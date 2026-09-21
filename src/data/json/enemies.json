@@ -124,7 +124,7 @@
  {
   "id": "en_driftsinger",
   "nameKey": "enemy.driftsinger",
-  "archetype": "basic",
+  "archetype": "ranged",
   "hp": 70,
   "poise": 26,
   "speed": 3.6,
@@ -151,6 +151,13 @@
     },
     {
      "min": 2.2,
+     "max": 11,
+     "actions": [
+      "shrill"
+     ]
+    },
+    {
+     "min": 11,
      "max": 99,
      "actions": [
       "chase"
@@ -276,6 +283,45 @@
      "sfx": [
       "wail"
      ]
+    }
+   },
+   {
+    "id": "shrill",
+    "beat": [
+     3
+    ],
+    "parryable": true,
+    "reaction": "R1",
+    "frames": {
+     "startup": 34,
+     "activeStart": 40,
+     "activeEnd": 46,
+     "recovery": 78,
+     "damage": 12,
+     "stamina": 0,
+     "poise": 6,
+     "hitStopMs": 70,
+     "lunge": 0,
+     "shake": "normal",
+     "sfx": [
+      "wail"
+     ],
+     "vfx": [
+      "ring_echo"
+     ],
+     "loudness": 5,
+     "projectile": {
+      "kind": "note",
+      "speed": 13,
+      "range": 20,
+      "radius": 0.45,
+      "offsetY": 1.3,
+      "gravity": 0,
+      "sfxLaunch": "wail",
+      "sfxHit": "hit_flesh",
+      "vfxHit": "impact_sparks",
+      "shake": "normal"
+     }
     }
    }
   ],

@@ -93,6 +93,9 @@ src/
                        Corruption 褪色值 / Overdrive 资源条；EffectComponent 承载
     HitShapes.ts       命中判定几何：sphere(即时)、capsule(挥砍扫掠：起止两球体插值)、
                        cone 扇形(AOE/锥形喷吐)；全部 vs 胶囊体(目标)相交测试，无物理引擎
+    Projectiles.ts     弹道运动学（纯逻辑，§5.9）：半隐式欧拉 + 重力/射程/寿命过期、
+                       pierce 与 hitIds 去重、withOwner 归属查询、reap 一次性回收通知；
+                       不含任何碰撞判定（那是 CombatManager 的职责，见 §5.9）
   ai/
     StateMachine.ts    分层 FSM 基类（Idle/Patrol/Investigate/Alert/Chase/Combat/
                        Retreat/Search/CallAlly/Recover/Dead，需求 §20）
@@ -120,6 +123,8 @@ src/
     ChunkGreybox.ts    chunk 灰盒表现层：world.chunk → InstancedMesh 挂/摘（§5.5）
     InteractableGreybox.ts 交互物占位模：按 kind 分池的 InstancedMesh，跟流送挂/摘、
                        随 ui.prompt 高亮、按 flag 谓词压暗消耗态（§5.5，Phase 7 换正式模）
+    ProjectileVisuals.ts 弹体表现层：按 kind 分池的 Mesh（长枪=长条盒、音符=二十面体…），
+                       每 tick 只读 combat.projectiles.list() 同步位置/朝向/脉冲（§5.9）
     PlaceholderArena.ts 起始占位场（灰盒地形到位前提供可玩平面+节拍信标）
     generators/        程序化生成器（需求 §52，关键区域手工摆放物件覆盖）：
                        TerrainGen(高度场+侵蚀噪声)、FoliageGen(泊松盘+实例化)、
@@ -203,9 +208,15 @@ src/
   "hitStopMs": 90, "cameraShake": "shake_light_swing",
   "moveAnim": "mont_sword_l1", "sfx": ["swoosh_1"], "vfx": ["trail_sword_basic"],
   "hitbox": {"shape": "capsule", "from": [0.2,1.4,0.6], "to": [0.9,0.9,1.6], "r": 0.45},
+  // 或者（远程/投掷动作，与 hitbox 互斥）：
+  // "projectile": {"kind":"spear","speed":28,"range":26,"radius":0.38,"offsetY":1.15,
+  //                 "gravity":0,"pierce":0,"pinTicks":72,"sfxLaunch":"thrust_1",
+  //                 "sfxHit":"hit_metal","vfxHit":"impact_sparks","shake":"heavy"},
   "roots": [[0,0],[0.02,0]]      // 根运动 (dx,dz)/tick 关键帧表
 }
 ```
+
+`hitbox` 与 `projectile` 二选一即决定这是近战判定还是弹道发射（§5.9）。投掷动作**故意不写 hitbox**——命中全部由弹体结算，避免「枪既在手里砍又在天上飞」的双判。
 
 ### 3.3 逐类 schema
 
@@ -366,8 +377,23 @@ HitStop 结束      └─ timeScale 恢复 → 攻方 recovery 续播 → 数�
 内建 `PerfPanel`（F 键）：帧时间 P50/P99 直方图、逻辑各 system 耗时分段（tick 内 performance.mark）、drawcall/三角面/纹理内存（renderer.info）、池命中率、流送队列。**记录流程（强制）**：任何标记为 `perf:` 的 PR 必须在 `docs/perf-log/YYYY-MM-DD-<topic>.md` 落表：`场景+档位 | Before(帧时间P99/drawcall/内存) | After | Improvement | Trade-offs`；无此表不得合并。
 
 ### 5.8 工程守则
-**依赖边界（自动化闸门）**：`tests/unit/arch-boundaries.test.ts` 静态扫描 `src/**/*.ts` 的运行时 import（`import type` 不计，编译后消失），断言 ①逻辑层（`ai/audio/combat/core/data/input` + `player/{LockOn,ThirdPersonController}` + `world/{Streaming,Surface,Interactables,SpawnDirector}`）不得 import `three` 或表现层模块；②用 `three` 的文件必须都在表现层清单（`main/CameraRig/CombatDebugger/Hud/VfxLayer/materials/ActorVisuals/ChunkGreybox/PlaceholderArena`）；③除组合根 `main.ts` 外，表现层不得 import 逻辑运行时（只订 `EventBus` 事件）。清单漂移会让「闸门变空测试」，所以另有 1 条断言校验扫描文件数与必扫项。
+**依赖边界（自动化闸门）**：`tests/unit/arch-boundaries.test.ts` 静态扫描 `src/**/*.ts` 的运行时 import（`import type` 不计，编译后消失），断言 ①逻辑层（`ai/audio/combat/core/data/input` + `player/{LockOn,ThirdPersonController}` + `world/{Streaming,Surface,Interactables,SpawnDirector}`）不得 import `three` 或表现层模块；②用 `three` 的文件必须都在表现层清单（`main/CameraRig/CombatDebugger/Hud/VfxLayer/materials/ActorVisuals/ChunkGreybox/InteractableGreybox/ProjectileVisuals/PlaceholderArena`）；③除组合根 `main.ts` 外，表现层不得 import 逻辑运行时（只订 `EventBus` 事件）。清单漂移会让「闸门变空测试」，所以另有 1 条断言校验扫描文件数与必扫项。
 > 注：需求文档设想的 ESLint `no-restricted-imports` 规则本环境未装（零新增依赖优先），改由上述测试承担同一职责；`npm run lint`(=tsc --noEmit) + `npm run test` 一起构成交付前门禁，pre-commit hook 跑 tsc。所有随机数走 `core/Math.ts` 的 `Rng`（`mulberry32` 种子流，可复现测试）；例外只允许出现在 `audio/*` 的音色抖动（不进玩法判定）。逻辑层不使用 `setTimeout/requestAnimationFrame`（一律过 Time/GameLoop）。
+
+### 5.9 弹道与远程子系统（Phase 4-A）— 已实现 `src/combat/Projectiles.ts` + `src/world/ProjectileVisuals.ts`
+
+需求 §66「远程敌人」与 §4.3「引针枪投掷」共用同一套弹道，遵循 §5.8 的分层：
+
+- **运动学 `combat/Projectiles.ts`（纯逻辑，零 three）**：`Projectile` = `{pos, vel, radius, rangeLeft, gravity, damage, poise, pinTicks, muteTicks, layers, pierce→hitsLeft, hostile, ownerId, sfxHit, vfxHit, shake, loudness}`。`spawn()` 把 `dir` 归一到 `speed`；`update()` 半隐式欧拉（先积分速度再积分位置），按实际位移扣 `rangeLeft`，射程耗尽=`'range'`、超 600 tick=`'expire'`、落地=`'ground'`、命中=`'hit'`。`hitIds` + `hitsLeft` 实现穿透去重；`reap(onGone)` 保证每条弹体**只通知一次**并同步从 `live` 移除；`withOwner(id)` 供归属回收。**这里不做任何碰撞判定**——运动学与命中解耦，才让 9 条单测能在 node 里纯算术断言（直线 5m/15tick、重力 1s 后 vy=0、抛体上升 4.5~5.05m）。
+- **命中与结算全部在 `CombatManager`**：单一伤害通道原则（§57）继续成立——远程只是把 `resolveDamage({ranged:true})`（**DR×0.6**，即远程破甲惩罚）与 `strikeEnemy()` 复用给弹体，玩家侧则把弹体包成一个 `Threat` 喂进同一条防御阶梯 `resolveAgainstPlayer()`：**弹反 > i-frame > 完美格挡 > 格挡 > 硬吃**。因此投掷/受击不需要第二套结算代码，`onBeat`/`fissureLayers`/`poiseMul`/`pinTicks(钉住=stunTicks)` 全部沿用近战语义。弹体各自的 `react(tick, outcome)` 回调负责差异（近战让攻方进入 `onParried` 硬直，远程让弹体自毁）。
+- **谁来发射**：`FrameData.projectile` 存在即视为发射动作；玩家动作与敌人攻击各自带 `launched` 闩锁（一次动作只发一发），判定窗口与近战 activeStart 同源。发射点在 `CombatManager`（它持有节奏/属性/RNG），`Enemy.pendingProjectile` 与 `PlayerController.action` 只是数据访问器——**不引入 ai↔combat 反向依赖**，也不用全局总线发射事件（那会让多实例 headless 测试串扰，Phase 3-C2 的教训）。
+- **弹道可读性**：锁定目标时用 `aimAt()` 解抛物线（给定射程与速度取命中时刻），未锁定时用 `aimFlat()`——按 `range/2` 的飞行时间反解 `vy`，使弹道在射程中点正好穿过站姿躯干高度带（引针枪按 combat.md §4.3 取 `gravity:0` 直线；同一套求解给未来带重力的落钟碎片/音色晶用），于是「朝天扔长矛」这种新手尴尬被数据本身消掉。
+- **敌人侧数据驱动**：`en_driftsinger` 由 `melee` 改 `ranged`，新招式 `shrill`（尖啸）在 2.2~11m 距离带发射 `note` 弹体（speed 13 / range 20 / 无重力 / damage 12 / poise 6），`distBands` 与 `chase` 带一起改表即完成布怪，零代码分支。
+- **表现层 `world/ProjectileVisuals.ts`**：`sync(list, tick)` 每 tick 只读弹体快照，按 `kind` 分池 acquire/release（长枪=沿 +Z 的长条盒并按速度四元数取向，音符=脉冲二十面体），`peakLive` 观测峰值；`dispose()` 释放几何/材质。落地/消失的尘埃与闷响由 CombatManager 发 `vfx.spawn`/`audio.sfx`，视觉层不判定语义。
+- **回收**：`entity.despawned` → 该 owner 的在飞弹体立即 `expire`（离格回收不留隐形弹幕）；`world.travel`/`teleport` 后弹体随 owner 一起清。
+- 覆盖：`tests/unit/projectiles.test.ts`（9 条运动学）、`tests/flow/ranged.test.ts`（9 条完整玩法流：投枪命中+钉住、DR×0.6 上下界、数据表断言、AI 真开火伤到玩家、无敌帧/弹反/格挡三档防御对远程同样成立、despawn 清弹）、`tests/unit/projectile-visuals.test.ts`（5 条，含「往返两波不涨网格数」的池泄漏回归——这条抓到了真 bug）。
+- **已知缺口**：弹体**没有世界遮挡**（不与地形/墙体做射线检测，只按射程/寿命/地面高度过期），因此敌人可以隔着岩壁投掷。登记为 KI-014，修复路径是接 `Navigation.ts` 时一并落地的 `LOS raycast`（`Surface.floorAt` 已是第一步）。
+
 
 ---
 

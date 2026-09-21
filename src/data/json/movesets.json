@@ -329,9 +329,14 @@
    "charged": {
     "startup": 20, "activeStart": 20, "activeEnd": 26, "recovery": 56,
     "damage": 34, "stamina": 24, "poise": 34, "hitStopMs": 110,
-    "hitbox": { "shape": "cone", "angleDeg": 30, "radius": 4.2, "height": 1.6, "offsetY": 1.0 },
-    "lunge": 2.0, "shake": "heavy", "sfx": ["thrust_1"], "vfx": ["trail_thrust"],
-    "loudness": 6, "flags": ["throw"]
+    "shake": "heavy", "sfx": ["thrust_1"], "vfx": ["trail_thrust"],
+    "loudness": 6, "flags": ["throw"],
+    "projectile": {
+     "kind": "spear", "speed": 28, "range": 26, "radius": 0.38,
+     "offsetY": 1.15, "gravity": 0, "pierce": 0, "pinTicks": 72,
+     "sfxLaunch": "thrust_1", "sfxHit": "hit_metal", "vfxHit": "impact_sparks",
+     "shake": "heavy"
+    }
    },
    "run": {
     "startup": 16, "activeStart": 16, "activeEnd": 22, "recovery": 43,

@@ -14,6 +14,7 @@ import { Interactables, takeInteractEdge } from '@/world/Interactables'
 import { ChunkGreybox } from '@/world/ChunkGreybox'
 import { InteractableGreybox } from '@/world/InteractableGreybox'
 import { ActorVisuals } from '@/world/ActorVisuals'
+import { ProjectileVisuals } from '@/world/ProjectileVisuals'
 import { PlayerController } from '@/player/ThirdPersonController'
 import { CameraRig } from '@/player/CameraRig'
 import { LockOn } from '@/player/LockOn'
@@ -61,6 +62,7 @@ const lock = new LockOn(player)
 const ai = new AISystem()
 const combat = new CombatManager(player, ai, time, rhythm)
 const visuals = new ActorVisuals(arena.scene, arena.playerVisual, player)
+const projectileVis = new ProjectileVisuals(arena.scene)
 const audio = new AudioEngine()
 const vfx = new VfxLayer(arena.scene)
 const hud = new Hud(document.getElementById('hud') as HTMLCanvasElement)
@@ -73,6 +75,7 @@ const streaming = new StreamingSystem(regions)
 streaming.teleport(0, player.pos) // 起始区同步加载（§5.5 传送遮蔽等价物）
 let shownRegion = streaming.regionAt(player.pos)?.id ?? null
 const surface = new Surface(regions, 0.5, (r) => !streaming.isRegionUnlocked(r))
+combat.floorAt = (pos) => surface.floorAt(pos)?.y ?? null // 弹道撞地：射进灰盒地板就落地
 const interact = new Interactables(regions, (r) => streaming.isRegionUnlocked(r))
 const greybox = new ChunkGreybox(arena.scene, regions, streaming.chunkSize)
 const nodes = new InteractableGreybox(arena.scene, regions, (pos) => { const c = streaming.cellOf(pos); return chunkKeyOf(c.cx, c.cy, c.cz) }, (k) => streaming.hasFlag(k))
@@ -127,9 +130,10 @@ const core = {
     // face locked target while locked & idle-ish
     if (lock.target) player.faceTowards(lock.target.getPos())
     ai.update(dt, t.tick, player, rhythm)
-    combat.update(t.tick, inp)
+    combat.update(t.tick, inp, dt)
     lock.update()
     visuals.sync(ai.enemies, t.tick)
+    projectileVis.sync(combat.projectiles.list(), t.tick)
   },
   postTick(t: GameTime) {
     rhythm.update(t.dt)
@@ -151,7 +155,7 @@ loop.add(core)
 addEventListener('resize', () => { arena.resize(); rig.resize() })
 bus.on('log', (l) => console.info(`[caesura:${l.level}] ${l.msg}`))
 
-;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, interact, hud, spawner, nodes }
+;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, interact, hud, spawner, nodes, projectileVis }
 
 document.getElementById('boot')!.style.display = 'none'
 ;(window as unknown as Record<string, unknown>).__CAESURA_BOOTED__ = true

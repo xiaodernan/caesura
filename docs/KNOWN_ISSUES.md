@@ -10,7 +10,7 @@
 | KI-003 | 处决期"休止"全频低通听感（§5.4）与专属处决音效未接，暂用 `chord_slam`+`death_shatter` 占位。 | P2 | Placeholder |
 | KI-004 | 手柄振动（§64）：`Haptics` 已按 combat.hit 的 shakeKey 分级驱动 `vibrationActuator.playEffect`，无手柄时优雅降级（已验），单元测试覆盖映射与调用。**实体振动主观手感未在接手柄设备复验**（本环境无控制器）。 | P2 | Partial |
 | KI-005 | `npm run build` 单 chunk >500kB：`three` 未按 manualChunks 拆出（rollup 对 CJS 依赖分包限制），首包偏大。非阻塞。 | P3 | Partial |
-| KI-006 | 引针枪蓄力「投掷枪」（§4.3）暂以强力突刺近似（flags `throw`），真实投掷弹体+钉住定身需远程弹道子系统（Phase 4/5）。 | P2 | Partial |
+| KI-006 | 引针枪蓄力「投掷枪」（§4.3）**已闭合（Phase 4-A）**：`ms_spear.charged` 去掉 hitbox/lunge，改为 `frames.projectile`（combat.md 口径：28m/s 直线、射程 26m、`pinTicks` 72=1.2s 定身），命中走统一的 `resolveDamage({ranged:true})`（DR×0.6）与防御阶梯。实机复验（真键鼠事件 + tickFrame）：锁定 14.5m 的漂调者 → 33 tick 飞行 → 40 伤害 + `钉住 −40` 提示 + 破势 → 第二枪击杀、槽位永久清剿；弹体与网格数同步归零，控制台 0 error/0 warn。剩余缺口：①投出的枪**不落地留存、无「按处决键拾回」动词**（§4.3 原设，需 Phase 5 物品/装备环一起落）；②无投掷专属动作，暂用蓄力挥势 `flags:["throw"]` 近似（KI-007 同族）。 | P2 | Implemented |
 | KI-007 | 换武器时 ActorVisuals 的武器模型不变（仍音调叉巨剑外观）；外观随武器切换为 Phase 7 视觉打磨项。 | P3 | Placeholder |
 | KI-008 | 区域流送逻辑完整，**表现层为灰盒**：`world/Streaming.ts`（48m 3D cell、激活环1/预载2/卸载3+2s 防抖、in-flight≤4、优先级、区域解锁门、teleport 同步加载、MissingRef 校验）+ `data/json/regions.json`（7 区域）+ `world/ChunkGreybox.ts`（按 `world.chunk` 事件挂/摘 InstancedMesh 板面与地标，全场常驻 2×7=14 drawcall）。缺的是**内容几何**：chunk 目前只有地面板面（无高度场/墙/植被/遗迹模块），区域间仍靠 `PlaceholderArena` 的平面兜底。 | P1 | Partial |
 | KI-009 | RegionData 暂**不含 `navmeshRef` 实体**：`Navigation.ts` 未落地，regions.json 里该字段留空以免产生悬空引用（MissingRef 校验会报警）。 | P2 | Placeholder |
@@ -18,6 +18,7 @@
 | KI-011 | ~~`Surface.floorAt` 不受 `unlockFlag` 约束~~ **已闭合（Phase 3-C1）**：`Surface` 现接受 `isClosed(region)` 闸门谓词，main.ts 注入 `!streaming.isRegionUnlocked(r)`；未解锁区域既没有可站面也没有交互物（`traversal.test.ts` 断言①）。剩余缺口只是灰盒表现：闸门「开合」没有动画/门模，仅表现为板面出现与提示文案。 | P1 | Implemented |
 | KI-012 | 垂直通路：上行已用**遮蔽传送等价物**近似（`InteractableRef.to` + `world.travel` → `streaming.teleport` 同步激活脚下 chunk，实测共鸣井/吊桥/管风琴吊机把人送到 -144/64/152 层并正常落层）。缺的是**连续运动演出**：井笼升降/吊桥落板的路径动画与物理过程（当前是瞬时落点 + `gate_creak` 占位音），以及可破坏音壁的几何碎裂。 | P1 | Partial |
 | KI-013 | **交互物占位模已可见（Phase 3-C3）**：`world/InteractableGreybox.ts` 按 kind 分池挂 26 个占位模，跟流送挂/摘、焦点点亮、setsFlag 已置位则压暗（谓词驱动 ⇒ 读档后首帧即正确）。剩余缺口：**只是形状可辨**，无材质/贴图/动画，`teleport` 类目前无数据条目，正式模在 Phase 7 替换。 | P2 | Partial |
+| KI-014 | **弹体无世界遮挡（Phase 4-A 遗留）**：`Projectiles.ts` 只做运动学，消失条件仅射程/寿命/落地三种，不对墙体与地形做射线，所以远程敌人可以隔岩壁投掷、长枪可穿过掩体。灰盒期影响可读性但不破坏平衡（当前区域无室内掩体几何）。 | P2 | Partial |
 
 ## 1.5 系统状态总表（需求 §78，每 Phase 出口更新）
 
@@ -27,9 +28,12 @@
 | 命中判定/伤害管线（DR/背刺/弱点/破势） | Implemented | — | P1 |
 | 防御阶梯（弹反>无敌>完美格挡>格挡>硬吃） | Implemented | — | P1 |
 | 节拍时钟 BeatClock（攻防共用） | Implemented | 敌人 hit-frame 量化到拍槽 | P1 |
-| 敌人 FSM（嘈壳/漂调者/驼鼓 基础 3 种） | Partial | 远程/幽灵/支援/精英/Boss 未做（Phase 4） | P1 |
+| 敌人 FSM（嘈壳/漂调者/驼鼓 基础 3 种） | Partial | 漂调者已改 **ranged** 原型（2.2~11m 尖啸投掷，距离带全在 `enemies.json`）；幽灵/支援/精英/Boss 未做（Phase 4 续） | P1 |
+| 弹道子系统（`combat/Projectiles.ts`，Phase 4-A） | Implemented | 纯逻辑零 three：半隐式欧拉 + 重力/射程/寿命/落地四类过期、pierce+hitIds 去重、`withOwner` 归属回收、`reap` 单次通知；9 条单测 + 9 条玩法流（含 AI 真开火、三档防御对远程同样成立）；遮挡缺口见 KI-014 | P1 |
+| 远程命中结算（复用单一伤害通道） | Implemented | 玩家投掷走 `strikeEnemy+ranged`（**DR×0.6**），敌方弹体走同一条 `resolveAgainstPlayer` 防御阶梯（弹反>无敌>完美格挡>格挡>硬吃）；钉住=stunTicks、裂音层、onBeat 架势×2 全部沿用近战语义 | P1 |
+| 弹体表现层（`world/ProjectileVisuals.ts`，按 kind 分池） | Implemented | 每 tick 只读弹体快照同步位置/朝向/脉冲；长枪按速度取向、音符脉冲自旋；`peakLive` 峰值观测；5 条断言含「两波往返网格数不涨」的池泄漏回归（该条抓到真 bug） | P2 |
 | 处决 / 背刺（§5.4 A/B/C） | Partial | 见 KI-002/003 | P1 |
-| 近战武器（调律剑 / 强音大剑 / 引针枪）帧数据+切换 | Partial | 弓/杖/隐藏刺剑未做（Phase 5 全解锁）；投掷枪见 KI-006；外观见 KI-007 | P1 |
+| 近战武器（调律剑 / 强音大剑 / 引针枪）帧数据+切换 | Partial | 弓/杖/隐藏刺剑未做（Phase 5 全解锁）；引针枪投掷枪已实现（KI-006 闭合）；外观见 KI-007 | P1 |
 | VFX 层 | Implemented | 4 池 InstancedBufferGeometry 渲染正常（修 aParam 属性溢出），灰盒 shader | P3 |
 | 音频引擎 | Partial | 见 KI-003；Boss 主题/区域 ambience 未做（Phase 8） | P2 |
 | HUD | Partial | 声纹 UI 基础；目标框/乐句线打磨待 Phase 7 | P2 |

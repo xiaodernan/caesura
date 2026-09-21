@@ -1,6 +1,6 @@
 import { bus } from '@/core/EventBus'
 import { Rng, clamp } from '@/core/Math'
-import type { EnemyData, AttackSpec } from '@/data/schema'
+import type { EnemyData, AttackSpec, FrameData, ProjectileSpec } from '@/data/schema'
 import { EntityStats } from '@/combat/EntityStats'
 import type { Vec3 } from '@/combat/EntityStats'
 import type { HitTarget } from '@/combat/HitShapes'
@@ -31,7 +31,7 @@ export class Enemy {
   home: Vec3
   lastKnown: Vec3
   investigateTick = 0
-  attack: { spec: AttackSpec; tick: number; hitDone: boolean; lungeApplied: number } | null = null
+  attack: { spec: AttackSpec; tick: number; hitDone: boolean; launched: boolean; lungeApplied: number } | null = null
   cooldowns = new Map<string, number>()
   stunTicks = 0
   buffedByRefrein = false
@@ -87,6 +87,20 @@ export class Enemy {
     const s = this.data.body?.scale ?? 1
     return { pos: this.pos, facingYaw: this.yaw, radius: 0.55 * s, height: 1.6 * s }
   }
+
+  /**
+   * 弹道招式的发射窗口（需求 §59：远程敌人走同一套弹道运行时）。
+   * 进入 activeStart 后由 CombatManager 取走一次，一发只发射一次。
+   */
+  get pendingProjectile(): { spec: ProjectileSpec; frames: FrameData } | null {
+    const a = this.attack
+    if (!a) return null
+    const spec = a.spec.frames.projectile
+    if (!spec || a.launched || a.tick < a.spec.frames.activeStart) return null
+    return { spec, frames: a.spec.frames }
+  }
+
+  markLaunched(): void { if (this.attack) this.attack.launched = true }
 
   enter(s: AIState): void {
     if (this.state === s) return
@@ -241,7 +255,7 @@ export class Enemy {
         id: 'callAlly', parryable: false, beat: [1, 2, 3, 4],
         frames: { startup: c.broadcastTicks, activeStart: c.broadcastTicks, activeEnd: c.broadcastTicks + 6, recovery: c.broadcastTicks + 24, damage: 0, stamina: 0, poise: 0, hitStopMs: 0, loudness: 9 }
       },
-      tick: 0, hitDone: false, lungeApplied: 0
+      tick: 0, hitDone: false, launched: false, lungeApplied: 0
     }
     this.cooldowns.set('callAlly', tick + 600)
     this.enterCallAlly()
@@ -261,7 +275,7 @@ export class Enemy {
     const beatWait = rhythm.ticksUntilBeatOn(spec.beat)
     const key = `${rhythm.info().bar}:${rhythm.info().beatInBar}:${spec.beat[0]}`
     if (slotTaken(key)) return
-    this.attack = { spec, tick: -beatWait, hitDone: false, lungeApplied: 0 }
+    this.attack = { spec, tick: -beatWait, hitDone: false, launched: false, lungeApplied: 0 }
     this.cooldowns.set(spec.id, tick + 240 + this.rng.int(0, 120))
     this.enter('combat')
     if (spec.id === 'callAlly' || pick === 'scream') {

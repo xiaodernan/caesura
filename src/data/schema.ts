@@ -7,6 +7,36 @@ export type Hitbox = HitboxCone | HitboxSphere | HitboxRing
 
 export interface CancelRule { to: string; fromTick: number }
 
+/**
+ * 弹道规格（combat.md §4.3 引针枪「投掷枪」/ §5 远程威胁）。挂在动作帧上，
+ * 玩家武器与敌人招式共用同一份表 ⇒ 同一套弹道运行时（combat/Projectiles.ts）。
+ */
+export interface ProjectileSpec {
+  /** 表现层按 kind 选模；未知 kind 走默认弹头 */
+  kind: 'spear' | 'note' | 'shard'
+  /** 初速 m/s */
+  speed: number
+  /** 飞行多少米后自然消散（无遮挡近似，见 tech-arch §5.9 已知缺口） */
+  range: number
+  /** 命中球半径（米） */
+  radius: number
+  /** 出手点高度，从攻击者脚下算；缺省 1.1 */
+  offsetY?: number
+  /** m/s²，0 = 直线弹道 */
+  gravity?: number
+  /** 命中一个目标后还能再穿几个；缺省 0 */
+  pierce?: number
+  /** 钉住定身 tick 数（引针枪的设计意图：把人钉在原地） */
+  pinTicks?: number
+  /** 命中附带沉默（§9 mute 标签） */
+  muteOnHit?: number
+  /** 打点（on-beat）投出的弹体保留架式加成快照 */
+  sfxLaunch?: string
+  sfxHit?: string
+  vfxHit?: string
+  shake?: 'graze' | 'normal' | 'heavy' | 'boss'
+}
+
 export interface FrameData {
   startup: number
   activeStart: number
@@ -17,6 +47,8 @@ export interface FrameData {
   poise: number
   hitStopMs: number
   hitbox?: Hitbox
+  /** 存在 = 这是一个投掷/射击动作：进入 activeStart 时发射弹体，hitbox 可以缺席 */
+  projectile?: ProjectileSpec
   lunge?: number
   shake?: 'graze' | 'normal' | 'heavy' | 'boss'
   sfx?: string[]
