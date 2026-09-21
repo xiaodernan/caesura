@@ -327,14 +327,14 @@ export class VfxLayer {
 
   /**
    * 由外部渲染循环驱动。标准调用是 render 钩子的 `update(alpha, realDelta)`；
-   * 也接受只传一个真实时长的简写（此时该值既是帧时长，也当帧内偏移用，退化为一帧内的采样点）。
+   * 也兼容只传真实时长的简写调用 `update(realDelta)`（此时直接按 now 绘制，不做帧内插值）。
    */
   update(alpha: number, realDelta: number = alpha): void {
     const dt = realDelta * this.timeScale
     const prev = this.time
     this.time += dt
     // 子帧插值：绘制时钟在 [prev, now] 内按 alpha 采样，扩散与干涉条纹不出现台阶
-    const draw = prev + dt * clamp(alpha, 0, 1)
+    const draw = realDelta === alpha ? this.time : prev + dt * clamp(alpha, 0, 1)
     this.ringMat.uniforms.uTime.value = draw
     this.sparkMat.uniforms.uTime.value = draw
     this.shardMat.uniforms.uTime.value = draw
