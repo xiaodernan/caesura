@@ -113,7 +113,8 @@
     "spawnGroups": [
       { "enemyId": "en_murkshell", "count": 4, "center": { "x": -80, "y": 0, "z": -200 }, "radius": 20, "campId": "camp_brokenbar", "condition": "!flag.brokenbar_resolved" },
       { "enemyId": "en_tympanus", "count": 1, "center": { "x": -50, "y": 0, "z": -250 }, "radius": 10, "campId": "camp_brokenbar" },
-      { "enemyId": "en_driftsinger", "count": 2, "center": { "x": -140, "y": 0, "z": -160 }, "radius": 12, "campId": "camp_brokenbar" }
+      { "enemyId": "en_driftsinger", "count": 2, "center": { "x": -140, "y": 0, "z": -160 }, "radius": 12, "campId": "camp_brokenbar" },
+      { "enemyId": "en_skewer", "count": 2, "center": { "x": -36, "y": 0, "z": -142 }, "radius": 10, "campId": "camp_brokenbar" }
     ],
     "landmarks": [
       { "id": "lm_brokenbar_stonebridge", "nameKey": "landmark.stonebridge", "pos": { "x": -48, "y": 4, "z": -120 }, "sightRange": 160 },

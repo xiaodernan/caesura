@@ -82,3 +82,49 @@ describe('ProjectileVisuals（弹体名单 -> 可见模）', () => {
     expect(vis.live).toBe(0)
   })
 })
+
+describe('ProjectileVisuals.syncTelegraphs（§14.4 赤线预告）', () => {
+  const scene = new THREE.Scene()
+  const vis = new ProjectileVisuals(scene)
+  afterAll(() => vis.dispose())
+  const group = () => scene.getObjectByName('projectiles') as THREE.Group
+
+  const line = (owner: string, to: [number, number, number], ticksLeft: number, total = 48) => ({
+    ownerId: owner, kind: 'shard', from: { x: 0, y: 1.25, z: 0 },
+    to: { x: to[0], y: to[1], z: to[2] }, ticksLeft, totalTicks: total
+  })
+  const visible = () => (group().children as THREE.Mesh[]).filter((m) => m.visible)
+
+  it('每根线一枚细长盒：中点落位、长度=线长、越接近出手越亮', () => {
+    vis.syncTelegraphs([line('a', [0, 1.25, -10], 40), line('b', [6, 1.25, 0], 8)])
+    expect(vis.liveTelegraphs).toBe(2)
+    const a = visible().find((m) => Math.abs(m.position.z + 5) < 0.01)!
+    expect(a.scale.z).toBeCloseTo(10, 4)
+    expect(a.scale.x).toBeLessThan(0.1) // 细，不是一堵墙
+    const matA = a.material as THREE.MeshBasicMaterial
+    vis.syncTelegraphs([line('a', [0, 1.25, -10], 2), line('b', [6, 1.25, 0], 8)])
+    expect(matA.opacity).toBeGreaterThan(0.5) // 只剩 2 拍 ⇒ 亮起来
+    vis.syncTelegraphs([line('a', [0, 1.25, -10], 46), line('b', [6, 1.25, 0], 8)])
+    expect(matA.opacity).toBeLessThan(0.3) // 刚起手 ⇒ 只是淡淡一条
+  })
+
+  it('射手停手后线收回池子：连打几波不会让场景对象数上涨', () => {
+    vis.syncTelegraphs([])
+    const before = group().children.length
+    for (let wave = 0; wave < 4; wave++) {
+      vis.syncTelegraphs([line(`w${wave}`, [0, 1.2, -8], 20)])
+      vis.syncTelegraphs([])
+    }
+    expect(group().children.length).toBe(before)
+    expect(vis.liveTelegraphs).toBe(0)
+    expect(vis.peakTelegraphs).toBe(2) // 峰值=历史上同时存在的最多根数（第一波两根）
+  })
+
+  it('同一射手只占一根线：按 ownerId 复用而不是叠加', () => {
+    vis.syncTelegraphs([line('solo', [0, 1.2, -6], 30)])
+    const n = visible().length
+    vis.syncTelegraphs([line('solo', [0, 1.2, -7], 12)])
+    expect(visible().length).toBe(n)
+    expect(vis.liveTelegraphs).toBe(1)
+  })
+})

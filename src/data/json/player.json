@@ -18,7 +18,8 @@
   "startupTicks": 6,
   "reduction": 0.55,
   "staPerDmg": 1.2,
-  "bleedPoiseFrac": 0.25
+  "bleedPoiseFrac": 0.25,
+  "perfectBlockReflectMul": 0.5
  },
  "perfectBlockWindow": 5,
  "parry": {
@@ -26,7 +27,8 @@
   "whiffRecovery": 27,
   "poiseDamage": 25,
   "stunTicks": 18,
-  "overdriveGain": 2
+  "overdriveGain": 2,
+  "projectileReflectMul": 1
  },
  "roll": {
   "total": 30,

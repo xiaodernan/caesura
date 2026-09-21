@@ -30,6 +30,13 @@ export interface ProjectileSpec {
   pinTicks?: number
   /** 命中附带沉默（§9 mute 标签） */
   muteOnHit?: number
+  /**
+   * 连发（combat.md §14.4 针喉「三叠箭」）：count 发、默认每 everyTicks 一拍序发一发。
+   * `at` 给出每发相对 activeStart 的显式帧位（缺省位用 everyTicks 补），用来写「第 2 拍延迟 0.25 拍的假动作」。
+   */
+  burst?: { count: number; everyTicks: number; at?: number[] }
+  /** 出手前画可见预告线（§14.4「赤线 telegraph，线终点=落点」），长度取招式 startup 帧 */
+  telegraph?: boolean
   /** 打点（on-beat）投出的弹体保留架式加成快照 */
   sfxLaunch?: string
   sfxHit?: string
@@ -104,6 +111,10 @@ export interface EnemyData {
     vibration: { range: number }
     hearing: { range: number }
     distBands: { min: number; max: number; actions: string[] }[]
+    /** 距离带里的伪动作 'backstep'（§14.4 针喉「永远背退拉近」）离家最远拉多远，米 */
+    kiteRange?: number
+    /** 多远放弃阵地回到追击；缺省 12m（射手按射程覆盖，否则永远打不到 14m 外的目标） */
+    chaseBeyond?: number
     retreatHpFrac?: number
     callAlly?: { range: number; broadcastTicks: number }
     buffAura?: { range: number; attackSpeedMul: number; dmgMul: number }
@@ -150,9 +161,9 @@ export interface PlayerBaseData {
   jumpSpeed: number
   gravity: number
   staminaRegen: { hardDelay: number; slowPerSec: number; slowTicks: number; fastPerSec: number }
-  guard: { startupTicks: number; reduction: number; staPerDmg: number; bleedPoiseFrac: number }
+  guard: { startupTicks: number; reduction: number; staPerDmg: number; bleedPoiseFrac: number; /** §5.2 对远程：完美格挡把弹体弹回原主人，带走的比例 */ perfectBlockReflectMul: number }
   perfectBlockWindow: number
-  parry: { activeTicks: number; whiffRecovery: number; poiseDamage: number; stunTicks: number; overdriveGain: number }
+  parry: { activeTicks: number; whiffRecovery: number; poiseDamage: number; stunTicks: number; overdriveGain: number; /** §5.3 弹反弹道：反射回原主人的伤害比例（100%） */ projectileReflectMul: number }
   roll: { total: number; iframeStart: number; iframeEnd: number; dist: number; backDist: number; stamina: number; lockOnDist: number; lockOnIframes: [number, number] }
   execution: ExecutionConfig
   attrs: Record<AttrKey, number>

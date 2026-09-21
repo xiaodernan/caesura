@@ -20,6 +20,9 @@ export type ActiveEnemyHit = {
 
 let enemySeq = 0
 
+/** 敌人脱离 combat 回到追击的距离（数据可用 `ai.chaseBeyond` 覆盖；射手要在更远距离开火） */
+const DEFAULT_CHASE_BEYOND = 12
+
 export class Enemy {
   id = `en_${++enemySeq}`
   stats: EntityStats
@@ -31,7 +34,7 @@ export class Enemy {
   home: Vec3
   lastKnown: Vec3
   investigateTick = 0
-  attack: { spec: AttackSpec; tick: number; hitDone: boolean; launched: boolean; lungeApplied: number } | null = null
+  attack: { spec: AttackSpec; tick: number; hitDone: boolean; shots: number; lungeApplied: number } | null = null
   cooldowns = new Map<string, number>()
   stunTicks = 0
   buffedByRefrein = false
@@ -90,17 +93,33 @@ export class Enemy {
 
   /**
    * 弹道招式的发射窗口（需求 §59：远程敌人走同一套弹道运行时）。
-   * 进入 activeStart 后由 CombatManager 取走一次，一发只发射一次。
+   * 连发（§14.4 三叠箭）按 burst.everyTicks 逐发排开，同一招式最多发 count 发；
+   * 被弹反/被打断 ⇒ attack 清空，余下发数一起作废（这就是「骗动作」的反制）。
    */
   get pendingProjectile(): { spec: ProjectileSpec; frames: FrameData } | null {
     const a = this.attack
     if (!a) return null
     const spec = a.spec.frames.projectile
-    if (!spec || a.launched || a.tick < a.spec.frames.activeStart) return null
+    if (!spec) return null
+    const count = spec.burst?.count ?? 1
+    if (a.shots >= count) return null
+    const b = spec.burst
+    const at = b ? (b.at?.[a.shots] ?? a.shots * b.everyTicks) : 0
+    if (a.tick < a.spec.frames.activeStart + at) return null
     return { spec, frames: a.spec.frames }
   }
 
-  markLaunched(): void { if (this.attack) this.attack.launched = true }
+  /** §14.4「可见赤线 telegraph，线终点=落点」：前摇期间把落点提前告诉玩家 */
+  get telegraphProjectile(): { spec: ProjectileSpec; ticksLeft: number; totalTicks: number } | null {
+    const a = this.attack
+    if (!a) return null
+    const spec = a.spec.frames.projectile
+    if (!spec?.telegraph) return null
+    if (a.tick < 0 || a.tick >= a.spec.frames.startup) return null
+    return { spec, ticksLeft: a.spec.frames.startup - a.tick, totalTicks: a.spec.frames.startup }
+  }
+
+  markShotFired(): void { if (this.attack) this.attack.shots++ }
 
   enter(s: AIState): void {
     if (this.state === s) return
@@ -181,26 +200,34 @@ export class Enemy {
       case 'chase': {
         faceSlow(this, p, 0.5)
         const band = this.data.ai.distBands.find((b) => dist >= b.min && dist <= b.max)
+        const kites = band?.actions.includes('backstep') ?? false
         const wants = band?.actions.includes('chase') ?? dist > 2
-        if (wants) stepToward(this, p, dt, this.data.speed, rhythm)
+        if (kites) stepKite(this, p, dt, this.data.speed)
+        else if (wants) stepToward(this, p, dt, this.data.speed, rhythm)
         else stepAway(this, p, dt, this.data.speed * 0.7)
         if (this.alertness < 40) this.enter('search')
-        const inAtkRange = band && !band.actions.includes('chase')
-        if (inAtkRange && !this.attack && this.stateTick > 24) this.tryAttack(band.actions, dist, rhythm, tick, slotTaken, player)
+        if (band && hasAttackAction(this, band.actions) && !this.attack && this.stateTick > 24) {
+          this.tryAttack(band.actions, rhythm, tick, slotTaken)
+        }
         break
       }
       case 'combat': {
         faceSlow(this, p, 0.6)
+        const band = this.data.ai.distBands.find((b) => dist >= b.min && dist <= b.max)
         if (this.attack) {
           this.progressAttack(dt, tick, player, rhythm)
+          // 射手边拉弓边挪（§14.4「永远背退拉近」）：出手窗口不站桩，但只走半速
+          if (band?.actions.includes('backstep')) stepKite(this, p, dt, this.data.speed * 0.45)
         } else {
-          const band = this.data.ai.distBands.find((b) => dist >= b.min && dist <= b.max)
-          if (dist > 12) { this.enter('chase'); break }
+          if (dist > (this.data.ai.chaseBeyond ?? DEFAULT_CHASE_BEYOND)) { this.enter('chase'); break }
           if (this.data.ai.retreatHpFrac && this.stats.hp / this.stats.hpMax <= this.data.ai.retreatHpFrac) { this.enter('retreat'); break }
           if (band) {
-            const wants = band.actions.includes('chase')
-            if (wants) stepToward(this, p, dt, this.data.speed * 0.9, rhythm)
-            else this.tryAttack(band.actions, dist, rhythm, tick, slotTaken, player)
+            // 伪动作决定脚下一步：'chase' 贴近、'backstep' 拉开（射手风筝），真招式名才出手
+            if (band.actions.includes('chase')) stepToward(this, p, dt, this.data.speed * 0.9, rhythm)
+            else if (band.actions.includes('backstep')) stepKite(this, p, dt, this.data.speed)
+            if (hasAttackAction(this, band.actions)) {
+              this.tryAttack(band.actions, rhythm, tick, slotTaken)
+            }
           }
           if (this.alertness < 40) this.enter('search')
         }
@@ -255,7 +282,7 @@ export class Enemy {
         id: 'callAlly', parryable: false, beat: [1, 2, 3, 4],
         frames: { startup: c.broadcastTicks, activeStart: c.broadcastTicks, activeEnd: c.broadcastTicks + 6, recovery: c.broadcastTicks + 24, damage: 0, stamina: 0, poise: 0, hitStopMs: 0, loudness: 9 }
       },
-      tick: 0, hitDone: false, launched: false, lungeApplied: 0
+      tick: 0, hitDone: false, shots: 0, lungeApplied: 0
     }
     this.cooldowns.set('callAlly', tick + 600)
     this.enterCallAlly()
@@ -268,28 +295,31 @@ export class Enemy {
   private pendingBroadcast: (() => void) | null = null
   private enterCallAlly(): void { this.enter('callAlly') }
 
-  private tryAttack(actions: string[], dist: number, rhythm: RhythmClock, tick: number, slotTaken: (k: string) => boolean, player: PlayerController): void {
-    const pick = this.rng.pick(actions.filter((a) => a !== 'chase' && !((this.cooldowns.get(a) ?? 0) > tick)))
+  private tryAttack(actions: string[], rhythm: RhythmClock, tick: number, slotTaken: (k: string) => boolean): void {
+    const usable = actions.filter((a) => !PSEUDO_ACTIONS.has(a) && !((this.cooldowns.get(a) ?? 0) > tick))
+    const pick = this.rng.pick(usable)
     const spec = this.data.attacks.find((a) => a.id === pick)
     if (!spec) return
     const beatWait = rhythm.ticksUntilBeatOn(spec.beat)
     const key = `${rhythm.info().bar}:${rhythm.info().beatInBar}:${spec.beat[0]}`
     if (slotTaken(key)) return
-    this.attack = { spec, tick: -beatWait, hitDone: false, launched: false, lungeApplied: 0 }
+    this.attack = { spec, tick: -beatWait, hitDone: false, shots: 0, lungeApplied: 0 }
     this.cooldowns.set(spec.id, tick + 240 + this.rng.int(0, 120))
     this.enter('combat')
     if (spec.id === 'callAlly' || pick === 'scream') {
       const c = this.data.ai.callAlly
       if (c) this.pendingBroadcast = () => bus.emit('ai.callAlly', { fromId: this.id, pos: { ...this.pos }, range: c.range })
     }
-    if (dist < 0.01) return
-    void player
   }
 
   private progressAttack(dt: number, tick: number, player: PlayerController, rhythm: RhythmClock): void {
     if (!this.attack) return
     this.attack.tick++
     const f = this.attack.spec.frames
+    // 赤线 telegraph 期间持续跟踪目标：线是「它会打哪」的诚实承诺，玩家要能看到被牵着
+    if (f.projectile?.telegraph && this.attack.tick >= 0 && this.attack.tick < f.startup) {
+      faceSlow(this, player.pos, 0.3)
+    }
     if (this.attack.tick === f.startup && this.pendingBroadcast) {
       this.pendingBroadcast()
       this.pendingBroadcast = null
@@ -365,6 +395,23 @@ function stepToward(e: Enemy, t: Vec3, dt: number, speed: number, _rhythm: Rhyth
 
 function stepAway(e: Enemy, t: Vec3, dt: number, speed: number): void {
   stepToward(e, { x: 2 * e.pos.x - t.x, y: 0, z: 2 * e.pos.z - t.z }, dt, speed, null as never)
+}
+
+/**
+ * 射手的「背退拉近」（combat.md §14.4）：永远朝远离目标的方向走，但只在
+ * `ai.kiteRange` 的家里半径内拉——否则它会一路退到地图边缘，玩家追不上也打不到。
+ */
+function stepKite(e: Enemy, t: Vec3, dt: number, speed: number): void {
+  const limit = e.data.ai.kiteRange ?? 0
+  if (limit > 0 && dist3(e.pos, e.home) >= limit) return
+  stepAway(e, t, dt, speed)
+}
+
+/** 距离带里的伪动作（'chase'/'backstep'）不是招式名，别拿去查攻击表 */
+const PSEUDO_ACTIONS = new Set(['chase', 'backstep'])
+
+function hasAttackAction(e: Enemy, actions: string[]): boolean {
+  return actions.some((a) => !PSEUDO_ACTIONS.has(a) && e.data.attacks.some((atk) => atk.id === a))
 }
 
 function playerIsMoving(p: PlayerController): boolean {

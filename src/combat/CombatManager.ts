@@ -15,6 +15,19 @@ import type { Vec3 } from './EntityStats'
 
 type ExecuteKind = 'A' | 'B' | 'C'
 
+/** 防御阶梯的结果：弹体分支要靠它决定「消失 / 穿过 / 反射」 */
+type DefenseOutcome = 'parry' | 'perfectBlock' | 'immune' | 'block' | 'guardBreak' | 'hit' | 'none'
+
+/** 一条「它要往这里打」的预告线（combat.md §14.4），由 CombatManager 算、ProjectileVisuals 画 */
+export interface TelegraphLine {
+  ownerId: string
+  kind: string
+  from: Vec3
+  to: Vec3
+  ticksLeft: number
+  totalTicks: number
+}
+
 /** 一次「打在某人身上」的全部决策输入；近战与弹体共用同一条结算通道（combat.md §12） */
 interface EnemyStrike {
   base: number
@@ -166,13 +179,16 @@ export class CombatManager {
 
   /* ======================= 弹道 ======================= */
 
-  /** 玩家投掷枪：进入 activeStart 的那一帧发射（同一动作只发射一次） */
+  /** 玩家投掷枪：进入 activeStart 的那一帧发射；连发按 burst 排开（同一动作最多 count 发） */
   private launchPlayerProjectile(tick: number): void {
     const a = this.player.action
-    if (!a || a.launched) return
+    if (!a) return
     const spec = a.f.projectile
-    if (!spec || a.tick < a.f.activeStart) return
-    a.launched = true
+    if (!spec) return
+    const count = spec.burst?.count ?? 1
+    if (a.shots >= count) return
+    if (a.tick < a.f.activeStart + a.shots * (spec.burst?.everyTicks ?? 0)) return
+    a.shots++
     const p = this.player
     const origin: Vec3 = { x: p.pos.x, y: p.pos.y + (spec.offsetY ?? 1.1), z: p.pos.z }
     const target = p.lockedTarget ? { x: p.lockedTarget.getPos().x, y: p.lockedTarget.getPos().y + 0.9, z: p.lockedTarget.getPos().z } : null
@@ -196,7 +212,7 @@ export class CombatManager {
     for (const e of this.ai.enemies) {
       const pending = e.pendingProjectile
       if (!pending) continue
-      e.markLaunched()
+      e.markShotFired()
       const { spec, frames } = pending
       const origin: Vec3 = { x: e.pos.x, y: e.pos.y + (spec.offsetY ?? 1.1), z: e.pos.z }
       const target: Vec3 = { x: this.player.pos.x, y: this.player.pos.y + 0.9, z: this.player.pos.z }
@@ -229,9 +245,11 @@ export class CombatManager {
   private projectilePass(tick: number, dt: number): void {
     this.projectiles.update(dt, tick)
     for (const pr of this.projectiles.list()) {
-      if (pr.dead) continue
+      if (pr.dead || pr.bornTick === tick) continue // 出生帧不参与判定：否则反射体会当帧打到自己
       if (pr.hostile) {
-        if (!this.player.executing && sphereHits(pr, this.player.hitTarget())) this.projectileThreatensPlayer(pr, tick)
+        if (!this.player.executing && !pr.hitIds.has('player') && sphereHits(pr, this.player.hitTarget())) {
+          this.projectileThreatensPlayer(pr, tick)
+        }
       } else {
         for (const e of this.ai.enemies) {
           if (!e.alive || pr.hitIds.has(e.id)) continue
@@ -262,18 +280,67 @@ export class CombatManager {
   }
 
   private projectileThreatensPlayer(pr: Projectile, tick: number): void {
-    const e = this.ai.enemies.find((x) => x.id === pr.ownerId)
     const point: Vec3 = { x: this.player.pos.x, y: this.player.pos.y + 1.0, z: this.player.pos.z }
-    this.projectiles.kill(pr, 'hit')
-    this.resolveAgainstPlayer({
+    const out = this.resolveAgainstPlayer({
       attackerId: pr.ownerId, damage: pr.damage, poise: pr.poise, hitStopMs: pr.hitStopMs,
       kind: 'enemy', point, dir: { x: -pr.vel.x, y: 0, z: -pr.vel.z }, from: { ...pr.pos },
       parryable: pr.parryable, ranged: true,
       statusOnHit: pr.muteTicks > 0 ? { tag: 'mute', layers: 1 } : undefined,
-      // 弹体被弹开/被完美格挡：它就是消失了，没有「攻击者硬直」这回事
-      react: () => this.projectiles.kill(pr, 'expire')
+      // §5.2/§5.3：弹体是唯一「防御成功后还活着」的攻击——被弹开就原路回去找主人
+      react: (t, outcome) => this.reflectProjectile(pr, outcome, t)
     }, tick)
+    if (out === 'immune') pr.hitIds.add('player') // 无敌帧：从身上穿过去，之后该落地落地
+    else if (out !== 'parry' && out !== 'perfectBlock') this.projectiles.kill(pr, 'hit')
+    const e = this.ai.enemies.find((x) => x.id === pr.ownerId)
     if (e) this.checkCrumple(e, tick)
+  }
+
+  /** 弹反/完美格挡把弹体反射回发射者：伤害按数据表比例（§5.3=100%，§5.2=50%） */
+  private reflectProjectile(pr: Projectile, outcome: 'parry' | 'perfectBlock', tick: number): void {
+    const b = this.player.base
+    const mul = outcome === 'parry' ? b.parry.projectileReflectMul : b.guard.perfectBlockReflectMul
+    const shooter = this.ai.enemies.find((e) => e.id === pr.ownerId && e.alive)
+    const origin: Vec3 = { x: this.player.pos.x, y: this.player.pos.y + 1.0, z: this.player.pos.z }
+    const speed = Math.hypot(pr.vel.x, pr.vel.y, pr.vel.z) || 1
+    const target = shooter
+      ? { x: shooter.pos.x, y: shooter.pos.y + 0.9, z: shooter.pos.z }
+      : { x: origin.x - pr.vel.x / speed * 10, y: origin.y, z: origin.z - pr.vel.z / speed * 10 }
+    const dir = aimAt(origin, target, { speed, gravity: pr.gravity })
+    const dist = Math.hypot(target.x - origin.x, target.y - origin.y, target.z - origin.z)
+    this.projectiles.spawn({
+      hostile: false, ownerId: 'player', kind: pr.kind, origin, dir,
+      speed, range: Math.max(6, dist + 2), radius: pr.radius, gravity: pr.gravity,
+      damage: Math.round(pr.damage * mul), poise: pr.poise, hitStopMs: pr.hitStopMs,
+      layers: pr.layers, pinTicks: pr.pinTicks, muteTicks: pr.muteTicks,
+      onBeat: this.rhythm.onBeat(50),
+      parryable: false, // 反射体不可再弹：否则两个人能对着弹一辈子
+      sfxHit: pr.sfxHit, vfxHit: pr.vfxHit, shake: pr.shake, loudness: pr.loudness
+    }, tick)
+    this.projectiles.kill(pr, 'hit')
+    bus.emit('vfx.request', { key: 'spike_chord', pos: { ...pr.pos }, scale: 0.8 })
+  }
+
+  /**
+   * §14.4「可见赤线 telegraph，线终点=落点」：前摇期间把落点亮给玩家看。
+   * 只读逻辑，画线是 ProjectileVisuals 的事（tech-arch §5.8 依赖边界）。
+   */
+  telegraphs(): TelegraphLine[] {
+    const out: TelegraphLine[] = []
+    for (const e of this.ai.enemies) {
+      const t = e.telegraphProjectile
+      if (!t) continue
+      const from: Vec3 = { x: e.pos.x, y: e.pos.y + (t.spec.offsetY ?? 1.1), z: e.pos.z }
+      const target: Vec3 = { x: this.player.pos.x, y: this.player.pos.y + 0.9, z: this.player.pos.z }
+      const dir = aimAt(from, target, t.spec)
+      const dl = Math.hypot(dir.x, dir.y, dir.z) || 1
+      const len = Math.min(t.spec.range, Math.hypot(target.x - from.x, target.y - from.y, target.z - from.z))
+      out.push({
+        ownerId: e.id, kind: t.spec.kind, from,
+        to: { x: from.x + (dir.x / dl) * len, y: from.y + (dir.y / dl) * len, z: from.z + (dir.z / dl) * len },
+        ticksLeft: t.ticksLeft, totalTicks: t.totalTicks
+      })
+    }
+    return out
   }
 
   private onProjectileGone(pr: Projectile, reason: 'hit' | 'ground' | 'range' | 'expire'): void {
@@ -313,7 +380,7 @@ export class CombatManager {
   }
 
   /** §5 优先级：弹反 > 无敌帧 > 完美格挡 > 格挡（含破防）> 硬吃。近战与弹体共用 */
-  private resolveAgainstPlayer(h: Threat, tick: number): void {
+  private resolveAgainstPlayer(h: Threat, tick: number): DefenseOutcome {
     const p = this.player
     const base = {
       attackerId: h.attackerId, victimId: 'player', poiseDamage: h.poise, kind: h.kind,
@@ -328,12 +395,12 @@ export class CombatManager {
       bus.emit('combat.parried', { attackerId: h.attackerId, defenderId: 'player' })
       bus.emit('vfx.request', { key: 'parry_ring', pos: h.point })
       bus.emit('audio.sfx', { key: 'parry_bell', pos: h.point, gain: 1 })
-      return
+      return 'parry'
     }
     p.parryTicksLeft = 0
     if (p.iFrame) {
       bus.emit('combat.hit', { ...base, damage: 0, result: 'immune', shakeKey: 'graze' })
-      return
+      return 'immune'
     }
     if (p.guardTicks >= 1 && p.guardTicks <= p.base.perfectBlockWindow) {
       h.react(tick, 'perfectBlock')
@@ -342,7 +409,7 @@ export class CombatManager {
       bus.emit('combat.hit', { ...base, damage: 0, result: 'perfectBlock', shakeKey: 'graze' })
       bus.emit('vfx.request', { key: 'parry_ring', pos: h.point, scale: 0.7 })
       bus.emit('audio.sfx', { key: 'perfect_block', pos: h.point, gain: 0.9 })
-      return
+      return 'perfectBlock'
     }
     if (p.guarding) {
       const through = Math.round(h.damage * (1 - p.base.guard.reduction))
@@ -354,19 +421,20 @@ export class CombatManager {
         bus.emit('combat.hit', { ...base, damage: through, result: 'block', shakeKey: 'graze' })
         bus.emit('vfx.request', { key: 'block_spark', pos: h.point })
         bus.emit('audio.sfx', { key: 'block_guard', pos: h.point, gain: 0.7 })
-      } else {
-        p.stats.stamina = 0
-        p.exhausted = true
-        p.stunTicks = 36 // guard break 600ms (combat.md §5.1)
-        p.takeDamage(Math.round(through * 1.3), h.dir)
-        bus.emit('combat.hit', { ...base, damage: through, result: 'hit', shakeKey: 'heavy' })
-        bus.emit('ui.notify', { text: '破防！', kind: 'info' })
+        this.checkPlayerCrumple(tick)
+        return 'block'
       }
+      p.stats.stamina = 0
+      p.exhausted = true
+      p.stunTicks = 36 // guard break 600ms (combat.md §5.1)
+      p.takeDamage(Math.round(through * 1.3), h.dir)
+      bus.emit('combat.hit', { ...base, damage: through, result: 'hit', shakeKey: 'heavy' })
+      bus.emit('ui.notify', { text: '破防！', kind: 'info' })
       this.checkPlayerCrumple(tick)
-      return
+      return 'guardBreak'
     }
     const dmg = resolveDamage({ base: h.damage, defense: p.stats.defense, ranged: h.ranged }, () => this.rng.float())
-    if (!p.takeDamage(dmg.damage, h.dir)) return
+    if (!p.takeDamage(dmg.damage, h.dir)) return 'none'
     p.stats.addPoise(h.poise, tick)
     this.time.hitStop(0.08)
     bus.emit('combat.hit', { ...base, damage: dmg.damage, result: 'hit', shakeKey: 'hurt' })
@@ -375,6 +443,7 @@ export class CombatManager {
     const st = h.statusOnHit
     if (st?.tag === 'mute') p.stats.muteTicksLeft = Math.max(p.stats.muteTicksLeft, st.layers * 240)
     this.checkPlayerCrumple(tick)
+    return 'hit'
   }
 
   /* ======================= 破势 / 死亡 / 处决 ======================= */

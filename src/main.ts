@@ -134,6 +134,7 @@ const core = {
     lock.update()
     visuals.sync(ai.enemies, t.tick)
     projectileVis.sync(combat.projectiles.list(), t.tick)
+    projectileVis.syncTelegraphs(combat.telegraphs())
   },
   postTick(t: GameTime) {
     rhythm.update(t.dt)

@@ -107,4 +107,29 @@ describe('event payload references resolve (跨模块字符串引用不许悬空
     const valid = new Set<string>(SFX_KEYS)
     expect([...keys].filter((k) => !valid.has(k))).toEqual([])
   })
+
+  it('数据表里写到的每个 sfx key 都在合成表里（§55：JSON 引用的音色不能悬空）', () => {
+    const valid = new Set<string>(SFX_KEYS)
+    const found = new Set<string>()
+    const collect = (v: unknown): void => {
+      if (typeof v === 'string') found.add(v)
+    }
+    const walk = (v: unknown): void => {
+      if (Array.isArray(v)) { for (const x of v) walk(x); return }
+      if (v === null || typeof v !== 'object') return
+      for (const [k, x] of Object.entries(v as Record<string, unknown>)) {
+        if (k === 'sfx' || k === 'sfxLaunch' || k === 'sfxHit') {
+          if (Array.isArray(x)) for (const s of x) collect(s)
+          else collect(x)
+          continue
+        }
+        walk(x)
+      }
+    }
+    for (const f of ['enemies.json', 'movesets.json', 'player.json', 'weapons.json']) {
+      walk(JSON.parse(readFileSync(`${SRC}/data/json/${f}`, 'utf8')))
+    }
+    expect(found.size).toBeGreaterThanOrEqual(10)
+    expect([...found].filter((k) => !valid.has(k))).toEqual([])
+  })
 })

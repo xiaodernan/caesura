@@ -18,7 +18,7 @@
 | KI-011 | ~~`Surface.floorAt` 不受 `unlockFlag` 约束~~ **已闭合（Phase 3-C1）**：`Surface` 现接受 `isClosed(region)` 闸门谓词，main.ts 注入 `!streaming.isRegionUnlocked(r)`；未解锁区域既没有可站面也没有交互物（`traversal.test.ts` 断言①）。剩余缺口只是灰盒表现：闸门「开合」没有动画/门模，仅表现为板面出现与提示文案。 | P1 | Implemented |
 | KI-012 | 垂直通路：上行已用**遮蔽传送等价物**近似（`InteractableRef.to` + `world.travel` → `streaming.teleport` 同步激活脚下 chunk，实测共鸣井/吊桥/管风琴吊机把人送到 -144/64/152 层并正常落层）。缺的是**连续运动演出**：井笼升降/吊桥落板的路径动画与物理过程（当前是瞬时落点 + `gate_creak` 占位音），以及可破坏音壁的几何碎裂。 | P1 | Partial |
 | KI-013 | **交互物占位模已可见（Phase 3-C3）**：`world/InteractableGreybox.ts` 按 kind 分池挂 26 个占位模，跟流送挂/摘、焦点点亮、setsFlag 已置位则压暗（谓词驱动 ⇒ 读档后首帧即正确）。剩余缺口：**只是形状可辨**，无材质/贴图/动画，`teleport` 类目前无数据条目，正式模在 Phase 7 替换。 | P2 | Partial |
-| KI-014 | **弹体无世界遮挡（Phase 4-A 遗留）**：`Projectiles.ts` 只做运动学，消失条件仅射程/寿命/落地三种，不对墙体与地形做射线，所以远程敌人可以隔岩壁投掷、长枪可穿过掩体。灰盒期影响可读性但不破坏平衡（当前区域无室内掩体几何）。 | P2 | Partial |
+| KI-014 | **弹体无世界遮挡（Phase 4-A 遗留）**：`Projectiles.ts` 只做运动学，消失条件仅射程/寿命/落地三种，不对墙体与地形做射线，所以远程敌人可以隔岩壁投掷、长枪可穿过掩体。**4-B 之后同一缺口覆盖反射弹道与针喉赤线**（线会穿墙指向落点、反射体会穿墙回射）。灰盒期影响可读性但不破坏平衡（当前区域无室内掩体几何）。 | P2 | Partial |
 
 ## 1.5 系统状态总表（需求 §78，每 Phase 出口更新）
 
@@ -28,10 +28,14 @@
 | 命中判定/伤害管线（DR/背刺/弱点/破势） | Implemented | — | P1 |
 | 防御阶梯（弹反>无敌>完美格挡>格挡>硬吃） | Implemented | — | P1 |
 | 节拍时钟 BeatClock（攻防共用） | Implemented | 敌人 hit-frame 量化到拍槽 | P1 |
-| 敌人 FSM（嘈壳/漂调者/驼鼓 基础 3 种） | Partial | 漂调者已改 **ranged** 原型（2.2~11m 尖啸投掷，距离带全在 `enemies.json`）；幽灵/支援/精英/Boss 未做（Phase 4 续） | P1 |
-| 弹道子系统（`combat/Projectiles.ts`，Phase 4-A） | Implemented | 纯逻辑零 three：半隐式欧拉 + 重力/射程/寿命/落地四类过期、pierce+hitIds 去重、`withOwner` 归属回收、`reap` 单次通知；9 条单测 + 9 条玩法流（含 AI 真开火、三档防御对远程同样成立）；遮挡缺口见 KI-014 | P1 |
+| 敌人 FSM（嘈壳/漂调者/驼鼓/针喉） | Partial | 漂调者 **ranged**（2.2~11m 尖啸投掷）、针喉 **ranged 狙击**（14-26m 背退风筝 + 三叠箭 + 赤线 telegraph，全在 `enemies.json`）；幽灵八/叠唱/精英/Boss 未做（Phase 4 续） | P1 |
+| 弹道子系统（`combat/Projectiles.ts`，Phase 4-A） | Implemented | 纯逻辑零 three：半隐式欧拉 + 重力/射程/寿命/落地四类过期、pierce+hitIds 去重、`withOwner` 归属回收、`reap` 单次通知；9 条单测 + 16 条玩法流（含 AI 真开火、三档防御对远程同样成立）；遮挡缺口见 KI-014 | P1 |
 | 远程命中结算（复用单一伤害通道） | Implemented | 玩家投掷走 `strikeEnemy+ranged`（**DR×0.6**），敌方弹体走同一条 `resolveAgainstPlayer` 防御阶梯（弹反>无敌>完美格挡>格挡>硬吃）；钉住=stunTicks、裂音层、onBeat 架势×2 全部沿用近战语义 | P1 |
-| 弹体表现层（`world/ProjectileVisuals.ts`，按 kind 分池） | Implemented | 每 tick 只读弹体快照同步位置/朝向/脉冲；长枪按速度取向、音符脉冲自旋；`peakLive` 峰值观测；5 条断言含「两波往返网格数不涨」的池泄漏回归（该条抓到真 bug） | P2 |
+| 弹道反射（§5.2/§5.3 弹反/完美格挡把弹体打回主人） | Implemented | `resolveAgainstPlayer` 返回 `DefenseOutcome` 驱动后事：反射比例走数据（parry 100% / perfectBlock 50%）、`ownerId` 改 player 且 `parryable:false` 防无限对弹、出生帧不判定防自伤、i-frame 只标 `hitIds` 不杀弹体；实机 tickFrame 复验：`parry→反射 14 伤打回射手 −16HP`、`perfectBlock→7 伤`（真 KeyG/KeyF 输入） | P1 |
+| 远程 telegraph 赤线（§14.4 线终点=落点） | Implemented | 逻辑层 `combat.telegraphs()` 只读线段名单 + 表现层按 `ownerId` 池化细长线盒（`opacity∝k²`）；依赖闸门仍全绿（`import type`）；玩法流断言「恰好亮满 48 tick」 | P1 |
+| 射手风筝行为（`kiteRange`/`chaseBeyond`/伪动作 `backstep`） | Implemented | 距离带伪动作决定脚步、`PSEUDO_ACTIONS` 过滤出招候选，改表即改行为；离家上限与放弃距离全数据（针喉 18m/26m） | P1 |
+| 针喉 Skewer `en_skewer`（第 4 种敌人） | Partial | 三叠箭用 `burst.at=[0,32,42]` 表达 §14.4「第 2 拍延迟 0.25 拍的假动作」，但**「骗到翻滚后硬直 0.6s」的诱饵惩罚未做**；布怪只落破拍营地塔哨 ×2 | P1 |
+| 弹体表现层（`world/ProjectileVisuals.ts`，按 kind 分池） | Implemented | 每 tick 只读弹体快照同步位置/朝向/脉冲；长枪按速度取向、音符脉冲自旋；`peakLive`/`peakTelegraphs` 峰值观测；8 条断言含「两波往返网格数不涨」的池泄漏回归（该条抓到真 bug） | P2 |
 | 处决 / 背刺（§5.4 A/B/C） | Partial | 见 KI-002/003 | P1 |
 | 近战武器（调律剑 / 强音大剑 / 引针枪）帧数据+切换 | Partial | 弓/杖/隐藏刺剑未做（Phase 5 全解锁）；引针枪投掷枪已实现（KI-006 闭合）；外观见 KI-007 | P1 |
 | VFX 层 | Implemented | 4 池 InstancedBufferGeometry 渲染正常（修 aParam 属性溢出），灰盒 shader | P3 |

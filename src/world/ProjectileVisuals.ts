@@ -6,6 +6,7 @@
  */
 import * as THREE from 'three'
 import type { Projectile } from '@/combat/Projectiles'
+import type { TelegraphLine } from '@/combat/CombatManager'
 
 const COLOR: Record<string, { body: number; glow: number }> = {
   spear: { body: 0x8d949c, glow: 0xffd479 },
@@ -28,6 +29,12 @@ export class ProjectileVisuals {
   private readonly zAxis = new THREE.Vector3(0, 0, 1)
   private readonly dir = new THREE.Vector3()
   private peak = 0
+  /** telegraph 赤线：按 ownerId 复用（同一射手同时只有一根线） */
+  private readonly lines = new Map<string, THREE.Mesh>()
+  private readonly freeLines: THREE.Mesh[] = []
+  private readonly lineMats: THREE.MeshBasicMaterial[] = []
+  private readonly lineGeo = new THREE.BoxGeometry(1, 1, 1)
+  private peakLines = 0
 
   constructor(private readonly scene: THREE.Scene) {
     this.group.name = 'projectiles'
@@ -36,6 +43,8 @@ export class ProjectileVisuals {
 
   get live(): number { return this.used.size }
   get peakLive(): number { return this.peak }
+  get liveTelegraphs(): number { return this.lines.size }
+  get peakTelegraphs(): number { return this.peakLines }
 
   sync(list: readonly Projectile[], tick: number): void {
     const alive = new Set(list.map((p) => p.id))
@@ -65,16 +74,62 @@ export class ProjectileVisuals {
   dispose(): void {
     for (const g of this.geos.values()) g.dispose()
     for (const m of this.mats.values()) m.dispose()
+    for (const m of this.lineMats) m.dispose()
+    this.lineGeo.dispose()
     this.scene.remove(this.group)
     this.used.clear()
     this.free.clear()
     this.geos.clear()
     this.mats.clear()
+    this.lines.clear()
+    this.freeLines.length = 0
+  }
+
+  /**
+   * §14.4「可见赤线 telegraph，线终点=落点」——针喉拉弦的 0.8s 里把弹道预先画出来。
+   * 线越接近出手越亮（k²），这是聋者玩家读节奏的视觉替代：拉弦声是听觉信号，红线是它的镜像。
+   */
+  syncTelegraphs(lines: readonly TelegraphLine[]): void {
+    const live = new Set<string>()
+    for (const l of lines) {
+      const mesh = this.lines.get(l.ownerId) ?? this.acquireLine()
+      live.add(l.ownerId)
+      const ax = l.to.x - l.from.x, ay = l.to.y - l.from.y, az = l.to.z - l.from.z
+      const len = Math.max(0.4, Math.hypot(ax, ay, az))
+      mesh.position.set((l.from.x + l.to.x) / 2, (l.from.y + l.to.y) / 2, (l.from.z + l.to.z) / 2)
+      this.dir.set(ax, ay, az)
+      if (this.dir.lengthSq() > 1e-8) mesh.quaternion.setFromUnitVectors(this.zAxis, this.dir.normalize())
+      mesh.scale.set(0.05, 0.05, len)
+      const k = 1 - l.ticksLeft / Math.max(1, l.totalTicks)
+      ;(mesh.material as THREE.MeshBasicMaterial).opacity = 0.12 + 0.72 * k * k
+      this.lines.set(l.ownerId, mesh)
+    }
+    for (const [id, mesh] of this.lines) {
+      if (live.has(id)) continue
+      this.lines.delete(id)
+      mesh.visible = false
+      this.freeLines.push(mesh)
+    }
+    this.peakLines = Math.max(this.peakLines, this.lines.size)
+  }
+
+  private acquireLine(): THREE.Mesh {
+    const reuse = this.freeLines.pop()
+    if (reuse) { reuse.visible = true; return reuse }
+    const mat = new THREE.MeshBasicMaterial({
+      color: 0xff3a22, transparent: true, opacity: 0.2, depthWrite: false, blending: THREE.AdditiveBlending
+    })
+    this.lineMats.push(mat)
+    const mesh = new THREE.Mesh(this.lineGeo, mat)
+    mesh.renderOrder = 3
+    this.group.add(mesh)
+    return mesh
   }
 
   private acquire(kind: string): THREE.Mesh {
     const reuse = this.poolFor(kind).pop()
-    if (reuse) { reuse.visible = true; return reuse }    let geo = this.geos.get(kind)
+    if (reuse) { reuse.visible = true; return reuse }
+    let geo = this.geos.get(kind)
     if (!geo) { geo = geometryFor(kind); this.geos.set(kind, geo) }
     let mat = this.mats.get(kind)
     if (!mat) {

@@ -27,7 +27,7 @@ export class PlayerController {
   vy = 0
   /** 当前站立面的高度，由 world/Surface 每 tick 注入（垂直分层世界） */
   floorY = 0
-  action: { key: string; f: FrameData; tick: number; hitDone: boolean; launched: boolean } | null = null
+  action: { key: string; f: FrameData; tick: number; hitDone: boolean; shots: number } | null = null
   roll: { tick: number; dir: Vec3; total: number; iframeStart: number; iframeEnd: number } | null = null
   guardTicks = 0
   guardStartTick = -999
@@ -288,7 +288,7 @@ export class PlayerController {
       bus.emit('ui.notify', { text: '精力不足', kind: 'info' })
       return false
     }
-    this.action = { key, f, tick: 0, hitDone: false, launched: false }
+    this.action = { key, f, tick: 0, hitDone: false, shots: 0 }
     this.comboQueued = null
     bus.emit('audio.sfx', { key: f.sfx?.[0] ?? 'swing_1', pos: { ...this.pos }, gain: 0.7 })
     if (f.vfx?.[0]) bus.emit('vfx.request', { key: f.vfx[0], pos: { ...this.pos }, dir: { x: Math.sin(this.yaw), y: 0, z: Math.cos(this.yaw) } })

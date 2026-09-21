@@ -124,7 +124,8 @@ src/
     InteractableGreybox.ts 交互物占位模：按 kind 分池的 InstancedMesh，跟流送挂/摘、
                        随 ui.prompt 高亮、按 flag 谓词压暗消耗态（§5.5，Phase 7 换正式模）
     ProjectileVisuals.ts 弹体表现层：按 kind 分池的 Mesh（长枪=长条盒、音符=二十面体…），
-                       每 tick 只读 combat.projectiles.list() 同步位置/朝向/脉冲（§5.9）
+                       每 tick 只读 combat.projectiles.list() 同步位置/朝向/脉冲（§5.9）；
+                       另按 ownerId 池化 telegraph 赤线（§14.4，syncTelegraphs）
     PlaceholderArena.ts 起始占位场（灰盒地形到位前提供可玩平面+节拍信标）
     generators/        程序化生成器（需求 §52，关键区域手工摆放物件覆盖）：
                        TerrainGen(高度场+侵蚀噪声)、FoliageGen(泊松盘+实例化)、
@@ -212,6 +213,9 @@ src/
   // "projectile": {"kind":"spear","speed":28,"range":26,"radius":0.38,"offsetY":1.15,
   //                 "gravity":0,"pierce":0,"pinTicks":72,"sfxLaunch":"thrust_1",
   //                 "sfxHit":"hit_metal","vfxHit":"impact_sparks","shake":"heavy"},
+  // 连发/预告（§14.4 针喉）：telegraph=前摇期间画赤线，burst.at=每发的显式帧位
+  // "projectile": {"kind":"shard","speed":18,"range":26,"radius":0.28,"telegraph":true,
+  //                 "burst":{"count":3,"everyTicks":21,"at":[0,32,42]}},
   "roots": [[0,0],[0.02,0]]      // 根运动 (dx,dz)/tick 关键帧表
 }
 ```
@@ -380,7 +384,7 @@ HitStop 结束      └─ timeScale 恢复 → 攻方 recovery 续播 → 数�
 **依赖边界（自动化闸门）**：`tests/unit/arch-boundaries.test.ts` 静态扫描 `src/**/*.ts` 的运行时 import（`import type` 不计，编译后消失），断言 ①逻辑层（`ai/audio/combat/core/data/input` + `player/{LockOn,ThirdPersonController}` + `world/{Streaming,Surface,Interactables,SpawnDirector}`）不得 import `three` 或表现层模块；②用 `three` 的文件必须都在表现层清单（`main/CameraRig/CombatDebugger/Hud/VfxLayer/materials/ActorVisuals/ChunkGreybox/InteractableGreybox/ProjectileVisuals/PlaceholderArena`）；③除组合根 `main.ts` 外，表现层不得 import 逻辑运行时（只订 `EventBus` 事件）。清单漂移会让「闸门变空测试」，所以另有 1 条断言校验扫描文件数与必扫项。
 > 注：需求文档设想的 ESLint `no-restricted-imports` 规则本环境未装（零新增依赖优先），改由上述测试承担同一职责；`npm run lint`(=tsc --noEmit) + `npm run test` 一起构成交付前门禁，pre-commit hook 跑 tsc。所有随机数走 `core/Math.ts` 的 `Rng`（`mulberry32` 种子流，可复现测试）；例外只允许出现在 `audio/*` 的音色抖动（不进玩法判定）。逻辑层不使用 `setTimeout/requestAnimationFrame`（一律过 Time/GameLoop）。
 
-### 5.9 弹道与远程子系统（Phase 4-A）— 已实现 `src/combat/Projectiles.ts` + `src/world/ProjectileVisuals.ts`
+### 5.9 弹道与远程子系统（Phase 4-A/4-B）— 已实现 `src/combat/Projectiles.ts` + `src/world/ProjectileVisuals.ts`
 
 需求 §66「远程敌人」与 §4.3「引针枪投掷」共用同一套弹道，遵循 §5.8 的分层：
 
@@ -391,8 +395,20 @@ HitStop 结束      └─ timeScale 恢复 → 攻方 recovery 续播 → 数�
 - **敌人侧数据驱动**：`en_driftsinger` 由 `melee` 改 `ranged`，新招式 `shrill`（尖啸）在 2.2~11m 距离带发射 `note` 弹体（speed 13 / range 20 / 无重力 / damage 12 / poise 6），`distBands` 与 `chase` 带一起改表即完成布怪，零代码分支。
 - **表现层 `world/ProjectileVisuals.ts`**：`sync(list, tick)` 每 tick 只读弹体快照，按 `kind` 分池 acquire/release（长枪=沿 +Z 的长条盒并按速度四元数取向，音符=脉冲二十面体），`peakLive` 观测峰值；`dispose()` 释放几何/材质。落地/消失的尘埃与闷响由 CombatManager 发 `vfx.spawn`/`audio.sfx`，视觉层不判定语义。
 - **回收**：`entity.despawned` → 该 owner 的在飞弹体立即 `expire`（离格回收不留隐形弹幕）；`world.travel`/`teleport` 后弹体随 owner 一起清。
-- 覆盖：`tests/unit/projectiles.test.ts`（9 条运动学）、`tests/flow/ranged.test.ts`（9 条完整玩法流：投枪命中+钉住、DR×0.6 上下界、数据表断言、AI 真开火伤到玩家、无敌帧/弹反/格挡三档防御对远程同样成立、despawn 清弹）、`tests/unit/projectile-visuals.test.ts`（5 条，含「往返两波不涨网格数」的池泄漏回归——这条抓到了真 bug）。
+- 覆盖：`tests/unit/projectiles.test.ts`（9 条运动学）、`tests/flow/ranged.test.ts`（16 条完整玩法流：投枪命中+钉住、DR×0.6 上下界、数据表断言、AI 真开火伤到玩家、无敌帧/弹反/格挡三档防御对远程同样成立、despawn 清弹、针喉三发帧位/风筝上限/telegraph 时长）、`tests/unit/projectile-visuals.test.ts`（8 条，含「往返两波不涨网格数」的池泄漏回归——这条抓到了真 bug）。
 - **已知缺口**：弹体**没有世界遮挡**（不与地形/墙体做射线检测，只按射程/寿命/地面高度过期），因此敌人可以隔着岩壁投掷。登记为 KI-014，修复路径是接 `Navigation.ts` 时一并落地的 `LOS raycast`（`Surface.floorAt` 已是第一步）。
+
+### 5.9.1 反射、telegraph 与射手风筝（Phase 4-B）— 已实现
+
+Phase 4-A 把弹道跑通，但远程只被当作「会飞的近战判定」。4-B 补的是它独有的三件事，全部沿用同一条通道，没有新增结算代码：
+
+- **弹体是唯一「防御成功后仍然活着」的攻击**：`resolveAgainstPlayer()` 改为返回 `DefenseOutcome`（`parry/perfectBlock/immune/block/guardBreak/hit/none`），弹体分支据此决定后事——`immune` 只把 `'player'` 写进 `hitIds`（**穿过去**，之后该落地落地、该到期到期，不凭空消失）；`parry`/`perfectBlock` 调 `reflectProjectile()`；其余才 `kill(pr,'hit')`。反射体按数据比例回射原主人：`parry.projectileReflectMul=1`（§5.3 其箭反射回杀）、`guard.perfectBlockReflectMul=0.5`（§5.2 弹开一半）；`ownerId` 改写为 `'player'`、`hostile:false`、**`parryable:false`**（否则两个射手能对着弹一辈子），射程取「到主人的距离+2」以免反射体在自己的领地边缘提前消散。反射体在**出生帧不参与判定**（`pr.bornTick === tick` 直接跳过），否则当帧打到自己。
+- **赤线 telegraph（§14.4「线终点=落点」）**：`ProjectileSpec.telegraph:true` 的招式在前摇期间由 `Enemy.telegraphProjectile` 报出剩余拍数，`CombatManager.telegraphs()` 把「射手出手点→按 `aimAt` 解出的落点」编译成一份**只读线段名单**（含 `ticksLeft/totalTicks`），表现层 `ProjectileVisuals.syncTelegraphs(lines)` 按 `ownerId` 复用一池细长盒（`opacity = 0.12 + 0.72·k²`，越接近出手越亮）。逻辑层不认识 three、表现层不认识 CombatManager——`TelegraphLine` 只做 `import type`，依赖闸门（`arch-boundaries`）照旧全绿。前摇期敌人 `faceSlow(...,0.3)` 持续跟头，所以这条线是**诚实的承诺**而不是随机抽奖：玩家可以看得见地被引到掩体后。
+- **风筝行为完全数据化**：距离带里的伪动作 `'chase'/'backstep'` 决定脚下一步，`PSEUDO_ACTIONS` 把它们从出招候选里过滤掉（`hasAttackAction` 才允许 `tryAttack`），`ai.kiteRange` 给「离家多远为止」（针喉 18m），`ai.chaseBeyond` 给「多远放弃阵地回头追击」（缺省 12m，针喉按射程覆盖成 26m）。于是 §14.4「14-26m 永远背退拉近、被贴至 <6m 解围」是**改表**而不是改 AI 分支。
+- **连发与假动作**：`attack.launched` 布尔闩锁升级为 `shots` 计数，`ProjectileSpec.burst = {count, everyTicks, at?}`；`at` 给出每发相对 activeStart 的显式帧位，针喉 `tri` 写 `[0,32,42]`——第 2 发比均匀网格（21）晚 11 tick ≈ 0.25 拍，就是 §14.4 的「假动作骗翻滚」。**反制天然成立**：招式被打断即 `attack=null`，余下发数一起作废，不需要额外的取消表。
+- **新增敌人 `en_skewer`（针喉）**：hp55/poise22/speed2.4，`snipe`(14 伤/单发) + `tri`(10 伤/三发) + `pluck`(近身 9 伤 R3 击退)，弹道 `shard` speed18/range26/无重力/`telegraph`，`loudness:8`（配合新合成音色 `bowstring`：窄带拨弦瞬态 + 两根快死弦音 + 共鸣腔低鸣，是场上最强的听觉信号）。布怪按 gameplay.md §破拍营地塔哨：`regions.json` 营地区加一组 `count:2`。
+- 覆盖：`tests/flow/ranged.test.ts` 新增 7 条（弹反反射=100%/给过载/原弹消失、完美格挡反射=50%、反射体真的打回射手、i-frame 不产生反射体、数据表逐字段对 §14.4、三叠箭 32+10 拍帧位、赤线恰好亮满 48 tick、风筝不越 `kiteRange`、<6m 解围）、`tests/unit/projectile-visuals.test.ts` 新增 3 条 telegraph 池化/亮度/复用，`arch-boundaries` 新增「JSON 里写到的每个 sfx key 都在合成表里」。
+- **未落地（如实登记）**：§14.4「三叠箭假动作骗到翻滚后硬直 0.6s」需要「玩家被假动作骗」的判定，当前只做延迟不做诱饵惩罚；KI-014 的遮挡缺口对针喉同样成立（它可隔墙狙击）。
 
 
 ---

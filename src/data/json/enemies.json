@@ -458,5 +458,200 @@
    "emissive": 13658923,
    "coreColor": 16756320
   }
+ },
+ {
+  "id": "en_skewer",
+  "nameKey": "enemy.skewer",
+  "archetype": "ranged",
+  "hp": 55,
+  "poise": 22,
+  "speed": 2.4,
+  "ai": {
+   "vision": {
+    "range": 30,
+    "fovDeg": 100
+   },
+   "vibration": {
+    "range": 8
+   },
+   "hearing": {
+    "range": 20
+   },
+   "kiteRange": 18,
+   "chaseBeyond": 26,
+   "distBands": [
+    {
+     "min": 0,
+     "max": 6,
+     "actions": [
+      "backstep",
+      "pluck"
+     ]
+    },
+    {
+     "min": 6,
+     "max": 14,
+     "actions": [
+      "backstep"
+     ]
+    },
+    {
+     "min": 14,
+     "max": 26,
+     "actions": [
+      "backstep",
+      "snipe",
+      "tri"
+     ]
+    },
+    {
+     "min": 26,
+     "max": 99,
+     "actions": [
+      "chase"
+     ]
+    }
+   ],
+   "retreatHpFrac": 0.3
+  },
+  "attacks": [
+   {
+    "id": "snipe",
+    "beat": [
+     1
+    ],
+    "parryable": true,
+    "reaction": "R1",
+    "frames": {
+     "startup": 48,
+     "activeStart": 48,
+     "activeEnd": 52,
+     "recovery": 78,
+     "damage": 14,
+     "stamina": 0,
+     "poise": 8,
+     "hitStopMs": 70,
+     "loudness": 8,
+     "sfx": [
+      "bowstring"
+     ],
+     "vfx": [
+      "ring_echo"
+     ],
+     "projectile": {
+      "kind": "shard",
+      "speed": 18,
+      "range": 26,
+      "radius": 0.28,
+      "offsetY": 1.25,
+      "gravity": 0,
+      "telegraph": true,
+      "sfxLaunch": "bowstring",
+      "sfxHit": "hit_flesh",
+      "vfxHit": "impact_sparks",
+      "shake": "normal"
+     }
+    }
+   },
+   {
+    "id": "tri",
+    "beat": [
+     2,
+     4
+    ],
+    "parryable": true,
+    "reaction": "R1",
+    "frames": {
+     "startup": 48,
+     "activeStart": 48,
+     "activeEnd": 96,
+     "recovery": 104,
+     "damage": 10,
+     "stamina": 0,
+     "poise": 5,
+     "hitStopMs": 60,
+     "loudness": 8,
+     "sfx": [
+      "bowstring"
+     ],
+     "vfx": [
+      "ring_echo"
+     ],
+     "projectile": {
+      "kind": "shard",
+      "speed": 18,
+      "range": 26,
+      "radius": 0.28,
+      "offsetY": 1.25,
+      "gravity": 0,
+      "telegraph": true,
+      "sfxLaunch": "bowstring",
+      "sfxHit": "hit_flesh",
+      "vfxHit": "impact_sparks",
+      "shake": "normal",
+      "burst": {
+       "count": 3,
+       "everyTicks": 21,
+       "at": [
+        0,
+        32,
+        42
+       ]
+      }
+     }
+    }
+   },
+   {
+    "id": "pluck",
+    "beat": [
+     1,
+     2,
+     3,
+     4
+    ],
+    "parryable": true,
+    "reaction": "R3",
+    "frames": {
+     "startup": 27,
+     "activeStart": 27,
+     "activeEnd": 33,
+     "recovery": 60,
+     "damage": 9,
+     "stamina": 0,
+     "poise": 16,
+     "hitStopMs": 70,
+     "hitbox": {
+      "shape": "cone",
+      "angleDeg": 110,
+      "radius": 2.4,
+      "height": 1.6,
+      "offsetY": 0.9
+     },
+     "lunge": 0.3,
+     "loudness": 6,
+     "sfx": [
+      "claw"
+     ],
+     "vfx": [
+      "spike_chord"
+     ]
+    }
+   }
+  ],
+  "weakpoint": {
+   "dmgMul": 1.6
+  },
+  "drops": [
+   {
+    "tableId": "loot_basic",
+    "chance": 0.8
+   }
+  ],
+  "body": {
+   "scale": 1.05,
+   "color": 3421266,
+   "emissive": 16724070,
+   "coreColor": 16761900
+  }
  }
 ]

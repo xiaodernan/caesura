@@ -11,7 +11,7 @@ export type SfxKey =
   | 'hit_flesh' | 'hit_metal' | 'parry_bell' | 'perfect_block' | 'block_guard'
   | 'player_hurt' | 'death_shatter' | 'lockon_on' | 'lockon_off' | 'footstep'
   | 'ui_move' | 'ui_select' | 'boss_roar'
-  | 'loot_chime' | 'gate_creak'
+  | 'loot_chime' | 'gate_creak' | 'bowstring'
 
 /* ------------------------------------------------------------------ */
 /* 基础原语                                                             */
@@ -258,6 +258,14 @@ const VOICES: Record<SfxKey, VoiceFn> = {
     playFM(c, o, t + 0.28, { f0: 700, f1: 300, modRatio: 1.6, index: 5, dur: 0.55, peak: 0.14 * g })
     playNoise(c, o, t + 0.1, { f0: 900, f1: 500, Q: 3, decay: 0.6, peak: 0.03 * g })
     return 1.0
+  },
+  /** 针喉拉弦/拨弦（§14.4：场上最强听觉信号）=窄带瞬态 + 两根快死弦音 + 琴身低鸣 */
+  bowstring: (c, o, t, g) => {
+    playNoise(c, o, t, { f0: 2600, f1: 1500, Q: 9, decay: 0.05, peak: 0.3 * g })       // 指尖离弦
+    playSweep(c, o, t, { f0: 494 * rnd(0.99, 1.01), f1: 440, dur: 0.22, peak: 0.16 * g })
+    playSweep(c, o, t + 0.004, { f0: 740 * rnd(0.99, 1.01), dur: 0.13, peak: 0.09 * g })
+    playFM(c, o, t, { f0: 165, f1: 110, modRatio: 2.02, index: 2.4, dur: 0.3, peak: 0.12 * g }) // 共鸣腔
+    return 0.5
   },
   // —— 奥斯塔拉鼓组（§3.3）：drum_boom 驼鼓低频要有体感 ——
   drum_sweep: (c, o, t, g) => {
