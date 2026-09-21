@@ -36,6 +36,20 @@ const rig = new CameraRig()
 const weapon = registry.get<WeaponData>('wp_tuning_sword')
 const moveset = registry.get<MovesetData>(`moveset:${weapon.movesetId}`)
 const player = new PlayerController(playerBase, weapon, moveset)
+
+const WEAPON_SLOTS: Record<string, string> = {
+  ability1: 'wp_tuning_sword', ability2: 'wp_fortissimo_greatsword', ability3: 'wp_drawpin_spear'
+}
+const WEAPON_NAMES: Record<string, string> = {
+  'weapon.tuningSword': '调律剑', 'weapon.fortissimoGreatsword': '强音大剑', 'weapon.drawpinSpear': '引针枪'
+}
+function selectWeapon(id: string): void {
+  const w = registry.get<WeaponData>(id)
+  const ms = registry.get<MovesetData>(`moveset:${w.movesetId}`)
+  if (w.id === player.weapon.id) return
+  player.equip(w, ms)
+  bus.emit('ui.notify', { text: `装备 · ${WEAPON_NAMES[w.nameKey] ?? w.nameKey}`, kind: 'info' })
+}
 const lock = new LockOn(player)
 const ai = new AISystem()
 const combat = new CombatManager(player, ai, time, rhythm)
@@ -57,8 +71,11 @@ addEventListener('keydown', (e) => { if (e.code === 'Escape') time.paused = !tim
 const core = {
   update(dt: number, t: GameTime, inp: Input) {
     if (inp.frame.edges.has('lockOn')) lock.toggle()
+    for (const act of ['ability1', 'ability2', 'ability3'] as const) {
+      if (inp.frame.edges.has(act)) selectWeapon(WEAPON_SLOTS[act])
+    }
     if (inp.frame.edges.has('weaponSkill')) {
-      bus.emit('ui.notify', { text: '乐章战技：将在 Phase 2 解锁', kind: 'info' })
+      bus.emit('ui.notify', { text: '乐章战技：将在 Phase 5 解锁', kind: 'info' })
     }
     player.update(dt, t, inp, t.tick, rhythm)
     // face locked target while locked & idle-ish
@@ -94,4 +111,4 @@ document.getElementById('boot')!.style.display = 'none'
 ;(window as unknown as Record<string, unknown>).__CAESURA_BOOTED__ = true
 bus.emit('boot.ready', undefined)
 loop.start()
-console.info('[caesura] combat prototype online — WASD/Shift/Ctrl-roll/LMB/RMB/F guard/G parry/Q lock/E execute(处决/背刺)/Esc pause')
+console.info('[caesura] combat prototype online — WASD/Shift/Ctrl-roll/LMB/RMB/F guard/G parry/Q lock/E execute(处决/背刺)/1·2·3 weapon/Esc pause')

@@ -209,3 +209,35 @@ describe('execution & backstab (§5.4)', () => {
     expect(w.player.stats.hp).toBe(before)
   })
 })
+
+describe('weapon switching (Phase 2-B)', () => {
+  it('equipping a weapon swaps its moveset and unlocks that weapon 段', () => {
+    const w = makeWorld()
+    // the starting sword has no 5th light hit; the spear does
+    expect(w.player.tryStartAction('l5', w.time.tick)).toBe(false)
+    w.player.equip(
+      registry.get<WeaponData>('wp_drawpin_spear'),
+      registry.get<MovesetData>('moveset:ms_spear')
+    )
+    expect(w.player.moveset.id).toBe('ms_spear')
+    expect(w.player.tryStartAction('l5', w.time.tick)).toBe(true)
+  })
+
+  it('greatsword swings connect through the full hit-resolution pipeline', () => {
+    const w = makeWorld()
+    const e = w.ai.spawn('en_murkshell', { x: 0, y: 0, z: -1.5 }, 'gw')
+    w.player.equip(
+      registry.get<WeaponData>('wp_fortissimo_greatsword'),
+      registry.get<MovesetData>('moveset:ms_greatsword')
+    )
+    let hit = false
+    for (let t = 0; t < 300 && !hit; t++) {
+      facePlayerTo(w, e)
+      if (!w.player.action && w.player.stats.stamina > 20) w.frame.edges.add('attackLight')
+      w.tick()
+      if (e.stats.hp < e.stats.hpMax) hit = true
+    }
+    expect(hit).toBe(true)
+    expect(w.log['combat.hit'] ?? 0).toBeGreaterThanOrEqual(1)
+  })
+})

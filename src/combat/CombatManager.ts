@@ -75,9 +75,9 @@ export class CombatManager {
     const poiseMul = (e.inStartup ? 1.5 : 1) * (onBeat ? 2 : 1)
     e.stats.addPoise(Math.round(hb.poise * poiseMul * (p.weapon.poiseMul ?? 1)), tick)
 
-    // Fissure stacking: heavy family only in this prototype (combat.md §11)
+    // Fissure stacking (combat.md §11) — explicit per-frame value wins, else heavy-family default
     const key = p.action?.key ?? ''
-    const layers = key === 'charged' ? 2 : key === 'h' ? 1 : 0
+    const layers = p.action?.f.fissureLayers ?? (key === 'charged' ? 2 : key === 'h' ? 1 : 0)
     const burst = e.stats.addFissure(layers + (flags.has('fissure') ? 1 : 0))
     if (flags.has('mute') && e.data.ai.buffAura) e.stunTicks = Math.max(e.stunTicks, 60)
 

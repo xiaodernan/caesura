@@ -226,5 +226,127 @@
     "loudness": 6
    }
   }
+ },
+ {
+  "id": "ms_greatsword",
+  "actions": {
+   "l1": {
+    "startup": 27, "activeStart": 27, "activeEnd": 36, "recovery": 60,
+    "damage": 24, "stamina": 18, "poise": 22, "hitStopMs": 90,
+    "hitbox": { "shape": "cone", "angleDeg": 180, "radius": 3.0, "height": 1.9, "offsetY": 1.0 },
+    "lunge": 0.3, "shake": "normal", "sfx": ["swing_heavy_1"], "vfx": ["trail_sword"],
+    "loudness": 5, "next": "l2"
+   },
+   "l2": {
+    "startup": 24, "activeStart": 24, "activeEnd": 33, "recovery": 59,
+    "damage": 24, "stamina": 18, "poise": 22, "hitStopMs": 90,
+    "hitbox": { "shape": "cone", "angleDeg": 180, "radius": 3.0, "height": 1.9, "offsetY": 1.0 },
+    "lunge": 0.3, "shake": "normal", "sfx": ["swing_heavy_2"], "vfx": ["trail_sword"],
+    "loudness": 5, "next": "l3"
+   },
+   "l3": {
+    "startup": 30, "activeStart": 30, "activeEnd": 42, "recovery": 72,
+    "damage": 38, "stamina": 24, "poise": 36, "hitStopMs": 120,
+    "hitbox": { "shape": "cone", "angleDeg": 200, "radius": 3.2, "height": 2.2, "offsetY": 1.1 },
+    "lunge": 1.5, "shake": "heavy", "sfx": ["swing_heavy_1"], "vfx": ["trail_sword", "shock_small"],
+    "loudness": 7, "flags": ["groundshock", "launchSmall"]
+   },
+   "h": {
+    "startup": 42, "activeStart": 42, "activeEnd": 54, "recovery": 90,
+    "damage": 52, "stamina": 30, "poise": 50, "hitStopMs": 120,
+    "hitbox": { "shape": "cone", "angleDeg": 90, "radius": 3.4, "height": 2.4, "offsetY": 1.2 },
+    "lunge": 0.8, "shake": "heavy", "sfx": ["swing_heavy_2"], "vfx": ["trail_sword", "shock_small"],
+    "loudness": 8, "flags": ["groundshock"]
+   },
+   "charged": {
+    "startup": 20, "activeStart": 20, "activeEnd": 35, "recovery": 74,
+    "damage": 80, "stamina": 40, "poise": 80, "hitStopMs": 150,
+    "hitbox": { "shape": "cone", "angleDeg": 120, "radius": 4.0, "height": 2.6, "offsetY": 1.3 },
+    "lunge": 0.6, "shake": "heavy", "sfx": ["chord_slam"], "vfx": ["trail_sword", "spike_chord"],
+    "loudness": 9, "flags": ["hyper"], "fissureLayers": 3
+   },
+   "run": {
+    "startup": 28, "activeStart": 28, "activeEnd": 37, "recovery": 65,
+    "damage": 30, "stamina": 22, "poise": 28, "hitStopMs": 120,
+    "hitbox": { "shape": "cone", "angleDeg": 160, "radius": 3.2, "height": 2.0, "offsetY": 1.0 },
+    "lunge": 2.0, "shake": "heavy", "sfx": ["swing_heavy_1"], "vfx": ["trail_sword"],
+    "loudness": 7
+   },
+   "jump": {
+    "startup": 24, "activeStart": 24, "activeEnd": 36, "recovery": 66,
+    "damage": 34, "stamina": 24, "poise": 32, "hitStopMs": 120,
+    "hitbox": { "shape": "ring", "inner": 0.4, "outer": 3.0, "forward": 0 },
+    "shake": "heavy", "sfx": ["land_slam"], "vfx": ["ring_dust"],
+    "loudness": 8, "flags": ["groundshock"]
+   }
+  }
+ },
+ {
+  "id": "ms_spear",
+  "actions": {
+   "l1": {
+    "startup": 16, "activeStart": 16, "activeEnd": 21, "recovery": 37,
+    "damage": 8, "stamina": 8, "poise": 5, "hitStopMs": 60,
+    "hitbox": { "shape": "cone", "angleDeg": 40, "radius": 3.2, "height": 1.4, "offsetY": 0.9 },
+    "lunge": 0.3, "shake": "graze", "sfx": ["thrust_1"], "vfx": ["trail_thrust"],
+    "loudness": 3, "next": "l2"
+   },
+   "l2": {
+    "startup": 14, "activeStart": 14, "activeEnd": 19, "recovery": 35,
+    "damage": 8, "stamina": 8, "poise": 5, "hitStopMs": 60,
+    "hitbox": { "shape": "cone", "angleDeg": 40, "radius": 3.2, "height": 1.4, "offsetY": 0.9 },
+    "lunge": 0.3, "shake": "graze", "sfx": ["thrust_1"], "vfx": ["trail_thrust"],
+    "loudness": 3, "next": "l3"
+   },
+   "l3": {
+    "startup": 15, "activeStart": 15, "activeEnd": 21, "recovery": 38,
+    "damage": 10, "stamina": 9, "poise": 7, "hitStopMs": 60,
+    "hitbox": { "shape": "cone", "angleDeg": 45, "radius": 3.2, "height": 1.6, "offsetY": 1.0 },
+    "lunge": 0.35, "shake": "graze", "sfx": ["thrust_1"], "vfx": ["trail_thrust"],
+    "loudness": 3, "next": "l4", "flags": ["launchSmall"]
+   },
+   "l4": {
+    "startup": 16, "activeStart": 16, "activeEnd": 22, "recovery": 40,
+    "damage": 11, "stamina": 9, "poise": 8, "hitStopMs": 70,
+    "hitbox": { "shape": "cone", "angleDeg": 45, "radius": 3.4, "height": 1.6, "offsetY": 1.0 },
+    "lunge": 0.4, "shake": "graze", "sfx": ["thrust_1"], "vfx": ["trail_thrust"],
+    "loudness": 3, "next": "l5"
+   },
+   "l5": {
+    "startup": 21, "activeStart": 21, "activeEnd": 29, "recovery": 55,
+    "damage": 17, "stamina": 12, "poise": 20, "hitStopMs": 90,
+    "hitbox": { "shape": "cone", "angleDeg": 45, "radius": 3.6, "height": 1.7, "offsetY": 1.0 },
+    "lunge": 0.9, "shake": "normal", "sfx": ["thrust_1"], "vfx": ["trail_thrust", "ring_echo"],
+    "loudness": 4, "flags": ["multihit"]
+   },
+   "h": {
+    "startup": 32, "activeStart": 32, "activeEnd": 42, "recovery": 70,
+    "damage": 27, "stamina": 18, "poise": 26, "hitStopMs": 90,
+    "hitbox": { "shape": "cone", "angleDeg": 30, "radius": 4.0, "height": 1.6, "offsetY": 1.0 },
+    "lunge": 3.0, "shake": "normal", "sfx": ["thrust_1"], "vfx": ["trail_thrust", "shock_small"],
+    "loudness": 5, "flags": ["riposte"]
+   },
+   "charged": {
+    "startup": 20, "activeStart": 20, "activeEnd": 26, "recovery": 56,
+    "damage": 34, "stamina": 24, "poise": 34, "hitStopMs": 110,
+    "hitbox": { "shape": "cone", "angleDeg": 30, "radius": 4.2, "height": 1.6, "offsetY": 1.0 },
+    "lunge": 2.0, "shake": "heavy", "sfx": ["thrust_1"], "vfx": ["trail_thrust"],
+    "loudness": 6, "flags": ["throw"]
+   },
+   "run": {
+    "startup": 16, "activeStart": 16, "activeEnd": 22, "recovery": 43,
+    "damage": 14, "stamina": 10, "poise": 12, "hitStopMs": 90,
+    "hitbox": { "shape": "cone", "angleDeg": 40, "radius": 3.4, "height": 1.5, "offsetY": 0.9 },
+    "lunge": 2.5, "shake": "normal", "sfx": ["thrust_1"], "vfx": ["trail_thrust"],
+    "loudness": 4
+   },
+   "jump": {
+    "startup": 16, "activeStart": 16, "activeEnd": 25, "recovery": 49,
+    "damage": 18, "stamina": 14, "poise": 16, "hitStopMs": 90,
+    "hitbox": { "shape": "ring", "inner": 0.3, "outer": 2.2, "forward": 0 },
+    "shake": "normal", "sfx": ["land_slam"], "vfx": ["ring_dust"],
+    "loudness": 6, "flags": ["fissure"], "fissureLayers": 1
+   }
+  }
  }
 ]

@@ -16,5 +16,28 @@
   ],
   "skill": "sk_sword_resonant_cut",
   "noiseMul": 1.0
+ },
+ {
+  "id": "wp_fortissimo_greatsword",
+  "nameKey": "weapon.fortissimoGreatsword",
+  "archetype": "greatsword",
+  "movesetId": "ms_greatsword",
+  "atkBase": 26,
+  "scaling": { "str": 1.15, "dex": 0.25 },
+  "swingTag": ["damage.physical", "crit.backstab2.0", "heavy"],
+  "skill": "sk_greatsword_chord_quake",
+  "poiseMul": 1.25,
+  "noiseMul": 1.5
+ },
+ {
+  "id": "wp_drawpin_spear",
+  "nameKey": "weapon.drawpinSpear",
+  "archetype": "spear",
+  "movesetId": "ms_spear",
+  "atkBase": 16,
+  "scaling": { "str": 0.7, "dex": 0.85 },
+  "swingTag": ["damage.physical", "crit.backstab2.0", "thrust"],
+  "skill": "sk_spear_stringpin_hook",
+  "noiseMul": 0.9
  }
 ]

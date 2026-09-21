@@ -10,6 +10,8 @@
 | KI-003 | 处决期"休止"全频低通听感（§5.4）与专属处决音效未接，暂用 `chord_slam`+`death_shatter` 占位。 | P2 | Placeholder |
 | KI-004 | 手柄振动（§64 Gamepad rumble）未实现；Input 已轮询手柄但无 `vibrationActuator` 调用。 | P4 | Placeholder |
 | KI-005 | `npm run build` 单 chunk >500kB：`three` 未按 manualChunks 拆出（rollup 对 CJS 依赖分包限制），首包偏大。非阻塞。 | P3 | Partial |
+| KI-006 | 引针枪蓄力「投掷枪」（§4.3）暂以强力突刺近似（flags `throw`），真实投掷弹体+钉住定身需远程弹道子系统（Phase 4/5）。 | P2 | Partial |
+| KI-007 | 换武器时 ActorVisuals 的武器模型不变（仍音调叉巨剑外观）；外观随武器切换为 Phase 7 视觉打磨项。 | P3 | Placeholder |
 
 ## 1.5 系统状态总表（需求 §78，每 Phase 出口更新）
 
@@ -21,7 +23,8 @@
 | 节拍时钟 BeatClock（攻防共用） | Implemented | 敌人 hit-frame 量化到拍槽 | P1 |
 | 敌人 FSM（嘈壳/漂调者/驼鼓 基础 3 种） | Partial | 远程/幽灵/支援/精英/Boss 未做（Phase 4） | P1 |
 | 处决 / 背刺（§5.4 A/B/C） | Partial | 见 KI-002/003 | P1 |
-| VFX 层 | Partial | 灰盒 shader，未接天气/Boss 特效 | P3 |
+| 近战武器（调律剑 / 强音大剑 / 引针枪）帧数据+切换 | Partial | 弓/杖/隐藏刺剑未做（Phase 5 全解锁）；投掷枪见 KI-006；外观见 KI-007 | P1 |
+| VFX 层 | Implemented | 4 池 InstancedBufferGeometry 渲染正常（修 aParam 属性溢出），灰盒 shader | P3 |
 | 音频引擎 | Partial | 见 KI-003；Boss 主题/区域 ambience 未做（Phase 8） | P2 |
 | HUD | Partial | 声纹 UI 基础；目标框/乐句线打磨待 Phase 7 | P2 |
 | Combat/Enemy Debugger | Partial | F2 事件面板；行为树可视化待补 | P2 |

@@ -71,6 +71,20 @@ export class PlayerController {
 
   markActionHit(): void { if (this.action) this.action.hitDone = true }
 
+  /** data-driven weapon swap: reset transient action state, adopt new frames */
+  equip(weapon: WeaponData, moveset: MovesetData): void {
+    if (weapon.id === this.weapon.id) return
+    this.weapon = weapon
+    this.moveset = moveset
+    this.action = null
+    this.comboQueued = null
+    this.charging = false
+    this.chargeTicks = 0
+    this.executing = null
+    bus.emit('audio.sfx', { key: 'ui_select', pos: { ...this.pos }, gain: 0.5 })
+    this.publishStats()
+  }
+
   faceTowards(p: Vec3): void {
     const d = Math.atan2(p.x - this.pos.x, p.z - this.pos.z)
     this.yaw += clampAngleDiff(this.yaw, d) * 0.35

@@ -24,6 +24,8 @@ export interface FrameData {
   loudness?: number
   beatQuant?: number[]
   flags?: string[]
+  /** explicit 震裂 (fissure) layers applied on hit; overrides the key-based default */
+  fissureLayers?: number
   next?: string
   skillTag?: string
 }
