@@ -1,0 +1,5 @@
+node_modules/
+dist/
+*.local
+docs/qa/shots/*
+!docs/qa/shots/.gitkeep

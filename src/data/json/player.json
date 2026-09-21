@@ -1,0 +1,62 @@
+{
+ "hp": 120,
+ "stamina": 100,
+ "poise": 60,
+ "defense": 10,
+ "moveSpeed": 4.6,
+ "sprintSpeed": 6.8,
+ "sprintCostPerSec": 10,
+ "jumpSpeed": 6.4,
+ "gravity": 19.6,
+ "staminaRegen": {
+  "hardDelay": 30,
+  "slowPerSec": 22,
+  "slowTicks": 72,
+  "fastPerSec": 38
+ },
+ "guard": {
+  "startupTicks": 6,
+  "reduction": 0.55,
+  "staPerDmg": 1.2,
+  "bleedPoiseFrac": 0.25
+ },
+ "perfectBlockWindow": 5,
+ "parry": {
+  "activeTicks": 6,
+  "whiffRecovery": 27,
+  "poiseDamage": 25,
+  "stunTicks": 18,
+  "overdriveGain": 2
+ },
+ "roll": {
+  "total": 30,
+  "iframeStart": 9,
+  "iframeEnd": 21,
+  "dist": 3.2,
+  "backDist": 2.6,
+  "stamina": 14,
+  "lockOnDist": 1.6,
+  "lockOnIframes": [
+   4,
+   16
+  ]
+ },
+ "execution": {
+  "hpFrac": 0.12,
+  "flat": 30
+ },
+ "attrs": {
+  "str": 10,
+  "dex": 10,
+  "ton": 10,
+  "vig": 10,
+  "ovr": 10,
+  "fis": 10
+ },
+ "attrUpCost": 1,
+ "rankXpCurve": {
+  "base": 60,
+  "a": 8,
+  "b": 20
+ }
+}

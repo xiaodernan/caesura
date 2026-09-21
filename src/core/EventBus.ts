@@ -1,0 +1,60 @@
+export interface GameEvents {
+  'log': { level: 'info' | 'warn' | 'error'; msg: string }
+  'boot.ready': undefined
+  'time.hitStop': { active: boolean }
+  'input.action': { action: string }
+  'player.stats': {
+    hp: number; hpMax: number; stamina: number; staminaMax: number
+    poise: number; poiseMax: number; overdrive: number; overdriveMax: number
+    rank: number
+  }
+  'player.damaged': { amount: number; killerId?: string }
+  'player.died': undefined
+  'entity.spawned': { id: string; kind: 'enemy' | 'npc' | 'prop'; entity: unknown }
+  'entity.died': { id: string; kind: string; position: { x: number; y: number; z: number } }
+  'combat.hit': {
+    attackerId: string; victimId: string; damage: number; poiseDamage: number
+    kind: 'light' | 'heavy' | 'skill' | 'enemy'
+    point: { x: number; y: number; z: number }
+    dir: { x: number; y: number; z: number }
+    result: 'hit' | 'block' | 'perfectBlock' | 'parry' | 'graze' | 'immune'
+    hitStopMs: number; shakeKey: string
+    backstab: boolean; weakpoint: boolean
+  }
+  'combat.parried': { attackerId: string; defenderId: string }
+  'audio.sfx': { key: string; pos?: { x: number; y: number; z: number }; gain?: number }
+  'vfx.request': { key: string; pos: { x: number; y: number; z: number }; dir?: { x: number; y: number; z: number }; scale?: number }
+  'sound.source': { id: string; pos: { x: number; y: number; z: number }; loudness: number }
+  'ui.notify': { text: string; kind?: 'info' | 'reward' | 'boss' }
+  'world.flag': { key: string; value: boolean | number | string }
+}
+
+type Handler<T> = (payload: T) => void
+
+export class EventBus<E extends Record<string, any> = GameEvents> {
+  private handlers = new Map<keyof E, Set<Handler<never>>>()
+
+  on<K extends keyof E>(key: K, fn: Handler<E[K]>): () => void {
+    let set = this.handlers.get(key)
+    if (!set) { set = new Set(); this.handlers.set(key, set) }
+    set.add(fn as Handler<never>)
+    return () => this.off(key, fn)
+  }
+
+  once<K extends keyof E>(key: K, fn: Handler<E[K]>): () => void {
+    const wrap: Handler<E[K]> = (p) => { this.off(key, wrap); fn(p) }
+    return this.on(key, wrap)
+  }
+
+  off<K extends keyof E>(key: K, fn: Handler<E[K]>): void {
+    this.handlers.get(key)?.delete(fn as Handler<never>)
+  }
+
+  emit<K extends keyof E>(key: K, payload: E[K]): void {
+    const set = this.handlers.get(key)
+    if (!set) return
+    for (const fn of [...set]) (fn as Handler<E[K]>)(payload)
+  }
+}
+
+export const bus = new EventBus()

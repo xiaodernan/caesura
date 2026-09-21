@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CAESURA 止音纪元</title>
+<style>
+  html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#07080c; }
+  #app { position:fixed; inset:0; }
+  #hud { position:fixed; inset:0; pointer-events:none; }
+  #boot { position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+          color:#c9b458; font-family:Georgia, serif; letter-spacing:.4em; font-size:28px;
+          background:radial-gradient(ellipse at center, #10131c 0%, #07080c 70%); z-index:10; }
+</style>
+</head>
+<body>
+  <div id="app"></div>
+  <canvas id="hud"></canvas>
+  <div id="boot">CAESURA</div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
