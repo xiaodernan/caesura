@@ -83,6 +83,28 @@ export interface EnemyData {
   tint?: string
 }
 
+/** combat.md §5.4 Execute/Backstab tunables (all timing in ticks) */
+export interface ExecutionConfig {
+  /** A/B: maxHP*hpFrac + flat (true damage) */
+  hpFrac: number
+  flat: number
+  /** vs Boss: fraction decays per repeat, flat suppressed */
+  bossFracs: number[]
+  /** B: basic enemy at/below this hpFrac dies silently instead of backstab animation */
+  stealthKillFrac: number
+  backstabConeDeg: number
+  backstabRange: number
+  /** A/C: front execute reach on a broken/stalled target */
+  crumpleRange: number
+  /** C: 休止处决 costs this much overdrive */
+  overdriveCost: number
+  overdriveFrac: number
+  overdriveFlat: number
+  /** input-lock + invulnerability montage window */
+  durationTicks: number
+  firstBladeHitStopMs: number
+}
+
 export interface PlayerBaseData {
   hp: number
   stamina: number
@@ -98,7 +120,7 @@ export interface PlayerBaseData {
   perfectBlockWindow: number
   parry: { activeTicks: number; whiffRecovery: number; poiseDamage: number; stunTicks: number; overdriveGain: number }
   roll: { total: number; iframeStart: number; iframeEnd: number; dist: number; backDist: number; stamina: number; lockOnDist: number; lockOnIframes: [number, number] }
-  execution: { hpFrac: number; flat: number }
+  execution: ExecutionConfig
   attrs: Record<AttrKey, number>
   attrUpCost: number
   rankXpCurve: { base: number; a: number; b: number }

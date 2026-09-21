@@ -64,7 +64,7 @@ const core = {
     // face locked target while locked & idle-ish
     if (lock.target) player.faceTowards(lock.target.getPos())
     ai.update(dt, t.tick, player, rhythm)
-    combat.update(t.tick)
+    combat.update(t.tick, inp)
     lock.update()
     visuals.sync(ai.enemies, t.tick)
   },
@@ -94,4 +94,4 @@ document.getElementById('boot')!.style.display = 'none'
 ;(window as unknown as Record<string, unknown>).__CAESURA_BOOTED__ = true
 bus.emit('boot.ready', undefined)
 loop.start()
-console.info('[caesura] combat prototype online — WASD/Shift/Ctrl-roll/LMB/RMB/F guard/G parry/Q lock/Esc pause')
+console.info('[caesura] combat prototype online — WASD/Shift/Ctrl-roll/LMB/RMB/F guard/G parry/Q lock/E execute(处决/背刺)/Esc pause')

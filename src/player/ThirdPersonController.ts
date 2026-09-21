@@ -33,6 +33,7 @@ export class PlayerController {
   crumpleTicks = 0
   chargeTicks = 0
   charging = false
+  executing: { tick: number; total: number } | null = null
   lockedTarget: { getPos(): Vec3; get radius(): number } | null = null
   exhausted = false
   private footAccum = 0
@@ -46,6 +47,7 @@ export class PlayerController {
 
   get dead_(): boolean { return this.dead }
   get iFrame(): boolean {
+    if (this.executing) return true // §5.4 execution montage: player invulnerable
     if (this.roll) {
       const t = this.roll.tick
       return t >= this.roll.iframeStart && t <= this.roll.iframeEnd
@@ -54,7 +56,7 @@ export class PlayerController {
   }
   get guarding(): boolean { return this.guardTicks >= this.base.guard.startupTicks }
   get parryActive(): boolean { return this.parryTicksLeft > 0 }
-  get busy(): boolean { return this.action !== null || this.roll !== null || this.stunTicks > 0 || this.crumpleTicks > 0 || this.dead }
+  get busy(): boolean { return this.action !== null || this.roll !== null || this.stunTicks > 0 || this.crumpleTicks > 0 || this.executing !== null || this.dead }
 
   get activeHitbox(): ActivePlayerHit | null {
     if (!this.action) return null
@@ -74,6 +76,17 @@ export class PlayerController {
     this.yaw += clampAngleDiff(this.yaw, d) * 0.35
   }
 
+  /** §5.4: snap to face the victim, enter the invulnerable input-lock montage */
+  beginExecute(targetPos: Vec3, totalTicks: number): void {
+    this.yaw = Math.atan2(targetPos.x - this.pos.x, targetPos.z - this.pos.z)
+    this.action = null
+    this.roll = null
+    this.charging = false
+    this.chargeTicks = 0
+    this.guardTicks = 0
+    this.executing = { tick: 0, total: totalTicks }
+  }
+
   update(dt: number, time: GameTime, input: Input, tick: number, rhythm: RhythmClock): void {
     if (this.dead) {
       this.deadTicks++
@@ -81,6 +94,13 @@ export class PlayerController {
       return
     }
     const canAct = this.stunTicks <= 0 && this.crumpleTicks <= 0
+    if (this.executing) {
+      this.executing.tick++
+      if (this.executing.tick >= this.executing.total) this.executing = null
+      this.stats.update(dt, tick, false)
+      this.publishStats()
+      return
+    }
     this.stats.update(dt, tick, this.guarding)
 
     // ---- defense inputs (always live unless rolling/attacking) ----

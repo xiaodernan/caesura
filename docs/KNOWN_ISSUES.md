@@ -6,7 +6,25 @@
 
 | ID | 描述 | 严重度 | 状态 |
 |---|---|---|---|
-| KI-001 | （空）项目尚未开始编码 | — | — |
+| KI-002 | 处决/背刺（§5.4）逻辑完整（触发 A/B/C、真伤公式、过载消耗、演出期无敌、i-frame、headless 测试覆盖），但**演出为简化蒙太奇**：无独立处决动画、无越肩推轨锁定镜头。 | P2 | Partial |
+| KI-003 | 处决期"休止"全频低通听感（§5.4）与专属处决音效未接，暂用 `chord_slam`+`death_shatter` 占位。 | P2 | Placeholder |
+| KI-004 | 手柄振动（§64 Gamepad rumble）未实现；Input 已轮询手柄但无 `vibrationActuator` 调用。 | P4 | Placeholder |
+| KI-005 | `npm run build` 单 chunk >500kB：`three` 未按 manualChunks 拆出（rollup 对 CJS 依赖分包限制），首包偏大。非阻塞。 | P3 | Partial |
+
+## 1.5 系统状态总表（需求 §78，每 Phase 出口更新）
+
+| 系统 | 状态 | 缺口 | 优先级 |
+|---|---|---|---|
+| 移动/相机/锁定/闪避 | Implemented | — | P1 |
+| 命中判定/伤害管线（DR/背刺/弱点/破势） | Implemented | — | P1 |
+| 防御阶梯（弹反>无敌>完美格挡>格挡>硬吃） | Implemented | — | P1 |
+| 节拍时钟 BeatClock（攻防共用） | Implemented | 敌人 hit-frame 量化到拍槽 | P1 |
+| 敌人 FSM（嘈壳/漂调者/驼鼓 基础 3 种） | Partial | 远程/幽灵/支援/精英/Boss 未做（Phase 4） | P1 |
+| 处决 / 背刺（§5.4 A/B/C） | Partial | 见 KI-002/003 | P1 |
+| VFX 层 | Partial | 灰盒 shader，未接天气/Boss 特效 | P3 |
+| 音频引擎 | Partial | 见 KI-003；Boss 主题/区域 ambience 未做（Phase 8） | P2 |
+| HUD | Partial | 声纹 UI 基础；目标框/乐句线打磨待 Phase 7 | P2 |
+| Combat/Enemy Debugger | Partial | F2 事件面板；行为树可视化待补 | P2 |
 
 ## 2. Technical Debt（技术债）
 

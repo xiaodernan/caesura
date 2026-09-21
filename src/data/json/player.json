@@ -43,7 +43,17 @@
  },
  "execution": {
   "hpFrac": 0.12,
-  "flat": 30
+  "flat": 30,
+  "bossFracs": [0.12, 0.08, 0.05],
+  "stealthKillFrac": 0.35,
+  "backstabConeDeg": 40,
+  "backstabRange": 1.8,
+  "crumpleRange": 2.2,
+  "overdriveCost": 8,
+  "overdriveFrac": 0.18,
+  "overdriveFlat": 45,
+  "durationTicks": 132,
+  "firstBladeHitStopMs": 180
  },
  "attrs": {
   "str": 10,

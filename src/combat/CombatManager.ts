@@ -2,6 +2,7 @@ import { bus } from '@/core/EventBus'
 import { Rng } from '@/core/Math'
 import type { GameTime } from '@/core/Time'
 import type { RhythmClock } from '@/core/RhythmClock'
+import type { Input } from '@/core/Input'
 import type { PlayerController, ActivePlayerHit } from '@/player/ThirdPersonController'
 import type { AISystem } from '@/ai/AISystem'
 import type { Enemy, ActiveEnemyHit } from '@/ai/Enemy'
@@ -9,10 +10,13 @@ import { resolveDamage } from './DamagePipeline'
 import { shapeHits, isBackstab } from './HitShapes'
 import type { Vec3 } from './EntityStats'
 
+type ExecuteKind = 'A' | 'B' | 'C'
+
 /** hit-resolution orchestrator — docs/combat.md §5/§7/§12 */
 export class CombatManager {
   rng = new Rng('combat')
   private killed = new Set<string>()
+  private execCount = new Map<string, number>()
 
   constructor(
     private player: PlayerController,
@@ -29,9 +33,10 @@ export class CombatManager {
     bus.emit('audio.music.encounter', { start: anyAggro })
   }
 
-  update(tick: number): void {
+  update(tick: number, input?: Input): void {
+    this.tryExecute(input, tick)
     this.playerHitsEnemies(tick)
-    this.enemiesHitPlayer(tick)
+    if (!this.player.executing) this.enemiesHitPlayer(tick)
     if (tick % 30 === 0) this.checkEncounterMusic()
   }
 
@@ -123,6 +128,83 @@ export class CombatManager {
     bus.emit('vfx.request', { key: 'death_shatter', pos: { ...e.pos }, scale: e.data.body?.scale ?? 1 })
     bus.emit('audio.sfx', { key: 'death_shatter', pos: { ...e.pos }, gain: 0.8 })
     bus.emit('ui.notify', { text: `${nameOf(e.data.nameKey)} 崩解 · 遗响 +${Math.round(e.stats.hpMax * 0.3)}`, kind: 'reward' })
+  }
+
+  /** §5.4 Execute/Backstab — trigger detection (interact edge + valid candidate) */
+  private tryExecute(input: Input | undefined, tick: number): void {
+    if (!input?.frame.edges.has('interact')) return
+    const p = this.player
+    if (p.busy || p.executing) return
+    const cand = this.findExecuteTarget()
+    if (cand) this.landExecute(cand.e, cand.kind, tick)
+  }
+
+  private findExecuteTarget(): { e: Enemy; kind: ExecuteKind } | null {
+    const ex = this.player.base.execution
+    const p = this.player
+    const oc = p.stats.overdrive
+    let best: { e: Enemy; kind: ExecuteKind } | null = null
+    let bestD = Infinity
+    for (const e of this.ai.enemies) {
+      if (!e.alive) continue
+      const d = Math.hypot(e.pos.x - p.pos.x, e.pos.z - p.pos.z)
+      const crumpled = e.stats.crumpleTicksLeft > 0 || e.state === 'recover'
+      const stalled = crumpled || e.stunTicks > 0 || e.inStartup
+      const unaware = e.state === 'idle' || e.state === 'patrol' || e.state === 'investigate' || e.state === 'alert' || e.state === 'search'
+      let kind: ExecuteKind | null = null
+      if (crumpled && d <= ex.crumpleRange) kind = 'A'
+      else if (unaware && d <= ex.backstabRange && behindCone(p.pos, e, ex.backstabConeDeg)) kind = 'B'
+      else if (oc >= ex.overdriveCost && stalled && d <= ex.crumpleRange) kind = 'C'
+      if (kind && d < bestD) { bestD = d; best = { e, kind } }
+    }
+    return best
+  }
+
+  /** apply the true-damage strike + start the invulnerable montage */
+  private landExecute(e: Enemy, kind: ExecuteKind, tick: number): void {
+    const ex = this.player.base.execution
+    const p = this.player
+    const isBoss = e.isBoss
+    let dmg: number
+    let silent = false
+    if (kind === 'B' && !isBoss && e.stats.hp / e.stats.hpMax <= ex.stealthKillFrac) {
+      silent = true
+      dmg = e.stats.hp
+    } else {
+      let frac = ex.hpFrac
+      let flat = isBoss ? 0 : ex.flat
+      if (kind === 'C') {
+        frac = ex.overdriveFrac
+        flat = isBoss ? 0 : ex.overdriveFlat
+        p.stats.overdrive = Math.max(0, p.stats.overdrive - ex.overdriveCost)
+      }
+      if (isBoss) {
+        const c = this.execCount.get(e.id) ?? 0
+        frac = ex.bossFracs[Math.min(c, ex.bossFracs.length - 1)]
+        this.execCount.set(e.id, c + 1)
+      }
+      dmg = Math.round(e.stats.hpMax * frac) + flat
+    }
+    const point: Vec3 = { x: (p.pos.x + e.pos.x) / 2, y: 1.1, z: (p.pos.z + e.pos.z) / 2 }
+    const dir: Vec3 = { x: e.pos.x - p.pos.x, y: 0, z: e.pos.z - p.pos.z }
+    p.beginExecute({ ...e.pos }, ex.durationTicks)
+    e.attack = null
+    e.stunTicks = Math.max(e.stunTicks, ex.durationTicks)
+    this.time.hitStop(ex.firstBladeHitStopMs / 1000)
+    e.stats.damage(dmg)
+    e.onDamaged(dir)
+    bus.emit('combat.hit', {
+      attackerId: 'player', victimId: e.id, damage: dmg, poiseDamage: 0, kind: 'heavy',
+      point, dir, result: 'hit', hitStopMs: ex.firstBladeHitStopMs,
+      shakeKey: isBoss ? 'boss' : 'heavy', backstab: kind === 'B', weakpoint: false
+    })
+    bus.emit('vfx.request', { key: 'hit_ring', pos: point, scale: 2 })
+    bus.emit('vfx.request', { key: 'shock_small', pos: { ...e.pos }, scale: 1.6 })
+    bus.emit('audio.sfx', { key: 'chord_slam', pos: point, gain: 1 })
+    const label = silent ? '静杀' : kind === 'A' ? '处决' : kind === 'B' ? '背刺处决' : '休止处决'
+    bus.emit('ui.notify', { text: `${label} −${dmg}`, kind: isBoss ? 'boss' : 'info' })
+    if (!e.alive) this.onEnemyKilled(e)
+    else this.checkCrumple(e, tick)
   }
 
   private enemiesHitPlayer(tick: number): void {
@@ -224,6 +306,12 @@ function norm(a: number): number {
   while (a > Math.PI) a -= Math.PI * 2
   while (a < -Math.PI) a += Math.PI * 2
   return a
+}
+
+/** is the player inside a tight cone directly behind the enemy? (§5.4 backstab) */
+function behindCone(playerPos: Vec3, e: Enemy, coneDeg: number): boolean {
+  const ang = Math.atan2(playerPos.x - e.pos.x, playerPos.z - e.pos.z)
+  return Math.abs(norm(ang - (e.yaw + Math.PI))) <= (coneDeg * Math.PI / 180) / 2
 }
 
 const NAME_MAP: Record<string, string> = {

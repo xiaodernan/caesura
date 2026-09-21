@@ -47,7 +47,7 @@ function makeWorld() {
       time.tick++
       player.update(TICK_DT, time, input, time.tick, rhythm)
       ai.update(TICK_DT, time.tick, player, rhythm)
-      combat.update(time.tick)
+      combat.update(time.tick, input)
       frame.edges.clear()
       rhythm.update(time.dt)
     }
@@ -147,4 +147,65 @@ describe('combat flow: detect -> fight -> kill -> loot notify (§59)', () => {
     }
     expect(blocked).toBe(true)
   }, 20000)
+})
+
+describe('execution & backstab (§5.4)', () => {
+  const ex = playerBase.execution
+
+  it('A: crumpled target -> interact deals maxHP*hpFrac+flat and locks player invulnerable', () => {
+    const w = makeWorld()
+    const e = w.ai.spawn('en_murkshell', { x: 0, y: 0, z: -1.5 }, 'execA')
+    e.stats.crumpleTicksLeft = 100
+    e.enter('recover')
+    const hp0 = e.stats.hp
+    const expected = Math.round(e.stats.hpMax * ex.hpFrac) + ex.flat
+    w.frame.edges.add('interact')
+    w.tick()
+    expect(w.player.executing).not.toBeNull()
+    expect(e.stats.hp).toBe(hp0 - expected)
+    expect(w.hits.some((h) => h.attackerId === 'player' && h.result === 'hit')).toBe(true)
+    expect(w.log['ui.notify'] ?? 0).toBeGreaterThanOrEqual(1)
+    // montage grants i-frames: an incoming hit is immune, not damaging
+    const hpBefore = w.player.stats.hp
+    w.player.iFrame && w.player.takeDamage(999)
+    expect(w.player.stats.hp).toBe(hpBefore)
+  })
+
+  it('B: silent backstab on an unaware, low-HP enemy kills it outright', () => {
+    const w = makeWorld()
+    const e = w.ai.spawn('en_murkshell', { x: 0, y: 0, z: -1.5 }, 'execB')
+    e.enter('idle')
+    e.alertness = 0
+    e.home = { x: 0, y: 0, z: -4 }
+    e.yaw = Math.PI // faces away from the player at origin -> player is behind
+    e.stats.damage(Math.round(e.stats.hpMax * 0.8)) // hpFrac -> below stealthKillFrac
+    w.frame.edges.add('interact')
+    w.tick()
+    expect(e.alive).toBe(false)
+    expect(w.log['entity.died'] ?? 0).toBeGreaterThanOrEqual(1)
+    const bs = w.hits.find((h) => h.attackerId === 'player' && h.backstab)
+    expect(bs).toBeTruthy()
+  })
+
+  it('C: 休止处决 spends 8 overdrive on a stalled target and is lethal', () => {
+    const w = makeWorld()
+    const e = w.ai.spawn('en_murkshell', { x: 0, y: 0, z: -1.5 }, 'execC')
+    e.enter('combat') // not unaware -> forces the C branch
+    e.stunTicks = 40
+    w.player.stats.overdrive = ex.overdriveCost
+    w.frame.edges.add('interact')
+    w.tick()
+    expect(w.player.stats.overdrive).toBe(0)
+    expect(e.alive).toBe(false)
+  })
+
+  it('interact with no valid candidate is a no-op', () => {
+    const w = makeWorld()
+    w.ai.spawn('en_murkshell', { x: 0, y: 0, z: -9 }, 'execNone') // far, unaware but out of range
+    const before = w.player.stats.hp
+    w.frame.edges.add('interact')
+    w.tick()
+    expect(w.player.executing).toBeNull()
+    expect(w.player.stats.hp).toBe(before)
+  })
 })

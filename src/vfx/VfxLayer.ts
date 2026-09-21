@@ -86,8 +86,10 @@ interface Field { size: number; data: Float32Array; attr: THREE.InstancedBufferA
  * free-list，但 GPU 要求实例行连续，所以用 swap-remove 代替自由链表）。
  */
 class InstanceBuffer {
-  readonly mesh: THREE.InstancedMesh
+  readonly mesh: THREE.Mesh
   readonly capacity: number
+  private readonly geo: THREE.InstancedBufferGeometry
+  private readonly material: THREE.Material
   private readonly fields = new Map<string, Field>()
   private liveCount = 0
   private dirty = false
@@ -101,22 +103,29 @@ class InstanceBuffer {
     layout: ReadonlyArray<readonly [string, number]>,
   ) {
     this.capacity = capacity
+    this.material = material
+    // Use Mesh + InstancedBufferGeometry (not InstancedMesh) so three does NOT
+    // inject the 4-slot `instanceMatrix` attribute — per-instance transform is
+    // already carried in aOrigin/aQuat. That overhead pushed the shaders past
+    // the 16-vertex-attribute GL limit ("Too many attributes (aParam)").
+    const geo = new THREE.InstancedBufferGeometry()
+    const idx = geometry.getIndex()
+    if (idx) geo.setIndex(idx)
+    for (const key of Object.keys(geometry.attributes)) geo.setAttribute(key, geometry.getAttribute(key))
     for (const [key, size] of layout) {
       const data = new Float32Array(capacity * size)
       const attr = new THREE.InstancedBufferAttribute(data, size)
       attr.setUsage(THREE.DynamicDrawUsage)
-      geometry.setAttribute(key, attr)
+      geo.setAttribute(key, attr)
       this.fields.set(key, { size, data, attr })
     }
-    this.mesh = new THREE.InstancedMesh(geometry, material, capacity)
-    const identity = new THREE.Matrix4()
-    for (let i = 0; i < capacity; i++) this.mesh.setMatrixAt(i, identity)
-    this.mesh.instanceMatrix.needsUpdate = true
+    geo.instanceCount = 0
+    this.geo = geo
+    this.mesh = new THREE.Mesh(geo, material)
     this.mesh.name = name
     this.mesh.frustumCulled = false
     this.mesh.matrixAutoUpdate = false
     this.mesh.renderOrder = 5
-    this.mesh.count = 0
   }
 
   get live(): number { return this.liveCount }
@@ -162,12 +171,12 @@ class InstanceBuffer {
       for (const f of this.fields.values()) f.attr.needsUpdate = true
       this.dirty = false
     }
-    this.mesh.count = this.liveCount
+    this.geo.instanceCount = this.liveCount
   }
 
   dispose(): void {
     this.mesh.geometry.dispose()
-    this.mesh.dispose()
+    this.material.dispose()
   }
 
   private removeAt(i: number): void {
