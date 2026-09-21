@@ -12,6 +12,8 @@ export class CombatDebugger {
   private hits: string[] = []
   private beatStrip = ''
   private statsLine = '—'
+  private streamLine = 'stream  —'
+  private readonly chunkStates = new Map<string, string>()
 
   constructor() {
     const d = document.createElement('div')
@@ -48,6 +50,15 @@ export class CombatDebugger {
         const mark = info.isBarStart ? '│' : '·' // bar start = downbeat, marked
         this.beatStrip = (this.beatStrip + ` ${mark}${info.beatInBar}`).slice(-96)
         this.refresh()
+      }),
+      bus.on('world.chunk', (c) => {
+        if (c.state === 'unloaded') this.chunkStates.delete(c.key)
+        else this.chunkStates.set(c.key, c.state)
+        this.streamLine = (() => {
+          const n = (s: string): number => [...this.chunkStates.values()].filter((v) => v === s).length
+          return `stream  act ${n('active')}  res ${n('resident')}  load ${n('preloading')}  · ${c.regionId} ${c.state} ${c.key}`
+        })()
+        this.refresh()
       })
     )
     this.refresh()
@@ -79,6 +90,7 @@ export class CombatDebugger {
     this.panel.textContent =
       `combat.debug  (F2 close)\n` +
       `${this.statsLine}\n` +
+      `${this.streamLine}\n` +
       `beats: ${beats}\n` +
       `last 12 combat.hit (newest first):\n${hits}`
   }

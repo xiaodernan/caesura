@@ -128,6 +128,89 @@ export interface PlayerBaseData {
   rankXpCurve: { base: number; a: number; b: number }
 }
 
+export interface Vec3 { x: number; y: number; z: number }
+
+export interface RegionBounds {
+  minX: number; maxX: number
+  minY: number; maxY: number
+  minZ: number; maxZ: number
+}
+
+/** hex strings; must match IP_SEED §10 区域色板 */
+export interface RegionPalette {
+  base: string
+  accent: string
+  glow: string
+}
+
+export interface SpawnGroup {
+  enemyId: string
+  count: number
+  center: Vec3
+  radius: number
+  campId?: string
+  /** stringExpr over world flags, evaluated by the spawner */
+  condition?: string
+}
+
+export interface Landmark {
+  id: string
+  nameKey: string
+  pos: Vec3
+  /** view distance in metres used by the map/POI layer */
+  sightRange: number
+}
+
+export interface InteractableRef {
+  id: string
+  kind: 'checkpoint' | 'elevator' | 'bridge' | 'soundwall' | 'gather' | 'chest' | 'npc' | 'teleport'
+  pos: Vec3
+  /** one-way shortcut lock: opens once, then stays open from this side only */
+  oneWay?: boolean
+  requiresFlag?: string
+  setsFlag?: string
+  npcId?: string
+}
+
+export interface SecretRef {
+  id: string
+  unlockFlag: string
+  rewardTable: string
+  pos: Vec3
+}
+
+export interface RegionMusic {
+  explore: string
+  battle: string
+  ambience: string
+}
+
+export interface RegionData {
+  id: string
+  /** IP_SEED §14 registered vocabulary */
+  nameKey: string
+  displayName: string
+  /** unlock order along the 12-beat slice loop (IP_SEED §15) */
+  order: number
+  biome: 'hub' | 'forest' | 'ruins' | 'underground' | 'camp' | 'dungeon' | 'boss_arena'
+  bounds: RegionBounds
+  chunkSize: number
+  navmeshRef?: string
+  weatherPresets: string[]
+  lightingPreset: string
+  palette: RegionPalette
+  spawnGroups: SpawnGroup[]
+  landmarks: Landmark[]
+  interactables: InteractableRef[]
+  music: RegionMusic
+  /** higher loads first inside the same ring (technical-architecture §5.5) */
+  streamingPriority: number
+  /** boss arenas preload their whole field, not just the near rings */
+  preloadWhole?: boolean
+  unlockFlag?: string
+  secrets: SecretRef[]
+  storyHooks: string[]
+}
 export interface BossData {
   id: string
   nameKey: string

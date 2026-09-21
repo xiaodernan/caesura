@@ -266,11 +266,12 @@ modifiers:[{attr:"staminaRegen", op:"mul", value:0.7}]}, vfxRefs, sfxRefs, camer
 **DialogueData**：`{id:"dl_belltongue_greet", speaker:"npc_belltongue",
 graph:{root:"n0", nodes:{"n0":{textKey, cond?:stringExpr, options:[{textKey, next,
 req?:"flag.x&&!flag.y", effects:[{kind:"setFlag",flag,op},{kind:"giveItem",id,n},{kind:"startQuest",id}]}]}}}`
-**RegionData**：`{id:"rg_whisperwode", order:int(解锁顺序), biome:"forest", bounds:{...},
-chunkSize:48, navmeshRef, weatherPresets:["clear","fog"], lightingPreset:"lp_whisperwode",
-palette:{...对齐 IP_SEED §10}, spawnGroups:[{enemyId, count, spawnArea, campId,
-condition:"stringExpr"}], interactables, music:{explore,battle,ambience},
-streamingPriority, secrets:[{id,unlockFlag,rewardTable}]}`
+**RegionData**（已落地 `src/data/json/regions.json`，7 区域 + `world/Streaming.ts`）：
+`{id:"rg_whisperwode", nameKey, displayName(IP_SEED §14 词表), order:int(解锁顺序), biome:"hub|forest|ruins|underground|camp|dungeon|boss_arena",
+bounds:{minX,maxX,minY,maxY,minZ,maxZ}(水平边界对齐 chunkSize，y 可半格抬升), chunkSize:48, navmeshRef?(Navigation.ts 未落地故暂留空，见 KI-009),
+weatherPresets[], lightingPreset, palette:{base,accent,glow}(对齐 IP_SEED §10), spawnGroups:[{enemyId,count,center,radius,campId?,condition?}],
+landmarks:[{id,nameKey,pos,sightRange}], interactables:[{id,kind:"checkpoint|elevator|bridge|soundwall|gather|chest|npc|teleport",pos,oneWay?,requiresFlag?,setsFlag?,npcId?}],
+music:{explore,battle,ambience}, streamingPriority:int, preloadWhole?(boss arena 整场预载), unlockFlag?, secrets:[{id,unlockFlag,rewardTable,pos}], storyHooks[]}`
 
 ---
 
@@ -323,8 +324,13 @@ HitStop 结束      └─ timeScale 恢复 → 攻方 recovery 续播 → 数�
 ### 5.4 内存预算（16GB 机器，浏览器 tab 目标 <1.8GB JS heap + GPU 显存 <3.5GB）
 纹理总预算 900MB（全部 KTX2/Basis 压缩、mipmap）、音频解码缓冲 120MB（ogg 流式 + 合成 SFX 零采样）、场景几何 300MB（Draco）、粒子上限 8000 实例、AI 实体 ≤60 同时激活（超出仅逻辑降级为休眠）。流送常驻 chunk ≤9、in-flight ≤4。
 
-### 5.5 流送策略（需求 §50）
-- chunk 48m 网格；激活环半径=1（2 圈预载、3 圈卸载、卸载延迟 2s 防抖）；优先级：剧情触发区 > boss arena（提前预载整场）> 地表 > 地下。
+### 5.5 流送策略（需求 §50）— 已实现 `src/world/Streaming.ts`
+- 网格为 **3D cell（48m 立方）**：水平相邻区域与垂直跨层（地表/崖壁/地下/深层）共用同一距离规则；cell 由「cell 中心落在哪个 RegionData.bounds」认领，因此上下叠放的区域不冲突。§5.4 的「常驻 chunk ≤9」是水平口径（3×3），3D 下为 3×3×3=**27**，`in-flight ≤4` 不变。
+- 状态机：`unloaded → preloading(loadTicks=3, 配额 4) → resident → active`；激活环半径=1（2 圈预载、3 圈卸载、卸载延迟 2s=120tick 防抖）；跨圈只降级/激活，不重复加载。优先级：区域 `streamingPriority` + 格内加成（剧情触点 +50 > boss 场地 +100 标记 > 营地 +20 > 遭遇 +10 ≈ 秘密 +10），排序键 `(ring, priority, dist)`。
+- `preloadWhole` 区域（未竟厅）在 `unloadRing+2` 观察圈内**整场预载**；`unlockFlag` 未满足的区域完全不参与流送（不加载、不 spawn）。
+- `teleport()` = 强制同步加载激活环 + 取消防抖（渲染层配黑屏遮蔽）；卸载即从活跃表摘除并记入 `explored`（地图遮罩，需求 §43），20 次往返压力测试断言驻留量不增长。
+- 渲染层**只订阅 `world.chunk` 事件**按 state 挂/摘子场景，`Streaming.ts` 禁止 import three（headless 可测、UE 可移植）。
+- 测试矩阵（需求 §50 原文）：高速移动（调试器加速作弊）、传送（同步加载+遮蔽 fade）、大区域入口、boss arena（进场锁定加载）、地下（垂直跨层）、室内外切换（interior cell 独立于地形 chunk）——headless 覆盖见 `tests/unit/streaming.test.ts`（17 条）与 `tests/flow/world.test.ts`（休垒→雾语林→沉唱堂→传送回城，断言「流送后 1s 内无 MissingRef 警告」与预算上限）。
 - 加载任务每帧预算 8ms（超时让位下帧），卸载当帧同步（dispose 几何/材质引用计数归零）。
 - 测试矩阵（需求 §50 原文）：高速移动（调试器加速作弊）、传送（同步加载+遮蔽 fade）、大区域入口、boss arena（进场锁定加载）、地下（垂直跨层）、室内外切换（interior cell 独立于地形 chunk）——全部列入 §6.2 headless 断言「流送后 1s 内无 MissingRef 警告」。
 

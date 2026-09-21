@@ -27,6 +27,13 @@ export interface GameEvents {
   'sound.source': { id: string; pos: { x: number; y: number; z: number }; loudness: number }
   'ui.notify': { text: string; kind?: 'info' | 'reward' | 'boss' }
   'world.flag': { key: string; value: boolean | number | string }
+  'world.chunk': {
+    key: string; regionId: string
+    cx: number; cy: number; cz: number
+    center: { x: number; y: number; z: number }
+    state: 'unloaded' | 'preloading' | 'resident' | 'active'
+    priority: number; tick: number
+  }
 }
 
 type Handler<T> = (payload: T) => void

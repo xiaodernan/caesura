@@ -4,9 +4,10 @@ import { GameLoop } from '@/core/GameLoop'
 import { Input } from '@/core/Input'
 import { RhythmClock } from '@/core/RhythmClock'
 import { registry } from '@/core/Registry'
-import { registerGameData, playerBase } from '@/data'
+import { registerGameData, playerBase, regions } from '@/data'
 import type { MovesetData, WeaponData } from '@/data/schema'
 import { createArena } from '@/world/PlaceholderArena'
+import { StreamingSystem } from '@/world/Streaming'
 import { ActorVisuals } from '@/world/ActorVisuals'
 import { PlayerController } from '@/player/ThirdPersonController'
 import { CameraRig } from '@/player/CameraRig'
@@ -61,6 +62,12 @@ const hud = new Hud(document.getElementById('hud') as HTMLCanvasElement)
 new CombatDebugger()
 new Haptics(input)
 
+const missingRefs = StreamingSystem.collectMissingRefs(regions, (id) => registry.has(id))
+if (missingRefs.length) bus.emit('log', { level: 'warn', msg: `MissingRef: ${missingRefs.join(', ')}` })
+const streaming = new StreamingSystem(regions)
+streaming.teleport(0, player.pos) // 起始区同步加载（§5.5 传送遮蔽等价物）
+let shownRegion = streaming.regionAt(player.pos)?.id ?? null
+
 ai.spawn('en_murkshell', { x: 4, y: 0, z: -6 })
 ai.spawn('en_murkshell', { x: -5, y: 0, z: -9 })
 ai.spawn('en_driftsinger', { x: 1.5, y: 0, z: -12 })
@@ -80,6 +87,13 @@ const core = {
       bus.emit('ui.notify', { text: '乐章战技：将在 Phase 5 解锁', kind: 'info' })
     }
     player.update(dt, t, inp, t.tick, rhythm)
+    streaming.update(t.tick, player.pos)
+    const here = streaming.regionAt(player.pos)
+    if (here && here.id !== shownRegion) {
+      shownRegion = here.id
+      bus.emit('ui.notify', { text: here.displayName, kind: 'info' })
+      bus.emit('log', { level: 'info', msg: `enter ${here.id} · chunks ${JSON.stringify(streaming.stats())}` })
+    }
     // face locked target while locked & idle-ish
     if (lock.target) player.faceTowards(lock.target.getPos())
     ai.update(dt, t.tick, player, rhythm)
@@ -107,7 +121,7 @@ loop.add(core)
 addEventListener('resize', () => { arena.resize(); rig.resize() })
 bus.on('log', (l) => console.info(`[caesura:${l.level}] ${l.msg}`))
 
-;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus }
+;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming }
 
 document.getElementById('boot')!.style.display = 'none'
 ;(window as unknown as Record<string, unknown>).__CAESURA_BOOTED__ = true

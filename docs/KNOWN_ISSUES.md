@@ -12,6 +12,9 @@
 | KI-005 | `npm run build` 单 chunk >500kB：`three` 未按 manualChunks 拆出（rollup 对 CJS 依赖分包限制），首包偏大。非阻塞。 | P3 | Partial |
 | KI-006 | 引针枪蓄力「投掷枪」（§4.3）暂以强力突刺近似（flags `throw`），真实投掷弹体+钉住定身需远程弹道子系统（Phase 4/5）。 | P2 | Partial |
 | KI-007 | 换武器时 ActorVisuals 的武器模型不变（仍音调叉巨剑外观）；外观随武器切换为 Phase 7 视觉打磨项。 | P3 | Placeholder |
+| KI-008 | 区域流送目前是**逻辑层完整、表现层未接**：`world/Streaming.ts`（48m 3D cell、激活环1/预载2/卸载3+2s 防抖、in-flight≤4、优先级、区域解锁门、teleport 同步加载、MissingRef 校验）+ `data/json/regions.json`（7 区域）已实现并有 17+2 条 headless 断言；但 chunk 灰盒渲染器（`SceneGraph`/按 chunk 挂载子场景）尚未实现，画面仍只有 `PlaceholderArena`。 | P1 | Partial |
+| KI-009 | RegionData 暂**不含 `navmeshRef` 实体**：`Navigation.ts` 未落地，regions.json 里该字段留空以免产生悬空引用（MissingRef 校验会报警）。 | P2 | Placeholder |
+| KI-010 | Phase 3 验收①「实机从休垒走到未竟厅」只能在 headless+浏览器 tickFrame 层面验证（区域切换/预算/无泄漏）；**视口评审（截图）仍被隐藏标签页阻塞**（canvas 0×0、rAF 暂停），需可见浏览器窗口。 | P1 | Blocked |
 
 ## 1.5 系统状态总表（需求 §78，每 Phase 出口更新）
 
@@ -27,7 +30,12 @@
 | VFX 层 | Implemented | 4 池 InstancedBufferGeometry 渲染正常（修 aParam 属性溢出），灰盒 shader | P3 |
 | 音频引擎 | Partial | 见 KI-003；Boss 主题/区域 ambience 未做（Phase 8） | P2 |
 | HUD | Partial | 声纹 UI 基础；目标框/乐句线打磨待 Phase 7 | P2 |
-| Combat/Enemy Debugger | Partial | F2 事件面板；行为树可视化待补 | P2 |
+| Combat/Enemy Debugger | Partial | F2 事件面板已含 chunk 流送行（active/resident/loading）；行为树可视化待补 | P2 |
+| 区域数据（RegionData 7 区，IP_SEED §3/§10/§14） | Implemented | `src/data/json/regions.json`；六要素/色板/垂直层级/解锁 flag 全部数据驱动 | P1 |
+| chunk 流送逻辑（§5.5：激活环1/预载2/卸载3+2s 防抖/in-flight≤4/优先级/整场预载/teleport/MissingRef） | Implemented | headless 19 条断言 + 浏览器 tickFrame 实测（maxActive 27、maxInFlight 4、区域序列正确、返回休垒后 loaded 回落无泄漏） | P1 |
+| chunk 表现层（按流送事件挂载/卸载灰盒子场景） | Partial | 见 KI-008：`SceneGraph`/灰盒地形未接，画面仍只有 `PlaceholderArena` | P1 |
+| 导航网格 Navigation.ts | Placeholder | 见 KI-009：RegionData.navmeshRef 暂留空以免悬空引用 | P2 |
+| 息声领灰盒穿行（Phase 3 验收①） | Blocked | 见 KI-010：逻辑层可验证，视口截图评审受隐藏标签页限制 | P1 |
 
 ## 2. Technical Debt（技术债）
 
