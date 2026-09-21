@@ -59,6 +59,9 @@ export class Input {
   private elapsed = 0
   frame: FrameInput = blankFrame()
   enabled = true
+  private activePad: Gamepad | null = null
+  /** the currently-polled gamepad, for haptics (null when no pad connected) */
+  get gamepad(): Gamepad | null { return this.activePad }
 
   constructor(el: HTMLElement, binds: Binds = DEFAULT_BINDS) {
     this.binds = binds
@@ -95,10 +98,12 @@ export class Input {
 
   private pollPad(): void {
     this.padHeld.clear()
+    this.activePad = null
     const pads = navigator.getGamepads ? navigator.getGamepads() : []
     this.padState = { moveX: 0, moveY: 0, lookX: 0, lookY: 0 }
     for (const p of pads) {
       if (!p) continue
+      this.activePad = p
       const dz = (v: number) => (Math.abs(v) < DEADZONE ? 0 : v)
       this.padState.moveX = dz(p.axes[this.binds.padAxes.moveX] ?? 0)
       this.padState.moveY = dz(p.axes[this.binds.padAxes.moveY] ?? 0)

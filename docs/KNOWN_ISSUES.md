@@ -8,7 +8,7 @@
 |---|---|---|---|
 | KI-002 | 处决/背刺（§5.4）逻辑完整（触发 A/B/C、真伤公式、过载消耗、演出期无敌、i-frame、headless 测试覆盖），但**演出为简化蒙太奇**：无独立处决动画、无越肩推轨锁定镜头。 | P2 | Partial |
 | KI-003 | 处决期"休止"全频低通听感（§5.4）与专属处决音效未接，暂用 `chord_slam`+`death_shatter` 占位。 | P2 | Placeholder |
-| KI-004 | 手柄振动（§64 Gamepad rumble）未实现；Input 已轮询手柄但无 `vibrationActuator` 调用。 | P4 | Placeholder |
+| KI-004 | 手柄振动（§64）：`Haptics` 已按 combat.hit 的 shakeKey 分级驱动 `vibrationActuator.playEffect`，无手柄时优雅降级（已验），单元测试覆盖映射与调用。**实体振动主观手感未在接手柄设备复验**（本环境无控制器）。 | P2 | Partial |
 | KI-005 | `npm run build` 单 chunk >500kB：`three` 未按 manualChunks 拆出（rollup 对 CJS 依赖分包限制），首包偏大。非阻塞。 | P3 | Partial |
 | KI-006 | 引针枪蓄力「投掷枪」（§4.3）暂以强力突刺近似（flags `throw`），真实投掷弹体+钉住定身需远程弹道子系统（Phase 4/5）。 | P2 | Partial |
 | KI-007 | 换武器时 ActorVisuals 的武器模型不变（仍音调叉巨剑外观）；外观随武器切换为 Phase 7 视觉打磨项。 | P3 | Placeholder |

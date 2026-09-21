@@ -14,6 +14,7 @@ import { LockOn } from '@/player/LockOn'
 import { AISystem } from '@/ai/AISystem'
 import { CombatManager } from '@/combat/CombatManager'
 import { AudioEngine } from '@/audio/AudioEngine'
+import { Haptics } from '@/input/Haptics'
 import { VfxLayer } from '@/vfx/VfxLayer'
 import { Hud } from '@/ui/Hud'
 import { CombatDebugger } from '@/tools/CombatDebugger'
@@ -58,6 +59,7 @@ const audio = new AudioEngine()
 const vfx = new VfxLayer(arena.scene)
 const hud = new Hud(document.getElementById('hud') as HTMLCanvasElement)
 new CombatDebugger()
+new Haptics(input)
 
 ai.spawn('en_murkshell', { x: 4, y: 0, z: -6 })
 ai.spawn('en_murkshell', { x: -5, y: 0, z: -9 })
