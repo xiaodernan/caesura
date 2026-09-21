@@ -435,11 +435,12 @@
      "loudness": 8,
      "sfx": [
       "drum_boom"
-     ],
-     "statusOnHit": {
-      "tag": "status.mute",
-      "layers": 1
-     }
+     ]
+    },
+    "statusOnHit": {
+     "tag": "status.mute",
+     "layers": 1,
+     "ticks": 240
     }
    }
   ],
@@ -652,6 +653,98 @@
    "color": 3421266,
    "emissive": 16724070,
    "coreColor": 16761900
+  }
+ },
+ {
+  "id": "en_refrein",
+  "nameKey": "enemy.refrein",
+  "archetype": "support",
+  "hp": 65,
+  "poise": 30,
+  "speed": 2.0,
+  "ai": {
+   "vision": {
+    "range": 24,
+    "fovDeg": 120
+   },
+   "vibration": {
+    "range": 6
+   },
+   "hearing": {
+    "range": 16
+   },
+   "buffAura": {
+    "range": 12,
+    "attackSpeedMul": 1.15,
+    "dmgMul": 1.1
+   },
+   "offTuneOnDeath": {
+    "stunTicks": 90,
+    "resetAlertness": true
+   },
+   "distBands": [
+    {
+     "min": 0,
+     "max": 99,
+     "actions": [
+      "hold",
+      "noise"
+     ]
+    }
+   ]
+  },
+  "attacks": [
+   {
+    "id": "noise",
+    "beat": [
+     1,
+     3
+    ],
+    "parryable": true,
+    "reaction": "R1",
+    "frames": {
+     "startup": 36,
+     "activeStart": 36,
+     "activeEnd": 42,
+     "recovery": 72,
+     "damage": 10,
+     "stamina": 0,
+     "poise": 6,
+     "hitStopMs": 60,
+     "loudness": 7,
+     "sfx": [
+      "wail"
+     ],
+     "vfx": [
+      "ring_echo"
+     ],
+     "projectile": {
+      "kind": "note",
+      "speed": 20,
+      "range": 18,
+      "radius": 0.4,
+      "offsetY": 1.3,
+      "gravity": 0,
+      "muteOnHit": 120,
+      "sfxLaunch": "wail",
+      "sfxHit": "hit_flesh",
+      "vfxHit": "ring_echo",
+      "shake": "normal"
+     }
+    }
+   }
+  ],
+  "drops": [
+   {
+    "tableId": "loot_basic",
+    "chance": 0.8
+   }
+  ],
+  "body": {
+   "scale": 0.95,
+   "color": 4535779,
+   "emissive": 6218991,
+   "coreColor": 12583152
   }
  }
 ]

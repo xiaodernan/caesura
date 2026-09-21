@@ -37,7 +37,13 @@ export class Enemy {
   attack: { spec: AttackSpec; tick: number; hitDone: boolean; shots: number; lungeApplied: number } | null = null
   cooldowns = new Map<string, number>()
   stunTicks = 0
-  buffedByRefrein = false
+  /**
+   * 「定调」光环加成（§14.6 叠唱）：由 AISystem 每 tick 从最近的 buffAura 来源写入，
+   * null = 未被定调。倍率全部来自那份数据表，不在这里写死（§55）。
+   */
+  buff: { attackSpeedMul: number; dmgMul: number; fromId: string } | null = null
+  /** 攻速加成用「攒够一整帧才多走一帧」实现，保持 tick 是整数（帧表里有 === 判定） */
+  private speedAcc = 0
   facingLocked = false
   deathTick = -1
   coreFlash = 0
@@ -80,7 +86,7 @@ export class Enemy {
     const f = this.attack.spec.frames
     if (this.attack.tick < f.activeStart || this.attack.tick > f.activeEnd || this.attack.hitDone) return null
     return {
-      box: f.hitbox, yaw: this.yaw, damage: f.damage * (this.buffedByRefrein ? 1.1 : 1),
+      box: f.hitbox, yaw: this.yaw, damage: f.damage * (this.buff?.dmgMul ?? 1),
       poise: f.poise, hitStopMs: f.hitStopMs, reaction: this.attack.spec.reaction ?? 'R1',
       loudness: f.loudness ?? 3, flags: f.flags ?? []
     }
@@ -120,6 +126,19 @@ export class Enemy {
   }
 
   markShotFired(): void { if (this.attack) this.attack.shots++ }
+
+  /**
+   * §14.6「定调」攻速加成：帧表全是整数 tick 且 telegraph/出手点用 `===` 判定，
+   * 所以不能把 tick 变成浮点——累计小数部分，攒满 1 就这一 tick 多走一帧（1.15× ≈ 每 7 帧多 1 帧）。
+   */
+  private advanceAttackFrames(mul: number): void {
+    if (!this.attack) return
+    this.attack.tick++
+    const extra = mul - 1
+    if (extra <= 0) return
+    this.speedAcc += extra
+    while (this.speedAcc >= 1) { this.speedAcc -= 1; this.attack.tick++ }
+  }
 
   enter(s: AIState): void {
     if (this.state === s) return
@@ -202,7 +221,8 @@ export class Enemy {
         const band = this.data.ai.distBands.find((b) => dist >= b.min && dist <= b.max)
         const kites = band?.actions.includes('backstep') ?? false
         const wants = band?.actions.includes('chase') ?? dist > 2
-        if (kites) stepKite(this, p, dt, this.data.speed)
+        if (band?.actions.includes('hold')) { /* 伪动作 'hold'：不追不逃，站定唱下去（§14.6 叠唱） */ }
+        else if (kites) stepKite(this, p, dt, this.data.speed)
         else if (wants) stepToward(this, p, dt, this.data.speed, rhythm)
         else stepAway(this, p, dt, this.data.speed * 0.7)
         if (this.alertness < 40) this.enter('search')
@@ -314,7 +334,7 @@ export class Enemy {
 
   private progressAttack(dt: number, tick: number, player: PlayerController, rhythm: RhythmClock): void {
     if (!this.attack) return
-    this.attack.tick++
+    this.advanceAttackFrames(this.buff?.attackSpeedMul ?? 1)
     const f = this.attack.spec.frames
     // 赤线 telegraph 期间持续跟踪目标：线是「它会打哪」的诚实承诺，玩家要能看到被牵着
     if (f.projectile?.telegraph && this.attack.tick >= 0 && this.attack.tick < f.startup) {
@@ -407,8 +427,8 @@ function stepKite(e: Enemy, t: Vec3, dt: number, speed: number): void {
   stepAway(e, t, dt, speed)
 }
 
-/** 距离带里的伪动作（'chase'/'backstep'）不是招式名，别拿去查攻击表 */
-const PSEUDO_ACTIONS = new Set(['chase', 'backstep'])
+/** 距离带里的伪动作：只决定脚步，不能当成招式出手 */
+const PSEUDO_ACTIONS = new Set(['chase', 'backstep', 'hold'])
 
 function hasAttackAction(e: Enemy, actions: string[]): boolean {
   return actions.some((a) => !PSEUDO_ACTIONS.has(a) && e.data.attacks.some((atk) => atk.id === a))

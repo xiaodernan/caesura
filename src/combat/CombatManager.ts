@@ -60,7 +60,7 @@ interface Threat {
   from: Vec3
   parryable: boolean
   ranged: boolean
-  statusOnHit?: { tag: string; layers: number }
+  statusOnHit?: { tag: string; layers: number; ticks?: number }
   /** 攻击方一侧的后果：近战敌人被弹反会硬直+破势，弹体被弹反就凭空消失 */
   react(tick: number, outcome: 'parry' | 'perfectBlock'): void
 }
@@ -199,7 +199,7 @@ export class CombatManager {
       speed: spec.speed, range: spec.range, radius: spec.radius, gravity: spec.gravity,
       damage: a.f.damage, poise: a.f.poise, hitStopMs: a.f.hitStopMs,
       layers: a.f.fissureLayers ?? (a.key === 'charged' ? 2 : a.key === 'h' ? 1 : 0),
-      pinTicks: spec.pinTicks ?? 0, muteTicks: (spec.muteOnHit ?? 0) * 240,
+      pinTicks: spec.pinTicks ?? 0, muteTicks: spec.muteOnHit ?? 0,
       pierce: spec.pierce, onBeat, parryable: true,
       sfxHit: spec.sfxHit, vfxHit: spec.vfxHit, shake: spec.shake ?? a.f.shake ?? 'normal',
       loudness: a.f.loudness ?? 5
@@ -222,8 +222,8 @@ export class CombatManager {
       this.projectiles.spawn({
         hostile: true, ownerId: e.id, kind: spec.kind, origin, dir,
         speed: spec.speed, range: spec.range, radius: spec.radius, gravity: spec.gravity,
-        damage: frames.damage * (e.buffedByRefrein ? 1.1 : 1), poise: frames.poise,
-        hitStopMs: frames.hitStopMs, muteTicks: (spec.muteOnHit ?? 0) * 240,
+        damage: frames.damage * (e.buff?.dmgMul ?? 1), poise: frames.poise,
+        hitStopMs: frames.hitStopMs, muteTicks: spec.muteOnHit ?? 0,
         pinTicks: spec.pinTicks ?? 0, parryable: true,
         sfxHit: spec.sfxHit, vfxHit: spec.vfxHit, shake: spec.shake ?? frames.shake ?? 'normal',
         loudness: frames.loudness ?? 4
@@ -285,7 +285,7 @@ export class CombatManager {
       attackerId: pr.ownerId, damage: pr.damage, poise: pr.poise, hitStopMs: pr.hitStopMs,
       kind: 'enemy', point, dir: { x: -pr.vel.x, y: 0, z: -pr.vel.z }, from: { ...pr.pos },
       parryable: pr.parryable, ranged: true,
-      statusOnHit: pr.muteTicks > 0 ? { tag: 'mute', layers: 1 } : undefined,
+      statusOnHit: pr.muteTicks > 0 ? { tag: 'mute', layers: 1, ticks: pr.muteTicks } : undefined,
       // §5.2/§5.3：弹体是唯一「防御成功后还活着」的攻击——被弹开就原路回去找主人
       react: (t, outcome) => this.reflectProjectile(pr, outcome, t)
     }, tick)
@@ -441,7 +441,11 @@ export class CombatManager {
     bus.emit('vfx.request', { key: 'hit_ring', pos: h.point })
     bus.emit('audio.sfx', { key: 'hit_flesh', pos: h.point, gain: 0.8 })
     const st = h.statusOnHit
-    if (st?.tag === 'mute') p.stats.muteTicksLeft = Math.max(p.stats.muteTicksLeft, st.layers * 240)
+    // tag 走 Gameplay Tag 风格：'mute' 与 'status.mute' 都认；时长一律由数据里的 ticks 声明
+    // （驼鼓原先只写 tag 不写时长，且前缀不匹配 ⇒ 闷音从未生效）
+    if (st && /(^|\.)mute$/.test(st.tag) && st.ticks) {
+      p.stats.muteTicksLeft = Math.max(p.stats.muteTicksLeft, st.ticks)
+    }
     this.checkPlayerCrumple(tick)
     return 'hit'
   }
@@ -476,6 +480,27 @@ export class CombatManager {
     bus.emit('vfx.request', { key: 'death_shatter', pos: { ...e.pos }, scale: e.data.body?.scale ?? 1 })
     bus.emit('audio.sfx', { key: 'death_shatter', pos: { ...e.pos }, gain: 0.8 })
     bus.emit('ui.notify', { text: `${nameOf(e.data.nameKey)} 崩解 · 遗响 +${Math.round(e.stats.hpMax * 0.3)}`, kind: 'reward' })
+    this.offTuneMoment(e)
+  }
+
+  /**
+   * §14.6「击杀它→全场敌人失衡（走调时刻）」：定调母一死，所有还在节奏位上的同伴一起走调——
+   * 硬直 + 警觉清零。这是「优先集火最软的靶」这条正确解法的奖励，也是对玩家读场的回报。
+   */
+  private offTuneMoment(e: Enemy): void {
+    const ot = e.data.ai.offTuneOnDeath
+    if (!ot) return
+    let hit = 0
+    for (const x of this.ai.enemies) {
+      if (x === e || !x.alive) continue
+      x.stunTicks = Math.max(x.stunTicks, ot.stunTicks)
+      x.attack = null
+      if (ot.resetAlertness) x.alertness = 0
+      hit++
+    }
+    bus.emit('vfx.request', { key: 'ring_echo', pos: { ...e.pos }, scale: 3 })
+    bus.emit('audio.sfx', { key: 'burst_shell', pos: { ...e.pos }, gain: 1 })
+    bus.emit('ui.notify', { text: `走调时刻！${hit} 名敌人失衡`, kind: 'boss' })
   }
 
   /** §5.4 Execute/Backstab — trigger detection (interact edge + valid candidate) */

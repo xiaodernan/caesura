@@ -28,7 +28,7 @@ export interface ProjectileSpec {
   pierce?: number
   /** 钉住定身 tick 数（引针枪的设计意图：把人钉在原地） */
   pinTicks?: number
-  /** 命中附带沉默（§9 mute 标签） */
+  /** 命中附带沉默（§9 mute 标签），单位=tick（全表计时统一用 tick，§14.6 闷音 2s=120） */
   muteOnHit?: number
   /**
    * 连发（combat.md §14.4 针喉「三叠箭」）：count 发、默认每 everyTicks 一拍序发一发。
@@ -95,7 +95,8 @@ export interface AttackSpec {
   beat: number[]
   parryable: boolean
   reaction?: 'R0' | 'R1' | 'R2' | 'R3' | 'R4' | 'R5'
-  statusOnHit?: { tag: string; layers: number }
+  /** 命中挂异常：tag 用 Gameplay Tag 串；mute 类必须显式写 ticks（不写就不挂状态，见 support.test 全表扫描） */
+  statusOnHit?: { tag: string; layers: number; ticks?: number }
 }
 
 export interface EnemyData {
@@ -117,7 +118,14 @@ export interface EnemyData {
     chaseBeyond?: number
     retreatHpFrac?: number
     callAlly?: { range: number; broadcastTicks: number }
+    /**
+     * 「定调」光环（combat.md §14.6 叠唱）：存活期间给半径内同伴乘算加成。
+     * 只有 attackSpeed/dmg 两项有消费方——敌人没有体力经济（受击用架式而非体力），
+     * 所以 §14.6 的「体力消耗 -20%」不在此表内，见 tech-arch §5.9.2 的如实登记。
+     */
     buffAura?: { range: number; attackSpeedMul: number; dmgMul: number }
+    /** §14.6「击杀它→全场敌人失衡（走调时刻）」：硬直 tick 数 + 是否把警觉清零 */
+    offTuneOnDeath?: { stunTicks: number; resetAlertness: boolean }
     deaf?: boolean
     eyes?: boolean
   }

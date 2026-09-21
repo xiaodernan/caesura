@@ -19,6 +19,7 @@
 | KI-012 | 垂直通路：上行已用**遮蔽传送等价物**近似（`InteractableRef.to` + `world.travel` → `streaming.teleport` 同步激活脚下 chunk，实测共鸣井/吊桥/管风琴吊机把人送到 -144/64/152 层并正常落层）。缺的是**连续运动演出**：井笼升降/吊桥落板的路径动画与物理过程（当前是瞬时落点 + `gate_creak` 占位音），以及可破坏音壁的几何碎裂。 | P1 | Partial |
 | KI-013 | **交互物占位模已可见（Phase 3-C3）**：`world/InteractableGreybox.ts` 按 kind 分池挂 26 个占位模，跟流送挂/摘、焦点点亮、setsFlag 已置位则压暗（谓词驱动 ⇒ 读档后首帧即正确）。剩余缺口：**只是形状可辨**，无材质/贴图/动画，`teleport` 类目前无数据条目，正式模在 Phase 7 替换。 | P2 | Partial |
 | KI-014 | **弹体无世界遮挡（Phase 4-A 遗留）**：`Projectiles.ts` 只做运动学，消失条件仅射程/寿命/落地三种，不对墙体与地形做射线，所以远程敌人可以隔岩壁投掷、长枪可穿过掩体。**4-B 之后同一缺口覆盖反射弹道与针喉赤线**（线会穿墙指向落点、反射体会穿墙回射）。灰盒期影响可读性但不破坏平衡（当前区域无室内掩体几何）。 | P2 | Partial |
+| KI-015 | **架构文档 §3.1/§6.5 里写到的工具链尚未全部接线**：`npm run validate:data`（Ajv）、`test:e2e`（Playwright）、`perf:capture`、`lint`（eslint）与 husky 都不存在于当前 `package.json`——真正的门禁是 pre-commit `tsc --noEmit` + `vitest run`（140 条）。数据完整性目前由**测试内断言**承担（`arch-boundaries` 扫 sfx key 是否都在合成表、`support` 扫 mute 必带时长、各 flow 逐字段对设计文档），够用但不是 schema 级校验。要么补 `scripts/validate-data.ts`，要么改文档口径，不允许继续写「必过」这种不存在的门。 | P2 | Blocked |
 
 ## 1.5 系统状态总表（需求 §78，每 Phase 出口更新）
 
@@ -28,13 +29,17 @@
 | 命中判定/伤害管线（DR/背刺/弱点/破势） | Implemented | — | P1 |
 | 防御阶梯（弹反>无敌>完美格挡>格挡>硬吃） | Implemented | — | P1 |
 | 节拍时钟 BeatClock（攻防共用） | Implemented | 敌人 hit-frame 量化到拍槽 | P1 |
-| 敌人 FSM（嘈壳/漂调者/驼鼓/针喉） | Partial | 漂调者 **ranged**（2.2~11m 尖啸投掷）、针喉 **ranged 狙击**（14-26m 背退风筝 + 三叠箭 + 赤线 telegraph，全在 `enemies.json`）；幽灵八/叠唱/精英/Boss 未做（Phase 4 续） | P1 |
+| 敌人 FSM（嘈壳/漂调者/驼鼓/针喉/叠唱） | Partial | 漂调者 **ranged**（2.2~11m 尖啸投掷）、针喉 **ranged 狙击**（14-26m 背退风筝 + 三叠箭 + 赤线 telegraph）、叠唱 **support**（`hold` 站定 + 定调光环 + 走调时刻），全在 `enemies.json`；幽灵八/精英/Boss 未做（Phase 4 续） | P1 |
 | 弹道子系统（`combat/Projectiles.ts`，Phase 4-A） | Implemented | 纯逻辑零 three：半隐式欧拉 + 重力/射程/寿命/落地四类过期、pierce+hitIds 去重、`withOwner` 归属回收、`reap` 单次通知；9 条单测 + 16 条玩法流（含 AI 真开火、三档防御对远程同样成立）；遮挡缺口见 KI-014 | P1 |
 | 远程命中结算（复用单一伤害通道） | Implemented | 玩家投掷走 `strikeEnemy+ranged`（**DR×0.6**），敌方弹体走同一条 `resolveAgainstPlayer` 防御阶梯（弹反>无敌>完美格挡>格挡>硬吃）；钉住=stunTicks、裂音层、onBeat 架势×2 全部沿用近战语义 | P1 |
 | 弹道反射（§5.2/§5.3 弹反/完美格挡把弹体打回主人） | Implemented | `resolveAgainstPlayer` 返回 `DefenseOutcome` 驱动后事：反射比例走数据（parry 100% / perfectBlock 50%）、`ownerId` 改 player 且 `parryable:false` 防无限对弹、出生帧不判定防自伤、i-frame 只标 `hitIds` 不杀弹体；实机 tickFrame 复验：`parry→反射 14 伤打回射手 −16HP`、`perfectBlock→7 伤`（真 KeyG/KeyF 输入） | P1 |
 | 远程 telegraph 赤线（§14.4 线终点=落点） | Implemented | 逻辑层 `combat.telegraphs()` 只读线段名单 + 表现层按 `ownerId` 池化细长线盒（`opacity∝k²`）；依赖闸门仍全绿（`import type`）；玩法流断言「恰好亮满 48 tick」 | P1 |
 | 射手风筝行为（`kiteRange`/`chaseBeyond`/伪动作 `backstep`） | Implemented | 距离带伪动作决定脚步、`PSEUDO_ACTIONS` 过滤出招候选，改表即改行为；离家上限与放弃距离全数据（针喉 18m/26m） | P1 |
 | 针喉 Skewer `en_skewer`（第 4 种敌人） | Partial | 三叠箭用 `burst.at=[0,32,42]` 表达 §14.4「第 2 拍延迟 0.25 拍的假动作」，但**「骗到翻滚后硬直 0.6s」的诱饵惩罚未做**；布怪只落破拍营地塔哨 ×2 | P1 |
+| 定调光环（§14.6 `ai.buffAura`，敌人给敌人加 buff） | Implemented | `AISystem` 每 tick 纯函数式重算：范围内**最近**的存活来源、不叠加、`buff.fromId` 可溯源；伤害乘 `dmgMul` 走 `activeHitbox`/弹体两条出口，攻速乘 `attackSpeedMul` 用**整数帧累加**（`speedAcc`）以保持帧表 `=== startup` 广播点。施主一死下 tick 自动失效，无需清理事件。实机（破拍营地）：`en_refrein` 给阵内 2 只嘈壳定调（6.0m/10.1m），其余 3 只（16.6/22.5/29m）不在罩内 | P1 |
+| 走调时刻（§14.6 击杀支援 → 全营失衡） | Implemented | `ai.offTuneOnDeath={stunTicks,resetAlertness}` 由 `CombatManager.offTuneMoment()` 消费：存活敌人硬直 + `attack=null`（读条中的招式一起作废）+ 按表清警觉，广播 `ring_echo`/`burst_shell`/「走调时刻！N 名敌人失衡」。实机：击杀叠唱 → 7 名敌人 stun 83（90 已过 7 tick）、alertness 归零；普通敌人死亡不触发（回归已断言） | P1 |
+| 叠唱 Refrein `en_refrein`（第 5 种敌人·支援位） | Partial | 行为全数据化（`hold` 伪动作=不追不逃、`noise` 噪音弹 18m/10 伤/闷音 2s）；缺口：**「其吟唱=可见五线光栅罩住同伴」的专属表现未做**（灰盒里只区别于配色，被定调者零可视标记 → Phase 7）、§14.6「体力消耗 −20%」**无消费方**（敌人无体力经济，故不写空字段）、布怪只落破拍营地 ×1 | P1 |
+| 状态异常·闷音 Mute（§11 时长归数据） | Partial | 时长全部改为显式 `ticks`（`statusOnHit.ticks` / `projectile.muteOnHit`，单位 tick），并修掉驼鼓 `stomp` 曾把 `statusOnHit` 写进 `frames` + tag 前缀不匹配 ⇒ **闷音从未生效**的真 bug；已落地消费方只有「体力回复 −30%」（`EntityStats`），**「战技/律具技封锁 4s」待 Phase 6 乐章战技**；单测扫全表强制 mute 类 statusOnHit 必须声明时长 | P1 |
 | 弹体表现层（`world/ProjectileVisuals.ts`，按 kind 分池） | Implemented | 每 tick 只读弹体快照同步位置/朝向/脉冲；长枪按速度取向、音符脉冲自旋；`peakLive`/`peakTelegraphs` 峰值观测；8 条断言含「两波往返网格数不涨」的池泄漏回归（该条抓到真 bug） | P2 |
 | 处决 / 背刺（§5.4 A/B/C） | Partial | 见 KI-002/003 | P1 |
 | 近战武器（调律剑 / 强音大剑 / 引针枪）帧数据+切换 | Partial | 弓/杖/隐藏刺剑未做（Phase 5 全解锁）；引针枪投掷枪已实现（KI-006 闭合）；外观见 KI-007 | P1 |
@@ -48,7 +53,7 @@
 | 垂直分层地面（Surface.floorAt / player.floorY） | Implemented | 5 层 groundY 数据 + 7 条 Surface 单测 + 5 条落层流（掉落/台阶容差/陈旧 floorY 不回抬） | P1 |
 | 导航网格 Navigation.ts | Placeholder | 见 KI-009：RegionData.navmeshRef 暂留空以免悬空引用 | P2 |
 | 交互物系统（`world/Interactables.ts`，10 kind / requiresFlag / oneWay） | Implemented | 数据全在 `regions.json.interactables`（26 个），零 import three；`use()` 只返回结果，回血/传送/掉落由 main.ts 执行；7 条动线流断言（含提示文案与 E 键仲裁） | P1 |
-| 数据驱动出怪（`world/SpawnDirector.ts`，§66「敌人布置」） | Implemented | 27 槽位全部来自 `regions.json.spawnGroups`（零硬编码 `ai.spawn`）；稳定槽身份 + 种子化布点 + flag condition + maxAlive 预算；9 条单测 + 5 条流送实机流；开局休垒按安全屋设定**零敌人**，原 main.ts 里 4 行硬编码靶怪改为雾语林数据布点 | P1 |
+| 数据驱动出怪（`world/SpawnDirector.ts`，§66「敌人布置」） | Implemented | 30 槽位全部来自 `regions.json.spawnGroups`（零硬编码 `ai.spawn`，含针喉 ×2 与叠唱 ×1）；稳定槽身份 + 种子化布点 + flag condition + maxAlive 预算；9 条单测 + 6 条流送实机流；开局休垒按安全屋设定**零敌人**，原 main.ts 里 4 行硬编码靶怪改为雾语林数据布点 | P1 |
 | 实体回收与 GPU 释放（`AISystem.despawn` / `entity.despawned` / `ActorVisuals` dispose） | Implemented | 离开激活格=回收（不记清剿）、击杀=永久清剿不再刷；实机 4 轮出/入往返：`scene.children` 稳定在 38、控制台 0 error 0 warn | P1 |
 | 交互物占位模（`world/InteractableGreybox.ts`，按 kind 分池 InstancedMesh） | Implemented | 26 条全部可见、跟流送挂/摘、`ui.prompt(id)` 点亮焦点、flag 谓词压暗消耗态（读档后首帧即正确）；9 张池 = 9 drawcall 恒定；6 条 headless 断言 + 实机巡回 0 error/0 warn；正式模见 KI-013 | P2 |
 | 区域闸门与垂直通路（音壁/吊桥/共鸣井/落钟 → flag → 解锁） | Partial | 全程只按 E 即可从休垒走到未竟厅（`traversal.test.ts` 实测 7 段链，实机 tickFrame 复验）；`flag.parry_taught` 仍需 Phase 6 剧情授予；运动演出见 KI-012，交互物无模见 KI-013 | P1 |

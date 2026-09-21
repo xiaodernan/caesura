@@ -59,13 +59,21 @@ export class AISystem {
     if (this.senseCursor % 6 === 0) {
       for (const e of this.enemies) e.sense(player, tick)
     }
-    // refrein aura pass
-    for (const e of this.enemies) e.buffedByRefrein = false
-    for (const s of this.enemies) {
-      if (!s.alive || !s.data.ai.buffAura) continue
-      for (const e of this.enemies) {
-        if (e === s || !e.alive) continue
-        if (Math.hypot(e.pos.x - s.pos.x, e.pos.z - s.pos.z) <= s.data.ai.buffAura.range) e.buffedByRefrein = true
+    // 「定调」光环（§14.6）：每 tick 重算一次，取范围内最近的 buffAura 来源，不叠加
+    for (const e of this.enemies) e.buff = null
+    for (const e of this.enemies) {
+      if (!e.alive) continue
+      let best: Enemy | null = null
+      let bestD = Infinity
+      for (const s of this.enemies) {
+        if (s === e || !s.alive || !s.data.ai.buffAura) continue
+        const d = Math.hypot(e.pos.x - s.pos.x, e.pos.z - s.pos.z)
+        if (d > s.data.ai.buffAura.range || d >= bestD) continue
+        bestD = d; best = s
+      }
+      if (best) {
+        const a = best.data.ai.buffAura!
+        e.buff = { attackSpeedMul: a.attackSpeedMul, dmgMul: a.dmgMul, fromId: best.id }
       }
     }
     for (const e of this.enemies) {

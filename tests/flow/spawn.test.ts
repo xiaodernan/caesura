@@ -94,12 +94,27 @@ describe('spawn flow: 世界里有怪，不是代码里有怪', () => {
     const g = camp.spawnGroups.find((x) => x.condition)
     expect(g, '数据里要有带 condition 的营地编队').toBeTruthy()
     const key = w.cellKey(g!.center)
+    // 按 enemyId 收口：同一格现在还驻扎着别的新编种（Phase 4-C），闸门只对自己那支负责
+    const live = (): number => w.dir.slotsInChunk(key).filter((s) => s.instanceId !== null && s.enemyId === g!.enemyId).length
     w.walk({ x: g!.center.x, y: 0, z: g!.center.z }, 60)
-    expect(w.dir.slotsInChunk(key).filter((s) => s.instanceId !== null)).toHaveLength(g!.count)
+    expect(live()).toBe(g!.count)
     w.give('flag.brokenbar_resolved')
     w.walk(FAR, 120) // 先离场回收
     w.walk({ x: g!.center.x, y: 0, z: g!.center.z }, 180) // 再回来：这支编队不驻扎了
-    expect(w.dir.slotsInChunk(key).filter((s) => s.instanceId !== null)).toHaveLength(0)
+    expect(live()).toBe(0)
+    w.dispose()
+  })
+
+  it('破拍营地按 §14.4/§14.6 编入远程与支援位：编队组成来自 regions.json', () => {
+    const w = world(['flag.left_resthold'])
+    const camp = regions.find((r) => r.id === 'rg_brokenbar_camp')!
+    const ids = new Set<string>()
+    camp.spawnGroups.forEach((g, i) => {
+      w.walk({ x: g.center.x, y: 0, z: g.center.z }, 60 + i * 60)
+      for (const s of w.dir.slotsInChunk(w.cellKey(g.center))) if (s.instanceId !== null) ids.add(s.enemyId)
+    })
+    expect(ids.has('en_skewer'), '针喉要在营').toBe(true)
+    expect(ids.has('en_refrein'), '叠唱要在营').toBe(true)
     w.dispose()
   })
 
