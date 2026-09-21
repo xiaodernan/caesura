@@ -8,7 +8,11 @@ import type { MovesetData, WeaponData, EnemyData, PlayerBaseData } from './schem
 
 export const playerBase = playerRaw as unknown as PlayerBaseData
 
+let registered = false
+
 export function registerGameData(): void {
+  if (registered) return
+  registered = true
   for (const ms of movesetsRaw as unknown as MovesetData[]) registry.register(ms.id, ms)
   for (const w of weaponsRaw as unknown as WeaponData[]) {
     registry.register(w.id, w)

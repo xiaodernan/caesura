@@ -1,11 +1,22 @@
-import * as THREE from 'three'
 import { bus } from '@/core/EventBus'
 import { GameTime } from '@/core/Time'
 import { GameLoop } from '@/core/GameLoop'
 import { Input } from '@/core/Input'
 import { RhythmClock } from '@/core/RhythmClock'
-import { registerGameData } from '@/data'
+import { registry } from '@/core/Registry'
+import { registerGameData, playerBase } from '@/data'
+import type { MovesetData, WeaponData } from '@/data/schema'
 import { createArena } from '@/world/PlaceholderArena'
+import { ActorVisuals } from '@/world/ActorVisuals'
+import { PlayerController } from '@/player/ThirdPersonController'
+import { CameraRig } from '@/player/CameraRig'
+import { LockOn } from '@/player/LockOn'
+import { AISystem } from '@/ai/AISystem'
+import { CombatManager } from '@/combat/CombatManager'
+import { AudioEngine } from '@/audio/AudioEngine'
+import { VfxLayer } from '@/vfx/VfxLayer'
+import { Hud } from '@/ui/Hud'
+import { CombatDebugger } from '@/tools/CombatDebugger'
 
 registerGameData()
 
@@ -18,53 +29,69 @@ const time = new GameTime()
 const input = new Input(canvas)
 const rhythm = new RhythmClock()
 rhythm.setBpm(84, 4)
+
 const arena = createArena(canvas, rhythm)
+const rig = new CameraRig()
 
-const camState = { yaw: 0.7, pitch: 0.28, dist: 5.4 }
-const vel = new THREE.Vector3()
+const weapon = registry.get<WeaponData>('wp_tuning_sword')
+const moveset = registry.get<MovesetData>(`moveset:${weapon.movesetId}`)
+const player = new PlayerController(playerBase, weapon, moveset)
+const lock = new LockOn(player)
+const ai = new AISystem()
+const combat = new CombatManager(player, ai, time, rhythm)
+const visuals = new ActorVisuals(arena.scene, arena.playerVisual, player)
+const audio = new AudioEngine()
+const vfx = new VfxLayer(arena.scene)
+const hud = new Hud(document.getElementById('hud') as HTMLCanvasElement)
+new CombatDebugger()
 
-const scaffold = {
-  update(_dt: number, _t: GameTime, inp: Input) {
-    if (inp.frame.edges.has('pause')) time.paused = !time.paused
-    camState.yaw -= inp.frame.look.dx
-    camState.pitch = THREE.MathUtils.clamp(camState.pitch + inp.frame.look.dy * 0.6, -0.15, 1.15)
-    const mv = inp.frame.move
-    const sin = Math.sin(camState.yaw), cos = Math.cos(camState.yaw)
-    const wish = new THREE.Vector3(mv.x * cos - mv.y * sin, 0, mv.x * sin + mv.y * cos)
-    if (wish.lengthSq() > 1) wish.normalize()
-    const speed = inp.frame.held.has('sprint') ? 7.2 : 4.6
-    vel.lerp(wish.multiplyScalar(speed), 0.22)
-    arena.playerVisual.position.addScaledVector(vel, _dt)
-    if (vel.lengthSq() > 0.01) {
-      const target = Math.atan2(vel.x, vel.z)
-      const cur = arena.playerVisual.rotation.y
-      arena.playerVisual.rotation.y += Math.atan2(Math.sin(target - cur), Math.cos(target - cur)) * 0.25
+ai.spawn('en_murkshell', { x: 4, y: 0, z: -6 })
+ai.spawn('en_murkshell', { x: -5, y: 0, z: -9 })
+ai.spawn('en_driftsinger', { x: 1.5, y: 0, z: -12 })
+ai.spawn('en_tympanus', { x: 8.5, y: 0, z: -15 })
+lock.candidates = ai.enemies
+
+addEventListener('pointerdown', () => audio.start())
+addEventListener('keydown', (e) => { if (e.code === 'Escape') time.paused = !time.paused })
+
+const core = {
+  update(dt: number, t: GameTime, inp: Input) {
+    if (inp.frame.edges.has('lockOn')) lock.toggle()
+    if (inp.frame.edges.has('weaponSkill')) {
+      bus.emit('ui.notify', { text: '乐章战技：将在 Phase 2 解锁', kind: 'info' })
     }
-    const p = arena.playerVisual.position
-    const cp = new THREE.Vector3(
-      p.x + Math.sin(camState.yaw) * Math.cos(camState.pitch) * camState.dist,
-      p.y + 1.4 + Math.sin(camState.pitch) * camState.dist,
-      p.z + Math.cos(camState.yaw) * Math.cos(camState.pitch) * camState.dist
-    )
-    arena.camera.position.lerp(cp, 0.18)
-    arena.camera.lookAt(p.x, p.y + 1.15, p.z)
+    player.update(dt, t, inp, t.tick, rhythm)
+    // face locked target while locked & idle-ish
+    if (lock.target) player.faceTowards(lock.target.getPos())
+    ai.update(dt, t.tick, player, rhythm)
+    combat.update(t.tick)
+    lock.update()
+    visuals.sync(ai.enemies, t.tick)
   },
-  postTick(t: GameTime) { rhythm.update(t.dt) }
+  postTick(t: GameTime) {
+    rhythm.update(t.dt)
+    rig.update(t.dt, player, input.frame.look, lock.target ? lock.target.getPos() : null)
+  }
 }
 
 const loop = new GameLoop(time, input, (alpha, realDelta) => {
   arena.update(alpha, realDelta)
-  arena.renderer.render(arena.scene, arena.camera)
+  vfx.update(realDelta) // particles run on real time — hitstop must not freeze VFX (tech-arch §4 rule 3)
+  audio.update(realDelta)
+  audio.setListener(player.pos.x, player.pos.y + 1, player.pos.z, rig.yaw)
+  hud.render(alpha, realDelta)
+  rig.cam.aspect = innerWidth / innerHeight
+  arena.renderer.render(arena.scene, rig.cam)
 })
-loop.add(scaffold)
+loop.add(core)
 
-addEventListener('resize', () => arena.resize())
+addEventListener('resize', () => { arena.resize(); rig.resize() })
 bus.on('log', (l) => console.info(`[caesura:${l.level}] ${l.msg}`))
 
-;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, bus }
+;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus }
 
 document.getElementById('boot')!.style.display = 'none'
 ;(window as unknown as Record<string, unknown>).__CAESURA_BOOTED__ = true
 bus.emit('boot.ready', undefined)
 loop.start()
-console.info('[caesura] boot ok — tick/sprint/look, Esc pause')
+console.info('[caesura] combat prototype online — WASD/Shift/Ctrl-roll/LMB/RMB/F guard/G parry/Q lock/Esc pause')
