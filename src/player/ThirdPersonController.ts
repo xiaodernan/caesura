@@ -331,6 +331,14 @@ export class PlayerController {
     this.publishStats()
   }
 
+  /** 调音桩休息：只回 HP/体力——不动架势与过载，调音桩不是免费复活 */
+  rest(): void {
+    this.stats.hp = this.stats.hpMax
+    this.stats.stamina = this.stats.staMax
+    this.exhausted = false
+    this.publishStats()
+  }
+
   addOverdrive(n: number): void {
     this.stats.overdrive = clamp(this.stats.overdrive + n, 0, this.stats.overdriveMax)
   }

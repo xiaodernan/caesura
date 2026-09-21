@@ -84,6 +84,9 @@ export class Hud {
 
   // notifications (max 3, 3s fade)
   private notes: Note[] = []
+  /** 交互提示（[E] …），由 world/Interactables 每帧焦点变化时推送 */
+  private prompt: string | null = null
+  private promptA = 0
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas
@@ -112,6 +115,7 @@ export class Hud {
         this.notes.push({ text: p.text, kind: p.kind ?? 'info', life: 0 })
         while (this.notes.length > 3) this.notes.shift()
       }),
+      bus.on('ui.prompt', (p) => { this.prompt = p.text }),
       bus.on('ui.target', (p) => {
         const fresh = !this.target || this.target.pos === null
         this.target = p
@@ -158,6 +162,9 @@ export class Hud {
     for (const n of this.notes) n.life += dt
     this.notes = this.notes.filter((n) => n.life < 3)
 
+    const wantPrompt = this.prompt && !this.dead ? 1 : 0
+    this.promptA = lerp(this.promptA, wantPrompt, 1 - Math.exp(-dt / 0.09))
+
     this.resizeIfNeeded()
     const { ctx } = this
     ctx.clearRect(0, 0, this.cssW, this.cssH)
@@ -167,6 +174,7 @@ export class Hud {
     this.drawBeatRing()
     this.drawTarget()
     this.drawNotes()
+    this.drawPrompt()
     this.drawDeath()
   }
 
@@ -492,6 +500,33 @@ export class Hud {
       ctx.fillText(prefix + n.text, xr + slide, y)
       y += 26 * s
     }
+  }
+
+  /** bottom-centre interaction prompt: `[E] 动作` fades in with the Interactables focus. */
+  private drawPrompt(): void {
+    const text = this.prompt
+    const a = clamp01(this.promptA)
+    if (text === null || a <= 0.01) return
+    const { ctx } = this
+    const s = this.scale()
+    const y = this.cssH - 148 * s
+    const rise = (1 - a) * 8 * s
+    const font = `${14 * s}px ${SERIF}`
+    ctx.font = font
+    ctx.textBaseline = 'middle'
+    const key = '[E]'
+    const gap = 10 * s
+    const wKey = ctx.measureText(key).width
+    const wAll = wKey + gap + ctx.measureText(text).width
+    let x = this.cssW / 2 - wAll / 2
+    ctx.textAlign = 'left'
+    ctx.fillStyle = css(GOLD, 0.9 * a)
+    ctx.fillText(key, x, y + rise)
+    x += wKey + gap
+    ctx.fillStyle = css(BONE, 0.82 * a)
+    ctx.fillText(text, x, y + rise)
+    ctx.fillStyle = css(GOLD, 0.18 * a)
+    ctx.fillRect(this.cssW / 2 - wAll / 2, y + 13 * s + rise, wAll, 1)
   }
 
   /** hit feedback: brief warm-dark vignette pulse at the screen edges. */

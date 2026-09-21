@@ -18,7 +18,8 @@
     ],
     "interactables": [
       { "id": "st_resthold", "kind": "checkpoint", "pos": { "x": -12, "y": 0, "z": 18 }, "setsFlag": "flag.checkpoint_resthold" },
-      { "id": "el_resthold_well", "kind": "elevator", "pos": { "x": 40, "y": 0, "z": -40 }, "oneWay": true, "setsFlag": "flag.shortcut_resonance_well" },
+      { "id": "gt_resthold_gate", "kind": "gate", "pos": { "x": 80, "y": 0, "z": 0 }, "setsFlag": "flag.left_resthold" },
+      { "id": "el_resthold_well", "kind": "elevator", "pos": { "x": 40, "y": 0, "z": -40 }, "oneWay": true, "requiresFlag": "flag.deeps_entrance_open", "setsFlag": "flag.shortcut_resonance_well", "to": { "x": -100, "y": -144, "z": 120 } },
       { "id": "npc_belltongue", "kind": "npc", "pos": { "x": 8, "y": 0, "z": 26 }, "npcId": "npc_belltongue" },
       { "id": "npc_lian", "kind": "npc", "pos": { "x": -26, "y": 0, "z": 6 }, "npcId": "npc_lian" },
       { "id": "npc_corvin", "kind": "npc", "pos": { "x": 22, "y": 0, "z": -6 }, "npcId": "npc_corvin" },
@@ -86,6 +87,7 @@
     ],
     "interactables": [
       { "id": "st_drowned_choir", "kind": "checkpoint", "pos": { "x": 210, "y": -40, "z": 40 }, "setsFlag": "flag.checkpoint_drowned_choir" },
+      { "id": "gt_drownedchoir_deepstair", "kind": "gate", "pos": { "x": 230, "y": -40, "z": 120 }, "setsFlag": "flag.deeps_entrance_open", "to": { "x": -100, "y": -144, "z": 120 } },
       { "id": "ch_drowned_choir_movement", "kind": "chest", "pos": { "x": 400, "y": -40, "z": 60 }, "requiresFlag": "flag.ostlara_defeated" }
     ],
     "music": { "explore": "mus_drowned_choir_explore", "battle": "mus_minibattle_ostlara", "ambience": "mus_drowned_choir_amb" },
@@ -119,7 +121,7 @@
     ],
     "interactables": [
       { "id": "st_brokenbar", "kind": "checkpoint", "pos": { "x": -170, "y": 0, "z": -350 }, "setsFlag": "flag.checkpoint_brokenbar" },
-      { "id": "br_brokenbar_gate", "kind": "bridge", "pos": { "x": -48, "y": 6, "z": -110 }, "oneWay": true, "setsFlag": "flag.brokenbar_bridge_down" },
+      { "id": "br_brokenbar_gate", "kind": "bridge", "pos": { "x": -48, "y": 6, "z": -110 }, "oneWay": true, "setsFlag": "flag.brokenbar_bridge_down", "to": { "x": 130, "y": 64, "z": -120 } },
       { "id": "npc_haltrune", "kind": "npc", "pos": { "x": -110, "y": 0, "z": -300 }, "npcId": "npc_haltrune" },
       { "id": "ch_brokenbar_chief", "kind": "chest", "pos": { "x": -60, "y": 0, "z": -270 }, "requiresFlag": "flag.brokenbar_resolved" }
     ],
@@ -153,12 +155,13 @@
     ],
     "interactables": [
       { "id": "st_fellcarillon", "kind": "checkpoint", "pos": { "x": 130, "y": 48, "z": -120 }, "setsFlag": "flag.checkpoint_fellcarillon" },
-      { "id": "el_fellcarillon_organlift", "kind": "elevator", "pos": { "x": 110, "y": 120, "z": -350 }, "oneWay": true, "requiresFlag": "flag.bell_toll_rung", "setsFlag": "flag.shortcut_organlift" },
+      { "id": "bl_fellcarillon_fallenbell", "kind": "bell", "pos": { "x": 200, "y": 56, "z": -220 }, "oneWay": true, "setsFlag": "flag.bell_toll_rung" },
+      { "id": "el_fellcarillon_organlift", "kind": "elevator", "verb": "乘管风琴吊机", "pos": { "x": 110, "y": 64, "z": -350 }, "oneWay": true, "requiresFlag": "flag.bell_toll_rung", "setsFlag": "flag.organ_gate_open", "to": { "x": 0, "y": 152, "z": -120 } },
       { "id": "ch_fellcarillon_bellcavity", "kind": "chest", "pos": { "x": 205, "y": 58, "z": -215 } }
     ],
     "music": { "explore": "mus_fellcarillon_explore", "battle": "mus_shared_battle", "ambience": "mus_fellcarillon_amb" },
     "streamingPriority": 20,
-    "unlockFlag": "flag.brokenbar_resolved",
+    "unlockFlag": "flag.brokenbar_bridge_down",
     "secrets": [
       { "id": "sec_fellcarillon_bell_interior", "unlockFlag": "flag.bell_interior_open", "rewardTable": "loot_heavy", "pos": { "x": 205, "y": 58, "z": -215 } }
     ],

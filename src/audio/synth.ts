@@ -11,6 +11,7 @@ export type SfxKey =
   | 'hit_flesh' | 'hit_metal' | 'parry_bell' | 'perfect_block' | 'block_guard'
   | 'player_hurt' | 'death_shatter' | 'lockon_on' | 'lockon_off' | 'footstep'
   | 'ui_move' | 'ui_select' | 'boss_roar'
+  | 'loot_chime' | 'gate_creak'
 
 /* ------------------------------------------------------------------ */
 /* 基础原语                                                             */
@@ -336,6 +337,19 @@ const VOICES: Record<SfxKey, VoiceFn> = {
     const r1 = [523.25, 622.25, 783.99, 932.33]
     for (let i = 0; i < r1.length; i++) playSweep(c, o, t + i * 0.055, { f0: r1[i], dur: 0.12, peak: 0.07 * g })
     return 0.42
+  },
+  loot_chime: (c, o, t, g) => {
+    // 拾取/开启：R-1 上行四音（C-Eb-G-Bb）用钟色，比 ui_select 更柔更短（§7.4 正向=R-1）
+    const r1 = [523.25, 622.25, 783.99, 932.33]
+    for (let i = 0; i < r1.length; i++) playBell(c, o, t + i * 0.06, r1[i], { dur: 0.9 - i * 0.12, peak: 0.055 * g, hammer: false })
+    return 1.1
+  },
+  gate_creak: (c, o, t, g) => {
+    // 机关/闸门/井笼：低频石-金属摩擦 + 一次咬合闷响，收尾留一点共鸣
+    playNoise(c, o, t, { type: 'bandpass', f0: 180, f1: 90, Q: 3.5, attack: 0.06, decay: 0.55, peak: 0.2 * g })
+    playSweep(c, o, t + 0.34, { f0: 96, f1: 52, dur: 0.22, peak: 0.3 * g })
+    playFM(c, o, t + 0.36, { f0: 132, modRatio: 1.02, index: 3, dur: 0.7, peak: 0.07 * g })
+    return 1.1
   },
   boss_roar: (c, o, t, g) => {
     const shaper = c.createWaveShaper()

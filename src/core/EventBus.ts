@@ -26,7 +26,9 @@ export interface GameEvents {
   'vfx.request': { key: string; pos: { x: number; y: number; z: number }; dir?: { x: number; y: number; z: number }; scale?: number }
   'sound.source': { id: string; pos: { x: number; y: number; z: number }; loudness: number }
   'ui.notify': { text: string; kind?: 'info' | 'reward' | 'boss' }
+  'ui.prompt': { text: string | null }
   'world.flag': { key: string; value: boolean | number | string }
+  'world.travel': { id: string; from: { x: number; y: number; z: number }; to: { x: number; y: number; z: number } }
   'world.chunk': {
     key: string; regionId: string
     cx: number; cy: number; cz: number

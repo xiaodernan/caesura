@@ -88,7 +88,7 @@ describe('world traversal flow (Phase 3-A)', () => {
 
   it('activates every cell of a region the player stands in, whatever the layer', () => {
     const s = new StreamingSystem(regions)
-    for (const f of ['flag.left_resthold', 'flag.choir_entrance_open', 'flag.brokenbar_resolved', 'flag.organ_gate_open', 'flag.deeps_entrance_open']) {
+    for (const f of ['flag.left_resthold', 'flag.choir_entrance_open', 'flag.brokenbar_bridge_down', 'flag.organ_gate_open', 'flag.deeps_entrance_open']) {
       s.setFlag(f)
     }
     const probes: Array<{ pos: { x: number; y: number; z: number }; region: string }> = [

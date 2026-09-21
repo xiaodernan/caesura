@@ -163,13 +163,17 @@ export interface Landmark {
 
 export interface InteractableRef {
   id: string
-  kind: 'checkpoint' | 'elevator' | 'bridge' | 'soundwall' | 'gather' | 'chest' | 'npc' | 'teleport'
+  kind: 'checkpoint' | 'elevator' | 'bridge' | 'soundwall' | 'gather' | 'chest' | 'npc' | 'teleport' | 'gate' | 'bell'
+  /** 提示文案里的动词，覆盖按 kind 的默认值（如吊机 ≠ 共鸣井）；Phase 6 换成本地表 key */
+  verb?: string
   pos: Vec3
   /** one-way shortcut lock: opens once, then stays open from this side only */
   oneWay?: boolean
   requiresFlag?: string
   setsFlag?: string
   npcId?: string
+  /** 交互后把人送去的落点（共鸣井/吊机/吊桥 = 遮蔽传送等价物）；缺省 = 原地生效 */
+  to?: Vec3
 }
 
 export interface SecretRef {
