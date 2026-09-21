@@ -11,6 +11,7 @@ export interface GameEvents {
   'player.damaged': { amount: number; killerId?: string }
   'player.died': undefined
   'entity.spawned': { id: string; kind: 'enemy' | 'npc' | 'prop'; entity: unknown }
+  'entity.despawned': { id: string; kind: 'enemy' | 'npc' | 'prop' }
   'entity.died': { id: string; kind: string; position: { x: number; y: number; z: number } }
   'combat.hit': {
     attackerId: string; victimId: string; damage: number; poiseDamage: number

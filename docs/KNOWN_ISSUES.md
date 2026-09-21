@@ -17,7 +17,7 @@
 | KI-010 | Phase 3 验收①「实机从休垒走到未竟厅」只能在 headless+浏览器 tickFrame 层面验证（区域切换/预算/无泄漏/落层）；**视口评审（截图）仍被隐藏标签页阻塞**（canvas 0×0、rAF 暂停），需可见浏览器窗口。 | P1 | Blocked |
 | KI-011 | ~~`Surface.floorAt` 不受 `unlockFlag` 约束~~ **已闭合（Phase 3-C1）**：`Surface` 现接受 `isClosed(region)` 闸门谓词，main.ts 注入 `!streaming.isRegionUnlocked(r)`；未解锁区域既没有可站面也没有交互物（`traversal.test.ts` 断言①）。剩余缺口只是灰盒表现：闸门「开合」没有动画/门模，仅表现为板面出现与提示文案。 | P1 | Implemented |
 | KI-012 | 垂直通路：上行已用**遮蔽传送等价物**近似（`InteractableRef.to` + `world.travel` → `streaming.teleport` 同步激活脚下 chunk，实测共鸣井/吊桥/管风琴吊机把人送到 -144/64/152 层并正常落层）。缺的是**连续运动演出**：井笼升降/吊桥落板的路径动画与物理过程（当前是瞬时落点 + `gate_creak` 占位音），以及可破坏音壁的几何碎裂。 | P1 | Partial |
-| KI-013 | **交互物在灰盒里不可见**：`Interactables` 只给焦点提示（`[E] …`）与结果文案，调音桩/闸门/井笼/落钟都没有占位模与范围指示——灰盒阶段「凭提示走路」。Phase 3-C2 起在 `ChunkGreybox` 里按 kind 挂占位棱柱（与地标同池），Phase 7 换成正式模。 | P2 | Placeholder |
+| KI-013 | **交互物在灰盒里不可见**：`Interactables` 只给焦点提示（`[E] …`）与结果文案，调音桩/闸门/井笼/落钟都没有占位模与范围指示——灰盒阶段「凭提示走路」。Phase 3-C3 起在 `ChunkGreybox` 里按 kind 挂占位棱柱（与地标同池），Phase 7 换成正式模。 | P2 | Placeholder |
 
 ## 1.5 系统状态总表（需求 §78，每 Phase 出口更新）
 
@@ -40,6 +40,8 @@
 | 垂直分层地面（Surface.floorAt / player.floorY） | Implemented | 5 层 groundY 数据 + 7 条 Surface 单测 + 5 条落层流（掉落/台阶容差/陈旧 floorY 不回抬） | P1 |
 | 导航网格 Navigation.ts | Placeholder | 见 KI-009：RegionData.navmeshRef 暂留空以免悬空引用 | P2 |
 | 交互物系统（`world/Interactables.ts`，10 kind / requiresFlag / oneWay） | Implemented | 数据全在 `regions.json.interactables`（26 个），零 import three；`use()` 只返回结果，回血/传送/掉落由 main.ts 执行；7 条动线流断言（含提示文案与 E 键仲裁） | P1 |
+| 数据驱动出怪（`world/SpawnDirector.ts`，§66「敌人布置」） | Implemented | 27 槽位全部来自 `regions.json.spawnGroups`（零硬编码 `ai.spawn`）；稳定槽身份 + 种子化布点 + flag condition + maxAlive 预算；9 条单测 + 5 条流送实机流；开局休垒按安全屋设定**零敌人**，原 main.ts 里 4 行硬编码靶怪改为雾语林数据布点 | P1 |
+| 实体回收与 GPU 释放（`AISystem.despawn` / `entity.despawned` / `ActorVisuals` dispose） | Implemented | 离开激活格=回收（不记清剿）、击杀=永久清剿不再刷；实机 4 轮出/入往返：`scene.children` 稳定在 38、控制台 0 error 0 warn | P1 |
 | 区域闸门与垂直通路（音壁/吊桥/共鸣井/落钟 → flag → 解锁） | Partial | 全程只按 E 即可从休垒走到未竟厅（`traversal.test.ts` 实测 7 段链，实机 tickFrame 复验）；`flag.parry_taught` 仍需 Phase 6 剧情授予；运动演出见 KI-012，交互物无模见 KI-013 | P1 |
 | HUD 交互提示（`ui.prompt` → `[E] 动词 · 区域`） | Implemented | 底部居中，焦点变化才发事件（不刷屏），淡入淡出；实机验证 prompt/promptA 与 fillText 落笔（隐藏标签页无法截图，KI-010） | P2 |
 | 息声领灰盒穿行（Phase 3 验收①） | Partial | 逻辑+落层已实机可走（tickFrame 实测 0→64→-40→0），视口截图评审仍受隐藏标签页限制（KI-010） | P1 |

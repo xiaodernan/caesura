@@ -64,6 +64,8 @@ type Cell = { cx: number; cy: number; cz: number }
 const STORY_KINDS = new Set(['checkpoint', 'elevator', 'soundwall', 'bridge', 'npc', 'teleport'])
 
 const keyOf = (cx: number, cy: number, cz: number): string => `${cx},${cy},${cz}`
+/** 格键格式对外一致（SpawnDirector 用它把 spawn 组归到所属格） */
+export { keyOf as chunkKeyOf }
 const ringOf = (a: Cell, b: Cell): number =>
   Math.max(Math.abs(a.cx - b.cx), Math.abs(a.cy - b.cy), Math.abs(a.cz - b.cz))
 
@@ -112,6 +114,8 @@ export class StreamingSystem {
   isRegionUnlocked(region: RegionData): boolean {
     return region.unlockFlag === undefined || this.flags.has(region.unlockFlag)
   }
+
+  hasFlag(key: string): boolean { return this.flags.has(key) }
 
   /** 直接登记 flag（测试与调试器用；正式路径走 bus 'world.flag'） */
   setFlag(key: string, on = true): void {

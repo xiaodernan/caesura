@@ -7,8 +7,9 @@ import { registry } from '@/core/Registry'
 import { registerGameData, playerBase, regions } from '@/data'
 import type { MovesetData, WeaponData } from '@/data/schema'
 import { createArena } from '@/world/PlaceholderArena'
-import { StreamingSystem } from '@/world/Streaming'
+import { StreamingSystem, chunkKeyOf } from '@/world/Streaming'
 import { Surface } from '@/world/Surface'
+import { SpawnDirector } from '@/world/SpawnDirector'
 import { Interactables, takeInteractEdge } from '@/world/Interactables'
 import { ChunkGreybox } from '@/world/ChunkGreybox'
 import { ActorVisuals } from '@/world/ActorVisuals'
@@ -87,10 +88,13 @@ function applyInteract(id: string): void {
   }
 }
 
-ai.spawn('en_murkshell', { x: 4, y: 0, z: -6 })
-ai.spawn('en_murkshell', { x: -5, y: 0, z: -9 })
-ai.spawn('en_driftsinger', { x: 1.5, y: 0, z: -12 })
-ai.spawn('en_tympanus', { x: 8.5, y: 0, z: -15 })
+/** 出怪：完全由 regions.json 的 spawnGroups 决定（开场休垒无敌，敌人属于雾语林之后的世界） */
+const spawner = new SpawnDirector(regions, {
+  spawn: (id, pos, seed) => ai.spawn(id, pos, seed),
+  despawn: (id) => ai.despawn(id),
+  hasFlag: (k) => streaming.hasFlag(k),
+}, (pos) => { const c = streaming.cellOf(pos); return chunkKeyOf(c.cx, c.cy, c.cz) })
+spawner.syncActive(streaming.byState('active').map((c) => c.key))
 lock.candidates = ai.enemies
 
 addEventListener('pointerdown', () => audio.start())
@@ -144,7 +148,7 @@ loop.add(core)
 addEventListener('resize', () => { arena.resize(); rig.resize() })
 bus.on('log', (l) => console.info(`[caesura:${l.level}] ${l.msg}`))
 
-;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, interact, hud }
+;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, interact, hud, spawner }
 
 document.getElementById('boot')!.style.display = 'none'
 ;(window as unknown as Record<string, unknown>).__CAESURA_BOOTED__ = true

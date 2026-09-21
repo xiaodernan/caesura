@@ -34,6 +34,19 @@ export class AISystem {
     return e
   }
 
+  /**
+   * 流送回收：把敌人移出名单（不发死亡事件、不给奖励）。
+   * 与死亡退役的区别——despawn 是「玩家走远了，它回到世界里去」，
+   * 因此 SpawnDirector 不会把它记成已清剿。
+   */
+  despawn(id: string): boolean {
+    const i = this.enemies.findIndex((e) => e.id === id)
+    if (i < 0) return false
+    const [e] = this.enemies.splice(i, 1)
+    bus.emit('entity.despawned', { id: e.id, kind: 'enemy' })
+    return true
+  }
+
   slotTaken(key: string): boolean {
     if (this.slotArmed.has(key)) return true
     this.slotArmed.add(key)

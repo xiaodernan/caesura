@@ -70,7 +70,15 @@ export class ActorVisuals {
     }
     // retire visuals of enemies removed from the roster
     for (const [id, v] of this.vis) {
-      if (!enemies.includes(v.e)) { this.scene.remove(v.group); this.vis.delete(id) }
+      if (!enemies.includes(v.e)) {
+        this.scene.remove(v.group)
+        // 流送会反复增删敌人（SpawnDirector），不 dispose 就是每跑一圈漏一批 GPU 资源
+        v.body.geometry.dispose()
+        v.body.material.dispose()
+        v.core.geometry.dispose()
+        v.core.material.dispose()
+        this.vis.delete(id)
+      }
     }
     for (const v of this.vis.values()) this.updateEnemy(v, tick)
 
