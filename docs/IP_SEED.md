@@ -134,7 +134,7 @@ Landmark（远景可到达的地标）/ Secret（看不见入口的隐藏房）/
 
 ## 14. 命名总表（唯一合法词表，新增名词必须登记）
 
-游戏 CAESURA / 止音纪元；休垒 Resthold；息声领 Restreach；雾语林 Whisperwode；钟坠院 Fellcarillon；无耳深窖 Earless Deeps；破拍营地 Brokenbar Camp；沉唱堂 Drowned Choir；未竟厅 Unfinished Hall；初句圣所 First Phrase；调音桩 Stakerite；音色石 Timbite；遗响 Remanence；喧堕 Cacophony；振源核 Discord Core；断章 Caesura；失谐之夜 Night of Dissonance；哑带 Hushbelt；律政院 Concordsuon Court；休止 The Rest；恩希尔·万籁 Hersil Vaanlay；奥斯塔拉 Ostlara；万籁 the Myriad；无鸣 Needlesilence；莉安 Lian；铃姨 Belltongue；科温 Corvin；盐歌 Meg；断弦 Haltrune；无面童 Faceless；定弦钩 Tensionhook。
+游戏 CAESURA / 止音纪元；休垒 Resthold；息声领 Restreach；雾语林 Whisperwode；钟坠院 Fellcarillon；无耳深窖 Earless Deeps；破拍营地 Brokenbar Camp；沉唱堂 Drowned Choir；未竟厅 Unfinished Hall；初句圣所 First Phrase；调音桩 Stakerite；音色石 Timbite；遗响 Remanence；喧堕 Cacophony；振源核 Discord Core；断章 Caesura；失谐之夜 Night of Dissonance；哑带 Hushbelt；律政院 Concordsuon Court；休止 The Rest；恩希尔·万籁 Hersil Vaanlay；奥斯塔拉 Ostlara；万籁 the Myriad（与恩希尔姓氏同词——系登记谜团 M9，见 world-bible，非笔误）；无鸣 Needlesilence；莉安 Lian；铃姨 Belltongue；科温 Corvin；盐歌 Meg；断弦 Haltrune；无面童 Faceless；定弦钩 Tensionhook；嘈壳 Murkshell；漂调者 Driftsinger；驼鼓 Tympanus；针喉 Skewer；幽灵八 Phantome；叠唱 Refrein；乐章战技 Movement；共振升降台 Levanker；闻者 Attuned；聋者 Hushed；续章仪典 Project Consummation。
 
 ## 15. 验收锚点（Vertical Slice 闭环，需求 60/73/88）
 
