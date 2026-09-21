@@ -384,7 +384,7 @@ HitStop 结束      └─ timeScale 恢复 → 攻方 recovery 续播 → 数�
 **依赖边界（自动化闸门）**：`tests/unit/arch-boundaries.test.ts` 静态扫描 `src/**/*.ts` 的运行时 import（`import type` 不计，编译后消失），断言 ①逻辑层（`ai/audio/combat/core/data/input` + `player/{LockOn,ThirdPersonController}` + `world/{Streaming,Surface,Interactables,SpawnDirector}`）不得 import `three` 或表现层模块；②用 `three` 的文件必须都在表现层清单（`main/CameraRig/CombatDebugger/Hud/VfxLayer/materials/ActorVisuals/ChunkGreybox/InteractableGreybox/ProjectileVisuals/PlaceholderArena`）；③除组合根 `main.ts` 外，表现层不得 import 逻辑运行时（只订 `EventBus` 事件）。清单漂移会让「闸门变空测试」，所以另有 1 条断言校验扫描文件数与必扫项。
 > 注：需求文档设想的 ESLint `no-restricted-imports` 规则本环境未装（零新增依赖优先），改由上述测试承担同一职责；`npm run lint`(=tsc --noEmit) + `npm run test` 一起构成交付前门禁，pre-commit hook 跑 tsc。所有随机数走 `core/Math.ts` 的 `Rng`（`mulberry32` 种子流，可复现测试）；例外只允许出现在 `audio/*` 的音色抖动（不进玩法判定）。逻辑层不使用 `setTimeout/requestAnimationFrame`（一律过 Time/GameLoop）。
 
-### 5.9 弹道与远程子系统（Phase 4-A/4-B/4-C）— 已实现 `src/combat/Projectiles.ts` + `src/world/ProjectileVisuals.ts`
+### 5.9 弹道与远程子系统（Phase 4-A/4-B/4-C/4-D）— 已实现 `src/combat/Projectiles.ts` + `src/world/ProjectileVisuals.ts`
 
 需求 §66「远程敌人」与 §4.3「引针枪投掷」共用同一套弹道，遵循 §5.8 的分层：
 
@@ -424,6 +424,24 @@ Phase 4-A 把弹道跑通，但远程只被当作「会飞的近战判定」。4
 - 覆盖：`tests/flow/support.test.ts` 新增 14 条（数据表逐字段对 §14.6、12m 内外的 buff 有/无、双来源取最近且不叠加、施主死亡当 tick 光环消失、伤害 = base×dmgMul 精确等式、攻速使整招少跑且 `=== startup` 广播帧不丢、走调时刻的硬直/警觉清零/招式作废三效果、普通敌人死亡不触发、噪音弹 120 tick 与体力回复 −30% 消费方、反射把 120 tick 原样带回射手、**全表扫描：凡 mute 类 statusOnHit 必须自带 ticks**），另在 `spawn.test.ts` 补 1 条「营地编队来自数据：远程+支援位都在场」并把 condition 用例改成按 `enemyId` 收口（同格新增兵不再误报）。
 - **未落地（如实登记）**：①§14.6「可见五线光栅罩住同伴」——被定调者目前**没有任何可视标记**，玩家只能从挨打更痛反推，需要表现层一个跟 `buff.fromId` 联动的池化特效（Phase 7 视觉）；②「体力消耗 −20%」无消费方（见上）；③「闷音期间战技/律具技封锁」只落了体力回复 −30% 这一半，因为乐章战技系统尚未存在。
 
+### 5.9.3 节拍空隙与相位实体（Phase 4-D 幽灵八）— 已实现
+
+§14.5 是第一个把**时间本身**当成防御层的敌人：它不闪、不格挡，只是「在拍点上的那一小段里不存在」。落地方式是把相位做成**每 tick 从数据重算的派生态**（和 4-C 的 `buff` 同一思路），而不是需要挂/摘的事件态——没有任何地方需要"记得"把它清掉。
+
+- **相位原语 `RhythmClock.ticksFromBeatPoint()`**：返回「离最近的拍点还有多少 tick」（0 = 正踩拍点），V 形、单调两侧、可比。数据表因此直接写窗口半径 `intangibleWindowTicks: 12`（84BPM 下 ±208ms），容差不藏在代码里（§55）。用距离而不是布尔的好处立刻显形：隐形占比、判定窗相位、测试里的「正拍/半拍」都能用同一个量表达。
+- **`intangible = revealTicks <= 0 && ticksFromBeatPoint() <= 窗口`** 在 `Enemy.syncPhase()` 每 tick 重算一次，放在敌人自己身上：命中层只问 `e.intangible`，不重复算拍子。`revealTicks > 0`（被抓出拍隙）时相位免伤整段失效，显形窗内踩在拍点上**也**打得到——这是「奖励」而不是「新免疫窗」的关键回归点。
+- **四条消费口**（免疫要闭合必须全部走到，缺一口就是假免疫）：近战 `playerHitsEnemies` 里 `continue`（刃穿过去，且不占目标名额）、弹体 `projectilePass` 里 `continue`（**不消耗** `hitsLeft`、不消失）、处决候选 `e.intangible ⇒ 跳过`（抓不住一个不在那里的东西）、`stepToward()` 顶部 `return`（§14.5「仅半拍窗内位移」⇒ 拍点上追击/逃跑/搜索全定住，`lunge` 也同样跳过）。反向证据是表现层：`ActorVisuals` 按 `intangible` 把身体 `opacity` 切到 0.18，而**振源核始终全亮**——玩家永远能读出「它现在在哪」，打不着的是身体不是位置信息。
+- **打空要有反馈**：`cuePhaseThrough()` 每记挥击对同一目标只发一次 `ring_echo`（判定窗有 6 tick，不然刷出一串残影），**刻意不播命中音、不吃 hitStop**——那一刀什么也没碰到，安静本身就是读相的教鞭。
+- **三条解法全部数据化（`ai.beatGhost`）**：a) **重音出手 = 一个假拍点**：大剑轻击起手那一帧的 `sound.source`（`(5/10)×noiseMul = 0.75 ≥ 0.6`）先把它的相位打乱 ⇒ 紧随其后的判定窗落在实体段，实测 `revealTicks` 峰值 178（表值 180，每 tick 递减）、hp 降、且**没有** `ring_echo`（打空提示一次都没发，正说明这一刀是真打上了）；b) 拍点闪避抓拍（`CombatManager.phaseCounter`）：判据是「dodge 输入 + 它正在前摇 + 此刻 `intangible` + 我在它**这招自己的 hitbox reach** 之内」——用招式自己的半径，所以不需要额外写死一个"抓拍距离"，射程外的负例自然成立。奖励 = `dodgeRevealTicks/dodgeStunTicks` 各 60（1s），定身复用通用 `stunTicks`，因此**读条中的那一刀一起作废**，不需要取消表；c) 伪拍点声源的通用形态（`Enemy.fakeBeat`）：任何 `loudness ≥ fakeBeatLoudness(0.6)` 的他源声（自己的动静不算、要在 `hearing.range` 内）⇒ 显形 180 tick。消费方是既有的 `sound.source` 事件流，所以 Phase 6 的音色晶道具**只要发一声就能用，零新管线**。
+- **阈值 0.6 是被实测卡出来的**：玩家响度 = `(frames.loudness ?? 3)/10 × weapon.noiseMul`，实测四值 = 引针枪蓄力 0.54（打不开）、调律剑轻击 0.3（打不开）、调律剑蓄力 0.7（打得开）、强音大剑轻击 0.75（打得开）——阈值正好落在「潜行／重音」这条设计缝中间，改任何一个数都会把某一类武器误分。这条算术有测试钉住（四把武器逐个比较）。
+- **命中帧量化改成「严格向前」+ 允许小数拍位**：`ticksUntilBeatOn([1.5,2.5,3.5,4.5])` 现在用 `wrap(t-1-now, beatsPerBar)` 取最近的未来时刻。旧实现允许"本拍已过就打"，会把命中帧漂到拍间——而 §14.5 的整条读感就是「它与全场反相」，漂了就读不出来。拍位支持小数是这次一起加的（1.5 = 第 1 拍的 "and"）。实测真 AI 时序：起手量化误差 ≤1 tick，**命中帧 100% 落在隐形段内**（`hitWhileVisible === 0`）。
+- **切分连段用 `frames.next`**：`synco1 → synco2` 的派生不是"下一帧立刻接"，而是把下一段 `tick` 设成 `-ticksUntilBeatOn(next.beat)`（负数=前摇提前量），于是两段之间留下真实的呼吸拍——§13.1 要的惩罚窗口由此来自数据。这个字段是给**所有**敌人用的通用能力，首个受益者是近战连段。
+- **时间口径的分工（必须写清，否则后人会改错）**：相位判定用**逻辑 tick**（`GameTime.tick` / RhythmClock 由 main.ts 以 `time.dt` 推进），表现层用 `time.dt`。命中停顿（`hitStop`）把 `dt` 压到 5%，而 `GameLoop.tickFrame` 仍按固定 `TICK_DT` 推进逻辑 tick ⇒ 实机在命中停顿的瞬间拍钟与帧表会有可感知漂移。这条已登记（见 KNOWN_ISSUES「相位与 hitStop 的口径」），修法是让 tick 推进成为节拍唯一时钟源，属于 Phase 5 的时钟统一工作，不在本次伪装修补。
+- **一个被代码推翻的假设（记录以免文档重复传播）**：原本以为「驼鼓踏地（loudness 0.8）会顺手把幽灵八震出来」，实测不成立。`sound.source` 的发射口一共四处：玩家动作**起手帧**（`tryStartAction`，`(f.loudness ?? 3)/10 × weapon.noiseMul`）、玩家的跳跃/落地/翻滚/脚步、**敌方弹道发射**。敌人的**近战 active 帧根本不 emit**（`Enemy` 只出 hitbox），所以踏地无感、敌人之间的噪音也扰动不了它的相位。附带发现：玩家侧的发声时机是**起手**而不是刀刃接触，蓄力长的招式因此提前约 0.4s 报信——这对玩法是有利的（给了读招余量），但和「砍中拍点才显形」的原始措辞不严格相同，故按代码事实登记为 KI-016，不写成已成立的设计。
+- **布怪（`regions.json`，全场槽位 30→33）**：破拍营地 `count:1 @(-160,0,-230)`（§14.5 首次登场要在有掩体有杂音的营地边缘）；沉唱堂 `count:2 @(330,-40,60)`（第二区域也要有拍隙压迫，§5.2）。**无耳深窖故意未加**：那关的设计正解依赖声呐/听感感知（Phase 6 的耳朵机制），现在塞两只相位刺客进去只会变成"看不见=打不过"的坏题，登记为延后而不是缺失。
+- 覆盖：`tests/flow/phantome.test.ts` 18 条（数据表逐字段、`intangible ⇔ 距拍点 ≤12` 每 tick 恒等 + 占比 `25/BT`、隐形段零位移、近战穿过 vs 半拍命中、弹体穿过不消耗、阈值数学、三个负例、重音显形、拍点闪避抓拍 A/B + 两负例、处决 A/B、真 AI 时序、`next` 连段派生）、`tests/unit/core.test.ts` 补 2 条（`ticksFromBeatPoint` V 形、`ticksUntilBeatOn` 小数拍位与严格向前）、`tests/flow/spawn.test.ts` 补 2 条布点。全量 `npx vitest run` = **19 files / 161 passed**，`tsc --noEmit` + `npm run build` 干净。
+- **视口评审（截图对比）未做**：本环境浏览器标签页处于隐藏态（`document.hidden=true`、canvas 0×0、rAF 停摆），渲染器按客户区尺寸建模 ⇒ 拿不到有效像素（KI-010 同一阻塞）。实机验证在 `tickFrame` 手动步进层完成（§6.3 的降级口径），逐 tick 读取的是 `intangible`/`opacity`/`revealTicks` 等状态量而非像素；已核对 300 tick 内 `opacity 0.18` 与 `intangible` **300/300 一致**。
+
 ---
 
 ## 6. 测试策略（需求 §58/§59/§77）
@@ -434,7 +452,7 @@ Phase 4-A 把弹道跑通，但远程只被当作「会飞的近战判定」。4
 - `rpg/inventory.test.ts`：堆叠/拆分/排序稳定性/容量边界
 - `rpg/progression.test.ts`：经验曲线公式、音级分配后属性重算一致性
 - `save/migration.test.ts`：v1→vN 迁移链、校验和失败回退、双写崩溃模拟（写 tmp 中途 kill=旧档完整）
-- `ai/perception.test.ts`：loudness/距离→suspicion 计算、拍隙可见性（幽灵八）
+- `ai/perception.test.ts`：loudness/距离→suspicion 计算、拍隙可见性（幽灵八）**——已落地但换了载体**：拍隙那半写在 `tests/flow/phantome.test.ts`（相位是跨系统的读感，flow 层才测得动），感知计算仍散在各 flow 的距离/响度断言里；独立 perception 单测等到 Phase 6 的声呐/耳朵机制再合。
 - `data/validate.test.ts`：全部 JSON 通过 Ajv schema + id 唯一 + 交叉引用存在（moveset/skill 等）
 覆盖率门槛：逻辑核心包（combat/rpg/save/quest）行覆盖 ≥80%。
 

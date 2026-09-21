@@ -42,6 +42,13 @@ export class Enemy {
    * null = 未被定调。倍率全部来自那份数据表，不在这里写死（§55）。
    */
   buff: { attackSpeedMul: number; dmgMul: number; fromId: string } | null = null
+  /**
+   * §14.5「拍隙」当前状态：true = 此刻正踩在拍点上，半透明+定身，打不着也走不动。
+   * 和 buff 一样是**每 tick 从数据重算的派生态**，不是需要维护的事件态。
+   */
+  intangible = false
+  /** 被「拍点闪避」或「伪拍点声源」拽出拍隙的剩余 tick；>0 期间相位不再免伤 */
+  revealTicks = 0
   /** 攻速加成用「攒够一整帧才多走一帧」实现，保持 tick 是整数（帧表里有 === 判定） */
   private speedAcc = 0
   facingLocked = false
@@ -174,6 +181,29 @@ export class Enemy {
     }
   }
 
+  /**
+   * §14.5 相位重算（每 tick 一次，纯函数）：离拍点足够近 = 隐形定身，除非刚被抓出来（reveal）。
+   * 放在敌人自己身上而不是 CombatManager：命中层只问 `e.intangible`，不重复算拍子。
+   */
+  private syncPhase(rhythm: RhythmClock): void {
+    const g = this.data.ai.beatGhost
+    if (!g) return
+    this.intangible = this.revealTicks <= 0 && rhythm.ticksFromBeatPoint() <= g.intangibleWindowTicks
+    if (this.revealTicks > 0) this.revealTicks--
+  }
+
+  /**
+   * §14.5 解法 c「投掷音色晶=伪拍点声源」：一次足够响的声源就是它听来的一个假拍点，
+   * 相位被打乱 ⇒ 显形。响度阈值与时长全部来自 `ai.beatGhost`；自己的动静不算数。
+   */
+  fakeBeat(src: { id: string; pos: Vec3; loudness: number }): void {
+    const g = this.data.ai.beatGhost
+    if (!g || src.id === this.id || !this.alive) return
+    if (src.loudness < g.fakeBeatLoudness) return
+    if (dist3(this.pos, src.pos) > this.data.ai.hearing.range) return
+    this.revealTicks = Math.max(this.revealTicks, g.fakeBeatRevealTicks)
+  }
+
   update(dt: number, tick: number, player: PlayerController, rhythm: RhythmClock, slotTaken: (bar_beat: string) => boolean): void {
     if (!this.alive) {
       if (this.state !== 'dead') this.enter('dead')
@@ -181,6 +211,7 @@ export class Enemy {
       return
     }
     if (tick < this.callAllySuppressedUntil) { /* noop */ }
+    this.syncPhase(rhythm)
     this.stats.update(dt, tick)
     this.stateTick++
     if (this.stunTicks > 0) { this.stunTicks--; this.attack = null; if (this.stunTicks === 0 && this.state === 'recover') this.enter('combat'); return }
@@ -344,7 +375,7 @@ export class Enemy {
       this.pendingBroadcast()
       this.pendingBroadcast = null
     }
-    if (this.attack.tick > 0 && this.attack.tick <= f.activeEnd && f.lunge) {
+    if (this.attack.tick > 0 && this.attack.tick <= f.activeEnd && f.lunge && !this.intangible) {
       faceSlow(this, player.pos, 1)
       // don't lunge through the player: stop at melee contact distance
       const dToP = Math.hypot(player.pos.x - this.pos.x, player.pos.z - this.pos.z)
@@ -355,8 +386,12 @@ export class Enemy {
       }
     }
     if (this.attack.tick >= f.recovery) {
-      this.attack = null
-      void rhythm
+      // 连段派生（§14.5 切分连踏「2 段半拍」）：下一段不在这一拍上硬顶，而是量化到它自己的
+      // 拍位再打——两段之间因此留下真实的呼吸拍，这正是 §13.1 要求的惩罚窗口。
+      const next = f.next ? this.data.attacks.find((a) => a.id === f.next) : undefined
+      this.attack = next
+        ? { spec: next, tick: -rhythm.ticksUntilBeatOn(next.beat), hitDone: false, shots: 0, lungeApplied: 0 }
+        : null
     }
   }
 
@@ -406,6 +441,7 @@ function faceSlow(e: Enemy, t: Vec3, rate = 0.15): void {
 }
 
 function stepToward(e: Enemy, t: Vec3, dt: number, speed: number, _rhythm: RhythmClock): void {
+  if (e.intangible) return // §14.5「仅半拍窗内位移」：拍点上定身，包括追击/逃跑/搜索
   const dx = t.x - e.pos.x, dz = t.z - e.pos.z
   const l = Math.hypot(dx, dz)
   if (l < 0.05) return

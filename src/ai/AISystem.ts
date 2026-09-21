@@ -19,6 +19,9 @@ export class AISystem {
     bindEnemyRegistry(this.enemies)
     bus.on('sound.source', (e) => {
       if (e.id === 'player') for (const en of this.enemies) en.hear(e)
+      // §14.5「伪拍点声源」：够响的一声 = 一个假拍点，把幽灵八从拍隙里拽出来显形。
+      // 走既有声源流而不是新事件：玩家重击/驼鼓踏地/未来的音色晶投掷天然是同一路信号。
+      for (const en of this.enemies) en.fakeBeat(e)
     })
     bus.on('rhythm.beat', (b) => {
       const k = `${b.bar}:${b.beatInBar}`

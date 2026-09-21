@@ -105,7 +105,7 @@ describe('spawn flow: 世界里有怪，不是代码里有怪', () => {
     w.dispose()
   })
 
-  it('破拍营地按 §14.4/§14.6 编入远程与支援位：编队组成来自 regions.json', () => {
+  it('破拍营地按 §14.4/§14.5/§14.6 编入远程、支援与拍隙位：编队组成来自 regions.json', () => {
     const w = world(['flag.left_resthold'])
     const camp = regions.find((r) => r.id === 'rg_brokenbar_camp')!
     const ids = new Set<string>()
@@ -115,6 +115,22 @@ describe('spawn flow: 世界里有怪，不是代码里有怪', () => {
     })
     expect(ids.has('en_skewer'), '针喉要在营').toBe(true)
     expect(ids.has('en_refrein'), '叠唱要在营').toBe(true)
+    expect(ids.has('en_phantome'), '幽灵八要在营').toBe(true)
+    w.dispose()
+  })
+
+  it('沉唱堂编入 2 只幽灵八（第二区域也要有拍隙压迫，§5.2）', () => {
+    const w = world(['flag.left_resthold', 'flag.choir_entrance_open'])
+    const choir = regions.find((r) => r.id === 'rg_drowned_choir')!
+    const g = choir.spawnGroups.find((x) => x.enemyId === 'en_phantome')
+    expect(g, 'regions.json 里要有这一支编队').toBeTruthy()
+    w.walk({ x: g!.center.x, y: -40, z: g!.center.z }, 60)
+    const ghosts = w.ai.enemies.filter((e) => e.data.id === 'en_phantome')
+    expect(ghosts).toHaveLength(g!.count)
+    for (const e of ghosts) {
+      expect(e.pos.y, '跟着堂子的海拔走，不是浮在地表').toBe(-40)
+      expect(e.data.ai.beatGhost, ' spawned 出来的这只确实带相位').toBeTruthy()
+    }
     w.dispose()
   })
 

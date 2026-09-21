@@ -126,6 +126,21 @@ export interface EnemyData {
     buffAura?: { range: number; attackSpeedMul: number; dmgMul: number }
     /** §14.6「击杀它→全场敌人失衡（走调时刻）」：硬直 tick 数 + 是否把警觉清零 */
     offTuneOnDeath?: { stunTicks: number; resetAlertness: boolean }
+    /**
+     * §14.5「节拍空隙」实体切换（幽灵八）。三条全是区间/时长，没有一条写在代码里：
+     * - `intangibleWindowTicks`：离拍点多近算「拍点上」（84BPM 下 ±208ms ≈ 12 tick）。在此区间内
+     *   它半透明+定身：近战盒与弹体从它身上穿过、不受击、不位移（只在"and"位活动）。
+     * - `dodge*`：解法 b「拍点闪避其前摇」→ 相位被抓包，显形 1s 且定身 1s（定身走通用 stunTicks）。
+     * - `fakeBeat*`：解法 c「投掷音色晶=伪拍点声源」→ 响度≥阈值的声源把它拽出拍隙，显形 3s。
+     *   消费方是既有的 `sound.source` 流，所以未来的音色晶道具只要发一声就能用，不需要新管线。
+     */
+    beatGhost?: {
+      intangibleWindowTicks: number
+      dodgeRevealTicks: number
+      dodgeStunTicks: number
+      fakeBeatRevealTicks: number
+      fakeBeatLoudness: number
+    }
     deaf?: boolean
     eyes?: boolean
   }

@@ -746,5 +746,167 @@
    "emissive": 6218991,
    "coreColor": 12583152
   }
+ },
+ {
+  "id": "en_phantome",
+  "nameKey": "enemy.phantome",
+  "archetype": "assassin",
+  "hp": 80,
+  "poise": 24,
+  "speed": 4.2,
+  "ai": {
+   "vision": {
+    "range": 20,
+    "fovDeg": 110
+   },
+   "vibration": {
+    "range": 10
+   },
+   "hearing": {
+    "range": 18
+   },
+   "beatGhost": {
+    "intangibleWindowTicks": 12,
+    "dodgeRevealTicks": 60,
+    "dodgeStunTicks": 60,
+    "fakeBeatRevealTicks": 180,
+    "fakeBeatLoudness": 0.6
+   },
+   "distBands": [
+    {
+     "min": 0,
+     "max": 2.2,
+     "actions": [
+      "backcut",
+      "synco1"
+     ]
+    },
+    {
+     "min": 2.2,
+     "max": 99,
+     "actions": [
+      "chase"
+     ]
+    }
+   ]
+  },
+  "attacks": [
+   {
+    "id": "backcut",
+    "beat": [
+     1.5,
+     2.5,
+     3.5,
+     4.5
+    ],
+    "parryable": true,
+    "reaction": "R2",
+    "frames": {
+     "startup": 24,
+     "activeStart": 24,
+     "activeEnd": 29,
+     "recovery": 47,
+     "damage": 22,
+     "stamina": 0,
+     "poise": 12,
+     "hitStopMs": 80,
+     "hitbox": {
+      "shape": "cone",
+      "angleDeg": 100,
+      "radius": 2.1,
+      "height": 1.5,
+      "offsetY": 0.5
+     },
+     "lunge": 1.4,
+     "loudness": 3,
+     "sfx": [
+      "claw"
+     ],
+     "vfx": [
+      "trail_thrust"
+     ]
+    },
+    "statusOnHit": {
+     "tag": "status.mute",
+     "layers": 1,
+     "ticks": 240
+    }
+   },
+   {
+    "id": "synco1",
+    "beat": [
+     1.5,
+     2.5,
+     3.5,
+     4.5
+    ],
+    "parryable": true,
+    "reaction": "R1",
+    "frames": {
+     "startup": 15,
+     "activeStart": 15,
+     "activeEnd": 21,
+     "recovery": 30,
+     "damage": 12,
+     "stamina": 0,
+     "poise": 8,
+     "hitStopMs": 60,
+     "hitbox": {
+      "shape": "ring",
+      "inner": 0.3,
+      "outer": 2,
+      "forward": 0
+     },
+     "loudness": 3,
+     "sfx": [
+      "land_slam"
+     ],
+     "next": "synco2"
+    }
+   },
+   {
+    "id": "synco2",
+    "beat": [
+     1.5,
+     2.5,
+     3.5,
+     4.5
+    ],
+    "parryable": false,
+    "reaction": "R2",
+    "frames": {
+     "startup": 12,
+     "activeStart": 12,
+     "activeEnd": 18,
+     "recovery": 33,
+     "damage": 12,
+     "stamina": 0,
+     "poise": 10,
+     "hitStopMs": 60,
+     "hitbox": {
+      "shape": "ring",
+      "inner": 0.3,
+      "outer": 2.2,
+      "forward": 0
+     },
+     "loudness": 4,
+     "sfx": [
+      "land_slam"
+     ]
+    }
+   }
+  ],
+  "drops": [
+   {
+    "tableId": "loot_basic",
+    "chance": 0.6
+   }
+  ],
+  "body": {
+   "scale": 0.92,
+   "color": 2760760,
+   "emissive": 7332080,
+   "coreColor": 13170687
+  }
  }
 ]

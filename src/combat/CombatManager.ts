@@ -100,6 +100,7 @@ export class CombatManager {
     this.launchEnemyProjectiles(tick)
     this.playerHitsEnemies(tick)
     if (!this.player.executing) this.enemiesHitPlayer(tick)
+    this.phaseCounter(input)
     this.projectilePass(tick, dt)
     if (tick % 30 === 0) this.checkEncounterMusic()
   }
@@ -111,6 +112,11 @@ export class CombatManager {
     if (!hb?.box) return
     for (const e of this.ai.enemies) {
       if (!e.alive) continue
+      if (e.intangible) {
+        // §14.5：拍点上的它不存在「被打中」这件事——刃穿过去，不占这一记的目标名额
+        if (shapeHits(hb.box, this.player.pos, hb.yaw, e.hitTarget())) this.cuePhaseThrough(e)
+        continue
+      }
       const hit = shapeHits(hb.box, this.player.pos, hb.yaw, e.hitTarget())
       if (!hit) continue
       this.player.markActionHit()
@@ -135,6 +141,20 @@ export class CombatManager {
     const declared = f?.fissureLayers
     const byKey = key === 'charged' ? 2 : key === 'h' ? 1 : 0
     return (declared ?? byKey) + (hb.flags.includes('fissure') ? 1 : 0)
+  }
+
+  /**
+   * 「打空」的表现：同一记挥击对同一只穿过目标只提示一次（判定窗有 6 tick，不然刷出一串残影）。
+   * 刻意**不播命中音、不吃 hitstop**——那一刀什么也没碰到，安静本身就是 §14.5 的读相。
+   */
+  private phasedSwing: object | null = null
+  private phasedIds = new Set<string>()
+  private cuePhaseThrough(e: Enemy): void {
+    const a = this.player.action
+    if (a && this.phasedSwing !== a) { this.phasedSwing = a; this.phasedIds.clear() }
+    if (this.phasedIds.has(e.id)) return
+    this.phasedIds.add(e.id)
+    bus.emit('vfx.request', { key: 'ring_echo', pos: midpoint(this.player.pos, e.pos), scale: 0.6 })
   }
 
   /** 唯一的「玩家打到敌人」通道：近战、投掷弹体、以及未来的战技都从这里走 */
@@ -253,6 +273,7 @@ export class CombatManager {
       } else {
         for (const e of this.ai.enemies) {
           if (!e.alive || pr.hitIds.has(e.id)) continue
+          if (e.intangible) continue // §14.5：弹体从拍隙里的它穿过去，不消耗、不停下
           if (!sphereHits(pr, e.hitTarget())) continue
           this.projectileStrikesEnemy(pr, e, tick)
           if (pr.dead) break
@@ -376,6 +397,31 @@ export class CombatManager {
           }
         }
       }, tick)
+    }
+  }
+
+  /**
+   * §14.5 解法 b「拍点闪避其前摇→其显形 1s 定身破绽」：它站在拍点上定身蓄力，那一刀的弧
+   * 已经亮给玩家看了；玩家就在这一刻按闪避=把手伸进它的拍隙里抓个正着。
+   * 判据是「闪避输入 + 它正在前摇 + 此刻它处于拍点相位 + 我在它的招式够得着的范围内」——
+   * 用的是这招自己的 hitbox 半径（前摇期本来没有判定），所以不需要额外写死一个「抓拍距离」。
+   * 定身复用通用 stunTicks（顺带把这条前摇作废），显形用 revealTicks（相位免伤失效）。
+   */
+  private phaseCounter(input?: Input): void {
+    const p = this.player
+    if (!input?.frame.edges.has('dodge') || !p.roll) return
+    for (const e of this.ai.enemies) {
+      const g = e.data.ai.beatGhost
+      if (!g || !e.alive || !e.intangible || !e.inStartup || !e.attack) continue
+      const box = e.attack.spec.frames.hitbox
+      if (!box) continue
+      const reach = box.shape === 'ring' ? box.outer : box.shape === 'cone' ? box.radius : box.offsetFwd + box.radius
+      if (Math.hypot(e.pos.x - p.pos.x, e.pos.z - p.pos.z) > reach + p.hitTarget().radius) continue
+      e.revealTicks = Math.max(e.revealTicks, g.dodgeRevealTicks)
+      e.stunTicks = Math.max(e.stunTicks, g.dodgeStunTicks)
+      bus.emit('vfx.request', { key: 'parry_ring', pos: { ...e.pos }, scale: 0.9 })
+      bus.emit('audio.sfx', { key: 'perfect_block', pos: { ...e.pos }, gain: 0.7 })
+      bus.emit('ui.notify', { text: '拍点闪避！幽灵八显形定身', kind: 'info' })
     }
   }
 
@@ -519,7 +565,7 @@ export class CombatManager {
     let best: { e: Enemy; kind: ExecuteKind } | null = null
     let bestD = Infinity
     for (const e of this.ai.enemies) {
-      if (!e.alive) continue
+      if (!e.alive || e.intangible) continue // 抓不住一个不在那里的东西（§14.5）
       const d = Math.hypot(e.pos.x - p.pos.x, e.pos.z - p.pos.z)
       const crumpled = e.stats.crumpleTicksLeft > 0 || e.state === 'recover'
       const stalled = crumpled || e.stunTicks > 0 || e.inStartup

@@ -105,6 +105,13 @@ export class ActorVisuals {
     }
     if (e.coreFlash > 0) glow = 3.2
     mat.emissiveIntensity = glow
+    // §14.5 拍隙：半透明=打不着（振源核始终全亮，玩家靠它读「它现在在哪」）
+    const want = e.intangible ? 0.18 : 1
+    if (mat.opacity !== want) {
+      mat.opacity = want
+      mat.transparent = want < 1
+      mat.needsUpdate = true
+    }
     const hb = e.activeHitbox
     core.scale.setScalar(hb ? 1.6 : 1 + Math.sin(tick * 0.08) * 0.08)
     if (e.state === 'recover') {

@@ -80,7 +80,8 @@
     "palette": { "base": "#2b3f45", "accent": "#7f8f8a", "glow": "#a58a4f" },
     "spawnGroups": [
       { "enemyId": "en_murkshell", "count": 3, "center": { "x": 250, "y": -40, "z": 20 }, "radius": 12 },
-      { "enemyId": "en_driftsinger", "count": 2, "center": { "x": 370, "y": -40, "z": 100 }, "radius": 10 }
+      { "enemyId": "en_driftsinger", "count": 2, "center": { "x": 370, "y": -40, "z": 100 }, "radius": 10 },
+      { "enemyId": "en_phantome", "count": 2, "center": { "x": 330, "y": -40, "z": 60 }, "radius": 10 }
     ],
     "landmarks": [
       { "id": "lm_drownedchoir_brokenaltar", "nameKey": "landmark.broken_altar", "pos": { "x": 320, "y": -36, "z": 60 }, "sightRange": 70 }
@@ -115,7 +116,8 @@
       { "enemyId": "en_tympanus", "count": 1, "center": { "x": -50, "y": 0, "z": -250 }, "radius": 10, "campId": "camp_brokenbar" },
       { "enemyId": "en_driftsinger", "count": 2, "center": { "x": -140, "y": 0, "z": -160 }, "radius": 12, "campId": "camp_brokenbar" },
       { "enemyId": "en_skewer", "count": 2, "center": { "x": -36, "y": 0, "z": -142 }, "radius": 10, "campId": "camp_brokenbar" },
-      { "enemyId": "en_refrein", "count": 1, "center": { "x": -80, "y": 0, "z": -212 }, "radius": 2, "campId": "camp_brokenbar" }
+      { "enemyId": "en_refrein", "count": 1, "center": { "x": -80, "y": 0, "z": -212 }, "radius": 2, "campId": "camp_brokenbar" },
+      { "enemyId": "en_phantome", "count": 1, "center": { "x": -160, "y": 0, "z": -230 }, "radius": 10, "campId": "camp_brokenbar" }
     ],
     "landmarks": [
       { "id": "lm_brokenbar_stonebridge", "nameKey": "landmark.stonebridge", "pos": { "x": -48, "y": 4, "z": -120 }, "sightRange": 160 },
