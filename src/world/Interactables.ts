@@ -105,7 +105,7 @@ export class Interactables {
     const id = f ? f.id : null
     if (id === this.focused) return
     this.focused = id
-    bus.emit('ui.prompt', { text: f ? `${f.verb ?? VERB[f.kind]} · ${f.regionName}` : null })
+    bus.emit('ui.prompt', { text: f ? `${f.verb ?? VERB[f.kind]} · ${f.regionName}` : null, id })
   }
 
   use(id: string, pos: Vec3): InteractResult {

@@ -12,6 +12,7 @@ import { Surface } from '@/world/Surface'
 import { SpawnDirector } from '@/world/SpawnDirector'
 import { Interactables, takeInteractEdge } from '@/world/Interactables'
 import { ChunkGreybox } from '@/world/ChunkGreybox'
+import { InteractableGreybox } from '@/world/InteractableGreybox'
 import { ActorVisuals } from '@/world/ActorVisuals'
 import { PlayerController } from '@/player/ThirdPersonController'
 import { CameraRig } from '@/player/CameraRig'
@@ -74,6 +75,8 @@ let shownRegion = streaming.regionAt(player.pos)?.id ?? null
 const surface = new Surface(regions, 0.5, (r) => !streaming.isRegionUnlocked(r))
 const interact = new Interactables(regions, (r) => streaming.isRegionUnlocked(r))
 const greybox = new ChunkGreybox(arena.scene, regions, streaming.chunkSize)
+const nodes = new InteractableGreybox(arena.scene, regions, (pos) => { const c = streaming.cellOf(pos); return chunkKeyOf(c.cx, c.cy, c.cz) }, (k) => streaming.hasFlag(k))
+nodes.syncActive(streaming.byState('active').map((c) => c.key)) // 起始格在构造前就已激活，补一次
 
 /** 交互物落地：调音桩休息、机关传送（= UE 的 Level Streaming 遮蔽传送） */
 function applyInteract(id: string): void {
@@ -148,7 +151,7 @@ loop.add(core)
 addEventListener('resize', () => { arena.resize(); rig.resize() })
 bus.on('log', (l) => console.info(`[caesura:${l.level}] ${l.msg}`))
 
-;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, interact, hud, spawner }
+;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, interact, hud, spawner, nodes }
 
 document.getElementById('boot')!.style.display = 'none'
 ;(window as unknown as Record<string, unknown>).__CAESURA_BOOTED__ = true

@@ -118,6 +118,8 @@ src/
                        world.chunk 进/出 active 即出怪/回收，entity.died 记永久清剿，
                        flag condition 闸门 + maxAlive 预算；不认识 three，不持有敌人实例
     ChunkGreybox.ts    chunk 灰盒表现层：world.chunk → InstancedMesh 挂/摘（§5.5）
+    InteractableGreybox.ts 交互物占位模：按 kind 分池的 InstancedMesh，跟流送挂/摘、
+                       随 ui.prompt 高亮、按 flag 谓词压暗消耗态（§5.5，Phase 7 换正式模）
     PlaceholderArena.ts 起始占位场（灰盒地形到位前提供可玩平面+节拍信标）
     generators/        程序化生成器（需求 §52，关键区域手工摆放物件覆盖）：
                        TerrainGen(高度场+侵蚀噪声)、FoliageGen(泊松盘+实例化)、
@@ -344,7 +346,8 @@ HitStop 结束      └─ timeScale 恢复 → 攻方 recovery 续播 → 数�
 - **垂直地面 `src/world/Surface.ts`**（无 three 依赖）：`floorAt(pos)` 取「水平覆盖该 xz 且 groundY ≤ 脚底+0.5m」中**最高**的一块地板——叠层区域共用 xz，所以不能复用 `regionAt` 的首个匹配。控制器改为读 `player.floorY`（每 tick 由 main.ts 注入，层外回落到 0），于是走下边缘会下落、踏上高层会抬升（仅 0.5m 容差内，防止跨层瞬移被拎起）。`RegionData.groundY` 是这一查询的数据源。构造参数 `isClosed(region)` 是**区域闸门**：main.ts 注入 `!streaming.isRegionUnlocked(r)`，未解锁区域连几何上都没有可站面（灰盒表现 = 悬空板面消失），修掉 KI-011。
 - **交互物 `src/world/Interactables.ts`**（无 three 依赖，需求 §65 六要素之「交互」）：数据源是 `RegionData.interactables`（`kind/requiresFlag/setsFlag/oneWay/to/verb`，26 个实例）。每 tick `update(pos)` 做半径 6m 的焦点查询，只在焦点变化时发 `ui.prompt`；`use(id, pos)` 校验区域已解锁 + 在半径内，然后消耗（一次性/`oneWay`）、`setFlag`（发 `world.flag`，流送层自己的订阅随即解锁区域）、发 notify/sfx/log，并**只返回结果**（`{rest, loot, to}`）——回血、掉落、传送由 main.ts 的 `applyInteract()` 执行，保持 world 逻辑层不认识玩家实例。`to` + `world.travel` + `streaming.teleport()` 即 UE「遮蔽传送」的等价物：跨层通路不再靠调试器作弊。E 键与处决/背刺共用 `interact` 边，由 `takeInteractEdge()` 仲裁（交互优先，帧内吃掉边即让战斗层落空），headless 覆盖见 `tests/flow/traversal.test.ts`（7 条：闸门拒开、全程只按 E 的 7 段动线、单行道、半径、NPC 不假完成、提示文案、E 键仲裁）。
 - **出怪 `src/world/SpawnDirector.ts`**（无 three 依赖，需求 §66 之「敌人布置」）：数据源是 `RegionData.spawnGroups`（`enemyId/count/center/radius/condition/campId`），全场 27 个槽位；槽身份是稳定的 `region:group:member`，落点 = 黄金角环形布点 + 以槽 key 为种子的 `Rng` 抖动（**同一存档同一位置**，重进不掉随机数）。它只订阅 `world.chunk`：格进 active → 按 condition 出怪，格离开 active → `host.despawn()` **回收而不记清剿**（下次进格重新驻扎）；`entity.died` → 槽位永久进 `cleared`（死过的怪不刷新，需求 §66「击杀持久」）。`maxAlive` 直接取 §5.5 的 AI 硬顶（默认 60，可注入覆盖以做压力测试）；超限时该格编队排队并打 warn，而不是无限堆怪。`condition` 是最小布尔式（`flag.x` / `!flag.x` / `&&`），由 `hasFlag` 注入（main.ts 接 `streaming.hasFlag`），因此「破拍营地编队在营地解决后不再驻扎」这类布点是一行 JSON。`campId` 留给 Phase 4 的 Squad（成组增援）。开局休垒是**零敌人**的安全屋（`spawnGroups: []` 忠于世界观设定，原来 main.ts 里 4 行硬编码靶怪已移到雾语林，由数据布点）。覆盖：`tests/unit/spawn.test.ts`（9 条：condition 真值表、确定性、chunk 归属、生命周期、清剿不刷新、上限+warn、dispose）与 `tests/flow/spawn.test.ts`（5 条：真流送走进布点圈出怪、离开回收、返回重刷、死者不归、营地 flag 闸门）。
-- 已知缺口：区域间的**运动演出**（井笼升降路径、吊桥落板、音壁碎裂）与交互物占位模未做，见 KI-012/KI-013；`flag.parry_taught` 一类剧情 flag 需 Phase 6 对话树授予，是动线上唯一仍需模拟的环节。
+- **交互物占位模 `src/world/InteractableGreybox.ts`**（表现层，修 KI-013）：26 条 `interactables` 按 kind 分池，每种一张 `InstancedMesh` ⇒ 常驻 drawcall = 数据里出现过的 kind 数（当前 9），与区域/chunk 无关；形状即读法（调音桩=细柱、闸门=框、吊机=开口筒、音壁=厚板、落钟=锥、NPC=胶囊…），落点用条目自己的 `pos.y + LIFT[kind]`，跨层条目站在自己那一层上。可见性完全跟着 `world.chunk`（未解锁区域根本没有格 ⇒ 自然不放模），`ui.prompt(id)` 点亮焦点（焦点 id 随提示一起发，HUD 只取 text），消耗态压暗由**注入的 flag 谓词**判定而不是只等 `world.flag` 事件——读档后第一次落位就是压暗色。格键与谓词都由组合根注入，本层不 import 流送运行时（arch 闸门覆盖）。覆盖 `tests/unit/greybox-nodes.test.ts`（6 条）；实机验证：走焦门亮金、按 E 后离开转暗石板色、远处 void 区 liveProps 归 0、回家回升，8 站跨 5 层巡回 0 error/0 warn。
+- 已知缺口：区域间的**运动演出**（井笼升降路径、吊桥落板、音壁碎裂）未做，见 KI-012；地标（landmarks）沿用 ChunkGreybox 的棱柱池，正式模在 Phase 7 替换；`flag.parry_taught` 一类剧情 flag 需 Phase 6 对话树授予，是动线上唯一仍需模拟的环节。
 
 ### 5.6 画质档位
 

@@ -23,7 +23,8 @@ const LOGIC = [
 const PRESENTATION = new Set([
   'main.ts', 'player/CameraRig.ts', 'tools/CombatDebugger.ts', 'ui/Hud.ts',
   'vfx/VfxLayer.ts', 'vfx/materials.ts',
-  'world/ActorVisuals.ts', 'world/ChunkGreybox.ts', 'world/PlaceholderArena.ts',
+  'world/ActorVisuals.ts', 'world/ChunkGreybox.ts', 'world/InteractableGreybox.ts',
+  'world/PlaceholderArena.ts',
 ])
 
 const tsFiles = (dir: string): string[] => {
