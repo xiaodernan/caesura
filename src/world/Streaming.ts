@@ -277,10 +277,11 @@ export class StreamingSystem {
   }
 
   private advanceUnloads(tick: number): void {
-    const { unloadRing, unloadDebounceTicks } = this.options
+    const { unloadDebounceTicks } = this.options
     for (const c of this.chunks.values()) {
       if (c.state === 'unloaded') continue
-      const outside = !this.window.has(c.key) || ringOf({ cx: c.cx, cy: c.cy, cz: c.cz }, this.playerCell) > unloadRing
+      // 窗口已编码「3 圈卸载 + boss arena 观察圈」，出窗即进入防抖，不再重复判圈
+      const outside = !this.window.has(c.key)
       if (!outside) { c.outsideSince = null; continue }
       if (c.outsideSince === null) c.outsideSince = tick
       else if (tick - c.outsideSince >= unloadDebounceTicks) this.setState(c, 'unloaded', tick)

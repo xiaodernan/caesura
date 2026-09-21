@@ -4,10 +4,18 @@
  * 断言「流送后 1s 内无 MissingRef 警告」与全程预算不破。
  */
 import { describe, expect, it } from 'vitest'
+import * as THREE from 'three'
 import { bus } from '@/core/EventBus'
+import { GameTime, TICK_DT } from '@/core/Time'
+import type { Input } from '@/core/Input'
+import { RhythmClock } from '@/core/RhythmClock'
 import { registry } from '@/core/Registry'
-import { registerGameData, regions } from '@/data'
+import { registerGameData, playerBase, regions } from '@/data'
+import type { MovesetData, WeaponData } from '@/data/schema'
+import { PlayerController } from '@/player/ThirdPersonController'
 import { StreamingSystem } from '@/world/Streaming'
+import { Surface } from '@/world/Surface'
+import { ChunkGreybox } from '@/world/ChunkGreybox'
 
 registerGameData()
 
@@ -102,5 +110,117 @@ describe('world traversal flow (Phase 3-A)', () => {
       expect(here!.regionId, p.region).toBe(p.region)
     }
     s.dispose()
+  })
+})
+
+/**
+ * Phase 3-B：玩家脚下的层由 Surface 给出（垂直分层世界），
+ * 不再是控制器里硬编码的 y=0。
+ */
+describe('vertical floor flow (Phase 3-B · §65 垂直结构)', () => {
+  function makePlayer() {
+    const time = new GameTime()
+    const rhythm = new RhythmClock()
+    rhythm.setBpm(84, 4)
+    const weapon = registry.get<WeaponData>('wp_tuning_sword')
+    const moveset = registry.get<MovesetData>('ms_sword')
+    const player = new PlayerController(playerBase, weapon, moveset)
+    const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0 }, held: new Set<string>(), edges: new Set<string>() }
+    const input = { frame, enabled: true } as unknown as Input
+    player.camYawRef = 0
+    const surface = new Surface(regions)
+    const step = (n: number): void => {
+      for (let i = 0; i < n; i++) {
+        time.tick++
+        player.update(TICK_DT, time, input, time.tick, rhythm)
+        const f = surface.floorAt(player.pos)
+        player.floorY = f ? f.y : 0 // 与 main.ts 同规则：层外回落到基准地面
+        frame.edges.clear()
+      }
+    }
+    const snap = (pos: { x: number; y: number; z: number }): void => {
+      player.pos.x = pos.x; player.pos.y = pos.y; player.pos.z = pos.z
+      player.vy = 0
+      player.floorY = surface.floorAt(pos)?.y ?? 0
+    }
+    return { player, step, snap }
+  }
+
+  it('站在上层地板上不穿模，走到无覆盖 xz 后落到该 xz 的最高地板', () => {
+    const { player, step, snap } = makePlayer()
+    snap({ x: 200, y: 64, z: -150 }) // 钟坠院 groundY 64（雾语林地表在其下）
+    step(10)
+    expect(player.grounded).toBe(true)
+    expect(player.pos.y).toBe(64)
+    snap({ x: 200, y: 64, z: -50 }) // 走出钟坠院 bounds，脚下只剩雾语林 0
+    step(5)
+    expect(player.grounded).toBe(false)
+    step(300) // 64m 自由落体 ≈ 2.3s，给足余量
+    expect(player.pos.y).toBe(0)
+    expect(player.grounded).toBe(true)
+  })
+
+  it('从崖口进入地下层时落到地下地面，而不是被地表接住', () => {
+    const { player, step, snap } = makePlayer()
+    snap({ x: 300, y: -20, z: 60 }) // 沉唱堂 xz：地表 0 在头顶，本层 -40
+    expect(player.floorY).toBe(-40)
+    step(120)
+    expect(player.pos.y).toBe(-40)
+    expect(player.grounded).toBe(true)
+  })
+
+  it('跨层瞬移不会被高层陈旧的 floorY 拎起来（main.ts 在 player.update 之后才刷新地面）', () => {
+    const { player, step, snap } = makePlayer()
+    snap({ x: 200, y: 64, z: -150 })
+    step(10)
+    expect(player.floorY).toBe(64)
+    player.pos.x = 300; player.pos.y = -20; player.pos.z = 60 // 本 tick 内 floorY 仍是 64
+    step(1)
+    expect(player.pos.y).toBe(-20)
+    step(400)
+    expect(player.pos.y).toBe(-40)
+    expect(player.grounded).toBe(true)
+  })
+
+  it('容差内的台阶自动抬升（Surface 只给脚底 +0.5m 以内的地板）', () => {
+    const { player, step, snap } = makePlayer()
+    snap({ x: 0, y: 0, z: 0 })
+    step(5)
+    player.floorY = 0.4 // 抬半米以内的层面
+    step(1)
+    expect(player.pos.y).toBe(0.4)
+    expect(player.grounded).toBe(true)
+  })
+
+  it('区域外没有地板时回落到基准地面（不会悬空也不会无限下坠）', () => {
+    const { player, step, snap } = makePlayer()
+    snap({ x: 5_000, y: 30, z: 5_000 })
+    step(200)
+    expect(player.pos.y).toBe(0)
+    expect(player.grounded).toBe(true)
+  })
+
+  it('整条穿行动线走一遍：灰盒实例数与存活 chunk 数始终一致', () => {
+    const scene = new THREE.Scene()
+    const s = new StreamingSystem(regions)
+    for (const f of ['flag.left_resthold', 'flag.choir_entrance_open']) s.setFlag(f)
+    const g = new ChunkGreybox(scene, regions, s.chunkSize)
+    s.teleport(0, HUB)
+    let t = drain(s, HUB, 0)
+    let events = 0
+    const off = bus.on('world.chunk', () => { events++ })
+    const versions = () => scene.children
+      .filter((c): c is THREE.InstancedMesh => c instanceof THREE.InstancedMesh)
+      .reduce((n, m) => n + m.instanceMatrix.version, 0)
+    const v0 = versions()
+    t = run(s, HUB, FOREST, t); t = drain(s, FOREST, t)
+    t = run(s, FOREST, CHOIR, t); t = drain(s, CHOIR, t)
+    expect(s.regionAt(CHOIR)?.id).toBe('rg_drowned_choir')
+    expect(g.liveFloors).toBe(s.all().filter((c) => c.state !== 'unloaded').length)
+    expect(g.liveFloors).toBeGreaterThan(0)
+    // 每个 chunk 事件最多两张图（地板 + 该格地标）各一次上传：版本增量 ≤ 2×事件数，无 O(N²) 重刷
+    expect(versions() - v0).toBeLessThanOrEqual(events * 2)
+    g.dispose(); s.dispose(); off()
+    expect(scene.children.length).toBe(0)
   })
 })

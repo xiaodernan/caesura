@@ -194,6 +194,8 @@ export interface RegionData {
   order: number
   biome: 'hub' | 'forest' | 'ruins' | 'underground' | 'camp' | 'dungeon' | 'boss_arena'
   bounds: RegionBounds
+  /** walkable surface height of this layer; used by world/Surface.ts floor queries */
+  groundY: number
   chunkSize: number
   navmeshRef?: string
   weatherPresets: string[]

@@ -8,6 +8,8 @@ import { registerGameData, playerBase, regions } from '@/data'
 import type { MovesetData, WeaponData } from '@/data/schema'
 import { createArena } from '@/world/PlaceholderArena'
 import { StreamingSystem } from '@/world/Streaming'
+import { Surface } from '@/world/Surface'
+import { ChunkGreybox } from '@/world/ChunkGreybox'
 import { ActorVisuals } from '@/world/ActorVisuals'
 import { PlayerController } from '@/player/ThirdPersonController'
 import { CameraRig } from '@/player/CameraRig'
@@ -67,6 +69,8 @@ if (missingRefs.length) bus.emit('log', { level: 'warn', msg: `MissingRef: ${mis
 const streaming = new StreamingSystem(regions)
 streaming.teleport(0, player.pos) // 起始区同步加载（§5.5 传送遮蔽等价物）
 let shownRegion = streaming.regionAt(player.pos)?.id ?? null
+const surface = new Surface(regions)
+const greybox = new ChunkGreybox(arena.scene, regions, streaming.chunkSize)
 
 ai.spawn('en_murkshell', { x: 4, y: 0, z: -6 })
 ai.spawn('en_murkshell', { x: -5, y: 0, z: -9 })
@@ -88,6 +92,7 @@ const core = {
     }
     player.update(dt, t, inp, t.tick, rhythm)
     streaming.update(t.tick, player.pos)
+    player.floorY = surface.floorAt(player.pos)?.y ?? 0 // 层外回落到基准地面
     const here = streaming.regionAt(player.pos)
     if (here && here.id !== shownRegion) {
       shownRegion = here.id
@@ -121,7 +126,7 @@ loop.add(core)
 addEventListener('resize', () => { arena.resize(); rig.resize() })
 bus.on('log', (l) => console.info(`[caesura:${l.level}] ${l.msg}`))
 
-;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming }
+;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox }
 
 document.getElementById('boot')!.style.display = 'none'
 ;(window as unknown as Record<string, unknown>).__CAESURA_BOOTED__ = true

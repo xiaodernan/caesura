@@ -111,6 +111,9 @@ src/
     Region.ts          区域定义（RegionData 驱动，§3）：Resthold/Whisperwode/
                        Fellcarillon/EarlessDeeps/BrokenbarCamp/DrownedChoir/UnfinishedHall
     Streaming.ts       chunk 流送（§5.5）
+    Surface.ts         垂直分层落点查询 floorAt（RegionData.groundY，§5.5）
+    ChunkGreybox.ts    chunk 灰盒表现层：world.chunk → InstancedMesh 挂/摘（§5.5）
+    PlaceholderArena.ts 起始占位场（灰盒地形到位前提供可玩平面+节拍信标）
     generators/        程序化生成器（需求 §52，关键区域手工摆放物件覆盖）：
                        TerrainGen(高度场+侵蚀噪声)、FoliageGen(泊松盘+实例化)、
                        RockGen(噪声扰动 icosphere)、RuinGen(模块拼贴：柱/墙/拱+波纹纹样)
@@ -332,7 +335,9 @@ HitStop 结束      └─ timeScale 恢复 → 攻方 recovery 续播 → 数�
 - 渲染层**只订阅 `world.chunk` 事件**按 state 挂/摘子场景，`Streaming.ts` 禁止 import three（headless 可测、UE 可移植）。
 - 测试矩阵（需求 §50 原文）：高速移动（调试器加速作弊）、传送（同步加载+遮蔽 fade）、大区域入口、boss arena（进场锁定加载）、地下（垂直跨层）、室内外切换（interior cell 独立于地形 chunk）——headless 覆盖见 `tests/unit/streaming.test.ts`（17 条）与 `tests/flow/world.test.ts`（休垒→雾语林→沉唱堂→传送回城，断言「流送后 1s 内无 MissingRef 警告」与预算上限）。
 - 加载任务每帧预算 8ms（超时让位下帧），卸载当帧同步（dispose 几何/材质引用计数归零）。
-- 测试矩阵（需求 §50 原文）：高速移动（调试器加速作弊）、传送（同步加载+遮蔽 fade）、大区域入口、boss arena（进场锁定加载）、地下（垂直跨层）、室内外切换（interior cell 独立于地形 chunk）——全部列入 §6.2 headless 断言「流送后 1s 内无 MissingRef 警告」。
+- **表现层 `src/world/ChunkGreybox.ts`**：只订阅 `world.chunk`，把 state 变成几何。每区域两张 `InstancedMesh`（地板板面 + 地标棱柱），容量按「该区域认领的 cell 数」预算，因此全场常驻 drawcall = 2×区域数（7 区 = 14），与 chunk 数无关；HIDDEN 实例（零缩放）而非增删对象来实现挂/摘；激活格用区域原色、常驻格压暗 45%，让流送窗口本身可读。卸载防抖期间实例数会短暂高于稳态，压力测试断言往返后 `liveFloors` 回到同一水位（无槽位泄漏）。
+- **垂直地面 `src/world/Surface.ts`**（无 three 依赖）：`floorAt(pos)` 取「水平覆盖该 xz 且 groundY ≤ 脚底+0.5m」中**最高**的一块地板——叠层区域共用 xz，所以不能复用 `regionAt` 的首个匹配。控制器改为读 `player.floorY`（每 tick 由 main.ts 注入，层外回落到 0），于是走下边缘会下落、踏上高层会抬升（仅 0.5m 容差内，防止跨层瞬移被拎起）。`RegionData.groundY` 是这一查询的数据源。
+- 已知缺口：`Surface` 不看 `unlockFlag`（未解锁区域的地面在几何上仍然可站），区域闸门/吊桥/共鸣井电梯属 Phase 3-C（见 KNOWN_ISSUES KI-011）。
 
 ### 5.6 画质档位
 

@@ -12,9 +12,11 @@
 | KI-005 | `npm run build` 单 chunk >500kB：`three` 未按 manualChunks 拆出（rollup 对 CJS 依赖分包限制），首包偏大。非阻塞。 | P3 | Partial |
 | KI-006 | 引针枪蓄力「投掷枪」（§4.3）暂以强力突刺近似（flags `throw`），真实投掷弹体+钉住定身需远程弹道子系统（Phase 4/5）。 | P2 | Partial |
 | KI-007 | 换武器时 ActorVisuals 的武器模型不变（仍音调叉巨剑外观）；外观随武器切换为 Phase 7 视觉打磨项。 | P3 | Placeholder |
-| KI-008 | 区域流送目前是**逻辑层完整、表现层未接**：`world/Streaming.ts`（48m 3D cell、激活环1/预载2/卸载3+2s 防抖、in-flight≤4、优先级、区域解锁门、teleport 同步加载、MissingRef 校验）+ `data/json/regions.json`（7 区域）已实现并有 17+2 条 headless 断言；但 chunk 灰盒渲染器（`SceneGraph`/按 chunk 挂载子场景）尚未实现，画面仍只有 `PlaceholderArena`。 | P1 | Partial |
+| KI-008 | 区域流送逻辑完整，**表现层为灰盒**：`world/Streaming.ts`（48m 3D cell、激活环1/预载2/卸载3+2s 防抖、in-flight≤4、优先级、区域解锁门、teleport 同步加载、MissingRef 校验）+ `data/json/regions.json`（7 区域）+ `world/ChunkGreybox.ts`（按 `world.chunk` 事件挂/摘 InstancedMesh 板面与地标，全场常驻 2×7=14 drawcall）。缺的是**内容几何**：chunk 目前只有地面板面（无高度场/墙/植被/遗迹模块），区域间仍靠 `PlaceholderArena` 的平面兜底。 | P1 | Partial |
 | KI-009 | RegionData 暂**不含 `navmeshRef` 实体**：`Navigation.ts` 未落地，regions.json 里该字段留空以免产生悬空引用（MissingRef 校验会报警）。 | P2 | Placeholder |
-| KI-010 | Phase 3 验收①「实机从休垒走到未竟厅」只能在 headless+浏览器 tickFrame 层面验证（区域切换/预算/无泄漏）；**视口评审（截图）仍被隐藏标签页阻塞**（canvas 0×0、rAF 暂停），需可见浏览器窗口。 | P1 | Blocked |
+| KI-010 | Phase 3 验收①「实机从休垒走到未竟厅」只能在 headless+浏览器 tickFrame 层面验证（区域切换/预算/无泄漏/落层）；**视口评审（截图）仍被隐藏标签页阻塞**（canvas 0×0、rAF 暂停），需可见浏览器窗口。 | P1 | Blocked |
+| KI-011 | **`Surface.floorAt` 不受 `unlockFlag` 约束**：未解锁区域的地面在几何上仍然可站（实测：未开 `flag.left_resthold` 时玩家仍能走到雾语林/钟坠院的高度）。流送层是对的（不加载不 spawn），所以表现是「站在没有内容的悬空板上」。需要区域闸门（音壁/吊桥/电梯 + `requiresFlag` 通行判定），Phase 3-C 交付。 | P1 | Partial |
+| KI-012 | 垂直移动只有**掉落**：`floorY` 已驱动重力（走下边缘会落、落层有 vfx/audio），但共鸣井电梯、吊桥、可破坏音壁等**上行通路**未实现，跨层目前只能靠 `teleport`。 | P1 | Placeholder |
 
 ## 1.5 系统状态总表（需求 §78，每 Phase 出口更新）
 
@@ -32,10 +34,12 @@
 | HUD | Partial | 声纹 UI 基础；目标框/乐句线打磨待 Phase 7 | P2 |
 | Combat/Enemy Debugger | Partial | F2 事件面板已含 chunk 流送行（active/resident/loading）；行为树可视化待补 | P2 |
 | 区域数据（RegionData 7 区，IP_SEED §3/§10/§14） | Implemented | `src/data/json/regions.json`；六要素/色板/垂直层级/解锁 flag 全部数据驱动 | P1 |
-| chunk 流送逻辑（§5.5：激活环1/预载2/卸载3+2s 防抖/in-flight≤4/优先级/整场预载/teleport/MissingRef） | Implemented | headless 19 条断言 + 浏览器 tickFrame 实测（maxActive 27、maxInFlight 4、区域序列正确、返回休垒后 loaded 回落无泄漏） | P1 |
-| chunk 表现层（按流送事件挂载/卸载灰盒子场景） | Partial | 见 KI-008：`SceneGraph`/灰盒地形未接，画面仍只有 `PlaceholderArena` | P1 |
+| chunk 流送逻辑（§5.5：激活环1/预载2/卸载3+2s 防抖/in-flight≤4/优先级/整场预载/teleport/MissingRef） | Implemented | headless 17 条断言 + 浏览器 tickFrame 实测（maxActive 27、maxInFlight 4、区域序列正确、返回休垒后 loaded 回落无泄漏） | P1 |
+| chunk 表现层（world.chunk → InstancedMesh 挂/摘） | Implemented | 灰盒：地面板面+地标棱柱，2×区域数 drawcall 恒定；7 条 headless 断言（容量按认领 cell 预算、往返不泄漏、实例版本增量≤事件量）；见 KI-008 缺内容几何 | P1 |
+| 垂直分层地面（Surface.floorAt / player.floorY） | Implemented | 5 层 groundY 数据 + 7 条 Surface 单测 + 5 条落层流（掉落/台阶容差/陈旧 floorY 不回抬） | P1 |
 | 导航网格 Navigation.ts | Placeholder | 见 KI-009：RegionData.navmeshRef 暂留空以免悬空引用 | P2 |
-| 息声领灰盒穿行（Phase 3 验收①） | Blocked | 见 KI-010：逻辑层可验证，视口截图评审受隐藏标签页限制 | P1 |
+| 区域闸门与垂直通路（音壁/吊桥/共鸣井电梯） | Placeholder | 见 KI-011/012：Surface 不看 unlockFlag，上行通路未实现 | P1 |
+| 息声领灰盒穿行（Phase 3 验收①） | Partial | 逻辑+落层已实机可走（tickFrame 实测 0→64→-40→0），视口截图评审仍受隐藏标签页限制（KI-010） | P1 |
 
 ## 2. Technical Debt（技术债）
 

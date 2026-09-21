@@ -9,6 +9,8 @@ import type { Vec3 } from '@/combat/EntityStats'
 import type { HitTarget } from '@/combat/HitShapes'
 
 const CHARGE_TICKS = 48
+/** 台阶容差：与 world/Surface 的 floorAt tolerance 一致，超过就不算「踩上台阶」 */
+const STEP_UP = 0.5
 
 export type MoveIntent = { x: number; z: number; sprint: boolean }
 
@@ -23,6 +25,8 @@ export class PlayerController {
   stats: EntityStats
   grounded = true
   vy = 0
+  /** 当前站立面的高度，由 world/Surface 每 tick 注入（垂直分层世界） */
+  floorY = 0
   action: { key: string; f: FrameData; tick: number; hitDone: boolean } | null = null
   roll: { tick: number; dir: Vec3; total: number; iframeStart: number; iframeEnd: number } | null = null
   guardTicks = 0
@@ -211,19 +215,22 @@ export class PlayerController {
         }
       }
     }
-    // gravity
-    if (!this.grounded || this.vy > 0) {
+    // gravity — floorY 由 world/Surface 按区域层给出（休垒 0 / 地下 -40 …），不再硬编码 0
+    if (!this.grounded || this.vy > 0 || this.pos.y > this.floorY) {
       this.vy -= this.base.gravity * dt
       this.pos.y += this.vy * dt
-      if (this.pos.y <= 0) {
+      if (this.pos.y > this.floorY) this.grounded = false // 走下边缘：脚下已无本层地面
+      if (this.pos.y <= this.floorY) {
         const fallSpeed = -this.vy
-        this.pos.y = 0; this.vy = 0; this.grounded = true
+        this.pos.y = this.floorY; this.vy = 0; this.grounded = true
         if (fallSpeed > 8) {
           bus.emit('vfx.request', { key: 'ring_dust', pos: { ...this.pos }, scale: clamp(fallSpeed / 16, 0.5, 1.4) })
           bus.emit('audio.sfx', { key: 'land_slam', pos: { ...this.pos }, gain: 0.4 })
         }
         if (this.action?.key === 'jump') this.action.tick = Math.max(this.action.tick, this.action.f.activeStart)
       }
+    } else if (this.floorY - this.pos.y > 0 && this.floorY - this.pos.y <= STEP_UP) {
+      this.pos.y = this.floorY // 踏上更高一层：只在台阶容差内抬升，避免跨层瞬移时被人拎起来
     }
     if (this.roll) {
       this.roll.tick++
