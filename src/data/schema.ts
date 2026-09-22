@@ -132,6 +132,13 @@ export interface EnemyData {
     /** §14.6「击杀它→全场敌人失衡（走调时刻）」：硬直 tick 数 + 是否把警觉清零 */
     offTuneOnDeath?: { stunTicks: number; resetAlertness: boolean }
     /**
+     * 选招方式。缺省 'random'＝从当前距离带的候选里随机；'cycle'＝按表的顺序轮转
+     * （冷却中的跳过，全在冷却就这一拍不出手）。§15.2 的 Main Boss 第一阶写着
+     * 「每 4 小节一个乐句，玩家可背谱」——随机选招背不了谱，这条不是为了 AI 更聪明，
+     * 而是为了让「可预测」这件事真的成立。
+     */
+    pickOrder?: 'random' | 'cycle'
+    /**
      * §14.5「节拍空隙」实体切换（幽灵八）。三条全是区间/时长，没有一条写在代码里：
      * - `intangibleWindowTicks`：离拍点多近算「拍点上」（84BPM 下 ±208ms ≈ 12 tick）。在此区间内
      *   它半透明+定身：近战盒与弹体从它身上穿过、不受击、不位移（只在"and"位活动）。
@@ -196,6 +203,12 @@ export interface EnemyData {
       resonanceRadius: number
       damagePerBeat: number
     }
+    /**
+     * 断音柱（§15.2「躲入场地断音柱后」）：玩家站在柱内而攻击者在柱外 ⇒ 这一击被柱子吃掉。
+     * 这是 KI-014 那条真 LOS（墙体射线）在灰盒期的**显式近似**：掩体必须由数据点名，
+     * 而不是从几何推出来。将来接上遮挡射线时，本字段应退化成「射线打到了什么」。
+     */
+    covers?: { positions: { x: number; y: number; z: number }[]; radius: number }
   }
   weakpoint?: { dmgMul: number }
   drops?: { tableId: string; chance: number }[]

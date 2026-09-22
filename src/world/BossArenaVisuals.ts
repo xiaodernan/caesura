@@ -9,8 +9,11 @@ import type { Enemy } from '@/ai/Enemy'
 export class BossArenaVisuals {
   private readonly group = new THREE.Group()
   private readonly geo = new THREE.CylinderGeometry(0.55, 1.15, 2.6, 10, 1, true)
+  /** §15.2 断音柱：玩家能站进去的掩体，所以必须比钟更像「一根能挡东西的柱子」 */
+  private readonly pillarGeo = new THREE.CylinderGeometry(1.5, 1.7, 7.5, 12, 1, true)
   private readonly aliveMat: THREE.MeshStandardMaterial
   private readonly rungMat: THREE.MeshStandardMaterial
+  private readonly coverMat: THREE.MeshStandardMaterial
   private readonly meshes = new Map<string, THREE.Mesh>()
   /** 观测用：历史峰值，验证没有按 tick 增长的分配 */
   peakLive = 0
@@ -25,6 +28,10 @@ export class BossArenaVisuals {
       color: 0x2a2f2c, emissive: 0x120c08, emissiveIntensity: 0.3,
       metalness: 0.6, roughness: 0.8, side: THREE.DoubleSide
     })
+    this.coverMat = new THREE.MeshStandardMaterial({
+      color: 0x1c2226, emissive: 0x0a1416, emissiveIntensity: 0.45,
+      metalness: 0.35, roughness: 0.6, side: THREE.DoubleSide, transparent: true, opacity: 0.92
+    })
     this.group.name = 'boss-arena'
     scene.add(this.group)
   }
@@ -33,6 +40,21 @@ export class BossArenaVisuals {
   sync(bosses: Enemy[]): void {
     const want = new Set<string>()
     for (const e of bosses) {
+      const cov = e.data.boss?.covers
+      if (cov) {
+        cov.positions.forEach((q, i) => {
+          const key = `cover:${e.id}:${i}`
+          want.add(key)
+          let m = this.meshes.get(key)
+          if (!m) {
+            m = new THREE.Mesh(this.pillarGeo, this.coverMat)
+            this.group.add(m)
+            this.meshes.set(key, m)
+            this.peakLive = Math.max(this.peakLive, this.meshes.size)
+          }
+          m.position.set(q.x, q.y + 3.6, q.z)
+        })
+      }
       const g = e.data.boss?.bells
       if (!g) continue
       g.positions.forEach((p, i) => {
@@ -62,8 +84,10 @@ export class BossArenaVisuals {
     for (const m of this.meshes.values()) this.group.remove(m)
     this.meshes.clear()
     this.geo.dispose()
+    this.pillarGeo.dispose()
     this.aliveMat.dispose()
     this.rungMat.dispose()
+    this.coverMat.dispose()
     this.group.parent?.remove(this.group)
   }
 }

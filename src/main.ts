@@ -137,7 +137,7 @@ const core = {
     visuals.sync(ai.enemies, t.tick)
     projectileVis.sync(combat.projectiles.list(), t.tick)
     projectileVis.syncTelegraphs(combat.telegraphs())
-    bossArena.sync(ai.enemies.filter((e) => !!e.data.boss?.bells))
+    bossArena.sync(ai.enemies.filter((e) => !!e.data.boss)) // 立钟与断音柱都在 Boss 场地类里，少一个过滤条件就会漏画后者
   },
   postTick(t: GameTime) {
     rhythm.update(t.dt)

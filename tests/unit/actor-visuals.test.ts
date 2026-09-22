@@ -101,6 +101,19 @@ describe('BossArenaVisuals：撞钟机关必须看得见（§15.1）', () => {
     expect(after.material, '换成暗材质（同一对共享材质实例，不多建）').not.toBe(matBefore)
   })
 
+  it('断音柱（§15.2 Main Boss 场地）也来自数据：柱数 = covers.positions 长度', () => {
+    const scene3 = new THREE.Scene()
+    const boss3 = new AISystem()
+    const arena3 = new BossArenaVisuals(scene3)
+    const h = boss3.spawn('en_hersil', { x: 0, y: 152, z: -250 }, 'h')
+    arena3.sync([h])
+    const group = scene3.getObjectByName('boss-arena') as THREE.Group
+    // 断音柱立在 152 层，奥斯塔拉的钟在 -40 层 ⇒ 用高度就能把两者分开
+    const pillars = group.children.filter((m) => m.position.y > 150)
+    expect(pillars.length, '四根断音柱立在 152 层').toBe(h.data.boss!.covers!.positions.length)
+    arena3.dispose()
+  })
+
   it('Boss 被流送回收 ⇒ 机关一起摘掉，往返不涨网格数', () => {
     const n0 = bells().length
     expect(n0).toBeGreaterThan(0)

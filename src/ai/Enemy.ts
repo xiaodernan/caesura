@@ -56,6 +56,8 @@ export class Enemy {
   armorBroken = false
   /** §14.7 敲钟自鸣的下一次准点小节（-1 = 还没参战，进战后才排程） */
   private tollDueBar = -1
+  /** §15.2 'cycle' 选招的轮转指针（只在 pickOrder==='cycle' 时有意义） */
+  private cycleIdx = 0
   /**
    * Boss 阶段下标（§15/§16）。**单调推进**：血线只降不升，所以绝不会来回跳阶，
    * 一记大伤害直接跨过两条线时也是一次性跳到最靠后的那一阶。
@@ -488,7 +490,17 @@ export class Enemy {
   }
 
   private tryAttack(actions: string[], rhythm: RhythmClock, tick: number, slotTaken: (k: string) => boolean): void {    const usable = actions.filter((a) => !PSEUDO_ACTIONS.has(a) && !((this.cooldowns.get(a) ?? 0) > tick))
-    const pick = this.rng.pick(usable)
+    if (!usable.length) return
+    // 'cycle' = 按表的顺序轮转（§15.2「每 4 小节一个乐句，玩家可背谱」：随机背不了谱）
+    let pick: string | undefined
+    if (this.data.ai.pickOrder === 'cycle') {
+      const start = this.cycleIdx % actions.length
+      for (let i = 0; i < actions.length; i++) {
+        const cand = actions[(start + i) % actions.length]
+        if (usable.includes(cand)) { pick = cand; this.cycleIdx = start + i + 1; break }
+      }
+    } else pick = this.rng.pick(usable)
+    if (!pick) return
     const spec = this.data.attacks.find((a) => a.id === pick)
     if (!spec) return
     // §2.1：约束的是**命中帧**落在拍点，不是起手帧 ⇒ 起手要提前一整个前摇。
@@ -520,6 +532,11 @@ export class Enemy {
       this.pendingBroadcast = null
     }
     // §15.1 撞钟机关：冲刺的落地帧（=读条走完那一帧）附近有别人才响得动的钟
+    // 敌人的前摇音：audio.md §7.2 要求「听见起手」而不是「看见落点」——本作核心反馈通道，
+    // 但此前 enemies.json 里那 8 套 sfx 字段根本没有发射方（只有玩家招式与弹道发射在响）。
+    if (this.attack.tick === 0 && f.sfx?.[0]) {
+      bus.emit('audio.sfx', { key: f.sfx[0], pos: { ...this.pos }, gain: 0.55 + Math.min(0.3, (f.loudness ?? 4) / 20) })
+    }
     if (this.attack.tick === f.startup && f.flags?.includes('charge')) this.ringBells()
     // 撞钟可能就地跳阶（§15.1「撞 2 钟 = 提前进 P2」），而跳阶会把这一招收掉 ⇒ 别再用陈旧的帧表
     if (!this.attack) return

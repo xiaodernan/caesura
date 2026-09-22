@@ -217,7 +217,9 @@
     "weatherPresets": ["still", "dissonant-storm"],
     "lightingPreset": "lp_unfinished_hall",
     "palette": { "base": "#d8b45a", "accent": "#2a1830", "glow": "#f2d98a" },
-    "spawnGroups": [],
+    "spawnGroups": [
+      { "enemyId": "en_hersil", "count": 1, "center": { "x": 0, "y": 152, "z": -250 }, "radius": 4 }
+    ],
     "landmarks": [
       { "id": "lm_unfinishedhall_organ", "nameKey": "landmark.great_organ", "pos": { "x": 0, "y": 180, "z": -300 }, "sightRange": 260 }
     ],

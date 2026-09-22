@@ -287,7 +287,14 @@ export class CombatManager {
       if (pr.dead || pr.bornTick === tick) continue // 出生帧不参与判定：否则反射体会当帧打到自己
       if (pr.hostile) {
         if (!this.player.executing && !pr.hitIds.has('player') && sphereHits(pr, this.player.hitTarget())) {
-          this.projectileThreatensPlayer(pr, tick)
+          // 弹体用「发射者的位置」判掩体：弹体自身此刻已经贴着玩家，拿它判等于永远判不出遮挡
+          const src = this.ai.enemies.find((x) => x.id === pr.ownerId)?.pos ?? pr.pos
+          const cover = this.behindCover(src)
+          if (cover) {
+            // 撞柱而落：不是「穿过但没伤害」，那样柱子就成了隐形斗篷
+            this.cueBlocked(cover)
+            this.projectiles.kill(pr, 'ground')
+          } else this.projectileThreatensPlayer(pr, tick)
         }
       } else {
         for (const e of this.ai.enemies) {
@@ -397,6 +404,12 @@ export class CombatManager {
       if (!hb?.box) continue
       const hit = shapeHits(hb.box, e.pos, e.yaw, this.player.hitTarget())
       if (!hit) continue
+      const cover = this.behindCover(e.pos)
+      if (cover) {
+        // 柱子挡得住「这一击」，挡不住「这一招」：收势帧不消耗 hitDone，冲出柱子还能再吃
+        this.cueBlocked(cover)
+        continue
+      }
       if (e.attack) e.attack.hitDone = true
       const st = e.attack?.spec.statusOnHit
       this.resolveAgainstPlayer({
@@ -477,6 +490,32 @@ export class CombatManager {
         break
       }
     }
+  }
+
+  /**
+   * 断音柱（§15.2「躲入场地断音柱后」）。灰盒期用**显式圆柱**近似遮挡：玩家柱内、攻击者柱外
+   * ⇒ 这一击被吃掉。它是 KI-014 那条真 LOS 的占位实现，不是它的替代品——接上遮挡射线之后，
+   * 这段就该退化成「射线先打到了什么」。
+   */
+  private behindCover(from: Vec3): { x: number; y: number; z: number } | null {
+    const p = this.player.pos
+    for (const e of this.ai.enemies) {
+      const c = e.data.boss?.covers
+      if (!c) continue
+      const near = (q: { x: number; y: number; z: number }, o: Vec3): boolean =>
+        Math.hypot(o.x - q.x, o.z - q.z) <= c.radius
+      const shelter = c.positions.find((q) => near(q, p))
+      if (!shelter) continue
+      if (c.positions.some((q) => near(q, from))) continue // 攻击者也贴着柱子 ⇒ 不算被挡，否则柱子变无敌房
+      return shelter
+    }
+    return null
+  }
+
+  /** 被柱子吃掉的那一击：安静、无伤、不吃 hitstop，但要有灰尘——玩家得知道是哪根柱子救了自己 */
+  private cueBlocked(pos: Vec3): void {
+    bus.emit('vfx.request', { key: 'ring_dust', pos: { ...pos }, scale: 1.4 })
+    bus.emit('audio.sfx', { key: 'block_guard', pos: { ...pos }, gain: 0.35 })
   }
 
   /** §5 优先级：弹反 > 无敌帧 > 完美格挡 > 格挡（含破防）> 硬吃。近战与弹体共用 */
@@ -760,7 +799,8 @@ const NAME_MAP: Record<string, string> = {
   'enemy.murkshell': '嘈壳', 'enemy.driftsinger': '漂调者', 'enemy.tympanus': '驼鼓',
   'enemy.skewer': '针喉', 'enemy.phantome': '幽灵八', 'enemy.refrein': '叠唱',
   'enemy.hangedKnight': '悬钟骑士',
-  'enemy.ostlara': '悬钟骑士·奥斯塔拉'
+  'enemy.ostlara': '悬钟骑士·奥斯塔拉',
+  'enemy.hersil': '无拍长·恩希尔·万籁'
 }
 
 export function nameOf(key: string): string {
