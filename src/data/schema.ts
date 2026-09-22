@@ -455,6 +455,12 @@ export interface ProgressionData {
   respec: { base: number; perPoint: number; discountTimes: number; discountMul: number }
   upgrade: UpgradeStep[]
   rarity: RarityTier[]
+  /**
+   * §9.4 全局装备大保底：每第 `every` 件装备强制抽到 ≥ `floorRarity`。
+   * 计数在掉落层跨表累计（LootDirector.gearStreak）——写在代码里的话，改一个数要重新编译，
+   * 而"多久保底一次"恰恰是最常被调的那颗旋钮。
+   */
+  pity: { every: number; floorRarity: string }
   affixes: { prefix: AffixDef[]; suffix: AffixDef[] }
   /** 洗点/强化之外，升级里程碑（progression.md §8.2「你新能做什么」） */
   milestones: { rank: number; id: string; label: string }[]
@@ -670,7 +676,10 @@ export interface LootRoll {
   xp?: [number, number]
   /** 按稀有度档抽一件装备（权重即 §9.4 的同档内权重，写在数据里而不是代码里） */
   gearBand?: { rarity: string; weight: number }[]
-  /** 保底：连续 N 次没出本条 ⇒ 第 N+1 次必出 */
+  /**
+   * 逐条保底（§9.2 容器档那一列）：这条 roll 连续 `pity` 次没掷中，第 `pity+1` 次强制命中。
+   * 管的是**本条掉不掉**；稀有度地板由 progression.json 的全局 pity 管（§9.4），两条互不替换。
+   */
   pity?: number
 }
 

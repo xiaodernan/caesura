@@ -14,7 +14,7 @@ import { unwrap, wrap } from './Integrity'
  * 存档里没有一个敌人实例，只有一串槽位身份）。
  */
 
-export const SAVE_VERSION = 4
+export const SAVE_VERSION = 5
 
 /**
  * 读档时接受的版本：凡是 ≤ 当前版本、且迁移链能一路升到当前的，都可以读。
@@ -56,6 +56,24 @@ registerMigration(3, (p) => {
   const rpg = snap.rpg as Record<string, unknown> | null | undefined
   if (rpg) snap.rpg = { ...rpg, movements: { lit: [], levels: {}, slots: [] } }
   snap.version = 4
+  return { ...p, snapshot: snap }
+})
+
+/**
+ * v4 → v5（Phase 5-C3 掉落评审）：`rpg.loot.rollStreaks`（§9.2 逐条保底计数）与 `rpg.inventory.rng`
+ * （掷骰抽到第几笔，§10「种子入档 ⇒ 可复现 QA」补齐的那一半）。
+ * 老档里这两格确实是空的 ⇒ 迁移只写**空表**：保底从零开始攒（不白送一次），掷骰位置不写
+ * （`Inventory.restore` 见不到 `rng` 就沿用运行时那颗，而不是假装"倒回开局种子"——那份档根本没记过）。
+ * 需求 §78：留空是如实，补一笔"你其实攒过了"就是假账。
+ */
+registerMigration(4, (p) => {
+  const snap = { ...(p.snapshot as Record<string, unknown>) }
+  const rpg = snap.rpg as Record<string, unknown> | null | undefined
+  if (rpg) {
+    const loot = (rpg.loot ?? null) as Record<string, unknown> | null
+    if (loot) snap.rpg = { ...rpg, loot: { ...loot, rollStreaks: {} } }
+  }
+  snap.version = 5
   return { ...p, snapshot: snap }
 })
 

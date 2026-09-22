@@ -15,7 +15,7 @@ const SRC = fileURLToPath(new URL('../../src', import.meta.url))
 
 /** 必须保持「不认识 three」的逻辑模块（headless 测试直接实例化它们） */
 const LOGIC = [
-  'ai', 'audio', 'combat', 'core', 'data', 'input',
+  'ai', 'audio', 'combat', 'core', 'data', 'input', 'rpg', 'save',
   'player/LockOn.ts', 'player/ThirdPersonController.ts',
   'world/Streaming.ts', 'world/Surface.ts', 'world/Interactables.ts', 'world/SpawnDirector.ts',
 ]
@@ -64,7 +64,7 @@ describe('module dependency boundaries (tech-arch §3)', () => {
 
   it('逻辑层文件确实被扫描到（防止清单漂移把闸门变成空测试）', () => {
     const scanned = LOGIC.flatMap((g) => tsFiles(g))
-    for (const must of ['world/Interactables.ts', 'world/Streaming.ts', 'world/Surface.ts', 'combat/CombatManager.ts', 'core/EventBus.ts']) {
+    for (const must of ['world/Interactables.ts', 'world/Streaming.ts', 'world/Surface.ts', 'combat/CombatManager.ts', 'core/EventBus.ts', 'rpg/Runtime.ts', 'rpg/Settlement.ts', 'save/Serializer.ts']) {
       expect(scanned, must).toContain(must)
     }
     expect(scanned.length).toBeGreaterThanOrEqual(20)

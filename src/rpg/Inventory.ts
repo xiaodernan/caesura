@@ -1,5 +1,5 @@
 import { registry } from '@/core/Registry'
-import { Rng } from '@/core/Math'
+import { Rng, type RngState } from '@/core/Math'
 import type { ItemData, SlotKey } from '@/data/schema'
 
 /**
@@ -22,6 +22,12 @@ export interface GearInstance {
 export interface ItemSnapshot {
   stacks: { itemId: string; count: number }[]
   gears: GearInstance[]
+  /**
+   * 掉落 RNG 抽到了第几笔（§10「随机种子入档 ⇒ 可复现 QA」）。
+   * 没有这一格，读档就等于把掷骰序列倒回开局：同一个存档重载三次会掉出三串不同的东西，
+   * 而 QA 要的恰恰是"这局之后的每一发都能重放"。
+   */
+  rng?: RngState
 }
 
 let uidSeq = 0
@@ -120,13 +126,17 @@ export class Inventory {
   snapshot(): ItemSnapshot {
     return {
       stacks: [...this.stacks].map(([itemId, count]) => ({ itemId, count })),
-      gears: this.gears.map((g) => ({ uid: g.uid, itemId: g.itemId, level: g.level, affixes: g.affixes.map((a) => ({ ...a })) }))
+      gears: this.gears.map((g) => ({ uid: g.uid, itemId: g.itemId, level: g.level, affixes: g.affixes.map((a) => ({ ...a })) })),
+      rng: this.rng.state()
     }
   }
 
   restore(s: ItemSnapshot): void {
     this.stacks.clear()
     this.gears.length = 0
+    // v4 及更早的档没有 rng 这一格：那就沿用当前这颗 RNG（如实——那份档确实没记位置），
+    // 而不是假装把它倒回开局种子：倒回去会让同一份档重载三次掉出三种东西。
+    if (s.rng) this.rng.restore(s.rng)
     for (const st of s.stacks ?? []) {
       if (registry.has(st.itemId)) this.stacks.set(st.itemId, st.count)
     }

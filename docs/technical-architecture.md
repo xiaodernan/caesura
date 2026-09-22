@@ -138,8 +138,10 @@ src/
     Inventory.ts       格子背包（堆叠/分类/排序/过滤，需求 §44），纯数据可单测
     Equipment.ts       装备槽（武器 L/R、头/胸/手/腿、护符）+ 属性重算 + 外观换装 hook
     Progression.ts     等级/音级属性点/经验曲线（§3 数值表）、调音桩分配 UI 数据
-    Loot.ts            掉落表（加权随机 + 保底 pity 计数，seeded RNG 可复现测试）
-    Upgrade.ts         音色石强化（武器 +1~+10，成功率表，失败不降级）
+    Loot.ts            掉落表（加权随机 + 两条保底 pity 计数，seeded RNG 可复现测试）
+    Settlement.ts      击杀结算与拾取编排（Phase 5-C3）：entity.died → 掉落 → 播报 → refresh → 检查点；
+                       refreshPlayer/openLootTable 是组合根与测试共用的同一份胶水，故 dispose() 必须存在
+    Upgrade.ts         音色石强化（武器 +1~+10，无失败无销毁，上限按稀有度封顶，材料不够一分不扣）
     Movements.ts       乐章战技谱册状态（Phase 5-C2）：页点亮/式等级/两槽配装，合成给玩家的 {f, cast}
   quest/
     QuestState.ts      任务状态机：notStarted→active(step k)→completed/failed，
@@ -201,7 +203,7 @@ src/
 - 每类 JSON 有对应 TS interface（`src/data/schema.ts`），文件命名 `kebab-case`，`id` 全局唯一且带类别前缀（`wp_`/`en_`/`bs_`/`it_`/`q_`/`sk_`/`dl_`/`rg_`）。
 - 时间单位统一为 **tick（1/60s 逻辑帧）**，杜绝毫秒/tick 混用。
 - Gameplay Tag 风格字符串（`damage.physical`、`status.fissure`）替代枚举位掩码，与 §57 GAS-lite 效果系统共用。
-- 校验：`npm run validate:data`（`scripts/validate-data.mjs`，**零新增依赖**的字段级校验器，见 KI-015；串在 `npm run check` 里，pre-commit 必过）。它管的是"schema 表达不出来"的那一类约束：跨字段区间、引用是否存在、以及**设计要求的必填组合**（例：带 `boss` 的敌人必须同时有 `intro` 与 `victory` 两格 —— §16「Boss 均带」由此变成机器钉住的规则而不是自觉）。
+- 校验：`npm run validate:data`（`scripts/validate-data.mjs`，**零新增依赖**的字段级校验器，见 KI-015；串在 `npm run check` 里，pre-commit 必过）。它管的是"schema 表达不出来"的那一类约束：跨字段区间、引用是否存在、以及**设计要求的必填组合**（例：带 `boss` 的敌人必须同时有 `intro` 与 `victory` 两格 —— §16「Boss 均带」由此变成机器钉住的规则而不是自觉）。Phase 5-C3 起再加三条同族规则：`progression.pity` 的两个数齐全且 `floorRarity` 必须是 `rarity` 表里真实存在的档；`LootRoll.pity` 必须与 `chance` 同时出现（必中条目不存在"没中"，那一格计数就是死数据）；同一张表内 `roll.id` 不得重复（逐条保底的计数键就是 `${表id}:${roll id}`，重名等于让常规档和首杀档共用一格）。
 
 ### 3.2 帧数据（FrameData）——攻击类条目的公共子结构
 
@@ -554,6 +556,9 @@ Phase 4-A 把弹道跑通，但远程只被当作「会飞的近战判定」。4
 - `tests/unit/save.test.ts`（原计划名 save/migration.test.ts，按仓库既有命名落在 unit/）：
   往返 deep-equal、清剿记录跨会话生效、CRC/magic/version 三道闸、主档损坏→回退 .prev、
   写到一半被 kill⇒主键位仍是完整旧档、迁移链 v1→v2 与「缺步骤必须抛错」、触发器同帧合并与失败发声
+- `tests/flow/gate5.test.ts`（Phase 5-C3 G5 出口验收，5 条）：**只从输入帧与 `entity.died` 事件两个入口进出**的一条不断链——真轻击打死 → 掉落入包 → 升音级 → 遗箱拾取 → 换装 → 强化 +1 → 存档 → 另一份世界读档 ⇒ 成长快照逐字段相等 + `mods()` 数值串相等 + 手里还是那把剑；再加"掷骰位置跟档走"（读档后续掉的一串 == 不断档那一串）、"杀进程重开只亏上一个检查点之后那一截"、力/律两条建卡线的同种子遭遇对照与一条纯 `scaling` 标尺断言
+- `tests/unit/loot-pity.test.ts`（Phase 5-C3，12 条）：两条 pity 规则各自的语义（容器保底「第 N+1 次必中」、大保底「每第 every 件顶到地板档」）、它们**互不替换**（容器那条不许动稀有度）、计数入档/老档留空、同种子同轨迹，以及掉落表数据的自检（roll id 表内唯一、`pity` 必带 `chance`、隐藏房给得出装备/乐谱/铭文档）
+- `tests/unit/arch-boundaries.test.ts`：逻辑层不得 import 表现层（Phase 5-C3 起把 `rpg/`、`save/` 也补进了扫描清单——之前这两个目录不在闸门范围内）
 - `ai/perception.test.ts`：loudness/距离→suspicion 计算、拍隙可见性（幽灵八）**——已落地但换了载体**：拍隙那半写在 `tests/flow/phantome.test.ts`（相位是跨系统的读感，flow 层才测得动），感知计算仍散在各 flow 的距离/响度断言里；独立 perception 单测等到 Phase 6 的声呐/耳朵机制再合。
 - `tests/flow/bossshow.test.ts`（Phase 5-C2b，6 条）：§16 入场演出与胜利序列的玩法流——拍长按**她自己的**拍速换算的精确等式、整窗零出手零位移（且中段一记弹体照样掉血、演出不被挨打断掉）、只演第一次照面、`boss.defeated.holdTicks`、`cut` 恰一条 + `rawScale<1`、屏息未完不落收尾字
 - ~~`data/validate.test.ts`：全部 JSON 通过 Ajv schema~~ **实际落地的是 `npm run validate:data`**（`scripts/validate-data.mjs`，零新增依赖，见 KI-015）：id 唯一、交叉引用存在、区间与帧表单调、以及设计要求的必填组合；vitest 里没有这条（跑法不同）。它已被证明能抓出真 bug（KI-015 首跑），本次新增的"Boss 两格齐全"也是同一类约束
@@ -638,19 +643,22 @@ ID 规则：KI-/TD-/PF-/MA- 前缀 + 4 位序号（例 TD-0007）。
   要么新档已经写完；读序是 主 → tmp → prev → 备份，逐个过校验，取第一份合格的并在日志里说清是哪一份。
   CRC32 只保证「没被截断/改坏」，不是密码学校验（本地单用户存档不需要后者，写在这免得被当成安全边界）。
 - **迁移链禁止「读旧档直接崩」**（Migration）：`registerMigration(from, fn)` 逐级升到当前版本，缺步骤抛
-  `MigrationError` 并由调用方回退到上一份。当前 **v1→v2→v3→v4 四步都是真历史**（v2=成长/背包，v3=失谐归零，
-  v4=谱册空谱），没有为了展示机制而虚构一步。**读侧白名单 `READABLE_VERSIONS = [1..SAVE_VERSION]`（Phase 5-C1 修的真 bug）**：
+  `MigrationError` 并由调用方回退到上一份。当前 **v1→v2→v3→v4→v5 五步都是真历史**（v2=成长/背包，v3=失谐归零，
+  v4=谱册空谱，v5=逐条保底计数 + 掷骰位置），没有为了展示机制而虚构一步。**读侧白名单 `READABLE_VERSIONS = [1..SAVE_VERSION]`（Phase 5-C1 修的真 bug）**：
   这里曾只写 `[SAVE_VERSION]`，于是 v1/v2 老档在 `unwrap` 那一步就被当坏档拒掉——迁移链写得再对也永远进不去，
   玩家表现为「有档却说没有」。现在 `save.test.ts` 有一条**从磁盘放一份 v1 档**、走 `load()` 全路径的可达性断言。
   v4 那一步的口径与前三步一致：**给老档补的是空谱（页全黑、槽全空），不是替玩家点亮第一页**——
   那份档确实没有"学过哪几式"这件事，振源核本来就在它的背包里，回调音桩照样点得开（§78 要的是如实，不是好看）。
+  v5 同一条口径：**保底计数写空表、掷骰位置不写**（老档没攒过就是没攒过，不白送一次保底；不记位置就不假装记得位置，
+  读档后从当前这颗 RNG 接着抽）。
 - **触发器与游戏循环解耦（Checkpoint）**：调音桩休息 / Boss 跳阶 / 首次进区域三个时机都只 `request(reason)`
   排队，异步写在后台跑（连请求会合并原因、合并成一笔），失败既发日志也发 HUD 提示——
   「以为存了其实没存」比不能存档更糟。`pagehide` 也挂了一次（关标签页前补一笔）。
 - **环境差异如实处理**：`typeof indexedDB === 'undefined'` ⇒ 备份位为 null 并在控制台说明「只剩本地一份」，
   不静默假装双份；存储写失败（隐私模式配额）走同一条「说出来」的路径。
 - 覆盖与实机：`tests/unit/save.test.ts` 9 条（含 Phase 5-C1 补的**读档可达性**一条）+ `tests/flow/movements.test.ts`
-  里的 v4 往返与 v3→v4 迁移两条；全量 **34 files / 374 passed**，tsc/build 干净。
+  里的 v4 往返与 v3→v4 迁移两条 + `tests/flow/gate5.test.ts` 的 v5 往返与"掷骰位置/保底计数退回"两条；
+  全量 **37 files / 398 passed**，tsc/validate:data/build 干净。
   实机：`?fresh=1` 开局 → 走到钟坠院存档点、设 flag、把 hp/过载调成非默认值 → `saveNow()` →
   localStorage 出现 `caesura.save.autosave` + `.prev`、IndexedDB 里同键可读 → **刷新页面** →
   日志 `load.ok autosave v1`（v2 起为 `v2`），玩家回到 (130, 64, -120)、hp 41、过载 7、三条 flag 全在、
@@ -670,7 +678,8 @@ ID 规则：KI-/TD-/PF-/MA- 前缀 + 4 位序号（例 TD-0007）。
 | `Progression.ts` | 遗响→音级→音级点→六音级属性；软上限折算；洗点；派生值公式 | 不认识"装备"，护甲 DEF 由调用方传进来 |
 | `Inventory.ts` | 堆叠件 vs **装备实例**（uid/强化等级/词缀数值）；分类清单；快照 | 不知道谁穿在身上 |
 | `Equipment.ts` | 七槽装配；把一身装备汇总成一组乘数（`EquipMods`） | 不写玩家状态 |
-| `Loot.ts` | 掉落掷骰（种子化）+ 保底 + 首杀 | 不播报、不落 UI |
+| `Loot.ts` | 掉落掷骰（种子化）+ **两条各自独立**的保底 + 首杀 | 不播报、不落 UI |
+| `Settlement.ts` | **组合根那串胶水的本体**（Phase 5-C3）：`KillSettlement`（`entity.died` → 结算 → 播报 → refresh → 检查点）、`refreshPlayer`（mods 灌回面板 + 按装备栏换手里那把武器）、`openLootTable`（交互物拾取） | 不认识 `PlayerController` 实例（只吃结构性接口 `ModsSink`）、不认识存档类（refresh 与 checkpoint 由外面注入） |
 | `Upgrade.ts` | 强化曲线消费与上限校验 | 不碰背包以外的系统 |
 | `Movements.ts` | **谱册状态**（Phase 5-C2）：哪几页亮了、每式几级、两槽装着什么；把"槽位号:音级"合成给玩家的 `{f, cast}` 小表 | 不出手、不认识 `PlayerController`，扣款只通过 `Inventory` |
 | `Runtime.ts` | 总装：`mods()` 一组扁平乘数 + `onEnemyKilled()` 一串所得 + `skillLoadout()` 交给玩家的招式 | 不认识 `PlayerController` |
@@ -679,7 +688,8 @@ ID 规则：KI-/TD-/PF-/MA- 前缀 + 4 位序号（例 TD-0007）。
 poiseMax / defense / loadMax / overdriveMax / critRate / critMul / execMul / noiseMul / poiseDmgMul /
 staminaRegenMul / perfectBlockBonusTicks / lightStartupTicks / bellBonus / restOverdrive /
 weaponDamageMul / weaponId / weight / overloaded`。
-`main.ts` 在「升级 / 换装 / 强化 / 洗点 / 掉落 / 读档」之后调一次 `refreshRpg()`，把这一组乘数灌进
+`main.ts` 在「升级 / 换装 / 强化 / 洗点 / 掉落 / 读档」之后调一次 `refreshRpg()`（本体是
+`Settlement.refreshPlayer(rpg, player)`，Phase 5-C3 起与 flow 测试共用同一份），把这一组乘数灌进
 `PlayerController.applyRpg()`，玩家与战斗管线只消费它——**成长系统不写第二份状态到玩家身上**。
 
 ### 10.1 消费点清单（每条乘数都有唯一去处，没有"挂在那儿好看"的字段）
@@ -814,6 +824,19 @@ flow 侧的关键技巧是 `CombatManager` 的 `rng` 每实例固定种子 ⇒ �
 - **首杀唯一从"设计说法"变成数据事实**：`it_resonance_core` 从 `loot.rolls` 移到 `loot.firstKill`（奥斯塔拉/恩希尔/万籁三张表），`SpawnDirector.cleared` 让死亡永久 —— 否则将来一旦允许 Boss 重生，振源核就成了可刷货币，而 §9.3 的"首杀唯一"是空话。flow 里两条断言把这句话钉住（第二次打死同一份数据：核不再掉，常规 rolls 照旧）。
 - 覆盖：`tests/flow/bossshow.test.ts` 6 条（拍长精确等式、整窗零出手零位移且演完归零、只演一次、`boss.defeated.holdTicks`、`cut` 恰一条且 `rawScale<1`、屏息未完不落字）+ `tests/flow/rpg.test.ts` 首杀 1 条。实机（5199，逻辑步进 + 真渲染各跑过一遍）：进战当 tick `introTicksLeft=100`（她自己的 108BPM×3 拍，`rhythm.beatTicks=33.33`）、窗口内 0 招 0 步、**第 100 tick 出第一招 `swordchain1`**；击杀帧 `rawScale=0.05`、30 tick 后回 1、`{start:false,cut:true}` 恰一条、提示顺序是「获得 振源核」→ 屏息 →「奥斯塔拉止息 · 振源核落在钟影里」；控制台 0 error。
 - **一次真实的测试副作用（记在这里，不当作已清理）**：`boss.defeated` 现在会触发检查点存档，所以实机探针打死区域 Boss 后 autosave v4 被写了两次（控制台可见两条 `save.ok`）—— 那是本地 playtest 存档里的"奥斯塔拉已死"，不是产品缺陷。
+
+## 13. G5 出口验收：整链闭环、两条保底与掷骰位置（Phase 5-C3）— 已实现
+
+需求 §59 那条「Start → 战斗 → 掉落 → 拾取 → 装备 → 强化 → 升级 → 存档 → 重载」的闭环，此前**只在中间 API 上测过**：
+flow 测试直接调 `rpg.onEnemyKilled(...)`，于是组合根里那串胶水（谁进背包、谁灌回面板、什么时候该存档）一行都没被测到
+——漏掉 `refresh()` 或漏掉检查点，测试照样绿。这一阶段先修结构再谈验收，五件事：
+
+- **胶水下沉到逻辑层**（`src/rpg/Settlement.ts`）：`KillSettlement`（订阅 `entity.died` → 结算 → 播报 → `refresh()` → 升级才 `checkpoint('levelup')`）、`refreshPlayer`（mods 灌回面板 + 按装备栏真的换手里那把武器）、`openLootTable`（交互物返回值里的 `lootTable` 落到背包）。三者都不 import `PlayerController`/存档类——玩家以结构性接口 `ModsSink` 进来，落盘时机由外面注入。`main.ts` 只剩接线，`dispose()` 让测试能一次拆掉监听（不拆的话同一进程里两份世界会互相把对方的击杀结算进自己的背包）。
+- **整链在真机上也走了一遍**：8 只嘈壳（真输入帧驱动的轻击连段）⇒ rank 1→2、音色石 0→21、掉落播报 11 条、`checkpoints.writes=1 / lastReason=levelup`、`gearStreak 0→1`、`rollStreaks{loot_murkshell:gear:7}`、耗时 5.5s。**视口/录屏评审依旧做不了**（本环境打不开可见窗口，KI-010），所以 G5② 那条"录屏对照"只交付了 headless 等式 + 实机逻辑读数两层，缺的那一层写在 KNOWN_ISSUES 的 G5②③ 行里。
+- **架构闸门补漏**：`tests/unit/arch-boundaries.test.ts` 的 LOGIC 清单此前**不含 `rpg/` 与 `save/`**——这两个目录里任何一个文件 import 了 three，闸门也不会红。补进去并把 `rpg/Runtime.ts`/`rpg/Settlement.ts`/`save/Serializer.ts` 列入"必须被扫到"的点名清单（防清单再次漂移成空测试）。
+- **两条 pity 是一条都没实现过的那一条**：`LootRoll.pity` 在 8 张表里写着、schema 里注释着，运行时**没有任何地方读它**（需求 §55 的违例）；反过来 §9.4 全局大保底的 `10` 与 `'rare'` 两个数硬编码在 `Loot.ts` 里。现在前者由 `LootDirector.attempts()` 逐条消费（键 = `${表id}:${roll id}`，计数入档 ⇒ 读档继续攒而不是清零白送），后者搬进 `progression.json.pity = { every: 10, floorRarity: "rare" }`。两条语义**互相排除**并各有断言：容器保底只保证"掉"，不许抬稀有度；大保底只抬稀有度，不许改掉落频率。数据侧同时补了门禁（`pity` 必带 `chance`、同表 `roll.id` 不得重名，否则两条 roll 会共用一格计数）。
+- **掷骰位置入档（存档 v5）**：`Rng` 现在自己记 `{seed, calls}`，`Inventory` 快照带着它走。此前 §10 那句"掉落随机种子入档"只做了一半——种子的**起点**在构造参数里，抽到第几笔不在，所以同一份档每重载一次就把掷骰序列倒回开局（表现是"档没问题、掉落却对不上"）。真机实测（5199，只跑逻辑不渲染）：读到档那一刻 `calls=44`、`rollStreaks{loot_murkshell:gear:7}`，之后继续打的 3 只把它推到 59/10，再读一次同一档 ⇒ 五项状态逐字退回（`reverted: true`），一次崩溃的亏损被钉在"上一个检查点之后"那一截（30 点遗响 < 升一级要的 75）。
+- **力 / 律对照给出了一个不好听但真实的数**：同一只驼鼓、同一颗种子、同一份输入脚本 ⇒ 力 613 tick / 9 发 / 单发 28.7，律 1221 tick / 29 发 / 单发 8.3。差出两倍这件事登记为 KI-039 等数值裁决（脚本是站桩对砍，不吃枪的射程优势，所以它是上限而非体验值）；测试里的容忍带按实测放宽，不为了变绿而声称两边一样快。另有一条纯标尺断言走生产公式 `resolveDamage`：同一把轻剑上指法占优、同一把重剑上基音占优——"哪一维值钱"是 `weapons.json.scaling` 说了算。
 
 ## 附录 A：模块规模与里程碑对照
 Phase 1（核心战斗原型）＝ `core + player + combat + tools/CombatDebugger + 占位场景`；Phase 3 ＝ `world/Streaming + generators`；Phase 5 ＝ `rpg + save`；Phase 6 ＝ `quest + audio(对话)`。每模块交付即配 §6 测试，不做「先全写完再测」。

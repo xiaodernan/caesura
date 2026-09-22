@@ -356,6 +356,14 @@ function validateProgression() {
     report.num(file, `${w}.affixes`, r.affixes, { min: 0, int: true, name: 'affixes' })
     report.num(file, `${w}.maxLevel`, r.maxLevel, { min: 0, int: true, name: 'maxLevel' })
   })
+  // 全局装备大保底（§9.4）：Loot.ts 逐字消费这两个数，代码里不留第二份
+  if (!isObj(d.pity)) report.error(file, 'pity', '必须是 { every, floorRarity }（§9.4 全局大保底）')
+  else {
+    report.num(file, 'pity.every', d.pity.every, { min: 2, int: true, name: 'pity.every' })
+    if (!isStr(d.pity.floorRarity) || !rarityIds.has(d.pity.floorRarity)) {
+      report.error(file, 'pity.floorRarity', `未知稀有度：${d.pity.floorRarity}（progression.json.rarity）`)
+    }
+  }
   // 词缀：每条必须有 stat 或 behavior（没有消费方的词缀不许写进表）
   if (!isObj(d.affixes)) report.error(file, 'affixes', '必须是对象')
   else for (const group of ['prefix', 'suffix']) {
@@ -546,7 +554,11 @@ function validateLoot(itemIds, rarityIds) {
         report.num(file, `${bw}.weight`, b.weight, { min: 0, name: 'weight' })
       })
     }
-    if (r.pity !== undefined) report.num(file, `${w}.pity`, r.pity, { min: 2, int: true, name: 'pity' })
+    if (r.pity !== undefined) {
+      report.num(file, `${w}.pity`, r.pity, { min: 2, int: true, name: 'pity' })
+      // pity 的消费方是「这条 roll 连续没中」的计数：没有 chance 就永远掷得中，那一格计数是死数据
+      if (r.chance === undefined) report.error(file, w, '写了 pity 就必须写 chance：必中条目不存在「没中」')
+    }
   }
   list.forEach((t, i) => {
     if (!isObj(t)) { report.error(file, `[${i}]`, '必须是对象'); return }
@@ -560,6 +572,10 @@ function validateLoot(itemIds, rarityIds) {
       if (!isArr(t.firstKill) || t.firstKill.length === 0) report.error(file, `${w}.firstKill`, '写了就必须是非空数组')
       else t.firstKill.forEach((r, ri) => roll(`${w}.firstKill`, r, ri))
     }
+    // 逐条保底把计数存成 `${表id}:${roll id}`：同名就会让常规档和首杀档共用一格（互相吃掉对方的保底）
+    const rollIds = [...(t.rolls ?? []), ...(t.firstKill ?? [])].map((r) => (isObj(r) ? r.id : undefined)).filter(isStr)
+    const dup = rollIds.filter((id, k) => rollIds.indexOf(id) !== k)
+    if (dup.length) report.error(file, w, `roll id 在同一张表里重复：${[...new Set(dup)].join('、')}（保底计数会串台）`)
   })
   return ids
 }

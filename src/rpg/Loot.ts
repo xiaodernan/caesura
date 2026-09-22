@@ -5,12 +5,15 @@ import { itemOf, isGear } from './Inventory'
 import type { Progression } from './Progression'
 
 /**
- * 掉落（progression.md §9）。掷骰全部走 `Inventory` 那颗种子化 RNG ⇒ 同一颗种子
- * 开出同一串掉落（§10「掉落随机种子入档（可复现 QA）」）。
+ * 掉落（progression.md §9）。掷骰全部走 `Inventory` 那颗种子化 RNG，而**抽到第几笔跟着存档走**
+ * （§10「掉落随机种子入档 ⇒ 可复现 QA」）⇒ 同一颗种子、同一份档，续掉的每一发都能重放。
  *
- * 保底是认真的：连续 9 件没出稀有，第 10 件强制 ≥稀有（§9.4）。它记在**掉落层**
- * 而不是"每次击杀"层——玩家杀 10 只嘈壳和开 10 个箱子共用同一条保底计数，
- * 否则"多刷小怪"就能把保底刷出来，那不是保底，是漏洞。
+ * 这里住着**两条各自独立**的保底，别把它们合成一条：
+ * - §9.4 全局大保底：每第 `progression.pity.every` 件装备强制 ≥ `floorRarity`。它记在**掉落层**
+ *   而不是"每次击杀"层——玩家杀 10 只嘈壳和开 10 个箱子共用同一条计数，否则"多刷小怪"就能把
+ *   保底刷出来，那不是保底，是漏洞。
+ * - §9.2 容器保底：某一条 roll 连续 `LootRoll.pity` 次没掷中，下一次强制命中。它只管**这一条掉不掉**，
+ *   不许抬稀有度（抬稀有度是上面那条的工作），计数按 `${表id}:${roll id}` 逐条各攒各的。
  */
 
 export interface LootGrant {
@@ -23,14 +26,18 @@ export interface LootGrant {
   pity?: boolean
 }
 
-const PITY_EVERY = 10
-const PITY_FLOOR = 'rare'
+/** §9.4 全局大保底的两个数（每第 N 件 / 地板稀有度）——住在 progression.json，代码里不留第二份 */
+function pityRule(): { every: number; floorRarity: string } {
+  return registry.get<ProgressionData>('progression').pity
+}
 
 export class LootDirector {
   /** 已首杀过的敌人（读档恢复；§9.3 Boss 首杀唯一） */
   private firstKilled = new Set<string>()
-  /** 连续未出稀有的装备件数 */
+  /** 连续未出稀有的装备件数（§9.4 全局大保底，跨表累计） */
   private gearStreak = 0
+  /** 逐条 roll 的「连续没中」计数（§9.2 容器保底），键 = `tableId:rollId`；只有带 pity 的 roll 会占一格 */
+  private rollStreak = new Map<string, number>()
 
   constructor(
     private readonly inv: Inventory,
@@ -57,23 +64,24 @@ export class LootDirector {
   grant(tableId: string, firstKill = false): LootGrant[] {
     const table = registry.get<LootTableData>(tableId)
     const out: LootGrant[] = []
-    for (const r of table.rolls) out.push(...this.roll(r, false))
+    for (const r of table.rolls) out.push(...this.roll(tableId, r))
     if (firstKill && table.firstKill) {
-      for (const r of table.firstKill) out.push(...this.roll(r, true))
+      for (const r of table.firstKill) out.push(...this.roll(tableId, r))
     }
     return out
   }
 
-  private roll(r: LootRoll, isFirstKill: boolean): LootGrant[] {
-    if (r.chance !== undefined && !this.rng.chance(r.chance)) return []
+  /** 一次掷骰：先问「本条中没中」（attempts），再按命中的内容给东西 */
+  private roll(tableId: string, r: LootRoll): LootGrant[] {
+    if (!this.attempts(tableId, r)) return []
     if (r.xp) {
       const n = this.rng.int(r.xp[0], r.xp[1])
-      const gain = this.prog.addResonance(n)
-      void gain
+      this.prog.addResonance(n)
       return [{ type: 'xp', id: 'resonance', count: n, name: '遗响' }]
     }
     if (r.gearBand) {
-      const pity = (this.gearStreak + 1) % PITY_EVERY === 0
+      const rule = pityRule()
+      const pity = (this.gearStreak + 1) % rule.every === 0
       const rarity = this.pickRarity(r.gearBand, pity)
       const item = this.pickGearItem(rarity)
       this.gearStreak++
@@ -85,46 +93,68 @@ export class LootDirector {
       const n = r.count ? this.rng.int(r.count[0], r.count[1]) : 1
       const got = this.inv.add(r.item, n)
       if (got <= 0) return []
-      return [{ type: 'item', id: r.item, count: got, name: itemOf(r.item).displayName, ...(isFirstKill ? { pity: false } : {}) }]
+      return [{ type: 'item', id: r.item, count: got, name: itemOf(r.item).displayName }]
     }
     return []
   }
 
-  /** 保底：强制 ≥ PITY_FLOOR；band 里没有就跳出 band 去全局池抽（保底不能被 band 限制住） */
+  /**
+   * 本条 roll 是否命中。带了 `pity` 的 roll 才有逐条计数（没带的不占存档位——否则每张表的
+   * 每个材料条都要存一笔从未被读过的计数器，那就是把 §55 的反面再抄一遍）。
+   */
+  private attempts(tableId: string, r: LootRoll): boolean {
+    if (r.chance === undefined) return true
+    if (this.rng.chance(r.chance)) {
+      if (r.pity !== undefined) this.rollStreak.delete(rollKey(tableId, r))
+      return true
+    }
+    if (r.pity === undefined) return false
+    const key = rollKey(tableId, r)
+    const fails = (this.rollStreak.get(key) ?? 0) + 1
+    if (fails > r.pity) {
+      this.rollStreak.delete(key) // 保底兑现过一次，计数归零重新开始攒
+      return true
+    }
+    this.rollStreak.set(key, fails)
+    return false
+  }
+
+  /** 保底：强制 ≥ 地板稀有度；band 里没有就在 floor 档位上直接抽（保底不能被 band 限制住） */
   private pickRarity(band: { rarity: string; weight: number }[], pity: boolean): string {
     const prog = registry.get<ProgressionData>('progression')
     const order = prog.rarity.map((r) => r.id)
-    const floor = order.indexOf(PITY_FLOOR)
+    const floor = pityRule().floorRarity
+    const floorIdx = order.indexOf(floor)
     const asItems = (xs: { rarity: string; weight: number }[]) => xs.map((b) => ({ item: b.rarity, weight: b.weight }))
     if (pity) {
-      const eligible = band.filter((b) => order.indexOf(b.rarity) >= floor)
+      const eligible = band.filter((b) => order.indexOf(b.rarity) >= floorIdx)
       if (eligible.length) return this.rng.weighted(asItems(eligible))
-      return PITY_FLOOR
+      return floor
     }
     return this.rng.weighted(asItems(band))
   }
 
   private pickGearItem(rarity: string): ItemData | null {
-    const pool = this.inv
-      .list()
-      .map((x) => x.item)
-      .filter((it) => isGear(it) && it.gear?.rarity === rarity)
     // 掉落池不看背包里有什么：从注册表全量扫装备件，背包只是容器
     const all = allGearItems().filter((it) => it.gear?.rarity === rarity)
-    void pool
     if (!all.length) return null
     return this.rng.pick(all)
   }
 
-  snapshot(): { firstKilled: string[]; gearStreak: number } {
-    return { firstKilled: [...this.firstKilled], gearStreak: this.gearStreak }
+  snapshot(): { firstKilled: string[]; gearStreak: number; rollStreaks: Record<string, number> } {
+    return { firstKilled: [...this.firstKilled], gearStreak: this.gearStreak, rollStreaks: Object.fromEntries(this.rollStreak) }
   }
 
-  restore(s: { firstKilled?: string[]; gearStreak?: number }): void {
+  restore(s: { firstKilled?: string[]; gearStreak?: number; rollStreaks?: Record<string, number> }): void {
     this.firstKilled = new Set(s.firstKilled ?? [])
     this.gearStreak = s.gearStreak ?? 0
+    // v4 及更早的档没有这一格：不传 = 从零开始攒（§78 如实），而不是白送玩家一次保底
+    this.rollStreak = new Map(Object.entries(s.rollStreaks ?? {}))
   }
 }
+
+/** 逐条保底的计数键：一张表里每条 roll 各攒各的（同一 id 在同表两个槽里不能重名，由 §55 数据闸门钉住） */
+const rollKey = (tableId: string, r: LootRoll): string => `${tableId}:${r.id}`
 
 let gearCache: ItemData[] | null = null
 /** 全量装备件（按稀有度抽掉落时用）。注册表是唯一真源，不另建池子表。 */

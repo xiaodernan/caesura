@@ -98,6 +98,7 @@
   "execMulPerOvr": 0.01
  },
  "softcap": { "mul": 0.5, "hardMul": 0.25 },
+ "pity": { "every": 10, "floorRarity": "rare" },
  "respec": { "base": 60, "perPoint": 25, "discountTimes": 3, "discountMul": 0.8 },
  "upgrade": [
   { "level": 1, "timbite": 20, "dross": 1, "weaponMul": 0.06, "armorMul": 0.08 },
