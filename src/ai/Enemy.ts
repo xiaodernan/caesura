@@ -69,6 +69,10 @@ export class Enemy {
   shellLiftTicks = 0
   /** 撞满 `breaksAt` 口钟 ⇒ 壳永久碎（不随 shellLiftTicks 归零而长回来） */
   shellBroken = false
+  /** §15.3 瞬移咬合的冷却线 */
+  private blinkReadyTick = 0
+  /** §15.3「听心跳」：玩家已连续静止的 tick 数 */
+  private stillTicks = 0
   /** 刚跳阶：让 CombatManager 演一次「敲钟怒吼」（hitstop + 低音 + 震镜） */
   phaseRoarPending = false
   /**
@@ -218,13 +222,41 @@ export class Enemy {
     void now
   }
 
-  hear(src: { pos: Vec3; loudness: number }): void {
+  hear(src: { pos: Vec3; loudness: number }, tick: number): void {
     if (!this.alive || this.data.ai.deaf) return
     const d = Math.hypot(src.pos.x - this.pos.x, src.pos.z - this.pos.z)
     if (d <= this.data.ai.hearing.range) {
       this.alertness = Math.min(100, this.alertness + src.loudness * 120)
       this.lastKnown = { ...src.pos }
     }
+    this.huntSound(src, tick)
+  }
+
+  /**
+   * §15.3 声音狩猎：够响的一声 ⇒ 她**瞬移到发声点并咬一口**。冷却由表给（`huntsSound`），
+   * 否则一串脚步会让她连环跳；瞬移落点刻意留在发声点上，不往玩家怀里跳——玩家因此
+   * 有 300ms 的前摇可读（她唯一的破绽就是这口前摇），而不是被凭空贴脸。
+   */
+  private huntSound(src: { pos: Vec3; loudness: number }, tick: number): void {
+    const h = this.data.ai.huntsSound
+    if (!h || !this.alive) return
+    if (src.loudness < h.minLoudness) return
+    if (tick < this.blinkReadyTick) return
+    const d = Math.hypot(src.pos.x - this.pos.x, src.pos.z - this.pos.z)
+    if (d > h.maxRange) return
+    const spec = this.data.attacks.find((a) => a.id === h.attackId)
+    if (!spec) return
+    this.blinkReadyTick = tick + h.cooldownTicks
+    this.pos.x = src.pos.x
+    this.pos.z = src.pos.z
+    this.lastKnown = { ...src.pos }
+    this.alertness = 100
+    // 她不在拍上 ⇒ 不等量化，落点即起手
+    this.attack = { spec, tick: 0, hitDone: false, shots: 0, lungeApplied: 0 }
+    this.enter('combat')
+    bus.emit('vfx.request', { key: 'spike_chord', pos: { ...src.pos }, scale: 1.5 })
+    bus.emit('audio.sfx', { key: 'boss_roar', pos: { ...src.pos }, gain: 0.5 })
+    bus.emit('ui.notify', { text: '万籁听见了你', kind: 'boss' })
   }
 
   /**
@@ -377,6 +409,13 @@ export class Enemy {
           // corpse fade handled by visuals; logic entity retired by AISystem
         }
         break
+    }
+    // §15.3「它也会听心跳」：玩家站住不动 ⇒ 她的警觉慢慢回落（屏息是可行解，不是 bug 绕过）
+    const hb = this.data.ai.hearsHeartbeat
+    if (hb) {
+      if (playerIsMoving(player)) this.stillTicks = 0
+      else this.stillTicks++
+      if (this.stillTicks >= hb.stillTicks) this.alertness = Math.max(0, this.alertness - hb.decayPerSec * dt)
     }
     if (this.alertness > 0 && this.state !== 'combat') this.alertness = Math.max(0, this.alertness - (this.state === 'alert' || this.state === 'investigate' ? 8 : 20) * dt)
     for (const [k, v] of this.cooldowns) if (v > tick) { void v } else this.cooldowns.delete(k)

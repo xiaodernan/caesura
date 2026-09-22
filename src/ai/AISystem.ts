@@ -14,11 +14,13 @@ export class AISystem {
   private senseCursor = 0
   private slotArmed = new Set<string>()
   private lastBarBeat = ''
+  /** 传给 hear() 的当前逻辑 tick（声源事件不带 tick，用监听方自己的） */
+  private tick = 0
 
   constructor() {
     bindEnemyRegistry(this.enemies)
     bus.on('sound.source', (e) => {
-      if (e.id === 'player') for (const en of this.enemies) en.hear(e)
+      if (e.id === 'player') for (const en of this.enemies) en.hear(e, this.tick)
       // §14.5「伪拍点声源」：够响的一声 = 一个假拍点，把幽灵八从拍隙里拽出来显形。
       // 走既有声源流而不是新事件：玩家重击/驼鼓踏地/未来的音色晶投掷天然是同一路信号。
       for (const en of this.enemies) en.fakeBeat(e)
@@ -73,6 +75,7 @@ export class AISystem {
   }
 
   update(dt: number, tick: number, player: PlayerController, rhythm: RhythmClock): void {
+    this.tick = tick
     this.syncClock(rhythm)
     // 10Hz rotated perception
     this.senseCursor++

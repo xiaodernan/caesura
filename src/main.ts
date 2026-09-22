@@ -125,6 +125,9 @@ const core = {
     if (act) applyInteract(act)
     const here = streaming.regionAt(player.pos)
     if (here && here.id !== shownRegion) {
+      // §2.1 的区域网格表：进区域就换拍（深窖=只有 60BPM 心跳）。Boss 的私有时钟叠在它之上，
+      // 所以这里写的是 home，AISystem.syncClock 决定当前用的是谁的拍。
+      rhythm.setBpm(here.grid.bpm, here.grid.beatsPerBar)
       shownRegion = here.id
       bus.emit('ui.notify', { text: here.displayName, kind: 'info' })
       bus.emit('log', { level: 'info', msg: `enter ${here.id} · chunks ${JSON.stringify(streaming.stats())}` })

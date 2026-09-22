@@ -1949,5 +1949,137 @@
    "emissive": 2053664,
    "coreColor": 16768196
   }
+ },
+ {
+  "id": "en_myriad",
+  "nameKey": "enemy.myriad",
+  "archetype": "boss",
+  "hp": 380,
+  "poise": 140,
+  "speed": 3.2,
+  "defense": 30,
+  "ai": {
+   "vision": {
+    "range": 0,
+    "fovDeg": 0
+   },
+   "vibration": {
+    "range": 0
+   },
+   "hearing": {
+    "range": 40
+   },
+   "huntsSound": {
+    "attackId": "bite",
+    "minLoudness": 0.05,
+    "cooldownTicks": 150,
+    "maxRange": 45
+   },
+   "hearsHeartbeat": {
+    "stillTicks": 180,
+    "decayPerSec": 40
+   },
+   "distBands": [
+    {
+     "min": 0,
+     "max": 3.2,
+     "actions": [
+      "bite",
+      "rend"
+     ]
+    },
+    {
+     "min": 3.2,
+     "max": 99,
+     "actions": [
+      "chase"
+     ]
+    }
+   ]
+  },
+  "attacks": [
+   {
+    "id": "bite",
+    "beat": [
+     1
+    ],
+    "parryable": false,
+    "reaction": "R3",
+    "onGrid": false,
+    "frames": {
+     "startup": 18,
+     "activeStart": 18,
+     "activeEnd": 30,
+     "recovery": 54,
+     "damage": 36,
+     "stamina": 0,
+     "poise": 26,
+     "hitStopMs": 130,
+     "hitbox": {
+      "shape": "cone",
+      "angleDeg": 70,
+      "radius": 3.0,
+      "height": 2.3,
+      "offsetY": 1.2
+     },
+     "lunge": 1.0,
+     "loudness": 7,
+     "sfx": [
+      "claw_heavy"
+     ],
+     "vfx": [
+      "trail_thrust",
+      "shock_small"
+     ]
+    }
+   },
+   {
+    "id": "rend",
+    "beat": [
+     2
+    ],
+    "parryable": false,
+    "reaction": "R2",
+    "onGrid": false,
+    "frames": {
+     "startup": 24,
+     "activeStart": 24,
+     "activeEnd": 33,
+     "recovery": 54,
+     "damage": 28,
+     "stamina": 0,
+     "poise": 22,
+     "hitStopMs": 110,
+     "hitbox": {
+      "shape": "ring",
+      "inner": 0.4,
+      "outer": 2.6,
+      "forward": 0
+     },
+     "loudness": 6,
+     "sfx": [
+      "gnash"
+     ],
+     "vfx": [
+      "trail_sword"
+     ]
+    }
+   }
+  ],
+  "weakpoint": {
+   "dmgMul": 1.5
+  },
+  "drops": [
+   {
+    "tableId": "loot_heavy",
+    "chance": 1
+   }
+  ],
+  "body": {
+   "scale": 2.8,
+   "color": 2303768,
+   "emissive": 1718514,
+   "coreColor": 14594812
+  }
  }
 ]

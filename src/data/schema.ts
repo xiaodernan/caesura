@@ -168,6 +168,18 @@ export interface EnemyData {
     deaf?: boolean
     eyes?: boolean
     /**
+     * §15.3 声音狩猎（隐藏 Boss 万籁）：玩家任何发声行为（挥砍/翻滚/格挡受击/脚步——
+     * 全是既有的 `sound.source`）只要够响，她就瞬移到那个点并咬一口。这一格把
+     * 「噪声=危险」从潜行数值升级成一条会被立刻惩罚的**位置**规则；`attackId` 就是那一口
+     * （应当 `onGrid:false`：她根本不在拍上）。
+     */
+    huntsSound?: { attackId: string; minLoudness: number; cooldownTicks: number; maxRange: number }
+    /**
+     * §15.3「它也会听心跳」：玩家连续静止 `stillTicks` 之后她的警觉按秒回落
+     * （屏息站住 = 甩掉她的可行解）；玩家一动就清零。
+     */
+    hearsHeartbeat?: { stillTicks: number; decayPerSec: number }
+    /**
      * §14.7 悬钟骑士的钟甲：**正面** `arcDeg` 锥内的玩家伤害乘 `dmgMul`（0.6 = 减伤 40%）。
      * 消费口只有 `CombatManager.strikeEnemy` 这一条（近战与弹体共用），所以「从哪打进来」
      * 必须在那里判——背刺/侧击/背后来的弹体一律全额。被震裂满层打碎后 `Enemy.armorBroken`
@@ -369,6 +381,13 @@ export interface RegionData {
   bounds: RegionBounds
   /** walkable surface height of this layer; used by world/Surface.ts floor queries */
   groundY: number
+  /**
+   * §2.1 的区域网格表（雾语林 84 / 营地 84（军鼓）/ 钟坠院 92 / 沉唱堂 96 /
+   * 无耳深窖=无网格领域（只有 60BPM 心跳）/ 未竟厅=恩希尔私有时钟接管前的余拍）。
+   * **必填，没有默认值**：只有每个区域自己声明，才不会出现「全作一张 84 的拍表」这种
+   * 悄悄写死在 main.ts 里的东西；Boss 的 `boss.bpm` 是叠在它之上的临时接管，要还得回去。
+   */
+  grid: { bpm: number; beatsPerBar: number; label?: string }
   chunkSize: number
   navmeshRef?: string
   weatherPresets: string[]

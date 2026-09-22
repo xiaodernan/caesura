@@ -858,7 +858,8 @@ const NAME_MAP: Record<string, string> = {
   'enemy.skewer': '针喉', 'enemy.phantome': '幽灵八', 'enemy.refrein': '叠唱',
   'enemy.hangedKnight': '悬钟骑士',
   'enemy.ostlara': '悬钟骑士·奥斯塔拉',
-  'enemy.hersil': '无拍长·恩希尔·万籁'
+  'enemy.hersil': '无拍长·恩希尔·万籁',
+  'enemy.myriad': '万籁 The Myriad'
 }
 
 export function nameOf(key: string): string {

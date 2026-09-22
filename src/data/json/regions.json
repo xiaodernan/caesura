@@ -7,6 +7,7 @@
     "biome": "hub",
     "bounds": { "minX": -96, "maxX": 96, "minY": -8, "maxY": 40, "minZ": -96, "maxZ": 96 },
     "groundY": 0,
+    "grid": { "bpm": 84, "beatsPerBar": 4, "label": "静默" },
     "chunkSize": 48,
     "weatherPresets": ["clear", "emberfall"],
     "lightingPreset": "lp_resthold",
@@ -38,6 +39,7 @@
     "biome": "forest",
     "bounds": { "minX": 96, "maxX": 432, "minY": -8, "maxY": 48, "minZ": -192, "maxZ": 240 },
     "groundY": 0,
+    "grid": { "bpm": 84, "beatsPerBar": 4 },
     "chunkSize": 48,
     "weatherPresets": ["clear", "fog"],
     "lightingPreset": "lp_whisperwode",
@@ -74,6 +76,7 @@
     "biome": "dungeon",
     "bounds": { "minX": 192, "maxX": 432, "minY": -96, "maxY": -8, "minZ": -48, "maxZ": 144 },
     "groundY": -40,
+    "grid": { "bpm": 96, "beatsPerBar": 4 },
     "chunkSize": 48,
     "weatherPresets": ["still", "drip"],
     "lightingPreset": "lp_drowned_choir",
@@ -108,6 +111,7 @@
     "biome": "camp",
     "bounds": { "minX": -192, "maxX": 96, "minY": -8, "maxY": 48, "minZ": -384, "maxZ": -96 },
     "groundY": 0,
+    "grid": { "bpm": 84, "beatsPerBar": 4, "label": "军鼓" },
     "chunkSize": 48,
     "weatherPresets": ["clear", "fog"],
     "lightingPreset": "lp_brokenbar_camp",
@@ -146,6 +150,7 @@
     "biome": "ruins",
     "bounds": { "minX": 96, "maxX": 384, "minY": 40, "maxY": 144, "minZ": -432, "maxZ": -96 },
     "groundY": 64,
+    "grid": { "bpm": 92, "beatsPerBar": 4 },
     "chunkSize": 48,
     "weatherPresets": ["clear", "stone-wind"],
     "lightingPreset": "lp_fellcarillon",
@@ -181,6 +186,7 @@
     "biome": "underground",
     "bounds": { "minX": -288, "maxX": 96, "minY": -200, "maxY": -96, "minZ": 96, "maxZ": 384 },
     "groundY": -144,
+    "grid": { "bpm": 60, "beatsPerBar": 1, "label": "无网格领域：只有 60BPM 心跳" },
     "chunkSize": 48,
     "weatherPresets": ["hush", "still"],
     "lightingPreset": "lp_earless_deeps",
@@ -188,7 +194,8 @@
     "spawnGroups": [
       { "enemyId": "en_driftsinger", "count": 3, "center": { "x": -200, "y": -144, "z": 180 }, "radius": 16 },
       { "enemyId": "en_tympanus", "count": 2, "center": { "x": -60, "y": -144, "z": 300 }, "radius": 12 },
-      { "enemyId": "en_hanged_knight", "count": 1, "center": { "x": -96, "y": -144, "z": 176 }, "radius": 5 }
+      { "enemyId": "en_hanged_knight", "count": 1, "center": { "x": -96, "y": -144, "z": 176 }, "radius": 5 },
+      { "enemyId": "en_myriad", "count": 1, "center": { "x": -250, "y": -144, "z": 330 }, "radius": 4 }
     ],
     "landmarks": [
       { "id": "lm_earlessdeeps_mineface", "nameKey": "landmark.mine_face", "pos": { "x": -240, "y": -150, "z": 140 }, "sightRange": 80 }
@@ -213,6 +220,7 @@
     "biome": "boss_arena",
     "bounds": { "minX": -96, "maxX": 96, "minY": 144, "maxY": 288, "minZ": -384, "maxZ": -96 },
     "groundY": 152,
+    "grid": { "bpm": 92, "beatsPerBar": 4, "label": "恩希尔接管前的余拍" },
     "chunkSize": 48,
     "weatherPresets": ["still", "dissonant-storm"],
     "lightingPreset": "lp_unfinished_hall",
