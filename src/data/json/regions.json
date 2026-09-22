@@ -1,244 +1,1020 @@
 [
-  {
-    "id": "rg_resthold",
-    "nameKey": "region.resthold",
-    "displayName": "休垒 Resthold",
-    "order": 0,
-    "biome": "hub",
-    "bounds": { "minX": -96, "maxX": 96, "minY": -8, "maxY": 40, "minZ": -96, "maxZ": 96 },
-    "groundY": 0,
-    "grid": { "bpm": 84, "beatsPerBar": 4, "label": "静默" },
-    "chunkSize": 48,
-    "weatherPresets": ["clear", "emberfall"],
-    "lightingPreset": "lp_resthold",
-    "palette": { "base": "#e8e2d4", "accent": "#d9a441", "glow": "#e2622b" },
-    "spawnGroups": [],
-    "landmarks": [
-      { "id": "lm_resthold_bonedome", "nameKey": "landmark.bonedome", "pos": { "x": 0, "y": 20, "z": 0 }, "sightRange": 220 },
-      { "id": "lm_resthold_stakerite", "nameKey": "landmark.stakerite", "pos": { "x": -12, "y": 0, "z": 18 }, "sightRange": 60 }
-    ],
-    "interactables": [
-      { "id": "st_resthold", "kind": "checkpoint", "pos": { "x": -12, "y": 0, "z": 18 }, "setsFlag": "flag.checkpoint_resthold" },
-      { "id": "gt_resthold_gate", "kind": "gate", "pos": { "x": 80, "y": 0, "z": 0 }, "setsFlag": "flag.left_resthold" },
-      { "id": "el_resthold_well", "kind": "elevator", "pos": { "x": 40, "y": 0, "z": -40 }, "oneWay": true, "requiresFlag": "flag.deeps_entrance_open", "setsFlag": "flag.shortcut_resonance_well", "to": { "x": -100, "y": -144, "z": 120 } },
-      { "id": "npc_belltongue", "kind": "npc", "pos": { "x": 8, "y": 0, "z": 26 }, "npcId": "npc_belltongue" },
-      { "id": "npc_lian", "kind": "npc", "pos": { "x": -26, "y": 0, "z": 6 }, "npcId": "npc_lian" },
-      { "id": "npc_corvin", "kind": "npc", "pos": { "x": 22, "y": 0, "z": -6 }, "npcId": "npc_corvin" },
-      { "id": "npc_meg", "kind": "npc", "pos": { "x": -30, "y": 0, "z": -28 }, "npcId": "npc_meg" }
-    ],
-    "music": { "explore": "mus_resthold_explore", "battle": "mus_shared_battle", "ambience": "mus_resthold_amb" },
-    "streamingPriority": 30,
-    "secrets": [],
-    "storyHooks": ["narr.act1_hub", "narr.act1_departure"]
+ {
+  "id": "rg_resthold",
+  "nameKey": "region.resthold",
+  "displayName": "休垒 Resthold",
+  "order": 0,
+  "biome": "hub",
+  "bounds": {
+   "minX": -96,
+   "maxX": 96,
+   "minY": -8,
+   "maxY": 40,
+   "minZ": -96,
+   "maxZ": 96
   },
-  {
-    "id": "rg_whisperwode",
-    "nameKey": "region.whisperwode",
-    "displayName": "雾语林 Whisperwode",
-    "order": 1,
-    "biome": "forest",
-    "bounds": { "minX": 96, "maxX": 432, "minY": -8, "maxY": 48, "minZ": -192, "maxZ": 240 },
-    "groundY": 0,
-    "grid": { "bpm": 84, "beatsPerBar": 4 },
-    "chunkSize": 48,
-    "weatherPresets": ["clear", "fog"],
-    "lightingPreset": "lp_whisperwode",
-    "palette": { "base": "#6f7d6a", "accent": "#8fa7bd", "glow": "#d9c37a" },
-    "spawnGroups": [
-      { "enemyId": "en_murkshell", "count": 3, "center": { "x": 160, "y": 0, "z": -100 }, "radius": 14 },
-      { "enemyId": "en_murkshell", "count": 2, "center": { "x": 300, "y": 0, "z": 60 }, "radius": 12 },
-      { "enemyId": "en_driftsinger", "count": 2, "center": { "x": 380, "y": 0, "z": -140 }, "radius": 10 }
-    ],
-    "landmarks": [
-      { "id": "lm_whisperwode_cairn", "nameKey": "landmark.echo_cairn", "pos": { "x": 240, "y": 6, "z": -20 }, "sightRange": 120 },
-      { "id": "lm_whisperwode_soundwall", "nameKey": "landmark.soundwall", "pos": { "x": 330, "y": 0, "z": 120 }, "sightRange": 45 }
-    ],
-    "interactables": [
-      { "id": "st_whisperwode", "kind": "checkpoint", "pos": { "x": 130, "y": 0, "z": 0 }, "setsFlag": "flag.checkpoint_whisperwode" },
-      { "id": "sw_whisperwode_soundwall", "kind": "soundwall", "pos": { "x": 330, "y": 0, "z": 120 }, "oneWay": true, "requiresFlag": "flag.parry_taught", "setsFlag": "flag.choir_entrance_open" },
-      { "id": "gh_whisperwode_timbite_1", "kind": "gather", "pos": { "x": 200, "y": 0, "z": 90 } },
-      { "id": "gh_whisperwode_timbite_2", "kind": "gather", "pos": { "x": 355, "y": 0, "z": 30 } },
-      { "id": "ch_whisperwode_therapist", "kind": "chest", "pos": { "x": 262, "y": 0, "z": -160 } }
-    ],
-    "music": { "explore": "mus_whisperwode_explore", "battle": "mus_shared_battle", "ambience": "mus_whisperwode_amb" },
-    "streamingPriority": 20,
-    "unlockFlag": "flag.left_resthold",
-    "secrets": [
-      { "id": "sec_whisperwode_echo_cairn", "unlockFlag": "flag.echo_cairn_read", "rewardTable": "loot_basic", "pos": { "x": 240, "y": 6, "z": -20 } }
-    ],
-    "storyHooks": ["narr.act1_first_enemy", "narr.act1_environmental_recording"]
+  "groundY": 0,
+  "grid": {
+   "bpm": 84,
+   "beatsPerBar": 4,
+   "label": "静默"
   },
-  {
-    "id": "rg_drowned_choir",
-    "nameKey": "region.drownedchoir",
-    "displayName": "沉唱堂 Drowned Choir",
-    "order": 2,
-    "biome": "dungeon",
-    "bounds": { "minX": 192, "maxX": 432, "minY": -96, "maxY": -8, "minZ": -48, "maxZ": 144 },
-    "groundY": -40,
-    "grid": { "bpm": 96, "beatsPerBar": 4 },
-    "chunkSize": 48,
-    "weatherPresets": ["still", "drip"],
-    "lightingPreset": "lp_drowned_choir",
-    "palette": { "base": "#2b3f45", "accent": "#7f8f8a", "glow": "#a58a4f" },
-    "spawnGroups": [
-      { "enemyId": "en_murkshell", "count": 3, "center": { "x": 250, "y": -40, "z": 20 }, "radius": 12 },
-      { "enemyId": "en_driftsinger", "count": 2, "center": { "x": 370, "y": -40, "z": 100 }, "radius": 10 },
-      { "enemyId": "en_phantome", "count": 2, "center": { "x": 330, "y": -40, "z": 60 }, "radius": 10 },
-      { "enemyId": "en_ostlara", "count": 1, "center": { "x": 300, "y": -40, "z": 104 }, "radius": 4 }
-    ],
-    "landmarks": [
-      { "id": "lm_drownedchoir_brokenaltar", "nameKey": "landmark.broken_altar", "pos": { "x": 320, "y": -36, "z": 60 }, "sightRange": 70 }
-    ],
-    "interactables": [
-      { "id": "st_drowned_choir", "kind": "checkpoint", "pos": { "x": 210, "y": -40, "z": 40 }, "setsFlag": "flag.checkpoint_drowned_choir" },
-      { "id": "gt_drownedchoir_deepstair", "kind": "gate", "pos": { "x": 230, "y": -40, "z": 120 }, "setsFlag": "flag.deeps_entrance_open", "to": { "x": -100, "y": -144, "z": 120 } },
-      { "id": "ch_drowned_choir_movement", "kind": "chest", "pos": { "x": 400, "y": -40, "z": 60 }, "requiresFlag": "flag.ostlara_defeated" }
-    ],
-    "music": { "explore": "mus_drowned_choir_explore", "battle": "mus_minibattle_ostlara", "ambience": "mus_drowned_choir_amb" },
-    "streamingPriority": 15,
-    "unlockFlag": "flag.choir_entrance_open",
-    "secrets": [
-      { "id": "sec_drownedchoir_side_nave", "unlockFlag": "flag.side_nave_found", "rewardTable": "loot_basic", "pos": { "x": 230, "y": -60, "z": 120 } }
-    ],
-    "storyHooks": ["narr.act2_project_consummation_failure"]
+  "chunkSize": 48,
+  "weatherPresets": [
+   "clear",
+   "emberfall"
+  ],
+  "lightingPreset": "lp_resthold",
+  "palette": {
+   "base": "#e8e2d4",
+   "accent": "#d9a441",
+   "glow": "#e2622b"
   },
-  {
-    "id": "rg_brokenbar_camp",
-    "nameKey": "region.brokenbar",
-    "displayName": "破拍营地 Brokenbar Camp",
-    "order": 3,
-    "biome": "camp",
-    "bounds": { "minX": -192, "maxX": 96, "minY": -8, "maxY": 48, "minZ": -384, "maxZ": -96 },
-    "groundY": 0,
-    "grid": { "bpm": 84, "beatsPerBar": 4, "label": "军鼓" },
-    "chunkSize": 48,
-    "weatherPresets": ["clear", "fog"],
-    "lightingPreset": "lp_brokenbar_camp",
-    "palette": { "base": "#4a4e55", "accent": "#a3262b", "glow": "#d9541f" },
-    "spawnGroups": [
-      { "enemyId": "en_murkshell", "count": 4, "center": { "x": -80, "y": 0, "z": -200 }, "radius": 20, "campId": "camp_brokenbar", "condition": "!flag.brokenbar_resolved" },
-      { "enemyId": "en_tympanus", "count": 1, "center": { "x": -50, "y": 0, "z": -250 }, "radius": 10, "campId": "camp_brokenbar" },
-      { "enemyId": "en_driftsinger", "count": 2, "center": { "x": -140, "y": 0, "z": -160 }, "radius": 12, "campId": "camp_brokenbar" },
-      { "enemyId": "en_skewer", "count": 2, "center": { "x": -36, "y": 0, "z": -142 }, "radius": 10, "campId": "camp_brokenbar" },
-      { "enemyId": "en_refrein", "count": 1, "center": { "x": -80, "y": 0, "z": -212 }, "radius": 2, "campId": "camp_brokenbar" },
-      { "enemyId": "en_phantome", "count": 1, "center": { "x": -160, "y": 0, "z": -230 }, "radius": 10, "campId": "camp_brokenbar" }
-    ],
-    "landmarks": [
-      { "id": "lm_brokenbar_stonebridge", "nameKey": "landmark.stonebridge", "pos": { "x": -48, "y": 4, "z": -120 }, "sightRange": 160 },
-      { "id": "lm_brokenbar_bloodlantern", "nameKey": "landmark.beat_lantern", "pos": { "x": -90, "y": 6, "z": -230 }, "sightRange": 90 }
-    ],
-    "interactables": [
-      { "id": "st_brokenbar", "kind": "checkpoint", "pos": { "x": -170, "y": 0, "z": -350 }, "setsFlag": "flag.checkpoint_brokenbar" },
-      { "id": "br_brokenbar_gate", "kind": "bridge", "pos": { "x": -48, "y": 0, "z": -110 }, "oneWay": true, "setsFlag": "flag.brokenbar_bridge_down", "to": { "x": 130, "y": 64, "z": -120 } },
-      { "id": "npc_haltrune", "kind": "npc", "pos": { "x": -110, "y": 0, "z": -300 }, "npcId": "npc_haltrune" },
-      { "id": "ch_brokenbar_chief", "kind": "chest", "pos": { "x": -60, "y": 0, "z": -270 }, "requiresFlag": "flag.brokenbar_resolved" }
-    ],
-    "music": { "explore": "mus_brokenbar_explore", "battle": "mus_camp_assault", "ambience": "mus_brokenbar_amb" },
-    "streamingPriority": 25,
-    "unlockFlag": "flag.left_resthold",
-    "secrets": [
-      { "id": "sec_brokenbar_ally_path", "unlockFlag": "flag.brokenbar_allied", "rewardTable": "loot_heavy", "pos": { "x": -110, "y": 0, "z": -300 } }
-    ],
-    "storyHooks": ["narr.act3_camp_three_solutions"]
+  "spawnGroups": [],
+  "landmarks": [
+   {
+    "id": "lm_resthold_bonedome",
+    "nameKey": "landmark.bonedome",
+    "pos": {
+     "x": 0,
+     "y": 20,
+     "z": 0
+    },
+    "sightRange": 220
+   },
+   {
+    "id": "lm_resthold_stakerite",
+    "nameKey": "landmark.stakerite",
+    "pos": {
+     "x": -12,
+     "y": 0,
+     "z": 18
+    },
+    "sightRange": 60
+   }
+  ],
+  "interactables": [
+   {
+    "id": "st_resthold",
+    "kind": "checkpoint",
+    "pos": {
+     "x": -12,
+     "y": 0,
+     "z": 18
+    },
+    "setsFlag": "flag.checkpoint_resthold"
+   },
+   {
+    "id": "gt_resthold_gate",
+    "kind": "gate",
+    "pos": {
+     "x": 80,
+     "y": 0,
+     "z": 0
+    },
+    "setsFlag": "flag.left_resthold"
+   },
+   {
+    "id": "el_resthold_well",
+    "kind": "elevator",
+    "pos": {
+     "x": 40,
+     "y": 0,
+     "z": -40
+    },
+    "oneWay": true,
+    "requiresFlag": "flag.deeps_entrance_open",
+    "setsFlag": "flag.shortcut_resonance_well",
+    "to": {
+     "x": -100,
+     "y": -144,
+     "z": 120
+    }
+   },
+   {
+    "id": "npc_belltongue",
+    "kind": "npc",
+    "pos": {
+     "x": 8,
+     "y": 0,
+     "z": 26
+    },
+    "npcId": "npc_belltongue"
+   },
+   {
+    "id": "npc_lian",
+    "kind": "npc",
+    "pos": {
+     "x": -26,
+     "y": 0,
+     "z": 6
+    },
+    "npcId": "npc_lian"
+   },
+   {
+    "id": "npc_corvin",
+    "kind": "npc",
+    "pos": {
+     "x": 22,
+     "y": 0,
+     "z": -6
+    },
+    "npcId": "npc_corvin"
+   },
+   {
+    "id": "npc_meg",
+    "kind": "npc",
+    "pos": {
+     "x": -30,
+     "y": 0,
+     "z": -28
+    },
+    "npcId": "npc_meg"
+   }
+  ],
+  "music": {
+   "explore": "mus_resthold_explore",
+   "battle": "mus_shared_battle",
+   "ambience": "mus_resthold_amb"
   },
-  {
-    "id": "rg_fellcarillon",
-    "nameKey": "region.fellcarillon",
-    "displayName": "钟坠院 Fellcarillon",
-    "order": 4,
-    "biome": "ruins",
-    "bounds": { "minX": 96, "maxX": 384, "minY": 40, "maxY": 144, "minZ": -432, "maxZ": -96 },
-    "groundY": 64,
-    "grid": { "bpm": 92, "beatsPerBar": 4 },
-    "chunkSize": 48,
-    "weatherPresets": ["clear", "stone-wind"],
-    "lightingPreset": "lp_fellcarillon",
-    "palette": { "base": "#4f7a6a", "accent": "#b4653a", "glow": "#6d4a7a" },
-    "spawnGroups": [
-      { "enemyId": "en_murkshell", "count": 2, "center": { "x": 150, "y": 64, "z": -140 }, "radius": 12 },
-      { "enemyId": "en_tympanus", "count": 1, "center": { "x": 280, "y": 64, "z": -300 }, "radius": 8 },
-      { "enemyId": "en_hanged_knight", "count": 1, "center": { "x": 206, "y": 64, "z": -244 }, "radius": 6 }
-    ],
-    "landmarks": [
-      { "id": "lm_fellcarillon_firstbell", "nameKey": "landmark.fallen_bell", "pos": { "x": 200, "y": 64, "z": -220 }, "sightRange": 200 },
-      { "id": "lm_fellcarillon_cliffstair", "nameKey": "landmark.cliff_stair", "pos": { "x": 120, "y": 60, "z": -380 }, "sightRange": 140 }
-    ],
-    "interactables": [
-      { "id": "st_fellcarillon", "kind": "checkpoint", "pos": { "x": 130, "y": 64, "z": -120 }, "setsFlag": "flag.checkpoint_fellcarillon" },
-      { "id": "bl_fellcarillon_fallenbell", "kind": "bell", "pos": { "x": 200, "y": 64, "z": -220 }, "oneWay": true, "setsFlag": "flag.bell_toll_rung" },
-      { "id": "el_fellcarillon_organlift", "kind": "elevator", "verb": "乘管风琴吊机", "pos": { "x": 110, "y": 64, "z": -350 }, "oneWay": true, "requiresFlag": "flag.bell_toll_rung", "setsFlag": "flag.organ_gate_open", "to": { "x": 0, "y": 152, "z": -120 } },
-      { "id": "ch_fellcarillon_bellcavity", "kind": "chest", "pos": { "x": 205, "y": 64, "z": -215 } }
-    ],
-    "music": { "explore": "mus_fellcarillon_explore", "battle": "mus_shared_battle", "ambience": "mus_fellcarillon_amb" },
-    "streamingPriority": 20,
-    "unlockFlag": "flag.brokenbar_bridge_down",
-    "secrets": [
-      { "id": "sec_fellcarillon_bell_interior", "unlockFlag": "flag.bell_interior_open", "rewardTable": "loot_heavy", "pos": { "x": 205, "y": 64, "z": -215 } }
-    ],
-    "storyHooks": ["narr.act4_vertical_puzzle"]
+  "streamingPriority": 30,
+  "secrets": [],
+  "storyHooks": [
+   "narr.act1_hub",
+   "narr.act1_departure"
+  ]
+ },
+ {
+  "id": "rg_whisperwode",
+  "nameKey": "region.whisperwode",
+  "displayName": "雾语林 Whisperwode",
+  "order": 1,
+  "biome": "forest",
+  "bounds": {
+   "minX": 96,
+   "maxX": 432,
+   "minY": -8,
+   "maxY": 48,
+   "minZ": -192,
+   "maxZ": 240
   },
-  {
-    "id": "rg_earless_deeps",
-    "nameKey": "region.earlessdeeps",
-    "displayName": "无耳深窖 Earless Deeps",
-    "order": 5,
-    "biome": "underground",
-    "bounds": { "minX": -288, "maxX": 96, "minY": -200, "maxY": -96, "minZ": 96, "maxZ": 384 },
-    "groundY": -144,
-    "grid": { "bpm": 60, "beatsPerBar": 1, "label": "无网格领域：只有 60BPM 心跳" },
-    "chunkSize": 48,
-    "weatherPresets": ["hush", "still"],
-    "lightingPreset": "lp_earless_deeps",
-    "palette": { "base": "#121316", "accent": "#cfd8d2", "glow": "#8f9d97" },
-    "spawnGroups": [
-      { "enemyId": "en_driftsinger", "count": 3, "center": { "x": -200, "y": -144, "z": 180 }, "radius": 16 },
-      { "enemyId": "en_tympanus", "count": 2, "center": { "x": -60, "y": -144, "z": 300 }, "radius": 12 },
-      { "enemyId": "en_hanged_knight", "count": 1, "center": { "x": -96, "y": -144, "z": 176 }, "radius": 5 },
-      { "enemyId": "en_myriad", "count": 1, "center": { "x": -250, "y": -144, "z": 330 }, "radius": 4 }
-    ],
-    "landmarks": [
-      { "id": "lm_earlessdeeps_mineface", "nameKey": "landmark.mine_face", "pos": { "x": -240, "y": -150, "z": 140 }, "sightRange": 80 }
-    ],
-    "interactables": [
-      { "id": "st_earless_deeps", "kind": "checkpoint", "pos": { "x": -100, "y": -144, "z": 120 }, "setsFlag": "flag.checkpoint_earless_deeps" },
-      { "id": "gh_deeps_timbite_vein", "kind": "gather", "pos": { "x": -230, "y": -144, "z": 200 } }
-    ],
-    "music": { "explore": "mus_earless_deeps_explore", "battle": "mus_hidden_battle_myriad", "ambience": "mus_silence_amb" },
-    "streamingPriority": 10,
-    "unlockFlag": "flag.deeps_entrance_open",
-    "secrets": [
-      { "id": "sec_first_phrase", "unlockFlag": "flag.found_first_phrase", "rewardTable": "loot_heavy", "pos": { "x": -260, "y": -180, "z": 360 } }
-    ],
-    "storyHooks": ["narr.act5_the_myriad_optional", "narr.act5_first_phrase_reveal"]
+  "groundY": 0,
+  "grid": {
+   "bpm": 84,
+   "beatsPerBar": 4
   },
-  {
-    "id": "rg_unfinished_hall",
-    "nameKey": "region.unfinishedhall",
-    "displayName": "未竟厅 The Unfinished Hall",
-    "order": 6,
-    "biome": "boss_arena",
-    "bounds": { "minX": -96, "maxX": 96, "minY": 144, "maxY": 288, "minZ": -384, "maxZ": -96 },
-    "groundY": 152,
-    "grid": { "bpm": 92, "beatsPerBar": 4, "label": "恩希尔接管前的余拍" },
-    "chunkSize": 48,
-    "weatherPresets": ["still", "dissonant-storm"],
-    "lightingPreset": "lp_unfinished_hall",
-    "palette": { "base": "#d8b45a", "accent": "#2a1830", "glow": "#f2d98a" },
-    "spawnGroups": [
-      { "enemyId": "en_hersil", "count": 1, "center": { "x": 0, "y": 152, "z": -250 }, "radius": 4 }
-    ],
-    "landmarks": [
-      { "id": "lm_unfinishedhall_organ", "nameKey": "landmark.great_organ", "pos": { "x": 0, "y": 180, "z": -300 }, "sightRange": 260 }
-    ],
-    "interactables": [
-      { "id": "st_unfinished_hall", "kind": "checkpoint", "pos": { "x": 0, "y": 152, "z": -120 }, "setsFlag": "flag.checkpoint_unfinished_hall" }
-    ],
-    "music": { "explore": "mus_unfinished_hall_explore", "battle": "mus_boss_hersil", "ambience": "mus_unfinished_hall_amb" },
-    "streamingPriority": 40,
-    "preloadWhole": true,
-    "unlockFlag": "flag.organ_gate_open",
-    "secrets": [],
-    "storyHooks": ["narr.act6_hersil_phase1", "narr.act6_hersil_phase2", "narr.act6_final_choice"]
-  }
+  "chunkSize": 48,
+  "weatherPresets": [
+   "clear",
+   "fog"
+  ],
+  "lightingPreset": "lp_whisperwode",
+  "palette": {
+   "base": "#6f7d6a",
+   "accent": "#8fa7bd",
+   "glow": "#d9c37a"
+  },
+  "spawnGroups": [
+   {
+    "enemyId": "en_murkshell",
+    "count": 3,
+    "center": {
+     "x": 160,
+     "y": 0,
+     "z": -100
+    },
+    "radius": 14
+   },
+   {
+    "enemyId": "en_murkshell",
+    "count": 2,
+    "center": {
+     "x": 300,
+     "y": 0,
+     "z": 60
+    },
+    "radius": 12
+   },
+   {
+    "enemyId": "en_driftsinger",
+    "count": 2,
+    "center": {
+     "x": 380,
+     "y": 0,
+     "z": -140
+    },
+    "radius": 10
+   }
+  ],
+  "landmarks": [
+   {
+    "id": "lm_whisperwode_cairn",
+    "nameKey": "landmark.echo_cairn",
+    "pos": {
+     "x": 240,
+     "y": 6,
+     "z": -20
+    },
+    "sightRange": 120
+   },
+   {
+    "id": "lm_whisperwode_soundwall",
+    "nameKey": "landmark.soundwall",
+    "pos": {
+     "x": 330,
+     "y": 0,
+     "z": 120
+    },
+    "sightRange": 45
+   }
+  ],
+  "interactables": [
+   {
+    "id": "st_whisperwode",
+    "kind": "checkpoint",
+    "pos": {
+     "x": 130,
+     "y": 0,
+     "z": 0
+    },
+    "setsFlag": "flag.checkpoint_whisperwode"
+   },
+   {
+    "id": "sw_whisperwode_soundwall",
+    "kind": "soundwall",
+    "pos": {
+     "x": 330,
+     "y": 0,
+     "z": 120
+    },
+    "oneWay": true,
+    "requiresFlag": "flag.parry_taught",
+    "setsFlag": "flag.choir_entrance_open"
+   },
+   {
+    "id": "gh_whisperwode_timbite_1",
+    "kind": "gather",
+    "pos": {
+     "x": 200,
+     "y": 0,
+     "z": 90
+    },
+    "lootTable": "loot_gather_timbite"
+   },
+   {
+    "id": "gh_whisperwode_timbite_2",
+    "kind": "gather",
+    "pos": {
+     "x": 355,
+     "y": 0,
+     "z": 30
+    },
+    "lootTable": "loot_gather_timbite"
+   },
+   {
+    "id": "ch_whisperwode_therapist",
+    "kind": "chest",
+    "pos": {
+     "x": 262,
+     "y": 0,
+     "z": -160
+    },
+    "lootTable": "loot_chest_t1"
+   }
+  ],
+  "music": {
+   "explore": "mus_whisperwode_explore",
+   "battle": "mus_shared_battle",
+   "ambience": "mus_whisperwode_amb"
+  },
+  "streamingPriority": 20,
+  "unlockFlag": "flag.left_resthold",
+  "secrets": [
+   {
+    "id": "sec_whisperwode_echo_cairn",
+    "unlockFlag": "flag.echo_cairn_read",
+    "rewardTable": "loot_secret_cairn",
+    "pos": {
+     "x": 240,
+     "y": 6,
+     "z": -20
+    }
+   }
+  ],
+  "storyHooks": [
+   "narr.act1_first_enemy",
+   "narr.act1_environmental_recording"
+  ]
+ },
+ {
+  "id": "rg_drowned_choir",
+  "nameKey": "region.drownedchoir",
+  "displayName": "沉唱堂 Drowned Choir",
+  "order": 2,
+  "biome": "dungeon",
+  "bounds": {
+   "minX": 192,
+   "maxX": 432,
+   "minY": -96,
+   "maxY": -8,
+   "minZ": -48,
+   "maxZ": 144
+  },
+  "groundY": -40,
+  "grid": {
+   "bpm": 96,
+   "beatsPerBar": 4
+  },
+  "chunkSize": 48,
+  "weatherPresets": [
+   "still",
+   "drip"
+  ],
+  "lightingPreset": "lp_drowned_choir",
+  "palette": {
+   "base": "#2b3f45",
+   "accent": "#7f8f8a",
+   "glow": "#a58a4f"
+  },
+  "spawnGroups": [
+   {
+    "enemyId": "en_murkshell",
+    "count": 3,
+    "center": {
+     "x": 250,
+     "y": -40,
+     "z": 20
+    },
+    "radius": 12
+   },
+   {
+    "enemyId": "en_driftsinger",
+    "count": 2,
+    "center": {
+     "x": 370,
+     "y": -40,
+     "z": 100
+    },
+    "radius": 10
+   },
+   {
+    "enemyId": "en_phantome",
+    "count": 2,
+    "center": {
+     "x": 330,
+     "y": -40,
+     "z": 60
+    },
+    "radius": 10
+   },
+   {
+    "enemyId": "en_ostlara",
+    "count": 1,
+    "center": {
+     "x": 300,
+     "y": -40,
+     "z": 104
+    },
+    "radius": 4
+   }
+  ],
+  "landmarks": [
+   {
+    "id": "lm_drownedchoir_brokenaltar",
+    "nameKey": "landmark.broken_altar",
+    "pos": {
+     "x": 320,
+     "y": -36,
+     "z": 60
+    },
+    "sightRange": 70
+   }
+  ],
+  "interactables": [
+   {
+    "id": "st_drowned_choir",
+    "kind": "checkpoint",
+    "pos": {
+     "x": 210,
+     "y": -40,
+     "z": 40
+    },
+    "setsFlag": "flag.checkpoint_drowned_choir"
+   },
+   {
+    "id": "gt_drownedchoir_deepstair",
+    "kind": "gate",
+    "pos": {
+     "x": 230,
+     "y": -40,
+     "z": 120
+    },
+    "setsFlag": "flag.deeps_entrance_open",
+    "to": {
+     "x": -100,
+     "y": -144,
+     "z": 120
+    }
+   },
+   {
+    "id": "ch_drowned_choir_movement",
+    "kind": "chest",
+    "pos": {
+     "x": 400,
+     "y": -40,
+     "z": 60
+    },
+    "requiresFlag": "flag.ostlara_defeated",
+    "lootTable": "loot_chest_t2"
+   }
+  ],
+  "music": {
+   "explore": "mus_drowned_choir_explore",
+   "battle": "mus_minibattle_ostlara",
+   "ambience": "mus_drowned_choir_amb"
+  },
+  "streamingPriority": 15,
+  "unlockFlag": "flag.choir_entrance_open",
+  "secrets": [
+   {
+    "id": "sec_drownedchoir_side_nave",
+    "unlockFlag": "flag.side_nave_found",
+    "rewardTable": "loot_secret_nave",
+    "pos": {
+     "x": 230,
+     "y": -60,
+     "z": 120
+    }
+   }
+  ],
+  "storyHooks": [
+   "narr.act2_project_consummation_failure"
+  ]
+ },
+ {
+  "id": "rg_brokenbar_camp",
+  "nameKey": "region.brokenbar",
+  "displayName": "破拍营地 Brokenbar Camp",
+  "order": 3,
+  "biome": "camp",
+  "bounds": {
+   "minX": -192,
+   "maxX": 96,
+   "minY": -8,
+   "maxY": 48,
+   "minZ": -384,
+   "maxZ": -96
+  },
+  "groundY": 0,
+  "grid": {
+   "bpm": 84,
+   "beatsPerBar": 4,
+   "label": "军鼓"
+  },
+  "chunkSize": 48,
+  "weatherPresets": [
+   "clear",
+   "fog"
+  ],
+  "lightingPreset": "lp_brokenbar_camp",
+  "palette": {
+   "base": "#4a4e55",
+   "accent": "#a3262b",
+   "glow": "#d9541f"
+  },
+  "spawnGroups": [
+   {
+    "enemyId": "en_murkshell",
+    "count": 4,
+    "center": {
+     "x": -80,
+     "y": 0,
+     "z": -200
+    },
+    "radius": 20,
+    "campId": "camp_brokenbar",
+    "condition": "!flag.brokenbar_resolved"
+   },
+   {
+    "enemyId": "en_tympanus",
+    "count": 1,
+    "center": {
+     "x": -50,
+     "y": 0,
+     "z": -250
+    },
+    "radius": 10,
+    "campId": "camp_brokenbar"
+   },
+   {
+    "enemyId": "en_driftsinger",
+    "count": 2,
+    "center": {
+     "x": -140,
+     "y": 0,
+     "z": -160
+    },
+    "radius": 12,
+    "campId": "camp_brokenbar"
+   },
+   {
+    "enemyId": "en_skewer",
+    "count": 2,
+    "center": {
+     "x": -36,
+     "y": 0,
+     "z": -142
+    },
+    "radius": 10,
+    "campId": "camp_brokenbar"
+   },
+   {
+    "enemyId": "en_refrein",
+    "count": 1,
+    "center": {
+     "x": -80,
+     "y": 0,
+     "z": -212
+    },
+    "radius": 2,
+    "campId": "camp_brokenbar"
+   },
+   {
+    "enemyId": "en_phantome",
+    "count": 1,
+    "center": {
+     "x": -160,
+     "y": 0,
+     "z": -230
+    },
+    "radius": 10,
+    "campId": "camp_brokenbar"
+   }
+  ],
+  "landmarks": [
+   {
+    "id": "lm_brokenbar_stonebridge",
+    "nameKey": "landmark.stonebridge",
+    "pos": {
+     "x": -48,
+     "y": 4,
+     "z": -120
+    },
+    "sightRange": 160
+   },
+   {
+    "id": "lm_brokenbar_bloodlantern",
+    "nameKey": "landmark.beat_lantern",
+    "pos": {
+     "x": -90,
+     "y": 6,
+     "z": -230
+    },
+    "sightRange": 90
+   }
+  ],
+  "interactables": [
+   {
+    "id": "st_brokenbar",
+    "kind": "checkpoint",
+    "pos": {
+     "x": -170,
+     "y": 0,
+     "z": -350
+    },
+    "setsFlag": "flag.checkpoint_brokenbar"
+   },
+   {
+    "id": "br_brokenbar_gate",
+    "kind": "bridge",
+    "pos": {
+     "x": -48,
+     "y": 0,
+     "z": -110
+    },
+    "oneWay": true,
+    "setsFlag": "flag.brokenbar_bridge_down",
+    "to": {
+     "x": 130,
+     "y": 64,
+     "z": -120
+    }
+   },
+   {
+    "id": "npc_haltrune",
+    "kind": "npc",
+    "pos": {
+     "x": -110,
+     "y": 0,
+     "z": -300
+    },
+    "npcId": "npc_haltrune"
+   },
+   {
+    "id": "ch_brokenbar_chief",
+    "kind": "chest",
+    "pos": {
+     "x": -60,
+     "y": 0,
+     "z": -270
+    },
+    "requiresFlag": "flag.brokenbar_resolved",
+    "lootTable": "loot_camp_store"
+   }
+  ],
+  "music": {
+   "explore": "mus_brokenbar_explore",
+   "battle": "mus_camp_assault",
+   "ambience": "mus_brokenbar_amb"
+  },
+  "streamingPriority": 25,
+  "unlockFlag": "flag.left_resthold",
+  "secrets": [
+   {
+    "id": "sec_brokenbar_ally_path",
+    "unlockFlag": "flag.brokenbar_allied",
+    "rewardTable": "loot_camp_store",
+    "pos": {
+     "x": -110,
+     "y": 0,
+     "z": -300
+    }
+   }
+  ],
+  "storyHooks": [
+   "narr.act3_camp_three_solutions"
+  ]
+ },
+ {
+  "id": "rg_fellcarillon",
+  "nameKey": "region.fellcarillon",
+  "displayName": "钟坠院 Fellcarillon",
+  "order": 4,
+  "biome": "ruins",
+  "bounds": {
+   "minX": 96,
+   "maxX": 384,
+   "minY": 40,
+   "maxY": 144,
+   "minZ": -432,
+   "maxZ": -96
+  },
+  "groundY": 64,
+  "grid": {
+   "bpm": 92,
+   "beatsPerBar": 4
+  },
+  "chunkSize": 48,
+  "weatherPresets": [
+   "clear",
+   "stone-wind"
+  ],
+  "lightingPreset": "lp_fellcarillon",
+  "palette": {
+   "base": "#4f7a6a",
+   "accent": "#b4653a",
+   "glow": "#6d4a7a"
+  },
+  "spawnGroups": [
+   {
+    "enemyId": "en_murkshell",
+    "count": 2,
+    "center": {
+     "x": 150,
+     "y": 64,
+     "z": -140
+    },
+    "radius": 12
+   },
+   {
+    "enemyId": "en_tympanus",
+    "count": 1,
+    "center": {
+     "x": 280,
+     "y": 64,
+     "z": -300
+    },
+    "radius": 8
+   },
+   {
+    "enemyId": "en_hanged_knight",
+    "count": 1,
+    "center": {
+     "x": 206,
+     "y": 64,
+     "z": -244
+    },
+    "radius": 6
+   }
+  ],
+  "landmarks": [
+   {
+    "id": "lm_fellcarillon_firstbell",
+    "nameKey": "landmark.fallen_bell",
+    "pos": {
+     "x": 200,
+     "y": 64,
+     "z": -220
+    },
+    "sightRange": 200
+   },
+   {
+    "id": "lm_fellcarillon_cliffstair",
+    "nameKey": "landmark.cliff_stair",
+    "pos": {
+     "x": 120,
+     "y": 60,
+     "z": -380
+    },
+    "sightRange": 140
+   }
+  ],
+  "interactables": [
+   {
+    "id": "st_fellcarillon",
+    "kind": "checkpoint",
+    "pos": {
+     "x": 130,
+     "y": 64,
+     "z": -120
+    },
+    "setsFlag": "flag.checkpoint_fellcarillon"
+   },
+   {
+    "id": "bl_fellcarillon_fallenbell",
+    "kind": "bell",
+    "pos": {
+     "x": 200,
+     "y": 64,
+     "z": -220
+    },
+    "oneWay": true,
+    "setsFlag": "flag.bell_toll_rung",
+    "lootTable": "loot_chest_t3"
+   },
+   {
+    "id": "el_fellcarillon_organlift",
+    "kind": "elevator",
+    "verb": "乘管风琴吊机",
+    "pos": {
+     "x": 110,
+     "y": 64,
+     "z": -350
+    },
+    "oneWay": true,
+    "requiresFlag": "flag.bell_toll_rung",
+    "setsFlag": "flag.organ_gate_open",
+    "to": {
+     "x": 0,
+     "y": 152,
+     "z": -120
+    }
+   },
+   {
+    "id": "ch_fellcarillon_bellcavity",
+    "kind": "chest",
+    "pos": {
+     "x": 205,
+     "y": 64,
+     "z": -215
+    },
+    "lootTable": "loot_chest_t2"
+   }
+  ],
+  "music": {
+   "explore": "mus_fellcarillon_explore",
+   "battle": "mus_shared_battle",
+   "ambience": "mus_fellcarillon_amb"
+  },
+  "streamingPriority": 20,
+  "unlockFlag": "flag.brokenbar_bridge_down",
+  "secrets": [
+   {
+    "id": "sec_fellcarillon_bell_interior",
+    "unlockFlag": "flag.bell_interior_open",
+    "rewardTable": "loot_secret_bellinterior",
+    "pos": {
+     "x": 205,
+     "y": 64,
+     "z": -215
+    }
+   }
+  ],
+  "storyHooks": [
+   "narr.act4_vertical_puzzle"
+  ]
+ },
+ {
+  "id": "rg_earless_deeps",
+  "nameKey": "region.earlessdeeps",
+  "displayName": "无耳深窖 Earless Deeps",
+  "order": 5,
+  "biome": "underground",
+  "bounds": {
+   "minX": -288,
+   "maxX": 96,
+   "minY": -200,
+   "maxY": -96,
+   "minZ": 96,
+   "maxZ": 384
+  },
+  "groundY": -144,
+  "grid": {
+   "bpm": 60,
+   "beatsPerBar": 1,
+   "label": "无网格领域：只有 60BPM 心跳"
+  },
+  "chunkSize": 48,
+  "weatherPresets": [
+   "hush",
+   "still"
+  ],
+  "lightingPreset": "lp_earless_deeps",
+  "palette": {
+   "base": "#121316",
+   "accent": "#cfd8d2",
+   "glow": "#8f9d97"
+  },
+  "spawnGroups": [
+   {
+    "enemyId": "en_driftsinger",
+    "count": 3,
+    "center": {
+     "x": -200,
+     "y": -144,
+     "z": 180
+    },
+    "radius": 16
+   },
+   {
+    "enemyId": "en_tympanus",
+    "count": 2,
+    "center": {
+     "x": -60,
+     "y": -144,
+     "z": 300
+    },
+    "radius": 12
+   },
+   {
+    "enemyId": "en_hanged_knight",
+    "count": 1,
+    "center": {
+     "x": -96,
+     "y": -144,
+     "z": 176
+    },
+    "radius": 5
+   },
+   {
+    "enemyId": "en_myriad",
+    "count": 1,
+    "center": {
+     "x": -250,
+     "y": -144,
+     "z": 330
+    },
+    "radius": 4
+   }
+  ],
+  "landmarks": [
+   {
+    "id": "lm_earlessdeeps_mineface",
+    "nameKey": "landmark.mine_face",
+    "pos": {
+     "x": -240,
+     "y": -150,
+     "z": 140
+    },
+    "sightRange": 80
+   }
+  ],
+  "interactables": [
+   {
+    "id": "st_earless_deeps",
+    "kind": "checkpoint",
+    "pos": {
+     "x": -100,
+     "y": -144,
+     "z": 120
+    },
+    "setsFlag": "flag.checkpoint_earless_deeps"
+   },
+   {
+    "id": "gh_deeps_timbite_vein",
+    "kind": "gather",
+    "pos": {
+     "x": -230,
+     "y": -144,
+     "z": 200
+    },
+    "lootTable": "loot_gather_timbite"
+   }
+  ],
+  "music": {
+   "explore": "mus_earless_deeps_explore",
+   "battle": "mus_hidden_battle_myriad",
+   "ambience": "mus_silence_amb"
+  },
+  "streamingPriority": 10,
+  "unlockFlag": "flag.deeps_entrance_open",
+  "secrets": [
+   {
+    "id": "sec_first_phrase",
+    "unlockFlag": "flag.found_first_phrase",
+    "rewardTable": "loot_secret_firstphrase",
+    "pos": {
+     "x": -260,
+     "y": -180,
+     "z": 360
+    }
+   }
+  ],
+  "storyHooks": [
+   "narr.act5_the_myriad_optional",
+   "narr.act5_first_phrase_reveal"
+  ]
+ },
+ {
+  "id": "rg_unfinished_hall",
+  "nameKey": "region.unfinishedhall",
+  "displayName": "未竟厅 The Unfinished Hall",
+  "order": 6,
+  "biome": "boss_arena",
+  "bounds": {
+   "minX": -96,
+   "maxX": 96,
+   "minY": 144,
+   "maxY": 288,
+   "minZ": -384,
+   "maxZ": -96
+  },
+  "groundY": 152,
+  "grid": {
+   "bpm": 92,
+   "beatsPerBar": 4,
+   "label": "恩希尔接管前的余拍"
+  },
+  "chunkSize": 48,
+  "weatherPresets": [
+   "still",
+   "dissonant-storm"
+  ],
+  "lightingPreset": "lp_unfinished_hall",
+  "palette": {
+   "base": "#d8b45a",
+   "accent": "#2a1830",
+   "glow": "#f2d98a"
+  },
+  "spawnGroups": [
+   {
+    "enemyId": "en_hersil",
+    "count": 1,
+    "center": {
+     "x": 0,
+     "y": 152,
+     "z": -250
+    },
+    "radius": 4
+   }
+  ],
+  "landmarks": [
+   {
+    "id": "lm_unfinishedhall_organ",
+    "nameKey": "landmark.great_organ",
+    "pos": {
+     "x": 0,
+     "y": 180,
+     "z": -300
+    },
+    "sightRange": 260
+   }
+  ],
+  "interactables": [
+   {
+    "id": "st_unfinished_hall",
+    "kind": "checkpoint",
+    "pos": {
+     "x": 0,
+     "y": 152,
+     "z": -120
+    },
+    "setsFlag": "flag.checkpoint_unfinished_hall"
+   }
+  ],
+  "music": {
+   "explore": "mus_unfinished_hall_explore",
+   "battle": "mus_boss_hersil",
+   "ambience": "mus_unfinished_hall_amb"
+  },
+  "streamingPriority": 40,
+  "preloadWhole": true,
+  "unlockFlag": "flag.organ_gate_open",
+  "secrets": [],
+  "storyHooks": [
+   "narr.act6_hersil_phase1",
+   "narr.act6_hersil_phase2",
+   "narr.act6_final_choice"
+  ]
+ }
 ]

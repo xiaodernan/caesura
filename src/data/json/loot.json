@@ -1,11 +1,695 @@
 [
-  { "id": "loot_basic", "entries": [
-    { "item": "it_timbite_raw", "weight": 60, "count": [1, 3] },
-    { "weight": 40, "xp": [6, 10] }
-  ]},
-  { "id": "loot_heavy", "entries": [
-    { "item": "it_timbite_raw", "weight": 70, "count": [4, 8] },
-    { "item": "it_timbite_sonic", "weight": 15, "count": [1, 1] },
-    { "weight": 10, "xp": [18, 24] }
-  ]}
+ {
+  "id": "loot_murkshell",
+  "rolls": [
+   {
+    "id": "resonance",
+    "xp": [
+     8,
+     12
+    ]
+   },
+   {
+    "id": "timbite",
+    "item": "it_timbite",
+    "count": [
+     2,
+     4
+    ]
+   },
+   {
+    "id": "shard",
+    "item": "it_shell_shard",
+    "count": [
+     1,
+     1
+    ],
+    "chance": 0.3
+   },
+   {
+    "id": "gear",
+    "gearBand": [
+     {
+      "rarity": "common",
+      "weight": 100
+     }
+    ],
+    "chance": 0.04,
+    "pity": 10
+   }
+  ]
+ },
+ {
+  "id": "loot_driftsinger",
+  "rolls": [
+   {
+    "id": "resonance",
+    "xp": [
+     10,
+     16
+    ]
+   },
+   {
+    "id": "timbite",
+    "item": "it_timbite",
+    "count": [
+     2,
+     5
+    ]
+   },
+   {
+    "id": "sand",
+    "item": "it_throat_sand",
+    "count": [
+     1,
+     1
+    ],
+    "chance": 0.25
+   },
+   {
+    "id": "gear",
+    "gearBand": [
+     {
+      "rarity": "common",
+      "weight": 70
+     },
+     {
+      "rarity": "uncommon",
+      "weight": 30
+     }
+    ],
+    "chance": 0.06,
+    "pity": 10
+   }
+  ]
+ },
+ {
+  "id": "loot_tympanus",
+  "rolls": [
+   {
+    "id": "resonance",
+    "xp": [
+     40,
+     60
+    ]
+   },
+   {
+    "id": "timbite",
+    "item": "it_timbite",
+    "count": [
+     8,
+     14
+    ]
+   },
+   {
+    "id": "dross",
+    "item": "it_dross",
+    "count": [
+     2,
+     2
+    ],
+    "chance": 0.6
+   },
+   {
+    "id": "gear",
+    "gearBand": [
+     {
+      "rarity": "uncommon",
+      "weight": 100
+     }
+    ],
+    "chance": 0.18,
+    "pity": 10
+   }
+  ],
+  "firstKill": [
+   {
+    "id": "silence_bonus",
+    "item": "it_timbite",
+    "count": [
+     30,
+     30
+    ]
+   }
+  ]
+ },
+ {
+  "id": "loot_skewer",
+  "rolls": [
+   {
+    "id": "resonance",
+    "xp": [
+     22,
+     30
+    ]
+   },
+   {
+    "id": "timbite",
+    "item": "it_timbite",
+    "count": [
+     5,
+     8
+    ]
+   },
+   {
+    "id": "silk",
+    "item": "it_string_silk",
+    "count": [
+     1,
+     1
+    ],
+    "chance": 0.35
+   },
+   {
+    "id": "gear",
+    "gearBand": [
+     {
+      "rarity": "uncommon",
+      "weight": 100
+     }
+    ],
+    "chance": 0.1,
+    "pity": 10
+   }
+  ]
+ },
+ {
+  "id": "loot_phantome",
+  "rolls": [
+   {
+    "id": "resonance",
+    "xp": [
+     35,
+     45
+    ]
+   },
+   {
+    "id": "timbite",
+    "item": "it_timbite",
+    "count": [
+     6,
+     10
+    ]
+   },
+   {
+    "id": "shadow",
+    "item": "it_syncop_shadow",
+    "count": [
+     1,
+     1
+    ],
+    "chance": 0.4
+   },
+   {
+    "id": "gear",
+    "gearBand": [
+     {
+      "rarity": "uncommon",
+      "weight": 60
+     },
+     {
+      "rarity": "rare",
+      "weight": 40
+     }
+    ],
+    "chance": 0.15,
+    "pity": 10
+   }
+  ],
+  "firstKill": [
+   {
+    "id": "score",
+    "item": "it_score_fragment",
+    "count": [
+     1,
+     1
+    ]
+   }
+  ]
+ },
+ {
+  "id": "loot_refrein",
+  "rolls": [
+   {
+    "id": "resonance",
+    "xp": [
+     30,
+     40
+    ]
+   },
+   {
+    "id": "timbite",
+    "item": "it_timbite",
+    "count": [
+     6,
+     10
+    ]
+   },
+   {
+    "id": "reed",
+    "item": "it_tuning_reed",
+    "count": [
+     1,
+     1
+    ],
+    "chance": 0.5
+   },
+   {
+    "id": "gear",
+    "gearBand": [
+     {
+      "rarity": "rare",
+      "weight": 100
+     }
+    ],
+    "chance": 0.2,
+    "pity": 10
+   }
+  ]
+ },
+ {
+  "id": "loot_hanged_knight",
+  "rolls": [
+   {
+    "id": "resonance",
+    "xp": [
+     90,
+     120
+    ]
+   },
+   {
+    "id": "timbite",
+    "item": "it_timbite",
+    "count": [
+     30,
+     60
+    ]
+   },
+   {
+    "id": "bronze",
+    "item": "it_bell_bronze",
+    "count": [
+     2,
+     2
+    ],
+    "chance": 0.8
+   },
+   {
+    "id": "gear",
+    "gearBand": [
+     {
+      "rarity": "rare",
+      "weight": 70
+     },
+     {
+      "rarity": "rareplus",
+      "weight": 30
+     }
+    ],
+    "chance": 0.45,
+    "pity": 10
+   }
+  ],
+  "firstKill": [
+   {
+    "id": "score",
+    "item": "it_score_fragment",
+    "count": [
+     2,
+     2
+    ]
+   }
+  ]
+ },
+ {
+  "id": "loot_ostlara",
+  "rolls": [
+   {
+    "id": "resonance",
+    "xp": [
+     400,
+     400
+    ]
+   },
+   {
+    "id": "core",
+    "item": "it_resonance_core",
+    "count": [
+     1,
+     1
+    ]
+   },
+   {
+    "id": "timbite",
+    "item": "it_timbite",
+    "count": [
+     200,
+     200
+    ]
+   },
+   {
+    "id": "dross",
+    "item": "it_dross",
+    "count": [
+     3,
+     3
+    ]
+   }
+  ]
+ },
+ {
+  "id": "loot_hersil",
+  "rolls": [
+   {
+    "id": "resonance",
+    "xp": [
+     900,
+     900
+    ]
+   },
+   {
+    "id": "core",
+    "item": "it_resonance_core",
+    "count": [
+     1,
+     1
+    ]
+   },
+   {
+    "id": "timbite",
+    "item": "it_timbite",
+    "count": [
+     250,
+     250
+    ]
+   }
+  ]
+ },
+ {
+  "id": "loot_myriad",
+  "rolls": [
+   {
+    "id": "resonance",
+    "xp": [
+     500,
+     500
+    ]
+   },
+   {
+    "id": "core",
+    "item": "it_resonance_core",
+    "count": [
+     1,
+     1
+    ]
+   },
+   {
+    "id": "score",
+    "item": "it_score_fragment",
+    "count": [
+     2,
+     2
+    ]
+   }
+  ]
+ },
+ {
+  "id": "loot_gather_timbite",
+  "rolls": [
+   {
+    "id": "timbite",
+    "item": "it_timbite",
+    "count": [
+     3,
+     8
+    ]
+   }
+  ]
+ },
+ {
+  "id": "loot_chest_t0",
+  "rolls": [
+   {
+    "id": "timbite",
+    "item": "it_timbite",
+    "count": [
+     8,
+     20
+    ]
+   }
+  ]
+ },
+ {
+  "id": "loot_chest_t1",
+  "rolls": [
+   {
+    "id": "timbite",
+    "item": "it_timbite",
+    "count": [
+     20,
+     40
+    ]
+   },
+   {
+    "id": "dross",
+    "item": "it_dross",
+    "count": [
+     1,
+     2
+    ]
+   },
+   {
+    "id": "gear",
+    "gearBand": [
+     {
+      "rarity": "common",
+      "weight": 55
+     },
+     {
+      "rarity": "uncommon",
+      "weight": 28
+     },
+     {
+      "rarity": "rare",
+      "weight": 13
+     },
+     {
+      "rarity": "rareplus",
+      "weight": 3
+     },
+     {
+      "rarity": "epic",
+      "weight": 1
+     }
+    ],
+    "chance": 0.35,
+    "pity": 10
+   }
+  ]
+ },
+ {
+  "id": "loot_chest_t2",
+  "rolls": [
+   {
+    "id": "timbite",
+    "item": "it_timbite",
+    "count": [
+     40,
+     80
+    ]
+   },
+   {
+    "id": "gear",
+    "gearBand": [
+     {
+      "rarity": "uncommon",
+      "weight": 40
+     },
+     {
+      "rarity": "rare",
+      "weight": 40
+     },
+     {
+      "rarity": "rareplus",
+      "weight": 20
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "loot_chest_t3",
+  "rolls": [
+   {
+    "id": "timbite",
+    "item": "it_timbite",
+    "count": [
+     80,
+     140
+    ]
+   },
+   {
+    "id": "gear",
+    "gearBand": [
+     {
+      "rarity": "rareplus",
+      "weight": 35
+     },
+     {
+      "rarity": "rare",
+      "weight": 65
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "loot_camp_store",
+  "rolls": [
+   {
+    "id": "timbite",
+    "item": "it_timbite",
+    "count": [
+     150,
+     150
+    ]
+   },
+   {
+    "id": "gearA",
+    "gearBand": [
+     {
+      "rarity": "rare",
+      "weight": 60
+     },
+     {
+      "rarity": "rareplus",
+      "weight": 40
+     }
+    ]
+   },
+   {
+    "id": "gearB",
+    "gearBand": [
+     {
+      "rarity": "rare",
+      "weight": 60
+     },
+     {
+      "rarity": "rareplus",
+      "weight": 40
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "loot_secret_cairn",
+  "rolls": [
+   {
+    "id": "seal",
+    "item": "seal_firstbeat",
+    "count": [
+     1,
+     1
+    ]
+   },
+   {
+    "id": "score",
+    "item": "it_score_fragment",
+    "count": [
+     1,
+     1
+    ]
+   },
+   {
+    "id": "timbite",
+    "item": "it_timbite",
+    "count": [
+     40,
+     60
+    ]
+   }
+  ]
+ },
+ {
+  "id": "loot_secret_nave",
+  "rolls": [
+   {
+    "id": "gear",
+    "gearBand": [
+     {
+      "rarity": "rare",
+      "weight": 60
+     },
+     {
+      "rarity": "rareplus",
+      "weight": 40
+     }
+    ]
+   },
+   {
+    "id": "timbite",
+    "item": "it_timbite",
+    "count": [
+     60,
+     90
+    ]
+   }
+  ]
+ },
+ {
+  "id": "loot_secret_bellinterior",
+  "rolls": [
+   {
+    "id": "bronze",
+    "item": "it_bell_bronze",
+    "count": [
+     3,
+     3
+    ]
+   },
+   {
+    "id": "gear",
+    "gearBand": [
+     {
+      "rarity": "rareplus",
+      "weight": 70
+     },
+     {
+      "rarity": "epic",
+      "weight": 30
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "loot_secret_firstphrase",
+  "rolls": [
+   {
+    "id": "seal",
+    "item": "seal_darkscore",
+    "count": [
+     1,
+     1
+    ]
+   },
+   {
+    "id": "timbite",
+    "item": "it_timbite",
+    "count": [
+     100,
+     140
+    ]
+   },
+   {
+    "id": "dross",
+    "item": "it_dross",
+    "count": [
+     3,
+     5
+    ]
+   }
+  ]
+ }
 ]

@@ -24,8 +24,10 @@ export interface InteractResult {
   to?: Vec3
   /** 调音桩：胶水层据此回满 HP/体力 */
   rest?: boolean
-  /** 采集/遗箱：胶水层据此发掉落通知（背包为 Phase 5） */
+  /** 采集/遗箱：胶水层据此掷掉落表 */
   loot?: boolean
+  /** 掉落表 id（来自 RegionData.interactables[].lootTable） */
+  lootTable?: string
 }
 
 const VERB: Record<InteractableRef['kind'], string> = {
@@ -141,6 +143,7 @@ export class Interactables {
       ...(it.setsFlag ? { setsFlag: it.setsFlag } : {}),
       ...(it.kind === 'checkpoint' ? { rest: true } : {}),
       ...(it.kind === 'gather' || it.kind === 'chest' ? { loot: true } : {}),
+      ...(it.lootTable ? { lootTable: it.lootTable } : {}),
     }
   }
 }
@@ -155,8 +158,8 @@ function lockText(it: Interactable): string {
 function resultText(it: Interactable): string {
   switch (it.kind) {
     case 'checkpoint': return `调音桩已共鸣 · ${it.regionName}`
-    case 'gather': return '拾得音色石碎料（背包系统 Phase 5）'
-    case 'chest': return '遗箱已开（掉落表接入为 Phase 5）'
+    case 'gather': return '采集 · 音色石碎料'
+    case 'chest': return '遗箱已开'
     case 'npc': return `${it.npcId ?? '某人'}：对话树将在 Phase 6 接入`
     case 'soundwall': return '音壁裂开 —— 通路已现'
     case 'bridge': return '吊桥落下'

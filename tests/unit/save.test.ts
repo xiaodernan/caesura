@@ -11,10 +11,10 @@ import { CombatManager } from '@/combat/CombatManager'
 import { StreamingSystem, chunkKeyOf } from '@/world/Streaming'
 import { SpawnDirector } from '@/world/SpawnDirector'
 import type { Vec3 } from '@/combat/EntityStats'
-import { SaveGame, MapStore, SAVE_VERSION, type KvStore } from '@/save/Serializer'
+import { SaveGame, MapStore, SAVE_VERSION, type KvStore, type Snapshot } from '@/save/Serializer'
 import { Checkpoints } from '@/save/Checkpoint'
 import { crc32, unwrap, wrap } from '@/save/Integrity'
-import { migrateTo, registerMigration, unregisterMigration } from '@/save/Migration'
+import { migrateTo } from '@/save/Migration'
 
 /**
  * 存档（需求 §45/§71）。存储层是可注入的 KV，所以「写一半被 kill」「校验和坏了」
@@ -175,18 +175,30 @@ describe('§45 防损坏：校验和、双写、迁移链', () => {
     expect(back!.player).toEqual(ok.player)
   })
 
-  it('迁移链：v1 档 + 注册 v1→v2 ⇒ 字段改名而不是崩；缺步骤则明确报错', async () => {
-    const w = world()
-    const store = new MapStore()
-    await savesWith(w, store).save('slot1')
-    const raw = (await store.get('slot1'))!
-    const parsed = unwrap(raw, [SAVE_VERSION])
-    expect(parsed.ok).toBe(true)
-    registerMigration(1, (p) => ({ ...p, snapshot: { ...(p.snapshot as object), version: 2 } }))
-    const moved = migrateTo((parsed as { payload: unknown }).payload, 1, 2) as { snapshot: { version: number } }
-    unregisterMigration(1)
+  it('迁移链：v1 档升 v2 ⇒ 成长字段被**显式**置空（不是静默丢字段），旧字段逐条保住', () => {
+    // 手工造一份 v1 档：不能拿 save() 去造，因为它现在写的是 v2
+    const v1 = {
+      version: 1,
+      playSec: 123,
+      regionId: 'rg_whisperwode',
+      player: { x: 1, y: 2, z: 3, hp: 44, stamina: 55, overdrive: 3, weaponId: 'wp_tuning_sword' },
+      flags: ['flag.left_resthold'],
+      clearedSlots: ['rg_whisperwode:g0:0']
+    }
+    const moved = migrateTo({ snapshot: v1 }, 1, SAVE_VERSION) as { snapshot: Snapshot }
     expect(moved.snapshot.version).toBe(2)
-    expect(() => migrateTo({}, 1, 2)).toThrow(/v1/)
+    // v1 的每个字段都还在（迁移不是「重新构造一份」）
+    expect(moved.snapshot.playSec).toBe(123)
+    expect(moved.snapshot.player.hp).toBe(44)
+    expect(moved.snapshot.flags).toEqual(['flag.left_resthold'])
+    expect(moved.snapshot.clearedSlots).toEqual(['rg_whisperwode:g0:0'])
+    // 而 v1 里根本不存在的东西被明确写成 null，读档时保留运行时基线
+    expect(moved.snapshot.rpg).toBeNull()
+  })
+
+  it('迁移链缺步骤 ⇒ 明确报错（不把半迁移的结果写回磁盘）', () => {
+    expect(() => migrateTo({}, SAVE_VERSION, SAVE_VERSION + 1)).toThrow(/v2/)
+    expect(() => migrateTo({}, 1, SAVE_VERSION)).not.toThrow()
   })
 })
 

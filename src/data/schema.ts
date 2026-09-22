@@ -309,6 +309,164 @@ export interface PlayerBaseData {
   rankXpCurve: { base: number; a: number; b: number }
 }
 
+/* ============================ RPG（Phase 5-B） ============================ */
+
+/**
+ * 装备槽位。武器占 `weapon`（同时只允许一把在手），护甲四件 + 两枚音徽（纯词缀件，重量 0）。
+ * 与 progression.md §5.1 对齐：护符就是「音徽 Tone-seal」。
+ */
+export type SlotKey = 'weapon' | 'helm' | 'cuirass' | 'gloves' | 'greaves' | 'seal' | 'sealA' | 'sealB'
+
+/** 物品大类。装备件（weapon/armor/seal）会带 `gear`，其余是消耗/素材/叙事件。 */
+export type ItemKind = 'currency' | 'material' | 'consumable' | 'weapon' | 'armor' | 'seal' | 'lore' | 'key'
+
+/** 六音级属性（progression.md §2.1）：基音/指法/音色/腔体/泛音/失谐。 */
+export interface AttrMeta {
+  key: AttrKey
+  nameKey: string
+  displayName: string
+  /** 一句话世界观解释，UI tooltip 用（需求 §19：状态与属性都要有世界内解释） */
+  desc: string
+  /** 软上限：超过后每点收益 ×softcap.mul */
+  softcap: number
+  /** 硬上限：再超过每点收益 ×softcap.hardMul */
+  hardcap: number
+}
+
+/** 出身（定弦）。六维合计固定，只改分布与初始装备（progression.md §2.2）。 */
+export interface OriginData {
+  id: string
+  nameKey: string
+  displayName: string
+  attrs: Record<AttrKey, number>
+  weaponId: string
+  /** 出身自带的一件护甲/音徽（可为空） */
+  gearIds?: string[]
+  blurb: string
+}
+
+/** 派生值公式的系数（progression.md §2.4）。全部在数据里，代码只做乘加。 */
+export interface DerivedConfig {
+  hp: { base: number; per: Partial<Record<AttrKey, number>>; perRank: number }
+  stamina: { base: number; per: Partial<Record<AttrKey, number>> }
+  poise: { base: number; per: Partial<Record<AttrKey, number>> }
+  /** DEF = Σ护甲件 DEF（含强化） + 腔体×defensePerVig + 出身修正 */
+  defensePerVig: number
+  /** 负重上限 = base + 基音×perStr（kg 制） */
+  load: { base: number; perStr: number }
+  crit: { base: number; perOvr: number; cap: number; mulBase: number; mulPerOvr: number }
+  /** 过载上限 = base + floor(音色/perDiv)，封顶 cap（progression.md §2.4） */
+  overdrive: { base: number; perTonDiv: number; cap: number }
+  /** 泛音每点给处决/背刺伤害的加成（progression.md §2.1 泛音行） */
+  execMulPerOvr: number
+}
+
+/** 强化曲线一格（progression.md §5.4：无失败、无销毁）。 */
+export interface UpgradeStep {
+  level: number
+  timbite: number
+  dross: number
+  /** 武器基础伤害 +%（累加口径由 Upgrade.ts 计算） */
+  weaponMul: number
+  /** 护甲 DEF +% */
+  armorMul: number
+}
+
+/** 稀有度档（progression.md §5.2）。词缀数与强化上限都由它决定。 */
+export interface RarityTier {
+  id: string
+  nameKey: string
+  displayName: string
+  affixes: number
+  maxLevel: number
+}
+
+/** 词缀定义：前缀=数值面，后缀=行为面（progression.md §5.3）。数值区间按稀有度取。 */
+export interface AffixDef {
+  id: string
+  nameKey: string
+  displayName: string
+  /** 数值型给 [min,max]（按稀有度在高区间取值）；行为型给固定效果描述 */
+  stat?: 'poiseDmg' | 'defense' | 'staminaRegen' | 'critRate' | 'execDmg' | 'noiseMul'
+  range?: [number, number]
+  /** 行为型：由具体系统消费（之延=完美格挡窗，之切=轻击前摇…） */
+  behavior?: string
+  slots?: SlotKey[]
+  minRarity?: string
+  desc: string
+}
+
+export interface ProgressionData {
+  maxRank: number
+  attrs: AttrMeta[]
+  origins: OriginData[]
+  /** 升到 `rank` 级所需遗响（index 0 = 升到 2 级） */
+  rankCurve: { rank: number; xp: number }[]
+  derived: DerivedConfig
+  softcap: { mul: number; hardMul: number }
+  respec: { base: number; perPoint: number; discountTimes: number; discountMul: number }
+  upgrade: UpgradeStep[]
+  rarity: RarityTier[]
+  affixes: { prefix: AffixDef[]; suffix: AffixDef[] }
+  /** 洗点/强化之外，升级里程碑（progression.md §8.2「你新能做什么」） */
+  milestones: { rank: number; id: string; label: string }[]
+}
+
+/** 装备件的静态定义（挂在 ItemData.gear 上）。 */
+export interface GearDef {
+  /** 装备件可放的槽位。'seal' = 音徽件，sealA/sealB 两槽都吃（progression.md §5.1） */
+  slot: SlotKey
+  rarity: string
+  /** 武器件指向 weapons.json 的 id；护甲/音徽不写 */
+  weaponId?: string
+  def?: number
+  weight: number
+  /** Unique 件的固定词缀（不可洗、不可随机） */
+  affixes?: string[]
+  unique?: boolean
+  /** 分解回残晶/音色石的比例（progression.md §6.3 重复件处理） */
+  salvage?: { dross: number; timbite: number }
+}
+
+export interface ItemData {
+  id: string
+  nameKey: string
+  displayName: string
+  kind: ItemKind
+  /** 堆叠上限；装备件一律 1 */
+  stack: number
+  /** 卖出价（货币本身为 0）。§6.3：卖出系数 ×50% 由经济层处理 */
+  value?: number
+  desc: string
+  gear?: GearDef
+  /** 消耗品：使用效果（回响膏=应急治疗） */
+  use?: { heal?: number; healFrac?: number; sfx?: string }
+}
+
+/** 掉落表（progression.md §9.0 schema）。掷骰全部走种子化 RNG ⇒ 可复现 QA。 */
+export interface LootRoll {
+  id: string
+  /** 命中概率（不写 = 必掉）。与 weight 互斥：weight 用于「从多条里挑一条」 */
+  chance?: number
+  weight?: number
+  /** 直接给物品 id */
+  item?: string
+  count?: [number, number]
+  /** 遗响（经验）区间 */
+  xp?: [number, number]
+  /** 按稀有度档抽一件装备（权重即 §9.4 的同档内权重，写在数据里而不是代码里） */
+  gearBand?: { rarity: string; weight: number }[]
+  /** 保底：连续 N 次没出本条 ⇒ 第 N+1 次必出 */
+  pity?: number
+}
+
+export interface LootTableData {
+  id: string
+  rolls: LootRoll[]
+  /** 首次击杀专属（§9.1 首杀列 / §9.3 Boss 首杀唯一） */
+  firstKill?: LootRoll[]
+}
+
 export interface Vec3 { x: number; y: number; z: number }
 
 export interface RegionBounds {
@@ -355,6 +513,8 @@ export interface InteractableRef {
   npcId?: string
   /** 交互后把人送去的落点（共鸣井/吊机/吊桥 = 遮蔽传送等价物）；缺省 = 原地生效 */
   to?: Vec3
+  /** 采集/遗箱/敲钟的掉落表 id（Phase 5-B：掉落不再写死在 main.ts 里） */
+  lootTable?: string
 }
 
 export interface SecretRef {

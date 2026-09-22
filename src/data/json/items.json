@@ -1,0 +1,234 @@
+[
+ {
+  "id": "it_timbite",
+  "nameKey": "item.timbite",
+  "displayName": "音色石",
+  "kind": "currency",
+  "stack": 99999,
+  "value": 0,
+  "desc": "凝结成固体的一段音色。息声领唯一的通货：买、强化、洗点，都只认它。"
+ },
+ {
+  "id": "it_dross",
+  "nameKey": "item.dross",
+  "displayName": "残晶",
+  "kind": "material",
+  "stack": 9999,
+  "value": 3,
+  "desc": "崩解后剩下的晶体渣。喂给武器与护甲，它们会记住原来的那声。"
+ },
+ {
+  "id": "it_shell_shard",
+  "nameKey": "item.shellShard",
+  "displayName": "壳残晶",
+  "kind": "material",
+  "stack": 999,
+  "value": 5,
+  "desc": "嘈壳碎裂后剥下的薄片，还在低声重复它生前最后一句话。"
+ },
+ {
+  "id": "it_throat_sand",
+  "nameKey": "item.throatSand",
+  "displayName": "喉晶砂",
+  "kind": "material",
+  "stack": 999,
+  "value": 6,
+  "desc": "漂调者喉咙里长出的结晶砂。研成粉能让人短暂地唱出不属于自己的音。"
+ },
+ {
+  "id": "it_string_silk",
+  "nameKey": "item.stringSilk",
+  "displayName": "弦丝",
+  "kind": "material",
+  "stack": 999,
+  "value": 7,
+  "desc": "从断弦身上取下的丝。绷紧时会自己找调，松开就哑。"
+ },
+ {
+  "id": "it_syncop_shadow",
+  "nameKey": "item.syncopShadow",
+  "displayName": "切分影屑",
+  "kind": "material",
+  "stack": 999,
+  "value": 9,
+  "desc": "幽灵八留在切分位上的残影。握在手里会漏过你的指缝。"
+ },
+ {
+  "id": "it_tuning_reed",
+  "nameKey": "item.tuningReed",
+  "displayName": "定调簧片",
+  "kind": "material",
+  "stack": 999,
+  "value": 8,
+  "desc": "叠唱用来给同伴定调的那片簧。拆下来之后，谁也不再听谁的。"
+ },
+ {
+  "id": "it_bell_bronze",
+  "nameKey": "item.bellBronze",
+  "displayName": "钟屑青铜",
+  "kind": "material",
+  "stack": 999,
+  "value": 12,
+  "desc": "礼钟崩落时溅出的青铜屑。敲一下，它还会答一声。"
+ },
+ {
+  "id": "it_echo_salve",
+  "nameKey": "item.echoSalve",
+  "displayName": "回响膏",
+  "kind": "consumable",
+  "stack": 20,
+  "value": 18,
+  "desc": "把别人的遗响抹在伤口上。应急治疗，但那声音会留在你身上。",
+  "use": { "heal": 45, "sfx": "ui_select" }
+ },
+ {
+  "id": "it_score_fragment",
+  "nameKey": "item.scoreFragment",
+  "displayName": "乐谱残页",
+  "kind": "lore",
+  "stack": 99,
+  "value": 20,
+  "desc": "半句没唱完的谱子。凑齐了才知道那一句本来要往哪里去。"
+ },
+ {
+  "id": "it_resonance_core",
+  "nameKey": "item.resonanceCore",
+  "displayName": "振源核",
+  "kind": "key",
+  "stack": 99,
+  "value": 0,
+  "desc": "喧堕者体内那颗还在振动的东西。吸收它，等于把它的句子接进自己的谱册。"
+ },
+
+ {
+  "id": "wp_tuning_sword_item",
+  "nameKey": "weapon.tuningSword",
+  "displayName": "调律剑",
+  "kind": "weapon",
+  "stack": 1,
+  "value": 60,
+  "desc": "学徒的第一把剑。没有多余的东西，只有一条准的线。",
+  "gear": { "slot": "weapon", "rarity": "common", "weaponId": "wp_tuning_sword", "weight": 8, "salvage": { "dross": 1, "timbite": 20 } }
+ },
+ {
+  "id": "wp_fortissimo_greatsword_item",
+  "nameKey": "weapon.fortissimoGreatsword",
+  "displayName": "强音大剑",
+  "kind": "weapon",
+  "stack": 1,
+  "value": 120,
+  "desc": "一整段强音被锻成刃。挥起来像把整支乐队砸下去。",
+  "gear": { "slot": "weapon", "rarity": "uncommon", "weaponId": "wp_fortissimo_greatsword", "weight": 18, "salvage": { "dross": 2, "timbite": 40 } }
+ },
+ {
+  "id": "wp_drawpin_spear_item",
+  "nameKey": "weapon.drawpinSpear",
+  "displayName": "引针枪",
+  "kind": "weapon",
+  "stack": 1,
+  "value": 100,
+  "desc": "弦坊伶人的长枪。不必贴身，也能把一个音钉死在墙上。",
+  "gear": { "slot": "weapon", "rarity": "uncommon", "weaponId": "wp_drawpin_spear", "weight": 12, "salvage": { "dross": 2, "timbite": 35 } }
+ },
+
+ {
+  "id": "ar_mutewrap_helm",
+  "nameKey": "armor.mutewrap",
+  "displayName": "哑带裹布",
+  "kind": "armor",
+  "stack": 1,
+  "value": 25,
+  "desc": "哑带边缘人人都会缠的一层布。挡不了多少，但能让世界小声一点。",
+  "gear": { "slot": "helm", "rarity": "common", "def": 3, "weight": 2, "salvage": { "dross": 1, "timbite": 8 } }
+ },
+ {
+  "id": "ar_choir_hood",
+  "nameKey": "armor.choirHood",
+  "displayName": "唱诗班头巾",
+  "kind": "armor",
+  "stack": 1,
+  "value": 55,
+  "desc": "旧唱诗班的头巾。内衬绣着四口钟的位置，最后一口没人找着。",
+  "gear": { "slot": "helm", "rarity": "uncommon", "def": 5, "weight": 3, "affixes": ["af_tacet"], "salvage": { "dross": 1, "timbite": 18 } }
+ },
+ {
+  "id": "ar_scavenger_cuirass",
+  "nameKey": "armor.scavenger",
+  "displayName": "拾晶人皮甲",
+  "kind": "armor",
+  "stack": 1,
+  "value": 70,
+  "desc": "缝了很多口袋的皮甲。每个口袋里都曾装过一块会响的石头。",
+  "gear": { "slot": "cuirass", "rarity": "common", "def": 6, "weight": 6, "salvage": { "dross": 2, "timbite": 22 } }
+ },
+ {
+  "id": "ar_drummer_cuirass",
+  "nameKey": "armor.drummer",
+  "displayName": "鼓手胸甲",
+  "kind": "armor",
+  "stack": 1,
+  "value": 130,
+  "desc": "把驼鼓的膜绷在胸前做的甲。挨打时它会替你先响一声。",
+  "gear": { "slot": "cuirass", "rarity": "uncommon", "def": 9, "weight": 9, "affixes": ["af_tempered"], "salvage": { "dross": 3, "timbite": 45 } }
+ },
+ {
+  "id": "ar_tuner_gloves",
+  "nameKey": "armor.tunerGloves",
+  "displayName": "调律手套",
+  "kind": "armor",
+  "stack": 1,
+  "value": 30,
+  "desc": "指尖磨得很薄，为了听得见弦的偏差。",
+  "gear": { "slot": "gloves", "rarity": "common", "def": 2, "weight": 1, "salvage": { "dross": 1, "timbite": 10 } }
+ },
+ {
+  "id": "ar_tracewrists",
+  "nameKey": "armor.tracewrists",
+  "displayName": "溯声护腕",
+  "kind": "armor",
+  "stack": 1,
+  "value": 95,
+  "desc": "护腕内侧刻着回溯的纹路：声音从哪里来，它就往哪里发烫。",
+  "gear": { "slot": "gloves", "rarity": "rare", "def": 4, "weight": 2, "affixes": ["af_tireless"], "salvage": { "dross": 2, "timbite": 34 } }
+ },
+ {
+  "id": "ar_silent_boots",
+  "nameKey": "armor.silentBoots",
+  "displayName": "静默长靴",
+  "kind": "armor",
+  "stack": 1,
+  "value": 90,
+  "desc": "底子裹了吸音的绒。在靠听不看的地方，这双靴子就是命。",
+  "gear": { "slot": "greaves", "rarity": "uncommon", "def": 4, "weight": 4, "affixes": ["af_tacet"], "salvage": { "dross": 2, "timbite": 30 } }
+ },
+ {
+  "id": "ar_coppergreaves",
+  "nameKey": "armor.copperGreaves",
+  "displayName": "铜钉腿甲",
+  "kind": "armor",
+  "stack": 1,
+  "value": 60,
+  "desc": "钉了一圈铜钉的腿甲。走路会响，但腿还在。",
+  "gear": { "slot": "greaves", "rarity": "common", "def": 6, "weight": 7, "salvage": { "dross": 2, "timbite": 20 } }
+ },
+ {
+  "id": "seal_firstbeat",
+  "nameKey": "seal.firstbeat",
+  "displayName": "音徽·初拍",
+  "kind": "seal",
+  "stack": 1,
+  "value": 110,
+  "desc": "刻着第一拍的徽记。据说戴上它的人，总能先一步踩到点上。",
+  "gear": { "slot": "seal", "rarity": "rare", "def": 0, "weight": 0, "affixes": ["af_keen"], "salvage": { "dross": 1, "timbite": 40 } }
+ },
+ {
+  "id": "seal_darkscore",
+  "nameKey": "seal.darkscore",
+  "displayName": "音徽·暗谱",
+  "kind": "seal",
+  "stack": 1,
+  "value": 140,
+  "desc": "背面刻着没人看得懂的谱。失谐越深，它越烫。",
+  "gear": { "slot": "seal", "rarity": "rare", "def": 0, "weight": 0, "affixes": ["af_tacet"], "salvage": { "dross": 1, "timbite": 50 } }
+ }
+]

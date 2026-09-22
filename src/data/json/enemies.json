@@ -109,8 +109,8 @@
   },
   "drops": [
    {
-    "tableId": "loot_basic",
-    "chance": 0.65
+    "tableId": "loot_murkshell",
+    "chance": 1
    }
   ],
   "body": {
@@ -327,8 +327,8 @@
   ],
   "drops": [
    {
-    "tableId": "loot_basic",
-    "chance": 0.8
+    "tableId": "loot_driftsinger",
+    "chance": 1
    }
   ],
   "body": {
@@ -449,7 +449,7 @@
   },
   "drops": [
    {
-    "tableId": "loot_heavy",
+    "tableId": "loot_tympanus",
     "chance": 1
    }
   ],
@@ -644,8 +644,8 @@
   },
   "drops": [
    {
-    "tableId": "loot_basic",
-    "chance": 0.8
+    "tableId": "loot_skewer",
+    "chance": 1
    }
   ],
   "body": {
@@ -736,8 +736,8 @@
   ],
   "drops": [
    {
-    "tableId": "loot_basic",
-    "chance": 0.8
+    "tableId": "loot_refrein",
+    "chance": 1
    }
   ],
   "body": {
@@ -898,8 +898,8 @@
   ],
   "drops": [
    {
-    "tableId": "loot_basic",
-    "chance": 0.6
+    "tableId": "loot_phantome",
+    "chance": 1
    }
   ],
   "body": {
@@ -1095,7 +1095,7 @@
   },
   "drops": [
    {
-    "tableId": "loot_heavy",
+    "tableId": "loot_hanged_knight",
     "chance": 1
    }
   ],
@@ -1518,7 +1518,7 @@
   },
   "drops": [
    {
-    "tableId": "loot_heavy",
+    "tableId": "loot_ostlara",
     "chance": 1
    }
   ],
@@ -1939,7 +1939,7 @@
   },
   "drops": [
    {
-    "tableId": "loot_heavy",
+    "tableId": "loot_hersil",
     "chance": 1
    }
   ],
@@ -2071,7 +2071,7 @@
   },
   "drops": [
    {
-    "tableId": "loot_heavy",
+    "tableId": "loot_myriad",
     "chance": 1
    }
   ],

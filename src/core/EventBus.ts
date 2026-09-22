@@ -12,7 +12,8 @@ export interface GameEvents {
   'player.died': undefined
   'entity.spawned': { id: string; kind: 'enemy' | 'npc' | 'prop'; entity: unknown }
   'entity.despawned': { id: string; kind: 'enemy' | 'npc' | 'prop' }
-  'entity.died': { id: string; kind: string; position: { x: number; y: number; z: number } }
+  /** `dataId` = 敌人/实体的数据 id（掉落与首杀判定要用；实例 id 每次都不同） */
+  'entity.died': { id: string; kind: string; dataId?: string; position: { x: number; y: number; z: number } }
   'combat.hit': {
     attackerId: string; victimId: string; damage: number; poiseDamage: number
     kind: 'light' | 'heavy' | 'skill' | 'enemy'

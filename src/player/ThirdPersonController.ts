@@ -7,6 +7,7 @@ import type { FrameData, MovesetData, PlayerBaseData, WeaponData } from '@/data/
 import { EntityStats, playerStatsFrom } from '@/combat/EntityStats'
 import type { Vec3 } from '@/combat/EntityStats'
 import type { HitTarget } from '@/combat/HitShapes'
+import { defaultMods, type PlayerMods } from '@/rpg/Runtime'
 
 const CHARGE_TICKS = 48
 /** 台阶容差：与 world/Surface 的 floorAt tolerance 一致，超过就不算「踩上台阶」 */
@@ -52,10 +53,18 @@ export class PlayerController {
   private footAccum = 0
   private dead = false
   private deadTicks = 0
+  /**
+   * Phase 5-B：成长系统灌进来的一组扁平乘数（音级派生 + 装备词缀）。
+   * 这里只做消费——它不认识 Progression，也不知道词缀从哪来（见 src/rpg/Runtime.ts）。
+   */
+  rpg: PlayerMods = defaultMods()
 
   constructor(public base: PlayerBaseData, public weapon: WeaponData, public moveset: MovesetData) {
     this.stats = playerStatsFrom(base)
     this.stats.defense = base.defense
+    // 未接成长系统时（单元测试/工具）也要有一组**恒等**乘数：属性取 player.json 的面板值，
+    // 于是伤害与 Phase 5-B 之前逐位相同——成长系统是叠加，不是替换。
+    this.rpg = { ...defaultMods(), attrs: { ...base.attrs } }
   }
 
   get dead_(): boolean { return this.dead }
@@ -98,6 +107,28 @@ export class PlayerController {
     this.publishStats()
   }
 
+  /**
+   * 成长/装备变化后重新灌一次（升级、换装、强化、洗点都走这里）。
+   * 升级带来的上限增长**立刻兑现**（§8.1「数值层反馈：HP 微条实际增长」），
+   * 但只补差额——掉的血不会被顺手治好，调音桩才有治疗权。
+   */
+  applyRpg(m: PlayerMods): void {
+    const dHp = m.hpMax - this.stats.hpMax
+    this.stats.hpMax = m.hpMax
+    this.stats.hp = clamp(this.stats.hp + Math.max(0, dHp), 0, m.hpMax)
+    this.stats.staMax = m.staminaMax
+    this.stats.stamina = Math.min(this.stats.stamina, m.staminaMax)
+    this.stats.poiseMax = m.poiseMax
+    this.stats.defense = m.defense
+    this.stats.overdriveMax = m.overdriveMax
+    this.stats.overdrive = Math.min(this.stats.overdrive, m.overdriveMax)
+    this.rpg = m
+    this.publishStats()
+  }
+
+  /** 发声时的噪音乘数（静默词缀 / 无鸣类武器）：所有 sound.source 出口共用它 */
+  private noise(loudness: number): number { return loudness * this.rpg.noiseMul }
+
   faceTowards(p: Vec3): void {
     const d = Math.atan2(p.x - this.pos.x, p.z - this.pos.z)
     this.yaw += clampAngleDiff(this.yaw, d) * 0.35
@@ -128,11 +159,13 @@ export class PlayerController {
       this.publishStats()
       return
     }
-    // 夺拍期间：他的拍点窗外不给回气（mods.regenMul 是 EntityStats 已有的乘子通道）
+    // 夺拍期间：他的拍点窗外不给回气（mods.regenMul 是 EntityStats 已有的乘子通道）。
+    // 装备的节律词缀与超载惩罚叠在这个乘子上——三者都只写一次，不各自另开一条回复路径。
+    const regenBase = this.rpg.staminaRegenMul * (this.rpg.overloaded ? 0.6 : 1)
     if (this.beatParasite && rhythm) {
       const onHisBeat = rhythm.ticksFromBeatPoint() <= this.beatParasite.windowTicks
-      this.stats.mods.regenMul = onHisBeat ? this.beatParasite.regenMul : 0
-    } else this.stats.mods.regenMul = 1
+      this.stats.mods.regenMul = (onHisBeat ? this.beatParasite.regenMul : 0) * regenBase
+    } else this.stats.mods.regenMul = regenBase
     this.stats.update(dt, tick, this.guarding)
 
     // ---- defense inputs (always live unless rolling/attacking) ----
@@ -175,9 +208,9 @@ export class PlayerController {
     if (input.frame.edges.has('jump') && this.grounded && !this.busy && this.stats.spendStamina(6, tick)) {
       this.vy = this.base.jumpSpeed
       this.grounded = false
-      bus.emit('sound.source', { id: 'player', pos: { ...this.pos }, loudness: 0.2 })
+      bus.emit('sound.source', { id: 'player', pos: { ...this.pos }, loudness: this.noise(0.2) })
     }
-    if (input.frame.edges.has('dodge') && (canAct || this.roll === null) && this.stats.stamina >= this.base.roll.stamina && !this.dead) {
+    if (input.frame.edges.has('dodge') && !this.rpg.overloaded && (canAct || this.roll === null) && this.stats.stamina >= this.base.roll.stamina && !this.dead) {
       this.startRoll(input, tick)
     }
 
@@ -202,8 +235,8 @@ export class PlayerController {
     // ---- movement ----
     if (canAct && !this.busyMovementLocked()) {
       const mv = input.frame.move
-      const speed = input.frame.held.has('sprint') && mv.x * mv.x + mv.y * mv.y > 0.1 && !this.guarding
-        ? this.base.sprintSpeed : this.base.moveSpeed
+      const sprinting = input.frame.held.has('sprint') && !this.rpg.overloaded && mv.x * mv.x + mv.y * mv.y > 0.1 && !this.guarding
+      const speed = sprinting ? this.base.sprintSpeed : this.base.moveSpeed
       const camYaw = this.camYawRef ?? this.yaw
       const cs = Math.sin(camYaw), cc = Math.cos(camYaw)
       // camera at +yaw offset: screen-forward (mv.y=+1) = -(sin c, cos c)
@@ -216,15 +249,15 @@ export class PlayerController {
         this.pos.x += nx * sp * dt
         this.pos.z += nz * sp * dt
         if (!this.action && !this.lockedTarget && !this.guarding) this.yaw += clampAngleDiff(this.yaw, Math.atan2(nx, nz)) * 0.25
-        if (input.frame.held.has('sprint') && !this.guarding) {
+        if (sprinting) {
           this.stats.stamina = Math.max(0, this.stats.stamina - this.base.sprintCostPerSec * dt)
           if (this.stats.stamina <= 0) this.exhausted = true
         }
         this.footAccum += sp * dt
-        const stride = input.frame.held.has('sprint') ? 2.2 : 3.0
+        const stride = sprinting ? 2.2 : 3.0
         if (this.footAccum > stride) {
           this.footAccum = 0
-          bus.emit('sound.source', { id: 'player', pos: { ...this.pos }, loudness: input.frame.held.has('sprint') ? 0.45 : 0.18 })
+          bus.emit('sound.source', { id: 'player', pos: { ...this.pos }, loudness: this.noise(sprinting ? 0.45 : 0.18) })
           bus.emit('audio.sfx', { key: 'footstep', pos: { ...this.pos }, gain: 0.25 })
         }
       }
@@ -295,7 +328,7 @@ export class PlayerController {
       iframeEnd: locked ? this.base.roll.lockOnIframes[1] : this.base.roll.iframeEnd
     }
     this.grounded = true
-    bus.emit('sound.source', { id: 'player', pos: { ...this.pos }, loudness: 0.3 })
+    bus.emit('sound.source', { id: 'player', pos: { ...this.pos }, loudness: this.noise(0.3) })
   }
 
   tryStartAction(key: string, tick: number, rhythm?: RhythmClock): boolean {
@@ -305,11 +338,12 @@ export class PlayerController {
       bus.emit('ui.notify', { text: '精力不足', kind: 'info' })
       return false
     }
-    this.action = { key, f, tick: 0, hitDone: false, shots: 0 }
+    const cut = key.startsWith('l') ? Math.min(this.rpg.lightStartupTicks, Math.max(0, f.activeStart - 1)) : 0
+    this.action = { key, f, tick: cut, hitDone: false, shots: 0 }
     this.comboQueued = null
     bus.emit('audio.sfx', { key: f.sfx?.[0] ?? 'swing_1', pos: { ...this.pos }, gain: 0.7 })
     if (f.vfx?.[0]) bus.emit('vfx.request', { key: f.vfx[0], pos: { ...this.pos }, dir: { x: Math.sin(this.yaw), y: 0, z: Math.cos(this.yaw) } })
-    bus.emit('sound.source', { id: 'player', pos: { ...this.pos }, loudness: ((f.loudness ?? 3) / 10) * (this.weapon.noiseMul ?? 1) })
+    bus.emit('sound.source', { id: 'player', pos: { ...this.pos }, loudness: this.noise(((f.loudness ?? 3) / 10) * (this.weapon.noiseMul ?? 1)) })
     void rhythm
     return true
   }
@@ -366,7 +400,7 @@ export class PlayerController {
       stamina: this.stats.stamina, staminaMax: this.stats.staMax,
       poise: this.stats.poiseAccum, poiseMax: this.stats.poiseMax,
       overdrive: this.stats.overdrive, overdriveMax: this.stats.overdriveMax,
-      rank: 1
+      rank: this.rpg.rank
     })
   }
 }

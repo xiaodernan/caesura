@@ -164,15 +164,20 @@ export class CombatManager {
     const p = this.player
     const crumpled = e.stats.crumpleTicksLeft > 0
     const dmg = resolveDamage({
-      base: s.base,
-      attrs: p.base.attrs,
+      base: s.base * p.rpg.weaponDamageMul,
+      attrs: p.rpg.attrs,
       scaling: p.weapon.scaling,
       defense: e.stats.defense,
       backstab: s.backstab,
       onBeat: s.onBeat,
-      ranged: s.ranged
+      ranged: s.ranged,
+      critRate: p.rpg.critRate,
+      critMul: p.rpg.critMul
     }, () => this.rng.float())
     let final = dmg.damage
+    // §5.3 之鸣钟：对钟甲/钟壳目标加伤。判据是**数据**（有钟甲或带壳），不是敌人名字。
+    const bellTarget = !!e.data.ai.armorFront || e.shellDmgMul < 1
+    if (bellTarget && p.rpg.bellBonus > 0) final = Math.round(final * (1 + p.rpg.bellBonus))
     if (crumpled) final = Math.round(final * 1.5)
     // §14.7 钟甲：只有「从它的正面锥里打进来」的这一笔被吃掉。用 s.dir（攻击者→它）反推
     // 来袭方位，所以近战挥砍、玩家投掷枪、以及未来任何走这条通道的伤害都自动受同一规则管。
@@ -194,7 +199,7 @@ export class CombatManager {
 
     const poiseMul = (e.inStartup ? 1.5 : 1) * (s.onBeat ? 2 : 1)
     // 壳在 ⇒ 架势免疫；壳刚被钟声剥掉 ⇒ 架势累积翻倍（同一个奖励的两半）
-    if (!e.poiseImmune) e.stats.addPoise(Math.round(s.poise * poiseMul * (p.weapon.poiseMul ?? 1) * e.poiseAccumMul), tick)
+    if (!e.poiseImmune) e.stats.addPoise(Math.round(s.poise * poiseMul * (p.weapon.poiseMul ?? 1) * p.rpg.poiseDmgMul * e.poiseAccumMul), tick)
     const burst = e.stats.addFissure(s.layers)
     if (s.mute && e.data.ai.buffAura) e.stunTicks = Math.max(e.stunTicks, 60)
     if (s.pinTicks > 0) e.stunTicks = Math.max(e.stunTicks, s.pinTicks) // 钉住定身
@@ -211,6 +216,7 @@ export class CombatManager {
     })
     this.time.hitStop((s.hitStopMs + (s.onBeat ? 30 : 0)) / 1000)
     if (burst) this.fissureBurst(e, s.point)
+    if (dmg.crit && !s.backstab) bus.emit('ui.notify', { text: `泛音暴击 · ${final}`, kind: 'reward' })
     this.player.onHitLanded()
     if (s.pinTicks > 0) bus.emit('ui.notify', { text: `钉住 −${final}`, kind: 'info' })
     this.checkCrumple(e, tick)
@@ -237,7 +243,7 @@ export class CombatManager {
     this.projectiles.spawn({
       hostile: false, ownerId: 'player', kind: spec.kind, origin, dir,
       speed: spec.speed, range: spec.range, radius: spec.radius, gravity: spec.gravity,
-      damage: a.f.damage, poise: a.f.poise, hitStopMs: a.f.hitStopMs,
+      damage: a.f.damage * p.rpg.weaponDamageMul, poise: a.f.poise, hitStopMs: a.f.hitStopMs,
       layers: a.f.fissureLayers ?? (a.key === 'charged' ? 2 : a.key === 'h' ? 1 : 0),
       pinTicks: spec.pinTicks ?? 0, muteTicks: spec.muteOnHit ?? 0,
       pierce: spec.pierce, onBeat, parryable: true,
@@ -599,9 +605,9 @@ export class CombatManager {
       bus.emit('combat.hit', { ...base, damage: 0, result: 'immune', shakeKey: 'graze' })
       return 'immune'
     }
-    if (p.guardTicks >= 1 && p.guardTicks <= p.base.perfectBlockWindow) {
+    if (p.guardTicks >= 1 && p.guardTicks <= p.base.perfectBlockWindow + p.rpg.perfectBlockBonusTicks) {
       h.react(tick, 'perfectBlock')
-      p.addOverdrive(1)
+      p.addOverdrive(1 + p.rpg.restOverdrive)
       this.time.hitStop(0.09)
       bus.emit('combat.hit', { ...base, damage: 0, result: 'perfectBlock', shakeKey: 'graze' })
       bus.emit('vfx.request', { key: 'parry_ring', pos: h.point, scale: 0.7 })
@@ -680,7 +686,7 @@ export class CombatManager {
     if (this.killed.has(e.id)) return
     this.killed.add(e.id)
     e.enter('dead')
-    bus.emit('entity.died', { id: e.id, kind: 'enemy', position: { ...e.pos } })
+    bus.emit('entity.died', { id: e.id, kind: 'enemy', dataId: e.data.id, position: { ...e.pos } })
     bus.emit('vfx.request', { key: 'death_shatter', pos: { ...e.pos }, scale: e.data.body?.scale ?? 1 })
     bus.emit('audio.sfx', { key: 'death_shatter', pos: { ...e.pos }, gain: 0.8 })
     bus.emit('ui.notify', { text: `${nameOf(e.data.nameKey)} 崩解 · 遗响 +${Math.round(e.stats.hpMax * 0.3)}`, kind: 'reward' })
@@ -760,7 +766,7 @@ export class CombatManager {
         frac = ex.bossFracs[Math.min(c, ex.bossFracs.length - 1)]
         this.execCount.set(e.id, c + 1)
       }
-      dmg = Math.round(e.stats.hpMax * frac) + flat
+      dmg = Math.round((e.stats.hpMax * frac + flat) * p.rpg.execMul)
     }
     const point: Vec3 = { x: (p.pos.x + e.pos.x) / 2, y: 1.1, z: (p.pos.z + e.pos.z) / 2 }
     const dir: Vec3 = { x: e.pos.x - p.pos.x, y: 0, z: e.pos.z - p.pos.z }

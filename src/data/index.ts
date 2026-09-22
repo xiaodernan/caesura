@@ -5,10 +5,14 @@ import weaponsRaw from './json/weapons.json'
 import enemiesRaw from './json/enemies.json'
 import lootRaw from './json/loot.json'
 import regionsRaw from './json/regions.json'
-import type { MovesetData, WeaponData, EnemyData, PlayerBaseData, RegionData } from './schema'
+import progressionRaw from './json/progression.json'
+import itemsRaw from './json/items.json'
+import type { MovesetData, WeaponData, EnemyData, PlayerBaseData, RegionData, ProgressionData, ItemData, LootTableData } from './schema'
 
 export const playerBase = playerRaw as unknown as PlayerBaseData
 export const regions = regionsRaw as unknown as RegionData[]
+export const progression = progressionRaw as unknown as ProgressionData
+export const items = itemsRaw as unknown as ItemData[]
 
 let registered = false
 
@@ -21,9 +25,11 @@ export function registerGameData(): void {
     registry.register(`moveset:${w.movesetId}`, (movesetsRaw as unknown as MovesetData[]).find((m) => m.id === w.movesetId))
   }
   for (const e of enemiesRaw as unknown as EnemyData[]) registry.register(e.id, e)
-  for (const l of lootRaw as { id: string; entries: unknown }[]) registry.register(l.id, l)
+  for (const l of lootRaw as unknown as LootTableData[]) registry.register(l.id, l)
   for (const r of regions) registry.register(r.id, r)
+  for (const it of items) registry.register(it.id, it)
   registry.register('player:base', playerBase)
+  registry.register('progression', progression)
 }
 
-export { weaponsRaw, enemiesRaw, movesetsRaw, regionsRaw }
+export { weaponsRaw, enemiesRaw, movesetsRaw, regionsRaw, progressionRaw, itemsRaw, lootRaw }

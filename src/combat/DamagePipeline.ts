@@ -12,6 +12,12 @@ export interface DamageRequest {
   poiseBreakTarget?: boolean         // crumpled -> true damage execution channel (caller handles)
   rawDamage?: number                 // executions/fissure burst bypass DR
   variance?: number                  // 0..1; 0 disables
+  /**
+   * 暴击（Phase 5-B，progression.md §2.1 泛音）：概率来自「泛音」属性 + 装备词缀。
+   * 只对**玩家出手**有意义——敌人没有暴击属性，也不该有（Boss 的难度来自机制而非随机倍率）。
+   */
+  critRate?: number
+  critMul?: number
 }
 
 export interface DamageResult {
@@ -48,7 +54,12 @@ export function resolveDamage(req: DamageRequest, rand: () => number): DamageRes
   let dmg = req.base * attrScale(req) * mul * (1 - damageReduction(req.defense, req.ranged))
   if (req.backstab) dmg *= 2.0
   if (req.weakpoint) dmg *= 1.8
-  return { damage: Math.max(1, Math.round(dmg)), crit: req.backstab === true || req.weakpoint === true }
+  let crit = req.backstab === true || req.weakpoint === true
+  if (req.critRate && req.critRate > 0 && rand() < req.critRate) {
+    dmg *= req.critMul ?? 1.35
+    crit = true
+  }
+  return { damage: Math.max(1, Math.round(dmg)), crit }
 }
 
 export function comboStageMul(stageIndex: number, isFinal: boolean): number {

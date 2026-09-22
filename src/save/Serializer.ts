@@ -3,7 +3,8 @@ import type { PlayerController } from '@/player/ThirdPersonController'
 import type { StreamingSystem } from '@/world/Streaming'
 import type { SpawnDirector } from '@/world/SpawnDirector'
 import type { RhythmClock } from '@/core/RhythmClock'
-import { migrateTo } from './Migration'
+import type { RpgRuntime, RpgSnapshot } from '@/rpg/Runtime'
+import { migrateTo, registerMigration } from './Migration'
 import { unwrap, wrap } from './Integrity'
 
 /**
@@ -13,7 +14,19 @@ import { unwrap, wrap } from './Integrity'
  * 存档里没有一个敌人实例，只有一串槽位身份）。
  */
 
-export const SAVE_VERSION = 1
+export const SAVE_VERSION = 2
+
+/**
+ * v1 → v2（Phase 5-B 的成长/背包/装备/掉落）。
+ * 老档里**没有**这些东西，所以迁移的动作是「明确地空着」而不是编一套假的成长数据：
+ * `rpg: null` ⇒ 读档后保留运行时当前值（出身基线）。需求 §78 的要求是如实，不是好看。
+ */
+registerMigration(1, (p) => {
+  const snap = { ...(p.snapshot as Record<string, unknown>) }
+  snap.rpg = null
+  snap.version = 2
+  return { ...p, snapshot: snap }
+})
 
 export interface Snapshot {
   version: number
@@ -30,6 +43,8 @@ export interface Snapshot {
   flags: string[]
   /** 已永久清剿的出怪槽位身份：读档后这些位置不能再刷怪 */
   clearedSlots: string[]
+  /** 成长/背包/装备/掉落状态（v2 起）。v1 老档为 null ⇒ 保留运行时基线 */
+  rpg: RpgSnapshot | null
 }
 
 export interface SavePayload { snapshot: Snapshot }
@@ -97,6 +112,8 @@ export interface SaveWorld {
   clock: RhythmClock
   /** 逻辑 tick → 秒（GameTime 的 tick 是唯一时间真源） */
   time: { tick: number }
+  /** Phase 5-B：成长系统（可选 —— 不接成长系统的测试/工具仍可构造 SaveGame） */
+  rpg?: RpgRuntime
 }
 
 /**
@@ -124,7 +141,8 @@ export class SaveGame {
         weaponId: p.weapon.id
       },
       flags: w.streaming.flagKeys(),
-      clearedSlots: w.spawner.clearedKeys()
+      clearedSlots: w.spawner.clearedKeys(),
+      rpg: w.rpg ? w.rpg.snapshot() : null
     }
   }
 
@@ -185,6 +203,7 @@ export class SaveGame {
     p.stats.hp = Math.min(p.stats.hpMax, s.player.hp)
     p.stats.stamina = s.player.stamina
     p.stats.overdrive = s.player.overdrive
+    if (s.rpg && w.rpg) w.rpg.restore(s.rpg)
     for (const f of s.flags) w.streaming.setFlag(f, true)
     for (const k of s.clearedSlots) w.spawner.markCleared(k)
     // floorY 不在这里算：调用方 teleport 之后由 world/Surface 给（保持「谁能算出脚下」只有一个答案）
