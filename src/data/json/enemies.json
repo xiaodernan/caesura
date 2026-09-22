@@ -1104,5 +1104,397 @@
    "emissive": 4474098,
    "coreColor": 16768196
   }
+ },
+ {
+  "id": "en_ostlara",
+  "nameKey": "enemy.ostlara",
+  "archetype": "miniboss",
+  "hp": 420,
+  "poise": 120,
+  "speed": 2.4,
+  "defense": 30,
+  "ai": {
+   "vision": {
+    "range": 26,
+    "fovDeg": 120
+   },
+   "vibration": {
+    "range": 14
+   },
+   "hearing": {
+    "range": 20
+   },
+   "distBands": [
+    {
+     "min": 0,
+     "max": 4.6,
+     "actions": [
+      "swordchain1",
+      "combo3a",
+      "pendulum",
+      "bellsmash",
+      "charge"
+     ]
+    },
+    {
+     "min": 4.6,
+     "max": 99,
+     "actions": [
+      "chase"
+     ]
+    }
+   ]
+  },
+  "boss": {
+   "bpm": 108,
+   "beatsPerBar": 3,
+   "phases": [
+    {
+     "id": "bellshell",
+     "attacks": [
+      "swordchain1",
+      "charge"
+     ],
+     "shell": {
+      "dmgMul": 0.1,
+      "immuneToPoise": true
+     }
+    },
+    {
+     "id": "twinfugue",
+     "belowHpFrac": 0.6,
+     "attacks": [
+      "swordchain1",
+      "combo3a",
+      "pendulum",
+      "charge"
+     ]
+    },
+    {
+     "id": "greatbell",
+     "belowHpFrac": 0.25,
+     "attacks": [
+      "pendulum",
+      "bellsmash",
+      "combo3a"
+     ]
+    }
+   ],
+   "bells": {
+    "positions": [
+     {
+      "x": 270,
+      "y": -40,
+      "z": 90
+     },
+     {
+      "x": 330,
+      "y": -40,
+      "z": 90
+     },
+     {
+      "x": 300,
+      "y": -40,
+      "z": 140
+     }
+    ],
+    "hitRadius": 3.6,
+    "releaseTicks": 360,
+    "breaksAt": 2,
+    "resonanceRadius": 4.5,
+    "damagePerBeat": 4
+   }
+  },
+  "attacks": [
+   {
+    "id": "swordchain1",
+    "beat": [
+     1
+    ],
+    "parryable": true,
+    "reaction": "R2",
+    "parryStunTicks": 72,
+    "frames": {
+     "startup": 40,
+     "activeStart": 40,
+     "activeEnd": 45,
+     "recovery": 60,
+     "damage": 24,
+     "stamina": 0,
+     "poise": 24,
+     "hitStopMs": 110,
+     "hitbox": {
+      "shape": "cone",
+      "angleDeg": 90,
+      "radius": 3.4,
+      "height": 2.2,
+      "offsetY": 1.2
+     },
+     "lunge": 0.9,
+     "loudness": 6,
+     "sfx": [
+      "swing_heavy_1"
+     ],
+     "vfx": [
+      "trail_sword"
+     ],
+     "next": "swordchain2"
+    }
+   },
+   {
+    "id": "swordchain2",
+    "beat": [
+     2
+    ],
+    "parryable": true,
+    "reaction": "R2",
+    "frames": {
+     "startup": 30,
+     "activeStart": 30,
+     "activeEnd": 36,
+     "recovery": 56,
+     "damage": 26,
+     "stamina": 0,
+     "poise": 26,
+     "hitStopMs": 110,
+     "hitbox": {
+      "shape": "cone",
+      "angleDeg": 100,
+      "radius": 3.5,
+      "height": 2.2,
+      "offsetY": 1.2
+     },
+     "lunge": 0.7,
+     "loudness": 6,
+     "sfx": [
+      "swing_heavy_2"
+     ],
+     "vfx": [
+      "trail_sword"
+     ]
+    }
+   },
+   {
+    "id": "combo3a",
+    "beat": [
+     1
+    ],
+    "parryable": true,
+    "reaction": "R1",
+    "parryStunTicks": 72,
+    "frames": {
+     "startup": 30,
+     "activeStart": 30,
+     "activeEnd": 35,
+     "recovery": 44,
+     "damage": 20,
+     "stamina": 0,
+     "poise": 20,
+     "hitStopMs": 95,
+     "hitbox": {
+      "shape": "cone",
+      "angleDeg": 80,
+      "radius": 3.2,
+      "height": 2.1,
+      "offsetY": 1.2
+     },
+     "lunge": 1.0,
+     "loudness": 5,
+     "sfx": [
+      "swing_heavy_1"
+     ],
+     "vfx": [
+      "trail_thrust"
+     ],
+     "next": "combo3b"
+    }
+   },
+   {
+    "id": "combo3b",
+    "beat": [
+     2
+    ],
+    "parryable": true,
+    "reaction": "R1",
+    "frames": {
+     "startup": 24,
+     "activeStart": 24,
+     "activeEnd": 29,
+     "recovery": 40,
+     "damage": 22,
+     "stamina": 0,
+     "poise": 22,
+     "hitStopMs": 95,
+     "hitbox": {
+      "shape": "cone",
+      "angleDeg": 80,
+      "radius": 3.3,
+      "height": 2.1,
+      "offsetY": 1.2
+     },
+     "lunge": 0.8,
+     "loudness": 5,
+     "sfx": [
+      "swing_heavy_2"
+     ],
+     "vfx": [
+      "trail_thrust"
+     ],
+     "next": "combo3c"
+    }
+   },
+   {
+    "id": "combo3c",
+    "beat": [
+     3
+    ],
+    "parryable": true,
+    "reaction": "R3",
+    "frames": {
+     "startup": 26,
+     "activeStart": 26,
+     "activeEnd": 33,
+     "recovery": 62,
+     "damage": 26,
+     "stamina": 0,
+     "poise": 34,
+     "hitStopMs": 120,
+     "hitbox": {
+      "shape": "cone",
+      "angleDeg": 120,
+      "radius": 3.6,
+      "height": 2.3,
+      "offsetY": 1.2
+     },
+     "lunge": 1.2,
+     "loudness": 7,
+     "sfx": [
+      "chord_slam"
+     ],
+     "vfx": [
+      "trail_sword",
+      "shock_small"
+     ]
+    }
+   },
+   {
+    "id": "pendulum",
+    "beat": [
+     1
+    ],
+    "parryable": false,
+    "reaction": "R3",
+    "frames": {
+     "startup": 48,
+     "activeStart": 48,
+     "activeEnd": 60,
+     "recovery": 90,
+     "damage": 28,
+     "stamina": 0,
+     "poise": 30,
+     "hitStopMs": 120,
+     "hitbox": {
+      "shape": "ring",
+      "inner": 0.6,
+      "outer": 3.6,
+      "forward": 0
+     },
+     "lunge": 0.4,
+     "loudness": 7,
+     "sfx": [
+      "drum_sweep"
+     ],
+     "vfx": [
+      "trail_sword"
+     ]
+    }
+   },
+   {
+    "id": "charge",
+    "beat": [
+     1
+    ],
+    "parryable": false,
+    "reaction": "R3",
+    "frames": {
+     "startup": 54,
+     "activeStart": 54,
+     "activeEnd": 60,
+     "recovery": 96,
+     "damage": 32,
+     "stamina": 0,
+     "poise": 36,
+     "hitStopMs": 130,
+     "hitbox": {
+      "shape": "ring",
+      "inner": 0,
+      "outer": 2.0,
+      "forward": 0
+     },
+     "lunge": 6.0,
+     "loudness": 8,
+     "sfx": [
+      "land_slam"
+     ],
+     "vfx": [
+      "shock_small"
+     ],
+     "flags": [
+      "charge"
+     ]
+    }
+   },
+   {
+    "id": "bellsmash",
+    "beat": [
+     1
+    ],
+    "parryable": false,
+    "reaction": "R3",
+    "frames": {
+     "startup": 200,
+     "activeStart": 200,
+     "activeEnd": 212,
+     "recovery": 270,
+     "damage": 36,
+     "stamina": 0,
+     "poise": 60,
+     "hitStopMs": 160,
+     "hitbox": {
+      "shape": "ring",
+      "inner": 0,
+      "outer": 5.0,
+      "forward": 0
+     },
+     "lunge": 1.5,
+     "loudness": 9,
+     "sfx": [
+      "chord_slam"
+     ],
+     "vfx": [
+      "shock_small",
+      "ring_dust"
+     ],
+     "flags": [
+      "slowwind"
+     ]
+    }
+   }
+  ],
+  "weakpoint": {
+   "dmgMul": 1.5
+  },
+  "drops": [
+   {
+    "tableId": "loot_heavy",
+    "chance": 1
+   }
+  ],
+  "body": {
+   "scale": 2.6,
+   "color": 6050622,
+   "emissive": 1355946,
+   "coreColor": 16772588
+  }
  }
 ]

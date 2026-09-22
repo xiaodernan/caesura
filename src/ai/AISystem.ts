@@ -50,6 +50,22 @@ export class AISystem {
     return true
   }
 
+  /**
+   * §15.2「区域网格由他接管」：正在交战的 Boss 用她的私有拍速改写**全场**网格，
+   * 她一死或玩家走开就归还区域基准拍。和 buff/intangible 一样是每 tick 重算的派生态——
+   * 没有成对的 enter/exit 事件可以漏，也没有「Boss 死了节拍还停在 108」这种脏状态。
+   */
+  private syncClock(rhythm: RhythmClock): void {
+    let boss: Enemy | null = null
+    for (const e of this.enemies) {
+      if (!e.alive || !e.data.boss?.bpm) continue
+      if (e.state !== 'combat' && e.state !== 'chase') continue
+      if (!boss || e.id < boss.id) boss = e // 同场多只时取稳定的一只（当前数据不会发生）
+    }
+    if (boss) rhythm.overrideTo(boss.data.boss!.bpm!, boss.data.boss!.beatsPerBar ?? 4)
+    else rhythm.restoreHome()
+  }
+
   slotTaken(key: string): boolean {
     if (this.slotArmed.has(key)) return true
     this.slotArmed.add(key)
@@ -57,6 +73,7 @@ export class AISystem {
   }
 
   update(dt: number, tick: number, player: PlayerController, rhythm: RhythmClock): void {
+    this.syncClock(rhythm)
     // 10Hz rotated perception
     this.senseCursor++
     if (this.senseCursor % 6 === 0) {

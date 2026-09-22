@@ -163,6 +163,40 @@ export interface EnemyData {
     selfToll?: { everyBars: number; attackId: string; heal: number }
   }
   attacks: AttackSpec[]
+  /**
+   * Boss 运行时（combat.md §15/§16）。写了这一格，这具敌人就不只是一只更厚的怪：
+   * - `bpm` / `beatsPerBar`：她的**私有拍速**（§15.1「3/4 拍 @108BPM」）。进战接管全场网格，
+   *   离场/死亡归还给区域基准拍——「区域网格由他接管」是需求 §23 的硬设定，不是 flavor。
+   * - `phases`：**单调**阶段机（血线只降不升，绝不来回跳）。每阶换的是「招式白名单 + 护壳规则」，
+   *   不是数值倍率——§16「阶段必有场地变化而非纯数值」。
+   * - `bells`：撞钟机关（§15.1）。P1 的壳靠打是打不动的，只有把她引去撞钟才剥得掉。
+   */
+  boss?: {
+    bpm?: number
+    beatsPerBar?: number
+    phases: {
+      id: string
+      /** 血量比例**低于**此值时进入本阶（第一阶省略 = 起始阶） */
+      belowHpFrac?: number
+      /** 本阶允许出的招式 id（白名单 ⇒ 阶段真的换行为） */
+      attacks: string[]
+      /** 护壳：吃这一阶伤害时乘 `dmgMul`，`immuneToPoise` = 打不出架势 */
+      shell?: { dmgMul: number; immuneToPoise: boolean }
+    }[]
+    /**
+     * 立钟机关：她的 `flags` 含 `'charge'` 那招收势帧附近若撞进一口还没响的钟，
+     * 钟鸣 ⇒ 壳解除 `releaseTicks`（期间架势累积翻倍）、已响钟数达 `breaksAt` ⇒ 壳永久碎。
+     * 响过的钟留下残响区：对玩家 0 伤、对喧堕者每拍 `damagePerBeat`（把场地用成 DPS 博弈）。
+     */
+    bells?: {
+      positions: { x: number; y: number; z: number }[]
+      hitRadius: number
+      releaseTicks: number
+      breaksAt: number
+      resonanceRadius: number
+      damagePerBeat: number
+    }
+  }
   weakpoint?: { dmgMul: number }
   drops?: { tableId: string; chance: number }[]
   body?: { scale: number; color: number; emissive: number; coreColor: number }

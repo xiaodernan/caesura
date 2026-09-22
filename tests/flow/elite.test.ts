@@ -292,7 +292,7 @@ describe('机制 c「敲钟自鸣」：必须打断的软计时器', () => {
     engage(w, e)
     e.stats.damage(120)
     const before = e.stats.hp
-    const started = watchTolls(w, e, Math.round(BAR * 4) + 240)
+    const started = watchTolls(w, e, Math.round(BAR * 4) + 600)
     expect(started.length, '到点就敲，不等 RNG 挑到它').toBeGreaterThanOrEqual(1)
     expect(e.stats.hp - before, '走完了 ⇒ +15').toBeGreaterThanOrEqual(15)
     expect(w.sfx.filter((k) => k === 'bell_toll').length).toBeGreaterThan(0)
@@ -307,7 +307,7 @@ describe('机制 c「敲钟自鸣」：必须打断的软计时器', () => {
     e.stats.damage(120)
     const before = e.stats.hp
     let cut = false
-    const started = watchTolls(w, e, Math.round(BAR * 4) + 240, (en) => {
+    const started = watchTolls(w, e, Math.round(BAR * 4) + 600, (en) => {
       if (cut) return
       cut = true
       en.interruptBroadcast(w.time.tick) // 玩家命中时 strikeEnemy 无条件调的就是这一句
@@ -329,7 +329,7 @@ describe('机制 c「敲钟自鸣」：必须打断的软计时器', () => {
     const hp0 = Math.round(e.stats.hp)
     const bells0 = w.sfx.filter((k) => k === 'bell_toll').length
     let stunned = false
-    const started = watchTolls(w, e, Math.round(BAR * 4) + 240, (en) => {
+    const started = watchTolls(w, e, Math.round(BAR * 4) + 600, (en) => {
       if (stunned) return
       stunned = true
       en.stunTicks = 30 // 走 stun 那条路：下一 tick `attack` 归零，但没经过 interruptBroadcast
@@ -341,7 +341,7 @@ describe('机制 c「敲钟自鸣」：必须打断的软计时器', () => {
     w.off()
   })
 
-  it('它是节拍器而不是随机冷却：1500 tick 里两次，间隔 = 4 小节', () => {
+  it('它是节拍器而不是随机冷却：1900 tick 里两次，间隔落在 4~6 小节', () => {
     const w = makeWorld()
     const e = knight(w, 0, -2.4)
     engage(w, e)
@@ -349,8 +349,8 @@ describe('机制 c「敲钟自鸣」：必须打断的软计时器', () => {
     const started = watchTolls(w, e, 1900)
     expect(started, '两个四小节周期 ⇒ 两次').toHaveLength(2)
     const gap = started[1] - started[0]
-    expect(gap, '周期就是 4 小节（小节边界取整差 1 tick）；手上那招没打完则顺延一小节').toBeGreaterThanOrEqual(BAR * 4 - 1)
-    expect(gap).toBeLessThanOrEqual(BAR * 5)
+    expect(gap, '周期是 4 小节的小节网格；手上那招没打完 ⇒ 排队顺延，最多到 6 小节').toBeGreaterThanOrEqual(BAR * 4 - 1)
+    expect(gap).toBeLessThanOrEqual(BAR * 6)
     w.off()
   })
 
@@ -358,9 +358,9 @@ describe('机制 c「敲钟自鸣」：必须打断的软计时器', () => {
     const w = makeWorld()
     const e = knight(w, 0, -2.4)
     engage(w, e)
-    expect(watchTolls(w, e, Math.round(BAR * 4) + 240), '满血没人敲钟').toHaveLength(0)
+    expect(watchTolls(w, e, Math.round(BAR * 4) + 600), '满血没人敲钟').toHaveLength(0)
     e.stats.damage(60)
-    expect(watchTolls(w, e, Math.round(BAR * 4) + 240).length, '掉了血就补上').toBeGreaterThanOrEqual(1)
+    expect(watchTolls(w, e, Math.round(BAR * 4) + 600).length, '掉了血就补上').toBeGreaterThanOrEqual(1)
     w.off()
   })
 })

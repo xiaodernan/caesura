@@ -93,11 +93,6 @@ function force(e: Enemy, id: string, tickIn = 0): void {
 }
 
 /** 离最近的「半拍网格」有多远（tick）。§2.1 要求敌人的时间单位踩在拍点/半拍点上 */
-function fromHalfBeatGrid(r: RhythmClock): number {
-  const half = BT / 2
-  const p = (((r.beat % 0.5) + 0.5) % 0.5) * BT
-  return Math.min(p, half - p)
-}
 
 /** 按下轻击那一 tick action.tick 已经是 1 ⇒ 判定窗中心在 press + (start+end)/2 - 1 */
 const windowCenter = (f: FrameData): number => (f.activeStart + f.activeEnd) / 2 - 1
@@ -396,30 +391,32 @@ describe('相位与「抓不住」：处决、真 AI 的时序、以及切分连
     w.off()
   })
 
-  it('真 AI（不 force）排出来的那一记：起手精确踩 .5 拍，命中帧因此永远藏在拍隙里', () => {
+  it('真 AI（不 force）排出来的那一记：命中帧精确踩在 .5 拍网格上，而那个位置她是实体的', () => {
     const w = makeWorld()
     const e = ghost(w, 0, 1.8)
     e.alertness = 100
     e.enter('chase')
-    let startErr = Infinity
+    let gridErr = Infinity
     let hitFrames = 0
-    let hitWhileVisible = 0
+    let hitWhileHidden = 0
     w.tick(200, () => {
       const a = e.attack
       if (!a) return
-      if (a.tick === 0) startErr = Math.min(startErr, fromHalfBeatGrid(w.rhythm))
       const f = a.spec.frames
+      if (a.tick === f.activeStart) gridErr = Math.min(gridErr, w.rhythm.offsetFromBeatGrid(a.spec.beat))
       if (a.tick >= f.activeStart && a.tick <= f.activeEnd) {
         hitFrames++
-        if (!e.intangible) hitWhileVisible++
+        if (e.intangible) hitWhileHidden++
       }
     })
     expect(hitFrames, '这 200 tick 里它真的打过一记').toBeGreaterThan(0)
-    expect(startErr, '量化取整允许 ±0.5 tick').toBeLessThanOrEqual(1)
-    expect(hitWhileVisible, '§14.5 的读感：它从拍隙里伸出一刀，出手瞬间自己是隐形的').toBe(0)
+    expect(gridErr, '§2.1 的 ±50ms 容差：量化后误差 <1 tick = 16.7ms').toBeLessThanOrEqual(1)
+    // §14.5 的正解（4-D 曾把它读反，见 technical-architecture §5.9.3 的更正）：
+    // 她的命中帧落在 and 位——那正是她**实体**的窗口。她「打不着」靠的是拍点上的定身+半透明，
+    // 不是「从隐形段里伸出一刀」；隐形段里她连动都不能动。
+    expect(hitWhileHidden, '隐形段里她既不能动也不该出手').toBe(0)
     w.off()
   })
-
   it('synco1 → synco2：派生段量化到下一个半拍位，两段之间留下约半拍呼吸（§13.1 惩罚窗口）', () => {
     const w = makeWorld()
     const e = ghost(w, 0, -60) // 摆远：只看帧序列，不让它打到人
@@ -432,13 +429,15 @@ describe('相位与「抓不住」：处决、真 AI 的时序、以及切分连
       const a = e.attack
       if (!a) return
       if (!order.includes(a.spec.id)) order.push(a.spec.id)
-      if (a.tick === 0) startErr.push(fromHalfBeatGrid(w.rhythm))
-      if (prev === 'synco1' && a.spec.id === 'synco2' && a.tick < 0) rest = -a.tick
+      // 量的是**命中帧**落在网格上（§2.1），不是起手帧——起手按设计就是提前一整个前摇
+      if (a.tick === a.spec.frames.activeStart && a.spec.id !== 'synco1') startErr.push(w.rhythm.offsetFromBeatGrid(a.spec.beat))
+      if (prev === 'synco1' && a.spec.id === 'synco2' && a.tick < 0) rest = a.spec.frames.activeStart - a.tick
       prev = a.spec.id
     })
     expect(order, '第一段之后自己接出第二段').toEqual(['synco1', 'synco2'])
     expect(rest, '两段之间 ≈ 半拍（不是同拍硬顶）').toBeGreaterThanOrEqual(10)
-    expect(Math.max(...startErr), '两段各自都精确踩在半拍网格上').toBeLessThanOrEqual(1)
+    expect(startErr.length, '派生段的收势帧被观察到了').toBeGreaterThan(0)
+    expect(Math.max(...startErr), '派生段（真 AI 排出来的那一记）命中帧精确踩在自己的拍网格上').toBeLessThanOrEqual(1)
     expect(e.attack, '连段有尽头：不会无限踏下去').toBeNull()
     w.off()
   })

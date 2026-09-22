@@ -24,7 +24,7 @@ const PRESENTATION = new Set([
   'main.ts', 'player/CameraRig.ts', 'tools/CombatDebugger.ts', 'ui/Hud.ts',
   'vfx/VfxLayer.ts', 'vfx/materials.ts',
   'world/ActorVisuals.ts', 'world/ChunkGreybox.ts', 'world/InteractableGreybox.ts',
-  'world/ProjectileVisuals.ts', 'world/PlaceholderArena.ts',
+  'world/ProjectileVisuals.ts', 'world/BossArenaVisuals.ts', 'world/PlaceholderArena.ts',
 ])
 
 const tsFiles = (dir: string): string[] => {

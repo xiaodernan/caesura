@@ -32,6 +32,8 @@ export class CameraRig {
       else if (h.result === 'parry') this.shake('parry')
     })
     bus.on('player.damaged', () => this.shake('hurt'))
+    // §15.1「转阶段敲钟怒吼 · 震镜 4°/900ms」：跳阶是一次世界事件，不是一次命中
+    bus.on('boss.phase', () => this.shake('boss', 1.2))
   }
 
   shake(key: string, mul = 1): void {

@@ -81,7 +81,8 @@
     "spawnGroups": [
       { "enemyId": "en_murkshell", "count": 3, "center": { "x": 250, "y": -40, "z": 20 }, "radius": 12 },
       { "enemyId": "en_driftsinger", "count": 2, "center": { "x": 370, "y": -40, "z": 100 }, "radius": 10 },
-      { "enemyId": "en_phantome", "count": 2, "center": { "x": 330, "y": -40, "z": 60 }, "radius": 10 }
+      { "enemyId": "en_phantome", "count": 2, "center": { "x": 330, "y": -40, "z": 60 }, "radius": 10 },
+      { "enemyId": "en_ostlara", "count": 1, "center": { "x": 300, "y": -40, "z": 104 }, "radius": 4 }
     ],
     "landmarks": [
       { "id": "lm_drownedchoir_brokenaltar", "nameKey": "landmark.broken_altar", "pos": { "x": 320, "y": -36, "z": 60 }, "sightRange": 70 }

@@ -11,6 +11,7 @@ import type { MovesetData, WeaponData } from '@/data/schema'
 import { PlayerController } from '@/player/ThirdPersonController'
 import { AISystem } from '@/ai/AISystem'
 import { ActorVisuals } from '@/world/ActorVisuals'
+import { BossArenaVisuals } from '@/world/BossArenaVisuals'
 
 registerGameData()
 
@@ -68,5 +69,47 @@ describe('ActorVisuals：钟甲板挂得对、掉得对、回收不漏', () => {
     ai.despawn(s.id)
     vis.sync(ai.enemies, 5)
     expect(meshCount(), '反复横跳之后水位不变 ⇒ 池没漏').toBe(empty)
+  })
+})
+
+describe('BossArenaVisuals：撞钟机关必须看得见（§15.1）', () => {
+  const scene2 = new THREE.Scene()
+  const boss = new AISystem()
+  const arena = new BossArenaVisuals(scene2)
+  afterAll(() => arena.dispose())
+
+  const bells = () => (scene2.getObjectByName('boss-arena') as THREE.Group).children as THREE.Mesh[]
+
+  it('带机关的 Boss 出现 ⇒ 每口立钟一个模，位置来自表而不是代码', () => {
+    const k = boss.spawn('en_ostlara', { x: 300, y: -40, z: 104 }, 'b')
+    arena.sync([k])
+    const g = k.data.boss!.bells!
+    expect(bells()).toHaveLength(g.positions.length)
+    expect(bells().map((m) => m.position.x).sort()).toEqual(g.positions.map((p) => p.x).sort())
+    expect(bells()[0].position.y, '钟心站在本层地板上' + g.positions[0].y.toFixed(0)).toBeCloseTo(g.positions[0].y + 1.3, 5)
+  })
+
+  it('钟被撞响 ⇒ 同一对象换材质 + 塌成暗桩（残响区还在，钟已经空了）', () => {
+    const k = boss.enemies.find((e) => e.data.boss?.bells)!
+    const before = bells()[0]
+    const matBefore = before.material
+    k.bellsRung[0] = true
+    arena.sync(boss.enemies)
+    const after = bells()[0]
+    expect(after, '不重建模型，只换状态').toBe(before)
+    expect(after.scale.y, '塌下去').toBeLessThan(1)
+    expect(after.material, '换成暗材质（同一对共享材质实例，不多建）').not.toBe(matBefore)
+  })
+
+  it('Boss 被流送回收 ⇒ 机关一起摘掉，往返不涨网格数', () => {
+    const n0 = bells().length
+    expect(n0).toBeGreaterThan(0)
+    for (const e of [...boss.enemies]) boss.despawn(e.id)
+    arena.sync(boss.enemies)
+    expect(bells()).toHaveLength(0)
+    const k = boss.spawn('en_ostlara', { x: 300, y: -40, z: 104 }, 'b2')
+    arena.sync([k])
+    expect(bells()).toHaveLength(n0)
+    expect(arena.peakLive, '峰值 = 表里的钟数，不随往返增长').toBe(n0)
   })
 })

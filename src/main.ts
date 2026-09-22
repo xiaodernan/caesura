@@ -15,6 +15,7 @@ import { ChunkGreybox } from '@/world/ChunkGreybox'
 import { InteractableGreybox } from '@/world/InteractableGreybox'
 import { ActorVisuals } from '@/world/ActorVisuals'
 import { ProjectileVisuals } from '@/world/ProjectileVisuals'
+import { BossArenaVisuals } from '@/world/BossArenaVisuals'
 import { PlayerController } from '@/player/ThirdPersonController'
 import { CameraRig } from '@/player/CameraRig'
 import { LockOn } from '@/player/LockOn'
@@ -63,6 +64,7 @@ const ai = new AISystem()
 const combat = new CombatManager(player, ai, time, rhythm)
 const visuals = new ActorVisuals(arena.scene, arena.playerVisual, player)
 const projectileVis = new ProjectileVisuals(arena.scene)
+const bossArena = new BossArenaVisuals(arena.scene) // §15.1 撞钟机关：机关看不见就等于不存在
 const audio = new AudioEngine()
 const vfx = new VfxLayer(arena.scene)
 const hud = new Hud(document.getElementById('hud') as HTMLCanvasElement)
@@ -135,6 +137,7 @@ const core = {
     visuals.sync(ai.enemies, t.tick)
     projectileVis.sync(combat.projectiles.list(), t.tick)
     projectileVis.syncTelegraphs(combat.telegraphs())
+    bossArena.sync(ai.enemies.filter((e) => !!e.data.boss?.bells))
   },
   postTick(t: GameTime) {
     rhythm.update(t.dt)
@@ -156,7 +159,7 @@ loop.add(core)
 addEventListener('resize', () => { arena.resize(); rig.resize() })
 bus.on('log', (l) => console.info(`[caesura:${l.level}] ${l.msg}`))
 
-;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, interact, hud, spawner, nodes, projectileVis, actors: visuals }
+;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, interact, hud, spawner, nodes, projectileVis, actors: visuals, bossArena }
 
 document.getElementById('boot')!.style.display = 'none'
 ;(window as unknown as Record<string, unknown>).__CAESURA_BOOTED__ = true

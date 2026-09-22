@@ -23,6 +23,8 @@ export interface GameEvents {
     backstab: boolean; weakpoint: boolean
   }
   'combat.parried': { attackerId: string; defenderId: string }
+  /** Boss 跳阶（§15.1 转阶段演出）：表现层据此震镜/压低频，main.ts 据此吃 hitstop */
+  'boss.phase': { id: string; phase: number; phases: number; nameKey: string }
   'audio.sfx': { key: string; pos?: { x: number; y: number; z: number }; gain?: number }
   'vfx.request': { key: string; pos: { x: number; y: number; z: number }; dir?: { x: number; y: number; z: number }; scale?: number }
   'sound.source': { id: string; pos: { x: number; y: number; z: number }; loudness: number }

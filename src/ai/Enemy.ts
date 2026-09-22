@@ -56,6 +56,19 @@ export class Enemy {
   armorBroken = false
   /** §14.7 敲钟自鸣的下一次准点小节（-1 = 还没参战，进战后才排程） */
   private tollDueBar = -1
+  /**
+   * Boss 阶段下标（§15/§16）。**单调推进**：血线只降不升，所以绝不会来回跳阶，
+   * 一记大伤害直接跨过两条线时也是一次性跳到最靠后的那一阶。
+   */
+  bossPhase = 0
+  /** 每口立钟是否已经响过（下标 = `boss.bells.positions` 的下标） */
+  bellsRung: boolean[] = []
+  /** 钟壳被机关暂时剥掉的剩余 tick；这期间她的架势累积翻倍 */
+  shellLiftTicks = 0
+  /** 撞满 `breaksAt` 口钟 ⇒ 壳永久碎（不随 shellLiftTicks 归零而长回来） */
+  shellBroken = false
+  /** 刚跳阶：让 CombatManager 演一次「敲钟怒吼」（hitstop + 低音 + 震镜） */
+  phaseRoarPending = false
   /** 攻速加成用「攒够一整帧才多走一帧」实现，保持 tick 是整数（帧表里有 === 判定） */
   private speedAcc = 0
   facingLocked = false
@@ -94,6 +107,25 @@ export class Enemy {
   get nameKey(): string { return this.data.nameKey }
   getPos(): Vec3 { return this.pos }
   get isBoss(): boolean { return this.data.archetype === 'boss' || this.data.archetype === 'miniboss' }
+  /** 当前生效的 Boss 阶段（非 Boss 为 undefined） */
+  get bossPhaseData(): NonNullable<EnemyData['boss']>['phases'][number] | undefined {
+    return this.data.boss?.phases[this.bossPhase]
+  }
+  /**
+   * 钟壳还在 = 这一阶写着 shell、没被撞碎、也没被钟声暂时剥掉。
+   * 三态缺一不可：§15.1 的 P1 是「打不动，但场地能解」而不是「数值怪」。
+   */
+  get shellUp(): boolean {
+    const sh = this.bossPhaseData?.shell
+    return !!sh && !this.shellBroken && this.shellLiftTicks <= 0
+  }
+  get shellDmgMul(): number { return this.shellUp ? this.bossPhaseData!.shell!.dmgMul : 1 }
+  get poiseImmune(): boolean { return this.shellUp && !!this.bossPhaseData?.shell?.immuneToPoise }
+  /** 壳被剥掉的那 6s 里架势累积翻倍（§15.1：无敌解除 + 架势累积翻倍是同一个奖励） */
+  get poiseAccumMul(): number {
+    const sh = this.bossPhaseData?.shell
+    return sh && !this.shellBroken && this.shellLiftTicks > 0 ? 2 : 1
+  }
   get inStartup(): boolean { return !!this.attack && this.attack.tick < this.attack.spec.frames.startup }
   get activeHitbox(): ActiveEnemyHit | null {
     if (!this.attack) return null
@@ -223,6 +255,7 @@ export class Enemy {
     // 挂在上面的后事必须一起作废——否则它会在**下一招**的起手帧上偷偷生效（白回 15 血、
     // 或把一次并不存在的警戒广播发出去）。实测过：没有这一行时漏回血。
     if (!this.attack && this.pendingBroadcast) this.pendingBroadcast = null
+    this.syncBoss()
     // 读条被外力抹掉（破势进 recover、stun、走调时刻、处决…都会直接 `attack = null`）时，
     // 那口挂着的气息必须一起作废——否则它会在**下一招**的起手帧上偷偷生效（回血/警戒广播）。
     this.stats.update(dt, tick)
@@ -270,8 +303,9 @@ export class Enemy {
         else if (wants) stepToward(this, p, dt, this.data.speed, rhythm)
         else stepAway(this, p, dt, this.data.speed * 0.7)
         if (this.alertness < 40) this.enter('search')
-        if (band && hasAttackAction(this, band.actions) && !this.attack && this.stateTick > 24) {
-          this.tryAttack(band.actions, rhythm, tick, slotTaken)
+        const can = this.phaseActions(band?.actions ?? [])
+        if (band && hasAttackAction(this, can) && !this.attack && this.stateTick > 24) {
+          this.tryAttack(can, rhythm, tick, slotTaken)
         }
         break
       }
@@ -291,8 +325,9 @@ export class Enemy {
             // 伪动作决定脚下一步：'chase' 贴近、'backstep' 拉开（射手风筝），真招式名才出手
             if (band.actions.includes('chase')) stepToward(this, p, dt, this.data.speed * 0.9, rhythm)
             else if (band.actions.includes('backstep')) stepKite(this, p, dt, this.data.speed)
-            if (hasAttackAction(this, band.actions)) {
-              this.tryAttack(band.actions, rhythm, tick, slotTaken)
+            const can = this.phaseActions(band.actions)
+            if (hasAttackAction(this, can)) {
+              this.tryAttack(can, rhythm, tick, slotTaken)
             }
           }
           if (this.alertness < 40) this.enter('search')
@@ -377,7 +412,7 @@ export class Enemy {
     if (!spec) return false
     this.tollDueBar = bar + t.everyBars
     if (this.stats.hp >= this.stats.hpMax) return false // 满血时它不敲：计时器照常推进
-    this.attack = { spec, tick: 0, hitDone: false, shots: 0, lungeApplied: 0 }
+    this.attack = { spec, tick: spec.frames.activeStart - rhythm.ticksUntilBeatOn(spec.beat, spec.frames.activeStart), hitDone: false, shots: 0, lungeApplied: 0 }
     const heal = t.heal
     this.pendingBroadcast = () => {
       const before = this.stats.hp
@@ -391,14 +426,79 @@ export class Enemy {
     return true
   }
 
+  /**
+   * §15/§16 Boss 阶段机：按血线单调跳阶，跳阶那一刻手上的读条作废（她要去敲钟怒吼）。
+   * 阶段换了的是**招式白名单与护壳规则**，不是倍率——§16 明确不许「纯数值阶段」。
+   */
+  private syncBoss(): void {
+    const b = this.data.boss
+    if (!b) return
+    if (this.shellLiftTicks > 0) this.shellLiftTicks--
+    const frac = this.stats.hp / this.stats.hpMax
+    let next = this.bossPhase
+    for (let i = next + 1; i < b.phases.length; i++) {
+      const gate = b.phases[i].belowHpFrac
+      if (gate !== undefined && frac < gate) next = i // 允许一次跨过两阶
+    }
+    if (next === this.bossPhase) return
+    this.bossPhase = next
+    this.attack = null
+    this.phaseRoarPending = true
+  }
+
+  /** 阶段白名单（非 Boss 原样返回）：改表即改「这一阶她会什么」 */
+  private phaseActions(actions: string[]): string[] {
+    const allow = this.bossPhaseData?.attacks
+    return allow ? actions.filter((a) => allow.includes(a)) : actions
+  }
+
+  /**
+   * §15.1 撞钟机关：她那记 `flags:['charge']` 的落地帧附近若有一口还没响的钟，钟就响了。
+   * 判据是**她自己的位置**（冲刺已经把她带到钟边），所以「引她撞钟」是站位问题、
+   * 不是反应力问题——玩家要做的是站在钟前面让她冲过来，而不是拼一把弹反。
+   */
+  private ringBells(): void {
+    const g = this.data.boss?.bells
+    if (!g) return
+    for (let i = 0; i < g.positions.length; i++) {
+      if (this.bellsRung[i]) continue
+      if (dist3(this.pos, g.positions[i]) > g.hitRadius) continue
+      this.bellsRung[i] = true
+      this.shellLiftTicks = Math.max(this.shellLiftTicks, g.releaseTicks)
+      const rung = this.bellsRung.filter(Boolean).length
+      bus.emit('audio.sfx', { key: 'bell_toll', pos: { ...g.positions[i] }, gain: 1 })
+      bus.emit('vfx.request', { key: 'shock_small', pos: { ...g.positions[i] }, scale: 2.4 })
+      bus.emit('ui.notify', {
+        text: `立钟鸣响 · 钟壳共振解除 ${(g.releaseTicks / 60).toFixed(1)}s（${rung}/${g.positions.length}）`,
+        kind: 'reward'
+      })
+      if (rung >= g.breaksAt && !this.shellBroken) {
+        this.shellBroken = true
+        bus.emit('vfx.request', { key: 'death_shatter', pos: { ...this.pos }, scale: 2 })
+        bus.emit('ui.notify', { text: '钟壳碎裂！这一阶的减伤彻底没了', kind: 'reward' })
+        // §15.1「撞 2 钟 = 壳碎（提前进 P2 条件）」：机关本身就是转阶段的捷径，不必把血磨到线
+        if (this.bossPhase === 0 && (this.data.boss?.phases.length ?? 0) > 1) {
+          this.bossPhase = 1
+          this.attack = null
+          this.phaseRoarPending = true
+        }
+      }
+      break // 一记冲刺只撞得响一口钟
+    }
+  }
+
   private tryAttack(actions: string[], rhythm: RhythmClock, tick: number, slotTaken: (k: string) => boolean): void {    const usable = actions.filter((a) => !PSEUDO_ACTIONS.has(a) && !((this.cooldowns.get(a) ?? 0) > tick))
     const pick = this.rng.pick(usable)
     const spec = this.data.attacks.find((a) => a.id === pick)
     if (!spec) return
-    const beatWait = rhythm.ticksUntilBeatOn(spec.beat)
+    // §2.1：约束的是**命中帧**落在拍点，不是起手帧 ⇒ 起手要提前一整个前摇。
+    // （旧写法把 tick 0 当成拍点，结果所有招式的命中都比拍点晚 0.2~0.6s：
+    //  蓄力重的敌人「看着像在重拍上，其实在重拍之后」，§2.1 的可预测性直接失效。）
+    const lead = spec.frames.activeStart
+    const beatWait = rhythm.ticksUntilBeatOn(spec.beat, lead)
     const key = `${rhythm.info().bar}:${rhythm.info().beatInBar}:${spec.beat[0]}`
     if (slotTaken(key)) return
-    this.attack = { spec, tick: -beatWait, hitDone: false, shots: 0, lungeApplied: 0 }
+    this.attack = { spec, tick: lead - beatWait, hitDone: false, shots: 0, lungeApplied: 0 }
     this.cooldowns.set(spec.id, tick + 240 + this.rng.int(0, 120))
     this.enter('combat')
     if (spec.id === 'callAlly' || pick === 'scream') {
@@ -419,6 +519,10 @@ export class Enemy {
       this.pendingBroadcast()
       this.pendingBroadcast = null
     }
+    // §15.1 撞钟机关：冲刺的落地帧（=读条走完那一帧）附近有别人才响得动的钟
+    if (this.attack.tick === f.startup && f.flags?.includes('charge')) this.ringBells()
+    // 撞钟可能就地跳阶（§15.1「撞 2 钟 = 提前进 P2」），而跳阶会把这一招收掉 ⇒ 别再用陈旧的帧表
+    if (!this.attack) return
     if (this.attack.tick > 0 && this.attack.tick <= f.activeEnd && f.lunge && !this.intangible) {
       faceSlow(this, player.pos, 1)
       // don't lunge through the player: stop at melee contact distance
@@ -433,9 +537,10 @@ export class Enemy {
       // 连段派生（§14.5 切分连踏「2 段半拍」）：下一段不在这一拍上硬顶，而是量化到它自己的
       // 拍位再打——两段之间因此留下真实的呼吸拍，这正是 §13.1 要求的惩罚窗口。
       const next = f.next ? this.data.attacks.find((a) => a.id === f.next) : undefined
-      this.attack = next
-        ? { spec: next, tick: -rhythm.ticksUntilBeatOn(next.beat), hitDone: false, shots: 0, lungeApplied: 0 }
-        : null
+      if (next) {
+        const nextLead = next.frames.activeStart
+        this.attack = { spec: next, tick: nextLead - rhythm.ticksUntilBeatOn(next.beat, nextLead), hitDone: false, shots: 0, lungeApplied: 0 }
+      } else this.attack = null
     }
   }
 

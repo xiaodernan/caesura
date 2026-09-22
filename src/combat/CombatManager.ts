@@ -101,6 +101,7 @@ export class CombatManager {
     this.playerHitsEnemies(tick)
     if (!this.player.executing) this.enemiesHitPlayer(tick)
     this.phaseCounter(input)
+    this.bossBits()
     this.projectilePass(tick, dt)
     if (tick % 30 === 0) this.checkEncounterMusic()
   }
@@ -181,9 +182,18 @@ export class CombatManager {
       bus.emit('audio.sfx', { key: 'bell_clang', pos: s.point, gain: 0.9 })
       bus.emit('vfx.request', { key: 'block_spark', pos: s.point, scale: 1.1 })
     }
+    // §15.1 钟壳：这一阶的减伤是「只有场地机关解得开」的减伤。它仍然只是同一通道里的
+    // 一个乘数——不是第二条伤害流程，也不是「免疫所以不显示数字」的假无敌。
+    const shell = e.shellDmgMul
+    if (shell < 1) {
+      final = Math.max(1, Math.round(final * shell))
+      bus.emit('audio.sfx', { key: 'bell_clang', pos: s.point, gain: 1 })
+      bus.emit('vfx.request', { key: 'block_spark', pos: s.point, scale: 1.5 })
+    }
 
     const poiseMul = (e.inStartup ? 1.5 : 1) * (s.onBeat ? 2 : 1)
-    e.stats.addPoise(Math.round(s.poise * poiseMul * (p.weapon.poiseMul ?? 1)), tick)
+    // 壳在 ⇒ 架势免疫；壳刚被钟声剥掉 ⇒ 架势累积翻倍（同一个奖励的两半）
+    if (!e.poiseImmune) e.stats.addPoise(Math.round(s.poise * poiseMul * (p.weapon.poiseMul ?? 1) * e.poiseAccumMul), tick)
     const burst = e.stats.addFissure(s.layers)
     if (s.mute && e.data.ai.buffAura) e.stunTicks = Math.max(e.stunTicks, 60)
     if (s.pinTicks > 0) e.stunTicks = Math.max(e.stunTicks, s.pinTicks) // 钉住定身
@@ -431,6 +441,41 @@ export class CombatManager {
       bus.emit('vfx.request', { key: 'parry_ring', pos: { ...e.pos }, scale: 0.9 })
       bus.emit('audio.sfx', { key: 'perfect_block', pos: { ...e.pos }, gain: 0.7 })
       bus.emit('ui.notify', { text: '拍点闪避！幽灵八显形定身', kind: 'info' })
+    }
+  }
+
+  /** 上一个记过残响伤害的拍号（机关是「每拍」结算，不能每 tick 结算） */
+  private lastResonanceBeat = -1
+
+  /**
+   * Boss 的两件「要结算并记账」的事，都留在这条唯一的伤害通道里：
+   * ①跳阶演出（hitstop + 低音 + 震镜由 boss.phase 事件交给表现层）；
+   * ②响过的立钟留下残响区——对玩家 0 伤、对敲钟的喧堕者每拍掉血（§15.1 把场地用成 DPS 博弈）。
+   * 死在残响里也必须走 onEnemyKilled，否则掉落/清剿/BGM 全部漏记账。
+   */
+  private bossBits(): void {
+    const beat = this.rhythm.info().beatIndex
+    const isNewBeat = beat !== this.lastResonanceBeat
+    if (isNewBeat) this.lastResonanceBeat = beat
+    for (const e of this.ai.enemies) {
+      if (e.phaseRoarPending) {
+        e.phaseRoarPending = false
+        this.time.hitStop(0.25)
+        bus.emit('boss.phase', { id: e.id, phase: e.bossPhase + 1, phases: e.data.boss?.phases.length ?? 1, nameKey: e.data.nameKey })
+        bus.emit('audio.sfx', { key: 'boss_roar', pos: { ...e.pos }, gain: 1 })
+        bus.emit('vfx.request', { key: 'shock_small', pos: { ...e.pos }, scale: 2.6 })
+        bus.emit('ui.notify', { text: `${nameOf(e.data.nameKey)} · 第 ${e.bossPhase + 1} 阶`, kind: 'boss' })
+      }
+      const g = e.data.boss?.bells
+      if (!g || !e.alive || !isNewBeat) continue
+      for (let i = 0; i < g.positions.length; i++) {
+        if (!e.bellsRung[i]) continue
+        if (Math.hypot(e.pos.x - g.positions[i].x, e.pos.z - g.positions[i].z) > g.resonanceRadius) continue
+        e.stats.damage(g.damagePerBeat)
+        bus.emit('vfx.request', { key: 'ring_echo', pos: { ...g.positions[i] }, scale: 0.8 })
+        if (!e.alive) this.onEnemyKilled(e)
+        break
+      }
     }
   }
 
@@ -714,7 +759,8 @@ function inFrontArc(e: Enemy, incoming: Vec3, arcDeg: number): boolean {
 const NAME_MAP: Record<string, string> = {
   'enemy.murkshell': '嘈壳', 'enemy.driftsinger': '漂调者', 'enemy.tympanus': '驼鼓',
   'enemy.skewer': '针喉', 'enemy.phantome': '幽灵八', 'enemy.refrein': '叠唱',
-  'enemy.hangedKnight': '悬钟骑士'
+  'enemy.hangedKnight': '悬钟骑士',
+  'enemy.ostlara': '悬钟骑士·奥斯塔拉'
 }
 
 export function nameOf(key: string): string {
