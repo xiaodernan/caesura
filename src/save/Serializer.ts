@@ -14,7 +14,7 @@ import { unwrap, wrap } from './Integrity'
  * 存档里没有一个敌人实例，只有一串槽位身份）。
  */
 
-export const SAVE_VERSION = 3
+export const SAVE_VERSION = 4
 
 /**
  * 读档时接受的版本：凡是 ≤ 当前版本、且迁移链能一路升到当前的，都可以读。
@@ -43,6 +43,19 @@ registerMigration(2, (p) => {
   const snap = { ...(p.snapshot as Record<string, unknown>) }
   snap.player = { ...(snap.player as Record<string, unknown>), corruption: 0 }
   snap.version = 3
+  return { ...p, snapshot: snap }
+})
+
+/**
+ * v3 → v4（Phase 5-C2 的乐章战技谱册）。老档里确实没有"学过哪几式"这件事，
+ * 所以迁移写的是**空谱册**（页全黑、槽全空），而不是替玩家点亮第一页：
+ * 振源核与乐谱残页本来就在它那份背包里，回到调音桩照样点得开。
+ */
+registerMigration(3, (p) => {
+  const snap = { ...(p.snapshot as Record<string, unknown>) }
+  const rpg = snap.rpg as Record<string, unknown> | null | undefined
+  if (rpg) snap.rpg = { ...rpg, movements: { lit: [], levels: {}, slots: [] } }
+  snap.version = 4
   return { ...p, snapshot: snap }
 })
 

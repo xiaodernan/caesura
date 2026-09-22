@@ -7,7 +7,7 @@ import type { Input } from '@/core/Input'
 import type { PlayerController, ActivePlayerHit } from '@/player/ThirdPersonController'
 import type { AISystem } from '@/ai/AISystem'
 import type { Enemy } from '@/ai/Enemy'
-import type { FrameData, ProjectileSpec } from '@/data/schema'
+import type { AttrKey, FrameData, ProjectileSpec } from '@/data/schema'
 import { resolveDamage } from './DamagePipeline'
 import { shapeHits, isBackstab } from './HitShapes'
 import { ProjectileSystem, sphereHits, type Projectile } from './Projectiles'
@@ -48,6 +48,19 @@ interface EnemyStrike {
    * 那一音是「上一击的尾巴」，不是新的一击。给它再走一遍完整管线就会自我繁殖。
    */
   rawDamage?: number
+  /**
+   * §11 闷音的施加时长（tick）。写 0/省略＝这一记不挂闷音。
+   * 时长永远来自施加方（敌人招式、弹道、战技等级），状态表只回答"挂着的时候值多少"。
+   */
+  muteTicks?: number
+  /** 追加真伤（全音符斩）：减伤、钟甲、钟壳、暴击都算完之后再加的一笔——它本来就是"绕过这些"的伤 */
+  trueDamage?: number
+  /**
+   * §7 战技出手的伤害标尺。非 null ⇒ 这一笔不是武器打的：
+   * 属性缩放换成战技自己那张小表（音色），并且**不吃武器强化倍率与武器架式倍率**——
+   * 你的剑淬到 +10 不会让一记瞬步更疼。省略＝武器出手（近战/投掷/回声），走原有全套。
+   */
+  movement?: { scaling: Partial<Record<AttrKey, number>>; overdriveLayerMul: number }
   point: Vec3
   dir: Vec3
   shakeKey: string
@@ -128,14 +141,25 @@ export class CombatManager {
       }
       const hit = shapeHits(hb.box, this.player.pos, hb.yaw, e.hitTarget())
       if (!hit) continue
-      this.player.markActionHit()
       const p = this.player
+      // 判定窗有好几 tick：同一记对同一个人只结一次账，多目标名额用尽才收
+      if (!p.markActionHit(e.id)) continue
+      const skill = p.action?.skill ?? null
+      const kind: EnemyStrike['kind'] = skill
+        ? 'skill'
+        : (p.action?.key ?? '').startsWith('l') ? 'light' : 'heavy'
+      // 起手式只在**真打到人**的那一记上兑现（挥空不该把全音符斩白白用掉）
+      const followup = p.takeFollowup(kind === 'heavy')
       const point = midpoint(p.pos, e.pos)
       const final = this.strikeEnemy(e, {
         base: hb.damage, poise: hb.poise, hitStopMs: hb.hitStopMs,
-        kind: (p.action?.key ?? '').startsWith('l') ? 'light' : 'heavy',
-        layers: this.fissureLayersOf(p.action?.key ?? '', p.action?.f, hb),
-        mute: hb.flags.includes('mute'),
+        kind,
+        // 战技自带层数；武器出手走按键默认（§11），两者都还可以被起手式追加一层
+        layers: (skill ? skill.fissureLayers : this.fissureLayersOf(p.action?.key ?? '', p.action?.f, hb)) + (followup?.layers ?? 0),
+        mute: hb.flags.includes('mute') || (skill ? skill.muteTicks > 0 : false),
+        muteTicks: skill?.muteTicks ?? 0,
+        trueDamage: followup?.trueDamage ?? 0,
+        movement: skill && skill.damage > 0 ? { scaling: skill.scaling, overdriveLayerMul: skill.overdriveLayerMul } : undefined,
         backstab: isBackstab(p.pos, e.hitTarget()),
         onBeat: this.rhythm.onBeat(50),
         ranged: false, pinTicks: 0,
@@ -145,7 +169,8 @@ export class CombatManager {
       // §11 回响：挂不挂影由**这一帧自己声明**（frames.echoOnHit）。不能反过来在结算通道里
       // 判「kind==='heavy'」——投掷弹体也标成 heavy，那样引针枪每发都会凭空生出回声。
       if (p.action?.f?.echoOnHit) this.spawnEcho(point, final, hb.poise, tick)
-      break // one swing, one target
+      // 一击一名目标是老规矩；写了 multi 的环形技打到名额用尽才收（markActionHit 负责数）
+      if (this.player.action?.hitDone) break
     }
   }
 
@@ -175,12 +200,16 @@ export class CombatManager {
     const p = this.player
     const cfg = statusConfig()
     const replay = s.rawDamage !== undefined
+    const mv = s.movement
+    // 战技出手的三重"不吃"：不吃武器强化倍率、不吃武器属性标尺、不吃武器架式倍率（见下面 addPoise）。
+    // 它的标尺是 movements.json 那张小表（§2.1 音色），外加 §11 过载列的"每层战技伤害 +4%"。
+    const mvMul = mv ? 1 + p.stats.overdrive * mv.overdriveLayerMul : p.rpg.weaponDamageMul
     // 回声重演带着**已经算完的数**进来：resolveDamage 看到 rawDamage 就直接透传，
     // 后面的减伤/钟甲/钟壳/暴击/碎裂加成一段都不再走（见 EnemyStrike.rawDamage 的注释）。
     const dmg = resolveDamage({
-      base: s.base * p.rpg.weaponDamageMul,
+      base: s.base * mvMul,
       attrs: p.rpg.attrs,
-      scaling: p.weapon.scaling,
+      scaling: mv ? mv.scaling : p.weapon.scaling,
       defense: e.stats.defense,
       backstab: s.backstab,
       onBeat: s.onBeat,
@@ -221,13 +250,22 @@ export class CombatManager {
         const vuln = 1 + layersBefore * cfg.fissure.dmgMulPerLayer * p.rpg.statusPowerMul * e.fissureEffectMul
         final = Math.round(final * vuln)
       }
+      // 追加真伤（全音符斩压在下一记上的那笔）：它站在减伤/钟甲/钟壳**之后**，
+      // 因为它的设计语义就是"这些护层挡不住的那一点"。回声重演不再重复加它。
+      if (s.trueDamage) final += s.trueDamage
     }
 
     const poiseMul = (e.inStartup ? 1.5 : 1) * (s.onBeat ? 2 : 1)
     // 壳在 ⇒ 架势免疫；壳刚被钟声剥掉 ⇒ 架势累积翻倍（同一个奖励的两半）
-    if (!e.poiseImmune) e.stats.addPoise(Math.round(s.poise * poiseMul * (p.weapon.poiseMul ?? 1) * p.rpg.poiseDmgMul * e.poiseAccumMul), tick)
+    // 武器的 poiseMul 是"这把武器的架式手感"，战技不用手上的家伙打人，所以那一乘只对武器出手生效。
+    if (!e.poiseImmune) {
+      e.stats.addPoise(Math.round(s.poise * poiseMul * (mv ? 1 : (p.weapon.poiseMul ?? 1)) * p.rpg.poiseDmgMul * e.poiseAccumMul), tick)
+    }
     const burst = e.stats.addFissure(s.layers)
     if (s.mute && e.data.ai.buffAura) e.stunTicks = Math.max(e.stunTicks, 60)
+    // §11 闷音挂在它身上：走 EntityStats 那条唯一的计时器（和弹道 muteOnHit 同一个字段），
+    // 不另开一套"战技版沉默"——那会变成第二条状态通道。
+    if (s.muteTicks && s.muteTicks > 0) e.stats.muteTicksLeft = Math.max(e.stats.muteTicksLeft, s.muteTicks)
     if (s.pinTicks > 0) e.stunTicks = Math.max(e.stunTicks, s.pinTicks) // 钉住定身
 
     e.stats.damage(final)

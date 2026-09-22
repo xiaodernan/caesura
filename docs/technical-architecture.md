@@ -140,6 +140,7 @@ src/
     Progression.ts     等级/音级属性点/经验曲线（§3 数值表）、调音桩分配 UI 数据
     Loot.ts            掉落表（加权随机 + 保底 pity 计数，seeded RNG 可复现测试）
     Upgrade.ts         音色石强化（武器 +1~+10，成功率表，失败不降级）
+    Movements.ts       乐章战技谱册状态（Phase 5-C2）：页点亮/式等级/两槽配装，合成给玩家的 {f, cast}
   quest/
     QuestState.ts      任务状态机：notStarted→active(step k)→completed/failed，
                        目标条件订阅 EventBus 计数
@@ -294,6 +295,27 @@ rewards, flagsSet:[...], npcRefs, outcomes:[{branch:"ally|purge", flag}]}`
 cost:{"stamina":0,"overdrive":50}, cooldownTicks:180, targeting:"self|target|directional",
 frameRef?(含帧数据的技能直接引 FrameData), effect:{applyTags:[], damageSrc?, durationTicks?,
 modifiers:[{attr:"staminaRegen", op:"mul", value:0.7}]}, vfxRefs, sfxRefs, cameraShake}`
+**MovementData（已落地 `src/data/json/movements.json`，Phase 5-C2）** —— 需求 §57 的 Ability 架构在本作落成
+**静态表版**，与上面立项时的 SkillData 有意不同（那是一份"什么都能表达"的通用图，这一份只表达谱册需要的事）：
+```jsonc
+{
+  "slots": [{"index":1,"action":"weaponSkill","milestone":"ms_movement_slot"},   // action=输入动作名；门槛是 progression.json 的里程碑 id
+            {"index":2,"action":"weaponSkillB","milestone":"ms_movement2"}],
+  "damage": { "scaling": {"ton":1.5}, "perOverdriveLayer":0.04 },               // 全表共用的口径，两处都有消费方
+  "pages":  [{"id":"mvpage_prelude","displayName":"…","desc":"…","unlock":{"item":"it_resonance_core","count":1}}],
+  "upgradeCost":[{"level":2,"timbite":40,"score":1},{"level":3,"timbite":120,"score":2}],   // 阶梯：第 n 格升到第 n+1 级
+  "movements": [{
+    "id":"mv_chordburst","page":"mvpage_storm","displayName":"和弦爆",
+    "cost":{"overdrive":3},                       // 体力或过载，二选一由数据决定
+    "frame":{ "startup":16,"activeStart":16,"activeEnd":22,"recovery":52,
+              "hitbox":{"shape":"ring","inner":0,"outer":4,"forward":0},"multi":8,
+              "poise":26,"hitStopMs":90,"shake":"heavy","loudness":8,"sfx":[…],"vfx":[…] },
+    "levels":[{ "cooldownTicks":300,"damage":26,"muteTicks":180 }, …]            // 阶梯：等级只改这张小表
+  }]
+}
+```
+帧与数值刻意分开：`frame`＝动作的形状（各等级相同），`levels[]`＝这一式的账（冷却/伤害/状态时长随等级变）。
+`validate:data` 对它的门禁见 KI-015 的清单（页引用、槽里程碑存在性、`levels` 与升级阶梯对齐、`hitbox` 合法）。
 **DialogueData**：`{id:"dl_belltongue_greet", speaker:"npc_belltongue",
 graph:{root:"n0", nodes:{"n0":{textKey, cond?:stringExpr, options:[{textKey, next,
 req?:"flag.x&&!flag.y", effects:[{kind:"setFlag",flag,op},{kind:"giveItem",id,n},{kind:"startQuest",id}]}]}}}`
@@ -525,6 +547,10 @@ Phase 4-A 把弹道跑通，但远程只被当作「会飞的近战判定」。4
 - `combat/stamina.test.ts`：攻击/闪避/格挡消耗、耗尽硬直、回复（含 Mute -30%）
 - `rpg/inventory.test.ts`：堆叠/拆分/排序稳定性/容量边界
 - `rpg/progression.test.ts`：经验曲线公式、音级分配后属性重算一致性
+- `tests/unit/movements.test.ts`（Phase 5-C2，16 条）：谱册状态层——点亮吃什么/先验后扣、升级阶梯到表尾报 `max`、
+  两槽门禁（页要先亮、槽要先开、槽号越界）、`loadout()` 按等级合成、脏档（假页/越界等级/未开槽）一律丢弃
+- `tests/flow/movements.test.ts`（Phase 5-C2，17 条）：真帧数据出手——同种子把"不吃武器强化""差值恰为表里真伤""过载每层 +4%"
+  钉成精确等式；错拍步位移=BPM 无关；`multi: 8` 只结 8 个不同受害者；起手式只兑一记；冷却按槽；闷音与过载封锁；v4 往返与 v3 迁移
 - `tests/unit/save.test.ts`（原计划名 save/migration.test.ts，按仓库既有命名落在 unit/）：
   往返 deep-equal、清剿记录跨会话生效、CRC/magic/version 三道闸、主档损坏→回退 .prev、
   写到一半被 kill⇒主键位仍是完整旧档、迁移链 v1→v2 与「缺步骤必须抛错」、触发器同帧合并与失败发声
@@ -611,25 +637,32 @@ ID 规则：KI-/TD-/PF-/MA- 前缀 + 4 位序号（例 TD-0007）。
   要么新档已经写完；读序是 主 → tmp → prev → 备份，逐个过校验，取第一份合格的并在日志里说清是哪一份。
   CRC32 只保证「没被截断/改坏」，不是密码学校验（本地单用户存档不需要后者，写在这免得被当成安全边界）。
 - **迁移链禁止「读旧档直接崩」**（Migration）：`registerMigration(from, fn)` 逐级升到当前版本，缺步骤抛
-  `MigrationError` 并由调用方回退到上一份。当前 **v1→v2→v3 三步都是真历史**（v2=成长/背包，v3=失谐归零），
-  没有为了展示机制而虚构一步。**读侧白名单 `READABLE_VERSIONS = [1..SAVE_VERSION]`（Phase 5-C1 修的真 bug）**：
+  `MigrationError` 并由调用方回退到上一份。当前 **v1→v2→v3→v4 四步都是真历史**（v2=成长/背包，v3=失谐归零，
+  v4=谱册空谱），没有为了展示机制而虚构一步。**读侧白名单 `READABLE_VERSIONS = [1..SAVE_VERSION]`（Phase 5-C1 修的真 bug）**：
   这里曾只写 `[SAVE_VERSION]`，于是 v1/v2 老档在 `unwrap` 那一步就被当坏档拒掉——迁移链写得再对也永远进不去，
   玩家表现为「有档却说没有」。现在 `save.test.ts` 有一条**从磁盘放一份 v1 档**、走 `load()` 全路径的可达性断言。
+  v4 那一步的口径与前三步一致：**给老档补的是空谱（页全黑、槽全空），不是替玩家点亮第一页**——
+  那份档确实没有"学过哪几式"这件事，振源核本来就在它的背包里，回调音桩照样点得开（§78 要的是如实，不是好看）。
 - **触发器与游戏循环解耦（Checkpoint）**：调音桩休息 / Boss 跳阶 / 首次进区域三个时机都只 `request(reason)`
   排队，异步写在后台跑（连请求会合并原因、合并成一笔），失败既发日志也发 HUD 提示——
   「以为存了其实没存」比不能存档更糟。`pagehide` 也挂了一次（关标签页前补一笔）。
 - **环境差异如实处理**：`typeof indexedDB === 'undefined'` ⇒ 备份位为 null 并在控制台说明「只剩本地一份」，
   不静默假装双份；存储写失败（隐私模式配额）走同一条「说出来」的路径。
-- 覆盖与实机：`tests/unit/save.test.ts` 9 条（含 Phase 5-C1 补的**读档可达性**一条）；全量 **32 files / 340 passed**，tsc/build 干净。
+- 覆盖与实机：`tests/unit/save.test.ts` 9 条（含 Phase 5-C1 补的**读档可达性**一条）+ `tests/flow/movements.test.ts`
+  里的 v4 往返与 v3→v4 迁移两条；全量 **34 files / 374 passed**，tsc/build 干净。
   实机：`?fresh=1` 开局 → 走到钟坠院存档点、设 flag、把 hp/过载调成非默认值 → `saveNow()` →
   localStorage 出现 `caesura.save.autosave` + `.prev`、IndexedDB 里同键可读 → **刷新页面** →
   日志 `load.ok autosave v1`（v2 起为 `v2`），玩家回到 (130, 64, -120)、hp 41、过载 7、三条 flag 全在、
   脚下层 64、区域判定 rg_fellcarillon、周围敌人由数据重新刷出。控制台 0 error 0 warn。
+  **Phase 5-C2 复验（2026-09-23）**：真浏览器里点亮三页 + 升到 L2 + 装两槽 → `saveNow()` → 读磁盘确认
+  `snapshot.rpg.movements = {lit[3], levels{全音符斩:2}, slots[2]}` 且信封 `magic/CAESURA-SAVE + schemaVersion 4 + crc(number)`
+  → **不带 `?fresh` 重新导航** ⇒ 日志 `load.ok autosave v4`、音级/点亮/等级/槽位全部回来、
+  `player.skills` 重新绑上 R（冷却**不**入档，读档不白送一次冷却），按 R 真的出手。0 error 0 warn。
 - **未落（登记 KI-025）**：三槽位与「继续冒险/新游戏/存档摘要卡」的存档 UI（ui-ux §8）还没有界面层，
   现在是单 autosave 槽 + `?fresh=1`；quest/NPC/settings 字段等各自 Phase 落地时补迁移（成长与背包已入 v2）。
 ## 10. RPG 成长系统（需求 §18/§25/§26/§55/§57）— Phase 5-B 已实现
 
-模块边界（`src/rpg/`，**四个文件互不越界**，全部零 three、零 DOM）：
+模块边界（`src/rpg/`，**文件之间互不越界**，全部零 three、零 DOM）：
 
 | 文件 | 职责 | 明确不做 |
 |---|---|---|
@@ -638,7 +671,8 @@ ID 规则：KI-/TD-/PF-/MA- 前缀 + 4 位序号（例 TD-0007）。
 | `Equipment.ts` | 七槽装配；把一身装备汇总成一组乘数（`EquipMods`） | 不写玩家状态 |
 | `Loot.ts` | 掉落掷骰（种子化）+ 保底 + 首杀 | 不播报、不落 UI |
 | `Upgrade.ts` | 强化曲线消费与上限校验 | 不碰背包以外的系统 |
-| `Runtime.ts` | 总装：`mods()` 一组扁平乘数 + `onEnemyKilled()` 一串所得 | 不认识 `PlayerController` |
+| `Movements.ts` | **谱册状态**（Phase 5-C2）：哪几页亮了、每式几级、两槽装着什么；把"槽位号:音级"合成给玩家的 `{f, cast}` 小表 | 不出手、不认识 `PlayerController`，扣款只通过 `Inventory` |
+| `Runtime.ts` | 总装：`mods()` 一组扁平乘数 + `onEnemyKilled()` 一串所得 + `skillLoadout()` 交给玩家的招式 | 不认识 `PlayerController` |
 
 **唯一接口是 `PlayerMods`**（`src/rpg/Runtime.ts`）：`rank / attrs（软上限折算后）/ hpMax / staminaMax /
 poiseMax / defense / loadMax / overdriveMax / critRate / critMul / execMul / noiseMul / poiseDmgMul /
@@ -674,15 +708,16 @@ weaponDamageMul / weaponId / weight / overloaded`。
   取连续曲线并在 KNOWN_ISSUES 登记这条口径差。
 - 强化倍率：文档 §5.4 合计栏写「≈+79%」，逐格相加是 0.80 ⇒ 实装 1.80，按表不按约数。
 
-### 10.3 存档 v2 / v3（与 §9 的衔接）
+### 10.3 存档 v2 / v3 / v4（与 §9 的衔接）
 
-`Snapshot.rpg` 存 `{progression, inventory, equipment, loot}` 四块，全部是**纯数据**：
-装备存的是 `uid/itemId/level/affixes`，不存任何 three 对象。v1→v2 的迁移是**真的一步**
+`Snapshot.rpg` 存 `{progression, inventory, equipment, loot, movements}` 五块，全部是**纯数据**：
+装备存的是 `uid/itemId/level/affixes`，谱册存的是 `lit[] / levels{} / slots[]`，不存任何 three 对象。v1→v2 的迁移是**真的一步**
 （`registerMigration(1, …)`）：老档把 `rpg` **显式写成 null**，读档时保留运行时基线（出身），
 既不编造等级、也不静默丢字段——测试 `save.test.ts` 钉住「v1 的每个字段都还在 + rpg === null」。
 **v3（Phase 5-C1）** 只补一格：`player.corruption = 0`——失谐是这一版才有的量，老档不补就会被
 `CorruptionMeter` 当成 `undefined` 参与算术。**读侧白名单 `READABLE_VERSIONS` 是这一步真正的教训**：
 `unwrap` 先前只认当前版本 ⇒ 老档在进入迁移链之前就被判成坏档（详见 §9 第三条）。
+**v4（Phase 5-C2）** 补的是 `rpg.movements = {lit: [], levels: {}, slots: []}`（见 §9 迁移段：空谱，不是替老玩家点亮第一页）。
 
 ### 10.4 数据门禁（KI-015 部分闭合）
 
@@ -693,19 +728,44 @@ weaponDamageMul / weaponId / weight / overloaded`。
 ### 10.5 UI 分工
 
 HUD（canvas）只多了一个**音级数字**（§42：不在战斗视野里堆数字，遗响条属于面板）。
-调音桩面板（`src/ui/Stakerite.ts`，DOM overlay）承载三页：调音 / 装备 / 行囊，
+调音桩面板（`src/ui/Stakerite.ts`，DOM overlay）承载四页：调音 / 装备 / 行囊 / **谱册**（Phase 5-C2），
 **只在调音桩前可开**（`interact.focus().kind === 'checkpoint'`），打开即 `time.paused = true` + `input.enabled = false`。
 面板只调 `RpgRuntime` 的公开方法，生效后回调 `onApply()` 由 main.ts 统一重算——
-面板自己不写第二份"应用变更"的逻辑。
+面板自己不写第二份"应用变更"的逻辑。方向键在四页间**环状**切换（第四页再往右回第一页）。
 
 ### 10.6 覆盖与实机
 
-- `tests/unit/rpg.test.ts` 27 条 + `tests/flow/rpg.test.ts` 8 条 + `tests/unit/stakerite.test.ts` 6 条；
-  全量 **32 files / 340 passed**（Phase 5-C1 口径），tsc / vite build 干净。
+- `tests/unit/rpg.test.ts` 28 条 + `tests/flow/rpg.test.ts` 8 条 + `tests/unit/stakerite.test.ts` 8 条；
+  全量 **34 files / 374 passed**（Phase 5-C2 口径），tsc / vite build 干净。
 - 玩法流覆盖需求 §59 的完整链条：击杀 → 遗响入账 → 掉落入背包 → 装备 → 强化（且 +3 封顶后
   第 4 次明确报 `maxed`）→ 升音级 → 存档 → 读档 → 数值一致。
 - **实机视口评审仍受 KI-010 限制**（本环境无法打开可见浏览器窗口）：面板用最小 DOM 替身验了
   状态机/渲染内容/动作派发，但排版与手感的视口走查未做，登记在 KI-027。
+
+### 10.7 乐章战技（谱册）— Phase 5-C2 已实现：三层各管一件事
+
+需求 §57 的"Ability 架构"在本作落成一个**静态表 + 状态层 + 结算层**的三层结构，谁都不越界：
+
+| 层 | 位置 | 回答的问题 | 拿不到的东西 |
+|---|---|---|---|
+| 静态表 | `src/data/json/movements.json`（第 10 份受门禁 JSON） | 有哪些页/式/槽、点亮吃什么、L1→L3 数值、帧形状、`damage.scaling`/`perOverdriveLayer` | 不认识任何运行时状态 |
+| 状态层 | `src/rpg/Movements.ts`（`MovementBook`） | 哪几页亮了、这一式几级、两槽装着什么；`loadout()` 合成 `{f, cast}` | 不出手、无 three、无 DOM、不直接改背包（扣款走传入的 `Inventory`） |
+| 结算层 | `player/ThirdPersonController.ts` + `combat/CombatManager.ts` | 按键→起手→命中→扣过载/体力→起冷却 | 不写死任何数值，全部读 `loadout()` 给的那份小表 |
+
+接线口径（都是测试钉住的，不是描述性承诺）：
+
+- **槽位＝输入动作名**：`slots[].action` 写 `weaponSkill`/`weaponSkillB`，`DEFAULT_BINDS` 把它们绑到 **R / C**
+  （手柄 A 面按钮同键）。开槽门槛写 `milestone`（`ms_movement_slot` / `ms_movement2`），由 `progression.json` 解析成音级，
+  代码里没有第二个常数。
+- **点亮页＝吃掉数据点名的那件东西**（`it_resonance_core` / `it_score_fragment`），先验后扣：钱不够一件都不扣。
+- **出手走同一条 `strikeEnemy`/`resolveDamage`**，只多带一个 `movement` 标记：于是战技继承既有的 i-frame、
+  格挡/弹反、震裂、处决窗口等一切，而不是平行发明第二套战斗。`mvMul = 1 + 剩余过载层 × 0.04`，
+  不吃 `weaponDamageMul`/武器 `scaling`/`poiseMul`（combat.md §4.8）。
+- **冷却按槽不按式**：同一式装两槽各自计时；被拒的按键（冷却中、闷音、过载不足）不起冷却、不扣资源。
+- **`setSkills()` 不清冷却**：换装不该把刚交的学费退回来，这条在 flow 里钉了一条负例。
+- **读档后 `refreshRpg()` 负责重新 `setSkills`**：`SaveGame.apply()` 只回数据，不伸手碰玩家实例（§9 的组合根纪律）。
+- 覆盖：`tests/unit/movements.test.ts` 16 条（状态层，headless）+ `tests/flow/movements.test.ts` 17 条
+  （真帧数据下的出手/封锁/存档往返，同种子把三条设计承诺钉成精确等式）+ `tests/unit/stakerite.test.ts` 谱册动作派发 1 条。
 
 ## 11. 状态系统（combat.md §11 五态）— Phase 5-C1 已实现
 

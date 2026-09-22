@@ -1,5 +1,7 @@
 /** All timing in logic ticks (1 tick = 1/60 s). See docs/technical-architecture.md §3. */
 
+import type { ActionName } from '@/core/Input'
+
 export interface HitboxCone { shape: 'cone'; angleDeg: number; radius: number; height: number; offsetY: number }
 export interface HitboxSphere { shape: 'sphere'; radius: number; offsetY: number; offsetFwd: number }
 export interface HitboxRing { shape: 'ring'; inner: number; outer: number; forward: number }
@@ -71,6 +73,12 @@ export interface FrameData {
    * §4.2 重击/蓄力），所以它由招式自己声明，而不是代码按 key 猜。
    */
   echoOnHit?: boolean
+  /**
+   * 一记命中多少个目标。省略/1 = 近战的老规矩「一击一名目标」（挥空了也不许靠同一记横扫全群）。
+   * 战技里的环形技（和弦爆）写它，才有「清群」这条真语义——由 `PlayerController.markActionHit`
+   * 与 `CombatManager.playerHitsEnemies` 共同消费。
+   */
+  multi?: number
   next?: string
   skillTag?: string
 }
@@ -534,6 +542,100 @@ export interface StatusConfig {
   echo: EchoStatus
   corruption: CorruptionStatus
   overdrive: OverdriveStatus
+}
+
+/* ============================ 乐章战技（progression.md §7，Phase 5-C2） ============================ */
+
+/**
+ * 一次出手的代价。两条通道都是**已有**的计量表：体力（`EntityStats.stamina`）与
+ * 共振过载（§11 的 overdrive 条）。写 0 或不写＝这条不付。
+ */
+export interface MovementCost {
+  stamina?: number
+  overdrive?: number
+}
+
+/**
+ * 战技的一帧表。刻意不复用 `FrameData`：武器帧里的 `damage`/`stamina` 是"这一刀本身"的数，
+ * 而战技的数值随等级成长、且不吃武器强化倍率（§2.1 音色列），两套口径混在一张表里必然出错。
+ * 到运行时由 `rpg/Movements.ts` 合成一份 `FrameData` 交给玩家的动作状态机——**状态机只有一条**。
+ */
+export interface MovementFrame {
+  startup: number
+  activeStart: number
+  activeEnd: number
+  recovery: number
+  /** 出手造成的架势。没有 hitbox 的战技（瞬步/起手式）不写这行 */
+  poise?: number
+  hitStopMs?: number
+  hitbox?: Hitbox
+  /** 一次出手能打满几个目标（环形技）。没有 hitbox 时写了就是死数据 ⇒ 门禁会拦 */
+  multi?: number
+  shake?: 'graze' | 'normal' | 'heavy' | 'boss'
+  sfx?: string[]
+  vfx?: string[]
+  loudness?: number
+}
+
+/**
+ * 战技的一级。`cooldownTicks` 必填：三条战技都有冷却，冷却统一按 tick 计 ⇒
+ * 「错拍步不受 BPM 漂移影响」（§7.2 它写着这是深窖/恩希尔 P2 的保命锚）由表示法本身成立，
+ * 不需要在代码里为它开特例。其余按战技语义可选，门禁要求"写了就必须有消费方"。
+ */
+export interface MovementLevel {
+  cooldownTicks: number
+  /** 战技自身的基础伤害（走同一条结算通道，但标尺换成「音色」） */
+  damage?: number
+  /** 追加真伤（全音符斩）：减伤/暴击之后再加的一笔，不吃 DR */
+  trueDamage?: number
+  /** 追加震裂层数（§11）。全音符斩把它压在"下一记重击"上，随那一记一起结算 */
+  fissureLayers?: number
+  /** 挂给命中者的闷音时长（和弦爆）。施加方给时长，与 `statusOnHit.ticks` 同一口径 */
+  muteTicks?: number
+  /** 位移距离（米）：错拍步。沿输入方向，无输入时沿面向 */
+  distance?: number
+}
+
+export interface MovementData {
+  id: string
+  page: string
+  nameKey: string
+  displayName: string
+  /** 需求 §19：系统概念也要有世界内解释 */
+  desc: string
+  cost: MovementCost
+  frame: MovementFrame
+  levels: MovementLevel[]
+}
+
+/** 谱册的一页。点亮页=把它的工具箱打开（§7.1）；来源是数据里点名的物品，不是代码里的 if。 */
+export interface MovementPage {
+  id: string
+  nameKey: string
+  displayName: string
+  desc: string
+  /** 点亮这一页要吃掉的东西（振源核/乐谱残页——§7.1 的两条解锁源） */
+  unlock: { item: string; count: number }
+}
+
+/** 主动槽。`milestone` 指向 progression.json 的里程碑 id：几级开槽由那张表说，这里不抄第二遍数 */
+export interface MovementSlotDef {
+  index: number
+  action: ActionName
+  milestone: string
+}
+
+export interface MovementConfig {
+  slots: MovementSlotDef[]
+  pages: MovementPage[]
+  movements: MovementData[]
+  /** 升级花费（index 0 = 升到 2 级）。§6.2：战技乐谱升级 40-200/级 */
+  upgradeCost: { level: number; timbite: number; score: number }[]
+  /**
+   * 战技伤害的标尺（§2.1 音色列「乐章战技伤害 +1.5%/点」+ §11 过载列「每层战技伤害 +4%」）。
+   * 它是**出手侧**的系数，写在谱册总表里而不是每条战技里：一条战技改口径，等于全表重定价。
+   */
+  damage: { scaling: Partial<Record<AttrKey, number>>; perOverdriveLayer: number }
 }
 
 /** 掉落表（progression.md §9.0 schema）。掷骰全部走种子化 RNG ⇒ 可复现 QA。 */

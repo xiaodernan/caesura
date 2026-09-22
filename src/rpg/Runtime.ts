@@ -4,11 +4,12 @@ import { Progression, originOf } from './Progression'
 import { Inventory, itemOf } from './Inventory'
 import { Equipment, equipSeal } from './Equipment'
 import { LootDirector, allGearItems, type LootGrant } from './Loot'
+import { MovementBook, type MovementSnapshot, type SkillAction } from './Movements'
 import { tryUpgrade, salvage, type UpgradeResult } from './Upgrade'
 
 /**
- * 成长系统的总装（Phase 5-B）：Progression（音级/属性）× Inventory（背包）×
- * Equipment（装备）× Loot（掉落）。
+ * 成长系统的总装（Phase 5-B/5-C2）：Progression（音级/属性）× Inventory（背包）×
+ * Equipment（装备）× Loot（掉落）× Movements（乐章战技谱册）。
  *
  * 它对外只吐两样东西：
  * 1. `mods()` —— 一组**扁平乘数**，由 main.ts 灌进 PlayerController 与战斗管线。
@@ -70,6 +71,8 @@ export interface RpgSnapshot {
   inventory: ReturnType<Inventory['snapshot']>
   equipment: ReturnType<Equipment['snapshot']>
   loot: ReturnType<LootDirector['snapshot']>
+  /** Phase 5-C2：乐章战技谱册（v4 起）。v3 老档没有这一格 ⇒ restore 走空状态 */
+  movements?: MovementSnapshot
 }
 
 export class RpgRuntime {
@@ -77,6 +80,8 @@ export class RpgRuntime {
   readonly inv: Inventory
   readonly eq = new Equipment()
   readonly loot: LootDirector
+  /** §7 谱册：点亮了哪几页、哪一式练到几级、两个主动槽里装着什么 */
+  readonly moves = new MovementBook()
 
   constructor(originId = 'origin_tuner', seed: number | string = 0x51f3a2) {
     this.prog = new Progression(originId)
@@ -183,7 +188,8 @@ export class RpgRuntime {
       progression: this.prog.snapshot(),
       inventory: this.inv.snapshot(),
       equipment: this.eq.snapshot(),
-      loot: this.loot.snapshot()
+      loot: this.loot.snapshot(),
+      movements: this.moves.snapshot()
     }
   }
 
@@ -192,7 +198,13 @@ export class RpgRuntime {
     if (s.inventory) this.inv.restore(s.inventory)
     if (s.equipment) this.eq.restore(s.equipment)
     if (s.loot) this.loot.restore(s.loot)
+    // v3 及更早的档没有这一格：不传 = 谱册空白（§78 如实），而不是替老档编一套已学会的战技。
+    // rank 先恢复再传进去：槽位是音级开的，判序反了就会让存档里伪造的槽位生效。
+    this.moves.restore(s.movements ?? null, this.prog.rank)
   }
+
+  /** 两个主动槽此刻能打出去的招式（键＝输入动作名）；main.ts 把它灌给 PlayerController */
+  skillLoadout(): Record<string, SkillAction> { return this.moves.loadout() }
 }
 
 /** 装备件的中文名（面板/播报用；数据里 displayName 已是中文，nameKey 留给未来本地化） */

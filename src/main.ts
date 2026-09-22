@@ -64,6 +64,7 @@ const player = new PlayerController(playerBase, weapon, moveset)
 function refreshRpg(): void {
   const m = rpg.mods()
   player.applyRpg(m)
+  player.setSkills(rpg.skillLoadout()) // §7 谱册换了（点亮/升级/换装/读档）⇒ 手里的两式要跟着换
   if (m.weaponId && m.weaponId !== player.weapon.id && registry.has(m.weaponId)) {
     const w = registry.get<WeaponData>(m.weaponId)
     player.equip(w, registry.get<MovesetData>(`moveset:${w.movesetId}`))
@@ -201,8 +202,10 @@ const core = {
     for (const [i, act] of (['ability1', 'ability2', 'ability3'] as const).entries()) {
       if (inp.frame.edges.has(act)) selectWeaponSlot(i)
     }
-    if (inp.frame.edges.has('weaponSkill')) {
-      bus.emit('ui.notify', { text: '乐章战技：谱册尚未拼齐（Phase 5-C）', kind: 'info' })
+    // §7 乐章战技：两个主动槽各自的键。出手与否由玩家动作系统判（冷却/闷音封锁/资源），
+    // 所以这里不看返回值——"按了没出声"本身就是它的反馈（闷音与过载不足会各自报一句话）。
+    for (const act of ['weaponSkill', 'weaponSkillB'] as const) {
+      if (inp.frame.edges.has(act)) player.tryStartAction(act, t.tick, rhythm)
     }
     player.update(dt, t, inp, t.tick, rhythm)
     streaming.update(t.tick, player.pos)
@@ -320,4 +323,4 @@ document.getElementById('boot')!.style.display = 'none'
 ;(window as unknown as Record<string, unknown>).__CAESURA_BOOTED__ = true
 bus.emit('boot.ready', undefined)
 void bootWithSave()
-console.info('[caesura] online — WASD/Shift/Ctrl-roll/LMB/RMB/F guard/G parry/Q lock/E interact(优先)/execute(处决·背刺)/1·2·3 换装/R 战技(5-C)/Tab 调音桩面板(需站在调音桩前)/Esc pause')
+console.info('[caesura] online — WASD/Shift/Ctrl-roll/LMB/RMB/F guard/G parry/Q lock/E interact(优先)/execute(处决·背刺)/1·2·3 换装/R·C 乐章战技 I·II/Tab 调音桩面板(需站在调音桩前)/Esc pause')

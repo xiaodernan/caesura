@@ -97,7 +97,7 @@ describe('调音桩面板：状态机与内容', () => {
     expect(p.isOpen).toBe(false)
   })
 
-  it('方向键切页：调音 → 装备 → 行囊 各自渲染自己的内容', async () => {
+  it('方向键切页：调音 → 装备 → 行囊 → 谱册，再往右回到第一页', async () => {
     const rt = new RpgRuntime('origin_tuner')
     rt.inv.add('it_timbite', 12)
     rt.inv.add('it_echo_salve', 2)
@@ -110,6 +110,11 @@ describe('调音桩面板：状态机与内容', () => {
     key('ArrowRight')
     expect(html(p)).toContain('通货')
     expect(html(p)).toContain('消耗品')
+    key('ArrowRight')
+    const moves = html(p)
+    expect(moves, '§7 谱册：每一页都要亮出来，包括还没点亮的那些').toContain('乐章 I·序句')
+    expect(moves).toContain('主动槽')
+    expect(moves).toContain('乐谱研读')
     key('ArrowRight')
     expect(html(p)).toContain('六音级属性')
   })
@@ -179,5 +184,37 @@ describe('调音桩面板：状态机与内容', () => {
     click(root, 'unequip', 'weapon')
     expect(rt.eq.slots.weapon).toBeUndefined()
     expect(rt.mods().weaponId).toBeNull()
+  })
+
+  it('谱册页的三个动作：点亮先收学费、装槽认音级，面板只派发不自己写状态', async () => {
+    const { movementConfig } = await import('@/rpg/Movements')
+    registerGameData() // movementConfig 读 registry，别假设别人已经注册过
+    const mv = movementConfig()
+    const page = mv.pages[0]
+    const onLitPage = mv.movements.find((m) => m.page === page.id)!
+    const rt = new RpgRuntime('origin_tuner')
+    const { p, notes, applied } = await panel(rt)
+    p.show()
+    const root = (p as unknown as { root: FakeEl }).root
+
+    click(root, 'lit', page.id)
+    expect(rt.moves.isLit(page.id), '一件解锁物都没有 ⇒ 页不亮').toBe(false)
+    expect(notes.some((n) => n.includes('解锁物不足'))).toBe(true)
+
+    rt.inv.add(page.unlock.item, page.unlock.count)
+    click(root, 'lit', page.id)
+    expect(rt.moves.isLit(page.id)).toBe(true)
+    expect(rt.inv.count(page.unlock.item)).toBe(0)
+    expect(notes.some((n) => n.includes('谱册点亮'))).toBe(true)
+
+    const need = rt.moves.slotRank(0)!
+    click(root, 'mvequip', `0:${onLitPage.id}`)
+    expect(rt.moves.slots[0], `音级 ${rt.prog.rank} 还没到开槽的 ${need}`).toBeNull()
+    expect(notes.some((n) => n.includes('才开'))).toBe(true)
+    for (let i = 0; i < 400 && rt.prog.rank < need; i++) rt.prog.addResonance(300)
+    expect(rt.prog.rank, `抬不到开槽音级 ${need}`).toBeGreaterThanOrEqual(need)
+    click(root, 'mvequip', `0:${onLitPage.id}`)
+    expect(rt.moves.slots[0]).toBe(onLitPage.id)
+    expect(applied.length, '每次点击都让宿主重算派生值（面板不自己 patch 玩家）').toBeGreaterThan(0)
   })
 })

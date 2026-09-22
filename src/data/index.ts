@@ -8,7 +8,8 @@ import regionsRaw from './json/regions.json'
 import progressionRaw from './json/progression.json'
 import itemsRaw from './json/items.json'
 import statusesRaw from './json/statuses.json'
-import type { MovesetData, WeaponData, EnemyData, PlayerBaseData, RegionData, ProgressionData, ItemData, LootTableData, StatusConfig } from './schema'
+import movementsRaw from './json/movements.json'
+import type { MovesetData, WeaponData, EnemyData, PlayerBaseData, RegionData, ProgressionData, ItemData, LootTableData, StatusConfig, MovementConfig } from './schema'
 
 export const playerBase = playerRaw as unknown as PlayerBaseData
 export const regions = regionsRaw as unknown as RegionData[]
@@ -16,6 +17,8 @@ export const progression = progressionRaw as unknown as ProgressionData
 export const items = itemsRaw as unknown as ItemData[]
 /** §11 五状态的单一数值真源（含世界观 tooltip）；派生读取走 combat/Statuses.ts 的 `statusConfig()` */
 export const statuses = statusesRaw as unknown as StatusConfig
+/** §7 乐章战技谱册（页/槽/等级成长）；成长状态本身在 rpg/Movements.ts，这里只有静态表 */
+export const movements = movementsRaw as unknown as MovementConfig
 
 let registered = false
 
@@ -34,6 +37,7 @@ export function registerGameData(): void {
   registry.register('player:base', playerBase)
   registry.register('progression', progression)
   registry.register('statuses', statuses)
+  registry.register('movements', movements)
 }
 
 export { weaponsRaw, enemiesRaw, movesetsRaw, regionsRaw, progressionRaw, itemsRaw, lootRaw }

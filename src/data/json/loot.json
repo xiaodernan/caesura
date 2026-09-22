@@ -589,6 +589,14 @@
     ]
    },
    {
+    "id": "score",
+    "item": "it_score_fragment",
+    "count": [
+     2,
+     2
+    ]
+   },
+   {
     "id": "gearA",
     "gearBand": [
      {

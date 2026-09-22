@@ -2,7 +2,7 @@ export type ActionName =
   | 'moveUp' | 'moveDown' | 'moveLeft' | 'moveRight'
   | 'sprint' | 'jump' | 'dodge'
   | 'attackLight' | 'attackHeavy' | 'guard' | 'parry'
-  | 'lockOn' | 'interact' | 'weaponSkill'
+  | 'lockOn' | 'interact' | 'weaponSkill' | 'weaponSkillB'
   | 'ability1' | 'ability2' | 'ability3'
   | 'map' | 'pause'
 
@@ -18,7 +18,7 @@ export const DEFAULT_BINDS: Binds = {
     ShiftLeft: 'sprint', Space: 'jump', ControlLeft: 'dodge',
     MouseLeft: 'attackLight', MouseRight: 'attackHeavy',
     KeyF: 'guard', KeyG: 'parry',
-    KeyQ: 'lockOn', KeyE: 'interact', KeyR: 'weaponSkill',
+    KeyQ: 'lockOn', KeyE: 'interact', KeyR: 'weaponSkill', KeyC: 'weaponSkillB',
     Digit1: 'ability1', Digit2: 'ability2', Digit3: 'ability3',
     Tab: 'map', Escape: 'pause'
   },
@@ -27,7 +27,7 @@ export const DEFAULT_BINDS: Binds = {
     4: 'guard', 5: 'lockOn', 6: 'map', 7: 'sprint',
     8: 'pause', 9: 'attackHeavy', 10: 'attackLight', 11: 'jump',
     12: 'dodge', 13: 'attackLight', 14: 'attackHeavy', 15: 'parry',
-    16: 'interact', 17: 'pause'
+    16: 'interact', 17: 'pause', 18: 'weaponSkillB'
   },
   padAxes: { moveX: 0, moveY: 1, camX: 2, camY: 3 }
 }

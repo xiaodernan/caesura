@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const JSON_DIR = resolve(ROOT, 'src/data/json')
-const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json']
+const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json']
 // Phase 5-B 起：装备槽位 / 物品大类（与 schema.ts 的 SlotKey / ItemKind 对齐）
 const SLOT_KEYS = new Set(['weapon', 'helm', 'cuirass', 'gloves', 'greaves', 'seal', 'sealA', 'sealB'])
 const GEAR_SLOTS = new Set(['weapon', 'helm', 'cuirass', 'gloves', 'greaves', 'seal'])
@@ -47,6 +47,12 @@ const STATUS_FIELDS = {
   corruption: ['tag', 'displayName', 'desc', 'max', 'eliteHit', 'visualStart', 'hpPerSec'],
   overdrive: ['tag', 'displayName', 'desc'],
 }
+// src/core/Input.ts ActionName —— 目前只有这两条动作被乐章战技占用（新增槽位要先在输入层登记）
+const MOVEMENT_ACTIONS = new Set(['weaponSkill', 'weaponSkillB'])
+/** 战技帧的字段白名单： MovementFrame（schema.ts）。多一个字段就必须多一个消费方 */
+const MOVE_FRAME_FIELDS = ['startup', 'activeStart', 'activeEnd', 'recovery', 'poise', 'hitStopMs', 'hitbox', 'multi', 'shake', 'sfx', 'vfx', 'loudness']
+/** 战技每级的数值字段： MovementLevel。同样一字段一消费口 */
+const MOVE_LEVEL_FIELDS = ['cooldownTicks', 'damage', 'trueDamage', 'fissureLayers', 'muteTicks', 'distance']
 
 // ---- 小工具 ----
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
@@ -920,6 +926,173 @@ function validateRegions(enemyIds, lootIds) {
   return ids
 }
 
+// ---- movements.json ----
+/** loot.json 里真正会掉出来的物品全集（rolls + firstKill）。点亮源必须落在这里面，否则那一页永远点不亮 */
+function lootedItemIds() {
+  const out = new Set()
+  const list = data['loot.json']
+  if (!isArr(list)) return out
+  for (const t of list) {
+    if (!isObj(t)) continue
+    const rows = [...(isArr(t.rolls) ? t.rolls : []), ...(isArr(t.firstKill) ? t.firstKill : [])]
+    for (const r of rows) if (isObj(r) && isStr(r.item)) out.add(r.item)
+  }
+  return out
+}
+
+function validateMovements(itemIds) {
+  const file = 'movements.json'
+  const d = data[file]
+  if (!isObj(d)) { report.error(file, file, '顶层必须是对象'); return }
+  const { slots, pages, movements, upgradeCost, damage } = d
+  for (const k of Object.keys(d)) {
+    if (!['slots', 'pages', 'movements', 'upgradeCost', 'damage'].includes(k)) report.error(file, k, '不认的顶层字段（§55）')
+  }
+
+  // 主动槽：开槽门槛只住 progression.json.milestones，这里引用 id，不抄第二份数字
+  const mileIds = new Set((isObj(data['progression.json']) ? data['progression.json'].milestones ?? [] : []).filter(isObj).map((m) => m.id))
+  if (!isArr(slots) || slots.length === 0) report.error(file, 'slots', '必须是非空数组')
+  else {
+    const acts = new Set()
+    slots.forEach((s, i) => {
+      const w = `slots[${i}]`
+      if (!isObj(s)) { report.error(file, w, '必须是对象'); return }
+      for (const k of Object.keys(s)) if (!['index', 'action', 'milestone'].includes(k)) report.error(file, `${w}.${k}`, '不认的字段（§55）')
+      report.num(file, `${w}.index`, s.index, { min: 1, int: true, name: 'index' })
+      if (isNum(s.index) && s.index !== i + 1) report.error(file, `${w}.index`, `槽序号必须从 1 连续：期望 ${i + 1}，实际 ${s.index}`)
+      if (!MOVEMENT_ACTIONS.has(s.action)) report.error(file, `${w}.action`, `action=${JSON.stringify(s.action)} 不是战技动作（${[...MOVEMENT_ACTIONS].join('/')}；新槽要先在 core/Input.ts 登记）`)
+      else if (acts.has(s.action)) report.error(file, w, `动作重复绑定：${s.action}`)
+      else acts.add(s.action)
+      if (!isStr(s.milestone)) report.error(file, `${w}.milestone`, '缺失或非字符串')
+      else if (!mileIds.has(s.milestone)) report.error(file, `${w}.milestone`, `悬空引用：'${s.milestone}' 不在 progression.json.milestones`)
+    })
+  }
+
+  const pageIds = new Set()
+  if (!isArr(pages) || pages.length === 0) report.error(file, 'pages', '必须是非空数组')
+  else {
+    const lootable = lootedItemIds()
+    pages.forEach((p, i) => {
+      const w = isStr(p?.id) ? p.id : `pages[${i}]`
+      if (!isObj(p)) { report.error(file, w, '必须是对象'); return }
+      if (!isStr(p.id)) report.error(file, w, 'id 缺失或非字符串')
+      else if (pageIds.has(p.id)) report.error(file, w, `id 重复：${p.id}`)
+      else pageIds.add(p.id)
+      for (const k of Object.keys(p)) if (!['id', 'nameKey', 'displayName', 'desc', 'unlock'].includes(k)) report.error(file, `${w}.${k}`, '不认的字段（§55）')
+      if (!isStr(p.nameKey)) report.error(file, `${w}.nameKey`, '必填')
+      if (!isStr(p.displayName)) report.error(file, `${w}.displayName`, '必填')
+      if (!isStr(p.desc) || p.desc.length < 5) report.error(file, `${w}.desc`, '需要一句世界内解释（§19）')
+      if (!isObj(p.unlock)) report.error(file, `${w}.unlock`, '必须是 { item, count } —— 点亮源写在数据里，不是代码里的 if')
+      else {
+        for (const k of Object.keys(p.unlock)) if (k !== 'item' && k !== 'count') report.error(file, `${w}.unlock.${k}`, '不认的字段（§55）')
+        if (!isStr(p.unlock.item)) report.error(file, `${w}.unlock.item`, '必填')
+        else {
+          if (!itemIds.has(p.unlock.item)) report.error(file, `${w}.unlock.item`, `悬空引用：'${p.unlock.item}' 不在 items.json`)
+          else if (!lootable.has(p.unlock.item)) report.error(file, `${w}.unlock.item`, `没有任何掉落表给出 '${p.unlock.item}'：这一页永远点不亮（unreachable content）`)
+        }
+        report.num(file, `${w}.unlock.count`, p.unlock.count, { min: 1, int: true, name: 'count' })
+      }
+    })
+  }
+
+  // 升级阶梯（全表共用一条：§6.2 战技乐谱 40-200/级）
+  let ladder = 0
+  if (!isArr(upgradeCost) || upgradeCost.length === 0) report.error(file, 'upgradeCost', '必须是非空数组')
+  else {
+    upgradeCost.forEach((u, i) => {
+      const w = `upgradeCost[${i}]`
+      if (!isObj(u)) { report.error(file, w, '必须是对象'); return }
+      for (const k of Object.keys(u)) if (!['level', 'timbite', 'score'].includes(k)) report.error(file, `${w}.${k}`, '不认的字段（§55）')
+      report.num(file, `${w}.level`, u.level, { min: 2, int: true, name: 'level' })
+      if (isNum(u.level) && u.level !== i + 2) report.error(file, `${w}.level`, `level 必须从 2 连续：期望 ${i + 2}，实际 ${u.level}`)
+      report.num(file, `${w}.timbite`, u.timbite, { min: 1, int: true, name: 'timbite' })
+      report.num(file, `${w}.score`, u.score, { min: 1, int: true, name: 'score' })
+    })
+    ladder = upgradeCost.length + 1
+  }
+
+  if (!isObj(damage)) report.error(file, 'damage', '必须是 { scaling, perOverdriveLayer }')
+  else {
+    for (const k of Object.keys(damage)) if (!['scaling', 'perOverdriveLayer'].includes(k)) report.error(file, `damage.${k}`, '不认的字段（§55）')
+    if (!isObj(damage.scaling) || Object.keys(damage.scaling).length === 0) report.error(file, 'damage.scaling', '必须是非空对象（§2.1 音色列）')
+    else for (const [k, v] of Object.entries(damage.scaling)) {
+      if (!ATTR_KEYS.has(k)) report.error(file, `damage.scaling.${k}`, `未知属性键 '${k}'（${[...ATTR_KEYS].join('/')}）`)
+      else report.num(file, `damage.scaling.${k}`, v, { min: 0, name: k })
+    }
+    report.num(file, 'damage.perOverdriveLayer', damage.perOverdriveLayer, { min: 0, name: 'perOverdriveLayer' })
+    if (isNum(damage.perOverdriveLayer) && damage.perOverdriveLayer >= 1) {
+      report.error(file, 'damage.perOverdriveLayer', `每层 +${damage.perOverdriveLayer} >= 100%：满过载就是倍率怪物，请回到 0.x`)
+    }
+  }
+
+  if (!isArr(movements) || movements.length === 0) { report.error(file, 'movements', '必须是非空数组'); return }
+  const ids = new Set()
+  movements.forEach((m, i) => {
+    const w = isStr(m?.id) ? m.id : `movements[${i}]`
+    if (!isObj(m)) { report.error(file, w, '必须是对象'); return }
+    if (!isStr(m.id)) report.error(file, w, 'id 缺失或非字符串')
+    else if (ids.has(m.id)) report.error(file, w, `id 重复：${m.id}`)
+    else ids.add(m.id)
+    for (const k of Object.keys(m)) if (!['id', 'page', 'nameKey', 'displayName', 'desc', 'cost', 'frame', 'levels'].includes(k)) report.error(file, `${w}.${k}`, '不认的字段（§55）')
+    if (!isStr(m.nameKey)) report.error(file, `${w}.nameKey`, '必填')
+    if (!isStr(m.displayName)) report.error(file, `${w}.displayName`, '必填')
+    if (!isStr(m.desc) || m.desc.length < 5) report.error(file, `${w}.desc`, '需要一句世界内解释（§19）')
+    if (!isStr(m.page)) report.error(file, `${w}.page`, '缺失或非字符串（点亮源住在页上）')
+    else if (!pageIds.has(m.page)) report.error(file, `${w}.page`, `悬空引用：'${m.page}' 不在 pages`)
+
+    if (!isObj(m.cost)) report.error(file, `${w}.cost`, '必须是 { stamina?, overdrive? }')
+    else {
+      for (const k of Object.keys(m.cost)) if (!['stamina', 'overdrive'].includes(k)) report.error(file, `${w}.cost.${k}`, '不认的字段（§55）')
+      report.sub(file, `${w}.cost`, m.cost, { stamina: { min: 1, int: true, optional: true }, overdrive: { min: 1, int: true, optional: true } })
+      if (Object.keys(m.cost).length === 0) report.error(file, `${w}.cost`, '一条战技至少要有一种代价（体力或过载），否则它没有消费方')
+    }
+
+    const fr = m.frame
+    if (!isObj(fr)) { report.error(file, `${w}.frame`, '必须是对象'); return }
+    for (const k of Object.keys(fr)) if (!MOVE_FRAME_FIELDS.includes(k)) report.error(file, `${w}.frame.${k}`, `不认的字段（本表可用：${MOVE_FRAME_FIELDS.join('/')}）`)
+    for (const k of ['startup', 'activeStart', 'activeEnd', 'recovery']) report.num(file, `${w}.frame.${k}`, fr[k], { min: 0, name: k })
+    const { startup, activeStart, activeEnd, recovery } = fr
+    if ([startup, activeStart, activeEnd, recovery].every(isNum)
+      && !(startup <= activeStart && activeStart <= activeEnd && activeEnd <= recovery)) {
+      report.error(file, `${w}.frame`, `帧序非法：需 startup(${startup}) <= activeStart(${activeStart}) <= activeEnd(${activeEnd}) <= recovery(${recovery})`)
+    }
+    if (fr.poise !== undefined) report.num(file, `${w}.frame.poise`, fr.poise, { min: 0, name: 'poise' })
+    if (fr.hitStopMs !== undefined) report.num(file, `${w}.frame.hitStopMs`, fr.hitStopMs, { min: 0, name: 'hitStopMs' })
+    if (fr.loudness !== undefined) report.num(file, `${w}.frame.loudness`, fr.loudness, { min: 0, name: 'loudness' })
+    if (fr.shake !== undefined && !SHAKES.has(fr.shake)) report.error(file, `${w}.frame.shake`, `shake=${JSON.stringify(fr.shake)} 非法`)
+    for (const k of ['sfx', 'vfx']) if (fr[k] !== undefined) strArray(file, `${w}.frame.${k}`, fr[k])
+    if (fr.hitbox !== undefined) hitbox(file, `${w}.frame.hitbox`, fr.hitbox)
+    if (fr.multi !== undefined) {
+      report.num(file, `${w}.frame.multi`, fr.multi, { min: 2, int: true, name: 'multi' })
+      if (!isObj(fr.hitbox)) report.error(file, `${w}.frame.multi`, 'multi 需要 hitbox：没有形状就打不出第二个人')
+    }
+
+    if (!isArr(m.levels) || m.levels.length === 0) { report.error(file, `${w}.levels`, '必须是非空数组'); return }
+    if (ladder > 0 && m.levels.length !== ladder) {
+      report.error(file, `${w}.levels`, `共 ${m.levels.length} 级，但 upgradeCost 只有 ${ladder - 1} 档（上限 L${ladder}）：两边必须对齐，否则要么有一级没有价目，要么有一个价目没人付`)
+    }
+    const cds = []
+    m.levels.forEach((l, li) => {
+      const lw = `${w}.levels[${li}]`
+      if (!isObj(l)) { report.error(file, lw, '必须是对象'); return }
+      for (const k of Object.keys(l)) if (!MOVE_LEVEL_FIELDS.includes(k)) report.error(file, `${lw}.${k}`, `不认的字段（本表可用：${MOVE_LEVEL_FIELDS.join('/')}）`)
+      const okCd = report.num(file, `${lw}.cooldownTicks`, l.cooldownTicks, { min: 1, int: true, name: 'cooldownTicks' })
+      if (okCd) cds.push(l.cooldownTicks)
+      if (l.damage !== undefined) {
+        report.num(file, `${lw}.damage`, l.damage, { min: 0, name: 'damage' })
+        if (!isObj(fr.hitbox)) report.error(file, `${lw}.damage`, `这一式没有 hitbox，damage 永远打不出去（要挂在别的招上请写 trueDamage）`)
+      }
+      if (l.trueDamage !== undefined) report.num(file, `${lw}.trueDamage`, l.trueDamage, { min: 1, name: 'trueDamage' })
+      if (l.fissureLayers !== undefined) report.num(file, `${lw}.fissureLayers`, l.fissureLayers, { min: 1, int: true, name: 'fissureLayers' })
+      if (l.muteTicks !== undefined) report.num(file, `${lw}.muteTicks`, l.muteTicks, { min: 1, int: true, name: 'muteTicks' })
+      if (l.distance !== undefined) report.num(file, `${lw}.distance`, l.distance, { min: 0.1, name: 'distance' })
+    })
+    for (let k = 1; k < cds.length; k++) {
+      if (cds[k] > cds[k - 1]) report.error(file, `${w}.levels`, `cooldownTicks 逐级变长（L${k}=${cds[k - 1]} → L${k + 1}=${cds[k]}）：练熟一招不该惩罚玩家`)
+    }
+  })
+}
+
 // ---- 跑全部校验（跨文件引用需要先拿到 id 集合）----
 // statuses 先跑：enemies 的 statusOnHit.tag 要拿它当词表对账
 validateStatuses()
@@ -932,6 +1105,8 @@ const lootIds = validateLoot(itemIds, rarityIds)
 const enemyIds = validateEnemies(lootIds)
 validatePlayer()
 const regionIds = validateRegions(enemyIds, lootIds)
+// movements 最后跑：它要同时对账 items（点亮源）、loot（源是否真会掉）、progression（开槽里程碑）
+validateMovements(itemIds)
 void regionIds
 
 // ---- 报告 ----

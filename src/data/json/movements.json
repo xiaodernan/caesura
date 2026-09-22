@@ -1,0 +1,107 @@
+{
+ "slots": [
+  { "index": 1, "action": "weaponSkill", "milestone": "ms_movement_slot" },
+  { "index": 2, "action": "weaponSkillB", "milestone": "ms_movement2" }
+ ],
+ "damage": { "scaling": { "ton": 1.5 }, "perOverdriveLayer": 0.04 },
+ "upgradeCost": [
+  { "level": 2, "timbite": 40, "score": 1 },
+  { "level": 3, "timbite": 120, "score": 2 }
+ ],
+ "pages": [
+  {
+   "id": "mvpage_prelude",
+   "nameKey": "movement.page.prelude",
+   "displayName": "乐章 I·序句",
+   "desc": "一句还没被唱坏的句子。它只做一件事：把力量落在一个点上。",
+   "unlock": { "item": "it_resonance_core", "count": 1 }
+  },
+  {
+   "id": "mvpage_dance",
+   "nameKey": "movement.page.dance",
+   "displayName": "乐章 II·舞曲",
+   "desc": "破拍营地的人不唱歌，他们换拍。脚步比拍子快半格，就总能在别人换气时站在别处。",
+   "unlock": { "item": "it_score_fragment", "count": 2 }
+  },
+  {
+   "id": "mvpage_storm",
+   "nameKey": "movement.page.storm",
+   "displayName": "乐章 III·风暴",
+   "desc": "万籁同时开口时，听到的不是许多声音，是一个声音。把那个声音借过来一次。",
+   "unlock": { "item": "it_resonance_core", "count": 1 }
+  }
+ ],
+ "movements": [
+  {
+   "id": "mv_wholenotecut",
+   "page": "mvpage_prelude",
+   "nameKey": "movement.wholeNoteCut",
+   "displayName": "全音符斩",
+   "desc": "把一整拍的力气压在下一记重击上。这一式自己不出声，出声的是接下来那一刀。",
+   "cost": { "overdrive": 2 },
+   "frame": {
+    "startup": 18,
+    "activeStart": 18,
+    "activeEnd": 24,
+    "recovery": 44,
+    "sfx": ["chord_slam"],
+    "vfx": ["spike_chord"],
+    "loudness": 5
+   },
+   "levels": [
+    { "cooldownTicks": 120, "fissureLayers": 2, "trueDamage": 8 },
+    { "cooldownTicks": 110, "fissureLayers": 2, "trueDamage": 12 },
+    { "cooldownTicks": 100, "fissureLayers": 3, "trueDamage": 18 }
+   ]
+  },
+  {
+   "id": "mv_syncopace",
+   "page": "mvpage_dance",
+   "nameKey": "movement.syncopace",
+   "displayName": "错拍步",
+   "desc": "往拍的缝里迈一步。它不躲攻击，它躲开的是那一拍本身——所以谁也漂移不掉它。",
+   "cost": { "stamina": 15 },
+   "frame": {
+    "startup": 3,
+    "activeStart": 3,
+    "activeEnd": 9,
+    "recovery": 20,
+    "sfx": ["drum_sweep"],
+    "vfx": ["ring_dust"],
+    "loudness": 3
+   },
+   "levels": [
+    { "cooldownTicks": 240, "distance": 2.5 },
+    { "cooldownTicks": 210, "distance": 3 },
+    { "cooldownTicks": 180, "distance": 3.5 }
+   ]
+  },
+  {
+   "id": "mv_chordburst",
+   "page": "mvpage_storm",
+   "nameKey": "movement.chordburst",
+   "displayName": "和弦爆",
+   "desc": "把几个音同时推到底，让它们在四米外撞成一堵墙。墙过去之后，那边的人会安静一会儿。",
+   "cost": { "overdrive": 3 },
+   "frame": {
+    "startup": 16,
+    "activeStart": 16,
+    "activeEnd": 22,
+    "recovery": 52,
+    "poise": 26,
+    "hitStopMs": 90,
+    "hitbox": { "shape": "ring", "inner": 0, "outer": 4, "forward": 0 },
+    "multi": 8,
+    "shake": "heavy",
+    "sfx": ["burst_shell"],
+    "vfx": ["hit_ring"],
+    "loudness": 8
+   },
+   "levels": [
+    { "cooldownTicks": 300, "damage": 26, "muteTicks": 180 },
+    { "cooldownTicks": 270, "damage": 36, "muteTicks": 210 },
+    { "cooldownTicks": 240, "damage": 48, "muteTicks": 240 }
+   ]
+  }
+ ]
+}

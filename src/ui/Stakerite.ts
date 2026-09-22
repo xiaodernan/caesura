@@ -3,12 +3,15 @@ import { itemOf } from '@/rpg/Inventory'
 import { ATTR_KEYS, progressionData } from '@/rpg/Progression'
 import { SLOTS } from '@/rpg/Equipment'
 import { upgradeStep, maxLevelOf, TIMBITE, DROSS } from '@/rpg/Upgrade'
+import { movementName, unlockItemName, SCORE } from '@/rpg/Movements'
+import { DEFAULT_BINDS, type ActionName } from '@/core/Input'
 import type { RpgRuntime } from '@/rpg/Runtime'
 
 /**
  * 调音桩面板（Phase 5-B 的 UI 落点；需求 §41/§44 + progression.md §8.3）。
  *
- * 三页：**调音**（音级/六维分配/洗点）、**装备**（七槽 + 强化）、**行囊**（分类清单）。
+ * 四页：**调音**（音级/六维分配/洗点）、**装备**（七槽 + 强化）、**行囊**（分类清单）、
+ * **谱册**（乐章战技的点亮/升级/装槽，Phase 5-C2）。
  * 用 DOM 而不是 HUD 的 canvas：这是一块要读字、要滚动、要点击的界面，不是战斗中的仪表盘
  * （tech-arch §1 的 UI 分工：HUD 走 canvas，菜单走 DOM overlay）。
  *
@@ -16,12 +19,13 @@ import type { RpgRuntime } from '@/rpg/Runtime'
  * 由 main.ts 统一把派生值灌回玩家——面板自己不写第二份"应用变更"的逻辑。
  */
 
-type Tab = 'tune' | 'gear' | 'bag'
+type Tab = 'tune' | 'gear' | 'bag' | 'moves'
 
 const TABS: { id: Tab; label: string; hint: string }[] = [
   { id: 'tune', label: '调音', hint: '分配音级点 · 洗点' },
   { id: 'gear', label: '装备', hint: '七槽 · 强化' },
-  { id: 'bag', label: '行囊', hint: '分类清点' }
+  { id: 'bag', label: '行囊', hint: '分类清点' },
+  { id: 'moves', label: '谱册', hint: '乐章战技 · 主动槽' }
 ]
 
 const CSS = `
@@ -135,6 +139,9 @@ export class Stakerite {
       case 'upgrade': this.upgrade(arg); break
       case 'salvage': this.salvage(arg); break
       case 'use': this.use(arg); break
+      case 'lit': this.unlock(arg); break
+      case 'mvup': this.upgradeMove(arg); break
+      case 'mvequip': this.equipSlot(arg); break
       case 'close': this.close(); break
       default: return
     }
@@ -198,13 +205,57 @@ export class Stakerite {
     return g.level > 0 ? `${item.displayName} +${g.level}` : item.displayName
   }
 
+  /* ------------------------------ 谱册 ------------------------------ */
+
+  /** 点亮一页 = 把数据里点名的那件东西花掉。扣不动就不亮（`MovementBook.unlockPage` 已保证顺序） */
+  private unlock(pageId: string): void {
+    const r = this.rpg.moves.unlockPage(pageId, this.rpg.inv)
+    if (!r.ok) {
+      this.hooks.notify(
+        r.reason === 'lit' ? '这一页已经亮着'
+          : r.reason === 'poor' ? `解锁物不足（需 ${unlockItemName(pageId)}）`
+            : '谱册里没有这一页', 'info')
+      return
+    }
+    this.hooks.notify(`谱册点亮 · ${this.rpg.moves.page(pageId)?.displayName ?? pageId}`, 'reward')
+  }
+
+  private upgradeMove(id: string): void {
+    const r = this.rpg.moves.upgrade(id, this.rpg.inv)
+    if (!r.ok) {
+      const need = this.rpg.moves.upgradeNeed(id)
+      this.hooks.notify(
+        r.reason === 'max' ? `${movementName(id)} 已到这一页的上限`
+          : r.reason === 'dark' ? '这一式还在没点亮的页里'
+            : `材料不足（需 ${need?.timbite ?? '?'} 石 / ${need?.score ?? '?'} 残页）`, 'info')
+      return
+    }
+    this.hooks.notify(`${movementName(id)} · 第 ${this.rpg.moves.levelOf(id)} 级`, 'reward')
+  }
+
+  /** `data-arg` = `"<槽序号>:<战技id>"`；id 留空＝卸下那槽 */
+  private equipSlot(arg: string): void {
+    const i = Number(arg.slice(0, arg.indexOf(':')))
+    const id = arg.slice(arg.indexOf(':') + 1) || null
+    const r = this.rpg.moves.equip(i, id, this.rpg.prog.rank)
+    if (!r.ok) {
+      this.hooks.notify(
+        r.reason === 'locked-slot' ? `第 ${i + 1} 槽要到音级 ${this.rpg.moves.slotRank(i)} 才开`
+          : r.reason === 'dark' ? '还没学会这一式'
+            : '这个槽位不存在', 'info')
+      return
+    }
+    this.hooks.notify(id ? `装入 · ${movementName(id)}` : '已卸下', 'info')
+  }
+
   /* ------------------------------- 渲染 ------------------------------- */
 
   private render(): void {
     if (!this.open) return
     const body = this.tab === 'tune' ? this.renderTune()
       : this.tab === 'gear' ? this.renderGear()
-        : this.renderBag()
+        : this.tab === 'bag' ? this.renderBag()
+          : this.renderMoves()
     this.root.innerHTML = `
       <div class="veil" data-act="close"></div>
       <div class="panel">
@@ -217,6 +268,7 @@ export class Stakerite {
         <div class="foot">
           <span>← → 切换页</span><span>Tab 收起</span>
           <span>音色石 ${this.rpg.inv.count(TIMBITE)}</span><span>残晶 ${this.rpg.inv.count(DROSS)}</span>
+          <span>乐谱残页 ${this.rpg.inv.count(SCORE)}</span>
         </div>
       </div>`
   }
@@ -313,6 +365,51 @@ export class Stakerite {
       return `<h2>${k.label}</h2>${rows}`
     }).join('')
     return sections || '<div class="empty">行囊空空。</div>'
+  }
+
+  /** 槽位显示绑定本身，而不是面板里再抄一份 'R'/'C'——改键之后面板不会说谎 */
+  private keyFor(action: ActionName): string {
+    const code = Object.entries(DEFAULT_BINDS.keyboard).find(([, a]) => a === action)?.[0]
+    return code ? code.replace(/^(Key|Digit|Mouse)/, '') : '—'
+  }
+
+  private renderMoves(): string {
+    const book = this.rpg.moves
+    const inv = this.rpg.inv
+    const rank = this.rpg.prog.rank
+    const pages = book.cfg.pages.map((pg) => {
+      const lit = book.isLit(pg.id)
+      const have = inv.count(pg.unlock.item)
+      const unlock = `<div class="row"><span class="name">解锁源<span class="note">${pg.desc}</span></span>
+        <span class="num">${itemOf(pg.unlock.item).displayName} ${have}/${pg.unlock.count}</span>
+        <span class="act"><button class="act" data-act="lit" data-arg="${pg.id}" ${lit || have < pg.unlock.count ? 'disabled' : ''}>${lit ? '已点亮' : '点亮'}</button></span></div>`
+      const rows = book.cfg.movements.filter((m) => m.page === pg.id).map((m) => {
+        const lv = book.levelOf(m.id)
+        const need = book.upgradeNeed(m.id)
+        const canUp = !!need && inv.count(TIMBITE) >= need.timbite && inv.count(SCORE) >= need.score
+        const cost = lv <= 0 ? '未点亮' : need ? `L${lv}/${m.levels.length} · ${need.timbite} 石 / ${need.score} 残页` : `L${lv}/${m.levels.length} · 已满`
+        return `<div class="row"><span class="name">${m.displayName}<span class="note">${m.desc}</span></span>
+          <span class="num">${cost}</span>
+          <span class="act"><button class="act" data-act="mvup" data-arg="${m.id}" ${canUp ? '' : 'disabled'}>乐谱研读</button></span></div>`
+      }).join('')
+      return `<h2>${pg.displayName}${lit ? '' : ' · 全暗'}</h2>${unlock}${rows}`
+    }).join('')
+    const known = book.cfg.movements.filter((m) => book.levelOf(m.id) > 0)
+    const slots = book.cfg.slots.map((def, i) => {
+      const open = book.slotOpen(i, rank)
+      const cur = book.slots[i]
+      const pick = known.map((m) => `<button class="act" data-act="mvequip" data-arg="${i}:${m.id}" ${open ? '' : 'disabled'}>${m.displayName}</button>`).join('')
+      const drop = cur ? `<button class="act" data-act="mvequip" data-arg="${i}:">卸下</button>` : ''
+      return `<div class="row"><span class="name">第 ${def.index} 槽 · 键 ${this.keyFor(def.action)}
+          <span class="note">${open ? '' : `未开启 · 需音级 ${book.slotRank(i)}`}</span></span>
+        <span class="num">${cur ? movementName(cur) : '空'}</span>
+        <span class="act">${drop}${pick || '<span class="note">尚未学会任何一式</span>'}</span></div>`
+    }).join('')
+    return `${pages}
+      <h2>主动槽（装进去才打得出）</h2>${slots}
+      <h2>口径</h2>
+      <div class="row"><span class="name">战技伤害标尺<span class="note">不吃武器强化倍率，按音色列折算</span></span>
+        <span class="num">${Object.entries(book.cfg.damage.scaling).map(([k, v]) => `${k.toUpperCase()} +${v}/点`).join(' · ')} · 过载每层 +${Math.round(book.cfg.damage.perOverdriveLayer * 100)}%</span></div>`
   }
 }
 

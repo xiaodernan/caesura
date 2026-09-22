@@ -9,6 +9,7 @@ import { armStats, CorruptionMeter } from '@/combat/Statuses'
 import type { Vec3 } from '@/combat/EntityStats'
 import type { HitTarget } from '@/combat/HitShapes'
 import { defaultMods, type PlayerMods } from '@/rpg/Runtime'
+import type { SkillAction, SkillCast } from '@/rpg/Movements'
 
 const CHARGE_TICKS = 48
 /** 台阶容差：与 world/Surface 的 floorAt tolerance 一致，超过就不算「踩上台阶」 */
@@ -29,7 +30,15 @@ export class PlayerController {
   vy = 0
   /** 当前站立面的高度，由 world/Surface 每 tick 注入（垂直分层世界） */
   floorY = 0
-  action: { key: string; f: FrameData; tick: number; hitDone: boolean; shots: number } | null = null
+  action: {
+    key: string; f: FrameData; tick: number; hitDone: boolean; shots: number
+    /** 这一记已经打到过哪些目标（`f.multi` 是名额上限）。判定窗有好几 tick，同一目标不能被同一记打两遍 */
+    hitIds: Set<string>
+    /** 非 null ⇒ 这一记是乐章战技（§7）：伤害标尺、真伤、闷音、位移都从它身上取 */
+    skill: SkillCast | null
+    /** 战技位移（错拍步）的行进方向；null＝不出位移 */
+    dir: Vec3 | null
+  } | null = null
   roll: { tick: number; dir: Vec3; total: number; iframeStart: number; iframeEnd: number } | null = null
   guardTicks = 0
   guardStartTick = -999
@@ -64,6 +73,20 @@ export class PlayerController {
    * 消耗品与调音桩决定它怎么掉，HUD/画面决定它怎么被看见——三层都不互相认识，只认这个对象。
    */
   readonly corruption: CorruptionMeter
+  /**
+   * §7 乐章战技：当前装着的两式（键＝输入动作名）。由 main.ts 在每次成长/换装后灌进来，
+   * 本类不认识 movements.json——它只认这份已经折算好等级的小表。
+   */
+  skills: Record<string, SkillAction> = {}
+  /** 冷却按**输入槽**记账（不是按式子）：同一式装在两个槽里，两条冷却各自走 */
+  private skillCd = new Map<string, number>()
+  /**
+   * 全音符斩那类「压在下一记重击上」的起手式：层数与真伤由 §11 的震裂通道在命中时结算。
+   * 它是**瞬时状态**，不入档——读档后回到没起手，比凭空带着一层蓄力诚实。
+   */
+  followup: { layers: number; trueDamage: number } | null = null
+  /** 本 tick 的相对移动输入（战技位移的方向源）。刻意缓存而不是把 Input 传进 tryStartAction：出招入口保持一个签名 */
+  private moveIntent = { x: 0, y: 0 }
 
   constructor(public base: PlayerBaseData, public weapon: WeaponData, public moveset: MovesetData) {
     this.stats = playerStatsFrom(base)
@@ -94,12 +117,42 @@ export class PlayerController {
     if (this.action.tick < f.activeStart || this.action.tick > f.activeEnd || this.action.hitDone) return null
     return {
       box: f.hitbox, yaw: this.yaw,
-      damage: f.damage, poise: f.poise, hitStopMs: f.hitStopMs,
+      // 战技的伤害写在等级表上（cast.damage），武器帧的 damage 对战技恒为 0——见 rpg/Movements.ts
+      damage: this.action.skill ? this.action.skill.damage : f.damage,
+      poise: f.poise, hitStopMs: f.hitStopMs,
       shake: f.shake ?? 'normal', flags: f.flags ?? [], loudness: (f.loudness ?? 3) * (this.weapon.noiseMul ?? 1)
     }
   }
 
-  markActionHit(): void { if (this.action) this.action.hitDone = true }
+  /**
+   * 「这一记打到人了」。近战老规矩是一记一名目标（打空了不许横扫全群）；
+   * 写了 `f.multi` 的招式（环形战技）打到上限才作罢。
+   */
+  markActionHit(victimId: string): boolean {
+    const a = this.action
+    if (!a || a.hitDone || a.hitIds.has(victimId)) return false
+    a.hitIds.add(victimId)
+    if (a.hitIds.size >= (a.f.multi ?? 1)) a.hitDone = true
+    return true
+  }
+
+  setSkills(skills: Record<string, SkillAction>): void {
+    this.skills = skills // 冷却不跟着清：在调音桩换装不该顺手把刚交的学费退回来
+  }
+
+  /** 战技冷却还剩几 tick（0＝可出手）。UI/调试器读它，不自己算 */
+  skillCooldown(actionKey: string): number { return this.skillCd.get(actionKey) ?? 0 }
+
+  /**
+   * 取走「压在下一记上的起手式」。只有重击能兑现它（§7.2 全音符斩明写"下一记重击"），
+   * 所以轻击/战技调用时传 false：不消费、不清空。
+   */
+  takeFollowup(onHeavy: boolean): { layers: number; trueDamage: number } | null {
+    if (!onHeavy || !this.followup) return null
+    const f = this.followup
+    this.followup = null
+    return f
+  }
 
   /** data-driven weapon swap: reset transient action state, adopt new frames */
   equip(weapon: WeaponData, moveset: MovesetData): void {
@@ -161,12 +214,17 @@ export class PlayerController {
       return
     }
     const canAct = this.stunTicks <= 0 && this.crumpleTicks <= 0
+    this.moveIntent = { x: input.frame.move.x, y: input.frame.move.y }
     if (this.executing) {
       this.executing.tick++
       if (this.executing.tick >= this.executing.total) this.executing = null
       this.stats.update(dt, tick, false)
       this.publishStats()
       return
+    }
+    for (const [k, v] of this.skillCd) {
+      if (v <= 1) this.skillCd.delete(k)
+      else this.skillCd.set(k, v - 1)
     }
     // 夺拍期间：他的拍点窗外不给回气（mods.regenMul 是 EntityStats 已有的乘子通道）。
     // 装备的节律词缀与超载惩罚叠在这个乘子上——三者都只写一次，不各自另开一条回复路径。
@@ -220,7 +278,7 @@ export class PlayerController {
       bus.emit('sound.source', { id: 'player', pos: { ...this.pos }, loudness: this.noise(0.2) })
     }
     if (input.frame.edges.has('dodge') && !this.rpg.overloaded && (canAct || this.roll === null) && this.stats.stamina >= this.base.roll.stamina && !this.dead) {
-      this.startRoll(input, tick)
+      this.startRoll(tick)
     }
 
     // ---- action progression ----
@@ -231,6 +289,16 @@ export class PlayerController {
         const step = f.lunge / f.activeEnd
         this.pos.x += Math.sin(this.yaw) * step
         this.pos.z += Math.cos(this.yaw) * step
+      }
+      // 战技位移（错拍步）：走**判定窗**这几 tick，一步的距离由等级表给。
+      // 它和 lunge 分开写，是因为两者的时间轴口径本来就不同：lunge 是招式自带的前冲（按
+      // startup 起算的老约定），位移是"从出声到落地的这几格"。合并就会改动既有武器的落点。
+      const d = this.action.dir
+      if (d && this.action.skill && this.action.tick >= f.activeStart && this.action.tick <= f.activeEnd) {
+        const span = Math.max(1, f.activeEnd - f.activeStart + 1)
+        const step = this.action.skill.distance / span
+        this.pos.x += d.x * step
+        this.pos.z += d.z * step
       }
       if (this.action.tick >= f.recovery) {
         if (this.comboQueued && f.next && this.action.tick >= f.activeEnd) {
@@ -312,16 +380,24 @@ export class PlayerController {
     return this.roll !== null || (this.action !== null && this.action.tick < this.action.f.recovery * 0.6) || this.charging
   }
 
-  private startRoll(input: Input, tick: number): void {
-    const mv = input.frame.move
-    let dir: Vec3
+  /**
+   * 摄像机相对的输入方向 → 世界单位向量；没有输入就朝正前方。
+   * 翻滚与战技位移共用它：两处各算一遍，就会出现「翻滚往左、瞬步往屏幕左」这种不一致。
+   */
+  private moveDir(): Vec3 {
+    const mv = this.moveIntent
     if (mv.x !== 0 || mv.y !== 0) {
       const camYaw = this.camYawRef ?? this.yaw
       const s = Math.sin(camYaw), c = Math.cos(camYaw)
       const wx = mv.x * c - mv.y * s, wz = -(mv.x * s + mv.y * c)
       const l = Math.hypot(wx, wz) || 1
-      dir = { x: wx / l, y: 0, z: wz / l }
-    } else dir = { x: -Math.sin(this.yaw), y: 0, z: -Math.cos(this.yaw) }
+      return { x: wx / l, y: 0, z: wz / l }
+    }
+    return { x: -Math.sin(this.yaw), y: 0, z: -Math.cos(this.yaw) }
+  }
+
+  private startRoll(tick: number): void {
+    const dir = this.moveDir()
     this.stats.spendStamina(this.base.roll.stamina, tick)
     this.action = null
     this.charging = false
@@ -341,19 +417,55 @@ export class PlayerController {
   }
 
   tryStartAction(key: string, tick: number, rhythm?: RhythmClock): boolean {
-    const f = this.moveset.actions[key]
+    // 武器招式与乐章战技**共用这一个入口**：查帧的顺序就是「先手上的武器，再谱册里的式子」。
+    // 分两个函数就会长-out 两套出手状态机——那正是实机复验里翻过车的地方（见 combat 注释 §11）。
+    const skill = this.skills[key] ?? null
+    const f = skill ? skill.f : this.moveset.actions[key]
     if (!f || this.action || this.roll || this.stunTicks > 0 || this.crumpleTicks > 0) return false
+    if (skill && !this.skillGate(key, skill)) return false
     if (this.exhausted || !this.stats.spendStamina(f.stamina, tick)) {
       bus.emit('ui.notify', { text: '精力不足', kind: 'info' })
       return false
     }
+    if (skill) {
+      // 过载在门里已经验过，这里只负责扣：先验后扣，不会出现"钱付了式子没出手"
+      this.stats.overdrive = clamp(this.stats.overdrive - skill.cast.overdriveCost, 0, this.stats.overdriveMax)
+      this.skillCd.set(key, skill.cast.cooldownTicks)
+      if (skill.cast.fissureLayers > 0 || skill.cast.trueDamage > 0) {
+        this.followup = { layers: skill.cast.fissureLayers, trueDamage: skill.cast.trueDamage }
+      }
+    }
     const cut = key.startsWith('l') ? Math.min(this.rpg.lightStartupTicks, Math.max(0, f.activeStart - 1)) : 0
-    this.action = { key, f, tick: cut, hitDone: false, shots: 0 }
+    this.action = {
+      key, f, tick: cut, hitDone: false, shots: 0, hitIds: new Set<string>(),
+      skill: skill?.cast ?? null,
+      dir: skill && skill.cast.distance > 0 ? this.moveDir() : null
+    }
     this.comboQueued = null
     bus.emit('audio.sfx', { key: f.sfx?.[0] ?? 'swing_1', pos: { ...this.pos }, gain: 0.7 })
     if (f.vfx?.[0]) bus.emit('vfx.request', { key: f.vfx[0], pos: { ...this.pos }, dir: { x: Math.sin(this.yaw), y: 0, z: Math.cos(this.yaw) } })
     bus.emit('sound.source', { id: 'player', pos: { ...this.pos }, loudness: this.noise(((f.loudness ?? 3) / 10) * (this.weapon.noiseMul ?? 1)) })
     void rhythm
+    return true
+  }
+
+  /**
+   * 战技能不能出手。三条闸门按"玩家下一步该做什么"排序：闷音 > 冷却 > 过载。
+   *
+   * 闷音这条是 §11「战技/律具技封锁」的落地。它**没有**自己的秒数：封锁时长就是这次闷音
+   * 被施加方写下的时长（`statusOnHit.ticks` / 弹道 `muteOnHit`）——在 statuses.json 里再写一个
+   * `skillLockTicks` 就是让同一件事有两个答案（KI-033 撤账）。
+   */
+  private skillGate(key: string, s: SkillAction): boolean {
+    if (this.stats.muteTicksLeft > 0) {
+      bus.emit('ui.notify', { text: '闷音｜战技被封', kind: 'info' })
+      return false
+    }
+    if (this.skillCd.get(key)) return false // 冷却中不出声：按键连打是常态，刷屏才是噪声
+    if (this.stats.overdrive < s.cast.overdriveCost) {
+      bus.emit('ui.notify', { text: '过载不足', kind: 'info' })
+      return false
+    }
     return true
   }
 
@@ -384,6 +496,7 @@ export class PlayerController {
 
   respawn(): void {
     this.dead = false
+    this.followup = null // 死了就是断了：压在下一记上的起手式不跟着人一起回来
     this.stats.hp = this.stats.hpMax
     this.stats.stamina = this.stats.staMax
     this.pos = { x: 0, y: 0, z: 0 }
