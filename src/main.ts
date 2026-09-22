@@ -25,6 +25,7 @@ import { AudioEngine } from '@/audio/AudioEngine'
 import { Haptics } from '@/input/Haptics'
 import { VfxLayer } from '@/vfx/VfxLayer'
 import { Hud } from '@/ui/Hud'
+import { Stakerite } from '@/ui/Stakerite'
 import { CombatDebugger } from '@/tools/CombatDebugger'
 import { SaveGame, LocalStore, IdbStore } from '@/save/Serializer'
 import { Checkpoints } from '@/save/Checkpoint'
@@ -107,6 +108,19 @@ const bossArena = new BossArenaVisuals(arena.scene) // §15.1 撞钟机关：机
 const audio = new AudioEngine()
 const vfx = new VfxLayer(arena.scene)
 const hud = new Hud(document.getElementById('hud') as HTMLCanvasElement)
+/**
+ * 调音桩面板（需求 §41/§44）。**只在调音桩前能打开**——分配点数与洗点是"回到基地"的奖励，
+ * 不是随时可用的作弊菜单；这条约束同时也是 §8.3「实验成本前置」的设计落点。
+ */
+const panel = new Stakerite(rpg, {
+  onApply: () => refreshRpg(),
+  notify: (text, kind) => bus.emit('ui.notify', { text, kind: kind ?? 'info' }),
+  onHeal: (amount) => { if (amount > 0) { player.stats.heal(amount); player.publishStats() } }
+})
+function setPanelOpen(open: boolean): void {
+  if (open) { panel.show(); time.paused = true; input.enabled = false }
+  else { panel.close(); time.paused = false; input.enabled = true }
+}
 new CombatDebugger()
 new Haptics(input)
 
@@ -146,16 +160,30 @@ spawner.syncActive(streaming.byState('active').map((c) => c.key))
 lock.candidates = ai.enemies
 
 addEventListener('pointerdown', () => audio.start())
-addEventListener('keydown', (e) => { if (e.code === 'Escape') time.paused = !time.paused })
+addEventListener('keydown', (e) => {
+  if (e.code === 'Escape') {
+    if (panel.isOpen) setPanelOpen(false) // 面板开着时 Esc 先收面板，不会顺手把游戏解冻
+    else time.paused = !time.paused
+  }
+})
 
 const core = {
   update(dt: number, t: GameTime, inp: Input) {
+    if (inp.frame.edges.has('map')) {
+      if (panel.isOpen) setPanelOpen(false)
+      else {
+        const f = interact.focus(player.pos)
+        if (f?.kind === 'checkpoint') setPanelOpen(true)
+        else bus.emit('ui.notify', { text: '需在调音桩前调音', kind: 'info' })
+      }
+    }
+    if (panel.isOpen) return // 面板打开时世界停摆：不再吃移动/攻击输入
     if (inp.frame.edges.has('lockOn')) lock.toggle()
     for (const [i, act] of (['ability1', 'ability2', 'ability3'] as const).entries()) {
       if (inp.frame.edges.has(act)) selectWeaponSlot(i)
     }
     if (inp.frame.edges.has('weaponSkill')) {
-      bus.emit('ui.notify', { text: '乐章战技：将在 Phase 5 解锁', kind: 'info' })
+      bus.emit('ui.notify', { text: '乐章战技：谱册尚未拼齐（Phase 5-C）', kind: 'info' })
     }
     player.update(dt, t, inp, t.tick, rhythm)
     streaming.update(t.tick, player.pos)
@@ -259,10 +287,10 @@ async function bootWithSave(): Promise<void> {
   loop.start()
 }
 
-;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, interact, hud, spawner, nodes, projectileVis, actors: visuals, bossArena, saves, checkpoints, rpg, refreshRpg, saveNow: () => saves.save('autosave') }
+;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, interact, hud, spawner, nodes, projectileVis, actors: visuals, bossArena, saves, checkpoints, rpg, panel, setPanelOpen, refreshRpg, saveNow: () => saves.save('autosave') }
 
 document.getElementById('boot')!.style.display = 'none'
 ;(window as unknown as Record<string, unknown>).__CAESURA_BOOTED__ = true
 bus.emit('boot.ready', undefined)
 void bootWithSave()
-console.info('[caesura] combat prototype online — WASD/Shift/Ctrl-roll/LMB/RMB/F guard/G parry/Q lock/E interact(优先)/execute(处决·背刺)/1·2·3 weapon/Esc pause')
+console.info('[caesura] online — WASD/Shift/Ctrl-roll/LMB/RMB/F guard/G parry/Q lock/E interact(优先)/execute(处决·背刺)/1·2·3 换装/R 战技(5-C)/Tab 调音桩面板(需站在调音桩前)/Esc pause')

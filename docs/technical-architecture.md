@@ -612,18 +612,89 @@ ID 规则：KI-/TD-/PF-/MA- 前缀 + 4 位序号（例 TD-0007）。
   CRC32 只保证「没被截断/改坏」，不是密码学校验（本地单用户存档不需要后者，写在这免得被当成安全边界）。
 - **迁移链禁止「读旧档直接崩」**（Migration）：`registerMigration(from, fn)` 逐级升到当前版本，缺步骤抛
   `MigrationError` 并由调用方回退到上一份。当前只有 v1：**没有**为了展示机制而虚构一段历史——
-  测试里注册的 v1→v2 用完即撤，等 Phase 5-B 真加背包字段时把那一步写成正式迁移。
+  测试里注册的 v1→v2 用完即撤。**Phase 5-B 已把 v1→v2 写成正式一步**（见 §10.3）。
 - **触发器与游戏循环解耦（Checkpoint）**：调音桩休息 / Boss 跳阶 / 首次进区域三个时机都只 `request(reason)`
   排队，异步写在后台跑（连请求会合并原因、合并成一笔），失败既发日志也发 HUD 提示——
   「以为存了其实没存」比不能存档更糟。`pagehide` 也挂了一次（关标签页前补一笔）。
 - **环境差异如实处理**：`typeof indexedDB === 'undefined'` ⇒ 备份位为 null 并在控制台说明「只剩本地一份」，
   不静默假装双份；存储写失败（隐私模式配额）走同一条「说出来」的路径。
-- 覆盖与实机：`tests/unit/save.test.ts` 7 条；全量 **27 files / 249 passed**，tsc/build 干净。
+- 覆盖与实机：`tests/unit/save.test.ts` 8 条；全量 **30 files / 291 passed**，tsc/build 干净。
   实机：`?fresh=1` 开局 → 走到钟坠院存档点、设 flag、把 hp/过载调成非默认值 → `saveNow()` →
   localStorage 出现 `caesura.save.autosave` + `.prev`、IndexedDB 里同键可读 → **刷新页面** →
-  日志 `load.ok autosave v1`，玩家回到 (130, 64, -120)、hp 41、过载 7、三条 flag 全在、
+  日志 `load.ok autosave v1`（v2 起为 `v2`），玩家回到 (130, 64, -120)、hp 41、过载 7、三条 flag 全在、
   脚下层 64、区域判定 rg_fellcarillon、周围敌人由数据重新刷出。控制台 0 error 0 warn。
 - **未落（登记 KI-025）**：三槽位与「继续冒险/新游戏/存档摘要卡」的存档 UI（ui-ux §8）还没有界面层，
-  现在是单 autosave 槽 + `?fresh=1`；inventory/quest/settings 字段等各自 Phase 落地时补迁移。
+  现在是单 autosave 槽 + `?fresh=1`；quest/NPC/settings 字段等各自 Phase 落地时补迁移（成长与背包已入 v2）。
+## 10. RPG 成长系统（需求 §18/§25/§26/§55/§57）— Phase 5-B 已实现
+
+模块边界（`src/rpg/`，**四个文件互不越界**，全部零 three、零 DOM）：
+
+| 文件 | 职责 | 明确不做 |
+|---|---|---|
+| `Progression.ts` | 遗响→音级→音级点→六音级属性；软上限折算；洗点；派生值公式 | 不认识"装备"，护甲 DEF 由调用方传进来 |
+| `Inventory.ts` | 堆叠件 vs **装备实例**（uid/强化等级/词缀数值）；分类清单；快照 | 不知道谁穿在身上 |
+| `Equipment.ts` | 七槽装配；把一身装备汇总成一组乘数（`EquipMods`） | 不写玩家状态 |
+| `Loot.ts` | 掉落掷骰（种子化）+ 保底 + 首杀 | 不播报、不落 UI |
+| `Upgrade.ts` | 强化曲线消费与上限校验 | 不碰背包以外的系统 |
+| `Runtime.ts` | 总装：`mods()` 一组扁平乘数 + `onEnemyKilled()` 一串所得 | 不认识 `PlayerController` |
+
+**唯一接口是 `PlayerMods`**（`src/rpg/Runtime.ts`）：`rank / attrs（软上限折算后）/ hpMax / staminaMax /
+poiseMax / defense / loadMax / overdriveMax / critRate / critMul / execMul / noiseMul / poiseDmgMul /
+staminaRegenMul / perfectBlockBonusTicks / lightStartupTicks / bellBonus / restOverdrive /
+weaponDamageMul / weaponId / weight / overloaded`。
+`main.ts` 在「升级 / 换装 / 强化 / 洗点 / 掉落 / 读档」之后调一次 `refreshRpg()`，把这一组乘数灌进
+`PlayerController.applyRpg()`，玩家与战斗管线只消费它——**成长系统不写第二份状态到玩家身上**。
+
+### 10.1 消费点清单（每条乘数都有唯一去处，没有"挂在那儿好看"的字段）
+
+| 乘数 | 消费点 | 语义 |
+|---|---|---|
+| `attrs`（折算后） | `CombatManager.strikeEnemy` → `resolveDamage({attrs, scaling})` | 武器伤害标尺吃**折算值**，所以面板 60 点基音不会说谎 |
+| `weaponDamageMul` | 近战 `strikeEnemy` 的 `base`、玩家投掷弹体的 `damage` | 强化跟着**那把武器件**走，不跟着槽走 |
+| `critRate` / `critMul` | `DamagePipeline.resolveDamage`（新增 `critRate` 字段） | 只对玩家出手生效；敌人没有暴击属性（Boss 的难度来自机制，不是随机倍率） |
+| `poiseDmgMul` | `strikeEnemy` 的 `addPoise` | 共鸣词缀 |
+| `bellBonus` | `strikeEnemy`，判据 = 目标有钟甲或带壳（数据驱动，不看名字） | 之鸣钟 |
+| `execMul` | `landExecute` 的真伤公式 | 泛音属性 + 泛音弦词缀 |
+| `perfectBlockBonusTicks` | `resolveAgainstPlayer` 的完美格挡窗 | 之延 |
+| `restOverdrive` | 弹反成功 `addOverdrive(1 + restOverdrive)` | 之休止 |
+| `lightStartupTicks` | `tryStartAction`：动作 tick 从 `min(bonus, activeStart-1)` 起跑 | 之切（永不越过 activeStart） |
+| `noiseMul` | 玩家所有 `sound.source` 出口（起手/跳跃/翻滚/脚步） | 静默词缀；深窖与万籁的正解靠它 |
+| `loadMax` / `overloaded` | 翻滚禁用、疾跑禁用、体力回复 ×0.6 | §5.1 的明确惩罚 |
+| `staminaRegenMul` | `stats.mods.regenMul`（与夺拍乘子相乘，不另开一条回复路径） | 节律 |
+
+### 10.2 数值纪律
+
+- 每一格数值都在 `data/json/progression.json` / `items.json` / `loot.json`；代码里只有乘加。
+- **词缀必须有消费方**：没有消费方的（之连「连段递变」、战技伤害、异常施加效率）**不写进数据表**——
+  一个没人读的 +5% 和没做没有区别，只会让面板看起来更满。将来 5-C 的战技系统落地时再补进去。
+- 音级曲线按 progression.md §2.3 的**前十个锚点**逐字落表（60/75/94/118/148/185/231/289/361…），
+  之后按文档自述的 r≈1.25 几何延展；文档 15/18/20 三行与"r≈1.25"这句自述本身对不上（其累计栏也算不回表内），
+  取连续曲线并在 KNOWN_ISSUES 登记这条口径差。
+- 强化倍率：文档 §5.4 合计栏写「≈+79%」，逐格相加是 0.80 ⇒ 实装 1.80，按表不按约数。
+
+### 10.3 存档 v2（与 §9 的衔接）
+
+`Snapshot.rpg` 存 `{progression, inventory, equipment, loot}` 四块，全部是**纯数据**：
+装备存的是 `uid/itemId/level/affixes`，不存任何 three 对象。v1→v2 的迁移是**真的一步**
+（`registerMigration(1, …)`）：老档把 `rpg` **显式写成 null**，读档时保留运行时基线（出身），
+既不编造等级、也不静默丢字段——测试 `save.test.ts` 钉住「v1 的每个字段都还在 + rpg === null」。
+
+### 10.4 UI 分工
+
+HUD（canvas）只多了一个**音级数字**（§42：不在战斗视野里堆数字，遗响条属于面板）。
+调音桩面板（`src/ui/Stakerite.ts`，DOM overlay）承载三页：调音 / 装备 / 行囊，
+**只在调音桩前可开**（`interact.focus().kind === 'checkpoint'`），打开即 `time.paused = true` + `input.enabled = false`。
+面板只调 `RpgRuntime` 的公开方法，生效后回调 `onApply()` 由 main.ts 统一重算——
+面板自己不写第二份"应用变更"的逻辑。
+
+### 10.5 覆盖与实机
+
+- `tests/unit/rpg.test.ts` 27 条 + `tests/flow/rpg.test.ts` 8 条 + `tests/unit/stakerite.test.ts` 6 条；
+  全量 **30 files / 291 passed**，tsc / vite build 干净。
+- 玩法流覆盖需求 §59 的完整链条：击杀 → 遗响入账 → 掉落入背包 → 装备 → 强化（且 +3 封顶后
+  第 4 次明确报 `maxed`）→ 升音级 → 存档 → 读档 → 数值一致。
+- **实机视口评审仍受 KI-010 限制**（本环境无法打开可见浏览器窗口）：面板用最小 DOM 替身验了
+  状态机/渲染内容/动作派发，但排版与手感的视口走查未做，登记在 KI-027。
+
 ## 附录 A：模块规模与里程碑对照
 Phase 1（核心战斗原型）＝ `core + player + combat + tools/CombatDebugger + 占位场景`；Phase 3 ＝ `world/Streaming + generators`；Phase 5 ＝ `rpg + save`；Phase 6 ＝ `quest + audio(对话)`。每模块交付即配 §6 测试，不做「先全写完再测」。

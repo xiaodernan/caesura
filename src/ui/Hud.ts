@@ -56,6 +56,9 @@ export class Hud {
   private dpr = 1
 
   // player stats (targets + displayed tweens)
+  /** 音级（Phase 5-B）。HUD 只放一个数字：遗响条属于调音桩面板，不属于战斗视野。 */
+  private rank = 1
+  private rankFlash = 0
   private hpFrac = 1
   private hpDisp = 1
   private stamFrac = 1
@@ -171,6 +174,7 @@ export class Hud {
 
     this.drawVignette()
     this.drawHpWave()
+    this.drawRank()
     this.drawBeatRing()
     this.drawTarget()
     this.drawNotes()
@@ -183,7 +187,13 @@ export class Hud {
   private onStats(p: {
     hp: number; hpMax: number; stamina: number; staminaMax: number
     overdrive: number; overdriveMax: number
+    rank?: number
   }): void {
+    if (p.rank && p.rank !== this.rank) {
+      // 升级是一次"世界重新给你调音"的事件：音级数字亮一下，不做大字横幅（§42 克制）
+      this.rank = p.rank
+      this.rankFlash = 1
+    }
     this.hpFrac = clamp01(p.hpMax > 0 ? p.hp / p.hpMax : 0)
     const stam = clamp01(p.staminaMax > 0 ? p.stamina / p.staminaMax : 0)
     if (stam < this.stamFrac - 0.002) {
@@ -229,6 +239,22 @@ export class Hud {
   // ---------------------------------------------------------------- widgets
 
   /** 1.3 HP amplitude bar — a waveform, not a rectangle bar. */
+  /** 音级：贴在振幅条左下角的一枚小字（升级时短暂发亮） */
+  private drawRank(): void {
+    const { ctx } = this
+    const { x0, yc } = this.hpLayout()
+    const s = this.scale()
+    const a = 0.32 + 0.55 * clamp01(this.rankFlash)
+    ctx.save()
+    ctx.font = `${Math.round(12 * s)}px ${SERIF}`
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'alphabetic'
+    ctx.fillStyle = css(GOLD, a)
+    ctx.fillText(`音级 ${this.rank}`, x0, yc - 18 * s)
+    ctx.restore()
+    this.rankFlash = Math.max(0, this.rankFlash - 0.012)
+  }
+
   private drawHpWave(): void {
     const { ctx } = this
     const { x0, yc, w, h } = this.hpLayout()
