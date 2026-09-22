@@ -175,8 +175,8 @@ describe('§45 防损坏：校验和、双写、迁移链', () => {
     expect(back!.player).toEqual(ok.player)
   })
 
-  it('迁移链：v1 档升 v2 ⇒ 成长字段被**显式**置空（不是静默丢字段），旧字段逐条保住', () => {
-    // 手工造一份 v1 档：不能拿 save() 去造，因为它现在写的是 v2
+  it('迁移链：v1 档一路升到现在 ⇒ 每一级补的东西都被**显式**写出来（不是静默丢字段），旧字段逐条保住', () => {
+    // 手工造一份 v1 档：不能拿 save() 去造，因为它现在写的是最新版
     const v1 = {
       version: 1,
       playSec: 123,
@@ -186,19 +186,49 @@ describe('§45 防损坏：校验和、双写、迁移链', () => {
       clearedSlots: ['rg_whisperwode:g0:0']
     }
     const moved = migrateTo({ snapshot: v1 }, 1, SAVE_VERSION) as { snapshot: Snapshot }
-    expect(moved.snapshot.version).toBe(2)
+    expect(moved.snapshot.version).toBe(SAVE_VERSION)
     // v1 的每个字段都还在（迁移不是「重新构造一份」）
     expect(moved.snapshot.playSec).toBe(123)
     expect(moved.snapshot.player.hp).toBe(44)
     expect(moved.snapshot.flags).toEqual(['flag.left_resthold'])
     expect(moved.snapshot.clearedSlots).toEqual(['rg_whisperwode:g0:0'])
-    // 而 v1 里根本不存在的东西被明确写成 null，读档时保留运行时基线
+    // v2 补的：老档没有成长数据，就明确写成 null，读档时保留运行时基线
     expect(moved.snapshot.rpg).toBeNull()
+    // v3 补的：老档没有失谐概念，从零开始（那是如实，不是"当时也没积累"的假账）
+    expect(moved.snapshot.player.corruption).toBe(0)
   })
 
   it('迁移链缺步骤 ⇒ 明确报错（不把半迁移的结果写回磁盘）', () => {
-    expect(() => migrateTo({}, SAVE_VERSION, SAVE_VERSION + 1)).toThrow(/v2/)
+    expect(() => migrateTo({}, SAVE_VERSION, SAVE_VERSION + 1)).toThrow(new RegExp(`v${SAVE_VERSION}`))
     expect(() => migrateTo({}, 1, SAVE_VERSION)).not.toThrow()
+  })
+
+  it('真实读档路径可达：磁盘上躺着一份 v1 老档 ⇒ load() 一路升到当前并灌回世界', async () => {
+    // 这条测试钉的是一个已经发生过的真 bug：读档白名单曾经只有 [SAVE_VERSION]，
+    // 于是老档在 unwrap 那步就被当成坏档，迁移链注册得再认真也永远跑不到。
+    const v1: Snapshot = {
+      version: 1,
+      playSec: 42,
+      regionId: 'rg_whisperwode',
+      player: { x: 1, y: 2, z: 3, hp: 44, stamina: 55, overdrive: 3, weaponId: 'wp_tuning_sword' } as Snapshot['player'],
+      flags: ['flag.left_resthold'],
+      clearedSlots: [],
+      rpg: null
+    }
+    const store = new MapStore()
+    await store.set('slot1', wrap(1, { snapshot: v1 }))
+    const w = world()
+    const loads = savesWith(w, store)
+    const back = await loads.load('slot1')
+    expect(back, '老档不能读不出来').not.toBeNull()
+    expect(back!.version).toBe(SAVE_VERSION)
+    expect(back!.player.corruption).toBe(0)
+    expect(w.player.stats.hp).toBe(44)
+    expect(w.streaming.hasFlag('flag.left_resthold')).toBe(true)
+    // 迁移过一次就写回当前版本：下一轮读档不必再走链（也证明磁盘上那一份没被半迁移污染）
+    const rewritten = await savesWith(w, store).save('slot1')
+    expect(rewritten.version).toBe(SAVE_VERSION)
+    expect(JSON.parse(store.raw.get('slot1')!).schemaVersion).toBe(SAVE_VERSION)
   })
 })
 

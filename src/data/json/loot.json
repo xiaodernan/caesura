@@ -67,6 +67,15 @@
     "chance": 0.25
    },
    {
+    "id": "crystal",
+    "item": "it_timbre_crystal",
+    "count": [
+     1,
+     1
+    ],
+    "chance": 0.25
+   },
+   {
     "id": "gear",
     "gearBand": [
      {
@@ -109,6 +118,15 @@
      2
     ],
     "chance": 0.6
+   },
+   {
+    "id": "crystal",
+    "item": "it_timbre_crystal",
+    "count": [
+     1,
+     1
+    ],
+    "chance": 0.35
    },
    {
     "id": "gear",
@@ -552,6 +570,22 @@
     "count": [
      150,
      150
+    ]
+   },
+   {
+    "id": "salve",
+    "item": "it_echo_salve",
+    "count": [
+     2,
+     3
+    ]
+   },
+   {
+    "id": "crystal",
+    "item": "it_timbre_crystal",
+    "count": [
+     2,
+     2
     ]
    },
    {

@@ -72,8 +72,8 @@ export interface StakeriteHooks {
   onApply: () => void
   /** 播报（走既有的 ui.notify 通道） */
   notify: (text: string, kind?: 'info' | 'reward' | 'boss') => void
-  /** 消耗品生效（回血由 main.ts 落到玩家身上，面板不直接碰玩家状态） */
-  onHeal: (amount: number) => void
+  /** 消耗品生效（回血/刮失谐的数都来自 items.json 的 use，面板不直接碰玩家状态） */
+  onUse: (eff: { heal: number; corruption: number }) => void
 }
 
 export class Stakerite {
@@ -182,10 +182,13 @@ export class Stakerite {
   }
 
   private use(itemId: string): void {
+    const item = itemOf(itemId)
     const r = this.rpg.useItem(itemId)
     if (!r.ok) { this.hooks.notify('这件东西不能用', 'info'); return }
-    this.hooks.notify(`使用 · ${itemOf(itemId).displayName}`, 'reward')
-    this.hooks.onHeal(r.heal)
+    // 播报把数值念出来：让玩家知道这一口下去到底换到了什么（失谐是负数=往下刮）
+    const eff = [r.heal > 0 ? `生命 +${r.heal}` : '', r.corruption < 0 ? `失谐 ${r.corruption}` : ''].filter(Boolean).join(' · ')
+    this.hooks.notify(`使用 · ${item.displayName}${eff ? ` · ${eff}` : ''}`, 'reward')
+    this.hooks.onUse({ heal: r.heal, corruption: r.corruption })
   }
 
   private label(uid: string): string {

@@ -94,6 +94,7 @@
   "load": { "base": 40, "perStr": 4 },
   "crit": { "base": 0.05, "perOvr": 0.004, "cap": 0.4, "mulBase": 1.35, "mulPerOvr": 0.002 },
   "overdrive": { "base": 10, "perTonDiv": 10, "cap": 15 },
+  "status": { "perFisPower": 0.02, "perFisTolerance": 0.02, "toleranceFloor": 0.2 },
   "execMulPerOvr": 0.01
  },
  "softcap": { "mul": 0.5, "hardMul": 0.25 },

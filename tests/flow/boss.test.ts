@@ -196,7 +196,8 @@ describe('数据表：§15.1 的三阶段、钟壳与撞钟机关全部在 enemi
   })
 
   it('钟壳与机关：0.1 倍伤 + 架势免疫，撞 2 口钟才永久剥掉；残响每拍 4', () => {
-    expect(d.boss?.phases[0].shell).toEqual({ dmgMul: 0.1, immuneToPoise: true })
+    // fissureMul=2 是 combat.md §11 点名的「壳期最怕同频敲击」：碎裂在剥壳之前反而更疼
+    expect(d.boss?.phases[0].shell).toEqual({ dmgMul: 0.1, immuneToPoise: true, fissureMul: 2 })
     const g = d.boss!.bells!
     expect(g.positions).toHaveLength(3)
     expect(g.releaseTicks / TICK_HZ, '§15.1「无敌解除 6s」').toBe(6)

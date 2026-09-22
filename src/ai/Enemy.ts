@@ -2,6 +2,7 @@ import { bus } from '@/core/EventBus'
 import { Rng, clamp } from '@/core/Math'
 import type { EnemyData, AttackSpec, FrameData, ProjectileSpec } from '@/data/schema'
 import { EntityStats } from '@/combat/EntityStats'
+import { armStats } from '@/combat/Statuses'
 import type { Vec3 } from '@/combat/EntityStats'
 import type { HitTarget } from '@/combat/HitShapes'
 import type { RhythmClock } from '@/core/RhythmClock'
@@ -94,6 +95,7 @@ export class Enemy {
   constructor(public data: EnemyData, pos: Vec3, seed: string) {
     this.rng = new Rng(seed + this.id)
     this.stats = new EntityStats(data.hp, 100, data.poise)
+    armStats(this.stats) // §11：震裂的层数上限与两段衰减节奏来自 statuses.json，不在这里写第二遍
     this.stats.defense = data.defense ?? 0
     this.pos = { ...pos }
     this.home = { ...pos }
@@ -132,6 +134,15 @@ export class Enemy {
   }
   get shellDmgMul(): number { return this.shellUp ? this.bossPhaseData!.shell!.dmgMul : 1 }
   get poiseImmune(): boolean { return this.shellUp && !!this.bossPhaseData?.shell?.immuneToPoise }
+  /**
+   * §11「震裂对装甲/晶体类效果 ×2」的载体：**本体材质**倍率（嘈壳的壳、漂调者喉咙里的晶）
+   * 叠上**铸壳期**倍率（§15.1 那层壳同样是铸出来的）。它只放大震裂这一条状态的收益——
+   * 层数打满仍然剥不掉壳，剥壳只有撞钟一条路，所以这不是给 P1 发明的第二条解法。
+   */
+  get fissureEffectMul(): number {
+    const shellMul = this.shellUp ? this.bossPhaseData?.shell?.fissureMul ?? 1 : 1
+    return (this.data.fissureMul ?? 1) * shellMul
+  }
   /** 壳被剥掉的那 6s 里架势累积翻倍（§15.1：无敌解除 + 架势累积翻倍是同一个奖励） */
   get poiseAccumMul(): number {
     const sh = this.bossPhaseData?.shell

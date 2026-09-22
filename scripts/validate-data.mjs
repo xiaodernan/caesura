@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const JSON_DIR = resolve(ROOT, 'src/data/json')
-const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json']
+const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json']
 // Phase 5-B 起：装备槽位 / 物品大类（与 schema.ts 的 SlotKey / ItemKind 对齐）
 const SLOT_KEYS = new Set(['weapon', 'helm', 'cuirass', 'gloves', 'greaves', 'seal', 'sealA', 'sealB'])
 const GEAR_SLOTS = new Set(['weapon', 'helm', 'cuirass', 'gloves', 'greaves', 'seal'])
@@ -37,6 +37,16 @@ const PICK_ORDERS = new Set(['random', 'cycle'])
 const PSEUDO_ACTIONS = new Set(['chase', 'backstep', 'hold'])
 // tests/flow/support.test.ts 同款判据：tag 末段为 mute 即闷音类，必须自带 ticks
 const MUTE_TAG = /(^|\.)mute$/
+// src/core/EventBus.ts:5 —— 五状态一张表：少一维 HUD 就没得播，多一维就是没人消费的数据
+const STATUS_IDS = ['fissure', 'mute', 'echo', 'corruption', 'overdrive']
+// 每个状态允许出现的字段（§55：写了没消费方的数值不许进表；加新字段必须同时接上消费方）
+const STATUS_FIELDS = {
+  fissure: ['tag', 'displayName', 'desc', 'maxLayers', 'dmgMulPerLayer', 'idleTicks', 'decayEveryTicks', 'burst'],
+  mute: ['tag', 'displayName', 'desc', 'regenMul'],
+  echo: ['tag', 'displayName', 'desc', 'delayTicks', 'replayMul', 'radius', 'maxShadows'],
+  corruption: ['tag', 'displayName', 'desc', 'max', 'eliteHit', 'visualStart', 'hpPerSec'],
+  overdrive: ['tag', 'displayName', 'desc'],
+}
 
 // ---- 小工具 ----
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
@@ -169,6 +179,7 @@ function frames(file, where, f) {
     else f.beatQuant.forEach((n, i) => report.num(file, `${where}.beatQuant[${i}]`, n, { name: 'beatQuant' }))
   }
   if (f.next !== undefined && !isStr(f.next)) report.error(file, `${where}.next`, '必须是非空字符串')
+  if (f.echoOnHit !== undefined && typeof f.echoOnHit !== 'boolean') report.error(file, `${where}.echoOnHit`, '必须是布尔（§11 回响：命中时是否留下回声）')
   if (f.hitbox !== undefined) hitbox(file, `${where}.hitbox`, f.hitbox)
   if (f.projectile !== undefined) projectile(file, `${where}.projectile`, f.projectile)
   return f.next
@@ -398,6 +409,43 @@ function validateProgression() {
   return { rarityIds, attrKeys }
 }
 
+// ---- statuses.json ----
+/** 每个状态的数值字段与取值范围（字段白名单在 STATUS_FIELDS，两边一起改） */
+const STATUS_SPECS = {
+  fissure: { maxLayers: { min: 2, int: true }, dmgMulPerLayer: { min: 0 }, idleTicks: { min: 0, int: true }, decayEveryTicks: { min: 1, int: true } },
+  mute: { regenMul: { min: 0, max: 1 } },
+  echo: { delayTicks: { min: 1, int: true }, replayMul: { min: 0 }, radius: { min: 0 }, maxShadows: { min: 1, int: true } },
+  corruption: { max: { min: 1 }, eliteHit: { min: 0 }, visualStart: { min: 0 }, hpPerSec: { min: 0 } },
+  overdrive: {},
+}
+
+function validateStatuses() {
+  const file = 'statuses.json'
+  const d = data[file]
+  if (!isObj(d)) { report.error(file, file, '顶层必须是对象（按状态 id 键控）'); return }
+  // 五缺一：HUD chip / 术语台账按 STATUS_IDS 逐个取，缺一行就是「这个状态永远不会被解释」
+  for (const id of STATUS_IDS) if (d[id] === undefined) report.error(file, id, `缺少 '${id}' 这一行（EventBus.STATUS_IDS 声明了它）`)
+  for (const [id, s] of Object.entries(d)) {
+    if (!STATUS_IDS.includes(id)) { report.error(file, id, `'${id}' 不是五状态之一：要加就得同时补进 EventBus.STATUS_IDS 并接上消费方`); continue }
+    if (!isObj(s)) { report.error(file, id, '必须是对象'); continue }
+    if (!isStr(s.tag)) report.error(file, `${id}.tag`, '缺失或非字符串')
+    else if (s.tag.split('.').pop() !== id) report.error(file, `${id}.tag`, `tag 末段必须等于 '${id}'（StatusGlossary 与 tagIs 都按末段判），实为 '${s.tag}'`)
+    if (!isStr(s.displayName)) report.error(file, `${id}.displayName`, '必填')
+    if (!isStr(s.desc) || s.desc.length < 5) report.error(file, `${id}.desc`, '需要一句世界内解释（§19 的 tooltip）')
+    for (const k of Object.keys(s)) {
+      if (!STATUS_FIELDS[id].includes(k)) report.error(file, `${id}.${k}`, `不认的字段：§55 不许写没有消费方的数据（本状态可用：${STATUS_FIELDS[id].join('/')}）`)
+    }
+    report.sub(file, id, s, STATUS_SPECS[id])
+    if (id === 'fissure') {
+      report.sub(file, `${id}.burst`, s.burst, { trueDamage: { min: 0 }, poise: { min: 0 } })
+      if (isNum(s.dmgMulPerLayer) && s.dmgMulPerLayer >= 1) report.error(file, `${id}.dmgMulPerLayer`, `每层 +${s.dmgMulPerLayer} >= 100%：满层就是倍率怪物，请回到 0.x`)
+    }
+    if (id === 'corruption' && isNum(s.visualStart) && isNum(s.max) && !(s.visualStart < s.max)) {
+      report.error(file, id, `visualStart(${s.visualStart}) 必须小于 max(${s.max})，否则去饱和永远不会渐入`)
+    }
+  }
+}
+
 // ---- items.json ----
 function validateItems(weaponIds, rarityIds) {
   const file = 'items.json'
@@ -431,7 +479,18 @@ function validateItems(weaponIds, rarityIds) {
       if (g.affixes !== undefined) strArray(file, `${w}.gear.affixes`, g.affixes, { nonEmpty: true })
       if (g.salvage !== undefined) report.sub(file, `${w}.gear.salvage`, g.salvage, { dross: { min: 0, int: true }, timbite: { min: 0, int: true } })
     }
-    if (it.use !== undefined) report.sub(file, `${w}.use`, it.use, { heal: { min: 0, optional: true }, healFrac: { min: 0, max: 1, optional: true } })
+    if (it.use !== undefined) {
+      // heal=回血；corruption 写成负数=往下刮失谐。两者都不写就是「用了什么也没发生」，直接拦掉。
+      report.sub(file, `${w}.use`, it.use, { heal: { min: 0, optional: true }, corruption: { max: -1, int: true, optional: true } })
+      if (isObj(it.use)) {
+        for (const k of Object.keys(it.use)) {
+          if (k !== 'heal' && k !== 'corruption') report.error(file, `${w}.use.${k}`, '没有消费方（use 只认 heal/corruption）')
+        }
+        if (it.use.heal === undefined && it.use.corruption === undefined) {
+          report.error(file, `${w}.use`, '必须至少写 heal 或 corruption，否则这个 use 没有消费方')
+        }
+      }
+    }
     if (it.kind === 'consumable' && it.use === undefined) report.error(file, w, '消耗品必须写 use，否则它没有消费方')
   })
   // 每把武器都要有一件对应的装备件 —— 否则出身/RpgRuntime 找不到它（真会抛错）
@@ -530,6 +589,8 @@ function validateEnemies(lootIds) {
     report.num(file, `${w}.poise`, e.poise, { min: 0, name: 'poise' })
     report.num(file, `${w}.speed`, e.speed, { min: 0, name: 'speed' })
     if (e.defense !== undefined) report.num(file, `${w}.defense`, e.defense, { min: 0, name: 'defense' })
+    // §11：震裂对材质的效果倍率标在敌人身上（铸出来的东西最怕同频敲击），不是状态表的全局量
+    if (e.fissureMul !== undefined) report.num(file, `${w}.fissureMul`, e.fissureMul, { min: 0, name: 'fissureMul' })
 
     // ---- ai ----
     if (!isObj(e.ai)) report.error(file, `${w}.ai`, 'ai 缺失或不是对象')
@@ -598,6 +659,16 @@ function validateEnemies(lootIds) {
           } else if (st.ticks !== undefined) {
             report.num(file, `${aw}.statusOnHit.ticks`, st.ticks, { min: 1, int: true, name: 'ticks' })
           }
+          // 跨文件闸：tag 的末段必须是 statuses.json 里真实存在的一行
+          if (isStr(st.tag)) {
+            const id = st.tag.split('.').pop() ?? ''
+            const sts = data['statuses.json']
+            if (!STATUS_IDS.includes(id)) report.error(file, `${aw}.statusOnHit.tag`, `'${st.tag}' 不是五状态之一（${STATUS_IDS.join('/')}）`)
+            else if (isObj(sts) && !isObj(sts[id])) report.error(file, `${aw}.statusOnHit.tag`, `statuses.json 缺 '${id}' 这一行`)
+            else if (isObj(sts) && isNum(sts[id]?.maxLayers) && isNum(st.layers) && st.layers > sts[id].maxLayers) {
+              report.error(file, `${aw}.statusOnHit.layers`, `一记就叠 ${st.layers} 层，超过 ${id}.maxLayers=${sts[id].maxLayers}：上限会被静默吃掉`)
+            }
+          }
         }
       }
       const nx = attackFrames(file, aw, a)
@@ -638,7 +709,7 @@ function validateEnemies(lootIds) {
             if (!isArr(ph.attacks) || ph.attacks.length === 0) report.error(file, `${pw}.attacks`, '阶段招式白名单必须是非空数组')
             if (ph.belowHpFrac !== undefined) report.num(file, `${pw}.belowHpFrac`, ph.belowHpFrac, { min: 0, max: 1, name: 'belowHpFrac' })
             if (ph.shell !== undefined) {
-              report.sub(file, `${pw}.shell`, ph.shell, { dmgMul: { min: 0 } })
+              report.sub(file, `${pw}.shell`, ph.shell, { dmgMul: { min: 0 }, fissureMul: { min: 0, optional: true } })
               if (isObj(ph.shell) && typeof ph.shell.immuneToPoise !== 'boolean') report.error(file, `${pw}.shell.immuneToPoise`, '必须是布尔')
             }
             if (ph.stealBeat !== undefined) {
@@ -820,6 +891,8 @@ function validateRegions(enemyIds, lootIds) {
 
     report.num(file, `${w}.streamingPriority`, rg.streamingPriority, { name: 'streamingPriority' })
     if (rg.preloadWhole !== undefined && typeof rg.preloadWhole !== 'boolean') report.error(file, `${w}.preloadWhole`, '必须是布尔')
+    // 失谐渗漏格：写了就必须是正数（0 会做出「看着像机制、实际什么都不做」的区域）
+    if (rg.corruption !== undefined) report.sub(file, `${w}.corruption`, rg.corruption, { perSec: { min: 0.0001 } })
     if (rg.unlockFlag !== undefined && !isStr(rg.unlockFlag)) report.error(file, `${w}.unlockFlag`, '必须是非空字符串')
 
     // navmeshRef：写了就必须有对应实体；不写不算错（KI-009）
@@ -848,6 +921,8 @@ function validateRegions(enemyIds, lootIds) {
 }
 
 // ---- 跑全部校验（跨文件引用需要先拿到 id 集合）----
+// statuses 先跑：enemies 的 statusOnHit.tag 要拿它当词表对账
+validateStatuses()
 const movesetIds = validateMovesets()
 const weaponIds = validateWeapons(movesetIds)
 // progression 要先跑：稀有度是 items/loot 的跨文件依据；items 要先跑：掉落表引用物品 id

@@ -611,14 +611,16 @@ ID 规则：KI-/TD-/PF-/MA- 前缀 + 4 位序号（例 TD-0007）。
   要么新档已经写完；读序是 主 → tmp → prev → 备份，逐个过校验，取第一份合格的并在日志里说清是哪一份。
   CRC32 只保证「没被截断/改坏」，不是密码学校验（本地单用户存档不需要后者，写在这免得被当成安全边界）。
 - **迁移链禁止「读旧档直接崩」**（Migration）：`registerMigration(from, fn)` 逐级升到当前版本，缺步骤抛
-  `MigrationError` 并由调用方回退到上一份。当前只有 v1：**没有**为了展示机制而虚构一段历史——
-  测试里注册的 v1→v2 用完即撤。**Phase 5-B 已把 v1→v2 写成正式一步**（见 §10.3）。
+  `MigrationError` 并由调用方回退到上一份。当前 **v1→v2→v3 三步都是真历史**（v2=成长/背包，v3=失谐归零），
+  没有为了展示机制而虚构一步。**读侧白名单 `READABLE_VERSIONS = [1..SAVE_VERSION]`（Phase 5-C1 修的真 bug）**：
+  这里曾只写 `[SAVE_VERSION]`，于是 v1/v2 老档在 `unwrap` 那一步就被当坏档拒掉——迁移链写得再对也永远进不去，
+  玩家表现为「有档却说没有」。现在 `save.test.ts` 有一条**从磁盘放一份 v1 档**、走 `load()` 全路径的可达性断言。
 - **触发器与游戏循环解耦（Checkpoint）**：调音桩休息 / Boss 跳阶 / 首次进区域三个时机都只 `request(reason)`
   排队，异步写在后台跑（连请求会合并原因、合并成一笔），失败既发日志也发 HUD 提示——
   「以为存了其实没存」比不能存档更糟。`pagehide` 也挂了一次（关标签页前补一笔）。
 - **环境差异如实处理**：`typeof indexedDB === 'undefined'` ⇒ 备份位为 null 并在控制台说明「只剩本地一份」，
   不静默假装双份；存储写失败（隐私模式配额）走同一条「说出来」的路径。
-- 覆盖与实机：`tests/unit/save.test.ts` 8 条；全量 **30 files / 291 passed**，tsc/build 干净。
+- 覆盖与实机：`tests/unit/save.test.ts` 9 条（含 Phase 5-C1 补的**读档可达性**一条）；全量 **32 files / 340 passed**，tsc/build 干净。
   实机：`?fresh=1` 开局 → 走到钟坠院存档点、设 flag、把 hp/过载调成非默认值 → `saveNow()` →
   localStorage 出现 `caesura.save.autosave` + `.prev`、IndexedDB 里同键可读 → **刷新页面** →
   日志 `load.ok autosave v1`（v2 起为 `v2`），玩家回到 (130, 64, -120)、hp 41、过载 7、三条 flag 全在、
@@ -672,12 +674,15 @@ weaponDamageMul / weaponId / weight / overloaded`。
   取连续曲线并在 KNOWN_ISSUES 登记这条口径差。
 - 强化倍率：文档 §5.4 合计栏写「≈+79%」，逐格相加是 0.80 ⇒ 实装 1.80，按表不按约数。
 
-### 10.3 存档 v2（与 §9 的衔接）
+### 10.3 存档 v2 / v3（与 §9 的衔接）
 
 `Snapshot.rpg` 存 `{progression, inventory, equipment, loot}` 四块，全部是**纯数据**：
 装备存的是 `uid/itemId/level/affixes`，不存任何 three 对象。v1→v2 的迁移是**真的一步**
 （`registerMigration(1, …)`）：老档把 `rpg` **显式写成 null**，读档时保留运行时基线（出身），
 既不编造等级、也不静默丢字段——测试 `save.test.ts` 钉住「v1 的每个字段都还在 + rpg === null」。
+**v3（Phase 5-C1）** 只补一格：`player.corruption = 0`——失谐是这一版才有的量，老档不补就会被
+`CorruptionMeter` 当成 `undefined` 参与算术。**读侧白名单 `READABLE_VERSIONS` 是这一步真正的教训**：
+`unwrap` 先前只认当前版本 ⇒ 老档在进入迁移链之前就被判成坏档（详见 §9 第三条）。
 
 ### 10.4 数据门禁（KI-015 部分闭合）
 
@@ -696,11 +701,45 @@ HUD（canvas）只多了一个**音级数字**（§42：不在战斗视野里堆
 ### 10.6 覆盖与实机
 
 - `tests/unit/rpg.test.ts` 27 条 + `tests/flow/rpg.test.ts` 8 条 + `tests/unit/stakerite.test.ts` 6 条；
-  全量 **30 files / 291 passed**，tsc / vite build 干净。
+  全量 **32 files / 340 passed**（Phase 5-C1 口径），tsc / vite build 干净。
 - 玩法流覆盖需求 §59 的完整链条：击杀 → 遗响入账 → 掉落入背包 → 装备 → 强化（且 +3 封顶后
   第 4 次明确报 `maxed`）→ 升音级 → 存档 → 读档 → 数值一致。
 - **实机视口评审仍受 KI-010 限制**（本环境无法打开可见浏览器窗口）：面板用最小 DOM 替身验了
   状态机/渲染内容/动作派发，但排版与手感的视口走查未做，登记在 KI-027。
+
+## 11. 状态系统（combat.md §11 五态）— Phase 5-C1 已实现
+
+**一张表 + 一个模块**：数值全在 `src/data/json/statuses.json`（新增第 9 份受门禁的 JSON），
+行为全在 `src/combat/Statuses.ts`（零 three、零 DOM）。此前这四个状态是散在代码里的常量，
+§11 文档说的数和实际跑的数没有对账通道 —— 现在两边都有断言钉住。
+
+| 态 | 数据行 | 唯一消费方 | 读数出口 |
+|---|---|---|---|
+| 震裂 | `fissure`（maxLayers/dmgMulPerLayer/idleTicks/decayEveryTicks/burst） | 计层与两段式衰减在 `EntityStats.addFissure`；每层的倍率与碎裂结算在 `CombatManager`（攻方与受方两条通道同用一个乘子） | `ui.status`（边沿量：层数变了才播） |
+| 闷音 | `mute.regenMul` | `Statuses.armStats` → `EntityStats.mods.regenMul` 通道 | `player.stats.muteTicksLeft`（会自然到期的量走状态对象） |
+| 回响 | `echo`（delayTicks/replayMul/radius/maxShadows） | `CombatManager.spawnEcho` → 影子队列按拍重演 | `ui.status` |
+| 失谐 | `corruption`（max/eliteHit/visualStart/hpPerSec） | `CorruptionMeter`（`player.corruption`）+ 区域 `corruption.perSec` | `player.stats` 三件套 + HUD `filter: saturate()` |
+| 共振过载 | 只有 tooltip（`overdrive`） | 数值归属 `progression.derived.overdrive` 与 `player.json`，**不在这里重复写一遍** | HUD 内圈辉光 |
+
+三条口径是这次收口真正的产出：
+
+1. **材质倍率不写在状态表**。§11 的「对装甲/晶体 ×2」是**目标的属性**，所以它落在
+   `EnemyData.fissureMul`（嘈壳）与 `BossPhase.shell.fissureMul`（壳期奥斯塔拉），由
+   `Enemy.fissureEffectMul = (data.fissureMul ?? 1) * shellMul` 合成。原先 `statuses.fissure.crystalMul`
+   是一个没人读的字段（§55 违例），门禁现在会把这类字段判成 ERROR。
+2. **谁触发回响由招式自己说**：`frames.echoOnHit`。结算通道不再按"这是重击"猜——
+   三把近战武器的 `h` 挂了它，敌人重击没挂，所以敌人打人不会产生回声影。
+3. **施加时长归施加方**：`statusOnHit.ticks` / `projectile.muteOnHit`，状态表只给"挂着的时候值多少"。
+
+表现层不自己读阈值：去饱和用 `CorruptionMeter.veil()`（`visualStart → max` 的线性 0→1），
+用 CSS `filter: saturate()` 近似后期 shader（ENV-001 的降级映射，不是"已经做了后处理"）。
+"本局第一次见到某状态就把 §19 的 tooltip 播一遍"由 `StatusGlossary` 记账，`main.ts:bootWithSave()`
+每次启动 `forgetAll()` —— 读档与新开局都是一次新的解释机会。
+
+覆盖：`tests/unit/statuses.test.ts` 27 条（表本身 + 计量表 + 台账文案）与
+`tests/flow/status.test.ts` 19 条（真帧数据下把四态在战斗流里跑出来）。
+flow 侧的关键技巧是 `CombatManager` 的 `rng` 每实例固定种子 ⇒ 两个同构造世界消耗同一条随机序列，
+于是"基线 vs 加成"可以精确对差，不必为了可测性放宽生产代码。
 
 ## 附录 A：模块规模与里程碑对照
 Phase 1（核心战斗原型）＝ `core + player + combat + tools/CombatDebugger + 占位场景`；Phase 3 ＝ `world/Streaming + generators`；Phase 5 ＝ `rpg + save`；Phase 6 ＝ `quest + audio(对话)`。每模块交付即配 §6 测试，不做「先全写完再测」。

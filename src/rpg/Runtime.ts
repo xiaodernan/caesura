@@ -34,6 +34,13 @@ export interface PlayerMods {
   execMul: number
   /** 自身噪音乘数（静默词缀；万籁/深窖的正解靠它） */
   noiseMul: number
+  /**
+   * §2.1 失谐给「异常强度」的乘数：震裂每层承伤、碎裂真伤、回响重演伤共用它。
+   * 它是**玩家出手侧**的乘数（我施加的异常更疼），不是我自己挨异常的倍率。
+   */
+  statusPowerMul: number
+  /** 环境失谐（Corruption）累积乘数，<1 = 褪色更慢；地板由 progression.json 的 toleranceFloor 兜住 */
+  corruptionResistMul: number
   poiseDmgMul: number
   staminaRegenMul: number
   perfectBlockBonusTicks: number
@@ -52,6 +59,7 @@ export function defaultMods(): PlayerMods {
     attrs: { str: 0, dex: 0, ton: 0, vig: 0, ovr: 0, fis: 0 },
     hpMax: 1, staminaMax: 1, poiseMax: 1, defense: 0, loadMax: 999, overdriveMax: 10,
     critRate: 0, critMul: 1.35, execMul: 1, noiseMul: 1, poiseDmgMul: 1, staminaRegenMul: 1,
+    statusPowerMul: 1, corruptionResistMul: 1,
     perfectBlockBonusTicks: 0, lightStartupTicks: 0, bellBonus: 0, restOverdrive: 0,
     weaponDamageMul: 1, weaponId: null, weight: 0, overloaded: false
   }
@@ -103,6 +111,8 @@ export class RpgRuntime {
       critRate: d.critRate + eq.critRate,
       critMul: d.critMul,
       execMul: d.execMul * eq.execMul,
+      statusPowerMul: d.statusPowerMul,
+      corruptionResistMul: d.corruptionResistMul,
       noiseMul: eq.noiseMul,
       poiseDmgMul: eq.poiseDmgMul,
       staminaRegenMul: eq.staminaRegenMul,
@@ -138,13 +148,16 @@ export class RpgRuntime {
     return salvage(this.inv, uid)
   }
 
-  /** 使用消耗品（回响膏）。返回实际回血量，由 main.ts 落到玩家身上 */
-  useItem(itemId: string): { ok: boolean; heal: number } {
+  /**
+   * 使用消耗品（回响膏=回血；音色晶=刮失谐）。返回实际生效量，由 main.ts 落到玩家身上——
+   * 这一层不认识 PlayerController，所以"回血/清值"只能作为数字交回去，不能自己改人。
+   */
+  useItem(itemId: string): { ok: boolean; heal: number; corruption: number } {
     const item: ItemData = itemOf(itemId)
-    if (item.kind !== 'consumable' || !item.use) return { ok: false, heal: 0 }
-    if (this.inv.count(itemId) <= 0) return { ok: false, heal: 0 }
+    if (item.kind !== 'consumable' || !item.use) return { ok: false, heal: 0, corruption: 0 }
+    if (this.inv.count(itemId) <= 0) return { ok: false, heal: 0, corruption: 0 }
     this.inv.remove(itemId, 1)
-    return { ok: true, heal: item.use.heal ?? 0 }
+    return { ok: true, heal: item.use.heal ?? 0, corruption: item.use.corruption ?? 0 }
   }
 
   onEnemyKilled(enemy: EnemyData): LootGrant[] {

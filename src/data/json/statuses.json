@@ -1,0 +1,41 @@
+{
+  "fissure": {
+    "tag": "status.fissure",
+    "displayName": "震裂",
+    "desc": "同一频率的敲击在物质里刻出裂纹。裂纹不挡声音，它让声音更容易穿过。",
+    "maxLayers": 5,
+    "dmgMulPerLayer": 0.04,
+    "idleTicks": 600,
+    "decayEveryTicks": 120,
+    "burst": { "trueDamage": 20, "poise": 40 }
+  },
+  "mute": {
+    "tag": "status.mute",
+    "displayName": "闷音",
+    "desc": "低频把腔体压成一片空白。听得见自己，听不见世界——气也短了。",
+    "regenMul": 0.7
+  },
+  "echo": {
+    "tag": "status.echo",
+    "displayName": "回响",
+    "desc": "那一音打得太实，世界把它又播了一遍。回声不挑对手，只挑位置。",
+    "delayTicks": 90,
+    "replayMul": 0.6,
+    "radius": 3,
+    "maxShadows": 2
+  },
+  "corruption": {
+    "tag": "status.corruption",
+    "displayName": "失谐",
+    "desc": "褪色值。哑带把不属于这首歌的音写进你身上——先失去颜色，再失去重量。",
+    "max": 100,
+    "eliteHit": 3,
+    "visualStart": 60,
+    "hpPerSec": 5
+  },
+  "overdrive": {
+    "tag": "status.overdrive",
+    "displayName": "共振过载",
+    "desc": "弹反与完美格挡攒下的内圈辉光。八层以上，你可以把世界按下休止。"
+  }
+}

@@ -1,4 +1,5 @@
-import { bus } from '../core/EventBus'
+import { bus, type StatusId, type StatusPulse } from '../core/EventBus'
+import { statuses } from '@/data'
 
 /** Screen-space (CSS px) lock-on target snapshot published by camera/lock systems. */
 export interface TargetHudInfo {
@@ -64,6 +65,14 @@ export class Hud {
   private stamFrac = 1
   private stamDisp = 1
   private odLayers = 0
+  /** §11 失谐：褪色槽（0..1）与其表现浓度（visualStart 之后才起坡） */
+  private corrFrac = 0
+  private corrVeil = 0
+  /** 闷音剩余秒数（>0 时 chip 亮着）——它是会自己到期的量，所以从 player.stats 读而不是等事件撤下 */
+  private muteSec = 0
+  /** 边沿触发的状态 chip（震裂层数 / 回响影数）。带 TTL：没有新读数就自己淡掉，别挂在屏幕上假装还在 */
+  private chips = new Map<StatusId, { value: number; max: number; until: number }>()
+  private chipA = 0
   private spike = 0 // damage amplitude spike, decays
   private vign = 0 // edge vignette pulse
   private dead = false
@@ -99,6 +108,7 @@ export class Hud {
 
     this.unsub.push(
       bus.on('player.stats', (p) => this.onStats(p)),
+      bus.on('ui.status', (p) => this.onStatus(p)),
       bus.on('player.damaged', () => {
         this.spike = 1
         this.vign = 1
@@ -153,6 +163,9 @@ export class Hud {
 
     const wantRing = this.stamIdle < 6 || this.odLayers > 0
     this.ringAlpha = lerp(this.ringAlpha, wantRing ? 1 : 0, 1 - Math.exp(-dt / 0.15))
+    for (const [id, c] of this.chips) if (c.until <= this.time) this.chips.delete(id)
+    const wantChips = this.chips.size > 0 || this.muteSec > 0 || this.corrFrac > 0
+    this.chipA = lerp(this.chipA, wantChips ? 1 : 0, 1 - Math.exp(-dt / 0.14))
 
     const tg = this.target
     const wantTarget = tg ? (tg.isBoss || tg.pos ? 1 : 0) : 0
@@ -175,6 +188,8 @@ export class Hud {
     this.drawVignette()
     this.drawHpWave()
     this.drawRank()
+    this.drawCorruption()
+    this.drawStatusChips()
     this.drawBeatRing()
     this.drawTarget()
     this.drawNotes()
@@ -188,6 +203,8 @@ export class Hud {
     hp: number; hpMax: number; stamina: number; staminaMax: number
     overdrive: number; overdriveMax: number
     rank?: number
+    corruption: number; corruptionMax: number; corruptionVeil: number
+    muteTicksLeft: number
   }): void {
     if (p.rank && p.rank !== this.rank) {
       // 升级是一次"世界重新给你调音"的事件：音级数字亮一下，不做大字横幅（§42 克制）
@@ -204,10 +221,19 @@ export class Hud {
     }
     this.stamFrac = stam
     this.odLayers = clamp(0, 10, Math.round(p.overdriveMax > 0 ? (p.overdrive / p.overdriveMax) * 10 : 0))
+    this.corrFrac = clamp01(p.corruptionMax > 0 ? p.corruption / p.corruptionMax : 0)
+    this.corrVeil = clamp01(p.corruptionVeil)
+    this.muteSec = p.muteTicksLeft / 60
     if (this.hpFrac > 0.001 && this.dead) {
       this.dead = false
       this.deadT = 0
     }
+  }
+
+  private onStatus(p: StatusPulse): void {
+    if (!p.on || p.value <= 0) { this.chips.delete(p.id); return }
+    // 读数带 TTL：之后再没有新读数就说明它自己走完了，chip 得退场（挂着=谎称状态还在）
+    this.chips.set(p.id, { value: Math.round(p.value), max: p.max, until: this.time + 2 })
   }
 
   // ---------------------------------------------------------------- layout
@@ -315,6 +341,74 @@ export class Hud {
     ctx.strokeStyle = col
     ctx.lineWidth = 1.2 * s
     ctx.stroke()
+  }
+
+  /** §11 失谐槽：振幅条下方的一条细线。满了之后它开始吃掉生命，所以它比任何大字都更该常驻。 */
+  private drawCorruption(): void {
+    if (this.corrFrac <= 0.001) return
+    const { ctx } = this
+    const s = this.scale()
+    const { x0, yc, w } = this.hpLayout()
+    const y = yc + 20 * s
+    const col = mix(GREYRED, [150, 150, 155], clamp01(this.corrVeil))
+    ctx.save()
+    ctx.lineWidth = 1
+    ctx.strokeStyle = css(BONE, 0.08)
+    ctx.beginPath()
+    ctx.moveTo(x0, y)
+    ctx.lineTo(x0 + w, y)
+    ctx.stroke()
+    ctx.lineWidth = 2.4 * s
+    ctx.strokeStyle = css(col, 0.32 + 0.5 * this.corrFrac)
+    ctx.beginPath()
+    ctx.moveTo(x0, y)
+    ctx.lineTo(x0 + w * this.corrFrac, y)
+    ctx.stroke()
+    if (this.corrFrac >= 0.999) {
+      ctx.font = `${Math.round(11 * s)}px ${SERIF}`
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'middle'
+      ctx.fillStyle = css(col, 0.9)
+      ctx.fillText('失谐 · 正在褪色', x0 + w + 10 * s, y)
+    }
+    ctx.restore()
+  }
+
+  /** §11 状态 chip 行：贴在振幅条上方，用 statuses.json 的 displayName（数据真源，§55） */
+  private drawStatusChips(): void {
+    if (this.dead) return
+    const a = clamp01(this.chipA)
+    if (a <= 0.02) return
+    const { ctx } = this
+    const s = this.scale()
+    const { x0, yc } = this.hpLayout()
+    const chips: { label: string; col: RGB }[] = []
+    if (this.muteSec > 0) chips.push({ label: `${statuses.mute.displayName} ${this.muteSec.toFixed(1)}s`, col: GREYRED })
+    for (const [id, c] of this.chips) {
+      if (id === 'fissure') {
+        // 层数用竖线而不是数字：满层碎裂前那一格要能被余光看见（§42 克制）
+        const bar = '▍'.repeat(c.value) + '▏'.repeat(Math.max(0, c.max - c.value))
+        chips.push({ label: `${statuses.fissure.displayName} ${bar}`, col: AMBER })
+      } else if (id === 'echo') {
+        chips.push({ label: `${statuses.echo.displayName} ${c.value}/${c.max}`, col: BONE })
+      }
+    }
+    if (!chips.length) return
+    ctx.save()
+    ctx.font = `${Math.round(11 * s)}px ${SERIF}`
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'middle'
+    let x = x0
+    const y = yc - 36 * s
+    for (const c of chips) {
+      const tw = ctx.measureText(c.label).width
+      ctx.fillStyle = css(c.col, 0.09 * a)
+      ctx.fillRect(x, y - 8 * s, tw + 10 * s, 16 * s)
+      ctx.fillStyle = css(c.col, 0.82 * a)
+      ctx.fillText(c.label, x + 5 * s, y)
+      x += tw + 16 * s
+    }
+    ctx.restore()
   }
 
   /** 1.4 stamina beat ring + 1.x overdrive inner resonance glow (0-10 layers). */

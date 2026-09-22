@@ -14,7 +14,14 @@ import { unwrap, wrap } from './Integrity'
  * 存档里没有一个敌人实例，只有一串槽位身份）。
  */
 
-export const SAVE_VERSION = 2
+export const SAVE_VERSION = 3
+
+/**
+ * 读档时接受的版本：凡是 ≤ 当前版本、且迁移链能一路升到当前的，都可以读。
+ * 之前这里只写 `[SAVE_VERSION]` ⇒ 老档在 `unwrap` 那一步就被当成坏档拒掉，
+ * 精心注册的迁移链在真实读档路径上永远跑不到（只有单测直接调 `migrateTo` 才跑到）。
+ */
+export const READABLE_VERSIONS: number[] = Array.from({ length: SAVE_VERSION }, (_, i) => i + 1)
 
 /**
  * v1 → v2（Phase 5-B 的成长/背包/装备/掉落）。
@@ -28,6 +35,17 @@ registerMigration(1, (p) => {
   return { ...p, snapshot: snap }
 })
 
+/**
+ * v2 → v3（Phase 5-C1 的失谐/褪色值）。老档读进来从「零失谐」开始——
+ * 这是如实（那份档确实没有这个概念），不是把 0 当成"当时也没积累"的假账。
+ */
+registerMigration(2, (p) => {
+  const snap = { ...(p.snapshot as Record<string, unknown>) }
+  snap.player = { ...(snap.player as Record<string, unknown>), corruption: 0 }
+  snap.version = 3
+  return { ...p, snapshot: snap }
+})
+
 export interface Snapshot {
   version: number
   /** 游玩秒数（HUD/存档摘要卡用） */
@@ -38,6 +56,8 @@ export interface Snapshot {
     x: number; y: number; z: number
     hp: number; stamina: number; overdrive: number
     weaponId: string
+    /** §11 失谐（褪色值）。不存它就能靠读档白嫖一次清除——那这条区域压力机制是假的 */
+    corruption: number
   }
   /** 世界 flag（区域解锁、营地状态、Boss 已死…全部命名空间化的键） */
   flags: string[]
@@ -138,7 +158,8 @@ export class SaveGame {
       player: {
         x: p.pos.x, y: p.pos.y, z: p.pos.z,
         hp: p.stats.hp, stamina: p.stats.stamina, overdrive: p.stats.overdrive,
-        weaponId: p.weapon.id
+        weaponId: p.weapon.id,
+        corruption: p.corruption.value
       },
       flags: w.streaming.flagKeys(),
       clearedSlots: w.spawner.clearedKeys(),
@@ -172,7 +193,7 @@ export class SaveGame {
       let raw: string | null = null
       try { raw = await store.get(key) } catch { continue }
       if (!raw) continue
-      const out = unwrap(raw, [SAVE_VERSION])
+      const out = unwrap(raw, READABLE_VERSIONS)
       if (!out.ok) {
         bus.emit('log', { level: 'warn', msg: `save.bad ${key} ${out.reason}` })
         continue
@@ -203,6 +224,9 @@ export class SaveGame {
     p.stats.hp = Math.min(p.stats.hpMax, s.player.hp)
     p.stats.stamina = s.player.stamina
     p.stats.overdrive = s.player.overdrive
+    // 读档后失谐要连着"它现在几成"的读数一起发布，否则 HUD 的褪色槽还停在上一局
+    p.corruption.value = Math.min(p.corruption.cfg.max, s.player.corruption ?? 0)
+    p.publishStats()
     if (s.rpg && w.rpg) w.rpg.restore(s.rpg)
     for (const f of s.flags) w.streaming.setFlag(f, true)
     for (const k of s.clearedSlots) w.spawner.markCleared(k)

@@ -24,6 +24,12 @@ export interface DerivedStats {
   overdriveMax: number
   /** 处决/背刺伤害乘数（泛音加成，§2.1） */
   execMul: number
+  /**
+   * §2.1 失谐的两条收益（Phase 5-C1 起有消费方：CombatManager 的震裂/碎裂/回响，
+   * 以及 main.ts 每 tick 的环境失谐暴露）。
+   */
+  statusPowerMul: number
+  corruptionResistMul: number
 }
 
 export interface ResonanceGain {
@@ -155,6 +161,11 @@ export class Progression {
     const sum = (per: Partial<Record<AttrKey, number>>): number =>
       ATTR_KEYS.reduce((s, k) => s + (per[k] ?? 0) * a[k], 0)
     const c = d.crit
+    /**
+     * 失谐的两条收益（§2.1）。这里**刻意用软上限折算后的点数**而不是面板值：一个 60 点失谐的
+     * build 面板上写着 60，实际只当 50 用——异常强度也必须按"实际当多少"结算，否则面板就在说谎。
+     */
+    const fis = this.effectiveAttr('fis')
     return {
       hpMax: Math.round(d.hp.base + sum(d.hp.per) + d.hp.perRank * this.rank),
       staminaMax: Math.round(d.stamina.base + sum(d.stamina.per)),
@@ -164,7 +175,9 @@ export class Progression {
       critRate: Math.min(c.cap, c.base + a.ovr * c.perOvr),
       critMul: c.mulBase + a.ovr * c.mulPerOvr,
       overdriveMax: Math.min(d.overdrive.cap, d.overdrive.base + Math.floor(a.ton / d.overdrive.perTonDiv)),
-      execMul: 1 + a.ovr * d.execMulPerOvr
+      execMul: 1 + a.ovr * d.execMulPerOvr,
+      statusPowerMul: 1 + fis * d.status.perFisPower,
+      corruptionResistMul: Math.max(d.status.toleranceFloor, 1 - fis * d.status.perFisTolerance)
     }
   }
 

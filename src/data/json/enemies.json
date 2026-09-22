@@ -6,6 +6,7 @@
   "hp": 45,
   "poise": 20,
   "speed": 3.0,
+  "fissureMul": 2,
   "ai": {
    "vision": {
     "range": 12,
@@ -1159,7 +1160,8 @@
      ],
      "shell": {
       "dmgMul": 0.1,
-      "immuneToPoise": true
+      "immuneToPoise": true,
+      "fissureMul": 2
      }
     },
     {

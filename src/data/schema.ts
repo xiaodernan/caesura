@@ -63,8 +63,14 @@ export interface FrameData {
   loudness?: number
   beatQuant?: number[]
   flags?: string[]
-  /** explicit 震裂 (fissure) layers applied on hit; overrides the key-based default */
+  /** 显式 fissureLayers（震裂，§11）；不写则走按键默认（charged=2 / h=1） */
   fissureLayers?: number
+  /**
+   * §11 回响：命中后在同一位置挂一记「回声影」，`statuses.echo.delayTicks` 之后把这一击的
+   * `replayMul` 倍伤害对群重演一次。写在哪一招上＝设计口径（combat.md §4.1 L4 尾段、
+   * §4.2 重击/蓄力），所以它由招式自己声明，而不是代码按 key 猜。
+   */
+  echoOnHit?: boolean
   next?: string
   skillTag?: string
 }
@@ -124,6 +130,11 @@ export interface EnemyData {
   poise: number
   speed: number
   defense?: number
+  /**
+   * §11 震裂对「装甲/晶体类」特化：它身上的震裂效果（每层承伤 + 碎裂真伤）乘这个倍率。
+   * 嘈壳的壳、漂调者喉咙里的晶是同一条规则的两批受害者。缺省 1（血肉之躯不吃特化）。
+   */
+  fissureMul?: number
   ai: {
     vision: { range: number; fovDeg: number }
     vibration: { range: number }
@@ -212,8 +223,10 @@ export interface EnemyData {
       belowHpFrac?: number
       /** 本阶允许出的招式 id（白名单 ⇒ 阶段真的换行为） */
       attacks: string[]
-      /** 护壳：吃这一阶伤害时乘 `dmgMul`，`immuneToPoise` = 打不出架势 */
-      shell?: { dmgMul: number; immuneToPoise: boolean }
+      /** 护壳：吃这一阶伤害时乘 `dmgMul`，`immuneToPoise` = 打不出架势。
+       * `fissureMul` = 壳期震裂效果倍率（§11「铸出来的东西最怕同频敲击」）：它让碎裂更疼，
+       * 但**剥不掉壳**——剥壳仍然只有撞钟那一条路（§15.1），所以它不构成第二条解法。 */
+      shell?: { dmgMul: number; immuneToPoise: boolean; fissureMul?: number }
       /**
        * §15.2 P2「夺拍」：他吞掉全局时钟，玩家的节奏工具改挂到他的拍上。只有阶段带着这一格，
        * CombatManager 才会游走 drift、压玩家体力回复、抖玩家闪避恢复；不带（或被玩家抢回拍）
@@ -359,6 +372,14 @@ export interface DerivedConfig {
   overdrive: { base: number; perTonDiv: number; cap: number }
   /** 泛音每点给处决/背刺伤害的加成（progression.md §2.1 泛音行） */
   execMulPerOvr: number
+  /**
+   * §2.1 失谐（fis）的两条收益，Phase 5-C1 起它们真的有消费方（combat/Statuses + CombatManager）：
+   * - `perFisPower`：每点给「异常强度」——震裂每层承伤、碎裂真伤、回响重演伤一律乘上去。
+   * - `perFisTolerance`：每点给「环境失谐耐受」——Corruption 累积按 (1 − 点数×系数) 衰减。
+   * - `toleranceFloor`：耐受的地板。**深窖的压门不能被属性点关掉**（§11 它是区域机制，不是可豁免的惩罚），
+   *   所以堆满失谐也只是"褪色慢得多"，不是"可以站在哑带里不动"。
+   */
+  status: { perFisPower: number; perFisTolerance: number; toleranceFloor: number }
 }
 
 /** 强化曲线一格（progression.md §5.4：无失败、无销毁）。 */
@@ -439,8 +460,80 @@ export interface ItemData {
   value?: number
   desc: string
   gear?: GearDef
-  /** 消耗品：使用效果（回响膏=应急治疗） */
-  use?: { heal?: number; healFrac?: number; sfx?: string }
+  /**
+   * 消耗品：使用效果。`heal` 回血（回响膏）；`corruption` 为负数=刮掉多少失谐（音色晶）。
+   * 只写有消费方的字段——消耗音效属于 Phase 8 音频系统的工作，届时再回表。
+   */
+  use?: { heal?: number; corruption?: number }
+}
+
+/* ============================ 状态系统（combat.md §11，Phase 5-C1） ============================ */
+
+/**
+ * 五个状态的共同头部：`tag` 走 Gameplay Tag 风格（数据里写 `mute` 或 `status.mute` 都认），
+ * `displayName`/`desc` 是需求 §19 要求的世界观 tooltip——**desc 必须被 UI 读到**，
+ * 所以 Statuses.ts 里有一条「本局第一次见到这个状态就把 tooltip 播一遍」的消费路径。
+ */
+export interface StatusMeta {
+  tag: string
+  displayName: string
+  desc: string
+}
+
+/** 震裂：层数＝承伤标尺，满层碎裂。衰减节奏是「10s 无新增 → 每 2s 掉一层」两段式。 */
+export interface FissureStatus extends StatusMeta {
+  maxLayers: number
+  dmgMulPerLayer: number
+  idleTicks: number
+  decayEveryTicks: number
+  burst: { trueDamage: number; poise: number }
+  /**
+   * §11「对装甲/晶体类效果 ×2」的倍率**不在这里**：那是目标的材质属性，标在
+   * `EnemyData.fissureMul`（嘈壳）与 `BossPhase.shell.fissureMul`（壳期奥斯塔拉）上，
+   * 由 `Enemy.fissureEffectMul` 合成。状态表只给「每层多少」这类通用规则，不替敌人认领材质。
+   */
+}
+
+/** 闷音：时长由施加方（`statusOnHit.ticks`）声明，这里只给「挂着的时候值多少」。 */
+export interface MuteStatus extends StatusMeta {
+  /** 体力回复乘数（0.7 = -30%）。「战技/律具技封锁 4s」的消费者是乐章战技（5-C2），故此处不预写数字 */
+  regenMul: number
+}
+
+/** 回响：重击命中挂一记回声影，延迟后在同一位置对群重演。 */
+export interface EchoStatus extends StatusMeta {
+  delayTicks: number
+  replayMul: number
+  /** 重演的判定半径（米）。§11 只说「同位置、对群」，这个数是从「一间屋子的宽度」定的 */
+  radius: number
+  /** 性能锁（§11 明写）：场上同时最多几影，超了直接丢新的 */
+  maxShadows: number
+}
+
+/** 失谐（褪色值）：玩家侧的环境压力计量表，不是惩罚——见 RegionData.corruption。 */
+export interface CorruptionStatus extends StatusMeta {
+  max: number
+  /** 被喧堕精英（archetype elite/miniboss/boss）命中一次的增量 */
+  eliteHit: number
+  /** 从这个值起开始抽颜色，到 max 抽完（表现层用 `veil()` 而不是自己读阈值） */
+  visualStart: number
+  /** 满值后在**非安全区**（有 corruption 格的区域）的每秒掉血 */
+  hpPerSec: number
+}
+
+/**
+ * 共振过载：数值不在这里——上限来自 progression.json 的 `derived.overdrive`，
+ * 收支来自 player.json（`parry.overdriveGain` / `execution.overdriveCost`）。
+ * 本表只带它的 tooltip，避免同一个数在两张表里各写一遍。
+ */
+export type OverdriveStatus = StatusMeta
+
+export interface StatusConfig {
+  fissure: FissureStatus
+  mute: MuteStatus
+  echo: EchoStatus
+  corruption: CorruptionStatus
+  overdrive: OverdriveStatus
 }
 
 /** 掉落表（progression.md §9.0 schema）。掷骰全部走种子化 RNG ⇒ 可复现 QA。 */
@@ -548,6 +641,13 @@ export interface RegionData {
    * 悄悄写死在 main.ts 里的东西；Boss 的 `boss.bpm` 是叠在它之上的临时接管，要还得回去。
    */
   grid: { bpm: number; beatsPerBar: number; label?: string }
+  /**
+   * §11 失谐 Corruption（褪色值）的区域侧：写这一格＝**非安全区**，站着就按 `perSec` 累积。
+   * 全作只有无耳深窖（哑带渗漏最重的地方）声明它 ⇒ 「能进，但要在计时器内决策」这条
+   * 压门（gameplay.md §7）由数据成立，而不是由代码里的一句 `if (region.id === 'rg_earless_deeps')`。
+   * 满值后的掉血也在同一格里判：没有这一格的区域天然安全。
+   */
+  corruption?: { perSec: number }
   chunkSize: number
   navmeshRef?: string
   weatherPresets: string[]

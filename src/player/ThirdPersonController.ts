@@ -5,6 +5,7 @@ import type { RhythmClock } from '@/core/RhythmClock'
 import { clamp } from '@/core/Math'
 import type { FrameData, MovesetData, PlayerBaseData, WeaponData } from '@/data/schema'
 import { EntityStats, playerStatsFrom } from '@/combat/EntityStats'
+import { armStats, CorruptionMeter } from '@/combat/Statuses'
 import type { Vec3 } from '@/combat/EntityStats'
 import type { HitTarget } from '@/combat/HitShapes'
 import { defaultMods, type PlayerMods } from '@/rpg/Runtime'
@@ -58,9 +59,16 @@ export class PlayerController {
    * 这里只做消费——它不认识 Progression，也不知道词缀从哪来（见 src/rpg/Runtime.ts）。
    */
   rpg: PlayerMods = defaultMods()
+  /**
+   * §11 失谐（褪色值）。它是**玩家身上的一块计量表**而不是一个 buff：区域数据决定它涨多快，
+   * 消耗品与调音桩决定它怎么掉，HUD/画面决定它怎么被看见——三层都不互相认识，只认这个对象。
+   */
+  readonly corruption: CorruptionMeter
 
   constructor(public base: PlayerBaseData, public weapon: WeaponData, public moveset: MovesetData) {
     this.stats = playerStatsFrom(base)
+    armStats(this.stats) // §11 闷音的 -30% 回复与震裂的层数规则都来自 statuses.json
+    this.corruption = new CorruptionMeter()
     this.stats.defense = base.defense
     // 未接成长系统时（单元测试/工具）也要有一组**恒等**乘数：属性取 player.json 的面板值，
     // 于是伤害与 Phase 5-B 之前逐位相同——成长系统是叠加，不是替换。
@@ -122,6 +130,7 @@ export class PlayerController {
     this.stats.defense = m.defense
     this.stats.overdriveMax = m.overdriveMax
     this.stats.overdrive = Math.min(this.stats.overdrive, m.overdriveMax)
+    this.corruption.resistMul = m.corruptionResistMul
     this.rpg = m
     this.publishStats()
   }
@@ -382,16 +391,34 @@ export class PlayerController {
     this.publishStats()
   }
 
-  /** 调音桩休息：只回 HP/体力——不动架势与过载，调音桩不是免费复活 */
+  /** 调音桩休息：回 HP/体力 + 归零失谐（§11「调音桩归零」）。不动架势与过载，调音桩不是免费复活 */
   rest(): void {
     this.stats.hp = this.stats.hpMax
     this.stats.stamina = this.stats.staMax
     this.exhausted = false
+    this.corruption.reset()
     this.publishStats()
   }
 
   addOverdrive(n: number): void {
     this.stats.overdrive = clamp(this.stats.overdrive + n, 0, this.stats.overdriveMax)
+  }
+
+  /**
+   * §11 失谐满值后的"褪色"掉血。它刻意**不是** takeDamage 的一条分支：
+   * 这是世界在拿走你的声音，不是谁打你一下——所以翻滚的无敌帧救不了它，也不该有硬直和击退。
+   * 单开一个入口，是为了让"环境伤害不吃防御阶梯"这件事在代码里看得见，而不是藏在布尔参数里。
+   */
+  fadeDamage(amount: number): void {
+    if (this.dead || amount <= 0) return
+    this.stats.damage(amount)
+    bus.emit('player.damaged', { amount })
+    if (this.stats.hp <= 0) {
+      this.dead = true
+      this.deadTicks = 0
+      bus.emit('player.died', undefined)
+    }
+    this.publishStats()
   }
 
   publishStats(): void {
@@ -400,7 +427,10 @@ export class PlayerController {
       stamina: this.stats.stamina, staminaMax: this.stats.staMax,
       poise: this.stats.poiseAccum, poiseMax: this.stats.poiseMax,
       overdrive: this.stats.overdrive, overdriveMax: this.stats.overdriveMax,
-      rank: this.rpg.rank
+      rank: this.rpg.rank,
+      // §11 失谐：HUD 要的是"多少/上限/褪色几成"三样，自己不去读玩家的 meter
+      corruption: this.corruption.value, corruptionMax: this.corruption.cfg.max, corruptionVeil: this.corruption.veil(),
+      muteTicksLeft: this.stats.muteTicksLeft
     })
   }
 }

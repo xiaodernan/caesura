@@ -819,6 +819,9 @@
    "maxZ": 384
   },
   "groundY": -144,
+  "corruption": {
+   "perSec": 2
+  },
   "grid": {
    "bpm": 60,
    "beatsPerBar": 1,

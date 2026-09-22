@@ -79,7 +79,17 @@
   "stack": 20,
   "value": 18,
   "desc": "把别人的遗响抹在伤口上。应急治疗，但那声音会留在你身上。",
-  "use": { "heal": 45, "sfx": "ui_select" }
+  "use": { "heal": 45 }
+ },
+ {
+  "id": "it_timbre_crystal",
+  "nameKey": "item.timbreCrystal",
+  "displayName": "音色晶",
+  "kind": "consumable",
+  "stack": 5,
+  "value": 26,
+  "desc": "会记住声音的晶体。刮一点粉下去，它把你身上那些不属于这首歌的音带走一层——安静是有代价的，这东西就是那笔账。",
+  "use": { "corruption": -25 }
  },
  {
   "id": "it_score_fragment",

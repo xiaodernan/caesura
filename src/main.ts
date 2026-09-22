@@ -21,6 +21,7 @@ import { CameraRig } from '@/player/CameraRig'
 import { LockOn } from '@/player/LockOn'
 import { AISystem } from '@/ai/AISystem'
 import { CombatManager } from '@/combat/CombatManager'
+import { glossary } from '@/combat/Statuses'
 import { AudioEngine } from '@/audio/AudioEngine'
 import { Haptics } from '@/input/Haptics'
 import { VfxLayer } from '@/vfx/VfxLayer'
@@ -115,7 +116,12 @@ const hud = new Hud(document.getElementById('hud') as HTMLCanvasElement)
 const panel = new Stakerite(rpg, {
   onApply: () => refreshRpg(),
   notify: (text, kind) => bus.emit('ui.notify', { text, kind: kind ?? 'info' }),
-  onHeal: (amount) => { if (amount > 0) { player.stats.heal(amount); player.publishStats() } }
+  onUse: (eff) => {
+    if (eff.heal > 0) player.stats.heal(eff.heal)
+    // 音色晶刮掉的是失谐（数据里是负数=往下刮）；归零发生在调音桩，这里是"路上应急"
+    if (eff.corruption < 0) player.corruption.purge(-eff.corruption)
+    if (eff.heal > 0 || eff.corruption < 0) player.publishStats()
+  }
 })
 function setPanelOpen(open: boolean): void {
   if (open) { panel.show(); time.paused = true; input.enabled = false }
@@ -167,6 +173,19 @@ addEventListener('keydown', (e) => {
   }
 })
 
+/**
+ * §11 失谐的视觉压力：>60 起屏幕一点点失去颜色（combat.md「饱和度渐减」）。
+ * WebGL 画面没有后处理管线，CSS filter 是这套环境里唯一真实的去饱和通道（ENV-001 下的合理替代，
+ * 升级路径=接一个 post-processing pass 后改这一处）。量化到 5% 一档，避免每帧改样式触发重排。
+ */
+let veilApplied = -1
+function setVeil(v: number): void {
+  const q = Math.round(v * 20) / 20
+  if (q === veilApplied) return
+  veilApplied = q
+  canvas.style.filter = q > 0 ? `saturate(${(1 - q).toFixed(2)}) brightness(${(1 - q * 0.3).toFixed(2)})` : ''
+}
+
 const core = {
   update(dt: number, t: GameTime, inp: Input) {
     if (inp.frame.edges.has('map')) {
@@ -205,6 +224,12 @@ const core = {
     if (lock.target) player.faceTowards(lock.target.getPos())
     ai.update(dt, t.tick, player, rhythm)
     combat.update(t.tick, inp, dt)
+    // §11 失谐：脏音是**区域**往你身上写的（深窖=2/s），不是打得不好的惩罚；
+    // 满值后的"褪色"走 fadeDamage——不吃防御阶梯、不硬直、不击退，它是环境而不是攻击。
+    // 累积与掉血共用区域那一格做闸门（tickEnvironment），安全区两条都关。
+    const faded = player.corruption.tickEnvironment(dt, here?.corruption)
+    if (faded > 0) player.fadeDamage(faded)
+    setVeil(player.corruption.veil())
     lock.update()
     visuals.sync(ai.enemies, t.tick)
     projectileVis.sync(combat.projectiles.list(), t.tick)
@@ -272,6 +297,8 @@ addEventListener('pagehide', () => checkpoints.request('quit'))
 let booted = false
 
 async function bootWithSave(): Promise<void> {
+  // 「本局第一次」的台账按局清一次：读档/新开局都是一次新的解释机会（需求 §19）
+  glossary.forgetAll()
   const fresh = new URLSearchParams(location.search).has('fresh')
   const snap = fresh ? null : await saves.load('autosave')
   if (snap) {

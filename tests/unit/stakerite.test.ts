@@ -55,13 +55,13 @@ async function panel(runtime: RpgRuntime) {
   const { Stakerite } = await import('@/ui/Stakerite')
   const applied: number[] = []
   const notes: string[] = []
-  const heals: number[] = []
+  const used: Array<{ heal: number; corruption: number }> = []
   const p = new Stakerite(runtime, {
     onApply: () => applied.push(1),
     notify: (t) => notes.push(t),
-    onHeal: (h) => heals.push(h)
+    onUse: (eff) => used.push(eff)
   })
-  return { p, applied, notes, heals }
+  return { p, applied, notes, used }
 }
 
 /** 面板把内容塞在 root.innerHTML 里；取出来当字符串断言（替身不做真解析） */
@@ -148,13 +148,26 @@ describe('调音桩面板：状态机与内容', () => {
 
   it('点「使用」消耗品会真的消耗一件并把回血量交给宿主', async () => {
     const rt = new RpgRuntime('origin_tuner')
-    const { p, heals } = await panel(rt)
+    const { p, used } = await panel(rt)
     p.show()
     const root = (p as unknown as { root: FakeEl }).root
     rt.inv.add('it_echo_salve', 1)
     click(root, 'use', 'it_echo_salve')
     expect(rt.inv.count('it_echo_salve')).toBe(0)
-    expect(heals[0]).toBeGreaterThan(0)
+    expect(used[0].heal).toBeGreaterThan(0)
+  })
+
+  it('音色晶：面板只把数据里的 use.corruption 交给宿主，自己不碰玩家状态（§11 失谐）', async () => {
+    const rt = new RpgRuntime('origin_tuner')
+    const { p, used, notes } = await panel(rt)
+    p.show()
+    const root = (p as unknown as { root: FakeEl }).root
+    rt.inv.add('it_timbre_crystal', 1)
+    click(root, 'use', 'it_timbre_crystal')
+    expect(rt.inv.count('it_timbre_crystal')).toBe(0)
+    // 负数=往下刮；回血是 0——一件东西只该做数据允许它做的事
+    expect(used[0]).toEqual({ heal: 0, corruption: -25 })
+    expect(notes.some((n) => n.includes('失谐 -25'))).toBe(true)
   })
 
   it('点「卸下」把槽位清空（不会留下指向空气的 uid）', async () => {

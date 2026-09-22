@@ -8,6 +8,17 @@ export interface StaminaRegenModel {
   hardDelay: number; slowPerSec: number; slowTicks: number; fastPerSec: number
 }
 
+/**
+ * §11 震裂的两段式节奏：`idleTicks` 内没有新增 → 之后每 `decayEveryTicks` 掉一层。
+ * 这三个数**不在这里写**：它们来自 `data/json/statuses.json`，由 `combat/Statuses.ts:armStats()`
+ * 在构造方（Enemy / PlayerController）挂上。留着 null 就是"这具 stats 没被武装过"。
+ */
+export interface FissureRules {
+  maxLayers: number
+  idleTicks: number
+  decayEveryTicks: number
+}
+
 /** shared stat block for player and enemies (GAS-lite, docs/technical-architecture.md §1.2) */
 export class EntityStats {
   hp: number
@@ -22,8 +33,14 @@ export class EntityStats {
   overdriveMax = 10
   private lastCostTick = -9999
   muteTicksLeft = 0
+  /** §11 震裂层数。承伤/碎裂的系数不在这里——那是 CombatManager 读 statuses.json 时算的 */
   fissureLayers = 0
-  private fissureDecayLeft = 0
+  /** 由 combat/Statuses.ts 的 armStats() 挂上；null ⇒ 这只实体不参与状态系统 */
+  fissureRules: FissureRules | null = null
+  /** 闷音期间的体力回复乘数（§11 的 -30% 就是这里的 0.7）。同样由 armStats() 从数据写入 */
+  muteRegenMul = 1
+  private fissureCountdown = 0
+  private fissureDecaying = false
   dead = false
   defense = 0
   regen: StaminaRegenModel
@@ -75,22 +92,35 @@ export class EntityStats {
       let rate = since > this.regen.slowTicks ? this.regen.fastPerSec : this.regen.slowPerSec
       if (since <= this.regen.hardDelay) rate = 0
       if (guarding) rate = Math.min(rate, 5)
-      if (this.muteTicksLeft > 0) rate *= 0.7
+      if (this.muteTicksLeft > 0) rate *= this.muteRegenMul
       this.stamina = clamp(this.stamina + rate * (this.mods.regenMul * dt), 0, this.staMax)
     }
-    if (this.fissureLayers > 0) {
-      this.fissureDecayLeft--
-      if (this.fissureDecayLeft <= 0) {
+    if (this.fissureLayers > 0 && this.fissureRules) {
+      if (--this.fissureCountdown <= 0) {
         this.fissureLayers--
-        this.fissureDecayLeft = 10 * TICK_HZ
+        // 掉到空 ⇒ 回到「先安静 10s 才开始掉」的第一段，下一层要重新攒计时
+        this.fissureDecaying = this.fissureLayers > 0
+        this.fissureCountdown = this.fissureRules.decayEveryTicks
       }
     }
   }
 
+  /**
+   * 叠震裂。返回 true = 顶满层（碎裂由调用方结算：真伤与架势都是数据）。
+   * 没武装就叠层是接线错误，不是"这只怪免疫震裂"——所以抛，不静默。
+   */
   addFissure(layers: number): boolean {
-    this.fissureLayers = Math.min(5, this.fissureLayers + layers)
-    this.fissureDecayLeft = 10 * TICK_HZ
-    if (this.fissureLayers >= 5) { this.fissureLayers = 0; return true }
+    const r = this.fissureRules
+    if (!r) throw new Error('EntityStats.addFissure: 未 arm —— 震裂的层数上限/衰减节奏来自 data/json/statuses.json，构造方必须调用 combat/Statuses.ts 的 armStats(stats)')
+    if (layers <= 0) return false
+    this.fissureLayers = Math.min(r.maxLayers, this.fissureLayers + layers)
+    // 「10s 内没有新增」→ 掉第一层 → 之后每 2s 一层。新增加进来会打断正在进行的逐层衰减。
+    this.fissureCountdown = this.fissureDecaying ? r.decayEveryTicks : r.idleTicks
+    if (this.fissureLayers >= r.maxLayers) {
+      this.fissureLayers = 0
+      this.fissureDecaying = false
+      return true
+    }
     return false
   }
 }

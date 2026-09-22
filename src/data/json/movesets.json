@@ -143,7 +143,8 @@
     "loudness": 5,
     "flags": [
      "groundshock"
-    ]
+    ],
+    "echoOnHit": true
    },
    "charged": {
     "startup": 20,
@@ -256,7 +257,7 @@
     "damage": 52, "stamina": 30, "poise": 50, "hitStopMs": 120,
     "hitbox": { "shape": "cone", "angleDeg": 90, "radius": 3.4, "height": 2.4, "offsetY": 1.2 },
     "lunge": 0.8, "shake": "heavy", "sfx": ["swing_heavy_2"], "vfx": ["trail_sword", "shock_small"],
-    "loudness": 8, "flags": ["groundshock"]
+    "loudness": 8, "flags": ["groundshock"], "echoOnHit": true
    },
    "charged": {
     "startup": 20, "activeStart": 20, "activeEnd": 35, "recovery": 74,
@@ -324,7 +325,7 @@
     "damage": 27, "stamina": 18, "poise": 26, "hitStopMs": 90,
     "hitbox": { "shape": "cone", "angleDeg": 30, "radius": 4.0, "height": 1.6, "offsetY": 1.0 },
     "lunge": 3.0, "shake": "normal", "sfx": ["thrust_1"], "vfx": ["trail_thrust", "shock_small"],
-    "loudness": 5, "flags": ["riposte"]
+    "loudness": 5, "flags": ["riposte"], "echoOnHit": true
    },
    "charged": {
     "startup": 20, "activeStart": 20, "activeEnd": 26, "recovery": 56,

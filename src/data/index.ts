@@ -7,12 +7,15 @@ import lootRaw from './json/loot.json'
 import regionsRaw from './json/regions.json'
 import progressionRaw from './json/progression.json'
 import itemsRaw from './json/items.json'
-import type { MovesetData, WeaponData, EnemyData, PlayerBaseData, RegionData, ProgressionData, ItemData, LootTableData } from './schema'
+import statusesRaw from './json/statuses.json'
+import type { MovesetData, WeaponData, EnemyData, PlayerBaseData, RegionData, ProgressionData, ItemData, LootTableData, StatusConfig } from './schema'
 
 export const playerBase = playerRaw as unknown as PlayerBaseData
 export const regions = regionsRaw as unknown as RegionData[]
 export const progression = progressionRaw as unknown as ProgressionData
 export const items = itemsRaw as unknown as ItemData[]
+/** §11 五状态的单一数值真源（含世界观 tooltip）；派生读取走 combat/Statuses.ts 的 `statusConfig()` */
+export const statuses = statusesRaw as unknown as StatusConfig
 
 let registered = false
 
@@ -30,6 +33,7 @@ export function registerGameData(): void {
   for (const it of items) registry.register(it.id, it)
   registry.register('player:base', playerBase)
   registry.register('progression', progression)
+  registry.register('statuses', statuses)
 }
 
 export { weaponsRaw, enemiesRaw, movesetsRaw, regionsRaw, progressionRaw, itemsRaw, lootRaw }

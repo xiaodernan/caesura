@@ -11,6 +11,7 @@ import type { FrameData, ProjectileSpec } from '@/data/schema'
 import { resolveDamage } from './DamagePipeline'
 import { shapeHits, isBackstab } from './HitShapes'
 import { ProjectileSystem, sphereHits, type Projectile } from './Projectiles'
+import { glossary, statusConfig, tagIs } from './Statuses'
 import type { Vec3 } from './EntityStats'
 
 type ExecuteKind = 'A' | 'B' | 'C'
@@ -42,6 +43,11 @@ interface EnemyStrike {
   ranged: boolean
   /** 钉住定身 tick（投掷枪） */
   pinTicks: number
+  /**
+   * §11 回响重演：已经算完的伤害直接进来，绕过减伤/钟甲/钟壳/暴击/叠层——
+   * 那一音是「上一击的尾巴」，不是新的一击。给它再走一遍完整管线就会自我繁殖。
+   */
+  rawDamage?: number
   point: Vec3
   dir: Vec3
   shakeKey: string
@@ -104,6 +110,7 @@ export class CombatManager {
     this.bossBits()
     this.stealBeat(tick, input)
     this.projectilePass(tick, dt)
+    this.tickEchoes(tick)
     if (tick % 30 === 0) this.checkEncounterMusic()
   }
 
@@ -123,7 +130,8 @@ export class CombatManager {
       if (!hit) continue
       this.player.markActionHit()
       const p = this.player
-      this.strikeEnemy(e, {
+      const point = midpoint(p.pos, e.pos)
+      const final = this.strikeEnemy(e, {
         base: hb.damage, poise: hb.poise, hitStopMs: hb.hitStopMs,
         kind: (p.action?.key ?? '').startsWith('l') ? 'light' : 'heavy',
         layers: this.fissureLayersOf(p.action?.key ?? '', p.action?.f, hb),
@@ -131,9 +139,12 @@ export class CombatManager {
         backstab: isBackstab(p.pos, e.hitTarget()),
         onBeat: this.rhythm.onBeat(50),
         ranged: false, pinTicks: 0,
-        point: midpoint(p.pos, e.pos), dir: flatDir(p.pos, e.pos),
+        point, dir: flatDir(p.pos, e.pos),
         shakeKey: hb.shake
       }, tick)
+      // §11 回响：挂不挂影由**这一帧自己声明**（frames.echoOnHit）。不能反过来在结算通道里
+      // 判「kind==='heavy'」——投掷弹体也标成 heavy，那样引针枪每发都会凭空生出回声。
+      if (p.action?.f?.echoOnHit) this.spawnEcho(point, final, hb.poise, tick)
       break // one swing, one target
     }
   }
@@ -159,10 +170,13 @@ export class CombatManager {
     bus.emit('vfx.request', { key: 'ring_echo', pos: midpoint(this.player.pos, e.pos), scale: 0.6 })
   }
 
-  /** 唯一的「玩家打到敌人」通道：近战、投掷弹体、以及未来的战技都从这里走 */
-  private strikeEnemy(e: Enemy, s: EnemyStrike, tick: number): void {
+  /** 唯一的「玩家打到敌人」通道：近战、投掷弹体、回声影、以及未来的战技都从这里走。返回这一击的最终伤害（回声要拿它记账） */
+  private strikeEnemy(e: Enemy, s: EnemyStrike, tick: number): number {
     const p = this.player
-    const crumpled = e.stats.crumpleTicksLeft > 0
+    const cfg = statusConfig()
+    const replay = s.rawDamage !== undefined
+    // 回声重演带着**已经算完的数**进来：resolveDamage 看到 rawDamage 就直接透传，
+    // 后面的减伤/钟甲/钟壳/暴击/碎裂加成一段都不再走（见 EnemyStrike.rawDamage 的注释）。
     const dmg = resolveDamage({
       base: s.base * p.rpg.weaponDamageMul,
       attrs: p.rpg.attrs,
@@ -171,30 +185,42 @@ export class CombatManager {
       backstab: s.backstab,
       onBeat: s.onBeat,
       ranged: s.ranged,
+      rawDamage: s.rawDamage,
       critRate: p.rpg.critRate,
       critMul: p.rpg.critMul
     }, () => this.rng.float())
     let final = dmg.damage
-    // §5.3 之鸣钟：对钟甲/钟壳目标加伤。判据是**数据**（有钟甲或带壳），不是敌人名字。
-    const bellTarget = !!e.data.ai.armorFront || e.shellDmgMul < 1
-    if (bellTarget && p.rpg.bellBonus > 0) final = Math.round(final * (1 + p.rpg.bellBonus))
-    if (crumpled) final = Math.round(final * 1.5)
-    // §14.7 钟甲：只有「从它的正面锥里打进来」的这一笔被吃掉。用 s.dir（攻击者→它）反推
-    // 来袭方位，所以近战挥砍、玩家投掷枪、以及未来任何走这条通道的伤害都自动受同一规则管。
-    const armor = e.data.ai.armorFront
-    const glancing = !!armor && !e.armorBroken && !s.backstab && inFrontArc(e, s.dir, armor.arcDeg)
-    if (glancing) {
-      final = Math.round(final * armor.dmgMul)
-      bus.emit('audio.sfx', { key: 'bell_clang', pos: s.point, gain: 0.9 })
-      bus.emit('vfx.request', { key: 'block_spark', pos: s.point, scale: 1.1 })
-    }
-    // §15.1 钟壳：这一阶的减伤是「只有场地机关解得开」的减伤。它仍然只是同一通道里的
-    // 一个乘数——不是第二条伤害流程，也不是「免疫所以不显示数字」的假无敌。
-    const shell = e.shellDmgMul
-    if (shell < 1) {
-      final = Math.max(1, Math.round(final * shell))
-      bus.emit('audio.sfx', { key: 'bell_clang', pos: s.point, gain: 1 })
-      bus.emit('vfx.request', { key: 'block_spark', pos: s.point, scale: 1.5 })
+    // 命中**前**的裂纹层数：这一击自己叠的那层留给下一击生效，否则重击一刀叠满就开始自我放大
+    const layersBefore = e.stats.fissureLayers
+    if (!replay) {
+      const crumpled = e.stats.crumpleTicksLeft > 0
+      // §5.3 之鸣钟：对钟甲/钟壳目标加伤。判据是**数据**（有钟甲或带壳），不是敌人名字。
+      const bellTarget = !!e.data.ai.armorFront || e.shellDmgMul < 1
+      if (bellTarget && p.rpg.bellBonus > 0) final = Math.round(final * (1 + p.rpg.bellBonus))
+      if (crumpled) final = Math.round(final * 1.5)
+      // §14.7 钟甲：只有「从它的正面锥里打进来」的这一笔被吃掉。用 s.dir（攻击者→它）反推
+      // 来袭方位，所以近战挥砍、玩家投掷枪、以及未来任何走这条通道的伤害都自动受同一规则管。
+      const armor = e.data.ai.armorFront
+      const glancing = !!armor && !e.armorBroken && !s.backstab && inFrontArc(e, s.dir, armor.arcDeg)
+      if (glancing) {
+        final = Math.round(final * armor.dmgMul)
+        bus.emit('audio.sfx', { key: 'bell_clang', pos: s.point, gain: 0.9 })
+        bus.emit('vfx.request', { key: 'block_spark', pos: s.point, scale: 1.1 })
+      }
+      // §15.1 钟壳：这一阶的减伤是「只有场地机关解得开」的减伤。它仍然只是同一通道里的
+      // 一个乘数——不是第二条伤害流程，也不是「免疫所以不显示数字」的假无敌。
+      const shell = e.shellDmgMul
+      if (shell < 1) {
+        final = Math.max(1, Math.round(final * shell))
+        bus.emit('audio.sfx', { key: 'bell_clang', pos: s.point, gain: 1 })
+        bus.emit('vfx.request', { key: 'block_spark', pos: s.point, scale: 1.5 })
+      }
+      // §11 震裂：裂纹不挡声音，它让声音更容易穿过。承伤侧按层数放大，
+      // 强度侧受「异音」属性（statusPowerMul）与目标自身材质（晶体 ×2、带壳按阶段值）双向放大。
+      if (layersBefore > 0) {
+        const vuln = 1 + layersBefore * cfg.fissure.dmgMulPerLayer * p.rpg.statusPowerMul * e.fissureEffectMul
+        final = Math.round(final * vuln)
+      }
     }
 
     const poiseMul = (e.inStartup ? 1.5 : 1) * (s.onBeat ? 2 : 1)
@@ -214,14 +240,69 @@ export class CombatManager {
       hitStopMs: s.hitStopMs + (s.onBeat ? 30 : 0), shakeKey: s.shakeKey,
       backstab: s.backstab, weakpoint: false
     })
-    this.time.hitStop((s.hitStopMs + (s.onBeat ? 30 : 0)) / 1000)
+    // 回声是"世界又播了一遍"，不该抢玩家手感的时间：不吃 hitstop、不推进连段
+    if (!replay) {
+      this.time.hitStop((s.hitStopMs + (s.onBeat ? 30 : 0)) / 1000)
+      this.player.onHitLanded()
+    }
     if (burst) this.fissureBurst(e, s.point)
+    this.reportFissure(e, burst)
     if (dmg.crit && !s.backstab) bus.emit('ui.notify', { text: `泛音暴击 · ${final}`, kind: 'reward' })
-    this.player.onHitLanded()
     if (s.pinTicks > 0) bus.emit('ui.notify', { text: `钉住 −${final}`, kind: 'info' })
     this.checkCrumple(e, tick)
     if (!e.alive) this.onEnemyKilled(e)
+    return final
   }
+
+  /** 层数读数：碎裂归零也要发一次，否则 HUD 的 chip 会挂在满层下不来 */
+  private reportFissure(e: Enemy, burst: boolean): void {
+    const n = e.stats.fissureLayers
+    if (!burst && n === 0) return
+    bus.emit('ui.status', { id: 'fissure', value: n, max: statusConfig().fissure.maxLayers, on: n > 0 })
+  }
+
+  /* ======================= §11 回响：那一音被世界再播一遍 ======================= */
+
+  /**
+   * 回声影的账本放在 CombatManager，因为只有这里是那条唯一的伤害通道（§12）——
+   * 在别处「再打一遍」就等于发明第二条结算流程。这里只记账与到期，结算仍走 strikeEnemy。
+   */
+  private echoes: { pos: Vec3; damage: number; poise: number; dueTick: number }[] = []
+  /** 给测试与调试器读数用（表现层不 import 逻辑运行时，tech-arch §3） */
+  get echoesLive(): number { return this.echoes.length }
+
+  private spawnEcho(at: Vec3, damage: number, poise: number, tick: number): void {
+    const c = statusConfig().echo
+    // 性能锁：场上最多 N 个影（§11 数值表里 maxShadows 就是为帧预算写的）
+    if (this.echoes.length >= c.maxShadows) return
+    this.echoes.push({ pos: { ...at }, damage, poise, dueTick: tick + c.delayTicks })
+    glossary.explain('echo')
+    bus.emit('vfx.request', { key: 'ring_echo', pos: { ...at }, scale: 1.3 })
+    bus.emit('ui.status', { id: 'echo', value: this.echoes.length, max: c.maxShadows, on: true })
+  }
+
+  private tickEchoes(tick: number): void {
+    const c = statusConfig().echo
+    for (let i = this.echoes.length - 1; i >= 0; i--) {
+      const sh = this.echoes[i]
+      if (tick < sh.dueTick) continue
+      this.echoes.splice(i, 1)
+      const p = this.player
+      for (const e of this.ai.enemies) {
+        if (!e.alive || e.intangible) continue // 打不到一个此刻不存在的东西
+        if (Math.hypot(e.pos.x - sh.pos.x, e.pos.z - sh.pos.z) > c.radius) continue
+        this.strikeEnemy(e, {
+          base: 0, poise: Math.round(sh.poise * c.replayMul), hitStopMs: 0, kind: 'skill',
+          layers: 0, mute: false, backstab: false, onBeat: false, ranged: false, pinTicks: 0,
+          rawDamage: sh.damage * c.replayMul * p.rpg.statusPowerMul,
+          point: { x: e.pos.x, y: e.pos.y + 1.1, z: e.pos.z }, dir: flatDir(sh.pos, e.pos),
+          shakeKey: 'graze'
+        }, tick)
+      }
+      bus.emit('ui.status', { id: 'echo', value: this.echoes.length, max: c.maxShadows, on: this.echoes.length > 0 })
+    }
+  }
+
 
   /* ======================= 弹道 ======================= */
 
@@ -585,6 +666,7 @@ export class CombatManager {
   /** §5 优先级：弹反 > 无敌帧 > 完美格挡 > 格挡（含破防）> 硬吃。近战与弹体共用 */
   private resolveAgainstPlayer(h: Threat, tick: number): DefenseOutcome {
     const p = this.player
+    const cfg = statusConfig()
     const base = {
       attackerId: h.attackerId, victimId: 'player', poiseDamage: h.poise, kind: h.kind,
       point: h.point, dir: h.dir, hitStopMs: h.hitStopMs, backstab: false, weakpoint: false
@@ -646,19 +728,33 @@ export class CombatManager {
     const st = h.statusOnHit
     // tag 走 Gameplay Tag 风格：'mute' 与 'status.mute' 都认；时长一律由数据里的 ticks 声明
     // （驼鼓原先只写 tag 不写时长，且前缀不匹配 ⇒ 闷音从未生效）
-    if (st && /(^|\.)mute$/.test(st.tag) && st.ticks) {
+    if (st && st.ticks && tagIs(st.tag, 'mute')) {
       p.stats.muteTicksLeft = Math.max(p.stats.muteTicksLeft, st.ticks)
+      glossary.explain('mute')
+    }
+    // §11 失谐：只有「精英及以上」的一击会在身上写下不属于这首歌的音。杂兵的脏活是环境的事。
+    if (this.corruptorOf(h.attackerId)) {
+      if (p.corruption.add(cfg.corruption.eliteHit) > 0) glossary.explain('corruption')
     }
     this.checkPlayerCrumple(tick)
     return 'hit'
   }
 
+  /** 精英判据取**数据**（archetype），不取名字：新怪只要标对原型就自动受同一条规则管 */
+  private corruptorOf(attackerId: string): boolean {
+    const src = this.ai.enemies.find((e) => e.id === attackerId)
+    return !!src && (src.isBoss || src.data.archetype === 'elite')
+  }
+
   /* ======================= 破势 / 死亡 / 处决 ======================= */
 
+  /** §11 震裂满层碎裂：真伤 + 架势冲击，两个数都吃「异音」强度与目标材质（晶体 ×2） */
   private fissureBurst(e: Enemy, point: Vec3): void {
-    const raw = resolveDamage({ base: 0, defense: 0, rawDamage: 20 }, () => this.rng.float())
+    const c = statusConfig().fissure
+    const mul = e.fissureEffectMul * this.player.rpg.statusPowerMul
+    const raw = resolveDamage({ base: 0, defense: 0, rawDamage: Math.round(c.burst.trueDamage * mul) }, () => this.rng.float())
     e.stats.damage(raw.damage)
-    e.stats.addPoise(40, this.time.tick)
+    e.stats.addPoise(Math.round(c.burst.poise * mul), this.time.tick)
     bus.emit('vfx.request', { key: 'hit_ring', pos: point, scale: 1.6 })
     bus.emit('audio.sfx', { key: 'hit_metal', pos: point, gain: 0.8 })
     bus.emit('ui.notify', { text: '震裂碎裂！', kind: 'info' })

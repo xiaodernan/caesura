@@ -1,3 +1,13 @@
+/**
+ * 状态槽的 id。刻意不 import data/schema：core 层不认识数据表（依赖方向单向），
+ * 与 statuses.json 的键是否一致由 tests/unit/statuses.test.ts 钉住。
+ */
+export const STATUS_IDS = ['fissure', 'mute', 'echo', 'corruption', 'overdrive'] as const
+export type StatusId = typeof STATUS_IDS[number]
+
+/** 一条状态的瞬时示量（HUD chip 用）：value 是层数/数值，on=false 表示撤下 */
+export interface StatusPulse { id: StatusId; value: number; max: number; on: boolean }
+
 export interface GameEvents {
   'log': { level: 'info' | 'warn' | 'error'; msg: string }
   'boot.ready': undefined
@@ -7,7 +17,14 @@ export interface GameEvents {
     hp: number; hpMax: number; stamina: number; staminaMax: number
     poise: number; poiseMax: number; overdrive: number; overdriveMax: number
     rank: number
+    corruption: number; corruptionMax: number
+    /** 0..1 褪色浓度（表现层：屏幕去饱和的程度） */
+    corruptionVeil: number
+    /** 闷音剩余 tick。放在这里而不是 ui.status：它是会自己到期的量，读数不该靠事件撤下 */
+    muteTicksLeft: number
   }
+  /** 边沿触发的状态示量：由**造成**状态的一方发出（敌人震裂层数、回声影数） */
+  'ui.status': StatusPulse
   'player.damaged': { amount: number; killerId?: string }
   'player.died': undefined
   'entity.spawned': { id: string; kind: 'enemy' | 'npc' | 'prop'; entity: unknown }
