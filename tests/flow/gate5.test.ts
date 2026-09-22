@@ -17,7 +17,7 @@ import { Interactables } from '@/world/Interactables'
 import { RpgRuntime } from '@/rpg/Runtime'
 import { itemOf } from '@/rpg/Inventory'
 import { KillSettlement, openLootTable, refreshPlayer, gearLabel, type SettlementDeps } from '@/rpg/Settlement'
-import { SaveGame, MapStore } from '@/save/Serializer'
+import { SaveGame, MapStore, SAVE_VERSION } from '@/save/Serializer'
 import { Checkpoints } from '@/save/Checkpoint'
 import type { Vec3 } from '@/combat/EntityStats'
 
@@ -213,7 +213,7 @@ describe('G5① 整链闭环：只在输入帧与事件两个入口上进出', (
     const modsAtSave = modsNumbers(w)
     const saved = await w.saves.save('autosave')
     expect(saved.rpg).not.toBeNull()
-    expect(saved.version).toBe(5)
+    expect(saved.version).toBe(SAVE_VERSION)
 
     const w2 = makeWorld('origin_tuner', 0x51f3a2, w.store)
     const back = await w2.saves.load('autosave')

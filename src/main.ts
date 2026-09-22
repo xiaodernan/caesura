@@ -243,7 +243,7 @@ bus.on('log', (l) => console.info(`[caesura:${l.level}] ${l.msg}`))
  */
 const savePrimary = new LocalStore('caesura.save.', localStorage)
 const saveBackup = typeof indexedDB === 'undefined' ? null : new IdbStore('caesura-save')
-const saves = new SaveGame({ player, streaming, spawner, clock: rhythm, time, rpg }, savePrimary, saveBackup)
+const saves = new SaveGame({ player, streaming, spawner, clock: rhythm, time, rpg, interact }, savePrimary, saveBackup)
 const checkpoints = new Checkpoints(saves)
 // 开局就把用的是哪颗种子写在控制台：QA 要复现某一串掉落，第一句问的就是"你那局什么种子"
 bus.emit('log', { level: 'info', msg: `rpg.origin ${originId} seed ${rpg.inv.rng.state().seed}` })

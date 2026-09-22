@@ -47,7 +47,7 @@ export class Interactables {
   readonly range: number
   private readonly items: Interactable[] = []
   private readonly flags = new Set<string>()
-  private readonly used = new Set<string>()
+  private used = new Set<string>()
   private readonly unsub: () => void
   private focused: string | null = null
 
@@ -72,9 +72,20 @@ export class Interactables {
   get usedCount(): number { return this.used.size }
   hasFlag(key: string): boolean { return this.flags.has(key) }
 
-  /** 测试/调试器直投 flag（正式路径仍走 bus，好让流送与交互两边同步） */
+  /**
+   * 一次性交互物的"用过了"必须跟着存档走：区域 flag 存了，但 `used` 没存过，
+   * 于是读档 = 全世界的遗箱重新能开一次、放下的吊桥又能过一遍（掉落复制 + 单向锁回退）。
+   * 排序是为了让快照可比对（存档 diff 与测试都靠它）。
+   */
+  snapshot(): string[] { return [...this.used].sort() }
+
+  restore(ids: string[] | null | undefined): void {
+    this.used = new Set(ids ?? [])
+    this.focused = null
+  }
+
+  /** 写 flag 的唯一路径同样是广播（自己的缓存由上面那个监听器更新，与 StreamingSystem 对称） */
   setFlag(key: string, on = true): void {
-    if (on) this.flags.add(key); else this.flags.delete(key)
     bus.emit('world.flag', { key, value: on })
   }
 

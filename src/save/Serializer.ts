@@ -4,6 +4,7 @@ import type { StreamingSystem } from '@/world/Streaming'
 import type { SpawnDirector } from '@/world/SpawnDirector'
 import type { RhythmClock } from '@/core/RhythmClock'
 import type { RpgRuntime, RpgSnapshot } from '@/rpg/Runtime'
+import type { Interactables } from '@/world/Interactables'
 import { migrateTo, registerMigration } from './Migration'
 import { unwrap, wrap } from './Integrity'
 
@@ -14,7 +15,7 @@ import { unwrap, wrap } from './Integrity'
  * 存档里没有一个敌人实例，只有一串槽位身份）。
  */
 
-export const SAVE_VERSION = 5
+export const SAVE_VERSION = 6
 
 /**
  * 读档时接受的版本：凡是 ≤ 当前版本、且迁移链能一路升到当前的，都可以读。
@@ -77,6 +78,18 @@ registerMigration(4, (p) => {
   return { ...p, snapshot: snap }
 })
 
+/**
+ * v5 → v6（Phase 6-A 抓到的第一笔漏账）：一次性交互物的"用过了"整格从没入过档。
+ * 老档里我们确实不知道哪些箱子被开过 ⇒ 迁移写空集。后果要说清楚：**那份档里的遗箱会再掉一次 loot**
+ * ——这不是补偿，是历史事实缺失的代价，任何"帮你补上"的做法都是编数据（§78）。
+ */
+registerMigration(5, (p) => {
+  const snap = { ...(p.snapshot as Record<string, unknown>) }
+  snap.usedInteractables = []
+  snap.version = 6
+  return { ...p, snapshot: snap }
+})
+
 export interface Snapshot {
   version: number
   /** 游玩秒数（HUD/存档摘要卡用） */
@@ -94,6 +107,9 @@ export interface Snapshot {
   flags: string[]
   /** 已永久清剿的出怪槽位身份：读档后这些位置不能再刷怪 */
   clearedSlots: string[]
+  /** 已经用过的一次性交互物 id（v6 起）：遗箱/吊桥/音壁读档后不许再响第二次。
+   *  存的是 id 数组而不是布尔位——加一个交互物不需要动存档 schema。 */
+  usedInteractables: string[]
   /** 成长/背包/装备/掉落状态（v2 起）。v1 老档为 null ⇒ 保留运行时基线 */
   rpg: RpgSnapshot | null
 }
@@ -165,6 +181,8 @@ export interface SaveWorld {
   time: { tick: number }
   /** Phase 5-B：成长系统（可选 —— 不接成长系统的测试/工具仍可构造 SaveGame） */
   rpg?: RpgRuntime
+  /** Phase 6-A：交互物（同上，可选）。它的一次性状态是**世界状态**的一部分，不是 UI 状态 */
+  interact?: Interactables
 }
 
 /**
@@ -194,6 +212,7 @@ export class SaveGame {
       },
       flags: w.streaming.flagKeys(),
       clearedSlots: w.spawner.clearedKeys(),
+      usedInteractables: w.interact ? w.interact.snapshot() : [],
       rpg: w.rpg ? w.rpg.snapshot() : null
     }
   }
@@ -261,6 +280,8 @@ export class SaveGame {
     if (s.rpg && w.rpg) w.rpg.restore(s.rpg)
     for (const f of s.flags) w.streaming.setFlag(f, true)
     for (const k of s.clearedSlots) w.spawner.markCleared(k)
+    // 交互物的一次性状态：v5 及以前的档没记 ⇒ 空集，那一局的箱子会再掉一次（见 v5→v6 迁移注释）
+    w.interact?.restore(s.usedInteractables)
     // floorY 不在这里算：调用方 teleport 之后由 world/Surface 给（保持「谁能算出脚下」只有一个答案）
   }
 }

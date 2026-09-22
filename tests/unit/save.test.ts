@@ -203,6 +203,13 @@ describe('§45 防损坏：校验和、双写、迁移链', () => {
     expect(() => migrateTo({}, 1, SAVE_VERSION)).not.toThrow()
   })
 
+  it('v5→v6：一次性交互物的 used 集合从空集补起（不替老档编造"哪些箱子开过"）', () => {
+    const v5 = { version: 5, playSec: 9, regionId: null, player: { x: 0, y: 0, z: 0, hp: 5, stamina: 5, overdrive: 0, weaponId: 'wp_tuning_sword', corruption: 0 }, flags: [], clearedSlots: [], rpg: null }
+    const moved = migrateTo({ snapshot: v5 }, 5, SAVE_VERSION) as { snapshot: Snapshot }
+    expect(moved.snapshot.version).toBe(SAVE_VERSION)
+    expect(moved.snapshot.usedInteractables).toEqual([])
+  })
+
   it('真实读档路径可达：磁盘上躺着一份 v1 老档 ⇒ load() 一路升到当前并灌回世界', async () => {
     // 这条测试钉的是一个已经发生过的真 bug：读档白名单曾经只有 [SAVE_VERSION]，
     // 于是老档在 unwrap 那步就被当成坏档，迁移链注册得再认真也永远跑不到。
@@ -213,6 +220,7 @@ describe('§45 防损坏：校验和、双写、迁移链', () => {
       player: { x: 1, y: 2, z: 3, hp: 44, stamina: 55, overdrive: 3, weaponId: 'wp_tuning_sword' } as Snapshot['player'],
       flags: ['flag.left_resthold'],
       clearedSlots: [],
+      usedInteractables: [],
       rpg: null
     }
     const store = new MapStore()

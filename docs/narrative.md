@@ -409,6 +409,15 @@ NPC 可见对话节点集 = Filter(树, 条件求值)
 
 派生规则：`PARTIAL/SILENT` 等聚合值由 Quest Debugger（需求 §54）实时显示 `Quest state + NPC state + World state` 三层，禁止代码内散落硬编码布尔。
 
+**实现口径（Phase 6-A 第一步，2026-09-23）**：本表描述的是**目标状态**，不是当前事实。现状是——
+上表这些 `STATE.*` 里的一部分（`flag.ostlara_defeated` / `parry_taught` / `echo_cairn_read` /
+`side_nave_found` / `bell_interior_open` / `brokenbar_resolved` / `brokenbar_allied` / `found_first_phrase`）
+在 `regions.json` 里**只有读方**（区域解锁、箱子 `requiresFlag`、隐藏房 `unlockFlag`），
+**运行时没有任何写入方**；`SecretRef.unlockFlag` 甚至全仓库零消费者。也就是说这些隐藏内容目前玩家走不到，
+本表的"写入时机"列是待接的线而不是已完成的机制（缺口与计划见 KNOWN_ISSUES KI-041）。
+本步已修的是这层的地基：一次性交互物的"用过了"入档（存档 v6）+ 写 flag 只保留一条广播路径（KI-040），
+所以接下来写入方落地时不会再撞上"存了档读不回来 / 两个系统各记一套"。
+
 ---
 
 ## 8. 验收自检

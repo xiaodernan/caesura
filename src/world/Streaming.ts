@@ -119,11 +119,14 @@ export class StreamingSystem {
   /** 存档用：当前置位的 flag 名（区域解锁由这些 flag 推导，所以只需要存它们） */
   flagKeys(): string[] { return [...this.flags].sort() }
 
-  /** 直接登记 flag（测试与调试器用；正式路径走 bus 'world.flag'） */
+  /**
+   * 写 flag 的**唯一路径就是 bus `world.flag`**（这里也走它，不开第二条）。
+   * 之前这里是"直接登记，正式路径走 bus"——两句话合起来的意思是存在两套缓存：
+   * 存档 `apply()` 只调了这个直投口，于是读档后流送层认为旗标立了、交互层却还认为没立
+   * （表现为：音壁早已裂开，读档后箱子仍说"上着锁"）。emit 之后两个系统各自更新自己的缓存。
+   */
   setFlag(key: string, on = true): void {
-    const changed = on ? !this.flags.has(key) : this.flags.delete(key)
-    if (on) this.flags.add(key)
-    if (changed) this.invalidate()
+    bus.emit('world.flag', { key, value: on })
   }
 
   chunkAt(pos: Vec3): Chunk | null {
