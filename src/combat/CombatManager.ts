@@ -7,7 +7,7 @@ import type { Input } from '@/core/Input'
 import type { PlayerController, ActivePlayerHit } from '@/player/ThirdPersonController'
 import type { AISystem } from '@/ai/AISystem'
 import type { Enemy } from '@/ai/Enemy'
-import type { AttrKey, FrameData, ProjectileSpec } from '@/data/schema'
+import type { AttrKey, EnemyData, FrameData, ProjectileSpec } from '@/data/schema'
 import { resolveDamage } from './DamagePipeline'
 import { shapeHits, isBackstab } from './HitShapes'
 import { ProjectileSystem, sphereHits, type Projectile } from './Projectiles'
@@ -644,15 +644,21 @@ export class CombatManager {
   private lastResonanceBeat = -1
 
   /**
-   * Boss 的两件「要结算并记账」的事，都留在这条唯一的伤害通道里：
+   * Boss 的三件「要结算并记账」的事，都留在这条唯一的伤害通道里：
    * ①跳阶演出（hitstop + 低音 + 震镜由 boss.phase 事件交给表现层）；
-   * ②响过的立钟留下残响区——对玩家 0 伤、对敲钟的喧堕者每拍掉血（§15.1 把场地用成 DPS 博弈）。
-   * 死在残响里也必须走 onEnemyKilled，否则掉落/清剿/BGM 全部漏记账。
+   * ②响过的立钟留下残响区——对玩家 0 伤、对敲钟的喧堕者每拍掉血（§15.1 把场地用成 DPS 博弈）；
+   * ③§16 胜利序列的收尾播报，等屏息走完才落字。
+   * 死在残响里也必须走 onEnemyKilled，否则掉落/清剿/BGM/胜利序列全部漏记账。
    */
   private bossBits(): void {
     const beat = this.rhythm.info().beatIndex
     const isNewBeat = beat !== this.lastResonanceBeat
     if (isNewBeat) this.lastResonanceBeat = beat
+    if (this.cadenzaPending && this.time.realSeconds >= this.cadenzaPending.atSec) {
+      const c = this.cadenzaPending
+      this.cadenzaPending = null
+      bus.emit('ui.notify', { text: c.text, kind: 'boss' })
+    }
     for (const e of this.ai.enemies) {
       if (e.phaseRoarPending) {
         e.phaseRoarPending = false
@@ -824,7 +830,28 @@ export class CombatManager {
     bus.emit('vfx.request', { key: 'death_shatter', pos: { ...e.pos }, scale: e.data.body?.scale ?? 1 })
     bus.emit('audio.sfx', { key: 'death_shatter', pos: { ...e.pos }, gain: 0.8 })
     bus.emit('ui.notify', { text: `${nameOf(e.data.nameKey)} 崩解 · 遗响 +${Math.round(e.stats.hpMax * 0.3)}`, kind: 'reward' })
+    const v = e.data.boss?.victory
+    if (v) this.cadenza(e, v)
     this.offTuneMoment(e)
+  }
+
+  /** §16 胜利序列的收尾播报：屏息走完之前它一直等着（安静不能被一行字盖掉） */
+  private cadenzaPending: { atSec: number; text: string } | null = null
+
+  /**
+   * §16「胜利序列（IP_SEED §6：音乐停=世界屏息 0.5s）」。三件事一起才成立，缺一件就只是"怪死了"：
+   * ①战斗层音乐**立刻**掐掉——不是脱战那条 4s 淡出：淡出说的是"危险过去了"，这一停说的是
+   *   "有什么东西不在了"（底噪 drone 不停，世界还在呼吸，只是没人再为打鼓）；
+   * ②`hitStop(hold)` 把世界压到 5% 走一段——本作没有过场时间轴，这是这套引擎里唯一真实的屏息
+   *   表达（ENV-001 下的合理替代，接上真过场系统时换实现不换数据）；
+   * ③收尾播报排在屏息**之后**，见 `cadenzaPending`。
+   */
+  private cadenza(e: Enemy, v: NonNullable<NonNullable<EnemyData['boss']>['victory']>): void {
+    this.time.hitStop(v.holdTicks / TICK_HZ)
+    bus.emit('audio.music.encounter', { start: false, cut: true })
+    bus.emit('boss.defeated', { id: e.id, dataId: e.data.id, nameKey: e.data.nameKey, holdTicks: v.holdTicks })
+    for (const k of v.sfx ?? []) bus.emit('audio.sfx', { key: k, pos: { ...e.pos }, gain: 1 })
+    if (v.label) this.cadenzaPending = { atSec: this.time.realSeconds + v.holdTicks / TICK_HZ, text: v.label }
   }
 
   /**

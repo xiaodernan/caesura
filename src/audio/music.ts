@@ -10,7 +10,8 @@ import { playBell, playNoise, playSweep } from './synth'
 declare module '../core/EventBus' {
   interface GameEvents {
     // 与 src/combat/CombatManager.ts 的发射契约一致：{ start: boolean }
-    'audio.music.encounter': { start: boolean }
+    // `cut`（§16 胜利序列）：start=false 时**立刻**掐掉战斗层，不走脱战那条 4s 淡出
+    'audio.music.encounter': { start: boolean; cut?: boolean }
   }
 }
 
@@ -55,7 +56,7 @@ export class MusicLayer {
     this.ambGain.gain.linearRampToValueAtTime(0.6, now + 3)
     this.nextChime = now + 4
     if (!this.offEncounter) {
-      this.offEncounter = bus.on('audio.music.encounter', (p) => this.onEncounter(p.start))
+      this.offEncounter = bus.on('audio.music.encounter', (p) => this.onEncounter(p.start, p.cut ?? false))
     }
   }
 
@@ -105,8 +106,8 @@ export class MusicLayer {
     this.droneNodes.push(lfo, lfoGain, lp)
   }
 
-  /** 遭遇事件入口：start=true 淡入战斗层；false 4s 淡出 */
-  onEncounter(start: boolean): void {
+  /** 遭遇事件入口：start=true 淡入战斗层；false 淡出（`cut` ⇒ 立刻切，§16 胜利序列的"音乐停"） */
+  onEncounter(start: boolean, cut = false): void {
     const now = this.ctx.currentTime
     const g = this.battleGain.gain
     if (start) {
@@ -119,6 +120,13 @@ export class MusicLayer {
       g.cancelScheduledValues(now)
       g.setValueAtTime(g.value, now)
       g.linearRampToValueAtTime(0.9, now + 1.2) // 淡入（重拍对齐交给 RhythmClock 层，Phase 1 简化）
+    } else if (cut) {
+      // §16「音乐停=世界屏息」：0.5s 的安静要被听得出来，所以这里没有渐变的余地。
+      this.battleOn = false
+      this.battleStopAt = 0
+      this.nextBeat = 0
+      g.cancelScheduledValues(now)
+      g.setValueAtTime(0, now)
     } else if (this.battleOn) {
       this.battleOn = false
       this.battleStopAt = now + 4

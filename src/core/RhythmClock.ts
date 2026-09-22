@@ -57,6 +57,12 @@ export class RhythmClock {
 
   get beat(): number { return this.beatAccum }
 
+  /**
+   * 当前网格的一拍有多长（tick）。凡是要把「N 拍」换算成逻辑帧的地方都用这一句，
+   * 不再各自手写 `60/bpm*TICK_HZ`——被 Boss 接管时它就是 Boss 的拍长（§16 入场演出按她的拍演）。
+   */
+  get beatTicks(): number { return (60 / this.bpm) * TICK_HZ }
+
   /** seconds until next integer beat (for telegraph alignment) */
   get toNextBeatSec(): number {
     const beatSec = 60 / this.bpm

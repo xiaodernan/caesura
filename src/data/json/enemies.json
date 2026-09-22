@@ -1151,6 +1151,20 @@
   "boss": {
    "bpm": 108,
    "beatsPerBar": 3,
+   "intro": {
+    "beats": 3,
+    "label": "钟坠院的主人转过身来 · 她的拍子是 3/4",
+    "sfx": [
+     "bell_toll"
+    ]
+   },
+   "victory": {
+    "holdTicks": 30,
+    "label": "奥斯塔拉止息 · 振源核落在钟影里",
+    "sfx": [
+     "bell_toll"
+    ]
+   },
    "phases": [
     {
      "id": "bellshell",
@@ -1578,6 +1592,20 @@
   "boss": {
    "bpm": 92,
    "beatsPerBar": 4,
+   "intro": {
+    "beats": 3,
+    "label": "管风琴的音栓一根根亮起 · 4/4 @92",
+    "sfx": [
+     "boss_roar"
+    ]
+   },
+   "victory": {
+    "holdTicks": 30,
+    "label": "恩希尔的管子空了 · 大厅没有回音",
+    "sfx": [
+     "bell_toll"
+    ]
+   },
    "phases": [
     {
      "id": "registr",
@@ -1998,6 +2026,25 @@
      ]
     }
    ]
+  },
+  "boss": {
+   "phases": [
+    {
+     "id": "stillness",
+     "attacks": [
+      "bite",
+      "rend"
+     ]
+    }
+   ],
+   "intro": {
+    "beats": 3,
+    "label": "山丘动了一下"
+   },
+   "victory": {
+    "holdTicks": 30,
+    "label": "万籁散了 · 这片没有网格的地方安静了下来"
+   }
   },
   "attacks": [
    {

@@ -34,6 +34,8 @@ export class CameraRig {
     bus.on('player.damaged', () => this.shake('hurt'))
     // §15.1「转阶段敲钟怒吼 · 震镜 4°/900ms」：跳阶是一次世界事件，不是一次命中
     bus.on('boss.phase', () => this.shake('boss', 1.2))
+    // §16 入场演出：照面那一下相机要"沉"一下（比跳阶轻——那是宣告，这只是登场）
+    bus.on('boss.intro', () => this.shake('boss', 0.8))
   }
 
   shake(key: string, mul = 1): void {

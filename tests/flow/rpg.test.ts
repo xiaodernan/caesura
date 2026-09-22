@@ -92,6 +92,16 @@ describe('§59 全流程：击杀 → 掉落 → 装备 → 强化 → 升级 �
     expect(w.rpg.inv.count('it_timbite')).toBeGreaterThan(beforeTimbite)
   })
 
+  it('Boss 的振源核是首杀专属：第二次打死同一份数据不再掉核（§9.1/§9.3 → 乐章战技解锁物）', () => {
+    const w = makeWorld()
+    const boss = registry.get<EnemyData>('en_ostlara')
+    const first = w.rpg.onEnemyKilled(boss)
+    expect(first.some((g) => g.type === 'item' && g.id === 'it_resonance_core'), '杀掉她 ⇒ 振源核到手，谱册那一页在调音桩前点得亮').toBe(true)
+    const second = w.rpg.onEnemyKilled(boss)
+    expect(second.some((g) => g.type === 'item' && g.id === 'it_resonance_core'), '同一份数据不再掉第二颗：否则「首杀唯一」是空话').toBe(false)
+    expect(second.some((g) => g.type === 'xp'), '被掐掉的只有 firstKill 那一栏，常规 rolls 照旧').toBe(true)
+  })
+
   it('攒够遗响就升音级、发音级点，并报出「你新能做什么」（§8.2）', () => {
     const w = makeWorld()
     const enemy = registry.get<EnemyData>('en_murkshell')

@@ -106,9 +106,11 @@ function ostlara(w: W, z = -3, seed = 'ostlara'): Enemy {
   return w.ai.spawn('en_ostlara', { x: 0, y: -40, z }, seed)
 }
 
+/** 真开打：入场演出（§16）由 `bossshow.test.ts` 负责，这里要的是她能立刻按帧表出招 */
 function engage(w: W, e: Enemy): void {
   e.alertness = 100
   e.enter('combat')
+  e.skipIntro()
 }
 
 /** 站定不还手（崩直 + recover）：把变量收敛到「这一记吃不吃壳」 */

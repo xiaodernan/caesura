@@ -77,6 +77,13 @@ export class Enemy {
   /** 刚跳阶：让 CombatManager 演一次「敲钟怒吼」（hitstop + 低音 + 震镜） */
   phaseRoarPending = false
   /**
+   * §16「Boss 均带 3 拍入场演出」：正在演这段的剩余 tick（0 = 没在演）。
+   * 触发是**每具实例一次**的——她演的是「第一次照面」，不是「每次进战」。
+   */
+  introTicksLeft = 0
+  private introQueued = false
+  private introPlayed = false
+  /**
    * §15.2 玩家已经「夺回节拍」的剩余 tick：>0 期间这一阶的 stealBeat 全场减益与 BPM 游走都关掉。
    * 由 CombatManager 写（那里有玩家输入与节奏），本类只读。
    */
@@ -213,6 +220,16 @@ export class Enemy {
     this.state = s
     this.stateTick = 0
     if (s === 'dead') this.deathTick = this.rng.int(0, 1)
+    // §16 入场演出的触发点：她**第一次**真正锁定玩家（alert 只是听见了，chase/combat 才是照面）。
+    // 这里只登记，不在这里算时长——拍长要等 `AISystem.syncClock` 把网格换成她的拍速才准。
+    if (!this.introPlayed && this.data.boss?.intro && (s === 'chase' || s === 'combat')) this.introQueued = true
+  }
+
+  /** 跳过 §16 入场演出。演出有 `bossshow.test.ts` 专门盯，其余 Boss 用例测的是战斗时序，不该被这几拍挡下。 */
+  skipIntro(): void {
+    this.introQueued = false
+    this.introPlayed = true
+    this.introTicksLeft = 0
   }
 
   /** perception runs at 10Hz (rotated by AISystem) */
@@ -293,6 +310,26 @@ export class Enemy {
     this.revealTicks = Math.max(this.revealTicks, g.fakeBeatRevealTicks)
   }
 
+  /**
+   * §16 入场演出的计时器。开始的那一刻才换算拍长：`AISystem.syncClock` 在她进战的同一 tick
+   * 就把全场网格换成了她的私有拍速，所以 `beats × beatTicks` 数的正是**她**的拍——
+   * 玩家在这几拍里听到的第一件东西就是这场战斗的 tempo（§15.1 的 3/4@108 与 §15.3 的 60BPM 心跳，
+   * 同一个 `beats: 3` 会给出两种秒数，这是设计要的差别，不是四舍五入的误差）。
+   */
+  private tickIntro(rhythm: RhythmClock): void {
+    if (this.introTicksLeft > 0) { this.introTicksLeft--; return }
+    if (!this.introQueued) return
+    const spec = this.data.boss?.intro
+    if (!spec) return
+    this.introQueued = false
+    this.introPlayed = true
+    this.introTicksLeft = Math.max(1, Math.round(spec.beats * rhythm.beatTicks))
+    for (const k of spec.sfx ?? []) bus.emit('audio.sfx', { key: k, pos: { ...this.pos }, gain: 1 })
+    bus.emit('vfx.request', { key: 'shock_small', pos: { ...this.pos }, scale: 2.2 })
+    bus.emit('boss.intro', { id: this.id, dataId: this.data.id, nameKey: this.data.nameKey, ticks: this.introTicksLeft })
+    if (spec.label) bus.emit('ui.notify', { text: spec.label, kind: 'boss' })
+  }
+
   update(dt: number, tick: number, player: PlayerController, rhythm: RhythmClock, slotTaken: (bar_beat: string) => boolean): void {
     if (!this.alive) {
       if (this.state !== 'dead') this.enter('dead')
@@ -306,15 +343,19 @@ export class Enemy {
     // 或把一次并不存在的警戒广播发出去）。实测过：没有这一行时漏回血。
     if (!this.attack && this.pendingBroadcast) this.pendingBroadcast = null
     this.syncBoss()
-    // 读条被外力抹掉（破势进 recover、stun、走调时刻、处决…都会直接 `attack = null`）时，
-    // 那口挂着的气息必须一起作废——否则它会在**下一招**的起手帧上偷偷生效（回血/警戒广播）。
     this.stats.update(dt, tick)
     this.stateTick++
+    // §16 入场演出：先计时再判硬直——被玩家一记开场打晕不该把演出「省掉」，也不该让它无限延长
+    this.tickIntro(rhythm)
     if (this.stunTicks > 0) { this.stunTicks--; this.attack = null; if (this.stunTicks === 0 && this.state === 'recover') this.enter('combat'); return }
     if (this.stats.crumpleTicksLeft > 0 && this.state !== 'recover' && this.state !== 'dead') this.enter('recover')
 
     const p = player.pos
     const dist = Math.hypot(p.x - this.pos.x, p.z - this.pos.z)
+
+    // 演出生效：这几拍里她只把身子转向玩家。不动脚、不出手、不排读条——
+    // 但吃伤害（`strikeEnemy` 不看这里），所以这一段的收益全归玩家，是惯例不是漏洞。
+    if (this.introTicksLeft > 0) { faceSlow(this, p); return }
 
     switch (this.state) {
       case 'idle':

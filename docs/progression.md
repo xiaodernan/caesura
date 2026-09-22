@@ -248,7 +248,7 @@
 | 页 | 解锁源 | 玩法定位 | 实装（2026-09-23） |
 |---|---|---|---|
 | 乐章 I·序句 Prelude | 奥斯塔拉振源核 | 单点爆发/架势工具 | **Implemented**：`mvpage_prelude`，1 振源核 |
-| 乐章 II·舞曲 Dance | 破拍营地（任意解，T4 奖励，鼓励多解） | 位移/身法/错拍 | **Implemented**：`mvpage_dance`，2 乐谱残页（营地的 T4 奖励管线仍未接，KI-021） |
+| 乐章 II·舞曲 Dance | 破拍营地（任意解，T4 奖励，鼓励多解） | 位移/身法/错拍 | **Implemented**：`mvpage_dance`，2 乐谱残页。残页本身已能拿到（万籁的首杀掉落给 2 张，Phase 5-C2b 起走 `loot.firstKill`），但**营地那条 T4 奖励管线仍未接**（营地奖励属 Phase 6 任务/奖励层） |
 | 乐章 III·风暴 Storm | 万籁振源核（隐藏线） | AoE/清群 | **Implemented**：`mvpage_storm`，1 振源核 |
 | 乐章 IV·休止 Rest | 恩希尔终段（全作线/V2 内容） | 防御反击终极（占位：VS 终局仅点亮图标，预告钩子） | **未入表**：`movements.json` 里没有这一页，也就点不亮（不是"点亮了但打不出"） |
 

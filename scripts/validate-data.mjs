@@ -745,6 +745,14 @@ function validateEnemies(lootIds) {
             report.sub(file, `${w}.boss.covers`, cov, { radius: { min: 0 } })
           }
         }
+        // §16「Boss 均带 3 拍入场演出 + 胜利序列（音乐停=世界屏息）」：少了这两格，她就只是
+        // 一具更厚的怪。上限是防呆：入场超过 8 拍（>4s）就变成站着挨打，屏息超过 180 tick 变成卡死。
+        const SHOW = { intro: { beats: { min: 1, max: 8, int: true }, label: { str: true, optional: true } }, victory: { holdTicks: { min: 1, max: 180, int: true }, label: { str: true, optional: true } } }
+        for (const [k, spec] of Object.entries(SHOW)) {
+          if (!isObj(b[k])) { report.error(file, `${w}.boss.${k}`, `缺失：§16 要求 Boss 均带${k === 'intro' ? '入场演出' : '胜利序列'}`); continue }
+          report.sub(file, `${w}.boss.${k}`, b[k], spec)
+          if (b[k].sfx !== undefined) strArray(file, `${w}.boss.${k}.sfx`, b[k].sfx)
+        }
       }
     }
 

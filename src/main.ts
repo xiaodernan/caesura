@@ -269,6 +269,8 @@ const saves = new SaveGame({ player, streaming, spawner, clock: rhythm, time, rp
 const checkpoints = new Checkpoints(saves)
 if (!saveBackup) console.info('[caesura] IndexedDB 不可用 ⇒ 存档只有本地一份')
 bus.on('boss.phase', () => checkpoints.request('boss'))
+// Boss 倒下是这一局里最不该丢进度的一刻：胜利序列同样按 Boss 检查点存一笔
+bus.on('boss.defeated', () => checkpoints.request('boss'))
 
 /**
  * 击杀结算（需求 §59 的 Loot 拍）：遗响入成长、掉落入背包，升级则播报 + 存一笔。

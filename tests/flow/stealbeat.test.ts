@@ -73,6 +73,8 @@ function hersilP2(w: W, seed = 'steal'): Enemy {
   w.player.pos.z = 0
   e.alertness = 100
   e.enter('combat')
+  // §16 的入场演出由 bossshow.test.ts 负责；这里要他从第一 tick 就能按帧表出招
+  e.skipIntro()
   // 60% 血线：进 P2 并触发时钟重置（转阶段演出走 4-F 那条既有通道）
   e.stats.damage(Math.round(e.stats.hpMax * 0.5))
   w.tick(2)

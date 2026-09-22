@@ -43,6 +43,10 @@ export interface GameEvents {
   'combat.parried': { attackerId: string; defenderId: string }
   /** Boss 跳阶（§15.1 转阶段演出）：表现层据此震镜/压低频，main.ts 据此吃 hitstop */
   'boss.phase': { id: string; phase: number; phases: number; nameKey: string }
+  /** §16「3 拍入场演出」：她第一次照面那几拍的开场信（`ticks` = 演出总长，表现层据此震镜） */
+  'boss.intro': { id: string; dataId: string; nameKey: string; ticks: number }
+  /** §16「胜利序列（IP §6：音乐停=世界屏息）」：`holdTicks` 后由 CombatManager 补上收尾播报 */
+  'boss.defeated': { id: string; dataId: string; nameKey: string; holdTicks: number }
   'audio.sfx': { key: string; pos?: { x: number; y: number; z: number }; gain?: number }
   'vfx.request': { key: string; pos: { x: number; y: number; z: number }; dir?: { x: number; y: number; z: number }; scale?: number }
   'sound.source': { id: string; pos: { x: number; y: number; z: number }; loudness: number }

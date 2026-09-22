@@ -68,9 +68,11 @@ function hersil(w: W, x = 0, z = -6, seed = 'hersil'): Enemy {
   return w.ai.spawn('en_hersil', { x, y: 152, z }, seed)
 }
 
+/** 真开打：入场演出（§16）由 `bossshow.test.ts` 负责，这里要的是他能立刻按帧表出招 */
 function engage(w: W, e: Enemy): void {
   e.alertness = 100
   e.enter('combat')
+  e.skipIntro()
 }
 
 /** 把玩家摆到「它的朝向 + offDeg」的射线上（掩体测试要用绝对坐标，所以单独设） */

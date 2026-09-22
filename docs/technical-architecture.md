@@ -201,7 +201,7 @@ src/
 - 每类 JSON 有对应 TS interface（`src/data/schema.ts`），文件命名 `kebab-case`，`id` 全局唯一且带类别前缀（`wp_`/`en_`/`bs_`/`it_`/`q_`/`sk_`/`dl_`/`rg_`）。
 - 时间单位统一为 **tick（1/60s 逻辑帧）**，杜绝毫秒/tick 混用。
 - Gameplay Tag 风格字符串（`damage.physical`、`status.fissure`）替代枚举位掩码，与 §57 GAS-lite 效果系统共用。
-- 校验：`npm run validate:data`（Ajv 校验全部 JSON schema，CI/pre-commit 必过）。
+- 校验：`npm run validate:data`（`scripts/validate-data.mjs`，**零新增依赖**的字段级校验器，见 KI-015；串在 `npm run check` 里，pre-commit 必过）。它管的是"schema 表达不出来"的那一类约束：跨字段区间、引用是否存在、以及**设计要求的必填组合**（例：带 `boss` 的敌人必须同时有 `intro` 与 `victory` 两格 —— §16「Boss 均带」由此变成机器钉住的规则而不是自觉）。
 
 ### 3.2 帧数据（FrameData）——攻击类条目的公共子结构
 
@@ -555,7 +555,8 @@ Phase 4-A 把弹道跑通，但远程只被当作「会飞的近战判定」。4
   往返 deep-equal、清剿记录跨会话生效、CRC/magic/version 三道闸、主档损坏→回退 .prev、
   写到一半被 kill⇒主键位仍是完整旧档、迁移链 v1→v2 与「缺步骤必须抛错」、触发器同帧合并与失败发声
 - `ai/perception.test.ts`：loudness/距离→suspicion 计算、拍隙可见性（幽灵八）**——已落地但换了载体**：拍隙那半写在 `tests/flow/phantome.test.ts`（相位是跨系统的读感，flow 层才测得动），感知计算仍散在各 flow 的距离/响度断言里；独立 perception 单测等到 Phase 6 的声呐/耳朵机制再合。
-- `data/validate.test.ts`：全部 JSON 通过 Ajv schema + id 唯一 + 交叉引用存在（moveset/skill 等）
+- `tests/flow/bossshow.test.ts`（Phase 5-C2b，6 条）：§16 入场演出与胜利序列的玩法流——拍长按**她自己的**拍速换算的精确等式、整窗零出手零位移（且中段一记弹体照样掉血、演出不被挨打断掉）、只演第一次照面、`boss.defeated.holdTicks`、`cut` 恰一条 + `rawScale<1`、屏息未完不落收尾字
+- ~~`data/validate.test.ts`：全部 JSON 通过 Ajv schema~~ **实际落地的是 `npm run validate:data`**（`scripts/validate-data.mjs`，零新增依赖，见 KI-015）：id 唯一、交叉引用存在、区间与帧表单调、以及设计要求的必填组合；vitest 里没有这条（跑法不同）。它已被证明能抓出真 bug（KI-015 首跑），本次新增的"Boss 两格齐全"也是同一类约束
 覆盖率门槛：逻辑核心包（combat/rpg/save/quest）行覆盖 ≥80%。
 
 ### 6.2 Headless 功能测试（自动化 gameplay flow，需求 §59）
@@ -800,6 +801,19 @@ HUD（canvas）只多了一个**音级数字**（§42：不在战斗视野里堆
 `tests/flow/status.test.ts` 19 条（真帧数据下把四态在战斗流里跑出来）。
 flow 侧的关键技巧是 `CombatManager` 的 `rng` 每实例固定种子 ⇒ 两个同构造世界消耗同一条随机序列，
 于是"基线 vs 加成"可以精确对差，不必为了可测性放宽生产代码。
+
+## 12. Boss 入场演出 · 胜利序列 · 首杀奖励（Phase 5-C2b）— 已实现
+
+§16 那行「Boss 均带：3 拍入场演出 + 胜利序列（音乐停=世界屏息 0.5s）」此前只有半句是真的（振源核确实掉，但没有任何演出承载体）。这一节的产出是**两件此前不存在的原语**，而且都没有为 Boss 特判。
+
+- **`boss.intro` / `boss.victory` 是数据格，不是脚本**：`intro.beats` 写"几拍"，`victory.holdTicks` 写"屏息多久"，`sfx[]` 与 `label` 是可选的音与字。`scripts/validate-data.mjs` 现在要求**每个带 `boss` 的敌人两格齐全**（缺格 = ERROR），所以"Boss 均带"由门禁保证，新增 Boss 忘了写就进不了库。万籁为此补了一整个 `boss` 块（`intro` 故意不带 `sfx` ⇒ 她的登场是"没有声音"，§15.3）；核对过：`syncClock` 要 `bpm`（她没有 ⇒ 不接管网格）、`syncBoss` 单阶 no-op、阶段白名单等于她自己的全招表，所以加这一格**不改变她的身份**。
+- **拍长换算发生在"开始演的那一刻"**：`Enemy.enter()` 只登记 `introQueued`，`tickIntro()` 才用 `rhythm.beatTicks`（`RhythmClock` 新增的只读量）把 `beats` 换成 tick。顺序是必须的 —— `AISystem.syncClock` 在进战的**同一个 tick** 才把全场网格换成她的私有拍速，早算就按区域的 84BPM 算了，等于用别人的心跳演她的登场。派生而非成对事件：没有 enter/exit 两半要配平。
+- **硬直窗口是一条 `return`，不是一串禁用位**：`if (this.introTicksLeft > 0) { faceSlow(this, p); return }` 放在状态 `switch` 之前 ⇒ 不出手、不挪步、不排读条，但 `strikeEnemy` 完全不看这里，**这几拍照吃伤害**（设计要的白送开局，flow 里钉着：演出中段一记 25 伤弹体 ⇒ 血掉了、`introTicksLeft` 一格没少）。`introPlayed` 让它只演"第一次照面"，脱战再回来不重演，否则这个窗口可以刷。
+- **"世界屏息"在 ENV-001 下的替换件 = `hitStop` + 瞬时静音**：`GameTime` 是全作唯一能把逻辑时间压慢的东西（`hitStop(sec, 0.05)`），所以 0.5s 屏息就写 30 tick 的 hitStop；音乐侧新增 `audio.music.encounter { start:false, cut:true }` —— `cut` 与脱战那条 4s 淡出是**两种语义**（淡出听不出"停"），只掐战斗层，氛围 drone 不断（IP §6 要的是屏息不是关机）。如实记账：剪影特写/镜头轨道/逐帧演出属 Phase 7 表现层，转阶段的全频低通属 Phase 8 混音。
+- **需要真实时间的播报按 `realSeconds` 排队**：`cadenzaPending = { atSec, text }`。原因是这套引擎的 hitStop 只压 `time.dt`，定步长循环照旧 60 tick/s —— 若按 tick 排队，"安静里不落字"会变成"落字和死亡同帧"。`CombatManager.bossBits()` 是它的唯一出口（该函数现在承担三件事：钟、阶段、屏息收尾）。
+- **首杀唯一从"设计说法"变成数据事实**：`it_resonance_core` 从 `loot.rolls` 移到 `loot.firstKill`（奥斯塔拉/恩希尔/万籁三张表），`SpawnDirector.cleared` 让死亡永久 —— 否则将来一旦允许 Boss 重生，振源核就成了可刷货币，而 §9.3 的"首杀唯一"是空话。flow 里两条断言把这句话钉住（第二次打死同一份数据：核不再掉，常规 rolls 照旧）。
+- 覆盖：`tests/flow/bossshow.test.ts` 6 条（拍长精确等式、整窗零出手零位移且演完归零、只演一次、`boss.defeated.holdTicks`、`cut` 恰一条且 `rawScale<1`、屏息未完不落字）+ `tests/flow/rpg.test.ts` 首杀 1 条。实机（5199，逻辑步进 + 真渲染各跑过一遍）：进战当 tick `introTicksLeft=100`（她自己的 108BPM×3 拍，`rhythm.beatTicks=33.33`）、窗口内 0 招 0 步、**第 100 tick 出第一招 `swordchain1`**；击杀帧 `rawScale=0.05`、30 tick 后回 1、`{start:false,cut:true}` 恰一条、提示顺序是「获得 振源核」→ 屏息 →「奥斯塔拉止息 · 振源核落在钟影里」；控制台 0 error。
+- **一次真实的测试副作用（记在这里，不当作已清理）**：`boss.defeated` 现在会触发检查点存档，所以实机探针打死区域 Boss 后 autosave v4 被写了两次（控制台可见两条 `save.ok`）—— 那是本地 playtest 存档里的"奥斯塔拉已死"，不是产品缺陷。
 
 ## 附录 A：模块规模与里程碑对照
 Phase 1（核心战斗原型）＝ `core + player + combat + tools/CombatDebugger + 占位场景`；Phase 3 ＝ `world/Streaming + generators`；Phase 5 ＝ `rpg + save`；Phase 6 ＝ `quest + audio(对话)`。每模块交付即配 §6 测试，不做「先全写完再测」。

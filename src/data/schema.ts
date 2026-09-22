@@ -280,6 +280,25 @@ export interface EnemyData {
      * 而不是从几何推出来。将来接上遮挡射线时，本字段应退化成「射线打到了什么」。
      */
     covers?: { positions: { x: number; y: number; z: number }[]; radius: number }
+    /**
+     * §16「Boss 均带 3 拍入场演出」：**第一次**把玩家当成目标起 `beats` 拍里她只转身、不出手、
+     * 不贴近。这段是给的读图窗口（剪影 + 她的私有拍速第一次演给玩家看），不是免伤窗口——
+     * 她照吃这一段的伤害，「白送一记开场」是这类遭遇的既有惯例，不是漏洞。
+     * 拍长取**她接管之后**的网格（`AISystem.syncClock` 见 combat/chase 就改写全场 BPM），
+     * 所以同一个 `beats: 3` 在 108BPM 的奥斯塔拉与 60BPM 的万籁身上是两种时长——这才对。
+     * 每具实例只演一次（她是"第一次见面"，不是"每次进战"）。
+     */
+    intro?: { beats: number; label?: string; sfx?: string[] }
+    /**
+     * §16「胜利序列（IP §6：音乐停=世界屏息 0.5s）」。两条口径都刻意复用既有原语：
+     * - 屏息走 `GameTime.hitStop`（本作没有过场时间轴，"世界慢到 5% 走一段" 就是这套引擎里
+     *   唯一真实的屏息表达，ENV-001 下的合理替代）；`holdTicks` 是**逻辑 tick**，
+     *   在慢放期间照常推进，所以玩家感觉被拉长而不是被切断。
+     * - 音乐是**立刻掐掉**战斗层（`audio.music.encounter` 的 `cut`），不是脱战那条 4s 淡出：
+     *   淡出说的是"危险过去了"，这一停说的是"有什么东西不在了"。底噪 drone 不停——
+     *   世界还在，只是没人再为打鼓。
+     */
+    victory?: { holdTicks: number; label?: string; sfx?: string[] }
   }
   weakpoint?: { dmgMul: number }
   drops?: { tableId: string; chance: number }[]

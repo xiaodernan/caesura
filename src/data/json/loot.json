@@ -350,14 +350,6 @@
     ]
    },
    {
-    "id": "core",
-    "item": "it_resonance_core",
-    "count": [
-     1,
-     1
-    ]
-   },
-   {
     "id": "timbite",
     "item": "it_timbite",
     "count": [
@@ -373,6 +365,16 @@
      3
     ]
    }
+  ],
+  "firstKill": [
+   {
+    "id": "core",
+    "item": "it_resonance_core",
+    "count": [
+     1,
+     1
+    ]
+   }
   ]
  },
  {
@@ -386,19 +388,21 @@
     ]
    },
    {
-    "id": "core",
-    "item": "it_resonance_core",
-    "count": [
-     1,
-     1
-    ]
-   },
-   {
     "id": "timbite",
     "item": "it_timbite",
     "count": [
      250,
      250
+    ]
+   }
+  ],
+  "firstKill": [
+   {
+    "id": "core",
+    "item": "it_resonance_core",
+    "count": [
+     1,
+     1
     ]
    }
   ]
@@ -412,7 +416,9 @@
      500,
      500
     ]
-   },
+   }
+  ],
+  "firstKill": [
    {
     "id": "core",
     "item": "it_resonance_core",
