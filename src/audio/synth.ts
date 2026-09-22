@@ -8,6 +8,7 @@ export type SfxKey =
   | 'swing_1' | 'swing_2' | 'swing_heavy_1' | 'swing_heavy_2' | 'thrust_1'
   | 'chord_slam' | 'land_slam' | 'ring_dust' | 'gnash' | 'burst_shell'
   | 'claw' | 'claw_heavy' | 'wail' | 'drum_sweep' | 'drum_boom'
+  | 'bell_toll' | 'bell_clang'
   | 'hit_flesh' | 'hit_metal' | 'parry_bell' | 'perfect_block' | 'block_guard'
   | 'player_hurt' | 'death_shatter' | 'lockon_on' | 'lockon_off' | 'footstep'
   | 'ui_move' | 'ui_select' | 'boss_roar'
@@ -278,6 +279,18 @@ const VOICES: Record<SfxKey, VoiceFn> = {
     playSweep(c, o, t, { f0: 75, f1: 40, dur: 0.5, peak: 0.35 * g })    // 体感次声垫
     playNoise(c, o, t, { type: 'lowpass', f0: 300, decay: 0.015, peak: 0.3 * g }) // 拍面瞬态
     return 0.7
+  },
+  /** §14.7 悬钟骑士「敲钟自鸣」：背驮礼钟的低频长鸣（audio.md §3.1 钟参数：非谐泛音 + 次声锤） */
+  bell_toll: (c, o, t, g) => {
+    const end = playBell(c, o, t, 174.6, { dur: 4.2, peak: 0.3 * g })   // 低 F 大钟，4.2s 长尾
+    playSweep(c, o, t, { f0: 62, f1: 41, dur: 0.6, peak: 0.24 * g })    // 钟体腔模：能进胸腔的那一层
+    return Math.max(end, 0.7)
+  },
+  /** §14.7 钟甲挡下刃：比 hit_metal 长而亮的金属反鸣——一听就知道这一刀被甲吃了 */
+  bell_clang: (c, o, t, g) => {
+    const end = playBell(c, o, t, 784, { dur: 0.8, peak: 0.2 * g })
+    playNoise(c, o, t, { f0: 3200, Q: 2.2, decay: 0.05, peak: 0.22 * g })
+    return Math.max(end, 0.12)
   },
   // —— Impact（§7.3）——
   hit_flesh: (c, o, t, g) => {

@@ -49,6 +49,13 @@ export class Enemy {
   intangible = false
   /** 被「拍点闪避」或「伪拍点声源」拽出拍隙的剩余 tick；>0 期间相位不再免伤 */
   revealTicks = 0
+  /**
+   * §14.7 钟甲是否已被震裂满层打碎。碎了就永久失效（不修甲、不长回来），
+   * 所以「攒震裂」是一次性奖励而不是一轮流循环。消费方只有 strikeEnemy 一处。
+   */
+  armorBroken = false
+  /** §14.7 敲钟自鸣的下一次准点小节（-1 = 还没参战，进战后才排程） */
+  private tollDueBar = -1
   /** 攻速加成用「攒够一整帧才多走一帧」实现，保持 tick 是整数（帧表里有 === 判定） */
   private speedAcc = 0
   facingLocked = false
@@ -212,6 +219,12 @@ export class Enemy {
     }
     if (tick < this.callAllySuppressedUntil) { /* noop */ }
     this.syncPhase(rhythm)
+    // 读条被外力抹掉（stun、破势进 recover、走调时刻、处决都会直接 `attack = null`）时，
+    // 挂在上面的后事必须一起作废——否则它会在**下一招**的起手帧上偷偷生效（白回 15 血、
+    // 或把一次并不存在的警戒广播发出去）。实测过：没有这一行时漏回血。
+    if (!this.attack && this.pendingBroadcast) this.pendingBroadcast = null
+    // 读条被外力抹掉（破势进 recover、stun、走调时刻、处决…都会直接 `attack = null`）时，
+    // 那口挂着的气息必须一起作废——否则它会在**下一招**的起手帧上偷偷生效（回血/警戒广播）。
     this.stats.update(dt, tick)
     this.stateTick++
     if (this.stunTicks > 0) { this.stunTicks--; this.attack = null; if (this.stunTicks === 0 && this.state === 'recover') this.enter('combat'); return }
@@ -272,6 +285,8 @@ export class Enemy {
         } else {
           if (dist > (this.data.ai.chaseBeyond ?? DEFAULT_CHASE_BEYOND)) { this.enter('chase'); break }
           if (this.data.ai.retreatHpFrac && this.stats.hp / this.stats.hpMax <= this.data.ai.retreatHpFrac) { this.enter('retreat'); break }
+          // §14.7 软计时器优先于随机招式：到点就必须敲钟，玩家要打断的是这一拍
+          if (this.maybeSelfToll(rhythm)) break
           if (band) {
             // 伪动作决定脚下一步：'chase' 贴近、'backstep' 拉开（射手风筝），真招式名才出手
             if (band.actions.includes('chase')) stepToward(this, p, dt, this.data.speed * 0.9, rhythm)
@@ -346,8 +361,37 @@ export class Enemy {
   private pendingBroadcast: (() => void) | null = null
   private enterCallAlly(): void { this.enter('callAlly') }
 
-  private tryAttack(actions: string[], rhythm: RhythmClock, tick: number, slotTaken: (k: string) => boolean): void {
-    const usable = actions.filter((a) => !PSEUDO_ACTIONS.has(a) && !((this.cooldowns.get(a) ?? 0) > tick))
+  /**
+   * §14.7「敲钟自鸣」软计时器：进战后每 `everyBars` 小节强制插入一次那招长前摇读条，
+   * 走完才回血。**故意不占用 tryAttack 的 RNG 候选**——它是节拍器，不是随机招式。
+   * 打断走的是既有的读条机制（`pendingBroadcast` + 受击时 `interruptBroadcast`），
+   * 所以「破势/硬直/任何一刀砍在前摇里」都能把这一笔血掐掉，无需新状态。
+   */
+  private maybeSelfToll(rhythm: RhythmClock): boolean {
+    const t = this.data.ai.selfToll
+    if (!t) return false
+    const bar = rhythm.info().bar
+    if (this.tollDueBar < 0) this.tollDueBar = bar + t.everyBars // 进战第一拍不立刻回血
+    if (bar < this.tollDueBar) return false
+    const spec = this.data.attacks.find((a) => a.id === t.attackId)
+    if (!spec) return false
+    this.tollDueBar = bar + t.everyBars
+    if (this.stats.hp >= this.stats.hpMax) return false // 满血时它不敲：计时器照常推进
+    this.attack = { spec, tick: 0, hitDone: false, shots: 0, lungeApplied: 0 }
+    const heal = t.heal
+    this.pendingBroadcast = () => {
+      const before = this.stats.hp
+      this.stats.heal(heal)
+      const got = Math.round(this.stats.hp - before)
+      bus.emit('audio.sfx', { key: 'bell_toll', pos: { ...this.pos }, gain: 1 })
+      bus.emit('vfx.request', { key: 'ring_echo', pos: { ...this.pos }, scale: 1.8 })
+      bus.emit('sound.source', { id: this.id, pos: { ...this.pos }, loudness: 0.9 })
+      if (got > 0) bus.emit('ui.notify', { text: `敲钟自鸣 · 回复 ${got}`, kind: 'info' })
+    }
+    return true
+  }
+
+  private tryAttack(actions: string[], rhythm: RhythmClock, tick: number, slotTaken: (k: string) => boolean): void {    const usable = actions.filter((a) => !PSEUDO_ACTIONS.has(a) && !((this.cooldowns.get(a) ?? 0) > tick))
     const pick = this.rng.pick(usable)
     const spec = this.data.attacks.find((a) => a.id === pick)
     if (!spec) return
@@ -414,10 +458,16 @@ export class Enemy {
   }
 
   onParried(tick: number): void {
-    this.stunTicks = 18
+    // §14.7「弹反钟锤二连第二段 → 钟体共振眩晕 2s」：只有写了 parryStunTicks 的招式给这个回报
+    const resonant = this.attack?.spec.parryStunTicks
+    this.stunTicks = resonant ?? 18
     this.attack = null
     this.pendingBroadcast = null
     this.cooldowns.set('parryLock', tick + 60)
+    if (resonant && resonant > 18) {
+      bus.emit('vfx.request', { key: 'shock_small', pos: { ...this.pos }, scale: 1.5 })
+      bus.emit('ui.notify', { text: `钟体共振！失衡 ${(resonant / 60).toFixed(1)}s`, kind: 'info' })
+    }
   }
 }
 

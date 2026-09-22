@@ -908,5 +908,201 @@
    "emissive": 7332080,
    "coreColor": 13170687
   }
+ },
+ {
+  "id": "en_hanged_knight",
+  "nameKey": "enemy.hangedKnight",
+  "archetype": "elite",
+  "hp": 320,
+  "poise": 80,
+  "speed": 2.6,
+  "defense": 24,
+  "ai": {
+   "vision": {
+    "range": 22,
+    "fovDeg": 100
+   },
+   "vibration": {
+    "range": 12
+   },
+   "hearing": {
+    "range": 16
+   },
+   "callAlly": {
+    "range": 25,
+    "broadcastTicks": 72
+   },
+   "armorFront": {
+    "arcDeg": 60,
+    "dmgMul": 0.6
+   },
+   "selfToll": {
+    "everyBars": 4,
+    "attackId": "toll",
+    "heal": 15
+   },
+   "distBands": [
+    {
+     "min": 0,
+     "max": 3.8,
+     "actions": [
+      "bellswing1",
+      "sway"
+     ]
+    },
+    {
+     "min": 3.8,
+     "max": 99,
+     "actions": [
+      "chase"
+     ]
+    }
+   ]
+  },
+  "attacks": [
+   {
+    "id": "bellswing1",
+    "beat": [
+     1
+    ],
+    "parryable": true,
+    "reaction": "R2",
+    "frames": {
+     "startup": 27,
+     "activeStart": 27,
+     "activeEnd": 33,
+     "recovery": 51,
+     "damage": 22,
+     "stamina": 0,
+     "poise": 24,
+     "hitStopMs": 95,
+     "hitbox": {
+      "shape": "cone",
+      "angleDeg": 100,
+      "radius": 3.2,
+      "height": 2.2,
+      "offsetY": 1.2
+     },
+     "lunge": 0.7,
+     "loudness": 6,
+     "sfx": [
+      "swing_heavy_1"
+     ],
+     "vfx": [
+      "trail_thrust"
+     ],
+     "next": "bellswing2"
+    }
+   },
+   {
+    "id": "bellswing2",
+    "beat": [
+     2
+    ],
+    "parryable": true,
+    "reaction": "R3",
+    "parryStunTicks": 120,
+    "frames": {
+     "startup": 21,
+     "activeStart": 21,
+     "activeEnd": 27,
+     "recovery": 48,
+     "damage": 24,
+     "stamina": 0,
+     "poise": 26,
+     "hitStopMs": 100,
+     "hitbox": {
+      "shape": "cone",
+      "angleDeg": 110,
+      "radius": 3.3,
+      "height": 2.3,
+      "offsetY": 1.2
+     },
+     "lunge": 0.6,
+     "loudness": 7,
+     "sfx": [
+      "swing_heavy_2"
+     ],
+     "vfx": [
+      "trail_thrust"
+     ]
+    }
+   },
+   {
+    "id": "sway",
+    "beat": [
+     1
+    ],
+    "parryable": false,
+    "reaction": "R3",
+    "frames": {
+     "startup": 36,
+     "activeStart": 36,
+     "activeEnd": 47,
+     "recovery": 74,
+     "damage": 30,
+     "stamina": 0,
+     "poise": 34,
+     "hitStopMs": 120,
+     "hitbox": {
+      "shape": "ring",
+      "inner": 0.6,
+      "outer": 3.0,
+      "forward": 0
+     },
+     "lunge": 0.5,
+     "loudness": 7,
+     "sfx": [
+      "chord_slam"
+     ],
+     "vfx": [
+      "shock_small"
+     ]
+    }
+   },
+   {
+    "id": "toll",
+    "beat": [
+     1
+    ],
+    "parryable": false,
+    "reaction": "R0",
+    "frames": {
+     "startup": 90,
+     "activeStart": 90,
+     "activeEnd": 96,
+     "recovery": 126,
+     "damage": 0,
+     "stamina": 0,
+     "poise": 0,
+     "hitStopMs": 0,
+     "loudness": 9,
+     "sfx": [
+      "bell_toll"
+     ],
+     "vfx": [
+      "shock_small"
+     ],
+     "flags": [
+      "toll"
+     ]
+    }
+   }
+  ],
+  "weakpoint": {
+   "dmgMul": 1.5
+  },
+  "drops": [
+   {
+    "tableId": "loot_heavy",
+    "chance": 1
+   }
+  ],
+  "body": {
+   "scale": 2.0,
+   "color": 8213448,
+   "emissive": 4474098,
+   "coreColor": 16768196
+  }
  }
 ]

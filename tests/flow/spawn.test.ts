@@ -9,6 +9,7 @@ import { registerGameData, regions } from '@/data'
 import type { Vec3 } from '@/data/schema'
 import { chunkKeyOf, StreamingSystem } from '@/world/Streaming'
 import { SpawnDirector } from '@/world/SpawnDirector'
+import { Surface } from '@/world/Surface'
 import { AISystem } from '@/ai/AISystem'
 
 registerGameData()
@@ -144,5 +145,59 @@ describe('spawn flow: 世界里有怪，不是代码里有怪', () => {
     }
     expect(run()).toEqual(run())
     expect(run().length).toBeGreaterThan(0)
+  })
+})
+
+describe('野外精英的布点与「站在哪一层」这条契约（§14.7 / §5.2）', () => {
+  it('钟坠院 64 层有 1 只悬钟骑士守着落钟', () => {
+    const w = world(['flag.left_resthold', 'flag.brokenbar_bridge_down'])
+    const r = regions.find((x) => x.id === 'rg_fellcarillon')!
+    const g = r.spawnGroups.find((x) => x.enemyId === 'en_hanged_knight')
+    expect(g, 'regions.json 里要有它').toBeTruthy()
+    w.walk({ x: g!.center.x, y: 64, z: g!.center.z }, 60)
+    const knights = w.ai.enemies.filter((e) => e.data.id === 'en_hanged_knight')
+    expect(knights).toHaveLength(g!.count)
+    expect(knights[0].pos.y, '踩在本层地板上，不是埋在下头').toBe(r.groundY)
+    expect(knights[0].data.ai.armorFront, '带着钟甲来的').toBeTruthy()
+    w.dispose()
+  })
+
+  it('无耳深窖入口 1 只把守（gameplay.md §软门：打不过就该绕回去练）', () => {
+    const w = world(['flag.left_resthold', 'flag.brokenbar_bridge_down', 'flag.deeps_entrance_open'])
+    const r = regions.find((x) => x.id === 'rg_earless_deeps')!
+    const g = r.spawnGroups.find((x) => x.enemyId === 'en_hanged_knight')
+    expect(g).toBeTruthy()
+    w.walk({ x: g!.center.x, y: -144, z: g!.center.z }, 60)
+    const knights = w.ai.enemies.filter((e) => e.data.id === 'en_hanged_knight')
+    expect(knights).toHaveLength(1)
+    expect(knights[0].pos.y).toBe(r.groundY)
+    w.dispose()
+  })
+
+  it('数据契约：每个布点都落在所属区域的地板上（灰盒期一区域一块可站面）', () => {
+    // 敌人自己不会下落，判定盒按 y 分层比对；表里少写 6m 就等于把它埋进地里——
+    // 双方永远打不着对方，而所有「数量对不对」的测试都照样绿。
+    for (const r of regions) {
+      for (const g of r.spawnGroups) {
+        expect(g.center.y, `${r.id}/${g.enemyId} 的 center.y 必须等于 groundY`).toBe(r.groundY)
+      }
+    }
+  })
+
+  it('数据契约：可交互节点与传送落点都踩在 Surface 认账的地板上', () => {
+    // 判定用真实的 Surface（不是「和所属区域比一下」）：息声领是叠层世界，
+    // 一个 xz 上可能压着好几层地板，节点必须站在自己那一层的面上。
+    const surface = new Surface(regions)
+    for (const r of regions) {
+      for (const it of r.interactables ?? []) {
+        const f = surface.floorAt(it.pos)
+        expect(f, `${it.id} 脚下什么都没有`).toBeTruthy()
+        expect(Math.abs(it.pos.y - f!.y), `${it.id} 悬在本层地板之外`).toBeLessThanOrEqual(4)
+        if (!it.to) continue
+        const land = surface.floorAt(it.to)
+        expect(land, `${it.id} 把人丢到深渊里`).toBeTruthy()
+        expect(Math.abs(it.to.y - land!.y), `${it.id} 的落点站不住`).toBeLessThanOrEqual(4)
+      }
+    }
   })
 })

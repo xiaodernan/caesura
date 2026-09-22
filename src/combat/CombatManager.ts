@@ -172,6 +172,15 @@ export class CombatManager {
     }, () => this.rng.float())
     let final = dmg.damage
     if (crumpled) final = Math.round(final * 1.5)
+    // §14.7 钟甲：只有「从它的正面锥里打进来」的这一笔被吃掉。用 s.dir（攻击者→它）反推
+    // 来袭方位，所以近战挥砍、玩家投掷枪、以及未来任何走这条通道的伤害都自动受同一规则管。
+    const armor = e.data.ai.armorFront
+    const glancing = !!armor && !e.armorBroken && !s.backstab && inFrontArc(e, s.dir, armor.arcDeg)
+    if (glancing) {
+      final = Math.round(final * armor.dmgMul)
+      bus.emit('audio.sfx', { key: 'bell_clang', pos: s.point, gain: 0.9 })
+      bus.emit('vfx.request', { key: 'block_spark', pos: s.point, scale: 1.1 })
+    }
 
     const poiseMul = (e.inStartup ? 1.5 : 1) * (s.onBeat ? 2 : 1)
     e.stats.addPoise(Math.round(s.poise * poiseMul * (p.weapon.poiseMul ?? 1)), tick)
@@ -505,6 +514,13 @@ export class CombatManager {
     bus.emit('vfx.request', { key: 'hit_ring', pos: point, scale: 1.6 })
     bus.emit('audio.sfx', { key: 'hit_metal', pos: point, gain: 0.8 })
     bus.emit('ui.notify', { text: '震裂碎裂！', kind: 'info' })
+    // §14.7「震裂满层碎裂其甲（清一次减伤）」：甲是这层减伤的载体，碎了就永久没了
+    if (e.data.ai.armorFront && !e.armorBroken) {
+      e.armorBroken = true
+      bus.emit('audio.sfx', { key: 'burst_shell', pos: { ...e.pos }, gain: 1 })
+      bus.emit('vfx.request', { key: 'death_shatter', pos: { ...e.pos }, scale: 1.2 })
+      bus.emit('ui.notify', { text: '钟甲碎裂！正面减伤失效', kind: 'reward' })
+    }
     if (!e.alive) this.onEnemyKilled(e)
   }
 
@@ -686,9 +702,19 @@ function behindCone(playerPos: Vec3, e: Enemy, coneDeg: number): boolean {
   return Math.abs(norm(ang - (e.yaw + Math.PI))) <= (coneDeg * Math.PI / 180) / 2
 }
 
+/**
+ * §14.7 钟甲：来袭者是否站在它正面 `arcDeg` 锥里。
+ * 传进来的 `incoming` 沿用 EnemyStrike.dir 的口径=「攻击者→它」，取反才是「它→攻击者」。
+ */
+function inFrontArc(e: Enemy, incoming: Vec3, arcDeg: number): boolean {
+  const toAttacker = Math.atan2(-incoming.x, -incoming.z)
+  return Math.abs(norm(toAttacker - e.yaw)) <= (arcDeg * Math.PI / 180) / 2
+}
+
 const NAME_MAP: Record<string, string> = {
   'enemy.murkshell': '嘈壳', 'enemy.driftsinger': '漂调者', 'enemy.tympanus': '驼鼓',
-  'enemy.skewer': '针喉', 'enemy.phantome': '幽灵八', 'enemy.refrein': '叠唱'
+  'enemy.skewer': '针喉', 'enemy.phantome': '幽灵八', 'enemy.refrein': '叠唱',
+  'enemy.hangedKnight': '悬钟骑士'
 }
 
 export function nameOf(key: string): string {

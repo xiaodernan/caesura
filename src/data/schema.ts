@@ -97,6 +97,11 @@ export interface AttackSpec {
   reaction?: 'R0' | 'R1' | 'R2' | 'R3' | 'R4' | 'R5'
   /** 命中挂异常：tag 用 Gameplay Tag 串；mute 类必须显式写 ticks（不写就不挂状态，见 support.test 全表扫描） */
   statusOnHit?: { tag: string; layers: number; ticks?: number }
+  /**
+   * §14.7「弹反钟锤二连第二段 → 钟体共振眩晕 2s」：这一招被弹反时它自己挨的硬直 tick。
+   * 缺省走通用 18 tick（`Enemy.onParried`），所以只有写了这行的招式才有「共振」回报。
+   */
+  parryStunTicks?: number
 }
 
 export interface EnemyData {
@@ -143,6 +148,19 @@ export interface EnemyData {
     }
     deaf?: boolean
     eyes?: boolean
+    /**
+     * §14.7 悬钟骑士的钟甲：**正面** `arcDeg` 锥内的玩家伤害乘 `dmgMul`（0.6 = 减伤 40%）。
+     * 消费口只有 `CombatManager.strikeEnemy` 这一条（近战与弹体共用），所以「从哪打进来」
+     * 必须在那里判——背刺/侧击/背后来的弹体一律全额。被震裂满层打碎后 `Enemy.armorBroken`
+     * 置位，本条永久失效（一次性奖励，不给它长回去）。
+     */
+    armorFront?: { arcDeg: number; dmgMul: number }
+    /**
+     * §14.7「每 4 小节敲钟自鸣回 15 HP（必须打断的软计时器）」：
+     * 每逢 `everyBars` 小节的第 1 拍，若它正打着，就强制插入 `attackId` 那招（长前摇、可打断）。
+     * 回血发生在该招的 `startup` 帧：前摇里被打断（硬直/破势都会清空 `attack`）⇒ 一分不回。
+     */
+    selfToll?: { everyBars: number; attackId: string; heal: number }
   }
   attacks: AttackSpec[]
   weakpoint?: { dmgMul: number }

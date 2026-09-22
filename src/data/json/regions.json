@@ -56,7 +56,7 @@
       { "id": "sw_whisperwode_soundwall", "kind": "soundwall", "pos": { "x": 330, "y": 0, "z": 120 }, "oneWay": true, "requiresFlag": "flag.parry_taught", "setsFlag": "flag.choir_entrance_open" },
       { "id": "gh_whisperwode_timbite_1", "kind": "gather", "pos": { "x": 200, "y": 0, "z": 90 } },
       { "id": "gh_whisperwode_timbite_2", "kind": "gather", "pos": { "x": 355, "y": 0, "z": 30 } },
-      { "id": "ch_whisperwode_therapist", "kind": "chest", "pos": { "x": 262, "y": 2, "z": -160 } }
+      { "id": "ch_whisperwode_therapist", "kind": "chest", "pos": { "x": 262, "y": 0, "z": -160 } }
     ],
     "music": { "explore": "mus_whisperwode_explore", "battle": "mus_shared_battle", "ambience": "mus_whisperwode_amb" },
     "streamingPriority": 20,
@@ -125,7 +125,7 @@
     ],
     "interactables": [
       { "id": "st_brokenbar", "kind": "checkpoint", "pos": { "x": -170, "y": 0, "z": -350 }, "setsFlag": "flag.checkpoint_brokenbar" },
-      { "id": "br_brokenbar_gate", "kind": "bridge", "pos": { "x": -48, "y": 6, "z": -110 }, "oneWay": true, "setsFlag": "flag.brokenbar_bridge_down", "to": { "x": 130, "y": 64, "z": -120 } },
+      { "id": "br_brokenbar_gate", "kind": "bridge", "pos": { "x": -48, "y": 0, "z": -110 }, "oneWay": true, "setsFlag": "flag.brokenbar_bridge_down", "to": { "x": 130, "y": 64, "z": -120 } },
       { "id": "npc_haltrune", "kind": "npc", "pos": { "x": -110, "y": 0, "z": -300 }, "npcId": "npc_haltrune" },
       { "id": "ch_brokenbar_chief", "kind": "chest", "pos": { "x": -60, "y": 0, "z": -270 }, "requiresFlag": "flag.brokenbar_resolved" }
     ],
@@ -150,24 +150,25 @@
     "lightingPreset": "lp_fellcarillon",
     "palette": { "base": "#4f7a6a", "accent": "#b4653a", "glow": "#6d4a7a" },
     "spawnGroups": [
-      { "enemyId": "en_murkshell", "count": 2, "center": { "x": 150, "y": 48, "z": -140 }, "radius": 12 },
-      { "enemyId": "en_tympanus", "count": 1, "center": { "x": 280, "y": 52, "z": -300 }, "radius": 8 }
+      { "enemyId": "en_murkshell", "count": 2, "center": { "x": 150, "y": 64, "z": -140 }, "radius": 12 },
+      { "enemyId": "en_tympanus", "count": 1, "center": { "x": 280, "y": 64, "z": -300 }, "radius": 8 },
+      { "enemyId": "en_hanged_knight", "count": 1, "center": { "x": 206, "y": 64, "z": -244 }, "radius": 6 }
     ],
     "landmarks": [
-      { "id": "lm_fellcarillon_firstbell", "nameKey": "landmark.fallen_bell", "pos": { "x": 200, "y": 56, "z": -220 }, "sightRange": 200 },
+      { "id": "lm_fellcarillon_firstbell", "nameKey": "landmark.fallen_bell", "pos": { "x": 200, "y": 64, "z": -220 }, "sightRange": 200 },
       { "id": "lm_fellcarillon_cliffstair", "nameKey": "landmark.cliff_stair", "pos": { "x": 120, "y": 60, "z": -380 }, "sightRange": 140 }
     ],
     "interactables": [
-      { "id": "st_fellcarillon", "kind": "checkpoint", "pos": { "x": 130, "y": 48, "z": -120 }, "setsFlag": "flag.checkpoint_fellcarillon" },
-      { "id": "bl_fellcarillon_fallenbell", "kind": "bell", "pos": { "x": 200, "y": 56, "z": -220 }, "oneWay": true, "setsFlag": "flag.bell_toll_rung" },
+      { "id": "st_fellcarillon", "kind": "checkpoint", "pos": { "x": 130, "y": 64, "z": -120 }, "setsFlag": "flag.checkpoint_fellcarillon" },
+      { "id": "bl_fellcarillon_fallenbell", "kind": "bell", "pos": { "x": 200, "y": 64, "z": -220 }, "oneWay": true, "setsFlag": "flag.bell_toll_rung" },
       { "id": "el_fellcarillon_organlift", "kind": "elevator", "verb": "乘管风琴吊机", "pos": { "x": 110, "y": 64, "z": -350 }, "oneWay": true, "requiresFlag": "flag.bell_toll_rung", "setsFlag": "flag.organ_gate_open", "to": { "x": 0, "y": 152, "z": -120 } },
-      { "id": "ch_fellcarillon_bellcavity", "kind": "chest", "pos": { "x": 205, "y": 58, "z": -215 } }
+      { "id": "ch_fellcarillon_bellcavity", "kind": "chest", "pos": { "x": 205, "y": 64, "z": -215 } }
     ],
     "music": { "explore": "mus_fellcarillon_explore", "battle": "mus_shared_battle", "ambience": "mus_fellcarillon_amb" },
     "streamingPriority": 20,
     "unlockFlag": "flag.brokenbar_bridge_down",
     "secrets": [
-      { "id": "sec_fellcarillon_bell_interior", "unlockFlag": "flag.bell_interior_open", "rewardTable": "loot_heavy", "pos": { "x": 205, "y": 58, "z": -215 } }
+      { "id": "sec_fellcarillon_bell_interior", "unlockFlag": "flag.bell_interior_open", "rewardTable": "loot_heavy", "pos": { "x": 205, "y": 64, "z": -215 } }
     ],
     "storyHooks": ["narr.act4_vertical_puzzle"]
   },
@@ -184,15 +185,16 @@
     "lightingPreset": "lp_earless_deeps",
     "palette": { "base": "#121316", "accent": "#cfd8d2", "glow": "#8f9d97" },
     "spawnGroups": [
-      { "enemyId": "en_driftsinger", "count": 3, "center": { "x": -200, "y": -150, "z": 180 }, "radius": 16 },
-      { "enemyId": "en_tympanus", "count": 2, "center": { "x": -60, "y": -150, "z": 300 }, "radius": 12 }
+      { "enemyId": "en_driftsinger", "count": 3, "center": { "x": -200, "y": -144, "z": 180 }, "radius": 16 },
+      { "enemyId": "en_tympanus", "count": 2, "center": { "x": -60, "y": -144, "z": 300 }, "radius": 12 },
+      { "enemyId": "en_hanged_knight", "count": 1, "center": { "x": -96, "y": -144, "z": 176 }, "radius": 5 }
     ],
     "landmarks": [
       { "id": "lm_earlessdeeps_mineface", "nameKey": "landmark.mine_face", "pos": { "x": -240, "y": -150, "z": 140 }, "sightRange": 80 }
     ],
     "interactables": [
-      { "id": "st_earless_deeps", "kind": "checkpoint", "pos": { "x": -100, "y": -150, "z": 120 }, "setsFlag": "flag.checkpoint_earless_deeps" },
-      { "id": "gh_deeps_timbite_vein", "kind": "gather", "pos": { "x": -230, "y": -152, "z": 200 } }
+      { "id": "st_earless_deeps", "kind": "checkpoint", "pos": { "x": -100, "y": -144, "z": 120 }, "setsFlag": "flag.checkpoint_earless_deeps" },
+      { "id": "gh_deeps_timbite_vein", "kind": "gather", "pos": { "x": -230, "y": -144, "z": 200 } }
     ],
     "music": { "explore": "mus_earless_deeps_explore", "battle": "mus_hidden_battle_myriad", "ambience": "mus_silence_amb" },
     "streamingPriority": 10,
@@ -219,7 +221,7 @@
       { "id": "lm_unfinishedhall_organ", "nameKey": "landmark.great_organ", "pos": { "x": 0, "y": 180, "z": -300 }, "sightRange": 260 }
     ],
     "interactables": [
-      { "id": "st_unfinished_hall", "kind": "checkpoint", "pos": { "x": 0, "y": 150, "z": -120 }, "setsFlag": "flag.checkpoint_unfinished_hall" }
+      { "id": "st_unfinished_hall", "kind": "checkpoint", "pos": { "x": 0, "y": 152, "z": -120 }, "setsFlag": "flag.checkpoint_unfinished_hall" }
     ],
     "music": { "explore": "mus_unfinished_hall_explore", "battle": "mus_boss_hersil", "ambience": "mus_unfinished_hall_amb" },
     "streamingPriority": 40,

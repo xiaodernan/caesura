@@ -252,10 +252,14 @@ src/
                     "hearingLoudnessMin": 0.35},   // 听觉一等公民
     "distBands": [{"min":0,"max":2.2,"actions":["en_atk_bite"]},
                    {"min":2.2,"max":8,"actions":["chase"]}],
-    "aggroShare": {"camp": true, "callAllyRange": 14}, "retreatPoiseFrac": 0.15
+    "aggroShare": {"camp": true, "callAllyRange": 14}, "retreatPoiseFrac": 0.15,
+    "armorFront": {"arcDeg": 60, "dmgMul": 0.6},        // §14.7 钟甲：正面锥内减伤（碎甲后失效）
+    "selfToll": {"everyBars": 4, "attackId": "toll", "heal": 15}  // §14.7 软计时器：到点强制读条回血
   },
   "attacks": [{"id":"bite","telegraphTicks":20,"frameRef":"frames_bite",
                 "damageSrc":"contact","loudness":0.5}],  // loudness 驱动噪音感知
+  // 招式层还有两个 §14 用的字段：frames.next（连段派生量化到下一拍位）与
+  // parryStunTicks（被弹反时它自己挨多久的硬直；缺省 18）
   "drops": [{"tableId": "loot_basic", "chance": 0.65}],
   "weakpoints": [{"bone":"core_discord","dmgMul":1.8}],   // 振源核（IP_SEED §5）
   "statusOnHit": [{"tag":"status.fissure","layers":1}]
@@ -384,7 +388,7 @@ HitStop 结束      └─ timeScale 恢复 → 攻方 recovery 续播 → 数�
 **依赖边界（自动化闸门）**：`tests/unit/arch-boundaries.test.ts` 静态扫描 `src/**/*.ts` 的运行时 import（`import type` 不计，编译后消失），断言 ①逻辑层（`ai/audio/combat/core/data/input` + `player/{LockOn,ThirdPersonController}` + `world/{Streaming,Surface,Interactables,SpawnDirector}`）不得 import `three` 或表现层模块；②用 `three` 的文件必须都在表现层清单（`main/CameraRig/CombatDebugger/Hud/VfxLayer/materials/ActorVisuals/ChunkGreybox/InteractableGreybox/ProjectileVisuals/PlaceholderArena`）；③除组合根 `main.ts` 外，表现层不得 import 逻辑运行时（只订 `EventBus` 事件）。清单漂移会让「闸门变空测试」，所以另有 1 条断言校验扫描文件数与必扫项。
 > 注：需求文档设想的 ESLint `no-restricted-imports` 规则本环境未装（零新增依赖优先），改由上述测试承担同一职责；`npm run lint`(=tsc --noEmit) + `npm run test` 一起构成交付前门禁，pre-commit hook 跑 tsc。所有随机数走 `core/Math.ts` 的 `Rng`（`mulberry32` 种子流，可复现测试）；例外只允许出现在 `audio/*` 的音色抖动（不进玩法判定）。逻辑层不使用 `setTimeout/requestAnimationFrame`（一律过 Time/GameLoop）。
 
-### 5.9 弹道与远程子系统（Phase 4-A/4-B/4-C/4-D）— 已实现 `src/combat/Projectiles.ts` + `src/world/ProjectileVisuals.ts`
+### 5.9 弹道与远程子系统（Phase 4-A/4-B/4-C/4-D/4-E）— 已实现 `src/combat/Projectiles.ts` + `src/world/ProjectileVisuals.ts`
 
 需求 §66「远程敌人」与 §4.3「引针枪投掷」共用同一套弹道，遵循 §5.8 的分层：
 
@@ -441,6 +445,22 @@ Phase 4-A 把弹道跑通，但远程只被当作「会飞的近战判定」。4
 - **布怪（`regions.json`，全场槽位 30→33）**：破拍营地 `count:1 @(-160,0,-230)`（§14.5 首次登场要在有掩体有杂音的营地边缘）；沉唱堂 `count:2 @(330,-40,60)`（第二区域也要有拍隙压迫，§5.2）。**无耳深窖故意未加**：那关的设计正解依赖声呐/听感感知（Phase 6 的耳朵机制），现在塞两只相位刺客进去只会变成"看不见=打不过"的坏题，登记为延后而不是缺失。
 - 覆盖：`tests/flow/phantome.test.ts` 18 条（数据表逐字段、`intangible ⇔ 距拍点 ≤12` 每 tick 恒等 + 占比 `25/BT`、隐形段零位移、近战穿过 vs 半拍命中、弹体穿过不消耗、阈值数学、三个负例、重音显形、拍点闪避抓拍 A/B + 两负例、处决 A/B、真 AI 时序、`next` 连段派生）、`tests/unit/core.test.ts` 补 2 条（`ticksFromBeatPoint` V 形、`ticksUntilBeatOn` 小数拍位与严格向前）、`tests/flow/spawn.test.ts` 补 2 条布点。全量 `npx vitest run` = **19 files / 161 passed**，`tsc --noEmit` + `npm run build` 干净。
 - **视口评审（截图对比）未做**：本环境浏览器标签页处于隐藏态（`document.hidden=true`、canvas 0×0、rAF 停摆），渲染器按客户区尺寸建模 ⇒ 拿不到有效像素（KI-010 同一阻塞）。实机验证在 `tickFrame` 手动步进层完成（§6.3 的降级口径），逐 tick 读取的是 `intangible`/`opacity`/`revealTicks` 等状态量而非像素；已核对 300 tick 内 `opacity 0.18` 与 `intangible` **300/300 一致**。
+
+---
+
+### 5.9.4 正面钟甲、碎甲与敲钟自鸣（Phase 4-E 悬钟骑士）— 已实现
+
+§14.7 是第一个「**打哪里**比**打几下**重要」的敌人，也是第一个带**软计时器**的敌人。三条机制都要求伤害通道与读条通道各自长出一个新口子，但都不许长成新系统。
+
+- **钟甲 = 单一伤害通道里的一个朝向项**：`ai.armorFront = {arcDeg, dmgMul}`，消费点只有 `strikeEnemy`（近战、玩家投掷枪、未来战技都从这条走）。判据用 `EnemyStrike.dir`（口径=「攻击者→它」）取反后与 `e.yaw` 比角，所以**不需要给 EnemyStrike 加来源坐标**；背刺分支天然不参与（它一定在背面）。反馈是「铛」——`audio.sfx: bell_clang` + `block_spark`，被减伤的那一笔必须听得出不一样。碎甲走 `fissureBurst`（既有满层结算点）：`e.armorBroken = true` 永久失效，不给它长回来，于是「攒震裂」是一次性奖励而不是轮流循环。处决**故意不吃甲**（它按生命比例结算，是读通状态的奖励）。
+- **敲钟自鸣 = 把 §14.6 的「读条 + 后事」范式用回敌人自己身上**：`ai.selfToll = {everyBars, attackId, heal}`，进战时排定 `tollDueBar`，每逢 `everyBars` 小节网格到点就强制插入那一招（**不占 tryAttack 的 RNG 候选**——它是节拍器不是随机招式），走完 `startup` 帧才 `heal`。打断不需要新代码：`strikeEnemy` 每次命中都调 `interruptBroadcast`，而 stun/破势会直接清空 `attack` ⇒ 回血与钟声一起作废。满血时它不敲（计时器照常推进），省下一条「它给自己奶满还硬敲」的怪话。
+- **`frames.next` 第二次上岗**：钟锤二连（拍 1 → 拍 2）直接复用 4-D 的派生字段，`bellswing1 → bellswing2` 之间因此是真实的「量化到下一拍」而不是帧级硬顶。
+- **弹反回报差异 = `AttackSpec.parryStunTicks`**：§14.7「弹反二连第二段→钟体共振眩晕 2s」写成第二段那一格数据（120 tick），第一段没有 ⇒ 通用 18 tick。这是「同一句防御指令，奖励按招式不同」第一次不需要代码分支。
+- **本 Phase 挖出并修掉一个真缺陷（读条后事泄漏）**：`pendingBroadcast` 原本只在「成功发射」「被弹反」「被玩家命中」三条路径上清空。而 `attack = null` 还可以来自 stun 分支、`recover` 状态、走调时刻、处决——这些路径留下的气息会在**下一招的起手帧**上偷偷生效（实测：自鸣被打断后仍回 15 血并响一声钟；`elite.test.ts` 去掉守卫就失败，是抓出来的真 bug 而不是装饰断言）。修法是 `Enemy.update` 顶部一条一致性守卫：没有读条就没有读条的后事。
+- **顺带闭合一个 P1 进度阻塞（数据缺陷，不是代码缺陷）**：审计 `regions.json` 发现**内容节点的 y 不在可站平面上**——钟坠院的两组敌人写在 48/52（该层地板 64）、无耳深窖写在 -150/-152（地板 -144），而同区的吊桥/落钟/储物点也各差 6~16m。后果是静默的：`shapeHits` 的竖向比对永远不成立 ⇒ 双方互相打不着；`Interactables` 的 range=6 三维距离 ⇒ 存档点「看得见按不到」，而所有「数量对不对」的测试照样绿。已把 spawnGroups/interactables 的 y 全部对到本层地板（`travel` 的落点也一起），并加两条数据契约断言：**布点 y === groundY**、**节点与传送落点必须踩在 `Surface.floorAt` 认账的那块地板上（±4m）**。注意落点归属**不能只看 xz**：息声领是叠层世界，同一个 xz 上压着好几层（下桥进钟坠院=64 与雾语林地表=0 同格），必须带 y 判——`Surface` 的注释早就写了这件事，是我的测试先写错才被数据纠正。
+- **布怪（35 槽位）**：`rg_fellcarillon` 落钟点 `count:1 @(206,64,-244) r6`（gameplay.md §229「钟坠院全家族+悬钟骑士」）；`rg_earless_deeps` 入口 `count:1 @(-96,-144,176) r5`（§217「无耳深窖入口精英把守」=软门）。破拍营地的「营长 ×1」（§254）**未落**：那条要求「仅强攻线交战」，即潜行线不该惊动它，而营地分线交战判定属于 Phase 6，现在塞进去只会变成开场必战的假精英。
+- 覆盖：`tests/flow/elite.test.ts` 17 条（数据表逐字段回算毫秒、正面=侧面×0.6、20° 在锥内/45° 出锥、碎甲后正面=侧面严格相等、处决不吃甲、弹反第二段 120 vs 第一段 18、自鸣到点回血+钟声+提示、受击打断不回血、stun 打断不漏回血、四小节周期、满血不敲、警戒广播 25m 叫得动范围内的同伴而 31m 外的叫不动、读条中打断则一声传不出）；`tests/unit/actor-visuals.test.ts` 3 条（钟甲板只挂在 `armorFront` 的敌人上、碎甲=隐藏同一对象、出格回收往返不涨网格数）；`tests/flow/spawn.test.ts` 补 4 条（两区布点 + 两条 y 契约）。全量 **21 files / 185 passed**，`tsc --noEmit` + `npm run build` 干净。
+- **实机复验（tickFrame 手动步进；截图仍被 KI-010 挡住）**：真渲染循环里从数据派出来的悬钟骑士落在 `rg_fellcarillon` 的 64 层（`floorAt` 同值、21 个 active chunk）；强音大剑实测正面 21 / 侧面 35 = 0.60，偏 20° 仍 20（吃甲）、偏 45° 33（不吃）；一发蓄力（3 层）把预设的 3 层顶满 ⇒ `armorBroken`、「震裂碎裂！」+「钟甲碎裂！正面减伤失效」双提示、钟甲板 `visible=false`，随后正面 33 = 侧面 33；第 4 小节自鸣走完前摇 ⇒ hp 120→135 恰好 +15、`bell_toll` 响一次、「敲钟自鸣 · 回复 15」；弹反第二段 ⇒ 「钟体共振！失衡 2.0s」、招式作废、stun 从 120 起算，玩家零伤；控制台 0 error 0 warn。**没能在实机复现的是「玩家一刀打断自鸣」**：脚本里玩家的挥击被精英自己的攻击反复打断（架势崩溃），该路径只有 headless 两条断言覆盖——记在这里，不写成已复验。
 
 ---
 

@@ -156,7 +156,7 @@ loop.add(core)
 addEventListener('resize', () => { arena.resize(); rig.resize() })
 bus.on('log', (l) => console.info(`[caesura:${l.level}] ${l.msg}`))
 
-;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, interact, hud, spawner, nodes, projectileVis }
+;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, interact, hud, spawner, nodes, projectileVis, actors: visuals }
 
 document.getElementById('boot')!.style.display = 'none'
 ;(window as unknown as Record<string, unknown>).__CAESURA_BOOTED__ = true

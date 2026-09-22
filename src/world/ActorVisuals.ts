@@ -6,6 +6,8 @@ interface EnemyVis {
   group: THREE.Group
   body: THREE.Mesh<THREE.CapsuleGeometry, THREE.MeshStandardMaterial>
   core: THREE.Mesh<THREE.SphereGeometry, THREE.MeshStandardMaterial>
+  /** §14.7 钟甲板：只在 `ai.armorFront` 的敌人身上存在，碎甲后隐藏（灰盒级可读性） */
+  plate: THREE.Mesh<THREE.BoxGeometry, THREE.MeshStandardMaterial> | null
   e: Enemy
 }
 
@@ -47,6 +49,7 @@ export class ActorVisuals {
       if (this.vis.has(e.id)) continue
       const s = e.data.body?.scale ?? 1
       const group = new THREE.Group()
+      group.name = `actor:${e.id}` // 调试器/回归测试按这个名字找回一具模（和 greybox_* 同一约定）
       const body = new THREE.Mesh(
         new THREE.CapsuleGeometry(0.45 * s, 0.7 * s, 6, 12),
         new THREE.MeshStandardMaterial({
@@ -65,8 +68,18 @@ export class ActorVisuals {
       )
       core.position.set(0, 1.15 * s, 0.36 * s)
       group.add(body, core)
+      // §14.7 钟甲：一块立在正面的板。它必须在视觉上「挡住那 60°」，否则减伤规则读不出来
+      let plate: EnemyVis['plate'] = null
+      if (e.data.ai.armorFront) {
+        plate = new THREE.Mesh(
+          new THREE.BoxGeometry(1.15 * s, 1.5 * s, 0.1 * s),
+          new THREE.MeshStandardMaterial({ color: 0x8c7a55, metalness: 0.85, roughness: 0.35 })
+        )
+        plate.position.set(0, 0.95 * s, 0.52 * s)
+        group.add(plate)
+      }
       this.scene.add(group)
-      this.vis.set(e.id, { group, body, core, e })
+      this.vis.set(e.id, { group, body, core, plate, e })
     }
     // retire visuals of enemies removed from the roster
     for (const [id, v] of this.vis) {
@@ -77,6 +90,10 @@ export class ActorVisuals {
         v.body.material.dispose()
         v.core.geometry.dispose()
         v.core.material.dispose()
+        if (v.plate) {
+          v.plate.geometry.dispose()
+          v.plate.material.dispose()
+        }
         this.vis.delete(id)
       }
     }
@@ -114,6 +131,7 @@ export class ActorVisuals {
     }
     const hb = e.activeHitbox
     core.scale.setScalar(hb ? 1.6 : 1 + Math.sin(tick * 0.08) * 0.08)
+    if (v.plate) v.plate.visible = !e.armorBroken // 碎甲是永久状态：板子掉了就是掉了
     if (e.state === 'recover') {
       group.position.y = -0.25 * s
       group.rotation.x = 0.35
