@@ -3,3 +3,6 @@ dist/
 *.local
 docs/qa/shots/*
 !docs/qa/shots/.gitkeep
+
+# 本地工具数据（AI 工作记忆与技能），不属于产品源码
+.workbuddy-ai/
