@@ -237,6 +237,20 @@ src/
 
 ### 3.3 逐类 schema
 
+> **这些 jsonc 块是 Phase 0 的立项稿，不是当前形状**（KI-038 的账）。真正的类型只有一个地方：
+> `src/data/schema.ts`，真正的数据只有那 11 份 `src/data/json/*.json`（全部受 `npm run validate:data` 管）。
+> 立项稿与实际落地的主要差异，逐条写在这里而不是假装它们一致：
+> ① 目录是扁平的 `src/data/json/`，不是 `data/weapons/*.json` 那种一物一文件——构建期打包要的是
+> 一次导入 + 一份注册表，拆文件只会让跨文件对账（同一张表内 id 唯一、稀有度、悬空引用）变复杂；
+> ② **Boss 没有独立文件**：她是 `enemies.json` 里带 `boss` 段的条目（私有拍速/阶段/机关/入场与胜利序列
+> 全在那一段），所以 `BossData` 这个接口已经从 schema.ts 删掉——留着会让人以为有一套没实现的文件布局；
+> ③ `ItemData` 实际字段是 `kind/stack/value/gear/use/desc`（不是 `type/stackMax/sellPrice`），
+> `WeaponData` 没有 `staminaCost/poisePerHit/upgradePathId/model`（体力与架式在帧表上，强化住在
+> `progression.json.upgrade`，模型是灰盒阶段的程序化几何）；④ `SkillData` 未单独成型，
+> 战技落在 `movements.json`（§10），武器战技落在 `weapons.json.skill` + `movesets.json`。
+> 需求 §78 要的是如实，不是好看：这一段保留立项稿只为对照"当初打算怎么做"，
+> 任何口径冲突以 schema.ts 与门禁为准。
+
 **WeaponData**（`data/weapons/*.json`）：
 ```jsonc
 {
@@ -279,21 +293,11 @@ src/
 }
 ```
 
-**BossData**（`data/bosses/*.json`，扩展 EnemyData）：
-```jsonc
-{
-  "id": "bs_ostlara", "baseEnemy": "en_boss_hanged_knight", "regionId": "rg_drowned_choir",
-  "phases": [
-    {"enter": {"hpFracGte": 0.6}, "btOverride": "bt_ostlara_p1",
-     "music": "mus_bell_knight", "camera": "cam_boss_arena_a"},
-    {"enter": {"hpFracLt": 0.6}, "triggers": ["cin_ostlara_bell_pull"], ...}
-  ],
-  "beatSignature": {"num": 3, "den": 4},          // 节拍可读性（IP_SEED §6：3/4 拍，弹反在重拍）
-  "mechanics": [{"id":"bell_shield","type":"gimmick","counter":"lure_bell_impact"}],
-  "victory": {"sequence": "cin_ostlara_death", "rewards": [{"item":"sk_mv_tempest_peal"}]},
-  "gates": {"regionExit": "flag.bs_ostlara_dead"}
-}
-```
+**Boss：没有独立 schema**（立项稿曾规划 `data/bosses/*.json`，实际合并进 EnemyData，KI-038）。
+落地的形状是 `enemies.json` 里那条带 `boss` 段的条目：`boss.bpm/beatsPerBar`（她的私有拍速，
+打完要还给区域网格）、`boss.phases[]`（`belowHpFrac` + 换一批招式 + 壳参数）、
+`boss.intro`/`boss.victory`（§16 的入场演出与胜利序列，两格由门禁要求齐全）、以及机关与掉落。
+把她的阶段拆到第二个文件里，就会出现"她有几阶"有两处可写这种事。
 
 **ItemData**：`{id:"it_timbite_raw", type:"material|weapon|armor|consumable|key", stackMax:99,
 nameKey, descKey(item lore 载体), stats?(装备属性 delta 表), useEffect?(SkillData ref),

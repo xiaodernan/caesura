@@ -833,18 +833,9 @@ export interface RegionData {
   secrets: SecretRef[]
   storyHooks: string[]
 }
-export interface BossData {
-  id: string
-  nameKey: string
-  baseEnemy: string
-  hp: number
-  regionId: string
-  beatSignature: { bpm: number; num: number; den: number }
-  phases: {
-    enterHpGte?: number
-    enterHpLt?: number
-    btOverride?: string
-    music?: string
-  }[]
-  rewards: { skill?: string; items?: string[] }
-}
+/**
+ * 立项目录里写过的 `data/bosses/*.json` 与 `BossData` 接口**已合并落地**（KI-038）：
+ * Boss 不是「另一种敌人」，她就是 `enemies.json` 里那条带 `boss` 段的数据（私有拍速、阶段、
+ * 机关、入场与胜利序列全在那一段）。拆成两个文件只会让「她有几阶」这件事有两处可写，
+ * 而两处可写就有一处会撒谎。本文件的这些 interface + `src/data/json/*.json` 才是真源。
+ */
