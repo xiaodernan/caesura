@@ -1,0 +1,879 @@
+#!/usr/bin/env node
+/**
+ * scripts/validate-data.mjs
+ *
+ * KI-015 数据门禁：零新增依赖（只用 node 内置 fs/path），校验 src/data/json/*.json。
+ * 结构/词表以 src/data/schema.ts 为准（本脚本只读，绝不修改任何被校验的 JSON）。
+ *
+ * 用法：node scripts/validate-data.mjs        （或 npm run validate:data）
+ * 退出码：存在 ERROR → 1；仅 WARN 或全绿 → 0（这才是它作为门禁的意义）。
+ */
+import { existsSync, readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const JSON_DIR = resolve(ROOT, 'src/data/json')
+const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json']
+// Phase 5-B 起：装备槽位 / 物品大类（与 schema.ts 的 SlotKey / ItemKind 对齐）
+const SLOT_KEYS = new Set(['weapon', 'helm', 'cuirass', 'gloves', 'greaves', 'seal', 'sealA', 'sealB'])
+const GEAR_SLOTS = new Set(['weapon', 'helm', 'cuirass', 'gloves', 'greaves', 'seal'])
+const ITEM_KINDS = new Set(['currency', 'material', 'consumable', 'weapon', 'armor', 'seal', 'lore', 'key'])
+const AFFIX_STATS = new Set(['poiseDmg', 'defense', 'staminaRegen', 'critRate', 'execDmg', 'noiseMul'])
+const AFFIX_BEHAVIORS = new Set(['perfectBlockWindow', 'lightStartup', 'bellBonus', 'restOverdrive'])
+
+// ---- 词表：与 src/data/schema.ts 对齐（改 schema 时同步这里） ----
+const WEAPON_ARCHETYPES = new Set(['straight_sword', 'greatsword', 'spear', 'bow', 'staff', 'unique'])
+const ENEMY_ARCHETYPES = new Set(['basic', 'heavy', 'ranged', 'assassin', 'support', 'elite', 'miniboss', 'boss'])
+const ATTR_KEYS = new Set(['str', 'dex', 'ton', 'vig', 'ovr', 'fis'])
+const BIOMES = new Set(['hub', 'forest', 'ruins', 'underground', 'camp', 'dungeon', 'boss_arena'])
+const HITBOX_SHAPES = new Set(['cone', 'sphere', 'ring'])
+const PROJECTILE_KINDS = new Set(['spear', 'note', 'shard'])
+const REACTIONS = new Set(['R0', 'R1', 'R2', 'R3', 'R4', 'R5'])
+const SHAKES = new Set(['graze', 'normal', 'heavy', 'boss'])
+const INTERACTABLE_KINDS = new Set(['checkpoint', 'elevator', 'bridge', 'soundwall', 'gather', 'chest', 'npc', 'teleport', 'gate', 'bell'])
+const PICK_ORDERS = new Set(['random', 'cycle'])
+// src/ai/Enemy.ts:707 —— 距离带里不是招式的伪动作
+const PSEUDO_ACTIONS = new Set(['chase', 'backstep', 'hold'])
+// tests/flow/support.test.ts 同款判据：tag 末段为 mute 即闷音类，必须自带 ticks
+const MUTE_TAG = /(^|\.)mute$/
+
+// ---- 小工具 ----
+const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
+const isArr = Array.isArray
+const isNum = (v) => typeof v === 'number' && Number.isFinite(v)
+const isStr = (v) => typeof v === 'string' && v.length > 0
+const isHex = (v) => typeof v === 'string' && /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v)
+// schema 里 body.color/emissive/coreColor 是 number（0xRRGGBB）；palette 三项才是 hex 字符串
+const isColorValue = (v) => isHex(v) || (Number.isInteger(v) && v >= 0 && v <= 0xffffff)
+
+class Report {
+  constructor() { this.rows = [] }
+  add(file, level, where, msg) { this.rows.push({ file, level, where, msg }) }
+  error(file, where, msg) { this.add(file, 'ERROR', where, msg) }
+  warn(file, where, msg) { this.add(file, 'WARN', where, msg) }
+
+  /** 数值校验：undefined → 必填缺失；非有限数 → NaN/Infinity；int/范围越界。返回是否通过。 */
+  num(file, where, v, opts = {}) {
+    const { min = -Infinity, max = Infinity, int = false, name = where.split('.').pop() } = opts
+    if (v === undefined || v === null) { this.error(file, where, `${name} 必填但缺失`); return false }
+    if (typeof v !== 'number' || !Number.isFinite(v)) { this.error(file, where, `${name} 不是有限数值（${JSON.stringify(v)}）`); return false }
+    if (int && !Number.isInteger(v)) { this.error(file, where, `${name} 必须是整数（${v}）`); return false }
+    if (v < min || v > max) {
+      const lo = min === -Infinity ? '-∞' : min
+      const hi = max === Infinity ? '∞' : max
+      this.error(file, where, `${name}=${v} 超出允许范围 [${lo}, ${hi}]`)
+      return false
+    }
+    return true
+  }
+
+  /** 子对象里的数值字段：子对象存在时逐字段必填；可选字段请传 { optional:true }。 */
+  sub(file, where, obj, spec) {
+    if (obj === undefined) return
+    if (!isObj(obj)) { this.error(file, where, '必须是对象'); return }
+    for (const [k, o] of Object.entries(spec)) {
+      if (o.str) { if (obj[k] !== undefined && !isStr(obj[k])) this.error(file, `${where}.${k}`, '必须是非空字符串'); continue }
+      if (o.bool) { if (obj[k] !== undefined && typeof obj[k] !== 'boolean') this.error(file, `${where}.${k}`, '必须是布尔'); continue }
+      if (o.optional && obj[k] === undefined) continue
+      this.num(file, `${where}.${k}`, obj[k], { ...o, name: k })
+    }
+  }
+}
+
+const report = new Report()
+
+// ---- 数据加载 ----
+const data = {}
+for (const f of FILES) {
+  try { data[f] = JSON.parse(readFileSync(resolve(JSON_DIR, f), 'utf8')) }
+  catch (e) { report.error(f, f, `JSON 读取/解析失败：${e.message}`); data[f] = null }
+}
+
+// ---- 通用片段校验 ----
+function vec3(file, where, v) {
+  if (!isObj(v)) { report.error(file, where, '必须是有 x/y/z 的对象'); return }
+  for (const k of ['x', 'y', 'z']) report.num(file, `${where}.${k}`, v[k], { name: k })
+}
+
+function strArray(file, where, v, { nonEmpty = false } = {}) {
+  if (!isArr(v)) { report.error(file, where, '必须是数组'); return }
+  if (nonEmpty && v.length === 0) { report.error(file, where, '数组不能为空'); return }
+  v.forEach((s, i) => { if (!isStr(s)) report.error(file, `${where}[${i}]`, '必须是非空字符串') })
+}
+
+function hitbox(file, where, hb) {
+  if (!isObj(hb)) { report.error(file, where, 'hitbox 必须是对象'); return }
+  if (!HITBOX_SHAPES.has(hb.shape)) { report.error(file, where, `hitbox.shape=${JSON.stringify(hb.shape)} 非法（cone/sphere/ring）`); return }
+  if (hb.shape === 'cone') {
+    report.num(file, `${where}.angleDeg`, hb.angleDeg, { min: 0, max: 360, name: 'angleDeg' })
+    report.num(file, `${where}.radius`, hb.radius, { min: 0, name: 'radius' })
+    report.num(file, `${where}.height`, hb.height, { min: 0, name: 'height' })
+    report.num(file, `${where}.offsetY`, hb.offsetY, { name: 'offsetY' })
+  } else if (hb.shape === 'sphere') {
+    report.num(file, `${where}.radius`, hb.radius, { min: 0, name: 'radius' })
+    report.num(file, `${where}.offsetY`, hb.offsetY, { name: 'offsetY' })
+    report.num(file, `${where}.offsetFwd`, hb.offsetFwd, { name: 'offsetFwd' })
+  } else {
+    const okIn = report.num(file, `${where}.inner`, hb.inner, { min: 0, name: 'inner' })
+    const okOut = report.num(file, `${where}.outer`, hb.outer, { min: 0, name: 'outer' })
+    report.num(file, `${where}.forward`, hb.forward, { name: 'forward' })
+    if (okIn && okOut && !(hb.inner < hb.outer)) report.error(file, where, `ring 必须 inner < outer（${hb.inner} / ${hb.outer}）`)
+  }
+}
+
+function projectile(file, where, p) {
+  if (!isObj(p)) { report.error(file, where, 'projectile 必须是对象'); return }
+  if (!PROJECTILE_KINDS.has(p.kind)) report.error(file, where, `projectile.kind=${JSON.stringify(p.kind)} 非法（spear/note/shard）`)
+  report.num(file, `${where}.speed`, p.speed, { min: 0, name: 'speed' })
+  report.num(file, `${where}.range`, p.range, { min: 0, name: 'range' })
+  report.num(file, `${where}.radius`, p.radius, { min: 0, name: 'radius' })
+  for (const [k, o] of Object.entries({ offsetY: {}, gravity: {}, pierce: { min: 0, int: true }, pinTicks: { min: 0, int: true }, muteOnHit: { min: 0, int: true } })) {
+    if (p[k] !== undefined) report.num(file, `${where}.${k}`, p[k], { ...o, name: k })
+  }
+  if (p.telegraph !== undefined && typeof p.telegraph !== 'boolean') report.error(file, `${where}.telegraph`, '必须是布尔')
+  if (p.shake !== undefined && !SHAKES.has(p.shake)) report.error(file, `${where}.shake`, `shake=${JSON.stringify(p.shake)} 非法`)
+  if (p.burst !== undefined) {
+    const b = p.burst
+    if (!isObj(b)) { report.error(file, `${where}.burst`, '必须是对象'); return }
+    report.num(file, `${where}.burst.count`, b.count, { min: 1, int: true, name: 'count' })
+    report.num(file, `${where}.burst.everyTicks`, b.everyTicks, { min: 1, int: true, name: 'everyTicks' })
+    if (b.at !== undefined) {
+      if (!isArr(b.at)) report.error(file, `${where}.burst.at`, '必须是数组')
+      else {
+        b.at.forEach((n, i) => report.num(file, `${where}.burst.at[${i}]`, n, { min: 0, name: 'at' }))
+        if (isNum(b.count) && b.at.length > b.count) report.warn(file, `${where}.burst.at`, `显式帧位 ${b.at.length} 个多于 count=${b.count}`)
+      }
+    }
+  }
+}
+
+/** 帧数据：必填 + 帧序 + 可选项。返回 frames.next（供调用方做引用校验）。 */
+function frames(file, where, f) {
+  if (!isObj(f)) { report.error(file, where, 'frames 缺失或不是对象'); return undefined }
+  for (const k of ['startup', 'activeStart', 'activeEnd', 'recovery', 'damage', 'stamina', 'poise', 'hitStopMs']) {
+    report.num(file, `${where}.${k}`, f[k], { min: 0, name: k })
+  }
+  const { startup, activeStart, activeEnd, recovery } = f
+  if ([startup, activeStart, activeEnd, recovery].every(isNum)
+    && !(startup <= activeStart && activeStart <= activeEnd && activeEnd <= recovery)) {
+    report.error(file, where, `帧序非法：需 startup(${startup}) <= activeStart(${activeStart}) <= activeEnd(${activeEnd}) <= recovery(${recovery})`)
+  }
+  if (f.lunge !== undefined) report.num(file, `${where}.lunge`, f.lunge, { name: 'lunge' })
+  if (f.loudness !== undefined) report.num(file, `${where}.loudness`, f.loudness, { min: 0, name: 'loudness' })
+  if (f.fissureLayers !== undefined) report.num(file, `${where}.fissureLayers`, f.fissureLayers, { min: 0, int: true, name: 'fissureLayers' })
+  if (f.shake !== undefined && !SHAKES.has(f.shake)) report.error(file, `${where}.shake`, `shake=${JSON.stringify(f.shake)} 非法`)
+  for (const k of ['sfx', 'vfx', 'flags']) if (f[k] !== undefined) strArray(file, `${where}.${k}`, f[k])
+  if (f.beatQuant !== undefined) {
+    if (!isArr(f.beatQuant)) report.error(file, `${where}.beatQuant`, '必须是数组')
+    else f.beatQuant.forEach((n, i) => report.num(file, `${where}.beatQuant[${i}]`, n, { name: 'beatQuant' }))
+  }
+  if (f.next !== undefined && !isStr(f.next)) report.error(file, `${where}.next`, '必须是非空字符串')
+  if (f.hitbox !== undefined) hitbox(file, `${where}.hitbox`, f.hitbox)
+  if (f.projectile !== undefined) projectile(file, `${where}.projectile`, f.projectile)
+  return f.next
+}
+
+/** 招式必填帧序检查（movesets 与 enemies 共用） */
+function attackFrames(file, where, a) {
+  if (!isObj(a)) { report.error(file, where, '招式必须是对象'); return undefined }
+  return frames(file, `${where}.frames`, a.frames)
+}
+
+// ---- player.json ----
+function validatePlayer() {
+  const file = 'player.json'
+  const p = data[file]
+  if (!isObj(p)) { report.error(file, file, '顶层必须是对象'); return }
+  for (const [k, o] of Object.entries({
+    hp: { min: 1 }, stamina: { min: 0 }, poise: { min: 0 }, defense: { min: 0 },
+    moveSpeed: { min: 0 }, sprintSpeed: { min: 0 }, sprintCostPerSec: { min: 0 },
+    jumpSpeed: { min: 0 }, gravity: { min: 0 }, perfectBlockWindow: { min: 0, int: true }, attrUpCost: { min: 0 },
+  })) report.num(file, k, p[k], { ...o, name: k })
+
+  report.sub(file, 'staminaRegen', p.staminaRegen, { hardDelay: { min: 0, int: true }, slowPerSec: { min: 0 }, slowTicks: { min: 0, int: true }, fastPerSec: { min: 0 } })
+  report.sub(file, 'guard', p.guard, { startupTicks: { min: 0, int: true }, reduction: { min: 0, max: 1 }, staPerDmg: { min: 0 }, bleedPoiseFrac: { min: 0, max: 1 }, perfectBlockReflectMul: { min: 0, max: 1 } })
+  report.sub(file, 'parry', p.parry, { activeTicks: { min: 0, int: true }, whiffRecovery: { min: 0, int: true }, poiseDamage: { min: 0 }, stunTicks: { min: 0, int: true }, overdriveGain: { min: 0 }, projectileReflectMul: { min: 0, max: 1 } })
+  report.sub(file, 'roll', p.roll, { total: { min: 0, int: true }, iframeStart: { min: 0, int: true }, iframeEnd: { min: 0, int: true }, dist: { min: 0 }, backDist: { min: 0 }, stamina: { min: 0 }, lockOnDist: { min: 0 } })
+  report.sub(file, 'execution', p.execution, {
+    hpFrac: { min: 0, max: 1 }, flat: { min: 0 }, stealthKillFrac: { min: 0, max: 1 }, backstabConeDeg: { min: 0, max: 180 },
+    backstabRange: { min: 0 }, crumpleRange: { min: 0 }, overdriveCost: { min: 0 }, overdriveFrac: { min: 0, max: 1 },
+    overdriveFlat: { min: 0 }, durationTicks: { min: 0, int: true }, firstBladeHitStopMs: { min: 0 },
+  })
+  report.sub(file, 'rankXpCurve', p.rankXpCurve, { base: { min: 0 }, a: { min: 0 }, b: { min: 0 } })
+  report.sub(file, 'attrs', p.attrs, Object.fromEntries([...ATTR_KEYS].map((k) => [k, { min: 0 }])))
+
+  // 区间序关系
+  if (isObj(p.roll)) {
+    const { total, iframeStart, iframeEnd, lockOnIframes } = p.roll
+    if ([total, iframeStart, iframeEnd].every(isNum) && !(iframeStart <= iframeEnd && iframeEnd <= total)) {
+      report.error(file, 'roll', `需 iframeStart(${iframeStart}) <= iframeEnd(${iframeEnd}) <= total(${total})`)
+    }
+    if (lockOnIframes !== undefined) {
+      if (!isArr(lockOnIframes) || lockOnIframes.length !== 2) report.error(file, 'roll.lockOnIframes', '必须是 [start, end] 两元素数组')
+      else {
+        lockOnIframes.forEach((n, i) => report.num(file, `roll.lockOnIframes[${i}]`, n, { min: 0, int: true, name: 'lockOnIframes' }))
+        if (lockOnIframes.every(isNum) && !(lockOnIframes[0] <= lockOnIframes[1] && lockOnIframes[1] <= total)) {
+          report.error(file, 'roll.lockOnIframes', `需 start <= end <= roll.total(${total})`)
+        }
+      }
+    }
+  }
+  if (isObj(p.execution)) {
+    const bf = p.execution.bossFracs
+    if (!isArr(bf) || bf.length === 0) report.error(file, 'execution.bossFracs', '必须是非空数组')
+    else bf.forEach((n, i) => report.num(file, `execution.bossFracs[${i}]`, n, { min: 0, max: 1, name: 'bossFracs' }))
+  }
+}
+
+// ---- movesets.json ----
+function validateMovesets() {
+  const file = 'movesets.json'
+  const list = data[file]
+  const ids = new Set()
+  if (!isArr(list)) { report.error(file, file, '顶层必须是数组'); return ids }
+  list.forEach((ms, i) => {
+    if (!isObj(ms)) { report.error(file, `[${i}]`, '必须是对象'); return }
+    const w = isStr(ms.id) ? ms.id : `[${i}]`
+    if (!isStr(ms.id)) report.error(file, w, 'id 缺失或非字符串')
+    else if (ids.has(ms.id)) report.error(file, w, `id 重复：${ms.id}`)
+    else ids.add(ms.id)
+    if (!isObj(ms.actions) || Object.keys(ms.actions).length === 0) { report.error(file, w, 'actions 必须是非空对象'); return }
+    const keys = new Set(Object.keys(ms.actions))
+    for (const [name, f] of Object.entries(ms.actions)) {
+      const nx = frames(file, `${w}.actions.${name}`, f)
+      if (nx !== undefined && isStr(nx) && !keys.has(nx)) {
+        report.error(file, `${w}.actions.${name}`, `next 悬空引用：'${nx}' 不在本 moveset 的 actions 里`)
+      }
+    }
+  })
+  return ids
+}
+
+// ---- weapons.json ----
+function validateWeapons(movesetIds) {
+  const file = 'weapons.json'
+  const list = data[file]
+  const ids = new Set()
+  if (!isArr(list)) { report.error(file, file, '顶层必须是数组'); return ids }
+  list.forEach((wp, i) => {
+    if (!isObj(wp)) { report.error(file, `[${i}]`, '必须是对象'); return }
+    const w = isStr(wp.id) ? wp.id : `[${i}]`
+    if (!isStr(wp.id)) report.error(file, w, 'id 缺失或非字符串')
+    else if (ids.has(wp.id)) report.error(file, w, `id 重复：${wp.id}`)
+    else ids.add(wp.id)
+    if (!isStr(wp.nameKey)) report.error(file, w, 'nameKey 缺失或非字符串')
+    if (!WEAPON_ARCHETYPES.has(wp.archetype)) report.error(file, w, `archetype=${JSON.stringify(wp.archetype)} 非法`)
+    if (!isStr(wp.movesetId)) report.error(file, w, 'movesetId 缺失或非字符串')
+    else if (!movesetIds.has(wp.movesetId)) report.error(file, w, `movesetId 悬空引用：'${wp.movesetId}' 不在 movesets.json`)
+    report.num(file, `${w}.atkBase`, wp.atkBase, { min: 0, name: 'atkBase' })
+    if (!isObj(wp.scaling)) report.error(file, `${w}.scaling`, '必须是对象')
+    else for (const [k, v] of Object.entries(wp.scaling)) {
+      if (!ATTR_KEYS.has(k)) report.error(file, `${w}.scaling.${k}`, `未知属性键 '${k}'（${[...ATTR_KEYS].join('/')}）`)
+      else report.num(file, `${w}.scaling.${k}`, v, { min: 0, name: k })
+    }
+    strArray(file, `${w}.swingTag`, wp.swingTag, { nonEmpty: true })
+    if (!isStr(wp.skill)) report.error(file, `${w}.skill`, '缺失或非字符串')
+    if (wp.poiseMul !== undefined) report.num(file, `${w}.poiseMul`, wp.poiseMul, { min: 0, name: 'poiseMul' })
+    if (wp.noiseMul !== undefined) report.num(file, `${w}.noiseMul`, wp.noiseMul, { min: 0, name: 'noiseMul' })
+  })
+  return ids
+}
+
+// ---- progression.json ----
+function validateProgression() {
+  const file = 'progression.json'
+  const d = data[file]
+  const rarityIds = new Set()
+  const attrKeys = new Set()
+  if (!isObj(d)) { report.error(file, file, '顶层必须是对象'); return { rarityIds, attrKeys } }
+  report.num(file, 'maxRank', d.maxRank, { min: 2, int: true, name: 'maxRank' })
+  // 六音级属性必须一个不多一个不少（漏一维就会有一个属性永远无法分配）
+  if (!isArr(d.attrs) || d.attrs.length !== 6) report.error(file, 'attrs', '必须恰好 6 条六音级属性')
+  else d.attrs.forEach((a, i) => {
+    const w = `attrs[${i}]`
+    if (!isObj(a)) { report.error(file, w, '必须是对象'); return }
+    if (!ATTR_KEYS.has(a.key)) report.error(file, `${w}.key`, `未知属性键：${a.key}`)
+    else if (attrKeys.has(a.key)) report.error(file, w, `属性键重复：${a.key}`)
+    else attrKeys.add(a.key)
+    if (!isStr(a.displayName)) report.error(file, `${w}.displayName`, '必填')
+    if (!isStr(a.desc) || a.desc.length < 5) report.error(file, `${w}.desc`, '需要一句世界内解释（§19）')
+    const soft = report.num(file, `${w}.softcap`, a.softcap, { min: 1, int: true, name: 'softcap' })
+    const hard = report.num(file, `${w}.hardcap`, a.hardcap, { min: 1, int: true, name: 'hardcap' })
+    if (soft && hard && !(a.softcap < a.hardcap)) report.error(file, w, `softcap 必须小于 hardcap（${a.softcap} / ${a.hardcap}）`)
+  })
+  // 等级曲线：rank 从 2 连续到 maxRank，xp 严格递增
+  if (!isArr(d.rankCurve) || d.rankCurve.length === 0) report.error(file, 'rankCurve', '必须是非空数组')
+  else {
+    let prev = 0
+    d.rankCurve.forEach((r, i) => {
+      const w = `rankCurve[${i}]`
+      if (!isObj(r)) { report.error(file, w, '必须是对象'); return }
+      report.num(file, `${w}.rank`, r.rank, { min: 2, int: true, name: 'rank' })
+      const ok = report.num(file, `${w}.xp`, r.xp, { min: 1, int: true, name: 'xp' })
+      if (ok && r.xp <= prev) report.error(file, w, `xp 必须严格递增（${prev} → ${r.xp}）`)
+      if (ok) prev = r.xp
+      if (i + 2 !== r.rank) report.error(file, w, `rank 必须连续：期望 ${i + 2}，实际 ${r.rank}`)
+    })
+    if (d.rankCurve.length !== d.maxRank - 1) report.error(file, 'rankCurve', `长度应为 maxRank-1=${d.maxRank - 1}，实际 ${d.rankCurve.length}`)
+  }
+  // 强化曲线：1..10 连续，花费与收益非负
+  if (!isArr(d.upgrade) || d.upgrade.length === 0) report.error(file, 'upgrade', '必须是非空数组')
+  else d.upgrade.forEach((u, i) => {
+    const w = `upgrade[${i}]`
+    if (!isObj(u)) { report.error(file, w, '必须是对象'); return }
+    if (u.level !== i + 1) report.error(file, w, `level 必须连续：期望 ${i + 1}，实际 ${u.level}`)
+    report.num(file, `${w}.timbite`, u.timbite, { min: 0, int: true, name: 'timbite' })
+    report.num(file, `${w}.dross`, u.dross, { min: 0, int: true, name: 'dross' })
+    report.num(file, `${w}.weaponMul`, u.weaponMul, { min: 0, name: 'weaponMul' })
+    report.num(file, `${w}.armorMul`, u.armorMul, { min: 0, name: 'armorMul' })
+  })
+  // 稀有度：id 唯一、词缀数与上限合理
+  if (!isArr(d.rarity) || d.rarity.length === 0) report.error(file, 'rarity', '必须是非空数组')
+  else d.rarity.forEach((r, i) => {
+    const w = `rarity[${i}]`
+    if (!isObj(r)) { report.error(file, w, '必须是对象'); return }
+    if (!isStr(r.id)) report.error(file, `${w}.id`, '必填')
+    else if (rarityIds.has(r.id)) report.error(file, w, `id 重复：${r.id}`)
+    else rarityIds.add(r.id)
+    report.num(file, `${w}.affixes`, r.affixes, { min: 0, int: true, name: 'affixes' })
+    report.num(file, `${w}.maxLevel`, r.maxLevel, { min: 0, int: true, name: 'maxLevel' })
+  })
+  // 词缀：每条必须有 stat 或 behavior（没有消费方的词缀不许写进表）
+  if (!isObj(d.affixes)) report.error(file, 'affixes', '必须是对象')
+  else for (const group of ['prefix', 'suffix']) {
+    const list = d.affixes[group]
+    if (!isArr(list)) { report.error(file, `affixes.${group}`, '必须是数组'); continue }
+    list.forEach((a, i) => {
+      const w = `affixes.${group}[${i}]`
+      if (!isObj(a)) { report.error(file, w, '必须是对象'); return }
+      if (!isStr(a.id)) report.error(file, `${w}.id`, '必填')
+      if (!isStr(a.desc)) report.error(file, `${w}.desc`, '必填')
+      const hasStat = a.stat !== undefined
+      const hasBehavior = a.behavior !== undefined
+      if (!hasStat && !hasBehavior) report.error(file, w, '必须写 stat 或 behavior —— 没有消费方的词缀不许进表（KI-029）')
+      if (hasStat && hasBehavior) report.error(file, w, 'stat 与 behavior 只能二选一')
+      if (hasStat && !AFFIX_STATS.has(a.stat)) report.error(file, `${w}.stat`, `未知 stat：${a.stat}`)
+      if (hasBehavior && !AFFIX_BEHAVIORS.has(a.behavior)) report.error(file, `${w}.behavior`, `未知 behavior：${a.behavior}`)
+      if (isArr(a.range)) {
+        if (a.range.length !== 2) report.error(file, `${w}.range`, '必须是 [min, max]')
+        else if (!(a.range[0] <= a.range[1])) report.error(file, `${w}.range`, `需 min <= max（${a.range[0]} / ${a.range[1]}）`)
+      } else report.error(file, `${w}.range`, '必填 [min, max]')
+      if (a.slots !== undefined) strArray(file, `${w}.slots`, a.slots, { nonEmpty: true })
+      if (a.slots !== undefined) for (const sl of a.slots) if (!GEAR_SLOTS.has(sl)) report.error(file, `${w}.slots`, `未知槽位：${sl}`)
+      if (a.minRarity !== undefined && !rarityIds.has(a.minRarity)) report.error(file, `${w}.minRarity`, `未知稀有度：${a.minRarity}`)
+    })
+  }
+  // 里程碑：rank 必须在曲线范围内
+  if (!isArr(d.milestones)) report.error(file, 'milestones', '必须是数组')
+  else d.milestones.forEach((m, i) => {
+    const w = `milestones[${i}]`
+    if (!isObj(m)) { report.error(file, w, '必须是对象'); return }
+    report.num(file, `${w}.rank`, m.rank, { min: 2, max: d.maxRank, int: true, name: 'rank' })
+    if (!isStr(m.id)) report.error(file, `${w}.id`, '必填')
+    if (!isStr(m.label)) report.error(file, `${w}.label`, '必填（§8.2「你新能做什么」）')
+  })
+  // 出身：六维齐全、合计一致（"定弦只改分布"这条设计承诺必须可机器检查）
+  if (!isArr(d.origins) || d.origins.length === 0) report.error(file, 'origins', '必须是非空数组')
+  else {
+    const totals = new Set()
+    d.origins.forEach((o, i) => {
+      const w = `origins[${i}]`
+      if (!isObj(o)) { report.error(file, w, '必须是对象'); return }
+      if (!isStr(o.id)) report.error(file, `${w}.id`, '必填')
+      if (!isObj(o.attrs)) { report.error(file, `${w}.attrs`, '必须是对象'); return }
+      let total = 0
+      for (const k of ATTR_KEYS) {
+        const ok = report.num(file, `${w}.attrs.${k}`, o.attrs[k], { min: 1, int: true, name: k })
+        if (ok) total += o.attrs[k]
+      }
+      totals.add(total)
+      if (!isStr(o.weaponId)) report.error(file, `${w}.weaponId`, '必填')
+      else if (!weaponIds.has(o.weaponId)) report.error(file, `${w}.weaponId`, `悬空引用：'${o.weaponId}' 不在 weapons.json`)
+      if (o.gearIds !== undefined) strArray(file, `${w}.gearIds`, o.gearIds, { nonEmpty: true })
+      if (!isStr(o.blurb)) report.error(file, `${w}.blurb`, '必填')
+    })
+    if (totals.size > 1) report.error(file, 'origins', `各出身六维合计必须一致，实际出现：${[...totals].join(' / ')}`)
+  }
+  return { rarityIds, attrKeys }
+}
+
+// ---- items.json ----
+function validateItems(weaponIds, rarityIds) {
+  const file = 'items.json'
+  const list = data[file]
+  const ids = new Set()
+  if (!isArr(list)) { report.error(file, file, '顶层必须是数组'); return ids }
+  list.forEach((it, i) => {
+    const w = isStr(it?.id) ? it.id : `[${i}]`
+    if (!isObj(it)) { report.error(file, w, '必须是对象'); return }
+    if (!isStr(it.id)) report.error(file, w, 'id 缺失或非字符串')
+    else if (ids.has(it.id)) report.error(file, w, `id 重复：${it.id}`)
+    else ids.add(it.id)
+    if (!isStr(it.displayName)) report.error(file, w, 'displayName 必填')
+    if (!isStr(it.desc)) report.error(file, w, 'desc 必填（物品也要有世界内解释）')
+    if (!ITEM_KINDS.has(it.kind)) report.error(file, w, `未知 kind：${it.kind}`)
+    report.num(file, `${w}.stack`, it.stack, { min: 1, int: true, name: 'stack' })
+    if (it.value !== undefined) report.num(file, `${w}.value`, it.value, { min: 0, name: 'value' })
+    const gearKind = it.kind === 'weapon' || it.kind === 'armor' || it.kind === 'seal'
+    if (gearKind && !isObj(it.gear)) { report.error(file, w, `${it.kind} 必须带 gear`); return }
+    if (!gearKind && it.gear !== undefined) report.error(file, w, '非装备件不该带 gear')
+    if (isObj(it.gear)) {
+      const g = it.gear
+      if (!GEAR_SLOTS.has(g.slot)) report.error(file, `${w}.gear.slot`, `未知槽位：${g.slot}`)
+      if (!rarityIds.has(g.rarity)) report.error(file, `${w}.gear.rarity`, `未知稀有度：${g.rarity}（progression.json.rarity）`)
+      report.num(file, `${w}.gear.weight`, g.weight, { min: 0, name: 'weight' })
+      if (g.def !== undefined) report.num(file, `${w}.gear.def`, g.def, { min: 0, name: 'def' })
+      if (it.kind === 'weapon') {
+        if (!isStr(g.weaponId)) report.error(file, `${w}.gear.weaponId`, '武器件必须指向 weapons.json 的 id')
+        else if (!weaponIds.has(g.weaponId)) report.error(file, `${w}.gear.weaponId`, `悬空引用：'${g.weaponId}' 不在 weapons.json`)
+      } else if (g.weaponId !== undefined) report.error(file, `${w}.gear.weaponId`, '只有武器件才写 weaponId')
+      if (g.affixes !== undefined) strArray(file, `${w}.gear.affixes`, g.affixes, { nonEmpty: true })
+      if (g.salvage !== undefined) report.sub(file, `${w}.gear.salvage`, g.salvage, { dross: { min: 0, int: true }, timbite: { min: 0, int: true } })
+    }
+    if (it.use !== undefined) report.sub(file, `${w}.use`, it.use, { heal: { min: 0, optional: true }, healFrac: { min: 0, max: 1, optional: true } })
+    if (it.kind === 'consumable' && it.use === undefined) report.error(file, w, '消耗品必须写 use，否则它没有消费方')
+  })
+  // 每把武器都要有一件对应的装备件 —— 否则出身/RpgRuntime 找不到它（真会抛错）
+  for (const wid of weaponIds) {
+    const has = list.some((it) => it?.gear?.weaponId === wid)
+    if (!has) report.error(file, 'weapons', `weapons.json 的 '${wid}' 没有对应的装备件（RpgRuntime 会因此抛错）`)
+  }
+  return ids
+}
+
+// ---- loot.json ----
+function validateLoot(itemIds, rarityIds) {
+  const file = 'loot.json'
+  const list = data[file]
+  const ids = new Set()
+  if (!isArr(list)) { report.error(file, file, '顶层必须是数组'); return ids }
+  const range = (where, v, name) => {
+    if (!isArr(v) || v.length !== 2) { report.error(file, where, `${name} 必须是 [min, max] 两元素数组`); return }
+    const ok = v.every((n, i) => report.num(file, `${where}[${i}]`, n, { min: 0, int: true, name }))
+    if (ok && !(v[0] <= v[1])) report.error(file, where, `${name} 需 min <= max（${v[0]} / ${v[1]}）`)
+  }
+  const roll = (tableId, r, ri) => {
+    const w = `${tableId}.rolls[${ri}]`
+    if (!isObj(r)) { report.error(file, w, '必须是对象'); return }
+    if (!isStr(r.id)) report.error(file, `${w}.id`, 'roll 必须有自己的 id')
+    if (r.chance !== undefined) report.num(file, `${w}.chance`, r.chance, { min: 0, max: 1, name: 'chance' })
+    if (r.weight !== undefined) report.num(file, `${w}.weight`, r.weight, { min: 0, name: 'weight' })
+    const sources = ['item', 'xp', 'gearBand'].filter((k) => r[k] !== undefined)
+    if (sources.length === 0) report.error(file, w, '至少要写 item / xp / gearBand 之一')
+    if (sources.length > 1) report.error(file, w, `一条 roll 只能有一种来源，实际写了：${sources.join(' + ')}`)
+    if (r.item !== undefined) {
+      if (!isStr(r.item)) report.error(file, `${w}.item`, '必须是非空字符串')
+      else if (!itemIds.has(r.item)) report.error(file, `${w}.item`, `悬空引用：'${r.item}' 不在 items.json`)
+      if (r.count === undefined) report.error(file, `${w}.count`, 'item 条目必须写 count')
+      else range(`${w}.count`, r.count, 'count')
+    }
+    if (r.xp !== undefined) {
+      if (r.count !== undefined) report.error(file, `${w}.count`, 'xp 条目不应再写 count')
+      range(`${w}.xp`, r.xp, 'xp')
+    }
+    if (r.gearBand !== undefined) {
+      if (!isArr(r.gearBand) || r.gearBand.length === 0) report.error(file, `${w}.gearBand`, '必须是非空数组')
+      else r.gearBand.forEach((b, bi) => {
+        const bw = `${w}.gearBand[${bi}]`
+        if (!isObj(b)) { report.error(file, bw, '必须是 { rarity, weight }'); return }
+        if (!rarityIds.has(b.rarity)) report.error(file, `${bw}.rarity`, `未知稀有度：${b.rarity}（progression.json.rarity）`)
+        report.num(file, `${bw}.weight`, b.weight, { min: 0, name: 'weight' })
+      })
+    }
+    if (r.pity !== undefined) report.num(file, `${w}.pity`, r.pity, { min: 2, int: true, name: 'pity' })
+  }
+  list.forEach((t, i) => {
+    if (!isObj(t)) { report.error(file, `[${i}]`, '必须是对象'); return }
+    const w = isStr(t.id) ? t.id : `[${i}]`
+    if (!isStr(t.id)) report.error(file, w, 'id 缺失或非字符串')
+    else if (ids.has(t.id)) report.error(file, w, `id 重复：${t.id}`)
+    else ids.add(t.id)
+    if (!isArr(t.rolls) || t.rolls.length === 0) { report.error(file, w, 'rolls 必须是非空数组'); return }
+    t.rolls.forEach((r, ri) => roll(w, r, ri))
+    if (t.firstKill !== undefined) {
+      if (!isArr(t.firstKill) || t.firstKill.length === 0) report.error(file, `${w}.firstKill`, '写了就必须是非空数组')
+      else t.firstKill.forEach((r, ri) => roll(`${w}.firstKill`, r, ri))
+    }
+  })
+  return ids
+}
+
+// ---- enemies.json ----
+/** 深度收集所有招式引用：任意 'attackId' 字符串字段 + 纯字符串数组的 'attacks' 字段 */
+function collectAttackRefs(node, out, where = '') {
+  if (isArr(node)) { node.forEach((v, i) => collectAttackRefs(v, out, `${where}[${i}]`)); return }
+  if (!isObj(node)) return
+  for (const [k, v] of Object.entries(node)) {
+    const w = where ? `${where}.${k}` : k
+    if (k === 'attackId' && typeof v === 'string') out.push({ where: w, id: v })
+    else if (k === 'attacks' && isArr(v) && v.length > 0 && v.every((x) => typeof x === 'string')) {
+      v.forEach((x, i) => out.push({ where: `${w}[${i}]`, id: x }))
+    } else collectAttackRefs(v, out, w)
+  }
+}
+
+function validateEnemies(lootIds) {
+  const file = 'enemies.json'
+  const list = data[file]
+  const ids = new Set()
+  if (!isArr(list)) { report.error(file, file, '顶层必须是数组'); return ids }
+  list.forEach((e, i) => {
+    if (!isObj(e)) { report.error(file, `[${i}]`, '必须是对象'); return }
+    const w = isStr(e.id) ? e.id : `[${i}]`
+    if (!isStr(e.id)) report.error(file, w, 'id 缺失或非字符串')
+    else if (ids.has(e.id)) report.error(file, w, `id 重复：${e.id}`)
+    else ids.add(e.id)
+    if (!isStr(e.nameKey)) report.error(file, w, 'nameKey 缺失或非字符串')
+    if (!ENEMY_ARCHETYPES.has(e.archetype)) report.error(file, w, `archetype=${JSON.stringify(e.archetype)} 非法`)
+    report.num(file, `${w}.hp`, e.hp, { min: 1, name: 'hp' })
+    report.num(file, `${w}.poise`, e.poise, { min: 0, name: 'poise' })
+    report.num(file, `${w}.speed`, e.speed, { min: 0, name: 'speed' })
+    if (e.defense !== undefined) report.num(file, `${w}.defense`, e.defense, { min: 0, name: 'defense' })
+
+    // ---- ai ----
+    if (!isObj(e.ai)) report.error(file, `${w}.ai`, 'ai 缺失或不是对象')
+    else {
+      const ai = e.ai
+      report.sub(file, `${w}.ai.vision`, ai.vision, { range: { min: 0 }, fovDeg: { min: 0, max: 360 } })
+      report.sub(file, `${w}.ai.vibration`, ai.vibration, { range: { min: 0 } })
+      report.sub(file, `${w}.ai.hearing`, ai.hearing, { range: { min: 0 } })
+      if (!isArr(ai.distBands) || ai.distBands.length === 0) report.error(file, `${w}.ai.distBands`, '必须是非空数组')
+      else ai.distBands.forEach((b, bi) => {
+        const bw = `${w}.ai.distBands[${bi}]`
+        if (!isObj(b)) { report.error(file, bw, '必须是对象'); return }
+        const okMin = report.num(file, `${bw}.min`, b.min, { min: 0, name: 'min' })
+        const okMax = report.num(file, `${bw}.max`, b.max, { min: 0, name: 'max' })
+        if (okMin && okMax && !(b.min <= b.max)) report.error(file, bw, `距离带需 min <= max（${b.min} / ${b.max}）`)
+        strArray(file, `${bw}.actions`, b.actions, { nonEmpty: true })
+      })
+      if (ai.kiteRange !== undefined) report.num(file, `${w}.ai.kiteRange`, ai.kiteRange, { min: 0, name: 'kiteRange' })
+      if (ai.chaseBeyond !== undefined) report.num(file, `${w}.ai.chaseBeyond`, ai.chaseBeyond, { min: 0, name: 'chaseBeyond' })
+      if (ai.retreatHpFrac !== undefined) report.num(file, `${w}.ai.retreatHpFrac`, ai.retreatHpFrac, { min: 0, max: 1, name: 'retreatHpFrac' })
+      report.sub(file, `${w}.ai.callAlly`, ai.callAlly, { range: { min: 0 }, broadcastTicks: { min: 0, int: true } })
+      report.sub(file, `${w}.ai.buffAura`, ai.buffAura, { range: { min: 0 }, attackSpeedMul: { min: 0 }, dmgMul: { min: 0 } })
+      report.sub(file, `${w}.ai.offTuneOnDeath`, ai.offTuneOnDeath, { stunTicks: { min: 0, int: true }, resetAlertness: { bool: true } })
+      report.sub(file, `${w}.ai.beatGhost`, ai.beatGhost, {
+        intangibleWindowTicks: { min: 0, int: true }, dodgeRevealTicks: { min: 0, int: true }, dodgeStunTicks: { min: 0, int: true },
+        fakeBeatRevealTicks: { min: 0, int: true }, fakeBeatLoudness: { min: 0 },
+      })
+      report.sub(file, `${w}.ai.huntsSound`, ai.huntsSound, { minLoudness: { min: 0 }, cooldownTicks: { min: 0, int: true }, maxRange: { min: 0 } })
+      if (isObj(ai.huntsSound) && !isStr(ai.huntsSound.attackId)) report.error(file, `${w}.ai.huntsSound.attackId`, '缺失或非字符串')
+      report.sub(file, `${w}.ai.hearsHeartbeat`, ai.hearsHeartbeat, { stillTicks: { min: 0, int: true }, decayPerSec: { min: 0 } })
+      report.sub(file, `${w}.ai.armorFront`, ai.armorFront, { arcDeg: { min: 0, max: 360 }, dmgMul: { min: 0 } })
+      report.sub(file, `${w}.ai.selfToll`, ai.selfToll, { everyBars: { min: 1, int: true }, heal: { min: 0 }, label: { str: true } })
+      if (isObj(ai.selfToll) && !isStr(ai.selfToll.attackId)) report.error(file, `${w}.ai.selfToll.attackId`, '缺失或非字符串')
+      if (ai.pickOrder !== undefined && !PICK_ORDERS.has(ai.pickOrder)) report.error(file, `${w}.ai.pickOrder`, `pickOrder=${JSON.stringify(ai.pickOrder)} 非法（random/cycle）`)
+      if (ai.deaf !== undefined && typeof ai.deaf !== 'boolean') report.error(file, `${w}.ai.deaf`, '必须是布尔')
+      if (ai.eyes !== undefined && typeof ai.eyes !== 'boolean') report.error(file, `${w}.ai.eyes`, '必须是布尔')
+    }
+
+    // ---- attacks（先建 id 集合，引用统一在下面解析）----
+    const attackIds = new Set()
+    const refs = [] // { where, id }
+    const nextRefs = []
+    if (!isArr(e.attacks) || e.attacks.length === 0) report.error(file, `${w}.attacks`, '必须是非空数组')
+    else e.attacks.forEach((a, ai) => {
+      const aw = `${w}.attacks.${isStr(a?.id) ? a.id : `[${ai}]`}`
+      if (!isObj(a)) { report.error(file, aw, '必须是对象'); return }
+      if (!isStr(a.id)) report.error(file, aw, 'id 缺失或非字符串')
+      else if (attackIds.has(a.id)) report.error(file, aw, `招式 id 重复：${a.id}`)
+      else attackIds.add(a.id)
+      if (!isArr(a.beat) || a.beat.length === 0) report.error(file, `${aw}.beat`, 'beat 必须是非空数组')
+      else a.beat.forEach((b, bi) => report.num(file, `${aw}.beat[${bi}]`, b, { min: 0, name: 'beat' }))
+      if (typeof a.parryable !== 'boolean') report.error(file, `${aw}.parryable`, '必须是布尔')
+      if (a.reaction !== undefined && !REACTIONS.has(a.reaction)) report.error(file, `${aw}.reaction`, `reaction=${JSON.stringify(a.reaction)} 非法`)
+      if (a.parryStunTicks !== undefined) report.num(file, `${aw}.parryStunTicks`, a.parryStunTicks, { min: 0, int: true, name: 'parryStunTicks' })
+      if (a.onGrid !== undefined && typeof a.onGrid !== 'boolean') report.error(file, `${aw}.onGrid`, '必须是布尔')
+      if (a.reclaimWindow !== undefined && typeof a.reclaimWindow !== 'boolean') report.error(file, `${aw}.reclaimWindow`, '必须是布尔')
+      if (a.statusOnHit !== undefined) {
+        const st = a.statusOnHit
+        if (!isObj(st)) report.error(file, `${aw}.statusOnHit`, '必须是对象')
+        else {
+          if (!isStr(st.tag)) report.error(file, `${aw}.statusOnHit.tag`, '缺失或非字符串')
+          report.num(file, `${aw}.statusOnHit.layers`, st.layers, { min: 1, int: true, name: 'layers' })
+          const isMute = isStr(st.tag) && MUTE_TAG.test(st.tag)
+          if (isMute && st.ticks === undefined) {
+            report.error(file, `${aw}.statusOnHit`, `闷音类 tag '${st.tag}' 必须声明 ticks（历史上闷音从未生效的坑）`)
+          } else if (st.ticks !== undefined) {
+            report.num(file, `${aw}.statusOnHit.ticks`, st.ticks, { min: 1, int: true, name: 'ticks' })
+          }
+        }
+      }
+      const nx = attackFrames(file, aw, a)
+      if (nx !== undefined) {
+        if (!isStr(nx)) report.error(file, `${aw}.frames.next`, '必须是非空字符串')
+        else nextRefs.push({ where: `${aw}.frames.next`, id: nx })
+      }
+    })
+
+    // ---- 距离带动作：伪动作放行，其余必须是本敌人的招式 ----
+    if (isObj(e.ai) && isArr(e.ai.distBands)) {
+      e.ai.distBands.forEach((b, bi) => {
+        if (!isObj(b) || !isArr(b.actions)) return
+        b.actions.forEach((act, ai2) => {
+          if (typeof act !== 'string') return
+          if (PSEUDO_ACTIONS.has(act)) return
+          refs.push({ where: `${w}.ai.distBands[${bi}].actions[${ai2}]`, id: act })
+        })
+      })
+    }
+
+    // ---- boss ----
+    if (e.boss !== undefined) {
+      const b = e.boss
+      if (!isObj(b)) report.error(file, `${w}.boss`, '必须是对象')
+      else {
+        if (b.bpm !== undefined) report.num(file, `${w}.boss.bpm`, b.bpm, { min: 0, name: 'bpm' })
+        if (b.beatsPerBar !== undefined) report.num(file, `${w}.boss.beatsPerBar`, b.beatsPerBar, { min: 1, int: true, name: 'beatsPerBar' })
+        if (!isArr(b.phases) || b.phases.length === 0) report.error(file, `${w}.boss.phases`, '必须是非空数组')
+        else {
+          const phaseIds = new Set()
+          b.phases.forEach((ph, pi) => {
+            const pw = `${w}.boss.phases[${pi}]`
+            if (!isObj(ph)) { report.error(file, pw, '必须是对象'); return }
+            if (!isStr(ph.id)) report.error(file, pw, '阶段 id 缺失或非字符串')
+            else if (phaseIds.has(ph.id)) report.error(file, pw, `阶段 id 重复：${ph.id}`)
+            else phaseIds.add(ph.id)
+            if (!isArr(ph.attacks) || ph.attacks.length === 0) report.error(file, `${pw}.attacks`, '阶段招式白名单必须是非空数组')
+            if (ph.belowHpFrac !== undefined) report.num(file, `${pw}.belowHpFrac`, ph.belowHpFrac, { min: 0, max: 1, name: 'belowHpFrac' })
+            if (ph.shell !== undefined) {
+              report.sub(file, `${pw}.shell`, ph.shell, { dmgMul: { min: 0 } })
+              if (isObj(ph.shell) && typeof ph.shell.immuneToPoise !== 'boolean') report.error(file, `${pw}.shell.immuneToPoise`, '必须是布尔')
+            }
+            if (ph.stealBeat !== undefined) {
+              const sb = ph.stealBeat
+              report.sub(file, `${pw}.stealBeat`, sb, { bpmDrift: { min: 0 }, reDriftEveryTicks: { min: 1, int: true }, staRegenMul: { min: 0 }, dodgeJitterTicks: { min: 0, int: true } })
+              if (isObj(sb)) report.sub(file, `${pw}.stealBeat.reclaim`, sb.reclaim, { neutralTicks: { min: 0, int: true }, overdrive: { min: 0 } })
+            }
+            report.sub(file, `${pw}.barCast`, ph.barCast, { everyBars: { min: 1, int: true }, heal: { min: 0, optional: true }, label: { str: true } })
+            if (isObj(ph.barCast) && !isStr(ph.barCast.attackId)) report.error(file, `${pw}.barCast.attackId`, '缺失或非字符串')
+          })
+        }
+        if (b.bells !== undefined) {
+          const bells = b.bells
+          if (!isObj(bells)) report.error(file, `${w}.boss.bells`, '必须是对象')
+          else {
+            if (!isArr(bells.positions) || bells.positions.length === 0) report.error(file, `${w}.boss.bells.positions`, '必须是非空数组')
+            else bells.positions.forEach((pos, pi) => vec3(file, `${w}.boss.bells.positions[${pi}]`, pos))
+            report.sub(file, `${w}.boss.bells`, bells, { hitRadius: { min: 0 }, releaseTicks: { min: 0, int: true }, breaksAt: { min: 1, int: true }, resonanceRadius: { min: 0 }, damagePerBeat: { min: 0 } })
+          }
+        }
+        if (b.covers !== undefined) {
+          const cov = b.covers
+          if (!isObj(cov)) report.error(file, `${w}.boss.covers`, '必须是对象')
+          else {
+            if (!isArr(cov.positions) || cov.positions.length === 0) report.error(file, `${w}.boss.covers.positions`, '必须是非空数组')
+            else cov.positions.forEach((pos, pi) => vec3(file, `${w}.boss.covers.positions[${pi}]`, pos))
+            report.sub(file, `${w}.boss.covers`, cov, { radius: { min: 0 } })
+          }
+        }
+      }
+    }
+
+    // ---- 引用解析（本敌人的招式闭包）----
+    collectAttackRefs(e.ai ?? {}, refs)
+    if (isObj(e.boss)) collectAttackRefs(e.boss, refs)
+    for (const ref of refs) {
+      if (!attackIds.has(ref.id)) report.error(file, ref.where, `招式悬空引用：'${ref.id}' 不在 ${w} 自己的 attacks 里`)
+    }
+    for (const ref of nextRefs) {
+      if (!attackIds.has(ref.id)) report.error(file, ref.where, `frames.next 悬空引用：'${ref.id}' 不在 ${w} 自己的 attacks 里`)
+    }
+
+    // ---- 其余字段 ----
+    if (e.weakpoint !== undefined) report.sub(file, `${w}.weakpoint`, e.weakpoint, { dmgMul: { min: 0 } })
+    if (e.drops !== undefined) {
+      if (!isArr(e.drops)) report.error(file, `${w}.drops`, '必须是数组')
+      else e.drops.forEach((d, di) => {
+        const dw = `${w}.drops[${di}]`
+        if (!isObj(d)) { report.error(file, dw, '必须是对象'); return }
+        if (!isStr(d.tableId)) report.error(file, `${dw}.tableId`, '缺失或非字符串')
+        else if (!lootIds.has(d.tableId)) report.error(file, dw, `tableId 悬空引用：'${d.tableId}' 不在 loot.json`)
+        report.num(file, `${dw}.chance`, d.chance, { min: 0, max: 1, name: 'chance' })
+      })
+    }
+    if (e.body !== undefined) {
+      const bd = e.body
+      if (!isObj(bd)) report.error(file, `${w}.body`, '必须是对象')
+      else {
+        report.num(file, `${w}.body.scale`, bd.scale, { min: 0, name: 'scale' })
+        for (const k of ['color', 'emissive', 'coreColor']) {
+          if (!isColorValue(bd[k])) report.error(file, `${w}.body.${k}`, `${k} 必须是合法颜色（hex 字符串或 0x000000~0xFFFFFF 整数），实为 ${JSON.stringify(bd[k])}`)
+        }
+      }
+    }
+    if (e.tint !== undefined && !isStr(e.tint)) report.error(file, `${w}.tint`, '必须是非空字符串')
+  })
+  return ids
+}
+
+// ---- regions.json ----
+function navmeshExists(ref) {
+  const roots = ['src/world/navmesh', 'src/data/navmesh', 'assets/navmesh', 'public/navmesh']
+  const suffixes = ['', '.json', '.bin']
+  return roots.some((root) => suffixes.some((s) => existsSync(resolve(ROOT, root, ref + s))))
+}
+
+function validateRegions(enemyIds, lootIds) {
+  const file = 'regions.json'
+  const list = data[file]
+  const ids = new Set()
+  const landmarkIds = new Set()
+  const interactableIds = new Set()
+  const secretIds = new Set()
+  const orders = new Map()
+  if (!isArr(list)) { report.error(file, file, '顶层必须是数组'); return ids }
+  list.forEach((rg, i) => {
+    if (!isObj(rg)) { report.error(file, `[${i}]`, '必须是对象'); return }
+    const w = isStr(rg.id) ? rg.id : `[${i}]`
+    if (!isStr(rg.id)) report.error(file, w, 'id 缺失或非字符串')
+    else if (ids.has(rg.id)) report.error(file, w, `id 重复：${rg.id}`)
+    else ids.add(rg.id)
+    if (!isStr(rg.nameKey)) report.error(file, w, 'nameKey 缺失或非字符串')
+    if (!isStr(rg.displayName)) report.error(file, w, 'displayName 缺失或非字符串')
+    if (!BIOMES.has(rg.biome)) report.error(file, w, `biome=${JSON.stringify(rg.biome)} 非法`)
+    if (report.num(file, `${w}.order`, rg.order, { min: 0, int: true, name: 'order' })) {
+      if (orders.has(rg.order)) report.warn(file, `${w}.order`, `order=${rg.order} 与 ${orders.get(rg.order)} 重复`)
+      else orders.set(rg.order, w)
+    }
+
+    // bounds
+    if (!isObj(rg.bounds)) report.error(file, `${w}.bounds`, '必须是对象')
+    else {
+      const b = rg.bounds
+      const ok = {}
+      for (const k of ['minX', 'maxX', 'minY', 'maxY', 'minZ', 'maxZ']) ok[k] = report.num(file, `${w}.bounds.${k}`, b[k], { name: k })
+      for (const [lo, hi] of [['minX', 'maxX'], ['minY', 'maxY'], ['minZ', 'maxZ']]) {
+        if (ok[lo] && ok[hi] && !(b[lo] <= b[hi])) report.error(file, `${w}.bounds`, `需 ${lo} <= ${hi}（${b[lo]} / ${b[hi]}）`)
+      }
+    }
+    report.num(file, `${w}.groundY`, rg.groundY, { name: 'groundY' })
+
+    // grid：必填且为正数（省略会悄悄退回硬编码 84）
+    if (!isObj(rg.grid)) report.error(file, `${w}.grid`, 'grid 必填且必须是对象（省略会退回硬编码 84）')
+    else {
+      report.num(file, `${w}.grid.bpm`, rg.grid.bpm, { min: 1, name: 'bpm' })
+      report.num(file, `${w}.grid.beatsPerBar`, rg.grid.beatsPerBar, { min: 1, int: true, name: 'beatsPerBar' })
+      if (rg.grid.label !== undefined && !isStr(rg.grid.label)) report.error(file, `${w}.grid.label`, '必须是非空字符串')
+    }
+
+    report.num(file, `${w}.chunkSize`, rg.chunkSize, { min: 1, name: 'chunkSize' })
+    strArray(file, `${w}.weatherPresets`, rg.weatherPresets, { nonEmpty: true })
+    if (!isStr(rg.lightingPreset)) report.error(file, `${w}.lightingPreset`, '缺失或非字符串')
+
+    // palette：三项必须是合法 hex
+    if (!isObj(rg.palette)) report.error(file, `${w}.palette`, '必须是对象')
+    else for (const k of ['base', 'accent', 'glow']) {
+      if (!isHex(rg.palette[k])) report.error(file, `${w}.palette.${k}`, `${k} 必须是合法 hex 颜色（#RGB 或 #RRGGBB），实为 ${JSON.stringify(rg.palette[k])}`)
+    }
+
+    // spawnGroups
+    if (!isArr(rg.spawnGroups)) report.error(file, `${w}.spawnGroups`, '必须是数组')
+    else rg.spawnGroups.forEach((g, gi) => {
+      const gw = `${w}.spawnGroups[${gi}]`
+      if (!isObj(g)) { report.error(file, gw, '必须是对象'); return }
+      if (!isStr(g.enemyId)) report.error(file, `${gw}.enemyId`, '缺失或非字符串')
+      else if (!enemyIds.has(g.enemyId)) report.error(file, gw, `enemyId 悬空引用：'${g.enemyId}' 不在 enemies.json`)
+      report.num(file, `${gw}.count`, g.count, { min: 1, int: true, name: 'count' })
+      vec3(file, `${gw}.center`, g.center)
+      report.num(file, `${gw}.radius`, g.radius, { min: 0, name: 'radius' })
+      if (g.campId !== undefined && !isStr(g.campId)) report.error(file, `${gw}.campId`, '必须是非空字符串')
+      if (g.condition !== undefined && !isStr(g.condition)) report.error(file, `${gw}.condition`, '必须是非空字符串')
+    })
+
+    // landmarks
+    if (!isArr(rg.landmarks)) report.error(file, `${w}.landmarks`, '必须是数组')
+    else rg.landmarks.forEach((lm, li) => {
+      const lw = `${w}.landmarks[${li}]`
+      if (!isObj(lm)) { report.error(file, lw, '必须是对象'); return }
+      if (!isStr(lm.id)) report.error(file, lw, 'id 缺失或非字符串')
+      else if (landmarkIds.has(lm.id)) report.error(file, lw, `landmark id 重复：${lm.id}`)
+      else landmarkIds.add(lm.id)
+      if (!isStr(lm.nameKey)) report.error(file, `${lw}.nameKey`, '缺失或非字符串')
+      vec3(file, `${lw}.pos`, lm.pos)
+      report.num(file, `${lw}.sightRange`, lm.sightRange, { min: 0, name: 'sightRange' })
+    })
+
+    // interactables
+    if (!isArr(rg.interactables)) report.error(file, `${w}.interactables`, '必须是数组')
+    else rg.interactables.forEach((it, ii) => {
+      const iw = `${w}.interactables[${ii}]`
+      if (!isObj(it)) { report.error(file, iw, '必须是对象'); return }
+      if (!isStr(it.id)) report.error(file, iw, 'id 缺失或非字符串')
+      else if (interactableIds.has(it.id)) report.error(file, iw, `interactable id 重复：${it.id}`)
+      else interactableIds.add(it.id)
+      if (!INTERACTABLE_KINDS.has(it.kind)) report.error(file, `${iw}.kind`, `kind=${JSON.stringify(it.kind)} 非法`)
+      vec3(file, `${iw}.pos`, it.pos)
+      if (it.verb !== undefined && !isStr(it.verb)) report.error(file, `${iw}.verb`, '必须是非空字符串')
+      if (it.oneWay !== undefined && typeof it.oneWay !== 'boolean') report.error(file, `${iw}.oneWay`, '必须是布尔')
+      for (const k of ['requiresFlag', 'setsFlag', 'npcId']) if (it[k] !== undefined && !isStr(it[k])) report.error(file, `${iw}.${k}`, '必须是非空字符串')
+      if (it.to !== undefined) vec3(file, `${iw}.to`, it.to)
+      if (it.kind === 'npc' && !isStr(it.npcId)) report.warn(file, iw, `kind=npc 但没有 npcId`)
+    })
+
+    // music
+    if (!isObj(rg.music)) report.error(file, `${w}.music`, '必须是对象')
+    else for (const k of ['explore', 'battle', 'ambience']) {
+      if (!isStr(rg.music[k])) report.error(file, `${w}.music.${k}`, '缺失或非字符串')
+    }
+
+    report.num(file, `${w}.streamingPriority`, rg.streamingPriority, { name: 'streamingPriority' })
+    if (rg.preloadWhole !== undefined && typeof rg.preloadWhole !== 'boolean') report.error(file, `${w}.preloadWhole`, '必须是布尔')
+    if (rg.unlockFlag !== undefined && !isStr(rg.unlockFlag)) report.error(file, `${w}.unlockFlag`, '必须是非空字符串')
+
+    // navmeshRef：写了就必须有对应实体；不写不算错（KI-009）
+    if (rg.navmeshRef !== undefined) {
+      if (!isStr(rg.navmeshRef)) report.error(file, `${w}.navmeshRef`, '必须是非空字符串')
+      else if (!navmeshExists(rg.navmeshRef)) report.error(file, `${w}.navmeshRef`, `写了 '${rg.navmeshRef}' 但找不到对应导航网格实体（KI-009：留空即可）`)
+    }
+
+    // secrets
+    if (!isArr(rg.secrets)) report.error(file, `${w}.secrets`, '必须是数组')
+    else rg.secrets.forEach((s, si) => {
+      const sw = `${w}.secrets[${si}]`
+      if (!isObj(s)) { report.error(file, sw, '必须是对象'); return }
+      if (!isStr(s.id)) report.error(file, sw, 'id 缺失或非字符串')
+      else if (secretIds.has(s.id)) report.error(file, sw, `secret id 重复：${s.id}`)
+      else secretIds.add(s.id)
+      if (!isStr(s.unlockFlag)) report.error(file, `${sw}.unlockFlag`, '缺失或非字符串')
+      if (!isStr(s.rewardTable)) report.error(file, `${sw}.rewardTable`, '缺失或非字符串')
+      else if (!lootIds.has(s.rewardTable)) report.error(file, sw, `rewardTable 悬空引用：'${s.rewardTable}' 不在 loot.json`)
+      vec3(file, `${sw}.pos`, s.pos)
+    })
+
+    strArray(file, `${w}.storyHooks`, rg.storyHooks)
+  })
+  return ids
+}
+
+// ---- 跑全部校验（跨文件引用需要先拿到 id 集合）----
+const movesetIds = validateMovesets()
+const weaponIds = validateWeapons(movesetIds)
+// progression 要先跑：稀有度是 items/loot 的跨文件依据；items 要先跑：掉落表引用物品 id
+const { rarityIds } = validateProgression()
+const itemIds = validateItems(weaponIds, rarityIds)
+const lootIds = validateLoot(itemIds, rarityIds)
+const enemyIds = validateEnemies(lootIds)
+validatePlayer()
+const regionIds = validateRegions(enemyIds, lootIds)
+void regionIds
+
+// ---- 报告 ----
+let errTotal = 0
+let warnTotal = 0
+console.log('CAESURA 数据校验（KI-015 门禁）— src/data/json')
+for (const f of FILES) {
+  const rows = report.rows.filter((x) => x.file === f)
+  const errs = rows.filter((x) => x.level === 'ERROR')
+  const warns = rows.filter((x) => x.level === 'WARN')
+  errTotal += errs.length
+  warnTotal += warns.length
+  console.log(`\n=== ${f} ===`)
+  if (rows.length === 0) console.log('  OK — 无 ERROR / WARN')
+  for (const x of errs) console.log(`  ERROR  ${x.where}: ${x.msg}`)
+  for (const x of warns) console.log(`  WARN   ${x.where}: ${x.msg}`)
+  if (rows.length > 0) console.log(`  -- ${errs.length} ERROR / ${warns.length} WARN`)
+}
+console.log(`\n总计：${errTotal} ERROR / ${warnTotal} WARN`)
+process.exit(errTotal > 0 ? 1 : 0)

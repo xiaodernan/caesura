@@ -112,6 +112,19 @@ describe('背包与装备（§5）', () => {
     }
   })
 
+  it('音徽件能真的掷出音徽池的词缀（词缀 slots 用的是"件"的槽位词表，不是装备实例的 A/B）', () => {
+    // 这条是 validate:data 抓出来的真 bug：词缀 slots 曾写成 ['weapon','sealA','sealB']，
+    // 而音徽件声明的 slot 是 'seal' ⇒ 池子永远匹配不上，音徽永远拿不到随机词缀（但测试数量上照样"有词缀"）
+    const seal = itemOf('seal_darkscore')
+    expect(seal.gear!.slot).toBe('seal')
+    const prog2 = prog()
+    const pools = [...prog2.affixes.prefix, ...prog2.affixes.suffix].filter((a) => a.slots?.includes('seal'))
+    expect(pools.length, '音徽池不能是空的').toBeGreaterThan(0)
+    // 抽一件没有固定词缀的稀有音徽（seal_firstbeat 固定了 af_keen，所以它只补数值）
+    const rolled = rollAffixes(seal, new Rng(11))
+    expect(rolled.length).toBeGreaterThan(0)
+  })
+
   it('装备汇总：DEF/重量/词缀都进 totals，噪音乘数被夹住不会变成负数', () => {
     const inv = new Inventory(2)
     const eq = new Equipment()

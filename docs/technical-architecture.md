@@ -679,7 +679,13 @@ weaponDamageMul / weaponId / weight / overloaded`。
 （`registerMigration(1, …)`）：老档把 `rpg` **显式写成 null**，读档时保留运行时基线（出身），
 既不编造等级、也不静默丢字段——测试 `save.test.ts` 钉住「v1 的每个字段都还在 + rpg === null」。
 
-### 10.4 UI 分工
+### 10.4 数据门禁（KI-015 部分闭合）
+
+`scripts/validate-data.mjs`（零新增依赖）+ `npm run validate:data`，并串进 `npm run check`（lint → validate:data → test）。
+校验范围见 KNOWN_ISSUES KI-015；**规则以 `src/data/schema.ts` 与设计文档的事实为准**，改 schema 时同步脚本里的词表常量
+（文件头已注明）。它上线当天抓出的第一个真 bug 是"音徽永远掷不到词缀"，已在 `rpg.test.ts` 留下回归。
+
+### 10.5 UI 分工
 
 HUD（canvas）只多了一个**音级数字**（§42：不在战斗视野里堆数字，遗响条属于面板）。
 调音桩面板（`src/ui/Stakerite.ts`，DOM overlay）承载三页：调音 / 装备 / 行囊，
@@ -687,7 +693,7 @@ HUD（canvas）只多了一个**音级数字**（§42：不在战斗视野里堆
 面板只调 `RpgRuntime` 的公开方法，生效后回调 `onApply()` 由 main.ts 统一重算——
 面板自己不写第二份"应用变更"的逻辑。
 
-### 10.5 覆盖与实机
+### 10.6 覆盖与实机
 
 - `tests/unit/rpg.test.ts` 27 条 + `tests/flow/rpg.test.ts` 8 条 + `tests/unit/stakerite.test.ts` 6 条；
   全量 **30 files / 291 passed**，tsc / vite build 干净。
