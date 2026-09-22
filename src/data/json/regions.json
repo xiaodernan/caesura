@@ -778,7 +778,8 @@
      "y": 64,
      "z": -215
     },
-    "lootTable": "loot_chest_t2"
+    "verb": "探进钟腔",
+    "secretId": "sec_fellcarillon_bell_interior"
    }
   ],
   "music": {

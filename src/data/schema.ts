@@ -738,13 +738,45 @@ export interface InteractableRef {
   to?: Vec3
   /** 采集/遗箱/敲钟的掉落表 id（Phase 5-B：掉落不再写死在 main.ts 里） */
   lootTable?: string
+  /**
+   * 指向本区域 `secrets[]` 里的一条（Phase 6-A）：写了它，这个交互物的**解锁旗标与奖励表就从那条 secret 取**，
+   * 不在这里再抄一遍 `requiresFlag`/`lootTable`——同一个事实只住一个地方。
+   * 语义是"这个封存点属于那个隐藏房"：走近立旗（`secret.discovery`）→ 在这里按 E 领取。
+   */
+  secretId?: string
 }
 
 export interface SecretRef {
   id: string
+  /**
+   * 解锁这条隐藏房的旗标。它的**读方**是派生出来的封存点（见 `InteractableRef.secretId`），
+   * **写方**统一在 `worldstate.json`（谁改了世界状态，一张表能查完，不散在代码里）。
+   */
   unlockFlag: string
   rewardTable: string
   pos: Vec3
+}
+
+/**
+ * 世界状态规则（narrative §7 的执行位，Phase 6-A）。
+ * 一条规则＝「发生了 X ⇒ 立一个旗标（顺带说一声）」。旗标的读方早就在 `regions.json` 里等着
+ * （区域解锁 / 交互物 requiresFlag / 隐藏房封存点），这里只补写方——之前它们一个写方都没有。
+ * `on` 的三种取值各自对应一个真实触发器：`firstParry`（玩家第一次成功弹反）、
+ * `bossDefeated`（按敌人数据 id）、`interactUsed`（按交互物 id）。规则是幂等的：旗已立就不再动它，
+ * 也不再重播一次播报。
+ * **刻意没有 `approach`（走近某个坐标就立旗）**——那条要等它对应的隐藏房有了能踩在地板上的领取点
+ * 之后再写，否则就是"规则能立旗、旗开了锁、锁后面却没有能按 E 的东西"，等于把 §55 换个方向违反。
+ */
+export interface WorldStateRule {
+  id: string
+  on: 'firstParry' | 'bossDefeated' | 'interactUsed'
+  /** on=bossDefeated：哪一份敌人数据 */
+  dataId?: string
+  /** on=interactUsed：哪个交互物被真正用掉（ok=true） */
+  interactId?: string
+  setFlag: string
+  /** 立旗那一句 HUD 播报（没有就不播） */
+  notify?: string
 }
 
 export interface RegionMusic {

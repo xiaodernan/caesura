@@ -409,14 +409,8 @@ NPC 可见对话节点集 = Filter(树, 条件求值)
 
 派生规则：`PARTIAL/SILENT` 等聚合值由 Quest Debugger（需求 §54）实时显示 `Quest state + NPC state + World state` 三层，禁止代码内散落硬编码布尔。
 
-**实现口径（Phase 6-A 第一步，2026-09-23）**：本表描述的是**目标状态**，不是当前事实。现状是——
-上表这些 `STATE.*` 里的一部分（`flag.ostlara_defeated` / `parry_taught` / `echo_cairn_read` /
-`side_nave_found` / `bell_interior_open` / `brokenbar_resolved` / `brokenbar_allied` / `found_first_phrase`）
-在 `regions.json` 里**只有读方**（区域解锁、箱子 `requiresFlag`、隐藏房 `unlockFlag`），
-**运行时没有任何写入方**；`SecretRef.unlockFlag` 甚至全仓库零消费者。也就是说这些隐藏内容目前玩家走不到，
-本表的"写入时机"列是待接的线而不是已完成的机制（缺口与计划见 KNOWN_ISSUES KI-041）。
-本步已修的是这层的地基：一次性交互物的"用过了"入档（存档 v6）+ 写 flag 只保留一条广播路径（KI-040），
-所以接下来写入方落地时不会再撞上"存了档读不回来 / 两个系统各记一套"。
+**实现口径（Phase 6-A 第二步之后，2026-09-23）**：本表是**目标状态**，不是已完成清单。当前事实——
+① `regions.json` 里被读到的世界旗标共 8 个，其中 **3 个已经有写方**（`flag.ostlara_defeated` 由奥斯塔拉的死、`flag.parry_taught` 由第一次真弹反、`flag.bell_interior_open` 由敲响落钟立起），它们全走 `data/json/worldstate.json` 这张规则表 + `quest/WorldState.ts`，不在代码里散落布尔；② **5 个还没有写方**（`echo_cairn_read` / `side_nave_found` / `found_first_phrase` / `brokenbar_resolved` / `brokenbar_allied`），原因是它们按本文件 §2 与 §4.8 该由对话、营地抉择、五环线索链来立——`DialogueRuntime`/`QuestState` 未做，所以**不预先用"走近就解锁"把剧情判据糊过去**；这 5 条逐个记名在数据闸门的 `PENDING_FLAG_WRITERS` 白名单里（新增一个没人写的旗标会直接 ERROR）；③ `SecretRef.unlockFlag` 现在真的锁着一个领取点（`InteractableRef.secretId` 挂回 secret，旗标与奖励表只住一处），钟腔那一间已经可解，其余三间的坐标实测落在可行走层之外，要先补几何；④ 本表的枚举值域（`BROKEN/REPAIRED/MUTED` 这类一名多值）仍未落地——现在只有布尔旗标一条路，值域型状态与派生值（`STATE.BELLS.ALL`、`STATE.AURORA`）要等 QuestState 一起做（tech-arch §15）。缺口的完整账目在 KNOWN_ISSUES KI-041。
 
 ---
 

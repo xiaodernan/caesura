@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const JSON_DIR = resolve(ROOT, 'src/data/json')
-const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json']
+const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json']
 // Phase 5-B 起：装备槽位 / 物品大类（与 schema.ts 的 SlotKey / ItemKind 对齐）
 const SLOT_KEYS = new Set(['weapon', 'helm', 'cuirass', 'gloves', 'greaves', 'seal', 'sealA', 'sealB'])
 const GEAR_SLOTS = new Set(['weapon', 'helm', 'cuirass', 'gloves', 'greaves', 'seal'])
@@ -364,6 +364,7 @@ function validateProgression() {
       report.error(file, 'pity.floorRarity', `未知稀有度：${d.pity.floorRarity}（progression.json.rarity）`)
     }
   }
+  const affixDefs = new Map()
   // 词缀：每条必须有 stat 或 behavior（没有消费方的词缀不许写进表）
   if (!isObj(d.affixes)) report.error(file, 'affixes', '必须是对象')
   else for (const group of ['prefix', 'suffix']) {
@@ -380,6 +381,12 @@ function validateProgression() {
       if (hasStat && hasBehavior) report.error(file, w, 'stat 与 behavior 只能二选一')
       if (hasStat && !AFFIX_STATS.has(a.stat)) report.error(file, `${w}.stat`, `未知 stat：${a.stat}`)
       if (hasBehavior && !AFFIX_BEHAVIORS.has(a.behavior)) report.error(file, `${w}.behavior`, `未知 behavior：${a.behavior}`)
+      if (isStr(a.id)) affixDefs.set(a.id, a)
+      if (a.minRarity !== undefined && !rarityIds.has(a.minRarity)) report.error(file, `${w}.minRarity`, `未知稀有度：${a.minRarity}`)
+      if (a.slots !== undefined) {
+        if (!isArr(a.slots) || a.slots.length === 0) report.error(file, `${w}.slots`, '要写就是非空数组（不写＝任何槽都行）')
+        else for (const sl of a.slots) if (!GEAR_SLOTS.has(sl)) report.error(file, `${w}.slots`, `未知槽位：${sl}`)
+      }
       if (isArr(a.range)) {
         if (a.range.length !== 2) report.error(file, `${w}.range`, '必须是 [min, max]')
         else if (!(a.range[0] <= a.range[1])) report.error(file, `${w}.range`, `需 min <= max（${a.range[0]} / ${a.range[1]}）`)
@@ -420,7 +427,7 @@ function validateProgression() {
     })
     if (totals.size > 1) report.error(file, 'origins', `各出身六维合计必须一致，实际出现：${[...totals].join(' / ')}`)
   }
-  return { rarityIds, attrKeys }
+  return { rarityIds, attrKeys, affixDefs }
 }
 
 // ---- statuses.json ----
@@ -461,7 +468,7 @@ function validateStatuses() {
 }
 
 // ---- items.json ----
-function validateItems(weaponIds, rarityIds) {
+function validateItems(weaponIds, rarityIds, affixDefs) {
   const file = 'items.json'
   const list = data[file]
   const ids = new Set()
@@ -491,6 +498,13 @@ function validateItems(weaponIds, rarityIds) {
         else if (!weaponIds.has(g.weaponId)) report.error(file, `${w}.gear.weaponId`, `悬空引用：'${g.weaponId}' 不在 weapons.json`)
       } else if (g.weaponId !== undefined) report.error(file, `${w}.gear.weaponId`, '只有武器件才写 weaponId')
       if (g.affixes !== undefined) strArray(file, `${w}.gear.affixes`, g.affixes, { nonEmpty: true })
+      // 固定词缀要能落在这个槽位上：af_bellwarden 只给武器，写在胸甲上就是"永远掷不到"（KI-015 那次的镜像）
+      if (isArr(g.affixes)) for (const aid of g.affixes) {
+        if (!isStr(aid)) continue
+        const def = affixDefs.get(aid)
+        if (!def) { report.error(file, `${w}.gear.affixes`, `未知词缀 id：'${aid}' 不在 progression.json.affixes`); continue }
+        if (def.slots && !def.slots.includes(g.slot)) report.error(file, `${w}.gear.affixes`, `'${aid}' 只能落在 ${def.slots.join('/')} 上，这件是 ${g.slot}`)
+      }
       if (g.salvage !== undefined) report.sub(file, `${w}.gear.salvage`, g.salvage, { dross: { min: 0, int: true }, timbite: { min: 0, int: true } })
     }
     if (it.use !== undefined) {
@@ -1117,20 +1131,138 @@ function validateMovements(itemIds) {
   })
 }
 
+// ---- 掉落档位的"付得出钱"检查（Phase 6-A / KI-042）----
+/**
+ * gearBand 里写了一个稀有度，items.json 里就得真有那一档的装备件，否则 `Loot.pickGearItem` 会
+ * 静悄悄返回 null ——表配好了、概率算对了、玩家打开箱子什么都没有。
+ * 这一步真的抓到了：修之前 rareplus / epic 两档一件装备都没有，而隐藏房的两条 roll 全押在这两档上。
+ */
+function validateGearRarityCoverage() {
+  const file = 'loot.json'
+  const gearRarities = new Set((data['items.json'] ?? []).filter(isObj).map((it) => it.gear?.rarity).filter(isStr))
+  const seen = new Set()
+  const walk = (t) => {
+    for (const r of [...(t.rolls ?? []), ...(t.firstKill ?? [])]) {
+      for (const b of r.gearBand ?? []) {
+        if (!isStr(b.rarity) || seen.has(b.rarity)) continue
+        seen.add(b.rarity)
+        if (!gearRarities.has(b.rarity)) {
+          report.error(file, `gearBand.${b.rarity}`, `这张档的稀有度 '${b.rarity}' 在 items.json 里没有任何装备件 ⇒ 掷到它等于什么都不掉（KI-042）`)
+        }
+      }
+    }
+  }
+  for (const t of data[file] ?? []) if (isObj(t)) walk(t)
+}
+
+// ---- worldstate.json（世界状态写入规则，Phase 6-A / KI-041）----
+/**
+ * 这一节是"可达性"闸门，不是普通的字段校验。它存在的原因是 KI-041 那个真 bug：
+ * `regions.json` 里有一批**只有读方、没有写方**的世界旗标（箱子的 requiresFlag、隐藏房的 unlockFlag），
+ * 于是那些内容在玩家侧永远打不开——而逐文件的校验全绿，因为每一半单独看都合法。
+ * 所以这里做的是**双向对账**：写了没人读 = ERROR（§55 的老规矩），读了没人写 = 必须逐个列在
+ * PENDING_FLAG_WRITERS 里（带原因），否则 ERROR。白名单只能变短不能变长。
+ */
+const PENDING_FLAG_WRITERS = {
+  'flag.echo_cairn_read': 'Phase 6-B：石堆的「读」是一次剧情动作（要接对话/调查），不预先编造触发器',
+  'flag.side_nave_found': 'Phase 6-B：侧廊入口需要一段能在地板上站住的领取点几何（当前 secret 坐标在可行走层之外）',
+  'flag.brokenbar_resolved': 'Phase 6-B：断弦营地线（收编/清算抉择）',
+  'flag.brokenbar_allied': 'Phase 6-B：同上，潜行解专属那条',
+  'flag.found_first_phrase': 'Phase 6-C：初句圣所五环线索链（narrative §4.8），不靠走近解',
+}
+const RULE_ONS = new Set(['firstParry', 'bossDefeated', 'interactUsed'])
+const RULE_FIELDS = new Set(['id', 'on', 'dataId', 'interactId', 'setFlag', 'notify'])
+
+function collectFlagUsage() {
+  const read = new Map() // flag -> 读它的地方（用于报错时指路）
+  const written = new Map() // flag -> 写它的规则/交互物
+  const interactableIds = new Set()
+  const secrets = [] // { id, unlockFlag, regionId, claim: null | interactable id }
+  for (const rg of data['regions.json'] ?? []) {
+    if (!isObj(rg)) continue
+    for (const it of rg.interactables ?? []) {
+      if (!isObj(it)) continue
+      interactableIds.add(it.id)
+      if (isStr(it.requiresFlag)) read.set(it.requiresFlag, `${rg.id}.interactables(${it.id}).requiresFlag`)
+      if (isStr(it.setsFlag)) written.set(it.setsFlag, `${rg.id}.interactables(${it.id}).setsFlag`)
+      if (isStr(it.secretId)) {
+        const owner = (rg.secrets ?? []).find((x) => x.id === it.secretId)
+        if (owner) owner.claim = owner.claim ?? it.id
+      }
+    }
+    // claim 在上面那个循环里被写在原始 secret 对象上（同一份 data 里），这里只把它搬到视图上——
+    // 之前写成 `claim: null` 会把刚认出来的领取点覆盖掉，闸门因此误报"旗立了没人发奖"。
+    for (const s of rg.secrets ?? []) if (isObj(s)) secrets.push({ ...s, regionId: rg.id, claim: s.claim ?? null })
+    if (isStr(rg.unlockFlag)) read.set(rg.unlockFlag, `${rg.id}.unlockFlag`)
+  }
+  for (const s of secrets) if (isStr(s.unlockFlag)) read.set(s.unlockFlag, `${s.regionId}.secrets(${s.id}).unlockFlag`)
+  return { read, written, interactableIds, secrets }
+}
+
+function validateWorldstate() {
+  const file = 'worldstate.json'
+  const list = data[file]
+  const { read, written, interactableIds, secrets } = collectFlagUsage()
+  const enemyIds = new Set((data['enemies.json'] ?? []).filter(isObj).map((e) => e.id))
+  const seen = new Set()
+  if (!isArr(list) || list.length === 0) { report.error(file, file, '必须是非空数组'); return { read, written, secrets } }
+  list.forEach((r, i) => {
+    const w = isStr(r?.id) ? r.id : `[${i}]`
+    if (!isObj(r)) { report.error(file, `[${i}]`, '必须是对象'); return }
+    for (const k of Object.keys(r)) if (!RULE_FIELDS.has(k)) report.error(file, `${w}.${k}`, `未知字段：规则表的字段就是引擎能听懂的动作，加字段必须同时加消费方`)
+    if (!isStr(r.id)) report.error(file, w, 'id 缺失')
+    else if (seen.has(r.id)) report.error(file, w, `id 重复：${r.id}`)
+    else seen.add(r.id)
+    if (!RULE_ONS.has(r.on)) report.error(file, `${w}.on`, `on=${JSON.stringify(r.on)} 非法（${[...RULE_ONS].join('/')}）`)
+    if (!isStr(r.setFlag)) { report.error(file, `${w}.setFlag`, '缺失或非字符串'); return }
+    if (r.on === 'bossDefeated' && !enemyIds.has(r.dataId)) report.error(file, `${w}.dataId`, `悬空引用：'${r.dataId}' 不在 enemies.json`)
+    if (r.on === 'interactUsed' && !interactableIds.has(r.interactId)) report.error(file, `${w}.interactId`, `悬空引用：'${r.interactId}' 不是任何区域的交互物`)
+    if (r.notify !== undefined && !isStr(r.notify)) report.error(file, `${w}.notify`, '必须是非空字符串')
+    // §55 的正方向：这条规则立的旗标必须真有人读
+    if (!read.has(r.setFlag)) report.error(file, `${w}.setFlag`, `写了 '${r.setFlag}' 但 regions.json 里没有任何读方（写进表却没人读的旗标就是死数据）`)
+    written.set(r.setFlag, `${w}`)
+  })
+  // §55 的反方向：被读的旗标必须有人写，否则它锁着的内容不可达（KI-041 的机器版判据）
+  for (const [flag, where] of [...read].sort()) {
+    if (written.has(flag)) continue
+    if (PENDING_FLAG_WRITERS[flag]) report.warn(file, flag, `${where} 在读它，但还没有写方（待办：${PENDING_FLAG_WRITERS[flag]}）`)
+    else report.error(file, flag, `${where} 在读这个旗标，但没有任何写方，也没列进 PENDING_FLAG_WRITERS ⇒ 它锁着的内容玩家不可达`)
+  }
+  // 反过来"写了却没人读"只对**规则表**判 ERROR（上面逐条已查）；交互物的 setsFlag
+  // 有一类是给 Phase 6 的对话/条件将来要读的（调音桩激活记录等），在这里报 WARN 只会变成噪音。
+  // 隐藏房：锁要有钥匙，钥匙也要有能按的锁
+  for (const s of secrets) {
+    const hasWriter = written.has(s.unlockFlag)
+    if (s.claim && !hasWriter) report.error(file, `${s.regionId}.secrets(${s.id})`, `领取点 ${s.claim} 依赖 ${s.unlockFlag}，但没有任何写方 ⇒ 这是一只永久焊死的箱子`)
+    if (!s.claim && hasWriter) report.error(file, `${s.regionId}.secrets(${s.id})`, `${s.unlockFlag} 有写方，但这条 secret 没有带 secretId 的领取点 ⇒ 旗立了也没人发奖`)
+    // 既没写方也没领取点 = 还没做的内容线；它的旗标已经在上面的 PENDING_FLAG_WRITERS 里挂过号，
+    // 这里不再重复报，免得一条欠账出现两行 WARN 把真正的新增孤儿淹掉。
+  }
+  // secretId 不许再自己抄一份 requiresFlag/lootTable（同一事实两处住）
+  for (const rg of data['regions.json'] ?? []) for (const it of rg.interactables ?? []) {
+    if (!isObj(it) || !it.secretId) continue
+    for (const k of ['requiresFlag', 'lootTable']) if (it[k] !== undefined) report.error('regions.json', `${it.id}.${k}`, `带了 secretId 就不该再自己写 ${k}：解锁旗标与奖励表只住在 secrets[] 那一条记录里`)
+  }
+  return { read, written, secrets }
+}
+
 // ---- 跑全部校验（跨文件引用需要先拿到 id 集合）----
 // statuses 先跑：enemies 的 statusOnHit.tag 要拿它当词表对账
 validateStatuses()
 const movesetIds = validateMovesets()
 const weaponIds = validateWeapons(movesetIds)
 // progression 要先跑：稀有度是 items/loot 的跨文件依据；items 要先跑：掉落表引用物品 id
-const { rarityIds } = validateProgression()
-const itemIds = validateItems(weaponIds, rarityIds)
+const { rarityIds, affixDefs } = validateProgression()
+const itemIds = validateItems(weaponIds, rarityIds, affixDefs)
 const lootIds = validateLoot(itemIds, rarityIds)
 const enemyIds = validateEnemies(lootIds)
 validatePlayer()
 const regionIds = validateRegions(enemyIds, lootIds)
 // movements 最后跑：它要同时对账 items（点亮源）、loot（源是否真会掉）、progression（开槽里程碑）
 validateMovements(itemIds)
+// worldstate 最后：它要拿 regions/enemies 的 id 与"谁在读旗标"做双向对账
+validateWorldstate()
+validateGearRarityCoverage()
 void regionIds
 
 // ---- 报告 ----

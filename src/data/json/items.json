@@ -240,5 +240,45 @@
   "value": 140,
   "desc": "背面刻着没人看得懂的谱。失谐越深，它越烫。",
   "gear": { "slot": "seal", "rarity": "rare", "def": 0, "weight": 0, "affixes": ["af_tacet"], "salvage": { "dross": 1, "timbite": 50 } }
+ },
+ {
+  "id": "ar_veilbell_helm",
+  "nameKey": "armor.veilbellHelm",
+  "displayName": "蒙钟盔",
+  "kind": "armor",
+  "stack": 1,
+  "value": 150,
+  "desc": "盔顶仿的是那口被布蒙住的钟：敲响也不许传出去的那种声音。",
+  "gear": { "slot": "helm", "rarity": "rareplus", "def": 7, "weight": 3, "affixes": ["af_tempered"], "salvage": { "dross": 2, "timbite": 26 } }
+ },
+ {
+  "id": "seal_upbeat",
+  "nameKey": "seal.upbeat",
+  "displayName": "音徽·起拍",
+  "kind": "seal",
+  "stack": 1,
+  "value": 175,
+  "desc": "徽面是一道没落下的指挥棒。戴着它，起手那半拍总像是别人先让了你。",
+  "gear": { "slot": "seal", "rarity": "rareplus", "def": 0, "weight": 0, "affixes": ["af_resonant"], "salvage": { "dross": 2, "timbite": 60 } }
+ },
+ {
+  "id": "ar_ostlaraweave_cuirass",
+  "nameKey": "armor.ostlaraweave",
+  "displayName": "钟皮胸甲",
+  "kind": "armor",
+  "stack": 1,
+  "value": 280,
+  "desc": "用敲裂的钟壳一层层编出来的胸甲。它替人挡下的第一件事，是它自己还想再响一次的冲动。",
+  "gear": { "slot": "cuirass", "rarity": "epic", "def": 13, "weight": 10, "affixes": ["af_tempered", "af_tacet"], "salvage": { "dross": 4, "timbite": 70 } }
+ },
+ {
+  "id": "seal_drumlegend",
+  "nameKey": "seal.drumlegend",
+  "displayName": "音徽·留鼓",
+  "kind": "seal",
+  "stack": 1,
+  "value": 320,
+  "desc": "鼓已经停了，拍子还在走。据说佩戴者的脚步声会替他把最后一小节数完。",
+  "gear": { "slot": "seal", "rarity": "epic", "def": 0, "weight": 0, "affixes": ["af_keen", "af_resonant"], "salvage": { "dross": 5, "timbite": 90 } }
  }
 ]

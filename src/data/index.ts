@@ -9,7 +9,8 @@ import progressionRaw from './json/progression.json'
 import itemsRaw from './json/items.json'
 import statusesRaw from './json/statuses.json'
 import movementsRaw from './json/movements.json'
-import type { MovesetData, WeaponData, EnemyData, PlayerBaseData, RegionData, ProgressionData, ItemData, LootTableData, StatusConfig, MovementConfig } from './schema'
+import worldstateRaw from './json/worldstate.json'
+import type { MovesetData, WeaponData, EnemyData, PlayerBaseData, RegionData, ProgressionData, ItemData, LootTableData, StatusConfig, MovementConfig, WorldStateRule } from './schema'
 
 export const playerBase = playerRaw as unknown as PlayerBaseData
 export const regions = regionsRaw as unknown as RegionData[]
@@ -19,6 +20,8 @@ export const items = itemsRaw as unknown as ItemData[]
 export const statuses = statusesRaw as unknown as StatusConfig
 /** §7 乐章战技谱册（页/槽/等级成长）；成长状态本身在 rpg/Movements.ts，这里只有静态表 */
 export const movements = movementsRaw as unknown as MovementConfig
+/** 世界状态的写入规则表（narrative §7 的执行位）：发生了什么 ⇒ 立哪个旗标 */
+export const worldstate = worldstateRaw as unknown as WorldStateRule[]
 
 let registered = false
 
@@ -38,6 +41,7 @@ export function registerGameData(): void {
   registry.register('progression', progression)
   registry.register('statuses', statuses)
   registry.register('movements', movements)
+  for (const r of worldstate) registry.register(r.id, r)
 }
 
-export { weaponsRaw, enemiesRaw, movesetsRaw, regionsRaw, progressionRaw, itemsRaw, lootRaw }
+export { weaponsRaw, enemiesRaw, movesetsRaw, regionsRaw, progressionRaw, itemsRaw, lootRaw, worldstateRaw }

@@ -4,7 +4,7 @@ import { GameLoop } from '@/core/GameLoop'
 import { Input } from '@/core/Input'
 import { RhythmClock } from '@/core/RhythmClock'
 import { registry } from '@/core/Registry'
-import { registerGameData, playerBase, regions } from '@/data'
+import { registerGameData, playerBase, regions, worldstate } from '@/data'
 import type { ItemData, MovesetData, WeaponData } from '@/data/schema'
 import { createArena } from '@/world/PlaceholderArena'
 import { StreamingSystem, chunkKeyOf } from '@/world/Streaming'
@@ -30,6 +30,7 @@ import { Stakerite } from '@/ui/Stakerite'
 import { CombatDebugger } from '@/tools/CombatDebugger'
 import { SaveGame, LocalStore, IdbStore } from '@/save/Serializer'
 import { Checkpoints } from '@/save/Checkpoint'
+import { WorldState } from '@/quest/WorldState'
 import { RpgRuntime } from '@/rpg/Runtime'
 import { KillSettlement, openLootTable, refreshPlayer, gearLabel, type SettlementDeps } from '@/rpg/Settlement'
 
@@ -118,6 +119,14 @@ const surface = new Surface(regions, 0.5, (r) => !streaming.isRegionUnlocked(r))
 combat.floorAt = (pos) => surface.floorAt(pos)?.y ?? null // 弹道撞地：射进灰盒地板就落地
 const interact = new Interactables(regions, (r) => streaming.isRegionUnlocked(r))
 const greybox = new ChunkGreybox(arena.scene, regions, streaming.chunkSize)
+/**
+ * 世界状态写入层（Phase 6-A）：`regions.json` 里那些被读的旗标需要一个**写方**，否则藏在门后的
+ * 内容根本不可达（KI-041）。规则住在 `data/json/worldstate.json`，这一层只管"触发了就广播"。
+ */
+const worldState = new WorldState(worldstate, {
+  hasFlag: (k) => streaming.hasFlag(k),
+  setFlag: (k) => streaming.setFlag(k)
+})
 const nodes = new InteractableGreybox(arena.scene, regions, (pos) => { const c = streaming.cellOf(pos); return chunkKeyOf(c.cx, c.cy, c.cz) }, (k) => streaming.hasFlag(k))
 nodes.syncActive(streaming.byState('active').map((c) => c.key)) // 起始格在构造前就已激活，补一次
 
@@ -281,7 +290,7 @@ async function bootWithSave(): Promise<void> {
   loop.start()
 }
 
-;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, interact, hud, spawner, nodes, projectileVis, actors: visuals, bossArena, saves, checkpoints, rpg, settlement, panel, setPanelOpen, refreshRpg, saveNow: () => saves.save('autosave') }
+;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, interact, hud, spawner, nodes, worldState, projectileVis, actors: visuals, bossArena, saves, checkpoints, rpg, settlement, panel, setPanelOpen, refreshRpg, saveNow: () => saves.save('autosave') }
 
 document.getElementById('boot')!.style.display = 'none'
 ;(window as unknown as Record<string, unknown>).__CAESURA_BOOTED__ = true

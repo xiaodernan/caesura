@@ -144,6 +144,8 @@ src/
     Upgrade.ts         音色石强化（武器 +1~+10，无失败无销毁，上限按稀有度封顶，材料不够一分不扣）
     Movements.ts       乐章战技谱册状态（Phase 5-C2）：页点亮/式等级/两槽配装，合成给玩家的 {f, cast}
   quest/
+    WorldState.ts      世界状态写入层（Phase 6-A 已落）：`worldstate.json` 的规则表 ⇒ 立旗 + 播报；
+                       只走 bus，自己不存旗标
     QuestState.ts      任务状态机：notStarted→active(step k)→completed/failed，
                        目标条件订阅 EventBus 计数
     WorldFlags.ts      全局 flag 仓（位图 + 命名 bool/int/string 三层），存档序列化，
@@ -203,7 +205,13 @@ src/
 - 每类 JSON 有对应 TS interface（`src/data/schema.ts`），文件命名 `kebab-case`，`id` 全局唯一且带类别前缀（`wp_`/`en_`/`bs_`/`it_`/`q_`/`sk_`/`dl_`/`rg_`）。
 - 时间单位统一为 **tick（1/60s 逻辑帧）**，杜绝毫秒/tick 混用。
 - Gameplay Tag 风格字符串（`damage.physical`、`status.fissure`）替代枚举位掩码，与 §57 GAS-lite 效果系统共用。
-- 校验：`npm run validate:data`（`scripts/validate-data.mjs`，**零新增依赖**的字段级校验器，见 KI-015；串在 `npm run check` 里，pre-commit 必过）。它管的是"schema 表达不出来"的那一类约束：跨字段区间、引用是否存在、以及**设计要求的必填组合**（例：带 `boss` 的敌人必须同时有 `intro` 与 `victory` 两格 —— §16「Boss 均带」由此变成机器钉住的规则而不是自觉）。Phase 5-C3 起再加三条同族规则：`progression.pity` 的两个数齐全且 `floorRarity` 必须是 `rarity` 表里真实存在的档；`LootRoll.pity` 必须与 `chance` 同时出现（必中条目不存在"没中"，那一格计数就是死数据）；同一张表内 `roll.id` 不得重复（逐条保底的计数键就是 `${表id}:${roll id}`，重名等于让常规档和首杀档共用一格）。
+- 校验：`npm run validate:data`（`scripts/validate-data.mjs`，**零新增依赖**的字段级校验器，见 KI-015；串在 `npm run check` 里，pre-commit 必过）。它管的是"schema 表达不出来"的那一类约束：跨字段区间、引用是否存在、以及**设计要求的必填组合**（例：带 `boss` 的敌人必须同时有 `intro` 与 `victory` 两格 —— §16「Boss 均带」由此变成机器钉住的规则而不是自觉）。Phase 6-A 起再加一组"可达性"规则（KI-041 的机器版判据，双向对账）：`worldstate.json` 每条规则立的旗标
+  必须在 `regions.json` 里真有人读；反过来 `regions.json` 里被读的每个旗标必须有人写，写方缺席的**逐个**列在
+  `PENDING_FLAG_WRITERS` 白名单里（只能变短，新增孤儿旗标直接 ERROR）；带 `secretId` 的领取点不许再自己抄
+  `requiresFlag`/`lootTable`（同一事实只住一处）；`gearBand` 用到的每个稀有度必须在 `items.json` 有至少一件装备件
+  （KI-042：这条上线时就抓到 rareplus/epic 两档一件装备都没有、隐藏房掷到它等于什么都不掉）；
+  固定词缀必须能落在该件的槽位上。
+  Phase 5-C3 起再加三条同族规则：`progression.pity` 的两个数齐全且 `floorRarity` 必须是 `rarity` 表里真实存在的档；`LootRoll.pity` 必须与 `chance` 同时出现（必中条目不存在"没中"，那一格计数就是死数据）；同一张表内 `roll.id` 不得重复（逐条保底的计数键就是 `${表id}:${roll id}`，重名等于让常规档和首杀档共用一格）。
 
 ### 3.2 帧数据（FrameData）——攻击类条目的公共子结构
 
@@ -558,6 +566,8 @@ Phase 4-A 把弹道跑通，但远程只被当作「会飞的近战判定」。4
   写到一半被 kill⇒主键位仍是完整旧档、迁移链 v1→v2 与「缺步骤必须抛错」、触发器同帧合并与失败发声
 - `tests/flow/gate5.test.ts`（Phase 5-C3 G5 出口验收，5 条）：**只从输入帧与 `entity.died` 事件两个入口进出**的一条不断链——真轻击打死 → 掉落入包 → 升音级 → 遗箱拾取 → 换装 → 强化 +1 → 存档 → 另一份世界读档 ⇒ 成长快照逐字段相等 + `mods()` 数值串相等 + 手里还是那把剑；再加"掷骰位置跟档走"（读档后续掉的一串 == 不断档那一串）、"杀进程重开只亏上一个检查点之后那一截"、力/律两条建卡线的同种子遭遇对照与一条纯 `scaling` 标尺断言
 - `tests/unit/loot-pity.test.ts`（Phase 5-C3，12 条）：两条 pity 规则各自的语义（容器保底「第 N+1 次必中」、大保底「每第 every 件顶到地板档」）、它们**互不替换**（容器那条不许动稀有度）、计数入档/老档留空、同种子同轨迹，以及掉落表数据的自检（roll id 表内唯一、`pity` 必带 `chance`、隐藏房给得出装备/乐谱/铭文档）
+- `tests/unit/worldstate.test.ts`（Phase 6-A，9 条）：规则语义（第一次真弹反才立、别人被弹不算、按 `dataId`/`interactId` 精确匹配、`ok=false` 不立、立过就不再播一次报、`dispose` 之后不再监听、`writerOf` 反查）+ 真表形状 + 一条"每条规则立的旗标都有读方"的数据对账
+- `tests/flow/hidden-rooms.test.ts`（Phase 6-A，5 条）：三条**从生产入口进**的可达链——真弹反 ⇒ 音壁裂开并连带立起通往沉唱堂的旗 / 敲响落钟 ⇒ 钟腔封存点可撬并掉出晶声档以上装备 / 杀死奥斯塔拉 ⇒ 沉唱堂那只 T2 箱不再锁着；外加"后果跟着存档走"（读档后端开过的不能撬第二次）与区域解锁吃同一套广播
 - `tests/unit/arch-boundaries.test.ts`：逻辑层不得 import 表现层（Phase 5-C3 起把 `rpg/`、`save/` 也补进了扫描清单——之前这两个目录不在闸门范围内）
 - `ai/perception.test.ts`：loudness/距离→suspicion 计算、拍隙可见性（幽灵八）**——已落地但换了载体**：拍隙那半写在 `tests/flow/phantome.test.ts`（相位是跨系统的读感，flow 层才测得动），感知计算仍散在各 flow 的距离/响度断言里；独立 perception 单测等到 Phase 6 的声呐/耳朵机制再合。
 - `tests/flow/bossshow.test.ts`（Phase 5-C2b，6 条）：§16 入场演出与胜利序列的玩法流——拍长按**她自己的**拍速换算的精确等式、整窗零出手零位移（且中段一记弹体照样掉血、演出不被挨打断掉）、只演第一次照面、`boss.defeated.holdTicks`、`cut` 恰一条 + `rawScale<1`、屏息未完不落收尾字
@@ -860,6 +870,35 @@ Phase 6 的对话与任务全部要读写"世界状态"，所以动手写内容�
 **下一步（同一 Phase 6-A 的正题）**：`regions.json` 里被读的 8 个世界 flag 目前**没有任何运行时写入方**，
 四张隐藏房奖励表因此玩家永远领不到（KI-041）。这一步要做的就是把"发生了什么 → 立哪个旗标"变成数据规则，
 而不是散在代码里的布尔——也正是 narrative §7 那句"禁止代码内散落硬编码布尔"的执行位。
+
+## 15. 世界状态写入层与隐藏房可达性（Phase 6-A 第二步）— 部分实现（3/8 旗标已有写方）
+
+narrative §7 那张旗标表写的是"什么时候该立哪个旗"，`regions.json` 写的是"哪个旗开了哪道锁"——
+**中间那一环（谁去立旗）从来没有人写**。于是 8 个旗标只有读方，四张隐藏房奖励与一只 T2 箱玩家永远拿不到；
+逐文件校验全绿，因为读半截和写半截各自都"合法"（KI-041）。这一步补的就是中间那一环：
+
+- **`data/json/worldstate.json`＝规则表**：一条规则＝`{on, 匹配位, setFlag, notify?}`。三种触发器都有真实来源：
+  `firstParry`（玩家第一次成功弹反 ⇒ `flag.parry_taught`，音壁捷径的设计前提就是"先学会还拍子"）、
+  `bossDefeated`（杀掉奥斯塔拉 ⇒ `flag.ostlara_defeated`，那只 T2 箱从此有钥匙）、
+  `interactUsed`（敲响落钟 ⇒ `flag.bell_interior_open`，钟腔封存点从"上着锁"变成撬得开）。
+- **`quest/WorldState.ts`＝引擎**：只读表、只广播。它**自己不存旗标**——写旗的唯一路径是 `bus.emit('world.flag')`，
+  流送层与交互层各自缓存同一个事件源（Phase 6-A 第一步刚把这条统一掉）。幂等：旗已立就不再动、不再重播播报，
+  所以它可以被每 tick 调用。`dispose()` 存在是因为总线是进程级单例。
+- **`world.interact` 是一条新事件**（成功失败都发）。有了它，"某件事被做过了"不再需要 main.ts 逐个转达；
+  第一消费者就是 `interactUsed` 规则。
+- **隐藏房的奖励入口挂在 secret 自己身上**：`InteractableRef.secretId` 指向同区域的 `secrets[]` 条目，
+  交互物构造时从那条记录取 `unlockFlag` 与 `rewardTable`。于是 `SecretRef.unlockFlag`/`rewardTable`
+  第一次有了真消费者，也不会出现"箱子上再抄一份旗标"的第二真值（闸门禁止）。钟腔那只箱子就是这么变成
+  隐藏房领取点的：`loot_secret_bellinterior`（晶声/史诗档）从此可达。
+- **顺手补掉 KI-042：`rareplus` / `epic` 两档此前一件装备都没有**。`gearBand` 掷到它们时
+  `pickGearItem` 返回 null ⇒ 函数安静地返回空数组，玩家打开隐藏房"什么都没有"而不报任何错。
+  补了四件（蒙钟盔 / 音徽·起拍 / 钟皮胸甲 / 音徽·留鼓，全部沿用既有词缀表），并把这条判据变成闸门：
+  **`gearBand` 用到的每个稀有度必须在 `items.json` 有至少一件装备件**。
+- **还欠的部分（如实登记，不假装做完）**：8 个旗标里 3 个有了写方，另外 5 个（`echo_cairn_read` /
+  `side_nave_found` / `found_first_phrase` / `brokenbar_resolved` / `brokenbar_allied`）要等 Phase 6-B/C 的
+  对话与营地抉择线——它们逐个挂在 `PENDING_FLAG_WRITERS` 白名单里（带原因），所以"新增一个没人写的旗标"
+  会立刻红，而欠账本身不会淹没在通用 WARN 里。`sec_drownedchoir_side_nave` 与 `sec_first_phrase`
+  还多一层几何欠账：它们的坐标落在可行走层之外（实测 `floorAt` 为 null），要先有能站住的领取点几何。
 
 ## 附录 A：模块规模与里程碑对照
 Phase 1（核心战斗原型）＝ `core + player + combat + tools/CombatDebugger + 占位场景`；Phase 3 ＝ `world/Streaming + generators`；Phase 5 ＝ `rpg + save`；Phase 6 ＝ `quest + audio(对话)`。每模块交付即配 §6 测试，不做「先全写完再测」。

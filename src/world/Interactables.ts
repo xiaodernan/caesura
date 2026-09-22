@@ -58,7 +58,15 @@ export class Interactables {
   ) {
     this.range = range
     for (const r of regions) {
-      for (const it of r.interactables) this.items.push({ ...it, regionId: r.id, regionName: r.displayName })
+      for (const it of r.interactables) {
+        const base = { ...it, regionId: r.id, regionName: r.displayName }
+        if (!it.secretId) { this.items.push(base); continue }
+        // 封存点的"解锁旗标"与"奖励表"只住在 secrets[] 那一条记录里：这里按引用取，
+        // 不在交互物行上再抄一遍——抄了就会出现"改了 secret 忘了改箱子"的第二真值。
+        const secret = r.secrets.find((x) => x.id === it.secretId)
+        if (!secret) throw new Error(`Interactables: ${it.id} 的 secretId "${it.secretId}" 不在 ${r.id}.secrets 里`)
+        this.items.push({ ...base, requiresFlag: secret.unlockFlag, lootTable: secret.rewardTable })
+      }
     }
     this.unsub = bus.on('world.flag', (f) => {
       const truthy = f.value !== false && f.value !== 0 && f.value !== ''
@@ -139,9 +147,14 @@ export class Interactables {
 
   private activate(it: Interactable): InteractResult {
     const base = { id: it.id, kind: it.kind, to: it.to }
-    if (this.used.has(it.id)) return { ...base, ok: false, state: 'used', text: `${it.regionName}：此路已尽` }
+    const out = (r: InteractResult): InteractResult => {
+      // 世界状态层（quest/WorldState）与调试器都读这条；失败的"为什么不行"同样是它们要的信息
+      bus.emit('world.interact', { id: r.id, kind: r.kind, ok: r.ok, state: r.state })
+      return r
+    }
+    if (this.used.has(it.id)) return out({ ...base, ok: false, state: 'used', text: `${it.regionName}：此路已尽` })
     if (it.requiresFlag && !this.flags.has(it.requiresFlag)) {
-      return { ...base, ok: false, state: 'locked', text: lockText(it) }
+      return out({ ...base, ok: false, state: 'locked', text: lockText(it) })
     }
     if (!REPEATABLE.has(it.kind) || it.oneWay) this.used.add(it.id)
     if (it.setsFlag) this.setFlag(it.setsFlag)
@@ -149,13 +162,13 @@ export class Interactables {
     bus.emit('ui.notify', { text, kind: it.kind === 'chest' || it.kind === 'gather' ? 'reward' : 'info' })
     bus.emit('audio.sfx', { key: SFX[it.kind], pos: it.pos, gain: 0.5 })
     if (it.setsFlag) bus.emit('log', { level: 'info', msg: `interact ${it.id} -> ${it.setsFlag ?? '-'} used=${this.used.has(it.id)}` })
-    return {
+    return out({
       ...base, ok: true, state: this.stateOf(it), text,
       ...(it.setsFlag ? { setsFlag: it.setsFlag } : {}),
       ...(it.kind === 'checkpoint' ? { rest: true } : {}),
       ...(it.kind === 'gather' || it.kind === 'chest' ? { loot: true } : {}),
       ...(it.lootTable ? { lootTable: it.lootTable } : {}),
-    }
+    })
   }
 }
 
