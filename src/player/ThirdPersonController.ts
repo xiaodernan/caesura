@@ -85,6 +85,13 @@ export class PlayerController {
    * 它是**瞬时状态**，不入档——读档后回到没起手，比凭空带着一层蓄力诚实。
    */
   followup: { layers: number; trueDamage: number } | null = null
+  /**
+   * §7.2 错拍步的落地窗口：脚落地之后这些 tick 内，自己的攻击架式伤害加 `landingPoise` 那点。
+   * 它是一个**带时限的加法项**，所以不住在 `PlayerMods` 里（那张表是装备/属性的静态汇总），
+   * 而是玩家自己的战斗态——和 `followup`（全音符斩压在下一记上的真伤）同一类。
+   */
+  landingPoise = 0
+  private landingPoiseTicks = 0
   /** 本 tick 的相对移动输入（战技位移的方向源）。刻意缓存而不是把 Input 传进 tryStartAction：出招入口保持一个签名 */
   private moveIntent = { x: 0, y: 0 }
 
@@ -214,6 +221,7 @@ export class PlayerController {
       return
     }
     const canAct = this.stunTicks <= 0 && this.crumpleTicks <= 0
+    if (this.landingPoiseTicks > 0 && --this.landingPoiseTicks === 0) this.landingPoise = 0
     this.moveIntent = { x: input.frame.move.x, y: input.frame.move.y }
     if (this.executing) {
       this.executing.tick++
@@ -299,8 +307,17 @@ export class PlayerController {
         const step = this.action.skill.distance / span
         this.pos.x += d.x * step
         this.pos.z += d.z * step
+
       }
       if (this.action.tick >= f.recovery) {
+        // 「落地」= 这一式结束、手又能动起来的那一刻。为什么不在判定窗末（activeEnd）就开：
+        // 错拍步的恢复有 20 tick，而窗口只有 18 tick——按 activeEnd 起算，窗口会在玩家能出手之前
+        // 就自己走完，那条 +3 永远吃不到。口径写进数据（landing.withinTicks），起算点写在这里。
+        const landed = this.action.skill
+        if (landed && landed.landingPoise > 0) {
+          this.landingPoise = landed.landingPoise
+          this.landingPoiseTicks = landed.landingPoiseTicks
+        }
         if (this.comboQueued && f.next && this.action.tick >= f.activeEnd) {
           const q = this.comboQueued
           this.comboQueued = null

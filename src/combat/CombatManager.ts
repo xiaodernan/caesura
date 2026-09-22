@@ -255,11 +255,14 @@ export class CombatManager {
       if (s.trueDamage) final += s.trueDamage
     }
 
+    // §7.2 错拍步的落地窗口：脚落地后那 0.3s 内的攻击多压 +3 架式。它是加法项，所以加在
+    // 乘法**之前**（这一击本身的架式值变高），并且只给武器出手——战技不握家伙，见下面那三重"不吃"。
+    const poiseBase = s.poise + (mv ? 0 : p.landingPoise)
     const poiseMul = (e.inStartup ? 1.5 : 1) * (s.onBeat ? 2 : 1)
     // 壳在 ⇒ 架势免疫；壳刚被钟声剥掉 ⇒ 架势累积翻倍（同一个奖励的两半）
     // 武器的 poiseMul 是"这把武器的架式手感"，战技不用手上的家伙打人，所以那一乘只对武器出手生效。
     if (!e.poiseImmune) {
-      e.stats.addPoise(Math.round(s.poise * poiseMul * (mv ? 1 : (p.weapon.poiseMul ?? 1)) * p.rpg.poiseDmgMul * e.poiseAccumMul), tick)
+      e.stats.addPoise(Math.round(poiseBase * poiseMul * (mv ? 1 : (p.weapon.poiseMul ?? 1)) * p.rpg.poiseDmgMul * e.poiseAccumMul), tick)
     }
     const burst = e.stats.addFissure(s.layers)
     if (s.mute && e.data.ai.buffAura) e.stunTicks = Math.max(e.stunTicks, 60)
@@ -273,7 +276,7 @@ export class CombatManager {
     e.interruptBroadcast(tick)
 
     bus.emit('combat.hit', {
-      attackerId: 'player', victimId: e.id, damage: final, poiseDamage: s.poise,
+      attackerId: 'player', victimId: e.id, damage: final, poiseDamage: poiseBase,
       kind: s.kind, point: s.point, dir: s.dir, result: 'hit',
       hitStopMs: s.hitStopMs + (s.onBeat ? 30 : 0), shakeKey: s.shakeKey,
       backstab: s.backstab, weakpoint: false

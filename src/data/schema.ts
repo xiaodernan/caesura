@@ -631,6 +631,12 @@ export interface MovementData {
   cost: MovementCost
   frame: MovementFrame
   levels: MovementLevel[]
+  /**
+   * 「落地窗口」（progression.md §7.2 错拍步那一格：位移落地后 0.3s 内，自己的攻击架式伤害 +3）。
+   * 没有这一格就是"位移完就没了"——§7.2 承诺的第三条收益此前只存在于文档里（KI-035）。
+   * 写成 `withinTicks` 而不是 0.3 秒：全项目的时序口径是 tick（§55），换算不在代码里做。
+   */
+  landing?: { poise: number; withinTicks: number }
 }
 
 /** 谱册的一页。点亮页=把它的工具箱打开（§7.1）；来源是数据里点名的物品，不是代码里的 if。 */

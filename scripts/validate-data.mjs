@@ -1071,7 +1071,19 @@ function validateMovements(itemIds) {
     if (!isStr(m.id)) report.error(file, w, 'id 缺失或非字符串')
     else if (ids.has(m.id)) report.error(file, w, `id 重复：${m.id}`)
     else ids.add(m.id)
-    for (const k of Object.keys(m)) if (!['id', 'page', 'nameKey', 'displayName', 'desc', 'cost', 'frame', 'levels'].includes(k)) report.error(file, `${w}.${k}`, '不认的字段（§55）')
+    for (const k of Object.keys(m)) if (!['id', 'page', 'nameKey', 'displayName', 'desc', 'cost', 'frame', 'levels', 'landing'].includes(k)) report.error(file, `${w}.${k}`, '不认的字段（§55）')
+    // 落地窗口（§7.2 错拍步）：没有位移就没有"落地"，这一格就成了没人能触发的死数据
+    if (m.landing !== undefined) {
+      if (!isObj(m.landing)) report.error(file, `${w}.landing`, '必须是 { poise, withinTicks }')
+      else {
+        for (const k of Object.keys(m.landing)) if (!['poise', 'withinTicks'].includes(k)) report.error(file, `${w}.landing.${k}`, '不认的字段（§55）')
+        report.num(file, `${w}.landing.poise`, m.landing.poise, { min: 0.1, name: 'poise' })
+        report.num(file, `${w}.landing.withinTicks`, m.landing.withinTicks, { min: 1, int: true, name: 'withinTicks' })
+      }
+      if (!(isArr(m.levels) && m.levels.some((l) => isObj(l) && l.distance !== undefined))) {
+        report.error(file, `${w}.landing`, '写了落地窗口但这一式没有 distance ⇒ 永远触发不了')
+      }
+    }
     if (!isStr(m.nameKey)) report.error(file, `${w}.nameKey`, '必填')
     if (!isStr(m.displayName)) report.error(file, `${w}.displayName`, '必填')
     if (!isStr(m.desc) || m.desc.length < 5) report.error(file, `${w}.desc`, '需要一句世界内解释（§19）')

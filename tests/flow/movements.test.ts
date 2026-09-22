@@ -43,7 +43,7 @@ const move = (id: string) => {
   return m
 }
 
-interface Hit { attackerId: string; victimId: string; damage: number; kind: string; result: string }
+interface Hit { attackerId: string; victimId: string; damage: number; kind: string; result: string; poiseDamage: number }
 
 function makeWorld() {
   registerGameData()
@@ -541,5 +541,83 @@ describe('§45 存档：谱册跟着档走', () => {
     expect(b.player.tryStartAction('weaponSkill', b.time.tick), '空谱 ⇒ 按 R 什么都没有').toBe(false)
     w.off()
     b.off()
+  })
+})
+
+
+/**
+ * 踏出这一步（错拍步），落地后空等 `wait` 个 tick，再补一记重击。
+ * 返回那一记重击压出去的架式基数——落地窗口的 +3 应当出现在里面，窗口过期后应当消失。
+ */
+function swingPoiseAfterStep(wait: number): { poise: number; armed: number; landedAt: number } {
+  const w = makeWorld()
+  const key = equipMove(w, SYNC, 0)
+  const e = w.pin(w.ai.spawn(FOE, { x: 0, y: 0, z: -4.2 }, `land-${wait}`))
+  faceAt(w, e.pos)
+  w.frame.move = { x: 0, y: 1 } // 方向在出手那一刻定死（口径与 step() 相同）
+  w.tick()
+  w.frame.move = { x: 0, y: 0 }
+  expect(w.player.tryStartAction(key, w.time.tick), '错拍步没踏出去').toBe(true)
+  let guard = 0
+  const before = w.time.tick
+  while (w.player.landingPoise === 0 && guard++ < 60) w.tick()
+  expect(w.player.landingPoise, '落地窗口没打开：KI-035 那条收益没接线').toBeGreaterThan(0)
+  const armed = w.player.landingPoise
+  const landedAt = w.time.tick - before
+  if (wait > 0) w.tick(wait)
+  // 用轻击读这一笔：落地窗口只有 0.3s（18 tick），而重击的前摇比窗口还长——
+  // 拿重击测就会看到"加成永远赶不上落点"，那是量具选错，不是机制没接。
+  expect(w.player.tryStartAction('l1', w.time.tick), '这一记轻击没砍出去').toBe(true)
+  const hit = nextHitOn(w, e)
+  expect(hit, '轻击没打中人，差值断言就是空的').toBeTruthy()
+  const out = { poise: hit!.poiseDamage, armed, landedAt }
+  w.off()
+  return out
+}
+
+describe('§7.2 错拍步的落地窗口（KI-035：落地后一段时间内，自己的攻击架式伤害加一档）', () => {
+  it('窗口在"脚落地"那一刻打开，长度与加成都来自 movements.json', () => {
+    const landed = swingPoiseAfterStep(0)
+    const mv = move(SYNC)
+    expect(mv.landing, '数据里要写这一格，否则本用例在自证').toBeTruthy()
+    expect(landed.armed, '落地那一刻的加成值 = 表里的 poise').toBe(mv.landing!.poise)
+    // 「落地」= 这一式结束、手又能动起来的那一刻。不是判定窗末：错拍步的恢复有 20 tick，
+    // 而窗口只有 18 tick，从 activeEnd 起算的话加成会在玩家能出手之前就自己走完（那是量出来的，不是猜的）。
+    expect(landed.landedAt, '窗口应在这一式结束的那一 tick 打开').toBe(mv.frame.recovery)
+  })
+
+  it('窗口里的那一记多压表里写的那点数；等过窗口就回到原值', () => {
+    const inside = swingPoiseAfterStep(0)
+    const mv = move(SYNC)
+    const outside = swingPoiseAfterStep(mv.landing!.withinTicks + 8)
+    expect(outside.poise, '前提：等过窗口之后落地加成确实归零了').toBe(inside.poise - mv.landing!.poise)
+    expect(inside.poise - outside.poise, '差值必须恰好是表里那一点，多一分少一分都不行').toBe(mv.landing!.poise)
+  })
+
+  it('这颗旋钮住在数据里：改 movements.json 的 poise，差值跟着改', () => {
+    swingPoiseAfterStep(0) // 先让 makeWorld() 把数据注册上
+    const mv = move(SYNC)
+    const backup = mv.landing!.poise
+    try {
+      mv.landing!.poise = backup + 6
+      const inside = swingPoiseAfterStep(0)
+      const outside = swingPoiseAfterStep(move(SYNC).landing!.withinTicks + 8)
+      expect(inside.poise - outside.poise, '代码里若还留着一份 +3，这条就会红').toBe(backup + 6)
+    } finally {
+      mv.landing!.poise = backup
+    }
+  })
+
+  it('没有落地窗口的式子（和弦爆）不吃这笔：加法项只从数据来', () => {
+    const w = makeWorld()
+    const key = equipMove(w, BURST, 0)
+    expect(move(BURST).landing, '前提：那一式没写落地收益').toBeUndefined()
+    const e = w.pin(w.ai.spawn(FOE, { ...FOE_POS }, 'noland'))
+    faceAt(w, e.pos)
+    w.player.stats.overdrive = w.player.skills[key].cast.overdriveCost
+    expect(w.player.tryStartAction(key, w.time.tick), '前提：和弦爆要能出手').toBe(true)
+    w.tick(12)
+    expect(w.player.landingPoise, '没写落地收益的战技不该凭空长出一段加成').toBe(0)
+    w.off()
   })
 })

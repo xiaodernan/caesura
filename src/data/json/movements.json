@@ -74,7 +74,8 @@
     { "cooldownTicks": 240, "distance": 2.5 },
     { "cooldownTicks": 210, "distance": 3 },
     { "cooldownTicks": 180, "distance": 3.5 }
-   ]
+   ],
+   "landing": { "poise": 3, "withinTicks": 18 }
   },
   {
    "id": "mv_chordburst",

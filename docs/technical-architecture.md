@@ -900,5 +900,31 @@ narrative §7 那张旗标表写的是"什么时候该立哪个旗"，`regions.j
   会立刻红，而欠账本身不会淹没在通用 WARN 里。`sec_drownedchoir_side_nave` 与 `sec_first_phrase`
   还多一层几何欠账：它们的坐标落在可行走层之外（实测 `floorAt` 为 null），要先有能站住的领取点几何。
 
+## 16. 错拍步的落地窗口（KI-035）— 已实现
+
+§7.2 给瞬步写了两件事：一步 2.5m，以及**落地 0.3s 内自己的攻击架式伤害 +3**。位移早就在了，
+后半句一直没做，因为全项目的成长乘数走的是 `PlayerMods` 那张**静态汇总表**，而这一笔是
+"下一记之内有效"的**带时限加法项**——硬塞进去会让 mods() 变成每 tick 都要重算的可变状态。
+
+- 数据：`movements.json` 的 `mv_syncopace` 多一格 `landing: { poise: 3, withinTicks: 18 }`（§55：0.3 秒
+  不写在代码里换算，tick 数就是数据的口径）。闸门新增：`landing` 的字段与区间、以及
+  **写了落地窗口但这一式没有 `distance` ⇒ ERROR**（没有位移就没有"落地"，那一格永远不会触发）
+- 合成：`rpg/Movements.actionFor` 把它放进 `SkillCast.landingPoise / landingPoiseTicks`，与 damage/distance 同一条路
+- 状态：`PlayerController.landingPoise`（+ 私有 tick 计数）与 `followup`（全音符斩压在下一记上的真伤）同类，
+  都是"下一段窗口内的加法项"，所以住在玩家战斗态而不在 mods 表里
+- 结算：`CombatManager.strikeEnemy` 把它加在**乘法之前**（`poiseBase = s.poise + landingPoise`，
+  语义是"这一击本身的架式值变高"），并且**只给武器出手**——战技不吃武器架式倍率那条口径同样适用于它；
+  `combat.hit.poiseDamage` 一并报真实压出去的基数（遥测不撒谎）
+- 起算点：**这一式结束、手又能动起来**的那一刻。为什么不从判定窗末（`activeEnd`）起算：错拍步的
+  `recovery` 是 20 tick 而窗口只有 18 tick，从 activeEnd 起算加成会在玩家能出手之前自己走完——
+  这是 flow 测试实测出来的（用重击量时窗口永远赶不上落点，换成轻击才对得上），不是拍脑袋定的口径
+- 覆盖：`tests/flow/movements.test.ts` 新增 4 条（窗口打开的时刻与数值全来自数据 / 窗口内外那一记差值
+  **恰好等于表里的 poise** / 改数据差值跟着改 / 没有 `landing` 的式子不吃这笔）
+- 实机（5199，只跑逻辑不渲染）复现了同一对数字：踏出这一步后 `player.landingPoise=3`，落地即砍轻击
+  `combat.hit.poiseDamage=9`，空等 26 tick 再砍同样的轻击则是基础值 `6`——+3 与窗口的关闭都在真循环里。
+  顺带一条**不是 bug 的观察**：第一遍探实时 `tryStartAction('weaponSkill')` 返回 false，原因是这只钉桩的驼鼓
+  命中会挂 999 tick 闷音（`enemies.json` 的数据），而闷音封战技正是 §11/Phase 5-C2 定的规则——
+  清掉 `muteTicksLeft` 之后一切照常。探针读数前先确认没有把自己闷住，这类"被自己的机制挡下"不要记成缺陷
+
 ## 附录 A：模块规模与里程碑对照
 Phase 1（核心战斗原型）＝ `core + player + combat + tools/CombatDebugger + 占位场景`；Phase 3 ＝ `world/Streaming + generators`；Phase 5 ＝ `rpg + save`；Phase 6 ＝ `quest + audio(对话)`。每模块交付即配 §6 测试，不做「先全写完再测」。
