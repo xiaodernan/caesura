@@ -26,6 +26,8 @@ import { Haptics } from '@/input/Haptics'
 import { VfxLayer } from '@/vfx/VfxLayer'
 import { Hud } from '@/ui/Hud'
 import { CombatDebugger } from '@/tools/CombatDebugger'
+import { SaveGame, LocalStore, IdbStore } from '@/save/Serializer'
+import { Checkpoints } from '@/save/Checkpoint'
 
 registerGameData()
 
@@ -86,7 +88,7 @@ nodes.syncActive(streaming.byState('active').map((c) => c.key)) // 起始格在�
 /** 交互物落地：调音桩休息、机关传送（= UE 的 Level Streaming 遮蔽传送） */
 function applyInteract(id: string): void {
   const r = interact.use(id, player.pos)
-  if (r.rest && !player.stats.dead) player.rest()
+  if (r.rest && !player.stats.dead) { player.rest(); checkpoints.request('rest') }
   if (r.ok && r.to) {
     player.pos.x = r.to.x; player.pos.y = r.to.y; player.pos.z = r.to.z
     player.vy = 0
@@ -128,6 +130,7 @@ const core = {
       // §2.1 的区域网格表：进区域就换拍（深窖=只有 60BPM 心跳）。Boss 的私有时钟叠在它之上，
       // 所以这里写的是 home，AISystem.syncClock 决定当前用的是谁的拍。
       rhythm.setBpm(here.grid.bpm, here.grid.beatsPerBar)
+      if (booted) checkpoints.request('region') // 读档后第一次「进区域」是恢复现场，不该顺手覆盖存档
       shownRegion = here.id
       bus.emit('ui.notify', { text: here.displayName, kind: 'info' })
       bus.emit('log', { level: 'info', msg: `enter ${here.id} · chunks ${JSON.stringify(streaming.stats())}` })
@@ -162,10 +165,38 @@ loop.add(core)
 addEventListener('resize', () => { arena.resize(); rig.resize() })
 bus.on('log', (l) => console.info(`[caesura:${l.level}] ${l.msg}`))
 
-;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, interact, hud, spawner, nodes, projectileVis, actors: visuals, bossArena }
+/**
+ * 存档后端：localStorage 主存位 + IndexedDB 备份位（需求 §45 的双份）。
+ * IndexedDB 不可用（隐私模式/被禁用）时降级为单份并说一声 —— 不静默假装还有备份。
+ */
+const savePrimary = new LocalStore('caesura.save.', localStorage)
+const saveBackup = typeof indexedDB === 'undefined' ? null : new IdbStore('caesura-save')
+const saves = new SaveGame({ player, streaming, spawner, clock: rhythm, time }, savePrimary, saveBackup)
+const checkpoints = new Checkpoints(saves)
+if (!saveBackup) console.info('[caesura] IndexedDB 不可用 ⇒ 存档只有本地一份')
+bus.on('boss.phase', () => checkpoints.request('boss'))
+addEventListener('pagehide', () => checkpoints.request('quit'))
+
+/** 启动即尝试回到最近的自动存档（?fresh=1 强制开新档） */
+let booted = false
+
+async function bootWithSave(): Promise<void> {
+  const fresh = new URLSearchParams(location.search).has('fresh')
+  const snap = fresh ? null : await saves.load('autosave')
+  if (snap) {
+    streaming.teleport(time.tick, player.pos)
+    player.floorY = surface.floorAt(player.pos)?.y ?? 0
+    spawner.syncActive(streaming.byState('active').map((c) => c.key))
+    bus.emit('ui.notify', { text: `回到上次调音桩 · ${snap.regionId ?? '未知区域'}`, kind: 'info' })
+  }
+  booted = true
+  loop.start()
+}
+
+;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, interact, hud, spawner, nodes, projectileVis, actors: visuals, bossArena, saves, checkpoints, saveNow: () => saves.save('autosave') }
 
 document.getElementById('boot')!.style.display = 'none'
 ;(window as unknown as Record<string, unknown>).__CAESURA_BOOTED__ = true
 bus.emit('boot.ready', undefined)
-loop.start()
+void bootWithSave()
 console.info('[caesura] combat prototype online — WASD/Shift/Ctrl-roll/LMB/RMB/F guard/G parry/Q lock/E interact(优先)/execute(处决·背刺)/1·2·3 weapon/Esc pause')

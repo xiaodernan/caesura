@@ -116,6 +116,8 @@ export class StreamingSystem {
   }
 
   hasFlag(key: string): boolean { return this.flags.has(key) }
+  /** 存档用：当前置位的 flag 名（区域解锁由这些 flag 推导，所以只需要存它们） */
+  flagKeys(): string[] { return [...this.flags].sort() }
 
   /** 直接登记 flag（测试与调试器用；正式路径走 bus 'world.flag'） */
   setFlag(key: string, on = true): void {

@@ -111,6 +111,13 @@ export class SpawnDirector {
   get slotCount(): number { return this.slots.length }
   get aliveCount(): number { return this.slots.reduce((n, s) => n + (s.instanceId ? 1 : 0), 0) }
   get clearedCount(): number { return this.cleared.size }
+  /** 存档：已永久清剿的槽位身份（`region:组序号:成员序号`） */
+  clearedKeys(): string[] { return [...this.cleared].sort() }
+  /** 读档：把清剿记录灌回来。槽位身份是稳定字符串，所以跨会话仍然指同一颗怪 */
+  markCleared(key: string): void {
+    if (!this.slots.some((s) => s.key === key)) return // 数据改过槽位身份 ⇒ 忽略陈旧记录而不是崩
+    this.cleared.add(key)
+  }
   alive(): SpawnSlot[] { return this.slots.filter((s) => s.instanceId !== null) }
   slotsInChunk(chunkKey: string): SpawnSlot[] { return this.byChunk.get(chunkKey) ?? [] }
 

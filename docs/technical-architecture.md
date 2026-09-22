@@ -171,9 +171,11 @@ src/
     Mixer.ts           音乐分层淡入淡出（exploration/combat/boss 主题共享 C 多利亚调性，
                        按 §11 转调规则）
   save/
-    Serializer.ts      存档对象 = {version, playTime, region, player, inventory, quest,
-                       flags, settings}；JSON + LZString 压缩 → localStorage(主) +
-                       IndexedDB(备份)
+    Serializer.ts      存档对象 = {version, playSec, region, player, flags, clearedSlots}
+                       （inventory/quest/settings 到了对应 Phase 再加字段 = 走 Migration 链）
+                       → JSON 明文写 localStorage(主) + IndexedDB(备份)
+                       ※ 原设计的 LZString 压缩未引入：那要多一个依赖，而这份存档 <2KB，
+                         收益远小于成本（需求「零新增依赖优先」）。差额记在 KI-025
     Checkpoint.ts      autosave 触发器（调音桩休息/Boss 阶段切换/区域首次进入）、槽位×3
     Integrity.ts       防损坏：双写（slot→slot.tmp 写完后 rename 语义双键位交换）、
                        CRC32 校验和、magic+schemaVersion 头；读档校验失败→自动回退
@@ -523,7 +525,9 @@ Phase 4-A 把弹道跑通，但远程只被当作「会飞的近战判定」。4
 - `combat/stamina.test.ts`：攻击/闪避/格挡消耗、耗尽硬直、回复（含 Mute -30%）
 - `rpg/inventory.test.ts`：堆叠/拆分/排序稳定性/容量边界
 - `rpg/progression.test.ts`：经验曲线公式、音级分配后属性重算一致性
-- `save/migration.test.ts`：v1→vN 迁移链、校验和失败回退、双写崩溃模拟（写 tmp 中途 kill=旧档完整）
+- `tests/unit/save.test.ts`（原计划名 save/migration.test.ts，按仓库既有命名落在 unit/）：
+  往返 deep-equal、清剿记录跨会话生效、CRC/magic/version 三道闸、主档损坏→回退 .prev、
+  写到一半被 kill⇒主键位仍是完整旧档、迁移链 v1→v2 与「缺步骤必须抛错」、触发器同帧合并与失败发声
 - `ai/perception.test.ts`：loudness/距离→suspicion 计算、拍隙可见性（幽灵八）**——已落地但换了载体**：拍隙那半写在 `tests/flow/phantome.test.ts`（相位是跨系统的读感，flow 层才测得动），感知计算仍散在各 flow 的距离/响度断言里；独立 perception 单测等到 Phase 6 的声呐/耳朵机制再合。
 - `data/validate.test.ts`：全部 JSON 通过 Ajv schema + id 唯一 + 交叉引用存在（moveset/skill 等）
 覆盖率门槛：逻辑核心包（combat/rpg/save/quest）行覆盖 ≥80%。
@@ -592,5 +596,34 @@ ID 规则：KI-/TD-/PF-/MA- 前缀 + 4 位序号（例 TD-0007）。
 
 ---
 
+## 9. 存档管线（需求 §45/§71）— Phase 5-A 已实现
+
+`src/save/`：`Serializer` / `Integrity` / `Migration` / `Checkpoint` 四个文件按 §2 的分工各管一件事，
+游戏侧**没有任何一处**直接碰 localStorage/IndexedDB。
+
+- **只存世界状态，不存实例**：快照 = `{version, playSec, regionId, player(位置/hp/体力/过载/武器), flags[], clearedSlots[]}`。
+  关键取舍是 `clearedSlots`：它存的是出怪槽位的**稳定身份**（`区域:组序号:成员序号`）而不是敌人实例，
+  所以读档后场景由既有的流送 + SpawnDirector 自己摆回来（Phase 3-C2「出怪来自数据」第二次生效：
+  存档里一个敌人数组都没有，也就不可能出现「存档里的怪和表里的怪对不上」）。区域解锁同样只存 flag——
+  解锁判定本来就是 `region.unlockFlag ∈ flags`，不需要第二套「已解锁区域」状态。
+- **校验和 + 双写 + 回退（Integrity）**：`magic + schemaVersion + crc32(JSON(payload))` 封在信封里；
+  写序是 `tmp → prev(上一份) → 主键位 → 删 tmp`，所以任何一步之间被 kill，主键位要么是旧的完整档、
+  要么新档已经写完；读序是 主 → tmp → prev → 备份，逐个过校验，取第一份合格的并在日志里说清是哪一份。
+  CRC32 只保证「没被截断/改坏」，不是密码学校验（本地单用户存档不需要后者，写在这免得被当成安全边界）。
+- **迁移链禁止「读旧档直接崩」**（Migration）：`registerMigration(from, fn)` 逐级升到当前版本，缺步骤抛
+  `MigrationError` 并由调用方回退到上一份。当前只有 v1：**没有**为了展示机制而虚构一段历史——
+  测试里注册的 v1→v2 用完即撤，等 Phase 5-B 真加背包字段时把那一步写成正式迁移。
+- **触发器与游戏循环解耦（Checkpoint）**：调音桩休息 / Boss 跳阶 / 首次进区域三个时机都只 `request(reason)`
+  排队，异步写在后台跑（连请求会合并原因、合并成一笔），失败既发日志也发 HUD 提示——
+  「以为存了其实没存」比不能存档更糟。`pagehide` 也挂了一次（关标签页前补一笔）。
+- **环境差异如实处理**：`typeof indexedDB === 'undefined'` ⇒ 备份位为 null 并在控制台说明「只剩本地一份」，
+  不静默假装双份；存储写失败（隐私模式配额）走同一条「说出来」的路径。
+- 覆盖与实机：`tests/unit/save.test.ts` 7 条；全量 **27 files / 249 passed**，tsc/build 干净。
+  实机：`?fresh=1` 开局 → 走到钟坠院存档点、设 flag、把 hp/过载调成非默认值 → `saveNow()` →
+  localStorage 出现 `caesura.save.autosave` + `.prev`、IndexedDB 里同键可读 → **刷新页面** →
+  日志 `load.ok autosave v1`，玩家回到 (130, 64, -120)、hp 41、过载 7、三条 flag 全在、
+  脚下层 64、区域判定 rg_fellcarillon、周围敌人由数据重新刷出。控制台 0 error 0 warn。
+- **未落（登记 KI-025）**：三槽位与「继续冒险/新游戏/存档摘要卡」的存档 UI（ui-ux §8）还没有界面层，
+  现在是单 autosave 槽 + `?fresh=1`；inventory/quest/settings 字段等各自 Phase 落地时补迁移。
 ## 附录 A：模块规模与里程碑对照
 Phase 1（核心战斗原型）＝ `core + player + combat + tools/CombatDebugger + 占位场景`；Phase 3 ＝ `world/Streaming + generators`；Phase 5 ＝ `rpg + save`；Phase 6 ＝ `quest + audio(对话)`。每模块交付即配 §6 测试，不做「先全写完再测」。
