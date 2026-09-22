@@ -71,6 +71,11 @@ export class Enemy {
   shellBroken = false
   /** 刚跳阶：让 CombatManager 演一次「敲钟怒吼」（hitstop + 低音 + 震镜） */
   phaseRoarPending = false
+  /**
+   * §15.2 玩家已经「夺回节拍」的剩余 tick：>0 期间这一阶的 stealBeat 全场减益与 BPM 游走都关掉。
+   * 由 CombatManager 写（那里有玩家输入与节奏），本类只读。
+   */
+  stealNeutralTicks = 0
   /** 攻速加成用「攒够一整帧才多走一帧」实现，保持 tick 是整数（帧表里有 === 判定） */
   private speedAcc = 0
   facingLocked = false
@@ -322,7 +327,7 @@ export class Enemy {
           if (dist > (this.data.ai.chaseBeyond ?? DEFAULT_CHASE_BEYOND)) { this.enter('chase'); break }
           if (this.data.ai.retreatHpFrac && this.stats.hp / this.stats.hpMax <= this.data.ai.retreatHpFrac) { this.enter('retreat'); break }
           // §14.7 软计时器优先于随机招式：到点就必须敲钟，玩家要打断的是这一拍
-          if (this.maybeSelfToll(rhythm)) break
+          if (this.maybeBarCast(rhythm)) break
           if (band) {
             // 伪动作决定脚下一步：'chase' 贴近、'backstep' 拉开（射手风筝），真招式名才出手
             if (band.actions.includes('chase')) stepToward(this, p, dt, this.data.speed * 0.9, rhythm)
@@ -404,26 +409,29 @@ export class Enemy {
    * 打断走的是既有的读条机制（`pendingBroadcast` + 受击时 `interruptBroadcast`），
    * 所以「破势/硬直/任何一刀砍在前摇里」都能把这一笔血掐掉，无需新状态。
    */
-  private maybeSelfToll(rhythm: RhythmClock): boolean {
-    const t = this.data.ai.selfToll
+  private maybeBarCast(rhythm: RhythmClock): boolean {
+    const t = this.barCast
     if (!t) return false
     const bar = rhythm.info().bar
-    if (this.tollDueBar < 0) this.tollDueBar = bar + t.everyBars // 进战第一拍不立刻回血
+    if (this.tollDueBar < 0) this.tollDueBar = bar + t.everyBars // 进战第一拍不立刻演
     if (bar < this.tollDueBar) return false
     const spec = this.data.attacks.find((a) => a.id === t.attackId)
     if (!spec) return false
     this.tollDueBar = bar + t.everyBars
-    if (this.stats.hp >= this.stats.hpMax) return false // 满血时它不敲：计时器照常推进
-    this.attack = { spec, tick: spec.frames.activeStart - rhythm.ticksUntilBeatOn(spec.beat, spec.frames.activeStart), hitDone: false, shots: 0, lungeApplied: 0 }
-    const heal = t.heal
+    // heal 省略（或满血）⇒ 不为了回血而演这一次，但计时器照常推进
+    const heal = t.heal ?? 0
+    if (heal > 0 && this.stats.hp >= this.stats.hpMax) return false
+    const lead = spec.frames.activeStart
+    this.attack = { spec, tick: lead - rhythm.ticksUntilBeatOn(spec.beat, lead), hitDone: false, shots: 0, lungeApplied: 0 }
+    const label = t.label
     this.pendingBroadcast = () => {
       const before = this.stats.hp
       this.stats.heal(heal)
       const got = Math.round(this.stats.hp - before)
-      bus.emit('audio.sfx', { key: 'bell_toll', pos: { ...this.pos }, gain: 1 })
+      bus.emit('audio.sfx', { key: (spec.frames.sfx ?? [])[0] ?? 'bell_toll', pos: { ...this.pos }, gain: 1 })
       bus.emit('vfx.request', { key: 'ring_echo', pos: { ...this.pos }, scale: 1.8 })
       bus.emit('sound.source', { id: this.id, pos: { ...this.pos }, loudness: 0.9 })
-      if (got > 0) bus.emit('ui.notify', { text: `敲钟自鸣 · 回复 ${got}`, kind: 'info' })
+      if (label && got > 0) bus.emit('ui.notify', { text: `${label} · 回复 ${got}`, kind: 'info' })
     }
     return true
   }
@@ -446,8 +454,26 @@ export class Enemy {
     this.bossPhase = next
     this.attack = null
     this.phaseRoarPending = true
+    // 「转阶段 ⇒ 时钟重置」（§15.2）：换气排程与玩家抢拍的余量都不跨阶段带过去
+    this.tollDueBar = -1
+    this.stealNeutralTicks = 0
   }
 
+  /** §15.2 夺拍配置（只有带着它的阶段才会触发全场减益） */
+  get stealBeat(): NonNullable<NonNullable<EnemyData['boss']>['phases'][number]['stealBeat']> | null {
+    return this.bossPhaseData?.stealBeat ?? null
+  }
+  /**
+   * 「到点必须做的一件事」的两种来源：Boss 挂在阶段上（阶段会换），普通敌人挂在 ai 上。
+   * §14.7 的敲钟自鸣与 §15.2 的换气拍因此共用一条排程器，而不是两套 if。
+   */
+  get barCast(): { everyBars: number; attackId: string; heal?: number; label?: string } | null {
+    return this.bossPhaseData?.barCast ?? this.data.ai.selfToll ?? null
+  }
+  /** 正在读「换气拍」那口气（前摇期）——玩家唯一能把拍抢回来的时刻 */
+  get inBreath(): boolean {
+    return !!this.attack?.spec.reclaimWindow && this.attack.tick < this.attack.spec.frames.startup
+  }
   /** 阶段白名单（非 Boss 原样返回）：改表即改「这一阶她会什么」 */
   private phaseActions(actions: string[]): string[] {
     const allow = this.bossPhaseData?.attacks
@@ -506,10 +532,13 @@ export class Enemy {
     // §2.1：约束的是**命中帧**落在拍点，不是起手帧 ⇒ 起手要提前一整个前摇。
     // （旧写法把 tick 0 当成拍点，结果所有招式的命中都比拍点晚 0.2~0.6s：
     //  蓄力重的敌人「看着像在重拍上，其实在重拍之后」，§2.1 的可预测性直接失效。）
+    const offGrid = spec.onGrid === false
     const lead = spec.frames.activeStart
-    const beatWait = rhythm.ticksUntilBeatOn(spec.beat, lead)
-    const key = `${rhythm.info().bar}:${rhythm.info().beatInBar}:${spec.beat[0]}`
-    if (slotTaken(key)) return
+    const beatWait = offGrid ? 0 : rhythm.ticksUntilBeatOn(spec.beat, lead)
+    if (!offGrid) {
+      const key = `${rhythm.info().bar}:${rhythm.info().beatInBar}:${spec.beat[0]}`
+      if (slotTaken(key)) return
+    }
     this.attack = { spec, tick: lead - beatWait, hitDone: false, shots: 0, lungeApplied: 0 }
     this.cooldowns.set(spec.id, tick + 240 + this.rng.int(0, 120))
     this.enter('combat')

@@ -939,7 +939,8 @@
    "selfToll": {
     "everyBars": 4,
     "attackId": "toll",
-    "heal": 15
+    "heal": 15,
+    "label": "敲钟自鸣"
    },
    "distBands": [
     {
@@ -1133,7 +1134,8 @@
       "combo3a",
       "pendulum",
       "bellsmash",
-      "charge"
+      "charge",
+      "phrase"
      ]
     },
     {
@@ -1167,8 +1169,13 @@
       "swordchain1",
       "combo3a",
       "pendulum",
-      "charge"
-     ]
+      "charge",
+      "phrase"
+     ],
+     "barCast": {
+      "everyBars": 2,
+      "attackId": "phrase"
+     }
     },
     {
      "id": "greatbell",
@@ -1479,6 +1486,31 @@
       "slowwind"
      ]
     }
+   },
+   {
+    "id": "phrase",
+    "beat": [
+     1
+    ],
+    "parryable": false,
+    "reaction": "R0",
+    "frames": {
+     "startup": 30,
+     "activeStart": 30,
+     "activeEnd": 31,
+     "recovery": 42,
+     "damage": 0,
+     "stamina": 0,
+     "poise": 0,
+     "hitStopMs": 0,
+     "loudness": 3,
+     "sfx": [
+      "ring_dust"
+     ],
+     "vfx": [
+      "ring_echo"
+     ]
+    }
    }
   ],
   "weakpoint": {
@@ -1522,9 +1554,12 @@
      "min": 0,
      "max": 12,
      "actions": [
-      "notes3",
       "barsweep",
-      "tutti"
+      "tutti",
+      "noBeatLunge",
+      "voiceChain",
+      "breath",
+      "notes3"
      ]
     },
     {
@@ -1532,6 +1567,7 @@
      "max": 99,
      "actions": [
       "notes3",
+      "voiceChain",
       "chase"
      ]
     }
@@ -1548,6 +1584,29 @@
       "barsweep",
       "tutti"
      ]
+    },
+    {
+     "id": "stealthebeat",
+     "belowHpFrac": 0.6,
+     "attacks": [
+      "noBeatLunge",
+      "voiceChain",
+      "breath"
+     ],
+     "stealBeat": {
+      "bpmDrift": 0.1,
+      "reDriftEveryTicks": 90,
+      "staRegenMul": 0.75,
+      "dodgeJitterTicks": 4,
+      "reclaim": {
+       "neutralTicks": 480,
+       "overdrive": 2
+      }
+     },
+     "barCast": {
+      "everyBars": 8,
+      "attackId": "breath"
+     }
     }
    ],
    "covers": {
@@ -1696,6 +1755,182 @@
      "tag": "status.mute",
      "layers": 2,
      "ticks": 360
+    }
+   },
+   {
+    "id": "noBeatLunge",
+    "beat": [
+     1
+    ],
+    "parryable": false,
+    "reaction": "R2",
+    "onGrid": false,
+    "frames": {
+     "startup": 26,
+     "activeStart": 26,
+     "activeEnd": 32,
+     "recovery": 54,
+     "damage": 16,
+     "stamina": 0,
+     "poise": 18,
+     "hitStopMs": 90,
+     "hitbox": {
+      "shape": "cone",
+      "angleDeg": 70,
+      "radius": 3.2,
+      "height": 2.2,
+      "offsetY": 1.2
+     },
+     "lunge": 4.2,
+     "loudness": 5,
+     "sfx": [
+      "thrust_1"
+     ],
+     "vfx": [
+      "trail_thrust"
+     ],
+     "next": "noBeatLunge2"
+    }
+   },
+   {
+    "id": "noBeatLunge2",
+    "beat": [
+     2
+    ],
+    "parryable": false,
+    "reaction": "R2",
+    "onGrid": false,
+    "frames": {
+     "startup": 18,
+     "activeStart": 18,
+     "activeEnd": 24,
+     "recovery": 44,
+     "damage": 16,
+     "stamina": 0,
+     "poise": 18,
+     "hitStopMs": 90,
+     "hitbox": {
+      "shape": "cone",
+      "angleDeg": 70,
+      "radius": 3.4,
+      "height": 2.2,
+      "offsetY": 1.2
+     },
+     "lunge": 4.2,
+     "loudness": 5,
+     "sfx": [
+      "thrust_1"
+     ],
+     "vfx": [
+      "trail_thrust"
+     ],
+     "next": "noBeatLunge3"
+    }
+   },
+   {
+    "id": "noBeatLunge3",
+    "beat": [
+     3
+    ],
+    "parryable": false,
+    "reaction": "R3",
+    "onGrid": false,
+    "frames": {
+     "startup": 22,
+     "activeStart": 22,
+     "activeEnd": 30,
+     "recovery": 70,
+     "damage": 22,
+     "stamina": 0,
+     "poise": 30,
+     "hitStopMs": 110,
+     "hitbox": {
+      "shape": "cone",
+      "angleDeg": 80,
+      "radius": 3.6,
+      "height": 2.3,
+      "offsetY": 1.2
+     },
+     "lunge": 3.0,
+     "loudness": 6,
+     "sfx": [
+      "swing_heavy_2"
+     ],
+     "vfx": [
+      "trail_thrust",
+      "shock_small"
+     ]
+    }
+   },
+   {
+    "id": "voiceChain",
+    "beat": [
+     1
+    ],
+    "parryable": false,
+    "reaction": "R1",
+    "frames": {
+     "startup": 34,
+     "activeStart": 34,
+     "activeEnd": 40,
+     "recovery": 66,
+     "damage": 14,
+     "stamina": 0,
+     "poise": 8,
+     "hitStopMs": 70,
+     "loudness": 6,
+     "sfx": [
+      "bowstring"
+     ],
+     "vfx": [
+      "trail_thrust"
+     ],
+     "projectile": {
+      "kind": "shard",
+      "speed": 17,
+      "range": 28,
+      "radius": 0.4,
+      "telegraph": true,
+      "burst": {
+       "count": 3,
+       "everyTicks": 26,
+       "at": [
+        0,
+        26,
+        52
+       ]
+      },
+      "sfxHit": "hit_flesh",
+      "vfxHit": "hit_ring",
+      "shake": "normal",
+      "loudness": 5
+     }
+    }
+   },
+   {
+    "id": "breath",
+    "beat": [
+     1
+    ],
+    "parryable": false,
+    "reaction": "R0",
+    "reclaimWindow": true,
+    "frames": {
+     "startup": 21,
+     "activeStart": 21,
+     "activeEnd": 22,
+     "recovery": 34,
+     "damage": 0,
+     "stamina": 0,
+     "poise": 0,
+     "hitStopMs": 0,
+     "loudness": 3,
+     "sfx": [
+      "ring_dust"
+     ],
+     "vfx": [
+      "ring_echo"
+     ]
     }
    }
   ],

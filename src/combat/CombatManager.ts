@@ -1,7 +1,7 @@
 import { bus } from '@/core/EventBus'
 import { Rng } from '@/core/Math'
 import type { GameTime } from '@/core/Time'
-import { TICK_DT } from '@/core/Time'
+import { TICK_DT, TICK_HZ } from '@/core/Time'
 import type { RhythmClock } from '@/core/RhythmClock'
 import type { Input } from '@/core/Input'
 import type { PlayerController, ActivePlayerHit } from '@/player/ThirdPersonController'
@@ -102,6 +102,7 @@ export class CombatManager {
     if (!this.player.executing) this.enemiesHitPlayer(tick)
     this.phaseCounter(input)
     this.bossBits()
+    this.stealBeat(tick, input)
     this.projectilePass(tick, dt)
     if (tick % 30 === 0) this.checkEncounterMusic()
   }
@@ -457,6 +458,63 @@ export class CombatManager {
     }
   }
 
+  /**
+   * §15.2「夺拍」：带着 stealBeat 的阶段一旦交战，全局网格就归他 —— BPM 随机游走、
+   * 玩家体力改挂他的拍点、闪避恢复锁漂移。玩家在换气拍前摇里按下弹反 ⇒ 夺回节拍：
+   * 中立网格若干秒、三项减益清零、过载 +N（这是需求 §24「二阶段必须可被反制」的落点）。
+   */
+  private stealBeat(tick: number, input?: Input): void {
+    let boss: Enemy | null = null
+    for (const e of this.ai.enemies) {
+      if (e.alive && e.stealBeat && (e.state === 'combat' || e.state === 'chase')) { boss = e; break }
+    }
+    const s = boss?.stealBeat
+    if (!boss || !s) {
+      // 没人夺拍 ⇒ 网格与玩家身上的寄生减益一起归零（留在 stats 上是脏状态）
+      if (this.rhythm.drift !== 0) this.rhythm.drift = 0
+      this.player.beatParasite = null
+      this.player.dodgeJitterTicks = 0
+      return
+    }
+    if (boss.stealNeutralTicks > 0) {
+      boss.stealNeutralTicks--
+      this.rhythm.drift = 0
+      this.player.beatParasite = null
+      this.player.dodgeJitterTicks = 0
+      return
+    }
+    if (tick % s.reDriftEveryTicks === 0) this.rhythm.drift = this.rng.float(-s.bpmDrift, s.bpmDrift)
+    const beatTicks = (60 / this.rhythm.bpm) * TICK_HZ
+    this.player.beatParasite = { regenMul: s.staRegenMul, windowTicks: Math.max(4, Math.round(beatTicks * 0.25)) }
+    this.player.dodgeJitterTicks = s.dodgeJitterTicks
+    const a = boss.attack
+    // 换气窗开场的可读提示（§15.2：HUD 以他胸口熄灭音色石的一次「暗-亮」脉冲）。
+    // 用招式对象的身份做边沿，避免 21 tick 的窗口里每 tick 响一次。
+    if (a?.spec.reclaimWindow && boss.inBreath && this.breathCue !== a) {
+      this.breathCue = a
+      bus.emit('vfx.request', { key: 'parry_ring', pos: { ...boss.pos }, scale: 0.8 })
+      bus.emit('audio.sfx', { key: 'lockon_on', pos: { ...boss.pos }, gain: 0.6 })
+      bus.emit('ui.notify', { text: '管风琴停气 —— 换气拍！', kind: 'boss' })
+    }
+    if (a?.spec.reclaimWindow && boss.inBreath && input?.frame.edges.has('parry')) {
+      boss.stealNeutralTicks = s.reclaim.neutralTicks
+      boss.attack = null
+      this.rhythm.drift = 0
+      this.player.beatParasite = null
+      this.player.dodgeJitterTicks = 0
+      this.player.addOverdrive(s.reclaim.overdrive)
+      this.time.hitStop(0.18)
+      bus.emit('vfx.request', { key: 'parry_ring', pos: { ...boss.pos }, scale: 1.6 })
+      bus.emit('audio.sfx', { key: 'parry_bell', pos: { ...boss.pos }, gain: 1 })
+      bus.emit('ui.notify', {
+        text: `夺回节拍！中立网格 ${(s.reclaim.neutralTicks / TICK_HZ).toFixed(0)}s · 过载 +${s.reclaim.overdrive}`,
+        kind: 'reward'
+      })
+    }
+  }
+
+  /** 已经提示过的换气窗（按招式对象身份判边沿） */
+  private breathCue: object | null = null
   /** 上一个记过残响伤害的拍号（机关是「每拍」结算，不能每 tick 结算） */
   private lastResonanceBeat = -1
 

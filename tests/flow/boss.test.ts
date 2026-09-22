@@ -362,6 +362,8 @@ describe('钟壳：打不动不是数值墙，而是「撞钟才是正解」', (
   })
 })
 
+const e_data = registry.get<EnemyData>('en_ostlara')
+
 describe('阶段白名单与命中网格（验收②「全招可被 BeatClock 对齐」）', () => {
   it('P1 出得来的招式全在白名单闭包里，且命中帧落在小节第 1 拍', () => {
     const w = makeWorld()
@@ -380,24 +382,39 @@ describe('阶段白名单与命中网格（验收②「全招可被 BeatClock �
     w.off()
   })
 
-  it('P2 加进三连与钟摆斩；三连的第三击永远落在小节第 3 拍（故意破规矩）', () => {
-    const w = makeWorld()
-    const e = ostlara(w)
-    engage(w, e)
-    e.stats.damage(Math.round(e.stats.hpMax * 0.5))
-    w.tick(1)
-    expect(e.bossPhase).toBe(1)
-    const got = observe(w, e, 2000)
-    const allow = closable(e.data, 1)
-    for (const id of got.seen) expect(allow.has(id), 'P2 出了不该会的 ' + id).toBe(true)
-    expect(got.seen.has('combo3a') && got.seen.has('pendulum'), 'P2 才会的招真的出得来').toBe(true)
-    expect(got.seen.has('bellsmash'), 'P3 的招不该提前').toBe(false)
-    const third = got.hitBeats['combo3c'] ?? []
-    expect(third.length, '三连打出来了').toBeGreaterThan(0)
-    expect(Math.max(...third), '第三击永远踩在它自己那一拍（表里写的是拍 3 ⇒ 破「只在重拍」的规矩）')
-      .toBeLessThanOrEqual(1)
-    expect(Math.max(...(got.hitBeats['combo3a'] ?? [9])), '起手仍在重拍网格').toBeLessThanOrEqual(1)
-    w.off()
+  it('P2 的候选真的换了一批，且三连的第三击永远落在小节第 3 拍（故意破规矩）', () => {
+    // 数据层面 P2 换了什么，由上面那条白名单测试负责；这里跑三个 seed 只验两件事：
+    // ①她**不会**提前拔出 P3 的招（子集性质，与安全相关）；②P2 招牌三连的命中帧仍然对齐
+    // （验收②）。不要求「一次采样里五招全出」——她的读条很长、同小节同拍位只有一个插槽，
+    // 单次 2200 tick 平均只有十几次起手，那种断言只会自己抖。
+    const allow = closable(e_data, 1)
+    const seen = new Set<string>()
+    let allowOk = true
+    const thirdErr: number[] = []
+    const startErr: number[] = []
+    for (const seed of ['p2-a', 'p2-b', 'p2-c']) {
+      const w = makeWorld()
+      const e = ostlara(w, -3, seed)
+      engage(w, e)
+      e.stats.damage(Math.round(e.stats.hpMax * 0.5))
+      w.tick(1)
+      expect(e.bossPhase).toBe(1)
+      const got = observe(w, e, 2400)
+      for (const id of got.seen) {
+        seen.add(id)
+        if (!allow.has(id)) allowOk = false
+      }
+      thirdErr.push(...(got.hitBeats['combo3c'] ?? []))
+      startErr.push(...(got.hitBeats['combo3a'] ?? []))
+      w.off()
+    }
+    expect(allowOk, `P2 出了不该会的招：[${[...seen]}]`).toBe(true)
+    expect(seen.has('swordchain1'), 'P1 的招式留在池子里').toBe(true)
+    expect(seen.has('combo3a'), `P2 的三连要出得来：[${[...seen]}]`).toBe(true)
+    expect(seen.has('bellsmash'), 'P3 的大招不许提前').toBe(false)
+    expect(thirdErr.length, '三连第三击被采到').toBeGreaterThan(0)
+    expect(Math.max(...thirdErr), '第三击踩在它自己声明的那一拍（表里写的是拍 3）').toBeLessThanOrEqual(1)
+    expect(Math.max(...startErr), '起手仍在拍 1 网格').toBeLessThanOrEqual(1)
   })
 
   it('P3 只剩大招：一记跨两条血线直接跳阶，命中帧仍在第 1 拍', () => {
@@ -439,6 +456,32 @@ describe('阶段白名单与命中网格（验收②「全招可被 BeatClock �
     expect(e.attack, '读条作废').toBeNull()
     expect(e.stunTicks, '失音 72 tick 减去已经走过的几 tick').toBeGreaterThan(55)
     expect(w.player.stats.hp, '弹反 = 零伤').toBe(9_999_999)
+    w.off()
+  })
+})
+
+describe('P2 的呼吸拍（§15.1「每 2 小节一次换乐句停顿 0.5s」）', () => {
+  it('换乐句被排进阶段里：她每 2 小节必须站住 0.5s，那是处决/喝药的窗口', () => {
+    const w = makeWorld()
+    const e = ostlara(w)
+    engage(w, e)
+    e.stats.damage(Math.round(e.stats.hpMax * 0.5))
+    w.tick(1)
+    expect(e.bossPhase, '呼吸拍挂在 P2 的阶段上').toBe(1)
+    const bc = e.bossPhaseData?.barCast
+    expect(bc?.everyBars, '每 2 小节一次').toBe(2)
+    expect(bc?.attackId, '那一拍她就站着').toBe('phrase')
+    const phrase = e.data.attacks.find((a) => a.id === 'phrase')!
+    expect(phrase.frames.damage, '不痛 —— 它是窗口不是招式').toBe(0)
+    expect(phrase.frames.recovery / TICK_HZ, '≈0.5s 的停顿').toBeGreaterThanOrEqual(0.5)
+    let breaths = 0
+    let prev: Enemy['attack'] = null
+    w.tick(2200, () => {
+      const a = e.attack
+      if (a && a !== prev && a.spec.id === 'phrase') breaths++
+      prev = a
+    })
+    expect(breaths, '2200 tick（约 22 小节）里至少给三次呼吸拍').toBeGreaterThanOrEqual(3)
     w.off()
   })
 })

@@ -487,6 +487,19 @@ Phase 4-A 把弹道跑通，但远程只被当作「会飞的近战判定」。4
 - **覆盖与实机**：`tests/flow/mainboss.test.ts` 12 条 + `tests/unit/actor-visuals.test.ts` 断音柱 1 条。实机 tickFrame（未竟厅 152 层）：他从数据里 spawn 出来、`clockOwner→boss/92/4`、前摇音 7 响、四根断音柱按表坐标挂在场景里；玩家贴柱（他在柱外 4m）时同一记管束横扫 **0 伤 + 4 片 dust**，往外迈到 4.6m（出半径 3.2）**27 伤** —— A/B 都成立；正常交战里他真的扫到过玩家 30 伤。
 - **未落（如实登记，不当作已完成）**：§15.2 的 P2「夺拍」（BPM 随机游走 ±10%、玩家体力回复挂他的拍、闪避冷却漂移、换气拍弹反=夺回 8s）、60% 的场地塌陷与声纹伤害带、Finale 的三个振源核、以及 P1 的「音栓哪根亮起决定出招方向」全部未实现；`boss.phases` 目前只有一条，所以他是**单阶段 Boss**。另注：实机探针第一次跑「玩家出柱仍被打中」拿到 0 伤，原因是我用手工塞的 `attack` 对象停在 `startup-1`、而敌人不在 combat 态时帧根本不走 ⇒ 收势帧从未到达；那是**测试夹具的错误**，不是掩体的错误，改对后 A/B 如上。
 
+### 5.9.7 夺拍：把玩家的节奏工具改挂到 Boss 的拍上（Phase 4-H 恩希尔 P2）— 已实现
+
+§15.2 的第二阶写着「他吞掉全局时钟」。这不是一串 debuff，而是**归属权**：同一条网格、同一批消费方，从这一刻起由他的拍子发号施令。做完之后 §24「每 Boss 恰 2 或 3 阶段」也第一次真的满足了（奥斯塔拉两阶、恩希尔两阶）。
+
+- **`phases[i].stealBeat` 是唯一开关**：阶段带着它 ⇒ CombatManager 每 tick 游走 `rhythm.drift`、给玩家挂 `beatParasite`、抖 `dodgeJitterTicks`；阶段不带（或被玩家抢回拍）⇒ 三者同时归零。`drift` 是 RhythmClock 从 Phase 1 就有的字段，此前一直没人写它 —— 现在它第一次成为玩法变量（92BPM ±10% ⇒ 实测在 -0.073~+0.056 之间走）。
+- **「体力回复改挂他的拍」= 拍点门外一口气都不给**：`player.beatParasite = {regenMul, windowTicks}`，`PlayerController.update` 在 `stats.update` 之前把 `mods.regenMul` 按「离他的拍点多远」写成 `regenMul` 或 `0`。用既有的 `mods` 乘子通道，不新增一套体力系统；`windowTicks` 取四分之一拍（≈160ms），所以回复是「脉冲式」的，玩家能数出来。
+- **闪避恢复锁 ±60ms 用整数 tick 落地**：`dodgeJitterTicks=4`（66.7ms）。翻滚的 `total` 在 `base±4` 之间交替（不是抽签：交替保证均值仍是 base，但每一滚的落点都要重读）。表里写 ms、代码只有 tick，这个 0.4 tick 的差**记在测试里**而不是假装刚好 60ms。
+- **换气拍是唯一的反制窗，也是唯一写「不」的地方**：`barCast`（4-E 挂在 `ai.selfToll` 上的那条小节排程）升到**阶段级**，指向一招 `breath`（`damage:0`、`startup:21`≈0.35s、`reclaimWindow:true`）。窗口里按弹反 ⇒ 夺拍：`rhythm.drift=0`、玩家两项寄生减益清零、过载 +2、中立网格 480 tick。窗口外按 G 什么都拿不到（flow 里把这条钉死：把他钉在非换气读条里连按 120 tick，`stealNeutralTicks` 仍是 0）。**窗口长度只在招式表里写一次** —— stealBeat 不再重复一遍 `windowTicks`。
+- **`onGrid:false` = 网格的例外通道**：§15.2 的「无拍突进」是全作唯一故意不量化到拍位的招式（教玩家放弃节拍依赖、改读身体 telegraph）。做法是给 `AttackSpec` 一个开关，`tryAttack` 见到它就跳过 `ticksUntilBeatOn` 与拍位插槽仲裁 ⇒ 它天然落在缝里（flow 断言命中帧离网格 >1 tick）。三段靠 `frames.next` 串起来，链式段也不回网格。
+- **转阶段 ⇒ 时钟重置**（§15.2 表格第二行）：`syncBoss` 跳阶那一路把 `tollDueBar/stealNeutralTicks` 一起清掉，所以换气排程和中立余量都不跨阶段带过去。顺带给奥斯塔拉的 P2 补上了 §15.1 的「每 2 小节一次换乐句停顿 0.5s」（同一个 `barCast`，`heal` 省略 ⇒ 到点站着不咬人，是处决/喝药窗），这条 4-F 登记的缺口现在闭合。
+- 覆盖：`tests/flow/stealbeat.test.ts` 10 条（游走、拍点门内外两种窗口各自的回复量、闪避漂移量级、P2 输出不可弹反、无拍三段不守拍且不抢插槽、换气每 8 小节真的来、窗口内弹反=夺拍全套后果、窗口外弹反无效、中立期到期后重新被夺）。全量 **24 files / 228 passed**，`tsc --noEmit` + `npm run build` 干净。
+- **实机（真键盘 KeyG）**：未竟厅 152 层把血压到 50% ⇒ `bossPhase=1`、`clockOwner=boss/92`；400 tick 内 `drift` 走出 5 个不同值（-0.073…+0.056）、`beatParasite`/`dodgeJitterTicks` 全程挂上；跑到第 8 小节的停气窗，一次真实 KeyG 按下 ⇒ `stealNeutralTicks=480`、`drift=0`、寄生减益与抖动清零、过载 +2、提示「管风琴停气 —— 换气拍！」+「夺回节拍！中立网格 8s · 过载 +2」、`parry_ring` 可见。**未落**：60% 的外环塌陷与声纹伤害带（要内容几何，KI-008 族）、Finale 的三个外露振源核与 120BPM 崩塌、以及「声部锁链躲回廊柱」所依赖的真 LOS（KI-014：现在由显式断音柱近似承担，见 §5.9.6）。登记在 KI-022。
+
 ---
 
 ## 6. 测试策略（需求 §58/§59/§77）

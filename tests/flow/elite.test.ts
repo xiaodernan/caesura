@@ -180,7 +180,8 @@ describe('数据表：§14.7 的每一格都在 enemies.json 里，帧数换算�
 
   it('钟甲与自鸣全在表里：正面 60° 吃 40%、每 4 小节敲一次回 15', () => {
     expect(d.ai.armorFront).toEqual({ arcDeg: 60, dmgMul: 0.6 })
-    expect(d.ai.selfToll).toEqual({ everyBars: 4, attackId: 'toll', heal: 15 })
+    // label 是提示文案的素材：回血那句话要说「敲钟自鸣」而不是硬编码在代码里（§55）
+    expect(d.ai.selfToll).toEqual({ everyBars: 4, attackId: 'toll', heal: 15, label: '敲钟自鸣' })
     const toll = d.attacks.find((a) => a.id === 'toll')!
     expect(toll.frames.damage, '这一招不打人').toBe(0)
     expect(toll.parryable).toBe(false)

@@ -32,6 +32,15 @@ export class PlayerController {
   guardTicks = 0
   guardStartTick = -999
   parryTicksLeft = 0
+  /**
+   * §15.2 被 Boss「夺拍」之后，玩家的节奏工具改挂到他的拍上：
+   * - 体力只在**他的**拍点窗（windowTicks）内回复，窗外为 0 ⇒ 你的呼吸由他的网格决定；
+   * - 闪避恢复锁在 ±dodgeJitterTicks 之间交替漂移（§15.2 的 ±60ms）。
+   * 由 CombatManager 每 tick 写（那里同时看得见 Boss 阶段与输入），本类只消费。
+   */
+  beatParasite: { regenMul: number; windowTicks: number } | null = null
+  dodgeJitterTicks = 0
+  private dodgeCount = 0
   parryWhiffTicks = 0
   stunTicks = 0
   crumpleTicks = 0
@@ -119,6 +128,11 @@ export class PlayerController {
       this.publishStats()
       return
     }
+    // 夺拍期间：他的拍点窗外不给回气（mods.regenMul 是 EntityStats 已有的乘子通道）
+    if (this.beatParasite && rhythm) {
+      const onHisBeat = rhythm.ticksFromBeatPoint() <= this.beatParasite.windowTicks
+      this.stats.mods.regenMul = onHisBeat ? this.beatParasite.regenMul : 0
+    } else this.stats.mods.regenMul = 1
     this.stats.update(dt, tick, this.guarding)
 
     // ---- defense inputs (always live unless rolling/attacking) ----
@@ -271,9 +285,12 @@ export class PlayerController {
     this.charging = false
     this.chargeTicks = 0
     const locked = this.lockedTarget !== null
+    // 恢复锁漂移：±jitter 交替（不是抽签——均值守恒，但每一滚的落点都要重新读）
+    const jit = this.dodgeJitterTicks
+    const drift = jit > 0 ? (this.dodgeCount++ % 2 === 0 ? jit : -jit) : 0
     this.roll = {
       tick: 0, dir,
-      total: locked ? 18 : this.base.roll.total,
+      total: Math.max(6, (locked ? 18 : this.base.roll.total) + drift),
       iframeStart: locked ? this.base.roll.lockOnIframes[0] : this.base.roll.iframeStart,
       iframeEnd: locked ? this.base.roll.lockOnIframes[1] : this.base.roll.iframeEnd
     }

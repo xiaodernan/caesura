@@ -85,12 +85,13 @@ function standAt(w: W, e: Enemy, pos: { x: number; y: number; z: number }): void
 describe('数据表：§15.2 第一阶的谱面与场地', () => {
   const d = registry.get<EnemyData>('en_hersil')
 
-  it('他是 Boss：私有 92BPM 4/4、单阶段（P2/Finale 未落，见 KNOWN_ISSUES）、轮转选招', () => {
+  it('他是 Boss：私有 92BPM 4/4、两阶段（§24 的最低要求）、轮转选招', () => {
     expect(d.archetype).toBe('boss')
     expect(d.hp).toBe(620)
     expect(d.boss?.bpm).toBe(92)
     expect(d.boss?.beatsPerBar).toBe(4)
-    expect(d.boss?.phases).toHaveLength(1)
+    expect(d.boss?.phases.map((p) => p.id)).toEqual(['registr', 'stealthebeat'])
+    expect(d.boss?.phases[1].belowHpFrac, '60% 转阶段并重置时钟').toBe(0.6)
     expect(d.ai.pickOrder, '「玩家可背谱」要求招式是轮转而不是抽签').toBe('cycle')
     expect(d.boss?.covers, '断音柱写在数据里').toBeTruthy()
     expect(d.boss!.covers!.positions.length).toBeGreaterThanOrEqual(4)
@@ -113,7 +114,19 @@ describe('数据表：§15.2 第一阶的谱面与场地', () => {
     expect(tutti.frames.damage).toBe(55)
     expect(tutti.statusOnHit?.ticks, '闷音 6s').toBe(360)
     expect(tutti.parryStunTicks, '弹反其起手拍=大师解，回报要给足').toBe(180)
-    for (const a of d.attacks) expect(a.beat, '整份谱面都落在小节第 1 拍起').toEqual([1])
+    for (const a of d.attacks.filter((a) => a.onGrid !== false)) {
+      expect(a.beat[0], `${a.id} 的起手落在第 1 拍`).toBe(1)
+    }
+    const lunge = d.attacks.filter((a) => a.id.startsWith('noBeatLunge'))
+    expect(lunge.length, '§15.2 无拍突进：三段不守拍的刺').toBe(3)
+    expect(lunge.every((a) => a.onGrid === false), '它们显式声明「不量化到网格」').toBe(true)
+    expect(lunge[0].frames.next, '三段自己是链子').toBe('noBeatLunge2')
+    const breath = d.attacks.find((a) => a.id === 'breath')!
+    expect(breath.reclaimWindow, '换气拍 = 唯一能把拍抢回来的时刻').toBe(true)
+    expect(breath.frames.damage, '他停气时不打人').toBe(0)
+    expect(breath.frames.startup / TICK_HZ).toBeCloseTo(0.35, 1)
+    expect(d.attacks.filter((a) => a.id === 'breath').map((a) => a.frames.startup)[0], '窗口长度只在招式表里写一次（stealBeat 不再重复）')
+      .toBe(d.attacks.find((a) => a.id === 'breath')!.frames.startup)
   })
 })
 
@@ -135,7 +148,11 @@ describe('可背谱：轮转选招而不是抽签', () => {
 
   it('三招按表的顺序全部出场，且同一 seed 两次运行顺序完全一致', () => {
     const a = run('cycle-a')
-    expect(a.slice(0, 3), 'notes3 → barsweep → tutti 的固定顺序').toEqual(['notes3', 'barsweep', 'tutti'])
+    // 轮转指针从表序第 0 项起，但「第一次出手」落在哪一拍要看它在等哪一个拍位 ⇒ 只断言顺序是环
+    const ring = ['notes3', 'barsweep', 'tutti']
+    const idx = a.slice(0, 3).map((id) => ring.indexOf(id))
+    expect(idx.every((i) => i >= 0), 'P1 只会这三招').toBe(true)
+    expect(((idx[0] + 1) % 3 === idx[1]) && ((idx[1] + 1) % 3 === idx[2]), `环序不被打乱：${a.slice(0, 3)}`).toBe(true)
     expect(run('cycle-a')).toEqual(a)
     expect(run('cycle-b'), '换 seed 也不该改变顺序：cycle 不走 RNG').toEqual(a)
   })

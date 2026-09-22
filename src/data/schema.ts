@@ -102,6 +102,18 @@ export interface AttackSpec {
    * 缺省走通用 18 tick（`Enemy.onParried`），所以只有写了这行的招式才有「共振」回报。
    */
   parryStunTicks?: number
+  /**
+   * false = **故意不量化到拍网格**（§15.2 无拍突进：「唯一不守拍的敌人，教玩家放弃节拍依赖、
+   * 改读身体 telegraph」）。默认 true ⇒ 命中帧落在 `beat` 上（§2.1）。写下去就是整招的契约：
+   * 它不参与拍位插槽仲裁，因为它本来就该出现在拍的缝里。
+   */
+  onGrid?: boolean
+  /**
+   * true = 这一招的前摇期是**玩家唯一能把全局网格抢回去**的时刻（§15.2 换气拍）：
+   * 前摇里按弹反 ⇒ 夺拍（中立网格恢复 + 玩家过载奖励 + 这一阶的减益清零）。
+   * 它同时应当 `damage: 0`——他停气时不打人，那口气本身就是窗口。
+   */
+  reclaimWindow?: boolean
 }
 
 export interface EnemyData {
@@ -163,11 +175,12 @@ export interface EnemyData {
      */
     armorFront?: { arcDeg: number; dmgMul: number }
     /**
-     * §14.7「每 4 小节敲钟自鸣回 15 HP（必须打断的软计时器）」：
+     * §14.7「每 4 小节敲钟自鸣回 15 HP（必须打断的软计时器）」。Boss 的阶段级同语义字段是
+     * `phases[].barCast`（阶段会换，所以挂在阶段上）：
      * 每逢 `everyBars` 小节的第 1 拍，若它正打着，就强制插入 `attackId` 那招（长前摇、可打断）。
      * 回血发生在该招的 `startup` 帧：前摇里被打断（硬直/破势都会清空 `attack`）⇒ 一分不回。
      */
-    selfToll?: { everyBars: number; attackId: string; heal: number }
+    selfToll?: { everyBars: number; attackId: string; heal: number; label?: string }
   }
   attacks: AttackSpec[]
   /**
@@ -189,6 +202,31 @@ export interface EnemyData {
       attacks: string[]
       /** 护壳：吃这一阶伤害时乘 `dmgMul`，`immuneToPoise` = 打不出架势 */
       shell?: { dmgMul: number; immuneToPoise: boolean }
+      /**
+       * §15.2 P2「夺拍」：他吞掉全局时钟，玩家的节奏工具改挂到他的拍上。只有阶段带着这一格，
+       * CombatManager 才会游走 drift、压玩家体力回复、抖玩家闪避恢复；不带（或被玩家抢回拍）
+       * 时网格是中立的。
+       */
+      stealBeat?: {
+        /** BPM 随机游走幅度（0.1 = ±10%，§15.2 明文），每 reDriftEveryTicks 重抽一次 */
+        bpmDrift: number
+        reDriftEveryTicks: number
+        /** 玩家体力回复乘数（0.75 = -25%） */
+        staRegenMul: number
+        /** 闪避恢复锁漂移 tick（§15.2 的 ±60ms ≈ ±3.6 tick） */
+        dodgeJitterTicks: number
+        /**
+         * 抢拍成功的回报：中立网格恢复 tick 数、过载 +N。窗口长度不在这里写第二遍 ——
+         * 它就是那一招（`phases[].barCast.attackId` + `attacks[].reclaimWindow`）自己的前摇。
+         */
+        reclaim: { neutralTicks: number; overdrive: number }
+      }
+      /**
+       * 本阶强制排进去的「读条招式」（4-E 的 ai.selfToll 语义提升到阶段级：阶段会变，所以挂在阶段上）。
+       * heal 省略 = 不回血，只是「到点必须做的一件事」——§15.1 P2 的「每 2 小节换乐句停顿 0.5s
+       * （呼吸拍=处决/喝药窗）」就是这一条。
+       */
+      barCast?: { everyBars: number; attackId: string; heal?: number; label?: string }
     }[]
     /**
      * 立钟机关：她的 `flags` 含 `'charge'` 那招收势帧附近若撞进一口还没响的钟，
