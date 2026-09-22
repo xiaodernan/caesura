@@ -920,8 +920,9 @@ narrative §7 那张旗标表写的是"什么时候该立哪个旗"，`regions.j
   这是 flow 测试实测出来的（用重击量时窗口永远赶不上落点，换成轻击才对得上），不是拍脑袋定的口径
 - 覆盖：`tests/flow/movements.test.ts` 新增 4 条（窗口打开的时刻与数值全来自数据 / 窗口内外那一记差值
   **恰好等于表里的 poise** / 改数据差值跟着改 / 没有 `landing` 的式子不吃这笔）
-- 实机（5199，只跑逻辑不渲染）复现了同一对数字：踏出这一步后 `player.landingPoise=3`，落地即砍轻击
-  `combat.hit.poiseDamage=9`，空等 26 tick 再砍同样的轻击则是基础值 `6`——+3 与窗口的关闭都在真循环里。
+- 实机（5199，只跑逻辑不渲染）与 headless 给出**同一对数字**：踏出这一步后 `player.landingPoise=3`，
+  落地即砍轻击 `combat.hit.poiseDamage=9`；空等 26 tick 再砍同一记轻击则是基础值 `6`。+3、窗口的打开与关闭
+  都在真循环里复现到个位数，两侧不是各说一套
   顺带一条**不是 bug 的观察**：第一遍探实时 `tryStartAction('weaponSkill')` 返回 false，原因是这只钉桩的驼鼓
   命中会挂 999 tick 闷音（`enemies.json` 的数据），而闷音封战技正是 §11/Phase 5-C2 定的规则——
   清掉 `muteTicksLeft` 之后一切照常。探针读数前先确认没有把自己闷住，这类"被自己的机制挡下"不要记成缺陷
