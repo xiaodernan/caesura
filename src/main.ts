@@ -1,5 +1,5 @@
 import { bus } from '@/core/EventBus'
-import { GameTime } from '@/core/Time'
+import { GameTime, TICK_DT } from '@/core/Time'
 import { GameLoop } from '@/core/GameLoop'
 import { Input } from '@/core/Input'
 import { RhythmClock } from '@/core/RhythmClock'
@@ -227,8 +227,12 @@ const core = {
     bossArena.sync(ai.enemies.filter((e) => !!e.data.boss)) // 立钟与断音柱都在 Boss 场地类里，少一个过滤条件就会漏画后者
   },
   postTick(t: GameTime) {
-    rhythm.update(t.dt)
-    rig.update(t.dt, player, input.frame.look, lock.target ? lock.target.getPos() : null)
+    // 节拍钟走「逻辑 tick」而不是 time.dt：combat.md §9 末行规定 hitStop 只冻结攻守双方的动画时间，
+    // 节拍/粒子/震镜/音效照常。喂 t.dt 会让命中停顿把整张拍网格拖慢（实机：20 tick 内只前进 0.0233 拍，
+    // 应为 0.4667 拍 —— KI-017 的量化读数）。
+    rhythm.update(TICK_DT)
+    // 相机跟随仍按 `t.dt`（停顿那一下镜头该"挂"住），但震镜走 tick——见 CameraRig 与 §9。
+    rig.update(t.dt, player, input.frame.look, lock.target ? lock.target.getPos() : null, TICK_DT)
   }
 }
 

@@ -44,7 +44,7 @@ function makeWorld(weaponId = 'wp_drawpin_spear') {
       ai.update(TICK_DT, time.tick, player, rhythm)
       combat.update(time.tick, input, TICK_DT)
       frame.edges.clear()
-      rhythm.update(time.dt)
+      rhythm.update(TICK_DT)
     }
   }
   /** 面向 -Z（把玩家摆在原点、目标摆在 -Z 轴上使用） */

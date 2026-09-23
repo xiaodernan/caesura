@@ -103,7 +103,7 @@ function makeWorld() {
       }
       combat.update(time.tick, input)
       frame.edges.clear()
-      rhythm.update(time.dt)
+      rhythm.update(TICK_DT)
     }
   }
   const off = (): void => offs.forEach((f) => f())

@@ -55,7 +55,7 @@ function makeWorld(originId = 'origin_tuner') {
       ai.update(TICK_DT, time.tick, player, rhythm)
       combat.update(time.tick, input)
       frame.edges.clear()
-      rhythm.update(time.dt)
+      rhythm.update(TICK_DT)
     }
   }
   return { time, rhythm, rpg, player, ai, combat, streaming, spawner, frame, tick }

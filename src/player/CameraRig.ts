@@ -49,7 +49,7 @@ export class CameraRig {
     this.cam.updateProjectionMatrix()
   }
 
-  update(dt: number, player: PlayerController, look: { dx: number; dy: number }, lockTarget: Vec3 | null): void {
+  update(dt: number, player: PlayerController, look: { dx: number; dy: number }, lockTarget: Vec3 | null, shakeDt = dt): void {
     this.yaw -= look.dx
     this.pitch = clamp(this.pitch + look.dy * 0.55, -0.18, 1.2)
     const target = { x: player.pos.x, y: player.pos.y + 1.15, z: player.pos.z }
@@ -78,7 +78,10 @@ export class CameraRig {
 
     let offX = 0, offY = 0, roll = 0
     for (const s of this.shakes) {
-      s.t += dt
+      // 震镜走 `shakeDt`（= 逻辑 tick），不走跟随平滑那个 `dt`：combat.md §9 末行把「震镜」
+      // 列进命中停顿期间**照常**的一类。§10 的包络 e^(-t/τ) 是以真实秒定义的，喂压缩时标会让
+      // 波形在停顿那 90ms 里几乎冻结、恢复时又跳回去——那是故障，不是屏息。
+      s.t += shakeDt
       const env = Math.exp(-s.t / s.decay)
       const osc = Math.sin(s.t * s.freq * Math.PI * 2) * s.amp * env
       offY += osc * 0.02; offX += osc * 0.012; roll += (s.roll ? s.roll * env * Math.sin(s.t * 40) : 0)

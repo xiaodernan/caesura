@@ -89,7 +89,7 @@ function makeWorld(originId = 'origin_tuner', seed: number | string = 0x51f3a2, 
       ai.update(TICK_DT, time.tick, player, rhythm)
       combat.update(time.tick, input)
       frame.edges.clear()
-      rhythm.update(time.dt)
+      rhythm.update(TICK_DT)
     }
   }
 

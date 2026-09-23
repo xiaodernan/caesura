@@ -53,7 +53,7 @@ function makeWorld(weaponId = 'wp_tuning_sword') {
       ai.update(TICK_DT, time.tick, player, rhythm)
       combat.update(time.tick, input)
       frame.edges.clear()
-      rhythm.update(time.dt)
+      rhythm.update(TICK_DT)
     }
   }
 
