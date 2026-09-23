@@ -54,6 +54,13 @@ export class PlayerController {
   private dodgeCount = 0
   parryWhiffTicks = 0
   stunTicks = 0
+  /**
+   * §9「冻结攻守双方动画时间」——本作把它按在**挨打的那一方**身上（KI-017 第二步）：
+   * 被这一记打中的这几 tick 里，硬直倒数不走。时长不写第二份常数，由 `CombatManager` 从
+   * 那一格的 `frames.hitStopMs` 派生（`msToTicks`）。
+   * 出手那一方的招式帧刻意不按停，理由有实测，写在 `Enemy.stunStopTicks` 的注释里。
+   */
+  stunStopTicks = 0
   crumpleTicks = 0
   chargeTicks = 0
   charging = false
@@ -397,7 +404,12 @@ export class PlayerController {
       this.pos.x += step; this.pos.z += stepZ
       if (this.roll.tick >= this.roll.total) this.roll = null
     }
-    if (this.stunTicks > 0) this.stunTicks--
+    // §9 的守方那一半（KI-017 第二步）：接触被按住的几 tick 里硬直倒数不走。先采样再扣，是为了
+    // 让"按住"正好等于 `msToTicks(hitStopMs)` 格而不是少一格；这一格自己也每 tick 都要走——它计的
+    // 是"那几十毫秒"，与"此刻有没有在硬直"无关（挂在硬直分支里会让一次停顿顺延到下一次硬直上）。
+    const stopped = this.stunStopTicks > 0
+    if (stopped) this.stunStopTicks--
+    else if (this.stunTicks > 0) this.stunTicks--
     if (this.crumpleTicks > 0) { this.crumpleTicks--; this.stats.crumpleTicksLeft = this.crumpleTicks }
     if (this.stats.stamina > 15) this.exhausted = false
     this.publishStats()

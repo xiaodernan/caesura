@@ -40,6 +40,18 @@ export class Enemy {
   cooldowns = new Map<string, number>()
   stunTicks = 0
   /**
+   * §9「冻结攻守双方动画时间」的守方那一半（KI-017 第二步）：命中那一下把这一只的硬直倒数按住
+   * 几 tick（与相机的停顿同一个 `frames.hitStopMs` 派生，不写第二份时长）。与下面的 `frozenTicks`
+   * 分格：那是"这只生物的节拍被拿走了几十 tick"（整个 update 短路），这是"这一记接触的三到五格"。
+   *
+   * **攻方那一半（敌方招式帧）刻意不做，而且是量出来的**：给 `attack.tick` 挂过一格同样的账，收势帧
+   * 就会从它声明的拍位上被推开一整个停顿长度——实测恩希尔 173ms、奥斯塔拉 133ms（§2.1 的容差是
+   * 50ms），幽灵八则出现两 tick"从隐形段里出手"。这不是容差调参能解决的问题：停顿要么吃逻辑时间，
+   * 要么不吃，而**敌人的逻辑时间就是那张网格**。要让这一半也成立，需要的是"停顿之后回拍重新量化"
+   * 这一件新机制（会改 AI 的排招方式），登记待裁决而不是顺手做掉。
+   */
+  stunStopTicks = 0
+  /**
    * §7.2 休止斩的「全场敌人时间冻结」。**刻意不是 `stunTicks` 的别名**：
    * 定身是"这一招被打断了"——`update` 里那条会把 `attack` 直接抹掉；
    * 时停是"这一招连人带帧停在原地"——帧数不推进、读条保留，松手后从同一帧继续。
@@ -398,7 +410,17 @@ export class Enemy {
     this.stateTick++
     // §16 入场演出：先计时再判硬直——被玩家一记开场打晕不该把演出「省掉」，也不该让它无限延长
     this.tickIntro(rhythm)
-    if (this.stunTicks > 0) { this.stunTicks--; this.attack = null; if (this.stunTicks === 0 && this.state === 'recover') this.enter('combat'); return }
+    // §9 的守方那一半（KI-017 第二步）：接触被按住的几 tick 里硬直倒数也不走，但这一支仍然
+    // 短路 return——否则一次停顿会变成免费的解禁（"不许动"那段反而推进了"多久才许动"的表）。
+    // 先采样再扣：这一格在硬直之外也要走（它计的是那几十毫秒，不是"还有多久解禁"）。
+    const stunHeld = this.stunStopTicks > 0
+    if (stunHeld) this.stunStopTicks--
+    if (this.stunTicks > 0) {
+      if (!stunHeld) this.stunTicks--
+      this.attack = null
+      if (this.stunTicks === 0 && this.state === 'recover') this.enter('combat')
+      return
+    }
     if (this.stats.crumpleTicksLeft > 0 && this.state !== 'recover' && this.state !== 'dead') this.enter('recover')
 
     const p = player.pos

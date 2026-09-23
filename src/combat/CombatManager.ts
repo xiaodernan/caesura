@@ -1,7 +1,7 @@
 import { bus } from '@/core/EventBus'
 import { Rng } from '@/core/Math'
 import type { GameTime } from '@/core/Time'
-import { TICK_DT, TICK_HZ } from '@/core/Time'
+import { TICK_DT, TICK_HZ, msToTicks } from '@/core/Time'
 import type { RhythmClock } from '@/core/RhythmClock'
 import type { Input } from '@/core/Input'
 import type { PlayerController, ActivePlayerHit } from '@/player/ThirdPersonController'
@@ -183,6 +183,25 @@ export class CombatManager {
   }
 
   /**
+   * §9「冻结攻守双方动画时间」第一次成为玩法量（KI-017 第二步），而本作把它落在**挨打的那一方**：
+   * 被这一记打中的那 `msToTicks(hitStopMs)` 个逻辑 tick 里，守方的硬直倒数不走。
+   *
+   * 三条口径，各自都有实测支撑（写在 `Enemy.stunStopTicks` 的注释里）：
+   * - **不挂全局停表**：全局停表会连拍网格与场上所有人的招式一起停，而那一行说的只是攻守双方；
+   *   KI-017 第一步刚把拍网格从动画时标上摘下来，第二步不该从后门把它装回去。
+   * - **不按停出手那一方的招式帧**：敌人的招式帧就是它的拍位（§2.1 唯一那条硬约束），一按就脱拍；
+   *   玩家的招式帧按停之后，`gate5` 那两条 KI-039 的腿会重排（详见 KI-017 行）。
+   * - **不复用 §7.2 的 `frozenTicks`**：那是"这只生物的节拍被拿走了几十 tick"（整个 update 短路），
+   *   这是"这一记接触的三到五格"（AI 决策、位移、架势衰减照走）。同一件事只有一格账。
+   *
+   * 时长只有一个来源：那一格的 `frames.hitStopMs`（§55），与相机吃的是同一个数。
+   */
+  private freezeContact(ms: number, victim: { stunStopTicks: number } | null): void {
+    const n = msToTicks(ms)
+    if (n > 0 && victim) victim.stunStopTicks = Math.max(victim.stunStopTicks, n)
+  }
+
+  /**
    * §7.2 休止斩：这一式的判定窗里，场上每个还活着的敌人被按住 `freezeTicks`（玩家照常动）。
    *
    * 三条口径要单独说清，否则这条会慢慢长出别人没有的特权：
@@ -325,7 +344,9 @@ export class CombatManager {
     })
     // 回声是"世界又播了一遍"，不该抢玩家手感的时间：不吃 hitstop、不推进连段
     if (!replay) {
-      this.time.hitStop((s.hitStopMs + (s.onBeat ? 30 : 0)) / 1000)
+      const stopMs = s.hitStopMs + (s.onBeat ? 30 : 0)
+      this.time.hitStop(stopMs / 1000)
+      this.freezeContact(stopMs, e)
       this.player.onHitLanded()
     }
     if (burst) this.fissureBurst(e, s.point)
@@ -778,8 +799,12 @@ export class CombatManager {
     if (p.parryActive && facing && h.parryable) {
       h.react(tick, 'parry')
       p.addOverdrive(p.base.parry.overdriveGain)
-      this.time.hitStop(0.12)
-      bus.emit('combat.hit', { ...base, damage: 0, result: 'parry', shakeKey: 'parry' })
+      // §9「弹反成功 120ms」：这一格的情境时长同时喂相机、事件与守方硬直——被弹反的人此刻正是
+      // 挨打的那一方（`onParried` 刚给他挂上失音硬直），所以这一格停顿有地方落。
+      const parryStopMs = 120
+      this.time.hitStop(parryStopMs / 1000)
+      this.freezeContact(parryStopMs, this.ai.enemies.find((x) => x.id === h.attackerId) ?? null)
+      bus.emit('combat.hit', { ...base, damage: 0, result: 'parry', shakeKey: 'parry', hitStopMs: parryStopMs })
       bus.emit('combat.parried', { attackerId: h.attackerId, defenderId: 'player' })
       bus.emit('vfx.request', { key: 'parry_ring', pos: h.point })
       bus.emit('audio.sfx', { key: 'parry_bell', pos: h.point, gain: 1 })
@@ -794,8 +819,10 @@ export class CombatManager {
     if (p.guardTicks >= 1 && p.guardTicks <= p.base.perfectBlockWindow + p.rpg.perfectBlockBonusTicks) {
       h.react(tick, 'perfectBlock')
       p.addOverdrive(1 + p.rpg.restOverdrive)
-      this.time.hitStop(0.09)
-      bus.emit('combat.hit', { ...base, damage: 0, result: 'perfectBlock', shakeKey: 'graze' })
+      // §9「完美格挡 90ms」：这一格没有"挨打的那一方"（谁都没进硬直），所以它今天仍然只有相机吃。
+      const perfectStopMs = 90
+      this.time.hitStop(perfectStopMs / 1000)
+      bus.emit('combat.hit', { ...base, damage: 0, result: 'perfectBlock', shakeKey: 'graze', hitStopMs: perfectStopMs })
       bus.emit('vfx.request', { key: 'parry_ring', pos: h.point, scale: 0.7 })
       bus.emit('audio.sfx', { key: 'perfect_block', pos: h.point, gain: 0.9 })
       this.impactAlarm(p.base.guard.impactLoudness)
@@ -807,8 +834,11 @@ export class CombatManager {
       if (p.stats.stamina > staCost) {
         p.stats.spendStamina(staCost, tick)
         p.stats.addPoise(h.damage * p.base.guard.bleedPoiseFrac, tick)
-        this.time.hitStop(0.045)
-        bus.emit('combat.hit', { ...base, damage: through, result: 'block', shakeKey: 'graze' })
+        // §9「命中被格挡 45ms」：盾上那一下比身上那一下短，这是**情境**表说的，不是招式表说的。
+        // 格挡中的玩家没有硬直可按，所以这一格仍只有相机吃；把它挪进 `player.json` 是 KI-017 的后续。
+        const blockStopMs = 45
+        this.time.hitStop(blockStopMs / 1000)
+        bus.emit('combat.hit', { ...base, damage: through, result: 'block', shakeKey: 'graze', hitStopMs: blockStopMs })
         bus.emit('vfx.request', { key: 'block_spark', pos: h.point })
         bus.emit('audio.sfx', { key: 'block_guard', pos: h.point, gain: 0.7 })
         this.checkPlayerCrumple(tick)
@@ -826,8 +856,12 @@ export class CombatManager {
     const dmg = resolveDamage({ base: h.damage, defense: p.stats.defense, ranged: h.ranged }, () => this.rng.float())
     if (!p.takeDamage(dmg.damage, h.dir)) return 'none'
     p.stats.addPoise(h.poise, tick)
-    this.time.hitStop(0.08)
-    bus.emit('combat.hit', { ...base, damage: dmg.damage, result: 'hit', shakeKey: 'hurt' })
+    // §9「玩家受击 80ms」：情境时长，一个数喂三处（相机、事件、被按住的硬直倒数）。它此前只喂相机，
+    // 而事件里报的却是攻击者招式自己那一格 ⇒ 同一个问题两个答案，这里一并收口。
+    const hurtStopMs = 80
+    this.time.hitStop(hurtStopMs / 1000)
+    this.freezeContact(hurtStopMs, p)
+    bus.emit('combat.hit', { ...base, damage: dmg.damage, result: 'hit', shakeKey: 'hurt', hitStopMs: hurtStopMs })
     bus.emit('vfx.request', { key: 'hit_ring', pos: h.point })
     bus.emit('audio.sfx', { key: 'hit_flesh', pos: h.point, gain: 0.8 })
     const st = h.statusOnHit
