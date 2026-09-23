@@ -35,7 +35,8 @@ export class Enemy {
   home: Vec3
   lastKnown: Vec3
   investigateTick = 0
-  attack: { spec: AttackSpec; tick: number; hitDone: boolean; shots: number; lungeApplied: number } | null = null
+  /** `noise` = 这一招的 `sound.source` 已经报过了（见 `advanceAttackFrames`） */
+  attack: { spec: AttackSpec; tick: number; hitDone: boolean; shots: number; lungeApplied: number; noise?: boolean } | null = null
   cooldowns = new Map<string, number>()
   stunTicks = 0
   /**
@@ -205,14 +206,28 @@ export class Enemy {
   /**
    * §14.6「定调」攻速加成：帧表全是整数 tick 且 telegraph/出手点用 `===` 判定，
    * 所以不能把 tick 变成浮点——累计小数部分，攒满 1 就这一 tick 多走一帧（1.15× ≈ 每 7 帧多 1 帧）。
+   *
+   * 这里同时是敌人近战**发声**的唯一出口（KI-016）：越过 `activeStart` 的那一 tick 报一声，
+   * 响度取招式自己的 `frames.loudness`（与玩家侧 `(loudness ?? 3)/10` 同一条标尺）。
+   * 判据写成"跨过"而不是"等于"，因为定调会让 tick 一次跳两帧；tick 在一招之内单调递增，
+   * 所以这个条件天然只成立一次，不需要额外的"已发声"标记。
+   * 弹道招式不在这里发声——发射那一 tick 由 `CombatManager` 报，两处理齐会双倍响度。
    */
   private advanceAttackFrames(mul: number): void {
     if (!this.attack) return
+    const prev = this.attack.tick
     this.attack.tick++
     const extra = mul - 1
-    if (extra <= 0) return
-    this.speedAcc += extra
-    while (this.speedAcc >= 1) { this.speedAcc -= 1; this.attack.tick++ }
+    if (extra > 0) {
+      this.speedAcc += extra
+      while (this.speedAcc >= 1) { this.speedAcc -= 1; this.attack.tick++ }
+    }
+    const f = this.attack.spec.frames
+    if (f.projectile) return // 发射那一 tick 由 CombatManager 报，两处理齐会双倍响度
+    if (prev < f.activeStart && this.attack.tick >= f.activeStart && !this.attack.noise) {
+      this.attack.noise = true
+      bus.emit('sound.source', { id: this.id, pos: { ...this.pos }, loudness: (f.loudness ?? 3) / 10 })
+    }
   }
 
   enter(s: AIState): void {
@@ -513,7 +528,9 @@ export class Enemy {
     const heal = t.heal ?? 0
     if (heal > 0 && this.stats.hp >= this.stats.hpMax) return false
     const lead = spec.frames.activeStart
-    this.attack = { spec, tick: lead - rhythm.ticksUntilBeatOn(spec.beat, lead), hitDone: false, shots: 0, lungeApplied: 0 }
+    // `noise: true` —— 这一招的动静由下面读条完成那一刻报（它本来就是全场景最响的一声），
+    // active 帧那条通用出口不再重复报一次，否则同一 tick 会有两声。
+    this.attack = { spec, tick: lead - rhythm.ticksUntilBeatOn(spec.beat, lead), hitDone: false, shots: 0, lungeApplied: 0, noise: true }
     const label = t.label
     this.pendingBroadcast = () => {
       const before = this.stats.hp
@@ -521,7 +538,7 @@ export class Enemy {
       const got = Math.round(this.stats.hp - before)
       bus.emit('audio.sfx', { key: (spec.frames.sfx ?? [])[0] ?? 'bell_toll', pos: { ...this.pos }, gain: 1 })
       bus.emit('vfx.request', { key: 'ring_echo', pos: { ...this.pos }, scale: 1.8 })
-      bus.emit('sound.source', { id: this.id, pos: { ...this.pos }, loudness: 0.9 })
+      bus.emit('sound.source', { id: this.id, pos: { ...this.pos }, loudness: (spec.frames.loudness ?? 3) / 10 })
       if (label && got > 0) bus.emit('ui.notify', { text: `${label} · 回复 ${got}`, kind: 'info' })
     }
     return true

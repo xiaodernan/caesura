@@ -442,3 +442,120 @@ describe('相位与「抓不住」：处决、真 AI 的时序、以及切分连
     w.off()
   })
 })
+
+/**
+ * KI-016 缺口①：敌人近战招式过去**根本不发声**（active 帧只出 hitbox），
+ * 所以「噪音越大越容易暴露相位」这条 §14.5 的规则对敌人之间完全不生效——
+ * 设计原本指望的「驼鼓踏地顺手把幽灵八震出来」在实机里是空的（tech-arch 那段
+ * 「一个被代码推翻的假设」记的就是这件事）。下面这几条不再由测试自己 `bus.emit`，
+ * 全部走真招式的帧推进，把这条规则钉回可观察的事实。
+ */
+describe('敌人自己响：近战 active 帧接入 sound.source（KI-016 缺口①）', () => {
+  /**
+   * 只收「这一招自己」报出来的声：同一只怪在观察窗内可能接着出第二招，
+   * 按招式名过滤才能让"一招收一次"这条断言不被邻居招式污染。
+   * 声源事件不带招式 id，所以读的是发射那一刻它手上的招式。
+   */
+  function noiseOf(e: Enemy, attackId: string): { levels: number[]; off: () => void } {
+    const levels: number[] = []
+    const off = bus.on('sound.source', (s) => { if (s.id === e.id && e.attack?.spec.id === attackId) levels.push(s.loudness) })
+    return { levels, off }
+  }
+  const g = registry.get<EnemyData>('en_phantome').ai.beatGhost!
+
+  it('驼鼓踏地的 active 那一帧把它震出来：不需要谁替它 emit', () => {
+    const w = makeWorld()
+    const drum = w.ai.spawn('en_tympanus', { x: 0, y: 0, z: -3 }, 'drum')
+    const e = ghost(w, 0, -9) // 两者相距 6m < hearing.range(18)
+    const stomp = drum.data.attacks.find((a) => a.id === 'stomp')!
+    expect((stomp.frames.loudness ?? 0) / 10, '这条用例的前提：踏地够响').toBeGreaterThanOrEqual(g.fakeBeatLoudness)
+    expect(e.revealTicks).toBe(0)
+    force(drum, 'stomp', stomp.frames.activeStart - 1)
+    w.tick(1)
+    expect(e.revealTicks, '0.8 的一次落地就是一个伪拍点 ⇒ 整 180 tick（同一 tick 它自己已衰一格）')
+      .toBeGreaterThanOrEqual(g.fakeBeatRevealTicks - 1)
+    w.off()
+  })
+
+  it('嘈壳撕咬（响度 0.2）不惊动它：补的是缺口，不是一条免死金牌', () => {
+    const w = makeWorld()
+    const shell = w.ai.spawn('en_murkshell', { x: 0, y: 0, z: -3 }, 'shell')
+    const e = ghost(w, 0, -6)
+    const bite = shell.data.attacks.find((a) => a.id === 'bite')!
+    expect((bite.frames.loudness ?? 0) / 10).toBeLessThan(g.fakeBeatLoudness)
+    force(shell, 'bite', bite.frames.activeStart - 1)
+    w.tick(2)
+    expect(e.revealTicks).toBe(0)
+    w.off()
+  })
+
+  it('一记挥击只报一声（跨过 activeStart 只成立一次，收势段不会再响）', () => {
+    const w = makeWorld()
+    const drum = w.ai.spawn('en_tympanus', { x: 0, y: 0, z: -3 }, 'drum')
+    const mallet = drum.data.attacks.find((a) => a.id === 'mallet')!
+    const { levels, off } = noiseOf(drum, 'mallet')
+    force(drum, 'mallet', -1)
+    w.tick(mallet.frames.startup + mallet.frames.recovery + 20) // 覆盖前摇→判定→收势整段
+    expect(levels, `整招只该有一声，实测 ${levels.length} 声`).toHaveLength(1)
+    expect(levels[0]).toBeCloseTo((mallet.frames.loudness ?? 0) / 10, 5)
+    off()
+    w.off()
+  })
+
+  it('弹道招式不在 active 帧再响一遍（发射那一声归 CombatManager）', () => {
+    const w = makeWorld()
+    const sn = w.ai.spawn('en_skewer', { x: 0, y: 0, z: -9 }, 'sniper')
+    const tri = sn.data.attacks.find((a) => a.id === 'tri')!
+    expect(tri.frames.projectile, '前提：这是弹道招').toBeTruthy()
+    const { levels, off } = noiseOf(sn, 'tri')
+    force(sn, 'tri', -1)
+    w.tick(tri.frames.startup + tri.frames.recovery + 60)
+    const shots = tri.frames.projectile!.burst?.count ?? 1
+    expect(shots, '三叠箭：这条断言要非平凡才成立').toBe(3)
+    expect(levels.length, `发几声响几下（表里 count=${shots}），active 帧不加戏`).toBe(shots)
+    off()
+    w.off()
+  })
+
+  it('敌人之间的动静不给玩家拉仇恨：声源流只让「玩家的声音」进 perception', () => {
+    const w = makeWorld()
+    const drum = w.ai.spawn('en_tympanus', { x: 0, y: 0, z: -3 }, 'drum')
+    const witness = w.ai.spawn('en_murkshell', { x: 1.5, y: 0, z: -3 }, 'witness') // 就站在踏地旁边
+    witness.enter('idle')
+    const stomp = drum.data.attacks.find((a) => a.id === 'stomp')!
+    force(drum, 'stomp', stomp.frames.activeStart - 1)
+    w.tick(2)
+    expect(witness.alertness, '0.8 的一脚踩在耳边，也不该替玩家暴露位置').toBe(0)
+    w.off()
+  })
+
+  it('读条招式（悬钟骑士敲钟自鸣）只响一次，响度来自招式表而不是代码里那个 0.9', () => {
+    const w = makeWorld()
+    const k = w.ai.spawn('en_hanged_knight', { x: 0, y: 0, z: -4 }, 'knight')
+    k.skipIntro()
+    k.alertness = 100
+    k.enter('combat') // 自鸣是**交战时**的软计时器：不把它拉进 combat，等到的只是巡逻
+    const e = ghost(w, 0, -9)
+    const toll = k.data.attacks.find((a) => a.id === 'toll')!
+    const { levels, off } = noiseOf(k, 'toll')
+    let sawToll = false
+    for (let i = 0; i < 1400 && !sawToll; i++) {
+      w.player.stats.hp = w.player.stats.hpMax // 它是量具，不是对手
+      // 钉在半血：满血时这条软计时器**故意**不演（`heal > 0 && hp >= hpMax` 就跳过），
+      // 顶满血测出来的"没演"是设计，不是 bug——所以这里要给它一个演下去的理由。
+      k.stats.hp = Math.floor(k.stats.hpMax / 2)
+      w.tick(1, () => { if (k.attack?.spec.id === 'toll') sawToll = true })
+    }
+    expect(sawToll, '1400 tick 内没等到自鸣（everyBars=4 ≈ 686 tick 一响）').toBe(true)
+    for (let i = 0; i < 200; i++) { // 走完读条（activeStart=90）再越过收势，看有没有第二声
+      w.player.stats.hp = w.player.stats.hpMax
+      k.stats.hp = Math.max(k.stats.hp, Math.floor(k.stats.hpMax / 2)) // 半血起跳：让回血真发生，但不顶满
+      w.tick(1)
+    }
+    expect(levels, `自鸣这一招只该报一声，实测 ${levels.length}`).toHaveLength(1)
+    expect(levels[0], 'frames.loudness=9 ⇒ 0.9（改前是代码里写死的那个数）').toBeCloseTo((toll.frames.loudness ?? 0) / 10, 5)
+    expect(e.revealTicks, '这一嗓子同样是一次伪拍点').toBeGreaterThan(0)
+    off()
+    w.off()
+  })
+})
