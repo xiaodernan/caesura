@@ -14,9 +14,25 @@ import { MusicLayer } from './music'
 const UI_KEYS = new Set(['ui_move', 'ui_select', 'lockon_on', 'lockon_off'])
 /** 常驻瞬态并发上限（docs §9 性能红线的保守子集） */
 const MAX_VOICES = 24
+/** audio.md §破处决：一切声音 80ms 内塌向 100Hz；出来用 180ms（§5 休止出入的出侧同一个数） */
+const MUFFLE_HZ = 100
+const MUFFLE_FULL = 20000
+const MUFFLE_IN = 0.08
+const MUFFLE_OUT = 0.18
+
+/**
+ * 消音的目标频率与斜坡时长，单独抽出来是因为这几个数**是 spec 的读数**（audio.md §破处决 / §5），
+ * 而 AudioEngine 本体要一个真的 AudioContext 才跑得动、在 node 里没法测。抽成纯函数后，
+ * "塌到 100Hz / 80ms 进 / 180ms 出回全开"这件事第一次有断言钉着。
+ */
+export function muffleRamp(on: boolean): { hz: number; seconds: number } {
+  return on ? { hz: MUFFLE_HZ, seconds: MUFFLE_IN } : { hz: MUFFLE_FULL, seconds: MUFFLE_OUT }
+}
 
 interface Graph {
   master: GainNode
+  /** §5.4 处决演出的全频低通：常开在 20kHz（听不见它），塌下去时只剩低频残振 */
+  muffle: BiquadFilterNode
   comp: DynamicsCompressorNode
   sfx: GainNode
   music: GainNode
@@ -51,8 +67,26 @@ export class AudioEngine {
 
   constructor() {
     bus.on('audio.sfx', (p) => this.onSfx(p))
+    bus.on('audio.muffle', (p) => this.onMuffle(p.on))
     window.addEventListener('pointerdown', this.gesture)
     window.addEventListener('keydown', this.gesture)
+  }
+
+  /**
+   * §5.4 处决演出的消音。挂在总线上的低通而不是逐个音源：设计说的是「一切声音塌下去」，
+   * 一个个源去改等于给每类声音各写一遍豁免（漏一类就是一次听感 bug）。
+   * 图还没建（首次手势前）时不处理——那时本来没有声音可闷，而建图后频率初值就是全开。
+   */
+  private onMuffle(on: boolean): void {
+    const ctx = this.ctx
+    const g = this.graph
+    if (!ctx || !g || ctx.state !== 'running') return
+    const now = ctx.currentTime
+    const f = g.muffle.frequency
+    f.cancelScheduledValues(now)
+    f.setValueAtTime(f.value, now)
+    const r = muffleRamp(on)
+    f.exponentialRampToValueAtTime(r.hz, now + r.seconds)
   }
 
   /** 首次用户手势时调用：建图、resume、启动音乐层 */
@@ -102,7 +136,11 @@ export class AudioEngine {
     comp.ratio.value = 3.5
     comp.attack.value = 0.004
     comp.release.value = 0.18
-    master.connect(comp).connect(ctx.destination)
+    const muffle = ctx.createBiquadFilter()
+    muffle.type = 'lowpass'
+    muffle.frequency.value = MUFFLE_FULL
+    muffle.Q.value = 0.0001
+    master.connect(muffle).connect(comp).connect(ctx.destination)
 
     const mk = (level: number): GainNode => {
       const g = ctx.createGain()
@@ -111,7 +149,7 @@ export class AudioEngine {
       return g
     }
     this.graph = {
-      master, comp,
+      master, muffle, comp,
       sfx: mk(0.9),
       music: mk(0.5),
       ambience: mk(0.45),

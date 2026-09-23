@@ -8,6 +8,7 @@ export type SfxKey =
   | 'swing_1' | 'swing_2' | 'swing_heavy_1' | 'swing_heavy_2' | 'thrust_1'
   | 'chord_slam' | 'land_slam' | 'ring_dust' | 'gnash' | 'burst_shell'
   | 'claw' | 'claw_heavy' | 'wail' | 'drum_sweep' | 'drum_boom'
+  | 'execute_rest'
   | 'bell_toll' | 'bell_clang'
   | 'hit_flesh' | 'hit_metal' | 'parry_bell' | 'perfect_block' | 'block_guard'
   | 'player_hurt' | 'death_shatter' | 'lockon_on' | 'lockon_off' | 'footstep'
@@ -187,6 +188,13 @@ type VoiceFn = (ctx: AudioContext, out: AudioNode, t: number, g: number) => numb
 const rnd = (a: number, b: number): number => a + Math.random() * (b - a)
 
 const VOICES: Record<SfxKey, VoiceFn> = {
+  // —— §5.4 破处决：音叉巨剑消音。全混音最响的席位（-6dB），也是唯一一条「让声音死」的声音 ——
+  execute_rest: (c, o, t, g) => {
+    playSweep(c, o, t, { f0: 2100, f1: 120, dur: 0.12, peak: 0.5 * g }) // 音叉被按停：音高一路塌下去
+    playNoise(c, o, t, { type: 'lowpass', f0: 1800, f1: 90, decay: 0.16, peak: 0.3 * g }) // 空气被抽走
+    playSweep(c, o, t + 0.09, { f0: 68, f1: 42, dur: 0.5, peak: 0.42 * g }) // 落到胸腔里的那一下
+    return 0.62
+  },
   // —— 玩家武器 telegraph（调律剑：纯净"咻"，docs §7.2）——
   swing_1: (c, o, t, g) => {
     playNoise(c, o, t, { f0: 800, f1: 2400, Q: 0.8, decay: 0.12, peak: 0.22 * g })

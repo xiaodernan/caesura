@@ -179,6 +179,9 @@ export class PlayerController {
     return f
   }
 
+  /** 消音的当前状态：只在边沿上 emit，清掉演出的地方有四处（换装/走完/死亡/重生），逐处 emit 必漏 */
+  private muffled = false
+
   /** data-driven weapon swap: reset transient action state, adopt new frames */
   equip(weapon: WeaponData, moveset: MovesetData): void {
     if (weapon.id === this.weapon.id) return
@@ -242,6 +245,9 @@ export class PlayerController {
   }
 
   update(dt: number, time: GameTime, input: Input, tick: number, rhythm: RhythmClock): void {
+    // 放在最前面、死前死后都过一遍：低通只能跟着 executing 的**当前值**翻，
+    // 挂在某个清除点上就会漏（换装把演出清空了、世界却还闷着，是最难查的那种 bug）
+    this.syncMuffle()
     if (this.dead) {
       this.deadTicks++
       if (this.deadTicks > 240) { this.deadTicks = 0; this.respawn() }
@@ -544,6 +550,14 @@ export class PlayerController {
     bus.emit('ui.notify', {
       text: `负重超载 ${w} / ${this.rpg.loadMax} kg · 翻滚与疾跑禁用、体力回复 −40%`, kind: 'info'
     })
+  }
+
+  /** §5.4：处决演出期间世界的听感塌下去（全频低通），演出去了就回来 */
+  private syncMuffle(): void {
+    const on = this.executing !== null
+    if (on === this.muffled) return
+    this.muffled = on
+    bus.emit('audio.muffle', { on })
   }
 
   onHitLanded(): void {

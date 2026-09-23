@@ -48,6 +48,11 @@ export interface GameEvents {
   /** §16「胜利序列（IP §6：音乐停=世界屏息）」：`holdTicks` 后由 CombatManager 补上收尾播报 */
   'boss.defeated': { id: string; dataId: string; nameKey: string; holdTicks: number }
   'audio.sfx': { key: string; pos?: { x: number; y: number; z: number }; gain?: number }
+  /**
+   * §5.4 处决演出的「消音」：世界塌向 100Hz 低通（audio.md §破处决），`on:false` 是演出去。
+   * 只有开关没有时长——时长跟着 `player.executing` 那一格走，写第二份秒数就会和演出长度各说一遍。
+   */
+  'audio.muffle': { on: boolean }
   'vfx.request': { key: string; pos: { x: number; y: number; z: number }; dir?: { x: number; y: number; z: number }; scale?: number }
   'sound.source': { id: string; pos: { x: number; y: number; z: number }; loudness: number }
   'ui.notify': { text: string; kind?: 'info' | 'reward' | 'boss' }

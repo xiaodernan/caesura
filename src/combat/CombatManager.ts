@@ -1039,7 +1039,9 @@ export class CombatManager {
     })
     bus.emit('vfx.request', { key: 'hit_ring', pos: point, scale: 2 })
     bus.emit('vfx.request', { key: 'shock_small', pos: { ...e.pos }, scale: 1.6 })
-    bus.emit('audio.sfx', { key: 'chord_slam', pos: point, gain: 1 })
+    // 专属处决音色（audio.md §破处决）。此前借 chord_slam 占位，那是和弦爆的音色，不是「让声音死」；
+    // 静杀反过来：那一刀没有音叉鸣响，只有尸体落地的碎声
+    bus.emit('audio.sfx', { key: silent ? 'death_shatter' : 'execute_rest', pos: point, gain: 1 })
     const label = silent ? '静杀' : kind === 'A' ? '处决' : kind === 'B' ? '背刺处决' : '休止处决'
     bus.emit('ui.notify', { text: `${label} −${dmg}`, kind: isBoss ? 'boss' : 'info' })
     if (!e.alive) this.onEnemyKilled(e)
