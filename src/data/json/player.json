@@ -19,7 +19,8 @@
   "reduction": 0.55,
   "staPerDmg": 1.2,
   "bleedPoiseFrac": 0.25,
-  "perfectBlockReflectMul": 0.5
+  "perfectBlockReflectMul": 0.5,
+  "impactLoudness": 0.5
  },
  "perfectBlockWindow": 5,
  "parry": {
@@ -28,7 +29,8 @@
   "poiseDamage": 25,
   "stunTicks": 18,
   "overdriveGain": 2,
-  "projectileReflectMul": 1
+  "projectileReflectMul": 1,
+  "impactLoudness": 0.85
  },
  "roll": {
   "total": 30,

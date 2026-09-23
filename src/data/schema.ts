@@ -339,9 +339,9 @@ export interface PlayerBaseData {
   jumpSpeed: number
   gravity: number
   staminaRegen: { hardDelay: number; slowPerSec: number; slowTicks: number; fastPerSec: number }
-  guard: { startupTicks: number; reduction: number; staPerDmg: number; bleedPoiseFrac: number; /** §5.2 对远程：完美格挡把弹体弹回原主人，带走的比例 */ perfectBlockReflectMul: number }
+  guard: { startupTicks: number; reduction: number; staPerDmg: number; bleedPoiseFrac: number; /** §5.2 对远程：完美格挡把弹体弹回原主人，带走的比例 */ perfectBlockReflectMul: number; /** §13.0「听觉 Sound」的第四路：格挡接准那一记闷响的响度（未乘武器/词缀） */ impactLoudness: number }
   perfectBlockWindow: number
-  parry: { activeTicks: number; whiffRecovery: number; poiseDamage: number; stunTicks: number; overdriveGain: number; /** §5.3 弹反弹道：反射回原主人的伤害比例（100%） */ projectileReflectMul: number }
+  parry: { activeTicks: number; whiffRecovery: number; poiseDamage: number; stunTicks: number; overdriveGain: number; /** §5.3 弹反弹道：反射回原主人的伤害比例（100%） */ projectileReflectMul: number; /** §13.0「听觉 Sound」：弹反那记钟响的响度（未乘武器/词缀），比踏地更响 */ impactLoudness: number }
   roll: { total: number; iframeStart: number; iframeEnd: number; dist: number; backDist: number; stamina: number; lockOnDist: number; lockOnIframes: [number, number] }
   execution: ExecutionConfig
   attrs: Record<AttrKey, number>

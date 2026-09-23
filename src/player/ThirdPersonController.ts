@@ -198,6 +198,15 @@ export class PlayerController {
   /** 发声时的噪音乘数（静默词缀 / 无鸣类武器）：所有 sound.source 出口共用它 */
   private noise(loudness: number): number { return loudness * this.rpg.noiseMul }
 
+  /**
+   * 刀兵相交的那一记（弹反 / 完美格挡）归**武器**而不是归脚步：和招式一样同时吃
+   * 武器噪音系数与词缀系数，所以无鸣类武器防御出来的世界是安静的。
+   * 基数在 player.json（`parry.impactLoudness` / `guard.impactLoudness`），这里只做标尺换算。
+   */
+  weaponImpactNoise(baseLoudness: number): number {
+    return this.noise(baseLoudness * (this.weapon.noiseMul ?? 1))
+  }
+
   faceTowards(p: Vec3): void {
     const d = Math.atan2(p.x - this.pos.x, p.z - this.pos.z)
     this.yaw += clampAngleDiff(this.yaw, d) * 0.35

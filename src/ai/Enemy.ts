@@ -276,6 +276,29 @@ export class Enemy {
   }
 
   /**
+   * §13.0「被弹反/完美格挡目击者 +100（瞬间报警）」。判据刻意是**看见**而不是听见：
+   * 视觉锥沿用 `sense()` 同一套数（`ai.vision.range / fovDeg`），而除嘈壳外的敌人
+   * `vision.range` 都比 `hearing.range` 长，所以这一条把报警半径从「听得见」推到「看得见」。
+   * 无眼的万籁（`vision.range = 0`）不在其列——她本来就靠声音找人。
+   * 已经在动手的不需要报警，只把最后已知位置更新到冲击点。
+   */
+  sawImpact(at: Vec3): void {
+    if (!this.alive) return
+    const dx = at.x - this.pos.x, dz = at.z - this.pos.z
+    const d = Math.hypot(dx, dz)
+    const v = this.data.ai.vision
+    if (this.state === 'combat' || this.state === 'chase') {
+      if (d <= v.range) this.lastKnown = { ...at }
+      return
+    }
+    const half = (v.fovDeg * Math.PI / 180) / 2
+    if (d > v.range || Math.abs(norm(Math.atan2(dx, dz) - this.yaw)) > half) return
+    this.alertness = 100
+    this.lastKnown = { ...at }
+    this.enter('chase')
+  }
+
+  /**
    * §15.3 声音狩猎：够响的一声 ⇒ 她**瞬移到发声点并咬一口**。冷却由表给（`huntsSound`），
    * 否则一串脚步会让她连环跳；瞬移落点刻意留在发声点上，不往玩家怀里跳——玩家因此
    * 有 300ms 的前摇可读（她唯一的破绽就是这口前摇），而不是被凭空贴脸。

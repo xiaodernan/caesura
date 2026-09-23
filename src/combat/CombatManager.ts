@@ -710,6 +710,20 @@ export class CombatManager {
     bus.emit('audio.sfx', { key: 'block_guard', pos: { ...pos }, gain: 0.35 })
   }
 
+  /**
+   * §13.0「听觉 Sound」列的第四路（攻击/弓弦/破坏/**弹反冲击**）与同节 Alertness 行写的
+   * 「被弹反/完美格挡目击者 +100（瞬间报警）」——这两条以前都只活在文档里。
+   * 冲击走**既有** `sound.source` 流（id 仍是 'player'，响度仍走玩家那条标尺），因此它一次性
+   * 喂给三条既有规则：同伴 `hear()`、幽灵八 `fakeBeat()`（弹反 0.85 过 0.6 门槛，完美格挡 0.5 不过）、
+   * 万籁 `huntsSound()`。最后一项是新后果：在她的领域里**防御同样报信**，无鸣武器才是正解。
+   * 目击报警则单独走 `sawImpact()`，因为它判的是「看见」，半径比听觉长。
+   */
+  private impactAlarm(baseLoudness: number): void {
+    const p = this.player
+    bus.emit('sound.source', { id: 'player', pos: { ...p.pos }, loudness: p.weaponImpactNoise(baseLoudness) })
+    for (const x of this.ai.enemies) x.sawImpact(p.pos)
+  }
+
   /** §5 优先级：弹反 > 无敌帧 > 完美格挡 > 格挡（含破防）> 硬吃。近战与弹体共用 */
   private resolveAgainstPlayer(h: Threat, tick: number): DefenseOutcome {
     const p = this.player
@@ -727,6 +741,7 @@ export class CombatManager {
       bus.emit('combat.parried', { attackerId: h.attackerId, defenderId: 'player' })
       bus.emit('vfx.request', { key: 'parry_ring', pos: h.point })
       bus.emit('audio.sfx', { key: 'parry_bell', pos: h.point, gain: 1 })
+      this.impactAlarm(p.base.parry.impactLoudness)
       return 'parry'
     }
     p.parryTicksLeft = 0
@@ -741,6 +756,7 @@ export class CombatManager {
       bus.emit('combat.hit', { ...base, damage: 0, result: 'perfectBlock', shakeKey: 'graze' })
       bus.emit('vfx.request', { key: 'parry_ring', pos: h.point, scale: 0.7 })
       bus.emit('audio.sfx', { key: 'perfect_block', pos: h.point, gain: 0.9 })
+      this.impactAlarm(p.base.guard.impactLoudness)
       return 'perfectBlock'
     }
     if (p.guarding) {
