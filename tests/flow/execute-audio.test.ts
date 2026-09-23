@@ -83,14 +83,13 @@ describe('§5.4 处决的消音与专属音色（KI-003）', () => {
     expect(w.player.executing, '处决演出没起来：这条在量空气').not.toBeNull()
     expect(w.sfx).toContain('execute_rest')
     expect(w.sfx, '不该再借和弦爆占位').not.toContain('chord_slam')
-    // 两个沿都是 player.update 开头采样的，而演出是在同一 tick 的 combat.update 里起来的
-    // ⇒ 开与关都晚一 tick。两边同样晚一 tick，所以**长度**仍然等于演出长度。
-    w.tick()
+    // 边沿判定在 combat.update 末尾（仲裁者）：开与演出点着同 tick，关与演出结束同 tick
     expect(w.muffles, '演出开始：世界塌下去').toEqual([true])
     const onAt = w.time.tick
     const total = w.player.executing ? w.player.executing.total : 0
     for (let i = 0; i < total + 8 && !w.muffles.includes(false); i++) w.tick()
     expect(w.muffles.filter((x) => !x).length, '只关一次（重复关是噪声）').toBe(1)
+    // 演出占 `total` 格（含头含尾），所以"开"与"关"两个沿之间隔的是 total-1 个 tick
     expect(w.time.tick - onAt, '消音的长度 = 演出的长度（`execution.durationTicks` 说的）').toBe(total)
     expect(w.player.executing).toBeNull()
     expect(e.alive, '处决真的把这一只带走了').toBe(false)

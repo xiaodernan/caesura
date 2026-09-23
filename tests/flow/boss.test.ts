@@ -49,11 +49,13 @@ function makeWorld() {
   const sfx: string[] = []
   const notifies: Array<{ t: string; kind?: string }> = []
   const phases: Array<{ id: string; phase: number; phases: number }> = []
+  const muffles: boolean[] = []
   const offs = [
     bus.on('combat.hit', (p) => hits.push({ v: p.victimId, d: p.damage })),
     bus.on('audio.sfx', (p) => sfx.push(p.key)),
     bus.on('ui.notify', (p) => notifies.push({ t: p.text, kind: p.kind })),
-    bus.on('boss.phase', (p) => phases.push(p))
+    bus.on('boss.phase', (p) => phases.push(p)),
+    bus.on('audio.muffle', (p) => muffles.push(p.on))
   ]
 
   function tick(n = 1, each?: () => void): void {
@@ -98,7 +100,7 @@ function makeWorld() {
   }
 
   const off = (): void => { for (const f of offs) f() }
-  return { time, rhythm, player, ai, combat, frame, tick, strike, hits, sfx, notifies, phases, off }
+  return { time, rhythm, player, ai, combat, frame, tick, strike, hits, sfx, notifies, phases, muffles, off }
 }
 type W = ReturnType<typeof makeWorld>
 
@@ -361,6 +363,39 @@ describe('钟壳：打不动不是数值墙，而是「撞钟才是正解」', (
     expect(w.phases.at(-1)).toMatchObject({ id: e.id, phase: 2, phases: 3 })
     expect(w.notifies.some((n) => n.kind === 'boss'), '提示是 Boss 级文案样式').toBe(true)
     expect(w.sfx.filter((k) => k === 'boss_roar').length).toBe(1)
+    // §15.1/§10 的三件套之三：那一嗓子期间世界要塌向 100Hz，且 0.8s 后自己回来
+    expect(w.muffles, '跳阶开低通').toEqual([true])
+    w.tick(46)
+    expect(w.muffles, '0.8s（48 tick）之内一直闷着').toEqual([true])
+    let toOpen = 0
+    while (!w.muffles.includes(false) && toOpen < 80) { w.tick(); toOpen++ }
+    expect(w.muffles, '到点自己解除，不需要谁去关').toEqual([true, false])
+    // 起音那一格算第一格 ⇒ 46 格之后还闷着，第 48 格回到开：低通覆盖的正好是 spec 的 0.8s
+    expect(toOpen, '低通覆盖的格数 = 0.8s = 48 tick').toBe(48 - 46)
+    w.off()
+  })
+
+  it('跳阶的低通与处决的低通重叠时不提前解除（两处来源共用一个仲裁者）', () => {
+    const w = makeWorld()
+    const e = ostlara(w)
+    engage(w, e)
+    e.stats.damage(Math.round(e.stats.hpMax * 0.5))
+    w.tick(1)
+    expect(w.muffles, '跳阶：低通起来了').toEqual([true])
+    // 趁那 48 格还没走完，开一次处决（132 格）——先结束的那一方不许把另一方还需要的低通撤掉
+    e.stats.crumpleTicksLeft = 400
+    e.enter('recover')
+    w.player.pos.x = e.pos.x
+    w.player.pos.z = e.pos.z + 1.5 // 处决判据是距离 + 破势，先把人放到她跟前
+    w.player.stats.overdrive = 99
+    w.frame.edges.add('interact')
+    w.tick(1)
+    expect(w.player.executing, '处决演出没起来：这条在量空气').not.toBeNull()
+    w.tick(60)
+    expect(w.muffles, '吼声那 48 格走完了，但演出还要它 ⇒ 不该有 false').toEqual([true])
+    for (let i = 0; i < 140 && !w.muffles.includes(false); i++) w.tick()
+    expect(w.muffles.filter((x) => !x).length, '只解除一次').toBe(1)
+    expect(w.player.executing, '解除的时候演出也确实结束了').toBeNull()
     w.off()
   })
 })

@@ -29,6 +29,9 @@ export interface TelegraphLine {
   totalTicks: number
 }
 
+/** combat.md §15.1：跳阶那一嗓子的全频低通时长（0.8s）；与 hitstop/震镜同一条演出拍子 */
+const ROAR_MUFFLE_MS = 800
+
 /** 一次「打在某人身上」的全部决策输入；近战与弹体共用同一条结算通道（combat.md §12） */
 interface EnemyStrike {
   base: number
@@ -125,6 +128,7 @@ export class CombatManager {
     this.stealBeat(tick, input)
     this.projectilePass(tick, dt)
     this.tickEchoes(tick)
+    this.arbiteMuffle()
     if (tick % 30 === 0) this.checkEncounterMusic()
   }
 
@@ -625,6 +629,24 @@ export class CombatManager {
   }
 
   /**
+   * 全频低通的仲裁者。它有**两处来源**：§5.4 的处决演出（长度 = `player.executing` 那一格）与
+   * §15.1 的跳阶怒吼（长度 = `ROAR_MUFFLE_MS`）。两处各自 emit 一定会互相踩——处决进行中跳了阶，
+   * 先结束的那一方会把另一方还需要的低通提前撤掉。所以只有一格状态、一个边沿：两边都空了才解除。
+   * 放在 update 末尾 ⇒ 这一 tick 内不管是谁先起来，事件都在同一 tick 发出去（不留采样延迟）。
+   */
+  private muffleHeld = false
+  private roarMuffleTicks = 0
+  private arbiteMuffle(): void {
+    // 先判后扣：起音那一格也算数，否则 48 格的 spec 会变成 47 格
+    const held = this.player.executing !== null || this.roarMuffleTicks > 0
+    if (this.roarMuffleTicks > 0) this.roarMuffleTicks--
+    if (held === this.muffleHeld) return
+    this.muffleHeld = held
+    bus.emit('audio.muffle', { on: held })
+  }
+
+
+  /**
    * §14.5 解法 b「拍点闪避其前摇→其显形 1s 定身破绽」：它站在拍点上定身蓄力，那一刀的弧
    * 已经亮给玩家看了；玩家就在这一刻按闪避=把手伸进它的拍隙里抓个正着。
    * 判据是「闪避输入 + 它正在前摇 + 此刻它处于拍点相位 + 我在它的招式够得着的范围内」——
@@ -728,6 +750,10 @@ export class CombatManager {
     for (const e of this.ai.enemies) {
       if (e.phaseRoarPending) {
         e.phaseRoarPending = false
+        // §15.1/§10 那一嗓子是三件套：hitstop 250ms + 震镜 + 全频低通 0.8s。前两件早就在了，
+        // 低通这一次接上 KI-003 的总线节点。三个时长现在都住在代码里（这一格该进 `boss.phases[].roar`，
+        // 而那要动正被并行会话写的 schema.ts）——记在 KI-021 行里。
+        this.roarMuffleTicks = msToTicks(ROAR_MUFFLE_MS)
         this.time.hitStop(0.25)
         bus.emit('boss.phase', { id: e.id, phase: e.bossPhase + 1, phases: e.data.boss?.phases.length ?? 1, nameKey: e.data.nameKey })
         bus.emit('audio.sfx', { key: 'boss_roar', pos: { ...e.pos }, gain: 1 })
