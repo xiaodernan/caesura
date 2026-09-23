@@ -11,25 +11,47 @@ interface EnemyVis {
   e: Enemy
 }
 
+/**
+ * 手里那把家伙的灰盒外形（KI-007）。表里的键就是 `weapons.json` 的 `archetype`——**选哪一组是数据说的**；
+ * 组内这几个尺寸是灰盒美术（真资产来了整组换掉，选择逻辑不动）。`bow/staff/unique` 现在没有能装备的件，
+ * 落进 `unknown` 那一组，见 `showForm` 的回退。
+ */
+const WEAPON_FORMS: Record<string, { blade: [number, number, number]; metal: number; grip: [number, number, number] }> = {
+  straight_sword: { blade: [0.07, 0.95, 0.16], metal: 0xb9c4cc, grip: [0.03, 0.03, 0.22] },
+  greatsword: { blade: [0.14, 1.5, 0.3], metal: 0x8f9aa4, grip: [0.045, 0.045, 0.34] },
+  spear: { blade: [0.05, 1.9, 0.05], metal: 0xc7bfa8, grip: [0.035, 0.035, 0.5] },
+  unknown: { blade: [0.07, 0.95, 0.16], metal: 0xb9c4cc, grip: [0.03, 0.03, 0.22] }
+}
+
 /** placeholder-grade actor visuals (docs/technical-architecture.md §1: assets later, interfaces now) */
 export class ActorVisuals {
   private vis = new Map<string, EnemyVis>()
+  /** 武器容器：每种 archetype 一个子组，只有手里那一把可见。挥击动画挂在容器上，换装不用改动画 */
   sword: THREE.Group
+  private readonly forms = new Map<string, THREE.Group>()
+  private shownForm = ''
   private shadowBlob: THREE.Mesh
 
   constructor(private scene: THREE.Scene, private playerMesh: THREE.Group, private player: PlayerController) {
     const sword = new THREE.Group()
-    const blade = new THREE.Mesh(
-      new THREE.BoxGeometry(0.07, 0.95, 0.16),
-      new THREE.MeshStandardMaterial({ color: 0xb9c4cc, metalness: 0.9, roughness: 0.25 })
-    )
-    blade.position.y = 0.55
-    const grip = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.03, 0.03, 0.22),
-      new THREE.MeshStandardMaterial({ color: 0x2b2620 })
-    )
-    grip.position.y = -0.05
-    sword.add(blade, grip)
+    for (const [kind, form] of Object.entries(WEAPON_FORMS)) {
+      const g = new THREE.Group()
+      g.name = `weapon:${kind}` // 与 actor:* / greybox_* 同一约定：调试器与回归测试按名字找回模
+      const blade = new THREE.Mesh(
+        new THREE.BoxGeometry(...form.blade),
+        new THREE.MeshStandardMaterial({ color: form.metal, metalness: 0.9, roughness: 0.25 })
+      )
+      blade.position.y = form.blade[1] / 2
+      const grip = new THREE.Mesh(
+        new THREE.CylinderGeometry(...form.grip),
+        new THREE.MeshStandardMaterial({ color: 0x2b2620 })
+      )
+      grip.position.y = -0.05
+      g.add(blade, grip)
+      g.visible = false
+      this.forms.set(kind, g)
+      sword.add(g)
+    }
     sword.position.set(0.38, 1.15, 0.18)
     sword.rotation.x = -0.5
     this.sword = sword
@@ -103,7 +125,20 @@ export class ActorVisuals {
     const p = this.player
     this.playerMesh.position.set(p.pos.x, p.pos.y, p.pos.z)
     this.playerMesh.rotation.y = p.yaw
+    this.showForm(p)
     this.animateSword(p, tick)
+  }
+
+  /**
+   * 只翻 visible，不重建模：换装是常态而几何体要留给渲染器复用。
+   * 表里没有的 archetype（例如以后真加进来的弓）回退到 `unknown` 那一组**并保持看得见**——
+   * 「手里空了」比「看着还是把剑」更糟：前者会让玩家以为装备没生效。
+   */
+  private showForm(p: PlayerController): void {
+    const kind = p.weapon.archetype in WEAPON_FORMS ? p.weapon.archetype : 'unknown'
+    if (kind === this.shownForm) return
+    this.shownForm = kind
+    for (const [k, g] of this.forms) g.visible = k === kind
   }
 
   private updateEnemy(v: EnemyVis, tick: number): void {

@@ -23,7 +23,8 @@ const player = new PlayerController(playerBase, sword, registry.get<MovesetData>
 const ai = new AISystem()
 const vis = new ActorVisuals(scene, playerMesh, player)
 afterAll(() => {
-  // ActorVisuals 没有 dispose()（它自己不留常驻模）：清空名册再同步一次，场景就该回到只有玩家的模
+  // ActorVisuals 现在常驻的只有手里那几把武器模（构造时一次建好，只翻 visible），
+  // 所以这里清空名册再同步一次，场景就该回到"玩家 + 四把武器"的水位
   for (const e of [...ai.enemies]) ai.despawn(e.id)
   vis.sync(ai.enemies, 999)
 })
@@ -124,5 +125,46 @@ describe('BossArenaVisuals：撞钟机关必须看得见（§15.1）', () => {
     arena.sync([k])
     expect(bells()).toHaveLength(n0)
     expect(arena.peakLive, '峰值 = 表里的钟数，不随往返增长').toBe(n0)
+  })
+})
+
+describe('KI-007 手里的家伙跟着装备走（外观不再是"永远那一根音调叉"）', () => {
+  const shown = (): string[] => vis.sword.children.filter((c) => c.visible).map((c) => c.name)
+  const give = (id: string): void => {
+    const w = registry.get<WeaponData>(id)
+    player.equip(w, registry.get<MovesetData>(`moveset:${w.movesetId}`))
+    vis.sync(ai.enemies, 1)
+  }
+  const bladeOf = (kind: string): THREE.BoxGeometry =>
+    ((vis.sword.getObjectByName(`weapon:${kind}`) as THREE.Group).children[0] as THREE.Mesh).geometry as THREE.BoxGeometry
+
+  it('每一种 archetype 一组，任何时刻只亮一组，且换装后亮的是新那把', () => {
+    expect(vis.sword.children.length, '表里四种形状（含回退用的 unknown）').toBe(4)
+    give('wp_drawpin_spear')
+    expect(shown(), '每一次 sync 之后只该亮一组').toEqual(['weapon:spear'])
+    give('wp_tuning_sword')
+    expect(shown()).toEqual(['weapon:straight_sword'])
+    give('wp_fortissimo_greatsword')
+    expect(shown(), '换到大剑：只翻这一组，上一组必须灭掉').toEqual(['weapon:greatsword'])
+    give('wp_drawpin_spear')
+    expect(shown()).toEqual(['weapon:spear'])
+  })
+
+  it('大剑那组的刃确实比直剑长——外观不是换了个名字而已', () => {
+    give('wp_tuning_sword')
+    const long1 = bladeOf('straight_sword').parameters.height
+    give('wp_fortissimo_greatsword')
+    expect(bladeOf('greatsword').parameters.height, '同一把模换个名字交差不算修好外观').toBeGreaterThan(long1)
+    give('wp_tuning_sword')
+  })
+
+  it('表里没有的形状回退成 "看得见的一把"，而不是空手', () => {
+    const w = registry.get<WeaponData>('wp_tuning_sword')
+    // id 必须换掉：`equip()` 见到同一把就短路返回（那是换装的常态优化，不是 bug）
+    player.equip({ ...w, id: 'wp_probe_bow', archetype: 'bow' }, registry.get<MovesetData>(`moveset:${w.movesetId}`))
+    vis.sync(ai.enemies, 2)
+    expect(shown(), '手里空了比看着像剑更糟：玩家会以为装备没生效').toEqual(['weapon:unknown'])
+    give('wp_tuning_sword')
+    expect(shown(), '回退不该留下尾巴').toEqual(['weapon:straight_sword'])
   })
 })
