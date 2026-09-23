@@ -258,8 +258,8 @@ src/
   "nameKey": "weapon.tuningSword",    // string, i18n 键（中文名不硬编码在代码）
   "archetype": "straight_sword",      // enum: straight_sword|greatsword|spear|bow|tuning_rod|unique
   "movesetId": "ms_sword",            // string → data/movesets/，含 L1-L4/H/charged/run/jump/back 全套 FrameData
-  "atkBase": 12, "scaling": {"str": 0.6, "dex": 0.9},  // number; 伤害=atkBase+Σ(stat*coef)
-  "staminaCost": {"light": 12, "heavy": 24},           // number/tick 触发一次
+  "atkBase": 12, "scaling": {"str": 0.6, "dex": 0.9},  // ⚠ 现状：只有 scaling 有消费方（strikeEnemy→resolveDamage）；atkBase 无人读——玩家出手的底数是 movesets.json 那一记的 damage（见 KI-047）
+  "staminaCost": {"light": 12, "heavy": 24},           // number/tick 触发一次（现状：体力住在每一记的 FrameData.stamina）
   "poisePerHit": 18,
   "swingTag": ["damage.physical", "crit.backstab1.5"], // string[] gameplay tags
   "skill": "sk_sword_resonant_cut",   // → SkillData（战技，武器专属）

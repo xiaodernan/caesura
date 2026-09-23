@@ -233,21 +233,21 @@
   "actions": {
    "l1": {
     "startup": 27, "activeStart": 27, "activeEnd": 36, "recovery": 60,
-    "damage": 24, "stamina": 18, "poise": 22, "hitStopMs": 90,
+    "damage": 21, "stamina": 18, "poise": 22, "hitStopMs": 90,
     "hitbox": { "shape": "cone", "angleDeg": 180, "radius": 3.0, "height": 1.9, "offsetY": 1.0 },
     "lunge": 0.3, "shake": "normal", "sfx": ["swing_heavy_1"], "vfx": ["trail_sword"],
     "loudness": 5, "next": "l2"
    },
    "l2": {
     "startup": 24, "activeStart": 24, "activeEnd": 33, "recovery": 59,
-    "damage": 24, "stamina": 18, "poise": 22, "hitStopMs": 90,
+    "damage": 21, "stamina": 18, "poise": 22, "hitStopMs": 90,
     "hitbox": { "shape": "cone", "angleDeg": 180, "radius": 3.0, "height": 1.9, "offsetY": 1.0 },
     "lunge": 0.3, "shake": "normal", "sfx": ["swing_heavy_2"], "vfx": ["trail_sword"],
     "loudness": 5, "next": "l3"
    },
    "l3": {
     "startup": 30, "activeStart": 30, "activeEnd": 42, "recovery": 72,
-    "damage": 38, "stamina": 24, "poise": 36, "hitStopMs": 120,
+    "damage": 34, "stamina": 24, "poise": 36, "hitStopMs": 120,
     "hitbox": { "shape": "cone", "angleDeg": 200, "radius": 3.2, "height": 2.2, "offsetY": 1.1 },
     "lunge": 1.5, "shake": "heavy", "sfx": ["swing_heavy_1"], "vfx": ["trail_sword", "shock_small"],
     "loudness": 7, "flags": ["groundshock", "launchSmall"]
@@ -287,35 +287,35 @@
   "actions": {
    "l1": {
     "startup": 16, "activeStart": 16, "activeEnd": 21, "recovery": 37,
-    "damage": 8, "stamina": 8, "poise": 5, "hitStopMs": 60,
+    "damage": 12, "stamina": 8, "poise": 5, "hitStopMs": 60,
     "hitbox": { "shape": "cone", "angleDeg": 40, "radius": 3.2, "height": 1.4, "offsetY": 0.9 },
     "lunge": 0.3, "shake": "graze", "sfx": ["thrust_1"], "vfx": ["trail_thrust"],
     "loudness": 3, "next": "l2"
    },
    "l2": {
     "startup": 14, "activeStart": 14, "activeEnd": 19, "recovery": 35,
-    "damage": 8, "stamina": 8, "poise": 5, "hitStopMs": 60,
+    "damage": 12, "stamina": 8, "poise": 5, "hitStopMs": 60,
     "hitbox": { "shape": "cone", "angleDeg": 40, "radius": 3.2, "height": 1.4, "offsetY": 0.9 },
     "lunge": 0.3, "shake": "graze", "sfx": ["thrust_1"], "vfx": ["trail_thrust"],
     "loudness": 3, "next": "l3"
    },
    "l3": {
     "startup": 15, "activeStart": 15, "activeEnd": 21, "recovery": 38,
-    "damage": 10, "stamina": 9, "poise": 7, "hitStopMs": 60,
+    "damage": 13, "stamina": 9, "poise": 7, "hitStopMs": 60,
     "hitbox": { "shape": "cone", "angleDeg": 45, "radius": 3.2, "height": 1.6, "offsetY": 1.0 },
     "lunge": 0.35, "shake": "graze", "sfx": ["thrust_1"], "vfx": ["trail_thrust"],
     "loudness": 3, "next": "l4", "flags": ["launchSmall"]
    },
    "l4": {
     "startup": 16, "activeStart": 16, "activeEnd": 22, "recovery": 40,
-    "damage": 11, "stamina": 9, "poise": 8, "hitStopMs": 70,
+    "damage": 15, "stamina": 9, "poise": 8, "hitStopMs": 70,
     "hitbox": { "shape": "cone", "angleDeg": 45, "radius": 3.4, "height": 1.6, "offsetY": 1.0 },
     "lunge": 0.4, "shake": "graze", "sfx": ["thrust_1"], "vfx": ["trail_thrust"],
     "loudness": 3, "next": "l5"
    },
    "l5": {
     "startup": 21, "activeStart": 21, "activeEnd": 29, "recovery": 55,
-    "damage": 17, "stamina": 12, "poise": 20, "hitStopMs": 90,
+    "damage": 20, "stamina": 12, "poise": 20, "hitStopMs": 90,
     "hitbox": { "shape": "cone", "angleDeg": 45, "radius": 3.6, "height": 1.7, "offsetY": 1.0 },
     "lunge": 0.9, "shake": "normal", "sfx": ["thrust_1"], "vfx": ["trail_thrust", "ring_echo"],
     "loudness": 4, "flags": ["multihit"]

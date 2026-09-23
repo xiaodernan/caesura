@@ -308,14 +308,19 @@ describe('G5② 力 / 律 Build 对照：同一颗种子、同一份输入脚本
     // 两条建卡走的是不同的伤害标尺：出手次数与单发重量必须成反比，否则"选建卡"是假的
     expect(li.perHit, `力应当更重：${li.perHit} vs ${lv.perHit}`).toBeGreaterThan(lv.perHit)
     expect(lv.hits, `律应当出手更多：${lv.hits} vs ${li.hits}`).toBeGreaterThan(li.hits)
-    // 实测（同一只驼鼓、同一颗种子、同一份输入脚本）：
-    //   力 = 613 tick / 9 次命中 / 单发均伤 28.7 / HP 196
-    //   律 = 1221 tick / 29 次命中 / 单发均伤 8.3 / HP 154
-    // 节奏差出两倍是**测出来的事实**，已登记 KI-039（轻武器侧的补偿没落在通关节奏这个指标上；
-    // 而这份脚本是站桩对砍，枪的射程优势它不吃）。容忍带先按实测放宽，不假装"两边一样快"。
+    // KI-039 裁决后的实测（同一只驼鼓、同一颗种子、同一份输入脚本）：
+    //   力 = 673 tick / 10 次命中 / 单发均伤 24.7
+    //   律 = 772 tick / 19 次命中 / 单发均伤 12.8
+    // 裁决前是 613 对 1221（差出 2.0×）：根因不在 `weapons.json`，而在 `movesets.json`——
+    // 玩家出手的底数是**招式帧表里的 damage**（`CombatManager.strikeEnemy` 拿 `hb.damage`），
+    // 而轻击家族当时是 8 伤 / 37 tick、重击 24 伤 / 60 tick ⇒ 每 tick 持续输出 0.22 对 0.40。
+    // 单发重 3× 却只慢 1.6×，"重"就顺带把"快"也赢了。现在两边拉到 0.324 对 0.35，
+    // 重量只从**架势（22 对 5）、体力（18 对 8）、噪声（loudness 5 对 3）**这几维拿回报，
+    // 不再从通关时间拿。带子按实测点取 ±35%：站桩对砍结构性地偏袒重击（脚本不吃枪的射程与
+    // 风筝优势），所以 0.87 这一侧留了余量，而不是把两边伪造成一样快。
     const ratio = li.ticks / lv.ticks
-    expect(ratio, `节奏比 ${ratio.toFixed(2)} 超出容忍带`).toBeGreaterThan(0.4)
-    expect(ratio).toBeLessThan(2.5)
+    expect(ratio, `节奏比 ${ratio.toFixed(2)} 超出容忍带`).toBeGreaterThan(0.75)
+    expect(ratio).toBeLessThan(1.35)
     expect(li.weaponId).not.toBe(lv.weaponId)
     expect(li.hpMax, '力那侧的腔体/负重优势要看得见').toBeGreaterThan(lv.hpMax)
   })
