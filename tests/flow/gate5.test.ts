@@ -71,11 +71,11 @@ function makeWorld(originId = 'origin_tuner', seed: number | string = 0x51f3a2, 
   const settlement = new KillSettlement(deps)
 
   const notes: string[] = []
-  const hits: { damage: number }[] = []
+  const hits: { damage: number; victim: string }[] = []
   const offs = [
     bus.on('ui.notify', (p) => { notes.push(p.text) }),
     // 只记玩家砍出去的有效命中（敌人出手、弹反、格挡都不算）
-    bus.on('combat.hit', (p) => { if (p.attackerId === 'player' && p.result === 'hit') hits.push({ damage: p.damage }) })
+    bus.on('combat.hit', (p) => { if (p.attackerId === 'player' && p.result === 'hit') hits.push({ damage: p.damage, victim: p.victimId }) })
   ]
   const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0 }, held: new Set<string>(), edges: new Set<string>() }
   const input = { frame, enabled: true } as unknown as Input
@@ -122,6 +122,41 @@ function makeWorld(originId = 'origin_tuner', seed: number | string = 0x51f3a2, 
     return e
   }
 
+  /**
+   * 站桩对砍一个**固定窗口**（KI-039 的第二条腿）：目标血量每 tick 顶满 ⇒ 它死不了，
+   * 于是量的是"这段时间里打掉多少"而不是"多少 tick 打完"——高甲目标的通关节奏被
+   * 机制（正面钟甲 ×0.6、碎甲时机）主导，用死亡时间当尺子会把定价与机制混成一坨。
+   * 输入侧仍只走两个合法入口：轻击按边沿，蓄力按长按 + 松开（`charging` 那条分支）。
+   */
+  function brawl(e: Enemy, ticks: number): { damage: number; hits: number; charges: number; armorBrokenAt: number | null; perTick: number } {
+    const tick0 = time.tick
+    const from = hits.length
+    let armorBrokenAt: number | null = null
+    let charges = 0
+    let wasCharging = false
+    for (let i = 0; i < ticks && e.alive; i++) {
+      player.stats.hp = player.stats.hpMax
+      e.stats.hp = e.stats.hpMax // 死不了的量具：击倒/退避都不会提前结束窗口
+      const d = Math.hypot(e.pos.x - player.pos.x, e.pos.z - player.pos.z)
+      frame.move = d > 1.6 ? { x: 0, y: 1 } : { x: 0, y: 0 }
+      const a = Math.atan2(e.pos.x - player.pos.x, e.pos.z - player.pos.z)
+      player.yaw = a
+      player.camYawRef = Math.PI + a
+      frame.held.clear()
+      if (i % 300 < 60) frame.held.add('attackHeavy') // 每 300 tick 蓄一次力（CHARGE_TICKS=48 留 12 tick 余量）
+      else if (player.action === null && player.stats.stamina > 12 && d < 2.4) frame.edges.add('attackLight')
+      tick()
+      const charging = player.action?.key === 'charged'
+      if (charging && !wasCharging) charges++
+      wasCharging = charging
+      if (armorBrokenAt === null && e.armorBroken) armorBrokenAt = time.tick - tick0
+    }
+    const mine = hits.slice(from).filter((h) => h.victim === e.id) // 敲钟召来的帮手不算进这只的账
+    const damage = mine.reduce((s, h) => s + h.damage, 0)
+    const span = time.tick - tick0
+    return { damage, hits: mine.length, charges, armorBrokenAt, perTick: damage / Math.max(1, span) }
+  }
+
   /** 走到最近一个挂着该表的交互物前按下交互键（真入口：Interactables.use → lootTable） */
   function openChest(lootTable: string): boolean {
     const target = interact.all.find((i) => i.lootTable === lootTable)
@@ -138,7 +173,7 @@ function makeWorld(originId = 'origin_tuner', seed: number | string = 0x51f3a2, 
   alive.push(dispose)
   return {
     time, rhythm, rpg, player, ai, combat, streaming, spawner, interact, saves, store, ck, deps,
-    notes, hits, reasons, tick, fight, killOne, openChest, dispose,
+    notes, hits, reasons, tick, fight, killOne, brawl, openChest, dispose,
     refreshes: () => refreshes,
     gear: (uid: string): ItemData | undefined => {
       const g = rpg.inv.gearByUid(uid)
@@ -345,5 +380,45 @@ describe('G5② 力 / 律 Build 对照：同一颗种子、同一份输入脚本
     // 两条一起才说明"哪一维值钱"是武器说的，不是代码里钦定的（§55）
     expect(oneSwing('dex', 'wp_tuning_sword'), '轻剑上指法更值钱').toBeGreaterThan(oneSwing('str', 'wp_tuning_sword'))
     expect(oneSwing('str', 'wp_fortissimo_greatsword'), '重剑上基音更值钱').toBeGreaterThan(oneSwing('dex', 'wp_fortissimo_greatsword'))
+  })
+
+  it('KI-039 第二条腿：把同一把尺子换到高甲目标（悬钟骑士·正面钟甲 60°/×0.6）', () => {
+    /**
+     * 为什么这条不用"多少 tick 打死"当尺子：高甲目标的死亡时间被**机制**（正面 ×0.6、
+     * 碎甲要震裂满 5 层，而只有 h/charged 派生带层数）主导，拿死亡时间量定价会把
+     * "武器贵不贵"和"机制让不让"混成一坨。所以这里固定 1600 tick 窗口、目标血量顶满，
+     * 量**这段时间真正打进去多少**，外加"甲在第几 tick 碎"。
+     *
+     * 实测（同一颗种子、同一份输入脚本）：
+     *   力 = 626 伤害 / 21 命中 / 3 次蓄力 / 第 680 tick 碎甲 ⇒ 0.391 伤害每 tick
+     *   律 = 447 伤害 / 35 命中 / 1 次蓄力 / 整窗没碎甲        ⇒ 0.279 伤害每 tick
+     * 比是 **1.40**（无甲驼鼓上同一对建卡是 1.15）⇒ 高甲把重击的优势又放大了一档，
+     * 而放大来自机制而不是数值偏袒：轻击一记都不带震裂层数，蓄力那记大剑带 3 层，
+     * 五层就碎甲；枪的蓄力只有 2 层，而且它起手短、被顶一下就断（出身腔体 7 对 3 也在这里还债）。
+     * 所以 KI-039 那条 [0.75, 1.35] 的节奏带**只适用于无甲目标**；两边一起看才是完整口径：
+     * 重击该赢的地方（破甲、站得住）赢，不该赢的地方（单纯杀得快）不赢。
+     */
+    const run = (originId: string, spend: 'str' | 'dex') => {
+      const w = makeWorld(originId, 'gate5-armor')
+      w.rpg.prog.addResonance(400)
+      while (w.rpg.prog.unspent > 0) expect(w.rpg.prog.allocate(spend)).toBe(true)
+      w.deps.refresh()
+      const e = w.ai.spawn('en_hanged_knight', { x: 0, y: 0, z: -6 }, 'armor')
+      e.skipIntro()
+      const r = w.brawl(e, 1600)
+      return { weapon: w.player.weapon.id, ...r }
+    }
+    const li = run('origin_drummer', 'str')
+    const lv = run('origin_player', 'dex')
+    expect(li.perTick, '量具没打到人 ⇒ 这条断言在自证空集').toBeGreaterThan(0)
+    expect(lv.perTick, '量具没打到人 ⇒ 这条断言在自证空集').toBeGreaterThan(0)
+    // 重击必须能碎甲（否则 §14.7 的正面钟甲对主力建卡也不成立）
+    expect(li.armorBrokenAt, '力那侧整窗没碎甲 ⇒ 蓄力/层数链断了').not.toBeNull()
+    // 碎甲时刻：律没碎就记 +∞ ⇒ "重量在甲胄上占先"是可比较的，而不是一句文案
+    const brokenAt = (r: { armorBrokenAt: number | null }): number => r.armorBrokenAt ?? Number.POSITIVE_INFINITY
+    expect(brokenAt(lv), `律碎甲于 ${lv.armorBrokenAt}，不比力（${li.armorBrokenAt}）更晚 ⇒ 甲白叠了`).toBeGreaterThan(brokenAt(li))
+    const ratio = li.perTick / lv.perTick
+    expect(ratio, `高甲节奏比 ${ratio.toFixed(2)}：重击不占先=机制假，占先超过 2×=轻武线在高甲前是废的`).toBeGreaterThanOrEqual(1)
+    expect(ratio).toBeLessThanOrEqual(2)
   })
 })
