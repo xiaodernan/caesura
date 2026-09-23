@@ -578,6 +578,12 @@ export interface StatusConfig {
 export interface MovementCost {
   stamina?: number
   overdrive?: number
+  /**
+   * §7.2 休止斩那一格「每次使用后过载消耗 +2（防连发）」：本式的过载价每用一次往上加这么多。
+   * 复位判据**不住在这张表里**——「过载条重新攒满」就是这个世界里"你又挣回了一拍"，
+   * 把它写成一个 `resetTicks` 会凭空造出第二个计时器（同一件事不能有两条时间）。
+   */
+  overdriveRamp?: number
 }
 
 /**
@@ -619,6 +625,12 @@ export interface MovementLevel {
   muteTicks?: number
   /** 位移距离（米）：错拍步。沿输入方向，无输入时沿面向 */
   distance?: number
+  /**
+   * 时停（休止斩，§7.2「全场敌人时间冻结，玩家正常」）：判定窗第一记落下的那一 tick，
+   * 场上每一个还活着的敌人被按住这么多 tick。写成 tick 不写成 0.8 秒——全项目时序口径同 §55。
+   * 它**不是** `stunTicks`：定身作废当前读条，时停把那一招连人带帧停在原地，松手后从同一帧继续。
+   */
+  freezeTicks?: number
 }
 
 export interface MovementData {

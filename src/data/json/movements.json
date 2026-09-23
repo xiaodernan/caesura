@@ -29,6 +29,13 @@
    "displayName": "乐章 III·风暴",
    "desc": "万籁同时开口时，听到的不是许多声音，是一个声音。把那个声音借过来一次。",
    "unlock": { "item": "it_resonance_core", "count": 1 }
+  },
+  {
+   "id": "mvpage_rest",
+   "nameKey": "movement.page.rest",
+   "displayName": "乐章 IV·休止",
+   "desc": "这一页上没有音符。它记的是一段空拍——要等第三颗振源核也交了出去，翻开的才是这一页。",
+   "unlock": { "item": "it_resonance_core", "count": 1 }
   }
  ],
  "movements": [
@@ -102,6 +109,28 @@
     { "cooldownTicks": 300, "damage": 26, "muteTicks": 180 },
     { "cooldownTicks": 270, "damage": 36, "muteTicks": 210 },
     { "cooldownTicks": 240, "damage": 48, "muteTicks": 240 }
+   ]
+  },
+  {
+   "id": "mv_caesuracut",
+   "page": "mvpage_rest",
+   "nameKey": "movement.caesuracut",
+   "displayName": "休止斩",
+   "desc": "刀落在两个音中间的那道缝里。缝张开的那一瞬，全世界都在等你把这口气用完。",
+   "cost": { "overdrive": 8, "overdriveRamp": 2 },
+   "frame": {
+    "startup": 12,
+    "activeStart": 12,
+    "activeEnd": 18,
+    "recovery": 42,
+    "sfx": ["swing_heavy_1"],
+    "vfx": ["shock_small"],
+    "loudness": 0
+   },
+   "levels": [
+    { "cooldownTicks": 360, "freezeTicks": 48 },
+    { "cooldownTicks": 330, "freezeTicks": 60 },
+    { "cooldownTicks": 300, "freezeTicks": 72 }
    ]
   }
  ]

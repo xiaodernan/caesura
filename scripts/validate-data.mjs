@@ -52,7 +52,7 @@ const MOVEMENT_ACTIONS = new Set(['weaponSkill', 'weaponSkillB'])
 /** 战技帧的字段白名单： MovementFrame（schema.ts）。多一个字段就必须多一个消费方 */
 const MOVE_FRAME_FIELDS = ['startup', 'activeStart', 'activeEnd', 'recovery', 'poise', 'hitStopMs', 'hitbox', 'multi', 'shake', 'sfx', 'vfx', 'loudness']
 /** 战技每级的数值字段： MovementLevel。同样一字段一消费口 */
-const MOVE_LEVEL_FIELDS = ['cooldownTicks', 'damage', 'trueDamage', 'fissureLayers', 'muteTicks', 'distance']
+const MOVE_LEVEL_FIELDS = ['cooldownTicks', 'damage', 'trueDamage', 'fissureLayers', 'muteTicks', 'distance', 'freezeTicks']
 
 // ---- 小工具 ----
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
@@ -1092,9 +1092,13 @@ function validateMovements(itemIds) {
 
     if (!isObj(m.cost)) report.error(file, `${w}.cost`, '必须是 { stamina?, overdrive? }')
     else {
-      for (const k of Object.keys(m.cost)) if (!['stamina', 'overdrive'].includes(k)) report.error(file, `${w}.cost.${k}`, '不认的字段（§55）')
-      report.sub(file, `${w}.cost`, m.cost, { stamina: { min: 1, int: true, optional: true }, overdrive: { min: 1, int: true, optional: true } })
+      for (const k of Object.keys(m.cost)) if (!['stamina', 'overdrive', 'overdriveRamp'].includes(k)) report.error(file, `${w}.cost.${k}`, '不认的字段（§55）')
+      report.sub(file, `${w}.cost`, m.cost, { stamina: { min: 1, int: true, optional: true }, overdrive: { min: 1, int: true, optional: true }, overdriveRamp: { min: 1, int: true, optional: true } })
       if (Object.keys(m.cost).length === 0) report.error(file, `${w}.cost`, '一条战技至少要有一种代价（体力或过载），否则它没有消费方')
+      // 涨价是挂在过载价上的一截利息：没有底价就没有可涨的东西，那一格就成了没人付的死数据
+      if (m.cost.overdriveRamp !== undefined && !isNum(m.cost.overdrive)) {
+        report.error(file, `${w}.cost.overdriveRamp`, '连打涨价需要 overdrive 底价：没有过载价可涨')
+      }
     }
 
     const fr = m.frame
@@ -1136,6 +1140,13 @@ function validateMovements(itemIds) {
       if (l.fissureLayers !== undefined) report.num(file, `${lw}.fissureLayers`, l.fissureLayers, { min: 1, int: true, name: 'fissureLayers' })
       if (l.muteTicks !== undefined) report.num(file, `${lw}.muteTicks`, l.muteTicks, { min: 1, int: true, name: 'muteTicks' })
       if (l.distance !== undefined) report.num(file, `${lw}.distance`, l.distance, { min: 0.1, name: 'distance' })
+      if (l.freezeTicks !== undefined) {
+        report.num(file, `${lw}.freezeTicks`, l.freezeTicks, { min: 1, int: true, name: 'freezeTicks' })
+        // 时停挂在判定窗的第一记上（CombatManager.caesuraFreeze）。没有窗口就永远不会落地 ⇒ 死数据
+        if (!(isNum(fr.activeStart) && isNum(fr.activeEnd) && fr.activeEnd >= fr.activeStart)) {
+          report.error(file, `${lw}.freezeTicks`, '写了时停但这一式没有判定窗（activeStart/activeEnd）⇒ 永远触发不了')
+        }
+      }
     })
     for (let k = 1; k < cds.length; k++) {
       if (cds[k] > cds[k - 1]) report.error(file, `${w}.levels`, `cooldownTicks 逐级变长（L${k}=${cds[k - 1]} → L${k + 1}=${cds[k]}）：练熟一招不该惩罚玩家`)

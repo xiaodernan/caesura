@@ -92,6 +92,12 @@ export class PlayerController {
    */
   landingPoise = 0
   private landingPoiseTicks = 0
+  /**
+   * §7.2 休止斩那格「每次使用后过载消耗 +2（防连发）」：按**输入槽**记的涨价账（和 `skillCd` 同一口径，
+   * 所以同一式装在两个槽里也是各涨各的）。它刻意不住 `movements.json` 的可存档部分，也不入档：
+   * 那是"这一段连打的余温"，读档后回到没涨过价，比凭空背着一笔涨价诚实。
+   */
+  private skillRamp = new Map<string, number>()
   /** 本 tick 的相对移动输入（战技位移的方向源）。刻意缓存而不是把 Input 传进 tryStartAction：出招入口保持一个签名 */
   private moveIntent = { x: 0, y: 0 }
 
@@ -149,6 +155,8 @@ export class PlayerController {
 
   /** 战技冷却还剩几 tick（0＝可出手）。UI/调试器读它，不自己算 */
   skillCooldown(actionKey: string): number { return this.skillCd.get(actionKey) ?? 0 }
+  /** 这一槽此刻的连打涨价（§7.2 防连发；0＝还是表上的底价）。给面板与测试读，不是第二个判据 */
+  skillRampOf(actionKey: string): number { return this.skillRamp.get(actionKey) ?? 0 }
 
   /**
    * 取走「压在下一记上的起手式」。只有重击能兑现它（§7.2 全音符斩明写"下一记重击"），
@@ -455,8 +463,11 @@ export class PlayerController {
     }
     if (skill) {
       // 过载在门里已经验过，这里只负责扣：先验后扣，不会出现"钱付了式子没出手"
-      this.stats.overdrive = clamp(this.stats.overdrive - skill.cast.overdriveCost, 0, this.stats.overdriveMax)
+      const cost = this.overdriveCostOf(key, skill)
+      this.stats.overdrive = clamp(this.stats.overdrive - cost, 0, this.stats.overdriveMax)
       this.skillCd.set(key, skill.cast.cooldownTicks)
+      // 涨了价才走：连打的第一下按底价付，从第二下起每下贵 `overdriveRamp`（§7.2 防连发）
+      if (skill.cast.overdriveRamp > 0) this.skillRamp.set(key, cost - skill.cast.overdriveCost + skill.cast.overdriveRamp)
       if (skill.cast.fissureLayers > 0 || skill.cast.trueDamage > 0) {
         this.followup = { layers: skill.cast.fissureLayers, trueDamage: skill.cast.trueDamage }
       }
@@ -476,6 +487,14 @@ export class PlayerController {
   }
 
   /**
+   * 这一式此刻要多少过载：表上的底价 + 连打涨出来的那截（§7.2 休止斩「每次使用后过载消耗 +2」）。
+   * 判据与扣费都从这里走，否则"付多少"和"够不够"会变成两个答案。
+   */
+  private overdriveCostOf(key: string, s: SkillAction): number {
+    return s.cast.overdriveCost + (this.skillRamp.get(key) ?? 0)
+  }
+
+  /**
    * 战技能不能出手。三条闸门按"玩家下一步该做什么"排序：闷音 > 冷却 > 过载。
    *
    * 闷音这条是 §11「战技/律具技封锁」的落地。它**没有**自己的秒数：封锁时长就是这次闷音
@@ -488,8 +507,10 @@ export class PlayerController {
       return false
     }
     if (this.skillCd.get(key)) return false // 冷却中不出声：按键连打是常态，刷屏才是噪声
-    if (this.stats.overdrive < s.cast.overdriveCost) {
-      bus.emit('ui.notify', { text: '过载不足', kind: 'info' })
+    const cost = this.overdriveCostOf(key, s)
+    if (this.stats.overdrive < cost) {
+      // 涨价要看得见：这一句里"要多少"是涨完之后的数，玩家才知道自己刚才是被连打锁住的
+      bus.emit('ui.notify', { text: this.skillRamp.get(key) ? `过载不足｜连打已涨到 ${cost}` : '过载不足', kind: 'info' })
       return false
     }
     return true
@@ -541,6 +562,10 @@ export class PlayerController {
 
   addOverdrive(n: number): void {
     this.stats.overdrive = clamp(this.stats.overdrive + n, 0, this.stats.overdriveMax)
+    // §7.2「每次使用后过载消耗 +2（防连发）」的复位那一半：涨价不归一个计时器管，
+    // 归"这条又攒满了"管——过载条只有弹反/完美格挡/换气弹反三条入账（§11），
+    // 所以清零这件事本身就是玩家把拍子又挣回来了，不需要再发明第二个冷却。
+    if (this.stats.overdrive >= this.stats.overdriveMax) this.skillRamp.clear()
   }
 
   /**

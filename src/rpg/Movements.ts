@@ -44,6 +44,10 @@ export interface SkillCast {
   /** §7.2 错拍步的落地窗口：落地后这些 tick 内，玩家自己的攻击架式伤害加这个数（0＝这一式没有落地收益） */
   landingPoise: number
   landingPoiseTicks: number
+  /** §7.2 休止斩的时停：判定窗内按住的 tick 数（0＝这一式不停时间） */
+  freezeTicks: number
+  /** §7.2「每次使用后过载消耗 +2」：每用一次往上加这么多的过载价，过载条回满才归零 */
+  overdriveRamp: number
   /** 伤害标尺（§2.1 音色列）。结算侧只认这张小表，不认识 movements.json */
   scaling: Partial<Record<AttrKey, number>>
   /** §11 过载列：每层过载给多少战技伤害 */
@@ -226,6 +230,8 @@ export class MovementBook {
         distance: l.distance ?? 0,
         landingPoise: mv.landing?.poise ?? 0,
         landingPoiseTicks: mv.landing?.withinTicks ?? 0,
+        freezeTicks: l.freezeTicks ?? 0,
+        overdriveRamp: mv.cost.overdriveRamp ?? 0,
         scaling: this.cfg.damage.scaling,
         overdriveLayerMul: this.cfg.damage.perOverdriveLayer
       }

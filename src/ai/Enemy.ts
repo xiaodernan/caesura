@@ -40,6 +40,13 @@ export class Enemy {
   cooldowns = new Map<string, number>()
   stunTicks = 0
   /**
+   * §7.2 休止斩的「全场敌人时间冻结」。**刻意不是 `stunTicks` 的别名**：
+   * 定身是"这一招被打断了"——`update` 里那条会把 `attack` 直接抹掉；
+   * 时停是"这一招连人带帧停在原地"——帧数不推进、读条保留，松手后从同一帧继续。
+   * 两条语义的差值有 flow 断言钉着（`tests/flow/movements.test.ts` 休止那一节）。
+   */
+  frozenTicks = 0
+  /**
    * 「定调」光环加成（§14.6 叠唱）：由 AISystem 每 tick 从最近的 buffAura 来源写入，
    * null = 未被定调。倍率全部来自那份数据表，不在这里写死（§55）。
    */
@@ -380,6 +387,12 @@ export class Enemy {
     // 挂在上面的后事必须一起作废——否则它会在**下一招**的起手帧上偷偷生效（白回 15 血、
     // 或把一次并不存在的警戒广播发出去）。实测过：没有这一行时漏回血。
     if (!this.attack && this.pendingBroadcast) this.pendingBroadcast = null
+    // §7.2 休止斩：时间被按住的那几十 tick 里，上面两行照跑，下面的一切都不跑。
+    // - `syncPhase` 要在冻结之前：§14.5 的拍隙是**世界**的拍网格算出来的派生态，冻结的是它自己的
+    //   时间，不是世界的；放在后面会让它带着一个过期的 `intangible` 站 0.8s（打不着或白白挨打）。
+    // - 不动 `stats.update`：架势衰减、震裂衰减、闷音计时全停——那才是"时间"冻结而不只是"不许动"。
+    // - 不清 `attack`、不 `enter('recover')`：招式停在原地，等松手。
+    if (this.frozenTicks > 0) { this.frozenTicks--; return }
     this.syncBoss()
     this.stats.update(dt, tick)
     this.stateTick++

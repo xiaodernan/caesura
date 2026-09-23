@@ -118,6 +118,7 @@ export class CombatManager {
     this.launchPlayerProjectile(tick)
     this.launchEnemyProjectiles(tick)
     this.playerHitsEnemies(tick)
+    this.caesuraFreeze()
     if (!this.player.executing) this.enemiesHitPlayer(tick)
     this.phaseCounter(input)
     this.bossBits()
@@ -179,6 +180,39 @@ export class CombatManager {
     const declared = f?.fissureLayers
     const byKey = key === 'charged' ? 2 : key === 'h' ? 1 : 0
     return (declared ?? byKey) + (hb.flags.includes('fissure') ? 1 : 0)
+  }
+
+  /**
+   * §7.2 休止斩：这一式的判定窗里，场上每个还活着的敌人被按住 `freezeTicks`（玩家照常动）。
+   *
+   * 三条口径要单独说清，否则这条会慢慢长出别人没有的特权：
+   * - **它不走 `strikeEnemy`**：那一通道的一切前提都是"打到了某个人"（伤害、架势、震裂、命中音、
+   *   hitstop、`combat.hit` 事件）。时停打在**没有人**的地方——一场一个敌人都没打着、或者干脆
+   *   没有敌人，停顿照样发生。硬挤进命中通道就会变成"要打中才停"，那不是 §7.2 写的那一式。
+   * - **一记只结一次**：判定窗有 7 tick，用出手那一次的动作对象当身份（同 `cuePhaseThrough` 的打法）。
+   * - **冻结落在 `Enemy.frozenTicks` 而不是 `stunTicks`**：定身作废读条，时停把读条停在原地
+   *   （差别有断言钉住，见 `Enemy` 那条注释）。
+   *
+   * 已知代价（不藏）：弹体不吃这条。已经射出去的音弹会继续飞——那是"声音已经离开发声体"，
+   * 停下发声的东西不等于停掉空气里正在跑的东西。真要一起停是 Phase 8 的活，见 KI-037。
+   */
+  private caesuraAction: object | null = null
+  private caesuraFreeze(): void {
+    const a = this.player.action
+    const cast = a?.skill
+    if (!a || !cast || cast.freezeTicks <= 0) return
+    const f = a.f
+    if (a.tick < f.activeStart || a.tick > f.activeEnd) return
+    if (this.caesuraAction === a) return
+    this.caesuraAction = a
+    let n = 0
+    for (const e of this.ai.enemies) {
+      if (!e.alive) continue
+      e.frozenTicks = Math.max(e.frozenTicks, cast.freezeTicks)
+      n++
+    }
+    // 场上没人时不出字：那一声"休止"是玩家挣到的信息，不是每次都敲一遍的说明书
+    if (n > 0) bus.emit('ui.notify', { text: `休止｜${n} 个声音停在拍上`, kind: 'info' })
   }
 
   /**

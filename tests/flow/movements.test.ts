@@ -621,3 +621,257 @@ describe('§7.2 错拍步的落地窗口（KI-035：落地后一段时间内，�
     w.off()
   })
 })
+
+/* ============================ 乐章 IV·休止 ============================ */
+
+const CAESURA = 'mv_caesuracut' // 它不出伤害：它拿走的是别人的时间
+const KNIGHT = 'en_hanged_knight' // 每 4 小节敲一次钟回 15 血的野外精英——一记 90 tick 的读条，量"时间停没停"的好尺子
+
+/** 休止斩那一式的读条数据（测试不抄第二份常量：招式在 enemies.json 里） */
+function tollSpec(e: Enemy): { id: string; startup: number; heal: number } {
+  const t = e.data.ai.selfToll
+  if (!t) throw new Error(`${e.data.id} 没有 selfToll：本用例的尺子失效`)
+  const spec = e.data.attacks.find((a) => a.id === t.attackId)
+  if (!spec) throw new Error(`表里没有读条招式 ${t.attackId}`)
+  return { id: t.attackId, startup: spec.frames.startup, heal: t.heal ?? 0 }
+}
+
+/** 把玩家摆回"能出手"：本文件测的是敌人的时间，不该被一次无关的挨打打断 */
+function ready(w: World): void {
+  w.player.stats.hp = w.player.stats.hpMax
+  w.player.stunTicks = 0
+  w.player.crumpleTicks = 0
+  w.player.action = null
+}
+
+function castCaesura(w: World, key: string): void {
+  const cast = w.player.skills[key].cast
+  ready(w)
+  w.player.stats.overdrive = Math.max(w.player.stats.overdrive, cast.overdriveCost)
+  expect(w.player.tryStartAction(key, w.time.tick), '休止斩没出手：本用例前提失效').toBe(true)
+}
+
+/** 一步步推到「冻结已经落在敌人身上」；返回是否等到（休止斩有 12 tick 前摇，不是举手就冻结） */
+function waitFrozen(w: World, e: Enemy, cap = 40): boolean {
+  for (let i = 0; i < cap && !(e.frozenTicks > 0); i++) w.tick()
+  return e.frozenTicks > 0
+}
+
+/**
+ * 把悬钟骑士推进到「敲钟自鸣正在读条」的那一刻。真打法：进战、挨它自己那几招、等 §14.7 的软计时器
+ * 到点，全程只走 `maybeBarCast` 这条既有通道（不手搓 `attack`——手搓会把 `pendingBroadcast` 那份后事跳过，
+ * 于是"回血"这一半根本没接线，测出来的冻结就是自证）。
+ *
+ * `startup - 14` 这个下界是给休止斩自己的 12 tick 前摇留的余量：要求"看到读条时它还早"，
+ * 才不会出现"读条在冻结生效之前就走完、回血已经发生"这种把断言掏空的情形。等不到就等下一次自鸣（每 4 小节一次）。
+ */
+function tillTolling(w: World, e: Enemy): boolean {
+  const t = tollSpec(e)
+  for (let i = 0; i < 3200; i++) {
+    w.tick()
+    if (e.attack?.spec.id === t.id && e.attack.tick >= 0 && e.attack.tick <= t.startup - 14) return true
+  }
+  return false
+}
+
+/** 造一个"正在敲钟"的世界：受伤（满血不为回血演这一招）→ 进战 → 等到读条 */
+function makeTollingWorld(): { w: World; e: Enemy; key: string; started: boolean } {
+  const w = makeWorld()
+  const key = equipMove(w, CAESURA, 0)
+  const e = w.ai.spawn(KNIGHT, { x: 0, y: 0, z: -1.8 }, 'caesura-toll')
+  e.stats.damage(80)
+  e.alertness = 100
+  e.enter('combat')
+  faceAt(w, e.pos)
+  return { w, e, key, started: tillTolling(w, e) }
+}
+
+describe('§7.2 休止斩的时停（KI-037 第一步：敌人侧的冻结原语）', () => {
+  it('判定窗那一 tick：全场每个活敌人被按住表里的格数，玩家与世界的拍子照走', () => {
+    const w = makeWorld()
+    const key = equipMove(w, CAESURA, 0)
+    const cast = w.player.skills[key].cast
+    expect(cast.freezeTicks, '前提：这一式写的是时停').toBeGreaterThan(0)
+    expect(cast.damage, '前提：这一式自己不出伤害').toBe(0)
+    const near = w.pin(w.ai.spawn(FOE, { ...FOE_POS }, 'frz-near'))
+    const far = w.pin(w.ai.spawn(FOE, { x: -14, y: 0, z: 9 }, 'frz-far')) // 背后 17m：判据是「全场」，不是「面前这一圈」
+    faceAt(w, near.pos)
+    const seen = w.hits.length
+    const beat0 = w.rhythm.info().beatIndex
+    const pre = { near: near.stateTick, far: far.stateTick }
+    castCaesura(w, key)
+    expect(waitFrozen(w, near), '冻结没落到近处这个敌人身上').toBe(true)
+    // 冻结之前它自己的时间照走：休止斩有前摇，它是「刀落在两个音中间」，不是举手就冻结
+    expect(near.stateTick - pre.near, '前摇那几 tick 里它该是正常的').toBe(move(CAESURA).frame.activeStart)
+    expect(near.frozenTicks, '生效那一刻应该正好是表里那一格').toBe(cast.freezeTicks)
+    expect(far.frozenTicks, '远处那个没被按住 = 冻结不是范围判定，而是全场').toBe(cast.freezeTicks)
+    const s0 = { near: near.stateTick, far: far.stateTick }
+    for (let i = 0; i < cast.freezeTicks; i++) {
+      w.tick()
+      expect(near.stateTick, '冻结的整段里它自己的状态机一格都不该走').toBe(s0.near)
+      expect(far.stateTick).toBe(s0.far)
+      expect(near.frozenTicks, '它是在一格一格倒数，不是被随手抹了一段').toBe(cast.freezeTicks - 1 - i)
+    }
+    expect(near.frozenTicks, '窗口要走满，也要准时松开').toBe(0)
+    expect(w.hits.slice(seen), '时停不是一条结算通道：这一式不该产出任何命中').toHaveLength(0)
+    expect(w.notes, '玩家要看得见拍子停了').toContain(`休止｜2 个声音停在拍上`)
+    // 「松手之后它自己走回来」这一半不在这里量：`stateTick` 会在换状态时归零（冻结期间 AI 的感知
+    // 照跑，解冻第一 tick 它就可能进 chase），那读数分不清"走回来了"和"归零了"。
+    // 它由下面那两例用读条来钉：`attack.tick` 停住、松手后继续走完、该回的血一分不少。
+    expect(w.player.action, '玩家不吃自己的时停：这一式在冻结期里自己收完了').toBeNull()
+    expect(w.rhythm.info().beatIndex, '世界的拍网格不吃时停——停的是「它」的时间').toBeGreaterThan(beat0)
+    w.off()
+  })
+
+  it('这颗旋钮住在数据里：改 movements.json 的 freezeTicks，被按住的 tick 数跟着改', () => {
+    const observed = (override: number) => {
+      const w = makeWorld()
+      const key = equipMove(w, CAESURA, 0)
+      const mv = move(CAESURA)
+      const backup = mv.levels[0].freezeTicks!
+      mv.levels[0].freezeTicks = override
+      w.player.setSkills(w.rpg.skillLoadout()) // cast 在出手之前就折好等级，重灌一次才吃得到新数
+      const e = w.pin(w.ai.spawn(FOE, { ...FOE_POS }, 'knob'))
+      faceAt(w, e.pos)
+      castCaesura(w, key)
+      expect(waitFrozen(w, e), '冻结没生效').toBe(true)
+      // 量的不是 `frozenTicks` 的读数，而是「它自己的时间有几 tick 没走」：那个数才是玩家吃到的收益
+      let held = 0
+      for (let i = 0; i < override + 30 && e.frozenTicks > 0; i++) {
+        const before = e.stateTick
+        w.tick()
+        if (e.stateTick === before) held++
+      }
+      w.off()
+      mv.levels[0].freezeTicks = backup
+      return held
+    }
+    const w = makeWorld()
+    const key = equipMove(w, CAESURA, 0)
+    const tabled = move(CAESURA).levels[0].freezeTicks!
+    expect(w.player.skills[key].cast.freezeTicks, '运行时读到的必须就是表里那格').toBe(tabled)
+    w.off()
+    expect(observed(20), '代码里若还写死着 48，这一条就会红').toBe(20)
+    expect(observed(tabled)).toBe(tabled)
+  })
+
+  it('没写时停的式子（和弦爆）一个敌人都不冻结', () => {
+    const w = makeWorld()
+    const key = equipMove(w, BURST, 0)
+    expect(move(BURST).levels[0].freezeTicks, '前提：那一式没写时停').toBeUndefined()
+    const e = w.pin(w.ai.spawn(FOE, { ...FOE_POS }, 'nofreeze'))
+    faceAt(w, e.pos)
+    const s0 = e.stateTick
+    w.player.stats.overdrive = w.player.skills[key].cast.overdriveCost
+    expect(w.player.tryStartAction(key, w.time.tick), '前提：和弦爆要能出手').toBe(true)
+    w.tick(move(CAESURA).levels[0].freezeTicks! + 8)
+    expect(e.frozenTicks, '没有 freezeTicks 的式子不该凭空按住任何人').toBe(0)
+    expect(e.stateTick, '它的状态机一整段都在走（这才叫"没被冻"）').toBeGreaterThan(s0)
+    w.off()
+  })
+
+  it('时停 ≠ 定身：读条停在原地，松手后走完并照回那 15 血', () => {
+    const { w, e, key, started } = makeTollingWorld()
+    expect(started, '等不到一次还来得及被整段按住的自鸣读条').toBe(true)
+    const t = tollSpec(e)
+    const cast = w.player.skills[key].cast
+    const hp0 = e.stats.hp
+    castCaesura(w, key)
+    expect(waitFrozen(w, e), '冻结没落到读条中的敌人身上').toBe(true)
+    expect(e.attack?.spec.id, '冻结前它还在读这一招').toBe(t.id)
+    const heldAt = e.attack!.tick
+    for (let i = 0; i < cast.freezeTicks; i++) {
+      w.tick()
+      expect(e.attack?.spec.id, '招式不该在冻结里换掉').toBe(t.id)
+      expect(e.attack!.tick, '时停把读条停在同一帧上，不是把它作废').toBe(heldAt)
+      expect(e.stats.hp, '回血那一步在冻结里发生不了').toBe(hp0)
+    }
+    // 松手：读条从它停下的那一帧继续，走完该拿的回血一分不少
+    let ticks = 0
+    while (e.stats.hp === hp0 && ticks < t.startup + 60) { w.tick(); ticks++ }
+    expect(e.stats.hp - hp0, '冻结松开后这一笔血该照旧回来').toBe(t.heal)
+    expect(w.notes.some((n) => n.includes('回复')), '回血那句提示也该补上').toBe(true)
+    w.off()
+  })
+
+  it('对照组：同一帧上给定身（既有通道），读条就地作废，那 15 血永远回不来', () => {
+    const { w, e, key, started } = makeTollingWorld()
+    expect(started, '等不到一次自鸣读条').toBe(true)
+    const t = tollSpec(e)
+    const hp0 = e.stats.hp
+    // 定身是 `Enemy.update` 里既有的那条通道：它会 `attack = null`，挂在读条上的后事一起作废
+    e.stunTicks = w.player.skills[key].cast.freezeTicks
+    for (let i = 0; i < t.startup + 60; i++) {
+      w.tick()
+      if (e.stats.hp > hp0) break
+    }
+    expect(e.stats.hp, '定身把这一笔血掐掉了——这才说明「停在原地」和「作废」是两条语义').toBe(hp0)
+    w.off()
+  })
+})
+
+describe('§7.2 休止斩的连打涨价（overdriveRamp：每用一次贵一档，过载条攒满才归零）', () => {
+  /** 底价、每档涨幅、默认过载上限——全部回读表，测试里不抄第二份数 */
+  function rampPrices() {
+    const mv = move(CAESURA)
+    return { base: mv.cost.overdrive!, step: mv.cost.overdriveRamp! }
+  }
+
+  /** 出手一次；成功了就等冷却自己走完（冷却按 tick 计，见 movements.json 的口径） */
+  function castOnce(w: World, key: string): boolean {
+    const ok = w.player.tryStartAction(key, w.time.tick)
+    if (ok) w.tick(w.player.skills[key].cast.cooldownTicks + 2)
+    return ok
+  }
+
+  it('第一下按底价；从第二下起每下贵 overdriveRamp，涨价看得见', () => {
+    const { base, step } = rampPrices()
+    const w = makeWorld()
+    const key = equipMove(w, CAESURA, 0)
+    const cast = w.player.skills[key].cast
+    expect(cast.overdriveCost, '运行时读到的底价就是表里那格').toBe(base)
+    expect(cast.overdriveRamp, '运行时读到的涨幅就是表里那格').toBe(step)
+    expect(w.player.skillRampOf(key), '没打过不该涨价').toBe(0)
+    ready(w)
+    w.player.stats.overdrive = base
+    expect(castOnce(w, key), '第一下该按底价出手').toBe(true)
+    expect(w.player.skillRampOf(key), '用过一次就该涨一档').toBe(step)
+    ready(w)
+    w.player.stats.overdrive = base
+    const seen = w.notes.length
+    expect(castOnce(w, key), '只给底价时第二下必须出手失败（这就是「防连发」）').toBe(false)
+    expect(w.notes.slice(seen)).toContain(`过载不足｜连打已涨到 ${base + step}`)
+    expect(w.player.skillRampOf(key), '被拒掉的一下不该再加价：涨价只在真出手时记').toBe(step)
+    ready(w)
+    w.player.stats.overdrive = base + step
+    expect(castOnce(w, key), '凑够涨后的价就该出手').toBe(true)
+    expect(w.player.skillRampOf(key)).toBe(step * 2)
+    w.off()
+  })
+
+  it('涨价攒满即归零：过载条满了，价也回到底价——复位不靠第二个计时器', () => {
+    const { base, step } = rampPrices()
+    const w = makeWorld()
+    const key = equipMove(w, CAESURA, 0)
+    const max = w.player.stats.overdriveMax
+    ready(w)
+    w.player.stats.overdrive = base
+    expect(castOnce(w, key)).toBe(true)
+    ready(w)
+    w.player.stats.overdrive = base + step
+    expect(castOnce(w, key)).toBe(true)
+    const third = base + step * 2
+    expect(third > max, '设计意图：默认上限下第三次根本够不着（这正是 §7.2 要的「防连发」）').toBe(true)
+    ready(w)
+    w.player.stats.overdrive = max
+    expect(castOnce(w, key), '满条也不该白给一次涨价后的出手').toBe(false)
+    // 挣满一条 = 又把拍子抢回来了：涨价账整个清零，价回到底价
+    w.player.addOverdrive(1)
+    expect(w.player.stats.overdrive, '前提：addOverdrive 会把它钳在上限上').toBe(max)
+    expect(w.player.skillRampOf(key), '攒满一次，连打的账就一笔勾销').toBe(0)
+    ready(w)
+    w.player.stats.overdrive = base
+    expect(castOnce(w, key), '归零之后底价就能出手').toBe(true)
+    w.off()
+  })
+})

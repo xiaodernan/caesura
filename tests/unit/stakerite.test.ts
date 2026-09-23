@@ -115,6 +115,9 @@ describe('调音桩面板：状态机与内容', () => {
     expect(moves, '§7 谱册：每一页都要亮出来，包括还没点亮的那些').toContain('乐章 I·序句')
     expect(moves).toContain('主动槽')
     expect(moves).toContain('乐谱研读')
+    // 页是数据驱动的：第四页（乐章 IV·休止）一入表就自己长出来了，UI 没加一行代码。
+    // 没点亮也要看得见——玩家得知道"这一页上还有东西"， KI-027 那句括号到此为止。
+    expect(moves).toContain('乐章 IV·休止 · 全暗')
     key('ArrowRight')
     expect(html(p)).toContain('六音级属性')
   })

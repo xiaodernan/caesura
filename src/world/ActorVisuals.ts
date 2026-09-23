@@ -121,6 +121,10 @@ export class ActorVisuals {
         new THREE.Vector3(Math.sin(e.yaw), 0, Math.cos(e.yaw)), -0.2 * (1 - prog))
     }
     if (e.coreFlash > 0) glow = 3.2
+    else if (e.frozenTicks > 0) glow = 0.08
+    // §7.2 休止斩的可见 tell：前摇那点亮不再往上烧，振源核的呼吸也停住。
+    // 冻结既不挪步也不出招，若没有这一点可见差别，玩家只能靠"它怎么不动了"反推自己那记时停
+    // 到底成没成——一个自己看不出来的机制等于没有机制。挨打的那一闪光仍然压在上面（挨打是真的）。
     mat.emissiveIntensity = glow
     // §14.5 拍隙：半透明=打不着（振源核始终全亮，玩家靠它读「它现在在哪」）
     const want = e.intangible ? 0.18 : 1
@@ -130,7 +134,7 @@ export class ActorVisuals {
       mat.needsUpdate = true
     }
     const hb = e.activeHitbox
-    core.scale.setScalar(hb ? 1.6 : 1 + Math.sin(tick * 0.08) * 0.08)
+    core.scale.setScalar(hb ? 1.6 : e.frozenTicks > 0 ? 1 : 1 + Math.sin(tick * 0.08) * 0.08)
     if (v.plate) v.plate.visible = !e.armorBroken // 碎甲是永久状态：板子掉了就是掉了
     if (e.state === 'recover') {
       group.position.y = -0.25 * s
