@@ -1,7 +1,8 @@
-import type { ItemData, SlotKey } from '@/data/schema'
+import { registry } from '@/core/Registry'
+import type { ItemData, MovesetData, SlotKey, WeaponData } from '@/data/schema'
 import { itemOf } from '@/rpg/Inventory'
 import { ATTR_KEYS, progressionData } from '@/rpg/Progression'
-import { SLOTS } from '@/rpg/Equipment'
+import { SLOTS, type EquipMods } from '@/rpg/Equipment'
 import { upgradeStep, maxLevelOf, TIMBITE, DROSS } from '@/rpg/Upgrade'
 import { movementName, unlockItemName, SCORE } from '@/rpg/Movements'
 import { DEFAULT_BINDS, type ActionName } from '@/core/Input'
@@ -65,11 +66,75 @@ const CSS = `
   display:flex; gap:18px; font-size:12px; opacity:.62; letter-spacing:.06em; }
 #stakerite .empty { opacity:.45; font-size:13px; padding:10px 2px; }
 #stakerite .tag { font-size:11px; padding:1px 6px; border:1px solid rgba(201,180,88,.45); color:#c9b458; }
+#stakerite .cmp { margin:2px 0 10px 12px; padding:8px 12px; border-left:2px solid rgba(201,180,88,.35);
+  background:rgba(0,0,0,.18); }
+#stakerite .cmp-head, #stakerite .cmp-row { display:grid; grid-template-columns:minmax(84px,1.2fr) 1fr 1.5fr 1fr;
+  gap:10px; align-items:baseline; font-size:12.5px; }
+#stakerite .cmp-head { opacity:.55; letter-spacing:.14em; font-size:11px; margin-bottom:4px; }
+#stakerite .cmp-row .k { opacity:.72; letter-spacing:.06em; }
+#stakerite .cmp-row .a, #stakerite .cmp-row .b { font-variant-numeric:tabular-nums; }
+#stakerite .cmp-row .b { opacity:.55; }
+#stakerite .cmp-row .d { font-variant-numeric:tabular-nums; letter-spacing:.04em; }
+#stakerite .cmp-row .d.up { color:#ffb86b; } #stakerite .cmp-row .d.down { color:#a8695f; }
+#stakerite .cmp-row .d.flat { opacity:.35; }
 `
 
 const SLOT_LABEL: Record<SlotKey, string> = {
   weapon: '武器', helm: '头部', cuirass: '躯干', gloves: '臂/手', greaves: '腿', seal: '音徽', sealA: '音徽 A', sealB: '音徽 B'
 }
+
+/**
+ * §44「Current vs New」的行表（需求 §44 / ui-ux §3.3，差值每一行都必须可见）。
+ *
+ * `get` 只读 `EquipMods`，也就是只读引擎自己算出来的那套乘数——面板不认识任何数值表，也不做加法：
+ * 两栏都来自 `Equipment.totals` / `Equipment.preview`（`KI-027` 记着为什么不能"把这件的属性加到当前上"：
+ * 强化倍率、词缀、音徽 A/B、噪音的加总偏移都在 `totals` 里，抄一份加法就会和装完之后不一致）。
+ * 唯一特殊的是「重击底数」：那一格住在 `movesets.json` 的帧表里，不在乘数表里，所以单独取。
+ * `always` 的行即使没变化也留着（攻击力 / 防御 / 负重是玩家做决定的那三件事，缺了它们要自己心算）。
+ */
+type CmpRow = {
+  label: string
+  get: (m: EquipMods) => number
+  /** 绝对值怎么读（一栏里的数） */
+  fmt: (v: number) => string
+  /** 差值怎么读（中间那一栏）：乘数行的差不能写成「×1.05」，那是比值不是差 */
+  dfmt: (v: number) => string
+  always?: boolean
+}
+
+const pct = (v: number): string => `${Math.round(v * 1000) / 10}%`
+const dpct = (v: number): string => `${v > 0 ? '+' : ''}${Math.round(v * 1000) / 10}%`
+const mul = (v: number): string => `×${Math.round(v * 1000) / 1000}`
+const dmul = (v: number): string => `${v > 0 ? '+' : ''}${Math.round(v * 1000) / 1000}`
+const int = (v: number): string => `${Math.round(v)}`
+const dint = (v: number): string => `${v > 0 ? '+' : ''}${Math.round(v)}`
+const one = (v: number): string => `${Math.round(v * 10) / 10}`
+const done = (v: number): string => `${v > 0 ? '+' : ''}${Math.round(v * 10) / 10}`
+const dticks = (v: number): string => `${v > 0 ? '+' : ''}${Math.round(v)} tick`
+/** 重击那一记的底数：帧表里的 damage × 手里那把的强化倍率（真正的伤害还要过属性补正与减伤，这里不假装是最终值） */
+function heavyBase(m: EquipMods): number {
+  if (!m.weaponId) return 0
+  const w = registry.maybeGet<WeaponData>(m.weaponId)
+  if (!w) return 0
+  const ms = registry.maybeGet<MovesetData>(`moveset:${w.movesetId}`)
+  const h = ms?.actions['h']
+  return h ? h.damage * m.weaponDamageMul : 0
+}
+
+const CMP_ROWS: CmpRow[] = [
+  { label: '重击底数', get: heavyBase, fmt: int, dfmt: dint, always: true },
+  { label: '防御', get: (m) => m.defense, fmt: int, dfmt: dint, always: true },
+  { label: '负重', get: (m) => m.weight, fmt: one, dfmt: done, always: true },
+  { label: '暴击率', get: (m) => m.critRate, fmt: pct, dfmt: dpct },
+  { label: '架式伤害', get: (m) => m.poiseDmgMul, fmt: mul, dfmt: dmul },
+  { label: '体力回复', get: (m) => m.staminaRegenMul, fmt: mul, dfmt: dmul },
+  { label: '处决倍率', get: (m) => m.execMul, fmt: mul, dfmt: dmul },
+  { label: '噪音系数', get: (m) => m.noiseMul, fmt: mul, dfmt: dmul },
+  { label: '完美格挡窗', get: (m) => m.perfectBlockBonusTicks, fmt: dticks, dfmt: dticks },
+  { label: '轻击前摇', get: (m) => m.lightStartupTicks, fmt: dticks, dfmt: dticks },
+  { label: '对钟甲加成', get: (m) => m.bellBonus, fmt: pct, dfmt: dpct },
+  { label: '弹反额外过载', get: (m) => m.restOverdrive, fmt: int, dfmt: dint }
+]
 
 export interface StakeriteHooks {
   /** 面板里任何一次生效（分配/洗点/装备/强化/使用）之后调用，由 main.ts 重算派生值 */
@@ -333,10 +398,47 @@ export class Stakerite {
           <button class="act" data-act="equip" data-arg="${g.uid}" ${worn ? 'disabled' : ''}>装备</button>
           <button class="act" data-act="upgrade" data-arg="${g.uid}" ${canUp ? '' : 'disabled'}>强化</button>
           <button class="act" data-act="salvage" data-arg="${g.uid}" ${worn ? 'disabled' : ''}>分解</button>
-        </span></div>`
+        </span></div>${worn ? '' : this.compareBlock(g.uid, item)}`
     }).join('') || '<div class="empty">还没有任何装备件。</div>'
     return `<h2>七槽</h2>${slots}
       <h2>行囊中的装备（${inv.gears.length}）</h2>${bag}`
+  }
+
+  /**
+   * §44 的那块双栏对比。差值用 ▲/▼/— 三种形状而不是只靠颜色（ui-ux §7 的双编码口径：色觉异常时
+   * 形状独立承载信息）。
+   *
+   * **刻意不做"更适合当前 Build"的星标建议**：那需要一张维度权重表，而权重是数值不是排版，
+   * 抄进代码就是 §55 禁的那第二类答案；它的落点（`player.json` 或一张 ui 表）要动 `schema.ts`
+   * 与验证器，那两份文件正被并行会话写。登记在 KI-027。
+   */
+  private compareBlock(uid: string, item: ItemData): string {
+    const inv = this.rpg.inv
+    const next = this.rpg.eq.preview(inv, uid)
+    if (!next) return ''
+    const cur = this.rpg.eq.totals(inv)
+    const g = inv.gearByUid(uid)
+    const wornUid = this.rpg.eq.slots[next.slot]
+    const wornGear = wornUid ? inv.gearByUid(wornUid) : null
+    const curName = wornGear ? this.label(wornGear.uid) : '空槽'
+    const rows = CMP_ROWS.map((r) => {
+      const a = r.get(cur)
+      const b = r.get(next.mods)
+      const d = b - a
+      const cls = Math.abs(d) < 1e-9 ? 'flat' : d > 0 ? 'up' : 'down'
+      const mark = cls === 'flat' ? '—' : cls === 'up' ? '▲' : '▼'
+      // 「—」 也带数：一行只写一个破折号，等于要求玩家自己心算 19 − 17
+      const dtxt = ` ${cls === 'flat' ? '0' : r.dfmt(d)}`
+      return { r, a, b, cls, html: `<span class="d ${cls}">${mark}${dtxt}</span>` }
+    }).filter((x) => x.cls !== 'flat' || x.r.always)
+    const line = (label: string, a: string, d: string, b: string): string =>
+      `<div class="cmp-row"><span class="k">${label}</span><span class="a">${a}</span>${d}<span class="b">${b}</span></div>`
+    const special = line('特殊', this.affixText(wornGear?.affixes ?? []), '<span class="d flat">→</span>',
+      this.affixText(g?.affixes ?? []))
+    return `<div class="cmp"><div class="cmp-head"><span>${SLOT_LABEL[next.slot]}</span>
+      <span>当前 · ${curName}</span><span>差值</span><span>换上 · ${item.displayName}${g && g.level > 0 ? ` +${g.level}` : ''}</span></div>
+      ${rows.map((x) => line(x.r.label, x.r.fmt(x.a), x.html, x.r.fmt(x.b))).join('')}
+      ${special}</div>`
   }
 
   private affixText(affixes: { id: string; value: number }[]): string {

@@ -221,3 +221,64 @@ describe('调音桩面板：状态机与内容', () => {
     expect(applied.length, '每次点击都让宿主重算派生值（面板不自己 patch 玩家）').toBeGreaterThan(0)
   })
 })
+
+describe('§44 装备对比 Current vs New（需求 §44 / ui-ux §3.3）', () => {
+  /** 面板的七槽页里，候选件那一行下面挂一块双栏对比 */
+  const gearTab = async (rt: RpgRuntime) => {
+    const { p } = await panel(rt)
+    p.show()
+    for (const fn of winHandlers.keydown ?? []) fn({ code: 'ArrowRight', preventDefault() {} })
+    return { p, s: html(p) }
+  }
+
+  it('未装备的候选：双栏都在，每一行都带差值（不允许只显新物品那一侧）', async () => {
+    const rt = new RpgRuntime('origin_tuner') // 出身戴着哑带盔（def 3 / 2.0）
+    const g = rt.inv.addGear('ar_choir_hood') // 唱诗班头巾：def 5 / 3.0 ⇒ 两项都该有差值
+    const { s } = await gearTab(rt)
+    expect(s, '候选件行下方要有对比块').toContain('<div class="cmp">')
+    expect(s).toContain('当前 · ')
+    expect(s).toContain('换上 · ')
+    // 两栏都是**整套**乘数（不是这一件的属性），所以当前防御是全身合计 17
+    expect(s, '防御那一行要报出差值').toMatch(/防御<\/span><span class="a">17<\/span><span class="d up">▲ \+2<\/span><span class="b">19/)
+    expect(s, '负重同样').toMatch(/负重<\/span><span class="a">24<\/span><span class="d up">▲ \+1<\/span><span class="b">25/)
+    expect(s, '词缀那一行也要有（特殊：左 vs 右）').toContain('特殊')
+    void g
+  })
+
+  it('已经穿着的那件不配拥有对比块（它就是"当前"）', async () => {
+    const rt = new RpgRuntime('origin_tuner')
+    const worn = rt.inv.gears.find((x) => x.itemId === 'ar_mutewrap_helm')!
+    const { s } = await gearTab(rt)
+    const at = s.indexOf(worn.uid)
+    expect(at, '已装备件仍在清单里').toBeGreaterThan(-1)
+    const block = s.slice(at, s.indexOf('</div>', at) + 6)
+    expect(block, '它的行下方不该再来一块对比').not.toContain('换上 ·')
+  })
+
+  it('同一件装备的另一份拷贝：三行常驻都在，但没有一行被标成提升或下降', async () => {
+    const rt = new RpgRuntime('origin_tuner')
+    rt.inv.addGear('ar_mutewrap_helm') // 与身上那件同一张表、同样没有词缀 ⇒ 差值必须全是 —
+    const { s } = await gearTab(rt)
+    expect(s).toContain('<div class="cmp">')
+    expect(s, '不许把相同的东西说成有提升').not.toContain('class="d up"')
+    expect(s).not.toContain('class="d down"')
+    expect(s, '常驻三行仍然要在（缺了要玩家自己心算）').toMatch(/重击底数[\s\S]*防御[\s\S]*负重/)
+  })
+
+  it('投影只是投影：不改真实槽位，音徽仍走 A→B 那一条规则', () => {
+    const rt = new RpgRuntime('origin_tuner')
+    const before = { ...rt.eq.slots }
+    const seal = rt.inv.addGear('seal_firstbeat')
+    const p = rt.eq.preview(rt.inv, seal.uid)
+    expect(p, '音徽要有落点').not.toBeNull()
+    expect(p!.slot, 'A 槽空着才进 A')
+      .toBe(rt.eq.slots.sealA ? 'sealB' : 'sealA')
+    expect(rt.eq.slots, 'preview 不许碰真实槽位').toEqual(before)
+    const helm = rt.inv.addGear('ar_veilbell_helm')
+    const q = rt.eq.preview(rt.inv, helm.uid)
+    expect(q!.slot).toBe('helm')
+    expect(q!.mods.defense, '投影里的防御 = 换上之后的值（当前 3 → 这件 7）')
+      .toBeGreaterThan(rt.eq.totals(rt.inv).defense)
+    expect(rt.eq.slots).toEqual(before)
+  })
+})

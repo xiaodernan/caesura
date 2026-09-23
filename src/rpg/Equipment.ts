@@ -85,11 +85,31 @@ export class Equipment {
     return this.weightOf(inv) > loadMax
   }
 
-  totals(inv: Inventory): EquipMods {
+  /**
+   * §44「Current vs New」里 **New** 那一栏：把这件装到它自己的槽位之后，整套乘数会变成什么。
+   * 刻意走"换装载重算"而不是"把这件的属性加到当前上"：词缀、强化倍率、音徽 A/B、噪音那一条的
+   * 「加总偏移」都在 `totalsFrom` 里，抄一份加法就会和真实装备之后的数字不一致（玩家会把它当 bug）。
+   * 投影不碰真实槽位。
+   */
+  preview(inv: Inventory, uid: string): { slot: SlotKey; mods: EquipMods } | null {
+    const gear = inv.gearByUid(uid)
+    if (!gear) return null
+    const own = itemOf(gear.itemId).gear?.slot
+    if (!own) return null
+    const slots = { ...this.slots }
+    const slot: SlotKey = own === 'seal' ? sealSlotFor(slots) : own
+    slots[slot] = uid
+    return { slot, mods: this.totalsFrom(slots, inv) }
+  }
+
+  totals(inv: Inventory): EquipMods { return this.totalsFrom(this.slots, inv) }
+
+  private totalsFrom(slots: Partial<Record<SlotKey, string>>, inv: Inventory): EquipMods {
     const out: EquipMods = { ...EMPTY_MODS }
     const prog = registry.get<ProgressionData>('progression')
     for (const slot of SLOTS) {
-      const g = this.equipped(inv, slot)
+      const uid = slots[slot]
+      const g = uid ? inv.gearByUid(uid) ?? null : null
       if (!g) continue
       const item = itemOf(g.itemId)
       const gear = item.gear
@@ -128,9 +148,14 @@ function targetSlot(item: ItemData): SlotKey | null {
   return slot
 }
 
-/** 音徽单独入口：A 槽优先，A 满了才进 B（避免"装第二枚徽记把第一枚顶掉"这种静默替换） */
+/** 音徽落哪个槽：A 槽优先，A 满了才进 B（避免"装第二枚徽记把第一枚顶掉"这种静默替换） */
+export function sealSlotFor(slots: Partial<Record<SlotKey, string>>): SlotKey {
+  return slots.sealA ? 'sealB' : 'sealA'
+}
+
+/** 音徽单独入口 */
 export function equipSeal(eq: Equipment, uid: string): SlotKey | null {
-  const slot: SlotKey = eq.slots.sealA ? 'sealB' : 'sealA'
+  const slot = sealSlotFor(eq.slots)
   eq.slots[slot] = uid
   return slot
 }
