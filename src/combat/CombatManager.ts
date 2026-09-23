@@ -193,8 +193,9 @@ export class CombatManager {
    * - **冻结落在 `Enemy.frozenTicks` 而不是 `stunTicks`**：定身作废读条，时停把读条停在原地
    *   （差别有断言钉住，见 `Enemy` 那条注释）。
    *
-   * 已知代价（不藏）：弹体不吃这条。已经射出去的音弹会继续飞——那是"声音已经离开发声体"，
-   * 停下发声的东西不等于停掉空气里正在跑的东西。真要一起停是 Phase 8 的活，见 KI-037。
+   * 敌方弹体一起冻结（`Projectile.frozenTicks`，同一记、同一格时长）：这一式的**全部产品就是
+   * 时间**，如果对面是针喉，"全场停下"却有一发音弹照常飞过来把玩家打死在停顿里，那这一式对远程
+   * 敌人是个陷阱而不是解法。玩家的弹体不冻结——§7.2 写的是「敌人时间冻结，玩家正常行动」。
    */
   private caesuraAction: object | null = null
   private caesuraFreeze(): void {
@@ -205,13 +206,20 @@ export class CombatManager {
     if (a.tick < f.activeStart || a.tick > f.activeEnd) return
     if (this.caesuraAction === a) return
     this.caesuraAction = a
+    // 报数把"人"和"正在飞的音弹"算成一类：那一声是玩家挣到的确认，而"场上没有活着的敌人、
+    // 只有她临死那一发还在空中"恰恰是最需要这句确认的场合（否则玩家会以为自己那记打空了）。
     let n = 0
     for (const e of this.ai.enemies) {
       if (!e.alive) continue
       e.frozenTicks = Math.max(e.frozenTicks, cast.freezeTicks)
       n++
     }
-    // 场上没人时不出字：那一声"休止"是玩家挣到的信息，不是每次都敲一遍的说明书
+    for (const pr of this.projectiles.list()) {
+      if (pr.dead || !pr.hostile) continue // 玩家自己的弹体照常：动不了的那一方才是被停住的
+      pr.frozenTicks = Math.max(pr.frozenTicks, cast.freezeTicks)
+      n++
+    }
+    // 场上什么都没有时不出字：那一声"休止"是玩家挣到的信息，不是每次都敲一遍的说明书
     if (n > 0) bus.emit('ui.notify', { text: `休止｜${n} 个声音停在拍上`, kind: 'info' })
   }
 

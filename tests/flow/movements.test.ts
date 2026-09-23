@@ -6,10 +6,12 @@ import { RhythmClock } from '@/core/RhythmClock'
 import { registry } from '@/core/Registry'
 import { registerGameData, playerBase, regions } from '@/data'
 import type { ItemData, MovesetData, WeaponData } from '@/data/schema'
+import type { EnemyData } from '@/data/schema'
 import { PlayerController } from '@/player/ThirdPersonController'
 import { AISystem } from '@/ai/AISystem'
 import { CombatManager } from '@/combat/CombatManager'
 import type { Enemy } from '@/ai/Enemy'
+import type { Projectile } from '@/combat/Projectiles'
 import type { Vec3 } from '@/combat/EntityStats'
 import { StreamingSystem, chunkKeyOf } from '@/world/Streaming'
 import { SpawnDirector } from '@/world/SpawnDirector'
@@ -872,6 +874,156 @@ describe('§7.2 休止斩的连打涨价（overdriveRamp：每用一次贵一档
     ready(w)
     w.player.stats.overdrive = base
     expect(castOnce(w, key), '归零之后底价就能出手').toBe(true)
+    w.off()
+  })
+})
+
+/* ==================== KI-037 第二步：时停镜像到弹体 ==================== */
+
+const SKEWER = 'en_skewer' // 14–26m 之间拉弦的狙击手：这一式要量的正是「已经离弦的那一发停不停」
+const SKEWER_POS: Vec3 = { x: 0, y: 0, z: -15 }
+
+/** 针喉 snipe 那一发的弹道数据（§55：测试不抄第二份常量，连手搓的样本弹也从表里取参数） */
+function shotSpec(): { kind: string; speed: number; range: number; radius: number; offsetY: number } {
+  const d = registry.get<EnemyData>(SKEWER)
+  const a = d.attacks.find((x) => x.frames.projectile)
+  const s = a?.frames.projectile
+  if (!s) throw new Error(`${SKEWER} 表里没有弹道招式：本用例的尺子失效`)
+  return { kind: s.kind, speed: s.speed, range: s.range, radius: s.radius, offsetY: s.offsetY ?? 1.1 }
+}
+
+/** 一发正在飞的敌方弹体（走 ProjectileSystem 真通道，只是不经 AI 的选招）；ownerId 可以是一个不存在的人 */
+function hostileShot(w: World, from: Vec3, ownerId = SKEWER): Projectile {
+  const s = shotSpec()
+  return w.combat.projectiles.spawn({
+    hostile: true, ownerId, kind: s.kind, origin: { ...from },
+    dir: { x: 0, y: 0, z: 1 }, speed: s.speed, range: s.range, radius: s.radius,
+    damage: 12, poise: 6, hitStopMs: 70
+  }, w.time.tick)
+}
+
+/** 推到「场上有一发敌方弹体、且它离玩家还有 safe 米以上」；只等不手搓，走 AI 真出手 */
+function tillIncomingShot(w: World, safe = 10, cap = 3000): Projectile | null {
+  for (let i = 0; i < cap; i++) {
+    w.tick()
+    const pr = w.combat.projectiles.list().find((x) => x.hostile && !x.dead &&
+      Math.hypot(x.pos.x - w.player.pos.x, x.pos.y - w.player.pos.y, x.pos.z - w.player.pos.z) > safe)
+    if (pr) return pr
+  }
+  return null
+}
+
+/** 一步步推到「冻结已经落在这一发上」；休止斩有前摇，举手不等于冻结 */
+function waitShotFrozen(w: World, pr: Projectile, cap = 40): boolean {
+  for (let i = 0; i < cap && !(pr.frozenTicks > 0); i++) w.tick()
+  return pr.frozenTicks > 0
+}
+
+describe('§7.2 休止斩把时停镜像到弹体（KI-037 第二步：飞着的那一发也停在拍上）', () => {
+  it('真通道：针喉离弦的那一发在空中静止表里那一格的 tick 数，然后自己接着飞', () => {
+    const w = makeWorld()
+    const key = equipMove(w, CAESURA, 0)
+    const cast = w.player.skills[key].cast
+    const e = w.ai.spawn(SKEWER, { ...SKEWER_POS }, 'caesura-shot')
+    e.alertness = 100
+    e.enter('combat')
+    const pr = tillIncomingShot(w)
+    expect(pr, '3000 tick 里针喉没射出过一发够远的弹体：本用例前提失效').toBeTruthy()
+    const beat0 = w.rhythm.info().beatIndex
+    castCaesura(w, key)
+    /**
+     * 量的不是 `frozenTicks` 的读数，而是「它在空中静止了多少 tick」——那才是玩家吃到的那笔。
+     * 顺带避开一处口径差：`Enemy.update` 跑在 `combat.update` 之前，`projectiles.update` 跑在之后，
+     * 所以冻结落地的那一 tick 弹体已经自己扣掉了一格（两边**静止的总 tick 数**仍然严格相等）。
+     */
+    let run = 0, longest = 0, resumed = false
+    let prev = { ...pr!.pos }
+    let heldRange = 0
+    for (let i = 0; i < cast.freezeTicks + 80 && !resumed; i++) {
+      w.tick()
+      const moved = Math.hypot(pr!.pos.x - prev.x, pr!.pos.y - prev.y, pr!.pos.z - prev.z) > 1e-9
+      prev = { ...pr!.pos }
+      if (moved) {
+        if (longest > 0) resumed = true
+        run = 0
+      } else {
+        if (run === 0) heldRange = pr!.rangeLeft
+        run++
+        longest = Math.max(longest, run)
+        expect(pr!.rangeLeft, '射程是积分出来的：时间没过，射程也就没过').toBe(heldRange)
+      }
+    }
+    expect(longest, '空中静止的 tick 数应该就是表里那一格').toBe(cast.freezeTicks)
+    expect(resumed, '松手之后它自己会接着飞：停在原地而不是作废').toBe(true)
+    expect(pr!.frozenTicks).toBe(0)
+    expect(w.rhythm.info().beatIndex, '世界的拍网格不吃时停——停的是「那一发」的时间').toBeGreaterThan(beat0)
+    w.off()
+  })
+
+  it('停在半空的弹体仍然是障碍物：冻结只停运动学，不停命中判定', () => {
+    const w = makeWorld()
+    const key = equipMove(w, CAESURA, 0)
+    const pr = hostileShot(w, { x: 0, y: 1.0, z: -14 })
+    castCaesura(w, key)
+    expect(waitShotFrozen(w, pr), '冻结没落到弹体上').toBe(true)
+    expect(pr.frozenTicks, '前提：这一下还在冻结窗口里').toBeGreaterThan(0)
+    // 玩家自己撞上那一发：它没动，但它还在那儿
+    faceAt(w, { x: 0, y: 0, z: -0.3 })
+    pr.pos.x = 0; pr.pos.y = 0.9; pr.pos.z = -0.3
+    const seen = w.hits.length
+    w.tick()
+    const h = w.hits.slice(seen).find((x) => x.victimId === 'player')
+    expect(h, '撞上一记停住的弹体不该穿身而过：那是障碍物不是幻影').toBeTruthy()
+    expect(h!.attackerId, '伤害记在发射者名下，与飞行中命中同一条通道').toBe(SKEWER)
+    w.off()
+  })
+
+  it('不对称是刻意的：同一记把敌人的时间拿走，玩家自己那一发照旧送出去', () => {
+    const w = makeWorld()
+    const key = equipMove(w, CAESURA, 0)
+    const cast = w.player.skills[key].cast
+    const foe = w.pin(w.ai.spawn(FOE, { ...FOE_POS }, 'caesura-own'))
+    faceAt(w, foe.pos)
+    const mine = w.combat.projectiles.spawn({
+      hostile: false, ownerId: 'player', kind: 'spear', origin: { x: 0, y: 1.0, z: -3 },
+      dir: { x: 0, y: 0, z: -1 }, speed: 20, range: 30, radius: 0.3,
+      damage: 10, poise: 5, hitStopMs: 60
+    }, w.time.tick)
+    castCaesura(w, key)
+    expect(waitFrozen(w, foe), '敌人的冻结没生效').toBe(true)
+    const s0 = foe.stateTick
+    const p0 = { ...mine.pos }
+    for (let i = 0; i < cast.freezeTicks; i++) {
+      w.tick()
+      expect(foe.stateTick, '敌人这一侧：状态机一格不走').toBe(s0)
+      expect(mine.frozenTicks, '玩家那一侧：连一格账都没记').toBe(0)
+    }
+    expect(mine.pos, '§7.2 写的是「敌人时间冻结，玩家正常行动」：玩家的弹体属于玩家那一侧').not.toEqual(p0)
+    w.off()
+  })
+
+  it('报数把「正在飞的音弹」算进声音：场上没有活人、只有她临死那一发时，玩家仍听得到那一嗓子', () => {
+    const w = makeWorld()
+    const key = equipMove(w, CAESURA, 0)
+    const pr = hostileShot(w, { x: 0, y: 1.0, z: -16 }, 'en_dead_shooter')
+    expect(w.ai.enemies.filter((x) => x.alive), '前提：场上没有活着的敌人').toHaveLength(0)
+    castCaesura(w, key)
+    expect(waitShotFrozen(w, pr)).toBe(true)
+    expect(w.notes, '只数敌人的话，这一记就变成"什么都没停"的静音反馈').toContain('休止｜1 个声音停在拍上')
+    w.off()
+  })
+
+  it('后坐力检查：没有弹体在场时，这一步不改第一步那笔账（敌人照旧、无多余播报）', () => {
+    const w = makeWorld()
+    const key = equipMove(w, CAESURA, 0)
+    const cast = w.player.skills[key].cast
+    const foe = w.pin(w.ai.spawn(FOE, { ...FOE_POS }, 'caesura-nopr'))
+    faceAt(w, foe.pos)
+    castCaesura(w, key)
+    expect(waitFrozen(w, foe)).toBe(true)
+    expect(foe.frozenTicks).toBe(cast.freezeTicks)
+    expect(w.combat.projectiles.live, '前提：场上没有弹体').toBe(0)
+    expect(w.notes).toContain('休止｜1 个声音停在拍上')
     w.off()
   })
 })

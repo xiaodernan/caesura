@@ -8,9 +8,9 @@ import * as THREE from 'three'
 import { ProjectileVisuals } from '@/world/ProjectileVisuals'
 import type { Projectile } from '@/combat/Projectiles'
 
-function proj(id: number, kind: string, pos: [number, number, number], vel: [number, number, number]): Projectile {
+function proj(id: number, kind: string, pos: [number, number, number], vel: [number, number, number], frozenTicks = 0): Projectile {
   return {
-    id, kind, hostile: false, ownerId: 'player',
+    id, kind, hostile: false, ownerId: 'player', frozenTicks,
     pos: { x: pos[0], y: pos[1], z: pos[2] },
     vel: { x: vel[0], y: vel[1], z: vel[2] }
   } as unknown as Projectile
@@ -56,7 +56,7 @@ describe('ProjectileVisuals（弹体名单 -> 可见模）', () => {
     expect(vis.peakLive).toBe(2) // 峰值记录这一波的最高同时数
   })
 
-  it('非 spear 弹头会随 tick 脉动/自旋，且不会覆盖掉朝向', () => {
+  it('非 spear 弹头会随 tick 脉动/自旋，且不会覆盖掉朝向；§7.2 冻结时这些动画一起停住', () => {
     vis.sync([], 0)
     const n = proj(20, 'note', [0, 1, 0], [0, 0, 12])
     vis.sync([n], 30)
@@ -66,6 +66,16 @@ describe('ProjectileVisuals（弹体名单 -> 可见模）', () => {
     expect(mesh.scale.x).not.toBe(s30)
     const nose = new THREE.Vector3(0, 0, 1).applyQuaternion(mesh.quaternion)
     expect(nose.z).toBeCloseTo(1, 4) // rotateZ 只绕自身轴转，朝向仍在
+    // 时停的可见 tell：动画吃着全局 tick，所以冻结时必须整段跳过——否则一颗"停了"的音弹
+    // 仍在原地自转发光，玩家只能靠猜判断自己那记休止斩成没成。
+    const held = mesh.scale.x
+    const frz = proj(20, 'note', [0, 1, 0], [0, 0, 12], 40)
+    vis.sync([frz], 60)
+    expect(mesh.scale.x, '冻结期间不该换一档呼吸').toBe(held)
+    vis.sync([frz], 61)
+    expect(mesh.scale.x).toBe(held)
+    vis.sync([proj(20, 'note', [0, 1, 0], [0, 0, 12])], 62)
+    expect(mesh.scale.x, '松开之后呼吸要回来（不能把这一枚永远冻在池子里）').not.toBe(held)
   })
 
   it('未知 kind 走默认弹头而不抛异常', () => {

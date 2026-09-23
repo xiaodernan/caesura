@@ -32,6 +32,12 @@ export interface Projectile {
   hitsLeft: number
   /** 同一弹体对同一目标只结算一次 */
   hitIds: Set<string>
+  /**
+   * §7.2 休止斩镜像到弹体：还有多少 tick 不推进。逐弹体记账而不是挂一个"世界冻结窗口"——
+   * 冻结之后才射出来的弹体不该跟着冻结（它飞行的那段时间本来就全在停顿之后）。
+   * 与 `Enemy.frozenTicks` 同一条口径：同一件事只有一格账，不发明第二个时钟源。
+   */
+  frozenTicks: number
   sfxHit: string
   vfxHit: string
   shake: string
@@ -101,6 +107,7 @@ export class ProjectileSystem {
       parryable: l.parryable ?? true,
       hitsLeft: 1 + (l.pierce ?? 0),
       hitIds: new Set(),
+      frozenTicks: 0,
       sfxHit: l.sfxHit ?? 'hit_flesh',
       vfxHit: l.vfxHit ?? 'hit_ring',
       shake: l.shake ?? 'normal',
@@ -117,6 +124,10 @@ export class ProjectileSystem {
   update(dt: number, tick: number): void {
     for (const p of this.items) {
       if (p.dead) continue
+      // §7.2 休止斩：时间没过的话，路程和寿命也一样没过——所以这一行在积分**之前**，
+      // 而不是只把 dx/dy/dz 置零。它只停运动学，不停命中判定（判定在 CombatManager，
+      // 一记停在半空的弹体是个看得见的障碍物，撞上去照样挨打）。
+      if (p.frozenTicks > 0) { p.frozenTicks--; continue }
       if (p.gravity) p.vel.y -= p.gravity * dt
       const dx = p.vel.x * dt, dy = p.vel.y * dt, dz = p.vel.z * dt
       p.pos.x += dx; p.pos.y += dy; p.pos.z += dz

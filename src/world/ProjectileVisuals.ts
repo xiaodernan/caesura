@@ -62,7 +62,10 @@ export class ProjectileVisuals {
         this.dir.normalize()
         mesh.quaternion.setFromUnitVectors(this.zAxis, this.dir)
       }
-      if (p.kind !== 'spear') {
+      if (p.kind !== 'spear' && p.frozenTicks <= 0) {
+        // §7.2 时停的可见 tell：冻结的那几十 tick 里不更新呼吸与自旋，网格就停在被停住的那一帧上。
+        // 这些动画本来吃着**全局 tick**，不改这一句的话，一颗"停了"的音弹仍在原地自转——
+        // 玩家只能靠猜来判断自己那记时停成没成（与 ActorVisuals 那条同源：看不见的机制等于没有机制）。
         mesh.scale.setScalar(1 + Math.sin(tick * 0.35 + p.id) * 0.14)
         mesh.rotateZ(tick * 0.12) // 自旋在自身轴上，别用 rotation 覆盖掉朝向
       }
