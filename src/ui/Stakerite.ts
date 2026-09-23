@@ -65,6 +65,7 @@ const CSS = `
 #stakerite .foot { padding:10px 22px; border-top:1px solid rgba(201,180,88,.18);
   display:flex; gap:18px; font-size:12px; opacity:.62; letter-spacing:.06em; }
 #stakerite .empty { opacity:.45; font-size:13px; padding:10px 2px; }
+#stakerite .over { color:#a8695f; border:1px solid rgba(168,105,95,.6); padding:1px 6px; font-size:11px; letter-spacing:.08em; }
 #stakerite .tag { font-size:11px; padding:1px 6px; border:1px solid rgba(201,180,88,.45); color:#c9b458; }
 #stakerite .cmp { margin:2px 0 10px 12px; padding:8px 12px; border-left:2px solid rgba(201,180,88,.35);
   background:rgba(0,0,0,.18); }
@@ -342,6 +343,7 @@ export class Stakerite {
     const p = this.rpg.prog
     const need = p.xpToNext()
     const d = p.derive(this.rpg.eq.totals(this.rpg.inv).defense)
+    const m = this.rpg.mods() // 负重那一行要说「现在多重 / 上限多少 / 超没超」，这三件事都在 mods() 里
     const frac = need === null ? 1 : Math.min(1, p.xp / need)
     const rows = p.data.attrs.map((a) => {
       const v = p.attrs[a.key]
@@ -367,7 +369,8 @@ export class Stakerite {
         <span class="act"><button class="act" data-act="respec">洗点</button></span></div>
       <h2>派生</h2>
       <div class="row"><span class="name">生命 / 体力 / 架势</span><span class="num">${d.hpMax} / ${d.staminaMax} / ${d.poiseMax}</span></div>
-      <div class="row"><span class="name">DEF / 负重上限</span><span class="num">${d.defense} / ${d.loadMax} kg</span></div>
+      <div class="row"><span class="name">DEF / 负重</span><span class="num">${d.defense} / ${Math.round(m.weight * 10) / 10} · 上限 ${m.loadMax} kg</span>
+        <span class="note">${m.overloaded ? '<span class="over">超载 · 翻滚与疾跑禁用、体力回复 −40%</span>' : '未超载'}</span></div>
       <div class="row"><span class="name">暴击率 / 暴击倍率 / 过载上限</span><span class="num">${(d.critRate * 100).toFixed(1)}% / ${d.critMul.toFixed(2)}× / ${d.overdriveMax}</span></div>
       <h2>里程碑</h2>
       ${milestones}`

@@ -282,3 +282,29 @@ describe('§44 装备对比 Current vs New（需求 §44 / ui-ux §3.3）', () =
     expect(rt.eq.slots).toEqual(before)
   })
 })
+
+describe('KI-027：负重那一行要说实话', () => {
+  it('未超载时写「未超载」，超载时写清罚了什么——两个分支都取自同一份 mods()', async () => {
+    const { Stakerite } = await import('@/ui/Stakerite')
+    const rt = new RpgRuntime('origin_tuner')
+    const real = rt.mods.bind(rt)
+    const mk = (overloaded: boolean) => {
+      // 面板的合同是"只读 RpgRuntime 的公开方法"，所以喂一份假的 mods 就是合法的接缝
+      rt.mods = () => ({ ...real(), weight: overloaded ? 99 : real().weight, overloaded })
+      const p = new Stakerite(rt, { onApply: () => {}, notify: () => {}, onUse: () => {} })
+      p.show()
+      const s = (p as unknown as { root: FakeEl }).root.innerHTML
+      p.close()
+      return s
+    }
+    const light = mk(false)
+    expect(light, '当前重量与上限都要写出来（只给上限要玩家自己心算）')
+      .toContain(`负重</span><span class="num">${real().defense} / ${real().weight} · 上限 ${real().loadMax} kg</span>`)
+    expect(light).toContain('未超载')
+    expect(light).not.toContain('class="over"')
+    const heavy = mk(true)
+    expect(heavy, '超载要说出罚了什么，不是只涂个色').toContain('超载 · 翻滚与疾跑禁用、体力回复 −40%')
+    expect(heavy, '超载那一行报的重量就是 mods() 里那个数').toContain(`/ 99 · 上限 ${real().loadMax} kg`)
+    rt.mods = real
+  })
+})

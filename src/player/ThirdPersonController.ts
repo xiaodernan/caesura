@@ -54,6 +54,8 @@ export class PlayerController {
   dodgeJitterTicks = 0
   private dodgeCount = 0
   parryWhiffTicks = 0
+  /** 超载提示的冷却：连打翻滚键不该把同一句话刷屏，但一次都不说就是「按了没反应」 */
+  overloadWarnTicks = 0
   stunTicks = 0
   /**
    * §9「冻结攻守双方动画时间」——本作把它按在**挨打的那一方**身上（KI-017 第二步）：
@@ -281,6 +283,7 @@ export class PlayerController {
     } else if (this.action || this.roll) this.guardTicks = canAct ? this.guardTicks : 0
     if (this.parryTicksLeft > 0) this.parryTicksLeft--
     if (this.parryWhiffTicks > 0) this.parryWhiffTicks--
+    if (this.overloadWarnTicks > 0) this.overloadWarnTicks--
 
     // ---- heavy hold -> charge ----
     if (input.frame.held.has('attackHeavy') && this.action === null && !this.busy) {
@@ -310,8 +313,12 @@ export class PlayerController {
       this.grounded = false
       bus.emit('sound.source', { id: 'player', pos: { ...this.pos }, loudness: this.noise(0.2) })
     }
-    if (input.frame.edges.has('dodge') && !this.rpg.overloaded && (canAct || this.roll === null) && this.stats.stamina >= this.base.roll.stamina && !this.dead) {
-      this.startRoll(tick)
+    if (input.frame.edges.has('dodge')) {
+      // 按了却什么都不发生，是本作最不该有的体验（需求 §25「每次输入都要有可感知的反馈」）：
+      // 超载这条拒判此前彻底静默，玩家只知道"翻滚键坏了"。拒的同时说清是哪一维在拦、现在多重、
+      // 上限多少——数字全部来自 mods()，不是第二份常数。
+      if (!this.rpg.overloaded && (canAct || this.roll === null) && this.stats.stamina >= this.base.roll.stamina && !this.dead) this.startRoll(tick)
+      else if (this.rpg.overloaded) this.warnOverloaded()
     }
 
     // ---- action progression ----
@@ -527,6 +534,16 @@ export class PlayerController {
       return false
     }
     return true
+  }
+
+  /** 超载那句话要说全：拦了什么、罚了什么、现在多重。漏掉任何一项玩家都得自己去试 */
+  private warnOverloaded(): void {
+    if (this.overloadWarnTicks > 0) return
+    this.overloadWarnTicks = 120 // 2s：够读到，又不至于每按一次刷一条
+    const w = Math.round(this.rpg.weight * 10) / 10
+    bus.emit('ui.notify', {
+      text: `负重超载 ${w} / ${this.rpg.loadMax} kg · 翻滚与疾跑禁用、体力回复 −40%`, kind: 'info'
+    })
   }
 
   onHitLanded(): void {
