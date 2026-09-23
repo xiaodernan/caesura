@@ -7,7 +7,7 @@ import { registry } from '@/core/Registry'
 import { registerGameData, playerBase, regions } from '@/data'
 import type { ItemData, MovesetData, ProgressionData, WeaponData } from '@/data/schema'
 import { resolveDamage } from '@/combat/DamagePipeline'
-import { PlayerController } from '@/player/ThirdPersonController'
+import { CHARGE_TICKS, PlayerController } from '@/player/ThirdPersonController'
 import { AISystem } from '@/ai/AISystem'
 import type { Enemy } from '@/ai/Enemy'
 import { CombatManager } from '@/combat/CombatManager'
@@ -128,12 +128,28 @@ function makeWorld(originId = 'origin_tuner', seed: number | string = 0x51f3a2, 
    * 机制（正面钟甲 ×0.6、碎甲时机）主导，用死亡时间当尺子会把定价与机制混成一坨。
    * 输入侧仍只走两个合法入口：轻击按边沿，蓄力按长按 + 松开（`charging` 那条分支）。
    */
+  /**
+   * 站桩对砍一个**固定窗口**（KI-039 的第二条腿）：目标血量每 tick 顶满 ⇒ 它死不了，
+   * 于是量的是"这段时间里打掉多少"而不是"多少 tick 打完"——高甲目标的通关节奏被
+   * 机制（正面钟甲 ×0.6、碎甲时机）主导，用死亡时间当尺子会把定价与机制混成一坨。
+   *
+   * **输入是自适应的，不是按绝对 tick 排的**（KI-017 第二步的量具前置）。旧脚本写的是
+   * `if (i % 300 < 60) held.add('attackHeavy')`，也就是"窗口第 300 格起按住 60 格"。只要
+   * 这一记的收招被任何机制拉长（命中停顿、闷音、被顶一下），那 60 格就整个落进恢复里被吞掉——
+   * 实测同一把尺子下蓄力次数 3→1、力/律节奏比从 1.40 掉到 0.87，量的就不再是节奏而是脚本的相位。
+   * 现在两张腿共用同一张**尝试表**（每 CHARGE_EVERY 格起一次蓄力），按住直到真的攒满放出蓄力、
+   * 或者这一轮确实没机会（超时作废）。于是"收招被拉长"只推迟下一次出手，不会让它消失。
+   */
+  const CHARGE_EVERY = 300
+  const CHARGE_GIVEUP = CHARGE_TICKS * 3
   function brawl(e: Enemy, ticks: number): { damage: number; hits: number; charges: number; armorBrokenAt: number | null; perTick: number } {
     const tick0 = time.tick
     const from = hits.length
     let armorBrokenAt: number | null = null
     let charges = 0
     let wasCharging = false
+    let nextAttempt = 0
+    let holding = -1
     for (let i = 0; i < ticks && e.alive; i++) {
       player.stats.hp = player.stats.hpMax
       e.stats.hp = e.stats.hpMax // 死不了的量具：击倒/退避都不会提前结束窗口
@@ -143,9 +159,15 @@ function makeWorld(originId = 'origin_tuner', seed: number | string = 0x51f3a2, 
       player.yaw = a
       player.camYawRef = Math.PI + a
       frame.held.clear()
-      if (i % 300 < 60) frame.held.add('attackHeavy') // 每 300 tick 蓄一次力（CHARGE_TICKS=48 留 12 tick 余量）
-      else if (player.action === null && player.stats.stamina > 12 && d < 2.4) frame.edges.add('attackLight')
+      const free = player.action === null && player.roll === null && player.stats.stamina > 12 && d < 2.4
+      const charged = player.charging && player.chargeTicks >= CHARGE_TICKS
+      if (holding < 0 && i >= nextAttempt) { holding = i; nextAttempt = i + CHARGE_EVERY }
+      if (holding >= 0) {
+        if (charged) { /* 这一 tick 不喂 held ⇒ 松开就是蓄力那一记 */ }
+        else frame.held.add('attackHeavy')
+      } else if (free) frame.edges.add('attackLight')
       tick()
+      if (holding >= 0 && (charged || (i - holding >= CHARGE_GIVEUP && !player.charging))) holding = -1
       const charging = player.action?.key === 'charged'
       if (charging && !wasCharging) charges++
       wasCharging = charging
@@ -389,12 +411,18 @@ describe('G5② 力 / 律 Build 对照：同一颗种子、同一份输入脚本
      * "武器贵不贵"和"机制让不让"混成一坨。所以这里固定 1600 tick 窗口、目标血量顶满，
      * 量**这段时间真正打进去多少**，外加"甲在第几 tick 碎"。
      *
-     * 实测（同一颗种子、同一份输入脚本）：
-     *   力 = 626 伤害 / 21 命中 / 3 次蓄力 / 第 680 tick 碎甲 ⇒ 0.391 伤害每 tick
-     *   律 = 447 伤害 / 35 命中 / 1 次蓄力 / 整窗没碎甲        ⇒ 0.279 伤害每 tick
-     * 比是 **1.40**（无甲驼鼓上同一对建卡是 1.15）⇒ 高甲把重击的优势又放大了一档，
+     * 实测（同一颗种子、同一份自适应输入；KI-017 第二步把量具重造之后重测的一版）：
+     *   力 = 771 伤害 / 20 命中 / 6 次蓄力 / 第 393 tick 碎甲 ⇒ 0.482 伤害每 tick
+     *   律 = 533 伤害 / 32 命中 / 6 次蓄力 / 第 995 tick 碎甲 ⇒ 0.333 伤害每 tick
+     * 比是 **1.45**（无甲驼鼓上同一对建卡是 1.15）⇒ 高甲把重击的优势又放大了一档，
      * 而放大来自机制而不是数值偏袒：轻击一记都不带震裂层数，蓄力那记大剑带 3 层，
-     * 五层就碎甲；枪的蓄力只有 2 层，而且它起手短、被顶一下就断（出身腔体 7 对 3 也在这里还债）。
+     * 五层就碎甲；枪的蓄力只有 2 层，所以它要攒到 995 才碎得开（出身腔体 7 对 3 也在这里还债）。
+     *
+     * **这一版数字与上一版不同，而且上一版是量具的错**：旧脚本按绝对 tick 排按键（`i % 300 < 60` 蓄力），
+     * 于是"谁的收招被拉长，谁的按键就被吞掉"——同一份脚本在力身上产生 3 次蓄力、在律身上只剩 1 次，
+     * 律甚至整窗没碎甲。改成"每 300 格起一次蓄力尝试、按住直到真的攒满"之后，两条腿各拿 6 次蓄力，
+     * 比值从 1.40 抬到 1.45，而**律现在也碎甲了**（晚 600 格）。"重击在甲胄上占先"这条结论没变，
+     * 变的是它的程度：占先是"早 600 格"而不是"只有我能碎"。
      * 所以 KI-039 那条 [0.75, 1.35] 的节奏带**只适用于无甲目标**；两边一起看才是完整口径：
      * 重击该赢的地方（破甲、站得住）赢，不该赢的地方（单纯杀得快）不赢。
      */

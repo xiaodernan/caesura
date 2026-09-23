@@ -11,7 +11,8 @@ import type { HitTarget } from '@/combat/HitShapes'
 import { defaultMods, type PlayerMods } from '@/rpg/Runtime'
 import type { SkillAction, SkillCast } from '@/rpg/Movements'
 
-const CHARGE_TICKS = 48
+/** 蓄力攒满要按满这几 tick；导出是为了量具不再抄第二份常数（§55） */
+export const CHARGE_TICKS = 48
 /** 台阶容差：与 world/Surface 的 floorAt tolerance 一致，超过就不算「踩上台阶」 */
 const STEP_UP = 0.5
 
