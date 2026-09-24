@@ -339,12 +339,15 @@ function validateWeapons(movesetIds) {
 }
 
 // ---- progression.json ----
+/** 出身被动的类型白名单（KI-031③）：加一种 kind = 承诺带来一个消费者，反向探针守着这句话 */
+const ORIGIN_PASSIVE_KINDS = ['lootStackBonus']
 function validateProgression() {
   const file = 'progression.json'
   const d = data[file]
   const rarityIds = new Set()
   const attrKeys = new Set()
-  if (!isObj(d)) { report.error(file, file, '顶层必须是对象'); return { rarityIds, attrKeys } }
+  const originPassives = []
+  if (!isObj(d)) { report.error(file, file, '顶层必须是对象'); return { rarityIds, attrKeys, originPassives } }
   report.num(file, 'maxRank', d.maxRank, { min: 2, int: true, name: 'maxRank' })
   // 六音级属性必须一个不多一个不少（漏一维就会有一个属性永远无法分配）
   if (!isArr(d.attrs) || d.attrs.length !== 6) report.error(file, 'attrs', '必须恰好 6 条六音级属性')
@@ -496,10 +499,23 @@ function validateProgression() {
       else if (!weaponIds.has(o.weaponId)) report.error(file, `${w}.weaponId`, `悬空引用：'${o.weaponId}' 不在 weapons.json`)
       if (o.gearIds !== undefined) strArray(file, `${w}.gearIds`, o.gearIds, { nonEmpty: true })
       if (!isStr(o.blurb)) report.error(file, `${w}.blurb`, '必填')
+      // §2.2 出身被动（KI-031③）：kind 白名单——每加一种 kind 都必须同时带来一个消费者；
+      // itemId 的悬空与"没人掉它"两问要等 items/loot 跑完，先收集、稍后各答一次。
+      if (o.passive !== undefined) {
+        const pw = `${w}.passive`
+        if (!isObj(o.passive)) report.error(file, pw, '必须是对象')
+        else {
+          if (!ORIGIN_PASSIVE_KINDS.includes(o.passive.kind)) report.error(file, `${pw}.kind`, `不认的被动类型：'${o.passive.kind}'（白名单：${ORIGIN_PASSIVE_KINDS.join(' / ')}）`)
+          if (isStr(o.passive.itemId)) originPassives.push({ w: `${w}.passive`, itemId: o.passive.itemId })
+          else report.error(file, `${pw}.itemId`, '必填（非空字符串）')
+          report.num(file, `${pw}.mul`, o.passive.mul, { min: 1, name: 'mul' })
+          if (!isStr(o.passive.label)) report.error(file, `${pw}.label`, '必填——被动是给玩家看的一句话，卡面要显示它')
+        }
+      }
     })
     if (totals.size > 1) report.error(file, 'origins', `各出身六维合计必须一致，实际出现：${[...totals].join(' / ')}`)
   }
-  return { rarityIds, attrKeys, affixDefs }
+  return { rarityIds, attrKeys, affixDefs, originPassives }
 }
 
 // ---- statuses.json ----
@@ -1617,9 +1633,22 @@ validateReactions()
 const movesetIds = validateMovesets()
 const weaponIds = validateWeapons(movesetIds)
 // progression 要先跑：稀有度是 items/loot 的跨文件依据；items 要先跑：掉落表引用物品 id
-const { rarityIds, affixDefs } = validateProgression()
+const { rarityIds, affixDefs, originPassives } = validateProgression()
 const itemIds = validateItems(weaponIds, rarityIds, affixDefs)
 const lootIds = validateLoot(itemIds, rarityIds)
+// §2.2 出身被动双向对账（KI-031③）：itemId 必须活在 items.json，也必须真被某张掉落表掉出——
+// 后者是"被动承诺加成于一个无人掉落的东西"的空头支票门，等 loot 跑完才量得到。
+{
+  const lootItemIds = new Set()
+  for (const t of data['loot.json'] ?? []) {
+    if (!isObj(t)) continue
+    for (const r of Array.isArray(t.rolls) ? t.rolls : []) if (isStr(r?.item)) lootItemIds.add(r.item)
+  }
+  for (const p of originPassives) {
+    if (!itemIds.has(p.itemId)) report.error('progression.json', `${p.w}.itemId`, `悬空引用：'${p.itemId}' 不在 items.json`)
+    if (!lootItemIds.has(p.itemId)) report.error('progression.json', `${p.w}.itemId`, `'${p.itemId}' 没有任何掉落表掉它——被动在给不存在的产出加成`)
+  }
+}
 const enemyIds = validateEnemies(lootIds)
 validatePlayer()
 const regionIds = validateRegions(enemyIds, lootIds)

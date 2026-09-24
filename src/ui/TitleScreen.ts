@@ -19,6 +19,8 @@ export interface TitleCard {
   weaponName: string
   /** 六维 [{基音,6},…]——label 也来自 attrs 表，不是第二份常数 */
   attrs: { label: string; value: number }[]
+  /** §2.2 出身被动那一句话（无被动的出身为 null；文案来自表，不在 UI 里另抄） */
+  passive: string | null
 }
 
 /** 出身卡面：顺序就是 progression.json origins[] 的顺序（表序即 UI 序，§55） */
@@ -35,7 +37,8 @@ export function titleCards(): TitleCard[] {
       name: o.displayName,
       blurb: o.blurb ?? '',
       weaponName: gearItem?.displayName ?? o.weaponId,
-      attrs: ATTR_KEYS.map((k) => ({ label: attrLabel(k), value: o.attrs[k] }))
+      attrs: ATTR_KEYS.map((k) => ({ label: attrLabel(k), value: o.attrs[k] })),
+      passive: o.passive?.label ?? null
     }
   })
 }
@@ -51,6 +54,7 @@ const CSS = `
 #title .card .nm{font-size:2.3vh;color:#ffb86b}
 #title .card .wp{font-size:1.7vh;color:#c9b458;margin:.6vh 0}
 #title .card .bl{font-size:1.45vh;color:#8a7f6d;min-height:8vh;line-height:1.5}
+#title .card .ps{font-size:1.45vh;color:#d0a76a;margin:.3vh 0}
 #title .card .at{font-size:1.5vh;color:#b7ab95;text-align:left;display:inline-block}
 #title .acts{display:flex;gap:2vw;font-size:2vh}
 #title .act{padding:.8vh 2.4vh;border:1px solid #3d372e;cursor:pointer;color:#b7ab95}
@@ -138,6 +142,7 @@ export class TitleScreen {
         <div class="nm">${c.name}</div>
         <div class="wp">${c.weaponName}</div>
         <div class="bl">${c.blurb}</div>
+        ${c.passive ? `<div class="ps">被动 · ${c.passive}</div>` : ''}
         <div class="at">${c.attrs.map((a) => `${a.label} ${a.value}`).join('<br>')}</div>
       </div>`).join('')
     const cont = hasSave

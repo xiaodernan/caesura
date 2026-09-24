@@ -43,7 +43,8 @@
    "attrs": { "str": 4, "dex": 6, "ton": 6, "vig": 4, "ovr": 4, "fis": 4 },
    "weaponId": "wp_tuning_sword",
    "gearIds": ["ar_mutewrap_helm", "ar_scavenger_cuirass", "ar_tuner_gloves", "ar_silent_boots"],
-   "blurb": "哑带上长大的拾晶人。耳朵比谁都灵，口袋也比谁都鼓（拾取音色石 +10%）。"
+   "blurb": "哑带上长大的拾晶人。耳朵比谁都灵，口袋也比谁都鼓（拾取音色石 +10%）。",
+   "passive": { "kind": "lootStackBonus", "itemId": "it_timbite", "mul": 1.1, "label": "拾取音色石 +10%" }
   },
   {
    "id": "origin_choir",

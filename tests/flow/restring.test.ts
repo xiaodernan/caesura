@@ -81,6 +81,7 @@ describe('titleCards：卡面就是表（§55——改表立刻反映到脸上�
         .toBe(allGearItems().find((it) => it.gear?.weaponId === o.weaponId)!.displayName)
       expect(c.attrs.map((a) => a.value), '六维逐格对上').toEqual(ATTR_KEYS.map((k) => o.attrs[k]))
       expect(c.attrs.map((a) => a.label), 'label 也来自 attrs 表').toEqual(d.attrs.map((a) => a.displayName))
+      expect(c.passive, '被动一句话也从表读（§2.2/KI-031③），无被动就是 null 而不是编一句').toBe(o.passive?.label ?? null)
     }
   })
 

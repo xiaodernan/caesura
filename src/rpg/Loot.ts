@@ -2,7 +2,7 @@ import { registry } from '@/core/Registry'
 import type { EnemyData, ItemData, LootRoll, LootTableData, ProgressionData } from '@/data/schema'
 import type { Inventory } from './Inventory'
 import { itemOf, isGear } from './Inventory'
-import type { Progression } from './Progression'
+import { originOf, type Progression } from './Progression'
 
 /**
  * 掉落（progression.md §9）。掷骰全部走 `Inventory` 那颗种子化 RNG，而**抽到第几笔跟着存档走**
@@ -90,7 +90,7 @@ export class LootDirector {
       return [{ type: 'gear', id: g.uid, count: 1, name: item.displayName, ...(pity ? { pity: true } : {}) }]
     }
     if (r.item) {
-      const n = r.count ? this.rng.int(r.count[0], r.count[1]) : 1
+      const n = this.withOriginPassive(r.item, r.count ? this.rng.int(r.count[0], r.count[1]) : 1)
       const got = this.inv.add(r.item, n)
       if (got <= 0) return []
       return [{ type: 'item', id: r.item, count: got, name: itemOf(r.item).displayName }]
@@ -139,6 +139,21 @@ export class LootDirector {
     const all = allGearItems().filter((it) => it.gear?.rarity === rarity)
     if (!all.length) return null
     return this.rng.pick(all)
+  }
+
+  /**
+   * §2.2 出身被动（目前白名单里只有 lootStackBonus 一种）。**期望值取整**：小数部分掷给
+   * 那颗种子化 RNG——3 件的 +10% 若走 `Math.round(3×1.1)=3`，"+10%" 就成了 "+0%"；
+   * 掷小数让长期期望真的是 mul×，而且这一掷跟着掉落序列入档（§10 可复现 QA 不破）。
+   * 不吃数的件**不消耗随机数**：对照腿（别的出身）的 RNG 序列因此保持同轨。
+   */
+  private withOriginPassive(itemId: string, n: number): number {
+    const p = originOf(this.prog.originId).passive
+    if (!p || p.itemId !== itemId) return n
+    const v = n * p.mul
+    const whole = Math.floor(v)
+    if (v === whole) return whole // 整数乘数不掷小数——对照腿的 RNG 序列保持同轨
+    return whole + (this.rng.float() < v - whole ? 1 : 0)
   }
 
   snapshot(): { firstKilled: string[]; gearStreak: number; rollStreaks: Record<string, number> } {

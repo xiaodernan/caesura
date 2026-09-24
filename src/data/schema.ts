@@ -415,6 +415,20 @@ export interface AttrMeta {
 }
 
 /** 出身（定弦）。六维合计固定，只改分布与初始装备（progression.md §2.2）。 */
+/**
+ * 出身被动（§2.2 玩法签名里唯一给了数字的那类）。kind 白名单由 validator 守住——
+ * 每加一种 kind，就必须同时有一个消费者，否则它只是句写在表上的谎话。
+ */
+export interface OriginPassive {
+  kind: 'lootStackBonus'
+  /** 吃加成的堆叠件 id（validator 双向对账：既要在 items.json 里，也要真有人掉它） */
+  itemId: string
+  /** 数量乘数，>=1（+10% 就是 1.1） */
+  mul: number
+  /** 卡面/播报给人看的那一句 */
+  label: string
+}
+
 export interface OriginData {
   id: string
   nameKey: string
@@ -424,6 +438,8 @@ export interface OriginData {
   /** 出身自带的一件护甲/音徽（可为空） */
   gearIds?: string[]
   blurb: string
+  /** §2.2 签名里可量化的那一半；其余四签名的表达就是六维分布与初始装备本身，不硬造数字 */
+  passive?: OriginPassive
 }
 
 /** 派生值公式的系数（progression.md §2.4）。全部在数据里，代码只做乘加。 */
