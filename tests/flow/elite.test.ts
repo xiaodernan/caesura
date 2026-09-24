@@ -10,7 +10,7 @@ import type { EnemyData, MovesetData, WeaponData } from '@/data/schema'
 import { PlayerController } from '@/player/ThirdPersonController'
 import { AISystem } from '@/ai/AISystem'
 import { CombatManager } from '@/combat/CombatManager'
-import type { Enemy } from '@/ai/Enemy'
+import { newAttack, type Enemy } from '@/ai/Enemy'
 
 /**
  * 悬钟骑士（需求 §59 自动化玩法流 / docs/combat.md §14.7 野外精英）。
@@ -253,7 +253,7 @@ describe('机制 b「弹反第二段 = 钟体共振」', () => {
   function parryItsStrike(w: W, e: Enemy, id: string): void {
     const spec = e.data.attacks.find((a) => a.id === id)!
     standAt(w, e, 1.6, 0)
-    e.attack = { spec, tick: spec.frames.startup - 6, hitDone: false, shots: 0, lungeApplied: 0 }
+    e.attack = newAttack(spec, spec.frames.startup - 6)
     for (let i = 0; i < 20; i++) {
       const a = e.attack
       if (a && a.tick === a.spec.frames.startup - 2) w.player.parryTicksLeft = w.player.base.parry.activeTicks

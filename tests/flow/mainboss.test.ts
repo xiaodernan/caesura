@@ -9,7 +9,7 @@ import type { EnemyData, MovesetData, WeaponData } from '@/data/schema'
 import { PlayerController } from '@/player/ThirdPersonController'
 import { AISystem } from '@/ai/AISystem'
 import { CombatManager } from '@/combat/CombatManager'
-import type { Enemy } from '@/ai/Enemy'
+import { newAttack, type Enemy } from '@/ai/Enemy'
 
 /**
  * Main Boss 恩希尔·万籁（docs/combat.md §15.2；需求 §23）。本文件只覆盖 P1「曲目学习期」
@@ -190,7 +190,7 @@ describe('断音柱：§15.2 写的「唯一解之一」必须真的成立', () 
   }
   const forceSweep = (e: Enemy): void => {
     const spec = e.data.attacks.find((a) => a.id === 'barsweep')!
-    e.attack = { spec, tick: spec.frames.startup, hitDone: false, shots: 0, lungeApplied: 0 }
+    e.attack = newAttack(spec, spec.frames.startup)
   }
 
   it('玩家贴柱、他在柱外 ⇒ 横扫被吃掉；跨出半步 ⇒ 同一招收势帧就见血', () => {
@@ -233,7 +233,7 @@ describe('断音柱：§15.2 写的「唯一解之一」必须真的成立', () 
     e.pos.z = pillar.z - 20
     e.yaw = Math.atan2(pillar.x - e.pos.x, pillar.z - e.pos.z)
     const spec = e.data.attacks.find((a) => a.id === 'notes3')!
-    e.attack = { spec, tick: spec.frames.startup - 1, hitDone: false, shots: 0, lungeApplied: 0 }
+    e.attack = newAttack(spec, spec.frames.startup - 1)
     w.player.stats.hp = 500
     let launched = 0
     let gone = 0
@@ -257,7 +257,7 @@ describe('全奏 Tutti：三小节的可视读条 + 它的两种解', () => {
     engage(w, e)
     standAt(w, e, { x: 0, y: 152, z: 0 }) // 同层 + 面对面：弹反要判朝向（§5.3）
     const spec = e.data.attacks.find((a) => a.id === 'tutti')!
-    e.attack = { spec, tick: spec.frames.startup - 1, hitDone: false, shots: 0, lungeApplied: 0 }
+    e.attack = newAttack(spec, spec.frames.startup - 1)
     w.player.stats.hp = 2000
     w.player.stats.muteTicksLeft = 0
     return { w, e, spec }
@@ -274,7 +274,7 @@ describe('全奏 Tutti：三小节的可视读条 + 它的两种解', () => {
 
   it('弹反其起手拍 = 大师解：他挨 180 tick 失衡，玩家零伤', () => {
     const { w, e, spec } = start()
-    e.attack = { spec, tick: spec.frames.startup - 3, hitDone: false, shots: 0, lungeApplied: 0 }
+    e.attack = newAttack(spec, spec.frames.startup - 3)
     for (let i = 0; i < 12; i++) {
       const a = e.attack
       if (a && a.tick === a.spec.frames.startup - 1) w.player.parryTicksLeft = w.player.base.parry.activeTicks
@@ -293,7 +293,7 @@ describe('全奏 Tutti：三小节的可视读条 + 它的两种解', () => {
     e.pos.x = pillar.x
     e.pos.z = pillar.z - 6 // 他在柱外起手
     standAt(w, e, { x: pillar.x, y: pillar.y, z: pillar.z })
-    e.attack = { spec, tick: spec.frames.startup - 1, hitDone: false, shots: 0, lungeApplied: 0 }
+    e.attack = newAttack(spec, spec.frames.startup - 1)
     w.tick(3)
     expect(w.player.stats.hp, '玩家没出柱子 ⇒ 55 伤没落到他头上').toBe(2000)
     w.off()
@@ -320,7 +320,7 @@ describe('敌人的前摇音有发射方（audio.md §7.2：本作核心反馈�
     standAt(w, e, { x: 0, y: 152, z: 0 })
     const spec = e.data.attacks.find((a) => a.id === 'barsweep')!
     const before = w.sfx.length
-    e.attack = { spec, tick: -1, hitDone: false, shots: 0, lungeApplied: 0 }
+    e.attack = newAttack(spec, -1)
     w.tick(6)
     expect(w.sfx.slice(before).filter((k) => k === 'drum_sweep').length).toBe(1)
     w.off()

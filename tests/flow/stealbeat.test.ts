@@ -9,7 +9,7 @@ import type { MovesetData, WeaponData } from '@/data/schema'
 import { PlayerController } from '@/player/ThirdPersonController'
 import { AISystem } from '@/ai/AISystem'
 import { CombatManager } from '@/combat/CombatManager'
-import type { Enemy } from '@/ai/Enemy'
+import { newAttack, type Enemy } from '@/ai/Enemy'
 
 /**
  * §15.2 P2「夺拍」+ §24「每 Boss 恰 2 或 3 阶段」。
@@ -154,7 +154,7 @@ describe('P2 上场：他把全局网格拿走了', () => {
     const e = hersilP2(w)
     const spec = e.data.attacks.find((a) => a.id === 'noBeatLunge')!
     expect(spec.parryable, '表里就写着不可弹').toBe(false)
-    e.attack = { spec, tick: spec.frames.startup - 1, hitDone: false, shots: 0, lungeApplied: 0 }
+    e.attack = newAttack(spec, spec.frames.startup - 1)
     w.face(e, 2.4)
     w.player.stats.hp = 3000
     w.player.parryTicksLeft = w.player.base.parry.activeTicks
@@ -184,7 +184,7 @@ describe('P2 上场：他把全局网格拿走了', () => {
     const w = makeWorld()
     const e = hersilP2(w)
     const spec = e.data.attacks.find((a) => a.id === 'noBeatLunge')!
-    e.attack = { spec, tick: spec.frames.activeStart, hitDone: true, shots: 0, lungeApplied: 0 }
+    e.attack = { ...newAttack(spec, spec.frames.activeStart), hitDone: true }
     const order: string[] = []
     let prev: Enemy['attack'] = null
     w.tick(500, () => {
@@ -249,7 +249,7 @@ describe('换气拍：唯一能把网格抢回来的 0.35s', () => {
     w.face(e, 2.4)
     for (let i = 0; i < 120; i++) {
       // 把他钉在「非换气」的读条里：否则等着等着真的等到一次换气，测的就不是这条判据了
-      e.attack = { spec: other, tick: 4, hitDone: false, shots: 0, lungeApplied: 0 }
+      e.attack = newAttack(other, 4)
       w.frame.edges.add('parry')
       w.tick(1)
     }
@@ -268,7 +268,7 @@ describe('换气拍：唯一能把网格抢回来的 0.35s', () => {
     // 手动模拟回血到 60% 以上：阶段单调 ⇒ 不会回 P1，但跳阶那一瞬的重置必须发生
     e.stats.heal(Math.round(e.stats.hpMax * 0.2))
     e.bossPhase = 0
-    e.attack = { spec, tick: spec.frames.startup - 1, hitDone: false, shots: 0, lungeApplied: 0 }
+    e.attack = newAttack(spec, spec.frames.startup - 1)
     w.tick(1)
     e.stats.damage(Math.round(e.stats.hpMax * 0.6))
     w.tick(2)

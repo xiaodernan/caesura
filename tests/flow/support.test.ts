@@ -9,7 +9,7 @@ import type { EnemyData, MovesetData, WeaponData } from '@/data/schema'
 import { PlayerController } from '@/player/ThirdPersonController'
 import { AISystem } from '@/ai/AISystem'
 import { CombatManager } from '@/combat/CombatManager'
-import type { Enemy } from '@/ai/Enemy'
+import { newAttack, type Enemy } from '@/ai/Enemy'
 
 /**
  * 支援位流程测试（需求 §59 / combat.md §14.6 叠唱 Refrein）。
@@ -65,7 +65,7 @@ function refrein(w: ReturnType<typeof makeWorld>, x = 0, z = -16): Enemy {
 /** 绕开随机选招：直接把敌人摆进某招的某一帧 */
 function force(e: Enemy, id: string, tickIn = 0): void {
   const spec = e.data.attacks.find((a) => a.id === id)!
-  e.attack = { spec, tick: tickIn, hitDone: false, shots: 0, lungeApplied: 0 }
+  e.attack = newAttack(spec, tickIn)
   e.enter('combat')
 }
 

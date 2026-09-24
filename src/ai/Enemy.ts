@@ -7,10 +7,28 @@ import type { Vec3 } from '@/combat/EntityStats'
 import type { HitTarget } from '@/combat/HitShapes'
 import type { RhythmClock } from '@/core/RhythmClock'
 import type { PlayerController } from '@/player/ThirdPersonController'
+import { advanceActionFrames, applyActionStop, type ActionStop } from '@/combat/ActionFrames'
 
 export type AIState =
   | 'idle' | 'patrol' | 'investigate' | 'alert' | 'chase' | 'combat'
   | 'retreat' | 'search' | 'callAlly' | 'recover' | 'dead'
+
+/**
+ * 一次出手的运行时状态。§9 攻方那一半要在它身上记两格（`ActionStop`），所以构造点收成一处
+ * （五处字面量各自抄一遍 `stopTicks: 0` 是迟早会漏的那类代码）。
+ */
+export interface AttackFrame extends ActionStop {
+  spec: AttackSpec
+  hitDone: boolean
+  shots: number
+  lungeApplied: number
+  /** `noise` = 这一招的 `sound.source` 已经报过了（见 `advanceAttackFrames`） */
+  noise?: boolean
+}
+
+export const newAttack = (spec: AttackSpec, tick: number, noise?: boolean): AttackFrame => ({
+  spec, tick, hitDone: false, shots: 0, lungeApplied: 0, noise, stopTicks: 0, stopDebt: 0
+})
 
 export interface PerceptionEvent { pos: Vec3; loudness: number; moveNoise: number }
 
@@ -35,8 +53,7 @@ export class Enemy {
   home: Vec3
   lastKnown: Vec3
   investigateTick = 0
-  /** `noise` = 这一招的 `sound.source` 已经报过了（见 `advanceAttackFrames`） */
-  attack: { spec: AttackSpec; tick: number; hitDone: boolean; shots: number; lungeApplied: number; noise?: boolean } | null = null
+  attack: AttackFrame | null = null
   cooldowns = new Map<string, number>()
   stunTicks = 0
   /**
@@ -44,11 +61,11 @@ export class Enemy {
    * 几 tick（与相机的停顿同一个 `frames.hitStopMs` 派生，不写第二份时长）。与下面的 `frozenTicks`
    * 分格：那是"这只生物的节拍被拿走了几十 tick"（整个 update 短路），这是"这一记接触的三到五格"。
    *
-   * **攻方那一半（敌方招式帧）刻意不做，而且是量出来的**：给 `attack.tick` 挂过一格同样的账，收势帧
-   * 就会从它声明的拍位上被推开一整个停顿长度——实测恩希尔 173ms、奥斯塔拉 133ms（§2.1 的容差是
-   * 50ms），幽灵八则出现两 tick"从隐形段里出手"。这不是容差调参能解决的问题：停顿要么吃逻辑时间，
-   * 要么不吃，而**敌人的逻辑时间就是那张网格**。要让这一半也成立，需要的是"停顿之后回拍重新量化"
-   * 这一件新机制（会改 AI 的排招方式），登记待裁决而不是顺手做掉。
+   * **攻方那一半（她的招式帧）也在，但一格都不落在判定窗之内**（KI-017 第三步）：给 `attack.tick`
+   * 在窗内挂过一格同样的账，收势帧仍然对得上拍，被推开的却是**窗尾**——实测恩希尔迟 89.86ms、
+   * 奥斯塔拉迟 83.33ms（§2.1 的容差是 50ms），因为按停几格就把可命中段在世界时间里拉长几格。
+   * 现行做法是"窗内只记账、窗尾之后兑现、收势之前每 tick 补一帧还债"，判据与配额全在
+   * `combat/ActionFrames.ts`；`stunStopTicks` 与它共用同一个时长来源，走两条独立的账。
    */
   stunStopTicks = 0
   /**
@@ -223,6 +240,17 @@ export class Enemy {
   markShotFired(): void { if (this.attack) this.attack.shots++ }
 
   /**
+   * §9 攻方那一半（KI-017 第三步）：把**这一记正在出的招**的招式帧按住几格，之后每 tick 补一帧
+   * 还回去——所以收势仍然落在它与不按停时**同一个 tick** 上，§2.1 的拍位不动。
+   * `src` 是"落下来的这一记"所属的那个出手对象：身份不符就不按（弹体早就离手了，按它等于抢别人的时间）。
+   * 能按几格全在 `applyActionStop` 那四条判据里（含"带连发拍位的弹道招式不按"、"一帧都不落在窗内"）。
+   */
+  freezeAction(ms: number, src: object): number {
+    if (!this.attack || this.attack !== src) return 0
+    return applyActionStop(this.attack, this.attack.spec.frames, ms)
+  }
+
+  /**
    * §14.6「定调」攻速加成：帧表全是整数 tick 且 telegraph/出手点用 `===` 判定，
    * 所以不能把 tick 变成浮点——累计小数部分，攒满 1 就这一 tick 多走一帧（1.15× ≈ 每 7 帧多 1 帧）。
    *
@@ -232,21 +260,26 @@ export class Enemy {
    * 所以这个条件天然只成立一次，不需要额外的"已发声"标记。
    * 弹道招式不在这里发声——发射那一 tick 由 `CombatManager` 报，两处理齐会双倍响度。
    */
-  private advanceAttackFrames(mul: number): void {
-    if (!this.attack) return
+  private advanceAttackFrames(mul: number): number {
+    if (!this.attack) return 0
+    const f = this.attack.spec.frames
     const prev = this.attack.tick
-    this.attack.tick++
+    // §9 攻方那一半：这一 tick 走几帧由停顿账本给（0＝按住，2＝回拍补帧）。
+    // 按住的那一 tick 连「定调」的加速也不走——那几格是时间在停，不是在变慢。
+    const base = advanceActionFrames(this.attack, f)
+    if (base === 0) return 0
+    this.attack.tick += base
     const extra = mul - 1
     if (extra > 0) {
       this.speedAcc += extra
       while (this.speedAcc >= 1) { this.speedAcc -= 1; this.attack.tick++ }
     }
-    const f = this.attack.spec.frames
-    if (f.projectile) return // 发射那一 tick 由 CombatManager 报，两处理齐会双倍响度
+    if (f.projectile) return base // 发射那一 tick 由 CombatManager 报，两处理齐会双倍响度
     if (prev < f.activeStart && this.attack.tick >= f.activeStart && !this.attack.noise) {
       this.attack.noise = true
       bus.emit('sound.source', { id: this.id, pos: { ...this.pos }, loudness: (f.loudness ?? 3) / 10 })
     }
+    return base
   }
 
   enter(s: AIState): void {
@@ -337,7 +370,7 @@ export class Enemy {
     this.lastKnown = { ...src.pos }
     this.alertness = 100
     // 她不在拍上 ⇒ 不等量化，落点即起手
-    this.attack = { spec, tick: 0, hitDone: false, shots: 0, lungeApplied: 0 }
+    this.attack = newAttack(spec, 0)
     this.enter('combat')
     bus.emit('vfx.request', { key: 'spike_chord', pos: { ...src.pos }, scale: 1.5 })
     bus.emit('audio.sfx', { key: 'boss_roar', pos: { ...src.pos }, gain: 0.5 })
@@ -549,13 +582,11 @@ export class Enemy {
 
   private beginCallAlly(tick: number): void {
     const c = this.data.ai.callAlly!
-    this.attack = {
-      spec: {
-        id: 'callAlly', parryable: false, beat: [1, 2, 3, 4],
-        frames: { startup: c.broadcastTicks, activeStart: c.broadcastTicks, activeEnd: c.broadcastTicks + 6, recovery: c.broadcastTicks + 24, damage: 0, stamina: 0, poise: 0, hitStopMs: 0, loudness: 9 }
-      },
-      tick: 0, hitDone: false, shots: 0, lungeApplied: 0
+    const spec: AttackSpec = {
+      id: 'callAlly', parryable: false, beat: [1, 2, 3, 4],
+      frames: { startup: c.broadcastTicks, activeStart: c.broadcastTicks, activeEnd: c.broadcastTicks + 6, recovery: c.broadcastTicks + 24, damage: 0, stamina: 0, poise: 0, hitStopMs: 0, loudness: 9 }
     }
+    this.attack = newAttack(spec, 0)
     this.cooldowns.set('callAlly', tick + 600)
     this.enterCallAlly()
     const bc = () => {
@@ -588,7 +619,7 @@ export class Enemy {
     const lead = spec.frames.activeStart
     // `noise: true` —— 这一招的动静由下面读条完成那一刻报（它本来就是全场景最响的一声），
     // active 帧那条通用出口不再重复报一次，否则同一 tick 会有两声。
-    this.attack = { spec, tick: lead - rhythm.ticksUntilBeatOn(spec.beat, lead), hitDone: false, shots: 0, lungeApplied: 0, noise: true }
+    this.attack = newAttack(spec, lead - rhythm.ticksUntilBeatOn(spec.beat, lead), true)
     const label = t.label
     this.pendingBroadcast = () => {
       const before = this.stats.hp
@@ -705,7 +736,7 @@ export class Enemy {
       const key = `${rhythm.info().bar}:${rhythm.info().beatInBar}:${spec.beat[0]}`
       if (slotTaken(key)) return
     }
-    this.attack = { spec, tick: lead - beatWait, hitDone: false, shots: 0, lungeApplied: 0 }
+    this.attack = newAttack(spec, lead - beatWait)
     this.cooldowns.set(spec.id, tick + 240 + this.rng.int(0, 120))
     this.enter('combat')
     if (spec.id === 'callAlly' || pick === 'scream') {
@@ -716,7 +747,7 @@ export class Enemy {
 
   private progressAttack(dt: number, tick: number, player: PlayerController, rhythm: RhythmClock): void {
     if (!this.attack) return
-    this.advanceAttackFrames(this.buff?.attackSpeedMul ?? 1)
+    const advanced = this.advanceAttackFrames(this.buff?.attackSpeedMul ?? 1)
     const f = this.attack.spec.frames
     // 赤线 telegraph 期间持续跟踪目标：线是「它会打哪」的诚实承诺，玩家要能看到被牵着
     if (f.projectile?.telegraph && this.attack.tick >= 0 && this.attack.tick < f.startup) {
@@ -735,7 +766,9 @@ export class Enemy {
     if (this.attack.tick === f.startup && f.flags?.includes('charge')) this.ringBells()
     // 撞钟可能就地跳阶（§15.1「撞 2 钟 = 提前进 P2」），而跳阶会把这一招收掉 ⇒ 别再用陈旧的帧表
     if (!this.attack) return
-    if (this.attack.tick > 0 && this.attack.tick <= f.activeEnd && f.lunge && !this.intangible) {
+    // `advanced > 0`：被 §9 按住的那几 tick 不许往前蹭位移——"人定在原地滑行"是这套机制最容易
+    // 长出来的假动作，而本作读的就是"它有没有真的停下来"。
+    if (advanced > 0 && this.attack.tick > 0 && this.attack.tick <= f.activeEnd && f.lunge && !this.intangible) {
       faceSlow(this, player.pos, 1)
       // don't lunge through the player: stop at melee contact distance
       const dToP = Math.hypot(player.pos.x - this.pos.x, player.pos.z - this.pos.z)
@@ -751,7 +784,7 @@ export class Enemy {
       const next = f.next ? this.data.attacks.find((a) => a.id === f.next) : undefined
       if (next) {
         const nextLead = next.frames.activeStart
-        this.attack = { spec: next, tick: nextLead - rhythm.ticksUntilBeatOn(next.beat, nextLead), hitDone: false, shots: 0, lungeApplied: 0 }
+        this.attack = newAttack(next, nextLead - rhythm.ticksUntilBeatOn(next.beat, nextLead))
       } else this.attack = null
     }
   }

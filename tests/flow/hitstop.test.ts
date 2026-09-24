@@ -13,24 +13,28 @@ import type { Enemy } from '@/ai/Enemy'
 import type { Vec3 } from '@/combat/EntityStats'
 
 /**
- * §9「命中停顿（hit stop）：冻结攻守双方动画时间」第一次成为**玩法量**（KI-017 第二步）。
+ * §9「命中停顿（hit stop）：冻结攻守双方动画时间」——两侧各落在哪一格，是量出来的（KI-017 第二、三步）。
  *
- * 落在哪一格不是选出来的，是量出来的。三种候选口径各跑过一遍全量测试：
- * - 给**敌方招式帧**挂同样的账 ⇒ 她的收势帧从自己声明的拍位上被推开一整个停顿长度（实测恩希尔
- *   173ms、奥斯塔拉 133ms，而 §2.1 的容差是 50ms；幽灵八那边还出现两 tick"从隐形段里出手"）。
- *   敌人的招式帧就是那张网格，一按就脱拍 —— 这条否掉。
- * - 给**玩家招式帧**也挂 ⇒ 不违反 §2.1，于是这一步之后把 `gate5.brawl` 的量具重造成了自适应的（按键按玩家
- *   状态排，不再按绝对 tick 排），用公平量具做 A/B：高甲比值 1.45 → **1.60**，仍在 [1, 2] 带内（第一次测出的 2.04 是半套补丁的假读数，
- *   改口写在 KI-017 行）⇒ 数值闸门不反对这一式，拦着它的是一次**手感裁决**：玩家每一记命中多付 3~7 格
- *   去换"刀陷进肉里"，而灰盒阶段这格停顿没有可见收益。下面那两条边界用例按现行口径钉住"出手方不被按停"，
- *   哪天裁决改了，它们会红在那里提醒改账的人。
- * - 只按在**挨打的那一方**（硬直倒数）⇒ 45 files / 484 passed 一条不红。
+ * 守方那一半（第二步）：被击中者的硬直倒数（`PlayerController.stunStopTicks` / `Enemy.stunStopTicks`）
+ * 在 `msToTicks(本行情境时长)` 个逻辑 tick 里不走，之后照走。
  *
- * 于是本作的口径写成一句：**停顿按在挨打的那一方身上，不按在出手的那一方身上**。
+ * 攻方那一半（第三步）落在哪一格有三种候选，各跑过一遍全量测试：
+ * - **窗内按停出手方的招式帧**（第一版）：全量测试 5 条腿红在 3 个文件——奥斯塔拉那记落点迟
+ *   83.33ms（5.0 tick）、恩希尔迟 89.86ms（5.4 tick），而 §2.1 的容差是 50ms。补帧把**收势**那一
+ *   tick 找回来了，迟到的却不是收势，是**窗尾**：按停几格就等于把可命中段在世界时间里拉长几格，
+ *   而玩家背的正是"落点在第几拍"。这条否掉。
+ * - **出手方整侧豁免**（第二步的口径）：§2.1 全绿，但 §9 那半句「冻结攻守双方」只剩守方；而「格挡 45」
+ *   「完美格挡 90」两行压根没有守方载体（格挡中的玩家不进硬直），于是那两行只喂了相机一个数。
+ * - **窗尾之后按、收势之前用双格步还账**（现行口径）：§2.1 全绿，那两行情境停顿也第一次有了玩法落点。
+ *   代价由数据自己报：收势比窗尾晚不到三帧的招式（错拍步那一类）一格也按不住，见 `ActionFrames` 判据 4。
  *
- * 时长只有一个来源：那一格的 `frames.hitStopMs`（§55）。下面的期望值全部从生产同一个 `msToTicks`
- * 派生；每一把尺子都配一条 `hitStopMs: 0` 的对照腿（两跑只差那一个数），所以"多撑了几格"量的是
- * 停顿本身，不是弹道要飞几 tick、也不是硬直倒数本身多久走一格。
+ * 于是本作的口径写成一句：**停顿按在"这一记"的双方身上——守方是硬直倒数，攻方是招式帧；
+ * 攻方那几格整段落在判定窗之后、收势之前，所以窗长与净时长都不被改写。**
+ *
+ * 时长只有一个来源：那一格的 `frames.hitStopMs`（§55）或 §9 情境表里的一个数，与相机吃的是同一个。
+ * 下面的期望值全部从生产同一个 `msToTicks` 派生；每一把尺子都配一条 `hitStopMs: 0` 的对照腿（两跑只差那一个数），
+ * 所以"多撑了几格"量的是停顿本身，不是弹道要飞几 tick、也不是硬直倒数本身多久走一格。
+ * 攻方那几条腿各带一条"账本必须是 0"的反证（挥空、弹体离手），否则"净时长没变"绿在没人被按停上。
  */
 
 registerGameData()
@@ -134,7 +138,7 @@ const reportedStop = (w: World, pick: (h: Hit) => boolean): number => {
   return h!.hitStopMs
 }
 
-describe('§9 停顿按在挨打的那一方（KI-017 第二步）', () => {
+describe('§9 守方那一半：停顿按在挨打的那一方（KI-017 第二步）', () => {
   it('她被打中：硬直倒数多撑的格数 == msToTicks(hitStopMs)，松手后照走', () => {
     const a = makeWorld()
     const ea = a.pin(a.ai.spawn(FOE, { ...FOE_POS }, 'hold'))
@@ -184,32 +188,66 @@ describe('§9 停顿按在挨打的那一方（KI-017 第二步）', () => {
   })
 })
 
-describe('§9 的边界：停顿不按在出手的那一方', () => {
-  it('打中人不比挥空多花一 tick（哪天有人给玩家招式帧挂停顿账，这里就红）', () => {
-    const swing = (hitSomething: boolean): number => {
+/** 一次出手的完整账：整式走了几 tick、判定窗被采到几格、出手方账本上最多挂过几格、真正停在哪几格 */
+type Move = { ticks: number; window: number; holdsAt: number[]; stopped: number; travel?: number }
+
+/**
+ * 每 tick 采一次时标。三格账要分开看：
+ * - `window` = 判定窗被采到的格数，也就是这一式「露着刀」在世界时间里待了多久；
+ * - `holdsAt` = 时标原地不动的那几格，也就是停顿**兑现**的地方；
+ * - `stopped` = 账本挂过的最大格数。
+ * 后两条不等于一条：账在窗内接触那一格就写上了，兑现排在窗尾之后。只断言「窗内账本非零」会把
+ * 现行口径读成"窗内被按停过"，只断言「账本非零」又量不到停顿到底落在哪——两格都要分开看。
+ */
+function sample(current: () => { tick: number; stopTicks: number; stopDebt: number } | null | undefined, f: { activeStart: number; activeEnd: number }, step: () => void, cap = 400): Move {
+  const seen: number[] = []
+  let stopped = 0
+  for (let i = 0; i < cap && current(); i++) {
+    const a = current()!
+    seen.push(a.tick)
+    stopped = Math.max(stopped, a.stopTicks + a.stopDebt)
+    step()
+  }
+  const inWin = seen.filter((t) => t >= f.activeStart && t <= f.activeEnd)
+  const holdsAt: number[] = []
+  for (let i = 1; i < seen.length; i++) if (seen[i] === seen[i - 1]) holdsAt.push(seen[i])
+  return { ticks: seen.length, window: inWin.length, holdsAt, stopped }
+}
+
+describe('§9 攻方那一半：停顿落在窗尾之后，收势之前还清（KI-017 第三步）', () => {
+  it('打中人不比挥空多花一 tick —— 而那一记确实被按停过（否则这条绿在空集上）', () => {
+    const swing = (hitSomething: boolean): Move => {
       const w = makeWorld()
       let e: Enemy | null = null
       if (hitSomething) e = w.pin(w.ai.spawn(FOE, { ...FOE_POS }, 'in'))
       faceAt(w, e ? e.pos : { x: 0, y: 0, z: -40 })
       w.player.stats.stamina = w.player.stats.staMax
       w.frame.edges.add('attackLight')
-      const t0 = w.time.tick
-      w.tick()
-      let guard = 0
-      while (w.player.action && guard++ < 400) w.tick()
-      const duration = w.time.tick - t0
+      const from = { ...w.player.pos }
+      w.tick() // 这一 tick 把那一式起出来
+      const started = w.player.action
+      expect(started, '这一记根本没出手：量具失效').toBeTruthy()
+      const f = started!.f
+      const mv = sample(() => w.player.action, f, () => w.tick())
+      // 前冲的落点：停顿与还债都落在这条带里，所以带内走过的帧数不该变（§56 那套位移与 §9 对账）
+      mv.travel = Math.hypot(w.player.pos.x - from.x, w.player.pos.z - from.z)
       if (hitSomething) expect(w.hits.some((h) => h.victimId === e!.id), '这一记要真落在她身上').toBe(true)
       else expect(w.hits.length, '挥空那条腿必须一个命中都没有').toBe(0)
       w.off()
-      return duration
+      return { ...mv }
     }
     const air = swing(false)
     const contact = swing(true)
-    expect(air, '量具失效：挥空都没有时长').toBeGreaterThan(0)
-    expect(contact, '打中人把这一记拉长了 ⇒ 停顿吃到了出手方').toBe(air)
+    expect(air.ticks, '量具失效：挥空都没有时长').toBeGreaterThan(0)
+    expect(air.stopped, '挥空没有人可打 ⇒ 出手方一格都不该被按停').toBe(0)
+    expect(contact.stopped, '出手方的账本整场是 0 ⇒ freezeAction 没接线，下面两条不变量在自证空集').toBeGreaterThan(0)
+    expect(contact.ticks, '打中人把这一记拉长了 ⇒ 欠的债没在收势之前还清（§2.1 收势拍位会跑）').toBe(air.ticks)
+    expect(contact.window, '判定窗在世界时间里被拉长 ⇒ 迟到的是窗尾，不是收势').toBe(air.window)
+    expect(contact.travel, '命中那一下吃掉了这一式的前冲：停顿与还债没有一起落在前冲带里').toBeCloseTo(air.travel ?? 0, 6)
+    expect(air.travel ?? 0, '量具失效：这一记根本没有前冲，上面那条相等是空转').toBeGreaterThan(0)
   })
 
-  it('她正在挥的那一记：挨打之后招式帧仍每 tick 走一格，而停顿确实挂上了', () => {
+  it('弹体离手之后没有"正在出的那一记"：射手的招式帧一格不被按停，停顿只归守方', () => {
     const w = makeWorld()
     const e = w.ai.spawn(FOE, { ...FOE_POS }, 'swing')
     e.alertness = 100
@@ -222,13 +260,49 @@ describe('§9 的边界：停顿不按在出手的那一方', () => {
     if (!atk) throw new Error('900 tick 里她没出过一招：这条用例的前提失效')
     shoot(w, e.pos, STOP)
     let sawStop = false
-    for (let i = 0; i < 6; i++) {
-      const t0 = atk.tick
+    const mv = sample(() => (e.attack === atk ? atk : null), atk.spec.frames, () => {
+      e.stats.hp = e.stats.hpMax
       w.tick()
-      expect(atk.tick - t0, '她的招式帧每 tick 仍走一格：停顿不碰出手方').toBe(1)
       if (e.stunStopTicks > 0) sawStop = true
-    }
+    }, 6)
     expect(sawStop, '这一记根本没给她挂上停顿 ⇒ 上面那六步是空转').toBe(true)
+    expect(mv.stopped, '她是这一记的**挨打方**，不是出手方：停顿按在她的硬直倒数上，不按在她正在挥的招式帧上').toBe(0)
+    w.off()
+  })
+
+  it('盾面卡住那一记：完美格挡把 90ms 按在出手的敌人身上，而她的窗尾不动', () => {
+    const w = makeWorld()
+    const e = w.ai.spawn(FOE, { ...FOE_POS }, 'guard')
+    e.alertness = 100
+    e.enter('combat')
+    let atk: Enemy['attack'] = null
+    for (let t = 0; t < 900; t++) {
+      const p = w.player.pos
+      w.player.yaw = Math.atan2(e.pos.x - p.x, e.pos.z - p.z)
+      w.player.stats.hp = w.player.stats.hpMax
+      e.stats.hp = e.stats.hpMax
+      atk = e.attack
+      // 前摇末段才按guard：早了会一直持盾，那条路走的是 `block` 而不是完美格挡窗
+      if (atk && atk.tick === atk.spec.frames.startup - 3) w.frame.held.add('guard')
+      w.tick()
+      if (w.hits.some((h) => h.result === 'perfectBlock' && h.attackerId === e.id)) break
+      atk = null
+    }
+    const blocked = w.hits.find((h) => h.result === 'perfectBlock' && h.attackerId === e.id)
+    expect(blocked, '900 tick 没等到一次完美格挡：量具失效').toBeTruthy()
+    expect(blocked!.hitStopMs, '§9「完美格挡」那一格说的是 90ms').toBe(90)
+    expect(e.attack, '完美格挡把那一招收掉了 ⇒ 攻方没有载体，这条量具读的是空气').toBe(atk)
+    const f = atk!.spec.frames
+    // 逐 tick 钉住架势与血量：碎甲会把这一收掉，那条路不是本条要量的东西
+    const mv = sample(() => (e.attack === atk ? atk : null), f, () => {
+      e.stats.hp = e.stats.hpMax
+      e.stats.poiseAccum = 0
+      e.stats.crumpleTicksLeft = 0
+      w.tick()
+    })
+    expect(mv.stopped, '90ms 没按到她正在挥的那一记上 ⇒ 「完美格挡」那一行仍然只喂了相机').toBe(msToTicks(90))
+    expect(mv.holdsAt.length, f.recovery - f.activeEnd - 1 + ' 帧的收势装不下 90ms 的债 ⇒ 判据 4 该把这一式整式豁免').toBeGreaterThan(0)
+    for (const t of mv.holdsAt) expect(t, '停顿兑现的那一格落在了判定窗里 ⇒ 她的窗尾被推开，而 §2.1 量的正是这一格').toBeGreaterThan(f.activeEnd)
     w.off()
   })
 })

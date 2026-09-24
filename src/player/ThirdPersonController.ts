@@ -5,6 +5,7 @@ import type { RhythmClock } from '@/core/RhythmClock'
 import { clamp } from '@/core/Math'
 import type { FrameData, MovesetData, PlayerBaseData, WeaponData } from '@/data/schema'
 import { EntityStats, playerStatsFrom } from '@/combat/EntityStats'
+import { advanceActionFrames, applyActionStop, type ActionStop } from '@/combat/ActionFrames'
 import { armStats, CorruptionMeter } from '@/combat/Statuses'
 import type { Vec3 } from '@/combat/EntityStats'
 import type { HitTarget } from '@/combat/HitShapes'
@@ -23,6 +24,20 @@ export type ActivePlayerHit = {
   hitStopMs: number; shake: string; flags: string[]; loudness: number
 }
 
+/**
+ * 玩家一次出手的运行时状态。§9 攻方那一半要在它身上记两格（`ActionStop`：还要按住几 tick /
+ * 欠下几帧没还），所以从 `PlayerController` 的内联类型提成一个具名接口。
+ */
+export interface PlayerAction extends ActionStop {
+  key: string; f: FrameData; hitDone: boolean; shots: number
+  /** 这一记已经打到过哪些目标（`f.multi` 是名额上限）。判定窗有好几 tick，同一目标不能被同一记打两遍 */
+  hitIds: Set<string>
+  /** 非 null ⇒ 这一记是乐章战技（§7）：伤害标尺、真伤、闷音、位移都从它身上取 */
+  skill: SkillCast | null
+  /** 战技位移（错拍步）的行进方向；null＝不出位移 */
+  dir: Vec3 | null
+}
+
 export class PlayerController {
   pos: Vec3 = { x: 0, y: 0, z: 0 }
   yaw = 0
@@ -31,15 +46,7 @@ export class PlayerController {
   vy = 0
   /** 当前站立面的高度，由 world/Surface 每 tick 注入（垂直分层世界） */
   floorY = 0
-  action: {
-    key: string; f: FrameData; tick: number; hitDone: boolean; shots: number
-    /** 这一记已经打到过哪些目标（`f.multi` 是名额上限）。判定窗有好几 tick，同一目标不能被同一记打两遍 */
-    hitIds: Set<string>
-    /** 非 null ⇒ 这一记是乐章战技（§7）：伤害标尺、真伤、闷音、位移都从它身上取 */
-    skill: SkillCast | null
-    /** 战技位移（错拍步）的行进方向；null＝不出位移 */
-    dir: Vec3 | null
-  } | null = null
+  action: PlayerAction | null = null
   roll: { tick: number; dir: Vec3; total: number; iframeStart: number; iframeEnd: number } | null = null
   guardTicks = 0
   guardStartTick = -999
@@ -58,10 +65,9 @@ export class PlayerController {
   overloadWarnTicks = 0
   stunTicks = 0
   /**
-   * §9「冻结攻守双方动画时间」——本作把它按在**挨打的那一方**身上（KI-017 第二步）：
-   * 被这一记打中的这几 tick 里，硬直倒数不走。时长不写第二份常数，由 `CombatManager` 从
-   * 那一格的 `frames.hitStopMs` 派生（`msToTicks`）。
-   * 出手那一方的招式帧刻意不按停，理由有实测，写在 `Enemy.stunStopTicks` 的注释里。
+   * §9「冻结攻守双方动画时间」的**守方**那一半（KI-017 第二步）：被这一记打中的这几 tick 里，
+   * 硬直倒数不走。时长不写第二份常数，由 `CombatManager` 从那一格的 `frames.hitStopMs` 派生
+   * （`msToTicks`）。出手那一方的招式帧同样会被按住，但走另一格账与另一套判据 —— 见 `freezeAction`。
    */
   stunStopTicks = 0
   crumpleTicks = 0
@@ -323,10 +329,16 @@ export class PlayerController {
 
     // ---- action progression ----
     if (this.action) {
-      this.action.tick++
       const f = this.action.f
-      if (this.action.tick >= f.startup && this.action.tick <= f.startup + f.activeEnd && f.lunge) {
-        const step = f.lunge / f.activeEnd
+      // §9 攻方那一半（KI-017 第三步）：这一 tick 推进几帧由停顿账本给（0＝按住，2＝回拍补帧）。
+      // 位移按同一格数缩放，这一句不是装饰：前冲段按老约定是 `startup .. startup + activeEnd`
+      // （比判定窗晚 `startup` 格），而停顿整段排在窗尾之后 ⇒ 两者必然重叠，按住的那几 tick 不许
+      // 往前蹭，否则"停住"变成"原地滑行"。还债的双格步同样落在这条带里（判据 4 保证债在收势前还清），
+      // 所以带内走过的帧数不变 ⇒ 前冲的**落点**不变，变的只是它被切成了"停—冲—停"。
+      const adv = advanceActionFrames(this.action, f)
+      this.action.tick += adv
+      if (adv > 0 && this.action.tick >= f.startup && this.action.tick <= f.startup + f.activeEnd && f.lunge) {
+        const step = (f.lunge / f.activeEnd) * adv
         this.pos.x += Math.sin(this.yaw) * step
         this.pos.z += Math.cos(this.yaw) * step
       }
@@ -336,7 +348,7 @@ export class PlayerController {
       const d = this.action.dir
       if (d && this.action.skill && this.action.tick >= f.activeStart && this.action.tick <= f.activeEnd) {
         const span = Math.max(1, f.activeEnd - f.activeStart + 1)
-        const step = this.action.skill.distance / span
+        const step = (this.action.skill.distance / span) * adv
         this.pos.x += d.x * step
         this.pos.z += d.z * step
 
@@ -430,6 +442,18 @@ export class PlayerController {
     return { pos: this.pos, facingYaw: this.yaw, radius: 0.4, height: 1.7 }
   }
 
+  /**
+   * §9 攻方那一半（KI-017 第三步）：她刚打中的那一记把**她自己**的招式帧按住几格，随后每 tick
+   * 补一帧还回去 ⇒ 这一式仍然在与不按停时同一 tick 结束（节拍工具、连段派生、体力窗都不移位）。
+   * 能不能按由 `applyActionStop` 的四条判据给：判定窗内、**一帧都不落在窗内**（窗尾之后才兑现）、
+   * 非连发弹体招式、窗尾到收势那几帧还得起这笔债。
+   * `src` 必须是"落下来的这一记"所属的那个出手对象（弹体命中时她可能在挥下一记，那不该被按停）。
+   */
+  freezeAction(ms: number, src: object): number {
+    if (!this.action || this.action !== src) return 0
+    return applyActionStop(this.action, this.action.f, ms)
+  }
+
   private busyMovementLocked(): boolean {
     return this.roll !== null || (this.action !== null && this.action.tick < this.action.f.recovery * 0.6) || this.charging
   }
@@ -495,6 +519,7 @@ export class PlayerController {
     const cut = key.startsWith('l') ? Math.min(this.rpg.lightStartupTicks, Math.max(0, f.activeStart - 1)) : 0
     this.action = {
       key, f, tick: cut, hitDone: false, shots: 0, hitIds: new Set<string>(),
+      stopTicks: 0, stopDebt: 0,
       skill: skill?.cast ?? null,
       dir: skill && skill.cast.distance > 0 ? this.moveDir() : null
     }

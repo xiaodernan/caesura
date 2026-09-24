@@ -10,7 +10,7 @@ import type { EnemyData, MovesetData, WeaponData } from '@/data/schema'
 import { PlayerController } from '@/player/ThirdPersonController'
 import { AISystem } from '@/ai/AISystem'
 import { CombatManager } from '@/combat/CombatManager'
-import type { Enemy } from '@/ai/Enemy'
+import { newAttack, type Enemy } from '@/ai/Enemy'
 
 /**
  * Mini Boss 奥斯塔拉（docs/combat.md §15.1 + §16；需求 §22/§24）。
@@ -124,7 +124,7 @@ function pin(e: Enemy): void {
 /** 把她的招式摆到指定帧（绕开 RNG 选招，只看机关与结算） */
 function forceAt(e: Enemy, id: string, tickIn: number): void {
   const spec = e.data.attacks.find((a) => a.id === id)!
-  e.attack = { spec, tick: tickIn, hitDone: false, shots: 0, lungeApplied: 0 }
+  e.attack = newAttack(spec, tickIn)
 }
 
 /** 离「本小节第 1 拍」还有多少 tick（§15.1 的核心可读性就这一句） */

@@ -9,7 +9,7 @@ import type { EnemyData, FrameData, MovesetData, WeaponData } from '@/data/schem
 import { PlayerController } from '@/player/ThirdPersonController'
 import { AISystem } from '@/ai/AISystem'
 import { CombatManager } from '@/combat/CombatManager'
-import type { Enemy } from '@/ai/Enemy'
+import { newAttack, type Enemy } from '@/ai/Enemy'
 
 /**
  * 幽灵八 Phantome（需求 §59 自动化玩法流 / docs/combat.md §14.5「拍隙实体切换」）。
@@ -88,7 +88,7 @@ function pin(e: Enemy): void {
 /** 绕开随机选招：直接把敌人摆进某招的某一帧 */
 function force(e: Enemy, id: string, tickIn = 0): void {
   const spec = e.data.attacks.find((a) => a.id === id)!
-  e.attack = { spec, tick: tickIn, hitDone: false, shots: 0, lungeApplied: 0 }
+  e.attack = newAttack(spec, tickIn)
   e.enter('combat')
 }
 

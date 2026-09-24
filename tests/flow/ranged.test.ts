@@ -8,6 +8,7 @@ import { registerGameData, playerBase } from '@/data'
 import type { MovesetData, WeaponData } from '@/data/schema'
 import { PlayerController } from '@/player/ThirdPersonController'
 import { AISystem } from '@/ai/AISystem'
+import { newAttack } from '@/ai/Enemy'
 import { CombatManager } from '@/combat/CombatManager'
 import { attrScale, damageReduction } from '@/combat/DamagePipeline'
 import type { Projectile } from '@/combat/Projectiles'
@@ -134,7 +135,7 @@ describe('针喉 Skewer（combat.md §14.4 弦指狙击）', () => {
   /** 直接摆好一次出手：绕开随机选招，只验发射窗口 */
   function force(e: ReturnType<typeof skewer>, id: string): void {
     const spec = e.data.attacks.find((a) => a.id === id)!
-    e.attack = { spec, tick: 0, hitDone: false, shots: 0, lungeApplied: 0 }
+    e.attack = newAttack(spec, 0)
     e.enter('combat')
   }
 
