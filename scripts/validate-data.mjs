@@ -25,9 +25,11 @@ const RELATION_OPS = new Set(['gte', 'lte', 'eq'])
 const NODE_TEXT_MAX = 120
 // Phase 5-B 起：装备槽位 / 物品大类（与 schema.ts 的 SlotKey / ItemKind 对齐）
 const SLOT_KEYS = new Set(['weapon', 'helm', 'cuirass', 'gloves', 'greaves', 'seal', 'sealA', 'sealB'])
-const GEAR_SLOTS = new Set(['weapon', 'helm', 'cuirass', 'gloves', 'greaves', 'seal'])
+// 'sealB'：B 槽专属件的载体（§6.2 音徽·丰谐——幸运系数只许长在看得见的署名件上，KI-030②）。
+// 'sealA' 刻意不进词表：今天没有任何一件声明它，出现需求时先登记消费者，再动这张表。
+const GEAR_SLOTS = new Set(['weapon', 'helm', 'cuirass', 'gloves', 'greaves', 'seal', 'sealB'])
 const ITEM_KINDS = new Set(['currency', 'material', 'consumable', 'weapon', 'armor', 'seal', 'lore', 'key'])
-const AFFIX_STATS = new Set(['poiseDmg', 'defense', 'staminaRegen', 'critRate', 'execDmg', 'noiseMul'])
+const AFFIX_STATS = new Set(['poiseDmg', 'defense', 'staminaRegen', 'critRate', 'execDmg', 'noiseMul', 'lootLuck'])
 const AFFIX_BEHAVIORS = new Set(['perfectBlockWindow', 'lightStartup', 'bellBonus', 'restOverdrive'])
 
 // ---- 词表：与 src/data/schema.ts 对齐（改 schema 时同步这里） ----
@@ -956,7 +958,7 @@ function navmeshExists(ref) {
   return roots.some((root) => suffixes.some((s) => existsSync(resolve(ROOT, root, ref + s))))
 }
 
-function validateRegions(enemyIds, lootIds) {
+function validateRegions(enemyIds, lootIds, rarityIds) {
   const file = 'regions.json'
   const list = data[file]
   const ids = new Set()
@@ -990,6 +992,19 @@ function validateRegions(enemyIds, lootIds) {
       }
     }
     report.num(file, `${w}.groundY`, rg.groundY, { name: 'groundY' })
+
+    // §9.4 区域上修（KI-030①）：写了就必须形状完整——atOrAbove 是稀有度表里的档位，mul ≥ 1（上修不是下修）
+    if (rg.loot !== undefined) {
+      if (!isObj(rg.loot)) report.error(file, `${w}.loot`, '必须是对象')
+      else if (rg.loot.rarityBoost !== undefined) {
+        const rb = rg.loot.rarityBoost
+        if (!isObj(rb)) report.error(file, `${w}.loot.rarityBoost`, '必须是对象')
+        else {
+          if (!isStr(rb.atOrAbove) || !rarityIds.has(rb.atOrAbove)) report.error(file, `${w}.loot.rarityBoost.atOrAbove`, `未知稀有度：${JSON.stringify(rb.atOrAbove)}——高段门槛必须是 rarity 表里的档`)
+          report.num(file, `${w}.loot.rarityBoost.mul`, rb.mul, { min: 1, name: 'mul' })
+        }
+      }
+    }
 
     // grid：必填且为正数（省略会悄悄退回硬编码 84）
     if (!isObj(rg.grid)) report.error(file, `${w}.grid`, 'grid 必填且必须是对象（省略会退回硬编码 84）')
@@ -1651,7 +1666,7 @@ const lootIds = validateLoot(itemIds, rarityIds)
 }
 const enemyIds = validateEnemies(lootIds)
 validatePlayer()
-const regionIds = validateRegions(enemyIds, lootIds)
+const regionIds = validateRegions(enemyIds, lootIds, rarityIds)
 // movements 最后跑：它要同时对账 items（点亮源）、loot（源是否真会掉）、progression（开槽里程碑）
 validateMovements(itemIds)
 // 叙事层（Phase 6-B）：NPC → 任务 → 对话（后者依赖前两者的 id）

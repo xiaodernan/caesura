@@ -423,6 +423,28 @@
   }
  },
  {
+  "id": "seal_bountiful",
+  "nameKey": "seal.bountiful",
+  "displayName": "音徽·丰谐",
+  "kind": "seal",
+  "stack": 1,
+  "value": 210,
+  "desc": "哑带拾晶人的署名徽：只有肯把晶屑分回去的手，才认得出哪堆石头鼓。",
+  "gear": {
+   "slot": "sealB",
+   "rarity": "rare",
+   "def": 0,
+   "weight": 0,
+   "affixes": [
+    "af_bountiful"
+   ],
+   "salvage": {
+    "dross": 1,
+    "timbite": 45
+   }
+  }
+ },
+ {
   "id": "ar_ostlaraweave_cuirass",
   "nameKey": "armor.ostlaraweave",
   "displayName": "钟皮胸甲",

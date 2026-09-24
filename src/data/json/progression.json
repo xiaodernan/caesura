@@ -128,7 +128,8 @@
    { "id": "af_tireless", "nameKey": "affix.tireless", "displayName": "节律", "stat": "staminaRegen", "range": [0.04, 0.1], "desc": "体力回复加快：气接得上，句子才唱得完。" },
    { "id": "af_keen", "nameKey": "affix.keen", "displayName": "准星", "stat": "critRate", "range": [0.02, 0.06], "slots": ["weapon", "seal"], "desc": "暴击率提升：找准泛音的那一层。" },
    { "id": "af_harmonic", "nameKey": "affix.harmonic", "displayName": "泛音弦", "stat": "execDmg", "range": [0.03, 0.09], "slots": ["weapon"], "desc": "处决与背刺伤害提升：休止处的一刀更重。" },
-   { "id": "af_tacet", "nameKey": "affix.tacet", "displayName": "静默", "stat": "noiseMul", "range": [-0.35, -0.12], "slots": ["helm", "cuirass", "gloves", "greaves", "seal"], "minRarity": "uncommon", "desc": "自身噪音降低：在靠听不看的地方，安静就是武器。" }
+   { "id": "af_tacet", "nameKey": "affix.tacet", "displayName": "静默", "stat": "noiseMul", "range": [-0.35, -0.12], "slots": ["helm", "cuirass", "gloves", "greaves", "seal"], "minRarity": "uncommon", "desc": "自身噪音降低：在靠听不看的地方，安静就是武器。" },
+   { "id": "af_bountiful", "nameKey": "affix.bountiful", "displayName": "丰谐", "stat": "lootLuck", "range": [0.15, 0.15], "slots": ["sealB"], "minRarity": "rare", "desc": "高稀有度掉落权重 +15%：晶耳听得见别人漏看的石头。单点区间=定值——这枚是署名造物，不掷区间（§6.2）。" }
   ],
   "suffix": [
    { "id": "af_fermata", "nameKey": "affix.fermata", "displayName": "之延", "behavior": "perfectBlockWindow", "range": [1, 2], "minRarity": "rare", "desc": "完美格挡判定窗 +1~2 帧。" },

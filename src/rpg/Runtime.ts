@@ -90,7 +90,7 @@ export class RpgRuntime {
   constructor(originId = 'origin_tuner', seed: number | string = 0x51f3a2) {
     this.prog = new Progression(originId)
     this.inv = new Inventory(seed)
-    this.loot = new LootDirector(this.inv, this.prog)
+    this.loot = new LootDirector(this.inv, this.prog, this.inv.rng, () => this.eq.totals(this.inv).lootLuck)
     this.grantOriginGear(originId)
   }
 

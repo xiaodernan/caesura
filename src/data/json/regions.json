@@ -823,6 +823,9 @@
   "corruption": {
    "perSec": 2
   },
+  "loot": {
+   "rarityBoost": { "atOrAbove": "rare", "mul": 1.5 }
+  },
   "grid": {
    "bpm": 60,
    "beatsPerBar": 1,

@@ -492,7 +492,7 @@ export interface AffixDef {
   nameKey: string
   displayName: string
   /** 数值型给 [min,max]（按稀有度在高区间取值）；行为型给固定效果描述 */
-  stat?: 'poiseDmg' | 'defense' | 'staminaRegen' | 'critRate' | 'execDmg' | 'noiseMul'
+  stat?: 'poiseDmg' | 'defense' | 'staminaRegen' | 'critRate' | 'execDmg' | 'noiseMul' | 'lootLuck'
   range?: [number, number]
   /** 行为型：由具体系统消费（之延=完美格挡窗，之切=轻击前摇…） */
   behavior?: string
@@ -939,6 +939,12 @@ export interface RegionData {
    * 满值后的掉血也在同一格里判：没有这一格的区域天然安全。
    */
   corruption?: { perSec: number }
+  /**
+   * §9.4 区域上修（KI-030①）：这一方天地里掉的装备，`atOrAbove` 及以上的档位权重 ×`mul`。
+   * 深窖是"门票"而不是"惩罚"——文档给的补偿形状就是这一格。不写的区域权重原样不动；
+   * **上修只歪权重，不保证任何一件**（保证 ≥ 地板是全局大保底的活，两条不许合并）。
+   */
+  loot?: { rarityBoost?: { atOrAbove: string; mul: number } }
   chunkSize: number
   navmeshRef?: string
   weatherPresets: string[]

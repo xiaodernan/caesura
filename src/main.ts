@@ -274,6 +274,7 @@ const core = {
       // §2.1 的区域网格表：进区域就换拍（深窖=只有 60BPM 心跳）。Boss 的私有时钟叠在它之上，
       // 所以这里写的是 home，AISystem.syncClock 决定当前用的是谁的拍。
       rhythm.setBpm(here.grid.bpm, here.grid.beatsPerBar)
+      rpg.loot.setRegion(here.id) // §9.4 区域上修（KI-030①）：掉落层第一次认识「玩家此刻在谁的地上」
       if (booted) checkpoints.request('region') // 读档后第一次「进区域」是恢复现场，不该顺手覆盖存档
       shownRegion = here.id
       bus.emit('ui.notify', { text: here.displayName, kind: 'info' })

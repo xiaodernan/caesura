@@ -1,5 +1,5 @@
 import { registry } from '@/core/Registry'
-import type { EnemyData, ItemData, LootRoll, LootTableData, ProgressionData } from '@/data/schema'
+import type { EnemyData, ItemData, LootRoll, LootTableData, ProgressionData, RegionData } from '@/data/schema'
 import type { Inventory } from './Inventory'
 import { itemOf, isGear } from './Inventory'
 import { originOf, type Progression } from './Progression'
@@ -38,12 +38,20 @@ export class LootDirector {
   private gearStreak = 0
   /** 逐条 roll 的「连续没中」计数（§9.2 容器保底），键 = `tableId:rollId`；只有带 pity 的 roll 会占一格 */
   private rollStreak = new Map<string, number>()
+  /** 玩家此刻站在哪个区域（§9.4 区域上修，KI-030①）。由 main.ts 每次区域切换写入，**不入档**——它是世界的读数不是掉落的账 */
+  private regionId: string | null = null
 
   constructor(
     private readonly inv: Inventory,
     private readonly prog: Progression,
     private readonly rng = inv.rng,
+    /** 幸运系数（§6.2「丰谐」，KI-030②）：**每次掷骰现查**而不是快照——卸下护符的那一格起就不该再加值 */
+    private readonly luck = () => 0,
   ) {}
+
+  setRegion(regionId: string | null): void {
+    this.regionId = regionId
+  }
 
   isFirstKill(enemyId: string): boolean {
     return !this.firstKilled.has(enemyId)
@@ -119,7 +127,10 @@ export class LootDirector {
     return false
   }
 
-  /** 保底：强制 ≥ 地板稀有度；band 里没有就在 floor 档位上直接抽（保底不能被 band 限制住） */
+  /**
+   * 保底：强制 ≥ 地板稀有度；band 里没有就在 floor 档位上直接抽（保底不能被 band 限制住）。
+   * 非保底那一腿先过 `tiltBand`——深窖上修与丰谐幸运都只**歪权重**，不保证任何一件。
+   */
   private pickRarity(band: { rarity: string; weight: number }[], pity: boolean): string {
     const prog = registry.get<ProgressionData>('progression')
     const order = prog.rarity.map((r) => r.id)
@@ -131,7 +142,24 @@ export class LootDirector {
       if (eligible.length) return this.rng.weighted(asItems(eligible))
       return floor
     }
-    return this.rng.weighted(asItems(band))
+    return this.rng.weighted(asItems(this.tiltBand(band, order)))
+  }
+
+  /**
+   * §9.4 区域上修 × §6.2 幸运系数（KI-030①②）：两者共用同一根杠杆——对高段档位的权重做乘法，
+   * 深窖里戴丰谐 = ×1.5×1.15。高段的门槛：区域声明了 `atOrAbove` 就用它；只有幸运时，
+   * 门槛与 §9.4 同源（`pity.floorRarity` 是「高段」唯一的数字主人，代码里不另发明一条线）。
+   * **歪权重不追加掷骰**：`weighted` 消耗随机数的多少只看 band 长度，与权重取值无关 ⇒
+   * 种子重放的轨道不改线（§10）。
+   */
+  private tiltBand(band: { rarity: string; weight: number }[], order: string[]): { rarity: string; weight: number }[] {
+    const region = this.regionId ? registry.maybeGet<RegionData>(this.regionId) : null
+    const boost = region?.loot?.rarityBoost
+    const mul = (boost ? boost.mul : 1) * (1 + this.luck())
+    if (mul === 1) return band
+    const hiIdx = boost ? order.indexOf(boost.atOrAbove) : -1
+    const from = hiIdx >= 0 ? hiIdx : order.indexOf(pityRule().floorRarity)
+    return band.map((b) => (order.indexOf(b.rarity) >= from ? { ...b, weight: b.weight * mul } : b))
   }
 
   private pickGearItem(rarity: string): ItemData | null {
