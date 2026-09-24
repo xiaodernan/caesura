@@ -1125,7 +1125,9 @@ export class CombatManager {
     bus.emit('combat.hit', {
       attackerId: 'player', victimId: e.id, damage: dmg, poiseDamage: 0, kind: 'heavy',
       point, dir, result: 'hit', hitStopMs: ex.firstBladeHitStopMs,
-      shakeKey: isBoss ? 'boss' : 'heavy', backstab: kind === 'B', weakpoint: false
+      // §10「处决」行有自己的震镜档（KI-053）：不再借 heavy/boss 列——那一记的分量
+      // 由推轨（KI-051）与消音+专属音色（KI-003）扛，震镜只标那一刀落
+      shakeKey: 'execute', backstab: kind === 'B', weakpoint: false
     })
     bus.emit('vfx.request', { key: 'hit_ring', pos: point, scale: 2 })
     bus.emit('vfx.request', { key: 'shock_small', pos: { ...e.pos }, scale: 1.6 })

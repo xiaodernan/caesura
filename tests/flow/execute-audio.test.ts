@@ -45,9 +45,11 @@ function world() {
 
   const muffles: boolean[] = []
   const sfx: string[] = []
+  const hits: { victimId: string; shakeKey: string }[] = []
   const offs = [
     bus.on('audio.muffle', (p) => muffles.push(p.on)),
-    bus.on('audio.sfx', (p) => sfx.push(p.key))
+    bus.on('audio.sfx', (p) => sfx.push(p.key)),
+    bus.on('combat.hit', (p) => hits.push({ victimId: p.victimId, shakeKey: p.shakeKey }))
   ]
   function tick(n = 1): void {
     for (let i = 0; i < n; i++) {
@@ -71,7 +73,7 @@ function world() {
     return e
   }
   const off = (): void => { for (const f of offs) f() }
-  return { time, rhythm, player, ai, combat, frame, tick, muffles, sfx, victim, off }
+  return { time, rhythm, player, ai, combat, frame, tick, muffles, sfx, hits, victim, off }
 }
 
 describe('§5.4 处决的消音与专属音色（KI-003）', () => {
@@ -83,6 +85,8 @@ describe('§5.4 处决的消音与专属音色（KI-003）', () => {
     expect(w.player.executing, '处决演出没起来：这条在量空气').not.toBeNull()
     expect(w.sfx).toContain('execute_rest')
     expect(w.sfx, '不该再借和弦爆占位').not.toContain('chord_slam')
+    // KI-053：那一记命中的震镜档有自己的行——不再借 heavy（发射方↔SHAKE_TABLE 两头断言的这半）
+    expect(w.hits.find((h) => h.victimId === e.id)?.shakeKey, '处决那记 combat.hit 该报 execute').toBe('execute')
     // 边沿判定在 combat.update 末尾（仲裁者）：开与演出点着同 tick，关与演出结束同 tick
     expect(w.muffles, '演出开始：世界塌下去').toEqual([true])
     const onAt = w.time.tick

@@ -45,13 +45,13 @@ function makeWorld() {
   player.stats.hpMax = 9_999_999
   player.stats.poiseMax = 9_999_999
 
-  const hits: Array<{ v: string; d: number }> = []
+  const hits: Array<{ v: string; d: number; k: string }> = []
   const sfx: string[] = []
   const notifies: Array<{ t: string; kind?: string }> = []
   const phases: Array<{ id: string; phase: number; phases: number }> = []
   const muffles: boolean[] = []
   const offs = [
-    bus.on('combat.hit', (p) => hits.push({ v: p.victimId, d: p.damage })),
+    bus.on('combat.hit', (p) => hits.push({ v: p.victimId, d: p.damage, k: p.shakeKey })),
     bus.on('audio.sfx', (p) => sfx.push(p.key)),
     bus.on('ui.notify', (p) => notifies.push({ t: p.text, kind: p.kind })),
     bus.on('boss.phase', (p) => phases.push(p)),
@@ -442,6 +442,8 @@ describe('钟壳：打不动不是数值墙，而是「撞钟才是正解」', (
     w.frame.edges.add('interact')
     w.tick(1)
     expect(w.player.executing, '处决演出没起来：这条在量空气').not.toBeNull()
+    // KI-053：Boss 处决那一记也报 execute，不再借 boss(4°) 列——「阶段转换」是情境不是身份
+    expect(w.hits.find((h) => h.v === e.id && h.k === 'execute'), 'Boss 处决那记该有自己的震镜档').toBeTruthy()
     w.tick(60)
     expect(w.muffles, '吼声那 48 格走完了，但演出还要它 ⇒ 不该有 false').toEqual([true])
     for (let i = 0; i < 140 && !w.muffles.includes(false); i++) w.tick()

@@ -22,6 +22,15 @@ export const SHAKE_TABLE: Record<string, { amp: number; freq: number; dur: numbe
   heavy: { amp: 2.0, freq: 6, dur: 0.4, fov: -1, fovMs: 120 },
   boss: { amp: 4.0, freq: 3.5, dur: 0.9 },
   /**
+   * §10「处决」行（KI-053）：1.0° 是设计给的数，它**比 heavy(2.0°) 轻**不是笔误——
+   * 处决那一刀的时间演出已经有自己的主人（`EXEC_DOLLY` 推轨 + KI-003 的消音与专属音色），
+   * 震镜在这里是"那一刀落"的标点，不是"这件事很大"的宣告；给它 2°/4° 会让每一记处决都和
+   * 推轨打架（同 KI-017③ 对破防的口径：一记只许一个主人）。**Boss 处决同样走这一行**：
+   * 表里的「4°/3.5Hz/900ms」那行是"阶段转换"这个情境，不是"对方血条长"这个身份。
+   * 附加格没有 FOV 脉冲：§10 该行的附加格写着「推轨另控（§5.4）」。
+   */
+  execute: { amp: 1.0, freq: 8, dur: 0.3 },
+  /**
    * §10「驼鼓踏地」行：这不是命中回报，是**世界事件**——敌人 active 帧落下去就发
    * `camera.shake`（挥空也震，见 `Enemy.advanceAttackFrames`），所以距离衰减在
    * 订阅方做，而不是等 `combat.hit` 把它当一次命中。

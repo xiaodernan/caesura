@@ -58,6 +58,29 @@ describe('§10 表行对账：数据 ↔ CameraRig', () => {
     expect(stomp.frames.vfx?.[0]).toBe('ring_dust')
     expect(stomp.frames.worldShake).toBe('stomp')
   })
+
+  it('处决行入表（KI-053）：1.0°/8Hz/300ms，轻于 heavy，且没有 FOV 附加格——推轨另控', () => {
+    const s = SHAKE_TABLE.execute
+    expect(s.amp, 'A=1.0°').toBeCloseTo(1.0)
+    expect(s.freq, 'f=8Hz').toBeCloseTo(8)
+    expect(s.dur, '持续 300ms').toBeCloseTo(0.3)
+    expect(s.amp, '设计表处决行比破修行(2.0°)轻：分量在推轨与消音，不在这一格').toBeLessThan(SHAKE_TABLE.heavy.amp)
+    expect(s.fov, '§10 该行附加格写着「推轨另控（§5.4）」⇒ 震镜行不许再挂一份 FOV').toBeUndefined()
+  })
+
+  it('execute 档被 rig 消费：满幅 1.0°/8Hz 进队列，FOV 一格不动（分量归推轨）', () => {
+    // 不举真 CameraRig 实例订阅总线：构造即挂常订阅、本文件没有卸载口（既病，不喂大）。
+    // 发射方（landExecute 报 execute）钉在 execute-audio / boss 的真处决用例里。
+    const p = stubPlayer({ x: 0, y: 0, z: 0 })
+    const rig = new CameraRig() // shakeIntensity 默认 1：这条量的是表值直通的幅值
+    rig.shake('execute')
+    const shakes = (rig as unknown as { shakes: { amp: number; freq: number }[] }).shakes
+    const last = shakes[shakes.length - 1]
+    expect(last.amp, '满幅 1.0°（combat.hit 通道不吃距离衰减）').toBeCloseTo(1.0, 6)
+    expect(last.freq).toBeCloseTo(8)
+    // 在 200ms 脉冲窗**之内**取样：若给 execute 偷挂 fov/fovMs，这里立刻抓到它离开基准
+    for (let i = 0; i < 12; i++) { step(rig, p, 1); expect(rig.cam.fov, `第 ${i} tick 不该有 FOV 脉冲`).toBe(50) }
+  })
 })
 
 describe('①FOV 脉冲：冲下去再自己回来', () => {

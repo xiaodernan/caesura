@@ -19,6 +19,15 @@ describe('gamepad haptics (§64)', () => {
     expect(mapShakeToRumble('nope').durationMs).toBe(mapShakeToRumble('graze').durationMs)
   })
 
+  it('处决档（KI-053）：不发明新尺子——strong 借 normal↔hurt 之间，整档轻于 heavy', () => {
+    const ex = mapShakeToRumble('execute')
+    expect(ex.strong, '轻于 heavy：分量在推轨与消音，手柄只标那一刀落下').toBeLessThan(mapShakeToRumble('heavy').strong)
+    expect(ex.strong).toBeGreaterThan(mapShakeToRumble('normal').strong)
+    expect(ex.strong).toBeLessThan(mapShakeToRumble('hurt').strong)
+    expect(ex.durationMs, '单发比擦过长、比破防短').toBeGreaterThan(mapShakeToRumble('graze').durationMs)
+    expect(ex.durationMs).toBeLessThan(mapShakeToRumble('heavy').durationMs)
+  })
+
   it('drives a connected pad actuator with the right params on combat.hit', () => {
     const playEffect = vi.fn()
     const input = { gamepad: { vibrationActuator: { playEffect } } } as unknown as Input

@@ -10,7 +10,14 @@ const TABLE: Record<string, Rumble> = {
   hurt: { durationMs: 120, strong: 0.5, weak: 0.6 },
   parry: { durationMs: 45, strong: 0.7, weak: 0.2 },
   heavy: { durationMs: 180, strong: 0.8, weak: 0.5 },
-  boss: { durationMs: 320, strong: 1.0, weak: 0.8 }
+  boss: { durationMs: 320, strong: 1.0, weak: 0.8 },
+  /**
+   * §10「处决」行的触感镜像（KI-053）：设计表给的是震镜的数（1.0° 轻于 heavy 的 2.0°），
+   * 没写过振动该多重——所以这里**不发明新档位**，只在既有档位之间取"轻于 heavy、
+   * 单发长于 graze"这一格：strong 落在 normal(0.3) 与 hurt(0.5) 之间，时长给到 120ms。
+   * 裁决与震镜同向：处决的分量由推轨与消音扛，手柄只标那一刀落下。
+   */
+  execute: { durationMs: 120, strong: 0.4, weak: 0.4 }
 }
 
 export function mapShakeToRumble(key: string): Rumble {
