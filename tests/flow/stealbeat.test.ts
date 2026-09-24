@@ -226,8 +226,41 @@ describe('换气拍：唯一能把网格抢回来的 0.35s', () => {
     w.off()
   })
 
-  it('中立期内他不再夺拍；到期后重新拿走 ⇒ 不是一次性开关', () => {
+  it('夺拍那一下的按停时长住在 `reclaim.hitStopMs`（§9 的情境腿，代码里不留常数）', () => {
     const w = makeWorld()
+    const e = hersilP2(w)
+    const s = e.stealBeat!
+    const saved = s.reclaim.hitStopMs
+    // 尺子：这一 tick 里谁要求把世界按停、按停多久。表**故意改成与旧常数不同**（180 是那条腿
+    // 唯一可能"两边写死同一个数"而照样绿的值），所以这条量的不是巧合而是接线。
+    s.reclaim.hitStopMs = 420
+    const asked: { at: number; ms: number }[] = []
+    const origStop = w.time.hitStop.bind(w.time)
+    w.time.hitStop = (sec: number, scale?: number): void => { asked.push({ at: w.time.tick, ms: Math.round(sec * 1000) }); origStop(sec, scale) }
+    let reclaimed = false
+    try {
+      for (let i = 0; i < 3200 && !reclaimed; i++) {
+        const a = e.attack
+        if (a?.spec.reclaimWindow && a.tick < a.spec.frames.startup) {
+          w.face(e, 2.4)
+          w.frame.edges.add('parry')
+        }
+        w.tick(1)
+        reclaimed = e.stealNeutralTicks > 0
+      }
+    } finally {
+      w.time.hitStop = origStop
+      s.reclaim.hitStopMs = saved
+    }
+    expect(reclaimed, '量具失效：没抢到拍').toBe(true)
+    const at = w.time.tick // 循环就在这一步退出 ⇒ 这一 tick 就是抢拍成功那一格
+    expect(asked.filter((x) => x.at === at).map((x) => x.ms), '抢拍那 tick 按停的毫秒数 = 表里那一格').toContain(420)
+    expect(asked.some((x) => x.ms === 180), '整趟读数里不该再有旧常数那一格 ⇒ 代码里还藏着 0.18').toBe(false)
+    expect(s.reclaim.hitStopMs, '量具不动生产数据').toBe(saved)
+    w.off()
+  })
+
+  it('中立期内他不再夺拍；到期后重新拿走 ⇒ 不是一次性开关', () => {    const w = makeWorld()
     const e = hersilP2(w)
     e.stealNeutralTicks = 240
     w.tick(60)

@@ -1226,6 +1226,10 @@
     "breaksAt": 2,
     "resonanceRadius": 4.5,
     "damagePerBeat": 4
+   },
+   "roar": {
+    "hitStopMs": 250,
+    "muffleMs": 800
    }
   },
   "attacks": [
@@ -1630,7 +1634,8 @@
       "dodgeJitterTicks": 4,
       "reclaim": {
        "neutralTicks": 480,
-       "overdrive": 2
+       "overdrive": 2,
+       "hitStopMs": 180
       }
      },
      "barCast": {
@@ -1663,6 +1668,10 @@
      }
     ],
     "radius": 3.2
+   },
+   "roar": {
+    "hitStopMs": 250,
+    "muffleMs": 800
    }
   },
   "attacks": [

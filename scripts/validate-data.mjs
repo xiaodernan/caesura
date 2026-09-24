@@ -225,6 +225,19 @@ function validatePlayer() {
     backstabRange: { min: 0 }, crumpleRange: { min: 0 }, overdriveCost: { min: 0 }, overdriveFrac: { min: 0, max: 1 },
     overdriveFlat: { min: 0 }, durationTicks: { min: 0, int: true }, firstBladeHitStopMs: { min: 0 },
   })
+  // §9「Hitstop 时长分级表」里玩家是守方的四行（KI-017 第四步：这四个数曾写死在 CombatManager 里）
+  if (!isObj(p.hitStop)) report.error(file, 'hitStop', '缺失：§9 的四行情境停顿必须有来源，代码里不留第二个数')
+  else {
+    report.sub(file, 'hitStop', p.hitStop, { hurtMs: { min: 0 }, blockMs: { min: 0 }, perfectBlockMs: { min: 0 }, parryMs: { min: 0 } })
+    const { hurtMs, blockMs, perfectBlockMs, parryMs } = p.hitStop
+    // 序关系就是这一表的设计意图：接住（盾面卡一下）比挨在身上短，接准与弹反比挨在身上更长——
+    // 「防守成功」那一格必须比「防守失败」更有电影感，否则整张表是在惩罚正确操作。
+    if ([hurtMs, blockMs, perfectBlockMs, parryMs].every(isNum)) {
+      if (blockMs > hurtMs) report.error(file, 'hitStop', `命中被格挡(${blockMs}) 不该长于玩家受击(${hurtMs})：盾上那一下更短`)
+      if (perfectBlockMs < hurtMs) report.error(file, 'hitStop', `完美格挡(${perfectBlockMs}) 短于硬吃(${hurtMs}) ⇒ 接准反而更没存在感`)
+      if (parryMs < perfectBlockMs) report.error(file, 'hitStop', `弹反(${parryMs}) 短于完美格挡(${perfectBlockMs})：§9 的精度阶梯反了`)
+    }
+  }
   report.sub(file, 'rankXpCurve', p.rankXpCurve, { base: { min: 0 }, a: { min: 0 }, b: { min: 0 } })
   report.sub(file, 'attrs', p.attrs, Object.fromEntries([...ATTR_KEYS].map((k) => [k, { min: 0 }])))
 
@@ -741,6 +754,12 @@ function validateEnemies(lootIds) {
       else {
         if (b.bpm !== undefined) report.num(file, `${w}.boss.bpm`, b.bpm, { min: 0, name: 'bpm' })
         if (b.beatsPerBar !== undefined) report.num(file, `${w}.boss.beatsPerBar`, b.beatsPerBar, { min: 1, int: true, name: 'beatsPerBar' })
+        // §15.1/§10 那一嗓子的两件时长。省略只对**单阶段** Boss 合法（她永远跳不了阶 ⇒ 没有消费者）；
+        // 多阶段而不写 = 转阶段演出会静默变成哑巴，所以这里挡下来（KI-017 第四步）。
+        // 这一格**必须独立于**下面的阶段循环、且不得带 `else`：第一版把它并进了那条 if/else 链，
+        // 结果凡是写了 roar 的 Boss 整个 `phases[]` 都不再被校验（反向实测当场抓到）。
+        if (b.roar !== undefined) report.sub(file, `${w}.boss.roar`, b.roar, { hitStopMs: { min: 0 }, muffleMs: { min: 0 } })
+        else if (isArr(b.phases) && b.phases.length > 1) report.error(file, `${w}.boss.roar`, `${b.phases.length} 个阶段 ⇒ 会跳阶，必须写那一嗓子的时长`)
         if (!isArr(b.phases) || b.phases.length === 0) report.error(file, `${w}.boss.phases`, '必须是非空数组')
         else {
           const phaseIds = new Set()
@@ -759,7 +778,7 @@ function validateEnemies(lootIds) {
             if (ph.stealBeat !== undefined) {
               const sb = ph.stealBeat
               report.sub(file, `${pw}.stealBeat`, sb, { bpmDrift: { min: 0 }, reDriftEveryTicks: { min: 1, int: true }, staRegenMul: { min: 0 }, dodgeJitterTicks: { min: 0, int: true } })
-              if (isObj(sb)) report.sub(file, `${pw}.stealBeat.reclaim`, sb.reclaim, { neutralTicks: { min: 0, int: true }, overdrive: { min: 0 } })
+              if (isObj(sb)) report.sub(file, `${pw}.stealBeat.reclaim`, sb.reclaim, { neutralTicks: { min: 0, int: true }, overdrive: { min: 0 }, hitStopMs: { min: 0 } })
             }
             report.sub(file, `${pw}.barCast`, ph.barCast, { everyBars: { min: 1, int: true }, heal: { min: 0, optional: true }, label: { str: true } })
             if (isObj(ph.barCast) && !isStr(ph.barCast.attackId)) report.error(file, `${pw}.barCast.attackId`, '缺失或非字符串')

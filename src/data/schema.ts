@@ -251,8 +251,10 @@ export interface EnemyData {
         /**
          * 抢拍成功的回报：中立网格恢复 tick 数、过载 +N。窗口长度不在这里写第二遍 ——
          * 它就是那一招（`phases[].barCast.attackId` + `attacks[].reclaimWindow`）自己的前摇。
+         * `hitStopMs` 是抢拍那一下的电影停顿（§9 的"情境"腿：这一次没有人挨打，停顿纯粹给
+         * "我把拍抢回来了"这一个动作打分）。
          */
-        reclaim: { neutralTicks: number; overdrive: number }
+        reclaim: { neutralTicks: number; overdrive: number; hitStopMs: number }
       }
       /**
        * 本阶强制排进去的「读条招式」（4-E 的 ai.selfToll 语义提升到阶段级：阶段会变，所以挂在阶段上）。
@@ -280,6 +282,15 @@ export interface EnemyData {
      * 而不是从几何推出来。将来接上遮挡射线时，本字段应退化成「射线打到了什么」。
      */
     covers?: { positions: { x: number; y: number; z: number }[]; radius: number }
+    /**
+     * §15.1/§10「转阶段那一嗓子」的两件时长（第三件震镜在表现层的 §10 表里，见 KI-021 的剩余项）。
+     * 它挂在 `boss` 上而不是 `phases[]` 上，是因为这一嗓子由**跳阶这个事件**触发、与跳到哪一阶无关：
+     * 按阶段写就是把同一对数字抄 N 遍，而 §55 不允许没有消费者的数据形状。
+     *
+     * 省略 = 这一具根本不该喊。单阶段 Boss（万籁）永远跳不了阶，所以它没有这一格是对的；
+     * 真正的保护在验证器里：**写了两个及以上阶段却没写 `roar` ⇒ ERROR**（那条规则有自己的断言腿）。
+     */
+    roar?: { hitStopMs: number; muffleMs: number }
     /**
      * §16「Boss 均带 3 拍入场演出」：**第一次**把玩家当成目标起 `beats` 拍里她只转身、不出手、
      * 不贴近。这段是给的读图窗口（剪影 + 她的私有拍速第一次演给玩家看），不是免伤窗口——
@@ -344,6 +355,17 @@ export interface PlayerBaseData {
   parry: { activeTicks: number; whiffRecovery: number; poiseDamage: number; stunTicks: number; overdriveGain: number; /** §5.3 弹反弹道：反射回原主人的伤害比例（100%） */ projectileReflectMul: number; /** §13.0「听觉 Sound」：弹反那记钟响的响度（未乘武器/词缀），比踏地更响 */ impactLoudness: number }
   roll: { total: number; iframeStart: number; iframeEnd: number; dist: number; backDist: number; stamina: number; lockOnDist: number; lockOnIframes: [number, number] }
   execution: ExecutionConfig
+  /**
+   * combat.md §9「Hitstop 时长分级表」中**玩家是守方**的那四行（毫秒）。它们属于**情境**而不属于
+   * 招式：同一记 heavy 打在盾上、被打准、被弹掉，停的长度各不相同，所以这一份长度不在
+   * `frames.hitStopMs` 里（那一格说的是"这一记打中肉"的长度，走的是另一条腿）。
+   *
+   * 一个数喂四处，且这四处必须同源（KI-017 第二/三步）：相机 `time.hitStop`、`combat.hit` 事件、
+   * 挨打那一方的硬直倒数（`stunStopTicks`）、出手那一方的招式帧账本（`ActionStop`）。
+   * §9 那张表的其余两行住在别处不是漏写：「处决首刀」是处决这一式的属性，在 `execution.firstBladeHitStopMs`；
+   * 「Boss 转阶段砸地」不是玩家身上的情境，在 `enemies[].boss.roar`。
+   */
+  hitStop: { hurtMs: number; blockMs: number; perfectBlockMs: number; parryMs: number }
   attrs: Record<AttrKey, number>
   attrUpCost: number
   rankXpCurve: { base: number; a: number; b: number }

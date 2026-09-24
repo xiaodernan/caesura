@@ -29,9 +29,6 @@ export interface TelegraphLine {
   totalTicks: number
 }
 
-/** combat.md §15.1：跳阶那一嗓子的全频低通时长（0.8s）；与 hitstop/震镜同一条演出拍子 */
-const ROAR_MUFFLE_MS = 800
-
 /** 一次「打在某人身上」的全部决策输入；近战与弹体共用同一条结算通道（combat.md §12） */
 interface EnemyStrike {
   base: number
@@ -650,7 +647,7 @@ export class CombatManager {
 
   /**
    * 全频低通的仲裁者。它有**两处来源**：§5.4 的处决演出（长度 = `player.executing` 那一格）与
-   * §15.1 的跳阶怒吼（长度 = `ROAR_MUFFLE_MS`）。两处各自 emit 一定会互相踩——处决进行中跳了阶，
+   * §15.1 的跳阶怒吼（长度 = `boss.roar.muffleMs`）。两处各自 emit 一定会互相踩——处决进行中跳了阶，
    * 先结束的那一方会把另一方还需要的低通提前撤掉。所以只有一格状态、一个边沿：两边都空了才解除。
    * 放在 update 末尾 ⇒ 这一 tick 内不管是谁先起来，事件都在同一 tick 发出去（不留采样延迟）。
    */
@@ -736,7 +733,7 @@ export class CombatManager {
       this.player.beatParasite = null
       this.player.dodgeJitterTicks = 0
       this.player.addOverdrive(s.reclaim.overdrive)
-      this.time.hitStop(0.18)
+      this.time.hitStop(s.reclaim.hitStopMs / 1000)
       bus.emit('vfx.request', { key: 'parry_ring', pos: { ...boss.pos }, scale: 1.6 })
       bus.emit('audio.sfx', { key: 'parry_bell', pos: { ...boss.pos }, gain: 1 })
       bus.emit('ui.notify', {
@@ -770,11 +767,15 @@ export class CombatManager {
     for (const e of this.ai.enemies) {
       if (e.phaseRoarPending) {
         e.phaseRoarPending = false
-        // §15.1/§10 那一嗓子是三件套：hitstop 250ms + 震镜 + 全频低通 0.8s。前两件早就在了，
-        // 低通这一次接上 KI-003 的总线节点。三个时长现在都住在代码里（这一格该进 `boss.phases[].roar`，
-        // 而那要动正被并行会话写的 schema.ts）——记在 KI-021 行里。
-        this.roarMuffleTicks = msToTicks(ROAR_MUFFLE_MS)
-        this.time.hitStop(0.25)
+        // §15.1/§10 那一嗓子是三件套：hitstop + 震镜 + 全频低通。前两件早就在了，低通在 KI-021②
+        // 接上 KI-003 的总线节点。**两个时长的来源现在是 `boss.roar`**（KI-017 第四步：§9 最后一行
+        // 还住在代码里的那一笔）；第三件震镜仍走表现层的 §10 表（`CameraRig` 的 `shake('boss')`），
+        // 那是另一张表、另一个消费者。
+        const roar = e.data.boss?.roar
+        if (roar) {
+          this.roarMuffleTicks = msToTicks(roar.muffleMs)
+          this.time.hitStop(roar.hitStopMs / 1000)
+        }
         bus.emit('boss.phase', { id: e.id, phase: e.bossPhase + 1, phases: e.data.boss?.phases.length ?? 1, nameKey: e.data.nameKey })
         bus.emit('audio.sfx', { key: 'boss_roar', pos: { ...e.pos }, gain: 1 })
         bus.emit('vfx.request', { key: 'shock_small', pos: { ...e.pos }, scale: 2.6 })
@@ -837,6 +838,10 @@ export class CombatManager {
   private resolveAgainstPlayer(h: Threat, tick: number): DefenseOutcome {
     const p = this.player
     const cfg = statusConfig()
+    // §9「Hitstop 时长分级表」里玩家是守方的那四行，整段来自 `player.json.hitStop`（KI-017 第四步）。
+    // 这里取一次、四个出口共用：一个情境值只准有一个落点，改表就是改行为（`tests/flow/hitstop-table.test.ts`
+    // 的那三条腿分别按三行去验）。
+    const hs = p.base.hitStop
     const base = {
       attackerId: h.attackerId, victimId: 'player', poiseDamage: h.poise, kind: h.kind,
       point: h.point, dir: h.dir, hitStopMs: h.hitStopMs, backstab: false, weakpoint: false
@@ -845,10 +850,10 @@ export class CombatManager {
     if (p.parryActive && facing && h.parryable) {
       h.react(tick, 'parry')
       p.addOverdrive(p.base.parry.overdriveGain)
-      // §9「弹反成功 120ms」：这一格的情境时长同时喂相机、事件与守方硬直——被弹反的人此刻正是
-      // 挨打的那一方（`onParried` 刚给他挂上失音硬直），所以这一格停顿有地方落。
+      // §9「弹反成功」那一行（`hitStop.parryMs`）：这一格的情境时长同时喂相机、事件与守方硬直——
+      // 被弹反的人此刻正是挨打的那一方（`onParried` 刚给他挂上失音硬直），所以这一格停顿有地方落。
       // 攻方这一侧没有载体：`onParried` 已经把他那一招收掉（`attack = null`），没有"正在出的招"可按。
-      const parryStopMs = 120
+      const parryStopMs = hs.parryMs
       this.time.hitStop(parryStopMs / 1000)
       const parried = this.attackerById(h.attackerId)
       this.freezeContact(parryStopMs, parried, parried, h.sourceAction ?? null)
@@ -867,9 +872,10 @@ export class CombatManager {
     if (p.guardTicks >= 1 && p.guardTicks <= p.base.perfectBlockWindow + p.rpg.perfectBlockBonusTicks) {
       h.react(tick, 'perfectBlock')
       p.addOverdrive(1 + p.rpg.restOverdrive)
-      // §9「完美格挡 90ms」：这一格谁都没进硬直，所以守方没有载体—— KI-017 第三步之后它有落点了：
+      // §9「完美格挡」那一行（`hitStop.perfectBlockMs`）：这一格谁都没进硬直，所以守方没有载体——
+      // KI-017 第三步之后它有落点了：
       // **出手那一方的招式帧**被按住（盾面把那一记卡住），仍然只有相机吃是不完整的实现。
-      const perfectStopMs = 90
+      const perfectStopMs = hs.perfectBlockMs
       this.time.hitStop(perfectStopMs / 1000)
       this.freezeContact(perfectStopMs, null, this.attackerById(h.attackerId), h.sourceAction ?? null)
       bus.emit('combat.hit', { ...base, damage: 0, result: 'perfectBlock', shakeKey: 'graze', hitStopMs: perfectStopMs })
@@ -884,9 +890,10 @@ export class CombatManager {
       if (p.stats.stamina > staCost) {
         p.stats.spendStamina(staCost, tick)
         p.stats.addPoise(h.damage * p.base.guard.bleedPoiseFrac, tick)
-        // §9「命中被格挡 45ms」：盾上那一下比身上那一下短，这是**情境**表说的，不是招式表说的。
+        // §9「命中被格挡」那一行（`hitStop.blockMs`）：盾上那一下比身上那一下短，这是**情境**表说的，
+        // 不是招式表说的。
         // 格挡中的玩家没有硬直可按 ⇒ 守方无载体，但攻方有：那一记卡在盾上，出手方的招式帧按住 45ms。
-        const blockStopMs = 45
+        const blockStopMs = hs.blockMs
         this.time.hitStop(blockStopMs / 1000)
         this.freezeContact(blockStopMs, null, this.attackerById(h.attackerId), h.sourceAction ?? null)
         bus.emit('combat.hit', { ...base, damage: through, result: 'block', shakeKey: 'graze', hitStopMs: blockStopMs })
@@ -907,9 +914,10 @@ export class CombatManager {
     const dmg = resolveDamage({ base: h.damage, defense: p.stats.defense, ranged: h.ranged }, () => this.rng.float())
     if (!p.takeDamage(dmg.damage, h.dir)) return 'none'
     p.stats.addPoise(h.poise, tick)
-    // §9「玩家受击 80ms」：情境时长，一个数喂四处（相机、事件、被按住的硬直倒数、**出手方那一式的帧**）。
+    // §9「玩家受击」那一行（`hitStop.hurtMs`）：情境时长，一个数喂四处（相机、事件、被按住的硬直
+    // 倒数、**出手方那一式的帧**）。
     // 攻方这一侧由 `h.sourceAction` 决定成不成：近战那一记正在出 ⇒ 按得住；弹体早就离手 ⇒ 不按。
-    const hurtStopMs = 80
+    const hurtStopMs = hs.hurtMs
     this.time.hitStop(hurtStopMs / 1000)
     this.freezeContact(hurtStopMs, p, this.attackerById(h.attackerId), h.sourceAction ?? null)
     bus.emit('combat.hit', { ...base, damage: dmg.damage, result: 'hit', shakeKey: 'hurt', hitStopMs: hurtStopMs })

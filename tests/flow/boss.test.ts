@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { bus } from '@/core/EventBus'
-import { GameTime, TICK_DT, TICK_HZ } from '@/core/Time'
+import { GameTime, msToTicks, TICK_DT, TICK_HZ } from '@/core/Time'
 import { Rng } from '@/core/Math'
 import type { Input } from '@/core/Input'
 import { RhythmClock } from '@/core/RhythmClock'
@@ -357,26 +357,77 @@ describe('钟壳：打不动不是数值墙，而是「撞钟才是正解」', (
     const w = makeWorld()
     const e = ostlara(w)
     engage(w, e)
+    // KI-017 第四步：那一嗓子的两件时长住在 `boss.roar`（此前是 CombatManager 里的两个常数）。
+    // 所以这里读的是她自己的表，而"演出来的长度 = 表里那一格"由两把尺子各自钉住。
+    const roar = e.data.boss?.roar
+    expect(roar, '三阶段 Boss 必须写着那一嗓子的时长（验证器同一条规则挡着）').toBeTruthy()
+    const asked: number[] = []
+    const origStop = w.time.hitStop.bind(w.time)
+    w.time.hitStop = (sec: number, scale?: number): void => { asked.push(sec * 1000); origStop(sec, scale) }
     e.stats.damage(Math.round(e.stats.hpMax * 0.5))
     w.tick(1)
+    w.time.hitStop = origStop
     expect(e.bossPhase).toBe(1)
     expect(w.phases.at(-1)).toMatchObject({ id: e.id, phase: 2, phases: 3 })
     expect(w.notifies.some((n) => n.kind === 'boss'), '提示是 Boss 级文案样式').toBe(true)
     expect(w.sfx.filter((k) => k === 'boss_roar').length).toBe(1)
-    // §15.1/§10 的三件套之三：那一嗓子期间世界要塌向 100Hz，且 0.8s 后自己回来
+    expect(asked, '按停那一下要的秒数 = boss.roar.hitStopMs，而且这一 tick 只按停这一次').toEqual([roar!.hitStopMs])
+    // §15.1/§10 的三件套之三：那一嗓子期间世界要塌向 100Hz，且到表里那一格自己回来
+    const held = msToTicks(roar!.muffleMs)
     expect(w.muffles, '跳阶开低通').toEqual([true])
-    w.tick(46)
-    expect(w.muffles, '0.8s（48 tick）之内一直闷着').toEqual([true])
+    w.tick(held - 2)
+    expect(w.muffles, `${held} tick 走完之前一直闷着`).toEqual([true])
     let toOpen = 0
-    while (!w.muffles.includes(false) && toOpen < 80) { w.tick(); toOpen++ }
+    while (!w.muffles.includes(false) && toOpen < held * 2) { w.tick(); toOpen++ }
     expect(w.muffles, '到点自己解除，不需要谁去关').toEqual([true, false])
-    // 起音那一格算第一格 ⇒ 46 格之后还闷着，第 48 格回到开：低通覆盖的正好是 spec 的 0.8s
-    expect(toOpen, '低通覆盖的格数 = 0.8s = 48 tick').toBe(48 - 46)
+    // 起音那一格算第一格 ⇒ 上面已经走过 held-2 格，再两格回到开：低通覆盖的正好是表里那一格
+    expect(toOpen, '低通覆盖的格数 = boss.roar.muffleMs 换算的 tick 数').toBe(2)
     w.off()
   })
 
-  it('跳阶的低通与处决的低通重叠时不提前解除（两处来源共用一个仲裁者）', () => {
-    const w = makeWorld()
+  /**
+   * 上一条读的是表，所以它可能"两边都写死同一个数"而照样绿。这一条用**改表法**补上：
+   * 把 `boss.roar` 改成另一对数字，演出来的两件时长必须跟着走 ⇒ 代码里没有第二个数。
+   */
+  it('那一嗓子的两件时长跟着表跑：改 roar 就改演出长度', () => {
+    const run = (hitStopMs: number, muffleMs: number): { asked: number; openAfter: number } => {
+      const w = makeWorld()
+      const e = ostlara(w)
+      const roar = e.data.boss?.roar
+      expect(roar, '量具失效：三阶段 Boss 没写那一嗓子的时长').toBeTruthy()
+      const saved = { hitStopMs: roar!.hitStopMs, muffleMs: roar!.muffleMs }
+      roar!.hitStopMs = hitStopMs
+      roar!.muffleMs = muffleMs
+      const asked: number[] = []
+      const origStop = w.time.hitStop.bind(w.time)
+      w.time.hitStop = (sec: number, scale?: number): void => { asked.push(Math.round(sec * 1000)); origStop(sec, scale) }
+      try {
+        engage(w, e)
+        e.stats.damage(Math.round(e.stats.hpMax * 0.5))
+        w.tick(1)
+        expect(e.bossPhase, '量具失效：这一 tick 没跳阶').toBe(1)
+        let openAfter = 0
+        while (!w.muffles.includes(false) && openAfter < 600) { w.tick(); openAfter++ }
+        return { asked: asked[0] ?? -1, openAfter }
+      } finally {
+        w.time.hitStop = origStop
+        roar!.hitStopMs = saved.hitStopMs
+        roar!.muffleMs = saved.muffleMs
+        w.off()
+      }
+    }
+    const asTable = run(250, 800)
+    const asEdited = run(500, 350)
+    expect(asTable.asked, '按停要的毫秒数 = 表里那一格').toBe(250)
+    expect(asTable.openAfter, '低通覆盖的格数 = 表里那一格换算的 tick').toBe(msToTicks(800))
+    expect(asEdited.asked, '改了表却没改按停 ⇒ CombatManager 里还藏着 0.25').toBe(500)
+    expect(asEdited.openAfter, '改了表却没改低通 ⇒ 那里还藏着 ROAR_MUFFLE_MS=800').toBe(msToTicks(350))
+    // 还原检查：量具不该把生产数据留在改过的状态
+    const back = run(250, 800)
+    expect(back, '跑完三趟之后表还是原来那张表').toEqual(asTable)
+  })
+
+  it('跳阶的低通与处决的低通重叠时不提前解除（两处来源共用一个仲裁者）', () => {    const w = makeWorld()
     const e = ostlara(w)
     engage(w, e)
     e.stats.damage(Math.round(e.stats.hpMax * 0.5))

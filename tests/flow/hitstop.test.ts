@@ -32,7 +32,10 @@ import type { Vec3 } from '@/combat/EntityStats'
  * 攻方那几格整段落在判定窗之后、收势之前，所以窗长与净时长都不被改写。**
  *
  * 时长只有一个来源：那一格的 `frames.hitStopMs`（§55）或 §9 情境表里的一个数，与相机吃的是同一个。
- * 下面的期望值全部从生产同一个 `msToTicks` 派生；每一把尺子都配一条 `hitStopMs: 0` 的对照腿（两跑只差那一个数），
+ * 第四步（KI-017②，2026-09-25）之后，情境表那四个数住在 `player.json.hitStop` 而不是住在
+ * `CombatManager.ts` —— 所以本文件的期望值一律从 `playerBase.hitStop` 读，而"读到的就是表里那个"
+ * 由最后那一条 describe 用**改表法**钉死（把表改成别的数，行为跟着变 ⇒ 代码里没有第二个数）。
+ * 每一把尺子都配一条 `hitStopMs: 0` 的对照腿（两跑只差那一个数），
  * 所以"多撑了几格"量的是停顿本身，不是弹道要飞几 tick、也不是硬直倒数本身多久走一格。
  * 攻方那几条腿各带一条"账本必须是 0"的反证（挥空、弹体离手），否则"净时长没变"绿在没人被按停上。
  */
@@ -165,8 +168,8 @@ describe('§9 守方那一半：停顿按在挨打的那一方（KI-017 第二�
     }
     const hit = run(STOP)
     expect(hit.stunned, '这一记确实把玩家打进了硬直').toBeGreaterThan(0)
-    // §9 是"情境"表：「玩家受击 80ms」不看攻击者招式自己那一格（这里传进去的 90 是干扰项）
-    expect(hit.reported, '受击那一下的时长住在情境表里，不是招式表里').toBe(80)
+    // §9 是"情境"表：「玩家受击」那一行不看攻击者招式自己那一格（这里传进去的 90 是干扰项）
+    expect(hit.reported, '受击那一下的时长住在情境表里，不是招式表里').toBe(playerBase.hitStop.hurtMs)
     // 尺子读出的格数含"它真正动起来的那一格"，所以被按住的格数是 moves - 1
     expect(hit.moves - 1, '玩家的硬直倒数被按住的就是这一格').toBe(msToTicks(hit.reported))
   })
@@ -290,7 +293,7 @@ describe('§9 攻方那一半：停顿落在窗尾之后，收势之前还清（
     }
     const blocked = w.hits.find((h) => h.result === 'perfectBlock' && h.attackerId === e.id)
     expect(blocked, '900 tick 没等到一次完美格挡：量具失效').toBeTruthy()
-    expect(blocked!.hitStopMs, '§9「完美格挡」那一格说的是 90ms').toBe(90)
+    expect(blocked!.hitStopMs, '§9「完美格挡」那一行读的是情境表').toBe(playerBase.hitStop.perfectBlockMs)
     expect(e.attack, '完美格挡把那一招收掉了 ⇒ 攻方没有载体，这条量具读的是空气').toBe(atk)
     const f = atk!.spec.frames
     // 逐 tick 钉住架势与血量：碎甲会把这一收掉，那条路不是本条要量的东西
@@ -300,16 +303,16 @@ describe('§9 攻方那一半：停顿落在窗尾之后，收势之前还清（
       e.stats.crumpleTicksLeft = 0
       w.tick()
     })
-    expect(mv.stopped, '90ms 没按到她正在挥的那一记上 ⇒ 「完美格挡」那一行仍然只喂了相机').toBe(msToTicks(90))
+    expect(mv.stopped, '那一行的时长没按到她正在挥的那一记上 ⇒ 「完美格挡」仍然只喂了相机').toBe(msToTicks(playerBase.hitStop.perfectBlockMs))
     expect(mv.holdsAt.length, f.recovery - f.activeEnd - 1 + ' 帧的收势装不下 90ms 的债 ⇒ 判据 4 该把这一式整式豁免').toBeGreaterThan(0)
     for (const t of mv.holdsAt) expect(t, '停顿兑现的那一格落在了判定窗里 ⇒ 她的窗尾被推开，而 §2.1 量的正是这一格').toBeGreaterThan(f.activeEnd)
     w.off()
   })
 })
 
-describe('§9「弹反成功 120ms」：被弹反的人就是此刻挨打的那一方', () => {
+describe('§9「弹反成功」那一行：被弹反的人就是此刻挨打的那一方', () => {
   it('弹反那一下把她失音的硬直多按住 msToTicks(120) 格', () => {
-    // 弹反这一路不需要对照腿：情境时长（120）不住在招式帧里，测试也没有办法把它调成 0；
+    // 弹反这一路不需要对照腿：情境时长不住在招式帧里，测试也没有办法把它调成 0（改表那一腿在上面）；
     // 所以这条量的是"事件报的那一格 == 实际按住的格数"，并用 onParried 那段真硬直当载体。
     const parryAndMeasure = (): { held: number; reported: number } => {
       const w = makeWorld()
@@ -334,9 +337,92 @@ describe('§9「弹反成功 120ms」：被弹反的人就是此刻挨打的那�
       throw new Error('1500 tick 里没弹成一次反：这条用例的尺子失效')
     }
     const { held, reported } = parryAndMeasure()
-    expect(reported, '§9「弹反成功」那一格说的是 120ms').toBe(120)
-    expect(held, '弹反那 120ms 确实按住了她的硬直（否则这条在自证空集）').toBeGreaterThan(0)
+    expect(reported, '§9「弹反成功」那一行读的是情境表').toBe(playerBase.hitStop.parryMs)
+    expect(held, '弹反那一行的时长确实按住了她的硬直（否则这条在自证空集）').toBeGreaterThan(0)
     expect(held, '事件报的那一格就是被按住的格数').toBe(msToTicks(reported))
+  })
+})
+
+describe('§9 的四行只有一个来源：改表就改行为（KI-017 第四步）', () => {
+  /** 表本身先立着：这四行是 combat.md §9 的那四行，改了表就是改了设计（序关系由验证器挡） */
+  it('表没被搬空：四行都在，且和 §9 那张表对得上', () => {
+    expect(playerBase.hitStop).toEqual({ hurtMs: 80, blockMs: 45, perfectBlockMs: 90, parryMs: 120 })
+  })
+
+  /**
+   * 「一个数喂四处」最硬的反证不是读数等于表值（那可能两边都写死同一个数），而是
+   * **把表改掉，行为跟着改**。这里只动表：同一套出手、同一个敌人、同一个 RNG，
+   * 差出来的格数必须正好是两档时长之差。
+   */
+  it('玩家受击：按住硬直的格数跟着表跑，不跟着代码里那个旧常数跑', () => {
+    const run = (hurtMs: number): { reported: number; held: number } => {
+      const saved = playerBase.hitStop.hurtMs
+      playerBase.hitStop.hurtMs = hurtMs
+      try {
+        const w = makeWorld()
+        w.pin(w.ai.spawn(FOE, { x: 0, y: 0, z: -30 }, 'table'))
+        faceAt(w, { x: 0, y: 0, z: -30 })
+        // 招式自己那一格（90）故意与表不同：读数是 80/200 而不是 90，才说明情境表赢了招式表
+        shoot(w, w.player.pos, STOP, true)
+        const moves = ticksUntilStunMoves(w, () => w.player.stunTicks, () => w.hits.some((h) => h.victimId === 'player'))
+        const out = { reported: reportedStop(w, (h) => h.victimId === 'player'), held: moves - 1 }
+        w.off()
+        return out
+      } finally {
+        playerBase.hitStop.hurtMs = saved
+      }
+    }
+    const asTable = run(80)
+    const asEdited = run(200)
+    expect(asTable.reported, '读到的就是表里那一格').toBe(playerBase.hitStop.hurtMs)
+    expect(asTable.held).toBe(msToTicks(80))
+    expect(asEdited.reported, '改了表却没改行为 ⇒ 代码里还藏着第二个数').toBe(200)
+    expect(asEdited.held - asTable.held, '按住格数的差 = 两档时长之差').toBe(msToTicks(200) - msToTicks(80))
+    expect(playerBase.hitStop.hurtMs, '量具不动生产数据：跑完要还原').toBe(80)
+  })
+
+  /**
+   * §9「命中被格挡 45ms」这一行到昨天为止只喂了相机一个数：格挡中的玩家不进硬直（守方无载体），
+   * 攻方载体是第三步才接上的。所以这条腿量的是**出手那一方**的招式帧账本，同时钉住
+   * 「45 短于 80」这一格设计意图在行为上也成立。
+   */
+  it('盾面吃下那一记：45ms 按在出手的人身上，而硬吃那一记按 80ms', () => {
+    const w = makeWorld()
+    const e = w.ai.spawn(FOE, { ...FOE_POS }, 'block')
+    e.alertness = 100
+    e.enter('combat')
+    let atk: Enemy['attack'] = null
+    for (let t = 0; t < 1500; t++) {
+      const p = w.player.pos
+      w.player.yaw = Math.atan2(e.pos.x - p.x, e.pos.z - p.z)
+      w.player.camYawRef = Math.PI + w.player.yaw
+      w.player.stats.hp = w.player.stats.hpMax
+      w.player.stats.stamina = w.player.stats.staMax // 盾不该先被掏空：这一腿量的是停顿不是体力
+      e.stats.hp = e.stats.hpMax
+      // 早按：持盾超过完美格挡窗才落判定 ⇒ 走 `block` 那条出口
+      w.frame.held.add('guard')
+      atk = e.attack
+      w.tick()
+      if (w.hits.some((h) => h.result === 'block' && h.attackerId === e.id)) break
+      atk = null
+    }
+    const blocked = w.hits.find((h) => h.result === 'block' && h.attackerId === e.id)
+    expect(blocked, '1500 tick 没等到一次格挡：量具失效').toBeTruthy()
+    expect(blocked!.hitStopMs, '§9「命中被格挡」那一行读的是表，不是招式帧').toBe(playerBase.hitStop.blockMs)
+    expect(atk, '格挡把那一招收掉了 ⇒ 攻方没有载体，这条量具读的是空气').toBeTruthy()
+    const f = atk!.spec.frames
+    const mv = sample(() => (e.attack === atk ? atk : null), f, () => {
+      e.stats.hp = e.stats.hpMax
+      e.stats.poiseAccum = 0
+      e.stats.crumpleTicksLeft = 0
+      w.frame.held.add('guard')
+      w.player.stats.stamina = w.player.stats.staMax
+      w.tick()
+    })
+    expect(mv.stopped, '45ms 没按到她正在挥的那一记上 ⇒ 这一行仍然只喂了相机').toBe(msToTicks(playerBase.hitStop.blockMs))
+    expect(playerBase.hitStop.blockMs, '这一格的设计意图：盾上那一下比身上那一下短').toBeLessThan(playerBase.hitStop.hurtMs)
+    for (const t of mv.holdsAt) expect(t, '停顿兑现的位置：判定窗之后（§2.1 的窗长不动）').toBeGreaterThan(f.activeEnd)
+    w.off()
   })
 })
 

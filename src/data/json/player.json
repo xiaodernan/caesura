@@ -32,6 +32,12 @@
   "projectileReflectMul": 1,
   "impactLoudness": 0.85
  },
+ "hitStop": {
+  "hurtMs": 80,
+  "blockMs": 45,
+  "perfectBlockMs": 90,
+  "parryMs": 120
+ },
  "roll": {
   "total": 30,
   "iframeStart": 9,
