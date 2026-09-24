@@ -4,8 +4,8 @@ import { GameLoop } from '@/core/GameLoop'
 import { Input } from '@/core/Input'
 import { RhythmClock } from '@/core/RhythmClock'
 import { registry } from '@/core/Registry'
-import { registerGameData, playerBase, regions, worldstate } from '@/data'
-import type { ItemData, MovesetData, WeaponData } from '@/data/schema'
+import { registerGameData, playerBase, regions, worldstate, dialogues, quests as questTable } from '@/data'
+import type { ItemData, MovesetData, NpcData, WeaponData } from '@/data/schema'
 import { createArena } from '@/world/PlaceholderArena'
 import { StreamingSystem, chunkKeyOf } from '@/world/Streaming'
 import { Surface } from '@/world/Surface'
@@ -27,10 +27,14 @@ import { Haptics } from '@/input/Haptics'
 import { VfxLayer } from '@/vfx/VfxLayer'
 import { Hud } from '@/ui/Hud'
 import { Stakerite } from '@/ui/Stakerite'
+import { DialogueBox } from '@/ui/DialogueBox'
 import { CombatDebugger } from '@/tools/CombatDebugger'
 import { SaveGame, LocalStore, IdbStore } from '@/save/Serializer'
 import { Checkpoints } from '@/save/Checkpoint'
 import { WorldState } from '@/quest/WorldState'
+import { Quests } from '@/quest/Quests'
+import { DialogueEngine, type DialogueContext } from '@/quest/Dialogue'
+import { DialogueSession } from '@/quest/Settlement'
 import { RpgRuntime } from '@/rpg/Runtime'
 import { KillSettlement, openLootTable, refreshPlayer, gearLabel, type SettlementDeps } from '@/rpg/Settlement'
 
@@ -103,6 +107,17 @@ const panel = new Stakerite(rpg, {
     if (eff.heal > 0 || eff.corruption < 0) player.publishStats()
   }
 })
+/**
+ * 对话框（Phase 6-B）。它只回吐玩家的选择，效果由 `showTurn` → `applyDialogueEffects` 统一落盘：
+ * UI 不做第二个真值（与调音桩面板同一条纪律）。
+ */
+const dialogueBox = new DialogueBox({
+  onChoose: (choiceId) => talk.choose(choiceId),
+  onAdvance: () => talk.advance(),
+  onClose: () => talk.close(),
+})
+dialogueBox.setSpeakerResolver((id) => registry.maybeGet<NpcData>(id)?.displayName ?? id)
+
 function setPanelOpen(open: boolean): void {
   if (open) { panel.show(); time.paused = true; input.enabled = false }
   else { panel.close(); time.paused = false; input.enabled = true }
@@ -127,14 +142,59 @@ const worldState = new WorldState(worldstate, {
   hasFlag: (k) => streaming.hasFlag(k),
   setFlag: (k) => streaming.setFlag(k)
 })
+/**
+ * 叙事层（Phase 6-B）：任务状态机 + NPC 关系 + 对话引擎。
+ * 三者共用**一个**上下文（旗标 / 关系 / 任务步 / 背包 / 已读），所以"对话看得见什么"
+ * 与"任务推进到哪"永远是同一份事实——不存在 UI 与逻辑各记一套的情况。
+ */
+const quests = new Quests(questTable, (e) => {
+  bus.emit('ui.notify', {
+    text: e.started ? `新的委托 · ${e.label}` : `委托推进 · ${e.label}`,
+    kind: e.started ? 'boss' : 'reward',
+  })
+})
+const dialogueEngine = new DialogueEngine(dialogues, quests)
+const dialogueCtx: DialogueContext = {
+  hasFlag: (k) => streaming.hasFlag(k),
+  relation: (npc) => quests.relation(npc),
+  questState: (id) => quests.state(id),
+  questIndex: (id) => quests.stepIndex(id),
+  hasItem: (id, count = 1) => rpg.inv.count(id) >= count,
+  hasSeen: (d, n) => quests.hasSeen(d, n),
+}
+
 const nodes = new InteractableGreybox(arena.scene, regions, (pos) => { const c = streaming.cellOf(pos); return chunkKeyOf(c.cx, c.cy, c.cz) }, (k) => streaming.hasFlag(k))
 nodes.syncActive(streaming.byState('active').map((c) => c.key)) // 起始格在构造前就已激活，补一次
+
+/**
+ * 对话会话（Phase 6-B）：编排住在 `quest/Settlement.ts`（那里才有 §59 的闭环测试），
+ * 这里只把它接到组合根的五样东西上——叙事进度、背包、旗标广播、播报、世界停摆开关。
+ */
+const talk = new DialogueSession({
+  quests,
+  engine: dialogueEngine,
+  ctx: dialogueCtx,
+  inv: rpg.inv,
+  setFlag: (k, v) => streaming.setFlag(k, v),
+  notify: (text, kind) => bus.emit('ui.notify', { text, kind: kind ?? 'info' }),
+  refresh: () => refreshRpg(),
+  setPaused: (paused) => { time.paused = paused; input.enabled = !paused },
+  present: (view) => { if (view) dialogueBox.show(view); else dialogueBox.hide() },
+})
+
+/** 与 NPC 交谈：没有可说的话就说明一句，不弹空框 */
+function openDialogue(npcId: string): void {
+  if (talk.open(npcId)) return
+  const name = registry.maybeGet<NpcData>(npcId)?.displayName ?? '对方'
+  bus.emit('ui.notify', { text: `${name}没有说话（这条线还没写到这里）`, kind: 'info' })
+}
 
 /** 交互物落地：调音桩休息、机关传送（= UE 的 Level Streaming 遮蔽传送） */
 function applyInteract(id: string): void {
   const r = interact.use(id, player.pos)
   if (r.rest && !player.stats.dead) { player.rest(); checkpoints.request('rest') }
   if (r.ok && r.lootTable) openLootTable(settlementDeps, r.lootTable)
+  if (r.ok && r.npcId) openDialogue(r.npcId)
   if (r.ok && r.to) {
     player.pos.x = r.to.x; player.pos.y = r.to.y; player.pos.z = r.to.z
     player.vy = 0
@@ -155,6 +215,7 @@ lock.candidates = ai.enemies
 
 addEventListener('pointerdown', () => audio.start())
 addEventListener('keydown', (e) => {
+  if (e.code === 'Escape' && dialogueBox.isOpen) return // 交给对话框自己处理（先关对话，不解冻世界）
   if (e.code === 'Escape') {
     if (panel.isOpen) setPanelOpen(false) // 面板开着时 Esc 先收面板，不会顺手把游戏解冻
     else time.paused = !time.paused
@@ -184,7 +245,7 @@ const core = {
         else bus.emit('ui.notify', { text: '需在调音桩前调音', kind: 'info' })
       }
     }
-    if (panel.isOpen) return // 面板打开时世界停摆：不再吃移动/攻击输入
+    if (panel.isOpen || dialogueBox.isOpen) return // 面板/对话打开时世界停摆：不再吃移动/攻击输入
     if (inp.frame.edges.has('lockOn')) lock.toggle()
     for (const [i, act] of (['ability1', 'ability2', 'ability3'] as const).entries()) {
       if (inp.frame.edges.has(act)) selectWeaponSlot(i)
@@ -256,7 +317,7 @@ bus.on('log', (l) => console.info(`[caesura:${l.level}] ${l.msg}`))
  */
 const savePrimary = new LocalStore('caesura.save.', localStorage)
 const saveBackup = typeof indexedDB === 'undefined' ? null : new IdbStore('caesura-save')
-const saves = new SaveGame({ player, streaming, spawner, clock: rhythm, time, rpg, interact }, savePrimary, saveBackup)
+const saves = new SaveGame({ player, streaming, spawner, clock: rhythm, time, rpg, interact, quests }, savePrimary, saveBackup)
 const checkpoints = new Checkpoints(saves)
 // 开局就把用的是哪颗种子写在控制台：QA 要复现某一串掉落，第一句问的就是"你那局什么种子"
 bus.emit('log', { level: 'info', msg: `rpg.origin ${originId} seed ${rpg.inv.rng.state().seed}` })
@@ -294,10 +355,10 @@ async function bootWithSave(): Promise<void> {
   loop.start()
 }
 
-;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, interact, hud, spawner, nodes, worldState, projectileVis, actors: visuals, bossArena, saves, checkpoints, rpg, settlement, panel, setPanelOpen, refreshRpg, saveNow: () => saves.save('autosave') }
+;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, interact, hud, spawner, nodes, worldState, projectileVis, actors: visuals, bossArena, saves, checkpoints, rpg, settlement, panel, setPanelOpen, quests, dialogueEngine, dialogueBox, openDialogue, refreshRpg, saveNow: () => saves.save('autosave') }
 
 document.getElementById('boot')!.style.display = 'none'
 ;(window as unknown as Record<string, unknown>).__CAESURA_BOOTED__ = true
 bus.emit('boot.ready', undefined)
 void bootWithSave()
-console.info('[caesura] online — WASD/Shift/Ctrl-roll/LMB/RMB/F guard/G parry/Q lock/E interact(优先)/execute(处决·背刺)/1·2·3 换装/R·C 乐章战技 I·II/Tab 调音桩面板(需站在调音桩前)/Esc pause')
+console.info('[caesura] online — WASD/Shift/Ctrl-roll/LMB/RMB/F guard/G parry/Q lock/E interact(优先)/execute(处决·背刺)/1·2·3 换装/R·C 乐章战技 I·II/Tab 调音桩面板(需站在调音桩前)/E 与 NPC 交谈/1-9 选对话选项/Esc pause')

@@ -117,11 +117,15 @@ describe('interactable-driven traversal (Phase 3-C1)', () => {
     w.off()
   })
 
-  it('NPC 不假装完成：只登记「对话待接入」，不设 flag', () => {
+  it('NPC 只回一句「交谈」并把 npcId 交出去：**交互本身不设任何旗标**（世界由对话里的选择改）', () => {
     const w = wire()
     const r = use(w, 'npc_belltongue')
     expect(r.ok).toBe(true)
-    expect(r.text).toContain('Phase 6')
+    // Phase 6-B 起这里返回的是"与谁交谈"（显示名来自 npcs.json），而不是 Phase 3 的占位台词
+    expect(r.text).toContain('铃姨')
+    // npcId 要从**原始返回**上取：上面的 use() 辅助函数是按老字段手挑子集，会把它滤掉
+    expect(w.interact.use('npc_belltongue', at(w, 'npc_belltongue')).npcId).toBe('npc_belltongue')
+    // 这条断言是它真正的价值：按一次 E 不会凭空改世界 —— 只有对话里做出的选择才会
     expect(w.flags).toEqual([])
     w.off()
   })

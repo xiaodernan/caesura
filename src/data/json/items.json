@@ -79,7 +79,9 @@
   "stack": 20,
   "value": 18,
   "desc": "把别人的遗响抹在伤口上。应急治疗，但那声音会留在你身上。",
-  "use": { "heal": 45 }
+  "use": {
+   "heal": 45
+  }
  },
  {
   "id": "it_timbre_crystal",
@@ -89,7 +91,9 @@
   "stack": 5,
   "value": 26,
   "desc": "会记住声音的晶体。刮一点粉下去，它把你身上那些不属于这首歌的音带走一层——安静是有代价的，这东西就是那笔账。",
-  "use": { "corruption": -25 }
+  "use": {
+   "corruption": -25
+  }
  },
  {
   "id": "it_score_fragment",
@@ -109,7 +113,6 @@
   "value": 0,
   "desc": "喧堕者体内那颗还在振动的东西。吸收它，等于把它的句子接进自己的谱册。"
  },
-
  {
   "id": "wp_tuning_sword_item",
   "nameKey": "weapon.tuningSword",
@@ -118,7 +121,16 @@
   "stack": 1,
   "value": 60,
   "desc": "学徒的第一把剑。没有多余的东西，只有一条准的线。",
-  "gear": { "slot": "weapon", "rarity": "common", "weaponId": "wp_tuning_sword", "weight": 8, "salvage": { "dross": 1, "timbite": 20 } }
+  "gear": {
+   "slot": "weapon",
+   "rarity": "common",
+   "weaponId": "wp_tuning_sword",
+   "weight": 8,
+   "salvage": {
+    "dross": 1,
+    "timbite": 20
+   }
+  }
  },
  {
   "id": "wp_fortissimo_greatsword_item",
@@ -128,7 +140,16 @@
   "stack": 1,
   "value": 120,
   "desc": "一整段强音被锻成刃。挥起来像把整支乐队砸下去。",
-  "gear": { "slot": "weapon", "rarity": "uncommon", "weaponId": "wp_fortissimo_greatsword", "weight": 18, "salvage": { "dross": 2, "timbite": 40 } }
+  "gear": {
+   "slot": "weapon",
+   "rarity": "uncommon",
+   "weaponId": "wp_fortissimo_greatsword",
+   "weight": 18,
+   "salvage": {
+    "dross": 2,
+    "timbite": 40
+   }
+  }
  },
  {
   "id": "wp_drawpin_spear_item",
@@ -138,9 +159,17 @@
   "stack": 1,
   "value": 100,
   "desc": "弦坊伶人的长枪。不必贴身，也能把一个音钉死在墙上。",
-  "gear": { "slot": "weapon", "rarity": "uncommon", "weaponId": "wp_drawpin_spear", "weight": 12, "salvage": { "dross": 2, "timbite": 35 } }
+  "gear": {
+   "slot": "weapon",
+   "rarity": "uncommon",
+   "weaponId": "wp_drawpin_spear",
+   "weight": 12,
+   "salvage": {
+    "dross": 2,
+    "timbite": 35
+   }
+  }
  },
-
  {
   "id": "ar_mutewrap_helm",
   "nameKey": "armor.mutewrap",
@@ -149,7 +178,16 @@
   "stack": 1,
   "value": 25,
   "desc": "哑带边缘人人都会缠的一层布。挡不了多少，但能让世界小声一点。",
-  "gear": { "slot": "helm", "rarity": "common", "def": 3, "weight": 2, "salvage": { "dross": 1, "timbite": 8 } }
+  "gear": {
+   "slot": "helm",
+   "rarity": "common",
+   "def": 3,
+   "weight": 2,
+   "salvage": {
+    "dross": 1,
+    "timbite": 8
+   }
+  }
  },
  {
   "id": "ar_choir_hood",
@@ -159,7 +197,19 @@
   "stack": 1,
   "value": 55,
   "desc": "旧唱诗班的头巾。内衬绣着四口钟的位置，最后一口没人找着。",
-  "gear": { "slot": "helm", "rarity": "uncommon", "def": 5, "weight": 3, "affixes": ["af_tacet"], "salvage": { "dross": 1, "timbite": 18 } }
+  "gear": {
+   "slot": "helm",
+   "rarity": "uncommon",
+   "def": 5,
+   "weight": 3,
+   "affixes": [
+    "af_tacet"
+   ],
+   "salvage": {
+    "dross": 1,
+    "timbite": 18
+   }
+  }
  },
  {
   "id": "ar_scavenger_cuirass",
@@ -169,7 +219,16 @@
   "stack": 1,
   "value": 70,
   "desc": "缝了很多口袋的皮甲。每个口袋里都曾装过一块会响的石头。",
-  "gear": { "slot": "cuirass", "rarity": "common", "def": 6, "weight": 6, "salvage": { "dross": 2, "timbite": 22 } }
+  "gear": {
+   "slot": "cuirass",
+   "rarity": "common",
+   "def": 6,
+   "weight": 6,
+   "salvage": {
+    "dross": 2,
+    "timbite": 22
+   }
+  }
  },
  {
   "id": "ar_drummer_cuirass",
@@ -179,7 +238,19 @@
   "stack": 1,
   "value": 130,
   "desc": "把驼鼓的膜绷在胸前做的甲。挨打时它会替你先响一声。",
-  "gear": { "slot": "cuirass", "rarity": "uncommon", "def": 9, "weight": 9, "affixes": ["af_tempered"], "salvage": { "dross": 3, "timbite": 45 } }
+  "gear": {
+   "slot": "cuirass",
+   "rarity": "uncommon",
+   "def": 9,
+   "weight": 9,
+   "affixes": [
+    "af_tempered"
+   ],
+   "salvage": {
+    "dross": 3,
+    "timbite": 45
+   }
+  }
  },
  {
   "id": "ar_tuner_gloves",
@@ -189,7 +260,16 @@
   "stack": 1,
   "value": 30,
   "desc": "指尖磨得很薄，为了听得见弦的偏差。",
-  "gear": { "slot": "gloves", "rarity": "common", "def": 2, "weight": 1, "salvage": { "dross": 1, "timbite": 10 } }
+  "gear": {
+   "slot": "gloves",
+   "rarity": "common",
+   "def": 2,
+   "weight": 1,
+   "salvage": {
+    "dross": 1,
+    "timbite": 10
+   }
+  }
  },
  {
   "id": "ar_tracewrists",
@@ -199,7 +279,19 @@
   "stack": 1,
   "value": 95,
   "desc": "护腕内侧刻着回溯的纹路：声音从哪里来，它就往哪里发烫。",
-  "gear": { "slot": "gloves", "rarity": "rare", "def": 4, "weight": 2, "affixes": ["af_tireless"], "salvage": { "dross": 2, "timbite": 34 } }
+  "gear": {
+   "slot": "gloves",
+   "rarity": "rare",
+   "def": 4,
+   "weight": 2,
+   "affixes": [
+    "af_tireless"
+   ],
+   "salvage": {
+    "dross": 2,
+    "timbite": 34
+   }
+  }
  },
  {
   "id": "ar_silent_boots",
@@ -209,7 +301,19 @@
   "stack": 1,
   "value": 90,
   "desc": "底子裹了吸音的绒。在靠听不看的地方，这双靴子就是命。",
-  "gear": { "slot": "greaves", "rarity": "uncommon", "def": 4, "weight": 4, "affixes": ["af_tacet"], "salvage": { "dross": 2, "timbite": 30 } }
+  "gear": {
+   "slot": "greaves",
+   "rarity": "uncommon",
+   "def": 4,
+   "weight": 4,
+   "affixes": [
+    "af_tacet"
+   ],
+   "salvage": {
+    "dross": 2,
+    "timbite": 30
+   }
+  }
  },
  {
   "id": "ar_coppergreaves",
@@ -219,7 +323,16 @@
   "stack": 1,
   "value": 60,
   "desc": "钉了一圈铜钉的腿甲。走路会响，但腿还在。",
-  "gear": { "slot": "greaves", "rarity": "common", "def": 6, "weight": 7, "salvage": { "dross": 2, "timbite": 20 } }
+  "gear": {
+   "slot": "greaves",
+   "rarity": "common",
+   "def": 6,
+   "weight": 7,
+   "salvage": {
+    "dross": 2,
+    "timbite": 20
+   }
+  }
  },
  {
   "id": "seal_firstbeat",
@@ -229,7 +342,19 @@
   "stack": 1,
   "value": 110,
   "desc": "刻着第一拍的徽记。据说戴上它的人，总能先一步踩到点上。",
-  "gear": { "slot": "seal", "rarity": "rare", "def": 0, "weight": 0, "affixes": ["af_keen"], "salvage": { "dross": 1, "timbite": 40 } }
+  "gear": {
+   "slot": "seal",
+   "rarity": "rare",
+   "def": 0,
+   "weight": 0,
+   "affixes": [
+    "af_keen"
+   ],
+   "salvage": {
+    "dross": 1,
+    "timbite": 40
+   }
+  }
  },
  {
   "id": "seal_darkscore",
@@ -239,7 +364,19 @@
   "stack": 1,
   "value": 140,
   "desc": "背面刻着没人看得懂的谱。失谐越深，它越烫。",
-  "gear": { "slot": "seal", "rarity": "rare", "def": 0, "weight": 0, "affixes": ["af_tacet"], "salvage": { "dross": 1, "timbite": 50 } }
+  "gear": {
+   "slot": "seal",
+   "rarity": "rare",
+   "def": 0,
+   "weight": 0,
+   "affixes": [
+    "af_tacet"
+   ],
+   "salvage": {
+    "dross": 1,
+    "timbite": 50
+   }
+  }
  },
  {
   "id": "ar_veilbell_helm",
@@ -249,7 +386,19 @@
   "stack": 1,
   "value": 150,
   "desc": "盔顶仿的是那口被布蒙住的钟：敲响也不许传出去的那种声音。",
-  "gear": { "slot": "helm", "rarity": "rareplus", "def": 7, "weight": 3, "affixes": ["af_tempered"], "salvage": { "dross": 2, "timbite": 26 } }
+  "gear": {
+   "slot": "helm",
+   "rarity": "rareplus",
+   "def": 7,
+   "weight": 3,
+   "affixes": [
+    "af_tempered"
+   ],
+   "salvage": {
+    "dross": 2,
+    "timbite": 26
+   }
+  }
  },
  {
   "id": "seal_upbeat",
@@ -259,7 +408,19 @@
   "stack": 1,
   "value": 175,
   "desc": "徽面是一道没落下的指挥棒。戴着它，起手那半拍总像是别人先让了你。",
-  "gear": { "slot": "seal", "rarity": "rareplus", "def": 0, "weight": 0, "affixes": ["af_resonant"], "salvage": { "dross": 2, "timbite": 60 } }
+  "gear": {
+   "slot": "seal",
+   "rarity": "rareplus",
+   "def": 0,
+   "weight": 0,
+   "affixes": [
+    "af_resonant"
+   ],
+   "salvage": {
+    "dross": 2,
+    "timbite": 60
+   }
+  }
  },
  {
   "id": "ar_ostlaraweave_cuirass",
@@ -269,7 +430,20 @@
   "stack": 1,
   "value": 280,
   "desc": "用敲裂的钟壳一层层编出来的胸甲。它替人挡下的第一件事，是它自己还想再响一次的冲动。",
-  "gear": { "slot": "cuirass", "rarity": "epic", "def": 13, "weight": 10, "affixes": ["af_tempered", "af_tacet"], "salvage": { "dross": 4, "timbite": 70 } }
+  "gear": {
+   "slot": "cuirass",
+   "rarity": "epic",
+   "def": 13,
+   "weight": 10,
+   "affixes": [
+    "af_tempered",
+    "af_tacet"
+   ],
+   "salvage": {
+    "dross": 4,
+    "timbite": 70
+   }
+  }
  },
  {
   "id": "seal_drumlegend",
@@ -279,6 +453,28 @@
   "stack": 1,
   "value": 320,
   "desc": "鼓已经停了，拍子还在走。据说佩戴者的脚步声会替他把最后一小节数完。",
-  "gear": { "slot": "seal", "rarity": "epic", "def": 0, "weight": 0, "affixes": ["af_keen", "af_resonant"], "salvage": { "dross": 5, "timbite": 90 } }
+  "gear": {
+   "slot": "seal",
+   "rarity": "epic",
+   "def": 0,
+   "weight": 0,
+   "affixes": [
+    "af_keen",
+    "af_resonant"
+   ],
+   "salvage": {
+    "dross": 5,
+    "timbite": 90
+   }
+  }
+ },
+ {
+  "id": "it_bell_tongue",
+  "nameKey": "item.bellTongue",
+  "displayName": "裂舌的断面",
+  "kind": "lore",
+  "stack": 1,
+  "value": 0,
+  "desc": "首钟的钟舌断口。结晶是往外长的——它不是被砸断的，是从里面炸开的。握久了会烫手。"
  }
 ]

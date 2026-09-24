@@ -14,7 +14,15 @@ import { fileURLToPath } from 'node:url'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const JSON_DIR = resolve(ROOT, 'src/data/json')
-const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json']
+const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json']
+// Phase 6-B：对话风格枚举与任务标注（narrative.md §3.2 / §28 图例）
+const CHOICE_STYLES = new Set(['blunt', 'poetic', 'silent', 'provoke'])
+const QUEST_TAGS = new Set(['D', 'C', 'H', 'M'])
+const EFFECT_FIELDS = new Set(['setRelation', 'setFlags', 'clearFlags', 'startQuest', 'advanceQuest', 'giveItem', 'takeItem', 'notify'])
+const CONDITION_FIELDS = new Set(['flags', 'relation', 'quest', 'hasItem'])
+const RELATION_OPS = new Set(['gte', 'lte', 'eq'])
+// narrative §3.2 的约束：单节点文案上限
+const NODE_TEXT_MAX = 120
 // Phase 5-B 起：装备槽位 / 物品大类（与 schema.ts 的 SlotKey / ItemKind 对齐）
 const SLOT_KEYS = new Set(['weapon', 'helm', 'cuirass', 'gloves', 'greaves', 'seal', 'sealA', 'sealB'])
 const GEAR_SLOTS = new Set(['weapon', 'helm', 'cuirass', 'gloves', 'greaves', 'seal'])
@@ -1269,6 +1277,210 @@ function validateWorldstate() {
   return { read, written, secrets }
 }
 
+// ---- npcs.json / quests.json / dialogue.json（Phase 6-B 叙事层）----
+function validateNpcs() {
+  const file = 'npcs.json'
+  const list = data[file]
+  const ids = new Set()
+  if (!isArr(list) || list.length === 0) { report.error(file, file, '必须是非空数组'); return ids }
+  const regionIds = new Set((data['regions.json'] ?? []).filter(isObj).map((r) => r.id))
+  list.forEach((n, i) => {
+    const w = isStr(n?.id) ? n.id : `[${i}]`
+    if (!isObj(n)) { report.error(file, w, '必须是对象'); return }
+    if (!isStr(n.id)) report.error(file, w, 'id 缺失或非字符串')
+    else if (ids.has(n.id)) report.error(file, w, `id 重复：${n.id}`)
+    else ids.add(n.id)
+    if (!isStr(n.displayName)) report.error(file, w, 'displayName 必填')
+    if (!isStr(n.nameKey)) report.error(file, w, 'nameKey 必填')
+    if (!isStr(n.blurb) || n.blurb.length < 8) report.error(file, w, 'blurb 必填（一句话人设）')
+    if (!isStr(n.homeRegion) || !regionIds.has(n.homeRegion)) report.error(file, `${w}.homeRegion`, `悬空引用：'${n.homeRegion}' 不是任何区域`)
+    if (n.relation !== undefined) report.num(file, `${w}.relation`, n.relation, { min: -5, max: 5, int: true, name: 'relation' })
+  })
+  return ids
+}
+
+function validateQuests(npcIds) {
+  const file = 'quests.json'
+  const list = data[file]
+  const ids = new Set()
+  const states = new Map() // state -> questId（state 串全局唯一：它是条件求值的键）
+  if (!isArr(list) || list.length === 0) { report.error(file, file, '必须是非空数组'); return ids }
+  list.forEach((q, i) => {
+    const w = isStr(q?.id) ? q.id : `[${i}]`
+    if (!isObj(q)) { report.error(file, w, '必须是对象'); return }
+    if (!isStr(q.id)) report.error(file, w, 'id 缺失或非字符串')
+    else if (ids.has(q.id)) report.error(file, w, `id 重复：${q.id}`)
+    else ids.add(q.id)
+    if (!isStr(q.displayName)) report.error(file, w, 'displayName 必填')
+    if (!isStr(q.outcome)) report.error(file, w, 'outcome 必填（完成后的世界状态摘要）')
+    if (!isStr(q.npc) || !npcIds.has(q.npc)) report.error(file, `${w}.npc`, `悬空引用：'${q.npc}' 不在 npcs.json`)
+    if (!isArr(q.steps) || q.steps.length === 0) { report.error(file, w, 'steps 必须是非空数组'); return }
+    q.steps.forEach((st, si) => {
+      const sw = `${w}.steps[${si}]`
+      if (!isObj(st)) { report.error(file, sw, '必须是对象'); return }
+      if (!isStr(st.state)) report.error(file, `${sw}.state`, 'state 必填（条件求值的键）')
+      else if (states.has(st.state)) report.error(file, sw, `state 串重复：${st.state}（已被 ${states.get(st.state)} 用掉）`)
+      else states.set(st.state, q.id)
+      if (!isStr(st.label)) report.error(file, `${sw}.label`, 'label 必填')
+      if (st.tags !== undefined) {
+        strArray(file, `${sw}.tags`, st.tags, { nonEmpty: true })
+        for (const t of st.tags ?? []) if (!QUEST_TAGS.has(t)) report.error(file, `${sw}.tags`, `未知标注：${t}（§28 只有 D/C/H/M）`)
+      }
+      if (st.advanceOn !== undefined) {
+        if (!isObj(st.advanceOn)) { report.error(file, `${sw}.advanceOn`, '必须是对象'); return }
+        strArray(file, `${sw}.advanceOn.flags`, st.advanceOn.flags, { nonEmpty: true })
+        for (const f of st.advanceOn.flags ?? []) if (!isStr(f) || !f.startsWith('flag.')) report.error(file, `${sw}.advanceOn.flags`, `旗标命名必须是 flag.*：${f}`)
+      }
+    })
+  })
+  return ids
+}
+
+function validateDialogue(npcIds, questIds, itemIds) {
+  const file = 'dialogue.json'
+  const list = data[file]
+  const ids = new Set()
+  const flagReads = new Map()
+  const flagWrites = new Map()
+  const note = (map, flag, where) => { if (!map.has(flag)) map.set(flag, where) }
+  if (!isArr(list) || list.length === 0) { report.error(file, file, '必须是非空数组'); return { ids, flagReads, flagWrites } }
+
+  const checkCondition = (where, c, npc) => {
+    if (c === undefined) return
+    if (!isObj(c)) { report.error(file, where, '必须是对象'); return }
+    for (const k of Object.keys(c)) if (!CONDITION_FIELDS.has(k)) report.error(file, `${where}.${k}`, `未知条件：${k}（条件求值只认这四种）`)
+    if (c.flags !== undefined) {
+      for (const group of ['all', 'any', 'not']) {
+        if (c.flags[group] === undefined) continue
+        strArray(file, `${where}.flags.${group}`, c.flags[group], { nonEmpty: true })
+        for (const f of c.flags[group] ?? []) {
+          if (!isStr(f) || !f.startsWith('flag.')) report.error(file, `${where}.flags.${group}`, `旗标命名必须是 flag.*：${f}`)
+          else note(flagReads, f, `${where}.flags.${group}`)
+        }
+      }
+    }
+    if (c.relation !== undefined) {
+      if (!RELATION_OPS.has(c.relation.op)) report.error(file, `${where}.relation.op`, `未知比较符：${c.relation.op}`)
+      report.num(file, `${where}.relation.value`, c.relation.value, { min: -5, max: 5, int: true, name: 'value' })
+      if (c.relation.npc !== undefined && !npcIds.has(c.relation.npc)) report.error(file, `${where}.relation.npc`, `悬空引用：'${c.relation.npc}'`)
+    }
+    if (c.quest !== undefined) {
+      if (!questIds.has(c.quest.id)) report.error(file, `${where}.quest.id`, `悬空引用：'${c.quest.id}' 不在 quests.json`)
+      if (c.quest.in !== undefined) strArray(file, `${where}.quest.in`, c.quest.in, { nonEmpty: true })
+      if (c.quest.in === undefined && c.quest.gte === undefined) report.error(file, `${where}.quest`, '至少要写 in 或 gte 之一')
+    }
+    if (c.hasItem !== undefined) {
+      if (!itemIds.has(c.hasItem.id)) report.error(file, `${where}.hasItem.id`, `悬空引用：'${c.hasItem.id}' 不在 items.json`)
+      if (c.hasItem.count !== undefined) report.num(file, `${where}.hasItem.count`, c.hasItem.count, { min: 1, int: true, name: 'count' })
+    }
+  }
+
+  const checkEffects = (where, e, npc) => {
+    if (e === undefined) return
+    if (!isObj(e)) { report.error(file, where, '必须是对象'); return }
+    for (const k of Object.keys(e)) if (!EFFECT_FIELDS.has(k)) report.error(file, `${where}.${k}`, `未知效果：${k}（效果表的字段就是引擎听得懂的动作，加字段必须同时加消费方）`)
+    if (e.setRelation !== undefined) {
+      report.num(file, `${where}.setRelation.delta`, e.setRelation.delta, { min: -5, max: 5, int: true, name: 'delta' })
+      if (e.setRelation.npc !== undefined && !npcIds.has(e.setRelation.npc)) report.error(file, `${where}.setRelation.npc`, `悬空引用：'${e.setRelation.npc}'`)
+    }
+    for (const group of ['setFlags', 'clearFlags']) {
+      if (e[group] === undefined) continue
+      strArray(file, `${where}.${group}`, e[group], { nonEmpty: true })
+      for (const f of e[group] ?? []) {
+        if (!isStr(f) || !f.startsWith('flag.')) report.error(file, `${where}.${group}`, `旗标命名必须是 flag.*：${f}`)
+        else if (group === 'setFlags') note(flagWrites, f, `${where}.${group}`)
+      }
+    }
+    if (e.startQuest !== undefined && !questIds.has(e.startQuest)) report.error(file, `${where}.startQuest`, `悬空引用：'${e.startQuest}' 不在 quests.json`)
+    if (e.advanceQuest !== undefined && !questIds.has(e.advanceQuest.id)) report.error(file, `${where}.advanceQuest.id`, `悬空引用：'${e.advanceQuest.id}'`)
+    for (const k of ['giveItem', 'takeItem']) {
+      if (e[k] === undefined) continue
+      if (!itemIds.has(e[k].id)) report.error(file, `${where}.${k}.id`, `悬空引用：'${e[k].id}' 不在 items.json`)
+      if (e[k].count !== undefined) report.num(file, `${where}.${k}.count`, e[k].count, { min: 1, int: true, name: 'count' })
+    }
+    if (e.notify !== undefined && !isStr(e.notify)) report.error(file, `${where}.notify`, '必须是非空字符串')
+  }
+
+  list.forEach((t, i) => {
+    const w = isStr(t?.id) ? t.id : `[${i}]`
+    if (!isObj(t)) { report.error(file, w, '必须是对象'); return }
+    if (!isStr(t.id)) report.error(file, w, 'id 缺失或非字符串')
+    else if (ids.has(t.id)) report.error(file, w, `id 重复：${t.id}`)
+    else ids.add(t.id)
+    if (!isStr(t.npc) || !npcIds.has(t.npc)) report.error(file, `${w}.npc`, `悬空引用：'${t.npc}' 不在 npcs.json`)
+    if (t.priority !== undefined) report.num(file, `${w}.priority`, t.priority, { name: 'priority' })
+    if (!isArr(t.nodes) || t.nodes.length === 0) { report.error(file, w, 'nodes 必须是非空数组'); return }
+    const nodeIds = new Set(t.nodes.filter(isObj).map((n) => n.id))
+    checkCondition(`${w}.entry`, t.entry, t.npc)
+    if (!isStr(t.rootNode)) report.error(file, `${w}.rootNode`, '必填')
+    else if (!nodeIds.has(t.rootNode)) report.error(file, `${w}.rootNode`, `悬空引用：'${t.rootNode}' 不是本树的节点`)
+    if (t.fallbackNode !== undefined) {
+      if (!isStr(t.fallbackNode)) report.error(file, `${w}.fallbackNode`, '必须是非空字符串')
+      else if (!nodeIds.has(t.fallbackNode)) report.error(file, `${w}.fallbackNode`, `悬空引用：'${t.fallbackNode}' 不是本树的节点`)
+    }
+    const seen = new Set()
+    t.nodes.forEach((n, ni) => {
+      const nw = `${w}.nodes[${ni}]`
+      if (!isObj(n)) { report.error(file, nw, '必须是对象'); return }
+      if (!isStr(n.id)) report.error(file, nw, 'id 缺失')
+      else if (seen.has(n.id)) report.error(file, nw, `节点 id 重复：${n.id}`)
+      else seen.add(n.id)
+      if (!isStr(n.speaker)) report.error(file, `${nw}.speaker`, '必填')
+      if (!isStr(n.text)) report.error(file, `${nw}.text`, '必填')
+      else if (n.text.length > NODE_TEXT_MAX) report.warn(file, `${nw}.text`, `文案 ${n.text.length} 字，超过 §3.2 的 ${NODE_TEXT_MAX} 字上限`)
+      checkCondition(`${nw}.conditions`, n.conditions, t.npc)
+      checkEffects(`${nw}.effects`, n.effects, t.npc)
+      if (n.next !== undefined && n.next !== null) {
+        if (!isStr(n.next) || !nodeIds.has(n.next)) report.error(file, `${nw}.next`, `悬空引用：'${n.next}' 不是本树的节点`)
+      }
+      if (!isArr(n.choices) || n.choices.length === 0) return
+      const cids = new Set()
+      n.choices.forEach((c, ci) => {
+        const cw = `${nw}.choices[${ci}]`
+        if (!isObj(c)) { report.error(file, cw, '必须是对象'); return }
+        if (!isStr(c.id)) report.error(file, cw, 'id 缺失')
+        else if (cids.has(c.id)) report.error(file, cw, `选项 id 重复：${c.id}`)
+        else cids.add(c.id)
+        if (!isStr(c.text)) report.error(file, `${cw}.text`, '必填')
+        if (!CHOICE_STYLES.has(c.style)) report.error(file, `${cw}.style`, `未知风格：${c.style}（${[...CHOICE_STYLES].join('/')}）`)
+        checkCondition(`${cw}.conditions`, c.conditions, t.npc)
+        checkEffects(`${cw}.effects`, c.effects, t.npc)
+        if (c.next !== undefined && c.next !== null) {
+          if (!isStr(c.next) || !nodeIds.has(c.next)) report.error(file, `${cw}.next`, `悬空引用：'${c.next}' 不是本树的节点`)
+        }
+      })
+      // §3.2 的 maxVisibleChoices：可见选项由条件过滤，但**声明**的选项数不该超过上限太多，
+      // 否则条件一放宽就会溢出 UI。
+      if (n.choices.length > 4) report.warn(file, nw, `声明了 ${n.choices.length} 个选项（§3.2 上限 3 个可见，超过 4 个声明通常是没在条件上收敛）`)
+    })
+  })
+  // 每棵树都要有落点：从 root/fallback 出发必须能走到一个"结束"（没有 next 且没有选项的节点），
+  // 否则玩家会卡在一段永远不结束的对话里。
+  for (const t of list.filter(isObj)) {
+    if (!isStr(t.rootNode)) continue
+    const byId = new Map((t.nodes ?? []).filter(isObj).map((n) => [n.id, n]))
+    const start = isStr(t.fallbackNode) ? t.fallbackNode : t.rootNode
+    const seen = new Set()
+    let cur = byId.get(start)
+    let ends = 0
+    let steps = 0
+    while (cur && steps++ < 64) {
+      if (seen.has(cur.id)) break
+      seen.add(cur.id)
+      const choices = (cur.choices ?? []).filter(isObj)
+      if (choices.length === 0) {
+        if (!cur.next) { ends++; break }
+        cur = byId.get(cur.next)
+        continue
+      }
+      if (choices.some((c) => !c.next)) { ends++; break }
+      cur = byId.get(choices[0].next)
+    }
+    if (ends === 0) report.error(file, `${t.id}`, '从 root/fallback 出发走不到任何结束节点 ⇒ 玩家会卡在一段不结束的对话里')
+  }
+  return { ids, flagReads, flagWrites }
+}
+
 // ---- 跑全部校验（跨文件引用需要先拿到 id 集合）----
 // statuses 先跑：enemies 的 statusOnHit.tag 要拿它当词表对账
 validateStatuses()
@@ -1283,6 +1495,38 @@ validatePlayer()
 const regionIds = validateRegions(enemyIds, lootIds)
 // movements 最后跑：它要同时对账 items（点亮源）、loot（源是否真会掉）、progression（开槽里程碑）
 validateMovements(itemIds)
+// 叙事层（Phase 6-B）：NPC → 任务 → 对话（后者依赖前两者的 id）
+const npcIds = validateNpcs()
+const questIds = validateQuests(npcIds)
+const dialogueInfo = validateDialogue(npcIds, questIds, itemIds)
+// 叙事层的双向对账（§55 / KI-041 的同一条纪律，两个方向都查）：
+// ① 对话写的旗标必须有人读（区域闸门 / 任务步 / 对话条件），否则是死数据；
+// ② 对话读的旗标必须有人写，否则那个条件永远不成立；
+// ③ NPC 交互物指向的 npcId 必须真有数据，否则按 E 只有一句占位台词。
+{
+  const { read: regionReads, written: regionWrites } = collectFlagUsage()
+  const questReads = new Set()
+  for (const q of data['quests.json'] ?? []) {
+    if (!isObj(q)) continue
+    for (const st of q.steps ?? []) for (const f of st.advanceOn?.flags ?? []) questReads.add(f)
+  }
+  const allWrites = new Set([...regionWrites.keys(), ...dialogueInfo.flagWrites.keys()])
+  for (const [flag, where] of [...dialogueInfo.flagWrites].sort()) {
+    if (dialogueInfo.flagReads.has(flag) || regionReads.has(flag) || questReads.has(flag)) continue
+    report.error('dialogue.json', flag, `${where} 写了它，但没有任何读方（区域闸门 / 任务步 / 对话条件都没有）⇒ 死数据`)
+  }
+  for (const [flag, where] of [...dialogueInfo.flagReads].sort()) {
+    if (allWrites.has(flag)) continue
+    report.error('dialogue.json', flag, `${where} 在读它，但没有任何写方 ⇒ 这个条件永远不成立`)
+  }
+  for (const rg of data['regions.json'] ?? []) {
+    for (const it of rg.interactables ?? []) {
+      if (!isObj(it) || it.kind !== 'npc' || !isStr(it.npcId)) continue
+      if (!npcIds.has(it.npcId)) report.error('regions.json', `${rg.id}.interactables(${it.id})`, `npcId '${it.npcId}' 不在 npcs.json ⇒ 按 E 只会得到一句占位台词`)
+    }
+  }
+}
+void dialogueInfo.ids
 // worldstate 最后：它要拿 regions/enemies 的 id 与"谁在读旗标"做双向对账
 validateWorldstate()
 validateGearRarityCoverage()

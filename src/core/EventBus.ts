@@ -58,6 +58,8 @@ export interface GameEvents {
   'ui.notify': { text: string; kind?: 'info' | 'reward' | 'boss' }
   'ui.prompt': { text: string | null; id: string | null }
   'world.flag': { key: string; value: boolean | number | string }
+  /** 任务推进（Phase 6-B）：UI 与调试面板据此播报，不做第二份任务状态 */
+  'quest.changed': { questId: string; state: string; index: number; total: number; label: string; started: boolean }
   /**
    * 一次交互的结果（成功失败都发）。世界状态的写方之一（`quest/WorldState` 的 interactUsed 规则）
    * 靠它，而不是让 main.ts 自己去调每个下游——加了新"按下之后会发生什么"，不必再改组合根。

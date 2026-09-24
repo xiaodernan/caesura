@@ -4,7 +4,8 @@
  * use() 只返回「发生了什么」，回血 / 传送 / 掉落由胶水层（main.ts）执行。
  */
 import { bus } from '@/core/EventBus'
-import type { InteractableRef, RegionData, Vec3 } from '@/data/schema'
+import { registry } from '@/core/Registry'
+import type { InteractableRef, NpcData, RegionData, Vec3 } from '@/data/schema'
 
 export interface Interactable extends InteractableRef {
   regionId: string
@@ -28,6 +29,8 @@ export interface InteractResult {
   loot?: boolean
   /** 掉落表 id（来自 RegionData.interactables[].lootTable） */
   lootTable?: string
+  /** 交谈对象（Phase 6-B：胶水层据此开对话树，本文件不认识对话引擎） */
+  npcId?: string
 }
 
 const VERB: Record<InteractableRef['kind'], string> = {
@@ -168,6 +171,7 @@ export class Interactables {
       ...(it.kind === 'checkpoint' ? { rest: true } : {}),
       ...(it.kind === 'gather' || it.kind === 'chest' ? { loot: true } : {}),
       ...(it.lootTable ? { lootTable: it.lootTable } : {}),
+      ...(it.npcId ? { npcId: it.npcId } : {}),
     })
   }
 }
@@ -184,7 +188,7 @@ function resultText(it: Interactable): string {
     case 'checkpoint': return `调音桩已共鸣 · ${it.regionName}`
     case 'gather': return '采集 · 音色石碎料'
     case 'chest': return '遗箱已开'
-    case 'npc': return `${it.npcId ?? '某人'}：对话树将在 Phase 6 接入`
+    case 'npc': return `与${registry.maybeGet<NpcData>(it.npcId ?? '')?.displayName ?? '某人'}交谈`
     case 'soundwall': return '音壁裂开 —— 通路已现'
     case 'bridge': return '吊桥落下'
     case 'bell': return '落钟鸣响，回音落在高处'

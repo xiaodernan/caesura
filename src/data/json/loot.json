@@ -689,6 +689,14 @@
   "id": "loot_secret_bellinterior",
   "rolls": [
    {
+    "id": "tongue",
+    "item": "it_bell_tongue",
+    "count": [
+     1,
+     1
+    ]
+   },
+   {
     "id": "bronze",
     "item": "it_bell_bronze",
     "count": [

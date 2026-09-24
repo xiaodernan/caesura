@@ -221,6 +221,7 @@ describe('§45 防损坏：校验和、双写、迁移链', () => {
       flags: ['flag.left_resthold'],
       clearedSlots: [],
       usedInteractables: [],
+      quest: null,
       rpg: null
     }
     const store = new MapStore()

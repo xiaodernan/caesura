@@ -414,6 +414,20 @@ NPC 可见对话节点集 = Filter(树, 条件求值)
 
 ---
 
+## 8. 实现状态（Phase 6-B 落档，2026-09-23）
+
+| 项 | 状态 | 落点 / 缺口 |
+|---|---|---|
+| 对话引擎（§3.1/§3.2） | **Implemented** | `quest/Dialogue.ts`：条件求值（flags/relation/quest/hasItem）纯只读、选树按 priority + entry、root 不成立退 fallback、`once` 节点靠已读缓存跳过。**效果在跨过边界的那一刻就交出去（`EffectSink`）**——否则"选了『我看了断面』，下一个节点的 `quest.gte` 却在效果落地前求值"这种错序会静默跳过决断节点（这条是实测出来的，不是推的） |
+| 效果结算（§3.2 effects） | **Implemented** | `quest/Settlement.ts`：setFlags/clearFlags → `world.flag` 广播（与战斗、交互立的旗是同一条路）；setRelation → 关系；startQuest/advanceQuest → 任务；give/takeItem → 背包。**引擎自己不写世界** |
+| 任务状态机（§28） | **Implemented** | `quest/Quests.ts`：推进只有两种来源（旗标广播 / 对话里的选择），**没有计数器**；单调不回跳；旗标只查当前这一步（提前立三步的旗不会一次跳完）；关系夹在 -5..+5；`quest.changed` 广播 |
+| NPC（§27 五位） | **Partial** | `npcs.json` 五位齐全（铃姨/科温/盐歌/断弦/无面童），休垒那处交互物已按 §2.5 更正为无面童（KI-044）。缺口：无立绘、无 `emotion` 表现、无选人/同行流程 |
+| 对话树内容 | **Partial** | 五棵初见树 + 铃姨的完整分支（检视 → 告诉/隐瞒）+ 科温的交付步。缺：§3.4 恩希尔战前（要 Boss 区触发）、§2.4 断弦三选一、§2.2/§2.3 的后续步（KI-043） |
+| 环境叙事（§29） | **Placeholder** | §4 的 Beat 表一条都还没落成实体（尸体摆位 / 遗物文案 / 符号贴花），Phase 6-C |
+| 过场（§31 / §6） | **Placeholder** | `cinematic` 字段现在只透传，不演；镜头轨道与字幕时序未接 |
+| 存档（Phase 6） | **Implemented** | v7：`quest` 块含任务状态 / 关系 / 已读节点；老档写 null（不编造进度） |
+| 数据门禁 | **Implemented** | `validate:data` 新增 npcs/dialogue/quests 三组规则 + 叙事层的**双向旗标对账**（对话写的必须有人读、对话读的必须有人写）+ 每棵树必须能走到结束节点。反向实测：悬空节点引用 / 未知效果字段 / 写了没人读的旗 / state 串撞车，四条各自拦下并 exit 1 |
+
 ## 8. 验收自检
 
 - [x] 三幕各带"玩家此刻的问题"（§1）；闭环顺序与 IP §15 一致，未改动锚点。

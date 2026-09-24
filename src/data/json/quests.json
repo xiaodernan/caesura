@@ -1,0 +1,108 @@
+[
+ {
+  "id": "q_bells",
+  "nameKey": "quest.bells",
+  "displayName": "四镇钟线",
+  "npc": "npc_belltongue",
+  "outcome": "四口钟说真话（或永远沉默）。铃姨的下场由玩家在《该不该敲响》里决定。",
+  "steps": [
+   {
+    "state": "BELLS.STEP1_OPEN",
+    "label": "《裂舌的断面》：去钟坠院取回首钟的断舌，并自行检视它",
+    "advanceOn": { "flags": ["flag.bell_tongue_examined"] },
+    "tags": ["D", "H"]
+   },
+   {
+    "state": "BELLS.STEP1_JUDGED",
+    "label": "断面上有从内向外的结晶爆痕 —— 告诉她，或者把它收起来",
+    "advanceOn": { "flags": ["flag.belltongue_told", "flag.belltongue_hidden"] },
+    "tags": ["C", "H"]
+   },
+   {
+    "state": "BELLS.STEP2_OPEN",
+    "label": "《唤四钟》：按爆痕顺藤修复其余三钟（后续步在 Phase 6-C 落）",
+    "tags": ["D", "M"]
+   }
+  ]
+ },
+ {
+  "id": "q_corvin",
+  "nameKey": "quest.corvin",
+  "displayName": "喧堕学线",
+  "npc": "npc_corvin",
+  "outcome": "他证明「喧堕不是灾难是进化」——为的是他的妻子是第一批喧堕者。终段三选一（揭露/包庇/共谋）在 Phase 6-C。",
+  "steps": [
+   {
+    "state": "CORVIN.STEP1_OPEN",
+    "label": "《第一份契约》：把「会唱歌的核」带给他，换整片息声领的弱点图谱",
+    "advanceOn": { "flags": ["flag.corvin_contract_signed"] },
+    "tags": ["D"]
+   },
+   {
+    "state": "CORVIN.STEP2_DELIVER",
+    "label": "核已在手 —— 交给他，或者留着",
+    "tags": ["D", "H"]
+   }
+  ]
+ },
+ {
+  "id": "q_meg",
+  "nameKey": "quest.meg",
+  "displayName": "声音拼图线",
+  "npc": "npc_meg",
+  "outcome": "完整声卷（未竟厅音栓钥匙）的归属，以及她在不在 Hub 唱歌。",
+  "steps": [
+   {
+    "state": "MEG.STEP1_OPEN",
+    "label": "《第一块拼图》：听出第一段记忆的录音地点 —— 她一直守在莉安家门口",
+    "advanceOn": { "flags": ["flag.meg_first_fragment"] },
+    "tags": ["D", "H"]
+   },
+   {
+    "state": "MEG.STEP2_EXCHANGE",
+    "label": "《以物易声》：用你见过的一段声音换下一段记忆（后续步在 Phase 6-C 落）",
+    "tags": ["D", "M"]
+   }
+  ]
+ },
+ {
+  "id": "q_haltrune",
+  "nameKey": "quest.haltrune",
+  "displayName": "破拍营号线",
+  "npc": "npc_haltrune",
+  "outcome": "营地成为友军哨站 / 废墟 / 恩希尔的驻防地 —— 三种世界线，直接改终幕入场编排。",
+  "steps": [
+   {
+    "state": "HALTRUNE.STEP1_OPEN",
+    "label": "《巡逻线尽头》：以纯闪避不反击走完一遍完整巡逻周期",
+    "advanceOn": { "flags": ["flag.haltrune_patrol_seen"] },
+    "tags": ["D"]
+   },
+   {
+    "state": "HALTRUNE.STEP2_ROSTER",
+    "label": "《点名册》：七个还在巡逻的兵，他记的是四个（后续步在 Phase 6-C 落）",
+    "tags": ["D", "H"]
+   }
+  ]
+ },
+ {
+  "id": "q_faceless",
+  "nameKey": "quest.faceless",
+  "displayName": "容器线",
+  "npc": "npc_faceless",
+  "outcome": "STATE.FACELESS = VESSEL / CHILD / CHOSEN / LOST —— 终局三手牌的关键变量。",
+  "steps": [
+   {
+    "state": "FACELESS.STEP1_OPEN",
+    "label": "《第一次代写》：它在灰上写下铃姨还没说出口的两个字",
+    "advanceOn": { "flags": ["flag.faceless_first_writing"] },
+    "tags": ["D", "H"]
+   },
+   {
+    "state": "FACELESS.STEP2_ANSWER",
+    "label": "《会应答的孩子》：修任意一口钟后，铃姨要你回答「你捡到的是孩子，还是耳朵」（Phase 6-C）",
+    "tags": ["D", "C"]
+   }
+  ]
+ }
+]

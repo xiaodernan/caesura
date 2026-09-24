@@ -1,0 +1,42 @@
+[
+ {
+  "id": "npc_belltongue",
+  "nameKey": "npc.belltongue",
+  "displayName": "铃姨",
+  "blurb": "休垒铸钟人。四口镇音巨钟出自她手，第三口她故意铸坏了舌——当年「放逐聋者」那道命令是她执行的。",
+  "homeRegion": "rg_resthold",
+  "relation": 0
+ },
+ {
+  "id": "npc_corvin",
+  "nameKey": "npc.corvin",
+  "displayName": "科温书记",
+  "blurb": "律政院末代档案官，唯一研究「喧堕学」的灰色学者。用情报换解剖素材，档案室里失谐之夜的卷宗被他一个人烧过一半。",
+  "homeRegion": "rg_resthold",
+  "relation": 0
+ },
+ {
+  "id": "npc_meg",
+  "nameKey": "npc.meg",
+  "displayName": "盐歌",
+  "blurb": "行走的留声人，莉安旧友。喉咙里养着一只音色晶，能录下听过的任何一段，也能卖出——她替莉安保管着「她还愿意回来的那部分」。",
+  "homeRegion": "rg_resthold",
+  "relation": 0
+ },
+ {
+  "id": "npc_faceless",
+  "nameKey": "npc.faceless",
+  "displayName": "无面童",
+  "blurb": "哑带边缘捡到的失声孩童。兜帽下五官被褪色抹平，只余「听」的形状；它写下的不是话，是还没发生的事。",
+  "homeRegion": "rg_resthold",
+  "relation": 0
+ },
+ {
+  "id": "npc_haltrune",
+  "nameKey": "npc.haltrune",
+  "displayName": "断弦",
+  "blurb": "破拍营地叛逃守卫队长，半喧堕化的义体兵。他的兵在他叛逃后仍按生前军阵巡逻至今，他要带他们走完最后一班岗。",
+  "homeRegion": "rg_brokenbar_camp",
+  "relation": 0
+ }
+]

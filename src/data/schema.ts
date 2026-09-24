@@ -851,3 +851,117 @@ export interface RegionData {
  * 机关、入场与胜利序列全在那一段）。拆成两个文件只会让「她有几阶」这件事有两处可写，
  * 而两处可写就有一处会撒谎。本文件的这些 interface + `src/data/json/*.json` 才是真源。
  */
+
+/* ============================ Narrative：NPC / 对话 / 任务（Phase 6-B） ============================ */
+
+/**
+ * 条件谓词（narrative.md §3.1）：**NPC 可见对话节点集 = Filter(树, f(quest.state, relation, flags))**。
+ * 四种谓词对应四种"玩家做过什么"的记法，全部只读、不求值副作用——所以同一棵树能被
+ * 预览、能被测试穷举，也不会出现"打开对话就改了世界"这种事。
+ */
+export interface DialogueCondition {
+  /** 旗标组合：all 全立 / any 任一 / not 全不立（§3.2 的 world.flags） */
+  flags?: { all?: string[]; any?: string[]; not?: string[] }
+  /** 关系阈值（§3.1 的 npc.relation，-5..+5） */
+  relation?: { npc?: string; op: 'gte' | 'lte' | 'eq'; value: number }
+  /** 任务状态：in = 正处在这些 state 之一；gte = 已推进到该 state 或更后 */
+  quest?: { id: string; in?: string[]; gte?: string }
+  /** 持有物品（「自行检视断面」这类动作靠它表达：背包里真有那截舌头才算知情） */
+  hasItem?: { id: string; count?: number }
+}
+
+/**
+ * 对话效果（§3.2 的 effects）。**引擎只产出这张清单，不自己写世界**——
+ * 真正落盘由调用方走既有通道（旗标走 `world.flag` 广播、物品走背包、任务走 Quests），
+ * 于是"对话改了世界"这件事在日志里与"战斗改了世界"是同一条路径。
+ */
+export interface DialogueEffects {
+  /** 关系增量；npc 缺省 = 本棵树的 npc */
+  setRelation?: { npc?: string; delta: number }
+  setFlags?: string[]
+  clearFlags?: string[]
+  /** 开始一条任务线（把它从"未开始"推到第一步） */
+  startQuest?: string
+  /** 推进任务；to 缺省 = 顺推一步 */
+  advanceQuest?: { id: string; to?: string }
+  giveItem?: { id: string; count?: number }
+  takeItem?: { id: string; count?: number }
+  /** 结算时的一句播报（走 HUD 通知队列） */
+  notify?: string
+}
+
+export interface DialogueChoice {
+  id: string
+  text: string
+  /** §3.2：blunt/poetic/silent/provoke —— 引擎只透传给 UI 与关系增量符号，不做玩法分支 */
+  style: 'blunt' | 'poetic' | 'silent' | 'provoke'
+  conditions?: DialogueCondition
+  effects?: DialogueEffects
+  /** 下一个节点；null/缺省 = 对话结束 */
+  next?: string | null
+  /** 挂接 §7 过场清单（Phase 6-C 接；现在只透传，不假装演过） */
+  cinematic?: string
+}
+
+export interface DialogueNode {
+  id: string
+  speaker: string
+  text: string
+  emotion?: string
+  conditions?: DialogueCondition
+  /** 进入即结算（§3.2 的 onEnter） */
+  effects?: DialogueEffects
+  choices?: DialogueChoice[]
+  next?: string | null
+  /** 一次性节点：看过就不再进（"看过"进档，读档后不会重复演） */
+  once?: boolean
+}
+
+export interface DialogueData {
+  id: string
+  npc: string
+  /** 同一个 NPC 挂多棵树时，priority 大的先选（后段剧情压前段） */
+  priority?: number
+  /** 进门条件：不满足就换下一棵树（"可见对话节点集 = Filter(树, 条件)"的第一层） */
+  entry?: DialogueCondition
+  rootNode: string
+  /** rootNode 的条件不满足时退到哪个节点（初见 / 复访两种开场） */
+  fallbackNode?: string
+  nodes: DialogueNode[]
+}
+
+export interface NpcData {
+  id: string
+  nameKey: string
+  displayName: string
+  /** 一句话人设（面板与调试用） */
+  blurb: string
+  homeRegion: string
+  /** 初始关系（-5..+5，§3.1） */
+  relation?: number
+}
+
+/**
+ * 任务步骤（需求 §28：完成条件是「改变世界的状态」或「玩家做出的知情决定」，
+ * 不是"去那里杀 10 只回来"）。所以一步的推进条件只有两种：某个旗标被立起，
+ * 或者对话里的一次选择直接推进（`DialogueEffects.advanceQuest`）。
+ */
+export interface QuestStep {
+  state: string
+  label: string
+  /** 任一旗标被立 ⇒ 顺推一步。**这里就是那些旗标的读方**（§55 的双向对账靠它闭合） */
+  advanceOn?: { flags: string[] }
+  /** §28 标注：D=发现 C=抉择 H=隐藏信息 M=多结果 */
+  tags?: string[]
+}
+
+export interface QuestData {
+  id: string
+  nameKey: string
+  displayName: string
+  /** 发布者（必须是 npcs.json 里的 id） */
+  npc: string
+  /** 完成后的世界状态摘要（叙事评审用；不是玩法数值） */
+  outcome: string
+  steps: QuestStep[]
+}

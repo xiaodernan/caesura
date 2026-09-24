@@ -4,6 +4,7 @@ import type { StreamingSystem } from '@/world/Streaming'
 import type { SpawnDirector } from '@/world/SpawnDirector'
 import type { RhythmClock } from '@/core/RhythmClock'
 import type { RpgRuntime, RpgSnapshot } from '@/rpg/Runtime'
+import type { Quests, QuestsSnapshot } from '@/quest/Quests'
 import type { Interactables } from '@/world/Interactables'
 import { migrateTo, registerMigration } from './Migration'
 import { unwrap, wrap } from './Integrity'
@@ -15,7 +16,7 @@ import { unwrap, wrap } from './Integrity'
  * 存档里没有一个敌人实例，只有一串槽位身份）。
  */
 
-export const SAVE_VERSION = 6
+export const SAVE_VERSION = 7
 
 /**
  * 读档时接受的版本：凡是 ≤ 当前版本、且迁移链能一路升到当前的，都可以读。
@@ -90,6 +91,18 @@ registerMigration(5, (p) => {
   return { ...p, snapshot: snap }
 })
 
+/**
+ * v6 → v7（Phase 6-B 叙事层）。老档里**没有**任务状态机、NPC 关系、对话已读节点——
+ * 迁移的动作同样是"明确地空着"：没做过的委托就是没做过、没说过话就是没说过，
+ * 不替玩家补一份"好像聊过"的进度（§78 要的是如实，不是好看）。
+ */
+registerMigration(6, (p) => {
+  const snap = { ...(p.snapshot as Record<string, unknown>) }
+  snap.quest = null
+  snap.version = 7
+  return { ...p, snapshot: snap }
+})
+
 export interface Snapshot {
   version: number
   /** 游玩秒数（HUD/存档摘要卡用） */
@@ -112,6 +125,8 @@ export interface Snapshot {
   usedInteractables: string[]
   /** 成长/背包/装备/掉落状态（v2 起）。v1 老档为 null ⇒ 保留运行时基线 */
   rpg: RpgSnapshot | null
+  /** 叙事进度（v7 起）：任务状态 / NPC 关系 / 对话已读节点。老档为 null ⇒ 一切从头 */
+  quest: QuestsSnapshot | null
 }
 
 export interface SavePayload { snapshot: Snapshot }
@@ -183,6 +198,8 @@ export interface SaveWorld {
   rpg?: RpgRuntime
   /** Phase 6-A：交互物（同上，可选）。它的一次性状态是**世界状态**的一部分，不是 UI 状态 */
   interact?: Interactables
+  /** Phase 6-B：叙事进度（任务状态 / 关系 / 已读节点），同上可选 */
+  quests?: Quests
 }
 
 /**
@@ -213,7 +230,8 @@ export class SaveGame {
       flags: w.streaming.flagKeys(),
       clearedSlots: w.spawner.clearedKeys(),
       usedInteractables: w.interact ? w.interact.snapshot() : [],
-      rpg: w.rpg ? w.rpg.snapshot() : null
+      rpg: w.rpg ? w.rpg.snapshot() : null,
+      quest: w.quests ? w.quests.snapshot() : null
     }
   }
 
@@ -278,6 +296,7 @@ export class SaveGame {
     p.corruption.value = Math.min(p.corruption.cfg.max, s.player.corruption ?? 0)
     p.publishStats()
     if (s.rpg && w.rpg) w.rpg.restore(s.rpg)
+    if (s.quest && w.quests) w.quests.restore(s.quest)
     for (const f of s.flags) w.streaming.setFlag(f, true)
     for (const k of s.clearedSlots) w.spawner.markCleared(k)
     // 交互物的一次性状态：v5 及以前的档没记 ⇒ 空集，那一局的箱子会再掉一次（见 v5→v6 迁移注释）
