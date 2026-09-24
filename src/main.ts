@@ -28,6 +28,7 @@ import { Haptics } from '@/input/Haptics'
 import { VfxLayer } from '@/vfx/VfxLayer'
 import { Hud } from '@/ui/Hud'
 import { Stakerite } from '@/ui/Stakerite'
+import { TitleScreen } from '@/ui/TitleScreen'
 import { DialogueBox } from '@/ui/DialogueBox'
 import { CombatDebugger } from '@/tools/CombatDebugger'
 import { SaveGame, LocalStore, IdbStore } from '@/save/Serializer'
@@ -326,8 +327,8 @@ const savePrimary = new LocalStore('caesura.save.', localStorage)
 const saveBackup = typeof indexedDB === 'undefined' ? null : new IdbStore('caesura-save')
 const saves = new SaveGame({ player, streaming, spawner, clock: rhythm, time, rpg, interact, quests }, savePrimary, saveBackup)
 const checkpoints = new Checkpoints(saves)
-// 开局就把用的是哪颗种子写在控制台：QA 要复现某一串掉落，第一句问的就是"你那局什么种子"
-bus.emit('log', { level: 'info', msg: `rpg.origin ${originId} seed ${rpg.inv.rng.state().seed}` })
+// 用的是哪颗种子/哪根弦写在控制台：QA 要复现某一串掉落，第一句问的就是"你那局什么种子"。
+// 播报挪到 startRun 之前由 logRunOrigin() 发——标题屏定弦之后才有"哪根弦"可言。
 if (!saveBackup) console.info('[caesura] IndexedDB 不可用 ⇒ 存档只有本地一份')
 bus.on('boss.phase', () => checkpoints.request('boss'))
 // Boss 倒下是这一局里最不该丢进度的一刻：胜利序列同样按 Boss 检查点存一笔
@@ -344,11 +345,10 @@ addEventListener('pagehide', () => checkpoints.request('quit'))
 /** 启动即尝试回到最近的自动存档（?fresh=1 强制开新档） */
 let booted = false
 
-async function bootWithSave(): Promise<void> {
+async function startRun(loadSave: boolean): Promise<void> {
   // 「本局第一次」的台账按局清一次：读档/新开局都是一次新的解释机会（需求 §19）
   glossary.forgetAll()
-  const fresh = new URLSearchParams(location.search).has('fresh')
-  const snap = fresh ? null : await saves.load('autosave')
+  const snap = loadSave ? await saves.load('autosave') : null
   if (snap) {
     streaming.teleport(time.tick, player.pos)
     player.floorY = surface.floorAt(player.pos)?.y ?? 0
@@ -362,10 +362,47 @@ async function bootWithSave(): Promise<void> {
   loop.start()
 }
 
-;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, interact, hud, spawner, nodes, worldState, projectileVis, actors: visuals, bossArena, saves, checkpoints, rpg, settlement, panel, setPanelOpen, quests, dialogueEngine, dialogueBox, openDialogue, refreshRpg, saveNow: () => saves.save('autosave') }
+/** 开局日志用的出身以**决策后**的为准：标题屏选完再说，否则报的是默认弦 */
+function logRunOrigin(): void {
+  bus.emit('log', { level: 'info', msg: `rpg.origin ${rpg.prog.originId} seed ${rpg.inv.rng.state().seed}` })
+}
+
+/**
+ * 开场「定弦」（KI-031② / §2.2）。正常启动在 `loop.start()` 之前把世界按住：标题屏决定
+ * 用哪根弦，`rpg.restring` 把选择落进成长层，续档按钮只在自动存档**确实存在**时才给
+ * （探测读的是主存位的裸 key——不经 `load`，免得"看一眼有没有"先把存档 apply 了一遍）。
+ * `?fresh=1` 是给无头探索与 live 探针铺好的通道：不立标题屏，直接按 `?origin=` 那根弦开跑——
+ * 既有探针配方一条不改。
+ */
+let title: TitleScreen | null = null
+const freshBoot = params.has('fresh')
+if (freshBoot) {
+  logRunOrigin()
+  void startRun(false)
+} else {
+  void (async () => {
+    const hasSave = (await savePrimary.get('autosave')) !== null
+    title = new TitleScreen({
+      onNew: (id) => {
+        const t = title as TitleScreen
+        t.dispose()
+        if (id !== rpg.prog.originId) rpg.restring(id)
+        logRunOrigin()
+        void startRun(false)
+      },
+      onContinue: () => {
+        const t = title as TitleScreen
+        t.dispose()
+        logRunOrigin()
+        void startRun(true)
+      }
+    }, hasSave, originId)
+  })()
+}
+
+;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, interact, hud, spawner, nodes, worldState, projectileVis, actors: visuals, bossArena, saves, checkpoints, rpg, settlement, panel, setPanelOpen, quests, dialogueEngine, dialogueBox, openDialogue, refreshRpg, saveNow: () => saves.save('autosave'), get title() { return title } }
 
 document.getElementById('boot')!.style.display = 'none'
 ;(window as unknown as Record<string, unknown>).__CAESURA_BOOTED__ = true
 bus.emit('boot.ready', undefined)
-void bootWithSave()
 console.info('[caesura] online — WASD/Shift/Ctrl-roll/LMB/RMB/F guard/G parry/Q lock/E interact(优先)/execute(处决·背刺)/1·2·3 换装/R·C 乐章战技 I·II/Tab 调音桩面板(需站在调音桩前)/E 与 NPC 交谈/1-9 选对话选项/Esc pause')

@@ -84,21 +84,44 @@ export class RpgRuntime {
   readonly loot: LootDirector
   /** §7 谱册：点亮了哪几页、哪一式练到几级、两个主动槽里装着什么 */
   readonly moves = new MovementBook()
+  /** 出身造装写进背包的那批实例 uid——restring 只摘这一批，别的件（掉落/购买）不在其列 */
+  private originGearUids: string[] = []
 
   constructor(originId = 'origin_tuner', seed: number | string = 0x51f3a2) {
     this.prog = new Progression(originId)
     this.inv = new Inventory(seed)
     this.loot = new LootDirector(this.inv, this.prog)
-    // 出身自带装备：定弦决定的不只是数值分布，还有你手里握着什么（§2.2）
+    this.grantOriginGear(originId)
+  }
+
+  /** 出身自带装备：定弦决定的不只是数值分布，还有你手里握着什么（§2.2） */
+  private grantOriginGear(originId: string): void {
     const origin = originOf(originId)
     const weaponItem = allGearItems().find((it) => it.gear?.weaponId === origin.weaponId)
     if (!weaponItem) throw new Error(`RpgRuntime: 出身 ${originId} 的武器 ${origin.weaponId} 没有对应的装备件`)
+    this.originGearUids = []
     for (const g of [...(origin.gearIds ?? []), weaponItem.id]) {
       const gear = this.inv.addGear(g)
+      this.originGearUids.push(gear.uid)
       const item = itemOf(g)
       if (item.gear?.slot === 'seal') equipSeal(this.eq, gear.uid)
       else this.eq.equip(this.inv, gear.uid)
     }
+  }
+
+  /**
+   * 「定弦」（KI-031② / §2.2）：开演之前换一根弦。六维回到新出身的底、出身装整批换掉、
+   * 装备槽清空后重挂。守卫只有一条，但它是设计承诺本身：**定弦是开场那一屏的动作**，
+   * 攒了任何进度（升级/遗响）之后就不存在"重选出身"——那叫洗点，玩法与代价都另有主人（§8.3）。
+   */
+  restring(originId: string): void {
+    if (this.prog.rank > 1 || this.prog.xp > 0) {
+      throw new Error(`RpgRuntime.restring: 音级 ${this.prog.rank}·遗响 ${this.prog.xp}——进度已经属于那根弦，定弦只发生在开演之前`)
+    }
+    this.prog.restore(new Progression(originId).snapshot()) // 未知出身在 originOf 处按既有措辞炸掉
+    for (const uid of this.originGearUids) this.inv.removeGear(uid)
+    this.eq.restore({})
+    this.grantOriginGear(originId)
   }
 
   /** 战斗/面板要的全部乘数，一次算完（每次装备/升级后由 main.ts 重新拉一次） */
