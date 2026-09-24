@@ -241,3 +241,32 @@ describe('weapon switching (Phase 2-B)', () => {
     expect(w.log['combat.hit'] ?? 0).toBeGreaterThanOrEqual(1)
   })
 })
+
+describe('combat.hit 的 crit 腿（KI-031① ms_crit_ring 发射端）', () => {
+  /** 一路正面挥砍攒命中；敌人死了就再放一只（不 press interact ⇒ 永远不会走出处决发射口） */
+  function farmHits(w: ReturnType<typeof makeWorld>, n: number): void {
+    let tag = 0
+    let e = w.ai.spawn('en_murkshell', { x: 0, y: 0, z: -1.8 }, `crit${tag}`)
+    for (let t = 0; t < 900 && w.hits.filter((h) => h.attackerId === 'player' && h.result === 'hit').length < n; t++) {
+      if (!e.alive) e = w.ai.spawn('en_murkshell', { x: 0, y: 0, z: -1.8 }, `crit${++tag}`)
+      facePlayerTo(w, e)
+      if (!w.player.action && w.player.stats.stamina > 20) w.frame.edges.add('attackLight')
+      w.tick()
+    }
+  }
+
+  it('critRate 0 ⇒ 玩家命中的 crit 恒为 false；critRate 1 ⇒ 恒为 true（字段真跟着判定走）', () => {
+    const a = makeWorld()
+    farmHits(a, 4)
+    const mineA = a.hits.filter((h) => h.attackerId === 'player' && h.result === 'hit')
+    expect(mineA.length).toBeGreaterThanOrEqual(4)
+    expect(mineA.every((h) => h.crit === false), 'A 世界 critRate 0：每一格都必须是明确的 false').toBe(true)
+
+    const b = makeWorld()
+    b.player.rpg.critRate = 1
+    farmHits(b, 4)
+    const mineB = b.hits.filter((h) => h.attackerId === 'player' && h.result === 'hit')
+    expect(mineB.length).toBeGreaterThanOrEqual(4)
+    expect(mineB.every((h) => h.crit === true), 'B 世界 rand()<1 恒真：命中无一带不出暴击读数').toBe(true)
+  })
+}, 30000)

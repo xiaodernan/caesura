@@ -437,15 +437,21 @@ function validateProgression() {
       if (a.minRarity !== undefined && !rarityIds.has(a.minRarity)) report.error(file, `${w}.minRarity`, `未知稀有度：${a.minRarity}`)
     })
   }
-  // 里程碑：rank 必须在曲线范围内。KI-054 起「一行承诺一条腿」——每行必须满足三者之一：
+  // 里程碑：rank 必须在曲线范围内。KI-054 起「一行承诺一条腿」——每行必须满足四者之一：
   // ① 带 grant（Progression.derive 逐项消费，字段白名单在 GRANT_FIELDS）；
   // ② 被 movements.json slots[].milestone 引用（既有消费者，不重复挂腿）；
-  // ③ 出现在 PENDING_MILESTONE_GRANTS 且理由非空（先记账后接线，清单只许变短不许变长）。
+  // ③ 出现在 PENDING_MILESTONE_GRANTS 且理由非空（先记账后接线，清单只许变短不许变长）；
+  // ④ 被 UI 承载体按 id 消费（UI_BOUND_MILESTONES，腿由 hud-milestones 测试作证，KI-031①）。
   // 这条规则的存在理由：§8.2 的 label 是玩家面向的数值承诺，此前 11 行里 9 行没有任何机制承载。
   const GRANT_FIELDS = ['loadFlat', 'parryWhiffMs', 'execMulPct', 'overdriveFlat'] // 加数项（kg / ms / 百分点% / 过载格），语义见 schema.MilestoneGrant
+  // ④ UI 腿（KI-031①）：行的消费方是 HUD 组件，unlock rank 由 Hud.milestoneRank **按 id 现查现用**
+  // （不是构造期快照）。承载体在表现层、derive 摸不到，所以这一形式的证人不是字段白名单，
+  // 是 tests/unit/hud-milestones.test.ts：rank A/B、改表法、删行⇒功能永不亮，三条腿都咬住表。
+  const UI_BOUND_MILESTONES = {
+    ms_beat_ripple: 'HUD 拍点涟漪刻度（体力环心荡圈）',
+    ms_crit_ring: 'HUD 暴击飘字的金色泛音环',
+  }
   const PENDING_MILESTONE_GRANTS = {
-    ms_beat_ripple: 'HUD 拍点涟漪刻度：HUD 尚无该组件，随 KI-031（UI 批）一并落腿',
-    ms_crit_ring: '暴击飘字金色泛音环：暴击飘字本身还没有载体，同上随 UI 批',
     ms_deepcellar: '深窖可停留时长 +35%：区域侧还没有"停留时长"这个量，无腿可接',
     ms_identity: '任一维触及 35 的专属效果：需求侧尚未定义具体效果（§8.2"待实装后补"）',
   }
@@ -467,8 +473,8 @@ function validateProgression() {
           else report.num(file, `${w}.grant.${k}`, v, { name: k })
         }
       }
-    } else if (!movementMsIds.has(m.id) && !(m.id in PENDING_MILESTONE_GRANTS)) {
-      report.error(file, w, `里程碑无机制腿：既无 grant、也不被战技槽引用、也不在 PENDING_MILESTONE_GRANTS（KI-054）`)
+    } else if (!movementMsIds.has(m.id) && !(m.id in PENDING_MILESTONE_GRANTS) && !(m.id in UI_BOUND_MILESTONES)) {
+      report.error(file, w, `里程碑无机制腿：既无 grant、也不被战技槽/UI 承载体引用、也不在 PENDING_MILESTONE_GRANTS（KI-054/KI-031①）`)
     }
   })
   // 出身：六维齐全、合计一致（"定弦只改分布"这条设计承诺必须可机器检查）

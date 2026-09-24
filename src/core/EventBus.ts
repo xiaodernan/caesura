@@ -39,6 +39,8 @@ export interface GameEvents {
     result: 'hit' | 'block' | 'perfectBlock' | 'parry' | 'graze' | 'immune'
     hitStopMs: number; shakeKey: string
     backstab: boolean; weakpoint: boolean
+    /** 只在玩家→敌人的命中结算里有值（resolveDamage 的 crit 原样带出）：ms_crit_ring 的飘字腿消费；其余发射方不写＝无 crit 读数 */
+    crit?: boolean
   }
   'combat.parried': { attackerId: string; defenderId: string }
   /** Boss 跳阶（§15.1 转阶段演出）：表现层据此震镜/压低频，main.ts 据此吃 hitstop */

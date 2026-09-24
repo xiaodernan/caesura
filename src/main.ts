@@ -1,4 +1,5 @@
 import { bus } from '@/core/EventBus'
+import { Vector3 } from 'three'
 import { GameTime, TICK_DT } from '@/core/Time'
 import { GameLoop } from '@/core/GameLoop'
 import { Input } from '@/core/Input'
@@ -93,6 +94,12 @@ const bossArena = new BossArenaVisuals(arena.scene) // §15.1 撞钟机关：机
 const audio = new AudioEngine()
 const vfx = new VfxLayer(arena.scene)
 const hud = new Hud(document.getElementById('hud') as HTMLCanvasElement)
+/** 飘字要钉在世界坐标上：HUD 不认识相机，投影由这里喂进去（§8.2 ms_crit_ring 的腿） */
+hud.project = (p) => {
+  const v = new Vector3(p.x, p.y, p.z).project(rig.cam)
+  if (v.z > 1 || v.z < -1) return null
+  return { x: (v.x * 0.5 + 0.5) * innerWidth, y: (1 - (v.y * 0.5 + 0.5)) * innerHeight }
+}
 /**
  * 调音桩面板（需求 §41/§44）。**只在调音桩前能打开**——分配点数与洗点是"回到基地"的奖励，
  * 不是随时可用的作弊菜单；这条约束同时也是 §8.3「实验成本前置」的设计落点。

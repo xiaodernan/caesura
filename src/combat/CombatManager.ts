@@ -364,7 +364,10 @@ export class CombatManager {
       attackerId: 'player', victimId: e.id, damage: final, poiseDamage: poiseBase,
       kind: s.kind, point: s.point, dir: s.dir, result: 'hit',
       hitStopMs: s.hitStopMs + (s.onBeat ? 30 : 0), shakeKey: s.shakeKey,
-      backstab: s.backstab, weakpoint: false
+      backstab: s.backstab, weakpoint: false,
+      // §8.2 rank8 的飘字腿读这一格；下面那条 ui.notify（"泛音暴击"文本）是它现在的双胞胎，
+      // 飘字上线后仍然留着——播报走通知队列、飘字在世界坐标，两个承载体各喊各的。
+      crit: dmg.crit
     })
     // 回声是"世界又播了一遍"，不该抢玩家手感的时间：不吃 hitstop、不推进连段
     if (!replay) {

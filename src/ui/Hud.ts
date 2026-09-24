@@ -1,4 +1,6 @@
 import { bus, type StatusId, type StatusPulse } from '../core/EventBus'
+import { registry } from '@/core/Registry'
+import type { ProgressionData } from '@/data/schema'
 import { statuses } from '@/data'
 
 /** Screen-space (CSS px) lock-on target snapshot published by camera/lock systems. */
@@ -87,6 +89,10 @@ export class Hud {
   private beatPulse = 0 // 1 at each beat point, decays
   private beatPeriod = 60 / 84
   private lastBeatAt = -1
+  /** §8.2 ms_beat_ripple 腿：每拍从体力环心荡开的一圈刻度（rank≥表值才产生） */
+  private ripples: { age: number }[] = []
+  /** §8.2 ms_crit_ring 腿：暴击飘字（世界坐标锚定，环是它的可选装饰） */
+  private floaters: { value: number; age: number; world: { x: number; y: number; z: number } }[] = []
 
   // target
   private target: TargetHudInfo | null = null
@@ -122,7 +128,15 @@ export class Hud {
         if (this.lastBeatAt >= 0) this.beatPeriod = clamp(0.2, 1.5, now - this.lastBeatAt)
         this.lastBeatAt = now
         this.beatPulse = 1
+        // §8.2 的 HUD 腿按表里的 rank 放行——表行本身就是开关（删行⇒永不亮，validator 盯行存在）
+        if (this.rank >= this.milestoneRank('ms_beat_ripple')) this.ripples.push({ age: 0 })
         void info
+      }),
+      bus.on('combat.hit', (p) => {
+        // 只有玩家砍出来的暴击才飘：敌人打中你是 player.damaged 的事，不是战报
+        if (p.attackerId !== 'player' || p.result !== 'hit' || !p.crit) return
+        this.floaters.push({ value: p.damage, age: 0, world: p.point })
+        while (this.floaters.length > 8) this.floaters.shift()
       }),
       bus.on('ui.notify', (p) => {
         this.notes.push({ text: p.text, kind: p.kind ?? 'info', life: 0 })
@@ -143,6 +157,14 @@ export class Hud {
   dispose(): void {
     for (const off of this.unsub) off()
     this.unsub.length = 0
+  }
+
+  /** main.ts 注入：世界坐标 → CSS 像素（相机外的点返回 null）。没接投影时飘字照常记账、只是不画 */
+  project: ((p: { x: number; y: number; z: number }) => { x: number; y: number } | null) | null = null
+
+  /** 里程碑的 rank 按 id 现查现用（不是构造期快照）：改表法测试与"删行=拔腿"都靠这一刻 */
+  private milestoneRank(id: string): number {
+    return registry.maybeGet<ProgressionData>('progression')?.milestones.find((m) => m.id === id)?.rank ?? Number.POSITIVE_INFINITY
   }
 
   /** GameLoop render hook — real-time driven so the HUD keeps breathing while paused. */
@@ -178,6 +200,11 @@ export class Hud {
     for (const n of this.notes) n.life += dt
     this.notes = this.notes.filter((n) => n.life < 3)
 
+    for (const r of this.ripples) r.age += dt
+    this.ripples = this.ripples.filter((r) => r.age < 0.9)
+    for (const f of this.floaters) f.age += dt
+    this.floaters = this.floaters.filter((f) => f.age < 1.1)
+
     const wantPrompt = this.prompt && !this.dead ? 1 : 0
     this.promptA = lerp(this.promptA, wantPrompt, 1 - Math.exp(-dt / 0.09))
 
@@ -191,7 +218,9 @@ export class Hud {
     this.drawCorruption()
     this.drawStatusChips()
     this.drawBeatRing()
+    this.drawBeatRipples()
     this.drawTarget()
+    this.drawFloaters()
     this.drawNotes()
     this.drawPrompt()
     this.drawDeath()
@@ -411,16 +440,19 @@ export class Hud {
     ctx.restore()
   }
 
+  /** 涟漪/飘字共用的锚：体力环心与呼吸后的半径（与 drawBeatRing 同源，禁止各算一份漂移） */
+  private beatRingCenter(): { cx: number; cy: number; r: number } {
+    const s = this.scale()
+    const { x0, yc, w } = this.hpLayout()
+    return { cx: x0 + w + 62 * s, cy: yc, r: 28 * s * (1 + 0.04 * this.beatPulse) }
+  }
+
   /** 1.4 stamina beat ring + 1.x overdrive inner resonance glow (0-10 layers). */
   private drawBeatRing(): void {
     if (this.ringAlpha < 0.01) return
     const { ctx } = this
     const s = this.scale()
-    const { x0, yc, w } = this.hpLayout()
-    const cx = x0 + w + 62 * s
-    const cy = yc
-    const breath = 1 + 0.04 * this.beatPulse
-    const r = 28 * s * breath
+    const { cx, cy, r } = this.beatRingCenter()
     const a0 = -Math.PI / 2
     const stam = clamp01(this.stamDisp)
     const exhausted = this.stamFrac <= 0.001
@@ -483,6 +515,58 @@ export class Hud {
       ctx.restore()
     }
     ctx.globalAlpha = 1
+  }
+
+  /** ms_beat_ripple 的承载体：每拍从体力环心荡开一圈——把「踏音加成的时点」变成看得见的东西 */
+  private drawBeatRipples(): void {
+    if (this.ripples.length === 0) return
+    const { ctx } = this
+    const s = this.scale()
+    const { cx, cy, r } = this.beatRingCenter()
+    ctx.save()
+    for (const rp of this.ripples) {
+      const t = clamp01(rp.age / 0.9)
+      const a = (1 - t) * 0.35
+      if (a <= 0.01) continue
+      ctx.lineWidth = Math.max(0.5, (1.4 * (1 - t) + 0.4) * s)
+      ctx.strokeStyle = css(BONE, a)
+      ctx.beginPath()
+      ctx.arc(cx, cy, r + 18 * s * t + 14 * s * t * t, 0, TAU)
+      ctx.stroke()
+    }
+    ctx.restore()
+  }
+
+  /** ms_crit_ring 的承载体：暴击数字在世界坐标上升起；rank≥表值时后面扩三圈金色泛音环 */
+  private drawFloaters(): void {
+    if (this.floaters.length === 0 || !this.project || this.cssW <= 0) return
+    const { ctx } = this
+    const s = this.scale()
+    const ringOn = this.rank >= this.milestoneRank('ms_crit_ring')
+    ctx.save()
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'alphabetic'
+    for (const f of this.floaters) {
+      const p = this.project(f.world)
+      if (!p) continue
+      const t = clamp01(f.age / 1.1)
+      const y = p.y - 26 * s * t
+      if (ringOn) {
+        for (let i = 0; i < 3; i++) {
+          const rt = clamp01(t * 1.6 - i * 0.18)
+          if (rt <= 0 || rt >= 1) continue
+          ctx.strokeStyle = css(GOLD, (1 - rt) * 0.5)
+          ctx.lineWidth = 1.2 * s
+          ctx.beginPath()
+          ctx.arc(p.x, y, (10 + 26 * rt + i * 4) * s, 0, TAU)
+          ctx.stroke()
+        }
+      }
+      ctx.font = `${Math.round(17 * s)}px ${SERIF}`
+      ctx.fillStyle = css(GOLD, (1 - t) * 0.95)
+      ctx.fillText(String(f.value), p.x, y)
+    }
+    ctx.restore()
   }
 
   /** 1.x lock-on voiceprint ring; bosses swap to the bottom phrase line (1.6). */
