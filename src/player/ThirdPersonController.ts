@@ -7,6 +7,8 @@ import type { FrameData, MovesetData, PlayerBaseData, WeaponData } from '@/data/
 import { EntityStats, playerStatsFrom } from '@/combat/EntityStats'
 import { advanceActionFrames, applyActionStop, type ActionStop } from '@/combat/ActionFrames'
 import { armStats, CorruptionMeter } from '@/combat/Statuses'
+import { armCrumple, reactionConfig } from '@/combat/Reactions'
+import { msToTicks } from '@/core/Time'
 import type { Vec3 } from '@/combat/EntityStats'
 import type { HitTarget } from '@/combat/HitShapes'
 import { defaultMods, type PlayerMods } from '@/rpg/Runtime'
@@ -120,6 +122,7 @@ export class PlayerController {
   constructor(public base: PlayerBaseData, public weapon: WeaponData, public moveset: MovesetData) {
     this.stats = playerStatsFrom(base)
     armStats(this.stats) // §11 闷音的 -30% 回复与震裂的层数规则都来自 statuses.json
+    armCrumple(this.stats, false) // §8 R4：玩家破势 1.8s，时长在 reactions.json，不在这里写第二遍
     this.corruption = new CorruptionMeter()
     this.stats.defense = base.defense
     // 未接成长系统时（单元测试/工具）也要有一组**恒等**乘数：属性取 player.json 的面板值，
@@ -579,11 +582,15 @@ export class PlayerController {
     if (this.iFrame || this.dead) return false
     if (this.parryTicksLeft > 0) return false // handled as parry upstream
     this.stats.damage(amount)
-    this.stunTicks = 12
+    // §8 玩家侧那一行：受击一律 **R1 等效**，时长与位移都读 reactions.json 的 R1 行
+    // （KI-050；此前是写死的 12 格 / 0.2m）。翻滚入口刻意不看 stunTicks（见 dodge 判据），
+    // 「硬直可翻滚取消」这半句早就成立，不需要为它写新代码。
+    const r1 = reactionConfig().R1
+    this.stunTicks = msToTicks(r1.stunMs)
     this.action = null; this.roll = null; this.charging = false
     if (knockDir) {
-      this.pos.x += clamp(knockDir.x, -1, 1) * 0.2
-      this.pos.z += clamp(knockDir.z, -1, 1) * 0.2
+      this.pos.x += clamp(knockDir.x, -1, 1) * r1.displaceM
+      this.pos.z += clamp(knockDir.z, -1, 1) * r1.displaceM
     }
     bus.emit('player.damaged', { amount })
     bus.emit('audio.sfx', { key: 'player_hurt', gain: 0.6 })

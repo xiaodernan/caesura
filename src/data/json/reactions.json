@@ -1,0 +1,4 @@
+{
+  "R1": { "stunMs": 200, "displaceM": 0.2 },
+  "R4": { "crumpleMs": 1800, "bossCrumpleMs": 2400 }
+}

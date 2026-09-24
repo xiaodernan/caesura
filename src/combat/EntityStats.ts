@@ -29,6 +29,11 @@ export class EntityStats {
   poiseAccum = 0
   private lastHitTick = -9999
   crumpleTicksLeft = 0
+  /**
+   * §8 R4 那一行的时长（tick）。由构造方经 `combat/Reactions.ts:armCrumple()` 从
+   * `data/json/reactions.json` 上弦（普通 1.8s / Boss 2.4s）；null＝没上弦 ⇒ `addPoise` 抛。
+   */
+  crumpleTicks: number | null = null
   overdrive = 0
   overdriveMax = 10
   private lastCostTick = -9999
@@ -66,7 +71,10 @@ export class EntityStats {
     this.poiseAccum += dmg
     this.lastHitTick = tick
     if (this.poiseAccum >= this.poiseMax && this.crumpleTicksLeft <= 0) {
-      this.crumpleTicksLeft = 108
+      // 破势时长来自 §8 R4 那一行：没上弦就是构造方漏了 armCrumple——那要抛，
+      // 静默免疫破势会让 Boss 的架势条变成摆设（同 `addFissure` 的纪律）。
+      if (this.crumpleTicks === null) throw new Error('EntityStats.addPoise: 未 arm —— §8 R4 的破势时长来自 data/json/reactions.json，构造方必须调用 combat/Reactions.ts 的 armCrumple(stats, isBoss)')
+      this.crumpleTicksLeft = this.crumpleTicks
       this.poiseAccum = 0
       return true
     }

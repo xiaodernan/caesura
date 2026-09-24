@@ -598,6 +598,23 @@ export interface StatusConfig {
   overdrive: OverdriveStatus
 }
 
+/* ============================ §8 受击反应表（combat.md §8，KI-050） ============================ */
+
+/**
+ * 表里只有**有承载体**的那两行（KI-017③ 的口径：不编造消费方）。
+ * - **R1**＝玩家侧那一行：§8「玩家受击一律 R1 等效 200ms + 位移 0.2m（硬直可翻滚取消——
+ *   翻滚入口本来就写在 `stunTicks > 0` 之外，见 `ThirdPersonController` 的 dodge 判据）」。
+ *   承载体是 `ThirdPersonController.takeDamage`。敌人不吃逐式 R1/R2/R3 受击硬直：
+ *   它们由「架势/破势」与「读条打断」（`interruptBroadcast`）承担；招式帧上的 `reaction`
+ *   分级目前只是声明 + 词表校验，没有行为消费方——那是本表不写 R0/R2/R3/R5 行的原因。
+ * - **R4**＝破势：承载体是 `EntityStats.addPoise` 写出的破势时长
+ *   （普通 1.8s；Boss/mini-boss 2.4s，由 `combat/Reactions.ts:armCrumple` 按 `isBoss` 上弦）。
+ */
+export interface HitReactionTable {
+  R1: { stunMs: number; displaceM: number }
+  R4: { crumpleMs: number; bossCrumpleMs: number }
+}
+
 /* ============================ 乐章战技（progression.md §7，Phase 5-C2） ============================ */
 
 /**

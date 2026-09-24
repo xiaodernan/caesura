@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const JSON_DIR = resolve(ROOT, 'src/data/json')
-const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json']
+const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json']
 // Phase 6-B：对话风格枚举与任务标注（narrative.md §3.2 / §28 图例）
 const CHOICE_STYLES = new Set(['blunt', 'poetic', 'silent', 'provoke'])
 const QUEST_TAGS = new Set(['D', 'C', 'H', 'M'])
@@ -487,6 +487,38 @@ function validateStatuses() {
     if (id === 'corruption' && isNum(s.visualStart) && isNum(s.max) && !(s.visualStart < s.max)) {
       report.error(file, id, `visualStart(${s.visualStart}) 必须小于 max(${s.max})，否则去饱和永远不会渐入`)
     }
+  }
+}
+
+// ---- reactions.json ----
+/** §8 受击反应表：只许写有承载体的行（KI-050）。一行一消费口，加行必须先接线 */
+const REACTION_FIELDS = {
+  R1: ['stunMs', 'displaceM'], // 消费方：player/ThirdPersonController.takeDamage（玩家受击一律 R1 等效）
+  R4: ['crumpleMs', 'bossCrumpleMs'], // 消费方：combat/EntityStats.addPoise（经 armCrumple 上弦）
+}
+const REACTION_SPECS = {
+  R1: { stunMs: { min: 1 }, displaceM: { min: 0 } },
+  R4: { crumpleMs: { min: 1 }, bossCrumpleMs: { min: 1 } },
+}
+
+function validateReactions() {
+  const file = 'reactions.json'
+  const d = data[file]
+  if (!isObj(d)) { report.error(file, file, '顶层必须是对象（按 R 行名键控）'); return }
+  for (const id of Object.keys(REACTION_FIELDS)) {
+    if (d[id] === undefined) report.error(file, id, `缺少 '${id}' 这一行：它已有消费方（takeDamage / addPoise），缺行就是运行时抛错`)
+  }
+  for (const [id, row] of Object.entries(d)) {
+    if (!REACTION_FIELDS[id]) { report.error(file, id, `'${id}' 在这份 build 里没有承载体：§55 不许写没有消费方的行（R0/R2/R3/R5 的敌人侧分级见 KI-050 的裁决）`); continue }
+    if (!isObj(row)) { report.error(file, id, '必须是对象'); continue }
+    for (const k of Object.keys(row)) {
+      if (!REACTION_FIELDS[id].includes(k)) report.error(file, `${id}.${k}`, `不认的字段：新字段必须同时接上消费方（本行可用：${REACTION_FIELDS[id].join('/')}）`)
+    }
+    report.sub(file, id, row, REACTION_SPECS[id])
+  }
+  const r4 = isObj(d.R4) ? d.R4 : null
+  if (r4 && isNum(r4.crumpleMs) && isNum(r4.bossCrumpleMs) && r4.bossCrumpleMs < r4.crumpleMs) {
+    report.error(file, 'R4', `bossCrumpleMs(${r4.bossCrumpleMs}) 必须 ≥ crumpleMs(${r4.crumpleMs})：Boss 不该比小兵破势更短`)
   }
 }
 
@@ -1505,6 +1537,8 @@ function validateDialogue(npcIds, questIds, itemIds) {
 // ---- 跑全部校验（跨文件引用需要先拿到 id 集合）----
 // statuses 先跑：enemies 的 statusOnHit.tag 要拿它当词表对账
 validateStatuses()
+// §8 受击反应表（KI-050）：独立一张小表，没有跨文件引用
+validateReactions()
 const movesetIds = validateMovesets()
 const weaponIds = validateWeapons(movesetIds)
 // progression 要先跑：稀有度是 items/loot 的跨文件依据；items 要先跑：掉落表引用物品 id

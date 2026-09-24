@@ -3,6 +3,7 @@ import { Rng, clamp } from '@/core/Math'
 import type { EnemyData, AttackSpec, FrameData, ProjectileSpec } from '@/data/schema'
 import { EntityStats } from '@/combat/EntityStats'
 import { armStats } from '@/combat/Statuses'
+import { armCrumple } from '@/combat/Reactions'
 import type { Vec3 } from '@/combat/EntityStats'
 import type { HitTarget } from '@/combat/HitShapes'
 import type { RhythmClock } from '@/core/RhythmClock'
@@ -140,6 +141,7 @@ export class Enemy {
     this.rng = new Rng(seed + this.id)
     this.stats = new EntityStats(data.hp, 100, data.poise)
     armStats(this.stats) // §11：震裂的层数上限与两段衰减节奏来自 statuses.json，不在这里写第二遍
+    armCrumple(this.stats, this.isBoss) // §8 R4：破势时长来自 reactions.json（Boss/mini-boss 2.4s，其余 1.8s）
     this.stats.defense = data.defense ?? 0
     this.pos = { ...pos }
     this.home = { ...pos }

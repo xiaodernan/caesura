@@ -911,9 +911,9 @@ export class CombatManager {
       const g = p.base.guard
       this.time.hitStop(g.breakSlowMs / 1000, g.breakSlowScale)
       p.takeDamage(Math.round(through * 1.3), h.dir)
-      // 写在 `takeDamage` **之后**是有意的：那一手按'受击'口径把硬直钉成 12 格，旧代码先写 36
-      // 再叫它 ⇒ 「破防 600ms 大踉跄」从未成立过，玩家实际只踉跄了受击那 200ms。这次裁决顺手纠的这个谎，
-      // 由 `hitstop.test.ts` 的破防腿钉住（读数 == msToTicks(breakStunMs)，不是 12）。
+      // 写在 `takeDamage` **之后**是有意的：那一手按 §8 玩家侧口径把硬直钉成 R1 等效（reactions.json 的
+      // 200ms=12 格），旧代码先写 36 再叫它 ⇒ 「破防 600ms 大踉跄」从未成立过，玩家实际只踉跄了受击那一格。
+      // 这次裁决顺手纠的这个谎，由 `hitstop.test.ts` 的破防腿钉住（读数 == msToTicks(breakStunMs)，不是 R1）。
       p.stunTicks = msToTicks(g.breakStunMs)
       bus.emit('combat.hit', { ...base, damage: through, result: 'hit', shakeKey: 'heavy', hitStopMs: 0 })
       bus.emit('ui.notify', { text: '破防！', kind: 'info' })
