@@ -99,8 +99,13 @@ export interface WeaponData {
   id: string
   nameKey: string
   archetype: 'straight_sword' | 'greatsword' | 'spear' | 'bow' | 'staff' | 'unique'
+  /**
+   * 武器↔moveset **一对一**（KI-047）：这记招式表就是这把武器的价格本身——
+   * 玩家出手的底数只有 `FrameData.damage` 一处（`CombatManager.strikeEnemy` 拿 `hb.damage`），
+   * 曾有的 `atkBase` 因无消费方已删。两把武器共用一张架式表 ⇒ 永远同价，
+   * validator 当场报。
+   */
   movesetId: string
-  atkBase: number
   scaling: Partial<Record<AttrKey, number>>
   swingTag: string[]
   skill: string

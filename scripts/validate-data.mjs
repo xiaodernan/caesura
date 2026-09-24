@@ -294,10 +294,16 @@ function validateMovesets() {
 }
 
 // ---- weapons.json ----
+/** WeaponData 的字段全集（KI-047）：每一格都必须有真实消费方，多余键一律 ERROR——
+ *  曾有的 `atkBase` 就是从这里出去的：底数住在 movesets.json 的帧表，武器表再带一份
+ *  "看起来是价格"的数，KI-039 的错价才躲过了整轮验收。 */
+const WEAPON_FIELDS = new Set(['id', 'nameKey', 'archetype', 'movesetId', 'scaling', 'swingTag', 'skill', 'poiseMul', 'noiseMul'])
+
 function validateWeapons(movesetIds) {
   const file = 'weapons.json'
   const list = data[file]
   const ids = new Set()
+  const movesetOwners = new Map() // movesetId -> 第一把引用它的武器
   if (!isArr(list)) { report.error(file, file, '顶层必须是数组'); return ids }
   list.forEach((wp, i) => {
     if (!isObj(wp)) { report.error(file, `[${i}]`, '必须是对象'); return }
@@ -305,11 +311,19 @@ function validateWeapons(movesetIds) {
     if (!isStr(wp.id)) report.error(file, w, 'id 缺失或非字符串')
     else if (ids.has(wp.id)) report.error(file, w, `id 重复：${wp.id}`)
     else ids.add(wp.id)
+    for (const k of Object.keys(wp)) {
+      if (!WEAPON_FIELDS.has(k)) report.error(file, `${w}.${k}`, 'WeaponData 没有这个字段：无消费方的数据不许入表（§55/KI-047）')
+    }
     if (!isStr(wp.nameKey)) report.error(file, w, 'nameKey 缺失或非字符串')
     if (!WEAPON_ARCHETYPES.has(wp.archetype)) report.error(file, w, `archetype=${JSON.stringify(wp.archetype)} 非法`)
     if (!isStr(wp.movesetId)) report.error(file, w, 'movesetId 缺失或非字符串')
     else if (!movesetIds.has(wp.movesetId)) report.error(file, w, `movesetId 悬空引用：'${wp.movesetId}' 不在 movesets.json`)
-    report.num(file, `${w}.atkBase`, wp.atkBase, { min: 0, name: 'atkBase' })
+    else {
+      // 武器↔moveset 一对一（KI-047）：帧表就是武器的价格本身，共用 ⇒ 两把武器永远同价
+      const prev = movesetOwners.get(wp.movesetId)
+      if (prev) report.error(file, w, `movesetId ${wp.movesetId} 已被 ${prev} 使用：武器↔moveset 必须一对一，新武器要带自己的架式表`)
+      else movesetOwners.set(wp.movesetId, w)
+    }
     if (!isObj(wp.scaling)) report.error(file, `${w}.scaling`, '必须是对象')
     else for (const [k, v] of Object.entries(wp.scaling)) {
       if (!ATTR_KEYS.has(k)) report.error(file, `${w}.scaling.${k}`, `未知属性键 '${k}'（${[...ATTR_KEYS].join('/')}）`)

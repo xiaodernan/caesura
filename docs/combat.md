@@ -99,6 +99,12 @@
 
 ## 4. 武器 Moveset（6 类 + 2 独特，IP §12；需求 §13/§17）
 
+> **这张帧表是玩家出手底数的唯一住处（KI-047 裁决）**：武器表曾带一件没人读的
+> `atkBase`，已连同 schema/验证器/种子脚本一起拔掉。删除的代价——"同一架式的两把
+> 武器永远同价"——写成了契约：武器↔moveset **一对一**（新武器必须带自己的架式表），
+> 且 `WeaponData` 有字段白名单，无消费方的键进门即 ERROR。两道门 validator 与
+> `tests/unit/movesets.test.ts` 各钉一遍。
+
 ### 4.1 调律剑 Tuning Sword（直剑，均衡基准）
 
 | 段 | Startup | Active | Recovery | 伤害 | 体力 | 架势 | 备注 |

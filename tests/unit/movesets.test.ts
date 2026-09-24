@@ -73,3 +73,41 @@ describe('KI-039：武器家族的轻击定价必须互相咬住（重量的回�
     expect(byCycle.id, `最重=${byHit.id}，最慢=${byCycle.id} ⇒ 重量没换来代价`).toBe(byHit.id)
   })
 })
+
+/**
+ * KI-047：玩家出手的底数只住一处——`movesets.json` 每一记的 `damage`。
+ *
+ * 武器表曾带一件 `atkBase`，全仓库没有消费方，却"看起来像价格"：这正是 KI-039 的
+ * 错价能在整轮验收里活下来的形状。裁决按 KI-038 先例删字段（而非把帧表改成倍率），
+ * 删除的代价是「同一架式的两把武器永远同价」从巧合变成契约——所以补两条腿：
+ * ① 武器↔moveset 必须一对一（validator 同款检查在跑测里也钉住）；
+ * ② 武器表里不许再长出 atkBase（`validate-data.mjs` 的 WEAPON_FIELDS 白名单是它的表亲，
+ *    反向实测：把 atkBase 塞回 weapons.json ⇒ 两道门各自当场红）。
+ */
+describe('KI-047：底数单一来源——帧表，武器表不再带价格', () => {
+  it('weapons.json 的每一格都在消费方字段集里，atkBase 不许复活', () => {
+    const CONSUMED = ['id', 'nameKey', 'archetype', 'movesetId', 'scaling', 'swingTag', 'skill', 'poiseMul', 'noiseMul']
+    for (const w of weaponsRaw) {
+      for (const k of Object.keys(w)) {
+        expect(CONSUMED, `${w.id} 带着无消费方的字段 '${k}'（§55）`).toContain(k)
+      }
+    }
+  })
+
+  it('武器↔moveset 一对一：共用一张架式表 = 两把武器永远同价', () => {
+    const owners = new Map<string, string>()
+    for (const w of weaponsRaw) {
+      const prev = owners.get(w.movesetId)
+      expect(prev, `${w.id} 与 ${prev} 共用 ${w.movesetId} ⇒ 定价没法分开`).toBeUndefined()
+      owners.set(w.movesetId, w.id)
+    }
+    expect(owners.size, '空集不自证').toBe(weaponsRaw.length)
+  })
+
+  it('每把武器的第一记轻击在帧表里真的有底数（删 atkBase 后价格的唯一住处）', () => {
+    for (const w of weaponsRaw) {
+      const l1 = registry.get<MovesetData>(`moveset:${w.movesetId}`).actions['l1']
+      expect(l1.damage, `${w.id} 的 ${w.movesetId}/l1 没有 damage ⇒ 玩家出手为 0`).toBeGreaterThan(0)
+    }
+  })
+})

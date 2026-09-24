@@ -1,7 +1,7 @@
 import type { AttrKey } from '@/data/schema'
 
 export interface DamageRequest {
-  base: number                       // weapon atkBase (already combo-adjusted by caller)
+  base: number                       // the move's frames.damage from movesets.json (KI-047: the ONLY damage base; combo/upgrade-adjusted by caller)
   attrs?: Partial<Record<AttrKey, number>>
   scaling?: Partial<Record<AttrKey, number>>
   defense: number

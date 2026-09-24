@@ -44,7 +44,7 @@ ms_sword = {"id": "ms_sword", "actions": {
 
 weapons = [{
   "id": "wp_tuning_sword", "nameKey": "weapon.tuningSword", "archetype": "straight_sword",
-  "movesetId": "ms_sword", "atkBase": 12, "scaling": {"str": 0.6, "dex": 0.9},
+  "movesetId": "ms_sword", "scaling": {"str": 0.6, "dex": 0.9},
   "swingTag": ["damage.physical", "crit.backstab2.0", "parryable"], "skill": "sk_sword_resonant_cut",
   "noiseMul": 1.0
 }]

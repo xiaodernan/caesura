@@ -393,8 +393,12 @@ describe('G5② 力 / 律 Build 对照：同一颗种子、同一份输入脚本
       while (w.rpg.prog.unspent > 0) expect(w.rpg.prog.allocate(spend)).toBe(true)
       w.deps.refresh()
       const weapon = registry.get<WeaponData>(weaponId)
+      // 底数从**生产同一处**取：movesets.json 帧表的第一记轻击（KI-047 删掉了武器表里
+      // 那件没人读的 atkBase）。本条断言只比同一把剑的加点方向，attrScale 是乘项，
+      // 底数取哪一记都不改结论——但必须从帧表取，才不会再量一条生产不走的通道。
+      const base = registry.get<MovesetData>(`moveset:${weapon.movesetId}`).actions['l1'].damage
       return resolveDamage({
-        base: weapon.atkBase, attrs: w.rpg.mods().attrs, scaling: weapon.scaling,
+        base, attrs: w.rpg.mods().attrs, scaling: weapon.scaling,
         defense: 0, variance: 0, critRate: 0
       }, () => 0.5).damage
     }

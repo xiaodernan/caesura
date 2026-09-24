@@ -4,7 +4,6 @@
   "nameKey": "weapon.tuningSword",
   "archetype": "straight_sword",
   "movesetId": "ms_sword",
-  "atkBase": 12,
   "scaling": {
    "str": 0.6,
    "dex": 0.9
@@ -22,7 +21,6 @@
   "nameKey": "weapon.fortissimoGreatsword",
   "archetype": "greatsword",
   "movesetId": "ms_greatsword",
-  "atkBase": 26,
   "scaling": { "str": 1.15, "dex": 0.25 },
   "swingTag": ["damage.physical", "crit.backstab2.0", "heavy"],
   "skill": "sk_greatsword_chord_quake",
@@ -34,7 +32,6 @@
   "nameKey": "weapon.drawpinSpear",
   "archetype": "spear",
   "movesetId": "ms_spear",
-  "atkBase": 16,
   "scaling": { "str": 0.7, "dex": 0.85 },
   "swingTag": ["damage.physical", "crit.backstab2.0", "thrust"],
   "skill": "sk_spear_stringpin_hook",
