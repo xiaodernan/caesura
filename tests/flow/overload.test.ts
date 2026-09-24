@@ -143,6 +143,9 @@ describe('超载这条惩罚的存活证明：它现在可达吗（数据对账�
     }
     const maxWearable = ['weapon', 'helm', 'cuirass', 'gloves', 'greaves'].reduce((s, k) => s + (heaviest[k] ?? 0), 0)
     const minLoadMax = Math.min(...prog.origins.map((o) => Math.round(prog.derived.load.base + prog.derived.load.perStr * o.attrs.str)))
+    // ⚠ KI-054 之后 `milestones[].grant.loadFlat`（rank4 的 +8）真的进了 `derive()`，它会**抬高**上限，
+    // 而这条判据取的是"不带任何里程碑的最轻上限"——grant 只会把差距拉大，不会把它反转，
+    // 所以判据仍然成立（且比 grant 之前更保守）。
     // 断言写成"不可达"，并给出余量：哪天这件装备表把这条激活了，这条会红，
     // 红的那句就是要回去复核三条惩罚与提示的措辞，而不是把断言反过来一删了之。
     expect(maxWearable, `最重搭配 ${maxWearable} kg 对上最轻上限 ${minLoadMax} kg：已经可达了，回去复核这三条惩罚`).toBeLessThan(minLoadMax)

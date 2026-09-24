@@ -63,6 +63,12 @@ export class PlayerController {
   dodgeJitterTicks = 0
   private dodgeCount = 0
   parryWhiffTicks = 0
+  /**
+   * §5.3「失败」行（KI-054）：弹反窗开着、还没被弹反成功清账。
+   * 窗口自然走完或被一记没弹到的攻击吃掉 ⇒ 从此 tick 起挂落空后摇；
+   * `CombatManager` 弹反成功那一支调 `onParrySuccess()` 把它撤掉。
+   */
+  parryWhiffPending = false
   /** 超载提示的冷却：连打翻滚键不该把同一句话刷屏，但一次都不说就是「按了没反应」 */
   overloadWarnTicks = 0
   stunTicks = 0
@@ -289,11 +295,18 @@ export class PlayerController {
       } else this.guardTicks = 0
       if (input.frame.edges.has('parry') && this.parryTicksLeft <= 0 && this.parryWhiffTicks <= 0 && this.stats.stamina >= 5) {
         this.parryTicksLeft = this.base.parry.activeTicks
+        this.parryWhiffPending = true
         if (this.guardTicks > 0) this.guardTicks = 0
       }
     } else if (this.action || this.roll) this.guardTicks = canAct ? this.guardTicks : 0
-    if (this.parryTicksLeft > 0) this.parryTicksLeft--
+    // 后摇倒数**先于**开窗口的落账：不然 beginParryWhiff 刚把 27 写上就在同一 tick 被自己减成 26，
+    // 表里的 whiffRecovery 与实际锁格数差一（KI-054）。
     if (this.parryWhiffTicks > 0) this.parryWhiffTicks--
+    if (this.parryTicksLeft > 0) {
+      this.parryTicksLeft--
+      // 窗口走完而没人被弹到 ⇒ §5.3 的落空。被一记吃掉（没弹着）的那支在 CombatManager 里走 beginParryWhiff。
+      if (this.parryTicksLeft === 0 && this.parryWhiffPending) this.beginParryWhiff()
+    }
     if (this.overloadWarnTicks > 0) this.overloadWarnTicks--
 
     // ---- heavy hold -> charge ----
@@ -580,10 +593,24 @@ export class PlayerController {
     // weapon unique: on-beat bonus handled by CombatManager reading rhythm
   }
 
+  /** §5.3「失败」行 + §8.2 rank5：落空后摇 = player.json 的 27 格 + 里程碑 grant（未到 rank5 为 0）。 */
+  beginParryWhiff(): void {
+    if (!this.parryWhiffPending) return
+    this.parryWhiffPending = false
+    this.parryWhiffTicks = this.base.parry.whiffRecovery + msToTicks(this.rpg.parryWhiffMs)
+  }
+
+  /** 弹反成功 ⇒ 这一扇窗是赚的不是落空，后摇不欠（ CombatManager 成功支调用） */
+  onParrySuccess(): void {
+    this.parryWhiffPending = false
+  }
+
   takeDamage(amount: number, knockDir?: Vec3): boolean {
     if (this.iFrame || this.dead) return false
     if (this.parryTicksLeft > 0) return false // handled as parry upstream
-    this.stats.damage(amount)
+    // §5.3「失败」行的赌注（KI-054）：落空后摇期间被击按 whiffDmgMul 加重。
+    const dealt = this.parryWhiffTicks > 0 ? Math.round(amount * this.base.parry.whiffDmgMul) : amount
+    this.stats.damage(dealt)
     // §8 玩家侧那一行：受击一律 **R1 等效**，时长与位移都读 reactions.json 的 R1 行
     // （KI-050；此前是写死的 12 格 / 0.2m）。翻滚入口刻意不看 stunTicks（见 dodge 判据），
     // 「硬直可翻滚取消」这半句早就成立，不需要为它写新代码。
@@ -594,7 +621,7 @@ export class PlayerController {
       this.pos.x += clamp(knockDir.x, -1, 1) * r1.displaceM
       this.pos.z += clamp(knockDir.z, -1, 1) * r1.displaceM
     }
-    bus.emit('player.damaged', { amount })
+    bus.emit('player.damaged', { amount: dealt })
     bus.emit('audio.sfx', { key: 'player_hurt', gain: 0.6 })
     if (this.stats.hp <= 0) {
       this.dead = true

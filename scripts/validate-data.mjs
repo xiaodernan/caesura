@@ -223,7 +223,8 @@ function validatePlayer() {
   // §5.1 破防踉跄 + §10 那行的慢放附加格（KI-017③ 裁决 2026-09-25：破防不进 §9 停顿表，时间演出走这里）。
   // scale 卡在 (0,1) 开区间：≥1 就不是"慢放"，那格该删而不是留着骗消费者。
   report.sub(file, 'guard', p.guard, { startupTicks: { min: 0, int: true }, reduction: { min: 0, max: 1 }, staPerDmg: { min: 0 }, bleedPoiseFrac: { min: 0, max: 1 }, perfectBlockReflectMul: { min: 0, max: 1 }, breakStunMs: { min: 1 }, breakSlowMs: { min: 0 }, breakSlowScale: { min: 0.05, max: 0.99 } })
-  report.sub(file, 'parry', p.parry, { activeTicks: { min: 0, int: true }, whiffRecovery: { min: 0, int: true }, poiseDamage: { min: 0 }, stunTicks: { min: 0, int: true }, overdriveGain: { min: 0 }, projectileReflectMul: { min: 0, max: 1 } })
+  // whiffDmgMul（§5.3 赌注）卡在 ≥1：<1 就成了「落空反而减伤」，那是奖励不是代价
+  report.sub(file, 'parry', p.parry, { activeTicks: { min: 0, int: true }, whiffRecovery: { min: 0, int: true }, whiffDmgMul: { min: 1 }, poiseDamage: { min: 0 }, stunTicks: { min: 0, int: true }, overdriveGain: { min: 0 }, projectileReflectMul: { min: 0, max: 1 } })
   report.sub(file, 'roll', p.roll, { total: { min: 0, int: true }, iframeStart: { min: 0, int: true }, iframeEnd: { min: 0, int: true }, dist: { min: 0 }, backDist: { min: 0 }, stamina: { min: 0 }, lockOnDist: { min: 0 } })
   report.sub(file, 'execution', p.execution, {
     hpFrac: { min: 0, max: 1 }, flat: { min: 0 }, stealthKillFrac: { min: 0, max: 1 }, backstabConeDeg: { min: 0, max: 180 },
@@ -436,7 +437,21 @@ function validateProgression() {
       if (a.minRarity !== undefined && !rarityIds.has(a.minRarity)) report.error(file, `${w}.minRarity`, `未知稀有度：${a.minRarity}`)
     })
   }
-  // 里程碑：rank 必须在曲线范围内
+  // 里程碑：rank 必须在曲线范围内。KI-054 起「一行承诺一条腿」——每行必须满足三者之一：
+  // ① 带 grant（Progression.derive 逐项消费，字段白名单在 GRANT_FIELDS）；
+  // ② 被 movements.json slots[].milestone 引用（既有消费者，不重复挂腿）；
+  // ③ 出现在 PENDING_MILESTONE_GRANTS 且理由非空（先记账后接线，清单只许变短不许变长）。
+  // 这条规则的存在理由：§8.2 的 label 是玩家面向的数值承诺，此前 11 行里 9 行没有任何机制承载。
+  const GRANT_FIELDS = ['loadFlat', 'parryWhiffMs', 'execMulPct'] // 加数项（kg / ms / 百分点%），语义见 schema.MilestoneGrant
+  const PENDING_MILESTONE_GRANTS = {
+    ms_beat_ripple: 'HUD 拍点涟漪刻度：HUD 尚无该组件，随 KI-031（UI 批）一并落腿',
+    ms_crit_ring: '暴击飘字金色泛音环：暴击飘字本身还没有载体，同上随 UI 批',
+    ms_deepcellar: '深窖可停留时长 +35%：区域侧还没有"停留时长"这个量，无腿可接',
+    ms_overdrive: '过载上限 10→12：实际由 ovr 属性公式承载（Progression.derive），此行是重复承诺，待裁决删行或改 label',
+    ms_identity: '任一维触及 35 的专属效果：需求侧尚未定义具体效果（§8.2"待实装后补"）',
+  }
+  const movementMsIds = new Set((Array.isArray(data['movements.json']?.slots) ? data['movements.json'].slots : [])
+    .map((s) => (isObj(s) ? s.milestone : undefined)).filter(isStr))
   if (!isArr(d.milestones)) report.error(file, 'milestones', '必须是数组')
   else d.milestones.forEach((m, i) => {
     const w = `milestones[${i}]`
@@ -444,6 +459,18 @@ function validateProgression() {
     report.num(file, `${w}.rank`, m.rank, { min: 2, max: d.maxRank, int: true, name: 'rank' })
     if (!isStr(m.id)) report.error(file, `${w}.id`, '必填')
     if (!isStr(m.label)) report.error(file, `${w}.label`, '必填（§8.2「你新能做什么」）')
+    if (m.grant !== undefined) {
+      if (!isObj(m.grant)) report.error(file, `${w}.grant`, '必须是对象')
+      else {
+        if (Object.keys(m.grant).length === 0) report.error(file, `${w}.grant`, '空对象＝没有腿，删掉它并走 pending 清单')
+        for (const [k, v] of Object.entries(m.grant)) {
+          if (!GRANT_FIELDS.includes(k)) report.error(file, `${w}.grant.${k}`, `不认的 grant 字段（只认 ${GRANT_FIELDS.join('/')}；加字段必须同时在 Progression.derive 接线）`)
+          else report.num(file, `${w}.grant.${k}`, v, { name: k })
+        }
+      }
+    } else if (!movementMsIds.has(m.id) && !(m.id in PENDING_MILESTONE_GRANTS)) {
+      report.error(file, w, `里程碑无机制腿：既无 grant、也不被战技槽引用、也不在 PENDING_MILESTONE_GRANTS（KI-054）`)
+    }
   })
   // 出身：六维齐全、合计一致（"定弦只改分布"这条设计承诺必须可机器检查）
   if (!isArr(d.origins) || d.origins.length === 0) report.error(file, 'origins', '必须是非空数组')

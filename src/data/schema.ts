@@ -371,7 +371,7 @@ export interface PlayerBaseData {
      */
     breakStunMs: number; breakSlowMs: number; breakSlowScale: number }
   perfectBlockWindow: number
-  parry: { activeTicks: number; whiffRecovery: number; poiseDamage: number; stunTicks: number; overdriveGain: number; /** §5.3 弹反弹道：反射回原主人的伤害比例（100%） */ projectileReflectMul: number; /** §13.0「听觉 Sound」：弹反那记钟响的响度（未乘武器/词缀），比踏地更响 */ impactLoudness: number }
+  parry: { activeTicks: number; whiffRecovery: number; /** §5.3「失败」行：落空后摇期间被击的伤害倍率（赌注），消费方 `ThirdPersonController.takeDamage` */ whiffDmgMul: number; poiseDamage: number; stunTicks: number; overdriveGain: number; /** §5.3 弹反弹道：反射回原主人的伤害比例（100%） */ projectileReflectMul: number; /** §13.0「听觉 Sound」：弹反那记钟响的响度（未乘武器/词缀），比踏地更响 */ impactLoudness: number }
   roll: { total: number; iframeStart: number; iframeEnd: number; dist: number; backDist: number; stamina: number; lockOnDist: number; lockOnIframes: [number, number] }
   execution: ExecutionConfig
   /**
@@ -504,7 +504,21 @@ export interface ProgressionData {
   pity: { every: number; floorRarity: string }
   affixes: { prefix: AffixDef[]; suffix: AffixDef[] }
   /** 洗点/强化之外，升级里程碑（progression.md §8.2「你新能做什么」） */
-  milestones: { rank: number; id: string; label: string }[]
+  milestones: { rank: number; id: string; label: string; grant?: MilestoneGrant }[]
+}
+
+/**
+ * 里程碑的机制腿（KI-054）。§8.2 那列「你新能做什么」此前全是播报文本——
+ * label 承诺了数字，derive 里却没有这一项，等于 UI 在替不存在的机制发奖。
+ * 规矩与 PENDING_FLAG_WRITERS 同族：**每一行要么带 grant（有真实消费方），
+ * 要么逐个列进 validator 的 PENDING_MILESTONE_GRANTS 白名单（带原因）**。
+ * 消费方：`loadFlat`/`execMulPct` 走 `Progression.derive`；`parryWhiffMs` 经
+ * `PlayerMods.parryWhiffMs` 到 `ThirdPersonController` 的落空后摇（§5.3 失败行）。
+ */
+export interface MilestoneGrant {
+  loadFlat?: number
+  parryWhiffMs?: number
+  execMulPct?: number
 }
 
 /** 装备件的静态定义（挂在 ItemData.gear 上）。 */

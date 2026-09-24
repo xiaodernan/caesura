@@ -1,5 +1,5 @@
 import { registry } from '@/core/Registry'
-import type { AttrKey, ProgressionData, OriginData } from '@/data/schema'
+import type { AttrKey, MilestoneGrant, OriginData, ProgressionData } from '@/data/schema'
 
 /**
  * 音级（Rank）· 遗响（Resonance）· 音级点（Pitch Point）· 六音级属性（progression.md §2）。
@@ -17,8 +17,10 @@ export interface DerivedStats {
   poiseMax: number
   /** Σ护甲 DEF（含强化）+ 腔体加成；不含 DR 换算（DR 在伤害管线里算） */
   defense: number
-  /** 负重上限（kg）；超出 ⇒ 翻滚/疾跑禁用 + 体力回复 -40%（§5.1） */
+  /** 负重上限（kg）= 40+基音×4（§2.4）+ 里程碑 `loadFlat`（rank4 那格 +8）；超出 ⇒ 翻滚/疾跑禁用 + 体力回复 -40%（§5.1） */
   loadMax: number
+  /** §8.2 rank5「弹反失败硬直 −50ms」的 grant 原值（ms，可为负）；消费方 `ThirdPersonController` 的落空后摇（§5.3 失败行） */
+  parryWhiffMs: number
   critRate: number
   critMul: number
   overdriveMax: number
@@ -166,16 +168,23 @@ export class Progression {
      * build 面板上写着 60，实际只当 50 用——异常强度也必须按"实际当多少"结算，否则面板就在说谎。
      */
     const fis = this.effectiveAttr('fis')
+    /**
+     * 里程碑的机制腿（KI-054 / §8.2）：带 `grant` 的行在到达（或超过）其 rank 后逐格累加。
+     * 没腿的行不许偷偷存在——validator 的 PENDING_MILESTONE_GRANTS 逼每行二选一。
+     */
+    const grantSum = (key: keyof MilestoneGrant): number =>
+      this.data.milestones.reduce((s, m) => (m.grant && this.rank >= m.rank ? s + (m.grant[key] ?? 0) : s), 0)
     return {
       hpMax: Math.round(d.hp.base + sum(d.hp.per) + d.hp.perRank * this.rank),
       staminaMax: Math.round(d.stamina.base + sum(d.stamina.per)),
       poiseMax: Math.round(d.poise.base + sum(d.poise.per)),
       defense: Math.round(armorDef + a.vig * d.defensePerVig),
-      loadMax: Math.round(d.load.base + d.load.perStr * a.str),
+      loadMax: Math.round(d.load.base + d.load.perStr * a.str + grantSum('loadFlat')),
+      parryWhiffMs: grantSum('parryWhiffMs'),
       critRate: Math.min(c.cap, c.base + a.ovr * c.perOvr),
       critMul: c.mulBase + a.ovr * c.mulPerOvr,
       overdriveMax: Math.min(d.overdrive.cap, d.overdrive.base + Math.floor(a.ton / d.overdrive.perTonDiv)),
-      execMul: 1 + a.ovr * d.execMulPerOvr,
+      execMul: (1 + a.ovr * d.execMulPerOvr) * (1 + grantSum('execMulPct') / 100),
       statusPowerMul: 1 + fis * d.status.perFisPower,
       corruptionResistMul: Math.max(d.status.toleranceFloor, 1 - fis * d.status.perFisTolerance)
     }

@@ -300,7 +300,9 @@ describe('敌方远程：漂调者（en_driftsinger）', () => {
     for (let t = 0; t < 120 && w.combat.projectiles.live; t++) {
       const p = w.combat.projectiles.list()[0]
       const dist = Math.hypot(p.pos.x, p.pos.z)
-      if (dist < 2.6 && w.player.parryTicksLeft === 0) w.frame.edges.add('parry') // 贴着脸才抬手
+      // 1.4m ≈ 4 tick 后接触，正好落进 6f 窗口。以前写 2.6m 是靠「落空后立刻重抬手」兜底——
+      // KI-054 之后落空有 §5.3 的 27 格后摇，重试这条路被设计ally 关掉了，判据必须一次到位。
+      if (dist < 1.4 && w.player.parryTicksLeft === 0 && w.player.parryWhiffTicks === 0) w.frame.edges.add('parry')
       w.tick()
       if (w.hits.some((h) => h.result === 'parry')) { parried = true; break }
     }
@@ -348,7 +350,8 @@ describe('敌方远程：漂调者（en_driftsinger）', () => {
     let reflected = 0
     for (let t = 0; t < 400; t++) {
       const p = w.combat.projectiles.list()[0]
-      if (p?.hostile && Math.hypot(p.pos.x, p.pos.z) < 2.6 && w.player.parryTicksLeft === 0) w.frame.edges.add('parry')
+      // 同上：1.4m 才抬手，一次到位（KI-054 的落空后摇关掉了「落空就重试」的老路）
+      if (p?.hostile && Math.hypot(p.pos.x, p.pos.z) < 1.4 && w.player.parryTicksLeft === 0 && w.player.parryWhiffTicks === 0) w.frame.edges.add('parry')
       w.tick()
       reflected = Math.max(reflected, w.combat.projectiles.list().filter((x) => !x.hostile).length)
       if (shooter.stats.hp < hp0) break

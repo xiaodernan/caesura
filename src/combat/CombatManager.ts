@@ -850,6 +850,7 @@ export class CombatManager {
     if (p.parryActive && facing && h.parryable) {
       h.react(tick, 'parry')
       p.addOverdrive(p.base.parry.overdriveGain)
+      p.onParrySuccess() // §5.3：窗口被弹中 ⇒ 不落空，后面的落空锁与赌注倍率都不该发生（KI-054）
       // §9「弹反成功」那一行（`hitStop.parryMs`）：这一格的情境时长同时喂相机、事件与守方硬直——
       // 被弹反的人此刻正是挨打的那一方（`onParried` 刚给他挂上失音硬直），所以这一格停顿有地方落。
       // 攻方这一侧没有载体：`onParried` 已经把他那一招收掉（`attack = null`），没有"正在出的招"可按。
@@ -864,6 +865,9 @@ export class CombatManager {
       this.impactAlarm(p.base.parry.impactLoudness)
       return 'parry'
     }
+    // 窗口没弹中这一记就是落空（不可弹的攻击也算吃掉窗口）：§5.3 的落空后摇从这里开始。
+    // beginParryWhiff 自己有 pending 守卫，没在弹反窗口里被击时它是无操作（KI-054）。
+    p.beginParryWhiff()
     p.parryTicksLeft = 0
     if (p.iFrame) {
       bus.emit('combat.hit', { ...base, damage: 0, result: 'immune', shakeKey: 'graze' })

@@ -29,6 +29,8 @@ export interface PlayerMods {
   poiseMax: number
   defense: number
   loadMax: number
+  /** §8.2 rank5 里程碑的落空硬直修正（ms，未达不发；见 Progression.DerivedStats.parryWhiffMs） */
+  parryWhiffMs: number
   overdriveMax: number
   critRate: number
   critMul: number
@@ -58,7 +60,7 @@ export function defaultMods(): PlayerMods {
   return {
     rank: 1,
     attrs: { str: 0, dex: 0, ton: 0, vig: 0, ovr: 0, fis: 0 },
-    hpMax: 1, staminaMax: 1, poiseMax: 1, defense: 0, loadMax: 999, overdriveMax: 10,
+    hpMax: 1, staminaMax: 1, poiseMax: 1, defense: 0, loadMax: 999, parryWhiffMs: 0, overdriveMax: 10,
     critRate: 0, critMul: 1.35, execMul: 1, noiseMul: 1, poiseDmgMul: 1, staminaRegenMul: 1,
     statusPowerMul: 1, corruptionResistMul: 1,
     perfectBlockBonusTicks: 0, lightStartupTicks: 0, bellBonus: 0, restOverdrive: 0,
@@ -112,6 +114,7 @@ export class RpgRuntime {
       poiseMax: d.poiseMax,
       defense: d.defense,
       loadMax: d.loadMax,
+      parryWhiffMs: d.parryWhiffMs,
       overdriveMax: d.overdriveMax,
       critRate: d.critRate + eq.critRate,
       critMul: d.critMul,

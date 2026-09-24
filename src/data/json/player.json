@@ -29,6 +29,7 @@
  "parry": {
   "activeTicks": 6,
   "whiffRecovery": 27,
+  "whiffDmgMul": 1.25,
   "poiseDamage": 25,
   "stunTicks": 18,
   "overdriveGain": 2,

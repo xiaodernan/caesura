@@ -236,6 +236,14 @@
 | 限制 | 对巨型 Boss 主躯攻击不生效（只对其"可弹反攻击"标记生效——每种攻击数据带 `parryable` 布尔，防万能解） |
 | 窗口加成来源 | 奥斯塔拉重拍窗 117ms（§14.2）；词缀"准星"（progression.md）；易访问性 +1f 选项（需求 §46） |
 
+> **「失败」这一行今天（KI-054，2026-09-25）第一次有了载体**：此前 `parryWhiffTicks` 是个只初始化、
+> 只倒数、从不被赋值的死字段——27f 后摇与 ×1.25 赌注在运行时都不存在。现行口径：窗口自然走完
+> （`ThirdPersonController` 倒数到 0）或被一记没弹着的攻击吃掉（`CombatManager.resolveAgainstPlayer`）
+> 都会进后摇，长度 = `player.json.parry.whiffRecovery` + §8.2 rank5 grant（`msToTicks(-50)`＝3 格）；
+> 后摇期间再次按弹反被拒（这条门一直写着，只是过去从没关过任何人）；期间 `takeDamage` 按
+> `parry.whiffDmgMul` 加重——**吃掉窗口的那一击本身就落在后摇第一格**，这是「赌注」的读法。
+> 弹反成功则 `onParrySuccess()` 撤账，一格不欠。守卫 `tests/flow/milestone-grants.test.ts`。
+
 ### 5.4 处决 Execute 与背刺 Backstab
 
 | 项 | 数值 |
