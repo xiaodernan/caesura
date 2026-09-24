@@ -839,8 +839,8 @@ export class CombatManager {
     const p = this.player
     const cfg = statusConfig()
     // §9「Hitstop 时长分级表」里玩家是守方的那四行，整段来自 `player.json.hitStop`（KI-017 第四步）。
-    // 这里取一次、四个出口共用：一个情境值只准有一个落点，改表就是改行为（`tests/flow/hitstop-table.test.ts`
-    // 的那三条腿分别按三行去验）。
+    // 这里取一次、四个出口共用：一个情境值只准有一个落点，改表就是改行为（`tests/flow/hitstop.test.ts`
+    // 末尾那个「改表法」describe 逐行去验）。
     const hs = p.base.hitStop
     const base = {
       attackerId: h.attackerId, victimId: 'player', poiseDamage: h.poise, kind: h.kind,
@@ -904,9 +904,18 @@ export class CombatManager {
       }
       p.stats.stamina = 0
       p.exhausted = true
-      p.stunTicks = 36 // guard break 600ms (combat.md §5.1)
+      // §5.1「破防」的 600ms 大踉跄 + §10「破防/被破势」那行的附加格「0.3s 慢放 ×0.75」。
+      // KI-017③ 的口径裁决（2026-09-25）：§9 没给破防一行，**不补**——它的"时间被拿走"由这次
+      // 慢放承担（`hitStop` 的 scale 参数是现成的，只吃相机/阻尼那一侧的时标；拍网格按 tick 走，
+      // §2.1 不受害）。事件里的 `hitStopMs` 报 0 是有意的：那一格说的就是 §9 停顿，这里没有。
+      const g = p.base.guard
+      this.time.hitStop(g.breakSlowMs / 1000, g.breakSlowScale)
       p.takeDamage(Math.round(through * 1.3), h.dir)
-      bus.emit('combat.hit', { ...base, damage: through, result: 'hit', shakeKey: 'heavy' })
+      // 写在 `takeDamage` **之后**是有意的：那一手按'受击'口径把硬直钉成 12 格，旧代码先写 36
+      // 再叫它 ⇒ 「破防 600ms 大踉跄」从未成立过，玩家实际只踉跄了受击那 200ms。这次裁决顺手纠的这个谎，
+      // 由 `hitstop.test.ts` 的破防腿钉住（读数 == msToTicks(breakStunMs)，不是 12）。
+      p.stunTicks = msToTicks(g.breakStunMs)
+      bus.emit('combat.hit', { ...base, damage: through, result: 'hit', shakeKey: 'heavy', hitStopMs: 0 })
       bus.emit('ui.notify', { text: '破防！', kind: 'info' })
       this.checkPlayerCrumple(tick)
       return 'guardBreak'

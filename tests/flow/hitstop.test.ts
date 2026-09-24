@@ -426,6 +426,64 @@ describe('§9 的四行只有一个来源：改表就改行为（KI-017 第四�
   })
 })
 
+describe('KI-017③ 裁决：破防不领 §9 的停顿格，领的是 §10 的慢放', () => {
+  /**
+   * §9 没给破防一行——裁决是**不加**（不把表没给过的数伪装成设计）。破防的时间演出住在
+   * §10「破防/被破势」那行的附加格「0.3s 慢放 ×0.75」，这条腿既是它的实现也是它的证人：
+   *  spying 读到相机时标被要了一次 `(0.3, 0.75)`，而 §9 自己的三格账（事件的 `hitStopMs`、
+   * 守方 `stunStopTicks`、攻方载体）**全是零** —— 谁日后往这条路上塞一次 hitstop，这条先红。
+   */
+  function driveGuardBreak(w: World): { asked: Array<[number, number]>; event: Hit | undefined } {
+    const asked: Array<[number, number]> = []
+    const orig = w.time.hitStop.bind(w.time)
+    w.time.hitStop = (sec: number, scale = 0.05): void => { asked.push([sec, scale]); orig(sec, scale) }
+    w.pin(w.ai.spawn(FOE, { x: 0, y: 0, z: -30 }, 'break'))
+    faceAt(w, { x: 0, y: 0, z: -30 })
+    w.frame.held.add('guard')
+    w.tick(8) // 持盾越过完美格挡窗（5 格）才落判定 ⇒ 走格挡那条出口，而不是完美格挡
+    w.player.stats.stamina = 1 // 盾面这一记要 3.6 点体力：掏空 ⇒ 破防
+    shoot(w, w.player.pos, STOP, true)
+    for (let i = 0; i < 30 && !w.hits.some((h) => h.victimId === 'player'); i++) w.tick()
+    return { asked, event: w.hits.find((h) => h.victimId === 'player') }
+  }
+
+  it('破防那三格住在表里：600ms 踉跄 + 300ms ×0.75 慢放，与 §5.1/§10 对得上', () => {
+    expect(playerBase.guard.breakStunMs).toBe(600)
+    expect(playerBase.guard.breakSlowMs).toBe(300)
+    expect(playerBase.guard.breakSlowScale).toBe(0.75)
+  })
+
+  it('真破防一次：踉跄格数由表派生，相机被要了一次慢放，而 §9 的三格账全是零', () => {
+    const w = makeWorld()
+    const { asked, event } = driveGuardBreak(w)
+    expect(w.player.exhausted, '前提：这一记真的打穿了盾').toBe(true)
+    expect(event, '弹体没落到玩家身上：这条在量空气').toBeTruthy()
+    expect(w.player.stunTicks, '§5.1 的 600ms 大踉跄 = msToTicks(表值)，不是代码里那个 36').toBe(msToTicks(playerBase.guard.breakStunMs))
+    expect(asked, '这一路只有一次时标请求：§10 的那次慢放').toEqual([[playerBase.guard.breakSlowMs / 1000, playerBase.guard.breakSlowScale]])
+    expect(event!.hitStopMs, '事件声称有 §9 停顿 ⇒ 与裁决矛盾（慢放不是停顿）').toBe(0)
+    expect(w.player.stunStopTicks, '守方那一格停顿压根不该被挂上').toBe(0)
+    w.off()
+  })
+
+  it('改表就改行为：踉跄格数与慢放的那一(秒, 比例)都跟着 guard 那三格走', () => {
+    const saved = { ...playerBase.guard }
+    playerBase.guard.breakStunMs = 200
+    playerBase.guard.breakSlowMs = 900
+    playerBase.guard.breakSlowScale = 0.4
+    try {
+      const w = makeWorld()
+      const { asked, event } = driveGuardBreak(w)
+      expect(event, '弹体没落到玩家身上：这条在量空气').toBeTruthy()
+      expect(w.player.stunTicks, '改了表却没改踉跄长度 ⇒ 代码里还藏着第二个数').toBe(msToTicks(200))
+      expect(asked, '慢放的那一格也要跟着表跑').toEqual([[0.9, 0.4]])
+      w.off()
+    } finally {
+      Object.assign(playerBase.guard, saved)
+    }
+    expect(playerBase.guard.breakStunMs, '量具不动生产数据：跑完要还原').toBe(600)
+  })
+})
+
 describe('§9 停顿与相邻两套时间：各记各的账', () => {
   it('打空不产生停顿：没有接触就没有人被打断时间', () => {
     const w = makeWorld()

@@ -20,7 +20,10 @@
   "staPerDmg": 1.2,
   "bleedPoiseFrac": 0.25,
   "perfectBlockReflectMul": 0.5,
-  "impactLoudness": 0.5
+  "impactLoudness": 0.5,
+  "breakStunMs": 600,
+  "breakSlowMs": 300,
+  "breakSlowScale": 0.75
  },
  "perfectBlockWindow": 5,
  "parry": {

@@ -350,7 +350,14 @@ export interface PlayerBaseData {
   jumpSpeed: number
   gravity: number
   staminaRegen: { hardDelay: number; slowPerSec: number; slowTicks: number; fastPerSec: number }
-  guard: { startupTicks: number; reduction: number; staPerDmg: number; bleedPoiseFrac: number; /** §5.2 对远程：完美格挡把弹体弹回原主人，带走的比例 */ perfectBlockReflectMul: number; /** §13.0「听觉 Sound」的第四路：格挡接准那一记闷响的响度（未乘武器/词缀） */ impactLoudness: number }
+  guard: { startupTicks: number; reduction: number; staPerDmg: number; bleedPoiseFrac: number; /** §5.2 对远程：完美格挡把弹体弹回原主人，带走的比例 */ perfectBlockReflectMul: number; /** §13.0「听觉 Sound」的第四路：格挡接准那一记闷响的响度（未乘武器/词缀） */ impactLoudness: number;
+    /**
+     * §5.1「破防 Guard Break」：格挡中体力被抽干 → 600ms 大踉跄（代码用 `msToTicks` 派生格数）。
+     * 这 36 tick 在 §9 停顿表里**没有**自己的一行（KI-017③ 的口径裁决，2026-09-25）：破防的时间
+     * 演出住在 §10「破防/被破势」那行的附加格——下面两格就是它，`GameTime.hitStop` 的 scale 参数
+     * 是现成的，慢放只吃相机那侧的时标，拍网格照走（§2.1 安全）。
+     */
+    breakStunMs: number; breakSlowMs: number; breakSlowScale: number }
   perfectBlockWindow: number
   parry: { activeTicks: number; whiffRecovery: number; poiseDamage: number; stunTicks: number; overdriveGain: number; /** §5.3 弹反弹道：反射回原主人的伤害比例（100%） */ projectileReflectMul: number; /** §13.0「听觉 Sound」：弹反那记钟响的响度（未乘武器/词缀），比踏地更响 */ impactLoudness: number }
   roll: { total: number; iframeStart: number; iframeEnd: number; dist: number; backDist: number; stamina: number; lockOnDist: number; lockOnIframes: [number, number] }

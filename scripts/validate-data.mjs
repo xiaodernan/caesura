@@ -217,7 +217,9 @@ function validatePlayer() {
   })) report.num(file, k, p[k], { ...o, name: k })
 
   report.sub(file, 'staminaRegen', p.staminaRegen, { hardDelay: { min: 0, int: true }, slowPerSec: { min: 0 }, slowTicks: { min: 0, int: true }, fastPerSec: { min: 0 } })
-  report.sub(file, 'guard', p.guard, { startupTicks: { min: 0, int: true }, reduction: { min: 0, max: 1 }, staPerDmg: { min: 0 }, bleedPoiseFrac: { min: 0, max: 1 }, perfectBlockReflectMul: { min: 0, max: 1 } })
+  // §5.1 破防踉跄 + §10 那行的慢放附加格（KI-017③ 裁决 2026-09-25：破防不进 §9 停顿表，时间演出走这里）。
+  // scale 卡在 (0,1) 开区间：≥1 就不是"慢放"，那格该删而不是留着骗消费者。
+  report.sub(file, 'guard', p.guard, { startupTicks: { min: 0, int: true }, reduction: { min: 0, max: 1 }, staPerDmg: { min: 0 }, bleedPoiseFrac: { min: 0, max: 1 }, perfectBlockReflectMul: { min: 0, max: 1 }, breakStunMs: { min: 1 }, breakSlowMs: { min: 0 }, breakSlowScale: { min: 0.05, max: 0.99 } })
   report.sub(file, 'parry', p.parry, { activeTicks: { min: 0, int: true }, whiffRecovery: { min: 0, int: true }, poiseDamage: { min: 0 }, stunTicks: { min: 0, int: true }, overdriveGain: { min: 0 }, projectileReflectMul: { min: 0, max: 1 } })
   report.sub(file, 'roll', p.roll, { total: { min: 0, int: true }, iframeStart: { min: 0, int: true }, iframeEnd: { min: 0, int: true }, dist: { min: 0 }, backDist: { min: 0 }, stamina: { min: 0 }, lockOnDist: { min: 0 } })
   report.sub(file, 'execution', p.execution, {
