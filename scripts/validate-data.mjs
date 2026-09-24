@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const JSON_DIR = resolve(ROOT, 'src/data/json')
-const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json']
+const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json', 'shop.json']
 // Phase 6-B：对话风格枚举与任务标注（narrative.md §3.2 / §28 图例）
 const CHOICE_STYLES = new Set(['blunt', 'poetic', 'silent', 'provoke'])
 const QUEST_TAGS = new Set(['D', 'C', 'H', 'M'])
@@ -608,6 +608,8 @@ function validateItems(weaponIds, rarityIds, affixDefs) {
     if (it.value !== undefined) report.num(file, `${w}.value`, it.value, { min: 0, name: 'value' })
     const gearKind = it.kind === 'weapon' || it.kind === 'armor' || it.kind === 'seal'
     if (gearKind && !isObj(it.gear)) { report.error(file, w, `${it.kind} 必须带 gear`); return }
+    // 装备件必须写 value：营地卖价 = value × shop.sell.mul（KI-055），缺了它就是一件"卖不出钱"的装备
+    if (gearKind && !(isNum(it.value) && it.value > 0)) report.error(file, `${w}.value`, '装备件必须写正数 value（营地交易的卖价底数，shop.json sell.mul 乘在它上面）')
     if (!gearKind && it.gear !== undefined) report.error(file, w, '非装备件不该带 gear')
     if (isObj(it.gear)) {
       const g = it.gear
@@ -649,6 +651,46 @@ function validateItems(weaponIds, rarityIds, affixDefs) {
     if (!has) report.error(file, 'weapons', `weapons.json 的 '${wid}' 没有对应的装备件（RpgRuntime 会因此抛错）`)
   }
   return ids
+}
+
+// ---- shop.json（营地交易，KI-055） ----
+const SHOP_FIELDS = new Set(['id', 'sell', 'stock', 'redlines'])
+const SELL_FIELDS = new Set(['mul', 'note'])
+const STOCK_FIELDS = new Set(['id', 'item', 'price', 'note'])
+/**
+ * 交易的三条红线全部做成机器形状（§6.3「无风险套利禁止」）：
+ * 清单只许 consumable、卖系数严格在 (0,1)、条目引用的件必须真存在且价是正整数。
+ * 为什么钉得这么死：这三条只要松一条，「买→卖」或「买材料→强化→卖装」就会变成印钞机，
+ * 而印钞机一旦发生，整个 §6 的经济设计（拾取即收入）就不再是收入的来源。
+ */
+function validateShop(itemKinds) {
+  const file = 'shop.json'
+  const d = data[file]
+  if (!isObj(d)) { report.error(file, file, '顶层必须是对象'); return }
+  for (const k of Object.keys(d)) if (!SHOP_FIELDS.has(k)) report.error(file, k, '没有消费方（ShopData 不读它）')
+  if (d.id !== 'shop') report.error(file, 'id', "必须是 'shop'（registerGameData 以此 id 入注册表）")
+  if (!isObj(d.sell)) report.error(file, 'sell', '必须是 { mul, note? }')
+  else {
+    for (const k of Object.keys(d.sell)) if (!SELL_FIELDS.has(k)) report.error(file, `sell.${k}`, '没有消费方')
+    if (report.num(file, 'sell.mul', d.sell.mul, { name: 'mul' })) {
+      if (d.sell.mul <= 0) report.error(file, 'sell.mul', `${d.sell.mul}：卖出价为 0 等于没有这条经济出口（§6.3 是「档价×50%」，不是「销毁装备」）`)
+      if (d.sell.mul >= 1) report.error(file, 'sell.mul', `${d.sell.mul}：≥1 让「买→卖」回环不亏钱，直接违反 §6.3 反通胀红线`)
+    }
+  }
+  if (!isArr(d.stock) || d.stock.length === 0) { report.error(file, 'stock', '必须是非空数组（没有清单就没有买这条腿）'); return }
+  const seen = new Set()
+  d.stock.forEach((e, i) => {
+    const w = isStr(e?.id) ? e.id : `stock[${i}]`
+    if (!isObj(e)) { report.error(file, w, '必须是对象'); return }
+    for (const k of Object.keys(e)) if (!STOCK_FIELDS.has(k)) report.error(file, `${w}.${k}`, '没有消费方')
+    if (!isStr(e.id)) report.error(file, w, 'id 缺失')
+    else if (seen.has(e.id)) report.error(file, w, `id 重复：${e.id}（买按钮按 id 派发，同名就会买错东西）`)
+    else seen.add(e.id)
+    const kind = itemKinds.get(e.item)
+    if (kind === undefined) { report.error(file, `${w}.item`, `悬空引用：'${e.item}' 不在 items.json`); return }
+    if (kind !== 'consumable') report.error(file, `${w}.item`, `'${e.item}' 是 ${kind}：买清单只许 consumable（§6.3 强化材料/乐谱不可购，装备可购则卖装腿变印钞机）`)
+    report.num(file, `${w}.price`, e.price, { min: 1, int: true, name: 'price' })
+  })
 }
 
 // ---- loot.json ----
@@ -1650,6 +1692,8 @@ const weaponIds = validateWeapons(movesetIds)
 // progression 要先跑：稀有度是 items/loot 的跨文件依据；items 要先跑：掉落表引用物品 id
 const { rarityIds, affixDefs, originPassives } = validateProgression()
 const itemIds = validateItems(weaponIds, rarityIds, affixDefs)
+// §6.2/§6.3 营地交易（KI-055）：清单条目的 kind 是对账依据，所以从 items 现取一张 id→kind
+validateShop(new Map((Array.isArray(data['items.json']) ? data['items.json'] : []).filter(isObj).map((it) => [it.id, it.kind])))
 const lootIds = validateLoot(itemIds, rarityIds)
 // §2.2 出身被动双向对账（KI-031③）：itemId 必须活在 items.json，也必须真被某张掉落表掉出——
 // 后者是"被动承诺加成于一个无人掉落的东西"的空头支票门，等 loot 跑完才量得到。

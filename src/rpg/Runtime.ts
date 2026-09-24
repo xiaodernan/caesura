@@ -6,6 +6,7 @@ import { Equipment, equipSeal } from './Equipment'
 import { LootDirector, allGearItems, type LootGrant } from './Loot'
 import { MovementBook, type MovementSnapshot, type SkillAction } from './Movements'
 import { tryUpgrade, salvage, type UpgradeResult } from './Upgrade'
+import { buy, sellGear, type BuyResult, type SellResult } from './Shop'
 
 /**
  * 成长系统的总装（Phase 5-B/5-C2）：Progression（音级/属性）× Inventory（背包）×
@@ -178,6 +179,19 @@ export class RpgRuntime {
     }
     return salvage(this.inv, uid)
   }
+
+  /**
+   * §6.2/§6.3 营地交易：卖身上或包里的那一件装备实例，买清单里的消耗品。
+   * 卖与分解共用同一条防线——槽位不能指向一个已经不存在的 uid，所以先脱再拆/再卖。
+   */
+  sell(uid: string): SellResult {
+    for (const slot of Object.keys(this.eq.slots) as SlotKey[]) {
+      if (this.eq.slots[slot] === uid) this.eq.unequip(slot)
+    }
+    return sellGear(this.inv, uid)
+  }
+
+  buy(entryId: string): BuyResult { return buy(this.inv, entryId) }
 
   /**
    * 使用消耗品（回响膏=回血；音色晶=刮失谐）。返回实际生效量，由 main.ts 落到玩家身上——

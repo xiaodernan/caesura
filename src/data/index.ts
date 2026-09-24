@@ -14,7 +14,8 @@ import statusesRaw from './json/statuses.json'
 import movementsRaw from './json/movements.json'
 import worldstateRaw from './json/worldstate.json'
 import reactionsRaw from './json/reactions.json'
-import type { MovesetData, WeaponData, EnemyData, PlayerBaseData, RegionData, ProgressionData, ItemData, LootTableData, NpcData, DialogueData, QuestData, StatusConfig, MovementConfig, WorldStateRule, HitReactionTable } from './schema'
+import shopRaw from './json/shop.json'
+import type { MovesetData, WeaponData, EnemyData, PlayerBaseData, RegionData, ProgressionData, ItemData, LootTableData, NpcData, DialogueData, QuestData, StatusConfig, MovementConfig, WorldStateRule, HitReactionTable, ShopData } from './schema'
 
 export const playerBase = playerRaw as unknown as PlayerBaseData
 export const regions = regionsRaw as unknown as RegionData[]
@@ -31,6 +32,8 @@ export const movements = movementsRaw as unknown as MovementConfig
 export const worldstate = worldstateRaw as unknown as WorldStateRule[]
 /** §8 受击反应表（只有有承载体的行：R1 玩家受击 / R4 破势时长）；派生读取走 combat/Reactions.ts */
 export const reactions = reactionsRaw as unknown as HitReactionTable
+/** §6.2/§6.3 营地商店（买清单 + 卖装系数）；玩法读取走 rpg/Shop.ts，红线由 validator 钉住 */
+export const shop = shopRaw as unknown as ShopData
 
 let registered = false
 
@@ -55,6 +58,7 @@ export function registerGameData(): void {
   registry.register('statuses', statuses)
   registry.register('movements', movements)
   registry.register('reactions', reactions)
+  registry.register(shop.id, shop)
   for (const r of worldstate) registry.register(r.id, r)
 }
 

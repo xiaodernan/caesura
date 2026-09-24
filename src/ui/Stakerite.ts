@@ -3,7 +3,8 @@ import type { ItemData, MovesetData, SlotKey, WeaponData } from '@/data/schema'
 import { itemOf } from '@/rpg/Inventory'
 import { ATTR_KEYS, progressionData } from '@/rpg/Progression'
 import { SLOTS, type EquipMods } from '@/rpg/Equipment'
-import { upgradeStep, maxLevelOf, TIMBITE, DROSS } from '@/rpg/Upgrade'
+import { upgradeStep, maxLevelOf, TIMBITE, DROSS, salvageValue } from '@/rpg/Upgrade'
+import { sellPrice, shopData, CURRENCY } from '@/rpg/Shop'
 import { movementName, unlockItemName, SCORE } from '@/rpg/Movements'
 import { DEFAULT_BINDS, type ActionName } from '@/core/Input'
 import type { RpgRuntime } from '@/rpg/Runtime'
@@ -11,8 +12,8 @@ import type { RpgRuntime } from '@/rpg/Runtime'
 /**
  * 调音桩面板（Phase 5-B 的 UI 落点；需求 §41/§44 + progression.md §8.3）。
  *
- * 四页：**调音**（音级/六维分配/洗点）、**装备**（七槽 + 强化）、**行囊**（分类清单）、
- * **谱册**（乐章战技的点亮/升级/装槽，Phase 5-C2）。
+ * 五页：**调音**（音级/六维分配/洗点）、**装备**（七槽 + 强化）、**行囊**（分类清单）、
+ * **谱册**（乐章战技的点亮/升级/装槽，Phase 5-C2）、**交易**（营地买卖，KI-055）。
  * 用 DOM 而不是 HUD 的 canvas：这是一块要读字、要滚动、要点击的界面，不是战斗中的仪表盘
  * （tech-arch §1 的 UI 分工：HUD 走 canvas，菜单走 DOM overlay）。
  *
@@ -20,13 +21,14 @@ import type { RpgRuntime } from '@/rpg/Runtime'
  * 由 main.ts 统一把派生值灌回玩家——面板自己不写第二份"应用变更"的逻辑。
  */
 
-type Tab = 'tune' | 'gear' | 'bag' | 'moves'
+type Tab = 'tune' | 'gear' | 'bag' | 'moves' | 'trade'
 
 const TABS: { id: Tab; label: string; hint: string }[] = [
   { id: 'tune', label: '调音', hint: '分配音级点 · 洗点' },
   { id: 'gear', label: '装备', hint: '七槽 · 强化' },
   { id: 'bag', label: '行囊', hint: '分类清点' },
-  { id: 'moves', label: '谱册', hint: '乐章战技 · 主动槽' }
+  { id: 'moves', label: '谱册', hint: '乐章战技 · 主动槽' },
+  { id: 'trade', label: '交易', hint: '卖装半价 · 购消耗品' }
 ]
 
 const CSS = `
@@ -205,6 +207,8 @@ export class Stakerite {
       case 'upgrade': this.upgrade(arg); break
       case 'salvage': this.salvage(arg); break
       case 'use': this.use(arg); break
+      case 'sell': this.sell(arg); break
+      case 'buy': this.buy(arg); break
       case 'lit': this.unlock(arg); break
       case 'mvup': this.upgradeMove(arg); break
       case 'mvequip': this.equipSlot(arg); break
@@ -252,6 +256,29 @@ export class Stakerite {
     if (!v) return
     if (this.gearSel === uid) this.gearSel = null
     this.hooks.notify(`分解 · 残晶 +${v.dross} · 音色石 +${v.timbite}`, 'reward')
+  }
+
+  /** 卖装备（§6.3）：拿到的只有底数的半价，强化过的那部分留在世界里不回来——所以播报把件名念出来而不是「+3」 */
+  private sell(uid: string): void {
+    const name = this.label(uid)
+    const r = this.rpg.sell(uid)
+    if (!r.ok) { this.hooks.notify(r.reason === 'missing' ? '包里已经没有这一件了' : '这种东西不能卖', 'info'); return }
+    if (this.gearSel === uid) this.gearSel = null
+    this.hooks.notify(`售出 · ${name} · 音色石 +${r.price}`, 'reward')
+  }
+
+  /** 买消耗品（§6.2）：失败的原因有三种，说出来比按钮变灰更有信息（按钮照旧禁用，这里兜住竞态） */
+  private buy(entryId: string): void {
+    const entry = shopData().stock.find((s) => s.id === entryId)
+    const r = this.rpg.buy(entryId)
+    if (!r.ok) {
+      this.hooks.notify(
+        r.reason === 'unknown' ? '清单上没有这一项'
+          : r.reason === 'poor' ? `音色石不足（需 ${entry?.price ?? '?'}）`
+            : `${entry ? itemOf(entry.item).displayName : '这一项'}已经带满`, 'info')
+      return
+    }
+    this.hooks.notify(`购入 · ${itemOf(r.itemId!).displayName} · 音色石 −${r.price}`, 'reward')
   }
 
   private use(itemId: string): void {
@@ -321,7 +348,8 @@ export class Stakerite {
     const body = this.tab === 'tune' ? this.renderTune()
       : this.tab === 'gear' ? this.renderGear()
         : this.tab === 'bag' ? this.renderBag()
-          : this.renderMoves()
+          : this.tab === 'moves' ? this.renderMoves()
+            : this.renderTrade()
     this.root.innerHTML = `
       <div class="veil" data-act="close"></div>
       <div class="panel">
@@ -515,6 +543,44 @@ export class Stakerite {
       <h2>口径</h2>
       <div class="row"><span class="name">战技伤害标尺<span class="note">不吃武器强化倍率，按音色列折算</span></span>
         <span class="num">${Object.entries(book.cfg.damage.scaling).map(([k, v]) => `${k.toUpperCase()} +${v}/点`).join(' · ')} · 过载每层 +${Math.round(book.cfg.damage.perOverdriveLayer * 100)}%</span></div>`
+  }
+
+  /* ------------------------------- 交易 ------------------------------- */
+
+  /**
+   * 营地交易页（KI-055）。两个区块各自从数据取价：卖侧读 `items.json` 的 `value × shop.sell.mul`，
+   * 买侧读 `shop.json` 的 `price`——面板里不出现第二个价格来源。
+   * 每一行都同时给"卖"和"拆"两个数：§6.3 的意图是**鼓励分解**（残晶回流），只报卖价就会让玩家
+   * 以为卖是正解；把两个数并排放，选择才是玩家做的而不是排版替他做的。
+   */
+  private renderTrade(): string {
+    const inv = this.rpg.inv
+    const shop = shopData()
+    const mulPct = Math.round(shop.sell.mul * 100)
+    const sell = inv.gears.map((g) => {
+      const item = itemOf(g.itemId)
+      const worn = Object.values(this.rpg.eq.slots).includes(g.uid)
+      const price = sellPrice(g.itemId)
+      const sv = salvageValue(item, g.level)
+      return `<div class="row">
+        <span class="name">${item.displayName}${g.level > 0 ? ` <span class="tag">+${g.level}</span>` : ''}
+          ${worn ? '<span class="tag">已装备</span>' : ''}
+          <span class="note">档价 ${item.value ?? 0} × ${mulPct}% · 分解另一算（残晶 ${sv.dross} + 石 ${sv.timbite}）</span></span>
+        <span class="num">${price} 石</span>
+        <span class="act"><button class="act" data-act="sell" data-arg="${g.uid}">售出</button></span></div>`
+    }).join('') || '<div class="empty">行囊里没有可卖的装备。</div>'
+    const buy = shop.stock.map((e) => {
+      const item = itemOf(e.item)
+      const have = inv.count(item.id)
+      const can = have < item.stack && inv.count(CURRENCY) >= e.price
+      return `<div class="row">
+        <span class="name">${item.displayName}<span class="note">${e.note ?? item.desc}</span></span>
+        <span class="num">${e.price} 石 · 持有 ${have}/${item.stack}</span>
+        <span class="act"><button class="act" data-act="buy" data-arg="${e.id}" ${can ? '' : 'disabled'}>购入</button></span></div>`
+    }).join('')
+    return `<h2>购入（营地商队 · 只收消耗品）</h2>${buy}
+      <h2>售出（装备实例 · 强化等级不折价）</h2>${sell}
+      <div class="row"><span class="name">口径<span class="note">买来的消耗品不能再卖（不是装备）；卖装备只给档价半价。§6.3 的红线：买→卖这一圈必定亏。</span></span></div>`
   }
 }
 

@@ -573,6 +573,27 @@ export interface ItemData {
   use?: { heal?: number; corruption?: number }
 }
 
+/* ============================ 营地商店（progression.md §6.2/§6.3，KI-055） ============================ */
+
+/**
+ * 音色石经济的**出口表**。两份账各一个主人：卖出系数 `sell.mul` 是 §6.3 的反通胀红线
+ * （档价×50%，强化沉没不反还）；`stock` 是 §6.2 消耗侧唯一合法的购买清单——validator 钉住
+ * 「只许 consumable」，因为「强化材料不可购、词缀不可购」是设计红线，不是库存巧合。
+ */
+export interface ShopStockEntry {
+  id: string
+  item: string
+  price: number
+  note?: string
+}
+
+export interface ShopData {
+  id: 'shop'
+  sell: { mul: number; note?: string }
+  stock: ShopStockEntry[]
+  redlines?: { note?: string }
+}
+
 /* ============================ 状态系统（combat.md §11，Phase 5-C1） ============================ */
 
 /**

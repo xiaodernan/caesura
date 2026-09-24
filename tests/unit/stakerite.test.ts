@@ -97,7 +97,7 @@ describe('调音桩面板：状态机与内容', () => {
     expect(p.isOpen).toBe(false)
   })
 
-  it('方向键切页：调音 → 装备 → 行囊 → 谱册，再往右回到第一页', async () => {
+  it('方向键切页：调音 → 装备 → 行囊 → 谱册 → 交易，再往右回到第一页', async () => {
     const rt = new RpgRuntime('origin_tuner')
     rt.inv.add('it_timbite', 12)
     rt.inv.add('it_echo_salve', 2)
@@ -118,6 +118,8 @@ describe('调音桩面板：状态机与内容', () => {
     // 页是数据驱动的：第四页（乐章 IV·休止）一入表就自己长出来了，UI 没加一行代码。
     // 没点亮也要看得见——玩家得知道"这一页上还有东西"， KI-027 那句括号到此为止。
     expect(moves).toContain('乐章 IV·休止 · 全暗')
+    key('ArrowRight')
+    expect(html(p), '第五页：营地交易').toContain('购入')
     key('ArrowRight')
     expect(html(p)).toContain('六音级属性')
   })
@@ -219,6 +221,59 @@ describe('调音桩面板：状态机与内容', () => {
     click(root, 'mvequip', `0:${onLitPage.id}`)
     expect(rt.moves.slots[0]).toBe(onLitPage.id)
     expect(applied.length, '每次点击都让宿主重算派生值（面板不自己 patch 玩家）').toBeGreaterThan(0)
+  })
+})
+
+describe('KI-055① 交易页（营地买卖）', () => {
+  /** 走到第五页（用真实的方向键导航，不是伪造 tab 状态） */
+  const tradeTab = async (rt: RpgRuntime) => {
+    const { p } = await panel(rt)
+    p.show()
+    for (let i = 0; i < 4; i++) { for (const fn of winHandlers.keydown ?? []) fn({ code: 'ArrowRight', preventDefault() {} }) }
+    return { p, s: html(p) }
+  }
+
+  it('买清单与卖价都从表里读出来，面板里没有第二个数', async () => {
+    const { shopData, sellPrice } = await import('@/rpg/Shop')
+    const { itemOf } = await import('@/rpg/Inventory')
+    const rt = new RpgRuntime('origin_tuner')
+    rt.inv.add('it_timbite', 900)
+    const { s } = await tradeTab(rt)
+    for (const e of shopData().stock) {
+      expect(s, `${e.id} 要出现在清单上`).toContain(itemOf(e.item).displayName)
+      expect(s, `按钮按条目 id 派发，不是按物品 id`).toContain(`data-act="buy" data-arg="${e.id}"`)
+      expect(s, '价格一格一字不差地报出来').toContain(`${e.price} 石`)
+    }
+    for (const g of rt.inv.gears) {
+      expect(s, `${g.uid} 要有一行可售出，价从表里读`).toContain(`data-act="sell" data-arg="${g.uid}"`)
+      expect(s).toContain(`${sellPrice(g.itemId)} 石`)
+    }
+    expect(s, '系数也要念出来：卖价不是黑箱').toContain(`${Math.round(shopData().sell.mul * 100)}%`)
+  })
+
+  it('点「售出」真的换到石、点「购入」真的扣石（面板只派发，账在 RpgRuntime 上）', async () => {
+    const { shopData, sellPrice } = await import('@/rpg/Shop')
+    const rt = new RpgRuntime('origin_tuner')
+    const { p, notes } = await panel(rt)
+    p.show()
+    const root = (p as unknown as { root: FakeEl }).root
+    for (let i = 0; i < 4; i++) { for (const fn of winHandlers.keydown ?? []) fn({ code: 'ArrowRight', preventDefault() {} }) }
+    const gem = rt.inv.addGear('ar_choir_hood')
+    const stone = rt.inv.count('it_timbite')
+    click(root, 'sell', gem.uid)
+    expect(rt.inv.gearByUid(gem.uid)).toBeUndefined()
+    expect(rt.inv.count('it_timbite') - stone).toBe(sellPrice('ar_choir_hood'))
+    expect(notes.some((n) => n.includes('售出'))).toBe(true)
+
+    const entry = shopData().stock[0]
+    const wallet = rt.inv.count('it_timbite')
+    click(root, 'buy', entry.id)
+    expect(rt.inv.count(entry.item)).toBe(1)
+    expect(wallet - rt.inv.count('it_timbite')).toBe(entry.price)
+    expect(notes.some((n) => n.includes('购入'))).toBe(true)
+
+    click(root, 'buy', 'no_such_entry')
+    expect(notes.some((n) => n.includes('清单上没有'))).toBe(true)
   })
 })
 
