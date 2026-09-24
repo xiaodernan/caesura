@@ -436,7 +436,11 @@
      "loudness": 8,
      "sfx": [
       "drum_boom"
-     ]
+     ],
+     "vfx": [
+      "ring_dust"
+     ],
+     "worldShake": "stomp"
     },
     "statusOnHit": {
      "tag": "status.mute",

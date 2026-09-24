@@ -54,6 +54,12 @@ export interface GameEvents {
    */
   'audio.muffle': { on: boolean }
   'vfx.request': { key: string; pos: { x: number; y: number; z: number }; dir?: { x: number; y: number; z: number }; scale?: number }
+  /**
+   * §10 KI-051：**世界事件震镜**。与 `combat.hit.shakeKey` 的分工——那条说「这一记打在谁身上
+   * 该震多重」（命中裁决的回报），这条说「落帧本身震了在场所有人的镜头」（踏地打空也震）。
+   * `pos` 是震源：相机按距离衰减（隔着半个屏幕的全场满幅 3° 是幻痛，不是反馈）。
+   */
+  'camera.shake': { key: string; pos?: { x: number; y: number; z: number }; mul?: number }
   'sound.source': { id: string; pos: { x: number; y: number; z: number }; loudness: number }
   'ui.notify': { text: string; kind?: 'info' | 'reward' | 'boss' }
   'ui.prompt': { text: string | null; id: string | null }

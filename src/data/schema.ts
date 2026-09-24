@@ -60,6 +60,13 @@ export interface FrameData {
   projectile?: ProjectileSpec
   lunge?: number
   shake?: 'graze' | 'normal' | 'heavy' | 'boss'
+  /**
+   * §10 KI-051：**落帧震场**——这一招越过 activeStart 的那一 tick 震全场景的镜头，**挥空也震**。
+   * 与 `shake` 刻意分家：那格是「这一记命中时该震多重」的命中裁决回报（玩家侧招式在用），
+   * 这格是招式作为世界事件本身的动静（驼鼓踏地）。消费方 = `Enemy.advanceAttackFrames`
+   * 越过 activeStart 那一 tick ⇒ `camera.shake` 总线 ⇒ `CameraRig`（表里有 `stomp` 行才震得出来）。
+   */
+  worldShake?: 'graze' | 'normal' | 'heavy' | 'boss' | 'stomp'
   sfx?: string[]
   vfx?: string[]
   loudness?: number

@@ -38,7 +38,9 @@ const BIOMES = new Set(['hub', 'forest', 'ruins', 'underground', 'camp', 'dungeo
 const HITBOX_SHAPES = new Set(['cone', 'sphere', 'ring'])
 const PROJECTILE_KINDS = new Set(['spear', 'note', 'shard'])
 const REACTIONS = new Set(['R0', 'R1', 'R2', 'R3', 'R4', 'R5'])
-const SHAKES = new Set(['graze', 'normal', 'heavy', 'boss'])
+// CameraRig.SHAKE_TABLE 里**数据可指**的行（hurt/parry 由代码按情境直接发，不经帧表）；
+// 'stomp' 自 KI-051 起是 §10「驼鼓踏地」的 worldShake 行
+const SHAKES = new Set(['graze', 'normal', 'heavy', 'boss', 'stomp'])
 const INTERACTABLE_KINDS = new Set(['checkpoint', 'elevator', 'bridge', 'soundwall', 'gather', 'chest', 'npc', 'teleport', 'gate', 'bell'])
 const PICK_ORDERS = new Set(['random', 'cycle'])
 // src/ai/Enemy.ts:707 —— 距离带里不是招式的伪动作
@@ -187,6 +189,7 @@ function frames(file, where, f) {
   if (f.loudness !== undefined) report.num(file, `${where}.loudness`, f.loudness, { min: 0, name: 'loudness' })
   if (f.fissureLayers !== undefined) report.num(file, `${where}.fissureLayers`, f.fissureLayers, { min: 0, int: true, name: 'fissureLayers' })
   if (f.shake !== undefined && !SHAKES.has(f.shake)) report.error(file, `${where}.shake`, `shake=${JSON.stringify(f.shake)} 非法`)
+  if (f.worldShake !== undefined && !SHAKES.has(f.worldShake)) report.error(file, `${where}.worldShake`, `worldShake=${JSON.stringify(f.worldShake)} 非法（§10 落帧震场：消费方 Enemy.advanceAttackFrames ⇒ CameraRig.SHAKE_TABLE）`)
   for (const k of ['sfx', 'vfx', 'flags']) if (f[k] !== undefined) strArray(file, `${where}.${k}`, f[k])
   if (f.beatQuant !== undefined) {
     if (!isArr(f.beatQuant)) report.error(file, `${where}.beatQuant`, '必须是数组')

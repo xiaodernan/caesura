@@ -75,7 +75,7 @@ export class PlayerController {
   crumpleTicks = 0
   chargeTicks = 0
   charging = false
-  executing: { tick: number; total: number } | null = null
+  executing: { tick: number; total: number; pos: Vec3 } | null = null
   lockedTarget: { getPos(): Vec3; get radius(): number } | null = null
   exhausted = false
   private footAccum = 0
@@ -247,7 +247,9 @@ export class PlayerController {
     this.charging = false
     this.chargeTicks = 0
     this.guardTicks = 0
-    this.executing = { tick: 0, total: totalTicks }
+    // KI-051：把受刑者位置也记进这一格——§5.4 的「越肩推轨」要朝它推，
+    // 而时长已经在 `{tick,total}` 里，不再写第二份秒数（EventBus 上 `audio.muffle` 同一口径）。
+    this.executing = { tick: 0, total: totalTicks, pos: { ...targetPos } }
   }
 
   update(dt: number, time: GameTime, input: Input, tick: number, rhythm: RhythmClock): void {

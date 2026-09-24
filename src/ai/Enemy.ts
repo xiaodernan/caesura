@@ -277,9 +277,23 @@ export class Enemy {
       while (this.speedAcc >= 1) { this.speedAcc -= 1; this.attack.tick++ }
     }
     if (f.projectile) return base // 发射那一 tick 由 CombatManager 报，两处理齐会双倍响度
-    if (prev < f.activeStart && this.attack.tick >= f.activeStart && !this.attack.noise) {
-      this.attack.noise = true
-      bus.emit('sound.source', { id: this.id, pos: { ...this.pos }, loudness: (f.loudness ?? 3) / 10 })
+    if (prev < f.activeStart && this.attack.tick >= f.activeStart) {
+      if (!this.attack.noise) {
+        this.attack.noise = true
+        bus.emit('sound.source', { id: this.id, pos: { ...this.pos }, loudness: (f.loudness ?? 3) / 10 })
+      }
+      // KI-051：落帧那一 tick 对**世界**做的两件事，打没打中都做——
+      // ① `frames.vfx`：这个字段在 enemies.json 里声明了二十多招却一直没有发射方，
+      //    今天起它是 `VfxLayer` 的敌人侧入口（挥剑有轨迹、砸地有尘环）；
+      // ② `frames.worldShake`：§10「驼鼓踏地」那类世界事件震镜，走 `camera.shake`
+      //    （不复用 `combat.hit.shakeKey`——那条说的是"打在谁身上"，落帧震场与命中无关）。
+      if (f.vfx?.[0]) {
+        bus.emit('vfx.request', {
+          key: f.vfx[0], pos: { ...this.pos },
+          dir: { x: Math.sin(this.yaw), y: 0, z: Math.cos(this.yaw) }, scale: 1.6
+        })
+      }
+      if (f.worldShake) bus.emit('camera.shake', { key: f.worldShake, pos: { ...this.pos } })
     }
     return base
   }
