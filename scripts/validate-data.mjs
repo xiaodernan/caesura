@@ -62,7 +62,7 @@ const MOVEMENT_ACTIONS = new Set(['weaponSkill', 'weaponSkillB'])
 /** 战技帧的字段白名单： MovementFrame（schema.ts）。多一个字段就必须多一个消费方 */
 const MOVE_FRAME_FIELDS = ['startup', 'activeStart', 'activeEnd', 'recovery', 'poise', 'hitStopMs', 'hitbox', 'multi', 'shake', 'sfx', 'vfx', 'loudness']
 /** 战技每级的数值字段： MovementLevel。同样一字段一消费口 */
-const MOVE_LEVEL_FIELDS = ['cooldownTicks', 'damage', 'trueDamage', 'fissureLayers', 'muteTicks', 'distance', 'freezeTicks']
+const MOVE_LEVEL_FIELDS = ['cooldownTicks', 'damage', 'trueDamage', 'fissureLayers', 'muteTicks', 'distance', 'freezeTicks', 'echoCharges', 'silenceTicks', 'silenceDmgBonus']
 
 // ---- 小工具 ----
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
@@ -1176,7 +1176,7 @@ function validateMovements(itemIds) {
     if (!isStr(m.id)) report.error(file, w, 'id 缺失或非字符串')
     else if (ids.has(m.id)) report.error(file, w, `id 重复：${m.id}`)
     else ids.add(m.id)
-    for (const k of Object.keys(m)) if (!['id', 'page', 'nameKey', 'displayName', 'desc', 'cost', 'frame', 'levels', 'landing'].includes(k)) report.error(file, `${w}.${k}`, '不认的字段（§55）')
+    for (const k of Object.keys(m)) if (!['id', 'page', 'nameKey', 'displayName', 'desc', 'cost', 'frame', 'levels', 'landing', 'echo'].includes(k)) report.error(file, `${w}.${k}`, '不认的字段（§55）')
     // 落地窗口（§7.2 错拍步）：没有位移就没有"落地"，这一格就成了没人能触发的死数据
     if (m.landing !== undefined) {
       if (!isObj(m.landing)) report.error(file, `${w}.landing`, '必须是 { poise, withinTicks }')
@@ -1187,6 +1187,19 @@ function validateMovements(itemIds) {
       }
       if (!(isArr(m.levels) && m.levels.some((l) => isObj(l) && l.distance !== undefined))) {
         report.error(file, `${w}.landing`, '写了落地窗口但这一式没有 distance ⇒ 永远触发不了')
+      }
+    }
+    // 回响（定音回响 §7.2）：加宽乘数与充能必须两半都在。windowMul < 1 的赌注同 whiffDmgMul——
+    // "回响"反而把窗拧窄，就变成对成功弹反的惩罚。int 是硬要求：parryTicksLeft 靠 `=== 0` 落账，
+    // 小数窗永远关不上 ⇒ §5.3 的落空与回响的账一起静默蒸发。
+    if (m.echo !== undefined) {
+      if (!isObj(m.echo)) report.error(file, `${w}.echo`, '必须是 { windowMul }')
+      else {
+        for (const k of Object.keys(m.echo)) if (k !== 'windowMul') report.error(file, `${w}.echo.${k}`, '不认的字段（§55）')
+        report.num(file, `${w}.echo.windowMul`, m.echo.windowMul, { min: 1, int: true, name: 'windowMul' })
+      }
+      if (!(isArr(m.levels) && m.levels.some((l) => isObj(l) && (l.echoCharges ?? 0) > 0))) {
+        report.error(file, `${w}.echo`, '写了加宽乘数但没有任何一级给充能 ⇒ 没有一格可花，窗永远不会加宽（死数据）')
       }
     }
     if (!isStr(m.nameKey)) report.error(file, `${w}.nameKey`, '必填')
@@ -1251,6 +1264,19 @@ function validateMovements(itemIds) {
         if (!(isNum(fr.activeStart) && isNum(fr.activeEnd) && fr.activeEnd >= fr.activeStart)) {
           report.error(file, `${lw}.freezeTicks`, '写了时停但这一式没有判定窗（activeStart/activeEnd）⇒ 永远触发不了')
         }
+      }
+      if (l.echoCharges !== undefined) {
+        report.num(file, `${lw}.echoCharges`, l.echoCharges, { min: 1, int: true, name: 'echoCharges' })
+        // 充能的载体是式子上的 echo 块（windowMul 从那里进 SkillCast）：没有它，
+        // tryStartAction 根本不会存这一格——写了三级成长也没人发牌。
+        if (!isObj(m.echo)) report.error(file, `${lw}.echoCharges`, '写了回响充能但这一式没有 echo.windowMul ⇒ 无处可加宽，存了也白存')
+      }
+      if (l.silenceTicks !== undefined) report.num(file, `${lw}.silenceTicks`, l.silenceTicks, { min: 1, int: true, name: 'silenceTicks' })
+      if (l.silenceDmgBonus !== undefined) {
+        report.num(file, `${lw}.silenceDmgBonus`, l.silenceDmgBonus, { min: 0.01, name: 'silenceDmgBonus' })
+        // 加成的载体是 silentTicks 开出的那段窗口（ThirdPersonController.tacet）：没有窗就没有载体，
+        // 那一笔百分比永远乘不到任何一记上。
+        if (l.silenceTicks === undefined) report.error(file, `${lw}.silenceDmgBonus`, '写了伤害加成但没有 silenceTicks ⇒ 加成没有可挂靠的时段（死数据）')
       }
     })
     for (let k = 1; k < cds.length; k++) {

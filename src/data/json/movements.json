@@ -132,6 +132,51 @@
     { "cooldownTicks": 330, "freezeTicks": 60 },
     { "cooldownTicks": 300, "freezeTicks": 72 }
    ]
+  },
+  {
+   "id": "mv_perfectingecho",
+   "page": "mvpage_rest",
+   "nameKey": "movement.perfectingecho",
+   "displayName": "定音回响",
+   "desc": "上一记弹开的余音被收进手里。接下来那几次抬手，世界要先听你的，才轮到自己开口。",
+   "cost": { "overdrive": 6 },
+   "echo": { "windowMul": 2 },
+   "frame": {
+    "startup": 10,
+    "activeStart": 10,
+    "activeEnd": 14,
+    "recovery": 34,
+    "sfx": ["parry_bell"],
+    "vfx": ["parry_ring"],
+    "loudness": 2
+   },
+   "levels": [
+    { "cooldownTicks": 300, "echoCharges": 1 },
+    { "cooldownTicks": 270, "echoCharges": 2 },
+    { "cooldownTicks": 240, "echoCharges": 2 }
+   ]
+  },
+  {
+   "id": "mv_tacetconcerto",
+   "page": "mvpage_rest",
+   "nameKey": "movement.tacetconcerto",
+   "displayName": "无声协奏",
+   "desc": "七秒里她指挥一支不发声的乐队：脚步、挥击、刀锋相交，全被吞进拍子里，只有落点还在响。",
+   "cost": { "overdrive": 7 },
+   "frame": {
+    "startup": 14,
+    "activeStart": 14,
+    "activeEnd": 20,
+    "recovery": 40,
+    "sfx": ["swing_heavy_1"],
+    "vfx": ["ring_dust"],
+    "loudness": 0
+   },
+   "levels": [
+    { "cooldownTicks": 360, "silenceTicks": 420, "silenceDmgBonus": 0.15 },
+    { "cooldownTicks": 330, "silenceTicks": 420, "silenceDmgBonus": 0.15 },
+    { "cooldownTicks": 300, "silenceTicks": 420, "silenceDmgBonus": 0.15 }
+   ]
   }
  ]
 }

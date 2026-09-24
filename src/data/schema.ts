@@ -703,6 +703,19 @@ export interface MovementLevel {
    * 它**不是** `stunTicks`：定身作废当前读条，时停把那一招连人带帧停在原地，松手后从同一帧继续。
    */
   freezeTicks?: number
+  /**
+   * 定音回响（§7.2 乐章 IV）：这一记出手往玩家身上存几扇「加宽弹反窗」的充能。
+   * 消费方＝`ThirdPersonController`：按下弹反的那一 tick 花掉一格，那扇窗吃 `echo.windowMul`
+   * 且弹中必挂破势。窗口没弹到也照花——花的时点在开窗，赌注口径同 §5.3（KI-054）。
+   */
+  echoCharges?: number
+  /**
+   * 无声协奏（§7.2 乐章 IV 顶）：生效后这么多 tick 内玩家**全部行动零噪音**
+   * （`ThirdPersonController.noise()` 直接返回 0，所有 `sound.source` 出口共用它）。
+   */
+  silenceTicks?: number
+  /** 无声协奏同时段给玩家出手的伤害加成（0.15 = +15%）。消费方＝`CombatManager.strikeEnemy` 唯一伤害通道 */
+  silenceDmgBonus?: number
 }
 
 export interface MovementData {
@@ -721,6 +734,14 @@ export interface MovementData {
    * 写成 `withinTicks` 而不是 0.3 秒：全项目的时序口径是 tick（§55），换算不在代码里做。
    */
   landing?: { poise: number; withinTicks: number }
+  /**
+   * 定音回响（§7.2 乐章 IV：「下一次弹反窗口 ×2（200ms）」）：充能花出去的那几扇窗
+   * 按这个乘数加宽（6 tick 的基准窗 ×2 = 12 tick = 200ms，基准住在 player.json `parry.activeTicks`）。
+   * 和 `landing` 同一先例：三条等级的表值都一样 ⇒ 它是这一式的**性质**，不是等级成长，
+   * 所以住在式子上而不是抄三遍进 levels。「必挂破势」没有数字可写——时长就是 reactions.json 的 R4，
+   * 不为这一式另开第二张破势表。
+   */
+  echo?: { windowMul: number }
 }
 
 /** 谱册的一页。点亮页=把它的工具箱打开（§7.1）；来源是数据里点名的物品，不是代码里的 if。 */

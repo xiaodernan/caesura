@@ -307,6 +307,10 @@ export class CombatManager {
       // §5.3 之鸣钟：对钟甲/钟壳目标加伤。判据是**数据**（有钟甲或带壳），不是敌人名字。
       const bellTarget = !!e.data.ai.armorFront || e.shellDmgMul < 1
       if (bellTarget && p.rpg.bellBonus > 0) final = Math.round(final * (1 + p.rpg.bellBonus))
+      // §7.2 无声协奏：静默窗内的出手加成。放在这条**唯一**伤害通道里，所以近战、投掷弹体、
+      // 战技自己那一记都吃到——「7s 内全部行动」说的就是从她手上出去的一切。
+      // 回声重演不吃：那是世界在重播旧账，不是她此刻的行动（`replay` 那一支整段豁免，同一先例）。
+      if (p.tacet) final = Math.round(final * (1 + p.tacet.dmgBonus))
       if (crumpled) final = Math.round(final * 1.5)
       // §14.7 钟甲：只有「从它的正面锥里打进来」的这一笔被吃掉。用 s.dir（攻击者→它）反推
       // 来袭方位，所以近战挥砍、玩家投掷枪、以及未来任何走这条通道的伤害都自动受同一规则管。
@@ -858,6 +862,18 @@ export class CombatManager {
       this.time.hitStop(parryStopMs / 1000)
       const parried = this.attackerById(h.attackerId)
       this.freezeContact(parryStopMs, parried, parried, h.sourceAction ?? null)
+      // §7.2 定音回响的「必挂破势」：这一扇窗是回响加宽的 ⇒ 弹中即破势。
+      // 走 `EntityStats.addPoise` 那条**唯一**的破势通道：时长仍是 reactions.json 的 R4
+      // （Boss 2.4s / 杂兵 1.8s，armCrumple 上弦），不为这一式写第二张破势表。
+      // `poiseImmune`（Boss 抬壳，§15.1）依然挡得住：回响是弹壳的**解法之一**（壳免疫架势，
+      // 但这一式本就不该把「必挂」写成「必破」），不是免死金牌——留白由 `combat.md` 的那一句管。
+      if (p.parryEchoLive) {
+        if (parried && parried.alive && !parried.poiseImmune) {
+          parried.stats.addPoise(parried.stats.poiseMax, tick)
+          this.checkCrumple(parried, tick)
+        }
+      }
+      p.parryEchoLive = false // 无论挂没挂上，这一扇窗的回响都结过账了
       bus.emit('combat.hit', { ...base, damage: 0, result: 'parry', shakeKey: 'parry', hitStopMs: parryStopMs })
       bus.emit('combat.parried', { attackerId: h.attackerId, defenderId: 'player' })
       bus.emit('vfx.request', { key: 'parry_ring', pos: h.point })
@@ -867,8 +883,10 @@ export class CombatManager {
     }
     // 窗口没弹中这一记就是落空（不可弹的攻击也算吃掉窗口）：§5.3 的落空后摇从这里开始。
     // beginParryWhiff 自己有 pending 守卫，没在弹反窗口里被击时它是无操作（KI-054）。
+    // 回响窗同理翻篇：充能开窗时已花掉（ThirdPersonController），但「必挂破势」没赚到。
     p.beginParryWhiff()
     p.parryTicksLeft = 0
+    p.parryEchoLive = false
     if (p.iFrame) {
       bus.emit('combat.hit', { ...base, damage: 0, result: 'immune', shakeKey: 'graze' })
       return 'immune'

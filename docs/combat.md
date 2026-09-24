@@ -187,7 +187,7 @@
 ### 4.8 乐章战技（玩家侧招式帧，Phase 5-C2 实装）
 
 战技不是第八把武器：**它不写进 `weapons.json`，帧形状写在 `movements.json`**（需求 §57 的 Ability 静态表版），
-出手仍走 §12 同一条 `resolveDamage`。四式的实装帧（tick @60Hz，ms 换算取整）：
+出手仍走 §12 同一条 `resolveDamage`。六式的实装帧（tick @60Hz，ms 换算取整）：
 
 | 式 | 键 | Startup | Active | Recovery | 消耗 | 冷却 L1→L3 | 数据给的结算 |
 |---|---|---|---|---|---|---|---|
@@ -195,6 +195,8 @@
 | 错拍步 `mv_syncopace` | 槽 0/1 | 3f/50ms | 3–9f | 20f/333ms | 体力 15 | 240→210→180f（4→3.5→3s） | 沿当前朝向位移 2.5/3/3.5m。**位移与 BPM 无关**：`player.update` 恒用 `TICK_DT`，恢复锁（夺拍 jitter）拖长的是翻滚，不是这一步——设计意图"深窖/恩希尔 P2 保命锚"因此是真的 |
 | 和弦爆 `mv_chordburst` | C（槽 1） | 16f/267ms | 16–22f | 52f/867ms | 过载 3 | 300→270→240f（5→4.5→4s） | `hitbox: ring inner 0 / outer 4`、`multi: 8`、架势 26、hitStop 90ms、重震；伤害 26/36/48 + 闷音 180/210/240f |
 | 休止斩 `mv_caesuracut` | 槽 0/1 任选（谱册里装哪槽就用哪键） | 12f/200ms | 12–18f | 42f/700ms | 过载 8，**每用一次 +2**（防连发；复位＝过载条重新攒满） | 360→330→300f（6→5.5→5s，我加的，见 progression §7.2 那一行） | 没有 hitbox、不出伤害、不产 `combat.hit`。它给的是 `freezeTicks: 48/60/72f`（＝§7.2 的 0.8/1.0/1.2s）：判定窗第一记落下的那一 tick，场上**每个还活着的敌人**（含 Boss）被按住 `Enemy.frozenTicks` 这么多 tick；**正在飞的敌方弹体**同一格账（`Projectile.frozenTicks`）——只停运动学与射程，不停命中判定，所以它是一堵停在半空的墙而不是消失。**她与 Boss 私有拍速的连带影响已评审**（§2.1 不被这一式破坏：她的排招抢的是拍位槽，被拿走的 48 tick 落在她本来就在等的空隙里，代价是错过一个槽=她的一拍，收势帧误差 5.6ms 对 5.6ms）——读数与断言在 `tests/flow/bossfreeze.test.ts` |
+| 定音回响 `mv_perfectingecho` | 槽 0/1（KI-037 第三步，2026-09-25） | 10f/167ms | 10–14f | 34f/567ms | 过载 6 | 300→270→240f（我加的，同休止斩冷却裁决先例） | 自己不出伤害、没有 hitbox。它把 `echoCharges: 1/2/2` 存进 `ThirdPersonController.echo`（再次出手＝换一批不叠罗汉），**下一批弹反窗**在按下那一格花一格充能、按 ×`echo.windowMul`（2）加宽：基准 6f 在 player.json，6×2=12f=200ms。弹中**必挂破势**不写第二张表——`EntityStats.addPoise(poiseMax)` 走既有 R4 账（reactions.json，杂兵 1.8s/Boss 2.4s），`poiseImmune`（抬壳）依然挡得住。落空照花充能，后摇与 §5.3 同一本账（KI-054）；`windowMul` 必填整数——小数窗的 `=== 0` 永远关不上，两本账会一起静默蒸发（validator 门）。断言在 `tests/flow/echo-tacet.test.ts` |
+| 无声协奏 `mv_tacetconcerto` | 槽 0/1（KI-037 第三步，2026-09-25） | 14f/233ms | 14–20f | 40f/667ms | 过载 7 | 360→330→300f（同上裁决；三级的时长与加成不涨——表没写成长，升级买的只是 CD） | 自己不出伤害。它挂一个 420f/7s 的 `tacet` 状态：**零噪音只有一个闸口**——`noise()` 直接返回 0，脚步/挥击/刀锋相交的 `sound.source` 出口本就从这一个函数走（出手那一瞬间自己的音效也被同一个闸吞掉：七秒是全聋，不是半聋）。期间伤害 +15% 挂在 `strikeEnemy` 唯一伤害通道，`replay` 豁免（回声重演的是旧账不是此刻的行动）；量法＝同脚本两世界差值恰为 `round(基准×1.15)`。消音与处决/跳阶的低通是两回事：那是世界听不见**你**，这是世界听不见你——没有全频低通参与。断言在 `tests/flow/echo-tacet.test.ts` |
 
 三条口径（都是 flow 测试钉住的，不是口头承诺）：
 

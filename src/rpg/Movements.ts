@@ -48,6 +48,14 @@ export interface SkillCast {
   freezeTicks: number
   /** §7.2「每次使用后过载消耗 +2」：每用一次往上加这么多的过载价，过载条回满才归零 */
   overdriveRamp: number
+  /** §7.2 定音回响：这一记存几扇加宽的弹反窗（0＝不存）。消费方＝ThirdPersonController 的弹反按下 */
+  echoCharges: number
+  /** 回响窗的加宽乘数（1＝这一式没有回响）。基准窗在 player.json `parry.activeTicks`，这里不抄第二份 */
+  parryWindowMul: number
+  /** §7.2 无声协奏：多少 tick 的全行动零噪音（0＝这一式不静音） */
+  silenceTicks: number
+  /** 无声协奏同一时段的出手伤害加成（0.15 = +15%）。消费方＝CombatManager.strikeEnemy 那条唯一通道 */
+  silenceDmgBonus: number
   /** 伤害标尺（§2.1 音色列）。结算侧只认这张小表，不认识 movements.json */
   scaling: Partial<Record<AttrKey, number>>
   /** §11 过载列：每层过载给多少战技伤害 */
@@ -232,6 +240,10 @@ export class MovementBook {
         landingPoiseTicks: mv.landing?.withinTicks ?? 0,
         freezeTicks: l.freezeTicks ?? 0,
         overdriveRamp: mv.cost.overdriveRamp ?? 0,
+        echoCharges: l.echoCharges ?? 0,
+        parryWindowMul: mv.echo?.windowMul ?? 1,
+        silenceTicks: l.silenceTicks ?? 0,
+        silenceDmgBonus: l.silenceDmgBonus ?? 0,
         scaling: this.cfg.damage.scaling,
         overdriveLayerMul: this.cfg.damage.perOverdriveLayer
       }

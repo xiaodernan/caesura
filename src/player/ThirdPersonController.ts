@@ -69,6 +69,19 @@ export class PlayerController {
    * `CombatManager` 弹反成功那一支调 `onParrySuccess()` 把它撤掉。
    */
   parryWhiffPending = false
+  /**
+   * §7.2 定音回响（KI-037①）：出手一式往身上存的「加宽弹反窗」充能。
+   * 弹反按下的那一 tick 花掉一格：那一扇窗宽 ×`windowMul`，且弹中必挂破势（判据在 CombatManager）。
+   * **开窗即花**——弹不弹得中那一记，开窗之前没人知道；赌注口径与 §5.3 的落空同一条账（KI-054）。
+   */
+  echo: { chargesLeft: number; windowMul: number } | null = null
+  /** 此刻开着的这扇窗是不是回响加宽的（弹反成功支据此决定要不要强挂破势） */
+  parryEchoLive = false
+  /**
+   * §7.2 无声协奏：生效期间玩家**全部行动零噪音**（`noise()` 是唯一出口，见它那一行）
+   * 且出手吃 `dmgBonus`。它不是成长，是一记出手换来的限时状态——不进存档，死了不清零才奇怪。
+   */
+  tacet: { ticksLeft: number; dmgBonus: number } | null = null
   /** 超载提示的冷却：连打翻滚键不该把同一句话刷屏，但一次都不说就是「按了没反应」 */
   overloadWarnTicks = 0
   stunTicks = 0
@@ -228,8 +241,12 @@ export class PlayerController {
     this.publishStats()
   }
 
-  /** 发声时的噪音乘数（静默词缀 / 无鸣类武器）：所有 sound.source 出口共用它 */
-  private noise(loudness: number): number { return loudness * this.rpg.noiseMul }
+  /**
+   * 发声时的噪音乘数（静默词缀 / 无鸣类武器）：所有 sound.source 出口共用它。
+   * 无声协奏期间这里就是那条"全部行动零噪音"的**唯一**闸口——每一处脚步/挥击/刀锋相交
+   * 都已经从这一个函数出去（含 CombatManager 的弹反冲击），所以那一句不需要任何一处特例。
+   */
+  private noise(loudness: number): number { return this.tacet ? 0 : loudness * this.rpg.noiseMul }
 
   /**
    * 刀兵相交的那一记（弹反 / 完美格挡）归**武器**而不是归脚步：和招式一样同时吃
@@ -266,6 +283,8 @@ export class PlayerController {
     }
     const canAct = this.stunTicks <= 0 && this.crumpleTicks <= 0
     if (this.landingPoiseTicks > 0 && --this.landingPoiseTicks === 0) this.landingPoise = 0
+    // 无声协奏的钟点：tick 一到世界重新听得见她，不需要任何人去"解除"它
+    if (this.tacet && --this.tacet.ticksLeft <= 0) this.tacet = null
     this.moveIntent = { x: input.frame.move.x, y: input.frame.move.y }
     if (this.executing) {
       this.executing.tick++
@@ -294,7 +313,14 @@ export class PlayerController {
         this.guardTicks = Math.min(this.guardTicks + 1, 9999)
       } else this.guardTicks = 0
       if (input.frame.edges.has('parry') && this.parryTicksLeft <= 0 && this.parryWhiffTicks <= 0 && this.stats.stamina >= 5) {
-        this.parryTicksLeft = this.base.parry.activeTicks
+        // 定音回响：开窗那一 tick 花掉一格充能，这一扇窗因此加宽（§7.2「下一次弹反窗口 ×2」）
+        const echo = this.echo && this.echo.chargesLeft > 0 ? this.echo : null
+        this.parryEchoLive = echo !== null
+        if (echo) {
+          echo.chargesLeft--
+          if (echo.chargesLeft <= 0) this.echo = null
+        }
+        this.parryTicksLeft = this.base.parry.activeTicks * (echo?.windowMul ?? 1)
         this.parryWhiffPending = true
         if (this.guardTicks > 0) this.guardTicks = 0
       }
@@ -304,8 +330,12 @@ export class PlayerController {
     if (this.parryWhiffTicks > 0) this.parryWhiffTicks--
     if (this.parryTicksLeft > 0) {
       this.parryTicksLeft--
-      // 窗口走完而没人被弹到 ⇒ §5.3 的落空。被一记吃掉（没弹着）的那支在 CombatManager 里走 beginParryWhiff。
-      if (this.parryTicksLeft === 0 && this.parryWhiffPending) this.beginParryWhiff()
+      if (this.parryTicksLeft === 0) {
+        // 窗一关，回响那一格就翻篇：充能照旧花掉（开窗即花），但"必挂破势"没赚到
+        this.parryEchoLive = false
+        // 窗口走完而没人被弹到 ⇒ §5.3 的落空。被一记吃掉（没弹着）的那支在 CombatManager 里走 beginParryWhiff。
+        if (this.parryWhiffPending) this.beginParryWhiff()
+      }
     }
     if (this.overloadWarnTicks > 0) this.overloadWarnTicks--
 
@@ -533,6 +563,16 @@ export class PlayerController {
       if (skill.cast.fissureLayers > 0 || skill.cast.trueDamage > 0) {
         this.followup = { layers: skill.cast.fissureLayers, trueDamage: skill.cast.trueDamage }
       }
+      // §7.2 定音回响：存充能。再出一式是**换一批**而不是叠罗汉——"下一次"不该被攒成货币
+      if (skill.cast.echoCharges > 0) {
+        this.echo = { chargesLeft: skill.cast.echoCharges, windowMul: skill.cast.parryWindowMul }
+        bus.emit('ui.notify', { text: `定音｜弹反充能 ×${skill.cast.echoCharges}`, kind: 'info' })
+      }
+      // §7.2 无声协奏：七秒的静默从这一记出手就开始计（时长与加成都是 movements.json 的数）
+      if (skill.cast.silenceTicks > 0) {
+        this.tacet = { ticksLeft: skill.cast.silenceTicks, dmgBonus: skill.cast.silenceDmgBonus }
+        bus.emit('ui.notify', { text: `无声协奏｜${(skill.cast.silenceTicks / 60).toFixed(1)}s 世界听不见你`, kind: 'info' })
+      }
     }
     const cut = key.startsWith('l') ? Math.min(this.rpg.lightStartupTicks, Math.max(0, f.activeStart - 1)) : 0
     this.action = {
@@ -635,6 +675,7 @@ export class PlayerController {
   respawn(): void {
     this.dead = false
     this.followup = null // 死了就是断了：压在下一记上的起手式不跟着人一起回来
+    this.echo = null; this.parryEchoLive = false; this.tacet = null // 限时的身外之物同理：不跟着人一起回来
     this.stats.hp = this.stats.hpMax
     this.stats.stamina = this.stats.staMax
     this.pos = { x: 0, y: 0, z: 0 }
