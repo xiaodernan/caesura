@@ -183,7 +183,8 @@ export class Progression {
       parryWhiffMs: grantSum('parryWhiffMs'),
       critRate: Math.min(c.cap, c.base + a.ovr * c.perOvr),
       critMul: c.mulBase + a.ovr * c.mulPerOvr,
-      overdriveMax: Math.min(d.overdrive.cap, d.overdrive.base + Math.floor(a.ton / d.overdrive.perTonDiv)),
+      /** rank14 的 grant 加在基数上、和音色成长同一条式子，仍被 cap 封顶——过载上限只有这一个主人（KI-054②） */
+      overdriveMax: Math.min(d.overdrive.cap, d.overdrive.base + grantSum('overdriveFlat') + Math.floor(a.ton / d.overdrive.perTonDiv)),
       execMul: (1 + a.ovr * d.execMulPerOvr) * (1 + grantSum('execMulPct') / 100),
       statusPowerMul: 1 + fis * d.status.perFisPower,
       corruptionResistMul: Math.max(d.status.toleranceFloor, 1 - fis * d.status.perFisTolerance)

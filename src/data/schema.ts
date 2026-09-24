@@ -512,13 +512,15 @@ export interface ProgressionData {
  * label 承诺了数字，derive 里却没有这一项，等于 UI 在替不存在的机制发奖。
  * 规矩与 PENDING_FLAG_WRITERS 同族：**每一行要么带 grant（有真实消费方），
  * 要么逐个列进 validator 的 PENDING_MILESTONE_GRANTS 白名单（带原因）**。
- * 消费方：`loadFlat`/`execMulPct` 走 `Progression.derive`；`parryWhiffMs` 经
+ * 消费方：`loadFlat`/`execMulPct`/`overdriveFlat` 走 `Progression.derive`；`parryWhiffMs` 经
  * `PlayerMods.parryWhiffMs` 到 `ThirdPersonController` 的落空后摇（§5.3 失败行）。
  */
 export interface MilestoneGrant {
   loadFlat?: number
   parryWhiffMs?: number
   execMulPct?: number
+  /** rank14「过载上限 10→12」：加在 10+floor(音色/10) 的**基数**上，仍被 cap（15）封顶（KI-054②） */
+  overdriveFlat?: number
 }
 
 /** 装备件的静态定义（挂在 ItemData.gear 上）。 */

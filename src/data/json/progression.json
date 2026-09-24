@@ -145,7 +145,7 @@
   { "rank": 8, "id": "ms_crit_ring", "label": "暴击飘字带金色泛音环" },
   { "rank": 10, "id": "ms_deepcellar", "label": "失谐耐受 +1 档：深窖可停留时长 +35%" },
   { "rank": 12, "id": "ms_bow_split", "label": "满弓分叉 2→3（若用弓）；处决伤害 +5%", "grant": { "execMulPct": 5 } },
-  { "rank": 14, "id": "ms_overdrive", "label": "过载上限 10→12：休止处决循环变短" },
+  { "rank": 14, "id": "ms_overdrive", "label": "过载上限 10→12：休止处决循环变短", "grant": { "overdriveFlat": 2 } },
   { "rank": 16, "id": "ms_identity", "label": "任一维触及 35：该维专属效果解锁" }
  ]
 }

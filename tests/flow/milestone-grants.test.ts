@@ -117,6 +117,36 @@ describe('§8.2 里程碑机制腿：grant 只在到达 rank 后经 derive 累�
     p.rank = 12
     expect(p.derive().execMul / before).toBeCloseTo(1.05, 10)
   })
+
+  it('rank14 的 overdriveFlat：跨过 rank14 过载上限整额 +2，音色顶格仍被 cap 封顶（KI-054②）', () => {
+    const d = registry.get<ProgressionData>('progression')
+    const g = d.milestones.find((m) => m.id === 'ms_overdrive')!.grant!.overdriveFlat!
+    const o = d.derived.overdrive
+    const p = new Progression('origin_tuner')
+    const tonFloor = Math.floor(p.attrs.ton / o.perTonDiv)
+    p.rank = 13
+    expect(p.derive().overdriveMax, 'rank13：式子只有基数 + 音色，grant 还没到手').toBe(Math.min(o.cap, o.base + tonFloor))
+    p.rank = 14
+    expect(p.derive().overdriveMax, 'rank14：同一式子上多一格 grant').toBe(Math.min(o.cap, o.base + tonFloor + g))
+    p.attrs.ton = 999
+    expect(p.derive().overdriveMax, '顶满音色 + grant 仍撞 cap——过载上限只有这一个主人').toBe(o.cap)
+  })
+
+  it('改表法 + 真管线：overdriveFlat 2→3 走到 EntityStats，还原分毫不差', () => {
+    const d = registry.get<ProgressionData>('progression')
+    const row = d.milestones.find((m) => m.id === 'ms_overdrive')!
+    const backup = JSON.parse(JSON.stringify(row.grant))
+    const w = makeWorld(14)
+    const base = w.player.stats.overdriveMax
+    expect(base, 'makeWorld 走的是 applyRpg：derive 的值真的挂上了实体').toBe(w.rpg!.prog.derive().overdriveMax)
+    row.grant = { overdriveFlat: backup.overdriveFlat + 1 }
+    w.player.applyRpg(w.rpg!.mods())
+    expect(w.player.stats.overdriveMax).toBe(base + 1)
+    row.grant = backup
+    w.player.applyRpg(w.rpg!.mods())
+    expect(w.player.stats.overdriveMax).toBe(base)
+    w.off()
+  })
 })
 
 describe('§5.3「失败」行第一次整句成立：落空后摇与 ×1.25 赌注（KI-054）', () => {

@@ -442,12 +442,11 @@ function validateProgression() {
   // ② 被 movements.json slots[].milestone 引用（既有消费者，不重复挂腿）；
   // ③ 出现在 PENDING_MILESTONE_GRANTS 且理由非空（先记账后接线，清单只许变短不许变长）。
   // 这条规则的存在理由：§8.2 的 label 是玩家面向的数值承诺，此前 11 行里 9 行没有任何机制承载。
-  const GRANT_FIELDS = ['loadFlat', 'parryWhiffMs', 'execMulPct'] // 加数项（kg / ms / 百分点%），语义见 schema.MilestoneGrant
+  const GRANT_FIELDS = ['loadFlat', 'parryWhiffMs', 'execMulPct', 'overdriveFlat'] // 加数项（kg / ms / 百分点% / 过载格），语义见 schema.MilestoneGrant
   const PENDING_MILESTONE_GRANTS = {
     ms_beat_ripple: 'HUD 拍点涟漪刻度：HUD 尚无该组件，随 KI-031（UI 批）一并落腿',
     ms_crit_ring: '暴击飘字金色泛音环：暴击飘字本身还没有载体，同上随 UI 批',
     ms_deepcellar: '深窖可停留时长 +35%：区域侧还没有"停留时长"这个量，无腿可接',
-    ms_overdrive: '过载上限 10→12：实际由 ovr 属性公式承载（Progression.derive），此行是重复承诺，待裁决删行或改 label',
     ms_identity: '任一维触及 35 的专属效果：需求侧尚未定义具体效果（§8.2"待实装后补"）',
   }
   const movementMsIds = new Set((Array.isArray(data['movements.json']?.slots) ? data['movements.json'].slots : [])
