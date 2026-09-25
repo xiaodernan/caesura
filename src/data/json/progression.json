@@ -565,6 +565,21 @@
     ],
     "minRarity": "rare",
     "desc": "高稀有度掉落权重 +15%：晶耳听得见别人漏看的石头。单点区间=定值——这枚是署名造物，不掷区间（§6.2）。"
+   },
+   {
+    "id": "af_timbral",
+    "nameKey": "affix.timbral",
+    "displayName": "律色",
+    "stat": "skillDmg",
+    "range": [
+     0.04,
+     0.1
+    ],
+    "slots": [
+     "weapon",
+     "seal"
+    ],
+    "desc": "战技伤害提升：把乐章弹得更响。"
    }
   ],
   "suffix": [

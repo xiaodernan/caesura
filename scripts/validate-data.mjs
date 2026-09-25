@@ -29,7 +29,7 @@ const SLOT_KEYS = new Set(['weapon', 'helm', 'cuirass', 'gloves', 'greaves', 'se
 // 'sealA' 刻意不进词表：今天没有任何一件声明它，出现需求时先登记消费者，再动这张表。
 const GEAR_SLOTS = new Set(['weapon', 'helm', 'cuirass', 'gloves', 'greaves', 'seal', 'sealB'])
 const ITEM_KINDS = new Set(['currency', 'material', 'consumable', 'weapon', 'armor', 'seal', 'lore', 'key'])
-const AFFIX_STATS = new Set(['poiseDmg', 'defense', 'staminaRegen', 'critRate', 'execDmg', 'noiseMul', 'lootLuck'])
+const AFFIX_STATS = new Set(['poiseDmg', 'defense', 'staminaRegen', 'critRate', 'execDmg', 'noiseMul', 'lootLuck', 'skillDmg'])
 const AFFIX_BEHAVIORS = new Set(['perfectBlockWindow', 'lightStartup', 'bellBonus', 'restOverdrive'])
 
 // ---- 词表：与 src/data/schema.ts 对齐（改 schema 时同步这里） ----

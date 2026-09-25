@@ -190,7 +190,9 @@ export class PlayerController {
     return {
       box: f.hitbox, yaw: this.yaw,
       // 战技的伤害写在等级表上（cast.damage），武器帧的 damage 对战技恒为 0——见 rpg/Movements.ts
-      damage: this.action.skill ? this.action.skill.damage : f.damage,
+      // 律色词缀（KI-029）：战技伤害的唯一乘点——技能那一支离开 activeHitbox 前吃 (1+skillDmg)。
+      // 近战/弹体/回声重演都不经过这里，各走各的账；面板显示的是等级底数，不含本乘数（已登记）。
+      damage: this.action.skill ? Math.round(this.action.skill.damage * (1 + this.rpg.skillDmg)) : f.damage,
       poise: f.poise, hitStopMs: f.hitStopMs,
       shake: f.shake ?? 'normal', flags: f.flags ?? [], loudness: (f.loudness ?? 3) * (this.weapon.noiseMul ?? 1),
       reaction: f.reaction

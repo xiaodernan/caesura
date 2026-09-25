@@ -551,7 +551,7 @@ export interface AffixDef {
   nameKey: string
   displayName: string
   /** 数值型给 [min,max]（按稀有度在高区间取值）；行为型给固定效果描述 */
-  stat?: 'poiseDmg' | 'defense' | 'staminaRegen' | 'critRate' | 'execDmg' | 'noiseMul' | 'lootLuck'
+  stat?: 'poiseDmg' | 'defense' | 'staminaRegen' | 'critRate' | 'execDmg' | 'noiseMul' | 'lootLuck' | 'skillDmg'
   range?: [number, number]
   /** 行为型：由具体系统消费（之延=完美格挡窗，之切=轻击前摇…） */
   behavior?: string

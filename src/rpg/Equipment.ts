@@ -34,6 +34,8 @@ export interface EquipMods {
   bellBonus: number
   /** 弹反成功额外过载（之休止） */
   restOverdrive: number
+  /** 战技伤害加成（律色，KI-029）：加数（0.07 = +7%），消费方 activeHitbox 的技能那一支 */
+  skillDmg: number
   /**
    * 幸运系数（§6.2「丰谐」，KI-030②）：掉落**高段权重**的加数（0.15 = +15%），
    * 由 `LootDirector` 读——它不是战斗乘数，所以不写进 `PlayerMods`，装备侧只负责把它算出来。
@@ -48,7 +50,7 @@ export interface EquipMods {
 export const EMPTY_MODS: EquipMods = {
   defense: 0, weight: 0, critRate: 0, poiseDmgMul: 0, staminaRegenMul: 0,
   execMul: 0, noiseMul: 0, perfectBlockBonusTicks: 0, lightStartupTicks: 0,
-  bellBonus: 0, restOverdrive: 0, weaponDamageMul: 1, weaponId: null, lootLuck: 0
+  bellBonus: 0, restOverdrive: 0, weaponDamageMul: 1, weaponId: null, lootLuck: 0, skillDmg: 0
 }
 
 export class Equipment {
@@ -174,6 +176,7 @@ function applyStat(out: EquipMods, stat: NonNullable<import('@/data/schema').Aff
     case 'execDmg': out.execMul += v; break
     case 'noiseMul': out.noiseMul += v; break
     case 'lootLuck': out.lootLuck += v; break
+    case 'skillDmg': out.skillDmg += v; break
   }
 }
 
