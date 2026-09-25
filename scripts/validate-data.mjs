@@ -456,7 +456,7 @@ function validateProgression() {
   // ③ 出现在 PENDING_MILESTONE_GRANTS 且理由非空（先记账后接线，清单只许变短不许变长）；
   // ④ 被 UI 承载体按 id 消费（UI_BOUND_MILESTONES，腿由 hud-milestones 测试作证，KI-031①）。
   // 这条规则的存在理由：§8.2 的 label 是玩家面向的数值承诺，此前 11 行里 9 行没有任何机制承载。
-  const GRANT_FIELDS = ['loadFlat', 'parryWhiffMs', 'execMulPct', 'overdriveFlat'] // 加数项（kg / ms / 百分点% / 过载格），语义见 schema.MilestoneGrant
+  const GRANT_FIELDS = ['loadFlat', 'parryWhiffMs', 'execMulPct', 'overdriveFlat', 'corruptionStayPct'] // 加数项（kg / ms / 百分点% / 过载格），语义见 schema.MilestoneGrant
   // ④ UI 腿（KI-031①）：行的消费方是 HUD 组件，unlock rank 由 Hud.milestoneRank **按 id 现查现用**
   // （不是构造期快照）。承载体在表现层、derive 摸不到，所以这一形式的证人不是字段白名单，
   // 是 tests/unit/hud-milestones.test.ts：rank A/B、改表法、删行⇒功能永不亮，三条腿都咬住表。

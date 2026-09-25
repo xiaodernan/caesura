@@ -132,6 +132,40 @@ describe('§8.2 里程碑机制腿：grant 只在到达 rank 后经 derive 累�
     expect(p.derive().overdriveMax, '顶满音色 + grant 仍撞 cap——过载上限只有这一个主人').toBe(o.cap)
   })
 
+  it('rank10 的 corruptionStayPct：累积速率 ÷1.35 ⇒ 停留时长 +35%，对任何出身逐字成立（KI-054 第三批）', () => {
+    const p = new Progression('origin_tuner')
+    const base = p.derive().corruptionResistMul
+    p.rank = 9
+    const before = p.derive().corruptionResistMul
+    p.rank = 10
+    const after = p.derive().corruptionResistMul
+    expect(before, 'rank9：grant 还没到手').toBe(base)
+    expect(after * 1.35, 'rank10：速率 ÷1.35（浮点容差内）').toBeCloseTo(before, 6)
+    // 高失谐时仍被 toleranceFloor 封底：grant 不能把耐受推穿设计的地板
+    p.attrs.fis = 99
+    expect(p.derive().corruptionResistMul, '地板仍是耐受的唯一刹车').toBe(registry.get<ProgressionData>('progression').derived.status.toleranceFloor)
+  })
+
+  it('改表法 + 真管线：corruptionResistMul 经 applyRpg 走到 CorruptionMeter，深窖停留时长 1.35 倍（KI-054 第三批）', () => {
+    const d = registry.get<ProgressionData>('progression')
+    const row = d.milestones.find((m) => m.id === 'ms_deepcellar')!
+    const backup = JSON.parse(JSON.stringify(row.grant))
+    const w = makeWorld(10)
+    const resist = w.player.corruption.resistMul
+    expect(resist, 'applyRpg 把 derive 的耐受灌进了计量器').toBe(w.rpg!.prog.derive().corruptionResistMul)
+    // rank9 对照：同一只角色跨过 rank10 的那一格，停留时长恰好多 35%
+    const w9 = makeWorld(9)
+    expect(resist, '速率比 = 1.35 ⇒ 停留时长 +35%，与标签逐字同式').toBeCloseTo(w9.player.corruption.resistMul / 1.35, 10)
+    w9.off()
+    row.grant = { corruptionStayPct: (backup.corruptionStayPct ?? 35) + 10 }
+    w.player.applyRpg(w.rpg!.mods())
+    expect(w.player.corruption.resistMul).toBeCloseTo(resist * 1.35 / 1.45, 10)
+    row.grant = backup
+    w.player.applyRpg(w.rpg!.mods())
+    expect(w.player.corruption.resistMul).toBeCloseTo(resist, 10)
+    w.off()
+  })
+
   it('改表法 + 真管线：overdriveFlat 2→3 走到 EntityStats，还原分毫不差', () => {
     const d = registry.get<ProgressionData>('progression')
     const row = d.milestones.find((m) => m.id === 'ms_overdrive')!

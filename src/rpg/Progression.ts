@@ -187,7 +187,8 @@ export class Progression {
       overdriveMax: Math.min(d.overdrive.cap, d.overdrive.base + grantSum('overdriveFlat') + Math.floor(a.ton / d.overdrive.perTonDiv)),
       execMul: (1 + a.ovr * d.execMulPerOvr) * (1 + grantSum('execMulPct') / 100),
       statusPowerMul: 1 + fis * d.status.perFisPower,
-      corruptionResistMul: Math.max(d.status.toleranceFloor, 1 - fis * d.status.perFisTolerance)
+      // rank10 的 grant 是乘在速率上的时长项（KI-054）：÷1.35 ⇒ 深窖可停留时长 +35%，对任何出身逐字成立
+      corruptionResistMul: Math.max(d.status.toleranceFloor, (1 - fis * d.status.perFisTolerance) / (1 + grantSum('corruptionStayPct') / 100))
     }
   }
 

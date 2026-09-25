@@ -1,153 +1,694 @@
 {
  "maxRank": 30,
  "attrs": [
-  { "key": "str", "nameKey": "attr.fundamental", "displayName": "基音", "desc": "一个音的高低。撑起大武器、架势池与负重——声音越沉，越难被推走。", "softcap": 40, "hardcap": 60 },
-  { "key": "dex", "nameKey": "attr.fretwork", "displayName": "指法", "desc": "按弦的手。轻武器标尺、体力与回复速率——指法快的人，气也更长。", "softcap": 40, "hardcap": 60 },
-  { "key": "ton", "nameKey": "attr.timbre", "displayName": "音色", "desc": "泛音的构成。律具与战技的强度、共鸣过载的上限。", "softcap": 40, "hardcap": 60 },
-  { "key": "vig", "nameKey": "attr.resonator", "displayName": "腔体", "desc": "承载声音的空腔。生命、护甲、异常耐受——腔体大的人才装得下更多震动。", "softcap": 50, "hardcap": 70 },
-  { "key": "ovr", "nameKey": "attr.overtone", "displayName": "泛音", "desc": "基音之上的临界音。暴击、处决与背刺的加成，也是踏音的精度。", "softcap": 35, "hardcap": 55 },
-  { "key": "fis", "nameKey": "attr.dissonance", "displayName": "失谐", "desc": "与世界的偏差。异常施加效率与环境失谐耐受——深窖的门票。", "softcap": 40, "hardcap": 60 }
+  {
+   "key": "str",
+   "nameKey": "attr.fundamental",
+   "displayName": "基音",
+   "desc": "一个音的高低。撑起大武器、架势池与负重——声音越沉，越难被推走。",
+   "softcap": 40,
+   "hardcap": 60
+  },
+  {
+   "key": "dex",
+   "nameKey": "attr.fretwork",
+   "displayName": "指法",
+   "desc": "按弦的手。轻武器标尺、体力与回复速率——指法快的人，气也更长。",
+   "softcap": 40,
+   "hardcap": 60
+  },
+  {
+   "key": "ton",
+   "nameKey": "attr.timbre",
+   "displayName": "音色",
+   "desc": "泛音的构成。律具与战技的强度、共鸣过载的上限。",
+   "softcap": 40,
+   "hardcap": 60
+  },
+  {
+   "key": "vig",
+   "nameKey": "attr.resonator",
+   "displayName": "腔体",
+   "desc": "承载声音的空腔。生命、护甲、异常耐受——腔体大的人才装得下更多震动。",
+   "softcap": 50,
+   "hardcap": 70
+  },
+  {
+   "key": "ovr",
+   "nameKey": "attr.overtone",
+   "displayName": "泛音",
+   "desc": "基音之上的临界音。暴击、处决与背刺的加成，也是踏音的精度。",
+   "softcap": 35,
+   "hardcap": 55
+  },
+  {
+   "key": "fis",
+   "nameKey": "attr.dissonance",
+   "displayName": "失谐",
+   "desc": "与世界的偏差。异常施加效率与环境失谐耐受——深窖的门票。",
+   "softcap": 40,
+   "hardcap": 60
+  }
  ],
  "origins": [
   {
    "id": "origin_tuner",
    "nameKey": "origin.tuner",
    "displayName": "调律者学徒",
-   "attrs": { "str": 5, "dex": 6, "ton": 5, "vig": 4, "ovr": 5, "fis": 3 },
+   "attrs": {
+    "str": 5,
+    "dex": 6,
+    "ton": 5,
+    "vig": 4,
+    "ovr": 5,
+    "fis": 3
+   },
    "weaponId": "wp_tuning_sword",
-   "gearIds": ["ar_mutewrap_helm", "ar_scavenger_cuirass", "ar_tuner_gloves", "ar_coppergreaves"],
+   "gearIds": [
+    "ar_mutewrap_helm",
+    "ar_scavenger_cuirass",
+    "ar_tuner_gloves",
+    "ar_coppergreaves"
+   ],
    "blurb": "在仪典前被教会收留的孩子。六维均衡，什么都能学，什么都不精。"
   },
   {
    "id": "origin_drummer",
    "nameKey": "origin.drummer",
    "displayName": "鼓手遗孤",
-   "attrs": { "str": 8, "dex": 3, "ton": 2, "vig": 7, "ovr": 3, "fis": 5 },
+   "attrs": {
+    "str": 8,
+    "dex": 3,
+    "ton": 2,
+    "vig": 7,
+    "ovr": 3,
+    "fis": 5
+   },
    "weaponId": "wp_fortissimo_greatsword",
-   "gearIds": ["ar_choir_hood", "ar_drummer_cuirass", "ar_tuner_gloves", "ar_coppergreaves"],
+   "gearIds": [
+    "ar_choir_hood",
+    "ar_drummer_cuirass",
+    "ar_tuner_gloves",
+    "ar_coppergreaves"
+   ],
    "blurb": "驼鼓踏碎了他家的墙。他活下来，从此用比鼓更沉的东西回话。"
   },
   {
    "id": "origin_player",
    "nameKey": "origin.player",
    "displayName": "弦坊伶人",
-   "attrs": { "str": 3, "dex": 8, "ton": 4, "vig": 3, "ovr": 7, "fis": 3 },
+   "attrs": {
+    "str": 3,
+    "dex": 8,
+    "ton": 4,
+    "vig": 3,
+    "ovr": 7,
+    "fis": 3
+   },
    "weaponId": "wp_drawpin_spear",
-   "gearIds": ["ar_mutewrap_helm", "ar_scavenger_cuirass", "ar_tracewrists", "ar_silent_boots"],
+   "gearIds": [
+    "ar_mutewrap_helm",
+    "ar_scavenger_cuirass",
+    "ar_tracewrists",
+    "ar_silent_boots"
+   ],
    "blurb": "在弦坊里靠一把枪的距离感活着：不必贴身，也能把音钉死在墙上。"
   },
   {
    "id": "origin_scavenger",
    "nameKey": "origin.scavenger",
    "displayName": "哑带拾晶人",
-   "attrs": { "str": 4, "dex": 6, "ton": 6, "vig": 4, "ovr": 4, "fis": 4 },
+   "attrs": {
+    "str": 4,
+    "dex": 6,
+    "ton": 6,
+    "vig": 4,
+    "ovr": 4,
+    "fis": 4
+   },
    "weaponId": "wp_tuning_sword",
-   "gearIds": ["ar_mutewrap_helm", "ar_scavenger_cuirass", "ar_tuner_gloves", "ar_silent_boots"],
+   "gearIds": [
+    "ar_mutewrap_helm",
+    "ar_scavenger_cuirass",
+    "ar_tuner_gloves",
+    "ar_silent_boots"
+   ],
    "blurb": "哑带上长大的拾晶人。耳朵比谁都灵，口袋也比谁都鼓（拾取音色石 +10%）。",
-   "passive": { "kind": "lootStackBonus", "itemId": "it_timbite", "mul": 1.1, "label": "拾取音色石 +10%" }
+   "passive": {
+    "kind": "lootStackBonus",
+    "itemId": "it_timbite",
+    "mul": 1.1,
+    "label": "拾取音色石 +10%"
+   }
   },
   {
    "id": "origin_choir",
    "nameKey": "origin.choir",
    "displayName": "旧唱诗班",
-   "attrs": { "str": 3, "dex": 4, "ton": 8, "vig": 4, "ovr": 4, "fis": 5 },
+   "attrs": {
+    "str": 3,
+    "dex": 4,
+    "ton": 8,
+    "vig": 4,
+    "ovr": 4,
+    "fis": 5
+   },
    "weaponId": "wp_tuning_sword",
-   "gearIds": ["ar_choir_hood", "ar_scavenger_cuirass", "ar_tuner_gloves", "ar_silent_boots"],
+   "gearIds": [
+    "ar_choir_hood",
+    "ar_scavenger_cuirass",
+    "ar_tuner_gloves",
+    "ar_silent_boots"
+   ],
    "blurb": "仪典失败那天的幸存唱者。她记得半句没唱完的句子——那是莉安的线索。"
   }
  ],
  "rankCurve": [
-  { "rank": 2, "xp": 60 },
-  { "rank": 3, "xp": 75 },
-  { "rank": 4, "xp": 94 },
-  { "rank": 5, "xp": 118 },
-  { "rank": 6, "xp": 148 },
-  { "rank": 7, "xp": 185 },
-  { "rank": 8, "xp": 231 },
-  { "rank": 9, "xp": 289 },
-  { "rank": 10, "xp": 361 },
-  { "rank": 11, "xp": 451 },
-  { "rank": 12, "xp": 564 },
-  { "rank": 13, "xp": 705 },
-  { "rank": 14, "xp": 881 },
-  { "rank": 15, "xp": 1101 },
-  { "rank": 16, "xp": 1376 },
-  { "rank": 17, "xp": 1720 },
-  { "rank": 18, "xp": 2150 },
-  { "rank": 19, "xp": 2688 },
-  { "rank": 20, "xp": 3360 },
-  { "rank": 21, "xp": 4200 },
-  { "rank": 22, "xp": 5250 },
-  { "rank": 23, "xp": 6563 },
-  { "rank": 24, "xp": 8203 },
-  { "rank": 25, "xp": 10254 },
-  { "rank": 26, "xp": 12817 },
-  { "rank": 27, "xp": 16022 },
-  { "rank": 28, "xp": 20027 },
-  { "rank": 29, "xp": 25034 },
-  { "rank": 30, "xp": 31292 }
+  {
+   "rank": 2,
+   "xp": 60
+  },
+  {
+   "rank": 3,
+   "xp": 75
+  },
+  {
+   "rank": 4,
+   "xp": 94
+  },
+  {
+   "rank": 5,
+   "xp": 118
+  },
+  {
+   "rank": 6,
+   "xp": 148
+  },
+  {
+   "rank": 7,
+   "xp": 185
+  },
+  {
+   "rank": 8,
+   "xp": 231
+  },
+  {
+   "rank": 9,
+   "xp": 289
+  },
+  {
+   "rank": 10,
+   "xp": 361
+  },
+  {
+   "rank": 11,
+   "xp": 451
+  },
+  {
+   "rank": 12,
+   "xp": 564
+  },
+  {
+   "rank": 13,
+   "xp": 705
+  },
+  {
+   "rank": 14,
+   "xp": 881
+  },
+  {
+   "rank": 15,
+   "xp": 1101
+  },
+  {
+   "rank": 16,
+   "xp": 1376
+  },
+  {
+   "rank": 17,
+   "xp": 1720
+  },
+  {
+   "rank": 18,
+   "xp": 2150
+  },
+  {
+   "rank": 19,
+   "xp": 2688
+  },
+  {
+   "rank": 20,
+   "xp": 3360
+  },
+  {
+   "rank": 21,
+   "xp": 4200
+  },
+  {
+   "rank": 22,
+   "xp": 5250
+  },
+  {
+   "rank": 23,
+   "xp": 6563
+  },
+  {
+   "rank": 24,
+   "xp": 8203
+  },
+  {
+   "rank": 25,
+   "xp": 10254
+  },
+  {
+   "rank": 26,
+   "xp": 12817
+  },
+  {
+   "rank": 27,
+   "xp": 16022
+  },
+  {
+   "rank": 28,
+   "xp": 20027
+  },
+  {
+   "rank": 29,
+   "xp": 25034
+  },
+  {
+   "rank": 30,
+   "xp": 31292
+  }
  ],
  "derived": {
-  "hp": { "base": 80, "per": { "vig": 6, "str": 2 }, "perRank": 10 },
-  "stamina": { "base": 60, "per": { "dex": 6, "vig": 4 } },
-  "poise": { "base": 20, "per": { "str": 2, "vig": 1.5 } },
+  "hp": {
+   "base": 80,
+   "per": {
+    "vig": 6,
+    "str": 2
+   },
+   "perRank": 10
+  },
+  "stamina": {
+   "base": 60,
+   "per": {
+    "dex": 6,
+    "vig": 4
+   }
+  },
+  "poise": {
+   "base": 20,
+   "per": {
+    "str": 2,
+    "vig": 1.5
+   }
+  },
   "defensePerVig": 1,
-  "load": { "base": 40, "perStr": 4 },
-  "crit": { "base": 0.05, "perOvr": 0.004, "cap": 0.4, "mulBase": 1.35, "mulPerOvr": 0.002 },
-  "overdrive": { "base": 10, "perTonDiv": 10, "cap": 15 },
-  "status": { "perFisPower": 0.02, "perFisTolerance": 0.02, "toleranceFloor": 0.2 },
+  "load": {
+   "base": 40,
+   "perStr": 4
+  },
+  "crit": {
+   "base": 0.05,
+   "perOvr": 0.004,
+   "cap": 0.4,
+   "mulBase": 1.35,
+   "mulPerOvr": 0.002
+  },
+  "overdrive": {
+   "base": 10,
+   "perTonDiv": 10,
+   "cap": 15
+  },
+  "status": {
+   "perFisPower": 0.02,
+   "perFisTolerance": 0.02,
+   "toleranceFloor": 0.2
+  },
   "execMulPerOvr": 0.01
  },
- "softcap": { "mul": 0.5, "hardMul": 0.25 },
- "pity": { "every": 10, "floorRarity": "rare" },
- "respec": { "base": 60, "perPoint": 25, "discountTimes": 3, "discountMul": 0.8 },
+ "softcap": {
+  "mul": 0.5,
+  "hardMul": 0.25
+ },
+ "pity": {
+  "every": 10,
+  "floorRarity": "rare"
+ },
+ "respec": {
+  "base": 60,
+  "perPoint": 25,
+  "discountTimes": 3,
+  "discountMul": 0.8
+ },
  "upgrade": [
-  { "level": 1, "timbite": 20, "dross": 1, "weaponMul": 0.06, "armorMul": 0.08 },
-  { "level": 2, "timbite": 30, "dross": 2, "weaponMul": 0.06, "armorMul": 0.08 },
-  { "level": 3, "timbite": 45, "dross": 3, "weaponMul": 0.07, "armorMul": 0.09 },
-  { "level": 4, "timbite": 65, "dross": 5, "weaponMul": 0.07, "armorMul": 0.09 },
-  { "level": 5, "timbite": 90, "dross": 7, "weaponMul": 0.08, "armorMul": 0.1 },
-  { "level": 6, "timbite": 125, "dross": 10, "weaponMul": 0.08, "armorMul": 0.11 },
-  { "level": 7, "timbite": 170, "dross": 14, "weaponMul": 0.09, "armorMul": 0.12 },
-  { "level": 8, "timbite": 225, "dross": 19, "weaponMul": 0.09, "armorMul": 0.12 },
-  { "level": 9, "timbite": 290, "dross": 25, "weaponMul": 0.1, "armorMul": 0.13 },
-  { "level": 10, "timbite": 370, "dross": 33, "weaponMul": 0.1, "armorMul": 0.14 }
+  {
+   "level": 1,
+   "timbite": 20,
+   "dross": 1,
+   "weaponMul": 0.06,
+   "armorMul": 0.08
+  },
+  {
+   "level": 2,
+   "timbite": 30,
+   "dross": 2,
+   "weaponMul": 0.06,
+   "armorMul": 0.08
+  },
+  {
+   "level": 3,
+   "timbite": 45,
+   "dross": 3,
+   "weaponMul": 0.07,
+   "armorMul": 0.09
+  },
+  {
+   "level": 4,
+   "timbite": 65,
+   "dross": 5,
+   "weaponMul": 0.07,
+   "armorMul": 0.09
+  },
+  {
+   "level": 5,
+   "timbite": 90,
+   "dross": 7,
+   "weaponMul": 0.08,
+   "armorMul": 0.1
+  },
+  {
+   "level": 6,
+   "timbite": 125,
+   "dross": 10,
+   "weaponMul": 0.08,
+   "armorMul": 0.11
+  },
+  {
+   "level": 7,
+   "timbite": 170,
+   "dross": 14,
+   "weaponMul": 0.09,
+   "armorMul": 0.12
+  },
+  {
+   "level": 8,
+   "timbite": 225,
+   "dross": 19,
+   "weaponMul": 0.09,
+   "armorMul": 0.12
+  },
+  {
+   "level": 9,
+   "timbite": 290,
+   "dross": 25,
+   "weaponMul": 0.1,
+   "armorMul": 0.13
+  },
+  {
+   "level": 10,
+   "timbite": 370,
+   "dross": 33,
+   "weaponMul": 0.1,
+   "armorMul": 0.14
+  }
  ],
  "rarity": [
-  { "id": "common", "nameKey": "rarity.plain", "displayName": "素声", "affixes": 0, "maxLevel": 3 },
-  { "id": "uncommon", "nameKey": "rarity.ringing", "displayName": "鸣声", "affixes": 1, "maxLevel": 5 },
-  { "id": "rare", "nameKey": "rarity.metallic", "displayName": "金属声", "affixes": 2, "maxLevel": 7 },
-  { "id": "rareplus", "nameKey": "rarity.crystal", "displayName": "晶声", "affixes": 2, "maxLevel": 8 },
-  { "id": "epic", "nameKey": "rarity.epic", "displayName": "史诗声", "affixes": 3, "maxLevel": 10 },
-  { "id": "unique", "nameKey": "rarity.unique", "displayName": "师传", "affixes": 3, "maxLevel": 10 }
+  {
+   "id": "common",
+   "nameKey": "rarity.plain",
+   "displayName": "素声",
+   "affixes": 0,
+   "maxLevel": 3
+  },
+  {
+   "id": "uncommon",
+   "nameKey": "rarity.ringing",
+   "displayName": "鸣声",
+   "affixes": 1,
+   "maxLevel": 5
+  },
+  {
+   "id": "rare",
+   "nameKey": "rarity.metallic",
+   "displayName": "金属声",
+   "affixes": 2,
+   "maxLevel": 7
+  },
+  {
+   "id": "rareplus",
+   "nameKey": "rarity.crystal",
+   "displayName": "晶声",
+   "affixes": 2,
+   "maxLevel": 8
+  },
+  {
+   "id": "epic",
+   "nameKey": "rarity.epic",
+   "displayName": "史诗声",
+   "affixes": 3,
+   "maxLevel": 10
+  },
+  {
+   "id": "unique",
+   "nameKey": "rarity.unique",
+   "displayName": "师传",
+   "affixes": 3,
+   "maxLevel": 10
+  }
  ],
  "affixes": {
   "prefix": [
-   { "id": "af_resonant", "nameKey": "affix.resonant", "displayName": "共鸣", "stat": "poiseDmg", "range": [0.04, 0.12], "slots": ["weapon", "seal"], "desc": "架势伤害提升：把对方的拍子打散。" },
-   { "id": "af_tempered", "nameKey": "affix.tempered", "displayName": "硬膜", "stat": "defense", "range": [2, 8], "slots": ["helm", "cuirass", "gloves", "greaves"], "desc": "腔体加厚，DEF 提升。" },
-   { "id": "af_tireless", "nameKey": "affix.tireless", "displayName": "节律", "stat": "staminaRegen", "range": [0.04, 0.1], "desc": "体力回复加快：气接得上，句子才唱得完。" },
-   { "id": "af_keen", "nameKey": "affix.keen", "displayName": "准星", "stat": "critRate", "range": [0.02, 0.06], "slots": ["weapon", "seal"], "desc": "暴击率提升：找准泛音的那一层。" },
-   { "id": "af_harmonic", "nameKey": "affix.harmonic", "displayName": "泛音弦", "stat": "execDmg", "range": [0.03, 0.09], "slots": ["weapon"], "desc": "处决与背刺伤害提升：休止处的一刀更重。" },
-   { "id": "af_tacet", "nameKey": "affix.tacet", "displayName": "静默", "stat": "noiseMul", "range": [-0.35, -0.12], "slots": ["helm", "cuirass", "gloves", "greaves", "seal"], "minRarity": "uncommon", "desc": "自身噪音降低：在靠听不看的地方，安静就是武器。" },
-   { "id": "af_bountiful", "nameKey": "affix.bountiful", "displayName": "丰谐", "stat": "lootLuck", "range": [0.15, 0.15], "slots": ["sealB"], "minRarity": "rare", "desc": "高稀有度掉落权重 +15%：晶耳听得见别人漏看的石头。单点区间=定值——这枚是署名造物，不掷区间（§6.2）。" }
+   {
+    "id": "af_resonant",
+    "nameKey": "affix.resonant",
+    "displayName": "共鸣",
+    "stat": "poiseDmg",
+    "range": [
+     0.04,
+     0.12
+    ],
+    "slots": [
+     "weapon",
+     "seal"
+    ],
+    "desc": "架势伤害提升：把对方的拍子打散。"
+   },
+   {
+    "id": "af_tempered",
+    "nameKey": "affix.tempered",
+    "displayName": "硬膜",
+    "stat": "defense",
+    "range": [
+     2,
+     8
+    ],
+    "slots": [
+     "helm",
+     "cuirass",
+     "gloves",
+     "greaves"
+    ],
+    "desc": "腔体加厚，DEF 提升。"
+   },
+   {
+    "id": "af_tireless",
+    "nameKey": "affix.tireless",
+    "displayName": "节律",
+    "stat": "staminaRegen",
+    "range": [
+     0.04,
+     0.1
+    ],
+    "desc": "体力回复加快：气接得上，句子才唱得完。"
+   },
+   {
+    "id": "af_keen",
+    "nameKey": "affix.keen",
+    "displayName": "准星",
+    "stat": "critRate",
+    "range": [
+     0.02,
+     0.06
+    ],
+    "slots": [
+     "weapon",
+     "seal"
+    ],
+    "desc": "暴击率提升：找准泛音的那一层。"
+   },
+   {
+    "id": "af_harmonic",
+    "nameKey": "affix.harmonic",
+    "displayName": "泛音弦",
+    "stat": "execDmg",
+    "range": [
+     0.03,
+     0.09
+    ],
+    "slots": [
+     "weapon"
+    ],
+    "desc": "处决与背刺伤害提升：休止处的一刀更重。"
+   },
+   {
+    "id": "af_tacet",
+    "nameKey": "affix.tacet",
+    "displayName": "静默",
+    "stat": "noiseMul",
+    "range": [
+     -0.35,
+     -0.12
+    ],
+    "slots": [
+     "helm",
+     "cuirass",
+     "gloves",
+     "greaves",
+     "seal"
+    ],
+    "minRarity": "uncommon",
+    "desc": "自身噪音降低：在靠听不看的地方，安静就是武器。"
+   },
+   {
+    "id": "af_bountiful",
+    "nameKey": "affix.bountiful",
+    "displayName": "丰谐",
+    "stat": "lootLuck",
+    "range": [
+     0.15,
+     0.15
+    ],
+    "slots": [
+     "sealB"
+    ],
+    "minRarity": "rare",
+    "desc": "高稀有度掉落权重 +15%：晶耳听得见别人漏看的石头。单点区间=定值——这枚是署名造物，不掷区间（§6.2）。"
+   }
   ],
   "suffix": [
-   { "id": "af_fermata", "nameKey": "affix.fermata", "displayName": "之延", "behavior": "perfectBlockWindow", "range": [1, 2], "minRarity": "rare", "desc": "完美格挡判定窗 +1~2 帧。" },
-   { "id": "af_staccato", "nameKey": "affix.staccato", "displayName": "之切", "behavior": "lightStartup", "range": [1, 2], "minRarity": "rare", "slots": ["weapon"], "desc": "轻击前摇 -1~2 帧：出声更早。" },
-   { "id": "af_bellwarden", "nameKey": "affix.bellwarden", "displayName": "之鸣钟", "behavior": "bellBonus", "range": [0.06, 0.12], "minRarity": "rare", "slots": ["weapon"], "desc": "对钟甲/钟壳目标伤害提升。" },
-   { "id": "af_restkeeper", "nameKey": "affix.restkeeper", "displayName": "之休止", "behavior": "restOverdrive", "range": [1, 1], "minRarity": "epic", "desc": "弹反成功额外 +1 过载（向下取整的余数由系统累积）。" }
+   {
+    "id": "af_fermata",
+    "nameKey": "affix.fermata",
+    "displayName": "之延",
+    "behavior": "perfectBlockWindow",
+    "range": [
+     1,
+     2
+    ],
+    "minRarity": "rare",
+    "desc": "完美格挡判定窗 +1~2 帧。"
+   },
+   {
+    "id": "af_staccato",
+    "nameKey": "affix.staccato",
+    "displayName": "之切",
+    "behavior": "lightStartup",
+    "range": [
+     1,
+     2
+    ],
+    "minRarity": "rare",
+    "slots": [
+     "weapon"
+    ],
+    "desc": "轻击前摇 -1~2 帧：出声更早。"
+   },
+   {
+    "id": "af_bellwarden",
+    "nameKey": "affix.bellwarden",
+    "displayName": "之鸣钟",
+    "behavior": "bellBonus",
+    "range": [
+     0.06,
+     0.12
+    ],
+    "minRarity": "rare",
+    "slots": [
+     "weapon"
+    ],
+    "desc": "对钟甲/钟壳目标伤害提升。"
+   },
+   {
+    "id": "af_restkeeper",
+    "nameKey": "affix.restkeeper",
+    "displayName": "之休止",
+    "behavior": "restOverdrive",
+    "range": [
+     1,
+     1
+    ],
+    "minRarity": "epic",
+    "desc": "弹反成功额外 +1 过载（向下取整的余数由系统累积）。"
+   }
   ]
  },
  "milestones": [
-  { "rank": 2, "id": "ms_movement_slot", "label": "乐章战技槽 I 激活：可以装第一个战技了" },
-  { "rank": 3, "id": "ms_beat_ripple", "label": "HUD 出现拍点涟漪刻度：踏音加成可见" },
-  { "rank": 4, "id": "ms_load_8", "label": "负重上限 +8：能换重甲而不超载", "grant": { "loadFlat": 8 } },
-  { "rank": 5, "id": "ms_parry_whiff", "label": "弹反失败硬直 -50ms", "grant": { "parryWhiffMs": -50 } },
-  { "rank": 7, "id": "ms_movement2", "label": "乐章战技槽 II 激活：双技能组合成立" },
-  { "rank": 8, "id": "ms_crit_ring", "label": "暴击飘字带金色泛音环" },
-  { "rank": 10, "id": "ms_deepcellar", "label": "失谐耐受 +1 档：深窖可停留时长 +35%" },
-  { "rank": 12, "id": "ms_bow_split", "label": "满弓分叉 2→3（若用弓）；处决伤害 +5%", "grant": { "execMulPct": 5 } },
-  { "rank": 14, "id": "ms_overdrive", "label": "过载上限 10→12：休止处决循环变短", "grant": { "overdriveFlat": 2 } },
-  { "rank": 16, "id": "ms_identity", "label": "任一维触及 35：该维专属效果解锁" }
+  {
+   "rank": 2,
+   "id": "ms_movement_slot",
+   "label": "乐章战技槽 I 激活：可以装第一个战技了"
+  },
+  {
+   "rank": 3,
+   "id": "ms_beat_ripple",
+   "label": "HUD 出现拍点涟漪刻度：踏音加成可见"
+  },
+  {
+   "rank": 4,
+   "id": "ms_load_8",
+   "label": "负重上限 +8：能换重甲而不超载",
+   "grant": {
+    "loadFlat": 8
+   }
+  },
+  {
+   "rank": 5,
+   "id": "ms_parry_whiff",
+   "label": "弹反失败硬直 -50ms",
+   "grant": {
+    "parryWhiffMs": -50
+   }
+  },
+  {
+   "rank": 7,
+   "id": "ms_movement2",
+   "label": "乐章战技槽 II 激活：双技能组合成立"
+  },
+  {
+   "rank": 8,
+   "id": "ms_crit_ring",
+   "label": "暴击飘字带金色泛音环"
+  },
+  {
+   "rank": 10,
+   "id": "ms_deepcellar",
+   "label": "失谐耐受 +1 档：深窖可停留时长 +35%",
+   "grant": {
+    "corruptionStayPct": 35
+   }
+  },
+  {
+   "rank": 12,
+   "id": "ms_bow_split",
+   "label": "满弓分叉 2→3（若用弓）；处决伤害 +5%",
+   "grant": {
+    "execMulPct": 5
+   }
+  },
+  {
+   "rank": 14,
+   "id": "ms_overdrive",
+   "label": "过载上限 10→12：休止处决循环变短",
+   "grant": {
+    "overdriveFlat": 2
+   }
+  },
+  {
+   "rank": 16,
+   "id": "ms_identity",
+   "label": "任一维触及 35：该维专属效果解锁"
+  }
  ]
 }

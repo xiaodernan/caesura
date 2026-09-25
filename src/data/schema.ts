@@ -596,6 +596,13 @@ export interface MilestoneGrant {
   execMulPct?: number
   /** rank14「过载上限 10→12」：加在 10+floor(音色/10) 的**基数**上，仍被 cap（15）封顶（KI-054②） */
   overdriveFlat?: number
+  /**
+   * rank10「失谐耐受 +1 档：深窖可停留时长 +35%」：**乘在累积速率上的时长项**——
+   * `corruptionResistMul = max(floor, (1 − fis×per) / (1 + 本项和/100))`。35 ⇒ 速率 ÷1.35 ⇒
+   * 同一口池子多 35% 停留时间，对**任何出身**逐字成立（加法平移会被出身异音稀释成 +38%，
+   * 换算记在 KI-054 行）；toleranceFloor 仍在最后封底，grant 推不穿设计的地板。
+   */
+  corruptionStayPct?: number
 }
 
 /** 装备件的静态定义（挂在 ItemData.gear 上）。 */
