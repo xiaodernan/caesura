@@ -63,6 +63,18 @@ export interface GameEvents {
    */
   'camera.shake': { key: string; pos?: { x: number; y: number; z: number }; mul?: number }
   'sound.source': { id: string; pos: { x: number; y: number; z: number }; loudness: number }
+  /**
+   * KI-023：可破坏场景物碎了。钩子（聋乱窗等）由监听方执行——PropSystem 只广播
+   * 「世界少了什么」，不认识任何敌人；`deafTarget/deafTicks` 原样透传自 prop 数据。
+   */
+  'world.propBroken': {
+    id: string
+    kind: string
+    regionId: string
+    pos: { x: number; y: number; z: number }
+    deafTarget?: string
+    deafTicks?: number
+  }
   'ui.notify': { text: string; kind?: 'info' | 'reward' | 'boss' }
   'ui.prompt': { text: string | null; id: string | null }
   'world.flag': { key: string; value: boolean | number | string }

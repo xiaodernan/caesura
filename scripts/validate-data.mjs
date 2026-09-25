@@ -44,6 +44,8 @@ const REACTIONS = new Set(['R0', 'R1', 'R2', 'R3', 'R4', 'R5'])
 // 'stomp' 自 KI-051 起是 §10「驼鼓踏地」的 worldShake 行
 const SHAKES = new Set(['graze', 'normal', 'heavy', 'boss', 'stomp'])
 const INTERACTABLE_KINDS = new Set(['checkpoint', 'elevator', 'bridge', 'soundwall', 'gather', 'chest', 'npc', 'teleport', 'gate', 'bell'])
+// KI-023 可破坏场景物的品类白名单（schema.ts PropRef.kind 同名单；新种类随消费方一起落）
+const PROP_KINDS = new Set(['soundspine'])
 const PICK_ORDERS = new Set(['random', 'cycle'])
 // src/ai/Enemy.ts:707 —— 距离带里不是招式的伪动作
 const PSEUDO_ACTIONS = new Set(['chase', 'backstep', 'hold'])
@@ -1040,6 +1042,7 @@ function validateRegions(enemyIds, lootIds, rarityIds) {
   const landmarkIds = new Set()
   const interactableIds = new Set()
   const secretIds = new Set()
+  const propIds = new Set()
   const orders = new Map()
   if (!isArr(list)) { report.error(file, file, '顶层必须是数组'); return ids }
   list.forEach((rg, i) => {
@@ -1142,6 +1145,47 @@ function validateRegions(enemyIds, lootIds, rarityIds) {
       if (it.to !== undefined) vec3(file, `${iw}.to`, it.to)
       if (it.kind === 'npc' && !isStr(it.npcId)) report.warn(file, iw, `kind=npc 但没有 npcId`)
     })
+
+    // props（KI-023 可破坏场景物）
+    if (rg.props !== undefined) {
+      if (!isArr(rg.props)) report.error(file, `${w}.props`, '必须是数组')
+      else rg.props.forEach((p, pi) => {
+        const pw = `${w}.props[${pi}]`
+        if (!isObj(p)) { report.error(file, pw, '必须是对象'); return }
+        if (!isStr(p.id)) report.error(file, pw, 'id 缺失或非字符串')
+        else if (propIds.has(p.id)) report.error(file, pw, `prop id 重复：${p.id}`)
+        else propIds.add(p.id)
+        if (!PROP_KINDS.has(p.kind)) report.error(file, `${pw}.kind`, `kind=${JSON.stringify(p.kind)} 非法`)
+        vec3(file, `${pw}.pos`, p.pos)
+        // y 契约（与 spawnGroups/interactables 同一条）：prop 立在本层地板上，
+        // 否则 shapeHits 的竖向判据与它永远错开——「看得见按不到」的镜像版
+        if (isObj(p.pos) && Math.abs(p.pos.y - rg.groundY) > 0.001) {
+          report.error(file, `${pw}.pos`, `pos.y 必须踩在本层地板 groundY=${rg.groundY}`)
+        }
+        report.num(file, `${pw}.hitsToBreak`, p.hitsToBreak, { min: 1, int: true, name: 'hitsToBreak' })
+        if (p.breakLabel !== undefined && !isStr(p.breakLabel)) report.error(file, `${pw}.breakLabel`, '必须是非空字符串')
+        if (p.kind === 'soundspine' && (p.gatherRadius === undefined || p.gatherRadius <= 0)) {
+          report.error(file, pw, 'soundspine 必须写正的 gatherRadius——汇聚噪音是这一类的全部意义，缺了它就只是一根打不坏的柱子')
+        } else if (p.gatherRadius !== undefined) {
+          report.num(file, `${pw}.gatherRadius`, p.gatherRadius, { min: 0.0001, name: 'gatherRadius' })
+        }
+        if (p.onBreakDeaf !== undefined) {
+          const d = p.onBreakDeaf
+          if (!isObj(d)) { report.error(file, `${pw}.onBreakDeaf`, '必须是对象') }
+          else {
+            if (!isStr(d.target)) report.error(file, `${pw}.onBreakDeaf.target`, '缺失或非字符串')
+            else if (!enemyIds.has(d.target)) report.error(file, `${pw}.onBreakDeaf.target`, `悬空引用：'${d.target}' 不在 enemies.json`)
+            else {
+              // 聋乱窗只对「靠听的敌人」成立：hearing.range=0 的东西聋不聋没有玩法差
+              const t = (data['enemies.json'] ?? []).find((e) => isObj(e) && e.id === d.target)
+              const hearRange = isObj(t) && isObj(t.ai) && isObj(t.ai.hearing) ? t.ai.hearing.range : 0
+              if (!(hearRange > 0)) report.error(file, `${pw}.onBreakDeaf.target`, `'${d.target}' 的 hearing.range=${hearRange}——聋乱窗对听不见的敌人没有意义`)
+            }
+            report.num(file, `${pw}.onBreakDeaf.deafTicks`, d.deafTicks, { min: 1, int: true, name: 'deafTicks' })
+          }
+        }
+      })
+    }
 
     // music
     if (!isObj(rg.music)) report.error(file, `${w}.music`, '必须是对象')

@@ -14,6 +14,7 @@ import { shapeHits, isBackstab } from './HitShapes'
 import { ProjectileSystem, sphereHits, type Projectile } from './Projectiles'
 import { glossary, statusConfig, tagIs } from './Statuses'
 import type { Vec3 } from './EntityStats'
+import type { PropSystem } from '@/world/Props'
 
 type ExecuteKind = 'A' | 'B' | 'C'
 
@@ -143,6 +144,13 @@ export class CombatManager {
     })
   }
 
+  /**
+   * KI-023 可破坏场景物（组合根注入，null = 场上没有 props；与 `floorAt` 同一套注入纪律，
+   * combat 层不 import world 的运行时）。命中参与走同一条 `shapeHits`、同一次数预算
+   * （`markActionHit`），所以"一记只结一次账"对场地件同样成立。
+   */
+  props: PropSystem | null = null
+
   checkEncounterMusic(): void {
     const anyAggro = this.ai.enemies.some((e) =>
       e.alive && (e.state === 'combat' || e.state === 'chase' || e.state === 'alert' || e.state === 'callAlly'))
@@ -154,6 +162,7 @@ export class CombatManager {
     this.launchPlayerProjectile(tick)
     this.launchEnemyProjectiles(tick)
     this.playerHitsEnemies(tick)
+    this.playerHitsProps()
     this.caesuraFreeze()
     if (!this.player.executing) this.enemiesHitPlayer(tick)
     this.phaseCounter(input)
@@ -219,6 +228,29 @@ export class CombatManager {
     const declared = f?.fissureLayers
     const byKey = key === 'charged' ? 2 : key === 'h' ? 1 : 0
     return (declared ?? byKey) + (hb.flags.includes('fissure') ? 1 : 0)
+  }
+
+  /**
+   * KI-023：玩家出手对可破坏场景物的那一扫。与敌人扫描共用同一个判定窗、同一次数预算
+   * （`markActionHit`）——一记横扫同时罩住敌人与音刺时，敌人先结账（先扫先得），
+   * 音刺只在还有名额时吃这一记。轻击敲上去只响不裂的裁决住在 `PropSystem.chip`。
+   * props 不产 `combat.hit`：它没有伤害数字、没有 hitstop、没有架势——那些语义全是"打到了某个人"的。
+   */
+  private playerHitsProps(): void {
+    const props = this.props
+    if (!props) return
+    const hb = this.player.activeHitbox
+    if (!hb?.box) return
+    const p = this.player
+    const kind: 'light' | 'heavy' | 'skill' = p.action?.skill
+      ? 'skill'
+      : (p.action?.key ?? '').startsWith('l') ? 'light' : 'heavy'
+    for (const prop of props.all) {
+      if (!props.hittable(prop)) continue
+      if (!shapeHits(hb.box, p.pos, hb.yaw, props.hitTarget(prop))) continue
+      if (!p.markActionHit(prop.id)) continue
+      props.chip(prop, kind !== 'light')
+    }
   }
 
   /**

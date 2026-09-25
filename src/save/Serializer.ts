@@ -16,7 +16,7 @@ import { unwrap, wrap } from './Integrity'
  * 存档里没有一个敌人实例，只有一串槽位身份）。
  */
 
-export const SAVE_VERSION = 7
+export const SAVE_VERSION = 8
 
 /**
  * 读档时接受的版本：凡是 ≤ 当前版本、且迁移链能一路升到当前的，都可以读。
@@ -103,6 +103,19 @@ registerMigration(6, (p) => {
   return { ...p, snapshot: snap }
 })
 
+/**
+ * v7 → v8（KI-023 可破坏场景物）。碎掉的 prop（音刺等）是**世界状态**：不存它，
+ * 读一次档 = 碎刺全部立回来 = 白还一次破势窗口（与 v5→v6 那笔是同一类洞）。
+ * 老档里我们不知道碎过什么 ⇒ 迁移写空集：那份档里的刺会再立起来一次——
+ * 历史事实缺失的代价，不是补偿（§78）。
+ */
+registerMigration(7, (p) => {
+  const snap = { ...(p.snapshot as Record<string, unknown>) }
+  snap.brokenProps = []
+  snap.version = 8
+  return { ...p, snapshot: snap }
+})
+
 export interface Snapshot {
   version: number
   /** 游玩秒数（HUD/存档摘要卡用） */
@@ -123,6 +136,8 @@ export interface Snapshot {
   /** 已经用过的一次性交互物 id（v6 起）：遗箱/吊桥/音壁读档后不许再响第二次。
    *  存的是 id 数组而不是布尔位——加一个交互物不需要动存档 schema。 */
   usedInteractables: string[]
+  /** 碎掉的可破坏场景物 id（v8 起，KI-023）：碎刺不可再生，读档不能白还一次破势窗 */
+  brokenProps: string[]
   /** 成长/背包/装备/掉落状态（v2 起）。v1 老档为 null ⇒ 保留运行时基线 */
   rpg: RpgSnapshot | null
   /** 叙事进度（v7 起）：任务状态 / NPC 关系 / 对话已读节点。老档为 null ⇒ 一切从头 */
@@ -198,6 +213,8 @@ export interface SaveWorld {
   rpg?: RpgRuntime
   /** Phase 6-A：交互物（同上，可选）。它的一次性状态是**世界状态**的一部分，不是 UI 状态 */
   interact?: Interactables
+  /** KI-023：可破坏场景物（可选）。碎裂状态同属世界状态：不存，读档就把破势窗白还一次 */
+  props?: { snapshot(): string[]; restore(ids: string[] | null | undefined): void }
   /** Phase 6-B：叙事进度（任务状态 / 关系 / 已读节点），同上可选 */
   quests?: Quests
 }
@@ -230,6 +247,7 @@ export class SaveGame {
       flags: w.streaming.flagKeys(),
       clearedSlots: w.spawner.clearedKeys(),
       usedInteractables: w.interact ? w.interact.snapshot() : [],
+      brokenProps: w.props ? w.props.snapshot() : [],
       rpg: w.rpg ? w.rpg.snapshot() : null,
       quest: w.quests ? w.quests.snapshot() : null
     }
@@ -301,6 +319,8 @@ export class SaveGame {
     for (const k of s.clearedSlots) w.spawner.markCleared(k)
     // 交互物的一次性状态：v5 及以前的档没记 ⇒ 空集，那一局的箱子会再掉一次（见 v5→v6 迁移注释）
     w.interact?.restore(s.usedInteractables)
+    // 碎裂的可破坏场景物：v7 及以前的档没记 ⇒ 空集，那份档里的刺会再立一次（见 v7→v8 迁移注释）
+    w.props?.restore(s.brokenProps)
     // floorY 不在这里算：调用方 teleport 之后由 world/Surface 给（保持「谁能算出脚下」只有一个答案）
   }
 }

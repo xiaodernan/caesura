@@ -12,6 +12,8 @@ import { StreamingSystem, chunkKeyOf } from '@/world/Streaming'
 import { Surface } from '@/world/Surface'
 import { SpawnDirector } from '@/world/SpawnDirector'
 import { Interactables, takeInteractEdge } from '@/world/Interactables'
+import { PropSystem } from '@/world/Props'
+import { PropVisuals } from '@/world/PropVisuals'
 import { ChunkGreybox } from '@/world/ChunkGreybox'
 import { InteractableGreybox } from '@/world/InteractableGreybox'
 import { ActorVisuals } from '@/world/ActorVisuals'
@@ -141,6 +143,14 @@ let shownRegion = streaming.regionAt(player.pos)?.id ?? null
 const surface = new Surface(regions, 0.5, (r) => !streaming.isRegionUnlocked(r))
 combat.floorAt = (pos) => surface.floorAt(pos)?.y ?? null // 弹道撞地：射进灰盒地板就落地
 const interact = new Interactables(regions, (r) => streaming.isRegionUnlocked(r))
+/**
+ * 可破坏场景物（KI-023，§15.3 音刺）。三根汇音刺与万籁同区：她的「听」在 sink 这一站被
+ * 重定向到刺上，碎刺的聋乱窗经 `world.propBroken` 由 AISystem 落账，碎裂状态跟着存档走（v8）。
+ */
+const props = new PropSystem(regions, (r) => streaming.isRegionUnlocked(r))
+ai.noiseSink = (src) => props.sinkNoise(src)
+combat.props = props
+const propVis = new PropVisuals(arena.scene, regions, (r) => streaming.isRegionUnlocked(r))
 const greybox = new ChunkGreybox(arena.scene, regions, streaming.chunkSize)
 /**
  * 世界状态写入层（Phase 6-A）：`regions.json` 里那些被读的旗标需要一个**写方**，否则藏在门后的
@@ -295,6 +305,7 @@ const core = {
     projectileVis.sync(combat.projectiles.list(), t.tick)
     projectileVis.syncTelegraphs(combat.telegraphs())
     bossArena.sync(ai.enemies.filter((e) => !!e.data.boss)) // 立钟与断音柱都在 Boss 场地类里，少一个过滤条件就会漏画后者
+    propVis.sync(props.all) // KI-023：音刺的歪斜/残桩跟着耐久走
   },
   postTick(t: GameTime) {
     // 节拍钟走「逻辑 tick」而不是 time.dt：combat.md §9 末行规定 hitStop 只冻结攻守双方的动画时间，
@@ -326,7 +337,7 @@ bus.on('log', (l) => console.info(`[caesura:${l.level}] ${l.msg}`))
  */
 const savePrimary = new LocalStore('caesura.save.', localStorage)
 const saveBackup = typeof indexedDB === 'undefined' ? null : new IdbStore('caesura-save')
-const saves = new SaveGame({ player, streaming, spawner, clock: rhythm, time, rpg, interact, quests }, savePrimary, saveBackup)
+const saves = new SaveGame({ player, streaming, spawner, clock: rhythm, time, rpg, interact, props, quests }, savePrimary, saveBackup)
 const checkpoints = new Checkpoints(saves)
 // 用的是哪颗种子/哪根弦写在控制台：QA 要复现某一串掉落，第一句问的就是"你那局什么种子"。
 // 播报挪到 startRun 之前由 logRunOrigin() 发——标题屏定弦之后才有"哪根弦"可言。
@@ -401,7 +412,7 @@ if (freshBoot) {
   })()
 }
 
-;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, interact, hud, spawner, nodes, worldState, projectileVis, actors: visuals, bossArena, saves, checkpoints, rpg, settlement, panel, setPanelOpen, quests, dialogueEngine, dialogueBox, openDialogue, refreshRpg, saveNow: () => saves.save('autosave'), get title() { return title } }
+;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, interact, props, hud, spawner, nodes, worldState, projectileVis, actors: visuals, bossArena, saves, checkpoints, rpg, settlement, panel, setPanelOpen, quests, dialogueEngine, dialogueBox, openDialogue, refreshRpg, saveNow: () => saves.save('autosave'), get title() { return title } }
 
 document.getElementById('boot')!.style.display = 'none'
 ;(window as unknown as Record<string, unknown>).__CAESURA_BOOTED__ = true

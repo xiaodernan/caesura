@@ -17,14 +17,14 @@ const SRC = fileURLToPath(new URL('../../src', import.meta.url))
 const LOGIC = [
   'ai', 'audio', 'combat', 'core', 'data', 'input', 'rpg', 'save',
   'player/LockOn.ts', 'player/ThirdPersonController.ts',
-  'world/Streaming.ts', 'world/Surface.ts', 'world/Interactables.ts', 'world/SpawnDirector.ts',
+  'world/Streaming.ts', 'world/Surface.ts', 'world/Interactables.ts', 'world/SpawnDirector.ts', 'world/Props.ts',
 ]
 /** 表现层：只有这些文件允许 import three / 被表现层模块引用 */
 const PRESENTATION = new Set([
   'main.ts', 'player/CameraRig.ts', 'tools/CombatDebugger.ts', 'ui/Hud.ts',
   'vfx/VfxLayer.ts', 'vfx/materials.ts',
   'world/ActorVisuals.ts', 'world/ChunkGreybox.ts', 'world/InteractableGreybox.ts',
-  'world/ProjectileVisuals.ts', 'world/BossArenaVisuals.ts', 'world/PlaceholderArena.ts',
+  'world/ProjectileVisuals.ts', 'world/BossArenaVisuals.ts', 'world/PlaceholderArena.ts', 'world/PropVisuals.ts',
 ])
 
 const tsFiles = (dir: string): string[] => {

@@ -937,6 +937,56 @@
     }
    }
   ],
+  "props": [
+   {
+    "id": "prop_spine_lair",
+    "kind": "soundspine",
+    "pos": {
+     "x": -250,
+     "y": -144,
+     "z": 330
+    },
+    "hitsToBreak": 4,
+    "gatherRadius": 12,
+    "onBreakDeaf": {
+     "target": "en_myriad",
+     "deafTicks": 360
+    },
+    "breakLabel": "音刺碎裂 · 万籁聋了六拍（破势窗口）"
+   },
+   {
+    "id": "prop_spine_mine",
+    "kind": "soundspine",
+    "pos": {
+     "x": -228,
+     "y": -144,
+     "z": 208
+    },
+    "hitsToBreak": 4,
+    "gatherRadius": 10,
+    "onBreakDeaf": {
+     "target": "en_myriad",
+     "deafTicks": 360
+    },
+    "breakLabel": "音刺碎裂 · 万籁聋了六拍（破势窗口）"
+   },
+   {
+    "id": "prop_spine_gallery",
+    "kind": "soundspine",
+    "pos": {
+     "x": -120,
+     "y": -144,
+     "z": 240
+    },
+    "hitsToBreak": 4,
+    "gatherRadius": 10,
+    "onBreakDeaf": {
+     "target": "en_myriad",
+     "deafTicks": 360
+    },
+    "breakLabel": "音刺碎裂 · 万籁聋了六拍（破势窗口）"
+   }
+  ],
   "storyHooks": [
    "narr.act5_the_myriad_optional",
    "narr.act5_first_phrase_reveal"

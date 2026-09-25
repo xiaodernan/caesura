@@ -16,14 +16,37 @@ export class AISystem {
   private lastBarBeat = ''
   /** 传给 hear() 的当前逻辑 tick（声源事件不带 tick，用监听方自己的） */
   private tick = 0
+  /**
+   * KI-023 噪音汇聚（§15.3「世界噪音汇聚点」）：组合根注入。返回重定向后的声源
+   * （听上去发生在音刺上），null = 原样。**必须在这一处拦**——hear() 已经把
+   * 玩家真实站位记进 lastKnown 之后再改，她还是会朝人走，汇聚就成了空话。
+   */
+  noiseSink: ((src: { pos: { x: number; y: number; z: number }; loudness: number }) => { pos: { x: number; y: number; z: number }; loudness: number } | null) | null = null
 
   constructor() {
     bindEnemyRegistry(this.enemies)
     bus.on('sound.source', (e) => {
-      if (e.id === 'player') for (const en of this.enemies) en.hear(e, this.tick)
+      if (e.id === 'player') {
+        const src = this.noiseSink?.(e) ?? e
+        for (const en of this.enemies) en.hear(src, this.tick)
+      }
       // §14.5「伪拍点声源」：够响的一声 = 一个假拍点，把幽灵八从拍隙里拽出来显形。
       // 走既有声源流而不是新事件：玩家重击/驼鼓踏地/未来的音色晶投掷天然是同一路信号。
+      // 汇聚重定向只改「谁听见」，不改「相位会不会被震」——那条判的是够不够响，不是在哪。
       for (const en of this.enemies) en.fakeBeat(e)
+    })
+    // KI-023：音刺碎裂 ⇒ 给猎手挂聋乱窗。按 dataId 找（prop 数据里写的是表 id，
+    // 不是实例 id），同场多只取离碎刺最近的那只——「她聋了」是这一只的六拍。
+    bus.on('world.propBroken', (p) => {
+      if (!p.deafTarget || !p.deafTicks) return
+      let best: Enemy | null = null
+      let bestD = Infinity
+      for (const en of this.enemies) {
+        if (en.data.id !== p.deafTarget || !en.alive) continue
+        const d = Math.hypot(en.pos.x - p.pos.x, en.pos.z - p.pos.z)
+        if (d < bestD) { bestD = d; best = en }
+      }
+      best?.applyDeaf(p.deafTicks)
     })
     bus.on('rhythm.beat', (b) => {
       const k = `${b.bar}:${b.beatInBar}`

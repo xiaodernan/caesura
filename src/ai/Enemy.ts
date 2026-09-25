@@ -92,6 +92,13 @@ export class Enemy {
    */
   frozenTicks = 0
   /**
+   * KI-023 聋乱窗（§15.3 音刺碎了）：>0 期间「听」这条通道整个关掉——hear/huntSound/sense 的
+   * 视觉与听觉分支全部短路。与 `stunTicks`（不能动）、`frozenTicks`（时间停）是三条语义：
+   * 聋乱里的她能动、时间在走，只是世界对她静音——这正是设计要的破势窗口。
+   * 时长来自 prop 数据的 `onBreakDeaf.deafTicks`（§55：代码不写第二份秒数）。
+   */
+  deafTicks = 0
+  /**
    * 「定调」光环加成（§14.6 叠唱）：由 AISystem 每 tick 从最近的 buffAura 来源写入，
    * null = 未被定调。倍率全部来自那份数据表，不在这里写死（§55）。
    */
@@ -195,6 +202,13 @@ export class Enemy {
   }
   get shellDmgMul(): number { return this.shellUp ? this.bossPhaseData!.shell!.dmgMul : 1 }
   get poiseImmune(): boolean { return this.shellUp && !!this.bossPhaseData?.shell?.immuneToPoise }
+  /**
+   * KI-023：此刻聋不聋。数据侧的 `ai.deaf`（天生无耳）与运行时的聋乱窗（音刺碎了）
+   * 走同一个出口——消费方只问这一格，不数来源。
+   */
+  get deaf(): boolean { return !!this.data.ai.deaf || this.deafTicks > 0 }
+  /** 音刺碎裂（PropSystem 广播 → AISystem 路由）把窗挂上来；取 max，两根刺同 tick 碎不叠时长 */
+  applyDeaf(ticks: number): void { this.deafTicks = Math.max(this.deafTicks, ticks) }
   /**
    * §11「震裂对装甲/晶体类效果 ×2」的载体：**本体材质**倍率（嘈壳的壳、漂调者喉咙里的晶）
    * 叠上**铸壳期**倍率（§15.1 那层壳同样是铸出来的）。它只放大震裂这一条状态的收益——
@@ -344,7 +358,7 @@ export class Enemy {
     const dx = p.x - this.pos.x, dz = p.z - this.pos.z
     const dist = Math.hypot(dx, dz)
     const ang = Math.abs(norm(Math.atan2(dx, dz) - this.yaw))
-    if (!ai.deaf && dist <= ai.vision.range && ang < (ai.vision.fovDeg * Math.PI / 180) / 2) {
+    if (!this.deaf && dist <= ai.vision.range && ang < (ai.vision.fovDeg * Math.PI / 180) / 2) {
       this.alertness = Math.min(100, this.alertness + 34 * 0.1)
       this.lastKnown = { ...p }
     } else if (dist <= ai.vibration.range && (playerIsMoving(player))) {
@@ -355,7 +369,7 @@ export class Enemy {
   }
 
   hear(src: { pos: Vec3; loudness: number }, tick: number): void {
-    if (!this.alive || this.data.ai.deaf) return
+    if (!this.alive || this.deaf) return
     const d = Math.hypot(src.pos.x - this.pos.x, src.pos.z - this.pos.z)
     if (d <= this.data.ai.hearing.range) {
       this.alertness = Math.min(100, this.alertness + src.loudness * 120)
@@ -394,7 +408,7 @@ export class Enemy {
    */
   private huntSound(src: { pos: Vec3; loudness: number }, tick: number): void {
     const h = this.data.ai.huntsSound
-    if (!h || !this.alive) return
+    if (!h || !this.alive || this.deaf) return
     if (src.loudness < h.minLoudness) return
     if (tick < this.blinkReadyTick) return
     const d = Math.hypot(src.pos.x - this.pos.x, src.pos.z - this.pos.z)
@@ -478,6 +492,9 @@ export class Enemy {
     this.syncBoss()
     this.stats.update(dt, tick)
     this.stateTick++
+    // KI-023 聋乱窗跟自己的时间走：冻结的那几十 tick 不计（时间没走，聋也没走）。
+    // 放在 frozen 短路之后——被休止斩按住的万籁不会把破势窗在静止里白白耗完。
+    if (this.deafTicks > 0) this.deafTicks--
     // §16 入场演出：先计时再判硬直——被玩家一记开场打晕不该把演出「省掉」，也不该让它无限延长
     this.tickIntro(rhythm)
     // §9 的守方那一半（KI-017 第二步）：接触被按住的几 tick 里硬直倒数也不走，但这一支仍然

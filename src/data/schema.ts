@@ -962,6 +962,29 @@ export interface SecretRef {
 }
 
 /**
+ * 可破坏场景物（KI-023，§15.3）：「可被攻击、有耐久、会发声」的环境实体。
+ * `Projectiles` 只管弹道、`EntityStats` 只管生物——props 是两者之外的第三类：
+ * 站在世界里、占一个命中靶位、有耐久计数，碎了有后果（钩子写在数据里）。
+ */
+export interface PropRef {
+  id: string
+  /** 品类决定形状/声音/被击中的反馈；白名单由 validator 钉，新种类随消费方一起落 */
+  kind: 'soundspine'
+  pos: Vec3
+  /** 击碎所需的重击次数（§15.3「重击 4 次击碎」；轻击只敲响不计数——裁决记在 Props.ts 头注释） */
+  hitsToBreak: number
+  /**
+   * 汇聚噪音半径（§15.3「世界噪音汇聚点」）：范围内的玩家声源**听上去发生在刺的位置**——
+   * 她会去刺那儿找你，而不是你的真实站位。这是「音刺在场=环境干扰器」的机制读法。
+   */
+  gatherRadius?: number
+  /** 击碎钩子：给谁聋多久（§15.3「碎了让她短暂聋乱 6s（破势窗口）」；360 tick = 6s @60Hz） */
+  onBreakDeaf?: { target: string; deafTicks: number }
+  /** 击碎那一句 HUD 播报（没有就不播）；文字归数据，运行时只负责念 */
+  breakLabel?: string
+}
+
+/**
  * 世界状态规则（narrative §7 的执行位，Phase 6-A）。
  * 一条规则＝「发生了 X ⇒ 立一个旗标（顺带说一声）」。旗标的读方早就在 `regions.json` 里等着
  * （区域解锁 / 交互物 requiresFlag / 隐藏房封存点），这里只补写方——之前它们一个写方都没有。
@@ -1028,6 +1051,8 @@ export interface RegionData {
   spawnGroups: SpawnGroup[]
   landmarks: Landmark[]
   interactables: InteractableRef[]
+  /** 可破坏场景物（KI-023）；不写 = 这个区域没有场地实体（多数区域如此） */
+  props?: PropRef[]
   music: RegionMusic
   /** higher loads first inside the same ring (technical-architecture §5.5) */
   streamingPriority: number
