@@ -87,12 +87,12 @@ function standAt(w: W, e: Enemy, pos: { x: number; y: number; z: number }): void
 describe('数据表：§15.2 第一阶的谱面与场地', () => {
   const d = registry.get<EnemyData>('en_hersil')
 
-  it('他是 Boss：私有 92BPM 4/4、两阶段（§24 的最低要求）、轮转选招', () => {
+  it('他是 Boss：私有 92BPM 4/4、三阶段（§15.2 的谱面到今天才齐）、轮转选招', () => {
     expect(d.archetype).toBe('boss')
     expect(d.hp).toBe(620)
     expect(d.boss?.bpm).toBe(92)
     expect(d.boss?.beatsPerBar).toBe(4)
-    expect(d.boss?.phases.map((p) => p.id)).toEqual(['registr', 'stealthebeat'])
+    expect(d.boss?.phases.map((p) => p.id)).toEqual(['registr', 'stealthebeat', 'finale'])
     expect(d.boss?.phases[1].belowHpFrac, '60% 转阶段并重置时钟').toBe(0.6)
     expect(d.ai.pickOrder, '「玩家可背谱」要求招式是轮转而不是抽签').toBe('cycle')
     expect(d.boss?.covers, '断音柱写在数据里').toBeTruthy()

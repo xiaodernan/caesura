@@ -31,6 +31,15 @@ export interface AttackFrame extends ActionStop {
    * 而"这一次已经赖掉一刀"是这一式的账。
    */
   hyperSpent?: boolean
+  /**
+   * 「读条走完」那一格要做的事（警戒广播、冲刺撞钟）不再用 `tick === startup` 判定：
+   * 任何让帧前进变快的来源（§14.6 定调光环、§15.2 Finale 的前摇倍率）都可能**一步跨过那个整数**，
+   * 于是同伴不会被叫醒、钟不会被撞响——而这两件都是玩家看得见的机制。
+   * 标记记在招式实例上，"一式一次"的语义没变，只是不再要求恰好落在那一帧。
+   */
+  startupDone?: boolean
+  /** 起手音的同一件事的另一半：`tick === 0` 也会被加速步过去（新写的式子从负 tick 起算时更是如此） */
+  sfxDone?: boolean
 }
 
 export const newAttack = (spec: AttackSpec, tick: number, noise?: boolean): AttackFrame => ({
@@ -283,6 +292,10 @@ export class Enemy {
     if (extra > 0) {
       this.speedAcc += extra
       while (this.speedAcc >= 1) { this.speedAcc -= 1; this.attack.tick++ }
+      // 加速不许跨过判定窗的第一格：那一格之后就是"打得到人"的时间，任何倍率都不该从里面扣。
+      // 定调光环同样受这条钳制管（它以前就能一步跳过 activeStart，只是没有人量过那条边界）。
+      if (this.attack.tick > f.activeStart && prev < f.activeStart) this.attack.tick = f.activeStart
+      // `prev` 用的是严格小于：钳过一次之后 prev 就等于 activeStart，写 <= 会把这一式永远钉在窗口第一格上
     }
     if (f.projectile) return base // 发射那一 tick 由 CombatManager 报，两处理齐会双倍响度
     if (prev < f.activeStart && this.attack.tick >= f.activeStart) {
@@ -685,6 +698,22 @@ export class Enemy {
     return this.bossPhaseData?.stealBeat ?? null
   }
   /**
+   * §15.2「（过载期）网格加速至 120BPM」：阶段可以换掉接管时的拍速，省略＝跟着 `boss.bpm`。
+   * 全场只有一个出口读它（`AISystem.syncClock`），所以入场演出的拍长、每小节的读条排程、
+   * 玩家的拍点判据都跟着同一格走——"管风琴过载"不是她一个人的事。
+   */
+  get clockBpm(): number | undefined { return this.bossPhaseData?.bpm ?? this.data.boss?.bpm }
+  get clockBeatsPerBar(): number { return this.bossPhaseData?.beatsPerBar ?? this.data.boss?.beatsPerBar ?? 4 }
+  /**
+   * §15.2「过载期其攻击前摇 -20%」：换算成"前摇段每 tick 多走几帧"（0.8 ⇒ 1.25×），
+   * 判定窗与收势一拍不短——更早落刀不该换来更长的破绽窗。走 §14.6 定调那台攒帧加速器，
+   * 因为帧表全是整数 tick 且 `===` 判定，不能把 tick 变成浮点。
+   */
+  get startupSpeedMul(): number {
+    const m = this.bossPhaseData?.startupMul
+    return m !== undefined && m > 0 && m < 1 && this.inStartup ? 1 / m : 1
+  }
+  /**
    * 「到点必须做的一件事」的两种来源：Boss 挂在阶段上（阶段会换），普通敌人挂在 ai 上。
    * §14.7 的敲钟自鸣与 §15.2 的换气拍因此共用一条排程器，而不是两套 if。
    */
@@ -771,23 +800,30 @@ export class Enemy {
 
   private progressAttack(dt: number, tick: number, player: PlayerController, rhythm: RhythmClock): void {
     if (!this.attack) return
-    const advanced = this.advanceAttackFrames(this.buff?.attackSpeedMul ?? 1)
+    const advanced = this.advanceAttackFrames((this.buff?.attackSpeedMul ?? 1) * this.startupSpeedMul)
     const f = this.attack.spec.frames
     // 赤线 telegraph 期间持续跟踪目标：线是「它会打哪」的诚实承诺，玩家要能看到被牵着
     if (f.projectile?.telegraph && this.attack.tick >= 0 && this.attack.tick < f.startup) {
       faceSlow(this, player.pos, 0.3)
     }
-    if (this.attack.tick === f.startup && this.pendingBroadcast) {
-      this.pendingBroadcast()
-      this.pendingBroadcast = null
-    }
-    // §15.1 撞钟机关：冲刺的落地帧（=读条走完那一帧）附近有别人才响得动的钟
     // 敌人的前摇音：audio.md §7.2 要求「听见起手」而不是「看见落点」——本作核心反馈通道，
     // 但此前 enemies.json 里那 8 套 sfx 字段根本没有发射方（只有玩家招式与弹道发射在响）。
-    if (this.attack.tick === 0 && f.sfx?.[0]) {
+    // 它排在"读条走完"那一格**之前**是有意的：撞钟会就地跳阶并把招式收掉（下面那句 return 就是为此）。
+    if (!this.attack.sfxDone && f.sfx?.[0]) {
+      this.attack.sfxDone = true
       bus.emit('audio.sfx', { key: f.sfx[0], pos: { ...this.pos }, gain: 0.55 + Math.min(0.3, (f.loudness ?? 4) / 20) })
     }
-    if (this.attack.tick === f.startup && f.flags?.includes('charge')) this.ringBells()
+    // 「读条走完」那一格的两件事（警戒广播、冲刺撞钟）共用一次守卫：判定从 `=== f.startup`
+    // 改成"过了那一格且没做过"，否则任何前摇加速都会一步跨过去 ⇒ 广播与撞钟一起静默。
+    if (this.attack.tick >= f.startup && !this.attack.startupDone) {
+      this.attack.startupDone = true
+      if (this.pendingBroadcast) {
+        this.pendingBroadcast()
+        this.pendingBroadcast = null
+      }
+      // §15.1 撞钟机关：冲刺的落地帧（=读条走完那一格）附近有别人才响得动的钟
+      if (f.flags?.includes('charge')) this.ringBells()
+    }
     // 撞钟可能就地跳阶（§15.1「撞 2 钟 = 提前进 P2」），而跳阶会把这一招收掉 ⇒ 别再用陈旧的帧表
     if (!this.attack) return
     // `advanced > 0`：被 §9 按住的那几 tick 不许往前蹭位移——"人定在原地滑行"是这套机制最容易

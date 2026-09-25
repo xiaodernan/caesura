@@ -60,11 +60,12 @@ export class AISystem {
   private syncClock(rhythm: RhythmClock): void {
     let boss: Enemy | null = null
     for (const e of this.enemies) {
-      if (!e.alive || !e.data.boss?.bpm) continue
+      if (!e.alive || e.clockBpm === undefined) continue
       if (e.state !== 'combat' && e.state !== 'chase') continue
       if (!boss || e.id < boss.id) boss = e // 同场多只时取稳定的一只（当前数据不会发生）
     }
-    if (boss) rhythm.overrideTo(boss.data.boss!.bpm!, boss.data.boss!.beatsPerBar ?? 4)
+    // 阶段可以改拍速（§15.2 Finale「网格加速至 120BPM」），所以读的是 `clockBpm` 而不是身份级的 `boss.bpm`
+    if (boss) rhythm.overrideTo(boss.clockBpm!, boss.clockBeatsPerBar)
     else rhythm.restoreHome()
   }
 

@@ -303,7 +303,8 @@ describe('换气拍：唯一能把网格抢回来的 0.35s', () => {
     e.bossPhase = 0
     e.attack = newAttack(spec, spec.frames.startup - 1)
     w.tick(1)
-    e.stats.damage(Math.round(e.stats.hpMax * 0.6))
+    // 落在 25%~60% 之间：这一条要量的是「重新进 P2 那一瞬的重置」，不是它掉到哪一阶
+    e.stats.damage(Math.round(e.stats.hpMax * 0.4))
     w.tick(2)
     expect(e.bossPhase, '血线再次低于 60% ⇒ 重新进 P2').toBe(1)
     w.off()

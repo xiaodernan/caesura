@@ -1646,6 +1646,20 @@
       "everyBars": 8,
       "attackId": "breath"
      }
+    },
+    {
+     "id": "finale",
+     "belowHpFrac": 0.25,
+     "attacks": [
+      "noBeatLunge",
+      "noBeatLunge2",
+      "noBeatLunge3",
+      "voiceChain",
+      "tutti"
+     ],
+     "bpm": 120,
+     "startupMul": 0.8,
+     "interruptOnHit": true
     }
    ],
    "covers": {

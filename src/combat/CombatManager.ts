@@ -446,9 +446,19 @@ export class CombatManager {
    * R3 那半句「可坠崖（营地石桥杀点）」因此留账（同上）。
    */
   private applyReactionTier(e: Enemy, s: EnemyStrike): void {
-    if (e.isBoss || e.stats.crumpleTicksLeft > 0) return
+    if (e.stats.crumpleTicksLeft > 0) return
     const tier = s.reaction ?? TIER_BY_KIND[s.kind]
     const row = reactionTier(tier)
+    if (e.isBoss) {
+      // Boss 的免疫本来是**身份级**的，§15.2 的 Finale 那一阶把它撤回来（「受击即断（R2 可打断全部招）」）：
+      // 带着 `interruptOnHit` 的阶段里，R2 与 R3 照常挂硬直并作废那一式，R1 仍然收不掉她
+      // （那一档连普通敌人的近战前摇都不打断）。**位移不撤**——她的走位是断音柱/撞钟这类
+      // 场地机关的输入，把她推出机关范围不是"DPS 竞速爽段"的意思。
+      if (e.bossPhaseData?.interruptOnHit && tier !== 'R1' && row.stunTicks > 0) {
+        e.stunTicks = Math.max(e.stunTicks, row.stunTicks)
+      }
+      return
+    }
     if (tier !== 'R1' && row.stunTicks > 0) e.stunTicks = Math.max(e.stunTicks, row.stunTicks)
     // R1 不迁移位置：**颤身（Finch）这一档的名字说的就是原地发抖**，"击退（Knockback）"才是 R3。
     // 灰盒里没有 §8 R3 那格原文要求的"滑行摩擦衰减"，于是每 hit 0.2m 会一路累加成一笔距离税——

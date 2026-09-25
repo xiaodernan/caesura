@@ -111,7 +111,7 @@ describe('§16：三个 Boss 的每一阶都要在 90 秒等效承伤之内', ()
     const ost = phases('en_ostlara')
     const her = phases('en_hersil')
     expect(ost, '奥斯塔拉三阶（§15.1）').toHaveLength(3)
-    expect(her, '恩希尔两阶已落（§15.2 的 Finale 未落，见 KI-022）').toHaveLength(2)
+    expect(her, '恩希尔三阶已落（§15.2 的 Finale 由 KI-022① 补上）').toHaveLength(3)
     for (const list of [ost, her]) {
       for (let i = 1; i < list.length; i++) {
         expect(list[i].belowHpFrac, '每一阶都由血线进入').toBeTypeOf('number')

@@ -940,6 +940,13 @@ function validateEnemies(lootIds) {
             else phaseIds.add(ph.id)
             if (!isArr(ph.attacks) || ph.attacks.length === 0) report.error(file, `${pw}.attacks`, '阶段招式白名单必须是非空数组')
             if (ph.belowHpFrac !== undefined) report.num(file, `${pw}.belowHpFrac`, ph.belowHpFrac, { min: 0, max: 1, name: 'belowHpFrac' })
+            // 阶段级拍速（§15.2 Finale「网格加速至 120BPM」）：全场网格被它接管，所以卡在能弹人的区间外
+            if (ph.bpm !== undefined) report.num(file, `${pw}.bpm`, ph.bpm, { min: 20, max: 300, name: 'bpm' })
+            if (ph.beatsPerBar !== undefined) report.num(file, `${pw}.beatsPerBar`, ph.beatsPerBar, { min: 1, int: true, name: 'beatsPerBar' })
+            // 前摇倍率必须是"缩短"：≥1 那一侧的加速已经有主人（§14.6 定调光环的 attackSpeedMul），
+            // 两处都能加速就会互相掩盖，而 §15.2 那句说的是"前摇 -20%"。
+            if (ph.startupMul !== undefined) report.num(file, `${pw}.startupMul`, ph.startupMul, { min: 0.05, max: 0.99, name: 'startupMul' })
+            if (ph.interruptOnHit !== undefined && typeof ph.interruptOnHit !== 'boolean') report.error(file, `${pw}.interruptOnHit`, '必须是布尔（§15.2「受击即断」）')
             if (ph.shell !== undefined) {
               report.sub(file, `${pw}.shell`, ph.shell, { dmgMul: { min: 0 }, fissureMul: { min: 0, optional: true } })
               if (isObj(ph.shell) && typeof ph.shell.immuneToPoise !== 'boolean') report.error(file, `${pw}.shell.immuneToPoise`, '必须是布尔')
