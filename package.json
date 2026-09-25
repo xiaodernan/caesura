@@ -9,10 +9,11 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "tsc --noEmit",
-    "test": "vitest run --pool=forks",
-    "test:flow": "vitest run --pool=forks tests/flow",
+    "test": "node scripts/test.mjs",
+    "test:flow": "node scripts/test.mjs tests/flow",
     "validate:data": "node scripts/validate-data.mjs",
-    "check": "npm run lint && npm run validate:data && npm run test"
+    "check": "npm run lint && npm run validate:data && npm run test",
+    "test:raw": "vitest run --pool=forks"
   },
   "dependencies": {
     "three": "^0.186.0"
