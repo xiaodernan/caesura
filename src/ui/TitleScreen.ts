@@ -1,6 +1,8 @@
 import { registry } from '@/core/Registry'
 import { ATTR_KEYS } from '@/rpg/Progression'
 import { allGearItems } from '@/rpg/Loot'
+import type { SlotCard } from '@/save/Slots'
+import { SAVE_CARD_CSS, saveCardHtml, saveCards, type SaveCardView } from './SaveSlots'
 import type { OriginData, ProgressionData } from '@/data/schema'
 
 /**
@@ -60,41 +62,72 @@ const CSS = `
 #title .act{padding:.8vh 2.4vh;border:1px solid #3d372e;cursor:pointer;color:#b7ab95}
 #title .act.sel{border-color:#ffb86b;color:#ffb86b}
 #title .hint{font-size:1.5vh;color:#5f584c}
+#title .slot.sel .scard{border-color:#c9b458;box-shadow:0 0 2.4vh rgba(201,180,88,.35)}
+#title .slot .scard{cursor:default}
+/* 摘要卡的基准字号：卡片那一套是 em（见 SaveSlots.SAVE_CARD_CSS），尺度由宿主给 */
+#title .scards{font-size:1.7vh}
 `
 
 export interface TitleHooks {
-  /** 选定出身开新弦：由 main.ts 调 `rpg.restring(id)` + 开环 */
+  /** 选定出身开新弦：由 main.ts 调 `rpg.restring(id)` + 开环（确认屏之后才会走到） */
   onNew: (originId: string) => void
-  /** 续档（只有存在自动存档时才可能走到） */
-  onContinue: () => void
+  /** 续档：读的是**玩家在这屏上选中的那一格**，不是写死的 autosave（KI-025②） */
+  onContinue: (slot: string) => void
+  /** 存档名册（`save/Slots.ts`）：卡面从它现读，标题屏自己不碰存储键位 */
+  listSlots: () => Promise<SlotCard[]>
 }
 
-type Focus = { kind: 'card' | 'continue'; index: number }
+type Mode = 'string' | 'slots' | 'confirm'
+
+type Focus = { kind: 'card' | 'continue' | 'slot' | 'new'; index: number }
 
 export class TitleScreen {
   private readonly root: HTMLDivElement
   private focus: Focus = { kind: 'card', index: 0 }
   private readonly cards: TitleCard[]
+  private mode: Mode = 'string'
+  private slotViews: SaveCardView[] = []
+  private slotsLoaded = false
+  /** 确认屏上待开的那根弦：只有"确认"才把它交出去 */
+  private pendingOrigin: string | null = null
   private readonly onKey = (e: KeyboardEvent): void => { this.key(e) }
 
-  constructor(private readonly hooks: TitleHooks, hasSave: boolean, preselectId?: string) {
+  constructor(private readonly hooks: TitleHooks, preselectId?: string) {
     this.cards = titleCards()
     const pre = this.cards.findIndex((c) => c.id === preselectId)
     if (pre >= 0) this.focus = { kind: 'card', index: pre }
     const style = document.createElement('style')
-    style.textContent = CSS
+    style.textContent = CSS + SAVE_CARD_CSS
     document.head.appendChild(style)
     this.root = document.createElement('div')
     this.root.id = 'title'
     document.body.appendChild(this.root)
-    this.root.dataset.hasSave = hasSave ? '1' : '0'
     this.root.addEventListener('click', (e) => this.click(e))
     window.addEventListener('keydown', this.onKey)
-    this.render()
     this.show()
+    this.render() // 先画一屏（hint 是"正在查看本机存档…"），名册回来再换：构造即空屏会闪一下白
+    // 「有没有档可续」是问名册，不是问主存位的裸 key：以前那种问法看不见恢复位，
+    // 于是"卡上说没有可续的存档"与"点 load 其实读得出来"能同时成立（一次假账）。
+    void (async () => {
+      this.slotViews = saveCards(await this.hooks.listSlots())
+      this.slotsLoaded = true
+      this.render()
+    })()
   }
 
   get isOpen(): boolean { return this.root.classList.contains('on') }
+
+  /** 有档可读 = 四格里至少一格是 ok / restored（空槽与坏档都不算） */
+  get hasSaveable(): boolean { return this.slotsLoaded && this.slotViews.some((v) => v.selectable) }
+
+  /** 有没有"摆着却读不出来"的档：这不影响能不能续，但一定要说出来（§78：坏消息也是消息） */
+  get hasBlocked(): boolean { return this.slotViews.some((v) => v.state === 'blocked') }
+
+  /**
+   * 能不能进挑档屏：**有可读的档**（去续）或**有读不出来的档**（去看原因）都算。
+   * 只在前者才给进的话，"读不出来"这句话就成了死路——屏上告诉你坏了，又不给看坏在哪。
+   */
+  private get canBrowseSlots(): boolean { return this.hasSaveable || this.hasBlocked }
 
   show(): void { this.root.classList.add('on') }
 
@@ -104,24 +137,75 @@ export class TitleScreen {
     this.root.remove()
   }
 
-  /** 程序化选新弦（live 探针与测试走这条，不依赖键盘事件真的抵达） */
-  pickNew(originId: string): void { this.hooks.onNew(originId) }
+  /** 直接进某一段（测试与 live 探针用；不伪装成键盘事件，也不绕过确认屏） */
+  async goto(mode: Mode): Promise<void> {
+    if (mode === 'slots' && !this.slotsLoaded) await new Promise((r) => setTimeout(r, 0))
+    this.mode = mode
+    if (mode === 'slots') this.focus = { kind: 'slot', index: 0 }
+    this.render()
+  }
+
+  private slots(): SaveCardView[] { return this.slotViews.filter((v) => v.selectable) }
+
+  private chooseNew(originId: string): void {
+    // 名册还没回来 ⇒ 此刻**不知道**有没有档要保护。这时候开新弦等于赌"大概没有吧"，
+    // 而赌输的代价是玩家下一次休息把自动槽写掉——真丢档。所以这一律不动，等读数到齐。
+    if (!this.slotsLoaded) { this.render(); return }
+    if (!this.hasSaveable) { this.hooks.onNew(originId); return }
+    this.pendingOrigin = originId
+    this.mode = 'confirm'
+    // 焦点落在"取消"：破坏性动作的默认项必须是安全的那一个（需求 §45 的防误删）
+    this.focus = { kind: 'new', index: 0 }
+    this.render()
+  }
 
   private key(e: KeyboardEvent): void {
     if (!this.isOpen) return
-    const hasSave = this.root.dataset.hasSave === '1'
     const n = this.cards.length
-    switch (e.code) {
-      case 'ArrowLeft': this.focus = { kind: 'card', index: (this.focus.index + n - 1) % n }; break
-      case 'ArrowRight': this.focus = { kind: 'card', index: (this.focus.index + 1) % n }; break
-      case 'ArrowDown': case 'ArrowUp':
-        if (hasSave) this.focus = this.focus.kind === 'card' ? { kind: 'continue', index: 0 } : { kind: 'card', index: this.focus.index }
+    switch (this.mode) {
+      case 'string':
+        switch (e.code) {
+          case 'ArrowLeft': this.focus = { kind: 'card', index: (this.focus.index + n - 1) % n }; break
+          case 'ArrowRight': this.focus = { kind: 'card', index: (this.focus.index + 1) % n }; break
+          case 'ArrowDown': case 'ArrowUp':
+            if (this.canBrowseSlots) this.focus = { kind: 'continue', index: 0 }
+            else break
+            break
+          case 'Enter':
+            if (this.focus.kind === 'card') this.chooseNew(this.cards[this.focus.index].id)
+            else if (this.canBrowseSlots) { this.mode = 'slots'; this.focus = { kind: 'slot', index: 0 } }
+            break
+          default: return
+        }
         break
-      case 'Enter':
-        if (this.focus.kind === 'card') this.hooks.onNew(this.cards[this.focus.index].id)
-        else if (hasSave) this.hooks.onContinue()
+      case 'slots': {
+        // 焦点只在**可读的那几格**里走；一格都不可读（全是坏档）时这一屏只用来读原因，← 回去
+        const m = this.slots().length
+        switch (e.code) {
+          case 'ArrowUp': if (m) this.focus = { kind: 'slot', index: (this.focus.index + m - 1) % m }; break
+          case 'ArrowDown': if (m) this.focus = { kind: 'slot', index: (this.focus.index + 1) % m }; break
+          case 'Enter': {
+            const v = this.slots()[this.focus.index]
+            if (v) this.hooks.onContinue(v.slot)
+            return
+          }
+          case 'ArrowLeft': case 'Escape': this.mode = 'string'; this.focus = { kind: 'card', index: 0 }; break
+          default: return
+        }
         break
-      default: return
+      }
+      case 'confirm':
+        switch (e.code) {
+          case 'ArrowLeft': this.focus = { kind: 'new', index: 0 }; break
+          case 'ArrowRight': this.focus = { kind: 'new', index: 1 }; break
+          case 'Enter':
+            if (this.focus.index === 1 && this.pendingOrigin) { const id = this.pendingOrigin; this.pendingOrigin = null; this.hooks.onNew(id) }
+            else { this.mode = 'string'; this.pendingOrigin = null }
+            break
+          case 'Escape': this.mode = 'string'; this.pendingOrigin = null; break
+          default: return
+        }
+        break
     }
     e.preventDefault()
     this.render()
@@ -129,14 +213,19 @@ export class TitleScreen {
 
   private click(e: MouseEvent): void {
     const el = (e.target as HTMLElement).closest('[data-act]') as HTMLElement | null
-    if (!el) return
+    if (!el || el.dataset.disabled) return
     const act = el.dataset.act!
-    if (act === 'card') this.hooks.onNew(el.dataset.arg!)
-    else if (act === 'continue') this.hooks.onContinue()
+    if (act === 'card') this.chooseNew(el.dataset.arg!)
+    else if (act === 'continue') { this.mode = 'slots'; this.focus = { kind: 'slot', index: 0 } }
+    else if (act === 'load') this.hooks.onContinue(el.dataset.arg!)
+    else if (act === 'back') { this.mode = 'string'; this.focus = { kind: 'card', index: 0 } }
+    else if (act === 'new-yes' && this.pendingOrigin) { const id = this.pendingOrigin; this.pendingOrigin = null; this.hooks.onNew(id) }
+    else if (act === 'new-no') { this.mode = 'string'; this.pendingOrigin = null }
+    else return
+    this.render()
   }
 
-  private render(): void {
-    const hasSave = this.root.dataset.hasSave === '1'
+  private renderString(): string {
     const cards = this.cards.map((c, i) => `
       <div class="card${this.focus.kind === 'card' && this.focus.index === i ? ' sel' : ''}" data-act="card" data-arg="${c.id}">
         <div class="nm">${c.name}</div>
@@ -145,14 +234,53 @@ export class TitleScreen {
         ${c.passive ? `<div class="ps">被动 · ${c.passive}</div>` : ''}
         <div class="at">${c.attrs.map((a) => `${a.label} ${a.value}`).join('<br>')}</div>
       </div>`).join('')
-    const cont = hasSave
-      ? `<div class="act${this.focus.kind === 'continue' ? ' sel' : ''}" data-act="continue">续 · 回到上次调音桩</div>`
+    const cont = this.canBrowseSlots
+      ? `<div class="act${this.focus.kind === 'continue' ? ' sel' : ''}" data-act="continue">${this.hasSaveable ? '续 · 挑一格回到上次调音桩' : '查看 · 本机有读不出来的存档'}</div>`
       : ''
-    this.root.innerHTML = `
+    const hint = !this.slotsLoaded ? '正在查看本机存档…'
+      : this.hasSaveable ? '←/→ 选弦 · Enter 定弦 · ↓ 挑存档'
+        // 「没有可续的档」与「有档但读不出来」是两件事：后者要说出来，否则玩家以为自己很干净，
+        // 下一次休息就把那一格覆盖了。原因的原话在卡上（挑档屏/存档页都看得到）。
+        : this.hasBlocked ? '本机有存档，但读不出来 · ↓ 看是哪一格' : '本机没有可续的存档'
+    return `
       <h1>止音纪元</h1>
       <div class="sub">CAESURA · 为她定一根弦</div>
       <div class="cards">${cards}</div>
       <div class="acts">${cont}</div>
-      <div class="hint">←/→ 选弦 · Enter 定弦 · ${hasSave ? '↓ 续档' : '本机没有可续的存档'}</div>`
+      <div class="hint">${hint}</div>`
+  }
+
+  private renderSlots(): string {
+    const pick = this.slots()
+    const html = this.slotViews.map((v) => {
+      const i = pick.findIndex((p) => p.slot === v.slot)
+      return `<div class="slot${i >= 0 && i === this.focus.index ? ' sel' : ''}">${saveCardHtml(v, ['load'])}</div>`
+    }).join('')
+    return `
+      <h1>止音纪元</h1>
+      <div class="sub">挑一格 · Enter 读取 · ← 返回定弦</div>
+      <div class="scards">${html}</div>
+      <div class="acts"><div class="act" data-act="back">返回定弦</div></div>`
+  }
+
+  private renderConfirm(): string {
+    const v = this.slotViews.find((x) => x.selectable)
+    const line = v ? `${v.label} · ${v.lines.join(' · ')}` : ''
+    return `
+      <h1>开一根新弦</h1>
+      <div class="sub">本机已有可读的存档。开新弦不会立刻动它，但下一次休息会把自动槽写掉。</div>
+      <div class="sub">${line}</div>
+      <div class="acts">
+        <div class="act${this.focus.index === 0 ? ' sel' : ''}" data-act="new-no">取消 · 回去挑存档</div>
+        <div class="act${this.focus.index === 1 ? ' sel' : ''}" data-act="new-yes">确认开新弦</div>
+      </div>
+      <div class="hint">←/→ 选 · Enter 确认</div>`
+  }
+
+  private render(): void {
+    this.root.innerHTML =
+      this.mode === 'slots' ? this.renderSlots()
+        : this.mode === 'confirm' ? this.renderConfirm()
+          : this.renderString()
   }
 }

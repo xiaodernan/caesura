@@ -186,7 +186,9 @@ src/
                        → JSON 明文写 localStorage(主) + IndexedDB(备份)
                        ※ 原设计的 LZString 压缩未引入：那要多一个依赖，而这份存档 <2KB，
                          收益远小于成本（需求「零新增依赖优先」）。差额记在 KI-025
-    Checkpoint.ts      autosave 触发器（调音桩休息/Boss 阶段切换/区域首次进入）、槽位×3
+    Checkpoint.ts      autosave 触发器（调音桩休息/Boss 阶段切换/区域首次进入）
+    Slots.ts           槽名册：自动槽 + 手动槽×3（需求 §45），每格一张摘要卡（四态 + 坏因原话 + 恢复来源）；
+                       只读不改世界，与 load() 共用 Serializer.readSlot 那一条候选顺序
     Integrity.ts       防损坏：双写（slot→slot.tmp 写完后 rename 语义双键位交换）、
                        CRC32 校验和、magic+schemaVersion 头；读档校验失败→自动回退
                        上一份并提示（需求 §45）
@@ -706,9 +708,9 @@ ID 规则：KI-/TD-/PF-/MA- 前缀 + 4 位序号（例 TD-0007）。
   要么新档已经写完；读序是 主 → tmp → prev → 备份，逐个过校验，取第一份合格的并在日志里说清是哪一份。
   CRC32 只保证「没被截断/改坏」，不是密码学校验（本地单用户存档不需要后者，写在这免得被当成安全边界）。
 - **迁移链禁止「读旧档直接崩」**（Migration）：`registerMigration(from, fn)` 逐级升到当前版本，缺步骤抛
-  `MigrationError` 并由调用方回退到上一份。当前 **v1→…→v9 八步都是真历史**（v2=成长/背包，v3=失谐归零，
+  `MigrationError` 并由调用方回退到上一份。当前 **v1→…→v10 九步都是真历史**（v2=成长/背包，v3=失谐归零，
   v4=谱册空谱，v5=逐条保底计数 + 掷骰位置，v6=`usedInteractables`，v7=`quest` 块，v8=`brokenProps`，
-  v9=`rpg.movements.passives` 被动栏），没有为了展示机制而虚构一步；每一步都按 §78 的口径写**空**
+  v9=`rpg.movements.passives` 被动栏，v10=`savedAt` 存档时刻），没有为了展示机制而虚构一步；每一步都按 §78 的口径写**空**
   （没发生过的事写空表/空集/null，不替老档补一份"好像做过"的进度）。**读侧白名单 `READABLE_VERSIONS = [1..SAVE_VERSION]`（Phase 5-C1 修的真 bug）**：
   这里曾只写 `[SAVE_VERSION]`，于是 v1/v2 老档在 `unwrap` 那一步就被当坏档拒掉——迁移链写得再对也永远进不去，
   玩家表现为「有档却说没有」。现在 `save.test.ts` 有一条**从磁盘放一份 v1 档**、走 `load()` 全路径的可达性断言。
@@ -732,8 +734,52 @@ ID 规则：KI-/TD-/PF-/MA- 前缀 + 4 位序号（例 TD-0007）。
   `snapshot.rpg.movements = {lit[3], levels{全音符斩:2}, slots[2]}` 且信封 `magic/CAESURA-SAVE + schemaVersion 4 + crc(number)`
   → **不带 `?fresh` 重新导航** ⇒ 日志 `load.ok autosave v4`、音级/点亮/等级/槽位全部回来、
   `player.skills` 重新绑上 R（冷却**不**入档，读档不白送一次冷却），按 R 真的出手。0 error 0 warn。
-- **未落（登记 KI-025）**：三槽位与「继续冒险/新游戏/存档摘要卡」的存档 UI（ui-ux §8）还没有界面层，
-  现在是单 autosave 槽 + `?fresh=1`；quest/NPC/settings 字段等各自 Phase 落地时补迁移（成长与背包已入 v2）。
+### 9.5 KI-025①②：存档槽名册与两屏存档 UI（2026-09-26）
+
+§9 那套读写编排此前只有一个入口（开局自动读 `autosave`、三个时机自动写），玩家侧没有"哪一格"这个概念。
+KI-025 把它补齐成**名册 + 两屏**，架构上留下四条值得钉住的取舍：
+
+- **一条候选顺序，一个主人**：`slotCandidates(primary, backup, slot)` = 主键位 → `.tmp` → `.prev` → 备份位，
+  是全仓库唯一的读档顺序；`readSlot` 是它上面唯一的纯读通道（不发事件、不改世界），
+  `SaveGame.load`（应用+播报）与 `SlotRoster`（只查四格）都是它的调用方。
+  动机不是审美：摘要卡要回答"这一格到底能不能读"，而**两条各写一份的候选顺序一定会飘**，
+  飘出来的表现是"卡上写可读取、点下去读到别的格子"——那是玩家眼前的假账，不是内部不一致。
+- **名册不许有副作用**：`SlotRoster.card()` 逐格问四遍，问的是存储不是内存；写/删之后面板**重新取名册**再画，
+  卡上的数字来自磁盘而不是"我应该写过了"。因此 v10 的 `savedAt` 必须由注入时钟给（`SaveWorld.now?`），
+  逻辑层不许自己读 `Date`——否则每次跑测都得到不同的档，摘要卡"时间来自表而不是代码"这条也没有证人。
+- **空 ≠ 坏，缺格留空**：`SlotCard.state` 四态 `empty/ok/restored/blocked`，只有 `blocked` 带 `problem` 原话
+  （四种坏因各一条：parse/magic/version/crc）；`restored` 必带来源键位并区分主机与备份机（`slot1.prev` vs `slot1@backup`）。
+  v1 老档的 rank/出身、v9 老档的时刻一律显示"未知/未记录"，不拿运行时基线或读档那一刻冒充。
+- **能做什么由站在哪儿决定**：读档只住在标题屏，写入/删除只住在调音桩面板第六页；面板拿到的是
+  三个闭包（`list/write/erase`），既不认识存储键位也不认识 `SlotRoster` 类——位置口径要能分开，
+  靠的是把"动作"而不是"存储"注入 UI。破坏性动作两步落盘，第一下只记待确认并写明后果。
+
+**一条只可能由实机抓到的 bug（§77 这一腿存在的理由）**：`IdbStore.get` 对**缺失键**是真 IDB 的
+success + `result === undefined`，而 `KvStore` 合同与 `readSlot` 判的是 `=== null`，
+于是三个从没写过的槽在浏览器里全报 `blocked / parse`（`unwrap(undefined)` 把空槽当坏 JSON）。
+`MapStore` 替身恰好返回 `null`，所以整条 headless 门禁（当时 72 文件 / 768 用例）对此完全无感——
+**假件照抄了我们希望真库有的脾气，而不是真库实际的脾气**。修法分两层：适配器把 `undefined` 归一成 `null`
+（合同由适配器守住），读侧再兜一层（一台不守合同的存储也不许让空格子背"损坏"的指控）；
+并给 `IdbStore` 补了一台**按真 IDB 语义说话**的假库（缺失键 `undefined`、对象仓库未建则同步抛 NotFoundError）。
+反向实测三探：只撤适配器 ⇒ 恰红 1；只撤读侧 ⇒ 恰红 1；两刀同撤 ⇒ 红 3 且其中一条原样复现实机症状
+（`['blocked','blocked',…]` 对上 `['empty',…]`）——两层的必要性由此不是说法而是读数。
+
+覆盖：`tests/unit/slots.test.ts` 21 条（格子形状 / 时刻只在注入时才有 / 恢复位带名字 / "一条候选顺序两处对账" /
+删除连恢复位一起删 / 写满三格内容互不串 / IDB 形状 4 条）+ `tests/unit/save-ui.test.ts` 13 条
+（**真 `SaveGame` 写进真 `MapStore`、再由真 `SlotRoster` 读回**，卡面不许有编出来的字）+
+`tests/unit/title-screen.test.ts` 12 条 + `tests/unit/stakerite.test.ts` 存档页 10 条。
+实机（127.0.0.1:5199，真 `MouseEvent`/`KeyboardEvent`）：修复前四格 `[ok, blocked/parse ×3]`、修复后如实；
+面板点第一下时 localStorage 里 `slot1` 一个键都没有、点确认后主机与 IDB 备份位同时出现；
+删除后两处都清干净、`ui.notify` 收到「已写入 槽 I」「已删除 槽 I」；标题屏塞一封 crc 不对的信 ⇒
+那张卡"读不出来 · 存档文件已损坏"且读取按钮置灰、焦点轮不到它，只有可读的自动档拿焦点；
+点"读取" ⇒ hp 120→124（档里的数）、`#title` DOM 移除、日志 `load.ok autosave v10`、0 error。
+视口观感（卡面好不好看、排版/热区手感）照旧 ENV 缺（KI-010/027 同因）。
+
+- **收尾时删掉的一条自己造的债**：`SlotRoster.firstFreeManual()` 与 `isManualSlot()` 落完 UI 之后**没有生产消费者**
+  （"存到哪一格"是玩家按下去的决定，不该由逻辑层猜；"自动槽不可写"的真主人是 `ui/SaveSlots.ts` 里那句 `v.kind === 'manual'`）。
+  按 §55「不留没有消费者的入口」删除，挂在这两个 API 上的断言改钉到真主人（候选名单不含自动槽 + 面板的置灰标记）。
+- **未落**：quest/NPC/settings 字段等各自 Phase 落地时继续往迁移链上加步（成长/背包/谱册/世界/任务/被动/时刻均已入档，**设置还没有**，见 KI-026）；
+  LZString 压缩仍未引入（实测信封 1.2KB，零新增依赖优先）。
 ## 10. RPG 成长系统（需求 §18/§25/§26/§55/§57）— Phase 5-B 已实现
 
 模块边界（`src/rpg/`，**文件之间互不越界**，全部零 three、零 DOM）：
@@ -804,10 +850,14 @@ weaponDamageMul / weaponId / weight / overloaded`。
 ### 10.5 UI 分工
 
 HUD（canvas）只多了一个**音级数字**（§42：不在战斗视野里堆数字，遗响条属于面板）。
-调音桩面板（`src/ui/Stakerite.ts`，DOM overlay）承载四页：调音 / 装备 / 行囊 / **谱册**（Phase 5-C2），
+调音桩面板（`src/ui/Stakerite.ts`，DOM overlay）承载六页：调音 / 装备 / 行囊 / **谱册**（Phase 5-C2）/
+**交易**（KI-055）/ **存档**（KI-025②），
 **只在调音桩前可开**（`interact.focus().kind === 'checkpoint'`），打开即 `time.paused = true` + `input.enabled = false`。
 面板只调 `RpgRuntime` 的公开方法，生效后回调 `onApply()` 由 main.ts 统一重算——
-面板自己不写第二份"应用变更"的逻辑。方向键在四页间**环状**切换（第四页再往右回第一页）。
+面板自己不写第二份"应用变更"的逻辑。方向键在六页间**环状**切换（最后一页再往右回第一页）。
+**存档那一页是这一段的例外**：它一个 `RpgRuntime` 方法都不调（写入/删除走构造时注入的三个闭包，
+面板既不认识存储键位也不认识 `SlotRoster`），而且存档动作**不叫 `onApply`**——那一页不重算任何派生值，
+这条边界有断言钉着（`hooks.onApply` 在"点写入 → 点确认"前后长度相等）。
 
 ### 10.6 覆盖与实机
 

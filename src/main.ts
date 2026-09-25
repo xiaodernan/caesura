@@ -34,6 +34,7 @@ import { TitleScreen } from '@/ui/TitleScreen'
 import { DialogueBox } from '@/ui/DialogueBox'
 import { CombatDebugger } from '@/tools/CombatDebugger'
 import { SaveGame, LocalStore, IdbStore } from '@/save/Serializer'
+import { SlotRoster } from '@/save/Slots'
 import { Checkpoints } from '@/save/Checkpoint'
 import { WorldState } from '@/quest/WorldState'
 import { Quests } from '@/quest/Quests'
@@ -116,6 +117,11 @@ const panel = new Stakerite(rpg, {
     if (eff.corruption < 0) player.corruption.purge(-eff.corruption)
     if (eff.heal > 0 || eff.corruption < 0) player.publishStats()
   }
+}, {
+  // 存档页（KI-025②）：面板只拿到"读名册/写这一格/删这一格"三个动作，键位与落盘都不归它管
+  list: () => saveRoster.list(),
+  write: (slot) => saves.save(slot),
+  erase: (slot) => saves.erase(slot)
 })
 /**
  * 对话框（Phase 6-B）。它只回吐玩家的选择，效果由 `showTurn` → `applyDialogueEffects` 统一落盘：
@@ -346,7 +352,16 @@ bus.on('log', (l) => console.info(`[caesura:${l.level}] ${l.msg}`))
  */
 const savePrimary = new LocalStore('caesura.save.', localStorage)
 const saveBackup = typeof indexedDB === 'undefined' ? null : new IdbStore('caesura-save')
-const saves = new SaveGame({ player, streaming, spawner, clock: rhythm, time, rpg, interact, props, quests }, savePrimary, saveBackup)
+/**
+ * 存档时刻的墙钟只在这里给（KI-025①）：逻辑层不许自己读 `Date`，否则每次跑测都会写出不同的档，
+ * 而"摘要卡上的时间是从外面带进来的"这条也就没有证人。
+ */
+const saves = new SaveGame(
+  { player, streaming, spawner, clock: rhythm, time, rpg, interact, props, quests, now: () => Date.now() },
+  savePrimary, saveBackup
+)
+/** 摘要卡的名册（KI-025）：标题屏与调音桩面板都从它读"这几格是什么、能不能读" */
+const saveRoster = new SlotRoster(savePrimary, saveBackup)
 const checkpoints = new Checkpoints(saves)
 // 用的是哪颗种子/哪根弦写在控制台：QA 要复现某一串掉落，第一句问的就是"你那局什么种子"。
 // 播报挪到 startRun 之前由 logRunOrigin() 发——标题屏定弦之后才有"哪根弦"可言。
@@ -366,10 +381,10 @@ addEventListener('pagehide', () => checkpoints.request('quit'))
 /** 启动即尝试回到最近的自动存档（?fresh=1 强制开新档） */
 let booted = false
 
-async function startRun(loadSave: boolean): Promise<void> {
+async function startRun(slot: string | null): Promise<void> {
   // 「本局第一次」的台账按局清一次：读档/新开局都是一次新的解释机会（需求 §19）
   glossary.forgetAll()
-  const snap = loadSave ? await saves.load('autosave') : null
+  const snap = slot ? await saves.load(slot) : null
   if (snap) {
     streaming.teleport(time.tick, player.pos)
     player.floorY = surface.floorAt(player.pos)?.y ?? 0
@@ -389,9 +404,9 @@ function logRunOrigin(): void {
 }
 
 /**
- * 开场「定弦」（KI-031② / §2.2）。正常启动在 `loop.start()` 之前把世界按住：标题屏决定
- * 用哪根弦，`rpg.restring` 把选择落进成长层，续档按钮只在自动存档**确实存在**时才给
- * （探测读的是主存位的裸 key——不经 `load`，免得"看一眼有没有"先把存档 apply 了一遍）。
+ * 开场「定弦」（KI-031② / §2.2）+ 存档摘要屏（KI-025②）。正常启动在 `loop.start()` 之前把世界按住：
+ * 标题屏决定用哪根弦、以及**读哪一格**（如果有可读的）。"有没有档可续"这一问交给 `SlotRoster`，
+ * 不再自己探主存位的裸 key——那种探法看不见 `.prev` 与备份位，会把"其实读得出来"报成"没有档"。
  * `?fresh=1` 是给无头探索与 live 探针铺好的通道：不立标题屏，直接按 `?origin=` 那根弦开跑——
  * 既有探针配方一条不改。
  */
@@ -399,29 +414,27 @@ let title: TitleScreen | null = null
 const freshBoot = params.has('fresh')
 if (freshBoot) {
   logRunOrigin()
-  void startRun(false)
+  void startRun(null)
 } else {
-  void (async () => {
-    const hasSave = (await savePrimary.get('autosave')) !== null
-    title = new TitleScreen({
-      onNew: (id) => {
-        const t = title as TitleScreen
-        t.dispose()
-        if (id !== rpg.prog.originId) rpg.restring(id)
-        logRunOrigin()
-        void startRun(false)
-      },
-      onContinue: () => {
-        const t = title as TitleScreen
-        t.dispose()
-        logRunOrigin()
-        void startRun(true)
-      }
-    }, hasSave, originId)
-  })()
+  title = new TitleScreen({
+    onNew: (id) => {
+      const t = title as TitleScreen
+      t.dispose()
+      if (id !== rpg.prog.originId) rpg.restring(id)
+      logRunOrigin()
+      void startRun(null)
+    },
+    onContinue: (slot) => {
+      const t = title as TitleScreen
+      t.dispose()
+      logRunOrigin()
+      void startRun(slot)
+    },
+    listSlots: () => saveRoster.list()
+  }, originId)
 }
 
-;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, interact, props, hud, spawner, nodes, worldState, projectileVis, actors: visuals, bossArena, saves, checkpoints, rpg, settlement, panel, setPanelOpen, quests, dialogueEngine, dialogueBox, openDialogue, refreshRpg, saveNow: () => saves.save('autosave'), get title() { return title } }
+;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, interact, props, hud, spawner, nodes, worldState, projectileVis, actors: visuals, bossArena, saves, saveRoster, checkpoints, rpg, settlement, panel, setPanelOpen, quests, dialogueEngine, dialogueBox, openDialogue, refreshRpg, saveNow: () => saves.save('autosave'), get title() { return title } }
 
 document.getElementById('boot')!.style.display = 'none'
 ;(window as unknown as Record<string, unknown>).__CAESURA_BOOTED__ = true

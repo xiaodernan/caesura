@@ -16,7 +16,7 @@ import { unwrap, wrap } from './Integrity'
  * 存档里没有一个敌人实例，只有一串槽位身份）。
  */
 
-export const SAVE_VERSION = 9
+export const SAVE_VERSION = 10
 
 /**
  * 读档时接受的版本：凡是 ≤ 当前版本、且迁移链能一路升到当前的，都可以读。
@@ -132,10 +132,32 @@ registerMigration(8, (p) => {
   return { ...p, snapshot: snap }
 })
 
+/**
+ * v9 → v10（KI-025① 存档摘要卡）。老档里**没有**"这一份是何时写的"这件事，
+ * 所以迁移写 `null` 而不是拿读档那一刻冒充存档时刻——卡上会如实显示"未记录时间"，
+ * 而不会让玩家以为"昨天存的档今天还是昨天"（§78：留空是如实，补一个现在的时间是假账）。
+ *
+ * 命名并导出是为了测试：`slots.test.ts` 要"摘掉这一步再装回去"来证明红的是那一步，
+ * 手抄一份函数体就等于给生产逻辑留了个副本——副本改了而原件没改，测试照样绿。
+ */
+export function migrateV9toV10(p: Record<string, unknown>): Record<string, unknown> {
+  const snap = { ...(p.snapshot as Record<string, unknown>) }
+  snap.savedAt = null
+  snap.version = 10
+  return { ...p, snapshot: snap }
+}
+registerMigration(9, migrateV9toV10)
+
 export interface Snapshot {
   version: number
   /** 游玩秒数（HUD/存档摘要卡用） */
   playSec: number
+  /**
+   * 这一份是**何时**写的（epoch ms，v10 起）。存档里没有自己的时钟 ⇒
+   * 由 `SaveWorld.now` 注入（浏览器给 `Date.now`）。拿不到就写 null，
+   * 摘要卡显示"未记录"，不拿读档那一刻冒充。
+   */
+  savedAt: number | null
   /** 存档那一刻玩家所在区域（读档提示用，不作为位置真源） */
   regionId: string | null
   player: {
@@ -207,14 +229,110 @@ export class IdbStore implements KvStore {
       req.onerror = () => reject(req.error)
     }).finally(() => db.close())
   }
+  /**
+   * IDB 对"这个键没有"是 **success + result === undefined**（不是 error、也不是 null），
+   * 而 `KvStore` 把"没有"统一成 null：漏掉这一步，未写过的槽会掉进解析分支，
+   * 摘要卡就把"空槽"报成"损坏"——实机 5199 读到过这件事（三个手动槽全红）。
+   */
   async get(k: string): Promise<string | null> {
-    return await this.run<string | null>('readonly', (os) => os.get(k) as IDBRequest<string | null>)
+    return (await this.run<string | undefined>('readonly', (os) => os.get(k) as IDBRequest<string | undefined>)) ?? null
   }
   async set(k: string, v: string): Promise<void> {
     await this.run<IDBValidKey>('readwrite', (os) => os.put(v, k))
   }
   async remove(k: string): Promise<void> {
     await this.run<undefined>('readwrite', (os) => os.delete(k))
+  }
+}
+
+/**
+ * 一个槽位可能落盘的键位，**按尝试顺序**排。这段顺序以前只写在 `SaveGame.load` 的循环里，
+ * KI-025① 起它有了第二个读者（存档摘要卡要回答"这一格到底能不能读"），
+ * 而两个各写一份的读档顺序一定会飘：卡上说"可读取"、点下去读出来的是另一格，
+ * 就是玩家眼前的假账。所以它是导出的**唯一主人**，`load` 与名册都从这里取。
+ *
+ * 顺序即优先级：主键位 → 在写的 tmp（上次崩在写一半，其实已经完整）→ prev（上一份完整档）
+ * → 备份存储。`.prev` 排在备份之前，因为它来自主存储、通常更新。
+ */
+/** 落在哪一台存储上：备份机上的 `slot1` 与主机上的 `slot1` 是两件事，恢复来源必须能分开说 */
+export type SaveStoreWhere = 'primary' | 'backup'
+
+export function slotCandidates(
+  primary: KvStore, backup: KvStore | null, slot: string,
+): Array<{ key: string; store: KvStore; where: SaveStoreWhere }> {
+  const out: Array<{ key: string; store: KvStore; where: SaveStoreWhere }> = [
+    { key: slot, store: primary, where: 'primary' },
+    { key: `${slot}.tmp`, store: primary, where: 'primary' },
+    { key: `${slot}.prev`, store: primary, where: 'primary' }
+  ]
+  // 备份位排在 prev 之后：它来自主存储，通常更新
+  if (backup) out.push({ key: slot, store: backup, where: 'backup' })
+  return out
+}
+
+/** 一格为什么读不出来。`empty` 不是错误——那一格从来没写过，卡上应该显示"空槽"而不是"损坏" */
+export type SlotProblem = 'empty' | 'parse' | 'magic' | 'version' | 'crc' | 'migration'
+
+export interface TriedKey {
+  key: string
+  where: SaveStoreWhere
+  reason: SlotProblem
+  /** 迁移抛出的原话（只有 `migration` 带） */
+  detail?: string
+}
+
+export interface SlotRead {
+  slot: string
+  /** 一路升到当前版本后的快照；null = 这一格读不出可用档 */
+  snapshot: Snapshot | null
+  /** 取到了哪个键位：主机上的 `slot` 本身是正常，其余都是**从恢复位捡回来的**（摘要卡的黄标） */
+  fromKey: string | null
+  fromStore: SaveStoreWhere | null
+  /** 落盘那一刻的 schema 版本（< 当前 ⇒ 卡上标"由 v7 升级"，玩家有权知道自己读的是老档） */
+  schemaVersion: number | null
+  problem: SlotProblem | null
+  recovered: boolean
+  /** 依次试过却没成的键位，供调用方逐条写日志（`load` 与名册报同一批事实） */
+  tried: TriedKey[]
+}
+
+/**
+ * 读一个槽位：走 {@link slotCandidates} 的顺序，取**第一份过校验和并能升到当前版本**的。
+ * 纯读、不发事件、不改世界——所以存档名册可以放心逐格问四遍，而 `SaveGame.load`
+ * 仍然只有一次"应用与广播"。
+ */
+export async function readSlot(
+  primary: KvStore, backup: KvStore | null, slot: string,
+): Promise<SlotRead> {
+  const tried: TriedKey[] = []
+  for (const c of slotCandidates(primary, backup, slot)) {
+    let raw: string | null | undefined = null
+    try { raw = await c.store.get(c.key) } catch (e) {
+      tried.push({ key: c.key, where: c.where, reason: 'parse', detail: (e as Error).message })
+      continue
+    }
+    // 读侧也兜一层：一台没把"没有这个键"说成 null 的存储，不许因此把空格子指控成坏档。
+    if (raw === null || raw === undefined) { tried.push({ key: c.key, where: c.where, reason: 'empty' }); continue }
+    const out = unwrap(raw, READABLE_VERSIONS)
+    if (!out.ok) { tried.push({ key: c.key, where: c.where, reason: out.reason }); continue }
+    let payload: SavePayload
+    try {
+      payload = migrateTo(out.payload, out.schemaVersion, SAVE_VERSION) as unknown as SavePayload
+    } catch (e) {
+      tried.push({ key: c.key, where: c.where, reason: 'migration', detail: (e as Error).message })
+      continue
+    }
+    return {
+      slot, snapshot: payload.snapshot, fromKey: c.key, fromStore: c.where,
+      schemaVersion: out.schemaVersion,
+      problem: null, recovered: !(c.key === slot && c.where === 'primary'), tried
+    }
+  }
+  // 全是 empty ⇒ 「这一格从来没写过」；掺了真损坏 ⇒ 报第一个非 empty 的原因
+  const bad = tried.find((t) => t.reason !== 'empty')
+  return {
+    slot, snapshot: null, fromKey: null, fromStore: null, schemaVersion: null,
+    problem: bad ? bad.reason : 'empty', recovered: false, tried
   }
 }
 
@@ -233,6 +351,12 @@ export interface SaveWorld {
   props?: { snapshot(): string[]; restore(ids: string[] | null | undefined): void }
   /** Phase 6-B：叙事进度（任务状态 / 关系 / 已读节点），同上可选 */
   quests?: Quests
+  /**
+   * 存档时刻的墙钟（epoch ms）。**逻辑层不许自己读 `Date`**：那样每次跑测都会得到不同的档，
+   * 而"摘要卡上的时间来自表而不是代码"这条也没有证人。不注入 ⇒ `savedAt` 为 null，
+   * 卡上显示"未记录时间"（KI-025①）。
+   */
+  now?: () => number
 }
 
 /**
@@ -253,6 +377,7 @@ export class SaveGame {
     return {
       version: SAVE_VERSION,
       playSec: Math.round(w.time.tick / 60),
+      savedAt: w.now ? w.now() : null,
       regionId: w.streaming.regionAt(p.pos)?.id ?? null,
       player: {
         x: p.pos.x, y: p.pos.y, z: p.pos.z,
@@ -285,34 +410,38 @@ export class SaveGame {
   }
 
   async load(slot = 'autosave'): Promise<Snapshot | null> {
-    const candidates: Array<[string, KvStore]> = [
-      [slot, this.primary],
-      [`${slot}.tmp`, this.primary],
-      [`${slot}.prev`, this.primary]
-    ]
-    if (this.backup) candidates.push([slot, this.backup])
-    for (const [key, store] of candidates) {
-      let raw: string | null = null
-      try { raw = await store.get(key) } catch { continue }
-      if (!raw) continue
-      const out = unwrap(raw, READABLE_VERSIONS)
-      if (!out.ok) {
-        bus.emit('log', { level: 'warn', msg: `save.bad ${key} ${out.reason}` })
-        continue
-      }
-      let payload: SavePayload
-      try {
-        payload = migrateTo(out.payload, out.schemaVersion, SAVE_VERSION) as unknown as SavePayload
-      } catch (e) {
-        bus.emit('log', { level: 'warn', msg: `save.migrate ${key} ${(e as Error).message}` })
-        continue
-      }
-      this.apply(payload.snapshot)
-      bus.emit('log', { level: 'info', msg: `load.ok ${key} v${out.schemaVersion}` })
-      return payload.snapshot
+    const r = await readSlot(this.primary, this.backup, slot)
+    for (const t of r.tried) {
+      if (t.reason === 'empty') continue // 没写过不是故障，不值得报
+      const at = `${t.key}${t.where === 'backup' ? '@backup' : ''}`
+      if (t.reason === 'migration') bus.emit('log', { level: 'warn', msg: `save.migrate ${at} ${t.detail ?? ''}` })
+      else bus.emit('log', { level: 'warn', msg: `save.bad ${at} ${t.reason}` })
     }
-    bus.emit('log', { level: 'warn', msg: `load.none ${slot}` })
-    return null
+    if (!r.snapshot || r.fromKey === null) {
+      bus.emit('log', { level: 'warn', msg: `load.none ${slot}` })
+      return null
+    }
+    this.apply(r.snapshot)
+    bus.emit('log', {
+      level: 'info',
+      msg: `load.ok ${r.fromKey}${r.fromStore === 'backup' ? '@backup' : ''} v${r.schemaVersion}`
+    })
+    return r.snapshot
+  }
+
+  /**
+   * 抹掉一个槽位：主键位与它在写的 tmp / prev 一起删，备份位也删。
+   * 只删一处就是留一份"删不干净的档"——下一格候选会把它捡回来，玩家看到刚删的档又出现了。
+   * 返回是否真删掉了东西（`false` = 那一格本来就是空的，UI 用它决定要不要说"已删除"）。
+   */
+  async erase(slot: string): Promise<boolean> {
+    let any = false
+    for (const c of slotCandidates(this.primary, this.backup, slot)) {
+      if (await c.store.get(c.key) !== null) any = true
+      await c.store.remove(c.key)
+    }
+    bus.emit('log', { level: 'info', msg: `erase.${any ? 'ok' : 'noop'} ${slot}` })
+    return any
   }
 
   /** 只灌状态；chunk/敌人在下一次 streaming.update / syncActive 时自己回来 */

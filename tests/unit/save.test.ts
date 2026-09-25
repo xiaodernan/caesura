@@ -213,7 +213,7 @@ describe('§45 防损坏：校验和、双写、迁移链', () => {
   it('真实读档路径可达：磁盘上躺着一份 v1 老档 ⇒ load() 一路升到当前并灌回世界', async () => {
     // 这条测试钉的是一个已经发生过的真 bug：读档白名单曾经只有 [SAVE_VERSION]，
     // 于是老档在 unwrap 那步就被当成坏档，迁移链注册得再认真也永远跑不到。
-    const v1: Snapshot = {
+    const v1 = {
       version: 1,
       playSec: 42,
       regionId: 'rg_whisperwode',

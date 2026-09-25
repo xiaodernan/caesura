@@ -8,12 +8,15 @@ import { sellPrice, shopData, CURRENCY } from '@/rpg/Shop'
 import { movementName, unlockItemName, SCORE } from '@/rpg/Movements'
 import { DEFAULT_BINDS, type ActionName } from '@/core/Input'
 import type { RpgRuntime } from '@/rpg/Runtime'
+import type { SlotCard } from '@/save/Slots'
+import { SAVE_CARD_CSS, saveCards, saveCardHtml, slotLabel, type SaveCardView } from '@/ui/SaveSlots'
 
 /**
  * 调音桩面板（Phase 5-B 的 UI 落点；需求 §41/§44 + progression.md §8.3）。
  *
- * 五页：**调音**（音级/六维分配/洗点）、**装备**（七槽 + 强化）、**行囊**（分类清单）、
- * **谱册**（乐章战技的点亮/升级/装槽，Phase 5-C2）、**交易**（营地买卖，KI-055）。
+ * 六页：**调音**（音级/六维分配/洗点）、**装备**（七槽 + 强化）、**行囊**（分类清单）、
+ * **谱册**（乐章战技的点亮/升级/装槽，Phase 5-C2）、**交易**（营地买卖，KI-055）、
+ * **存档**（手动槽写入/删除，KI-025②）。
  * 用 DOM 而不是 HUD 的 canvas：这是一块要读字、要滚动、要点击的界面，不是战斗中的仪表盘
  * （tech-arch §1 的 UI 分工：HUD 走 canvas，菜单走 DOM overlay）。
  *
@@ -21,14 +24,15 @@ import type { RpgRuntime } from '@/rpg/Runtime'
  * 由 main.ts 统一把派生值灌回玩家——面板自己不写第二份"应用变更"的逻辑。
  */
 
-type Tab = 'tune' | 'gear' | 'bag' | 'moves' | 'trade'
+type Tab = 'tune' | 'gear' | 'bag' | 'moves' | 'trade' | 'save'
 
 const TABS: { id: Tab; label: string; hint: string }[] = [
   { id: 'tune', label: '调音', hint: '分配音级点 · 洗点' },
   { id: 'gear', label: '装备', hint: '七槽 · 强化' },
   { id: 'bag', label: '行囊', hint: '分类清点' },
   { id: 'moves', label: '谱册', hint: '乐章战技 · 主动槽' },
-  { id: 'trade', label: '交易', hint: '卖装半价 · 购消耗品' }
+  { id: 'trade', label: '交易', hint: '卖装半价 · 购消耗品' },
+  { id: 'save', label: '存档', hint: '手动槽 · 写入/删除' }
 ]
 
 const CSS = `
@@ -80,6 +84,10 @@ const CSS = `
 #stakerite .cmp-row .d { font-variant-numeric:tabular-nums; letter-spacing:.04em; }
 #stakerite .cmp-row .d.up { color:#ffb86b; } #stakerite .cmp-row .d.down { color:#a8695f; }
 #stakerite .cmp-row .d.flat { opacity:.35; }
+/* 存档页：卡片本体与标题屏共用 SAVE_CARD_CSS，这里只给定基准字号与确认条 */
+#stakerite .scards { font-size:13px; }
+#stakerite .confirm { border:1px solid rgba(201,180,88,.5); background:rgba(201,180,88,.08); margin-bottom:10px; }
+#stakerite .confirm .name { font-size:13px; }
 `
 
 const SLOT_LABEL: Record<SlotKey, string> = {
@@ -148,16 +156,37 @@ export interface StakeriteHooks {
   onUse: (eff: { heal: number; corruption: number }) => void
 }
 
+/**
+ * 存档页的三个动作（KI-025②）。全部以回调给出，面板不认识存储键位也不认识 `SaveGame`：
+ * 名册的读法只有一条（`save/Slots.ts` 的候选顺序），写入/删除的落盘只有一处（`save/Serializer.ts`）。
+ * 面板这里如果自己去拼 `localStorage.setItem('caesura.save.slot1', …)`，那条"一条候选顺序一个主人"
+ * 的纪律当场就破了——所以这里只给函数，不给存储对象。
+ */
+export interface SavePanelDeps {
+  /** 现读名册（进页、写入/删除之后各读一次；不做缓存刷新） */
+  list: () => Promise<SlotCard[]>
+  /** 把**当前局面**写进指定手动槽（返回快照；面板不读它的字段，只按成功/失败说话） */
+  write: (slot: string) => Promise<unknown>
+  /** 抹掉一个槽的全部副本（含备份位）；返回 false = 那一格本来就没有东西 */
+  erase: (slot: string) => Promise<boolean>
+}
+
 export class Stakerite {
   private readonly root: HTMLDivElement
   private tab: Tab = 'tune'
   private open = false
   /** 装备页当前选中要强化的件（uid） */
   private gearSel: string | null = null
+  /** 存档页的卡面（名册读数经 `saveCards` 换成的显示口径） */
+  private saveViews: SaveCardView[] = []
+  /** 等待确认的那一笔：写入/删除都是**覆盖或清掉玩家的东西**，所以一律两步 */
+  private pending: { slot: string; act: 'write' | 'erase' } | null = null
+  /** 落盘进行中（按钮不给第二次点击的机会） */
+  private saving = false
 
-  constructor(private readonly rpg: RpgRuntime, private readonly hooks: StakeriteHooks) {
+  constructor(private readonly rpg: RpgRuntime, private readonly hooks: StakeriteHooks, private readonly saves: SavePanelDeps) {
     const style = document.createElement('style')
-    style.textContent = CSS
+    style.textContent = CSS + SAVE_CARD_CSS
     document.head.appendChild(style)
     this.root = document.createElement('div')
     this.root.id = 'stakerite'
@@ -173,12 +202,14 @@ export class Stakerite {
   show(): void {
     this.open = true
     this.root.classList.add('on')
+    if (this.tab === 'save') this.refreshSaves()
     this.render()
   }
 
   close(): void {
     this.open = false
     this.root.classList.remove('on')
+    this.pending = null
   }
 
   private onKey(e: KeyboardEvent): void {
@@ -186,10 +217,25 @@ export class Stakerite {
     if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
       const i = TABS.findIndex((t) => t.id === this.tab)
       const d = e.code === 'ArrowRight' ? 1 : -1
-      this.tab = TABS[(i + d + TABS.length) % TABS.length].id
-      this.render()
+      this.setTab(TABS[(i + d + TABS.length) % TABS.length].id)
       e.preventDefault()
     }
+  }
+
+  /** 换页：进存档页就现取名册（离开时把未确认的那一笔撤掉，别把确认条留在别的页里） */
+  private setTab(tab: Tab): void {
+    this.tab = tab
+    this.pending = null
+    if (tab === 'save') this.refreshSaves()
+    this.render()
+  }
+
+  /** 名册是异步的（存储层给 Promise）：回来时若已换页/关面板就不重绘 */
+  private refreshSaves(): void {
+    void this.saves.list().then((cards) => {
+      this.saveViews = saveCards(cards)
+      if (this.open && this.tab === 'save') this.render()
+    })
   }
 
   private onClick(e: MouseEvent): void {
@@ -197,8 +243,17 @@ export class Stakerite {
     if (!el) return
     const act = el.dataset.act!
     const arg = el.dataset.arg ?? ''
+    // 存档那一页的三个动作各自收尾（都是异步或纯 UI 状态，不重算派生值也不共用尾部逻辑）
+    if (act === 'write' || act === 'erase') {
+      if (el.dataset.disabled || this.saving || this.savesOf(arg) === null) return
+      this.pending = { slot: arg, act }
+      this.render()
+      return
+    }
+    if (act === 'confirm') { this.runPending(); return }
+    if (act === 'cancel') { this.pending = null; this.render(); return }
     switch (act) {
-      case 'tab': this.tab = arg as Tab; break
+      case 'tab': this.setTab(arg as Tab); break
       case 'alloc': this.alloc(arg as never); break
       case 'respec': this.respec(); break
       case 'equip': this.equip(arg); break
@@ -218,6 +273,34 @@ export class Stakerite {
     }
     this.hooks.onApply()
     this.render()
+  }
+
+  /** 按槽位找卡面（点到的按钮一定在卡上，但 `data-arg` 是字符串——查不到就不动） */
+  private savesOf(slot: string): SaveCardView | null {
+    return this.saveViews.find((v) => v.slot === slot) ?? null
+  }
+
+  /**
+   * 执行已确认的那一笔，然后**重新取名册**再画：写/删之后卡面上的数字必须来自存储，
+   * 不是面板凭"我刚写过了"替它编的——那是 ui-ux §8 反对的那类假读数。
+   */
+  private runPending(): void {
+    const p = this.pending
+    this.pending = null
+    if (!p) return
+    this.saving = true
+    this.render()
+    const label = slotLabel(p.slot)
+    const job = p.act === 'write'
+      ? this.saves.write(p.slot).then(() => { this.hooks.notify(`已写入 ${label}`, 'reward') })
+      : this.saves.erase(p.slot).then((gone) => {
+        this.hooks.notify(gone ? `已删除 ${label}` : `${label}本来就是空的`, gone ? 'reward' : 'info')
+      })
+    void job.catch(() => this.hooks.notify(`${p.act === 'write' ? '写入' : '删除'}失败：存储没有答应`, 'info')).then(() => this.saves.list()).then((cards) => {
+      this.saveViews = saveCards(cards)
+      this.saving = false
+      if (this.open && this.tab === 'save') this.render()
+    })
   }
 
   private alloc(attr: never): void {
@@ -358,7 +441,8 @@ export class Stakerite {
       : this.tab === 'gear' ? this.renderGear()
         : this.tab === 'bag' ? this.renderBag()
           : this.tab === 'moves' ? this.renderMoves()
-            : this.renderTrade()
+            : this.tab === 'trade' ? this.renderTrade()
+              : this.renderSave()
     this.root.innerHTML = `
       <div class="veil" data-act="close"></div>
       <div class="panel">
@@ -602,6 +686,37 @@ export class Stakerite {
     return `<h2>购入（营地商队 · 只收消耗品）</h2>${buy}
       <h2>售出（装备实例 · 强化等级不折价）</h2>${sell}
       <div class="row"><span class="name">口径<span class="note">买来的消耗品不能再卖（不是装备）；卖装备只给档价半价。§6.3 的红线：买→卖这一圈必定亏。</span></span></div>`
+  }
+
+  /* ------------------------------- 存档 ------------------------------- */
+
+  /**
+   * 存档页（KI-025②）。卡面与标题屏同一张卡、同一段 CSS，只有能做的动作不同：
+   * 这一页给"写入/删除"不给"读取"——读档要把整个世界推倒重来，那是标题屏的位置才该干的事；
+   * 反过来标题屏不能在这里写手动槽。**能做什么由位置决定**，两处都不是卡自己决定。
+   *
+   * 两步确认（`pending` → `confirm`）不是仪式：写入会覆盖那一格原有的档，删除拿不回来。
+   * 落盘之后一律重新取名册再画——卡上的数字来自存储，不是面板凭"我刚才写过了"替它填的。
+   */
+  private renderSave(): string {
+    const p = this.pending
+    const target = p ? this.savesOf(p.slot) : null
+    const confirm = p && target
+      ? `<div class="row confirm"><span class="name">${this.pendingText(p.act, p.slot, target.state)}
+          <span class="note">${this.saving ? '落盘中…' : '这一步会动到硬盘上的东西，确认才做。'}</span></span>
+        <span class="act"><button class="act" data-act="confirm" ${this.saving ? 'disabled' : ''}>确认</button>
+          <button class="act" data-act="cancel">取消</button></span></div>`
+      : ''
+    const cards = this.saveViews.map((v) => saveCardHtml(v, ['write', 'erase'])).join('')
+    return `<h2>手动存档槽（只有站在调音桩前才写得进去）</h2>${confirm}
+      <div class="scards">${cards || '<div class="empty">名册还在读…</div>'}</div>
+      <div class="row"><span class="name">口径<span class="note">自动档在每个检查点自己落盘，这一页不动它；读档请回标题屏。删掉的是主存位与备份位两处，删完不可恢复。</span></span></div>`
+  }
+
+  private pendingText(act: 'write' | 'erase', slot: string, state: SlotCard['state']): string {
+    const label = slotLabel(slot)
+    if (act === 'erase') return `删除 ${label} —— 这一格${state === 'empty' ? '本来是空的' : '的存档（含备份位）'}会被清掉。`
+    return `写入 ${label} —— ${state === 'empty' ? '这一格现在是空的' : '这一格已有的存档会被当前局面覆盖'}。`
   }
 }
 
