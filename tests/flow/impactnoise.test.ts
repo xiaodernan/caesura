@@ -179,7 +179,7 @@ describe('§13.0 弹反冲击：金属相交第一次同时被世界听见、被
     const m = w.ai.spawn('en_myriad', { x: 0, y: 0, z: 12 }, 'myriad-eye')
     m.skipIntro()
     expect(m.data.ai.vision.range, '夹具前提：她是无眼').toBe(0)
-    m.sawImpact({ x: 0, y: 0, z: 0 })
+    m.sawImpact({ x: 0, y: 0, z: 0 }, 1.7)
     expect(m.alertness, '视觉锥半径 0 ⇒ 目击判据不成立（她的 100 只能来自 huntsSound/hear）').toBe(0)
     expect(m.state).not.toBe('chase')
     w.off()

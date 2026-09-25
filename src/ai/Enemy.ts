@@ -7,6 +7,7 @@ import { armCrumple, materialFlashSeconds, reactionTier } from '@/combat/Reactio
 import type { Vec3 } from '@/combat/EntityStats'
 import type { HitTarget } from '@/combat/HitShapes'
 import type { RhythmClock } from '@/core/RhythmClock'
+import type { SightGate } from '@/core/Occlusion'
 import type { PlayerController } from '@/player/ThirdPersonController'
 import { advanceActionFrames, applyActionStop, type ActionStop } from '@/combat/ActionFrames'
 
@@ -158,6 +159,9 @@ export class Enemy {
   patrolIdx = 0
   searchAngle = 0
   callAllySuppressedUntil = 0
+  /** 视线段的两个复用端点（`losBlocked` 每次覆写它们，查询方只在调用期间读） */
+  private readonly segA: Vec3 = { x: 0, y: 0, z: 0 }
+  private readonly segB: Vec3 = { x: 0, y: 0, z: 0 }
 
   constructor(public data: EnemyData, pos: Vec3, seed: string) {
     this.rng = new Rng(seed + this.id)
@@ -238,9 +242,8 @@ export class Enemy {
 
   hitTarget(): HitTarget {
     const s = this.data.body?.scale ?? 1
-    return { pos: this.pos, facingYaw: this.yaw, radius: 0.55 * s, height: 1.6 * s }
+    return { pos: this.pos, facingYaw: this.yaw, radius: 0.55 * s, height: this.bodyHeight() }
   }
-
   /**
    * 弹道招式的发射窗口（需求 §59：远程敌人走同一套弹道运行时）。
    * 连发（§14.4 三叠箭）按 burst.everyTicks 逐发排开，同一招式最多发 count 发；
@@ -352,14 +355,17 @@ export class Enemy {
   }
 
   /** perception runs at 10Hz (rotated by AISystem) */
-  sense(player: PlayerController, now: number): void {
+  sense(player: PlayerController, now: number, sight: SightGate = null): void {
     if (!this.alive) return
     const ai = this.data.ai
     const p = player.pos
     const dx = p.x - this.pos.x, dz = p.z - this.pos.z
     const dist = Math.hypot(dx, dz)
     const ang = Math.abs(norm(Math.atan2(dx, dz) - this.yaw))
-    if (!this.deaf && dist <= ai.vision.range && ang < (ai.vision.fovDeg * Math.PI / 180) / 2) {
+    // §13.0 视觉列写的是「视锥 **+** 遮挡检查」，此前只落了前半句。墙在两人之间时
+    // 这里整条不成立，于是往下走**震动**那一支——躲进掩体不等于消失，敌人还会听见你移动。
+    if (!this.deaf && dist <= ai.vision.range && ang < (ai.vision.fovDeg * Math.PI / 180) / 2
+      && !this.losBlocked(p, player.hitTarget().height, sight)) {
       this.alertness = Math.min(100, this.alertness + 34 * 0.1)
       this.lastKnown = { ...p }
     } else if (dist <= (this.bossPhaseData?.vibrationRange ?? ai.vibration.range) && (playerIsMoving(player))) {
@@ -370,6 +376,23 @@ export class Enemy {
     }
     void now
   }
+
+  /**
+   * 这一段视线被挡住没有（KI-014②b）。两端取**身体中心**，与 `CombatManager.coverEatsLine`
+   * 同一口径：拿脚底量的话，一块到腰的矮墙在数学上谁也没挡、画面上却明晃晃立着；
+   * 而 `sight = null`（场上没有几何体）恒为「看得见」，所以既有全部测试的口径不变。
+   * 两端各用一个复用槽：`sense()` 每 0.1s 对全场敌人跑一遍，这里不该成为分配的源头。
+   */
+  private losBlocked(target: Vec3, targetHeight: number, sight: SightGate): boolean {
+    if (!sight) return false
+    const a = this.segA, b = this.segB
+    a.x = this.pos.x; a.y = this.pos.y + this.bodyHeight() / 2; a.z = this.pos.z
+    b.x = target.x; b.y = target.y + targetHeight / 2; b.z = target.z
+    return sight(a, b)
+  }
+
+  /** 与 `hitTarget()` 同一个数，只是不为它造一个对象 */
+  private bodyHeight(): number { return 1.6 * (this.data.body?.scale ?? 1) }
 
   hear(src: { pos: Vec3; loudness: number }, tick: number): void {
     if (!this.alive || this.deaf) return
@@ -387,18 +410,22 @@ export class Enemy {
    * `vision.range` 都比 `hearing.range` 长，所以这一条把报警半径从「听得见」推到「看得见」。
    * 无眼的万籁（`vision.range = 0`）不在其列——她本来就靠声音找人。
    * 已经在动手的不需要报警，只把最后已知位置更新到冲击点。
+   * KI-014②b：这一条既然写的是「目击」，就必须真的**看见**——墙在中间时两者都不成立。
    */
-  sawImpact(at: Vec3): void {
+  sawImpact(at: Vec3, atHeight: number, sight: SightGate = null): void {
     if (!this.alive) return
     const dx = at.x - this.pos.x, dz = at.z - this.pos.z
     const d = Math.hypot(dx, dz)
     const v = this.data.ai.vision
     if (this.state === 'combat' || this.state === 'chase') {
-      if (d <= v.range) this.lastKnown = { ...at }
+      // 交战中的他不需要"报警"，但**看见**才更新最后已知位置：隔着一堵墙听见那一记，
+      // 把人往墙那头引是错的（那一支本来就有 `hear()` 负责，它给的是声音的位置）
+      if (d <= v.range && !this.losBlocked(at, atHeight, sight)) this.lastKnown = { ...at }
       return
     }
     const half = (v.fovDeg * Math.PI / 180) / 2
     if (d > v.range || Math.abs(norm(Math.atan2(dx, dz) - this.yaw)) > half) return
+    if (this.losBlocked(at, atHeight, sight)) return // 那一记发生在墙后面：他没看见，就不该瞬间进 chase
     this.alertness = 100
     this.lastKnown = { ...at }
     this.enter('chase')

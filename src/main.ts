@@ -176,6 +176,9 @@ wallGreybox.syncLoaded(loadedStates.flatMap((s) => streaming.byState(s).map((c) 
 // 关卡侧遮挡名册跟着脚下这片天走（Boss 的柱子每 tick 重名点，墙只在跨区时动一次）
 let wallsRegion = shownRegion
 combat.occlusion.syncAuthored(streaming.regionAt(player.pos) ?? null)
+// KI-014②b：AI 的视线借**同一份**名册（§13.0 视觉列的后半句）。名字里那个 `blocked` 就是
+// 弹道读的那一条线 ⇒ "这堵墙挡住了箭、却挡不住目光"从这一刻起不成立。
+ai.sightBlocked = (a, b) => combat.occlusion.blocked(a, b)
 /**
  * 世界状态写入层（Phase 6-A）：`regions.json` 里那些被读的旗标需要一个**写方**，否则藏在门后的
  * 内容根本不可达（KI-041）。规则住在 `data/json/worldstate.json`，这一层只管"触发了就广播"。

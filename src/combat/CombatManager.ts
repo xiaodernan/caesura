@@ -999,12 +999,13 @@ export class CombatManager {
    * 冲击走**既有** `sound.source` 流（id 仍是 'player'，响度仍走玩家那条标尺），因此它一次性
    * 喂给三条既有规则：同伴 `hear()`、幽灵八 `fakeBeat()`（弹反 0.85 过 0.6 门槛，完美格挡 0.5 不过）、
    * 万籁 `huntsSound()`。最后一项是新后果：在她的领域里**防御同样报信**，无鸣武器才是正解。
-   * 目击报警则单独走 `sawImpact()`，因为它判的是「看见」，半径比听觉长。
+   * 目击报警则单独走 `sawImpact()`，因为它判的是「看见」，半径比听觉长。而"看见"从 KI-014②b
+   * 起包含**这条线没有被挡住**：用的就是 AI 那一份视线闸门（同一个名册，不另起一套判据）。
    */
   private impactAlarm(baseLoudness: number): void {
     const p = this.player
     bus.emit('sound.source', { id: 'player', pos: { ...p.pos }, loudness: p.weaponImpactNoise(baseLoudness) })
-    for (const x of this.ai.enemies) x.sawImpact(p.pos)
+    for (const x of this.ai.enemies) x.sawImpact(p.pos, p.hitTarget().height, this.ai.sightBlocked)
   }
 
   /** §5 优先级：弹反 > 无敌帧 > 完美格挡 > 格挡（含破防）> 硬吃。近战与弹体共用 */

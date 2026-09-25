@@ -2,6 +2,7 @@ import { bus } from '@/core/EventBus'
 import { Enemy, bindEnemyRegistry } from './Enemy'
 import type { PlayerController } from '@/player/ThirdPersonController'
 import type { RhythmClock } from '@/core/RhythmClock'
+import type { SightGate } from '@/core/Occlusion'
 import type { EnemyData } from '@/data/schema'
 import { registry } from '@/core/Registry'
 
@@ -27,6 +28,13 @@ export class AISystem {
    * 「某类 prop 还剩几件」的现状交给带 `enterOnProps` 的 Boss 阶段机。
    */
   props: { remainingByKind(kind: string): number } | null = null
+  /**
+   * KI-014②b 视线闸门（组合根注入，null = 场上没有可挡视线的几何体）：`a → b` 被挡住 ⇒ true。
+   * §13.0 的视觉列本来就写着「视锥 **+** 遮挡检查」，此前只有前半句 ⇒ 躲在已 authored 的墙后
+   * 仍然会被看见，而同一堵墙却能把那支箭挡下来——掩体成了半真半假的东西。
+   * 名册的主人是 `combat`（它每 tick 重点名），所以这里要的只是一个函数，不新增依赖箭头。
+   */
+  sightBlocked: SightGate = null
 
   constructor() {
     bindEnemyRegistry(this.enemies)
@@ -120,7 +128,7 @@ export class AISystem {
     // 10Hz rotated perception
     this.senseCursor++
     if (this.senseCursor % 6 === 0) {
-      for (const e of this.enemies) e.sense(player, tick)
+      for (const e of this.enemies) e.sense(player, tick, this.sightBlocked)
     }
     // 「定调」光环（§14.6）：每 tick 重算一次，取范围内最近的 buffAura 来源，不叠加
     for (const e of this.enemies) e.buff = null

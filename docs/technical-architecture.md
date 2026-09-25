@@ -70,6 +70,8 @@ src/
                        「a→b 被哪块竖直遮挡体**先**截断、截在哪一点」。两种截面共用同两条口径：
                        `cylinder`（`boss.covers` 的断音柱/钟）走 xz 二次方程 + y 带，`box`（`regions.json > walls`
                        的 authored 塌墙/岩脊，轴对齐）走三轴 slab 裁剪；"起点在体内不挡""贴脸不挡"两边同解。
+                       四个读者共用它：弹体扫掠段、打在玩家身上的那一记、telegraph 红线、**敌人的视线**
+                       （KI-014②b：`ai.sightBlocked` 由组合根接到 `occlusion.blocked`，两端取身体中心）。
                        `OcclusionField` 是名册，两条输入通道住同一个数组：`syncAuthored(region)` 写关卡墙
                        （跨区才重写一次，固定在前部），`syncFrom(entities)` 每 tick 就地改写实体柱子（尾巴），
                        于是热路径上仍只有一次遍历、零分配。三个读者共用同一个判据：弹体逐 tick 的扫掠段
@@ -110,11 +112,15 @@ src/
                        Retreat/Search/CallAlly/Recover/Dead，需求 §20）
     bt/                行为树节点（Selector/Sequence/Parallel/Condition/Inverter/
                        Cooldown/Service + Action）；战斗决策树：距离带→招式选择表
-    Perception.ts      视觉（视锥 120°×视距 + 遮挡 raycast）与**听觉**（EventBus 订阅
+    Perception.ts      **未落为独立文件（换了载体，不是缺失）**：视觉=视锥（`ai.vision.range/fovDeg`）
+                       **+ 遮挡线段**（KI-014②b：`sense()`/`sawImpact()` 都问 `ai.sightBlocked`，
+                       问的就是挡箭的那同一个名册）与**听觉**（EventBus 订阅
                        footstep/attack/dodge 声源事件→声波球半径→噪声吸引 aggro）。
                        听觉是隐藏 Boss 万籁「声音狩猎」的核心机制：声源事件统一带
                        loudness 标量，AI 按 loudness/距离 计算 suspicion——必须作为
-                       一等公民设计，不能后补
+                       一等公民设计，不能后补。**这一句已经成立**：三条通道都在
+                       `Enemy.sense()`（视觉 + 震动）与 `Enemy.hear()`（听觉）里，10Hz 轮转在
+                       `AISystem.update`；把它拆成独立 `Perception.ts` 只是当年的一种布线选择
     Navigation.ts      简化 navmesh：每 chunk 预烘焙导航网格（离线脚本或首帧烘焙 worker）、
                        A* + string-pulling 平滑；动态绕行=局部转向（velocity obstacle）
     Squad.ts           编队/aggro：共享 blackboard 的 camp 引用，仇恨分配（越后置入战斗
@@ -453,7 +459,7 @@ HitStop 结束      └─ timeScale 恢复 → 攻方 recovery 续播 → 数�
 - **表现层 `world/ProjectileVisuals.ts`**：`sync(list, tick)` 每 tick 只读弹体快照，按 `kind` 分池 acquire/release（长枪=沿 +Z 的长条盒并按速度四元数取向，音符=脉冲二十面体），`peakLive` 观测峰值；`dispose()` 释放几何/材质。落地/消失的尘埃与闷响由 CombatManager 发 `vfx.spawn`/`audio.sfx`，视觉层不判定语义。
 - **回收**：`entity.despawned` → 该 owner 的在飞弹体立即 `expire`（离格回收不留隐形弹幕）；`world.travel`/`teleport` 后弹体随 owner 一起清。
 - 覆盖：`tests/unit/projectiles.test.ts`（9 条运动学）、`tests/flow/ranged.test.ts`（16 条完整玩法流：投枪命中+钉住、DR×0.6 上下界、数据表断言、AI 真开火伤到玩家、无敌帧/弹反/格挡三档防御对远程同样成立、despawn 清弹、针喉三发帧位/风筝上限/telegraph 时长）、`tests/unit/projectile-visuals.test.ts`（8 条，含「往返两波不涨网格数」的池泄漏回归——这条抓到了真 bug）。
-- **遮挡（KI-014①② 已落地的部分）**：弹体逐 tick 量的是 `prev → pos` 这**一段**，不是"此刻在不在墙里"——采点版本会让一枚一 tick 跨过整个柱截面的弹体白拿穿透。命中就把 `pr.pos` 写成撞击点再 `kill(pr,'wall')`，于是灰尘与那一声撒在玩家眼睛该看的地方，而反馈仍然只有 `onProjectileGone` 一个出口。**对两边一样狠**：玩家投出的长枪与敌人射来的弹体走同一行判据，所以"长枪穿过掩体"从这一刻起不成立。**名册现在有两条输入通道**（KI-014②）：实体侧的 `boss.covers`（竖直圆柱，每 tick 由 `update` 顶部重新点名）与关卡侧的 `regions.json > walls`（轴对齐盒，跨区时由组合根写一次 `syncAuthored`）。两者住**同一个数组**——authored 段固定在前部，于是热路径上仍是一次遍历、零分配，而"墙"与"柱子"在三个读者眼里没有区别。写进表的墙自此真的挡得住：隔着一堵**已 authored** 的塌墙投掷不再成立；而**没写进表**的岩壁依然拦不住弹体——那一格等的是 KI-009 的导航网格与真几何，不是这一层的职责。**仍然缺的那格是"看得见不等于被看见"**：敌人的 `sense()` 视锥与 `sawImpact()` 目击报警都还不读这条线段，所以隔墙仍然会被发现（登记在 KI-014②b，它是 §13.0 潜行支柱的承重格）。
+- **遮挡（KI-014①② 已落地的部分）**：弹体逐 tick 量的是 `prev → pos` 这**一段**，不是"此刻在不在墙里"——采点版本会让一枚一 tick 跨过整个柱截面的弹体白拿穿透。命中就把 `pr.pos` 写成撞击点再 `kill(pr,'wall')`，于是灰尘与那一声撒在玩家眼睛该看的地方，而反馈仍然只有 `onProjectileGone` 一个出口。**对两边一样狠**：玩家投出的长枪与敌人射来的弹体走同一行判据，所以"长枪穿过掩体"从这一刻起不成立。**名册现在有两条输入通道**（KI-014②）：实体侧的 `boss.covers`（竖直圆柱，每 tick 由 `update` 顶部重新点名）与关卡侧的 `regions.json > walls`（轴对齐盒，跨区时由组合根写一次 `syncAuthored`）。两者住**同一个数组**——authored 段固定在前部，于是热路径上仍是一次遍历、零分配，而"墙"与"柱子"在三个读者眼里没有区别。写进表的墙自此真的挡得住：隔着一堵**已 authored** 的塌墙投掷不再成立；而**没写进表**的岩壁依然拦不住弹体——那一格等的是 KI-009 的导航网格与真几何，不是这一层的职责。**第四个读者是眼睛（KI-014②b）**：`Enemy.sense()` 与 `sawImpact()` 现在都先问一句"这一线被截了没有"，而问的是**同一个名册**——组合根把 `ai.sightBlocked` 接成 `combat.occlusion.blocked`（全场仅此一处赋值，`occlusion.test.ts` 里有一条源码门盯住它，因为"注不注入"就是这一格的唯一开关）。于是挡箭与挡眼不可能再分家；被视觉截掉的那一帧会自然落到**震动**那一支（掩体不是消失术，站定才是）。两端口径同样是**身体中心**：`sight=null` 时恒为"看得见"（没有几何体的野外与既有全部测试的口径），而测试用一块下沿 0.6m 的挡板与一块 2.2m 以上才开始的悬空体把这条口径两侧都钉住。**仍然缺的两格**：玩家的挥砍（扇形不是线段）与没写进 `walls` 的天然岩壁（等 KI-009 的真几何）。
 
 ### 5.9.1 反射、telegraph 与射手风筝（Phase 4-B）— 已实现
 
@@ -465,7 +471,7 @@ Phase 4-A 把弹道跑通，但远程只被当作「会飞的近战判定」。4
 - **连发与假动作**：`attack.launched` 布尔闩锁升级为 `shots` 计数，`ProjectileSpec.burst = {count, everyTicks, at?}`；`at` 给出每发相对 activeStart 的显式帧位，针喉 `tri` 写 `[0,32,42]`——第 2 发比均匀网格（21）晚 11 tick ≈ 0.25 拍，就是 §14.4 的「假动作骗翻滚」。**反制天然成立**：招式被打断即 `attack=null`，余下发数一起作废，不需要额外的取消表。
 - **新增敌人 `en_skewer`（针喉）**：hp55/poise22/speed2.4，`snipe`(14 伤/单发) + `tri`(10 伤/三发) + `pluck`(近身 9 伤 R3 击退)，弹道 `shard` speed18/range26/无重力/`telegraph`，`loudness:8`（配合新合成音色 `bowstring`：窄带拨弦瞬态 + 两根快死弦音 + 共鸣腔低鸣，是场上最强的听觉信号）。布怪按 gameplay.md §破拍营地塔哨：`regions.json` 营地区加一组 `count:2`。
 - 覆盖：`tests/flow/ranged.test.ts` 新增 7 条（弹反反射=100%/给过载/原弹消失、完美格挡反射=50%、反射体真的打回射手、i-frame 不产生反射体、数据表逐字段对 §14.4、三叠箭 32+10 拍帧位、赤线恰好亮满 48 tick、风筝不越 `kiteRange`、<6m 解围）、`tests/unit/projectile-visuals.test.ts` 新增 3 条 telegraph 池化/亮度/复用，`arch-boundaries` 新增「JSON 里写到的每个 sfx key 都在合成表里」。
-- **未落地（如实登记）**：§14.4「三叠箭假动作骗到翻滚后硬直 0.6s」需要「玩家被假动作骗」的判定，当前只做延迟不做诱饵惩罚；KI-014① 之后针喉的弹体与它的赤线都会被**数据点名的**遮挡体截住，KI-014②a 已经把 authored 墙体（`regions.json > walls`）接进同一条线段判定并在灰盒里画出来 ⇒ 写了墙的地方"隔墙狙击"不再成立；但**没写墙的岩石/坡地仍然不挡**（那需要 Navigation/几何抠洞，KI-009），且**敌人视线还不吃这条线**（`sense()`/`sawImpact()` 只看距离与角度，KI-014②b）。
+- **未落地（如实登记）**：§14.4「三叠箭假动作骗到翻滚后硬直 0.6s」需要「玩家被假动作骗」的判定，当前只做延迟不做诱饵惩罚；KI-014① 之后针喉的弹体与它的赤线都会被**数据点名的**遮挡体截住，KI-014②a 已经把 authored 墙体（`regions.json > walls`）接进同一条线段判定并在灰盒里画出来 ⇒ 写了墙的地方"隔墙狙击"不再成立；但**没写墙的岩石/坡地仍然既不挡弹也不挡眼**（那需要 Navigation/几何抠洞，KI-009）；KI-014②b 已经把**敌人的视线**也接到同一条线段上，所以"隔着已 authored 的塌墙狙杀/被发现"这两件事一起失效了。
 
 ### 5.9.2 定调光环与走调时刻（Phase 4-C）— 已实现
 

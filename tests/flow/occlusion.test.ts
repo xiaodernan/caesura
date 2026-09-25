@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { bus } from '@/core/EventBus'
 import { GameTime, TICK_DT } from '@/core/Time'
@@ -17,7 +19,7 @@ import { newAttack, type Enemy } from '@/ai/Enemy'
  *
  * 这一批要守住的不是"柱子有没有用"（`mainboss.test.ts` 已经管过那一格），而是
  * **遮挡第一次变成一条真的线段**：`core/Occlusion` 的那一个 `firstBlock` 被三个读者共用
- * （弹体的扫掠段、打在玩家身上的那一记、§14.4 的红线），于是三条腿必须同生同死。
+ * （弹体的扫掠段、打在玩家身上的那一记、§14.4 的红线、敌人的视线），于是这几条腿必须同生同死。
  * 所以这里的判据全是几何量（"截在哪一点""离柱轴多少米"），不是"掉没掉血"那种间接读数——
  * 掉血只能证明某一格 if 生效，证明不了三个人读的是同一把尺子。
  *
@@ -654,5 +656,160 @@ describe('接线：名册每 tick 由 update 顶部重新点名（不靠调用�
     expect(w.combat.occlusion.live, '她回到世界里去，她的场地跟着消失').toBe(0)
     expect(w.combat.occlusion.blocked(a, b), '否则玩家会站在一座不存在的柱子后面挨打').toBe(false)
     w.off()
+  })
+})
+
+/* ==================== E. 第四个读者：敌人的视线（KI-014②b，§13.0「视锥 + 遮挡检查」的后半句） ==================== */
+
+/**
+ * 这一节的判据全是"看得见 / 看不见"的**直接读数**（alertness、lastKnown、state），不是"掉没掉血"。
+ * 因为这一格要守的正是那件最割裂的事：同一堵墙把箭挡了下来，目光却没有 ⇒ 掩体成了一半真的东西。
+ *
+ * 视线两端口径与 `coverEatsLine` 一致（**身体中心**）：这里特意放了一块悬在头顶的盒子，
+ * 如果谁把视线改成"从脚底量到脚底"，那一块就会把整片天都挡住，本节的 A/B 立刻对调。
+ */
+const EYE_AT = { x: AX.x, y: AX.y, z: AX.z }
+/** 10m：在针喉的 vision.range(30) 里、在她 vibration.range(8) 外 ⇒ 站定时只有视觉这一条路 */
+const EYE_P = { x: AX.x, y: AX.y, z: AX.z + 10 }
+/** 立在两人正中间的一堵薄墙（8m 宽足以排除"从旁边看过去"这个解释） */
+const EYE_WALL = wall('wb_eyes_between', AX.x, AX.z + 5, 8, 0.6, 3, AX.y)
+
+function eyeRig(w: W, opts: { wall?: boolean; gate?: boolean; band?: 'ground' | 'sill' | 'over' } = {}) {
+  const e = w.ai.spawn('en_skewer', { ...EYE_AT }, 'eyes')
+  const walled = opts.wall ?? true
+  // pos.y 是墙底。三档 y 带只为钉死"视线两端取身体中心"这一口径：
+  // ground = 落地墙（两种量法都给"挡住"，所以它不承担判别），sill = 下沿 0.6m 的挡板
+  // （胸口在带里、脚不在），over = 从 2.2m 才开始的悬空体（两者都不在带里）。
+  const band = opts.band ?? 'ground'
+  const baseY = band === 'sill' ? AX.y + 0.6 : band === 'over' ? AX.y + 2.2 : AX.y
+  const wl = { ...EYE_WALL, pos: { x: EYE_WALL.pos.x, y: baseY, z: EYE_WALL.pos.z } }
+  w.combat.occlusion.syncAuthored(walled ? { id: 'rg_eyes_probe', walls: [wl] } : null)
+  if (opts.gate ?? true) w.ai.sightBlocked = (a, b) => w.combat.occlusion.blocked(a, b)
+  const pin = () => {
+    e.pos.x = EYE_AT.x; e.pos.y = EYE_AT.y; e.pos.z = EYE_AT.z
+    e.yaw = 0 // 视锥朝 +z，玩家就在正前方：角度这一维钉死，只剩"有没有东西在中间"
+    w.player.pos.x = EYE_P.x; w.player.pos.y = EYE_P.y; w.player.pos.z = EYE_P.z
+    w.player.floorY = AX.y; w.player.vy = 0; w.player.grounded = true
+  }
+  return { e, pin }
+}
+
+describe('读者四：敌人的视线吃遮挡（§13.0 视觉列「视锥 + 遮挡检查」）', () => {
+  it('夹具前提：这一格只有视觉一条路——站定、在震动半径之外、视野正中', () => {
+    const w = makeWorld()
+    const sk = registry.get<EnemyData>('en_skewer').ai
+    expect(sk.vision.range, '10m 必须落在她的视觉锥里').toBeGreaterThan(10)
+    expect(sk.vibration.range, '而 10m 必须在她的震动感知之外（否则看不见也会因移动被发现）').toBeLessThan(10)
+    w.off()
+  })
+
+  it('没有墙：站定也看得见，警觉按 10Hz 往上爬', () => {
+    const w = makeWorld()
+    const { e, pin } = eyeRig(w, { wall: false })
+    w.tick(13, pin)
+    expect(e.alertness, '视锥里明摆站着个人 ⇒ 看见').toBeGreaterThan(0)
+    expect(e.lastKnown.z, '最后已知位置 = 玩家站位').toBeCloseTo(EYE_P.z, 6)
+    w.off()
+  })
+
+  it('同一位置、中间立一堵 authored 墙：视觉整条不成立，警觉一格不涨', () => {
+    const w = makeWorld()
+    const { e, pin } = eyeRig(w)
+    expect(w.combat.occlusion.blocked(
+      { x: EYE_AT.x, y: AX.y + 0.8, z: EYE_AT.z },
+      { x: EYE_P.x, y: AX.y + 0.85, z: EYE_P.z },
+    ), '几何腿先自证：这一线真的被那堵墙截了').toBe(true)
+    w.tick(13, pin)
+    expect(e.alertness, '墙挡住了箭，就该同样挡住目光').toBe(0)
+    expect(e.lastKnown, '没看见就不许把玩家的站位记进去').toEqual({ ...EYE_AT }) // 还是出生点那一份
+    expect(e.state, '更不会进 chase').toBe('idle')
+    w.off()
+  })
+
+  it('撤掉那一堵墙 ⇒ 立刻恢复看见（证明上一条的答案来自那堵墙，不是闸门本身）', () => {
+    const w = makeWorld()
+    const { e, pin } = eyeRig(w)
+    w.tick(13, pin)
+    expect(e.alertness).toBe(0)
+    w.combat.occlusion.syncAuthored({ id: 'rg_eyes_probe', walls: [] })
+    w.tick(13, pin)
+    expect(e.alertness, '同一个人、同一个闸门，只少了那堵墙 ⇒ 又看见了').toBeGreaterThan(0)
+    w.off()
+  })
+
+  it('视线的两端是**身体中心**：一块下沿 0.6m 的挡板卡在胸口高 ⇒ 挡住（从脚底量就会假绿）', () => {
+    const w = makeWorld()
+    const { e, pin } = eyeRig(w, { band: 'sill' })
+    w.tick(13, pin)
+    expect(e.alertness, '胸口高那条线确实穿过了它 ⇒ 看不见；而贴地那条线从它下面钻得过去').toBe(0)
+    w.off()
+  })
+
+  it('同一块挡板整体上移到头顶 2.2m 以上 ⇒ 不挡视线：两个站着的人照样对眼', () => {
+    const w = makeWorld()
+    const { e, pin } = eyeRig(w, { band: 'over' })
+    w.tick(13, pin)
+    expect(e.alertness, 'y 带不含身体中心 ⇒ 遮挡不成立').toBeGreaterThan(0)
+    w.off()
+  })
+
+  it('敌人的身体不是遮挡体：名册里只有墙与柱，另一具身体站在中间不挡目光', () => {
+    const w = makeWorld()
+    const { e, pin } = eyeRig(w, { wall: false })
+    // 正中间塞第二个人：她的位置恰好落在那条视线上
+    const mid = w.ai.spawn('en_skewer', { x: AX.x, y: AX.y, z: AX.z + 5 }, 'eyes-mid')
+    w.tick(13, pin)
+    expect(w.ai.enemies.length, '夹具前提：场上确实有两个人站在视线上').toBe(2)
+    expect(mid.alive).toBe(true)
+    expect(w.combat.occlusion.live, '两具身体都没进名册 ⇒ 名册里只有被数据点名的遮挡体').toBe(0)
+    expect(e.alertness, '所以视线仍然通').toBeGreaterThan(0)
+    w.off()
+  })
+
+  it('没接闸门 = 全场照旧看不见墙：这一格的全部开关就是组合根那一行', () => {
+    const w = makeWorld()
+    const { e, pin } = eyeRig(w, { gate: false }) // 墙在中间，但 sightBlocked 仍是 null
+    w.tick(13, pin)
+    expect(e.alertness, '默认口径（既有全部测试与没有几何体的野外）不变').toBeGreaterThan(0)
+    w.off()
+  })
+
+  it('目击报警（§13.0「目击者 +100 瞬间报警」）：那一记发生在墙后面就不算看见', () => {
+    const w = makeWorld()
+    const { e } = eyeRig(w)
+    const gate = (a: Vec3, b: Vec3) => w.combat.occlusion.blocked(a, b)
+    e.sawImpact({ ...EYE_P }, 1.7, gate)
+    expect(e.alertness, '隔着墙听见金属相交 ≠ 目击').toBe(0)
+    expect(e.state).toBe('idle')
+    w.combat.occlusion.syncAuthored(null)
+    e.sawImpact({ ...EYE_P }, 1.7, gate)
+    expect(e.alertness, '撤了墙，同一次弹反立刻是目击：+100').toBe(100)
+    expect(e.state, '并且瞬间进 chase').toBe('chase')
+    w.off()
+  })
+
+  it('交战中的敌人：隔墙目击不把最后已知位置拽到墙后（那一支由 hear 负责，它给的是声音）', () => {
+    const w = makeWorld()
+    const { e } = eyeRig(w)
+    e.enter('chase')
+    const gate = (a: Vec3, b: Vec3) => w.combat.occlusion.blocked(a, b)
+    const before = { ...e.lastKnown }
+    e.sawImpact({ ...EYE_P }, 1.7, gate)
+    expect(e.lastKnown, '墙后面那一声不该成为"我看见他在那儿"').toEqual(before)
+    w.combat.occlusion.syncAuthored(null)
+    e.sawImpact({ ...EYE_P }, 1.7, gate)
+    expect(e.lastKnown.z, '看得见才更新').toBeCloseTo(EYE_P.z, 6)
+    w.off()
+  })
+})
+
+describe('接线：第四个读者挂在组合根上（不靠测试自己记得注入）', () => {
+  it('main.ts 把 AI 的视线闸门接到 combat 的那份名册，且只接这一处', () => {
+    const src = readFileSync(fileURLToPath(new URL('../../src/main.ts', import.meta.url)), 'utf8')
+      .split(/\r?\n/)
+    const wired = src.filter((l) => l.includes('sightBlocked'))
+    expect(wired.length, '视线闸门在组合根里恰好一处赋值').toBe(1)
+    expect(wired[0], '必须复用 combat.occlusion 那一份名册，而不是另算一套几何').toMatch(/combat\.occlusion\.blocked/)
+    expect(wired[0].trim().startsWith('//'), '那一行是代码不是注释').toBe(false)
   })
 })
