@@ -1,7 +1,8 @@
 # CAESURA《止音纪元》— Technical Architecture（技术架构）
 
 > 状态标注约定（需求 §78）：Implemented / Partial / Placeholder / Blocked。
-> 本文档当前为 **Implemented（文档层）**——是 Phase 0 预生产产物，代码尚未开工，所有运行时条目均为 Planned。
+> 本文档当前为 **Implemented（文档层）**——Phase 0 写的规划，此后每个 Phase 交付时同步更新（最近一次：2026-09-26）。
+> **§2 那张目录表是"目录已定不得更改"的规划，不是交付清单**；真实树与它的逐条差异在 **§2.1**，读实现位置先看那一节。
 > 关联文档：`docs/IP_SEED.md`（创意基线，唯一合法名词表）、`docs/KNOWN_ISSUES.md`（技术债登记，见 §8）。
 
 ---
@@ -29,10 +30,10 @@
 | Nanite（虚拟化几何） | 手工 LOD 组（3 级）+ `InstancedMesh` 植被/岩体 + Draco 压缩 glTF | **近似** | 无逐集群（cluster）LOD 与软件光栅；以「实例化 + 距离分级网格」在 6GB 显存预算内达到同量级 drawcall 控制 |
 | Lumen（动态 GI/反射） | 烘焙 AO（lightmap/vertex AO）+ SSAO 后处理 + 屏幕空间反射（仅 High/Ultra 档，平面近似）+ 环境光探针（每区域一组 `PMREMGenerator` env map） | **降级** | 无真实动态 GI；「凝声极光带」天光用 IBL 探针 + 每区域 2~4 个烘焙光变体近似「光照 mood」（需求 §37）；动态光源仅限 ≤8 个 punctual light |
 | World Partition / Level Streaming / Data Layers | 区域流送：chunk streaming（§5.5），每区域独立 scene graph 片段，按玩家位置 activate/deactivate；Data Layer 等价物为 `layerMask`（环境层/玩法层/剧情层分开卸载） | **近似** | 无网格级（Nanite cell）流送，粒度为 chunk（48m）；传送需触发强制同步加载 + 黑屏遮蔽 |
-| Behavior Tree / Blackboard / EQS | 自研 TS 行为树（`ai/bt/`：Selector/Sequence/Decorator/Service 节点 + Blackboard `Map<string,unknown>`）；EQS 由「查询生成器」近似：候选位置打分（距离/视线/掩体） | **等效**（简化版） | 无编辑器可视化（用 `tools/AIDebugger` 面板树形打印替代）；节点类型先实现 8 种够用即止 |
-| State Machines | 分层 FSM（HFSM）手写状态类，需求 §20 的 11 态全覆盖 | **等效** | — |
+| Behavior Tree / Blackboard / EQS | 自研 TS 行为树（`ai/bt/`：Selector/Sequence/Decorator/Service 节点 + Blackboard `Map<string,unknown>`）；EQS 由「查询生成器」近似：候选位置打分（距离/视线/掩体） | **等效**（简化版） | 无编辑器可视化（用 `tools/AIDebugger` 面板树形打印替代）；节点类型先实现 8 种够用即止。**⚠️ 2026-09-26 对账：这一行是当初的选型理由，不是现状**——实际落的是「距离带 → 招式选择表」的数据查表，`ai/bt/`、Blackboard、EQS、`tools/AIDebugger` 全都不存在（§2.1-B）。按今天的树读，本行的等效等级应记为**缺失且换了路线** |
+| State Machines | 分层 FSM（HFSM）手写状态类，需求 §20 的 11 态全覆盖 | **等效** | — →**对账修正**：11 态确实一个不少（`EnemyState` 联合类型 + `enter()`），但**没有 HFSM 基类也没有分层**，是一份手写 switch（§2.1-A） |
 | UMG / Common UI | DOM（HTML/CSS）做菜单栈/背包/对话 + 单个 overlay canvas 做 HUD 实时元素（HP 振幅条、节拍环）；`ui/` 统一 Widget 栈管理焦点/输入捕获 | **降级** | 无矢量缩放 DPI 自动适配（用 rem + canvas scale 手工处理）；材质化 UI（振膜质感）靠 CSS backdrop-filter + canvas shader，效果上限低于 UMG |
-| Niagara GPU 粒子 | 自研 GPU 粒子：`InstancedBufferGeometry` + 顶点动画 shader（生命周期/速度/颜色写入实例属性，CPU 仅管理发射器）；CPU 回退路径给 Low 档 | **近似** | 无模块图编辑器（发射器配置全部 JSON 数据驱动，见 §3 SkillData.vfx）；流体/ribbon 拖尾用定制 tube shader 单独实现 |
+| Niagara GPU 粒子 | 自研 GPU 粒子：`InstancedBufferGeometry` + 顶点动画 shader（生命周期/速度/颜色写入实例属性，CPU 仅管理发射器）；CPU 回退路径给 Low 档 | **近似** | 无模块图编辑器（发射器配置全部 JSON 数据驱动，见 §3 SkillData.vfx）；流体/ribbon 拖尾用定制 tube shader 单独实现。**对账**：这套机制**落了，但只有三类**——ring / spark / shard（`vfx/VfxLayer.ts` + `vfx/materials.ts`）；`vfx/GPUParticles.ts`、`Trails.ts`、`Decals.ts` 三个文件名与拖尾/贴花能力均未落（§2.1-B），CPU 回退路径同理未落 |
 | MetaSounds 程序化音频 | WebAudio 图程序合成：振荡器/噪声源/卷积混响（生成式 IR）/参数自动化；音乐节奏系统用 `AudioContext.currentTime` 采样级 BPM 网格（需求 §11 音频方向：攻击与 BGM 同网格） | **等效**（对本作反而贴合） | 本作音乐即玩法（节拍可读性、幽灵八的拍隙机制），采样级时钟比 Niagara 式事件更关键；差距：无空间音频 HRTF 内置（自写 PannerNode + 距离模型近似） |
 | Montage / Anim Blueprint / Blend Spaces | 动画片段混合器（`player/anim/MontagePlayer`）：glTF animation clips + 分层（上身武器层/全身层）+ 1D/2D BlendSpace（走跑稀疏插值）+ Additive 层（受击抖动）；montage 式帧数据驱动攻击判定（见 §3 帧数据） | **降级** | 无 Control Rig / Motion Warping（用根运动预烘焙 + 命中时手工对齐位移修正替代 IK 步对齐：单骨 look-at IK 自写）；`THREE.AnimationMixer` 需封装事件轨道 |
 | Gameplay Ability System (GAS) | 轻量 ECS 风格组件（§57）：`AbilityComponent` + `EffectComponent`（DoT/护盾/状态效果，tag 化：`status.mute`、`status.fissure.3`）+ 属性集（GameplayEffect 等价 = JSON 修饰符栈） | **近似** | 无复制预测（单机不需要，属**缺失且合理**）；预测/回滚：不做（本地单机无网络） |
@@ -218,6 +219,73 @@ src/
 
 ---
 
+### 2.1 这张表的对账（2026-09-26，按真实 `src/` 树逐条核）
+
+> 上面那张表是 **Phase 0 的目录规划**（需求 §56「目录已定不得更改」），不是交付清单。它在过去几周被
+> 当成了清单读，于是"表里有 `ai/Navigation.ts`"被理解成"项目里有导航"。这一节把两边对上：
+> **A = 文件名没落但职责落了（换了载体）**，**B = 文件名和职责都没落（真缺口）**，
+> **C = 真树里有、这张表没写（后来长出来的）**。可复跑的事实来源只有一条命令：`find src -name '*.ts' | sort`
+> （本轮 **68 个文件**：其中 `src/data/json/` 那些 `.json` 不计，本闸门只核 `.ts`）。分层与依赖箭头没有因为对账而改变，但**有一层是规划外新增的**，见 C 表的 `input/`。
+
+**A. 换了载体：表里的路径不存在，职责确实每天都在跑**
+
+| 规划路径 | 真载体 | 差在哪一句 |
+|---|---|---|
+| `core/SceneGraph.ts` | `main.ts` 建 `THREE.Scene`，各表现层跟着 `world.chunk` 自行挂/摘（ChunkGreybox / WallGreybox / InteractableGreybox / ActorVisuals / ProjectileVisuals / PropVisuals / BossArenaVisuals / VfxLayer） | **layerMask 与相机切换未做**：场上还没有需要分层的正式美术（KI-008 同因） |
+| `player/Attributes.ts` | `combat/EntityStats.ts` | 玩家与敌人共用同一份 base+modifier 栈与按 tick 的衰减，脏标记重算没做（每 tick 重算，量小） |
+| `player/anim/MontagePlayer.ts` | `combat/ActionFrames.ts`（纯 tick 帧数据）+ `world/ActorVisuals.ts`（灰盒位姿） | **动画剪辑混合器、BlendSpace、Additive 层、glTF clips 全未落**（KI-008）。KI-017 之后帧数据本来就不依赖动画时标，所以这条缺口不挡玩法 |
+| `combat/AttackSystem.ts`、`combat/DefenseSystem.ts`、`combat/HitStop.ts`、`combat/Poise.ts` | 四份合并进 `combat/CombatManager.ts` | hitOnce、三档防御阶梯、§9 情境停顿、架势积累/衰减/破防**都在这一个文件里**。§1.2 映射表按职责读仍成立，按文件名读不成立 |
+| `combat/HitReaction.ts` | `combat/Reactions.ts` | §8 四档（KI-050/KI-052） |
+| `combat/StatusEffects.ts` | `combat/Statuses.ts` | 震裂/闷音/回响/失谐/超载五键全数据化（Phase 5-C1） |
+| `ai/StateMachine.ts` | `src/ai/Enemy.ts` 的 `state` 联合类型 + `enter()`（调度轮转在 `src/ai/AISystem.ts`） | **十一个状态一个不少**（需求 §20），但没有"分层 FSM 基类"这层抽象——它是一份手写 switch |
+| `ai/bt/`（8 种节点 + Blackboard + EQS 打分） | **从未存在** | 决策的实际形态是"距离带 → 招式选择表"的**数据查表**（`enemies.json > ai`），改表即改行为。§1.2 那行「自研 TS 行为树 = 等效」按今天的树读**不成立**，已在本节记下（不改 §1.2 的映射表，那是当初的选型理由） |
+| `ai/Perception.ts` | `Enemy.sense()`（视觉 + 震动）/ `Enemy.hear()`（听觉） | 表内已注明；KI-014②b 之后视觉那半条吃遮挡 |
+| `world/Region.ts` | `data/json/regions.json` + `data/schema.ts` 的 `RegionData`；读取与闸门在 `world/Streaming.ts`，垂直落点在 `world/Surface.ts` | 区域是 **JSON 而不是类**——这本来就更符合 §55，规划时写成了面向对象 |
+| `world/Interactable.ts` | `world/Interactables.ts` | 复数是唯一差别 |
+| `quest/QuestState.ts` | `quest/Quests.ts`（+ `quest/Settlement.ts` 落选项效果） | 三步机已落（notStarted→active(step k)→completed）。需求 §30 的 NPC state 公式在 `quest/Dialogue.ts` 的条件里，不是独立状态机 |
+| `quest/WorldFlags.ts` | `world/Streaming.ts` 的 `flags: Set<string>` | **只有命名 bool 这一层**：位图、int/string 层、条件表达式解析器（`"flag.a && npc.b"`）都没有。今天读旗的口径是 `hasFlag/setFlag/flagKeys`，写旗的口径是 `quest/WorldState.ts` 的规则表 |
+| `quest/DialogueRuntime.ts`、`ui/DialogueUI.ts` | `quest/Dialogue.ts`（纯函数树）+ `ui/DialogueBox.ts`（表现） | 逻辑与表现分家比规划更干净：`Dialogue.ts` 不 import DOM |
+| `audio/AudioGraph.ts` | `audio/AudioEngine.ts` | 图结构一致（master→bus→limiter→dest），limiter 用的是 DynamicsCompressor |
+| `audio/Synth.ts` | `audio/synth.ts` | 只有大小写 |
+| `vfx/ImpactRings.ts` | `vfx/VfxLayer.ts` + `vfx/materials.ts` | ring/spark/shard **三类**共用一套"每类一张实例几何 + 一份 GLSL + 一个 Pool"的做法 |
+| `core/RhythmClock.ts`（表里写在 `audio/`） | `core/RhythmClock.ts` | **换了层**：它发 `beat.*` 事件、不碰 WebAudio，按依赖规则本就该在 core |
+
+**B. 表里的路径不存在，职责也没落——这些是真缺口，不是改名**
+
+| 规划路径 | 状态标签（§78） | 归属与后果 |
+|---|---|---|
+| `ai/Navigation.ts` | Placeholder | KI-009：`regions.json > navmeshRef` 故意留空以免悬空引用；敌人的移动现在是"朝目标走 + 距离带停"，不会绕墙 |
+| `ai/Squad.ts` 的仇恨槽位（上限 3） | 未落 | `callAlly` 只有广播（`ai.callAlly` 事件 + 半径判定），没有"后置入战斗的敌人等槽位"，围殴可读性这条还没做 |
+| `player/CameraRig.ts` 的模式枚举与碰撞回弹 | 未落 | 现在的 CameraRig = 平滑跟随 + §10 震镜表 + FOV 脉冲 + 处决推轨 + 锁定时的 target bias；**没有 exploration/combat/lockOn/boss/cinematic 五个模式，也没有弹簧臂射线回弹**（球体射线 5 点采样那句是规划） |
+| `world/generators/`（Terrain/Foliage/Rock/Ruin，需求 §52） | 未落 | 地形现在全部 authored 在 `regions.json` + 灰盒盒子；关键区域手工摆放本来就是规划的首选路径，程序化那条没开 |
+| `world/Weather.ts`、`world/Lighting.ts` | 未落 | 与 KI-008 同因：没有真几何与材质就没有雨雾与光照预设。IP_SEED §7 的"铃姨 flag 驱动天气"目前没有任何载体 |
+| `ui/MenuStack.ts`、`ui/MapUI.ts`（需求 §43 地图） | 未落 | UI 现只有 HUD、调音桩面板、对话箱、存档两屏、标题屏。**顺带一条命名失真**：`core/Input.ts` 里那个虚拟按钮仍叫 `map`（Tab / 手柄 6 号键），但它今天的消费者（`main.ts` 的 `edges.has('map')`）开的是**调音桩/商摊面板**，不是地图——§43 的地图 UI 从未落地，于是"按着地图的名字在调音"。本轮不改这个键名（改了会连带动 `settings` 与测试口径），只在此登记 |
+| `vfx/GPUParticles.ts`、`vfx/Trails.ts`、`vfx/Decals.ts` | 未落 | 弹痕/震纹贴花与武器拖尾没有，命中反馈目前靠 ring+spark+shard 三件套 |
+| `audio/Mixer.ts` 的三主题淡入淡出（§11 转调） | 未落 | `audio/music.ts` 只有一条休垒 drone + 随机泛音；combat/boss 主题与转调规则没有 |
+| `tools/EnemyDebugger.ts`(F1)、`QuestDebugger.ts`(F3)、`AIDebugger.ts`(F4) | 未落 | **四把键里只有 F2 有面板**（`CombatDebugger` 监听 `F2`）。`core/Input.ts` 对 F1/F3/F4 做了 `preventDefault` 而**全仓库没有一处读它们** ⇒ 这三把是真·死绑定：按下去浏览器不响应、游戏里什么都不发生，看上去"已被占用"。要么补面板，要么把这三把从 `preventDefault` 名单里摘掉——按 §55「没有消费方的东西不占位」，后者是默认答案，但那是代码批次的事，本批只登记（§2.1 的对账不改行为） |
+| `core/Registry.ts` 的 glTF/纹理/音频引用计数 + 占位兜底 | Partial | JSON 名册与 `load(url, loader)`（loader 由表现层注入，core 不 import three）都在；**preload 与引用计数没有**，因为场上还没有需要计数的外部资源 |
+
+**C. 真树里有、这张表没写（交付过程中长出来的）**
+
+| 文件 | 为什么在规划之外 |
+|---|---|
+| `core/Math.ts` | `mulberry32` / `clamp` / `Rng`：需求 §59「可复现测试」要求 seeded RNG，规划时只写了"RNG"这个概念 |
+| `core/Pool.ts` | 通用对象池。§5.1 讲了池化策略，却没给文件名，于是它落成了 core 的一个 20 行类 |
+| `input/Haptics.ts` ＋ **整个 `input/` 层** | §64 振动的**逻辑层**（档位表、纯数据、headless 可测），与 `core/Input.ts` 的"读设备"分家才有测试可写。**这是规划外新增的一层目录**，依赖箭头按 `core ← input` 摆放；§56 那张定表本轮不擅自改（它写着"不得更改"），在此登记待修订 |
+| `data/index.ts`、`data/schema.ts` | 表里 `data/` 只有一行。实际是两份：schema.ts 是 §3 全部类型的唯一来源，index.ts 把它们与 9 个 JSON 装进 registry |
+| `rpg/Runtime.ts` | 组合根装配（Progression + Equipment + Inventory + 派生属性），表里把这职责分散写了、没给载体 |
+| `rpg/Shop.ts` | KI-055① 商店逻辑层（买清单 / 卖装半价 / 反套利闸门） |
+| `rpg/Movements.ts`、`world/Props.ts`、`world/PropVisuals.ts` | 乐章战技谱册（Phase 5-C2）与**可破坏场景物**这一类实体（KI-023 音刺 / KI-022② 振源核）——后者是规划里没有的**实体类别**，不是文件 |
+| `quest/Settlement.ts` | 与 `rpg/Settlement.ts` **同名不同职**：前者落对话与任务的选项效果，后者是击杀结算。两个同名文件住在同一个仓库里是真实的踩坑点，点名登记 |
+| `ui/Stakerite.ts`、`ui/TitleScreen.ts`、`ui/SaveSlots.ts` | 调音桩面板、开场定弦（KI-031②）、存档槽两屏（KI-025②）——都晚于规划 |
+| `world/ActorVisuals.ts`、`world/BossArenaVisuals.ts` | 身体与场地的灰盒表现层。规划把它们算进了 `SceneGraph`，实际各自一份才好测 |
+| `world/WallGreybox.ts` | KI-014②a：遮挡必须看得见 |
+
+**这一节往后的读法**（防止又漂回去）：需要"某个能力实现在哪"时，**先读 KNOWN_ISSUES 的状态表与 §2.1，再读这张目录表**；
+新模块交付时必须在 A/B/C 三张表之一加一行，改 `src/` 而不动本节 = 本节的日期就该更新。
+
+---
+
 ## 3. 数据驱动规范（需求 §55）
 
 ### 3.1 总原则
@@ -381,6 +449,17 @@ HitStop 结束      └─ timeScale 恢复 → 攻方 recovery 续播 → 数�
 
 弹反时序另加一层：parry 窗口(攻击命中前 10tick) 判定成功 → 攻方硬直 montage + 大音钟「铛」+ 白色大环 + HitStop 140ms + 摄像机 dolly-in 5% + 手柄强震动——弹反是本作世界观「休止」特权的核心表达，反馈等级最高。
 
+> **§4 对账（2026-09-26）**：这张时间轴**按事件读成立、按文件名读不成立**。
+> `HitFeedback.ts`（规则 1 指定的那个集中派发者）**不存在**——四档强度的派发实际分散在四处，各自吃总线事件：
+> `combat/Reactions.ts`（§8 受击档位 + 豁免）、`player/CameraRig.ts`（§10 震镜表 + FOV 脉冲 + 处决推轨）、
+> `vfx/VfxLayer.ts`（ring/spark/shard）、`ui/Hud.ts`（飘字与里程碑腿）。
+> 时间轴里那几个名字同时按 §2.1 换过载体：`AttackSystem`→`CombatManager`、`ImpactRings`→`VfxLayer`；
+> **`Decal` 与「additive flinch 层」确实没有**（前者 §2.1-B，后者属 KI-008：没有动画层，今天的"受击可见"是
+> R0 发光 + R1/R2/R3 位移与硬直 tick）。
+> 数字侧要分开读：`hitStopMs`（§9，KI-017 第四步入表）与 `SHAKE_TABLE` 的幅度/频率/时长（§10，KI-051/053 入表）
+> **都在数据表里且有测试钉住**；而 `t=-133 / +83 / +100` 这三个"错开几拍"的择时是各表现层自己定的，
+> 没有一个中央定时器在发号施令 —— 所以规则 1 那句「禁止散点触发」今天**只能靠 review 守住**。
+
 规则：
 1. 每条反馈的强度分 4 档（graze/normal/heavy/boss），由 FrameData/事件载荷驱动，集中在 `HitFeedback.ts` 派发，禁止散点触发。
 2. 「克制」原则（需求 §16）：轻击不得触发 screen flash；只有处决/弹反/破防允许全屏效果。
@@ -389,6 +468,20 @@ HitStop 结束      └─ timeScale 恢复 → 攻方 recovery 续播 → 数�
 ---
 
 ## 5. 性能架构（需求 §48/§49/§50）
+
+> **§5 对账（2026-09-26，需求 §78「状态标签必须真实」）**：本节里只有 §5.5 与 §5.9 系列挂着"已实现"并且
+> 真的在树里；**§5.1~§5.4、§5.6、§5.7 是预算与规划，不是现状**。逐格：
+>
+> | 小节 | 标签 | 事实依据（可复跑） |
+> |---|---|---|
+> | §5.1 对象池 | **Partial** | `core/Pool.ts`（29 行泛型池）在跑，但**消费者只有 `vfx/VfxLayer.ts`**（ring/spark/shard 三类实例池）。敌人不池化（`AISystem.spawn()` 每只 `new Enemy`）、伤害飘字没有 DOM 池、音频节点没有池、"上限=峰值×1.5 + 超限告警"没有 |
+> | §5.2 LOD 与实例化 | **Partial** | 实例化落了：每类灰盒一张 `InstancedMesh`（Chunk/Wall/Interactable/BossArena/Prop/Projectile/Vfx）。**LOD 一级都没有**——`grep -rn LOD src` 零命中；植被/岩体/遗迹模块本来也不存在（`world/generators/` 见 §2.1-B） |
+> | §5.3 Drawcall 预算 | **Placeholder** | **这张表从未被实测过。**「3060Laptop 实测余量 20%」是立项时的期望值：本环境打不开可见窗口（KI-010），`package.json` 里没有任何 `perf:` 脚本（KI-015 已记）。今天真能数出来的只有"每类 1 call"这一条结构性事实 |
+> | §5.4 内存预算 | **Placeholder** | KTX2/Basis、Draco、ogg 流式**都不在树里**（本作至今零外部素材：全程序合成 + 灰盒），所以这份预算没有可核对的对象 |
+> | §5.6 画质档位 | **Planned** | Low/Medium/High/Ultra 没有载体，`src/` 里没有 quality 开关；CSM/SSAO/SSR/bloom/FXAA/DOF 全未落 |
+> | §5.7 Profiling | **未落** | `PerfPanel` 不存在，F 键没有绑定，`docs/perf-log/` 目录也不存在 ⇒ **"无此表不得合并"这条强制流程今天无法执行**。需求 §49 的"不要猜性能"目前只由一条兜住：逻辑一律走 60Hz 固定 tick，所以玩法判定与机器性能无关；真实帧时间属 KI-010/KI-045 那个不可测面 |
+>
+> 这一格的正确读法：**预算数字是用来在能做测量那天核对的，不是用来当作已达成的指标引用的。**
 
 ### 5.1 对象池
 `core/Pool.ts<T>` 泛型池：粒子实例（每发射器一池）、特效环、伤害飘字 DOM 节点、敌人实体（区域重置复用）、音频源节点。禁止热路径 `new`；池上限=峰值观测值×1.5，超限告警（profiling 面板红色条目）。
@@ -620,10 +713,15 @@ Phase 4-A 把弹道跑通，但远程只被当作「会飞的近战判定」。4
 
 
 ### 6.1 Vitest 单元测试（纯逻辑层，毫秒级）
-- `combat/damage.test.ts`：伤害管线各阶段（scaling/弱点×背刺/抗性下限 0/方差区间断言用固定 seed）
-- `combat/stamina.test.ts`：攻击/闪避/格挡消耗、耗尽硬直、回复（含 Mute -30%）
-- `rpg/inventory.test.ts`：堆叠/拆分/排序稳定性/容量边界
-- `rpg/progression.test.ts`：经验曲线公式、音级分配后属性重算一致性
+
+> **对账（2026-09-26）**：下面前四条**按文件名读全部不存在**——`combat/damage.test.ts`、`combat/stamina.test.ts`、
+> `rpg/inventory.test.ts`、`rpg/progression.test.ts` 从未以这些名字落过盘。它们承诺的断言是真的，只是按"系统"而不是
+> 按"模块"落了盘：伤害管线在 `tests/flow/{ranged,gate5,combat}.test.ts`，体力在 `tests/flow/{combat,boss,elite}.test.ts`
+> 等一批里，背包/强化在 `tests/unit/rpg.test.ts` 与 `tests/flow/{shop,loot-rules,timbral-affix}.test.ts`。
+> **真实清单：74 份 `*.test.ts` = `tests/unit/` 30 份 + `tests/flow/` 44 份**（`find tests -name '*.test.ts' | wc -l`），
+> 本轮全绿 811 条用例。逐文件清单不在本文档里维护（会漂），跑 `npm run test` 的覆盖核对那一行就是权威。
+> 下面只保留**当初的命名与现在的载体对不上、且值得记住语义**的那几条。
+- `combat/damage.test.ts`、`combat/stamina.test.ts`、`rpg/inventory.test.ts`、`rpg/progression.test.ts` → **未以此名落地**，语义见上
 - `tests/unit/movements.test.ts`（Phase 5-C2，16 条）：谱册状态层——点亮吃什么/先验后扣、升级阶梯到表尾报 `max`、
   两槽门禁（页要先亮、槽要先开、槽号越界）、`loadout()` 按等级合成、脏档（假页/越界等级/未开槽）一律丢弃
 - `tests/flow/movements.test.ts`（Phase 5-C2，17 条）：真帧数据出手——同种子把"不吃武器强化""差值恰为表里真伤""过载每层 +4%"
@@ -641,6 +739,11 @@ Phase 4-A 把弹道跑通，但远程只被当作「会飞的近战判定」。4
 - ~~`data/validate.test.ts`：全部 JSON 通过 Ajv schema~~ **实际落地的是 `npm run validate:data`**（`scripts/validate-data.mjs`，零新增依赖，见 KI-015）：id 唯一、交叉引用存在、区间与帧表单调、以及设计要求的必填组合；vitest 里没有这条（跑法不同）。它已被证明能抓出真 bug（KI-015 首跑），本次新增的"Boss 两格齐全"也是同一类约束
 覆盖率门槛：逻辑核心包（combat/rpg/save/quest）行覆盖 ≥80%。
 
+> **对账（2026-09-26）**：这条门槛**从未被测量过**。仓库里没有 `@vitest/coverage-*`，也没有 coverage 脚本
+> （零新增依赖优先）。今天真正在执行的替代度量是另一件事：`scripts/test.mjs` 拿 JSON reporter 的"这次真跑了哪些文件"
+> 与磁盘上的 `tests/**/*.test.ts` 对账，对不上就重跑、最多三次后失败并打印差集——它保证**每个测试文件都被跑到**，
+> 不保证**每行代码都被执行**。两者不能互相冒充，所以"行覆盖 ≥80%"按 §78 应读作**未执行的门槛**。
+
 ### 6.2 Headless 功能测试（自动化 gameplay flow，需求 §59）
 无渲染模式：GameLoop 以 `tickSync()` 手动步进（注入假时钟），装配 stub 渲染层。脚本化协议：
 ```
@@ -653,15 +756,36 @@ startNewGame() → 移动 3 tick 假输入 → 位置变化断言
 每阶段一条用例、seed 固定、可 `npm run test:flow`。回归红线：任何 P0/P1 系统改动必须绿此流程。
 
 ### 6.3 浏览器实机验证协议（需求 §77，P0 验收门槛）
-- Playwright（chromium）：`npm run test:e2e`——启动 dev server，加载首页，等待 boot 完成信号（`window.__CAESURA_BOOTED__`），**控制台错误数必须 = 0**（warning 白名单制），WebGL context 存活断言，关键场景截图存 `docs/qa/shots/` 与基线图对比（像素 diff 阈值，视觉评审用需求 §82 清单人工复核）。
-- browser-use（交互式 QA 补充）：真实输入走一遍 §6.2 流程（鼠标键盘事件注入），录制 30s 片段验证 game feel（HitStop 手感/摄像机行为无法纯 headless 断言，须截图+录像目检）。
-- 性能冒烟：e2e 中采样 10s 帧时间，P99 > 20ms 即 fail（Medium 档 1080p 虚拟分辨率）。
+
+> **对账（2026-09-26）**：下面第一条**整条未落**——本机没有 Playwright，`npm run test:e2e` 这个脚本不存在
+> （KI-015 已把这条从"必过门"口径里摘掉），`docs/qa/shots/` 目录也不存在，像素 diff 无从谈起。
+> 今天真正在跑的只有第二条（browser-use 交互式探针），而它受一个环境事实约束：本环境打开的是隐藏标签页
+> （`innerWidth/innerHeight = 0`、`document.hidden = true`），一帧真实渲染约 0.6~1.5s ⇒
+> **"关键场景截图与基线对比"与"30s 录像目检 game feel"这两格做不了，登记在 KI-010**。
+> 仍然守得住的两条：① 控制台错误数 = 0（每轮探针都在读，非零就当场记 KI）；② 逻辑层用 `loop.tickFrame(1/60)`
+> 真步进 + 真键盘/真鼠标事件复验（KI-020/KI-003/KI-048 都是这样读回来的）。
+> 第三条"性能冒烟 P99 > 20ms 即 fail"同样未落：隐藏页测出来的帧时间是那个标签页被节流后的假数，不是性能数。
+> **凡涉及"看起来对不对"的结论，本文档一律不写"已验证"**（§78）。
+
+- ~~Playwright（chromium）：`npm run test:e2e`~~ **未落**：启动 dev server，加载首页，等待 boot 完成信号（`window.__CAESURA_BOOTED__`），**控制台错误数必须 = 0**（warning 白名单制），WebGL context 存活断言，关键场景截图存 `docs/qa/shots/` 与基线图对比（像素 diff 阈值，视觉评审用需求 §82 清单人工复核）。—— boot 信号与控制台错误两条已由 browser-use 探针承担；其余等 Playwright 或可见窗口。
+- browser-use（交互式 QA 补充）：真实输入走一遍 §6.2 流程（鼠标键盘事件注入），录制 30s 片段验证 game feel（HitStop 手感/摄像机行为无法纯 headless 断言，须截图+录像目检）。**录像与目检未做（KI-010）**；HitStop 与镜头行为改用**逻辑读数**验证（`hitStopUntilTick`、`CameraRig.rawScale`、`SHAKE_TABLE` 档位），这能证明量对了，不能证明手感对了。
+- ~~性能冒烟：e2e 中采样 10s 帧时间，P99 > 20ms 即 fail（Medium 档 1080p 虚拟分辨率）~~ **未落**（同上，属 KI-010/KI-045 那个不可测面）。
 
 ---
 
 ## 7. 构建与版本
 
 ### 7.1 npm scripts
+
+> **对账（2026-09-26）**：这张表是立项时的期望清单，**其中四行不存在**。`package.json` 里真实存在的九个是：
+> `dev` / `build`(= `tsc --noEmit && vite build`) / `preview` / `lint`(= **只有 `tsc --noEmit`，没有 eslint**) /
+> `test`(= `node scripts/test.mjs`，带覆盖核对的跑测器，见 §6 前言) / `test:flow` / `validate:data` /
+> `check`(= lint + validate:data + test) / `test:raw`（绕过覆盖核对直接跑 vitest）。
+> **不存在的**：`test:e2e`（无 Playwright）、`perf:capture`（无 `scripts/perf-capture.mjs`）、`lint` 里的
+> `eslint --max-warnings 0`（零新增依赖优先，边界检查由 `tests/unit/arch-boundaries.test.ts` 承担）；
+> `validate:data` 也不是 `tsx scripts/validate-data.ts`，而是**零依赖的 `.mjs`**。
+> 这套脚本清单每次改动都真跑，所以它没有"表里绿、实际不存在"的余地——上面那四行原本是假的。
+
 ```
 dev            vite（HMR，默认 DEV 调试器开启）
 build          vite build（生产，去 tools/、Drop console、esbuild minify）
@@ -673,13 +797,35 @@ perf:capture   node scripts/perf-capture.mjs（跑 e2e 采样帧时间写 docs/p
 ```
 
 ### 7.2 Vite 分包
+
 manualChunks：`three`（vendor，独立长缓存）、`game-logic`（core/combat/ai/rpg/quest/save）、`game-render`（world/vfx/player 视觉部分）、`ui`、`audio`、`data`（JSON 资产独立 chunk 可预加载）。资产（gltf/纹理）走 public + import.meta.url。目标：首屏 JS ≤450KB gzip（不含 three）。
 
+> **对账（2026-09-26）**：分包**落了**（KI-005 结案：`manualChunks` 曾挂在错误的配置层级被 vite 静默忽略，现在真产物的六块是
+> `three` / `index` / `data` / `ui` / `render` / `audio`，名字与上面规划的 `game-logic`/`game-render` 不同但分层一致）。
+> **那条"首屏 ≤450KB gzip（不含 three）"这次可以真回答**：本轮 `npm run build` 的实际 gzip 是
+> index 35.70 + data 27.76 + ui 27.22 + render 21.26 + audio 4.77 = **116.71 KB**，不含 three 的 133.25 KB ⇒ 达标且余量很大。
+> `public` 里至今没有 gltf/纹理（零外部素材），所以"资产走 public + import.meta.url"这一句**没有对象**，不是未落。
+
 ### 7.3 Git 工作流
+
 主干 `main`（始终可玩）+ 短分支 `feat/<system>-<topic>`；commit 前缀约定 `combat:|ai:|world:|perf:|data:|fix:`；PR 合并门槛 = `lint + test + validate:data` 绿，P1 以上另需 `test:flow`；squash merge。大文件：模型/纹理走 git-lfs（或首版全程序化生成=无二进制）。每 Milestone 打 tag `ms-0.x`。
 
+> **对账（2026-09-26）**：本仓库**没有远端、只有 `master` 一条分支**（文档写的是 `main`），因此 PR / squash merge /
+> 分支名约定这三件事**都不成立**——实际流程是"每个 KI/Phase 一条直提交，提交信息里写清门禁与实机状态"。
+> commit 前缀确实在用，形态是 `area+area: KI-xxx — 中文摘要`（例：`ai+core: KI-014②b — …`）。
+> **`git tag` 一个都没有**：需求 §62 的 Milestone 打 tag 从未执行，这是本轮对账抓出来的第二条"写了没做"。
+> git-lfs 未启用，且走的是括号里那一支（全程序化生成 = 无二进制），符合事实。
+
 ### 7.4 CI 思路（本地先行）
+
 无外部 CI 依赖：git pre-commit hook（husky）跑 `lint + tsc`；pre-push 跑 `test + validate:data`；`scripts/release-check.mjs`（每次发版候选）串跑 build+test:flow+test:e2e 全绿才允许打 tag。未来若上 GitHub Actions：linux runner 即可（无需 GPU 机，e2e 用 headless swiftshader 标记为性能豁免）。
+
+> **对账（2026-09-26）**：`husky` 没装（零新增依赖优先），仓库里 `.git/hooks/` 只有 `.sample`；
+> 实际拦住提交的是**机器级** `core.hooksPath = C:/Users/18414/.codex/git-hooks`（不属于本项目、不可修改，
+> 它会跑 `tsc --noEmit` 并拦截看起来像密钥的 diff）。**pre-push 与 `scripts/release-check.mjs` 都不存在**
+> （`scripts/` 里只有 `validate-data.mjs`、`test.mjs`、`gen_initial_data.py`）。
+> 于是"提交前必过"的真实清单只有：tsc（钩子）+ 我自己在每次交付前手跑的 `validate:data` / `test` / `build` 三道——
+> 这条口径 KI-015 已经改过一次，本节是文档里最后一处还写着不存在门禁的地方。
 
 ---
 
