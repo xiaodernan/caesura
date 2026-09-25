@@ -280,6 +280,27 @@
      "z": -160
     },
     "lootTable": "loot_chest_t1"
+   },
+   {
+    "id": "in_echo_cairn",
+    "kind": "inspect",
+    "verb": "读石堆",
+    "pos": {
+     "x": 240,
+     "y": 0,
+     "z": -20
+    },
+    "setsFlag": "flag.echo_cairn_read"
+   },
+   {
+    "id": "ch_echo_cairn_claim",
+    "kind": "chest",
+    "pos": {
+     "x": 244,
+     "y": 0,
+     "z": -24
+    },
+    "secretId": "sec_whisperwode_echo_cairn"
    }
   ],
   "music": {
@@ -296,7 +317,7 @@
     "rewardTable": "loot_secret_cairn",
     "pos": {
      "x": 240,
-     "y": 6,
+     "y": 0,
      "z": -20
     }
    }

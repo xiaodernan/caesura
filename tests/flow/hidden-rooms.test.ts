@@ -206,6 +206,25 @@ describe('隐藏房可达性：发生了什么 ⇒ 立旗 ⇒ 锁开 ⇒ 东西�
     expect(r2.ok, '捷径是永久的：第二次穿墙照常可用（teleport 天然反复）').toBe(true)
   })
 
+  it('回音石堆：研读是写方（旗立）⇒ 封存点解锁 ⇒ 石堆档真能领；研读一次性（KI-041）', () => {
+    const w = makeWorld()
+    w.standAt('ch_echo_cairn_claim')
+    expect(w.interact.use('ch_echo_cairn_claim', w.player.pos).state, '没读过石堆之前，封存点锁着').toBe('locked')
+    w.standAt('in_echo_cairn')
+    const read = w.interact.use('in_echo_cairn', w.player.pos)
+    expect(read.ok, '「读石堆」是一次真的按 E 的动作，不是走近就算').toBe(true)
+    expect(w.streaming.hasFlag('flag.echo_cairn_read'), '研读这个动作把旗立了起来（写方落地）').toBe(true)
+    w.standAt('ch_echo_cairn_claim')
+    const claim = w.interact.use('ch_echo_cairn_claim', w.player.pos)
+    expect(claim.ok, '旗立了，石堆的封存点能撬了').toBe(true)
+    expect(claim.lootTable, '奖励表来自那条 secret（loot_secret_cairn 第一次可达）').toBe('loot_secret_cairn')
+    const gearsBefore = w.rpg.inv.gears.length
+    openLootTable(w.deps, claim.lootTable!)
+    expect(w.rpg.inv.gears.length, '真的掉出东西进背包').toBeGreaterThan(gearsBefore)
+    w.standAt('in_echo_cairn')
+    expect(w.interact.use('in_echo_cairn', w.player.pos).state, '研读是一次性的：读过就是读过').toBe('used')
+  })
+
   it('区域的解锁判定也吃同一套广播：立了 unlockFlag，那块区域就参与流送', () => {
     const w = makeWorld()
     const choir = regionOf('rg_drowned_choir')

@@ -43,7 +43,7 @@ const REACTIONS = new Set(['R0', 'R1', 'R2', 'R3', 'R4', 'R5'])
 // CameraRig.SHAKE_TABLE 里**数据可指**的行（hurt/parry 由代码按情境直接发，不经帧表）；
 // 'stomp' 自 KI-051 起是 §10「驼鼓踏地」的 worldShake 行
 const SHAKES = new Set(['graze', 'normal', 'heavy', 'boss', 'stomp'])
-const INTERACTABLE_KINDS = new Set(['checkpoint', 'elevator', 'bridge', 'soundwall', 'gather', 'chest', 'npc', 'teleport', 'gate', 'bell'])
+const INTERACTABLE_KINDS = new Set(['checkpoint', 'elevator', 'bridge', 'soundwall', 'gather', 'chest', 'npc', 'teleport', 'gate', 'bell', 'inspect'])
 // KI-023 可破坏场景物的品类白名单（schema.ts PropRef.kind 同名单；新种类随消费方一起落）
 const PROP_KINDS = new Set(['soundspine', 'resonance_core'])
 const PICK_ORDERS = new Set(['random', 'cycle'])
@@ -1538,7 +1538,6 @@ function validateGearRarityCoverage() {
  * PENDING_FLAG_WRITERS 里（带原因），否则 ERROR。白名单只能变短不能变长。
  */
 const PENDING_FLAG_WRITERS = {
-  'flag.echo_cairn_read': 'Phase 6-B：石堆的「读」是一次剧情动作（要接对话/调查），不预先编造触发器',
   'flag.side_nave_found': 'Phase 6-B：侧廊入口需要一段能在地板上站住的领取点几何（当前 secret 坐标在可行走层之外）',
   'flag.brokenbar_resolved': 'Phase 6-B：断弦营地线（收编/清算抉择）',
   'flag.brokenbar_allied': 'Phase 6-B：同上，潜行解专属那条',
