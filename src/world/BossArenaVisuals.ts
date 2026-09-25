@@ -9,8 +9,14 @@ import type { Enemy } from '@/ai/Enemy'
 export class BossArenaVisuals {
   private readonly group = new THREE.Group()
   private readonly geo = new THREE.CylinderGeometry(0.55, 1.15, 2.6, 10, 1, true)
-  /** §15.2 断音柱：玩家能站进去的掩体，所以必须比钟更像「一根能挡东西的柱子」 */
-  private readonly pillarGeo = new THREE.CylinderGeometry(1.5, 1.7, 7.5, 12, 1, true)
+  /**
+   * §15.2 断音柱：玩家能站进去的掩体，所以必须比钟更像「一根能挡东西的柱子」。
+   * 几何按**单位尺寸**建（底半径 1、高 1，顶部 0.86 的收分只是让它读起来像一根柱子），
+   * 实际大小由 `sync` 按 `boss.covers` 的 `radius`/`heightM` 缩放 ⇒
+   * **画出来的那一根就是射线会撞上的那一根**（KI-014①：遮挡判据换成线段之后，
+   * 表现层再留一份自己的尺寸就是让玩家按一个看不见的圆柱躲柱子）。
+   */
+  private readonly pillarGeo = new THREE.CylinderGeometry(0.86, 1, 1, 12, 1, true)
   private readonly aliveMat: THREE.MeshStandardMaterial
   private readonly rungMat: THREE.MeshStandardMaterial
   private readonly coverMat: THREE.MeshStandardMaterial
@@ -52,7 +58,9 @@ export class BossArenaVisuals {
             this.meshes.set(key, m)
             this.peakLive = Math.max(this.peakLive, this.meshes.size)
           }
-          m.position.set(q.x, q.y + 3.6, q.z)
+          // 底面圆心在数据那个 y，几何又是以原点居中的 ⇒ 抬高半个高度正好"站在地上"
+          m.scale.set(cov.radius, cov.heightM, cov.radius)
+          m.position.set(q.x, q.y + cov.heightM / 2, q.z)
         })
       }
       const g = e.data.boss?.bells

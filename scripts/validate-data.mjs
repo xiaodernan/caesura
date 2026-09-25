@@ -993,7 +993,11 @@ function validateEnemies(lootIds) {
           else {
             if (!isArr(cov.positions) || cov.positions.length === 0) report.error(file, `${w}.boss.covers.positions`, '必须是非空数组')
             else cov.positions.forEach((pos, pi) => vec3(file, `${w}.boss.covers.positions[${pi}]`, pos))
-            report.sub(file, `${w}.boss.covers`, cov, { radius: { min: 0 } })
+            // KI-014①：这一格从此是**遮挡体的尺寸**而不是装饰——`core/Occlusion` 拿它算"弹体能不能
+            // 从柱顶上方飞过去"，表现层拿它缩放画出来的那一根，两边读同一个数。
+            // 高度必须为正（0 高的柱子挡不住任何东西，写它就是写一条永远为假的判据）；
+            // 上限是防呆：30m 已经远超灰盒期任何场地高度，写出更大的数只会是手抖多打了一个 0。
+            report.sub(file, `${w}.boss.covers`, cov, { radius: { min: 0 }, heightM: { min: 0.1, max: 30 } })
           }
         }
         // §16「Boss 均带 3 拍入场演出 + 胜利序列（音乐停=世界屏息）」：少了这两格，她就只是

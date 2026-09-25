@@ -1685,7 +1685,8 @@
       "z": -300
      }
     ],
-    "radius": 3.2
+    "radius": 3.2,
+    "heightM": 7.5
    },
    "roar": {
     "hitStopMs": 250,

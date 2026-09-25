@@ -11,7 +11,9 @@ import type { AttrKey, EnemyData, FrameData, IncomingGrade, ProjectileSpec, Reac
 import { resolveDamage } from './DamagePipeline'
 import { reactionTier } from './Reactions'
 import { shapeHits, isBackstab } from './HitShapes'
-import { ProjectileSystem, sphereHits, type Projectile } from './Projectiles'
+import type { HitTarget } from './HitShapes'
+import { ProjectileSystem, sphereHits, type GoneReason, type Projectile } from './Projectiles'
+import { OcclusionField, type BlockHit } from '@/core/Occlusion'
 import { glossary, statusConfig, tagIs } from './Statuses'
 import type { Vec3 } from './EntityStats'
 import type { PropSystem } from '@/world/Props'
@@ -130,6 +132,19 @@ export class CombatManager {
   private execCount = new Map<string, number>()
   /** 注入：脚下地面高度查询（world/Surface），用于「射进地面就落地」；缺省则只做射程/寿命到期 */
   floorAt: ((pos: Vec3) => number | null) | null = null
+  /**
+   * 遮挡体名册（KI-014①）：每 tick 由 {@link update} 从场上的实体重新点名。
+   * 它是 `core/Occlusion` 的一个实例而不是注入项，因为**读它的人全在 combat 层**
+   * （弹体扫掠段、打在玩家身上的那一线、telegraph 红线），而注入一份可空的遮挡会让
+   * "忘了接线"表现成"场上的柱子忽然挡不住东西"——那种谎在 headless 里是静默的。
+   */
+  readonly occlusion = new OcclusionField()
+  /**
+   * 线段查询的两个复用端点：热路径上每 tick 要问几十次，而 `firstBlock` 只在调用期间读它们、
+   * 出去时把结果**复制**成新的 `at`，所以复用不会留下别名。
+   */
+  private readonly segA: Vec3 = { x: 0, y: 0, z: 0 }
+  private readonly segB: Vec3 = { x: 0, y: 0, z: 0 }
 
   constructor(
     private player: PlayerController,
@@ -158,6 +173,8 @@ export class CombatManager {
   }
 
   update(tick: number, input?: Input, dt = TICK_DT): void {
+    // 遮挡名册每 tick 重新点名：Boss 离场她的柱子就退出判据（柱子住在她的数据里，不是区域几何）
+    this.occlusion.syncFrom(this.ai.enemies)
     this.tryExecute(input, tick)
     this.launchPlayerProjectile(tick)
     this.launchEnemyProjectiles(tick)
@@ -632,16 +649,21 @@ export class CombatManager {
     this.projectiles.update(dt, tick)
     for (const pr of this.projectiles.list()) {
       if (pr.dead || pr.bornTick === tick) continue // 出生帧不参与判定：否则反射体会当帧打到自己
+      // KI-014①：遮挡量的是**这一 tick 走过的那一段**（`prev → pos`），不是"此刻在不在墙里"，
+      // 而它**对两边一样狠**：玩家投出的枪与敌人射来的弹体共用这一行，所以"长枪穿过掩体"
+      // 这一支从这一刻起不成立。弹体自己的半径并进柱子里算（`expand`），否则半根柱子
+      // 可以让一枚"球心"贴过去——那是画面上一眼就能看出的假账。
+      const wall = this.occlusion.firstBlock(pr.prev, pr.pos, pr.radius)
+      if (wall) {
+        // 停在柱面上：把弹体的位置写成**撞击点**再杀，于是表现层（vfx/音效都读 `pr.pos`）
+        // 拿到的就是玩家眼睛该看的那个地方，而反馈仍然只从 `onProjectileGone` 那一个出口发一次
+        pr.pos.x = wall.at.x; pr.pos.y = wall.at.y; pr.pos.z = wall.at.z
+        this.projectiles.kill(pr, 'wall')
+        continue
+      }
       if (pr.hostile) {
         if (!this.player.executing && !pr.hitIds.has('player') && sphereHits(pr, this.player.hitTarget())) {
-          // 弹体用「发射者的位置」判掩体：弹体自身此刻已经贴着玩家，拿它判等于永远判不出遮挡
-          const src = this.ai.enemies.find((x) => x.id === pr.ownerId)?.pos ?? pr.pos
-          const cover = this.behindCover(src)
-          if (cover) {
-            // 撞柱而落：不是「穿过但没伤害」，那样柱子就成了隐形斗篷
-            this.cueBlocked(cover)
-            this.projectiles.kill(pr, 'ground')
-          } else this.projectileThreatensPlayer(pr, tick)
+          this.projectileThreatensPlayer(pr, tick)
         }
       } else {
         for (const e of this.ai.enemies) {
@@ -730,18 +752,30 @@ export class CombatManager {
       const dir = aimAt(from, target, t.spec)
       const dl = Math.hypot(dir.x, dir.y, dir.z) || 1
       const len = Math.min(t.spec.range, Math.hypot(target.x - from.x, target.y - from.y, target.z - from.z))
+      const aim: Vec3 = { x: from.x + (dir.x / dl) * len, y: from.y + (dir.y / dl) * len, z: from.z + (dir.z / dl) * len }
+      // KI-014①：那条线是"它会打哪"的**诚实承诺**（§14.4），所以它不能画到柱子后面去。
+      // 被挡住时剪在撞击点——玩家读到的是"这一发会撞在那儿"，于是他知道这一下不用翻滚、
+      // 但也知道**再往旁边一步**线就会重新拉长。画一条到不了的红线是骗人，不画更是。
+      const wall = this.occlusion.firstBlock(from, aim)
       out.push({
         ownerId: e.id, kind: t.spec.kind, from,
-        to: { x: from.x + (dir.x / dl) * len, y: from.y + (dir.y / dl) * len, z: from.z + (dir.z / dl) * len },
+        to: wall ? wall.at : aim,
         ticksLeft: t.ticksLeft, totalTicks: t.totalTicks
       })
     }
     return out
   }
 
-  private onProjectileGone(pr: Projectile, reason: 'hit' | 'ground' | 'range' | 'expire'): void {
-    if (reason !== 'ground') return
-    bus.emit('vfx.request', { key: 'ring_dust', pos: { ...pr.pos }, scale: 0.4 })
+  /**
+   * 弹体的离场原因里，只有两种是"撞上了什么"：地面与几何（KI-014① 的 `wall`）。
+   * 两者的反馈是同一对（灰尘 + 那一声），差别只在**灰尘撒在哪**与撒多大：
+   * `kill(pr,'wall')` 之前调用点已经把 `pr.pos` 挪到柱面上，所以这里读到的就是撞击点，
+   * 不需要第二份坐标（一份事实只准有一个落点）。柱子那一团给得比落地大，因为那是
+   * "有人替这一下挡了"的读数，而落地只是"这一发结束了"。
+   */
+  private onProjectileGone(pr: Projectile, reason: GoneReason): void {
+    if (reason !== 'ground' && reason !== 'wall') return
+    bus.emit('vfx.request', { key: 'ring_dust', pos: { ...pr.pos }, scale: reason === 'wall' ? 1.4 : 0.4 })
     bus.emit('audio.sfx', { key: pr.hostile ? 'block_guard' : 'hit_metal', pos: { ...pr.pos }, gain: 0.35 })
   }
 
@@ -753,10 +787,10 @@ export class CombatManager {
       if (!hb?.box) continue
       const hit = shapeHits(hb.box, e.pos, e.yaw, this.player.hitTarget())
       if (!hit) continue
-      const cover = this.behindCover(e.pos)
+      const cover = this.coverEatsLine(e.hitTarget(), this.player.hitTarget())
       if (cover) {
         // 柱子挡得住「这一击」，挡不住「这一招」：收势帧不消耗 hitDone，冲出柱子还能再吃
-        this.cueBlocked(cover)
+        this.cueBlocked(cover.at)
         continue
       }
       if (e.attack) e.attack.hitDone = true
@@ -933,23 +967,22 @@ export class CombatManager {
   }
 
   /**
-   * 断音柱（§15.2「躲入场地断音柱后」）。灰盒期用**显式圆柱**近似遮挡：玩家柱内、攻击者柱外
-   * ⇒ 这一击被吃掉。它是 KI-014 那条真 LOS 的占位实现，不是它的替代品——接上遮挡射线之后，
-   * 这段就该退化成「射线先打到了什么」。
+   * 断音柱（§15.2「躲入场地断音柱后」）——KI-014① 之后它就是**一条线段**：
+   * 从攻击者的身体中心量到玩家的身体中心，中间穿过任一根柱子的圆柱面 ⇒ 这一击被柱子吃掉。
+   *
+   * 这一手替换掉的是原来那两格手写判据（「玩家站进圆内 + 攻击者在圆外」+
+   * 「攻击者也贴柱 ⇒ 不挡，否则柱子变无敌房」）。**后者不再需要写**：线段从柱内出发时
+   * 根本没有"穿过柱面"这件事，几何自己就把它否掉了（`core/Occlusion` 的第一条口径）。
+   * 前者则从"站在柱子附近"收紧成"柱子真的在两人之间"——这正是 §15.2 那句"躲**到柱子后面**"
+   * 的原意，而近似版本给的是"躲到柱子旁边"。
+   *
+   * 端点用身体中心而不是脚底：柱子的 y 带（`covers.heightM`）量的是"这一段高度里有没有实体"，
+   * 拿脚底量会让一根 7.5m 的柱子在数学上挡得住、在画面上一眼就能看出没挡住。
    */
-  private behindCover(from: Vec3): { x: number; y: number; z: number } | null {
-    const p = this.player.pos
-    for (const e of this.ai.enemies) {
-      const c = e.data.boss?.covers
-      if (!c) continue
-      const near = (q: { x: number; y: number; z: number }, o: Vec3): boolean =>
-        Math.hypot(o.x - q.x, o.z - q.z) <= c.radius
-      const shelter = c.positions.find((q) => near(q, p))
-      if (!shelter) continue
-      if (c.positions.some((q) => near(q, from))) continue // 攻击者也贴着柱子 ⇒ 不算被挡，否则柱子变无敌房
-      return shelter
-    }
-    return null
+  private coverEatsLine(from: HitTarget, to: HitTarget): BlockHit | null {
+    this.segA.x = from.pos.x; this.segA.y = from.pos.y + from.height / 2; this.segA.z = from.pos.z
+    this.segB.x = to.pos.x; this.segB.y = to.pos.y + to.height / 2; this.segB.z = to.pos.z
+    return this.occlusion.firstBlock(this.segA, this.segB)
   }
 
   /** 被柱子吃掉的那一击：安静、无伤、不吃 hitstop，但要有灰尘——玩家得知道是哪根柱子救了自己 */

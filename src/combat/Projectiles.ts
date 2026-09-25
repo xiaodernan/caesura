@@ -7,7 +7,7 @@ import type { IncomingGrade } from '@/data/schema'
 import type { Vec3 } from './EntityStats'
 import type { HitTarget } from './HitShapes'
 
-export type GoneReason = 'hit' | 'ground' | 'range' | 'expire'
+export type GoneReason = 'hit' | 'ground' | 'wall' | 'range' | 'expire'
 
 export interface Projectile {
   id: number
@@ -16,6 +16,14 @@ export interface Projectile {
   ownerId: string
   kind: string
   pos: Vec3
+  /**
+   * 上一 tick 的位置（KI-014①）：遮挡判据量的是**这一 tick 走过的那一段**，不是"此刻在不在墙里"。
+   * 采点的版本会漏掉一件事：一 tick 之内"穿过柱面并落在玩家身上"是可能的（弹速 28m/s ⇒ 每帧 0.47m，
+   * 柱子半径 3.2m，所以漏的是"贴着柱边那一线"而不是整根柱子——小半径弹体与薄遮挡体会漏得更多）。
+   * 扫掠段把"先碰到什么"变成判据本身，也顺带给出命中点（灰尘甩在哪）。
+   * 就地改写、不每个 tick 造新对象（`update` 里是全场每枚弹体每帧一次的调用）。
+   */
+  prev: Vec3
   /** m/s，含重力时逐 tick 改变 y 分量 */
   vel: Vec3
   radius: number
@@ -102,6 +110,7 @@ export class ProjectileSystem {
       ownerId: l.ownerId,
       kind: l.kind,
       pos: { ...l.origin },
+      prev: { ...l.origin },
       vel: { x: l.dir.x * k, y: l.dir.y * k, z: l.dir.z * k },
       radius: l.radius,
       rangeLeft: l.range,
@@ -130,10 +139,12 @@ export class ProjectileSystem {
     return p
   }
 
-  /** 直线/抛物线积分 + 射程与寿命到期；不做命中判定 */
+  /** 直线/抛物线积分 + 射程与寿命到期；不做命中判定，也不做遮挡判定（遮挡要这一段的两端点，见 CombatManager） */
   update(dt: number, tick: number): void {
     for (const p of this.items) {
       if (p.dead) continue
+      // 先记账再动：`prev → pos` 这一段就是"这一 tick 走过来的路"，冻结时它是零长段（不假装动过）
+      p.prev.x = p.pos.x; p.prev.y = p.pos.y; p.prev.z = p.pos.z
       // §7.2 休止斩：时间没过的话，路程和寿命也一样没过——所以这一行在积分**之前**，
       // 而不是只把 dx/dy/dz 置零。它只停运动学，不停命中判定（判定在 CombatManager，
       // 一记停在半空的弹体是个看得见的障碍物，撞上去照样挨打）。
