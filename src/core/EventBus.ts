@@ -75,6 +75,18 @@ export interface GameEvents {
     deafTarget?: string
     deafTicks?: number
   }
+  /**
+   * KI-022②：血量型 prop（振源核）挨了一记。`amount` 是打在核上的原始伤害，
+   * 消费方（AISystem）把它**原样**记到 `damageTarget` 头上（外露器官无甲=真伤）——
+   * 核就是她露在场地上的血条，这条事件是转移的那一笔。
+   */
+  'world.propDamaged': {
+    id: string
+    kind: string
+    damageTarget?: string
+    amount: number
+    pos: { x: number; y: number; z: number }
+  }
   'ui.notify': { text: string; kind?: 'info' | 'reward' | 'boss' }
   'ui.prompt': { text: string | null; id: string | null }
   'world.flag': { key: string; value: boolean | number | string }

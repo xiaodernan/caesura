@@ -824,7 +824,10 @@
    "perSec": 2
   },
   "loot": {
-   "rarityBoost": { "atOrAbove": "rare", "mul": 1.5 }
+   "rarityBoost": {
+    "atOrAbove": "rare",
+    "mul": 1.5
+   }
   },
   "grid": {
    "bpm": 60,
@@ -1072,6 +1075,56 @@
    "narr.act6_hersil_phase1",
    "narr.act6_hersil_phase2",
    "narr.act6_final_choice"
+  ],
+  "props": [
+   {
+    "id": "prop_core_west",
+    "kind": "resonance_core",
+    "pos": {
+     "x": -22,
+     "y": 152,
+     "z": -238
+    },
+    "hpFracOfBoss": 0.18,
+    "damageTarget": "en_hersil",
+    "exposedWhen": {
+     "bossId": "en_hersil",
+     "minPhase": 2
+    },
+    "breakLabel": "振源核碎裂 · 她的血顺着核流走了"
+   },
+   {
+    "id": "prop_core_east",
+    "kind": "resonance_core",
+    "pos": {
+     "x": 22,
+     "y": 152,
+     "z": -238
+    },
+    "hpFracOfBoss": 0.18,
+    "damageTarget": "en_hersil",
+    "exposedWhen": {
+     "bossId": "en_hersil",
+     "minPhase": 2
+    },
+    "breakLabel": "振源核碎裂 · 她的血顺着核流走了"
+   },
+   {
+    "id": "prop_core_north",
+    "kind": "resonance_core",
+    "pos": {
+     "x": 0,
+     "y": 152,
+     "z": -282
+    },
+    "hpFracOfBoss": 0.18,
+    "damageTarget": "en_hersil",
+    "exposedWhen": {
+     "bossId": "en_hersil",
+     "minPhase": 2
+    },
+    "breakLabel": "振源核碎裂 · 她的血顺着核流走了"
+   }
   ]
  }
 ]

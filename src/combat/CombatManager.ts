@@ -232,8 +232,9 @@ export class CombatManager {
 
   /**
    * KI-023：玩家出手对可破坏场景物的那一扫。与敌人扫描共用同一个判定窗、同一次数预算
-   * （`markActionHit`）——一记横扫同时罩住敌人与音刺时，敌人先结账（先扫先得），
-   * 音刺只在还有名额时吃这一记。轻击敲上去只响不裂的裁决住在 `PropSystem.chip`。
+   * （`markActionHit`）——一记横扫同时罩住敌人与场地件时，敌人先结账（先扫先得），
+   * 场地件只在还有名额时吃这一记。计数型（音刺）轻击只响不裂、血量型（振源核）任何
+   * 一记都按原始伤害扣池——两条裁决的分支住在 `PropSystem.hitProp`。
    * props 不产 `combat.hit`：它没有伤害数字、没有 hitstop、没有架势——那些语义全是"打到了某个人"的。
    */
   private playerHitsProps(): void {
@@ -249,7 +250,7 @@ export class CombatManager {
       if (!props.hittable(prop)) continue
       if (!shapeHits(hb.box, p.pos, hb.yaw, props.hitTarget(prop))) continue
       if (!p.markActionHit(prop.id)) continue
-      props.chip(prop, kind !== 'light')
+      props.hitProp(prop, { heavyFamily: kind !== 'light', rawDamage: hb.damage })
     }
   }
 

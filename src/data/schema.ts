@@ -987,10 +987,23 @@ export interface SecretRef {
 export interface PropRef {
   id: string
   /** 品类决定形状/声音/被击中的反馈；白名单由 validator 钉，新种类随消费方一起落 */
-  kind: 'soundspine'
+  kind: 'soundspine' | 'resonance_core'
   pos: Vec3
-  /** 击碎所需的重击次数（§15.3「重击 4 次击碎」；轻击只敲响不计数——裁决记在 Props.ts 头注释） */
-  hitsToBreak: number
+  /** 击碎所需的重击次数（§15.3「重击 4 次击碎」；轻击只敲响不计数——裁决记在 Props.ts 头注释）。
+   *  与 `hpFracOfBoss` 二选一：计数型（音刺）vs 血量型（振源核）。 */
+  hitsToBreak?: number
+  /**
+   * 血量型 prop 的池子（KI-022②「每个 18% HP」= Boss 最大生命的这个比例）。
+   * 打在核上的每一分**原样变成对 `damageTarget` 的真伤**（外露的器官没有甲），池子打空 = 核碎。
+   */
+  hpFracOfBoss?: number
+  /** 血量型必填：核上掉的血记到谁头上 */
+  damageTarget?: string
+  /**
+   * KI-022②：何时**外露**（可被打、可见）。没外露的核不参与命中、不渲染——
+   * 「Finale 场地出 3 个振源核」的意思是它之前不存在，而不是一直蹲在那儿无敌。
+   */
+  exposedWhen?: { bossId: string; minPhase: number }
   /**
    * 汇聚噪音半径（§15.3「世界噪音汇聚点」）：范围内的玩家声源**听上去发生在刺的位置**——
    * 她会去刺那儿找你，而不是你的真实站位。这是「音刺在场=环境干扰器」的机制读法。

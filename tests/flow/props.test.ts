@@ -227,7 +227,7 @@ describe('音刺：可被攻击、有耐久、会发声（KI-023）', () => {
     expect(w2.prop('prop_spine_lair').hitsLeft, '别的刺完好如初').toBe(4)
     // 读档回来的世界再挥一记：碎刺不再吃这一记，完好那根照常计数
     w2.standBy('prop_spine_lair')
-    const before = w2.prop('prop_spine_lair').hitsLeft
+    const before = w2.prop("prop_spine_lair").hitsLeft ?? 0
     w2.swingHeavy()
     w2.tick(20)
     expect(w2.prop('prop_spine_lair').hitsLeft).toBe(before - 1)

@@ -45,7 +45,7 @@ const REACTIONS = new Set(['R0', 'R1', 'R2', 'R3', 'R4', 'R5'])
 const SHAKES = new Set(['graze', 'normal', 'heavy', 'boss', 'stomp'])
 const INTERACTABLE_KINDS = new Set(['checkpoint', 'elevator', 'bridge', 'soundwall', 'gather', 'chest', 'npc', 'teleport', 'gate', 'bell'])
 // KI-023 可破坏场景物的品类白名单（schema.ts PropRef.kind 同名单；新种类随消费方一起落）
-const PROP_KINDS = new Set(['soundspine'])
+const PROP_KINDS = new Set(['soundspine', 'resonance_core'])
 const PICK_ORDERS = new Set(['random', 'cycle'])
 // src/ai/Enemy.ts:707 —— 距离带里不是招式的伪动作
 const PSEUDO_ACTIONS = new Set(['chase', 'backstep', 'hold'])
@@ -1176,12 +1176,32 @@ function validateRegions(enemyIds, lootIds, rarityIds) {
         if (isObj(p.pos) && Math.abs(p.pos.y - rg.groundY) > 0.001) {
           report.error(file, `${pw}.pos`, `pos.y 必须踩在本层地板 groundY=${rg.groundY}`)
         }
-        report.num(file, `${pw}.hitsToBreak`, p.hitsToBreak, { min: 1, int: true, name: 'hitsToBreak' })
+        // 耐久模型二选一（KI-023 计数型 / KI-022② 血量型）：两样都缺 = 打不坏的装饰，两样都有 = 两个主人
+        if (p.hitsToBreak === undefined && p.hpFracOfBoss === undefined) {
+          report.error(file, pw, 'hitsToBreak（计数型）与 hpFracOfBoss（血量型）必须二选一——两样都缺就是一根打不坏的装饰')
+        }
         if (p.breakLabel !== undefined && !isStr(p.breakLabel)) report.error(file, `${pw}.breakLabel`, '必须是非空字符串')
         if (p.kind === 'soundspine' && (p.gatherRadius === undefined || p.gatherRadius <= 0)) {
           report.error(file, pw, 'soundspine 必须写正的 gatherRadius——汇聚噪音是这一类的全部意义，缺了它就只是一根打不坏的柱子')
         } else if (p.gatherRadius !== undefined) {
           report.num(file, `${pw}.gatherRadius`, p.gatherRadius, { min: 0.0001, name: 'gatherRadius' })
+        }
+        if (p.kind === 'resonance_core') {
+          if (p.hpFracOfBoss === undefined || p.hpFracOfBoss <= 0 || p.hpFracOfBoss > 0.5) {
+            report.error(file, pw, 'resonance_core 必须写 hpFracOfBoss ∈ (0, 0.5]——「每个 18% HP」是这一类的全部意义')
+          }
+          if (!isStr(p.damageTarget)) report.error(file, pw + '.damageTarget', '缺失或非字符串——核上掉的血必须有个去处')
+          else if (!enemyIds.has(p.damageTarget)) report.error(file, pw + '.damageTarget', '悬空引用：' + p.damageTarget + ' 不在 enemies.json')
+          if (p.hitsToBreak !== undefined) report.error(file, pw, 'resonance_core 是血量型（hpFracOfBoss），不该再写 hitsToBreak——一个 prop 只许一种耐久模型')
+        }
+        if (p.hitsToBreak !== undefined) report.num(file, pw + '.hitsToBreak', p.hitsToBreak, { min: 1, int: true, name: 'hitsToBreak' })
+        if (p.exposedWhen !== undefined) {
+          const ex = p.exposedWhen
+          if (!isObj(ex)) { report.error(file, pw + '.exposedWhen', '必须是对象') }
+          else {
+            if (!isStr(ex.bossId)) report.error(file, pw + '.exposedWhen.bossId', '缺失或非字符串')
+            report.num(file, pw + '.exposedWhen.minPhase', ex.minPhase, { min: 0, int: true, name: 'minPhase' })
+          }
         }
         if (p.onBreakDeaf !== undefined) {
           const d = p.onBreakDeaf
@@ -1246,6 +1266,23 @@ function validateRegions(enemyIds, lootIds, rarityIds) {
         report.error('enemies.json', `${en.id}.boss.phases[${pi}].enterOnProps.kind`, `品类 '${ph.enterOnProps.kind}' 没有任何区域布过 prop——这一阶永远进不去`)
       }
     })
+  }
+  // KI-022② 跨文件对账：exposedWhen 指向的 Boss 必须存在、且 minPhase 真的落在**她自己**的阶段数内——
+  // 否则这颗核永远外露不了（「配置齐全但付不出货」的洞，KI-042 同族）
+  for (const rg of data['regions.json'] ?? []) {
+    if (!isObj(rg) || !isArr(rg.props)) continue
+    for (const p of rg.props) {
+      if (!isObj(p) || !isObj(p.exposedWhen) || !isStr(p.exposedWhen.bossId)) continue
+      const boss = (data['enemies.json'] ?? []).find((e) => isObj(e) && e.id === p.exposedWhen.bossId)
+      if (!isObj(boss)) {
+        report.error('regions.json', `${rg.id}.props(${p.id}).exposedWhen.bossId`, `悬空引用：'${p.exposedWhen.bossId}' 不在 enemies.json`)
+        continue
+      }
+      const phaseCount = isObj(boss.boss) && isArr(boss.boss.phases) ? boss.boss.phases.length : 0
+      if (p.exposedWhen.minPhase >= phaseCount) {
+        report.error('regions.json', `${rg.id}.props(${p.id}).exposedWhen.minPhase`, `${p.exposedWhen.bossId} 只有 ${phaseCount} 阶——minPhase=${p.exposedWhen.minPhase} 的核永远外露不了`)
+      }
+    }
   }
   return ids
 }

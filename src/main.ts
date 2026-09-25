@@ -151,7 +151,13 @@ const props = new PropSystem(regions, (r) => streaming.isRegionUnlocked(r))
 ai.noiseSink = (src) => props.sinkNoise(src)
 ai.props = props // KI-024：万籁的场地阶段入口吃这个现状
 combat.props = props
-const propVis = new PropVisuals(arena.scene, regions, (r) => streaming.isRegionUnlocked(r))
+// KI-022②：振源核的外露判定与血量池物化都从「当前那只 Boss」读——
+// world 层不认识 AI，这条注入是它们之间唯一的一根线
+props.bossQuery = (dataId) => {
+  const b = ai.enemies.find((e) => e.data.id === dataId && e.alive)
+  return b ? { hpMax: b.stats.hpMax, phase: b.bossPhase, alive: true } : null
+}
+const propVis = new PropVisuals(arena.scene, regions, (r) => streaming.isRegionUnlocked(r), (p) => props.isExposed(p))
 const greybox = new ChunkGreybox(arena.scene, regions, streaming.chunkSize)
 /**
  * 世界状态写入层（Phase 6-A）：`regions.json` 里那些被读的旗标需要一个**写方**，否则藏在门后的

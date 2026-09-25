@@ -53,6 +53,15 @@ export class AISystem {
       }
       best?.applyDeaf(p.deafTicks)
     })
+    // KI-022②：振源核挨的那一记**原样**记到她头上（外露器官无甲=真伤）。
+    // 走 EntityStats.damage 与残响区同一入口：不吃防御阶梯、不触发受击反应——
+    // 这是"器官上的血"不是"打在她身上的招"。
+    bus.on('world.propDamaged', (p) => {
+      if (!p.damageTarget || !p.amount) return
+      for (const en of this.enemies) {
+        if (en.data.id === p.damageTarget && en.alive) en.stats.damage(p.amount)
+      }
+    })
     bus.on('rhythm.beat', (b) => {
       const k = `${b.bar}:${b.beatInBar}`
       if (k !== this.lastBarBeat) { this.slotArmed.clear(); this.lastBarBeat = k }
