@@ -208,7 +208,7 @@ export class CombatManager {
         trueDamage: followup?.trueDamage ?? 0,
         movement: skill && skill.damage > 0 ? { scaling: skill.scaling, overdriveLayerMul: skill.overdriveLayerMul } : undefined,
         backstab: isBackstab(p.pos, e.hitTarget()),
-        onBeat: this.rhythm.onBeat(50),
+        onBeat: this.rhythm.onBeat(this.player.beatGraceTicks > 0 ? 80 : 50), // 常拍脚（KI-036）：±80ms 宽限
         ranged: false, pinTicks: 0,
         point, dir: flatDir(p.pos, e.pos),
         reaction: hb.reaction,
@@ -577,7 +577,7 @@ export class CombatManager {
     const origin: Vec3 = { x: p.pos.x, y: p.pos.y + (spec.offsetY ?? 1.1), z: p.pos.z }
     const target = p.lockedTarget ? { x: p.lockedTarget.getPos().x, y: p.lockedTarget.getPos().y + 0.9, z: p.lockedTarget.getPos().z } : null
     const dir = target ? aimAt(origin, target, spec) : aimFlat(origin, p.yaw, spec)
-    const onBeat = this.rhythm.onBeat(50)
+    const onBeat = this.rhythm.onBeat(this.player.beatGraceTicks > 0 ? 80 : 50) // 常拍脚（KI-036）
     this.projectiles.spawn({
       hostile: false, ownerId: 'player', kind: spec.kind, origin, dir,
       speed: spec.speed, range: spec.range, radius: spec.radius, gravity: spec.gravity,
@@ -708,7 +708,7 @@ export class CombatManager {
       speed, range: Math.max(6, dist + 2), radius: pr.radius, gravity: pr.gravity,
       damage: Math.round(pr.damage * mul), poise: pr.poise, hitStopMs: pr.hitStopMs,
       layers: pr.layers, pinTicks: pr.pinTicks, muteTicks: pr.muteTicks,
-      onBeat: this.rhythm.onBeat(50),
+      onBeat: this.rhythm.onBeat(this.player.beatGraceTicks > 0 ? 80 : 50), // 常拍脚（KI-036）：反射弹也是玩家的踏音
       parryable: false, // 反射体不可再弹：否则两个人能对着弹一辈子
       sfxHit: pr.sfxHit, vfxHit: pr.vfxHit, shake: pr.shake, loudness: pr.loudness
     }, tick)

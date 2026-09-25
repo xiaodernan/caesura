@@ -178,5 +178,28 @@
     { "cooldownTicks": 300, "silenceTicks": 420, "silenceDmgBonus": 0.15 }
    ]
   }
+ ],
+ "passiveCost": [
+  { "timbite": 30, "score": 30 },
+  { "timbite": 60, "score": 60 },
+  { "timbite": 100, "score": 100 }
+ ],
+ "passives": [
+  {
+   "id": "ps_metronomefoot",
+   "page": "mvpage_prelude",
+   "nameKey": "passive.metronomefoot",
+   "displayName": "常拍脚",
+   "desc": "落地/翻滚结束后的一段时间里，踏音判定放宽至 ±80ms（§7.3）。数值=宽限秒数。",
+   "values": [0.6, 0.9, 1.2]
+  },
+  {
+   "id": "ps_tympanicguard",
+   "page": "mvpage_dance",
+   "nameKey": "passive.tympanicguard",
+   "displayName": "厚膜鼓",
+   "desc": "自己的架势累积衰减加快（§7.3）。数值=衰减加成（0.30 = +30%）。",
+   "values": [0.3, 0.4, 0.5]
+  }
  ]
 }

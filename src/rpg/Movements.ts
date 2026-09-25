@@ -71,6 +71,8 @@ export interface MovementSnapshot {
   lit: string[]
   levels: Record<string, number>
   slots: (string | null)[]
+  /** 已研读的被动（v9 起，KI-036）：老档为空 ⇒ 一切从头（§78 的口径） */
+  passives?: Record<string, number>
 }
 
 export type MoveFail = 'unknown' | 'lit' | 'dark' | 'max' | 'poor' | 'bad-slot' | 'locked-slot'
@@ -252,11 +254,44 @@ export class MovementBook {
 
   /* ---------------- 存档 ---------------- */
 
+  /* ---------------- 被动栏（§7.3，KI-036） ---------------- */
+
+  /** 已研读的被动：id → 等级（0 = 没学）。被动没有卸下动词——学了的常驻（页底常驻的本意） */
+  private passiveLv = new Map<string, number>()
+
+  passiveLevel(id: string): number { return this.passiveLv.get(id) ?? 0 }
+
+  /** 当前等级的效果值（L0 = null）。量纲由 PassiveDef 的注释说，这条函数只管取数 */
+  passiveValue(id: string): number | null {
+    const def = this.cfg.passives?.find((d) => d.id === id)
+    const lv = this.passiveLevel(id)
+    if (!def || lv <= 0) return null
+    return def.values[Math.min(lv, def.values.length) - 1] ?? null
+  }
+
+  /** 研读/升级一条被动：页要亮、等级没满、钱要够（同一本书的同一套扣费纪律） */
+  learnPassive(id: string, inv: Inventory): MoveResult {
+    const def = this.cfg.passives?.find((d) => d.id === id)
+    if (!def) return { ok: false, reason: 'unknown' }
+    if (!this.isLit(def.page)) return { ok: false, reason: 'lit' }
+    const lv = this.passiveLevel(id)
+    const max = def.values.length
+    if (lv >= max) return { ok: false, reason: 'max' }
+    const step = this.cfg.passiveCost?.[lv]
+    if (!step) return { ok: false, reason: 'max' }
+    if (inv.count(TIMBITE) < step.timbite || inv.count(SCORE) < step.score) return { ok: false, reason: 'poor' }
+    inv.remove(TIMBITE, step.timbite)
+    inv.remove(SCORE, step.score)
+    this.passiveLv.set(id, lv + 1)
+    return { ok: true }
+  }
+
   snapshot(): MovementSnapshot {
     return {
       lit: [...this.lit],
       levels: Object.fromEntries(this.levels),
-      slots: [...this.slots]
+      slots: [...this.slots],
+      passives: Object.fromEntries(this.passiveLv)
     }
   }
 
@@ -267,10 +302,16 @@ export class MovementBook {
   restore(s: Partial<MovementSnapshot> | null | undefined, rank: number): void {
     this.lit.clear()
     this.levels.clear()
+    this.passiveLv.clear()
     this.slots.fill(null)
     if (!s) return
     const cfg = this.cfg
     for (const id of s.lit ?? []) if (cfg.pages.some((p) => p.id === id)) this.lit.add(id)
+    for (const [id, lv] of Object.entries(s.passives ?? {})) {
+      const def = cfg.passives?.find((d) => d.id === id)
+      // 与 levels 同一套纪律：认不出的、页没亮的、越界的（手改档）一律丢掉，不 clamp 成满级
+      if (def && this.lit.has(def.page) && lv >= 1 && lv <= def.values.length) this.passiveLv.set(id, lv)
+    }
     for (const [id, lv] of Object.entries(s.levels ?? {})) {
       const mv = cfg.movements.find((m) => m.id === id)
       if (mv && this.lit.has(mv.page) && lv >= 1 && lv <= mv.levels.length) this.levels.set(id, lv)

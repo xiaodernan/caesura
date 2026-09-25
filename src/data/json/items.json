@@ -100,7 +100,7 @@
   "nameKey": "item.scoreFragment",
   "displayName": "乐谱残页",
   "kind": "lore",
-  "stack": 99,
+  "stack": 999,
   "value": 20,
   "desc": "半句没唱完的谱子。凑齐了才知道那一句本来要往哪里去。"
  },

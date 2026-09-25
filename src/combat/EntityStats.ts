@@ -21,6 +21,8 @@ export interface FissureRules {
 
 /** shared stat block for player and enemies (GAS-lite, docs/technical-architecture.md §1.2) */
 export class EntityStats {
+  /** §7.3 厚膜鼓（KI-036）：架势累积衰减的乘数（1 = 标准；玩家侧由被动加成）。敌人恒 1 */
+  poiseDecayMul = 1
   hp: number
   hpMax: number
   stamina: number
@@ -93,7 +95,7 @@ export class EntityStats {
     if (this.crumpleTicksLeft > 0) this.crumpleTicksLeft--
     if (this.muteTicksLeft > 0) this.muteTicksLeft--
     if (tick - this.lastHitTick > 72 && this.poiseAccum > 0) {
-      this.poiseAccum = Math.max(0, this.poiseAccum - (12 / TICK_HZ) * (dt * TICK_HZ))
+      this.poiseAccum = Math.max(0, this.poiseAccum - (12 / TICK_HZ) * (dt * TICK_HZ) * this.poiseDecayMul)
     }
     if (this.stamina < this.staMax) {
       const since = tick - this.lastCostTick

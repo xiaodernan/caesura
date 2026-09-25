@@ -28,6 +28,10 @@ export interface ModsSink {
   applyRpg(m: PlayerMods): void
   setSkills(skills: Record<string, SkillAction>): void
   equip(weapon: WeaponData, moveset: MovesetData): void
+  /** §7.3 被动栏（KI-036）：常拍脚的宽限时长（秒；null = 没学） */
+  setBeatGrace(durationSec: number | null): void
+  /** 被动侧要摸得到架势衰减乘数（厚膜鼓） */
+  readonly stats: { poiseDecayMul: number }
 }
 
 /**
@@ -41,6 +45,9 @@ export function refreshPlayer(rpg: RpgRuntime, player: ModsSink): void {
   const m = rpg.mods()
   player.applyRpg(m)
   player.setSkills(rpg.skillLoadout()) // §7 谱册换了（点亮/升级/换装/读档）⇒ 手里的两式要跟着换
+  // §7.3 被动栏（KI-036）：谱册动了，被动跟着重算——常拍脚的宽限秒数与厚膜鼓的衰减乘数
+  player.setBeatGrace(rpg.moves.passiveValue('ps_metronomefoot'))
+  player.stats.poiseDecayMul = 1 + (rpg.moves.passiveValue('ps_tympanicguard') ?? 0)
   if (m.weaponId && m.weaponId !== player.weapon.id && registry.has(m.weaponId)) {
     const w = registry.get<WeaponData>(m.weaponId)
     player.equip(w, registry.get<MovesetData>(`moveset:${w.movesetId}`))

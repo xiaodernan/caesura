@@ -211,6 +211,7 @@ export class Stakerite {
       case 'buy': this.buy(arg); break
       case 'lit': this.unlock(arg); break
       case 'mvup': this.upgradeMove(arg); break
+      case 'pslearn': this.learnPassive(arg); break
       case 'mvequip': this.equipSlot(arg); break
       case 'close': this.close(); break
       default: return
@@ -311,6 +312,14 @@ export class Stakerite {
       return
     }
     this.hooks.notify(`谱册点亮 · ${this.rpg.moves.page(pageId)?.displayName ?? pageId}`, 'reward')
+  }
+
+  /** §7.3 被动研读（KI-036）：扣费在 book.learnPassive（同一本书的同一套纪律），这里只播报 */
+  private learnPassive(id: string): void {
+    const r = this.rpg.moves.learnPassive(id, this.rpg.inv)
+    const def = this.rpg.moves.cfg.passives?.find((d) => d.id === id)
+    if (r.ok) this.hooks.notify(`被动研读 · ${def?.displayName ?? id}`, 'reward')
+    else this.hooks.notify(def ? `${def.displayName}：研读不动（${r.reason}）` : '研读不动', 'info')
   }
 
   private upgradeMove(id: string): void {
@@ -525,7 +534,19 @@ export class Stakerite {
           <span class="num">${cost}</span>
           <span class="act"><button class="act" data-act="mvup" data-arg="${m.id}" ${canUp ? '' : 'disabled'}>乐谱研读</button></span></div>`
       }).join('')
-      return `<h2>${pg.displayName}${lit ? '' : ' · 全暗'}</h2>${unlock}${rows}`
+      // §7.3 被动栏（KI-036）：页底常驻。数值语义由每条被动自己的 desc 说（数据表带 values）
+      const passives = (book.cfg.passives ?? []).filter((ps) => ps.page === pg.id).map((ps) => {
+        const lv = book.passiveLevel(ps.id)
+        const max = ps.values.length
+        const cost = book.cfg.passiveCost?.[Math.min(lv, max - 1)]
+        const canLearn = lit && lv < max && !!cost && inv.count(TIMBITE) >= cost.timbite && inv.count(SCORE) >= cost.score
+        const value = lv > 0 ? ps.values[lv - 1] : null
+        const num = lv >= max ? `L${lv}/${max} · 已满` : cost ? `L${lv}/${max} · ${cost.timbite} 石 / ${cost.score} 残页` : `L${lv}/${max}`
+        return `<div class="row"><span class="name">被动 · ${ps.displayName}<span class="note">${ps.desc}${value !== null ? `（当前 ${value}）` : ''}</span></span>
+          <span class="num">${num}</span>
+          <span class="act"><button class="act" data-act="pslearn" data-arg="${ps.id}" ${canLearn ? '' : 'disabled'}>${lv > 0 ? '再研读' : '研读'}</button></span></div>`
+      }).join('')
+      return `<h2>${pg.displayName}${lit ? '' : ' · 全暗'}</h2>${unlock}${rows}${passives}`
     }).join('')
     const known = book.cfg.movements.filter((m) => book.levelOf(m.id) > 0)
     const slots = book.cfg.slots.map((def, i) => {

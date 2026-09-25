@@ -16,7 +16,7 @@ import { unwrap, wrap } from './Integrity'
  * 存档里没有一个敌人实例，只有一串槽位身份）。
  */
 
-export const SAVE_VERSION = 8
+export const SAVE_VERSION = 9
 
 /**
  * 读档时接受的版本：凡是 ≤ 当前版本、且迁移链能一路升到当前的，都可以读。
@@ -113,6 +113,22 @@ registerMigration(7, (p) => {
   const snap = { ...(p.snapshot as Record<string, unknown>) }
   snap.brokenProps = []
   snap.version = 8
+  return { ...p, snapshot: snap }
+})
+
+/**
+ * v8 → v9（KI-036 被动栏）。研读过的被动是成长状态：`rpg.movements.passives`。
+ * 老档没学过任何被动 ⇒ 迁移写空表——"没学过的被动就是没学过"（§78 的口径，
+ * 与 v1→v2 的 `rpg: null`、v6→v7 的 `quest: null` 同一套纪律）。
+ */
+registerMigration(8, (p) => {
+  const snap = { ...(p.snapshot as Record<string, unknown>) }
+  const rpg = snap.rpg as Record<string, unknown> | null | undefined
+  if (rpg && typeof rpg === 'object') {
+    const mv = rpg.movements as Record<string, unknown> | null | undefined
+    if (mv && typeof mv === 'object') (mv as Record<string, unknown>).passives = {}
+  }
+  snap.version = 9
   return { ...p, snapshot: snap }
 })
 

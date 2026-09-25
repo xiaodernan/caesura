@@ -888,12 +888,28 @@ export interface MovementSlotDef {
   milestone: string
 }
 
+/** 被动（§7.3「被动栏」，KI-036）。数值住在 values 里（L1-3 各一格），语义由消费方注释：
+ *  常拍脚=落地/翻滚后的踏音宽限秒数；厚膜鼓=架势衰减加成（0.30 = +30%）。 */
+export interface PassiveDef {
+  id: string
+  page: string
+  nameKey: string
+  displayName: string
+  desc: string
+  /** L1-3 的效果数值；语义见上（同一条被动一个量纲，整条换） */
+  values: number[]
+}
+
 export interface MovementConfig {
   slots: MovementSlotDef[]
   pages: MovementPage[]
   movements: MovementData[]
   /** 升级花费（index 0 = 升到 2 级）。§6.2：战技乐谱升级 40-200/级 */
   upgradeCost: { level: number; timbite: number; score: number }[]
+  /** 被动研读花费（index 0 = L1）。§7.3：L1-3 = 30/60/100 残晶+石 */
+  passiveCost?: { timbite: number; score: number }[]
+  /** 被动栏（页底常驻，KI-036）；不写 = 没有被动 */
+  passives?: PassiveDef[]
   /**
    * 战技伤害的标尺（§2.1 音色列「乐章战技伤害 +1.5%/点」+ §11 过载列「每层战技伤害 +4%」）。
    * 它是**出手侧**的系数，写在谱册总表里而不是每条战技里：一条战技改口径，等于全表重定价。

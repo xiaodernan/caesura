@@ -67,6 +67,9 @@ const MOVEMENT_ACTIONS = new Set(['weaponSkill', 'weaponSkillB'])
 const MOVE_FRAME_FIELDS = ['startup', 'activeStart', 'activeEnd', 'recovery', 'poise', 'hitStopMs', 'hitbox', 'multi', 'shake', 'sfx', 'vfx', 'loudness']
 /** 战技每级的数值字段： MovementLevel。同样一字段一消费口 */
 const MOVE_LEVEL_FIELDS = ['cooldownTicks', 'damage', 'trueDamage', 'fissureLayers', 'muteTicks', 'distance', 'freezeTicks', 'echoCharges', 'silenceTicks', 'silenceDmgBonus']
+/** 被动 id 白名单（§7.3，KI-036）：一条被动 = 一个消费者（src/rpg/Settlement.ts refreshPlayer）。
+ *  名单只能随消费方一起加长；残响耳（撞 KI-032）与轻身法（处决状态机）没接，故不收录。 */
+const PASSIVE_IDS = new Set(['ps_metronomefoot', 'ps_tympanicguard'])
 
 // ---- 小工具 ----
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
@@ -1309,7 +1312,7 @@ function validateMovements(itemIds) {
   if (!isObj(d)) { report.error(file, file, '顶层必须是对象'); return }
   const { slots, pages, movements, upgradeCost, damage } = d
   for (const k of Object.keys(d)) {
-    if (!['slots', 'pages', 'movements', 'upgradeCost', 'damage'].includes(k)) report.error(file, k, '不认的顶层字段（§55）')
+    if (!['slots', 'pages', 'movements', 'upgradeCost', 'damage', 'passiveCost', 'passives'].includes(k)) report.error(file, k, '不认的顶层字段（§55）')
   }
 
   // 主动槽：开槽门槛只住 progression.json.milestones，这里引用 id，不抄第二份数字
@@ -1354,6 +1357,61 @@ function validateMovements(itemIds) {
           else if (!lootable.has(p.unlock.item)) report.error(file, `${w}.unlock.item`, `没有任何掉落表给出 '${p.unlock.item}'：这一页永远点不亮（unreachable content）`)
         }
         report.num(file, `${w}.unlock.count`, p.unlock.count, { min: 1, int: true, name: 'count' })
+      }
+    })
+  }
+
+  // 被动栏（§7.3，KI-036）：价目 + 表。两者是一对——只有价目没有被动是死数据，
+  // 只有被动没有价目则 learnPassive 每一次都以 'max' 拒绝（玩家看到的是按钮永远点不动）。
+  const { passiveCost, passives } = d
+  if (passiveCost !== undefined) {
+    if (!isArr(passiveCost)) report.error(file, 'passiveCost', '必须是数组')
+    else {
+      passiveCost.forEach((c, i) => {
+        const w = `passiveCost[${i}]`
+        if (!isObj(c)) { report.error(file, w, '必须是对象'); return }
+        for (const k of Object.keys(c)) if (!['timbite', 'score'].includes(k)) report.error(file, `${w}.${k}`, '不认的字段（§55）')
+        report.num(file, `${w}.timbite`, c.timbite, { min: 1, int: true, name: 'timbite' })
+        report.num(file, `${w}.score`, c.score, { min: 1, int: true, name: 'score' })
+      })
+    }
+  }
+  if (passives !== undefined && !isArr(passives)) report.error(file, 'passives', '必须是数组')
+  else if (isArr(passives)) {
+    if (!isArr(passiveCost)) report.error(file, 'passives', '写了被动却没写 passiveCost ⇒ 每一级都研读不动（死门）')
+    const pids = new Set()
+    passives.forEach((p, i) => {
+      const w = isStr(p?.id) ? p.id : `passives[${i}]`
+      if (!isObj(p)) { report.error(file, w, '必须是对象'); return }
+      if (!isStr(p.id)) report.error(file, w, 'id 缺失或非字符串')
+      else if (pids.has(p.id)) report.error(file, w, `id 重复：${p.id}`)
+      else pids.add(p.id)
+      // §55 没有消费方的数值不许进表：每加一条被动 = 承诺一个消费者。
+      // ps_metronomefoot / ps_tympanicguard 的消费者是 src/rpg/Settlement.ts refreshPlayer
+      // （常拍脚 → PlayerController.setBeatGrace → CombatManager 的 onBeat 窗；厚膜鼓 → EntityStats.poiseDecayMul），
+      // 由 tests/flow/passives.test.ts 作证；残响耳（撞 KI-032）与轻身法（处决状态机）还没接，故不在表里也不在白名单里。
+      if (isStr(p.id) && !PASSIVE_IDS.has(p.id)) report.error(file, `${w}.id`, `白名单外的被动 '${p.id}'：加一条就要同时带来一个消费者（当前白名单：${[...PASSIVE_IDS].join(' / ')}）`)
+      for (const k of Object.keys(p)) if (!['id', 'page', 'nameKey', 'displayName', 'desc', 'values'].includes(k)) report.error(file, `${w}.${k}`, '不认的字段（§55）')
+      if (!isStr(p.nameKey)) report.error(file, `${w}.nameKey`, '必填')
+      if (!isStr(p.displayName)) report.error(file, `${w}.displayName`, '必填——面板上显示的是它，不是 id')
+      if (!isStr(p.desc) || p.desc.length < 5) report.error(file, `${w}.desc`, '需要一句世界内解释（§19）：数值的量纲写在这一句里')
+      if (!isStr(p.page)) report.error(file, `${w}.page`, '必填——被动挂在页底，没有页就没有位置')
+      else if (!pageIds.has(p.page)) report.error(file, `${w}.page`, `悬空引用：'${p.page}' 不在 pages`)
+      if (!isArr(p.values) || p.values.length === 0) report.error(file, `${w}.values`, '必须是非空数组（L1-3 的效果值）')
+      else {
+        if (p.values.length > 3) report.error(file, `${w}.values`, `L1-3 是上限（§7.3），实际 ${p.values.length} 级`)
+        let prev = -Infinity
+        p.values.forEach((v, li) => {
+          const vw = `${w}.values[${li}]`
+          if (!isNum(v)) { report.error(file, vw, '必须是数字'); return }
+          if (v <= 0) report.error(file, vw, `L${li + 1} = ${v} ≤ 0：学了等于没学，这一级没有存在的理由`)
+          if (v <= prev) report.error(file, vw, `L${li + 1} = ${v} 不大于上一级 ${prev}：升级不能变弱`)
+          prev = v
+        })
+        // 每一级都要有价目：learnPassive 拿 level 去 index passiveCost，够不着就当"已满"拒绝
+        if (isArr(passiveCost) && p.values.length > passiveCost.length) {
+          report.error(file, `${w}.values`, `L${p.values.length} 的学费没有价目（passiveCost 只有 ${passiveCost.length} 档）⇒ 第 ${passiveCost.length + 1} 级永远研读不动`)
+        }
       }
     })
   }

@@ -201,12 +201,15 @@ describe('§7.3 配装：两槽、页要先亮、槽要先开', () => {
 })
 
 describe('§45 存档：谱册往返，脏字段一律丢弃', () => {
-  it('点亮 / 等级 / 槽位三样都复原', () => {
+  it('点亮 / 等级 / 槽位 / 被动四样都复原', () => {
     const mv = some((m) => m.levels.length > 1, '可升级')
+    const ps = cfg().passives?.find((p) => p.page === mv.page)
+    expect(ps, '表里至少有一条被动落在本式所在的页（否则这条往返测不到被动）').toBeTruthy()
     const b = learn(book(), mv)
     const inv = rich()
     b.upgrade(mv.id, inv)
     b.equip(0, mv.id, b.slotRank(0)!)
+    expect(b.learnPassive(ps!.id, inv).ok, '研读成立').toBe(true)
     const snap = JSON.parse(JSON.stringify(b.snapshot()))
 
     const back = book()
@@ -215,16 +218,21 @@ describe('§45 存档：谱册往返，脏字段一律丢弃', () => {
     expect(back.levelOf(mv.id)).toBe(2)
     expect(back.slots[0]).toBe(mv.id)
     expect(back.loadout()).toEqual(b.loadout())
+    expect(back.passiveLevel(ps!.id), '被动等级复原').toBe(1)
+    expect(back.passiveValue(ps!.id), '被动数值跟着等级回来').toBe(ps!.values[0])
   })
 
   it('不存在的页、越界的等级、没亮页里的式子、还没开的槽——全进不了运行时', () => {
     const litPage = cfg().pages[0].id
     const onLitPage = cfg().movements.find((m) => m.page === litPage)!
     const elsewhere = cfg().movements.find((m) => m.page !== litPage)!
+    const onPassive = cfg().passives?.find((p) => p.page === litPage)
+    expect(onPassive, '本表至少有一条被动落在第一页（否则这条测不到被动的门禁）').toBeTruthy()
     const dirty = {
       lit: ['mvpage_nobody', litPage],
       levels: { [onLitPage.id]: 99, [elsewhere.id]: 2 }, // 一个越界、一个所在页没亮
-      slots: ['mv_nobody', onLitPage.id, 'ignored-beyond-slot-count']
+      slots: ['mv_nobody', onLitPage.id, 'ignored-beyond-slot-count'],
+      passives: { ps_nobody: 3, [onPassive!.id]: 99 } // 一条认不出、一条越界（不 clamp 成满级）
     }
     const b = book()
     b.restore(dirty, FULL)
@@ -235,6 +243,7 @@ describe('§45 存档：谱册往返，脏字段一律丢弃', () => {
     expect(snap.slots[0], '认不出的式子留空').toBeNull()
     expect(snap.slots[1], '合法的就收下').toBe(onLitPage.id)
     expect(snap.slots.length, '超出的槽位被忽略，不会凭空多出一个槽').toBe(cfg().slots.length)
+    expect(snap.passives, '认不出/越界的被动都不进运行时').toEqual({})
 
     // 同一份脏档，在低音级下读进来：没开的槽连合法内容也不能带进来
     const poor = book()
@@ -248,7 +257,7 @@ describe('§45 存档：谱册往返，脏字段一律丢弃', () => {
     const b = learn(book(), mv)
     b.equip(0, mv.id, b.slotRank(0)!)
     b.restore(null, FULL)
-    expect(b.snapshot()).toEqual({ lit: [], levels: {}, slots: cfg().slots.map(() => null) })
+    expect(b.snapshot()).toEqual({ lit: [], levels: {}, slots: cfg().slots.map(() => null), passives: {} })
     expect(b.loadout()).toEqual({})
   })
 })

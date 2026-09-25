@@ -137,6 +137,9 @@ export class PlayerController {
    */
   landingPoise = 0
   private landingPoiseTicks = 0
+  /** §7.3 常拍脚（KI-036）：落地/翻滚结束后的踏音宽限（tick）。0 = 被动没学/不在窗内 */
+  beatGraceTicks = 0
+  private beatGraceDuration = 0
   /**
    * §7.2 休止斩那格「每次使用后过载消耗 +2（防连发）」：按**输入槽**记的涨价账（和 `skillCd` 同一口径，
    * 所以同一式装在两个槽里也是各涨各的）。它刻意不住 `movements.json` 的可存档部分，也不入档：
@@ -213,6 +216,11 @@ export class PlayerController {
 
   setSkills(skills: Record<string, SkillAction>): void {
     this.skills = skills // 冷却不跟着清：在调音桩换装不该顺手把刚交的学费退回来
+  }
+
+  /** §7.3 常拍脚（KI-036）：被动等级给的宽限时长（秒），null = 没学。窗宽 ±80ms 是 strikeEnemy 的事 */
+  setBeatGrace(durationSec: number | null): void {
+    this.beatGraceDuration = durationSec ? Math.round(durationSec * 60) : 0
   }
 
   /** 战技冷却还剩几 tick（0＝可出手）。UI/调试器读它，不自己算 */
@@ -307,6 +315,7 @@ export class PlayerController {
     }
     const canAct = this.stunTicks <= 0 && this.crumpleTicks <= 0
     if (this.landingPoiseTicks > 0 && --this.landingPoiseTicks === 0) this.landingPoise = 0
+    if (this.beatGraceTicks > 0) this.beatGraceTicks--
     // 无声协奏的钟点：tick 一到世界重新听得见她，不需要任何人去"解除"它
     if (this.tacet && --this.tacet.ticksLeft <= 0) this.tacet = null
     this.moveIntent = { x: input.frame.move.x, y: input.frame.move.y }
@@ -434,6 +443,8 @@ export class PlayerController {
           this.landingPoise = landed.landingPoise
           this.landingPoiseTicks = landed.landingPoiseTicks
         }
+        // §7.3 常拍脚：招式收完落地 = 另一个起算点（KI-036；错拍步的 landing 加成同站不冲突）
+        if (this.beatGraceDuration > 0) this.beatGraceTicks = this.beatGraceDuration
         if (this.comboQueued && f.next && this.action.tick >= f.activeEnd) {
           const q = this.comboQueued
           this.comboQueued = null
@@ -494,7 +505,11 @@ export class PlayerController {
       const step = (this.roll.dir.x * this.base.roll.dist + 0) / this.roll.total
       const stepZ = (this.roll.dir.z * this.base.roll.dist) / this.roll.total
       this.pos.x += step; this.pos.z += stepZ
-      if (this.roll.tick >= this.roll.total) this.roll = null
+      if (this.roll.tick >= this.roll.total) {
+        this.roll = null
+        // §7.3 常拍脚：翻滚结束 = 宽限起算点之一（KI-036）
+        if (this.beatGraceDuration > 0) this.beatGraceTicks = this.beatGraceDuration
+      }
     }
     // §9 的守方那一半（KI-017 第二步）：接触被按住的几 tick 里硬直倒数不走。先采样再扣，是为了
     // 让"按住"正好等于 `msToTicks(hitStopMs)` 格而不是少一格；这一格自己也每 tick 都要走——它计的
