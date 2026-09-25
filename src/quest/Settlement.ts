@@ -95,15 +95,22 @@ export class DialogueSession {
     this.deps.present(res.view)
   }
 
+  /**
+   * 结算顺序是**语义**，不是风格：**先把任务建立/推进，再立旗标**。
+   *
+   * 反例（真踩过）：盐歌第一段记忆那条选择同时 `startQuest: q_meg` 与 `setFlags: [flag.meg_first_fragment]`，
+   * 而这条旗标正是第一步的 `advanceOn`。若先立旗，`Quests` 收到广播时任务还没开始（stepIndex = -1）
+   * ⇒ 那一步被静默跳过，玩家看到"接了委托但一步没走"。先建任务再立旗，旗标就能落到当前这一步上。
+   */
   applyEffects(list: readonly DialogueEffects[], npc: string): void {
     const d = this.deps
     let touched = false
     for (const e of list) {
+      if (e.startQuest) { d.quests.start(e.startQuest); touched = true }
+      if (e.advanceQuest) { d.quests.advance(e.advanceQuest.id, e.advanceQuest.to); touched = true }
       if (e.setRelation) { d.quests.addRelation(e.setRelation.npc ?? npc, e.setRelation.delta); touched = true }
       for (const f of e.setFlags ?? []) { d.setFlag(f, true); touched = true }
       for (const f of e.clearFlags ?? []) { d.setFlag(f, false); touched = true }
-      if (e.startQuest) { d.quests.start(e.startQuest); touched = true }
-      if (e.advanceQuest) { d.quests.advance(e.advanceQuest.id, e.advanceQuest.to); touched = true }
       if (e.giveItem) { d.inv.add(e.giveItem.id, e.giveItem.count ?? 1); touched = true }
       if (e.takeItem) { d.inv.remove(e.takeItem.id, e.takeItem.count ?? 1); touched = true }
       if (e.notify) d.notify(e.notify, 'reward')

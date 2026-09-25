@@ -250,6 +250,58 @@
     "speaker": "npc_belltongue",
     "emotion": "unsteady",
     "text": "降 B。……那晚有人把整支合唱按下了半个音，而且是从最里面按的。不是我。我这辈子只铸坏过一口钟——可有人改过一整支曲子。",
+    "next": "n10"
+   },
+   {
+    "id": "n10",
+    "speaker": "npc_belltongue",
+    "emotion": "closed",
+    "text": "（她站起来走到门口，又停下）第四口我不修。那口钟里封着被放逐的人最后一声。你要敲，自己去敲——我不听。",
+    "choices": [
+     {
+      "id": "c1",
+      "text": "里面封着谁？",
+      "style": "blunt",
+      "next": "n11"
+     },
+     {
+      "id": "c2",
+      "text": "（不问了，把锤子放回原处）",
+      "style": "silent",
+      "effects": {
+       "setRelation": {
+        "delta": 1
+       },
+       "setFlags": [
+        "flag.belltongue_refused"
+       ],
+       "notify": "她没回头。你听见炉火被拨了一下，又一下"
+      },
+      "next": "n12"
+     }
+    ]
+   },
+   {
+    "id": "n11",
+    "speaker": "npc_belltongue",
+    "emotion": "unsteady",
+    "text": "（她很久没说话）我放逐的不是聋者，是——（她闭口，转身去拨炉火）……出去。今天到此为止。",
+    "effects": {
+     "setRelation": {
+      "delta": -1
+     },
+     "setFlags": [
+      "flag.belltongue_refused"
+     ],
+     "notify": "那半句话停在炉边 —— 它缺的后半截，在别处"
+    },
+    "next": null
+   },
+   {
+    "id": "n12",
+    "speaker": "npc_belltongue",
+    "emotion": "quiet",
+    "text": "……谢谢。锤子我收着。哪天你想敲了，它还在。",
     "next": null
    }
   ]
@@ -389,7 +441,7 @@
        "quest": {
         "id": "q_corvin",
         "in": [
-         "CORVIN.STEP1_OPEN"
+         "CORVIN.STEP2_DELIVER"
         ]
        }
       },
@@ -401,7 +453,10 @@
        "setRelation": {
         "delta": 1
        },
-       "notify": "他把核举到灯下听了很久 —— 弱点图谱的第一页已经写在你眼里"
+       "notify": "他把核举到灯下听了很久 —— 弱点图谱的第一页已经写在你眼里",
+       "setFlags": [
+        "flag.corvin_core_delivered"
+       ]
       },
       "next": "n6"
      },
@@ -532,7 +587,11 @@
       "effects": {
        "setRelation": {
         "delta": 1
-       }
+       },
+       "setFlags": [
+        "flag.meg_second_fragment"
+       ],
+       "notify": "第二段记忆入账：仪典前夜，莉安唱错了一个音——她知道"
       },
       "next": "n4"
      },

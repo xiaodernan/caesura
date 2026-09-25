@@ -147,8 +147,8 @@ describe('§27/§30 叙事闭环：交谈 → 选择 → 世界被改 → 存档
     const w = makeWorld()
     w.session.open('npc_corvin')
     w.session.choose('c1') // 「什么价钱？」
-    w.session.choose('c1') // 「成交。」
-    expect(w.quests.state('q_corvin')).toBe('CORVIN.STEP1_OPEN')
+    w.session.choose('c1') // 「成交。」—— 接委托与立"契约已签"的旗是同一次选择，所以当场推进到第二步
+    expect(w.quests.state('q_corvin')).toBe('CORVIN.STEP2_DELIVER')
     w.session.close()
 
     w.rpg.inv.add('it_resonance_core', 1)
@@ -157,6 +157,18 @@ describe('§27/§30 叙事闭环：交谈 → 选择 → 世界被改 → 存档
     w.session.choose('c1') // 「（把振源核放在桌上）」
     expect(w.rpg.inv.count('it_resonance_core')).toBe(before - 1)
     expect(w.last().nodeId).toBe('n6')
+    w.session.close()
+    w.off()
+  })
+
+  it('同一次选择里「接委托 + 立第一步的旗」⇒ 任务要真的走到第二步（结算顺序的回归）', () => {
+    const w = makeWorld()
+    w.session.open('npc_meg')
+    w.session.choose('c1') // 「你认识她。」
+    w.session.choose('c1') // 「……这里。休垒。」—— 这一条同时 startQuest 与立 flag.meg_first_fragment
+    expect(w.streaming.hasFlag('flag.meg_first_fragment')).toBe(true)
+    // 旗标是第一步的 advanceOn：任务必须先被建立，旗标才落得到这一步上（否则玩家"接了委托却一步没走"）
+    expect(w.quests.state('q_meg')).toBe('MEG.STEP2_EXCHANGE')
     w.session.close()
     w.off()
   })
@@ -231,8 +243,8 @@ describe('§27/§30 叙事闭环：交谈 → 选择 → 世界被改 → 存档
     w.rpg.inv.add('it_echo_salve', 1)
     w.session.open('npc_meg')
     w.session.choose('c1') // 「你认识她。」→ 她才肯赊第一段记忆
-    w.session.choose('c1') // 「……这里。休垒。她一直守在自家门口。」← 答对录音地点才算完成
-    expect(w.quests.state('q_meg')).toBe('MEG.STEP1_OPEN')
+    w.session.choose('c1') // 「……这里。休垒。她一直守在自家门口。」← 答对录音地点，第一步当场完成
+    expect(w.quests.state('q_meg')).toBe('MEG.STEP2_EXCHANGE')
     expect(w.rpg.inv.count('it_echo_salve'), '对话不该碰无关物品').toBe(1)
     w.session.close()
     w.off()

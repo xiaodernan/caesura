@@ -175,15 +175,19 @@ describe('任务状态机（需求 §28：只有两种推进来源）', () => {
     expect(q.advance('q_bells', 'BELLS.STEP2_OPEN')).toBe(true)
     expect(q.advance('q_bells'), '顺推一步').toBe(true)
     expect(q.state('q_bells')).toBe('BELLS.STEP2_SECOND')
-    // 一路推到末步：末步是"正在进行"而不是"已完成"
+    // 一路推到末步《哑钟》：末步是"正在进行"而不是"已完成"
     q.advance('q_bells', 'BELLS.STEP3_OPEN')
     expect(q.state('q_bells')).toBe('BELLS.STEP3_OPEN')
     expect(q.isComplete('q_bells'), '停在末步 ≠ 做完了').toBe(false)
-    expect(q.advance('q_bells'), '末步之后没有下一步').toBe(false)
-    // 末步的 advanceOn 命中 ⇒ 收束（状态不变，但这条线算完成）
+    // 这一步的 advanceOn（合听解锁降 B）命中 ⇒ 顺推到《哑钟》的收束步
     bus.emit('world.flag', { key: 'flag.bell_keymod_found', value: true })
+    expect(q.state('q_bells')).toBe('BELLS.STEP3_REFUSED')
+    expect(q.isComplete('q_bells')).toBe(false)
+    expect(q.advance('q_bells'), '末步之后没有下一步').toBe(false)
+    // 末步的 advanceOn（她拒绝碰第四口钟）命中 ⇒ 收束（状态不变，但这条线算完成）
+    bus.emit('world.flag', { key: 'flag.belltongue_refused', value: true })
     expect(q.isComplete('q_bells')).toBe(true)
-    expect(q.state('q_bells'), '收束不改 state').toBe('BELLS.STEP3_OPEN')
+    expect(q.state('q_bells'), '收束不改 state').toBe('BELLS.STEP3_REFUSED')
   })
 
   it('旗标驱动的顺推只查**当前这一步**（提前立了三步的旗也不会一次跳完）', () => {

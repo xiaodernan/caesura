@@ -150,9 +150,55 @@ describe('《唤四钟》：修钟的闸门、跨区三步、三段合听（§2.
     w.session.choose('c4')
     expect(w.streaming.hasFlag('flag.bell_keymod_found')).toBe(true)
     expect(w.rpg.inv.count('it_echo_slate'), '三段合听是消耗掉的').toBe(0)
-    expect(w.quests.state('q_bells')).toBe('BELLS.STEP3_OPEN')
-    expect(w.quests.isComplete('q_bells'), '末步的 advanceOn 命中 ⇒ 这条线收束').toBe(true)
+    // 合听只是把任务推到**下一步**《哑钟》（她拒绝碰第四口钟），不是收束
+    expect(w.quests.state('q_bells')).toBe('BELLS.STEP3_REFUSED')
+    expect(w.quests.isComplete('q_bells')).toBe(false)
     expect(w.last().text).toContain('降 B')
+
+    // 她拒绝碰第四口钟：这段的收场方式有两种（问到底 / 不问），两种都算把这一步走完
+    w.session.advance()                       // n9 → n10
+    expect(w.last().nodeId).toBe('n10')
+    expect(w.last().choices.map((c) => c.id)).toEqual(['c1', 'c2'])
+    w.session.choose('c2')                    // 不问了
+    expect(w.streaming.hasFlag('flag.belltongue_refused')).toBe(true)
+    expect(w.quests.isComplete('q_bells'), '这一步的旗标命中 ⇒ 铃姨线在本切片内收束').toBe(true)
+    expect(w.last().text).toContain('锤子')
+    w.session.close()
+  })
+
+  it('问到底那条路会拿到那半句话，但代价是关系（沉默不是唯一解，也不是免费解）', () => {
+    const w = makeWorld()
+    w.tellHerAboutTheCrack()
+    for (const id of BELLS) w.pressE(id)
+    w.rpg.inv.add('it_echo_slate', 3)
+    const before = w.quests.relation('npc_belltongue')
+    w.session.open('npc_belltongue')
+    w.session.choose('c4')
+    w.session.advance()
+    w.session.choose('c1')                    // 里面封着谁？
+    expect(w.last().text).toContain('我放逐的不是聋者')
+    expect(w.quests.relation('npc_belltongue')).toBe(before - 1)
+    expect(w.quests.isComplete('q_bells')).toBe(true)
+    w.session.close()
+  })
+
+  it('盐歌线第二步也收束了：她收下首钟的断面，第二段记忆入账（用探索成果换剧情）', () => {
+    const w = makeWorld()
+    w.tellHerAboutTheCrack()                 // 先真的听过断面（她说得出那段声音）
+    w.session.open('npc_meg')
+    w.session.choose('c1')                   // 「你认识她。」
+    w.session.choose('c1')                   // 答对录音地点 ⇒ 第一步当场完成（同一次选择里接委托+立旗）
+    expect(w.quests.state('q_meg')).toBe('MEG.STEP2_EXCHANGE')
+    w.session.close()
+
+    w.session.open('npc_meg')                // 复访：以物易声
+    expect(w.last().nodeId).toBe('n3')
+    const withSound = w.last().choices.map((c) => c.id)
+    expect(withSound).toContain('c1')
+    w.session.choose('c1')
+    expect(w.streaming.hasFlag('flag.meg_second_fragment')).toBe(true)
+    expect(w.quests.isComplete('q_meg'), '末步的 advanceOn 命中 ⇒ 这条线收束').toBe(true)
+    expect(w.last().text).toContain('唱错了一个音')
     w.session.close()
   })
 

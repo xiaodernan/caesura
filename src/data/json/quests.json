@@ -83,6 +83,19 @@
      "H",
      "C"
     ]
+   },
+   {
+    "state": "BELLS.STEP3_REFUSED",
+    "label": "《哑钟》：她拒绝碰第四口钟 —— 半句没说完的话留在炉边",
+    "advanceOn": {
+     "flags": [
+      "flag.belltongue_refused"
+     ]
+    },
+    "tags": [
+     "H",
+     "C"
+    ]
    }
   ]
  },
@@ -107,11 +120,16 @@
    },
    {
     "state": "CORVIN.STEP2_DELIVER",
-    "label": "核已在手 —— 交给他，或者留着",
+    "label": "核已在手 —— 交给他（交付即本条线在本切片内收束）",
     "tags": [
      "D",
      "H"
-    ]
+    ],
+    "advanceOn": {
+     "flags": [
+      "flag.corvin_core_delivered"
+     ]
+    }
    }
   ]
  },
@@ -137,11 +155,16 @@
    },
    {
     "state": "MEG.STEP2_EXCHANGE",
-    "label": "《以物易声》：用你见过的一段声音换下一段记忆（后续步在 Phase 6-C 落）",
+    "label": "《以物易声》：用你见过的一段声音换第二段记忆（她收下了首钟的断面）",
     "tags": [
      "D",
      "M"
-    ]
+    ],
+    "advanceOn": {
+     "flags": [
+      "flag.meg_second_fragment"
+     ]
+    }
    }
   ]
  },

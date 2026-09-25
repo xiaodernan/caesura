@@ -419,10 +419,10 @@ NPC 可见对话节点集 = Filter(树, 条件求值)
 | 项 | 状态 | 落点 / 缺口 |
 |---|---|---|
 | 对话引擎（§3.1/§3.2） | **Implemented** | `quest/Dialogue.ts`：条件求值（flags/relation/quest/hasItem）纯只读、选树按 priority + entry、root 不成立退 fallback、`once` 节点靠已读缓存跳过。**效果在跨过边界的那一刻就交出去（`EffectSink`）**——否则"选了『我看了断面』，下一个节点的 `quest.gte` 却在效果落地前求值"这种错序会静默跳过决断节点（这条是实测出来的，不是推的） |
-| 效果结算（§3.2 effects） | **Implemented** | `quest/Settlement.ts`：setFlags/clearFlags → `world.flag` 广播（与战斗、交互立的旗是同一条路）；setRelation → 关系；startQuest/advanceQuest → 任务；give/takeItem → 背包。**引擎自己不写世界** |
+| 效果结算（§3.2 effects） | **Implemented** | **结算顺序是语义**：先把任务建立/推进，再立旗标——反例是真踩到的（盐歌那条选择同时 `startQuest` 与立第一步的 `advanceOn` 旗，先立旗就会被静默跳过："接了委托却一步没走"）。 `quest/Settlement.ts`：setFlags/clearFlags → `world.flag` 广播（与战斗、交互立的旗是同一条路）；setRelation → 关系；startQuest/advanceQuest → 任务；give/takeItem → 背包。**引擎自己不写世界** |
 | 任务状态机（§28） | **Implemented** | `quest/Quests.ts`：推进只有两种来源（旗标广播 / 对话里的选择），**没有计数器**；单调不回跳；旗标只查当前这一步（提前立三步的旗不会一次跳完）；关系夹在 -5..+5；`quest.changed` 广播。**收束语义**：`isComplete` 的判据是「末步的 `advanceOn` 命中」，不是「已走到末步」——停在末步意味着任务**正在进行**（《哑钟》= 你该去合听三段录音了），把它算成完成会让任务簿撒谎 |
 | NPC（§27 五位） | **Partial** | `npcs.json` 五位齐全（铃姨/科温/盐歌/断弦/无面童），休垒那处交互物已按 §2.5 更正为无面童（KI-044）。缺口：无立绘、无 `emotion` 表现、无选人/同行流程 |
-| 对话树内容 | **Partial** | 五棵初见树 + **铃姨线步 1–2 全通**（检视 → 告诉/隐瞒 → 唤四钟 → 三段拾音石合听解锁「降 B」）+ 科温的交付步。缺：§3.4 恩希尔战前（要 Boss 区触发）、§2.4 断弦三选一、铃姨线步 3/4（哑钟与终极抉择）、§2.2/§2.3 的后续步（KI-043） |
+| 对话树内容 | **Partial** | 五棵初见树；**铃姨线步 1–3 全通**（检视 → 告诉/隐瞒 → 唤四钟 → 三段合听解锁「降 B」→ 她拒绝碰第四口钟）；**盐歌线 2/2 与科温线 2/2 收束**。缺：§3.4 恩希尔战前（要 Boss 区触发）、铃姨步 4 终极三选一、§2.2 步 3/4、§2.4 断弦三选一（KI-043） |
 | 修钟（§2.1 步 2） | **Implemented** | 三口钟的钟座（`regions.json` 三个 `kind:'bell'` + `verb`），闸门是**对话里的决断**立起的 `flag.bells_repair_open`；每口钟 `setsFlag` 一个旗标（任务步的读方）+ `lootTable` 给一块拾音石。三段拾音石在铃姨的复访节点合听 ⇒ 解锁「转调发生在降 B」（`flag.bell_keymod_found`）⇒ 收束本条线。**实机视口未走查**（KI-010 同因），headless 5 条 flow 覆盖 |
 | 环境叙事（§29） | **Placeholder** | §4 的 Beat 表一条都还没落成实体（尸体摆位 / 遗物文案 / 符号贴花），Phase 6-C |
 | 过场（§31 / §6） | **Placeholder** | `cinematic` 字段现在只透传，不演；镜头轨道与字幕时序未接 |
