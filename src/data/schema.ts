@@ -82,7 +82,7 @@ export interface FrameData {
    * **敌人的招式不许在这里声明**：那一侧的分级住在 `AttackSpec.reaction`，两处都写就是两个主人
    * （validator 当场报错）。
    */
-  reaction?: 'R1' | 'R2' | 'R3'
+  reaction?: ReactionStunTier
   /**
    * §11 回响：命中后在同一位置挂一记「回声影」，`statuses.echo.delayTicks` 之后把这一击的
    * `replayMul` 倍伤害对群重演一次。写在哪一招上＝设计口径（combat.md §4.1 L4 尾段、
@@ -129,7 +129,7 @@ export interface AttackSpec {
   frames: FrameData
   beat: number[]
   parryable: boolean
-  reaction?: 'R0' | 'R1' | 'R2' | 'R3' | 'R4' | 'R5'
+  reaction?: IncomingGrade
   /** 命中挂异常：tag 用 Gameplay Tag 串；mute 类必须显式写 ticks（不写就不挂状态，见 support.test 全表扫描） */
   statusOnHit?: { tag: string; layers: number; ticks?: number }
   /**
@@ -683,8 +683,9 @@ export interface StatusConfig {
  *   承载体有两条：`ThirdPersonController.takeDamage`（玩家）与 `CombatManager.applyReaction`（敌人，§8 的分级列）。
  * - **R2 / R3**＝敌人侧的重击档与击退档。承载体同样是 `applyReaction`：重击与战技出手报 R2、
  *   招式帧自己声明 `reaction:"R3"` 的那一格（§4.2 强音大剑跳劈「附加击倒 R3」）报 R3。
- *   **Boss 整条 R0–R3 通道免疫**（§16/§2.1 的背谱前提：她的招式不被逐式打断，反制手段是弹反/破势/场地机关），
- *   `hyper` 窗与钟壳期免 R1/R2 的硬直（位移不免）——裁决全文见 KI-052 行。
+ *   **Boss 整条 R0–R3 通道免疫**（§16/§2.1 的背谱前提：她的招式不被逐式打断，反制手段是弹反/破势/场地机关）。
+ *   R1 那一档对敌人**什么都不接管**（不硬直、不迁移位置）——"每一记轻击推 0.2m"在没有滑行衰减的灰盒里
+ *   会累加成一笔距离税，实测会顶穿 KI-039 的高甲平衡判据；那一格的 `displaceM` 由玩家受击那一边读。
  * - **R4**＝破势：承载体是 `EntityStats.addPoise` 写出的破势时长
  *   （普通 1.8s；Boss/mini-boss 2.4s，由 `combat/Reactions.ts:armCrumple` 按 `isBoss` 上弦）。
  * - **R5 不写**：本作没有"浮空"这个状态（敌人不会离地，也没有空中减伤通道），写进去就是造没有消费方的行。
@@ -697,10 +698,18 @@ export interface HitReactionTable {
   R4: { crumpleMs: number; bossCrumpleMs: number }
 }
 
-/** 受击反应里"挂在挨打那一方的时间"的四档（R4/R5 各有自己的通道，不在这一列里） */
+/**
+ * §8 里"挂在挨打那一方的时间"的四档（R4/R5 各有自己的通道，不在这一列里）
+ */
 export type ReactionTier = 'R0' | 'R1' | 'R2' | 'R3'
 /** 其中给得出"硬直 + 位移"的那三档：R0 只发光，所以不在这个子集里 */
 export type ReactionStunTier = Exclude<ReactionTier, 'R0'>
+/**
+ * 一记攻击**打在谁身上都算哪一档**的完整词表（KI-052②）：敌人招式声明的是这一列，
+ * 玩家受击那一边读它决定"要不要没收正在出的那一式"。
+ * §8 末行把玩家的**时长**钉死成 R1 等效（操作权不没收），所以这一列不改时长，只改打断。
+ */
+export type IncomingGrade = 'R0' | 'R1' | 'R2' | 'R3' | 'R4' | 'R5'
 
 /* ============================ 乐章战技（progression.md §7，Phase 5-C2） ============================ */
 

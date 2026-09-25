@@ -5,8 +5,8 @@ import type { Input } from '@/core/Input'
 import { RhythmClock } from '@/core/RhythmClock'
 import { registry } from '@/core/Registry'
 import { registerGameData, playerBase, reactions, movesetsRaw } from '@/data'
-import type { MovesetData, WeaponData } from '@/data/schema'
-import { PlayerController } from '@/player/ThirdPersonController'
+import type { IncomingGrade, MovesetData, WeaponData } from '@/data/schema'
+import { PlayerController, type PlayerAction } from '@/player/ThirdPersonController'
 import { AISystem } from '@/ai/AISystem'
 import { CombatManager } from '@/combat/CombatManager'
 import { newAttack, type Enemy } from '@/ai/Enemy'
@@ -357,3 +357,205 @@ describe('KI-052① R0：材质发光第一次住在表里，而且看"架势破
     w.ai.despawn(e.id)
   })
 })
+
+/**
+ * KI-052②：同一张表的另一半——**敌人那一招声明的档位，打在玩家身上算不算"没收你正在出的那一式"**。
+ *
+ * §8 的末行把玩家的**时长**钉死成 R1 等效（"无 R3+，操作权不没收"），所以这一半的分级
+ * 不改秒数、只改打断：R1「不打断重击与蓄力」、R2「中断一切非霸体（hyper 自带 1 次免役）」、
+ * R3 起穿得过免役。量具走真受击通道（弹体 ⇒ `resolveAgainstPlayer` ⇒ `takeDamage`），
+ * 档位由 spawn 参数给——那正是敌人身上的 `AttackSpec.reaction` 在生产里走的路。
+ */
+describe('KI-052②：玩家受击第一次看来袭档位——秒数恒定，改的是"没收哪一式"', () => {
+  /** 玩家正在出 key 这一式时，一记某档度的攻击落到她身上；返回"那一式活没活下来 + 挨了多久硬直" */
+  function hitWhileCasting(key: 'l1' | 'h' | 'charged', grade: IncomingGrade | undefined, atTick = 4): { landed: boolean; kept: boolean; stun: number } {
+    const w = makeWorld()
+    const p = w.player
+    p.action = null; p.roll = null; p.stunTicks = 0; p.charging = false
+    p.stats.hp = 9_999; p.stats.hpMax = 9_999; p.stats.stamina = 100
+    expect(p.tryStartAction(key, w.time.tick, w.rhythm), `出招失败：${key}`).toBe(true)
+    const mine = p.action
+    const shoot = (): boolean => {
+      const seen = w.hits.length
+      w.combat.projectiles.spawn({
+        hostile: true, ownerId: 'foe-live', kind: 'note',
+        origin: { x: p.pos.x, y: p.pos.y + 1.1, z: p.pos.z + 1.3 },
+        dir: { x: 0, y: 0, z: -1 }, speed: 60, range: 20, radius: 1.2,
+        damage: 7, poise: 0, hitStopMs: 40, onBeat: false, reaction: grade,
+      }, w.time.tick)
+      for (let i = 0; i < 24; i++) {
+        w.tick()
+        if (w.hits.slice(seen).some((h) => h.victimId === 'player' && h.result === 'hit')) return true
+      }
+      return false
+    }
+    for (let i = 0; i < atTick; i++) w.tick()
+    expect(p.action, `前提：${key} 还在出手中`).toBe(mine)
+    const landed = shoot()
+    return { landed, kept: p.action === mine, stun: p.stunTicks }
+  }
+
+  it('§8 末行的"无 R3+（操作权不没收）"：五档来袭给的硬直都是 R1 那一格', () => {
+    for (const grade of ['R0', 'R1', 'R2', 'R3', undefined] as const) {
+      const r = hitWhileCasting('l1', grade, 2)
+      expect(r.landed, `${grade} 那一记没落到玩家身上：这条在量空气`).toBe(true)
+      expect(r.stun, `档位 ${grade} 不许改受击时长（§8 玩家侧那一行是底线）`).toBe(msToTicks(reactions.R1.stunMs))
+    }
+  })
+
+  it('R1 打在蓄力/重击上：那一式活着（§8「不打断重击与蓄力」的前半句第一次有承载体）', () => {
+    for (const key of ['h', 'charged'] as const) {
+      const r = hitWhileCasting(key, 'R1')
+      expect(r.landed).toBe(true)
+      expect(r.kept, `${key} 被一记 R1 级攻击收掉了 ⇒ §8 那半句还是空话`).toBe(true)
+    }
+  })
+
+  it('R1 打在轻击段上：那一式照旧被收（同一行的前半句不许被豁免吃掉）', () => {
+    const r = hitWhileCasting('l1', 'R1')
+    expect(r.landed).toBe(true)
+    expect(r.kept, '轻击不该拿到重击才有的豁免——那一行说的是"中断轻击前摇"').toBe(false)
+  })
+
+  it('没写档位的攻击按 R1 处理：默认落在保守的那一侧（轻击被收、蓄力不被收）', () => {
+    const light = hitWhileCasting('l1', undefined)
+    expect(light.landed).toBe(true)
+    expect(light.kept, '缺省档位没有按 R1 走').toBe(false)
+    expect(hitWhileCasting('charged', undefined).kept).toBe(true)
+  })
+
+  it('R3 穿得过霸体：和弦斩被 R3 收掉（免役写的是 R2，不是"一切"）', () => {
+    const r = hitWhileCasting('charged', 'R3')
+    expect(r.landed).toBe(true)
+    expect(r.kept, '§8 R3 是比 R2 更强的一行，那一格免役盖不到它').toBe(false)
+  })
+
+  it('hyper 的免役恰好一次：同一式上第一记 R2 挡下、第二记挡不下', () => {
+    const w = makeWorld()
+    const p = w.player
+    p.action = null; p.stunTicks = 0; p.charging = false
+    p.stats.hp = 9_999; p.stats.hpMax = 9_999; p.stats.stamina = 100
+    expect(p.tryStartAction('charged', w.time.tick, w.rhythm)).toBe(true)
+    const mine = p.action
+    const shoot = (): boolean => {
+      const seen = w.hits.length
+      w.combat.projectiles.spawn({
+        hostile: true, ownerId: 'foe-live', kind: 'note',
+        origin: { x: p.pos.x, y: p.pos.y + 1.1, z: p.pos.z + 1.3 },
+        dir: { x: 0, y: 0, z: -1 }, speed: 60, range: 20, radius: 1.2,
+        damage: 7, poise: 0, hitStopMs: 40, onBeat: false, reaction: 'R2',
+      }, w.time.tick)
+      for (let i = 0; i < 24; i++) {
+        w.tick()
+        if (w.hits.slice(seen).some((h) => h.victimId === 'player' && h.result === 'hit')) return true
+      }
+      return false
+    }
+    w.tick(4)
+    expect(shoot(), '第一记 R2 没落到玩家身上').toBe(true)
+    expect(p.action, '§8 R2 括号那句「招式自带 1 次 R2 免役」没有承载体').toBe(mine)
+    expect(p.action, '前提：那一式还在 hyper 窗内（Active 段未过）').toBe(mine)
+    expect(shoot(), '第二记 R2 没落到玩家身上').toBe(true)
+    expect(p.action, '免役若能反复赖，§8 那个"1 次"就白写').not.toBe(mine)
+  })
+
+  it('hyper 窗只到 Active 段为止：收势段里那一式不再免役（§8 括号写的是「前摇+Active」）', () => {
+    const w = makeWorld()
+    const p = w.player
+    p.action = null; p.stunTicks = 0; p.charging = false
+    p.stats.hp = 9_999; p.stats.hpMax = 9_999; p.stats.stamina = 100
+    expect(p.tryStartAction('charged', w.time.tick, w.rhythm)).toBe(true)
+    // 用对象装着读数：直接 `const mine = p.action` 会被控制流分析窄成 null（它上面刚赋过 null）
+    const started: { a: PlayerAction | null } = { a: p.action }
+    const f = started.a!.f
+    // 走到 Active 段之后、收势段之内：这一段"拍子已经交出去了"，不该再穿着霸体
+    w.tick(f.activeEnd + 3 - w.time.tick)
+    expect(p.action, '前提：那一式还在（收势段没走完）').toBe(started.a)
+    expect(p.action!.tick, '前提：已经过了 Active 段').toBeGreaterThan(f.activeEnd)
+    const seen = w.hits.length
+    w.combat.projectiles.spawn({
+      hostile: true, ownerId: 'foe-live', kind: 'note',
+      origin: { x: p.pos.x, y: p.pos.y + 1.1, z: p.pos.z + 1.3 },
+      dir: { x: 0, y: 0, z: -1 }, speed: 60, range: 20, radius: 1.2,
+      damage: 7, poise: 0, hitStopMs: 40, onBeat: false, reaction: 'R2',
+    }, w.time.tick)
+    for (let i = 0; i < 24 && !w.hits.slice(seen).some((h) => h.victimId === 'player' && h.result === 'hit'); i++) w.tick()
+    expect(p.action, '免役延伸到了收势段 ⇒ 后摇也变成霸体，§8 那半句被读宽了').not.toBe(started.a)
+  })
+
+  it('没声明 hyper 的那一式挡不住 R2：免役是数据给的，不是"重击"这个身份自带的', () => {
+    const r = hitWhileCasting('h', 'R2')
+    expect(r.landed).toBe(true)
+    expect(r.kept, 'ms_sword.h 帧上没有 hyper ⇒ 它不该有免役').toBe(false)
+  })
+
+  it('收掉那一式的同时也收掉蓄力：R2/R3 之后不再有"半程蓄力"的悬空状态', () => {
+    const w = makeWorld()
+    const p = w.player
+    p.action = null; p.roll = null; p.stunTicks = 0
+    p.stats.hp = 9_999; p.stats.hpMax = 9_999; p.stats.stamina = 100
+    w.frame.held.add('attackHeavy')
+    w.tick(3) // 按满三格：charging 起来，chargeTicks 在涨
+    expect(p.charging, '前提：正在蓄力').toBe(true)
+    const seen = w.hits.length
+    w.combat.projectiles.spawn({
+      hostile: true, ownerId: 'foe-live', kind: 'note',
+      origin: { x: p.pos.x, y: p.pos.y + 1.1, z: p.pos.z + 1.3 },
+      dir: { x: 0, y: 0, z: -1 }, speed: 60, range: 20, radius: 1.2,
+      damage: 7, poise: 0, hitStopMs: 40, onBeat: false, reaction: 'R3',
+    }, w.time.tick)
+    for (let i = 0; i < 24 && !w.hits.slice(seen).some((h) => h.victimId === 'player' && h.result === 'hit'); i++) w.tick()
+    expect(p.charging, 'R3 收掉了那一式却没收掉蓄力状态 ⇒ 半程蓄力悬在空中').toBe(false)
+  })
+
+  /**
+   * 真近战通道：让一只真敌人用它**表里那一招**打到玩家。上面那些腿把档位从 spawn 参数灌进弹体，
+   * 这一条要的是另一半——`AttackSpec.reaction` 那 35 条声明（KI-050 登记时是"写了没人读"的账）
+   * 现在真的走到了玩家的受击出口。
+   */  function enemyLands(enemyId: string, attackId: string, whileCasting: 'charged' | 'l1') {
+    const w = makeWorld()
+    const p = w.player
+    p.pos.x = 0; p.pos.y = 0; p.pos.z = 0
+    p.action = null; p.roll = null; p.stunTicks = 0; p.charging = false
+    p.stats.hp = 9_999; p.stats.hpMax = 9_999; p.stats.stamina = 100
+    const e = w.ai.spawn(enemyId, { x: 0, y: 0, z: -1.3 }, 'grade-' + attackId)
+    e.stats.hp = 1e7; e.stats.poiseMax = 1e7
+    e.enter('combat')
+    const spec = e.data.attacks.find((a) => a.id === attackId)
+    expect(spec, `敌人表里没有 ${enemyId}.${attackId}`).toBeTruthy()
+    expect(p.tryStartAction(whileCasting, w.time.tick, w.rhythm), `出招失败：${whileCasting}`).toBe(true)
+    const mine = p.action
+    // 用一个对象装着：闭包里写进去的读数如果落在 `let` 上，TS 的控制流分析会把它窄成 never
+    const seen: { landed?: { kept: boolean; stun: number } } = {}
+    for (let i = 0; i < 140 && !seen.landed; i++) {
+      if (!e.attack) e.attack = newAttack(spec!, spec!.frames.startup - 1)
+      const before = w.hits.length
+      w.tick(1, () => {
+        if (seen.landed) return
+        if (w.hits.slice(before).some((h) => h.victimId === 'player' && h.result === 'hit')) {
+          seen.landed = { kept: p.action === mine, stun: p.stunTicks }
+        }
+      })
+    }
+    const out = { declared: spec!.reaction ?? null, landed: seen.landed ?? null }
+    w.ai.despawn(e.id)
+    return out
+  }
+
+  it('敌人那一招声明的档位真的走到玩家受击出口：R1 的咬打不断蓄力斩，R3 的鼓槌打得断', () => {
+    const bite = enemyLands('en_murkshell', 'bite', 'charged')
+    expect(bite.declared, '前提：嘈壳的啄壳咬在表里是 R1').toBe('R1')
+    expect(bite.landed, '它一记都没打到玩家：这条在量空气').toBeTruthy()
+    expect(bite.landed!.kept, 'R1 收掉了蓄力斩 ⇒ §8「不打断重击与蓄力」在真通道上没成立').toBe(true)
+    expect(bite.landed!.stun).toBe(msToTicks(reactions.R1.stunMs))
+
+    const mallet = enemyLands('en_tympanus', 'mallet', 'charged')
+    expect(mallet.declared, '前提：驼鼓的鼓槌横扫在表里是 R3').toBe('R3')
+    expect(mallet.landed, '它一记都没打到玩家：这条在量空气').toBeTruthy()
+    expect(mallet.landed!.kept, 'R3 打在霸体式的第一记上就该收掉那一式').toBe(false)
+
+    const light = enemyLands('en_murkshell', 'bite', 'l1')
+    expect(light.landed!.kept, '同一记 R1 打在轻击段上必须收掉——否则前半句丢了').toBe(false)
+  })
+})
+

@@ -222,7 +222,7 @@ export class Enemy {
    * 连发（§14.4 三叠箭）按 burst.everyTicks 逐发排开，同一招式最多发 count 发；
    * 被弹反/被打断 ⇒ attack 清空，余下发数一起作废（这就是「骗动作」的反制）。
    */
-  get pendingProjectile(): { spec: ProjectileSpec; frames: FrameData } | null {
+  get pendingProjectile(): { spec: ProjectileSpec; frames: FrameData; reaction: AttackSpec['reaction'] } | null {
     const a = this.attack
     if (!a) return null
     const spec = a.spec.frames.projectile
@@ -232,7 +232,9 @@ export class Enemy {
     const b = spec.burst
     const at = b ? (b.at?.[a.shots] ?? a.shots * b.everyTicks) : 0
     if (a.tick < a.spec.frames.activeStart + at) return null
-    return { spec, frames: a.spec.frames }
+    // §8 的分级跟着这一发走（KI-052②）：弹体离手之后它仍然是"那一招打出来的一记"，
+    // 所以那一招声明的档位要原样带到命中点，而不是在发射处再查一次此刻的招式。
+    return { spec, frames: a.spec.frames, reaction: a.spec.reaction }
   }
 
   /** §14.4「可见赤线 telegraph，线终点=落点」：前摇期间把落点提前告诉玩家 */

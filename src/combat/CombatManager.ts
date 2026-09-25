@@ -7,7 +7,7 @@ import type { Input } from '@/core/Input'
 import type { PlayerController, ActivePlayerHit } from '@/player/ThirdPersonController'
 import type { AISystem } from '@/ai/AISystem'
 import type { Enemy } from '@/ai/Enemy'
-import type { AttrKey, EnemyData, FrameData, ProjectileSpec, ReactionStunTier } from '@/data/schema'
+import type { AttrKey, EnemyData, FrameData, IncomingGrade, ProjectileSpec, ReactionStunTier } from '@/data/schema'
 import { resolveDamage } from './DamagePipeline'
 import { reactionTier } from './Reactions'
 import { shapeHits, isBackstab } from './HitShapes'
@@ -86,6 +86,13 @@ interface EnemyStrike {
  */
 const TIER_BY_KIND: Record<EnemyStrike['kind'], ReactionStunTier> = { light: 'R1', heavy: 'R2', skill: 'R2' }
 
+/**
+ * 打在**敌人**身上的那一档只可能是"给得出硬直"的那三档（R0 只发光，R4/R5 各走自己的通道）。
+ * 弹体那条通道里 `!hostile` 那一支才会打中人，所以这不是放宽判据，只是把它写成类型。
+ */
+const stunTier = (g: IncomingGrade | undefined): ReactionStunTier | undefined =>
+  g === 'R1' || g === 'R2' || g === 'R3' ? g : undefined
+
 /** 玩家要防御的一击：敌方近战与敌方弹体走同一个阶梯（§5：弹反 > 无敌帧 > 完美格挡 > 格挡 > 硬吃） */
 interface Threat {
   attackerId: string
@@ -102,6 +109,13 @@ interface Threat {
   /** §9 攻方那一半：这一记来自出手者此刻的哪个招式对象（弹体不填＝离手了，见 `EnemyStrike.sourceAction`） */
   sourceAction?: object
   statusOnHit?: { tag: string; layers: number; ticks?: number }
+  /**
+   * §8 来袭档位（KI-052②）：敌人那一招声明自己算哪一档。
+   * 它**不改玩家挨打的时长**——§8 末行把那一格钉死成 R1 等效（"操作权不没收"是这类型的底线）；
+   * 它改的是**这一记有没有权利没收你正在出的那一式**（R1「不打断重击与蓄力」/ R2「中断一切非霸体」）。
+   * 不写＝按 R1 处理（最保守的那一档：只没收轻击）。
+   */
+  reaction?: IncomingGrade
   /** 攻击方一侧的后果：近战敌人被弹反会硬直+破势，弹体被弹反就凭空消失 */
   react(tick: number, outcome: 'parry' | 'perfectBlock'): void
 }
@@ -536,7 +550,7 @@ export class CombatManager {
       const pending = e.pendingProjectile
       if (!pending) continue
       e.markShotFired()
-      const { spec, frames } = pending
+      const { spec, frames, reaction } = pending
       const origin: Vec3 = { x: e.pos.x, y: e.pos.y + (spec.offsetY ?? 1.1), z: e.pos.z }
       const target: Vec3 = { x: this.player.pos.x, y: this.player.pos.y + 0.9, z: this.player.pos.z }
       // 不追求必中：给一点散布，玩家有走位/翻滚的余地（§5 远程威胁可读性）
@@ -549,6 +563,7 @@ export class CombatManager {
         hitStopMs: frames.hitStopMs, muteTicks: spec.muteOnHit ?? 0,
         pinTicks: spec.pinTicks ?? 0, parryable: true,
         sfxHit: spec.sfxHit, vfxHit: spec.vfxHit, shake: spec.shake ?? frames.shake ?? 'normal',
+        reaction,
         loudness: frames.loudness ?? 4
       }, tick)
       this.afterLaunch(e.pos, spec, frames, dir)
@@ -600,7 +615,7 @@ export class CombatManager {
     this.projectiles.consume(pr, e.id)
     this.strikeEnemy(e, {
       base: pr.damage, poise: pr.poise, hitStopMs: pr.hitStopMs, kind: 'heavy',
-      reaction: pr.reaction,
+      reaction: stunTier(pr.reaction),
       layers: pr.layers, mute: pr.muteTicks > 0, backstab: false,
       onBeat: pr.onBeat, ranged: true, pinTicks: pr.pinTicks,
       point: { x: e.pos.x, y: e.pos.y + 1.1, z: e.pos.z }, dir: { ...pr.vel },
@@ -618,6 +633,7 @@ export class CombatManager {
       kind: 'enemy', point, dir: { x: -pr.vel.x, y: 0, z: -pr.vel.z }, from: { ...pr.pos },
       parryable: pr.parryable, ranged: true,
       statusOnHit: pr.muteTicks > 0 ? { tag: 'mute', layers: 1, ticks: pr.muteTicks } : undefined,
+      reaction: pr.reaction,
       // §5.2/§5.3：弹体是唯一「防御成功后还活着」的攻击——被弹开就原路回去找主人
       react: (t, outcome) => this.reflectProjectile(pr, outcome, t)
     }, tick)
@@ -703,6 +719,7 @@ export class CombatManager {
         from: { ...e.pos }, parryable: e.attack?.spec.parryable ?? true, ranged: false,
         sourceAction: e.attack ?? undefined,
         statusOnHit: st,
+        reaction: e.attack?.spec.reaction,
         react: (t, outcome) => {
           if (outcome === 'parry') {
             e.onParried(t)
@@ -1001,7 +1018,7 @@ export class CombatManager {
       // §2.1 不受害）。事件里的 `hitStopMs` 报 0 是有意的：那一格说的就是 §9 停顿，这里没有。
       const g = p.base.guard
       this.time.hitStop(g.breakSlowMs / 1000, g.breakSlowScale)
-      p.takeDamage(Math.round(through * 1.3), h.dir)
+      p.takeDamage(Math.round(through * 1.3), h.dir, h.reaction)
       // 写在 `takeDamage` **之后**是有意的：那一手按 §8 玩家侧口径把硬直钉成 R1 等效（reactions.json 的
       // 200ms=12 格），旧代码先写 36 再叫它 ⇒ 「破防 600ms 大踉跄」从未成立过，玩家实际只踉跄了受击那一格。
       // 这次裁决顺手纠的这个谎，由 `hitstop.test.ts` 的破防腿钉住（读数 == msToTicks(breakStunMs)，不是 R1）。
@@ -1012,7 +1029,7 @@ export class CombatManager {
       return 'guardBreak'
     }
     const dmg = resolveDamage({ base: h.damage, defense: p.stats.defense, ranged: h.ranged }, () => this.rng.float())
-    if (!p.takeDamage(dmg.damage, h.dir)) return 'none'
+    if (!p.takeDamage(dmg.damage, h.dir, h.reaction)) return 'none'
     p.stats.addPoise(h.poise, tick)
     // §9「玩家受击」那一行（`hitStop.hurtMs`）：情境时长，一个数喂四处（相机、事件、被按住的硬直
     // 倒数、**出手方那一式的帧**）。

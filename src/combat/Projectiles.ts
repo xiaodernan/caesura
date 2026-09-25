@@ -3,6 +3,7 @@
  * 职责边界：这里只做运动学与生命周期（积分、射程/寿命到期、穿透计数），
  * 命中判定与伤害结算留在 CombatManager（全场只有一条受击通道，见 combat.md §12）。
  */
+import type { IncomingGrade } from '@/data/schema'
 import type { Vec3 } from './EntityStats'
 import type { HitTarget } from './HitShapes'
 
@@ -42,11 +43,11 @@ export interface Projectile {
   vfxHit: string
   shake: string
   /**
-   * §8 反应分级（KI-052①）：这一发打在敌人身上算哪一档。只有**玩家**的投掷带它
-   * （来源＝出手那一格的帧声明）；敌方弹体的分级住在 `AttackSpec.reaction`，
-   * 而玩家受击那一侧按 §8 末行永远走 R1 等效，所以那一边不需要这一格。
+   * §8 反应分级：这一发打在谁身上算哪一档（KI-052① 给玩家投掷那一条腿，②给敌方弹体那一条）。
+   * 玩家弹体带的是出手那一格的帧声明；敌方弹体带的是 `AttackSpec.reaction`——
+   * 两边都走这一格，"离手之后才落"的那一记才算得上仍然带着自己那一档。
    */
-  reaction?: 'R1' | 'R2' | 'R3'
+  reaction?: IncomingGrade
   loudness: number
   dead: boolean
   gone: GoneReason | null
@@ -76,8 +77,8 @@ export interface LaunchParams {
   sfxHit?: string
   vfxHit?: string
   shake?: string
-  /** §8 反应分级（KI-052①）：玩家投掷出手那一格帧上的声明，原样带到命中点 */
-  reaction?: 'R1' | 'R2' | 'R3'
+  /** §8 反应分级：出手方那一格/那一行的声明，原样带到命中点（KI-052①②） */
+  reaction?: IncomingGrade
   loudness?: number
 }
 

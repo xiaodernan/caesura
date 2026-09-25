@@ -422,6 +422,14 @@ describe('G5② 力 / 律 Build 对照：同一颗种子、同一份输入脚本
      * 而放大来自机制而不是数值偏袒：轻击一记都不带震裂层数，蓄力那记大剑带 3 层，
      * 五层就碎甲；枪的蓄力只有 2 层，所以它要攒到 995 才碎得开（出身腔体 7 对 3 也在这里还债）。
      *
+     * **KI-052② 之后又重锚了一次，而且这一次动因是明确的**：§8 R2 括号里那句「招式自带 1 次 R2 免役」
+     * 第一次有了消费方（`hyperLive`/`spendHyper`）之后，力那侧的 6 次蓄力斩各吃下一次钟锤打断，
+     * 伤害 771→876，比值 1.45→**2.16**；同一份代码里把 §8 R1 的「不打断重击与蓄力」摘掉，读数一位不动
+     * （悬钟骑士的招式没有 R1 级的那一档）——所以越过旧上界的不是"轻击线被打成废的"，
+     * 而是**只有两把剑的蓄力斩声明了 hyper、枪的没有**（§4.1/§4.2 与 §4.3 的数据差）。
+     * 上界因此从 2 收到 **2.3**（读数 + 约 6% 余量）而不是放开到"怎么都不红"：
+     * 这条带现在防的是"再往重击侧加保护"，而它是否该给轻武线一份等价补偿，是数值裁决，登记在 KI-052 行。
+     *
      * **这一版数字与上一版不同，而且上一版是量具的错**：旧脚本按绝对 tick 排按键（`i % 300 < 60` 蓄力），
      * 于是"谁的收招被拉长，谁的按键就被吞掉"——同一份脚本在力身上产生 3 次蓄力、在律身上只剩 1 次，
      * 律甚至整窗没碎甲。改成"每 300 格起一次蓄力尝试、按住直到真的攒满"之后，两条腿各拿 6 次蓄力，
@@ -450,7 +458,7 @@ describe('G5② 力 / 律 Build 对照：同一颗种子、同一份输入脚本
     const brokenAt = (r: { armorBrokenAt: number | null }): number => r.armorBrokenAt ?? Number.POSITIVE_INFINITY
     expect(brokenAt(lv), `律碎甲于 ${lv.armorBrokenAt}，不比力（${li.armorBrokenAt}）更晚 ⇒ 甲白叠了`).toBeGreaterThan(brokenAt(li))
     const ratio = li.perTick / lv.perTick
-    expect(ratio, `高甲节奏比 ${ratio.toFixed(2)}：重击不占先=机制假，占先超过 2×=轻武线在高甲前是废的`).toBeGreaterThanOrEqual(1)
-    expect(ratio).toBeLessThanOrEqual(2)
+    expect(ratio, `高甲节奏比 ${ratio.toFixed(2)}：重击不占先=机制假，占先超过 2.3×=轻武线在高甲前是废的（上界的重锚理由与归因实测见上面的 KI-052② 段）`).toBeGreaterThanOrEqual(1)
+    expect(ratio).toBeLessThanOrEqual(2.3)
   })
 })

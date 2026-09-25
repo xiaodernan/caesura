@@ -3,7 +3,7 @@ import type { GameTime } from '@/core/Time'
 import type { Input } from '@/core/Input'
 import type { RhythmClock } from '@/core/RhythmClock'
 import { clamp } from '@/core/Math'
-import type { FrameData, MovesetData, PlayerBaseData, WeaponData } from '@/data/schema'
+import type { FrameData, IncomingGrade, MovesetData, PlayerBaseData, WeaponData } from '@/data/schema'
 import { EntityStats, playerStatsFrom } from '@/combat/EntityStats'
 import { advanceActionFrames, applyActionStop, type ActionStop } from '@/combat/ActionFrames'
 import { armStats, CorruptionMeter } from '@/combat/Statuses'
@@ -40,6 +40,12 @@ export interface PlayerAction extends ActionStop {
   skill: SkillCast | null
   /** 战技位移（错拍步）的行进方向；null＝不出位移 */
   dir: Vec3 | null
+  /**
+   * §8 R2 那行括号里的「招式自带 1 次 R2 免役」（KI-052②）：用过了没有。
+   * 它记在**这一式**上而不是人身上——"一式一次"说的是这一式，不是"这个角色一直免役"；
+   * 下一式是新的对象，那一格自己归零。
+   */
+  hyperSpent?: boolean
 }
 
 export class PlayerController {
@@ -163,6 +169,19 @@ export class PlayerController {
   get guarding(): boolean { return this.guardTicks >= this.base.guard.startupTicks }
   get parryActive(): boolean { return this.parryTicksLeft > 0 }
   get busy(): boolean { return this.action !== null || this.roll !== null || this.stunTicks > 0 || this.crumpleTicks > 0 || this.executing !== null || this.dead }
+  /**
+   * §8 的「霸体」此刻是活的：这一式在帧上带着 `hyper`、还在**前摇+Active** 段内（收势段不算，
+   * 那一段的"我已经把拍子交出去了"不该再受保护），且那一次免役没被用掉。
+   * 生产者今天有两个：调律剑与强音大剑的蓄力和弦斩（§4.1/§4.2）——此前这两个声明零读取方。
+   */
+  get hyperLive(): boolean {
+    const a = this.action
+    if (!a || a.hyperSpent) return false
+    if (!(a.f.flags ?? []).includes('hyper')) return false
+    return a.tick <= a.f.activeEnd
+  }
+  /** 用掉这一式的免役（只有真的挡下了一记 R2 才算用掉——见 `takeDamage`） */
+  spendHyper(): void { if (this.action) this.action.hyperSpent = true }
 
   get activeHitbox(): ActivePlayerHit | null {
     if (!this.action) return null
@@ -648,7 +667,7 @@ export class PlayerController {
     this.parryWhiffPending = false
   }
 
-  takeDamage(amount: number, knockDir?: Vec3): boolean {
+  takeDamage(amount: number, knockDir?: Vec3, incoming?: IncomingGrade): boolean {
     if (this.iFrame || this.dead) return false
     if (this.parryTicksLeft > 0) return false // handled as parry upstream
     // §5.3「失败」行的赌注（KI-054）：落空后摇期间被击按 whiffDmgMul 加重。
@@ -659,7 +678,16 @@ export class PlayerController {
     // 「硬直可翻滚取消」这半句早就成立，不需要为它写新代码。
     const r1 = reactionConfig().R1
     this.stunTicks = msToTicks(r1.stunMs)
-    this.action = null; this.roll = null; this.charging = false
+    // **档位不改时长，只改"这一记有没有权利没收你正在出的那一式"**（KI-052②）：
+    // 那一行末尾写着"无 R3+（操作权不没收）"，所以再重的招式打在身上也只有 R1 的 200ms；
+    // 分级的落点全在打断那一列——R0 什么都不收，R1 只收轻击（「不打断重击与蓄力」），
+    // R2 收一切非霸体（撞上 hyper 窗就消耗掉那一次免役），R3 起穿得过免役。
+    const grade = incoming ?? 'R1'
+    const light = this.action !== null && this.action.skill === null && this.action.key.startsWith('l')
+    let breaks = grade === 'R0' ? false : grade === 'R1' ? light : true
+    if (breaks && grade === 'R2' && this.hyperLive) { this.spendHyper(); breaks = false }
+    this.roll = null
+    if (breaks) { this.action = null; this.charging = false }
     if (knockDir) {
       this.pos.x += clamp(knockDir.x, -1, 1) * r1.displaceM
       this.pos.z += clamp(knockDir.z, -1, 1) * r1.displaceM
