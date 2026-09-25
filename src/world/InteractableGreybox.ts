@@ -40,19 +40,20 @@ const GEOMETRY: Record<Kind, () => THREE.BufferGeometry> = {
   teleport: () => new THREE.TorusGeometry(1.6, 0.16, 8, 24),         // 位移环
   bell: () => new THREE.ConeGeometry(1.4, 3.4, 10),                  // 落钟
   inspect: () => new THREE.DodecahedronGeometry(0.9, 0),             // 可研读的碑石（KI-041 石堆）
+  shop: () => new THREE.BoxGeometry(2.6, 1.1, 1.2),                  // 商摊（KI-055②）
 }
 
 /** kind → 离地高度（形状半高，让条目「站在」数据给的点上而不是陷进去） */
 const LIFT: Record<Kind, number> = {
   checkpoint: 1.6, gate: 2.5, elevator: 3.5, bridge: 0.2, soundwall: 3.5,
-  gather: 0.7, chest: 0.45, npc: 0.9, teleport: 0.2, bell: 1.7, inspect: 0.9,
+  gather: 0.7, chest: 0.45, npc: 0.9, teleport: 0.2, bell: 1.7, inspect: 0.9, shop: 0.55,
 }
 
 /** 三档状态色：可用 / 已消耗（setsFlag 已置位）/ 焦点 */
 const COLOR: Record<Kind, number> = {
   checkpoint: 0xd9b46a, gate: 0x9fb0b8, elevator: 0x74a8a0, bridge: 0x8a7f74,
   soundwall: 0xa3262b, gather: 0x8fae6d, chest: 0xb08d4f, npc: 0xcfc4b0,
-  teleport: 0x6f7fd8, bell: 0xd9b46a, inspect: 0x9db8a8,
+  teleport: 0x6f7fd8, bell: 0xd9b46a, inspect: 0x9db8a8, shop: 0xc98d4f,
 }
 const SPENT = 0x4a4e55
 const FOCUS = 0xfff2c8

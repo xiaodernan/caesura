@@ -217,6 +217,7 @@ function openDialogue(npcId: string): void {
 /** 交互物落地：调音桩休息、机关传送（= UE 的 Level Streaming 遮蔽传送） */
 function applyInteract(id: string): void {
   const r = interact.use(id, player.pos)
+  if (r.ok && r.kind === 'shop' && !panel.isOpen) setPanelOpen(true)
   if (r.rest && !player.stats.dead) { player.rest(); checkpoints.request('rest') }
   if (r.ok && r.lootTable) openLootTable(settlementDeps, r.lootTable)
   if (r.ok && r.npcId) openDialogue(r.npcId)
@@ -267,6 +268,7 @@ const core = {
       else {
         const f = interact.focus(player.pos)
         if (f?.kind === 'checkpoint') setPanelOpen(true)
+        else if (f?.kind === 'shop') setPanelOpen(true) // KI-055②：交易要人在商摊前，不再是"面板开了在哪都能买"
         else bus.emit('ui.notify', { text: '需在调音桩前调音', kind: 'info' })
       }
     }

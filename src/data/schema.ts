@@ -963,7 +963,7 @@ export interface Landmark {
 
 export interface InteractableRef {
   id: string
-  kind: 'checkpoint' | 'elevator' | 'bridge' | 'soundwall' | 'gather' | 'chest' | 'npc' | 'teleport' | 'gate' | 'bell' | 'inspect'
+  kind: 'checkpoint' | 'elevator' | 'bridge' | 'soundwall' | 'gather' | 'chest' | 'npc' | 'teleport' | 'gate' | 'bell' | 'inspect' | 'shop'
   /** 提示文案里的动词，覆盖按 kind 的默认值（如吊机 ≠ 共鸣井）；Phase 6 换成本地表 key */
   verb?: string
   pos: Vec3

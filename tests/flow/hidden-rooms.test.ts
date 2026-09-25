@@ -225,6 +225,21 @@ describe('隐藏房可达性：发生了什么 ⇒ 立旗 ⇒ 锁开 ⇒ 东西�
     expect(w.interact.use('in_echo_cairn', w.player.pos).state, '研读是一次性的：读过就是读过').toBe('used')
   })
 
+  it('破拍营地的商摊：E 可交易、反复可用——"能不能买"从此取决于人在不在摊前（KI-055②）', () => {
+    const w = makeWorld()
+    const stall = w.interact.all.find((i) => i.id === 'shop_camp_stall')!
+    expect(stall.kind, '它是商摊不是箱子').toBe('shop')
+    w.standAt('shop_camp_stall')
+    const prompt = w.interact.use('shop_camp_stall', w.player.pos)
+    expect(prompt.ok, '在摊前按 E，交易成立').toBe(true)
+    expect(prompt.text, '摊主的招呼要说明白').toContain('摊子')
+    // 反复可用：交易不是一次性的
+    const r2 = w.interact.use('shop_camp_stall', w.player.pos)
+    expect(r2.ok, '第二次交易照常成立').toBe(true)
+    // 焦点：站在摊前，E 键仲裁会指向它
+    expect(w.interact.focus(w.player.pos)?.id, '焦点就是商摊').toBe('shop_camp_stall')
+  })
+
   it('区域的解锁判定也吃同一套广播：立了 unlockFlag，那块区域就参与流送', () => {
     const w = makeWorld()
     const choir = regionOf('rg_drowned_choir')

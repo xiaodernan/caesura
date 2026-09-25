@@ -43,7 +43,7 @@ const REACTIONS = new Set(['R0', 'R1', 'R2', 'R3', 'R4', 'R5'])
 // CameraRig.SHAKE_TABLE 里**数据可指**的行（hurt/parry 由代码按情境直接发，不经帧表）；
 // 'stomp' 自 KI-051 起是 §10「驼鼓踏地」的 worldShake 行
 const SHAKES = new Set(['graze', 'normal', 'heavy', 'boss', 'stomp'])
-const INTERACTABLE_KINDS = new Set(['checkpoint', 'elevator', 'bridge', 'soundwall', 'gather', 'chest', 'npc', 'teleport', 'gate', 'bell', 'inspect'])
+const INTERACTABLE_KINDS = new Set(['checkpoint', 'elevator', 'bridge', 'soundwall', 'gather', 'chest', 'npc', 'teleport', 'gate', 'bell', 'inspect', 'shop'])
 // KI-023 可破坏场景物的品类白名单（schema.ts PropRef.kind 同名单；新种类随消费方一起落）
 const PROP_KINDS = new Set(['soundspine', 'resonance_core'])
 const PICK_ORDERS = new Set(['random', 'cycle'])

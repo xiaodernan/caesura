@@ -657,6 +657,16 @@
     },
     "requiresFlag": "flag.brokenbar_resolved",
     "lootTable": "loot_camp_store"
+   },
+   {
+    "id": "shop_camp_stall",
+    "kind": "shop",
+    "verb": "交易",
+    "pos": {
+     "x": -120,
+     "y": 0,
+     "z": -310
+    }
    }
   ],
   "music": {

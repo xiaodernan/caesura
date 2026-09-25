@@ -36,13 +36,13 @@ export interface InteractResult {
 const VERB: Record<InteractableRef['kind'], string> = {
   checkpoint: '调音', elevator: '乘共鸣井', bridge: '放吊桥', soundwall: '共振音壁',
   gather: '采集', chest: '开启', npc: '交谈', teleport: '传送', gate: '开门', bell: '敲钟',
-  inspect: '研读',
+  inspect: '研读', shop: '交易',
 }
 
 /** 反复可用的设施（其余一次性；oneWay 数据标记永远只用一次）。
  *  teleport 天然反复：捷径/传送点是"门开了就一直在"（KI-021① 的音壁回廊捷径是第一个消费者），
  *  oneWay 数据仍可把任何种类强制成单次。 */
-const REPEATABLE = new Set<InteractableRef['kind']>(['checkpoint', 'npc', 'teleport'])
+const REPEATABLE = new Set<InteractableRef['kind']>(['checkpoint', 'npc', 'teleport', 'shop'])
 
 const dist2 = (a: Vec3, b: Vec3): number => {
   const dx = a.x - b.x, dy = a.y - b.y, dz = a.z - b.z
@@ -199,6 +199,7 @@ function resultText(it: Interactable): string {
     case 'elevator': return it.verb ? '吊机咬合，回音把人托往高处' : '共鸣井启动 —— 井笼开始升降'
     case 'teleport': return '位移回响'
     case 'inspect': return '刻痕读进了心里'
+    case 'shop': return '摊子上摆着些消耗品'
     default: return '机关启动'
   }
 }
@@ -207,7 +208,7 @@ function resultText(it: Interactable): string {
 const SFX: Record<InteractableRef['kind'], string> = {
   checkpoint: 'chord_slam', elevator: 'gate_creak', bridge: 'gate_creak', soundwall: 'gnash',
   gather: 'loot_chime', chest: 'loot_chime', npc: 'ui_select', teleport: 'chord_slam',
-  gate: 'gate_creak', bell: 'chord_slam', inspect: 'ui_select',
+  gate: 'gate_creak', bell: 'chord_slam', inspect: 'ui_select', shop: 'ui_select',
 }
 
 /**
