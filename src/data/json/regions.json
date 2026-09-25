@@ -338,6 +338,34 @@
   "storyHooks": [
    "narr.act1_first_enemy",
    "narr.act1_environmental_recording"
+  ],
+  "walls": [
+   {
+    "id": "ww_ridge_east",
+    "pos": {
+     "x": 360,
+     "y": 0,
+     "z": -128
+    },
+    "size": {
+     "x": 2.5,
+     "z": 24
+    },
+    "heightM": 6
+   },
+   {
+    "id": "ww_fault_south",
+    "pos": {
+     "x": 210,
+     "y": 0,
+     "z": -140
+    },
+    "size": {
+     "x": 24,
+     "z": 2.2
+    },
+    "heightM": 4.2
+   }
   ]
  },
  {
@@ -512,6 +540,34 @@
   ],
   "storyHooks": [
    "narr.act2_project_consummation_failure"
+  ],
+  "walls": [
+   {
+    "id": "dc_nave_arcade",
+    "pos": {
+     "x": 252,
+     "y": -40,
+     "z": 128
+    },
+    "size": {
+     "x": 1.8,
+     "z": 22
+    },
+    "heightM": 7
+   },
+   {
+    "id": "dc_choir_screen",
+    "pos": {
+     "x": 250,
+     "y": -40,
+     "z": 64
+    },
+    "size": {
+     "x": 22,
+     "z": 1.6
+    },
+    "heightM": 5.5
+   }
   ]
  },
  {
@@ -716,6 +772,60 @@
   ],
   "storyHooks": [
    "narr.act3_camp_three_solutions"
+  ],
+  "walls": [
+   {
+    "id": "wb_camp_watch_screen",
+    "pos": {
+     "x": -46,
+     "y": 0,
+     "z": -128
+    },
+    "size": {
+     "x": 18,
+     "z": 1.8
+    },
+    "heightM": 3.6
+   },
+   {
+    "id": "wb_camp_store_wall",
+    "pos": {
+     "x": -120,
+     "y": 0,
+     "z": -302
+    },
+    "size": {
+     "x": 20,
+     "z": 1.6
+    },
+    "heightM": 3
+   },
+   {
+    "id": "wb_camp_ridge_west",
+    "pos": {
+     "x": -150,
+     "y": 0,
+     "z": -200
+    },
+    "size": {
+     "x": 2.2,
+     "z": 26
+    },
+    "heightM": 5
+   },
+   {
+    "id": "wb_camp_chief_screen",
+    "pos": {
+     "x": -74,
+     "y": 0,
+     "z": -258
+    },
+    "size": {
+     "x": 1.8,
+     "z": 20
+    },
+    "heightM": 3.2
+   }
   ]
  },
  {
@@ -889,6 +999,34 @@
   ],
   "storyHooks": [
    "narr.act4_vertical_puzzle"
+  ],
+  "walls": [
+   {
+    "id": "fc_narthex_wall",
+    "pos": {
+     "x": 170,
+     "y": 64,
+     "z": -160
+    },
+    "size": {
+     "x": 26,
+     "z": 2
+    },
+    "heightM": 6
+   },
+   {
+    "id": "fc_carillon_buttress",
+    "pos": {
+     "x": 250,
+     "y": 64,
+     "z": -270
+    },
+    "size": {
+     "x": 2,
+     "z": 26
+    },
+    "heightM": 8
+   }
   ]
  },
  {
@@ -1082,6 +1220,34 @@
   "storyHooks": [
    "narr.act5_the_myriad_optional",
    "narr.act5_first_phrase_reveal"
+  ],
+  "walls": [
+   {
+    "id": "ed_tunnel_wall",
+    "pos": {
+     "x": -140,
+     "y": -144,
+     "z": 190
+    },
+    "size": {
+     "x": 1.8,
+     "z": 30
+    },
+    "heightM": 5
+   },
+   {
+    "id": "ed_mineface_spine",
+    "pos": {
+     "x": -240,
+     "y": -144,
+     "z": 172
+    },
+    "size": {
+     "x": 22,
+     "z": 2.2
+    },
+    "heightM": 4.5
+   }
   ]
  },
  {

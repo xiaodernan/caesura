@@ -1060,6 +1060,25 @@ export interface PropRef {
 }
 
 /**
+ * authored 遮挡体（KI-014②）：关卡自己写的、**挡视线与弹道**的一块几何——塌墙、岩脊、回廊墩。
+ * 与 `boss.covers`（§15.2 断音柱）的区别只在截面：柱子是圆的、墙是轴对齐的盒子；
+ * 两者进同一张名册（`core/Occlusion.OcclusionField`），被同一批读者读（弹体扫掠段 /
+ * 打在玩家身上的那一记 / telegraph 红线 / 敌人视觉锥）。
+ *
+ * **口径与 covers 一致**：`pos` 是**底面中心**（`pos.y` = 墙底所在高度，不是重心），
+ * `size` 是全尺寸而不是半宽（"一堵 14×3.4 的墙"比"半宽 7"少一次心算），`heightM` 是高。
+ *
+ * 这一格**只回答"看得见/打得到吗"**，不回答"走不走得过"——位移碰撞是 KI-009 Navigation 那一格，
+ * 把两者混成一个字段就会出现"空气墙"这种没人想要的东西。
+ */
+export interface WallRef {
+  id: string
+  pos: Vec3
+  size: { x: number; z: number }
+  heightM: number
+}
+
+/**
  * 世界状态规则（narrative §7 的执行位，Phase 6-A）。
  * 一条规则＝「发生了 X ⇒ 立一个旗标（顺带说一声）」。旗标的读方早就在 `regions.json` 里等着
  * （区域解锁 / 交互物 requiresFlag / 隐藏房封存点），这里只补写方——之前它们一个写方都没有。
@@ -1128,6 +1147,11 @@ export interface RegionData {
   interactables: InteractableRef[]
   /** 可破坏场景物（KI-023）；不写 = 这个区域没有场地实体（多数区域如此） */
   props?: PropRef[]
+  /**
+   * authored 遮挡体（KI-014②）：塌墙/岩脊这类**挡视线与弹道**的关卡几何。
+   * 不写 = 这片地方是开阔地，远程与 telegraph 谁也不被什么挡住。
+   */
+  walls?: WallRef[]
   music: RegionMusic
   /** higher loads first inside the same ring (technical-architecture §5.5) */
   streamingPriority: number

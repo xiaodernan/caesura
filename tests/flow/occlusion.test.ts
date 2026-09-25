@@ -6,20 +6,24 @@ import { RhythmClock } from '@/core/RhythmClock'
 import { registry } from '@/core/Registry'
 import { registerGameData, playerBase } from '@/data'
 import type { EnemyData, MovesetData, Vec3, WeaponData } from '@/data/schema'
-import { firstBlock, OcclusionField, type Occluder } from '@/core/Occlusion'
+import { firstBlock, OcclusionField, type CylinderOccluder, type Occluder } from '@/core/Occlusion'
 import { PlayerController } from '@/player/ThirdPersonController'
 import { AISystem } from '@/ai/AISystem'
 import { CombatManager } from '@/combat/CombatManager'
 import { newAttack, type Enemy } from '@/ai/Enemy'
 
 /**
- * 世界遮挡流程测试（KI-014①，需求 §15.2「躲入断音柱后」+ §65「弹体不该穿过掩体」）。
+ * 世界遮挡流程测试（KI-014①②，需求 §15.2「躲入断音柱后」+ §65「弹体不该穿过掩体」+ §577「视锥 + 遮挡检查」的几何地基）。
  *
  * 这一批要守住的不是"柱子有没有用"（`mainboss.test.ts` 已经管过那一格），而是
  * **遮挡第一次变成一条真的线段**：`core/Occlusion` 的那一个 `firstBlock` 被三个读者共用
  * （弹体的扫掠段、打在玩家身上的那一记、§14.4 的红线），于是三条腿必须同生同死。
  * 所以这里的判据全是几何量（"截在哪一点""离柱轴多少米"），不是"掉没掉血"那种间接读数——
  * 掉血只能证明某一格 if 生效，证明不了三个人读的是同一把尺子。
+ *
+ * ②那一批（authored 墙）新增的判据是**同一把尺子的第二种截面**：一条线穿过一堵薄墙和穿过
+ * 一根柱子必须给出同一种答案（截在**进**那个面上、贴脸不算挡、起点在体内不算挡、`expand` 把
+ * 墙加厚），否则"躲到墙后面"会根据玩家躲的是柱还是墙而 behave 不一样——那才是玩家真正会感到的那种割裂。
  *
  * 全 headless：`firstBlock` 是纯几何，`CombatManager` 是逻辑层，都不碰 three（tech-arch §5.8）。
  */
@@ -36,7 +40,17 @@ const CHEST = AX.y + 1.0
 
 /** 手工名册：几何腿要的是"我能自己算出答案的那个尺寸"，所以这里允许自定义半径/高度 */
 const cyl = (id: string, x: number, z: number, radius = 2, heightM = 10, baseY = 0): Occluder =>
-  ({ id, pos: { x, y: baseY, z }, radius, heightM })
+  ({ id, shape: 'cylinder', pos: { x, y: baseY, z }, radius, heightM })
+
+/** 轴对齐盒：`size` 是**全尺寸**（与 `regions.json > walls` 同口径），这里折成半尺寸 */
+const box = (id: string, x: number, z: number, sizeX: number, sizeZ: number, heightM = 10, baseY = 0): Occluder =>
+  ({ id, shape: 'box', pos: { x, y: baseY, z }, halfX: sizeX / 2, halfZ: sizeZ / 2, heightM })
+
+/** 判别联合不是用来在断言里到处开 `!` 的：要读 radius 就先把这一条钉成圆柱 */
+const asCyl = (o: Occluder): CylinderOccluder => {
+  expect(o.shape, `要读 radius，这一条就得是圆柱（实测 ${o.shape}）`).toBe('cylinder')
+  return o as CylinderOccluder
+}
 
 const dist3 = (a: Vec3, b: Vec3): number => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z)
 
@@ -101,6 +115,80 @@ describe('遮挡原语 firstBlock：一条线段只有一个答案', () => {
   })
 })
 
+/* ==================== A2. 盒截面：authored 墙与柱子共用同一套口径 ==================== */
+
+describe('遮挡原语 firstBlock（盒截面）：一堵薄墙是一维的柱子，不是另一种规则', () => {
+  it('直穿一堵墙 ⇒ 截在**朝向我方**的那个面上，并交出是哪堵墙', () => {
+    // 墙：x∈[-0.75,0.75]（1.5m 厚），z∈[-9,9]（18m 长），高 3m
+    const o = box('w', 0, 0, 1.5, 18, 3)
+    const hit = firstBlock([o], { x: -10, y: 1.5, z: 0 }, { x: 10, y: 1.5, z: 0 })
+    expect(hit, '穿过墙面就是被挡').not.toBeNull()
+    expect(hit!.occluderId).toBe('w')
+    expect(hit!.at.x, '取的是进面 x=-0.75，不是穿出面').toBeCloseTo(-0.75, 6)
+    expect(hit!.at.z, '沿墙长方向直行时交点不该漂走').toBeCloseTo(0, 6)
+  })
+
+  it('与圆柱同一条口径：起点在墙肚子里 ⇒ 不算被挡（站内不会变成无敌房）', () => {
+    const o = box('w', 0, 0, 4, 4, 3)
+    expect(firstBlock([o], { x: 0, y: 1.5, z: 0 }, { x: 10, y: 1.5, z: 0 })).toBeNull()
+    expect(firstBlock([o], { x: 1.9, y: 1.5, z: 0 }, { x: 9, y: 1.5, z: 0 })).toBeNull()
+  })
+
+  it('墙整块在目标后面 ⇒ 不是掩体；擦着墙角过去 ⇒ 一寸都不算挡住（判据不许有缝）', () => {
+    const o = box('w', 0, 0, 2, 2, 3)
+    expect(firstBlock([o], { x: -10, y: 1.5, z: 0 }, { x: -5, y: 1.5, z: 0 }), '走不到墙面前').toBeNull()
+    expect(firstBlock([o], { x: -10, y: 1.5, z: 1.01 }, { x: 10, y: 1.5, z: 1.01 }), '离墙轴 1.01 > 半宽 1 ⇒ 从旁边过去').toBeNull()
+    expect(firstBlock([o], { x: -10, y: 1.5, z: 0.99 }, { x: 10, y: 1.5, z: 0.99 }), '差一丝 ⇒ 立刻变回挡住').not.toBeNull()
+  })
+
+  it('墙**有高度**：同一根线，墙高 1m 时从顶上飞过、墙高 3m 时被截住；悬空的墙挡不住贴地的线', () => {
+    const a = { x: -10, y: 1.5, z: 0 }
+    const b = { x: 10, y: 1.5, z: 0 }
+    expect(firstBlock([box('矮', 0, 0, 2, 8, 1)], a, b)).toBeNull()
+    expect(firstBlock([box('高', 0, 0, 2, 8, 3)], a, b)).not.toBeNull()
+    expect(firstBlock([box('悬', 0, 0, 2, 8, 2, 4)], a, b), '4~6m 的悬空体：线在 1.5m，从底下钻过去').toBeNull()
+  })
+
+  it('运动的物体自己有半径：expand 把墙加厚（球心贴墙掠过也算撞）', () => {
+    const o = box('w', 0, 0, 2, 8, 3)
+    const a = { x: -10, y: 1.5, z: 4.3 }
+    const b = { x: 10, y: 1.5, z: 4.3 }
+    expect(firstBlock([o], a, b, 0), '球心离轴 4.3 > 半宽 4 ⇒ 只看轴心是掠过的').toBeNull()
+    const hit = firstBlock([o], a, b, 0.5)
+    expect(hit, '半径 0.5 的球并进墙 ⇒ 4.3 < 4.5，撞上了').not.toBeNull()
+    // 盒子与柱子在这里的区别是诚实的：柱面是弯的，球心停在"离轴 = 半径+弹宽"那一圈；
+    // 墙的面是平的，加厚发生在**被穿的那一轴**上，掠过的那一轴只参与"够不够近"的判定。
+    expect(hit!.at.x, '球心停在加厚之后的墙面前：x = -(半宽 + 球半径)').toBeCloseTo(-1.5, 6)
+    expect(hit!.at.z, '掠过轴上的位置就是它飞过来的那个位置').toBeCloseTo(4.3, 6)
+  })
+
+  it('贴脸不算挡：起点正压在墙面上（lo=0）时与柱面同口径，否则玩家会被自己站的墙吃掉攻击', () => {
+    const o = box('w', 0, 0, 2, 8, 3)
+    expect(firstBlock([o], { x: -1, y: 1.5, z: 0 }, { x: 10, y: 1.5, z: 0 })).toBeNull()
+  })
+
+  it('线段是斜的、或者从负方向来，都必须照样挡住：三条轴的入口参数各要排好序（漏一次就整类漏判）', () => {
+    const o = box('w', 0, 0, 2, 8, 4)
+    expect(firstBlock([o], { x: -10, y: 2, z: 0 }, { x: 10, y: 2, z: 0 }), '+x 方向').not.toBeNull()
+    expect(firstBlock([o], { x: 10, y: 2, z: 0 }, { x: -10, y: 2, z: 0 }), '-x 方向（墙的另一面）').not.toBeNull()
+    expect(firstBlock([o], { x: 0, y: 2, z: -10 }, { x: 0, y: 2, z: 10 }), '+z 方向').not.toBeNull()
+    expect(firstBlock([o], { x: 0, y: 2, z: 10 }, { x: 0, y: 2, z: -10 }), '-z 方向').not.toBeNull()
+    // 一条从胸口往脚下斜的线（抛射/马上挨的一记都是这种）：y 轴走负方向，入口参数在另一端
+    expect(firstBlock([o], { x: -10, y: 6, z: 0 }, { x: 10, y: 0.5, z: 0 }), '下坡的线').not.toBeNull()
+    expect(firstBlock([o], { x: -10, y: 0.5, z: 0 }, { x: 10, y: 6, z: 0 }), '上坡的线').not.toBeNull()
+    expect(firstBlock([o], { x: -10, y: 9, z: 0 }, { x: 10, y: 4, z: 0 }), '整条下坡都从 4m 墙顶上方过去 ⇒ 不挡').toBeNull()
+  })
+
+  it('两种截面混在同一份名册里时，取的是**最近**的那一块，而不是名册顺序', () => {
+    const wall = box('墙', 4, 0, 1, 12, 3)      // 进面在 x=3.5
+    const pillar = cyl('柱', 0, 0, 1.5, 6)       // 柱面在 x=-1.5
+    const a = { x: -10, y: 1.5, z: 0 }
+    const b = { x: 10, y: 1.5, z: 0 }
+    expect(firstBlock([wall, pillar], a, b)!.occluderId, '柱子更近').toBe('柱')
+    expect(firstBlock([wall, cyl('远柱', 8, 0, 1.5, 6)], a, b)!.occluderId, '墙更近').toBe('墙')
+  })
+})
+
 /* ==================== B. 名册：遮挡体跟着实体生灭 ==================== */
 
 describe('遮挡名册 syncFrom：条目就地改写，尺寸来自数据', () => {
@@ -112,7 +200,7 @@ describe('遮挡名册 syncFrom：条目就地改写，尺寸来自数据', () =
     f.syncFrom([bearing('en_hersil', [{ x: 1, y: 0, z: 2 }, { x: 3, y: 0, z: 4 }], 3.2, 7.5)])
     expect(f.live).toBe(2)
     expect(f.list().map((o) => o.id)).toEqual(['cover:en_hersil:0', 'cover:en_hersil:1'])
-    expect(f.list()[0].radius, '半径不是代码里的常数').toBe(3.2)
+    expect(asCyl(f.list()[0]).radius, '半径不是代码里的常数').toBe(3.2)
     expect(f.list()[0].heightM, '高度是 y 带的承重格，它必须真的来自数据').toBe(7.5)
     expect(f.list()[1].pos.x).toBe(3)
   })
@@ -134,6 +222,79 @@ describe('遮挡名册 syncFrom：条目就地改写，尺寸来自数据', () =
     expect(f.live, '招式表里没有场地的实体，就不该有掩体').toBe(0)
   })
 })
+
+/* ==================== B2. 第二条输入通道：关卡墙与实体柱子同住一个名册 ==================== */
+
+/** 关卡侧输入：与 `regions.json > walls` 同口径（pos=底面中心、size=全尺寸） */
+const wall = (id: string, x: number, z: number, sizeX: number, sizeZ: number, heightM = 3, baseY = 0) =>
+  ({ id, pos: { x, y: baseY, z }, size: { x: sizeX, z: sizeZ }, heightM })
+
+describe('遮挡名册 syncAuthored：墙按区域写一次，柱子仍按 tick 写', () => {
+  const bearing = (id: string, positions: Vec3[], radius: number, heightM: number) =>
+    ({ id, data: { boss: { covers: { positions, radius, heightM } } } })
+
+  it('一片地方三面墙 ⇒ 三条盒名册，尺寸从数据折半而来，id 带"wall:"前缀', () => {
+    const f = new OcclusionField()
+    f.syncAuthored({ id: 'rg_x', walls: [wall('w1', 0, 0, 2, 8), wall('w2', 30, 0, 1.5, 6, 5, -40)] })
+    expect(f.live, '没有实体时也已经有 authored 遮挡体').toBe(2)
+    expect(f.authoredLive).toBe(2)
+    expect(f.list().map((o) => o.id)).toEqual(['wall:w1', 'wall:w2'])
+    const w2 = f.list()[1]
+    expect(w2.shape, 'authored 的截面是盒，不是把墙硬塞成圆柱').toBe('box')
+    expect((w2 as { halfX: number }).halfX).toBe(0.75)
+    expect((w2 as { halfZ: number }).halfZ).toBe(3)
+    expect(w2.heightM, '高度是 y 带的承重格，必须真的来自数据').toBe(5)
+    expect(w2.pos.y, '底面中心而不是重心：区域层差靠这一格才不串层').toBe(-40)
+  })
+
+  it('不写 walls 的区域 ⇒ 空名册（"这一片天没有 authored 掩体"不是错误，是常态）', () => {
+    const f = new OcclusionField()
+    f.syncAuthored({ id: 'rg_hub' })
+    expect(f.live).toBe(0)
+    f.syncAuthored(null)
+    expect(f.live, '人不在任何区域里 ⇒ 不许留着上一片天的墙').toBe(0)
+  })
+
+  it('两条通道共存：authored 段固定在前部，每 tick 的 syncFrom 只动尾巴（热路径仍是一次遍历）', () => {
+    const f = new OcclusionField()
+    f.syncAuthored({ id: 'rg_x', walls: [wall('w1', 0, 0, 2, 8), wall('w2', 20, 0, 2, 8)] })
+    f.syncFrom([bearing('en_hersil', [{ x: 5, y: 0, z: 5 }], 2, 7)])
+    expect(f.list().map((o) => o.id)).toEqual(['wall:w1', 'wall:w2', 'cover:en_hersil:0'])
+    f.syncFrom([bearing('en_hersil', [{ x: 6, y: 0, z: 5 }, { x: 7, y: 0, z: 5 }], 2, 7)])
+    expect(f.list().map((o) => o.id), '柱子换数量不许把墙挤掉或挤序').toEqual([
+      'wall:w1', 'wall:w2', 'cover:en_hersil:0', 'cover:en_hersil:1',
+    ])
+    expect(f.authoredLive, 'authored 段不该被每 tick 的重写算回去').toBe(2)
+    f.syncFrom([])
+    expect(f.list().map((o) => o.id), 'Boss 离场只收走她的柱子，墙还在').toEqual(['wall:w1', 'wall:w2'])
+  })
+
+  it('换区域：墙从 2 条缩到 0 条之后，尾巴上的盒子不许被当成圆柱复用（否则读者拿到既厚又圆的东西）', () => {
+    const f = new OcclusionField()
+    f.syncAuthored({ id: 'rg_a', walls: [wall('w1', 0, 0, 2, 8), wall('w2', 20, 0, 2, 8)] })
+    f.syncFrom([])
+    f.syncAuthored({ id: 'rg_b' }) // 下一片天没有 authored 墙
+    f.syncFrom([bearing('en_hersil', [{ x: 0, y: 0, z: 0 }], 3.2, 7.5)])
+    expect(f.list().map((o) => o.shape), '名册里只剩圆柱，而且它真的是圆柱').toEqual(['cylinder'])
+    expect(asCyl(f.list()[0]).radius, 'radius 来自数据，不是残留 halfX 那种错值').toBe(3.2)
+    const a = { x: -10, y: 5, z: 0 }
+    expect(f.blocked(a, { x: 10, y: 5, z: 0 }), '旧墙不该继续吃这一线').toBe(true)
+    f.syncAuthored(null)
+    f.syncFrom([])
+    expect(f.blocked(a, { x: 10, y: 5, z: 0 })).toBe(false)
+  })
+
+  it('同一堵墙在两条通道下各自署名：调试器要靠 id 前缀回答"挡住我的是 authored 的还是 Boss 自己带的"', () => {
+    const f = new OcclusionField()
+    f.syncAuthored({ id: 'rg_x', walls: [wall('en_hersil_pillar', 0, 0, 4, 4, 10)] })
+    f.syncFrom([bearing('en_hersil', [{ x: 0, y: 0, z: 0 }], 2, 10)])
+    const hit = f.firstBlock({ x: -10, y: 5, z: 0 }, { x: 10, y: 5, z: 0 })
+    expect(hit!.occluderId, '同尺寸同位置时 authored 在前 ⇒ 名字指向关卡那一条（判据只有一条线段，重复的遮挡体不影响"挡没挡"）').toBe('wall:en_hersil_pillar')
+    expect(f.authoredLive).toBe(1)
+    expect(f.live, '两条通道各占一条，不会互相覆盖').toBe(2)
+  })
+})
+
 
 /* ==================== C. 三条读者：同一个 firstBlock，三个调用点 ==================== */
 
@@ -361,6 +522,118 @@ describe('读者三：§14.4 的 telegraph 红线（承诺要画到打得到的�
     const lines = w.combat.telegraphs()
     expect(lines.length).toBeGreaterThan(0)
     expect(dist3(lines[0].to, w.player.pos), '线终点=落点=玩家').toBeLessThan(1.5)
+    w.off()
+  })
+})
+
+/* ==================== D. authored 墙进三条读者：关卡几何不是装饰 ==================== */
+describe('authored 墙：墙真的能挡住三条读者（KI-014②）', () => {
+  /**
+   * 两道灰盒墙，尺寸都是**测试自己 authored 的**（不抄区域数据，也不给区域数据背书）：
+   * - `横墙`：18m 长（沿 x）、0.6m 厚、6m 高，横在两人中间——柱子帮不上忙的那种方位；
+   * - `侧屏`：同样尺寸，但它是为了"谁救的我"这一格而摆到柱子前面。
+   * 位置全部相对柱轴 AX 给，读起来与上面几节同一套坐标。
+   */
+  const lean = wall('wb_flow_lean', AX.x + 4, AX.z + 3.6, 0.6, 6, 6, AX.y)
+  const inFront = wall('wb_flow_front', AX.x, AX.z - 3.8, 18, 0.6, 6, AX.y)
+  /** 侧屏靠 Boss 那一面的 x（薄墙：Boss 在 +x 侧，所以近面是中心 + 半厚） */
+  const LEAN_FACE = AX.x + 4 + 0.3
+  /** 横墙靠玩家那一侧飞来的弹体，球心停在面外一个弹半径处 */
+  const PR_R = 0.45
+
+  const shotAt = (w: W, hostile: boolean, ownerId: string, from: Vec3, to: Vec3, speed: number) => {
+    const d = { x: to.x - from.x, y: to.y - from.y, z: to.z - from.z }
+    const l = Math.hypot(d.x, d.y, d.z) || 1
+    return w.combat.projectiles.spawn({
+      hostile, ownerId, kind: 'note', origin: { ...from },
+      dir: { x: d.x / l, y: d.y / l, z: d.z / l }, speed,
+      range: l * 4, radius: PR_R, damage: 12, poise: 6, hitStopMs: 70
+    }, w.time.tick)
+  }
+
+  const tuttiOn = (w: W, e: Enemy, pin: () => void): void => {
+    w.player.stats.hp = 500
+    force(e, 'tutti')
+    w.tick(3, pin)
+  }
+
+  it('同一段 8m、同一个方位，只是中间多了一道 authored 墙 ⇒ 55 伤落在墙上（§14「躲一下再冲」的关卡腿）', () => {
+    const w = makeWorld()
+    // 这一组方位就是上面「掩体不是无敌房」那条：柱子帮不上忙（线离柱轴 3.6m > 半径 3.2m）
+    const e = hersil(w, at(8.0, 3.6))
+    const pin = place(w, e, at(8.0, 3.6), at(0, 3.6))
+    w.combat.occlusion.syncAuthored({ id: 'rg_flow', walls: [lean] })
+    pin(); w.tick(1, pin)
+    expect(w.combat.occlusion.authoredLive, '每 tick 的 syncFrom 不许把 authored 段算回去').toBe(1)
+    expect(w.combat.occlusion.live, '墙 + 她自己的四根柱子，两条通道同时在场').toBe(1 + COV.positions.length)
+    const hit = w.combat.occlusion.firstBlock(
+      { x: e.pos.x, y: e.pos.y + e.hitTarget().height / 2, z: e.pos.z },
+      { x: w.player.pos.x, y: w.player.pos.y + w.player.hitTarget().height / 2, z: w.player.pos.z })
+    expect(hit!.occluderId, '记账要能回答"是哪堵墙救了我"').toBe('wall:wb_flow_lean')
+    expect(hit!.at.x, '截在靠 Boss 的那个面上').toBeCloseTo(LEAN_FACE, 6)
+    tuttiOn(w, e, pin)
+    expect(w.player.stats.hp, '墙在两人之间，这一记就落在墙面上').toBe(500)
+    w.combat.occlusion.syncAuthored(null)
+    pin(); tuttiOn(w, e, pin)
+    expect(w.player.stats.hp, '把墙撤走 ⇒ 同一条线立刻上人：挡住他的是那堵墙，不是别的什么').toBeLessThan(500)
+    w.off()
+  })
+
+  it('墙可以比柱子更近：谁挡的这一线由几何决定，不由"这条通道是后来才有的"决定', () => {
+    const w = makeWorld()
+    const e = hersil(w, at(0, -4.4))
+    const pin = place(w, e, at(0, -4.4), at(0, 3.6))
+    w.combat.occlusion.syncAuthored({ id: 'rg_flow', walls: [inFront] })
+    pin(); w.tick(1, pin)
+    const hit = w.combat.occlusion.firstBlock(
+      { x: e.pos.x, y: e.pos.y + e.hitTarget().height / 2, z: e.pos.z },
+      { x: w.player.pos.x, y: w.player.pos.y + w.player.hitTarget().height / 2, z: w.player.pos.z })
+    expect(hit!.occluderId, '横墙的面（z=-4.1）比柱面（z=-3.2）更靠 Boss ⇒ 功劳记在墙上').toBe('wall:wb_flow_front')
+    tuttiOn(w, e, pin)
+    expect(w.player.stats.hp).toBe(500)
+    w.off()
+  })
+
+  it('一发动在 authored 墙上的长枪：停在面外一个弹半径处，敌人零伤', () => {
+    const w = makeWorld()
+    // 用针喉：她没有 covers ⇒ 场上唯一的遮挡体就是那道 authored 墙，这一条绿得没有第二条解释
+    const e = w.ai.spawn('en_skewer', { x: AX.x, y: AX.y, z: AX.z + 20 }, 'occlusion')
+    const pin = place(w, e, at(0, 20), at(0, -9))
+    w.combat.occlusion.syncAuthored({ id: 'rg_flow', walls: [inFront] })
+    w.tick(1, pin)
+    expect(w.combat.occlusion.authoredLive).toBe(1)
+    const hp0 = e.stats.hp
+    const pr = shotAt(w, false, 'player', at(0, -9), at(0, 20), 30)
+    w.tick(30, pin)
+    expect(pr.gone, `穿不过 authored 墙（gone=${pr.gone}）`).toBe('wall')
+    expect(pr.pos.z, '球心停在进面之外一个半径处').toBeCloseTo(AX.z - 3.8 - 0.3 - PR_R, 1)
+    expect(Math.abs(pr.pos.x - AX.x), '沿 x 没有漂走').toBeLessThan(0.01)
+    expect(e.stats.hp, '所以这一下没到她身上').toBe(hp0)
+    w.combat.occlusion.syncAuthored(null)
+    const free = shotAt(w, false, 'player', at(0, -9), at(0, 20), 30)
+    w.tick(30)
+    expect(free.gone, '撤掉墙 ⇒ 同一发照样飞过去').not.toBe('wall')
+    w.off()
+  })
+
+  it('红线剪在 authored 墙面前：玩家读到"这一发会撞在墙上"，而不是画到他背后的假承诺', () => {
+    const w = makeWorld()
+    const e = w.ai.spawn('en_skewer', { x: AX.x, y: AX.y, z: AX.z - 20 }, 'occlusion')
+    const pin = place(w, e, at(0, -20), at(0, 18))
+    w.combat.occlusion.syncAuthored({ id: 'rg_flow', walls: [inFront] })
+    w.tick(1, pin)
+    const spec = e.data.attacks.find((a) => a.frames.projectile?.telegraph)!
+    pin(); e.attack = newAttack(spec, 0)
+    const blocked = w.combat.telegraphs()
+    expect(blocked.length).toBeGreaterThan(0)
+    expect(blocked[0].to.z, '线头停在墙面上，不是穿到玩家身上').toBeCloseTo(AX.z - 3.8 - 0.3, 1)
+    w.combat.occlusion.syncAuthored(null)
+    pin(); e.attack = newAttack(spec, 0)
+    const open = w.combat.telegraphs()
+    // 撤掉墙之后线回到"它自己的射程尽头"（两人相距 38m，比这一招的射程远 ⇒ 落点本来就不是玩家）
+    const len = Math.min(spec.frames.projectile!.range, 38)
+    expect(open[0].to.z, '撤掉墙 ⇒ 线穿过墙原来那个位置，一路拉到射程尽头').toBeCloseTo(AX.z - 20 + len, 0)
+    expect(open[0].to.z, '所以挡住它的确是那堵墙').toBeGreaterThan(AX.z - 3.8)
     w.off()
   })
 })

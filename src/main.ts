@@ -8,13 +8,14 @@ import { registry } from '@/core/Registry'
 import { registerGameData, playerBase, regions, worldstate, dialogues, quests as questTable } from '@/data'
 import type { ItemData, MovesetData, NpcData, WeaponData } from '@/data/schema'
 import { createArena } from '@/world/PlaceholderArena'
-import { StreamingSystem, chunkKeyOf } from '@/world/Streaming'
+import { StreamingSystem, chunkKeyOf, type ChunkState } from '@/world/Streaming'
 import { Surface } from '@/world/Surface'
 import { SpawnDirector } from '@/world/SpawnDirector'
 import { Interactables, takeInteractEdge } from '@/world/Interactables'
 import { PropSystem } from '@/world/Props'
 import { PropVisuals } from '@/world/PropVisuals'
 import { ChunkGreybox } from '@/world/ChunkGreybox'
+import { WallGreybox } from '@/world/WallGreybox'
 import { InteractableGreybox } from '@/world/InteractableGreybox'
 import { ActorVisuals } from '@/world/ActorVisuals'
 import { ProjectileVisuals } from '@/world/ProjectileVisuals'
@@ -166,6 +167,16 @@ props.bossQuery = (dataId) => {
 const propVis = new PropVisuals(arena.scene, regions, (r) => streaming.isRegionUnlocked(r), (p) => props.isExposed(p))
 const greybox = new ChunkGreybox(arena.scene, regions, streaming.chunkSize)
 /**
+ * authored 墙体（KI-014②）：灰盒与逻辑名册读**同一份** `regions.json > walls`。
+ * 两边各算一套尺寸就会出现"看不见的墙挡住了看得见的路"——那比没有墙更糟。
+ */
+const wallGreybox = new WallGreybox(arena.scene, regions, (pos) => { const c = streaming.cellOf(pos); return chunkKeyOf(c.cx, c.cy, c.cz) })
+const loadedStates: ChunkState[] = ['active', 'resident', 'preloading']
+wallGreybox.syncLoaded(loadedStates.flatMap((s) => streaming.byState(s).map((c) => c.key))) // 构造前就加载好的格：等不到下一次跨格事件
+// 关卡侧遮挡名册跟着脚下这片天走（Boss 的柱子每 tick 重名点，墙只在跨区时动一次）
+let wallsRegion = shownRegion
+combat.occlusion.syncAuthored(streaming.regionAt(player.pos) ?? null)
+/**
  * 世界状态写入层（Phase 6-A）：`regions.json` 里那些被读的旗标需要一个**写方**，否则藏在门后的
  * 内容根本不可达（KI-041）。规则住在 `data/json/worldstate.json`，这一层只管"触发了就广播"。
  */
@@ -295,6 +306,12 @@ const core = {
     const act = takeInteractEdge(inp.frame.edges, interact.focus(player.pos)) // 交互优先于处决/背刺
     if (act) applyInteract(act)
     const here = streaming.regionAt(player.pos)
+    // authored 遮挡（KI-014②）：跨区就换名册，人不在任何区域里就清空——
+    // 留着上一片天的墙会出现"新区域里凭空有空气挡箭"，而那空气在这儿根本没画出来
+    if ((here?.id ?? null) !== wallsRegion) {
+      wallsRegion = here?.id ?? null
+      combat.occlusion.syncAuthored(here ?? null)
+    }
     if (here && here.id !== shownRegion) {
       // §2.1 的区域网格表：进区域就换拍（深窖=只有 60BPM 心跳）。Boss 的私有时钟叠在它之上，
       // 所以这里写的是 home，AISystem.syncClock 决定当前用的是谁的拍。
@@ -434,7 +451,7 @@ if (freshBoot) {
   }, originId)
 }
 
-;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, interact, props, hud, spawner, nodes, worldState, projectileVis, actors: visuals, bossArena, saves, saveRoster, checkpoints, rpg, settlement, panel, setPanelOpen, quests, dialogueEngine, dialogueBox, openDialogue, refreshRpg, saveNow: () => saves.save('autosave'), get title() { return title } }
+;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, wallGreybox, interact, props, hud, spawner, nodes, worldState, projectileVis, actors: visuals, bossArena, saves, saveRoster, checkpoints, rpg, settlement, panel, setPanelOpen, quests, dialogueEngine, dialogueBox, openDialogue, refreshRpg, saveNow: () => saves.save('autosave'), get title() { return title } }
 
 document.getElementById('boot')!.style.display = 'none'
 ;(window as unknown as Record<string, unknown>).__CAESURA_BOOTED__ = true

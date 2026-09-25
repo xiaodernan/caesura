@@ -66,11 +66,15 @@ src/
     SceneGraph.ts      Three.js 场景管理：区域子场景挂载/卸载、相机切换、layerMask
     Registry.ts        资源 registry：glTF/纹理/音频/JSON 的 load/get/preload 引用计数，
                        全部走异步加载 + 占位资源兜底
-    Occlusion.ts       世界遮挡的**一条线段**（KI-014①）：`firstBlock(occluders, a, b, expand)` 回答
-                       「a→b 被哪块竖直圆柱**先**截断、截在哪一点」；`OcclusionField` 是跟着实体生灭的
-                       名册（每 tick `syncFrom(entities)` 就地改写，热路径不 new）。三个读者共用同一个判据：
-                       弹体逐 tick 的扫掠段（`prev→pos`，`expand` 带进弹体半径）、打在玩家身上的那一记
-                       近战/AoE（攻击者身体中心→玩家身体中心）、§14.4 的 telegraph 红线（剪在柱面）
+    Occlusion.ts       世界遮挡的**一条线段**（KI-014①②）：`firstBlock(occluders, a, b, expand)` 回答
+                       「a→b 被哪块竖直遮挡体**先**截断、截在哪一点」。两种截面共用同两条口径：
+                       `cylinder`（`boss.covers` 的断音柱/钟）走 xz 二次方程 + y 带，`box`（`regions.json > walls`
+                       的 authored 塌墙/岩脊，轴对齐）走三轴 slab 裁剪；"起点在体内不挡""贴脸不挡"两边同解。
+                       `OcclusionField` 是名册，两条输入通道住同一个数组：`syncAuthored(region)` 写关卡墙
+                       （跨区才重写一次，固定在前部），`syncFrom(entities)` 每 tick 就地改写实体柱子（尾巴），
+                       于是热路径上仍只有一次遍历、零分配。三个读者共用同一个判据：弹体逐 tick 的扫掠段
+                       （`prev→pos`，`expand` 带进弹体半径）、打在玩家身上的那一记近战/AoE
+                       （攻击者身体中心→玩家身体中心）、§14.4 的 telegraph 红线（剪在面上）
   player/
     ThirdPersonController.ts  胶囊角色控制器：move/sprint(耗体力)/jump/dodge(i-frame 窗口
                        数据驱动)/fall(落地硬直按高度分档)；贴地射线 + 台阶自动上 0.4m
@@ -126,6 +130,10 @@ src/
                        world.chunk 进/出 active 即出怪/回收，entity.died 记永久清剿，
                        flag condition 闸门 + maxAlive 预算；不认识 three，不持有敌人实例
     ChunkGreybox.ts    chunk 灰盒表现层：world.chunk → InstancedMesh 挂/摘（§5.5）
+    WallGreybox.ts     authored 墙体灰盒（KI-014②）：`regions.json > walls` 那张表里每一块墙一张
+                       InstancedMesh（单位立方体 × 每块墙自己的缩放），全场常驻 1 个 drawcall；
+                       跟着 world.chunk 挂/摘、预载格压暗 45%，格键由组合根注入（本层不 import 流送运行时）。
+                       它存在的理由是**遮挡必须是看得见的**：判据先落地而几何没出现，玩家会挨一发"被空气挡住的箭"
     InteractableGreybox.ts 交互物占位模：按 kind 分池的 InstancedMesh，跟流送挂/摘、
                        随 ui.prompt 高亮、按 flag 谓词压暗消耗态（§5.5，Phase 7 换正式模）
     ProjectileVisuals.ts 弹体表现层：按 kind 分池的 Mesh（长枪=长条盒、音符=二十面体…），
@@ -430,7 +438,7 @@ HitStop 结束      └─ timeScale 恢复 → 攻方 recovery 续播 → 数�
 内建 `PerfPanel`（F 键）：帧时间 P50/P99 直方图、逻辑各 system 耗时分段（tick 内 performance.mark）、drawcall/三角面/纹理内存（renderer.info）、池命中率、流送队列。**记录流程（强制）**：任何标记为 `perf:` 的 PR 必须在 `docs/perf-log/YYYY-MM-DD-<topic>.md` 落表：`场景+档位 | Before(帧时间P99/drawcall/内存) | After | Improvement | Trade-offs`；无此表不得合并。
 
 ### 5.8 工程守则
-**依赖边界（自动化闸门）**：`tests/unit/arch-boundaries.test.ts` 静态扫描 `src/**/*.ts` 的运行时 import（`import type` 不计，编译后消失），断言 ①逻辑层（`ai/audio/combat/core/data/input` + `player/{LockOn,ThirdPersonController}` + `world/{Streaming,Surface,Interactables,SpawnDirector}`）不得 import `three` 或表现层模块；②用 `three` 的文件必须都在表现层清单（`main/CameraRig/CombatDebugger/Hud/VfxLayer/materials/ActorVisuals/ChunkGreybox/InteractableGreybox/ProjectileVisuals/PlaceholderArena`）；③除组合根 `main.ts` 外，表现层不得 import 逻辑运行时（只订 `EventBus` 事件）。清单漂移会让「闸门变空测试」，所以另有 1 条断言校验扫描文件数与必扫项。
+**依赖边界（自动化闸门）**：`tests/unit/arch-boundaries.test.ts` 静态扫描 `src/**/*.ts` 的运行时 import（`import type` 不计，编译后消失），断言 ①逻辑层（`ai/audio/combat/core/data/input` + `player/{LockOn,ThirdPersonController}` + `world/{Streaming,Surface,Interactables,SpawnDirector}`）不得 import `three` 或表现层模块；②用 `three` 的文件必须都在表现层清单（`main/CameraRig/CombatDebugger/Hud/VfxLayer/materials/ActorVisuals/ChunkGreybox/InteractableGreybox/WallGreybox/ProjectileVisuals/PlaceholderArena`）；③除组合根 `main.ts` 外，表现层不得 import 逻辑运行时（只订 `EventBus` 事件）。清单漂移会让「闸门变空测试」，所以另有 1 条断言校验扫描文件数与必扫项。
 > 注：需求文档设想的 ESLint `no-restricted-imports` 规则本环境未装（零新增依赖优先），改由上述测试承担同一职责；`npm run lint`(=tsc --noEmit) + `npm run test` 一起构成交付前门禁，pre-commit hook 跑 tsc。所有随机数走 `core/Math.ts` 的 `Rng`（`mulberry32` 种子流，可复现测试）；例外只允许出现在 `audio/*` 的音色抖动（不进玩法判定）。逻辑层不使用 `setTimeout/requestAnimationFrame`（一律过 Time/GameLoop）。
 
 ### 5.9 弹道、敌人机制与 Boss 运行时（Phase 4-A…4-F）— 已实现 `src/combat/Projectiles.ts` + `src/world/ProjectileVisuals.ts`
@@ -445,7 +453,7 @@ HitStop 结束      └─ timeScale 恢复 → 攻方 recovery 续播 → 数�
 - **表现层 `world/ProjectileVisuals.ts`**：`sync(list, tick)` 每 tick 只读弹体快照，按 `kind` 分池 acquire/release（长枪=沿 +Z 的长条盒并按速度四元数取向，音符=脉冲二十面体），`peakLive` 观测峰值；`dispose()` 释放几何/材质。落地/消失的尘埃与闷响由 CombatManager 发 `vfx.spawn`/`audio.sfx`，视觉层不判定语义。
 - **回收**：`entity.despawned` → 该 owner 的在飞弹体立即 `expire`（离格回收不留隐形弹幕）；`world.travel`/`teleport` 后弹体随 owner 一起清。
 - 覆盖：`tests/unit/projectiles.test.ts`（9 条运动学）、`tests/flow/ranged.test.ts`（16 条完整玩法流：投枪命中+钉住、DR×0.6 上下界、数据表断言、AI 真开火伤到玩家、无敌帧/弹反/格挡三档防御对远程同样成立、despawn 清弹、针喉三发帧位/风筝上限/telegraph 时长）、`tests/unit/projectile-visuals.test.ts`（8 条，含「往返两波不涨网格数」的池泄漏回归——这条抓到了真 bug）。
-- **遮挡（KI-014① 已落地的那一半）**：弹体逐 tick 量的是 `prev → pos` 这**一段**，不是"此刻在不在墙里"——采点版本会让一枚一 tick 跨过整个柱截面的弹体白拿穿透。命中就把 `pr.pos` 写成撞击点再 `kill(pr,'wall')`，于是灰尘与那一声撒在玩家眼睛该看的地方，而反馈仍然只有 `onProjectileGone` 一个出口。**对两边一样狠**：玩家投出的长枪与敌人射来的弹体走同一行判据，所以"长枪穿过掩体"从这一刻起不成立。**仍是缺格**：遮挡体名册今天只有数据点名的 `boss.covers` 一种（竖直圆柱），隔着一堵没写进表的岩壁投掷依然成立——那要 authored 墙体几何（与 KI-008 表现层同因），修复路径仍然是接 `Navigation.ts` 时一并落地（`Surface.floorAt` 是第一步，`core/Occlusion` 是它的线段版本）。
+- **遮挡（KI-014①② 已落地的部分）**：弹体逐 tick 量的是 `prev → pos` 这**一段**，不是"此刻在不在墙里"——采点版本会让一枚一 tick 跨过整个柱截面的弹体白拿穿透。命中就把 `pr.pos` 写成撞击点再 `kill(pr,'wall')`，于是灰尘与那一声撒在玩家眼睛该看的地方，而反馈仍然只有 `onProjectileGone` 一个出口。**对两边一样狠**：玩家投出的长枪与敌人射来的弹体走同一行判据，所以"长枪穿过掩体"从这一刻起不成立。**名册现在有两条输入通道**（KI-014②）：实体侧的 `boss.covers`（竖直圆柱，每 tick 由 `update` 顶部重新点名）与关卡侧的 `regions.json > walls`（轴对齐盒，跨区时由组合根写一次 `syncAuthored`）。两者住**同一个数组**——authored 段固定在前部，于是热路径上仍是一次遍历、零分配，而"墙"与"柱子"在三个读者眼里没有区别。写进表的墙自此真的挡得住：隔着一堵**已 authored** 的塌墙投掷不再成立；而**没写进表**的岩壁依然拦不住弹体——那一格等的是 KI-009 的导航网格与真几何，不是这一层的职责。**仍然缺的那格是"看得见不等于被看见"**：敌人的 `sense()` 视锥与 `sawImpact()` 目击报警都还不读这条线段，所以隔墙仍然会被发现（登记在 KI-014②b，它是 §13.0 潜行支柱的承重格）。
 
 ### 5.9.1 反射、telegraph 与射手风筝（Phase 4-B）— 已实现
 
@@ -457,7 +465,7 @@ Phase 4-A 把弹道跑通，但远程只被当作「会飞的近战判定」。4
 - **连发与假动作**：`attack.launched` 布尔闩锁升级为 `shots` 计数，`ProjectileSpec.burst = {count, everyTicks, at?}`；`at` 给出每发相对 activeStart 的显式帧位，针喉 `tri` 写 `[0,32,42]`——第 2 发比均匀网格（21）晚 11 tick ≈ 0.25 拍，就是 §14.4 的「假动作骗翻滚」。**反制天然成立**：招式被打断即 `attack=null`，余下发数一起作废，不需要额外的取消表。
 - **新增敌人 `en_skewer`（针喉）**：hp55/poise22/speed2.4，`snipe`(14 伤/单发) + `tri`(10 伤/三发) + `pluck`(近身 9 伤 R3 击退)，弹道 `shard` speed18/range26/无重力/`telegraph`，`loudness:8`（配合新合成音色 `bowstring`：窄带拨弦瞬态 + 两根快死弦音 + 共鸣腔低鸣，是场上最强的听觉信号）。布怪按 gameplay.md §破拍营地塔哨：`regions.json` 营地区加一组 `count:2`。
 - 覆盖：`tests/flow/ranged.test.ts` 新增 7 条（弹反反射=100%/给过载/原弹消失、完美格挡反射=50%、反射体真的打回射手、i-frame 不产生反射体、数据表逐字段对 §14.4、三叠箭 32+10 拍帧位、赤线恰好亮满 48 tick、风筝不越 `kiteRange`、<6m 解围）、`tests/unit/projectile-visuals.test.ts` 新增 3 条 telegraph 池化/亮度/复用，`arch-boundaries` 新增「JSON 里写到的每个 sfx key 都在合成表里」。
-- **未落地（如实登记）**：§14.4「三叠箭假动作骗到翻滚后硬直 0.6s」需要「玩家被假动作骗」的判定，当前只做延迟不做诱饵惩罚；KI-014① 之后针喉的弹体与它的赤线都会被**数据点名的**遮挡体截住，但野外没有柱子可截 ⇒ "隔岩壁狙击"仍然成立，那一格在 KI-014②（authored 墙体）。
+- **未落地（如实登记）**：§14.4「三叠箭假动作骗到翻滚后硬直 0.6s」需要「玩家被假动作骗」的判定，当前只做延迟不做诱饵惩罚；KI-014① 之后针喉的弹体与它的赤线都会被**数据点名的**遮挡体截住，KI-014②a 已经把 authored 墙体（`regions.json > walls`）接进同一条线段判定并在灰盒里画出来 ⇒ 写了墙的地方"隔墙狙击"不再成立；但**没写墙的岩石/坡地仍然不挡**（那需要 Navigation/几何抠洞，KI-009），且**敌人视线还不吃这条线**（`sense()`/`sawImpact()` 只看距离与角度，KI-014②b）。
 
 ### 5.9.2 定调光环与走调时刻（Phase 4-C）— 已实现
 
@@ -559,7 +567,7 @@ Phase 4-A 把弹道跑通，但远程只被当作「会飞的近战判定」。4
 §15.2 的 Main Boss 只落了第一阶，但这一阶逼出了三个**通用**载体，都不是「为 Boss 特判」：
 
 - **`ai.pickOrder:'cycle'`：招式按表的顺序轮转，而不是抽签。**「每 4 小节一个乐句，玩家可背谱」在随机选招下是假话——玩家背不了一个掷骰子的对手。`tryAttack` 里 cycle 分支从 `cycleIdx` 起扫第一个不在冷却里的候选（全在冷却就这一拍不出手），于是谱面**可复现**：同一 seed、不同 seed 跑 2600 tick 出来的招式顺序完全一致（flow 里两条断言）。这不是让 AI 更聪明，是让「可预测」这件事真的成立。
-- **断音柱 = 一条线段（`boss.covers` 从"显式近似"升级成遮挡射线的输入，KI-014①）。** §15.2 给全奏的「唯一解之一」是躲进柱子后面。这一格原来是两行手写判据（「玩家站进圆内 + 攻击者在圆外」⇒ 吃掉这一击；「攻击者也贴着同一根柱」⇒ 不挡，否则柱子变无敌房），而架构上一直按"这是近似"记账：接上遮挡射线之后它应退化成「射线先打到什么」。**那一天就是这一批**：`core/Occlusion.firstBlock` 从攻击者的**身体中心**量到玩家的**身体中心**，线段穿过柱面 ⇒ 这一击被吃掉（近战吃帧、弹体撞柱而落 `gone:'wall'` 并停在柱面，不是"穿过但没伤害"——那样柱子就成了隐形斗篷），并甩一片 `ring_dust` 在**撞击点**让玩家知道是谁救了自己。三条口径因此不再需要写死：① 反作弊那条是几何事实——线段从柱内出发时它没有"穿过柱面"这件事；② 判据的量具从发射者位置换成**这一段的两端**，弹体不再需要"用谁的位置判"这种二次近似；③ 玩家**没**踩进地板那个圆、但柱子确实在两人之间 ⇒ 现在挡得住（旧近似会漏，它量的是"躲到柱子旁边"而不是 §15.2 原意的"躲**到柱子后面**"）。`covers.heightM` 从这一批起是承重格：y 带 `[底, 底+heightM]` 不参与判定的话，一根 7.5m 的柱子会在数学上挡得住、在画面上一眼就能看出没挡住，数据门也据此给了区间 `[0.1, 30]`。同两个数被 `BossArenaVisuals` 拿去缩放那根**画出来**的柱子 ⇒ 画多粗就挡多粗，一本账。（网格是 `radiusTop 0.86 / radiusBottom 1` 的装饰锥，所以画出来的柱子在上半身比射线用的那根细约 0.15m（柱高 1/3 处）⇒ 射线取的是**底半径**当外包络：宁可"看着擦过、实际被挡"一寸，也不要反过来。）玩家的**挥砍**刻意不接这条通道：那是扇形/盒形命中框而不是线段，一把尺子不量两件事，登记在 KI-014 剩余格。
+- **断音柱 = 一条线段（`boss.covers` 从"显式近似"升级成遮挡射线的输入，KI-014①）。** §15.2 给全奏的「唯一解之一」是躲进柱子后面。这一格原来是两行手写判据（「玩家站进圆内 + 攻击者在圆外」⇒ 吃掉这一击；「攻击者也贴着同一根柱」⇒ 不挡，否则柱子变无敌房），而架构上一直按"这是近似"记账：接上遮挡射线之后它应退化成「射线先打到什么」。**那一天就是这一批**：`core/Occlusion.firstBlock` 从攻击者的**身体中心**量到玩家的**身体中心**，线段穿过柱面 ⇒ 这一击被吃掉（近战吃帧、弹体撞柱而落 `gone:'wall'` 并停在柱面，不是"穿过但没伤害"——那样柱子就成了隐形斗篷），并甩一片 `ring_dust` 在**撞击点**让玩家知道是谁救了自己。三条口径因此不再需要写死：① 反作弊那条是几何事实——线段从柱内出发时它没有"穿过柱面"这件事；② 判据的量具从发射者位置换成**这一段的两端**，弹体不再需要"用谁的位置判"这种二次近似；③ 玩家**没**踩进地板那个圆、但柱子确实在两人之间 ⇒ 现在挡得住（旧近似会漏，它量的是"躲到柱子旁边"而不是 §15.2 原意的"躲**到柱子后面**"）。`covers.heightM` 从这一批起是承重格：y 带 `[底, 底+heightM]` 不参与判定的话，一根 7.5m 的柱子会在数学上挡得住、在画面上一眼就能看出没挡住，数据门也据此给了区间 `[0.1, 30]`。同两个数被 `BossArenaVisuals` 拿去缩放那根**画出来**的柱子 ⇒ 画多粗就挡多粗，一本账。（网格是 `radiusTop 0.86 / radiusBottom 1` 的装饰锥，所以画出来的柱子在上半身比射线用的那根细约 0.15m（柱高 1/3 处）⇒ 射线取的是**底半径**当外包络：宁可"看着擦过、实际被挡"一寸，也不要反过来。）玩家的**挥砍**刻意不接这条通道：那是扇形/盒形命中框而不是线段，一把尺子不量两件事，登记在 KI-014 剩余格。**KI-014②a 之后这根柱子不再是场上唯一的遮挡体**：`Occluder` 变成了 `cylinder | box` 的可辨识联合，关卡侧 `regions.json > walls` 的塌墙/岩脊以**轴对齐盒截面**走同一个 `firstBlock`（盒用 slab 裁剪，三个轴各取"进入面最大值 / 离出面最小值"，入口参数必须先排序——否则任一负方向的线段都会被整类误判为"没穿过墙"）；画它的是 `world/WallGreybox.ts`，与逻辑名册读同一份数据，所以"能挡"必然"看得见"。
 - **敌人前摇音终于有发射方了（一处系统性缺口）。** `enemies.json` 从第一版起就给每招写了 `sfx`，但全场只有**玩家**动作起手与**弹道发射**在 emit `audio.sfx` ⇒ 8 类敌人的招式音字段是死的：一个只用耳朵玩的游戏里，小怪出手无声。现在 `progressAttack` 在 `tick === 0`（前摇第一帧）按招式发一响，音量随 `loudness` 抬。这条不是新特性，是把 §55「数据驱动」里承诺的字段接上消费方。
 - **音弹连发用 `burst.at=[0,39,78]` 表达「拍 1/2/3」**（92BPM 下一拍 39.13 tick）：§15.2 的三发点射是一行数据，不是代码里的循环。Tutti 的三小节前摇（469 tick）则是「可视读条」在帧表里的直译，配 `parryStunTicks:180` 把「弹反其起手拍=大师解」的回报写进同一条数据。
 - **覆盖与实机**：`tests/flow/mainboss.test.ts` 12 条 + `tests/unit/actor-visuals.test.ts` 断音柱 1 条。实机 tickFrame（未竟厅 152 层）：他从数据里 spawn 出来、`clockOwner→boss/92/4`、前摇音 7 响、四根断音柱按表坐标挂在场景里；玩家贴柱（他在柱外 4m）时同一记管束横扫 **0 伤 + 4 片 dust**，往外迈到 4.6m（出半径 3.2）**27 伤** —— A/B 都成立；正常交战里他真的扫到过玩家 30 伤。
@@ -576,7 +584,7 @@ Phase 4-A 把弹道跑通，但远程只被当作「会飞的近战判定」。4
 - **`onGrid:false` = 网格的例外通道**：§15.2 的「无拍突进」是全作唯一故意不量化到拍位的招式（教玩家放弃节拍依赖、改读身体 telegraph）。做法是给 `AttackSpec` 一个开关，`tryAttack` 见到它就跳过 `ticksUntilBeatOn` 与拍位插槽仲裁 ⇒ 它天然落在缝里（flow 断言命中帧离网格 >1 tick）。三段靠 `frames.next` 串起来，链式段也不回网格。
 - **转阶段 ⇒ 时钟重置**（§15.2 表格第二行）：`syncBoss` 跳阶那一路把 `tollDueBar/stealNeutralTicks` 一起清掉，所以换气排程和中立余量都不跨阶段带过去。顺带给奥斯塔拉的 P2 补上了 §15.1 的「每 2 小节一次换乐句停顿 0.5s」（同一个 `barCast`，`heal` 省略 ⇒ 到点站着不咬人，是处决/喝药窗），这条 4-F 登记的缺口现在闭合。
 - 覆盖：`tests/flow/stealbeat.test.ts` 10 条（游走、拍点门内外两种窗口各自的回复量、闪避漂移量级、P2 输出不可弹反、无拍三段不守拍且不抢插槽、换气每 8 小节真的来、窗口内弹反=夺拍全套后果、窗口外弹反无效、中立期到期后重新被夺）。全量 **24 files / 228 passed**，`tsc --noEmit` + `npm run build` 干净。
-- **实机（真键盘 KeyG）**：未竟厅 152 层把血压到 50% ⇒ `bossPhase=1`、`clockOwner=boss/92`；400 tick 内 `drift` 走出 5 个不同值（-0.073…+0.056）、`beatParasite`/`dodgeJitterTicks` 全程挂上；跑到第 8 小节的停气窗，一次真实 KeyG 按下 ⇒ `stealNeutralTicks=480`、`drift=0`、寄生减益与抖动清零、过载 +2、提示「管风琴停气 —— 换气拍！」+「夺回节拍！中立网格 8s · 过载 +2」、`parry_ring` 可见。**未落**：60% 的外环塌陷与声纹伤害带（要内容几何，KI-008 族）、Finale 的三个外露振源核与 120BPM 崩塌、以及「声部锁链躲回廊柱」所依赖的 authored 墙体（KI-014②：场地柱子的遮挡已经是真线段，见 §5.9.6；缺的是关卡网格）。登记在 KI-022。
+- **实机（真键盘 KeyG）**：未竟厅 152 层把血压到 50% ⇒ `bossPhase=1`、`clockOwner=boss/92`；400 tick 内 `drift` 走出 5 个不同值（-0.073…+0.056）、`beatParasite`/`dodgeJitterTicks` 全程挂上；跑到第 8 小节的停气窗，一次真实 KeyG 按下 ⇒ `stealNeutralTicks=480`、`drift=0`、寄生减益与抖动清零、过载 +2、提示「管风琴停气 —— 换气拍！」+「夺回节拍！中立网格 8s · 过载 +2」、`parry_ring` 可见。**未落**：60% 的外环塌陷与声纹伤害带（要内容几何，KI-008 族）、Finale 的三个外露振源核与 120BPM 崩塌、以及「声部锁链躲回廊柱」所依赖的 authored 墙体（KI-014②a 已落：`regions.json > walls` 的塌墙/回廊墩现在是同一条线段名册里的盒截面，并由 `WallGreybox` 画出来；仍缺的是没写进表的天然几何，KI-009）。登记在 KI-022。
 
 ### 5.9.8 区域网格与无网格领域 + 声音狩猎（Phase 4-I 万籁）— 已实现
 

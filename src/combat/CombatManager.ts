@@ -133,7 +133,8 @@ export class CombatManager {
   /** 注入：脚下地面高度查询（world/Surface），用于「射进地面就落地」；缺省则只做射程/寿命到期 */
   floorAt: ((pos: Vec3) => number | null) | null = null
   /**
-   * 遮挡体名册（KI-014①）：每 tick 由 {@link update} 从场上的实体重新点名。
+   * 遮挡体名册（KI-014①②）：实体侧每 tick 由 {@link update} 从场上的 Boss 重新点名，
+   * 关卡侧（authored 墙）由组合根在跨区时写一次（`syncAuthored`）。
    * 它是 `core/Occlusion` 的一个实例而不是注入项，因为**读它的人全在 combat 层**
    * （弹体扫掠段、打在玩家身上的那一线、telegraph 红线），而注入一份可空的遮挡会让
    * "忘了接线"表现成"场上的柱子忽然挡不住东西"——那种谎在 headless 里是静默的。
@@ -173,7 +174,8 @@ export class CombatManager {
   }
 
   update(tick: number, input?: Input, dt = TICK_DT): void {
-    // 遮挡名册每 tick 重新点名：Boss 离场她的柱子就退出判据（柱子住在她的数据里，不是区域几何）
+    // 遮挡名册每 tick 重新点名**实体那一段**：Boss 离场她的柱子就退出判据。
+    // authored 墙不在这里动——它住在区域数据里，由组合根跨区时写（`syncAuthored`）。
     this.occlusion.syncFrom(this.ai.enemies)
     this.tryExecute(input, tick)
     this.launchPlayerProjectile(tick)

@@ -1063,9 +1063,18 @@ function validateRegions(enemyIds, lootIds, rarityIds) {
   const interactableIds = new Set()
   const secretIds = new Set()
   const propIds = new Set()
+  const wallIds = new Set()
   const propKinds = new Set()
   const orders = new Map()
   if (!isArr(list)) { report.error(file, file, '顶层必须是数组'); return ids }
+  /**
+   * 「会给玩家扔东西的敌人」与「自己带掩体的 Boss」：authored 墙那条远程布点判据要用（见下）。
+   * 判据从**招式数据**推（`frames.projectile`），不从 id 名单抄——新增一种远程怪不该改验证器。
+   */
+  const enemyList = (data['enemies.json'] ?? []).filter(isObj)
+  const rangedEnemy = new Set(enemyList.filter((e) => (isArr(e.attacks) ? e.attacks : [])
+    .some((a) => isObj(a) && isObj(a.frames) && a.frames.projectile !== undefined)).map((e) => e.id))
+  const coverBearingEnemy = new Set(enemyList.filter((e) => isObj(e.boss) && isObj(e.boss.covers)).map((e) => e.id))
   list.forEach((rg, i) => {
     if (!isObj(rg)) { report.error(file, `[${i}]`, '必须是对象'); return }
     const w = isStr(rg.id) ? rg.id : `[${i}]`
@@ -1230,6 +1239,72 @@ function validateRegions(enemyIds, lootIds, rarityIds) {
       })
     }
 
+    // authored 墙体（KI-014②）：挡视线与弹道的关卡几何。三条判据各自对应一种坏法——
+    // ① 越界：息声领是叠层世界（bounds 共用 xz），伸出 bounds 的墙会伸进邻层的地板上；
+    // ② 埋点：交互物/出怪中心/场地件/隐藏房落在墙肚子里。起点在遮挡体内按几何口径是**不挡**，
+    //    于是那一处得到一座无限掩体，而灰盒里它被墙盖住看不见——"看得见按不到"的镜像版；
+    // ③ 远程敌人要有的放矢：能给远程怪（`frames.projectile`）的布点区域必须给得出掩体，
+    //    否则 §14 的"躲一下再冲"在关卡上无处可躲。Boss 自带的 `boss.covers`（断音柱）算数。
+    const sites = [
+      ...(isArr(rg.interactables) ? rg.interactables : []),
+      ...(isArr(rg.props) ? rg.props : []),
+      ...(isArr(rg.secrets) ? rg.secrets : []),
+    ].filter(isObj).filter((x) => isObj(x.pos))
+    for (const g of isArr(rg.spawnGroups) ? rg.spawnGroups : []) {
+      if (isObj(g) && isObj(g.center)) sites.push({ id: `${g.enemyId}@spawn`, pos: g.center })
+    }
+    if (rg.walls !== undefined) {
+      if (!isArr(rg.walls)) report.error(file, `${w}.walls`, '必须是数组')
+      else rg.walls.forEach((wl, wi) => {
+        const lw = `${w}.walls[${wi}]`
+        if (!isObj(wl)) { report.error(file, lw, '必须是对象'); return }
+        const nm = isStr(wl.id) ? `${w}.walls(${wl.id})` : lw
+        if (!isStr(wl.id)) report.error(file, lw, 'id 缺失或非字符串')
+        else if (wallIds.has(wl.id)) report.error(file, nm, `wall id 重复：${wl.id}——遮挡体 id 要能回答"是哪堵墙救了我"，全场唯一`)
+        else wallIds.add(wl.id)
+        vec3(file, `${nm}.pos`, wl.pos)
+        if (!isObj(wl.size)) report.error(file, `${nm}.size`, '必须是对象（x/z 两个方向的**全尺寸**，不是半宽）')
+        else {
+          report.num(file, `${nm}.size.x`, wl.size.x, { min: 0.2, name: 'size.x' })
+          report.num(file, `${nm}.size.z`, wl.size.z, { min: 0.2, name: 'size.z' })
+        }
+        report.num(file, `${nm}.heightM`, wl.heightM, { min: 1, name: 'heightM' })
+        if (!isObj(wl.pos) || !isObj(wl.size) || typeof wl.heightM !== 'number') return
+        // 墙底必须坐在**这一层的地面**上：灰盒期一片天只有一张地板（`Surface.floorAt` 按 groundY 分层），
+        // 底面不等于 groundY 的墙要么浮在半空（玩家看得见却躲不进去那条线），要么沉进地里（画不出来）
+        if (typeof rg.groundY === 'number' && wl.pos.y !== rg.groundY) {
+          report.error(file, `${nm}.pos.y`, `墙底在 ${wl.pos.y}，而 ${rg.id} 的地面在 ${rg.groundY}：区域只有一张地板，错层的墙既看不见也不挡（要叠第二层请开新区域）`)
+        }
+        const b = rg.bounds
+        if (isObj(b)) {
+          const hx = wl.size.x / 2, hz = wl.size.z / 2
+          if (wl.pos.x - hx < b.minX || wl.pos.x + hx > b.maxX || wl.pos.z - hz < b.minZ || wl.pos.z + hz > b.maxZ) {
+            report.error(file, `${nm}.pos`, `墙伸出区域 ${rg.id} 的 bounds：水平范围 [${wl.pos.x - hx}, ${wl.pos.x + hx}]×[${wl.pos.z - hz}, ${wl.pos.z + hz}] 不在 [${b.minX},${b.maxX}]×[${b.minZ},${b.maxZ}] 内`)
+          }
+          if (wl.pos.y < b.minY || wl.pos.y + wl.heightM > b.maxY) {
+            report.error(file, `${nm}.heightM`, `竖直范围 [${wl.pos.y}, ${wl.pos.y + wl.heightM}] 超出 bounds 的 [${b.minY}, ${b.maxY}]`)
+          }
+        }
+        for (const s of sites) {
+          const inside = Math.abs(s.pos.x - wl.pos.x) < wl.size.x / 2
+            && Math.abs(s.pos.z - wl.pos.z) < wl.size.z / 2
+            && s.pos.y >= wl.pos.y && s.pos.y <= wl.pos.y + wl.heightM
+          if (inside) report.error(file, `${nm}.pos`, `把 ${s.id} 埋进了墙肚子里：站在墙里=无限掩体（几何口径"起点在体内不挡"），而灰盒里它被墙盖住`)
+        }
+      })
+    }
+
+    // 远程布点要有的放矢（KI-014② 的第三条判据）：这一片地刷了会扔东西的敌人，就得给得出掩体
+    {
+      const groups = isArr(rg.spawnGroups) ? rg.spawnGroups : []
+      const rangedHere = groups.filter((g) => isObj(g) && rangedEnemy.has(g.enemyId))
+      const ownCover = groups.some((g) => isObj(g) && coverBearingEnemy.has(g.enemyId))
+      const wallsHere = isArr(rg.walls) ? rg.walls.length : 0
+      if (rangedHere.length > 0 && wallsHere === 0 && !ownCover) {
+        report.error(file, `${w}.walls`, `这片地方刷了远程敌人（${rangedHere.map((g) => g.enemyId).join(', ')}）却一块 authored 遮挡体都没有：§14 的"躲一下再冲"在关卡上无处可躲`)
+      }
+    }
+
     // music
     if (!isObj(rg.music)) report.error(file, `${w}.music`, '必须是对象')
     else for (const k of ['explore', 'battle', 'ambience']) {
@@ -1264,6 +1339,13 @@ function validateRegions(enemyIds, lootIds, rarityIds) {
 
     strArray(file, `${w}.storyHooks`, rg.storyHooks)
   })
+
+  // §55 死数据闸门（KI-014②）：全场一块 authored 遮挡体都没有的话，`walls` 这一格、
+  // `core/Occlusion` 的盒截面、`world/WallGreybox` 三条腿就一起空转——那比"没做"更糟，因为它看起来做完了
+  const authoredWalls = list.filter(isObj).reduce((n, rg) => n + (isArr(rg.walls) ? rg.walls.length : 0), 0)
+  if (authoredWalls === 0) {
+    report.error(file, 'walls', '全场没有任何 authored 遮挡体：关卡侧的遮挡通道是死代码（要么布墙，要么把这格从 schema 删掉）')
+  }
 
   // KI-024 跨文件对账：场地阶段入口指向的 prop 品类必须真的有区域布过——
   // 否则那一阶永远进不去（「配置齐全但付不出货」的洞，KI-042 同族，只有跨文件才拦得住）

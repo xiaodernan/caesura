@@ -1,44 +1,55 @@
 /**
- * 世界遮挡（KI-014①）：`a → b` 这条线段被哪块几何**先**截断、截在哪一点。
+ * 世界遮挡（KI-014①②）：`a → b` 这条线段被哪块几何**先**截断、截在哪一点。
  * 住在 `core/` 而不是 `world/`，因为它是一条纯几何查询（和 `core/Math` 同层），
- * 而它的三个读者分属两层——`combat`（弹体、打在玩家身上的那一线）与 `world` 表现层
- * （红线剪断、把柱子画成同尺寸的那一根）。遮挡体**名册**也在这里：`combat` 不许反向 import
- * `world`（tech-arch §3 的依赖箭头），而名册的输入只是 `data/schema` 里已经存在的那格
- * `boss.covers`，不需要认识任何实体类。
+ * 而它的读者分属两层——`combat`（弹体、打在玩家身上的那一线）与 `world` 表现层
+ * （红线剪断、把遮挡体画成同尺寸的那一块）。遮挡体**名册**也在这里：`combat` 不许反向 import
+ * `world`（tech-arch §3 的依赖箭头），而名册的两条输入都只是 `data/schema` 里已经存在的格
+ * （实体的 `boss.covers`、区域的 `walls`），不需要认识任何实体类或区域类。
  *
  * **一条线段，一个主人。** 三处读取它，而且只有这三处：
  * - 弹体逐 tick 的**扫掠段**（`Projectile.prev → pos`）：弹体自己有半径，所以撞上的判据
- *   要把这一点并进柱子里算（`expand`），否则半根柱子可以让一枚"球心"贴过去。
+ *   要把这一点并进遮挡体里算（`expand`），否则半根柱子可以让一枚"球心"贴过去。
  * - 打在玩家身上的那一记近战/锁定式 AoE：它的伤害本来就落在"攻击者→玩家"这条线上
  *   （§15.2 断音柱的原文判据），所以它是线段而不是扇形。
  * - §14.4 的 telegraph 红线：线是"它会打哪"的诚实承诺，被挡住的承诺不能画到墙后面。
  *
- * **为什么遮挡体是竖直圆柱**：灰盒期真正有尺寸的实体只有圆柱这一种（断音柱、钟、地标棱柱），
- * 而 §55 不许我凭空发明一套墙体几何来"看起来像"有遮挡。所以本模块的输入是**数据点名的**
- * 遮挡体（今天只有 `boss.covers`），不是从关卡网格推出来的。KI-014 剩下的那半句
- * "隔岩壁投掷"要的是 authored 墙体（KI-008 表现层同因），不在这一批里假装。
+ * **为什么遮挡体是"竖直柱 + 轴对齐盒"这两种**：灰盒期真正有尺寸的实体只有这两类——
+ * 断音柱/钟/地标棱柱是柱（`boss.covers`），塌墙/岩脊/回廊墩是盒（`regions.json > walls`，KI-014②）。
+ * §55 不许我凭空发明一套自由形式墙体几何来"看起来像"有遮挡，所以输入全是**数据点名的**凸体，
+ * 而不是从关卡网格推出来的。斜墙（带 yaw）留给有真几何的那一天，登记在 KI-014 行。
  *
  * **两条刻意的口径**（都不是遗漏）：
- * - 起点在柱内 ⇒ **不算被挡**。这就是原来那句"攻击者也贴着柱子 ⇒ 不挡，否则柱子变无敌房"
- *   的几何版本：线段从内部出发时它没有"穿过柱面"，挡不住任何东西。
+ * - 起点在遮挡体内 ⇒ **不算被挡**。这就是原来那句"攻击者也贴着柱子 ⇒ 不挡，否则柱子变无敌房"
+ *   的几何版本：线段从内部出发时它没有"穿过柱面/墙面"，挡不住任何东西。
  *   近似实现里那条要手写，射线实现里它自己成立。
  * - 玩家自己的**挥砍**不接这条通道。§15.2 的柱子是给"朝玩家打来的那一记"准备的，
  *   而玩家的近战是扇形/盒形命中框，不是线段——把线段判据套到扇形上等于用一把尺子量两件事，
  *   那一格留给真正有几何体的时候（登记在 KI-014 行，不当作已解决）。
  */
-import type { Vec3 } from '@/data/schema'
+import type { Vec3, WallRef } from '@/data/schema'
 
-/** 一块竖直圆柱遮挡体：`pos` 是**底面圆心**（不是重心），`heightM` 是它的高度 */
-export interface Occluder {
+/** 遮挡体的公共部分：`pos` 是**底面中心**（不是重心），`heightM` 是它的高度 */
+export interface OccluderBase {
   id: string
   pos: Vec3
-  radius: number
   heightM: number
 }
+/** 竖直圆柱截面（断音柱、钟、地标棱柱） */
+export interface CylinderOccluder extends OccluderBase {
+  shape: 'cylinder'
+  radius: number
+}
+/** 轴对齐盒截面（authored 塌墙/岩脊/回廊墩，KI-014②）：`halfX`/`halfZ` 是**半尺寸** */
+export interface BoxOccluder extends OccluderBase {
+  shape: 'box'
+  halfX: number
+  halfZ: number
+}
+export type Occluder = CylinderOccluder | BoxOccluder
 
-/** 线段被截断在哪：`at` 是线段**第一次**碰到柱面的那个点（灰尘要甩在那里） */
+/** 线段被截断在哪：`at` 是线段**第一次**碰到遮挡体表面的那个点（灰尘要甩在那里） */
 export interface BlockHit {
-  /** 哪一块挡的：调试器与测试要靠它回答"救了我的是哪根柱子" */
+  /** 哪一块挡的：调试器与测试要靠它回答"救了我的是哪根柱子/哪堵墙" */
   occluderId: string
   at: Vec3
 }
@@ -47,48 +58,75 @@ const EPS = 1e-7
 
 /**
  * 线段 `a → b` 与遮挡体集合的第一个交点；没有交点返回 null。
- * `expand` 是把"运动的物体自己有半径"并进遮挡体里（柱半径与柱高各加这么多），
+ * `expand` 是把"运动的物体自己有半径"并进遮挡体里（截面与高度各加这么多），
  * 近战那条线的端点已经是身体中心/命中点，所以它传 0。
  */
 export function firstBlock(
   occluders: Iterable<Occluder>, a: Vec3, b: Vec3, expand = 0,
 ): BlockHit | null {
   const dx = b.x - a.x
+  const dy = b.y - a.y
   const dz = b.z - a.z
-  // 水平方向没有位移的线段（垂直落体）不可能"从侧面穿过"一根竖直柱：它要么在柱里要么在柱外，
-  // 而"整段都在柱内"按上面那条口径是不挡（起点在柱内）。所以直接判无遮挡，不进二次方程除零。
+  // 水平方向没有位移的线段（垂直落体）不可能"从侧面穿过"一块竖直遮挡体：它要么在体内要么在体外，
+  // 而"整段都在体内"按上面那条口径是不挡（起点在体内）。至于"从墙顶垂直落进盒子里"——一条只有 y
+  // 在动的线没有掩体可言，那一格归位移碰撞（KI-009），不在这里充数。所以直接判无遮挡，不进除零。
   if (Math.hypot(dx, dz) < EPS) return null
   let best: { t: number; at: Vec3; occluderId: string } | null = null
   for (const o of occluders) {
-    const r = o.radius + expand
-    if (r <= 0) continue
-    const top = o.pos.y + o.heightM + expand
-    const base = o.pos.y - expand
-    // |A + t·D − C|² = r² 在 xz 平面上的二次方程
-    const fx = a.x - o.pos.x
-    const fz = a.z - o.pos.z
-    const q = (dx * dx + dz * dz)
-    const lin = 2 * (fx * dx + fz * dz)
-    const cst = fx * fx + fz * fz - r * r
-    const disc = lin * lin - 4 * q * cst
-    if (disc <= 0) continue // 不相交（含相切：擦过柱面的一寸都不算挡住）
-    const sq = Math.sqrt(disc)
-    const t1 = (-lin - sq) / (2 * q)
-    const t2 = (-lin + sq) / (2 * q)
-    if (t1 <= EPS) continue // 起点已经在柱内 ⇒ 柱面在身后，挡不住这一线
-    const lo = t1
-    const hi = Math.min(t2, 1)
-    if (hi <= lo) continue // 交点整段在 b 之后 ⇒ 柱子在目标后面，不是掩体
-    const tHit = enterBand(a.y, b.y, lo, hi, base, top)
-    if (tHit === null) continue
-    if (best && best.t <= tHit) continue
-    best = {
-      t: tHit,
-      occluderId: o.id,
-      at: { x: a.x + dx * tHit, y: a.y + (b.y - a.y) * tHit, z: a.z + dz * tHit },
-    }
+    const t = o.shape === 'box' ? boxEnter(o, a, dx, dy, dz, expand) : cylEnter(o, a, dx, dy, dz, expand)
+    if (t === null) continue
+    if (best && best.t <= t) continue
+    best = { t, occluderId: o.id, at: { x: a.x + dx * t, y: a.y + dy * t, z: a.z + dz * t } }
   }
   return best ? { occluderId: best.occluderId, at: best.at } : null
+}
+
+/** 圆柱截面：xz 上解二次方程拿到进出参数，再看那一段有没有穿过 `[base,top]` 这一竖带 */
+function cylEnter(o: CylinderOccluder, a: Vec3, dx: number, dy: number, dz: number, expand: number): number | null {
+  const r = o.radius + expand
+  if (r <= 0) return null
+  const base = o.pos.y - expand
+  const top = o.pos.y + o.heightM + expand
+  // |A + t·D − C|² = r² 在 xz 平面上的二次方程
+  const fx = a.x - o.pos.x
+  const fz = a.z - o.pos.z
+  const q = dx * dx + dz * dz
+  const lin = 2 * (fx * dx + fz * dz)
+  const cst = fx * fx + fz * fz - r * r
+  const disc = lin * lin - 4 * q * cst
+  if (disc <= 0) return null // 不相交（含相切：擦过柱面的一寸都不算挡住）
+  const sq = Math.sqrt(disc)
+  const lo = (-lin - sq) / (2 * q)
+  const hi = Math.min((-lin + sq) / (2 * q), 1)
+  if (lo <= EPS) return null // 起点已经在柱内 ⇒ 柱面在身后，挡不住这一线
+  if (hi <= lo) return null // 交点整段在 b 之后 ⇒ 柱子在目标后面，不是掩体
+  return enterBand(a.y, a.y + dy, lo, hi, base, top)
+}
+
+/**
+ * 轴对齐盒截面（authored 墙）：三条轴各夹一块板（slab），交集非空就是被挡住，返回进入参数。
+ * 与圆柱共用同两条口径：起点在体内不挡、贴脸（`lo <= EPS`）不挡。
+ */
+function boxEnter(o: BoxOccluder, a: Vec3, dx: number, dy: number, dz: number, expand: number): number | null {
+  const hx = o.halfX + expand
+  const hz = o.halfZ + expand
+  const yLo = o.pos.y - expand
+  const yHi = o.pos.y + o.heightM + expand
+  if (Math.abs(a.x - o.pos.x) <= hx && Math.abs(a.z - o.pos.z) <= hz && a.y >= yLo && a.y <= yHi) return null
+  let lo = 0
+  let hi = 1
+  for (const [p, d, b, t] of [[a.x - o.pos.x, dx, -hx, hx], [a.y, dy, yLo, yHi], [a.z - o.pos.z, dz, -hz, hz]] as const) {
+    if (Math.abs(d) < EPS) { if (p < b || p > t) return null; continue } // 与该轴平行：不在带里就永远进不来
+    // 沿负方向走的那一轴，`b` 那一侧才是**离开**：先排好序，否则"进面"参数会是负数并把 hi 压到 0 以下
+    // （实测：一条从胸口往下斜的线会整条被判为"没穿过墙"，红线不剪、近战不被吃）
+    let e = (b - p) / d
+    let x = (t - p) / d
+    if (e > x) { const tmp = e; e = x; x = tmp }
+    if (e > lo) lo = e
+    if (x < hi) hi = x
+    if (lo >= hi) return null // 有一轴先离开 ⇒ 擦着边过去，没穿过任何面
+  }
+  return lo <= EPS ? null : lo // 起点正贴在墙面上：贴脸不算"被墙挡住"，与柱面同口径
 }
 
 /**
@@ -121,25 +159,58 @@ export interface CoverBearing {
 }
 
 /**
+ * 关卡侧输入形状（KI-014②）：只要求"这一片地方带 `walls`"，不要求认识 `RegionData` 类，
+ * 于是 `core` 仍然不认识 `world`（组合根把当前区域的那一条递进来）。
+ */
+export interface WallBearing {
+  id: string
+  walls?: readonly WallRef[]
+}
+
+/**
  * 遮挡体的**名册**：为什么不是一个纯函数？因为遮挡体跟着实体一起生灭（Boss 离场，
  * 她场地的柱子就该从判据里消失），而线段查询每 tick 要被问几十次。
  * 每 tick 由 {@link syncFrom} 重新点名，条目**就地改写**——这条通道在每帧的热路径上，
  * 造数组/造对象会让"场上有没有 Boss"变成 GC 压力的开关。
+ *
+ * **两条输入通道，一个名册**（KI-014②）：{@link syncAuthored} 写关卡墙（换区域才重写一次），
+ * {@link syncFrom} 写实体柱子（每 tick 重名点）。两者住同一个数组，authored 段固定在**前部**，
+ * 于是热路径上仍然只有一次遍历，而"墙"与"柱子"在读者眼里没有区别——它们都是"这一线被什么截断"。
  */
 export class OcclusionField {
   private items: Occluder[] = []
+  /** `items` 的前这么多条来自关卡；剩下的那条尾巴每 tick 被 {@link syncFrom} 重写 */
+  private authored = 0
+
+  /**
+   * 换区域时调用一次（不在每 tick 的热路径上，所以这里允许重建条目）。
+   * 传 `null` = 清空（组合根在"人不在任何区域里"时走这一支，不许留着上一片天的墙）。
+   */
+  syncAuthored(region: WallBearing | null): void {
+    const walls = region?.walls ?? []
+    const next: Occluder[] = walls.map((w) => ({
+      // id 直接取数据里的墙名：它全场唯一（validator 钉），读它的人要能回答"是哪堵墙"
+      id: `wall:${w.id}`, shape: 'box', pos: { x: w.pos.x, y: w.pos.y, z: w.pos.z },
+      halfX: w.size.x / 2, halfZ: w.size.z / 2, heightM: w.heightM,
+    }))
+    this.items.splice(0, this.authored, ...next)
+    this.authored = next.length
+  }
 
   syncFrom(entities: readonly CoverBearing[]): void {
-    let n = 0
+    let n = this.authored
     for (const e of entities) {
       const c = e.data.boss?.covers
       if (!c) continue
       for (let i = 0; i < c.positions.length; i++) {
         const p = c.positions[i]
         let o = this.items[n]
-        if (!o) {
-          o = { id: '', pos: { x: 0, y: 0, z: 0 }, radius: 0, heightM: 0 }
-          this.items.push(o)
+        if (!o || o.shape !== 'cylinder') {
+          // 复用槽位只认"同一种截面"：authored 段缩小之后，尾巴上可能还剩着上一片天的盒子，
+          // 给它挂 radius 会让类型撒谎（而 box 的 halfX 还留着，读者会拿到一块既厚又圆的东西）
+          o = { id: '', shape: 'cylinder', pos: { x: 0, y: 0, z: 0 }, radius: 0, heightM: 0 }
+          if (n < this.items.length) this.items[n] = o
+          else this.items.push(o)
         }
         // id 带**这一具**里的序号（不是全场序号）：读它的人要能回答"是哪根柱子救了我"
         o.id = `cover:${e.id}:${i}`
@@ -152,6 +223,8 @@ export class OcclusionField {
   }
 
   get live(): number { return this.items.length }
+  /** 关卡墙的数量：调试器与测试要靠它区分"挡住我的是 authored 的还是 Boss 自己带的" */
+  get authoredLive(): number { return this.authored }
 
   /** 只读视图：调试器与测试要靠它回答"场上现在有哪几块遮挡体、尺寸是从哪份数据来的" */
   list(): readonly Occluder[] { return this.items }
