@@ -438,6 +438,11 @@ export class CombatManager {
       this.freezeContact(stopMs, e, this.player, s.sourceAction ?? null)
       this.player.onHitLanded()
     }
+    // §13.0「听觉 Sound」收尾（KI-016）：刀落在肉上的那声响发生在**受击者**位置，归因玩家
+    // （因果：没有玩家就没有这一声）。同伴听得见同伴挨打，朝这里看一眼。乘武器与词缀系数
+    // ⇒ 无鸣/静默一系的角色连打人都是安静的；0.5 < 0.6 ⇒ 打同伴不会震出拍隙里的幽灵八。
+    // 回声重演也发：那一声是世界重播的旧账，本来就是可听事件。
+    bus.emit('sound.source', { id: 'player', pos: { ...e.pos }, loudness: this.player.weaponImpactNoise(this.player.base.melee.impactLoudness) })
     if (burst) this.fissureBurst(e, s.point)
     this.reportFissure(e, burst)
     if (dmg.crit && !s.backstab) bus.emit('ui.notify', { text: `泛音暴击 · ${final}`, kind: 'reward' })
@@ -1141,6 +1146,9 @@ export class CombatManager {
     this.killed.add(e.id)
     e.enter('dead')
     bus.emit('entity.died', { id: e.id, kind: 'enemy', dataId: e.data.id, position: { ...e.pos } })
+    // §13.0（KI-016）：死亡哀鸣——一个同伴倒地是场上最响的动静之一（0.8 = 驼鼓踏地档），
+    // 30m 外的巡逻听得见。归因玩家、位置在尸体脚下；无鸣角色的击杀也是安静的。
+    bus.emit('sound.source', { id: 'player', pos: { ...e.pos }, loudness: this.player.weaponImpactNoise(this.player.base.melee.killNoiseLoudness) })
     bus.emit('vfx.request', { key: 'death_shatter', pos: { ...e.pos }, scale: e.data.body?.scale ?? 1 })
     bus.emit('audio.sfx', { key: 'death_shatter', pos: { ...e.pos }, gain: 0.8 })
     bus.emit('ui.notify', { text: `${nameOf(e.data.nameKey)} 崩解 · 遗响 +${Math.round(e.stats.hpMax * 0.3)}`, kind: 'reward' })

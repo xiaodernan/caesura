@@ -955,7 +955,8 @@
      "target": "en_myriad",
      "deafTicks": 360
     },
-    "breakLabel": "音刺碎裂 · 万籁聋了六拍（破势窗口）"
+    "breakLabel": "音刺碎裂 · 万籁聋了六拍（破势窗口）",
+    "breakLoudness": 0.9
    },
    {
     "id": "prop_spine_mine",
@@ -971,7 +972,8 @@
      "target": "en_myriad",
      "deafTicks": 360
     },
-    "breakLabel": "音刺碎裂 · 万籁聋了六拍（破势窗口）"
+    "breakLabel": "音刺碎裂 · 万籁聋了六拍（破势窗口）",
+    "breakLoudness": 0.9
    },
    {
     "id": "prop_spine_gallery",
@@ -987,7 +989,8 @@
      "target": "en_myriad",
      "deafTicks": 360
     },
-    "breakLabel": "音刺碎裂 · 万籁聋了六拍（破势窗口）"
+    "breakLabel": "音刺碎裂 · 万籁聋了六拍（破势窗口）",
+    "breakLoudness": 0.9
    }
   ],
   "storyHooks": [
@@ -1091,7 +1094,8 @@
      "bossId": "en_hersil",
      "minPhase": 2
     },
-    "breakLabel": "振源核碎裂 · 她的血顺着核流走了"
+    "breakLabel": "振源核碎裂 · 她的血顺着核流走了",
+    "breakLoudness": 0.9
    },
    {
     "id": "prop_core_east",
@@ -1107,7 +1111,8 @@
      "bossId": "en_hersil",
      "minPhase": 2
     },
-    "breakLabel": "振源核碎裂 · 她的血顺着核流走了"
+    "breakLabel": "振源核碎裂 · 她的血顺着核流走了",
+    "breakLoudness": 0.9
    },
    {
     "id": "prop_core_north",
@@ -1123,7 +1128,8 @@
      "bossId": "en_hersil",
      "minPhase": 2
     },
-    "breakLabel": "振源核碎裂 · 她的血顺着核流走了"
+    "breakLabel": "振源核碎裂 · 她的血顺着核流走了",
+    "breakLoudness": 0.9
    }
   ]
  }

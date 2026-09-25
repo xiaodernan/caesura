@@ -58,7 +58,11 @@
  "execution": {
   "hpFrac": 0.12,
   "flat": 30,
-  "bossFracs": [0.12, 0.08, 0.05],
+  "bossFracs": [
+   0.12,
+   0.08,
+   0.05
+  ],
   "stealthKillFrac": 0.35,
   "backstabConeDeg": 40,
   "backstabRange": 1.8,
@@ -82,5 +86,9 @@
   "base": 60,
   "a": 8,
   "b": 20
+ },
+ "melee": {
+  "impactLoudness": 0.5,
+  "killNoiseLoudness": 0.8
  }
 }

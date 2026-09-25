@@ -435,6 +435,15 @@ export interface PlayerBaseData {
    * 「Boss 转阶段砸地」不是玩家身上的情境，在 `enemies[].boss.roar`。
    */
   hitStop: { hurtMs: number; blockMs: number; perfectBlockMs: number; parryMs: number }
+  /**
+   * §13.0「听觉 Sound」最后两条缺口的响度（KI-016 收尾）：
+   * - `impactLoudness`：玩家的刀**落在肉上**那一声（发生在受击者位置）。0.5 与格挡那一记同档：
+   *   肉挨一刀和格挡接准一样响；0.5 < 0.6（幽灵八伪拍点门槛）⇒ 打同伴不会震出拍隙里的她。
+   * - `killNoiseLoudness`：击杀那一声（死亡哀鸣）。0.8 = 驼鼓踏地档：一个同伴倒地是场上
+   *   最响的动静之一，30m 外的巡逻听得见。两条都归因玩家（因果：没有玩家就没有这两声），
+   *   位置在事件点而非玩家脚下；乘武器 `noiseMul` 与词缀 `noiseMul` ⇒ 无鸣连击杀都是安静的。
+   */
+  melee: { impactLoudness: number; killNoiseLoudness: number }
   attrs: Record<AttrKey, number>
   attrUpCost: number
   rankXpCurve: { base: number; a: number; b: number }
@@ -1013,6 +1022,12 @@ export interface PropRef {
   onBreakDeaf?: { target: string; deafTicks: number }
   /** 击碎那一句 HUD 播报（没有就不播）；文字归数据，运行时只负责念 */
   breakLabel?: string
+  /**
+   * §13.0「听觉 Sound」的「破坏」那一声（KI-016 收尾）：碎裂是**响的**——归因玩家
+   * （因果：没有玩家就没有这一声）、位置在碎片落地处。没写这一格的 prop 碎了等于静音消失，
+   * 验证器因此要求必填。音刺 0.9：一根汇聚全场噪音的巨刺碎裂，比弹反更响。
+   */
+  breakLoudness?: number
 }
 
 /**

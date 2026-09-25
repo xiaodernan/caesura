@@ -243,6 +243,7 @@ function validatePlayer() {
   // §9「Hitstop 时长分级表」里玩家是守方的四行（KI-017 第四步：这四个数曾写死在 CombatManager 里）
   if (!isObj(p.hitStop)) report.error(file, 'hitStop', '缺失：§9 的四行情境停顿必须有来源，代码里不留第二个数')
   else {
+    report.sub(file, 'melee', p.melee, { impactLoudness: { min: 0.0001, max: 1 }, killNoiseLoudness: { min: 0.0001, max: 1 } })
     report.sub(file, 'hitStop', p.hitStop, { hurtMs: { min: 0 }, blockMs: { min: 0 }, perfectBlockMs: { min: 0 }, parryMs: { min: 0 } })
     const { hurtMs, blockMs, perfectBlockMs, parryMs } = p.hitStop
     // 序关系就是这一表的设计意图：接住（盾面卡一下）比挨在身上短，接准与弹反比挨在身上更长——
@@ -1181,6 +1182,7 @@ function validateRegions(enemyIds, lootIds, rarityIds) {
           report.error(file, pw, 'hitsToBreak（计数型）与 hpFracOfBoss（血量型）必须二选一——两样都缺就是一根打不坏的装饰')
         }
         if (p.breakLabel !== undefined && !isStr(p.breakLabel)) report.error(file, `${pw}.breakLabel`, '必须是非空字符串')
+        report.num(file, `${pw}.breakLoudness`, p.breakLoudness, { min: 0.0001, max: 1, name: 'breakLoudness' })
         if (p.kind === 'soundspine' && (p.gatherRadius === undefined || p.gatherRadius <= 0)) {
           report.error(file, pw, 'soundspine 必须写正的 gatherRadius——汇聚噪音是这一类的全部意义，缺了它就只是一根打不坏的柱子')
         } else if (p.gatherRadius !== undefined) {

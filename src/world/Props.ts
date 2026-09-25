@@ -177,6 +177,9 @@ export class PropSystem {
   private breakProp(p: Prop): void {
     this.broken.add(p.id)
     bus.emit('audio.sfx', { key: BREAK_SFX[p.kind], pos: { ...p.pos }, gain: 1 })
+    // §13.0「听觉 Sound」的「破坏」通道（KI-016 收尾）：碎裂的响进声场——
+    // 归因玩家（只有玩家能碎东西）、位置在碎片处；听见的人会来查看。
+    bus.emit('sound.source', { id: 'player', pos: { ...p.pos }, loudness: p.breakLoudness ?? 0.9 })
     bus.emit('vfx.request', { key: 'death_shatter', pos: { x: p.pos.x, y: p.pos.y + 1, z: p.pos.z }, scale: 1.4 })
     bus.emit('vfx.request', { key: 'ring_dust', pos: { ...p.pos }, scale: 1.2 })
     if (p.breakLabel) bus.emit('ui.notify', { text: p.breakLabel, kind: 'boss' })
