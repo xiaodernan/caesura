@@ -1497,6 +1497,16 @@
       "outer": 5,
       "forward": 0
      },
+     "bands": [
+      {
+       "outer": 2.5,
+       "damage": 36
+      },
+      {
+       "outer": 5,
+       "damage": 20
+      }
+     ],
      "lunge": 1.5,
      "loudness": 9,
      "sfx": [

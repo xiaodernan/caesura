@@ -4,6 +4,12 @@ import type { ActionName } from '@/core/Input'
 
 export interface HitboxCone { shape: 'cone'; angleDeg: number; radius: number; height: number; offsetY: number }
 export interface HitboxSphere { shape: 'sphere'; radius: number; offsetY: number; offsetFwd: number }
+/**
+ * §15.1 P3「落点震波外环 20 / 内环 36」：同一记落点，离爆心越近吃得越狠。
+ * `outer` 是这一档的外沿（米，从爆心的水平距离量，与 `shapeHits` 的 ring 用同一把尺子）。
+ * 伤害档位的主人在 `FrameData.bands`，这里是形状那一半。
+ */
+export interface DamageBand { outer: number; damage: number }
 export interface HitboxRing { shape: 'ring'; inner: number; outer: number; forward: number }
 export type Hitbox = HitboxCone | HitboxSphere | HitboxRing
 
@@ -56,6 +62,16 @@ export interface FrameData {
   poise: number
   hitStopMs: number
   hitbox?: Hitbox
+  /**
+   * §15.1 P3「拍 1 落点震波外环 20 / 内环 36」：**离爆心多远决定吃多少**。
+   * 由近及远逐档查（`outer` 严格递增），取第一档满足 `outer >= 与爆心的水平距离`。
+   * 存在时 `damage` 退为「最深那一档」的读数——validator 逼它等于 `max(bands.damage)`，
+   * 两处各写一套就是两个主人（这条闸门就是为拦这个而生的）。
+   * **只有"以出手者为圆心的形状"吃它**（sphere，或 `forward === 0` 的 ring）：cone 要角、
+   * 偏心球要朝向、带 `forward` 的环要爆心偏移，而结算那一格手上只有出手点与目标中心，
+   * 写在那些形状上就是一份永远读不到的数据。
+   */
+  bands?: DamageBand[]
   /** 存在 = 这是一个投掷/射击动作：进入 activeStart 时发射弹体，hitbox 可以缺席 */
   projectile?: ProjectileSpec
   lunge?: number

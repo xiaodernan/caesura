@@ -797,8 +797,11 @@ export class CombatManager {
       }
       if (e.attack) e.attack.hitDone = true
       const st = e.attack?.spec.statusOnHit
+      // §15.1 P3：写了 bands 的落点按"离爆心多远"取档，没写的照旧走 hb.damage。
+      // 距离用的是 shapeHits 那一支同一个量（两个 pos 的水平距离）——判定与结算不许各拿一把尺子。
+      const zone = e.bandedDamage(this.player.pos)
       this.resolveAgainstPlayer({
-        attackerId: e.id, damage: hb.damage, poise: hb.poise, hitStopMs: hb.hitStopMs,
+        attackerId: e.id, damage: zone ?? hb.damage, poise: hb.poise, hitStopMs: hb.hitStopMs,
         kind: 'enemy', point: midpoint(e.pos, this.player.pos), dir: flatDir(e.pos, this.player.pos),
         from: { ...e.pos }, parryable: e.attack?.spec.parryable ?? true, ranged: false,
         sourceAction: e.attack ?? undefined,

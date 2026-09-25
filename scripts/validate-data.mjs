@@ -210,6 +210,41 @@ function frames(file, where, f) {
   }
   if (f.echoOnHit !== undefined && typeof f.echoOnHit !== 'boolean') report.error(file, `${where}.echoOnHit`, '必须是布尔（§11 回响：命中时是否留下回声）')
   if (f.hitbox !== undefined) hitbox(file, `${where}.hitbox`, f.hitbox)
+  // §15.1 P3「外环 20 / 内环 36」（KI-057）：落点分环。**伤害档位的主人是 bands 这张表**，
+  // `damage` 在写了 bands 的招式上退为"最深那一档"的读数——两边各写一套就是两个主人，当场红。
+  if (f.bands !== undefined) {
+    if (file !== 'enemies.json') {
+      report.error(file, `${where}.bands`, 'bands 唯一的读者是 Enemy.bandedDamage（敌人落点）⇒ 玩家侧不许写，那是一份读不到的数据')
+    } else if (f.projectile !== undefined) {
+      report.error(file, `${where}.bands`, '弹体在飞行路上只有一个伤害数，落点档位对它没有意义 ⇒ bands 与 projectile 互斥')
+    } else if (!isArr(f.bands) || f.bands.length < 2) {
+      report.error(file, `${where}.bands`, 'bands 必须是 ≥2 档的数组（只有一档＝没有分环，走 damage 那一格）')
+    } else {
+      let prev = -1
+      for (const [i, b] of f.bands.entries()) {
+        const w = `${where}.bands[${i}]`
+        if (!isObj(b)) { report.error(file, w, '必须是 {outer, damage}'); continue }
+        for (const k of Object.keys(b)) if (k !== 'outer' && k !== 'damage') report.error(file, `${w}.${k}`, '不认的字段（本档只有 outer/damage）')
+        const okO = report.num(file, `${w}.outer`, b.outer, { min: 0, name: 'outer' })
+        report.num(file, `${w}.damage`, b.damage, { min: 1, int: true, name: 'damage' })
+        // 查表是"由近及远取第一档"，顺序错了就会先撞上外档 ⇒ 内环反而更轻
+        if (okO && !(b.outer > prev)) { report.error(file, `${w}.outer`, `bands.outer 必须严格递增（第 ${i} 档 ${b.outer} <= 前一档 ${prev}）`); }
+        if (okO) prev = b.outer
+      }
+      const deepest = f.bands.map((b) => (isObj(b) ? b.damage : NaN)).filter(isNum)
+      if (isNum(f.damage) && deepest.length && f.damage !== Math.max(...deepest)) {
+        report.error(file, `${where}.damage`, `写了 bands 时 damage 必须等于最深那一档（表里 ${Math.max(...deepest)}，这里 ${f.damage}）——两个主人各说一套`)
+      }
+      // 可达半径与档位表必须严丝合缝：留缝＝"打得到但不知道吃多少"，超出＝"有一档永远读不到"
+      const hb = f.hitbox
+      const reach = isObj(hb) ? (hb.shape === 'ring' ? (hb.outer ?? NaN) + (hb.forward ?? 0) : hb.shape === 'sphere' ? hb.radius : NaN) : NaN
+      if (!isNum(reach)) report.error(file, `${where}.bands`, 'bands 要求同一条招式上有 ring/sphere hitbox（没有落点就没有"离爆心多远"）')
+      else if (isNum(prev) && prev !== reach) report.error(file, `${where}.bands`, `最后一档 outer(${prev}) 必须等于可达外沿(${reach})`)
+      // 结算那一格手上只有出手点与目标中心：角、朝向、爆心偏移它都拿不到
+      const centered = isObj(hb) && ((hb.shape === 'sphere' && (hb.offsetFwd ?? 0) === 0) || (hb.shape === 'ring' && (hb.forward ?? 0) === 0))
+      if (!centered) report.error(file, `${where}.bands`, 'bands 只吃"以出手者为圆心"的形状（sphere offsetFwd=0 / ring forward=0）；cone 与偏心落点没有可用的距离尺')
+    }
+  }
   if (f.projectile !== undefined) projectile(file, `${where}.projectile`, f.projectile)
   return f.next
 }

@@ -1,4 +1,4 @@
-import type { Hitbox } from '@/data/schema'
+import type { DamageBand, Hitbox } from '@/data/schema'
 import type { Vec3 } from './EntityStats'
 
 export interface HitTarget {
@@ -38,6 +38,21 @@ export function shapeHits(
   }
   const inner = box.inner, outer = box.outer + box.forward
   return dist >= inner - target.radius && dist <= outer + target.radius
+}
+
+/**
+ * 落点分环伤害（§15.1 P3「外环 20 / 内环 36」）。**档位的主人是 `FrameData.bands` 这张表**，
+ * `damage` 在带 bands 的招式上只是"最深那一档"的读数（validator 逼它俩相等）。
+ *
+ * `dist` 是**目标球心到爆心的水平距离**，与 `shapeHits` 那一支用同一把尺子：判定说"你在 4.8m"，
+ * 伤害档位也说"你在 4.8m"，不允许判定读 A、结算读 B。由此有一条口径必须写清：
+ * **球心落在最后一档之外 ⇒ 仍取最后一档**。这不是兜底兜错了方向——能打上却落在环外，
+ * 只可能是因为目标自己的体积（0.55m）从外沿探进来的，那种贴边本来就该按外环算，
+ * 而不是按内环罚一次"你居然被体积蹭到"。
+ */
+export function bandDamage(bands: DamageBand[], dist: number): number {
+  for (const b of bands) if (dist <= b.outer) return b.damage
+  return bands[bands.length - 1].damage
 }
 
 /** is attacker behind defender? (§5.4 backstab 40deg cone / damage backstab flag) */

@@ -6,6 +6,8 @@ import { armStats } from '@/combat/Statuses'
 import { armCrumple, materialFlashSeconds, reactionTier } from '@/combat/Reactions'
 import type { Vec3 } from '@/combat/EntityStats'
 import type { HitTarget } from '@/combat/HitShapes'
+import { bandDamage } from '@/combat/HitShapes'
+
 import type { RhythmClock } from '@/core/RhythmClock'
 import type { SightGate } from '@/core/Occlusion'
 import type { PlayerController } from '@/player/ThirdPersonController'
@@ -238,6 +240,24 @@ export class Enemy {
       poise: f.poise, hitStopMs: f.hitStopMs, reaction: this.attack.spec.reaction ?? 'R1',
       loudness: f.loudness ?? 3, flags: f.flags ?? []
     }
+  }
+
+  /**
+   * §15.1 P3「落点震波外环 20 / 内环 36」：这一记打在 `target` 这一点上吃多少伤害。
+   *
+   * 为什么是**结算时现算**而不是在 `activeHitbox` 里折好：那个 getter 手上只有出手点，
+   * 它同时被表现层读（`ActorVisuals` 拿它判断"此刻该不该亮"），把"打在哪"烧进去等于让一个
+   * 显示用的读取口去决定玩法数值。距离只有结算那一方知道，所以档位也只在结算那一格查。
+   *
+   * 返回 null = **这一招没有分环**，调用方走 `activeHitbox.damage` 那条老路。档位只在数据写了
+   * 的地方存在；不给没写 bands 的招式凭空补一档（那才是真的两个主人）。
+   * 乘 `dmgMul` 与 hitbox 那一支同源：§14.6 定调光环抬的也正是落点伤害。
+   */
+  bandedDamage(target: Vec3): number | null {
+    const f = this.attack?.spec.frames
+    if (!f?.bands) return null
+    const dist = Math.hypot(target.x - this.pos.x, target.z - this.pos.z)
+    return Math.round(bandDamage(f.bands, dist) * (this.buff?.dmgMul ?? 1))
   }
 
   hitTarget(): HitTarget {
