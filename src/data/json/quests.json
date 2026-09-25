@@ -9,19 +9,80 @@
    {
     "state": "BELLS.STEP1_OPEN",
     "label": "《裂舌的断面》：去钟坠院取回首钟的断舌，并自行检视它",
-    "advanceOn": { "flags": ["flag.bell_tongue_examined"] },
-    "tags": ["D", "H"]
+    "advanceOn": {
+     "flags": [
+      "flag.bell_tongue_examined"
+     ]
+    },
+    "tags": [
+     "D",
+     "H"
+    ]
    },
    {
     "state": "BELLS.STEP1_JUDGED",
     "label": "断面上有从内向外的结晶爆痕 —— 告诉她，或者把它收起来",
-    "advanceOn": { "flags": ["flag.belltongue_told", "flag.belltongue_hidden"] },
-    "tags": ["C", "H"]
+    "advanceOn": {
+     "flags": [
+      "flag.belltongue_told",
+      "flag.belltongue_hidden"
+     ]
+    },
+    "tags": [
+     "C",
+     "H"
+    ]
    },
    {
     "state": "BELLS.STEP2_OPEN",
-    "label": "《唤四钟》：按爆痕顺藤修复其余三钟（后续步在 Phase 6-C 落）",
-    "tags": ["D", "M"]
+    "label": "《唤四钟》：按爆痕重立首钟 —— 钟坠院那座空了的钟座",
+    "advanceOn": {
+     "flags": [
+      "flag.bell_first_repaired"
+     ]
+    },
+    "tags": [
+     "D",
+     "M"
+    ]
+   },
+   {
+    "state": "BELLS.STEP2_SECOND",
+    "label": "第二口钟在雾语林的浮尘里 —— 修好它，那里的金色会变亮",
+    "advanceOn": {
+     "flags": [
+      "flag.bell_second_repaired"
+     ]
+    },
+    "tags": [
+     "D"
+    ]
+   },
+   {
+    "state": "BELLS.STEP2_THIRD",
+    "label": "第三口钟沉在沉唱堂的水线以下 —— 那是她亲手铸坏的那口",
+    "advanceOn": {
+     "flags": [
+      "flag.bell_third_repaired"
+     ]
+    },
+    "tags": [
+     "D",
+     "H"
+    ]
+   },
+   {
+    "state": "BELLS.STEP3_OPEN",
+    "label": "《哑钟》：三段拾音石合听 —— 转调发生在降 B。把这件事告诉她",
+    "advanceOn": {
+     "flags": [
+      "flag.bell_keymod_found"
+     ]
+    },
+    "tags": [
+     "H",
+     "C"
+    ]
    }
   ]
  },
@@ -35,13 +96,22 @@
    {
     "state": "CORVIN.STEP1_OPEN",
     "label": "《第一份契约》：把「会唱歌的核」带给他，换整片息声领的弱点图谱",
-    "advanceOn": { "flags": ["flag.corvin_contract_signed"] },
-    "tags": ["D"]
+    "advanceOn": {
+     "flags": [
+      "flag.corvin_contract_signed"
+     ]
+    },
+    "tags": [
+     "D"
+    ]
    },
    {
     "state": "CORVIN.STEP2_DELIVER",
     "label": "核已在手 —— 交给他，或者留着",
-    "tags": ["D", "H"]
+    "tags": [
+     "D",
+     "H"
+    ]
    }
   ]
  },
@@ -55,13 +125,23 @@
    {
     "state": "MEG.STEP1_OPEN",
     "label": "《第一块拼图》：听出第一段记忆的录音地点 —— 她一直守在莉安家门口",
-    "advanceOn": { "flags": ["flag.meg_first_fragment"] },
-    "tags": ["D", "H"]
+    "advanceOn": {
+     "flags": [
+      "flag.meg_first_fragment"
+     ]
+    },
+    "tags": [
+     "D",
+     "H"
+    ]
    },
    {
     "state": "MEG.STEP2_EXCHANGE",
     "label": "《以物易声》：用你见过的一段声音换下一段记忆（后续步在 Phase 6-C 落）",
-    "tags": ["D", "M"]
+    "tags": [
+     "D",
+     "M"
+    ]
    }
   ]
  },
@@ -75,13 +155,22 @@
    {
     "state": "HALTRUNE.STEP1_OPEN",
     "label": "《巡逻线尽头》：以纯闪避不反击走完一遍完整巡逻周期",
-    "advanceOn": { "flags": ["flag.haltrune_patrol_seen"] },
-    "tags": ["D"]
+    "advanceOn": {
+     "flags": [
+      "flag.haltrune_patrol_seen"
+     ]
+    },
+    "tags": [
+     "D"
+    ]
    },
    {
     "state": "HALTRUNE.STEP2_ROSTER",
     "label": "《点名册》：七个还在巡逻的兵，他记的是四个（后续步在 Phase 6-C 落）",
-    "tags": ["D", "H"]
+    "tags": [
+     "D",
+     "H"
+    ]
    }
   ]
  },
@@ -95,13 +184,23 @@
    {
     "state": "FACELESS.STEP1_OPEN",
     "label": "《第一次代写》：它在灰上写下铃姨还没说出口的两个字",
-    "advanceOn": { "flags": ["flag.faceless_first_writing"] },
-    "tags": ["D", "H"]
+    "advanceOn": {
+     "flags": [
+      "flag.faceless_first_writing"
+     ]
+    },
+    "tags": [
+     "D",
+     "H"
+    ]
    },
    {
     "state": "FACELESS.STEP2_ANSWER",
     "label": "《会应答的孩子》：修任意一口钟后，铃姨要你回答「你捡到的是孩子，还是耳朵」（Phase 6-C）",
-    "tags": ["D", "C"]
+    "tags": [
+     "D",
+     "C"
+    ]
    }
   ]
  }

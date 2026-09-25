@@ -21,12 +21,16 @@ export interface QuestEvent {
   index: number
   label: string
   started: boolean
+  /** 这一步是否**收束**了整条线（末步的 advanceOn 命中） */
+  completed: boolean
 }
 
 export interface QuestsSnapshot {
   states: Record<string, string>
   relations: Record<string, number>
   seen: string[]
+  /** 已收束的线（末步的 advanceOn 命中）。老档没有这一格 ⇒ 空集，不假装已完成 */
+  completed: string[]
 }
 
 const RELATION_MIN = -5
@@ -40,6 +44,8 @@ export class Quests {
   private readonly states = new Map<string, string>()
   private readonly relations = new Map<string, number>()
   private readonly seenNodes = new Set<string>()
+  /** 已收束的线：末步的 advanceOn 命中才算走完（"停在末步"不等于"做完了"） */
+  private readonly completedQuests = new Set<string>()
   private readonly offs: Array<() => void> = []
 
   constructor(
@@ -85,11 +91,13 @@ export class Quests {
     return q.steps.findIndex((s) => s.state === st)
   }
 
-  /** 任务是否已走到最后一步之后（末步的旗标已立 ⇒ 这条线在本切片内收束） */
+  /**
+   * 这条线是否**收束**了。判据是"末步的 `advanceOn` 旗标已立"——而不是"已经走到末步"：
+   * 停在末步意味着任务**正在进行**（例：《哑钟》= 你该去合听三段录音了），把它算成完成
+   * 会让任务簿撒谎。末步没有 `advanceOn` 的线（后续步还没写的那四条）永远返回 false。
+   */
   isComplete(id: string): boolean {
-    const q = this.def(id)
-    if (!q) return false
-    return this.stepIndex(id) >= q.steps.length - 1
+    return this.completedQuests.has(id)
   }
 
   /** 开始一条线：落到第一步。已在进行的线不会被打回第一步 */
@@ -122,9 +130,10 @@ export class Quests {
   private setStep(q: QuestData, index: number, started: boolean): void {
     const step = q.steps[index]
     this.states.set(q.id, step.state)
-    this.onEvent({ questId: q.id, state: step.state, index, label: step.label, started })
+    const completed = this.completedQuests.has(q.id)
+    this.onEvent({ questId: q.id, state: step.state, index, label: step.label, started, completed })
     bus.emit('quest.changed', {
-      questId: q.id, state: step.state, index, total: q.steps.length, label: step.label, started,
+      questId: q.id, state: step.state, index, total: q.steps.length, label: step.label, started, completed,
     })
   }
 
@@ -139,8 +148,15 @@ export class Quests {
       if (idx < 0) continue
       const step = q.steps[idx]
       if (!step.advanceOn?.flags.includes(key)) continue
-      if (idx >= q.steps.length - 1) continue
-      this.setStep(q, idx + 1, false)
+      if (idx < q.steps.length - 1) {
+        this.setStep(q, idx + 1, false)
+        continue
+      }
+      // 末步的 advanceOn = "这条线在这里收束"。旗标立起来就记完成（状态不变），
+      // 而不是像以前那样**静默忽略**——那会让末步的 advanceOn 变成没人读的死数据。
+      if (this.completedQuests.has(q.id)) continue
+      this.completedQuests.add(q.id)
+      this.setStep(q, idx, false)
     }
   }
 
@@ -173,6 +189,7 @@ export class Quests {
       states: Object.fromEntries(this.states),
       relations: Object.fromEntries(this.relations),
       seen: [...this.seenNodes].sort(),
+      completed: [...this.completedQuests].sort(),
     }
   }
 
@@ -180,6 +197,7 @@ export class Quests {
     this.states.clear()
     this.relations.clear()
     this.seenNodes.clear()
+    this.completedQuests.clear()
     if (!s) return
     // 读档只认**现在还在表里**的 id：数据里删掉的线不该靠一份老档复活
     for (const [id, state] of Object.entries(s.states ?? {})) {
@@ -190,6 +208,11 @@ export class Quests {
       if (typeof v === 'number' && Number.isFinite(v)) this.relations.set(npc, clamp(v, RELATION_MIN, RELATION_MAX))
     }
     for (const k of s.seen ?? []) this.seenNodes.add(k)
+    // 只认"当前还在表里、且确实停在末步"的完成记录：数据改过之后不该靠老档凭空完成
+    for (const id of s.completed ?? []) {
+      const q = this.def(id)
+      if (q && this.stepIndex(id) === q.steps.length - 1) this.completedQuests.add(id)
+    }
   }
 
   dispose(): void { for (const off of this.offs.splice(0)) off() }

@@ -11,15 +11,25 @@
     "speaker": "npc_belltongue",
     "emotion": "guarded",
     "text": "站住。……左耳那串断铃，剪的时候疼吗？",
-    "conditions": { "flags": { "not": ["flag.belltongue_met"] } },
+    "conditions": {
+     "flags": {
+      "not": [
+       "flag.belltongue_met"
+      ]
+     }
+    },
     "choices": [
      {
       "id": "c1",
       "text": "不疼。剪断的东西，从来不该疼第二次。",
       "style": "blunt",
       "effects": {
-       "setRelation": { "delta": 1 },
-       "setFlags": ["flag.belltongue_met"],
+       "setRelation": {
+        "delta": 1
+       },
+       "setFlags": [
+        "flag.belltongue_met"
+       ],
        "startQuest": "q_bells"
       },
       "next": "n1"
@@ -29,8 +39,12 @@
       "text": "……",
       "style": "silent",
       "effects": {
-       "setRelation": { "delta": -1 },
-       "setFlags": ["flag.belltongue_met"],
+       "setRelation": {
+        "delta": -1
+       },
+       "setFlags": [
+        "flag.belltongue_met"
+       ],
        "startQuest": "q_bells"
       },
       "next": "n2"
@@ -47,7 +61,11 @@
       "id": "c1",
       "text": "四口钟都响。",
       "style": "blunt",
-      "effects": { "setRelation": { "delta": 1 } },
+      "effects": {
+       "setRelation": {
+        "delta": 1
+       }
+      },
       "next": "n3"
      },
      {
@@ -90,19 +108,36 @@
     "speaker": "npc_belltongue",
     "emotion": "working",
     "text": "（她没抬头，锤子还在敲）路量到哪了？",
-    "conditions": { "flags": { "all": ["flag.belltongue_met"] } },
+    "conditions": {
+     "flags": {
+      "all": [
+       "flag.belltongue_met"
+      ]
+     }
+    },
     "choices": [
      {
       "id": "c1",
       "text": "断面是从里往外炸的。我看了。",
       "style": "blunt",
       "conditions": {
-       "hasItem": { "id": "it_bell_tongue" },
-       "quest": { "id": "q_bells", "in": ["BELLS.STEP1_OPEN"] }
+       "hasItem": {
+        "id": "it_bell_tongue"
+       },
+       "quest": {
+        "id": "q_bells",
+        "in": [
+         "BELLS.STEP1_OPEN"
+        ]
+       }
       },
       "effects": {
-       "setRelation": { "delta": 1 },
-       "setFlags": ["flag.bell_tongue_examined"],
+       "setRelation": {
+        "delta": 1
+       },
+       "setFlags": [
+        "flag.bell_tongue_examined"
+       ],
        "notify": "她停下手里的锤：「……从里面。你确定。」"
       },
       "next": "n6"
@@ -118,6 +153,35 @@
       "text": "（什么也不说，站着看她敲）",
       "style": "silent",
       "next": null
+     },
+     {
+      "id": "c4",
+      "text": "（把三段拾音石放在她的砧上）",
+      "style": "silent",
+      "conditions": {
+       "hasItem": {
+        "id": "it_echo_slate",
+        "count": 3
+       },
+       "quest": {
+        "id": "q_bells",
+        "gte": "BELLS.STEP2_THIRD"
+       }
+      },
+      "effects": {
+       "takeItem": {
+        "id": "it_echo_slate",
+        "count": 3
+       },
+       "setRelation": {
+        "delta": 1
+       },
+       "setFlags": [
+        "flag.bell_keymod_found"
+       ],
+       "notify": "三段环境声合听：仪典那晚，整支合唱被按下了半个音 —— 降 B"
+      },
+      "next": "n9"
      }
     ]
    },
@@ -126,15 +190,25 @@
     "speaker": "npc_belltongue",
     "emotion": "still",
     "text": "（她把锤子放下了。五十年，这间铁铺第一次没有锤声。）说下去。",
-    "conditions": { "quest": { "id": "q_bells", "gte": "BELLS.STEP1_JUDGED" } },
+    "conditions": {
+     "quest": {
+      "id": "q_bells",
+      "gte": "BELLS.STEP1_JUDGED"
+     }
+    },
     "choices": [
      {
       "id": "c1",
       "text": "首钟不是坠毁炸的。是共鸣。",
       "style": "blunt",
       "effects": {
-       "setRelation": { "delta": 2 },
-       "setFlags": ["flag.belltongue_told"],
+       "setRelation": {
+        "delta": 2
+       },
+       "setFlags": [
+        "flag.belltongue_told",
+        "flag.bells_repair_open"
+       ],
        "notify": "《唤四钟》记入谱册 —— 按爆痕顺藤修其余三钟"
       },
       "next": "n7"
@@ -144,8 +218,13 @@
       "text": "（把断面收进衣袋）",
       "style": "silent",
       "effects": {
-       "setRelation": { "delta": -1 },
-       "setFlags": ["flag.belltongue_hidden"],
+       "setRelation": {
+        "delta": -1
+       },
+       "setFlags": [
+        "flag.belltongue_hidden",
+        "flag.bells_repair_open"
+       ],
        "notify": "你把那截舌头收了起来 —— 它会在你的包里继续响"
       },
       "next": "n8"
@@ -165,10 +244,16 @@
     "emotion": "quiet",
     "text": "……你藏起来了。行。等你哪天想说了，炉子还在这儿，锤子也还在这儿。",
     "next": null
+   },
+   {
+    "id": "n9",
+    "speaker": "npc_belltongue",
+    "emotion": "unsteady",
+    "text": "降 B。……那晚有人把整支合唱按下了半个音，而且是从最里面按的。不是我。我这辈子只铸坏过一口钟——可有人改过一整支曲子。",
+    "next": null
    }
   ]
  },
-
  {
   "id": "DLG_CORVIN",
   "npc": "npc_corvin",
@@ -181,20 +266,34 @@
     "speaker": "npc_corvin",
     "emotion": "curious",
     "text": "站住。你身上有遗响的余味，而且很新。……律政院末代档案官，科温。我在写一本书，书里缺一节：会唱歌的核。",
-    "conditions": { "flags": { "not": ["flag.corvin_met"] } },
+    "conditions": {
+     "flags": {
+      "not": [
+       "flag.corvin_met"
+      ]
+     }
+    },
     "choices": [
      {
       "id": "c1",
       "text": "什么价钱？",
       "style": "blunt",
-      "effects": { "setRelation": { "delta": 1 } },
+      "effects": {
+       "setRelation": {
+        "delta": 1
+       }
+      },
       "next": "n1"
      },
      {
       "id": "c2",
       "text": "我不替人打猎。",
       "style": "provoke",
-      "effects": { "setRelation": { "delta": -1 } },
+      "effects": {
+       "setRelation": {
+        "delta": -1
+       }
+      },
       "next": "n2"
      },
      {
@@ -216,7 +315,10 @@
       "text": "成交。",
       "style": "blunt",
       "effects": {
-       "setFlags": ["flag.corvin_met", "flag.corvin_contract_signed"],
+       "setFlags": [
+        "flag.corvin_met",
+        "flag.corvin_contract_signed"
+       ],
        "startQuest": "q_corvin",
        "notify": "《第一份契约》记入谱册 —— 要「会唱歌」的那种核，死透的不算"
       },
@@ -226,7 +328,12 @@
       "id": "c2",
       "text": "先让我看看你的档案室。",
       "style": "poetic",
-      "effects": { "setFlags": ["flag.corvin_met"], "startQuest": "q_corvin" },
+      "effects": {
+       "setFlags": [
+        "flag.corvin_met"
+       ],
+       "startQuest": "q_corvin"
+      },
       "next": "n4"
      }
     ]
@@ -236,7 +343,11 @@
     "speaker": "npc_corvin",
     "emotion": "cold",
     "text": "……不勉强。但我建议你别把背对着我说话，聋者。我记性好。",
-    "effects": { "setFlags": ["flag.corvin_met"] },
+    "effects": {
+     "setFlags": [
+      "flag.corvin_met"
+     ]
+    },
     "next": null
    },
    {
@@ -259,16 +370,37 @@
     "speaker": "npc_corvin",
     "emotion": "brisk",
     "text": "核带来了吗？",
-    "conditions": { "flags": { "all": ["flag.corvin_met"] } },
+    "conditions": {
+     "flags": {
+      "all": [
+       "flag.corvin_met"
+      ]
+     }
+    },
     "choices": [
      {
       "id": "c1",
       "text": "（把振源核放在桌上）",
       "style": "blunt",
-      "conditions": { "hasItem": { "id": "it_resonance_core" }, "quest": { "id": "q_corvin", "in": ["CORVIN.STEP1_OPEN"] } },
+      "conditions": {
+       "hasItem": {
+        "id": "it_resonance_core"
+       },
+       "quest": {
+        "id": "q_corvin",
+        "in": [
+         "CORVIN.STEP1_OPEN"
+        ]
+       }
+      },
       "effects": {
-       "takeItem": { "id": "it_resonance_core", "count": 1 },
-       "setRelation": { "delta": 1 },
+       "takeItem": {
+        "id": "it_resonance_core",
+        "count": 1
+       },
+       "setRelation": {
+        "delta": 1
+       },
        "notify": "他把核举到灯下听了很久 —— 弱点图谱的第一页已经写在你眼里"
       },
       "next": "n6"
@@ -290,7 +422,6 @@
    }
   ]
  },
-
  {
   "id": "DLG_MEG",
   "npc": "npc_meg",
@@ -303,13 +434,23 @@
     "speaker": "npc_meg",
     "emotion": "bored",
     "text": "别站那么近，你踩到我摊子了。……等等。你胸口那颗音色石，灭的。莉安给你的吧？",
-    "conditions": { "flags": { "not": ["flag.meg_met"] } },
+    "conditions": {
+     "flags": {
+      "not": [
+       "flag.meg_met"
+      ]
+     }
+    },
     "choices": [
      {
       "id": "c1",
       "text": "你认识她。",
       "style": "blunt",
-      "effects": { "setRelation": { "delta": 1 } },
+      "effects": {
+       "setRelation": {
+        "delta": 1
+       }
+      },
       "next": "n1"
      },
      {
@@ -331,8 +472,13 @@
       "text": "（听完）……这里。休垒。她一直守在自家门口。",
       "style": "blunt",
       "effects": {
-       "setRelation": { "delta": 2 },
-       "setFlags": ["flag.meg_met", "flag.meg_first_fragment"],
+       "setRelation": {
+        "delta": 2
+       },
+       "setFlags": [
+        "flag.meg_met",
+        "flag.meg_first_fragment"
+       ],
        "startQuest": "q_meg",
        "notify": "《第一块拼图》记入谱册 —— 她一直守在莉安家门口"
       },
@@ -342,7 +488,12 @@
       "id": "c2",
       "text": "听不出来。",
       "style": "silent",
-      "effects": { "setFlags": ["flag.meg_met"], "startQuest": "q_meg" },
+      "effects": {
+       "setFlags": [
+        "flag.meg_met"
+       ],
+       "startQuest": "q_meg"
+      },
       "next": "n2"
      }
     ]
@@ -359,14 +510,30 @@
     "speaker": "npc_meg",
     "emotion": "businesslike",
     "text": "第二段要拿东西换：你见过的一段声音。哑带的死寂，或者首钟炸开的断面——随便哪一段，只要是你亲耳听的。",
-    "conditions": { "flags": { "all": ["flag.meg_met"] } },
+    "conditions": {
+     "flags": {
+      "all": [
+       "flag.meg_met"
+      ]
+     }
+    },
     "choices": [
      {
       "id": "c1",
       "text": "首钟的断面我听过。是从里往外炸的。",
       "style": "blunt",
-      "conditions": { "flags": { "all": ["flag.belltongue_told"] } },
-      "effects": { "setRelation": { "delta": 1 } },
+      "conditions": {
+       "flags": {
+        "all": [
+         "flag.belltongue_told"
+        ]
+       }
+      },
+      "effects": {
+       "setRelation": {
+        "delta": 1
+       }
+      },
       "next": "n4"
      },
      {
@@ -386,7 +553,6 @@
    }
   ]
  },
-
  {
   "id": "DLG_FACELESS",
   "npc": "npc_faceless",
@@ -399,13 +565,23 @@
     "speaker": "npc_faceless",
     "emotion": "blank",
     "text": "（它蹲在休垒的水缸边，用指头在灰上写。写完就擦。你走近时它抬头——兜帽下没有五官，只有「听」的形状。）灰上剩着两个字：哑钟。",
-    "conditions": { "flags": { "not": ["flag.faceless_met"] } },
+    "conditions": {
+     "flags": {
+      "not": [
+       "flag.faceless_met"
+      ]
+     }
+    },
     "choices": [
      {
       "id": "c1",
       "text": "……你怎么会知道这个词？",
       "style": "blunt",
-      "effects": { "setRelation": { "delta": 1 } },
+      "effects": {
+       "setRelation": {
+        "delta": 1
+       }
+      },
       "next": "n1"
      },
      {
@@ -427,8 +603,13 @@
       "text": "跟我走。",
       "style": "blunt",
       "effects": {
-       "setRelation": { "delta": 1 },
-       "setFlags": ["flag.faceless_met", "flag.faceless_first_writing"],
+       "setRelation": {
+        "delta": 1
+       },
+       "setFlags": [
+        "flag.faceless_met",
+        "flag.faceless_first_writing"
+       ],
        "startQuest": "q_faceless",
        "notify": "《第一次代写》记入谱册 —— 它写的不是话，是还没发生的事"
       },
@@ -439,8 +620,13 @@
       "text": "（什么也不说，转身离开）",
       "style": "silent",
       "effects": {
-       "setRelation": { "delta": -1 },
-       "setFlags": ["flag.faceless_met", "flag.faceless_first_writing"],
+       "setRelation": {
+        "delta": -1
+       },
+       "setFlags": [
+        "flag.faceless_met",
+        "flag.faceless_first_writing"
+       ],
        "startQuest": "q_faceless"
       },
       "next": "n2"
@@ -459,12 +645,17 @@
     "speaker": "npc_faceless",
     "emotion": "blank",
     "text": "（它抬头看你，然后在灰上写了一个字。你还没看清，它就擦了。）",
-    "conditions": { "flags": { "all": ["flag.faceless_met"] } },
+    "conditions": {
+     "flags": {
+      "all": [
+       "flag.faceless_met"
+      ]
+     }
+    },
     "next": null
    }
   ]
  },
-
  {
   "id": "DLG_HALTRUNE",
   "npc": "npc_haltrune",
@@ -477,20 +668,34 @@
     "speaker": "npc_haltrune",
     "emotion": "hostile",
     "text": "（一只手从暗处扣住你的后颈）别动。聋者。……你身上没有律政院的味道。那你可以活着听完这句话：前面那队兵已经死了。他们还在走。",
-    "conditions": { "flags": { "not": ["flag.haltrune_met"] } },
+    "conditions": {
+     "flags": {
+      "not": [
+       "flag.haltrune_met"
+      ]
+     }
+    },
     "choices": [
      {
       "id": "c1",
       "text": "我不打断他们。",
       "style": "blunt",
-      "effects": { "setRelation": { "delta": 1 } },
+      "effects": {
+       "setRelation": {
+        "delta": 1
+       }
+      },
       "next": "n1"
      },
      {
       "id": "c2",
       "text": "死人该躺下。",
       "style": "provoke",
-      "effects": { "setRelation": { "delta": -1 } },
+      "effects": {
+       "setRelation": {
+        "delta": -1
+       }
+      },
       "next": "n2"
      },
      {
@@ -512,8 +717,13 @@
       "text": "（跟着他们，走完一整圈）",
       "style": "silent",
       "effects": {
-       "setRelation": { "delta": 1 },
-       "setFlags": ["flag.haltrune_met", "flag.haltrune_patrol_seen"],
+       "setRelation": {
+        "delta": 1
+       },
+       "setFlags": [
+        "flag.haltrune_met",
+        "flag.haltrune_patrol_seen"
+       ],
        "startQuest": "q_haltrune",
        "notify": "《巡逻线尽头》记入谱册 —— 他们在等一个不会再来的口令"
       },
@@ -523,7 +733,12 @@
       "id": "c2",
       "text": "先告诉我你是谁。",
       "style": "blunt",
-      "effects": { "setFlags": ["flag.haltrune_met"], "startQuest": "q_haltrune" },
+      "effects": {
+       "setFlags": [
+        "flag.haltrune_met"
+       ],
+       "startQuest": "q_haltrune"
+      },
       "next": "n4"
      }
     ]
@@ -533,7 +748,11 @@
     "speaker": "npc_haltrune",
     "emotion": "cold",
     "text": "（他没再说话。你听见他左臂里有东西在打拍——一下，一下，很稳。）",
-    "effects": { "setFlags": ["flag.haltrune_met"] },
+    "effects": {
+     "setFlags": [
+      "flag.haltrune_met"
+     ]
+    },
     "next": null
    },
    {
@@ -555,7 +774,13 @@
     "speaker": "npc_haltrune",
     "emotion": "flat",
     "text": "名册的事，你想好了吗？",
-    "conditions": { "flags": { "all": ["flag.haltrune_met"] } },
+    "conditions": {
+     "flags": {
+      "all": [
+       "flag.haltrune_met"
+      ]
+     }
+    },
     "choices": [
      {
       "id": "c1",
@@ -567,7 +792,13 @@
       "id": "c2",
       "text": "（把名册还给他）",
       "style": "silent",
-      "conditions": { "flags": { "all": ["flag.haltrune_patrol_seen"] } },
+      "conditions": {
+       "flags": {
+        "all": [
+         "flag.haltrune_patrol_seen"
+        ]
+       }
+      },
       "next": null
      }
     ]

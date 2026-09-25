@@ -68,8 +68,8 @@ const MOVE_FRAME_FIELDS = ['startup', 'activeStart', 'activeEnd', 'recovery', 'p
 /** 战技每级的数值字段： MovementLevel。同样一字段一消费口 */
 const MOVE_LEVEL_FIELDS = ['cooldownTicks', 'damage', 'trueDamage', 'fissureLayers', 'muteTicks', 'distance', 'freezeTicks', 'echoCharges', 'silenceTicks', 'silenceDmgBonus']
 /** 被动 id 白名单（§7.3，KI-036）：一条被动 = 一个消费者（src/rpg/Settlement.ts refreshPlayer）。
- *  名单只能随消费方一起加长；残响耳（撞 KI-032）与轻身法（处决状态机）没接，故不收录。 */
-const PASSIVE_IDS = new Set(['ps_metronomefoot', 'ps_tympanicguard'])
+ *  名单只能随消费方一起加长；残响耳（撞 KI-032）没接，故不收录。 */
+const PASSIVE_IDS = new Set(['ps_metronomefoot', 'ps_tympanicguard', 'ps_featherrest'])
 
 // ---- 小工具 ----
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
@@ -1387,9 +1387,10 @@ function validateMovements(itemIds) {
       else if (pids.has(p.id)) report.error(file, w, `id 重复：${p.id}`)
       else pids.add(p.id)
       // §55 没有消费方的数值不许进表：每加一条被动 = 承诺一个消费者。
-      // ps_metronomefoot / ps_tympanicguard 的消费者是 src/rpg/Settlement.ts refreshPlayer
-      // （常拍脚 → PlayerController.setBeatGrace → CombatManager 的 onBeat 窗；厚膜鼓 → EntityStats.poiseDecayMul），
-      // 由 tests/flow/passives.test.ts 作证；残响耳（撞 KI-032）与轻身法（处决状态机）还没接，故不在表里也不在白名单里。
+      // ps_metronomefoot / ps_tympanicguard / ps_featherrest 的消费者都是 src/rpg/Settlement.ts refreshPlayer
+      // （常拍脚 → PlayerController.setBeatGrace → CombatManager 的 onBeat 窗；厚膜鼓 → EntityStats.poiseDecayMul；
+      //  轻身法 → PlayerController.setExecCancel → update 里处决演出的取消窗），由 tests/flow/passives.test.ts 作证；
+      // 残响耳（撞 KI-032）还没接，故不在表里也不在白名单里。
       if (isStr(p.id) && !PASSIVE_IDS.has(p.id)) report.error(file, `${w}.id`, `白名单外的被动 '${p.id}'：加一条就要同时带来一个消费者（当前白名单：${[...PASSIVE_IDS].join(' / ')}）`)
       for (const k of Object.keys(p)) if (!['id', 'page', 'nameKey', 'displayName', 'desc', 'values'].includes(k)) report.error(file, `${w}.${k}`, '不认的字段（§55）')
       if (!isStr(p.nameKey)) report.error(file, `${w}.nameKey`, '必填')
@@ -1627,6 +1628,20 @@ function collectFlagUsage() {
     if (isStr(rg.unlockFlag)) read.set(rg.unlockFlag, `${rg.id}.unlockFlag`)
   }
   for (const s of secrets) if (isStr(s.unlockFlag)) read.set(s.unlockFlag, `${s.regionId}.secrets(${s.id}).unlockFlag`)
+  // 叙事层（Phase 6-B）也是旗标的写方：对话效果里的 setFlags 与交互物、规则表**同权**。
+  // 不把它算进来，就会出现一类假 ERROR——"这个旗标锁着的内容不可达"，而它明明是玩家在对话里选出来的
+  // （例：铃姨说出断面 ⇒ `flag.bells_repair_open` ⇒ 三口钟的钟座才修得动）。
+  for (const t of data['dialogue.json'] ?? []) {
+    if (!isObj(t)) continue
+    for (const n of t.nodes ?? []) {
+      if (!isObj(n)) continue
+      const effectList = [n.effects, ...(n.choices ?? []).map((c) => (isObj(c) ? c.effects : undefined))]
+      for (const e of effectList) {
+        if (!isObj(e)) continue
+        for (const f of e.setFlags ?? []) if (isStr(f)) written.set(f, `${t.id} 对话效果`)
+      }
+    }
+  }
   return { read, written, interactableIds, secrets }
 }
 

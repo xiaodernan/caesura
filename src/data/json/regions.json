@@ -301,6 +301,19 @@
      "z": -24
     },
     "secretId": "sec_whisperwode_echo_cairn"
+   },
+   {
+    "id": "bl_whisperwode_secondbell",
+    "kind": "bell",
+    "verb": "修复钟座",
+    "pos": {
+     "x": 170,
+     "y": 0,
+     "z": 60
+    },
+    "requiresFlag": "flag.bells_repair_open",
+    "setsFlag": "flag.bell_second_repaired",
+    "lootTable": "loot_bell_repair"
    }
   ],
   "music": {
@@ -463,6 +476,19 @@
      "y": 0,
      "z": 106
     }
+   },
+   {
+    "id": "bl_drownedchoir_thirdbell",
+    "kind": "bell",
+    "verb": "修复钟座",
+    "pos": {
+     "x": 280,
+     "y": -40,
+     "z": 60
+    },
+    "requiresFlag": "flag.bells_repair_open",
+    "setsFlag": "flag.bell_third_repaired",
+    "lootTable": "loot_bell_repair"
    }
   ],
   "music": {
@@ -827,6 +853,19 @@
     },
     "verb": "探进钟腔",
     "secretId": "sec_fellcarillon_bell_interior"
+   },
+   {
+    "id": "bl_fellcarillon_firstbell_rehang",
+    "kind": "bell",
+    "verb": "重立首钟",
+    "pos": {
+     "x": 170,
+     "y": 64,
+     "z": -190
+    },
+    "requiresFlag": "flag.bells_repair_open",
+    "setsFlag": "flag.bell_first_repaired",
+    "lootTable": "loot_bell_repair"
    }
   ],
   "music": {
