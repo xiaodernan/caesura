@@ -949,6 +949,18 @@ function validateEnemies(lootIds) {
             // 两处都能加速就会互相掩盖，而 §15.2 那句说的是"前摇 -20%"。
             if (ph.startupMul !== undefined) report.num(file, `${pw}.startupMul`, ph.startupMul, { min: 0.05, max: 0.99, name: 'startupMul' })
             if (ph.interruptOnHit !== undefined && typeof ph.interruptOnHit !== 'boolean') report.error(file, `${pw}.interruptOnHit`, '必须是布尔（§15.2「受击即断」）')
+            // KI-024 场地阶段入口与本阶的聋乱/振动载荷
+            if (ph.deaf !== undefined && typeof ph.deaf !== 'boolean') report.error(file, `${pw}.deaf`, '必须是布尔（聋乱期）')
+            if (ph.vibrationRange !== undefined) report.num(file, `${pw}.vibrationRange`, ph.vibrationRange, { min: 0, name: 'vibrationRange' })
+            if (ph.enterOnProps !== undefined) {
+              const ep = ph.enterOnProps
+              if (!isObj(ep)) report.error(file, `${pw}.enterOnProps`, '必须是对象')
+              else {
+                if (!isStr(ep.kind)) report.error(file, `${pw}.enterOnProps.kind`, '缺失或非字符串')
+                report.num(file, `${pw}.enterOnProps.atMost`, ep.atMost, { min: 0, int: true, name: 'atMost' })
+              }
+              if (pi === 0) report.error(file, pw, '起始阶不该带 enterOnProps——它没有「上一阶」可以推进')
+            }
             if (ph.shell !== undefined) {
               report.sub(file, `${pw}.shell`, ph.shell, { dmgMul: { min: 0 }, fissureMul: { min: 0, optional: true } })
               if (isObj(ph.shell) && typeof ph.shell.immuneToPoise !== 'boolean') report.error(file, `${pw}.shell.immuneToPoise`, '必须是布尔')
@@ -1043,6 +1055,7 @@ function validateRegions(enemyIds, lootIds, rarityIds) {
   const interactableIds = new Set()
   const secretIds = new Set()
   const propIds = new Set()
+  const propKinds = new Set()
   const orders = new Map()
   if (!isArr(list)) { report.error(file, file, '顶层必须是数组'); return ids }
   list.forEach((rg, i) => {
@@ -1156,6 +1169,7 @@ function validateRegions(enemyIds, lootIds, rarityIds) {
         else if (propIds.has(p.id)) report.error(file, pw, `prop id 重复：${p.id}`)
         else propIds.add(p.id)
         if (!PROP_KINDS.has(p.kind)) report.error(file, `${pw}.kind`, `kind=${JSON.stringify(p.kind)} 非法`)
+        else propKinds.add(p.kind)
         vec3(file, `${pw}.pos`, p.pos)
         // y 契约（与 spawnGroups/interactables 同一条）：prop 立在本层地板上，
         // 否则 shapeHits 的竖向判据与它永远错开——「看得见按不到」的镜像版
@@ -1221,6 +1235,18 @@ function validateRegions(enemyIds, lootIds, rarityIds) {
 
     strArray(file, `${w}.storyHooks`, rg.storyHooks)
   })
+
+  // KI-024 跨文件对账：场地阶段入口指向的 prop 品类必须真的有区域布过——
+  // 否则那一阶永远进不去（「配置齐全但付不出货」的洞，KI-042 同族，只有跨文件才拦得住）
+  for (const en of data['enemies.json'] ?? []) {
+    if (!isObj(en) || !isObj(en.boss) || !isArr(en.boss.phases)) continue
+    en.boss.phases.forEach((ph, pi) => {
+      if (!isObj(ph) || !isObj(ph.enterOnProps) || !isStr(ph.enterOnProps.kind)) return
+      if (!propKinds.has(ph.enterOnProps.kind)) {
+        report.error('enemies.json', `${en.id}.boss.phases[${pi}].enterOnProps.kind`, `品类 '${ph.enterOnProps.kind}' 没有任何区域布过 prop——这一阶永远进不去`)
+      }
+    })
+  }
   return ids
 }
 

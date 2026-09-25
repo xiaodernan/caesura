@@ -86,7 +86,7 @@ describe('§16：三个 Boss 的每一阶都要在 90 秒等效承伤之内', ()
   const cases: Array<{ id: string; label: string; phases: Array<[string, number, number]> }> = [
     { id: 'en_ostlara', label: '悬钟骑士·奥斯塔拉', phases: [['P1 钟壳期（撞钟剥壳后）', 0.4, 1], ['P2 双剑狂板', 0.35, 1], ['P3 拔钟抡砸', 0.25, 1]] },
     { id: 'en_hersil', label: '无拍长·恩希尔', phases: [['P1 曲目学习期', 0.4, 1], ['P2 夺拍期', 0.35, 1], ['Finale 过载期', 0.25, 1]] },
-    { id: 'en_myriad', label: '隐藏 Boss 万籁', phases: [['全程无阶段（单阶）', 1, 1]] }
+    { id: 'en_myriad', label: '隐藏 Boss 万籁', phases: [['P1 听诊期（音刺在场）', 1, 1], ['P2 聋乱期（音刺碎尽，KI-024 场地入口非血线）', 1, 2]] }
   ]
 
   for (const kase of cases) {

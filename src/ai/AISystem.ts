@@ -22,6 +22,11 @@ export class AISystem {
    * 玩家真实站位记进 lastKnown 之后再改，她还是会朝人走，汇聚就成了空话。
    */
   noiseSink: ((src: { pos: { x: number; y: number; z: number }; loudness: number }) => { pos: { x: number; y: number; z: number }; loudness: number } | null) | null = null
+  /**
+   * KI-024 场地阶段入口的喂食口（组合根注入，null = 场上没有 props）：每 tick 把
+   * 「某类 prop 还剩几件」的现状交给带 `enterOnProps` 的 Boss 阶段机。
+   */
+  props: { remainingByKind(kind: string): number } | null = null
 
   constructor() {
     bindEnemyRegistry(this.enemies)
@@ -101,6 +106,8 @@ export class AISystem {
   update(dt: number, tick: number, player: PlayerController, rhythm: RhythmClock): void {
     this.tick = tick
     this.syncClock(rhythm)
+    // KI-024：场地阶段入口每 tick 对账一次（音刺碎尽的那一 tick 她就该换阶，不等下一次血线结算）
+    if (this.props) for (const e of this.enemies) e.checkFieldPhase(this.props)
     // 10Hz rotated perception
     this.senseCursor++
     if (this.senseCursor % 6 === 0) {

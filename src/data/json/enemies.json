@@ -5,7 +5,7 @@
   "archetype": "basic",
   "hp": 45,
   "poise": 20,
-  "speed": 3.0,
+  "speed": 3,
   "fissureMul": 2,
   "ai": {
    "vision": {
@@ -333,7 +333,7 @@
    }
   ],
   "body": {
-   "scale": 1.0,
+   "scale": 1,
    "color": 7694218,
    "emissive": 10078160,
    "coreColor": 13667327
@@ -429,8 +429,8 @@
      "hitStopMs": 90,
      "hitbox": {
       "shape": "ring",
-      "inner": 1.0,
-      "outer": 4.0,
+      "inner": 1,
+      "outer": 4,
       "forward": 0
      },
      "loudness": 8,
@@ -666,7 +666,7 @@
   "archetype": "support",
   "hp": 65,
   "poise": 30,
-  "speed": 2.0,
+  "speed": 2,
   "ai": {
    "vision": {
     "range": 24,
@@ -1053,7 +1053,7 @@
      "hitbox": {
       "shape": "ring",
       "inner": 0.6,
-      "outer": 3.0,
+      "outer": 3,
       "forward": 0
      },
      "lunge": 0.5,
@@ -1105,7 +1105,7 @@
    }
   ],
   "body": {
-   "scale": 2.0,
+   "scale": 2,
    "color": 8213448,
    "emissive": 4474098,
    "coreColor": 16768196
@@ -1329,7 +1329,7 @@
       "height": 2.1,
       "offsetY": 1.2
      },
-     "lunge": 1.0,
+     "lunge": 1,
      "loudness": 5,
      "sfx": [
       "swing_heavy_1"
@@ -1459,10 +1459,10 @@
      "hitbox": {
       "shape": "ring",
       "inner": 0,
-      "outer": 2.0,
+      "outer": 2,
       "forward": 0
      },
-     "lunge": 6.0,
+     "lunge": 6,
      "loudness": 8,
      "sfx": [
       "land_slam"
@@ -1494,7 +1494,7 @@
      "hitbox": {
       "shape": "ring",
       "inner": 0,
-      "outer": 5.0,
+      "outer": 5,
       "forward": 0
      },
      "lunge": 1.5,
@@ -1759,7 +1759,7 @@
      "hitbox": {
       "shape": "cone",
       "angleDeg": 90,
-      "radius": 6.0,
+      "radius": 6,
       "height": 2.6,
       "offsetY": 1.3
      },
@@ -1793,7 +1793,7 @@
      "hitbox": {
       "shape": "ring",
       "inner": 0,
-      "outer": 8.0,
+      "outer": 8,
       "forward": 0
      },
      "loudness": 9,
@@ -1908,7 +1908,7 @@
       "height": 2.3,
       "offsetY": 1.2
      },
-     "lunge": 3.0,
+     "lunge": 3,
      "loudness": 6,
      "sfx": [
       "swing_heavy_2"
@@ -2057,11 +2057,24 @@
   "boss": {
    "phases": [
     {
-     "id": "stillness",
+     "id": "listening",
      "attacks": [
       "bite",
       "rend"
      ]
+    },
+    {
+     "id": "deaf_rage",
+     "attacks": [
+      "bite",
+      "rend"
+     ],
+     "enterOnProps": {
+      "kind": "soundspine",
+      "atMost": 0
+     },
+     "deaf": true,
+     "vibrationRange": 10
     }
    ],
    "intro": {
@@ -2071,6 +2084,10 @@
    "victory": {
     "holdTicks": 30,
     "label": "万籁散了 · 这片没有网格的地方安静了下来"
+   },
+   "roar": {
+    "hitStopMs": 250,
+    "muffleMs": 800
    }
   },
   "attacks": [
@@ -2094,11 +2111,11 @@
      "hitbox": {
       "shape": "cone",
       "angleDeg": 70,
-      "radius": 3.0,
+      "radius": 3,
       "height": 2.3,
       "offsetY": 1.2
      },
-     "lunge": 1.0,
+     "lunge": 1,
      "loudness": 7,
      "sfx": [
       "claw_heavy"

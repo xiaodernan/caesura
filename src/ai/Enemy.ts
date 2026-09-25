@@ -203,10 +203,11 @@ export class Enemy {
   get shellDmgMul(): number { return this.shellUp ? this.bossPhaseData!.shell!.dmgMul : 1 }
   get poiseImmune(): boolean { return this.shellUp && !!this.bossPhaseData?.shell?.immuneToPoise }
   /**
-   * KI-023：此刻聋不聋。数据侧的 `ai.deaf`（天生无耳）与运行时的聋乱窗（音刺碎了）
-   * 走同一个出口——消费方只问这一格，不数来源。
+   * KI-023：此刻聋不聋。三个来源走同一个出口——数据侧的 `ai.deaf`（天生无耳）、
+   * 运行时的聋乱窗（音刺碎裂的 6s）、阶段侧的 `phases[].deaf`（KI-024 聋乱期）。
+   * 消费方只问这一格，不数来源。
    */
-  get deaf(): boolean { return !!this.data.ai.deaf || this.deafTicks > 0 }
+  get deaf(): boolean { return !!this.data.ai.deaf || this.deafTicks > 0 || this.bossPhaseData?.deaf === true }
   /** 音刺碎裂（PropSystem 广播 → AISystem 路由）把窗挂上来；取 max，两根刺同 tick 碎不叠时长 */
   applyDeaf(ticks: number): void { this.deafTicks = Math.max(this.deafTicks, ticks) }
   /**
@@ -361,7 +362,9 @@ export class Enemy {
     if (!this.deaf && dist <= ai.vision.range && ang < (ai.vision.fovDeg * Math.PI / 180) / 2) {
       this.alertness = Math.min(100, this.alertness + 34 * 0.1)
       this.lastKnown = { ...p }
-    } else if (dist <= ai.vibration.range && (playerIsMoving(player))) {
+    } else if (dist <= (this.bossPhaseData?.vibrationRange ?? ai.vibration.range) && (playerIsMoving(player))) {
+      // KI-024：聋乱期她改读地面——阶段可以给震动感知换半径。移动才算数：站定仍是安全的，
+      // 「听心跳」那条线在 P2 依旧成立（§15.3 的屏息窗口没有因换阶段而消失）
       this.alertness = Math.min(100, this.alertness + 40)
       this.lastKnown = { ...p }
     }
@@ -701,11 +704,29 @@ export class Enemy {
       const gate = b.phases[i].belowHpFrac
       if (gate !== undefined && frac < gate) next = i // 允许一次跨过两阶
     }
-    if (next === this.bossPhase) return
+    if (next !== this.bossPhase) this.advanceTo(next)
+  }
+
+  /**
+   * KI-024 场地阶段入口：下一阶若声明了 `enterOnProps`，场地上该类 prop 剩余 ≤`atMost`
+   * 就进入（与血线入口同一条单调推进、同一套跳阶后事）。AISystem 每 tick 用 PropSystem 的
+   * 现状喂一次——她不认识 props，这个数是世界的读数，不是她自己维护的账。
+   */
+  checkFieldPhase(props: { remainingByKind(kind: string): number }): void {
+    const b = this.data.boss
+    if (!b || !this.alive) return
+    const next = this.bossPhase + 1
+    const gate = b.phases[next]?.enterOnProps
+    if (!gate) return
+    if (props.remainingByKind(gate.kind) > gate.atMost) return
+    this.advanceTo(next)
+  }
+
+  /** 跳阶的那一套后事只有一份：读条作废、演怒吼、换气排程与抢拍余量清零（§15.2「时钟重置」） */
+  private advanceTo(next: number): void {
     this.bossPhase = next
     this.attack = null
     this.phaseRoarPending = true
-    // 「转阶段 ⇒ 时钟重置」（§15.2）：换气排程与玩家抢拍的余量都不跨阶段带过去
     this.tollDueBar = -1
     this.stealNeutralTicks = 0
   }

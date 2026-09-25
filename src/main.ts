@@ -149,6 +149,7 @@ const interact = new Interactables(regions, (r) => streaming.isRegionUnlocked(r)
  */
 const props = new PropSystem(regions, (r) => streaming.isRegionUnlocked(r))
 ai.noiseSink = (src) => props.sinkNoise(src)
+ai.props = props // KI-024：万籁的场地阶段入口吃这个现状
 combat.props = props
 const propVis = new PropVisuals(arena.scene, regions, (r) => streaming.isRegionUnlocked(r))
 const greybox = new ChunkGreybox(arena.scene, regions, streaming.chunkSize)
