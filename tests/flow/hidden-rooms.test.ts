@@ -10,6 +10,7 @@ import { AISystem } from '@/ai/AISystem'
 import type { Enemy } from '@/ai/Enemy'
 import { CombatManager } from '@/combat/CombatManager'
 import { StreamingSystem, chunkKeyOf } from '@/world/Streaming'
+import { Surface } from '@/world/Surface'
 import { SpawnDirector } from '@/world/SpawnDirector'
 import { Interactables } from '@/world/Interactables'
 import { RpgRuntime } from '@/rpg/Runtime'
@@ -183,6 +184,26 @@ describe('隐藏房可达性：发生了什么 ⇒ 立旗 ⇒ 锁开 ⇒ 东西�
     expect(w2.interact.snapshot(), '撬过的封存点复原').toContain(vault.id)
     w2.standAt(vault.id)
     expect(w2.interact.use(vault.id, w2.player.pos).state, '读档后不能白拿一次隐藏房奖励').toBe('used')
+  })
+
+  it('杀死奥斯塔拉 ⇒ 音壁回廊捷径打开且反复可用：从沉唱堂穿回雾语林（§15.1 奖励/§2.4 捷径拍，KI-021①）', () => {
+    const w = makeWorld()
+    const shortcut = 'tp_choir_soundwall_shortcut'
+    w.standAt(shortcut)
+    expect(w.interact.use(shortcut, w.player.pos).state, '她活着的时候捷径是锁着的').toBe('locked')
+    const boss = w.ai.spawn('en_ostlara', { x: w.player.pos.x, y: w.player.pos.y, z: w.player.pos.z - 6 }, 'shortcut-kill')
+    boss.skipIntro()
+    killThroughRealChannel(w, boss)
+    expect(boss.alive, '她得真的死在这一串里').toBe(false)
+    w.standAt(shortcut)
+    const r1 = w.interact.use(shortcut, w.player.pos)
+    expect(r1.ok, '她死后音壁回廊的捷径开了（flag.ostlara_defeated 的写方在 worldstate）').toBe(true)
+    expect(r1.to, '落点在雾语林一侧、音壁的另一边').toEqual({ x: 330, y: 0, z: 106 })
+    // 落点必须真的能站：Surface 认账的地板（travel 的 y 契约）
+    const surface = new Surface(regions)
+    expect(surface.floorAt(r1.to!)?.y, '穿墙落点踩在雾语林的地板上').toBe(0)
+    const r2 = w.interact.use(shortcut, w.player.pos)
+    expect(r2.ok, '捷径是永久的：第二次穿墙照常可用（teleport 天然反复）').toBe(true)
   })
 
   it('区域的解锁判定也吃同一套广播：立了 unlockFlag，那块区域就参与流送', () => {

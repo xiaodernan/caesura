@@ -38,8 +38,10 @@ const VERB: Record<InteractableRef['kind'], string> = {
   gather: '采集', chest: '开启', npc: '交谈', teleport: '传送', gate: '开门', bell: '敲钟',
 }
 
-/** 反复可用的设施（其余一次性；oneWay 数据标记永远只用一次） */
-const REPEATABLE = new Set<InteractableRef['kind']>(['checkpoint', 'npc'])
+/** 反复可用的设施（其余一次性；oneWay 数据标记永远只用一次）。
+ *  teleport 天然反复：捷径/传送点是"门开了就一直在"（KI-021① 的音壁回廊捷径是第一个消费者），
+ *  oneWay 数据仍可把任何种类强制成单次。 */
+const REPEATABLE = new Set<InteractableRef['kind']>(['checkpoint', 'npc', 'teleport'])
 
 const dist2 = (a: Vec3, b: Vec3): number => {
   const dx = a.x - b.x, dy = a.y - b.y, dz = a.z - b.z

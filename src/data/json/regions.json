@@ -426,6 +426,22 @@
     },
     "requiresFlag": "flag.ostlara_defeated",
     "lootTable": "loot_chest_t2"
+   },
+   {
+    "id": "tp_choir_soundwall_shortcut",
+    "kind": "teleport",
+    "verb": "穿过音壁",
+    "pos": {
+     "x": 330,
+     "y": -40,
+     "z": 100
+    },
+    "requiresFlag": "flag.ostlara_defeated",
+    "to": {
+     "x": 330,
+     "y": 0,
+     "z": 106
+    }
    }
   ],
   "music": {
