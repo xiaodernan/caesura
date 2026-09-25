@@ -1,8 +1,16 @@
-import { describe, expect, it, beforeAll } from 'vitest'
+import { describe, expect, it, beforeAll, vi } from 'vitest'
 import { registerGameData, regions } from '@/data'
 import { RpgRuntime } from '@/rpg/Runtime'
 import { AUTOSAVE_SLOT, type SlotCard } from '@/save/Slots'
 import type { SavePanelDeps } from '@/ui/Stakerite'
+
+/**
+ * 本文件是全场地最贵的 UI 测试（一个用例里 boot 面板 + RpgRuntime + 存档名册），
+ * 单独跑 25 条每次都在 ~1s 内过；但全场并发跑满时它会被挤到默认 5s 超时上（实测两条
+ * "Test timed out in 5000ms"，重跑即绿）。抬到 20s 只给这一份文件，不动全局默认——
+ * 全局默认一抬，别处真正的慢就再也读不出来了。
+ */
+vi.setConfig({ testTimeout: 20000 })
 
 /**
  * 调音桩面板（Phase 5-B 的 UI 落点）。
