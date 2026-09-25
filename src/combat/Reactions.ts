@@ -4,19 +4,25 @@ import type { HitReactionTable } from '@/data/schema'
 import type { EntityStats } from './EntityStats'
 
 /**
- * §8 受击反应的运行时（KI-050）。与 `combat/Statuses.ts` 同一口径：
+ * §8 受击反应的运行时（KI-050 起表，KI-052① 把分级接到敌人身上）。与 `combat/Statuses.ts` 同一口径：
  * 数值住在 `data/json/reactions.json`，这里只接线，代码里不写第二份常数。
- * 表里刻意只有两行——R1（玩家受击那一行）与 R4（破势时长）。其余等级
- * 在这份 build 里没有承载体（敌人侧由架势/读条打断承担），写进表就是造没有消费方的数据。
+ * 表里的每一行都必须有承载体：R0（材质发光）/ R1–R3（硬直 + 位移）/ R4（破势）。
+ * R5 浮空不写——本作敌人不会离地，那是一行没有腿的承诺。
  */
 
 export function reactionConfig(): HitReactionTable {
   return registry.get<HitReactionTable>('reactions')
 }
 
-/** 玩家受击那一行（§8 玩家侧：一律 R1 等效）换算出的硬直格数 */
-export function playerHurtStunTicks(): number {
-  return msToTicks(reactionConfig().R1.stunMs)
+/** §8 R1–R3 三档换算出的硬直格数与位移米数（受击方是玩家还是敌人都读同一本账） */
+export function reactionTier(tier: 'R1' | 'R2' | 'R3'): { stunTicks: number; displaceM: number } {
+  const row = reactionConfig()[tier]
+  return { stunTicks: msToTicks(row.stunMs), displaceM: row.displaceM }
+}
+
+/** R0 那一格的材质发光时长（秒）——`Enemy.onDamaged` 读它，代码里不留第二个 0.15 */
+export function materialFlashSeconds(): number {
+  return reactionConfig().R0.flashMs / 1000
 }
 
 /**

@@ -3,7 +3,7 @@ import { Rng, clamp } from '@/core/Math'
 import type { EnemyData, AttackSpec, FrameData, ProjectileSpec } from '@/data/schema'
 import { EntityStats } from '@/combat/EntityStats'
 import { armStats } from '@/combat/Statuses'
-import { armCrumple } from '@/combat/Reactions'
+import { armCrumple, materialFlashSeconds, reactionTier } from '@/combat/Reactions'
 import type { Vec3 } from '@/combat/EntityStats'
 import type { HitTarget } from '@/combat/HitShapes'
 import type { RhythmClock } from '@/core/RhythmClock'
@@ -25,6 +25,12 @@ export interface AttackFrame extends ActionStop {
   lungeApplied: number
   /** `noise` = 这一招的 `sound.source` 已经报过了（见 `advanceAttackFrames`） */
   noise?: boolean
+  /**
+   * §8 R2 那行的「霸体（`frames.flags` 里的 `hyper`）」自带 **1 次**免役：用过就作废，
+   * 同一式的后摇与下一式都不再免。它记在招式实例上而不是实体上，因为"哪一式霸体"是数据，
+   * 而"这一次已经赖掉一刀"是这一式的账。
+   */
+  hyperSpent?: boolean
 }
 
 export const newAttack = (spec: AttackSpec, tick: number, noise?: boolean): AttackFrame => ({
@@ -810,12 +816,17 @@ export class Enemy {
       this.pendingBroadcast = null
       this.attack = null
       this.callAllySuppressedUntil = tick + 120
-      this.stunTicks = 12
+      // §8 R1 那一档的时长：读条被打断的人原地失音 200ms。这个数曾经写死成 12 格，
+      // 与 reactions.json 的 R1 行是同一条账的两个主人（KI-052① 把它接回表上）。
+      this.stunTicks = reactionTier('R1').stunTicks
     }
   }
 
   onDamaged(knockDir?: Vec3): void {
-    this.coreFlash = 0.15
+    // §8 R0 那一格的语义：材质发光是「这一记穿进了身子、但架势还没破」的确认。
+    // 破势之后眼睛该看的是那条更大的演出（recover + 处决窗口），所以这里让位——
+    // 时长自 KI-052① 起住在 reactions.json，代码里不再有第二个 0.15。
+    if (this.stats.crumpleTicksLeft <= 0) this.coreFlash = materialFlashSeconds()
     if (this.state === 'idle' || this.state === 'patrol' || this.state === 'investigate' || this.state === 'search') {
       this.alertness = 100
       this.enter('chase')

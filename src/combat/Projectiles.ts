@@ -41,6 +41,12 @@ export interface Projectile {
   sfxHit: string
   vfxHit: string
   shake: string
+  /**
+   * §8 反应分级（KI-052①）：这一发打在敌人身上算哪一档。只有**玩家**的投掷带它
+   * （来源＝出手那一格的帧声明）；敌方弹体的分级住在 `AttackSpec.reaction`，
+   * 而玩家受击那一侧按 §8 末行永远走 R1 等效，所以那一边不需要这一格。
+   */
+  reaction?: 'R1' | 'R2' | 'R3'
   loudness: number
   dead: boolean
   gone: GoneReason | null
@@ -70,6 +76,8 @@ export interface LaunchParams {
   sfxHit?: string
   vfxHit?: string
   shake?: string
+  /** §8 反应分级（KI-052①）：玩家投掷出手那一格帧上的声明，原样带到命中点 */
+  reaction?: 'R1' | 'R2' | 'R3'
   loudness?: number
 }
 
@@ -111,6 +119,7 @@ export class ProjectileSystem {
       sfxHit: l.sfxHit ?? 'hit_flesh',
       vfxHit: l.vfxHit ?? 'hit_ring',
       shake: l.shake ?? 'normal',
+      reaction: l.reaction,
       loudness: l.loudness ?? 4,
       dead: false,
       gone: null,

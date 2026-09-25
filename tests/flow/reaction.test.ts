@@ -24,8 +24,9 @@ import type { Vec3 } from '@/combat/EntityStats'
  *   后半句此前**从未实现**，小兵与 Boss 一样 108 格）。
  *
  * 期望值一律从 `reactions` 读、经 `msToTicks` 换算，不手算；"读到的就是表里那个"由改表法腿钉死。
- * R0/R2/R3/R5 与招式帧 `reaction` 分级的敌人侧受击硬直**没有承载体**：不入表（§55），
- * 裁决记录在 `docs/KNOWN_ISSUES.md` KI-050 与 combat.md §8 的注记里。
+ *
+ * R0/R2/R3 那三档的敌人侧承载体在 **KI-052①** 之后才存在，证人在 `tests/flow/reaction-grade.test.ts`；
+ * 本文件只留 KI-050 那两条腿（玩家受击 = R1 等效、破势 = R4）。R5 浮空到现在仍无承载体，不入表。
  */
 
 registerGameData()

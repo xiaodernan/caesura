@@ -7,8 +7,9 @@ import type { Input } from '@/core/Input'
 import type { PlayerController, ActivePlayerHit } from '@/player/ThirdPersonController'
 import type { AISystem } from '@/ai/AISystem'
 import type { Enemy } from '@/ai/Enemy'
-import type { AttrKey, EnemyData, FrameData, ProjectileSpec } from '@/data/schema'
+import type { AttrKey, EnemyData, FrameData, ProjectileSpec, ReactionStunTier } from '@/data/schema'
 import { resolveDamage } from './DamagePipeline'
+import { reactionTier } from './Reactions'
 import { shapeHits, isBackstab } from './HitShapes'
 import { ProjectileSystem, sphereHits, type Projectile } from './Projectiles'
 import { glossary, statusConfig, tagIs } from './Statuses'
@@ -67,10 +68,23 @@ interface EnemyStrike {
    * 你的剑淬到 +10 不会让一记瞬步更疼。省略＝武器出手（近战/投掷/回声），走原有全套。
    */
   movement?: { scaling: Partial<Record<AttrKey, number>>; overdriveLayerMul: number }
+  /**
+   * §8 反应分级的**出手侧声明**（KI-052①）。不写＝按下面的重量轴取档；写＝这一式自己点名要那一档
+   * （今天只有强音大剑的跳劈写 R3，那是 §4.2 逐字点名的"附加击倒"）。
+   */
+  reaction?: ReactionStunTier
   point: Vec3
   dir: Vec3
   shakeKey: string
 }
+
+/**
+ * §8 的三档反应按**引擎已有的出手重量轴**取档（KI-052① 的裁决）：
+ * 设计文本自己就用这套话说事——R1 那行写的是「中断轻击前摇；不打断重击与蓄力」。
+ * 所以这里不是发明第二把尺子，而是把"轻/重"这一格早就存在的读数接到表上；
+ * 招式帧若要偏离这个默认（跳劈的击倒），在帧上写 `reaction`，那一格优先。
+ */
+const TIER_BY_KIND: Record<EnemyStrike['kind'], ReactionStunTier> = { light: 'R1', heavy: 'R2', skill: 'R2' }
 
 /** 玩家要防御的一击：敌方近战与敌方弹体走同一个阶梯（§5：弹反 > 无敌帧 > 完美格挡 > 格挡 > 硬吃） */
 interface Threat {
@@ -174,6 +188,7 @@ export class CombatManager {
         onBeat: this.rhythm.onBeat(50),
         ranged: false, pinTicks: 0,
         point, dir: flatDir(p.pos, e.pos),
+        reaction: hb.reaction,
         shakeKey: hb.shake,
         sourceAction: p.action ?? undefined
       }, tick)
@@ -382,7 +397,56 @@ export class CombatManager {
     if (s.pinTicks > 0) bus.emit('ui.notify', { text: `钉住 −${final}`, kind: 'info' })
     this.checkCrumple(e, tick)
     if (!e.alive) this.onEnemyKilled(e)
+    // §8 的分级反应：这一记把人打成了哪一档。放在破势判定**之后**是有意的——
+    // R4 若已经成立就是它在管这段时间（1.8s 远长于任何一档硬直），逐式硬直不该去抢它的窗口；
+    // 回声重演（`replay`）也不给反应：那一音是世界重播旧账，不是新的一记把人推开。
+    else if (!replay) this.applyReactionTier(e, s)
     return final
+  }
+
+  /**
+   * §8 受击反应分级第一次有行为承载体（KI-052①）：把"挨这一记该硬直多久、被推多远"落到敌人身上。
+   *
+   * **三档各自兑现哪一半，是按那一行的名字裁的**：
+   * - **R1「颤身 Flinch」只发光**：它的原文是「中断轻击前摇；**不打断重击与蓄力**」，而敌人的近战前摇
+   *   没有轻/重这一格数据（`AttackSpec.reaction` 说的是他们**打人**算哪一档）——所以"断一切"这种
+   *   特权它没有。位置也不迁移：灰盒里没有那一行承诺的"滑行/摩擦"，把每 hit 的米数直接加在 `pos` 上
+   *   会累加成一笔距离税（实测：31 记轻击 ×0.2m 把 KI-039 的高甲量具从 1.45 顶到 2.10，越过
+   *   "轻武线在高甲前被打成废的"那条判据线）。那一格的 `displaceM` 仍有人读——玩家受击那一边（KI-050）。
+   * - **R2「受击顿」与 R3「击退」才接管时间与位置**：`stunTicks > 0` 让 `Enemy.update` 把 `attack` 收掉
+   *   ⇒ §7 的「前摇期间被打＝动作中断」从这一刻起对近战成立（此前敌人挨打从不进硬直）。
+   *   R3 唯一的生产者是招式帧的点名（§4.2 强音大剑跳劈），kind 轴给不出它。
+   * - **读条那条腿属于 R1**：`Enemy.interruptBroadcast` 的硬直格数改读 R1 行——那一格 12 与 200ms
+   *   本来就是同一个数的两种单位，写死在这里等于给表造第二个主人。
+   *
+   * 三条豁免，每条都是裁决而不是兜底：
+   * - **Boss 整条通道免疫**。§16/§2.1 的 Boss 设计前提是"招式可背谱"，逐式硬直会把读条与前摇
+   *   随时打断 ⇒ 背谱判据失效；她的反制手段是弹反、破势（R4 仍照走）与场地机关（撞钟、断音柱）。
+   * - **已经在破势里的人不再叠逐式硬直**：R4（1.8s）比任何一档都长，是这段时间的主人；
+   *   再压一格硬直只会把 `recover`（=处决窗口）的入场往后推——那是在没收玩家挣到的奖励。
+   * - **回声重演不给反应**（调用点那半边）：那一音是世界重播旧账，不是新的一记把人推开。
+   * - **`hyper` 不在这条通道上**：那两式的声明住在**玩家**架式表里（§4.1/§4.2 的蓄力和弦斩），
+   *   所以它的消费方是玩家受击那一边，登记在 KI-052②——写在这里会是一支没有生产者的分支。
+   *
+   * 位移不做遮挡与坠落判定：本作没有"实体撞墙停住"与"坠崖杀"这两条通道，
+   * R3 那半句「可坠崖（营地石桥杀点）」因此留账（同上）。
+   */
+  private applyReactionTier(e: Enemy, s: EnemyStrike): void {
+    if (e.isBoss || e.stats.crumpleTicksLeft > 0) return
+    const tier = s.reaction ?? TIER_BY_KIND[s.kind]
+    const row = reactionTier(tier)
+    if (tier !== 'R1' && row.stunTicks > 0) e.stunTicks = Math.max(e.stunTicks, row.stunTicks)
+    // R1 不迁移位置：**颤身（Finch）这一档的名字说的就是原地发抖**，"击退（Knockback）"才是 R3。
+    // 灰盒里没有 §8 R3 那格原文要求的"滑行摩擦衰减"，于是每 hit 0.2m 会一路累加成一笔距离税——
+    // 实测在 KI-039 的高甲量具上把 力/律 节奏比从 1.45 顶到 2.10（越过"轻武线被打成废的"那条线）。
+    // R1 那一格的 displaceM 仍然有读者：玩家受击那一边（`ThirdPersonController.takeDamage`，KI-050）。
+    if (tier !== 'R1' && row.displaceM > 0) {
+      // `s.dir` 在弹体那条通道里塞的是**速度**（大小=弹速，28m/s），所以位移前必须自己归一化——
+      // 否则一发投掷枪会把敌人推出十几米，而"位移 2 米"是表里写好的那个数。
+      const dl = Math.hypot(s.dir.x, s.dir.z) || 1
+      e.pos.x += (s.dir.x / dl) * row.displaceM
+      e.pos.z += (s.dir.z / dl) * row.displaceM
+    }
   }
 
   /** 层数读数：碎裂归零也要发一次，否则 HUD 的 chip 会挂在满层下不来 */
@@ -460,6 +524,7 @@ export class CombatManager {
       pinTicks: spec.pinTicks ?? 0, muteTicks: spec.muteOnHit ?? 0,
       pierce: spec.pierce, onBeat, parryable: true,
       sfxHit: spec.sfxHit, vfxHit: spec.vfxHit, shake: spec.shake ?? a.f.shake ?? 'normal',
+      reaction: a.f.reaction,
       loudness: a.f.loudness ?? 5
     }, tick)
     this.afterLaunch(p.pos, spec, a.f, dir)
@@ -535,6 +600,7 @@ export class CombatManager {
     this.projectiles.consume(pr, e.id)
     this.strikeEnemy(e, {
       base: pr.damage, poise: pr.poise, hitStopMs: pr.hitStopMs, kind: 'heavy',
+      reaction: pr.reaction,
       layers: pr.layers, mute: pr.muteTicks > 0, backstab: false,
       onBeat: pr.onBeat, ranged: true, pinTicks: pr.pinTicks,
       point: { x: e.pos.x, y: e.pos.y + 1.1, z: e.pos.z }, dir: { ...pr.vel },

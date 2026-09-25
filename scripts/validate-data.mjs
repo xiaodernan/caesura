@@ -198,6 +198,11 @@ function frames(file, where, f) {
     else f.beatQuant.forEach((n, i) => report.num(file, `${where}.beatQuant[${i}]`, n, { name: 'beatQuant' }))
   }
   if (f.next !== undefined && !isStr(f.next)) report.error(file, `${where}.next`, '必须是非空字符串')
+  // §8 反应分级（KI-052①）：招式帧只许点"有腿的那三档"。R4 的主人是对面的 `poise` 列、
+  // R5 没有承载体（本作敌人不离地），写在这里就是开一张兑不了现的支票。
+  if (f.reaction !== undefined && !['R1', 'R2', 'R3'].includes(f.reaction)) {
+    report.error(file, `${where}.reaction`, `reaction=${JSON.stringify(f.reaction)} 非法（帧上只许 R1/R2/R3）`)
+  }
   if (f.echoOnHit !== undefined && typeof f.echoOnHit !== 'boolean') report.error(file, `${where}.echoOnHit`, '必须是布尔（§11 回响：命中时是否留下回声）')
   if (f.hitbox !== undefined) hitbox(file, `${where}.hitbox`, f.hitbox)
   if (f.projectile !== undefined) projectile(file, `${where}.projectile`, f.projectile)
@@ -558,13 +563,23 @@ function validateStatuses() {
 }
 
 // ---- reactions.json ----
-/** §8 受击反应表：只许写有承载体的行（KI-050）。一行一消费口，加行必须先接线 */
+/** §8 受击反应表：只许写有承载体的行（KI-050 立规，KI-052① 补齐分级那三档）。一行一消费口，加行必须先接线 */
 const REACTION_FIELDS = {
-  R1: ['stunMs', 'displaceM'], // 消费方：player/ThirdPersonController.takeDamage（玩家受击一律 R1 等效）
+  // 消费方：ai/Enemy.onDamaged（§8 R0「架势未破，仅抖动材质发光」——材质发光时长是这一档的全部产品）
+  R0: ['flashMs'],
+  // 消费方：player/ThirdPersonController.takeDamage（玩家受击一律 R1 等效）+ CombatManager.applyReactionTier（玩家轻击打在敌人身上）
+  R1: ['stunMs', 'displaceM'],
+  // 消费方：CombatManager.applyReactionTier（重击 / 战技出手的默认档，TIER_BY_KIND）
+  R2: ['stunMs', 'displaceM'],
+  // 消费方：同上，但要有招式帧的 `reaction:"R3"` 声明才走这一档（今天只有 §4.2 强音大剑跳劈点名）
+  R3: ['stunMs', 'displaceM'],
   R4: ['crumpleMs', 'bossCrumpleMs'], // 消费方：combat/EntityStats.addPoise（经 armCrumple 上弦）
 }
 const REACTION_SPECS = {
+  R0: { flashMs: { min: 1 } },
   R1: { stunMs: { min: 1 }, displaceM: { min: 0 } },
+  R2: { stunMs: { min: 1 }, displaceM: { min: 0 } },
+  R3: { stunMs: { min: 1 }, displaceM: { min: 0 } },
   R4: { crumpleMs: { min: 1 }, bossCrumpleMs: { min: 1 } },
 }
 
@@ -573,15 +588,22 @@ function validateReactions() {
   const d = data[file]
   if (!isObj(d)) { report.error(file, file, '顶层必须是对象（按 R 行名键控）'); return }
   for (const id of Object.keys(REACTION_FIELDS)) {
-    if (d[id] === undefined) report.error(file, id, `缺少 '${id}' 这一行：它已有消费方（takeDamage / addPoise），缺行就是运行时抛错`)
+    if (d[id] === undefined) report.error(file, id, `缺少 '${id}' 这一行：它已有消费方（onDamaged / takeDamage / applyReactionTier / addPoise），缺行就是运行时抛错`)
   }
   for (const [id, row] of Object.entries(d)) {
-    if (!REACTION_FIELDS[id]) { report.error(file, id, `'${id}' 在这份 build 里没有承载体：§55 不许写没有消费方的行（R0/R2/R3/R5 的敌人侧分级见 KI-050 的裁决）`); continue }
+    if (!REACTION_FIELDS[id]) { report.error(file, id, `'${id}' 在这份 build 里没有承载体：§55 不许写没有消费方的行（R5 浮空＝敌人不会离地，见 KI-052）`); continue }
     if (!isObj(row)) { report.error(file, id, '必须是对象'); continue }
     for (const k of Object.keys(row)) {
       if (!REACTION_FIELDS[id].includes(k)) report.error(file, `${id}.${k}`, `不认的字段：新字段必须同时接上消费方（本行可用：${REACTION_FIELDS[id].join('/')}）`)
     }
     report.sub(file, id, row, REACTION_SPECS[id])
+  }
+  // 分级序：R1 < R2 < R3 必须是"越重越疼"，否则这张表是在奖励用轻击
+  const tiers = ['R1', 'R2', 'R3'].map((id) => (isObj(d[id]) ? d[id] : null))
+  if (tiers.every(Boolean)) {
+    const [t1, t2, t3] = tiers
+    if (!(t1.stunMs <= t2.stunMs && t2.stunMs <= t3.stunMs)) report.error(file, 'R1/R2/R3', `硬直时长必须递增：${t1.stunMs}/${t2.stunMs}/${t3.stunMs}`)
+    if (!(t1.displaceM <= t2.displaceM && t2.displaceM <= t3.displaceM)) report.error(file, 'R1/R2/R3', `位移必须递增：${t1.displaceM}/${t2.displaceM}/${t3.displaceM}`)
   }
   const r4 = isObj(d.R4) ? d.R4 : null
   if (r4 && isNum(r4.crumpleMs) && isNum(r4.bossCrumpleMs) && r4.bossCrumpleMs < r4.crumpleMs) {
@@ -844,6 +866,10 @@ function validateEnemies(lootIds) {
       else a.beat.forEach((b, bi) => report.num(file, `${aw}.beat[${bi}]`, b, { min: 0, name: 'beat' }))
       if (typeof a.parryable !== 'boolean') report.error(file, `${aw}.parryable`, '必须是布尔')
       if (a.reaction !== undefined && !REACTIONS.has(a.reaction)) report.error(file, `${aw}.reaction`, `reaction=${JSON.stringify(a.reaction)} 非法`)
+      // 分级只有一个主人：敌人这一侧住在 AttackSpec.reaction，帧上再写一份就是两个来源（KI-052①）
+      if (isObj(a.frames) && a.frames.reaction !== undefined) {
+        report.error(file, `${aw}.frames.reaction`, '敌人招式的反应分级住在这条招式行的 reaction，不许在帧上再写一份')
+      }
       if (a.parryStunTicks !== undefined) report.num(file, `${aw}.parryStunTicks`, a.parryStunTicks, { min: 0, int: true, name: 'parryStunTicks' })
       if (a.onGrid !== undefined && typeof a.onGrid !== 'boolean') report.error(file, `${aw}.onGrid`, '必须是布尔')
       if (a.reclaimWindow !== undefined && typeof a.reclaimWindow !== 'boolean') report.error(file, `${aw}.reclaimWindow`, '必须是布尔')

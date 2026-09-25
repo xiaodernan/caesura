@@ -24,6 +24,8 @@ export type MoveIntent = { x: number; z: number; sprint: boolean }
 export type ActivePlayerHit = {
   box: FrameData['hitbox']; yaw: number; damage: number; poise: number;
   hitStopMs: number; shake: string; flags: string[]; loudness: number
+  /** §8 反应分级：这一式打在挨打的人身上算哪一档（缺省＝按出手重量轴取档，见 CombatManager） */
+  reaction?: FrameData['reaction']
 }
 
 /**
@@ -171,7 +173,8 @@ export class PlayerController {
       // 战技的伤害写在等级表上（cast.damage），武器帧的 damage 对战技恒为 0——见 rpg/Movements.ts
       damage: this.action.skill ? this.action.skill.damage : f.damage,
       poise: f.poise, hitStopMs: f.hitStopMs,
-      shake: f.shake ?? 'normal', flags: f.flags ?? [], loudness: (f.loudness ?? 3) * (this.weapon.noiseMul ?? 1)
+      shake: f.shake ?? 'normal', flags: f.flags ?? [], loudness: (f.loudness ?? 3) * (this.weapon.noiseMul ?? 1),
+      reaction: f.reaction
     }
   }
 

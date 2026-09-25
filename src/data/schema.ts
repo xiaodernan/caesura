@@ -75,6 +75,15 @@ export interface FrameData {
   /** 显式 fissureLayers（震裂，§11）；不写则走按键默认（charged=2 / h=1） */
   fissureLayers?: number
   /**
+   * §8 反应分级的**出手侧声明**（KI-052①）：这一式打在挨打的人身上算哪一档。
+   * 只有玩家架式表写它——不写＝按出手重量轴取档（轻击 R1 / 重击·战技 R2，
+   * 见 `CombatManager.TIER_BY_KIND`），写＝这一式点名要那一档。
+   * 今天只有一格写它：§4.2 强音大剑「跳跃攻击……附加击倒 R3」是设计文本逐字点名的那次击倒。
+   * **敌人的招式不许在这里声明**：那一侧的分级住在 `AttackSpec.reaction`，两处都写就是两个主人
+   * （validator 当场报错）。
+   */
+  reaction?: 'R1' | 'R2' | 'R3'
+  /**
    * §11 回响：命中后在同一位置挂一记「回声影」，`statuses.echo.delayTicks` 之后把这一击的
    * `replayMul` 倍伤害对群重演一次。写在哪一招上＝设计口径（combat.md §4.1 L4 尾段、
    * §4.2 重击/蓄力），所以它由招式自己声明，而不是代码按 key 猜。
@@ -666,19 +675,32 @@ export interface StatusConfig {
 /* ============================ §8 受击反应表（combat.md §8，KI-050） ============================ */
 
 /**
- * 表里只有**有承载体**的那两行（KI-017③ 的口径：不编造消费方）。
- * - **R1**＝玩家侧那一行：§8「玩家受击一律 R1 等效 200ms + 位移 0.2m（硬直可翻滚取消——
+ * 表里只有**有承载体**的那几行（KI-017③ 的口径：不编造消费方）。
+ * - **R0**＝材质发光：§8「架势未破，仅抖动材质发光 150ms」。承载体是 `Enemy.onDamaged`
+ *   写的那一格 `coreFlash`（此前 0.15 秒写死在代码里，且不看"架势有没有破"——KI-052① 两个毛病一起修）。
+ * - **R1**＝玩家侧那一行 + 敌人侧的轻击档：§8「玩家受击一律 R1 等效 200ms + 位移 0.2m（硬直可翻滚取消——
  *   翻滚入口本来就写在 `stunTicks > 0` 之外，见 `ThirdPersonController` 的 dodge 判据）」。
- *   承载体是 `ThirdPersonController.takeDamage`。敌人不吃逐式 R1/R2/R3 受击硬直：
- *   它们由「架势/破势」与「读条打断」（`interruptBroadcast`）承担；招式帧上的 `reaction`
- *   分级目前只是声明 + 词表校验，没有行为消费方——那是本表不写 R0/R2/R3/R5 行的原因。
+ *   承载体有两条：`ThirdPersonController.takeDamage`（玩家）与 `CombatManager.applyReaction`（敌人，§8 的分级列）。
+ * - **R2 / R3**＝敌人侧的重击档与击退档。承载体同样是 `applyReaction`：重击与战技出手报 R2、
+ *   招式帧自己声明 `reaction:"R3"` 的那一格（§4.2 强音大剑跳劈「附加击倒 R3」）报 R3。
+ *   **Boss 整条 R0–R3 通道免疫**（§16/§2.1 的背谱前提：她的招式不被逐式打断，反制手段是弹反/破势/场地机关），
+ *   `hyper` 窗与钟壳期免 R1/R2 的硬直（位移不免）——裁决全文见 KI-052 行。
  * - **R4**＝破势：承载体是 `EntityStats.addPoise` 写出的破势时长
  *   （普通 1.8s；Boss/mini-boss 2.4s，由 `combat/Reactions.ts:armCrumple` 按 `isBoss` 上弦）。
+ * - **R5 不写**：本作没有"浮空"这个状态（敌人不会离地，也没有空中减伤通道），写进去就是造没有消费方的行。
  */
 export interface HitReactionTable {
+  R0: { flashMs: number }
   R1: { stunMs: number; displaceM: number }
+  R2: { stunMs: number; displaceM: number }
+  R3: { stunMs: number; displaceM: number }
   R4: { crumpleMs: number; bossCrumpleMs: number }
 }
+
+/** 受击反应里"挂在挨打那一方的时间"的四档（R4/R5 各有自己的通道，不在这一列里） */
+export type ReactionTier = 'R0' | 'R1' | 'R2' | 'R3'
+/** 其中给得出"硬直 + 位移"的那三档：R0 只发光，所以不在这个子集里 */
+export type ReactionStunTier = Exclude<ReactionTier, 'R0'>
 
 /* ============================ 乐章战技（progression.md §7，Phase 5-C2） ============================ */
 

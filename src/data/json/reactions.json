@@ -1,4 +1,7 @@
 {
+  "R0": { "flashMs": 150 },
   "R1": { "stunMs": 200, "displaceM": 0.2 },
+  "R2": { "stunMs": 350, "displaceM": 0.5 },
+  "R3": { "stunMs": 600, "displaceM": 2 },
   "R4": { "crumpleMs": 1800, "bossCrumpleMs": 2400 }
 }

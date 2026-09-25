@@ -278,7 +278,7 @@
     "damage": 34, "stamina": 24, "poise": 32, "hitStopMs": 120,
     "hitbox": { "shape": "ring", "inner": 0.4, "outer": 3.0, "forward": 0 },
     "shake": "heavy", "sfx": ["land_slam"], "vfx": ["ring_dust"],
-    "loudness": 8, "flags": ["groundshock"]
+    "loudness": 8, "flags": ["groundshock"], "reaction": "R3"
    }
   }
  },
