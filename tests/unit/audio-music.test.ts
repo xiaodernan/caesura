@@ -379,3 +379,91 @@ describe('拍网所有权（KI-066：这里不再有第二份 BPM）', () => {
       .toEqual(accents.map((_, k) => k * 6))
   })
 })
+
+describe('调度积压（KI-067：切回标签页那一秒不许打出机枪）', () => {
+  /** 一批节点里有几个"拍面头"（驼鼓/军鼓）= 这一帧排了几拍 */
+  const beatHeads = (ns: FakeNode[]): number => ns.filter(isBeatNode).length
+
+  it('晾 20 秒之后那一帧：排出去的拍 ≤2，而不是把整段欠账砸在同一时刻；之后间距回到拍长', () => {
+    const { ctx, layer } = rig()
+    open.push(() => layer.dispose())
+    layer.start()
+    bus.emit('audio.music.encounter', { start: true })
+    beats(ctx, layer, 8)
+    ctx.advance(20) // 20 秒 = 28 拍（隐藏标签页 rAF 不跑而音频钟照走，实机量到 31 拍落在同一刻）
+    const n0 = ctx.nodes.length
+    const now = ctx.currentTime
+    layer.update()
+    const fresh = ctx.nodes.slice(n0)
+    const heads = beatHeads(fresh)
+    expect(heads, `一帧补排了 ${heads} 拍 = 欠账全砸在 now+0.02 这一个时刻`).toBeLessThanOrEqual(2)
+    const late = fresh.filter(isBeatNode).flatMap((n) => n.startedAt).filter((t) => t < now)
+    expect(late, `重新锚定不该往过去调度：${late.join('/')}`).toEqual([])
+    const later = onsetsOf(beats(ctx, layer, 40).filter((b) => b.some(isBeatNode)))
+    expect(later.length, '重锚之后一拍都没排 = 音乐再也起不来').toBeGreaterThanOrEqual(2)
+    expect(later[1] - later[0], `重锚后间距没回到拍长（实测 ${later[1] - later[0]}）`).toBeCloseTo(BEAT, 6)
+  })
+
+  it('重锚那一次要说出口（恰一条 log），而接下来正常的几十帧不再重复吱声', () => {
+    const logs: string[] = []
+    open.push(bus.on('log', (l) => logs.push(l.msg)))
+    const { ctx, layer } = rig()
+    open.push(() => layer.dispose())
+    layer.start()
+    bus.emit('audio.music.encounter', { start: true })
+    beats(ctx, layer, 8)
+    ctx.advance(20)
+    layer.update()
+    expect(logs.length, `一次 stall 说了 ${logs.length} 句`).toBe(1)
+    expect(logs[0], `那句要能说清跳了几拍：${logs[0]}`).toContain('拍')
+    beats(ctx, layer, 200)
+    expect(logs.length, '回到实时之后还在喊 = 把恢复当成还在掉帧').toBe(1)
+  })
+
+  it('落后不到一拍 = 一次卡顿：不许吞拍、也不许吱声（对照＝同样时长的连续跑）', () => {
+    /** 同一套时间预算 3.0 秒，只是**帧大小**不同：A 全是 0.05s 的小步；B 中间来一记 0.3s 的 hitch；
+     *  C 整程按 0.5s 一帧跑（= 落后超过一帧但始终不到一拍，2fps 的重度掉帧）。
+     *  C 才是「一拍」这条门限的分界线：`> 0` 的写法在 A/B 里都不会误火（循环每轮都把 nextBeat 抬到
+     *  now+0.25 之外），只有 C 这种"每帧都落后 ~0.25s"的世界能区分两种门限 —— 第一版用例没有 C，
+     *  于是把门限改成 `> 0` 也全绿（变异探针 P2 实测），那等于门限根本没被钉住。 */
+    const world = (step: number, hitchAt = -1): { count: number; logs: number } => {
+      const ctx = new FakeAudioContext()
+      const musicOut = ctx.createGain()
+      const ambOut = ctx.createGain()
+      const layer = new MusicLayer(ctx as unknown as AudioContext, musicOut as unknown as AudioNode, ambOut as unknown as AudioNode, GRID)
+      const logs: string[] = []
+      const off = bus.on('log', (l) => logs.push(l.msg))
+      open.push(off)
+      open.push(() => layer.dispose())
+      layer.start()
+      bus.emit('audio.music.encounter', { start: true })
+      const batch: FakeNode[][] = []
+      for (let t = 0; t < 3; t += step) {
+        const advance = t === hitchAt ? 0.3 : step
+        const before = ctx.nodes.length
+        ctx.advance(advance)
+        layer.update()
+        const fresh = ctx.nodes.slice(before)
+        if (beatHeads(fresh) > 0) batch.push(fresh)
+      }
+      return { count: batch.length, logs: logs.length }
+    }
+    const steady = world(0.05)
+    const hiccup = world(0.05, 1.0)
+    expect(steady.count, '对照组本身就没排满，这条量不了"掉没掉拍"').toBeGreaterThanOrEqual(3)
+    // hitch 那一世界总共多走了 0.25 秒（0.3 替掉 0.05），所以拍数只会**不少于**对照组；
+    // 真正要钉的是"没有一拍被吞掉"——把它写成 === 会因为那 0.25 秒的差额自己红（第一版就是这么红的）
+    expect(hiccup.count, `一记小 hitch 之后拍数从 ${steady.count} 变成 ${hiccup.count} = 把卡顿当成了停摆`)
+      .toBeGreaterThanOrEqual(steady.count)
+    expect(hiccup.logs, `落后不到一拍却说了 ${hiccup.logs} 句 = 门限写宽了`).toBe(0)
+
+    // C：按拍长该有的数量级排，不多（每帧砸一拍 = 机枪）也不少（吞拍）
+    const coarse = world(0.5)
+    const expected = Math.floor(3 / BEAT) // 3 秒 = 4.2 拍，取整作分母
+    expect(coarse.logs, `每帧落后不到一拍却说 ${coarse.logs} 句 = 把掉帧当成停摆：门限是一拍，不是 0`).toBe(0)
+    expect(coarse.count, `2fps 掉帧排出 ${coarse.count} 拍，3 秒该是 ${expected}~${expected + 1} 拍 = 每帧都在重锚`)
+      .toBeLessThanOrEqual(expected + 1)
+    expect(coarse.count, `2fps 掉帧只排出 ${coarse.count} 拍（3 秒该有 ${expected} 拍）= 把掉帧的拍吞掉了`)
+      .toBeGreaterThanOrEqual(expected)
+  })
+})

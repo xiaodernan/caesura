@@ -188,6 +188,25 @@ export class MusicLayer {
       return
     }
     if (this.nextBeat === 0) this.nextBeat = now + 0.05
+    /**
+     * KI-067：落后超过**一拍**时重新锚定，不补排欠账。下面那道 `while` 的循环条件是
+     * `nextBeat < now + 0.25`，而每次排出去的时刻都被 `Math.max(nextBeat, now + 0.02)` 抬到"现在"——
+     * 于是 `update()` 一旦长时间没跑（标签页被切走、后台节流：rAF 停了而 WebAudio 钟照走），
+     * 回来那一帧会把整段欠账砸在同一个时刻。这不是推演：实机晾 22 秒之后读到 **31 拍全落在
+     * `ctx.currentTime = 53.372`**，听感等价于一记机枪（headless 同一形状的复现是一帧 28 拍）。
+     *
+     * 门限为什么是「一拍」而不是「N 秒」：落后不到一拍本来就在这道循环的**吸收范围**里
+     * （它一轮最多排 `ceil(0.25/拍长)+1` 个，一次卡顿该补的拍要补上，不然掉拍是听得出来的）；
+     * 超过一拍就说明这段时间根本没在演，补排等于把历史砸进现在。
+     * 这条边界有对照用例钉着，而**能**钉住它的只有"整程按 0.5s 一帧"那个世界：一记 0.3s 的轻 hitch
+     * 够不到门限边上（循环每轮都把 `nextBeat` 抬到 `now+0.25` 之外），所以把门限写成 `> 0`
+     * 在轻 hitch 里读数完全一样 —— 这是变异探针 P2 第一次不咬时量出来的（见 §5.9.10）。
+     */
+    const behind = now - this.nextBeat
+    if (behind > this.beatSec) {
+      this.nextBeat = now + 0.05
+      bus.emit('log', { level: 'warn', msg: `music: 调度落后 ${behind.toFixed(2)}s，跳过 ${Math.round(behind / this.beatSec)} 拍重新锚定（不补排欠账）` })
+    }
     while (this.nextBeat < now + 0.25 && (!this.battleStopAt || this.nextBeat < this.battleStopAt)) {
       this.scheduleBeat(Math.max(this.nextBeat, now + 0.02), this.beatIdx)
       this.nextBeat += this.beatSec
