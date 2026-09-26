@@ -64,6 +64,9 @@ const CSS = `
 #stakerite button.act { background:rgba(201,180,88,.12); border:1px solid rgba(201,180,88,.4);
   color:#e8dfcb; font:inherit; font-size:12px; padding:5px 12px; cursor:pointer; letter-spacing:.08em; }
 #stakerite button.act:hover:not(:disabled) { background:rgba(255,184,107,.22); }
+/* §218 键盘/手柄导航的焦点框：描边而不是换底色——底色那条通道已被"能不能点"（disabled 发暗）
+   占用了，而"禁用"与"正被选中"可以同时成立，两种状态不许抢同一个视觉通道 */
+#stakerite button.act.focus { outline:2px solid #b9e6ff; outline-offset:1px; }
 #stakerite button.act:disabled { opacity:.3; cursor:default; }
 #stakerite .xp { display:flex; align-items:center; gap:12px; margin-bottom:6px; }
 #stakerite .bar { flex:1; height:6px; background:rgba(232,223,203,.12); position:relative; overflow:hidden; }
@@ -154,6 +157,14 @@ export interface StakeriteHooks {
   notify: (text: string, kind?: 'info' | 'reward' | 'boss') => void
   /** 消耗品生效（回血/刮失谐的数都来自 items.json 的 use，面板不直接碰玩家状态） */
   onUse: (eff: { heal: number; corruption: number }) => void
+  /**
+   * 「我要收起来了」的唯一出口（KI-061 补的洞）。面板**不许**自己 hide 自己：
+   * 遮罩点击那条路以前直接 `close()`，于是 DOM 上的面板没了、`time.paused` 与 `input.enabled`
+   * 却还挂着 —— 点一下背景就等于把游戏冻死在看不见的地冻里（Esc 只能再解开一半，
+   * 因为 `input.enabled` 只有 `setPanelOpen` 那一处会恢复）。
+   * 所以关闭的决定权交给持有者（`main.ts` 的 `setPanelOpen(false)`），面板只负责"提出"。
+   */
+  onRequestClose: () => void
 }
 
 /**
@@ -183,6 +194,13 @@ export class Stakerite {
   private pending: { slot: string; act: 'write' | 'erase' } | null = null
   /** 落盘进行中（按钮不给第二次点击的机会） */
   private saving = false
+  /**
+   * §218「焦点记忆」：每页各自记住上次选中的那一行（按 `navRows` 的行号，不是 DOM 元素——
+   * 面板每次动作后都整块重绘 innerHTML，抓住元素等于抓住一具尸体）。
+   */
+  private focusByTab: Partial<Record<Tab, number>> = {}
+  /** 刚渲染出来的那一页正文（`navRows` 与焦点框都从它这里数行，不另抄名单） */
+  private lastBody = ''
 
   constructor(private readonly rpg: RpgRuntime, private readonly hooks: StakeriteHooks, private readonly saves: SavePanelDeps) {
     const style = document.createElement('style')
@@ -201,6 +219,7 @@ export class Stakerite {
 
   show(): void {
     this.open = true
+    this.navUsed = false   // 每次打开都从"没有焦点框"开始（焦点行号仍按页记着，§218 的焦点记忆是跨页不是跨开场）
     this.root.classList.add('on')
     if (this.tab === 'save') this.refreshSaves()
     this.render()
@@ -210,16 +229,6 @@ export class Stakerite {
     this.open = false
     this.root.classList.remove('on')
     this.pending = null
-  }
-
-  private onKey(e: KeyboardEvent): void {
-    if (!this.open) return
-    if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
-      const i = TABS.findIndex((t) => t.id === this.tab)
-      const d = e.code === 'ArrowRight' ? 1 : -1
-      this.setTab(TABS[(i + d + TABS.length) % TABS.length].id)
-      e.preventDefault()
-    }
   }
 
   /** 换页：进存档页就现取名册（离开时把未确认的那一笔撤掉，别把确认条留在别的页里） */
@@ -241,11 +250,20 @@ export class Stakerite {
   private onClick(e: MouseEvent): void {
     const el = (e.target as HTMLElement).closest('[data-act]') as HTMLElement | null
     if (!el) return
-    const act = el.dataset.act!
-    const arg = el.dataset.arg ?? ''
+    this.run(el.dataset.act!, el.dataset.arg ?? '', !!el.dataset.disabled)
+  }
+
+  /**
+   * 面板里**每一个**动作的唯一点发口：鼠标点击与手柄/键盘确认都走这里（§218 的"全路径可达"
+   * 要求两条路落在同一个 handler 上，否则键盘那条会变成一套需要各自对齐的实现）。
+   * `disabled` 是那一行的按钮当前是否禁用（浏览器替鼠标挡了 `disabled`，键盘/手柄这条路没人挡，
+   * 所以这里必须自己挡 —— 让"买不起"的条目被 Enter 买下去不是可达性，是 bug）。
+   */
+  private run(act: string, arg: string, disabled = false): void {
+    if (disabled && act !== 'close' && act !== 'tab') return
     // 存档那一页的三个动作各自收尾（都是异步或纯 UI 状态，不重算派生值也不共用尾部逻辑）
     if (act === 'write' || act === 'erase') {
-      if (el.dataset.disabled || this.saving || this.savesOf(arg) === null) return
+      if (this.saving || this.savesOf(arg) === null) return
       this.pending = { slot: arg, act }
       this.render()
       return
@@ -269,11 +287,111 @@ export class Stakerite {
       case 'mvup': this.upgradeMove(arg); break
       case 'pslearn': this.learnPassive(arg); break
       case 'mvequip': this.equipSlot(arg); break
-      case 'close': this.close(); break
+      case 'close': this.requestClose(); break
       default: return
     }
     this.hooks.onApply()
     this.render()
+  }
+
+  /** 面板不自己关自己：把"收起来"这个请求交给持有者（见 `StakeriteHooks.onRequestClose`） */
+  private requestClose(): void { this.hooks.onRequestClose() }
+
+  /* ------------------------------ 导航（§218） ------------------------------ */
+
+  /**
+   * 当前这一页上"可被选中的行"：**从刚渲染出来的那段 HTML 里读**，不另抄一份名单。
+   * 抄一份就会和渲染漂移（多一个按钮、少一个按钮，行号就全体错位，而焦点是按行号记的）。
+   * 遮罩（`data-act="close"`）与页签按钮（切页有 ←→/肩键专门管）不算行。
+   * 这一份是**唯一的行定义**：`navRows` 与 `markFocus` 都读它，否则"焦点框画在哪"和
+   * "Enter 执行哪一行"就有两套坐标，而两套坐标迟早会差一格。
+   */
+  private navTags(html: string): string[] {
+    return (html.match(/<button\b[^>]*>/g) ?? []).filter((t) => {
+      const act = t.match(/data-act="([^"]*)"/)?.[1]
+      return !!act && act !== 'close' && act !== 'tab'
+    })
+  }
+
+  private navRows(): { act: string; arg: string; disabled: boolean; tag: string }[] {
+    return this.navTags(this.lastBody).map((tag) => ({
+      act: tag.match(/data-act="([^"]*)"/)![1],
+      arg: tag.match(/data-arg="([^"]*)"/)?.[1] ?? '',
+      disabled: /\bdisabled\b/.test(tag),
+      tag,
+    }))
+  }
+
+  /** 焦点在导航键按下时才点亮（鼠标用户不该看见一个孤零零的框） */
+  private navUsed = false
+
+  /** 把焦点框画在第 N 个可导航按钮上——行的定义只有 `navTags` 一处，这里按它取到就替换 */
+  private markFocus(html: string): string {
+    const tags = this.navTags(html)
+    const target = this.focusRow()
+    if (target < 0 || target >= tags.length) return html
+    const tag = tags[target]
+    const at = html.indexOf(tag)
+    if (at < 0) return html
+    const patched = /class="/.test(tag)
+      ? tag.replace(/class="([^"]*)"/, 'class="$1 focus"')
+      : tag.replace('<button', '<button class="focus"')
+    return html.slice(0, at) + patched + html.slice(at + tag.length)
+  }
+
+  private focusRow(): number {
+    const n = this.navRows().length
+    if (n === 0) return 0
+    const f = this.focusByTab[this.tab] ?? 0
+    return f < n ? f : n - 1   // 行数会因强化/购买而变少：焦点钳回最后一行，不躲进空气里
+  }
+
+  private moveFocus(delta: number): void {
+    const n = this.navRows().length
+    if (!n) return
+    // 第一次按导航键只是**把框亮出来**（停在记住的那一行上），不顺手挪一格：
+    // 否则"按下键"这个动作被数了两次——既出现焦点框又往下走一行，玩家看到的选中项和他按的次数差一格。
+    if (!this.navUsed) { this.navUsed = true; this.render(); return }
+    this.focusByTab[this.tab] = (((this.focusRow() + delta) % n) + n) % n  // 回绕：列表是环，§218 的摇杆语义
+    this.render()
+  }
+
+  private page(delta: number): void {
+    const i = TABS.findIndex((t) => t.id === this.tab)
+    this.setTab(TABS[(i + delta + TABS.length) % TABS.length].id)
+  }
+
+  /**
+   * 面板自己那只键盘：↑↓ 走行、←→ 走页、Enter 点那一行、Backspace 退一层（确认条挂着先撤确认）。
+   * 手柄那条路（摇杆/肩键/Back）今天还没有接进这一只键盘：`core/Input.ts` 在面板打开时是
+   * `enabled=false` 的，摇杆读数到不了这里 —— 那一腿登记在 KI-061 的缺口里，不拿键盘那条冒充全通。
+   */
+  private onKey(e: KeyboardEvent): void {
+    if (!this.open) return
+    switch (e.code) {
+      case 'ArrowLeft': this.page(-1); break
+      case 'ArrowRight': this.page(1); break
+      case 'ArrowUp': this.moveFocus(-1); break
+      case 'ArrowDown': this.moveFocus(1); break
+      case 'Enter':
+      case 'NumpadEnter': {
+        const row = this.navRows()[this.focusRow()]
+        if (!row) return
+        this.navUsed = true
+        e.preventDefault()
+        this.run(row.act, row.arg, row.disabled)
+        return
+      }
+      case 'Backspace':
+        // 「Back 永远后退一层」：确认条还挂着时先撤确认，否则才退面板。
+        // Escape 不在这里——那是 main 的窗口监听器早就管着的键（两处都管 = 两个主人，
+        // 而其中一个（本类）没有解冻世界的权力。
+        if (this.pending) { this.pending = null; this.render() } else this.requestClose()
+        e.preventDefault()
+        return
+      default: return
+    }
+    e.preventDefault()
   }
 
   /** 按槽位找卡面（点到的按钮一定在卡上，但 `data-arg` 是字符串——查不到就不动） */
@@ -453,12 +571,14 @@ export class Stakerite {
 
   private render(): void {
     if (!this.open) return
-    const body = this.tab === 'tune' ? this.renderTune()
+    const raw = this.tab === 'tune' ? this.renderTune()
       : this.tab === 'gear' ? this.renderGear()
         : this.tab === 'bag' ? this.renderBag()
           : this.tab === 'moves' ? this.renderMoves()
             : this.tab === 'trade' ? this.renderTrade()
               : this.renderSave()
+    this.lastBody = raw
+    const body = this.navUsed ? this.markFocus(raw) : raw
     this.root.innerHTML = `
       <div class="veil" data-act="close"></div>
       <div class="panel">
@@ -469,7 +589,7 @@ export class Stakerite {
         <nav>${TABS.map((t) => `<button data-act="tab" data-arg="${t.id}" class="${t.id === this.tab ? 'sel' : ''}">${t.label}</button>`).join('')}</nav>
         <main>${body}</main>
         <div class="foot">
-          <span>← → 切换页</span><span>Tab 收起</span>
+          <span>← → 换页 · ↑ ↓ 选行 · Enter 执行 · Backspace 后退</span><span>Tab 收起</span>
           <span>音色石 ${this.rpg.inv.count(TIMBITE)}</span><span>残晶 ${this.rpg.inv.count(DROSS)}</span>
           <span>乐谱残页 ${this.rpg.inv.count(SCORE)}</span>
         </div>

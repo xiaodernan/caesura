@@ -112,12 +112,14 @@ async function panel(runtime: RpgRuntime, deps: SavePanelDeps = NO_SAVES) {
   const applied: number[] = []
   const notes: string[] = []
   const used: Array<{ heal: number; corruption: number }> = []
+  const closes: number[] = []
   const p = new Stakerite(runtime, {
     onApply: () => applied.push(1),
     notify: (t) => notes.push(t),
-    onUse: (eff) => used.push(eff)
+    onUse: (eff) => used.push(eff),
+    onRequestClose: () => closes.push(1),
   }, deps)
-  return { p, applied, notes, used }
+  return { p, applied, notes, used, closes }
 }
 
 /** 打开面板并走到存档页（真实点击切页，不伪造 tab 状态） */
@@ -425,7 +427,7 @@ describe('KI-027：负重那一行要说实话', () => {
     const mk = (overloaded: boolean) => {
       // 面板的合同是"只读 RpgRuntime 的公开方法"，所以喂一份假的 mods 就是合法的接缝
       rt.mods = () => ({ ...real(), weight: overloaded ? 99 : real().weight, overloaded })
-      const p = new Stakerite(rt, { onApply: () => {}, notify: () => {}, onUse: () => {} }, NO_SAVES)
+      const p = new Stakerite(rt, { onApply: () => {}, notify: () => {}, onUse: () => {}, onRequestClose: () => {} }, NO_SAVES)
       p.show()
       const s = (p as unknown as { root: FakeEl }).root.innerHTML
       p.close()

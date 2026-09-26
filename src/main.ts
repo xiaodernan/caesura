@@ -121,7 +121,10 @@ const panel = new Stakerite(rpg, {
     // 音色晶刮掉的是失谐（数据里是负数=往下刮）；归零发生在调音桩，这里是"路上应急"
     if (eff.corruption < 0) player.corruption.purge(-eff.corruption)
     if (eff.heal > 0 || eff.corruption < 0) player.publishStats()
-  }
+  },
+  // 面板只"提出"关闭；解冻世界与恢复吃输入是这一处的活（KI-061：以前遮罩点击直接 hide，
+  // 结果背景点一下 = 游戏冻在看不见的地冻里，键盘也一起哑）
+  onRequestClose: () => setPanelOpen(false),
 }, {
   // 存档页（KI-025②）：面板只拿到"读名册/写这一格/删这一格"三个动作，键位与落盘都不归它管
   list: () => saveRoster.list(),

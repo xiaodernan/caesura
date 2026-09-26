@@ -119,13 +119,18 @@ export class Input {
   poll(dtReal: number): void {
     this.elapsed += dtReal
     this.pollPad()
-    const held = new Set<ActionName>([...this.kbHeld, ...this.mouseHeld, ...this.padHeld])
-    if (!this.enabled) held.clear()
+    const deviceHeld = new Set<ActionName>([...this.kbHeld, ...this.mouseHeld, ...this.padHeld])
+    const held = this.enabled ? deviceHeld : new Set<ActionName>()
     const edges = new Set<ActionName>()
-    for (const a of held) if (!this.prevHeld.has(a)) edges.add(a)
-    for (const [a, until] of this.bufferedEdges) {
-      if (until < this.elapsed) this.bufferedEdges.delete(a)
-      else if (!edges.has(a)) edges.add(a)
+    // `enabled` 只决定"游戏这一帧看不看得见输入"，不决定"我们还跟不跟设备状态"。
+    // 以前禁用期是把 held 清空之后再记进 prevHeld 的，于是"在菜单里一直按着 A"会在关面板
+    // 那一帧被当成新按下 —— 关个调音桩送自己一次翻滚（KI-061 抓出）。
+    if (this.enabled) {
+      for (const a of deviceHeld) if (!this.prevHeld.has(a)) edges.add(a)
+      for (const [a, until] of this.bufferedEdges) {
+        if (until < this.elapsed) this.bufferedEdges.delete(a)
+        else if (!edges.has(a)) edges.add(a)
+      }
     }
     const m = {
       x: (held.has('moveRight') ? 1 : 0) - (held.has('moveLeft') ? 1 : 0) + this.padState.moveX,
@@ -142,7 +147,7 @@ export class Input {
       edges, held
     }
     this.mouseLook.dx = 0; this.mouseLook.dy = 0
-    this.prevHeld = held
+    this.prevHeld = deviceHeld
   }
 
   endTick(): void {
