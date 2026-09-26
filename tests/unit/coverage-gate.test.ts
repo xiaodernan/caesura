@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process'
 import { mkdtempSync, writeFileSync, rmSync, existsSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 /**
  * KI-063 / TD-004：行覆盖率这道门自己的测试。
@@ -36,9 +36,11 @@ function summary(rows: Row[], keyStyle: 'win' | 'posix' = 'win'): string {
   return p
 }
 
-function floorDoc(linesPct: number, zeroFiles: string[]): string {
+function floorDoc(linesPct: number, zeroFiles: string[], byPackage?: Record<string, number>): string {
   const p = join(TMP, `floor-${++seq}.json`)
-  writeFileSync(p, JSON.stringify({ linesPct, zeroFiles, note: 'test' }), 'utf8')
+  const doc: Record<string, unknown> = { linesPct, zeroFiles, note: 'test' }
+  if (byPackage) doc.byPackage = byPackage
+  writeFileSync(p, JSON.stringify(doc), 'utf8')
   return p
 }
 
@@ -119,6 +121,107 @@ describe('coverage 门的判读（两侧都从脚本走）', () => {
   })
 })
 
+describe('按包判据（KI-064：§6.1 那句门槛本来就是按包说的）', () => {
+  /** 四个核心包各占一格：save 给一个可改的覆盖数，其余钉满，让"只让被测的那条规则出声"。 */
+  const coreRows = (saveCovered: number): Row[] => [
+    { path: 'src/combat/a.ts', covered: 100, total: 100 },
+    { path: 'src/rpg/a.ts', covered: 100, total: 100 },
+    { path: 'src/save/a.ts', covered: saveCovered, total: 100 },
+    { path: 'src/quest/a.ts', covered: 100, total: 100 }
+  ]
+
+  it('某个包的行覆盖跌 0.01 ⇒ 红，并且点名是哪一个包', () => {
+    const s = summary(coreRows(90))
+    const r = run(`--summary=${s}`, `--floor=${floorDoc(97.5, [], { combat: 100, rpg: 100, save: 90.01, quest: 100 })}`)
+    expect(r.code, r.out).toBe(1)
+    expect(r.out).toContain('包 save 行覆盖 90.00% 低于该包地板 90.01%')
+  })
+
+  it('核心包低于 80% ⇒ 红，**即使它的地板就钉在 70%**（棘轮救不了不合规）', () => {
+    const s = summary(coreRows(70))
+    const r = run(`--summary=${s}`, `--floor=${floorDoc(92.5, [], { combat: 100, rpg: 100, save: 70, quest: 100 })}`)
+    expect(r.code, r.out).toBe(1)
+    expect(r.out).toContain('低于 §6.1 承诺的 80%（这是文档门槛，与地板无关）')
+  })
+
+  it('非核心包低于 80% ⇒ 不红（那条承诺只给了四个核心包，别拿它管表现层）', () => {
+    const s = summary([...coreRows(100), { path: 'src/audio/a.ts', covered: 10, total: 100 }])
+    const r = run(`--summary=${s}`, `--floor=${floorDoc(82, [], { combat: 100, rpg: 100, save: 100, quest: 100, audio: 10 })}`)
+    expect(r.code, r.out).toBe(0)
+    expect(r.out).not.toContain('门红')
+  })
+
+  it('今天量到一个没进地板的新包 ⇒ 绿，但"落账"那句话要说出口', () => {
+    const s = summary([...coreRows(100), { path: 'src/ui/a.ts', covered: 50, total: 100 }])
+    const r = run(`--summary=${s}`, `--floor=${floorDoc(90, [], { combat: 100, rpg: 100, save: 100, quest: 100 })}`)
+    expect(r.code, r.out).toBe(0)
+    expect(r.out).toContain('新包 ui 没进地板')
+  })
+
+  it('地板里列着的包今天没有文件 ⇒ 红（目录改名不许让某条门槛悄悄失去对象）', () => {
+    const s = summary(coreRows(100))
+    const r = run(`--summary=${s}`, `--floor=${floorDoc(100, [], { combat: 100, rpg: 100, save: 100, quest: 100, fight: 90 })}`)
+    expect(r.code, r.out).toBe(1)
+    expect(r.out).toContain('地板里的包 fight 今天没有一个可计行的文件')
+  })
+
+  it('旧地板（KI-063 那份，没有按包格子）⇒ 不红，但提示要落一次账', () => {
+    const s = summary(coreRows(100))
+    const r = run(`--summary=${s}`, `--floor=${floorDoc(100, [])}`)
+    expect(r.code, r.out).toBe(0)
+    expect(r.out).toContain('地板里没有按包格子')
+  })
+
+  it('涨幅不到 0.5 个百分点 ⇒ 不开口；到了才提示抬地板（15 个包每包一句会把要读的两行淹掉）', () => {
+    const s = summary(coreRows(100))
+    const by = { combat: 100, rpg: 100, save: 100, quest: 100 }
+    const small = run(`--summary=${s}`, `--floor=${floorDoc(99.6, [], by)}`)
+    expect(small.code, small.out).toBe(0)
+    expect(small.out).not.toContain('行覆盖已涨到')
+    const big = run(`--summary=${s}`, `--floor=${floorDoc(99, [], by)}`)
+    expect(big.code, big.out).toBe(0)
+    expect(big.out).toContain('行覆盖已涨到 100.00%')
+  })
+
+  it('某个包涨得够多 ⇒ 点名那个包（按包的棘轮也要出声，不只是总覆盖）', () => {
+    const s = summary(coreRows(100))
+    const r = run(`--summary=${s}`, `--floor=${floorDoc(100, [], { combat: 100, rpg: 100, save: 99, quest: 100 })}`)
+    expect(r.code, r.out).toBe(0)
+    expect(r.out).toContain('包 save 行覆盖已涨到 100.00%')
+  })
+
+  it('读数里星号只打在 §6.1 点名的那四个包上', () => {
+    const s = summary([...coreRows(100), { path: 'src/audio/a.ts', covered: 90, total: 100 }])
+    const r = run(`--summary=${s}`, `--floor=${floorDoc(98, [], { combat: 100, rpg: 100, save: 100, quest: 100, audio: 90 })}`)
+    expect(r.code, r.out).toBe(0)
+    for (const pkg of ['combat', 'rpg', 'save', 'quest']) expect(r.out).toContain(`★ ${pkg}`)
+    expect(r.out).not.toContain('★ audio')
+  })
+
+  it('包的 pct 由加总后的行现算，不是把 istanbul 每个文件各自四舍五入过的 pct 再平均', () => {
+    // 同一个包里 2/3 与 1/6：真值是 3/9 = 33.33%，而"两个文件的 pct 取平均"会读出 41.67%。
+    const s = summary([
+      { path: 'src/ui/a.ts', covered: 2, total: 3 },
+      { path: 'src/ui/b.ts', covered: 1, total: 6 },
+      ...coreRows(100).slice(1)
+    ])
+    const r = run(`--summary=${s}`, `--floor=${floorDoc(65.7, [], { ui: 33.33, rpg: 100, save: 100, quest: 100 })}`)
+    expect(r.code, r.out).toBe(0)
+    expect(r.out).toMatch(/ui\s+33\.33%/)
+    expect(r.out).not.toMatch(/ui\s+41\.67%/)
+  })
+
+  it('import 这份脚本不许顺手跑整套测试（顶层副作用是 KI-064 自己撞出来的地雷）', () => {
+    const url = pathToFileURL(SCRIPT).href
+    const r = spawnSync(process.execPath, ['-e', `import(${JSON.stringify(url)}).then((m) => console.log(typeof m.measure))`], {
+      encoding: 'utf8',
+      timeout: 20000
+    })
+    expect(r.status, r.stderr).toBe(0)
+    expect(String(r.stdout).trim()).toBe('function')
+  })
+})
+
 describe('仓库里那份地板文件自身', () => {
   it('存在、是 0-100 的数、且名单里每一格今天在磁盘上还认得出来', () => {
     expect(existsSync(FLOOR), 'scripts/coverage-floor.json 必须在册（否则这道门没有下限）').toBe(true)
@@ -132,5 +235,38 @@ describe('仓库里那份地板文件自身', () => {
       expect(existsSync(join(ROOT, f)), `地板名单里的 ${f} 已经从磁盘上消失了：--bless 划掉它`).toBe(true)
     }
     expect(new Set(doc.zeroFiles).size, '名单不许有重复格子').toBe(doc.zeroFiles.length)
+  })
+
+  it('按包那一格：四个核心包都在且各 ≥80，每个键今天在磁盘上还认得出来', () => {
+    const doc = JSON.parse(readFileSync(FLOOR, 'utf8')) as { byPackage?: Record<string, number> }
+    const bp = doc.byPackage
+    expect(bp, '地板必须有 byPackage（KI-064 起）：没有它就等于按包门槛没人守').toBeTruthy()
+    const script = readFileSync(SCRIPT, 'utf8')
+    const listed = [...(script.match(/const CORE_PACKAGES = \[([^\]]*)\]/)?.[1] ?? '').matchAll(/'([^']+)'/g)].map((m) => m[1])
+    const min = Number(script.match(/const CORE_MIN = (\d+)/)?.[1])
+    expect(listed.length, '脚本里 CORE_PACKAGES 不许是空的').toBeGreaterThan(0)
+    expect(Number.isFinite(min) && min > 0, '脚本里 CORE_MIN 必须是个正数').toBe(true)
+    for (const pkg of listed) {
+      expect(pkg in (bp as Record<string, number>), `地板里缺了核心包 ${pkg}`).toBe(true)
+      expect((bp as Record<string, number>)[pkg], `核心包 ${pkg} 的地板低于 §6.1 的 ${min}%`).toBeGreaterThanOrEqual(min)
+    }
+    for (const pkg of Object.keys(bp as Record<string, number>)) {
+      const v = (bp as Record<string, number>)[pkg]
+      expect(v, `包 ${pkg} 的地板不是 0-100 的数`).toBeGreaterThanOrEqual(0)
+      expect(v).toBeLessThanOrEqual(100)
+      if (pkg === '(root)') continue
+      expect(existsSync(join(ROOT, 'src', pkg)), `地板里的包 ${pkg} 在磁盘上没有 src/${pkg}/ 这一层`).toBe(true)
+    }
+  })
+
+  it('脚本里的名单 == 架构文档 §6.1 那句话里的名单（改任一侧都必须两边一起改）', () => {
+    const script = readFileSync(SCRIPT, 'utf8')
+    const listed = [...(script.match(/const CORE_PACKAGES = \[([^\]]*)\]/)?.[1] ?? '').matchAll(/'([^']+)'/g)].map((m) => m[1])
+    const min = script.match(/const CORE_MIN = (\d+)/)?.[1]
+    const doc = readFileSync(join(ROOT, 'docs', 'technical-architecture.md'), 'utf8')
+    const line = doc.match(/覆盖率门槛：逻辑核心包（([^）]*)）行覆盖 ≥(\d+)%/)
+    expect(line, '§6.1 那句按包门槛的话还在文档里吗？它是这道门的另一半，删了它门就变成自说自话').not.toBeNull()
+    expect(line![1].split('/')).toEqual(listed)
+    expect(line![2]).toBe(min)
   })
 })

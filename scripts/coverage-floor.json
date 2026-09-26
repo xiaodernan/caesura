@@ -1,5 +1,22 @@
 {
   "linesPct": 81.84,
+  "byPackage": {
+    "(root)": 0,
+    "ai": 98.59,
+    "audio": 15.93,
+    "combat": 99.35,
+    "core": 90.39,
+    "data": 100,
+    "input": 97.14,
+    "player": 86.4,
+    "quest": 97.75,
+    "rpg": 96.89,
+    "save": 96.5,
+    "tools": 67.29,
+    "ui": 73.32,
+    "vfx": 95,
+    "world": 87.1
+  },
   "zeroFiles": [
     "src/main.ts",
     "src/player/LockOn.ts",
@@ -10,5 +27,5 @@
   ],
   "srcFilesAtMeasure": 72,
   "linesTotal": 10142,
-  "note": "由 npm run coverage -- --bless 写入。linesPct 是地板（只许涨）；zeroFiles 是\"今天确实没有任何测试执行过\"的 src 文件名单，新增一格当场红。"
+  "note": "由 npm run coverage -- --bless 写入。linesPct 是总地板、byPackage 是按包地板（都只许涨）；zeroFiles 是\"今天确实没有任何测试执行过\"的 src 文件名单，新增一格当场红。§6.1 那句\"逻辑核心包各 ≥80%\"**不写在这里**——它是脚本里的常量（CORE_PACKAGES/CORE_MIN），地板会被 bless 顺手重写，承诺不该跟着量具一起漂。"
 }
