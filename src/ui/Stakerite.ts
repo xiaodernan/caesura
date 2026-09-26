@@ -6,7 +6,7 @@ import { SLOTS, type EquipMods } from '@/rpg/Equipment'
 import { upgradeStep, maxLevelOf, TIMBITE, DROSS, salvageValue } from '@/rpg/Upgrade'
 import { sellPrice, stackSellPrice, shopData, CURRENCY } from '@/rpg/Shop'
 import { movementName, unlockItemName, SCORE } from '@/rpg/Movements'
-import { DEFAULT_BINDS, type ActionName } from '@/core/Input'
+import { DEFAULT_BINDS, type ActionName, type UiIntent } from '@/core/Input'
 import type { RpgRuntime } from '@/rpg/Runtime'
 import type { SlotCard } from '@/save/Slots'
 import { SAVE_CARD_CSS, saveCards, saveCardHtml, slotLabel, type SaveCardView } from '@/ui/SaveSlots'
@@ -210,7 +210,6 @@ export class Stakerite {
     this.root.id = 'stakerite'
     document.body.appendChild(this.root)
     this.root.addEventListener('click', (e) => this.onClick(e))
-    window.addEventListener('keydown', (e) => this.onKey(e))
   }
 
   get isOpen(): boolean { return this.open }
@@ -362,36 +361,31 @@ export class Stakerite {
   }
 
   /**
-   * 面板自己那只键盘：↑↓ 走行、←→ 走页、Enter 点那一行、Backspace 退一层（确认条挂着先撤确认）。
-   * 手柄那条路（摇杆/肩键/Back）今天还没有接进这一只键盘：`core/Input.ts` 在面板打开时是
-   * `enabled=false` 的，摇杆读数到不了这里 —— 那一腿登记在 KI-061 的缺口里，不拿键盘那条冒充全通。
+   * 菜单读数的**唯一入口**（KI-062）：意图由 `core/Input.ts` 的 UI 通道给（键盘码、手柄十字键、
+   * 左摇杆、肩键在那儿已经折成同一组 `UiIntent`），本方法只负责把它们落到"走行 / 走页 / 执行 / 后退"上。
+   *
+   * 这里刻意**不再挂任何 `keydown` 监听器**：DOM 一条、菜单一条就是两个主人，一次 ↓ 会被数两遍
+   * （框刚亮起来又立刻挪一格）。现在键盘也走同一条意图通道，面板只认这一个入口
+   * （`tests/unit/ui-intents.test.ts` 里有源码门钉着）。
    */
-  private onKey(e: KeyboardEvent): void {
-    if (!this.open) return
-    switch (e.code) {
-      case 'ArrowLeft': this.page(-1); break
-      case 'ArrowRight': this.page(1); break
-      case 'ArrowUp': this.moveFocus(-1); break
-      case 'ArrowDown': this.moveFocus(1); break
-      case 'Enter':
-      case 'NumpadEnter': {
-        const row = this.navRows()[this.focusRow()]
-        if (!row) return
-        this.navUsed = true
-        e.preventDefault()
-        this.run(row.act, row.arg, row.disabled)
-        return
-      }
-      case 'Backspace':
-        // 「Back 永远后退一层」：确认条还挂着时先撤确认，否则才退面板。
-        // Escape 不在这里——那是 main 的窗口监听器早就管着的键（两处都管 = 两个主人，
-        // 而其中一个（本类）没有解冻世界的权力。
-        if (this.pending) { this.pending = null; this.render() } else this.requestClose()
-        e.preventDefault()
-        return
-      default: return
+  uiStep(intents: ReadonlySet<UiIntent>): void {
+    if (!this.open || intents.size === 0) return
+    // 左右与肩键都落在换页上：面板只有一维列表可走，横向语义就是"翻页"（§5.2 的肩键切页）
+    if (intents.has('pagePrev') || intents.has('left')) { this.page(-1); return }
+    if (intents.has('pageNext') || intents.has('right')) { this.page(1); return }
+    if (intents.has('up')) { this.moveFocus(-1); return }
+    if (intents.has('down')) { this.moveFocus(1); return }
+    if (intents.has('confirm')) {
+      const row = this.navRows()[this.focusRow()]
+      if (!row) return
+      this.navUsed = true
+      this.run(row.act, row.arg, row.disabled)
+      return
     }
-    e.preventDefault()
+    if (intents.has('back')) {
+      // 「Back 永远后退一层」：确认条还挂着时先撤确认，否则才退面板（解冻由持有者做，见 onRequestClose）
+      if (this.pending) { this.pending = null; this.render() } else this.requestClose()
+    }
   }
 
   /** 按槽位找卡面（点到的按钮一定在卡上，但 `data-arg` 是字符串——查不到就不动） */

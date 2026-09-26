@@ -178,14 +178,15 @@ describe('调音桩面板：状态机与内容', () => {
     rt.inv.add('it_echo_salve', 2)
     const { p } = await panel(rt)
     p.show()
-    const key = (code: string) => { for (const fn of winHandlers.keydown ?? []) fn({ code, preventDefault() {} }) }
-    key('ArrowRight')
+    // 菜单读数的入口只有一个（KI-062）：面板自己不再挂 keydown，所以这里喂意图
+    const key = (dir: 'left' | 'right') => p.uiStep(new Set([dir]))
+    key('right')
     expect(html(p)).toContain('七槽')
     expect(html(p)).toContain('调律剑')
-    key('ArrowRight')
+    key('right')
     expect(html(p)).toContain('通货')
     expect(html(p)).toContain('消耗品')
-    key('ArrowRight')
+    key('right')
     const moves = html(p)
     expect(moves, '§7 谱册：每一页都要亮出来，包括还没点亮的那些').toContain('乐章 I·序句')
     expect(moves).toContain('主动槽')
@@ -197,11 +198,11 @@ describe('调音桩面板：状态机与内容', () => {
     // 页是数据驱动的：第四页（乐章 IV·休止）一入表就自己长出来了，UI 没加一行代码。
     // 没点亮也要看得见——玩家得知道"这一页上还有东西"， KI-027 那句括号到此为止。
     expect(moves).toContain('乐章 IV·休止 · 全暗')
-    key('ArrowRight')
+    key('right')
     expect(html(p), '第五页：营地交易').toContain('购入')
-    key('ArrowRight')
+    key('right')
     expect(html(p), '第六页：存档（KI-025②）').toContain('手动存档槽')
-    key('ArrowRight')
+    key('right')
     expect(html(p), '再往右绕回头一页').toContain('六音级属性')
   })
 
@@ -306,11 +307,11 @@ describe('调音桩面板：状态机与内容', () => {
 })
 
 describe('KI-055① 交易页（营地买卖）', () => {
-  /** 走到第五页（用真实的方向键导航，不是伪造 tab 状态） */
+  /** 走到第五页（走真实的菜单读数那条，不是伪造 tab 状态） */
   const tradeTab = async (rt: RpgRuntime) => {
     const { p } = await panel(rt)
     p.show()
-    for (let i = 0; i < 4; i++) { for (const fn of winHandlers.keydown ?? []) fn({ code: 'ArrowRight', preventDefault() {} }) }
+    for (let i = 0; i < 4; i++) p.uiStep(new Set(['right']))
     return { p, s: html(p) }
   }
 
@@ -338,7 +339,7 @@ describe('KI-055① 交易页（营地买卖）', () => {
     const { p, notes } = await panel(rt)
     p.show()
     const root = (p as unknown as { root: FakeEl }).root
-    for (let i = 0; i < 4; i++) { for (const fn of winHandlers.keydown ?? []) fn({ code: 'ArrowRight', preventDefault() {} }) }
+    for (let i = 0; i < 4; i++) p.uiStep(new Set(['right']))
     const gem = rt.inv.addGear('ar_choir_hood')
     const stone = rt.inv.count('it_timbite')
     click(root, 'sell', gem.uid)
@@ -363,7 +364,7 @@ describe('§44 装备对比 Current vs New（需求 §44 / ui-ux §3.3）', () =
   const gearTab = async (rt: RpgRuntime) => {
     const { p } = await panel(rt)
     p.show()
-    for (const fn of winHandlers.keydown ?? []) fn({ code: 'ArrowRight', preventDefault() {} })
+    p.uiStep(new Set(['right']))
     return { p, s: html(p) }
   }
 

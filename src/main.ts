@@ -143,8 +143,10 @@ const dialogueBox = new DialogueBox({
 dialogueBox.setSpeakerResolver((id) => registry.maybeGet<NpcData>(id)?.displayName ?? id)
 
 function setPanelOpen(open: boolean): void {
-  if (open) { panel.show(); time.paused = true; input.enabled = false }
-  else { panel.close(); time.paused = false; input.enabled = true }
+  // uiOwner：菜单读数的所有权（KI-062）。开着才发意图、关着一格都不发，也不抢浏览器的默认行为。
+  // 玩法那条（enabled）与这条是两件事：世界停摆期间正是菜单需要读数的时候。
+  if (open) { panel.show(); time.paused = true; input.enabled = false; input.uiOwner = 'panel' }
+  else { panel.close(); time.paused = false; input.enabled = true; input.uiOwner = null }
 }
 new CombatDebugger()
 new Haptics(input)
@@ -410,6 +412,9 @@ const core = {
 }
 
 const loop = new GameLoop(time, input, (alpha, realDelta) => {
+  // 菜单读数喂给面板：世界停摆时 `core.update` 那一段整个跳过，所以意图只能在渲染回调里给
+  // （每帧一次，且 `uiEdges` 是 edge 语义 —— 一直按着不会连发）。KI-062。
+  if (panel.isOpen) panel.uiStep(input.uiEdges)
   arena.update(alpha, realDelta)
   vfx.update(realDelta) // particles run on real time — hitstop must not freeze VFX (tech-arch §4 rule 3)
   audio.update(realDelta)
