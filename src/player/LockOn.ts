@@ -59,8 +59,12 @@ export class LockOn {
   }
 
   setTarget(t: LockCandidate | null): void {
+    const had = this.target !== null
     this.target = t
     this.player.lockedTarget = t ? { getPos: () => t.getPos(), radius: 0.6 } : null
+    // 解除有一张自己的脸（synth 里 `lockon_off` 一直是空号）：换目标不该听到"断开"，所以只在
+    // 从有到无那一拍发；走 UI 总线不空间化（AudioEngine 的 UI_KEYS 名单里有它）。
+    if (!t && had) bus.emit('audio.sfx', { key: 'lockon_off', gain: 0.4 })
     bus.emit('ui.target', t
       ? { pos: null, name: t.nameKey, hpFrac: 1, poiseFrac: 0, isBoss: t.isBoss }
       : { pos: null, name: '', hpFrac: 0, poiseFrac: 0, isBoss: false })

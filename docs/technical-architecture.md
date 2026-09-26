@@ -721,8 +721,9 @@ Phase 4-A 把弹道跑通，但远程只被当作「会飞的近战判定」。4
 > `rpg/inventory.test.ts`、`rpg/progression.test.ts` 从未以这些名字落过盘。它们承诺的断言是真的，只是按"系统"而不是
 > 按"模块"落了盘：伤害管线在 `tests/flow/{ranged,gate5,combat}.test.ts`，体力在 `tests/flow/{combat,boss,elite}.test.ts`
 > 等一批里，背包/强化在 `tests/unit/rpg.test.ts` 与 `tests/flow/{shop,loot-rules,timbral-affix}.test.ts`。
-> **真实清单：74 份 `*.test.ts` = `tests/unit/` 30 份 + `tests/flow/` 44 份**（`find tests -name '*.test.ts' | wc -l`），
-> 本轮全绿 811 条用例。逐文件清单不在本文档里维护（会漂），跑 `npm run test` 的覆盖核对那一行就是权威。
+> **真实清单（2026-09-27 重数）：86 份 `*.test.ts` = `tests/unit/` 39 份 + `tests/flow/` 47 份**（`find tests -name '*.test.ts' | wc -l`），
+> 另有 `tests/support/fakeAudio.ts` 一台**量具**（假 WebAudio，不是用例）。本轮实测 1013 条用例（干净快照 `14796a0` + KI-065 那批 8 个文件全绿）。
+> **这句数字每次引用之前要重数**：上一版写的是"74 份 / 811 条"，那是 2026-09-26 的磁盘状态，两天里长了 12 份文件。逐文件清单不在本文档里维护（会漂），跑 `npm run test` 的覆盖核对那一行就是权威。
 > 下面只保留**当初的命名与现在的载体对不上、且值得记住语义**的那几条。
 - `combat/damage.test.ts`、`combat/stamina.test.ts`、`rpg/inventory.test.ts`、`rpg/progression.test.ts` → **未以此名落地**，语义见上
 - `tests/unit/movements.test.ts`（Phase 5-C2，16 条）：谱册状态层——点亮吃什么/先验后扣、升级阶梯到表尾报 `max`、
@@ -804,6 +805,42 @@ Phase 4-A 把弹道跑通，但远程只被当作「会飞的近战判定」。4
 > 主工作树当时正被并行会话红着）⇒ 先在 `dac9d68` 的干净 worktree 快照上真跑一次 bless，再把产物搬回主仓并 `diff` 证明
 > "按读数手工倒出的那份"与"真跑写出的那份"**逐字节一致**；没有"先写一个数再让门去迁就它"。
 > **仍然没被执行的是那句老话的另一半**：行覆盖是**被执行的行数**，不是**被断言的行为数**——这一批没有让它变得更"真"，只是让它变得更"细"。
+>
+> **对账 v4（KI-065，2026-09-27）：`audio` 那一格第一次从"看不见"变成"全看见"。** 上一版点名的那块最大盲区（15.93%，596 行只跑过 95 行）
+> 靠一台手写的假 WebAudio（`tests/support/fakeAudio.ts`：假 `AudioContext` 记录每个节点与每条 `connect` 边、假 `AudioParam` 记录每次
+> `set/linearRamp/exponentialRamp/cancel` 的**值与时刻**、假 `window` 换掉整只全局对象）第一次可断言，四份新测试文件 + `lockon.test.ts` 补的打分腿：
+> **HEAD 快照 `14796a0` + 本批 8 个文件的实测：总行覆盖 81.84% → 87.36%（8859/10140 行，72 个 src 文件，86 个测试文件 / 1013 条用例全绿）；
+> `audio` 15.93% → 100.00%（592/592 行）；`player` 86.40% → 94.77%；零覆盖名单 6 格 → 5 格（`src/player/LockOn.ts` 出列）。**
+> 五条限制要跟着这个数字一起读：
+> ①**这一批改的是可测性，不是玩法**——新增的几乎全是测试资产，生产侧只有两处：`lockon_off` 接上它唯一的消费者（`VOICES` 里躺着没人喊的那个），
+>    以及删掉 `music.ts` 里四行**永远跑不到**的"淡出到点归零"（覆盖率读数本身就是证据：`scheduling` 要求 `now < battleStopAt`，那段的前提是 `now ≥ battleStopAt`）；
+> ②`audio` 到 100% **不等于音色是对的**：这台量具保证图形状与参数调度可断言，"好听"仍然属于 §78 里 Blocked 那一栏（KI-010 同因）；
+> ③`audio` 不在 §6.1 点名的四个核心包里，**所以门今天仍然不会替它红**——它的地板被 bless 到 100 之后含义是"这一格不许再回到看不见"，
+>    不是"这一格达到了对玩家的承诺"；口径那句（80% 只管四个包）写在上面，不重复；
+> ④`(root)` 那 388 行（`src/main.ts`）仍是 0%：装配层只在浏览器里活，headless 没有可断言的对象，这一格不在任何承诺里也不在任何名单的债上；
+> ⑤**反向探针 56 刀、54 刀咬到行为红**（5 个被改文件跑完按 sha 逐字节还原复验）。两刀不咬，各自是一句实话而不是一个洞：
+>    `pan` 那道 `Math.max(-1, Math.min(1, side / Math.max(2, dist)))` **数学上到不了**（`|side| ≤ dist`，`dist ≥ 2` 时分式 ≤ 1、`dist < 2` 时分母是 2 而分子 < 2），
+>    摘掉钳位行为不变 ⇒ 它是死码的一半（同一行的乘子 0.85 有读者）；`scheduling` 里那半句 `now < battleStopAt` 是**等价突变**
+>    （淡出的账由 `while` 那道同名守卫负责——拆它红；`scheduling` 整道门的职责是"不该响的时候不响"——写成恒真也红），
+>    两道守卫各有证人，本批没有为了制造可测性去动生产代码。另有一刀是**刀自己的 bug**：`NOISE_CACHE.delete(ctx)` 第一版写在 `set` 之前
+>    （删的是一个还没写进去的键）⇒"不咬"的是探针不是判据，挪到 `set` 之后立刻红一条。
+> **地板只能在干净快照上写**：主工作树今天被并行会话红着（17 条：对话/任务/唤四钟/F3 面板/文档对账/存档恢复位），`--bless` 拒绝红跑，
+> 所以本批走的是"`git worktree` 拉 `14796a0` → 只把我这 8 个文件同步进去 → 控制组先全绿 → 再 bless → `cmp` 证明搬回主仓那份逐字节一致"。
+>
+> **实机腿（同批，`http://127.0.0.1:5199/?fresh=1`，Chrome 真 `AudioContext` 48kHz `running`）**：把 `AudioContext.prototype` 的七个工厂包一层，
+> 真机就变成同一台量具。① 首次手势建图 = 真图（12 gain / 3 biquad / 1 comp / 5 osc）；② **34 个 key 逐个喊，全部建出真节点、零抛错**，
+> 而连喊 34 声时最后 10 个 key **零节点** —— `MAX_VOICES = 24` 在真机上真的咬人，隔 2.5s 再喊十个全部出声（含此前是空号的 `lockon_off`）；
+> ③ UI 四个 key 带 pos 不生 `createStereoPanner`、世界 key 生一个 ⇒ 假机那套直通/空间化断言没有和 Chrome 语义打架；
+> ④ 锁定四拍全对上：空手→`lockon_on`、**换一个目标只响 `lockon_on` 不响 `lockon_off`**（本批 `if (!t && had)` 的实机证人）、有→null→`lockon_off`、抢空→`ui_move`；
+> 打分选了正前 6m 而非侧向 5m；⑤ 音乐：拍距实测 **0.714s** 逐拍不漂移、kick 150/snare 200 落在 1·3 与 2·4、ostinato 根音与表同序、反拍八度 **+0.357s**、
+> 第 1 拍的钟带着 `BELL_RATIOS`（260.12 的 2.01/2.43/3.07/4.53/5.77 倍，±8 音分）；第二场 `start:true` 后 **+0.1s** 落第 1 拍且第 1 拍又是 kick+65.41+钟 ⇒ `beatIdx` 真归零；
+> `start:false` 后拍点排到 stop+3.86s，`battleStopAt`(+4s) 之后一拍不排；⑥ 未知 key 喊 6 次 ⇒ 0 振荡器 + 每键一条 warn，且 warn 走 `bus.emit('log')` 而非 `console.warn`，
+> **所以浏览器控制台里看不见它**（以前没人记过这句）；⑦ `audio.muffle` on/off 不抛，真 bundle 里 `muffleRamp` 读出 100Hz/0.08s 与 20000Hz/0.18s。
+> 两处坑写给下一次：**`press_key` 在这个隐藏页送不进去**（`userActivation.hasBeenActive` 恒 false），真图靠 `window.dispatchEvent(new PointerEvent('pointerdown'))` 建；
+> **同步空转把 `tickFrame` 灌到 265fps 会量错** —— GameTime 跑到音频钟前面 3.5 倍，淡出尾部两拍被吞（我第一版据此得到"淡出提前 1.5s 结束"这句假结论），
+> 改成 40ms 节流步进后尾巴塞满。**量节拍的东西必须与音频钟同速跑，不许比它快。**
+> 仍然拿不到的：那条 `exponentialRamp` 落在哪个滤波器节点上（`AudioEngine`/`MusicLayer` 没挂进 `__caesura`，`main.ts:104` 的 `audio` 是模块内 const，读不到 `frequency.value`）；
+> 以及一切听感与像素（页面 0×0、`document.hidden`）—— 实机腿量到的是"Chrome 同意这套调度"，不是"它好听"。
 
 ### 6.2 Headless 功能测试（自动化 gameplay flow，需求 §59）
 无渲染模式：GameLoop 以 `tickSync()` 手动步进（注入假时钟），装配 stub 渲染层。脚本化协议：

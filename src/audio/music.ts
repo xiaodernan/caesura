@@ -154,10 +154,8 @@ export class MusicLayer {
       this.nextBeat += BEAT_SEC
       this.beatIdx++
     }
-    if (!this.battleOn && this.battleStopAt && now >= this.battleStopAt) {
-      this.battleStopAt = 0
-      this.nextBeat = 0
-    }
+    // 这里原有四行"淡出到点把 battleStopAt/nextBeat 归零"，被 KI-065 的覆盖率读数证明永远跑不到：
+    // 上面那句 `scheduling` 要求 `now < battleStopAt` 才会往下走，而那段的前提是 `now >= battleStopAt`。
   }
 
   /** 84BPM 脉冲鼓 + ostinato：鼓点按小节 4/4（kick 1/3 拍、军鼓边击 2/4 拍） */
