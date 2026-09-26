@@ -10,9 +10,23 @@ export interface BeatInfo {
 }
 
 /**
+ * 对外发布的**当前网格**（KI-066）：拍网的原样快照，不是给听的那一层的第二份配置。
+ * 只带 `bpm/beatsPerBar` 两个数——听众唯一读的就是这两个；"此刻是谁的拍"另有 `clockOwner`
+ * （F4 面板直接读它），塞进这条事件就是一个没有消费者的字段（§55）。
+ */
+export interface MusicGrid {
+  bpm: number
+  beatsPerBar: number
+}
+
+/**
  * Beat grid clock advanced by logic ticks so AI quantization stays deterministic
  * and headless-testable; the audio layer phase-locks WebAudio to this clock
  * (docs/KNOWN_ISSUES TD note: deviation from combat.md §17 audio-authoritative design).
+ *
+ * ⚠️ 上面那句 "the audio layer phase-locks WebAudio to this clock" 在 KI-066 之前只是**意图**：
+ * 音频侧自己养了一份 `BPM = 84`，从不跟这里走。现在它是事实——网格变化（含第一次发布）由本类
+ * 经 `audio.music.grid` 发布，`AudioEngine` 是唯一订阅者。
  */
 export class RhythmClock {
   bpm = 84
@@ -38,6 +52,28 @@ export class RhythmClock {
   private home = { bpm: 84, beatsPerBar: 4 }
   private overridden = false
   get clockOwner(): 'region' | 'boss' { return this.overridden ? 'boss' : 'region' }
+
+  /**
+   * 最后一次**被听见**的网格。`null` = 还没喊过。
+   * 之所以要记这个而不是每次改完就喊：`AISystem.syncClock` 每 tick 都会重算一次接管状态，
+   * 幂等重算不该在总线上刷出 60 条/秒的同一个网格。
+   */
+  private published: MusicGrid | null = null
+
+  /**
+   * 只在网格**真的变了**（含第一次）时发布。**唯一调用点是 `update()`**，写在这里的三个改网格方法都不直接喊——
+   * 因为"发布过"必须是"**被听见**过"：`main.ts` 建钟在第 61 行、建 `AudioEngine` 在第 104 行，
+   * 中间那次 `setBpm(84,4)`（第 62 行）如果算作"已发布"，全场的战斗音乐就永远等不到拍网
+   * （这一条不是推演：headless 探针按 main.ts 的顺序建钟→订阅→步进，实测 `grids: []` 加一条"没收到拍网"的 warn）。
+   * 交给 `update()` 还有一个好处：只有循环在跑的时候才可能有耳朵。
+   */
+  private publishGrid(): void {
+    const p = this.published
+    if (p && p.bpm === this.bpm && p.beatsPerBar === this.beatsPerBar) return
+    const g: MusicGrid = { bpm: this.bpm, beatsPerBar: this.beatsPerBar }
+    this.published = g
+    bus.emit('audio.music.grid', g)
+  }
 
   overrideTo(bpm: number, beatsPerBar: number): boolean {
     if (this.overridden && this.bpm === bpm && this.beatsPerBar === beatsPerBar) return false
@@ -88,6 +124,8 @@ export class RhythmClock {
   }
 
   update(dt: number): void {
+    // 拍网的唯一发布点（暂停中也发：网格是"现在是多少"，不是"走没走"）
+    this.publishGrid()
     if (this.paused) return
     this.beatAccum += dt * (this.bpm / 60) * (1 + this.drift)
     const b = Math.floor(this.beatAccum)
@@ -156,5 +194,12 @@ function wrap(a: number, n: number): number {
 declare module './EventBus' {
   interface GameEvents {
     'rhythm.beat': BeatInfo
+    /**
+     * KI-066：拍网的原样快照（区域 `regions.json > grid` 或 Boss 接管后的当前值）。
+     * 由本类独家发布、`AudioEngine` 独家消费 ⇒ 声明写在**主人**这里，不在 EventBus.ts 上开第二份。
+     * 刻意不含 `drift`：那是 §15.2「拍寄生」给逻辑拍的亚拍级摆动，若把它灌进调度，
+     * 每 tick 都在变的拍长会让 lookahead 里已排的拍与下一拍的间距不单调（听着就是乱拍）。
+     */
+    'audio.music.grid': MusicGrid
   }
 }

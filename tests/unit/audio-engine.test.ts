@@ -327,8 +327,7 @@ describe('消音（§5.4 处决演出：一切声音塌向 100Hz）', () => {
   })
 })
 
-describe('start()：把音乐层接上', () => {
-  it('start 建图 + 起 drone + 把 ambience 在 3 秒内推起来', () => {
+describe('start()：把音乐层接上', () => {  it('start 建图 + 起 drone + 把 ambience 在 3 秒内推起来', () => {
     installWindow()
     const engine = mkEngine()
     engine.start()
@@ -363,5 +362,57 @@ describe('start()：把音乐层接上', () => {
     expect(() => engine.update(-1)).not.toThrow()
     expect(() => engine.update(0.016)).not.toThrow()
     expect(made.length).toBe(0)
+  })
+})
+
+describe('拍网交接（KI-066：音乐层不再自带 BPM）', () => {
+  /** 拍面声的记号：驼鼓从 150Hz 起、军鼓边击从 200Hz 起（与 audio-music.test.ts 同一口径） */
+  const beatAt = (n: FakeNode): number | null => {
+    if (n.kind !== 'osc' || !n.startedAt.length) return null
+    const e = n.params.frequency.events.find((x) => x.kind === 'set')
+    const f = e ? e.value : n.params.frequency.value
+    return f === 150 || f === 200 ? Math.min(...n.startedAt) : null
+  }
+  /** 只走引擎的公开面（`start`/`update`）推进时间，读出每一拍的起始时刻 */
+  function onsets(ctx: FakeAudioContext, engine: AudioEngine, frames: number): number[] {
+    const out: number[] = []
+    for (let i = 0; i < frames; i++) {
+      const n0 = ctx.nodes.length
+      ctx.advance(0.05)
+      engine.update(0.05)
+      const t = ctx.nodes.slice(n0).map(beatAt).filter((x): x is number => x !== null)
+      if (t.length) out.push(Math.min(...t))
+    }
+    return out
+  }
+
+  it('网格先到、图后建：缓存住，`start` 建层时兑现（建层比建引擎晚是这里的常态）', () => {
+    installWindow()
+    const engine = mkEngine()
+    bus.emit('audio.music.grid', { bpm: 120, beatsPerBar: 4 })
+    engine.start()
+    const ctx = LAST()
+    bus.emit('audio.music.encounter', { start: true })
+    const on = onsets(ctx, engine, 40)
+    expect(on.length, '两秒里一次都没排 = 缓存的网格没交出去').toBeGreaterThanOrEqual(3)
+    expect(on[1] - on[0], '拍距不是缓存里那份 60/120 = 建层时把网格丢了').toBeCloseTo(0.5, 6)
+    void engine
+  })
+
+  it('层已经在跑：后来的网格只改之后的拍距（转交腿）', () => {
+    installWindow()
+    const engine = mkEngine()
+    bus.emit('audio.music.grid', { bpm: 84, beatsPerBar: 4 })
+    engine.start()
+    const ctx = LAST()
+    bus.emit('audio.music.encounter', { start: true })
+    const early = onsets(ctx, engine, 20)
+    bus.emit('audio.music.grid', { bpm: 120, beatsPerBar: 4 })
+    const late = onsets(ctx, engine, 40)
+    expect(early.length, '84 下连两拍都没排上，这条量不了间距').toBeGreaterThanOrEqual(2)
+    expect(early[1] - early[0], '建层时缓存的 84 没生效').toBeCloseTo(60 / 84, 6)
+    expect(late.length, '换网格之后停了 = 转交把调度打断了').toBeGreaterThanOrEqual(3)
+    expect(late[1] - late[0], '后来的网格没转交给正在跑的音乐层').toBeCloseTo(0.5, 6)
+    void engine
   })
 })

@@ -2,11 +2,12 @@
  * AudioEngine.ts — WebAudio 音频引擎（Phase 1 战斗原型，零采样纯合成）
  * 图结构：master → DynamicsCompressor → destination；master 前置总线 { sfx / music / ambience / ui }。
  * 3D：按 listener 位置算声像（StereoPanner）+ 距离衰减（listener 经 setListener 更新）。
- * 事件：订阅 bus 'audio.sfx' { key, pos?, gain? }；音乐遭遇由 music.ts 自行订阅。
+ * 事件：订阅 bus 'audio.sfx' { key, pos?, gain? } 与 'audio.music.grid'（拍网，KI-066）；音乐遭遇由 music.ts 自行订阅。
  * AudioContext 必须在用户手势后 resume —— start() 于首次手势调用；
  * 若构造后即处 suspended，会挂一次性 pointerdown/keydown 自动恢复。
  */
 import { bus, type GameEvents } from '../core/EventBus'
+import type { MusicGrid } from '../core/RhythmClock'
 import { triggerSfx } from './synth'
 import { MusicLayer } from './music'
 
@@ -44,6 +45,11 @@ export class AudioEngine {
   private ctx: AudioContext | null = null
   private graph: Graph | null = null
   private musicLayer: MusicLayer | null = null
+  /**
+   * 最后收到的拍网（KI-066）。要在这里缓存是因为**建层比建引擎晚**：`RhythmClock` 第一次发布发生在
+   * 逻辑循环的第一 tick，而 `MusicLayer` 要等首次用户手势建图才存在。缓存 = 那中间的变化不丢。
+   */
+  private grid: MusicGrid | null = null
   private started = false
   private voices = 0
   private warned = new Set<string>()
@@ -68,6 +74,11 @@ export class AudioEngine {
   constructor() {
     bus.on('audio.sfx', (p) => this.onSfx(p))
     bus.on('audio.muffle', (p) => this.onMuffle(p.on))
+    // KI-066：拍网向唯一主人领，不再由音乐层自己猜一份。订阅摘不掉这件事与上面两条同账（TD-006 第二腿）。
+    bus.on('audio.music.grid', (g) => {
+      this.grid = g
+      this.musicLayer?.setGrid(g)
+    })
     window.addEventListener('pointerdown', this.gesture)
     window.addEventListener('keydown', this.gesture)
   }
@@ -98,7 +109,7 @@ export class AudioEngine {
     this.detachGesture()
     if (this.started) return
     this.started = true
-    this.musicLayer = new MusicLayer(ctx, this.graph.music, this.graph.ambience)
+    this.musicLayer = new MusicLayer(ctx, this.graph.music, this.graph.ambience, this.grid)
     this.musicLayer.start()
   }
 

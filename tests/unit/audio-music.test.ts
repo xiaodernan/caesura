@@ -1,28 +1,36 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { bus } from '@/core/EventBus'
 import { MusicLayer } from '@/audio/music'
+import type { MusicGrid } from '@/core/RhythmClock'
 import { FakeAudioContext, FakeNode } from '../support/fakeAudio'
 
 /**
- * 音乐层第一次可断言（KI-065 / TD-006 第一腿的另一半：`src/audio/music.ts` 整个文件）。
+ * 音乐层的可断言面（KI-065 开了这块，KI-066 把拍网的所有权交回 `RhythmClock`）。
  *
- * 这里断的是**时间结构**：84BPM 的拍距、鼓点上哪个是驼鼓哪个是军鼓、脱战 4s 淡出、`cut` 立刻掐、
+ * 这里断的是**时间结构**：拍距、鼓点上哪个是驼鼓哪个是军鼓、脱战 4s 淡出、`cut` 立刻掐、
  * 音色石铃 5–9s 一颗。听感（"这套鼓好不好听"）不在这一份的保证范围里，本机没有可被听的输出（KI-010 同因）。
+ *
+ * ⚠️ 拍网是**注入**的（`rig(grid)`），不是这一层自带的：KI-066 之前 `music.ts` 顶上写着 `const BPM = 84`，
+ * 于是"84"这个数字有了两个主人，而音频那一个从不跟 `RhythmClock` 走。所以现在测试要自己声明输入是什么，
+ * 而"没有输入就不排拍"本身成为一条用例。
  *
  * `MusicLayer` 是有 `dispose()` 的，所以每条用例都在结束时把总线订阅摘掉——
  * `bus` 是进程全局的，留下一条订阅会把后面整块用例读到脏状态（KI-058 那次合跑假红的形状）。
  */
 
-const BEAT = 60 / 84
+/** 84/4 = 休垒与全场默认网格（真值在 `regions.json > grid`，抄在这里是给测试一个明说的输入） */
+const GRID: MusicGrid = { bpm: 84, beatsPerBar: 4 }
+const BEAT = 60 / GRID.bpm
 
-function rig(): { ctx: FakeAudioContext; layer: MusicLayer; musicOut: FakeNode; ambOut: FakeNode } {
+function rig(grid: MusicGrid | null = GRID): { ctx: FakeAudioContext; layer: MusicLayer; musicOut: FakeNode; ambOut: FakeNode } {
   const ctx = new FakeAudioContext()
   const musicOut = ctx.createGain()
   const ambOut = ctx.createGain()
   const layer = new MusicLayer(
     ctx as unknown as AudioContext,
     musicOut as unknown as AudioNode,
-    ambOut as unknown as AudioNode
+    ambOut as unknown as AudioNode,
+    grid
   )
   return { ctx, layer, musicOut, ambOut }
 }
@@ -50,6 +58,32 @@ function startedFreqs(ns: FakeNode[]): number[] {
     const e = n.params.frequency.events.find((x) => x.kind === 'set')
     return e ? e.value : (n.params.frequency.value ?? -1)
   })
+}
+
+/**
+ * "这一批节点里有一拍打在拍面上"的记号：驼鼓从 150Hz 起、军鼓边击从 200Hz 起。
+ * ostinato 的八个音（65.41…155.56）与它们的八度（130.82…311.12）都不撞这两个数，石铃最低 523.25 也不撞。
+ */
+const isBeatNode = (n: FakeNode): boolean =>
+  n.kind === 'osc' && startedFreqs([n]).some((f) => f === 150 || f === 200)
+
+/** 从若干批次里读出"每一拍落在哪个时刻"（没有拍面声的批次跳过） */
+function onsetsOf(batches: FakeNode[][]): number[] {
+  return batches.filter((b) => b.some(isBeatNode))
+    .map((b) => Math.min(...b.filter(isBeatNode).flatMap((n) => n.startedAt)))
+}
+
+/** 起层之后按 `step` 秒一帧地推时间，返回每次 update 新建的节点 */
+function beats(ctx: FakeAudioContext, layer: MusicLayer, count: number, step = 0.05): FakeNode[][] {
+  const batches: FakeNode[][] = []
+  for (let i = 0; i < count; i++) {
+    const before = ctx.nodes.length
+    ctx.advance(step)
+    layer.update()
+    const fresh = ctx.nodes.slice(before)
+    if (fresh.length) batches.push(fresh)
+  }
+  return batches
 }
 
 describe('ambience：低音 drone 与音色石铃', () => {
@@ -125,20 +159,7 @@ describe('ambience：低音 drone 与音色石铃', () => {
   })
 })
 
-describe('战斗层：84BPM 脉冲鼓 + ostinato', () => {
-  /** 起层之后按 `step` 秒一帧地推时间，返回每次 update 新建的节点 */
-  function beats(ctx: FakeAudioContext, layer: MusicLayer, count: number, step = 0.05): FakeNode[][] {
-    const batches: FakeNode[][] = []
-    for (let i = 0; i < count; i++) {
-      const before = ctx.nodes.length
-      ctx.advance(step)
-      layer.update()
-      const fresh = ctx.nodes.slice(before)
-      if (fresh.length) batches.push(fresh)
-    }
-    return batches
-  }
-
+describe('战斗层：脉冲鼓 + ostinato（拍网由外面注入）', () => {
   it('拍距 = 60/84 秒：连续四拍的起始时刻两两差一个拍长', () => {
     const { ctx, layer } = rig()
     open.push(() => layer.dispose())
@@ -289,5 +310,72 @@ describe('战斗层：84BPM 脉冲鼓 + ostinato', () => {
     expect(batch.length, '淡出过一次就再也起不了拍 = 战斗音乐一局游戏只能用一次').toBeGreaterThanOrEqual(4)
     expect(Math.min(...batch[0].flatMap((n) => n.startedAt)) - t0, '第二场战斗的第一拍没有立刻跟上').toBeCloseTo(0.1, 2)
     expect(startedFreqs(batch[0]).includes(150), '重新入场第 1 拍不是驼鼓 = beatIdx 还挂着上一场的第 N 拍').toBe(true)
+  })
+})
+
+describe('拍网所有权（KI-066：这里不再有第二份 BPM）', () => {
+  it('没有网格 ⇒ 战斗层一声不排，但 log 里恰好一条 warn（"音乐没响"必须能归因）', () => {
+    const msgs: string[] = []
+    const { ctx, layer } = rig(null)
+    open.push(() => { layer.dispose(); msgs.length = 0 })
+    const off = bus.on('log', (p) => { if (p.msg.includes('拍网')) msgs.push(p.msg) })
+    open.push(off)
+    layer.start()
+    bus.emit('audio.music.encounter', { start: true })
+    const batch = beats(ctx, layer, 60)
+    expect(batch.filter((b) => b.some(isBeatNode)).length, '没网格却排了拍 = 实现里还藏着一份默认 BPM').toBe(0)
+    expect(msgs.length, `没网格要说，但只说一次（实测 ${msgs.length} 条）`).toBe(1)
+    expect(ctx.count('osc'), 'drone 不吃拍网，不该被这道门一起关掉').toBeGreaterThanOrEqual(5)
+  })
+
+  it('换网格只作用于"之后排的拍"：已排的拍一张不抹、包络一条不 cancel，下一拍之后才是新拍长', () => {
+    const { ctx, layer } = rig()
+    open.push(() => layer.dispose())
+    layer.start()
+    bus.emit('audio.music.encounter', { start: true })
+    const early = beats(ctx, layer, 20) // 走到 t = 1.00：84 下排了第 1、2 拍
+    // 变更之前的全部时间线快照：`startedAt` 与包络自动化事件。假参数里 cancel 会把 t 之后的事件删掉，
+    // 所以"换网格顺手 cancel 重排"这一刀会直接反映成数组变短，而不是悄悄过去。
+    const snap = ctx.nodes.map((n) => ({ n, started: [...n.startedAt], env: n.params.gain ? [...n.params.gain.events] : null }))
+    layer.setGrid({ bpm: 120, beatsPerBar: 4 })
+    const late = beats(ctx, layer, 40)
+    for (const s of snap) {
+      expect(s.n.startedAt, `${s.n.id} 的排程时刻被换网格改写了`).toEqual(s.started)
+      if (s.env) expect(s.n.params.gain.events, `${s.n.id} 的包络被换网格抹掉了`).toEqual(s.env)
+    }
+    const e = onsetsOf(early)
+    const l = onsetsOf(late)
+    expect(e.length, '84 下一秒里连两拍都没排上，这条量不了').toBeGreaterThanOrEqual(2)
+    expect(e[1] - e[0], '换网格之前应该是 60/84 的拍距').toBeCloseTo(BEAT, 6)
+    expect(l.length, '换了 120 之后一次都没排').toBeGreaterThanOrEqual(3)
+    // 队列里已经排好的那一拍保持旧间距（不抹的代价就是这一拍仍按旧拍长跑完）
+    expect(l[0] - e[e.length - 1], '已排进队列的那一拍被新拍长提前了').toBeCloseTo(BEAT, 6)
+    expect(l[1] - l[0], '新拍长没跟到 60/120').toBeCloseTo(0.5, 6)
+    expect(l[2] - l[1], '第三拍又滑回旧间距').toBeCloseTo(0.5, 6)
+  })
+
+  it('3/4 的网格（奥斯塔拉在表里与实机都是 108/3）：小节形状跟着走，钟 accent 的周期变成每两小节 = 6 拍', () => {
+    const { ctx, layer } = rig({ bpm: 100, beatsPerBar: 3 })
+    open.push(() => layer.dispose())
+    layer.start()
+    bus.emit('audio.music.encounter', { start: true })
+    const batch = beats(ctx, layer, 240).filter((b) => b.some(isBeatNode)) // 12 秒 ≈ 20 拍
+    expect(batch.length, '跑不满两个小节，这条量不了形状').toBeGreaterThanOrEqual(13)
+    const voice = (b: FakeNode[]): string => {
+      const f = startedFreqs(b)
+      return f.includes(150) ? '咚' : f.includes(200) ? '哒' : '·'
+    }
+    expect(batch.slice(0, 6).map(voice).join(''), '3/4 的拍面不是两轮"咚-哒-咚"').toBe('咚哒咚咚哒咚')
+    const on = onsetsOf(batch.slice(0, 6))
+    expect(on[1] - on[0], '100BPM 没跟到拍距上').toBeCloseTo(0.6, 6)
+    // accent 认 261.64±2.5Hz（泛音带 ±8 音分随机微失谐，不能等值比；石铃最低 523.25 撞不上这格）
+    const hasBell = (b: FakeNode[]): boolean =>
+      b.some((n) => n.kind === 'osc' && Math.abs(startedFreqs([n])[0] - 261.64) < 2.5)
+    const accents: number[] = []
+    for (let i = 0; i < batch.length; i++) if (hasBell(batch[i])) accents.push(i)
+    expect(accents.length, `量不到三个 accent：实测第 ${accents.map((k) => k + 1).join('/')} 拍`).toBeGreaterThanOrEqual(3)
+    // 每一条都必须落在"6 的整数倍"上：周期对了，起点与中间插音也一起被钉住
+    expect(accents, `钟的周期没跟着 3/4 的小节形状走：实测第 ${accents.map((k) => k + 1).join('/')} 拍`)
+      .toEqual(accents.map((_, k) => k * 6))
   })
 })
