@@ -120,6 +120,12 @@ export class AISystem {
     return false
   }
 
+  /**
+   * 拍位插槽的**只读**镜像（F4 调试面板用）。分成两个口而不是让面板去调 `slotTaken`：
+   * 那个函数领用槽位，"看一眼这一拍有没有人排上"就会真的把这一拍占掉——观测改变被观测的系统。
+   */
+  get armedSlots(): readonly string[] { return [...this.slotArmed] }
+
   update(dt: number, tick: number, player: PlayerController, rhythm: RhythmClock): void {
     this.tick = tick
     this.syncClock(rhythm)

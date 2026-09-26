@@ -21,7 +21,11 @@ const LOGIC = [
 ]
 /** 表现层：只有这些文件允许 import three / 被表现层模块引用 */
 const PRESENTATION = new Set([
-  'main.ts', 'player/CameraRig.ts', 'tools/CombatDebugger.ts', 'ui/Hud.ts',
+  'main.ts', 'player/CameraRig.ts', 'ui/Hud.ts',
+  // `tools/` 是"读数给人看"的那一层：它允许碰 DOM，但也因此和 UI 一样受最后一条闸门管——
+  // 面板只许从组合根拿闭包，不许自己去 import 运行时实例（KI-058 的三块新面板就在这条里）。
+  'tools/CombatDebugger.ts', 'tools/DebugPanel.ts',
+  'tools/EnemyDebugger.ts', 'tools/QuestDebugger.ts', 'tools/AIDebugger.ts',
   'vfx/VfxLayer.ts', 'vfx/materials.ts',
   'world/ActorVisuals.ts', 'world/ChunkGreybox.ts', 'world/InteractableGreybox.ts',
   'world/WallGreybox.ts',

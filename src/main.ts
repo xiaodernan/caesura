@@ -34,6 +34,10 @@ import { Stakerite } from '@/ui/Stakerite'
 import { TitleScreen } from '@/ui/TitleScreen'
 import { DialogueBox } from '@/ui/DialogueBox'
 import { CombatDebugger } from '@/tools/CombatDebugger'
+import { DebugPanel } from '@/tools/DebugPanel'
+import { enemyPanelText } from '@/tools/EnemyDebugger'
+import { questPanelText, questRows } from '@/tools/QuestDebugger'
+import { aiPanelText } from '@/tools/AIDebugger'
 import { SaveGame, LocalStore, IdbStore } from '@/save/Serializer'
 import { SlotRoster } from '@/save/Slots'
 import { Checkpoints } from '@/save/Checkpoint'
@@ -281,6 +285,54 @@ function setVeil(v: number): void {
   canvas.style.filter = q > 0 ? `saturate(${(1 - q).toFixed(2)}) brightness(${(1 - q * 0.3).toFixed(2)})` : ''
 }
 
+/* ---------------------------------------------------------------------------
+ * 运行时调试面板（需求 §54 的 F1/F3/F4，§56 目录表里规划的三个 Debugger）。
+ * 只在 DEV 构建里接线：这三块面板读的是引擎内部状态，发布版本里没有它们，
+ * 而 `core.postTick` 的循环里连一次函数调用都不会留下（`debugPanels` 恒空）。
+ * F2 比这套外壳早落地（`CombatDebugger` 走纯事件流，不需要读实例），不动它。
+ * ------------------------------------------------------------------------- */
+const debugPanels: DebugPanel[] = []
+if (import.meta.env.DEV) {
+  const nearestEnemy = (): (typeof ai.enemies)[number] | null => {
+    let t: (typeof ai.enemies)[number] | null = null
+    let best = Number.POSITIVE_INFINITY
+    for (const e of ai.enemies) {
+      const d = Math.hypot(e.pos.x - player.pos.x, e.pos.z - player.pos.z)
+      if (d < best) { best = d; t = e } // 出场顺序做平手裁决：面板不许制造不稳定
+    }
+    return t
+  }
+  debugPanels.push(
+    new DebugPanel({
+      key: 'F1', label: 'enemies on the field', anchor: 'position:fixed;left:12px;top:300px',
+      text: () => enemyPanelText(ai.enemies, player.pos),
+    }),
+    new DebugPanel({
+      key: 'F3', label: 'quests & world state (read-only)', anchor: 'position:fixed;left:46%;top:12px',
+      text: () => questPanelText(questRows(questTable, quests), {
+        flags: streaming.flagKeys(),
+        byRules: worldState.flagsWritten,
+        used: interact.snapshot(),
+        relations: quests.snapshot().relations,
+      }),
+    }),
+    new DebugPanel({
+      key: 'F4', label: 'AI decision path (FSM + 排招器，不是行为树)', anchor: 'position:fixed;left:12px;top:46%',
+      text: () => {
+        const info = rhythm.info()
+        return aiPanelText({
+          target: nearestEnemy(), player: player.pos,
+          grid: {
+            owner: rhythm.clockOwner, bpm: rhythm.bpm, beatsPerBar: rhythm.beatsPerBar,
+            bar: info.bar, beatInBar: info.beatInBar, tick: time.tick,
+          },
+          armedSlots: ai.armedSlots,
+        })
+      },
+    }),
+  )
+}
+
 const core = {
   update(dt: number, t: GameTime, inp: Input) {
     if (inp.frame.edges.has('map')) {
@@ -349,6 +401,8 @@ const core = {
     rhythm.update(TICK_DT)
     // 相机跟随仍按 `t.dt`（停顿那一下镜头该"挂"住），但震镜走 tick——见 CameraRig 与 §9。
     rig.update(t.dt, player, input.frame.look, lock.target ? lock.target.getPos() : null, TICK_DT)
+    // 调试面板每逻辑帧重画一次（关着的面板内部直接 return，一个字符串都不生成）
+    for (const p of debugPanels) p.refresh()
   }
 }
 
@@ -454,7 +508,7 @@ if (freshBoot) {
   }, originId)
 }
 
-;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, wallGreybox, interact, props, hud, spawner, nodes, worldState, projectileVis, actors: visuals, bossArena, saves, saveRoster, checkpoints, rpg, settlement, panel, setPanelOpen, quests, dialogueEngine, dialogueBox, openDialogue, refreshRpg, saveNow: () => saves.save('autosave'), get title() { return title } }
+;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, wallGreybox, interact, props, hud, spawner, nodes, worldState, projectileVis, actors: visuals, bossArena, saves, saveRoster, checkpoints, rpg, settlement, panel, setPanelOpen, quests, dialogueEngine, dialogueBox, openDialogue, debugPanels, refreshRpg, saveNow: () => saves.save('autosave'), get title() { return title } }
 
 document.getElementById('boot')!.style.display = 'none'
 ;(window as unknown as Record<string, unknown>).__CAESURA_BOOTED__ = true

@@ -63,15 +63,28 @@ describe('文档对账闸门（KI-056）', () => {
     expect(bad, `非法状态标签（§78 只允许那四个）：${JSON.stringify(bad)}`).toEqual([])
   })
 
-  it('对账里点名的三条死绑定必须仍然被记着（谁修好了代码就该同时删这条，而不是让文档悄悄留着）', () => {
-    expect(archDoc, 'F1/F3/F4 那三块调试面板的缺口必须在 §2.1 里读得到').toMatch(/EnemyDebugger[\s\S]{0,400}F1/)
+  it('对账里点名的死绑定：每把被占住的键必须有读者，没有读者就必须留一笔 TD（同生同死）', () => {
+    expect(archDoc, 'F1/F3/F4 那三块调试面板必须在 §2.1 里读得到（落没落都算账）').toMatch(/EnemyDebugger[\s\S]{0,400}F1/)
     // 判据锚在 TD 表的 ID 列上：只在正文里提一句 "TD-001" 不算在册（第一版就是这样白送的，被变异探针打出来了）
     const tdTable = issues.split('## 2. Technical Debt')[1].split('## 3.')[0]
     const ids = [...tdTable.matchAll(/^\|\s*(TD-\d+)\s*\|/gm)].map((m) => m[1])
+    // "死"的判据不是"键还写在 Input 里"——那份清单是**预留表**（`preventDefault` 不让浏览器抢走），
+    // 键出现在那儿是应该的。死的是"占着名字没人读"。所以这里查的是读者，而且读者必须是面板本身：
+    // 谁往预留表里加一把 F 键又不接面板，这条就会把 TD-001 叫回来。
     const input = readFileSync(root + 'src/core/Input.ts', 'utf8')
-    const stillDead = ['F1', 'F3', 'F4'].some((k) => input.includes(`'${k}'`))
-    if (stillDead) expect(ids, '那三把键还占着却没有面板 ⇒ TD-001 必须在册').toContain('TD-001')
-    else expect(ids, '键已摘掉 ⇒ TD-001 必须同时销案，别让文档留着一笔假债').not.toContain('TD-001')
+    const panels = readFileSync(root + 'src/main.ts', 'utf8') + readFileSync(root + 'src/tools/CombatDebugger.ts', 'utf8')
+    // 两侧都要**结构**判据，不能只看字符串出现过：
+    // 预留侧锚在 `e.code` 那份名单上，读者侧锚在**绑定**上（`key: 'F1'` / `e.key !== 'F2'`）。
+    // 否则"面板拆了但注释里还写着 'F1'"就能骗过这条——探针 D 第一次正是这么漏的。
+    const reservedList = input.match(/\[([^\]]*)\]\.includes\(e\.code\)/)?.[1] ?? ''
+    const reserved = ['F1', 'F2', 'F3', 'F4'].filter((k) => reservedList.includes(`'${k}'`))
+    const bound = new Set([...panels.matchAll(/(?:key:\s*|\.key\s*[!=]==\s*)'(F\d)'/g)].map((m) => m[1]))
+    const unbound = reserved.filter((k) => !bound.has(k))
+    expect(reserved.length, '预留表里的 F 键整批被删了 = 这条判据在空转').toBeGreaterThanOrEqual(4)
+    expect([...bound], '这些绑定不在预留表里 = 面板接了一把没预留的键（浏览器会把它抢走）')
+      .toEqual(expect.arrayContaining(reserved.filter((k) => bound.has(k))))
+    if (unbound.length) expect(ids, `这些键占着预留位却没有面板：${unbound.join(' ')} ⇒ TD-001 必须在册`).toContain('TD-001')
+    else expect(ids, '每把预留键都有了读者 ⇒ TD-001 必须同时销案，别让文档留着一笔假债').not.toContain('TD-001')
     expect(ids, 'KI-056 抓出的三条流程/命名债都要有 TD 行').toEqual(expect.arrayContaining(['TD-002', 'TD-003']))
   })
 })

@@ -30,7 +30,7 @@
 | Nanite（虚拟化几何） | 手工 LOD 组（3 级）+ `InstancedMesh` 植被/岩体 + Draco 压缩 glTF | **近似** | 无逐集群（cluster）LOD 与软件光栅；以「实例化 + 距离分级网格」在 6GB 显存预算内达到同量级 drawcall 控制 |
 | Lumen（动态 GI/反射） | 烘焙 AO（lightmap/vertex AO）+ SSAO 后处理 + 屏幕空间反射（仅 High/Ultra 档，平面近似）+ 环境光探针（每区域一组 `PMREMGenerator` env map） | **降级** | 无真实动态 GI；「凝声极光带」天光用 IBL 探针 + 每区域 2~4 个烘焙光变体近似「光照 mood」（需求 §37）；动态光源仅限 ≤8 个 punctual light |
 | World Partition / Level Streaming / Data Layers | 区域流送：chunk streaming（§5.5），每区域独立 scene graph 片段，按玩家位置 activate/deactivate；Data Layer 等价物为 `layerMask`（环境层/玩法层/剧情层分开卸载） | **近似** | 无网格级（Nanite cell）流送，粒度为 chunk（48m）；传送需触发强制同步加载 + 黑屏遮蔽 |
-| Behavior Tree / Blackboard / EQS | 自研 TS 行为树（`ai/bt/`：Selector/Sequence/Decorator/Service 节点 + Blackboard `Map<string,unknown>`）；EQS 由「查询生成器」近似：候选位置打分（距离/视线/掩体） | **等效**（简化版） | 无编辑器可视化（用 `tools/AIDebugger` 面板树形打印替代）；节点类型先实现 8 种够用即止。**⚠️ 2026-09-26 对账：这一行是当初的选型理由，不是现状**——实际落的是「距离带 → 招式选择表」的数据查表，`ai/bt/`、Blackboard、EQS、`tools/AIDebugger` 全都不存在（§2.1-B）。按今天的树读，本行的等效等级应记为**缺失且换了路线** |
+| Behavior Tree / Blackboard / EQS | 自研 TS 行为树（`ai/bt/`：Selector/Sequence/Decorator/Service 节点 + Blackboard `Map<string,unknown>`）；EQS 由「查询生成器」近似：候选位置打分（距离/视线/掩体） | **等效**（简化版） | 无编辑器可视化（用 `tools/AIDebugger` 面板树形打印替代）；节点类型先实现 8 种够用即止。**⚠️ 2026-09-26 对账：这一行是当初的选型理由，不是现状**——实际落的是「距离带 → 招式选择表」的数据查表，`ai/bt/`、Blackboard、EQS 全都不存在（§2.1-B）；`tools/AIDebugger.ts` 到 KI-058 才落地，但它打印的是 **FSM 状态与选招过程**，不是"行为树执行路径"（本作没有行为树可打印）。按今天的树读，本行的等效等级应记为**缺失且换了路线** |
 | State Machines | 分层 FSM（HFSM）手写状态类，需求 §20 的 11 态全覆盖 | **等效** | — →**对账修正**：11 态确实一个不少（`EnemyState` 联合类型 + `enter()`），但**没有 HFSM 基类也没有分层**，是一份手写 switch（§2.1-A） |
 | UMG / Common UI | DOM（HTML/CSS）做菜单栈/背包/对话 + 单个 overlay canvas 做 HUD 实时元素（HP 振幅条、节拍环）；`ui/` 统一 Widget 栈管理焦点/输入捕获 | **降级** | 无矢量缩放 DPI 自动适配（用 rem + canvas scale 手工处理）；材质化 UI（振膜质感）靠 CSS backdrop-filter + canvas shader，效果上限低于 UMG |
 | Niagara GPU 粒子 | 自研 GPU 粒子：`InstancedBufferGeometry` + 顶点动画 shader（生命周期/速度/颜色写入实例属性，CPU 仅管理发射器）；CPU 回退路径给 Low 档 | **近似** | 无模块图编辑器（发射器配置全部 JSON 数据驱动，见 §3 SkillData.vfx）；流体/ribbon 拖尾用定制 tube shader 单独实现。**对账**：这套机制**落了，但只有三类**——ring / spark / shard（`vfx/VfxLayer.ts` + `vfx/materials.ts`）；`vfx/GPUParticles.ts`、`Trails.ts`、`Decals.ts` 三个文件名与拖尾/贴花能力均未落（§2.1-B），CPU 回退路径同理未落 |
@@ -225,7 +225,7 @@ src/
 > 当成了清单读，于是"表里有 `ai/Navigation.ts`"被理解成"项目里有导航"。这一节把两边对上：
 > **A = 文件名没落但职责落了（换了载体）**，**B = 文件名和职责都没落（真缺口）**，
 > **C = 真树里有、这张表没写（后来长出来的）**。可复跑的事实来源只有一条命令：`find src -name '*.ts' | sort`
-> （本轮 **68 个文件**：其中 `src/data/json/` 那些 `.json` 不计，本闸门只核 `.ts`）。分层与依赖箭头没有因为对账而改变，但**有一层是规划外新增的**，见 C 表的 `input/`。
+> （本轮 **72 个文件**（KI-058 之后；本节初稿核的是 68）：其中 `src/data/json/` 那些 `.json` 不计，本闸门只核 `.ts`）。分层与依赖箭头没有因为对账而改变，但**有两层是规划外新增的**，见 C 表的 `input/`。
 
 **A. 换了载体：表里的路径不存在，职责确实每天都在跑**
 
@@ -262,7 +262,7 @@ src/
 | `ui/MenuStack.ts`、`ui/MapUI.ts`（需求 §43 地图） | 未落 | UI 现只有 HUD、调音桩面板、对话箱、存档两屏、标题屏。**顺带一条命名失真**：`core/Input.ts` 里那个虚拟按钮仍叫 `map`（Tab / 手柄 6 号键），但它今天的消费者（`main.ts` 的 `edges.has('map')`）开的是**调音桩/商摊面板**，不是地图——§43 的地图 UI 从未落地，于是"按着地图的名字在调音"。本轮不改这个键名（改了会连带动 `settings` 与测试口径），只在此登记 |
 | `vfx/GPUParticles.ts`、`vfx/Trails.ts`、`vfx/Decals.ts` | 未落 | 弹痕/震纹贴花与武器拖尾没有，命中反馈目前靠 ring+spark+shard 三件套 |
 | `audio/Mixer.ts` 的三主题淡入淡出（§11 转调） | 未落 | `audio/music.ts` 只有一条休垒 drone + 随机泛音；combat/boss 主题与转调规则没有 |
-| `tools/EnemyDebugger.ts`(F1)、`QuestDebugger.ts`(F3)、`AIDebugger.ts`(F4) | 未落 | **四把键里只有 F2 有面板**（`CombatDebugger` 监听 `F2`）。`core/Input.ts` 对 F1/F3/F4 做了 `preventDefault` 而**全仓库没有一处读它们** ⇒ 这三把是真·死绑定：按下去浏览器不响应、游戏里什么都不发生，看上去"已被占用"。要么补面板，要么把这三把从 `preventDefault` 名单里摘掉——按 §55「没有消费方的东西不占位」，后者是默认答案，但那是代码批次的事，本批只登记（§2.1 的对账不改行为） |
+| ~~`tools/EnemyDebugger.ts`(F1)、`QuestDebugger.ts`(F3)、`AIDebugger.ts`(F4)~~ 三块面板已落地（KI-058，2026-09-26） | Partial | **这一行从前是"真缺口"，现在只剩缺口的那半句**：三个文件名与 §2 规划树逐字一致，`core/Input.ts` 里 F1/F3/F4 从此有了读者（TD-001 随本批销案），共用外壳是规划外的 `tools/DebugPanel.ts`（见 C 表）。**没落的那三句都在这张表里点名**：① F1 规划写"每敌人**浮标签**+面板列表"，本批只有面板列表，场景内浮标签没有（它要 `three` 的 sprite/CSS2D，与 KI-010 同因：本机没有可见窗口，画出来也从未被眼睛看过一次，所以不拿"代码写了"冒充"做完了"）；② F4 规划写"**行为树**执行路径高亮（ASCII 树）"，可这一作的 AI 真实形态是 **FSM（chase/range/melee/retreat/regroup）+ 鼓点排招器**，从来没有行为树 ⇒ 面板如实打印状态机与选招过程（选哪一带→阶段放行→冷却→落在哪个槽），**不画一棵假树**，`ai/bt/` 那个从未存在过的目录同理仍在 B 表；③ F3 规划写"world flags **编辑器**"，本批刻意只做只读：编辑旗标要写世界状态，而写旗标的唯一合法通道是 `bus.emit('world.flag')`（`world/Streaming.ts` 与交互层各自缓存在那条事件上），调试器另开一条写路径 = 造第二套真相。读数三条通道都齐了（当前 flags / 由 worldstate 规则推出的 / 交互物 used / NPC 关系），"能改"这一格登记为待裁决 |
 | `core/Registry.ts` 的 glTF/纹理/音频引用计数 + 占位兜底 | Partial | JSON 名册与 `load(url, loader)`（loader 由表现层注入，core 不 import three）都在；**preload 与引用计数没有**，因为场上还没有需要计数的外部资源 |
 
 **C. 真树里有、这张表没写（交付过程中长出来的）**
@@ -280,6 +280,7 @@ src/
 | `ui/Stakerite.ts`、`ui/TitleScreen.ts`、`ui/SaveSlots.ts` | 调音桩面板、开场定弦（KI-031②）、存档槽两屏（KI-025②）——都晚于规划 |
 | `world/ActorVisuals.ts`、`world/BossArenaVisuals.ts` | 身体与场地的灰盒表现层。规划把它们算进了 `SceneGraph`，实际各自一份才好测 |
 | `world/WallGreybox.ts` | KI-014②a：遮挡必须看得见 |
+| `tools/DebugPanel.ts` | §2 的 `tools/` 只列了四块面板，没列它们**共用的外壳**。KI-058 补后三块时发现三份"钉在屏幕角落、按 F 键开合、逐 tick 重画文本"的代码会各写一遍且各不相同（第一版的 F1 就是漏了 `pointer-events:none` 的那个）⇒ 抽成一份 `DebugPanelSpec`：面板只交 `{ key, label, anchor, text() }`，DOM 与按键监听归它，读数一律由组合根（`main.ts`，且只在 `import.meta.env.DEV`）以闭包注入。规划外还多了一条分工：`tools/` 里**只有这一个文件碰 DOM**，四块面板各自是纯文本产线（只收读数闭包、只吐字符串），所以 headless 可测（`tests/flow/debug-panels.test.ts` 27 条里只有外壳那 4 条需要一份最小 DOM 替身） |
 
 **这一节往后的读法**（防止又漂回去）：需要"某个能力实现在哪"时，**先读 KNOWN_ISSUES 的状态表与 §2.1，再读这张目录表**；
 新模块交付时必须在 A/B/C 三张表之一加一行，改 `src/` 而不动本节 = 本节的日期就该更新。

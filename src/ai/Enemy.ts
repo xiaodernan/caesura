@@ -809,8 +809,12 @@ export class Enemy {
   get inBreath(): boolean {
     return !!this.attack?.spec.reclaimWindow && this.attack.tick < this.attack.spec.frames.startup
   }
-  /** 阶段白名单（非 Boss 原样返回）：改表即改「这一阶她会什么」 */
-  private phaseActions(actions: string[]): string[] {
+  /**
+   * 阶段白名单（非 Boss 原样返回）：改表即改「这一阶她会什么」。
+   * 公开是因为 F4 面板要报的是同一个交集：私有的话面板只能自己再抄一遍 `allow.includes`，
+   * 那条规则就出现两个主人——而它恰恰是最容易在改表时只对上一半的那种规则。
+   */
+  phaseActions(actions: string[]): string[] {
     const allow = this.bossPhaseData?.attacks
     return allow ? actions.filter((a) => allow.includes(a)) : actions
   }
@@ -871,7 +875,7 @@ export class Enemy {
     const lead = spec.frames.activeStart
     const beatWait = offGrid ? 0 : rhythm.ticksUntilBeatOn(spec.beat, lead)
     if (!offGrid) {
-      const key = `${rhythm.info().bar}:${rhythm.info().beatInBar}:${spec.beat[0]}`
+      const key = attackSlotKey(rhythm.info().bar, rhythm.info().beatInBar, spec.beat[0])
       if (slotTaken(key)) return
     }
     this.attack = newAttack(spec, lead - beatWait)
@@ -1015,6 +1019,14 @@ function stepKite(e: Enemy, t: Vec3, dt: number, speed: number): void {
 
 /** 距离带里的伪动作：只决定脚步，不能当成招式出手 */
 const PSEUDO_ACTIONS = new Set(['chase', 'backstep', 'hold'])
+
+/**
+ * 拍位插槽的键（§2.1 命中帧落拍）。领用方与读数方共用这一条：F4 面板打印的键必须就是
+ * `slotTaken` 听到的那个串，否则面板上"这一拍有没有人"读的是自己编的格式，看着对、其实从未对上。
+ */
+export function attackSlotKey(bar: number, beatInBar: number, specBeat: number): string {
+  return `${bar}:${beatInBar}:${specBeat}`
+}
 
 function hasAttackAction(e: Enemy, actions: string[]): boolean {
   return actions.some((a) => !PSEUDO_ACTIONS.has(a) && e.data.attacks.some((atk) => atk.id === a))
