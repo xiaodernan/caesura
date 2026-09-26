@@ -141,6 +141,11 @@ export class PlayerController {
   beatGraceTicks = 0
   private beatGraceDuration = 0
   /**
+   * §7.3 轻身法（KI-036）：处决演出**最后一段**的可取消占比（0.3 = 后 30%；0 = 没学）。
+   * 与 `beatGraceDuration` 同一口径：它是被动的配置值，由 `refreshPlayer` 灌进来、不入档。
+   */
+  private execCancelFrac = 0
+  /**
    * §7.2 休止斩那格「每次使用后过载消耗 +2（防连发）」：按**输入槽**记的涨价账（和 `skillCd` 同一口径，
    * 所以同一式装在两个槽里也是各涨各的）。它刻意不住 `movements.json` 的可存档部分，也不入档：
    * 那是"这一段连打的余温"，读档后回到没涨过价，比凭空背着一笔涨价诚实。
@@ -221,6 +226,11 @@ export class PlayerController {
   /** §7.3 常拍脚（KI-036）：被动等级给的宽限时长（秒），null = 没学。窗宽 ±80ms 是 strikeEnemy 的事 */
   setBeatGrace(durationSec: number | null): void {
     this.beatGraceDuration = durationSec ? Math.round(durationSec * 60) : 0
+  }
+
+  /** §7.3 轻身法（KI-036）：可取消段占演出的比例，null = 没学。取消窗按比例从演出末尾倒着量，不写第二份秒数 */
+  setExecCancel(windowFrac: number | null): void {
+    this.execCancelFrac = windowFrac ?? 0
   }
 
   /** 战技冷却还剩几 tick（0＝可出手）。UI/调试器读它，不自己算 */
@@ -321,10 +331,25 @@ export class PlayerController {
     this.moveIntent = { x: input.frame.move.x, y: input.frame.move.y }
     if (this.executing) {
       this.executing.tick++
-      if (this.executing.tick >= this.executing.total) this.executing = null
-      this.stats.update(dt, tick, false)
-      this.publishStats()
-      return
+      // §7.3 轻身法（KI-036）：走到最后一段时，翻滚键把蒙太奇提前收掉。窗从末尾倒着量
+      // （`tick > total*(1-frac)`），所以表里写 0.3 就是 §7.3 原文那句"后 30% 段"，不另写秒数。
+      // 取消的判据是**这一下真的能翻滚起来**（与下面 dodge 分支同一条）：判不通时**不清演出**、
+      // 而是落回正常输入路径——超载那条拒判要照 §25 报出来，不许因为改了这里就变回静默。
+      // 代价是同步的：演出期无敌（`iFrame`）跟着 `executing` 一起走，换回来这一 tick 的操作权。
+      const total = this.executing.total
+      const inWindow = this.execCancelFrac > 0
+        && this.executing.tick > Math.floor(total * (1 - this.execCancelFrac))
+      const press = input.frame.edges.has('dodge') && canAct && !this.dead
+      const canRollNow = !this.rpg.overloaded && this.stats.stamina >= this.base.roll.stamina
+      if (inWindow && press && canRollNow) {
+        this.executing = null // 取消成立：落回本 tick 的正常输入路径，翻滚就在这里起
+      } else if (!(inWindow && press)) {
+        if (this.executing.tick >= total) this.executing = null
+        this.stats.update(dt, tick, false)
+        this.publishStats()
+        return
+      }
+      // 落到下面 = 演出还挂着但本 tick 交还输入（消音的边沿在 CombatManager 那一侧自己会收）
     }
     for (const [k, v] of this.skillCd) {
       if (v <= 1) this.skillCd.delete(k)

@@ -200,6 +200,14 @@
    "displayName": "厚膜鼓",
    "desc": "自己的架势累积衰减加快（§7.3）。数值=衰减加成（0.30 = +30%）。",
    "values": [0.3, 0.4, 0.5]
+  },
+  {
+   "id": "ps_featherrest",
+   "page": "mvpage_rest",
+   "nameKey": "passive.featherrest",
+   "displayName": "轻身法",
+   "desc": "处决演出走到最后一段时，翻滚键可以把演出提前收掉（§7.3 后 30% 段）。数值=可取消段占演出的比例（0.30 = 后 30%）。",
+   "values": [0.3, 0.35, 0.4]
   }
- ]
+  ]
 }

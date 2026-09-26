@@ -21,8 +21,9 @@ import type { Vec3 } from '@/combat/EntityStats'
  *
  * 裁决：先做**有真消费方**的两条——常拍脚的踏音判定就是 strikeEnemy 里那三处
  * `rhythm.onBeat(50)`（§11 拍点架势 ×2），厚膜鼓吃 EntityStats 既有衰减通道；
- * 残响耳撞 KI-032（上限在真实帧数据下打不到，抬了等于改一条没压力的规则）、
- * 轻身法碰处决状态机——两条留在表外等各自的批次。数值住数据（values L1-3），
+ * 残响耳撞 KI-032（上限在真实帧数据下打不到，抬了等于改一条没压力的规则）；
+ * **轻身法（处决演出的取消窗）已在本文件后半段落表**——它等的"处决状态机"就是 `PlayerController.executing`
+ * 那段早返回，取消窗只是把末尾一段的操作权还给玩家。数值住数据（values L1-3），
  * 首版填数登记在 KI-036 行，产品可改表不改码。
  *
  * 常拍脚的时序腿是全批最硬的一条：60BPM 下让一记轻击的命中帧落在**拍点后 4 tick
@@ -70,6 +71,15 @@ function makeWorld(store = new MapStore()) {
 type World = ReturnType<typeof makeWorld>
 
 /** 学常拍脚 L1：点亮序句页 + 塞钱 + 研读 + 灌给玩家（与 main.ts 的 refresh 同口径） */
+function learnFeatherRest(w: World): void {
+  w.rpg.inv.add('it_resonance_core', 1)
+  expect(w.rpg.moves.unlockPage('mvpage_rest', w.rpg.inv).ok, '乐章 IV·休止 点亮').toBe(true)
+  w.rpg.inv.add('it_timbite', 100)
+  w.rpg.inv.add('it_score_fragment', 100)
+  expect(w.rpg.moves.learnPassive('ps_featherrest', w.rpg.inv).ok, '研读成立').toBe(true)
+  refreshPlayer(w.rpg, w.player) // 生产口径：refreshPlayer 里那三格（常拍脚/厚膜鼓/轻身法）
+}
+
 function learnMetronomeFoot(w: World): void {
   w.rpg.inv.add('it_resonance_core', 1)
   expect(w.rpg.moves.unlockPage('mvpage_prelude', w.rpg.inv).ok, '页点亮').toBe(true)
@@ -190,6 +200,84 @@ describe('§7.3 被动栏第一批（KI-036）：常拍脚与厚膜鼓', () => {
     const poiseGrace = hitAtPhase(w1, pressPhase, true)
     expect(poiseGrace, `宽限内那一乘 = 2（实测 ${poiseGrace}）——50ms 判不中的那一拍被 80ms 接住了`).toBe(2)
     expect(poisePlain, `旧窗下那一乘 = 1（实测 ${poisePlain}）`).toBe(1)
+  })
+
+  it('轻身法·取消窗：只有处决演出的**后 30%** 才收得掉，而且取消是真的翻滚起来', () => {
+    const total = playerBase.execution.durationTicks // 132（表里的总时长，不手抄）
+    const windowStart = Math.floor(total * (1 - 0.3)) // 表里 values[0]=0.3 ⇒ 窗从第 93 tick 起
+
+    // ① 没学：窗内按翻滚也收不掉（被动没学 = 那一段的操作权不归你）
+    const w0 = makeWorld()
+    refreshPlayer(w0.rpg, w0.player)
+    w0.player.beginExecute({ x: 0, y: 0, z: -2 }, total)
+    w0.tick(windowStart + 5)
+    w0.frame.edges.add('dodge')
+    w0.tick()
+    expect(w0.player.executing, '没学 ⇒ 演出继续').not.toBeNull()
+    expect(w0.player.roll, '而且没有翻滚').toBeNull()
+
+    // ② 学了但在窗外：同样无效（窗是"最后一段"，不是"整场"）
+    const w1 = makeWorld()
+    learnFeatherRest(w1)
+    w1.player.beginExecute({ x: 0, y: 0, z: -2 }, total)
+    w1.tick(40)
+    w1.frame.edges.add('dodge')
+    w1.tick()
+    expect(w1.player.executing, '窗外 ⇒ 演出继续').not.toBeNull()
+
+    // ③ 窗内：演出被收掉，且这一 tick 的翻滚真的起（取消换回来的是操作权，不是"提前结束"）
+    const w2 = makeWorld()
+    learnFeatherRest(w2)
+    w2.player.beginExecute({ x: 0, y: 0, z: -2 }, total)
+    w2.tick(windowStart + 5)
+    expect(w2.player.executing, '先确认还在演出里').not.toBeNull()
+    w2.frame.edges.add('dodge')
+    w2.tick()
+    expect(w2.player.executing, '窗内 ⇒ 演出被收掉').toBeNull()
+    expect(w2.player.roll, '而且翻滚当场起来').not.toBeNull()
+
+    // ④ 超载：窗内按也收不掉 —— 与翻滚那条拒判同口径（超载不许被这条新路径静默绕过）
+    const w3 = makeWorld()
+    learnFeatherRest(w3)
+    w3.player.rpg = { ...w3.player.rpg, overloaded: true }
+    w3.player.beginExecute({ x: 0, y: 0, z: -2 }, total)
+    w3.tick(windowStart + 5)
+    w3.frame.edges.add('dodge')
+    w3.tick()
+    expect(w3.player.executing, '超载 ⇒ 收不掉').not.toBeNull()
+    w3.tick(total) // 演出照原时长走完（不按键也不卡住）
+    expect(w3.player.executing).toBeNull()
+  })
+
+  it('轻身法·数值腿：等级改的是窗口起点，而不是"能不能取消"（0.3 → 0.4 让窗更早开）', () => {
+    const total = playerBase.execution.durationTicks
+    const w = makeWorld()
+    learnFeatherRest(w)
+    expect(w.rpg.moves.passiveValue('ps_featherrest'), 'L1 = 0.3').toBe(0.3)
+    // L1 的窗从「tick > floor(total×0.7)」起（132 ⇒ 第 93 tick）：0.6 处按无效
+    const beforeWindow = Math.floor(total * 0.6)
+    w.player.beginExecute({ x: 0, y: 0, z: -2 }, total)
+    w.tick(beforeWindow)
+    w.frame.edges.add('dodge')
+    w.tick()
+    expect(w.player.executing, 'L1 在窗开之前收不掉').not.toBeNull()
+
+    // 升到 L3（0.4）⇒ 同一相位就能收掉
+    const w2 = makeWorld()
+    w2.rpg.inv.add('it_resonance_core', 1)
+    w2.rpg.moves.unlockPage('mvpage_rest', w2.rpg.inv)
+    w2.rpg.inv.add('it_timbite', 1000)
+    w2.rpg.inv.add('it_score_fragment', 1000)
+    // 每次研读升一级：L1 → L3 要三次（数值住 data 的 values[0..2] = 0.3/0.35/0.4）
+    for (let i = 0; i < 3; i++) expect(w2.rpg.moves.learnPassive('ps_featherrest', w2.rpg.inv).ok).toBe(true)
+    expect(w2.rpg.moves.passiveValue('ps_featherrest'), 'L3 = 0.4').toBe(0.4)
+    refreshPlayer(w2.rpg, w2.player)
+    w2.player.beginExecute({ x: 0, y: 0, z: -2 }, total)
+    w2.tick(Math.floor(total * 0.65)) // 0.65 落在 0.6(=1-0.4) 之后
+    w2.frame.edges.add('dodge')
+    w2.tick()
+    expect(w2.player.executing, 'L3 的窗更早开').toBeNull()
+    expect(w2.player.roll).not.toBeNull()
   })
 
   it('被动跟着存档走（v9）：读档后等级与数值都在', async () => {
