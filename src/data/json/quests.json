@@ -219,11 +219,16 @@
    },
    {
     "state": "FACELESS.STEP2_ANSWER",
-    "label": "《会应答的孩子》：修任意一口钟后，铃姨要你回答「你捡到的是孩子，还是耳朵」（Phase 6-C）",
+    "label": "《会应答的孩子》：修过钟之后它写准了半度 —— 铃姨要你回答「你捡到的是孩子，还是耳朵」",
     "tags": [
      "D",
      "C"
-    ]
+    ],
+    "advanceOn": {
+     "flags": [
+      "flag.faceless_answered"
+     ]
+    }
    }
   ]
  }

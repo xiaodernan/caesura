@@ -202,6 +202,62 @@ describe('《唤四钟》：修钟的闸门、跨区三步、三段合听（§2.
     w.session.close()
   })
 
+  it('无面童线步 2：修过钟之后它才问得出那句话 —— 撒谎不是免费的（§2.5 步 2）', () => {
+    const w = makeWorld()
+    // 初见：它写下「还没发生」⇒ 第一步完成
+    w.session.open('npc_faceless')
+    w.session.choose('c1')
+    w.session.choose('c1')
+    w.session.close()
+    expect(w.quests.state('q_faceless')).toBe('FACELESS.STEP2_ANSWER')
+
+    // 还没修过钟 ⇒ 复访只有那一句，问不出「孩子还是耳朵」
+    w.session.open('npc_faceless')
+    expect(w.last().nodeId).toBe('n3')
+    expect(w.last().choices).toHaveLength(0)
+    w.session.close()
+
+    // 修一口钟（第二口，雾语林）⇒ 它写下的音准了半度，质问出现
+    w.tellHerAboutTheCrack()
+    w.pressE('bl_whisperwode_secondbell')
+    w.session.open('npc_faceless')
+    expect(w.last().nodeId).toBe('n4')
+    expect(w.last().choices.map((c) => c.id)).toEqual(['c1', 'c2', 'c3'])
+
+    // 撒谎：它当场拆穿，并且**这个谎有可见后果**（复访时它只写同一个音符）
+    const relBefore = w.quests.relation('npc_faceless')
+    w.session.choose('c3')
+    expect(w.streaming.hasFlag('flag.faceless_told_it_is_an_ear')).toBe(true)
+    expect(w.quests.relation('npc_faceless'), '撒谎扣关系').toBe(relBefore - 1)
+    expect(w.quests.isComplete('q_faceless'), '这一步走完了（诚实与否都算）').toBe(true)
+    w.session.close()
+
+    w.session.open('npc_faceless') // 复访：质问不再出现，只剩那个反复写下的音符
+    expect(w.last().nodeId).toBe('n6')
+    expect(w.last().text).toContain('还是那一个')
+    w.session.close()
+  })
+
+  it('无面童线步 2 的诚实路：答案不同、后果不同（同样的"这一步走完"）', () => {
+    const w = makeWorld()
+    w.session.open('npc_faceless')
+    w.session.choose('c1')
+    w.session.choose('c1')
+    w.session.close()
+    w.tellHerAboutTheCrack()
+    w.pressE('bl_whisperwode_secondbell')
+    w.session.open('npc_faceless')
+    w.session.choose('c1') // 「是孩子。」
+    expect(w.streaming.hasFlag('flag.faceless_answered')).toBe(true)
+    expect(w.streaming.hasFlag('flag.faceless_told_it_is_an_ear')).toBe(false)
+    expect(w.quests.isComplete('q_faceless')).toBe(true)
+    w.session.close()
+    // 诚实的人复访时不会被那段"同一个音符"跟着（那条链只对撒谎成立）
+    w.session.open('npc_faceless')
+    expect(w.last().nodeId).toBe('n3')
+    w.session.close()
+  })
+
   it('修钟点踩在各区自己的地板上（y === groundY），且闸门旗标三口一致', () => {
     const byId = new Map<string, RegionData>()
     for (const r of regions) for (const it of r.interactables) byId.set(it.id, r)

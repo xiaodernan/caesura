@@ -617,7 +617,7 @@
   "npc": "npc_faceless",
   "priority": 10,
   "rootNode": "n0",
-  "fallbackNode": "n3",
+  "fallbackNode": "n4",
   "nodes": [
    {
     "id": "n0",
@@ -711,7 +711,104 @@
       ]
      }
     },
+    "next": "n6"
+   },
+   {
+    "id": "n4",
+    "speaker": "npc_faceless",
+    "emotion": "blank",
+    "text": "（修过钟之后，它写下的音准了半度。它把灰抹平，抬头看你——铃姨的声音从铁铺那边过来：「你在哑带里捡到的，是孩子，还是耳朵？」）",
+    "conditions": {
+     "flags": {
+      "all": [
+       "flag.faceless_met"
+      ],
+      "any": [
+       "flag.bell_first_repaired",
+       "flag.bell_second_repaired",
+       "flag.bell_third_repaired"
+      ],
+      "not": [
+       "flag.faceless_answered"
+      ]
+     },
+     "quest": {
+      "id": "q_faceless",
+      "in": [
+       "FACELESS.STEP2_ANSWER"
+      ]
+     }
+    },
+    "choices": [
+     {
+      "id": "c1",
+      "text": "是孩子。",
+      "style": "poetic",
+      "effects": {
+       "setRelation": {
+        "delta": 1
+       },
+       "setFlags": [
+        "flag.faceless_answered"
+       ],
+       "notify": "它在灰上写了一个字，又立刻擦掉 —— 你瞥见那是「谢」"
+      },
+      "next": "n5"
+     },
+     {
+      "id": "c2",
+      "text": "……我不知道。",
+      "style": "silent",
+      "effects": {
+       "setRelation": {
+        "delta": 1
+       },
+       "setFlags": [
+        "flag.faceless_answered"
+       ],
+       "notify": "它没有写任何字。你听见空气里有一声很轻的笑"
+      },
+      "next": "n5"
+     },
+     {
+      "id": "c3",
+      "text": "是耳朵。",
+      "style": "blunt",
+      "effects": {
+       "setRelation": {
+        "delta": -1
+       },
+       "setFlags": [
+        "flag.faceless_answered",
+        "flag.faceless_told_it_is_an_ear"
+       ],
+       "notify": "它当场在灰上写下两个字：他骗你。然后它自己擦了"
+      },
+      "next": "n5"
+     }
+    ],
+    "next": "n6"
+   },
+   {
+    "id": "n5",
+    "speaker": "npc_faceless",
+    "emotion": "blank",
+    "text": "（它跟在你身后半步。你回头时它已经在那儿了 —— 这一次，它手里攥着一小把灰。）",
     "next": null
+   },
+   {
+    "id": "n6",
+    "speaker": "npc_faceless",
+    "emotion": "blank",
+    "text": "（它蹲下去，在灰上写了一个音符。擦掉，又写同一个。再擦，还是那一个。）",
+    "conditions": {
+     "flags": {
+      "all": [
+       "flag.faceless_told_it_is_an_ear"
+      ]
+     }
+    },
+    "next": "n3"
    }
   ]
  },
