@@ -53,6 +53,14 @@ export const EMPTY_MODS: EquipMods = {
   bellBonus: 0, restOverdrive: 0, weaponDamageMul: 1, weaponId: null, lootLuck: 0, skillDmg: 0
 }
 
+/**
+ * 建议分能读的轴 = `EquipMods` 里**数值**的那些键（`weaponId` 是字符串，读不了）。
+ * 从 `EMPTY_MODS` 现推，不另抄一份名单：抄来的名单会在下一次加轴时静默落后，
+ * 而这一列正是 `progression.json > gearAdvice.weights` 的键域（两边由测试对账）。
+ */
+export const ADVICE_AXES = (Object.keys(EMPTY_MODS) as (keyof EquipMods)[])
+  .filter((k) => typeof EMPTY_MODS[k] === 'number')
+
 export class Equipment {
   /** 槽位 → 装备实例 uid */
   slots: Partial<Record<SlotKey, string>> = {}
@@ -110,6 +118,48 @@ export class Equipment {
   }
 
   totals(inv: Inventory): EquipMods { return this.totalsFrom(this.slots, inv) }
+
+  /**
+   * §44 的**建议星标**（KI-060，ui-ux.md §3.3）：把这件装上去之后，整套投影相对现在差多少建议分。
+   * 两侧都走同一台加法机器（`totalsFrom`），所以词缀、强化倍率、音徽 A/B 这些"不在这一件身上"的
+   * 贡献自动抵消——留下的才是它真的带来的差别。乘数轴的基线（`weaponDamageMul: 1` 那一类）
+   * 也在差里自己抵消，因此表里不需要为它们发明"先减 1"的规矩。
+   * 表里没写的轴一律不读（validator 钉住"表 ↔ 类型"不漂，见 `tests/unit/gear-advice.test.ts`）。
+   * **它是序数不是汇率**：这个数字只决定 ★ 落在哪一行，不参与任何结算。
+   */
+  adviceDelta(inv: Inventory, uid: string): number {
+    const cand = this.preview(inv, uid)
+    if (!cand) return 0
+    const base = this.totals(inv)
+    const w = registry.get<ProgressionData>('progression').gearAdvice.weights
+    let d = 0
+    for (const axis of ADVICE_AXES) {
+      const k = w[axis]
+      if (k === undefined) continue
+      d += k * ((cand.mods[axis] as number) - (base[axis] as number))
+    }
+    return d
+  }
+
+  /**
+   * 每一格里建议分最高的那件（只在"差分 > 0"时才给星：换上会更差就不该叫建议）。
+   * 槽位归属走 `preview` 自己算（音徽 A/B 的落格规则只有它一个主人），这里不复制那份规则。
+   * 星标是**建议不是闸门**——装哪一件永远许可，§3.3 那句"玩家可否决"就是这个意思。
+   */
+  adviceStars(inv: Inventory): Partial<Record<SlotKey, string>> {
+    const best: Partial<Record<SlotKey, { uid: string; score: number }>> = {}
+    for (const g of inv.gears) {
+      if (Object.values(this.slots).includes(g.uid)) continue // 身上这件不需要被推荐
+      const slot = this.preview(inv, g.uid)?.slot
+      if (!slot) continue
+      const score = this.adviceDelta(inv, g.uid)
+      if (score <= 0) continue
+      if (!best[slot] || score > best[slot]!.score) best[slot] = { uid: g.uid, score }
+    }
+    const out: Partial<Record<SlotKey, string>> = {}
+    for (const [k, v] of Object.entries(best)) if (v) out[k as SlotKey] = v.uid
+    return out
+  }
 
   private totalsFrom(slots: Partial<Record<SlotKey, string>>, inv: Inventory): EquipMods {
     const out: EquipMods = { ...EMPTY_MODS }

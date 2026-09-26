@@ -563,6 +563,25 @@ function validateProgression() {
     })
     if (totals.size > 1) report.error(file, 'origins', `各出身六维合计必须一致，实际出现：${[...totals].join(' / ')}`)
   }
+  // §44 建议星标的权重表（KI-060）。这里的职责只有两件：**别让表指向不存在的轴**，
+  // 以及**别让表变成一堆 NaN**。至于权重本身合不合理，那是数值裁决，不是校验器的活。
+  // 轴名单是手抄的（脚本读不到 TS 类型），所以它由 tests/unit/gear-advice.test.ts 与
+  // `Equipment.ADVICE_AXES` 逐字对账——抄漏一条，那条测试就红。
+  const ADVICE_AXES = ['defense', 'weight', 'critRate', 'poiseDmgMul', 'staminaRegenMul', 'execMul',
+    'noiseMul', 'perfectBlockBonusTicks', 'lightStartupTicks', 'bellBonus', 'restOverdrive',
+    'skillDmg', 'lootLuck', 'weaponDamageMul']
+  if (!isObj(d.gearAdvice)) report.error(file, 'gearAdvice', '必须有（§44 那一栏的权重表；缺了它面板就不该画星标，而不是拿一套代码内置数字继续标）')
+  else {
+    for (const k of Object.keys(d.gearAdvice)) if (!['weights', 'note'].includes(k)) report.error(file, `gearAdvice.${k}`, '没有消费方')
+    const w = d.gearAdvice.weights
+    if (!isObj(w) || Object.keys(w).length === 0) report.error(file, 'gearAdvice.weights', '必须是非空对象（空表 = 星标永远不落，那还不如没有这一栏）')
+    else {
+      for (const [axis, v] of Object.entries(w)) {
+        if (!ADVICE_AXES.includes(axis)) report.error(file, `gearAdvice.weights.${axis}`, `不存在的轴：EquipMods 没有这一项（可写轴：${ADVICE_AXES.join(', ')}）`)
+        if (typeof v !== 'number' || !Number.isFinite(v)) report.error(file, `gearAdvice.weights.${axis}`, '轴权重必须是有限数（负数合法：负重与噪音越低越好）')
+      }
+    }
+  }
   return { rarityIds, attrKeys, affixDefs, originPassives }
 }
 

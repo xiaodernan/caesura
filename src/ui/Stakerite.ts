@@ -522,6 +522,9 @@ export class Stakerite {
       return `<div class="row"><span class="name">${SLOT_LABEL[s]}</span><span class="name">${name}</span>
         <span class="act">${act}</span></div>`
     }).join('')
+    // §44 建议星标（KI-060）：每格分数最高的那件挂 ★。它是**建议不是闸门**——
+    // 下面每一行的"装备"按钮一律可点，权重表不同意玩家的选择不等于玩家不能选。
+    const stars = new Set(Object.values(this.rpg.eq.adviceStars(inv)))
     const bag = inv.gears.map((g) => {
       const item = itemOf(g.itemId)
       const worn = Object.values(this.rpg.eq.slots).includes(g.uid)
@@ -529,11 +532,13 @@ export class Stakerite {
       const step = upgradeStep(g.level)
       const canUp = !!step && inv.count(TIMBITE) >= step.timbite && inv.count(DROSS) >= step.dross
       const cost = step ? `${step.timbite} 石 / ${step.dross} 晶` : '已满'
+      const star = stars.has(g.uid) ? ' <span class="tag">★ 建议</span>' : ''
+      const score = this.rpg.eq.adviceDelta(inv, g.uid)
       return `<div class="row">
-        <span class="name">${item.displayName}${g.level > 0 ? ` <span class="tag">+${g.level}</span>` : ''}
+        <span class="name">${item.displayName}${g.level > 0 ? ` <span class="tag">+${g.level}</span>` : ''}${star}
           ${worn ? '<span class="tag">已装备</span>' : ''}
           <span class="note">${this.affixText(g.affixes)}</span></span>
-        <span class="num">${g.level}/${cap} · ${cost}</span>
+        <span class="num">${g.level}/${cap} · ${cost}${worn || score === 0 ? '' : ` · 建议分 ${score > 0 ? '+' : ''}${score.toFixed(1)}`}</span>
         <span class="act">
           <button class="act" data-act="equip" data-arg="${g.uid}" ${worn ? 'disabled' : ''}>装备</button>
           <button class="act" data-act="upgrade" data-arg="${g.uid}" ${canUp ? '' : 'disabled'}>强化</button>

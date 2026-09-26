@@ -705,5 +705,24 @@
    "id": "ms_identity",
    "label": "任一维触及 35：该维专属效果解锁"
   }
- ]
+ ],
+ "gearAdvice": {
+  "weights": {
+   "defense": 1.0,
+   "weight": -1.5,
+   "critRate": 120,
+   "weaponDamageMul": 60,
+   "poiseDmgMul": 20,
+   "staminaRegenMul": 20,
+   "execMul": 20,
+   "skillDmg": 30,
+   "noiseMul": -30,
+   "perfectBlockBonusTicks": 2,
+   "lightStartupTicks": 2,
+   "bellBonus": 10,
+   "restOverdrive": 10,
+   "lootLuck": 15
+  },
+  "note": "KI-060 §44 建议星标的轴权重：值 = 每一点该轴【相对现在这一格的增量】折多少建议分，可为负（负重、噪音越低越好）。基准是承伤侧 1 DEF = 1 分，其余相对它给：负重 1kg 抵掉 1.5 分（超载惩罚在近处但当前装备表不可达，见 KI-049），1% 暴击 = 1.2 分，武器伤害 +10% = 6 分。这张表只决定 ★ 落在哪一行，不参与任何结算——它是序数不是汇率（ui-ux.md §3.3『不做数值保姆』那一格的可否决版本）。"
+ }
 }

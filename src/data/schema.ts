@@ -602,6 +602,16 @@ export interface ProgressionData {
   affixes: { prefix: AffixDef[]; suffix: AffixDef[] }
   /** 洗点/强化之外，升级里程碑（progression.md §8.2「你新能做什么」） */
   milestones: { rank: number; id: string; label: string; grant?: MilestoneGrant }[]
+  /**
+   * §44 那一栏「更适合当前 Build」的**建议星标**权重（KI-060，ui-ux.md §3.3）。
+   * 键是 `rpg/Equipment.ts > EquipMods` 的数值轴（一张测试脚本↔类型的双向对账钉着，见
+   * `tests/unit/gear-advice.test.ts`），值是**建议分 / 该轴一点增量**——所以它可以是负数
+   * （负重、噪音这类"越低越好"就是负权重；`lightStartupTicks` 本身就是负帧，正权重自动变成扣分）。
+   * 读它的是 `Equipment.adviceDelta`：算的是"把这件装上去之后整套投影相对现在这一格差多少"，
+   * 因此乘数轴的基线（`weaponDamageMul: 1` 那一类）在差里自己抵消，不需要为它们发明"减去 1"的规矩。
+   * 这是一张**序数**表不是汇率：它的输出决定 ★ 落在哪一行，不决定任何结算数字。
+   */
+  gearAdvice: { weights: Record<string, number>; note?: string }
 }
 
 /**
