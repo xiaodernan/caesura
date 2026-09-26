@@ -742,10 +742,28 @@ Phase 4-A 把弹道跑通，但远程只被当作「会飞的近战判定」。4
 - ~~`data/validate.test.ts`：全部 JSON 通过 Ajv schema~~ **实际落地的是 `npm run validate:data`**（`scripts/validate-data.mjs`，零新增依赖，见 KI-015）：id 唯一、交叉引用存在、区间与帧表单调、以及设计要求的必填组合；vitest 里没有这条（跑法不同）。它已被证明能抓出真 bug（KI-015 首跑），本次新增的"Boss 两格齐全"也是同一类约束
 覆盖率门槛：逻辑核心包（combat/rpg/save/quest）行覆盖 ≥80%。
 
-> **对账（2026-09-26）**：这条门槛**从未被测量过**。仓库里没有 `@vitest/coverage-*`，也没有 coverage 脚本
+> **对账 v1（2026-09-26）**：这条门槛**当时从未被测量过**。仓库里没有 `@vitest/coverage-*`，也没有 coverage 脚本
 > （零新增依赖优先）。今天真正在执行的替代度量是另一件事：`scripts/test.mjs` 拿 JSON reporter 的"这次真跑了哪些文件"
 > 与磁盘上的 `tests/**/*.test.ts` 对账，对不上就重跑、最多三次后失败并打印差集——它保证**每个测试文件都被跑到**，
 > 不保证**每行代码都被执行**。两者不能互相冒充，所以"行覆盖 ≥80%"按 §78 应读作**未执行的门槛**。
+>
+> **对账 v2（KI-063，2026-09-27）：这条门槛第一次被真量了一次。** `npm run coverage`
+> （`scripts/coverage.mjs` + devDependency `@vitest/coverage-v8`，与 vitest 同版）跑 v8 provider，
+> 口径是 `--coverage.include=src/**/*.ts` 加 `all`——**没被任何测试 import 的文件也算进分母**，
+> 否则"零覆盖"那一格会被 istanbul 静默丢掉，而那正是这条门要抓的东西。
+> **HEAD 快照 `af45535` 上的实测：行覆盖 81.84%（8301/10142 行，72 个 src 文件，80 个测试文件全绿）。**
+> 三条限制要跟着这个数字一起读，否则它又是一句"表里有 = 项目里有"：
+> ① 量的是**整个 src/ 的总行数**，不是上面那句按包切的 80%——`combat/rpg/save/quest` **各自的**数字仍未逐包执行；
+>    承担"每个模块至少被碰到一次"这一半的是**零覆盖名单**（见下），不是那条按包门槛。
+> ② 行覆盖是**被执行的行数**，不是"被断言的行为数"——一行 `x = x + 1` 被跑过一百次也不产生任何保证。
+> ③ 数字先于阈值，所以**地板由实测倒着钉**：`scripts/coverage-floor.json` 写死 `linesPct: 81.84` 与六格零覆盖名单；
+>    低于地板 = 红、名单变长 = 红、覆盖涨了 = 只提示（门不惩罚进步，但要 `--bless` 才把新地板落盘）。
+>    这条**不挂进 `npm run check`**：共享工作区里别人写一半的模块会把 check 变成我的红；
+>    它的定位是**第五道门**，每批收尾自测跑一次，且**红跑一律不作数**（v8 provider 默认 `reportOnFailure: false`，
+>    脚本先看测试报告再看读数，顺序反了就会把"这次跑红了"误报成"量具坏了"——本批第一次探针就是这么撞上的）。
+> 那六格零覆盖今天是谁：`src/main.ts`（装配层，只在浏览器里活）、`src/tools/CombatDebugger.ts`（DEV 面板）、
+> `src/ui/DialogueBox.ts` 与 `src/world/PropVisuals.ts` / `src/world/PlaceholderArena.ts`（DOM / three 表现层，headless 没有对象可断言），
+> 以及**一个真缺口**：`src/player/LockOn.ts`——它是纯逻辑（目标筛选与打分），却既没有测试、又写着死 `range = 35` 与 `2.2 / 0.06 / +3` 三个权重（§55 双重不符合），登记为 TD-005。
 
 ### 6.2 Headless 功能测试（自动化 gameplay flow，需求 §59）
 无渲染模式：GameLoop 以 `tickSync()` 手动步进（注入假时钟），装配 stub 渲染层。脚本化协议：
@@ -780,10 +798,11 @@ startNewGame() → 移动 3 tick 假输入 → 位置变化断言
 
 ### 7.1 npm scripts
 
-> **对账（2026-09-26）**：这张表是立项时的期望清单，**其中四行不存在**。`package.json` 里真实存在的九个是：
+> **对账（2026-09-26，KI-063 于 2026-09-27 更新）**：这张表是立项时的期望清单，**其中四行不存在**。`package.json` 里真实存在的十个是：
 > `dev` / `build`(= `tsc --noEmit && vite build`) / `preview` / `lint`(= **只有 `tsc --noEmit`，没有 eslint**) /
 > `test`(= `node scripts/test.mjs`，带覆盖核对的跑测器，见 §6 前言) / `test:flow` / `validate:data` /
-> `check`(= lint + validate:data + test) / `test:raw`（绕过覆盖核对直接跑 vitest）。
+> `check`(= lint + validate:data + test) / `test:raw`（绕过覆盖核对直接跑 vitest） /
+> `coverage`(= `node scripts/coverage.mjs`，**第五道门**：量整个 `src/` 的行覆盖并对账地板文件，刻意**不在 `check` 里**，理由见 §6.1 对账 v2)。
 > **不存在的**：`test:e2e`（无 Playwright）、`perf:capture`（无 `scripts/perf-capture.mjs`）、`lint` 里的
 > `eslint --max-warnings 0`（零新增依赖优先，边界检查由 `tests/unit/arch-boundaries.test.ts` 承担）；
 > `validate:data` 也不是 `tsx scripts/validate-data.ts`，而是**零依赖的 `.mjs`**。
