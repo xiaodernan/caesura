@@ -718,7 +718,7 @@ function validateItems(weaponIds, rarityIds, affixDefs) {
 
 // ---- shop.json（营地交易，KI-055） ----
 const SHOP_FIELDS = new Set(['id', 'sell', 'stock', 'redlines'])
-const SELL_FIELDS = new Set(['mul', 'note'])
+const SELL_FIELDS = new Set(['mul', 'stackKinds', 'note'])
 const STOCK_FIELDS = new Set(['id', 'item', 'price', 'note'])
 /**
  * 交易的三条红线全部做成机器形状（§6.3「无风险套利禁止」）：
@@ -726,13 +726,15 @@ const STOCK_FIELDS = new Set(['id', 'item', 'price', 'note'])
  * 为什么钉得这么死：这三条只要松一条，「买→卖」或「买材料→强化→卖装」就会变成印钞机，
  * 而印钞机一旦发生，整个 §6 的经济设计（拾取即收入）就不再是收入的来源。
  */
-function validateShop(itemKinds) {
+function validateShop(items) {
+  const itemKinds = new Map(items.map((it) => [it.id, it.kind]))
+  const kindsPresent = new Set(items.map((it) => it.kind))
   const file = 'shop.json'
   const d = data[file]
   if (!isObj(d)) { report.error(file, file, '顶层必须是对象'); return }
   for (const k of Object.keys(d)) if (!SHOP_FIELDS.has(k)) report.error(file, k, '没有消费方（ShopData 不读它）')
   if (d.id !== 'shop') report.error(file, 'id', "必须是 'shop'（registerGameData 以此 id 入注册表）")
-  if (!isObj(d.sell)) report.error(file, 'sell', '必须是 { mul, note? }')
+  if (!isObj(d.sell)) report.error(file, 'sell', '必须是 { mul, stackKinds, note? }')
   else {
     for (const k of Object.keys(d.sell)) if (!SELL_FIELDS.has(k)) report.error(file, `sell.${k}`, '没有消费方')
     if (report.num(file, 'sell.mul', d.sell.mul, { name: 'mul' })) {
@@ -754,6 +756,31 @@ function validateShop(itemKinds) {
     if (kind !== 'consumable') report.error(file, `${w}.item`, `'${e.item}' 是 ${kind}：买清单只许 consumable（§6.3 强化材料/乐谱不可购，装备可购则卖装腿变印钞机）`)
     report.num(file, `${w}.price`, e.price, { min: 1, int: true, name: 'price' })
   })
+  // ---- 堆叠件出售那一腿（KI-059，需求 §6 收入表「出售战利品（残骸→石）」）----
+  // 排在 stock 之后跑：这条腿唯一真正会坏的地方就是它与"买"那条腿的关系，
+  // 而对账要用到清单里的 kind，所以顺序本身是判据的一部分（挪到前面就读不到 stock）。
+  if (isObj(d.sell) && !isArr(d.sell.stackKinds)) {
+    report.error(file, 'sell.stackKinds', '必须是数组（缺了它，Shop.stackSellKinds() 在运行时才炸，门禁不该等到运行时）')
+  } else if (isObj(d.sell) && isArr(d.sell.stackKinds)) {
+    const sk = d.sell.stackKinds
+    if (sk.length === 0) report.error(file, 'sell.stackKinds', '空数组等于关掉这条出口（§6 收入表那行落空）')
+    const unknown = sk.filter((k) => !kindsPresent.has(k))
+    if (unknown.length) report.error(file, 'sell.stackKinds', `这些 kind 在 items.json 里一件都没有：${unknown.join(', ')}（名单里写不存在的类别 = 这一腿永远卖不出东西）`)
+    // 装备类一律禁止：装备只认实例（uid 才是卖家），按类别卖就绕过了「强化沉没不反还」那道闸
+    const gear = sk.filter((k) => k === 'weapon' || k === 'armor' || k === 'seal')
+    if (gear.length) report.error(file, 'sell.stackKinds', `装备类不得按数量卖：${gear.join(', ')}（卖价只看件底数靠的就是"装备只能按实例卖"）`)
+    if (sk.includes('currency')) report.error(file, 'sell.stackKinds', '通货不能卖：把货币换算成货币是无中生有')
+    // 反套利的机器形状：**可买的类别与可卖的类别不相交**。今天 stock 只有 consumable，
+    // 于是"买来的消耗品卖不掉"不靠自觉，靠这一行。
+    const buyKinds = new Set(d.stock.map((e) => itemKinds.get(e?.item)).filter((k) => k !== undefined))
+    const both = sk.filter((k) => buyKinds.has(k))
+    if (both.length) report.error(file, 'sell.stackKinds', `与 stock 的 kind 相交：${both.join(', ')} ⇒ 买回再卖这一圈开始印石，违反 §6.3「无风险套利禁止」`)
+    // 名单非空、类别也存在，却一件都卖不掉（全是 value 0）＝这条腿在空转
+    if (!unknown.length) {
+      const sellable = items.filter((it) => sk.includes(it.kind) && isNum(it.value) && it.value > 0)
+      if (sellable.length === 0) report.error(file, 'sell.stackKinds', '名单里的类别没有任何一件写了正数 value ⇒ 这一腿空转')
+    }
+  }
 }
 
 // ---- loot.json ----
@@ -2027,8 +2054,8 @@ const weaponIds = validateWeapons(movesetIds)
 // progression 要先跑：稀有度是 items/loot 的跨文件依据；items 要先跑：掉落表引用物品 id
 const { rarityIds, affixDefs, originPassives } = validateProgression()
 const itemIds = validateItems(weaponIds, rarityIds, affixDefs)
-// §6.2/§6.3 营地交易（KI-055）：清单条目的 kind 是对账依据，所以从 items 现取一张 id→kind
-validateShop(new Map((Array.isArray(data['items.json']) ? data['items.json'] : []).filter(isObj).map((it) => [it.id, it.kind])))
+// §6.2/§6.3 营地交易（KI-055/KI-059）：买侧清单与卖侧类别名单要按 kind 互相对账，所以把整张 items 交给它
+validateShop((Array.isArray(data['items.json']) ? data['items.json'] : []).filter(isObj))
 const lootIds = validateLoot(itemIds, rarityIds)
 // §2.2 出身被动双向对账（KI-031③）：itemId 必须活在 items.json，也必须真被某张掉落表掉出——
 // 后者是"被动承诺加成于一个无人掉落的东西"的空头支票门，等 loot 跑完才量得到。

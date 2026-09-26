@@ -4,7 +4,7 @@ import { itemOf } from '@/rpg/Inventory'
 import { ATTR_KEYS, progressionData } from '@/rpg/Progression'
 import { SLOTS, type EquipMods } from '@/rpg/Equipment'
 import { upgradeStep, maxLevelOf, TIMBITE, DROSS, salvageValue } from '@/rpg/Upgrade'
-import { sellPrice, shopData, CURRENCY } from '@/rpg/Shop'
+import { sellPrice, stackSellPrice, shopData, CURRENCY } from '@/rpg/Shop'
 import { movementName, unlockItemName, SCORE } from '@/rpg/Movements'
 import { DEFAULT_BINDS, type ActionName } from '@/core/Input'
 import type { RpgRuntime } from '@/rpg/Runtime'
@@ -31,7 +31,7 @@ const TABS: { id: Tab; label: string; hint: string }[] = [
   { id: 'gear', label: '装备', hint: '七槽 · 强化' },
   { id: 'bag', label: '行囊', hint: '分类清点' },
   { id: 'moves', label: '谱册', hint: '乐章战技 · 主动槽' },
-  { id: 'trade', label: '交易', hint: '卖装半价 · 购消耗品' },
+  { id: 'trade', label: '交易', hint: '卖装半价 · 残骸按堆卖 · 购消耗品' },
   { id: 'save', label: '存档', hint: '手动槽 · 写入/删除' }
 ]
 
@@ -263,6 +263,7 @@ export class Stakerite {
       case 'salvage': this.salvage(arg); break
       case 'use': this.use(arg); break
       case 'sell': this.sell(arg); break
+      case 'sell-stack': this.sellStacks(arg); break
       case 'buy': this.buy(arg); break
       case 'lit': this.unlock(arg); break
       case 'mvup': this.upgradeMove(arg); break
@@ -349,6 +350,21 @@ export class Stakerite {
     if (!r.ok) { this.hooks.notify(r.reason === 'missing' ? '包里已经没有这一件了' : '这种东西不能卖', 'info'); return }
     if (this.gearSel === uid) this.gearSel = null
     this.hooks.notify(`售出 · ${name} · 音色石 +${r.price}`, 'reward')
+  }
+
+  /**
+   * 卖整堆残骸/素材（KI-059，需求 §6 收入表「出售战利品（残骸→石）」）。
+   * 播报把**件数 × 单价**都念出来：这一腿是 n 次同价乘法，只报总数就看不出"哪一格错了"。
+   */
+  private sellStacks(itemId: string): void {
+    const item = itemOf(itemId)
+    const have = this.rpg.inv.count(itemId)
+    const r = this.rpg.sellStacks(itemId, have)
+    if (!r.ok) {
+      this.hooks.notify(have <= 0 ? `${item.displayName}：包里已经没有这一件了` : `${item.displayName}：营地不收这类货`, 'info')
+      return
+    }
+    this.hooks.notify(`售出 · ${item.displayName} ×${r.count} @${stackSellPrice(itemId)} · 音色石 +${r.price}`, 'reward')
   }
 
   /** 买消耗品（§6.2）：失败的原因有三种，说出来比按钮变灰更有信息（按钮照旧禁用，这里兜住竞态） */
@@ -653,8 +669,8 @@ export class Stakerite {
   /* ------------------------------- 交易 ------------------------------- */
 
   /**
-   * 营地交易页（KI-055）。两个区块各自从数据取价：卖侧读 `items.json` 的 `value × shop.sell.mul`，
-   * 买侧读 `shop.json` 的 `price`——面板里不出现第二个价格来源。
+   * 营地交易页（KI-055）。三个区块各自从数据取价：卖装备与卖残骸都读 `items.json` 的 `value × shop.sell.mul`
+   * （同一条式子在 `Shop.saleUnit`，面板不算第二次），买侧读 `shop.json` 的 `price`——面板里不出现第二个价格来源。
    * 每一行都同时给"卖"和"拆"两个数：§6.3 的意图是**鼓励分解**（残晶回流），只报卖价就会让玩家
    * 以为卖是正解；把两个数并排放，选择才是玩家做的而不是排版替他做的。
    */
@@ -683,9 +699,21 @@ export class Stakerite {
         <span class="num">${e.price} 石 · 持有 ${have}/${item.stack}</span>
         <span class="act"><button class="act" data-act="buy" data-arg="${e.id}" ${can ? '' : 'disabled'}>购入</button></span></div>`
     }).join('')
+    // 残骸/素材那一栏（KI-059）：读的是**包里的实际数量**，不是全表——收摊上不卖的东西一律不占行。
+    // 单价与装备腿同一条式子（`Shop.saleUnit`），所以这里只做乘法、不再出现第二个舍入点。
+    const stacks = inv.list()
+      .filter((x) => x.count > 0 && stackSellPrice(x.itemId) > 0)
+      .map((x) => {
+        const unit = stackSellPrice(x.itemId)
+        return `<div class="row">
+          <span class="name">${x.item.displayName}<span class="note">档价 ${x.item.value ?? 0} × ${mulPct}% · 持有 ${x.count}（整堆一次卖出）</span></span>
+          <span class="num">${unit}/件 · 共 ${unit * x.count} 石</span>
+          <span class="act"><button class="act" data-act="sell-stack" data-arg="${x.itemId}">全部售出</button></span></div>`
+      }).join('') || '<div class="empty">包里没有被营地收购的残骸或素材。</div>'
     return `<h2>购入（营地商队 · 只收消耗品）</h2>${buy}
       <h2>售出（装备实例 · 强化等级不折价）</h2>${sell}
-      <div class="row"><span class="name">口径<span class="note">买来的消耗品不能再卖（不是装备）；卖装备只给档价半价。§6.3 的红线：买→卖这一圈必定亏。</span></span></div>`
+      <h2>售出（残骸与素材 · 按数量）</h2>${stacks}
+      <div class="row"><span class="name">口径<span class="note">买来的消耗品不能再卖（可买的类别与可卖的类别不相交）；卖装备与卖残骸用同一个系数、同一次取整。§6.3 的红线：买→卖这一圈必定亏。</span></span></div>`
   }
 
   /* ------------------------------- 存档 ------------------------------- */

@@ -677,7 +677,14 @@ export interface ShopStockEntry {
 
 export interface ShopData {
   id: 'shop'
-  sell: { mul: number; note?: string }
+  /**
+   * 营地交易的两个系数口（KI-055/KI-059）：
+   * `mul` 是**唯一**的卖价系数，装备腿与堆叠件腿同乘它（`rpg/Shop.ts` 的 `saleUnit`）；
+   * `stackKinds` 是"哪几类**堆叠件**可以按数量卖"（`['material','lore']`）——写成数据而不是
+   * 写死在 TS 里，是为了让 validator 能拿它和 `stock` 的 kind 对账：**能买的类别绝不能同时能卖**，
+   * 那条 §6.3 的反套利红线才有机器形状（白名单藏在代码里的话，门就摸不到它）。
+   */
+  sell: { mul: number; stackKinds: ItemData['kind'][]; note?: string }
   stock: ShopStockEntry[]
   redlines?: { note?: string }
 }

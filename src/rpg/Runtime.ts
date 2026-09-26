@@ -6,7 +6,7 @@ import { Equipment, equipSeal } from './Equipment'
 import { LootDirector, allGearItems, type LootGrant } from './Loot'
 import { MovementBook, type MovementSnapshot, type SkillAction } from './Movements'
 import { tryUpgrade, salvage, type UpgradeResult } from './Upgrade'
-import { buy, sellGear, type BuyResult, type SellResult } from './Shop'
+import { buy, sellGear, sellStack, type BuyResult, type SellResult, type StackSellResult } from './Shop'
 
 /**
  * 成长系统的总装（Phase 5-B/5-C2）：Progression（音级/属性）× Inventory（背包）×
@@ -195,6 +195,15 @@ export class RpgRuntime {
   }
 
   buy(entryId: string): BuyResult { return buy(this.inv, entryId) }
+
+  /**
+   * 卖掉手里的那 n 件堆叠货（残骸/素材/乐谱，KI-059）。装备走 `sell(uid)`（实例才是卖家），
+   * 堆叠件走这里（数量才是卖家）——两条腿不共用一个入口，否则"卖这把剑"和"卖 3 个残晶"
+   * 会在同一个参数上分叉。
+   */
+  sellStacks(itemId: string, n = 1): StackSellResult {
+    return sellStack(this.inv, itemId, n)
+  }
 
   /**
    * 使用消耗品（回响膏=回血；音色晶=刮失谐）。返回实际生效量，由 main.ts 落到玩家身上——
