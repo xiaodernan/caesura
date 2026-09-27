@@ -9,9 +9,15 @@
  * 做法：用 JSON reporter 拿到"这次真正跑了哪些文件"，与磁盘上的测试文件对账；
  * 对不上就重跑（最多 3 次），全都不齐才失败并打印差集。**慢一点没关系，漏跑不可接受。**
  *
+ * 红的时候**点名**（KI-072 补上的那一半）：把「几条用例 / 哪几个含红文件 / 每个文件红的是哪几条、
+ * 第一条读数是什么」直接打出来，并把那份 JSON 报告留在原地。为什么算一条修复：旧写法只报两个数，
+ * 而第二个数取的是 `numFailedTestSuites`——它数的不是文件（同一份报告：88 个文件里含红用例的只有 5 个，
+ * 它报 11），于是每一批红的归属都要再花四分钟跑一趟裸 vitest 才知道是谁。
+ *
  * 用法：node scripts/test.mjs [vitest 额外参数]
  */
 import { execFileSync } from 'node:child_process'
+import { formatReds, summarizeReds } from './report-reds.mjs'
 import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
@@ -61,26 +67,47 @@ for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
   const tmp = mkdtempSync(join(tmpdir(), 'caesura-test-'))
   const report = join(tmp, 'report.json')
   const res = runOnce(report)
-  rmSync(tmp, { recursive: true, force: true })
   if (!res) {
+    rmSync(tmp, { recursive: true, force: true })
     console.error(`\n[test] 第 ${attempt} 次连报告都没写出来（vitest 起不来？）`)
     process.exit(1)
   }
   last = res
+  /**
+   * 红的归属要点名，不能只报数。旧写法是
+   * `${numFailedTests} 条用例 / ${numFailedTestSuites} 个文件`——那个 `M` 数的**不是文件**
+   * （实测同一份报告：88 个文件里含红用例的只有 5 个，而它报 11），于是每一批红的归属都要
+   * 再跑一趟裸 vitest 才知道是谁。数与点名的逻辑抽进 `report-reds.mjs`（那边有单元测试钉着），
+   * 这里只负责印出来 + 决定退不退。
+   */
+  const sum = summarizeReds(res.json, ROOT)
+  if (sum.nRed > 0) {
+    // 红的那一趟**不删报告**：点名只是第一眼，真正的归属还要看 message 的第 2/3 行与堆栈，
+    // 而那要同一份报告（重跑一次就要四分钟，而且未必复现同一批红）。
+    console.error(`\n[test] ${formatReds(sum)}`)
+    console.error(`  完整报告留在 ${report}`)
+    process.exit(1)
+  }
   const failed = (res.json.numFailedTests ?? 0) + (res.json.numFailedTestSuites ?? 0)
   if (failed > 0) {
-    console.error(`\n[test] 有失败用例：${res.json.numFailedTests ?? 0} 条用例 / ${res.json.numFailedTestSuites ?? 0} 个文件`)
+    // 一条用例都没红，但报告说有失败的 suite ⇒ 这是**文件级**的事（import 失败、teardown 炸、
+    // 或本机那条 EPERM 被记成 Unhandled Error），不是用例红。分开说，别让两种红共用一个读数。
+    console.error(`\n[test] 用例全绿（这一趟跑了 ${sum.total} 条），但报告里有 ${res.json.numFailedTestSuites ?? 0} 个失败的 suite`)
+    console.error('  这是**文件级**问题（import 失败、teardown 抛错，或本机那条 EPERM 被记成 Unhandled Error），不是断言红：')
+    console.error('  报告里没有一条 status=failed 的用例可点名，所以要用 `npm run test:raw` 看原始输出，别改测试文件。')
+    console.error(`  完整报告留在 ${report}`)
     process.exit(1)
   }
   const ran = new Set(res.files)
   const missing = expected.filter((p) => !ran.has(p))
   if (missing.length === 0) {
-    const total = (res.json.testResults ?? []).reduce((s, r) => s + (r.assertionResults?.length ?? 0), 0)
-    console.log(`\n[test] 覆盖核对通过：${expected.length} 个测试文件全部跑到，${total} 条用例全绿` +
+    rmSync(tmp, { recursive: true, force: true })
+    console.log(`\n[test] 覆盖核对通过：${expected.length} 个测试文件全部跑到，${sum.total} 条用例全绿` +
       (res.cleanExit ? '' : '（进程退出码非零，来自本机那条 EPERM 的 Unhandled Error，与用例无关）'))
     process.exit(0)
   }
   lastMissing = missing
+  rmSync(tmp, { recursive: true, force: true })
   console.warn(`[test] 第 ${attempt} 次只跑到 ${res.files.length}/${expected.length} 个文件（本机 fs shim 的 EPERM 会让 vitest 静默跳过），重跑…`)
 }
 
