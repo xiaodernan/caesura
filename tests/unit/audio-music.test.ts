@@ -569,3 +569,107 @@ describe('入战落点（KI-068）：第一拍的时刻与拍号都来自事件�
       .toBeLessThan(BEAT * 1.15)
   })
 })
+
+/**
+ * KI-069：Boss 的接管通常发生在战斗层**已经开着**的时候——她被 `alert`/`callAlly` 唤醒就换网格，
+ * 而遭遇事件的上升沿早就过了（KI-068 的落点因此只覆盖"入战那一下"）。那一格上拍距跟着新网格走（KI-066），
+ * 小节位置却还是音乐层从入战那一刻自己数下来的 ⇒ 重拍与她的拍点错开，§2.1「音乐重拍与敌人主攻击对齐」
+ * 在过渡段仍是假的。这里钉的是"网格变化那一次带来的落点"确实被用掉，而且**只在真的在演的时候**用掉。
+ */
+describe('网格中途变化的落点（KI-069）：战斗正在演时小节位置跟到新网格的头', () => {
+  /**
+   * 起战斗层但把第一拍锚在 1.0s 之后。调度 lookahead 只有 0.25s ⇒ 换网格那一刻**时间线上一条拍都还没排出去**，
+   * 于是"落点有没有被用掉"只看第一拍落在 0.3s 还是 1.0s，不与在飞的拍纠缠。
+   */
+  function lateAnchor(): { ctx: FakeAudioContext; layer: MusicLayer } {
+    const r = rig()
+    open.push(() => r.layer.dispose())
+    r.layer.start()
+    bus.emit('audio.music.encounter', { start: true, enter: { waitSec: 1.0, beatIndex: 4 } })
+    return r
+  }
+  const voice = (b: FakeNode[]): string => {
+    const f = startedFreqs(b.filter(isBeatNode))
+    return `${f.includes(150) ? 'kick' : ''}${f.includes(200) ? 'snare' : ''}`
+  }
+
+  it('带落点的新网格 ⇒ 未排出的那一拍跟到新的头：时刻、鼓点身份、之后的拍距都换成她的', () => {
+    const { ctx, layer } = lateAnchor()
+    const t = ctx.currentTime
+    layer.setGrid({ bpm: 108, beatsPerBar: 3, enter: { waitSec: 0.3, beatIndex: 9 } })
+    const bs = beats(ctx, layer, 40).filter((b) => b.some(isBeatNode))
+    expect(bs.length, '换网格之后两秒里连三拍都没排（她的拍长 0.556s）').toBeGreaterThanOrEqual(3)
+    const first = Math.min(...bs[0].filter(isBeatNode).flatMap((n) => n.startedAt))
+    expect(first - t, `第一拍在 +${(first - t).toFixed(3)}s，落点说的是 0.3s = 小节位置没跟过来`).toBeCloseTo(0.3, 4)
+    expect(voice(bs[0]), '第 9 拍在她的 3/4 里是小节头，该只响驼鼓').toBe('kick')
+    const on = onsetsOf(bs)
+    expect(on[1] - on[0], '跟到头之后拍距不是她的拍长').toBeCloseTo(60 / 108, 6)
+  })
+
+  it('不带落点的新网格 ⇒ 只换拍距、时间线不挪（重锚来自 `enter`，不是来自"任何变化"）', () => {
+    // 对照：同样的拍速变化、同样的小节形状变化，唯一差别是没有落点。
+    // 若"任何网格变化都重锚"，这一条会跟着上一条一起绿得没意义——它要证明上一条绿的是那个字段。
+    const { ctx, layer } = lateAnchor()
+    const t = ctx.currentTime
+    layer.setGrid({ bpm: 108, beatsPerBar: 3 })
+    const bs = beats(ctx, layer, 40).filter((b) => b.some(isBeatNode))
+    const first = Math.min(...bs[0].filter(isBeatNode).flatMap((n) => n.startedAt))
+    expect(first - t, `没给落点却被挪到了 +${(first - t).toFixed(3)}s = 重锚不再需要落点，KI-068 那格的"只在带落点时用"塌了`)
+      .toBeCloseTo(1.0, 4)
+    expect(voice(bs[0]), '第 4 拍在她的 3/4 里是第 2 拍（弱拍），不该响驼鼓').toBe('snare')
+    const on = onsetsOf(bs)
+    expect(on[1] - on[0], '拍距没跟着换成她的拍长（KI-066 那条前提在此必须仍然成立）').toBeCloseTo(60 / 108, 6)
+  })
+
+  it('战斗层还没起来 ⇒ 带落点的网格一声都不排（网格变化不替玩家决定什么时候有战斗曲）', () => {
+    // 这条钉的是**行为**，不是 `setGrid` 里那个 `battleOn` 条件：探针 P3（把条件删掉）在这里不咬，
+    // 因为调度器自己还有一道 `scheduling = battleOn || 淡出中` 的门（这一层的"没开战就不排"是双层的）。
+    // 那句条件的可见效果只有一格——淡出那 4 秒，由下面倒数第二条钉。P6（把调度器的门抬成恒真）才是这条的判官。
+    const { ctx, layer } = rig()
+    open.push(() => layer.dispose())
+    layer.start()
+    layer.setGrid({ bpm: 108, beatsPerBar: 3, enter: { waitSec: 0.3, beatIndex: 9 } })
+    expect(beats(ctx, layer, 40).filter((b) => b.some(isBeatNode)).length,
+      '没入战却被落点叫醒 = 她在野外换个拍就冒出一段鼓').toBe(0)
+  })
+
+  it('淡出那 4 秒里网格带着落点来 ⇒ 不许把退场的拍拽走（只认"正在演"）', () => {
+    const fade = (withEnter: boolean): number[] => {
+      const { ctx, layer } = rig()
+      open.push(() => layer.dispose())
+      layer.start()
+      bus.emit('audio.music.encounter', { start: true, enter: ENTRY })
+      const bs = beats(ctx, layer, 20) // 一秒：已经在打
+      bus.emit('audio.music.encounter', { start: false }) // 4 秒淡出（§16 之外的一般脱战）
+      layer.setGrid(withEnter
+        ? { bpm: 108, beatsPerBar: 3, enter: { waitSec: 1.1, beatIndex: 9 } }
+        : { bpm: 108, beatsPerBar: 3 })
+      return onsetsOf(bs.concat(beats(ctx, layer, 60)).filter((b) => b.some(isBeatNode)))
+    }
+    const control = fade(false)
+    const worst = (x: number[]): number => Math.max(...x.slice(1).map((t, i) => t - x[i]))
+    expect(control.length, '淡出期间一拍都没排 = 这一条量不到东西').toBeGreaterThanOrEqual(4)
+    expect(worst(control), `对照组的最大拍间 ${worst(control).toFixed(2)}s 已经不正常，判别式没有余量`)
+      .toBeLessThan(0.8)
+    const entered = fade(true)
+    expect(worst(entered), `淡出里被落点插进一记 ${worst(entered).toFixed(2)}s 的空档（对照组 ${worst(control).toFixed(2)}s）`
+      + ' = 退场也被重锚了，胜利序列那一下会被听得出来的停顿替掉').toBeCloseTo(worst(control), 6)
+  })
+
+  it('同一个网格带"新落点"重发 ⇒ 不许重锚（落点只在**真的变了**那一次算）', () => {
+    // "只在变化时发"是 `publishGrid()` 的口径（KI-066 ②），但消费侧也不能把"收到"读成"变了"：
+    // `barEntry()` 每 tick 都在往前走，所以任何一次重复转发带来的 `enter` 都**不一样**。
+    // 少了 `changed` 这一眼，同值重发就会把 `nextBeat` 一次次往前推——听着就是"永远在等下一拍"。
+    const { ctx, layer } = lateAnchor()
+    const grid = (enter: { waitSec: number; beatIndex: number }): MusicGrid => ({ bpm: 108, beatsPerBar: 3, enter })
+    layer.setGrid(grid({ waitSec: 0.3, beatIndex: 9 }))
+    const bs = beats(ctx, layer, 20) // 0.5s：第一拍已按 0.3s 的落点排出去
+    expect(bs.filter((b) => b.some(isBeatNode)).length, '前半秒连一拍都没排 = 后面量不到"重复转发"').toBeGreaterThanOrEqual(1)
+    layer.setGrid(grid({ waitSec: 1.5, beatIndex: 13 })) // 同值，只有落点"新"了
+    const on = onsetsOf(bs.concat(beats(ctx, layer, 60)).filter((b) => b.some(isBeatNode)))
+    expect(on.length, '重发之后干脆不排了').toBeGreaterThanOrEqual(4)
+    const worst = Math.max(...on.slice(1).map((t, i) => t - on[i]))
+    expect(worst, `同值重发之后最大拍间 ${worst.toFixed(3)}s（她的拍长 ${(60 / 108).toFixed(3)}s）= 重复转发被当成了变化，把下一拍又往前推了一格`)
+      .toBeLessThan((60 / 108) * 1.15)
+  })
+})

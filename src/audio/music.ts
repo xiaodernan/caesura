@@ -75,12 +75,28 @@ export class MusicLayer {
   /**
    * 换网格只改**下一拍之后**的拍长：已经排进 WebAudio 时间线的拍一张都不抹
    * （抹 = 听觉上的 glitch，而 docs §2.1 要的是"进出只在乐句边界"那种可预期的变化）。
-   * `beatIdx` 也不归零——小节形状变了就让它在新的模上继续走，重排小节头会打断正在演的那一拍。
+   * 没有落点时 `beatIdx` 也不归零——小节形状变了就让它在新的模上继续走，重排小节头会打断正在演的那一拍。
+   *
+   * KI-069：带落点的变化（Boss 接管/归还就是这一类）把**尚未排出**的那一拍跟到新网格的头上去，
+   * 于是 §2.1「音乐重拍与敌人主攻击对齐」在过渡段也成立，而不只是稳态两拍之后偶然对上。
+   * 三个条件是这句话的一部分：①**真的变了**才重锚（同一个网格重发不是变化）；②只在 `battleOn` 时用——
+   * 淡出那 4 秒是退场（§16 的胜利序列要听得出来那一下安静），不许被一段新的等待替掉；"战斗层还没起来"
+   * 那一半其实由 `update()` 里那道 `scheduling` 门兜着（探针 P3 在这一格不咬、P6 才咬到，见 KI-069 行），
+   * 所以这一眼**看得见的效果只有淡出窗口**，别把它写成两条功劳；③已排的拍仍然一张不抹，重锚只动
+   * `nextBeat` 这个"下一个要排的"。
+   * 代价如实说：lookahead 只有 0.25s，所以过渡那一拍最多与已排出去的最后一记重叠 0.25s 内（一记软撞），
+   * 换来的是重拍落在她的拍点上——这是 KI-066"不抹历史"与 §2.1"重拍对齐"之间必须选的一个边界。
    */
   setGrid(grid: MusicGrid | null): void {
     if (!grid) return
+    const changed = grid.bpm !== this.bpm || grid.beatsPerBar !== this.beatsPerBar
     this.bpm = grid.bpm
     this.beatsPerBar = grid.beatsPerBar
+    if (changed && grid.enter && this.battleOn) {
+      const now = this.ctx.currentTime
+      this.nextBeat = Math.max(now + grid.enter.waitSec, now + 0.02)
+      this.beatIdx = grid.enter.beatIndex
+    }
   }
 
   /** 一拍有多长（秒）；没有网格 = 0，`update` 用它当"能不能排"的门 */

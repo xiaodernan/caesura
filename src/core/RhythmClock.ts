@@ -11,12 +11,17 @@ export interface BeatInfo {
 
 /**
  * 对外发布的**当前网格**（KI-066）：拍网的原样快照，不是给听的那一层的第二份配置。
- * 只带 `bpm/beatsPerBar` 两个数——听众唯一读的就是这两个；"此刻是谁的拍"另有 `clockOwner`
- * （F4 面板直接读它），塞进这条事件就是一个没有消费者的字段（§55）。
+ * `bpm/beatsPerBar` 是听众唯一读的那两个数——"此刻是谁的拍"另有 `clockOwner`（F4 面板直接读它），
+ * 塞进这条事件就是一个没有消费者的字段（§55）。
+ *
+ * `enter`（KI-069）只在网格**真的变了**那一次出现，内容是发布那一刻的 `barEntry()`：
+ * 消费方是 `MusicLayer` 的"小节位置跟过去"。第一次发布也带上它（那一刻战斗层还没起，读了也无害），
+ * 而同值重算不发（KI-066 那条纪律）——所以 `beatIndex` 每 tick 都在走这件事，不会把总线刷成流水账。
  */
 export interface MusicGrid {
   bpm: number
   beatsPerBar: number
+  enter?: { waitSec: number; beatIndex: number }
 }
 
 /**
@@ -66,11 +71,14 @@ export class RhythmClock {
    * 中间那次 `setBpm(84,4)`（第 62 行）如果算作"已发布"，全场的战斗音乐就永远等不到拍网
    * （这一条不是推演：headless 探针按 main.ts 的顺序建钟→订阅→步进，实测 `grids: []` 加一条"没收到拍网"的 warn）。
    * 交给 `update()` 还有一个好处：只有循环在跑的时候才可能有耳朵。
+   *
+   * KI-069：载荷里从此还带 `enter`（发布那一刻的落点），但**变化判断只看 `bpm/beatsPerBar`**——
+   * `enter.beatIndex` 每 tick 都在往前走，把它算进比较就等于每 tick 发一条（上面②那条纪律当场作废）。
    */
   private publishGrid(): void {
     const p = this.published
     if (p && p.bpm === this.bpm && p.beatsPerBar === this.beatsPerBar) return
-    const g: MusicGrid = { bpm: this.bpm, beatsPerBar: this.beatsPerBar }
+    const g: MusicGrid = { bpm: this.bpm, beatsPerBar: this.beatsPerBar, enter: this.barEntry() }
     this.published = g
     bus.emit('audio.music.grid', g)
   }

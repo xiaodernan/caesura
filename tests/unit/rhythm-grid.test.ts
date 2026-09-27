@@ -25,6 +25,13 @@ function listen(): void {
 }
 afterEach(() => { off?.(); off = null })
 
+/**
+ * KI-069 之后载荷还多带一个 `enter`，而 KI-066 那批断言量的是"网格本身"。
+ * 所以它们收窄到这两个字段：新字段不该把旧断言绑架成"必须等于整个对象"，
+ * 否则下一格加字段又要再来改一遍。（`enter` 自己另有一组用例。）
+ */
+const shape = (g: MusicGrid) => ({ bpm: g.bpm, beatsPerBar: g.beatsPerBar })
+
 describe('audio.music.grid：发布点是 update()，且只在真的变化时发', () => {
   it('构造与 setBpm 都不喊（没有循环就没有耳朵）；第一次 update 把当前网格补发出来', () => {
     listen()
@@ -32,7 +39,7 @@ describe('audio.music.grid：发布点是 update()，且只在真的变化时发
     c.setBpm(84, 4) // main.ts:62 就是这一句：它发生在 AudioEngine 出生之前
     expect(seen.length, '还没人订阅就"发布过"了 = 战斗音乐永远等不到拍网').toBe(0)
     c.update(1 / 60)
-    expect(seen, '第一次 update 没把网格交出去').toEqual([{ bpm: 84, beatsPerBar: 4 }])
+    expect(seen.map(shape), '第一次 update 没把网格交出去').toEqual([{ bpm: 84, beatsPerBar: 4 }])
     for (let i = 0; i < 200; i++) c.update(1 / 60)
     expect(seen.length, `步进 200 tick 发了 ${seen.length} 条 = 每 tick 在刷`).toBe(1)
   })
@@ -44,7 +51,7 @@ describe('audio.music.grid：发布点是 update()，且只在真的变化时发
     c.setBpm(100, 3)
     expect(seen.length, 'setBpm 自己发 = 发布点不止 update()，两处会各说一份').toBe(1)
     c.update(1 / 60)
-    expect(seen[1], '变化没被补发').toEqual({ bpm: 100, beatsPerBar: 3 })
+    expect(shape(seen[1]), '变化没被补发').toEqual({ bpm: 100, beatsPerBar: 3 })
     c.setBpm(100, 3)
     c.update(1 / 60)
     expect(seen.length, '同值再 setBpm 一次又发一条').toBe(2)
@@ -57,13 +64,13 @@ describe('audio.music.grid：发布点是 update()，且只在真的变化时发
     expect(c.overrideTo(108, 3)).toBe(true)
     c.update(1 / 60)
     expect(seen.length, '接管没告诉音频').toBe(2)
-    expect(seen[1]).toEqual({ bpm: 108, beatsPerBar: 3 })
+    expect(shape(seen[1])).toEqual({ bpm: 108, beatsPerBar: 3 })
     for (let i = 0; i < 120; i++) { c.overrideTo(108, 3); c.update(1 / 60) }
     expect(seen.length, `syncClock 那种每 tick 重算发了 ${seen.length - 2} 条 = 总线被刷`).toBe(2)
     expect(c.restoreHome()).toBe(true)
     c.update(1 / 60)
     expect(seen.length, '归还没告诉音频 = 她会一直演到散场').toBe(3)
-    expect(seen[2]).toEqual({ bpm: 84, beatsPerBar: 4 })
+    expect(shape(seen[2])).toEqual({ bpm: 84, beatsPerBar: 4 })
   })
 
   it('接管期间 setBpm 改的是基准不是当前网格：归还之后发的必须是新基准', () => {
@@ -77,7 +84,7 @@ describe('audio.music.grid：发布点是 update()，且只在真的变化时发
     expect(seen.length, '耳朵此刻听的是她的拍，区域基准不该插一条').toBe(2)
     c.restoreHome()
     c.update(1 / 60)
-    expect(seen[seen.length - 1], '归还之后没落到新基准 = 区域换 BPM 永远进不了耳朵')
+    expect(shape(seen[seen.length - 1]), '归还之后没落到新基准 = 区域换 BPM 永远进不了耳朵')
       .toEqual({ bpm: 92, beatsPerBar: 4 })
   })
 
@@ -207,5 +214,94 @@ describe('barEntry()：入战落点是查出来的，不是把钟挪过去', () 
     expect(c.restoreHome()).toBe(true)
     c.update(1 / 60)
     identity(c, '归还之后')
+  })
+})
+
+/**
+ * KI-069 的发布侧：网格**变了**那一次，除了新数值还要带上"从此刻走到新的头"。
+ * 消费方是 `MusicLayer`——战斗正在演的时候 Boss 接管（或归还），拍距跟着新网格（KI-066），
+ * 小节位置却还是音乐层从入战那一刻自己数下来的，于是重拍与她的拍点错开，§2.1
+ * 「音乐重拍与敌人主攻击对齐」在这一格还是假的。落点这条原语不新写，沿用 `barEntry()`。
+ */
+describe('发布侧的落点（KI-069）：网格变了就把"还要等多久、那是第几拍"一起交出去', () => {
+  /** 小节内位置（0 起，含相位）：`barEntry()` 的两支就是按这个数分的手 */
+  const posOf = (c: RhythmClock): number => {
+    const i = c.info()
+    return i.beatInBar - 1 + i.phase
+  }
+  /** 走到小节内位置**首次** ≥ `target`（在当前网格之下） */
+  function stepToPos(c: RhythmClock, target: number): void {
+    let guard = 0
+    while (posOf(c) < target && guard++ < 10000) c.update(1 / 60)
+  }
+  /** 走到**连续拍位** ≥ `target`（跟小节形状无关，用来预告换网格之后的位置） */
+  function stepToBeat(c: RhythmClock, target: number): void {
+    let guard = 0
+    while (c.beat < target && guard++ < 10000) c.update(1 / 60)
+  }
+
+  it('每一条发布的 `enter` 都与发布那一刻的钟自洽：等待 = 走到那一拍的秒数、且不超过 2 拍预算', () => {
+    // 时刻是**构造**出来的，不是抽出来的（第一版跑 300 tick、在第 100/200 tick 换网格）：
+    // `barEntry()` 吃的是**换完之后**的小节形状，同一个连续拍位在 4/4 里离头 3.5 拍（夹住那一支）、
+    // 在 3/4 里只离 1.5 拍（等头那一支），手抽的两个时刻完全可能落在同一边，于是那条等式只量到一支
+    // —— KI-068 的 P5（预算 2→9 不咬）就是同一类洞。
+    // 如实记一句：第一版那条红**不是**因为抽不好，真因是下面订阅里的 `beatsPerBar` 抄错了地方。
+    const c = new RhythmClock()
+    const shots: Array<{ g: MusicGrid; beat: number; phase: number; beatsPerBar: number }> = []
+    // 订阅者是在 `publishGrid()` 里面被同步调用的 ⇒ 这里读到的 `info()` 就是发布那一刻的钟
+    const off2 = bus.on('audio.music.grid', (g) => {
+      const i = c.info()
+      // `beatsPerBar` 不在 `BeatInfo` 上（那里只有 `beatInBar`），它挂在钟本身：
+      // 从 `info()` 上抄会拿到 `undefined` ⇒ 下面两个计数器都是 `NaN` 分支，一条也进不去。
+      // 这一条不是洁癖：这一格第一版的红（"两支没走全"）真因就是这里，不是抽的时刻不好。
+      shots.push({ g, beat: i.beatIndex, phase: i.phase, beatsPerBar: c.beatsPerBar })
+    })
+    c.update(1 / 60) // 发布 ①：84/4 的第 0 拍，正踩在小节头上（waitSec 0 那一格）
+    stepToPos(c, 1.2)
+    c.overrideTo(108, 3)
+    c.update(1 / 60) // 发布 ②：换到 3/4 之后离头 3−1.2 ≈ 1.8 拍 ≤ 2 拍预算 ⇒ 走"等头"那一支
+    stepToBeat(c, 4.5)
+    c.restoreHome()
+    c.update(1 / 60) // 发布 ③：连续拍位 ≈4.5 换回 4/4 ⇒ pos = 0.5，离头 3.5 拍 > 预算 ⇒ 夹到下一拍
+    off2()
+    expect(shots.length, `发了 ${shots.length} 条：第一次 + 接管 + 归还 = 3 条，多了就是每 tick 在刷`).toBe(3)
+    let heads = 0
+    let headsReal = 0
+    let clamps = 0
+    for (const s of shots) {
+      const e = s.g.enter
+      expect(e, '网格发布没带落点（KI-069）= 战斗中途换网格时小节位置永远跟不过去').toBeTruthy()
+      if (!e) continue
+      const beatSec = 60 / s.g.bpm
+      expect(Number.isInteger(e.beatIndex), `落点拍号 ${e.beatIndex} 不是整拍`).toBe(true)
+      expect(e.beatIndex, `落点 ${e.beatIndex} 在当前拍 ${s.beat} 之前 = 让音乐倒着等`).toBeGreaterThanOrEqual(s.beat)
+      const should = (e.beatIndex - (s.beat + s.phase)) * beatSec
+      expect(e.waitSec, `等待 ${e.waitSec.toFixed(4)}s 与"走到第 ${e.beatIndex} 拍"该花的 ${should.toFixed(4)}s 不一致`)
+        .toBeCloseTo(should, 6)
+      expect(e.waitSec, `§2.1 的预算是 2 拍，这一条等了 ${(e.waitSec / beatSec).toFixed(2)} 拍`)
+        .toBeLessThanOrEqual(2 * beatSec + 1e-9)
+      if (e.beatIndex % s.beatsPerBar === 0) {
+        heads++
+        if (e.waitSec > 0) headsReal++ // "真的要等上一截才够得着头"，不是恰好在头上那格
+      } else clamps++
+    }
+    expect(heads, '没有一条发布落在小节头上 = 等头那一支从没被走过').toBeGreaterThan(0)
+    expect(headsReal, '落在头上的那一条 waitSec 是 0 = 等头那一支只是"刚好踩到"，预算没参与').toBeGreaterThan(0)
+    expect(clamps, '没有一条发布被预算夹住 = 夹到下一拍那一支从没被走过').toBeGreaterThan(0)
+  })
+
+  it('`enter` 每 tick 都在变，但它不是"网格变了"：幂等重算 100 tick 还是一条', () => {
+    // 把落点塞进载荷的最大风险就在这里：`AISystem.syncClock` 每 tick 重算一次接管状态，
+    // 若发布条件把 `beatIndex` 也算作变化，总线会被刷成流水账（KI-066 ② 的纪律）。
+    listen()
+    const c = new RhythmClock()
+    c.update(1 / 60)
+    c.overrideTo(108, 3)
+    c.update(1 / 60)
+    expect(seen.length, '接管本身没发').toBe(2)
+    for (let i = 0; i < 100; i++) { c.overrideTo(108, 3); c.update(1 / 60) }
+    expect(seen.length, `幂等重算发了 ${seen.length - 2} 条 = 变化判断把落点算进去了（它每 tick 都不同）`)
+      .toBe(2)
+    expect(seen[1].enter, '接管那一条没带落点').toBeTruthy()
   })
 })

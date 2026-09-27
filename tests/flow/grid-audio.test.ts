@@ -3,6 +3,7 @@ import { bus } from '@/core/EventBus'
 import { GameTime, TICK_DT } from '@/core/Time'
 import type { Input } from '@/core/Input'
 import { RhythmClock } from '@/core/RhythmClock'
+import type { MusicGrid } from '@/core/RhythmClock'
 import { registry } from '@/core/Registry'
 import { registerGameData, playerBase } from '@/data'
 import type { MovesetData, WeaponData } from '@/data/schema'
@@ -153,9 +154,10 @@ describe('敌人拍速 → 战斗音乐的拍距（整链）', () => {
       '接管前后间距没变 = 网格变化从来没走到耳朵').toBeGreaterThan(0.05)
 
     // 事件序列本身：第一次发布 → 接管那一条，中间没有被逐 tick 重算刷出来
-    expect(w.grids[0], '第一次发布不是区域基准').toEqual({ bpm: 84, beatsPerBar: 4 })
-    expect(w.grids[w.grids.length - 1], '最后一条网格不是她接管后的值')
-      .toEqual({ bpm: w.rhythm.bpm, beatsPerBar: w.rhythm.beatsPerBar })
+    expect({ bpm: w.grids[0].bpm, beatsPerBar: w.grids[0].beatsPerBar }, '第一次发布不是区域基准')
+      .toEqual({ bpm: 84, beatsPerBar: 4 })
+    expect({ bpm: w.grids[w.grids.length - 1].bpm, beatsPerBar: w.grids[w.grids.length - 1].beatsPerBar },
+      '最后一条网格不是她接管后的值').toEqual({ bpm: w.rhythm.bpm, beatsPerBar: w.rhythm.beatsPerBar })
     expect(w.grids.length, `接管过程发了 ${w.grids.length} 条 = syncClock 每 tick 重算在刷总线`).toBeLessThanOrEqual(3)
   })
 })
@@ -279,5 +281,74 @@ describe('入战落点走完真发射侧（KI-068 整链）', () => {
     expect(first, '报了落点却一拍都没排 = 事件没走到耳朵').toBeGreaterThan(0)
     expect(voice, `她的第 1 拍（区域 4/4 的第 4 拍）响的是 "${voice}" = 音乐还在按 4/4 数她的拍`)
       .toBe('kick')
+  })
+})
+
+/**
+ * KI-069 的整链腿：**她在战斗中途接管**（不是入战之前），鼓点有没有跟到她的头。
+ * KI-068 那三条量的是"入战那一下"，而真实的一场 Boss 战里战斗层通常早就被杂兵开着了——
+ * 她被唤醒时 `AISystem.syncClock` 当场换网格，遭遇事件的上升沿已经过去，于是那一格里
+ * 只有拍距跟着她（KI-066），小节位置还留在音乐层自己从入战数下来的那条锚上。
+ *
+ * 时序在这里是全部：**接管、发布、重锚、排拍都发生在同一个 tick 内**，顺序是
+ * `ai.update`（她接管）→ `rhythm.update`（发新网格，`AudioEngine` 同步转发给音乐层重锚）→ `ctx.advance` → `engine.update`（把重锚后的那一拍排出去）。
+ * 所以"接管之后第一拍"必须从**接管那一 tick** 起算，晚一帧就把它读丢了；而落点的 `waitSec` 是发布那一刻的钟算的，
+ * 音乐层用的 `now` 也是那一刻（同一次同步派发），等式两边才取得同一个时刻。
+ */
+describe('战斗中途换网格：鼓点跟到新的头，已排的拍一张不抹（KI-069 整链）', () => {
+  it('她在交战之中接管 ⇒ 接管那一 tick 排出去的第一拍落在她的头上，接管之前排出去的拍一条没动', () => {
+    const w = world()
+    const mob = w.ai.spawn('en_murkshell', { x: 0, y: 0, z: -3 }, 'ki069')
+    mob.alertness = 100
+    mob.enter('chase')
+    w.run(1)
+    expect(w.rhythm.clockOwner, '杂兵把全场网格接管了 = 下面那句"她接管"没有对照').toBe('region')
+    w.encounterAt() // 真发射侧把战斗层开着（KI-068 那条路）
+    w.run(40) // 让战斗曲先演一段：这一段的拍是"接管之前"的，一条都不许被动过
+    const snap = (n: FakeNode): string => `${n.kind}:${n.startedAt.join(',')}`
+    const before = w.ctx.nodes.map(snap).join('|')
+    expect(before, '四十 tick 里战斗曲一拍都没排 = 场景没搭起来').toContain('osc')
+
+    let atPublish = -1
+    let published: MusicGrid | null = null
+    const offGrid = bus.on('audio.music.grid', (g) => { atPublish = w.ctx.currentTime; published = g })
+    const boss = w.ai.spawn('en_ostlara', { x: 0, y: -40, z: 0 }, 'ki069b')
+    boss.alertness = 100
+    boss.enter('chase')
+
+    let first = -1
+    let voice = 'none'
+    for (let k = 0; k < 200 && first < 0; k++) {
+      const n0 = w.ctx.nodes.length
+      const ts = w.run(1)
+      if (!published || w.rhythm.clockOwner !== 'boss') continue // 接管与发布都在这一 tick 里
+      if (ts.length) { first = ts[0]; voice = w.drumVoice(w.ctx.nodes.slice(n0)) }
+    }
+    offGrid()
+    const g = published as MusicGrid | null
+    expect(g, '她接管却没发出新网格 = 前半句的场景没搭起来').toBeTruthy()
+    expect({ bpm: g!.bpm, beatsPerBar: g!.beatsPerBar }, '接管发出的不是她的网格')
+      .toEqual({ bpm: w.rhythm.bpm, beatsPerBar: 3 })
+    const e = g!.enter
+    expect(e, '接管的网格发布没带落点（KI-069）= 战斗曲只换了拍距，小节位置留在旧网格上').toBeTruthy()
+    const beatSec = 60 / g!.bpm
+    expect(e!.waitSec, `落点等了 ${(e!.waitSec / beatSec).toFixed(2)} 拍 > 2 拍预算`).toBeLessThanOrEqual(2 * beatSec + 1e-9)
+    expect(first, '接管之后一拍都没排 = 战斗曲死了').toBeGreaterThan(0)
+    // 调度器的那一拍最早也只能排在**它看见的那一刻**之后 20ms（KI-068 的下限），而它看见的那一刻
+    // 是 `ctx.advance(TICK_DT)` 之后（`rhythm.update` 里重锚用的却是 advance 之前的 `now`）。
+    // 所以可达的最早落点是 `atPublish + TICK_DT + 0.02`：`waitSec` 比这一格还小时会被垫到这里
+    // （实测差 12.6ms，在 §2.1 的 ±50ms 容差内）；`waitSec` 大于一格时等式两边仍是同一个数。
+    const should = Math.max(e!.waitSec, TICK_DT + 0.02)
+    expect(first - atPublish, `接管之后第一拍在 +${(first - atPublish).toFixed(4)}s，落点说的是 ${e!.waitSec.toFixed(4)}s`
+      + '（含 lookahead 下限该是 ' + should.toFixed(4) + 's）= 小节位置没跟到她的头').toBeCloseTo(should, 4)
+    expect(voice, `落点是她的第 ${e!.beatIndex} 拍（小节内第 ${(e!.beatIndex % 3) + 1} 拍），响的却是 "${voice}"`)
+      .toBe(e!.beatIndex % 3 === 0 ? 'kick' : 'snare')
+
+    for (let i = 0; i < 240 && w.rhythm.info().beatIndex < e!.beatIndex; i++) w.run(1)
+    expect(w.rhythm.info().beatIndex, `钟没走到落点报的那一拍（停在 ${w.rhythm.info().beatIndex}）`).toBe(e!.beatIndex)
+    expect(w.rhythm.info().isBarStart, `落点 ${e!.beatIndex} 的小节位置与钟自己的判断不一致`).toBe(e!.beatIndex % 3 === 0)
+    // 不抹历史：接管之前那一段的每一个节点（含时刻）仍在序列开头，之后才是新拍的节点
+    expect(w.ctx.nodes.map(snap).join('|').startsWith(before),
+      '接管之前排出去的拍被改写或抹掉了（KI-066 那条纪律必须继续成立）').toBe(true)
   })
 })
