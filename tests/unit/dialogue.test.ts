@@ -3,6 +3,7 @@ import { bus } from '@/core/EventBus'
 import { registerGameData, dialogues, quests as questTable } from '@/data'
 import type { DialogueData } from '@/data/schema'
 import { DialogueEngine, conditionPass, type DialogueContext } from '@/quest/Dialogue'
+import { WorldStates } from '@/quest/WorldStates'
 import { Quests } from '@/quest/Quests'
 
 /**
@@ -25,6 +26,7 @@ function liveCtx() {
   const questStates = new Map<string, string>()
   const seen = new Set<string>()
   const quests = new Quests(questTable)
+  const worldStates = new WorldStates([])
   const ctx: DialogueContext = {
     hasFlag: (k) => flags.has(k),
     relation: (npc) => rel.get(npc) ?? quests.relation(npc),
@@ -32,6 +34,7 @@ function liveCtx() {
     questIndex: (id) => quests.stepIndex(id),
     hasItem: (id, count = 1) => (items.get(id) ?? 0) >= count,
     hasSeen: (d, n) => seen.has(`${d}#${n}`),
+    state: (k) => worldStates.get(k),
   }
   return {
     ctx, quests, flags, items, rel, questStates, seen,
@@ -104,7 +107,8 @@ describe('对话引擎：选树 / 退路 / 一次性节点 / 效果产出', () =
     const again = liveCtx()
     again.setFlag('flag.belltongue_met')
     expect(e.start('npc_belltongue', again.ctx).view!.nodeId).toBe('n5')
-    expect(tree.fallbackNode).toBe('n5')
+    // 复访的第一道门是**值域三选一**（没走到抉择步就顺着 next 一路退到通用复访节点 n5）
+    expect(tree.fallbackNode).toBe('n13')
   })
 
   it('选项按条件过滤：没有断舌时"我看了断面"那条不可见（其余照旧）', () => {
@@ -162,7 +166,7 @@ describe('对话引擎：选树 / 退路 / 一次性节点 / 效果产出', () =
   })
 })
 
-describe('任务状态机（需求 §28：只有两种推进来源）', () => {
+describe('任务状态机（需求 §28：三种推进来源 —— 旗标 / 状态步 / 值域）', () => {
   it('start / advance / 单调：不许回头也不许原地重播', () => {
     const q = new Quests(questTable)
     expect(q.stepIndex('q_bells')).toBe(-1)
@@ -175,19 +179,25 @@ describe('任务状态机（需求 §28：只有两种推进来源）', () => {
     expect(q.advance('q_bells', 'BELLS.STEP2_OPEN')).toBe(true)
     expect(q.advance('q_bells'), '顺推一步').toBe(true)
     expect(q.state('q_bells')).toBe('BELLS.STEP2_SECOND')
-    // 一路推到末步《哑钟》：末步是"正在进行"而不是"已完成"
+    // 一路推到《哑钟》：这一步是"正在进行"而不是"已完成"
     q.advance('q_bells', 'BELLS.STEP3_OPEN')
     expect(q.state('q_bells')).toBe('BELLS.STEP3_OPEN')
-    expect(q.isComplete('q_bells'), '停在末步 ≠ 做完了').toBe(false)
-    // 这一步的 advanceOn（合听解锁降 B）命中 ⇒ 顺推到《哑钟》的收束步
+    expect(q.isComplete('q_bells'), '停在这一步 ≠ 做完了').toBe(false)
+    // 这一步的 advanceOn（合听解锁降 B）命中 ⇒ 顺推到《哑钟》的拒绝步
     bus.emit('world.flag', { key: 'flag.bell_keymod_found', value: true })
     expect(q.state('q_bells')).toBe('BELLS.STEP3_REFUSED')
     expect(q.isComplete('q_bells')).toBe(false)
-    expect(q.advance('q_bells'), '末步之后没有下一步').toBe(false)
-    // 末步的 advanceOn（她拒绝碰第四口钟）命中 ⇒ 收束（状态不变，但这条线算完成）
+    // 拒绝那面旗把线推到**末步**《该不该敲响》——它还不收束：末步等的是一格**值域**，旗标推不动它
     bus.emit('world.flag', { key: 'flag.belltongue_refused', value: true })
+    expect(q.state('q_bells')).toBe('BELLS.STEP4_DECIDE')
+    expect(q.isComplete('q_bells'), '走到抉择步 ≠ 做完了').toBe(false)
+    expect(q.advance('q_bells'), '末步之后没有下一步').toBe(false)
+    expect(q.isComplete('q_bells'), '旗标命不中值域那一步').toBe(false)
+    // 三选一写下去（值域广播 ⇒ 唯一的写方）才收束；收束不改 state
+    bus.emit('world.state', { key: 'state.bells.fourth_dumb', value: 'RUNG' })
     expect(q.isComplete('q_bells')).toBe(true)
-    expect(q.state('q_bells'), '收束不改 state').toBe('BELLS.STEP3_REFUSED')
+    expect(q.state('q_bells'), '收束不改 state').toBe('BELLS.STEP4_DECIDE')
+    q.dispose()
   })
 
   it('旗标驱动的顺推只查**当前这一步**（提前立了三步的旗也不会一次跳完）', () => {

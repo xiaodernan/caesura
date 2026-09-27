@@ -5,7 +5,7 @@
  */
 import { bus } from '@/core/EventBus'
 import { registry } from '@/core/Registry'
-import type { InteractableRef, NpcData, RegionData, Vec3 } from '@/data/schema'
+import type { InteractableRef, NpcData, RegionData, Vec3, WorldStateDef } from '@/data/schema'
 
 export interface Interactable extends InteractableRef {
   regionId: string
@@ -61,6 +61,12 @@ export class Interactables {
     private readonly regions: readonly RegionData[],
     private readonly isRegionOpen: (r: RegionData) => boolean = () => true,
     range = 6,
+    /**
+     * 值域闸门（`requiresState` 的读方）。世界层不许 import quest 层，所以由胶水层注入；
+     * **缺省一律视作锁住**——没给读方的交互物宁可不开，也不该在数据没接好时对玩家放行。
+     * 与 `requiresFlag` 的差别只在记法：旗标两格，值域一格枚举（休垒广场三处陈设就靠它换组）。
+     */
+    private readonly stateGate: (req: { key: string; value: string }) => boolean = () => false,
   ) {
     this.range = range
     for (const r of regions) {
@@ -113,14 +119,23 @@ export class Interactables {
   stateOf(it: Interactable): InteractState {
     if (this.used.has(it.id)) return 'used'
     if (it.requiresFlag && !this.flags.has(it.requiresFlag)) return 'locked'
+    if (this.stateLocked(it)) return 'locked'
     return 'ready'
   }
 
-  /** 半径内、所属区域已解锁、且还没被消耗掉的交互物，按距离升序 */
+  /** 值域闸门：没写过这一格时读到的是登记表里的缺省，与游戏里"还没走到那个抉择"是同一回事 */
+  private stateLocked(it: Interactable): boolean {
+    return it.requiresState ? !this.stateGate(it.requiresState) : false
+  }
+
+  /** 半径内、所属区域已解锁、还没被消耗掉**且值域对得上**的交互物，按距离升序 */
   nearby(pos: Vec3): Interactable[] {
     const r2 = this.range * this.range
     return this.items
-      .filter((i) => dist2(i.pos, pos) <= r2 && this.regionOpen(i) && !this.used.has(i.id))
+      // 值域不成立的变体**不在场**：组换的三个变体住在同一个点上，留着不成立的那两个
+      // 会跟已经换上来的那个抢焦点（"对准了却说状态未到"比看不见更怪）。旗标不这样处理——
+      // 旗标只改变一件东西的成色，值域改的是"这儿现在有没有它"。
+      .filter((i) => dist2(i.pos, pos) <= r2 && this.regionOpen(i) && !this.used.has(i.id) && !this.stateLocked(i))
       .sort((a, b) => dist2(a.pos, pos) - dist2(b.pos, pos))
   }
 
@@ -162,6 +177,9 @@ export class Interactables {
     if (it.requiresFlag && !this.flags.has(it.requiresFlag)) {
       return out({ ...base, ok: false, state: 'locked', text: lockText(it) })
     }
+    if (this.stateLocked(it)) {
+      return out({ ...base, ok: false, state: 'locked', text: lockText(it) })
+    }
     if (!REPEATABLE.has(it.kind) || it.oneWay) this.used.add(it.id)
     if (it.setsFlag) this.setFlag(it.setsFlag)
     const text = resultText(it)
@@ -183,6 +201,10 @@ function lockText(it: Interactable): string {
   if (it.kind === 'soundwall') return '音壁纹丝不动 —— 需要先学会弹反'
   if (it.kind === 'elevator') return '井笼不动 —— 机构未接通'
   if (it.kind === 'chest') return '箱子上着锁'
+  if (it.requiresState) {
+    const d = registry.maybeGet<WorldStateDef>(it.requiresState.key)
+    return `此处状态未到 —— 需要 ${d?.displayName ?? it.requiresState.key} = ${it.requiresState.value}`
+  }
   return `需要 ${it.requiresFlag ?? '前置条件'}`
 }
 

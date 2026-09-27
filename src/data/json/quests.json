@@ -96,45 +96,107 @@
      "H",
      "C"
     ]
-   }
-  ]
- },
- {
-  "id": "q_corvin",
-  "nameKey": "quest.corvin",
-  "displayName": "喧堕学线",
-  "npc": "npc_corvin",
-  "outcome": "他证明「喧堕不是灾难是进化」——为的是他的妻子是第一批喧堕者。终段三选一（揭露/包庇/共谋）在 Phase 6-C。",
-  "steps": [
-   {
-    "state": "CORVIN.STEP1_OPEN",
-    "label": "《第一份契约》：把「会唱歌的核」带给他，换整片息声领的弱点图谱",
-    "advanceOn": {
-     "flags": [
-      "flag.corvin_contract_signed"
-     ]
-    },
-    "tags": [
-     "D"
-    ]
    },
    {
-    "state": "CORVIN.STEP2_DELIVER",
-    "label": "核已在手 —— 交给他（交付即本条线在本切片内收束）",
-    "tags": [
-     "D",
-     "H"
-    ],
+    "state": "BELLS.STEP4_DECIDE",
+    "label": "《该不该敲响》：第四口钟怎么处置 —— 敲响 / 交给她熔掉 / 永不动它",
     "advanceOn": {
-     "flags": [
-      "flag.corvin_core_delivered"
-     ]
-    }
+     "state": {
+      "key": "state.bells.fourth_dumb",
+      "in": [
+       "RUNG",
+       "MELTED",
+       "SEALED"
+      ]
+     }
+    },
+    "tags": [
+     "C",
+     "M"
+    ]
    }
   ]
  },
- {
-  "id": "q_meg",
+{
+   "id": "q_corvin",
+   "nameKey": "quest.corvin",
+   "displayName": "喧堕学线",
+   "npc": "npc_corvin",
+   "outcome": "他证明「喧堕不是灾难是进化」——为的是他的妻子是第一批喧堕者。终段三选一（揭露/包庇/共谋）在 Phase 6-C。",
+   "steps": [
+    {
+     "state": "CORVIN.STEP1_OPEN",
+     "label": "《第一份契约》：把「会唱歌的核」带给他，换整片息声领的弱点图谱",
+     "advanceOn": {
+      "flags": [
+       "flag.corvin_contract_signed"
+      ]
+     },
+     "tags": [
+      "D"
+     ]
+    },
+    {
+     "state": "CORVIN.STEP2_DELIVER",
+     "label": "核已在手 —— 交给他",
+     "tags": [
+      "D",
+      "H"
+     ],
+     "advanceOn": {
+      "flags": [
+       "flag.corvin_core_delivered"
+      ]
+     }
+    },
+    {
+     "state": "CORVIN.STEP3_REMAINS",
+     "label": "《干净的脑》：在钟坠院崖壁找到悬钟骑士遗骸，读取盔内铭牌",
+     "advanceOn": {
+      "flags": [
+       "flag.corvin_remains_found"
+      ]
+     },
+     "tags": [
+      "D",
+      "H"
+     ]
+    },
+    {
+     "state": "CORVIN.STEP4_CONFRONT",
+     "label": "《档案室的另一半火》：质问科温烧毁卷宗，获取破拍营地口令与未竟厅音栓图",
+     "advanceOn": {
+      "flags": [
+       "flag.corvin_archive_confronted"
+      ]
+     },
+     "tags": [
+      "C",
+      "H"
+     ]
+    },
+    {
+     "state": "CORVIN.STEP5_SCHISM",
+     "label": "《学者之乱》：三选一 —— 揭露 / 包庇 / 共谋",
+     "advanceOn": {
+      "state": {
+       "key": "state.corvin.schism",
+       "in": [
+        "EXPOSED",
+        "COMPLICIT",
+        "COLLUDED"
+       ]
+      }
+     },
+     "tags": [
+      "C",
+      "M"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "q_meg",
   "nameKey": "quest.meg",
   "displayName": "声音拼图线",
   "npc": "npc_meg",

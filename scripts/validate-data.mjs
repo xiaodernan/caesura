@@ -19,12 +19,12 @@ import { fieldUnion, interfaceFields, schemaBlocks, unionMembers, vocabDriftErro
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const JSON_DIR = resolve(ROOT, 'src/data/json')
-const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json', 'shop.json']
+const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json', 'shop.json', 'states.json']
 // Phase 6-B：对话风格枚举与任务标注（narrative.md §3.2 / §28 图例）
 const CHOICE_STYLES = new Set(['blunt', 'poetic', 'silent', 'provoke'])
 const QUEST_TAGS = new Set(['D', 'C', 'H', 'M'])
-const EFFECT_FIELDS = new Set(['setRelation', 'setFlags', 'clearFlags', 'startQuest', 'advanceQuest', 'giveItem', 'takeItem', 'notify'])
-const CONDITION_FIELDS = new Set(['flags', 'relation', 'quest', 'hasItem'])
+const EFFECT_FIELDS = new Set(['setRelation', 'setFlags', 'clearFlags', 'startQuest', 'advanceQuest', 'giveItem', 'takeItem', 'notify', 'setState'])
+const CONDITION_FIELDS = new Set(['flags', 'relation', 'quest', 'hasItem', 'state'])
 const RELATION_OPS = new Set(['gte', 'lte', 'eq'])
 // narrative §3.2 的约束：单节点文案上限
 const NODE_TEXT_MAX = 120
@@ -104,6 +104,9 @@ const VOCAB_PAIRS = [
   { at: 'PropRef.kind', name: '可破坏场景物品类', source: (b) => fieldUnion(b, 'PropRef', 'kind'), copied: [...PROP_KINDS], where: 'PROP_KINDS' },
   { at: 'InteractableRef.kind', name: '交互物品类', source: (b) => fieldUnion(b, 'InteractableRef', 'kind'), copied: [...INTERACTABLE_KINDS], where: 'INTERACTABLE_KINDS' },
   { at: 'ProjectileSpec.kind', name: '弹道种类', source: (b) => fieldUnion(b, 'ProjectileSpec', 'kind'), copied: [...PROJECTILE_KINDS], where: 'PROJECTILE_KINDS' },
+  // Phase 6-B 的值域状态：这两张名单是"引擎听得懂的条件/效果字段"，与 schema 同一条纪律
+  { at: 'DialogueCondition', name: '对话条件字段', source: (b) => interfaceFields(b, 'DialogueCondition'), copied: [...CONDITION_FIELDS], where: 'CONDITION_FIELDS' },
+  { at: 'DialogueEffects', name: '对话效果字段', source: (b) => interfaceFields(b, 'DialogueEffects'), copied: [...EFFECT_FIELDS], where: 'EFFECT_FIELDS' },
 ]
 
 /**
@@ -1194,7 +1197,7 @@ function navmeshExists(ref) {
   return roots.some((root) => suffixes.some((s) => existsSync(resolve(ROOT, root, ref + s))))
 }
 
-function validateRegions(enemyIds, lootIds, rarityIds) {
+function validateRegions(enemyIds, lootIds, rarityIds, stateDefs) {
   const file = 'regions.json'
   const list = data[file]
   const ids = new Set()
@@ -1311,6 +1314,15 @@ function validateRegions(enemyIds, lootIds, rarityIds) {
       if (it.verb !== undefined && !isStr(it.verb)) report.error(file, `${iw}.verb`, '必须是非空字符串')
       if (it.oneWay !== undefined && typeof it.oneWay !== 'boolean') report.error(file, `${iw}.oneWay`, '必须是布尔')
       for (const k of ['requiresFlag', 'setsFlag', 'npcId']) if (it[k] !== undefined && !isStr(it[k])) report.error(file, `${iw}.${k}`, '必须是非空字符串')
+      // 值域闸门（Phase 6-B 组换）：与 requiresFlag 平级的另一种"这儿现在有没有它"
+      if (it.requiresState !== undefined) {
+        if (!isObj(it.requiresState)) report.error(file, `${iw}.requiresState`, '必须是对象 { key, value }')
+        else {
+          for (const msg of stateRefErrors(stateDefs, it.requiresState.key, [it.requiresState.value])) {
+            report.error(file, `${iw}.requiresState`, msg)
+          }
+        }
+      }
       if (it.to !== undefined) vec3(file, `${iw}.to`, it.to)
       if (it.kind === 'npc' && !isStr(it.npcId)) report.warn(file, iw, `kind=npc 但没有 npcId`)
     })
@@ -1923,6 +1935,55 @@ function validateWorldstate() {
 }
 
 // ---- npcs.json / quests.json / dialogue.json（Phase 6-B 叙事层）----
+/**
+ * 值域型世界状态（`state.*`，Phase 6-B / narrative §7 的 `STATE.<域>.<对象> = <枚举>`）。
+ * 这张表把三件事钉死在数据里：一共几格、缺省哪格、谁说了算。
+ * 没有它，`conditions.state` / `effects.setState` / `advanceOn.state` / `requiresState`
+ * 四处引用会各自发明 key —— 拼错的那个会变成一个永远读不到的死状态，
+ * 而逐文件的形状检查看不见它（这正是旗标那边 PENDING_FLAG_WRITERS 一族要挡的东西，值域这边的对应物）。
+ * 返回 `key -> { values }`，供四处引用对账。
+ */
+function validateStates() {
+  const file = 'states.json'
+  const list = data[file]
+  const out = new Map()
+  if (!isArr(list) || list.length === 0) { report.error(file, file, '必须是非空数组（值域状态登记表）'); return out }
+  list.forEach((s, i) => {
+    const w = `[${i}]`
+    if (!isObj(s)) { report.error(file, w, '必须是对象'); return }
+    if (!isStr(s.key)) report.error(file, `${w}.key`, 'key 必填')
+    else if (!s.key.startsWith('state.')) report.error(file, `${w}.key`, `命名必须是 state.*（与旗标 flag.* 同一条命名纪律）：${s.key}`)
+    if (!isStr(s.displayName)) report.error(file, `${w}.displayName`, 'displayName 必填（F3 面板与锁门文案要印它）')
+    const values = s.values
+    if (!isArr(values) || values.length < 2) report.error(file, `${w}.values`, '至少两格（一格不叫状态机）')
+    else {
+      strArray(file, `${w}.values`, values, { nonEmpty: true })
+      const dup = values.find((v, idx) => values.indexOf(v) !== idx)
+      if (dup !== undefined) report.error(file, `${w}.values`, `取值重复：${JSON.stringify(dup)}（枚举里两格同名，写进去也读不出落在哪一格）`)
+    }
+    if (!isStr(s.default)) report.error(file, `${w}.default`, 'default 必填（这一格从没被写过时读它——"还没抉择"是状态机的一格，不是第五种谓词）')
+    else if (isArr(values) && !values.includes(s.default)) report.error(file, `${w}.default`, `default 必须是 values 里的一员：${JSON.stringify(s.default)}`)
+    if (s.note !== undefined && !isStr(s.note)) report.error(file, `${w}.note`, '必须是非空字符串')
+    if (!isStr(s.key) || out.has(s.key)) return
+    out.set(s.key, { values: isArr(values) ? values : [] })
+  })
+  return out
+}
+
+/**
+ * 一处值域引用（对话条件 / 对话效果 / 任务步 advanceOn / 交互物 requiresState）的对账：
+ * key 必须在 `states.json` 登记过，用到的取值必须是那一格里的成员。
+ * 返回错误消息（空数组 = 干净），由四处引用各报各的文件与位置。
+ */
+function stateRefErrors(stateDefs, key, values) {
+  if (!isStr(key)) return ['key 缺失或非字符串']
+  const def = stateDefs.get(key)
+  if (!def) return [`不在 states.json 登记表里：${key}（值域的 key 与取值只能由这张表说了算）`]
+  const out = []
+  for (const v of values ?? []) if (!def.values.includes(v)) out.push(`取值 ${JSON.stringify(v)} 不在 ${key} 的取值表里（合法：${def.values.join('/')}）`)
+  return out
+}
+
 function validateNpcs() {
   const file = 'npcs.json'
   const list = data[file]
@@ -1944,7 +2005,7 @@ function validateNpcs() {
   return ids
 }
 
-function validateQuests(npcIds) {
+function validateQuests(npcIds, stateDefs) {
   const file = 'quests.json'
   const list = data[file]
   const ids = new Set()
@@ -1973,27 +2034,45 @@ function validateQuests(npcIds) {
       }
       if (st.advanceOn !== undefined) {
         if (!isObj(st.advanceOn)) { report.error(file, `${sw}.advanceOn`, '必须是对象'); return }
-        strArray(file, `${sw}.advanceOn.flags`, st.advanceOn.flags, { nonEmpty: true })
-        for (const f of st.advanceOn.flags ?? []) if (!isStr(f) || !f.startsWith('flag.')) report.error(file, `${sw}.advanceOn.flags`, `旗标命名必须是 flag.*：${f}`)
+        if (st.advanceOn.flags === undefined && st.advanceOn.state === undefined) {
+          report.error(file, `${sw}.advanceOn`, '至少要写 advanceOn.flags 或 advanceOn.state 之一（没有读方的步骤永远不会自己往前走）')
+        }
+        if (st.advanceOn.flags !== undefined) {
+          strArray(file, `${sw}.advanceOn.flags`, st.advanceOn.flags, { nonEmpty: true })
+          for (const f of st.advanceOn.flags ?? []) if (!isStr(f) || !f.startsWith('flag.')) report.error(file, `${sw}.advanceOn.flags`, `旗标命名必须是 flag.*：${f}`)
+        }
+        if (st.advanceOn.state !== undefined) {
+          if (!isObj(st.advanceOn.state)) report.error(file, `${sw}.advanceOn.state`, '必须是对象 { key, in }')
+          else {
+            if (!isArr(st.advanceOn.state.in)) report.error(file, `${sw}.advanceOn.state.in`, '必须是数组（这一步等哪些取值）')
+            else strArray(file, `${sw}.advanceOn.state.in`, st.advanceOn.state.in, { nonEmpty: true })
+            for (const msg of stateRefErrors(stateDefs, st.advanceOn.state.key, st.advanceOn.state.in)) {
+              report.error(file, `${sw}.advanceOn.state`, msg)
+            }
+          }
+        }
       }
     })
   })
   return ids
 }
 
-function validateDialogue(npcIds, questIds, itemIds) {
+function validateDialogue(npcIds, questIds, itemIds, stateDefs) {
   const file = 'dialogue.json'
   const list = data[file]
   const ids = new Set()
   const flagReads = new Map()
   const flagWrites = new Map()
+  /** 值域状态的读写名册（与旗标那两份同构；对账在主流程末尾做） */
+  const stateReads = new Map()
+  const stateWrites = new Map()
   const note = (map, flag, where) => { if (!map.has(flag)) map.set(flag, where) }
-  if (!isArr(list) || list.length === 0) { report.error(file, file, '必须是非空数组'); return { ids, flagReads, flagWrites } }
+  if (!isArr(list) || list.length === 0) { report.error(file, file, '必须是非空数组'); return { ids, flagReads, flagWrites, stateReads, stateWrites } }
 
   const checkCondition = (where, c, npc) => {
     if (c === undefined) return
     if (!isObj(c)) { report.error(file, where, '必须是对象'); return }
-    for (const k of Object.keys(c)) if (!CONDITION_FIELDS.has(k)) report.error(file, `${where}.${k}`, `未知条件：${k}（条件求值只认这四种）`)
+    for (const k of Object.keys(c)) if (!CONDITION_FIELDS.has(k)) report.error(file, `${where}.${k}`, `未知条件：${k}（条件求值只认这五种）`)
     if (c.flags !== undefined) {
       for (const group of ['all', 'any', 'not']) {
         if (c.flags[group] === undefined) continue
@@ -2017,6 +2096,15 @@ function validateDialogue(npcIds, questIds, itemIds) {
     if (c.hasItem !== undefined) {
       if (!itemIds.has(c.hasItem.id)) report.error(file, `${where}.hasItem.id`, `悬空引用：'${c.hasItem.id}' 不在 items.json`)
       if (c.hasItem.count !== undefined) report.num(file, `${where}.hasItem.count`, c.hasItem.count, { min: 1, int: true, name: 'count' })
+    }
+    if (c.state !== undefined) {
+      if (!isObj(c.state)) { report.error(file, `${where}.state`, '必须是对象 { key, eq | in | notIn }'); return }
+      const used = [c.state.eq, ...(isArr(c.state.in) ? c.state.in : []), ...(isArr(c.state.notIn) ? c.state.notIn : [])].filter((v) => v !== undefined)
+      if (used.length === 0) report.error(file, `${where}.state`, '至少要写 eq / in / notIn 之一（什么都不比的条件永远成立）')
+      if (c.state.in !== undefined) strArray(file, `${where}.state.in`, c.state.in, { nonEmpty: true })
+      if (c.state.notIn !== undefined) strArray(file, `${where}.state.notIn`, c.state.notIn, { nonEmpty: true })
+      for (const msg of stateRefErrors(stateDefs, c.state.key, used)) report.error(file, `${where}.state`, msg)
+      if (isStr(c.state.key)) note(stateReads, c.state.key, `${where}.state`)
     }
   }
 
@@ -2044,6 +2132,11 @@ function validateDialogue(npcIds, questIds, itemIds) {
       if (e[k].count !== undefined) report.num(file, `${where}.${k}.count`, e[k].count, { min: 1, int: true, name: 'count' })
     }
     if (e.notify !== undefined && !isStr(e.notify)) report.error(file, `${where}.notify`, '必须是非空字符串')
+    if (e.setState !== undefined) {
+      if (!isObj(e.setState)) { report.error(file, `${where}.setState`, '必须是对象 { key, value }'); return }
+      for (const msg of stateRefErrors(stateDefs, e.setState.key, [e.setState.value])) report.error(file, `${where}.setState`, msg)
+      if (isStr(e.setState.key)) note(stateWrites, e.setState.key, `${where}.setState`)
+    }
   }
 
   list.forEach((t, i) => {
@@ -2123,10 +2216,12 @@ function validateDialogue(npcIds, questIds, itemIds) {
     }
     if (ends === 0) report.error(file, `${t.id}`, '从 root/fallback 出发走不到任何结束节点 ⇒ 玩家会卡在一段不结束的对话里')
   }
-  return { ids, flagReads, flagWrites }
+  return { ids, flagReads, flagWrites, stateReads, stateWrites }
 }
 
 // ---- 跑全部校验（跨文件引用需要先拿到 id 集合）----
+// 值域状态表先跑：regions/quests/dialogue 三处都要拿它当对账依据（key 与取值只能由它说了算）
+const stateDefs = validateStates()
 // statuses 先跑：enemies 的 statusOnHit.tag 要拿它当词表对账
 validateStatuses()
 // §8 受击反应表（KI-050）：独立一张小表，没有跨文件引用
@@ -2154,13 +2249,13 @@ const lootIds = validateLoot(itemIds, rarityIds)
 }
 const enemyIds = validateEnemies(lootIds)
 validatePlayer()
-const regionIds = validateRegions(enemyIds, lootIds, rarityIds)
+const regionIds = validateRegions(enemyIds, lootIds, rarityIds, stateDefs)
 // movements 最后跑：它要同时对账 items（点亮源）、loot（源是否真会掉）、progression（开槽里程碑）
 validateMovements(itemIds)
 // 叙事层（Phase 6-B）：NPC → 任务 → 对话（后者依赖前两者的 id）
 const npcIds = validateNpcs()
-const questIds = validateQuests(npcIds)
-const dialogueInfo = validateDialogue(npcIds, questIds, itemIds)
+const questIds = validateQuests(npcIds, stateDefs)
+const dialogueInfo = validateDialogue(npcIds, questIds, itemIds, stateDefs)
 // 叙事层的双向对账（§55 / KI-041 的同一条纪律，两个方向都查）：
 // ① 对话写的旗标必须有人读（区域闸门 / 任务步 / 对话条件），否则是死数据；
 // ② 对话读的旗标必须有人写，否则那个条件永远不成立；
@@ -2186,6 +2281,39 @@ const dialogueInfo = validateDialogue(npcIds, questIds, itemIds)
       if (!isObj(it) || it.kind !== 'npc' || !isStr(it.npcId)) continue
       if (!npcIds.has(it.npcId)) report.error('regions.json', `${rg.id}.interactables(${it.id})`, `npcId '${it.npcId}' 不在 npcs.json ⇒ 按 E 只会得到一句占位台词`)
     }
+  }
+}
+/**
+ * 值域状态的双向对账（与上面旗标那三条同一族，只是把"一面旗"换成"一格枚举"）：
+ * ① 读了却没人写 ⇒ 那个条件永远不成立，它锁着的内容不可达（旗标那边是 KI-041 的机器版判据）；
+ * ② 写了却没人读 ⇒ 死数据（§55：字段与状态都必须有真实消费方）；
+ * ③ 登记了却整张表都没人碰 ⇒ 死表（`states.json` 自己的那条）。
+ * 写方今天只有一条路（对话效果 `effects.setState`）；哪天世界状态规则表也写值域，这里要跟着认第二条。
+ */
+{
+  const reads = new Map()
+  const writes = new Map(dialogueInfo.stateWrites)
+  const put = (m, k, w) => { if (isStr(k) && !m.has(k)) m.set(k, w) }
+  for (const [k, w] of dialogueInfo.stateReads) put(reads, k, w)
+  for (const q of data['quests.json'] ?? []) {
+    if (!isObj(q)) continue
+    ;(Array.isArray(q.steps) ? q.steps : []).forEach((st, i) => put(reads, st?.advanceOn?.state?.key, `${q.id}.steps[${i}].advanceOn.state`))
+  }
+  for (const rg of data['regions.json'] ?? []) {
+    if (!isObj(rg)) continue
+    for (const it of rg.interactables ?? []) if (isObj(it)) put(reads, it.requiresState?.key, `${rg.id}.interactables(${it.id}).requiresState`)
+  }
+  for (const [k, w] of [...reads].sort()) {
+    if (writes.has(k)) continue
+    report.error('states.json', k, `${w} 在读它，但没有任何写方（值域的写方今天只有对话效果 effects.setState）⇒ 这一格永远停在 default，它锁着的内容不可达`)
+  }
+  for (const [k, w] of [...writes].sort()) {
+    if (reads.has(k)) continue
+    report.error('states.json', k, `${w} 写了它，但没有任何读方（对话条件 / 任务步 advanceOn / 交互物 requiresState）⇒ 写进去也没人看的死数据`)
+  }
+  for (const k of [...stateDefs.keys()].sort()) {
+    if (reads.has(k) || writes.has(k)) continue
+    report.warn('states.json', k, '登记了这一格，但整张表里既没有读方也没有写方 ⇒ 死表')
   }
 }
 void dialogueInfo.ids

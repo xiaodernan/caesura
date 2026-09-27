@@ -6,8 +6,9 @@ import type { Quests } from './Quests'
  * 对话的**结算胶水**（Phase 6-B）。与 `rpg/Settlement.ts` 同一条理由：
  * 编排逻辑不该只住在 `main.ts` 里——那样 §59 的闭环只能靠"读代码"验证，而不是靠测试。
  *
- * 引擎产出 `DialogueEffects` 清单，这里把它落到**既有的四条通道**上：
+ * 引擎产出 `DialogueEffects` 清单，这里把它落到**既有的通道**上：
  * 旗标 → `setFlag`（走 `world.flag` 广播，与战斗/交互立的旗是同一条路）、
+ * 值域状态 → `setState`（走 `world.state` 广播，一个枚举只留一个读数）、
  * 关系与任务 → `Quests`、物品 → 背包。所以"对话改了世界"在存档与日志里
  * 与"战斗改了世界"没有区别，也不存在第二份世界状态。
  */
@@ -24,6 +25,8 @@ export interface DialogueDeps {
   ctx: DialogueContext
   inv: DialogueInv
   setFlag(key: string, value: boolean): void
+  /** 写一格值域状态（key/value 由登记表把关，认不出就拒写并告警） */
+  setState(key: string, value: string): void
   notify(text: string, kind?: 'info' | 'reward' | 'boss'): void
   /** 世界被改过之后调用（main.ts 用它把派生值重新灌回玩家） */
   refresh(): void
@@ -111,6 +114,9 @@ export class DialogueSession {
       if (e.setRelation) { d.quests.addRelation(e.setRelation.npc ?? npc, e.setRelation.delta); touched = true }
       for (const f of e.setFlags ?? []) { d.setFlag(f, true); touched = true }
       for (const f of e.clearFlags ?? []) { d.setFlag(f, false); touched = true }
+      // 值域写在旗标之后、物品之前：三选一那类抉择往往与旗标同处一条效果里，
+      // 而任务推进（最上面）已经先落地——与"先建任务再立旗"同一条时序理由。
+      if (e.setState) { d.setState(e.setState.key, e.setState.value); touched = true }
       if (e.giveItem) { d.inv.add(e.giveItem.id, e.giveItem.count ?? 1); touched = true }
       if (e.takeItem) { d.inv.remove(e.takeItem.id, e.takeItem.count ?? 1); touched = true }
       if (e.notify) d.notify(e.notify, 'reward')

@@ -5,6 +5,7 @@ import type { SpawnDirector } from '@/world/SpawnDirector'
 import type { RhythmClock } from '@/core/RhythmClock'
 import type { RpgRuntime, RpgSnapshot } from '@/rpg/Runtime'
 import type { Quests, QuestsSnapshot } from '@/quest/Quests'
+import type { WorldStates } from '@/quest/WorldStates'
 import type { Interactables } from '@/world/Interactables'
 import { migrateTo, registerMigration } from './Migration'
 import { unwrap, wrap } from './Integrity'
@@ -16,7 +17,8 @@ import { unwrap, wrap } from './Integrity'
  * 存档里没有一个敌人实例，只有一串槽位身份）。
  */
 
-export const SAVE_VERSION = 10
+/** v11 起带值域状态（`state.*`，narrative §7 的 `STATE.<域>.<对象> = <枚举>`）。迁移链见文末 */
+export const SAVE_VERSION = 11
 
 /**
  * 读档时接受的版本：凡是 ≤ 当前版本、且迁移链能一路升到当前的，都可以读。
@@ -148,6 +150,21 @@ export function migrateV9toV10(p: Record<string, unknown>): Record<string, unkno
 }
 registerMigration(9, migrateV9toV10)
 
+/**
+ * v10 → v11（值域型世界状态 `state.*`）。老档里**没有**任何一格被写过 ⇒ 迁移写空表，
+ * 于是每一格读到 `states.json` 声明的 `default`（= 那个抉择还没做）。
+ * 这是如实的：老档确实没做过《该不该敲响》的抉择，**不能**反推成"已经选了某个结局"——
+ * 与 v1→v2 的 `rpg: null`、v6→v7 的 `quest: null` 同一条纪律（§78 留空是如实，补一个是假账）。
+ * 空表会让休垒广场那组陈设回到"还没敲响"的那一版，这正是老档该有的样子。
+ */
+export function migrateV10toV11(p: Record<string, unknown>): Record<string, unknown> {
+  const snap = { ...(p.snapshot as Record<string, unknown>) }
+  snap.states = {}
+  snap.version = 11
+  return { ...p, snapshot: snap }
+}
+registerMigration(10, migrateV10toV11)
+
 export interface Snapshot {
   version: number
   /** 游玩秒数（HUD/存档摘要卡用） */
@@ -180,6 +197,11 @@ export interface Snapshot {
   rpg: RpgSnapshot | null
   /** 叙事进度（v7 起）：任务状态 / NPC 关系 / 对话已读节点。老档为 null ⇒ 一切从头 */
   quest: QuestsSnapshot | null
+  /**
+   * 值域状态（v11 起）：只记**被写过**的格；没记的格读 `states.json` 里的 `default`
+   * （= 那个抉择还没做）。老档经 v10→v11 迁移得到空表 ⇒ 不反推结局（§78）。
+   */
+  states: Record<string, string>
 }
 
 export interface SavePayload { snapshot: Snapshot }
@@ -351,6 +373,8 @@ export interface SaveWorld {
   props?: { snapshot(): string[]; restore(ids: string[] | null | undefined): void }
   /** Phase 6-B：叙事进度（任务状态 / 关系 / 已读节点），同上可选 */
   quests?: Quests
+  /** Phase 6-B：值域状态（`state.*`）。同样是世界状态的一部分：不存，读档就回到缺省那一格 */
+  states?: WorldStates
   /**
    * 存档时刻的墙钟（epoch ms）。**逻辑层不许自己读 `Date`**：那样每次跑测都会得到不同的档，
    * 而"摘要卡上的时间来自表而不是代码"这条也没有证人。不注入 ⇒ `savedAt` 为 null，
@@ -390,7 +414,8 @@ export class SaveGame {
       usedInteractables: w.interact ? w.interact.snapshot() : [],
       brokenProps: w.props ? w.props.snapshot() : [],
       rpg: w.rpg ? w.rpg.snapshot() : null,
-      quest: w.quests ? w.quests.snapshot() : null
+      quest: w.quests ? w.quests.snapshot() : null,
+      states: w.states ? w.states.snapshot() : {}
     }
   }
 
@@ -460,6 +485,8 @@ export class SaveGame {
     p.publishStats()
     if (s.rpg && w.rpg) w.rpg.restore(s.rpg)
     if (s.quest && w.quests) w.quests.restore(s.quest)
+    // 值域状态：档里没有的格退回缺省（WorldStates.restore 自己会广播，交互物那侧的闸门跟着更新）
+    w.states?.restore(s.states)
     for (const f of s.flags) w.streaming.setFlag(f, true)
     for (const k of s.clearedSlots) w.spawner.markCleared(k)
     // 交互物的一次性状态：v5 及以前的档没记 ⇒ 空集，那一局的箱子会再掉一次（见 v5→v6 迁移注释）

@@ -5,7 +5,7 @@ import { GameLoop } from '@/core/GameLoop'
 import { Input } from '@/core/Input'
 import { RhythmClock } from '@/core/RhythmClock'
 import { registry } from '@/core/Registry'
-import { registerGameData, playerBase, regions, worldstate, dialogues, quests as questTable } from '@/data'
+import { registerGameData, playerBase, regions, worldstate, dialogues, quests as questTable, worldStates as worldStateDefs } from '@/data'
 import type { ItemData, MovesetData, NpcData, WeaponData } from '@/data/schema'
 import { createArena } from '@/world/PlaceholderArena'
 import { StreamingSystem, chunkKeyOf, type ChunkState } from '@/world/Streaming'
@@ -42,6 +42,7 @@ import { SaveGame, LocalStore, IdbStore } from '@/save/Serializer'
 import { SlotRoster } from '@/save/Slots'
 import { Checkpoints } from '@/save/Checkpoint'
 import { WorldState } from '@/quest/WorldState'
+import { WorldStates } from '@/quest/WorldStates'
 import { Quests } from '@/quest/Quests'
 import { DialogueEngine, type DialogueContext } from '@/quest/Dialogue'
 import { DialogueSession } from '@/quest/Settlement'
@@ -158,7 +159,18 @@ streaming.teleport(0, player.pos) // 起始区同步加载（§5.5 传送遮蔽�
 let shownRegion = streaming.regionAt(player.pos)?.id ?? null
 const surface = new Surface(regions, 0.5, (r) => !streaming.isRegionUnlocked(r))
 combat.floorAt = (pos) => surface.floorAt(pos)?.y ?? null // 弹道撞地：射进灰盒地板就落地
-const interact = new Interactables(regions, (r) => streaming.isRegionUnlocked(r))
+/**
+ * 值域型世界状态（Phase 6-B，narrative §7 的 `STATE.<域>.<对象> = <枚举>`）。
+ * 放在交互物**之前**：`requiresState` 的闸门要在这里注入（世界层不认识 quest 层，
+ * 组合根是唯一能同时看见两边的地方）。规则表在 `data/json/states.json`。
+ */
+const worldStates = new WorldStates(worldStateDefs)
+const interact = new Interactables(
+  regions,
+  (r) => streaming.isRegionUnlocked(r),
+  6,
+  (req) => worldStates.matches(req.key, req.value),
+)
 /**
  * 可破坏场景物（KI-023，§15.3 音刺）。三根汇音刺与万籁同区：她的「听」在 sink 这一站被
  * 重定向到刺上，碎刺的聋乱窗经 `world.propBroken` 由 AISystem 落账，碎裂状态跟着存档走（v8）。
@@ -215,9 +227,15 @@ const dialogueCtx: DialogueContext = {
   questIndex: (id) => quests.stepIndex(id),
   hasItem: (id, count = 1) => rpg.inv.count(id) >= count,
   hasSeen: (d, n) => quests.hasSeen(d, n),
+  state: (k) => worldStates.get(k),
 }
 
-const nodes = new InteractableGreybox(arena.scene, regions, (pos) => { const c = streaming.cellOf(pos); return chunkKeyOf(c.cx, c.cy, c.cz) }, (k) => streaming.hasFlag(k))
+const nodes = new InteractableGreybox(
+  arena.scene, regions,
+  (pos) => { const c = streaming.cellOf(pos); return chunkKeyOf(c.cx, c.cy, c.cz) },
+  (k) => streaming.hasFlag(k),
+  (req) => worldStates.matches(req.key, req.value),
+)
 nodes.syncActive(streaming.byState('active').map((c) => c.key)) // 起始格在构造前就已激活，补一次
 
 /**
@@ -230,6 +248,7 @@ const talk = new DialogueSession({
   ctx: dialogueCtx,
   inv: rpg.inv,
   setFlag: (k, v) => streaming.setFlag(k, v),
+  setState: (k, v) => worldStates.set(k, v),
   notify: (text, kind) => bus.emit('ui.notify', { text, kind: kind ?? 'info' }),
   refresh: () => refreshRpg(),
   setPaused: (paused) => { time.paused = paused; input.enabled = !paused },
@@ -319,6 +338,7 @@ if (import.meta.env.DEV) {
         byRules: worldState.flagsWritten,
         used: interact.snapshot(),
         relations: quests.snapshot().relations,
+        states: worldStates.snapshot(),
       }),
     }),
     new DebugPanel({
@@ -439,7 +459,7 @@ const saveBackup = typeof indexedDB === 'undefined' ? null : new IdbStore('caesu
  * 而"摘要卡上的时间是从外面带进来的"这条也就没有证人。
  */
 const saves = new SaveGame(
-  { player, streaming, spawner, clock: rhythm, time, rpg, interact, props, quests, now: () => Date.now() },
+  { player, streaming, spawner, clock: rhythm, time, rpg, interact, props, quests, states: worldStates, now: () => Date.now() },
   savePrimary, saveBackup
 )
 /** 摘要卡的名册（KI-025）：标题屏与调音桩面板都从它读"这几格是什么、能不能读" */

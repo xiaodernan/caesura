@@ -9,7 +9,8 @@ import type { QuestData } from '@/data/schema'
  * （对话条件求值），并且一起进同一格存档。拆成三个类只会得到三个"总是要一起改"的东西。
  *
  * 三条纪律：
- * 1. **任务推进只由两种事驱动**：某个旗标被立起（`world.flag` 广播，走 `advanceOn.flags`），
+ * 1. **任务推进只由三种事驱动**：某个旗标被立起（`world.flag` 广播，走 `advanceOn.flags`）、
+ *    某一格值域状态落进一组取值（`world.state` 广播，走 `advanceOn.state`，如《该不该敲响》的三选一），
  *    或对话里的一次选择（`DialogueEffects.advanceQuest`）。没有"计时器"也没有"计数到 N 次"——
  *    需求 §28 明确禁止「去那里杀 10 只回来」，所以这里连一个计数器都不提供。
  * 2. **关系值是 -5..+5 的整数**（narrative §3.1），越界夹住而不是无限长。
@@ -58,6 +59,9 @@ export class Quests {
       bus.on('world.flag', (p) => {
         if (p.value === true || p.value === 1 || p.value === 'true') this.onFlag(p.key)
       }),
+      // 值域状态是旗标之外的**第二种世界读数**（枚举 vs 两格），所以这里多听一条通道。
+      // 只有登记过的 key/value 才广播得出来，因此下面不必再校验取值合法。
+      bus.on('world.state', (p) => this.onState(p.key, p.value)),
     )
   }
 
@@ -92,7 +96,7 @@ export class Quests {
   }
 
   /**
-   * 这条线是否**收束**了。判据是"末步的 `advanceOn` 旗标已立"——而不是"已经走到末步"：
+   * 这条线是否**收束**了。判据是"末步的 `advanceOn` 已命中"——而不是"已经走到末步"：
    * 停在末步意味着任务**正在进行**（例：《哑钟》= 你该去合听三段录音了），把它算成完成
    * 会让任务簿撒谎。末步没有 `advanceOn` 的线（后续步还没写的那四条）永远返回 false。
    */
@@ -146,18 +150,33 @@ export class Quests {
     for (const q of this.data) {
       const idx = this.stepIndex(q.id)
       if (idx < 0) continue
-      const step = q.steps[idx]
-      if (!step.advanceOn?.flags.includes(key)) continue
-      if (idx < q.steps.length - 1) {
-        this.setStep(q, idx + 1, false)
-        continue
-      }
-      // 末步的 advanceOn = "这条线在这里收束"。旗标立起来就记完成（状态不变），
-      // 而不是像以前那样**静默忽略**——那会让末步的 advanceOn 变成没人读的死数据。
-      if (this.completedQuests.has(q.id)) continue
-      this.completedQuests.add(q.id)
-      this.setStep(q, idx, false)
+      if (!q.steps[idx].advanceOn?.flags?.includes(key)) continue
+      this.push(q, idx)
     }
+  }
+
+  /** 值域驱动的顺推（与 `onFlag` 同一套"只查当前这一步"的规矩，见其注释） */
+  private onState(key: string, value: string): void {
+    for (const q of this.data) {
+      const idx = this.stepIndex(q.id)
+      if (idx < 0) continue
+      const gate = q.steps[idx].advanceOn?.state
+      if (!gate || gate.key !== key || !gate.in.includes(value)) continue
+      this.push(q, idx)
+    }
+  }
+
+  /** 推进一步；已在末步 ⇒ 这里就是整条线的收束点 */
+  private push(q: QuestData, idx: number): void {
+    if (idx < q.steps.length - 1) {
+      this.setStep(q, idx + 1, false)
+      return
+    }
+    // 末步的 advanceOn = "这条线在这里收束"。命中就记完成（状态不变），
+    // 而不是像以前那样**静默忽略**——那会让末步的 advanceOn 变成没人读的死数据。
+    if (this.completedQuests.has(q.id)) return
+    this.completedQuests.add(q.id)
+    this.setStep(q, idx, false)
   }
 
   /* ------------------------------- 关系 ------------------------------- */

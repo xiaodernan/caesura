@@ -206,9 +206,15 @@ describe('恢复位：谁救的场要说得出名字', () => {
     await saves.save('slot1')          // 第一次：主键位 = 这份
     dirty(w, 60 * 200, AT_DEEP)
     await saves.save('slot1')          // 第二次：前一份进 .prev
-    // 只改坏主键位的一个字符（校验和立刻对不上），.prev 保持完整
-    const body = (await store.get('slot1'))!.split('')
-    body[body.length - 30] = body[body.length - 30] === '9' ? '8' : '9'
+    // 只改坏主键位的**一个数值字符**：JSON 仍然合法（挑的是 playSec 的数位，不是结构符号），
+    // 所以坏因只可能是校验和对不上；.prev 保持完整
+    const raw = (await store.get('slot1'))!
+    const marker = '"playSec":'
+    const at = raw.indexOf(marker)
+    expect(at, '档里得有 playSec 才挑得出安全的坏位').toBeGreaterThan(-1)
+    const body = raw.split('')
+    const i = at + marker.length
+    body[i] = body[i] === '9' ? '8' : '9'
     await store.set('slot1', body.join(''))
     const c = await new SlotRoster(store).card('slot1')
     expect(c.state).toBe('restored')

@@ -12,6 +12,7 @@ import { SpawnDirector } from '@/world/SpawnDirector'
 import { Interactables, takeInteractEdge } from '@/world/Interactables'
 import { RpgRuntime } from '@/rpg/Runtime'
 import { Quests } from '@/quest/Quests'
+import { WorldStates } from '@/quest/WorldStates'
 import { DialogueEngine, type DialogueContext, type DialogueView } from '@/quest/Dialogue'
 import { DialogueSession } from '@/quest/Settlement'
 import { SaveGame, MapStore, SAVE_VERSION } from '@/save/Serializer'
@@ -49,6 +50,7 @@ function makeWorld() {
   const off = bus.on('world.flag', (f) => { if (f.value !== false) flagEvents.push(f.key) })
 
   const quests = new Quests(questTable)
+  const worldStates = new WorldStates(registry.get('state.bells.fourth_dumb') ? [registry.get('state.bells.fourth_dumb')] : [])
   const engine = new DialogueEngine(dialogues, quests)
   const ctx: DialogueContext = {
     hasFlag: (k) => streaming.hasFlag(k),
@@ -57,12 +59,14 @@ function makeWorld() {
     questIndex: (id) => quests.stepIndex(id),
     hasItem: (id, count = 1) => rpg.inv.count(id) >= count,
     hasSeen: (d, n) => quests.hasSeen(d, n),
+    state: (k) => worldStates.get(k),
   }
   const views: DialogueView[] = []
   let paused = false
   const session = new DialogueSession({
     quests, engine, ctx, inv: rpg.inv,
     setFlag: (k, v) => streaming.setFlag(k, v),
+    setState: (k, v) => worldStates.set(k, v),
     notify: (text) => bus.emit('ui.notify', { text, kind: 'reward' }),
     refresh: () => player.applyRpg(rpg.mods()),
     setPaused: (p) => { paused = p },

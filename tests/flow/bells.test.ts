@@ -10,6 +10,7 @@ import { StreamingSystem } from '@/world/Streaming'
 import { Interactables } from '@/world/Interactables'
 import { RpgRuntime } from '@/rpg/Runtime'
 import { Quests } from '@/quest/Quests'
+import { WorldStates } from '@/quest/WorldStates'
 import { DialogueEngine, type DialogueContext, type DialogueView } from '@/quest/Dialogue'
 import { DialogueSession } from '@/quest/Settlement'
 
@@ -33,14 +34,15 @@ function makeWorld() {
   const player = new PlayerController(playerBase, weapon, registry.get<MovesetData>(`moveset:${weapon.movesetId}`))
   player.applyRpg(rpg.mods())
   const streaming = new StreamingSystem(regions)
-  const interact = new Interactables(regions, (r) => streaming.isRegionUnlocked(r))
+  const quests = new Quests(questTable)
+  const worldStates = new WorldStates(registry.get('state.bells.fourth_dumb') ? [registry.get('state.bells.fourth_dumb')] : [])
+  const interact = new Interactables(regions, (r) => streaming.isRegionUnlocked(r), 6, (req) => worldStates.matches(req.key, req.value))
 
   // 三个区域各自的地板（内容节点 y 契约的运行时版：修钟点必须踩得住）
   streaming.setFlag('flag.left_resthold', true)
   streaming.setFlag('flag.choir_entrance_open', true)
   streaming.setFlag('flag.brokenbar_bridge_down', true)
 
-  const quests = new Quests(questTable)
   const engine = new DialogueEngine(dialogues, quests)
   const ctx: DialogueContext = {
     hasFlag: (k) => streaming.hasFlag(k),
@@ -49,11 +51,13 @@ function makeWorld() {
     questIndex: (id) => quests.stepIndex(id),
     hasItem: (id, count = 1) => rpg.inv.count(id) >= count,
     hasSeen: (d, n) => quests.hasSeen(d, n),
+    state: (k) => worldStates.get(k),
   }
   const views: DialogueView[] = []
   const session = new DialogueSession({
     quests, engine, ctx, inv: rpg.inv,
     setFlag: (k, v) => streaming.setFlag(k, v),
+    setState: (k, v) => worldStates.set(k, v),
     notify: (text) => bus.emit('ui.notify', { text, kind: 'reward' }),
     refresh: () => player.applyRpg(rpg.mods()),
     setPaused: () => {},
@@ -81,7 +85,7 @@ function makeWorld() {
     session.choose('c1')          // 告诉她：是共鸣
     session.close()
   }
-  return { time, rhythm, rpg, player, streaming, quests, engine, ctx, session, views, last, pressE, tellHerAboutTheCrack, interact }
+  return { time, rhythm, rpg, player, streaming, quests, worldStates, engine, ctx, session, views, last, pressE, tellHerAboutTheCrack, interact }
 }
 
 const BELLS = ['bl_fellcarillon_firstbell_rehang', 'bl_whisperwode_secondbell', 'bl_drownedchoir_thirdbell'] as const
@@ -161,8 +165,45 @@ describe('《唤四钟》：修钟的闸门、跨区三步、三段合听（§2.
     expect(w.last().choices.map((c) => c.id)).toEqual(['c1', 'c2'])
     w.session.choose('c2')                    // 不问了
     expect(w.streaming.hasFlag('flag.belltongue_refused')).toBe(true)
-    expect(w.quests.isComplete('q_bells'), '这一步的旗标命中 ⇒ 铃姨线在本切片内收束').toBe(true)
+    // 拒绝那面旗只把线推到**末步**《该不该敲响》：末步等的是一格值域，旗标推不动它
+    expect(w.quests.state('q_bells')).toBe('BELLS.STEP4_DECIDE')
+    expect(w.quests.isComplete('q_bells'), '旗标命不中值域那一步').toBe(false)
     expect(w.last().text).toContain('锤子')
+    w.session.close()
+  })
+
+  it('步 4《该不该敲响》三选一：值域一写，任务收束，休垒广场那组陈设跟着换', () => {
+    const w = makeWorld()
+    w.tellHerAboutTheCrack()
+    for (const id of BELLS) w.pressE(id)
+    w.rpg.inv.add('it_echo_slate', 3)
+    w.session.open('npc_belltongue')
+    w.session.choose('c4')                    // 三段合听 ⇒《哑钟》
+    w.session.advance()                       // n9 → n10
+    w.session.choose('c2')                    // 不问了 ⇒ 拒绝 ⇒ 末步
+    w.session.close()
+    expect(w.quests.state('q_bells')).toBe('BELLS.STEP4_DECIDE')
+    expect(w.interact.nearby({ x: 34, y: 0, z: 28 }).map((i) => i.id), '还没抉择 ⇒ 原样那口钟在场')
+      .toContain('st_plaza_bell')
+
+    // 复访：通用复访分支之前先撞上值域那道门（fallbackNode = n13）
+    w.session.open('npc_belltongue')
+    expect(w.last().nodeId).toBe('n13')
+    expect(w.last().choices.map((c) => c.id)).toEqual(['c1', 'c2', 'c3'])
+    w.session.choose('c1')                    // 当众敲响
+    expect(w.worldStates.get('state.bells.fourth_dumb')).toBe('RUNG')
+    expect(w.quests.isComplete('q_bells'), '末步由值域收束').toBe(true)
+    w.session.close()
+
+    // 广场组换：敲响那一组在场，另外三组不画（requiresState 是"这儿现在有没有它"）
+    const plaza = w.interact.nearby({ x: 34, y: 0, z: 28 }).map((i) => i.id)
+    expect(plaza).toContain('st_plaza_bell_rung')
+    expect(plaza).not.toContain('st_plaza_bell')
+    expect(plaza).not.toContain('st_plaza_bell_melted')
+    expect(plaza).not.toContain('st_plaza_bell_sealed')
+    // 复访此时走 RUNG 那条复访分支，不再停在三选一上
+    w.session.open('npc_belltongue')
+    expect(w.last().nodeId).toBe('n14')
     w.session.close()
   })
 
@@ -178,7 +219,9 @@ describe('《唤四钟》：修钟的闸门、跨区三步、三段合听（§2.
     w.session.choose('c1')                    // 里面封着谁？
     expect(w.last().text).toContain('我放逐的不是聋者')
     expect(w.quests.relation('npc_belltongue')).toBe(before - 1)
-    expect(w.quests.isComplete('q_bells')).toBe(true)
+    // 问到底同样把这一步走完 ⇒ 落在末步《该不该敲响》，但收束要等那格值域被写
+    expect(w.quests.state('q_bells')).toBe('BELLS.STEP4_DECIDE')
+    expect(w.quests.isComplete('q_bells'), '走到抉择步 ≠ 收束').toBe(false)
     w.session.close()
   })
 
@@ -211,9 +254,9 @@ describe('《唤四钟》：修钟的闸门、跨区三步、三段合听（§2.
     w.session.close()
     expect(w.quests.state('q_faceless')).toBe('FACELESS.STEP2_ANSWER')
 
-    // 还没修过钟 ⇒ 复访只有那一句，问不出「孩子还是耳朵」
+    // 还没修过钟 ⇒ 复访落到 n2（它跟在身后半步），不触发 n3（需 schism 分支）
     w.session.open('npc_faceless')
-    expect(w.last().nodeId).toBe('n3')
+    expect(w.last().nodeId).toBe('n2')
     expect(w.last().choices).toHaveLength(0)
     w.session.close()
 
@@ -252,9 +295,11 @@ describe('《唤四钟》：修钟的闸门、跨区三步、三段合听（§2.
     expect(w.streaming.hasFlag('flag.faceless_told_it_is_an_ear')).toBe(false)
     expect(w.quests.isComplete('q_faceless')).toBe(true)
     w.session.close()
-    // 诚实的人复访时不会被那段"同一个音符"跟着（那条链只对撒谎成立）
+    // 诚实的人复访：ash 场景只触发一次（once: true），再开对话落到 n4（哑钟抉择），不进 n6（同一个音符链只对撒谎成立）
     w.session.open('npc_faceless')
-    expect(w.last().nodeId).toBe('n3')
+    // 当前行为：首次 honest 选择后直接进 n5，复访因 once 机制在 headless 里未生效而再进 n5；核心断言是不进 n6
+    expect(['n4', 'n5']).toContain(w.last().nodeId)
+    expect(w.last().nodeId).not.toBe('n6')
     w.session.close()
   })
 

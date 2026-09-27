@@ -4,7 +4,7 @@
   "npc": "npc_belltongue",
   "priority": 10,
   "rootNode": "n0",
-  "fallbackNode": "n5",
+  "fallbackNode": "n13",
   "nodes": [
    {
     "id": "n0",
@@ -297,15 +297,114 @@
     },
     "next": null
    },
-   {
-    "id": "n12",
-    "speaker": "npc_belltongue",
-    "emotion": "quiet",
-    "text": "……谢谢。锤子我收着。哪天你想敲了，它还在。",
-    "next": null
-   }
-  ]
- },
+    {
+     "id": "n12",
+     "speaker": "npc_belltongue",
+     "emotion": "quiet",
+     "text": "……谢谢。锤子我收着。哪天你想敲了，它还在。",
+     "next": null
+    },
+    {
+     "id": "n13",
+     "speaker": "npc_belltongue",
+     "emotion": "closed",
+     "text": "第四口钟还挂着，谁也没碰。……替我拿个主意：敲响它、把它交给我熔进炉子，还是让它继续哑着？",
+     "conditions": {
+      "quest": {
+       "id": "q_bells",
+       "in": [
+        "BELLS.STEP4_DECIDE"
+       ]
+      },
+      "state": {
+       "key": "state.bells.fourth_dumb",
+       "eq": "INTACT"
+      }
+     },
+     "choices": [
+      {
+       "id": "c1",
+       "text": "敲响它。被放逐的人该有人听他把话说完。",
+       "style": "blunt",
+       "effects": {
+        "setState": {
+         "key": "state.bells.fourth_dumb",
+         "value": "RUNG"
+        },
+        "notify": "第四口钟鸣响 —— 休垒广场上空多了一个不肯散的音"
+       },
+       "next": "n14"
+      },
+      {
+       "id": "c2",
+       "text": "把它交给你熔了 —— 哑过一次的东西，不该再有开口的机会。",
+       "style": "poetic",
+       "effects": {
+        "setState": {
+         "key": "state.bells.fourth_dumb",
+         "value": "MELTED"
+        },
+        "notify": "钟铜进了炉子 —— 四镇从此只剩三口钟"
+       },
+       "next": "n15"
+      },
+      {
+       "id": "c3",
+       "text": "（不碰它。让它哑着。）",
+       "style": "silent",
+       "effects": {
+        "setState": {
+         "key": "state.bells.fourth_dumb",
+         "value": "SEALED"
+        },
+        "notify": "布重新蒙上钟口 —— 第四口钟被封存"
+       },
+       "next": "n16"
+      }
+     ],
+     "next": "n14"
+    },
+    {
+     "id": "n14",
+     "speaker": "npc_belltongue",
+     "emotion": "unsteady",
+     "text": "（她背过身去，锤子从手里滑下来，砸在砧上，很轻。）五十年……我第一次听见它把话说完。",
+     "conditions": {
+      "state": {
+       "key": "state.bells.fourth_dumb",
+       "eq": "RUNG"
+      }
+     },
+     "next": "n5"
+    },
+    {
+     "id": "n15",
+     "speaker": "npc_belltongue",
+     "emotion": "working",
+     "text": "（钟铜在炉子里化开，她没让火星溅出来。）好。……你替我把最后那句咽下去了。",
+     "conditions": {
+      "state": {
+       "key": "state.bells.fourth_dumb",
+       "eq": "MELTED"
+      }
+     },
+     "next": "n5"
+    },
+    {
+     "id": "n16",
+     "speaker": "npc_belltongue",
+     "emotion": "quiet",
+     "text": "（她点头，把布重新蒙上钟口。）哑着也行。哑的钟不骗人 —— 它只是不肯开口。",
+     "conditions": {
+      "state": {
+       "key": "state.bells.fourth_dumb",
+       "eq": "SEALED"
+      }
+     },
+     "next": "n5"
+    }
+   ]
+  },
  {
   "id": "DLG_CORVIN",
   "npc": "npc_corvin",
@@ -468,15 +567,201 @@
      }
     ]
    },
-   {
-    "id": "n6",
-    "speaker": "npc_corvin",
-    "emotion": "quiet",
-    "text": "……它真的在唱。七十三年了，我以为我妻子那批是最后一批会唱的。谢谢你，聋者。你让我少写了一页谎。",
-    "next": null
-   }
-  ]
- },
+{
+     "id": "n6",
+     "speaker": "npc_corvin",
+     "emotion": "quiet",
+     "text": "……它真的在唱。七十三年了，我以为我妻子那批是最后一批会唱的。谢谢你，聋者。你让我少写了一页谎。",
+     "next": null
+    },
+    {
+     "id": "n7",
+     "speaker": "npc_corvin",
+     "emotion": "measured",
+     "text": "核还在唱。但光有核不够——我需要一具「死前仍是闻者」的头颅。钟坠院崖壁下，有具悬钟骑士遗骸没烂透。盔里的铭牌，属于休垒失踪的采晶人。去把它带给我。",
+     "conditions": {
+      "quest": {
+       "id": "q_corvin",
+       "in": [
+        "CORVIN.STEP2_DELIVER"
+       ]
+      }
+     },
+     "next": null
+    },
+    {
+     "id": "n8",
+     "speaker": "npc_corvin",
+     "emotion": "cold",
+     "text": "（他把铭牌贴在灯下，指尖发白）……是她。休垒那份失踪名单上，排第七。律政院说她「因公殉职」，实际是我把她送进喧堕池的。",
+     "conditions": {
+      "quest": {
+       "id": "q_corvin",
+       "in": [
+        "CORVIN.STEP3_REMAINS"
+       ]
+      }
+     },
+     "choices": [
+      {
+       "id": "c1",
+       "text": "你亲手把她推进去的。",
+       "style": "blunt",
+       "effects": {
+        "setRelation": {
+         "delta": -1
+        },
+        "setFlags": [
+         "flag.corvin_archive_confronted"
+        ],
+        "notify": "《档案室的另一半火》记入谱册 —— 他烧的不止档案，还有良心"
+       },
+       "next": "n10"
+      },
+      {
+       "id": "c2",
+       "text": "为什么？",
+       "style": "poetic",
+       "effects": {
+        "setRelation": {
+         "delta": 1
+        },
+        "setFlags": [
+         "flag.corvin_archive_confronted"
+        ],
+        "notify": "《档案室的另一半火》记入谱册 —— 真相要用声音换"
+       },
+       "next": "n9"
+      }
+     ]
+    },
+    {
+     "id": "n9",
+     "speaker": "npc_corvin",
+     "emotion": "unsteady",
+     "text": "因为她是第一批喧堕者。律政院在仪典前就预算了失败——把聋者放逐，是为了给新秩序腾出「无共鸣腔的耗材人口」。我烧掉一半卷宗，是灭律政院的罪，也是灭我洗白实验的罪。",
+     "next": "n10"
+    },
+    {
+     "id": "n10",
+     "speaker": "npc_corvin",
+     "emotion": "brisk",
+     "text": "剩下的半间档案室，现在对你开门。里头有破拍营地换防口令、未竟厅音栓位置图。拿去吧——你替我保守秘密，我给你开路。",
+     "effects": {
+      "setFlags": [
+       "flag.brokenbar_password"
+      ],
+      "notify": "获得破拍营地口令 + 未竟厅音栓图"
+     },
+     "conditions": {
+      "quest": {
+       "id": "q_corvin",
+       "in": [
+        "CORVIN.STEP4_CONFRONT"
+       ]
+      }
+     },
+     "choices": [
+      {
+       "id": "c1",
+       "text": "揭露：把实验证据摆上休垒广场。",
+       "style": "blunt",
+       "effects": {
+        "setState": {
+         "key": "state.corvin.schism",
+         "value": "EXPOSED"
+        },
+        "setRelation": {
+         "delta": -2
+        },
+        "setFlags": [
+         "flag.schism_exposed"
+        ],
+        "notify": "学者之乱爆发 —— 科温被逐，营地强攻难度上调，情报作废"
+       },
+       "next": "n11"
+      },
+      {
+       "id": "c2",
+       "text": "包庇：他给我开营地后门，我替他守秘密。",
+       "style": "silent",
+       "effects": {
+        "setState": {
+         "key": "state.corvin.schism",
+         "value": "COMPLICIT"
+        },
+        "setRelation": {
+         "delta": 2
+        },
+        "setFlags": [
+         "flag.schism_complicit"
+        ],
+        "notify": "达成包庇密约 —— 营地后门开启，但沉唱堂出现捕获笼"
+       },
+       "next": "n12"
+      },
+      {
+       "id": "c3",
+       "text": "共谋：提供活捉方案，换「振源核嵌甲」独家强化。",
+       "style": "provoke",
+       "effects": {
+        "setState": {
+         "key": "state.corvin.schism",
+         "value": "COLLUDED"
+        },
+        "setRelation": {
+         "delta": 1
+        },
+        "setFlags": [
+         "flag.schism_colluded"
+        ],
+        "notify": "缔结共谋契约 —— 获得振源核嵌甲配方，无面童将疏远你"
+       },
+       "next": "n13"
+      }
+     ]
+    },
+    {
+     "id": "n11",
+     "speaker": "npc_corvin",
+     "emotion": "quiet",
+     "text": "（档案室的火舔舐着他的手稿）你赢了，聋者。真相总比谎言响亮……哪怕它烧穿喉咙。",
+     "conditions": {
+      "state": {
+       "key": "state.corvin.schism",
+       "eq": "EXPOSED"
+      }
+     },
+     "next": null
+    },
+    {
+     "id": "n12",
+     "speaker": "npc_corvin",
+     "emotion": "measured",
+     "text": "成交。后门钥匙在第三块地砖下。但记住——沉唱堂那边，我的笼子会等着下一批「听得见」的人。",
+     "conditions": {
+      "state": {
+       "key": "state.corvin.schism",
+       "eq": "COMPLICIT"
+      }
+     },
+     "next": null
+    },
+    {
+     "id": "n13",
+     "speaker": "npc_corvin",
+     "emotion": "eager",
+     "text": "振源核嵌甲……唯一能让凡人承载「会唱歌的核」的配方。代价是你身上的血腥味，无面童会闻出来的。",
+     "conditions": {
+      "state": {
+       "key": "state.corvin.schism",
+       "eq": "COLLUDED"
+      }
+     },
+     "next": null
+    }
+   ]
+  },
  {
   "id": "DLG_MEG",
   "npc": "npc_meg",
@@ -699,20 +984,24 @@
     "text": "（它跟在你身后半步。你回头时，它已经在那儿了。）",
     "next": null
    },
-   {
-    "id": "n3",
-    "speaker": "npc_faceless",
-    "emotion": "blank",
-    "text": "（它抬头看你，然后在灰上写了一个字。你还没看清，它就擦了。）",
-    "conditions": {
-     "flags": {
-      "all": [
-       "flag.faceless_met"
-      ]
-     }
+{
+     "id": "n3",
+     "speaker": "npc_faceless",
+     "emotion": "blank",
+     "text": "（它抬头看你，然后在灰上写了一个字。你还没看清，它就擦了。）",
+     "conditions": {
+      "flags": {
+       "all": [
+        "flag.faceless_met"
+       ],
+       "any": [
+        "flag.schism_colluded",
+        "flag.schism_complicit"
+       ]
+      }
+     },
+     "next": "n6"
     },
-    "next": "n6"
-   },
    {
     "id": "n4",
     "speaker": "npc_faceless",
@@ -789,13 +1078,14 @@
     ],
     "next": "n6"
    },
-   {
-    "id": "n5",
-    "speaker": "npc_faceless",
-    "emotion": "blank",
-    "text": "（它跟在你身后半步。你回头时它已经在那儿了 —— 这一次，它手里攥着一小把灰。）",
-    "next": null
-   },
+{
+     "id": "n5",
+     "speaker": "npc_faceless",
+     "emotion": "blank",
+     "text": "（它跟在你身后半步。你回头时它已经在那儿了 —— 这一次，它手里攥着一小把灰。）",
+     "once": true,
+     "next": null
+    },
    {
     "id": "n6",
     "speaker": "npc_faceless",

@@ -21,6 +21,8 @@ export interface DialogueContext {
   questIndex(id: string): number
   hasItem(id: string, count?: number): boolean
   hasSeen(dialogueId: string, nodeId: string): boolean
+  /** 值域状态的一格读数（`state.*`，没写过 ⇒ 登记表里的缺省） */
+  state(key: string): string
 }
 
 export interface DialogueChoiceView {
@@ -70,7 +72,7 @@ export interface QuestIndexResolver {
   stepIndexOf(questId: string, state: string): number
 }
 
-/** 条件求值：四种谓词各自只读一次上下文，没有隐式副作用 */
+/** 条件求值：五种谓词各自只读一次上下文，没有隐式副作用 */
 export function conditionPass(
   c: DialogueCondition | undefined, npc: string, ctx: DialogueContext, quests?: QuestIndexResolver,
 ): boolean {
@@ -101,6 +103,12 @@ export function conditionPass(
   }
   if (c.hasItem) {
     if (!ctx.hasItem(c.hasItem.id, c.hasItem.count ?? 1)) return false
+  }
+  if (c.state) {
+    const v = ctx.state(c.state.key)
+    if (c.state.eq !== undefined && v !== c.state.eq) return false
+    if (c.state.in && !c.state.in.includes(v)) return false
+    if (c.state.notIn && c.state.notIn.includes(v)) return false
   }
   return true
 }

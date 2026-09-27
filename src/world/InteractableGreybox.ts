@@ -63,6 +63,8 @@ export class InteractableGreybox {
   private readonly pools = new Map<Kind, Pool>()
   private readonly byCell = new Map<string, Entry[]>()
   private readonly shown = new Map<string, { entry: Entry; index: number; active: boolean }>()
+  /** 已加载的格 → 是否 active（值域组换要靠它知道"换完该显示给哪几格"） */
+  private readonly loaded = new Map<string, boolean>()
   private focused: string | null = null
   private readonly unsub: Array<() => void> = []
   private readonly m4 = new THREE.Matrix4()
@@ -76,6 +78,12 @@ export class InteractableGreybox {
     cellKey: (pos: Vec3) => string,
     /** flag 谓词同样注入：读档后 flag 已经在了，不能只靠事件补色（否则存档态不可见） */
     private readonly hasFlag: (key: string) => boolean,
+    /**
+     * 值域谓词（`requiresState` 的读方，组合根注入）。**不满足的条目不画**：
+     * 组换的三个变体住在同一个点上，把不成立的那两个也画出来就是三张纸叠在一起闪。
+     * （旗标那一路是"画着但变灰"，因为旗标只改变一件东西的成色；值域改的是"这儿有没有它"。）
+     */
+    private readonly stateOk: (req: { key: string; value: string }) => boolean = () => false,
   ) {
     const entries: Entry[] = []
     for (const r of regions) {
@@ -112,6 +120,8 @@ export class InteractableGreybox {
       bus.on('world.flag', (f) => {
         for (const cur of this.shown.values()) if (cur.entry.it.setsFlag === f.key) this.paint(cur.entry.it.id)
       }),
+      // 组换发生在"下一格加载"之前也可能（站在原地把钟敲了），所以这里必须自己跟一遍
+      bus.on('world.state', () => this.syncStates()),
     )
   }
 
@@ -143,13 +153,31 @@ export class InteractableGreybox {
     const list = this.byCell.get(key)
     if (!list) return
     if (state === 'unloaded') {
+      this.loaded.delete(key)
       for (const e of list) this.hide(e.it.id)
       return
     }
+    this.loaded.set(key, state === 'active')
     for (const e of list) this.show(e, state === 'active')
   }
 
+  /**
+   * 值域变了 ⇒ 已加载的格里重新过一遍 `requiresState`：该出现的补上、该退场的摘掉。
+   * 不等下一次跨格事件，是因为组换往往就发生在玩家脚下那一格（敲完钟，回头看见陈设换了）。
+   */
+  private syncStates(): void {
+    let touched = false
+    for (const [key, active] of this.loaded) {
+      for (const e of this.byCell.get(key) ?? []) {
+        if (!e.it.requiresState) continue
+        if (this.stateOk(e.it.requiresState)) { this.show(e, active); touched = true } else this.hide(e.it.id)
+      }
+    }
+    if (touched) bus.emit('log', { level: 'info', msg: `greybox.stateSwap shown=${this.shown.size}` })
+  }
+
   private show(e: Entry, active: boolean): void {
+    if (e.it.requiresState && !this.stateOk(e.it.requiresState)) return // 不成立的变体不占格子
     const cur = this.shown.get(e.it.id)
     if (cur) { if (cur.active !== active) { cur.active = active; this.paint(e.it.id) } return }
     const pool = this.pools.get(e.kind)

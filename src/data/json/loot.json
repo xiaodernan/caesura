@@ -140,17 +140,25 @@
     "pity": 10
    }
   ],
-  "firstKill": [
-   {
-    "id": "silence_bonus",
-    "item": "it_timbite",
-    "count": [
-     30,
-     30
-    ]
-   }
-  ]
- },
+"firstKill": [
+    {
+     "id": "silence_bonus",
+     "item": "it_timbite",
+     "count": [
+      30,
+      30
+     ]
+    },
+    {
+     "id": "singing_core",
+     "item": "it_resonance_core",
+     "count": [
+      1,
+      1
+     ]
+    }
+   ]
+  },
  {
   "id": "loot_skewer",
   "rolls": [
@@ -337,10 +345,23 @@
      2
     ]
    }
-  ]
- },
- {
-  "id": "loot_ostlara",
+]
+  },
+  {
+   "id": "loot_hanged_knight_nameplate",
+   "rolls": [
+    {
+     "id": "nameplate",
+     "item": "it_hanged_knight_nameplate",
+     "count": [
+      1,
+      1
+     ]
+    }
+   ]
+  },
+  {
+   "id": "loot_ostlara",
   "rolls": [
    {
     "id": "resonance",

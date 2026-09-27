@@ -489,11 +489,11 @@
     "timbite": 90
    }
   }
- },
+},
  {
   "id": "it_bell_tongue",
   "nameKey": "item.bellTongue",
-  "displayName": "裂舌的断面",
+  "displayName": "裂舌的断舌",
   "kind": "lore",
   "stack": 1,
   "value": 0,
@@ -507,5 +507,14 @@
   "stack": 9,
   "value": 0,
   "desc": "从钟腔内壁剥下的一小片结晶。贴着耳朵会听见仪典当晚的一段环境声——三段合听，才听得出那晚的调门被按下了半个音。"
+ },
+ {
+  "id": "it_hanged_knight_nameplate",
+  "nameKey": "item.hangedKnightNameplate",
+  "displayName": "悬钟骑士铭牌",
+  "kind": "lore",
+  "stack": 1,
+  "value": 0,
+  "desc": "从遗骸盔甲内侧取下的铭牌。刻着休垒采晶队第七号失踪者的名字——律政院档案里写着「因公殉职」，实际是被送进喧堕池的实验品。"
  }
 ]

@@ -23,6 +23,7 @@ import { RhythmClock } from '@/core/RhythmClock'
 import { registry } from '@/core/Registry'
 import {
   registerGameData, playerBase, regions, worldstate, quests as questTable,
+  worldStates as worldStateTable,
 } from '@/data'
 import type { EnemyData, MovesetData, WeaponData } from '@/data/schema'
 import { PlayerController } from '@/player/ThirdPersonController'
@@ -33,6 +34,7 @@ import { StreamingSystem } from '@/world/Streaming'
 import { Interactables } from '@/world/Interactables'
 import { WorldState } from '@/quest/WorldState'
 import { Quests } from '@/quest/Quests'
+import { WorldStates } from '@/quest/WorldStates'
 import { DebugPanel } from '@/tools/DebugPanel'
 import { enemyPanelText, enemyRows } from '@/tools/EnemyDebugger'
 import { questPanelText, questRows } from '@/tools/QuestDebugger'
@@ -398,11 +400,13 @@ describe('F3 · 任务与世界读数（只读）', () => {
       setFlag: (k) => streaming.setFlag(k),
     })
     const quests = new Quests(questTable)
+    const worldStates = new WorldStates(worldStateTable)
     const render = (): string => questPanelText(questRows(questTable, quests), {
       flags: streaming.flagKeys(),
       byRules: worldState.flagsWritten,
       used: interact.snapshot(),
       relations: quests.snapshot().relations,
+      states: worldStates.snapshot(),
     })
     const rowOf = (id: string): string => {
       const line = render().split('\n').find((l) => l.startsWith(id))
@@ -414,14 +418,14 @@ describe('F3 · 任务与世界读数（只读）', () => {
       const q = questTable.find((x) => x.id === id)!
       quests.start(id)
       for (let i = 0; i < index; i++) {
-        const flag = q.steps[i].advanceOn?.flags[0]
+        const flag = q.steps[i].advanceOn?.flags?.[0]
         if (!flag) return
         streaming.setFlag(flag)
       }
     }
-    const dispose = (): void => { quests.dispose(); worldState.dispose(); interact.dispose(); streaming.dispose() }
+    const dispose = (): void => { quests.dispose(); worldState.dispose(); interact.dispose(); streaming.dispose(); worldStates.dispose() }
     live.push(dispose)
-    return { streaming, interact, worldState, quests, render, rowOf, walkTo, dispose }
+    return { streaming, interact, worldState, worldStates, quests, render, rowOf, walkTo, dispose }
   }
 
   it('一条线都没开时五行都在，每行写着"没开始"而不是"第 0 步"', () => {
@@ -440,7 +444,7 @@ describe('F3 · 任务与世界读数（只读）', () => {
     const w = makeQuestWorld()
     w.quests.start('q_bells')
     const row = w.rowOf('q_bells')
-    expect(row).toContain('1/7')
+    expect(row).toContain('1/8')
     expect(row).toContain('BELLS.STEP1_OPEN')
     expect(row).toContain('next: flag.bell_tongue_examined')
     expect(row, '没到末步不许打 [done]').not.toContain('[done]')
@@ -450,12 +454,15 @@ describe('F3 · 任务与世界读数（只读）', () => {
   it('旗标一路顺推，面板跟着走；末步的旗一立才打勾（停在末步 ≠ 收束）', () => {
     const w = makeQuestWorld()
     const q = questTable.find((x) => x.id === 'q_bells')!
-    w.walkTo('q_bells', 6)
+    w.walkTo('q_bells', 7)
     const row = w.rowOf('q_bells')
-    expect(row).toContain('7/7')
-    expect(row).toContain('BELLS.STEP3_REFUSED')
+    expect(row).toContain('8/8')
+    expect(row).toContain('BELLS.STEP4_DECIDE')
     expect(row, '末步正在进行 ≠ 已收束').not.toContain('[done]')
-    w.streaming.setFlag(q.steps[6].advanceOn!.flags[0])
+    // 末步上一步那面旗已经立着，却命不中的就是这一步：末步的 advanceOn 里只有**值域**，没有旗标
+    expect(q.steps[7].advanceOn?.flags, '末步不该再挂旗标').toBeUndefined()
+    expect(q.steps[7].advanceOn?.state?.key).toBe('state.bells.fourth_dumb')
+    w.worldStates.set('state.bells.fourth_dumb', 'RUNG')
     expect(w.rowOf('q_bells')).toContain('[done]')
     w.dispose()
   })

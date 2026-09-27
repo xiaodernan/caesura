@@ -1025,6 +1025,13 @@ export interface InteractableRef {
   /** one-way shortcut lock: opens once, then stays open from this side only */
   oneWay?: boolean
   requiresFlag?: string
+  /**
+   * **值域型**闸门（Phase 6-B：`state.*`）。与 `requiresFlag` 的差别只在记法：旗标是"有没有"，
+   * 值域状态是"走到哪一格"（narrative §7 的 `STATE.<域>.<对象> = <枚举>`）。
+   * 休垒广场的三处陈设就是这么换组的：同一个地点，敲响 / 熔掉 / 封存之后站的东西各不相同。
+   * 未写入时读到的是 `states.json` 里声明的 `default`（= 还没走到那个抉择）。
+   */
+  requiresState?: { key: string; value: string }
   setsFlag?: string
   npcId?: string
   /** 交互后把人送去的落点（共鸣井/吊机/吊桥 = 遮蔽传送等价物）；缺省 = 原地生效 */
@@ -1205,7 +1212,7 @@ export interface RegionData {
 
 /**
  * 条件谓词（narrative.md §3.1）：**NPC 可见对话节点集 = Filter(树, f(quest.state, relation, flags))**。
- * 四种谓词对应四种"玩家做过什么"的记法，全部只读、不求值副作用——所以同一棵树能被
+ * 五种谓词对应五种"玩家做过什么"的记法，全部只读、不求值副作用——所以同一棵树能被
  * 预览、能被测试穷举，也不会出现"打开对话就改了世界"这种事。
  */
 export interface DialogueCondition {
@@ -1217,6 +1224,13 @@ export interface DialogueCondition {
   quest?: { id: string; in?: string[]; gte?: string }
   /** 持有物品（「自行检视断面」这类动作靠它表达：背包里真有那截舌头才算知情） */
   hasItem?: { id: string; count?: number }
+  /**
+   * 值域状态（narrative §7 `STATE.*`）：`eq` 单值、`in` 任一、`notIn` 都不是。
+   * 与 `flags` 的分工——旗标记"发生过没有"，值域记"落在哪一格"，两者都不许互相冒充
+   * （用三个互斥布尔冒充一个枚举，就会出现"两个都立了"这种没人裁决的局面）。
+   * 未写入时读到 `states.json` 声明的 `default`。
+   */
+  state?: { key: string; eq?: string; in?: string[]; notIn?: string[] }
 }
 
 /**
@@ -1237,6 +1251,12 @@ export interface DialogueEffects {
   takeItem?: { id: string; count?: number }
   /** 结算时的一句播报（走 HUD 通知队列） */
   notify?: string
+  /**
+   * **写一格值域状态**（`state.*`）。与 `setFlags` 的分工同上：旗标记事件，值域记结局；
+   * 一次三选一的抉择落下去，世界从此只认一个取值，不会与别的"旗标"打架。
+   * key/value 必须在 `states.json` 里登记过——引擎侧（WorldStates.set）认不出就拒写并广播告警。
+   */
+  setState?: { key: string; value: string }
 }
 
 export interface DialogueChoice {
@@ -1292,14 +1312,18 @@ export interface NpcData {
 
 /**
  * 任务步骤（需求 §28：完成条件是「改变世界的状态」或「玩家做出的知情决定」，
- * 不是"去那里杀 10 只回来"）。所以一步的推进条件只有两种：某个旗标被立起，
- * 或者对话里的一次选择直接推进（`DialogueEffects.advanceQuest`）。
+ * 不是"去那里杀 10 只回来"）。所以一步的推进条件只有三种来源：某个旗标被立起、
+ * 某一格值域状态落进一组取值（`advanceOn.state`），或者对话里的一次选择直接推进
+ * （`DialogueEffects.advanceQuest`）。三者都只是"世界读数变了"，谁也不许偷偷改任务面板。
  */
 export interface QuestStep {
   state: string
   label: string
-  /** 任一旗标被立 ⇒ 顺推一步。**这里就是那些旗标的读方**（§55 的双向对账靠它闭合） */
-  advanceOn?: { flags: string[] }
+  /**
+   * 任一旗标被立 ⇒ 顺推一步。**这里就是那些旗标的读方**（§55 的双向对账靠它闭合）。
+   * `flags` 与 `state` 至少给一个（校验脚本负责把关）。
+   */
+  advanceOn?: { flags?: string[]; state?: { key: string; in: string[] } }
   /** §28 标注：D=发现 C=抉择 H=隐藏信息 M=多结果 */
   tags?: string[]
 }
@@ -1313,4 +1337,23 @@ export interface QuestData {
   /** 完成后的世界状态摘要（叙事评审用；不是玩法数值） */
   outcome: string
   steps: QuestStep[]
+}
+
+/**
+ * **值域型世界状态**的登记项（`states.json`，narrative §7 的 `STATE.<域>.<对象> = <枚举>`）。
+ * 表存在的意义是把三件事钉死在数据里：一共几格、缺省哪格、谁说了算。
+ * `default` 就是"这一格从来没被写过"时读到的值——它必须是 `values` 里的一员，
+ * 因为"抉择还没做"本身就是这个状态机的一格（第四种结局，而不是第五种谓词）。
+ */
+export interface WorldStateDef {
+  /** 全局唯一，形如 `state.bells.fourth_dumb` */
+  key: string
+  /** 面板与调试器里显示的名字 */
+  displayName: string
+  /** 全部合法取值，顺序即面板里显示的顺序 */
+  values: string[]
+  /** 从未写入时的读数 */
+  default: string
+  /** 这一格要回答的叙事问题与取值裁决（叙事评审读这里，引擎不读） */
+  note?: string
 }

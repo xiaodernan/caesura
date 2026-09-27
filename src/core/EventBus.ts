@@ -90,6 +90,12 @@ export interface GameEvents {
   'ui.notify': { text: string; kind?: 'info' | 'reward' | 'boss' }
   'ui.prompt': { text: string | null; id: string | null }
   'world.flag': { key: string; value: boolean | number | string }
+  /**
+   * 值域型世界状态（Phase 6-B / narrative §7 的 `STATE.*`）：**与旗标同权的第二条世界通道**，
+   * 但两者不许互相冒充——旗标记"发生过没有"，值域记"落在哪一格"。
+   * 写这条广播的唯一入口是 `quest/WorldStates.set`（它同时把住 key/value 必须在登记表里）。
+   */
+  'world.state': { key: string; value: string }
   /** 任务推进（Phase 6-B）：UI 与调试面板据此播报，不做第二份任务状态 */
   'quest.changed': { questId: string; state: string; index: number; total: number; label: string; started: boolean; completed: boolean }
   /**

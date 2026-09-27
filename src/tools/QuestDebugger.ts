@@ -20,7 +20,7 @@ export interface QuestRow {
   label: string
   /** 末步的 advanceOn 已命中（停在末步 ≠ 做完了，判据与 `Quests.isComplete` 同源） */
   done: boolean
-  /** 下一步等哪些旗标（没写＝这条线的后续步还没落表，面板要能看出这件事） */
+  /** 下一步等哪些旗标 / 哪一格值域（没写＝这条线的后续步还没落表，面板要能看出这件事） */
   waits: string
 }
 
@@ -42,9 +42,21 @@ export function questRows(quests: readonly QuestData[], reader: QuestReader): Qu
       steps: q.steps.length,
       label: cur?.label ?? q.displayName,
       done: reader.isComplete(q.id),
-      waits: cur ? (next ? next.flags.join('|') : '(no advanceOn)') : '(not started)',
+      waits: cur ? (waitsText(next) ?? '(no advanceOn)') : '(not started)',
     }
   })
+}
+
+/**
+ * 把 `advanceOn` 翻成人看得懂的一行。旗标与值域**并排印**而不是二选一：
+ * 一步可以同时等"某面旗立起来"与"某一格落进这几个取值"，只印一个会让另一个读数凭空消失。
+ */
+function waitsText(a: { flags?: string[]; state?: { key: string; in: string[] } } | undefined): string | null {
+  if (!a) return null
+  const parts: string[] = []
+  if (a.flags?.length) parts.push(a.flags.join('|'))
+  if (a.state) parts.push(`${a.state.key} in ${a.state.in.join('/')}`)
+  return parts.length ? parts.join(' + ') : null
 }
 
 export interface WorldFlagRows {
@@ -55,6 +67,8 @@ export interface WorldFlagRows {
   /** 一次性交互物里已"用过了"的那些（与旗标分开：用过不一定立旗，立旗不一定用过） */
   used: readonly string[]
   relations: Readonly<Record<string, number>>
+  /** 被写过的值域状态格（`state.*`；空表 = 一个抉择都还没做过） */
+  states?: Readonly<Record<string, string>>
 }
 
 export function questPanelText(rows: readonly QuestRow[], world: WorldFlagRows): string {
@@ -67,6 +81,8 @@ export function questPanelText(rows: readonly QuestRow[], world: WorldFlagRows):
   out.push(`— world —\nflags ${world.flags.length ? world.flags.join(', ') : '(none)'}`)
   if (world.byRules.length) out.push(`  by worldstate rules: ${world.byRules.join(', ')}`)
   out.push(`used interactables ${world.used.length ? `${world.used.length}: ${world.used.slice(0, 12).join(', ')}${world.used.length > 12 ? ' …' : ''}` : '(none)'}`)
+  const st = Object.entries(world.states ?? {})
+  out.push(`states ${st.length ? st.map(([k, v]) => `${k}=${v}`).join(', ') : '(all default)'}`)
   if (rel.length) out.push(`relations: ${rel.map(([k, v]) => `${k} ${v > 0 ? '+' : ''}${v}`).join(' · ')}`)
   return out.join('\n')
 }
