@@ -11,6 +11,9 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+// 「先记账后接线」那两份账本的**销账**判据（KI-073）。住在这里而不是内联，是为了让测试能喂它合成账本：
+// 本脚本一被 import 就会去校验真表，判据留在里面就没人 import 得动（与 report-reds.mjs 同一个理由）。
+import { flagLedgerErrors, milestoneLedgerErrors, PENDING_FLAG_WRITERS, PENDING_MILESTONE_GRANTS, UI_BOUND_MILESTONES } from './ledger-rules.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const JSON_DIR = resolve(ROOT, 'src/data/json')
@@ -491,21 +494,16 @@ function validateProgression() {
   // 里程碑：rank 必须在曲线范围内。KI-054 起「一行承诺一条腿」——每行必须满足四者之一：
   // ① 带 grant（Progression.derive 逐项消费，字段白名单在 GRANT_FIELDS）；
   // ② 被 movements.json slots[].milestone 引用（既有消费者，不重复挂腿）；
-  // ③ 出现在 PENDING_MILESTONE_GRANTS 且理由非空（先记账后接线，清单只许变短不许变长）；
+  // ③ 出现在 PENDING_MILESTONE_GRANTS 且理由非空（先记账后接线；**销账有判据**，KI-073：有腿不销 ⇒ ERROR。
+  //    "清单只许变短"那半句从前是空话——新记一条欠账是虚是实机器不知道，所以变长这一侧由 review 管，
+  //    而"该销未销"这一侧从今天起是门）；
   // ④ 被 UI 承载体按 id 消费（UI_BOUND_MILESTONES，腿由 hud-milestones 测试作证，KI-031①）。
   // 这条规则的存在理由：§8.2 的 label 是玩家面向的数值承诺，此前 11 行里 9 行没有任何机制承载。
   const GRANT_FIELDS = ['loadFlat', 'parryWhiffMs', 'execMulPct', 'overdriveFlat', 'corruptionStayPct'] // 加数项（kg / ms / 百分点% / 过载格），语义见 schema.MilestoneGrant
   // ④ UI 腿（KI-031①）：行的消费方是 HUD 组件，unlock rank 由 Hud.milestoneRank **按 id 现查现用**
   // （不是构造期快照）。承载体在表现层、derive 摸不到，所以这一形式的证人不是字段白名单，
   // 是 tests/unit/hud-milestones.test.ts：rank A/B、改表法、删行⇒功能永不亮，三条腿都咬住表。
-  const UI_BOUND_MILESTONES = {
-    ms_beat_ripple: 'HUD 拍点涟漪刻度（体力环心荡圈）',
-    ms_crit_ring: 'HUD 暴击飘字的金色泛音环',
-  }
-  const PENDING_MILESTONE_GRANTS = {
-    ms_deepcellar: '深窖可停留时长 +35%：区域侧还没有"停留时长"这个量，无腿可接',
-    ms_identity: '任一维触及 35 的专属效果：需求侧尚未定义具体效果（§8.2"待实装后补"）',
-  }
+  // 两份名单住在 scripts/ledger-rules.mjs（销账判据与单元测试都读同一份；复制或切字符串都是第二个主人）
   const movementMsIds = new Set((Array.isArray(data['movements.json']?.slots) ? data['movements.json'].slots : [])
     .map((s) => (isObj(s) ? s.milestone : undefined)).filter(isStr))
   if (!isArr(d.milestones)) report.error(file, 'milestones', '必须是数组')
@@ -528,6 +526,21 @@ function validateProgression() {
       report.error(file, w, `里程碑无机制腿：既无 grant、也不被战技槽/UI 承载体引用、也不在 PENDING_MILESTONE_GRANTS（KI-054/KI-031①）`)
     }
   })
+  /**
+   * **销账判据（KI-073）**。上面那条规则管的是"没腿又不记账 ⇒ 红"；它管不到的是反面——
+   * 腿已经接上了，账还挂着，于是**理由那句话从此说谎**。这不是假想：本批动手前实测，
+   * `PENDING_MILESTONE_GRANTS.ms_deepcellar` 写着「区域侧还没有"停留时长"这个量，无腿可接」,
+   * 而表里那一行早在 KI-054③ 就有了 `grant.corruptionStayPct: 35`（label 也已改成"失谐耐受 +1 档"）。
+   * 规则③只在 `grant` 缺席时才去查名单，所以这条死条目既不报错也不被任何读者用上——
+   * 一份"只能变短"的清单，缺的正是"变短"这一步的机器判据。
+   *
+   * 两份名单不对称，理由是它们各自承诺的不是同一件事：pending 承诺的是**没有腿**（一有腿就被证伪），
+   * UI_BOUND 承诺的是**承载体在表现层**（字段腿与它并存不构成为假，例如某个 HUD 刻度同时给负重加成）。
+   * 所以"有腿就红"只对 pending 用；两边共用的是"id 必须还在表里"。
+   */
+  for (const e of milestoneLedgerErrors({ pending: PENDING_MILESTONE_GRANTS, uiBound: UI_BOUND_MILESTONES, rows: d.milestones, movementMsIds })) {
+    report.error(file, e.key, e.msg)
+  }
   // 出身：六维齐全、合计一致（"定弦只改分布"这条设计承诺必须可机器检查）
   if (!isArr(d.origins) || d.origins.length === 0) report.error(file, 'origins', '必须是非空数组')
   else {
@@ -1761,14 +1774,11 @@ function validateGearRarityCoverage() {
  * `regions.json` 里有一批**只有读方、没有写方**的世界旗标（箱子的 requiresFlag、隐藏房的 unlockFlag），
  * 于是那些内容在玩家侧永远打不开——而逐文件的校验全绿，因为每一半单独看都合法。
  * 所以这里做的是**双向对账**：写了没人读 = ERROR（§55 的老规矩），读了没人写 = 必须逐个列在
- * PENDING_FLAG_WRITERS 里（带原因），否则 ERROR。白名单只能变短不能变长。
+ * PENDING_FLAG_WRITERS 里（带原因），否则 ERROR。**这份名单也要能销**（KI-073：条目里的旗标一旦出现写方
+ * ⇒ ERROR）；至于"只许变短"——新记一条欠账是虚是实机器判不了，那一侧留给 review，别写成机器的功劳。
  */
-const PENDING_FLAG_WRITERS = {
-  'flag.side_nave_found': 'Phase 6-B：侧廊入口需要一段能在地板上站住的领取点几何（当前 secret 坐标在可行走层之外）',
-  'flag.brokenbar_resolved': 'Phase 6-B：断弦营地线（收编/清算抉择）',
-  'flag.brokenbar_allied': 'Phase 6-B：同上，潜行解专属那条',
-  'flag.found_first_phrase': 'Phase 6-C：初句圣所五环线索链（narrative §4.8），不靠走近解',
-}
+// 名单本体在 ledger-rules.mjs（与里程碑那两份同一个理由）
+
 const RULE_ONS = new Set(['firstParry', 'bossDefeated', 'interactUsed'])
 const RULE_FIELDS = new Set(['id', 'on', 'dataId', 'interactId', 'setFlag', 'notify'])
 
@@ -1841,6 +1851,14 @@ function validateWorldstate() {
     if (PENDING_FLAG_WRITERS[flag]) report.warn(file, flag, `${where} 在读它，但还没有写方（待办：${PENDING_FLAG_WRITERS[flag]}）`)
     else report.error(file, flag, `${where} 在读这个旗标，但没有任何写方，也没列进 PENDING_FLAG_WRITERS ⇒ 它锁着的内容玩家不可达`)
   }
+  /**
+   * 销账判据（KI-073，与 `validateProgression` 里那两条同族）：上面那个循环只在"没人写"时才读这份名单，
+   * 所以**写方出现之后条目还留着**它一句话都不说——而名单里那句"待办"从此是假理由。
+   * 里程碑那边已经实测过这条形状（`ms_deepcellar` 的账在腿落地之后仍挂着"无腿可接"），
+   * 旗标这边今天量到的是干净的（现在的写方只有三条：弹反教学、奥斯塔拉、钟腹闸门，都不在名单上），
+   * 所以这条判据现在不响——它买的是"下一次销账不会靠人记得"。
+   */
+  for (const e of flagLedgerErrors({ pending: PENDING_FLAG_WRITERS, written })) report.error(file, e.key, e.msg)
   // 反过来"写了却没人读"只对**规则表**判 ERROR（上面逐条已查）；交互物的 setsFlag
   // 有一类是给 Phase 6 的对话/条件将来要读的（调音桩激活记录等），在这里报 WARN 只会变成噪音。
   // 隐藏房：锁要有钥匙，钥匙也要有能按的锁
