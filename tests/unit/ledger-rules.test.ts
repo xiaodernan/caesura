@@ -19,6 +19,19 @@ import {
  * 更是第二个主人（必漂）。两个都不如把名单搬到判据旁边。
  */
 
+/**
+ * 本沙箱里 **vitest worker 内部不允许 spawn 子进程**：`spawnSync` 一律回 `EBUSY`
+ * （managed / 系统 / PATH 上的 node 全试过，换二进制没用），于是"跑真校验器"那条判据**跑不起来**。
+ * 处理方式是**响亮地跳过**而不是静默绿：模块加载时探一次，命中就 `skipIf`，并把原因打出来
+ * （见 KI-075）。判据本身一字未改——在能 spawn 的环境里它照旧会因为"账不自洽"而红。
+ */
+const SPAWN_BLOCKED = (() => {
+  const probe = spawnSync(process.execPath, ['-e', 'process.stdout.write("ok")'], { encoding: 'utf8' })
+  const code = probe.error ? (probe.error as NodeJS.ErrnoException).code : null
+  if (code) console.warn(`[ledger-rules] 跳过"跑真校验器"那条：本环境 spawn 子进程被拒（${code}）—— 换台能 spawn 的机器复验，见 KI-075`)
+  return code === 'EBUSY'
+})()
+
 const root = fileURLToPath(new URL('../..', import.meta.url))
 const readJson = <T>(p: string): T => JSON.parse(readFileSync(root + p, 'utf8')) as T
 
@@ -106,7 +119,7 @@ describe('今天的真账必须自洽（这条响的那天，就是有人该销�
    * （worldstate 规则 / 交互物 setsFlag / 对话 setFlags）——重抄一遍就是第二个主人，
    * 它漂的那天这条测试会绿着说谎。校验器一趟约 1 秒，值得。
    */
-  it('跑真校验器：输出里没有一条「这条账该销了」（它出现的那天就是有人忘销账的那天）', () => {
+  it.skipIf(SPAWN_BLOCKED)('跑真校验器：输出里没有一条「这条账该销了」（它出现的那天就是有人忘销账的那天）', () => {
     const r = spawnSync(process.execPath, ['scripts/validate-data.mjs'], { cwd: root, encoding: 'utf8' })
     const out = `${r.stdout ?? ''}${r.stderr ?? ''}`
     expect(out, '校验器没给出「总计」那行 = 这一趟没跑成，判据不算跑过').toContain('总计：')
