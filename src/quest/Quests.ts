@@ -52,6 +52,11 @@ export class Quests {
   constructor(
     private readonly data: readonly QuestData[],
     private readonly onEvent: (e: QuestEvent) => void = () => {},
+    /**
+     * 读世界旗标的谓词——**顺序补判**要用它（见 `settle`）。缺省恒 false：
+     * 不传也能跑，只是不做补判（单元测试大多如此），生产路径由 main.ts 注入 `streaming.hasFlag`。
+     */
+    private readonly hasFlag: (key: string) => boolean = () => false,
   ) {
     this.offs.push(
       // 旗标是**唯一**的世界状态事件源（Phase 6-A 第一步把它收成一条广播），所以这里
@@ -109,7 +114,7 @@ export class Quests {
     if (this.states.has(id)) return false
     const q = this.def(id)
     if (!q || q.steps.length === 0) return false
-    this.setStep(q, 0, true)
+    this.settle(q, 0, true)
     return true
   }
 
@@ -122,12 +127,12 @@ export class Quests {
       const idx = q.steps.findIndex((s) => s.state === to)
       if (idx < 0) return false
       if (idx <= cur) return false // 单调：不许回头，也不许原地重播
-      this.setStep(q, idx, false)
+      this.settle(q, idx, false)
       return true
     }
     if (cur < 0) return this.start(id)
     if (cur >= q.steps.length - 1) return false
-    this.setStep(q, cur + 1, false)
+    this.settle(q, cur + 1, false)
     return true
   }
 
@@ -169,7 +174,7 @@ export class Quests {
   /** 推进一步；已在末步 ⇒ 这里就是整条线的收束点 */
   private push(q: QuestData, idx: number): void {
     if (idx < q.steps.length - 1) {
-      this.setStep(q, idx + 1, false)
+      this.settle(q, idx + 1, false)
       return
     }
     // 末步的 advanceOn = "这条线在这里收束"。命中就记完成（状态不变），
@@ -177,6 +182,28 @@ export class Quests {
     if (this.completedQuests.has(q.id)) return
     this.completedQuests.add(q.id)
     this.setStep(q, idx, false)
+  }
+
+  /**
+   * 落步并**顺序补判**：开放世界里玩家会先做后接（先在钟坠院捡到采晶人的铭牌，再去找科温签契约），
+   * 而 `onFlag` 只听得见"新立起来的旗"——那面旗早就在了，于是那一步永远不会推进。
+   * 所以每一步落地时都要再问一次"这一步的推进条件是不是早就满足了"。
+   * 只往前走、有界（最多 steps.length 步），数据即使成环也不会转不停。
+   */
+  private settle(q: QuestData, index: number, started: boolean): void {
+    let i = index
+    let first = started
+    for (let guard = 0; guard <= q.steps.length; guard++) {
+      this.setStep(q, i, first)
+      first = false
+      const flags = q.steps[i].advanceOn?.flags ?? []
+      if (!flags.some((f) => this.hasFlag(f))) return
+      if (i < q.steps.length - 1) { i++; continue }
+      if (this.completedQuests.has(q.id)) return
+      this.completedQuests.add(q.id)
+      this.setStep(q, i, false)
+      return
+    }
   }
 
   /* ------------------------------- 关系 ------------------------------- */

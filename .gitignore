@@ -7,3 +7,4 @@ docs/qa/shots/*
 # 本地工具数据（AI 工作记忆与技能），不属于产品源码
 .workbuddy-ai/
 vite.config.ts.timestamp-*.mjs
+.tmp-*

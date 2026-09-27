@@ -212,6 +212,33 @@ describe('任务状态机（需求 §28：三种推进来源 —— 旗标 / 状
     q.dispose()
   })
 
+  it('顺序补判：先把事情做了再接委托 ⇒ 那几步当场补上（开放世界允许先做后接）', () => {
+    const flags = new Set<string>()
+    const q = new Quests(questTable, () => {}, (k) => flags.has(k))
+    // 玩家先捡到断舌并看懂了断面（旗标早就在了），之后才去找铃姨接委托
+    flags.add('flag.bell_tongue_examined')
+    q.start('q_bells')
+    // 起步那一步的条件已经满足 ⇒ 补判直接落到第二步；第二步的条件没满足就停在那
+    expect(q.state('q_bells')).toBe('BELLS.STEP1_JUDGED')
+
+    // 再做一件（说出断面）⇒ 新旗标走 onFlag 那条老路，照常推进
+    flags.add('flag.belltongue_told')
+    bus.emit('world.flag', { key: 'flag.belltongue_told', value: true })
+    expect(q.state('q_bells')).toBe('BELLS.STEP2_OPEN')
+
+    // 连做两步再接（三口钟全修好了才去接委托）⇒ 起步就补到当前该在的位置
+    const f2 = new Set(['flag.bell_tongue_examined', 'flag.belltongue_told', 'flag.bell_first_repaired'])
+    const q2 = new Quests(questTable, () => {}, (k) => f2.has(k))
+    q2.start('q_bells')
+    expect(q2.state('q_bells')).toBe('BELLS.STEP2_SECOND')
+
+    // 不注入谓词（老口径）⇒ 不补判：这条差异是**可分辨**的，不是"碰巧一样"
+    const q3 = new Quests(questTable)
+    q3.start('q_bells')
+    expect(q3.state('q_bells')).toBe('BELLS.STEP1_OPEN')
+    q.dispose(); q2.dispose(); q3.dispose()
+  })
+
   it('关系值被夹在 -5..+5（越界夹住，不无限长）', () => {
     const q = new Quests(questTable)
     for (let i = 0; i < 10; i++) q.addRelation('npc_belltongue', 2)

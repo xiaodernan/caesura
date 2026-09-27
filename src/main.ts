@@ -213,12 +213,17 @@ const worldState = new WorldState(worldstate, {
  * 三者共用**一个**上下文（旗标 / 关系 / 任务步 / 背包 / 已读），所以"对话看得见什么"
  * 与"任务推进到哪"永远是同一份事实——不存在 UI 与逻辑各记一套的情况。
  */
-const quests = new Quests(questTable, (e) => {
-  bus.emit('ui.notify', {
-    text: e.started ? `新的委托 · ${e.label}` : `委托推进 · ${e.label}`,
-    kind: e.started ? 'boss' : 'reward',
-  })
-})
+const quests = new Quests(
+  questTable,
+  (e) => {
+    bus.emit('ui.notify', {
+      text: e.started ? `新的委托 · ${e.label}` : `委托推进 · ${e.label}`,
+      kind: e.started ? 'boss' : 'reward',
+    })
+  },
+  // 顺序补判要读世界旗标：玩家可能先捡到东西再接到委托（生产路径的唯一注入点）
+  (k) => streaming.hasFlag(k),
+)
 const dialogueEngine = new DialogueEngine(dialogues, quests)
 const dialogueCtx: DialogueContext = {
   hasFlag: (k) => streaming.hasFlag(k),
