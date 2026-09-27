@@ -18,6 +18,7 @@
  */
 import { execFileSync } from 'node:child_process'
 import { formatReds, summarizeReds } from './report-reds.mjs'
+import { describeScope, positionalFilters, scopeOf } from './test-scope.mjs'
 import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
@@ -53,14 +54,33 @@ function runOnce(reportPath) {
   }
   try {
     const json = JSON.parse(readFileSync(reportPath, 'utf8'))
-    const files = (json.testResults ?? []).map((r) => resolve(r.name))
+    // 报告里的路径是 Windows 反斜杠形状，而期望集在 `test-scope.mjs` 里折成了正斜杠（vitest 在
+    // win32 上也是先折再比）⇒ 两边同一个形状再对账，否则"跑到了"会被读成"漏跑了全部"。
+    const files = (json.testResults ?? []).map((r) => resolve(r.name).replace(/\\/g, '/'))
     return { json, files, cleanExit }
   } catch {
     return null
   }
 }
 
-const expected = testFilesOnDisk(TESTS).map((p) => resolve(p))
+const onDisk = testFilesOnDisk(TESTS).map((p) => resolve(p))
+/**
+ * 期望集**跟着筛选器收窄**（KI-078）。原来这一格直接是 `testFilesOnDisk(TESTS)`（HEAD 上还是那句），
+ * 于是 `npm run test:flow`（= `node scripts/test.mjs tests/flow`，package.json 里写着的那一条）
+ * 拿这一趟跑到的 flow 那 48 个文件去对**整份磁盘名册**（今天 91 个）⇒ 必然判成漏跑，
+ * 而重跑三次也一样：差集不会因为重试而消失。它给的建议还是「改用更小的范围」——
+ * 那条建议本身就是同一条会失败的命令。筛选器的匹配语义照抄 vitest，见 `test-scope.mjs` 头部。
+ */
+const filters = positionalFilters(EXTRA)
+const scope = scopeOf(onDisk, filters, ROOT)
+if (scope.unmatched.length) {
+  console.error(`\n[test] 这些参数在磁盘上一个测试文件都没圈到：${scope.unmatched.map((f) => `"${f}"`).join(' ')}`)
+  console.error('  要么路径写错了，要么它是某个**选项的值**而不是位置参数（那一律写成 `--选项=值` 的等号形状，')
+  console.error('  或把它补进 `test-scope.mjs` 的 `VALUE_OPTS`）。**不退成全量继续判**：')
+  console.error('  vitest 遇到圈空的筛选器会一个文件都不跑，而"该跑 0 个、跑到 0 个"读起来就是全绿。')
+  process.exit(1)
+}
+const expected = scope.expected
 let last = null
 let lastMissing = []
 for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
@@ -102,17 +122,19 @@ for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
   const missing = expected.filter((p) => !ran.has(p))
   if (missing.length === 0) {
     rmSync(tmp, { recursive: true, force: true })
-    console.log(`\n[test] 覆盖核对通过：${expected.length} 个测试文件全部跑到，${sum.total} 条用例全绿` +
+    console.log(`\n[test] 覆盖核对通过：${describeScope(filters, expected.length, onDisk.length)}，${sum.total} 条用例全绿` +
       (res.cleanExit ? '' : '（进程退出码非零，来自本机那条 EPERM 的 Unhandled Error，与用例无关）'))
     process.exit(0)
   }
   lastMissing = missing
   rmSync(tmp, { recursive: true, force: true })
-  console.warn(`[test] 第 ${attempt} 次只跑到 ${res.files.length}/${expected.length} 个文件（本机 fs shim 的 EPERM 会让 vitest 静默跳过），重跑…`)
+  console.warn(`[test] 第 ${attempt} 次只跑到 ${res.files.length}/${expected.length} 个文件${filters.length ? `（范围：${filters.join(' ')}）` : ''}（本机 fs shim 的 EPERM 会让 vitest 静默跳过），重跑…`)
 }
 
 console.error(`\n[test] ${MAX_ATTEMPTS} 次都没跑齐：每次都会漏掉下面这些文件 ——`)
-for (const p of lastMissing) console.error(`  - ${p.replace(ROOT, '.')}`)
-console.error('  这不是测试失败，而是**覆盖不足**：请重跑，或改用更小的范围（npm run test -- tests/unit）。')
+for (const p of lastMissing) console.error(`  - ${p}`)
+console.error(filters.length
+  ? `  这不是测试失败，而是**覆盖不足**（范围 ${filters.join(' ')} 内）。重跑；仍然不齐就用 \`npm run test:raw -- ${filters.join(' ')}\` 看 vitest 自己怎么说。`
+  : '  这不是测试失败，而是**覆盖不足**：请重跑。全量名册就是这一趟的期望集，没有更小的范围可退。')
 void last
 process.exit(1)
