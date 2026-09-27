@@ -1,0 +1,108 @@
+[
+  {
+    "id": "mus_resthold_amb",
+    "layers": [
+      { "hz": 87.31, "wave": "sawtooth", "peak": 0.035, "detune": -5 },
+      { "hz": 87.31, "wave": "sawtooth", "peak": 0.03, "detune": 6 },
+      { "hz": 43.65, "wave": "sine", "peak": 0.05, "detune": 0 },
+      { "hz": 130.81, "wave": "sine", "peak": 0.012, "detune": 2 }
+    ],
+    "lpHz": 300,
+    "breath": { "hz": 0.07, "depth": 0.008 },
+    "bell": {
+      "scale": [698.46, 783.99, 880.0, 981.42, 1046.5, 1174.66],
+      "everySec": [5, 9],
+      "peak": [0.02, 0.05],
+      "hammerP": 0.4
+    }
+  },
+  {
+    "id": "mus_whisperwode_amb",
+    "layers": [
+      { "hz": 65.41, "wave": "sawtooth", "peak": 0.035, "detune": -5 },
+      { "hz": 65.41, "wave": "sawtooth", "peak": 0.03, "detune": 6 },
+      { "hz": 65.41, "wave": "sine", "peak": 0.05, "detune": 0 },
+      { "hz": 98.0, "wave": "sine", "peak": 0.012, "detune": 2 }
+    ],
+    "lpHz": 240,
+    "breath": { "hz": 0.07, "depth": 0.008 },
+    "bell": {
+      "scale": [523.25, 622.25, 698.46, 783.99, 880.0, 932.33],
+      "everySec": [5, 9],
+      "peak": [0.02, 0.05],
+      "hammerP": 0.4
+    }
+  },
+  {
+    "id": "mus_fellcarillon_amb",
+    "layers": [
+      { "hz": 98.0, "wave": "sawtooth", "peak": 0.032, "detune": -6 },
+      { "hz": 98.0, "wave": "sawtooth", "peak": 0.028, "detune": 7 },
+      { "hz": 49.0, "wave": "sine", "peak": 0.05, "detune": 0 },
+      { "hz": 146.83, "wave": "sine", "peak": 0.014, "detune": 2 }
+    ],
+    "lpHz": 330,
+    "breath": { "hz": 0.05, "depth": 0.006 },
+    "bell": {
+      "scale": [783.99, 880.0, 981.42, 1046.5, 1174.66, 1396.91],
+      "everySec": [5, 9],
+      "peak": [0.02, 0.05],
+      "hammerP": 0.9
+    }
+  },
+  {
+    "id": "mus_silence_amb",
+    "layers": [
+      { "hz": 40.0, "wave": "sine", "peak": 0.06, "detune": 0 },
+      { "hz": 40.0, "wave": "sine", "peak": 0.045, "detune": 4 },
+      { "hz": 38.89, "wave": "sawtooth", "peak": 0.008, "detune": 0 }
+    ],
+    "lpHz": 110,
+    "breath": { "hz": 0.045, "depth": 0.01 },
+    "bell": null
+  },
+  {
+    "id": "mus_brokenbar_amb",
+    "layers": [
+      { "hz": 116.54, "wave": "sawtooth", "peak": 0.03, "detune": -5 },
+      { "hz": 116.54, "wave": "sawtooth", "peak": 0.026, "detune": 6 },
+      { "hz": 58.27, "wave": "sine", "peak": 0.05, "detune": 0 },
+      { "hz": 138.59, "wave": "sine", "peak": 0.012, "detune": 2 }
+    ],
+    "lpHz": 320,
+    "breath": { "hz": 0.07, "depth": 0.008 },
+    "bell": {
+      "scale": [932.33, 1046.5, 1108.73, 1244.51, 1396.91, 1661.22],
+      "everySec": [5, 9],
+      "peak": [0.02, 0.05],
+      "hammerP": 0.4
+    }
+  },
+  {
+    "id": "mus_drowned_choir_amb",
+    "layers": [
+      { "hz": 103.83, "wave": "sine", "peak": 0.05, "detune": 0 },
+      { "hz": 51.91, "wave": "sine", "peak": 0.035, "detune": 0 },
+      { "hz": 116.54, "wave": "triangle", "peak": 0.012, "detune": 2 },
+      { "hz": 130.81, "wave": "triangle", "peak": 0.008, "detune": -2 }
+    ],
+    "lpHz": 300,
+    "breath": { "hz": 0.07, "depth": 0.008 },
+    "bell": {
+      "scale": [830.61, 932.33, 1046.5, 1174.66, 1318.51, 1479.98],
+      "everySec": [5, 9],
+      "peak": [0.02, 0.05],
+      "hammerP": 0.4
+    }
+  },
+  {
+    "id": "mus_unfinished_hall_amb",
+    "layers": [],
+    "bell": {
+      "scale": [261.63, 277.18, 293.66, 311.13, 329.63, 349.23, 369.99, 392.0, 415.3, 440.0, 466.16, 493.88],
+      "everySec": [40, 50],
+      "peak": [0.02, 0.05],
+      "hammerP": 0.4
+    }
+  }
+]

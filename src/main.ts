@@ -156,7 +156,11 @@ const missingRefs = StreamingSystem.collectMissingRefs(regions, (id) => registry
 if (missingRefs.length) bus.emit('log', { level: 'warn', msg: `MissingRef: ${missingRefs.join(', ')}` })
 const streaming = new StreamingSystem(regions)
 streaming.teleport(0, player.pos) // 起始区同步加载（§5.5 传送遮蔽等价物）
-let shownRegion = streaming.regionAt(player.pos)?.id ?? null
+const homeRegion = streaming.regionAt(player.pos)
+let shownRegion = homeRegion?.id ?? null
+// KI-077（docs §1.2/§4）：开局那一张环境声床。这一句必须在 `audio.start()` 之前发——
+// 建图要等首次用户手势，而 `AudioEngine` 缓存事件，所以"玩家出生在哪一区"这件事不会丢。
+if (homeRegion) bus.emit('audio.music.ambience', { id: homeRegion.music.ambience })
 const surface = new Surface(regions, 0.5, (r) => !streaming.isRegionUnlocked(r))
 combat.floorAt = (pos) => surface.floorAt(pos)?.y ?? null // 弹道撞地：射进灰盒地板就落地
 /**
@@ -402,6 +406,8 @@ const core = {
       // 所以这里写的是 home，AISystem.syncClock 决定当前用的是谁的拍。
       rhythm.setBpm(here.grid.bpm, here.grid.beatsPerBar)
       rpg.loot.setRegion(here.id) // §9.4 区域上修（KI-030①）：掉落层第一次认识「玩家此刻在谁的地上」
+      // KI-077（§1.2）：底噪与铃点跟着脚下的区域换，音乐层自己按 8 小节做 crossfade
+      bus.emit('audio.music.ambience', { id: here.music.ambience })
       if (booted) checkpoints.request('region') // 读档后第一次「进区域」是恢复现场，不该顺手覆盖存档
       shownRegion = here.id
       bus.emit('ui.notify', { text: here.displayName, kind: 'info' })

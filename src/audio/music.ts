@@ -1,8 +1,10 @@
 /**
  * music.ts — 极简音乐层（Phase 1）
- *  · 休垒 ambience：C Dorian 持续低音 drone + 随机"音色石铃"泛音（5–9s 一颗，docs §4）
+ *  · ambience：一张**区域声床**（`data/json/ambience.json` = docs §1.2 主音分配 + §4 的 L1 drone / L4 稀疏事件）
+ *    + 跨区 8 小节 crossfade（§1.2 转场规则）
  *  · 战斗层：进入战斗淡入脉冲鼓 + 低音 ostinato（R-1 派生），脱战 4s 淡出
- * 事件驱动：订阅 bus 'audio.music.encounter'（本文件 declare module 扩展 GameEvents，勿改 EventBus.ts）。
+ * 事件驱动：订阅 bus `'audio.music.encounter'`（本文件 declare module 扩展 GameEvents，勿改 EventBus.ts）。
+ * `'audio.music.ambience'` 由 `AudioEngine` 订阅并**解析成行**再递进来（KI-077 的落点，见下面那段）。
  *
  * **拍网不是这里的东西**（KI-066）：这一层曾经自带 `const BPM = 84`，于是全场有了两个主人——
  * `RhythmClock` 吃 `regions.json > grid` 与 Boss 的 `overrideTo`，而战斗曲永远按 84/4 演。
@@ -12,9 +14,15 @@
  * KI-066 管的是**拍长**（间隔），KI-068 补的是**时刻**（那一拍落在什么时候、是第几拍）：入战不再自己猜 `now + 0.1`，
  * 第一拍与"第几拍"都来自 `RhythmClock.barEntry()`（§2.1「≤2 拍内进战斗曲」），由 `CombatManager` 在遭遇事件里带上。
  * 于是"重拍踩在敌人主攻击那一拍"第一次在**入场那一下**成立，而不只是稳态之后两拍对齐。
+ *
+ * **音高也不是这里的东西**（KI-077）：同一批数字在这里还留着第二份副本——`CHIME_PITCHES` 与 `startDrone()` 里那四条
+ * 振荡，而 docs §4 那一行写的是**雾语林**的参数。玩家开局站在休垒（F Lydian），听到的底噪与铃点却永远是 C2/C Dorian，
+ * 且 `regions.json > music.ambience` 那 21 个 id 全场零读者。现在这张表的行键进 `ambience.json`（validator 双向对账），
+ * 这里只留 `OSTINATO` 那份**属于玩法调性**的 C（§1.1「主音不变、色彩变暗」），其余一律由 `setAmbience()` 换。
  */
 import { bus } from '../core/EventBus'
 import type { MusicGrid } from '../core/RhythmClock'
+import type { AmbienceBed, AmbienceBell } from '../data/schema'
 import { playBell, playNoise, playSweep } from './synth'
 
 declare module '../core/EventBus' {
@@ -26,19 +34,56 @@ declare module '../core/EventBus' {
     //   `rhythm` 是模块 const、没挂在 `__caesura` 上，所以外部发射（面板、debt 探针、测试）发不出这条。
     //   缺它时音乐层退回旧的 `now + 0.1` 起拍，并把这件事说出口（一次性 warn），而不是假装锁过了。
     'audio.music.encounter': { start: boolean; cut?: boolean; enter?: { waitSec: number; beatIndex: number } }
+    /**
+     * KI-077（§1.2 + §4）：换环境声床。载荷只有**一个 id**，因为这张表的行属于数据层，
+     * 而"哪一行该响"属于组合根——`main.ts` 只管发脚下那一区的 id，id→行 的解析住在 `AudioEngine`
+     * （它是"表 + 图"两头都看得见的那一层），解析好的行再注入本层的 `setAmbience()`。
+     * 发射方 = `main.ts` 的区域切换那一处 + 开局那一句（开局必须在建图之前发，`AudioEngine` 缓存它）。
+     */
+    'audio.music.ambience': { id: string }
   }
 }
 
-/** C Dorian 五声音阶化铃点（C5 Eb5 F5 G5 A5 Bb5） */
-const CHIME_PITCHES = [523.25, 622.25, 698.46, 783.99, 880, 932.33]
-/** 低音 ostinato：R-1 动机 C-Eb-G-Bb 的低八度节奏化（docs §1.2 音乐宪法） */
+/**
+ * 低音 ostinato：R-1 动机 C-Eb-G-Bb 的低八度节奏化（docs §1.2 音乐宪法）
+ *
+ * ⚠️ 这一串**不跟着区域主音走**，而且是故意的：§1.1 那一格写的是"战斗遭遇 = 主音不变、色彩变暗"，
+ * 所以 C 属于**玩法调性系统**（全局主题调），而区域主音只属于**环境层**。把这里也换成区域主音
+ * 就是把 §1.1 那句抹了。
+ */
 const OSTINATO = [65.41, 65.41, 98.0, 155.56, 116.54, 65.41, 77.78, 98.0]
+/** docs §1.2 转场规则：跨区 **8 小节** crossfade。小节长度吃当前网格，所以这里只有格数 */
+const XFADE_BARS = 8
+/**
+ * 没有网格时那 8 小节无从换算。口径**实名**在这里而不是随便猜一个 BPM：1 秒，并且说一次。
+ * 这条只在"区域事件比第一次 `audio.music.grid` 还早"那种装配回归里才走得到（实机是反过来的），
+ * 所以它存在的意义是让换床这件事**不发生静默**——KI-066 拆掉 `const BPM = 84` 的理由在这格同样成立。
+ */
+const XFADE_NO_GRID_SEC = 1
 
 export class MusicLayer {
   private ambGain: GainNode
   private battleGain: GainNode
   private bassLp: BiquadFilterNode
-  private droneNodes: AudioNode[] = []
+  /** 此刻在响的那张床：drone 的全部节点（含它自己的层增益），换床时这一组整批淡出后回收 */
+  private bedNodes: AudioNode[] = []
+  /** 上面那一组的音量把手（crossfade 淡的就是它；`layers: []` 的那一区没有它） */
+  private bedGain: GainNode | null = null
+  /** 已经在淡出、还没到回收时刻的旧床。窗口没走完又来一次换区时，旧的连同前一批一起埋在这里 */
+  private dyingBeds: AudioNode[][] = []
+  /** 此刻掷铃用的那一张名册。它比 `bed` **慢一个 crossfade 窗口**：§1.2「旋律层最后」 */
+  private bellCfg: AmbienceBell | null = null
+  /** 换床窗口的终点；`Infinity` = 没有窗口在走（不用 0 当哨兵：假 AudioContext 的 `currentTime` 就从 0 开始） */
+  private bedSwapAt = Infinity
+  /**
+   * 此刻的床。**按对象身份比**："同一张床重发"不动图，靠的是 `data/index.ts` 那一次解析出的是同一个对象
+   * （区域事件与 KI-068 那条"重发不许重锚"同一口径）。
+   */
+  private bed: AmbienceBed | null = null
+  /** 没网格时那个 1 秒兜底只说一次；不与战斗侧那条 `warnedNoGrid` 共用，否则谁先说话就把另一个静音了 */
+  private warnedNoGridX = false
+  /** 「建图了却一张床都没有」只说一次（同一层实例里 `start()` 可能被反复点） */
+  private warnedNoBed = false
   private nextBeat = 0
   private beatIdx = 0
   private nextChime = 0
@@ -56,7 +101,9 @@ export class MusicLayer {
     private ctx: AudioContext,
     musicOut: AudioNode,
     ambOut: AudioNode,
-    grid: MusicGrid | null
+    grid: MusicGrid | null,
+    /** KI-077：开局那一张床（`main.ts` 在建图之前发那条事件、`AudioEngine` 缓存并解析后递进来）。 */
+    bed: AmbienceBed | null
   ) {
     this.setGrid(grid)
     this.ambGain = ctx.createGain()
@@ -70,6 +117,7 @@ export class MusicLayer {
     this.bassLp.frequency.value = 320
     this.bassLp.Q.value = 0.7
     this.bassLp.connect(this.battleGain)
+    if (bed) this.applyBed(bed, 0) // 开局不 crossfade：还没有旧床可淡，直接建
   }
 
   /**
@@ -99,67 +147,143 @@ export class MusicLayer {
     }
   }
 
+  /**
+   * KI-077：换环境声床。§1.2 的转场口径是「跨区 8 小节 crossfade，先淡出旧区节奏层，再淡和声层，旋律层最后」——
+   * 本作的环境层没有节奏层（那是战斗曲），所以这里兑现的是后两半：
+   * **drone（和声）当场开始交叉淡变，铃点（旋律）等窗口走完再换名册**。
+   * 淡变只动"这一床自己的层增益"，已经掷出去的铃一颗不抹（KI-066 同一条纪律：不篡改时间线）。
+   *
+   * 传进来的是**行**而不是 id（与 `setGrid` 同一个形状：id→行 的解析住在 `AudioEngine`，
+   * 因为那里才是"表 + 图"两头都看得见的那一层）。这样这一层可以被喂合成床来验"跟着床走"这件事——
+   * 用真表验就等于让实现自证：写死哪一张都可能碰巧对。
+   */
+  setAmbience(bed: AmbienceBed | null): void {
+    if (bed) this.applyBed(bed, this.xfadeSec())
+  }
+
+  /** §1.2 那 8 小节有多长：吃当前网格。没有网格时走实名的 1 秒兜底，并且说一次 */
+  private xfadeSec(): number {
+    if (this.bpm > 0 && this.beatsPerBar > 0) return XFADE_BARS * this.beatsPerBar * this.beatSec
+    if (!this.warnedNoGridX) {
+      this.warnedNoGridX = true
+      bus.emit('log', { level: 'warn', msg: `music: 换声床时还没有拍网，8 小节按 ${XFADE_NO_GRID_SEC}s 兜底（跨区淡变时长不再跟区域走，是装配回归的读数）` })
+    }
+    return XFADE_NO_GRID_SEC
+  }
+
+  private applyBed(bed: AmbienceBed, fadeSec: number): void {
+    if (bed === this.bed) return // 同一张床重发：一次都不动图（与 KI-068 的"重发不许重锚"同一口径）
+    const now = this.ctx.currentTime
+    this.bed = bed
+    if (this.bedGain) {
+      const g = this.bedGain.gain
+      g.cancelScheduledValues(now)
+      g.setValueAtTime(g.value, now)
+      g.linearRampToValueAtTime(0, now + Math.max(fadeSec, 0.02))
+    }
+    if (this.bedNodes.length) this.dyingBeds.push(this.bedNodes)
+    this.bedNodes = []
+    this.bedGain = null
+    if (bed.layers.length > 0) this.buildDrone(bed, now, fadeSec)
+    // 「旋律层最后」：铃点名册不在这里换，只记下窗口终点，由 `update()` 到点兑现。
+    this.bedSwapAt = now + fadeSec
+  }
+
+  /**
+   * L1 drone：`layers` 里一条振荡 = 一个声部，全部过同一只低通（§4「大提琴式」「只透低频」的落点），
+   * 再一起挂进**这一床自己的**层增益——crossfade 淡的就是那只把手，所以换床时已排的铃与别的层都不受影响。
+   * 呼吸 LFO 也接在这只把手的 gain 参数上：WebAudio 里"连到 AudioParam 的信号"是加在自动化值之上的，
+   * 于是淡入淡出与呼吸可以同时在同一格上成立（旧代码把它接到全局 ambGain，那是"全场一起呼吸"，不是风箱）。
+   */
+  private buildDrone(bed: AmbienceBed, now: number, fadeSec: number): void {
+    const ctx = this.ctx
+    const { lpHz, breath } = bed
+    if (lpHz === undefined || breath === undefined) {
+      // validator 把"有层却没写这两格"判死，所以这里理论上到不了；真到了也不能装没听见
+      bus.emit('log', { level: 'warn', msg: `music: 声床 '${bed.id}' 有 drone 层却没写 lpHz/breath，这一区的底噪不起` })
+      return
+    }
+    const gain = ctx.createGain()
+    gain.connect(this.ambGain)
+    gain.gain.setValueAtTime(0, now)
+    gain.gain.linearRampToValueAtTime(1, now + Math.max(fadeSec, 0.02))
+    const lp = ctx.createBiquadFilter()
+    lp.type = 'lowpass'
+    lp.frequency.value = lpHz
+    lp.connect(gain)
+    const nodes: AudioNode[] = [gain, lp]
+    for (const l of bed.layers) {
+      const osc = ctx.createOscillator()
+      osc.type = l.wave
+      osc.frequency.value = l.hz
+      osc.detune.value = l.detune
+      const g = ctx.createGain()
+      g.gain.value = l.peak
+      osc.connect(g).connect(lp)
+      osc.start(now)
+      nodes.push(osc, g)
+    }
+    const lfo = ctx.createOscillator()
+    lfo.frequency.value = breath.hz
+    const lfoGain = ctx.createGain()
+    lfoGain.gain.value = breath.depth
+    lfo.connect(lfoGain).connect(gain.gain)
+    lfo.start(now)
+    nodes.push(lfo, lfoGain)
+    this.bedNodes = nodes
+    this.bedGain = gain
+  }
+
+  /** 一组节点退役：源停下来、线摘掉（`dispose()` 与换床回收走的是同一只手） */
+  private teardown(nodes: AudioNode[]): void {
+    for (const n of nodes) {
+      if ('stop' in n && typeof (n as OscillatorNode).stop === 'function') {
+        try { (n as OscillatorNode).stop() } catch { /* ok */ }
+      }
+      n.disconnect()
+    }
+  }
+
   /** 一拍有多长（秒）；没有网格 = 0，`update` 用它当"能不能排"的门 */
   private get beatSec(): number {
     return this.bpm > 0 ? 60 / this.bpm : 0
   }
 
-  /** 启动 ambience + 订阅遭遇事件（AudioEngine 建图后调用一次） */
+  /** 下一颗铃隔多久：在这张床自己那一格 `[最短, 最长]` 里现掷（§4 的 L4 稀疏事件） */
+  private chimeGap(): number {
+    const e = this.bellCfg?.everySec
+    return e ? rnd(e[0], e[1]) : 0
+  }
+
+  /**
+   * 启动 ambience + 订阅遭遇事件（AudioEngine 建图后调用一次）。
+   * KI-077 之后这里**不再建 drone**：底噪是"当前那张声床"的图形，由构造函数（开局那条缓存事件解析出的行）
+   * 或 `setAmbience()`（换区）建。这一处只剩下总音量。
+   */
   start(): void {
     const now = this.ctx.currentTime
-    this.startDrone(now)
     this.ambGain.gain.setValueAtTime(0, now)
     this.ambGain.gain.linearRampToValueAtTime(0.6, now + 3)
-    this.nextChime = now + 4
     if (!this.offEncounter) {
       this.offEncounter = bus.on('audio.music.encounter', (p) => this.onEncounter(p.start, p.cut ?? false, p.enter))
+    }
+    if (!this.bed && !this.warnedNoBed) {
+      // 建图时一张床都没收到 = 装配腿断了（开局那句事件在 `main.ts`，缓存这条路也在同一提交里落地）。
+      // 静默的没有底噪会被读成"音频坏了"，而真实原因是那条事件没人发或没人解析。
+      this.warnedNoBed = true
+      bus.emit('log', { level: 'warn', msg: 'music: 没有收到任何环境声床（audio.music.ambience），底噪不起' })
     }
   }
 
   dispose(): void {
     this.offEncounter?.()
     this.offEncounter = null
-    for (const n of this.droneNodes) {
-      if ('stop' in n && typeof (n as OscillatorNode).stop === 'function') {
-        try { (n as OscillatorNode).stop() } catch { /* ok */ }
-      }
-      n.disconnect()
-    }
-    this.droneNodes = []
-  }
-
-  /** L1 drone：C2 锯齿暖底（-24dB 级）+ 正弦sub + 五度泛音，缓慢呼吸 */
-  private startDrone(now: number): void {
-    const ctx = this.ctx
-    const lp = ctx.createBiquadFilter()
-    lp.type = 'lowpass'
-    lp.frequency.value = 240
-    lp.connect(this.ambGain)
-    const spec: Array<{ f: number; type: OscillatorType; peak: number; detune: number }> = [
-      { f: 65.41, type: 'sawtooth', peak: 0.035, detune: -5 },
-      { f: 65.41, type: 'sawtooth', peak: 0.03, detune: 6 },
-      { f: 65.41, type: 'sine', peak: 0.05, detune: 0 },
-      { f: 98.0, type: 'sine', peak: 0.012, detune: 2 }
-    ]
-    for (const s of spec) {
-      const osc = ctx.createOscillator()
-      osc.type = s.type
-      osc.frequency.value = s.f
-      osc.detune.value = s.detune
-      const g = ctx.createGain()
-      g.gain.value = s.peak
-      osc.connect(g).connect(lp)
-      osc.start(now)
-      this.droneNodes.push(osc, g)
-    }
-    // 风箱呼吸 LFO 0.07Hz ±10%
-    const lfo = ctx.createOscillator()
-    lfo.frequency.value = 0.07
-    const lfoGain = ctx.createGain()
-    lfoGain.gain.value = 0.008
-    lfo.connect(lfoGain).connect(this.ambGain.gain)
-    lfo.start(now)
-    this.droneNodes.push(lfo, lfoGain, lp)
+    this.teardown(this.bedNodes)
+    this.bedNodes = []
+    this.bedGain = null
+    for (const dead of this.dyingBeds) this.teardown(dead)
+    this.dyingBeds = []
+    this.bedSwapAt = Infinity
   }
 
   /** 遭遇事件入口：start=true 淡入战斗层；false 淡出（`cut` ⇒ 立刻切，§16 胜利序列的"音乐停"） */
@@ -209,11 +333,31 @@ export class MusicLayer {
   /** 每帧调用（AudioEngine.update 驱动）：lookahead 调度，节点即用即弃 */
   update(): void {
     const now = this.ctx.currentTime
-    // 音色石铃：5–9s 一颗（docs §4 L4 稀疏事件）
-    if (now >= this.nextChime) {
-      const f = CHIME_PITCHES[Math.floor(Math.random() * CHIME_PITCHES.length)]
-      playBell(this.ctx, this.ambGain, now + 0.02, f, { dur: rnd(3.5, 6), peak: rnd(0.02, 0.05), hammer: Math.random() < 0.4 })
-      this.nextChime = now + rnd(5, 9)
+    /**
+     * KI-077：换床窗口的**兑现处**。放在最前面、且在战斗层那道 `scheduling` 门之外，
+     * 因为这一件事与"有没有在打仗"无关——§1.2 的转场是环境层自己的规则。
+     * 到点做两件：回收已经淡完的旧床（不回收就是每跨一次区漏一组振荡器，KI-071 那本账），
+     * 然后把铃点名册换成新床的——这就是「旋律层最后」那半句。
+     */
+    if (now >= this.bedSwapAt) {
+      for (const dead of this.dyingBeds) this.teardown(dead)
+      this.dyingBeds = []
+      this.bedSwapAt = Infinity
+      this.bellCfg = this.bed?.bell ?? null
+      // 窗口一关就按新床的间隔重掷下一颗：旧床那颗在飞的铃不抹，但"下一颗隔多久"从此属于新区域
+      this.nextChime = this.bellCfg ? now + this.chimeGap() : Infinity
+    }
+    // 音色石铃：docs §4 的 L4 稀疏事件。间隔/音高/亮度/锤感全部来自当前那张床（KI-077）；
+    // `bell: null` 的那一区（无耳深窖）这里一道门就安静下来——那是设计，不是漏配。
+    if (this.bellCfg && now >= this.nextChime) {
+      const cfg = this.bellCfg
+      const f = cfg.scale[Math.floor(Math.random() * cfg.scale.length)]
+      playBell(this.ctx, this.ambGain, now + 0.02, f, {
+        dur: rnd(3.5, 6),
+        peak: rnd(cfg.peak[0], cfg.peak[1]),
+        hammer: Math.random() < cfg.hammerP
+      })
+      this.nextChime = now + this.chimeGap()
     }
     // 战斗层调度
     const scheduling = this.battleOn || (this.battleStopAt > 0 && now < this.battleStopAt)

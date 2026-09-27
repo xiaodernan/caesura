@@ -16,7 +16,8 @@ import worldstateRaw from './json/worldstate.json'
 import statesRaw from './json/states.json'
 import reactionsRaw from './json/reactions.json'
 import shopRaw from './json/shop.json'
-import type { MovesetData, WeaponData, EnemyData, PlayerBaseData, RegionData, ProgressionData, ItemData, LootTableData, NpcData, DialogueData, QuestData, StatusConfig, MovementConfig, WorldStateRule, WorldStateDef, HitReactionTable, ShopData } from './schema'
+import ambienceRaw from './json/ambience.json'
+import type { MovesetData, WeaponData, EnemyData, PlayerBaseData, RegionData, ProgressionData, ItemData, LootTableData, NpcData, DialogueData, QuestData, StatusConfig, MovementConfig, WorldStateRule, WorldStateDef, HitReactionTable, ShopData, AmbienceBed } from './schema'
 
 export const playerBase = playerRaw as unknown as PlayerBaseData
 export const regions = regionsRaw as unknown as RegionData[]
@@ -37,6 +38,8 @@ export const worldStates = statesRaw as unknown as WorldStateDef[]
 export const reactions = reactionsRaw as unknown as HitReactionTable
 /** §6.2/§6.3 营地商店（买清单 + 卖装系数）；玩法读取走 rpg/Shop.ts，红线由 validator 钉住 */
 export const shop = shopRaw as unknown as ShopData
+/** docs/audio.md §1.2/§4 的区域环境声床（行键 = `regions.json > music.ambience`）；唯一读者是 `audio/AudioEngine.ts`（id→行 解析在那里，解析结果注入 `MusicLayer`） */
+export const ambienceBeds = ambienceRaw as unknown as AmbienceBed[]
 
 let registered = false
 
@@ -62,6 +65,7 @@ export function registerGameData(): void {
   registry.register('movements', movements)
   registry.register('reactions', reactions)
   registry.register(shop.id, shop)
+  for (const b of ambienceBeds) registry.register(b.id, b)
   for (const r of worldstate) registry.register(r.id, r)
   for (const s of worldStates) registry.register(s.key, s)
 }

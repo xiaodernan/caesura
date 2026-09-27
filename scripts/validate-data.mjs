@@ -23,7 +23,7 @@ import {
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const JSON_DIR = resolve(ROOT, 'src/data/json')
-const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json', 'shop.json', 'states.json']
+const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json', 'shop.json', 'states.json', 'ambience.json']
 // Phase 6-B：对话风格枚举与任务标注（narrative.md §3.2 / §28 图例）
 const CHOICE_STYLES = new Set(['blunt', 'poetic', 'silent', 'provoke'])
 const QUEST_TAGS = new Set(['D', 'C', 'H', 'M'])
@@ -82,6 +82,14 @@ const MOVE_LEVEL_FIELDS = ['cooldownTicks', 'damage', 'trueDamage', 'fissureLaye
 /** 被动 id 白名单（§7.3，KI-036）：一条被动 = 一个消费者（src/rpg/Settlement.ts refreshPlayer）。
  *  名单只能随消费方一起加长；残响耳（撞 KI-032）没接，故不收录。 */
 const PASSIVE_IDS = new Set(['ps_metronomefoot', 'ps_tympanicguard', 'ps_featherrest'])
+/** 环境声床的字段白名单：`schema.ts > AmbienceBed`（KI-077）。唯一读者是 `audio/AudioEngine.ts`（解析成行后注给 `MusicLayer`） */
+const AMB_BED_FIELDS = ['id', 'layers', 'lpHz', 'breath', 'bell']
+/** §4 的 L1 一层：`AmbienceLayer` */
+const AMB_LAYER_FIELDS = ['hz', 'wave', 'peak', 'detune']
+/** §4 的 L4 稀疏事件：`AmbienceBell` */
+const AMB_BELL_FIELDS = ['scale', 'everySec', 'peak', 'hammerP']
+/** `AmbienceLayer.wave`：WebAudio `OscillatorNode.type` 里能当 drone 的那四种（`custom` 不算） */
+const AMB_WAVES = new Set(['sine', 'square', 'sawtooth', 'triangle'])
 
 /**
  * 词表对账表（KI-074 起，KI-076 把载体泛化）。上面这些名单每一张都写着「与 X 对齐」——**手抄**。
@@ -132,6 +140,11 @@ const VOCAB_PAIRS = [
     at: "passiveValue('…')", from: 'src/rpg/Settlement.ts', name: '被动白名单', source: (c) => callArgLiterals(c.text, 'passiveValue'), copied: [...PASSIVE_IDS], where: 'PASSIVE_IDS',
     hint: '载体是 Settlement.refreshPlayer 里那三处字面量调用（§55：一条被动 = 一个消费者）；哪天改成变量传参，这条普查就读不到了，要连判据一起换',
   },
+  /* ---- KI-077：环境声床那三张字段表 + 波形词表（每张都先量过：interfaceFields / fieldUnion 读得回来） ---- */
+  { at: 'AmbienceBed', from: 'src/data/schema.ts', name: '环境声床字段', source: (c) => interfaceFields(c.blocks, 'AmbienceBed'), copied: AMB_BED_FIELDS, where: 'AMB_BED_FIELDS' },
+  { at: 'AmbienceLayer', from: 'src/data/schema.ts', name: 'drone 单层字段', source: (c) => interfaceFields(c.blocks, 'AmbienceLayer'), copied: AMB_LAYER_FIELDS, where: 'AMB_LAYER_FIELDS' },
+  { at: 'AmbienceBell', from: 'src/data/schema.ts', name: 'L4 铃点字段', source: (c) => interfaceFields(c.blocks, 'AmbienceBell'), copied: AMB_BELL_FIELDS, where: 'AMB_BELL_FIELDS' },
+  { at: 'AmbienceLayer.wave', from: 'src/data/schema.ts', name: 'drone 波形', source: (c) => fieldUnion(c.blocks, 'AmbienceLayer', 'wave'), copied: [...AMB_WAVES], where: 'AMB_WAVES' },
 ]
 
 /**
@@ -1562,6 +1575,127 @@ function validateRegions(enemyIds, lootIds, rarityIds, stateDefs) {
   return ids
 }
 
+// ---- ambience.json（KI-077：docs/audio.md §1.2 主音分配 + §4 的 L1/L4 两层入表）----
+/**
+ * 一张声床 = 一个区域的 drone + 铃点。这里管三件事：
+ * ① 字段集合恰好等于 `schema.ts > AmbienceBed / AmbienceLayer / AmbienceBell`（多一个字段 = 引擎读不懂的装饰。
+ *    那三张字段表本身由词表对账门钉在 schema 上（KI-074/076），所以这条不是「手抄对空抄」）；
+ * ② `lpHz` / `breath` 与 `layers` 的**存在性绑定**：这两个字段只在 drone 子图上有消费者，
+ *    给一张不存在的图配参数就是 §55 的死数据；
+ * ③ 与 `regions.json > music.ambience` **双向**对账：少一行 = 那一区永远没有底噪（听感上像游戏坏了），
+ *    多一行 = 没有读者的表。两个方向都是 ERROR，与 KI-041 那条纪律同源。
+ */
+function validateAmbience() {
+  const file = 'ambience.json'
+  const list = data[file]
+  if (!isArr(list)) { report.error(file, file, '顶层必须是数组'); return }
+  const ids = new Set()
+  /** §4 的 L1 逐层参数域：hz 卡在可闻带内（低于 20Hz 连"体感"那一格都谈不上，高于 20k 只是费一个节点） */
+  const HZ = { min: 20, max: 20000 }
+  /** drone 层峰值上限 0.5：§4 写的是 -24dB 级（≈0.063），一半增益会把 AMB 总线顶穿 */
+  const LAYER_PEAK = { min: 0.0001, max: 0.5 }
+  /** 音分：±50 以内是"两条同音层的微失谐 = 暖"，越过半个音就变成第二个音高而不是失谐 */
+  const DETUNE = { min: -50, max: 50 }
+  /** 呼吸 LFO 比 4Hz 快就不是呼吸而是颤音（那是 §4 之外的另一件事） */
+  const BREATH_HZ = { min: 0.01, max: 4 }
+  const BREATH_DEPTH = { min: 0.0001, max: 0.2 }
+  /** 每颗铃到点后掷间隔与峰值的那一格 */
+  const pair = (where, v, { min, max, name }) => {
+    if (!isArr(v) || v.length !== 2) { report.error(file, where, '必须是 [最轻/最短, 最响/最长] 两个数'); return }
+    const [lo, hi] = v
+    if (!isNum(lo) || !isNum(hi)) { report.error(file, where, '两端必须是有限数值'); return }
+    if (lo < min || lo > max || hi < min || hi > max) report.error(file, where, `${name} 两端都须落在 [${min}, ${max}]（${lo} / ${hi}）`)
+    else if (lo > hi) report.error(file, where, `需 下限 <= 上限（${lo} / ${hi}）`)
+  }
+  let belowBand = 0
+  for (const [i, bed] of list.entries()) {
+    if (!isObj(bed)) { report.error(file, `[${i}]`, '必须是对象'); continue }
+    const w = isStr(bed.id) ? bed.id : `[${i}]`
+    if (!isStr(bed.id)) report.error(file, w, 'id 缺失或非字符串')
+    else if (ids.has(bed.id)) report.error(file, w, `id 重复：${bed.id}`)
+    else ids.add(bed.id)
+    for (const k of Object.keys(bed)) if (!AMB_BED_FIELDS.includes(k)) report.error(file, `${w}.${k}`, '未知字段：声床的字段就是 `schema.ts > AmbienceBed` 那五个，加字段要连消费方一起加')
+
+    if (!isArr(bed.layers)) report.error(file, `${w}.layers`, '必须是数组（可以为空——空 = 这一区没有 drone）')
+    else {
+      bed.layers.forEach((l, li) => {
+        const lw = `${w}.layers[${li}]`
+        if (!isObj(l)) { report.error(file, lw, '必须是对象'); return }
+        for (const k of Object.keys(l)) if (!AMB_LAYER_FIELDS.includes(k)) report.error(file, `${lw}.${k}`, '未知字段：drone 单层只有 hz/wave/peak/detune')
+        report.num(file, `${lw}.hz`, l.hz, { ...HZ, name: 'hz' })
+        report.num(file, `${lw}.peak`, l.peak, { ...LAYER_PEAK, name: 'peak' })
+        report.num(file, `${lw}.detune`, l.detune, { ...DETUNE, name: 'detune' })
+        if (!AMB_WAVES.has(l.wave)) report.error(file, `${lw}.wave`, `wave=${JSON.stringify(l.wave)} 非法（${[...AMB_WAVES].join('/')}）`)
+      })
+      // 存在性绑定：drone 子图不在，暖度低通与呼吸 LFO 就没有落脚的节点
+      if (bed.layers.length > 0) {
+        report.num(file, `${w}.lpHz`, bed.lpHz, { ...HZ, name: 'lpHz' })
+        report.sub(file, `${w}.breath`, bed.breath, { hz: { min: BREATH_HZ.min, max: BREATH_HZ.max }, depth: { min: BREATH_DEPTH.min, max: BREATH_DEPTH.max } })
+        if (bed.breath === undefined) report.error(file, `${w}.breath`, '有 drone 层就必须写 breath——静止不变的 drone 是电流声，不是风箱')
+      } else {
+        if (bed.lpHz !== undefined) report.error(file, `${w}.lpHz`, 'layers 为空（这一区没有 drone）却写了 lpHz：给一张不存在的图配参数')
+        if (bed.breath !== undefined) report.error(file, `${w}.breath`, 'layers 为空（这一区没有 drone）却写了 breath：给一张不存在的图配参数')
+      }
+    }
+
+    if (bed.bell === null || bed.bell === undefined) {
+      if (bed.bell === undefined) report.error(file, `${w}.bell`, '必须显式写 null 或一张铃点表——缺字段读不出是"没有事件"还是"忘了写"')
+    } else if (!isObj(bed.bell)) report.error(file, `${w}.bell`, '必须是对象或 null')
+    else {
+      for (const k of Object.keys(bed.bell)) if (!AMB_BELL_FIELDS.includes(k)) report.error(file, `${w}.bell.${k}`, '未知字段：铃点表只有 scale/everySec/peak/hammerP')
+      const sc = bed.bell.scale
+      if (!isArr(sc) || sc.length === 0) report.error(file, `${w}.bell.scale`, '必须是非空数组（空 = 这一区有事件位却永远掷不出音）')
+      else {
+        const seen = new Set()
+        sc.forEach((f, si) => {
+          if (!report.num(file, `${w}.bell.scale[${si}]`, f, { min: 20, max: 8000, name: 'scale' })) return
+          if (seen.has(f)) report.error(file, `${w}.bell.scale[${si}]`, `音高重复：${f}Hz 在同一张名册里出现两次——它只会让那一颗被掷得更勤，不是另一个色彩`)
+          seen.add(f)
+        })
+      }
+      pair(`${w}.bell.everySec`, bed.bell.everySec, { min: 0.01, max: 600, name: 'everySec' })
+      pair(`${w}.bell.peak`, bed.bell.peak, { min: 0.0001, max: 1, name: 'peak' })
+      report.num(file, `${w}.bell.hammerP`, bed.bell.hammerP, { min: 0, max: 1, name: 'hammerP' })
+      // §4 的 L4 那一格写的是「30–120s 随机」。本表的间隔沿用的是 KI-077 之前的实机口径（雾语林 5–9s 一颗），
+      // 把它挪进文档那一格是一次**听感裁决**而不是数据整理，所以这里只登记不擅改（KNOWN_ISSUES KI-077）。
+      if (isArr(bed.bell.everySec) && bed.bell.everySec[1] < 30) belowBand++
+    }
+  }
+
+  // ②' §1.2 的结构性承诺：七区七主音。这里只查**彼此不同**（两区同主音 = 跨区听不出换了地方），
+  //     不查"是不是 F/C/G…"——那要把文档那张表的音名抄进脚本，正是 KI-074 要拆掉的手抄。
+  const roots = new Map()
+  for (const bed of list) {
+    if (!isObj(bed) || !isStr(bed.id) || !isArr(bed.layers)) continue
+    const hzs = bed.layers.filter((l) => isObj(l) && isNum(l.hz)).map((l) => l.hz)
+    if (hzs.length === 0) continue // 未竟厅 §4「无 drone」：没有音高地可比
+    const root = Math.min(...hzs)
+    for (const [other, or] of roots) {
+      const cents = Math.abs(1200 * Math.log2(root / or))
+      if (cents < 50) report.error(file, bed.id, `drone 主音 ${root.toFixed(2)}Hz 与 ${other} 的 ${or.toFixed(2)}Hz 只差 ${cents.toFixed(1)} 音分——§1.2「一区一主音」塌了，跨区听不出换地方`)
+    }
+    roots.set(bed.id, root)
+  }
+
+  // ③ 与 regions.json 双向对账
+  const refBy = new Map()
+  for (const rg of (data['regions.json'] ?? []).filter(isObj)) {
+    const a = isObj(rg.music) ? rg.music.ambience : undefined
+    if (!isStr(a)) continue // 那一格由 validateRegions 报
+    refBy.set(a, [...(refBy.get(a) ?? []), isStr(rg.id) ? rg.id : '(无 id)'])
+  }
+  for (const [a, regs] of refBy) {
+    if (!ids.has(a)) report.error(file, a, `${regs.join(', ')} 指它当环境声床，但表里没有这一行 ⇒ 进那一区永远没有底噪，听感上等价于"音频坏了"`)
+    if (regs.length > 1) report.error('regions.json', 'music.ambience', `${regs.join(' / ')} 共用同一张声床 '${a}'——一区一张是 §1.2 的承诺，共用 = 跨那两区什么都没换`)
+  }
+  for (const id of ids) {
+    if (!refBy.has(id)) report.error(file, id, '没有任何区域指它 ⇒ §55 死数据：这张床永远不会被装进耳朵')
+  }
+  if (belowBand > 0) {
+    report.warn(file, 'bell.everySec', `${belowBand} 张声床的铃点间隔上限低于 §4 的「30–120s 稀疏事件」那一格（现值沿用 KI-077 之前的实机口径 5–9s）：挪进文档那一格是听感裁决，已登记，不做静默改动`)
+  }
+}
+
 // ---- movements.json ----
 /** loot.json 里真正会掉出来的物品全集（rolls + firstKill）。点亮源必须落在这里面，否则那一页永远点不亮 */
 function lootedItemIds() {
@@ -2283,6 +2417,8 @@ const lootIds = validateLoot(itemIds, rarityIds)
 const enemyIds = validateEnemies(lootIds)
 validatePlayer()
 const regionIds = validateRegions(enemyIds, lootIds, rarityIds, stateDefs)
+// KI-077：环境声床表要对账 regions 的 music.ambience，所以排在它后面
+validateAmbience()
 // movements 最后跑：它要同时对账 items（点亮源）、loot（源是否真会掉）、progression（开槽里程碑）
 validateMovements(itemIds)
 // 叙事层（Phase 6-B）：NPC → 任务 → 对话（后者依赖前两者的 id）

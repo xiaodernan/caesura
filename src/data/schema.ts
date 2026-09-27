@@ -1146,6 +1146,47 @@ export interface RegionMusic {
   ambience: string
 }
 
+/**
+ * docs/audio.md §4 的 L1 一层：一条持续振荡 = 一个声部。
+ * **`hz` 是绝对频率而不是相对根音的音程**——"写出来的就是响出来的"，所以这张表不需要第二份
+ * 「主音 + 音程 → 频率」的换算住在代码里（那正是 KI-066 拆掉的那种副本：数字有两个主人）。
+ */
+export interface AmbienceLayer {
+  hz: number
+  wave: 'sine' | 'square' | 'sawtooth' | 'triangle'
+  peak: number
+  /** 音分，±50 以内：两条同音层的微失谐就是"暖"的全部来源（§4「大提琴式锯齿」那句） */
+  detune: number
+}
+
+/** §4 的 L4 稀疏事件，本作实现为音色石铃（`synth.playBell`）；`bell: null` 的那一区见 KNOWN_ISSUES KI-077 */
+export interface AmbienceBell {
+  /** 铃点候选音（Hz）：这一串就是这一区的"音阶色彩"（§1.2 主音列的听感侧） */
+  scale: number[]
+  /** [最短, 最长] 间隔秒：每颗铃到点后在这一格现掷 */
+  everySec: [number, number]
+  /** [最轻, 最响] 峰值：同样每颗现掷 */
+  peak: [number, number]
+  /** 敲出 FM 亮边的概率（0–1，§4「金属嗡鸣」那一格把它推高） */
+  hammerP: number
+}
+
+/**
+ * 一张环境声床 = 一个区域的 L1 drone + L4 铃点（docs/audio.md §4 表里的那一行、§1.2 的主音分配）。
+ * `id` 与 `regions.json > music.ambience` 双向对账（少一行 = 那一区永远没有底噪，多一行 = §55 死数据）。
+ * `layers` 为空 = 这一区**没有 drone**（未竟厅 §4「无 drone——风箱底噪」），此时 `lpHz`/`breath` 必须缺席：
+ * 那两个字段只在 drone 子图上有消费者，留着就是给一张不存在的图配参数。
+ */
+export interface AmbienceBed {
+  id: string
+  layers: AmbienceLayer[]
+  /** drone 的暖度低通：§4「大提琴式」「只透低频」的落点。有层就必须有它（没有默认值） */
+  lpHz?: number
+  /** 风箱呼吸 LFO（调这一层自身的增益，不是全局）：有层就必须有它 */
+  breath?: { hz: number; depth: number }
+  bell: AmbienceBell | null
+}
+
 export interface RegionData {
   id: string
   /** IP_SEED §14 registered vocabulary */

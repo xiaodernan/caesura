@@ -1,7 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { bus } from '@/core/EventBus'
 import { AudioEngine } from '@/audio/AudioEngine'
+import { ambienceBeds } from '@/data'
+import type { AmbienceBed } from '@/data/schema'
+import { BELL_CENTS } from '@/audio/synth'
 import { FakeAudioContext, FakeNode, fakeWindow, fakeWindowWebkitOnly, type FakeWindow } from '../support/fakeAudio'
 
 /**
@@ -327,9 +330,32 @@ describe('消音（§5.4 处决演出：一切声音塌向 100Hz）', () => {
   })
 })
 
-describe('start()：把音乐层接上', () => {  it('start 建图 + 起 drone + 把 ambience 在 3 秒内推起来', () => {
+describe('start()：把音乐层接上（KI-077：id→行 的解析住在这一层）', () => {
+  /**
+   * 这一层用**真表里的行**，而 `audio-music.test.ts` 用合成床 —— 是分工不是重复：
+   * 音乐层那半边证"跟着喂进来的床走"（写死一张真表就成了实现自证），这一半边证"`ambience.json` 的那一行
+   * 真的能走到图上"（只用合成床就永远量不到 id→行 这一步，而那一步正是 KI-077 补的缺口）。
+   */
+  const row = (id: string): AmbienceBed => {
+    const b = ambienceBeds.find((x) => x.id === id)
+    if (!b) throw new Error(`ambience.json 里没有 '${id}'：表改过 id，这一份测试的输入要跟着改（红的是测试，不是引擎）`)
+    return b
+  }
+  const OPEN = row('mus_resthold_amb')       // 开局那一区（休垒）
+  const NEXT = row('mus_fellcarillon_amb')   // 换区那一区：与 OPEN 四条层没有一个频率相同
+  /** 图上此刻的振荡频率名册（drone 声部 + 呼吸 LFO；LFO 是小数 hz，不会与音高撞） */
+  const oscHz = (ctx: FakeAudioContext): number[] =>
+    ctx.nodes.filter((n) => n.kind === 'osc').map((n) => n.params.frequency.value).sort((a, b) => a - b)
+  /** 一张床应该留下的那一名册 */
+  const bedHz = (b: AmbienceBed): number[] => [...b.layers.map((l) => l.hz), b.breath!.hz].sort((x, y) => x - y)
+  /** 一敲铃的记号：某条泛音落在名册某一格上（容差 = 生产自己的 `BELL_CENTS`） */
+  const rangOn = (ctx: FakeAudioContext, scale: number[]): boolean =>
+    oscHz(ctx).some((f) => scale.some((s) => Math.abs(f - s) <= (BELL_CENTS / 1200) * s + 0.01))
+
+  it('开局：床事件在图**之前**也不丢（`main.ts` 的真实顺序），start 建图并按那一行起 drone', () => {
     installWindow()
     const engine = mkEngine()
+    bus.emit('audio.music.ambience', { id: OPEN.id })   // 图还没有：这一句必须缓存住，不能像 KI-066 之前那样漏
     engine.start()
     const ctx = LAST()
     expect(ctx.count('compressor'), 'start 没建图').toBe(1)
@@ -340,7 +366,69 @@ describe('start()：把音乐层接上', () => {  it('start 建图 + 起 drone +
     expect(layer, 'ambience 层没被推起来').toBeTruthy()
     expect(ctx.edgesTo(ambBus).some((e) => e.from === layer), '推起来的那一层没接到 ambience 总线').toBe(true)
     expect(layer!.params.gain.lastAt(), '3 秒淡入').toBeCloseTo(3, 6)
-    expect(ctx.count('osc'), 'drone 一层都没有').toBeGreaterThanOrEqual(5)
+    // 相等而不是"至少几条"：多出来的那一条就是"表外还留着一份写死的底噪"或者起了两遍
+    expect(oscHz(ctx), 'drone 不是 `ambience.json` 里那一行（声部 + 呼吸 LFO 的名册整体对账）').toEqual(bedHz(OPEN))
+    void engine
+  })
+
+  it('一张床都没收到时仍然建图、仍然淡入总层，但一架 drone 都不建，并且说一次', () => {
+    installWindow()
+    const engine = mkEngine()
+    const msgs: string[] = []
+    live.push(bus.on('log', (p) => { if (p.msg.includes('声床')) msgs.push(p.msg) }))
+    engine.start()
+    const ctx = LAST()
+    expect(ctx.count('compressor'), '没有床也不该把建图这件事一起跳过').toBe(1)
+    expect(ctx.count('osc'), '表外还有写死的底噪（没床却建了振荡）').toBe(0)
+    expect(msgs.length, `没床要说，但每只引擎各说一次（实测 ${msgs.length} 句）`).toBe(1)
+    void engine
+  })
+
+  it('图建好之后再发床：走 `setAmbience`，换区那一行的声部真的落到图上', () => {
+    installWindow()
+    const engine = mkEngine()
+    bus.emit('audio.music.ambience', { id: OPEN.id })
+    engine.start()
+    const ctx = LAST()
+    expect(oscHz(ctx)).toEqual(bedHz(OPEN))
+    bus.emit('audio.music.ambience', { id: NEXT.id })
+    // crossfade 窗口里新旧两套并存（旧的那套在淡，回收由 `update()` 到点兑现——那半边在 music.test 量）
+    expect(oscHz(ctx), '换区之后图上的声部名册 ≠ 新旧两张床之和')
+      .toEqual([...bedHz(OPEN), ...bedHz(NEXT)].sort((a, b) => a - b))
+    // 重复发同一张床不建第二套（区域 tick 每帧都在发，那是 §1.2 之外的噪声）
+    const n0 = ctx.nodes.length
+    bus.emit('audio.music.ambience', { id: NEXT.id })
+    expect(ctx.nodes.length, '同一张床重发又起了一套 drone').toBe(n0)
+    void engine
+  })
+
+  it('未知 id：每只引擎恰好一句 warn，而且**上一张床还在响**（既不清空也不换成别的行）', () => {
+    installWindow()
+    const spy = vi.spyOn(Math, 'random').mockReturnValue(0.5)   // ⇒ 间隔取中值、泛音零失谐，铃点可预算
+    live.push(() => spy.mockRestore())
+    const msgs: string[] = []
+    live.push(bus.on('log', (p) => { if (p.msg.includes('未知环境声床')) msgs.push(p.msg) }))
+    const engine = mkEngine()
+    // 分母是"本文件此刻活着的引擎数"而不是 1：`AudioEngine` 没有 dispose（TD-006 第二腿，文件头那本账），
+    // 历史引擎也都订阅着这一条事件，各自按自己的 `warnedBed` 说一句。被量的两件事是"**同一个 id 只说一句**"
+    // 与"说过之后不再每帧说"，写成 ===1 会把这本账读成缺陷。
+    const said = engineCount
+    bus.emit('audio.music.ambience', { id: OPEN.id })
+    engine.start()
+    const ctx = LAST()
+    // 先让开局那张床真的敲过一颗铃（否则下面"仍然响在 OPEN 名册上"可以因为一颗都没响而恒真）
+    for (let i = 0; i < 20; i++) { ctx.advance(0.5); engine.update(0.5) }   // 10 秒 > 中值间隔 7s
+    expect(rangOn(ctx, OPEN.bell!.scale), '开局那张床连一颗铃都没掷出去，这条量不了"保留上一张床"').toBe(true)
+    const n0 = ctx.count('osc')
+    bus.emit('audio.music.ambience', { id: 'mus_typo_not_in_table' })
+    expect(msgs.length, `未知 id 要说一次，但实测 ${msgs.length} 句 / ${said} 只引擎 = 同一只引擎说了不止一句（或者 warn 挂在每帧上）`).toBe(said)
+    // 同一个 id 再发一次：去重的那只 Set 只有敲第二次才看得见（第一次说过了还说 = 它没记账）
+    bus.emit('audio.music.ambience', { id: 'mus_typo_not_in_table' })
+    expect(msgs.length, `同一个未知 id 重发又说了一轮（实测 ${msgs.length}）= warn-once 没落地`).toBe(said)
+    expect(ctx.count('osc'), '未知 id 却建了第二套 drone = 那句 warn 之外还偷偷换了床').toBe(n0)
+    for (let i = 0; i < 20; i++) { ctx.advance(0.5); engine.update(0.5) }
+    expect(rangOn(ctx, OPEN.bell!.scale), '未知 id 之后不再掷上一张床的铃 = `this.bed` 被清成了 null（读侧静默失效）').toBe(true)
+    expect(msgs.length, '同一个未知 id 之后每帧又喊 = 把没配好当成常态噪声，读数没法用').toBe(said)
     void engine
   })
 

@@ -2,12 +2,15 @@
  * AudioEngine.ts — WebAudio 音频引擎（Phase 1 战斗原型，零采样纯合成）
  * 图结构：master → DynamicsCompressor → destination；master 前置总线 { sfx / music / ambience / ui }。
  * 3D：按 listener 位置算声像（StereoPanner）+ 距离衰减（listener 经 setListener 更新）。
- * 事件：订阅 bus 'audio.sfx' { key, pos?, gain? } 与 'audio.music.grid'（拍网，KI-066）；音乐遭遇由 music.ts 自行订阅。
+ * 事件：订阅 bus 'audio.sfx' { key, pos?, gain? }、'audio.music.grid'（拍网，KI-066）与
+ * 'audio.music.ambience'（环境声床 id → 行，KI-077）；音乐遭遇由 music.ts 自行订阅。
  * AudioContext 必须在用户手势后 resume —— start() 于首次手势调用；
  * 若构造后即处 suspended，会挂一次性 pointerdown/keydown 自动恢复。
  */
 import { bus, type GameEvents } from '../core/EventBus'
 import type { MusicGrid } from '../core/RhythmClock'
+import { ambienceBeds } from '../data'
+import type { AmbienceBed } from '../data/schema'
 import { triggerSfx } from './synth'
 import { MusicLayer } from './music'
 
@@ -50,6 +53,16 @@ export class AudioEngine {
    * 逻辑循环的第一 tick，而 `MusicLayer` 要等首次用户手势建图才存在。缓存 = 那中间的变化不丢。
    */
   private grid: MusicGrid | null = null
+  /**
+   * 最后收到的环境声床**行**（KI-077）。缓存理由与上面那一条**一字不差**：建层比建引擎晚，
+   * 而 `main.ts` 开局那一句 `'audio.music.ambience'` 正是在建图之前发的（首次手势之前）。
+   *
+   * 存的是行而不是 id：解析只发生一次、就在这层（它同时看得见 `ambienceBeds` 与 `MusicLayer`），
+   * 音乐层只接收形状，不认表。id 认不出时**保留上一张床**并说一次——换区失败不该让底噪断掉。
+   */
+  private bed: AmbienceBed | null = null
+  /** 认不出的声床 id 每个只说一次（与 `warned` 那本 SFX 名册同一口径：刷屏会把真信号埋掉） */
+  private warnedBed = new Set<string>()
   private started = false
   private voices = 0
   private warned = new Set<string>()
@@ -78,6 +91,18 @@ export class AudioEngine {
     bus.on('audio.music.grid', (g) => {
       this.grid = g
       this.musicLayer?.setGrid(g)
+    })
+    // KI-077（docs §1.2 + §4）：区域环境声床。发射方是组合根（`main.ts` 的进区那一处 + 开局那一句），
+    // 这里把它从 id 翻成表里的行再注给音乐层——音乐层认形状，不认 `ambience.json`。
+    bus.on('audio.music.ambience', (p) => {
+      const bed = ambienceBeds.find((b) => b.id === p.id) ?? null
+      if (!bed && !this.warnedBed.has(p.id)) {
+        this.warnedBed.add(p.id)
+        bus.emit('log', { level: 'warn', msg: `AudioEngine: 未知环境声床 id "${p.id}"（regions.music.ambience 与 ambience.json 对不上），保留上一张床` })
+      }
+      if (!bed) return
+      this.bed = bed
+      this.musicLayer?.setAmbience(bed)
     })
     window.addEventListener('pointerdown', this.gesture)
     window.addEventListener('keydown', this.gesture)
@@ -109,7 +134,7 @@ export class AudioEngine {
     this.detachGesture()
     if (this.started) return
     this.started = true
-    this.musicLayer = new MusicLayer(ctx, this.graph.music, this.graph.ambience, this.grid)
+    this.musicLayer = new MusicLayer(ctx, this.graph.music, this.graph.ambience, this.grid, this.bed)
     this.musicLayer.start()
   }
 
