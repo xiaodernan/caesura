@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import {
-  flagLedgerErrors, hasMilestoneLeg, milestoneLedgerErrors,
+  flagLedgerErrors, hasMilestoneLeg, milestoneLedgerErrors, statusLedgerErrors,
   PENDING_FLAG_WRITERS, PENDING_MILESTONE_GRANTS, UI_BOUND_MILESTONES,
 } from '../../scripts/ledger-rules.mjs'
 
@@ -95,6 +95,37 @@ describe('旗标账本：写方一出现，条目就该删', () => {
   })
 })
 
+describe('状态名册的三张派生表（KI-076）：少一行是崩，多一行是谎', () => {
+  const roster = ['fissure', 'mute']
+  const fields = { fissure: ['tag'], mute: ['tag'] }
+  const specs = { fissure: { maxLayers: { min: 2 } }, mute: {} }
+
+  it('三张表同一批行 ⇒ 一声不响', () => {
+    expect(statusLedgerErrors({ roster, fields, specs })).toEqual([])
+  })
+
+  it('名册加了态而白名单/取值表没跟上 ⇒ 各报一条，并且说清"不报的话校验器会当场崩在那一格"', () => {
+    const e = statusLedgerErrors({ roster: [...roster, 'echo'], fields, specs })
+    expect(e.map((x) => x.key)).toEqual(['echo.字段表', 'echo.取值表'])
+    expect(e[0].msg, '措辞要说清代价：假红一片，而且在没有兜底的那一版里是整份报告消失').toContain('不认的字段')
+  })
+
+  it('白名单/取值表里留着名册没有的态 ⇒ 那是条该销的死派生（KI-073 同族）', () => {
+    const e = statusLedgerErrors({ roster, fields: { ...fields, ghost: ['tag'] }, specs: { ...specs, stale: {} } })
+    expect(e.map((x) => x.key)).toEqual(['STATUS_FIELDS.ghost', 'STATUS_SPECS.stale'])
+    expect(e[0].msg).toContain('该销')
+  })
+
+  it('表读成 undefined ⇒ 判据自己不许是那个崩溃点；名册读不到 ⇒ 报"空转"而不是"全部该销"', () => {
+    expect(statusLedgerErrors({ roster, fields: undefined as unknown as Record<string, string[]>, specs }).map((x) => x.key))
+      .toEqual(['fissure.字段表', 'mute.字段表'])
+    const noRoster = statusLedgerErrors({ roster: undefined as unknown as string[], fields, specs })
+    expect(noRoster.map((x) => x.key), '主人没了就说主人没了：把三张派生表全判成"该销"是一句谎')
+      .toEqual(['STATUS_IDS'])
+    expect(noRoster[0].msg).toContain('空转')
+  })
+})
+
 describe('今天的真账必须自洽（这条响的那天，就是有人该销账的那天）', () => {
   it('三份名单都不是空的，且每一条都带着理由（判据不许在空集合上空转）', () => {
     for (const [name, ledger] of Object.entries({ PENDING_MILESTONE_GRANTS, UI_BOUND_MILESTONES, PENDING_FLAG_WRITERS })) {
@@ -123,6 +154,7 @@ describe('今天的真账必须自洽（这条响的那天，就是有人该销�
     const r = spawnSync(process.execPath, ['scripts/validate-data.mjs'], { cwd: root, encoding: 'utf8' })
     const out = `${r.stdout ?? ''}${r.stderr ?? ''}`
     expect(out, '校验器没给出「总计」那行 = 这一趟没跑成，判据不算跑过').toContain('总计：')
-    expect(out.split(/\r?\n/).filter((l) => l.includes('这条账该销了') || l.includes('账上挂着表里没有的里程碑'))).toEqual([])
+    expect(out.split(/\r?\n/).filter((l) => l.includes('这条账该销了') || l.includes('账上挂着表里没有的里程碑')
+      || l.includes('.字段表') || l.includes('.取值表')), 'KI-076 起：状态名册那两张派生表也归这条判据管').toEqual([])
   })
 })

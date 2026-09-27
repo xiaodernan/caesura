@@ -48,6 +48,38 @@ export function hasMilestoneLeg(row, movementMsIds) {
 }
 
 /**
+ * 状态名册与它在本仓库派生出的两张按 id 键控的表（字段白名单 / 取值范围）必须同一批行（KI-076）。
+ * 为什么这算"账"：名册的主人已经搬到 `core/EventBus.ts` 去了（对账门读它），但这两张派生表还住在
+ * 校验器里、还是手抄的。
+ *
+ * 崩溃的真实形状是**量出来的**，而且第一版量错了：我原以为"名册加一态而白名单没跟上"就会崩，
+ * 植入实测发现那种情形一条都不会崩（statuses.json 里没有那一行，那个循环根本走不到）。真正崩的那条是
+ * **数据里有这一行、白名单里删掉了它**（删派生行／改名都可能）：读到 `undefined` ⇒ 脚本以 TypeError 收场，
+ * 报告一段都不印——十七份表全部没人看（C7b）。给白名单补上 `?? []` 兜底之后同一颗植入变回 5 条可读的红（C7c）。
+ * @param roster 名册（数组，来自 EventBus.STATUS_IDS 那份手抄）
+ * @param fields id → 字段白名单
+ * @param specs  id → 取值范围表
+ */
+export function statusLedgerErrors({ roster, fields, specs }) {
+  const out = []
+  if (!Array.isArray(roster)) {
+    // 名册读不到时说"每张派生表都该销"是撒谎：主人没了，派生表再全也没人读。同一条门在空转的口径。
+    return [{ key: 'STATUS_IDS', msg: '状态名册读不到（不是数组）⇒ 这一格在空转：先把名册接回来，再谈三张表对不对得上' }]
+  }
+  const ids = roster
+  for (const id of ids) {
+    if (!isObj(fields) || !(id in fields)) out.push({ key: `${id}.字段表`, msg: `名册里有 '${id}' 而字段白名单没有这一行 ⇒ 数据里那一行的每个字段都会被判成"不认的字段"（假红一片），而在没有兜底的那一版里它直接把校验器崩掉、整份报告一条都不印（补上白名单：§55 一字段一消费方）` })
+    if (!isObj(specs) || !(id in specs)) out.push({ key: `${id}.取值表`, msg: `名册里有 '${id}' 而取值范围表没有这一行 ⇒ 这个状态的数值今天没人管（少一维 HUD 就没得播，多一维就是没人消费的数据）` })
+  }
+  for (const [tbl, t] of [['STATUS_FIELDS', fields], ['STATUS_SPECS', specs]]) {
+    for (const id of Object.keys(isObj(t) ? t : {})) {
+      if (!ids.includes(id)) out.push({ key: `${tbl}.${id}`, msg: `${tbl} 里有 '${id}' 而名册没有 ⇒ 这条派生该销了（KI-073 同族：留着它，下一个读代码的人会以为名册里多一态）` })
+    }
+  }
+  return out
+}
+
+/**
  * 里程碑那两份名单的销账判据。
  * @param pending   id → 欠账理由
  * @param uiBound   id → 承载体说明（这份承诺的是"腿在表现层"，与字段腿可并存，所以只查死条目）

@@ -32,3 +32,10 @@ export function flagLedgerErrors(input: {
   pending: Record<string, string>
   written: Map<string, string>
 }): LedgerError[]
+
+/** 状态名册 ↔ 两张按 id 键控的派生表（字段白名单 / 取值范围）的三向一致性（KI-076） */
+export function statusLedgerErrors(input: {
+  roster: string[]
+  fields: Record<string, string[]>
+  specs: Record<string, unknown>
+}): LedgerError[]
