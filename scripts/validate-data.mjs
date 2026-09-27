@@ -14,6 +14,8 @@ import { fileURLToPath } from 'node:url'
 // 「先记账后接线」那两份账本的**销账**判据（KI-073）。住在这里而不是内联，是为了让测试能喂它合成账本：
 // 本脚本一被 import 就会去校验真表，判据留在里面就没人 import 得动（与 report-reds.mjs 同一个理由）。
 import { flagLedgerErrors, milestoneLedgerErrors, PENDING_FLAG_WRITERS, PENDING_MILESTONE_GRANTS, UI_BOUND_MILESTONES } from './ledger-rules.mjs'
+// 词表对账（KI-074）：schema.ts 是这些名单的唯一主人，这里读它而不是抄它。
+import { fieldUnion, interfaceFields, schemaBlocks, unionMembers, vocabDriftErrors } from './schema-vocab.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const JSON_DIR = resolve(ROOT, 'src/data/json')
@@ -66,6 +68,9 @@ const STATUS_FIELDS = {
 }
 // src/core/Input.ts ActionName —— 目前只有这两条动作被乐章战技占用（新增槽位要先在输入层登记）
 const MOVEMENT_ACTIONS = new Set(['weaponSkill', 'weaponSkillB'])
+/** 里程碑 grant 的字段白名单：`schema.ts > MilestoneGrant`。每一项都必须有消费方
+ *  （`Progression.derive` 或 mods 出口）；语义写在那条声明自己的注释里，这里不再抄一份。 */
+export const GRANT_FIELDS = ['loadFlat', 'parryWhiffMs', 'execMulPct', 'overdriveFlat', 'corruptionStayPct']
 /** 战技帧的字段白名单： MovementFrame（schema.ts）。多一个字段就必须多一个消费方 */
 const MOVE_FRAME_FIELDS = ['startup', 'activeStart', 'activeEnd', 'recovery', 'poise', 'hitStopMs', 'hitbox', 'multi', 'shake', 'sfx', 'vfx', 'loudness']
 /** 战技每级的数值字段： MovementLevel。同样一字段一消费口 */
@@ -73,6 +78,46 @@ const MOVE_LEVEL_FIELDS = ['cooldownTicks', 'damage', 'trueDamage', 'fissureLaye
 /** 被动 id 白名单（§7.3，KI-036）：一条被动 = 一个消费者（src/rpg/Settlement.ts refreshPlayer）。
  *  名单只能随消费方一起加长；残响耳（撞 KI-032）没接，故不收录。 */
 const PASSIVE_IDS = new Set(['ps_metronomefoot', 'ps_tympanicguard', 'ps_featherrest'])
+
+/**
+ * 词表对账表（KI-074）。上面这些名单每一张都写着「与 schema.ts 对齐」——**手抄**。
+ * 抄不会失败，只会静悄悄变旧：schema 加了成员而这里没加 ⇒ 合法数据被判 ERROR；
+ * 这里加了而 schema 没有 ⇒ 类型侧根本不认识这一项（derive 可能已在读它）。
+ * 所以每张都登记"从哪条声明读"，跑一次逐张比对（`validateSchemaVocab`）。
+ *
+ * 刻意没一次把所有名单都并进来：**一条没量过的对账不是门，是安慰**。`REACTIONS` 就不在这张表里——
+ * 它的载体不是 `ReactionTier`（那张只到 R3），而是 `reactions.json` 的行键加上 R4 那一档，
+ * 硬配一个名字相近的声明只会造出一条永远在说谎的门。
+ */
+const VOCAB_PAIRS = [
+  { at: 'AttrKey', name: '六维词表', source: (b) => unionMembers(b, 'AttrKey'), copied: [...ATTR_KEYS], where: 'ATTR_KEYS' },
+  { at: 'SlotKey', name: '槽位全集', source: (b) => unionMembers(b, 'SlotKey'), copied: [...SLOT_KEYS], where: 'SLOT_KEYS' },
+  {
+    at: 'SlotKey', name: '装备件槽位', source: (b) => unionMembers(b, 'SlotKey'), copied: [...GEAR_SLOTS],
+    allowMissing: ['sealA'], where: 'GEAR_SLOTS',
+    whyMissing: '今天没有任何一件装备声明 sealA（B 槽专属件的载体是 sealB）；出现需求先登记消费者，再动这张表',
+  },
+  { at: 'ItemKind', name: '物品大类', source: (b) => unionMembers(b, 'ItemKind'), copied: [...ITEM_KINDS], where: 'ITEM_KINDS' },
+  { at: 'MilestoneGrant', name: '里程碑 grant 字段', source: (b) => interfaceFields(b, 'MilestoneGrant'), copied: GRANT_FIELDS, where: 'GRANT_FIELDS' },
+  { at: 'MovementFrame', name: '战技帧字段', source: (b) => interfaceFields(b, 'MovementFrame'), copied: MOVE_FRAME_FIELDS, where: 'MOVE_FRAME_FIELDS' },
+  { at: 'MovementLevel', name: '战技每级数值字段', source: (b) => interfaceFields(b, 'MovementLevel'), copied: MOVE_LEVEL_FIELDS, where: 'MOVE_LEVEL_FIELDS' },
+  { at: 'PropRef.kind', name: '可破坏场景物品类', source: (b) => fieldUnion(b, 'PropRef', 'kind'), copied: [...PROP_KINDS], where: 'PROP_KINDS' },
+  { at: 'InteractableRef.kind', name: '交互物品类', source: (b) => fieldUnion(b, 'InteractableRef', 'kind'), copied: [...INTERACTABLE_KINDS], where: 'INTERACTABLE_KINDS' },
+  { at: 'ProjectileSpec.kind', name: '弹道种类', source: (b) => fieldUnion(b, 'ProjectileSpec', 'kind'), copied: [...PROJECTILE_KINDS], where: 'PROJECTILE_KINDS' },
+]
+
+/**
+ * 词表对账（KI-074）：读一次 `src/data/schema.ts`，把顶上每张手抄名单与声明逐张比一遍。
+ * 读不到 schema 或读不到某条声明都报 ERROR —— **看不见的门比没有门更糟**（它让所有人都以为有人在看）。
+ */
+function validateSchemaVocab() {
+  const file = 'schema.ts'
+  let text = ''
+  try { text = readFileSync(resolve(ROOT, 'src/data/schema.ts'), 'utf8') }
+  catch { report.error(file, file, '读不到 schema.ts ⇒ 整批词表对账作废（这不是"没有漂移"，是"没看成"）'); return }
+  const blocks = schemaBlocks(text)
+  for (const e of vocabDriftErrors({ blocks, pairs: VOCAB_PAIRS })) report.error(file, e.key, e.msg)
+}
 
 // ---- 小工具 ----
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
@@ -499,7 +544,7 @@ function validateProgression() {
   //    而"该销未销"这一侧从今天起是门）；
   // ④ 被 UI 承载体按 id 消费（UI_BOUND_MILESTONES，腿由 hud-milestones 测试作证，KI-031①）。
   // 这条规则的存在理由：§8.2 的 label 是玩家面向的数值承诺，此前 11 行里 9 行没有任何机制承载。
-  const GRANT_FIELDS = ['loadFlat', 'parryWhiffMs', 'execMulPct', 'overdriveFlat', 'corruptionStayPct'] // 加数项（kg / ms / 百分点% / 过载格），语义见 schema.MilestoneGrant
+  // GRANT_FIELDS 已提到模块层（词表对账要读它；见文件顶部的 VOCAB_PAIRS）
   // ④ UI 腿（KI-031①）：行的消费方是 HUD 组件，unlock rank 由 Hud.milestoneRank **按 id 现查现用**
   // （不是构造期快照）。承载体在表现层、derive 摸不到，所以这一形式的证人不是字段白名单，
   // 是 tests/unit/hud-milestones.test.ts：rank A/B、改表法、删行⇒功能永不亮，三条腿都咬住表。
@@ -2147,18 +2192,27 @@ void dialogueInfo.ids
 // worldstate 最后：它要拿 regions/enemies 的 id 与"谁在读旗标"做双向对账
 validateWorldstate()
 validateGearRarityCoverage()
+validateSchemaVocab()
 void regionIds
 
 // ---- 报告 ----
 let errTotal = 0
 let warnTotal = 0
 console.log('CAESURA 数据校验（KI-015 门禁）— src/data/json')
-for (const f of FILES) {
+/**
+ * 打印的段 = 11 份 JSON ∪ **报过事的其他名字**。
+ * 前半直查出来的一件事（KI-074）：词表对账挂在 `schema.ts` 这个段名下，而这段循环只走 `FILES`，
+ * 于是它报的 ERROR 既不打印也不计数——**一门彻底哑掉的门**，四趟植入实测全部"不咬"就是这么来的。
+ * 跨文件的检查以后还会加，所以修的是这段循环，不是给对账挑一个在 `FILES` 里的假名字。
+ */
+const sections = [...FILES, ...[...new Set(report.rows.map((x) => x.file))].filter((f) => !FILES.includes(f))]
+for (const f of sections) {
   const rows = report.rows.filter((x) => x.file === f)
   const errs = rows.filter((x) => x.level === 'ERROR')
   const warns = rows.filter((x) => x.level === 'WARN')
   errTotal += errs.length
   warnTotal += warns.length
+  if (!FILES.includes(f) && rows.length === 0) continue
   console.log(`\n=== ${f} ===`)
   if (rows.length === 0) console.log('  OK — 无 ERROR / WARN')
   for (const x of errs) console.log(`  ERROR  ${x.where}: ${x.msg}`)
