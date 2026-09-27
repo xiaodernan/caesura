@@ -135,6 +135,26 @@ describe('音刺：可被攻击、有耐久、会发声（KI-023）', () => {
     expect(w.props.hittable(spine), '碎了的刺没有再被击中的资格').toBe(false)
   })
 
+  it('墙后面的音刺：同一记挥砍被同一堵墙吃掉（KI-070——场地件与敌人吃同一把尺子，不另开判据）', () => {
+    const w = makeWorld()
+    w.standBy('prop_spine_mine')
+    const spine = w.prop('prop_spine_mine')
+    const mid = { x: (w.player.pos.x + spine.pos.x) / 2, z: (w.player.pos.z + spine.pos.z) / 2 }
+    const wl = {
+      id: 'wb_prop_between', pos: { x: mid.x, y: spine.pos.y, z: mid.z },
+      size: { x: 6, z: 0.6 }, heightM: 3,
+    }
+    const before = spine.hitsLeft
+    expect(before, '夹具前提：计数型的刺才有"耐久没被扣"这件事可量（血量型的刺走另一条腿）').toBeDefined()
+    w.combat.occlusion.syncAuthored({ id: 'rg_ki070', walls: [wl] })
+    expect(w.swingHeavy(), '夹具前提：这一记真的出手了').toBe(true)
+    expect(spine.hitsLeft, '墙把刃挡在了刺前面，却还照旧计数 = 场地件没吃这条判据').toBe(before)
+    w.combat.occlusion.syncAuthored(null)
+    expect(w.swingHeavy()).toBe(true)
+    expect(spine.hitsLeft, '拆掉同一堵墙、同一个人、同一个位置 ⇒ 判别式在那堵墙上，不是在这条腿的夹具上')
+      .toBe((before ?? 0) - 1)
+  })
+
   it('碎裂走真广播：world.propBroken 恰一条，聋乱窗落账在猎手身上', () => {
     const w = makeWorld()
     const broken: unknown[] = []

@@ -200,6 +200,8 @@ export class CombatManager {
   private playerHitsEnemies(tick: number): void {
     const hb = this.player.activeHitbox
     if (!hb?.box) return
+    const swing = this.player.action
+    if (!swing) return // `activeHitbox` 没有招式就是 null；这一行只是把那件事说给类型听（否决的读数要一个"哪一记"的键）
     for (const e of this.ai.enemies) {
       if (!e.alive) continue
       if (e.intangible) {
@@ -209,6 +211,13 @@ export class CombatManager {
       }
       const hit = shapeHits(hb.box, this.player.pos, hb.yaw, e.hitTarget())
       if (!hit) continue
+      // KI-070（KI-014 未落格②）：扇形管"谁在这一记里"，线段管"刃到得了吗"，两把尺子各量一件事。
+      // 被几何吃掉的那一线**不吃"一击一名"的名额**——墙挡的是这一线，不是这一招。
+      const wall = this.coverEatsLine(this.player.hitTarget(), e.hitTarget())
+      if (wall) {
+        this.cueBlockedOnce(swing, wall.at)
+        continue
+      }
       const p = this.player
       // 判定窗有好几 tick：同一记对同一个人只结一次账，多目标名额用尽才收
       if (!p.markActionHit(e.id)) continue
@@ -263,6 +272,8 @@ export class CombatManager {
     if (!props) return
     const hb = this.player.activeHitbox
     if (!hb?.box) return
+    const swing = this.player.action
+    if (!swing) return // 同上：判定窗存在就意味着招式存在
     const p = this.player
     const kind: 'light' | 'heavy' | 'skill' = p.action?.skill
       ? 'skill'
@@ -270,6 +281,12 @@ export class CombatManager {
     for (const prop of props.all) {
       if (!props.hittable(prop)) continue
       if (!shapeHits(hb.box, p.pos, hb.yaw, props.hitTarget(prop))) continue
+      // KI-070：场地件吃同一把尺子。同一记挥砍不许"打不到墙后的人、却打得碎墙后的刺"
+      const wall = this.coverEatsLine(p.hitTarget(), props.hitTarget(prop))
+      if (wall) {
+        this.cueBlockedOnce(swing, wall.at)
+        continue
+      }
       if (!p.markActionHit(prop.id)) continue
       props.hitProp(prop, { heavyFamily: kind !== 'light', rawDamage: hb.damage })
     }
@@ -794,7 +811,7 @@ export class CombatManager {
       const cover = this.coverEatsLine(e.hitTarget(), this.player.hitTarget())
       if (cover) {
         // 柱子挡得住「这一击」，挡不住「这一招」：收势帧不消耗 hitDone，冲出柱子还能再吃
-        this.cueBlocked(cover.at)
+        if (e.attack) this.cueBlockedOnce(e.attack, cover.at)
         continue
       }
       if (e.attack) e.attack.hitDone = true
@@ -996,6 +1013,22 @@ export class CombatManager {
   private cueBlocked(pos: Vec3): void {
     bus.emit('vfx.request', { key: 'ring_dust', pos: { ...pos }, scale: 1.4 })
     bus.emit('audio.sfx', { key: 'block_guard', pos: { ...pos }, gain: 0.35 })
+  }
+
+  /**
+   * 已经报过"被几何吃了"的那些招式（键 = 出手方此刻那一式的对象，所以同时出手的两个人各报各的）。
+   * 判定窗有好几 tick，而遮挡那一支**不消耗** `hitDone`（柱子挡得住这一击、挡不住这一招），
+   * 于是同一记挥砍会在窗内每一 tick 重新走到这里一次：灰要撒 7 团、那一声要响 7 遍。
+   * 读数说的是"这一记被挡了"，不是"这一记的第 N 个 tick 被挡了" ⇒ 一招一次。
+   * `WeakSet` 而不是字段：招式对象随收势作废，不需要谁去清它。
+   */
+  private readonly blockedCued = new WeakSet<object>()
+
+  /** 一次接触只报一次的那条通道（见 {@link blockedCued}） */
+  private cueBlockedOnce(action: object, at: Vec3): void {
+    if (this.blockedCued.has(action)) return
+    this.blockedCued.add(action)
+    this.cueBlocked(at)
   }
 
   /**

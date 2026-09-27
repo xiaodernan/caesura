@@ -18,8 +18,10 @@ import { newAttack, type Enemy } from '@/ai/Enemy'
  * 世界遮挡流程测试（KI-014①②，需求 §15.2「躲入断音柱后」+ §65「弹体不该穿过掩体」+ §577「视锥 + 遮挡检查」的几何地基）。
  *
  * 这一批要守住的不是"柱子有没有用"（`mainboss.test.ts` 已经管过那一格），而是
- * **遮挡第一次变成一条真的线段**：`core/Occlusion` 的那一个 `firstBlock` 被三个读者共用
- * （弹体的扫掠段、打在玩家身上的那一记、§14.4 的红线、敌人的视线），于是这几条腿必须同生同死。
+ * **遮挡第一次变成一条真的线段**：`core/Occlusion` 的那一个 `firstBlock` 被五个读者共用
+ * （弹体的扫掠段、打在玩家身上的那一记、§14.4 的红线、敌人的视线、玩家自己挥出去的那一刀 KI-070），
+ * 于是这几条腿必须同生同死。
+ * （这一句从前写"三个读者"却列了四个——读者四落地时只补了清单没补数，读者五落地时一起改对。）
  * 所以这里的判据全是几何量（"截在哪一点""离柱轴多少米"），不是"掉没掉血"那种间接读数——
  * 掉血只能证明某一格 if 生效，证明不了三个人读的是同一把尺子。
  *
@@ -334,7 +336,8 @@ function makeWorld() {
       rhythm.update(TICK_DT)
     }
   }
-  return { time, rhythm, player, ai, combat, tick, dust, off: () => off() }
+  // `frame` 一并交出去：读者五要自己按一下出手键（KI-070），而 `input` 包的就是这一个对象
+  return { time, rhythm, player, ai, combat, frame, tick, dust, off: () => off() }
 }
 type W = ReturnType<typeof makeWorld>
 
@@ -811,5 +814,124 @@ describe('接线：第四个读者挂在组合根上（不靠测试自己记得�
     expect(wired.length, '视线闸门在组合根里恰好一处赋值').toBe(1)
     expect(wired[0], '必须复用 combat.occlusion 那一份名册，而不是另算一套几何').toMatch(/combat\.occlusion\.blocked/)
     expect(wired[0].trim().startsWith('//'), '那一行是代码不是注释').toBe(false)
+  })
+})
+
+/**
+ * 读者五（KI-070，KI-014 未落格②）：玩家自己的挥砍。
+ *
+ * 这一格欠的不是"再写一条判据"，是一处**不对称**：KI-014① 之后玩家投出去的长枪会被掩体吃掉
+ * （combat.md §15.2 那行的原话「长枪不再穿过掩体」），打在玩家身上的那一记也吃（读者一），
+ * 唯独玩家挥出去的那一刀不吃——同一堵墙，箭被拦下、刀穿墙伤人。遮挡名册就此成了"敌人的掩体、玩家的装饰"。
+ *
+ * 两把尺子各量一件事，这是这一格的全部难点：
+ * - **扇形（`shapeHits`）管"谁在这记挥砍里"**。把线段判据套到扇形上就等于用一把尺子量两件事
+ *  （KI-014 行原本那句），所以"背后的敌人照样打不到"必须是这条腿反过来钉住的（见最后那条）。
+ * - **线段（`coverEatsLine`）管"刃到得了吗"**——与读者一同一个 helper、同一份名册、同一端口径
+ *   （身体中心），它只是否决权，不改变谁在扇形里。
+ * 被否决的那一记**不吃"一击一名"的名额**：墙吃的是这一线，不是这一招，同一记照样结得到旁边没被挡的人。
+ */
+describe('读者五：玩家自己的挥砍吃遮挡（KI-070，KI-014 未落格②「箭被拦下、刀穿墙」）', () => {
+  const FOE = 'en_tympanus'
+  const P = at(0, 0)
+  const F = at(0, 2.0)
+  /** 立在两人正中间的 authored 薄墙（与读者四那一堵同比例：8m 宽、0.6m 厚、3m 高） */
+  const mid = (heightM = 3, sizeX = 8): ReturnType<typeof wall> =>
+    wall('wb_swing_between', AX.x, AX.z + 1.0, sizeX, 0.6, heightM, AX.y)
+
+  /**
+   * 一记完整的 l1（判定窗 12..18 共 7 tick，收势 30 ⇒ 走满 34 tick）。
+   * `face` 缺省 = 面向 `foes[0]`；位置每 tick 重钉（AI 会走、控制器会落），
+   * 所以这里量的是"这一记的几何"，不是"她后来走去哪了"。
+   */
+  function swingRig(opts: {
+    walls?: ReturnType<typeof wall>[] | null
+    face?: Vec3
+    stand?: Vec3
+    foes?: Vec3[]
+  } = {}): { w: W; hits: string[]; foes: Enemy[] } {
+    const w = makeWorld()
+    w.combat.occlusion.syncAuthored(opts.walls ? { id: 'rg_ki070', walls: opts.walls } : null)
+    const pAt = opts.stand ?? P
+    const face = opts.face ?? F
+    const spots = opts.foes ?? [F]
+    const foes = spots.map((s, i) => {
+      const e = w.ai.spawn(FOE, { x: s.x, y: s.y, z: s.z }, `ki070-${i}`)
+      e.stats.hpMax = e.stats.hp = 99_999 // 一记打不死她，也不许被别的东西打死
+      e.alertness = 0
+      return e
+    })
+    const hits: string[] = []
+    const offHit = bus.on('combat.hit', (p) => { if (p.attackerId === 'player') hits.push(p.victimId) })
+    const pin = (): void => {
+      for (let i = 0; i < foes.length; i++) {
+        foes[i].pos.x = spots[i].x; foes[i].pos.y = spots[i].y; foes[i].pos.z = spots[i].z
+      }
+      w.player.pos.x = pAt.x; w.player.pos.y = pAt.y; w.player.pos.z = pAt.z
+      w.player.floorY = pAt.y; w.player.vy = 0; w.player.grounded = true
+      const a = Math.atan2(face.x - pAt.x, face.z - pAt.z)
+      w.player.yaw = a; w.player.camYawRef = Math.PI + a
+      w.player.stats.hp = w.player.stats.hpMax // 她偶尔还一口也不影响这一记的读数
+    }
+    pin()
+    w.frame.edges.add('attackLight')
+    w.tick(34, pin)
+    offHit()
+    w.off()
+    return { w, hits, foes }
+  }
+
+  it('夹具先自证：没有墙 ⇒ 这一记确实落在她身上（下面那条"没落"才有对照）', () => {
+    const { hits, foes } = swingRig()
+    expect(foes[0].stats.hp, '对照腿：伤害没落地，后面所有"被挡住"都绿得没意义').toBeLessThan(99_999)
+    expect(hits, '一记 2.0m 正面的轻击打空了：夹具没搭对（cone r=2.1）').toHaveLength(1)
+  })
+
+  it('同一记、同一段距离，中间立一堵 authored 墙 ⇒ 不结这一线：没伤害、没 hit，只有墙面上那一团灰', () => {
+    const { w, hits, foes } = swingRig({ walls: [mid()] })
+    expect(hits, '墙把箭都拦了，刀却穿过去结了账').toHaveLength(0)
+    expect(foes[0].stats.hp, '不结 hit 却掉了血 = 还有第二条伤害通道没接').toBe(99_999)
+    expect(w.dust.length, '被挡这件事要有读数（灰尘），但一次接触只撒一团').toBe(1)
+    expect(Math.abs(w.dust[0].z - (AX.z + 0.7)), '灰尘撒在墙后的人身上，而不是近面（z=墙前沿）').toBeLessThan(0.05)
+  })
+
+  it('墙有高度：同一堵墙压到 0.3m ⇒ 刃从它上面过去，照旧结账（`heightM` 在玩家这一侧也承重）', () => {
+    const { hits } = swingRig({ walls: [mid(0.3)] })
+    expect(hits, '0.3m 的矮墙挡不住胸口挥出去的一刀').toHaveLength(1)
+  })
+
+  it('玩家自己站进墙肚子里 ⇒ 不算被挡（否则"贴墙的人无敌"这条口径在攻击侧同样成立）', () => {
+    const { hits } = swingRig({ walls: [mid()], stand: at(0, 1.0) })
+    expect(hits, '起点在遮挡体内 = 墙在她身后，不是挡在两人之间').toHaveLength(1)
+  })
+
+  it('扇形仍然是那把尺子：没有墙、背对着她 ⇒ 照样打不到（线段只是否决权，不是新的命中判据）', () => {
+    const { w, hits } = swingRig({ face: at(0, -2.0) })
+    expect(w.combat.occlusion.live, '这一条没有遮挡体：线段判据根本无从介入').toBe(0)
+    expect(hits, '把 shapeHits 换成"两点一条线"也会让上面几条绿——这一条专门否掉那种做法').toHaveLength(0)
+  })
+
+  it('墙吃的是**这一线**，不是这一招：同一记里旁边那个没被挡的照样结账（名额没被吃掉）', () => {
+    const { hits, foes } = swingRig({
+      walls: [mid(3, 1.2)], // 窄墙：只盖住正前方那条线
+      foes: [at(0, 2.0), at(1.5, 1.5)], // A 在墙后、B 在同一扇形的右侧 45°
+    })
+    expect(hits, 'B 面前没有几何体，却被 A 那一线连坐').toEqual([foes[1].id])
+    expect(foes[0].stats.hp, 'A 仍然不该受伤').toBe(99_999)
+  })
+
+  it('被柱子吃掉的那一记也只撒一团灰（判定窗 7 tick，窗内不许刷屏）——玩家侧与敌人侧同一条读数纪律', () => {
+    // 读者一那条腿今天就会红：`enemiesHitPlayer` 的遮挡分支不消耗 `hitDone`，于是判定窗每一 tick
+    // 都重撒一次灰、重响一声。这一格是把那件事和玩家这一侧一起钉住。
+    const w = makeWorld()
+    const e = hersil(w, at(0, -4.4))
+    const pin = place(w, e, at(0, -4.4), at(0, 3.6))
+    pin()
+    w.player.stats.hp = 500
+    force(e, 'tutti')
+    w.tick(12, pin)
+    expect(w.player.stats.hp, '夹具前提：这一记确实被柱子吃掉了（否则灰数没意义）').toBe(500)
+    expect(w.dust.length, `一次接触撒了 ${w.dust.length} 团灰 = 判定窗每一 tick 重播读数`).toBe(1)
+    w.off()
   })
 })
