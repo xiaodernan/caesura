@@ -8,6 +8,10 @@
  * `RhythmClock` 吃 `regions.json > grid` 与 Boss 的 `overrideTo`，而战斗曲永远按 84/4 演。
  * 结果 docs/audio.md §2.1「音乐重拍与敌人主攻击对齐」在奥斯塔拉（表里 108BPM、3/4，实机量到同一对数）身上是假的。
  * 现在拍长与小节形状由 `setGrid()` 注入（`AudioEngine` 转发 `audio.music.grid`），这里不再留副本。
+ *
+ * KI-066 管的是**拍长**（间隔），KI-068 补的是**时刻**（那一拍落在什么时候、是第几拍）：入战不再自己猜 `now + 0.1`，
+ * 第一拍与"第几拍"都来自 `RhythmClock.barEntry()`（§2.1「≤2 拍内进战斗曲」），由 `CombatManager` 在遭遇事件里带上。
+ * 于是"重拍踩在敌人主攻击那一拍"第一次在**入场那一下**成立，而不只是稳态之后两拍对齐。
  */
 import { bus } from '../core/EventBus'
 import type { MusicGrid } from '../core/RhythmClock'
@@ -17,7 +21,11 @@ declare module '../core/EventBus' {
   interface GameEvents {
     // 与 src/combat/CombatManager.ts 的发射契约一致：{ start: boolean }
     // `cut`（§16 胜利序列）：start=false 时**立刻**掐掉战斗层，不走脱战那条 4s 淡出
-    'audio.music.encounter': { start: boolean; cut?: boolean }
+    // `enter`（KI-068，§2.1）：start=true 时带上 `RhythmClock.barEntry()` 的落点（还要等多久 + 第几拍）。
+    //   **可选**不是客套：发射侧无状态、每 30 tick 重发，而 `barEntry()` 要查全场钟——`main.ts` 里
+    //   `rhythm` 是模块 const、没挂在 `__caesura` 上，所以外部发射（面板、debt 探针、测试）发不出这条。
+    //   缺它时音乐层退回旧的 `now + 0.1` 起拍，并把这件事说出口（一次性 warn），而不是假装锁过了。
+    'audio.music.encounter': { start: boolean; cut?: boolean; enter?: { waitSec: number; beatIndex: number } }
   }
 }
 
@@ -41,6 +49,8 @@ export class MusicLayer {
   private bpm = 0
   private beatsPerBar = 0
   private warnedNoGrid = false
+  /** KI-068：`enter` 缺席时说一次话，别让它静默退回 `now + 0.1` */
+  private warnedNoEnter = false
 
   constructor(
     private ctx: AudioContext,
@@ -86,7 +96,7 @@ export class MusicLayer {
     this.ambGain.gain.linearRampToValueAtTime(0.6, now + 3)
     this.nextChime = now + 4
     if (!this.offEncounter) {
-      this.offEncounter = bus.on('audio.music.encounter', (p) => this.onEncounter(p.start, p.cut ?? false))
+      this.offEncounter = bus.on('audio.music.encounter', (p) => this.onEncounter(p.start, p.cut ?? false, p.enter))
     }
   }
 
@@ -137,19 +147,33 @@ export class MusicLayer {
   }
 
   /** 遭遇事件入口：start=true 淡入战斗层；false 淡出（`cut` ⇒ 立刻切，§16 胜利序列的"音乐停"） */
-  onEncounter(start: boolean, cut = false): void {
+  onEncounter(start: boolean, cut = false, enter?: { waitSec: number; beatIndex: number }): void {
     const now = this.ctx.currentTime
     const g = this.battleGain.gain
     if (start) {
       if (!this.battleOn) {
-        this.beatIdx = 0
-        this.nextBeat = now + 0.1
+        // **上升沿**才取落点（KI-068）。发射侧每 30 tick 就重发一次"还在交战"，若每次都重锚，
+        // 战斗曲会每隔半秒跳回小节头——那比 `now + 0.1` 更糟。淡入的 1.2 秒本来就盖住第一小节，
+        // 所以等待只推迟起音，不会把入场的声音推到最后。
+        if (enter) {
+          // 真网格 `waitSec` 不会是 0（`barEntry()` 只在正踩小节头时给 0，而 `now` 也 > 0）；
+          // 这一句防的是假网格下"第 0 秒入战"把 `nextBeat` 留成 0 = "还没起拍"那个哨兵（KI-067）。
+          this.nextBeat = Math.max(now + enter.waitSec, now + 0.02)
+          this.beatIdx = enter.beatIndex
+        } else {
+          this.nextBeat = now + 0.1
+          this.beatIdx = 0
+          if (!this.warnedNoEnter) {
+            this.warnedNoEnter = true
+            bus.emit('log', { level: 'warn', msg: 'music: 入战事件没带落点 enter，第一拍回到旧的 now+0.1（§2.1 的 ≤2 拍对齐没生效）' })
+          }
+        }
       }
       this.battleOn = true
       this.battleStopAt = 0
       g.cancelScheduledValues(now)
       g.setValueAtTime(g.value, now)
-      g.linearRampToValueAtTime(0.9, now + 1.2) // 淡入。拍长已跟网格（KI-066），**相位**仍未锁：入战第一拍是 `now+0.1`，不是 §2.1 的 snapToNextBar
+      g.linearRampToValueAtTime(0.9, now + 1.2) // 淡入。拍长跟网格（KI-066），第一拍的时刻与拍号吃 `barEntry()`（KI-068）
     } else if (cut) {
       // §16「音乐停=世界屏息」：0.5s 的安静要被听得出来，所以这里没有渐变的余地。
       this.battleOn = false

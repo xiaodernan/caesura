@@ -100,3 +100,112 @@ describe('audio.music.grid：发布点是 update()，且只在真的变化时发
     expect(seen[0].bpm, '名义拍速被 drift 改写').toBe(84)
   })
 })
+
+/**
+ * KI-068：§2.1「EncounterTrigger → BeatClock.snapToNextBar()（≤2 拍内进战斗曲）」。
+ * 这里做成**只读查询**而不是字面上那句"把钟 snap 到小节头"：移钟会连带挪走场上所有在飞招式的
+ * hit-frame 量化（§2.1 同一节给敌人的那条约束），为了音乐的落点去动玩法的拍，代价方向反了。
+ */
+describe('barEntry()：入战落点是查出来的，不是把钟挪过去', () => {
+  /** 小节内位置（第几拍，0 起，含相位）—— 判据都从钟自己的读数推，不手抄浮点 */
+  const posOf = (c: RhythmClock): number => {
+    const i = c.info()
+    return i.beatInBar - 1 + i.phase
+  }
+  /** 把钟步进到"小节内第 target 拍"附近（每 tick 1/60，落在第一个 ≥target 的位置） */
+  const stepTo = (c: RhythmClock, target: number): RhythmClock => {
+    let guard = 0
+    while (posOf(c) < target && guard++ < 100000) c.update(1 / 60)
+    return c
+  }
+
+  it('4/4 的后半小节：等到小节头，等待 = 剩下的那一截、落点 beatIndex 真的落在小节头上', () => {
+    const c = stepTo(new RhythmClock(), 2.5) // 第 3 拍过半 ⇒ 离小节头不到 2 拍
+    const pos = posOf(c)
+    expect(pos, `前置没走到后半小节（pos=${pos}），这条量不了"够得着"那一支`).toBeGreaterThanOrEqual(2)
+    const e = c.barEntry()
+    expect(e.beatIndex % c.beatsPerBar, `落点 ${e.beatIndex} 不在小节头`).toBe(0)
+    expect(e.waitSec, `等待 ${e.waitSec} 不等于剩下的 ${4 - pos} 拍`).toBeCloseTo((4 - pos) * (60 / c.bpm), 9)
+    expect(e.waitSec, `等了 ${e.waitSec}s > §2.1 那句 ≤2 拍`).toBeLessThanOrEqual(2 * (60 / c.bpm) + 1e-9)
+  })
+
+  it('4/4 的前半小节：小节头要等 >2 拍 ⇒ 夹到下一拍点，报的拍号是真拍号（不假装是小节头）', () => {
+    const c = stepTo(new RhythmClock(), 0.5)
+    const info = c.info()
+    const pos = info.beatInBar - 1 + info.phase
+    expect(4 - pos, `这条量的是"够不着"那一支，前提要先成立：小节头只剩 ${4 - pos} 拍`).toBeGreaterThan(2)
+    const e = c.barEntry()
+    expect(e.waitSec, `夹不住时等了 ${e.waitSec}s，应该只等到下一拍点（剩下 ${1 - info.phase} 拍）`)
+      .toBeCloseTo((1 - info.phase) * (60 / c.bpm), 9)
+    expect(e.beatIndex, '退到下一拍点却报了个假拍号').toBe(info.beatIndex + 1)
+    expect(e.beatIndex % 4, '夹住那一支不该报小节头').not.toBe(0)
+  })
+
+  it('3/4（奥斯塔拉）里小节头每 3 拍一次：预算守得住，且两支都真的被走到过', () => {
+    const beatSec = 60 / 108
+    const c = new RhythmClock()
+    c.setBpm(108, 3)
+    let sawHead = 0
+    for (let i = 0; i < 400; i++) {
+      const e = c.barEntry()
+      expect(e.waitSec, `第 ${i} tick 等了 ${e.waitSec}s > 2 拍（${2 * beatSec}s）`).toBeLessThanOrEqual(2 * beatSec + 1e-9)
+      if (e.beatIndex % 3 === 0) sawHead++
+      c.update(1 / 60)
+    }
+    expect(sawHead, '一次都没踩到小节头 = 预算把落点全夹成了散拍').toBeGreaterThan(0)
+    expect(sawHead, '400 条全踩小节头不可能（3 拍的小节有 1/3 的时刻离头 >2 拍）').toBeLessThan(400)
+  })
+
+  it('深窖那种 1 拍小节（60/1）：头就在下一拍，等待永远 ≤1 拍', () => {
+    const c = new RhythmClock()
+    c.setBpm(60, 1)
+    for (let i = 0; i < 120; i++) {
+      const info = c.info()
+      const e = c.barEntry()
+      expect(e.waitSec, `心跳区等了 ${e.waitSec} > 1 拍`).toBeLessThanOrEqual(60 / 60 + 1e-9)
+      // 1 拍小节里"小节头"与"下一拍"是同一个东西，所以落点必须是真的一拍之后
+      expect(e.beatIndex, `pos=${info.phase} 时报的拍号 ${e.beatIndex} 不是下一拍`).toBe(info.beatIndex + (info.phase === 0 ? 0 : 1))
+      c.update(1 / 60)
+    }
+  })
+
+  it('钟刚起来（正踩在拍点上）时不等待，落点就是当前这一拍；走一步之后等的是"到下一拍"那一截', () => {
+    const c = new RhythmClock()
+    const e0 = c.barEntry()
+    expect(e0.waitSec, '已经在小节头上还要等').toBe(0)
+    expect(e0.beatIndex, '开局报的拍号不是当前这拍').toBe(0)
+    c.update(1 / 60) // 走一步：phase>0 且还在第 1 拍里
+    const info = c.info()
+    expect(info.phase).toBeGreaterThan(0)
+    const e1 = c.barEntry()
+    expect(e1.waitSec, `等的不是"到下一拍"那一段（phase=${info.phase}）`)
+      .toBeCloseTo((1 - info.phase) * (60 / c.bpm), 9)
+    expect(e1.beatIndex).toBe(info.beatIndex + 1)
+  })
+
+  it('被 Boss 接管之后查的是**她的**网格：等待秒数按她的拍长推，归还之后回到区域的（§2.1 与 KI-066 的同一条所有权）', () => {
+    /** 恒等式：等待秒数 = （落点拍号 − 当前连续拍位）× 此刻的拍长。用错拍长就破，所以这条不需要手填数字 */
+    const identity = (c: RhythmClock, tag: string): void => {
+      const e = c.barEntry()
+      expect(e.waitSec, `${tag}：等待 ${e.waitSec}s 对不上落点 ${e.beatIndex} 与当前拍位 ${c.beat} 之间的 ${60 / c.bpm}s/拍`)
+        .toBeCloseTo((e.beatIndex - c.beat) * (60 / c.bpm), 9)
+    }
+    const c = new RhythmClock()
+    c.update(1 / 60)
+    stepTo(c, 1.2) // 区域 84/4 的第 2 拍里
+    identity(c, '区域拍')
+    // 小节形状真的参与判断：同一个连续拍位（≈1.5）在 4/4 里离头 2.5 拍（被 2 拍预算夹住），
+    // 在 3/4 里离头 1.5 拍（够得着，落点是小节头）
+    stepTo(c, 1.49)
+    const under4 = c.barEntry()
+    c.overrideTo(108, 3)
+    c.update(1 / 60)
+    const under3 = c.barEntry()
+    expect(under4.beatIndex % 4, '4/4 里这个拍位离小节头 2.5 拍，本该被预算夹住').not.toBe(0)
+    expect(under3.beatIndex % 3, '换成 3/4 之后同一位置离头只剩 1.5 拍，该踩到小节头').toBe(0)
+    identity(c, '接管成 108/3 之后')
+    expect(c.restoreHome()).toBe(true)
+    c.update(1 / 60)
+    identity(c, '归还之后')
+  })
+})

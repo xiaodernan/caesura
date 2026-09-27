@@ -170,7 +170,9 @@ export class CombatManager {
   checkEncounterMusic(): void {
     const anyAggro = this.ai.enemies.some((e) =>
       e.alive && (e.state === 'combat' || e.state === 'chase' || e.state === 'alert' || e.state === 'callAlly'))
-    bus.emit('audio.music.encounter', { start: anyAggro })
+    // KI-068（§2.1「遭遇 → ≤2 拍内进战斗曲」）：落点是查出来的，不是音乐层自己猜的。
+    // 这里查**每次**都没关系：`MusicLayer.onEncounter` 只在战斗层的上升沿取用它，中段重发不动已排的拍。
+    bus.emit('audio.music.encounter', { start: anyAggro, enter: anyAggro ? this.rhythm.barEntry() : undefined })
   }
 
   update(tick: number, input?: Input, dt = TICK_DT): void {

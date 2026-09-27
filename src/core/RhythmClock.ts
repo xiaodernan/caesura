@@ -123,6 +123,28 @@ export class RhythmClock {
     return p < tol || p > 1 - tol
   }
 
+  /**
+   * §2.1「EncounterTrigger → `BeatClock.snapToNextBar()`（≤2 拍内进战斗曲）」——**只读查询**，
+   * 不是字面那句"把钟 snap 过去"：移钟会连带挪走场上所有在飞招式的 hit-frame 量化（同一节给敌人的
+   * 那条约束），为了音乐的落点去动玩法的拍，代价方向反了。所以这里只回答"该落在哪一拍、还要等多久"，
+   * 由 `CombatManager` 在遭遇事件里交给音乐层。
+   *
+   * 两支：小节头在 `maxWaitBeats` 预算内 ⇒ 等小节头；够不着 ⇒ 夹到**下一拍点**，并且报的是那一拍的真拍号
+   * （不假装是小节头）。这一条夹子是必需的，不是偷懒：4/4 下有一半时刻离小节头 >2 拍，
+   * 「踩小节头」与「≤2 拍内进曲」在纯 next-bar 语义下不可能同时恒成立。
+   *
+   * 用的是**当前**网格（含 Boss 接管后的 `bpm/beatsPerBar`）——KI-066 那条所有权在这句话上继续成立。
+   */
+  barEntry(maxWaitBeats = 2): { waitSec: number; beatIndex: number } {
+    const info = this.info()
+    const beatSec = 60 / this.bpm
+    const pos = info.beatInBar - 1 + info.phase // 小节内第几拍（0 起，含相位）
+    if (pos === 0) return { waitSec: 0, beatIndex: info.beatIndex } // 正踩在小节头上
+    const toHead = this.beatsPerBar - pos
+    if (toHead <= maxWaitBeats) return { waitSec: toHead * beatSec, beatIndex: (info.bar + 1) * this.beatsPerBar }
+    return { waitSec: (1 - info.phase) * beatSec, beatIndex: info.beatIndex + 1 }
+  }
+
   update(dt: number): void {
     // 拍网的唯一发布点（暂停中也发：网格是"现在是多少"，不是"走没走"）
     this.publishGrid()
