@@ -44,6 +44,28 @@ function disposeOnEnd(endNode: AudioScheduledSourceNode, chain: AudioNode[]): vo
   endNode.onended = () => { for (const n of chain) { try { n.disconnect() } catch { /* already gone */ } } }
 }
 
+/**
+ * 一次性链里**不是 source、所以没有 `onended` 可挂**的那些下游公共节点（`boss_roar` 的失真器就是：
+ * 两声 FM 共用一只，谁都不"拥有"它）需要一个收尾。不给收尾就是每响一次留一只挂在输出上——
+ * 它不静音、不报错，只是长 Boss 战里攒出一条越来越脏的输出链（TD-006 第二腿②，KI-071 量出来的一次普查）。
+ *
+ * 做法是给它们一只**寿命刚好盖住这一声的哑源**：`ConstantSourceNode` 的 `offset` 恒 0 ⇒ 接到总线上
+ * 什么也不加，但它是一个正经的可调度源，会按时报 `onended`。为什么不用 `setTimeout`：那条挂的是墙钟，
+ * 与音频时间轴不是同一条（后台标签页会被节流到 ~1s 一次， KI-067 撞过的正是这个差）。
+ * `until` 传的是**这条音色自己报出去的时长**——`AudioEngine.play` 已经拿它归还声部配额，
+ * 而 `audio-synth.test.ts` 那条「报出的时长盖不住最后一次 stop」的判据保证了它不早于任何一条链的收尾。
+ */
+function disposeAfter(ctx: AudioContext, out: AudioNode, until: number, nodes: AudioNode[]): void {
+  const ttl = ctx.createConstantSource()
+  ttl.offset.value = 0
+  ttl.connect(out)
+  ttl.start()
+  ttl.stop(until)
+  ttl.onended = () => {
+    for (const n of [...nodes, ttl]) { try { n.disconnect() } catch { /* already gone */ } }
+  }
+}
+
 export interface NoiseOpts {
   type?: BiquadFilterType
   f0: number
@@ -137,6 +159,14 @@ export function playFM(ctx: AudioContext, out: AudioNode, t: number, o: FMOpts):
 /** 钟非谐泛音比（docs §3.1：拒绝弦乐整数比=一听即钟） */
 const BELL_RATIOS = [1, 2.0, 2.4, 3.04, 4.5, 5.73]
 
+/**
+ * 每一敲的随机失谐上限（cents）。**导出是给测试的容差用的**：容差如果手填一个数，
+ * 它就会和生产侧的抖动各自漂移——`audio-synth.test.ts` 里那条"3.04 分音"曾经用手填 0.02
+ * 认一个上界是 3.04×8/1200 = 0.02027 的抖动，于是那条判据从写下起就有几分之一的概率自己红（KI-071 实测）。
+ * 现在两边同吃这一个常数：抖动日后变宽，容差跟着变宽，不会再出现"生产改了测试不知道"。
+ */
+export const BELL_CENTS = 8
+
 export interface BellOpts {
   dur?: number
   peak?: number
@@ -153,7 +183,7 @@ export function playBell(ctx: AudioContext, out: AudioNode, t: number, base: num
   let maxEnd = t
   for (let i = 0; i < BELL_RATIOS.length; i++) {
     const d = Math.max(0.05, dur / Math.pow(i + 1, 1.3))
-    const cents = (Math.random() * 16 - 8) / 1200
+    const cents = ((Math.random() * 2 - 1) * BELL_CENTS) / 1200
     const f = base * BELL_RATIOS[i] * (1 + cents)
     const excite = i === 0 ? 1 : (0.35 + Math.random() * 0.65) / (1 + i * 0.8)
     const end = playSweep(ctx, out, t, { f0: f, dur: d, attack: 0.002, peak: peak * excite })
@@ -388,7 +418,10 @@ const VOICES: Record<SfxKey, VoiceFn> = {
     playFM(c, shaper, t + 0.05, { f0: 180, f1: 95, modRatio: 1.51, index: 7, dur: 0.9, type: 'sawtooth', peak: 0.14 * g })
     playNoise(c, o, t, { type: 'lowpass', f0: 500, f1: 150, decay: 1.0, peak: 0.12 * g })
     playSweep(c, o, t, { f0: 60, f1: 38, dur: 1.1, peak: 0.25 * g })
-    return 1.4
+    // 那两声 FM 的下游就是这只 shaper：它自己不是 source，所以由哑源按**这一声报出的时长**收尾
+    const life = 1.4
+    disposeAfter(c, o, t + life, [shaper])
+    return life
   }
 }
 

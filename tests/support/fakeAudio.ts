@@ -14,7 +14,7 @@
  */
 
 export type NodeKind =
-  | 'gain' | 'osc' | 'bufferSource' | 'biquad' | 'compressor' | 'panner' | 'shaper' | 'destination'
+  | 'gain' | 'osc' | 'bufferSource' | 'constantSource' | 'biquad' | 'compressor' | 'panner' | 'shaper' | 'destination'
 
 export interface ParamEvent {
   kind: 'set' | 'lin' | 'exp' | 'cancel' | 'target'
@@ -79,11 +79,18 @@ export class FakeNode {
   get ratio(): FakeParam { return this.params.ratio }
   get attack(): FakeParam { return this.params.attack }
   get release(): FakeParam { return this.params.release }
+  /** `ConstantSourceNode` 的那个常量（哑源用来当"一次性链的寿命"，值恒 0 = 听不见） */
+  get offset(): FakeParam { return this.params.offset }
   connect(dst: FakeNode | FakeParam): FakeNode | FakeParam {
     this.ctx.edges.push({ from: this, to: dst })
     return dst
   }
-  disconnect(): void { this.disconnected++ }
+  disconnect(): void {
+    this.disconnected++
+    // 真语义：`disconnect()` 摘掉的是**这个节点出发**的全部连线。不跟着摘，`live()` 就读不出
+    // "一次性链走完有没有把线收回去"这件事（ KI-071 的整表普查全靠这个数）。
+    for (let i = this.ctx.edges.length - 1; i >= 0; i--) if (this.ctx.edges[i].from === this) this.ctx.edges.splice(i, 1)
+  }
   start(at?: number): void { this.startedAt.push(at ?? this.ctx.currentTime) }
   stop(at?: number): void { this.stoppedAt.push(at ?? this.ctx.currentTime) }
   /** 触发一次"播完"回调（真机上由引擎在 stop 时刻调用；这里由测试手动兑现 onended 那条清理链） */
@@ -94,6 +101,7 @@ const FAKE_PARAMS: Record<NodeKind, string[]> = {
   gain: ['gain'],
   osc: ['frequency', 'detune'],
   bufferSource: ['playbackRate'],
+  constantSource: ['offset'],
   biquad: ['frequency', 'Q', 'gain'],
   compressor: ['threshold', 'knee', 'ratio', 'attack', 'release'],
   panner: ['pan'],
@@ -122,6 +130,7 @@ export class FakeAudioContext {
   createGain(): FakeNode { return this.mk('gain') }
   createOscillator(): FakeNode { return this.mk('osc') }
   createBufferSource(): FakeNode { return this.mk('bufferSource') }
+  createConstantSource(): FakeNode { return this.mk('constantSource') }
   createBiquadFilter(): FakeNode { return this.mk('biquad') }
   createDynamicsCompressor(): FakeNode { return this.mk('compressor') }
   createStereoPanner(): FakeNode { return this.mk('panner') }
@@ -139,6 +148,22 @@ export class FakeAudioContext {
   sources(): FakeNode[] { return this.nodes.filter((n) => n.kind === 'osc' || n.kind === 'bufferSource') }
   /** connect 到某个具体目标的全部连线 */
   edgesTo(dst: FakeNode | FakeParam): FakeEdge[] { return this.edges.filter((e) => e.to === dst) }
+  /** **此刻还连在**某个目标上的连线数（`disconnect` 会摘线，所以这个数读的是"还没回收的节点"） */
+  live(dst: FakeNode | FakeParam): number { return this.edges.filter((e) => e.to === dst).length }
+  /**
+   * 把所有源节点的"生命周期走完"兑现一次（真机由音频线程在 `stop` 时刻回调，这里测试手动）。
+   * 一次性音色该不该回收，只有走完整条命才看得出来，所以普查用例都从这里过一遍。
+   */
+  endAll(): number {
+    let n = 0
+    for (const x of this.nodes) {
+      if (x.kind !== 'osc' && x.kind !== 'bufferSource' && x.kind !== 'constantSource') continue
+      if (!x.startedAt.length) continue
+      x.fireEnded()
+      n++
+    }
+    return n
+  }
 }
 
 /** 真正挂到 `globalThis.window` 上的那一只：只有 `AudioEngine` 读到的字段。 */

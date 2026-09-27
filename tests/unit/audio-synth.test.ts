@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { applyEnv, isSfxKey, playFM, playNoise, playSweep, SFX_KEYS, triggerSfx } from '@/audio/synth'
+import { applyEnv, BELL_CENTS, isSfxKey, playFM, playNoise, playSweep, SFX_KEYS, triggerSfx } from '@/audio/synth'
 import { FakeAudioContext, FakeNode, FakeParam } from '../support/fakeAudio'
 
 /**
@@ -127,10 +127,13 @@ describe('VOICES 全表逐条真触发（KI-065：34 条音色第一次全部被
     const base = 174.6
     const ratios = ns.filter((n) => n.kind === 'osc').map(firstFreqOf).filter((f) => f > 0).map((f) => f / base)
     expect(ratios.length, '一个分音都没建').toBeGreaterThanOrEqual(6)
-    // 每一敲带 ±8 cents 随机失谐，所以按"接近"认比例而不是相等
-    expect(ratios.some((r) => Math.abs(r - 2.4) < 0.02), `2.4 分音不见了：${ratios.map((r) => r.toFixed(2))}`).toBe(true)
-    expect(ratios.some((r) => Math.abs(r - 3.04) < 0.02), '3.04 分音不见了').toBe(true)
-    expect(ratios.some((r) => Math.abs(r - 5.73) < 0.05), '5.73 分音不见了').toBe(true)
+    // 每一敲带 ±`BELL_CENTS` 随机失谐（生产侧同一个常数），所以容差**从它推**而不是手填：
+    // 旧写法对 3.04 用 0.02，而它的抖动上界是 3.04×8/1200 = 0.02027 ⇒ 这条判据每跑有一次自己红
+    // （KI-071 的探针 P2 撞出来的既有间歇红；40 趟实测 1 次，见 §5.9.14）。
+    const near = (r: number, x: number): boolean => Math.abs(r - x) <= x * (BELL_CENTS / 1200) + 1e-9
+    expect(ratios.some((r) => near(r, 2.4)), `2.4 分音不见了：${ratios.map((r) => r.toFixed(3))}`).toBe(true)
+    expect(ratios.some((r) => near(r, 3.04)), '3.04 分音不见了').toBe(true)
+    expect(ratios.some((r) => near(r, 5.73)), '5.73 分音不见了').toBe(true)
   })
 
   it('boss_roar 走 waveshaper 失真，曲线是真算出来的（512 点、两端 ±1、过零）', () => {
@@ -215,6 +218,36 @@ describe('VOICES 全表逐条真触发（KI-065：34 条音色第一次全部被
     // 恒等映射会在 x=-0.5 处给出 -0.5；k=6 的 tanh 折叠在那里已经几乎顶到 ±1
     expect(curve[128], 'x≈-0.5 处折叠曲线应已接近 -1').toBeLessThan(-0.9)
     expect(curve[383], 'x≈+0.5 处对称').toBeGreaterThan(0.9)
+  })
+})
+
+/**
+ * 一次性链的回收普查（KI-071 / TD-006 第二腿②）。
+ *
+ * `synth.ts` 顶上那句「所有节点即用即弃（onended 时断开）」在 KI-065 之前从没人量过，今天逐条量一遍：
+ * 把一条音色里**所有源**的一生走完，此刻还连在输出总线上的连线必须是 0 根。
+ * 这条判据抓的不是"响不响"（KI-065 那条"每个节点都要有出边"已经钉过那一侧），抓的是**另一边**：
+ * 一只不会自己消失的非 source 节点挂在总线上——它不静音、不报错，只是每响一次多留一只，
+ * 长 Boss 战里攒成一条越来越脏的输出链（登记原话：`boss_roar` 每响一次留一只 `WaveShaper`）。
+ */
+describe('一次性链必须回收：走完一生之后不许还有节点连在输出上（KI-071）', () => {
+  for (const key of SFX_KEYS) {
+    it(`${key}：所有源走完之后，连在输出总线上的连线归零`, () => {
+      const { ctx, out } = fire(key)
+      expect(ctx.edgesTo(out).length, '夹具前提：这一声确实接出去了').toBeGreaterThan(0)
+      const fired = ctx.endAll()
+      expect(fired, '一个源都没走完 = 这条判据在空转').toBeGreaterThan(0)
+      expect(ctx.live(out), `${fired} 个源都走完之后，还有 ${ctx.live(out)} 根线连在输出上（没人回收它）`)
+        .toBe(0)
+    })
+  }
+
+  it('同一个 sink 上连 20 次：走完之后残留不随次数增长（这就是"每响一次留一只"的形状）', () => {
+    const { ctx, out } = rig()
+    for (let i = 0; i < 20; i++) triggerSfx(ctx as unknown as AudioContext, out as unknown as AudioNode, 'boss_roar', 0.5 + i * 3, 1)
+    expect(ctx.live(out), '夹具前提：20 声都挂在输出上').toBeGreaterThan(0)
+    ctx.endAll()
+    expect(ctx.live(out), `响 20 次攒下 ${ctx.live(out)} 根没收的线 = 长战斗里的输出链只会越来越脏`).toBe(0)
   })
 })
 
