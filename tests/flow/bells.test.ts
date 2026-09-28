@@ -225,7 +225,7 @@ describe('《唤四钟》：修钟的闸门、跨区三步、三段合听（§2.
     w.session.close()
   })
 
-  it('盐歌线第二步也收束了：她收下首钟的断面，第二段记忆入账（用探索成果换剧情）', () => {
+  it('盐歌线第二步推进到第三步：她收下首钟的断面，第二段记忆入账（用探索成果换剧情）', () => {
     const w = makeWorld()
     w.tellHerAboutTheCrack()                 // 先真的听过断面（她说得出那段声音）
     w.session.open('npc_meg')
@@ -240,7 +240,7 @@ describe('《唤四钟》：修钟的闸门、跨区三步、三段合听（§2.
     expect(withSound).toContain('c1')
     w.session.choose('c1')
     expect(w.streaming.hasFlag('flag.meg_second_fragment')).toBe(true)
-    expect(w.quests.isComplete('q_meg'), '末步的 advanceOn 命中 ⇒ 这条线收束').toBe(true)
+    expect(w.quests.state('q_meg')).toBe('MEG.STEP3_EXTRACT')
     expect(w.last().text).toContain('唱错了一个音')
     w.session.close()
   })

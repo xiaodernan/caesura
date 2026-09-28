@@ -1,22 +1,29 @@
 [
- {
-  "id": "ws_parry_first_lesson",
-  "on": "firstParry",
-  "setFlag": "flag.parry_taught",
-  "notify": "第一次把别人的拍子原样还回去 —— 那面会挡路的音壁，从这一刻起挡不住你了"
- },
- {
-  "id": "ws_ostlara_silent",
-  "on": "bossDefeated",
-  "dataId": "en_ostlara",
-  "setFlag": "flag.ostlara_defeated",
-  "notify": "钟坠院的主人不再响 —— 沉唱堂那间 Movement 室的锁没人守了"
- },
- {
-  "id": "ws_fallenbell_opens_cavity",
-  "on": "interactUsed",
-  "interactId": "bl_fellcarillon_fallenbell",
-  "setFlag": "flag.bell_interior_open",
-  "notify": "落钟的震动顺着腔体往下走，钟壳里侧裂开一个口子"
- }
+  {
+    "id": "ws_parry_first_lesson",
+    "on": "firstParry",
+    "setFlag": "flag.parry_taught",
+    "notify": "第一次把别人的拍子原样还回去 —— 那面会挡路的音壁，从这一刻起挡不住你了"
+  },
+  {
+    "id": "ws_ostlara_silent",
+    "on": "bossDefeated",
+    "dataId": "en_ostlara",
+    "setFlag": "flag.ostlara_defeated",
+    "notify": "钟坠院的主人不再响 —— 沉唱堂那间 Movement 室的锁没人守了"
+  },
+  {
+    "id": "ws_fallenbell_opens_cavity",
+    "on": "interactUsed",
+    "interactId": "bl_fellcarillon_fallenbell",
+    "setFlag": "flag.bell_interior_open",
+    "notify": "落钟的震动顺着腔体往下走，钟壳里侧裂开一个口子"
+  },
+  {
+    "id": "ws_hersil_felled",
+    "on": "bossDefeated",
+    "dataId": "en_hersil",
+    "setFlag": "flag.hersil_felled",
+    "notify": "未竟厅的管风琴熄声 —— 谱册最暗的那一页，听见了它的休止"
+  }
 ]

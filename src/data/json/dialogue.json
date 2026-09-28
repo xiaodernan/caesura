@@ -888,13 +888,75 @@
      }
     ]
    },
-   {
-    "id": "n4",
-    "speaker": "npc_meg",
-    "emotion": "careful",
-    "text": "……从里往外。难怪她那天回来时，耳朵是红的。第二段记忆在这儿：仪典前夜，她唱错了一个音。她知道。",
-    "next": null
-   }
+{
+      "id": "n4",
+      "speaker": "npc_meg",
+      "emotion": "careful",
+      "text": "……从里往外。难怪她那天回来时，耳朵是红的。第二段记忆在这儿：仪典前夜，她唱错了一个音。她知道。",
+      "next": null
+    },
+    {
+      "id": "n5",
+      "speaker": "npc_meg",
+      "emotion": "serious",
+      "text": "第三段在未竟厅深处。那句被剪掉的耳语，被压在回响层里——你得用共鸣石把它剥出来。别问我共鸣石哪来的，未竟厅里自会有人给。",
+      "conditions": {
+        "flags": {
+          "all": [
+            "flag.meg_second_fragment"
+          ]
+        }
+      },
+      "choices": [
+        {
+          "id": "c1",
+          "text": "（记下了）",
+          "style": "silent",
+          "next": "n6"
+        }
+      ]
+    },
+    {
+      "id": "n6",
+      "speaker": "npc_meg",
+      "emotion": "even",
+      "text": "共鸣石在手，回响在耳，那句话自然会浮上来。去吧，未竟厅深处等着你。",
+      "next": null
+    },
+    {
+      "id": "n7",
+      "speaker": "npc_meg",
+      "emotion": "soft",
+      "text": "耳语剥出来了。那句话是她最后留给自己的——不是给谁听的。现在声卷全了，音栓钥匙该插进未竟厅大门了。",
+      "conditions": {
+        "flags": {
+          "all": [
+            "flag.meg_whisper_extracted"
+          ]
+        }
+      },
+      "choices": [
+        {
+          "id": "c1",
+          "text": "（把声卷交给她）",
+          "style": "blunt",
+          "effects": {
+            "setFlags": [
+              "flag.meg_soundscroll_complete"
+            ],
+            "notify": "完整声卷归位，音栓钥匙插进未竟厅大门"
+          },
+          "next": "n8"
+        }
+      ]
+    },
+    {
+      "id": "n8",
+      "speaker": "npc_meg",
+      "emotion": "quiet",
+      "text": "声卷全了。她该唱的、不该唱的，都在这儿了。以后休垒如果还有人唱这首歌，就知道是谁留下来的了。",
+      "next": null
+    }
   ]
  },
  {

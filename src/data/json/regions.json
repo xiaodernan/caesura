@@ -1479,17 +1479,37 @@
     "sightRange": 260
    }
   ],
-  "interactables": [
-   {
-    "id": "st_unfinished_hall",
-    "kind": "checkpoint",
-    "pos": {
-     "x": 0,
-     "y": 152,
-     "z": -120
+"interactables": [
+    {
+      "id": "st_unfinished_hall",
+      "kind": "checkpoint",
+      "pos": {
+        "x": 0,
+        "y": 152,
+        "z": -120
+      },
+      "setsFlag": "flag.checkpoint_unfinished_hall"
     },
-    "setsFlag": "flag.checkpoint_unfinished_hall"
-   }
+    {
+      "id": "it_unfinishedhall_whisper",
+      "kind": "inspect",
+      "pos": {
+        "x": 8,
+        "y": 152,
+        "z": -280
+      },
+      "verb": "剥耳语",
+      "verbDesc": "用共鸣石把回响里被剪掉的耳语剥出来",
+      "requiresState": {
+        "key": "state.bells.fourth_dumb",
+        "value": "RUNG"
+      },
+      "lockText": {
+        "default": "回响太厚，听不清里面有什么。",
+        "RUNG": "共鸣石在手，回响层开始松动……"
+      },
+      "setsFlag": "flag.meg_whisper_extracted"
+    }
   ],
   "music": {
    "explore": "mus_unfinished_hall_explore",

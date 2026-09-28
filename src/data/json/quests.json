@@ -195,41 +195,68 @@
     }
    ]
   },
-  {
-   "id": "q_meg",
-  "nameKey": "quest.meg",
-  "displayName": "声音拼图线",
-  "npc": "npc_meg",
-  "outcome": "完整声卷（未竟厅音栓钥匙）的归属，以及她在不在 Hub 唱歌。",
-  "steps": [
-   {
-    "state": "MEG.STEP1_OPEN",
-    "label": "《第一块拼图》：听出第一段记忆的录音地点 —— 她一直守在莉安家门口",
-    "advanceOn": {
-     "flags": [
-      "flag.meg_first_fragment"
-     ]
-    },
-    "tags": [
-     "D",
-     "H"
+{
+    "id": "q_meg",
+    "nameKey": "quest.meg",
+    "displayName": "声音拼图线",
+    "npc": "npc_meg",
+    "outcome": "完整声卷（未竟厅音栓钥匙）的归属，以及她在不在 Hub 唱歌。",
+    "steps": [
+      {
+        "state": "MEG.STEP1_OPEN",
+        "label": "《第一块拼图》：听出第一段记忆的录音地点 —— 她一直守在莉安家门口",
+        "advanceOn": {
+          "flags": [
+            "flag.meg_first_fragment"
+          ]
+        },
+        "tags": [
+          "D",
+          "H"
+        ]
+      },
+      {
+        "state": "MEG.STEP2_EXCHANGE",
+        "label": "《以物易声》：用你见过的一段声音换第二段记忆（她收下了首钟的断面）",
+        "tags": [
+          "D",
+          "M"
+        ],
+        "advanceOn": {
+          "flags": [
+            "flag.meg_second_fragment"
+          ]
+        }
+      },
+      {
+        "state": "MEG.STEP3_EXTRACT",
+        "label": "《剥耳语》：在未竟厅深处找回被剪掉的那句耳语，用共鸣石把它从回响里剥出来",
+        "advanceOn": {
+          "flags": [
+            "flag.meg_whisper_extracted"
+          ]
+        },
+        "tags": [
+          "D",
+          "H",
+          "M"
+        ]
+      },
+      {
+        "state": "MEG.STEP4_CONVERGE",
+        "label": "《声卷归一》：完整声卷归位，音栓钥匙插进未竟厅大门",
+        "advanceOn": {
+          "flags": [
+            "flag.meg_soundscroll_complete"
+          ]
+        },
+        "tags": [
+          "C",
+          "M"
+        ]
+      }
     ]
-   },
-   {
-    "state": "MEG.STEP2_EXCHANGE",
-    "label": "《以物易声》：用你见过的一段声音换第二段记忆（她收下了首钟的断面）",
-    "tags": [
-     "D",
-     "M"
-    ],
-    "advanceOn": {
-     "flags": [
-      "flag.meg_second_fragment"
-     ]
-    }
-   }
-  ]
- },
+  },
  {
   "id": "q_haltrune",
   "nameKey": "quest.haltrune",
