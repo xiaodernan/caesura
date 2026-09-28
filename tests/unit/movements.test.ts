@@ -1,3 +1,4 @@
+import { bus } from '@/core/EventBus'
 import { describe, expect, it } from 'vitest'
 import { registerGameData, movements as movementsData } from '@/data'
 import type { MovementConfig, MovementData } from '@/data/schema'
@@ -49,29 +50,31 @@ describe('§7.1 点亮一页 = 吃掉数据里点名的那件东西', () => {
     expect(cfg()).toBe(movementsData) // registry 里那份与导出的那份是同一个对象
     expect(cfg().pages.length).toBeGreaterThan(0)
     for (const m of cfg().movements) expect(cfg().pages.some((p) => p.id === m.page), m.id).toBe(true)
-    for (const p of cfg().pages) expect(p.unlock.count, `${p.id} 的点亮源要点名物品`).toBeTruthy()
+    for (const p of cfg().pages) expect(p.unlock.count || p.unlock.flag, `${p.id} 的点亮源要写物品或旗标`).toBeTruthy()
   })
 
   it('东西不够就不亮，而且一件都不扣（顺序反了就是「钱花了页没亮」）', () => {
     const b = book()
     const page = cfg().pages[0]
+    if (page.unlock.flag) throw new Error('pages[0] 改成旗标页了：这条 poor 腿要换一张吃实物的页')
     const inv = new Inventory('mv')
-    inv.add(page.unlock.item, page.unlock.count - 1)
+    inv.add(page.unlock.item ?? '', (page.unlock.count ?? 1) - 1)
     expect(b.unlockPage(page.id, inv)).toMatchObject({ ok: false, reason: 'poor' })
     expect(b.isLit(page.id)).toBe(false)
-    expect(inv.count(page.unlock.item)).toBe(page.unlock.count - 1)
+    expect(inv.count(page.unlock.item ?? '')).toBe((page.unlock.count ?? 1) - 1)
   })
 
   it('够就点亮并扣款；重复点亮不再收第二份学费', () => {
     const b = book()
     const page = cfg().pages[0]
+    if (page.unlock.flag) throw new Error('pages[0] 改成旗标页了：这条「只吃点名数量」腿要换一张吃实物的页')
     const inv = new Inventory('mv')
-    inv.add(page.unlock.item, page.unlock.count + 3)
+    inv.add(page.unlock.item ?? '', (page.unlock.count ?? 1) + 3)
     expect(b.unlockPage(page.id, inv).ok).toBe(true)
     expect(b.isLit(page.id)).toBe(true)
-    expect(inv.count(page.unlock.item), '只吃点名的数量，多余的留着换别的').toBe(3)
+    expect(inv.count(page.unlock.item ?? ''), '只吃点名的数量，多余的留着换别的').toBe(3)
     expect(b.unlockPage(page.id, inv)).toMatchObject({ ok: false, reason: 'lit' })
-    expect(inv.count(page.unlock.item)).toBe(3)
+    expect(inv.count(page.unlock.item ?? '')).toBe(3)
   })
 
   it('页 id 认不出来就是认不出来，不会顺手点亮别的页', () => {
@@ -84,10 +87,12 @@ describe('§7.1 点亮一页 = 吃掉数据里点名的那件东西', () => {
     const b = book()
     const inv = rich()
     for (const page of cfg().pages) {
+      // 旗标页（乐章 IV）不吃实物：让「恩希尔终段」发生，然后它点亮时一分钱都不花
+      if (page.unlock.flag) bus.emit('world.flag', { key: page.unlock.flag, value: true })
       const before = Object.fromEntries(TRACKED.map((id) => [id, inv.count(id)]))
       expect(b.unlockPage(page.id, inv).ok, page.id).toBe(true)
       for (const id of TRACKED) {
-        const want = id === page.unlock.item ? before[id] - page.unlock.count : before[id]
+        const want = id === (page.unlock.item ?? '') ? before[id] - (page.unlock.count ?? 0) : before[id]
         expect(inv.count(id), `${page.id} 不该动 ${id}`).toBe(want)
       }
     }

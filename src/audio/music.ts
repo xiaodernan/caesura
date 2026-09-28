@@ -30,7 +30,7 @@
  */
 import { bus } from '../core/EventBus'
 import type { MusicGrid } from '../core/RhythmClock'
-import type { AmbienceBed, AmbienceBell, ExploreForm, ExploreScore } from '../data/schema'
+import type { AmbienceBed, AmbienceBell, BattleScore, BattleTonal, ExploreForm, ExploreScore } from '../data/schema'
 import { playBell, playNoise, playSweep } from './synth'
 
 declare module '../core/EventBus' {
@@ -55,17 +55,22 @@ declare module '../core/EventBus' {
      * 才在实现层真的有顺序可依（先 `ambience` 后 `explore`：前者开出 crossfade 窗口，后者看见窗口就把名册押后）。
      */
     'audio.music.explore': { id: string }
+    /**
+     * KI-080（§1.1 + §2.2 的"遭遇层"）：换战斗档。载荷形状与上面两条**完全一样**（只有 id，
+     * id→行 的解析住在 `AudioEngine`），发射点也是同一处（`main.ts` 换区那一格连着发三条 + 开局那三条）。
+     * 它与 `explore` 的区别在消费侧：那一条响在环境层、跟着 crossfade 窗口走；这一条只会在
+     * **交战时**被奏出来，所以它不吃窗口——换行之后下一拍就按新行走，已经排出去的拍一张不抹（KI-066 那条纪律）。
+     */
+    'audio.music.battle': { id: string }
   }
 }
 
 /**
- * 低音 ostinato：R-1 动机 C-Eb-G-Bb 的低八度节奏化（docs §1.2 音乐宪法）
- *
- * ⚠️ 这一串**不跟着区域主音走**，而且是故意的：§1.1 那一格写的是"战斗遭遇 = 主音不变、色彩变暗"，
- * 所以 C 属于**玩法调性系统**（全局主题调），而区域主音只属于**环境层**。把这里也换成区域主音
- * 就是把 §1.1 那句抹了。
+ * 战斗低音**不再抄一份音高**（KI-080）。上面那一串 `OSTINATO` 是这张表里最后一个音高副本：
+ * 它把 §1.1「战斗主音不变」写对了一件事（那是全局的 C），却把"低音走哪一条线"写死成了唯一一个答案，
+ * 于是 `regions.json > music.battle` 那 5 个 id 从落地那天起就没有读者。现在：
+ * **主音留在这里**（`BATTLE_ROOT_HZ`，全局的 C2），**线本身进 `battle.json`**（`pattern` 那一格）。
  */
-const OSTINATO = [65.41, 65.41, 98.0, 155.56, 116.54, 65.41, 77.78, 98.0]
 /** docs §1.2 转场规则：跨区 **8 小节** crossfade。小节长度吃当前网格，所以这里只有格数 */
 const XFADE_BARS = 8
 /**
@@ -80,7 +85,17 @@ const XFADE_NO_GRID_SEC = 1
  * 三种音高变形都是从它**现推**的（下面的 `motifDegrees`），所以"数据里那条旋律"能指的形状只有三种。
  * 度数为何不进了 `explore.json`：那等于给同一句话两个主人（ KI-074 拆手抄名单拆的正是这种东西）。
  */
-const MOTIF_R1 = [0, 3, 7, 10]
+export const MOTIF_R1 = [0, 3, 7, 10]
+
+/**
+ * 战斗低音的**主音**（docs §1.1「战斗遭遇 = 主音不变、色彩变暗」里那个不变的 C2 = 65.41Hz）。
+ *
+ * 它与上面那张表的区别正是这一格存在的理由：`rootHz` 属于**区域**（§1.2 一区一个，进 `ambience.json`），
+ * 而战斗主音属于**玩法调性系统**（全局主题调），跨区不许变——所以它既不在 `battle.json` 里，
+ * 也不跟着喂进来的那张床走（§1.1 那一格写的是"仍在同一个世界，但歌走调了"）。
+ * `battle.json` 的每一行只写"这一档走哪几个音级"（见 `schema.ts > BattleTonal.pattern`）。
+ */
+const BATTLE_ROOT_HZ = 65.41
 
 /** 旋律声部比数据里那个主音高多少个八度：§1.2 给的是**音级**（F/C/G…，与 drone 同音高记录），而 L3 要盖在 L1 之上 */
 const MELODY_OCTAVES = 2
@@ -90,6 +105,21 @@ export function motifDegrees(form: ExploreForm): number[] {
   if (form === 'inversion') return MOTIF_R1.map((d) => 0 - d)   // 不是 `-d`：那给主音留下 `-0`，而度数是要拿去比对的数
   if (form === 'retrograde') return [...MOTIF_R1].reverse()
   return [...MOTIF_R1]
+}
+
+/**
+ * `battle.json > pattern` 那一个格子的解码（KI-080）：数据写的是**折起来的一格** ——
+ * `动机第几音` 放在低位、`第几档八度` 放在高位，于是"宪法之外的音"在数据里根本没有写法
+ * （§1.2 那条音乐宪法在这条腿上的形状版，与 KI-079 那支判别联合同一条纪律）。
+ *
+ * 步长取 `MOTIF_R1.length` 而不是写死 4：动机的音数是那一格的主人，这里只是用它换算。
+ * 代价也要如实说 —— `scripts/battle-rules.mjs > MAX_PATTERN_CELL` 那个上界是按"四音 × 两档"算的，
+ * 动机增减一个音就会换意思，所以 `tests/unit/battle-table.test.ts` 有一条把两者对账的用例。
+ */
+export function battleOstinatoHz(cell: number): number {
+  const deg = cell % MOTIF_R1.length
+  const oct = Math.floor(cell / MOTIF_R1.length)
+  return BATTLE_ROOT_HZ * 2 ** ((MOTIF_R1[deg] + 12 * oct) / 12)
 }
 
 export class MusicLayer {
@@ -128,6 +158,14 @@ export class MusicLayer {
   private nextBeat = 0
   private beatIdx = 0
   private nextChime = 0
+  /**
+   * 此刻这一区的战斗档（`battle.json` 的一行）。**没有默认值**（KI-080）：
+   * 曾经这里写死过一份 `OSTINATO`，于是 `music.battle` 那 5 个 id 谁也没读，而战斗曲永远只有一条线。
+   * `null` = 那条腿没接上 ⇒ 不排拍并说一次（与拍网那一格同一口径）。
+   */
+  private battle: BattleScore | null = null
+  /** 没收到战斗档那一句话只说一次；与"没网格""没落点"那两条各是一个主人，共用会互相静音 */
+  private warnedNoBattle = false
   private battleOn = false
   private battleStopAt = 0
   private offEncounter: (() => void) | null = null
@@ -146,7 +184,9 @@ export class MusicLayer {
     /** KI-077：开局那一张床（`main.ts` 在建图之前发那条事件、`AudioEngine` 缓存并解析后递进来）。 */
     bed: AmbienceBed | null,
     /** KI-079：开局那一区的探索曲。缓存的理由与上面那一条一字不差（建层比建引擎晚），两支事件在建图之前都发完了 */
-    song: ExploreScore | null
+    song: ExploreScore | null,
+    /** KI-080：开局那一区的战斗档。同一条缓存理由，同一条"没有就是没有"的口径（不排拍并说一次） */
+    battle: BattleScore | null
   ) {
     this.setGrid(grid)
     this.ambGain = ctx.createGain()
@@ -162,6 +202,7 @@ export class MusicLayer {
     this.bassLp.connect(this.battleGain)
     if (bed) this.applyBed(bed, 0) // 开局不 crossfade：还没有旧床可淡，直接建
     if (song) this.applyExplore(song) // 同上：开局那条旋律不需要淡入，第一次 `update()` 就起音
+    if (battle) this.setBattle(battle) // 同上：开局那一区的战斗档，第一次交战第一拍就按它走
   }
 
   /**
@@ -228,6 +269,29 @@ export class MusicLayer {
     // 换曲 = 从动机第一个音重新开始念（旧曲那一句已经排出去的音一张不抹，与 KI-066 同一条纪律）
     this.noteIdx = 0
     this.nextNote = 0
+  }
+
+  /**
+   * KI-080：换战斗档。它与上面两条的区别只有一件：**没有窗口可等**。
+   * §1.2 那句「旋律层最后」管的是环境总线（`ambGain`）上的东西，而这一行只在交战时被奏出来，
+   * 换它不需要淡变——已经在排的那几拍一张不抹（KI-066 的纪律），从下一拍起走新行那条线。
+   * 所以 `main.ts` 那一格里它排在 `explore` 之后不影响任何语义：三条事件里只有后两条之间有序可依。
+   */
+  /**
+   * 这里刻意**不写** `applyBed`/`applyExplore` 那句"同一行重发：一次都不动"的挡板。
+   * 那两处要挡板是因为换行会建图／归零读数，重发的代价看得见；而这一行只是被存下来、
+   * 由下一拍去读——重发与不重发在图上、在 `beatIdx` 上都没有任何差别。
+   * 写一道没有可观测差别的守卫就是 §55 说的没人消费的东西，也是 KI-061 登记过的那一类
+   * "今天没有证人的保险"（这一句是本批摘掉旧比较、跑全套读数一位不动之后写的，见 §5.9.17 的变异账）。
+   */
+  setBattle(battle: BattleScore | null): void {
+    // `null` = 那条事件压根没到，或者 id 认不出（后一种 `AudioEngine` 已经说过一次）：
+    // 保留上一档，别把正在演的战斗层掐掉——与 `setExplore(null)` 同一条"换区失败不许变哑"的口径。
+    if (!battle) return
+    this.battle = battle
+    // ⚠️ 这里**不清** `warnedNoBattle`。今天它其实没有证人：接上行之后 `battle` 再也回不到 `null`
+    // （上面那句 `if (!battle) return` 的语义就是"保留上一档"），所以清与不清读不出差别 ——
+    // 按 KI-061 的口径这是一处"今天没有证人的保险"，如实登记在这里，而不是补一条把它喂活的断言。
   }
 
   /** §1.2 那 8 小节有多长：吃当前网格。没有网格时走实名的 1 秒兜底，并且说一次 */
@@ -482,6 +546,24 @@ export class MusicLayer {
       }
       return
     }
+    /**
+     * KI-080：这一档的两个"没有声音"必须分得开，所以这里是两道门而不是一个判断：
+     *  · `battle === null` ⇒ **装配缺了一条腿**（区域 id 打错 / 表少一行 / `AudioEngine` 那条订阅断了）。
+     *    一声都不排，并且说一句——静悄悄地没有战斗音乐会被读成"引擎坏了"，而它正是这个意思。
+     *  · `noMusic: true` ⇒ **数据说的安静**（§6.3 万籁「本 Boss 无配乐」）。一声都不排，也**不说**：
+     *    那不是故障。增益仍然淡入淡出，所以 §16 那句"音乐停"在这一区本来就无话可说。
+     * 两道门都排在 `while` 之前：`beatIdx` 是不走的，于是接上行之后的第一拍就是那条线的第一个音，
+     * 而不是"断掉那一段被跳过的拍"欠下来的位置。
+     */
+    const row = this.battle
+    if (row === null) {
+      if (!this.warnedNoBattle) {
+        this.warnedNoBattle = true
+        bus.emit('log', { level: 'warn', msg: 'music: 没收到战斗档（audio.music.battle → battle.json 那一行），战斗层不排拍' })
+      }
+      return
+    }
+    if ('noMusic' in row) return
     if (this.nextBeat === 0) this.nextBeat = now + 0.05
     /**
      * KI-067：落后超过**一拍**时重新锚定，不补排欠账。下面那道 `while` 的循环条件是
@@ -503,7 +585,7 @@ export class MusicLayer {
       bus.emit('log', { level: 'warn', msg: `music: 调度落后 ${behind.toFixed(2)}s，跳过 ${Math.round(behind / this.beatSec)} 拍重新锚定（不补排欠账）` })
     }
     while (this.nextBeat < now + 0.25 && (!this.battleStopAt || this.nextBeat < this.battleStopAt)) {
-      this.scheduleBeat(Math.max(this.nextBeat, now + 0.02), this.beatIdx)
+      this.scheduleBeat(Math.max(this.nextBeat, now + 0.02), this.beatIdx, row)
       this.nextBeat += this.beatSec
       this.beatIdx++
     }
@@ -515,8 +597,12 @@ export class MusicLayer {
    * 脉冲鼓 + ostinato：鼓点按**当前网格的小节形状**走（区域 4/4、奥斯塔拉 3/4）。
    * 第 1、3 拍驼鼓，其余拍军鼓边击 —— 4/4 下就是原来的 1/3 驼鼓、2/4 军鼓；
    * 3/4 下成为"咚-哒-咚"的玛祖卡低音（§6.1 的弹反重拍落在第 1 拍）。
+   *
+   * KI-080：低音那条线与钟的周期由调用方把**那一行**递进来（`update()` 里那两道门已经判过"没有行"
+   * 与 `noMusic`，这里再问一次就是到不了的一行 —— KI-065 用覆盖率读数拆过的那类"到不了的守卫"）。
+   * 鼓型（哪几拍驼鼓）与各家峰值仍留在代码里：五档真数据在那一格全同，写成字段就是一列没有信息量的数据。
    */
-  private scheduleBeat(t: number, i: number): void {
+  private scheduleBeat(t: number, i: number, row: BattleTonal): void {
     const ctx = this.ctx
     const pos = i % this.beatsPerBar
     const kick = pos === 0 || pos === 2
@@ -527,12 +613,12 @@ export class MusicLayer {
       playNoise(ctx, this.battleGain, t, { type: 'highpass', f0: 1400, decay: 0.08, peak: 0.09 }) // 军鼓/边击
       playSweep(ctx, this.battleGain, t, { f0: 200, f1: 170, dur: 0.05, peak: 0.12 })
     }
-    // 低音 ostinato（八分推进感：每拍 + 反拍短音）
-    const root = OSTINATO[i % OSTINATO.length]
+    // 低音 ostinato（八分推进感：每拍 + 反拍短音）：这一行走到哪一音 = `拍号 % 行长`
+    const root = battleOstinatoHz(row.pattern[i % row.pattern.length])
     playSweep(ctx, this.bassLp, t, { f0: root, dur: 0.22, peak: 0.24, type: 'sawtooth' })
     playSweep(ctx, this.bassLp, t + this.beatSec * 0.5, { f0: root * 2, dur: 0.1, peak: 0.08, type: 'sawtooth' })
-    // 每两小节一次钟 accent（奥斯塔拉"节拍即机制"底色）：周期跟着小节形状走，不是固定的 8 拍
-    if (i % (2 * this.beatsPerBar) === 0) playBell(ctx, this.battleGain, t, 65.41 * 4, { dur: 2.4, peak: 0.06, hammer: false })
+    // 钟的 accent：周期 = 那一档写的"每隔几小节"× 当前网格的小节长度（所以 3/4 下它跟着变，不是固定 8 拍）
+    if (i % (row.bellEveryBars * this.beatsPerBar) === 0) playBell(ctx, this.battleGain, t, BATTLE_ROOT_HZ * 4, { dur: 2.4, peak: 0.06, hammer: false })
   }
 }
 

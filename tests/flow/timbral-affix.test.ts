@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { bus } from '@/core/EventBus'
 import { GameTime, TICK_DT } from '@/core/Time'
 import type { Input } from '@/core/Input'
 import { RhythmClock } from '@/core/RhythmClock'
@@ -46,7 +47,8 @@ function makeWorld(rank = 7) {
     const mv = move(movementId)
     const page = book.page(mv.page)!
     if (!book.isLit(page.id)) {
-      rpg.inv.add(page.unlock.item, page.unlock.count)
+      if (page.unlock.flag) bus.emit('world.flag', { key: page.unlock.flag, value: true })
+      else rpg.inv.add(page.unlock.item ?? '', page.unlock.count ?? 0)
       expect(book.unlockPage(page.id, rpg.inv).ok).toBe(true)
     }
     expect(book.equip(slot, movementId, rpg.prog.rank).ok, `装上 ${movementId}`).toBe(true)

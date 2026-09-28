@@ -1,3 +1,4 @@
+import { bus } from '@/core/EventBus'
 import { describe, expect, it, beforeAll, vi } from 'vitest'
 import { registerGameData, regions } from '@/data'
 import { RpgRuntime } from '@/rpg/Runtime'
@@ -287,11 +288,12 @@ describe('调音桩面板：状态机与内容', () => {
     click(root, 'lit', page.id)
     expect(rt.moves.isLit(page.id), '一件解锁物都没有 ⇒ 页不亮').toBe(false)
     expect(notes.some((n) => n.includes('解锁物不足'))).toBe(true)
+    if (page.unlock.flag) bus.emit('world.flag', { key: page.unlock.flag, value: true })
 
-    rt.inv.add(page.unlock.item, page.unlock.count)
+    rt.inv.add(page.unlock.item ?? '', page.unlock.count ?? 0)
     click(root, 'lit', page.id)
     expect(rt.moves.isLit(page.id)).toBe(true)
-    expect(rt.inv.count(page.unlock.item)).toBe(0)
+    expect(rt.inv.count(page.unlock.item ?? '')).toBe(0)
     expect(notes.some((n) => n.includes('谱册点亮'))).toBe(true)
 
     const need = rt.moves.slotRank(0)!

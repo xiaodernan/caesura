@@ -6,7 +6,7 @@ import { RhythmClock } from '@/core/RhythmClock'
 import type { MusicGrid } from '@/core/RhythmClock'
 import { registry } from '@/core/Registry'
 import { registerGameData, playerBase } from '@/data'
-import type { MovesetData, WeaponData } from '@/data/schema'
+import type { MovesetData, RegionData, WeaponData } from '@/data/schema'
 import { PlayerController } from '@/player/ThirdPersonController'
 import { AISystem } from '@/ai/AISystem'
 import { CombatManager } from '@/combat/CombatManager'
@@ -79,6 +79,12 @@ function world() {
 
   const engine = new AudioEngine()
   engine.start()
+  /**
+   * KI-080：战斗层现在**只奏 `battle.json` 里的那一行**（代码里那份 `OSTINATO` 手抄已经拆了），
+   * 所以这一条整链要照组合根的样子发同一句 —— 发的就是脚下那一区（休垒）在 `regions.json` 里写的那个 id，
+   * 不是测试自己编的：整链腿的意义在于"真表 + 真发射点 + 真调度"三段都走一遍。
+   */
+  bus.emit('audio.music.battle', { id: registry.get<RegionData>('rg_resthold').music.battle })
   const ctx = made[made.length - 1]
   const musicBus = ctx.nodes.find((n) => n.kind === 'gain' && Math.abs(n.params.gain.value - 0.5) < 1e-9) as FakeNode
   expect(musicBus, '图里没有音乐总线（电平 0.5）').toBeTruthy()

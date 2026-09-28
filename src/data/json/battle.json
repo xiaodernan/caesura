@@ -1,0 +1,26 @@
+[
+  {
+    "id": "mus_shared_battle",
+    "pattern": [0, 0, 2, 5, 3, 0, 1, 2],
+    "bellEveryBars": 2
+  },
+  {
+    "id": "mus_camp_assault",
+    "pattern": [0, 0, 0, 2, 0, 0, 3, 2],
+    "bellEveryBars": 4
+  },
+  {
+    "id": "mus_minibattle_ostlara",
+    "pattern": [0, 1, 2, 3],
+    "bellEveryBars": 4
+  },
+  {
+    "id": "mus_hidden_battle_myriad",
+    "noMusic": true
+  },
+  {
+    "id": "mus_boss_hersil",
+    "pattern": [3, 2, 1, 0, 3, 2, 1, 0],
+    "bellEveryBars": 2
+  }
+]

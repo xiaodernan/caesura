@@ -78,13 +78,9 @@ export function exploreFindings(rows, regions) {
 
   // 与 regions.json 双向对账（两个方向都是 ERROR：少一行 = 那一区永远没有旋律，多一行 = §55 死数据）
   const refBy = new Map()
-  const battleRefs = new Map()
   for (const rg of (Array.isArray(regions) ? regions : []).filter(isObj)) {
     const e = isObj(rg.music) ? rg.music.explore : undefined
     if (isStr(e)) refBy.set(e, [...(refBy.get(e) ?? []), isStr(rg.id) ? rg.id : '(无 id)'])
-    const b = isObj(rg.music) ? rg.music.battle : undefined
-    // 战斗曲那一格今天**没有表**：见下面那条 WARN 的理由。这里只把 id 收集起来，判据不在这张表上
-    if (isStr(b)) battleRefs.set(b, [...(battleRefs.get(b) ?? []), isStr(rg.id) ? rg.id : '(无 id)'])
   }
   for (const [e, regs] of refBy) {
     if (!ids.has(e)) err(e, `${regs.join(', ')} 指它当探索曲，但表里没有这一行 ⇒ 进那一区永远没有旋律（铃点照响，所以它读起来像"曲子少了一段"而不是"坏了"）`)
@@ -92,20 +88,6 @@ export function exploreFindings(rows, regions) {
   }
   for (const id of ids) {
     if (!refBy.has(id)) err(id, '没有任何区域指它 ⇒ §55 死数据：这一行的旋律永远不会被奏出来')
-  }
-
-  /**
-   * 诚实登记（不是豁免）：`music.battle` 指的是一张**还不存在**的表——今天的战斗音乐只有一张全局层
-   * （`music.ts > OSTINATO` 那份 C + 区域网格），所以这一格既不是死数据也不是待接线的机制腿，
-   * 它缺的是"探索/战斗两档 BPM"那个数据形状本身。判 WARN 而不是 ERROR：把它判死等于逼下一批
-   * 偷偷造一张没人奏的表来让门禁闭嘴。谁建了 `battle.json` 并接上读者，这一条连同话术一起消失
-   * （它是从 regions 现算的，不是一张手抄名单，所以不需要"销账"）。
-   */
-  if (battleRefs.size > 0) {
-    out.push({
-      level: 'warn', file: 'regions.json', where: 'music.battle',
-      msg: `${battleRefs.size} 个战斗曲 id（${[...battleRefs.keys()].join(', ')}）指向一张还不存在的表：战斗音乐今天只有一张全局层，§2.2 那句"同一区域的探索/战斗两档"还没有数据形状。要么建 battle.json 并接读者（与 ambience/explore 同一只手解析），要么把这一格从 RegionMusic 删掉`,
-    })
   }
   return out
 }

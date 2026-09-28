@@ -1,3 +1,4 @@
+import { bus } from '@/core/EventBus'
 import { registry } from '@/core/Registry'
 import type { AttrKey, FrameData, MovementConfig, MovementData, MovementLevel, MovementPage } from '@/data/schema'
 import type { Inventory } from './Inventory'
@@ -75,7 +76,7 @@ export interface MovementSnapshot {
   passives?: Record<string, number>
 }
 
-export type MoveFail = 'unknown' | 'lit' | 'dark' | 'max' | 'poor' | 'bad-slot' | 'locked-slot'
+export type MoveFail = 'unknown' | 'lit' | 'dark' | 'max' | 'poor' | 'flag' | 'bad-slot' | 'locked-slot'
 
 export interface MoveResult {
   ok: boolean
@@ -106,16 +107,43 @@ export class MovementBook {
 
   isLit(pageId: string): boolean { return this.lit.has(pageId) }
 
+  /* ---------------- 页解锁源（§7.1 二形：item 吃实物 / flag 被世界见证，KI-037 改判） ---------------- */
+
+  /** 页旗标的本地缓存：`world.flag` 广播是唯一写路径（与 Interactables/Streaming 同一条纪律） */
+  private readonly flags = new Set<string>()
+  private readonly offFlag = bus.on('world.flag', (f) => {
+    if (f.value !== false && f.value !== 0 && f.value !== '') this.flags.add(f.key)
+    else this.flags.delete(f.key)
+  })
+  /** 测试卫生：一次性的书可以摘掉监听（生产里书与 Runtime 同寿，不需要调） */
+  dispose(): void { this.offFlag() }
+
+  hasFlag(key: string): boolean { return this.flags.has(key) }
+
+  /** 这一刻点不点得亮（渲染层禁用按钮与 unlockPage 判据共用这一个答案） */
+  canUnlock(pageId: string, inv: Inventory): boolean {
+    const p = this.page(pageId)
+    if (!p || this.lit.has(pageId)) return false
+    if (p.unlock.flag) return this.hasFlag(p.unlock.flag)
+    return inv.count(p.unlock.item ?? '') >= (p.unlock.count ?? 1)
+  }
+
   /**
    * 吸收解锁源点亮一页。扣得动才点亮——顺序反了就会出现「钱花了页没亮」。
    * 已经亮着的页不再收物品（`reason: 'lit'`），否则玩家可以拿多余的核去换别的。
+   * 旗标形（乐章 IV）：不扣任何东西——它要的不是实物，是「恩希尔终段」那次见证。
    */
   unlockPage(pageId: string, inv: Inventory): MoveResult {
     const p = this.page(pageId)
     if (!p) return { ok: false, reason: 'unknown' }
     if (this.lit.has(pageId)) return { ok: false, reason: 'lit' }
-    if (inv.count(p.unlock.item) < p.unlock.count) return { ok: false, reason: 'poor' }
-    inv.remove(p.unlock.item, p.unlock.count)
+    if (p.unlock.flag) {
+      if (!this.hasFlag(p.unlock.flag)) return { ok: false, reason: 'flag' }
+      this.lit.add(pageId)
+      return { ok: true }
+    }
+    if (inv.count(p.unlock.item ?? '') < (p.unlock.count ?? 1)) return { ok: false, reason: 'poor' }
+    inv.remove(p.unlock.item ?? '', p.unlock.count ?? 1)
     this.lit.add(pageId)
     return { ok: true }
   }
@@ -333,5 +361,6 @@ export function unlockItemName(pageId: string): string {
   const cfg = registry.get<MovementConfig>('movements')
   const p = cfg.pages.find((x) => x.id === pageId)
   if (!p) return pageId
-  return `${itemOf(p.unlock.item).displayName} ×${p.unlock.count}`
+  if (p.unlock.flag) return '恩希尔的最后一拍'
+  return `${itemOf(p.unlock.item ?? '').displayName} ×${p.unlock.count ?? 1}`
 }

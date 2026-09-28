@@ -25,10 +25,12 @@ import {
 import {
   EXPLORE_ATONAL_FIELDS, EXPLORE_FORMS, EXPLORE_TONAL_FIELDS, EXPLORE_WAVES, exploreFindings,
 } from './explore-rules.mjs'
+// KI-080：战斗档表的判据本体，同一族理由（两端都要量得动）。`report.num` 管的 `bellEveryBars` 留在本文件。
+import { BATTLE_SILENT_FIELDS, BATTLE_TONAL_FIELDS, battleFindings } from './battle-rules.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const JSON_DIR = resolve(ROOT, 'src/data/json')
-const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json', 'shop.json', 'states.json', 'ambience.json', 'explore.json']
+const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json', 'shop.json', 'states.json', 'ambience.json', 'explore.json', 'battle.json']
 // Phase 6-B：对话风格枚举与任务标注（narrative.md §3.2 / §28 图例）
 const CHOICE_STYLES = new Set(['blunt', 'poetic', 'silent', 'provoke'])
 const QUEST_TAGS = new Set(['D', 'C', 'H', 'M'])
@@ -157,6 +159,9 @@ const VOCAB_PAIRS = [
   { at: 'ExploreTonal', from: 'src/data/schema.ts', name: '有调探索曲字段', source: (c) => interfaceFields(c.blocks, 'ExploreTonal'), copied: EXPLORE_TONAL_FIELDS, where: 'EXPLORE_TONAL_FIELDS' },
   { at: 'ExploreAtonal', from: 'src/data/schema.ts', name: '无调探索曲字段', source: (c) => interfaceFields(c.blocks, 'ExploreAtonal'), copied: EXPLORE_ATONAL_FIELDS, where: 'EXPLORE_ATONAL_FIELDS' },
   { at: 'ExploreTonal.wave', from: 'src/data/schema.ts', name: '探索曲波形', source: (c) => fieldUnion(c.blocks, 'ExploreTonal', 'wave'), copied: [...EXPLORE_WAVES], where: 'EXPLORE_WAVES' },
+  /* ---- KI-080：战斗档那两支字段表（鼓型不在这里：五档真数据那一格全同，一列没有信息量的数据就不进表，见 schema 那段） ---- */
+  { at: 'BattleTonal', from: 'src/data/schema.ts', name: '有配乐战斗档字段', source: (c) => interfaceFields(c.blocks, 'BattleTonal'), copied: BATTLE_TONAL_FIELDS, where: 'BATTLE_TONAL_FIELDS' },
+  { at: 'BattleSilent', from: 'src/data/schema.ts', name: '无配乐战斗档字段', source: (c) => interfaceFields(c.blocks, 'BattleSilent'), copied: BATTLE_SILENT_FIELDS, where: 'BATTLE_SILENT_FIELDS' },
 ]
 
 /**
@@ -1740,6 +1745,33 @@ function validateExplore() {
   }
 }
 
+// ---- battle.json（KI-080：`music.battle` 那 5 个 id 从"指向一张不存在的表"变成有读者的一行）----
+/**
+ * 一行的战斗档 = 进那一区开打时奏的那一档（§1.1「战斗遭遇」+ §2.2 那张表缺的"遭遇层"）。
+ * 判据本体在 `battle-rules.mjs`（①字段集合落在 schema 那两支之一，且**主音格/速度格出现即红**——
+ * §1.1「主音不变」与 KI-066「拍网只有一个主人」的数据侧 ②有配乐/无配乐两支的形状不能混
+ * ③低音线每一项是 `R-1` 派生的音级、不越八度上界 ④与 `regions.json > music.battle` 双向对账 +
+ * `kickBeats` 越界即死数据）。这里剩两张嘴：findings → ERROR/WARN，加 `report.num` 管 `bellEveryBars`。
+ */
+function validateBattle() {
+  const file = 'battle.json'
+  const list = data[file]
+  if (!isArr(list)) { report.error(file, file, '顶层必须是数组'); return }
+  for (const f of battleFindings(list, data['regions.json'] ?? [])) {
+    if (f.level === 'warn') report.warn(f.file, f.where, f.msg)
+    else report.error(f.file, f.where, f.msg)
+  }
+  /**
+   * `bellEveryBars` ≥1 的整数：`i % (bars × beatsPerBar)`，写 0 就是 `i % 0 = NaN`（永远不响而无人说话），
+   * 写小数就是"每隔 1.5 小节"那种谁也走不到的格。想表达"钟也不打"请整行换 `noMusic` 那一支。
+   */
+  for (const [i, row] of list.entries()) {
+    if (!isObj(row) || row.noMusic === true) continue
+    const w = isStr(row.id) ? row.id : `[${i}]`
+    report.num(file, `${w}.bellEveryBars`, row.bellEveryBars, { min: 1, int: true, name: 'bellEveryBars' })
+  }
+}
+
 // ---- movements.json ----
 /** loot.json 里真正会掉出来的物品全集（rolls + firstKill）。点亮源必须落在这里面，否则那一页永远点不亮 */
 function lootedItemIds() {
@@ -1796,15 +1828,22 @@ function validateMovements(itemIds) {
       if (!isStr(p.nameKey)) report.error(file, `${w}.nameKey`, '必填')
       if (!isStr(p.displayName)) report.error(file, `${w}.displayName`, '必填')
       if (!isStr(p.desc) || p.desc.length < 5) report.error(file, `${w}.desc`, '需要一句世界内解释（§19）')
-      if (!isObj(p.unlock)) report.error(file, `${w}.unlock`, '必须是 { item, count } —— 点亮源写在数据里，不是代码里的 if')
+      if (!isObj(p.unlock)) report.error(file, `${w}.unlock`, '必须是 { item, count } 或 { flag } —— 点亮源写在数据里，不是代码里的 if')
       else {
-        for (const k of Object.keys(p.unlock)) if (k !== 'item' && k !== 'count') report.error(file, `${w}.unlock.${k}`, '不认的字段（§55）')
-        if (!isStr(p.unlock.item)) report.error(file, `${w}.unlock.item`, '必填')
-        else {
+        for (const k of Object.keys(p.unlock)) if (k !== 'item' && k !== 'count' && k !== 'flag') report.error(file, `${w}.unlock.${k}`, '不认的字段（§55）')
+        const formItem = isStr(p.unlock.item)
+        const formFlag = isStr(p.unlock.flag)
+        if (!formItem && !formFlag) report.error(file, `${w}.unlock`, 'item 与 flag 至少写一个（两种解锁源二选一）')
+        if (formItem && formFlag) report.error(file, `${w}.unlock`, 'item 与 flag 二选一——一个解锁源只有一种主人（KI-037 改判）')
+        if (formItem) {
           if (!itemIds.has(p.unlock.item)) report.error(file, `${w}.unlock.item`, `悬空引用：'${p.unlock.item}' 不在 items.json`)
           else if (!lootable.has(p.unlock.item)) report.error(file, `${w}.unlock.item`, `没有任何掉落表给出 '${p.unlock.item}'：这一页永远点不亮（unreachable content）`)
+          report.num(file, `${w}.unlock.count`, p.unlock.count, { min: 1, int: true, name: 'count' })
         }
-        report.num(file, `${w}.unlock.count`, p.unlock.count, { min: 1, int: true, name: 'count' })
+        if (formFlag) {
+          // 旗标形（KI-037 乐章 IV）：读方登记进 collectFlagUsage 的对账（写方=worldstate 的 bossDefeated 规则）
+          if (!p.unlock.flag.startsWith('flag.')) report.error(file, `${w}.unlock.flag`, `命名必须是 flag.*：${p.unlock.flag}`)
+        }
       }
     })
   }
@@ -2073,6 +2112,11 @@ function collectFlagUsage() {
     if (isStr(rg.unlockFlag)) read.set(rg.unlockFlag, `${rg.id}.unlockFlag`)
   }
   for (const s of secrets) if (isStr(s.unlockFlag)) read.set(s.unlockFlag, `${s.regionId}.secrets(${s.id}).unlockFlag`)
+  // 谱册页的旗标解锁源（KI-037 乐章 IV）：读方登记进对账——没有写方的页永远点不亮
+  const mvCfg = data['movements.json']
+  if (isObj(mvCfg)) for (const pg of mvCfg.pages ?? []) {
+    if (isObj(pg) && isObj(pg.unlock) && isStr(pg.unlock.flag)) read.set(pg.unlock.flag, `movements.json pages(${pg.id}).unlock.flag`)
+  }
   // 叙事层（Phase 6-B）也是旗标的写方：对话效果里的 setFlags 与交互物、规则表**同权**。
   // 不把它算进来，就会出现一类假 ERROR——"这个旗标锁着的内容不可达"，而它明明是玩家在对话里选出来的
   // （例：铃姨说出断面 ⇒ `flag.bells_repair_open` ⇒ 三口钟的钟座才修得动）。
@@ -2463,8 +2507,10 @@ validatePlayer()
 const regionIds = validateRegions(enemyIds, lootIds, rarityIds, stateDefs)
 // KI-077：环境声床表要对账 regions 的 music.ambience，所以排在它后面
 validateAmbience()
-// KI-079：探索曲表同理对账 regions 的 music.explore（顺带把 music.battle 那一格的实情登记在报告里）
+// KI-079：探索曲表同理对账 regions 的 music.explore
 validateExplore()
+// KI-080：战斗档表对账 regions 的 music.battle（这一格从"指向一张不存在的表"变成有读者的行）
+validateBattle()
 // movements 最后跑：它要同时对账 items（点亮源）、loot（源是否真会掉）、progression（开槽里程碑）
 validateMovements(itemIds)
 // 叙事层（Phase 6-B）：NPC → 任务 → 对话（后者依赖前两者的 id）

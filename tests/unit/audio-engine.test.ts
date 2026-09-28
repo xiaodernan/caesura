@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { bus } from '@/core/EventBus'
 import { AudioEngine } from '@/audio/AudioEngine'
-import { ambienceBeds, exploreScores } from '@/data'
+import { ambienceBeds, battleScores, exploreScores, regions } from '@/data'
 import type { AmbienceBed, ExploreScore, ExploreTonal } from '@/data/schema'
 import { BELL_CENTS } from '@/audio/synth'
 import { FakeAudioContext, FakeNode, fakeWindow, fakeWindowWebkitOnly, type FakeWindow } from '../support/fakeAudio'
@@ -632,15 +632,24 @@ describe('探索曲的 id→行（KI-079）', () => {
    */
   it('main.ts 两处发射点都是"先声床后探索曲"，而且全场只有这两处', () => {
     const src = readFileSync(new URL('../../src/main.ts', import.meta.url), 'utf8').split(/\r?\n/)
-    const emits = src.filter((l) => /bus\.emit\('audio\.music\.(ambience|explore)'/.test(l) && !l.trim().startsWith('//'))
-    expect(emits.length, `audio.music.{ambience,explore} 在组合根里应有恰好两对发射点，实测 ${emits.length} 行`)
-      .toBe(4)
-    expect(emits.map((l) => /audio\.music\.(\w+)/.exec(l)?.[1]), '每一对里声床都排在探索曲之前（顺序就是那句"旋律层最后"）')
-      .toEqual(['ambience', 'explore', 'ambience', 'explore'])
+    const emits = src.filter((l) => /bus\.emit\('audio\.music\.(ambience|explore|battle)'/.test(l) && !l.trim().startsWith('//'))
+    expect(emits.length, `audio.music.{ambience,explore,battle} 在组合根里应有恰好两组三行发射点，实测 ${emits.length} 行`)
+      .toBe(6)
+    expect(emits.map((l) => /audio\.music\.(\w+)/.exec(l)?.[1]), '每一组里声床都排在探索曲之前（顺序就是那句"旋律层最后"）')
+      .toEqual(['ambience', 'explore', 'battle', 'ambience', 'explore', 'battle'])
+    // KI-080 的另一半：那三行取的必须是**同一条 `music` 上的三个字段**，不许有两行都写 `ambience`
+    expect(emits.map((l) => /\.music\.(\w+)/.exec(l)?.[1]), '发射点吃的字段名与事件名不对齐（复制粘贴漏改就是这个形状）')
+      .toEqual(['ambience', 'explore', 'battle', 'ambience', 'explore', 'battle'])
   })
 })
 
 describe('拍网交接（KI-066：音乐层不再自带 BPM）', () => {
+  /**
+   * KI-080 之后，战斗层要**先有 `battle.json` 的那一行**才排得出拍（代码里那份 `OSTINATO` 已经拆了）。
+   * 这两条量的是拍距与转交，所以随手把真表里第一行有配乐的发上——用真表的 id 而不是编一个，
+   * 因为这一条走的就是"引擎解析表 + 音乐层奏行"那条真链。
+   */
+  const ARM = battleScores.find((r) => 'pattern' in r)?.id ?? '(表里没有一行有配乐)'
   /** 拍面声的记号：驼鼓从 150Hz 起、军鼓边击从 200Hz 起（与 audio-music.test.ts 同一口径） */
   const beatAt = (n: FakeNode): number | null => {
     if (n.kind !== 'osc' || !n.startedAt.length) return null
@@ -665,6 +674,7 @@ describe('拍网交接（KI-066：音乐层不再自带 BPM）', () => {
     installWindow()
     const engine = mkEngine()
     bus.emit('audio.music.grid', { bpm: 120, beatsPerBar: 4 })
+    bus.emit('audio.music.battle', { id: ARM })
     engine.start()
     const ctx = LAST()
     bus.emit('audio.music.encounter', { start: true })
@@ -678,6 +688,7 @@ describe('拍网交接（KI-066：音乐层不再自带 BPM）', () => {
     installWindow()
     const engine = mkEngine()
     bus.emit('audio.music.grid', { bpm: 84, beatsPerBar: 4 })
+    bus.emit('audio.music.battle', { id: ARM })
     engine.start()
     const ctx = LAST()
     bus.emit('audio.music.encounter', { start: true })
@@ -689,5 +700,141 @@ describe('拍网交接（KI-066：音乐层不再自带 BPM）', () => {
     expect(late.length, '换网格之后停了 = 转交把调度打断了').toBeGreaterThanOrEqual(3)
     expect(late[1] - late[0], '后来的网格没转交给正在跑的音乐层').toBeCloseTo(0.5, 6)
     void engine
+  })
+})
+
+/* ------------------------------------------------------------------ */
+/* KI-080：战斗档 id → 行（`battle.json` 那一侧的解析仍住在这只引擎里）    */
+/* ------------------------------------------------------------------ */
+
+describe('战斗档：id→行 的解析与转交（KI-080）', () => {
+  /** 真表里那三行了望台：默认线（休垒等三区共用）/ 下行线（未竟厅）/ 无配乐（无耳深窖，§6.3） */
+  const SHARED = 'mus_shared_battle'
+  const HERSIL = 'mus_boss_hersil'
+  const MYRIAD = 'mus_hidden_battle_myriad'
+  const isDrum = (n: FakeNode): boolean =>
+    n.kind === 'osc' && (n.params.frequency.events.find((e) => e.kind === 'set')?.value ?? -1) === 150
+      || (n.params.frequency.events.find((e) => e.kind === 'set')?.value ?? -1) === 200
+  /** 一批节点里"那一拍的低音本音"：不是鼓、也不是钟那一族（≥261.6）的那些里最低的一个 */
+  const rootOf = (nodes: FakeNode[]): number | null => {
+    const f = nodes
+      .filter((n) => n.kind === 'osc' && n.params.frequency.events.length === 1)
+      .map((n) => Number(n.params.frequency.events.find((e) => e.kind === 'set')?.value ?? -1))
+      .filter((x) => x > 0 && x !== 150 && x !== 200 && x < 261.6)
+    return f.length ? Math.min(...f) : null
+  }
+  /**
+   * 走到**第一个拍面**为止，返回那一拍的低音本音（`null` = 一直没排过拍）。
+   * ⚠️ 只读第一拍：`beatIdx` 是全场拍号，往后每一拍都在换那一行的下一格，
+   * 拿"全部节点里最低的那个"当读数会把整行读成一个数（这一条第一版就是这么假绿的）。
+   */
+  function firstRoot(ctx: FakeAudioContext, engine: AudioEngine, cap = 80): number | null {
+    for (let i = 0; i < cap; i++) {
+      const n0 = ctx.nodes.length
+      ctx.advance(0.05)
+      engine.update(0.05)
+      const fresh = ctx.nodes.slice(n0)
+      if (fresh.some(isDrum)) return rootOf(fresh)
+    }
+    return null
+  }
+  /** 只走公开面推进时间 */
+  function fight(ctx: FakeAudioContext, engine: AudioEngine, frames: number): void {
+    for (let i = 0; i < frames; i++) { ctx.advance(0.05); engine.update(0.05) }
+  }
+  const battleOscs = (ctx: FakeAudioContext): number => ctx.nodes.filter((n) => n.kind === 'osc').length
+  /** 重新入战：`cut` 先把这一场掐干净，再发一条 `start` ⇒ `beatIdx` 归零，第一拍就是那一行的第 0 格 */
+  const reEngage = (): void => {
+    bus.emit('audio.music.encounter', { start: false, cut: true })
+    bus.emit('audio.music.encounter', { start: true })
+  }
+
+  it('开局那条 id 在**建图之前**发也不丢：`start` 建层时兑现，第一次交战第一拍就奏这一行', () => {
+    installWindow()
+    const engine = mkEngine()
+    bus.emit('audio.music.grid', { bpm: 84, beatsPerBar: 4 })
+    bus.emit('audio.music.battle', { id: HERSIL })   // 图还没有：这一句必须缓存住
+    engine.start()
+    const ctx = LAST()
+    expect(battleOscs(ctx), '建层之前就该有图？这条的前提是"发在 start 之前"').toBe(0)
+    bus.emit('audio.music.encounter', { start: true })
+    // 这一行第 0 格是 cell 3（Bb2 = 65.41×2^(10/12) ≈ 116.55），而默认那一行第 0 格是主音本身 65.41 ——
+    // 两个数不同才量得出"兑现的正是缓存的那一行"，而不是"随便有一行"。
+    expect(firstRoot(ctx, engine), '缓存的战斗档没兑现：第一拍唱的是别的行（或压根没有行）').toBeCloseTo(116.547, 2)
+    void engine
+  })
+
+  it('层已经在跑：后来那一条转交给它，下一次入战的第一拍就是新那一行', () => {
+    installWindow()
+    const engine = mkEngine()
+    bus.emit('audio.music.grid', { bpm: 84, beatsPerBar: 4 })
+    engine.start()
+    const ctx = LAST()
+    bus.emit('audio.music.encounter', { start: true })
+    fight(ctx, engine, 20)
+    expect(battleOscs(ctx), '还没发战斗档就排了拍 = 音乐层自己又留了一份抄本（KI-080 拆的就是它）').toBe(0)
+    bus.emit('audio.music.battle', { id: SHARED })
+    reEngage()
+    expect(firstRoot(ctx, engine), '发了默认那一行，第一拍却不是主音').toBeCloseTo(65.41, 6)
+    bus.emit('audio.music.battle', { id: HERSIL })                  // 换区那一格：层活着，走的是 `setBattle`
+    reEngage()
+    expect(firstRoot(ctx, engine), '第一拍还是 65.41 = `musicLayer?.setBattle` 那一转交没走到正在跑的层')
+      .toBeCloseTo(116.547, 2)
+    void engine
+  })
+
+  it('认不出的 id：每一只活着的引擎恰好说一句、上一档继续奏、一个节点都不建', () => {
+    installWindow()
+    const engine = mkEngine()
+    const msgs: string[] = []
+    live.push(bus.on('log', (p) => { if (p.msg.includes('未知战斗档')) msgs.push(p.msg) }))
+    bus.emit('audio.music.grid', { bpm: 84, beatsPerBar: 4 })
+    bus.emit('audio.music.battle', { id: SHARED })
+    engine.start()
+    const ctx = LAST()
+    bus.emit('audio.music.encounter', { start: true })
+    fight(ctx, engine, 40)
+    // 分母是"本文件此刻活着的引擎数"而不是 1：`AudioEngine` 没有 dispose（TD-006 第二腿，文件头那本账），
+    // 历史引擎也都订阅着这一条事件，各自按自己的那本 `warnedBattle` 说一句。被量的是"同一个 id 只说一句"。
+    const said = engineCount
+    const n0 = ctx.nodes.length
+    const osc0 = battleOscs(ctx)
+    expect(osc0, '上一档一个音都没排，这条量不了"保留"').toBeGreaterThan(0)
+    bus.emit('audio.music.battle', { id: 'mus_typo_not_in_table' })
+    expect(msgs.length, `未知 id 要说一次，但实测 ${msgs.length} 句 / ${said} 只引擎 = 同一只说了不止一句`)
+      .toBe(said)
+    bus.emit('audio.music.battle', { id: 'mus_typo_not_in_table' })
+    expect(msgs.length, `同一个未知 id 重发又说了一轮（实测 ${msgs.length}）`).toBe(said)
+    expect(ctx.nodes.length, `认不出 id 却建了 ${ctx.nodes.length - n0} 个节点 = 那句 warn 之外还偷偷换了档`).toBe(n0)
+    fight(ctx, engine, 40)
+    expect(battleOscs(ctx), '未知 id 之后上一档停了 = 解析侧把 `battle` 清成了 null（读侧静默失效）')
+      .toBeGreaterThan(osc0)
+    void engine
+  })
+
+  it('`noMusic: true` 那一档经过引擎 ⇒ 交战全程零条振荡，而"没收到战斗档"那句不说（§6.3 的安静是数据说的）', () => {
+    installWindow()
+    const engine = mkEngine()
+    const msgs: string[] = []
+    live.push(bus.on('log', (p) => { if (p.msg.includes('没收到战斗档')) msgs.push(p.msg) }))
+    bus.emit('audio.music.grid', { bpm: 84, beatsPerBar: 4 })
+    bus.emit('audio.music.battle', { id: MYRIAD })
+    engine.start()
+    const ctx = LAST()
+    bus.emit('audio.music.encounter', { start: true })
+    fight(ctx, engine, 80)
+    expect(battleOscs(ctx), '无配乐那一档还是排了振荡').toBe(0)
+    expect(msgs.length, `这一条 id 明明解析到了（表里有这一行），装配读数不该响：${msgs.join(' | ')}`).toBe(0)
+    void engine
+  })
+
+  it('真表里那五行与七个区域双向对得上（KI-079 那条 WARN 的销账判据）', () => {
+    // 计数由 `regions.json` 与 `battle.json` 现算，这里一张名单都不抄。
+    const referenced = new Set(regions.map((r) => r.music.battle))
+    const authored = new Set(battleScores.map((b) => b.id))
+    expect([...referenced].filter((id) => !authored.has(id)), '有区域指了一张不存在的战斗档').toEqual([])
+    expect([...authored].filter((id) => !referenced.has(id)), '表里有一行永远不会被奏出来（§55 死数据）').toEqual([])
+    expect([referenced.size, authored.size, regions.length], '五个 id / 五行 / 七个区——变了就要重看上面两条比的是同一件事')
+      .toEqual([5, 5, 7])
   })
 })

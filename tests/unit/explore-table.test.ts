@@ -22,7 +22,7 @@ type Row = Record<string, unknown>
 /** 一行合法有调曲 + 一行合法无调曲：所有 refuse 臂都是在它们身上各改一处得到的 */
 const TONAL_OK: Row = { id: 'mus_a_explore', form: 'prime', rootHz: 110, beatsPerNote: 1, wave: 'sine', peak: 0.02 }
 const ATONAL_OK: Row = { id: 'mus_b_explore', form: null }
-/** 一个区域一张曲：`music.battle` 一律不给，免得那条诚实登记的 WARN 混进"这一臂只该红一条"的读数里 */
+/** 一个区域一张曲：`music.battle` 一律不给（KI-080 之后那一格由 `battle-rules` 判，混进来只会多读一条） */
 const reg = (explore: string, id = `rg_${explore}`): Row => ({ id, music: { explore } })
 /** 各臂只改一处的那只手：其余格仍然合法，所以红的那一条必然属于被改的这格 */
 const bad = (patch: Row): Row => ({ ...TONAL_OK, ...patch })
@@ -64,23 +64,19 @@ describe('探索曲判据的 accept 侧：合法形状一条都不报', () => {
     expect(errs(rows, regions)).toEqual([])
   })
 
-  it('唯一那条 WARN 是"宪法之外"的诚实登记：只由 regions 现算，且整张表只说一次', () => {
-    expect(run([TONAL_OK]).filter((f) => f.level === 'warn'), '区域没写 battle 那一格却仍然冒出 WARN').toEqual([])
+  it('KI-080 之后这张判据不再发任何 WARN：那句"战斗曲指向一张不存在的表"连同话术一起消失了', () => {
+    // 双向挡板。KI-079 写下的承诺是「谁建了 battle.json 并接上读者，这一条连同话术一起消失」，
+    // 所以今天它必须读作零条；而任何人把那段登记抄回来（或新加一句"暂时登记"的 WARN）都会在这里红。
+    expect(run([TONAL_OK]).filter((f) => f.level === 'warn'), '合成一侧冒出了一句 WARN：登记的口径变了？').toEqual([])
     const withBattle = run([TONAL_OK], [{ id: 'rg_a', music: { explore: 'mus_a_explore', battle: 'mus_x' } }])
       .filter((f) => f.level === 'warn')
-    expect(withBattle.length, '有了悬空引用却不登记 = 那句话从来没说过').toBe(1)
-    expect(withBattle[0].file, '这条登记挂在 explore.json 名下，regions 的读者就找不到它').toBe('regions.json')
-    expect(withBattle[0].where).toBe('music.battle')
-    // 三个区域指三个不同的战斗曲 id 也仍然只有一句（每区刷一遍就没法读了）
-    const many = run([], [
-      { id: 'rg_a', music: { battle: 'mus_x' } }, { id: 'rg_b', music: { battle: 'mus_y' } },
-      { id: 'rg_c', music: { battle: 'mus_z' } },
-    ]).filter((f) => f.level === 'warn')
-    expect(many.length, `3 个悬空 id 冒出了 ${many.length} 条`).toBe(1)
-    expect(many[0].msg).toContain('3 个战斗曲 id')
-    const real = run([], REAL_REGIONS()).filter((f) => f.level === 'warn')
-    expect(real.length, `真 regions 上的战斗曲登记应有恰好一条，实测 ${real.length}`).toBe(1)
-    expect(real[0].msg, '话术里的计数没跟着 regions 走 = 它变成了一份手抄名单').toContain('5 个战斗曲 id')
+    expect(withBattle, '`music.battle` 的悬空登记又回来了：那张表今天存在，判据住在 `battle-rules.mjs` 而不是这里')
+      .toEqual([])
+    expect(run([], REAL_REGIONS()).filter((f) => f.level === 'warn'), '真 regions 上仍有一句战斗曲登记 = 那句话没人销')
+      .toEqual([])
+    // 而这里"沉默"是有前提的：那一格今天归另一张嘴管。这条臂里 explore 自己是合法的，所以零条 ERROR 才对。
+    expect(errs([TONAL_OK], [{ id: 'rg_a', music: { explore: 'mus_a_explore', battle: 'mus_x' } }]),
+      '探索曲这一侧对不存在的 `battle` 该完全不管（管它是 battle-table 那条用例的事）').toEqual([])
   })
 })
 

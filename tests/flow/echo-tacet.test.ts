@@ -120,7 +120,9 @@ function equipMove(w: World, movementId: string, slot: number): string {
   const mv = move(movementId)
   const page = book.page(mv.page)!
   if (!book.isLit(page.id)) {
-    w.rpg.inv.add(page.unlock.item, page.unlock.count)
+    // 乐章 IV 的页走旗标解锁（KI-037）：写方在 worldstate 规则，此处等价发生
+    if (page.unlock.flag) bus.emit('world.flag', { key: page.unlock.flag, value: true })
+    else w.rpg.inv.add(page.unlock.item ?? '', page.unlock.count ?? 0)
     expect(book.unlockPage(page.id, w.rpg.inv).ok).toBe(true)
   }
   reachRank(w, book.slotRank(slot)!)

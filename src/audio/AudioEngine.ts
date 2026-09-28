@@ -10,8 +10,8 @@
  */
 import { bus, type GameEvents } from '../core/EventBus'
 import type { MusicGrid } from '../core/RhythmClock'
-import { ambienceBeds, exploreScores } from '../data'
-import type { AmbienceBed, ExploreScore } from '../data/schema'
+import { ambienceBeds, exploreScores, battleScores } from '../data'
+import type { AmbienceBed, BattleScore, ExploreScore } from '../data/schema'
 import { triggerSfx } from './synth'
 import { MusicLayer } from './music'
 
@@ -68,10 +68,18 @@ export class AudioEngine {
    * （`main.ts` 的那两句都在首次手势之前发，之后不会再发，直到玩家真的跨区为止）。
    */
   private song: ExploreScore | null = null
+  /**
+   * 最后收到的战斗档**行**（KI-080）。缓存与解析的理由与上面两条一字不差，而它多一条自己的理由：
+   * 战斗层只在交战时才响，若开局那一句不缓存，第一次进战斗就没有行 ⇒ 音乐层那句"没收到战斗档"
+   * 会在每次新档的开局各响一次，而它本来只该在**装配断了**的时候响。
+   */
+  private battle: BattleScore | null = null
   /** 认不出的声床 id 每个只说一次（与 `warned` 那本 SFX 名册同一口径：刷屏会把真信号埋掉） */
   private warnedBed = new Set<string>()
   /** 认不出的探索曲 id 同上（单独一本：与上面那本共用会让先说话的那条静音另一条） */
   private warnedSong = new Set<string>()
+  /** 认不出的战斗档 id 同上，第三本（同一句话的三个主人各自记账） */
+  private warnedBattle = new Set<string>()
   private started = false
   private voices = 0
   private warned = new Set<string>()
@@ -125,6 +133,17 @@ export class AudioEngine {
       this.song = song
       this.musicLayer?.setExplore(song)
     })
+    // KI-080（docs §1.1 + §2.2 的遭遇层）：第三条同一只手。认不出时保留上一档，并说一次（单独一本账）。
+    bus.on('audio.music.battle', (p) => {
+      const row = battleScores.find((s) => s.id === p.id) ?? null
+      if (!row && !this.warnedBattle.has(p.id)) {
+        this.warnedBattle.add(p.id)
+        bus.emit('log', { level: 'warn', msg: `AudioEngine: 未知战斗档 id "${p.id}"（regions.music.battle 与 battle.json 对不上），保留上一档` })
+      }
+      if (!row) return
+      this.battle = row
+      this.musicLayer?.setBattle(row)
+    })
     window.addEventListener('pointerdown', this.gesture)
     window.addEventListener('keydown', this.gesture)
   }
@@ -155,7 +174,7 @@ export class AudioEngine {
     this.detachGesture()
     if (this.started) return
     this.started = true
-    this.musicLayer = new MusicLayer(ctx, this.graph.music, this.graph.ambience, this.grid, this.bed, this.song)
+    this.musicLayer = new MusicLayer(ctx, this.graph.music, this.graph.ambience, this.grid, this.bed, this.song, this.battle)
     this.musicLayer.start()
   }
 

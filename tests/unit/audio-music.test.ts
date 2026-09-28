@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { bus } from '@/core/EventBus'
-import { MusicLayer, motifDegrees } from '@/audio/music'
+import { MusicLayer, MOTIF_R1, battleOstinatoHz, motifDegrees } from '@/audio/music'
 import type { MusicGrid } from '@/core/RhythmClock'
-import type { AmbienceBed, ExploreScore } from '@/data/schema'
+import type { AmbienceBed, BattleScore, ExploreScore } from '@/data/schema'
 import { BELL_CENTS } from '@/audio/synth'
 import { FakeAudioContext, FakeNode } from '../support/fakeAudio'
 
@@ -112,11 +112,60 @@ const SONG_LATEST: ExploreScore = { id: 'song_latest', form: 'inversion', rootHz
 const SONG_GRID: MusicGrid = { bpm: 75, beatsPerBar: 4 }
 const SONG_BEAT = 60 / SONG_GRID.bpm
 
+/* ------------------------------------------------------------------ */
+/* KI-080：合成战斗档。形状 = `schema.ts > BattleScore`，值同样是这里编的       */
+/* ------------------------------------------------------------------ */
+
+/**
+ * `pattern` 那一个格子写的是「动机第几音 × 第几档八度」折成的整数（解码住在 `music.ts > battleOstinatoHz`，
+ * 步长 = `MOTIF_R1.length` = 4）。下面这八个展开**是本批用那条算式量出来的**，用例认的就是这些 Hz：
+ *  · 0 → C2 65.410 · 1 → Eb2 77.786 · 2 → G2 98.004 · 3 → Bb2 116.547
+ *  · 4 → C3 130.820（**别拿它当换行的记号**：它的反拍短音 261.640 与钟 accent 的基频是同一个数）
+ *  · 5 → Eb3 155.572 · 6 → G3 196.009 · 7 → Bb3 233.095
+ *
+ * ⚠️ 八度档 0 的那四个音**反拍都要抬一个八度**，所以 130.82 / 155.572 / 196.009 / 233.095 这些数在默认行里
+ * 本来就以"反拍短音"的身份存在。因此"换了一行"的读数不能只问"图上有没有 196.009"（默认行第 3 拍的反拍就是它），
+ * 要问一个**只有新行才做得出的数**——cell 6 当本音时反拍 = 196.009×2 = **392.017**，默认行八格里没有它。
+ */
+const BATTLE_LINE: BattleScore = { id: 'battle_line', pattern: [0, 0, 2, 5, 3, 0, 1, 2], bellEveryBars: 2 }
+/**
+ * 十二平均律：战斗主音 C2 = 65.41Hz 之上 `n` 个半音。**抄在测试这一侧而不是调 `battleOstinatoHz`** ——
+ * 与被测函数共用一条算式就等于让实现自证（与那条"八个音抄在这里而不是 import"的理由同一句）。
+ * `battleOstinatoHz` 自己另有两条用例钉着（八度关系、步长跟着动机音数走）。
+ */
+const ET = (semi: number): number => 65.41 * 2 ** (semi / 12)
+/** 手抄的那份 `R-1` 度数；有一条用例把它与主人 `motifDegrees('prime')` 逐格对账（KI-074 的纪律） */
+const R1_SEMI = [0, 3, 7, 10]
+/** 一个格子展开成半音数：低位是"动机第几音"，高位是"第几档八度" */
+const cellSemi = (cell: number): number => R1_SEMI[cell % R1_SEMI.length] + 12 * Math.floor(cell / R1_SEMI.length)
+const cellHz = (cell: number): number => ET(cellSemi(cell))
+/**
+ * 换行要看得见的那一行：整条线只有 cell 6（G3），于是每一拍的反拍都是 **392.0** —— 默认行做不出这个数；
+ * 钟的周期也换成 4 小节，于是第 8 拍那记 accent（默认行的）消失了、改在第 16 拍。两维都不同（KI-077 的夹具纪律）。
+ */
+const BATTLE_WIDE: BattleScore = { id: 'battle_wide', pattern: [6], bellEveryBars: 4 }
+/** §6.3 万籁那一档：数据说的安静。它与"这条腿没接"（`null`）必须分得开 —— 一个不吱声，一个要吱声 */
+const BATTLE_SILENT: BattleScore = { id: 'battle_silent', noMusic: true }
+
+/**
+ * 战斗层的默认夹具行 = KI-080 之前写死在 `music.ts > OSTINATO` 的那八个数（65.41/65.41/98/155.56/
+ * 116.54/65.41/77.78/98）换成格子记法**重写一遍**，钟的周期也照旧（2 小节）。
+ * 所以那批"拍距 / 鼓型 / 低音轮换 / 钟 accent"的老用例读数一位都不该动 —— 它们从"钉住代码里那八个数"
+ * 变成"钉住喂进来的这一行被照着奏出来"。它与真表 `mus_shared_battle` 的逐格相同由
+ * `tests/unit/battle-table.test.ts` 那条迁移对账用例钉着（这里是合成行，不 import 真表）。
+ */
+
 function rig(
   grid: MusicGrid | null = GRID,
   bed: AmbienceBed | null = null,
   /** KI-079：开局那一区的探索曲。给 `null` 就是"这条腿没接"的形状，与真引擎在收到事件之前的状态一致 */
-  song: ExploreScore | null = null
+  song: ExploreScore | null = null,
+  /**
+   * KI-080：开局那一区的战斗档。默认给 `BATTLE_LINE`（就是 KI-080 之前代码里那份 `OSTINATO`，
+   * 换成数据那套记法重写一遍），所以那批"拍距/鼓型/低音轮换/钟 accent"的用例读数一位都不该动——
+   * **它们现在是这位默认值的证人**：这份合成行与真表 `mus_shared_battle` 逐格解码相同，那条对账用例在下面。
+   */
+  battle: BattleScore | null = BATTLE_LINE
 ): { ctx: FakeAudioContext; layer: MusicLayer; musicOut: FakeNode; ambOut: FakeNode } {
   const ctx = new FakeAudioContext()
   const musicOut = ctx.createGain()
@@ -127,7 +176,8 @@ function rig(
     ambOut as unknown as AudioNode,
     grid,
     bed,
-    song
+    song,
+    battle
   )
   return { ctx, layer, musicOut, ambOut }
 }
@@ -752,8 +802,9 @@ describe('战斗层：脉冲鼓 + ostinato（拍网由外面注入）', () => {
     open.push(() => layer.dispose())
     layer.start()
     bus.emit('audio.music.encounter', { start: true, enter: ENTRY })
-    // 表里那八个音（65.41 C2 … 98.0 G2）—— 抄在这里而不是 import，是因为 import 进来就等于让实现自证
-    const OST = [65.41, 65.41, 98.0, 155.56, 116.54, 65.41, 77.78, 98.0]
+    // 那一行八个格展开之后的那八个音（65.41 C2 … 98.00 G2）—— 用测试自己那套 `cellHz` 算，
+    // 而不是 import 被测的解码：抄在这里是因为 import 进来就等于让实现自证。
+    const OST = [0, 0, 2, 5, 3, 0, 1, 2].map(cellHz)
     // 只数"这是一拍"的那批（驼鼓/军鼓都以 150 或 200Hz 起头）：4 秒处冒出来的那颗石铃会插进
     // 批次序列，不筛的话第 7 个批次根本不是第 7 拍（这条第一版就是这么红的）
     const batch = beats(ctx, layer, 200)
@@ -932,7 +983,7 @@ describe('调度积压（KI-067：切回标签页那一秒不许打出机枪）'
       const ctx = new FakeAudioContext()
       const musicOut = ctx.createGain()
       const ambOut = ctx.createGain()
-      const layer = new MusicLayer(ctx as unknown as AudioContext, musicOut as unknown as AudioNode, ambOut as unknown as AudioNode, GRID, BED_A, null)
+      const layer = new MusicLayer(ctx as unknown as AudioContext, musicOut as unknown as AudioNode, ambOut as unknown as AudioNode, GRID, BED_A, null, BATTLE_LINE)
       const logs: string[] = []
       const off = bus.on('log', (l) => logs.push(l.msg))
       open.push(off)
@@ -1038,9 +1089,11 @@ describe('入战落点（KI-068）：第一拍的时刻与拍号都来自事件�
       const on = b.filter((n) => n.kind === 'osc' && n.params.frequency.events.length === 1)
       return Math.min(...startedFreqs(on))
     }
-    expect(root(12), `第 12 拍（4/4 的小节头、ostinato 格 4）的低音不是 Bb 116.54`).toBeCloseTo(116.54, 6)
-    expect(root(11), `第 11 拍（格 3）的低音不是 155.56`).toBeCloseTo(155.56, 6)
-    expect(root(13), `第 13 拍（格 5）的低音不是 65.41`).toBeCloseTo(65.41, 6)
+    // 期望值按**派生**的数写（`cellHz`），不是 KI-080 之前那张手抄表里的四位数：那串是把 116.5416…
+    // 四舍五入到两位的抄本，与 `65.41 × 2^(10/12)` 差 0.0074Hz ≈ 0.11 音分。差的不是音，是抄表的精度。
+    expect(root(12), `第 12 拍（4/4 的小节头、行里第 4 格 = cell 3 → Bb）的低音不是 ${cellHz(3).toFixed(3)}`).toBeCloseTo(cellHz(3), 6)
+    expect(root(11), `第 11 拍（行里第 3 格 = cell 5 → Eb 抬一个八度）的低音不是 ${cellHz(5).toFixed(3)}`).toBeCloseTo(cellHz(5), 6)
+    expect(root(13), `第 13 拍（行里第 5 格 = cell 0 → 主音）的低音不是 65.41`).toBeCloseTo(65.41, 6)
   })
 
   it('战斗中途重发"还在交战"不许把已锚定的时间线拽回去（落点只在上升沿取）', () => {
@@ -1464,5 +1517,145 @@ describe('探索曲（KI-079）：R-1 的三种形态、每音占几拍、以及
     a[0] = 999
     expect(motifDegrees('prime')[0], '交出去的是 `MOTIF_R1` 本身：调用方一改就把全表改了')
       .toBe(0)
+  })
+})
+
+/* ------------------------------------------------------------------ */
+/* KI-080：区域战斗档第一次有读者（那一行走哪条线、钟隔几小节，都是数据说的）   */
+/* ------------------------------------------------------------------ */
+
+describe('战斗档那一行（KI-080：`battle.json` 的形状进了耳朵）', () => {
+  /** 只有"这一批里有一拍打在拍面上"才算一拍（石铃与 drone 的批次不算） */
+  const beatBatches = (ctx: FakeAudioContext, layer: MusicLayer, n: number): FakeNode[][] =>
+    beats(ctx, layer, n).filter((b) => b.some(isBeatNode))
+  /**
+   * 那一拍的低音本音：一条拍面上的音 = 本音 + 反拍高八度那一对，两者都只被 set 过一次频率，
+   * 所以取这批里"只 set 一次"的那些振荡里最低的那个（与 KI-065 那批用例同一认法）。
+   */
+  const bassRoot = (b: FakeNode[]): number => {
+    const on = b.filter((n) => n.kind === 'osc' && n.params.frequency.events.length === 1)
+    return Math.min(...startedFreqs(on))
+  }
+  /** 钟 accent 的记号：基频 261.64（= 战斗主音 65.41×4）±2.5Hz（泛音带 ±8 音分，容差不许写死成等值） */
+  const accentAt = (b: FakeNode[]): boolean =>
+    b.some((n) => n.kind === 'osc' && Math.abs(startedFreqs([n])[0] - 261.64) < 2.5)
+  /** 交战 20 秒之后按 `step` 推帧，返回拍面批次 */
+  function fight(row: BattleScore | null, frames: number): { ctx: FakeAudioContext; batches: FakeNode[][]; logs: string[] } {
+    const { ctx, layer } = rig(GRID, null, null, row)
+    open.push(() => layer.dispose())
+    const logs: string[] = []
+    open.push(bus.on('log', (p) => { if (p.msg.includes('战斗档')) logs.push(p.msg) }))
+    layer.start()
+    bus.emit('audio.music.encounter', { start: true, enter: ENTRY })
+    return { ctx, batches: beatBatches(ctx, layer, frames), logs }
+  }
+
+  it('手抄的那份动机度数与主人对得上：`R1_SEMI` == `MOTIF_R1`', () => {
+    expect(R1_SEMI, '测试这一侧抄的度数与代码里那份不是同一串 ⇒ 下面那些 `cellHz` 期望值全在说别的事')
+      .toEqual([...MOTIF_R1])
+    expect(R1_SEMI, `顺行的度数就是 \`motifDegrees("prime")\`（两个主人会在这条用例上打架）`)
+      .toEqual([...motifDegrees('prime')])
+  })
+
+  it('一格一格解：0 = 战斗主音本音，往上三格是 R-1 的另外三个音，第 5 格起抬一个八度', () => {
+    expect(battleOstinatoHz(0), '第 0 格不是主音本身（§1.1 那个不变的 C2 = 65.41）').toBeCloseTo(65.41, 9)
+    for (let c = 1; c < 4; c++) {
+      expect(battleOstinatoHz(c), `第 ${c} 格不是主音之上第 ${R1_SEMI[c]} 半音`).toBeCloseTo(ET(R1_SEMI[c]), 9)
+    }
+    // 八度档：这一维必须**恰好**是 2 倍，不是"高一点"
+    for (let c = 0; c < 4; c++) {
+      expect(battleOstinatoHz(c + 4) / battleOstinatoHz(c), `第 ${c + 4} 格不是第 ${c} 格的八度`).toBeCloseTo(2, 9)
+    }
+    expect(battleOstinatoHz(MOTIF_R1.length), '走完**动机自己的音数**那一格就该抬一个八度（步长的主人是动机，不是写死的 4）')
+      .toBeCloseTo(65.41 * 2, 9)
+  })
+
+  it('换一行 ⇒ 每一拍的低音都换成那一行的格，一个音都不留在旧线上', () => {
+    const line = fight(BATTLE_LINE, 60)
+    expect(line.batches.length, '60 帧（3 秒 ≈ 4 拍 @84BPM）里凑不齐四拍 = 场景没搭起来，这条量不了换行').toBeGreaterThanOrEqual(4)
+    // 默认行的头四拍：C2 C2 G2 Eb3。⚠️ 用的是**根音**而不是它的反拍八度：默认行 98 的反拍就是 196，
+    // 而新行 cell 6 的本音也是 196 —— 只问"图上有没有 196"会两头都通过（KI-079 那条"判据不许假设参数形状"同族）。
+    expect(bassRoot(line.batches[0]), '第 1 拍的低音不是 C2').toBeCloseTo(cellHz(0), 9)
+    expect(bassRoot(line.batches[2]), '第 3 拍的低音不是 G2').toBeCloseTo(cellHz(2), 9)
+    expect(bassRoot(line.batches[3]), '第 4 拍的低音不是 Eb3').toBeCloseTo(cellHz(5), 9)
+
+    const wide = fight(BATTLE_WIDE, 60)
+    expect(wide.batches.length, '换行之后一拍都没排').toBeGreaterThanOrEqual(4)
+    for (let i = 0; i < Math.min(4, wide.batches.length); i++) {
+      expect(bassRoot(wide.batches[i]), `换行之后第 ${i + 1} 拍还唱旧线（${bassRoot(wide.batches[i])} ≠ G3 ${cellHz(6)}）`)
+        .toBeCloseTo(cellHz(6), 9)
+    }
+  })
+
+  it('钟隔几小节是那一行说的：`bellEveryBars` 2→4 ⇒ 第 9 拍那记消失、改在第 17 拍（双向判别）', () => {
+    // 4/4 @84BPM：2 小节 = 8 拍 ⇒ accent 落在第 1/9/17 拍；4 小节 = 16 拍 ⇒ 落在第 1/17 拍。
+    // 这一条要**两侧都有证人**：只断言"旧的没了"会被"整段不打钟"骗过去，只断言"新的有"会被"周期写死"骗过去。
+    const two = fight(BATTLE_LINE, 260)
+    expect(two.batches.length, '拍数不够（要跨过第 17 拍）').toBeGreaterThanOrEqual(17)
+    const atTwo: number[] = []
+    two.batches.forEach((b, i) => { if (accentAt(b)) atTwo.push(i) })
+    expect(atTwo, `每两小节一记钟读出来的不是第 1/9/17 拍：${atTwo.map((k) => k + 1).join('/')}`).toEqual([0, 8, 16])
+
+    const four = fight(BATTLE_WIDE, 260)
+    expect(four.batches.length, '拍数不够').toBeGreaterThanOrEqual(17)
+    const atFour: number[] = []
+    four.batches.forEach((b, i) => { if (accentAt(b)) atFour.push(i) })
+    expect(atFour, `这一行写的是每 4 小节一记钟，读出来的不是第 1/17 拍：${atFour.map((k) => k + 1).join('/')}`).toEqual([0, 16])
+  })
+
+  it('战斗主音不跟着区域那张床走（§1.1「主音不变、色彩变暗」）：换床之后低音一位都不动', () => {
+    // 这一条防的是"顺手把战斗层也接到区域主音上"——那一句抹掉的就是 §1.1 那一格。
+    // 床换成 B 床（主音差一个全音、低通更暗、铃点名册完全不同），低音线必须一格都没变。
+    const { layer } = rig(GRID, BED_B, null, BATTLE_LINE)
+    open.push(() => layer.dispose())
+    const a = fight(BATTLE_LINE, 60)
+    expect(bassRoot(a.batches[0]), '第 1 拍的低音不是 C2').toBeCloseTo(cellHz(0), 9)
+    // 上面那一句用的是同一个 rig 形状（床=null），这里再把"喂了一张完全不同的床"这条路走一遍：
+    const { ctx, layer: withBed } = rig(GRID, BED_B, null, BATTLE_LINE)
+    open.push(() => withBed.dispose())
+    withBed.start()
+    bus.emit('audio.music.encounter', { start: true, enter: ENTRY })
+    const b = beatBatches(ctx, withBed, 60)
+    expect(b.length, '带床的世界一拍都没排（床把战斗层带走了？）').toBeGreaterThanOrEqual(4)
+    expect(bassRoot(b[0]), '换了区域床，战斗低音就跟过去了 = §1.1 那句"主音不变"是假的')
+      .toBeCloseTo(cellHz(0), 9)
+    expect(bassRoot(b[1])).toBeCloseTo(cellHz(0), 9)
+    expect(bassRoot(b[2]), '第 3 拍不再是那一行的第 3 格').toBeCloseTo(cellHz(2), 9)
+    void layer
+  })
+
+  it('`noMusic` 那一档 ⇒ 音乐总线上一条振荡都不排，而那句"没收到战斗档"不许响（§6.3：安静是数据说的）', () => {
+    const { ctx, batches, logs } = fight(BATTLE_SILENT, 120)
+    expect(batches.length, '这一档本该什么都不排').toBe(0)
+    expect(ctx.nodes.filter((n) => n.kind === 'osc').length, '无配乐那一档还是建了振荡器').toBe(0)
+    expect(logs.length, `数据说的安静却喊了装配：${logs.join(' | ')}`).toBe(0)
+    // 增益仍然淡入：§16 那句"音乐停"要的是这条腿在，只是没有声音挂在它上面
+    const g = ctx.nodes.find((n) => n.kind === 'gain'
+      && n.params.gain.events.some((e) => e.kind === 'lin' && Math.abs(e.value - 0.9) < 1e-9))
+    expect(g, '无配乐那一档连淡入都跳了 = 战斗层的门被这一行带走了').toBeTruthy()
+  })
+
+  it('没有那一行 ⇒ 一声不排、说一次，之后每帧重发都不刷屏（装配缺腿与数据安静是两件事）', () => {
+    const { ctx, batches, logs } = fight(null, 200)
+    expect(batches.length, '没接上战斗档却还在排拍').toBe(0)
+    expect(ctx.nodes.filter((n) => n.kind === 'osc').length).toBe(0)
+    expect(logs.length, `那句话该恰好说一次，实测 ${logs.length} 次`).toBe(1)
+    // 接上之后立刻有声（同一条腿的两个方向都要有证人）
+    const back = fight(BATTLE_LINE, 60)
+    expect(back.batches.length, '给了一行还是不出声 = 上面那条红其实是装配本身断了').toBeGreaterThanOrEqual(4)
+    expect(back.logs.length, `给了行之后那句装配读数还在响：${back.logs.join(' | ')}`).toBe(0)
+  })
+
+  it('`setBattle(null)` 不许把正在演的那条线掐掉（与 `setExplore(null)` 同一条口径）', () => {
+    const { ctx, layer } = rig(GRID, null, null, BATTLE_LINE)
+    open.push(() => layer.dispose())
+    layer.start()
+    bus.emit('audio.music.encounter', { start: true, enter: ENTRY })
+    const before = beatBatches(ctx, layer, 40).length
+    layer.setBattle(null)
+    const after = beatBatches(ctx, layer, 40).length
+    expect(before, '这一段一拍都没排，后面那个"没被掐掉"没有可比的东西').toBeGreaterThan(0)
+    expect(after, '发了一条 null 就把战斗层噤了 = 上一档没保住（未知 id / 事件缺失该保留上一行）')
+      .toBeGreaterThan(0)
   })
 })

@@ -127,7 +127,8 @@ function equipMove(w: World, movementId: string, slot: number): string {
   const page = book.page(mv.page)
   if (!page) throw new Error(`谱册里没有页 ${mv.page}`)
   if (!book.isLit(page.id)) {
-    w.rpg.inv.add(page.unlock.item, page.unlock.count)
+    if (page.unlock.flag) bus.emit('world.flag', { key: page.unlock.flag, value: true })
+    else w.rpg.inv.add(page.unlock.item ?? '', page.unlock.count ?? 0)
     expect(book.unlockPage(page.id, w.rpg.inv).ok, page.id).toBe(true)
   }
   reachRank(w, book.slotRank(slot)!)

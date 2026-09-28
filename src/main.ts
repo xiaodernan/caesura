@@ -163,6 +163,7 @@ let shownRegion = homeRegion?.id ?? null
 if (homeRegion) {
   bus.emit('audio.music.ambience', { id: homeRegion.music.ambience })
   bus.emit('audio.music.explore', { id: homeRegion.music.explore }) // KI-079：同一句理由，开局那一区的旋律也要在建图之前缓存住
+  bus.emit('audio.music.battle', { id: homeRegion.music.battle }) // KI-080：同上，第一次交战之前就得把那一区的战斗档递到
 }
 const surface = new Surface(regions, 0.5, (r) => !streaming.isRegionUnlocked(r))
 combat.floorAt = (pos) => surface.floorAt(pos)?.y ?? null // 弹道撞地：射进灰盒地板就落地
@@ -412,8 +413,11 @@ const core = {
       // KI-077（§1.2）：底噪与铃点跟着脚下的区域换，音乐层自己按 8 小节做 crossfade。
       // KI-079：探索曲跟着换，而**顺序是这句话的一部分**——先发的这条开出淡变窗口，后发的那条看见窗口
       // 就把旋律押到窗口走完再换（§1.2「和声先换、旋律层最后」）。反过来写就是旋律先跳、底噪后淡。
+      // KI-080：战斗档也跟着换，它排在最后而**不参与那个顺序**：它只在交战时被奏出来，
+      // 不吃 crossfade 窗口，所以它对调出去也不会改变任何听感——三条里只有头两条之间有序可依。
       bus.emit('audio.music.ambience', { id: here.music.ambience })
       bus.emit('audio.music.explore', { id: here.music.explore })
+      bus.emit('audio.music.battle', { id: here.music.battle })
       if (booted) checkpoints.request('region') // 读档后第一次「进区域」是恢复现场，不该顺手覆盖存档
       shownRegion = here.id
       bus.emit('ui.notify', { text: here.displayName, kind: 'info' })

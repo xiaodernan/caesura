@@ -13,6 +13,8 @@ import type { Enemy } from '@/ai/Enemy'
 import { RpgRuntime } from '@/rpg/Runtime'
 import { KillSettlement, refreshPlayer, type SettlementDeps } from '@/rpg/Settlement'
 import { SCORE, movementConfig } from '@/rpg/Movements'
+import { WorldState } from '@/quest/WorldState'
+import { worldstate } from '@/data'
 
 /**
  * KI-021 的第二半：三场 Boss 战的**首杀奖励整链**实测。
@@ -24,8 +26,9 @@ import { SCORE, movementConfig } from '@/rpg/Movements'
  * 所以这里三场都从**输入侧**进（真弹体 → `projectileStrikesEnemy` → `strikeEnemy` → 死亡），
  * 结算用生产那份 `KillSettlement`，测试自己不叫任何死亡或掉落函数。
  *
- * §7.1 的经济口径也压在这里：全作的振源核**只有**三场 Boss 战的首杀会掉，而吃核的页正好三张
- * ——「三颗核付得起 I+III+IV」（KI-037 那句裁决）此前是一句口算，现在有数。
+ * §7.1 的经济口径也压在这里（KI-037 改判后的形状）：全作的振源核**只有**三场 Boss 战的首杀会掉，
+ * 吃核的页是 I/III 两张；乐章 IV 的解锁源是**恩希尔终段那次见证**（bossDefeated 规则写旗，
+ * 谱册点亮键读旗）——所以三颗核会剩一颗，而第四页悬在「她死没死」这件事上，不悬在货币上。
  */
 
 const CORE = 'it_resonance_core'
@@ -50,13 +53,18 @@ function makeWorld(seed: string) {
   const combat = new CombatManager(player, ai, time, rhythm)
   const deps: SettlementDeps = { rpg, refresh: () => refreshPlayer(rpg, player), checkpoint: () => {} }
   const settlement = new KillSettlement(deps)
+  // worldstate 规则引擎（生产组合根同款）：恩希尔倒下 ⇒ 「终段」的旗真的被写下（KI-037 改判的写方）
+  const ws = new WorldState(worldstate, {
+    hasFlag: () => false,
+    setFlag: (k) => bus.emit('world.flag', { key: k, value: true })
+  })
   const defeats: Array<{ dataId: string; holdTicks: number }> = []
   const notifies: string[] = []
   const offs = [
     bus.on('boss.defeated', (p) => defeats.push({ dataId: p.dataId ?? '', holdTicks: p.holdTicks })),
     bus.on('ui.notify', (p) => notifies.push(p.text)),
   ]
-  alive.push(() => settlement.dispose(), ...offs)
+  alive.push(() => settlement.dispose(), () => ws.dispose(), ...offs)
 
   const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0 }, held: new Set<string>(), edges: new Set<string>() }
   const input = { frame, enabled: true } as unknown as Input
@@ -159,34 +167,37 @@ describe('§9.1「首杀唯一」在真通道上：第二次打死同一份数�
 })
 
 describe('§7.1 的经济链对账：三场 Boss 战 ⇒ 整本谱册', () => {
-  it('三颗核点亮三张吃核的页，乐章 II 由万籁那两页残章付——正好够，一分余量都不多', () => {
+  it('三场 Boss 打完：两颗核点亮两张吃核的页（I/III），乐章 II 由残章付，乐章 IV 由恩希尔的旗点亮', () => {
     const w = makeWorld('economy')
     const cfg = movementConfig()
     const beforeCore = w.rpg.inv.count(CORE)
     const beforeScore = w.rpg.inv.count(SCORE)
     for (const b of BOSSES) w.fight(w.engage(b.id, `eco-${b.id}`))
-    expect(w.rpg.inv.count(CORE) - beforeCore, '全作的核只有三场 Boss 战的首杀会掉').toBe(
-      cfg.pages.filter((p) => p.unlock.item === CORE).length)
+    const corePages = cfg.pages.filter((p) => p.unlock.item === CORE)
+    expect(corePages.map((p) => p.id), '吃核的页是 I 与 III（IV 已改判成旗标门）').toEqual(['mvpage_prelude', 'mvpage_storm'])
+    expect(w.rpg.inv.count(CORE) - beforeCore, '全作的核只有三场 Boss 战的首杀会掉').toBe(3)
     expect(w.rpg.inv.count(SCORE) - beforeScore, '残章的总供给').toBeGreaterThanOrEqual(
-      cfg.pages.filter((p) => p.unlock.item === SCORE).reduce((s, p) => s + p.unlock.count, 0))
+      cfg.pages.filter((p) => p.unlock.item === SCORE).reduce((s, p) => s + (p.unlock.count || 0), 0))
     for (const p of cfg.pages) {
       expect(w.rpg.moves.unlockPage(p.id, w.rpg.inv), p.id).toMatchObject({ ok: true })
       expect(w.rpg.moves.isLit(p.id), `${p.id} 亮了`).toBe(true)
     }
-    expect(w.rpg.inv.count(CORE) - beforeCore, '钱花完了：核没有多余的来兜底').toBe(0)
+    // 核吃两颗剩一颗：乐章 IV 不再是货币的买家（旧口径「一分余量都不多」随改判作废）
+    expect(w.rpg.inv.count(CORE) - beforeCore, '三颗核只吃两颗：剩的那颗是她自己的').toBe(1)
   })
 
-  it('反向：少杀一场 Boss，三张吃核的页就点不满（乐章 IV 真的悬在那一场战上）', () => {
+  it('反向：不杀恩希尔，乐章 IV 就真的暗着——核再多也买不动它（解锁源不是货币是见证）', () => {
     const w = makeWorld('short')
     const cfg = movementConfig()
-    const corePages = cfg.pages.filter((p) => p.unlock.item === CORE)
-    expect(corePages[corePages.length - 1].id, '这条负例把「最后一张吃核的页=乐章 IV」当成了顺序前提').toBe('mvpage_rest')
+    const rest = cfg.pages.find((p) => p.id === 'mvpage_rest')!
+    expect(rest.unlock.flag, 'IV 的解锁源是旗标').toBe('flag.hersil_felled')
     const before = w.rpg.inv.count(CORE)
-    for (const b of BOSSES.filter((x) => x.id !== 'en_myriad')) w.fight(w.engage(b.id, 'two-only'))
-    expect(w.rpg.inv.count(CORE) - before, '两场 Boss 战只给两颗核').toBe(corePages.length - 1)
-    for (const p of corePages.slice(0, -1)) expect(w.rpg.moves.unlockPage(p.id, w.rpg.inv).ok, p.id).toBe(true)
-    const rest = corePages[corePages.length - 1]
-    expect(w.rpg.moves.unlockPage(rest.id, w.rpg.inv)).toMatchObject({ ok: false, reason: 'poor' })
-    expect(w.rpg.moves.isLit(rest.id), '少一颗核就是暗的：解锁价不是装饰').toBe(false)
+    for (const b of BOSSES.filter((x) => x.id !== 'en_hersil')) w.fight(w.engage(b.id, 'no-finale'))
+    expect(w.rpg.inv.count(CORE) - before, '两场 Boss 战给两颗核：吃核的 I/III 付得起').toBe(2)
+    for (const p of cfg.pages.filter((x) => x.unlock.item === CORE)) {
+      expect(w.rpg.moves.unlockPage(p.id, w.rpg.inv).ok, p.id).toBe(true)
+    }
+    expect(w.rpg.moves.unlockPage(rest.id, w.rpg.inv)).toMatchObject({ ok: false, reason: 'flag' })
+    expect(w.rpg.moves.isLit(rest.id), '她没死，那一页就是暗的：核堆成山也换不来').toBe(false)
   })
 })

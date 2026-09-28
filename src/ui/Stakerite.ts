@@ -740,10 +740,13 @@ export class Stakerite {
     const rank = this.rpg.prog.rank
     const pages = book.cfg.pages.map((pg) => {
       const lit = book.isLit(pg.id)
-      const have = inv.count(pg.unlock.item)
+      // 解锁源二形（KI-037）：item 页数实物，flag 页见证事件——按钮判据两形共用 canUnlock
+      const src = pg.unlock.flag
+        ? `<span class="num">${unlockItemName(pg.id)} · ${book.hasFlag(pg.unlock.flag) ? '已见证' : '未见证'}</span>`
+        : (() => { const have = inv.count(pg.unlock.item ?? ''); return `<span class="num">${itemOf(pg.unlock.item ?? '').displayName} ${have}/${pg.unlock.count ?? 1}</span>` })()
       const unlock = `<div class="row"><span class="name">解锁源<span class="note">${pg.desc}</span></span>
-        <span class="num">${itemOf(pg.unlock.item).displayName} ${have}/${pg.unlock.count}</span>
-        <span class="act"><button class="act" data-act="lit" data-arg="${pg.id}" ${lit || have < pg.unlock.count ? 'disabled' : ''}>${lit ? '已点亮' : '点亮'}</button></span></div>`
+        ${src}
+        <span class="act"><button class="act" data-act="lit" data-arg="${pg.id}" ${lit || !book.canUnlock(pg.id, inv) ? 'disabled' : ''}>${lit ? '已点亮' : '点亮'}</button></span></div>`
       const rows = book.cfg.movements.filter((m) => m.page === pg.id).map((m) => {
         const lv = book.levelOf(m.id)
         const need = book.upgradeNeed(m.id)

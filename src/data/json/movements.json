@@ -34,8 +34,8 @@
    "id": "mvpage_rest",
    "nameKey": "movement.page.rest",
    "displayName": "乐章 IV·休止",
-   "desc": "这一页上没有音符。它记的是一段空拍——要等第三颗振源核也交了出去，翻开的才是这一页。",
-   "unlock": { "item": "it_resonance_core", "count": 1 }
+   "desc": "这一页上没有音符。它记的是一段空拍——要等未竟厅的那位自己停下，翻开的才是这一页。",
+   "unlock": { "flag": "flag.hersil_felled" }
   }
  ],
  "movements": [

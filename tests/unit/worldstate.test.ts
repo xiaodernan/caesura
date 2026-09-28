@@ -100,6 +100,8 @@ describe('WorldState 规则语义', () => {
       for (const it of rg.interactables ?? []) if (it.requiresFlag) read.add(it.requiresFlag)
       for (const s of rg.secrets ?? []) read.add(s.unlockFlag)
     }
+    // 谱册页的旗标解锁源也是读方（KI-037 乐章 IV：恩希尔终段那条规则写的就是它）
+    for (const pg of (registry.get('movements') as { pages: Array<{ unlock?: { flag?: string } }> }).pages ?? []) if (pg.unlock?.flag) read.add(pg.unlock.flag)
     for (const r of worldstate) expect(read.has(r.setFlag), `${r.id} 写了 ${r.setFlag}，但没有任何闸门读它`).toBe(true)
   })
 })

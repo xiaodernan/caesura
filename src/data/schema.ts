@@ -916,8 +916,13 @@ export interface MovementPage {
   nameKey: string
   displayName: string
   desc: string
-  /** 点亮这一页要吃掉的东西（振源核/乐谱残页——§7.1 的两条解锁源） */
-  unlock: { item: string; count: number }
+  /**
+   * 点亮这一页的解锁源（§7.1）。两种形状二选一（validator 钉住）：
+   * - `item`：吃掉实物（振源核/乐谱残页——I/II/III 三页）；
+   * - `flag`：被世界事件见证（乐章 IV = 恩希尔终段，KI-037 的改判：worldstate 的
+   *   bossDefeated 规则写旗，谱册的点亮键读旗——不再把「第四颗核」伪造进经济）。
+   */
+  unlock: { item?: string; count?: number; flag?: string }
 }
 
 /** 主动槽。`milestone` 指向 progression.json 的里程碑 id：几级开槽由那张表说，这里不抄第二遍数 */
@@ -1221,6 +1226,40 @@ export interface ExploreAtonal {
 }
 
 export type ExploreScore = ExploreTonal | ExploreAtonal
+
+/**
+ * 一区的战斗档（docs/audio.md §1.1 那一行「战斗遭遇」+ §2.2 那张表的"遭遇层"，KI-080）。
+ *
+ * **这一支里没有任何主音格、也没有任何速度格**，而且是刻意的：
+ *  · §1.1 写的是"战斗 = 主音不变、色彩变暗"——主音属于玩法调性系统（全局那个 C），
+ *    一旦这张表能写 `rootHz`，"主音不变"就成了可被数据逐区推翻的话；
+ *  · 拍长的唯一主人是 `RhythmClock`（KI-066 拆掉 `music.ts > const BPM = 84` 拆的就是这个），
+ *    这里写 `bpm` 就是把它请回来当第二个主人。
+ * 所以数据能指的只有**这一档的低音走哪一条线、钟隔几小节一次，或者整档什么都不排**。
+ * 鼓型（哪几拍驼鼓、哪几拍军鼓）与各家峰值刻意留在 `music.ts`：五档真数据在那一格全同，
+ * 一列谁都不同的值都没有的信息量就是 §55 说的死数据 —— 哪天要给某一档换鼓型，再把它加进来。
+ */
+export interface BattleTonal {
+  id: string
+  /**
+   * 低音 ostinato：每一项是**一个折起来的格子** —— `动机第几音 + 第几档八度`，
+   * 解码 `deg = e % 4`、`oct = floor(e / 4)`（`music.ts > battleOstinatoHz`，步长取 `MOTIF_R1.length`）。
+   * 为什么不直接写半音数或 Hz：这张表连一个音名都不写，于是 §1.2「一切旋律只许派生自 R-1」
+   * 在**形状上**就成立（违宪的音没有写法），而 Hz 的主人照旧是 `music.ts > BATTLE_ROOT_HZ` 那一格
+   * ——§1.1「战斗 = 主音不变」说的就是它不许跟着区域走。合法范围由校验器管（`scripts/battle-rules.mjs`）。
+   */
+  pattern: number[]
+  /** 每隔几小节一次钟 accent（§6.1 奥斯塔拉那一格的"每 4 小节一次钟敲"就落在这上面）。≥1：`i % 0` 是 NaN */
+  bellEveryBars: number
+}
+
+/** 万籁那一格：§6.3「本 Boss 无配乐」——这一档**什么都不排**，是数据说的，不是"表里少写了几格" */
+export interface BattleSilent {
+  id: string
+  noMusic: true
+}
+
+export type BattleScore = BattleTonal | BattleSilent
 
 export interface RegionData {
   id: string

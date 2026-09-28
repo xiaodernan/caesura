@@ -72,7 +72,8 @@ type World = ReturnType<typeof makeWorld>
 
 /** 学常拍脚 L1：点亮序句页 + 塞钱 + 研读 + 灌给玩家（与 main.ts 的 refresh 同口径） */
 function learnFeatherRest(w: World): void {
-  w.rpg.inv.add('it_resonance_core', 1)
+  // 乐章 IV 的解锁源是旗标（KI-037 改判）：写方在 worldstate 的 bossDefeated 规则，此处等价发生
+  bus.emit('world.flag', { key: 'flag.hersil_felled', value: true })
   expect(w.rpg.moves.unlockPage('mvpage_rest', w.rpg.inv).ok, '乐章 IV·休止 点亮').toBe(true)
   w.rpg.inv.add('it_timbite', 100)
   w.rpg.inv.add('it_score_fragment', 100)
@@ -264,7 +265,7 @@ describe('§7.3 被动栏第一批（KI-036）：常拍脚与厚膜鼓', () => {
 
     // 升到 L3（0.4）⇒ 同一相位就能收掉
     const w2 = makeWorld()
-    w2.rpg.inv.add('it_resonance_core', 1)
+    bus.emit('world.flag', { key: 'flag.hersil_felled', value: true })
     w2.rpg.moves.unlockPage('mvpage_rest', w2.rpg.inv)
     w2.rpg.inv.add('it_timbite', 1000)
     w2.rpg.inv.add('it_score_fragment', 1000)
