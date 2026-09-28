@@ -272,7 +272,7 @@ describe('《唤四钟》：修钟的闸门、跨区三步、三段合听（§2.
     w.session.choose('c3')
     expect(w.streaming.hasFlag('flag.faceless_told_it_is_an_ear')).toBe(true)
     expect(w.quests.relation('npc_faceless'), '撒谎扣关系').toBe(relBefore - 1)
-    expect(w.quests.isComplete('q_faceless'), '这一步走完了（诚实与否都算）').toBe(true)
+    expect(w.quests.state('q_faceless'), '这一步推进到步 3').toBe('FACELESS.STEP3_VESSEL')
     w.session.close()
 
     w.session.open('npc_faceless') // 复访：质问不再出现，只剩那个反复写下的音符
@@ -293,7 +293,7 @@ describe('《唤四钟》：修钟的闸门、跨区三步、三段合听（§2.
     w.session.choose('c1') // 「是孩子。」
     expect(w.streaming.hasFlag('flag.faceless_answered')).toBe(true)
     expect(w.streaming.hasFlag('flag.faceless_told_it_is_an_ear')).toBe(false)
-    expect(w.quests.isComplete('q_faceless')).toBe(true)
+    expect(w.quests.state('q_faceless'), '这一步推进到步 3').toBe('FACELESS.STEP3_VESSEL')
     w.session.close()
     // 诚实的人复访：ash 场景只触发一次（once: true），再开对话落到 n4（哑钟抉择），不进 n6（同一个音符链只对撒谎成立）
     w.session.open('npc_faceless')

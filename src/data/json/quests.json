@@ -286,39 +286,72 @@
    }
   ]
  },
- {
-  "id": "q_faceless",
-  "nameKey": "quest.faceless",
-  "displayName": "容器线",
-  "npc": "npc_faceless",
-  "outcome": "STATE.FACELESS = VESSEL / CHILD / CHOSEN / LOST —— 终局三手牌的关键变量。",
-  "steps": [
-   {
-    "state": "FACELESS.STEP1_OPEN",
-    "label": "《第一次代写》：它在灰上写下铃姨还没说出口的两个字",
-    "advanceOn": {
-     "flags": [
-      "flag.faceless_first_writing"
-     ]
-    },
-    "tags": [
-     "D",
-     "H"
+{
+    "id": "q_faceless",
+    "nameKey": "quest.faceless",
+    "displayName": "容器线",
+    "npc": "npc_faceless",
+    "outcome": "STATE.FACELESS = VESSEL / CHILD / CHOSEN / LOST —— 终局三手牌的关键变量。",
+    "steps": [
+      {
+        "state": "FACELESS.STEP1_OPEN",
+        "label": "《第一次代写》：它在灰上写下铃姨还没说出口的两个字",
+        "advanceOn": {
+          "flags": [
+            "flag.faceless_first_writing"
+          ]
+        },
+        "tags": [
+          "D",
+          "H"
+        ]
+      },
+      {
+        "state": "FACELESS.STEP2_ANSWER",
+        "label": "《会应答的孩子》：修过钟之后它写准了半度 —— 铃姨要你回答「你捡到的是孩子，还是耳朵」",
+        "tags": [
+          "D",
+          "C"
+        ],
+        "advanceOn": {
+          "flags": [
+            "flag.faceless_answered"
+          ]
+        }
+      },
+      {
+        "state": "FACELESS.STEP3_VESSEL",
+        "label": "《容器》：在初句圣所收集五环线索，确认它到底是什么 —— 容器、孩子、被选中者、还是迷失者",
+        "tags": [
+          "D",
+          "H",
+          "M"
+        ],
+        "advanceOn": {
+          "flags": [
+            "flag.faceless_clue_ring_complete"
+          ]
+        }
+      },
+      {
+        "state": "FACELESS.STEP4_IDENTITY",
+        "label": "《归属》：在圣所深处把归属写入它的灰里 —— STATE.FACELESS 写入 VESSEL/CHILD/CHOSEN/LOST",
+        "advanceOn": {
+          "state": {
+            "key": "state.faceless.identity",
+            "in": [
+              "VESSEL",
+              "CHILD",
+              "CHOSEN",
+              "LOST"
+            ]
+          }
+        },
+        "tags": [
+          "C",
+          "M"
+        ]
+      }
     ]
-   },
-   {
-    "state": "FACELESS.STEP2_ANSWER",
-    "label": "《会应答的孩子》：修过钟之后它写准了半度 —— 铃姨要你回答「你捡到的是孩子，还是耳朵」",
-    "tags": [
-     "D",
-     "C"
-    ],
-    "advanceOn": {
-     "flags": [
-      "flag.faceless_answered"
-     ]
-    }
-   }
-  ]
- }
+  }
 ]

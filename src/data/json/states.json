@@ -1,26 +1,39 @@
 [
   {
-   "key": "state.bells.fourth_dumb",
-   "displayName": "第四口钟 · 哑钟",
-   "values": [
-    "INTACT",
-    "RUNG",
-    "MELTED",
-    "SEALED"
-   ],
-   "default": "INTACT",
-   "note": "铃姨线步 4《该不该敲响》三选一写入（§2.1/§7 STATE.BELLS.FOURTH_DUMB）。取值映射按 §7 那句「公审/熔钟/封口」：当众敲响=RUNG、把锤子交给她= MELTED、永不动它=SEALED；INTACT 是**缺省读数**（还没走到这个抉择），不是第四种结局。读方四处：抉择门控、三句复访、休垒广场三处陈设组换、任务末步 advanceOn。"
+    "key": "state.bells.fourth_dumb",
+    "displayName": "第四口钟 · 哑钟",
+    "values": [
+      "INTACT",
+      "RUNG",
+      "MELTED",
+      "SEALED"
+    ],
+    "default": "INTACT",
+    "note": "铃姨线步 4《该不该敲响》三选一写入（§2.1/§7 STATE.BELLS.FOURTH_DUMB）。取值映射按 §7 那句「公审/熔钟/封口」：当众敲响=RUNG、把锤子交给她= MELTED、永不动它=SEALED；INTACT 是**缺省读数**（还没走到这个抉择），不是第四种结局。读方四处：抉择门控、三句复访、休垒广场三处陈设组换、任务末步 advanceOn。"
   },
   {
-   "key": "state.corvin.schism",
-   "displayName": "科温 · 学派分裂",
-   "values": [
-    "INTACT",
-    "EXPOSED",
-    "COMPLICIT",
-    "COLLUDED"
-   ],
-   "default": "INTACT",
-   "note": "科温线步 4《学者之乱》三选一写入（§2.2）。取值映射：揭露实验=EXPOSED、包庇=COMPLICIT、共谋=COLLUDED；INTACT 是缺省读数。读方：休垒广场学者之乱支线、营地后门、沉唱堂捕获笼、无面童尾声。"
+    "key": "state.corvin.schism",
+    "displayName": "科温 · 学派分裂",
+    "values": [
+      "INTACT",
+      "EXPOSED",
+      "COMPLICIT",
+      "COLLUDED"
+    ],
+    "default": "INTACT",
+    "note": "科温线步 4《学者之乱》三选一写入（§2.2）。取值映射：揭露实验=EXPOSED、包庇=COMPLICIT、共谋=COLLUDED；INTACT 是缺省读数。读方：休垒广场学者之乱支线、营地后门、沉唱堂捕获笼、无面童尾声。"
+  },
+  {
+    "key": "state.faceless.identity",
+    "displayName": "无面童 · 身份归属",
+    "values": [
+      "INTACT",
+      "VESSEL",
+      "CHILD",
+      "CHOSEN",
+      "LOST"
+    ],
+    "default": "INTACT",
+    "note": "无面童线步 4《容器》三选一写入（�?.3/§7 STATE.FACELESS）。取值映射：它是容器=VESSEL、它是孩子=CHILD、它是被选中者=CHOSEN、它迷失了=LOST；INTACT 是缺省读数。读方：初句圣所五环线索链、无面童尾声、谱册最终页、谱架最终解锁"
   }
 ]
