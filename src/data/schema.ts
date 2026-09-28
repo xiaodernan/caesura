@@ -488,7 +488,19 @@ export interface PlayerBaseData {
     breakStunMs: number; breakSlowMs: number; breakSlowScale: number }
   perfectBlockWindow: number
   parry: { activeTicks: number; whiffRecovery: number; /** §5.3「失败」行：落空后摇期间被击的伤害倍率（赌注），消费方 `ThirdPersonController.takeDamage` */ whiffDmgMul: number; poiseDamage: number; stunTicks: number; overdriveGain: number; /** §5.3 弹反弹道：反射回原主人的伤害比例（100%） */ projectileReflectMul: number; /** §13.0「听觉 Sound」：弹反那记钟响的响度（未乘武器/词缀），比踏地更响 */ impactLoudness: number }
-  roll: { total: number; iframeStart: number; iframeEnd: number; dist: number; backDist: number; stamina: number; lockOnDist: number; lockOnIframes: [number, number] }
+  /**
+   * §5.5「翻滚 Roll 与侧步 Sidestep」表里**玩家能做出来的那两行**（KI-090 把这四格接上读者）。
+   *
+   * 前/侧/后翻滚 = `total / iframeStart..iframeEnd / dist`，「（后向 2.6m）」那一格是 `backDist`；
+   * 锁定侧步整行**替代**第一行而不是叠加 ⇒ `lockOnTotal / lockOnIframes / lockOnDist / lockOnStamina`
+   * 各对应表里那一行的四列（300ms/18f、4-16f、1.6m、10 点）。
+   *
+   * 唯一消费方是 `ThirdPersonController.rollProfile()/rollDist()`：起手门槛、扣体力、时长/免伤窗、
+   * 每 tick 位移四条腿都从那里派生，谁也不许再自己数一遍（18 与 14 以前就各数了两遍）。
+   * 表里另外两格今天仍然没有载体，不在这里冒充有：「恢复锁」列（后摇）与「空中翻滚」整行，
+   * 理由与实测读数见 KNOWN_ISSUES KI-090。
+   */
+  roll: { total: number; iframeStart: number; iframeEnd: number; dist: number; backDist: number; stamina: number; lockOnTotal: number; lockOnDist: number; lockOnStamina: number; lockOnIframes: [number, number] }
   execution: ExecutionConfig
   /**
    * combat.md §9「Hitstop 时长分级表」中**玩家是守方**的那四行（毫秒）。它们属于**情境**而不属于

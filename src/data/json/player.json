@@ -49,7 +49,9 @@
   "dist": 3.2,
   "backDist": 2.6,
   "stamina": 14,
+  "lockOnTotal": 18,
   "lockOnDist": 1.6,
+  "lockOnStamina": 10,
   "lockOnIframes": [
    4,
    16

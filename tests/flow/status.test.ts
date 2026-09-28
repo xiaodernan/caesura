@@ -355,7 +355,7 @@ describe('§11 失谐（褪色值）：区域压力机制，不是惩罚', () =>
     const hp0 = w.player.stats.hp
     const dt = 1 / TICK_HZ
     // 把玩家摆在翻滚无敌帧里：takeDamage 会拒收，fadeDamage 不该理它（§11 这是世界在拿走声音，不是谁打你）
-    w.player.roll = { tick: 5, dir: { x: 0, y: 0, z: 1 }, total: 30, iframeStart: 1, iframeEnd: 20 }
+    w.player.roll = { tick: 5, dir: { x: 0, y: 0, z: 1 }, dist: w.player.base.roll.dist, total: 30, iframeStart: 1, iframeEnd: 20 }
     expect(w.player.iFrame, '前提：此刻确实处于无敌帧').toBe(true)
     expect(w.player.takeDamage(5, { x: 0, y: 0, z: 1 }), '同一时刻的一击被无敌帧吃掉').toBe(false)
     for (let t = 0; t < 60; t++) {

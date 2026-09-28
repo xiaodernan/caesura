@@ -57,7 +57,13 @@ export class PlayerController {
   /** 当前站立面的高度，由 world/Surface 每 tick 注入（垂直分层世界） */
   floorY = 0
   action: PlayerAction | null = null
-  roll: { tick: number; dir: Vec3; total: number; iframeStart: number; iframeEnd: number; punishTicks?: number } | null = null
+  /**
+   * §5.5 那一次翻滚的运行时状态。`dist` 是**这一滚自己的**位移（米，整段走完的总长）：
+   * 起手时从 `rollDist()` 快照一份，而不是每 tick 再读一次表——朝向在滚的过程中会被
+   * `faceTowards` 改动，逐 tick 重算就会让"后向 2.6m"在半途变成 3.2m（与 `punishTicks` 同一口径：
+   * 一次翻滚的属性记在翻滚身上，KI-085 已经立过这条规矩）。
+   */
+  roll: { tick: number; dir: Vec3; dist: number; total: number; iframeStart: number; iframeEnd: number; punishTicks?: number } | null = null
   guardTicks = 0
   guardStartTick = -999
   parryTicksLeft = 0
@@ -340,7 +346,7 @@ export class PlayerController {
       const inWindow = this.execCancelFrac > 0
         && this.executing.tick > Math.floor(total * (1 - this.execCancelFrac))
       const press = input.frame.edges.has('dodge') && canAct && !this.dead
-      const canRollNow = !this.rpg.overloaded && this.stats.stamina >= this.base.roll.stamina
+      const canRollNow = !this.rpg.overloaded && this.stats.stamina >= this.rollProfile(this.lockedTarget !== null).stamina
       if (inWindow && press && canRollNow) {
         this.executing = null // 取消成立：落回本 tick 的正常输入路径，翻滚就在这里起
       } else if (!(inWindow && press)) {
@@ -429,7 +435,7 @@ export class PlayerController {
       // 按了却什么都不发生，是本作最不该有的体验（需求 §25「每次输入都要有可感知的反馈」）：
       // 超载这条拒判此前彻底静默，玩家只知道"翻滚键坏了"。拒的同时说清是哪一维在拦、现在多重、
       // 上限多少——数字全部来自 mods()，不是第二份常数。
-      if (!this.rpg.overloaded && (canAct || this.roll === null) && this.stats.stamina >= this.base.roll.stamina && !this.dead) this.startRoll(tick)
+      if (!this.rpg.overloaded && (canAct || this.roll === null) && this.stats.stamina >= this.rollProfile(this.lockedTarget !== null).stamina && !this.dead) this.startRoll(tick)
       else if (this.rpg.overloaded) this.warnOverloaded()
     }
 
@@ -527,8 +533,8 @@ export class PlayerController {
     }
     if (this.roll) {
       this.roll.tick++
-      const step = (this.roll.dir.x * this.base.roll.dist + 0) / this.roll.total
-      const stepZ = (this.roll.dir.z * this.base.roll.dist) / this.roll.total
+      const step = (this.roll.dir.x * this.roll.dist) / this.roll.total
+      const stepZ = (this.roll.dir.z * this.roll.dist) / this.roll.total
       this.pos.x += step; this.pos.z += stepZ
       if (this.roll.tick >= this.roll.total) {
         // §14.4 诱饵惩罚在这里兑现（KI-085）：这一滚把无敌帧花在了假动作上，所以站起来那一刻
@@ -590,21 +596,51 @@ export class PlayerController {
     return { x: -Math.sin(this.yaw), y: 0, z: -Math.cos(this.yaw) }
   }
 
+  /**
+   * §5.5 那张翻滚表的**唯一读数处**（KI-090）：一次翻滚的时长 / 免伤窗 / 体力价三格都从这里派生。
+   *
+   * 表里锁定侧步那一行（300ms/18f、4-16f、10 点）此前在代码里是两处各数一遍的：时长硬编码成
+   * `locked ? 18`，体力那两条门槛读的是自由翻滚那一格（14）。于是「侧步只要 10 点」这一格数字
+   * 躺在 `player.json` 里没有人读，而"12 点体力时滚不出自由翻滚、却该滚得出侧步"这条边界根本不存在。
+   * 现在起手门槛、处决取消那一处的门槛、扣体力、时长与免伤窗四条腿共用这一份读数（位移是另一条腿，见 `rollDist`）。
+   */
+  rollProfile(locked: boolean): { total: number; iframeStart: number; iframeEnd: number; stamina: number } {
+    const r = this.base.roll
+    return locked
+      ? { total: r.lockOnTotal, iframeStart: r.lockOnIframes[0], iframeEnd: r.lockOnIframes[1], stamina: r.lockOnStamina }
+      : { total: r.total, iframeStart: r.iframeStart, iframeEnd: r.iframeEnd, stamina: r.stamina }
+  }
+
+  /**
+   * §5.5「位移」那一列（KI-090）：`lockOnDist`(1.6m) 与 `backDist`(2.6m) 两格今天才第一次有读者。
+   *
+   * 锁定侧步走 `lockOnDist`：表里第二行**替代**第一行而不是叠加，所以锁定状态下不论输入朝哪都走那一格
+   * 短步（"锁定 + 后向"表里没有第五格，不发明）。自由翻滚按"这一滚是否与朝向相反"取 `backDist`，
+   * 反向判据用 `+sin/+cos` 那个朝向约定（与招式前冲 `f.lunge` 同一个）。注意 `moveDir()` 在**没有输入**
+   * 时回落的是 `-sin/-cos`，正好与朝向相反 ⇒ 空输入的一滚会被算成后向，那条既有不一致登记在 KI-090 没做③。
+   */
+  rollDist(dir: Vec3, locked: boolean): number {
+    if (locked) return this.base.roll.lockOnDist
+    const backward = dir.x * Math.sin(this.yaw) + dir.z * Math.cos(this.yaw) < 0
+    return backward ? this.base.roll.backDist : this.base.roll.dist
+  }
+
   private startRoll(tick: number): void {
     const dir = this.moveDir()
-    this.stats.spendStamina(this.base.roll.stamina, tick)
+    const locked = this.lockedTarget !== null
+    const p = this.rollProfile(locked)
+    this.stats.spendStamina(p.stamina, tick)
     this.action = null
     this.charging = false
     this.chargeTicks = 0
-    const locked = this.lockedTarget !== null
     // 恢复锁漂移：±jitter 交替（不是抽签——均值守恒，但每一滚的落点都要重新读）
     const jit = this.dodgeJitterTicks
     const drift = jit > 0 ? (this.dodgeCount++ % 2 === 0 ? jit : -jit) : 0
     this.roll = {
-      tick: 0, dir,
-      total: Math.max(6, (locked ? 18 : this.base.roll.total) + drift),
-      iframeStart: locked ? this.base.roll.lockOnIframes[0] : this.base.roll.iframeStart,
-      iframeEnd: locked ? this.base.roll.lockOnIframes[1] : this.base.roll.iframeEnd
+      tick: 0, dir, dist: this.rollDist(dir, locked),
+      total: Math.max(6, p.total + drift),
+      iframeStart: p.iframeStart,
+      iframeEnd: p.iframeEnd
     }
     this.grounded = true
     bus.emit('sound.source', { id: 'player', pos: { ...this.pos }, loudness: this.noise(0.3) })

@@ -542,7 +542,7 @@ function validatePlayer() {
   report.sub(file, 'guard', p.guard, { startupTicks: { min: 0, int: true }, reduction: { min: 0, max: 1 }, staPerDmg: { min: 0 }, bleedPoiseFrac: { min: 0, max: 1 }, perfectBlockReflectMul: { min: 0, max: 1 }, breakStunMs: { min: 1 }, breakSlowMs: { min: 0 }, breakSlowScale: { min: 0.05, max: 0.99 } })
   // whiffDmgMul（§5.3 赌注）卡在 ≥1：<1 就成了「落空反而减伤」，那是奖励不是代价
   report.sub(file, 'parry', p.parry, { activeTicks: { min: 0, int: true }, whiffRecovery: { min: 0, int: true }, whiffDmgMul: { min: 1 }, poiseDamage: { min: 0 }, stunTicks: { min: 0, int: true }, overdriveGain: { min: 0 }, projectileReflectMul: { min: 0, max: 1 } })
-  report.sub(file, 'roll', p.roll, { total: { min: 0, int: true }, iframeStart: { min: 0, int: true }, iframeEnd: { min: 0, int: true }, dist: { min: 0 }, backDist: { min: 0 }, stamina: { min: 0 }, lockOnDist: { min: 0 } })
+  report.sub(file, 'roll', p.roll, { total: { min: 0, int: true }, iframeStart: { min: 0, int: true }, iframeEnd: { min: 0, int: true }, dist: { min: 0 }, backDist: { min: 0 }, stamina: { min: 0 }, lockOnTotal: { min: 1, int: true }, lockOnDist: { min: 0 }, lockOnStamina: { min: 1 } })
   report.sub(file, 'execution', p.execution, {
     hpFrac: { min: 0, max: 1 }, flat: { min: 0 }, stealthKillFrac: { min: 0, max: 1 }, backstabConeDeg: { min: 0, max: 180 },
     backstabRange: { min: 0 }, crumpleRange: { min: 0 }, overdriveCost: { min: 0 }, overdriveFrac: { min: 0, max: 1 },
@@ -572,9 +572,11 @@ function validatePlayer() {
   report.sub(file, 'rankXpCurve', p.rankXpCurve, { base: { min: 0 }, a: { min: 0 }, b: { min: 0 } })
   report.sub(file, 'attrs', p.attrs, Object.fromEntries([...ATTR_KEYS].map((k) => [k, { min: 0 }])))
 
-  // 区间序关系
+  // 区间序关系：§5.5 那两行**各自**成立——免伤窗要住在自己那一行的时长里。
+  // `lockOnIframes` 以前比的是 `total`（自由翻滚那 30 拍），所以把侧步时长改成 8 拍也不会红：
+  // 那条判据量的是**另一行**的长度（KI-090 纠正）。
   if (isObj(p.roll)) {
-    const { total, iframeStart, iframeEnd, lockOnIframes } = p.roll
+    const { total, iframeStart, iframeEnd, lockOnTotal, lockOnIframes } = p.roll
     if ([total, iframeStart, iframeEnd].every(isNum) && !(iframeStart <= iframeEnd && iframeEnd <= total)) {
       report.error(file, 'roll', `需 iframeStart(${iframeStart}) <= iframeEnd(${iframeEnd}) <= total(${total})`)
     }
@@ -582,8 +584,8 @@ function validatePlayer() {
       if (!isArr(lockOnIframes) || lockOnIframes.length !== 2) report.error(file, 'roll.lockOnIframes', '必须是 [start, end] 两元素数组')
       else {
         lockOnIframes.forEach((n, i) => report.num(file, `roll.lockOnIframes[${i}]`, n, { min: 0, int: true, name: 'lockOnIframes' }))
-        if (lockOnIframes.every(isNum) && !(lockOnIframes[0] <= lockOnIframes[1] && lockOnIframes[1] <= total)) {
-          report.error(file, 'roll.lockOnIframes', `需 start <= end <= roll.total(${total})`)
+        if (lockOnIframes.every(isNum) && isNum(lockOnTotal) && !(lockOnIframes[0] <= lockOnIframes[1] && lockOnIframes[1] <= lockOnTotal)) {
+          report.error(file, 'roll.lockOnIframes', `需 start <= end <= roll.lockOnTotal(${lockOnTotal})：侧步的免伤窗住在侧步的时长里，不是自由翻滚那一行里`)
         }
       }
     }
