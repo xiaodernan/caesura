@@ -3,6 +3,8 @@
  * scripts/validate-data.mjs
  *
  * KI-015 数据门禁：零新增依赖（只用 node 内置 fs/path），校验 src/data/json/*.json。
+ * KI-082 起多一道与其它判据**不相交**的门：表里出现 U+FFFD（写盘路径压坏中文留下的记号）即 ERROR，
+ * 判据本体住 `scripts/text-integrity.mjs`。
  * 结构/词表以 src/data/schema.ts 为准（本脚本只读，绝不修改任何被校验的 JSON）。
  *
  * 用法：node scripts/validate-data.mjs        （或 npm run validate:data）
@@ -27,6 +29,8 @@ import {
 } from './explore-rules.mjs'
 // KI-080：战斗档表的判据本体，同一族理由（两端都要量得动）。`report.num` 管的 `bellEveryBars` 留在本文件。
 import { BATTLE_SILENT_FIELDS, BATTLE_TONAL_FIELDS, battleFindings } from './battle-rules.mjs'
+// KI-082：文本完整性。中文被写盘路径压坏这件事从此由机器发现，不靠人眼撞见（那一族不与任何既有判据相交）。
+import { mojibakeFindings } from './text-integrity.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const JSON_DIR = resolve(ROOT, 'src/data/json')
@@ -229,9 +233,26 @@ const report = new Report()
 
 // ---- 数据加载 ----
 const data = {}
+/** 每份表的**原文**（KI-082）：坏字符不破坏 JSON 的合法性，只看解析后的对象是看不见它的 */
+const sourceText = {}
 for (const f of FILES) {
-  try { data[f] = JSON.parse(readFileSync(resolve(JSON_DIR, f), 'utf8')) }
+  try {
+    const text = readFileSync(resolve(JSON_DIR, f), 'utf8')
+    sourceText[f] = text
+    data[f] = JSON.parse(text)
+  }
   catch (e) { report.error(f, f, `JSON 读取/解析失败：${e.message}`); data[f] = null }
+}
+
+// ---- KI-082 文本完整性：数据表里不许有 U+FFFD ----
+/**
+ * 为什么它要单列一道门：这一族坏字符**不与任何既有判据相交**——文件仍然是合法 JSON、字段仍然对得上
+ * `schema.ts`、数值仍然在范围内，只有那一段中文悄悄少了几个字（2026-09-28 实测：`states.json` 的
+ * `§2.3` 被压成 `\uFFFD?.3`，成因是另一条并行会话的写盘路径）。判据本体住 `text-integrity.mjs`，
+ * 这里只当那张嘴；`where` 报行号 —— 压坏之后连那条 JSON 路径自己都可能读不出来。
+ */
+for (const f of mojibakeFindings(FILES.map((file) => ({ file, text: sourceText[file] })))) {
+  report.error(f.file, f.where, f.msg)
 }
 
 // ---- 通用片段校验 ----
