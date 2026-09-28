@@ -10,7 +10,7 @@
  * 用法：node scripts/validate-data.mjs        （或 npm run validate:data）
  * 退出码：存在 ERROR → 1；仅 WARN 或全绿 → 0（这才是它作为门禁的意义）。
  */
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 // 「先记账后接线」那两份账本的**销账**判据（KI-073）。住在这里而不是内联，是为了让测试能喂它合成账本：
@@ -20,8 +20,10 @@ import { flagLedgerErrors, milestoneLedgerErrors, PENDING_FLAG_WRITERS, PENDING_
 // 一张表、一条数组、一组调用点）是唯一起点，这里读它而不是抄它。
 // KI-086 补两种形状（嵌套对象里的内联联合、模块级 `const X = new Set([...])`），
 // 并把"还剩几张没交代"换成机器读数（`handCopiedLists` + `vocabCoverageErrors`）。
+// KI-088 认下第六种主人：**一个目录**——`corpusFor` 从此吃得下以 `/` 结尾的路径（语料是目录名逐行拼起来的），
+// 于是 `FILES` 那张工作清单也不再是"没有主人"，而是与 `src/data/json/` 里的真文件双向对账。
 import {
-  arrayLiterals, callArgLiterals, fieldUnion, handCopiedLists, importedNames, interfaceFields, objectKeys,
+  arrayLiterals, callArgLiterals, dirListing, fieldUnion, handCopiedLists, importedNames, interfaceFields, objectKeys,
   refFieldUnion, schemaBlocks, setLiterals, unionMembers, vocabCoverageErrors, vocabDriftErrors,
 } from './schema-vocab.mjs'
 // KI-079：探索曲表的判据本体（同一族理由，见上面那两行）。这里只把 findings 报成 ERROR/WARN，
@@ -230,6 +232,15 @@ const VOCAB_PAIRS = [
   { at: 'QuestTag', from: 'src/data/schema.ts', name: '§28 任务标注', source: (c) => unionMembers(c.blocks, 'QuestTag'), copied: [...QUEST_TAGS], where: 'QUEST_TAGS' },
   // 主人不在 schema：伪动作那张住在 AI 模块里，是私有常量而不是 export，也不是数组（KI-086 的新形状）
   { at: 'PSEUDO_ACTIONS', from: 'src/ai/Enemy.ts', name: '距离带里的伪动作', source: (c) => setLiterals(c.text, 'PSEUDO_ACTIONS'), copied: [...PSEUDO_ACTIONS], where: 'PSEUDO_ACTIONS' },
+  // KI-088：第六种主人是**一个目录**。`FILES` 不是一段数据的值域，它是"校验器去读哪几份表"的工作清单，
+  // 真主人是 `src/data/json/` 里躺着的那些文件（语料由 corpusFor 现读目录，见上面那条注释）。
+  // 这一行替掉了 KI-086 登记在豁免表里的那句"那个形状今天没有"。
+  {
+    at: 'src/data/json/ 目录', from: 'src/data/json/', name: '校验器要读的表名册',
+    source: (c) => dirListing(c.text, '.json'), copied: FILES, where: 'FILES',
+    missHint: '那份 JSON 躺在表目录里而校验器不读它 ⇒ 它永远不过门禁（§55 的死数据，比写错一格更糟：没人会看见它错）',
+    extraHint: '名单里有这个文件名而目录里没有 ⇒ 校验器在读一份不存在的表，那条判据从此在空转',
+  },
 ]
 
 /**
@@ -256,10 +267,6 @@ const VOCAB_UNPAIRED = [
     why: '它是 validateGearAdvice 的函数内临时量而不是模块级词表，且 tests/unit/gear-advice.test.ts 已把它与 `ADVICE_AXES` 逐字对账（KI-060）',
   },
   {
-    name: 'FILES', master: 'src/data/json/ 目录本身',
-    why: '这是校验器"读哪几份 JSON"的工作清单，不是一段数据的值域；它该对账的对象是目录而不是任何一条声明，而 VocabPair.source 收到的是**一份文件**的语料——那个形状今天没有。登记为 KI-086 没做①：新增一份表而忘了加进这里，今天只会安静地不被校验',
-  },
-  {
     name: 'VOCAB_PAIRS', master: '（无）',
     why: '对账表自己：一张对象数组而不是词表。普查按形状认名单，所以它会被扫到——把"为什么它不算一张词表"写在这里，而不是在抽取器里开一个特例（特例是藏身处，KI-073 那一族）',
   },
@@ -278,7 +285,10 @@ function validateVocabDrift() {
   const corpusFor = (from) => {
     if (!cache.has(from)) {
       try {
-        const text = readFileSync(resolve(ROOT, from), 'utf8')
+        // 以 `/` 结尾的主人是一个**目录**（KI-088）：语料就是"这里面躺着哪些文件"，逐行拼起来交给 dirListing。
+        const text = from.endsWith('/')
+          ? readdirSync(resolve(ROOT, from)).join('\n')
+          : readFileSync(resolve(ROOT, from), 'utf8')
         cache.set(from, { text, blocks: schemaBlocks(text) })
       } catch { cache.set(from, null) }
     }

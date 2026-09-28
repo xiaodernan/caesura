@@ -17,8 +17,13 @@
  * KI-086 把剩下的两种形状补上，并把"还剩几张没接"变成机器读数：
  * ①**嵌套对象里的内联联合**（`EnemyData.ai.pickOrder` 缩进四格）——`fieldUnion` 原来只认两格，
  *    于是那张名单读成 null；②**模块级 `const X = new Set([...])`**（`src/ai/Enemy.ts > PSEUDO_ACTIONS`，
- *    既不是 export 也不是数组）；③一张名单如果**确实没有代码主人**（`REACTIONS` 那类），
- *    必须进 `VOCAB_UNPAIRED` 写明真主人是谁——由 `vocabCoverageErrors` 逐张交代，不再靠注释。
+ *    既不是 export 也不是数组）；③一张名单如果**确实没有代码主人**（`AFFIX_STATS` 那类，主人是另一道门
+ *    已经在跑的双向对账），必须进 `VOCAB_UNPAIRED` 写明真主人是谁——由 `vocabCoverageErrors` 逐张交代，不再靠注释。
+ *
+ * KI-088 承认第六种主人：**一个目录**。`FILES`（校验器读哪几份 JSON）的真主人不是任何一条声明，
+ * 而是 `src/data/json/` 里躺着的那些文件，所以 `corpusFor` 收得到以 `/` 结尾的路径（语料 = 目录名逐行拼起来），
+ * 由 `dirListing` 读数。两侧的通用措辞在这个载体上说的都不是这件事，于是 `missHint`/`extraHint`
+ * 让每张名单自己说"这一侧多了/少了到底意味着什么"——红消息必须陈述它自己那条判据。
  *
  * 抽取只认**声明本身**，不认注释、不认第二个来源。读不到就报，不静默跳过——
  * 静默跳过的对账门比没有门更糟（它让所有人都以为有人在看）。
@@ -173,7 +178,9 @@ export function objectKeys(text, constName) {
 /** `export const X = ['a', 'b'] as const` ⇒ ['a','b']（五状态名册那一族：主人是一张数组而不是一条 type） */
 export function arrayLiterals(text, constName) {
   const src = stripComments(text)
-  const m = new RegExp(`export const ${constName}\\b[^=]*?=\\s*\\[([^\\]]*)\\]`).exec(src)
+  // KI-088：`export` 不是"这张名册存不存在"的判据——`validate-data.mjs > FILES` 正是一张没导出的数组，
+  // 而测试要**从它自己读**而不是再手抄第三份。与 `setLiterals`（KI-086）同一条理由。
+  const m = new RegExp(`(?:export )?const ${constName}\\b[^=]*?=\\s*\\[([^\\]]*)\\]`).exec(src)
   if (!m) return null
   const lits = [...m[1].matchAll(/'([^']+)'/g)].map((x) => x[1])
   return lits.length ? lits : null
@@ -223,8 +230,20 @@ export function callArgLiterals(text, fnName) {
 }
 
 /**
+ * 一份**目录名册**语料的读数（KI-088）。`corpusFor('src/data/json/')` 这类主人不是一段声明而是
+ * "那个目录里有哪些文件"，调用方把 `readdirSync` 的结果按行拼成语料交给它，这里只管筛选与去空。
+ * 读不到（空目录、或那张名册其实一张都不剩）返回 null —— 与别的抽取器同一条规矩：
+ * 宁可让调用方喊"门在空转"，也不交出一个空集合冒充"目录里没有多余的表"。
+ */
+export function dirListing(text, ext) {
+  const names = text.split('\n').map((s) => s.trim()).filter(Boolean)
+  const picked = ext ? names.filter((n) => n.endsWith(ext)) : names
+  return picked.length ? [...new Set(picked)] : null
+}
+
+/**
  * 逐张名单对账。
- * @param pairs 每张：`{ at, from, name?, source, copied, allowMissing?, whyMissing?, subset?, whySubset?, where?, hint? }`
+ * @param pairs 每张：`{ at, from, name?, source, copied, allowMissing?, whyMissing?, subset?, whySubset?, where?, hint?, missHint?, extraHint? }`
  *        - `at`：那张声明在这道门里的身份（'SlotKey' / 'MilestoneGrant' / 'SHAKE_TABLE' / 'passiveValue()'）
  *        - `from`：**主人住的文件**（KI-076 起不再只有 schema.ts）——报错按它分段，措辞也用它
  *        - `corpus`：`source` 收到的是 `{ text, blocks }`（前者给 `objectKeys`/`arrayLiterals`/`callArgLiterals` 这类"读整份文件"的判据，后者给 schema 块判据）
@@ -233,6 +252,9 @@ export function callArgLiterals(text, fnName) {
  *        - `subset`：抄本只是声明的一个**任意小子集**（'ActionName' 20 个动作里战技只占 2 个）——
  *          少抄不报，多抄（声明里没有的）照报；必须配 `whySubset`。和 `allowMissing` 互斥：
  *          一张表同时挂两种豁免，等于谁都不在看。
+ *        - `missHint`/`extraHint`（KI-088）：那两个方向在这个载体上**到底意味着什么**。
+ *          通用措辞说的是"字段白名单加了一格没抄"，而主人是目录时说的那句是假的——
+ *          红消息必须陈述它自己那条判据（缺一条表 ⇒ 那份 JSON 没人校验，§55；多一条 ⇒ 名单里有个不存在的文件名）。
  * @returns 每条 `{ key, msg, from }`，调用方按 `from` 分段 report.error
  */
 export function vocabDriftErrors({ pairs, corpusFor }) {
@@ -273,11 +295,12 @@ export function vocabDriftErrors({ pairs, corpusFor }) {
         if (unused.length) out.push({ key: `vocab:${p.at}`, from: p.from, msg: `${name} 登记了"刻意不抄 ${unused.join('/')}"，而今天这份声明里根本没有它们 ⇒ 这条豁免该销了（KI-073 同族）` })
       }
       if (realMissing.length) {
-        out.push({ key: `vocab:${p.at}`, from: p.from, msg: `${name}：${p.from} 里有 ${realMissing.join('/')} 而校验器的名单没有 ⇒ 改表的人会被一个不存在的问题挡住（名单在 ${p.where ?? 'validate-data.mjs'}）` })
+        const tail = p.missHint ?? `改表的人会被一个不存在的问题挡住（名单在 ${p.where ?? 'validate-data.mjs'}）`
+        out.push({ key: `vocab:${p.at}`, from: p.from, msg: `${name}：${p.from} 里有 ${realMissing.join('/')} 而校验器的名单没有 ⇒ ${tail}` })
       }
     }
     if (extra.length) {
-      out.push({ key: `vocab:${p.at}`, from: p.from, msg: `${name}：校验器的名单里有 ${extra.join('/')} 而 ${p.from} 不认识 ⇒ 那一侧看不见这一项，它要么该进声明、要么就是死词（KI-047 那一族）` })
+      out.push({ key: `vocab:${p.at}`, from: p.from, msg: `${name}：校验器的名单里有 ${extra.join('/')} 而 ${p.from} 不认识 ⇒ ${p.extraHint ?? '那一侧看不见这一项，它要么该进声明、要么就是死词（KI-047 那一族）'}` })
     }
   }
   return out

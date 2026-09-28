@@ -1,8 +1,8 @@
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import {
-  arrayLiterals, callArgLiterals, fieldUnion, handCopiedLists, importedNames, interfaceFields, objectKeys,
+  arrayLiterals, callArgLiterals, dirListing, fieldUnion, handCopiedLists, importedNames, interfaceFields, objectKeys,
   refFieldUnion, schemaBlocks, setLiterals, stripComments, unionMembers, vocabCoverageErrors, vocabDriftErrors,
 } from '../../scripts/schema-vocab.mjs'
 import type { VocabCorpus, VocabPair } from '../../scripts/schema-vocab.mjs'
@@ -308,7 +308,7 @@ describe('KI-086：模块级 Set / 数组名册的普查、import 进来的名�
   it('`handCopiedLists` 按缩进读数：两格算进来（校验器的 ADVICE_AXES 正是这张形状），四格以深读不到', () => {
     const names = handCopiedLists(SYNTH2)
     expect(names).toEqual(['PRIVATE_SET', 'PUBLIC_SET', 'ROSTER'])
-    expect(names, '四格缩进今天读不到 ⇒ KI-086 没做②：一张藏得更深的抄本可以躲过覆盖面').not.toContain('DEEP_TABLE')
+    expect(names, '四格缩进今天读不到 ⇒ KI-086 没做③：一张藏在三层嵌套里的抄本可以躲过覆盖面').not.toContain('DEEP_TABLE')
     expect(handCopiedLists('export function f(): void {\n  const TWO_SPACE = new Set([\'x\'])\n}\n'),
       '两格会被算进来：`validate-data.mjs` 里的 ADVICE_AXES 就是函数顶上这张表，它由 VOCAB_UNPAIRED 交代').toEqual(['TWO_SPACE'])
     expect(names, '派生集合（`new Set(OTHER)`）不在这张普查里').not.toContain('DERIVED')
@@ -389,5 +389,84 @@ describe('KI-086 的真载体：新形状在真文件上读得回来，门本体
     const code = read('scripts/validate-data.mjs').split('\n').filter((l) => !/^\s*\/\//.test(l)).join('\n')
     expect(code).toContain('vocabCoverageErrors(')
     expect(code, '普查读数必须来自抽取器，不许手抄').toContain('handCopiedLists(selfCorpus.text)')
+  })
+})
+
+/**
+ * KI-086 没做① 的结案：`FILES`（校验器读哪几份 JSON）的真主人是 `src/data/json/` **目录**，
+ * 而 `corpusFor(from)` 原来只收"一份文件"——那个形状今天没有，于是这张名单只能挂着"没有主人"豁免。
+ * 现在它有第六种主人：一个目录。两侧都从源码现推，测试不许再手抄第三份。
+ */
+const DIR_SYNTH = `
+ambience.json
+battle.json
+notes.txt
+README.md
+dup.json
+dup.json
+`
+
+describe('KI-088：第六种主人是一个目录 —— 读法、两个方向各自说话、以及校验器那份真名册', () => {
+  it('`dirListing` 按后缀挑名字：别的后缀不算、重复只留一次、一项不剩时是 null', () => {
+    expect(dirListing(DIR_SYNTH, '.json')).toEqual(['ambience.json', 'battle.json', 'dup.json'])
+    expect(dirListing(DIR_SYNTH, '.md'), '换一种后缀读到的是另一种集合').toEqual(['README.md'])
+    expect(dirListing(DIR_SYNTH, '.toml'), '读不到任何一项 ⇒ null（门在空转），不是"这个目录是空的"').toBeNull()
+    expect(dirListing('  \n\n', '.json')).toBeNull()
+  })
+
+  it('`arrayLiterals` 不再要求 `export`：没导出的那张名册也读得回来（测试由此能**从源码推**而不是再抄一份）', () => {
+    expect(arrayLiterals("const FILES = ['a.json', 'b.json']\n", 'FILES')).toEqual(['a.json', 'b.json'])
+    expect(arrayLiterals(SYNTH, 'ROSTER'), 'export + as const 那一族照旧读得到').toEqual(['fissure', 'mute', 'echo'])
+  })
+
+  const base: VocabPair = {
+    at: 'DIR', from: 'dir/', name: '名册', where: 'FILES',
+    source: (c) => dirListing(c.text, '.json'), copied: ['a.json'],
+  }
+  const drift = (pairs: VocabPair[], listing: string) =>
+    vocabDriftErrors({ pairs, corpusFor: (from) => (from === 'dir/' ? { text: listing, blocks: new Map() } : null) })
+
+  it('两个方向各说自己的话：给了 `missHint`/`extraHint` 就不再说那句通用措辞（主人是目录时那句是假的）', () => {
+    const miss = drift([{ ...base, missHint: 'MISS-HINT' }], 'a.json\nb.json')
+    expect(miss.map((x) => x.key)).toEqual(['vocab:DIR'])
+    expect(miss[0].msg).toContain('MISS-HINT')
+    expect(miss[0].msg, '通用措辞说的是"改表的人被一个不存在的问题挡住"——目录里多出一份文件时没人被挡住，是那份文件没人校验').not.toContain('改表的人会被一个不存在的问题挡住')
+    const extra = drift([{ ...base, copied: ['a.json', 'ghost.json'], extraHint: 'EXTRA-HINT' }], 'a.json')
+    expect(extra.map((x) => x.key)).toEqual(['vocab:DIR'])
+    expect(extra[0].msg).toContain('EXTRA-HINT')
+    expect(extra[0].msg).not.toContain('要么该进声明、要么就是死词')
+  })
+
+  it('没给提示时通用措辞照旧（默认路径不许被新参数悄悄吞掉，两边都要有读数）', () => {
+    const miss = drift([base], 'a.json\nb.json')
+    expect(miss[0].msg).toContain('改表的人会被一个不存在的问题挡住')
+    expect(miss[0].msg, '`where` 提供指路，缺它才退到默认文件名').toContain('FILES')
+    const extra = drift([{ ...base, copied: ['a.json', 'ghost.json'] }], 'a.json')
+    expect(extra[0].msg).toContain('要么该进声明、要么就是死词')
+    expect(extra[0].from).toBe('dir/')
+  })
+
+  it('真载体：`FILES` 与 `src/data/json/` 目录双向对账 0 条，两侧读数都从源码现推', () => {
+    const roster = arrayLiterals(read('scripts/validate-data.mjs'), 'FILES')
+    expect(roster, '读不回来就等于这张门两侧比的是空集，KI-088 的 `arrayLiterals` 放宽当场失效').not.toBeNull()
+    const real = readdirSync(root + 'src/data/json').filter((n) => n.endsWith('.json')).sort()
+    expect([...(roster ?? [])].sort()).toEqual(real)
+    expect(real.length, '非空守卫：目录读到 0 份时上面那条 toEqual 会连"两侧都读空"一起放行').toBeGreaterThanOrEqual(20)
+    const errs = vocabDriftErrors({
+      pairs: [{ ...base, at: 'src/data/json/ 目录', from: 'dir/', name: '校验器要读的表名册', copied: roster ?? [] }],
+      corpusFor: (from) => (from === 'dir/' ? { text: real.join('\n'), blocks: new Map() } : null),
+    })
+    expect(errs, '今天这一趟必须真的干净（否则新门一开就带着红落地）').toEqual([])
+  })
+
+  it('接线：`corpusFor` 真走目录那一支，且 `FILES` 从"没有主人"改成了"有主人"（删掉那半句分支而留着判据，一切照绿）', () => {
+    const src = read('scripts/validate-data.mjs')
+    const code = src.split('\n').filter((l) => !/^\s*\/\//.test(l)).join('\n')
+    expect(code).toContain("from.endsWith('/')")
+    expect(code).toContain('readdirSync(resolve(ROOT, from))')
+    expect(code).toContain("at: 'src/data/json/ 目录'")
+    expect(code, '那个尾斜杠就是"主人是一个目录"的记号，抄漏它 ⇒ readFileSync 读到 EISDIR ⇒ 门在空转').toContain("from: 'src/data/json/',")
+    expect(code).toContain('copied: FILES')
+    expect(handCopiedLists(src), '覆盖面普查读得到 FILES ⇒ 它现在由 VOCAB_PAIRS 交代').toContain('FILES')
   })
 })

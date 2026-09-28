@@ -29,6 +29,10 @@ export interface VocabPair {
   where?: string
   /** 读不到声明时给排查留的提示 */
   hint?: string
+  /** 「主人有而抄本没有」在这个载体上到底意味着什么（KI-088：主人是目录时，通用那句"改表的人被挡住"是假的） */
+  missHint?: string
+  /** 「抄本有而主人没有」在这个载体上到底意味着什么 */
+  extraHint?: string
 }
 
 export interface VocabError {
@@ -52,6 +56,8 @@ export function handCopiedLists(text: string): string[] | null
 /** 一份文件 `import { … } from` 进来的名字：覆盖普查用它区分"住在本文件"与"住在规则模块" */
 export function importedNames(text: string): string[] | null
 export function callArgLiterals(text: string, fnName: string): string[] | null
+/** 一份**目录名册**语料（KI-088：主人是 `src/data/json/` 那种目录）的读数；空 ⇒ null，不许拿空集冒充"目录里不多不少" */
+export function dirListing(text: string, ext?: string): string[] | null
 /** `corpusFor(from)`：按载体文件给语料；读不到返回 null（对账会把它报成"这张门的载体读不到"） */
 export function vocabDriftErrors(input: { pairs: VocabPair[]; corpusFor: (from: string) => VocabCorpus | null }): VocabError[]
 
