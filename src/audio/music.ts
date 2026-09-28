@@ -32,6 +32,8 @@ import { bus } from '../core/EventBus'
 import type { MusicGrid } from '../core/RhythmClock'
 import type { AmbienceBed, AmbienceBell, BattleScore, BattleTonal, ExploreForm, ExploreScore } from '../data/schema'
 import { playBell, playNoise, playSweep } from './synth'
+import { AmbienceField } from './ambient-field'
+import type { ListenerPose } from './spatial'
 
 declare module '../core/EventBus' {
   interface GameEvents {
@@ -125,6 +127,11 @@ export function battleOstinatoHz(cell: number): number {
 export class MusicLayer {
   private ambGain: GainNode
   private battleGain: GainNode
+  /**
+   * §4 的 L2／L3 声景层（KI-083）：一区的真位置声源。它**不是** KI-077 那条 crossfade 的一部分
+   * ——drone 是要淡的持续图，而这一层是"一次一声"的事件：换区只是"下一声属于新区"。
+   */
+  private field: AmbienceField
   private bassLp: BiquadFilterNode
   /** 此刻在响的那张床：drone 的全部节点（含它自己的层增益），换床时这一组整批淡出后回收 */
   private bedNodes: AudioNode[] = []
@@ -192,6 +199,8 @@ export class MusicLayer {
     this.ambGain = ctx.createGain()
     this.ambGain.gain.value = 0
     this.ambGain.connect(ambOut)
+    // KI-083：声景层与 drone 挂在**同一只** ambGain 上（§8 的混音与 §5.4 的消音对它一并成立）
+    this.field = new AmbienceField(ctx, this.ambGain)
     this.battleGain = ctx.createGain()
     this.battleGain.gain.value = 0
     this.battleGain.connect(musicOut)
@@ -200,7 +209,10 @@ export class MusicLayer {
     this.bassLp.frequency.value = 320
     this.bassLp.Q.value = 0.7
     this.bassLp.connect(this.battleGain)
-    if (bed) this.applyBed(bed, 0) // 开局不 crossfade：还没有旧床可淡，直接建
+    if (bed) {
+      this.applyBed(bed, 0) // 开局不 crossfade：还没有旧床可淡，直接建
+      this.field.setBed(bed) // KI-083：声景层同样开局就位（少了这句，出生区一条 L2/L3 都不会响）
+    }
     if (song) this.applyExplore(song) // 同上：开局那条旋律不需要淡入，第一次 `update()` 就起音
     if (battle) this.setBattle(battle) // 同上：开局那一区的战斗档，第一次交战第一拍就按它走
   }
@@ -243,7 +255,23 @@ export class MusicLayer {
    * 用真表验就等于让实现自证：写死哪一张都可能碰巧对。
    */
   setAmbience(bed: AmbienceBed | null): void {
-    if (bed) this.applyBed(bed, this.xfadeSec())
+    if (!bed) return
+    /**
+     * §4 的 L2／L3（KI-083）**不等窗口**：它们是"一次一声"的事件，不是要淡的图——换区之后下一声
+     * 就属于新区。§1.2 那句「旋律层最后」管的是 ambGain 上那些**持续**图（drone 与旋律），
+     * 声景层不在那条排序里，所以这里不进 `songPending` 那一族等待。
+     */
+    this.field.setBed(bed)
+    this.applyBed(bed, this.xfadeSec())
+  }
+
+  /**
+   * 听者位姿（KI-083）：§4 的 L2／L3 要算真位置才谈得上声像，而位姿的唯一主人是
+   * `AudioEngine.setListener`（每一帧从 `main.ts` 来）。这里只**转交**、不自己存一份——
+   * 存一份就是给同一个数配第二个主人（KI-066 拆掉的正是这一类副本）。
+   */
+  setListener(pose: ListenerPose): void {
+    this.field.setListener(pose)
   }
 
   /**
@@ -488,6 +516,11 @@ export class MusicLayer {
         this.songPending = null
       }
     }
+    /**
+     * KI-083：§4 的 L2／L3 声景层。它排在战斗层那道 `scheduling` 门**之外**——声景不是战斗音乐，
+     * 打不打都一样响（与换床窗口同一条理由：那两件事都与"有没有在打仗"无关）。
+     */
+    this.field.update()
     // 音色石铃：docs §4 的 L4 稀疏事件。间隔/音高/亮度/锤感全部来自当前那张床（KI-077）；
     // `bell: null` 的那一区（无耳深窖）这里一道门就安静下来——那是设计，不是漏配。
     if (this.bellCfg && now >= this.nextChime) {

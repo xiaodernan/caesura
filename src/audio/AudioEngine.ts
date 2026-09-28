@@ -14,6 +14,8 @@ import { ambienceBeds, exploreScores, battleScores } from '../data'
 import type { AmbienceBed, BattleScore, ExploreScore } from '../data/schema'
 import { triggerSfx } from './synth'
 import { MusicLayer } from './music'
+// KI-083：声源→听者那一步的唯一主人（一次性 SFX 与 §4 的 L2／L3 声景层两条读者共用同一份数学）
+import { AUDIBLE_FLOOR, spatialize, type ListenerPose } from './spatial'
 
 /** 走 UI 总线、无空间化的按键类音色 */
 const UI_KEYS = new Set(['ui_move', 'ui_select', 'lockon_on', 'lockon_off'])
@@ -83,11 +85,12 @@ export class AudioEngine {
   private started = false
   private voices = 0
   private warned = new Set<string>()
-  // listener 状态（世界坐标 + 朝向 yaw，弧度）
-  private lx = 0
-  private ly = 0
-  private lz = 0
-  private yaw = 0
+  /**
+   * 听者位姿（世界坐标 + 朝向 yaw，弧度）。KI-083 起它是一个对象而不是四个散字段：它现在有
+   * **两个读者**——一次性 SFX（`onSfx`）与 §4 的 L2／L3 声景层（`MusicLayer` 转交给 `AmbienceField`）。
+   * 位姿的主人仍然只有这里：`main.ts` 每帧调 `setListener`，别人只读。
+   */
+  private pose: ListenerPose = { x: 0, y: 0, z: 0, yaw: 0 }
 
   /** 一次性手势恢复：ctx suspended 时等待 pointerdown/keydown */
   private gesture = (): void => {
@@ -175,6 +178,8 @@ export class AudioEngine {
     if (this.started) return
     this.started = true
     this.musicLayer = new MusicLayer(ctx, this.graph.music, this.graph.ambience, this.grid, this.bed, this.song, this.battle)
+    // KI-083：位姿也要补一次——首次手势之前 `main.ts` 的每一帧都只落在上面那个缓存里（见 `setListener`）
+    this.musicLayer.setListener(this.pose)
     this.musicLayer.start()
   }
 
@@ -186,7 +191,10 @@ export class AudioEngine {
 
   /** 更新听者位置与朝向（yaw：绕 Y 轴弧度，0 = 面向 -Z） */
   setListener(x: number, y: number, z: number, facingYaw: number): void {
-    this.lx = x; this.ly = y; this.lz = z; this.yaw = facingYaw
+    this.pose.x = x; this.pose.y = y; this.pose.z = z; this.pose.yaw = facingYaw
+    // 建层比建引擎晚（与那三条 id→行 的缓存同一条理由）：首次手势之前的每一帧都到不了音乐层，
+    // 所以 `start()` 里还要再补一次；这里这一句管的是"层已经建好"之后的每一帧。
+    this.musicLayer?.setListener(this.pose)
   }
 
   /* ------------------------------------------------------------ */
@@ -246,15 +254,10 @@ export class AudioEngine {
       return
     }
 
-    // 3D：距离衰减 + 声像
-    const rx = p.pos.x - this.lx
-    const ry = p.pos.y - this.ly
-    const rz = p.pos.z - this.lz
-    const dist = Math.sqrt(rx * rx + ry * ry + rz * rz)
-    const att = Math.min(1, 1 / (1 + Math.pow(dist / 16, 1.8)))
-    if (att < 0.02) return
-    const side = rx * Math.cos(this.yaw) - rz * Math.sin(this.yaw)
-    const pan = Math.max(-1, Math.min(1, side / Math.max(2, dist))) * 0.85
+    // 3D：距离衰减 + 声像。KI-083 起这段数学住在 `spatial.ts`（第二个读者是 §4 的 L2／L3 声景层），
+    // 常数与算式一字未改——"两条读者读同一个位置得到同一个声像"由共用同一份代码保证。
+    const { att, pan } = spatialize(p.pos, this.pose)
+    if (att < AUDIBLE_FLOOR) return
 
     const vg = ctx.createGain()
     vg.gain.value = att

@@ -1177,10 +1177,38 @@ export interface AmbienceBell {
 }
 
 /**
- * 一张环境声床 = 一个区域的 L1 drone + L4 铃点（docs/audio.md §4 表里的那一行、§1.2 的主音分配）。
+ * docs/audio.md §4 的 L2／L3 两层：一个**有真位置**的声源（KI-083）。
+ *
+ * 它与 L1 的长处正好相反：L1 是 2D 铺底（听不出在哪），L2/L3 是"走两步就换边"的那一层。
+ * 所以 `pos` 是世界坐标（与 `regions.json > landmarks[].pos` 同一帧），validator 拿它与该区
+ * `bounds` 对账——落在区外的声源永远听不见，那就等于 §55 说的死数据。
+ *
+ * `layer` 决定这条源被奏成什么（`src/audio/ambient-field.ts > AmbienceField`）：
+ * `'texture'` = §4 的 L2 颗粒声纹（窄带带通里的一颗，是这个场所的**质地**）；
+ * `'motion'` = §4 的 L3 物理动源（宽带、一声之内边扫，是"有什么在**动**"）。
+ * 这一格同时是数据门的一条判据：§4 那张表每一区都写了 L2 与 L3，空一格就是声景少了一半。
+ */
+export interface AmbienceSource {
+  layer: 'texture' | 'motion'
+  /** 带通中心频率（Hz）：写出来就是响出来的，与 `AmbienceLayer.hz` 同一口径 */
+  hz: number
+  /** 世界坐标：§4「真位置」——声源不跟着玩家走 */
+  pos: { x: number; y: number; z: number }
+  peak: number
+  /** 起音时长（秒）：颗粒是毫秒级、动源是秒级 */
+  attackSec: number
+  /** 起音之后的衰减时长（秒）：一声一共响 `attackSec + durSec`（`applyEnv` 那条包络的两段） */
+  durSec: number
+  /** [最短, 最长] 间隔秒：每次响完现掷下一次。`[1.2, 1.2]` 是刻意的零方差（破拍营地那句"整齐得不对"） */
+  everySec: [number, number]
+}
+
+/**
+ * 一张环境声床 = 一个区域的 L1 drone + L2／L3 真位置声源 + L4 铃点（docs/audio.md §4 表里的那一行、§1.2 的主音分配）。
  * `id` 与 `regions.json > music.ambience` 双向对账（少一行 = 那一区永远没有底噪，多一行 = §55 死数据）。
  * `layers` 为空 = 这一区**没有 drone**（未竟厅 §4「无 drone——风箱底噪」），此时 `lpHz`/`breath` 必须缺席：
  * 那两个字段只在 drone 子图上有消费者，留着就是给一张不存在的图配参数。
+ * `sources` 必须两层都有：§4 那张表每一区都写了 L2 与 L3，空一格就是那一区的声景少了一半。
  */
 export interface AmbienceBed {
   id: string
@@ -1189,6 +1217,8 @@ export interface AmbienceBed {
   lpHz?: number
   /** 风箱呼吸 LFO（调这一层自身的增益，不是全局）：有层就必须有它 */
   breath?: { hz: number; depth: number }
+  /** §4 的 L2（颗粒声纹）／L3（物理动源）：真位置声源（KI-083） */
+  sources: AmbienceSource[]
   bell: AmbienceBell | null
 }
 

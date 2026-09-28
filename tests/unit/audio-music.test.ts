@@ -41,6 +41,9 @@ const ENTRY = { waitSec: 0.1, beatIndex: 0 }
 
 /* ------------------------------------------------------------------ */
 /* KI-077：合成声床。字段形状 = `schema.ts > AmbienceBed`，值是本文件编的（见上面那段） */
+/* KI-083：下面这些床一律 `sources: []` —— 这一族用例量的是 L1 drone 与 L4 铃点那条路，
+   §4 的 L2／L3 声景层有它自己的用例（`ambience-field.test.ts`，那边自己带床）。
+   "没有声景的床"在这个形状里是合法的（validator 管的是真表，这里是表外的行）。 */
 /* ------------------------------------------------------------------ */
 
 /** A 床：休垒那张的形状（四条层 + 低通 + 呼吸），铃点名册 `[700, 800]`、每 5 秒一颗 */
@@ -54,7 +57,8 @@ const BED_A: AmbienceBed = {
   ],
   lpHz: 300,
   breath: { hz: 0.07, depth: 0.008 },
-  bell: { scale: [700, 800], everySec: [4, 6], peak: [0.02, 0.05], hammerP: 0 }
+  bell: { scale: [700, 800], everySec: [4, 6], peak: [0.02, 0.05], hammerP: 0 },
+  sources: []
 }
 /** B 床：另一区（主音差一个全音、低通更暗、铃点名册换成 `[1100, 1200]`）——换床要看得见的是"跟着变了" */
 const BED_B: AmbienceBed = {
@@ -65,13 +69,15 @@ const BED_B: AmbienceBed = {
   ],
   lpHz: 220,
   breath: { hz: 0.05, depth: 0.01 },
-  bell: { scale: [1100, 1200], everySec: [8, 10], peak: [0.02, 0.05], hammerP: 0 }
+  bell: { scale: [1100, 1200], everySec: [8, 10], peak: [0.02, 0.05], hammerP: 0 },
+  sources: []
 }
 /** 未竟厅形状（§4「无 drone——风箱底噪」）：`layers` 空数组，但铃点照掷 */
 const BED_HALL: AmbienceBed = {
   id: 'bed_hall',
   layers: [],
-  bell: { scale: [700, 800], everySec: [4, 6], peak: [0.02, 0.05], hammerP: 0 }
+  bell: { scale: [700, 800], everySec: [4, 6], peak: [0.02, 0.05], hammerP: 0 },
+  sources: []
 }
 /** 无耳深窖形状：有 drone 但 `bell: null`（§4 那一格「40Hz 次声」没有旋律事件） */
 const BED_CRYPT: AmbienceBed = {
@@ -79,7 +85,8 @@ const BED_CRYPT: AmbienceBed = {
   layers: [{ hz: 40.0, wave: 'sine', peak: 0.06, detune: 0 }],
   lpHz: 110,
   breath: { hz: 0.045, depth: 0.01 },
-  bell: null
+  bell: null,
+  sources: []
 }
 
 /* ------------------------------------------------------------------ */
@@ -469,7 +476,7 @@ describe('ambience：区域声床（KI-077：底噪与铃点跟着注入的那�
     const msgs: string[] = []
     const off = bus.on('log', (l) => { if (l.msg.includes('却没写')) msgs.push(l.msg) })
     open.push(off)
-    const broken: AmbienceBed = { id: 'bed_broken', layers: [{ hz: 87.31, wave: 'sine', peak: 0.05, detune: 0 }], bell: null }
+    const broken: AmbienceBed = { id: 'bed_broken', layers: [{ hz: 87.31, wave: 'sine', peak: 0.05, detune: 0 }], sources: [], bell: null }
     const { ctx, layer, ambOut } = rig(GRID, broken)   // 构造时就 applyBed：订阅必须在 rig 之前挂上
     open.push(() => layer.dispose())
     expect(msgs.length, `缺 lpHz 这件事要说，实测 ${msgs.length} 句`).toBe(1)

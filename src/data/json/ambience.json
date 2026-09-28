@@ -9,6 +9,11 @@
     ],
     "lpHz": 300,
     "breath": { "hz": 0.07, "depth": 0.008 },
+    "sources": [
+      { "layer": "texture", "hz": 1500, "pos": { "x": 14, "y": 1, "z": 16 }, "peak": 0.028, "attackSec": 0.002, "durSec": 0.07, "everySec": [0.5, 2.2] },
+      { "layer": "texture", "hz": 420, "pos": { "x": -14, "y": 1, "z": 20 }, "peak": 0.022, "attackSec": 0.004, "durSec": 0.5, "everySec": [9, 22] },
+      { "layer": "motion", "hz": 560, "pos": { "x": 0, "y": 26, "z": 0 }, "peak": 0.022, "attackSec": 1.1, "durSec": 3.6, "everySec": [10, 24] }
+    ],
     "bell": {
       "scale": [698.46, 783.99, 880.0, 981.42, 1046.5, 1174.66],
       "everySec": [5, 9],
@@ -26,6 +31,11 @@
     ],
     "lpHz": 240,
     "breath": { "hz": 0.07, "depth": 0.008 },
+    "sources": [
+      { "layer": "texture", "hz": 880, "pos": { "x": 244, "y": 6, "z": -24 }, "peak": 0.025, "attackSec": 0.003, "durSec": 0.3, "everySec": [4, 12] },
+      { "layer": "motion", "hz": 320, "pos": { "x": 330, "y": 1, "z": 120 }, "peak": 0.03, "attackSec": 0.001, "durSec": 0.06, "everySec": [2, 7] },
+      { "layer": "motion", "hz": 240, "pos": { "x": 150, "y": 8, "z": 40 }, "peak": 0.016, "attackSec": 2.2, "durSec": 5.5, "everySec": [14, 30] }
+    ],
     "bell": {
       "scale": [523.25, 622.25, 698.46, 783.99, 880.0, 932.33],
       "everySec": [5, 9],
@@ -43,6 +53,11 @@
     ],
     "lpHz": 330,
     "breath": { "hz": 0.05, "depth": 0.006 },
+    "sources": [
+      { "layer": "texture", "hz": 92, "pos": { "x": 200, "y": 66, "z": -220 }, "peak": 0.03, "attackSec": 1.4, "durSec": 3.2, "everySec": [8, 18] },
+      { "layer": "motion", "hz": 900, "pos": { "x": 170, "y": 62, "z": -192 }, "peak": 0.02, "attackSec": 0.02, "durSec": 1.1, "everySec": [6, 15] },
+      { "layer": "motion", "hz": 480, "pos": { "x": 120, "y": 62, "z": -380 }, "peak": 0.02, "attackSec": 1.6, "durSec": 4.2, "everySec": [12, 26] }
+    ],
     "bell": {
       "scale": [783.99, 880.0, 981.42, 1046.5, 1174.66, 1396.91],
       "everySec": [5, 9],
@@ -59,6 +74,10 @@
     ],
     "lpHz": 110,
     "breath": { "hz": 0.045, "depth": 0.01 },
+    "sources": [
+      { "layer": "texture", "hz": 6000, "pos": { "x": -240, "y": -146, "z": 140 }, "peak": 0.008, "attackSec": 0.6, "durSec": 1.4, "everySec": [10, 26] },
+      { "layer": "motion", "hz": 1400, "pos": { "x": -100, "y": -148, "z": 120 }, "peak": 0.028, "attackSec": 0.001, "durSec": 0.05, "everySec": [7, 20] }
+    ],
     "bell": null
   },
   {
@@ -71,6 +90,11 @@
     ],
     "lpHz": 320,
     "breath": { "hz": 0.07, "depth": 0.008 },
+    "sources": [
+      { "layer": "texture", "hz": 240, "pos": { "x": -120, "y": 6, "z": -310 }, "peak": 0.02, "attackSec": 0.004, "durSec": 0.22, "everySec": [3, 9] },
+      { "layer": "texture", "hz": 1100, "pos": { "x": -60, "y": 5, "z": -270 }, "peak": 0.018, "attackSec": 0.002, "durSec": 0.12, "everySec": [5, 13] },
+      { "layer": "motion", "hz": 160, "pos": { "x": -170, "y": 1, "z": -350 }, "peak": 0.03, "attackSec": 0.004, "durSec": 0.35, "everySec": [1.2, 1.2] }
+    ],
     "bell": {
       "scale": [932.33, 1046.5, 1108.73, 1244.51, 1396.91, 1661.22],
       "everySec": [5, 9],
@@ -88,6 +112,10 @@
     ],
     "lpHz": 300,
     "breath": { "hz": 0.07, "depth": 0.008 },
+    "sources": [
+      { "layer": "texture", "hz": 1800, "pos": { "x": 320, "y": -38, "z": 60 }, "peak": 0.018, "attackSec": 0.002, "durSec": 0.14, "everySec": [1.6, 5] },
+      { "layer": "motion", "hz": 500, "pos": { "x": 210, "y": -42, "z": 40 }, "peak": 0.02, "attackSec": 1.8, "durSec": 4.8, "everySec": [10, 22] }
+    ],
     "bell": {
       "scale": [830.61, 932.33, 1046.5, 1174.66, 1318.51, 1479.98],
       "everySec": [5, 9],
@@ -98,6 +126,11 @@
   {
     "id": "mus_unfinished_hall_amb",
     "layers": [],
+    "sources": [
+      { "layer": "texture", "hz": 3200, "pos": { "x": 0, "y": 182, "z": -300 }, "peak": 0.014, "attackSec": 0.9, "durSec": 2.2, "everySec": [6, 14] },
+      { "layer": "texture", "hz": 7000, "pos": { "x": 0, "y": 200, "z": -260 }, "peak": 0.008, "attackSec": 0.01, "durSec": 0.18, "everySec": [3, 10] },
+      { "layer": "motion", "hz": 300, "pos": { "x": -40, "y": 170, "z": -160 }, "peak": 0.024, "attackSec": 2.4, "durSec": 5.2, "everySec": [16, 40] }
+    ],
     "bell": {
       "scale": [261.63, 277.18, 293.66, 311.13, 329.63, 349.23, 369.99, 392.0, 415.3, 440.0, 466.16, 493.88],
       "everySec": [40, 50],

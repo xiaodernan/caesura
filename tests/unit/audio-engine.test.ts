@@ -5,6 +5,7 @@ import { AudioEngine } from '@/audio/AudioEngine'
 import { ambienceBeds, battleScores, exploreScores, regions } from '@/data'
 import type { AmbienceBed, ExploreScore, ExploreTonal } from '@/data/schema'
 import { BELL_CENTS } from '@/audio/synth'
+import { spatialize } from '@/audio/spatial'
 import { FakeAudioContext, FakeNode, fakeWindow, fakeWindowWebkitOnly, type FakeWindow } from '../support/fakeAudio'
 
 /**
@@ -264,6 +265,86 @@ describe('路由：UI 直通 / 无位置走 sfx / 有位置才 3D', () => {
     w.runTimers()
     expect(vg.disconnected, '用完没断开 = 每次发声留一对节点').toBe(1)
     expect(sp.disconnected, '声像没断开').toBe(1)
+    void engine
+  })
+})
+
+describe('KI-083：§4 的 L2／L3 声景层（真位置声源）', () => {
+  /** 这一块用**真表里的床**：要证的是"id→行 解析出来的那一行真的走到了声景层上"，合成床量不到这一步 */
+  const openBed = (): AmbienceBed => {
+    const rg = regions.find((r) => r.id === 'rg_resthold')
+    if (!rg) throw new Error('regions.json 里没有出生区 rg_resthold：这一份测试的输入要跟着数据走')
+    const b = ambienceBeds.find((x) => x.id === rg.music.ambience)
+    if (!b) throw new Error('出生区指的声床不在 ambience.json 里')
+    return b
+  }
+  /** 这段读数之后建起来的声像名册（声景层每一颗都有一只，一次性 SFX 也各有一只） */
+  const pansSince = (ctx: FakeAudioContext, from: number): number[] =>
+    ctx.nodes.slice(from).filter((n) => n.kind === 'panner').map((n) => n.params.pan.value).sort((a, b) => a - b)
+
+  it('开局缓存的那张床 + 那一份位姿：两手都要补到声景层上（少一句，声景就按原点算）', () => {
+    installWindow()
+    const engine = mkEngine()
+    const bed = openBed()
+    const pose = { x: 14, y: 1, z: 16, yaw: 0 }   // 炉火边：这张床的第一条源就在这个点上
+    engine.setListener(pose.x, pose.y, pose.z, pose.yaw)   // 手势之前：位姿先落进引擎的缓存
+    bus.emit('audio.music.ambience', { id: bed.id })       // 手势之前：床也先落进缓存（main.ts 就是这个顺序）
+    engine.start()
+    const ctx = LAST()
+    const before = ctx.nodes.length
+    ctx.advance(60)   // 超过这张床里最长的那一格间隔（数据里最大 40s），让三条源全到点
+    engine.update(1 / 60)
+    const pans = pansSince(ctx, before)
+    expect(pans.length, '三条真位置声源该各掷一声').toBe(bed.sources.length)
+    /**
+     * 逐条按**它自己的真位置**算：期望值从 `spatialize` 现推（那一位是两条读者的共同主人），
+     * 所以这一条同时钉住"位置进得来"与"数学是同一份"。位姿没补进声景层时这一组读数会整体偏掉。
+     */
+    const want = bed.sources.map((s) => spatialize(s.pos, pose).pan).sort((a, b) => a - b)
+    expect(pans).toEqual(want)
+    // 第一颗（炉火）就在听者脚下 ⇒ 满衰减。少了这一条，上面那组数可能只是"碰巧排对了"
+    const att = spatialize(bed.sources[0].pos, pose).att
+    expect(att, '这一条的前提是脚下那颗的衰减恰为 1').toBe(1)
+    expect(ctx.nodes.slice(before).some((n) => n.kind === 'gain' && n.params.gain.value === att), '距离衰减没写进这一声的增益').toBe(true)
+    void engine
+  })
+
+  it('听不见的那一区：位姿离得远 ⇒ 一条源都不建（不是建了再乘 0）', () => {
+    installWindow()
+    const engine = mkEngine()
+    const bed = openBed()
+    engine.setListener(0, 200, 0, 0)
+    bus.emit('audio.music.ambience', { id: bed.id })
+    engine.start()
+    const ctx = LAST()
+    const before = ctx.nodes.length
+    ctx.advance(60)
+    engine.update(1 / 60)
+    expect(pansSince(ctx, before).length, '200 米外的声景照样建图 = 白烧一个声部').toBe(0)
+    void engine
+  })
+
+  it('两条读者同源：同一个位置的一次性 SFX 与声景层得到同一个声像', () => {
+    installWindow()
+    const engine = mkEngine()
+    const bed = openBed()
+    const pose = { x: 14, y: 1, z: 16, yaw: 0 }
+    const at = bed.sources[1].pos       // 铁砧那一颗：离听者 28 米，声像明显偏一侧
+    engine.setListener(pose.x, pose.y, pose.z, pose.yaw)
+    bus.emit('audio.music.ambience', { id: bed.id })
+    engine.start()
+    const ctx = LAST()
+    const before = ctx.nodes.length
+    ctx.advance(60)
+    engine.update(1 / 60)
+    const fieldPans = pansSince(ctx, before)
+    const mid = ctx.nodes.length
+    bus.emit('audio.sfx', { key: 'hit_flesh', pos: at, gain: 1 })
+    const sfxPans = pansSince(ctx, mid)
+    expect(sfxPans.length, '一次性 SFX 那条链没建声像').toBe(1)
+    const want = spatialize(at, pose).pan
+    expect(sfxPans[0], 'SFX 那条读者算出的声像变了').toBeCloseTo(want, 6)
+    expect(fieldPans.some((p) => Math.abs(p - want) < 1e-12), '声景层那条读者与 SFX 不是同一份数学').toBe(true)
     void engine
   })
 })

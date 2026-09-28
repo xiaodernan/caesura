@@ -55,7 +55,7 @@ function disposeOnEnd(endNode: AudioScheduledSourceNode, chain: AudioNode[]): vo
  * `until` 传的是**这条音色自己报出去的时长**——`AudioEngine.play` 已经拿它归还声部配额，
  * 而 `audio-synth.test.ts` 那条「报出的时长盖不住最后一次 stop」的判据保证了它不早于任何一条链的收尾。
  */
-function disposeAfter(ctx: AudioContext, out: AudioNode, until: number, nodes: AudioNode[]): void {
+export function disposeAfter(ctx: AudioContext, out: AudioNode, until: number, nodes: AudioNode[]): void {
   const ttl = ctx.createConstantSource()
   ttl.offset.value = 0
   ttl.connect(out)
