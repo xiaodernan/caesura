@@ -45,6 +45,32 @@ export function fieldUnion(blocks: Map<string, string>, ifaceName: string, field
 export function refFieldUnion(blocks: Map<string, string>, typeName: string, field: string): string[] | null
 export function objectKeys(text: string, constName: string): string[] | null
 export function arrayLiterals(text: string, constName: string): string[] | null
+/** 模块级 `const X = new Set(['a','b'])`（KI-086）：既不必是 export，主人也可以是一张 Set。实参不是字面量数组 ⇒ null */
+export function setLiterals(text: string, constName: string): string[] | null
+/** 一份文件顶层手抄名单的**名字**普查（`const X = new Set([…])` / `const X = […]`，缩进 ≤2 格） */
+export function handCopiedLists(text: string): string[] | null
+/** 一份文件 `import { … } from` 进来的名字：覆盖普查用它区分"住在本文件"与"住在规则模块" */
+export function importedNames(text: string): string[] | null
 export function callArgLiterals(text: string, fnName: string): string[] | null
 /** `corpusFor(from)`：按载体文件给语料；读不到返回 null（对账会把它报成"这张门的载体读不到"） */
 export function vocabDriftErrors(input: { pairs: VocabPair[]; corpusFor: (from: string) => VocabCorpus | null }): VocabError[]
+
+/** 一张"刻意不入对账"的名单：`name` 是名单常量名，`why` 说凭什么，`master` 说真主人其实是谁 */
+export interface VocabUnpaired {
+  name: string
+  why: string
+  master?: string
+}
+
+/**
+ * 覆盖面对账（KI-086）：每张住在这一份文件的手抄名单，要么有主人（VOCAB_PAIRS），
+ * 要么写明它没有主人（VOCAB_UNPAIRED）。`census`/`imported` 必须是抽取器自己的读数，不许手抄。
+ */
+export function vocabCoverageErrors(input: {
+  file: string
+  census: string[] | null
+  imported?: string[] | null
+  pairs: VocabPair[]
+  unpaired?: VocabUnpaired[]
+}): VocabError[]
+

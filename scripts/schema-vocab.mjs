@@ -14,6 +14,12 @@
  * 所以 `source` 收到的不再是一叠 schema 块，而是一个 `{ text, blocks }` 的**语料**，
  * 每张名单自己说它住在哪个文件（`from`）；报错也按那个文件分段打印。
  *
+ * KI-086 把剩下的两种形状补上，并把"还剩几张没接"变成机器读数：
+ * ①**嵌套对象里的内联联合**（`EnemyData.ai.pickOrder` 缩进四格）——`fieldUnion` 原来只认两格，
+ *    于是那张名单读成 null；②**模块级 `const X = new Set([...])`**（`src/ai/Enemy.ts > PSEUDO_ACTIONS`，
+ *    既不是 export 也不是数组）；③一张名单如果**确实没有代码主人**（`REACTIONS` 那类），
+ *    必须进 `VOCAB_UNPAIRED` 写明真主人是谁——由 `vocabCoverageErrors` 逐张交代，不再靠注释。
+ *
  * 抽取只认**声明本身**，不认注释、不认第二个来源。读不到就报，不静默跳过——
  * 静默跳过的对账门比没有门更糟（它让所有人都以为有人在看）。
  */
@@ -98,11 +104,16 @@ export function interfaceFields(text, ifaceName) {
  * 两种排版都要认：多行接口里那一行缩进两格，而**单行接口**（`export interface HitboxCone { shape: 'cone'; … }`）
  * 的字段跟在 `{` 后面。KI-076 第一版只认前者，于是 `Hitbox` 那张引用链整个读不到，
  * 门当场按"我在空转"自曝——这条比假绿好，但也不许留着：判据认不了一个形状就是判据的缺口。
+ *
+ * KI-086 补第三种排版：**嵌在嵌套对象里的字段**（`EnemyData.ai.pickOrder` 缩进四格）。
+ * 只认两格的那一版把 `PICK_ORDERS` 读成 null——门会喊"空转"，但真正该改的是判据。
+ * 缩进下限仍是两格（顶层字段之下才有主人），且 `match` 取**第一处**：同一块里若外层与嵌套各有一行同名，
+ * 读到的是外层那一条，与 TS 的可见性一致。
  */
 export function fieldUnion(text, ifaceName, field) {
   const block = text.get(ifaceName)
   if (!block) return null
-  const re = new RegExp(`(?:^ {2}(?:readonly )?|[{;]\\s*(?:readonly )?)${field}\\??: ((?:'[^']+'\\s*\\|?\\s*)+)`, 'm')
+  const re = new RegExp(`(?:^ {2,}(?:readonly )?|[{;]\\s*(?:readonly )?)${field}\\??: ((?:'[^']+'\\s*\\|?\\s*)+)`, 'm')
   const m = block.match(re)
   if (!m) return null
   const lits = [...m[1].matchAll(/'([^']+)'/g)].map((x) => x[1])
@@ -166,6 +177,39 @@ export function arrayLiterals(text, constName) {
   if (!m) return null
   const lits = [...m[1].matchAll(/'([^']+)'/g)].map((x) => x[1])
   return lits.length ? lits : null
+}
+
+/**
+ * 模块级 `const X = new Set(['a', 'b'])` ⇒ ['a','b']（KI-086）。
+ * `arrayLiterals` 管不了这一族：主人既可以不是 `export`（`src/ai/Enemy.ts` 的 `PSEUDO_ACTIONS` 是私有常量），
+ * 也可以是一张 `Set` 而不是数组。
+ * 要紧的约束：**花括号里必须是字面量**。`new Set(STATUS_IDS)` 那种"从别人派生"的读不到就返回 null，
+ * 让调用方报成"门在空转"——把一个派生集合当成"这张词表是空的"，比没有门还糟（它会把所有成员判成非法）。
+ */
+export function setLiterals(text, constName) {
+  const src = stripComments(text)
+  const m = new RegExp(`^ {0,2}(?:export )?const ${constName}\\b[^=]*?=\\s*new Set\\(\\[([^\\]]*)\\]`, 'm').exec(src)
+  if (!m) return null
+  const lits = [...m[1].matchAll(/'([^']+)'/g)].map((x) => x[1])
+  return lits.length ? lits : null
+}
+
+/**
+ * 一份文件里"住在模块顶层的手抄名单"的名字普查（KI-086）：`const X = new Set([…])` 与 `const X = […]`。
+ * 只普查**名字**，不读成员——它的用途是回答"还剩几张名单没入表"，读数由对账那一侧给。
+ * 缩进零到两格都算（顶层常量与 `export const`）；函数体里的四格临时集合不算，那是一条语句的局部，不是一张词表。
+ */
+export function handCopiedLists(text) {
+  const src = stripComments(text)
+  const names = [...src.matchAll(/^ {0,2}(?:export )?const ([A-Z][A-Z0-9_]*)\s*=\s*(?:new Set\(\[|\[)/gm)].map((m) => m[1])
+  return names.length ? [...new Set(names)] : null
+}
+
+/** 一份文件从别处 `import { … }` 进来的名字（多行 import 也算）：覆盖普查用它区分"住在本文件"与"住在规则模块" */
+export function importedNames(text) {
+  const src = stripComments(text)
+  const out = [...src.matchAll(/^import \{([^}]*)\} from/gm)].flatMap((m) => m[1].split(',')).map((s) => s.trim()).filter(Boolean)
+  return out.length ? [...new Set(out)] : null
 }
 
 /**
@@ -235,6 +279,61 @@ export function vocabDriftErrors({ pairs, corpusFor }) {
     if (extra.length) {
       out.push({ key: `vocab:${p.at}`, from: p.from, msg: `${name}：校验器的名单里有 ${extra.join('/')} 而 ${p.from} 不认识 ⇒ 那一侧看不见这一项，它要么该进声明、要么就是死词（KI-047 那一族）` })
     }
+  }
+  return out
+}
+
+/**
+ * 覆盖面的对账（KI-086）：「还剩几张手抄名单没入表」从此不由散文回答。
+ *
+ * 存在的理由：KI-074/076 每张都写"先量再接"，可"没接的那几张"只活在注释里——
+ * 一批人接了 12 张、下一批人不知道剩下哪 8 张，于是名单既不会被接完，也不会被解释完。
+ * 现在每张住在 `validate-data.mjs` 的顶层名单必须由两条路之一交代：
+ * **有主人**（进 `VOCAB_PAIRS`）或**没有主人**（进 `VOCAB_UNPAIRED`，并写明为什么、主人其实是谁）。
+ *
+ * @param file 被普查的文件名（报错的段名，跟着 `from` 走才会打印）
+ * @param census `handCopiedLists(text)` 的读数（抽取器自己扫出来的，不是我手写的名单）
+ * @param imported `importedNames(text)` 的读数：住在规则模块里的那些名单不算"本文件的抄本"
+ * @param pairs 同一份 `VOCAB_PAIRS`
+ * @param unpaired 每张：`{ name, why, master? }`——`master` 写"那这张名单的真主人究竟在哪"
+ */
+export function vocabCoverageErrors({ file, census, imported = [], pairs, unpaired = [] }) {
+  const out = []
+  const lists = census ?? []
+  const from = file
+  const at = (n) => `coverage:${n}`
+  const registered = new Set(pairs.map((p) => p.where).filter(Boolean))
+  const exempt = new Map(unpaired.map((u) => [u.name, u]))
+  const holds = new Set([...lists, ...imported])
+
+  for (const n of lists) {
+    if (registered.has(n) && exempt.has(n)) {
+      out.push({ key: at(n), from, msg: `${n} 既登记了主人（VOCAB_PAIRS）又登记为"没有主人"（VOCAB_UNPAIRED）⇒ 两种交代同时挂，等于谁都不在看（KI-076 的 subset/allowMissing 同族）` })
+      continue
+    }
+    if (!registered.has(n) && !exempt.has(n)) {
+      out.push({ key: at(n), from, msg: `${n} 是一张手抄名单而没有任何交代 ⇒ 要么给它登记主人（VOCAB_PAIRS），要么写明它为什么没有主人、真主人其实是谁（VOCAB_UNPAIRED）。手抄的东西不会失败，只会静悄悄变旧（KI-074）` })
+      continue
+    }
+    if (exempt.has(n) && !exempt.get(n).why) {
+      out.push({ key: at(n), from, msg: `${n} 豁免了对账却没写理由 ⇒ 豁免也要有据（KI-074）` })
+    }
+  }
+
+  for (const u of unpaired) {
+    if (registered.has(u.name)) continue
+    if (!lists.includes(u.name)) {
+      out.push({ key: at(u.name), from, msg: `VOCAB_UNPAIRED 里还挂着 ${u.name}，而这份文件里已经没有这张名单 ⇒ 这条豁免该销了（KI-073 同族：先记账的名单要能销）` })
+    }
+  }
+
+  // 反向：每张入表名单的 `where` 必须真存在（本文件普查到 或 从规则模块 import 进来）。
+  // 这条同时是抽取器自己的探测器：census 一旦读空，所有已入表的本地名单都会在这里红，
+  // "判据坏了"不会变成静默绿。
+  for (const p of pairs) {
+    if (!p.where) continue
+    if (holds.has(p.where)) continue
+    out.push({ key: `coverage:${p.where}`, from, msg: `对账登记了名单 ${p.where}（主人 ${p.at}），而 ${file} 里普查不到它，也不是 import 进来的 ⇒ 名单被改名/删掉了，或者手抄名单的抽取器读不到它今天这个形状（KI-076：认不了一个形状就是判据的缺口）` })
   }
   return out
 }

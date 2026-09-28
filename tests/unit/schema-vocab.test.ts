@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import {
-  arrayLiterals, callArgLiterals, fieldUnion, interfaceFields, objectKeys,
-  refFieldUnion, schemaBlocks, stripComments, unionMembers, vocabDriftErrors,
+  arrayLiterals, callArgLiterals, fieldUnion, handCopiedLists, importedNames, interfaceFields, objectKeys,
+  refFieldUnion, schemaBlocks, setLiterals, stripComments, unionMembers, vocabCoverageErrors, vocabDriftErrors,
 } from '../../scripts/schema-vocab.mjs'
 import type { VocabCorpus, VocabPair } from '../../scripts/schema-vocab.mjs'
 
@@ -258,5 +258,136 @@ describe('今天的真载体：五张新对账在真文件上零条，抽取也�
     const code = read('scripts/validate-data.mjs').split('\n').filter((l) => !/^\s*\/\//.test(l)).join('\n')
     expect(code, 'sections 必须并入 report.rows 里出现过的段名').toContain('new Set(report.rows.map((x) => x.file))')
     expect(code, 'errTotal 要按 sections 累加，不是按 FILES').toMatch(/for \(const f of sections\)/)
+  })
+})
+/**
+ * KI-086：抽取器补上两种新形状，并把「还剩几张手抄名单没交代」换成机器读数。
+ * 这一段钉两件事：①新形状读得回来（读不回来时返回 null 而不是空集——空集会把所有成员判成非法）；
+ * ②覆盖面判据的每一臂都咬得住，包括它自己那两条反向判据（「登记了豁免却没写理由」「豁免该销了」）。
+ */
+const SYNTH2 = `
+import { AMB_A, AMB_B } from './ambience-rules.mjs'
+import {
+  AMB_C,
+  AMB_D,
+} from './explore-rules.mjs'
+
+const PRIVATE_SET = new Set(['one', 'two'])
+export const PUBLIC_SET = new Set(['three'] as const)
+const ROSTER = ['r1', 'r2'] as const
+export const DERIVED = new Set(OTHER_LIST)
+declare const OTHER_LIST: string[]
+
+export interface Outer {
+  plain: string
+  ai: {
+    pickOrder: 'random' | 'cycle'
+  }
+  trailing: number
+}
+
+export function localScope(): void {
+  if (true) {
+    const DEEP_TABLE = new Set(['x'])
+    void DEEP_TABLE
+  }
+}
+`
+
+describe('KI-086：模块级 Set / 数组名册的普查、import 进来的名字、嵌套对象里那一格', () => {
+  it('`setLiterals` 读私有 `const X = new Set([…])`：主人不必是 export，也不必是数组', () => {
+    expect(setLiterals(SYNTH2, 'PRIVATE_SET')).toEqual(['one', 'two'])
+    expect(setLiterals(SYNTH2, 'PUBLIC_SET'), 'export 与 `as const` 都拦不住它').toEqual(['three'])
+  })
+
+  it('`setLiterals`：从别人派生的那一种读不到就是 null（拿空集冒充词表会把所有成员判成非法）', () => {
+    expect(setLiterals(SYNTH2, 'DERIVED')).toBeNull()
+    expect(setLiterals(SYNTH2, 'NOPE')).toBeNull()
+  })
+
+  it('`handCopiedLists` 按缩进读数：两格算进来（校验器的 ADVICE_AXES 正是这张形状），四格以深读不到', () => {
+    const names = handCopiedLists(SYNTH2)
+    expect(names).toEqual(['PRIVATE_SET', 'PUBLIC_SET', 'ROSTER'])
+    expect(names, '四格缩进今天读不到 ⇒ KI-086 没做②：一张藏得更深的抄本可以躲过覆盖面').not.toContain('DEEP_TABLE')
+    expect(handCopiedLists('export function f(): void {\n  const TWO_SPACE = new Set([\'x\'])\n}\n'),
+      '两格会被算进来：`validate-data.mjs` 里的 ADVICE_AXES 就是函数顶上这张表，它由 VOCAB_UNPAIRED 交代').toEqual(['TWO_SPACE'])
+    expect(names, '派生集合（`new Set(OTHER)`）不在这张普查里').not.toContain('DERIVED')
+  })
+
+  it('`importedNames` 认单行与多行 import：覆盖普查靠它区分「住在本文件」与「住在规则模块」', () => {
+    expect(importedNames(SYNTH2)).toEqual(['AMB_A', 'AMB_B', 'AMB_C', 'AMB_D'])
+    expect(importedNames('const A = 1\n'), '一条 import 都没有 ⇒ null，喊空转由调用方负责').toBeNull()
+  })
+
+  it('`fieldUnion` 认得嵌在嵌套对象里的那一格（KI-086 之前只认两格缩进 ⇒ 读成 null）', () => {
+    expect(fieldUnion(schemaBlocks(SYNTH2), 'Outer', 'pickOrder')).toEqual(['random', 'cycle'])
+    expect(fieldUnion(schemaBlocks(SYNTH2), 'Outer', 'plain'), '没有字面量联合的字段照旧 null').toBeNull()
+  })
+})
+
+describe('KI-086：覆盖面对账——每张手抄名单要么有主人、要么写明为什么没有主人', () => {
+  const P = (where: string): VocabPair => ({ at: where, from: 'synth.ts', source: () => ['a'], copied: ['a'], where })
+  const cov = (over: Partial<Parameters<typeof vocabCoverageErrors>[0]>) =>
+    vocabCoverageErrors({ file: 'synth.ts', census: ['A_LIST', 'B_LIST'], pairs: [], unpaired: [], ...over })
+
+  it('两张都有主人 ⇒ 一声不响；漏掉一张 ⇒ 红在它自己的名下，并给出两条路选一条', () => {
+    expect(cov({ pairs: [P('A_LIST'), P('B_LIST')] })).toEqual([])
+    const e = cov({ pairs: [P('A_LIST')] })
+    expect(e.map((x) => x.key)).toEqual(['coverage:B_LIST'])
+    expect(e[0].msg).toContain('没有任何交代')
+    expect(e[0].from, '报错要落在被普查的那份文件段名下').toBe('synth.ts')
+  })
+
+  it('豁免要写理由：`VOCAB_UNPAIRED` 挂着一张名单却没有 `why` ⇒ 红（豁免也要有据）', () => {
+    expect(cov({ unpaired: [{ name: 'A_LIST', why: '主人是别处的测试' }, { name: 'B_LIST', why: '同上' }] })).toEqual([])
+    const e = cov({ unpaired: [{ name: 'A_LIST', why: 'x' }, { name: 'B_LIST', why: '' }] })
+    expect(e.map((x) => x.key)).toEqual(['coverage:B_LIST'])
+    expect(e[0].msg).toContain('没写理由')
+  })
+
+  it('豁免要能销：名单已经从文件里消失，`VOCAB_UNPAIRED` 还挂着它 ⇒ 红（KI-073 同族）', () => {
+    const e = cov({ census: ['A_LIST'], unpaired: [{ name: 'A_LIST', why: 'x' }, { name: 'GONE_LIST', why: 'y' }] })
+    expect(e.map((x) => x.key)).toEqual(['coverage:GONE_LIST'])
+    expect(e[0].msg).toContain('该销了')
+  })
+
+  it('两种交代同时挂 ⇒ 判据自己拒绝（那等于谁都不在看，KI-076 的 subset/allowMissing 同族）', () => {
+    const e = cov({ census: ['A_LIST'], pairs: [P('A_LIST')], unpaired: [{ name: 'A_LIST', why: 'x' }] })
+    expect(e.map((x) => x.msg).join('\n')).toContain('两种交代同时挂')
+  })
+
+  it('反向：入表名单必须在文件里真存在（本文件普查到 或 import 进来），否则红——这条同时是抽取器的自曝器', () => {
+    const gone = cov({ census: ['A_LIST', 'B_LIST'], pairs: [P('A_LIST'), P('B_LIST'), P('C_LIST')] })
+    expect(gone.map((x) => x.key)).toEqual(['coverage:C_LIST'])
+    expect(gone[0].msg).toContain('普查不到它')
+    const imported = cov({ census: ['A_LIST'], imported: ['B_LIST'], pairs: [P('A_LIST'), P('B_LIST')] })
+    expect(imported, '从规则模块 import 进来的名字也算交代').toEqual([])
+    const empty = cov({ census: null, pairs: [P('A_LIST'), P('B_LIST')] })
+    expect(empty.map((x) => x.key), '普查读空 ⇒ 每张已入表的本地名单各红一次，不静默变绿')
+      .toEqual(['coverage:A_LIST', 'coverage:B_LIST'])
+  })
+})
+
+describe('KI-086 的真载体：新形状在真文件上读得回来，门本体还在被调用', () => {
+  it('`PSEUDO_ACTIONS` 住在 AI 模块里：私有 Set，既不是 export 也不是数组', () => {
+    expect(setLiterals(read('src/ai/Enemy.ts'), 'PSEUDO_ACTIONS')).toEqual(['chase', 'backstep', 'hold'])
+  })
+
+  it('`EnemyData.ai.pickOrder` 四格缩进也读得到（KI-086 之前这张是 null ⇒ 门在空转）', () => {
+    expect(fieldUnion(schemaBlocks(read('src/data/schema.ts')), 'EnemyData', 'pickOrder')).toEqual(['random', 'cycle'])
+  })
+
+  it('校验器那份文件里两种读数都非空——任一边读空，覆盖面都会自己红（不是静默绿）', () => {
+    const text = read('scripts/validate-data.mjs')
+    const census = handCopiedLists(text) ?? []
+    expect(census.length, '三十来张手抄名单，少一大截就说明抽取器读不动今天这个形状了').toBeGreaterThan(30)
+    expect(census).toContain('VOCAB_PAIRS')
+    expect(importedNames(text) ?? [], '规则模块搬进来的名字也算交代').toContain('AMB_BED_FIELDS')
+  })
+
+  it('门本体还在被调用：删掉 `vocabCoverageErrors(...)` 而留着函数，一切照绿、没人会发现', () => {
+    const code = read('scripts/validate-data.mjs').split('\n').filter((l) => !/^\s*\/\//.test(l)).join('\n')
+    expect(code).toContain('vocabCoverageErrors(')
+    expect(code, '普查读数必须来自抽取器，不许手抄').toContain('handCopiedLists(selfCorpus.text)')
   })
 })

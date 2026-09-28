@@ -731,16 +731,25 @@ export interface ShopStockEntry {
   note?: string
 }
 
+/**
+ * 卖出侧的三个口（KI-055/KI-059）：
+ * `mul` 是**唯一**的卖价系数，装备腿与堆叠件腿同乘它（`rpg/Shop.ts` 的 `saleUnit`）；
+ * `stackKinds` 是"哪几类**堆叠件**可以按数量卖"（`['material','lore']`）——写成数据而不是
+ * 写死在 TS 里，是为了让 validator 能拿它和 `stock` 的 kind 对账：**能买的类别绝不能同时能卖**，
+ * 那条 §6.3 的反套利红线才有机器形状（白名单藏在代码里的话，门就摸不到它）。
+ *
+ * 它原来是 `ShopData.sell` 上的一行内联对象，形状上就没有"主人"可指：validator 里的 `SELL_FIELDS`
+ * 只能手抄，抄漏一个键不会红，只会让那个键静默失效（KI-085 的 `burst.feint` 就是这么处理的，同一条规矩）。
+ */
+export interface ShopSell {
+  mul: number
+  stackKinds: ItemData['kind'][]
+  note?: string
+}
+
 export interface ShopData {
   id: 'shop'
-  /**
-   * 营地交易的两个系数口（KI-055/KI-059）：
-   * `mul` 是**唯一**的卖价系数，装备腿与堆叠件腿同乘它（`rpg/Shop.ts` 的 `saleUnit`）；
-   * `stackKinds` 是"哪几类**堆叠件**可以按数量卖"（`['material','lore']`）——写成数据而不是
-   * 写死在 TS 里，是为了让 validator 能拿它和 `stock` 的 kind 对账：**能买的类别绝不能同时能卖**，
-   * 那条 §6.3 的反套利红线才有机器形状（白名单藏在代码里的话，门就摸不到它）。
-   */
-  sell: { mul: number; stackKinds: ItemData['kind'][]; note?: string }
+  sell: ShopSell
   stock: ShopStockEntry[]
   redlines?: { note?: string }
 }
@@ -1507,6 +1516,14 @@ export interface NpcData {
  * 某一格值域状态落进一组取值（`advanceOn.state`），或者对话里的一次选择直接推进
  * （`DialogueEffects.advanceQuest`）。三者都只是"世界读数变了"，谁也不许偷偷改任务面板。
  */
+/**
+ * §28 的任务标注图例（narrative.md）：D=发现 C=抉择 H=隐藏信息 M=多结果。
+ * validator 的 `QUEST_TAGS` 自 KI-086 起从这条声明现读，不再手抄——那四字母原来只写在文档里，
+ * 代码侧是 `tags?: string[]`（什么都能塞），于是"标注"这件事没有任何一个地方能回答"合法取值到底是哪些"。
+ * 今天没有 UI 读它（消费方是 validator 的名册判据本身）；要加第五种标注，先给它一个读者。
+ */
+export type QuestTag = 'D' | 'C' | 'H' | 'M'
+
 export interface QuestStep {
   state: string
   label: string
@@ -1515,8 +1532,8 @@ export interface QuestStep {
    * `flags` 与 `state` 至少给一个（校验脚本负责把关）。
    */
   advanceOn?: { flags?: string[]; state?: { key: string; in: string[] } }
-  /** §28 标注：D=发现 C=抉择 H=隐藏信息 M=多结果 */
-  tags?: string[]
+  /** §28 标注：见 `QuestTag`（词表对账把 validator 的名册钉在这条声明上） */
+  tags?: QuestTag[]
 }
 
 export interface QuestData {

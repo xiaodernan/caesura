@@ -1572,6 +1572,38 @@ Phase 4-B 落三叠箭时只做了**延迟**那一半（`at=[0,32,42]` 让第 2 
 - **§77 实机腿（本轮如实登记：in-page 探针不可用）**：5199 在应答（`curl` 200 / 14ms），`navigate_page` 两次都成功返回（`?ki085=1`、`?ki085=live`），但页面主线程整轮钉死——`evaluate_script` 四种形状全超时（含 `() => 1+1`、`() => 2+2`、读 `window.__caesura` 的守卫式探针、读 `document.readyState`），`list_console_messages` / `take_snapshot` / `list_network_requests` 同样超时，只有 `list_pages`（控制面）还能返回。症状与 `caesura-live-verify-recipe` 记的那次一致（上一轮的步进把主线程钉住，等待自然结束后才恢复），本轮等待约 6 分钟未解 ⇒ **停手，不拿离线读数冒充实机读数**。可用的替代证据两条：① **dev server 现发的模块**已带这条链（按浏览器真正请求的 URL 抓：`enemies.json?import` 有 `punishMs`/`feint` 各 1、`ThirdPersonController.ts` 有 `beginFeintPunish` 1、`CombatManager.ts` 有 `feintPunishMs` 5 + `beginFeintPunish` 1、`Enemy.ts` 有 2、`Projectiles.ts` 有 2）；② **构建产物**里那一格是原文：`dist/assets/data-*.js` 内 `burst:{count:3,everyTicks:21,at:[0,32,42],feint:{shot:1,punishMs:600}}`。这两条证的是"表→产物"没断，**不**证"浏览器里那一滚真的站不住"——后者要在探针恢复后补跑：读活 `en_skewer.tri` 的 `feint`、朝诱饵前滚、读 `roll.punishTicks` 再数 35 拍锁、并现场把已加载实例的 `punishMs` 改成 300 看锁变成 18 拍。**像素与听感照旧 Blocked（KI-010）**。
 - **没做（§78）**：① 被骗那一记**没有任何可见/可听的提示**——玩家看到的是"翻滚结束后动不了 0.6s"，不知道为什么；§14.4 要的是可读的陷阱，那一格属于表现层，等 KI-010 那一类评审能做得动再说；② 场上**只有针喉 `tri` 有诱饵**，`snipe`/`pluck` 与其余敌人的连发没声明 `feint`（判据对此保持沉默，因为"没有诱饵"是合法状态而不是缺口）；③ 上面那条实机腿要补跑。
 
+### 5.9.24 词表对账的覆盖面第一次由机器回答，并把两种认不出来的形状补上（KI-086，2026-09-29）— 已实现
+
+**这一格治的不是错数，是一句没有人回答的话。** `scripts/validate-data.mjs` 顶上那批 `const X = new Set([...])` 全是"与某处对齐"的手抄名单：KI-074 立了"读一次主人、逐张比"的判据（`vocabDriftErrors`），KI-076 把**载体**泛化到 schema 之外（`from` 说这张名单的主人住哪个文件），KI-077 之后每批新表都把判据本体搬进 `scripts/<域>-rules.mjs`。可"**没接的那几张**"一直只活在注释里——一批人接了十二张，下一批人不知道该接哪八张，于是名单既不会被接完，也不会被解释完。KI-086 把这句话换成读数。
+
+**抽取器补两种形状**（判据认不了一个形状就是判据的缺口，KI-076 口径）：
+
+| 形状 | 新 API | 真载体 |
+|---|---|---|
+| 嵌套对象里的内联联合（缩进四格） | `fieldUnion` 的缩进下限由"恰好两格"放宽到**两格及以上**，`match` 取第一处（与 TS 可见性一致） | `EnemyData.ai.pickOrder` ⇒ `PICK_ORDERS` |
+| 模块级 `const X = new Set([...])`（既不必 `export`，也不必是数组） | `setLiterals(text, name)` | `src/ai/Enemy.ts > PSEUDO_ACTIONS` |
+
+**两条边界是刻意写死的**：`setLiterals` 只认**字面量实参**（`new Set(STATUS_IDS)` 那种派生集合读成 null，让调用方报"门在空转"）——把一个派生集合当成空词表，比没有门更糟，它会把所有成员判成非法；`handCopiedLists` 只普查**模块顶层**的名字（零到两格缩进），函数体里更深一层（四格）的临时集合算一条语句的局部，不算一张词表。
+
+**覆盖面对账**（`vocabCoverageErrors`）：同一份文件里每张被普查到的手抄名单，必须由两条路之一交代——
+
+1. **有主人**：登记进 `VOCAB_PAIRS`（`where` 写名单常量名，`at`/`from` 说主人是谁）；
+2. **没有主人**：登记进 `VOCAB_UNPAIRED`，并且 `why` 要说凭什么、`master` 要说真主人其实在哪。
+
+两条反向判据同生同死：**既入表又豁免** ⇒ 红（"两种交代同时挂"是 KI-076 `subset`/`allowMissing` 那一族）；**豁免还挂着而名单已经从文件里消失** ⇒ 红（KI-073：先记账的名单要能销）。另有一条**抽取器自曝器**：`VOCAB_PAIRS` 里每张 `where` 都必须在普查读数或 `importedNames` 里真出现，普查一旦读空，所有**住在本文件**的已入表名单会各自红一次——"判据坏了"不会变成静默绿。
+
+**一个模块求值顺序的约束（本批第一趟实测撞到的，写下来免得下次再撞）**：`VOCAB_PAIRS` 是一张在模块求值时就要读这些名单的数组，所以**一张名单想有主人，它必须和主人登记在同一个可求值的起点之前**——把那七张名单留在各自那张表的校验段落里，就是 `ReferenceError: Cannot access 'WEAPON_FIELDS' before initialization`。它们因此搬进了文件顶部的词表区。
+
+**两笔假账纠正在同一批里**：`SELL_FIELDS` 的主人原来是一行**内联对象**（`sell: { mul; stackKinds; note }`），形状上没有可指的名，于是只能手抄——按 KI-085 对 `burst.feint` 的同一处理，把内联类型提成具名接口 `ShopSell`，抽取器不必长新形状；`QUEST_TAGS` 那四个字母（§28 的 D/C/H/M）原来只写在文档与注释里，代码侧是 `tags?: string[]`（什么都能塞），今天提成 `QuestTag` 类型并由 validator 现读。
+
+**守卫**：`tests/unit/schema-vocab.test.ts` **32 条**（本批 +14）。合成段钉新形状与两条边界（派生集合、更深缩进）；覆盖面每一臂各一条（没交代 / 没写理由 / 该销 / 两种交代同时挂 / 普查读空自曝 / import 进来的名字算交代）；真载体四条（`PSEUDO_ACTIONS` 逐成员、`pickOrder` 四格缩进、校验器那份文件里两种读数都非空且条数够、门本体源码门——删掉 `vocabCoverageErrors(...)` 的调用而留着函数，一切照绿没人会发现，所以那条调用本身也被钉住）。
+
+**反向实测三刀**（每一刀互不重叠、跑完按 sha256 核对还原成字节一致）：①在 `validate-data.mjs` 里塞一张没人交代的 `const KI086_PROBE = new Set(['x'])` ⇒ 门恰红 1 条（`coverage:KI086_PROBE`），计数 `1 ERROR / 4 WARN`；②把 `PSEUDO_ACTIONS` 的 `'hold'` 删掉 ⇒ 恰红 1 条（`vocab:PSEUDO_ACTIONS`：主人那一侧不认识 hold）；③把那句字面量换成派生集合 `new Set(ACTIONS_LIST)` ⇒ 恰红 1 条（`carrier:PSEUDO_ACTIONS … 这张门在空转`）——第三刀是那条边界的现场见证：**派生集合读不到就喊空转，不拿空集冒充词表**。
+
+**门禁（2026-09-29）**：`tsc --noEmit` 0 错；`validate:data` **0 ERROR / 4 WARN**（四条全是既有的：三条无写方旗标 + 一条铃点间隔口径）。
+
+**没做（§78）**：①`FILES` 这张"校验器读哪几份 JSON"的工作清单，真主人是 `src/data/json/` **目录**而不是任何一条声明，而 `corpusFor(from)` 收的是"一份文件"——**那个形状今天没有**，所以新增一份表而忘了加进 `FILES` 仍只会安静地不被校验（已如实登记在 `VOCAB_UNPAIRED` 里，不假装覆盖了）；②`docs/**` 与 `src/**` 的文本不在 KI-082 那道门内，源码侧"反斜杠被吃"没有 U+FFFD 那样的唯一记号，在没有那种判据之前不假装覆盖。
+
 ## 附录 A：模块规模与里程碑对照
 
 Phase 1（核心战斗原型）＝ `core + player + combat + tools/CombatDebugger + 占位场景`；Phase 3 ＝ `world/Streaming + generators`；Phase 5 ＝ `rpg + save`；Phase 6 ＝ `quest + audio(对话)`。每模块交付即配 §6 测试，不做「先全写完再测」。

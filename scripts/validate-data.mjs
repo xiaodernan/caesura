@@ -18,9 +18,11 @@ import { fileURLToPath } from 'node:url'
 import { flagLedgerErrors, milestoneLedgerErrors, PENDING_FLAG_WRITERS, PENDING_MILESTONE_GRANTS, statusLedgerErrors, UI_BOUND_MILESTONES } from './ledger-rules.mjs'
 // 词表对账（KI-074 / KI-076）：每张名单的主人（可能是 schema 的一条声明，也可能是某个模块的
 // 一张表、一条数组、一组调用点）是唯一起点，这里读它而不是抄它。
+// KI-086 补两种形状（嵌套对象里的内联联合、模块级 `const X = new Set([...])`），
+// 并把"还剩几张没交代"换成机器读数（`handCopiedLists` + `vocabCoverageErrors`）。
 import {
-  arrayLiterals, callArgLiterals, fieldUnion, interfaceFields, objectKeys,
-  refFieldUnion, schemaBlocks, unionMembers, vocabDriftErrors,
+  arrayLiterals, callArgLiterals, fieldUnion, handCopiedLists, importedNames, interfaceFields, objectKeys,
+  refFieldUnion, schemaBlocks, setLiterals, unionMembers, vocabCoverageErrors, vocabDriftErrors,
 } from './schema-vocab.mjs'
 // KI-079：探索曲表的判据本体（同一族理由，见上面那两行）。这里只把 findings 报成 ERROR/WARN，
 // 并把 `report.num` 管的数值可闻带留在本文件——那张名单的两端都要能在测试里喂合成行。
@@ -81,6 +83,23 @@ const PROP_KINDS = new Set(['soundspine', 'resonance_core'])
 const PICK_ORDERS = new Set(['random', 'cycle'])
 // src/ai/Enemy.ts:707 —— 距离带里不是招式的伪动作
 const PSEUDO_ACTIONS = new Set(['chase', 'backstep', 'hold'])
+/* 下面这七张原来住在各自那张表的校验段落里，KI-086 起搬到词表区。理由不是排版：
+   `VOCAB_PAIRS` 是一张在模块求值时就要读这些名单的数组，声明排在它后面就是
+   `ReferenceError: Cannot access 'WEAPON_FIELDS' before initialization`——本批第一趟实测撞到的。
+   也就是说：**一张名单想有主人，它必须和主人登记在同一个可求值的起点之前**，这条写在这里免得下次再撞。 */
+/** WeaponData 的字段全集（KI-047）：每一格都必须有真实消费方，多余键一律 ERROR——
+ *  曾有的 `atkBase` 就是从这里出去的：底数住在 movesets.json 的帧表，武器表再带一份
+ *  "看起来是价格"的数，KI-039 的错价才躲过了整轮验收。 */
+const WEAPON_FIELDS = new Set(['id', 'nameKey', 'archetype', 'movesetId', 'scaling', 'swingTag', 'skill', 'poiseMul', 'noiseMul'])
+/** 出身被动的类型白名单（KI-031③）：加一种 kind = 承诺带来一个消费者，反向探针守着那句话 */
+const ORIGIN_PASSIVE_KINDS = ['lootStackBonus']
+/** 营地商店那三张字段白名单（KI-055）：主人分别是 ShopData / ShopSell / ShopStockEntry */
+const SHOP_FIELDS = new Set(['id', 'sell', 'stock', 'redlines'])
+const SELL_FIELDS = new Set(['mul', 'stackKinds', 'note'])
+const STOCK_FIELDS = new Set(['id', 'item', 'price', 'note'])
+/** 世界状态规则表：`on` 是引擎听得懂的触发口，字段是它能做的动作——加一项必须同时加消费方 */
+const RULE_ONS = new Set(['firstParry', 'bossDefeated', 'interactUsed'])
+const RULE_FIELDS = new Set(['id', 'on', 'dataId', 'interactId', 'setFlag', 'notify'])
 // tests/flow/support.test.ts 同款判据：tag 末段为 mute 即闷音类，必须自带 ticks
 const MUTE_TAG = /(^|\.)mute$/
 // src/core/EventBus.ts > STATUS_IDS —— 五状态一张表：少一维 HUD 就没得播，多一维就是没人消费的数据（KI-076 起由对账读它，不再抄它）
@@ -117,11 +136,11 @@ const PASSIVE_IDS = new Set(['ps_metronomefoot', 'ps_tympanicguard', 'ps_feather
  * 这里加了而声明没有 ⇒ 代码侧根本不认识这一项（derive 可能已在读它）。
  * 所以每张都登记"主人住在哪个文件的哪条声明"（`from` + `at`），跑一次逐张比对（`validateVocabDrift`）。
  *
- * 刻意没一次把所有名单都并进来：**一条没量过的对账不是门，是安慰**。`REACTIONS` 就不在这张表里——
- * 它的载体不是 `ReactionTier`（那张只到 R3），而是 `reactions.json` 的行键加上 R4 那一档，
- * 硬配一个名字相近的声明只会造出一条永远在说谎的门。同理 `AFFIX_STATS`/`AFFIX_BEHAVIORS` 不入表：
- * 它们与 `rpg/Equipment.ts > EquipMods` 的双向对账已经由 `tests/unit/gear-advice.test.ts` 在跑，
- * 一道门不需要两个主人。
+ * KI-074 那批刻意没一次把所有名单并进来：**一条没量过的对账不是门，是安慰**——每张都要先在真文件上
+ * 量过"抽取读得回来"才登记。KI-086 把剩下的逐张量完并入了，只剩 `VOCAB_UNPAIRED` 那五张确实没有声明可指。
+ * 顺带纠正一笔旧账：这里曾经写「`REACTIONS` 的载体不是任何一条声明，而是 `reactions.json` 的行键加上 R4」——
+ * 那是 KI-074 当时的实话，而 KI-052② 后来补了 `IncomingGrade`（R0..R5 全列，正是敌人招式
+ * `AttackSpec.reaction` 那一格的类型）。判据比注释老，就得改注释：`REACTIONS` 今天入表。
  */
 const VOCAB_PAIRS = [
   { at: 'AttrKey', from: 'src/data/schema.ts', name: '六维词表', source: (c) => unionMembers(c.blocks, 'AttrKey'), copied: [...ATTR_KEYS], where: 'ATTR_KEYS' },
@@ -182,6 +201,72 @@ const VOCAB_PAIRS = [
      内联类型，没有任何名单可对账，所以拼错一个键（`faint`）只会静默失效。提成具名接口才有主人可读。 ---- */
   { at: 'ProjectileBurst', from: 'src/data/schema.ts', name: '连发字段', source: (c) => interfaceFields(c.blocks, 'ProjectileBurst'), copied: BURST_FIELDS, where: 'BURST_FIELDS' },
   { at: 'BurstFeint', from: 'src/data/schema.ts', name: '诱饵惩罚字段', source: (c) => interfaceFields(c.blocks, 'BurstFeint'), copied: FEINT_FIELDS, where: 'FEINT_FIELDS' },
+  /* ---- KI-086：把剩下那批"能指到主人"的名单逐张量完并入（每张都先量过它读得回来，KI-074 的规矩：
+     一条没量过的对账不是门，是安慰）。其中 `PICK_ORDERS` 入表前读回来是 null —— 那是判据认不了
+     "嵌在嵌套对象里的内联联合"这一种排版，补的是抽取器，不是名单；`PSEUDO_ACTIONS` 同族，
+     主人是 `src/ai/Enemy.ts` 的模块级 `const … = new Set([...])`，既不是 export 也不是数组。
+     剩下的没交代不行，所以另有一张 `VOCAB_UNPAIRED` 专门记"确实没有主人"的那几张。 ---- */
+  { at: 'WeaponData.archetype', from: 'src/data/schema.ts', name: '武器原型', source: (c) => fieldUnion(c.blocks, 'WeaponData', 'archetype'), copied: [...WEAPON_ARCHETYPES], where: 'WEAPON_ARCHETYPES' },
+  { at: 'EnemyData.archetype', from: 'src/data/schema.ts', name: '敌人原型', source: (c) => fieldUnion(c.blocks, 'EnemyData', 'archetype'), copied: [...ENEMY_ARCHETYPES], where: 'ENEMY_ARCHETYPES' },
+  // KI-074 曾把这张名单登记为"没有声明可指"；KI-052② 之后主人是 `IncomingGrade`（敌人招式那一格的类型），
+  // 而不是只到 R3 的 `ReactionTier`。今天量过：R0..R5 逐张相等 ⇒ 入表，那条旧说法随之改掉。
+  { at: 'IncomingGrade', from: 'src/data/schema.ts', name: '受击反应档位', source: (c) => unionMembers(c.blocks, 'IncomingGrade'), copied: [...REACTIONS], where: 'REACTIONS' },
+  // 嵌在 `EnemyData.ai` 里那一格：KI-086 起 `fieldUnion` 认得四格缩进（只认两格的那一版读成 null）
+  { at: 'EnemyData.ai.pickOrder', from: 'src/data/schema.ts', name: '选招方式', source: (c) => fieldUnion(c.blocks, 'EnemyData', 'pickOrder'), copied: [...PICK_ORDERS], where: 'PICK_ORDERS' },
+  { at: 'RegionData.biome', from: 'src/data/schema.ts', name: '生物群系', source: (c) => fieldUnion(c.blocks, 'RegionData', 'biome'), copied: [...BIOMES], where: 'BIOMES' },
+  { at: 'DialogueChoice.style', from: 'src/data/schema.ts', name: '对话风格（narrative §3.2）', source: (c) => fieldUnion(c.blocks, 'DialogueChoice', 'style'), copied: [...CHOICE_STYLES], where: 'CHOICE_STYLES' },
+  // 主人是 `relation?: { npc?: string; op: 'gte' | 'lte' | 'eq'; value: number }` 里那一格——
+  // 内联嵌套对象的字段跟在 `;` 后面，`fieldUnion` 的第二条分支本来就认，量过就入表，不再手抄。
+  { at: 'DialogueCondition.relation.op', from: 'src/data/schema.ts', name: '关系比较符', source: (c) => fieldUnion(c.blocks, 'DialogueCondition', 'op'), copied: [...RELATION_OPS], where: 'RELATION_OPS' },
+  { at: 'WeaponData', from: 'src/data/schema.ts', name: '武器字段白名单', source: (c) => interfaceFields(c.blocks, 'WeaponData'), copied: [...WEAPON_FIELDS], where: 'WEAPON_FIELDS' },
+  { at: 'OriginPassive.kind', from: 'src/data/schema.ts', name: '出身被动类型', source: (c) => fieldUnion(c.blocks, 'OriginPassive', 'kind'), copied: ORIGIN_PASSIVE_KINDS, where: 'ORIGIN_PASSIVE_KINDS' },
+  { at: 'ShopData', from: 'src/data/schema.ts', name: '商店字段白名单', source: (c) => interfaceFields(c.blocks, 'ShopData'), copied: [...SHOP_FIELDS], where: 'SHOP_FIELDS' },
+  // `SELL_FIELDS` 的主人原来是一行内联对象（`sell: { mul; stackKinds; note }`），形状上没有可指的名。
+  // 按 KI-085 对 `burst.feint` 的同一处理：把内联类型提成具名接口 `ShopSell`，抽取器不用长新形状。
+  { at: 'ShopSell', from: 'src/data/schema.ts', name: '卖出系数字段', source: (c) => interfaceFields(c.blocks, 'ShopSell'), copied: [...SELL_FIELDS], where: 'SELL_FIELDS' },
+  { at: 'ShopStockEntry', from: 'src/data/schema.ts', name: '商店库存字段', source: (c) => interfaceFields(c.blocks, 'ShopStockEntry'), copied: [...STOCK_FIELDS], where: 'STOCK_FIELDS' },
+  { at: 'WorldStateRule', from: 'src/data/schema.ts', name: '世界状态规则字段', source: (c) => interfaceFields(c.blocks, 'WorldStateRule'), copied: [...RULE_FIELDS], where: 'RULE_FIELDS' },
+  { at: 'WorldStateRule.on', from: 'src/data/schema.ts', name: '规则触发口', source: (c) => fieldUnion(c.blocks, 'WorldStateRule', 'on'), copied: [...RULE_ONS], where: 'RULE_ONS' },
+  { at: 'QuestTag', from: 'src/data/schema.ts', name: '§28 任务标注', source: (c) => unionMembers(c.blocks, 'QuestTag'), copied: [...QUEST_TAGS], where: 'QUEST_TAGS' },
+  // 主人不在 schema：伪动作那张住在 AI 模块里，是私有常量而不是 export，也不是数组（KI-086 的新形状）
+  { at: 'PSEUDO_ACTIONS', from: 'src/ai/Enemy.ts', name: '距离带里的伪动作', source: (c) => setLiterals(c.text, 'PSEUDO_ACTIONS'), copied: [...PSEUDO_ACTIONS], where: 'PSEUDO_ACTIONS' },
+]
+
+/**
+ * 没有主人的那几张名单（KI-086 起由 `vocabCoverageErrors` 逐张交代，不再是散在注释里的自述）。
+ * 这张名单与 `VOCAB_PAIRS` 一样**只能变短**：一张名单既没登记主人也没登记理由，覆盖普查就红；
+ * 登记了理由而名单已经消失，那条豁免该销，也红。
+ *
+ * 顺手纠正一笔 §2 冒充事实的旧账：KI-074 那时写「`REACTIONS` 的载体不是任何一条声明，
+ * 而是 `reactions.json` 的行键加上 R4」——那是**当时**的实话，而 KI-052② 后来补了
+ * `IncomingGrade`（R0..R5 全列，正是敌人招式 `AttackSpec.reaction` 那一格的类型）。
+ * 今天它有主人，所以 `REACTIONS` 进 `VOCAB_PAIRS` 而不是这张豁免表（判据比注释老，就得改注释）。
+ */
+const VOCAB_UNPAIRED = [
+  {
+    name: 'AFFIX_STATS', master: 'src/rpg/Equipment.ts > EquipMods',
+    why: '它与 EquipMods 的双向对账已经由 tests/unit/gear-advice.test.ts 在跑——一道门不需要两个主人',
+  },
+  {
+    name: 'AFFIX_BEHAVIORS', master: 'src/rpg/Equipment.ts > EquipMods',
+    why: '同上：那张测试把词缀行为与 EquipMods 逐轴对账，这里再配一条声明只是第二个主人',
+  },
+  {
+    name: 'ADVICE_AXES', master: 'src/rpg/Equipment.ts > ADVICE_AXES',
+    why: '它是 validateGearAdvice 的函数内临时量而不是模块级词表，且 tests/unit/gear-advice.test.ts 已把它与 `ADVICE_AXES` 逐字对账（KI-060）',
+  },
+  {
+    name: 'FILES', master: 'src/data/json/ 目录本身',
+    why: '这是校验器"读哪几份 JSON"的工作清单，不是一段数据的值域；它该对账的对象是目录而不是任何一条声明，而 VocabPair.source 收到的是**一份文件**的语料——那个形状今天没有。登记为 KI-086 没做①：新增一份表而忘了加进这里，今天只会安静地不被校验',
+  },
+  {
+    name: 'VOCAB_PAIRS', master: '（无）',
+    why: '对账表自己：一张对象数组而不是词表。普查按形状认名单，所以它会被扫到——把"为什么它不算一张词表"写在这里，而不是在抽取器里开一个特例（特例是藏身处，KI-073 那一族）',
+  },
+  {
+    name: 'VOCAB_UNPAIRED', master: '（无）',
+    why: '豁免表自己，同一个道理：它装的是"没有主人"那一侧的账，不是一段数据的值域。判据第一趟就报出这一条——**这张门连自己的新名单都不放过**，那它才不是在给人留余地',
+  },
 ]
 
 /**
@@ -200,6 +285,23 @@ function validateVocabDrift() {
     return cache.get(from)
   }
   for (const e of vocabDriftErrors({ pairs: VOCAB_PAIRS, corpusFor })) report.error(e.from, e.key, e.msg)
+  /* 覆盖面（KI-086）：还剩一个问题没被回答——"每张手抄名单到底有没有交代"（有主人 / 没主人并写明原因）。
+     读的是校验器**自己**这份文件，所以它同时钉着抽取器：`handCopiedLists` 一旦读空，
+     下面那条反向判据会让每张已入表的本地名单各自红一次——"判据坏了"不会变成静默绿。 */
+  const SELF = 'scripts/validate-data.mjs'
+  const selfCorpus = corpusFor(SELF)
+  if (!selfCorpus) {
+    report.error(SELF, 'coverage:carrier', `${SELF} 读不到 ⇒ 覆盖普查在空转（工作目录不对？文件改名？）`)
+    return
+  }
+  const coverage = vocabCoverageErrors({
+    file: SELF,
+    census: handCopiedLists(selfCorpus.text),
+    imported: importedNames(selfCorpus.text) ?? [],
+    pairs: VOCAB_PAIRS,
+    unpaired: VOCAB_UNPAIRED,
+  })
+  for (const e of coverage) report.error(e.from, e.key, e.msg)
 }
 
 // ---- 小工具 ----
@@ -505,10 +607,8 @@ function validateMovesets() {
 }
 
 // ---- weapons.json ----
-/** WeaponData 的字段全集（KI-047）：每一格都必须有真实消费方，多余键一律 ERROR——
- *  曾有的 `atkBase` 就是从这里出去的：底数住在 movesets.json 的帧表，武器表再带一份
- *  "看起来是价格"的数，KI-039 的错价才躲过了整轮验收。 */
-const WEAPON_FIELDS = new Set(['id', 'nameKey', 'archetype', 'movesetId', 'scaling', 'swingTag', 'skill', 'poiseMul', 'noiseMul'])
+// `WEAPON_FIELDS`（WeaponData 的字段全集，KI-047）住在文件顶部的词表区：
+// 它的主人由 VOCAB_PAIRS 现场读，而那张表在模块求值时就要引用名单本身，所以声明必须在那之前。
 
 function validateWeapons(movesetIds) {
   const file = 'weapons.json'
@@ -549,8 +649,7 @@ function validateWeapons(movesetIds) {
 }
 
 // ---- progression.json ----
-/** 出身被动的类型白名单（KI-031③）：加一种 kind = 承诺带来一个消费者，反向探针守着这句话 */
-const ORIGIN_PASSIVE_KINDS = ['lootStackBonus']
+// 出身被动的类型白名单 `ORIGIN_PASSIVE_KINDS`（KI-031③：加一种 kind = 承诺带来一个消费者）住在顶部词表区
 function validateProgression() {
   const file = 'progression.json'
   const d = data[file]
@@ -911,9 +1010,7 @@ function validateItems(weaponIds, rarityIds, affixDefs) {
 }
 
 // ---- shop.json（营地交易，KI-055） ----
-const SHOP_FIELDS = new Set(['id', 'sell', 'stock', 'redlines'])
-const SELL_FIELDS = new Set(['mul', 'stackKinds', 'note'])
-const STOCK_FIELDS = new Set(['id', 'item', 'price', 'note'])
+// `SHOP_FIELDS`/`SELL_FIELDS`/`STOCK_FIELDS` 住在顶部词表区（主人分别是 ShopData / ShopSell / ShopStockEntry）
 /**
  * 交易的三条红线全部做成机器形状（§6.3「无风险套利禁止」）：
  * 清单只许 consumable、卖系数严格在 (0,1)、条目引用的件必须真存在且价是正整数。
@@ -2111,8 +2208,7 @@ function validateGearRarityCoverage() {
  */
 // 名单本体在 ledger-rules.mjs（与里程碑那两份同一个理由）
 
-const RULE_ONS = new Set(['firstParry', 'bossDefeated', 'interactUsed'])
-const RULE_FIELDS = new Set(['id', 'on', 'dataId', 'interactId', 'setFlag', 'notify'])
+// `RULE_ONS` / `RULE_FIELDS` 住在顶部词表区（主人 `WorldStateRule` 与它的 `on` 那一格，同一个理由）
 
 function collectFlagUsage() {
   const read = new Map() // flag -> 读它的地方（用于报错时指路）
