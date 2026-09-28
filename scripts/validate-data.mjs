@@ -47,13 +47,16 @@ import { LOCKON_FIELDS, lockOnFindings } from './lockon-rules.mjs'
 // KI-085：连发/诱饵那几条**关系**判据的本体（同一族理由：`at` 与 `everyTicks` 与 `punishMs` 之间的
 // 序关系要在测试里喂得出非法行）。count/everyTicks/at[i]/punishMs 各自的可闻带仍走本文件的 report.num。
 import { BURST_FIELDS, FEINT_FIELDS, burstFindings } from './burst-rules.mjs'
+// KI-092：§8.2 侧链表那几条**跨文件**判据的本体（同一族理由：要在测试里喂一行"引擎根本不听的触发口"
+// 看它拒不拒）。这里只负责把那两份源码名单读出来当输入，再把 findings 报成 ERROR。
+import { DUCK_FIELDS, duckFindings } from './ducking-rules.mjs'
 // KI-089：对话树的**可达性**判据本体（同一族理由：要在测试里喂一棵合成树看它拒不拒）。这里只把
 // findings 报成 ERROR —— 一句话有没有玩家读得到，是"边"的事，不是"条件写得好不好"的事。
 import { dialogueReachErrors } from './dialogue-rules.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const JSON_DIR = resolve(ROOT, 'src/data/json')
-const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json', 'shop.json', 'states.json', 'ambience.json', 'explore.json', 'battle.json']
+const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json', 'shop.json', 'states.json', 'ambience.json', 'explore.json', 'battle.json', 'ducking.json']
 // Phase 6-B：对话风格枚举与任务标注（narrative.md §3.2 / §28 图例）
 const CHOICE_STYLES = new Set(['blunt', 'poetic', 'silent', 'provoke'])
 const QUEST_TAGS = new Set(['D', 'C', 'H', 'M'])
@@ -206,6 +209,8 @@ const VOCAB_PAIRS = [
      内联类型，没有任何名单可对账，所以拼错一个键（`faint`）只会静默失效。提成具名接口才有主人可读。 ---- */
   { at: 'ProjectileBurst', from: 'src/data/schema.ts', name: '连发字段', source: (c) => interfaceFields(c.blocks, 'ProjectileBurst'), copied: BURST_FIELDS, where: 'BURST_FIELDS' },
   { at: 'BurstFeint', from: 'src/data/schema.ts', name: '诱饵惩罚字段', source: (c) => interfaceFields(c.blocks, 'BurstFeint'), copied: FEINT_FIELDS, where: 'FEINT_FIELDS' },
+  /* ---- KI-092：§8.2 侧链表那一行的字段名单（判据住在 `ducking-rules.mjs`，名单与它同一份声明） ---- */
+  { at: 'DuckRow', from: 'src/data/schema.ts', name: '侧链表字段', source: (c) => interfaceFields(c.blocks, 'DuckRow'), copied: DUCK_FIELDS, where: 'DUCK_FIELDS' },
   /* ---- KI-086：把剩下那批"能指到主人"的名单逐张量完并入（每张都先量过它读得回来，KI-074 的规矩：
      一条没量过的对账不是门，是安慰）。其中 `PICK_ORDERS` 入表前读回来是 null —— 那是判据认不了
      "嵌在嵌套对象里的内联联合"这一种排版，补的是抽取器，不是名单；`PSEUDO_ACTIONS` 同族，
@@ -1920,6 +1925,30 @@ function validateBattle() {
 }
 
 // ---- movements.json ----
+// ---- ducking.json（KI-092：docs/audio.md §8.2 侧链表）----
+/**
+ * 判据本体在 `ducking-rules.mjs`（字段名单 / 触发口两端对账 / 总线名 / db 与 holdSec 的界）。
+ * 这里只多做一件判据本体做不了的事：**把两份源码名单读出来**。
+ *  · `handled` = `src/audio/AudioEngine.ts` 里 `onDuckTrigger('…')` 的字面量实参（引擎真接的侧链口）；
+ *  · `buses`   = `src/audio/ducking.ts` 的 `DuckBusName` 联合（图上有哪几条总线）。
+ * 两份都是**现推**而不是手抄：抄一份名单就等于给这句话配第二个主人，改了引擎而名单不动，
+ * 门就会替过时的代码说话（KI-074 那条纪律的同一家族）。读不到时把 null 交给判据，它说"门在空转"。
+ */
+function validateDucking() {
+  const file = 'ducking.json'
+  const read = (p) => {
+    try { return readFileSync(resolve(ROOT, p), 'utf8') } catch { return null }
+  }
+  const engineText = read('src/audio/AudioEngine.ts')
+  const duckText = read('src/audio/ducking.ts')
+  const handled = engineText === null ? null : callArgLiterals(engineText, 'onDuckTrigger')
+  const buses = duckText === null ? null : unionMembers(schemaBlocks(duckText), 'DuckBusName')
+  for (const f of duckFindings(file, data[file], handled, buses)) {
+    if (f.level === 'warn') report.warn(f.file, f.where, f.msg)
+    else report.error(f.file, f.where, f.msg)
+  }
+}
+
 /** loot.json 里真正会掉出来的物品全集（rolls + firstKill）。点亮源必须落在这里面，否则那一页永远点不亮 */
 function lootedItemIds() {
   const out = new Set()
@@ -2664,6 +2693,8 @@ validateAmbience()
 validateExplore()
 // KI-080：战斗档表对账 regions 的 music.battle（这一格从"指向一张不存在的表"变成有读者的行）
 validateBattle()
+// KI-092：§8.2 侧链表要对账两处源码名单（引擎的触发口 + 总线名册），所以排在它们所在的模块之外也能读到
+validateDucking()
 // movements 最后跑：它要同时对账 items（点亮源）、loot（源是否真会掉）、progression（开槽里程碑）
 validateMovements(itemIds)
 // 叙事层（Phase 6-B）：NPC → 任务 → 对话（后者依赖前两者的 id）

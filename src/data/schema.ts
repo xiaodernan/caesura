@@ -1366,6 +1366,30 @@ export interface BattleSilent {
 
 export type BattleScore = BattleTonal | BattleSilent
 
+/**
+ * docs/audio.md §8.2「Ducking 规则表」的一行（KI-092）。行 = 表里那一**行**，不是那一格：
+ * `label` 与文档第一列同字，`targets` 与第二列（MUSIC／AMB 那几个词）同集合，
+ * `db`/`holdSec` 与第三列那两个数同值——这一层对账由 `tests/unit/ducking.test.ts` 从文档现推。
+ *
+ * `trigger` 是**引擎听得懂的那个口**：它的合法值不是词表，而是 `AudioEngine` 里真把触发送进侧链
+ * 的那几处调用（`onDuckTrigger('…')` 的字面量实参，由校验器从源码现推）。写一个没人接的口子
+ * 就是死数据，与 §55 同源；判据两端都有证人。
+ */
+export interface DuckRow {
+  /** 行键：侧链表里唯一 */
+  id: string
+  /** §8.2 第一列的原字，用来跟文档对账 */
+  label: string
+  /** 总线事件名：主人是 `AudioEngine` 的侧链订阅 */
+  trigger: string
+  /** 被压的总线，名字的主人见 `audio/ducking.ts > DuckBusName` */
+  targets: string[]
+  /** 压下去的量（dB，必须为负）：换算成增益是 `ducking.ts > duckFactor` 那一步 */
+  db: number
+  /** 压住多久（秒）后弹回基准电平 */
+  holdSec: number
+}
+
 export interface RegionData {
   id: string
   /** IP_SEED §14 registered vocabulary */

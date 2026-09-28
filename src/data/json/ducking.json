@@ -1,0 +1,10 @@
+[
+  {
+    "id": "parry",
+    "label": "弹反成功",
+    "trigger": "combat.parried",
+    "targets": ["music", "ambience"],
+    "db": -6,
+    "holdSec": 0.3
+  }
+]

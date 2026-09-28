@@ -19,7 +19,8 @@ import shopRaw from './json/shop.json'
 import ambienceRaw from './json/ambience.json'
 import exploreRaw from './json/explore.json'
 import battleRaw from './json/battle.json'
-import type { MovesetData, WeaponData, EnemyData, PlayerBaseData, RegionData, ProgressionData, ItemData, LootTableData, NpcData, DialogueData, QuestData, StatusConfig, MovementConfig, WorldStateRule, WorldStateDef, HitReactionTable, ShopData, AmbienceBed, ExploreScore, BattleScore } from './schema'
+import duckingRaw from './json/ducking.json'
+import type { MovesetData, WeaponData, EnemyData, PlayerBaseData, RegionData, ProgressionData, ItemData, LootTableData, NpcData, DialogueData, QuestData, StatusConfig, MovementConfig, WorldStateRule, WorldStateDef, HitReactionTable, ShopData, AmbienceBed, ExploreScore, BattleScore, DuckRow } from './schema'
 
 export const playerBase = playerRaw as unknown as PlayerBaseData
 export const regions = regionsRaw as unknown as RegionData[]
@@ -46,6 +47,13 @@ export const ambienceBeds = ambienceRaw as unknown as AmbienceBed[]
 export const exploreScores = exploreRaw as unknown as ExploreScore[]
 /** docs/audio.md §1.1/§2.2 的区域战斗档（行键 = `regions.json > music.battle`）：低音走哪条线、钟隔几小节，或显式的"无配乐"。唯一读者同上（KI-080） */
 export const battleScores = battleRaw as unknown as BattleScore[]
+/**
+ * docs/audio.md §8.2 的侧链表（一行 = 文档表里那一行：谁触发、压哪几条总线、压多少 dB、压多久）。
+ * 唯一读者是 `audio/AudioEngine.ts`（KI-092）：触发口在那里接，压的是四条前置总线的基准电平，
+ * 数学（dB→增益、叠压取最深）住 `audio/ducking.ts`。这里不进 `registry`：行键 `parry` 不是内容 id，
+ * 没有任何一处按 id 取它——登记进注册表就是给一个没人敲的门配一把钥匙。
+ */
+export const duckingRows = duckingRaw as unknown as DuckRow[]
 
 let registered = false
 

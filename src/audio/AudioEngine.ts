@@ -2,7 +2,8 @@
  * AudioEngine.ts — WebAudio 音频引擎（Phase 1 战斗原型，零采样纯合成）
  * 图结构：master → DynamicsCompressor → destination；master 前置总线 { sfx / music / ambience / ui }。
  * 3D：按 listener 位置算声像（StereoPanner）+ 距离衰减（listener 经 setListener 更新）。
- * 事件：订阅 bus 'audio.sfx' { key, pos?, gain? }、'audio.music.grid'（拍网，KI-066）与
+ * 事件：订阅 bus 'audio.sfx' { key, pos?, gain? }、'audio.music.grid'（拍网，KI-066）、
+ * 'combat.parried'（§8.2 侧链的触发，KI-092）与
  * 'audio.music.ambience'（环境声床 id → 行，KI-077）、'audio.music.explore'（探索曲 id → 行，KI-079）；
  * 音乐遭遇由 music.ts 自行订阅。这两条 id→行 的解析都住在本类：它是"表 + 图"两头都看得见的那一层。
  * AudioContext 必须在用户手势后 resume —— start() 于首次手势调用；
@@ -10,12 +11,14 @@
  */
 import { bus, type GameEvents } from '../core/EventBus'
 import type { MusicGrid } from '../core/RhythmClock'
-import { ambienceBeds, exploreScores, battleScores } from '../data'
+import { ambienceBeds, battleScores, duckingRows, exploreScores } from '../data'
 import type { AmbienceBed, BattleScore, ExploreScore } from '../data/schema'
 import { triggerSfx } from './synth'
 import { MusicLayer } from './music'
 // KI-083：声源→听者那一步的唯一主人（一次性 SFX 与 §4 的 L2／L3 声景层两条读者共用同一份数学）
 import { AUDIBLE_FLOOR, spatialize, type ListenerPose } from './spatial'
+// KI-092：§8.2 侧链的数学与总线名册（dB→增益、叠压取最深、四条总线的基准电平都只在这里列一次）
+import { BUS_BASE, DUCK_TC_SEC, activeDucks, deepestFactor, duckFactor, type DuckBusName, type DuckRequest } from './ducking'
 
 /** 走 UI 总线、无空间化的按键类音色 */
 const UI_KEYS = new Set(['ui_move', 'ui_select', 'lockon_on', 'lockon_off'])
@@ -41,10 +44,12 @@ interface Graph {
   /** §5.4 处决演出的全频低通：常开在 20kHz（听不见它），塌下去时只剩低频残振 */
   muffle: BiquadFilterNode
   comp: DynamicsCompressorNode
-  sfx: GainNode
-  music: GainNode
-  ambience: GainNode
-  ui: GainNode
+  /**
+   * 四条前置总线，名字与基准电平都由 `ducking.ts > BUS_BASE` 一家管（KI-092）。
+   * 这里原来是 `sfx/music/ambience/ui` 四个字段配四次 `mk(0.9)`——那份电平数在侧链要"弹回基准"
+   * 时就必须有第二份读数，收成一格一名之后侧链不需要抄任何数。
+   */
+  buses: Record<DuckBusName, GainNode>
 }
 
 export class AudioEngine {
@@ -91,6 +96,14 @@ export class AudioEngine {
    * 位姿的主人仍然只有这里：`main.ts` 每帧调 `setListener`，别人只读。
    */
   private pose: ListenerPose = { x: 0, y: 0, z: 0, yaw: 0 }
+  /**
+   * 在场的侧链请求（§8.2，KI-092）。它挂在引擎上而不是算完就走，是因为**到期要自己发生**：
+   * 表里的 `holdSec` 说的是"压住 300ms"，300ms 之后必须有人在那条总线上把电平写回基准。
+   * `onMuffle` 不需要这份状态，因为那一格的开与关都由发射方各说一次（`{ on: boolean }`）。
+   */
+  private ducks: DuckRequest[] = []
+  /** 上一次写给每条总线的那一格。只有它变了才再排一次自动化——每帧重贴会把同一条斜坡不断往后推 */
+  private duckApplied: Record<string, number> = {}
 
   /** 一次性手势恢复：ctx suspended 时等待 pointerdown/keydown */
   private gesture = (): void => {
@@ -107,6 +120,10 @@ export class AudioEngine {
   constructor() {
     bus.on('audio.sfx', (p) => this.onSfx(p))
     bus.on('audio.muffle', (p) => this.onMuffle(p.on))
+    // KI-092（docs §8.2「弹反成功 | MUSIC+AMB | -6dB / 300ms」那一行）：触发口的合法名单**主人就是
+    // 这里 `onDuckTrigger('…')` 的那个字面量**——校验器从本文件现推它，所以加一行表却不接这一句，
+    // 数据门禁会直接红（那一行没有执行口），而只接这一句却不给行，白订阅同样红。
+    bus.on('combat.parried', () => this.onDuckTrigger('combat.parried'))
     // KI-066：拍网向唯一主人领，不再由音乐层自己猜一份。订阅摘不掉这件事与上面两条同账（TD-006 第二腿）。
     bus.on('audio.music.grid', (g) => {
       this.grid = g
@@ -168,6 +185,42 @@ export class AudioEngine {
     f.exponentialRampToValueAtTime(r.hz, now + r.seconds)
   }
 
+  /**
+   * §8.2 侧链的入口：一个触发口 → 表里所有以它为 `trigger` 的行 → 每条被压总线一条请求。
+   * 图还没建（首次手势前）时**一条都不留**：那时没有总线可压，也没有声音要让位；把它记下来
+   * 反而会在建图之后突然压一次——那是一次没人听见的历史事件在说话。
+   */
+  private onDuckTrigger(trigger: string): void {
+    const ctx = this.ctx
+    if (!ctx || !this.graph || ctx.state !== 'running') return
+    const now = ctx.currentTime
+    for (const row of duckingRows) {
+      if (row.trigger !== trigger) continue
+      for (const b of row.targets) this.ducks.push({ bus: b, factor: duckFactor(row.db), until: now + row.holdSec })
+    }
+    this.reconcileDucks()
+  }
+
+  /**
+   * 把在场请求折成"每条总线一个系数"，只给**变了**的那几条排自动化。
+   * 目标电平 = `BUS_BASE[name] * factor`：基准电平只有一个主人，所以表里那一行的 dB 是**相对量**——
+   * 改 `BUS_BASE` 那一格，侧链自己跟着走，不需要谁记得再同步一份电平数。
+   */
+  private reconcileDucks(): void {
+    const ctx = this.ctx
+    const graph = this.graph
+    if (!ctx || !graph || ctx.state !== 'running') return
+    const now = ctx.currentTime
+    this.ducks = activeDucks(this.ducks, now)
+    const factors = deepestFactor(this.ducks)
+    for (const name of Object.keys(BUS_BASE) as DuckBusName[]) {
+      const f = factors[name] ?? 1
+      if (this.duckApplied[name] === f) continue
+      this.duckApplied[name] = f
+      graph.buses[name].gain.setTargetAtTime(BUS_BASE[name] * f, now, DUCK_TC_SEC)
+    }
+  }
+
   /** 首次用户手势时调用：建图、resume、启动音乐层 */
   start(): void {
     this.ensureGraph()
@@ -177,7 +230,7 @@ export class AudioEngine {
     this.detachGesture()
     if (this.started) return
     this.started = true
-    this.musicLayer = new MusicLayer(ctx, this.graph.music, this.graph.ambience, this.grid, this.bed, this.song, this.battle)
+    this.musicLayer = new MusicLayer(ctx, this.graph.buses.music, this.graph.buses.ambience, this.grid, this.bed, this.song, this.battle)
     // KI-083：位姿也要补一次——首次手势之前 `main.ts` 的每一帧都只落在上面那个缓存里（见 `setListener`）
     this.musicLayer.setListener(this.pose)
     this.musicLayer.start()
@@ -187,6 +240,8 @@ export class AudioEngine {
   update(dtReal: number): void {
     if (dtReal < 0) return
     this.musicLayer?.update()
+    // §8.2 的到期就在这一帧兑现：请求自己会过期，但没有这一句没人把电平写回基准（压住 ≠ 压死）
+    this.reconcileDucks()
   }
 
   /** 更新听者位置与朝向（yaw：绕 Y 轴弧度，0 = 面向 -Z） */
@@ -232,13 +287,13 @@ export class AudioEngine {
       g.connect(master)
       return g
     }
-    this.graph = {
-      master, muffle, comp,
-      sfx: mk(0.9),
-      music: mk(0.5),
-      ambience: mk(0.45),
-      ui: mk(0.8)
+    const buses = {} as Record<DuckBusName, GainNode>
+    for (const k of Object.keys(BUS_BASE) as DuckBusName[]) {
+      buses[k] = mk(BUS_BASE[k])
+      // 建图时每条总线上写的就是这个数 ⇒ 侧链的"没被压"记为 1，第一次 reconcile 不会多排四条没人要的斜坡
+      this.duckApplied[k] = 1
     }
+    this.graph = { master, muffle, comp, buses }
   }
 
   private onSfx(p: GameEvents['audio.sfx']): void {
@@ -249,7 +304,7 @@ export class AudioEngine {
 
     // UI / 无位置事件：直通对应总线，不空间化
     if (UI_KEYS.has(p.key) || !p.pos) {
-      const busNode = UI_KEYS.has(p.key) ? graph.ui : graph.sfx
+      const busNode = UI_KEYS.has(p.key) ? graph.buses.ui : graph.buses.sfx
       this.play(ctx, busNode, p.key, base)
       return
     }
@@ -263,7 +318,7 @@ export class AudioEngine {
     vg.gain.value = att
     const sp = ctx.createStereoPanner()
     sp.pan.value = pan
-    vg.connect(sp).connect(graph.sfx)
+    vg.connect(sp).connect(graph.buses.sfx)
     const dur = this.play(ctx, vg, p.key, base)
     window.setTimeout(() => { vg.disconnect(); sp.disconnect() }, (dur + 0.5) * 1000)
   }
