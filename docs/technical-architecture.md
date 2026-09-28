@@ -818,7 +818,7 @@ KI-077 收口时如实记了「只兑现 L1+L4，`music.explore`(7) 与 `music.b
 - **「旋律层最后」的实现只有一条顺序**：换床开出的 crossfade 窗口没走完时，新曲押在 `songPending` 里由 `update()` 到点兑现；没有窗口在走就当场换。这个顺序**在组合根**：`main.ts` 两处发射点都是先 `audio.music.ambience` 后 `audio.music.explore`，反过来写两句都不报错、只是旋律抢跑 ⇒ 由一条源码门钉住（`main.ts` 全场恰好四行、顺序 `ambience,explore,ambience,explore`）。每帧最多排**一个**音（不像战斗层那样 `while` 补排）：调度落后时"把欠的拍补回来"在这里听感上是把过去十秒砸进这一帧，而探索曲没有拍点要对齐，代价换成"一串音被跳过"。
 - **判据搬进 `scripts/explore-rules.mjs`（+ `.d.mts`），校验器只当那张嘴**。理由与 `report-reds.mjs`/`test-scope.mjs` 同一个（KI-072/078 先例）：`validate-data.mjs` 一被 import 就去校验真表并 `process.exit`，而"喂一行非法数据、看它拒不拒"这一半在测试里做不了——本沙箱连 spawn 子进程都被宿主拒（KI-075 那条 `skipIf` 就是这件事的读数）。搬出来之后门禁与 `tests/unit/explore-table.test.ts`（21 条）**读的是同一段代码**。`rootHz`/`peak` 的可闻带刻意留下：那三种说法由 `report.num` 全场统一管，搬过来等于配第二个主人（源码门把这一格钉在原地：校验器里不许出现 `EXPLORE_FORMS.has`/`MIN_ROOT_CENTS`，也不许丢掉 `.rootHz`, `row.rootHz`）。
 - **数据门钉的六件事**：字段集合落在两支之一（名单由两支**现拼**，`EXPLORE_FIELDS` 的右边不许出现字段名字面量）、`form` 只有那三个词或显式 `null`、`beatsPerNote` 只有 1/2/0.5、`form:null` 的那一行四格音高参数一格都不许多、主音跨区相距 ≥`MIN_ROOT_CENTS`(50) 音分、与 `regions.json` **双向**对账 + 一区一张曲（两区共用一张 = §1.2 的承诺破了，那条红记在 `regions.json` 名下）。
-- **那条 `music.battle` 的 WARN 是登记，不是豁免**：5 个战斗曲 id 指向一张**还不存在**的表（战斗音乐今天只有一张全局 ostinato 层），判 ERROR 等于逼下一批偷偷造一张没人奏的表来让门禁闭嘴。它的计数**从 regions 现算**，所以不是手抄名单、不需要"销账"——谁建了 `battle.json` 并接上读者，这条连同话术一起消失。校验器读数因此从 5 WARN 变 **6 WARN**。
+- **那条 `music.battle` 的 WARN 是登记，不是豁免**：5 个战斗曲 id 指向一张**还不存在**的表（战斗音乐今天只有一张全局 ostinato 层），判 ERROR 等于逼下一批偷偷造一张没人奏的表来让门禁闭嘴。它的计数**从 regions 现算**，所以不是手抄名单、不需要"销账"——谁建了 `battle.json` 并接上读者，这条连同话术一起消失。校验器读数因此从 5 WARN 变 **6 WARN**。**（2026-09-28 收口）**：KI-080 建了 `battle.json` 并接上读者，这一条连同话术一起消失（`validate:data` **6 WARN → 5 WARN**）；上面那句“从 5 WARN 变 6 WARN”是当时的读数，保留不改。
 - **覆盖**：`explore-table.test.ts` 21 条（accept 侧 4 / refuse 侧 16 / 单一主人源码门 3）、`audio-engine.test.ts` 30 条（KI-079 那 6 条含源码门）、`audio-music.test.ts` 55 条。refuse 侧每条臂都在**合法那一行上只改一处**，并断言"红恰好一条、红在那一格"，另留一条对照臂（什么都不改 ⇒ 零条）；三张词表各挑一个"表外那个词"，并有一条门管着"那个词哪天变成合法值就得换词"，否则那条臂会悄悄空转。
 - **变异探针 10 刀**（预言先写进探针文件；未变异对照先立基线：四文件 117 条 0 红；逐刀按字节还原并复验 sha256，全程不碰 git）：**单测抓到 9 刀**——M1 窗口哨兵 2 红、M2 `-0` 1 红、M3 读侧不吃 `beatsPerNote` 3 红、M4 按身份短路失效 1 红、M5 孤儿行 1 红、M6 阈值归零 1 红、M7 共用曲 1 红、M8b 拔掉 `report.num` 1 红（红在那条源码门上）、M9 `main.ts` 那一对发射点倒过来 1 红。**唯一一条单测没抓的是 M8a**（把那条诚实登记的 WARN 报成 ERROR）：它由**校验器那一趟**说话——`总计：1 ERROR / 5 WARN`、exit 1。这条不是漏网，是读者本来就该在那一侧：单测判的是"这一行合不合法"，而"合法但宪法之外"这条登记只对跑起来的门禁有意义。
 - **两条预测要如实报**：① M3 预言"引擎腿 0 红"，实测 **2 红**（「开局 explore 不丢」与「未知 id 保留上一张曲」都断言了固定秒数内**排出的音集合**，节奏一变那两个读数就变）⇒ 引擎腿其实是 `beatsPerNote` 的第二位证人，我的预言过严而不是过松，缺陷侧无；② 探针文件里那条 `总计：…` 的正则第一次跑**解析失败**（`.*$` 在没有 `m` 标志时不认尾随换行），于是 M8a 第一趟印的是 `ERROR -1`——**读不到不等于 0**，修成 `/总计：[^\r\n]*/` 之后才量出上面那句 `1 ERROR / 5 WARN`。
@@ -829,6 +829,26 @@ KI-077 收口时如实记了「只兑现 L1+L4，`music.explore`(7) 与 `music.b
   ③ 钉在 `rg_unfinished_hall`（`form: null`）里：押着的旧线在窗口内继续按**新区的拍**走（音距变 0.35s ＝ 0.5 拍 @92BPM——`beatsPerNote` 是相对当前网格的拍数，所以"押着的曲 + 新的拍"是设计的直接推论，真机上看得见），窗口兑现（末记 250.07s）之后连续 10 秒 **零条**带音高的振荡，而该区铃间隔本就是 `[40,50]`s ⇒ 那句安静是数据说的，不是探针坏了。这一段只敢说"同量级"不敢说"相等"：`enter` 那一刻我没同时打 ctx 点，所以窗口长度只有②那一条能报成 0.007s 精度。全程 console **0 error / 0 warn**。
 - **门禁（本批最后一次全量实测，2026-09-28）**：`npx tsc --noEmit` 0 error；`node scripts/validate-data.mjs` **0 ERROR / 6 WARN**（那 6 格里 KI-079 新登记的就是 `music.battle` 一条）；`node scripts/test.mjs` **93 个测试文件全部跑到（磁盘名册 93）、1208 条用例全绿**（本批从 1207 增到 1208，多的就是上面那条反向对照；`audio-music.test.ts` 单跑 55 条 0 红）；`npm run build` ✓ 3.25s。`npm run coverage` **本平面红**：总行覆盖 85.09% < 地板 87.36%，按包红的四格是 `quest` 92.46<97.75、`tools` 65.27<67.29、`ui` 70.93<73.32、`world` 83.62<87.10——这四包**一行都不在本次改动面上**（本批只动 `src/audio/*`、`src/data/*`、`src/main.ts`、`scripts/*` 与 tests；本批所在的 `audio` 与 `data` 两包读数是 **100.00%**），那是共享工作区里别人在途的 src 文件把分母拉下去了 ⇒ 按第五门既有口径**不落账、不 `--bless`**，只把读数与归属如实贴在这里。
 
+
+### 5.9.17 区域战斗档第一次有读者：`regions.json > music.battle` 那 5 个 id 从「指向一张不存在的表」变成有行有读者（KI-080，2026-09-28）
+
+- **一句话**：战斗层从此**只奏数据里那一行**。`music.ts` 里那份写死的 `OSTINATO` 八格是这张表里最后一个音高副本：它把 §1.1「战斗遭遇 = 主音不变」写对了一件事（那个 C 是全局的），却把「低音走哪条线」钉成了唯一答案，于是 `music.battle` 那 5 个 id 从落地那天起就没有读者。
+- **两样东西分开住**：主音留代码（`music.ts > BATTLE_ROOT_HZ = 65.41`，全局 C2，跨区不许变），**线本身进数据**（`battle.json > pattern`）。所以这张表里 `rootHz`/`bpm`/`beatsPerBar` **不是还没加，是不许加** —— 校验器把它们点名叫出来。
+- **`pattern` 是折起来的一格**：一项 = 「动机第几音 × 第几档八度」，解码 `battleOstinatoHz(cell)`（`deg = cell % MOTIF_R1.length`、`oct = floor(cell / MOTIF_R1.length)`）⇒ §1.2「一切旋律只许派生自 R-1」在**形状上**成立：违宪的音在这张表里没有写法。代价如实说：上界 `MAX_PATTERN_CELL`(7) 是按「四音 × 两档」算的，动机增减一个音它就换意思 ⇒ 有专门一条用例把 `MAX_PATTERN_CELL + 1 == MOTIF_R1.length × PATTERN_OCTAVE_TIERS` 对账。
+- **判别联合管「没有音乐」那一档**：`BattleScore = BattleTonal | BattleSilent`，§6.3 万籁那一格是 `noMusic: true` 的**显式声明**（「什么都不排」是数据说的，不是「少写几格」），写了它就不许再写 `pattern`/`bellEveryBars`。
+- **钟的周期跟着网格走**：`i % (bellEveryBars × beatsPerBar)`，所以同一份 `2` 在 3/4（奥斯塔拉）与 4/4 下是两种间距 —— 与 KI-066/079 同一条纪律：拍长只有 `RhythmClock` 一个主人。
+- **读者与发射点都是同一只手**：`AudioEngine` 认 id→行、建图前缓存、认不出保留上一档并单独说一次（与 `ambience`/`explore` 共用一个解析形状）；`main.ts` 开局与跨区各发一条。**战斗档不吃 crossfade 窗口**（它只在交战时被奏出来，§1.2 那句「旋律层最后」管的是环境总线），所以 `main.ts` 那一格里它排在 `explore` 之后不影响任何语义。
+- **判据搬进 `scripts/battle-rules.mjs`（+ `.d.mts`）**：与 KI-072/078/079 同一条理由（`validate-data.mjs` 一被 import 就去校验真表并 `process.exit`，喂非法行这半在测试里做不了），门禁与 `tests/unit/battle-table.test.ts` 读同一段代码。门钉四件事：字段落在两支之一、`pattern` 每一项是 0..7 的整数、逐格相同的两行 = 同一张行抄两遍（§55）、与 `regions.json` **双向**对账。
+- **跨区共用一行在这里合法**（与探索曲「一区一张」相反）：§1.1 写的就是主音不变，所以共用是设计而不是脏数据 —— 有一条专门喂「两区指同一行」并断言零条的用例，把「允许共享」钉成**选择**而不是判据漏了。
+- **迁移不改声音**：默认那一行 `mus_shared_battle` 的八格逐格对上被删掉的旧常数（实测最大差 < 0.2 音分），那是一条专门的回归断言。
+- **门禁（2026-09-28）**：`tsc --noEmit` 0 错；`validate:data` **0 ERROR / 5 WARN**（本条把 KI-079 登记的那条 `music.battle` WARN 销掉）；`node scripts/test.mjs` **96 文件 / 1258 条全绿**。
+- **没做**：鼓型与各家峰值留在 `music.ts`（五档真数据那一格全同 ⇒ 一列没有信息量的数据就是 §55 说的死数据）；§2.2「同一区域的探索/战斗两档」的 **BPM 数据形状**仍未做（拍长归 `RhythmClock`）；听感不可评审（KI-010）。
+
+### 5.9.18 乐章 IV 页的点亮源改判：一页要么吃实物、要么被事件见证（KI-037 第四步，2026-09-28）
+
+- **改判的不是数值，是「解锁源有几种形状」**。乐章 IV（`mvpage_rest`）原先的 `unlock` 是 `{ item: it_resonance_core, count: 1 }` —— 它要玩家交出**第三颗**振源核才翻开。问题是：`loot.firstKill` 一共只发三颗核，而 I/III 两页各吃一颗 ⇒ 想让 IV 也吃实物，要么让 I/III 永远点不亮，要么凭空造一个「第四颗核」的假经济（都是把 §55 的账搅浑）。所以改成「**被世界事件见证**」：`{ flag: 'flag.hersil_felled' }`（写方是已存在的 worldstate 规则 —— 本作里只有一个人写旗；读方新登记进 `collectFlagUsage`，于是「读它但没人写」的假 ERROR 不会再咬这一格）。
+- **形状进类型与门禁**：`MovementPage.unlock` 变成二形 `{ item, count } | { flag }`，validator 硬钉「至少写一个、至多写一个」（同时写两种 = 错）；`MovementBook` 新增 `hasFlag`（缓存 `world.flag` 广播，与交互物/流送同一条纪律）与 `canUnlock`（**按钮置灰与 `unlockPage` 共用同一个答案** —— 两处各写一遍就是两个主人），旗标页不扣任何实物、拒绝理由新增 `'flag'`；`Stakerite` 按形渲染（实物页 `have/need`、旗标页「已见证/未见证」）。
+- **守卫**：`boss-rewards.test.ts` 那条「拿三颗核点不亮这一页」改成了「这一页的解锁源是旗标」（口径变了，断言跟着变而不是删掉）；`movements`/`echo-tacet`/`timbral-affix`/`passives` 四个流测的装配助手各自多一条「旗标页先发一次 `world.flag`」的分支；`worldstate.test.ts` 把谱册页算进旗标读方对账。
 
 ---
 
