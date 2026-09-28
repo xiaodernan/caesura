@@ -78,9 +78,15 @@ function makeWorld(store = new MapStore()) {
   }
 
   /** 站到某个交互物跟前，按 E（走 use(id) 这条正式入口，不碰 setFlag 抄近路） */
+  const surface = new Surface(regions)
   const standAt = (id: string): void => {
     const it = interact.all.find((x) => x.id === id)!
     player.pos = { ...it.pos }
+    // main.ts 每帧都用 Surface 按区域层刷新 floorY（休垒 0 / 沉唱堂 -40 / 无耳深窖 -144…），
+    // harness 里没有那个循环：不补这一步，y 会被 gravity 拽回默认的 0，地下层的交互全部变成"离得太远"。
+    player.floorY = surface.floorAt(player.pos)?.y ?? 0
+    player.vy = 0
+    player.grounded = true
     tick(2)
   }
 
@@ -276,6 +282,72 @@ describe('隐藏房可达性：发生了什么 ⇒ 立旗 ⇒ 锁开 ⇒ 东西�
     expect(w.interact.use(cache.id, w.player.pos).state, '封存点是一次性的').toBe('used')
     w.standAt('in_drownedchoir_side_nave')
     expect(w.interact.use('in_drownedchoir_side_nave', w.player.pos).state, '推门也是一次性的').toBe('used')
+  })
+
+  it('初句圣所：五环线索链第一次闭合成链——四环读到，井底那扇门才认你（Phase 6-C，KI-091）', () => {
+    const w = makeWorld()
+    const door = w.interact.all.find((i) => i.id === 'ga_deeps_firstphrase_door')!
+    const claim = w.interact.all.find((i) => i.secretId === 'sec_first_phrase')!
+    expect(door, '无耳深窖井底那扇门要在数据里').toBeTruthy()
+    expect(claim, '这条 secret 从此有领取点（KI-041 缺的那半截几何）').toBeTruthy()
+
+    w.standAt(door.id)
+    const closed = w.interact.use(door.id, w.player.pos)
+    expect(closed.state, '一环都没读：门不动（这就是"不靠走近解"）。').toBe('locked')
+    expect(closed.text, '锁着的时候要说清还差哪几环').toContain('flag.clue_')
+
+    // 四环分散在四个区域，各自按 E 读一次（走真入口，不直接 setFlag）
+    const rings = [
+      'in_fellcarillon_reverse_score',   // ① 钟坠院：钟舌上的反向谱线
+      'in_resthold_dome_reflection',     // ② 休垒：积水里的倒影
+      'in_drownedchoir_d5_scratch',      // ③ 沉唱堂：石龛的三连划痕
+      'in_deeps_lean_corpses',           // ④ 无耳深窖：遗骸倾斜的朝向
+    ]
+    // 门的闸门**恰好**是这四环：多一环少一环都会被数据门抓住（
+    // 每一环的旗只被这扇门读 —— 把它从列表里摘掉，validator 立刻报"写了没人读"）
+    const ringFlags = ['flag.clue_reverse_score', 'flag.clue_dome_reflection', 'flag.clue_d5_scratch', 'flag.clue_lean_corpses']
+    expect([...(door.requiresFlags ?? [])].sort(), '合取闸门就是这四环').toEqual([...ringFlags].sort())
+
+    for (let i = 0; i < 3; i++) {
+      w.standAt(rings[i])
+      expect(w.interact.use(rings[i], w.player.pos).ok, `${rings[i]} 读得动（inspect 是一次真的按 E）`).toBe(true)
+      w.standAt(door.id)
+      const useRes = w.interact.use(door.id, w.player.pos)
+      expect(useRes.state, `读了 ${i + 1} 环还不够：门只认四环齐`).toBe('locked')
+    }
+
+    w.standAt(rings[3])
+    expect(w.interact.use(rings[3], w.player.pos).ok).toBe(true)
+    for (const f of ['flag.clue_reverse_score', 'flag.clue_dome_reflection', 'flag.clue_d5_scratch', 'flag.clue_lean_corpses']) {
+      expect(w.streaming.hasFlag(f), `${f} 由规则表立起（写方在 worldstate.json，不在代码里）`).toBe(true)
+    }
+
+    w.standAt(door.id)
+    const opened = w.interact.use(door.id, w.player.pos)
+    expect(opened.ok, '四环齐了，井底的门才开').toBe(true)
+    expect(w.streaming.hasFlag('flag.found_first_phrase'), '开门就是那条 secret 的写方（KI-041 白名单上最后一条）').toBe(true)
+
+    w.standAt(claim.id)
+    const claimRes = w.interact.use(claim.id, w.player.pos)
+    expect(claimRes.ok, '锁开了，石刻前的领取点按得动').toBe(true)
+    expect(claimRes.lootTable, '奖励表来自那条 secret，不是箱子上抄的第二份').toBe('loot_secret_firstphrase')
+    // 音徽是**装备实例**（`Inventory.add` 对 kind='seal' 走 addGear）：量的是 gears 里那一件，
+    // 不是 stacks 的计数——写成 count() 会永远读到 0，那条断言会绿着说谎
+    const seals = (): number => w.rpg.inv.gears.filter((g) => g.itemId === 'seal_darkscore').length
+    const before = seals()
+    openLootTable(w.deps, claimRes.lootTable!)
+    expect(seals(), '这一拓要真的把音徽·暗谱锻成一件装备进背包').toBe(before + 1)
+
+    // 几何：门、领取点、secret 自己的坐标都踩在**可行走层**上
+    // （KI-041 那笔账的理由正是"当前 secret 坐标在可行走层之外"——它原来悬在 y=-180）
+    const surface = new Surface(regions)
+    const secret = regionOf('rg_earless_deeps').secrets!.find((s) => s.id === 'sec_first_phrase')!
+    expect(surface.floorAt(claim.pos)?.y, '领取点踩在无耳深窖的地板上').toBe(-144)
+    expect(surface.floorAt(door.pos)?.y, '门也踩在地板上').toBe(-144)
+    expect(surface.floorAt(secret.pos)?.y, 'secret 自己的坐标也落回本层地板').toBe(-144)
+
+    w.standAt(claim.id)
+    expect(w.interact.use(claim.id, w.player.pos).state, '封存点是一次性的').toBe('used')
   })
 
   it('破拍营地：盟军补给点只认收编（`flag.brokenbar_allied` 的唯一读方，KI-087）', () => {

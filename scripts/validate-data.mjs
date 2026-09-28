@@ -1538,6 +1538,16 @@ function validateRegions(enemyIds, lootIds, rarityIds, stateDefs) {
       if (it.verb !== undefined && !isStr(it.verb)) report.error(file, `${iw}.verb`, '必须是非空字符串')
       if (it.oneWay !== undefined && typeof it.oneWay !== 'boolean') report.error(file, `${iw}.oneWay`, '必须是布尔')
       for (const k of ['requiresFlag', 'setsFlag', 'npcId']) if (it[k] !== undefined && !isStr(it[k])) report.error(file, `${iw}.${k}`, '必须是非空字符串')
+      // 合取闸门（Phase 6-C）：数组、非空、每项是字符串，且不许与单面的 requiresFlag 同时写
+      if (it.requiresFlags !== undefined) {
+        if (!isArr(it.requiresFlags) || it.requiresFlags.length === 0) {
+          report.error(file, `${iw}.requiresFlags`, '必须是非空字符串数组（要几面旗就列几面；只有一面请用 requiresFlag）')
+        } else {
+          it.requiresFlags.forEach((f, fi) => { if (!isStr(f)) report.error(file, `${iw}.requiresFlags[${fi}]`, '必须是非空字符串') })
+          if (new Set(it.requiresFlags).size !== it.requiresFlags.length) report.error(file, `${iw}.requiresFlags`, '有重复项：同一面旗列两遍不会更严，只会让锁文本重复同一句')
+          if (it.requiresFlag !== undefined) report.error(file, `${iw}.requiresFlags`, '与 requiresFlag 同时写 = 同一件事两处真值（单面 / 合取选一种）')
+        }
+      }
       // 值域闸门（Phase 6-B 组换）：与 requiresFlag 平级的另一种"这儿现在有没有它"
       if (it.requiresState !== undefined) {
         if (!isObj(it.requiresState)) report.error(file, `${iw}.requiresState`, '必须是对象 { key, value }')
@@ -2234,6 +2244,9 @@ function collectFlagUsage() {
       if (!isObj(it)) continue
       interactableIds.add(it.id)
       if (isStr(it.requiresFlag)) read.set(it.requiresFlag, `${rg.id}.interactables(${it.id}).requiresFlag`)
+      // 合取闸门（Phase 6-C 初句圣所）：列进去的每一面旗都是**读方**——少登记一面，
+      // 那面旗就会在下面"写了没人读"那条判据里被判成死数据
+      if (isArr(it.requiresFlags)) for (const f of it.requiresFlags) if (isStr(f)) read.set(f, `${rg.id}.interactables(${it.id}).requiresFlags`)
       if (isStr(it.setsFlag)) written.set(it.setsFlag, `${rg.id}.interactables(${it.id}).setsFlag`)
       if (isStr(it.secretId)) {
         const owner = (rg.secrets ?? []).find((x) => x.id === it.secretId)

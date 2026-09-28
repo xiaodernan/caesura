@@ -1401,7 +1401,7 @@ Phase 6 的对话与任务全部要读写"世界状态"，所以动手写内容�
 四张隐藏房奖励表因此玩家永远领不到（KI-041）。这一步要做的就是把"发生了什么 → 立哪个旗标"变成数据规则，
 而不是散在代码里的布尔——也正是 narrative §7 那句"禁止代码内散落硬编码布尔"的执行位。
 
-## 15. 世界状态写入层与隐藏房可达性（Phase 6-A 第二步）— 部分实现（3/8 旗标已有写方）
+## 15. 世界状态写入层与隐藏房可达性（Phase 6-A 第二步）— 已实现（8/8 旗标都有写方，KI-091 销空最后一条）
 
 narrative §7 那张旗标表写的是"什么时候该立哪个旗"，`regions.json` 写的是"哪个旗开了哪道锁"——
 **中间那一环（谁去立旗）从来没有人写**。于是 8 个旗标只有读方，四张隐藏房奖励与一只 T2 箱玩家永远拿不到；
@@ -1424,12 +1424,16 @@ narrative §7 那张旗标表写的是"什么时候该立哪个旗"，`regions.j
   `pickGearItem` 返回 null ⇒ 函数安静地返回空数组，玩家打开隐藏房"什么都没有"而不报任何错。
   补了四件（蒙钟盔 / 音徽·起拍 / 钟皮胸甲 / 音徽·留鼓，全部沿用既有词缀表），并把这条判据变成闸门：
   **`gearBand` 用到的每个稀有度必须在 `items.json` 有至少一件装备件**。
-- **还欠的部分（如实登记，不假装做完）**：8 个旗标里 3 个有了写方，另外 5 个（`echo_cairn_read` /
-  `side_nave_found` / `found_first_phrase` / `brokenbar_resolved` / `brokenbar_allied`）要等 Phase 6-B/C 的
-  对话与营地抉择线——它们逐个挂在 `PENDING_FLAG_WRITERS` 白名单里（带原因），所以"新增一个没人写的旗标"
-  会立刻红，而欠账本身不会淹没在通用 WARN 里。`sec_drownedchoir_side_nave` 与 `sec_first_phrase`
-  还多一层几何欠账：它们的坐标落在可行走层之外（实测 `floorAt` 为 null），要先有能站住的领取点几何。
-
+- **这一步的账已经销空（2026-09-29 追记）**：KI-041 那份「被读但没人写」的 8 条清单由 KI-081
+  （`brokenbar_resolved`）、KI-087（`side_nave_found` / `brokenbar_allied`）、KI-091
+  （`found_first_phrase`：无耳深窖井底那扇门，四环线索齐才认你）销完 —— `PENDING_FLAG_WRITERS`
+  现在是**空**的（空就是它的目标状态），五条 secret 的坐标也都落回各自的本层地板（`floorAt` 不再为 null）。
+  隐藏房这边新长出来的那一格是**合取闸门** `InteractableRef.requiresFlags`（AND）：单面旗说不了
+  「四件事都发生了吗」，井底那扇门就是它的第一个消费者（锁文本会说清还差哪几件），细节见 §5.9.28。
+- **仍然欠着的**：①§4.8 环⑤ 的第二个条件（`STATE.BELLS.FIRST..FOURTH` 已修）今天**无处表达**，
+  而且它与 `narrative.md §8` 验收那句「存在不依赖任何 NPC 对话的纯环境推理通关路径」打架 ——
+  裁决留给需求文档持有者；②任务步骤机（QuestState）与对话效果原子集未做：这张表目前只表达
+  「发生过 X」，还不能表达「任务第 k 步完成」。
 ## 16. 错拍步的落地窗口（KI-035）— 已实现
 
 §7.2 给瞬步写了两件事：一步 2.5m，以及**落地 0.3s 内自己的攻击架式伤害 +3**。位移早就在了，
@@ -1697,6 +1701,81 @@ Phase 4-B 落三叠箭时只做了**延迟**那一半（`at=[0,32,42]` 让第 2 
 **门禁（2026-09-29）**：`tsc --noEmit` 0 错；`validate:data` **0 ERROR / 2 WARN**；相邻 8 个文件 **105 条全绿**（没有跑全量回归）。
 
 **没做（§78）**：①条件层面的"永远读不到"（条件恒假）不做 —— 那是可满足性一级的活，本批只钉**结构上**够不着的那一半；②"收束后能不能重开一条线"除科温/断弦外没有逐条裁；③五环线索链的**内容**（点亮顺序、初句圣所几何）仍按 KI-087 的没做②留给 Phase 6-C —— 本批只保证 n7/n8/n9 这三句有人读得到，不是那三步已经有地方走。
+
+### 5.9.28 初句圣所的五环线索链第一次闭合成链：四个读点分散在四个区域，井底那扇门要四环齐才认你（KI-091，2026-09-29）— 已实现
+
+**症状不是崩，是"最后一面旗没有写方，而它的四句线索也不在世界里"**。KI-041 立账时 `regions.json` 里被读到的
+8 个世界旗标一个写方都没有；KI-081 落 `brokenbar_resolved`、KI-087 落 `side_nave_found` 与
+`brokenbar_allied` 之后，白名单上只剩 `flag.found_first_phrase` —— 它是无耳深窖那条隐藏房
+`sec_first_phrase` 的解锁旗，按 narrative §4.8 该由**五环线索链**来立。动手时量到三件事：
+
+- 那条 secret 的坐标 `(−260,−180,360)` 实测 `Surface.floorAt` 为 **null**：无耳深窖的可行走层是
+  `groundY=−144`，`−180` 是悬空的（KI-041 那句"几何欠账"在坐标上仍然成立）。
+- §4.8 的环①–④（钟舌反向谱线 / 穹顶积水倒影 / 石龛三连划痕 D5 / 遗骸朝一点倾斜）在游戏里
+  **一个读点都没有**：四句话只活在文档里，`docs/narrative.md §8` 的"环境叙事"因此一直记 Placeholder。
+- 那扇门要的是**四件事都发生了吗**，而交互物闸门只有 `requiresFlag`（单面）与 `requiresState`
+  （值域取等）两种记法 —— 没有一种能说"这四面旗都要在"。
+
+**修法一：新字段 `requiresFlags`（合取闸门，AND）**。`InteractableRef.requiresFlag` 之外多一格
+`requiresFlags?: string[]`：单面旗能表达的门只到"一件事办完"为止，合取闸门回答的是"这几件事都发生了吗"。
+它与单面那面**共用一处求值**：`Interactables.missingFlags(it)` 把两者拼成"还差哪几面"，`stateOf` /
+`activate` / 锁文本都从那一处读——于是"锁着"与"为什么锁着"不会各自算一遍（旧代码在 `stateOf` 与
+`activate` 里把那句判断写了两遍）。锁文本：只缺一面沿旧口径「需要 X」，缺多面则说清
+「还差 N 件事：a、b、c」（`requiresState` 那条分支不动）。校验器三条形状：非空字符串数组、
+不许与 `requiresFlag` 同时写（同一件事两处真值）、不许重复列同一面旗；并且
+**`collectFlagUsage` 把列进去的每一面都登记成读方** —— 少了这一条，规则表刚写的旗会被
+"写了没人读"那条判据判成死数据。
+
+**修法二：五环的四环落成读点，句子走规则表的 `notify`**。
+
+| 环 | 读点（`inspect`） | 位置 | 由哪条规则立旗 |
+|---|---|---|---|
+| ① 钟坠院 | `in_fellcarillon_reverse_score`「辨读钟舌上的反向谱线」 | (214, 64, −236) | `ws_firstphrase_ring1` → `flag.clue_reverse_score` |
+| ② 休垒 | `in_resthold_dome_reflection`「看积水里的倒影」 | (−62, 0, −62) | `ws_firstphrase_ring2` → `flag.clue_dome_reflection` |
+| ③ 沉唱堂 | `in_drownedchoir_d5_scratch`「读石龛的三连划痕」 | (348, −40, 16) | `ws_firstphrase_ring3` → `flag.clue_d5_scratch` |
+| ④ 无耳深窖 | `in_deeps_lean_corpses`「辨认遗骸倾斜的朝向」 | (−262, −144, 318) | `ws_firstphrase_ring4` → `flag.clue_lean_corpses` |
+
+读点自己**不挂 `setsFlag`**：写方统一在 `worldstate.json`（`SecretRef` 头注释那句承诺），
+而 §4.8 那四句话作为规则的 `notify` 播出来 —— 于是"读了什么"第一次在游戏里说出口，
+而不是只留一句通用的「刻痕读进了心里」。
+
+**修法三：井底的门 + 石刻前的领取点**。`ga_deeps_firstphrase_door`（`gate`，( −258, −144, 344)）
+的 `requiresFlags` 恰好是那四面旗；它被用掉时 `ws_firstphrase_door` 立 `flag.found_first_phrase`。
+门后 `ch_first_phrase`（( −264, −144, 364)，`secretId: sec_first_phrase`）按引用取解锁旗与奖励表
+（`loot_secret_firstphrase`：音徽·暗谱 + 音色石 + 残晶）。**门、领取点、secret 自己的坐标三处实测
+`floorAt = −144`**，secret 的 y 从悬空的 −180 落回本层地板。四环可以**任意顺序**读（四句话是平行的观察，
+不是一条强制的走路次序），门只问"四环齐没齐"。
+
+**判据与守卫**：`validate-data.mjs` 的 `requiresFlags` 三条形状 + 读方登记；
+`tests/flow/hidden-rooms.test.ts` **+1 条**（11 条）：逐环读一次、门逐环仍锁（阶梯），
+四环齐门才开，领取点拓到 `seal_darkscore`，最后三处 `floorAt` 都是 −144；
+`tests/unit/worldstate.test.ts` **+2 条**：合成一块区域量"三面旗立两面仍锁 / 锁文本说清缺哪几件"，
+以及"单面与合取同一处求值"（不会被对方顶掉）。顺带记一条量错的地方：那条 flow 用例第一版把音徽写成
+`inv.count('seal_darkscore')`，而音徽是**装备实例**（`Inventory.add` 对 `kind:'seal'` 走 `addGear`）——
+`count()` 永远读 0，那条断言会绿着说谎；改成数 `inv.gears` 里那一件才对。
+
+**`PENDING_FLAG_WRITERS` 因此销空**（`scripts/ledger-rules.mjs`）。空**就是**它的目标状态：
+那本账记的是"被读的旗没有写方"这种欠账，销完就该空着；而 `PENDING_MILESTONE_GRANTS` /
+`UI_BOUND_MILESTONES` 记的是"需求要的效果还没有腿"，做下去还会一直有 —— 所以
+`tests/unit/ledger-rules.test.ts` 里那条"三份名单都不是空的"拆成了两半：前两份不设空集豁免，
+旗标那一份允许为空，判据本身照旧由**合成账本**的用例钉住（集合空 ≠ 判据在空转）。
+
+**反向实测四刀**（每刀事前写明"必须红在哪"，跑完按 sha256 核对还原成字节一致）：
+①把 `flag.clue_d5_scratch` 从门的 `requiresFlags` 里摘掉 ⇒ validator **1 ERROR**
+（`ws_firstphrase_ring3.setFlag: 写了 'flag.clue_d5_scratch' 但 regions.json 里没有任何读方`）——
+这一刀顺带证明**"门的合取列表恰好是那四环"是机器钉住的**：那一面旗若从列表里消失，它就没有第二个读方；
+②把校验器里那行读方登记摘掉 ⇒ **4 ERROR**（四条规则各一条）；③门上同时写 `requiresFlag` 与
+`requiresFlags` ⇒ **1 ERROR**（两处真值）；④列表里重复列同一面旗 ⇒ **1 ERROR**（重复不会更严，只会让锁文本重复）。
+
+**没做（§78）**：①§4.8 环⑤ 的第二个条件是「`STATE.BELLS.FIRST..FOURTH` 已修」，今天**没接**。
+设计表 §7 把它的读法写成 `STATE.TRUTH_KEYMOD_FOUND`（"圣所 ⑤ 门语义"），可那口钟的整条链
+（`flag.bells_repair_open` 起）每一环都要过铃姨的对话，接上它就把 `narrative.md §8` 验收里那句
+"**存在不依赖任何 NPC 对话的纯环境推理通关路径**"堵死；两句话打架，本批按**纯环境**那一侧落
+（门只认四环），裁决留给需求文档持有者。②§4.8 ①②⑤ 把入口说在**休垒铁铺井底**，
+而 `IP_SEED.md` 的垂直结构（雾语林→钟坠院→沉唱堂→无耳深窖→**隐藏房初句圣所**）、
+`world-bible §5.8`（"深窖最深层之下"）与这条 secret 的实际归属都说圣所在深窖之下 ——
+本批按数据与 §5.8 落（门在深窖最深的井底），**不擅自把 secret 搬到休垒**，这句话同样留给需求文档持有者。
+③陈设与贴花（尸体摆位 / 遗物文案 / 符号贴花）仍按 KI-013 记 Partial，实机视口走查按 KI-010 记 Missing。
 
 ## 附录 A：模块规模与里程碑对照
 

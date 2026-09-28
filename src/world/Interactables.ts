@@ -118,7 +118,7 @@ export class Interactables {
 
   stateOf(it: Interactable): InteractState {
     if (this.used.has(it.id)) return 'used'
-    if (it.requiresFlag && !this.flags.has(it.requiresFlag)) return 'locked'
+    if (this.missingFlags(it).length > 0) return 'locked'
     if (this.stateLocked(it)) return 'locked'
     return 'ready'
   }
@@ -126,6 +126,15 @@ export class Interactables {
   /** 值域闸门：没写过这一格时读到的是登记表里的缺省，与游戏里"还没走到那个抉择"是同一回事 */
   private stateLocked(it: Interactable): boolean {
     return it.requiresState ? !this.stateGate(it.requiresState) : false
+  }
+
+  /**
+   * 旗标侧的闸门：`requiresFlag`（单面）与 `requiresFlags`（合取，Phase 6-C）在**一处**求值。
+   * 返回"还差哪几面"（空数组 = 齐了）——锁文本要用它说清为什么不行，只回布尔就得再算一遍。
+   */
+  private missingFlags(it: Interactable): string[] {
+    const need = [...(it.requiresFlag ? [it.requiresFlag] : []), ...(it.requiresFlags ?? [])]
+    return need.filter((f) => !this.flags.has(f))
   }
 
   /** 半径内、所属区域已解锁、还没被消耗掉**且值域对得上**的交互物，按距离升序 */
@@ -174,8 +183,9 @@ export class Interactables {
       return r
     }
     if (this.used.has(it.id)) return out({ ...base, ok: false, state: 'used', text: `${it.regionName}：此路已尽` })
-    if (it.requiresFlag && !this.flags.has(it.requiresFlag)) {
-      return out({ ...base, ok: false, state: 'locked', text: lockText(it) })
+    const missing = this.missingFlags(it)
+    if (missing.length > 0) {
+      return out({ ...base, ok: false, state: 'locked', text: lockText(it, missing) })
     }
     if (this.stateLocked(it)) {
       return out({ ...base, ok: false, state: 'locked', text: lockText(it) })
@@ -197,7 +207,7 @@ export class Interactables {
   }
 }
 
-function lockText(it: Interactable): string {
+function lockText(it: Interactable, missing: string[] = []): string {
   if (it.kind === 'soundwall') return '音壁纹丝不动 —— 需要先学会弹反'
   if (it.kind === 'elevator') return '井笼不动 —— 机构未接通'
   if (it.kind === 'chest') return '箱子上着锁'
@@ -205,7 +215,9 @@ function lockText(it: Interactable): string {
     const d = registry.maybeGet<WorldStateDef>(it.requiresState.key)
     return `此处状态未到 —— 需要 ${d?.displayName ?? it.requiresState.key} = ${it.requiresState.value}`
   }
-  return `需要 ${it.requiresFlag ?? '前置条件'}`
+  // 合取闸门（requiresFlags）要说清**还差哪几件**：只说"需要前置"就是让玩家去猜
+  if (missing.length > 1) return `还差 ${missing.length} 件事：${missing.join('、')}`
+  return `需要 ${missing[0] ?? it.requiresFlag ?? '前置条件'}`
 }
 
 function resultText(it: Interactable): string {

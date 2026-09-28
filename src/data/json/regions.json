@@ -237,6 +237,16 @@
      "z": 0
     },
     "requiresFlag": "flag.schism_exposed"
+   },
+   {
+    "id": "in_resthold_dome_reflection",
+    "kind": "inspect",
+    "verb": "看积水里的倒影",
+    "pos": {
+     "x": -62,
+     "y": 0,
+     "z": -62
+    }
    }
   ],
   "music": {
@@ -672,6 +682,16 @@
      "z": 126
     },
     "secretId": "sec_drownedchoir_side_nave"
+   },
+   {
+    "id": "in_drownedchoir_d5_scratch",
+    "kind": "inspect",
+    "verb": "读石龛的三连划痕",
+    "pos": {
+     "x": 348,
+     "y": -40,
+     "z": 16
+    }
    }
   ],
   "music": {
@@ -1183,6 +1203,16 @@
     "requiresFlag": "flag.corvin_core_delivered",
     "setsFlag": "flag.corvin_remains_found",
     "lootTable": "loot_hanged_knight_nameplate"
+   },
+   {
+    "id": "in_fellcarillon_reverse_score",
+    "kind": "inspect",
+    "verb": "辨读钟舌上的反向谱线",
+    "pos": {
+     "x": 214,
+     "y": 64,
+     "z": -236
+    }
    }
   ],
   "music": {
@@ -1350,6 +1380,43 @@
      "z": 200
     },
     "lootTable": "loot_gather_timbite"
+   },
+   {
+    "id": "in_deeps_lean_corpses",
+    "kind": "inspect",
+    "verb": "辨认遗骸倾斜的朝向",
+    "pos": {
+     "x": -262,
+     "y": -144,
+     "z": 318
+    }
+   },
+   {
+    "id": "ga_deeps_firstphrase_door",
+    "kind": "gate",
+    "verb": "以休止轻触井底的门",
+    "pos": {
+     "x": -258,
+     "y": -144,
+     "z": 344
+    },
+    "requiresFlags": [
+     "flag.clue_reverse_score",
+     "flag.clue_dome_reflection",
+     "flag.clue_d5_scratch",
+     "flag.clue_lean_corpses"
+    ]
+   },
+   {
+    "id": "ch_first_phrase",
+    "kind": "chest",
+    "verb": "拓下石刻上的初句",
+    "pos": {
+     "x": -264,
+     "y": -144,
+     "z": 364
+    },
+    "secretId": "sec_first_phrase"
    }
   ],
   "music": {
@@ -1366,7 +1433,7 @@
     "rewardTable": "loot_secret_firstphrase",
     "pos": {
      "x": -260,
-     "y": -180,
+     "y": -144,
      "z": 360
     }
    }

@@ -127,11 +127,18 @@ describe('状态名册的三张派生表（KI-076）：少一行是崩，多一�
 })
 
 describe('今天的真账必须自洽（这条响的那天，就是有人该销账的那天）', () => {
-  it('三份名单都不是空的，且每一条都带着理由（判据不许在空集合上空转）', () => {
-    for (const [name, ledger] of Object.entries({ PENDING_MILESTONE_GRANTS, UI_BOUND_MILESTONES, PENDING_FLAG_WRITERS })) {
+  it('里程碑与承载体两份名单必须非空；旗标那份**允许为空**——空就是"没有欠账"', () => {
+    // 两份"需求要的效果还没有腿"的账永远有内容（做下去还会一直有），所以它们不设空集豁免。
+    for (const [name, ledger] of Object.entries({ PENDING_MILESTONE_GRANTS, UI_BOUND_MILESTONES })) {
       const keys = Object.keys(ledger)
       expect(keys.length, `${name} 读不到条目 = 这一格在空转`).toBeGreaterThan(0)
       for (const k of keys) expect(ledger[k].trim(), `${name}.${k} 的理由是空的`).not.toBe('')
+    }
+    // 旗标那一份是 KI-041 那批"只有读方、没有写方"的**待办清单**：KI-091 销掉最后一条之后它是空的，
+    // 而空就是目标状态（新长出来的条目照样要带理由：上面 `flagLedgerErrors` 那几条用例用的是合成账本，
+    // 所以"集合空"不等于"判据在空转"）。这一格故意不设下限：写死"必须为空"会让它变成一句没人敢碰的谎。
+    for (const k of Object.keys(PENDING_FLAG_WRITERS)) {
+      expect(PENDING_FLAG_WRITERS[k].trim(), `PENDING_FLAG_WRITERS.${k} 的理由是空的`).not.toBe('')
     }
   })
 

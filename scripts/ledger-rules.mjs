@@ -32,14 +32,19 @@ export const UI_BOUND_MILESTONES = {
   ms_crit_ring: 'HUD 暴击飘字的金色泛音环',
 }
 
-/** 旗标：被读但还没有写方的账（写方一出现 ⇒ `flagLedgerErrors` 报"该销"） */
-export const PENDING_FLAG_WRITERS = {
-  // KI-087（2026-09-29）销掉两条：`flag.side_nave_found`（沉唱堂侧廊：推开侧廊门是写方，封存点
-  // `ch_drownedchoir_side_nave_cache` 是读方）与 `flag.brokenbar_allied`（收编那条抉择派生，读方是
-  // `ch_brokenbar_ally_store`）。**销账不是删行**：两条的理由都搬进了 KNOWN_ISSUES 的 KI-087 那一段，
-  // 这里只留"还剩谁"——这一格越短越接近"隐藏房全部可达"。
-  'flag.found_first_phrase': 'Phase 6-C：初句圣所五环线索链（narrative §4.8），不靠走近解',
-}
+/**
+ * 旗标：被读但还没有写方的账（写方一出现 ⇒ `flagLedgerErrors` 报"该销"）。
+ *
+ * **这一格今天是空的，而且"空"就是它的目标状态**（KI-091，2026-09-29）：KI-041 立这本账时
+ * `regions.json` 里被读到的 8 个旗标一个写方都没有，全部挂在这里；KI-081 落 `brokenbar_resolved`、
+ * KI-087 落 `side_nave_found` 与 `brokenbar_allied`、KI-091 落 `found_first_phrase`（无耳深窖井底
+ * 那扇门：四环线索齐了才认你）之后，**没有一面被读的旗是没人写的**。
+ *
+ * 与另外两份名单（`PENDING_MILESTONE_GRANTS` / `UI_BOUND_MILESTONES`）的区别写在这里：
+ * 那两份记的是"需求要的效果还没有腿"，做下去还会一直有；这一份记的是**旗标对账欠下的笔**——
+ * 它是一条待办清单，销完就该空着。判据本身照旧（新长出来的条目照样要带理由、写方一出现照样报"该销"）。
+ */
+export const PENDING_FLAG_WRITERS = {}
 
 /** 这一行里程碑此刻有没有机制腿：一条字段 grant，或被某个战技槽按 id 引用 */
 export function hasMilestoneLeg(row, movementMsIds) {

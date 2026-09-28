@@ -104,6 +104,7 @@ describe('event payload references resolve (跨模块字符串引用不许悬空
     const off = bus.on('audio.sfx', (p) => { keys.add(p.key) })
     for (const it of interact.all) {
       if (it.requiresFlag) interact.setFlag(it.requiresFlag) // 全开：让每个 kind 都能触发
+      for (const f of it.requiresFlags ?? []) interact.setFlag(f) // 合取闸门（Phase 6-C）也要全开，否则探针漏掉那一种 kind
     }
     for (const it of interact.all) interact.use(it.id, { ...it.pos })
     off()

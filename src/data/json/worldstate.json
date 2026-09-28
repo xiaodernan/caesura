@@ -25,5 +25,40 @@
     "dataId": "en_hersil",
     "setFlag": "flag.hersil_felled",
     "notify": "未竟厅的管风琴熄声 —— 谱册最暗的那一页，听见了它的休止"
+  },
+  {
+    "id": "ws_firstphrase_ring1",
+    "on": "interactUsed",
+    "interactId": "in_fellcarillon_reverse_score",
+    "setFlag": "flag.clue_reverse_score",
+    "notify": "首钟的钟舌上刻的是反向谱线 —— 钟不是乐器，是封印的副本"
+  },
+  {
+    "id": "ws_firstphrase_ring2",
+    "on": "interactUsed",
+    "interactId": "in_resthold_dome_reflection",
+    "setFlag": "flag.clue_dome_reflection",
+    "notify": "反向的谱在骨腔穹顶的积水里读正了 —— 倒影指着井底"
+  },
+  {
+    "id": "ws_firstphrase_ring3",
+    "on": "interactUsed",
+    "interactId": "in_drownedchoir_d5_scratch",
+    "setFlag": "flag.clue_d5_scratch",
+    "notify": "石龛上的三连划痕，第二句是「它只是把嘴藏起来了」—— 神没有死，神在藏"
+  },
+  {
+    "id": "ws_firstphrase_ring4",
+    "on": "interactUsed",
+    "interactId": "in_deeps_lean_corpses",
+    "setFlag": "flag.clue_lean_corpses",
+    "notify": "满窖的遗骸都朝同一点倾斜 —— 藏得住一句话的地方，是连回声都死了的井底"
+  },
+  {
+    "id": "ws_firstphrase_door",
+    "on": "interactUsed",
+    "interactId": "ga_deeps_firstphrase_door",
+    "setFlag": "flag.found_first_phrase",
+    "notify": "井底的门认出了聋的手 —— 初句圣所的石刻就在门后"
   }
 ]

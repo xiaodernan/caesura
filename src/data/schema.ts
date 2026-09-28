@@ -1086,6 +1086,14 @@ export interface InteractableRef {
   oneWay?: boolean
   requiresFlag?: string
   /**
+   * **多面旗的合取闸门**（AND，Phase 6-C 初句圣所）：与 `requiresFlag`（单面）平级，
+   * 回答"这几件事**都**发生了吗"。单面旗能表达的门只到"一件事办完"为止——无耳深窖井底那扇门
+   * 要的是**五环线索都读到**（narrative §4.8 环①–④），一条 `requiresFlag` 说不了。
+   * 与 `requiresFlag` 同时写 = 同一件事两处真值 ⇒ 校验器 ERROR；与 `requiresState` 可以并存
+   * （一个问"走到哪一格"，一个问"哪几件事齐了"）。
+   */
+  requiresFlags?: string[]
+  /**
    * **值域型**闸门（Phase 6-B：`state.*`）。与 `requiresFlag` 的差别只在记法：旗标是"有没有"，
    * 值域状态是"走到哪一格"（narrative §7 的 `STATE.<域>.<对象> = <枚举>`）。
    * 休垒广场的三处陈设就是这么换组的：同一个地点，敲响 / 熔掉 / 封存之后站的东西各不相同。

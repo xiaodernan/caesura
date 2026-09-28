@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { bus } from '@/core/EventBus'
 import { registry } from '@/core/Registry'
 import { registerGameData, regions, worldstate } from '@/data'
-import type { WorldStateRule } from '@/data/schema'
+import type { RegionData, WorldStateRule } from '@/data/schema'
 import { WorldState } from '@/quest/WorldState'
 import { Interactables } from '@/world/Interactables'
 
@@ -97,12 +97,62 @@ describe('WorldState 规则语义', () => {
     const read = new Set<string>()
     for (const rg of regions) {
       if (rg.unlockFlag) read.add(rg.unlockFlag)
-      for (const it of rg.interactables ?? []) if (it.requiresFlag) read.add(it.requiresFlag)
+      for (const it of rg.interactables ?? []) {
+        if (it.requiresFlag) read.add(it.requiresFlag)
+        // 合取闸门列进去的每一面也是读方（Phase 6-C）：漏登记一面，这条判据就会把
+        // 规则表刚写下的旗判成"没人读"，而它明明锁着一扇门
+        for (const f of it.requiresFlags ?? []) read.add(f)
+      }
       for (const s of rg.secrets ?? []) read.add(s.unlockFlag)
     }
     // 谱册页的旗标解锁源也是读方（KI-037 乐章 IV：恩希尔终段那条规则写的就是它）
     for (const pg of (registry.get('movements') as { pages: Array<{ unlock?: { flag?: string } }> }).pages ?? []) if (pg.unlock?.flag) read.add(pg.unlock.flag)
     for (const r of worldstate) expect(read.has(r.setFlag), `${r.id} 写了 ${r.setFlag}，但没有任何闸门读它`).toBe(true)
+  })
+})
+
+describe('requiresFlags：多面旗的合取闸门（Phase 6-C 初句圣所）', () => {
+  /** 合成一块区域：一个 gate 挂在几面旗上，用来单独量"合取"这条语义 */
+  const gate = (opts: { flags?: string[]; one?: string }): RegionData[] => {
+    const rg = structuredClone(regions[0])
+    rg.interactables = [{
+      id: 'ga_lab', kind: 'gate', pos: { x: 0, y: 0, z: 0 },
+      ...(opts.one ? { requiresFlag: opts.one } : {}),
+      ...(opts.flags ? { requiresFlags: opts.flags } : {}),
+    }]
+    return [rg]
+  }
+  const at = { x: 0, y: 0, z: 0 }
+
+  it('列进去的每一面都要在：少一面就不开，锁文本说清还差几件', () => {
+    registerGameData()
+    const it = new Interactables(gate({ flags: ['flag.lab.a', 'flag.lab.b', 'flag.lab.c'] }), () => true)
+    expect(it.stateOf(it.get('ga_lab')!), '一面都没立').toBe('locked')
+    it.setFlag('flag.lab.a'); it.setFlag('flag.lab.b')
+    expect(it.stateOf(it.get('ga_lab')!), '三面里立了两面还是锁着').toBe('locked')
+    const denied = it.use('ga_lab', at)
+    expect(denied.ok).toBe(false)
+    expect(denied.text, '缺一面就点名那一面').toContain('flag.lab.c')
+    // 缺多面时要说清"还差几件、哪几件"（另起一个实例，免得把上面那三面搅在一起）
+    const it2 = new Interactables(gate({ flags: ['flag.lab.a', 'flag.lab.b', 'flag.lab.c'] }), () => true)
+    it2.setFlag('flag.lab.a')
+    expect(it2.use('ga_lab', at).text, '缺两面时说清是哪两件').toMatch(/还差 2 件事.*flag\.lab\.b.*flag\.lab\.c/)
+    it2.dispose()
+    it.setFlag('flag.lab.c')
+    expect(it.stateOf(it.get('ga_lab')!), '三面齐了才是 ready').toBe('ready')
+    expect(it.use('ga_lab', at).ok).toBe(true)
+    it.dispose()
+  })
+
+  it('单面旗（requiresFlag）与合取（requiresFlags）走的是同一处求值，不会互相顶掉', () => {
+    registerGameData()
+    const it = new Interactables(gate({ flags: ['flag.lab.b'], one: 'flag.lab.a' }), () => true)
+    it.setFlag('flag.lab.b')
+    expect(it.stateOf(it.get('ga_lab')!), '合取那一半齐了，单面那面还缺').toBe('locked')
+    expect(it.use('ga_lab', at).text, '缺的那面旗要点名').toContain('flag.lab.a')
+    it.setFlag('flag.lab.a')
+    expect(it.stateOf(it.get('ga_lab')!)).toBe('ready')
+    it.dispose()
   })
 })
 
