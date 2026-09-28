@@ -1598,11 +1598,37 @@ Phase 4-B 落三叠箭时只做了**延迟**那一半（`at=[0,32,42]` 让第 2 
 
 **守卫**：`tests/unit/schema-vocab.test.ts` **32 条**（本批 +14）。合成段钉新形状与两条边界（派生集合、更深缩进）；覆盖面每一臂各一条（没交代 / 没写理由 / 该销 / 两种交代同时挂 / 普查读空自曝 / import 进来的名字算交代）；真载体四条（`PSEUDO_ACTIONS` 逐成员、`pickOrder` 四格缩进、校验器那份文件里两种读数都非空且条数够、门本体源码门——删掉 `vocabCoverageErrors(...)` 的调用而留着函数，一切照绿没人会发现，所以那条调用本身也被钉住）。
 
-**反向实测三刀**（每一刀互不重叠、跑完按 sha256 核对还原成字节一致）：①在 `validate-data.mjs` 里塞一张没人交代的 `const KI086_PROBE = new Set(['x'])` ⇒ 门恰红 1 条（`coverage:KI086_PROBE`），计数 `1 ERROR / 4 WARN`；②把 `PSEUDO_ACTIONS` 的 `'hold'` 删掉 ⇒ 恰红 1 条（`vocab:PSEUDO_ACTIONS`：主人那一侧不认识 hold）；③把那句字面量换成派生集合 `new Set(ACTIONS_LIST)` ⇒ 恰红 1 条（`carrier:PSEUDO_ACTIONS … 这张门在空转`）——第三刀是那条边界的现场见证：**派生集合读不到就喊空转，不拿空集冒充词表**。
+**反向实测四刀**（每一刀互不重叠、跑完按 sha256 核对还原成字节一致；对照组先跑未改动的门，总计 0 ERROR ⇒ 红才可归因）：①在 `validate-data.mjs` 里塞一张没人交代的 `const KI086_PROBE = new Set(['x'])` ⇒ 门恰红 1 条（`coverage:KI086_PROBE`），总计 `1 ERROR`；②把 `PSEUDO_ACTIONS` 的 `'hold'` 删掉 ⇒ 恰红 1 条（`vocab:PSEUDO_ACTIONS`：主人那一侧不认识 hold）；③把那句字面量换成派生集合 `new Set(ACTIONS_LIST)` ⇒ 恰红 1 条（`carrier:PSEUDO_ACTIONS … 这张门在空转`）——第三刀是那条边界的现场见证：**派生集合读不到就喊空转，不拿空集冒充词表**；④把 `EnemyData.ai.pickOrder` 那一格的内联联合换成一个引用（`pickOrder?: PickOrderKind`，而那个别名并不存在）⇒ 恰红 1 条（`carrier:EnemyData.ai.pickOrder`）——第四刀管的是新放宽的那条缩进分支：它今天读得到，改天读不到时必须自己喊出来，而不是"没有漂移"。
 
-**门禁（2026-09-29）**：`tsc --noEmit` 0 错；`validate:data` **0 ERROR / 4 WARN**（四条全是既有的：三条无写方旗标 + 一条铃点间隔口径）。
+**门禁（2026-09-29）**：`tsc --noEmit` 0 错；`validate:data` **0 ERROR**（WARN 的条数随并行会话的在途数据改动浮动，落档时读到 2 条：`flag.found_first_phrase` 仍无写方 + `bell.everySec` 听感待裁决；KI-086 没新增也没放宽任何一条）；`npm run build` 通过；全量 `node scripts/test.mjs` **1391 条 / 103 个文件**，唯一一条红在 `tests/flow/debug-panels.test.ts` 的 F3——那条断言还写着 `2/2`，而 `q_haltrune` 在 HEAD 上已经是三步（`git show HEAD:src/data/json/quests.json` 量得 3 步），归任务线那一批的账，本批没碰那张文件，也没顺手把它改绿。
 
-**没做（§78）**：①`FILES` 这张"校验器读哪几份 JSON"的工作清单，真主人是 `src/data/json/` **目录**而不是任何一条声明，而 `corpusFor(from)` 收的是"一份文件"——**那个形状今天没有**，所以新增一份表而忘了加进 `FILES` 仍只会安静地不被校验（已如实登记在 `VOCAB_UNPAIRED` 里，不假装覆盖了）；②`docs/**` 与 `src/**` 的文本不在 KI-082 那道门内，源码侧"反斜杠被吃"没有 U+FFFD 那样的唯一记号，在没有那种判据之前不假装覆盖。
+**没做（§78）**：①`FILES` 这张"校验器读哪几份 JSON"的工作清单，真主人是 `src/data/json/` **目录**而不是任何一条声明，而 `corpusFor(from)` 收的是"一份文件"——**那个形状今天没有**，所以新增一份表而忘了加进 `FILES` 仍只会安静地不被校验（已如实登记在 `VOCAB_UNPAIRED` 里，不假装覆盖了）；②`docs/**` 与 `src/**` 的文本不在 KI-082 那道门内，源码侧"反斜杠被吃"没有 U+FFFD 那样的唯一记号，在没有那种判据之前不假装覆盖；③`handCopiedLists` 的普查按**缩进**读数（零到两格算，四格以深算局部）而不是按花括号配对，所以一张故意写在三层嵌套里的抄本可以躲过覆盖面——今天校验器自己要交代的名单都在这条线以内（`ADVICE_AXES` 是函数顶上两格那张，已登记），但这条线本身是个可以被越过的形状。
+
+### 5.9.25 隐藏房剩下那两间通了：写方与领取点是**一对**，缺哪一半都不算（KI-087，2026-09-29）— 已实现
+
+**这一格治的是"半截账"。** 隐藏房（`regions.json > secrets[]`）在数据上由两个字段绑成一条链：`unlockFlag` 是锁，`X.secretId = <secret id>` 的交互物是钥匙孔（`world/Interactables.ts` 由它现推 `requiresFlag` 与 `lootTable`，交互物自己不许再写一份）。校验器 `validateWorldstate()` 对此有两条对称判据：
+
+| 形状 | 判据的说法 |
+|---|---|
+| 有领取点、没有写方 | `领取点 … 依赖 <flag>，但没有任何写方 ⇒ 这是一只永久焊死的箱子` |
+| 有写方、没有领取点 | `<flag> 有写方，但这条 secret 没有带 secretId 的领取点 ⇒ 旗立了也没人发奖` |
+
+**两条判据在"写方与领取点都缺"时都不响**——而 `PENDING_FLAG_WRITERS` 只登记旗标那一侧，于是 KI-041 当时把两条写成了"只缺领取点几何"。本批动手时逐条量出来的实情是**两半都缺**（这正是 §5.9.24 那门"覆盖面要由机器回答"的同一族问题：账目里的措辞也需要一个能被推翻的机会）。
+
+**本批落地的两条链**：
+
+- **沉唱堂侧廊**（`rg_drowned_choir`，groundY −40）：写方是新动词面 `in_drownedchoir_side_nave`（`inspect`、「推开侧廊门」，(250,−40,118)）立 `flag.side_nave_found`；领取点 `ch_drownedchoir_side_nave_cache`（(258,−40,126)，墙 `dc_nave_arcade` 的另一侧）带 `secretId` ⇒ `loot_secret_nave`。secret 自身坐标从 y=−60（`Surface.floorAt` 为 null 的一层）搬回 −40：**隐藏房的坐标从此与它的领取点同层**。
+- **破拍营地盟军补给**（`rg_brokenbar_camp`，groundY 0）：写方不是新交互物，是**抉择派生**——`DLG_HALTRUNE` 的 n6-c1（归还给休垒 ⇒ OUTPOST）那条 `setFlags` 在 KI-081 的 `flag.brokenbar_resolved` 旁边多写一面 `flag.brokenbar_allied`；领取点 `ch_brokenbar_ally_store`（(−130,0,−330)）带 `secretId` ⇒ `loot_camp_store`。
+
+**`allied` 与"抉择记两遍"的界线（这条界线写在这里，免得下一个人拿 KI-081 的断言来质疑本批）**：KI-081 的原则是**值域与旗标不许 1:1 平行**（`flag.haltrune_camp_decided` 那种重复旗标没有任何读方，那条断言今天原样留着）。`allied` 落在界线以内有两处硬理由：①它的读方只有**一个**（盟军补给封存点），而那个读方要的条件比 `resolved` **窄**——`resolved` 管"营地定了"（OUTPOST 与 RUINS 都写），`allied` 只管"营地里的是友军"；②秘密房的锁只认旗标通道（`UnlockFlag` 是字符串）。反过来，若哪天有人想让 `allied` 去表达"营地定了"，那就撞上了 KI-081 那条原则——**判据（`haltrune.test.ts` 的九格表）会把三分支 × 两枚旗标逐格量出来**，多写一格当场红。
+
+**几何纪律**：两处领取点都放在本层地板（`groundY`）上，并与既有 authored 墙体保持了 `size/2` 之外的间距——校验器那条"把 X 埋进了墙肚子里"的判据（§5.9.9 那一族）在本批全程开着；`hidden-rooms.test.ts` 另用 `Surface.floorAt` 现场量一次 y（**不是**再抄一遍数）。
+
+**守卫**：`tests/flow/hidden-rooms.test.ts` 8 → 10 条（两条链各一条，含"锁 → 打开 → 真掉落 → 一次性 → 踩在地板上"）；`tests/flow/haltrune.test.ts` 的九格表扩成"三分支 × 两枚派生旗"（`resolved` / `allied` 各自的真假矩阵）。**反向实测两刀**（逐刀跑完按 sha256 核对还原成字节一致）：摘掉 `ch_drownedchoir_side_nave_cache` 的 `secretId` ⇒ 恰红 1 条（"旗立了也没人发奖"）；摘掉 `in_drownedchoir_side_nave` 的 `setsFlag` ⇒ 恰红 **2** 条（"`flag.side_nave_found` 没有任何写方" 与 "领取点依赖它 ⇒ 永久焊死的箱子"——同一件事被两条对称判据各说一次；这也正是**两半都缺**时它们为什么都不响）。**销账**：`PENDING_FLAG_WRITERS` 从 3 条降到 1 条（KI-073 的销账判据先把"写了还挂着账"报成 2 条 ERROR，本批同一趟清掉）。
+
+**门禁（2026-09-29）**：`tsc --noEmit` 0 错；`validate:data` **0 ERROR / 2 WARN**（全仓 WARN 由 4 降到 2：只剩 `flag.found_first_phrase` 的待办与一条铃点间隔的听感口径）。
+
+**没做（§78）**：①初句圣所（`flag.found_first_phrase`）仍挂在白名单上——narrative §4.8 要的是**五环线索链**（不靠走近解），那是 Phase 6-C 的内容批，不是几何；②两间新房的陈设与演出仍按 KI-013（无模）与 KI-010（视口评审做不了）记 Partial——本批能承诺的是"锁与钥匙对上了、东西真的进背包"。
 
 ## 附录 A：模块规模与里程碑对照
 

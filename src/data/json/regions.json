@@ -650,6 +650,28 @@
      "value": "COMPLICIT"
     },
     "oneWay": false
+   },
+   {
+    "id": "in_drownedchoir_side_nave",
+    "kind": "inspect",
+    "verb": "推开侧廊门",
+    "pos": {
+     "x": 250,
+     "y": -40,
+     "z": 118
+    },
+    "setsFlag": "flag.side_nave_found"
+   },
+   {
+    "id": "ch_drownedchoir_side_nave_cache",
+    "kind": "chest",
+    "verb": "撬开侧廊的封存点",
+    "pos": {
+     "x": 258,
+     "y": -40,
+     "z": 126
+    },
+    "secretId": "sec_drownedchoir_side_nave"
    }
   ],
   "music": {
@@ -665,9 +687,9 @@
     "unlockFlag": "flag.side_nave_found",
     "rewardTable": "loot_secret_nave",
     "pos": {
-     "x": 230,
-     "y": -60,
-     "z": 120
+     "x": 258,
+     "y": -40,
+     "z": 126
     }
    }
   ],
@@ -910,6 +932,17 @@
      "y": 0,
      "z": -360
     }
+   },
+   {
+    "id": "ch_brokenbar_ally_store",
+    "kind": "chest",
+    "verb": "取走盟军的补给",
+    "pos": {
+     "x": -130,
+     "y": 0,
+     "z": -330
+    },
+    "secretId": "sec_brokenbar_ally_path"
    }
   ],
   "music": {
@@ -925,9 +958,9 @@
     "unlockFlag": "flag.brokenbar_allied",
     "rewardTable": "loot_camp_store",
     "pos": {
-     "x": -110,
+     "x": -130,
      "y": 0,
-     "z": -300
+     "z": -330
     }
    }
   ],

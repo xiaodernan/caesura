@@ -247,4 +247,54 @@ describe('隐藏房可达性：发生了什么 ⇒ 立旗 ⇒ 锁开 ⇒ 东西�
     w.streaming.setFlag(choir.unlockFlag!, true) // 与音壁裂开时走的是同一个 flag 通道
     expect(w.streaming.isRegionUnlocked(choir), 'setFlag 之后区域应立刻参与流送').toBe(true)
   })
+
+  it('沉唱堂侧廊：推开侧廊门是写方（旗立）⇒ 侧廊的封存点解锁 ⇒ 独岚档真能领（KI-087）', () => {
+    const w = makeWorld()
+    const cache = w.interact.all.find((i) => i.secretId === 'sec_drownedchoir_side_nave')!
+    expect(cache, '这条 secret 从此有领取点（KI-041 缺的那半截几何）').toBeTruthy()
+    w.standAt(cache.id)
+    expect(w.interact.use(cache.id, w.player.pos).state, '还没发现侧廊，封存点锁着').toBe('locked')
+
+    w.standAt('in_drownedchoir_side_nave')
+    expect(w.interact.use('in_drownedchoir_side_nave', w.player.pos).ok, '推门是一次真的按 E 的动作').toBe(true)
+    expect(w.streaming.hasFlag('flag.side_nave_found'), '推门把旗立了起来（写方落地）').toBe(true)
+
+    w.standAt(cache.id)
+    const claim = w.interact.use(cache.id, w.player.pos)
+    expect(claim.ok, '旗立了，侧廊的封存点能撬了').toBe(true)
+    expect(claim.lootTable, '奖励表来自那条 secret（loot_secret_nave 第一次可达）').toBe('loot_secret_nave')
+    const gearsBefore = w.rpg.inv.gears.length
+    openLootTable(w.deps, claim.lootTable!)
+    expect(w.rpg.inv.gears.length, '真的掉出东西进背包').toBeGreaterThan(gearsBefore)
+
+    // 几何：领取点踩在**可行走层**上（KI-041 那笔账的理由正是"当前 secret 坐标在可行走层之外"）
+    const surface = new Surface(regions)
+    expect(surface.floorAt(cache.pos)?.y, '封存点踩在沉唱堂的地板上').toBe(-40)
+    expect(surface.floorAt(w.interact.all.find((i) => i.id === 'in_drownedchoir_side_nave')!.pos)?.y, '门也踩在地板上').toBe(-40)
+
+    w.standAt(cache.id)
+    expect(w.interact.use(cache.id, w.player.pos).state, '封存点是一次性的').toBe('used')
+    w.standAt('in_drownedchoir_side_nave')
+    expect(w.interact.use('in_drownedchoir_side_nave', w.player.pos).state, '推门也是一次性的').toBe('used')
+  })
+
+  it('破拍营地：盟军补给点只认收编（`flag.brokenbar_allied` 的唯一读方，KI-087）', () => {
+    // 写方在对话里：n6 的 c1（归还给休垒 ⇒ OUTPOST）派生这面旗，那一半由 haltrune.test.ts 在同一批里钉住。
+    // 这里量的是另一半——这个读方到底认不认它。
+    const w = makeWorld()
+    const store = w.interact.all.find((i) => i.secretId === 'sec_brokenbar_ally_path')!
+    expect(store, '这条 secret 从此有领取点').toBeTruthy()
+    w.standAt(store.id)
+    expect(w.interact.use(store.id, w.player.pos).state, '还没结盟 ⇒ 盟军的补给点关着').toBe('locked')
+
+    w.streaming.setFlag('flag.brokenbar_allied', true) // 与收编那条抉择走的是同一个 flag 通道
+    w.standAt(store.id)
+    const claim = w.interact.use(store.id, w.player.pos)
+    expect(claim.ok, '结盟之后补给点开了').toBe(true)
+    expect(claim.lootTable, '奖励表来自那条 secret').toBe('loot_camp_store')
+    const surface = new Surface(regions)
+    expect(surface.floorAt(store.pos)?.y, '补给点踩在营地的地板上').toBe(0)
+    w.standAt(store.id)
+    expect(w.interact.use(store.id, w.player.pos).state, '一次性').toBe('used')
+  })
 })

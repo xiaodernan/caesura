@@ -34,8 +34,10 @@ export const UI_BOUND_MILESTONES = {
 
 /** 旗标：被读但还没有写方的账（写方一出现 ⇒ `flagLedgerErrors` 报"该销"） */
 export const PENDING_FLAG_WRITERS = {
-  'flag.side_nave_found': 'Phase 6-B：侧廊入口需要一段能在地板上站住的领取点几何（当前 secret 坐标在可行走层之外）',
-  'flag.brokenbar_allied': 'Phase 6-B：断弦营地线的潜行解独岚奖励（收编）——缺的是 `sec_brokenbar_ally_path` 的领取点几何（新增一个带 secretId 的交互物），不是写方',
+  // KI-087（2026-09-29）销掉两条：`flag.side_nave_found`（沉唱堂侧廊：推开侧廊门是写方，封存点
+  // `ch_drownedchoir_side_nave_cache` 是读方）与 `flag.brokenbar_allied`（收编那条抉择派生，读方是
+  // `ch_brokenbar_ally_store`）。**销账不是删行**：两条的理由都搬进了 KNOWN_ISSUES 的 KI-087 那一段，
+  // 这里只留"还剩谁"——这一格越短越接近"隐藏房全部可达"。
   'flag.found_first_phrase': 'Phase 6-C：初句圣所五环线索链（narrative §4.8），不靠走近解',
 }
 

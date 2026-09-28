@@ -1542,7 +1542,8 @@
               "value": "OUTPOST"
             },
             "setFlags": [
-              "flag.brokenbar_resolved"
+              "flag.brokenbar_resolved",
+              "flag.brokenbar_allied"
             ],
             "notify": "营地定性：友军哨站 OUTPOST —— 巡逻队就此停摆"
           },

@@ -46,6 +46,6 @@
       "GARRISON"
     ],
     "default": "INTACT",
-    "note": "断弦线步 2《点名册》与营地定性三选一写入（§2.4 步 2–3 / §7 STATE.CAMP）。取值映射：友军哨站=OUTPOST、废墟=RUINS、恩希尔驻防地=GARRISON；INTACT 是缺省读数（还没替他填名册）。读方：任务步 q_haltrune.STEP2_ROSTER.advanceOn.state、DLG_HALTRUNE 的决断闸门（n5/n6 看 INTACT）与复访后果三句（n7/n8/n9 看 OUTPOST/RUINS/GARRISON）。派生后果：收编/清算写 `flag.brokenbar_resolved`（出怪表的 `!flag.brokenbar_resolved` 与营地仓库箱的 requiresFlag 是它的读方）"
+    "note": "断弦线步 2《点名册》与营地定性三选一写入（§2.4 步 2–3 / §7 STATE.CAMP）。取值映射：友军哨站=OUTPOST、废墟=RUINS、恩希尔驻防地=GARRISON；INTACT 是缺省读数（还没替他填名册）。读方：任务步 q_haltrune.STEP2_ROSTER.advanceOn.state、DLG_HALTRUNE 的决断闸门（n5/n6 看 INTACT）与复访后果三句（n7/n8/n9 看 OUTPOST/RUINS/GARRISON）。派生后果：收编/清算写 `flag.brokenbar_resolved`（出怪表的 `!flag.brokenbar_resolved` 与营地仓库箱的 requiresFlag 是它的读方）；**只有收编**另派生 `flag.brokenbar_allied`（盟军补给封存点 `ch_brokenbar_ally_store` 的 requiresFlag 是它唯一的读方——`resolved` 管「营地定了」，`allied` 管「是我们的」，两个读方要的不是同一件事）"
   }
 ]

@@ -115,12 +115,13 @@ describe('断弦线《点名册》：营地归属是一次真的三选一', () =
 
   it('三种写法各写各的值（并派生各自的后果旗标），决定之后不可回退', () => {
     //                选项  读数        后果句  关键词     营地不再有守军
-    const cases: Array<[string, string, string, string, boolean]> = [
-      ['c1', 'OUTPOST', 'n7', '友军哨站', true], // 收编 ⇒ 军阵安息
-      ['c2', 'RUINS', 'n8', '废墟', true], // 清算 ⇒ 营地空了
-      ['c3', 'GARRISON', 'n9', '驻防地', false], // 留给恩希尔 ⇒ 守军还在
+    //                选项  读数        后果句  关键词     营地不再有守军  收编（盟军）
+    const cases: Array<[string, string, string, string, boolean, boolean]> = [
+      ['c1', 'OUTPOST', 'n7', '友军哨站', true, true], // 收编 ⇒ 军阵安息
+      ['c2', 'RUINS', 'n8', '废墟', true, false], // 清算 ⇒ 营地空了（营地不是"我们的"，盟军补给点不开）
+      ['c3', 'GARRISON', 'n9', '驻防地', false, false], // 留给恩希尔 ⇒ 守军还在
     ]
-    for (const [choice, value, node, needle, resolved] of cases) {
+    for (const [choice, value, node, needle, resolved, allied] of cases) {
       const w = makeWorld()
       w.walkPatrol()
       w.fillRoster(choice)
@@ -129,6 +130,9 @@ describe('断弦线《点名册》：营地归属是一次真的三选一', () =
       expect(w.last().text).toContain(needle)
       // 派生旗标：出怪表与仓库箱只认旗标，不认值域
       expect(w.streaming.hasFlag('flag.brokenbar_resolved'), `${value} ⇒ resolved=${resolved}`).toBe(resolved)
+      // KI-087：收编另派生一面**更窄**的旗（`allied` 只管"营地里的是友军"），它的唯一读方是
+      // 盟军补给封存点 `ch_brokenbar_ally_store`——`resolved` 管"营地定了"，两者要的不是同一件事
+      expect(w.streaming.hasFlag('flag.brokenbar_allied'), `${value} ⇒ allied=${allied}`).toBe(allied)
 
       w.session.open('npc_haltrune')
       expect(w.last().nodeId, '复访还是那一句后果').toBe(node)
