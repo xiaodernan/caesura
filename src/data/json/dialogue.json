@@ -1481,40 +1481,151 @@
         "text": "断弦。叛逃的守卫队长。这条手臂已经不是我自己的了——它每天替我敲止血拍。现在，跟我走一圈。",
         "next": null
       },
-      {
-        "id": "n5",
-        "speaker": "npc_haltrune",
-        "emotion": "flat",
-        "text": "名册的事，你想好了吗？",
-        "conditions": {
-          "flags": {
-            "all": [
-              "flag.haltrune_met"
-            ]
-          }
+    {
+      "id": "n5",
+      "speaker": "npc_haltrune",
+      "emotion": "flat",
+      "text": "名册的事，你想好了吗？",
+      "conditions": {
+        "quest": {
+          "id": "q_haltrune",
+          "in": [
+            "HALTRUNE.STEP2_ROSTER"
+          ]
         },
-        "choices": [
-          {
-            "id": "c1",
-            "text": "再让我看一遍营地。",
-            "style": "silent",
-            "next": null
-          },
-          {
-            "id": "c2",
-            "text": "（把名册还给他）",
-            "style": "silent",
-            "conditions": {
-              "flags": {
-                "all": [
-                  "flag.haltrune_patrol_seen"
-                ]
-              }
+        "state": {
+          "key": "state.haltrune.camp",
+          "eq": "INTACT"
+        }
+      },
+      "choices": [
+        {
+          "id": "c1",
+          "text": "再让我看一遍营地。",
+          "style": "silent",
+          "next": null
+        },
+        {
+          "id": "c2",
+          "text": "（把名册还给他）",
+          "style": "silent",
+          "next": "n6"
+        }
+      ],
+      "next": "n7"
+    },
+    {
+      "id": "n6",
+      "speaker": "npc_haltrune",
+      "emotion": "hollow",
+      "text": "（他把名册摊在篝火旁的石板上。七个名字，四个他记着，三个只剩编号。他把炭笔递给你：该你填了——这营地归谁？）",
+      "conditions": {
+        "quest": {
+          "id": "q_haltrune",
+          "in": [
+            "HALTRUNE.STEP2_ROSTER"
+          ]
+        },
+        "state": {
+          "key": "state.haltrune.camp",
+          "eq": "INTACT"
+        }
+      },
+      "choices": [
+        {
+          "id": "c1",
+          "text": "归还给休垒——建成友军哨站（OUTPOST）。",
+          "style": "blunt",
+          "effects": {
+            "setState": {
+              "key": "state.haltrune.camp",
+              "value": "OUTPOST"
             },
-            "next": null
-          }
-        ]
-      }
+            "notify": "营地定性：友军哨站 OUTPOST"
+          },
+          "next": "n7"
+        },
+        {
+          "id": "c2",
+          "text": "听天由命——任它化作废墟（RUINS）。",
+          "style": "silent",
+          "effects": {
+            "setState": {
+              "key": "state.haltrune.camp",
+              "value": "RUINS"
+            },
+            "notify": "营地定性：废墟 RUINS"
+          },
+          "next": "n8"
+        },
+        {
+          "id": "c3",
+          "text": "献给恩希尔——作她的前线驻防地（GARRISON）。",
+          "style": "provoke",
+          "effects": {
+            "setState": {
+              "key": "state.haltrune.camp",
+              "value": "GARRISON"
+            },
+            "notify": "营地定性：恩希尔驻防地 GARRISON"
+          },
+          "next": "n9"
+        }
+      ]
+    },
+    {
+      "id": "n7",
+      "speaker": "npc_haltrune",
+      "emotion": "tired",
+      "text": "（他把名册折好，塞进你手里）友军哨站……好。我们会守着这堆废墟，直到休垒的旗帜插上来。谢了。",
+      "conditions": {
+        "state": {
+          "key": "state.haltrune.camp",
+          "eq": "OUTPOST"
+        }
+      },
+      "next": "n8"
+    },
+    {
+      "id": "n8",
+      "speaker": "npc_haltrune",
+      "emotion": "hollow",
+      "text": "（他没接名册，只是把炭笔折成两半）废墟……也好。烂在泥里，比烂在谁手里都强。",
+      "conditions": {
+        "state": {
+          "key": "state.haltrune.camp",
+          "eq": "RUINS"
+        }
+      },
+      "next": "n9"
+    },
+    {
+      "id": "n9",
+      "speaker": "npc_haltrune",
+      "emotion": "cold",
+      "text": "（他把名册揉成团扔进火里）恩希尔的驻防地……她会喜欢的。我们也就此了结了。",
+      "conditions": {
+        "state": {
+          "key": "state.haltrune.camp",
+          "eq": "GARRISON"
+        }
+      },
+      "next": "n10"
+    },
+    {
+      "id": "n10",
+      "speaker": "npc_haltrune",
+      "emotion": "flat",
+      "text": "（他侧身让开半步，把那条断臂搭在断墙上。臂里的拍子一下、一下，和远处巡逻的脚步对得很齐。）",
+      "conditions": {
+        "flags": {
+          "all": [
+            "flag.haltrune_met"
+          ]
+        }
+      },
+      "next": null
+    }
     ]
   }
 ]

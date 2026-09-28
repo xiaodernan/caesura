@@ -278,10 +278,28 @@
    },
    {
     "state": "HALTRUNE.STEP2_ROSTER",
-    "label": "《点名册》：七个还在巡逻的兵，他记的是四个（后续步在 Phase 6-C 落）",
+    "label": "《点名册》：七个还在巡逻的兵，他记的是四个 —— 替他给营地定性（收编 / 废墟 / 交给恩希尔）",
+    "advanceOn": {
+     "state": {
+      "key": "state.haltrune.camp",
+      "in": [
+       "OUTPOST",
+       "RUINS",
+       "GARRISON"
+      ]
+     }
+    },
     "tags": [
      "D",
      "H"
+    ]
+   },
+   {
+    "state": "HALTRUNE.STEP3_LASTWATCH",
+    "label": "《最后一班岗》：三条路各自收尾 —— 收编冲锋 / 逐个劝停 / 留给恩希尔（Phase 6-C 落）",
+    "tags": [
+     "C",
+     "M"
     ]
    }
   ]

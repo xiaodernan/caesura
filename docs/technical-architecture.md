@@ -1455,5 +1455,33 @@ narrative §7 那张旗标表写的是"什么时候该立哪个旗"，`regions.j
   命中会挂 999 tick 闷音（`enemies.json` 的数据），而闷音封战技正是 §11/Phase 5-C2 定的规则——
   清掉 `muteTicksLeft` 之后一切照常。探针读数前先确认没有把自己闷住，这类"被自己的机制挡下"不要记成缺陷
 
+### 5.9.19 营地归属是一次真的三选一：值域承载抉择，「末步」不等于「收束」（KI-081，2026-09-28）— 已实现
+
+- **补的是断弦线的空档**：`DLG_HALTRUNE` 的初见把玩家按在"跟着尸体军阵走完一圈、别出手"上（步 1），
+  但"走完之后呢"在数据里是断的——`q_haltrune` 的 `HALTRUNE.STEP2_ROSTER` 没有 `advanceOn`，
+  "名册"那半句台词挂在一枚没人读的旗标上，树里也没有承接它的节点。
+- **谁说了算：值域表，不是旗标**。营地归属是**一个**枚举，不是三个互斥布尔——`states.json` 新增
+  `state.haltrune.camp = INTACT / OUTPOST / RUINS / GARRISON`（缺省 `INTACT` ＝ 还没替他填名册）。
+  第一版在对话效果里**同时**写了 `flag.haltrune_camp_decided`，被 `validate:data` 的两条反向对账当场拦下：
+  ①值域**没有读方**（三个后果节点当时靠 `once` 而不是靠读数）、②那枚旗标**没有读方**。两条指向同一件事：
+  值域与旗标各说一遍就是两个真值 ⇒ 旗标删掉，营地的读数只剩一格。
+- **读方是任务步**：`HALTRUNE.STEP2_ROSTER.advanceOn.state` 认 `OUTPOST/RUINS/GARRISON` 三值——
+  与铃姨《该不该敲响》（`BELLS.STEP4_DECIDE`）同一套"由值域收束"的形状。区别在这条线**没走完**：
+  新增 `HALTRUNE.STEP3_LASTWATCH`（**故意没有** `advanceOn`）承接收编冲锋 / 逐个劝停 / 留给恩希尔
+  三种收尾，那是 Phase 6-C 的演出。`Quests.isComplete` 的判据是"末步的 `advanceOn` 命中"，
+  所以营地既定之后 `isComplete` 仍是 false——停在末步意味着任务**正在进行**，任务簿不撒谎。
+- **复访靠探针链，不靠 `once`**：`fallbackNode = n5`（决策提示）→ `n5.next = n7` → `n8` → `n9` → `n10`。
+  条件不成立就沿 `next` 试下一个，于是"决定之后复访"直接落在那一句后果上（`n7/n8/n9` 各认一个读数），
+  "只是见过面、还没走完巡逻"落在中立的 `n10`——两种情形都不需要多存一份状态。形状是从铃姨那棵树搬来的。
+- **守卫**：`tests/flow/haltrune.test.ts` 4 条（见过面不算走完巡逻 / 三选一写读数并把线推到《最后一班岗》
+  且 `isComplete=false` / 三种写法各写各的值且决定不可回退 / 不再另立与值域重复的旗标）。
+  数据门 `validate:data` **0 ERROR / 5 WARN**（那 5 条 WARN 与本次改动无关，是既有登记）。
+- **没做（§78）**：①营地既定之后**场上还没有任何东西改变**——友军哨站 / 废墟 / 恩希尔驻防地三种形态的
+  陈设组换、换防口令、通往 Boss 区的敌群配置都没接（`STATE.CAMP` 那一列的"改变的世界"今天只有对话可见）；
+  ②步 3 的三种收尾演出（列队冲锋 / 与"活鼓"副官的精英战 / 潜入）未做；③步 4《义体尽头的拍子》与
+  `STATE.HALTRUNE`（ALIVE_AT_POST / PASSING_STILL / DRUM_LEGEND / HOSTILE）、"叛哨"敌对分支未做；
+  ④"纯闪避走完巡逻周期"的**未出手统计**仍只是数据里的一句话：需求 §28 禁止计数器型任务，
+  这条要用事件型判据表达，留给该线批次；⑤视口评审未做（KI-010 同因）。
+
 ## 附录 A：模块规模与里程碑对照
 Phase 1（核心战斗原型）＝ `core + player + combat + tools/CombatDebugger + 占位场景`；Phase 3 ＝ `world/Streaming + generators`；Phase 5 ＝ `rpg + save`；Phase 6 ＝ `quest + audio(对话)`。每模块交付即配 §6 测试，不做「先全写完再测」。

@@ -35,5 +35,17 @@
     ],
     "default": "INTACT",
     "note": "无面童线步 4《容器》三选一写入（�?.3/§7 STATE.FACELESS）。取值映射：它是容器=VESSEL、它是孩子=CHILD、它是被选中者=CHOSEN、它迷失了=LOST；INTACT 是缺省读数。读方：初句圣所五环线索链、无面童尾声、谱册最终页、谱架最终解锁"
+  },
+  {
+    "key": "state.haltrune.camp",
+    "displayName": "破拍营地 · 世界线归属",
+    "values": [
+      "INTACT",
+      "OUTPOST",
+      "RUINS",
+      "GARRISON"
+    ],
+    "default": "INTACT",
+    "note": "断弦线步 2《点名册》与营地定性三选一写入（§2.4 步 2–3 / §7 STATE.CAMP）。取值映射：友军哨站=OUTPOST、废墟=RUINS、恩希尔驻防地=GARRISON；INTACT 是缺省读数（还没替他填名册）。读方：任务步 q_haltrune.STEP2_ROSTER.advanceOn.state、DLG_HALTRUNE 的决断闸门（n5/n6 看 INTACT）与复访后果三句（n7/n8/n9 看 OUTPOST/RUINS/GARRISON）"
   }
 ]
