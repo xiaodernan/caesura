@@ -156,6 +156,10 @@ FM 加性混合钟（奥斯塔拉/休垒圣钟/拾取音共用）：
 - 3D 化：所有 L2–L4 为 PannerNode 声源实体（真位置），L1 为 2D 铺底。HRTF 开启。
 - 与视觉接口：L4 事件触发时对应区域可产生极光带微亮反馈（art-direction.md §10）。
 
+**已落地（2026-09-28，KI-083）**：L2 颗粒声纹／L3 物理动源第一次有读者。`ambience.json` 每张床多了 `sources[]`（7 张床共 **19 条**真位置源，每条都落在它自己那一区的 bounds 内），一条源 = `{ layer: texture|motion, hz, pos{x,y,z}, peak, attackSec, durSec, everySec[lo,hi] }`。运行时每源一根计时器，到点掷一声带通噪声：`texture` 走固定 Q 的颗粒（炉火噼啪、水面涟漪、音管漏气嘶声），`motion` 走低 Q 且一声之内中心频率边扫的长音（风掠过穹顶、断链摆动、金属应力呻吟）。声像与衰减**不是新写的一份**——它与一次性 SFX 共用 `src/audio/spatial.ts > spatialize` 那一步（听者位姿由 `AudioEngine.setListener` 转交），所以「走两步就换边」在两支读者里是同一把尺子。`mus_brokenbar_amb` 的巡逻脚步刻意写成 `everySec: [1.2, 1.2]`（零方差）——那格「死军阵：永远整齐得不对」在数据里就是「间隔没有抖动」。
+
+- **与原文的差异，如实记两条**：①原文写 `PannerNode + HRTF`，本作走 `StereoPanner`——§4 之前一次性 SFX 已经是这条路，声景层与它同源；HRTF 若要真做，**两支读者要一起换**，只换一支就是把「同一条尺子」拆成两把。②`motion` 那格「越深声音间隔越长（-1s/100m）」（无耳深窖）仍是文档里的一句话：本批的 `everySec` 是固定区间，没有深度递减规则。判据住 `scripts/ambience-rules.mjs`（顺带补上此前从没量过的 refuse 侧），测试面 `tests/unit/ambience-table.test.ts`（38 条）+ `tests/unit/ambience-field.test.ts`（11 条）。**听感本身仍不可评审**（KI-010 同因）。
+
 ---
 
 ## 5. 主角"休止"状态听感设计（全频低通，本作签名音效）
@@ -272,6 +276,7 @@ FM 加性混合钟（奥斯塔拉/休垒圣钟/拾取音共用）：
 
 - 状态：本文档大部分为 **Spec**；实装顺序建议 `SYN_BELL→BeatClock→Footstep/Impact→AMB 分层→休止低通→Boss 三曲`（每步可玩验证）。其中 **§破处决 的总线低通与专属音色已落（2026-09-24，KI-003）**；"休止出入 / 侧链压低"那几条仍未做。
 - 已落地（2026-09-28，KI-080）：**遭遇层的低音线与钟那半有数据了** —— `battle.json` 5 行（行键 = `regions.json > music.battle`），判据在 `scripts/battle-rules.mjs`，测试面 `tests/unit/battle-table.test.ts`；「每区两档 BPM」那半仍未实现（见 §2.2 那一段）。**听感本身仍不可评审**（KI-010 同因）。
+- 已落地（2026-09-28，KI-083）：**§4 那张表的 L2 颗粒声纹／L3 物理动源有读者了** —— `ambience.json` 7 张床共 19 条真位置源（`sources[]`；L1 drone 与 L4 铃点那条路不变），声源→听者那一步抽成唯一主人 `src/audio/spatial.ts`（与一次性 SFX 同源），判据搬进 `scripts/ambience-rules.mjs`。与原文的差异（`StereoPanner` 而非 `PannerNode+HRTF`、`motion` 没有深度递减）见 §4 那一段。**听感本身仍不可评审**（KI-010 同因）。
 - 性能红线：常驻发声体 ≤ 48 振荡器链 + ≤ 64 并发瞬态；Worklet 单帧音频处理 ≤ 3ms。
 - 验收：① 盲听测试——只听音效能否区分"弹反/重击/受击"；② 关掉音乐后 combat 是否仍可读（telegraph 音在 SFX 层）；③ 万籁战静音合规（MUSIC=0）；④ 各区 ambience 30s 录音可盲辨区域。
 - 接口：与 art-direction.md（光脉冲=BPM 半速、telegraph 三通道）、ui-ux.md（声纹 UI 组件由 BeatClock 驱动、可访问性"声音视觉化"字幕）联动实现。命名一律取自 IP_SEED §14。

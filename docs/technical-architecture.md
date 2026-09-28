@@ -1526,5 +1526,20 @@ narrative §7 那张旗标表写的是"什么时候该立哪个旗"，`regions.j
   方式）⇒ 这道门是「发现」而不是「防止」：下一次压坏会在门禁上响亮地出现、但不会自动消失；
   ③ 被压成 `?` 而不是 U+FFFD 的那种坏法抓不到（没有样本的那种）。
 
+### 5.9.21 §4 的 L2／L3 声景层第一次有读者：一张床多了几条会响的真位置声源（KI-083，2026-09-28）— 已实现
+
+docs/audio.md §4 那张表里，**L2 颗粒声纹**与 **L3 物理动源**是最后两格零读者（KI-077 落地时只兑现 L1 drone + L4 铃点，并把这两格登记为未做）。这一批把它们接上，同时做了两件同源的事：把"声源 → 听者"那一步抽成**唯一主人**，把整张 `ambience.json` 的判据从校验器搬进独立的规则模块。
+
+- **数据形状**：`schema.ts > AmbienceSource = { layer: 'texture'|'motion'; hz; pos{x,y,z}; peak; attackSec; durSec; everySec: [number, number] }`，`AmbienceBed` 增**必填** `sources: AmbienceSource[]`。`durSec` 的注释写成「起音**之后**的衰减时长」——它此前是含糊的"时长"，而它与 `attackSec` 是两件事：一记 0.001s 起音、0.05s 衰减的水滴，和 1.6s 起音、4.2s 衰减的金属应力呻吟不是同一种声音。
+- **数据**：7 张床各 2–3 条，共 **19 条**真位置源，每条落在**它自己那一区的 bounds 内**（门禁量，不是注释承诺）。`mus_brokenbar_amb` 的巡逻脚步刻意 `everySec: [1.2, 1.2]` —— §4 那格「死军阵：永远整齐得不对」在数据里就是**间隔没有抖动**：零方差是一句设计，不是忘了填区间。
+- **`src/audio/spatial.ts > spatialize()` 是"声源→听者"的唯一主人**：那段数学（按世界坐标算斜距、算出增益与 `StereoPanner` 的声像）原本**只长在 `AudioEngine.onSfx()` 里**，本批把它抽出来，一次性 SFX 与声景层共用同一份（常数一字未改）——否则"走两步就换边"这件事会在两支读者里各有一把尺子，迟早一边改了另一边没改。`ListenerPose`（世界坐标 + yaw 弧度）现在是一个对象而不是四个散字段；`AudioEngine.setListener()` 收下它、转交音乐层，并在 `start()` 里补送一次（首次手势之前 `main.ts` 的每一帧只落在缓存里，少了这一句出生区的第一条源就没有位姿可算）。
+- **`src/audio/ambient-field.ts > AmbienceField`**：每源一根自己的计时器，到点用 `synth.playNoise` 掷一声带通噪声 + `StereoPanner`，收尾走 KI-071 记的那条哑源/`onended` 账。两层的音色只用 Q 分开：`texture` Q 固定 2.5（颗粒），`motion` Q 0.8 且中心频率取 `hz × 0.62` 边扫（风/链的长音形）。**没有一样音色参数写在这个文件里**——全从数据那四格现推。
+- **声景层不等 crossfade 窗口**（与 KI-077 那条 8 小节刻意不同）：它们是"一次一声"的事件而不是要淡的持续图，跨区只意味着"下一声属于新区"，已经掷出去的那一声**不抹**（KI-066「不篡改时间线」同源）。所以 `MusicLayer.setAmbience()` 在换床之外**即时** `field.setBed()`，构造函数开局也喂一次；`field.update()` 排在战斗层那道 `scheduling` 门**之外**——声景不是战斗音乐，没在交战也该听得见。
+- **判据本体搬进 `scripts/ambience-rules.mjs`（+ `.d.mts`）**：与 ledger/explore/battle 同一条理由（`validate-data.mjs` 一被 import 就去校验真表并 `process.exit`，喂非法行这半在测试里做不了）。导出字段表、两层名、四波形与 `MIN_ROOT_CENTS`，以及 `ambienceFindings()`；`validate-data.mjs` 里那 8 行手抄名单删掉改成 import，`validateAmbience()` 缩成"两张嘴"（findings → ERROR/WARN 加 `report.num` 管的数值可闻带）。**这一搬顺手补上了 KI-077 内联时从没量过的 refuse 侧**：drone／铃点那两支此前只有 accept 侧有人量过。
+- **守卫**：`tests/unit/ambience-table.test.ts` 38 条（accept 侧含真表实测、声源 12 条 refuse 臂、drone／铃点 10 条 refuse 臂、结构性脏数据与双向对账、四道"唯一主人"源码门）、`tests/unit/ambience-field.test.ts` 11 条（到点/没到点、两层音色、位置与 `spatialize` 同源、听不见就不建节点、高度差进衰减、换床不抹在飞的那一声、同床重发不重掷、响完自己收线），`audio-engine.test.ts` 新增 3 条端到端（真表床 + 真位姿、听不见的那一区、与一次性 SFX 同源）。判据里有一条 `opaque` 守卫：有源的 `layer` 读不出来时**不判"少了哪一层"**，否则一处的错会报成两条，反而看不出是同一个地方。
+- **门禁（2026-09-28）**：`tsc --noEmit` 0 错；`validate:data` **0 ERROR / 4 WARN**（`ambience.json` 只剩 KI-077 那条刻意保留的 `bell.everySec` 登记）；定向跑测 4 文件 / 150 条全绿。
+- **没做（§78）**：① §4 原文写的 `PannerNode + HRTF` 没有做，本作走 `StereoPanner`（§4 之前一次性 SFX 已经是这条路；HRTF 要真做，两支读者必须**一起换**，只换一支等于把"同一条尺子"拆成两把）；② `motion` 那格「越深声音间隔越长（-1s/100m）」（无耳深窖）仍是文档里的一句话，本批的 `everySec` 是固定区间、没有深度递减规则；③ L4 的「30–120s 稀疏事件」与本表 5–9s 铃点仍是两条口径（那条 WARN 登记着，挪它是听感裁决）；④ 听感不可评审（KI-010）。
+
 ## 附录 A：模块规模与里程碑对照
+
 Phase 1（核心战斗原型）＝ `core + player + combat + tools/CombatDebugger + 占位场景`；Phase 3 ＝ `world/Streaming + generators`；Phase 5 ＝ `rpg + save`；Phase 6 ＝ `quest + audio(对话)`。每模块交付即配 §6 测试，不做「先全写完再测」。
