@@ -37,6 +37,9 @@ import {
 } from './ambience-rules.mjs'
 // KI-082：文本完整性。中文被写盘路径压坏这件事从此由机器发现，不靠人眼撞见（那一族不与任何既有判据相交）。
 import { mojibakeFindings } from './text-integrity.mjs'
+// KI-084：锁定四数的两条**关系**判据（同一族理由：那两句文档折成的不等式要在测试里喂得出非法数组）。
+// 四个数各自的 min 仍走本文件的 `report.sub`——缺失/非有限数/越界那三种说法全场由它一家管。
+import { LOCKON_FIELDS, lockOnFindings } from './lockon-rules.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const JSON_DIR = resolve(ROOT, 'src/data/json')
@@ -170,6 +173,8 @@ const VOCAB_PAIRS = [
   /* ---- KI-080：战斗档那两支字段表（鼓型不在这里：五档真数据那一格全同，一列没有信息量的数据就不进表，见 schema 那段） ---- */
   { at: 'BattleTonal', from: 'src/data/schema.ts', name: '有配乐战斗档字段', source: (c) => interfaceFields(c.blocks, 'BattleTonal'), copied: BATTLE_TONAL_FIELDS, where: 'BATTLE_TONAL_FIELDS' },
   { at: 'BattleSilent', from: 'src/data/schema.ts', name: '无配乐战斗档字段', source: (c) => interfaceFields(c.blocks, 'BattleSilent'), copied: BATTLE_SILENT_FIELDS, where: 'BATTLE_SILENT_FIELDS' },
+  /* ---- KI-084：锁定那一块的字段名单（判据住在 `lockon-rules.mjs`，名单与它同一份声明，不再手抄） ---- */
+  { at: 'LockOnConfig', from: 'src/data/schema.ts', name: '锁定四数字段', source: (c) => interfaceFields(c.blocks, 'LockOnConfig'), copied: LOCKON_FIELDS, where: 'LOCKON_FIELDS' },
 ]
 
 /**
@@ -428,6 +433,13 @@ function validatePlayer() {
       if (parryMs < perfectBlockMs) report.error(file, 'hitStop', `弹反(${parryMs}) 短于完美格挡(${perfectBlockMs})：§9 的精度阶梯反了`)
     }
   }
+  // 需求 §34 锁定的四个数（KI-084，TD-005 的入表腿）：唯一读者是 `player/LockOn.ts`，构造时注入。
+  // 两条**关系**判据（Boss 加分 vs 距离项跨度、跨度 vs 90° 的角度惩罚）住在 `lockon-rules.mjs`，这里只当
+  // 那张把 findings 报成 ERROR 的嘴 —— 留在本文件就没法在测试里"喂一组对不上的数看它拒不拒"（KI-075 同族），
+  // 而那两句文档说的是数与数之间的序关系，`report.num` 一次只看一个字段，表达不出来。
+  for (const f of lockOnFindings(p.lockOn)) report.error(f.file, f.where, f.msg)
+  // 四个数各自的可闻带仍走 `report.sub`：缺失 / 非有限数 / 越界那三种说法全场由它一家管，搬走就是第二个主人。
+  if (isObj(p.lockOn)) report.sub(file, 'lockOn', p.lockOn, { range: { min: 0.1 }, aimWeight: { min: 0.0001 }, distWeight: { min: 0.0001 }, bossBonus: { min: 0 } })
   report.sub(file, 'rankXpCurve', p.rankXpCurve, { base: { min: 0 }, a: { min: 0 }, b: { min: 0 } })
   report.sub(file, 'attrs', p.attrs, Object.fromEntries([...ATTR_KEYS].map((k) => [k, { min: 0 }])))
 

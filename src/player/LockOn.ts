@@ -2,6 +2,7 @@ import { bus } from '@/core/EventBus'
 import { clampAngleDiff } from './ThirdPersonController'
 import type { PlayerController } from './ThirdPersonController'
 import type { Vec3 } from '@/combat/EntityStats'
+import type { LockOnConfig } from '@/data/schema'
 
 export interface LockCandidate {
   id: string
@@ -11,10 +12,16 @@ export interface LockCandidate {
   get nameKey(): string
 }
 
+/**
+ * 目标锁定的切换、脱锁与**打分**。
+ *
+ * 四个数（射程 / 角度权重 / 距离权重 / Boss 加分）自 KI-084 起住在 `player.json > lockOn`，
+ * 由组合根注入 —— 这个文件里不再留任何一份（TD-005 的入表腿；此前是 `range = 35` 与
+ * `2.2 / 0.06 / +3`）。行为与证人见 `tests/unit/lockon.test.ts`。
+ */
 export class LockOn {
   target: LockCandidate | null = null
-  range = 35
-  constructor(private player: PlayerController) {
+  constructor(private player: PlayerController, private cfg: LockOnConfig) {
     bus.on('entity.died', (e) => {
       if (this.target?.id === e.id) this.setTarget(null)
     })
@@ -40,7 +47,7 @@ export class LockOn {
     return this.candidates.filter((c) => {
       if (!c.alive) return false
       const d = Math.hypot(c.getPos().x - p.x, c.getPos().z - p.z)
-      return d <= this.range
+      return d <= this.cfg.range
     })
   }
 
@@ -52,7 +59,7 @@ export class LockOn {
     for (const c of list) {
       const d = Math.hypot(c.getPos().x - p.x, c.getPos().z - p.z)
       const ang = Math.abs(clampAngleDiff(this.player.yaw, Math.atan2(c.getPos().x - p.x, c.getPos().z - p.z)))
-      const score = -ang * 2.2 - d * 0.06 + (c.isBoss ? 3 : 0)
+      const score = -ang * this.cfg.aimWeight - d * this.cfg.distWeight + (c.isBoss ? this.cfg.bossBonus : 0)
       if (score > bestScore) { bestScore = score; best = c }
     }
     this.setTarget(best)
@@ -75,7 +82,7 @@ export class LockOn {
     if (this.target) {
       const tp = this.target.getPos()
       const d = Math.hypot(tp.x - this.player.pos.x, tp.z - this.player.pos.z)
-      if (d > this.range) this.setTarget(null)
+      if (d > this.cfg.range) this.setTarget(null)
     }
   }
 }

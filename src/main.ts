@@ -95,7 +95,7 @@ function selectWeaponSlot(slot: number): void {
   bus.emit('ui.notify', { text: `装备 · ${gearLabel(rpg, uid)}`, kind: 'info' })
 }
 
-const lock = new LockOn(player)
+const lock = new LockOn(player, playerBase.lockOn)
 const ai = new AISystem()
 const combat = new CombatManager(player, ai, time, rhythm)
 const visuals = new ActorVisuals(arena.scene, arena.playerVisual, player)

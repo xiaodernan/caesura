@@ -83,8 +83,9 @@ src/
                        数据驱动)/fall(落地硬直按高度分档)；贴地射线 + 台阶自动上 0.4m
     CameraRig.ts       弹簧臂 + 碰撞回弹（球体射线 5 点采样）；模式：exploration/combat/
                        lockOn/boss(独立行为：更近、略微低角度、target bias 0.7)/cinematic
-    LockOn.ts          目标评分锁定（角度优先→距离，8m~35m 锥形）；切换循环、遮挡脱锁、
-                       锁定圈 strafe 重映射、boss 强制单锁
+    LockOn.ts          目标评分锁定（在射程内取"角度项 + 距离项 + Boss 加分"的加权和，四个数自 KI-084
+                       起住在 `player.json > lockOn`）；切换循环、超距与死亡脱锁；
+                       规划那句"8m 内圈 / 锥形角上限 / 遮挡脱锁 / boss 强制单锁"里没有一样成立，见 §2.1 B 表
     Attributes.ts      属性组件：base+modifier 栈（来自装备/buff/等级），脏标记重算
     anim/MontagePlayer.ts    动画片段混合器（§1 Montage 等效）：slots(upper/full/body)、
                        additive hit 层、blend space 1D(走跑)、动画事件轨道 → 发 EventBus 事件
@@ -257,6 +258,7 @@ src/
 | `ai/Navigation.ts` | Placeholder | KI-009：`regions.json > navmeshRef` 故意留空以免悬空引用；敌人的移动现在是"朝目标走 + 距离带停"，不会绕墙 |
 | `ai/Squad.ts` 的仇恨槽位（上限 3） | 未落 | `callAlly` 只有广播（`ai.callAlly` 事件 + 半径判定），没有"后置入战斗的敌人等槽位"，围殴可读性这条还没做 |
 | `player/CameraRig.ts` 的模式枚举与碰撞回弹 | 未落 | 现在的 CameraRig = 平滑跟随 + §10 震镜表 + FOV 脉冲 + 处决推轨 + 锁定时的 target bias；**没有 exploration/combat/lockOn/boss/cinematic 五个模式，也没有弹簧臂射线回弹**（球体射线 5 点采样那句是规划） |
+| `player/LockOn.ts` 的规划四句：`8m~35m 锥形` / `遮挡脱锁` / `boss 强制单锁` | 未落 | **KI-084 把数接进表时逐句核过代码**（不是照抄 §2 那行）：①没有 8m 内圈，也没有任何角度上限——`liveCandidates()` 只筛 `alive` 与水平斜距 `≤ range`，角度只是打分里的一项（所以背后 170° 的目标照样可锁，只要它最近）；②脱锁只有两条：`target.alive == false` 与 `d > range`，**墙不会解开锁定**（`core/Occlusion.ts` 的四个读者里没有 LockOn，KI-014 那条"锁定 AoE"指的是被锁者的 AOE 被遮挡，不是锁定本身被遮挡）；③Boss 没有"强制单锁"，只有 `bossBonus` 让她在同角度上不被贴脸杂兵抢走（那条关系现由 validator 钉住，见 §5.9.22）。**后果**：这三句是设计意图而不是现状，谁要落其中任何一句都得先改这一格，而不是让 §2 那行继续冒充事实 |
 | `world/generators/`（Terrain/Foliage/Rock/Ruin，需求 §52） | 未落 | 地形现在全部 authored 在 `regions.json` + 灰盒盒子；关键区域手工摆放本来就是规划的首选路径，程序化那条没开 |
 | `world/Weather.ts`、`world/Lighting.ts` | 未落 | 与 KI-008 同因：没有真几何与材质就没有雨雾与光照预设。IP_SEED §7 的"铃姨 flag 驱动天气"目前没有任何载体 |
 | `ui/MenuStack.ts`、`ui/MapUI.ts`（需求 §43 地图） | 未落 | UI 现只有 HUD、调音桩面板、对话箱、存档两屏、标题屏。**顺带一条命名失真**：`core/Input.ts` 里那个虚拟按钮仍叫 `map`（Tab / 手柄 6 号键），但它今天的消费者（`main.ts` 的 `edges.has('map')`）开的是**调音桩/商摊面板**，不是地图——§43 的地图 UI 从未落地，于是"按着地图的名字在调音"。本轮不改这个键名（改了会连带动 `settings` 与测试口径），只在此登记 |
@@ -1539,6 +1541,20 @@ docs/audio.md §4 那张表里，**L2 颗粒声纹**与 **L3 物理动源**是�
 - **守卫**：`tests/unit/ambience-table.test.ts` 38 条（accept 侧含真表实测、声源 12 条 refuse 臂、drone／铃点 10 条 refuse 臂、结构性脏数据与双向对账、四道"唯一主人"源码门）、`tests/unit/ambience-field.test.ts` 11 条（到点/没到点、两层音色、位置与 `spatialize` 同源、听不见就不建节点、高度差进衰减、换床不抹在飞的那一声、同床重发不重掷、响完自己收线），`audio-engine.test.ts` 新增 3 条端到端（真表床 + 真位姿、听不见的那一区、与一次性 SFX 同源）。判据里有一条 `opaque` 守卫：有源的 `layer` 读不出来时**不判"少了哪一层"**，否则一处的错会报成两条，反而看不出是同一个地方。
 - **门禁（2026-09-28）**：`tsc --noEmit` 0 错；`validate:data` **0 ERROR / 4 WARN**（`ambience.json` 只剩 KI-077 那条刻意保留的 `bell.everySec` 登记）；定向跑测 4 文件 / 150 条全绿。
 - **没做（§78）**：① §4 原文写的 `PannerNode + HRTF` 没有做，本作走 `StereoPanner`（§4 之前一次性 SFX 已经是这条路；HRTF 要真做，两支读者必须**一起换**，只换一支等于把"同一条尺子"拆成两把）；② `motion` 那格「越深声音间隔越长（-1s/100m）」（无耳深窖）仍是文档里的一句话，本批的 `everySec` 是固定区间、没有深度递减规则；③ L4 的「30–120s 稀疏事件」与本表 5–9s 铃点仍是两条口径（那条 WARN 登记着，挪它是听感裁决）；④ 听感不可评审（KI-010）。
+
+### 5.9.22 §34 锁定那四个数进了表，顺带把两句设计文档折成不等式（KI-084，2026-09-29）— 已实现
+
+TD-005 欠的是**数据形状**那一半：KI-065 给 `player/LockOn.ts` 补了行为证人（9 条），但 `range = 35` 与 `2.2 / 0.06 / +3` 仍写死在码里，改表改不动锁定手感。这一批把四个数搬进 `player.json > lockOn`，并且**没有只搬数**——搬的过程中发现那两句话（§34「Boss 独立锁定框」、本文档 §3「角度优先→距离」）是可以折成不等式的，于是它们成了 validator 的两条 ERROR，而不是注释。
+
+- **数据**：`player.json > lockOn = { range: 35, aimWeight: 2.2, distWeight: 0.06, bossBonus: 3 }`（`schema.ts > LockOnConfig`，`PlayerBaseData` 增**必填** `lockOn`）。**四个值一个都没改**——这批换的是来源不是手感，任何"入表之后顺手调调数"的念头都属于数值裁决，不在这笔账里。
+- **单位口径是这次最容易记错的一格**：打分式里的 `ang` 是**弧度**（`|clampAngleDiff(yaw, atan2(dx, dz))| ∈ [0, π]`），所以 `aimWeight` 是"每弧度罚多少"。`2.2` 看着比 `0.06` 大 36 倍，实际 30° 只折合 1.15 分、而 30m 的距离罚是 1.8 分——**"角度优先"在 30° 这个尺度上其实并不优先**，它是"正前方压倒性地优先，侧后方只靠距离差说话"。这句写进 `LockOnConfig` 的注释，因为只看数会得出相反的结论。
+- **两条折成不等式的关系**（`scripts/lockon-rules.mjs`，ERROR 级）：① `bossBonus > range × distWeight` —— Boss 站在射程**最远处**也不该被贴脸杂兵用距离优势抢走锁定，否则 §34 那格「独立锁定框」是假的（实测 3 > 35×0.06 = 2.1）；② `distWeight × range < aimWeight × π/2` —— 从贴脸走到射程尽头，距离拉开的差距必须还比不上一个 90° 的偏离惩罚，否则本文档那句「角度优先→距离」不再成立，该改的是文档而不是让判据追着数跑（实测 2.1 < 3.456）。**这两条是本文档里第一处把"设计句话"写成"表内不等式"的门**，与 `hitStop` 那组（弹反不得短于完美格挡）同族，但那是排序、这是两条**跨字段的乘积**。
+- **接线**：`LockOn` 删掉公开字段 `range`，构造函数改成 `constructor(player, cfg: LockOnConfig)`；读者恰好四个（`range` 两处——筛选与脱锁共用；`aimWeight`/`distWeight`/`bossBonus` 各一处，都在那一行打分式里），组合根 `main.ts` 交的是 `playerBase.lockOn` 这一块，不是手抄的四格。**判据本体照 KI-079/080/083 那条路搬进规则模块**（+ `.d.mts`），`validate-data.mjs` 只留两张嘴（findings → ERROR、数值可闻带仍由 `report.num` 管），`VOCAB_PAIRS` 加一对 `LockOnConfig ↔ LOCKON_FIELDS`。
+- **守卫**：`tests/unit/lockon.test.ts` 从 9 条长成 13 条（新增的「真表那一侧」四条：射程 ±1%、距离项 + 那句「角度优先→距离」、Boss 加分、以及"这四个数在 `LockOn.ts` 里不再留第二份"的源码门），`tests/unit/lockon-table.test.ts` 16 条（accept 侧含真表实测与 schema 名单对账；关系①的**等号那一格必须红**、关系②用 ±0.1% 卡边界；非对象/字符串/空数组各说一次且只说在 `lockOn` 上；缺格交给 `report.sub`；未知字段点到自己那一格；四道唯一主人源码门）。**两端实测 15 臂 + 控制组**（控制组 29/29 绿；五个被改文件跑完按内容逐字节还原复验）：**15 臂全咬**，其中 13 臂红的案名与事前预测逐条对上，两臂比预测**多红一条**——L2（把射程筛选写成恒真） additionally 咬到「空锁不该响 `lockon_on`」那一条，R5（摘掉 `every(isNum)` 守卫）咬到「NaN/Infinity 不参与关系判断」那一条。**R5 我原本预测它是等价突变，预测错了**：`range = +Infinity` 时 `bossBonus <= range × distWeight` 真的成立，那句守卫不是装饰。两条都记在这里，因为"证人比我数的多"是这次唯一的不符，而把它写成"15/15 全中"就是谎。
+- **边界那一格怎么敲（这批新踩的口径）**：关系①可以在**恰好相等**上敲，因为比较的两边是**同一个表达式**（`SPAN = range × distWeight`）；关系②不行，它的两边是两个不同的表达式，浮点回差 1 ulp 就能让"恰好相等"变成掷硬币，所以用 ±0.1% 夹逼。凡是"在边界上敲一条不等式"，先问两边是不是同一个式子。
+- **门禁（2026-09-29）**：`tsc --noEmit` 0 错；`validate:data` **0 ERROR / 4 WARN**（本批没动任何数值，四条 WARN 全是既有的）；全量 `node scripts/test.mjs` **101 个文件 / 1344 条**，唯一那条红在 `tests/flow/debug-panels.test.ts`（`q_haltrune 2/3` vs 期望 `2/2`，**归并行任务的 `224dbb0`**，单跑复现、与本批无关，按归属如实上报不顺手替它改）；`npm run build` 2.41s。第五道门 `npm run coverage` 本批未重跑（量具与地板文件仍在并行会话的写入面上，KI-063 口径）。
+- **实机腿（5199 隐藏页、真组合根、真 `__caesura.lock`）**：① `lock.cfg` 与 `fetch('/src/data/json/player.json')` 读回的 `lockOn` **逐格相等**（两个独立读者）；② 正面 30m 对正右方 8m ⇒ 赢的是 `farFront`，而我用那四个数在页面里独立复算的分是 −1.80 对 −3.94（角度项在这一格里说了话）；③ 同一角度线上贴脸杂兵（−0.06）对射程尽头 34.9m 的 Boss（+0.91）⇒ Boss 赢，这就是关系①那条不等式在运行时的那张脸；④ 34.9m 可锁、35.1m 不可锁（边界在表里那个数上）；⑤ 把已锁目标推到 36m 再调 `update()` ⇒ 脱锁并放 `lockon_off`；空锁只放 `ui_move`；⑥ **现场把 `cfg.range` 从 35 改成 5**，20m 的目标立刻锁不上，改回 35 又锁上（还原复验）——这一条证的是"表里的数真的是行为的输入"，不是"表里写了个数"。控制台 0 error / 0 warn。像素与听感照旧 Blocked（KI-010）。
+- **没做（§78）**：① §2 那行的三句规划（8m 内圈、锥形角上限、遮挡脱锁、boss 强制单锁）**依旧未落**，本批只是把它们从"看起来已实现"改成 §2.1 B 表里的一格真缺口；② 四个数值的手感裁决没做（入表不等于调数）；③ `bossBonus` 只在**同一个角度**上保证 Boss 不被抢——若玩家正对着一个贴脸杂兵而 Boss 在身后 170°，她照样会被抢走，那是设计里没写的一格，要不要补"锁定优先给 Boss"需要一次裁决。
 
 ## 附录 A：模块规模与里程碑对照
 

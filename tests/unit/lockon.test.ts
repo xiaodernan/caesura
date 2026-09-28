@@ -1,7 +1,11 @@
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it } from 'vitest'
 import { bus } from '@/core/EventBus'
 import { LockOn, type LockCandidate } from '@/player/LockOn'
 import type { PlayerController } from '@/player/ThirdPersonController'
+import { playerBase } from '@/data'
+import type { LockOnConfig } from '@/data/schema'
 
 /**
  * 锁定（LockOn）的声音签名（KI-065）——`audio-keys` 那道静态闸门只证明"有人发射这个 key"，
@@ -33,10 +37,15 @@ function candidate(p: Probe): LockCandidate {
 const live: Array<() => void> = []
 afterEach(() => { while (live.length) live.pop()!() })
 
-function rig(probes: Probe[]): { lock: LockOn; player: PlayerController; sfx: string[]; targets: string[] } {
+/**
+ * 默认吃**真表** `player.json > lockOn`（KI-084 把这四个数搬进了表）。下面所有距离都从 `cfg`
+ * 派生（`cfg.range ± 1` 而不是写死 34/40）——那正是"表里的数有没有读者"这件事本身：抄一份进来，
+ * 改表就再也红不了。
+ */
+function rig(probes: Probe[], cfg: LockOnConfig = playerBase.lockOn): { lock: LockOn; player: PlayerController; sfx: string[]; targets: string[]; cfg: LockOnConfig } {
   // 只给 LockOn 真正读写的那三个字段——多给一个字段就是替测试造一个生产里不存在的玩家
   const player = { pos: { x: 0, y: 0, z: 0 }, yaw: 0, lockedTarget: null } as unknown as PlayerController
-  const lock = new LockOn(player)
+  const lock = new LockOn(player, cfg)
   lock.candidates = probes.map(candidate)
   const sfx: string[] = []
   const targets: string[] = []
@@ -45,7 +54,7 @@ function rig(probes: Probe[]): { lock: LockOn; player: PlayerController; sfx: st
     bus.on('ui.target', (e) => targets.push(e.name))
   ]
   live.push(() => offs.forEach((off) => off()))
-  return { lock, player, sfx, targets }
+  return { lock, player, sfx, targets, cfg }
 }
 
 describe('锁定的声音：响与不响同样要钉', () => {
@@ -83,7 +92,7 @@ describe('锁定的声音：响与不响同样要钉', () => {
 
   it('目标死亡 / 走出射程 ⇒ update 里解除并响那一声（玩家不看屏幕也要知道锁丢了）', () => {
     const a: Probe = { id: 'a', pos: { x: 4, y: 0, z: 0 }, alive: true }
-    const { lock, sfx } = rig([a])
+    const { lock, sfx, cfg } = rig([a])
     lock.toggle()
     expect(sfx).toEqual(['lockon_on'])
     a.alive = false
@@ -95,9 +104,10 @@ describe('锁定的声音：响与不响同样要钉', () => {
     const b: Probe = { id: 'b', pos: { x: 4, y: 0, z: 0 }, alive: true }
     const r2 = rig([b])
     r2.lock.toggle()
-    // 40m 而不是 999m：把射程边界挪到"射程外一点点"，`range` 这个数才有读者
-    // （999 的话把 range 改成 3500 也照样红不了，见 KI-065 的 L4 探针空手）
-    b.pos = { x: 40, y: 0, z: 0 }
+    // 射程外一点点而不是 999m：只有边界附近那个位置才让 `range` 有读者
+    // （999 的话把 range 改成 3500 也照样红不了，见 KI-065 的 L4 探针空手）。距离从表里派生，
+    // 所以"表被调了"不会让这条红；而"代码没读表"由最后那个 describe 的源码门抓。
+    b.pos = { x: cfg.range + 5, y: 0, z: 0 }
     r2.lock.update()
     expect(r2.sfx, '走出射程的解除没响').toEqual(['lockon_on', 'lockon_off'])
     expect(r2.player.lockedTarget, '解除后玩家手里还攥着旧目标').toBe(null)
@@ -105,7 +115,7 @@ describe('锁定的声音：响与不响同样要钉', () => {
     const c: Probe = { id: 'c', pos: { x: 4, y: 0, z: 0 }, alive: true }
     const r3 = rig([c])
     r3.lock.toggle()
-    c.pos = { x: 34, y: 0, z: 0 }   // 34 < 35：还在射程内，不许自己掉锁
+    c.pos = { x: r3.cfg.range - 1, y: 0, z: 0 }   // 射程内一点：不许自己掉锁
     r3.lock.update()
     expect(r3.sfx, '射程内的目标被解除了（边界读反了方向）').toEqual(['lockon_on'])
     expect(r3.lock.target?.id).toBe('c')
@@ -144,7 +154,8 @@ describe('锁定的声音：响与不响同样要钉', () => {
  * 只证明"这一项存在"是不够的：同距的正面/侧面平局会被名单顺序替权重领功，`999m` 的射程外会把
  * 任何有限 range 都判对。所以下面每一格都是"两项对着干、结果只可能由其中一个决定"的形状，
  * 并把权重比值本身也钉住（20° vs 35° 那一对：把 2.2 写成 0.06 就翻）。
- * 这三个数仍住在代码里、不在表里 —— TD-005 的**入表腿**还欠着（`schema.ts` 此刻被并行会话占着）。
+ * 这三项用的是**真表**里的权重（`rig()` 默认吃 `player.json > lockOn`），所以"权重被对调/归零"这一类
+ * 改动会被下面这几条咬到；"表里的数有没有真的被读"由最后那个 describe 的源码门钉住。
  */
 describe('选目标打分：三项权重各有对手，不是各自空转', () => {
   it('距离项有读者：更近的那个排在名单后面也必须被选中（权重写成 0 就是平局，平局由顺序判）', () => {
@@ -176,5 +187,66 @@ describe('选目标打分：三项权重各有对手，不是各自空转', () =
     lock.acquireBest()
     expect(lock.target?.id, '她站在侧面就锁不上：Boss 优先这一项没有落地').toBe('boss')
     expect(targets[targets.length - 1], 'HUD 收到的 isBoss 与实际锁定的目标不是同一只').toBe('boss')
+  })
+})
+
+/**
+ * 真表那一侧（KI-084，TD-005 的入表腿）：`player.json > lockOn` 的四个数**各自**要在行为上被量出来，
+ * 而且每一条都从表里派生（不抄 35 / 2.2 / 0.06 / 3）——抄进来就是把"表是主人"变回一句注释。
+ *
+ * 对手位置的挑法有讲究：**每一项都对着另一项干**。
+ *  · 射程：`range` 的 ±1% 各站一只，只可能由表里那个数决定；
+ *  · 距离 vs 角度：正对射程尽头（距离罚满）赢过 90° 贴脸（角度罚满）—— 这正是 validator 里那条
+ *    「距离项跨度 < 角度项在 90° 上的惩罚」，门禁与行为是同一句话的两位证人；
+ *  · Boss 加分：同一角度上，她站在射程尽头也赢过贴脸的杂兵 —— validator 那条
+ *    `bossBonus > range × distWeight`。
+ * 反过来 `distWeight` 由"同角度更近的赢"钉住（权重为 0 时平局会把名单里第一个留下，那是顺序领功）。
+ */
+describe('真表那一侧：四个数各自有读者（KI-084）', () => {
+  it('射程：表里的 range 决定边界（±1% 各站一只，只有这个数能决定谁被锁上）', () => {
+    const inside: Probe = { id: 'inside', pos: { x: 0, y: 0, z: playerBase.lockOn.range * 0.99 }, alive: true }
+    const r1 = rig([inside])
+    r1.lock.toggle()
+    expect(r1.lock.target?.id, `表里的 range=${r1.cfg.range} 之内反而锁不上`).toBe('inside')
+
+    const outside: Probe = { id: 'outside', pos: { x: 0, y: 0, z: playerBase.lockOn.range * 1.01 }, alive: true }
+    const r2 = rig([outside])
+    r2.lock.toggle()
+    expect(r2.lock.target, `表里的 range=${r2.cfg.range} 之外还锁上了`).toBe(null)
+  })
+
+  it('距离项 + 「角度优先→距离」：同角度更近的赢；正对射程尽头赢过 90° 贴脸', () => {
+    const cfg = playerBase.lockOn
+    const far: Probe = { id: 'far', pos: { x: 0, y: 0, z: cfg.range * 0.99 }, alive: true }
+    const near: Probe = { id: 'near', pos: { x: 0, y: 0, z: 0.5 }, alive: true }
+    const r1 = rig([far, near])
+    r1.lock.acquireBest()
+    expect(r1.lock.target?.id, '两个正对、名单里远的在前 ⇒ 距离项没有读数').toBe('near')
+
+    // 90° 贴脸的角度罚 = aimWeight × π/2；正对尽头的距离罚 = distWeight × range。后者必须更小。
+    const ahead: Probe = { id: 'ahead', pos: { x: 0, y: 0, z: cfg.range * 0.99 }, alive: true }
+    const side: Probe = { id: 'side', pos: { x: 0.5, y: 0, z: 0 }, alive: true }
+    const r2 = rig([side, ahead])
+    r2.lock.acquireBest()
+    expect(r2.lock.target?.id, '90° 贴脸的赢了正对射程尽头：文档那句「角度优先→距离」在这一组数下不成立').toBe('ahead')
+  })
+
+  it('Boss 加分：同一角度上她站在射程尽头，也赢过贴脸的杂兵（§34 Boss 独立锁定框）', () => {
+    const boss: Probe = { id: 'boss', pos: { x: 0, y: 0, z: playerBase.lockOn.range * 0.99 }, alive: true, boss: true }
+    const mook: Probe = { id: 'mook', pos: { x: 0, y: 0, z: 0.1 }, alive: true }
+    const { lock, targets } = rig([mook, boss])
+    lock.acquireBest()
+    expect(lock.target?.id, 'Boss 加分盖不过距离项在射程上的跨度：她站远一点就被杂兵抢走').toBe('boss')
+    expect(targets[targets.length - 1], 'HUD 收到的 isBoss 与实际锁定不是同一只').toBe('boss')
+  })
+
+  it('源码门：这四个数在 LockOn.ts 里不再留第二份（TD-005 那一半的收口条件）', () => {
+    const raw = readFileSync(fileURLToPath(new URL('../../src/player/LockOn.ts', import.meta.url)), 'utf8')
+    // 注释里可以写历史（"此前是 2.2 / 0.06"那种记账），**代码**里不许再有这几个数
+    const code = raw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '')
+    for (const lit of ['2.2', '0.06', '35']) {
+      expect(code.includes(lit), `LockOn.ts 的代码里仍有字面量 ${lit}：表与码各说一遍就是两个主人`).toBe(false)
+    }
+    expect(raw, 'LockOn 没有从注入的配置里取数（那四个数就成了没人读的表字段）').toContain('this.cfg.')
   })
 })

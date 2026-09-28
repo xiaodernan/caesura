@@ -90,5 +90,11 @@
  "melee": {
   "impactLoudness": 0.5,
   "killNoiseLoudness": 0.8
+ },
+ "lockOn": {
+  "range": 35,
+  "aimWeight": 2.2,
+  "distWeight": 0.06,
+  "bossBonus": 3
  }
 }

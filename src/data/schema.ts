@@ -423,6 +423,29 @@ export interface ExecutionConfig {
   firstBladeHitStopMs: number
 }
 
+/**
+ * 锁定（需求 §34 / gameplay.md「视野内 30° 锥最近目标」/ tech-arch §3 里 `player/LockOn.ts` 那行
+ * 「角度优先→距离」）的四个数（KI-084，TD-005 的入表腿）。
+ *
+ * 它们此前写死在 `player/LockOn.ts`（`range = 35` 与打分式里的 `2.2 / 0.06 / +3`）：行为证人在
+ * `tests/unit/lockon.test.ts`，但**改表改不动**。搬进来之后代码里不再留第二份。
+ *
+ * 打分式：`score = -ang * aimWeight - dist * distWeight + (isBoss ? bossBonus : 0)`。
+ * `ang` 的单位是**弧度**（`clampAngleDiff(yaw, atan2(dx, dz))` 的绝对值，取值 [0, π]）——所以
+ * `aimWeight` 是"每弧度罚多少"而不是每度：`2.2` 看着比 `0.06` 大 36 倍，30° 其实只折合 1.15 分。
+ * 两条设计关系由 validator 钉住（不是新设计，是把上面那两句话折成不等式，见 `validate-data.mjs`）。
+ */
+export interface LockOnConfig {
+  /** 候选筛选与脱锁共用的射程（米）。量的是**水平斜距** `hypot(dx, dz)`：跳起来不勾更远的人。 */
+  range: number
+  /** 角度项：偏离视线每一弧度罚多少 */
+  aimWeight: number
+  /** 距离项：每远一米罚多少 */
+  distWeight: number
+  /** 躯体 Boss 的加分（§34「Boss 独立锁定框」）：她在场时不该被杂兵抢走 */
+  bossBonus: number
+}
+
 export interface PlayerBaseData {
   hp: number
   stamina: number
@@ -469,6 +492,8 @@ export interface PlayerBaseData {
   attrs: Record<AttrKey, number>
   attrUpCost: number
   rankXpCurve: { base: number; a: number; b: number }
+  /** 需求 §34 锁定的四个数（KI-084）：唯一读者是 player/LockOn.ts，构造时注入 */
+  lockOn: LockOnConfig
 }
 
 /* ============================ RPG（Phase 5-B） ============================ */
