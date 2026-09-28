@@ -50,6 +50,20 @@ const RAISE_HINT = 0.5
  */
 const CORE_PACKAGES = ['combat', 'rpg', 'save', 'quest']
 const CORE_MIN = 80
+/**
+ * **纯类型文件**：只声明 interface/type，编译后是一份空模块，没有一行可以被执行。
+ *
+ * 量具对"从未被加载过的文件"是逐行记账的（`src/main.ts` 544 行 0 覆盖就是这么来的），
+ * 对纯类型文件会得出一个荒唐读数——`schema.ts` 1359 行"0% 覆盖"，而事实上那里**没有任何
+ * 一行代码可测**。这道门要抓的是"写了却没人测的模块"，不是"写了类型声明的模块"：
+ * `measure()` 本来就把 0 行可计的文件归进 `noLineFiles`（见 printReading），排除它只是
+ * 让 vitest 那侧的口径跟上同一条判据。
+ *
+ * 白名单**必须能被证伪**（tests/unit/coverage-gate.test.ts 钉两条）：
+ * 1. 名单里的文件今天仍然纯类型——谁往里加一行可执行语句，测试当场红，逼人把它挪出去、真去测它；
+ * 2. 脚本确实把名单传给了 vitest——名单悄悄失效时红的不该是读数，而是这道门自己。
+ */
+const PURE_TYPE_FILES = ['src/data/schema.ts']
 
 const rel = (p) => String(p).replace(/\\/g, '/').replace(/^\.\/+/, '')
 const ROOT_REL = rel(ROOT)
@@ -189,7 +203,9 @@ function runVitest() {
     '--reporter=default', '--reporter=json', `--outputFile.json=${reportJson}`,
     '--coverage', '--coverage.provider=v8', '--coverage.all',
     '--coverage.reporter=json-summary', `--coverage.reportsDirectory=${covDir}`,
-    '--coverage.include=src/**/*.ts'
+    '--coverage.include=src/**/*.ts',
+    // 纯类型文件不进分母（见 PURE_TYPE_FILES 的注释：那里没有一行代码可测）
+    ...PURE_TYPE_FILES.map((f) => `--coverage.exclude=${f}`)
   ]
   try {
     execFileSync(process.execPath, args, { cwd: ROOT, stdio: ['ignore', 'inherit', 'inherit'] })
@@ -245,6 +261,8 @@ function printReading(m, floor, src) {
   if (m.noLineFiles.length) {
     console.log(`[coverage] 无行可计（纯类型/常量文件，istanbul 记 0 行）${m.noLineFiles.length} 个：${m.noLineFiles.join(' · ')}`)
   }
+  // 排除名单也印出来：门的读数要能自证"分母里少了谁"，否则下一个人会以为 schema.ts 被删了
+  console.log(`[coverage] 纯类型文件（不进分母）：${PURE_TYPE_FILES.join(' · ')}`)
 }
 
 /**

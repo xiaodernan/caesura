@@ -270,3 +270,49 @@ describe('仓库里那份地板文件自身', () => {
     expect(line![2]).toBe(min)
   })
 })
+
+describe('纯类型文件的排除名单（schema.ts 那 1359 行不是"没测的代码"）', () => {
+  const SCHEMA = join(ROOT, 'src', 'data', 'schema.ts')
+
+  it('名单里的文件今天仍然纯类型：谁往里加一行可执行语句，这条就红', () => {
+    const script = readFileSync(SCRIPT, 'utf8')
+    const raw = script.match(/const PURE_TYPE_FILES = \[([^\]]*)\]/)?.[1] ?? ''
+    const listed = [...raw.matchAll(/'([^']+)'/g)].map((m) => m[1])
+    expect(listed.length, '排除名单不许是空的：空名单说明这段口径没人守').toBeGreaterThan(0)
+    for (const f of listed) {
+      expect(existsSync(join(ROOT, f)), `名单里的 ${f} 今天在磁盘上不在了：口径要跟着改，别留一格失效的豁免`).toBe(true)
+      const src = readFileSync(join(ROOT, f), 'utf8')
+      const noComments = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+      // ① 不许出现任何可执行声明（interface/type 的成员都是类型，落不到 JS 里）
+      // 用 [^\S\n]* 而不是 \s*：后者会跨行吞掉空白，把 `default: string` 这种成员名读成 `export default`
+      expect(noComments, `${f} 里出现了可执行声明：它不再是纯类型文件，把 ${f} 从名单里挪出去并真去测它`)
+        .not.toMatch(/^[^\S\n]*(export[^\S\n]+)?(const|let|var|function|class|enum)\b/m)
+      // ② 不许出现副作用 import（那会让这个文件在运行时真的被加载，排除的理由就变了）
+      expect(noComments, `${f} 里出现了非 type 的 import：它不再是"编译后为空"的文件`)
+        .not.toMatch(/^\s*import\s+(?!type\b)/m)
+      // ③ 顶层每一行只许是类型声明本身或它自己的收尾大括号
+      const topLines = noComments.split('\n').filter((l) => l.length > 0 && !/^\s/.test(l))
+      for (const l of topLines) {
+        expect(l, `${f} 顶层出现了类型声明之外的行：${l.slice(0, 60)}`).toMatch(
+          /^(import type |export (interface|type) |export type \{|})/
+        )
+      }
+    }
+  })
+
+  it('脚本确实把名单交给了 vitest（名单失效时红的该是这道门，不是读数）', () => {
+    const script = readFileSync(SCRIPT, 'utf8')
+    expect(script, '排除名单必须被组装进 vitest 的命令行，否则 schema.ts 会把 1359 行类型声明算成 0 覆盖')
+      .toContain('...PURE_TYPE_FILES.map((f) => `--coverage.exclude=${f}`)')
+  })
+
+  it('地板的零覆盖名单里不许有纯类型文件（那不是"没人测的模块"）', () => {
+    const script = readFileSync(SCRIPT, 'utf8')
+    const listed = [...((script.match(/const PURE_TYPE_FILES = \[([^\]]*)\]/)?.[1] ?? '').matchAll(/'([^']+)'/g))].map((m) => m[1])
+    const doc = JSON.parse(readFileSync(FLOOR, 'utf8')) as { zeroFiles: string[] }
+    for (const f of listed) {
+      expect(doc.zeroFiles, `${f} 是纯类型文件，不该出现在零覆盖名单里（它一行代码都没有）`).not.toContain(f)
+    }
+    expect(existsSync(SCHEMA)).toBe(true)
+  })
+})

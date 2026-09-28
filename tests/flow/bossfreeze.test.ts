@@ -84,7 +84,10 @@ function equipCaesura(w: World): string {
   const mv = movementConfig().movements.find((m) => m.id === CAESURA)
   if (!mv) throw new Error('movements.json 里没有休止斩：本文件的尺子失效')
   const page = book.page(mv.page)!
-  w.rpg.inv.add(page.unlock.item, page.unlock.count)
+  // 乐章 IV 的解锁源是旗标（KI-037 改判）：这里的 harness 只关心休止斩本身，
+  // 「恩希尔终段」的写方是 worldstate 的 bossDefeated 规则（数据对账在验证器），此处等价地让它发生
+  bus.emit('world.flag', { key: 'flag.hersil_felled', value: true })
+  if (page.unlock?.item) w.rpg.inv.add(page.unlock.item, page.unlock.count ?? 0)
   expect(book.unlockPage(page.id, w.rpg.inv).ok).toBe(true)
   for (let i = 0; i < 40 && w.rpg.prog.rank < book.slotRank(0)!; i++) w.rpg.prog.addResonance(400)
   expect(book.equip(0, CAESURA, w.rpg.prog.rank).ok).toBe(true)
