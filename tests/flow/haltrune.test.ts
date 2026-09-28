@@ -72,7 +72,7 @@ function makeWorld() {
 }
 
 describe('断弦线《点名册》：营地归属是一次真的三选一', () => {
-  it('仅仅"见过面"不算走完巡逻：那时复访不给名册，只给中立的那句', () => {
+  it('仅仅"见过面"不算走完巡逻：那时复访不给名册，只把"你得自己数一遍"再问一次', () => {
     const w = makeWorld()
     w.session.open('npc_haltrune')
     expect(w.last().nodeId).toBe('n0')
@@ -81,10 +81,12 @@ describe('断弦线《点名册》：营地归属是一次真的三选一', () =
     expect(w.streaming.hasFlag('flag.haltrune_patrol_seen')).toBe(false)
     w.session.close()
 
-    w.session.open('npc_haltrune')
-    expect(w.last().nodeId, '名册还没开张 ⇒ 落在中立节点上').toBe('n10')
+    expect(w.session.open('npc_haltrune'), '复访有话说（不是空对话框）').toBe(true)
+    expect(w.last().nodeId, '名册还没开张 ⇒ 落在"你得自己数一遍"那句反问上').toBe('n11')
     expect(w.last().text).not.toContain('名册的事')
-    expect(w.last().choices).toEqual([])
+    // KI-089：这一格原来断言的是"只剩一句中立结束语"（`choices` 为空）——那正是"拒绝没有回头路"：
+    // 选了「死人该躺下」的玩家此后每一次搭话都只能看同一句收尾，任务永远拿不到。
+    expect(w.last().choices.map((c) => c.id), '有一条回头路：跟一圈 / 走开').toEqual(['c1', 'c2'])
     w.cleanup()
   })
 

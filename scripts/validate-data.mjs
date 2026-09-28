@@ -47,6 +47,9 @@ import { LOCKON_FIELDS, lockOnFindings } from './lockon-rules.mjs'
 // KI-085：连发/诱饵那几条**关系**判据的本体（同一族理由：`at` 与 `everyTicks` 与 `punishMs` 之间的
 // 序关系要在测试里喂得出非法行）。count/everyTicks/at[i]/punishMs 各自的可闻带仍走本文件的 report.num。
 import { BURST_FIELDS, FEINT_FIELDS, burstFindings } from './burst-rules.mjs'
+// KI-089：对话树的**可达性**判据本体（同一族理由：要在测试里喂一棵合成树看它拒不拒）。这里只把
+// findings 报成 ERROR —— 一句话有没有玩家读得到，是"边"的事，不是"条件写得好不好"的事。
+import { dialogueReachErrors } from './dialogue-rules.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const JSON_DIR = resolve(ROOT, 'src/data/json')
@@ -2602,6 +2605,10 @@ function validateDialogue(npcIds, questIds, itemIds, stateDefs) {
     }
     if (ends === 0) report.error(file, `${t.id}`, '从 root/fallback 出发走不到任何结束节点 ⇒ 玩家会卡在一段不结束的对话里')
   }
+  // KI-089：**读得到的台词**。上面那条"每棵树都要有落点"只顺 root/fallback 的**第一条**路走，
+  // 走不到的节点它不作声 —— 而实测里正是有 19 个节点没有任何一条边指向（科温 7 / 无面童 8 / 盐歌 4），
+  // 写它的人以为它在场上。判据本体在 `dialogue-rules.mjs`（孤儿节点 + 没有出口的环），这里只报。
+  for (const e of dialogueReachErrors(list)) report.error(file, e.at, e.msg)
   return { ids, flagReads, flagWrites, stateReads, stateWrites }
 }
 

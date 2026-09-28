@@ -410,7 +410,7 @@
     "npc": "npc_corvin",
     "priority": 10,
     "rootNode": "n0",
-    "fallbackNode": "n5",
+    "fallbackNode": "n7",
     "nodes": [
       {
         "id": "n0",
@@ -499,7 +499,21 @@
             "flag.corvin_met"
           ]
         },
-        "next": null
+        "next": null,
+        "choices": [
+          {
+            "id": "c1",
+            "text": "……那就开个价。",
+            "style": "blunt",
+            "next": "n1"
+          },
+          {
+            "id": "c2",
+            "text": "（什么也不说，走开）",
+            "style": "silent",
+            "next": null
+          }
+        ]
       },
       {
         "id": "n3",
@@ -525,6 +539,12 @@
           "flags": {
             "all": [
               "flag.corvin_met"
+            ]
+          },
+          "quest": {
+            "id": "q_corvin",
+            "in": [
+              "CORVIN.STEP2_DELIVER"
             ]
           }
         },
@@ -565,7 +585,8 @@
             "style": "silent",
             "next": null
           }
-        ]
+        ],
+        "next": "n14"
       },
       {
         "id": "n6",
@@ -583,11 +604,11 @@
           "quest": {
             "id": "q_corvin",
             "in": [
-              "CORVIN.STEP2_DELIVER"
+              "CORVIN.STEP3_REMAINS"
             ]
           }
         },
-        "next": null
+        "next": "n8"
       },
       {
         "id": "n8",
@@ -598,7 +619,7 @@
           "quest": {
             "id": "q_corvin",
             "in": [
-              "CORVIN.STEP3_REMAINS"
+              "CORVIN.STEP4_CONFRONT"
             ]
           }
         },
@@ -633,7 +654,8 @@
             },
             "next": "n9"
           }
-        ]
+        ],
+        "next": "n10"
       },
       {
         "id": "n9",
@@ -657,8 +679,12 @@
           "quest": {
             "id": "q_corvin",
             "in": [
-              "CORVIN.STEP4_CONFRONT"
+              "CORVIN.STEP5_SCHISM"
             ]
+          },
+          "state": {
+            "key": "state.corvin.schism",
+            "eq": "INTACT"
           }
         },
         "choices": [
@@ -719,7 +745,8 @@
             },
             "next": "n13"
           }
-        ]
+        ],
+        "next": "n11"
       },
       {
         "id": "n11",
@@ -732,7 +759,7 @@
             "eq": "EXPOSED"
           }
         },
-        "next": null
+        "next": "n12"
       },
       {
         "id": "n12",
@@ -745,7 +772,7 @@
             "eq": "COMPLICIT"
           }
         },
-        "next": null
+        "next": "n13"
       },
       {
         "id": "n13",
@@ -758,7 +785,34 @@
             "eq": "COLLUDED"
           }
         },
-        "next": null
+        "next": "n5"
+      },
+      {
+        "id": "n14",
+        "speaker": "npc_corvin",
+        "emotion": "measured",
+        "text": "（他合上书，指节在封皮上敲了两下）我们上次没谈完。那一节还空着——会唱歌的核。你要是改主意了，价钱不变。",
+        "conditions": {
+          "flags": {
+            "all": [
+              "flag.corvin_met"
+            ]
+          }
+        },
+        "choices": [
+          {
+            "id": "c1",
+            "text": "……那就开个价。",
+            "style": "blunt",
+            "next": "n1"
+          },
+          {
+            "id": "c2",
+            "text": "（什么也不说，走开）",
+            "style": "silent",
+            "next": null
+          }
+        ]
       }
     ]
   },
@@ -767,7 +821,7 @@
     "npc": "npc_meg",
     "priority": 10,
     "rootNode": "n0",
-    "fallbackNode": "n3",
+    "fallbackNode": "n7",
     "nodes": [
       {
         "id": "n0",
@@ -855,6 +909,12 @@
             "all": [
               "flag.meg_met"
             ]
+          },
+          "quest": {
+            "id": "q_meg",
+            "in": [
+              "MEG.STEP2_EXCHANGE"
+            ]
           }
         },
         "choices": [
@@ -886,7 +946,8 @@
             "style": "silent",
             "next": null
           }
-        ]
+        ],
+        "next": "n9"
       },
       {
         "id": "n4",
@@ -914,7 +975,8 @@
             "style": "silent",
             "next": "n6"
           }
-        ]
+        ],
+        "next": "n3"
       },
       {
         "id": "n6",
@@ -932,6 +994,9 @@
           "flags": {
             "all": [
               "flag.meg_whisper_extracted"
+            ],
+            "not": [
+              "flag.meg_soundscroll_complete"
             ]
           }
         },
@@ -948,7 +1013,8 @@
             },
             "next": "n8"
           }
-        ]
+        ],
+        "next": "n10"
       },
       {
         "id": "n8",
@@ -956,6 +1022,47 @@
         "emotion": "quiet",
         "text": "声卷全了。她该唱的、不该唱的，都在这儿了。以后休垒如果还有人唱这首歌，就知道是谁留下来的了。",
         "next": null
+      },
+      {
+        "id": "n9",
+        "speaker": "npc_meg",
+        "emotion": "quiet",
+        "text": "（她把那枚晶片在指间转了半圈，又收回喉咙里）第一段我还留着。那段录音是在哪儿录的？想好了再来听一遍——录音会等人，比人耐心。",
+        "conditions": {
+          "flags": {
+            "all": [
+              "flag.meg_met"
+            ]
+          }
+        },
+        "choices": [
+          {
+            "id": "c1",
+            "text": "……在你家门口。我再听一遍。",
+            "style": "blunt",
+            "next": "n1"
+          },
+          {
+            "id": "c2",
+            "text": "（先不听了）",
+            "style": "silent",
+            "next": null
+          }
+        ]
+      },
+      {
+        "id": "n10",
+        "speaker": "npc_meg",
+        "emotion": "quiet",
+        "text": "（她把声卷贴在喉咙上，听了很久，一个字没说。灰从她的摊子上落下来。）",
+        "conditions": {
+          "flags": {
+            "all": [
+              "flag.meg_soundscroll_complete"
+            ]
+          }
+        },
+        "next": "n5"
       }
     ]
   },
@@ -1062,7 +1169,7 @@
             ]
           }
         },
-        "next": "n6"
+        "next": "n15"
       },
       {
         "id": "n4",
@@ -1160,7 +1267,7 @@
             ]
           }
         },
-        "next": "n3"
+        "next": "n7"
       },
       {
         "id": "n7",
@@ -1190,7 +1297,8 @@
             "style": "blunt",
             "next": "n8"
           }
-        ]
+        ],
+        "next": "n10"
       },
       {
         "id": "n8",
@@ -1332,7 +1440,8 @@
             },
             "next": "n14"
           }
-        ]
+        ],
+        "next": "n3"
       },
       {
         "id": "n11",
@@ -1364,6 +1473,20 @@
         "emotion": "blank",
         "text": "（它把「失」写在灰上，然后把灰全撒了。缝隙吞了它，你再回头时，水缸边只剩一把飞扬的灰。）",
         "once": true,
+        "next": null
+      },
+      {
+        "id": "n15",
+        "speaker": "npc_faceless",
+        "emotion": "still",
+        "text": "（它把灰推成一堆，等你走。兜帽下没有五官，可你听见它在数你的脚步。）",
+        "conditions": {
+          "flags": {
+            "all": [
+              "flag.faceless_met"
+            ]
+          }
+        },
         "next": null
       }
     ]
@@ -1629,9 +1752,44 @@
           "all": [
             "flag.haltrune_met"
           ]
+        },
+        "quest": {
+          "id": "q_haltrune",
+          "in": [
+            "HALTRUNE.STEP1_OPEN",
+            "HALTRUNE.STEP2_ROSTER",
+            "HALTRUNE.STEP3_LASTWATCH"
+          ]
         }
       },
-      "next": null
+      "next": "n11"
+    },
+    {
+      "id": "n11",
+      "speaker": "npc_haltrune",
+      "emotion": "flat",
+      "text": "（他收回那半步，断墙边的拍子慢了下来）你说过，死人该躺下。可他们还在走。我不跟你争这个——你得自己数一遍：七个，还是四个。",
+      "conditions": {
+        "flags": {
+          "all": [
+            "flag.haltrune_met"
+          ]
+        }
+      },
+      "choices": [
+        {
+          "id": "c1",
+          "text": "……那我跟一圈。",
+          "style": "blunt",
+          "next": "n1"
+        },
+        {
+          "id": "c2",
+          "text": "（转身走开）",
+          "style": "silent",
+          "next": null
+        }
+      ]
     }
     ]
   }

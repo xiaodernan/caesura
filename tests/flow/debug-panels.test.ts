@@ -469,10 +469,13 @@ describe('F3 · 任务与世界读数（只读）', () => {
 
   it('末步没有 advanceOn 的那几条线永远不打勾（后续步还没写，不是做完了）', () => {
     const w = makeQuestWorld()
+    // 这条线三步：step0 的闸门是旗标、step1 的闸门是值域、**step2 一个闸门都没有**（后续步还没落表）。
+    // 两步各走一条路推到位；`walkTo` 只会立旗，值域那一步得由状态机自己广播过来。
     w.walkTo('q_haltrune', 1)
+    w.worldStates.set('state.haltrune.camp', 'OUTPOST')
     const row = w.rowOf('q_haltrune')
-    expect(row).toContain('2/2')
-    expect(row).toContain('HALTRUNE.STEP2_ROSTER')
+    expect(row).toContain('3/3')
+    expect(row).toContain('HALTRUNE.STEP3_LASTWATCH')
     expect(row).toContain('(no advanceOn)')
     expect(row).not.toContain('[done]')
     w.dispose()

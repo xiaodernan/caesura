@@ -254,9 +254,12 @@ describe('《唤四钟》：修钟的闸门、跨区三步、三段合听（§2.
     w.session.close()
     expect(w.quests.state('q_faceless')).toBe('FACELESS.STEP2_ANSWER')
 
-    // 还没修过钟 ⇒ 复访落到 n2（它跟在身后半步），不触发 n3（需 schism 分支）
-    w.session.open('npc_faceless')
-    expect(w.last().nodeId).toBe('n2')
+    // 还没修过钟 ⇒ 复访落在通用那一句上（它推灰、数你的脚步），不触发 n6（需"是耳朵"）也不触发 n3（需 schism 分支）
+    // KI-089：这条原来是**假绿** —— 老数据里 fallback 那条链 n4→n6→n3→n6 是个环，引擎 `enter()` 转不出来
+    // 就返回空视图，`open()` 当场 false，而 `w.last()` 读的是**上一段对话留下的那个陈旧视图**（正好是 n2），
+    // "落在 n2"于是永远成立。现在先钉 `open()` 真的开了口，再钉它落在哪一句上。
+    expect(w.session.open('npc_faceless'), '复访有话说（不是空对话框）').toBe(true)
+    expect(w.last().nodeId).toBe('n15')
     expect(w.last().choices).toHaveLength(0)
     w.session.close()
 
@@ -295,10 +298,11 @@ describe('《唤四钟》：修钟的闸门、跨区三步、三段合听（§2.
     expect(w.streaming.hasFlag('flag.faceless_told_it_is_an_ear')).toBe(false)
     expect(w.quests.state('q_faceless'), '这一步推进到步 3').toBe('FACELESS.STEP3_VESSEL')
     w.session.close()
-    // 诚实的人复访：ash 场景只触发一次（once: true），再开对话落到 n4（哑钟抉择），不进 n6（同一个音符链只对撒谎成立）
-    w.session.open('npc_faceless')
-    // 当前行为：首次 honest 选择后直接进 n5，复访因 once 机制在 headless 里未生效而再进 n5；核心断言是不进 n6
-    expect(['n4', 'n5']).toContain(w.last().nodeId)
+    // 诚实的人复访：不进 n6（"同一个音符"那条链只对撒谎成立），而是往前一步：五环线索
+    // KI-089：这条原来也是**假绿** —— 老数据里 fallback 的链是个环，`open()` 返回 false，`last()` 读的是上一段
+    // 对话的陈旧视图（n5），`['n4','n5']` 于是永远命中。现在钉 `open()` 真开了口，再钉它落在 n7 上。
+    expect(w.session.open('npc_faceless'), '复访有话说（不是空对话框）').toBe(true)
+    expect(w.last().nodeId, '诚实那条路复访读到的是五环线索').toBe('n7')
     expect(w.last().nodeId).not.toBe('n6')
     w.session.close()
   })
