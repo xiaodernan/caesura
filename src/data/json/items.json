@@ -489,7 +489,7 @@
     "timbite": 90
    }
   }
-},
+ },
  {
   "id": "it_bell_tongue",
   "nameKey": "item.bellTongue",
@@ -516,5 +516,28 @@
   "stack": 1,
   "value": 0,
   "desc": "从遗骸盔甲内侧取下的铭牌。刻着休垒采晶队第七号失踪者的名字——律政院档案里写着「因公殉职」，实际是被送进喧堕池的实验品。"
+ },
+ {
+  "id": "ar_coreinlay_cuirass",
+  "nameKey": "armor.coreinlay",
+  "displayName": "振源核嵌甲",
+  "kind": "armor",
+  "stack": 1,
+  "value": 320,
+  "desc": "把一颗还在唱的核嵌进胸甲的夹层。它替你挡下的每一击都会轻一点——因为那一击先喂了它。穿上它的人，孩子闻得出来。",
+  "gear": {
+   "slot": "cuirass",
+   "rarity": "epic",
+   "def": 12,
+   "weight": 8,
+   "affixes": [
+    "af_tempered",
+    "af_tireless"
+   ],
+   "salvage": {
+    "dross": 5,
+    "timbite": 80
+   }
+  }
  }
 ]

@@ -174,9 +174,9 @@ describe('KI-059 这条腿有人按（新逻辑没有消费者就等于没做）
 })
 
 describe('KI-059 诚实账：卖 vs 分解+把回到的残晶立刻卖掉', () => {
-  it('18/18 件装备仍然是"卖"多于"拆+卖残晶"——§6.3 括注「鼓励分解」到今天也不成立（登记为数值裁决）', () => {
+  it('19/19 件装备仍然是"卖"多于"拆+卖残晶"——§6.3 括注「鼓励分解」到今天也不成立（登记为数值裁决；19=科温线嵌甲入表）', () => {
     const gears = items.filter((it) => it.gear)
-    expect(gears.length).toBe(18)
+    expect(gears.length).toBe(19)
     const notEncouraged: string[] = []
     for (const it of gears) {
       const sv = salvageValue(it, 0)

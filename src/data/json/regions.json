@@ -121,124 +121,124 @@
     },
     "npcId": "npc_corvin"
    },
-    {
-     "id": "npc_meg",
-     "kind": "npc",
-     "pos": {
-      "x": -30,
-      "y": 0,
-      "z": -28
-     },
-     "npcId": "npc_meg"
+   {
+    "id": "npc_meg",
+    "kind": "npc",
+    "pos": {
+     "x": -30,
+     "y": 0,
+     "z": -28
     },
-    {
-     "id": "st_plaza_bell",
-     "kind": "inspect",
-     "verb": "察看第四口钟",
-     "pos": {
-      "x": 34,
-      "y": 0,
-      "z": 28
-     },
-     "requiresState": {
-      "key": "state.bells.fourth_dumb",
-      "value": "INTACT"
-     }
+    "npcId": "npc_meg"
+   },
+   {
+    "id": "st_plaza_bell",
+    "kind": "inspect",
+    "verb": "察看第四口钟",
+    "pos": {
+     "x": 34,
+     "y": 0,
+     "z": 28
     },
-    {
-     "id": "st_plaza_bell_rung",
-     "kind": "inspect",
-     "verb": "察看第四口钟",
-     "pos": {
-      "x": 34,
-      "y": 0,
-      "z": 28
-     },
-     "requiresState": {
-      "key": "state.bells.fourth_dumb",
-      "value": "RUNG"
-     }
+    "requiresState": {
+     "key": "state.bells.fourth_dumb",
+     "value": "INTACT"
+    }
+   },
+   {
+    "id": "st_plaza_bell_rung",
+    "kind": "inspect",
+    "verb": "察看第四口钟",
+    "pos": {
+     "x": 34,
+     "y": 0,
+     "z": 28
     },
-    {
-     "id": "st_plaza_bell_melted",
-     "kind": "inspect",
-     "verb": "察看空钟架",
-     "pos": {
-      "x": 34,
-      "y": 0,
-      "z": 28
-     },
-     "requiresState": {
-      "key": "state.bells.fourth_dumb",
-      "value": "MELTED"
-     }
+    "requiresState": {
+     "key": "state.bells.fourth_dumb",
+     "value": "RUNG"
+    }
+   },
+   {
+    "id": "st_plaza_bell_melted",
+    "kind": "inspect",
+    "verb": "察看空钟架",
+    "pos": {
+     "x": 34,
+     "y": 0,
+     "z": 28
     },
-    {
-     "id": "st_plaza_bell_sealed",
-     "kind": "inspect",
-     "verb": "察看蒙布的钟",
-     "pos": {
-      "x": 34,
-      "y": 0,
-      "z": 28
-     },
-     "requiresState": {
-      "key": "state.bells.fourth_dumb",
-      "value": "SEALED"
-     }
+    "requiresState": {
+     "key": "state.bells.fourth_dumb",
+     "value": "MELTED"
+    }
+   },
+   {
+    "id": "st_plaza_bell_sealed",
+    "kind": "inspect",
+    "verb": "察看蒙布的钟",
+    "pos": {
+     "x": 34,
+     "y": 0,
+     "z": 28
     },
-    {
-     "id": "st_plaza_mourners",
-     "kind": "inspect",
-     "verb": "走近跪地的人影",
-     "pos": {
-      "x": 30,
-      "y": 0,
-      "z": 20
-     },
-     "requiresState": {
-      "key": "state.bells.fourth_dumb",
-      "value": "RUNG"
-     }
+    "requiresState": {
+     "key": "state.bells.fourth_dumb",
+     "value": "SEALED"
+    }
+   },
+   {
+    "id": "st_plaza_mourners",
+    "kind": "inspect",
+    "verb": "走近跪地的人影",
+    "pos": {
+     "x": 30,
+     "y": 0,
+     "z": 20
     },
-{
-      "id": "st_plaza_copper",
-      "kind": "inspect",
-      "verb": "察看钟铜残块",
-      "pos": {
-       "x": 40,
-       "y": 0,
-       "z": 32
-      },
-      "requiresState": {
-       "key": "state.bells.fourth_dumb",
-       "value": "MELTED"
-      }
-     },
-     {
-      "id": "it_resthold_archive_room",
-      "kind": "inspect",
-      "verb": "进入档案室",
-      "pos": {
-       "x": 20,
-       "y": 0,
-       "z": -12
-      },
-      "requiresFlag": "flag.corvin_archive_confronted",
-      "setsFlag": "flag.corvin_archive_entered"
-     },
-     {
-      "id": "st_plaza_schism_exposed",
-      "kind": "inspect",
-      "verb": "察看广场动乱",
-      "pos": {
-       "x": 0,
-       "y": 0,
-       "z": 0
-      },
-      "requiresFlag": "flag.schism_exposed"
-     }
-    ],
+    "requiresState": {
+     "key": "state.bells.fourth_dumb",
+     "value": "RUNG"
+    }
+   },
+   {
+    "id": "st_plaza_copper",
+    "kind": "inspect",
+    "verb": "察看钟铜残块",
+    "pos": {
+     "x": 40,
+     "y": 0,
+     "z": 32
+    },
+    "requiresState": {
+     "key": "state.bells.fourth_dumb",
+     "value": "MELTED"
+    }
+   },
+   {
+    "id": "it_resthold_archive_room",
+    "kind": "inspect",
+    "verb": "进入档案室",
+    "pos": {
+     "x": 20,
+     "y": 0,
+     "z": -12
+    },
+    "requiresFlag": "flag.corvin_archive_confronted",
+    "setsFlag": "flag.corvin_archive_entered"
+   },
+   {
+    "id": "st_plaza_schism_exposed",
+    "kind": "inspect",
+    "verb": "察看广场动乱",
+    "pos": {
+     "x": 0,
+     "y": 0,
+     "z": 0
+    },
+    "requiresFlag": "flag.schism_exposed"
+   }
+  ],
   "music": {
    "explore": "mus_resthold_explore",
    "battle": "mus_shared_battle",
@@ -536,28 +536,28 @@
     },
     "radius": 10
    },
-{
-     "enemyId": "en_ostlara",
-     "count": 1,
-     "center": {
-      "x": 300,
-      "y": -40,
-      "z": 104
-     },
-     "radius": 4
+   {
+    "enemyId": "en_ostlara",
+    "count": 1,
+    "center": {
+     "x": 300,
+     "y": -40,
+     "z": 104
     },
-    {
-     "enemyId": "en_phantome",
-     "count": 2,
-     "center": {
-      "x": 280,
-      "y": -40,
-      "z": 80
-     },
-     "radius": 8,
-     "condition": "flag.schism_complicit"
-    }
-   ],
+    "radius": 4
+   },
+   {
+    "enemyId": "en_phantome",
+    "count": 2,
+    "center": {
+     "x": 280,
+     "y": -40,
+     "z": 80
+    },
+    "radius": 8,
+    "condition": "flag.schism_complicit"
+   }
+  ],
   "landmarks": [
    {
     "id": "lm_drownedchoir_brokenaltar",
@@ -635,6 +635,21 @@
     "requiresFlag": "flag.bells_repair_open",
     "setsFlag": "flag.bell_third_repaired",
     "lootTable": "loot_bell_repair"
+   },
+   {
+    "id": "dc_corvin_cage",
+    "kind": "inspect",
+    "verb": "查看铁笼",
+    "pos": {
+     "x": 372,
+     "y": -40,
+     "z": 36
+    },
+    "requiresState": {
+     "key": "state.corvin.schism",
+     "value": "COMPLICIT"
+    },
+    "oneWay": false
    }
   ],
   "music": {
@@ -786,6 +801,17 @@
     },
     "radius": 10,
     "campId": "camp_brokenbar"
+   },
+   {
+    "enemyId": "en_murkshell",
+    "count": 2,
+    "center": {
+     "x": -140,
+     "y": 0,
+     "z": -330
+    },
+    "radius": 10,
+    "condition": "flag.schism_exposed"
    }
   ],
   "landmarks": [
@@ -858,34 +884,34 @@
     "requiresFlag": "flag.brokenbar_resolved",
     "lootTable": "loot_camp_store"
    },
-{
-     "id": "shop_camp_stall",
-     "kind": "shop",
-     "verb": "交易",
-     "pos": {
-      "x": -120,
-      "y": 0,
-      "z": -310
-     }
-    },
-    {
-     "id": "gt_brokenbar_backdoor",
-     "kind": "gate",
-     "verb": "打开后门",
-     "pos": {
-      "x": -80,
-      "y": 0,
-      "z": -200
-     },
-     "requiresFlag": "flag.brokenbar_password",
-     "setsFlag": "flag.brokenbar_backdoor_open",
-     "to": {
-      "x": -50,
-      "y": 0,
-      "z": -360
-     }
+   {
+    "id": "shop_camp_stall",
+    "kind": "shop",
+    "verb": "交易",
+    "pos": {
+     "x": -120,
+     "y": 0,
+     "z": -310
     }
-   ],
+   },
+   {
+    "id": "gt_brokenbar_backdoor",
+    "kind": "gate",
+    "verb": "打开后门",
+    "pos": {
+     "x": -80,
+     "y": 0,
+     "z": -200
+    },
+    "requiresFlag": "flag.brokenbar_password",
+    "setsFlag": "flag.brokenbar_backdoor_open",
+    "to": {
+     "x": -50,
+     "y": 0,
+     "z": -360
+    }
+   }
+  ],
   "music": {
    "explore": "mus_brokenbar_explore",
    "battle": "mus_camp_assault",
@@ -1110,24 +1136,24 @@
     },
     "requiresFlag": "flag.bells_repair_open",
     "setsFlag": "flag.bell_first_repaired",
-"lootTable": "loot_bell_repair"
+    "lootTable": "loot_bell_repair"
+   },
+   {
+    "id": "it_fellcarillon_hanged_remains",
+    "kind": "inspect",
+    "verb": "读取铭牌",
+    "pos": {
+     "x": 206,
+     "y": 64,
+     "z": -244
     },
-    {
-     "id": "it_fellcarillon_hanged_remains",
-     "kind": "inspect",
-     "verb": "读取铭牌",
-     "pos": {
-      "x": 206,
-      "y": 64,
-      "z": -244
-     },
-     "requiresFlag": "flag.corvin_core_delivered",
-     "setsFlag": "flag.corvin_remains_found",
-     "lootTable": "loot_hanged_knight_nameplate"
-    }
-   ],
-   "music": {
-    "explore": "mus_fellcarillon_explore",
+    "requiresFlag": "flag.corvin_core_delivered",
+    "setsFlag": "flag.corvin_remains_found",
+    "lootTable": "loot_hanged_knight_nameplate"
+   }
+  ],
+  "music": {
+   "explore": "mus_fellcarillon_explore",
    "battle": "mus_shared_battle",
    "ambience": "mus_fellcarillon_amb"
   },
