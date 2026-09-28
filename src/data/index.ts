@@ -17,7 +17,8 @@ import statesRaw from './json/states.json'
 import reactionsRaw from './json/reactions.json'
 import shopRaw from './json/shop.json'
 import ambienceRaw from './json/ambience.json'
-import type { MovesetData, WeaponData, EnemyData, PlayerBaseData, RegionData, ProgressionData, ItemData, LootTableData, NpcData, DialogueData, QuestData, StatusConfig, MovementConfig, WorldStateRule, WorldStateDef, HitReactionTable, ShopData, AmbienceBed } from './schema'
+import exploreRaw from './json/explore.json'
+import type { MovesetData, WeaponData, EnemyData, PlayerBaseData, RegionData, ProgressionData, ItemData, LootTableData, NpcData, DialogueData, QuestData, StatusConfig, MovementConfig, WorldStateRule, WorldStateDef, HitReactionTable, ShopData, AmbienceBed, ExploreScore } from './schema'
 
 export const playerBase = playerRaw as unknown as PlayerBaseData
 export const regions = regionsRaw as unknown as RegionData[]
@@ -40,6 +41,8 @@ export const reactions = reactionsRaw as unknown as HitReactionTable
 export const shop = shopRaw as unknown as ShopData
 /** docs/audio.md §1.2/§4 的区域环境声床（行键 = `regions.json > music.ambience`）；唯一读者是 `audio/AudioEngine.ts`（id→行 解析在那里，解析结果注入 `MusicLayer`） */
 export const ambienceBeds = ambienceRaw as unknown as AmbienceBed[]
+/** docs/audio.md §1.2 的区域探索曲（行键 = `regions.json > music.explore`）：R-1 的哪一种变形、每音占几拍、这一区的主音。唯一读者同上（KI-079） */
+export const exploreScores = exploreRaw as unknown as ExploreScore[]
 
 let registered = false
 

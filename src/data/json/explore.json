@@ -1,0 +1,54 @@
+[
+  {
+    "id": "mus_resthold_explore",
+    "form": "prime",
+    "rootHz": 87.31,
+    "beatsPerNote": 2,
+    "wave": "triangle",
+    "peak": 0.028
+  },
+  {
+    "id": "mus_whisperwode_explore",
+    "form": "prime",
+    "rootHz": 65.41,
+    "beatsPerNote": 1,
+    "wave": "sine",
+    "peak": 0.03
+  },
+  {
+    "id": "mus_drowned_choir_explore",
+    "form": "retrograde",
+    "rootHz": 103.83,
+    "beatsPerNote": 0.5,
+    "wave": "sine",
+    "peak": 0.024
+  },
+  {
+    "id": "mus_brokenbar_explore",
+    "form": "inversion",
+    "rootHz": 116.54,
+    "beatsPerNote": 0.5,
+    "wave": "square",
+    "peak": 0.018
+  },
+  {
+    "id": "mus_fellcarillon_explore",
+    "form": "retrograde",
+    "rootHz": 98.0,
+    "beatsPerNote": 1,
+    "wave": "triangle",
+    "peak": 0.026
+  },
+  {
+    "id": "mus_earless_deeps_explore",
+    "form": "inversion",
+    "rootHz": 73.42,
+    "beatsPerNote": 2,
+    "wave": "sine",
+    "peak": 0.03
+  },
+  {
+    "id": "mus_unfinished_hall_explore",
+    "form": null
+  }
+]

@@ -3,14 +3,15 @@
  * 图结构：master → DynamicsCompressor → destination；master 前置总线 { sfx / music / ambience / ui }。
  * 3D：按 listener 位置算声像（StereoPanner）+ 距离衰减（listener 经 setListener 更新）。
  * 事件：订阅 bus 'audio.sfx' { key, pos?, gain? }、'audio.music.grid'（拍网，KI-066）与
- * 'audio.music.ambience'（环境声床 id → 行，KI-077）；音乐遭遇由 music.ts 自行订阅。
+ * 'audio.music.ambience'（环境声床 id → 行，KI-077）、'audio.music.explore'（探索曲 id → 行，KI-079）；
+ * 音乐遭遇由 music.ts 自行订阅。这两条 id→行 的解析都住在本类：它是"表 + 图"两头都看得见的那一层。
  * AudioContext 必须在用户手势后 resume —— start() 于首次手势调用；
  * 若构造后即处 suspended，会挂一次性 pointerdown/keydown 自动恢复。
  */
 import { bus, type GameEvents } from '../core/EventBus'
 import type { MusicGrid } from '../core/RhythmClock'
-import { ambienceBeds } from '../data'
-import type { AmbienceBed } from '../data/schema'
+import { ambienceBeds, exploreScores } from '../data'
+import type { AmbienceBed, ExploreScore } from '../data/schema'
 import { triggerSfx } from './synth'
 import { MusicLayer } from './music'
 
@@ -61,8 +62,16 @@ export class AudioEngine {
    * 音乐层只接收形状，不认表。id 认不出时**保留上一张床**并说一次——换区失败不该让底噪断掉。
    */
   private bed: AmbienceBed | null = null
+  /**
+   * 最后收到的探索曲**行**（KI-079）。缓存与解析的理由与上面那一条完全相同——
+   * 而建图那一刻要把两支一起交给 `MusicLayer`：只给床不给曲，开局那一区就永远没有旋律
+   * （`main.ts` 的那两句都在首次手势之前发，之后不会再发，直到玩家真的跨区为止）。
+   */
+  private song: ExploreScore | null = null
   /** 认不出的声床 id 每个只说一次（与 `warned` 那本 SFX 名册同一口径：刷屏会把真信号埋掉） */
   private warnedBed = new Set<string>()
+  /** 认不出的探索曲 id 同上（单独一本：与上面那本共用会让先说话的那条静音另一条） */
+  private warnedSong = new Set<string>()
   private started = false
   private voices = 0
   private warned = new Set<string>()
@@ -104,6 +113,18 @@ export class AudioEngine {
       this.bed = bed
       this.musicLayer?.setAmbience(bed)
     })
+    // KI-079（docs §1.2 世界音乐层）：同一只手把 id 翻成行，音乐层只认形状、不认 `explore.json`。
+    // 认不出时**保留上一张曲**：换区失败不该把正在奏的旋律掐掉（与上面那条同口径）。
+    bus.on('audio.music.explore', (p) => {
+      const song = exploreScores.find((s) => s.id === p.id) ?? null
+      if (!song && !this.warnedSong.has(p.id)) {
+        this.warnedSong.add(p.id)
+        bus.emit('log', { level: 'warn', msg: `AudioEngine: 未知探索曲 id "${p.id}"（regions.music.explore 与 explore.json 对不上），保留上一张曲` })
+      }
+      if (!song) return
+      this.song = song
+      this.musicLayer?.setExplore(song)
+    })
     window.addEventListener('pointerdown', this.gesture)
     window.addEventListener('keydown', this.gesture)
   }
@@ -134,7 +155,7 @@ export class AudioEngine {
     this.detachGesture()
     if (this.started) return
     this.started = true
-    this.musicLayer = new MusicLayer(ctx, this.graph.music, this.graph.ambience, this.grid, this.bed)
+    this.musicLayer = new MusicLayer(ctx, this.graph.music, this.graph.ambience, this.grid, this.bed, this.song)
     this.musicLayer.start()
   }
 

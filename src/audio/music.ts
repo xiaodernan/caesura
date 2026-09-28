@@ -2,6 +2,7 @@
  * music.ts — 极简音乐层（Phase 1）
  *  · ambience：一张**区域声床**（`data/json/ambience.json` = docs §1.2 主音分配 + §4 的 L1 drone / L4 稀疏事件）
  *    + 跨区 8 小节 crossfade（§1.2 转场规则）
+ *  · 探索曲（L3 对位旋律）：`data/json/explore.json` = §1.2 那四种变形里能进数据的那几样，跟着声床换（KI-079）
  *  · 战斗层：进入战斗淡入脉冲鼓 + 低音 ostinato（R-1 派生），脱战 4s 淡出
  * 事件驱动：订阅 bus `'audio.music.encounter'`（本文件 declare module 扩展 GameEvents，勿改 EventBus.ts）。
  * `'audio.music.ambience'` 由 `AudioEngine` 订阅并**解析成行**再递进来（KI-077 的落点，见下面那段）。
@@ -19,10 +20,17 @@
  * 振荡，而 docs §4 那一行写的是**雾语林**的参数。玩家开局站在休垒（F Lydian），听到的底噪与铃点却永远是 C2/C Dorian，
  * 且 `regions.json > music.ambience` 那 21 个 id 全场零读者。现在这张表的行键进 `ambience.json`（validator 双向对账），
  * 这里只留 `OSTINATO` 那份**属于玩法调性**的 C（§1.1「主音不变、色彩变暗」），其余一律由 `setAmbience()` 换。
+ *
+ * KI-079 补的是同一句话里剩下的那一半：§1.2 那张表管的是「ambience **与世界音乐层**」，而世界音乐层
+ * （探索时那条慢旋律）在这里根本不存在——`regions.json > music.explore` 那 7 个 id 与 KI-077 之前的
+ * `music.ambience` 一样，是**指向一张不存在的表的引用**，校验器只看它"是不是字符串"所以永远不红。
+ * 现在它有了行（`data/json/explore.json`）、有了读者（下面那段环境层调度）、也终于有了对账。
+ * 而动机 `R-1` 的"四种变形"第一次成为可校验的东西：数据只许写 `prime`/`inversion`/`retrograde` 三个词之一，
+ * 度数由 `MOTIF_R1` 现推，节奏变形写成 `beatsPerNote`（1/2/0.5）。
  */
 import { bus } from '../core/EventBus'
 import type { MusicGrid } from '../core/RhythmClock'
-import type { AmbienceBed, AmbienceBell } from '../data/schema'
+import type { AmbienceBed, AmbienceBell, ExploreForm, ExploreScore } from '../data/schema'
 import { playBell, playNoise, playSweep } from './synth'
 
 declare module '../core/EventBus' {
@@ -41,6 +49,12 @@ declare module '../core/EventBus' {
      * 发射方 = `main.ts` 的区域切换那一处 + 开局那一句（开局必须在建图之前发，`AudioEngine` 缓存它）。
      */
     'audio.music.ambience': { id: string }
+    /**
+     * KI-079（§1.2 世界音乐层）：换探索曲。载荷形状与上面那条**完全一样**（只有 id，解析住在 `AudioEngine`），
+     * 发射点也是同一处——`main.ts` 在换区那一格连着发这两条，所以"和声先换、旋律最后"那句话
+     * 才在实现层真的有顺序可依（先 `ambience` 后 `explore`：前者开出 crossfade 窗口，后者看见窗口就把名册押后）。
+     */
+    'audio.music.explore': { id: string }
   }
 }
 
@@ -61,6 +75,23 @@ const XFADE_BARS = 8
  */
 const XFADE_NO_GRID_SEC = 1
 
+/**
+ * 动机 `R-1`（docs §1.2 音乐宪法）：遗响四音，主音之上的半音数。**全游戏只有这一处写它**，
+ * 三种音高变形都是从它**现推**的（下面的 `motifDegrees`），所以"数据里那条旋律"能指的形状只有三种。
+ * 度数为何不进了 `explore.json`：那等于给同一句话两个主人（ KI-074 拆手抄名单拆的正是这种东西）。
+ */
+const MOTIF_R1 = [0, 3, 7, 10]
+
+/** 旋律声部比数据里那个主音高多少个八度：§1.2 给的是**音级**（F/C/G…，与 drone 同音高记录），而 L3 要盖在 L1 之上 */
+const MELODY_OCTAVES = 2
+
+/** `R-1` 的一种音高变形 ⇒ 四个半音度数。倒影＝镜像到主音下方，逆行＝原形倒着念 */
+export function motifDegrees(form: ExploreForm): number[] {
+  if (form === 'inversion') return MOTIF_R1.map((d) => 0 - d)   // 不是 `-d`：那给主音留下 `-0`，而度数是要拿去比对的数
+  if (form === 'retrograde') return [...MOTIF_R1].reverse()
+  return [...MOTIF_R1]
+}
+
 export class MusicLayer {
   private ambGain: GainNode
   private battleGain: GainNode
@@ -73,6 +104,16 @@ export class MusicLayer {
   private dyingBeds: AudioNode[][] = []
   /** 此刻掷铃用的那一张名册。它比 `bed` **慢一个 crossfade 窗口**：§1.2「旋律层最后」 */
   private bellCfg: AmbienceBell | null = null
+  /** 此刻在奏的探索曲（同一句「旋律层最后」，与上面那格同一次兑现；`form: null` 的那一区不奏旋律） */
+  private song: ExploreScore | null = null
+  /** crossfade 窗口里押后待兑现的那一张曲；`null` = 没有待兑现的换（与 `dyingBeds` 同一类"窗口内的事先记着"） */
+  private songPending: ExploreScore | null = null
+  /** 下一个旋律音该排在什么时刻（秒）。0 = 还没起音，与战斗层 `nextBeat` 用同一个哨兵形状 */
+  private nextNote = 0
+  /** 当前这句念到动机里的第几个音（不随小节形状走，所以它是曲自己的位置，不是 `beatIdx`） */
+  private noteIdx = 0
+  /** 探索曲没有拍网时那一句只说一次：它与战斗层那条、换床那条各是一个主人，共用会把彼此静音 */
+  private warnedNoGridSong = false
   /** 换床窗口的终点；`Infinity` = 没有窗口在走（不用 0 当哨兵：假 AudioContext 的 `currentTime` 就从 0 开始） */
   private bedSwapAt = Infinity
   /**
@@ -103,7 +144,9 @@ export class MusicLayer {
     ambOut: AudioNode,
     grid: MusicGrid | null,
     /** KI-077：开局那一张床（`main.ts` 在建图之前发那条事件、`AudioEngine` 缓存并解析后递进来）。 */
-    bed: AmbienceBed | null
+    bed: AmbienceBed | null,
+    /** KI-079：开局那一区的探索曲。缓存的理由与上面那一条一字不差（建层比建引擎晚），两支事件在建图之前都发完了 */
+    song: ExploreScore | null
   ) {
     this.setGrid(grid)
     this.ambGain = ctx.createGain()
@@ -118,6 +161,7 @@ export class MusicLayer {
     this.bassLp.Q.value = 0.7
     this.bassLp.connect(this.battleGain)
     if (bed) this.applyBed(bed, 0) // 开局不 crossfade：还没有旧床可淡，直接建
+    if (song) this.applyExplore(song) // 同上：开局那条旋律不需要淡入，第一次 `update()` 就起音
   }
 
   /**
@@ -159,6 +203,31 @@ export class MusicLayer {
    */
   setAmbience(bed: AmbienceBed | null): void {
     if (bed) this.applyBed(bed, this.xfadeSec())
+  }
+
+  /**
+   * KI-079：换探索曲。它与 `setAmbience()` 之间**只有一个顺序**要守：§1.2 那句「旋律层最后」。
+   * 所以换床开出的那个 crossfade 窗口还没走完时，新的曲**押在 `songPending` 里**，由 `update()` 到点兑现；
+   * 没有窗口在走（开局那一张、或者只换曲不换床的装配形状）就当场换——这一格刻意不做"没有旧曲可淡"的判断，
+   * 因为押着不动的唯一理由就是"旧区还在淡"，那个理由不在场时押着等于让新区永远等一次不会来的兑现。
+   */
+  setExplore(song: ExploreScore | null): void {
+    if (!song) return
+    // "窗口在走"= `bedSwapAt` 是个**有限数**，不是"它比此刻晚"：`Infinity` 是上面那格声明的"没有窗口"哨兵，
+    // 拿 `>` 比就会把第一帧之后的每一次换曲都当成窗口内，押进 `songPending` 等一次永远不会来的兑现。
+    if (Number.isFinite(this.bedSwapAt)) this.songPending = song
+    else this.applyExplore(song)
+  }
+
+  private applyExplore(song: ExploreScore): void {
+    // **按对象身份比**：同一张曲重发（区域 tick 的噪声、调试面板重复点）一格都不动——
+    // 少了这一眼，每次重发都把 `noteIdx` 拽回 0，听感上是乐句永远念不完第一个音。
+    // 与 `applyBed()` 里那句"同一张床重发：一次都不动图"是同一口径（KI-077 的读数钉过那一侧）。
+    if (song === this.song) return
+    this.song = song
+    // 换曲 = 从动机第一个音重新开始念（旧曲那一句已经排出去的音一张不抹，与 KI-066 同一条纪律）
+    this.noteIdx = 0
+    this.nextNote = 0
   }
 
   /** §1.2 那 8 小节有多长：吃当前网格。没有网格时走实名的 1 秒兜底，并且说一次 */
@@ -346,6 +415,14 @@ export class MusicLayer {
       this.bellCfg = this.bed?.bell ?? null
       // 窗口一关就按新床的间隔重掷下一颗：旧床那颗在飞的铃不抹，但"下一颗隔多久"从此属于新区域
       this.nextChime = this.bellCfg ? now + this.chimeGap() : Infinity
+      /**
+       * KI-079：同一句「旋律层最后」的第二半——探索曲与铃点**在同一次兑现里**换名册（它们是同一层，
+       * 分两次换就是"旋律"有了两个时刻）。押着的那张不存在时一句都不做：换床不等于换曲。
+       */
+      if (this.songPending) {
+        this.applyExplore(this.songPending)
+        this.songPending = null
+      }
     }
     // 音色石铃：docs §4 的 L4 稀疏事件。间隔/音高/亮度/锤感全部来自当前那张床（KI-077）；
     // `bell: null` 的那一区（无耳深窖）这里一道门就安静下来——那是设计，不是漏配。
@@ -358,6 +435,40 @@ export class MusicLayer {
         hammer: Math.random() < cfg.hammerP
       })
       this.nextChime = now + this.chimeGap()
+    }
+    /**
+     * KI-079：L3 对位旋律（§1.2「世界音乐层」那一半）。一个音 = `beatsPerNote` 拍，
+     * 音高 = 这一区主音抬 `MELODY_OCTAVES` 个八度之后、按 `form` 现推出的 `R-1` 度数（§1.2 音乐宪法）。
+     * 挂在 `ambGain` 上与铃点同一只总线，所以 §5.4 的消音与 §8 的混音规则对它一律成立。
+     *
+     * 每帧最多排**一个**音，而不是像战斗层那样 `while` 补排：调度一落后（KI-067 量过的那种标签页节流，
+     * 真实读数是一帧 28 拍），"把欠的拍补回来"在这里听感上是把过去十秒的旋律砸进现在这一帧。
+     * 探索曲不是机制（没有拍点要对齐），所以代价是"一串音被跳过"，这是这一层付得起的。
+     */
+    const song = this.song
+    if (song && song.form !== null) {
+      if (this.beatSec === 0) {
+        // 与战斗层那条同一口径：没有拍网就一个音都不排，并且说一次。铃点不吃网格（它按秒掷），
+        // 所以"底噪在响、铃在响、却没有旋律"这一格要单独讲出来，才读得懂是装配断了而不是设计如此。
+        if (!this.warnedNoGridSong) {
+          this.warnedNoGridSong = true
+          bus.emit('log', { level: 'warn', msg: 'music: 没收到拍网（audio.music.grid），探索曲不起音（铃点不受影响，它按秒掷）' })
+        }
+      } else if (now >= this.nextNote) {
+        const step = song.beatsPerNote * this.beatSec
+        const degrees = motifDegrees(song.form)
+        const semi = degrees[this.noteIdx % degrees.length]
+        const t = Math.max(this.nextNote, now + 0.02)
+        playSweep(this.ctx, this.ambGain, t, {
+          f0: song.rootHz * 2 ** ((MELODY_OCTAVES * 12 + semi) / 12),
+          dur: step,
+          peak: song.peak,
+          type: song.wave,
+        })
+        // 从**这次真正排出去的时刻**往前走，不是从 `nextNote` 加：后者在被跳过之后会一直欠着（见上面那段代价）
+        this.nextNote = t + step
+        this.noteIdx++
+      }
     }
     // 战斗层调度
     const scheduling = this.battleOn || (this.battleStopAt > 0 && now < this.battleStopAt)

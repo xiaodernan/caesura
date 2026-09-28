@@ -1187,6 +1187,41 @@ export interface AmbienceBed {
   bell: AmbienceBell | null
 }
 
+/**
+ * §1.2 音乐宪法允许的一种**音高变形**：`R-1`（C–Eb–G–Bb = 半音 [0,3,7,10]）的原形、倒影、逆行。
+ * 度数不在数据里——它们由 `src/audio/music.ts > MOTIF_R1` 现推，那张表抄一遍度数就是给同一句话两个主人。
+ * 节奏变形（扩张/压缩）不是一种"形"，而是 `beatsPerNote` 那一格：1 = 原样、2 = 扩张（augment）、0.5 = 压缩（diminut）。
+ */
+export type ExploreForm = 'prime' | 'inversion' | 'retrograde'
+
+/**
+ * 一区的探索曲（docs/audio.md §1.2「ambience 与世界音乐层」里"世界音乐层"那一半，KI-079）。
+ * 分成两支而不是"五个可选字段"：§1.2 那一格写的是**要么有调、要么无调**，
+ * 「无调却写着 peak」这种半真半假的行在类型层就不该写得出来（与 `AmbienceBed` 那对
+ * 「有层才有 lpHz/breath」是同一条纪律，只是那里靠 validator、这里靠类型）。
+ * `id` 与 `regions.json > music.explore` 双向对账。
+ */
+export interface ExploreTonal {
+  id: string
+  form: ExploreForm
+  /** 这一区的主音（§1.2 那张表的第一列，绝对 Hz 而不是音名）。validator 钉的是"一区一个"：共用主音 = 跨那两区什么色彩都没换 */
+  rootHz: number
+  /** 一个音占几拍（相对**当前区域的网格**，所以 84BPM 的营地与 60BPM 的深窖写同一个 2 是完全不同的速度） */
+  beatsPerNote: number
+  /** 旋律声部波形：与 `AmbienceLayer.wave` 同一份枚举 */
+  wave: 'sine' | 'square' | 'sawtooth' | 'triangle'
+  /** 声部峰值：与 `AmbienceLayer.peak` 同一量纲，validator 按可听范围判死 */
+  peak: number
+}
+
+/** 未竟厅那一格：§1.2「C→无调」——这一区**没有调性旋律**，只有 `ambience.json` 那张名册里的半音铃点在奏 */
+export interface ExploreAtonal {
+  id: string
+  form: null
+}
+
+export type ExploreScore = ExploreTonal | ExploreAtonal
+
 export interface RegionData {
   id: string
   /** IP_SEED §14 registered vocabulary */

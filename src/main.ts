@@ -160,7 +160,10 @@ const homeRegion = streaming.regionAt(player.pos)
 let shownRegion = homeRegion?.id ?? null
 // KI-077（docs §1.2/§4）：开局那一张环境声床。这一句必须在 `audio.start()` 之前发——
 // 建图要等首次用户手势，而 `AudioEngine` 缓存事件，所以"玩家出生在哪一区"这件事不会丢。
-if (homeRegion) bus.emit('audio.music.ambience', { id: homeRegion.music.ambience })
+if (homeRegion) {
+  bus.emit('audio.music.ambience', { id: homeRegion.music.ambience })
+  bus.emit('audio.music.explore', { id: homeRegion.music.explore }) // KI-079：同一句理由，开局那一区的旋律也要在建图之前缓存住
+}
 const surface = new Surface(regions, 0.5, (r) => !streaming.isRegionUnlocked(r))
 combat.floorAt = (pos) => surface.floorAt(pos)?.y ?? null // 弹道撞地：射进灰盒地板就落地
 /**
@@ -406,8 +409,11 @@ const core = {
       // 所以这里写的是 home，AISystem.syncClock 决定当前用的是谁的拍。
       rhythm.setBpm(here.grid.bpm, here.grid.beatsPerBar)
       rpg.loot.setRegion(here.id) // §9.4 区域上修（KI-030①）：掉落层第一次认识「玩家此刻在谁的地上」
-      // KI-077（§1.2）：底噪与铃点跟着脚下的区域换，音乐层自己按 8 小节做 crossfade
+      // KI-077（§1.2）：底噪与铃点跟着脚下的区域换，音乐层自己按 8 小节做 crossfade。
+      // KI-079：探索曲跟着换，而**顺序是这句话的一部分**——先发的这条开出淡变窗口，后发的那条看见窗口
+      // 就把旋律押到窗口走完再换（§1.2「和声先换、旋律层最后」）。反过来写就是旋律先跳、底噪后淡。
       bus.emit('audio.music.ambience', { id: here.music.ambience })
+      bus.emit('audio.music.explore', { id: here.music.explore })
       if (booted) checkpoints.request('region') // 读档后第一次「进区域」是恢复现场，不该顺手覆盖存档
       shownRegion = here.id
       bus.emit('ui.notify', { text: here.displayName, kind: 'info' })

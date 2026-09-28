@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { bus } from '@/core/EventBus'
 import { AudioEngine } from '@/audio/AudioEngine'
-import { ambienceBeds } from '@/data'
-import type { AmbienceBed } from '@/data/schema'
+import { ambienceBeds, exploreScores } from '@/data'
+import type { AmbienceBed, ExploreScore, ExploreTonal } from '@/data/schema'
 import { BELL_CENTS } from '@/audio/synth'
 import { FakeAudioContext, FakeNode, fakeWindow, fakeWindowWebkitOnly, type FakeWindow } from '../support/fakeAudio'
 
@@ -450,6 +450,193 @@ describe('start()：把音乐层接上（KI-077：id→行 的解析住在这一
     expect(() => engine.update(-1)).not.toThrow()
     expect(() => engine.update(0.016)).not.toThrow()
     expect(made.length).toBe(0)
+  })
+})
+
+/**
+ * KI-079 的引擎侧：`explore.json` 的那一行**真的**走到图上。
+ *
+ * 分工与 KI-077 那一层一模一样：`audio-music.test.ts` 用**合成行**证"跟着喂进来的行走"（写死一张真表
+ * 就成了实现自证），这一份用**真表里的行**证"id→行 的解析在真表上还走得通"。后者只用合成行就永远量不到，
+ * 而那一步正是 KI-079 补的缺口——`regions.json > music.explore` 那 7 个 id 之前指向一张不存在的表。
+ *
+ * ⚠️ 这里的每一行都配一张 `bell: null` 的床（`mus_silence_amb`／无 drone 的 `mus_unfinished_hall_amb`），
+ * 这不是巧合而是**测量条件**：旋律音与石铃泛音在图上长得一样（都是 `playSweep` 起的一条振荡），
+ * 只有把铃点从名册里请出去，"图上带 `set` 事件的振荡"才只可能是探索曲排出去的（认法见 `melodyHz`）。
+ * 换床时"旋律层最后"那一半由音乐层那份测试量，这里不重复。
+ */
+describe('探索曲的 id→行（KI-079）', () => {
+  const song = (id: string): ExploreScore => {
+    const s = exploreScores.find((x) => x.id === id)
+    if (!s) throw new Error(`explore.json 里没有 '${id}'：表改过 id，这一份测试的输入要跟着改（红的是测试，不是引擎）`)
+    return s
+  }
+  const bed = (id: string): AmbienceBed => {
+    const b = ambienceBeds.find((x) => x.id === id)
+    if (!b) throw new Error(`ambience.json 里没有 '${id}'`)
+    return b
+  }
+  /** 有调那两支：把行取出来并要求它真的带 form（红在取行这一处，而不是在每条断言里补 `!`） */
+  const tonal = (id: string): ExploreTonal => {
+    const s = song(id)
+    if (s.form === null) throw new Error(`'${id}' 在表里是无调那一行，这几条用例把它当有调行喂了：表改过要跟着改测试`)
+    return s
+  }
+  const DEEPS = tonal('mus_earless_deeps_explore')   // 倒影，主音 73.42，每音 2 拍
+  const FELL = tonal('mus_fellcarillon_explore')     // 逆行，主音 98，每音 1 拍
+  const HALL = song('mus_unfinished_hall_explore')    // `form: null`（§1.2「C→无调」）
+  const DEEPS_BED = bed('mus_silence_amb')            // 三条 40Hz 层，`bell: null`
+  const HALL_BED = bed('mus_unfinished_hall_amb')     // 无 drone，铃点 40–50s 一颗
+  /** 深窖那一区表的网格（`regions.json > rg_earless_deeps.grid`）：一拍 = 1 秒，量起来不必跟小数较劲 */
+  const GRID60 = { bpm: 60, beatsPerBar: 1 }
+
+  /**
+   * R-1 = C–Eb–G–Bb ⇒ 度数 0/3/7/10；倒影即取负，再抬两个八度（数据里那个主音记在 L1 同音高，旋律要盖在之上）。
+   * **这四个数是手算的**：`audio-music.test.ts` 已经钉过 `motifDegrees` 交出的就是这份度数表，
+   * 这里再 import 一次就只能证明"代码等于代码"，而这一条要证的是"表里那一行走到了图上"。
+   */
+  const DEEPS_HZ = [293.68, 246.95, 196.01, 164.82]      // 73.42 ×4，然后 −3/−7/−10 半音
+  const FELL_HZ = [698.46, 587.34, 466.17, 392]          // 98 ×4 之后从 +10 倒着念回 0
+
+  /**
+   * 旋律音的记号：`playSweep` 用 `setValueAtTime` 起音，drone 与呼吸 LFO 是直接写 `.value`（没有这条事件）。
+   * 认法只在"这一床没有铃点"时成立（见文件头那段），所以每条用例都点名了自己配的那张床。
+   */
+  const melodyHz = (ctx: FakeAudioContext): number[] => ctx.nodes
+    .filter((n) => n.kind === 'osc' && n.startedAt.length)
+    .map((n) => {
+      const e = n.params.frequency.events.find((x) => x.kind === 'set')
+      return e ? Number(e.value.toFixed(2)) : null
+    })
+    .filter((f): f is number => f !== null)
+    .sort((a, b) => a - b)
+  /**
+   * "此刻在唱哪一行"= 名册去重后整体比。用去重而不是整条序列，是因为这一层要钉的是**行的身份**，
+   * 而动机按 `beatsPerNote` 循环念：时间推得越久，序列里同一个音出现得越多（序列本身那一半在音乐层那份测试里钉）。
+   */
+  const songSet = (ctx: FakeAudioContext): number[] => [...new Set(melodyHz(ctx))].sort((a, b) => a - b)
+
+  /** 只走引擎的公开面推进时间（`start` + `update`），一帧半秒 */
+  function run(ctx: FakeAudioContext, engine: AudioEngine, frames: number, dt = 0.5): void {
+    for (let i = 0; i < frames; i++) { ctx.advance(dt); engine.update(dt) }
+  }
+
+  it('开局：explore 事件在建图**之前**也不丢，start 之后按表里那一行排出倒影四个音', () => {
+    installWindow()
+    const engine = mkEngine()
+    bus.emit('audio.music.grid', GRID60)
+    bus.emit('audio.music.ambience', { id: DEEPS_BED.id })
+    bus.emit('audio.music.explore', { id: DEEPS.id })
+    engine.start()
+    const ctx = LAST()
+    // 前提证人：那张没有铃的床真的落了图（否则下面的"旋律是这一行的"可以因为整层没起而恒真）
+    expect(melodyHz(ctx).length, '一个旋律音都还没排，先量 drone：图上有带 `set` 事件的振荡 = 底噪不来自那张床')
+      .toBe(0)
+    expect(ctx.nodes.filter((n) => n.kind === 'osc').map((n) => n.params.frequency.value).sort((a, b) => a - b),
+      '深窖那张床的 drone 没落到图上 = 前提断了')
+      .toEqual([DEEPS_BED.breath!.hz, ...DEEPS_BED.layers.map((l) => l.hz)].sort((a, b) => a - b))
+    run(ctx, engine, 20)   // 10 秒 ÷ 每音 2 拍（=2s）⇒ 恰好一轮四个音，一格不多一格不少（多了就是补排欠账）
+    expect(melodyHz(ctx).length, `10 秒里排了 ${melodyHz(ctx).length} 个音，一轮该是四个（每音 2 拍）`)
+      .toBe(DEEPS_HZ.length)
+    expect(songSet(ctx), `深窖那一行唱出的不是倒影那四个音（主音 ${DEEPS.rootHz}，每音 ${DEEPS.beatsPerNote} 拍）`)
+      .toEqual([...DEEPS_HZ].sort((a, b) => a - b))
+    void engine
+  })
+
+  it('图建好之后再发曲：走 `setExplore`，新区那一行的音高真的换上图（且不顺手换床）', () => {
+    installWindow()
+    const engine = mkEngine()
+    bus.emit('audio.music.grid', GRID60)
+    bus.emit('audio.music.ambience', { id: DEEPS_BED.id })
+    engine.start()
+    const ctx = LAST()
+    run(ctx, engine, 20)
+    expect(songSet(ctx), '还没发过探索曲，图上就有了旋律音 = 表外写死了一条曲子').toEqual([])
+    const lp0 = ctx.count('biquad')   // 只换曲不换床：低通名册一格都不许动
+    bus.emit('audio.music.explore', { id: FELL.id })
+    run(ctx, engine, 20)   // 每音 1 拍 = 1s，10 秒排满两圈半
+    expect(songSet(ctx), `换曲之后图上的名册 ≠ 逆行那一行（${FELL_HZ.join('/')}`)
+      .toEqual([...FELL_HZ].sort((a, b) => a - b))
+    expect(melodyHz(ctx).some((h) => DEEPS_HZ.includes(h)), '换曲之后还在唱上一行的音').toBe(false)
+    expect(ctx.count('biquad'), '只换曲却建了新的低通 = 顺手换了一张床').toBe(lp0)
+    void engine
+  })
+
+  it('`form: null` 的那一行（未竟厅）：一个旋律音都不排，而那句"未知 id"也没有说（说明确实解析到了这一行）', () => {
+    installWindow()
+    const engine = mkEngine()
+    const msgs: string[] = []
+    live.push(bus.on('log', (p) => { if (p.msg.includes('探索曲')) msgs.push(p.msg) }))
+    bus.emit('audio.music.grid', { bpm: 92, beatsPerBar: 4 })
+    bus.emit('audio.music.ambience', { id: HALL_BED.id })
+    bus.emit('audio.music.explore', { id: HALL.id })
+    engine.start()
+    const ctx = LAST()
+    expect(ctx.count('compressor'), '没有床也没有曲就把建图跳过了').toBe(1)
+    run(ctx, engine, 20)   // 10 秒：这张床的铃最快也要 40s，drone 一条都没有
+    expect(melodyHz(ctx), '`form: null` 被当成了顺行，或者表外那条写死的底噪还在').toEqual([])
+    expect(ctx.count('osc'), '未竟厅按 §4 是「无 drone」，图上却起了振荡').toBe(0)
+    expect(msgs.length, `解析到了行却还说"未知探索曲"（实测 ${msgs.length} 句）= id→行 那一步在骗人`).toBe(0)
+    void engine
+  })
+
+  it('未知 id：每只引擎恰好一句 warn，而且上一张曲继续唱（既不清空也不换成别的行）', () => {
+    installWindow()
+    const msgs: string[] = []
+    live.push(bus.on('log', (p) => { if (p.msg.includes('未知探索曲')) msgs.push(p.msg) }))
+    const engine = mkEngine()
+    const said = engineCount   // 与 KI-077 那条同一本账：`AudioEngine` 没有 dispose（TD-006 第二腿），历史引擎都订阅着这一条
+    bus.emit('audio.music.grid', GRID60)
+    bus.emit('audio.music.ambience', { id: DEEPS_BED.id })
+    bus.emit('audio.music.explore', { id: DEEPS.id })
+    engine.start()
+    const ctx = LAST()
+    run(ctx, engine, 8)   // 先让上一张曲真的唱出来（否则"仍然唱在深窖名册上"可以因为一颗都没响而恒真）
+    expect(songSet(ctx), '开局那一行一个音都没排，这条量不了"保留上一张曲"')
+      .toEqual([...DEEPS_HZ.slice(0, 2)].sort((a, b) => a - b))
+    const lp0 = ctx.count('biquad')
+    bus.emit('audio.music.explore', { id: 'mus_typo_not_in_table' })
+    expect(msgs.length, `未知 id 要说一次，但实测 ${msgs.length} 句 / ${said} 只引擎 = 同一只说了不止一句`).toBe(said)
+    bus.emit('audio.music.explore', { id: 'mus_typo_not_in_table' })   // 重发：记账那只 Set 只有第二次看得见
+    expect(msgs.length, `同一个未知 id 重发又说了一轮（实测 ${msgs.length}）`).toBe(said)
+    expect(ctx.count('biquad'), '未知 id 却建了第二套 drone = 那句 warn 之外还偷偷换了床').toBe(lp0)
+    run(ctx, engine, 20)
+    expect(songSet(ctx), '未知 id 之后不再唱上一张曲 = `this.song` 被清成了 null（读侧静默失效）')
+      .toEqual([...DEEPS_HZ].sort((a, b) => a - b))
+    expect(msgs.length, '之后每帧又喊 = 把没配好当成常态噪声').toBe(said)
+    void engine
+  })
+
+  it('没收到拍网 ⇒ 探索曲一个音都不排（drone 不受影响，它也不吃网格），而那句话说一次', () => {
+    installWindow()
+    const engine = mkEngine()
+    const msgs: string[] = []
+    live.push(bus.on('log', (p) => { if (p.msg.includes('探索曲不起音')) msgs.push(p.msg) }))
+    bus.emit('audio.music.ambience', { id: DEEPS_BED.id })
+    bus.emit('audio.music.explore', { id: DEEPS.id })
+    engine.start()          // 一条网格都没发：`RhythmClock` 那条腿断了就是这个形状
+    const ctx = LAST()
+    run(ctx, engine, 20)
+    expect(melodyHz(ctx), '没有拍网却排了旋律 = 音乐层自己又猜了一个 BPM（KI-066 那份副本回归）').toEqual([])
+    // 这一条的分子是 1 而不是 `engineCount`：那句 warn 住在音乐层的 `update()` 里，而历史引擎没人替它们推时间
+    expect(msgs.length, `没网格要说一次，但这条只该本用例那只引擎说（实测 ${msgs.length}）`).toBe(1)
+    expect(ctx.count('osc'), 'drone 也被那道门带走了（它不吃网格）').toBe(DEEPS_BED.layers.length + 1)
+    void engine
+  })
+
+  /**
+   * 组合根那条顺序（源码门，KI-058 那套"那一行是代码不是注释"的写法）。
+   * `main.ts` 发这两句的**顺序**就是 §1.2「旋律层最后」能不能实现的全部：ambience 先开发窗口，
+   * 紧随的探索曲才被押到窗口走完；反过来写两句都不报错，只是旋律抢跑——自动面上今天量不到，
+   * 所以这一格只能由源码钉住（与视线闸门那条同一手法）。
+   */
+  it('main.ts 两处发射点都是"先声床后探索曲"，而且全场只有这两处', () => {
+    const src = readFileSync(new URL('../../src/main.ts', import.meta.url), 'utf8').split(/\r?\n/)
+    const emits = src.filter((l) => /bus\.emit\('audio\.music\.(ambience|explore)'/.test(l) && !l.trim().startsWith('//'))
+    expect(emits.length, `audio.music.{ambience,explore} 在组合根里应有恰好两对发射点，实测 ${emits.length} 行`)
+      .toBe(4)
+    expect(emits.map((l) => /audio\.music\.(\w+)/.exec(l)?.[1]), '每一对里声床都排在探索曲之前（顺序就是那句"旋律层最后"）')
+      .toEqual(['ambience', 'explore', 'ambience', 'explore'])
   })
 })
 

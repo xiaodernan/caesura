@@ -20,10 +20,15 @@ import {
   arrayLiterals, callArgLiterals, fieldUnion, interfaceFields, objectKeys,
   refFieldUnion, schemaBlocks, unionMembers, vocabDriftErrors,
 } from './schema-vocab.mjs'
+// KI-079：探索曲表的判据本体（同一族理由，见上面那两行）。这里只把 findings 报成 ERROR/WARN，
+// 并把 `report.num` 管的数值可闻带留在本文件——那张名单的两端都要能在测试里喂合成行。
+import {
+  EXPLORE_ATONAL_FIELDS, EXPLORE_FORMS, EXPLORE_TONAL_FIELDS, EXPLORE_WAVES, exploreFindings,
+} from './explore-rules.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const JSON_DIR = resolve(ROOT, 'src/data/json')
-const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json', 'shop.json', 'states.json', 'ambience.json']
+const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json', 'shop.json', 'states.json', 'ambience.json', 'explore.json']
 // Phase 6-B：对话风格枚举与任务标注（narrative.md §3.2 / §28 图例）
 const CHOICE_STYLES = new Set(['blunt', 'poetic', 'silent', 'provoke'])
 const QUEST_TAGS = new Set(['D', 'C', 'H', 'M'])
@@ -90,6 +95,8 @@ const AMB_LAYER_FIELDS = ['hz', 'wave', 'peak', 'detune']
 const AMB_BELL_FIELDS = ['scale', 'everySec', 'peak', 'hammerP']
 /** `AmbienceLayer.wave`：WebAudio `OscillatorNode.type` 里能当 drone 的那四种（`custom` 不算） */
 const AMB_WAVES = new Set(['sine', 'square', 'sawtooth', 'triangle'])
+/* KI-079 那五张（两支字段表 + 拼出来的白名单 + 音高变形 + 波形 + 每音拍数档位）住在 `explore-rules.mjs`，
+   与上面的 `AMB_*` 不是同一份声明：探索曲的波形主人是 `ExploreTonal.wave`，各有一条对账。 */
 
 /**
  * 词表对账表（KI-074 起，KI-076 把载体泛化）。上面这些名单每一张都写着「与 X 对齐」——**手抄**。
@@ -145,6 +152,11 @@ const VOCAB_PAIRS = [
   { at: 'AmbienceLayer', from: 'src/data/schema.ts', name: 'drone 单层字段', source: (c) => interfaceFields(c.blocks, 'AmbienceLayer'), copied: AMB_LAYER_FIELDS, where: 'AMB_LAYER_FIELDS' },
   { at: 'AmbienceBell', from: 'src/data/schema.ts', name: 'L4 铃点字段', source: (c) => interfaceFields(c.blocks, 'AmbienceBell'), copied: AMB_BELL_FIELDS, where: 'AMB_BELL_FIELDS' },
   { at: 'AmbienceLayer.wave', from: 'src/data/schema.ts', name: 'drone 波形', source: (c) => fieldUnion(c.blocks, 'AmbienceLayer', 'wave'), copied: [...AMB_WAVES], where: 'AMB_WAVES' },
+  /* ---- KI-079：探索曲那三张 + 音高变形词表（同一份四波形在 schema 里是**另一条声明**，所以另起一张名单，不借 `AMB_WAVES`） ---- */
+  { at: 'ExploreForm', from: 'src/data/schema.ts', name: 'R-1 的音高变形', source: (c) => unionMembers(c.blocks, 'ExploreForm'), copied: [...EXPLORE_FORMS], where: 'EXPLORE_FORMS' },
+  { at: 'ExploreTonal', from: 'src/data/schema.ts', name: '有调探索曲字段', source: (c) => interfaceFields(c.blocks, 'ExploreTonal'), copied: EXPLORE_TONAL_FIELDS, where: 'EXPLORE_TONAL_FIELDS' },
+  { at: 'ExploreAtonal', from: 'src/data/schema.ts', name: '无调探索曲字段', source: (c) => interfaceFields(c.blocks, 'ExploreAtonal'), copied: EXPLORE_ATONAL_FIELDS, where: 'EXPLORE_ATONAL_FIELDS' },
+  { at: 'ExploreTonal.wave', from: 'src/data/schema.ts', name: '探索曲波形', source: (c) => fieldUnion(c.blocks, 'ExploreTonal', 'wave'), copied: [...EXPLORE_WAVES], where: 'EXPLORE_WAVES' },
 ]
 
 /**
@@ -1696,6 +1708,38 @@ function validateAmbience() {
   }
 }
 
+// ---- explore.json（KI-079：docs/audio.md §1.2 的「世界音乐层」第一次成为一张表）----
+/**
+ * 一行的探索曲 = 一个区域探索时那条慢旋律（§2.1 四层里的 L3 对位旋律）。判据是那四件事，
+ * **本体住在 `explore-rules.mjs`**（①字段集合落在 schema 那两支之一 ②§1.2 音乐宪法：音高变形只有三个词、
+ * 节奏变形只许 1/2/0.5 ③有调／无调两支的形状不能混 ④与 `regions.json > music.explore` 双向对账 + 一区一主音）。
+ * 搬走的唯一理由是"两端都要量得动"：本文件一被 import 就去校验真表并 `process.exit`，
+ * 于是拒不拒那一半只能在能 spawn 的环境里测（KI-075 说这台机器不能）。这里剩的是两张嘴：
+ * findings → ERROR/WARN，加 `report.num` 管的那两格可闻带（那种说法全场共用，不该有第二个主人）。
+ */
+function validateExplore() {
+  const file = 'explore.json'
+  const list = data[file]
+  if (!isArr(list)) { report.error(file, file, '顶层必须是数组'); return }
+  // 判据本体住在 `explore-rules.mjs`（上面四件事全在那一份里），这里只当"把 findings 报成 ERROR/WARN 的那张嘴"：
+  // 搬走之后测试可以喂合成行量"拒不拒"，门禁与测试读的是同一条规则，而不是两份各自手抄。
+  for (const f of exploreFindings(list, data['regions.json'] ?? [])) {
+    if (f.level === 'warn') report.warn(f.file, f.where, f.msg)
+    else report.error(f.file, f.where, f.msg)
+  }
+  /**
+   * 数值可闻带留在本文件走 `report.num`：缺失 / 非有限数 / 越界那三种说法全场由它一家管，搬走就是第二个主人。
+   * `rootHz` 20–4000：这一格写的是**音级**（与同区那张床的 drone 同高），旋律声部在运行时才抬八度。
+   * `peak` ≤0.2：§8 的 ambience 总线要让位给战斗层，一条永远在奏的旋律比铃点贵得多。
+   */
+  for (const [i, row] of list.entries()) {
+    if (!isObj(row) || row.form === null) continue
+    const w = isStr(row.id) ? row.id : `[${i}]`
+    report.num(file, `${w}.rootHz`, row.rootHz, { min: 20, max: 4000, name: 'rootHz' })
+    report.num(file, `${w}.peak`, row.peak, { min: 0.0001, max: 0.2, name: 'peak' })
+  }
+}
+
 // ---- movements.json ----
 /** loot.json 里真正会掉出来的物品全集（rolls + firstKill）。点亮源必须落在这里面，否则那一页永远点不亮 */
 function lootedItemIds() {
@@ -2419,6 +2463,8 @@ validatePlayer()
 const regionIds = validateRegions(enemyIds, lootIds, rarityIds, stateDefs)
 // KI-077：环境声床表要对账 regions 的 music.ambience，所以排在它后面
 validateAmbience()
+// KI-079：探索曲表同理对账 regions 的 music.explore（顺带把 music.battle 那一格的实情登记在报告里）
+validateExplore()
 // movements 最后跑：它要同时对账 items（点亮源）、loot（源是否真会掉）、progression（开槽里程碑）
 validateMovements(itemIds)
 // 叙事层（Phase 6-B）：NPC → 任务 → 对话（后者依赖前两者的 id）

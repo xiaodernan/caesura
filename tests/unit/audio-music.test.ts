@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { bus } from '@/core/EventBus'
-import { MusicLayer } from '@/audio/music'
+import { MusicLayer, motifDegrees } from '@/audio/music'
 import type { MusicGrid } from '@/core/RhythmClock'
-import type { AmbienceBed } from '@/data/schema'
+import type { AmbienceBed, ExploreScore } from '@/data/schema'
 import { BELL_CENTS } from '@/audio/synth'
 import { FakeAudioContext, FakeNode } from '../support/fakeAudio'
 
@@ -82,9 +82,41 @@ const BED_CRYPT: AmbienceBed = {
   bell: null
 }
 
+/* ------------------------------------------------------------------ */
+/* KI-079：合成探索曲。形状 = `schema.ts > ExploreScore`，值同样是这里编的      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * 与上面那批床同一条纪律：**不抄 `explore.json`**，因为这一层要验的是"跟着喂进来的那一行走"，
+ * 拿真表验等于让实现自证。`rootHz` 一律挑在名册之外的数（下面三种变形的音高全部落在 69.59…1140.9，
+ * 与合成床的 drone（87.31/49/43.65/130.81/40）、驼鼓 150、军鼓 200、`OSTINATO` 那八个数、
+ * 以及两张床的铃点名册（700/800、1100/1200）都不重合，所以"图里出现 147.46"只可能是旋律。
+ */
+const SONG_PRIME: ExploreScore = { id: 'song_prime', form: 'prime', rootHz: 31, beatsPerNote: 1, wave: 'triangle', peak: 0.02 }
+const SONG_INVERSION: ExploreScore = { id: 'song_inversion', form: 'inversion', rootHz: 31, beatsPerNote: 1, wave: 'triangle', peak: 0.02 }
+const SONG_RETROGRADE: ExploreScore = { id: 'song_retrograde', form: 'retrograde', rootHz: 31, beatsPerNote: 1, wave: 'triangle', peak: 0.02 }
+/** 未竟厅那一区（§1.2「C→无调」）：有 id 却没音高参数，读侧要能接住这一格 */
+const SONG_ATONAL: ExploreScore = { id: 'song_atonal', form: null }
+/** 换区那一行的新曲：主音与顺行那三行差得远（640…1140.35），所以"图上出现 1140.35"只可能是新行开口 */
+const SONG_FELL: ExploreScore = { id: 'song_fell', form: 'retrograde', rootHz: 160, beatsPerNote: 1, wave: 'sine', peak: 0.015 }
+/** 窗口里第二次换曲（后一张说话那条用例）：又一个不撞任何名册的主音 */
+const SONG_LATEST: ExploreScore = { id: 'song_latest', form: 'inversion', rootHz: 210, beatsPerNote: 1, wave: 'sine', peak: 0.015 }
+
+/**
+ * 探索曲用例的拍网：**75/4 而不是休垒真值那 84/4**，是有意选的测量条件。
+ * 75 ⇒ 一拍 = 0.8 秒，于是 `beatsPerNote` 的三档（0.5/1/2）都是帧步（0.05s）的整数倍，
+ * 音距读数不掺帧粒度误差。网格是**注入**的输入（KI-066 之后这一层没有自己的 BPM），
+ * 这几条量的是"间隔跟着 `beatsPerNote` 走"，与某个区的表值是不是 75 无关；
+ * 84 那份留给上面那批拍距用例，它们钉的正是"跟着注入的那张网格走"。
+ */
+const SONG_GRID: MusicGrid = { bpm: 75, beatsPerBar: 4 }
+const SONG_BEAT = 60 / SONG_GRID.bpm
+
 function rig(
   grid: MusicGrid | null = GRID,
-  bed: AmbienceBed | null = null
+  bed: AmbienceBed | null = null,
+  /** KI-079：开局那一区的探索曲。给 `null` 就是"这条腿没接"的形状，与真引擎在收到事件之前的状态一致 */
+  song: ExploreScore | null = null
 ): { ctx: FakeAudioContext; layer: MusicLayer; musicOut: FakeNode; ambOut: FakeNode } {
   const ctx = new FakeAudioContext()
   const musicOut = ctx.createGain()
@@ -94,7 +126,8 @@ function rig(
     musicOut as unknown as AudioNode,
     ambOut as unknown as AudioNode,
     grid,
-    bed
+    bed,
+    song
   )
   return { ctx, layer, musicOut, ambOut }
 }
@@ -237,6 +270,73 @@ function chimeBatches(batches: FakeNode[][], inner: FakeNode): FakeNode[][] {
 function chimeFrames(frames: Array<{ t: number; nodes: FakeNode[] }>, inner: FakeNode): Array<{ t: number; nodes: FakeNode[] }> {
   return frames.filter((f) => chimeBatches([f.nodes], inner).length > 0)
 }
+
+/**
+ * KI-079：从批次里认出"这就是探索曲的一个音"。认法 = **挂在 ambience 总层上、且整批只有一条振荡**。
+ *
+ * 这条判据为什么够用：旋律音走 `playSweep`（一条振荡 + 一只包络把手），而同一层上唯一的另一种声音是石铃——
+ * 一敲至少 8 条振荡（6 条非谐泛音 + FM 载波与调制），永远不会被读成"一个音"。换床时旧床那组 drone 也接在
+ * 总层上，但它们是**构造那一瞬**建的，不会落进任何一帧的"新建批次"里。
+ *
+ * 每个音取四样：`t` = 决定要排它的那一帧（与铃点同一口径，不掺前瞻的 0.02），`hz`/`wave`/`peak` = 表里那三格
+ * 是否真的落到了图上，`start`/`span` = 这个音被排的时刻与它自己响了多长。
+ */
+interface MelodyNote { t: number; hz: number; wave: string; peak: number; start: number; span: number }
+function melodyNotes(frames: Array<{ t: number; nodes: FakeNode[] }>, inner: FakeNode): MelodyNote[] {
+  return frames
+    .filter((f) => f.nodes.filter((n) => n.kind === 'osc').length === 1 && reaches(f.nodes, inner))
+    .map((f) => {
+      const osc = f.nodes.find((n) => n.kind === 'osc')!
+      const env = f.nodes.find((n) => n.kind === 'gain')!
+      return {
+        t: f.t,
+        hz: startedFreqs([osc])[0],
+        wave: osc.type,
+        peak: env.params.gain.peakValue(),
+        start: osc.startedAt[0],
+        span: osc.stoppedAt.length ? osc.stoppedAt[0] - osc.startedAt[0] : -1,
+      }
+    })
+}
+
+/** 推时间并直接读出旋律音（上面那两条 helper 的组合，KI-079 那批用例每帧都在用） */
+function songOf(ctx: FakeAudioContext, layer: MusicLayer, inner: FakeNode, count: number, step = 0.05): MelodyNote[] {
+  return melodyNotes(beatFrames(ctx, layer, count, step), inner)
+}
+
+/**
+ * 「逐音读数」那批用例的版本：先证明这一段窗口里**一记铃都没有**，再把音交给 `melodyNotes`。
+ *
+ * 为什么需要这道栅栏（不是美化）：`melodyNotes` 认一个音靠的是"这一批节点只有一条振荡"，而一记石铃
+ * 是同一帧里 ≥7 条振荡——铃与某个旋律音撞上同一帧，那个音就从读数里**消失**，表现是音距凭空翻倍、
+ * 序列少一格。KI-079 第一版就在 A 床上红过一次（「0.5 拍/音的理想音距 0.400s，实测 0.900s」——少认一个音
+ * 的双倍间距 0.800s 再加帧格与调度前瞻的零头）。红在栅栏这一句里说的是"测量床不合格"，红在下面那些断言里会被读成
+ * "生产少排了一个音"——两者必须分得开，否则修好床的人不知道该改哪一边。机制本身不靠"我记得红过一次"，
+ * 那次随机红的概率我也没量到（只把 `beatsPerNote` 那一条换回带铃 A 床、去掉栅栏连跑 8 遍，0 红）：钉住它的是
+ * 下面那条「把铃钉成每帧一颗」的对照。
+ */
+function songOfQuiet(ctx: FakeAudioContext, layer: MusicLayer, inner: FakeNode, count: number, step = 0.05): MelodyNote[] {
+  const frames = beatFrames(ctx, layer, count, step)
+  const bells = chimeFrames(frames, inner).length
+  expect(bells, `这一段窗口里出现 ${bells} 记石铃 ⇒ "一批只有一条振荡"那个认法会把同帧的旋律音吞掉：`
+    + '逐音读数的床要 `bell: null`（理由见 KI-079 那个 describe 顶部，与 `melodyNotes` 上面那段）').toBe(0)
+  return melodyNotes(frames, inner)
+}
+
+/**
+ * 间隔读数的上界为什么是「理想音距 + 一帧」而不是精确值：生产排的是 `Math.max(nextNote, now + 0.02)`
+ * （前瞻，防调度落在过去），于是每个音都被抬到"决定那一帧 + 0.02"，落在帧网格上就比理想值多出不到一帧。
+ * 下界仍是理想值——这一条才是判据：**音符不许比表说的更密**。
+ * 容差不从生产的 0.02 抄（那是 `synth`/调度的裕量，不是这里的被测量），从测试自己声明的 `step` 推。
+ */
+const inBand = (gap: number, ideal: number, step: number): boolean => gap >= ideal - 1e-9 && gap <= ideal + step + 1e-9
+
+/**
+ * "这个音高属于那一名册"的认法。容差 0.6Hz：合成行之间**最窄**的两个音也差 5Hz 以上
+ * （旧行 124…220.94 / 新行 640…1140.35 / 第三行 471.43…840），而生产算的是同一个浮点式子，
+ * 所以 0.6 既不会把邻行认进来，也不会因为取整自己红。
+ */
+const inSet = (hz: number, set: number[]): boolean => set.some((x) => Math.abs(hz - x) <= 0.6)
 
 
 describe('ambience：区域声床（KI-077：底噪与铃点跟着注入的那张床走）', () => {
@@ -832,7 +932,7 @@ describe('调度积压（KI-067：切回标签页那一秒不许打出机枪）'
       const ctx = new FakeAudioContext()
       const musicOut = ctx.createGain()
       const ambOut = ctx.createGain()
-      const layer = new MusicLayer(ctx as unknown as AudioContext, musicOut as unknown as AudioNode, ambOut as unknown as AudioNode, GRID, BED_A)
+      const layer = new MusicLayer(ctx as unknown as AudioContext, musicOut as unknown as AudioNode, ambOut as unknown as AudioNode, GRID, BED_A, null)
       const logs: string[] = []
       const off = bus.on('log', (l) => logs.push(l.msg))
       open.push(off)
@@ -1065,5 +1165,304 @@ describe('网格中途变化的落点（KI-069）：战斗正在演时小节位�
     const worst = Math.max(...on.slice(1).map((t, i) => t - on[i]))
     expect(worst, `同值重发之后最大拍间 ${worst.toFixed(3)}s（她的拍长 ${(60 / 108).toFixed(3)}s）= 重复转发被当成了变化，把下一拍又往前推了一格`)
       .toBeLessThan((60 / 108) * 1.15)
+  })
+})
+
+/**
+ * KI-079：探索曲（docs §1.2「世界音乐层」那一半 + 音乐宪法「一切旋律只许派生自 R-1 及其四种变形」）。
+ *
+ * 这一层此前**根本没有世界音乐层**：`regions.json > music.explore` 那 7 个 id 指向一张不存在的表，
+ * 校验器只看它"是不是字符串"所以永远不红。现在表有了（`explore.json`）、读者有了（下面这些用例），
+ * 那句宪法第一次成为可校验的东西——所以这几条量的不是"有没有声音"，而是**音高到底是从哪儿来的**：
+ *  ① 度数：只许 `MOTIF_R1` 那四个数（0/3/7/10 半音）与它的倒影/逆行，写不出第六个音；
+ *  ② 节奏：`beatsPerNote` 三档（0.5/1/2）= §1.2 的"压缩/原形/扩张"，同时管音距与音长；
+ *  ③ 音色：`wave`/`peak` 两格进了图，不是读侧写死；
+ *  ④ 转场：`form: null` 那一区不唱旋律而铃点照掷，以及「旋律层最后」那一半句（与 KI-077 的铃点腿同一个窗口）。
+ *
+ * ⚠️ 与合成床同一条纪律：这里的行是**编的**，不抄 `explore.json`。拿真表验"跟着行走"等于让实现自证。
+ * `id→行` 那一条腿（真表能不能走到图上）在 `audio-engine.test.ts`，与本文件的分工同 KI-077。
+ *
+ * ⚠️ **逐音读数的这几条用 `BED_CRYPT`（`bell: null`）并走 `songOfQuiet` 那道栅栏，这是测量条件不是省事**：
+ * 旋律音的认法是"这一批节点里只有一条振荡"（见 `melodyNotes`），而一记石铃也是 `playSweep` 起的一条条振荡——
+ * 铃与某个音落进同一帧，那个音就从读数里**消失**，音距当场翻倍。KI-079 第一版带着 A 床跑这些条时红过
+ * 一次（同一份树连跑两遍可以一遍绿一遍红，红话正是「0.5 拍/音的理想音距 0.400s，实测 0.900s」；
+ * 0.900 ≈ 少认一个音后的双倍间距 0.800 再加帧格与调度前瞻的零头，判据的上沿 0.450 与它不是一个数，别把这条读成"整倍")。
+ * **这句成因不是靠那次随机红撑住的**：把 `beatsPerNote` 那一条单独换回带铃的 A 床、去掉栅栏连跑 8 遍是 0 红
+ * （6 秒窗口里每 4–6 秒掷一记铃，撞上一帧旋律音的机会本来就薄），所以"带铃的床必然吞音"这句话我没量到，不许照着写。
+ * 真正钉住机制的是下面
+ * 「把铃钉成每帧一颗」那条对照：它让 `melodyNotes` 只剩首音，而图上一条音不少，
+ * 所以该改的是测量床，不是 `music.ts`。铃与旋律共存由 `form: null` 与"没收到拍网"那两条量，
+ * 它们吃的是**铃那一侧**的认法（一敲 ≥6 条振荡，容得下多出来的那一条），所以那两条仍用带铃的 A 床。
+ */
+describe('探索曲（KI-079）：R-1 的三种形态、每音占几拍、以及"旋律层最后"', () => {
+  /**
+   * R-1 = C–Eb–G–Bb ⇒ 度数 0/3/7/10。顺行那一串是把 31Hz 抬两个八度（×4 = 124）后逐度数推半音：
+   * 124、+3 = 147.46、+7 = 185.79、+10 = 220.94。**这四个数是手算的**，不从 `music.ts` import——
+   * import 过来比就只能证明"代码等于代码"，而这一条要证的是"代码等于 docs §1.2 那四个音"。
+   */
+  const PRIME = [124, 147.46, 185.79, 220.94]
+  const INVERSION = [124, 104.27, 82.76, 69.59]
+  const RETROGRADE = [220.94, 185.79, 147.46, 124]
+  const FELL = [1140.35, 958.92, 761.09, 640]
+  const LATEST = [840, 706.35, 560.63, 471.43]
+
+  it('顺行（prime）：四个度数按表推开，念完回到第一个音（动机是循环，不是一次性的四音）', () => {
+    const { ctx, layer, ambOut } = rig(SONG_GRID, BED_CRYPT, SONG_PRIME)
+    open.push(() => layer.dispose())
+    const notes = songOfQuiet(ctx, layer, layerGain(ctx, ambOut), 130, 0.05)   // 6.5 秒 ÷ 每音 0.8 秒 ⇒ 8 个音
+    expect(notes.length, `只排了 ${notes.length} 个音，量不了"念完回到第一个音"（要 ≥8）`).toBeGreaterThanOrEqual(8)
+    expect(notes.slice(0, 8).map((n) => +n.hz.toFixed(2)), '旋律不是 R-1 那四个数、或者没循环回去')
+      .toEqual([...PRIME, ...PRIME])
+  })
+
+  it('倒影（inversion）：同一个起点向下走，四个度数取负——与顺行只差一个符号', () => {
+    const { ctx, layer, ambOut } = rig(SONG_GRID, BED_CRYPT, SONG_INVERSION)
+    open.push(() => layer.dispose())
+    const notes = songOfQuiet(ctx, layer, layerGain(ctx, ambOut), 60, 0.05)
+    expect(notes.length, `只排了 ${notes.length} 个音`).toBeGreaterThanOrEqual(4)
+    expect(notes.slice(0, 4).map((n) => +n.hz.toFixed(2)), '倒影不是"向下念的那一串"')
+      .toEqual(INVERSION)
+    // 与顺行共用第一个音（= 主音），这是"派生"而不是"另起一首"的形状
+    expect(notes[0].hz, '倒影的起点不等于本区主音 ⇒ 那不是倒影，是另一张表').toBeCloseTo(PRIME[0], 2)
+  })
+
+  it('逆行（retrograde）：同一批音高倒着念，第一个音是顺行的最后一个', () => {
+    const { ctx, layer, ambOut } = rig(SONG_GRID, BED_CRYPT, SONG_RETROGRADE)
+    open.push(() => layer.dispose())
+    const notes = songOfQuiet(ctx, layer, layerGain(ctx, ambOut), 60, 0.05)
+    expect(notes.length, `只排了 ${notes.length} 个音`).toBeGreaterThanOrEqual(4)
+    expect(notes.slice(0, 4).map((n) => +n.hz.toFixed(2)), '逆行不是顺行的倒序')
+      .toEqual(RETROGRADE)
+    // 三种形态吃的必须是**同一批**音高（只是顺序与方向不同）：名册整体对账
+    expect([...notes.slice(0, 4).map((n) => +n.hz.toFixed(2))].sort((a, b) => a - b), '逆行用的是另一批音高（不是 R-1 的变形）')
+      .toEqual([...PRIME].sort((a, b) => a - b))
+  })
+
+  it('`beatsPerNote` 三档（0.5/1/2）：音距按拍走，音长也按拍走（§1.2 的"扩张/压缩"）', () => {
+    const run = (bn: number): { gap: number; span: number } => {
+      const { ctx, layer, ambOut } = rig(SONG_GRID, BED_CRYPT, { ...SONG_PRIME, beatsPerNote: bn })
+      open.push(() => layer.dispose())
+      const notes = songOfQuiet(ctx, layer, layerGain(ctx, ambOut), 120, 0.05)   // 6 秒
+      expect(notes.length, `每音 ${bn} 拍时只排了 ${notes.length} 个音，量不了音距`).toBeGreaterThanOrEqual(3)
+      const gaps = notes.slice(1).map((n, i) => n.t - notes[i].t)
+      for (const g of gaps) {
+        expect(inBand(g, bn * SONG_BEAT, 0.05),
+          `${bn} 拍/音的理想音距 ${(bn * SONG_BEAT).toFixed(3)}s，实测 ${g.toFixed(3)}s（判据 = [理想, 理想+一帧]，多出的那点来自调度前瞻 + 帧网格，见 inBand 上面那段`)
+          .toBe(true)
+      }
+      expect(new Set(gaps.map((g) => +g.toFixed(4))).size, `同一张曲里音距不稳：${gaps.map((g) => g.toFixed(3)).join('/')}`).toBe(1)
+      return { gap: gaps[0], span: notes[1].span }
+    }
+    const half = run(0.5)
+    const one = run(1)
+    const two = run(2)
+    // 音长（`playSweep` 的 dur）也必须跟 `beatsPerNote`：读侧写死一个 dur 时上面三条断言一条都不红
+    // 比值取 1.8~2.2 而不是等号：`span` 里掺着合成侧的 attack 与尾音裕量，那两个数属于 `synth.ts`，不在这里抄。
+    const doubles = (a: number, b: number): boolean => b > a * 1.8 && b < a * 2.2
+    expect(doubles(half.span, one.span), `音长没随拍数翻倍：${half.span}→${one.span}`)
+      .toBe(true)
+    expect(doubles(one.span, two.span), `音长没随拍数翻倍：${one.span}→${two.span}`)
+      .toBe(true)
+    expect(doubles(half.gap, one.gap), `音距没随拍数翻倍：${half.gap}→${one.gap}`).toBe(true)
+    expect(doubles(one.gap, two.gap), `音距没随拍数翻倍：${one.gap}→${two.gap}`).toBe(true)
+  })
+
+  /**
+   * KI-079 的**反向对照**：上面那些条为什么不许带铃的床，这一条让它响一次给大家看。
+   *
+   * 把铃的间隔钉成 0.05 秒 = 帧步，于是**除第一帧外每一帧**都有一颗铃，而第一帧之后的每一个旋律音都必然
+   * 与一颗铃同帧（第一帧没铃的机制在下面 ① 之前那段：床的窗口恰好在那一帧兑现，`nextChime` 被当场推后一格）。
+   * 判据的形状是"两个读者读同一件事"：
+   *  ① **逐帧收下所有新建节点**再数名册音——频率落在 `PRIME` 那四个数上的振荡，一条 `playSweep` 就是一条，
+   *    这是"生产排了多少音"；
+   *  ② **按帧认**——`melodyNotes` 那句"这一批只有一条振荡"，这是"我的读数看见了多少"。
+   * ① 站得住而 ② 塌成一个 ⇒ 吞音的是认法，不是调度。所以修的是测量床（`BED_CRYPT` + `songOfQuiet`），
+   * 不是 `music.ts`——这一条也就是那条改动唯一的、不靠"我记得红过一次"的凭据。
+   * 实测读数（跑出来的，不是推算的）：120 帧里 119 帧有铃、唯一没铃的是第一帧；图上有 8 条名册音，
+   * 而 `melodyNotes` 只认回 1 个（首音）。
+   */
+  it('把铃钉成每帧一颗 ⇒ 图上一条音不少、读数只剩首音（吞音的是认法，不是调度）', () => {
+    /** 与 A 床同一组 drone，只把铃的间隔钉死成一帧：`rnd(a, a)` 与 `Math.random` 无关，不需要伪造随机数 */
+    const bell = BED_A.bell
+    if (!bell) throw new Error('A 床本来就该带铃，这条对照没有主体')
+    const BED_EVERY_FRAME: AmbienceBed = { ...BED_A, id: 'bed_bell_every_frame', bell: { ...bell, everySec: [0.05, 0.05] } }
+    const { ctx, layer, ambOut } = rig(SONG_GRID, BED_EVERY_FRAME, SONG_PRIME)
+    open.push(() => layer.dispose())
+    const inner = layerGain(ctx, ambOut)
+    const frames = beatFrames(ctx, layer, 120, 0.05)   // 6 秒：一拍/音 = 0.8s 一个 ⇒ 七个音上下
+    // 主体先到场：铃除了**第一帧**之外每一帧都在响。第一帧没铃的机制是量过的（不是猜）：`applyBed(bed, 0)`
+    // 把窗口排在 0，而第一帧的 `now` 已经是 0.05，于是那一帧先走进兑现分支、把 `nextChime` 重掷成
+    // `now + 0.05 = 0.1`（`music.ts:417`），同一帧末尾那道 `now >= nextChime` 就不成立了。
+    // 偏偏就是这一帧让下面 ② 认出首音，所以"没铃的只有第一帧"不是容差，而是这条对照的形状本身。
+    const bellFree = frames.filter((f) => chimeBatches([f.nodes], inner).length === 0)
+    expect(bellFree.map((f) => f.t), `没铃的帧是 [${bellFree.map((f) => f.t).join(',')}]（共 ${frames.length} 帧）——不是"只有第一帧"，铃就没盖满窗口，这一条什么都没对照`)
+      .toEqual([frames[0].t])
+    // ① 逐帧收下所有新建节点再数名册音：一次 `playSweep` 一条振荡，与"这一批有几条"的切分无关。
+    //    （不能问 `ctx.nodes` 的总账——KI-071 之后排完就停的节点会被回收，末尾清点天然少一截。）
+    const scheduled = frames.flatMap((f) => f.nodes).filter((n) => n.kind === 'osc' && inSet(startedFreqs([n])[0], PRIME)).length
+    expect(scheduled, '六秒里图上一条旋律音都没排 = 这一条量的不是"认法吞音"').toBeGreaterThanOrEqual(6)
+    // ② 按帧认：只剩第一个音（那一帧还没有铃），其余全被同帧的铃盖掉
+    const recognized = melodyNotes(frames, inner)
+    expect(recognized.length, `带铃的窗口里认法只该剩首音，实测认到 ${recognized.length} 个 ⇒ 铃与音没有同帧，对照不成立`).toBe(1)
+    expect(+recognized[0].hz.toFixed(2), '认到的那一个不是首音 = 第一帧也有铃，对照的形状与上面那段说不上')
+      .toBe(PRIME[0])
+    expect(scheduled - recognized.length, `排了 ${scheduled} 条、认到 ${recognized.length} 个，差不足 5 ⇒ 吞得不够多，这条读不出名堂`).toBeGreaterThanOrEqual(5)
+    // 栅栏用的就是"这一窗有几记铃"这一个数：它先红，红话说的是"床不合格"而不是"生产少排音"
+    expect(chimeFrames(frames, inner).length > 0, '`songOfQuiet` 那道栅栏读的数在这里，栅栏没道理不响').toBe(true)
+  })
+
+  it('`wave` 与 `peak` 两格进了图，不是读侧写死一个音色（0.0137 这种非整数才叫读数）', () => {
+    const song: ExploreScore = { id: 'song_sq', form: 'prime', rootHz: 31, beatsPerNote: 1, wave: 'square', peak: 0.0137 }
+    const { ctx, layer, ambOut } = rig(SONG_GRID, BED_CRYPT, song)
+    open.push(() => layer.dispose())
+    const notes = songOfQuiet(ctx, layer, layerGain(ctx, ambOut), 30, 0.05)
+    expect(notes.length, '一个音都没排，波形/音量无从谈起').toBeGreaterThanOrEqual(2)
+    // `playSweep` 不传 type 时默认 sine ⇒ 读到 square 只可能是那一格被吃了
+    expect(notes.every((n) => n.wave === 'square'), `波形没跟着表：${notes.map((n) => n.wave).join('/')}`).toBe(true)
+    expect(notes.every((n) => Math.abs(n.peak - song.peak) < 1e-9), `峰值没跟着表：${notes.map((n) => n.peak).join('/')}`).toBe(true)
+  })
+
+  it('`form: null` 的那一区（§1.2 未竟厅「C→无调」）：一个旋律音都不排，但铃点照掷', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5)   // A 床间隔 = 5s，铃点时刻可预算
+    const { ctx, layer, ambOut } = rig(SONG_GRID, BED_A, SONG_ATONAL)
+    open.push(() => layer.dispose())
+    const inner = layerGain(ctx, ambOut)
+    const frames = beatFrames(ctx, layer, 30, 0.5)   // 15 秒 ⇒ 无调那一行什么旋律都不该有
+    expect(melodyNotes(frames, inner).length, '无调那一行却排出了旋律音 = `form: null` 被当成了 prime').toBe(0)
+    expect(chimeFrames(frames, inner).length, '没有旋律却连铃点也一起哑了（两件事各有一道门）').toBeGreaterThanOrEqual(2)
+    expect(ctx.count('osc'), 'drone 也被带走了（无调只表示无旋律）').toBeGreaterThan(BED_A.layers.length)
+  })
+
+  it('没收到拍网 ⇒ 探索曲一个音都不排，而那句话说一次（铃点不吃网格，照掷）', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5)
+    const msgs: string[] = []
+    open.push(bus.on('log', (l) => { if (l.msg.includes('探索曲')) msgs.push(l.msg) }))
+    const { ctx, layer, ambOut } = rig(null, BED_A, SONG_PRIME)
+    open.push(() => layer.dispose())
+    const inner = layerGain(ctx, ambOut)
+    const frames = beatFrames(ctx, layer, 40, 0.5)   // 20 秒：够排 25 个音，如果它吃网格的话
+    expect(melodyNotes(frames, inner).length, '没有拍网却排了旋律（`beatSec === 0` 那道门没生效）').toBe(0)
+    expect(msgs.length, `没拍网这件事要说，但实测 ${msgs.length} 句 = 每帧都在喊`).toBe(1)
+    expect(chimeFrames(frames, inner).length, '探索曲那道门把铃点一起带走了（间隔是按秒掷的）').toBeGreaterThanOrEqual(2)
+  })
+
+  it('调度晾 10 秒 ⇒ 只起**一个**音，排在"现在"而不是过去，之后回到正常音距（KI-067 的旋律腿）', () => {
+    // `BED_CRYPT` 的理由见本文件顶部那段（逐音测量的六条共用同一条测量条件）：这一条还要再过一次
+    // "一记 10 秒的跳跃"，旧床那颗**过期**的铃与旋律音必定挤进同一批节点。
+    const { ctx, layer, ambOut } = rig(SONG_GRID, BED_CRYPT, SONG_PRIME)
+    open.push(() => layer.dispose())
+    const inner = layerGain(ctx, ambOut)
+    expect(songOfQuiet(ctx, layer, inner, 4, 0.05).length, '前 0.2 秒连一个音都没排，后面量不了"欠账"').toBe(1)
+    ctx.advance(10)
+    const before = ctx.nodes.length
+    layer.update()
+    const afterHitch = melodyNotes([{ t: Number(ctx.currentTime.toFixed(6)), nodes: ctx.nodes.slice(before) }], inner)
+    expect(afterHitch.length, `晾了 10 秒之后一帧排出 ${afterHitch.length} 个音 = 把欠的旋律砸进现在（机枪）`).toBe(1)
+    expect(afterHitch[0].start, `那个音排在 ${afterHitch[0].start}，而钟在 ${ctx.currentTime} = 往过去调度`).toBeGreaterThan(ctx.currentTime)
+    // 重新锚定之后音距回到拍长（不是继续把过去十秒摊平）：两拍 + 一点余量，才数得出"第二个音"
+    const later = songOfQuiet(ctx, layer, inner, 45, 0.05)
+    expect(later.length, `重锚之后 2.25 秒只排了 ${later.length} 个音（一拍/音该有两个）`).toBeGreaterThanOrEqual(2)
+    const gap = later[1].t - later[0].t
+    expect(inBand(gap, SONG_BEAT, 0.05),
+      `重锚后的音距该落在 ${SONG_BEAT}~${(SONG_BEAT + 0.05).toFixed(2)}s（一拍/音），实测 ${gap.toFixed(3)}s`).toBe(true)
+  })
+
+  it('同一张曲重发 ⇒ 乐句位置一格都不动（区域 tick 的重复噪声不许把句子拽回开头）', () => {
+    const { ctx, layer, ambOut } = rig(SONG_GRID, BED_CRYPT, SONG_PRIME)
+    open.push(() => layer.dispose())
+    const inner = layerGain(ctx, ambOut)
+    const a = songOfQuiet(ctx, layer, inner, 20, 0.05)   // 1.0 秒 ⇒ 前两个音（度数 0、3）
+    expect(a.map((n) => +n.hz.toFixed(2)), `前两个音不是动机的开头（实测 ${a.map((n) => n.hz).join('/')}）`).toEqual([PRIME[0], PRIME[1]])
+    layer.setExplore(SONG_PRIME)                   // 同一张曲、同一个对象重发
+    const b = songOfQuiet(ctx, layer, inner, 40, 0.05)  // 接下来 2 秒
+    expect(b.length, '重发之后干脆不排了').toBeGreaterThanOrEqual(2)
+    expect(+b[0].hz.toFixed(2), '重发把 `noteIdx` 拽回 0 = 每帧重发一次就永远念不完第二个音')
+      .toBe(+PRIME[2].toFixed(2))
+  })
+
+  it('只换曲、不换床 ⇒ 当场换（押着不动的唯一理由是"旧区还在淡"，那个理由不在场时不许等）', () => {
+    const { ctx, layer, ambOut } = rig(SONG_GRID, BED_A, SONG_PRIME)
+    open.push(() => layer.dispose())
+    const inner = layerGain(ctx, ambOut)
+    layer.setExplore(SONG_FELL)
+    const notes = songOf(ctx, layer, inner, 40, 0.05)
+    expect(notes.length, '换曲之后一个音都没排').toBeGreaterThanOrEqual(1)
+    expect(inSet(notes[0].hz, FELL), `没有窗口在走却押着不换（第一个音 ${notes[0].hz} 仍属旧行）`).toBe(true)
+  })
+
+  /**
+   * 上面那条只覆盖到"开局那次窗口还没兑现之前"的形状（`bedSwapAt` 那时还是个有限数）。
+   * **窗口兑现之后**换曲才是装配里真正常见的那一条（走了一段路、进新区），而它是这份代码的真缺陷：
+   * `update()` 把窗口收在哨兵 `Infinity` 上，`Infinity > now` 恒真，于是用"比此刻晚"当"窗口在走"的读法
+   * 会把此后每一次换曲都押进 `songPending`——那里再没有东西来兑现它，新区永远不出旋律。
+   */
+  it('开局那次窗口兑现之后再换曲 ⇒ 仍然当场换（`Infinity` 是"没有窗口"的哨兵，不是"窗口永远走不完"）', () => {
+    const { ctx, layer, ambOut } = rig(SONG_GRID, BED_A, SONG_PRIME)
+    open.push(() => layer.dispose())
+    const inner = layerGain(ctx, ambOut)
+    const old = songOf(ctx, layer, inner, 8, 0.05)   // 推过 `update()`：窗口的兑现处跑过了
+    expect(old.length, '开局那一行一个音都没排，这条量不了"换曲之后当场不当场"').toBeGreaterThanOrEqual(1)
+    expect(old.every((n) => inSet(n.hz, PRIME)), '开局那一行唱的不是自己的名册').toBe(true)
+    layer.setExplore(SONG_FELL)
+    const next = songOf(ctx, layer, inner, 8, 0.05)
+    expect(next.length, '换曲之后一个音都不排 = 那一行被押进了一个永远走不完的窗口').toBeGreaterThanOrEqual(1)
+    expect(inSet(next[0].hz, FELL), `没有窗口在走却押着不换（第一个音 ${next[0].hz} 仍属旧行）`).toBe(true)
+  })
+
+  it('「旋律层最后」的旋律腿：窗口里仍唱旧那一行，兑现那一帧换新行、并从动机第一个音重新开始', () => {
+    const G120: MusicGrid = { bpm: 120, beatsPerBar: 4 }
+    const XF = 8 * G120.beatsPerBar * (60 / G120.bpm)   // 8 小节 = 16s：与 KI-077 那批用例同一测量条件
+    const { ctx, layer, ambOut } = rig(G120, BED_A, SONG_PRIME)
+    open.push(() => layer.dispose())
+    const inner = layerGain(ctx, ambOut)
+    const before = songOf(ctx, layer, inner, 8, 0.25)   // 走到 t = 2.0
+    expect(before.length, '换床之前连三个音都没唱，量不了"什么时候换行"').toBeGreaterThanOrEqual(3)
+    expect(before.every((n) => inSet(n.hz, PRIME)), '开局那一行没唱自己的名册').toBe(true)
+    layer.setAmbience(BED_B)                            // bedSwapAt = 2 + 16 = 18
+    layer.setExplore(SONG_FELL)                         // 同一次换区带来的新曲：必须押着
+    const seen: Array<{ t: number; hz: number }> = []
+    for (let guard = 0; guard < 60 && !seen.some((n) => inSet(n.hz, FELL)); guard++) {
+      seen.push(...songOf(ctx, layer, inner, 4, 0.25))
+    }
+    const firstNew = seen.findIndex((n) => inSet(n.hz, FELL))
+    expect(firstNew, `推到 t=${seen.length ? seen[seen.length - 1].t : '?'} 新行也没开口 = 窗口兑现处没接探索曲`).toBeGreaterThan(-1)
+    const inWindow = seen.slice(0, firstNew)
+    expect(inWindow.length, `窗口里只唱了 ${inWindow.length} 个旧音就换了行 = 旋律抢在和声淡变前面（§1.2 那句反了）`)
+      .toBeGreaterThanOrEqual(4)
+    expect(inWindow.every((n) => inSet(n.hz, PRIME)), `窗口里出现别的行：${inWindow.map((n) => n.hz).join('/')}`).toBe(true)
+    // 兑现那一帧重新开始念：逆行形态的第一个音 = 顺行的最后一个（1140.35），不是接着上一句的位置
+    expect(+seen[firstNew].hz.toFixed(2), '换行之后没有从动机第一个音重新开始（`applyExplore` 没重置 `noteIdx`）')
+      .toBe(+FELL[0].toFixed(2))
+    const after = songOf(ctx, layer, inner, 30, 0.25)   // 兑现之后再唱 7.5 秒
+    expect(after.length, '换行之后唱不满四个音').toBeGreaterThanOrEqual(4)
+    expect(after.every((n) => inSet(n.hz, FELL)), `兑现之后又唱回旧行：${after.filter((n) => !inSet(n.hz, FELL)).map((n) => n.hz).join('/')}`).toBe(true)
+    expect(XF, '上面那条推帧预算是照 8 小节 = 16s 写的；窗口长度变了这一条会先假红').toBe(16)
+  })
+
+  it('窗口里连换两张曲 ⇒ 后一张说话（`songPending` 是单格，不是队列）', () => {
+    const G120: MusicGrid = { bpm: 120, beatsPerBar: 4 }
+    const { ctx, layer, ambOut } = rig(G120, BED_A, SONG_PRIME)
+    open.push(() => layer.dispose())
+    const inner = layerGain(ctx, ambOut)
+    layer.setAmbience(BED_B)
+    layer.setExplore(SONG_FELL)
+    layer.setExplore(SONG_LATEST)   // 两次换区挤进同一个窗口（区域 tick 很快）
+    const seen: Array<{ t: number; hz: number }> = []
+    for (let guard = 0; guard < 80 && !seen.some((n) => inSet(n.hz, LATEST)); guard++) {
+      seen.push(...songOf(ctx, layer, inner, 4, 0.25))
+    }
+    const opened = seen.findIndex((n) => inSet(n.hz, LATEST))
+    expect(opened, '押着的那两张都没开口').toBeGreaterThan(-1)
+    expect(seen.slice(0, opened).some((n) => inSet(n.hz, FELL)), '中间那张也唱了一遍（押注被当成了队列）').toBe(false)
+  })
+
+  it('`motifDegrees` 是那张表的唯一主人：三行度数各是它自己，交出的是副本', () => {
+    expect(motifDegrees('prime'), '顺行 = R-1 本形（C–Eb–G–Bb ⇒ 0/3/7/10）').toEqual([0, 3, 7, 10])
+    expect(motifDegrees('inversion'), '倒影 = 度数取负（音程上下翻转）').toEqual([0, -3, -7, -10])
+    expect(motifDegrees('retrograde'), '逆行 = 顺序倒过来（度数不变）').toEqual([10, 7, 3, 0])
+    const a = motifDegrees('prime')
+    a[0] = 999
+    expect(motifDegrees('prime')[0], '交出去的是 `MOTIF_R1` 本身：调用方一改就把全表改了')
+      .toBe(0)
   })
 })
