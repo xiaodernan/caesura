@@ -636,7 +636,7 @@ export class CombatManager {
       const pending = e.pendingProjectile
       if (!pending) continue
       e.markShotFired()
-      const { spec, frames, reaction } = pending
+      const { spec, frames, reaction, feintPunishMs } = pending
       const origin: Vec3 = { x: e.pos.x, y: e.pos.y + (spec.offsetY ?? 1.1), z: e.pos.z }
       const target: Vec3 = { x: this.player.pos.x, y: this.player.pos.y + 0.9, z: this.player.pos.z }
       // 不追求必中：给一点散布，玩家有走位/翻滚的余地（§5 远程威胁可读性）
@@ -650,6 +650,9 @@ export class CombatManager {
         pinTicks: spec.pinTicks ?? 0, parryable: true,
         sfxHit: spec.sfxHit, vfxHit: spec.vfxHit, shake: spec.shake ?? frames.shake ?? 'normal',
         reaction,
+        // §14.4 诱饵惩罚跟着"离手的这一发"走（KI-085）：只有 burst.feint.shot 那一发带数，
+        // 其余两发是 null ⇒ 玩家对真箭的无敌帧不该被记成"被骗"。
+        feintPunishMs: feintPunishMs ?? undefined,
         loudness: frames.loudness ?? 4
       }, tick)
       this.afterLaunch(e.pos, spec, frames, dir)
@@ -728,8 +731,13 @@ export class CombatManager {
       // §5.2/§5.3：弹体是唯一「防御成功后还活着」的攻击——被弹开就原路回去找主人
       react: (t, outcome) => this.reflectProjectile(pr, outcome, t)
     }, tick)
-    if (out === 'immune') pr.hitIds.add('player') // 无敌帧：从身上穿过去，之后该落地落地
-    else if (out !== 'parry' && out !== 'perfectBlock') this.projectiles.kill(pr, 'hit')
+    if (out === 'immune') {
+      pr.hitIds.add('player') // 无敌帧：从身上穿过去，之后该落地落地
+      // §14.4「骗翻滚后硬直 0.6s」（KI-085）：这一发的无敌帧是花在**诱饵**上的，所以这一滚没换到
+      // 安全——惩罚不由这里判"该不该"，只把表里的毫秒数交给翻滚的主人；判据（必须在滚、
+      // 何时兑现）全在 `beginFeintPunish` 那一格。
+      if (pr.feintPunishMs !== undefined) this.player.beginFeintPunish(pr.feintPunishMs)
+    } else if (out !== 'parry' && out !== 'perfectBlock') this.projectiles.kill(pr, 'hit')
     const e = this.ai.enemies.find((x) => x.id === pr.ownerId)
     if (e) this.checkCrumple(e, tick)
   }

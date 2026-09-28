@@ -40,6 +40,9 @@ import { mojibakeFindings } from './text-integrity.mjs'
 // KI-084：锁定四数的两条**关系**判据（同一族理由：那两句文档折成的不等式要在测试里喂得出非法数组）。
 // 四个数各自的 min 仍走本文件的 `report.sub`——缺失/非有限数/越界那三种说法全场由它一家管。
 import { LOCKON_FIELDS, lockOnFindings } from './lockon-rules.mjs'
+// KI-085：连发/诱饵那几条**关系**判据的本体（同一族理由：`at` 与 `everyTicks` 与 `punishMs` 之间的
+// 序关系要在测试里喂得出非法行）。count/everyTicks/at[i]/punishMs 各自的可闻带仍走本文件的 report.num。
+import { BURST_FIELDS, FEINT_FIELDS, burstFindings } from './burst-rules.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const JSON_DIR = resolve(ROOT, 'src/data/json')
@@ -175,6 +178,10 @@ const VOCAB_PAIRS = [
   { at: 'BattleSilent', from: 'src/data/schema.ts', name: '无配乐战斗档字段', source: (c) => interfaceFields(c.blocks, 'BattleSilent'), copied: BATTLE_SILENT_FIELDS, where: 'BATTLE_SILENT_FIELDS' },
   /* ---- KI-084：锁定那一块的字段名单（判据住在 `lockon-rules.mjs`，名单与它同一份声明，不再手抄） ---- */
   { at: 'LockOnConfig', from: 'src/data/schema.ts', name: '锁定四数字段', source: (c) => interfaceFields(c.blocks, 'LockOnConfig'), copied: LOCKON_FIELDS, where: 'LOCKON_FIELDS' },
+  /* ---- KI-085：连发与诱饵那两块的字段名单（判据住在 `burst-rules.mjs`；此前 burst 是 schema 里的
+     内联类型，没有任何名单可对账，所以拼错一个键（`faint`）只会静默失效。提成具名接口才有主人可读。 ---- */
+  { at: 'ProjectileBurst', from: 'src/data/schema.ts', name: '连发字段', source: (c) => interfaceFields(c.blocks, 'ProjectileBurst'), copied: BURST_FIELDS, where: 'BURST_FIELDS' },
+  { at: 'BurstFeint', from: 'src/data/schema.ts', name: '诱饵惩罚字段', source: (c) => interfaceFields(c.blocks, 'BurstFeint'), copied: FEINT_FIELDS, where: 'FEINT_FIELDS' },
 ]
 
 /**
@@ -318,6 +325,13 @@ function projectile(file, where, p) {
         b.at.forEach((n, i) => report.num(file, `${where}.burst.at[${i}]`, n, { min: 0, name: 'at' }))
         if (isNum(b.count) && b.at.length > b.count) report.warn(file, `${where}.burst.at`, `显式帧位 ${b.at.length} 个多于 count=${b.count}`)
       }
+    }
+    // §14.4 诱饵那两格的可闻带留在这里（缺失/非有限/越界由 `report.num` 全场统一说），
+    // 而**关系**（哪一发、延迟、真收尾、盖得住间隔）归 `burst-rules.mjs`——见下面那 4 行。
+    if (b.feint !== undefined) report.sub(file, `${where}.burst.feint`, b.feint, { shot: { min: 0, int: true }, punishMs: { min: 1 } })
+    for (const f of burstFindings(file, `${where}.burst`, b)) {
+      if (f.level === 'warn') report.warn(f.file, f.where, f.msg)
+      else report.error(f.file, f.where, f.msg)
     }
   }
 }

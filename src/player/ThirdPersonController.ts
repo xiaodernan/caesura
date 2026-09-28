@@ -57,7 +57,7 @@ export class PlayerController {
   /** 当前站立面的高度，由 world/Surface 每 tick 注入（垂直分层世界） */
   floorY = 0
   action: PlayerAction | null = null
-  roll: { tick: number; dir: Vec3; total: number; iframeStart: number; iframeEnd: number } | null = null
+  roll: { tick: number; dir: Vec3; total: number; iframeStart: number; iframeEnd: number; punishTicks?: number } | null = null
   guardTicks = 0
   guardStartTick = -999
   parryTicksLeft = 0
@@ -531,6 +531,10 @@ export class PlayerController {
       const stepZ = (this.roll.dir.z * this.base.roll.dist) / this.roll.total
       this.pos.x += step; this.pos.z += stepZ
       if (this.roll.tick >= this.roll.total) {
+        // §14.4 诱饵惩罚在这里兑现（KI-085）：这一滚把无敌帧花在了假动作上，所以站起来那一刻
+        // 站不稳。它记在**这一次翻滚**身上 ⇒ 中途被打断/好处被拿走（takeDamage、beginExecute、
+        // 重生）就一起作废——那一滚已经不是"被骗空的一滚"了，不该再补一笔。
+        if (this.roll.punishTicks) this.stunTicks = Math.max(this.stunTicks, this.roll.punishTicks)
         this.roll = null
         // §7.3 常拍脚：翻滚结束 = 宽限起算点之一（KI-036）
         if (this.beatGraceDuration > 0) this.beatGraceTicks = this.beatGraceDuration
@@ -604,6 +608,24 @@ export class PlayerController {
     }
     this.grounded = true
     bus.emit('sound.source', { id: 'player', pos: { ...this.pos }, loudness: this.noise(0.3) })
+  }
+
+  /**
+   * §14.4「三叠箭第 2 拍为假动作（延迟 0.25 拍），骗翻滚后硬直 0.6s」的惩罚腿（KI-085）。
+   *
+   * 判据只有一条：**这一滚还在飞**。诱饵从身上穿过去（无敌帧吃掉它）就是"把这一滚花在了假动作上"，
+   * 于是把毫秒折成 tick 记在**这一次翻滚**身上，自然结束那一拍转成 `stunTicks`。换算走全项目那把
+   * 唯一的尺子 `msToTicks`，这里不留第二个秒数；时长本身在 `enemies.json > burst.feint.punishMs`。
+   *
+   * 返回"有没有记上"：不在翻滚里（站着挨了、或在处决演出里穿过去）就什么也不欠——那一句文档说的是
+   * **骗翻滚**，不是"任何形式的无敌"。
+   */
+  beginFeintPunish(ms: number): boolean {
+    if (!this.roll) return false
+    const ticks = msToTicks(ms)
+    if (ticks <= 0) return false
+    this.roll.punishTicks = Math.max(this.roll.punishTicks ?? 0, ticks)
+    return true
   }
 
   tryStartAction(key: string, tick: number, rhythm?: RhythmClock): boolean {

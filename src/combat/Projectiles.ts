@@ -56,6 +56,12 @@ export interface Projectile {
    * 两边都走这一格，"离手之后才落"的那一记才算得上仍然带着自己那一档。
    */
   reaction?: IncomingGrade
+  /**
+   * §14.4 那句「骗翻滚后硬直 0.6s」跟着弹体走的那一格（KI-085）：非 null ⇒ 这一发是诱饵，
+   * 玩家用无敌帧把它吃掉就要在翻滚结束时欠下这么多毫秒硬直。只有敌方连发的指定那发带它；
+   * 反射体不带（玩家弹回去的那一发已经不是她的诱饵了）。
+   */
+  feintPunishMs?: number
   loudness: number
   dead: boolean
   gone: GoneReason | null
@@ -87,6 +93,8 @@ export interface LaunchParams {
   shake?: string
   /** §8 反应分级：出手方那一格/那一行的声明，原样带到命中点（KI-052①②） */
   reaction?: IncomingGrade
+  /** §14.4 诱饵惩罚（KI-085）：这一发是假动作时带来时的硬直毫秒数；见 `Projectile.feintPunishMs` */
+  feintPunishMs?: number
   loudness?: number
 }
 
@@ -130,6 +138,7 @@ export class ProjectileSystem {
       vfxHit: l.vfxHit ?? 'hit_ring',
       shake: l.shake ?? 'normal',
       reaction: l.reaction,
+      feintPunishMs: l.feintPunishMs,
       loudness: l.loudness ?? 4,
       dead: false,
       gone: null,

@@ -16,6 +16,31 @@ export type Hitbox = HitboxCone | HitboxSphere | HitboxRing
 export interface CancelRule { to: string; fromTick: number }
 
 /**
+ * 连发（combat.md §14.4 针喉「三叠箭」）：count 发、默认每 everyTicks 一拍序发一发。
+ * `at` 给出每发相对 activeStart 的显式帧位（缺省位用 everyTicks 补），用来写「第 2 拍延迟 0.25 拍的假动作」。
+ */
+export interface ProjectileBurst {
+  count: number
+  everyTicks: number
+  at?: number[]
+  /** 这一串里哪一发是诱饵；不写就没有假动作惩罚（§55：没有消费者的格子不预写） */
+  feint?: BurstFeint
+}
+
+/**
+ * §14.4 那句「三叠箭第 2 拍为假动作（延迟 0.25 拍），骗翻滚后硬直 0.6s」的**惩罚腿**（KI-085）。
+ *
+ * `shot` 是诱饵那发在 `at` 里的下标，`punishMs` 是玩家把无敌帧花在这一发上之后欠下的硬直。
+ * 两格之间的关系由 `scripts/burst-rules.mjs` 判（延迟成立 / 后面还有真收尾 / 硬直盖得住下一发），
+ * 所以这里不重复那句话——改了数而没人改判据，门会红。
+ */
+export interface BurstFeint {
+  shot: number
+  /** 翻滚结束那一刻起算的硬直毫秒数（由 `msToTicks` 折成 tick，代码里不留第二份秒数） */
+  punishMs: number
+}
+
+/**
  * 弹道规格（combat.md §4.3 引针枪「投掷枪」/ §5 远程威胁）。挂在动作帧上，
  * 玩家武器与敌人招式共用同一份表 ⇒ 同一套弹道运行时（combat/Projectiles.ts）。
  */
@@ -38,11 +63,7 @@ export interface ProjectileSpec {
   pinTicks?: number
   /** 命中附带沉默（§9 mute 标签），单位=tick（全表计时统一用 tick，§14.6 闷音 2s=120） */
   muteOnHit?: number
-  /**
-   * 连发（combat.md §14.4 针喉「三叠箭」）：count 发、默认每 everyTicks 一拍序发一发。
-   * `at` 给出每发相对 activeStart 的显式帧位（缺省位用 everyTicks 补），用来写「第 2 拍延迟 0.25 拍的假动作」。
-   */
-  burst?: { count: number; everyTicks: number; at?: number[] }
+  burst?: ProjectileBurst
   /** 出手前画可见预告线（§14.4「赤线 telegraph，线终点=落点」），长度取招式 startup 帧 */
   telegraph?: boolean
   /** 打点（on-beat）投出的弹体保留架式加成快照 */
