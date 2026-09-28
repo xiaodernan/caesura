@@ -35,8 +35,7 @@ export const UI_BOUND_MILESTONES = {
 /** 旗标：被读但还没有写方的账（写方一出现 ⇒ `flagLedgerErrors` 报"该销"） */
 export const PENDING_FLAG_WRITERS = {
   'flag.side_nave_found': 'Phase 6-B：侧廊入口需要一段能在地板上站住的领取点几何（当前 secret 坐标在可行走层之外）',
-  'flag.brokenbar_resolved': 'Phase 6-B：断弦营地线（收编/清算抉择）',
-  'flag.brokenbar_allied': 'Phase 6-B：同上，潜行解专属那条',
+  'flag.brokenbar_allied': 'Phase 6-B：断弦营地线的潜行解独岚奖励（收编）——缺的是 `sec_brokenbar_ally_path` 的领取点几何（新增一个带 secretId 的交互物），不是写方',
   'flag.found_first_phrase': 'Phase 6-C：初句圣所五环线索链（narrative §4.8），不靠走近解',
 }
 

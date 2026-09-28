@@ -1541,7 +1541,10 @@
               "key": "state.haltrune.camp",
               "value": "OUTPOST"
             },
-            "notify": "营地定性：友军哨站 OUTPOST"
+            "setFlags": [
+              "flag.brokenbar_resolved"
+            ],
+            "notify": "营地定性：友军哨站 OUTPOST —— 巡逻队就此停摆"
           },
           "next": "n7"
         },
@@ -1554,7 +1557,10 @@
               "key": "state.haltrune.camp",
               "value": "RUINS"
             },
-            "notify": "营地定性：废墟 RUINS"
+            "setFlags": [
+              "flag.brokenbar_resolved"
+            ],
+            "notify": "营地定性：废墟 RUINS —— 军阵散了，仓库留给了你"
           },
           "next": "n8"
         },
@@ -1567,7 +1573,7 @@
               "key": "state.haltrune.camp",
               "value": "GARRISON"
             },
-            "notify": "营地定性：恩希尔驻防地 GARRISON"
+            "notify": "营地定性：恩希尔驻防地 GARRISON —— 营地仍有人守，后门只认口令"
           },
           "next": "n9"
         }
