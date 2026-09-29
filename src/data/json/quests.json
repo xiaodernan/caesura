@@ -301,27 +301,10 @@
      "C",
      "M"
     ]
-   },
-   {
-    "state": "HALTRUNE.STEP4_PASSING",
-    "label": "《义体尽头的拍子》：他请你在场 —— 用休止送走他，或者让他敲完最后一个循环",
-    "advanceOn": {
-     "state": {
-      "key": "state.haltrune.fate",
-      "in": [
-       "PASSING_STILL",
-       "DRUM_LEGEND"
-      ]
-     }
-    },
-    "tags": [
-     "C",
-     "M"
-    ]
    }
   ]
  },
- {
+{
     "id": "q_faceless",
     "nameKey": "quest.faceless",
     "displayName": "容器线",
