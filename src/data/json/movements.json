@@ -133,6 +133,21 @@
     { "cooldownTicks": 300, "freezeTicks": 72 }
    ]
   },
+
+  {
+   "id": "mv_terminate",
+   "page": "mvpage_rest",
+   "nameKey": "movement.terminate",
+   "displayName": "终止",
+   "desc": "谱面走到最后一条线，你替他把笔放下。不是打断，是收工——那一拍停在它该停的地方。",
+   "cost": { "overdrive": 10, "overdriveRamp": 2 },
+   "frame": { "startup": 20, "activeStart": 20, "activeEnd": 26, "recovery": 54, "sfx": ["swing_heavy_1"], "vfx": ["shock_small"], "loudness": 0 },
+   "levels": [
+    { "cooldownTicks": 420, "freezeTicks": 90, "silenceTicks": 120, "silenceDmgBonus": 0.15 },
+    { "cooldownTicks": 390, "freezeTicks": 105, "silenceTicks": 150, "silenceDmgBonus": 0.2 },
+    { "cooldownTicks": 360, "freezeTicks": 120, "silenceTicks": 180, "silenceDmgBonus": 0.25 }
+   ]
+  },
   {
    "id": "mv_perfectingecho",
    "page": "mvpage_rest",
