@@ -1,0 +1,19 @@
+[
+  {
+    "id": "clear",
+    "docWeather": "clear",
+    "fogDensity": 0.008
+  },
+  {
+    "id": "fog",
+    "docWeather": "fog",
+    "fogDensity": 0.03,
+    "contrastMul": 0.6
+  },
+  {
+    "id": "dissonant-storm",
+    "docWeather": "storm",
+    "fogDensity": 0.022,
+    "contrastMul": 1.15
+  }
+]

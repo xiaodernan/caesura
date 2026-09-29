@@ -51,6 +51,9 @@ import { BURST_FIELDS, FEINT_FIELDS, burstFindings } from './burst-rules.mjs'
 // KI-092：§8.2 侧链表那几条**跨文件**判据的本体（同一族理由：要在测试里喂一行"引擎根本不听的触发口"
 // 看它拒不拒）。这里只负责把那两份源码名单读出来当输入，再把 findings 报成 ERROR。
 import { DUCK_FIELDS, duckFindings } from './ducking-rules.mjs'
+// KI-094：天气表那几条**跨文件**判据的本体（同一族理由：要在测试里喂一行"§38 没有的那一档"、
+// "没被任何一区指到的名字"看它拒不拒）。这里只负责把 §38 的档名名册与被引用的天气名读出来当输入。
+import { PENDING_WEATHER_READINGS, WEATHER_FIELDS, weatherFindings } from './weather-rules.mjs'
 // KI-089：对话树的**可达性**判据本体（同一族理由：要在测试里喂一棵合成树看它拒不拒）。这里只把
 // findings 报成 ERROR —— 一句话有没有玩家读得到，是"边"的事，不是"条件写得好不好"的事。
 import { dialogueReachErrors } from './dialogue-rules.mjs'
@@ -60,7 +63,7 @@ import { mapFindings } from './validator-map-rules.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const JSON_DIR = resolve(ROOT, 'src/data/json')
-const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json', 'shop.json', 'states.json', 'ambience.json', 'explore.json', 'battle.json', 'ducking.json']
+const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json', 'shop.json', 'states.json', 'ambience.json', 'explore.json', 'battle.json', 'ducking.json', 'weather.json']
 // Phase 6-B：对话风格枚举与任务标注（narrative.md §3.2 / §28 图例）
 const CHOICE_STYLES = new Set(['blunt', 'poetic', 'silent', 'provoke'])
 const QUEST_TAGS = new Set(['D', 'C', 'H', 'M'])
@@ -215,6 +218,8 @@ const VOCAB_PAIRS = [
   { at: 'BurstFeint', from: 'src/data/schema.ts', name: '诱饵惩罚字段', source: (c) => interfaceFields(c.blocks, 'BurstFeint'), copied: FEINT_FIELDS, where: 'FEINT_FIELDS' },
   /* ---- KI-092：§8.2 侧链表那一行的字段名单（判据住在 `ducking-rules.mjs`，名单与它同一份声明） ---- */
   { at: 'DuckRow', from: 'src/data/schema.ts', name: '侧链表字段', source: (c) => interfaceFields(c.blocks, 'DuckRow'), copied: DUCK_FIELDS, where: 'DUCK_FIELDS' },
+  /* ---- KI-094：天气表那一行的字段名单（判据住在 `weather-rules.mjs`，名单与它同一份声明） ---- */
+  { at: 'WeatherRow', from: 'src/data/schema.ts', name: '天气表字段', source: (c) => interfaceFields(c.blocks, 'WeatherRow'), copied: WEATHER_FIELDS, where: 'WEATHER_FIELDS' },
   /* ---- KI-086：把剩下那批"能指到主人"的名单逐张量完并入（每张都先量过它读得回来，KI-074 的规矩：
      一条没量过的对账不是门，是安慰）。其中 `PICK_ORDERS` 入表前读回来是 null —— 那是判据认不了
      "嵌在嵌套对象里的内联联合"这一种排版，补的是抽取器，不是名单；`PSEUDO_ACTIONS` 同族，
@@ -2017,8 +2022,29 @@ function validateDucking() {
   }
 }
 
-/** loot.json 里真正会掉出来的物品全集（rolls + firstKill）。点亮源必须落在这里面，否则那一页永远点不亮 */
-function lootedItemIds() {
+// ---- weather.json（KI-094：需求 §38 / art-direction §8 的天气档）----
+/**
+ * 判据本体在 `weather-rules.mjs`（字段名单 / 读数界 / 两侧对账 / 基线行）。这里只多做一件判据
+ * 本体做不了的事：**把两端的名册读出来**。
+ *  · `docIds`     = `src/data/schema.ts` 的 `WeatherDocId` 联合（需求 §38 认的那几档）；
+ *  · `referenced` = `regions.json` 每一区 `weatherPresets` 里的名字（数据侧真被指到的天气）。
+ * 两份都**现推**而不是手抄（与 `validateDucking` 同一族纪律）：抄一份就等于给这句话配第二个主人，
+ * 改了 schema 而名单不动，门会替过时的代码说话。读不到时把 null 交给判据，它说"门在空转"。
+ */
+function validateWeather() {
+  const file = 'weather.json'
+  let schemaText = null
+  try { schemaText = readFileSync(resolve(ROOT, 'src/data/schema.ts'), 'utf8') } catch { schemaText = null }
+  const docIds = schemaText === null ? null : unionMembers(schemaBlocks(schemaText), 'WeatherDocId')
+  const regions = isArr(data['regions.json']) ? data['regions.json'] : []
+  const referenced = [...new Set(regions.filter(isObj).flatMap((rg) => isArr(rg.weatherPresets) ? rg.weatherPresets.filter(isStr) : []))]
+  for (const f of weatherFindings(file, data[file], docIds, referenced, PENDING_WEATHER_READINGS)) {
+    if (f.level === 'warn') report.warn(f.file, f.where, f.msg)
+    else report.error(f.file, f.where, f.msg)
+  }
+}
+
+/** loot.json 里真正会掉出来的物品全集（rolls + firstKill）。点亮源必须落在这里面，否则那一页永远点不亮 */function lootedItemIds() {
   const out = new Set()
   const list = data['loot.json']
   if (!isArr(list)) return out
@@ -2763,6 +2789,8 @@ validateExplore()
 validateBattle()
 // KI-092：§8.2 侧链表要对账两处源码名单（引擎的触发口 + 总线名册），所以排在它们所在的模块之外也能读到
 validateDucking()
+// KI-094：天气表要对账两端名册（§38 的档名联合 + 各区 weatherPresets 引用的名字），排在 regions 之后
+validateWeather()
 // movements 最后跑：它要同时对账 items（点亮源）、loot（源是否真会掉）、progression（开槽里程碑）
 validateMovements(itemIds)
 // 叙事层（Phase 6-B）：NPC → 任务 → 对话（后者依赖前两者的 id）

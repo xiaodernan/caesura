@@ -20,7 +20,8 @@ import ambienceRaw from './json/ambience.json'
 import exploreRaw from './json/explore.json'
 import battleRaw from './json/battle.json'
 import duckingRaw from './json/ducking.json'
-import type { MovesetData, WeaponData, EnemyData, PlayerBaseData, RegionData, ProgressionData, ItemData, LootTableData, NpcData, DialogueData, QuestData, StatusConfig, MovementConfig, WorldStateRule, WorldStateDef, HitReactionTable, ShopData, AmbienceBed, ExploreScore, BattleScore, DuckRow } from './schema'
+import weatherRaw from './json/weather.json'
+import type { MovesetData, WeaponData, EnemyData, PlayerBaseData, RegionData, ProgressionData, ItemData, LootTableData, NpcData, DialogueData, QuestData, StatusConfig, MovementConfig, WorldStateRule, WorldStateDef, HitReactionTable, ShopData, AmbienceBed, ExploreScore, BattleScore, DuckRow, WeatherRow } from './schema'
 
 export const playerBase = playerRaw as unknown as PlayerBaseData
 export const regions = regionsRaw as unknown as RegionData[]
@@ -54,6 +55,13 @@ export const battleScores = battleRaw as unknown as BattleScore[]
  * 没有任何一处按 id 取它——登记进注册表就是给一个没人敲的门配一把钥匙。
  */
 export const duckingRows = duckingRaw as unknown as DuckRow[]
+/**
+ * 需求 §38 / art-direction §8 的天气表（一行 = 数据侧的一个天气名加它那一档的读数，KI-094）。
+ * 唯一读者是 `vfx/ColorGrade.ts`：它按驻留天气写 `scene.fog.density`，并把乘数与失谐的褪色合成成
+ * 一条 `canvas.style.filter`。和 `duckingRows` 同理**不进 `registry`**：行键（`clear`／`fog`／
+ * `dissonant-storm`）是被 `regions.json > weatherPresets` 指着的名字而不是内容 id，注册表里没有按 id 敲它的门。
+ */
+export const weatherRows = weatherRaw as unknown as WeatherRow[]
 
 let registered = false
 

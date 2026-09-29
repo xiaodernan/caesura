@@ -1401,6 +1401,38 @@ export interface DuckRow {
   holdSec: number
 }
 
+/**
+ * 需求 §38 / art-direction §8 认的那四档天气。名字的主人**在这里**：`regions.json` 里那些
+ * 区域自己的叫法（emberfall／still／drip／hush／stone-wind）不在这张联合里，它们要通过
+ * `WeatherRow.docWeather` 挂到某一档上才拿得到读数。校验器把这张联合从源码现推成合法值集合，
+ * 所以加一档必须同时给它一个读数载体，否则那一档在数据里永远没人奏（WARN 会说）。
+ */
+export type WeatherDocId = 'clear' | 'rain' | 'fog' | 'storm'
+
+/**
+ * `weather.json` 的一行（KI-094）：一个**数据侧的天气名** ⇄ 它在需求 §38 里那一档 ⇄ 那一档的读数。
+ *
+ * 三个读数格全部**可选**，因为文档只给了它有话说的格：art-direction §8 的雾密度四档逐名给数，
+ * §2 的乘数那句只给 Rain 明度、Fog 与 Storm 对比。没给的格不填——填了就是我编的。
+ * `brightnessMul` 因此今天没有任何一行声明它，那是对的（Rain 那一档在 `regions.json` 里没人用）。
+ *
+ * 唯一读者是 `src/vfx/ColorGrade.ts`：它把雾密度写进 `scene.fog`，把乘数与失谐的褪色合成成
+ * 一条 `canvas.style.filter`。没有这一行 ⇒ 区域按基线（`clear`）奏，而那个事实挂在
+ * `PENDING_WEATHER_READINGS` 上，不靠注释。
+ */
+export interface WeatherRow {
+  /** 行键 = `regions.json > weatherPresets` 里出现的那个名字 */
+  id: string
+  /** 它对应需求 §38 的哪一档：读数就是从那一档的文档行来的 */
+  docWeather: WeatherDocId
+  /** 指数雾密度（art-direction §8「Clear 0.008 / Fog 0.030 / Rain 0.018 / Storm 0.022」） */
+  fogDensity?: number
+  /** CSS brightness() 的乘子（§2「Rain ×0.8」）；不写 = 1.0 中性 */
+  brightnessMul?: number
+  /** CSS contrast() 的乘子（§2「Fog 对比 ×0.6、Storm 对比 ×1.15」）；不写 = 1.0 中性 */
+  contrastMul?: number
+}
+
 export interface RegionData {
   id: string
   /** IP_SEED §14 registered vocabulary */
@@ -1434,6 +1466,14 @@ export interface RegionData {
   loot?: { rarityBoost?: { atOrAbove: string; mul: number } }
   chunkSize: number
   navmeshRef?: string
+  /**
+   * 这一区**可能**处于的那几个天气（KI-094）。读法有两条，各有一半今天成立：
+   * ① `[0]` 是这区无人打扰时的驻留天气（今天唯一的读者 `vfx/ColorGrade.ts` 就按这一格奏）；
+   * ② 后面的格子是"铃姨修钟之后这一区换成的样子"（IP_SEED §7 / narrative §9 `STATE.BELLS.*`），
+   *    那条**切换今天没有人写**——它要的是任务线给的世界状态，没接线这件事记在
+   *    `scripts/validate-data.mjs` 的 `PENDING_WEATHER_READINGS` 账上，不靠这句注释。
+   * 每个名字都要在 `weather.json` 里有行或挂在 pending 名单上，拼错就是一片区域静默走基线。
+   */
   weatherPresets: string[]
   lightingPreset: string
   palette: RegionPalette

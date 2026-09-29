@@ -30,6 +30,7 @@ import { glossary } from '@/combat/Statuses'
 import { AudioEngine } from '@/audio/AudioEngine'
 import { Haptics } from '@/input/Haptics'
 import { VfxLayer } from '@/vfx/VfxLayer'
+import { ColorGrade } from '@/vfx/ColorGrade'
 import { Hud } from '@/ui/Hud'
 import { Stakerite } from '@/ui/Stakerite'
 import { TitleScreen } from '@/ui/TitleScreen'
@@ -105,6 +106,9 @@ const projectileVis = new ProjectileVisuals(arena.scene)
 const bossArena = new BossArenaVisuals(arena.scene) // §15.1 撞钟机关：机关看不见就等于不存在
 const audio = new AudioEngine()
 const vfx = new VfxLayer(arena.scene)
+// KI-094①：雾密度与画面滤镜的唯一写方。它按「脚下这一区的驻留天气 + §11 失谐」合成，
+// 所以开局那一区也得由它读一次——见下面 `grade.setRegion(homeRegion …)`，那句排在 streaming 之后。
+const grade = new ColorGrade(arena.scene, canvas)
 const hud = new Hud(document.getElementById('hud') as HTMLCanvasElement)
 /** 飘字要钉在世界坐标上：HUD 不认识相机，投影由这里喂进去（§8.2 ms_crit_ring 的腿） */
 hud.project = (p) => {
@@ -160,6 +164,9 @@ const streaming = new StreamingSystem(regions)
 streaming.teleport(0, player.pos) // 起始区同步加载（§5.5 传送遮蔽等价物）
 const homeRegion = streaming.regionAt(player.pos)
 let shownRegion = homeRegion?.id ?? null
+// KI-094①：开局那一区的雾与滤镜。与上面三条 `audio.music.*` 同一件事的另一半——"玩家出生在哪一区"
+// 这件事在画面侧也只有一个入口，而它必须在这里读一次，否则首帧走的是场景构造时写死的那片雾。
+grade.setRegion(homeRegion ?? null)
 // KI-077（docs §1.2/§4）：开局那一张环境声床。这一句必须在 `audio.start()` 之前发——
 // 建图要等首次用户手势，而 `AudioEngine` 缓存事件，所以"玩家出生在哪一区"这件事不会丢。
 if (homeRegion) {
@@ -329,18 +336,9 @@ addEventListener('keydown', (e) => {
   }
 })
 
-/**
- * §11 失谐的视觉压力：>60 起屏幕一点点失去颜色（combat.md「饱和度渐减」）。
- * WebGL 画面没有后处理管线，CSS filter 是这套环境里唯一真实的去饱和通道（ENV-001 下的合理替代，
- * 升级路径=接一个 post-processing pass 后改这一处）。量化到 5% 一档，避免每帧改样式触发重排。
- */
-let veilApplied = -1
-function setVeil(v: number): void {
-  const q = Math.round(v * 20) / 20
-  if (q === veilApplied) return
-  veilApplied = q
-  canvas.style.filter = q > 0 ? `saturate(${(1 - q).toFixed(2)}) brightness(${(1 - q * 0.3).toFixed(2)})` : ''
-}
+/* §11 失谐的视觉压力（>60 起屏幕一点点失去颜色）今天住在 `vfx/ColorGrade.ts`（KI-094①）。
+   搬走而不是在这里包一层：那一格的读数与需求 §38 的天气乘数**共用同一条 `canvas.style.filter`**，
+   两个写方在浏览器里是后盖前的，谁都不认识谁——把合成收成唯一仲裁者之后，这里只剩下"报失谐读数"。 */
 
 /* ---------------------------------------------------------------------------
  * 运行时调试面板（需求 §54 的 F1/F3/F4，§56 目录表里规划的三个 Debugger）。
@@ -439,6 +437,9 @@ const core = {
       bus.emit('audio.music.ambience', { id: here.music.ambience })
       bus.emit('audio.music.explore', { id: here.music.explore })
       bus.emit('audio.music.battle', { id: here.music.battle })
+      // KI-094①：雾跟着区域换。它排在三条音乐之后而没有顺序可依——滤镜与雾都是**立即生效**的画面量，
+      // 不存在"先换底噪再换雾"那种淡变窗口，写在前写在后同一帧里看不出区别。
+      grade.setRegion(here)
       if (booted) checkpoints.request('region') // 读档后第一次「进区域」是恢复现场，不该顺手覆盖存档
       shownRegion = here.id
       bus.emit('ui.notify', { text: here.displayName, kind: 'info' })
@@ -453,7 +454,7 @@ const core = {
     // 累积与掉血共用区域那一格做闸门（tickEnvironment），安全区两条都关。
     const faded = player.corruption.tickEnvironment(dt, here?.corruption)
     if (faded > 0) player.fadeDamage(faded)
-    setVeil(player.corruption.veil())
+    grade.setVeil(player.corruption.veil())
     lock.update()
     visuals.sync(ai.enemies, t.tick)
     projectileVis.sync(combat.projectiles.list(), t.tick)

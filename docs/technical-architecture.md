@@ -261,7 +261,7 @@ src/
 | `player/CameraRig.ts` 的模式枚举与碰撞回弹 | 未落 | 现在的 CameraRig = 平滑跟随 + §10 震镜表 + FOV 脉冲 + 处决推轨 + 锁定时的 target bias；**没有 exploration/combat/lockOn/boss/cinematic 五个模式，也没有弹簧臂射线回弹**（球体射线 5 点采样那句是规划） |
 | `player/LockOn.ts` 的规划四句：`8m~35m 锥形` / `遮挡脱锁` / `boss 强制单锁` | 未落 | **KI-084 把数接进表时逐句核过代码**（不是照抄 §2 那行）：①没有 8m 内圈，也没有任何角度上限——`liveCandidates()` 只筛 `alive` 与水平斜距 `≤ range`，角度只是打分里的一项（所以背后 170° 的目标照样可锁，只要它最近）；②脱锁只有两条：`target.alive == false` 与 `d > range`，**墙不会解开锁定**（`core/Occlusion.ts` 的四个读者里没有 LockOn，KI-014 那条"锁定 AoE"指的是被锁者的 AOE 被遮挡，不是锁定本身被遮挡）；③Boss 没有"强制单锁"，只有 `bossBonus` 让她在同角度上不被贴脸杂兵抢走（那条关系现由 validator 钉住，见 §5.9.22）。**后果**：这三句是设计意图而不是现状，谁要落其中任何一句都得先改这一格，而不是让 §2 那行继续冒充事实 |
 | `world/generators/`（Terrain/Foliage/Rock/Ruin，需求 §52） | 未落 | 地形现在全部 authored 在 `regions.json` + 灰盒盒子；关键区域手工摆放本来就是规划的首选路径，程序化那条没开 |
-| `world/Weather.ts`、`world/Lighting.ts` | 未落 | 与 KI-008 同因：没有真几何与材质就没有雨雾与光照预设。IP_SEED §7 的"铃姨 flag 驱动天气"目前没有任何载体 |
+| ~~`world/Weather.ts`、`world/Lighting.ts` | 未落 | 与 KI-008 同因：没有真几何与材质就没有雨雾与光照预设。IP_SEED §7 的"铃姨 flag 驱动天气"目前没有任何载体~~ **纠正（2026-09-30，KI-094①）**：天气那一半不再等真几何——它落在 **`src/vfx/ColorGrade.ts`**（画面调色的唯一仲裁者：`scene.fog.density` + `canvas.style.filter`），数据是 `data/json/weather.json`（三行有读数的档，判据在 `scripts/weather-rules.mjs`）。**仍然未落的三句**：①`world/Lighting.ts` 没有落点，`regions.json > lightingPreset` 那一列至今**零运行时读者**（校验器只判它是不是一个名字），7 区色板/光照预设那条腿整条欠着；②"铃姨 flag 驱动天气"= `weatherPresets[1]` 那条切换**今天没有写方**（要的是任务线给的世界状态，KI-094②），所以七区的**驻留**天气全部落回基线那一行，非基线两行（`fog`／`dissonant-storm`）只有 `ColorGrade.setWeather` 这一条入口而它没有外部调用点——这条现状由 `tests/unit/color-grade.test.ts` 量出来而不是写在注释里；③§38 的 `rain` 档没人奏、五个数据侧天气名（`emberfall`/`still`/`drip`/`stone-wind`/`hush`）没有文档读数，挂在 `PENDING_WEATHER_READINGS` 账上（校验器逐条 WARN）。详见 §5.9.33 |
 | `ui/MenuStack.ts`、`ui/MapUI.ts`（需求 §43 地图） | 未落 | UI 现只有 HUD、调音桩面板、对话箱、存档两屏、标题屏。**顺带一条命名失真**：`core/Input.ts` 里那个虚拟按钮仍叫 `map`（Tab / 手柄 6 号键），但它今天的消费者（`main.ts` 的 `edges.has('map')`）开的是**调音桩/商摊面板**，不是地图——§43 的地图 UI 从未落地，于是"按着地图的名字在调音"。本轮不改这个键名（改了会连带动 `settings` 与测试口径），只在此登记 |
 | `vfx/GPUParticles.ts`、`vfx/Trails.ts`、`vfx/Decals.ts` | 未落 | 弹痕/震纹贴花与武器拖尾没有，命中反馈目前靠 ring+spark+shard 三件套 |
 | `audio/Mixer.ts` 的三主题淡入淡出（§11 转调） | 未落 | `audio/music.ts` 只有一条休垒 drone + 随机泛音；combat/boss 主题与转调规则没有 |
@@ -1915,6 +1915,43 @@ Phase 4-B 落三叠箭时只做了**延迟**那一半（`at=[0,32,42]` 让第 2 
 **实机腿（§77）**：这一批的读数全部来自 headless（几何是纯函数、`Enemy` 是逻辑层）。真组合根里"追击的敌人绕过破拍营地那堵塌墙"这一眼没有在可见窗口里走过（本会话没有视口，KI-010 同因），如实记在这里。
 
 
+
+### 5.9.33 天气那一列第一次有读者：画面调色的唯一仲裁者，两条腿乘在一起而不是互相盖掉（KI-094①，2026-09-30）— 已落地（Partial：切换腿欠）
+
+**症状是两串数字与一条字符串**。art-direction §8 给的是四个可读的雾密度（Clear 0.008 / Fog 0.030 / Rain 0.018 / Storm 0.022），§2 给的是三条乘数（Rain 明度 ×0.8、Fog 对比 ×0.6、Storm 对比 ×1.15），而 `regions.json` 每区写着 2 个天气名（`weatherPresets[]`，全场去重 **8** 个名字）——**两头从来没有对过账**：需求 §38 的四档与数据侧的八个名字之间没有任何一条机器关系，拼错一个天气名不会有任何东西响。同时 `world/PlaceholderArena.ts:25` 把雾密度**写死成 `0.028`**（不属于文档任何一个数），换区不改、天气不改，整片世界永远同一片雾。第三条：`canvas.style.filter` 只有一个写方（`main.ts` 的 `setVeil()`，§11 失谐褪色），而天气的明度/对比乘数想说的也是这一串——**任何一方单独往上写，浏览器里就是后盖前的**。
+
+**落点分五处**（形状与 KI-077/079/080/092 同一族：判据住 `scripts/*-rules.mjs`，因为 `validate-data.mjs` 一被 import 就校验真表并 `process.exit`，本沙箱连 spawn 子进程都被拒 — KI-075）：
+
+| 处 | 东西 | 它回答的问题 |
+|---|---|---|
+| `data/json/weather.json` | 3 行有读数的档（`clear` / `fog` / `dissonant-storm`） | 一个天气名到底改哪几格、改成多少 |
+| `schema.ts > WeatherRow` + `> WeatherDocId` | 五格声明 + §38 那四档的联合 | 字段名单与档名册的**主人**（判据从源码现推，不手抄） |
+| `scripts/weather-rules.mjs`（+`.d.mts`） | 五条关系判据 + `PENDING_WEATHER_READINGS` 账本 | 见下 |
+| `src/data/index.ts > weatherRows` | 读表入口，**故意不进 `registry`** | 行键是"被 `weatherPresets` 指着的名字"，不是内容 id；注册就是给它编一个不存在的读者（§55） |
+| `src/vfx/ColorGrade.ts` | 画面调色的**唯一仲裁者** | `scene.fog.density` 与 `canvas.style.filter` 各自只有一个写方，且两条腿在同一个 `apply()` 里合成 |
+
+**判据判的是关系，不是逐字段 min/max**（逐字段那半仍由 `report.num`/`report.sub` 全场那张嘴管）：①`docWeather` 必须落在 `WeatherDocId` 联合上；②反向——§38 的每一档都得有行奏它，没人奏的报 **WARN**（那是"需求还剩一档"，不是数据写错，今天剩 `rain`）；③行键必须被某个 `weatherPresets` 指到（否则这一行永远不响 = §55 死数据）；④反向——被指到的名字要么有行，要么挂在 `PENDING_WEATHER_READINGS` 上写明"为什么今天给不出读数"（≥20 字），**账本要能销**（有行却不销 ⇒ ERROR，不再被指 ⇒ 条目作废，KI-073 那一族）；⑤基线行 `clear` 必须存在且给得出雾密度——所有没有读数的名字都按它奏，那条退路不能是空的。两个抽取器读不到名册时报 ERROR 说"这道门在空转"，绝不退成"名单为空所以什么都合法"。
+
+**五条裁决**：
+- **CSS filter 是这套环境里唯一真实的调色通道**（ENV-001 下没有后处理管线）。接上真 post-processing pass 时**换实现不换数据**——表里那三格读数的语义（雾密度、明度乘子、对比乘子）与谁来执行无关。
+- **失谐量化到 5% 一档（`VEIL_QUANTUM = 20`）是性能量，不是审美**：`setVeil` 每帧被叫，而 CSS filter 每帧改一次就每帧重排。仲裁者另有 `applied` 那一格：合成串没变就**一个字都不写**。
+- **`brightnessMul` 与失谐亮度是相乘不是取其一**：`bright = (w.brightnessMul ?? 1) × (1 − q × 0.3)`。斜率 0.3 沿用 `setVeil` 落地以来的读数（§11「失谐满值时屏幕剩 70% 亮度」），本批不动它，只把它从 `main.ts` 搬进仲裁者并让天气乘数落在同一格里。
+- **`regions.json` 里 5 个名字没有文档读数，于是**不替它们编**：`emberfall`/`still`/`drip`/`stone-wind`/`hush` 逐条挂 `PENDING_WEATHER_READINGS` 写明"§38/§8 的哪一句里没有它、要给读数还缺谁裁决"。今天它们全部按基线奏，而**这件事是校验器喊出来的**（5 条 WARN），不是一句注释。
+- **那一行没声明的格子不许顺手按基线覆盖**：`apply()` 只在行真的给了 `fogDensity` 时写雾。一条没给雾密度的天气行去写雾，等于把别人的雾改成自己的默认值（`world/PlaceholderArena.ts` 那个写死的构造参数今天就是"别人"）。
+
+**合成发生在哪里，由源码门说**（`tests/unit/color-grade.test.ts` 最后一组）：`style\.filter\s*=` 在 `src/**` 的写方 `toEqual(['src/vfx/ColorGrade.ts'])`；`\.density\s*=` 同理；`main.ts` 里**作为语句**出现的 `grade.setRegion(` 恰 **2** 次（开局一次 + 换区一次）。最后这条从前写的是 `toMatch(/grade\.setRegion\(/)`，A4 那一臂（删掉换区那一句）在它上面**存活**——开局那次调用替它把字符串留着了；改成数次数后又踩到第二个坑：全文数会把 `main.ts:110` **注释里**那句 `grade.setRegion(homeRegion …)` 数进去（实测 3 而非 2），于是锚到行首。
+
+**现状量测（不是设计）**：七区的**驻留**天气（`weatherPresets[0]`）今天全部落回基线——只有 `rg_resthold` 的驻留名 `clear` 有行，`still`/`hush` 欠读数；而两个有读数的非基线行（`fog`／`dissonant-storm`）只出现在 `[1]`（修钟之后那条切换），它**今天没有写方**（要的是任务线给的世界状态），`setWeather` 在 `src/` 里除仲裁者自己之外**零外部调用点**。这两条都由用例量出来并写明"②落地时这条必须翻过来"，红的时候直接指向该改的那一行。
+
+**守卫**：新 `tests/unit/weather-table.test.ts` **22 条** + 新 `tests/unit/color-grade.test.ts` **17 条**。前者最要紧的是**文档对账那一组不抄数字**：`docs/art-direction.md` 用正则解析（`([A-Z][a-z]+)\s+0\.(\d+)` 读四个雾档、`(Rain|Fog|Storm)( 对比)?\s*×([0-9.]+)` 读三条乘数），并且**先自证解析读出来的不是空集**，再与表里的值逐字相等——否则"文档改了没人知道"会退化成"读空了也没人说"。后者含一条行为回归带：`gradeFilter(v, {})` 与删掉的 `setVeil` 旧公式在四个失谐读数上**逐字相同**（搬动没有改口径），以及一条"重复写同一个字符串 ⇒ 一次都不动 DOM"的写计数（**先证明计数大于 0**，再要求它不再增长）。
+
+**变异探针七臂**（事前把"必须红在哪几条用例"写进探针文件，每臂跑完按 sha256 还原并核对，未变异对照两平面 17/17 + 22/22 绿）：A1 天气盖掉失谐（`gradeFilter(0, …)`）⇒ 恰红「失谐读数落在天气之上」那一条；A2 去掉 `applied` 守卫 ⇒ 恰红「每帧被叫同一个读数」；A3 去掉雾那格的 `typeof` 守卫 ⇒ 恰红「表里这一行没给雾密度」；A4 删掉 `main.ts` 换区那句 ⇒ **第一轮存活**（门只 `toMatch`），门改成数语句次数后第二轮命中；A5 表里 Fog 的对比写成 1 ⇒ 红 7 条（事前点名的 2 条 + 5 条** collateral**：那些用例的夹具是从**真表**组合出来的，真表被毒就全体红——红得比预言多是预言的口径问题，不是门的毛病，与 KI-092 的 A9 同一形状）；A6 把 `FOG_DENSITY_MAX` 从 0.12 收到 0.02 ⇒ 红 9 条（含"界本身从判据读而不是抄"那条，证明这条界是活的）；A7 关掉判据③ ⇒ 恰红「没有任何一区指着的行」。**A4 是这一批唯一一处"我的门有洞"，已经补掉；其余六臂按事前预测命中。**
+
+**门禁（2026-09-30，全部在本 commit 的工作副本平面上量）**：`npx tsc --noEmit` 0 错；`node scripts/validate-data.mjs` **0 ERROR / 7 WARN**（新增 6 条 = 5 个欠读数的天气名 + §38 的 `rain` 档没人奏，原来那条 `bell.everySec` 听感口径不动）；`npm run build` exit 0（`dist/assets/data-*.js` 104.83 kB）；`node scripts/test.mjs` 见 KNOWN_ISSUES KI-094 行的全量读数。**第五道门 `npm run coverage` 未跑**（量具与地板仍在并行会话的写入面上，KI-063 口径），`vfx` 也不是核心包。
+
+**实机腿（§77，2026-09-30 跑通，dev server 起在 `127.0.0.1:5173` 的隐藏标签页）**：开局驻留态读回 `scene.fog.density === 0.008`（表里 `clear` 行那个数，**运行时已经不是 `PlaceholderArena` 写死的 0.028**）与 `canvas.style.filter === ''`（没有失谐也没有乘数 ⇒ 合成串为空、一个滤镜都不挂）。再把 `player.corruption.value` 灌到 `cfg.max`、步进 3 帧 ⇒ `saturate(0) brightness(0.7)`（§11「失谐满值剩 70% 亮度」在真 three 运行时里的样子），回 0 再步进 ⇒ 滤镜清空而雾纹丝不动。**两条口径必须写清**：①DOM 读回的是浏览器规范化后的 CSS（`saturate(0.00)` 序列化成 `saturate(0)`），所以这一腿证的是**合成的语义与切换的可逆**，不是那一串字符逐字相等——逐字比在 `color-grade.test.ts` 的假画布上做；②七区驻留天气今天全落基线，所以实机换区看不到雾变（那是 `weatherPresets[1]` 那条没接的切换腿，KI-094②），这条实机读数不覆盖它。
+
+**没做（§78，故本条记 Partial）**：①**`weatherPresets[1]` 那条切换没有写方**——它要的是任务线给的世界状态（`STATE.BELLS.*`），归 KI-094②；②**`lightingPreset` 那一列仍然零读者**，§37 的区域光照/色板预设整条欠着（它和天气是两格，别把它们合成一个假的仲裁者）；③天气的**音频腿**（雨声/风声层随档开合）、**敌人浓度腿**（§38「Storm 期敌人浓度+」）、**失谐累积速率随天气**那半句都没有载体；④§8 的 Storm「间歇冷光」那一格没做——它要的是真几何与材质（KI-008 同因），本批只兑现了它可读的那两格（雾与对比乘数）；⑤`world/PlaceholderArena.ts:25` 那个写死的 `0.028` 从此是**待删**（该文件属并行会话的写入面，本批不动，删它的时机是真几何落地时；`tests/unit/color-grade.test.ts` 钉着它此刻仍在，删掉时那条会红并指名原因）；⑥视口与听感评审**仍不做**：本环境没有可见窗口，"雾换了看不看得出来、褪色压不压得住"这类观感结论一句不写（KI-010 同因）——上面那条实机腿给的是**数字读数**，它不冒充观感。
 
 ## 附录 A：模块规模与里程碑对照
 
