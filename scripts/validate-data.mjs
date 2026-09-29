@@ -23,7 +23,8 @@ import { flagLedgerErrors, milestoneLedgerErrors, PENDING_FLAG_WRITERS, PENDING_
 // KI-088 认下第六种主人：**一个目录**——`corpusFor` 从此吃得下以 `/` 结尾的路径（语料是目录名逐行拼起来的），
 // 于是 `FILES` 那张工作清单也不再是"没有主人"，而是与 `src/data/json/` 里的真文件双向对账。
 import {
-  arrayLiterals, callArgLiterals, dirListing, fieldUnion, handCopiedLists, importedNames, interfaceFields, objectKeys,
+  arrayLiterals, assignedLiterals, bracketKeys, calledNames, callArgLiterals, dirListing, fieldUnion, functionBodies,
+  handCopiedLists, importedNames, interfaceFields, objectKeys,
   refFieldUnion, schemaBlocks, setLiterals, unionMembers, vocabCoverageErrors, vocabDriftErrors,
 } from './schema-vocab.mjs'
 // KI-079：探索曲表的判据本体（同一族理由，见上面那两行）。这里只把 findings 报成 ERROR/WARN，
@@ -53,6 +54,9 @@ import { DUCK_FIELDS, duckFindings } from './ducking-rules.mjs'
 // KI-089：对话树的**可达性**判据本体（同一族理由：要在测试里喂一棵合成树看它拒不拒）。这里只把
 // findings 报成 ERROR —— 一句话有没有玩家读得到，是"边"的事，不是"条件写得好不好"的事。
 import { dialogueReachErrors } from './dialogue-rules.mjs'
+// KI-093：`FILES` 名册 ⇄ `validateX()` 函数那条缝的判据本体。同一族理由（要在测试里喂一张"有表没人报"
+// 的合成名册看它拒不拒），也同一族形状：这里只把 findings 报成 ERROR，而三端读数全部由抽取器现推。
+import { mapFindings } from './validator-map-rules.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const JSON_DIR = resolve(ROOT, 'src/data/json')
@@ -282,7 +286,60 @@ const VOCAB_UNPAIRED = [
     name: 'VOCAB_UNPAIRED', master: '（无）',
     why: '豁免表自己，同一个道理：它装的是"没有主人"那一侧的账，不是一段数据的值域。判据第一趟就报出这一条——**这张门连自己的新名单都不放过**，那它才不是在给人留余地',
   },
+  // KI-093：`SUBJECT_WAIVERS` 也是一张这样的账（它记的是"哪个校验函数刻意不报任何表"，不是值域），
+  // 所以对同一道覆盖普查登记。它与 `VOCAB_UNPAIRED` 一样只能变短：函数一旦写出 `const file = '…'`，
+  // 那条豁免就由 `validateValidatorMap` 报成"该销了"。
+  {
+    name: 'SUBJECT_WAIVERS', master: '（无）',
+    why: '豁免账而不是词表：一行 = 一个"确实不报任何 JSON"的校验函数加它的理由。它自己的对账由 validateValidatorMap 逐条做（漏登记、条目已失效、没写理由都红），这里只向 KI-086 的覆盖普查交代"它为什么没有一段声明可指"',
+  },
 ]
+
+/**
+ * 刻意"不报任何一张表"的那些校验函数（KI-093）。一张表都没有主人的函数只有两类合法理由：
+ * ① 它做的是**跨载体**对账（词表 ⇄ 主人），ERROR 记在那些载体名下；② 它管的是校验器自己这份源码。
+ * 除这两类之外的一张"什么都不报"的 validateX，就该由 `validateValidatorMap` 报红。
+ */
+const SUBJECT_WAIVERS = [
+  {
+    name: 'validateVocabDrift',
+    why: '跨载体的词表与覆盖对账：它的 ERROR 记在 schema.ts / src/ai/Enemy.ts / src/data/json/ 目录 / 本文件这些**主人**名下（report 的段名就是它们），FILES 里没有一张表是它管的对象',
+  },
+  {
+    name: 'validateValidatorMap',
+    why: '这道门管的就是校验器自己这份源码（`FILES` ⇄ `validateX`），对端不是任何一张 JSON。它自指，所以也必须在这张表上交代自己——否则它第一趟就红，而那一次红是对的：那条缝确实不属于任何一张表',
+  },
+]
+
+/**
+ * 名册 ⇄ 校验函数的对账（KI-093，结案 KI-088 没做①）。三端读数全部**现推**，这里不抄任何名单：
+ * 名册 = `arrayLiterals(本文件, 'FILES')`，函数 = `functionBodies(本文件, 'validate')` 逐条配对切体，
+ * 每个函数报哪张表 = 它体内 `const file = '…'`，它读了哪张表 = 体内 `data['…']` 加上 `data[file]` 这一种
+ * 变量式，调用点 = `calledNames(本文件, 'validate')`。判据本体住 `validator-map-rules.mjs`（两端都要喂合成的）。
+ */
+function validateValidatorMap() {
+  const SELF = 'scripts/validate-data.mjs'
+  let text = null
+  try { text = readFileSync(resolve(ROOT, SELF), 'utf8') } catch { text = null }
+  if (text === null) {
+    report.error(SELF, 'map:carrier', `${SELF} 读不到 ⇒ "名册 ⇄ 校验函数"这条对账在空转（工作目录不对？文件改名？）`)
+    return
+  }
+  const validators = (functionBodies(text, 'validate') ?? []).map((b) => ({
+    name: b.name,
+    bodyOk: b.body !== null,
+    subjects: b.body === null ? null : assignedLiterals(b.body, 'file'),
+    reads: b.body === null ? null : bracketKeys(b.body, 'data'),
+    readsVar: b.body !== null && /\bdata\[file\]/.test(b.body),
+  }))
+  for (const f of mapFindings({
+    file: SELF,
+    roster: arrayLiterals(text, 'FILES'),
+    validators,
+    calls: calledNames(text, 'validate'),
+    waivers: SUBJECT_WAIVERS,
+  })) report.error(f.file, f.where, f.msg)
+}
 
 /**
  * 词表对账（KI-074 / KI-076）：按 `from` 逐份读载体文件（一次一趟，缓存着），把顶上每张手抄名单比一遍。
@@ -2777,6 +2834,8 @@ void dialogueInfo.ids
 validateWorldstate()
 validateGearRarityCoverage()
 validateVocabDrift()
+// KI-093 排在最后：它读的是本文件的源码，而"有没有被调用"正是它的一条判据 ⇒ 调用点必须已经写下去了
+validateValidatorMap()
 void regionIds
 
 // ---- 报告 ----

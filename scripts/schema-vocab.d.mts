@@ -58,6 +58,24 @@ export function importedNames(text: string): string[] | null
 export function callArgLiterals(text: string, fnName: string): string[] | null
 /** 一份**目录名册**语料（KI-088：主人是 `src/data/json/` 那种目录）的读数；空 ⇒ null，不许拿空集冒充"目录里不多不少" */
 export function dirListing(text: string, ext?: string): string[] | null
+
+/** 一个顶层 `function <prefix>…(…)`：`body` 为 null = 花括号配不上对（抽取器在这一条上瞎了，要报） */
+export interface FunctionBody {
+  name: string
+  params: string
+  body: string | null
+}
+
+/** 从 `open`（必须指向 `{`）走到配对的 `}`，返回闭合括号下标；走不到 ⇒ -1。认字符串/模板/正则里的花括号 */
+export function matchBrace(src: string, open: number): number
+/** 一份源码里所有顶层 `function <prefix>…` 的函数体普查；一条都没有 ⇒ null（宁喊空转，不交空数组） */
+export function functionBodies(text: string, prefix: string): FunctionBody[] | null
+/** 一段代码里 `const <varName> = '字面量'` 的读数（去重、按出现序）；一处都没有 ⇒ null。只认单引号字面量 */
+export function assignedLiterals(text: string, varName: string): string[] | null
+/** `objName['键']` 的键普查（去重）；一处都没有 ⇒ null。变量式 `obj[k]` 看不见，调用方自己判 */
+export function bracketKeys(text: string, objName: string): string[] | null
+/** 源码里出现过调用点的 `<prefix>…` 名字（去重，声明行不算）；一个都没有 ⇒ null。只用来判"有没有 ≥1 个调用点" */
+export function calledNames(text: string, prefix: string): string[] | null
 /** `corpusFor(from)`：按载体文件给语料；读不到返回 null（对账会把它报成"这张门的载体读不到"） */
 export function vocabDriftErrors(input: { pairs: VocabPair[]; corpusFor: (from: string) => VocabCorpus | null }): VocabError[]
 

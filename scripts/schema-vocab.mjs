@@ -242,6 +242,157 @@ export function dirListing(text, ext) {
 }
 
 /**
+ * 从 `open`（必须指向一个 `{`）走到配对的那个 `}`，返回**闭合花括号的下标**；走不到 ⇒ -1。
+ *
+ * 与私有的 `matchingBrace`（`schemaBlocks`/`objectKeys` 用的那一条）差在一件事：那一条把**字符串、
+ * 模板串与正则字面量里的花括号也数进去**（切 TS 声明块够用，因为那里几乎没有裸花括号）。
+ * 切 JS 函数体时这一点是致命的：`validate-data.mjs` 的报告语里全是带引号的措辞，而抽取器自己
+ * 就读在 `/'([^']+)'/` 这类正则上（KI-093）。这一条因此认 `'…'`、`"…"`、`` `…${…}…` ``（可嵌套）
+ * 与 `/re/`（含 `[...]` 字符类）。注释仍由调用方先 `stripComments` 剥掉，本模块不养第二套口径。
+ */
+export function matchBrace(src, open) {
+  if (src[open] !== '{') return -1
+  const stack = ['brace']
+  let prev = '{'
+  for (let i = open + 1; i < src.length; i++) {
+    const c = src[i]
+    const top = stack[stack.length - 1]
+    if (top === 'sq') {
+      if (c === '\\') i++
+      else if (c === "'") { stack.pop(); prev = c }
+      continue
+    }
+    if (top === 'dq') {
+      if (c === '\\') i++
+      else if (c === '"') { stack.pop(); prev = c }
+      continue
+    }
+    if (top === 'tpl') {
+      if (c === '\\') i++
+      else if (c === '`') { stack.pop(); prev = c }
+      else if (c === '$' && src[i + 1] === '{') { stack.push('brace'); i++ }
+      continue
+    }
+    if (top === 're') {
+      if (c === '\\') i++
+      else if (c === '[') stack.push('cls')
+      else if (c === '/') stack.pop()
+      continue
+    }
+    if (top === 'cls') {
+      if (c === '\\') i++
+      else if (c === ']') stack.pop()
+      continue
+    }
+    // 代码上下文
+    if (c === "'" || c === '"' || c === '`') {
+      stack.push(c === "'" ? 'sq' : c === '"' ? 'dq' : 'tpl')
+      continue
+    }
+    if (c === '/') {
+      // 前一个非空白字符是"值的尾巴"（标识符/数字/`)`/`]`/`}`/引号）⇒ 这是除号，不是正则开头
+      if (!/[A-Za-z0-9_)\]}'"`]/.test(prev)) stack.push('re')
+      prev = c
+      continue
+    }
+    if (c === '{') { stack.push('brace'); prev = c; continue }
+    if (c === '}') {
+      stack.pop()
+      if (!stack.length) return i
+      prev = c
+      continue
+    }
+    if (!/\s/.test(c)) prev = c
+  }
+  return -1
+}
+
+/**
+ * 从参数表的开括号走到它的闭括号，再要求"闭括号后第一个非空白字符是 `{`"。
+ * 返回 `{ params, brace }`；不是这个形状（宏式声明、参数表没闭合、`function` 出现在别的地方）⇒ null。
+ *
+ * 为什么不用 `[^)]*\)` 一步到位（第一版就是这么写的）：它会在 `{ x = (1) } = {}` 这种**默认值里带括号**
+ * 的参数表上提前收口，然后 `indexOf('{')` 抓到参数表内部的 `{` ⇒ **函数体被切错边界**，
+ * 于是"这个函数报哪张表"读成一个自洽的假答案（实测：`assignedLiterals` 读出 null）。切错比读不到更糟，
+ * 因为读不到会被判成"抽取器瞎了"并红出来。这一条由 `tests/unit/validator-map.test.ts` 钉着。
+ * 已知限制：模板串里的 `${ f() }` 按"整段都是字符串"跳过（参数表默认值里那种嵌套今天没有证人）。
+ */
+function readParams(src, open) {
+  let depth = 0
+  let quote = null
+  let i = open
+  for (; i < src.length; i++) {
+    const c = src[i]
+    if (quote) {
+      if (c === '\\') { i++; continue }
+      if (c === quote) quote = null
+      continue
+    }
+    if (c === "'" || c === '"' || c === '`') { quote = c; continue }
+    if (c === '(') depth++
+    else if (c === ')') { depth--; if (depth === 0) break }
+  }
+  if (depth !== 0) return null
+  let j = i + 1
+  while (j < src.length && /\s/.test(src[j])) j++
+  return src[j] === '{' ? { params: src.slice(open + 1, i).trim(), brace: j } : null
+}
+
+/**
+ * 一份源码里所有**顶层** `function <prefix>…(…)` 的函数体普查（KI-093）。
+ * 返回 `[{ name, params, body }]`；参数表由 `readParams` 走括号，体由 `matchBrace` 配对切出。
+ * 两种"切不动"各自有各自的红法，都不许静默变成"这个函数不存在/它什么都不报"：
+ *  · 声明的形状本模块认不得（参数表没闭合、闭括号后不是 `{`）⇒ 这一条**根本不在结果里**，
+ *    于是"主循环调用了而没这个声明"那一条会红（实测钉在测试里）；
+ *  · 花括号配不上对（文件被截断、或有第三种本模块不认的语法）⇒ `body: null`，由判据报成"抽取器在这一条上瞎了"。
+ * 一个声明都没读到 ⇒ null（与别的抽取器同一口径：宁可喊空转，不交出空数组冒充"这个文件没有校验函数"）。
+ */
+export function functionBodies(text, prefix) {
+  const src = stripComments(text)
+  const out = []
+  for (const m of src.matchAll(new RegExp(`^function (${prefix}\\w*)\\s*\\(`, 'gm'))) {
+    const found = readParams(src, m.index + m[0].length - 1)
+    if (!found) continue
+    const close = matchBrace(src, found.brace)
+    out.push({ name: m[1], params: found.params, body: close > found.brace ? src.slice(found.brace + 1, close) : null })
+  }
+  return out.length ? out : null
+}
+
+/**
+ * 一段代码里 `const <varName> = '字面量'` 的读数（去重、按出现序）；一处都没有 ⇒ null。
+ * 校验函数用它回答"这个函数报的是哪一份表"（`const file = 'shop.json'` 那一格）。
+ * 只认**单引号字面量**：模板串与变量传进来的那一种读不到就报 null，让调用方喊空转，
+ * 而不是交出"这个函数不报任何表"的假读数（`callArgLiterals` 同一条限制）。
+ */
+export function assignedLiterals(text, varName) {
+  const lits = [...String(text).matchAll(new RegExp(`^\\s*const ${varName}\\s*=\\s*'([^']*)'`, 'gm'))].map((m) => m[1])
+  return lits.length ? [...new Set(lits)] : null
+}
+
+/** `objName['键']` 的键普查（去重、按出现序）；一处都没有 ⇒ null。变量式 `obj[k]` 这里**看不见**，调用方自己判 */
+export function bracketKeys(text, objName) {
+  const keys = [...String(text).matchAll(new RegExp(`\\b${objName}\\['([^']+)'\\]`, 'g'))].map((m) => m[1])
+  return keys.length ? [...new Set(keys)] : null
+}
+
+/**
+ * 源码里"被调用过"的 `<prefix>…(` 的名字（去重、按出现序）；一个都没有 ⇒ null。
+ * `function <name>(` 那一行**不算调用**（那是声明）。行注释先剥，整行是声明的先跳。
+ * 已知限制：名字出现在字符串/模板里也会被算成一次调用——所以这张读数只用来判"有没有调用点"
+ * 这一件事（有没有 ≥1），不用来数调用了几次。
+ */
+export function calledNames(text, prefix) {
+  const src = stripComments(text)
+  const out = []
+  for (const line of src.split('\n')) {
+    if (/^\s*function\b/.test(line)) continue
+    for (const m of line.matchAll(new RegExp(`\\b(${prefix}\\w*)\\s*\\(`, 'g'))) out.push(m[1])
+  }
+  return out.length ? [...new Set(out)] : null
+}
+
+/**
  * 逐张名单对账。
  * @param pairs 每张：`{ at, from, name?, source, copied, allowMissing?, whyMissing?, subset?, whySubset?, where?, hint?, missHint?, extraHint? }`
  *        - `at`：那张声明在这道门里的身份（'SlotKey' / 'MilestoneGrant' / 'SHAKE_TABLE' / 'passiveValue()'）
