@@ -68,9 +68,18 @@ const EPS = 1e-7
  * 线段 `a → b` 与遮挡体集合的第一个交点；没有交点返回 null。
  * `expand` 是把"运动的物体自己有半径"并进遮挡体里（截面与高度各加这么多），
  * 近战那条线的端点已经是身体中心/命中点，所以它传 0。
+ *
+ * `strict` 是**同一把尺子的第二种口径**（KI-092）：默认那两条"让着走"的规则——起点在体内
+ * 不算挡、贴面与相切不算挡——是给**打出去的线**写的（站在柱子旁也该能开枪，擦着柱面过去
+ * 的一寸不该算掩体）。而"这一条线**走不走得过去**"问的是另一件事：身体进不去墙，体内、
+ * 贴面、相切都算挡。两种口径共用同一份 slab 与二次方程（`strict` 只关掉那两条赦免），
+ * 于是"挡箭的几何"与"挡路的几何"不可能各写一份、各差一格——那正是 KI-092 要避免的东西。
+ *
+ * `strict` 下 t 允许 ≤ 0（起点已经在体内），布尔用户（导航）只问"是不是 null"；
+ * **那种输入上 `at` 落在起点之后，不是可用的撞击点**，所以除导航外不要传 true。
  */
 export function firstBlock(
-  occluders: Iterable<Occluder>, a: Vec3, b: Vec3, expand = 0,
+  occluders: Iterable<Occluder>, a: Vec3, b: Vec3, expand = 0, strict = false,
 ): BlockHit | null {
   const dx = b.x - a.x
   const dy = b.y - a.y
@@ -81,7 +90,7 @@ export function firstBlock(
   if (Math.hypot(dx, dz) < EPS) return null
   let best: { t: number; at: Vec3; occluderId: string } | null = null
   for (const o of occluders) {
-    const t = o.shape === 'box' ? boxEnter(o, a, dx, dy, dz, expand) : cylEnter(o, a, dx, dy, dz, expand)
+    const t = o.shape === 'box' ? boxEnter(o, a, dx, dy, dz, expand, strict) : cylEnter(o, a, dx, dy, dz, expand, strict)
     if (t === null) continue
     if (best && best.t <= t) continue
     best = { t, occluderId: o.id, at: { x: a.x + dx * t, y: a.y + dy * t, z: a.z + dz * t } }
@@ -90,7 +99,7 @@ export function firstBlock(
 }
 
 /** 圆柱截面：xz 上解二次方程拿到进出参数，再看那一段有没有穿过 `[base,top]` 这一竖带 */
-function cylEnter(o: CylinderOccluder, a: Vec3, dx: number, dy: number, dz: number, expand: number): number | null {
+function cylEnter(o: CylinderOccluder, a: Vec3, dx: number, dy: number, dz: number, expand: number, strict: boolean): number | null {
   const r = o.radius + expand
   if (r <= 0) return null
   const base = o.pos.y - expand
@@ -106,7 +115,7 @@ function cylEnter(o: CylinderOccluder, a: Vec3, dx: number, dy: number, dz: numb
   const sq = Math.sqrt(disc)
   const lo = (-lin - sq) / (2 * q)
   const hi = Math.min((-lin + sq) / (2 * q), 1)
-  if (lo <= EPS) return null // 起点已经在柱内 ⇒ 柱面在身后，挡不住这一线
+  if (!strict && lo <= EPS) return null // 起点已经在柱内 ⇒ 柱面在身后，挡不住这一线（strict 下「体内」= 走不过去）
   if (hi <= lo) return null // 交点整段在 b 之后 ⇒ 柱子在目标后面，不是掩体
   return enterBand(a.y, a.y + dy, lo, hi, base, top)
 }
@@ -115,12 +124,12 @@ function cylEnter(o: CylinderOccluder, a: Vec3, dx: number, dy: number, dz: numb
  * 轴对齐盒截面（authored 墙）：三条轴各夹一块板（slab），交集非空就是被挡住，返回进入参数。
  * 与圆柱共用同两条口径：起点在体内不挡、贴脸（`lo <= EPS`）不挡。
  */
-function boxEnter(o: BoxOccluder, a: Vec3, dx: number, dy: number, dz: number, expand: number): number | null {
+function boxEnter(o: BoxOccluder, a: Vec3, dx: number, dy: number, dz: number, expand: number, strict: boolean): number | null {
   const hx = o.halfX + expand
   const hz = o.halfZ + expand
   const yLo = o.pos.y - expand
   const yHi = o.pos.y + o.heightM + expand
-  if (Math.abs(a.x - o.pos.x) <= hx && Math.abs(a.z - o.pos.z) <= hz && a.y >= yLo && a.y <= yHi) return null
+  if (!strict && Math.abs(a.x - o.pos.x) <= hx && Math.abs(a.z - o.pos.z) <= hz && a.y >= yLo && a.y <= yHi) return null
   let lo = 0
   let hi = 1
   for (const [p, d, b, t] of [[a.x - o.pos.x, dx, -hx, hx], [a.y, dy, yLo, yHi], [a.z - o.pos.z, dz, -hz, hz]] as const) {
@@ -134,7 +143,7 @@ function boxEnter(o: BoxOccluder, a: Vec3, dx: number, dy: number, dz: number, e
     if (x < hi) hi = x
     if (lo >= hi) return null // 有一轴先离开 ⇒ 擦着边过去，没穿过任何面
   }
-  return lo <= EPS ? null : lo // 起点正贴在墙面上：贴脸不算"被墙挡住"，与柱面同口径
+  return strict ? lo : (lo <= EPS ? null : lo) // 起点正贴在墙面上：贴脸不算"被墙挡住"，与柱面同口径（strict 下贴面 = 走不过去）
 }
 
 /**

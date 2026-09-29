@@ -10,6 +10,7 @@ import { bandDamage } from '@/combat/HitShapes'
 
 import type { RhythmClock } from '@/core/RhythmClock'
 import type { SightGate } from '@/core/Occlusion'
+import type { NavGate } from './Navigation'
 import type { PlayerController } from '@/player/ThirdPersonController'
 import { advanceActionFrames, applyActionStop, type ActionStop } from '@/combat/ActionFrames'
 
@@ -106,6 +107,13 @@ export class Enemy {
    * null = 未被定调。倍率全部来自那份数据表，不在这里写死（§55）。
    */
   buff: { attackSpeedMul: number; dmgMul: number; fromId: string } | null = null
+  /**
+   * KI-009 第一腿的绕路口（combat.md §595「路径=简单导航网格（手工 Nav 点或 A* 网格，
+   * 禁动态避障物理）」）：由 `AISystem` 每 tick 从组合根写入，`null` = 这一片天没有 authored 墙
+   * （野外与全部既有测试的口径）。**读它的地方只有一处**——`stepToward`，于是追击 / 搜索 /
+   * 巡逻 / 退却 / 跟队友共用同一条腿，绕路的收益与它的代价都只有一份。
+   */
+  nav: NavGate = null
   /**
    * §14.5「拍隙」当前状态：true = 此刻正踩在拍点上，半透明+定身，打不着也走不动。
    * 和 buff 一样是**每 tick 从数据重算的派生态**，不是需要维护的事件态。
@@ -1002,11 +1010,26 @@ function faceSlow(e: Enemy, t: Vec3, rate = 0.15): void {
 
 function stepToward(e: Enemy, t: Vec3, dt: number, speed: number, _rhythm: RhythmClock): void {
   if (e.intangible) return // §14.5「仅半拍窗内位移」：拍点上定身，包括追击/逃跑/搜索
-  const dx = t.x - e.pos.x, dz = t.z - e.pos.z
+  // KI-009 第一腿（combat.md §595）：注入过导航器时先问一句「直着走过去会撞墙吗」——会，就把这一步
+  // 的目标换成绕路的第一个拐点。没注入、绕不过去、或这一片天本来没有 authored 墙 ⇒ 目标原样，
+  // 脚步与导航落地之前**逐字节相同**（这就是"老行为是新行为的回落分支"那句话的实现）。
+  const goal = e.nav ? e.nav(e.pos, t, agentRadius(e)) : t
+  const dx = goal.x - e.pos.x, dz = goal.z - e.pos.z
   const l = Math.hypot(dx, dz)
   if (l < 0.05) return
   e.pos.x += (dx / l) * speed * dt
   e.pos.z += (dz / l) * speed * dt
+}
+
+/**
+ * 这一只的体格（导航半径，KI-009 第一腿）。和 `bodyHeight()` 同一支笔：灰盒身体是**圆柱**，
+ * 身高 1.6 × scale、半径 0.5 × scale——两个尺寸都从 `body.scale` 乘出来，不在代码里另立一格
+ * （§55：视觉体与"走路的那个体"不许各写一个尺寸，否则玩家看到的是穿模、量到的是另一回事）。
+ * 要求文档哪天给出正式体格表（`ai.agentRadius` 这种），这里就改成读那一格，形状与
+ * `ai.kiteRange` 同族。
+ */
+function agentRadius(e: Enemy): number {
+  return 0.5 * (e.data.body?.scale ?? 1)
 }
 
 function stepAway(e: Enemy, t: Vec3, dt: number, speed: number): void {

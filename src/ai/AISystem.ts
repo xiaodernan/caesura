@@ -3,6 +3,7 @@ import { Enemy, bindEnemyRegistry } from './Enemy'
 import type { PlayerController } from '@/player/ThirdPersonController'
 import type { RhythmClock } from '@/core/RhythmClock'
 import type { SightGate } from '@/core/Occlusion'
+import type { NavGate } from './Navigation'
 import type { EnemyData } from '@/data/schema'
 import { registry } from '@/core/Registry'
 
@@ -35,6 +36,13 @@ export class AISystem {
    * 名册的主人是 `combat`（它每 tick 重点名），所以这里要的只是一个函数，不新增依赖箭头。
    */
   sightBlocked: SightGate = null
+  /**
+   * KI-009 第一腿 绕路（combat.md §595）：组合根每 tick 写一次，`null` = 没有可挡路的几何体。
+   * 与 `sightBlocked` 同一个套路（名册的主人是组合根，`ai` 只要一个函数，不新增依赖箭头），
+   * 但落点不同：视线是每一次感知才问一次，而脚步是**每一只每一 tick**都要问——所以它写在
+   * {@link Enemy.nav} 上，由下面那个循环统一下发。
+   */
+  nav: NavGate = null
 
   constructor() {
     bindEnemyRegistry(this.enemies)
@@ -154,6 +162,7 @@ export class AISystem {
       }
     }
     for (const e of this.enemies) {
+      e.nav = this.nav // 组合根改一次注入，全场当帧生效（不必等下一次 spawn）
       e.update(dt, tick, player, rhythm, (k) => this.slotTaken(k))
       if (!e.alive && e.stateTick > 3000) {
         // retire fully faded corpses

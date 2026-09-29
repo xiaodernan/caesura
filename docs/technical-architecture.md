@@ -123,8 +123,9 @@ src/
                        一等公民设计，不能后补。**这一句已经成立**：三条通道都在
                        `Enemy.sense()`（视觉 + 震动）与 `Enemy.hear()`（听觉）里，10Hz 轮转在
                        `AISystem.update`；把它拆成独立 `Perception.ts` 只是当年的一种布线选择
-    Navigation.ts      简化 navmesh：每 chunk 预烘焙导航网格（离线脚本或首帧烘焙 worker）、
-                       A* + string-pulling 平滑；动态绕行=局部转向（velocity obstacle）
+    Navigation.ts      KI-009 第一腿：绕路（可见性图 + A\*，节点 = authored 墙的外扩角）。
+                       几何的真源是 `core/Occlusion.firstBlock` 的 `strict` 档，与挡箭/挡眼同一把尺子；
+                       规划里的"每 chunk 预烘焙导航网格 + string-pulling + 局部避障"仍未做，见 §5.9.32
     Squad.ts           编队/aggro：共享 blackboard 的 camp 引用，仇恨分配（越后置入战斗
                        的敌人等待槽位，槽位上限 3——避免围殴不可读），CallAlly 广播
   world/
@@ -255,7 +256,7 @@ src/
 
 | 规划路径 | 状态标签（§78） | 归属与后果 |
 |---|---|---|
-| `ai/Navigation.ts` | Placeholder | KI-009：`regions.json > navmeshRef` 故意留空以免悬空引用；敌人的移动现在是"朝目标走 + 距离带停"，不会绕墙 |
+| `ai/Navigation.ts` | Partial | KI-009 **第一腿已落（2026-09-29）**：可见性图 + A\* 绕路，节点 = 每面 authored 墙按这一只的体格外扩后的四个角 + 终点，边成立 ⇔ 那一段被 `core/Occlusion.firstBlock`（`strict` 那一档）判为走得通 —— 与箭、视线、挥砍**共用同一份几何**。护栏三层：墙数超过 `MAX_WALLS`(12) 熔断回落直线、拐点让开 `CORNER_MARGIN`(0.15m > 死区 0.05 + 最快一 tick 0.077)、起点压在墙体内时先迈出那面墙（`escape`，否则"直线回落"就是穿墙）。**仍未落**：`regions.json > navmeshRef` 仍留空（没有烘焙网格，`Navigation.ts` 是运行时几何而不是预烘焙资产）；没有 string-pulling 平滑（走的是折线，贴角那一段是直角转弯）；没有局部避障（§595 明令禁）；**没有高度场** —— 导航是平面问题，多层结构要有真几何之后才谈 |
 | `ai/Squad.ts` 的仇恨槽位（上限 3） | 未落 | `callAlly` 只有广播（`ai.callAlly` 事件 + 半径判定），没有"后置入战斗的敌人等槽位"，围殴可读性这条还没做 |
 | `player/CameraRig.ts` 的模式枚举与碰撞回弹 | 未落 | 现在的 CameraRig = 平滑跟随 + §10 震镜表 + FOV 脉冲 + 处决推轨 + 锁定时的 target bias；**没有 exploration/combat/lockOn/boss/cinematic 五个模式，也没有弹簧臂射线回弹**（球体射线 5 点采样那句是规划） |
 | `player/LockOn.ts` 的规划四句：`8m~35m 锥形` / `遮挡脱锁` / `boss 强制单锁` | 未落 | **KI-084 把数接进表时逐句核过代码**（不是照抄 §2 那行）：①没有 8m 内圈，也没有任何角度上限——`liveCandidates()` 只筛 `alive` 与水平斜距 `≤ range`，角度只是打分里的一项（所以背后 170° 的目标照样可锁，只要它最近）；②脱锁只有两条：`target.alive == false` 与 `d > range`，**墙不会解开锁定**（`core/Occlusion.ts` 的四个读者里没有 LockOn，KI-014 那条"锁定 AoE"指的是被锁者的 AOE 被遮挡，不是锁定本身被遮挡）；③Boss 没有"强制单锁"，只有 `bossBonus` 让她在同角度上不被贴脸杂兵抢走（那条关系现由 validator 钉住，见 §5.9.22）。**后果**：这三句是设计意图而不是现状，谁要落其中任何一句都得先改这一格，而不是让 §2 那行继续冒充事实 |
@@ -429,7 +430,7 @@ graph:{root:"n0", nodes:{"n0":{textKey, cond?:stringExpr, options:[{textKey, nex
 req?:"flag.x&&!flag.y", effects:[{kind:"setFlag",flag,op},{kind:"giveItem",id,n},{kind:"startQuest",id}]}]}}}`
 **RegionData**（已落地 `src/data/json/regions.json`，7 区域 + `world/Streaming.ts`）：
 `{id:"rg_whisperwode", nameKey, displayName(IP_SEED §14 词表), order:int(解锁顺序), biome:"hub|forest|ruins|underground|camp|dungeon|boss_arena",
-bounds:{minX,maxX,minY,maxY,minZ,maxZ}(水平边界对齐 chunkSize，y 可半格抬升), chunkSize:48, navmeshRef?(Navigation.ts 未落地故暂留空，见 KI-009),
+bounds:{minX,maxX,minY,maxY,minZ,maxZ}(水平边界对齐 chunkSize，y 可半格抬升), chunkSize:48, navmeshRef?(仍留空：KI-009 第一腿走的是**运行时几何** `walls[]`，不是预烘焙网格，见 §5.9.32),
 weatherPresets[], lightingPreset, palette:{base,accent,glow}(对齐 IP_SEED §10), spawnGroups:[{enemyId,count,center,radius,campId?,condition?}],
 landmarks:[{id,nameKey,pos,sightRange}], interactables:[{id,kind:"checkpoint|elevator|bridge|soundwall|gather|chest|npc|teleport",pos,oneWay?,requiresFlag?,setsFlag?,npcId?}],
 music:{explore,battle,ambience}, streamingPriority:int, preloadWhole?(boss arena 整场预载), unlockFlag?, secrets:[{id,unlockFlag,rewardTable,pos}], storyHooks[]}`
@@ -1877,6 +1878,39 @@ Phase 4-B 落三叠箭时只做了**延迟**那一半（`at=[0,32,42]` 让第 2 
 **实机腿（§77）**：这一批没有运行时行为可跑——它全部落在工具链平面上（源码抽取 + 门禁 + 单测），"实机"这一格就是 `validate-data.mjs` 与 `tests/unit/validator-map.test.ts` 这两条真读数的通道本身，没有第三层可证。
 
 **仍未做的两格**：①覆盖面那张普查按**缩进**读数（零到两格算名单、四格以深算局部），一张故意写进三层嵌套的抄本今天躲得过去（KI-086②）；②`docs/**`、`src/**` 的文本不在 KI-082 那道门内（KI-086③）。
+
+
+
+### 5.9.32 敌人的绕路：`Navigation.ts` 第一腿落地，几何与挡箭/挡眼同一把尺子（KI-009，2026-09-29）— 已实现一半
+
+**症状是一幅壁画**。combat.md §595「路径 = 简单导航网格（手工 Nav 点或 A\* 网格，禁动态避障物理）」此前一个承载体都没有：追击是"朝目标走直线"，一堵 `regions.json > walls` 里的塌墙就够把它变成贴着墙蹭、在墙角抖的一幅画——而**同一堵墙**早就挡住了玩家的箭与它的视线（KI-014②b）。这一批把"挡路"也并进同一条线段。
+
+**几何的真源仍然只有一份**：走得通与否问 `core/Occlusion.firstBlock` 的**第二种口径** `strict`（本批新增的参数）。
+
+| 口径 | 两条赦免 | 谁在读 |
+|---|---|---|
+| 默认（`strict = false`） | 起点在体内不算挡、贴面/相切不算挡 | 弹体扫掠段、打在玩家身上的那一记、§14.4 telegraph 红线、敌人视线、玩家挥砍 |
+| `strict = true` | **两条都关掉**：体内、贴面都算挡 | 只有脚步（`Navigator.clear`） |
+
+两种口径共用同一份 slab 裁剪与同一支二次方程（`strict` 只关掉那两条赦免），所以"挡箭的几何"与"挡路的几何"不可能各写一份、各差一格。`strict` 下 `t` 允许 ≤ 0（起点已在体内），布尔用户只问"是不是 null"——**那种输入上 `at` 落在起点之后，不是可用的撞击点**，所以除导航外不要传 true（写在 `firstBlock` 的文档注释里）。
+
+**走法：可见性图 + A\***，一个设计数字都不新增（§55）。节点 = 每面墙按**这一只的体格半径**外扩后的四个角 + 终点；一条边成立 ⇔ 那一段不被任何墙截断。体格从 `body.scale` 推（`Enemy.agentRadius` = `0.5 × scale`，与灰盒圆柱同一支笔：视觉体与"走路的那个体"不许各写一个尺寸）。A\* 里**先算账再看几何**（`tentative >= g[i]` 先短路）——顺序是承重的，绕路这一支每 tick 都要跑。
+
+**缺口注入沿用 `SightGate` 那一套**：`AISystem.nav` 每 tick 下发给名册里的每一只（改一次全场当帧生效，不必等下一次 spawn），读者**只有一处**（`Enemy.stepToward`）⇒ 追击／搜索／巡逻／退却／跟队友共用同一条腿，绕路的收益与它的代价都只有一份。`main.ts` 的落点与遮挡名册同一处触发（`syncAuthored`，跨区才动一次）。
+
+**三条护栏，各有一段实测读数**：
+
+- **墙太多就熔断**：`MAX_WALLS = 12`（现状：7 区共 **10** 面墙、单区最多 4 面，离上限很远）。它是给意外数据的保险丝，不是预算——真到那一天该做的是"只认走廊附近几面墙"的裁剪。
+- **拐点让开 `CORNER_MARGIN = 0.15m`**。**这一格是第一版真出错的地方**：初版余量 `1e-6`（"比 `EPS` 大一个数量级"），而 `stepToward` 对 0.05m 以内的目标原地不动（"走到拐点上"实际是"停在拐点前 0.05m"），拐点压在外扩边界上时那点提前量就把身体放进盒里了 ⇒ `strict` 判"从体内出发的每一条边都不成立" ⇒ `path` 返回 null ⇒ 回落"直线冲目标" ⇒ **之后 73 tick 它一路从墙里穿过去**。这条读数是 `.scratch` 的探针逐 tick 打出来的（不是推断）：`pos=(-1.358,-3.396) inside=true route=[]`。余量因此必须大于"死区 + 一 tick 的步长"：最快的敌人（幽灵八 4.2 × 1.1 倍速 ÷ 60）一 tick 走 **0.077m**，加 0.05 死区 = 0.127 ⇒ 取 0.15。`REACHED`（拐点判定为"已站在那儿"的距离）与 `stepToward` 的死区**是同一个数**，这一点写进了注释——两个 0.05 各改各的，上面那条链子会以同样的方式再断一次。
+- **起点确实压在墙体内时先迈出去**（`Navigator.escape` → 走向那面墙最近的外扩角）。没有这一格，"起点在体内"的常规回落就是 `to`，也就是穿墙。它今天只在"作者把人摆进墙的体格里"这类输入上可达（余量已经把正常走位那条路堵死），所以是保险而不是主路，但有一条用例专门喂它。
+
+**仍未做**：`regions.json > navmeshRef` 仍留空（这条腿走的是**运行时几何** `walls[]`，不是预烘焙网格资产）；没有 string-pulling 平滑（折线，贴角是直角转弯）；没有局部避障（§595 明令禁）；**没有高度场**——导航是平面问题，查询点由 `at()` 压到 `groundY` 上，多层结构要等 KI-008 的真几何。
+
+**守卫**：新 `tests/unit/navigation.test.ts` **20 条**，三层：①两种口径的差（体内／贴面／离开那一面／外面来的一线给同一个交点／`expand`）；②纯几何（没有墙 ⇒ 返回目标本身**那个对象**；墙在别处 ⇒ 目标原样；绕路 ⇒ 每一段都用**同一个** `firstBlock` 复验；拐点在外扩盒外且余量盖得住死区；站在拐点上时它被摘掉；墙太多 ⇒ 熔断；被围死 ⇒ 回落不抛错；查询点落到地板；换区域清空；`escape` 脱困）；③集成——**同一个敌人、同一段距离跑两遍**：不注入的那一趟走进墙的脚印（本引擎没有位移碰撞，这正是壁画的来源），注入的那一趟一次都不进、且跨过墙所在那条线时人在墙的两头之外。第三层第一版把两人摆在 ±10m（20m 远到嘈壳 12m 的视距之外），半途掉进 `search` 绕着 `lastKnown` 转圈 ⇒ 那条断言量的其实是状态机；改成 ±4m 才是只量脚下的路——这条教训写在用例的文件头。
+
+**门禁（2026-09-29）**：`tsc --noEmit` 0 错；`node scripts/validate-data.mjs` 0 ERROR / 1 WARN；`node scripts/test.mjs` 109 个测试文件全部跑到、1529 条用例全绿。
+
+**实机腿（§77）**：这一批的读数全部来自 headless（几何是纯函数、`Enemy` 是逻辑层）。真组合根里"追击的敌人绕过破拍营地那堵塌墙"这一眼没有在可见窗口里走过（本会话没有视口，KI-010 同因），如实记在这里。
 
 
 

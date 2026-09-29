@@ -24,6 +24,7 @@ import { PlayerController } from '@/player/ThirdPersonController'
 import { CameraRig } from '@/player/CameraRig'
 import { LockOn } from '@/player/LockOn'
 import { AISystem } from '@/ai/AISystem'
+import { Navigator } from '@/ai/Navigation'
 import { CombatManager } from '@/combat/CombatManager'
 import { glossary } from '@/combat/Statuses'
 import { AudioEngine } from '@/audio/AudioEngine'
@@ -97,6 +98,7 @@ function selectWeaponSlot(slot: number): void {
 
 const lock = new LockOn(player, playerBase.lockOn)
 const ai = new AISystem()
+const nav = new Navigator() // KI-009 第一腿：敌人的绕路（读者只有 Enemy.stepToward 一处）
 const combat = new CombatManager(player, ai, time, rhythm)
 const visuals = new ActorVisuals(arena.scene, arena.playerVisual, player)
 const projectileVis = new ProjectileVisuals(arena.scene)
@@ -216,9 +218,16 @@ wallGreybox.syncLoaded(loadedStates.flatMap((s) => streaming.byState(s).map((c) 
 // 关卡侧遮挡名册跟着脚下这片天走（Boss 的柱子每 tick 重名点，墙只在跨区时动一次）
 let wallsRegion = shownRegion
 combat.occlusion.syncAuthored(streaming.regionAt(player.pos) ?? null)
+// KI-009 第一腿：绕路读**同一份**墙（`regions.json > walls`），换区域时和遮挡名册一起换。
+// 两份名册各自持有一条同源同构的墙表，这不是"两个真源"——它们是同一份数据在同一处的两次投影，
+// 而且判据共用同一个 `firstBlock`（口径差在 `strict` 那一档，见 core/Occlusion）。
+nav.syncAuthored(streaming.regionAt(player.pos) ?? null)
 // KI-014②b：AI 的视线借**同一份**名册（§13.0 视觉列的后半句）。名字里那个 `blocked` 就是
 // 弹道读的那一条线 ⇒ "这堵墙挡住了箭、却挡不住目光"从这一刻起不成立。
 ai.sightBlocked = (a, b) => combat.occlusion.blocked(a, b)
+// KI-009 第一腿：脚步的绕路口（同上的那个函数、那一档 strict）。空名册与没有注入是同一种效果：
+// `next` 返回目标本身 ⇒ 直线追击，与这一腿之前逐字节相同。
+ai.nav = (from, to, radius) => nav.next(from, to, radius)
 /**
  * 世界状态写入层（Phase 6-A）：`regions.json` 里那些被读的旗标需要一个**写方**，否则藏在门后的
  * 内容根本不可达（KI-041）。规则住在 `data/json/worldstate.json`，这一层只管"触发了就广播"。
@@ -415,6 +424,7 @@ const core = {
     if ((here?.id ?? null) !== wallsRegion) {
       wallsRegion = here?.id ?? null
       combat.occlusion.syncAuthored(here ?? null)
+      nav.syncAuthored(here ?? null)
     }
     if (here && here.id !== shownRegion) {
       // §2.1 的区域网格表：进区域就换拍（深窖=只有 60BPM 心跳）。Boss 的私有时钟叠在它之上，
