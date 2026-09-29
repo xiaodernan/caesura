@@ -297,6 +297,28 @@
    {
     "state": "HALTRUNE.STEP3_LASTWATCH",
     "label": "《最后一班岗》：三条路各自收尾 —— 收编冲锋 / 逐个劝停 / 留给恩希尔（Phase 6-C 落）",
+    "advanceOn": {
+     "flags": [
+      "flag.haltrune_farewell_open"
+     ]
+    },
+    "tags": [
+     "C",
+     "M"
+    ]
+   },
+   {
+    "state": "HALTRUNE.STEP4_PASSING",
+    "label": "《义体尽头的拍子》：他请你在场 —— 用休止送走他，或者让他敲完最后一个循环",
+    "advanceOn": {
+     "state": {
+      "key": "state.haltrune.fate",
+      "in": [
+       "PASSING_STILL",
+       "DRUM_LEGEND"
+      ]
+     }
+    },
     "tags": [
      "C",
      "M"

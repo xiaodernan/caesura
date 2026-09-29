@@ -190,3 +190,79 @@ describe('断弦线《点名册》：营地归属是一次真的三选一', () =
     w.cleanup()
   })
 })
+
+describe('断弦线步 4《义体尽头的拍子》：入口在复访节点上，不抢步 3 的后果句', () => {
+  /** 走到"最后一班岗"（营地已定性）那个世界 */
+  const toLastWatch = () => {
+    const w = makeWorld()
+    w.walkPatrol()
+    w.fillRoster('c1') // 归还给休垒 —— 友军哨站
+    expect(w.quests.state('q_haltrune')).toBe('HALTRUNE.STEP3_LASTWATCH')
+    expect(w.quests.isComplete('q_haltrune'), '《最后一班岗》还没演 ⇒ 不许算收束').toBe(false)
+    return w
+  }
+  /**
+   * 沿复访链走到"结局入口可见"那一刻。**不假设落在哪个节点**：这条链是
+   * "一道闸不成立就往 next 退"的台阶（KI-089 的形状），写死节点名会随台阶增删而假红/假绿。
+   */
+  const walkToFarewell = (w: ReturnType<typeof makeWorld>): void => {
+    expect(w.session.open('npc_haltrune'), '复访要有话说').toBe(true)
+    for (let i = 0; i < 8; i++) {
+      const v = w.last()
+      if (v.choices.some((c) => c.id === 'c3')) return
+      if (v.choices.length > 0) { w.session.choose(v.choices[v.choices.length - 1].id); continue }
+      w.session.advance()
+    }
+    throw new Error('沿复访链走不到结局入口')
+  }
+
+  it('填完名册的第一眼仍是"营地归谁"的后果句：结局不抢它（KI-043 的教训）', () => {
+    const w = toLastWatch()
+    expect(w.last().nodeId, '后果句').toBe('n7')
+    expect(w.last().text).toContain('友军哨站')
+    // 再往下走一层才轮到复访中立节点，那时结局入口只是多出来的一条
+    w.session.open('npc_haltrune')
+    walkToFarewell(w)
+    expect(w.last().choices.map((c) => c.id), '结局旁边还有"让他继续站着"').toEqual(['c3', 'c4'])
+    w.cleanup()
+  })
+
+  it('用休止把他停在最后一拍上 ⇒ PASSING_STILL，线在这一刻收束（§2.4 步 4 / §7 STATE.HALTRUNE）', () => {
+    const w = toLastWatch()
+    walkToFarewell(w)
+    w.session.choose('c3') // （把那条断臂上的拍子按停）
+    expect(w.last().nodeId).toBe('h0')
+    expect(w.last().choices.map((c) => c.id)).toEqual(['c1', 'c2'])
+
+    const rel = w.quests.relation('npc_haltrune')
+    w.session.choose('c1') // （用休止按住那面鼓）
+    expect(w.states.get('state.haltrune.fate'), '值域是这条线唯一的结局读数').toBe('PASSING_STILL')
+    expect(w.quests.relation('npc_haltrune'), '他谢你懂什么叫收工').toBe(rel + 1)
+    expect(w.quests.isComplete('q_haltrune'), '末步的 advanceOn 命中 ⇒ 这条线收束').toBe(true)
+    expect(w.quests.state('q_haltrune'), '收束不改 state').toBe('HALTRUNE.STEP4_PASSING')
+    expect(w.last().nodeId).toBe('h1')
+    expect(w.last().text).toContain('收工')
+    w.cleanup()
+  })
+
+  it('走开让他敲完最后一个循环 ⇒ DRUM_LEGEND，同样收束（两条路都算把这条线走完）', () => {
+    const w = toLastWatch()
+    walkToFarewell(w)
+    w.session.choose('c3')
+    w.session.choose('c2') // （转身走开）
+    expect(w.states.get('state.haltrune.fate')).toBe('DRUM_LEGEND')
+    expect(w.quests.isComplete('q_haltrune')).toBe(true)
+    expect(w.last().nodeId).toBe('h2')
+    expect(w.last().text).toContain('更')
+    w.cleanup()
+  })
+
+  it('还没走到最后一班岗时：结局闸门的两个前提都不成立（不靠"走一遍看有没有"来判）', () => {
+    const w = makeWorld()
+    w.walkPatrol() // 只到《点名册》
+    expect(w.quests.state('q_haltrune'), '任务步还没到最后一班岗 ⇒ gte 闸门不成立').toBe('HALTRUNE.STEP2_ROSTER')
+    expect(w.states.get('state.haltrune.fate'), '结局读数还在缺省上 ⇒ 值域闸门也不成立').toBe('ALIVE_AT_POST')
+    // 两条前提都不成立时，n10 上那两条结局选项的 conditions 必然求值为假（引擎的条件是合取）
+    w.cleanup()
+  })
+})

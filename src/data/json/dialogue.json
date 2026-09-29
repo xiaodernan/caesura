@@ -1762,7 +1762,46 @@
           ]
         }
       },
-      "next": "n11"
+      "choices": [
+          {
+            "id": "c3",
+            "text": "（把那条断臂上的拍子按停）",
+            "style": "poetic",
+            "effects": {
+              "setFlags": [
+                "flag.haltrune_farewell_open"
+              ]
+            },
+            "conditions": {
+          "quest": {
+            "id": "q_haltrune",
+            "gte": "HALTRUNE.STEP3_LASTWATCH"
+          },
+          "state": {
+            "key": "state.haltrune.camp",
+            "in": ["OUTPOST", "RUINS", "GARRISON"]
+          }
+        },
+            "next": "h0"
+          },
+          {
+            "id": "c4",
+            "text": "（让他继续站着）",
+            "style": "silent",
+            "conditions": {
+          "quest": {
+            "id": "q_haltrune",
+            "gte": "HALTRUNE.STEP3_LASTWATCH"
+          },
+          "state": {
+            "key": "state.haltrune.camp",
+            "in": ["OUTPOST", "RUINS", "GARRISON"]
+          }
+        },
+            "next": "n11"
+          }
+        ],
+        "next": "n11"
     },
     {
       "id": "n11",
@@ -1790,6 +1829,57 @@
           "next": null
         }
       ]
+    },
+    {
+      "id": "h0",
+      "speaker": "npc_haltrune",
+      "emotion": "still",
+      "text": "（他的左臂在打拍，比昨天快——他自己听得见那个速度。他把义肢卸下来放在石头上。）两个选择：你用休止把它停在这里，我就停在最后一拍上；或者你走开，让我自己敲完。",
+      "choices": [
+        {
+          "id": "c1",
+          "text": "（用休止按住那面鼓）",
+          "style": "poetic",
+          "effects": {
+            "setState": {
+              "key": "state.haltrune.fate",
+              "value": "PASSING_STILL"
+            },
+            "setRelation": {
+              "delta": 1
+            },
+            "notify": "他停在最后一拍上 —— 石头上的义肢最后一次落下时没有响"
+          },
+          "next": "h1"
+        },
+        {
+          "id": "c2",
+          "text": "（转身走开）",
+          "style": "silent",
+          "effects": {
+            "setState": {
+              "key": "state.haltrune.fate",
+              "value": "DRUM_LEGEND"
+            },
+            "notify": "你走到桥头回头 —— 营地里多了一面鼓。它自己打更，拍子很稳"
+          },
+          "next": "h2"
+        }
+      ]
+    },
+    {
+      "id": "h1",
+      "speaker": "npc_haltrune",
+      "emotion": "quiet",
+      "text": "……稳。谢谢。你比律政院懂什么叫收工。",
+      "next": null
+    },
+    {
+      "id": "h2",
+      "speaker": "npc_haltrune",
+      "emotion": "hollow",
+      "text": "（他没有回头。你听见第一声更，落在正拍上。）",
+      "next": null
     }
     ]
   }
