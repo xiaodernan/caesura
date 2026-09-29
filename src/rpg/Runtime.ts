@@ -208,13 +208,21 @@ export class RpgRuntime {
   /**
    * 使用消耗品（回响膏=回血；音色晶=刮失谐）。返回实际生效量，由 main.ts 落到玩家身上——
    * 这一层不认识 PlayerController，所以"回血/清值"只能作为数字交回去，不能自己改人。
+   *
+   * KI-023① 之后 `use` 认三种用法，而**这条腿只认两种**：投掷（`throw`）的消费方是
+   * `CombatManager.throwCrystal`，不是这里。所以只写 `throw` 的晶石不能被"研读"吃掉一件——
+   * 先扣再算会让它返回 `ok:true, 0, 0`，玩家看到的是道具凭空消失（§55：一个字段一个消费方，
+   * 而"没有效果的那种消费"是最坏的一种）。今天表里没有这样的道具，这道闸门是为那个合法形状立的。
    */
   useItem(itemId: string): { ok: boolean; heal: number; corruption: number } {
     const item: ItemData = itemOf(itemId)
     if (item.kind !== 'consumable' || !item.use) return { ok: false, heal: 0, corruption: 0 }
+    const heal = item.use.heal ?? 0
+    const corruption = item.use.corruption ?? 0
+    if (heal === 0 && corruption === 0) return { ok: false, heal: 0, corruption: 0 }
     if (this.inv.count(itemId) <= 0) return { ok: false, heal: 0, corruption: 0 }
     this.inv.remove(itemId, 1)
-    return { ok: true, heal: item.use.heal ?? 0, corruption: item.use.corruption ?? 0 }
+    return { ok: true, heal, corruption }
   }
 
   onEnemyKilled(enemy: EnemyData): LootGrant[] {

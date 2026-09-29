@@ -723,10 +723,17 @@ export interface ItemData {
   desc: string
   gear?: GearDef
   /**
-   * 消耗品：使用效果。`heal` 回血（回响膏）；`corruption` 为负数=刮掉多少失谐（音色晶）。
+   * 消耗品的用法。`heal` 回血（回响膏）、`corruption` 为负数=刮掉多少失谐（音色晶），
+   * 两者都是面板上「研读」那条腿；`throw`（KI-023① 声东击西）是投掷用法：抛物线弹体落地碎裂，
+   * 按 `loudness` 发一声伪声源——她朝碎响处扑过去，玩家在别处输出。投掷本身不发声（风声不算数）。
+   *
    * 只写有消费方的字段——消耗音效属于 Phase 8 音频系统的工作，届时再回表。
    */
-  use?: { heal?: number; corruption?: number }
+  use?: {
+    heal?: number
+    corruption?: number
+    throw?: { speed: number; range: number; radius: number; gravity: number; loudness: number; offsetY?: number }
+  }
 }
 
 /* ============================ 营地商店（progression.md §6.2/§6.3，KI-055） ============================ */

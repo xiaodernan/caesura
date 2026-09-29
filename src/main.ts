@@ -193,6 +193,17 @@ props.bossQuery = (dataId) => {
   const b = ai.enemies.find((e) => e.data.id === dataId && e.alive)
   return b ? { hpMax: b.stats.hpMax, phase: b.bossPhase, alive: true } : null
 }
+// KI-023① 声东击西的弹药源：背包里的音色晶 + 它的投掷参数（数据在 items.json 的 use.throw）
+combat.crystalSource = () => {
+  const def = registry.maybeGet<ItemData>('it_timbre_crystal')
+  const n = rpg.inv.count('it_timbre_crystal')
+  if (!def?.use?.throw) return null
+  return {
+    available: n,
+    consume: () => { rpg.inv.remove('it_timbre_crystal', 1) },
+    spec: def.use.throw
+  }
+}
 const propVis = new PropVisuals(arena.scene, regions, (r) => streaming.isRegionUnlocked(r), (p) => props.isExposed(p))
 const greybox = new ChunkGreybox(arena.scene, regions, streaming.chunkSize)
 /**

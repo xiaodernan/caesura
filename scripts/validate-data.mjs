@@ -1012,10 +1012,21 @@ function validateItems(weaponIds, rarityIds, affixDefs) {
       report.sub(file, `${w}.use`, it.use, { heal: { min: 0, optional: true }, corruption: { max: -1, int: true, optional: true } })
       if (isObj(it.use)) {
         for (const k of Object.keys(it.use)) {
-          if (k !== 'heal' && k !== 'corruption') report.error(file, `${w}.use.${k}`, '没有消费方（use 只认 heal/corruption）')
+          if (k !== 'heal' && k !== 'corruption' && k !== 'throw') report.error(file, `${w}.use.${k}`, '没有消费方（use 只认 heal/corruption/throw——KI-023① 声东击西）')
+          if (k === 'throw' && isObj(it.use.throw)) {
+            const t = it.use.throw
+            for (const [tk, tv] of Object.entries(t)) {
+              if (typeof tv !== 'number' || !Number.isFinite(tv)) report.error(file, `${w}.use.throw.${tk}`, '必须是有限数字')
+            }
+            if (!(t.speed > 0) || !(t.range > 0) || !(t.gravity >= 0) || !(t.loudness > 0 && t.loudness <= 1) || !(t.radius > 0)) {
+              report.error(file, `${w}.use.throw`, 'speed/range/radius/loudness(0,1]/gravity 必须在合法区间')
+            }
+          }
         }
-        if (it.use.heal === undefined && it.use.corruption === undefined) {
-          report.error(file, `${w}.use`, '必须至少写 heal 或 corruption，否则这个 use 没有消费方')
+        // 「至少写一个用法」那一句必须与本条**同一个名单**：只写 `throw` 的消耗品（一颗只会被扔出去的
+        // 晶石）是合法的，而条件里漏掉 throw 时上面那句新措辞就是假的（说认三种、实际只认两种）。
+        if (it.use.heal === undefined && it.use.corruption === undefined && it.use.throw === undefined) {
+          report.error(file, `${w}.use`, '必须至少写 heal/corruption/throw 之一，否则这个 use 没有消费方')
         }
       }
     }

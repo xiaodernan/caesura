@@ -321,6 +321,24 @@ describe('总装（RpgRuntime）：装备/升级/洗点/使用道具的编排', 
     expect(rt.inv.count('it_echo_salve')).toBe(1)
   })
 
+  it('只写投掷用法的消耗品不能被「研读」吃掉（`use` 认三种，研读那条腿只认两种）', () => {
+    /**
+     * 今天表里**没有**这样的道具（`it_timbre_crystal` 同时有 `corruption` 那一条腿），所以这一格是
+     * 合成的：它钉的是"schema 与验证器认下的形状，每条腿都要说得清自己吃不吃它"。KI-023① 之前
+     * `use` 只认 heal/corruption，这个形状根本写不出来；认下之后 `useItem` 若照旧"先扣再算"，
+     * 一颗只会被扔出去的晶石被研读一次就 `ok:true, 0, 0`——那是白吃一件。
+     */
+    registry.register('it_probe_throw_only', {
+      id: 'it_probe_throw_only', nameKey: 'item.probe', displayName: '探针晶', kind: 'consumable',
+      stack: 5, value: 0, desc: '只写 throw 的探针（不进任何表）',
+      use: { throw: { speed: 11, range: 15, radius: 0.35, gravity: 14, loudness: 0.8 } },
+    } as ItemData)
+    const rt = new RpgRuntime('origin_tuner')
+    rt.inv.add('it_probe_throw_only', 2)
+    expect(rt.useItem('it_probe_throw_only'), '没有研读效果 ⇒ 不许报 ok').toMatchObject({ ok: false, heal: 0, corruption: 0 })
+    expect(rt.inv.count('it_probe_throw_only'), '更不许扣掉一件').toBe(2)
+  })
+
   it('快照往返：音级/属性/背包/装备/首杀记录一起回来', () => {
     const rt = new RpgRuntime('origin_player')
     rt.prog.addResonance(200)

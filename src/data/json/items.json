@@ -92,7 +92,15 @@
   "value": 26,
   "desc": "会记住声音的晶体。刮一点粉下去，它把你身上那些不属于这首歌的音带走一层——安静是有代价的，这东西就是那笔账。",
   "use": {
-   "corruption": -25
+   "corruption": -25,
+   "throw": {
+    "speed": 11,
+    "range": 15,
+    "radius": 0.35,
+    "gravity": 14,
+    "loudness": 0.8,
+    "offsetY": 1.2
+   }
   }
  },
  {
