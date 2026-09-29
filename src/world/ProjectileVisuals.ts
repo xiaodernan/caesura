@@ -17,6 +17,7 @@ const COLOR: Record<string, { body: number; glow: number }> = {
 function geometryFor(kind: string): THREE.BufferGeometry {
   if (kind === 'spear') return new THREE.BoxGeometry(0.07, 0.07, 1.7) // 长轴 +Z，朝速度方向摆正
   if (kind === 'note') return new THREE.IcosahedronGeometry(0.24, 0)
+  if (kind === 'crystal') return new THREE.OctahedronGeometry(0.3, 0) // 音色晶（KI-023①）：会唱歌的八面体
   return new THREE.TetrahedronGeometry(0.22)
 }
 

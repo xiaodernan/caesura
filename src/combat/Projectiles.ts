@@ -63,6 +63,8 @@ export interface Projectile {
    */
   feintPunishMs?: number
   loudness: number
+  /** KI-023①：音色晶那发带着——碎裂时的伪声源响度（onProjectileGone 读它） */
+  crystalLoudness?: number
   dead: boolean
   gone: GoneReason | null
   bornTick: number
@@ -96,6 +98,12 @@ export interface LaunchParams {
   /** §14.4 诱饵惩罚（KI-085）：这一发是假动作时带来时的硬直毫秒数；见 `Projectile.feintPunishMs` */
   feintPunishMs?: number
   loudness?: number
+  /**
+   * KI-023① 声东击西：这一发是音色晶（kind 'crystal'），落地碎裂时按这个响度发一声
+   * 伪声源（onProjectileGone 的 crystal 分支读它）。伤害恒 0：它是诱饵不是武器，
+   * 弹道判定对它整段跳过（穿过人，不撞人）。
+   */
+  crystalLoudness?: number
 }
 
 /** 兜底寿命：600 tick = 10 秒，射程与地面都漏不掉也不会常驻 */
@@ -139,6 +147,7 @@ export class ProjectileSystem {
       shake: l.shake ?? 'normal',
       reaction: l.reaction,
       feintPunishMs: l.feintPunishMs,
+      crystalLoudness: l.crystalLoudness,
       loudness: l.loudness ?? 4,
       dead: false,
       gone: null,

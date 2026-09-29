@@ -4,7 +4,7 @@ export type ActionName =
   | 'attackLight' | 'attackHeavy' | 'guard' | 'parry'
   | 'lockOn' | 'interact' | 'weaponSkill' | 'weaponSkillB'
   | 'ability1' | 'ability2' | 'ability3'
-  | 'map' | 'pause'
+  | 'map' | 'pause' | 'throwCrystal'
 
 export interface Binds {
   keyboard: Record<string, ActionName>
@@ -19,6 +19,7 @@ export const DEFAULT_BINDS: Binds = {
     MouseLeft: 'attackLight', MouseRight: 'attackHeavy',
     KeyF: 'guard', KeyG: 'parry',
     KeyQ: 'lockOn', KeyE: 'interact', KeyR: 'weaponSkill', KeyC: 'weaponSkillB',
+    KeyT: 'throwCrystal',
     Digit1: 'ability1', Digit2: 'ability2', Digit3: 'ability3',
     Tab: 'map', Escape: 'pause'
   },

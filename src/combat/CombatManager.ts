@@ -180,6 +180,7 @@ export class CombatManager {
     // authored 墙不在这里动——它住在区域数据里，由组合根跨区时写（`syncAuthored`）。
     this.occlusion.syncFrom(this.ai.enemies)
     this.tryExecute(input, tick)
+    this.tryThrowCrystal(input, tick)
     this.launchPlayerProjectile(tick)
     this.launchEnemyProjectiles(tick)
     this.playerHitsEnemies(tick)
@@ -602,6 +603,40 @@ export class CombatManager {
   /* ======================= 弹道 ======================= */
 
   /** 玩家投掷枪：进入 activeStart 的那一帧发射；连发按 burst 排开（同一动作最多 count 发） */
+  /**
+   * KI-023① 声东击西的弹药源（组合根注入）：此刻包里有几颗音色晶、怎么扣、投掷参数。
+   * combat 层不认识背包与物品表——这一格是它们之间唯一的一根线（与 props.bossQuery 同一套注入纪律）。
+   */
+  crystalSource: (() => { available: number; consume: () => void; spec: { speed: number; range: number; radius: number; gravity: number; loudness: number; offsetY?: number } } | null) | null = null
+  private crystalReadyTick = 0
+
+  /** §15.3 解法循环：投掷音色晶到 A 点 → 她转向 A → 玩家在 B 输出。投掷本身不发声（风声不算数），
+   *  全部的产品是落地那一声碎响（onProjectileGone 的 crystal 分支）。 */
+  private tryThrowCrystal(input: Input | undefined, tick: number): void {
+    if (!input || !input.frame.edges.has('throwCrystal')) return
+    if (tick < this.crystalReadyTick) return
+    if (this.player.action || this.player.roll || this.player.executing || this.player.stats.dead) return
+    const src = this.crystalSource?.()
+    if (!src || src.available <= 0) {
+      bus.emit('ui.notify', { text: '没有音色晶可投', kind: 'info' })
+      this.crystalReadyTick = tick + 20
+      return
+    }
+    const p = this.player
+    src.consume()
+    const spec = src.spec
+    const dir = { x: Math.sin(p.yaw), y: 0.42, z: Math.cos(p.yaw) }
+    this.projectiles.spawn({
+      hostile: false, ownerId: 'player', kind: 'crystal',
+      origin: { x: p.pos.x, y: p.pos.y + (spec.offsetY ?? 1.2), z: p.pos.z }, dir,
+      speed: spec.speed, range: spec.range, radius: spec.radius, gravity: spec.gravity,
+      damage: 0, poise: 0, hitStopMs: 0, parryable: false, pierce: 99,
+      crystalLoudness: spec.loudness
+    }, tick)
+    this.crystalReadyTick = tick + 30 // 连投限速：一串晶不该变成一串无缝的假声源
+    bus.emit('log', { level: 'info', msg: `crystal.thrown left=${src.available}` })
+  }
+
   private launchPlayerProjectile(tick: number): void {
     const a = this.player.action
     if (!a) return
@@ -673,6 +708,9 @@ export class CombatManager {
     this.projectiles.update(dt, tick)
     for (const pr of this.projectiles.list()) {
       if (pr.dead || pr.bornTick === tick) continue // 出生帧不参与判定：否则反射体会当帧打到自己
+      // 声东击西的晶（KI-023①）：是诱饵不是武器——只跳过**命中**分支；遮挡/地面照常结账，
+      // 否则它落地不死、碎裂那一声永远发不出来（写测试时当场抓到的过跳）
+      const isDecoy = pr.kind === 'crystal'
       // KI-014①：遮挡量的是**这一 tick 走过的那一段**（`prev → pos`），不是"此刻在不在墙里"，
       // 而它**对两边一样狠**：玩家投出的枪与敌人射来的弹体共用这一行，所以"长枪穿过掩体"
       // 这一支从这一刻起不成立。弹体自己的半径并进柱子里算（`expand`），否则半根柱子
@@ -685,7 +723,9 @@ export class CombatManager {
         this.projectiles.kill(pr, 'wall')
         continue
       }
-      if (pr.hostile) {
+      if (isDecoy) {
+        // 穿过所有人：晶的判定只有遮挡、地面与碎裂（上面/下面各自照跑）
+      } else if (pr.hostile) {
         if (!this.player.executing && !pr.hitIds.has('player') && sphereHits(pr, this.player.hitTarget())) {
           this.projectileThreatensPlayer(pr, tick)
         }
@@ -804,6 +844,14 @@ export class CombatManager {
    */
   private onProjectileGone(pr: Projectile, reason: GoneReason): void {
     if (reason !== 'ground' && reason !== 'wall') return
+    // KI-023①：音色晶碎裂 = 一次伪声源广播。§15.3 的解法循环在这里闭合：
+    // 「投掷音色晶到 A 点 → 她转向 A」——任何靠听的敌人吃的都是同一路 sound.source。
+    if (pr.kind === 'crystal') {
+      bus.emit('sound.source', { id: 'player', pos: { ...pr.pos }, loudness: pr.crystalLoudness ?? 0.8 })
+      bus.emit('audio.sfx', { key: 'chord_slam', pos: { ...pr.pos }, gain: 0.9 })
+      bus.emit('vfx.request', { key: 'death_shatter', pos: { ...pr.pos }, scale: 0.8 })
+      return
+    }
     bus.emit('vfx.request', { key: 'ring_dust', pos: { ...pr.pos }, scale: reason === 'wall' ? 1.4 : 0.4 })
     bus.emit('audio.sfx', { key: pr.hostile ? 'block_guard' : 'hit_metal', pos: { ...pr.pos }, gain: 0.35 })
   }
