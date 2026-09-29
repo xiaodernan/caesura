@@ -467,17 +467,29 @@ describe('F3 · 任务与世界读数（只读）', () => {
     w.dispose()
   })
 
-  it('末步没有 advanceOn 的那几条线永远不打勾（后续步还没写，不是做完了）', () => {
+  it('末步的闸门没命中就不打勾；而"末步干脆没有闸门"这种线在表里已经不存在', () => {
     const w = makeQuestWorld()
-    // 这条线三步：step0 的闸门是旗标、step1 的闸门是值域、**step2 一个闸门都没有**（后续步还没落表）。
-    // 两步各走一条路推到位；`walkTo` 只会立旗，值域那一步得由状态机自己广播过来。
+    /**
+     * 这条用例原来叫「末步没有 advanceOn 的那几条线永远不打勾（后续步还没写，不是做完了）」——
+     * 那时 `q_haltrune` 的末步是《最后一班岗》，没有闸门（＝一条永远收不了的线）。
+     * 五条 NPC 线各自收束之后，那个形状在表里**一条都不剩**了，所以判据反过来钉：
+     * ① **表级**：谁再往表里加一条没有闸门的末步（＝造一条永远打不了勾的线）当场红；
+     * ② **面板级**：末步的闸门要原样印出来，没命中之前不打勾，命中那一刻才打勾。
+     */
+    const openEnded = questTable.filter((q) => !q.steps[q.steps.length - 1].advanceOn).map((q) => q.id)
+    expect(openEnded, '末步没有闸门的线（＝后续步还没落表的老形状）').toEqual([])
+
+    // `walkTo` 只立旗，所以值域那两步得由状态机自己广播过来（引擎那条路，不是直接调 advance）
     w.walkTo('q_haltrune', 1)
-    w.worldStates.set('state.haltrune.camp', 'OUTPOST')
+    w.worldStates.set('state.haltrune.camp', 'OUTPOST') // 步 2《点名册》的闸门
+    w.streaming.setFlag('flag.haltrune_farewell_open') // 步 3《最后一班岗》的闸门
     const row = w.rowOf('q_haltrune')
-    expect(row).toContain('3/3')
-    expect(row).toContain('HALTRUNE.STEP3_LASTWATCH')
-    expect(row).toContain('(no advanceOn)')
-    expect(row).not.toContain('[done]')
+    expect(row).toContain('4/4')
+    expect(row).toContain('HALTRUNE.STEP4_PASSING')
+    expect(row, '末步等的是**值域**，面板要印出那一格与它的取值').toContain('next: state.haltrune.fate in PASSING_STILL/DRUM_LEGEND')
+    expect(row, '停在末步 ≠ 收束').not.toContain('[done]')
+    w.worldStates.set('state.haltrune.fate', 'PASSING_STILL')
+    expect(w.rowOf('q_haltrune'), '闸门命中才打勾').toContain('[done]')
     w.dispose()
   })
 
