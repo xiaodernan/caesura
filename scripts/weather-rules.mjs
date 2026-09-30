@@ -60,10 +60,149 @@ export const PENDING_WEATHER_READINGS = {
   hush: '深窖的驻留天气"噤声"。与 still 同族：那一区的压抑来自病白色与光照（§8 区域色板那句），不在天气那一格里，天气表替光照欠着这一笔',
 }
 
+/**
+ * 「这一区的第二格天气今天由谁的条件来」还没裁的那些区（KI-094② 判据 S1）。
+ *
+ * 每条写的都是**那一区的变化在数据里长什么形状**，而不是"待办"：切换的判据是"一口修得动的钟立起
+ * 一面任务线在等的旗"（`src/world/WeatherSwitch.ts`），下面这四处的事件都不是那个形状——
+ * 给它们编一个条件就是拿我的猜测冒充叙事裁决（§77 那条纪律在数据侧的样子）。
+ */
+export const PENDING_WEATHER_SWITCHES = {
+  rg_resthold: '休垒的"落烬"：区内没有 `kind:\'bell\'` 的钟——广场那四件陈设是 `inspect`，按**值域**换组（`state.bells.fourth_dumb` = INTACT/RUNG/MELTED/SEALED，narrative §7 那个抉择）。切换今天只认"被任务线追踪的旗"，要让它认值域得先裁"值域状态算不算天气条件"',
+  rg_brokenbar_camp: '营地的"雾"：那一区的世界变化走的是桥放下来／后门开／`flag.brokenbar_resolved` 那类事件（没有钟，也没有修钟这一步），而文档里没有任何一句说营地为什么起雾。那一格是抄雾语林的样子还是另有条件 ⇒ 欠叙事裁决',
+  rg_earless_deeps: '深窖从"噤声"到"沉静"：它的事件是五环线索读齐后初句圣所那扇门打开（`ga_deeps_firstphrase_door` 吃四面 `flag.clue_*` 的**合取**），不是修钟。把"线索齐了"当天气条件是另一种判据形状，要接就先裁它属不属于天气那一格',
+  rg_unfinished_hall: '未竟厅的"失谐风暴"：那一区的门槛是 `flag.organ_gate_open`（管风琴门），它由关卡推进而不是由某口钟的修复立起；§15.2 里恩希尔战改变的是**音乐与拍**，文档没说过它改天气 ⇒ 谁的条件来这一格欠裁决',
+}
+
 const isObj = (v) => !!v && typeof v === 'object' && !Array.isArray(v)
 const isArr = (v) => Array.isArray(v)
 const isNum = (v) => typeof v === 'number' && Number.isFinite(v)
 const isNonEmptyStr = (v) => typeof v === 'string' && v.trim().length > 0
+
+/**
+ * 「修钟之后这一区的天气换掉」那条切换的判据本体（KI-094②）。它量的是三方之间的关系，而不是一张新表：
+ * **任务线追踪的旗标**（`quests.json > steps[].advanceOn.flags`）× **站在谁的地上的钟**
+ * （`regions.json > interactables[kind==='bell'].setsFlag`）× **那一区声明了几格天气**（`weatherPresets`）。
+ * 读者的算法住在 `src/world/WeatherSwitch.ts`，与这里同一判据、同一份数据 —— 判据与读者各写一份
+ * "什么算修好的钟"就是两份账（KI-092 那一族：口径必须有主人）。
+ *
+ * 五条：
+ *  S1 每区都要交代它的切换：`weatherPresets` 只有驻留那一格 ⇒ 没事；有第二格而**没有任何被追踪的钟**
+ *     ⇒ 必须挂在 `PENDING_WEATHER_SWITCHES` 上写清"这一格今天由谁的条件来"，否则 ERROR（欠账能挂，
+ *     不能不挂）；已经挂了账而条件后来出现 ⇒ ERROR 说该销（KI-073 那一族）。
+ *  S2 一面被追踪的旗不许被两区的钟同时立：那"这面旗改谁的天"没有答案 ⇒ ERROR。
+ *  S3 钟数与格数不齐（`bells !== presets.length - 1`）⇒ WARN：多出来的钟拨不动新天气，
+ *     少掉的那几格永远等不到（今天没有这种区，这条是给以后拦的）。
+ *  S4 `kind === 'bell'` 而立了旗、那面旗**不在任务线名册里** ⇒ WARN：这口钟改了世界而不改天气，
+ *     要么它本来就不是"修钟"（今天那口倒钟正是敲响而非修复），要么任务线漏了它。
+ *  S5 两侧任一名册读空 ⇒ ERROR 说"这道门在空转"，不退成"名单为空所以什么都合法"。
+ *
+ * @param {string} file 报告用的文件名
+ * @param {unknown} regions `regions.json` 的顶层
+ * @param {string[] | null} questFlags 任务线用来推进步骤的旗标（由调用方从 `quests.json` 现推）；null/空 ⇒ 门在空转
+ * @param {{ [regionId: string]: string } | null} pending 欠条件的区域账本：区 id → 为什么今天给不出条件
+ * @returns {{ level: 'error' | 'warn', file: string, where: string, msg: string }[]}
+ */
+export function weatherSwitchFindings(file, regions, questFlags, pending) {
+  const out = []
+  const err = (where, msg) => out.push({ level: 'error', file, where: where || file, msg })
+  const warn = (where, msg) => out.push({ level: 'warn', file, where: where || file, msg })
+
+  if (!isArr(regions) || regions.length === 0) {
+    err('', '读不到 regions.json 的区域名单：这条切换判据在空转')
+    return out
+  }
+  if (!isArr(questFlags) || questFlags.length === 0) {
+    err('', '读不到 quests.json 里被任务线追踪的旗标（主人：steps[].advanceOn.flags）：这条切换判据在空转——'
+      + '名册读空时每一区都会被判成"没有修钟的条件"，零条 finding 什么都不证明')
+    return out
+  }
+  const tracked = new Set(questFlags)
+  const ledger = isObj(pending) ? pending : null
+
+  // S2 先收集：一面旗被哪几区的钟立着
+  const flagOwners = new Map()
+  for (const rg of regions) {
+    if (!isObj(rg) || !isNonEmptyStr(rg.id)) continue
+    for (const flag of trackedBellFlags(rg, tracked)) {
+      const owners = flagOwners.get(flag) ?? []
+      owners.push(rg.id)
+      flagOwners.set(flag, owners)
+    }
+  }
+  for (const [flag, owners] of [...flagOwners].sort()) {
+    if (owners.length > 1) err(flag, `旗标 '${flag}' 被 ${owners.length} 区的钟同时立着（${owners.join(' / ')}）：一面旗改两区的天气，切换没有答案`)
+  }
+
+  for (const rg of regions) {
+    if (!isObj(rg) || !isNonEmptyStr(rg.id)) continue
+    const presets = isArr(rg.weatherPresets) ? rg.weatherPresets : []
+    const bells = [...new Set(trackedBellFlags(rg, tracked))]
+    const slots = Math.max(presets.length - 1, 0)
+
+    if (presets.length === 0) {
+      err(`${rg.id}.weatherPresets`, '必填且非空：一区至少要说得出它驻留的天气，否则画面那一格对它没有读数')
+      continue
+    }
+    if (slots > 0 && bells.length === 0) {
+      const why = ledger && ledger[rg.id]
+      if (why) {
+        warn(rg.id, `这一区声明了修钟后的天气而今天没有能让它响的条件：${why}`)
+      } else {
+        err(`${rg.id}.weatherPresets`, `'${rg.id}' 声明了 ${presets.length} 格天气（${presets.join(' → ')}），`
+          + '而区内没有任何一口钟立着被任务线追踪的旗 ⇒ 第二格永远不会奏。要么在那一区放一口修得动的钟，'
+          + '要么把"这一格今天由谁的条件来"写进 PENDING_WEATHER_SWITCHES')
+      }
+    }
+    if (ledger && ledger[rg.id] && bells.length > 0) {
+      err(`PENDING_WEATHER_SWITCHES.${rg.id}`, `这一区已经有 ${bells.length} 口被追踪的钟（${bells.join(' / ')}）作为条件，这条待办该销（留着就是两种交代同时挂）`)
+    }
+    if (bells.length > 0 && bells.length !== slots) {
+      warn(rg.id, `这一区有 ${bells.length} 口被追踪的钟而天气只有 ${slots} 格可换：${bells.length > slots ? '多出来的钟拨不动新天气' : `第 ${bells.length + 1} 格之后的天气永远等不到`}（bell 数与格数要一起改）`)
+    }
+
+    // S4：不被追踪的钟——它立了旗而任务线不等那面旗，于是它不改天气
+    for (const it of rg.interactables ?? []) {
+      if (!isObj(it) || it.kind !== 'bell') continue
+      if (isNonEmptyStr(it.setsFlag) && !tracked.has(it.setsFlag)) {
+        warn(`${rg.id}.interactables(${it.id})`, `这口钟立的是 '${it.setsFlag}'，而它不在任务线追踪的旗标里 ⇒ 敲响/修好它都不改天气。`
+          + '如果它本该改：让某个任务步骤的 advanceOn.flags 等这面旗；如果不该改（比如它只是"敲响"而不是"修复"），这条 WARN 就是它的说明')
+      }
+      if (!isNonEmptyStr(it.setsFlag)) warn(`${rg.id}.interactables(${it.id})`, '一口不立任何旗的钟：它没有能拨天气的出口（也不改任何世界状态）')
+    }
+  }
+
+  // 账本自己也要能销：条目指的区没有第二格了 = 条目作废
+  if (ledger) {
+    for (const [id, why] of Object.entries(ledger)) {
+      const rg = regions.find((r) => isObj(r) && r.id === id)
+      if (!rg) err(`PENDING_WEATHER_SWITCHES.${id}`, `待办点着一区 '${id}'，而 regions.json 里没有这一区：条目作废`)
+      else if (isArr(rg.weatherPresets) && rg.weatherPresets.length <= 1) {
+        err(`PENDING_WEATHER_SWITCHES.${id}`, `'${id}' 已经只剩驻留那一格天气：没有要切换的第二格，这条待办该销`)
+      }
+      if (!isNonEmptyStr(why) || why.trim().length < 20) {
+        err(`PENDING_WEATHER_SWITCHES.${id}`, '欠账必须写清楚今天为什么给不出切换条件（≥20 字）：一句"待办"两年后没人能判断它成不成立')
+      }
+    }
+  }
+  return out
+}
+
+/**
+ * 与 `src/world/WeatherSwitch.ts > repairBellFlags` 同一条判据：`kind === 'bell'` 而立着被任务线追踪的旗。
+ *
+ * 这条判据在两个平面各有一份实现（判据不能 import 玩法层，玩法层不能 import 判据），
+ * 所以它**被导出**：`tests/unit/weather-switch.test.ts` 在真实的 `regions.json` + `quests.json` 上
+ * 逐区对账两份名单。对不上就是有一份在说谎——这一句话是那条用例的全部内容。
+ */
+export function trackedBellFlags(region, tracked) {
+  const flags = []
+  for (const it of region.interactables ?? []) {
+    if (!isObj(it) || it.kind !== 'bell' || !isNonEmptyStr(it.setsFlag)) continue
+    if (tracked.has(it.setsFlag)) flags.push(it.setsFlag)
+  }
+  return flags
+}
 
 /**
  * 一表天气行 → findings（`{ level, file, where, msg }`）。只读不改。

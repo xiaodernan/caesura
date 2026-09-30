@@ -1921,7 +1921,7 @@ Phase 4-B 落三叠箭时只做了**延迟**那一半（`at=[0,32,42]` 让第 2 
 
 
 
-### 5.9.33 天气那一列第一次有读者：画面调色的唯一仲裁者，两条腿乘在一起而不是互相盖掉（KI-094①，2026-09-30）— 已落地（Partial：切换腿欠）
+### 5.9.33 天气那一列第一次有读者：画面调色的唯一仲裁者，两条腿乘在一起而不是互相盖掉（KI-094①，2026-09-30）— 已落地（Partial：切换腿已由 §5.9.34 接上，本条剩 ②–⑥ 那几格欠）
 
 **症状是两串数字与一条字符串**。art-direction §8 给的是四个可读的雾密度（Clear 0.008 / Fog 0.030 / Rain 0.018 / Storm 0.022），§2 给的是三条乘数（Rain 明度 ×0.8、Fog 对比 ×0.6、Storm 对比 ×1.15），而 `regions.json` 每区写着 2 个天气名（`weatherPresets[]`，全场去重 **8** 个名字）——**两头从来没有对过账**：需求 §38 的四档与数据侧的八个名字之间没有任何一条机器关系，拼错一个天气名不会有任何东西响。同时 `world/PlaceholderArena.ts:25` 把雾密度**写死成 `0.028`**（不属于文档任何一个数），换区不改、天气不改，整片世界永远同一片雾。第三条：`canvas.style.filter` 只有一个写方（`main.ts` 的 `setVeil()`，§11 失谐褪色），而天气的明度/对比乘数想说的也是这一串——**任何一方单独往上写，浏览器里就是后盖前的**。
 
@@ -1944,9 +1944,9 @@ Phase 4-B 落三叠箭时只做了**延迟**那一半（`at=[0,32,42]` 让第 2 
 - **`regions.json` 里 5 个名字没有文档读数，于是**不替它们编**：`emberfall`/`still`/`drip`/`stone-wind`/`hush` 逐条挂 `PENDING_WEATHER_READINGS` 写明"§38/§8 的哪一句里没有它、要给读数还缺谁裁决"。今天它们全部按基线奏，而**这件事是校验器喊出来的**（5 条 WARN），不是一句注释。
 - **那一行没声明的格子不许顺手按基线覆盖**：`apply()` 只在行真的给了 `fogDensity` 时写雾。一条没给雾密度的天气行去写雾，等于把别人的雾改成自己的默认值（`world/PlaceholderArena.ts` 那个写死的构造参数今天就是"别人"）。
 
-**合成发生在哪里，由源码门说**（`tests/unit/color-grade.test.ts` 最后一组）：`style\.filter\s*=` 在 `src/**` 的写方 `toEqual(['src/vfx/ColorGrade.ts'])`；`\.density\s*=` 同理；`main.ts` 里**作为语句**出现的 `grade.setRegion(` 恰 **2** 次（开局一次 + 换区一次）。最后这条从前写的是 `toMatch(/grade\.setRegion\(/)`，A4 那一臂（删掉换区那一句）在它上面**存活**——开局那次调用替它把字符串留着了；改成数次数后又踩到第二个坑：全文数会把 `main.ts:110` **注释里**那句 `grade.setRegion(homeRegion …)` 数进去（实测 3 而非 2），于是锚到行首。
+**合成发生在哪里，由源码门说**（`tests/unit/color-grade.test.ts` 最后一组）：`style\.filter\s*=` 在 `src/**` 的写方 `toEqual(['src/vfx/ColorGrade.ts'])`；`\.density\s*=` 同理；`main.ts` 里**作为语句**出现的 `grade.setRegion(` 恰 **2** 次（开局一次 + 换区一次）。最后这条从前写的是 `toMatch(/grade\.setRegion\(/)`，A4 那一臂（删掉换区那一句）在它上面**存活**——开局那次调用替它把字符串留着了；改成数次数后又踩到第二个坑：全文数会把 `main.ts:110` **注释里**那句 `grade.setRegion(homeRegion …)` 数进去（实测 3 而非 2），于是锚到行首。~~那一格的钉子今天钉的是 `grade.setRegion(`。~~ **纠正（KI-094②）**：`setRegion` 整个方法已经删掉（见 §5.9.34），同一格现在钉 `applyWeather(` 恰 **2** 次 + `grade.setWeather(` 恰 **1** 次 + 一条"旗标广播那一行必须重算天气"的行锚；`grade.setRegion(` 的写方普查退成 `toEqual([])`，A3/A4 两臂在新钉子上各命中一条（探针表见 §5.9.34）。
 
-**现状量测（不是设计）**：七区的**驻留**天气（`weatherPresets[0]`）今天全部落回基线——只有 `rg_resthold` 的驻留名 `clear` 有行，`still`/`hush` 欠读数；而两个有读数的非基线行（`fog`／`dissonant-storm`）只出现在 `[1]`（修钟之后那条切换），它**今天没有写方**（要的是任务线给的世界状态），`setWeather` 在 `src/` 里除仲裁者自己之外**零外部调用点**。这两条都由用例量出来并写明"②落地时这条必须翻过来"，红的时候直接指向该改的那一行。
+**现状量测（不是设计）**：七区的**驻留**天气（`weatherPresets[0]`）今天全部落回基线——只有 `rg_resthold` 的驻留名 `clear` 有行，`still`/`hush` 欠读数；而两个有读数的非基线行（`fog`／`dissonant-storm`）只出现在 `[1]`（修钟之后那条切换），它~~今天没有写方（要的是任务线给的世界状态），`setWeather` 在 `src/` 里除仲裁者自己之外**零外部调用点**~~。**纠正（KI-094②，2026-10-01）**：那句已经翻过来了——`setWeather` 的外部写方**恰好是 `src/main.ts` 一处**（`applyWeather()` 里面），而 `weatherPresets[1]` 的写方是"这一区里立着被任务线追踪的旗的钟"（`src/world/WeatherSwitch.ts`，§5.9.34）。驻留全落基线那半句仍然成立（`[0]` 那五格的名字还是欠读数的那五个）。这一格的断言在 `color-grade.test.ts` 里也跟着翻了：它今天**要求**那一处调用点存在，而不是要求它不存在。
 
 **守卫**：新 `tests/unit/weather-table.test.ts` **22 条** + 新 `tests/unit/color-grade.test.ts` **17 条**。前者最要紧的是**文档对账那一组不抄数字**：`docs/art-direction.md` 用正则解析（`([A-Z][a-z]+)\s+0\.(\d+)` 读四个雾档、`(Rain|Fog|Storm)( 对比)?\s*×([0-9.]+)` 读三条乘数），并且**先自证解析读出来的不是空集**，再与表里的值逐字相等——否则"文档改了没人知道"会退化成"读空了也没人说"。后者含一条行为回归带：`gradeFilter(v, {})` 与删掉的 `setVeil` 旧公式在四个失谐读数上**逐字相同**（搬动没有改口径），以及一条"重复写同一个字符串 ⇒ 一次都不动 DOM"的写计数（**先证明计数大于 0**，再要求它不再增长）。
 
@@ -1954,9 +1954,42 @@ Phase 4-B 落三叠箭时只做了**延迟**那一半（`at=[0,32,42]` 让第 2 
 
 **门禁（2026-09-30，全部在本 commit 的工作副本平面上量）**：`npx tsc --noEmit` 0 错；`node scripts/validate-data.mjs` **0 ERROR / 7 WARN**（新增 6 条 = 5 个欠读数的天气名 + §38 的 `rain` 档没人奏，原来那条 `bell.everySec` 听感口径不动）；`npm run build` exit 0（`dist/assets/data-*.js` 104.83 kB）；`node scripts/test.mjs` 见 KNOWN_ISSUES KI-094 行的全量读数。**第五道门 `npm run coverage` 未跑**（量具与地板仍在并行会话的写入面上，KI-063 口径），`vfx` 也不是核心包。
 
-**实机腿（§77，2026-09-30 跑通，dev server 起在 `127.0.0.1:5173` 的隐藏标签页）**：开局驻留态读回 `scene.fog.density === 0.008`（表里 `clear` 行那个数，**运行时已经不是 `PlaceholderArena` 写死的 0.028**）与 `canvas.style.filter === ''`（没有失谐也没有乘数 ⇒ 合成串为空、一个滤镜都不挂）。再把 `player.corruption.value` 灌到 `cfg.max`、步进 3 帧 ⇒ `saturate(0) brightness(0.7)`（§11「失谐满值剩 70% 亮度」在真 three 运行时里的样子），回 0 再步进 ⇒ 滤镜清空而雾纹丝不动。**两条口径必须写清**：①DOM 读回的是浏览器规范化后的 CSS（`saturate(0.00)` 序列化成 `saturate(0)`），所以这一腿证的是**合成的语义与切换的可逆**，不是那一串字符逐字相等——逐字比在 `color-grade.test.ts` 的假画布上做；②七区驻留天气今天全落基线，所以实机换区看不到雾变（那是 `weatherPresets[1]` 那条没接的切换腿，KI-094②），这条实机读数不覆盖它。
+**实机腿（§77，2026-09-30 跑通，dev server 起在 `127.0.0.1:5173` 的隐藏标签页）**：开局驻留态读回 `scene.fog.density === 0.008`（表里 `clear` 行那个数，**运行时已经不是 `PlaceholderArena` 写死的 0.028**）与 `canvas.style.filter === ''`（没有失谐也没有乘数 ⇒ 合成串为空、一个滤镜都不挂）。再把 `player.corruption.value` 灌到 `cfg.max`、步进 3 帧 ⇒ `saturate(0) brightness(0.7)`（§11「失谐满值剩 70% 亮度」在真 three 运行时里的样子），回 0 再步进 ⇒ 滤镜清空而雾纹丝不动。**两条口径必须写清**：①DOM 读回的是浏览器规范化后的 CSS（`saturate(0.00)` 序列化成 `saturate(0)`），所以这一腿证的是**合成的语义与切换的可逆**，不是那一串字符逐字相等——逐字比在 `color-grade.test.ts` 的假画布上做；②~~七区驻留天气今天全落基线，所以实机换区看不到雾变（那是 `weatherPresets[1]` 那条没接的切换腿，KI-094②），这条实机读数不覆盖它。~~ **纠正（KI-094②）**：那一腿已经接上并有自己的实机读数（§5.9.34 末尾），驻留全落基线那半句仍然成立——所以"走到隔壁区雾就变"仍然看不到，能看到的是"在同一区修好一口被任务线追踪的钟，雾与对比乘数当场换档"。
 
-**没做（§78，故本条记 Partial）**：①**`weatherPresets[1]` 那条切换没有写方**——它要的是任务线给的世界状态（`STATE.BELLS.*`），归 KI-094②；②**`lightingPreset` 那一列仍然零读者**，§37 的区域光照/色板预设整条欠着（它和天气是两格，别把它们合成一个假的仲裁者）；③天气的**音频腿**（雨声/风声层随档开合）、**敌人浓度腿**（§38「Storm 期敌人浓度+」）、**失谐累积速率随天气**那半句都没有载体；④§8 的 Storm「间歇冷光」那一格没做——它要的是真几何与材质（KI-008 同因），本批只兑现了它可读的那两格（雾与对比乘数）；⑤`world/PlaceholderArena.ts:25` 那个写死的 `0.028` 从此是**待删**（该文件属并行会话的写入面，本批不动，删它的时机是真几何落地时；`tests/unit/color-grade.test.ts` 钉着它此刻仍在，删掉时那条会红并指名原因）；⑥视口与听感评审**仍不做**：本环境没有可见窗口，"雾换了看不看得出来、褪色压不压得住"这类观感结论一句不写（KI-010 同因）——上面那条实机腿给的是**数字读数**，它不冒充观感。
+**没做（§78，故本条记 Partial）**：①~~**`weatherPresets[1]` 那条切换没有写方**——它要的是任务线给的世界状态（`STATE.BELLS.*`），归 KI-094②~~ **已落地（KI-094②，§5.9.34）**：写方就是"这一区里立着被任务线追踪的旗的那口钟"，而它换到 `[1]` 之后**剩下的欠账换了形状**——七区里只有三区（低语林／沉溺合唱／钟坠院）今天有这样的钟，其余四区那一格挂在 `PENDING_WEATHER_SWITCHES` 上等叙事裁决（见 §5.9.34 的欠账表）；②**`lightingPreset` 那一列仍然零读者**，§37 的区域光照/色板预设整条欠着（它和天气是两格，别把它们合成一个假的仲裁者）；③天气的**音频腿**（雨声/风声层随档开合）、**敌人浓度腿**（§38「Storm 期敌人浓度+」）、**失谐累积速率随天气**那半句都没有载体；④§8 的 Storm「间歇冷光」那一格没做——它要的是真几何与材质（KI-008 同因），本批只兑现了它可读的那两格（雾与对比乘数）；⑤`world/PlaceholderArena.ts:25` 那个写死的 `0.028` 从此是**待删**（该文件属并行会话的写入面，本批不动，删它的时机是真几何落地时；`tests/unit/color-grade.test.ts` 钉着它此刻仍在，删掉时那条会红并指名原因）；⑥视口与听感评审**仍不做**：本环境没有可见窗口，"雾换了看不看得出来、褪色压不压得住"这类观感结论一句不写（KI-010 同因）——上面那条实机腿给的是**数字读数**，它不冒充观感。
+
+### 5.9.34 修钟之后这一区的天真的换了：切换的条件从既有三方关系推导，而不是抄一张对照表（KI-094②，2026-10-01）— 已落地（Partial：四区的第二格欠叙事裁决）
+
+**①留下的那一格是死数据，不是一个 if**。`weatherPresets[1]` 上今天挂着的恰好是两个**有读数的行**（低语林 `fog` 0.030/×0.6、钟坠院 `dissonant-storm` ×1.15），而运行时没有任何一条路奏得到它们——按 §55 这就是死数据。补它最省事的写法是往组合根塞一张 `{ 'flag.bell_second_repaired': 'fog' }` 之类的对照表，而那种表一落地就开始腐烂：它抄的是"钟站在谁的地上"与"任务线在等哪面旗"，而**这两件事 `regions.json` 与 `quests.json` 里本来就写着**。所以这一批没有新增字段、没有新增表，新增的是**一条推导**。
+
+**判据是三方关系**：`quests.json > steps[].advanceOn.flags`（任务线用来推进步骤的旗＝"世界登记过这件事"的名册）× `regions.json > interactables[kind==='bell'].setsFlag`（这口钟站在哪一区的地上）× 每区 `weatherPresets` 的格数。落点四处：
+
+| 处 | 东西 | 它回答的问题 |
+|---|---|---|
+| `src/world/WeatherSwitch.ts`（新） | 三个纯函数 `questTrackedFlags` / `repairBellFlags` / `activeWeather`，零 three、零 DOM | 脚下这一区**现在**该奏哪个天气名 |
+| `src/main.ts` | 两条重算腿：换区那一次 + `world.flag` 广播那一次 | 谁去拨那个指针（组合根只做接线，不认识任何区 id／旗标名） |
+| `scripts/weather-rules.mjs > weatherSwitchFindings`（S1–S5） + `PENDING_WEATHER_SWITCHES` | 校验侧的同一判据 + 那几区"今天由谁的条件来"的欠账 | 声明了第二格却没有条件的区必须被点名，而且账要能销 |
+| `src/vfx/ColorGrade.ts` | **`setRegion()` 整个删掉**，天气那一格只剩 `setWeather(name)` | 画面层不再认识区域：认识区域＝在画层里抄第二份判据 |
+
+**两条巧合不许升级成判据**（写进模块头，免得后人误用）：三口被追踪的钟今天恰好都写着 `requiresFlag: 'flag.bells_repair_open'` 与 `lootTable: 'loot_bell_repair'`。用这两个字段在这一批能挑出**同一组钟**，但一个问的是"修得动吗"（闸门），一个问的是"修完给什么"（掉落），都不是"修好了没有"。真判据是**任务线在等这面旗**。反面教材是那口倒钟（`bl_fellcarillon_fallenbell` 立 `flag.bell_toll_rung`，一次敲响而不是修复）：它不改天气，而这件事由校验器的 S4 **WARN** 喊出来，不靠推导里的沉默。
+
+**五条 S1–S5**（与①那五条天气判据同族，判关系不判逐字段）：**S1** 每一区都要交代它的切换——`weatherPresets` 只有驻留那一格 ⇒ 没事；有第二格而区内**没有任何一口被追踪的钟** ⇒ 必须挂进 `PENDING_WEATHER_SWITCHES` 写清"这一格今天由谁的条件来"（≥20 字），否则 ERROR；**挂了账而条件后来出现 ⇒ ERROR 说该销**（KI-073 那一族：欠账能挂，不能不挂，也不能挂着过期）。**S2** 一面被追踪的旗不许被两区的钟同时立着——"这面旗改谁的天"没有答案 ⇒ ERROR。**S3** 钟数与可换格数不齐 ⇒ WARN（多出来的钟拨不动新天气，少掉的格永远等不到）。**S4** `kind:'bell'` 而立了**不被追踪**的旗、或一口不立任何旗的钟 ⇒ WARN（它没有拨天气的出口）。**S5** 任一名册读空 ⇒ ERROR 说"这道门在空转"，绝不退成"名单为空所以什么都合法"。四区欠的条件逐条写的是**那一区的世界变化在数据里长什么形状**（休垒：广场那四件是 `inspect`，走 `state.bells.fourth_dumb` 的**值域**抉择而不是钟；营地：桥放下来／后门开／`flag.brokenbar_resolved`，文档没有一句说营地为什么起雾；深窖：`ga_deeps_firstphrase_door` 吃四面 `flag.clue_*` 的**合取**；未竟厅：门槛是 `flag.organ_gate_open`，而 §15.2 里恩希尔战改变的是音乐与拍），**没有一区的第二格是靠猜测接上的**。
+
+**判据与读者各写了一份"什么算修好的钟"，所以口径一致性只能由第三方对账**（两层不能互相 import：一层是 node 侧判据、一层是玩法侧）。两条缝：① `trackedBellFlags` 从判据里**导出**，`tests/unit/weather-switch.test.ts` 在真 `regions.json` + 真 `quests.json` 上**逐区逐字（含顺序）**比两份名单——顺序的主人也是 `regions.json` 里交互物的顺序，因为多口钟时"哪一口拨哪一格"按它走；② 校验器那条名册推导**必须执行的是同一句**：测试把 `validate-data.mjs` 里 `const questFlags = …` 那个表达式**从源码里取出来就地求值**（`new Function`，喂真 `quests.json`），再与运行时 `questTrackedFlags` 的结果比。这一条为什么不写成 grep：把 `advanceOn.flags` 改成 `requiresFlag` **今天挑出同一批钟**（上面那两条巧合），词还在、门还绿，而答案已经不是同一个问题——所以这里问的是行为。
+
+**一格拨多少由数据定**：立了 k 面旗就奏第 k 格（`presets[Math.min(rung, presets.length - 1)]`）。夹取那一格不是糖：真表今天每区两格、最多一口钟，越界只在"以后有人加了第三口钟而没加天气格"时到达，而那时读出的 `undefined` 在画面那侧等于"没有天气"（静默退回基线）——A10 那一臂（删掉 `Math.min`）就是钉这条的，红在"钟数多于天气格数 ⇒ 停在最后一格而不出界"。
+
+**源码门三格**（这一批最容易烂掉的方式不是算错，而是有人把推导搬回手写表）：`main.ts` 里不许出现 `weatherPresets`，而必须同时出现 `questTrackedFlags(` 与 `activeWeather(`；`WeatherSwitch.ts` 剔掉注释之后的**代码体**里不许匹配到任何 `\b(?:rg|bl|flag)_[a-z0-9_]+`（区 id／钟 id／旗标名），也不许 import `three`／`@/vfx`／`@/ui`；`ColorGrade.ts` 里 `setRegion` 与 `RegionData` 两个都不存在。
+
+**现状量测（翻过来的那两条）**：`setWeather` 在仲裁者之外的写方**恰好是 `src/main.ts` 一处**（①记的是"零处"，那一句在 `color-grade.test.ts` 里跟着翻了）；`weatherPresets[1]` 的路线今天在三区可通（低语林／沉溺合唱／钟坠院各有一口被追踪的钟），四区不通而各自挂着账。驻留那一格仍然七区全落基线——那不是这一批的靶子（欠的是读数，见①的 `PENDING_WEATHER_READINGS`）。
+
+**变异探针十臂**（跑在**平面**上：`git archive HEAD` + 我的改动，共享工作树一个字没碰；每臂跑完按 sha256 还原那 5 份可变文件并复跑；未变异对照 **42 案例／0 红 + 门禁 0 ERROR／12 WARN**）：A1 读者丢掉"旗在名册里" ⇒ 恰红 3；A2 丢掉"区域"这一维 ⇒ 红 3；A3 组合根丢掉旗标广播 ⇒ 恰红源码门那一条；A4 丢掉换区重算 ⇒ 恰红同一条；A5 判据丢掉 S1 ⇒ 恰红 4 且门禁 WARN 12→8；A6 判据丢掉 `kind==='bell'` ⇒ 恰红 3 且门禁响 **1 ERROR**；A7 读者丢掉按旗去重 ⇒ 恰红 1；A8 校验器名册改吃 `requiresFlag` ⇒ 恰红"执行的是同一句"且门禁 1 ERROR／7 WARN；A9 读者丢掉 `hasFlag` ⇒ 红 5；A10 读者丢掉越界夹取 ⇒ 恰红 1。**两处预测订正，都按实测写下**：A2 第一轮预测 4 条，实测 3 条——那条"两面旗拨到第二格"的合成案例**在这个臂下答案本来就不变**（它自己传进去的 `tracked` 恰好就是那两面旗），所以这句话对 A2 没有说话权，订正的是我的预测表而不是门；A9 预测 3 条，实测 5 条——多出来的是「立起本区那口钟的旗…其他区纹丝不动」与「敲响倒钟那面不被追踪的旗」，因为"有钟就算拨过"让**每一个有钟的区**都跳到 `[1]`，那两条各自也读这个数（红得比预言多是预测口径漏了，不是假红）。第二轮 **0 存活**。
+
+**门禁（每个数字都带它量的平面）**：`npx tsc --noEmit -p .scratch/ki094_plane/tsconfig.json` **RC=0**；`node scripts/validate-data.mjs` 在"HEAD + 我的两处 hunk"的平面上 **0 ERROR / 12 WARN**，而纯 `git archive HEAD` 平面同一句 **0 ERROR / 7 WARN** ⇒ 增量 **+5 WARN / 0 ERROR**（S1 那四区欠账 + S4 那口倒钟）。定向两文件在平面上 **42/42 绿**（`weather-switch` 25 + `color-grade` 17）。**文档那两格写完之后，同一平面重跑了一遍全量**：`node scripts/test.mjs --minWorkers=1 --maxWorkers=2` **1607 条 / 113 个测试文件全部跑到、全绿、RC=0**，`npx vite build` **RC=0**（`dist/assets/data-*.js` 104.67 kB）。这一趟不是重复劳动：上一趟全量（1591 条 / 112 文件、1 红）红的正是 `doc-audit` 那条"每个 src 文件名都必须在架构文档里出现过"，报的是 `src/world/WeatherSwitch.ts` 从没被对过账——那趟跑在文档还没落地的工作副本上，而这一趟平面里的 `docs/technical-architecture.md` 与 `docs/KNOWN_ISSUES.md` 已是最终版，同一条用例绿。⚠️**共享工作副本今天给不出干净读数**：并行会话未提交的 `tests/flow/needlesilence.test.ts` 让 `tsc` 报 TS1002/TS1005，而它未提交的 `validate-data.mjs` 武器字段 hunk 配 HEAD 的 `schema.ts` 会响一条不属于本批的 `vocab:WeaponData` ERROR——两条都在 HEAD 平面上消失，本批既不修也不 stage 它们。
+
+**实机腿（§77，2026-10-01，dev server 起在 `127.0.0.1:5173`，隐藏标签页 `innerWidth/innerHeight = 0`）**：开局 `rg_resthold` ⇒ `scene.fog.density = 0.008`、`canvas.style.filter = ''`；把 `player.pos` 写进低语林 `(264, 0, 24)` 步进 3 帧 ⇒ 区域切到 `rg_whisperwode` 而读数不变（驻留名 `clear` 有行）；再走**生产写手** `interact.setFlag('flag.bell_second_repaired', true)`（`Interactables.use()` 内部走的正是这一句）⇒ 同一次调用里雾 **0.008 → 0.030**、滤镜从空串变成 **`contrast(0.6)`**（表里 `fog` 行那两格）；清掉同一面旗 ⇒ 回 `0.008 / ''`，**整条切换可逆**。两条口径注意：DOM 读回的是浏览器规范化后的 CSS（逐字比在 `color-grade.test.ts` 的假画布上做）；这一腿证的是**接线与可逆**，不是"看起来对不对"——视口与听感评审本环境无可见窗口，照旧登记未做（KI-010 同因），数字读数不冒充当观感结论。
+
+**没做（§78，故本条记 Partial）**：①**四区的第二格今天没有条件**——休垒走值域、营地走桥与后门、深窖走五环线索合取、未竟厅走管风琴门，把它们接成天气条件先欠一条"值域状态／线索合取算不算天气那一格的判据形状"的裁决（`PENDING_WEATHER_SWITCHES` 逐条记着，校验器逐条 WARN 着）；②实机那一腿立旗走的是 `interact.setFlag()`，**没有真的站到那口钟前面按 E 把修理流程跑完**（前半段 `use → setsFlag → world.flag` 属既有交互系统，本批只补后半段）；③**换档没有过渡**——一帧从 0.008 跳到 0.030，而 §38/§8 没有给过任何淡入时长，编一个就是拿猜测冒充裁决；④"被任务线追踪"这一维目前只有 `advanceOn.flags` 一个来源，若以后要承认别的登记处（比如 `worldState` 的直接写），S1/S4 那两条判据要跟着重裁；⑤①那条天气表本身的欠读数账（五个名字挂 `PENDING_WEATHER_READINGS`）没变，驻留那一格仍全落基线；⑥视口与听感评审**仍不做**。
 
 ## 附录 A：模块规模与里程碑对照
 

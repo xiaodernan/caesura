@@ -6,8 +6,9 @@ import { Input } from '@/core/Input'
 import { RhythmClock } from '@/core/RhythmClock'
 import { registry } from '@/core/Registry'
 import { registerGameData, playerBase, regions, worldstate, dialogues, quests as questTable, worldStates as worldStateDefs } from '@/data'
-import type { ItemData, MovesetData, NpcData, WeaponData } from '@/data/schema'
+import type { ItemData, MovesetData, NpcData, RegionData, WeaponData } from '@/data/schema'
 import { createArena } from '@/world/PlaceholderArena'
+import { activeWeather, questTrackedFlags } from '@/world/WeatherSwitch'
 import { StreamingSystem, chunkKeyOf, type ChunkState } from '@/world/Streaming'
 import { Surface } from '@/world/Surface'
 import { SpawnDirector } from '@/world/SpawnDirector'
@@ -106,8 +107,8 @@ const projectileVis = new ProjectileVisuals(arena.scene)
 const bossArena = new BossArenaVisuals(arena.scene) // §15.1 撞钟机关：机关看不见就等于不存在
 const audio = new AudioEngine()
 const vfx = new VfxLayer(arena.scene)
-// KI-094①：雾密度与画面滤镜的唯一写方。它按「脚下这一区的驻留天气 + §11 失谐」合成，
-// 所以开局那一区也得由它读一次——见下面 `grade.setRegion(homeRegion …)`，那句排在 streaming 之后。
+// KI-094①：雾密度与画面滤镜的唯一写方。它按「当前生效的那格天气 + §11 失谐」合成，
+// 所以开局那一区也得由它读一次——那句在 `interact` 之后（要读旗标），见下面 `applyWeather(homeRegion …)`。
 const grade = new ColorGrade(arena.scene, canvas)
 const hud = new Hud(document.getElementById('hud') as HTMLCanvasElement)
 /** 飘字要钉在世界坐标上：HUD 不认识相机，投影由这里喂进去（§8.2 ms_crit_ring 的腿） */
@@ -164,9 +165,6 @@ const streaming = new StreamingSystem(regions)
 streaming.teleport(0, player.pos) // 起始区同步加载（§5.5 传送遮蔽等价物）
 const homeRegion = streaming.regionAt(player.pos)
 let shownRegion = homeRegion?.id ?? null
-// KI-094①：开局那一区的雾与滤镜。与上面三条 `audio.music.*` 同一件事的另一半——"玩家出生在哪一区"
-// 这件事在画面侧也只有一个入口，而它必须在这里读一次，否则首帧走的是场景构造时写死的那片雾。
-grade.setRegion(homeRegion ?? null)
 // KI-077（docs §1.2/§4）：开局那一张环境声床。这一句必须在 `audio.start()` 之前发——
 // 建图要等首次用户手势，而 `AudioEngine` 缓存事件，所以"玩家出生在哪一区"这件事不会丢。
 if (homeRegion) {
@@ -188,6 +186,22 @@ const interact = new Interactables(
   6,
   (req) => worldStates.matches(req.key, req.value),
 )
+/**
+ * KI-094②：「修钟之后这一区的天气换掉」那条切换第一次有运行时读者（`world/WeatherSwitch`，
+ * 为什么判据是任务线那份旗标名册见那个文件的头注）。旗标的真源在 `world/Interactables`，
+ * 这里只借它的读法 ⇒ 画面侧仍然只有一个写方（`vfx/ColorGrade`），而"拨到哪一格"由数据推导，
+ * 组合根里没有一处写着区 id 或旗标名的白名单。
+ *
+ * 这一句排在 `interact` 之后而不是"开局那一区"那一处：旗标读者在 `interact` 立起来之前会踩到
+ * 未初始化的 const（TDZ），而开局那次读必须走同一条推导腿——读两次不等于读一次，两处算法才是真的两份账。
+ */
+const trackedBells = questTrackedFlags(questTable)
+const applyWeather = (rg: RegionData | null): void => {
+  grade.setWeather(activeWeather(rg, (k) => interact.hasFlag(k), trackedBells))
+}
+applyWeather(homeRegion ?? null)
+// 修钟那一刻人往往就站在那口钟旁边：旗标一广播就重算，否则天气要等下一次跨区才跟得上（IP_SEED §7 说的那件回报）
+bus.on('world.flag', () => applyWeather(streaming.regionAt(player.pos) ?? null))
 /**
  * 可破坏场景物（KI-023，§15.3 音刺）。三根汇音刺与万籁同区：她的「听」在 sink 这一站被
  * 重定向到刺上，碎刺的聋乱窗经 `world.propBroken` 由 AISystem 落账，碎裂状态跟着存档走（v8）。
@@ -439,7 +453,8 @@ const core = {
       bus.emit('audio.music.battle', { id: here.music.battle })
       // KI-094①：雾跟着区域换。它排在三条音乐之后而没有顺序可依——滤镜与雾都是**立即生效**的画面量，
       // 不存在"先换底噪再换雾"那种淡变窗口，写在前写在后同一帧里看不出区别。
-      grade.setRegion(here)
+      // KI-094②：换区读的是"那一区当前生效的那一格"，不是永远的第一格——区里的钟修过了就是修过后的天气。
+      applyWeather(here)
       if (booted) checkpoints.request('region') // 读档后第一次「进区域」是恢复现场，不该顺手覆盖存档
       shownRegion = here.id
       bus.emit('ui.notify', { text: here.displayName, kind: 'info' })

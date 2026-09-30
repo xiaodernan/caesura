@@ -28,6 +28,32 @@ export const GRADE_MUL_RANGE: { min: number; max: number }
 export const PENDING_WEATHER_READINGS: { [name: string]: string }
 
 /**
+ * 「这一区的第二格天气今天由谁的条件来」还没裁的那些区（判据 S1）：区 id → 为什么今天给不出条件。
+ * 与上面那张欠读数的账同族：条目双向能销（区有了被追踪的钟 ⇒ 该销；区没了第二格 ⇒ 作废）。
+ */
+export const PENDING_WEATHER_SWITCHES: { [regionId: string]: string }
+
+/**
+ * 「修钟之后换天气」那条切换的判据（KI-094②，S1–S5）。量的是三方关系：任务线追踪的旗标 ×
+ * 各区 `kind === 'bell'` 交互物立的旗 × 每区声明的 `weatherPresets` 格数。
+ * @param regions `regions.json` 的顶层（读不到传 null ⇒ 报"门在空转"）
+ * @param questFlags `quests.json > steps[].advanceOn.flags` 的去重名册（由调用方现推；null/空 ⇒ 门在空转）
+ * @param pending 欠条件的区域账本：区 id → 理由（读不到传 null）
+ */
+export function weatherSwitchFindings(
+  file: string,
+  regions: unknown,
+  questFlags: string[] | null,
+  pending: { [regionId: string]: string } | null,
+): WeatherFinding[]
+
+/**
+ * 这一区里"立着被任务线追踪的旗的钟"的旗标名册（判据与读者共用的那一条口径，导出是为了让
+ * `tests/unit/weather-switch.test.ts` 能拿真实两张表逐区对账 `src/world/WeatherSwitch.ts > repairBellFlags`）。
+ */
+export function trackedBellFlags(region: unknown, tracked: ReadonlySet<string>): string[]
+
+/**
  * 一表天气行 → findings。
  * @param docIds 需求 §38 那四档（由调用方从 `schema.ts > WeatherDocId` 现推；读不到传 null）
  * @param referenced `regions.json > weatherPresets` 去重后的名字（读不到传 null）

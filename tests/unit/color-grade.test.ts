@@ -17,6 +17,10 @@ import { WEATHER_BASELINE_ID } from '../../scripts/weather-rules.mjs'
  *
  * 最后那一组是源码门：雾密度与滤镜今天各只有一个写方，`ColorGrade` 里那个基线 id 字面量与判据
  * 用的是同一个字（两个平面各写一遍就会有一天不一致）。
+ *
+ * **这份文件不量的那一半**：「脚下这一区当前生效的是哪一格天气」——那是 `weatherPresets` × 任务线
+ * 旗标的推导，住在 `src/world/WeatherSwitch.ts`，由 `tests/unit/weather-switch.test.ts` 量。
+ * 这里只按**名字**喂仲裁者，因为仲裁者本来就不该认识区域（它一旦认识区域，画面层就有了第二份切换判据）。
  */
 
 /** 中文目录名在 `.pathname` 上会被百分号编码成一条不存在的路径 ⇒ 走 `fileURLToPath`（与 `ducking.test.ts` 同一个根） */
@@ -55,8 +59,6 @@ function fogScene(density = 0.028): { scene: THREE.Scene; fog: THREE.FogExp2 } {
   return { scene, fog }
 }
 
-const region = (id: string) => regions.find((r) => r.id === id) ?? null
-
 /** 合成律本身（不碰 DOM 的那一半，测试直接吃它） */
 describe('合成律：天气说话与失谐说话是乘在一起，不是互相覆盖', () => {
   it('两边都没话说 ⇒ 空串（= 不挂滤镜，与"没天气、没失谐"逐像素等价）', () => {
@@ -89,8 +91,8 @@ describe('合成律：天气说话与失谐说话是乘在一起，不是互相�
   })
 })
 
-describe('仲裁者：区域与失谐各自改输入，动手的只有 apply() 一处', () => {
-  it('雾语林修钟后换成 fog（`weatherPresets[1]` 那条路今天没人写，先按名字喂）⇒ 雾从写死的 0.028 变成表里的 0.030，滤镜跟着对比乘数', () => {
+describe('仲裁者：天气与失谐各自改输入，动手的只有 apply() 一处', () => {
+  it('雾语林修钟后那格 fog 按名字喂进来 ⇒ 雾从写死的 0.028 变成表里的 0.030，滤镜跟着对比乘数', () => {
     const { scene, fog } = fogScene(0.028)
     const c = fakeCanvas()
     const grade = new ColorGrade(scene, c.el)
@@ -101,17 +103,17 @@ describe('仲裁者：区域与失谐各自改输入，动手的只有 apply() �
     expect(grade.fogDensity()).toBe(0.03)
   })
 
-  it('换到深窖（驻留天气 hush 欠读数）⇒ 走基线那一行，而**这个事实是量出来的**不是注释', () => {
+  it('深窖的驻留名 hush 欠读数 ⇒ 走基线那一行，而**这个事实是量出来的**不是注释', () => {
     const { scene, fog } = fogScene(0.028)
     const c = fakeCanvas()
     const grade = new ColorGrade(scene, c.el)
-    grade.setRegion(region('rg_earless_deeps'))
+    grade.setWeather('hush') // 区 → 天气名那一腿（含 pending 名字怎么落回基线）住在 tests/unit/weather-switch.test.ts
     expect(fog.density).toBeCloseTo(0.008, 6)
     expect(c.value()).toBe('')
     expect(grade.fogDensity()).toBe(0.008)
   })
 
-  it('失谐读数落在天气之上：换区不清掉褪色，褪色也不清掉天气', () => {
+  it('失谐读数落在天气之上：换天气不清掉褪色，褪色也不清掉天气', () => {
     const { scene, fog } = fogScene()
     const c = fakeCanvas()
     const grade = new ColorGrade(scene, c.el)
@@ -119,7 +121,7 @@ describe('仲裁者：区域与失谐各自改输入，动手的只有 apply() �
     grade.setVeil(0.6)
     expect(c.value(), '天气先写、失谐后写而结果是单侧字符串 = 后盖前的那个 bug 又回来了')
       .toBe('saturate(0.40) brightness(0.82) contrast(0.60)')
-    grade.setRegion(region('rg_unfinished_hall')) // 驻留 still：欠读数 ⇒ 基线
+    grade.setWeather('still') // 未竟厅的驻留名：欠读数 ⇒ 基线
     expect(fog.density).toBeCloseTo(0.008, 6)
     expect(c.value()).toBe('saturate(0.40) brightness(0.82)')
   })
@@ -132,9 +134,9 @@ describe('仲裁者：区域与失谐各自改输入，动手的只有 apply() �
     const after = c.writes()
     expect(after, '构造加一次 setVeil 之后一次都没写过 = 下面那句"不再写"什么都没证明').toBeGreaterThan(0)
     for (let i = 0; i < 50; i++) grade.setVeil(0.6)
-    grade.setRegion(regions[0])
-    grade.setRegion(regions[0])
-    expect(c.writes(), '50 帧同读数 + 两次同区域 ⇒ 应该是零次重排').toBe(after)
+    grade.setWeather('clear')
+    grade.setWeather('clear')
+    expect(c.writes(), '50 帧同读数 + 两次同天气 ⇒ 应该是零次重排').toBe(after)
   })
 
   it('表里这一行没给雾密度 ⇒ 雾保持**当时**的样子，而滤镜照旧（两格读数各自独立生效）', () => {
@@ -180,14 +182,22 @@ describe('源码门：这两格今天各只有一个写方', () => {
     const main = SRC.find((f) => f.path === 'src/main.ts')!.text
     expect(main).toMatch(/grade\.setVeil\(/)
     expect(main).not.toMatch(/function setVeil/)
-    // 这里按**次数**判而不是按"出现过"判：A4 那一臂（删掉换区块里那句 `grade.setRegion(here)`）
-    // 在只写 `toMatch(/grade\.setRegion\(/)` 的门上是**存活**的 —— 开局那一次调用替它把字符串留着了。
-    // 天气腿于是只剩构造时那一遍，换区不再改雾，而门一声不响。
-    // 数的时候锚在行首：main.ts:110 那句注释里也写着 `grade.setRegion(homeRegion …)`，
-    // 不锚行首会把注释数进去（我第一次就这么把期望写成了 2 而实测 3）。
-    const setRegion = (main.match(/^[ \t]*grade\.setRegion\(/gm) ?? []).length
-    expect(setRegion, 'main.ts 里作为语句出现的 `grade.setRegion(` 次数变了：应当是"开局一次 + 换区一次"两处，少一处就是换区不喂天气')
+    // 按**次数**判而不是按"出现过"判：KI-094① 那一批的 A4 臂（删掉换区那一句喂天气的调用）在只写
+    // `toMatch` 的门上是**存活**的——开局那一次调用替它把字符串留着了，门一声不响。
+    // 数的时候锚在行首：注释里也写着 `applyWeather(homeRegion …)`，不锚行首会把注释数进去。
+    const applied = (main.match(/^[ \t]*applyWeather\(/gm) ?? []).length
+    expect(applied, 'main.ts 里作为语句出现的 `applyWeather(` 次数变了：应当是"开局一次 + 换区一次"两处，少一处就是有一侧不喂天气')
       .toBe(2)
+    // 第三处入口：旗标广播。修钟那一刻人通常就站在那口钟旁边，等下一次跨区才换天就是"回报没兑现"。
+    // 这一句独立成条是因为上面那个次数对它完全无感：把 `bus.on('world.flag', …)` 整句删掉，
+    // 行首的 `applyWeather(` 仍然是 2。
+    expect(main, '旗标广播不再重算天气：修好钟要走到下一个区域才看得见天变').toMatch(/^\s*bus\.on\('world\.flag',[^\n]*applyWeather\(/m)
+    // 推导只有一个入口点：区域 ⇄ 旗标 ⇄ 天气名那一腿算出来的名字，只从 `applyWeather` 里那一句进仲裁者。
+    const entries = (main.match(/^[ \t]*grade\.setWeather\(/gm) ?? []).length
+    expect(entries, 'main.ts 里出现了第二处 `grade.setWeather(`：又变成两个写方各说一半').toBe(1)
+    // `setRegion` 在 KI-094② 之后已从仲裁者身上删掉（它认识区域就等于把切换判据抄进画面层）。
+    // 这里全 src 扫，而不是只扫 main.ts：`rpg.loot.setRegion(...)` 那种同名方法是另一个人的，所以锚在 `grade.`。
+    expect(writersOf(/grade\.setRegion\(/g), '还有人在调 `grade.setRegion`：那个方法已经不存在，这行代码今天跑不到').toEqual([])
   })
 
   it('`fog.density` 的赋值点只有 ColorGrade；场景构造那一格仍是 FogExp2（那句类型收窄靠它）', () => {
@@ -203,35 +213,34 @@ describe('源码门：这两格今天各只有一个写方', () => {
       .toBeTypeOf('number')
   })
 
-  it('现状量测（KI-094② 的靶子）：七区的**驻留**天气今天全部落回基线，非基线那两行只挂在 `weatherPresets[1]` 上', () => {
-    const baseline = weatherRows.find((r) => r.id === WEATHER_BASELINE_ID)!.fogDensity as number
-    const resting = weatherRows.filter((w) => regions.some((rg) => rg.weatherPresets[0] === w.id))
-    expect(resting.map((r) => r.id), '驻留天气里出现了非基线行：那说明 ② 那条切换已经落地 ⇒ 这条"现状量测"必须换成按 [1] 断言，不许留着当假话')
-      .toEqual([WEATHER_BASELINE_ID])
-    const { scene, fog } = fogScene(0.028)
-    const grade = new ColorGrade(scene, fakeCanvas().el)
-    for (const rg of regions) {
-      grade.setRegion(rg)
-      expect(fog.density, `${rg.id} 的驻留天气奏出了非基线密度`).toBeCloseTo(baseline, 6)
-    }
-    // `[1]` 那条路今天的写方数量：除仲裁者自己（`setRegion` 内部走 `setWeather`）之外为零。
-    // 这一格不是"设计如此"的糖衣，是把 §38/§2 那半句（换天气要任务线给的世界状态）欠的具体形状量出来。
+  it('天气腿的写方普查：`setWeather` 在仲裁者之外恰好被组合根调用一处', () => {
+    // 这一格在 KI-094① 落地时断言的是**空集**（「`[1]` 那条路今天没有写方」），并在注释里写明
+    // ② 落地时必须翻过来。今天翻了：`world/WeatherSwitch > activeWeather` 有了运行时读者，
+    // main.ts 把名字喂进来。断言从"零"变成"恰一"而不是"若干"——第二个写方就是第二个仲裁者。
     const callers = SRC.filter((f) => f.path !== 'src/vfx/ColorGrade.ts' && /\.setWeather\(/.test(f.text)).map((f) => f.path)
-    expect(callers, '`setWeather` 出现了外部调用点：天气腿已接线 ⇒ KI-094 那行的 Partial 要改，这条臂也要跟着改').toEqual([])
+    expect(callers, '天气名的外部写方不是恰好 src/main.ts：还是零 = 切换没接线，多于一个 = 又长出第二个写方').toEqual(['src/main.ts'])
   })
 
-  it('每一区的驻留天气都由仲裁者读得到行或落回基线（表 ⇄ 真区 ⇄ 读者在同一趟里对上）', () => {
+  it('regions.json 里被指着的**每一个**天气名（驻留那格与修钟后那格都算）都由仲裁者读得出行或落回基线', () => {
     const { scene } = fogScene(0.028)
     const grade = new ColorGrade(scene, fakeCanvas().el)
     const baseline = weatherRows.find((r) => r.id === WEATHER_BASELINE_ID)!.fogDensity as number
-    const resting = regions.map((rg) => ({ id: rg.id, name: rg.weatherPresets[0] }))
-    expect(resting.length, 'regions.json 读空 ⇒ 这一趟什么都没走').toBeGreaterThan(0)
-    for (const rg of regions) {
-      grade.setRegion(rg)
-      const name = rg.weatherPresets[0]
+    const referenced = [...new Set(regions.flatMap((rg) => rg.weatherPresets))]
+    expect(referenced.length, 'regions.json 的天气名读空 ⇒ 这一趟什么都没走').toBeGreaterThan(0)
+    // 两侧都要有货：只有 `[0]` 被走到的话，"每一格都读得出"就退化成上一批那条被翻掉的现状量测。
+    const secondSlot = [...new Set(regions.map((rg) => rg.weatherPresets[1]).filter((n): n is string => typeof n === 'string'))]
+    expect(secondSlot.length, '没有任何一区声明第二格天气 ⇒ 这一趟走不到切换那一侧').toBeGreaterThan(0)
+    let offBaseline = 0
+    for (const name of referenced) {
+      grade.setWeather(name)
       const row = weatherRows.find((r) => r.id === name)
-      expect(grade.fogDensity(), `${rg.id} 的驻留天气 '${name}' 奏出了 null`).toBe(row?.fogDensity ?? baseline)
-      if (row) expect(grade.fogDensity(), `${rg.id} 上 '${name}' 没用上表里的读数`).toBe(row.fogDensity)
+      expect(grade.fogDensity(), `'${name}' 奏出了 null`).toBe(row?.fogDensity ?? baseline)
+      if (row) {
+        expect(grade.fogDensity(), `'${name}' 没用上表里的读数（${row.fogDensity}）`).toBe(row.fogDensity)
+        if (row.fogDensity !== baseline) offBaseline++
+      }
     }
+    // 「修钟后天真的变了」这句话在画面层的前提：表里至少有一个非基线名能被走到。
+    expect(offBaseline, '被指着的名字里没有一个给出非基线雾密度：切换拨到哪一格都是同一片雾').toBeGreaterThan(0)
   })
 })

@@ -18,6 +18,8 @@ const LOGIC = [
   'ai', 'audio', 'combat', 'core', 'data', 'input', 'rpg', 'save',
   'player/LockOn.ts', 'player/ThirdPersonController.ts',
   'world/Streaming.ts', 'world/Surface.ts', 'world/Interactables.ts', 'world/SpawnDirector.ts', 'world/Props.ts',
+  // KI-094②：「哪一格天气生效」是玩法推导，所以它住在逻辑层而不是 `vfx/ColorGrade`（那边只按名字画）。
+  'world/WeatherSwitch.ts',
 ]
 /** 表现层：只有这些文件允许 import three / 被表现层模块引用 */
 const PRESENTATION = new Set([
@@ -69,7 +71,7 @@ describe('module dependency boundaries (tech-arch §3)', () => {
 
   it('逻辑层文件确实被扫描到（防止清单漂移把闸门变成空测试）', () => {
     const scanned = LOGIC.flatMap((g) => tsFiles(g))
-    for (const must of ['world/Interactables.ts', 'world/Streaming.ts', 'world/Surface.ts', 'combat/CombatManager.ts', 'core/EventBus.ts', 'rpg/Runtime.ts', 'rpg/Settlement.ts', 'save/Serializer.ts']) {
+    for (const must of ['world/Interactables.ts', 'world/Streaming.ts', 'world/Surface.ts', 'world/WeatherSwitch.ts', 'combat/CombatManager.ts', 'core/EventBus.ts', 'rpg/Runtime.ts', 'rpg/Settlement.ts', 'save/Serializer.ts']) {
       expect(scanned, must).toContain(must)
     }
     expect(scanned.length).toBeGreaterThanOrEqual(20)

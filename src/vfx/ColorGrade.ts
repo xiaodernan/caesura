@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import type { RegionData, WeatherRow } from '@/data/schema'
+import type { WeatherRow } from '@/data/schema'
 import { weatherRows } from '@/data'
 
 /**
@@ -13,8 +13,11 @@ import { weatherRows } from '@/data'
  *
  * 为什么"合成"必须住在同一个类里：这两件事各自的落地时间是两次 commit。失谐那半早在 §11 就在写
  * `style.filter`，天气这半今天才有表。任何一方单独往那条字符串上写，都会把另一方的读数盖掉
- * （浏览器里只有最后一个写方说话）。所以 `setVeil()` 与 `setRegion()` 都只是**改输入**，
+ * （浏览器里只有最后一个写方说话）。所以 `setVeil()` 与 `setWeather()` 都只是**改输入**，
  * 真正动手的只有 `apply()` 一处，它每次把两条腿一起算完再写。
+ *
+ * 它**不认识区域也不认识旗标**：「脚下这一区当前生效的是哪一格天气」由 `world/WeatherSwitch` 推导
+ * （KI-094②），组合根把那个名字递进来。这一层只管"这一格怎么画"。
  */
 
 /**
@@ -63,14 +66,12 @@ export class ColorGrade {
   }
 
   /**
-   * 玩家脚下的区域。读的是 `weatherPresets[0]`（驻留天气）。
-   * 数组里后面那些格子是"修钟之后换成的样子"，那条切换今天还没有写方（世界状态里只有任务线给的
-   * `STATE.BELLS.*`，把它接进来的腿欠在 KI-094②），所以这里**故意**不看 `[1]`。
+   * 现在生效的那一格天气（名字来自 `world/WeatherSwitch > activeWeather`：那一区驻留的天气，
+   * 或修过钟之后换上的那一格）。**这一层不认识区域也不认识旗标**——它只接一个天气名，
+   * 因为"哪一格生效"是玩法侧的推导（KI-094②），而"这一格怎么画"是这里的活。
+   * 名字为 null（没有区、或那一区没声明天气）或表里没这一行时走基线（`clear`）；
+   * 名字欠读数这件事由校验器的 `PENDING_WEATHER_READINGS` 账交代，不由这里编一个默认值。
    */
-  setRegion(region: RegionData | null): void {
-    this.setWeather(region?.weatherPresets?.[0] ?? null)
-  }
-
   setWeather(name: string | null): void {
     this.weather = name === null ? null : this.rows.find((r) => r.id === name) ?? null
     this.apply()
