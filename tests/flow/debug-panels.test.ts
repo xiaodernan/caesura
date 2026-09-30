@@ -14,7 +14,7 @@
  * 一块面板最容易的两种假绿：把"字段存在"当成"读数正确"（所以每条都从实例改一笔再读回），
  * 以及"看一眼"把被看的系统改坏（所以 `armedSlots` 那条既测读到、也测没占坑）。
  */
-import { afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { GameTime, TICK_DT } from '@/core/Time'
@@ -39,13 +39,36 @@ import { DebugPanel } from '@/tools/DebugPanel'
 import { enemyPanelText, enemyRows } from '@/tools/EnemyDebugger'
 import { questPanelText, questRows } from '@/tools/QuestDebugger'
 import { aiPanelText, type AiDebugInput } from '@/tools/AIDebugger'
+import { CombatDebugger } from '@/tools/CombatDebugger'
+import { bus } from '@/core/EventBus'
 
 registerGameData()
 
 /* ------------------------------------------------------------------ 外壳 */
 
 class FakeEl {
-  style: Record<string, string> = {}
+  private _style: Record<string, string> = {}
+  get style(): Record<string, string> & { cssText: string } {
+    return new Proxy(this._style, {
+      get(target, prop: string) {
+        if (prop === 'cssText') {
+          return Object.entries(target).map(([k, v]) => `${k}:${v}`).join(';')
+        }
+        return target[prop]
+      },
+      set(target, prop: string, value) {
+        if (prop === 'cssText') {
+          for (const part of String(value).split(';')) {
+            const [k, ...rest] = part.split(':')
+            if (k && rest.length) target[k.trim()] = rest.join(':').trim()
+          }
+          return true
+        }
+        target[prop] = value
+        return true
+      }
+    }) as Record<string, string> & { cssText: string }
+  }
   textContent = ''
   children: FakeEl[] = []
   parent: FakeEl | null = null
@@ -389,6 +412,21 @@ describe('F4 · AI 决策路径读数', () => {
     }
     expect(bands, '一条距离带都没扫到 = 这条判据变成了空测试').toBeGreaterThan(15)
   })
+
+  it('出手那一式在 F4 也报（doing 行：帧表四个数 + shots）', () => {
+    const w = makeWorld()
+    const e = w.ai.spawn('en_refrein', at(4), 'f4')
+    const spec = e.data.attacks[0]
+    e.attack = newAttack(spec, 7)
+    const text = aiPanelText({ target: e, player: w.player.pos, grid: gridOf(w), armedSlots: [] })
+    expect(text).toMatch(new RegExp(`doing\\s+${spec.id} tick 7`))
+    expect(text).toContain(`startup ${spec.frames.startup}`)
+    expect(text).toContain(`window ${spec.frames.activeStart}-${spec.frames.activeEnd}`)
+    expect(text).toContain(`recovery ${spec.frames.recovery}`)
+    expect(text).toContain(`shots ${e.attack.shots}`)
+    e.attack = null
+    expect(aiPanelText({ target: e, player: w.player.pos, grid: gridOf(w), armedSlots: [] }), '收招之后 doing 行消失').not.toContain('doing')
+  })
 })
 
 describe('F3 · 任务与世界读数（只读）', () => {
@@ -525,5 +563,129 @@ describe('F3 · 任务与世界读数（只读）', () => {
       expect(code, `调试器长出了写入口 ${writer} ⇒ 世界状态出现第二个主人`).not.toContain(writer)
     }
     expect(code).toContain('QuestReader') // 反过来钉住：它确实只经由"读"接口拿数据
+  })
+})
+
+describe('F2 · 战斗读数面板', () => {
+  let beforeKeydownCount: number
+
+  beforeEach(() => {
+    beforeKeydownCount = win.handlers.keydown?.length ?? 0
+  })
+
+  afterEach(() => {
+    const after = win.handlers.keydown?.length ?? 0
+    expect(after, 'CombatDebugger dispose 必须把 keydown 监听摘走').toBe(beforeKeydownCount)
+  })
+
+  const anyDbg = (dbg: CombatDebugger) => dbg as any
+
+  it('F2 开关：首按开、再按关，关着时不拼文本', () => {
+    const dbg = new CombatDebugger()
+    expect(anyDbg(dbg).enabled).toBe(false)
+    expect(anyDbg(dbg).panel.style.display).toBe('none')
+
+    press('F2')
+    expect(anyDbg(dbg).enabled).toBe(true)
+    expect(anyDbg(dbg).panel.style.display).toBe('block')
+    const textOpen = anyDbg(dbg).panel.textContent
+
+    press('F1') // 无关键不拨动
+    expect(anyDbg(dbg).enabled).toBe(true)
+    expect(anyDbg(dbg).panel.textContent).toBe(textOpen)
+
+    press('F2')
+    expect(anyDbg(dbg).enabled).toBe(false)
+    expect(anyDbg(dbg).panel.style.display).toBe('none')
+    const textClosed = anyDbg(dbg).panel.textContent
+    expect(textClosed).toBe(textOpen) // 关着不刷
+
+    dbg.dispose()
+  })
+
+  it('combat.hit 追加 newest-first 并封顶 12 条；BS/WP 旗标随事件印', () => {
+    const dbg = new CombatDebugger()
+    press('F2')
+    // 13 条 ⇒ 只保留最新 12
+    for (let i = 0; i < 13; i++) {
+      bus.emit('combat.hit', {
+        attackerId: `atk${i}`, victimId: 'v', damage: 10, poiseDamage: 5,
+        kind: 'enemy', result: 'hit', point: { x: 0, y: 0, z: 0 }, dir: { x: 1, y: 0, z: 0 },
+        hitStopMs: 80, shakeKey: 'small', backstab: i === 12, weakpoint: i === 11
+      })
+    }
+    const txt = anyDbg(dbg).panel.textContent
+    expect(txt).toContain('combat.debug')
+    expect(txt).toContain('BS')  // 最后一条
+    expect(txt).toContain('WP')  // 倒数第二条
+    // 只有 12 行 hit（去掉表头 5 行 ⇒ 17 行总共）
+    expect(txt.split('\n').filter((l: string) => l.includes('dmg')).length).toBe(12)
+    dbg.dispose()
+  })
+
+  it('player.stats：整数不加小数点，非整数保留一位', () => {
+    const dbg = new CombatDebugger()
+    press('F2')
+    bus.emit('player.stats', { hp: 60, hpMax: 100, stamina: 75, staminaMax: 100,
+      poise: 30, poiseMax: 50, overdrive: 42.5, overdriveMax: 100, rank: 2,
+      corruption: 0, corruptionMax: 100, corruptionVeil: 0, muteTicksLeft: 0 })
+    expect(anyDbg(dbg).panel.textContent).toContain('HP 60/100')
+    expect(anyDbg(dbg).panel.textContent).toContain('STA 75/100')
+    expect(anyDbg(dbg).panel.textContent).toContain('POI 30/50')
+    expect(anyDbg(dbg).panel.textContent).toContain('OD 42.5/100')
+    dbg.dispose()
+  })
+
+  it('rhythm.beat：isBarStart=│ 否则=·，最多保留 96 字符', () => {
+    const dbg = new CombatDebugger()
+    press('F2')
+    bus.emit('rhythm.beat', { beatIndex: 0, beatInBar: 1, bar: 0, isBarStart: true, phase: 0 })
+    bus.emit('rhythm.beat', { beatIndex: 1, beatInBar: 2, bar: 0, isBarStart: false, phase: 0.25 })
+    const beatsLine = anyDbg(dbg).panel.textContent.split('\n').find((l: string) => l.startsWith('beats:'))!
+    expect(beatsLine).toContain('│1')
+    expect(beatsLine).toContain('·2')
+    dbg.dispose()
+  })
+
+  it('world.chunk：unloaded 删除 key，其余三态计数 + 末行回显', () => {
+    const dbg = new CombatDebugger()
+    press('F2')
+    bus.emit('world.chunk', { key: 'a', regionId: 'r1', cx: 0, cy: 0, cz: 0, center: { x: 0, y: 0, z: 0 },
+      state: 'active', priority: 1, tick: 0 })
+    bus.emit('world.chunk', { key: 'b', regionId: 'r1', cx: 1, cy: 0, cz: 0, center: { x: 0, y: 0, z: 0 },
+      state: 'resident', priority: 1, tick: 0 })
+    bus.emit('world.chunk', { key: 'c', regionId: 'r1', cx: 0, cy: 1, cz: 0, center: { x: 0, y: 0, z: 0 },
+      state: 'preloading', priority: 1, tick: 0 })
+    let stream = anyDbg(dbg).panel.textContent.split('\n').find((l: string) => l.startsWith('stream'))!
+    expect(stream).toContain('act 1')
+    expect(stream).toContain('res 1')
+    expect(stream).toContain('load 1')
+
+    bus.emit('world.chunk', { key: 'b', regionId: 'r1', cx: 1, cy: 0, cz: 0, center: { x: 0, y: 0, z: 0 },
+      state: 'unloaded', priority: 1, tick: 0 })
+    stream = anyDbg(dbg).panel.textContent.split('\n').find((l: string) => l.startsWith('stream'))!
+    expect(stream).toContain('res 0')
+    expect(stream).toContain('unloaded')
+    dbg.dispose()
+  })
+
+  it('dispose 摘掉按键、解订 bus、把节点从 body 拿下', () => {
+    const dbg = new CombatDebugger()
+    press('F2')
+    const panel = anyDbg(dbg).panel as FakeEl
+    const bodyChildrenBefore = body.children.length
+    dbg.dispose()
+    expect(panel.removeCount).toBe(1)
+    expect(panel.parent).toBe(null)
+    expect(body.children.length).toBe(bodyChildrenBefore - 1)
+    // 解订后再发事件不报错、也不更新文本
+    expect(() => bus.emit('combat.hit', {
+      attackerId: 'x', victimId: 'y', damage: 1, poiseDamage: 1,
+      kind: 'enemy', result: 'hit', point: { x: 0, y: 0, z: 0 }, dir: { x: 1, y: 0, z: 0 },
+      hitStopMs: 0, shakeKey: 'x', backstab: false, weakpoint: false
+    })).not.toThrow()
+    const txtAfter = panel.textContent
+    // 面板已移除但对象还在；dispose 后不应再因事件而变文本（handler 已摘）
+    expect(panel.textContent).toBe(txtAfter)
   })
 })

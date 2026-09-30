@@ -278,4 +278,47 @@ describe('任务状态机（需求 §28：三种推进来源 —— 旗标 / 状
     expect(seen).toEqual(['q_corvin:CORVIN.STEP1_OPEN', 'q_corvin:CORVIN.STEP2_DELIVER'])
     q.dispose()
   })
+
+  it('isStarted：任务在 start 之前为 false，start 之后为 true', () => {
+    const q = new Quests(questTable)
+    expect(q.isStarted('q_bells')).toBe(false)
+    q.start('q_bells')
+    expect(q.isStarted('q_bells')).toBe(true)
+    expect(q.isStarted('q_meg'), '别的线没开').toBe(false)
+    q.dispose()
+  })
+
+  it('settle 末步收束：已立末步旗标时直接跳到末步 ⇒ 当场完成', () => {
+    const flags = new Set<string>(['flag.meg_soundscroll_complete'])
+    const q = new Quests(questTable, () => {}, (k) => flags.has(k))
+    q.start('q_meg')
+    expect(q.state('q_meg')).toBe('MEG.STEP1_OPEN')
+    q.advance('q_meg', 'MEG.STEP4_CONVERGE')
+    expect(q.state('q_meg')).toBe('MEG.STEP4_CONVERGE')
+    expect(q.isComplete('q_meg'), '末步落脚且它等的旗已在 ⇒ 当场收束').toBe(true)
+    q.dispose()
+  })
+
+  it('restore 完成记录：completed 数组里的 id 停在末步 ⇒ 读档后 isComplete=true', () => {
+    const c = new Quests(questTable)
+    c.restore({ states: { q_meg: 'MEG.STEP4_CONVERGE' }, relations: {}, seen: [], completed: ['q_meg'] })
+    expect(c.isComplete('q_meg'), '末步的完成记录随档回来').toBe(true)
+
+    const d = new Quests(questTable)
+    d.restore({ states: { q_meg: 'MEG.STEP1_OPEN' }, relations: {}, seen: [], completed: ['q_meg'] })
+    expect(d.isComplete('q_meg'), '状态不在末步 ⇒ 老档的完成记录作废').toBe(false)
+
+    const e = new Quests(questTable)
+    e.restore({ states: {}, relations: {}, seen: [], completed: ['q_gone'] })
+    expect(e.isComplete('q_gone'), '表里没有的线不认完成').toBe(false)
+  })
+
+  it('Dialogue.advance 落在终点节点 ⇒ 明确结束（view 空且没有 reason，区别于 no-node）', () => {
+    const eng = new DialogueEngine(dialogues, new Quests(questTable))
+    const tree = eng.treeById('DLG_MEG')!
+    const res = eng.advance(tree, 'n8', 'npc_meg', liveCtx().ctx)
+    expect(res.view).toBeNull()
+    expect(res.effects).toEqual([])
+    expect(res.reason, '终点是正常结束，不是"找不到节点"').toBeUndefined()
+  })
 })
