@@ -1088,6 +1088,26 @@ manualChunks：`three`（vendor，独立长缓存）、`game-logic`（core/comba
 > commit 前缀确实在用，形态是 `area+area: KI-xxx — 中文摘要`（例：`ai+core: KI-014②b — …`）。
 > **`git tag` 一个都没有**：需求 §62 的 Milestone 打 tag 从未执行，这是本轮对账抓出来的第二条"写了没做"。
 > git-lfs 未启用，且走的是括号里那一支（全程序化生成 = 无二进制），符合事实。
+>
+> **对账（2026-10-01，TD-003 结案）**：上面那句"`git tag` 一个都没有"到此为止。G0..G5 已补打为注释 tag，编号按 Phase 走，
+> 每条 tag 的正文里写着它的证据（提交主题原文 + 该提交的文件清单），这张表只是索引：
+>
+> | 出口门（production-plan §4 原文） | tag | 锚点提交 | 锚在这里的理由 | 这个 tag **不**证明 |
+> |---|---|---|---|---|
+> | G0 docs 齐全 + 骨架可 `npm run dev` 出画面 | `ms-0.0` | `6f1f031` | 两半句只在此处同时成立：文档集在 `627d69a`，能出画面的骨架在 `6f1f031` | 出不出画面之外的一切（那一半没有判据） |
+> | G1 战斗原型可玩（视+键鼠闭环） | `ms-0.1` | `3cf8090` | 同一提交一次性带入 `ThirdPersonController`/`CameraRig`/`LockOn` + `CombatManager`/`DamagePipeline`/`HitShapes` + `VfxLayer`/`Hud` + `tests/flow/combat.test.ts` | — |
+> | G2 "Combat feels excellent" 内评通过 | **无 tag** | — | 判据是三人格投票（production-plan §5 Phase 2 验收标准①），而**这台机器上找不到任何一次投票记录**：docs、账本、提交信息里都搜不到"内评"被声明过 | 强打分等于把一个没做过的评审写成做过 |
+> | G3 休垒→雾语林→钟坠院 blockout 可穿行+流送 | `ms-0.3` | `ea41d0c` | 该提交的 `regions.json` 已有那三张区名（`rg_resthold`/`rg_whisperwode`/`rg_fellcarillon`）；流送 `Streaming.ts` 来自 `33a5427`，穿行 `Interactables.ts`（region gates + travel）来自 `5ea25b2`，灰盒可见化收口于本提交 | 穿行是逻辑 + 灰盒，不是美术 blockout 评审 |
+> | G4 5 基础+2 精英+奥斯塔拉+恩希尔 机制版全可战 | `ms-0.4` | `a6ef71a` | 主题即"Phase 4 出口验收" | 名册形状与原文不同：该提交 `enemies.json` 是 6 非精英 + **1** 只 elite + 3 只 Boss 位，"2 精英"当时只兑现一只，多出的那一格是隐藏 Boss 万籁；而验收本身登记了四条 Boss 缺口 ⇒ **带缺口通过** |
+> | G5 升级→加点→装备→掉落→强化 闭环自动化测试通过 | `ms-0.5` | `4f09065` | 该提交带 `tests/flow/gate5.test.ts`，这条链的用例今天在 HEAD 上仍在门禁里（6 条） | 只证明"自动化测试通过"那半句——账本里 G5②③ 是 Partial，原文要的录屏/视口对照在本环境做不了 |
+>
+> `ms-0.2` 那一格**空着留痕**，不补号也不复用。G6 起还没验收过 ⇒ 往后每个出口达成时**当场**打，不再走补打这条路。
+>
+> **这一批没有、也加不出一条"tag 在册"的机器门**，把原因写死在这里免得下一个人再试：tag 不在 `git archive` 出来的平面里
+> （那种平面根本没有 `.git`），而本沙箱**不允许 vitest worker 内部 spawn 子进程**（`spawnSync` 一律回 `EBUSY`，
+> 实测记录在 `tests/unit/ledger-rules.test.ts`）⇒ 任何去执行 `git tag` 的门禁要么永远红要么永远绿。可机检的那一半是
+> **账本自身**：`tests/unit/doc-audit.test.ts` 从此要求一个编号只能待在 TD 表**或**下面那条"留号不留行"注记里，
+> 两边都在 = 红，两边都不在 = 红。tag 的内容对不对仍只能靠人读（§82）。
 
 ### 7.4 CI 思路（本地先行）
 
