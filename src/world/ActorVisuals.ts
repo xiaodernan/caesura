@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { executionPose } from './ExecutionPose'
 import type { Enemy } from '@/ai/Enemy'
 import type { PlayerController } from '@/player/ThirdPersonController'
 
@@ -171,7 +172,14 @@ export class ActorVisuals {
     const hb = e.activeHitbox
     core.scale.setScalar(hb ? 1.6 : e.frozenTicks > 0 ? 1 : 1 + Math.sin(tick * 0.08) * 0.08)
     if (v.plate) v.plate.visible = !e.armorBroken // 碎甲是永久状态：板子掉了就是掉了
-    if (e.state === 'recover') {
+    // §5.4 处决演出（KI-002）：执行者正对着**这一具**演 → 受刑者按进度坍塌。
+    // 受刑者的身份是"位置对得上"（executing.pos 记的就是它）——不需要第二份标记。
+    const exec = this.player.executing
+    if (exec && Math.hypot(e.pos.x - exec.pos.x, e.pos.z - exec.pos.z) < 0.6) {
+      const pose = executionPose(exec.tick / Math.max(1, exec.total))
+      group.rotation.x = pose.tilt
+      group.position.y = e.pos.y - pose.sink * s
+    } else if (e.state === 'recover') {
       group.position.y = -0.25 * s
       group.rotation.x = 0.35
     } else group.rotation.x = 0
@@ -185,6 +193,12 @@ export class ActorVisuals {
 
   private animateSword(p: PlayerController, tick: number): void {
     const sw = this.sword
+    // §5.4（KI-002）：处决蒙太奇的劈砍走姿态函数——高举、落刀、保持（刀不复位）
+    if (p.executing) {
+      sw.rotation.x = -0.5 + executionPose(p.executing.tick / Math.max(1, p.executing.total)).chop
+      sw.rotation.z = 0
+      return
+    }
     if (p.action) {
       const f = p.action.f
       const t = p.action.tick

@@ -138,6 +138,10 @@ src/
     SpawnDirector.ts   数据驱动出怪（§66「敌人布置」/§5.5）：spawnGroups → 稳定槽位（region:group:member），
                        world.chunk 进/出 active 即出怪/回收，entity.died 记永久清剿，
                        flag condition 闸门 + maxAlive 预算；不认识 three，不持有敌人实例
+    WeatherSwitch.ts   「这一区当前生效的是哪一格天气」的唯一推导（KI-094②，IP_SEED §7）：
+                       任务线在等的旗（quests.json > steps[].advanceOn.flags）× 站在这一区的钟
+                       （regions.json > interactables[kind==='bell'].setsFlag）⇒ 一口修好的钟拨一格。
+                       纯函数、不认识 three 也不认识 DOM，输出只有一个天气名；画怎么调色归 vfx/ColorGrade
     ChunkGreybox.ts    chunk 灰盒表现层：world.chunk → InstancedMesh 挂/摘（§5.5）
     WallGreybox.ts     authored 墙体灰盒（KI-014②）：`regions.json > walls` 那张表里每一块墙一张
                        InstancedMesh（单位立方体 × 每块墙自己的缩放），全场常驻 1 个 drawcall；
@@ -145,6 +149,7 @@ src/
                        它存在的理由是**遮挡必须是看得见的**：判据先落地而几何没出现，玩家会挨一发"被空气挡住的箭"
     InteractableGreybox.ts 交互物占位模：按 kind 分池的 InstancedMesh，跟流送挂/摘、
                        随 ui.prompt 高亮、按 flag 谓词压暗消耗态（§5.5，Phase 7 换正式模）
+    ExecutionPose.ts 处决演出的姿态数学（KI-002）：纯函数（受刑者坍塌的 ease-in / 攻击者高举-落下的劈砍），头less 可量、ActorVisuals 只负责画；
     ProjectileVisuals.ts 弹体表现层：按 kind 分池的 Mesh（长枪=长条盒、音符=二十面体…），
                        每 tick 只读 combat.projectiles.list() 同步位置/朝向/脉冲（§5.9）；
                        另按 ownerId 池化 telegraph 赤线（§14.4，syncTelegraphs）
