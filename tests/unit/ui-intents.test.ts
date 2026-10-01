@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 /**
- * KI-062：`core/Input.ts` 的 UI 意图通道——需求 §5.2「摇杆/方向键 + 肩键切页 + Back 后退一层」里
+ * KI-062：`core/Input.ts` 的 UI 意图通道——ui-ux.md §5.2「摇杆/方向键 + 肩键切页 + Back 后退一层」里
  * 手柄那半条的落点。
  *
  * 面板为什么不能直接吃玩法那套 `ActionName`：面板开着时 `enabled=false`，玩法那条 held/edges 是

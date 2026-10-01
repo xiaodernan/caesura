@@ -24,7 +24,7 @@ describe('音级与遗响（§2.3/§8）', () => {
   it('等级曲线单调递增，且与 progression.md 的前十个锚点一致', () => {
     const c = prog().rankCurve
     for (let i = 1; i < c.length; i++) expect(c[i].xp, `rank ${c[i].rank}`).toBeGreaterThan(c[i - 1].xp)
-    // 需求 §2.3 表：2 级 60 / 3 级 75 / 4 级 94 / 5 级 118 / 10 级 361
+    // progression.md §2.3 表：2 级 60 / 3 级 75 / 4 级 94 / 5 级 118 / 10 级 361
     expect(c.find((r) => r.rank === 2)!.xp).toBe(60)
     expect(c.find((r) => r.rank === 3)!.xp).toBe(75)
     expect(c.find((r) => r.rank === 4)!.xp).toBe(94)
