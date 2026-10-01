@@ -579,7 +579,7 @@ Phase 4-A 把弹道跑通，但远程只被当作「会飞的近战判定」。4
 
 ### 5.9.2 定调光环与走调时刻（Phase 4-C）— 已实现
 
-需求 §14.6 的叠唱 Refrein 是第一个**给同伴加 buff** 的敌人，它逼着把「增益」从布尔位升级成一份可追溯的数据。同时顺手把 §11 的闷音时长也彻底数据化，过程中挖出两个真实缺陷。
+combat.md §14.6 的叠唱 Refrein 是第一个**给同伴加 buff** 的敌人，它逼着把「增益」从布尔位升级成一份可追溯的数据。同时顺手把 §11 的闷音时长也彻底数据化，过程中挖出两个真实缺陷。
 
 - **`ai.buffAura = {range, attackSpeedMul, dmgMul}` 取代 `buffedByRefrein: boolean`**：布尔位丢掉了倍率来源与数值，任何新支援位都得改代码。现在 `AISystem` 每 tick 重算一遍：先全部置 `null`，再对每个存活个体取**范围内最近**的 `buffAura` 来源，写 `e.buff = {attackSpeedMul, dmgMul, fromId}`。**不叠加**（多个支援位同时加成会让伤害乘算爆炸且不可读），但 `fromId` 保留——HUD/调试器能说「谁在给谁定调」。因为是每 tick 纯函数重算，施主一死、或施主被流送回收，光环**下一 tick 自动消失**，不需要任何清理事件（旧布尔位的做法得记得在 death 里手动清，这是 bug 温床）。
 - **攻速加成用整数帧累加，不引入浮点 tick**：`Enemy.advanceAttackFrames(mul)` 每 tick 先走 1 帧，再把 `mul-1` 的余数攒进 `speedAcc`，攒满 1 就多走一帧。理由：帧表里 `tick === f.startup`（广播 callAlly）、`tick >= activeStart && <= activeEnd`（判定窗）、弹体按 `=== activeStart + shotFrame` 发射，全都指望整数；如果直接 `tick += mul`，`===` 分支会静默失配。实测 1.15× 让 48 tick 的招式 41 tick 走完（−14.6%，接近 1/1.15 的理论 −13%，误差来自整数取整与提前一帧结束）。

@@ -15,7 +15,7 @@ import { CombatManager } from '@/combat/CombatManager'
 import { newAttack, type Enemy } from '@/ai/Enemy'
 
 /**
- * 世界遮挡流程测试（KI-014①②，需求 §15.2「躲入断音柱后」+ §65「弹体不该穿过掩体」+ §577「视锥 + 遮挡检查」的几何地基）。
+ * 世界遮挡流程测试（KI-014①②，combat.md §15.2「躲入断音柱后」+ §65「弹体不该穿过掩体」+ §577「视锥 + 遮挡检查」的几何地基）。
  *
  * 这一批要守住的不是"柱子有没有用"（`mainboss.test.ts` 已经管过那一格），而是
  * **遮挡第一次变成一条真的线段**：`core/Occlusion` 的那一个 `firstBlock` 被五个读者共用
