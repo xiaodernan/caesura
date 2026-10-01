@@ -1,0 +1,165 @@
+﻿diff --git a/src/ai/AISystem.ts b/src/ai/AISystem.ts
+index 681bedf..293542d 100644
+--- a/src/ai/AISystem.ts
++++ b/src/ai/AISystem.ts
+@@ -3,6 +3,7 @@ import { Enemy, bindEnemyRegistry } from './Enemy'
+ import type { PlayerController } from '@/player/ThirdPersonController'
+ import type { RhythmClock } from '@/core/RhythmClock'
+ import type { SightGate } from '@/core/Occlusion'
++import type { NavGate } from './Navigation'
+ import type { EnemyData } from '@/data/schema'
+ import { registry } from '@/core/Registry'
+ 
+@@ -35,6 +36,13 @@ export class AISystem {
+    * 名册的主人是 `combat`（它每 tick 重点名），所以这里要的只是一个函数，不新增依赖箭头。
+    */
+   sightBlocked: SightGate = null
++  /**
++   * KI-009 第一腿 绕路（combat.md §595）：组合根每 tick 写一次，`null` = 没有可挡路的几何体。
++   * 与 `sightBlocked` 同一个套路（名册的主人是组合根，`ai` 只要一个函数，不新增依赖箭头），
++   * 但落点不同：视线是每一次感知才问一次，而脚步是**每一只每一 tick**都要问——所以它写在
++   * {@link Enemy.nav} 上，由下面那个循环统一下发。
++   */
++  nav: NavGate = null
+ 
+   constructor() {
+     bindEnemyRegistry(this.enemies)
+@@ -154,6 +162,7 @@ export class AISystem {
+       }
+     }
+     for (const e of this.enemies) {
++      e.nav = this.nav // 组合根改一次注入，全场当帧生效（不必等下一次 spawn）
+       e.update(dt, tick, player, rhythm, (k) => this.slotTaken(k))
+       if (!e.alive && e.stateTick > 3000) {
+         // retire fully faded corpses
+diff --git a/src/ai/Enemy.ts b/src/ai/Enemy.ts
+index e553da7..48ac774 100644
+--- a/src/ai/Enemy.ts
++++ b/src/ai/Enemy.ts
+@@ -10,6 +10,7 @@ import { bandDamage } from '@/combat/HitShapes'
+ 
+ import type { RhythmClock } from '@/core/RhythmClock'
+ import type { SightGate } from '@/core/Occlusion'
++import type { NavGate } from './Navigation'
+ import type { PlayerController } from '@/player/ThirdPersonController'
+ import { advanceActionFrames, applyActionStop, type ActionStop } from '@/combat/ActionFrames'
+ 
+@@ -106,6 +107,13 @@ export class Enemy {
+    * null = 未被定调。倍率全部来自那份数据表，不在这里写死（§55）。
+    */
+   buff: { attackSpeedMul: number; dmgMul: number; fromId: string } | null = null
++  /**
++   * KI-009 第一腿的绕路口（combat.md §595「路径=简单导航网格（手工 Nav 点或 A* 网格，
++   * 禁动态避障物理）」）：由 `AISystem` 每 tick 从组合根写入，`null` = 这一片天没有 authored 墙
++   * （野外与全部既有测试的口径）。**读它的地方只有一处**——`stepToward`，于是追击 / 搜索 /
++   * 巡逻 / 退却 / 跟队友共用同一条腿，绕路的收益与它的代价都只有一份。
++   */
++  nav: NavGate = null
+   /**
+    * §14.5「拍隙」当前状态：true = 此刻正踩在拍点上，半透明+定身，打不着也走不动。
+    * 和 buff 一样是**每 tick 从数据重算的派生态**，不是需要维护的事件态。
+@@ -1002,13 +1010,28 @@ function faceSlow(e: Enemy, t: Vec3, rate = 0.15): void {
+ 
+ function stepToward(e: Enemy, t: Vec3, dt: number, speed: number, _rhythm: RhythmClock): void {
+   if (e.intangible) return // §14.5「仅半拍窗内位移」：拍点上定身，包括追击/逃跑/搜索
+-  const dx = t.x - e.pos.x, dz = t.z - e.pos.z
++  // KI-009 第一腿（combat.md §595）：注入过导航器时先问一句「直着走过去会撞墙吗」——会，就把这一步
++  // 的目标换成绕路的第一个拐点。没注入、绕不过去、或这一片天本来没有 authored 墙 ⇒ 目标原样，
++  // 脚步与导航落地之前**逐字节相同**（这就是"老行为是新行为的回落分支"那句话的实现）。
++  const goal = e.nav ? e.nav(e.pos, t, agentRadius(e)) : t
++  const dx = goal.x - e.pos.x, dz = goal.z - e.pos.z
+   const l = Math.hypot(dx, dz)
+   if (l < 0.05) return
+   e.pos.x += (dx / l) * speed * dt
+   e.pos.z += (dz / l) * speed * dt
+ }
+ 
++/**
++ * 这一只的体格（导航半径，KI-009 第一腿）。和 `bodyHeight()` 同一支笔：灰盒身体是**圆柱**，
++ * 身高 1.6 × scale、半径 0.5 × scale——两个尺寸都从 `body.scale` 乘出来，不在代码里另立一格
++ * （§55：视觉体与"走路的那个体"不许各写一个尺寸，否则玩家看到的是穿模、量到的是另一回事）。
++ * 要求文档哪天给出正式体格表（`ai.agentRadius` 这种），这里就改成读那一格，形状与
++ * `ai.kiteRange` 同族。
++ */
++function agentRadius(e: Enemy): number {
++  return 0.5 * (e.data.body?.scale ?? 1)
++}
++
+ function stepAway(e: Enemy, t: Vec3, dt: number, speed: number): void {
+   stepToward(e, { x: 2 * e.pos.x - t.x, y: 0, z: 2 * e.pos.z - t.z }, dt, speed, null as never)
+ }
+diff --git a/src/core/Occlusion.ts b/src/core/Occlusion.ts
+index 15e8d72..7a9c2f2 100644
+--- a/src/core/Occlusion.ts
++++ b/src/core/Occlusion.ts
+@@ -68,9 +68,18 @@ const EPS = 1e-7
+  * 线段 `a → b` 与遮挡体集合的第一个交点；没有交点返回 null。
+  * `expand` 是把"运动的物体自己有半径"并进遮挡体里（截面与高度各加这么多），
+  * 近战那条线的端点已经是身体中心/命中点，所以它传 0。
++ *
++ * `strict` 是**同一把尺子的第二种口径**（KI-092）：默认那两条"让着走"的规则——起点在体内
++ * 不算挡、贴面与相切不算挡——是给**打出去的线**写的（站在柱子旁也该能开枪，擦着柱面过去
++ * 的一寸不该算掩体）。而"这一条线**走不走得过去**"问的是另一件事：身体进不去墙，体内、
++ * 贴面、相切都算挡。两种口径共用同一份 slab 与二次方程（`strict` 只关掉那两条赦免），
++ * 于是"挡箭的几何"与"挡路的几何"不可能各写一份、各差一格——那正是 KI-092 要避免的东西。
++ *
++ * `strict` 下 t 允许 ≤ 0（起点已经在体内），布尔用户（导航）只问"是不是 null"；
++ * **那种输入上 `at` 落在起点之后，不是可用的撞击点**，所以除导航外不要传 true。
+  */
+ export function firstBlock(
+-  occluders: Iterable<Occluder>, a: Vec3, b: Vec3, expand = 0,
++  occluders: Iterable<Occluder>, a: Vec3, b: Vec3, expand = 0, strict = false,
+ ): BlockHit | null {
+   const dx = b.x - a.x
+   const dy = b.y - a.y
+@@ -81,7 +90,7 @@ export function firstBlock(
+   if (Math.hypot(dx, dz) < EPS) return null
+   let best: { t: number; at: Vec3; occluderId: string } | null = null
+   for (const o of occluders) {
+-    const t = o.shape === 'box' ? boxEnter(o, a, dx, dy, dz, expand) : cylEnter(o, a, dx, dy, dz, expand)
++    const t = o.shape === 'box' ? boxEnter(o, a, dx, dy, dz, expand, strict) : cylEnter(o, a, dx, dy, dz, expand, strict)
+     if (t === null) continue
+     if (best && best.t <= t) continue
+     best = { t, occluderId: o.id, at: { x: a.x + dx * t, y: a.y + dy * t, z: a.z + dz * t } }
+@@ -90,7 +99,7 @@ export function firstBlock(
+ }
+ 
+ /** 圆柱截面：xz 上解二次方程拿到进出参数，再看那一段有没有穿过 `[base,top]` 这一竖带 */
+-function cylEnter(o: CylinderOccluder, a: Vec3, dx: number, dy: number, dz: number, expand: number): number | null {
++function cylEnter(o: CylinderOccluder, a: Vec3, dx: number, dy: number, dz: number, expand: number, strict: boolean): number | null {
+   const r = o.radius + expand
+   if (r <= 0) return null
+   const base = o.pos.y - expand
+@@ -106,7 +115,7 @@ function cylEnter(o: CylinderOccluder, a: Vec3, dx: number, dy: number, dz: numb
+   const sq = Math.sqrt(disc)
+   const lo = (-lin - sq) / (2 * q)
+   const hi = Math.min((-lin + sq) / (2 * q), 1)
+-  if (lo <= EPS) return null // 起点已经在柱内 ⇒ 柱面在身后，挡不住这一线
++  if (!strict && lo <= EPS) return null // 起点已经在柱内 ⇒ 柱面在身后，挡不住这一线（strict 下「体内」= 走不过去）
+   if (hi <= lo) return null // 交点整段在 b 之后 ⇒ 柱子在目标后面，不是掩体
+   return enterBand(a.y, a.y + dy, lo, hi, base, top)
+ }
+@@ -115,12 +124,12 @@ function cylEnter(o: CylinderOccluder, a: Vec3, dx: number, dy: number, dz: numb
+  * 轴对齐盒截面（authored 墙）：三条轴各夹一块板（slab），交集非空就是被挡住，返回进入参数。
+  * 与圆柱共用同两条口径：起点在体内不挡、贴脸（`lo <= EPS`）不挡。
+  */
+-function boxEnter(o: BoxOccluder, a: Vec3, dx: number, dy: number, dz: number, expand: number): number | null {
++function boxEnter(o: BoxOccluder, a: Vec3, dx: number, dy: number, dz: number, expand: number, strict: boolean): number | null {
+   const hx = o.halfX + expand
+   const hz = o.halfZ + expand
+   const yLo = o.pos.y - expand
+   const yHi = o.pos.y + o.heightM + expand
+-  if (Math.abs(a.x - o.pos.x) <= hx && Math.abs(a.z - o.pos.z) <= hz && a.y >= yLo && a.y <= yHi) return null
++  if (!strict && Math.abs(a.x - o.pos.x) <= hx && Math.abs(a.z - o.pos.z) <= hz && a.y >= yLo && a.y <= yHi) return null
+   let lo = 0
+   let hi = 1
+   for (const [p, d, b, t] of [[a.x - o.pos.x, dx, -hx, hx], [a.y, dy, yLo, yHi], [a.z - o.pos.z, dz, -hz, hz]] as const) {
+@@ -134,7 +143,7 @@ function boxEnter(o: BoxOccluder, a: Vec3, dx: number, dy: number, dz: number, e
+     if (x < hi) hi = x
+     if (lo >= hi) return null // 有一轴先离开 ⇒ 擦着边过去，没穿过任何面
+   }
+-  return lo <= EPS ? null : lo // 起点正贴在墙面上：贴脸不算"被墙挡住"，与柱面同口径
++  return strict ? lo : (lo <= EPS ? null : lo) // 起点正贴在墙面上：贴脸不算"被墙挡住"，与柱面同口径（strict 下贴面 = 走不过去）
+ }
+ 
+ /**

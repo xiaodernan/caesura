@@ -43,6 +43,8 @@ interface EnemyStrike {
   layers: number
   mute: boolean
   backstab: boolean
+  /** 背刺倍率（无鸣 ×3.5 经武器标签解析进来；缺省 2.0） */
+  backstabMul?: number
   onBeat: boolean
   ranged: boolean
   /** 钉住定身 tick（投掷枪） */
@@ -238,7 +240,8 @@ export class CombatManager {
         muteTicks: skill?.muteTicks ?? 0,
         trueDamage: followup?.trueDamage ?? 0,
         movement: skill && skill.damage > 0 ? { scaling: skill.scaling, overdriveLayerMul: skill.overdriveLayerMul } : undefined,
-        backstab: isBackstab(p.pos, e.hitTarget()),
+        backstab: isBackstab(p.pos, e.hitTarget()) || this.heavyAlertBackstab(e, kind),
+        backstabMul: this.weaponBackstabMul(),
         onBeat: this.rhythm.onBeat(this.player.beatGraceTicks > 0 ? 80 : 50), // 常拍脚（KI-036）：±80ms 宽限
         ranged: false, pinTicks: 0,
         point, dir: flatDir(p.pos, e.pos),
@@ -268,6 +271,26 @@ export class CombatManager {
    * 一记都按原始伤害扣池——两条裁决的分支住在 `PropSystem.hitProp`。
    * props 不产 `combat.hit`：它没有伤害数字、没有 hitstop、没有架势——那些语义全是"打到了某个人"的。
    */
+  /**
+   * 背刺倍率从**武器标签**解析（`crit.backstab2.0`/`3.5`）——倍率的真值住在 swingTag 里，
+   * DamagePipeline 的默认 2.0 只是标签缺失时的兜底（KI-023 收尾批：无鸣 ×3.5 第一次有多主人）。
+   */
+  private weaponBackstabMul(): number {
+    const tag = this.player.weapon.swingTag?.find((t) => t.startsWith('crit.backstab'))
+    if (!tag) return 2.0
+    const v = Number.parseFloat(tag.slice('crit.backstab'.length))
+    return Number.isFinite(v) && v > 0 ? v : 2.0
+  }
+
+  /**
+   * 无鸣「抹喉弧线」（§4.6）：重击对 **Alert 侧**（未进战斗：alert/investigate/search）的目标
+   * 视为背刺——刺剑的弧线绕过警戒者的注意力，但真打起来（combat/chase）就没这份便宜。
+   */
+  private heavyAlertBackstab(e: Enemy, kind: 'light' | 'heavy' | 'skill'): boolean {
+    return !!this.player.weapon.heavyAlertBackstab && kind === 'heavy' &&
+      (e.state === 'alert' || e.state === 'investigate' || e.state === 'search')
+  }
+
   private playerHitsProps(): void {
     const props = this.props
     if (!props) return
@@ -394,6 +417,7 @@ export class CombatManager {
       scaling: mv ? mv.scaling : p.weapon.scaling,
       defense: e.stats.defense,
       backstab: s.backstab,
+      backstabMul: s.backstabMul,
       onBeat: s.onBeat,
       ranged: s.ranged,
       rawDamage: s.rawDamage,
@@ -1347,9 +1371,11 @@ export class CombatManager {
       const crumpled = e.stats.crumpleTicksLeft > 0 || e.state === 'recover'
       const stalled = crumpled || e.stunTicks > 0 || e.inStartup
       const unaware = e.state === 'idle' || e.state === 'patrol' || e.state === 'investigate' || e.state === 'alert' || e.state === 'search'
+      // 无鸣的潜行处决血线（KI-023 收尾批）：武器可以覆盖 player.json 的默认（0.35 → 0.5）
+      const stealthFrac = p.weapon.stealthKillFrac ?? ex.stealthKillFrac
       let kind: ExecuteKind | null = null
       if (crumpled && d <= ex.crumpleRange) kind = 'A'
-      else if (unaware && d <= ex.backstabRange && behindCone(p.pos, e, ex.backstabConeDeg)) kind = 'B'
+      else if (unaware && d <= ex.backstabRange && behindCone(p.pos, e, ex.backstabConeDeg) && e.stats.hp / e.stats.hpMax <= stealthFrac) kind = 'B'
       else if (oc >= ex.overdriveCost && stalled && d <= ex.crumpleRange) kind = 'C'
       if (kind && d < bestD) { bestD = d; best = { e, kind } }
     }

@@ -1,0 +1,17 @@
+
+  [32m[1mVITE[22m v5.4.21[39m  [2mready in [0m[1m580[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
+[2m  [32m➜[39m  [1mNetwork[22m[2m: use [22m[1m--host[22m[2m to expose[22m
+[2m00:48:43[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2m.scratch/ki094_plane/dist/index.html[22m
+[2m00:56:56[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2m.scratch/ki094_plane/dist/index.html[22m
+[2m00:56:56[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2m.scratch/ki094_plane/index.html[22m
+[2m00:56:56[22m [36m[1m[vite][22m[39m changed tsconfig file detected: D:\法环游戏\.scratch\ki094_plane\tsconfig.json - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.
+[2m00:56:56[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2m.scratch/ki094_pure/index.html[22m
+[2m00:56:56[22m [36m[1m[vite][22m[39m changed tsconfig file detected: D:\法环游戏\.scratch\ki094_pure\tsconfig.json - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.
+[2m01:14:39[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2m.scratch/td003_plane/index.html[22m
+[2m01:14:40[22m [36m[1m[vite][22m[39m changed tsconfig file detected: D:\法环游戏\.scratch\td003_plane\tsconfig.json - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.
+[2m01:18:17[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2m.scratch/td003_plane/dist/index.html[22m
+[2m01:21:48[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2m.scratch/td003_plane/dist/index.html[22m
+[2m01:21:48[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2m.scratch/td003_plane/index.html[22m
+[2m01:21:48[22m [36m[1m[vite][22m[39m changed tsconfig file detected: D:\法环游戏\.scratch\td003_plane\tsconfig.json - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.

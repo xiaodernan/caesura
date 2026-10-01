@@ -1,0 +1,81 @@
+CAESURA 数据校验（KI-015 门禁）— src/data/json
+
+=== player.json ===
+  OK — 无 ERROR / WARN
+
+=== movesets.json ===
+  OK — 无 ERROR / WARN
+
+=== weapons.json ===
+  OK — 无 ERROR / WARN
+
+=== enemies.json ===
+  OK — 无 ERROR / WARN
+
+=== loot.json ===
+  OK — 无 ERROR / WARN
+
+=== regions.json ===
+  OK — 无 ERROR / WARN
+
+=== items.json ===
+  OK — 无 ERROR / WARN
+
+=== progression.json ===
+  OK — 无 ERROR / WARN
+
+=== statuses.json ===
+  OK — 无 ERROR / WARN
+
+=== movements.json ===
+  OK — 无 ERROR / WARN
+
+=== worldstate.json ===
+  OK — 无 ERROR / WARN
+
+=== npcs.json ===
+  OK — 无 ERROR / WARN
+
+=== dialogue.json ===
+  OK — 无 ERROR / WARN
+
+=== quests.json ===
+  OK — 无 ERROR / WARN
+
+=== reactions.json ===
+  OK — 无 ERROR / WARN
+
+=== shop.json ===
+  OK — 无 ERROR / WARN
+
+=== states.json ===
+  OK — 无 ERROR / WARN
+
+=== ambience.json ===
+  WARN   bell.everySec: 5 张声床的铃点间隔上限低于 §4 的「30–120s 稀疏事件」那一格（现值沿用 KI-077 之前的实机口径 5–9s）：挪进文档那一格是听感裁决，已登记，不做静默改动
+  -- 0 ERROR / 1 WARN
+
+=== explore.json ===
+  OK — 无 ERROR / WARN
+
+=== battle.json ===
+  OK — 无 ERROR / WARN
+
+=== ducking.json ===
+  OK — 无 ERROR / WARN
+
+=== weather.json ===
+  WARN   emberfall: 天气 'emberfall' 被 regions.json 指着而表里没有行 ⇒ 它走基线（clear 那一行）：休垒修钟后的"落烬"。§38 四档说的是可见度与明度，没有"落烬"这一档；它挂 clear 还是 rain 属美术裁决，文档没给，读数就不能由校验器编
+  WARN   still: 天气 'still' 被 regions.json 指着而表里没有行 ⇒ 它走基线（clear 那一行）：沉溺合唱与未竟厅的驻留天气"沉静"。它描述的是"没有声音"而不是某种可见度，§38/§8 两句里都没有对应读数 ⇒ 今天按基线奏，欠的是 §37 光照表那条腿
+  WARN   drip: 天气 'drip' 被 regions.json 指着而表里没有行 ⇒ 它走基线（clear 那一行）：沉溺合唱修钟后的"滴答"。形状上最像 §38 的 Rain（文档给 Rain 雾 0.018、明度 ×0.8），但"drip 就是 Rain"这一句文档没说过，认档之后再入表
+  WARN   stone-wind: 天气 'stone-wind' 被 regions.json 指着而表里没有行 ⇒ 它走基线（clear 那一行）：钟坠院修钟后的"石风"。风不在 §38 的四档里，而 §8 的四个雾密度数没有一个按风给过；要先有人决定它改雾还是改明度，才有读数可写
+  WARN   hush: 天气 'hush' 被 regions.json 指着而表里没有行 ⇒ 它走基线（clear 那一行）：深窖的驻留天气"噤声"。与 still 同族：那一区的压抑来自病白色与光照（§8 区域色板那句），不在天气那一格里，天气表替光照欠着这一笔
+  WARN   §38 rain: 需求 §38 有 'rain' 这一档，而表里没有任何一行挂它：那一档的读数今天没有载体（要么给一个区域换上这一档，要么在需求里作废它）
+  WARN   rg_resthold: 这一区声明了修钟后的天气而今天没有能让它响的条件：休垒的"落烬"：区内没有 `kind:'bell'` 的钟——广场那四件陈设是 `inspect`，按**值域**换组（`state.bells.fourth_dumb` = INTACT/RUNG/MELTED/SEALED，narrative §7 那个抉择）。切换今天只认"被任务线追踪的旗"，要让它认值域得先裁"值域状态算不算天气条件"
+  WARN   rg_brokenbar_camp: 这一区声明了修钟后的天气而今天没有能让它响的条件：营地的"雾"：那一区的世界变化走的是桥放下来／后门开／`flag.brokenbar_resolved` 那类事件（没有钟，也没有修钟这一步），而文档里没有任何一句说营地为什么起雾。那一格是抄雾语林的样子还是另有条件 ⇒ 欠叙事裁决
+  WARN   rg_fellcarillon.interactables(bl_fellcarillon_fallenbell): 这口钟立的是 'flag.bell_toll_rung'，而它不在任务线追踪的旗标里 ⇒ 敲响/修好它都不改天气。如果它本该改：让某个任务步骤的 advanceOn.flags 等这面旗；如果不该改（比如它只是"敲响"而不是"修复"），这条 WARN 就是它的说明
+  WARN   rg_earless_deeps: 这一区声明了修钟后的天气而今天没有能让它响的条件：深窖从"噤声"到"沉静"：它的事件是五环线索读齐后初句圣所那扇门打开（`ga_deeps_firstphrase_door` 吃四面 `flag.clue_*` 的**合取**），不是修钟。把"线索齐了"当天气条件是另一种判据形状，要接就先裁它属不属于天气那一格
+  WARN   rg_unfinished_hall: 这一区声明了修钟后的天气而今天没有能让它响的条件：未竟厅的"失谐风暴"：那一区的门槛是 `flag.organ_gate_open`（管风琴门），它由关卡推进而不是由某口钟的修复立起；§15.2 里恩希尔战改变的是**音乐与拍**，文档没说过它改天气 ⇒ 谁的条件来这一格欠裁决
+  -- 0 ERROR / 11 WARN
+
+总计：0 ERROR / 12 WARN

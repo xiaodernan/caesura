@@ -1,0 +1,8 @@
+JSON report written to C:/Users/18414/AppData/Local/Temp/caesura-test-It7RaO/report.json
+
+[test] 有失败用例：1 条 / 1 个含红文件（这一趟跑了 1568 条 / 111 个文件）
+  tests/unit/arch-boundaries.test.ts — 1 条
+      × module dependency boundaries (tech-arch §3) three 只在表现层出现，且表现层清单与实际一致
+        AssertionError: vfx/ColorGrade.ts 用了 three 但不在表现层清单: expected false to be true // Object.is equality
+  完整报告留在 C:\Users\18414\AppData\Local\Temp\caesura-test-It7RaO\report.json
+FULL_RC=1

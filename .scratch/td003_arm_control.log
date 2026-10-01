@@ -1,0 +1,3 @@
+JSON report written to C:/Users/18414/AppData/Local/Temp/caesura-test-5ytkUY/report.json
+
+[test] 覆盖核对通过：筛选器 "tests/unit/doc-audit.test.ts" 圈定的 1 个文件全部跑到（磁盘名册 113），6 条用例全绿

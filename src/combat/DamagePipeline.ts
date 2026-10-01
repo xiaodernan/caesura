@@ -7,6 +7,11 @@ export interface DamageRequest {
   defense: number
   ranged?: boolean
   backstab?: boolean
+  /**
+   * 背刺倍率（KI-023 收尾批）：默认 2.0（§5.4）。无鸣的 `crit.backstab3.5` 由武器标签解析后
+   * 从这里进来——「背刺倍率再 +泛音×0.1%」那条隐藏天花板暂时仍是 3.5 定值（V2 数值批再动）。
+   */
+  backstabMul?: number
   weakpoint?: boolean
   onBeat?: boolean
   poiseBreakTarget?: boolean         // crumpled -> true damage execution channel (caller handles)
@@ -52,7 +57,7 @@ export function resolveDamage(req: DamageRequest, rand: () => number): DamageRes
   const v = req.variance ?? 0.1
   const mul = 1 - v / 2 + rand() * v
   let dmg = req.base * attrScale(req) * mul * (1 - damageReduction(req.defense, req.ranged))
-  if (req.backstab) dmg *= 2.0
+  if (req.backstab) dmg *= req.backstabMul ?? 2.0
   if (req.weakpoint) dmg *= 1.8
   let crit = req.backstab === true || req.weakpoint === true
   if (req.critRate && req.critRate > 0 && rand() < req.critRate) {

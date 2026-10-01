@@ -547,5 +547,24 @@
     "timbite": 80
    }
   }
+ },
+ {
+  "id": "wp_needlesilence_item",
+  "nameKey": "weapon.needlesilence",
+  "displayName": "无鸣",
+  "kind": "weapon",
+  "stack": 1,
+  "value": 400,
+  "desc": "从万籁巢穴最深处那根音刺上磨出来的刺剑。它替你挡下的第一件事，是它自己还想再响一次的冲动。",
+  "gear": {
+   "slot": "weapon",
+   "rarity": "unique",
+   "weaponId": "wp_needlesilence",
+   "salvage": {
+    "dross": 5,
+    "timbite": 90
+   },
+   "weight": 6
+  }
  }
 ]

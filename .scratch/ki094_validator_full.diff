@@ -1,0 +1,52 @@
+diff --git a/scripts/validate-data.mjs b/scripts/validate-data.mjs
+index 8095fed..b75b5d8 100644
+--- a/scripts/validate-data.mjs
++++ b/scripts/validate-data.mjs
+@@ -53,7 +53,7 @@ import { BURST_FIELDS, FEINT_FIELDS, burstFindings } from './burst-rules.mjs'
+ import { DUCK_FIELDS, duckFindings } from './ducking-rules.mjs'
+ // KI-094：天气表那几条**跨文件**判据的本体（同一族理由：要在测试里喂一行"§38 没有的那一档"、
+ // "没被任何一区指到的名字"看它拒不拒）。这里只负责把 §38 的档名名册与被引用的天气名读出来当输入。
+-import { PENDING_WEATHER_READINGS, WEATHER_FIELDS, weatherFindings } from './weather-rules.mjs'
++import { PENDING_WEATHER_READINGS, PENDING_WEATHER_SWITCHES, WEATHER_FIELDS, weatherFindings, weatherSwitchFindings } from './weather-rules.mjs'
+ // KI-089：对话树的**可达性**判据本体（同一族理由：要在测试里喂一棵合成树看它拒不拒）。这里只把
+ // findings 报成 ERROR —— 一句话有没有玩家读得到，是"边"的事，不是"条件写得好不好"的事。
+ import { dialogueReachErrors } from './dialogue-rules.mjs'
+@@ -105,7 +105,7 @@ const PSEUDO_ACTIONS = new Set(['chase', 'backstep', 'hold'])
+ /** WeaponData 的字段全集（KI-047）：每一格都必须有真实消费方，多余键一律 ERROR——
+  *  曾有的 `atkBase` 就是从这里出去的：底数住在 movesets.json 的帧表，武器表再带一份
+  *  "看起来是价格"的数，KI-039 的错价才躲过了整轮验收。 */
+-const WEAPON_FIELDS = new Set(['id', 'nameKey', 'archetype', 'movesetId', 'scaling', 'swingTag', 'skill', 'poiseMul', 'noiseMul'])
++const WEAPON_FIELDS = new Set(['id', 'nameKey', 'archetype', 'movesetId', 'scaling', 'swingTag', 'skill', 'poiseMul', 'noiseMul', 'stealthKillFrac', 'heavyAlertBackstab'])
+ /** 出身被动的类型白名单（KI-031③）：加一种 kind = 承诺带来一个消费者，反向探针守着那句话 */
+ const ORIGIN_PASSIVE_KINDS = ['lootStackBonus']
+ /** 营地商店那三张字段白名单（KI-055）：主人分别是 ShopData / ShopSell / ShopStockEntry */
+@@ -723,7 +723,9 @@ function validateWeapons(movesetIds) {
+       else report.num(file, `${w}.scaling.${k}`, v, { min: 0, name: k })
+     }
+     strArray(file, `${w}.swingTag`, wp.swingTag, { nonEmpty: true })
+-    if (!isStr(wp.skill)) report.error(file, `${w}.skill`, '缺失或非字符串')
++    if (wp.skill !== undefined && !isStr(wp.skill)) report.error(file, `${w}.skill`, '缺失或非字符串')
++    if (wp.stealthKillFrac !== undefined) report.num(file, `${w}.stealthKillFrac`, wp.stealthKillFrac, { min: 0, max: 1, name: 'stealthKillFrac' })
++    if (wp.heavyAlertBackstab !== undefined && typeof wp.heavyAlertBackstab !== 'boolean') report.error(file, `${w}.heavyAlertBackstab`, '必须是布尔')
+     if (wp.poiseMul !== undefined) report.num(file, `${w}.poiseMul`, wp.poiseMul, { min: 0, name: 'poiseMul' })
+     if (wp.noiseMul !== undefined) report.num(file, `${w}.noiseMul`, wp.noiseMul, { min: 0, name: 'noiseMul' })
+   })
+@@ -2042,6 +2044,18 @@ function validateWeather() {
+     if (f.level === 'warn') report.warn(f.file, f.where, f.msg)
+     else report.error(f.file, f.where, f.msg)
+   }
++  /*
++   * KI-094②：那条切换（`weatherPresets[1]`）的条件名册从 `quests.json` 现推——**主人是 `steps[].advanceOn.flags`**，
++   * 手抄一份就等于给这条判据编第二个真源。runtime 那一侧的同名推导在 `src/world/WeatherSwitch.ts`，
++   * 两边读的是同一份 `quests.json`，而"它们今天是不是同一批旗"由 `tests/unit/weather-switch.test.ts` 对账。
++   */
++  const questFlags = (isArr(data['quests.json']) ? data['quests.json'] : []).filter(isObj)
++    .flatMap((q) => isArr(q.steps) ? q.steps : []).filter(isObj)
++    .flatMap((s) => isObj(s.advanceOn) && isArr(s.advanceOn.flags) ? s.advanceOn.flags.filter(isStr) : [])
++  for (const f of weatherSwitchFindings(file, data['regions.json'], questFlags, PENDING_WEATHER_SWITCHES)) {
++    if (f.level === 'warn') report.warn(f.file, f.where, f.msg)
++    else report.error(f.file, f.where, f.msg)
++  }
+ }
+ 
+ /** loot.json 里真正会掉出来的物品全集（rolls + firstKill）。点亮源必须落在这里面，否则那一页永远点不亮 */function lootedItemIds() {

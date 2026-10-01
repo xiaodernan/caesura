@@ -1,0 +1,2 @@
+tests/flow/needlesilence.test.ts(187,86): error TS1002: Unterminated string literal.
+tests/flow/needlesilence.test.ts(188,1): error TS1005: ')' expected.

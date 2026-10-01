@@ -1,0 +1,268 @@
+import { describe, expect, it } from 'vitest'
+import { registerGameData, regions, dialogues, quests as questTable, worldStates } from '@/data'
+import { StreamingSystem } from '@/world/Streaming'
+import { SpawnDirector } from '@/world/SpawnDirector'
+import { AISystem } from '@/ai/AISystem'
+import { Quests } from '@/quest/Quests'
+import { WorldStates } from '@/quest/WorldStates'
+import { DialogueEngine, type DialogueContext, type DialogueView } from '@/quest/Dialogue'
+import { DialogueSession } from '@/quest/Settlement'
+import { Inventory } from '@/rpg/Inventory'
+import type { Vec3 } from '@/combat/EntityStats'
+
+/**
+ * 断弦线步 2/3/4（narrative §2.4《点名册》与营地定性，§7 `STATE.CAMP`/`STATE.FATE`）。
+ *
+ * 这一批把「尸体军阵的巡逻」接到一个**真的会改世界**的抉择上：替断弦填名册 = 给营地定性，
+ * 三种写法各是终幕入场编排的一根线。五条设计承诺在这里被钉住：
+ *
+ * 1. **步 1 靠机制推进**：只有以纯闪避走完整圈（旗标 `flag.haltrune_patrol_seen`）才开《点名册`；
+ *    仅仅"见过面"不算——那时复访给的是中立的那句，不是"名册的事，你想好了吗？"。
+ * 2. **决断只由值域承载**：`state.haltrune.camp = OUTPOST/RUINS/GARRISON` 是营地归属的唯一读数，
+ *    不另立一枚与它 1:1 重复的旗标（"两条同时立起来时世界是哪一种"就是值域表要消灭的局面）。
+ * 3. **步 3《最后一班岗》由纯闪避推进**：`flag.haltrune_farewell_open` 推到末步。
+ * 4. **步 4《义体尽头的拍子》二选一写入值域**：`state.haltrune.fate = PASSING_STILL/DRUM_LEGEND`。
+ * 5. **派生的后果**：真正动手改世界的几个读方（出怪表的 `!flag.brokenbar_resolved`、营地仓库箱的
+ *    `requiresFlag`）只认旗标字符串 ⇒ 由抉择**派生**那面旗，而不是把 Decide 记两遍。
+ * 6. **末步 ≠ 完成**：营地定性把线推到《最后一班岗》（`HALTRUNE.STEP3_LASTWATCH`），
+ *    那一步没有 `advanceOn` ⇒ `isComplete` 必须是 false——停在末步意味着任务**正在进行**。
+ */
+
+function makeWorld() {
+  registerGameData()
+  const streaming = new StreamingSystem(regions)
+  const quests = new Quests(questTable, () => {}, (k) => streaming.hasFlag(k))
+  const states = new WorldStates(worldStates)
+  const engine = new DialogueEngine(dialogues, quests)
+  const inv = new Inventory('haltrune')
+  const ctx: DialogueContext = {
+    hasFlag: (k: string) => streaming.hasFlag(k),
+    relation: (npc: string) => quests.relation(npc),
+    questState: (id: string) => quests.state(id),
+    questIndex: (id: string) => quests.stepIndex(id),
+    hasItem: (id: string, count?: number) => inv.count(id) >= (count ?? 1),
+    hasSeen: (d: string, n: string) => quests.hasSeen(d, n),
+    state: (k: string) => states.get(k),
+  }
+  const views: DialogueView[] = []
+  const session = new DialogueSession({
+    quests, engine, ctx, inv,
+    setFlag: (k, v) => streaming.setFlag(k, v),
+    setState: (k, v) => states.set(k, v),
+    notify: () => {},
+    refresh: () => {},
+    setPaused: () => {},
+    present: (v) => { if (v) views.push(v) },
+  })
+  const last = (): DialogueView => views[views.length - 1]
+  const cleanup = (): void => { session.close(); states.dispose(); quests.dispose(); streaming.dispose() }
+  /** 走完一遍巡逻（初见 → 跟队 → 一整圈），返回落到步 2 的世界 */
+  const walkPatrol = (): void => {
+    session.open('npc_haltrune')
+    session.choose('c1') // 我不打断他们
+    session.choose('c1') // （跟着他们，走完一整圈）
+    session.close()
+  }
+  /** 替他填名册：c1/c2/c3 = 友军哨站 / 废墟 / 恩希尔驻防地 */
+  const fillRoster = (choice: string): void => {
+    session.open('npc_haltrune')
+    session.choose('c2') // （把名册还给他）
+    session.choose(choice)
+    session.close()
+  }
+  return { streaming, quests, states, session, views, last, cleanup, walkPatrol, fillRoster }
+}
+
+describe('断弦线《点名册》：营地归属是一次真的三选一', () => {
+  it('仅仅"见过面"不算走完巡逻：那时复访不给名册，只把"你得自己数一遍"再问一次', () => {
+    const w = makeWorld()
+    w.session.open('npc_haltrune')
+    expect(w.last().nodeId).toBe('n0')
+    w.session.choose('c2') // 死人该躺下 ⇒ 只立"见过面"
+    expect(w.streaming.hasFlag('flag.haltrune_met')).toBe(true)
+    expect(w.streaming.hasFlag('flag.haltrune_patrol_seen')).toBe(false)
+    w.session.close()
+
+    expect(w.session.open('npc_haltrune'), '复访有话说（不是空对话框）').toBe(true)
+    expect(w.last().nodeId, '名册还没开张 ⇒ 落在"你得自己数一遍"那句反问上').toBe('n11')
+    expect(w.last().text).not.toContain('名册的事')
+    // KI-089：这一格原来断言的是"只剩一句中立结束语"（`choices` 为空）——那正是"拒绝没有回头路"：
+    // 选了「死人该躺下」的玩家此后每一次搭话都只能看同一句收尾，任务永远拿不到。
+    expect(w.last().choices.map((c) => c.id), '有一条回头路：跟一圈 / 走开').toEqual(['c1', 'c2'])
+    w.cleanup()
+  })
+
+  it('走完巡逻 ⇒ 步 2《点名册》；三选一写到 state.haltrune.camp 并把线推到《最后一班岗》', () => {
+    const w = makeWorld()
+    w.walkPatrol()
+    expect(w.streaming.hasFlag('flag.haltrune_patrol_seen')).toBe(true)
+    expect(w.quests.state('q_haltrune'), '旗标是任务步的读方').toBe('HALTRUNE.STEP2_ROSTER')
+
+    w.session.open('npc_haltrune')
+    expect(w.last().nodeId).toBe('n5')
+    expect(w.last().choices.map((c) => c.id)).toEqual(['c1', 'c2', 'c3', 'c4'])
+    w.session.choose('c2') // （把名册还给他）
+    expect(w.last().nodeId).toBe('n6')
+    expect(w.last().choices.map((c) => c.id)).toEqual(['c1', 'c2', 'c3'])
+
+    w.session.choose('c1') // 归还给休垒 —— 友军哨站
+    expect(w.states.get('state.haltrune.camp')).toBe('OUTPOST')
+    expect(w.quests.state('q_haltrune'), '营地既定 ⇒ 线往前走到最后一班岗').toBe('HALTRUNE.STEP3_LASTWATCH')
+    expect(w.quests.isComplete('q_haltrune'), '最后一班岗还没演 ⇒ 不许算收束').toBe(false)
+    expect(w.last().nodeId, '后果句').toBe('n7')
+    expect(w.last().text).toContain('友军哨站')
+
+    w.session.advance() // 效果句走完 ⇒ 落到复访的中立末节点
+    expect(w.last().nodeId).toBe('n10')
+    w.cleanup()
+  })
+
+  it('三种写法各写各的值（并派生各自的后果旗标），决定之后不可回退', () => {
+    const cases: Array<[string, string, string, string, boolean, boolean]> = [
+      ['c1', 'OUTPOST', 'n7', '友军哨站', true, true],
+      ['c2', 'RUINS', 'n8', '废墟', true, false],
+      ['c3', 'GARRISON', 'n9', '驻防地', false, false],
+    ]
+    for (const [choice, value, node, needle, resolved, allied] of cases) {
+      const w = makeWorld()
+      w.walkPatrol()
+      w.fillRoster(choice)
+      expect(w.states.get('state.haltrune.camp'), `${choice} ⇒ ${value}`).toBe(value)
+      expect(w.last().nodeId).toBe(node)
+      expect(w.last().text).toContain(needle)
+      // 派生旗标：出怪表与仓库箱只认旗标，不认值域
+      expect(w.streaming.hasFlag('flag.brokenbar_resolved'), `${value} ⇒ resolved=${resolved}`).toBe(resolved)
+      // KI-087：收编另派生一面更窄的旗（`allied` 只管"营地里的是友军"），它的唯一读方是
+      // 盟军补给封存点 `ch_brokenbar_ally_store`——`resolved` 管"营地定了"，两者要的不是同一件事
+      expect(w.streaming.hasFlag('flag.brokenbar_allied'), `${value} ⇒ allied=${allied}`).toBe(allied)
+
+      w.session.open('npc_haltrune')
+      expect(w.last().nodeId, '复访还是那一句后果').toBe(node)
+      expect(w.last().choices, '名册交出去了 ⇒ 这里没有可选项').toEqual([])
+      expect(w.states.get('state.haltrune.camp'), '值不会被第二次决定改写').toBe(value)
+      w.session.close()
+      w.cleanup()
+    }
+  })
+
+  it('营地既定 ⇒ 尸体军阵真的停摆（值域 → 派生旗标 → 出怪表那个既有读方的现场量法）', () => {
+    const w = makeWorld()
+    const ai = new AISystem()
+    const dir = new SpawnDirector(regions, {
+      spawn: (id, pos, sd) => new (require('@/ai/AI').AI)(id, pos, sd),
+      despawn: (id) => ai.despawn(id),
+      hasFlag: (k) => w.streaming.hasFlag(k),
+    }, (p: Vec3) => { const c = w.streaming.cellOf(p); return `${c.cx},${c.cy},${c.cz}` })
+    w.streaming.setFlag('flag.left_resthold')
+    const CAMP: Vec3 = { x: -80, y: 0, z: -200 }
+    const FAR: Vec3 = { x: 900, y: 0, z: 900 }
+    const syncAt = (p: Vec3): void => {
+      w.streaming.teleport(0, p)
+      dir.syncActive(w.streaming.byState('active').map((c) => c.key))
+    }
+    const murkshells = (): number => new (require('@/ai/AISystem'))().enemies.filter(
+      (e: { data: { id: string }; pos: { x: number; z: number } }) => e.data.id === 'en_murkshell' && Math.hypot(e.pos.x + 80, e.pos.z + 200) < 24,
+    ).length
+
+    syncAt(CAMP)
+    expect(murkshells(), '还没抉择的世界：那队兵照旧在营地里走').toBeGreaterThanOrEqual(4)
+
+    w.walkPatrol()
+    w.fillRoster('c1')
+    expect(w.streaming.hasFlag('flag.brokenbar_resolved'), '值域定了 ⇒ 派生旗标跟着立').toBe(true)
+
+    syncAt(FAR)
+    expect(murkshells(), '离开营地 ⇒ 活着的那些先撤回').toBe(0)
+    syncAt(CAMP)
+    expect(murkshells(), '营地归了休垒 ⇒ 这组不再落地').toBe(0)
+    w.cleanup()
+  })
+
+  it('营地归属只有值域一个抉择记录：不再另立一枚与它 1:1 重复的旗标', () => {
+    const w = makeWorld()
+    w.walkPatrol()
+    w.fillRoster('c3')
+    expect(w.states.get('state.haltrune.camp')).toBe('GARRISON')
+    expect(w.streaming.hasFlag('flag.haltrune_camp_decided'), '抉择记两遍 = 两个真值').toBe(false)
+    w.cleanup()
+  })
+})
+
+describe('断弦线步 3《最后一班岗》与步 4《义体尽头的拍子》', () => {
+  /** 走到"最后一班岗"（营地已定性）那个世界 */
+  const toLastWatch = () => {
+    const w = makeWorld()
+    w.walkPatrol()
+    w.fillRoster('c1')
+    expect(w.quests.state('q_haltrune')).toBe('HALTRUNE.STEP3_LASTWATCH')
+    expect(w.quests.isComplete('q_haltrune'), '《最后一班岗》还没演 ⇒ 不许算收束').toBe(false)
+    return w
+  }
+
+  it('填完名册的第一眼仍是"营地归谁"的后果句：结局不抢它', () => {
+    const w = toLastWatch()
+    expect(w.last().nodeId, '后果句').toBe('n7')
+    expect(w.last().text).toContain('友军哨站')
+    w.session.open('npc_haltrune')
+    /** 沿复访链走完步 3《最后一班岗》，再复访一次落到步 4 入口 n12 */
+    const walkToFarewell = (w: ReturnType<typeof makeWorld>): void => {
+      // 先走完步 3：复访 → 选 c3（最后一班岗） → 走完 n10/n11
+      expect(w.session.open('npc_haltrune'), '复访要有话说').toBe(true)
+      // 此时任务在 STEP3_LASTWATCH，n5 应该显示 c3（最后一班岗）
+      expect(w.last().choices.some((c: { id: string }) => c.id === 'c3')).toBe(true)
+      w.session.choose('c3') // 选择"最后一班岗"
+      // 走完 n10 -> n11
+      for (let i = 0; i < 4; i++) {
+        const v = w.last()
+        if (!v.choices.length) { w.session.advance(); continue }
+        w.session.choose(v.choices[v.choices.length - 1].id)
+      }
+      // 步 3 完成，flag.haltrune_farewell_open 被立起，任务推到 STEP4_PASSING
+      // 再复访一次，落到步 4 入口 n12（c1/c2）
+      expect(w.session.open('npc_haltrune'), '二次复访要有话说').toBe(true)
+      expect(w.last().choices.some((c: { id: string }) => c.id === 'c1' || c.id === 'c2')).toBe(true)
+    }
+    walkToFarewell(w)
+    expect(w.last().choices.map((c) => c.id), '结局旁边还有"让他继续站着"').toEqual(['c1', 'c2'])
+    w.cleanup()
+  })
+
+  it('用休止把他停在最后一拍上 ⇒ PASSING_STILL，线在这一刻收束', () => {
+    const w = toLastWatch()
+    for (let i = 0; i < 8; i++) {
+      const v = w.last()
+      if (v.choices.some((c: { id: string }) => c.id === 'c1')) break
+      if (v.choices.length > 0) { w.session.choose(v.choices[v.choices.length - 1].id); continue }
+      w.session.advance()
+    }
+    // 现在应该在 n12（步 4 入口），选 c1 = PASSING_STILL
+    w.session.choose('c1')
+    expect(w.states.get('state.haltrune.fate'), '值域是这条线唯一的结局读数').toBe('PASSING_STILL')
+    expect(w.quests.isComplete('q_haltrune'), '末步的 advanceOn 命中 ⇒ 这条线收束').toBe(true)
+    expect(w.quests.state('q_haltrune'), '收束不改 state').toBe('HALTRUNE.STEP4_PASSING')
+    w.cleanup()
+  })
+
+  it('走开让他敲完最后一个循环 ⇒ DRUM_LEGEND，同样收束', () => {
+    const w = toLastWatch()
+    for (let i = 0; i < 8; i++) {
+      const v = w.last()
+      if (v.choices.some((c: { id: string }) => c.id === 'c1')) break
+      if (v.choices.length > 0) { w.session.choose(v.choices[v.choices.length - 1].id); continue }
+      w.session.advance()
+    }
+    // 现在在 n12，选 c2 = DRUM_LEGEND
+    w.session.choose('c2')
+    expect(w.states.get('state.haltrune.fate')).toBe('DRUM_LEGEND')
+    expect(w.quests.isComplete('q_haltrune')).toBe(true)
+    w.cleanup()
+  })
+
+  it('还没走到最后一班岗时：结局闸门的两个前提都不成立', () => {
+    const w = makeWorld()
+    w.walkPatrol()
+    expect(w.quests.state('q_haltrune')).toBe('HALTRUNE.STEP2_ROSTER')
+    expect(w.states.get('state.haltrune.fate')).toBe('ALIVE_AT_POST')
+    w.cleanup()
+  })
+})

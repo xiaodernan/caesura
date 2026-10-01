@@ -1,0 +1,3 @@
+20	0	docs/technical-architecture.md
+21	1	tests/unit/doc-audit.test.ts
+9	1	docs/KNOWN_ISSUES.md

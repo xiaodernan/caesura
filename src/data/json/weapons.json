@@ -14,15 +14,22 @@
    "parryable"
   ],
   "skill": "sk_sword_resonant_cut",
-  "noiseMul": 1.0
+  "noiseMul": 1
  },
  {
   "id": "wp_fortissimo_greatsword",
   "nameKey": "weapon.fortissimoGreatsword",
   "archetype": "greatsword",
   "movesetId": "ms_greatsword",
-  "scaling": { "str": 1.15, "dex": 0.25 },
-  "swingTag": ["damage.physical", "crit.backstab2.0", "heavy"],
+  "scaling": {
+   "str": 1.15,
+   "dex": 0.25
+  },
+  "swingTag": [
+   "damage.physical",
+   "crit.backstab2.0",
+   "heavy"
+  ],
   "skill": "sk_greatsword_chord_quake",
   "poiseMul": 1.25,
   "noiseMul": 1.5
@@ -32,9 +39,34 @@
   "nameKey": "weapon.drawpinSpear",
   "archetype": "spear",
   "movesetId": "ms_spear",
-  "scaling": { "str": 0.7, "dex": 0.85 },
-  "swingTag": ["damage.physical", "crit.backstab2.0", "thrust"],
+  "scaling": {
+   "str": 0.7,
+   "dex": 0.85
+  },
+  "swingTag": [
+   "damage.physical",
+   "crit.backstab2.0",
+   "thrust"
+  ],
   "skill": "sk_spear_stringpin_hook",
   "noiseMul": 0.9
+ },
+ {
+  "id": "wp_needlesilence",
+  "nameKey": "weapon.needlesilence",
+  "archetype": "straight_sword",
+  "movesetId": "ms_needlesilence",
+  "scaling": {
+   "dex": 1.2,
+   "str": 0.3
+  },
+  "swingTag": [
+   "damage.physical",
+   "crit.backstab3.5",
+   "parryable"
+  ],
+  "noiseMul": 0,
+  "stealthKillFrac": 0.5,
+  "heavyAlertBackstab": true
  }
 ]

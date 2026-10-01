@@ -1,0 +1,5 @@
+G1 出口 = 战斗原型可玩（视 + 键鼠闭环）（production-plan §4）
+
+锚点：3cf8090 engine: Phase 1-B core combat prototype
+
+证据是那个提交的文件清单而不是主题措辞：同一提交一次性带入 ThirdPersonController / CameraRig / LockOn（键鼠 + 第三人称视）、CombatManager / DamagePipeline / HitShapes / EntityStats（战斗闭环）、AISystem / Enemy（对手）、VfxLayer / materials / Hud（反馈层）与 tests/flow/combat.test.ts（这条闭环第一次有用例）。

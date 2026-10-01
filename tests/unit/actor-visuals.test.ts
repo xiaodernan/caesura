@@ -12,6 +12,7 @@ import { PlayerController } from '@/player/ThirdPersonController'
 import { AISystem } from '@/ai/AISystem'
 import { ActorVisuals } from '@/world/ActorVisuals'
 import { BossArenaVisuals } from '@/world/BossArenaVisuals'
+import { newAttack } from '@/ai/Enemy'
 
 registerGameData()
 
@@ -160,11 +161,101 @@ describe('KI-007 手里的家伙跟着装备走（外观不再是"永远那一�
 
   it('表里没有的形状回退成 "看得见的一把"，而不是空手', () => {
     const w = registry.get<WeaponData>('wp_tuning_sword')
-    // id 必须换掉：`equip()` 见到同一把就短路返回（那是换装的常态优化，不是 bug）
     player.equip({ ...w, id: 'wp_probe_bow', archetype: 'bow' }, registry.get<MovesetData>(`moveset:${w.movesetId}`))
     vis.sync(ai.enemies, 2)
     expect(shown(), '手里空了比看着像剑更糟：玩家会以为装备没生效').toEqual(['weapon:unknown'])
     give('wp_tuning_sword')
     expect(shown(), '回退不该留下尾巴').toEqual(['weapon:straight_sword'])
+  })
+})
+
+describe('ActorVisuals：受击/拍隙/收束/武器动画的可见分支', () => {
+  it('前摇脉冲：攻击处于 startup 内 ⇒ emissiveIntensity 随 prog 上升', () => {
+    const e = ai.spawn('en_murkshell', { x: 0, y: 0, z: -10 }, 'a')
+    vis.sync(ai.enemies, 1)
+    const atk = e.data.attacks[0]
+    const startup = atk.frames.startup
+    e.attack = newAttack(atk, Math.max(1, Math.floor(startup / 2))) // 0 < tick < startup
+    vis.sync(ai.enemies, 2)
+    const mat = (vis as any).vis.get(e.id)!.body.material as THREE.MeshStandardMaterial
+    expect(mat.emissiveIntensity).toBeGreaterThan(0.5) // base 0.5 + pulse
+  })
+
+  it('核心闪光：coreFlash > 0 ⇒ emissiveIntensity = 3.2（压过脉冲）', () => {
+    const e = ai.spawn('en_murkshell', { x: 5, y: 0, z: -10 }, 'b')
+    vis.sync(ai.enemies, 1)
+    e.coreFlash = 5
+    vis.sync(ai.enemies, 2)
+    const mat = (vis as any).vis.get(e.id)!.body.material as THREE.MeshStandardMaterial
+    expect(mat.emissiveIntensity).toBe(3.2)
+  })
+
+  it('时停冻结：frozenTicks > 0 且无 coreFlash ⇒ emissiveIntensity = 0.08', () => {
+    const e = ai.spawn('en_murkshell', { x: 10, y: 0, z: -10 }, 'c')
+    vis.sync(ai.enemies, 1)
+    e.frozenTicks = 10
+    vis.sync(ai.enemies, 2)
+    const mat = (vis as any).vis.get(e.id)!.body.material as THREE.MeshStandardMaterial
+    expect(mat.emissiveIntensity).toBe(0.08)
+  })
+
+  it('拍隙半透明：intangible = true ⇒ opacity=0.18, transparent=true', () => {
+    const e = ai.spawn('en_murkshell', { x: 15, y: 0, z: -10 }, 'd')
+    vis.sync(ai.enemies, 1)
+    e.intangible = true
+    vis.sync(ai.enemies, 2)
+    const mat = (vis as any).vis.get(e.id)!.body.material as THREE.MeshStandardMaterial
+    expect(mat.opacity).toBe(0.18)
+    expect(mat.transparent).toBe(true)
+  })
+
+  it('恢复倒地：state === recover ⇒ position.y 下沉、rotation.x 前倾', () => {
+    const e = ai.spawn('en_murkshell', { x: 20, y: 0, z: -10 }, 'e')
+    vis.sync(ai.enemies, 1)
+    e.state = 'recover'
+    e.stateTick = 1
+    vis.sync(ai.enemies, 2)
+    const g = scene.getObjectByName(`actor:${e.id}`) as THREE.Group
+    expect(g.position.y).toBeLessThan(0)
+    expect(g.rotation.x).toBeGreaterThan(0)
+  })
+
+  it('死亡消融：!alive ⇒ 逐帧下沉 + 缩放，k>=1 时从场景移除并删除名册', () => {
+    const e = ai.spawn('en_murkshell', { x: 25, y: 0, z: -10 }, 'f')
+    vis.sync(ai.enemies, 1)
+    e.stats.dead = true // trigger alive = false
+    e.stateTick = 90 // k = 1
+    vis.sync(ai.enemies, 2)
+    expect(scene.getObjectByName(`actor:${e.id}`)).toBeUndefined()
+    expect((vis as any).vis.has(e.id)).toBe(false)
+  })
+
+  it('animateSword：parryActive → rotation.x=0.6, rotation.z=1.2', () => {
+    player.parryTicksLeft = 10
+    vis.sync(ai.enemies, 1)
+    expect(vis.sword.rotation.x).toBeCloseTo(0.6, 5)
+    expect(vis.sword.rotation.z).toBeCloseTo(1.2, 5)
+  })
+
+  it('animateSword：guarding → rotation.x=-1.4, rotation.z=0.4', () => {
+    player.parryTicksLeft = 0
+    player.guardTicks = 999
+    vis.sync(ai.enemies, 1)
+    expect(vis.sword.rotation.x).toBeCloseTo(-1.4, 5)
+    expect(vis.sword.rotation.z).toBeCloseTo(0.4, 5)
+  })
+
+  it('animateSword：roll → rotation.x=-2.2', () => {
+    player.guardTicks = 0
+    player.roll = { tick: 1, dir: { x: 0, y: 0, z: 1 }, dist: 4, total: 12, iframeStart: 0, iframeEnd: 8 }
+    vis.sync(ai.enemies, 1)
+    expect(vis.sword.rotation.x).toBeCloseTo(-2.2, 5)
+  })
+
+  it('animateSword：idle → rotation.x 在 -0.5 周围微动、rotation.z=0', () => {
+    player.roll = null
+    vis.sync(ai.enemies, 100)
+    expect(Math.abs(vis.sword.rotation.x + 0.5)).toBeLessThan(0.1)
+    expect(vis.sword.rotation.z).toBe(0)
   })
 })

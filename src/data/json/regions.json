@@ -239,6 +239,18 @@
     "requiresFlag": "flag.schism_exposed"
    },
    {
+    "id": "in_resthold_gate_hooks",
+    "kind": "inspect",
+    "verb": "数墙上的挂钩",
+    "pos": { "x": 74, "y": 0, "z": 3 }
+   },
+   {
+    "id": "in_resthold_noticeboard",
+    "kind": "inspect",
+    "verb": "看告示板",
+    "pos": { "x": 42, "y": 0, "z": 34 }
+   },
+   {
     "id": "in_resthold_dome_reflection",
     "kind": "inspect",
     "verb": "看积水里的倒影",

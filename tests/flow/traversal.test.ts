@@ -45,7 +45,7 @@ describe('interactable-driven traversal (Phase 3-C1)', () => {
     const w = wire()
     expect(w.surface.floorAt({ x: 0, y: 0, z: 0 })?.regionId).toBe('rg_resthold')
     expect(w.surface.floorAt({ x: 200, y: 0, z: 0 })).toBeNull() // 雾语林未解锁
-    const gate = w.interact.focus({ x: 76, y: 0, z: 0 })
+    const gate = w.interact.focus({ x: 78, y: 0, z: 0 })
     expect(gate?.id).toBe('gt_resthold_gate')
     expect(w.interact.focus({ x: 130, y: 0, z: 0 })).toBeNull() // 区域外的交互物不可见
     w.off()

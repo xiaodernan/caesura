@@ -1,0 +1,8 @@
+JSON report written to C:/Users/18414/AppData/Local/Temp/caesura-test-Q3yr1y/report.json
+
+[test] 有失败用例：1 条 / 1 个含红文件（这一趟跑了 1591 条 / 112 个文件）
+  tests/unit/doc-audit.test.ts — 1 条
+      × 文档对账闸门（KI-056） 真实 src/ 树里每一个文件名都必须在架构文档里出现过（新模块必须同时记账）
+        AssertionError: 这些模块从没被文档提到过 = 没人对过账：D:\法环游戏\src/world/WeatherSwitch.ts: expected [ Array(1) ] to deeply equal []
+  完整报告留在 C:\Users\18414\AppData\Local\Temp\caesura-test-Q3yr1y\report.json
+RC=1

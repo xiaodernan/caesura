@@ -1,0 +1,23 @@
+docs: TD-003 结案 —— G0..G5 补打成注释 tag，ms-0.2 那一格空着留痕，而"历史提交点找不回来"那句被证伪
+
+需求 §62 的 Milestone tag 从立项到今天零兑现（`git tag` 为空）。这一批补打五条注释 tag，每条的正文写着它自己的证据：
+
+- ms-0.0 @ 6f1f031 —— G0 的两半句只在这里同时成立（文档集 627d69a、能出画面的骨架 6f1f031），所以不锚在文档那一提交
+- ms-0.1 @ 3cf8090 —— 同一提交一次性带入 ThirdPersonController/CameraRig/LockOn + CombatManager/DamagePipeline/HitShapes + VfxLayer/Hud + tests/flow/combat.test.ts
+- ms-0.3 @ ea41d0c —— 该提交 regions.json 已有休垒/雾语林/钟坠院三张区名；Streaming.ts 来自 33a5427、Interactables.ts（区闸门 + travel）来自 5ea25b2、灰盒可见化收口于本提交
+- ms-0.4 @ a6ef71a —— 主题即"Phase 4 出口验收"；名册与原文不同（elite 只有 1 只，多出的那格是隐藏 Boss 万籁），而验收本身登记了四条 Boss 缺口 ⇒ 这是一个带缺口通过的 tag
+- ms-0.5 @ 4f09065 —— 该提交带 tests/flow/gate5.test.ts，那六条今天仍在门禁里；只证明"自动化测试通过"那半句，G5②③ 在账本里是 Partial
+
+ms-0.2 不打：G2 的判据是"三人格内评投票"，而 docs / 账本 / 提交信息里搜不到任何一次声明（实测三种写法只命中规划文档自己那几行；Phase 2 的 bef3e29/6a66d93/5b9778f 全是工作提交）。补一个号等于把没做过的评审写成做过。
+
+那笔债的原文说"历史提交点已经找不回来"——当时就写重了：找得回来，条件是每条都指得到提交主题 + 那一次提交的文件清单。架构文档 §7.3 因此加了一张表，第四列写"锚在那里的理由"，第五列写"这个 tag 不证明什么"。
+
+不加"tag 在册"的机器门，原因写在 §7.3 里免得下一个人再试：`git archive` 出来的平面没有 `.git`，而本沙箱不允许 vitest worker 内部 spawn（`spawnSync` 一律 EBUSY，实测见 tests/unit/ledger-rules.test.ts）⇒ 那种门只能写成永远红或永远绿。可机检的是账本自身：doc-audit 新增一条"销案的 TD 留号不留行"（一个编号只能待在 TD 表或那段注记里，两边都在 / 两边都不在都红，分子分母各有地板），旧那条钉成 arrayContaining(['TD-002','TD-003']) 的判据同时改成只钉 TD-002 —— 否则 TD-003 会"已销案"与"在册"同时为真。
+
+门禁（全部跑在 git archive HEAD 平面上：HEAD=c0ccf30 + 我这三个文件的覆盖，归一化字节复验一致）：npx tsc --noEmit 0 错（主工作副本的 lint 被并行会话那份未闭合的 tests/flow/needlesilence.test.ts 判成 RC=2，所以"绿"这件事只能在干净平面量）· node scripts/validate-data.mjs 0 ERROR / 11 WARN · node scripts/test.mjs --minWorkers=1 --maxWorkers=2 1608 条 / 113 个测试文件全部跑到、全绿、RC=0（比 KI-094② 那趟的 1607 多的正是 doc-audit 新加的那一条）· npx vite build RC=0（data chunk 104.67 kB / gzip 38.72 kB）
+
+判据两端实测：未变异对照 6 绿 0 红；五臂 5/5 命中事前预测（预测先写在 .scratch/td003_arms_predict.md，逐臂核对红在哪一句）——表里回魂一行→红在"假债"且点名 TD-003；抹掉 ~~TD-003~~ 的删除线→红在分子地板那句（3<4，array 被第一红掩盖）；换成没销过案的 ~~TD-009~~→地板绿而 array 红（钉子绑具体编号的证人）；注记块标题改名→红在"在读一个空集合"；删掉 TD-002 那一行→红 2 条（TD-002 必须在册 + 表里只剩 1 行而地板是 2）。
+
+实机腿不适用，写清楚免得被读成漏做：这一批一行运行时代码都没动，5199 那一趟量不到任何新东西 ⇒ 按 §77 记"没有这一腿"。
+
+提交在 detached worktree 平面上完成：机器级 pre-commit 真的执行了 npm run lint 并打印 passed，未用 SKIP_HOOKS；update-ref 带 cas-value；落库后主副本索引已按路径逐个 git reset 重建。

@@ -1,0 +1,9 @@
+G0 出口 = Phase 0 文档集齐全 + 项目骨架可 npm run dev 出画面（production-plan §4）
+
+补打（TD-003，2026-10-01）。锚在 6f1f031 而不是文档集那一提交：G0 的两半句只有在 6f1f031 才同时成立 —— 文档集在 627d69a 齐，能出画面的骨架到 6f1f031 才有。
+
+证据（提交主题原文）：
+- 627d69a docs: Phase 0 complete - full design doc suite for CAESURA original IP (world bible, combat, gameplay, progression, narrative, art, audio, uiux, tech arch, production plan) + known issues registry
+- 6f1f031 engine: Phase 1-A scaffold - vite+ts+three core loop (fixed 60Hz), data-driven assets, rhythm clock, placeholder arena, unit tests green
+
+口径：tag 记的是「出口在账本上被承认的那个提交点」，不是「该 Phase 最后一次改动」。

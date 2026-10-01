@@ -1,0 +1,7 @@
+JSON report written to C:/Users/18414/AppData/Local/Temp/caesura-test-cLha09/report.json
+
+[test] 有失败用例：1 条 / 1 个含红文件（这一趟跑了 6 条 / 1 个文件）
+  tests/unit/doc-audit.test.ts — 1 条
+      × 文档对账闸门（KI-056） 销案的 TD 留号不留行：一个编号只能待在 TD 表或那段注记里，两边都在 / 两边都不在都算红
+        AssertionError: 已销案的编号必须在那段注记里点名（TD-003 = Milestone tag，2026-10-01 结案）: expected [ 'TD-001', 'TD-004', 'TD-005', …(1) ] to deeply equal ArrayContaining{…}
+  完整报告留在 C:\Users\18414\AppData\Local\Temp\caesura-test-cLha09\report.json

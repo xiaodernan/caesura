@@ -1,0 +1,7 @@
+JSON report written to C:/Users/18414/AppData/Local/Temp/caesura-test-3PvEEE/report.json
+
+[test] 有失败用例：1 条 / 1 个含红文件（这一趟跑了 6 条 / 1 个文件）
+  tests/unit/doc-audit.test.ts — 1 条
+      × 文档对账闸门（KI-056） 销案的 TD 留号不留行：一个编号只能待在 TD 表或那段注记里，两边都在 / 两边都不在都算红
+        AssertionError: TD 表下面那段"留号不留行"注记整块不见了 ⇒ 这条判据在读一个空集合: expected -1 to be greater than -1
+  完整报告留在 C:\Users\18414\AppData\Local\Temp\caesura-test-3PvEEE\report.json

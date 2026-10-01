@@ -1,0 +1,398 @@
+[
+  {
+    "id": "q_bells",
+    "nameKey": "quest.bells",
+    "displayName": "四镇钟线",
+    "npc": "npc_belltongue",
+    "outcome": "四口钟说真话（或永远沉默）。铃姨的下场由玩家在《该不该敲响》里决定。",
+    "steps": [
+      {
+        "state": "BELLS.STEP1_OPEN",
+        "label": "《裂舌的断面》：去钟坠院取回首钟的断舌，并自行检视它",
+        "advanceOn": {
+          "flags": [
+            "flag.bell_tongue_examined"
+          ]
+        },
+        "tags": [
+          "D",
+          "H"
+        ]
+      },
+      {
+        "state": "BELLS.STEP1_JUDGED",
+        "label": "断面上有从内向外的结晶爆痕 —— 告诉她，或者把它收起来",
+        "advanceOn": {
+          "flags": [
+            "flag.belltongue_told",
+            "flag.belltongue_hidden"
+          ]
+        },
+        "tags": [
+          "C",
+          "H"
+        ]
+      },
+      {
+        "state": "BELLS.STEP2_OPEN",
+        "label": "《唤四钟》：按爆痕重立首钟 —— 钟坠院那座空了的钟座",
+        "advanceOn": {
+          "flags": [
+            "flag.bell_first_repaired"
+          ]
+        },
+        "tags": [
+          "D",
+          "M"
+        ]
+      },
+      {
+        "state": "BELLS.STEP2_SECOND",
+        "label": "第二口钟在雾语林的浮尘里 —— 修好它，那里的金色会变亮",
+        "advanceOn": {
+          "flags": [
+            "flag.bell_second_repaired"
+          ]
+        },
+        "tags": [
+          "D"
+        ]
+      },
+      {
+        "state": "BELLS.STEP2_THIRD",
+        "label": "第三口钟沉在沉唱堂的水线以下 —— 那是她亲手铸坏的那口",
+        "advanceOn": {
+          "flags": [
+            "flag.bell_third_repaired"
+          ]
+        },
+        "tags": [
+          "D",
+          "H"
+        ]
+      },
+      {
+        "state": "BELLS.STEP3_OPEN",
+        "label": "《哑钟》：三段拾音石合听 —— 转调发生在降 B。把这件事告诉她",
+        "advanceOn": {
+          "flags": [
+            "flag.bell_keymod_found"
+          ]
+        },
+        "tags": [
+          "H",
+          "C"
+        ]
+      },
+      {
+        "state": "BELLS.STEP3_REFUSED",
+        "label": "《哑钟》：她拒绝碰第四口钟 —— 半句没说完的话留在炉边",
+        "advanceOn": {
+          "flags": [
+            "flag.belltongue_refused"
+          ]
+        },
+        "tags": [
+          "H",
+          "C"
+        ]
+      },
+      {
+        "state": "BELLS.STEP4_DECIDE",
+        "label": "《该不该敲响》：第四口钟怎么处置 —— 敲响 / 交给她熔掉 / 永不动它",
+        "advanceOn": {
+          "state": {
+            "key": "state.bells.fourth_dumb",
+            "in": [
+              "RUNG",
+              "MELTED",
+              "SEALED"
+            ]
+          }
+        },
+        "tags": [
+          "C",
+          "M"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "q_corvin",
+    "nameKey": "quest.corvin",
+    "displayName": "喧堕学线",
+    "npc": "npc_corvin",
+    "outcome": "他证明「喧堕不是灾难是进化」——为的是他的妻子是第一批喧堕者。终段三选一（揭露/包庇/共谋）在 Phase 6-C。",
+    "steps": [
+      {
+        "state": "CORVIN.STEP1_OPEN",
+        "label": "《第一份契约》：把「会唱歌的核」带给他，换整片息声领的弱点图谱",
+        "advanceOn": {
+          "flags": [
+            "flag.corvin_contract_signed"
+          ]
+        },
+        "tags": [
+          "D"
+        ]
+      },
+      {
+        "state": "CORVIN.STEP2_DELIVER",
+        "label": "核已在手 —— 交给他",
+        "tags": [
+          "D",
+          "H"
+        ],
+        "advanceOn": {
+          "flags": [
+            "flag.corvin_core_delivered"
+          ]
+        }
+      },
+      {
+        "state": "CORVIN.STEP3_REMAINS",
+        "label": "《干净的脑》：在钟坠院崖壁找到悬钟骑士遗骸，读取盔内铭牌",
+        "advanceOn": {
+          "flags": [
+            "flag.corvin_remains_found"
+          ]
+        },
+        "tags": [
+          "D",
+          "H"
+        ]
+      },
+      {
+        "state": "CORVIN.STEP4_CONFRONT",
+        "label": "《档案室的另一半火》：质问科温烧毁卷宗，获取破拍营地口令与未竟厅音栓图",
+        "advanceOn": {
+          "flags": [
+            "flag.corvin_archive_confronted"
+          ]
+        },
+        "tags": [
+          "C",
+          "H"
+        ]
+      },
+      {
+        "state": "CORVIN.STEP5_SCHISM",
+        "label": "《学者之乱》：三选一 —— 揭露 / 包庇 / 共谋",
+        "advanceOn": {
+          "state": {
+            "key": "state.corvin.schism",
+            "in": [
+              "EXPOSED",
+              "COMPLICIT",
+              "COLLUDED"
+            ]
+          }
+        },
+        "tags": [
+          "C",
+          "M"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "q_meg",
+    "nameKey": "quest.meg",
+    "displayName": "声音拼图线",
+    "npc": "npc_meg",
+    "outcome": "完整声卷（未竟厅音栓钥匙）的归属，以及她在不在 Hub 唱歌。",
+    "steps": [
+      {
+        "state": "MEG.STEP1_OPEN",
+        "label": "《第一块拼图》：听出第一段记忆的录音地点 —— 她一直守在莉安家门口",
+        "advanceOn": {
+          "flags": [
+            "flag.meg_first_fragment"
+          ]
+        },
+        "tags": [
+          "D",
+          "H"
+        ]
+      },
+      {
+        "state": "MEG.STEP2_EXCHANGE",
+        "label": "《以物易声》：用你见过的一段声音换第二段记忆（她收下了首钟的断面）",
+        "tags": [
+          "D",
+          "M"
+        ],
+        "advanceOn": {
+          "flags": [
+            "flag.meg_second_fragment"
+          ]
+        }
+      },
+      {
+        "state": "MEG.STEP3_EXTRACT",
+        "label": "《剥耳语》：在未竟厅深处找回被剪掉的那句耳语，用共鸣石把它从回响里剥出来",
+        "advanceOn": {
+          "flags": [
+            "flag.meg_whisper_extracted"
+          ]
+        },
+        "tags": [
+          "D",
+          "H",
+          "M"
+        ]
+      },
+      {
+        "state": "MEG.STEP4_CONVERGE",
+        "label": "《声卷归一》：完整声卷归位，音栓钥匙插进未竟厅大门",
+        "advanceOn": {
+          "flags": [
+            "flag.meg_soundscroll_complete"
+          ]
+        },
+        "tags": [
+          "C",
+          "M"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "q_haltrune",
+    "nameKey": "quest.haltrune",
+    "displayName": "破拍营号线",
+    "npc": "npc_haltrune",
+    "outcome": "营地成为友军哨站 / 废墟 / 恩希尔的驻防地 —— 三种世界线，直接改终幕入场编排。",
+    "steps": [
+      {
+        "state": "HALTRUNE.STEP1_OPEN",
+        "label": "《巡逻线尽头》：以纯闪避不反击走完一遍完整巡逻周期",
+        "advanceOn": {
+          "flags": [
+            "flag.haltrune_patrol_seen"
+          ]
+        },
+        "tags": [
+          "D"
+        ]
+      },
+      {
+        "state": "HALTRUNE.STEP2_ROSTER",
+        "label": "《点名册》：纯闪避走完巡逻周期的未出手统计与尸体摆位，三选一定营地归属",
+        "advanceOn": {
+          "state": {
+            "key": "state.haltrune.camp",
+            "in": [
+              "OUTPOST",
+              "RUINS",
+              "GARRISON"
+            ]
+          }
+        },
+        "tags": [
+          "D",
+          "C",
+          "M"
+        ]
+      },
+      {
+        "state": "HALTRUNE.STEP3_LASTWATCH",
+        "label": "《最后一班岗》：三条路各自收尾 —— 收编冲锋 / 逐个劝停 / 留给恩希尔",
+        "advanceOn": {
+          "flags": [
+            "flag.haltrune_farewell_open"
+          ]
+        },
+        "tags": [
+          "C",
+          "M"
+        ]
+      },
+      {
+        "state": "HALTRUNE.STEP4_PASSING",
+        "label": "《义体尽头的拍子》：他请你在场 —— 用休止送走他，或者让他敲完最后一个循环",
+        "advanceOn": {
+          "state": {
+            "key": "state.haltrune.fate",
+            "in": [
+              "PASSING_STILL",
+              "DRUM_LEGEND"
+            ]
+          }
+        },
+        "tags": [
+          "C",
+          "M"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "q_faceless",
+    "nameKey": "quest.faceless",
+    "displayName": "容器线",
+    "npc": "npc_faceless",
+    "outcome": "STATE.FACELESS = VESSEL / CHILD / CHOSEN / LOST —— 终局三手牌的关键变量。",
+    "steps": [
+      {
+        "state": "FACELESS.STEP1_OPEN",
+        "label": "《第一次代写》：它在灰上写下铃姨还没说出口的两个字",
+        "advanceOn": {
+          "flags": [
+            "flag.faceless_first_writing"
+          ]
+        },
+        "tags": [
+          "D",
+          "H"
+        ]
+      },
+      {
+        "state": "FACELESS.STEP2_ANSWER",
+        "label": "《会应答的孩子》：修过钟之后它写准了半度 —— 铃姨要你回答「你捡到的是孩子，还是耳朵」",
+        "tags": [
+          "D",
+          "C"
+        ],
+        "advanceOn": {
+          "flags": [
+            "flag.faceless_answered"
+          ]
+        }
+      },
+      {
+        "state": "FACELESS.STEP3_VESSEL",
+        "label": "《容器》：在初句圣所收集五环线索，确认它到底是什么 —— 容器、孩子、被选中者、还是迷失者",
+        "tags": [
+          "D",
+          "H",
+          "M"
+        ],
+        "advanceOn": {
+          "flags": [
+            "flag.faceless_clue_ring_complete"
+          ]
+        }
+      },
+      {
+        "state": "FACELESS.STEP4_IDENTITY",
+        "label": "《归属》：在圣所深处把归属写入它的灰里 —— STATE.FACELESS 写入 VESSEL/CHILD/CHOSEN/LOST",
+        "advanceOn": {
+          "state": {
+            "key": "state.faceless.identity",
+            "in": [
+              "VESSEL",
+              "CHILD",
+              "CHOSEN",
+              "LOST"
+            ]
+          }
+        },
+        "tags": [
+          "C",
+          "M"
+        ]
+      }
+    ]
+  }
+]

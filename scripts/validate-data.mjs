@@ -105,7 +105,7 @@ const PSEUDO_ACTIONS = new Set(['chase', 'backstep', 'hold'])
 /** WeaponData 的字段全集（KI-047）：每一格都必须有真实消费方，多余键一律 ERROR——
  *  曾有的 `atkBase` 就是从这里出去的：底数住在 movesets.json 的帧表，武器表再带一份
  *  "看起来是价格"的数，KI-039 的错价才躲过了整轮验收。 */
-const WEAPON_FIELDS = new Set(['id', 'nameKey', 'archetype', 'movesetId', 'scaling', 'swingTag', 'skill', 'poiseMul', 'noiseMul'])
+const WEAPON_FIELDS = new Set(['id', 'nameKey', 'archetype', 'movesetId', 'scaling', 'swingTag', 'skill', 'poiseMul', 'noiseMul', 'stealthKillFrac', 'heavyAlertBackstab'])
 /** 出身被动的类型白名单（KI-031③）：加一种 kind = 承诺带来一个消费者，反向探针守着那句话 */
 const ORIGIN_PASSIVE_KINDS = ['lootStackBonus']
 /** 营地商店那三张字段白名单（KI-055）：主人分别是 ShopData / ShopSell / ShopStockEntry */
@@ -723,7 +723,9 @@ function validateWeapons(movesetIds) {
       else report.num(file, `${w}.scaling.${k}`, v, { min: 0, name: k })
     }
     strArray(file, `${w}.swingTag`, wp.swingTag, { nonEmpty: true })
-    if (!isStr(wp.skill)) report.error(file, `${w}.skill`, '缺失或非字符串')
+    if (wp.skill !== undefined && !isStr(wp.skill)) report.error(file, `${w}.skill`, '缺失或非字符串')
+    if (wp.stealthKillFrac !== undefined) report.num(file, `${w}.stealthKillFrac`, wp.stealthKillFrac, { min: 0, max: 1, name: 'stealthKillFrac' })
+    if (wp.heavyAlertBackstab !== undefined && typeof wp.heavyAlertBackstab !== 'boolean') report.error(file, `${w}.heavyAlertBackstab`, '必须是布尔')
     if (wp.poiseMul !== undefined) report.num(file, `${w}.poiseMul`, wp.poiseMul, { min: 0, name: 'poiseMul' })
     if (wp.noiseMul !== undefined) report.num(file, `${w}.noiseMul`, wp.noiseMul, { min: 0, name: 'noiseMul' })
   })

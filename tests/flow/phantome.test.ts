@@ -381,9 +381,10 @@ describe('相位与「抓不住」：处决、真 AI 的时序、以及切分连
     const e = ghost(w, 0, 1.5) // 它在玩家身后、面朝 +z（背对玩家）
     e.yaw = 0
     e.alertness = 0
+    e.stats.hp = e.stats.hpMax * 0.3 // 潜行处决的血线门槛（无鸣批加了 HP≤stealthKillFrac 的判据；默认 0.35）
     actAt(w, e, true, ['interact'])
     expect(w.player.executing, '抓不住一个不在那里的东西').toBeNull()
-    expect(e.stats.hp).toBe(e.stats.hpMax)
+    expect(e.stats.hp).toBe(e.stats.hpMax * 0.3)
     actAt(w, e, false, ['interact'])
     w.tick(2)
     expect(w.player.executing, '同一位置、同一按键，实体段就抓得住').not.toBeNull()

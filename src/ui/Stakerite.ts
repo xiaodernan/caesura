@@ -35,62 +35,73 @@ const TABS: { id: Tab; label: string; hint: string }[] = [
   { id: 'save', label: '存档', hint: '手动槽 · 写入/删除' }
 ]
 
-const CSS = `
-#stakerite { position:fixed; inset:0; display:none; z-index:20; pointer-events:none;
+/**
+ * 面板外壳（**两块 overlay 共用这一份**）：根/遮罩/膜、页头、页签、行、焦点框、页脚……
+ *
+ * 为什么是个导出的常量：`ui/MapUI.ts`（区域图）要用**同一件壳**。前缀写成 class `.cxs`
+ * 而不是某一个 id——谁挂上这个 class 谁就穿上它（`#stakerite` 与 `#mapui` 各挂各的 id）。
+ * 抄第二份的结局是：改了一块的圆角、忘了另一块，而这两处永远不会出现在同一个 diff 里。
+ */
+export const PANEL_CSS = `
+.cxs { position:fixed; inset:0; display:none; z-index:20; pointer-events:none;
   font-family: Georgia, "Songti SC", "STSong", "SimSun", serif; color:#e8dfcb; }
-#stakerite.on { display:block; pointer-events:auto; }
-#stakerite .veil { position:absolute; inset:0; background:radial-gradient(ellipse at center, rgba(16,19,28,.72), rgba(7,8,12,.92)); }
-#stakerite .panel { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+.cxs.on { display:block; pointer-events:auto; }
+.cxs .veil { position:absolute; inset:0; background:radial-gradient(ellipse at center, rgba(16,19,28,.72), rgba(7,8,12,.92)); }
+.cxs .panel { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
   width:min(880px, 92vw); max-height:86vh; display:flex; flex-direction:column;
   background:linear-gradient(180deg, rgba(20,23,32,.97), rgba(12,14,20,.97));
   border:1px solid rgba(201,180,88,.34); box-shadow:0 24px 80px rgba(0,0,0,.6); }
-#stakerite header { display:flex; align-items:baseline; gap:18px; padding:16px 22px 12px;
+.cxs header { display:flex; align-items:baseline; gap:18px; padding:16px 22px 12px;
   border-bottom:1px solid rgba(201,180,88,.18); }
-#stakerite header h1 { margin:0; font-size:19px; letter-spacing:.24em; font-weight:400; color:#c9b458; }
-#stakerite header .sub { font-size:12px; opacity:.6; letter-spacing:.08em; }
-#stakerite nav { display:flex; gap:2px; padding:10px 22px 0; }
-#stakerite nav button { background:none; border:0; border-bottom:2px solid transparent; color:#e8dfcb;
+.cxs header h1 { margin:0; font-size:19px; letter-spacing:.24em; font-weight:400; color:#c9b458; }
+.cxs header .sub { font-size:12px; opacity:.6; letter-spacing:.08em; }
+.cxs nav { display:flex; gap:2px; padding:10px 22px 0; }
+.cxs nav button { background:none; border:0; border-bottom:2px solid transparent; color:#e8dfcb;
   opacity:.55; font:inherit; font-size:14px; letter-spacing:.16em; padding:8px 16px; cursor:pointer; }
-#stakerite nav button.sel { opacity:1; border-bottom-color:#ffb86b; }
-#stakerite main { padding:16px 22px 20px; overflow:auto; }
-#stakerite h2 { font-size:13px; letter-spacing:.2em; color:#ffb86b; font-weight:400; margin:18px 0 8px; }
-#stakerite h2:first-child { margin-top:0; }
-#stakerite .row { display:flex; align-items:center; gap:12px; padding:8px 10px; border-radius:2px; }
-#stakerite .row:nth-child(odd) { background:rgba(255,255,255,.028); }
-#stakerite .row .name { flex:1; font-size:14px; }
-#stakerite .row .num { font-variant-numeric:tabular-nums; opacity:.85; min-width:96px; font-size:13px; }
-#stakerite .row .note { font-size:12px; opacity:.5; max-width:320px; }
-#stakerite .row .act { display:flex; gap:6px; }
-#stakerite button.act { background:rgba(201,180,88,.12); border:1px solid rgba(201,180,88,.4);
+.cxs nav button.sel { opacity:1; border-bottom-color:#ffb86b; }
+.cxs main { padding:16px 22px 20px; overflow:auto; }
+.cxs h2 { font-size:13px; letter-spacing:.2em; color:#ffb86b; font-weight:400; margin:18px 0 8px; }
+.cxs h2:first-child { margin-top:0; }
+.cxs .row { display:flex; align-items:center; gap:12px; padding:8px 10px; border-radius:2px; }
+.cxs .row:nth-child(odd) { background:rgba(255,255,255,.028); }
+.cxs .row .name { flex:1; font-size:14px; }
+.cxs .row .num { font-variant-numeric:tabular-nums; opacity:.85; min-width:96px; font-size:13px; }
+.cxs .row .note { font-size:12px; opacity:.5; max-width:320px; }
+.cxs .row .act { display:flex; gap:6px; }
+.cxs button.act { background:rgba(201,180,88,.12); border:1px solid rgba(201,180,88,.4);
   color:#e8dfcb; font:inherit; font-size:12px; padding:5px 12px; cursor:pointer; letter-spacing:.08em; }
-#stakerite button.act:hover:not(:disabled) { background:rgba(255,184,107,.22); }
+.cxs button.act:hover:not(:disabled) { background:rgba(255,184,107,.22); }
 /* §218 键盘/手柄导航的焦点框：描边而不是换底色——底色那条通道已被"能不能点"（disabled 发暗）
    占用了，而"禁用"与"正被选中"可以同时成立，两种状态不许抢同一个视觉通道 */
-#stakerite button.act.focus { outline:2px solid #b9e6ff; outline-offset:1px; }
-#stakerite button.act:disabled { opacity:.3; cursor:default; }
-#stakerite .xp { display:flex; align-items:center; gap:12px; margin-bottom:6px; }
-#stakerite .bar { flex:1; height:6px; background:rgba(232,223,203,.12); position:relative; overflow:hidden; }
-#stakerite .bar i { position:absolute; inset:0 auto 0 0; background:linear-gradient(90deg,#c9b458,#ffb86b); }
-#stakerite .foot { padding:10px 22px; border-top:1px solid rgba(201,180,88,.18);
+.cxs button.act.focus { outline:2px solid #b9e6ff; outline-offset:1px; }
+.cxs button.act:disabled { opacity:.3; cursor:default; }
+.cxs .foot { padding:10px 22px; border-top:1px solid rgba(201,180,88,.18);
   display:flex; gap:18px; font-size:12px; opacity:.62; letter-spacing:.06em; }
-#stakerite .empty { opacity:.45; font-size:13px; padding:10px 2px; }
-#stakerite .over { color:#a8695f; border:1px solid rgba(168,105,95,.6); padding:1px 6px; font-size:11px; letter-spacing:.08em; }
-#stakerite .tag { font-size:11px; padding:1px 6px; border:1px solid rgba(201,180,88,.45); color:#c9b458; }
-#stakerite .cmp { margin:2px 0 10px 12px; padding:8px 12px; border-left:2px solid rgba(201,180,88,.35);
+.cxs .empty { opacity:.45; font-size:13px; padding:10px 2px; }
+.cxs .over { color:#a8695f; border:1px solid rgba(168,105,95,.6); padding:1px 6px; font-size:11px; letter-spacing:.08em; }
+.cxs .tag { font-size:11px; padding:1px 6px; border:1px solid rgba(201,180,88,.45); color:#c9b458; }
+`
+
+/** 调音桩自己那几块（遗响条 / §44 的双栏对比 / 存档页确认条）：别的面板不用，也就不必共享 */
+const CSS = `
+.cxs .xp { display:flex; align-items:center; gap:12px; margin-bottom:6px; }
+.cxs .bar { flex:1; height:6px; background:rgba(232,223,203,.12); position:relative; overflow:hidden; }
+.cxs .bar i { position:absolute; inset:0 auto 0 0; background:linear-gradient(90deg,#c9b458,#ffb86b); }
+.cxs .cmp { margin:2px 0 10px 12px; padding:8px 12px; border-left:2px solid rgba(201,180,88,.35);
   background:rgba(0,0,0,.18); }
-#stakerite .cmp-head, #stakerite .cmp-row { display:grid; grid-template-columns:minmax(84px,1.2fr) 1fr 1.5fr 1fr;
+.cxs .cmp-head, .cxs .cmp-row { display:grid; grid-template-columns:minmax(84px,1.2fr) 1fr 1.5fr 1fr;
   gap:10px; align-items:baseline; font-size:12.5px; }
-#stakerite .cmp-head { opacity:.55; letter-spacing:.14em; font-size:11px; margin-bottom:4px; }
-#stakerite .cmp-row .k { opacity:.72; letter-spacing:.06em; }
-#stakerite .cmp-row .a, #stakerite .cmp-row .b { font-variant-numeric:tabular-nums; }
-#stakerite .cmp-row .b { opacity:.55; }
-#stakerite .cmp-row .d { font-variant-numeric:tabular-nums; letter-spacing:.04em; }
-#stakerite .cmp-row .d.up { color:#ffb86b; } #stakerite .cmp-row .d.down { color:#a8695f; }
-#stakerite .cmp-row .d.flat { opacity:.35; }
+.cxs .cmp-head { opacity:.55; letter-spacing:.14em; font-size:11px; margin-bottom:4px; }
+.cxs .cmp-row .k { opacity:.72; letter-spacing:.06em; }
+.cxs .cmp-row .a, .cxs .cmp-row .b { font-variant-numeric:tabular-nums; }
+.cxs .cmp-row .b { opacity:.55; }
+.cxs .cmp-row .d { font-variant-numeric:tabular-nums; letter-spacing:.04em; }
+.cxs .cmp-row .d.up { color:#ffb86b; } .cxs .cmp-row .d.down { color:#a8695f; }
+.cxs .cmp-row .d.flat { opacity:.35; }
 /* 存档页：卡片本体与标题屏共用 SAVE_CARD_CSS，这里只给定基准字号与确认条 */
-#stakerite .scards { font-size:13px; }
-#stakerite .confirm { border:1px solid rgba(201,180,88,.5); background:rgba(201,180,88,.08); margin-bottom:10px; }
-#stakerite .confirm .name { font-size:13px; }
+.cxs .scards { font-size:13px; }
+.cxs .confirm { border:1px solid rgba(201,180,88,.5); background:rgba(201,180,88,.08); margin-bottom:10px; }
+.cxs .confirm .name { font-size:13px; }
 `
 
 const SLOT_LABEL: Record<SlotKey, string> = {
@@ -204,10 +215,11 @@ export class Stakerite {
 
   constructor(private readonly rpg: RpgRuntime, private readonly hooks: StakeriteHooks, private readonly saves: SavePanelDeps) {
     const style = document.createElement('style')
-    style.textContent = CSS + SAVE_CARD_CSS
+    style.textContent = PANEL_CSS + CSS + SAVE_CARD_CSS
     document.head.appendChild(style)
     this.root = document.createElement('div')
     this.root.id = 'stakerite'
+    this.root.classList.add('cxs') // 穿上共用那件壳（见 PANEL_CSS）
     document.body.appendChild(this.root)
     this.root.addEventListener('click', (e) => this.onClick(e))
   }

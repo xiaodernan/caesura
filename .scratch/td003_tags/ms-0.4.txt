@@ -1,0 +1,9 @@
+G4 出口 = 5 基础 + 2 精英 + 奥斯塔拉 + 恩希尔 机制版全可战（production-plan §4）
+
+锚点：a6ef71a test: Phase 4 出口验收 — §16 Boss 数值上限断言 + 四条 Boss 缺口如实登记
+
+这个 tag 不为 gate 原文背书，两处实测偏差写在这里：
+① 名册形状与原文不同：该提交的 src/data/json/enemies.json 有 10 个原型位 —— 嘈壳 basic / 漂调者 ranged / 驼鼓 heavy / 针喉 ranged / 叠唱 support / 幽灵八 assassin（六只非精英）+ 悬钟骑士 elite（唯一的野外精英）+ 奥斯塔拉 miniboss / 恩希尔 boss / 万籁 boss。原文那句「2 精英」当时只兑现 1 只 elite，多出来的那一格是隐藏 Boss 万籁。
+② 这是一个"带缺口通过"的出口：验收提交本身登记了四条 Boss 缺口（提交主题后半句），并按 §78 留在账本里，而不是被宣布成已完成。
+
+机制腿逐条可追：Phase 4-A..4-I 九个提交（23f8b38 弹道子系统 → b6db5a1 弹道防御与针喉 → c497520 叠唱 → b36e2b8 幽灵八 → cafb699 悬钟骑士 → f597297 Boss 阶段运行时 → e6929e4/9c4925a 恩希尔 P1/P2 → 6e64029 无网格领域与万籁）。

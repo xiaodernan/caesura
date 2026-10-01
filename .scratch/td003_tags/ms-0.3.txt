@@ -1,0 +1,9 @@
+G3 出口 = 休垒→雾语林→钟坠院 blockout 可穿行 + 流送（production-plan §4）
+
+锚点：ea41d0c world: Phase 3-C3 greybox placeholder meshes make interactables visible (KI-013) —— Phase 3 的最后一提交。
+
+证据按 gate 的三个词分别落在哪：
+- 三张区名：该提交的 src/data/json/regions.json 已有 rg_resthold「休垒 Resthold」/ rg_whisperwode「雾语林 Whisperwode」/ rg_fellcarillon「钟坠院 Fellcarillon」三行（同提交另含其余四区）。
+- 流送：src/world/Streaming.ts 由 33a5427（Phase 3-A，48m chunk streaming）带入，实体回收由 7f22e89（Phase 3-C2）补上。
+- 穿行：src/world/Interactables.ts 由 5ea25b2（Phase 3-C1，interactables drive region gates + travel）带入 —— 区域闸门第一次由交互物驱动。
+- blockout 可见化：本提交带入 src/world/InteractableGreybox.ts；在此之前交互物与地标是"数据里有、屏幕上没有"（KI-013）。

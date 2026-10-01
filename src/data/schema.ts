@@ -154,9 +154,15 @@ export interface WeaponData {
   movesetId: string
   scaling: Partial<Record<AttrKey, number>>
   swingTag: string[]
-  skill: string
+  /** 战技 id（sk_*）。无鸣没有战技（V2 内容）⇒ 可省略（KI-023 收尾批） */
+  skill?: string
   poiseMul?: number
   noiseMul?: number
+  /** KI-023 收尾批（无鸣独有，§4.6）：消费方在 findExecuteTarget —— 无消费方的武器不许写（WEAPON_FIELDS 同门） */
+  /** 潜行处决的血线覆盖：无鸣 0.5（普通 0.35；设计的 +15pt 平移到实现的基数上） */
+  stealthKillFrac?: number
+  /** 重击「抹喉弧线」：对 Alert 侧（未进战斗）的目标，重击视为背刺（吃 ×3.5 那条倍率） */
+  heavyAlertBackstab?: boolean
 }
 
 export type AttrKey = 'str' | 'dex' | 'ton' | 'vig' | 'ovr' | 'fis'
