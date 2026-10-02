@@ -53,9 +53,6 @@ export const GRADE_MUL_RANGE = { min: 0.2, max: 5 }
  * 名字一旦不再被任何一区指到，条目自己也作废。
  */
 export const PENDING_WEATHER_READINGS = {
-  still: '沉溺合唱与未竟厅的驻留天气"沉静"。它描述的是"没有声音"而不是某种可见度，§38/§8 两句里都没有对应读数 ⇒ 今天按基线奏，欠的是 §37 光照表那条腿',
-  'stone-wind': '钟坠院修钟后的"石风"。风不在 §38 的四档里，而 §8 的四个雾密度数没有一个按风给过；要先有人决定它改雾还是改明度，才有读数可写',
-  hush: '深窖的驻留天气"噤声"。与 still 同族：那一区的压抑来自病白色与光照（§8 区域色板那句），不在天气那一格里，天气表替光照欠着这一笔',
 }
 
 /**
@@ -68,7 +65,6 @@ export const PENDING_WEATHER_READINGS = {
 export const PENDING_WEATHER_SWITCHES = {
   rg_resthold: '休垒的"落烬"：区内没有 `kind:\'bell\'` 的钟——广场那四件陈设是 `inspect`，按**值域**换组（`state.bells.fourth_dumb` = INTACT/RUNG/MELTED/SEALED，narrative §7 那个抉择）。切换今天只认"被任务线追踪的旗"，要让它认值域得先裁"值域状态算不算天气条件"',
   rg_brokenbar_camp: '营地的"雾"：那一区的世界变化走的是桥放下来／后门开／`flag.brokenbar_resolved` 那类事件（没有钟，也没有修钟这一步），而文档里没有任何一句说营地为什么起雾。那一格是抄雾语林的样子还是另有条件 ⇒ 欠叙事裁决',
-  rg_earless_deeps: '深窖从"噤声"到"沉静"：它的事件是五环线索读齐后初句圣所那扇门打开（`ga_deeps_firstphrase_door` 吃四面 `flag.clue_*` 的**合取**），不是修钟。把"线索齐了"当天气条件是另一种判据形状，要接就先裁它属不属于天气那一格',
   rg_unfinished_hall: '未竟厅的"失谐风暴"：那一区的门槛是 `flag.organ_gate_open`（管风琴门），它由关卡推进而不是由某口钟的修复立起；§15.2 里恩希尔战改变的是**音乐与拍**，文档没说过它改天气 ⇒ 谁的条件来这一格欠裁决',
 }
 

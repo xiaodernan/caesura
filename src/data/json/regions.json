@@ -537,7 +537,7 @@
   },
   "chunkSize": 48,
   "weatherPresets": [
-   "still",
+   "clear",
    "drip"
   ],
   "lightingPreset": "lp_drowned_choir",
@@ -1130,8 +1130,7 @@
   },
   "chunkSize": 48,
   "weatherPresets": [
-   "clear",
-   "stone-wind"
+   "clear"
   ],
   "lightingPreset": "lp_fellcarillon",
   "palette": {
@@ -1376,8 +1375,7 @@
   },
   "chunkSize": 48,
   "weatherPresets": [
-   "hush",
-   "still"
+   "clear"
   ],
   "lightingPreset": "lp_earless_deeps",
   "palette": {
@@ -1643,7 +1641,7 @@
   },
   "chunkSize": 48,
   "weatherPresets": [
-   "still",
+   "clear",
    "dissonant-storm"
   ],
   "lightingPreset": "lp_unfinished_hall",
