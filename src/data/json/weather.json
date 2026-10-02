@@ -21,5 +21,11 @@
   "docWeather": "rain",
   "fogDensity": 0.018,
   "brightnessMul": 0.8
+ },
+ {
+  "id": "emberfall",
+  "docWeather": "rain",
+  "fogDensity": 0.018,
+  "brightnessMul": 0.8
  }
 ]
