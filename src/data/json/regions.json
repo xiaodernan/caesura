@@ -411,6 +411,18 @@
     "lootTable": "loot_chest_t1"
    },
    {
+    "id": "in_whisperwode_pickcamp",
+    "kind": "inspect",
+    "verb": "看营地的碗筷",
+    "pos": { "x": 380, "y": 0, "z": -120 }
+   },
+   {
+    "id": "in_whisperwode_shrine",
+    "kind": "inspect",
+    "verb": "看那座小龛",
+    "pos": { "x": 120, "y": 0, "z": 200 }
+   },
+   {
     "id": "in_echo_cairn",
     "kind": "inspect",
     "verb": "读石堆",
