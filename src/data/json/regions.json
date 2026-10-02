@@ -1223,6 +1223,18 @@
     "lootTable": "loot_bell_repair"
    },
    {
+    "id": "in_fellcarillon_cliff_platform",
+    "kind": "inspect",
+    "verb": "看崖壁的观景台",
+    "pos": { "x": 160, "y": 64, "z": -340 }
+   },
+   {
+    "id": "in_fellcarillon_chisel_marks",
+    "kind": "inspect",
+    "verb": "数钟壳上的凿痕",
+    "pos": { "x": 230, "y": 64, "z": -250 }
+   },
+   {
     "id": "it_fellcarillon_hanged_remains",
     "kind": "inspect",
     "verb": "读取铭牌",
