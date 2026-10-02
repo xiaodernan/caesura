@@ -911,6 +911,18 @@
   ],
   "interactables": [
    {
+    "id": "in_brokenbar_kitchen",
+    "kind": "inspect",
+    "verb": "看伙房的锅",
+    "pos": { "x": -150, "y": 0, "z": -280 }
+   },
+   {
+    "id": "in_brokenbar_execution_post",
+    "kind": "inspect",
+    "verb": "看刑柱底下",
+    "pos": { "x": -120, "y": 0, "z": -320 }
+   },
+   {
     "id": "st_brokenbar",
     "kind": "checkpoint",
     "pos": {
@@ -1425,6 +1437,12 @@
     "lootTable": "loot_gather_timbite"
    },
    {
+    "id": "in_deeps_child_drawings",
+    "kind": "inspect",
+    "verb": "看栏杆上的蜡笔画",
+    "pos": { "x": -200, "y": -144, "z": 300 }
+   },
+   {
     "id": "in_deeps_lean_corpses",
     "kind": "inspect",
     "verb": "辨认遗骸倾斜的朝向",
@@ -1633,6 +1651,12 @@
       },
       "setsFlag": "flag.checkpoint_unfinished_hall"
     },
+   {
+    "id": "in_unfinishedhall_key_208",
+    "kind": "inspect",
+    "verb": "看那枚没接音管的音栓",
+    "pos": { "x": 0, "y": 152, "z": -200 }
+   },
     {
       "id": "it_unfinishedhall_whisper",
       "kind": "inspect",
