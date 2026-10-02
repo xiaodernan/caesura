@@ -239,6 +239,13 @@
     "requiresFlag": "flag.schism_exposed"
    },
    {
+    "id": "in_resthold_forge_chimney",
+    "kind": "inspect",
+    "verb": "看铁铺的烟囱",
+    "pos": { "x": 16, "y": 0, "z": 32 },
+    "requiresFlag": "flag.bell_first_repaired"
+   },
+   {
     "id": "in_resthold_gate_hooks",
     "kind": "inspect",
     "verb": "数墙上的挂钩",
