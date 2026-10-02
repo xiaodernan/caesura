@@ -613,6 +613,24 @@
   ],
   "interactables": [
    {
+    "id": "in_choir_organ_stop",
+    "kind": "inspect",
+    "verb": "看管风琴的键子",
+    "pos": { "x": 370, "y": -40, "z": 40 }
+   },
+   {
+    "id": "in_choir_nameplate_wall",
+    "kind": "inspect",
+    "verb": "看铜牌墙",
+    "pos": { "x": 250, "y": -40, "z": 80 }
+   },
+   {
+    "id": "in_choir_choir_positions",
+    "kind": "inspect",
+    "verb": "看地上的声位刻痕",
+    "pos": { "x": 300, "y": -40, "z": 60 }
+   },
+   {
     "id": "st_drowned_choir",
     "kind": "checkpoint",
     "pos": {
@@ -921,6 +939,12 @@
     "kind": "inspect",
     "verb": "看刑柱底下",
     "pos": { "x": -120, "y": 0, "z": -320 }
+   },
+   {
+    "id": "in_brokenbar_sandtable",
+    "kind": "inspect",
+    "verb": "看帐里的沙盘",
+    "pos": { "x": -60, "y": 0, "z": -350 }
    },
    {
     "id": "st_brokenbar",
@@ -1443,6 +1467,18 @@
     "pos": { "x": -200, "y": -144, "z": 300 }
    },
    {
+    "id": "in_deeps_transcript_room",
+    "kind": "inspect",
+    "verb": "翻抄本室的残稿",
+    "pos": { "x": -250, "y": -144, "z": 340 }
+   },
+   {
+    "id": "in_deeps_knock_plates",
+    "kind": "inspect",
+    "verb": "看门口的响牌",
+    "pos": { "x": -120, "y": -144, "z": 200 }
+   },
+   {
     "id": "in_deeps_lean_corpses",
     "kind": "inspect",
     "verb": "辨认遗骸倾斜的朝向",
@@ -1651,6 +1687,12 @@
       },
       "setsFlag": "flag.checkpoint_unfinished_hall"
     },
+   {
+    "id": "in_unfinishedhall_old_robe",
+    "kind": "inspect",
+    "verb": "看那把椅子上的袍子",
+    "pos": { "x": -40, "y": 152, "z": -300 }
+   },
    {
     "id": "in_unfinishedhall_key_208",
     "kind": "inspect",
