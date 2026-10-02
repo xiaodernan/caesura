@@ -15,5 +15,11 @@
     "docWeather": "storm",
     "fogDensity": 0.022,
     "contrastMul": 1.15
-  }
+  },
+ {
+  "id": "drip",
+  "docWeather": "rain",
+  "fogDensity": 0.018,
+  "brightnessMul": 0.8
+ }
 ]
