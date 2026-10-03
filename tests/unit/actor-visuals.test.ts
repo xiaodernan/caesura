@@ -12,6 +12,7 @@ import { PlayerController } from '@/player/ThirdPersonController'
 import { AISystem } from '@/ai/AISystem'
 import { ActorVisuals } from '@/world/ActorVisuals'
 import { BossArenaVisuals } from '@/world/BossArenaVisuals'
+import { executionPose } from '@/world/ExecutionPose'
 import { newAttack } from '@/ai/Enemy'
 
 registerGameData()
@@ -140,7 +141,7 @@ describe('KI-007 手里的家伙跟着装备走（外观不再是"永远那一�
     ((vis.sword.getObjectByName(`weapon:${kind}`) as THREE.Group).children[0] as THREE.Mesh).geometry as THREE.BoxGeometry
 
   it('每一种 archetype 一组，任何时刻只亮一组，且换装后亮的是新那把', () => {
-    expect(vis.sword.children.length, '表里四种形状（含回退用的 unknown）').toBe(4)
+    expect(vis.sword.children.length, '表里五种形状（含无鸣 needle + 回退 unknown）（含回退用的 unknown）').toBe(5)
     give('wp_drawpin_spear')
     expect(shown(), '每一次 sync 之后只该亮一组').toEqual(['weapon:spear'])
     give('wp_tuning_sword')
@@ -257,5 +258,55 @@ describe('ActorVisuals：受击/拍隙/收束/武器动画的可见分支', () =
     vis.sync(ai.enemies, 100)
     expect(Math.abs(vis.sword.rotation.x + 0.5)).toBeLessThan(0.1)
     expect(vis.sword.rotation.z).toBe(0)
+  })
+
+  it('处决蒙太奇：受刑者按进度坍塌、刀走姿态函数（同一个进度只有一份，两处读同一份）', () => {
+    const e = ai.spawn('en_murkshell', { x: 40, y: 0, z: -10 }, 'h')
+    vis.sync(ai.enemies, 1)
+    const g = groupOf(e.id)
+    expect(g.rotation.x, '没在处决里 ⇒ 立着').toBe(0)
+    player.executing = { tick: 45, total: 60, pos: { x: 40, y: 0, z: -10 } } // progress 0.75
+    vis.sync(ai.enemies, 2)
+    const pose = executionPose(0.75)
+    expect(g.rotation.x, '受刑者前倾角来自姿态函数').toBeCloseTo(pose.tilt, 5)
+    expect(g.position.y, '下沉量同样来自它（不写第二份时长）')
+      .toBeCloseTo(0 - pose.sink * (e.data.body?.scale ?? 1), 5)
+    expect(vis.sword.rotation.x, '攻击者只有一记高举-落刀').toBeCloseTo(-0.5 + pose.chop, 5)
+    expect(vis.sword.rotation.z, '刀不复位').toBe(0)
+    player.executing = null
+    vis.sync(ai.enemies, 3)
+    expect(g.rotation.x, '处决结束回到立姿').toBe(0)
+    ai.despawn(e.id)
+    vis.sync(ai.enemies, 4)
+  })
+
+  it('animateSword：出手三段（起手后摆 → 判定窗横扫 → 收势回位）各走各的插值', () => {
+    const f = registry.get<MovesetData>(`moveset:${sword.movesetId}`).actions['l1']
+    const act = (tick: number): void => {
+      player.action = {
+        key: 'l1', f, tick, hitDone: false, shots: 0, hitIds: new Set(),
+        skill: null, dir: null, stopTicks: 0, stopDebt: 0,
+      }
+    }
+    // 起手：往后摆，幅度按 tick/startup 线性
+    act(Math.floor(f.startup / 2))
+    vis.sync(ai.enemies, 1)
+    const windup = -1.7 * (Math.floor(f.startup / 2) / Math.max(1, f.startup))
+    expect(vis.sword.rotation.x, '起手后摆').toBeCloseTo(-0.5 + windup, 5)
+    expect(vis.sword.rotation.z, '后摆带一点侧转').toBeCloseTo(windup * 0.35, 5)
+    // 判定窗：从 -1.7 扫到 +1.4
+    act(Math.floor((f.startup + f.activeEnd) / 2))
+    vis.sync(ai.enemies, 2)
+    const k1 = (Math.floor((f.startup + f.activeEnd) / 2) - f.startup) / Math.max(1, f.activeEnd - f.startup)
+    expect(vis.sword.rotation.x, '窗中段已经扫过中线附近').toBeCloseTo(-0.5 + (-1.7 + k1 * 3.1), 5)
+    // 收势：从 +1.4 回落到 -0.5
+    act(Math.floor((f.activeEnd + f.recovery) / 2))
+    vis.sync(ai.enemies, 3)
+    const k2 = Math.min(1, (Math.floor((f.activeEnd + f.recovery) / 2) - f.activeEnd) / Math.max(1, f.recovery - f.activeEnd))
+    expect(vis.sword.rotation.x, '收势回位').toBeCloseTo(-0.5 + 1.4 * (1 - k2), 5)
+    expect(vis.sword.rotation.z, '侧转跟着同一份 swing 走').toBeCloseTo((1.4 * (1 - k2)) * 0.35, 5)
+    player.action = null
+    vis.sync(ai.enemies, 4)
+    expect(Math.abs(vis.sword.rotation.x + 0.5), '收工回到 idle').toBeLessThan(0.1)
   })
 })
