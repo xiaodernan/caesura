@@ -89,10 +89,25 @@ describe('推导：谁把指针拨到 weatherPresets[1]', () => {
   })
 
   it('立起**本区**那口钟的旗 ⇒ 该区换成 `[1]`；同一趟里其他区纹丝不动（旗不串区）', () => {
+    const switching = REGIONS_WITH_BELLS.filter((rg) => rg.weatherPresets[1] !== undefined)
+    expect(switching.length, '没有一区的钟能拨到第二格 ⇒ `[1]` 那条腿今天仍然没有条件，下面那一臂就是在空集合上自证')
+      .toBeGreaterThan(0)
     for (const rg of REGIONS_WITH_BELLS) {
       const own = repairBellFlags(rg, tracked)
       expect(own.length, `${rg.id} 的被追踪钟为空 = 这一臂对它没说话`).toBeGreaterThan(0)
-      expect(activeWeather(rg, only(own[0]), tracked), `${rg.id} 立了自己的旗还奏 [0]：切换没接上`).toBe(rg.weatherPresets[1])
+      if (rg.weatherPresets[1] === undefined) {
+        // 「有钟而只有一格」那一类（今天 = 钟坠院，§8.1 裁决后它的第二格并回基线）。
+        // 两侧各自的义务：读者不许奏出 `undefined`（画面那一侧会把它当成"没有天气"而是上一个区的残留），
+        // 判据不许沉默（这把钟今天白修，得由 WARN 喊出来而不是由这里的静默交代）。
+        expect(activeWeather(rg, only(own[0]), tracked), `${rg.id} 只有驻留那一格，读者却给了别的读数（越界夹取没夹住）`)
+          .toBe(rg.weatherPresets[0])
+        const shouts = run(REAL_REGIONS).filter((f) => f.level === 'warn' && f.where === rg.id)
+        expect(shouts.length, `${rg.id} 有 ${own.length} 面被追踪的钟而天气只有 1 格，判据却不说话 ⇒ 没人知道这把钟拨不动任何东西`)
+          .toBe(1)
+        expect(shouts[0].msg, 'WARN 要说的是"钟多出来的那一拨没有天气可换"，换成别的话术就是换了判据').toContain('拨不动')
+      } else {
+        expect(activeWeather(rg, only(own[0]), tracked), `${rg.id} 立了自己的旗还奏 [0]：切换没接上`).toBe(rg.weatherPresets[1])
+      }
       for (const other of regions) {
         if (other.id === rg.id) continue
         expect(activeWeather(other, only(own[0]), tracked), `${other.id} 被 '${rg.id}' 的旗拨动了天气`).toBe(other.weatherPresets[0])
@@ -188,14 +203,24 @@ describe('判据 ⇄ 读者：同一句口径在两个平面各写了一遍，�
   it('真表在真账本下零条 ERROR，而 WARN 的位点**由数据派生**而不是数出来的', () => {
     const out = run(REAL_REGIONS)
     expect(out.filter((f) => f.level === 'error'), '真表响了一条切换判据的 ERROR').toEqual([])
-    // 期望集全部现推：挂了账的区（S1 的 warn）+ 立了不被追踪的旗的钟（S4 的 warn）
-    const expected = [...Object.keys(PENDING_WEATHER_SWITCHES)]
+    // 期望集全部现推：S1（有第二格、没有钟、挂着账的那些区）+ S3（钟数与格数不齐的区）+ S4（立了不被追踪的旗的钟）
+    const expected: string[] = []
+    const s1Sites: string[] = []
     for (const rg of REAL_REGIONS as RegionData[]) {
+      const bells = repairBellFlags(rg, tracked).length
+      const slots = Math.max((rg.weatherPresets?.length ?? 0) - 1, 0)
+      if (slots > 0 && bells === 0 && PENDING_WEATHER_SWITCHES[rg.id] !== undefined) s1Sites.push(rg.id)
+      // S3 只在"有钟"时才开口（没钟也没第二格 = 这一区压根不参与切换，不是不齐）
+      if (bells > 0 && bells !== slots) expected.push(rg.id)
       for (const it of rg.interactables ?? []) {
         if (it.kind !== 'bell') continue
         if (typeof it.setsFlag !== 'string' || !tracked.has(it.setsFlag)) expected.push(`${rg.id}.interactables(${it.id})`)
       }
     }
+    // 账本的每一条今天都还得对着一个"欠条件的区"：对不上就是死条目（该销）或漏账（该挂），两种都是 ERROR
+    expect(s1Sites.sort(), 'PENDING_WEATHER_SWITCHES 与"真表里那些有第二格却没有条件的区"已经不是同一份')
+      .toEqual(Object.keys(PENDING_WEATHER_SWITCHES).sort())
+    expected.push(...s1Sites)
     expect(out.filter((f) => f.level === 'warn').map((f) => f.where).sort(), 'WARN 的位点变了：要么是新的区欠条件，要么是新增/改名的钟')
       .toEqual(expected.sort())
   })
@@ -269,9 +294,15 @@ describe('判据臂：每一臂只改一个形状，红的那条必须归得到�
       expect(out[0].msg).toContain('空转')
     }
     expect(errsOf([], { pending: {} })[0]?.msg).toContain('空转')
-    // 反证：空名册如果退成"合法"，下面这句就会红——它确保上面那两条不是碰巧
-    expect(errsOf(REAL_REGIONS, { questFlags: QUEST_FLAGS, pending: null }).length, '真名册下真表不该响（上一条的空转 ERROR 与这条之间的差必须只有 pending 那格）')
-      .toBe(4)
+    // 反证：空名册如果退成"合法"，下面这句就会红——它确保上面那两条不是碰巧。
+    // 期望的不是"某一条数"而是"每一个有第二格却没有钟的区各报一条"：数会随数据漂，判据那句话不会。
+    const unmet = (REAL_REGIONS as RegionData[])
+      .filter((rg) => (rg.weatherPresets?.length ?? 0) > 1 && repairBellFlags(rg, tracked).length === 0)
+    expect(unmet.length, '真表里没有"声明了第二格而区内没有钟"的区 ⇒ 这句反证的对照集是空的，它什么也没反证')
+      .toBeGreaterThan(0)
+    expect(errsOf(REAL_REGIONS, { questFlags: QUEST_FLAGS, pending: null }).map((f) => f.where).sort(),
+      '真名册下响的必须是"有第二格而区内没钟"的那几区（摘掉账本 ⇒ 每一笔欠账都得自己站出来）')
+      .toEqual(unmet.map((rg) => `${rg.id}.weatherPresets`).sort())
   })
 })
 

@@ -220,10 +220,15 @@ describe('两侧对账：表 ⇄ 被指到的名字 ⇄ pending 账，三个方�
   })
 
   it('pending 账能销：名字一旦有了行 ⇒ 报"这条该销"；不再被指 ⇒ 条目作废', () => {
-    const landed = errs(patch('fog', { id: 'hush' }), { referenced: REFERENCED.filter((n) => n !== 'hush') })
+    // 真账本今天已经空了（KI-094① 最后那三个名字都落成了行），所以主语从表里现推而不是照着账本抄：
+    // 挑一个"表里有行、又真的被某区指着"的名字挂上账 ⇒ 判据必须说该销。
+    const landedName = REFERENCED.find((n) => REAL.some((r) => r.id === n))
+    expect(landedName, '一个"有行又被指着"的名字都推不出来 ⇒ weather.json 或 regions.json 读空了，这一臂就在空集合上自证')
+      .toBeDefined()
+    const landed = errs(REAL, { pending: { [landedName as string]: '这一行早就有读数了，账还挂着就是两种交代同时挂' } })
       .filter((f) => f.where.startsWith('PENDING_WEATHER_READINGS.'))
-    // 两行都叫 hush 的那一半是重复 id，不是这条判据要说的话，所以只数 PENDING 名下那一条
     expect(landed.length, `pending 销账判据没说话：${landed.map((f) => f.msg).join(' / ')}`).toBe(1)
+    expect(landed[0].where).toBe(`PENDING_WEATHER_READINGS.${landedName}`)
     expect(landed[0].msg).toContain('该销')
     const dead = errs(REAL, { pending: { ...PENDING_WEATHER_READINGS, 'nobody-uses-this': '这个名字今天没有任何一区指着它，条目留着就是两种交代同时挂' } })
     expect(dead.filter((f) => f.where === 'PENDING_WEATHER_READINGS.nobody-uses-this').length).toBe(1)
@@ -231,9 +236,23 @@ describe('两侧对账：表 ⇄ 被指到的名字 ⇄ pending 账，三个方�
   })
 
   it('pending 的理由短于 20 字 ⇒ 红（"待办"两个字两年后没人能判断它成不成立）', () => {
-    const e = errs(REAL, { pending: { ...PENDING_WEATHER_READINGS, hush: '还没做' } })
-    expect(e.length).toBe(1)
+    // 底必须是合成表 + 自己写的引用名册：真账本空了，而"名字有行"或"没人指它"这两种挂法都会顺带招来
+    // 另一条 ERROR（该销 / 作废），那一臂就不再只归因于理由这一句。这里让 hush 被指着而表里没行
+    // ⇒ 判据 ④ 只出 WARN，唯一的 ERROR 就是"理由太短"。
+    const ledger = (why: string): Record<string, string> => ({ hush: why })
+    const names = ['clear', 'fog', 'hush']
+    const e = weatherFindings('weather.json', SYNTH, DOC_IDS, names, ledger('还没做')).filter((f) => f.level === 'error')
+    expect(e.length, `只该红理由那一条，实际：${e.map((f) => f.where).join(' / ')}`).toBe(1)
     expect(e[0].where).toBe('PENDING_WEATHER_READINGS.hush')
+    // 反向对照：同一本账只把理由写够 ⇒ ERROR 归零，那一格转成"走基线"的 WARN。
+    // （合成底只有 clear/fog 两行，所以判据 ② 会为 §38 里没人奏的那几档各出一条 WARN——那是底的话，
+    // 不是这一臂的话，所以这里只点名 hush 那一格，不钉 WARN 的总数。）
+    const enough = weatherFindings('weather.json', SYNTH, DOC_IDS, names,
+      ledger('这一档的读数要等美术在 §38 四档里给它派一档（合成臂用的理由）'))
+    expect(enough.filter((f) => f.level === 'error')).toEqual([])
+    const hushWarn = enough.filter((f) => f.level === 'warn' && f.where === 'hush')
+    expect(hushWarn.length, '名字被指着、挂着账、表里没行 ⇒ 必须有且只有一条"它走基线"的 WARN').toBe(1)
+    expect(hushWarn[0].msg).toContain('基线')
   })
 })
 
