@@ -1405,6 +1405,9 @@ export interface DuckRow {
   db: number
   /** 压住多久（秒）后弹回基准电平 */
   holdSec: number
+  /** KI-092①（休止状态行）：压下去的斜率（秒）。缺省走 DUCK_TC_SEC；设计给的是 250ms 入 180ms 出 */
+  attackSec?: number
+  releaseSec?: number
 }
 
 /**

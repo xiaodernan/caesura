@@ -383,7 +383,13 @@ export class CombatManager {
       n++
     }
     // 场上什么都没有时不出字：那一声"休止"是玩家挣到的信息，不是每次都敲一遍的说明书
-    if (n > 0) bus.emit('ui.notify', { text: `休止｜${n} 个声音停在拍上`, kind: 'info' })
+    if (n > 0) {
+      bus.emit('ui.notify', { text: `休止｜${n} 个声音停在拍上`, kind: 'info' })
+      // KI-092①：休止状态到达音频层——Ducking 规则表的那一行终于有了触发源。
+      // holdSec = 冻结时长（秒），AudioEngine 据此设压制请求的到期时间（不是第二份秒数，
+      // 是同一个 `cast.freezeTicks` 的秒形——§55：一记演出只有一个时钟，所以走 TICK_DT 而不是再写一个 60）。
+      bus.emit('audio.caesura', { on: true, holdSec: cast.freezeTicks * TICK_DT })
+    }
   }
 
   /**

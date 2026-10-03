@@ -18,7 +18,7 @@ import { MusicLayer } from './music'
 // KI-083：声源→听者那一步的唯一主人（一次性 SFX 与 §4 的 L2／L3 声景层两条读者共用同一份数学）
 import { AUDIBLE_FLOOR, spatialize, type ListenerPose } from './spatial'
 // KI-092：§8.2 侧链的数学与总线名册（dB→增益、叠压取最深、四条总线的基准电平都只在这里列一次）
-import { BUS_BASE, DUCK_TC_SEC, activeDucks, deepestFactor, duckFactor, type DuckBusName, type DuckRequest } from './ducking'
+import { BUS_BASE, DUCK_TC_SEC, activeDucks, deepestRequests, duckFactor, tcFromReach, type DuckBusName, type DuckRequest } from './ducking'
 
 /** 走 UI 总线、无空间化的按键类音色 */
 const UI_KEYS = new Set(['ui_move', 'ui_select', 'lockon_on', 'lockon_off'])
@@ -104,6 +104,11 @@ export class AudioEngine {
   private ducks: DuckRequest[] = []
   /** 上一次写给每条总线的那一格。只有它变了才再排一次自动化——每帧重贴会把同一条斜坡不断往后推 */
   private duckApplied: Record<string, number> = {}
+  /**
+   * 每一条总线**当前这一格电平的主人**（KI-092①）。它只为一件事存在：弹回那一刻请求已经过期，
+   * 而"出"的斜率住在那位已经消失的主人的 `releaseSec` 上（休止那行是 180ms，其余行走缺省）。
+   */
+  private duckOwner: Record<string, DuckRequest> = {}
 
   /** 一次性手势恢复：ctx suspended 时等待 pointerdown/keydown */
   private gesture = (): void => {
@@ -124,6 +129,8 @@ export class AudioEngine {
     // 这里 `onDuckTrigger('…')` 的那个字面量**——校验器从本文件现推它，所以加一行表却不接这一句，
     // 数据门禁会直接红（那一行没有执行口），而只接这一句却不给行，白订阅同样红。
     bus.on('combat.parried', () => this.onDuckTrigger('combat.parried'))
+    // KI-092①：休止状态进/出——holdSec 由事件携带（同一个 freezeTicks 的秒形），不是第二份读数
+    bus.on('audio.caesura', (e) => { if (e.on) this.onDuckTrigger('audio.caesura', e.holdSec) })
     // KI-066：拍网向唯一主人领，不再由音乐层自己猜一份。订阅摘不掉这件事与上面两条同账（TD-006 第二腿）。
     bus.on('audio.music.grid', (g) => {
       this.grid = g
@@ -190,13 +197,22 @@ export class AudioEngine {
    * 图还没建（首次手势前）时**一条都不留**：那时没有总线可压，也没有声音要让位；把它记下来
    * 反而会在建图之后突然压一次——那是一次没人听见的历史事件在说话。
    */
-  private onDuckTrigger(trigger: string): void {
+  private onDuckTrigger(trigger: string, holdSecOverride?: number): void {
     const ctx = this.ctx
     if (!ctx || !this.graph || ctx.state !== 'running') return
     const now = ctx.currentTime
     for (const row of duckingRows) {
       if (row.trigger !== trigger) continue
-      for (const b of row.targets) this.ducks.push({ bus: b, factor: duckFactor(row.db), until: now + row.holdSec })
+      const hold = holdSecOverride ?? row.holdSec
+      for (const b of row.targets) {
+        // 出入斜率随请求一起走（KI-092①）：`until` 一到请求就消失了，那时引擎再也问不出
+        // "这条总线当初是谁压的、该用多长的斜坡弹回来"，所以主人必须在压下的那一刻定下来。
+        this.ducks.push({
+          bus: b, factor: duckFactor(row.db), until: now + hold,
+          ...(row.attackSec !== undefined ? { attackSec: row.attackSec } : {}),
+          ...(row.releaseSec !== undefined ? { releaseSec: row.releaseSec } : {}),
+        })
+      }
     }
     this.reconcileDucks()
   }
@@ -212,12 +228,22 @@ export class AudioEngine {
     if (!ctx || !graph || ctx.state !== 'running') return
     const now = ctx.currentTime
     this.ducks = activeDucks(this.ducks, now)
-    const factors = deepestFactor(this.ducks)
+    const owners = deepestRequests(this.ducks)
     for (const name of Object.keys(BUS_BASE) as DuckBusName[]) {
-      const f = factors[name] ?? 1
+      const owner = owners[name]
+      const f = owner ? owner.factor : 1
       if (this.duckApplied[name] === f) continue
+      /**
+       * KI-092①：斜坡有两条。往下压用**这一行**的 `attackSec`；弹回那一刻请求已经过期没了，
+       * 所以用当初把这条总线压下去的那位主人的 `releaseSec`（`duckOwner` 就是为此留的一格）。
+       * 两侧都缺省时走 `DUCK_TC_SEC`——那个数不是设计读数，§8.2 只有休止那一行给了斜率。
+       * 表里写的是**到位时长**（250ms 入），`setTargetAtTime` 收的是时间常数，换算只有一个主人
+       * （`tcFromReach`），不在调用点写第二个 `/ 3`。
+       */
+      const reach = f < this.duckApplied[name] ? owner?.attackSec : this.duckOwner[name]?.releaseSec
       this.duckApplied[name] = f
-      graph.buses[name].gain.setTargetAtTime(BUS_BASE[name] * f, now, DUCK_TC_SEC)
+      if (owner) this.duckOwner[name] = owner
+      graph.buses[name].gain.setTargetAtTime(BUS_BASE[name] * f, now, reach === undefined ? DUCK_TC_SEC : tcFromReach(reach))
     }
   }
 

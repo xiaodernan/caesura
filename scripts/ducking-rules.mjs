@@ -16,8 +16,14 @@
  * 抽取器读不到名单时返回 null ⇒ 这里报 ERROR，绝不退成"名单为空所以什么都合法"。
  */
 
-/** `schema.ts > DuckRow` 的字段（词表对账 `VOCAB_PAIRS` 读的就是这张名单） */
-export const DUCK_FIELDS = ['id', 'label', 'trigger', 'targets', 'db', 'holdSec']
+/**
+ * `schema.ts > DuckRow` 的字段（词表对账 `VOCAB_PAIRS` 读的就是这张名单）
+ *
+ * KI-092① 加进来的两格是**出入斜率**（到位时长，秒）——它们不是"多写两个好看的数"：
+ * `attackSec` 是休止那一行 §8.2 写的 `250ms 入`，`releaseSec` 是 `180ms 出`，
+ * 而没有读者时它们就是 §55 名下的死字段（引擎侧那一段见 `AudioEngine > onDuckTrigger/reconcileDucks`）。
+ */
+export const DUCK_FIELDS = ['id', 'label', 'trigger', 'targets', 'db', 'holdSec', 'attackSec', 'releaseSec']
 
 /**
  * −60dB（增益 ≈ 0.001）以下不是"压低"而是静音。静音这件事文档另有说法：§6.3 万籁那一格是
@@ -74,7 +80,7 @@ export function duckFindings(file, rows, handled, buses) {
     }
     for (const k of Object.keys(row)) {
       if (DUCK_FIELDS.includes(k)) continue
-      err(`${at}.${k}`, `未知字段 ${k}：这一行的字段就是 schema.ts > DuckRow 那六格，加字段要连消费方一起加（§55）`)
+      err(`${at}.${k}`, `未知字段 ${k}：这一行的字段就是 schema.ts > DuckRow 那几个，加字段要连消费方一起加（§55）`)
     }
 
     if (!isNonEmptyStr(row.id)) err(`${at}.id`, 'id 必须是非空字符串（行键）')
@@ -101,6 +107,21 @@ export function duckFindings(file, rows, handled, buses) {
     if (!isNum(row.holdSec)) err(`${at}.holdSec`, 'holdSec 必须是有限数字（秒）')
     else if (row.holdSec <= 0) err(`${at}.holdSec`, `holdSec = ${row.holdSec}：压住 0 秒等于这一行没有后果，而"一直压着不弹"不归侧链管`)
     else if (row.holdSec > DUCK_HOLD_MAX_SEC) err(`${at}.holdSec`, `holdSec = ${row.holdSec}s 超过 ${DUCK_HOLD_MAX_SEC}s（§8.2 表里最长那一行的读数）：比它长就不是让位而是接管`)
+
+    /*
+     * KI-092①：出入斜率（**到位时长**，秒）。两格都可选：§8.2 只有休止那一行给了斜率
+     * （250ms 入 / 180ms 出），其余行只给量与时长 ⇒ 缺省走引擎那个非设计读数 `DUCK_TC_SEC`。
+     * 两条判据各自对应一种坏法：0 或负 = 阶跃（真机上是一次咔哒，不是"斜率"）；
+     * 比 `holdSec` 还长 = 这段压制**压不到底就弹回去**，表里那个 dB 从此是一句空话。
+     */
+    for (const k of ['attackSec', 'releaseSec']) {
+      if (row[k] === undefined) continue
+      if (!isNum(row[k])) err(`${at}.${k}`, `${k} 必须是有限数字（秒，到位时长）`)
+      else if (row[k] <= 0) err(`${at}.${k}`, `${k} = ${row[k]}：斜率为 0 或负 = 阶跃，真机上那是一次咔哒`)
+      else if (isNum(row.holdSec) && row[k] > row.holdSec) {
+        err(`${at}.${k}`, `${k} = ${row[k]}s 比 holdSec = ${row.holdSec}s 还长：压不到底就弹回去，这一行承诺的那个 dB 兑现不了`)
+      }
+    }
   }
 
   // 反向：引擎接了的口没有行用它 = 代码里躺着半张表（改动表的人看不见它，改引擎的人以为它有用）

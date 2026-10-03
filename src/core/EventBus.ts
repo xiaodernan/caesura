@@ -55,6 +55,9 @@ export interface GameEvents {
    * 只有开关没有时长——时长跟着 `player.executing` 那一格走，写第二份秒数就会和演出长度各说一遍。
    */
   'audio.muffle': { on: boolean }
+  /** KI-092①：休止状态进/出（audio.md §8.2 Ducking 那一行的触发源）。
+   *  `holdSec` 是冻结时长（秒），AudioEngine 据此设压制请求的到期时间。 */
+  'audio.caesura': { on: boolean; holdSec: number }
   'vfx.request': { key: string; pos: { x: number; y: number; z: number }; dir?: { x: number; y: number; z: number }; scale?: number }
   /**
    * §10 KI-051：**世界事件震镜**。与 `combat.hit.shakeKey` 的分工——那条说「这一记打在谁身上

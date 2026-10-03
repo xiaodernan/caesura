@@ -37,15 +37,34 @@ export const BUS_BASE: Record<DuckBusName, number> = {
  * 逼近基准/压下去的时间常数（秒）。**这不是设计读数**：§8.2 只有「休止状态」那一行给了斜率
  * （250ms 入 180ms 出），其余行只给量与时长。这里要一个数是为了不把增益写成阶跃（真机上那是一次
  * 咔哒），20ms 的时间常数在 60ms 内到位、听不出" ramp"也听不出爆音。
- * 那一行的 250/180 今天没有载体（休止状态进不来的引擎，见 KI-092 没做①），所以这里**不**冒充它。
  */
 export const DUCK_TC_SEC = 0.02
+
+/**
+ * 「表里的秒」⇄「`setTargetAtTime` 的时间常数」那一步的换算率。
+ *
+ * §8.2 休止那一行写的是 `250ms 入 180ms 出`——那是**到位时长**（人耳听到"压下去用了 250ms"），
+ * 而 WebAudio 的 `setTargetAtTime(target, start, τ)` 收的是**指数逼近的时间常数**，3τ 才走到 95%。
+ * 两个数不是一回事，所以这里把换算钉成一个常量而不是在调用点写 `/ 3`：写在那儿就没人知道那个 3
+ * 是 95% 判据，下一个人会把它读成"随便砍一刀"。`DUCK_TC_SEC = 0.02` 与这句是同一把尺子
+ * （20ms × 3 = 60ms 到位，与它自己那句注释一字不差）。
+ */
+export const DUCK_REACH_TC = 3
+
+/** 到位时长（秒）→ 时间常数（秒）。表与文档说的是前者，引擎收的是后者 */
+export function tcFromReach(reachSec: number): number { return reachSec / DUCK_REACH_TC }
 
 /** 一次还没过期的压制请求：某条总线在 `until`（音频钟秒）之前压到基准 × `factor` */
 export interface DuckRequest {
   bus: string
   factor: number
   until: number
+  /**
+   * KI-092①：这一行自己的**入 / 出**斜率（到位时长，秒）。缺省走 `DUCK_TC_SEC`——
+   * 休止那一行的 250ms 入 / 180ms 出是设计读数（§8.2 / §5），其余行只给量与时长。
+   */
+  attackSec?: number
+  releaseSec?: number
 }
 
 /** dB → 线性增益倍数。−6dB ≈ 0.5012，−12dB ≈ 0.2512，0dB = 1（不压） */
@@ -60,9 +79,24 @@ export function duckFactor(db: number): number {
  */
 export function deepestFactor(requests: DuckRequest[]): Record<string, number> {
   const out: Record<string, number> = {}
+  for (const [bus, r] of Object.entries(deepestRequests(requests))) out[bus] = r.factor
+  return out
+}
+
+/**
+ * 与上面同一个折叠，但**交出那位主人**而不只是它的系数（KI-092①）。
+ *
+ * 为什么引擎需要它：斜坡不是一条，是两条——压下去用**这一行**的 `attackSec`，弹回来要用
+ * **当初把这条总线压下去的那一行**的 `releaseSec`。只拿系数的话，弹回那一刻请求早就过期没了，
+ * 引擎无从知道"是休止压的（180ms 出）还是弹反压的（走缺省）"，只能给所有行用同一个缺省斜率——
+ * 那正是"表里写了读数而没人读"的形状（§55）。取最深的那位主人同时决定了深度与出入斜率，
+ * 一条总线只有一个主人，不会出现"深度归甲、斜率归乙"。
+ */
+export function deepestRequests(requests: DuckRequest[]): Record<string, DuckRequest> {
+  const out: Record<string, DuckRequest> = {}
   for (const r of requests) {
     const prev = out[r.bus]
-    if (prev === undefined || r.factor < prev) out[r.bus] = r.factor
+    if (prev === undefined || r.factor < prev.factor) out[r.bus] = r
   }
   return out
 }

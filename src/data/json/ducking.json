@@ -1,10 +1,26 @@
 [
-  {
-    "id": "parry",
-    "label": "弹反成功",
-    "trigger": "combat.parried",
-    "targets": ["music", "ambience"],
-    "db": -6,
-    "holdSec": 0.3
-  }
+ {
+  "id": "parry",
+  "label": "弹反成功",
+  "trigger": "combat.parried",
+  "targets": [
+   "music",
+   "ambience"
+  ],
+  "db": -6,
+  "holdSec": 0.3
+ },
+ {
+  "id": "caesura",
+  "label": "休止状态",
+  "trigger": "audio.caesura",
+  "targets": [
+   "music",
+   "ambience"
+  ],
+  "db": -12,
+  "holdSec": 1.2,
+  "attackSec": 0.25,
+  "releaseSec": 0.18
+ }
 ]
