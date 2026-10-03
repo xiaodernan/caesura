@@ -247,6 +247,35 @@ export class AudioEngine {
     }
   }
 
+  /**
+   * KI-026：设置持久化的音频消费端。四条总线 + master 各自一个 0..1 音量；
+   * 图未建时先存（首次手势建图后 apply）。bus 传 null = master。
+   */
+  private pendingVolumes = new Map<string, number>()
+  /** KI-026：设置持久化的音频消费端。bus 传 null = master */
+  setVolume(bus: 'sfx' | 'music' | 'ambience' | 'ui' | 'master', level: number): void {
+    const v = Math.max(0, Math.min(1, level))
+    this.pendingVolumes.set(bus, v)
+    const ctx = this.ctx
+    if (!ctx || !this.graph) return
+    this.applyOne(bus as DuckBusName | 'master', v)
+  }
+  getVolume(bus: string): number { return this.pendingVolumes.get(bus) ?? 1 }
+  private applyOne(bus: DuckBusName | 'master', v: number): void {
+    const ctx = this.ctx
+    if (!ctx || !this.graph) return
+    if (bus === 'master') {
+      this.graph.master.gain.setTargetAtTime(0.85 * v, ctx.currentTime, 0.05)
+    } else {
+      const base = BUS_BASE[bus as DuckBusName] ?? 1
+      this.graph.buses[bus as DuckBusName].gain.setTargetAtTime(base * v, ctx.currentTime, 0.05)
+    }
+  }
+
+  private applyPendingVolumes(): void {
+    for (const [bus, v] of this.pendingVolumes) this.applyOne(bus as DuckBusName | 'master', v)
+  }
+
   /** 首次用户手势时调用：建图、resume、启动音乐层 */
   start(): void {
     this.ensureGraph()
@@ -256,6 +285,7 @@ export class AudioEngine {
     this.detachGesture()
     if (this.started) return
     this.started = true
+    this.applyPendingVolumes()
     this.musicLayer = new MusicLayer(ctx, this.graph.buses.music, this.graph.buses.ambience, this.grid, this.bed, this.song, this.battle)
     // KI-083：位姿也要补一次——首次手势之前 `main.ts` 的每一帧都只落在上面那个缓存里（见 `setListener`）
     this.musicLayer.setListener(this.pose)
