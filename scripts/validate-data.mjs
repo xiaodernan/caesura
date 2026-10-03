@@ -82,7 +82,7 @@ const AFFIX_STATS = new Set(['poiseDmg', 'defense', 'staminaRegen', 'critRate', 
 const AFFIX_BEHAVIORS = new Set(['perfectBlockWindow', 'lightStartup', 'bellBonus', 'restOverdrive'])
 
 // ---- 词表：手抄名单。每张的主人由文件末尾的 VOCAB_PAIRS 现场读出来，改了主人就会红 ----
-const WEAPON_ARCHETYPES = new Set(['straight_sword', 'greatsword', 'spear', 'bow', 'staff', 'unique'])
+const WEAPON_ARCHETYPES = new Set(['straight_sword', 'greatsword', 'spear', 'bow', 'staff', 'unique', 'needle'])
 const ENEMY_ARCHETYPES = new Set(['basic', 'heavy', 'ranged', 'assassin', 'support', 'elite', 'miniboss', 'boss'])
 const ATTR_KEYS = new Set(['str', 'dex', 'ton', 'vig', 'ovr', 'fis'])
 const BIOMES = new Set(['hub', 'forest', 'ruins', 'underground', 'camp', 'dungeon', 'boss_arena'])

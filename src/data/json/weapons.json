@@ -54,7 +54,7 @@
  {
   "id": "wp_needlesilence",
   "nameKey": "weapon.needlesilence",
-  "archetype": "straight_sword",
+  "archetype": "needle",
   "movesetId": "ms_needlesilence",
   "scaling": {
    "dex": 1.2,

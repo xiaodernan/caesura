@@ -21,6 +21,7 @@ const WEAPON_FORMS: Record<string, { blade: [number, number, number]; metal: num
   straight_sword: { blade: [0.07, 0.95, 0.16], metal: 0xb9c4cc, grip: [0.03, 0.03, 0.22] },
   greatsword: { blade: [0.14, 1.5, 0.3], metal: 0x8f9aa4, grip: [0.045, 0.045, 0.34] },
   spear: { blade: [0.05, 1.9, 0.05], metal: 0xc7bfa8, grip: [0.035, 0.035, 0.5] },
+  needle: { blade: [0.035, 1.05, 0.07], metal: 0x14181c, grip: [0.02, 0.02, 0.2] }, // 无鸣：细长黑刃（KI-023）
   unknown: { blade: [0.07, 0.95, 0.16], metal: 0xb9c4cc, grip: [0.03, 0.03, 0.22] }
 }
 

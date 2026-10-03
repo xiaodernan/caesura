@@ -144,7 +144,7 @@ export interface MovesetData {
 export interface WeaponData {
   id: string
   nameKey: string
-  archetype: 'straight_sword' | 'greatsword' | 'spear' | 'bow' | 'staff' | 'unique'
+  archetype: 'straight_sword' | 'greatsword' | 'spear' | 'bow' | 'staff' | 'unique' | 'needle'
   /**
    * 武器↔moveset **一对一**（KI-047）：这记招式表就是这把武器的价格本身——
    * 玩家出手的底数只有 `FrameData.damage` 一处（`CombatManager.strikeEnemy` 拿 `hb.damage`），
