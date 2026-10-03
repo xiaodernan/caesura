@@ -54,6 +54,9 @@ import { DUCK_FIELDS, duckFindings } from './ducking-rules.mjs'
 // KI-094：天气表那几条**跨文件**判据的本体（同一族理由：要在测试里喂一行"§38 没有的那一档"、
 // "没被任何一区指到的名字"看它拒不拒）。这里只负责把 §38 的档名名册与被引用的天气名读出来当输入。
 import { PENDING_WEATHER_READINGS, PENDING_WEATHER_SWITCHES, WEATHER_FIELDS, weatherFindings, weatherSwitchFindings } from './weather-rules.mjs'
+// KI-100：世界图那三条**几何**判据的本体（同一族理由：要在测试里喂一条"落点正踩在两个区的缝上"的边、
+// 一个"锚点排成一条直线"的区域，看它拒不拒）。这里只把 `regions.json` 递给它，再把 findings 报成 ERROR。
+import { worldGraphFindings } from './world-graph-rules.mjs'
 // KI-089：对话树的**可达性**判据本体（同一族理由：要在测试里喂一棵合成树看它拒不拒）。这里只把
 // findings 报成 ERROR —— 一句话有没有玩家读得到，是"边"的事，不是"条件写得好不好"的事。
 import { dialogueReachErrors } from './dialogue-rules.mjs'
@@ -2058,6 +2061,22 @@ function validateWeather() {
   }
 }
 
+// ---- regions.json 的世界图几何（KI-100：需求 §9「地图设计」的第一台机器读者）----
+/**
+ * 判据本体在 `world-graph-rules.mjs`：①作者标注的点位不许伸出本区 bounds，②每条通行器边的落点必须
+ * **恰好**落进一个区域，③一个区域的锚点不许全部共线。这里只递表、只报 findings —— 判据不认识文件。
+ *
+ * `regions.json` 本来就有报告者（区域字段、旗标对账那几段），所以 `mapFindings` 那道门不会因为这一格变绿；
+ * 它早就绿着，而绿的那句话是"这张表至少有人看"，不是"这张表的每一维都有人看"。这一格补的正是几何那一维：
+ * 在 KI-100 之前，`to` 只被当成 vec3 验一次型，落点在不在虚空、有没有同时踩进两个叠层区，一个读者都没有。
+ */
+function validateWorldGraph() {
+  const file = 'regions.json'
+  // 没有 warn 分支不是漏了：`worldGraphFindings` 今天只产 error，写一条走不到的分派就是给同一句话配第二个口径。
+  // 判据哪天要出 WARN，会由那条钉着"这里的出口只有 report.error"的证人先红一次。
+  for (const f of worldGraphFindings(data[file])) report.error(f.file, f.where, f.msg)
+}
+
 /** loot.json 里真正会掉出来的物品全集（rolls + firstKill）。点亮源必须落在这里面，否则那一页永远点不亮 */function lootedItemIds() {
   const out = new Set()
   const list = data['loot.json']
@@ -2805,6 +2824,8 @@ validateBattle()
 validateDucking()
 // KI-094：天气表要对账两端名册（§38 的档名联合 + 各区 weatherPresets 引用的名字），排在 regions 之后
 validateWeather()
+// KI-100：世界图几何（点位归属 / 落点歧义 / 锚点共线）——同样只读 regions，所以也排在它之后
+validateWorldGraph()
 // movements 最后跑：它要同时对账 items（点亮源）、loot（源是否真会掉）、progression（开槽里程碑）
 validateMovements(itemIds)
 // 叙事层（Phase 6-B）：NPC → 任务 → 对话（后者依赖前两者的 id）

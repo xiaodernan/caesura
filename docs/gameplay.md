@@ -169,7 +169,7 @@ Explore → Discover → Fight → Loot → Upgrade → Experiment → Progress 
 | NPC | 2 次（盐歌/断弦） | T2 |
 | Upgrade Material（强化材料） | 常备 | T0-T3 |
 | Secret（隐藏房） | 5 个（含初句圣所） | T4-T5 |
-| Shortcut | 6 处（共鸣井×2/吊桥×2/音壁×2） | T1-T3 |
+| Shortcut | 6 条通行器边 · elevator×2 / gate×2 / teleport×1 / bridge×1：`el_resthold_well`（共鸣井，休垒→无耳深窖）、`el_fellcarillon_organlift`（管风琴吊机，钟坠院→未竟厅）、`br_brokenbar_gate`（断链天桥，破拍营地→钟坠院）、`tp_choir_soundwall_shortcut`（音壁回廊，沉唱堂→雾语林）、`gt_drownedchoir_deepstair`（深窖阶梯，沉唱堂→无耳深窖）、`gt_brokenbar_backdoor`（营地后门，区内）| T1-T3 |
 | Boss | 3 个 | 主线+可选 |
 
 ### 4.3 反"空洞地图"密度检查（需求 §7）
