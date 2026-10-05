@@ -1118,7 +1118,7 @@
   "bounds": {
    "minX": 96,
    "maxX": 384,
-   "minY": 40,
+   "minY": 48,
    "maxY": 144,
    "minZ": -432,
    "maxZ": -96
@@ -1512,6 +1512,21 @@
      "z": 364
     },
     "secretId": "sec_first_phrase"
+   },
+   {
+    "id": "tp_deeps_drainslide",
+    "kind": "teleport",
+    "verb": "攀排水斜道",
+    "pos": {
+     "x": -252,
+     "y": -144,
+     "z": 210
+    },
+    "to": {
+     "x": -120,
+     "y": 0,
+     "z": -150
+    }
    }
   ],
   "music": {
@@ -1716,6 +1731,21 @@
         "RUNG": "共鸣石在手，回响层开始松动……"
       },
       "setsFlag": "flag.meg_whisper_extracted"
+    },
+    {
+      "id": "tp_unfinishedhall_belfrystair",
+      "kind": "teleport",
+      "verb": "沿钟楼折返楼梯下行",
+      "pos": {
+        "x": -16,
+        "y": 152,
+        "z": -104
+      },
+      "to": {
+        "x": 120,
+        "y": 64,
+        "z": -140
+      }
     }
   ],
   "music": {
