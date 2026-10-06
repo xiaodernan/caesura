@@ -16,6 +16,7 @@ import {
 import { wrap } from '@/save/Integrity'
 import { registerMigration, unregisterMigration } from '@/save/Migration'
 import { AUTOSAVE_SLOT, MANUAL_SLOTS, SlotRoster, saveSlots } from '@/save/Slots'
+import { bus } from '@/core/EventBus'
 
 /**
  * 存档槽名册（KI-025① / 需求 §45、ui-ux §8）。
@@ -414,5 +415,68 @@ describe('IdbStore：备份机的形状', () => {
     expect(r.problem).toBe('empty')
     expect(r.tried.every((t) => t.reason === 'empty')).toBe(true)
     expect((await new SlotRoster(new LooseStore()).card('slot2')).state).toBe('empty')
+  })
+})
+
+/* ------------------- 异常腿：存储半路翻脸时的主档与诊断 ------------------- */
+
+/** 一台 get 会当场翻脸的库：实机存储也可能坏（配额爆 / 打开失败），读档不许把进程砸了 */
+class ExplodeStore implements KvStore {
+  async get(): Promise<string | null> { throw new Error('storage boom') }
+  async set(): Promise<void> {}
+  async remove(): Promise<void> {}
+}
+
+/** 只在写时翻脸的备份机：set 抛错、读照常——「备份位失败不影响主档」那条腿的证人 */
+class BackupRejectSet implements KvStore {
+  calls = 0
+  #data = new Map<string, string>()
+  async get(k: string): Promise<string | null> { return this.#data.get(k) ?? null }
+  async set(): Promise<void> { this.calls++; throw new Error('backup boom') }
+  async remove(k: string): Promise<void> { this.#data.delete(k) }
+}
+
+describe('异常腿：存储半路翻脸时，主档与诊断各归各位', () => {
+  it('存储 get 抛错 ⇒ 这一格记 parse 并带上错误原话，三条候选都留名，不砸进程', async () => {
+    const r = await readSlot(new ExplodeStore(), null, 'slot1')
+    expect(r.snapshot).toBeNull()
+    expect(r.problem).toBe('parse')
+    expect(r.tried).toHaveLength(3)
+    expect(r.tried.every((t) => t.reason === 'parse')).toBe(true)
+    expect(r.tried.every((t) => t.detail === 'storage boom')).toBe(true)
+    expect(r.tried.map((t) => t.key)).toEqual(['slot1', 'slot1.tmp', 'slot1.prev'])
+    // 名册侧把同一件事说成 blocked：UI 的卡与读档的诊断是同一份账
+    expect((await new SlotRoster(new ExplodeStore()).card('slot1')).state).toBe('blocked')
+  })
+
+  it('备份机 set 翻脸 ⇒ 主档照样落、save.ok 照样报（备份位失败不影响主档）', async () => {
+    const w = world()
+    const primary = new MapStore()
+    const backup = new BackupRejectSet()
+    const saves = new SaveGame(
+      { player: w.player, streaming: w.streaming, spawner: w.spawner, clock: w.rhythm, time: w.time, rpg: w.rpg },
+      primary, backup
+    )
+    const msgs: string[] = []
+    const off = bus.on('log', (p) => { msgs.push(p.msg) })
+    let snap: Snapshot | null = null
+    try {
+      snap = await saves.save('slot1')
+    } finally { off() }
+    expect(snap).not.toBeNull()
+    expect(backup.calls).toBe(1)
+    expect(primary.raw.get('slot1')).toBeTruthy()
+    expect(primary.raw.has('slot1.tmp')).toBe(false)
+    expect(msgs.some((m) => m.startsWith('save.ok slot1'))).toBe(true)
+  })
+
+  it('读一个从没写过的槽 ⇒ load.none 的账要报、返回 null（静默 null 是诊断黑洞）', async () => {
+    const { saves } = await savedToWorld()
+    const msgs: string[] = []
+    const off = bus.on('log', (p) => { msgs.push(p.msg) })
+    try {
+      expect(await saves.load('slot1')).toBeNull()
+    } finally { off() }
+    expect(msgs).toContain('load.none slot1')
   })
 })
