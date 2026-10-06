@@ -8,6 +8,7 @@ import { WorldStates } from '@/quest/WorldStates'
 import { DialogueEngine, type DialogueContext, type DialogueView } from '@/quest/Dialogue'
 import { DialogueSession } from '@/quest/Settlement'
 import { Inventory } from '@/rpg/Inventory'
+import { MovementBook } from '@/rpg/Movements'
 import type { Vec3 } from '@/combat/EntityStats'
 
 /**
@@ -264,5 +265,42 @@ describe('断弦线步 4《义体尽头的拍子》：入口在复访节点上�
     expect(w.states.get('state.haltrune.fate'), '结局读数还在缺省上 ⇒ 值域闸门也不成立').toBe('ALIVE_AT_POST')
     // 两条前提都不成立时，n10 上那两条结局选项的 conditions 必然求值为假（引擎的条件是合取）
     w.cleanup()
+  })
+})
+
+describe('《终止》的授予就是"你在场"这件事本身（§7.2 / KI-043 / P0-2）', () => {
+  it('抉择之前那一页点不亮、抉择之后可点，而且不扣任何实物（旗标页的纪律）', () => {
+    const w = makeWorld()
+    const book = new MovementBook() // 听 world.flag 广播（与互动物/流送同一条纪律）
+    const bag = new Inventory('terminate-check')
+    try {
+      expect(book.canUnlock('mvpage_terminate', bag), '还没走完最后一班岗 ⇒ 点不亮').toBe(false)
+
+      w.walkPatrol()
+      w.fillRoster('c1')
+      expect(book.canUnlock('mvpage_terminate', bag), '填完名册还不够').toBe(false)
+
+      // 步 4：他请你在场 —— 用休止送走他
+      expect(w.session.open('npc_haltrune')).toBe(true)
+      // 沿复访链走到结局入口（不假设落在哪个节点：这条链是"闸不成立就顺 next 退一级"的台阶）
+      for (let i = 0; i < 8 && !w.last().choices.some((c) => c.id === 'c3'); i++) {
+        if (w.last().choices.length > 0) w.session.choose(w.last().choices[w.last().choices.length - 1].id)
+        else w.session.advance()
+      }
+      expect(w.last().choices.some((c) => c.id === 'c3'), '走到结局入口').toBe(true)
+      w.session.choose('c3') // （把那条断臂上的拍子按停）
+      w.session.choose('c1') // （用休止按住那面鼓）
+      expect(w.streaming.hasFlag('flag.terminate_granted'), '抉择立起那面旗').toBe(true)
+
+      expect(book.canUnlock('mvpage_terminate', bag), '你在场 ⇒ 这一页可点').toBe(true)
+      expect(book.unlockPage('mvpage_terminate', bag).ok, '旗标页不扣实物').toBe(true)
+      expect(book.page('mvpage_terminate')?.displayName).toContain('终止')
+
+      // 另一页（休止，要 flag.hersil_felled）不受这次抉择影响
+      expect(book.canUnlock('mvpage_rest', bag), '别的页不受影响').toBe(false)
+    } finally {
+      book.dispose()
+      w.cleanup()
+    }
   })
 })
