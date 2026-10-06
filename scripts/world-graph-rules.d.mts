@@ -62,5 +62,45 @@ export interface MacroReading {
   seamCount: number
 }
 export function macroConnectivity(regions: unknown): MacroReading
-/** 五条判据的 findings；入参非数组或为空时不抛，改成一条 error */
-export function worldGraphFindings(regions: unknown): WorldGraphFinding[]
+/**
+ * 一面旗的一个写方（"钥匙的家"）。`regionId: null` = 这句话没有空间位置（全局事件，或下面三种悬空引用）；
+ * `usable: false` 只给 `rule-dangling` / `boss-noloc` / `dialogue-noloc`——引用落不到坐标 ⇒ 这面旗永远立不起来，
+ * 把它当可得就是替数据圆场。`requires` 是这个写方自己吃的旗（钥匙套钥匙那一格）。
+ */
+export interface Carrier {
+  kind: 'interactable' | 'rule-interact' | 'boss' | 'event' | 'rule-dangling' | 'boss-noloc' | 'dialogue' | 'dialogue-noloc'
+  id: string
+  regionId: string | null
+  requires: string[]
+  usable?: boolean
+  /** 悬空引用那一格：它指向的那个 id（interactId / dataId / npc），报错时要说出来 */
+  via?: string
+}
+/** 旗标 → 它的写方名册；`regions.json` + `worldstate.json` + `dialogue.json` 三份一起才推得出这张图 */
+export function flagCarriers(regions: unknown, worldstate: unknown, dialogue: unknown): Map<string, Carrier[]>
+/** carrier 的来源分解：kind → 条数（⑥ 的总体自证与文档那一行的唯一主人） */
+export function carrierTally(carriers: Map<string, Carrier[]>): Record<string, number>
+/** 一面旗的"家"：它的全部写方，一个都没有就是 `[]`（那句归旗标账，不归 ⑥ 说） */
+export function keyHome(flag: string, carriers: Map<string, Carrier[]>): Carrier[]
+/** 一把锁：谁被什么挡住。`kind` 决定它在报错里怎么说自己 */
+export interface Lock {
+  where: string
+  kind: 'region' | 'interactable' | 'edge' | 'secret'
+  regionId: string
+  id: string
+  flags: string[]
+}
+/** 锁名册：区域 unlockFlag + 交互物/边的 `requiresOf`（含 secretId 派生）+ secrets[].unlockFlag */
+export function lockRoster(regions: unknown): Lock[]
+/** 带着锁走一遍图的不动点读数 */
+export interface UnlockReading {
+  start: string | null
+  open: Set<string>
+  obtainable: Set<string>
+  regionCount: number
+  flagCount: number
+}
+/** ⑥ 的主体；`opts.forbid` 让 ⑦ 问第二个问题（「永远不拿着这面旗，玩家还能站到哪些区」） */
+export function unlockReachability(regions: unknown, carriers: Map<string, Carrier[]>, opts?: { forbid?: string | null }): UnlockReading
+/** 七条判据的 findings；入参非数组或为空时不抛，改成一条 error。`keys` 缺省时 ⑥⑦ 只能报「名册读空」 */
+export function worldGraphFindings(regions: unknown, keys?: { worldstate?: unknown; dialogue?: unknown }): WorldGraphFinding[]

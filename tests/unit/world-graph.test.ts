@@ -22,15 +22,27 @@
  *   ⑤ 从 `order` 最小的起始区沿「共面接缝 ∪ 通行器出边」要走得到每一区，且每一区都至少有一条出路（不许有死端）。
  *      ⑤ 只在有名字的盒子 ≥ 2 块时判：一个区域没有"之间"，这条边界下面单独钉着。
  *
- * 刻意不在这里判的：`vec3` 三格是不是有限数、`min <= max`、kind 的枚举、secretId 的引用完整性——
- * 那些 `validate-data.mjs` 全场统一管，搬过来等于给同一句话配第二个主人（KI-083 立的分工）。
+ * KI-103 补的是 §9 那一格里最后一个没人读的短语——「需不需要钥匙」（`docs/technical-architecture.md` §5.9.38）：
+ *   ⑥ 每一把锁吃的旗标都要有玩家**到得了**的写方：旗标的"家"从三份表一起推（交互物 setsFlag、
+ *      `worldstate.json` 的 `interactUsed`/`bossDefeated` 规则、`dialogue.json` 的树按 `npc` 落回某一块地），
+ *      然后带着锁走一遍图求不动点。没有写方的旗在这一格按**已满足**处理——那句归 `ledger-rules.mjs` 的旗标账，
+ *      两个主人各说半句；
+ *   ⑦ 落进上锁区的通行器边不许**无证白送**：`main.ts` 只管 emit 落点，而 `Streaming.isRegionUnlocked`
+ *      （`src/world/Streaming.ts:115`）会拒绝激活整个区 ⇒ 玩家落到一块没有 chunk 的地上。
+ *      合法的豁免只有三种：这条边自己吃着那把钥匙、这条边就是铸钥匙的地方、或者**不拿钥匙根本站不到起点区**
+ *      （把钥匙全程禁掉再走一遍图）。第三种是 ⑦ 里最容易被读成死代码的一腿，真表上 8 条边有 3 条靠它。
+ *
+ * 刻意不在这里判的：`vec3` 三格是不是有限数、`min <= max`、kind 的枚举、secretId 的引用完整性、
+ * 「有读方没写方」的旗标账——那些 `validate-data.mjs` / `ledger-rules.mjs` 全场统一管，
+ * 搬过来等于给同一句话配第二个主人（KI-083 立的分工）。
  */
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { assignedLiterals, calledNames, functionBodies, stripComments } from '../../scripts/schema-vocab.mjs'
 import {
-  anchorPoints, anchorSources, boxContacts, macroConnectivity, maxTriangleAreaXZ, regionsContaining, travelEdges, travelKindTally, worldGraphFindings,
+  anchorPoints, anchorSources, boxContacts, carrierTally, flagCarriers, keyHome, lockRoster, macroConnectivity, maxTriangleAreaXZ,
+  regionsContaining, travelEdges, travelKindTally, unlockReachability, worldGraphFindings,
 } from '../../scripts/world-graph-rules.mjs'
 
 type Finding = { level: 'error' | 'warn'; file: string; where: string; msg: string }
@@ -47,7 +59,12 @@ type Row = { id?: string; order?: number; bounds?: Record<string, number>; inter
 const ROOT = fileURLToPath(new URL('../../', import.meta.url))
 const read = (rel: string) => readFileSync(ROOT + rel, 'utf8').replace(/\r\n/g, '\n')
 const regions = JSON.parse(read('src/data/json/regions.json')) as Row[]
-const errorsOf = (rs: unknown): Finding[] => worldGraphFindings(rs).filter((f) => f.level === 'error')
+/** ⑥⑦ 的两份额外名册：判据要能把「规则／对话」这类写方钉回一块地，光有 `regions.json` 推不出旗标的家 */
+const worldstate = JSON.parse(read('src/data/json/worldstate.json')) as unknown[]
+const dialogue = JSON.parse(read('src/data/json/dialogue.json')) as unknown[]
+const KEYS = { worldstate, dialogue }
+const errorsOf = (rs: unknown, keys: { worldstate?: unknown; dialogue?: unknown } = {}): Finding[] =>
+  worldGraphFindings(rs, keys).filter((f) => f.level === 'error')
 const onlyErrs = (errs: Finding[]): string => errs.map((e) => `${e.where} :: ${e.msg}`).join('\n')
 
 /** 一个 ±10 的方盒子：所有 refuse 臂都是在它身上各改一处得到的 */
@@ -121,8 +138,8 @@ const box = (id: string, x: [number, number], y: [number, number], z: [number, n
 const A1 = (): Row => box('a', [-5, 5], [-5, 5], [-5, 5])
 
 describe('真表读数：判据吃的必须是一个非空的总体（需求 §9）', () => {
-  it('regions.json 五条判据一个 error 都没有——而这句话的分母是 7 个区域、113 个锚点、8 条通行器边、21 对盒子', () => {
-    const errs = errorsOf(regions)
+  it('regions.json 七条判据一个 error 都没有——而这句话的分母是 7 个区域、113 个锚点、8 条通行器边、21 对盒子、31 把锁', () => {
+    const errs = errorsOf(regions, KEYS)
     const tally = anchorSources(regions)
     expect(errs, `世界图判据在真表上红了：\n${onlyErrs(errs)}`).toEqual([])
     for (const [k, v] of Object.entries(tally)) {
@@ -130,7 +147,7 @@ describe('真表读数：判据吃的必须是一个非空的总体（需求 §9
     }
     expect(tally['spawnGroups.center'], '出怪点一共 23 组，全带 center；这一格掉到 20 以下就是有人把出怪几何改了').toBeGreaterThanOrEqual(20)
     expect(travelEdges(regions).length, '一条通行器都没有就不是"干净的总体"，是没读到东西').toBeGreaterThanOrEqual(3)
-    expect(regions.length, '区域数掉下去 = 名册被谁摘走一个，五条判据同时缩').toBeGreaterThanOrEqual(5)
+    expect(regions.length, '区域数掉下去 = 名册被谁摘走一个，七条判据同时缩').toBeGreaterThanOrEqual(5)
     // ④⑤ 的总体自证：接触对是从 regions.length 派生的两两组合里筛出来的，筛空了就是没读到 bounds
     const contacts = boxContacts(regions)
     const candidates = (regions.length * (regions.length - 1)) / 2
@@ -393,7 +410,7 @@ describe('⑤ 区域之间的关系走得通吗（需求 §9 的 Macro：从起�
     const leaderless = facePair().map((r) => { const c = { ...r }; delete c.order; return c })
     expect(macroConnectivity(leaderless).start).toBeNull()
     const errs = errorsOf(leaderless)
-    expect(errs.map((e) => e.where), `没有起点时不许报"全都可达"，也不许逐区报死胡同（那是同一件事的 N 遍）：${onlyErrs(errs)}`).toEqual(['regions.json'])
+    expect(errs.map((e) => e.where), `没有起点时不许报"全都可达"，也不许逐区/逐锁报死胡同（那是同一件事的 N 遍——⑥⑦ 在这一格同样跟着安静，因为它没有种子可走）：${onlyErrs(errs)}`).toEqual(['regions.json'])
     expect(errs[0].msg).toContain('没有主语')
   })
 
@@ -419,6 +436,218 @@ describe('⑤ 区域之间的关系走得通吗（需求 §9 的 Macro：从起�
     expect(inbound('rg_earless_deeps'), '两条进得去的路（其中一口井还是 oneWay 的）配一条出得去的路 ⇒ 上面那句"0 死胡同"不是补完就绿的巧合').toEqual(['el_resthold_well', 'gt_drownedchoir_deepstair'])
     expect(m.exits.get('rg_resthold')?.out, '休垒靠两条共面接缝出去，一条出边都不用：这是⑤「接缝 ∪ 出边」两半里接缝那一半的真表证人').toEqual([])
     expect(m.exits.get('rg_resthold')?.seams.sort(), '休垒的两条接缝：营地与雾语林（⑤ 的路网在这里是真的连上的）').toEqual(['rg_brokenbar_camp', 'rg_whisperwode'])
+  })
+})
+
+/* ---------- ⑥⑦ 用的夹具：三份表一起给，旗标的「家」才推得出来 ---------- */
+const KEY = 'flag.open_camp'
+const KEY2 = 'flag.open_deep'
+/**
+ * `facePair()` 的营地上锁（`unlockFlag = KEY`），而 A→营地那条边付不付这把钥匙由 `edgeKey` 决定：
+ * `null` = 白送（⑦ 该红），默认 = 付钥匙（⑦ 该安静）。
+ */
+const gatedPair = (edgeKey: string | null = KEY): Row[] => {
+  const [a, c] = facePair()
+  c.unlockFlag = KEY
+  if (edgeKey !== null) a.interactables![0].requiresFlag = edgeKey
+  return [a, c]
+}
+/** 在指定那一区放一个立 KEY 的交互物（点位都落在该区的 bounds 内，① 不许跟着响） */
+const writerIn = (rs: Row[], who: 'rg_ok' | 'rg_camp'): Row[] => {
+  rs.find((r) => r.id === who)!.interactables!.push(who === 'rg_ok'
+    ? { id: 'gt_key', kind: 'gate', pos: { x: 0, y: 0, z: 6 }, setsFlag: KEY }
+    : { id: 'gt_key', kind: 'gate', pos: { x: 20, y: 0, z: 6 }, setsFlag: KEY })
+  return rs
+}
+/** 一块 10³ 的裸世界（连 ch_far 的锁与 gt_mid 的旗都拆掉）：剩下所有锁吃的旗都必须由外部名册来写 */
+const barePair = (): Row[] => {
+  const [a, c] = gatedPair()
+  delete (a.interactables!.find((i) => i.id === 'gt_mid') as Item).setsFlag
+  delete (a.interactables!.find((i) => i.id === 'ch_far') as Item).requiresFlag
+  a.secrets = []
+  return [a, c]
+}
+/** worldstate 的一条规则（`on` 决定它的家怎么找：interactId / dataId / 根本没有位置） */
+const ws = (o: Record<string, unknown>): unknown[] => [{ id: 'ws_test', setFlag: KEY, ...o }]
+
+describe('⑥ 每一把锁的钥匙都拿得到（需求 §9「需不需要钥匙」的前半句）', () => {
+  it('真表：31 把锁吃的每一面旗，玩家都在不动点里拿得起来，7/7 区开放', () => {
+    const carriers = flagCarriers(regions, worldstate, dialogue)
+    const locks = lockRoster(regions)
+    const reach = unlockReachability(regions, carriers)
+    expect(locks.length, '锁名册读空 ⇒ "0 条解不开"是假的：区域 unlockFlag / 交互物 requires / secret / 边，四类都得在场').toBeGreaterThanOrEqual(25)
+    expect(carriers.size, '有写方的旗标只剩这么点 ⇒ worldstate 或 dialogue 有一侧没被读').toBeGreaterThanOrEqual(50)
+    expect(reach.open.size, `带着锁走图只开放 ${reach.open.size}/${regions.length} 区（${regions.filter((r) => !reach.open.has(String(r.id))).map((r) => r.id).join(' ')} 开不了）`).toBe(regions.length)
+    expect(reach.obtainable.size, `62 面有写方的旗里，${carriers.size - reach.obtainable.size} 面玩家拿不起来：${[...carriers.keys()].filter((f) => !reach.obtainable.has(f)).join(' ')}`).toBe(carriers.size)
+    const stuck = locks.filter((l) => !l.flags.every((f) => !carriers.has(f) || reach.obtainable.has(f)))
+    expect(stuck.map((l) => l.where), `解不开的锁：${stuck.map((l) => `${l.where} 缺 ${l.flags.join(',')}`).join(' ;; ')}`).toEqual([])
+    expect(errorsOf(regions, KEYS), '⑥⑦ 在真表上就该一句不响').toEqual([])
+  })
+
+  it('旗标的四类来源各有真实的一条：interactable / rule-interact / boss / dialogue / event 少一类就是那一份表没被读', () => {
+    const tally = carrierTally(flagCarriers(regions, worldstate, dialogue))
+    for (const kind of ['interactable', 'rule-interact', 'boss', 'dialogue', 'event']) {
+      expect(tally[kind] ?? 0, `carrier 的 '${kind}' 这一类读到了 ${tally[kind] ?? 0} 条 ⇒ 派生那一份表的代码断了，而 ⑥ 只会把它的旗当成别人的账`).toBeGreaterThan(0)
+    }
+    expect(Object.values(tally).reduce((a, b) => a + b, 0), 'carrier 条数换了 = 有人在改三份表中的任意一份，上面那五格要一起重量').toBeGreaterThanOrEqual(60)
+    // 三种"指不到坐标"的形状今天一条都不许有：它们各自都是 `usable: false`，也就是永远立不起来的旗
+    expect(Object.keys(tally).filter((k) => k.endsWith('-dangling') || k.endsWith('-noloc')), `真表上有写方落不到坐标：${JSON.stringify(tally)}`).toEqual([])
+  })
+
+  it('没递第二参数 ⇒ 锁吃的旗一个写方都没读到 ⇒ 红「这道门在空转」，而不是安静通过', () => {
+    // 这一格的 KEY 只有对话树这一个写方：不递 `dialogue` 就是真的把名册读空（递 worldstate 也救不回来）。
+    const dlg = [{ id: 't_key', npc: 'gt_mid', nodes: [{ id: 'n1', effects: { setFlags: [KEY] } }] }]
+    expect(errorsOf(barePair(), { worldstate: [] }).map((e) => e.where), '⑥⑦ 的名册必须成对给：少一份就不是"干净"而是"没读到"').toEqual(['worldstate.json+dialogue.json'])
+    expect(errorsOf(barePair(), { worldstate: [], dialogue: dlg }), '两份都递 ⇒ 营地开得了解锁这一格该安静').toEqual([])
+  })
+
+  it('钥匙写在起始区、唯一的入口付这把钥匙 ⇒ ⑥⑦ 一起安静（合法形状的接受侧）', () => {
+    const rs = writerIn(gatedPair(), 'rg_ok')
+    const errs = errorsOf(rs)
+    expect(errs, `营地靠起始区立起来的钥匙开放，而那条边付着钥匙：${onlyErrs(errs)}`).toEqual([])
+    expect(unlockReachability(rs, flagCarriers(rs, undefined, undefined)).open.has('rg_camp'), '不动点没开放营地 ⇒ 上面那句"安静"就不是因为整格没判').toBe(true)
+  })
+
+  it('钥匙锁在它自己开的那扇门后面（自锁）⇒ 红两条：区开不了 + 那条付着这把钥匙的边也解不开', () => {
+    const errs = errorsOf(writerIn(gatedPair(), 'rg_camp'))
+    expect(errs.map((e) => e.where), `自锁要说两处（区本身、以及吃这把钥匙的入口边）：${onlyErrs(errs)}`).toEqual(['rg_camp.unlockFlag', 'rg_ok.interactables(el_up).requires'])
+    expect(errs[0].msg).toContain('自锁')
+    expect(errs[0].msg, '⑥ 的理由是"先后"，不是"接缝"：⑤ 在这一格仍然是干净的，消息要把这件事说破').toContain('断的是先后顺序而不是接缝')
+  })
+
+  it('两区互相等对方的钥匙 ⇒ 各红一条，而消息说的是"那个区本身还没开放"（不是自锁）', () => {
+    const [a, c] = gatedPair()
+    const deep = camp(20, 0, { x: 40, y: 0, z: 0 })
+    deep.id = 'rg_deep'
+    deep.unlockFlag = KEY2
+    c.interactables!.push({ id: 'gt_key2', kind: 'gate', pos: { x: 20, y: 0, z: 6 }, setsFlag: KEY2 })
+    deep.interactables!.push({ id: 'gt_key', kind: 'gate', pos: { x: 40, y: 0, z: 6 }, setsFlag: KEY })
+    const errs = errorsOf([a, c, deep])
+    expect(errs.map((e) => e.where), `死锁环上的两区各红一条，再加上那条解不开的入口边：${onlyErrs(errs)}`).toEqual(['rg_camp.unlockFlag', 'rg_deep.unlockFlag', 'rg_ok.interactables(el_up).requires'])
+    expect(errs[0].msg).toContain('住在 rg_deep（那个区本身还没开放）')
+    expect(errs[0].msg, '钥匙的家在别的区，就不是自锁：这一句不许被写进所有 ⑥ 的红里').not.toContain('自锁')
+  })
+
+  it('worldstate 的 `interactUsed` 规则按 interactId 落回那一块地：交互物住在营地 ⇒ 同样自锁', () => {
+    const rs = gatedPair()
+    expect(errorsOf(rs, { worldstate: ws({ on: 'interactUsed', interactId: 'gt_mid' }) }), 'gt_mid 在 rg_ok ⇒ 营地该开得了解锁这一格不该红').toEqual([])
+    const errs = errorsOf(rs, { worldstate: ws({ on: 'interactUsed', interactId: 'el_down' }) })
+    expect(errs.map((e) => e.where), `el_down 住在营地：规则的家跟着交互物走，所以这一格与"钥匙写在营地里"同一种红：${onlyErrs(errs)}`).toEqual(['rg_camp.unlockFlag', 'rg_ok.interactables(el_up).requires'])
+    expect(errs[0].msg).toContain('rule-interact(ws_test) 住在 rg_camp')
+  })
+
+  it('规则指的交互物不存在 ⇒ usable:false ⇒「这面旗永远立不起来」，把它当可得就是替数据圆场', () => {
+    const errs = errorsOf(gatedPair(), { worldstate: ws({ on: 'interactUsed', interactId: 'no_such_interactable' }) })
+    expect(errs.length, '悬空引用必须红，而不是安静通过：⑥ 不许假设表总会自己先红').toBe(2)
+    expect(errs[0].msg).toContain('落不到任何坐标')
+    expect(errs[0].msg, '报错要端出那个不存在的 id，否则读者得自己去 grep').toContain('no_such_interactable')
+    expect(errs[0].msg).toContain('rule-dangling')
+  })
+
+  it('`bossDefeated` 按 spawnGroups[].enemyId 找雇主：在几区出怪就住几区，找不到就永远立不起来', () => {
+    const rs = gatedPair()
+    expect(errorsOf(rs, { worldstate: ws({ on: 'bossDefeated', dataId: 'en_a' }) }), 'en_a 的出怪点在 rg_ok ⇒ 打赢就开门，这一格该安静').toEqual([])
+    const inCamp = structuredClone(rs)
+    inCamp[1].spawnGroups!.push({ enemyId: 'en_camp', count: 1, center: { x: 20, y: 0, z: -6 } })
+    const errs = errorsOf(inCamp, { worldstate: ws({ on: 'bossDefeated', dataId: 'en_camp' }) })
+    expect(errs[0].msg, 'Boss 只在营地里出怪，而营地由它开的门锁着 ⇒ 这就是自锁，话术要跟着 boss 这一类说').toContain('boss(ws_test) 住在 rg_camp')
+    expect(errorsOf(rs, { worldstate: ws({ on: 'bossDefeated', dataId: 'en_nowhere' }) })[0].msg, '找不到出怪点 ⇒ boss-noloc，不许当成"总会打赢"').toContain('boss-noloc')
+  })
+
+  it('`on:\'firstParry\'` 这类没有空间位置的事件按可得处理：这一格量位置与先后，不量"事件会不会发生"', () => {
+    const errs = errorsOf(gatedPair(), { worldstate: ws({ on: 'firstParry' }) })
+    expect(errs, '全局事件是 regionId:null 而不是 usable:false：把它当拿不到，真表上 flag.parry_taught 那一类就会集体假红').toEqual([])
+  })
+
+  it('对话树按 `npc` 落回那块地，节点与**选项**的 setFlags 都算这棵树会立的旗（乐观口径）', () => {
+    /** 把 `npc_c` 放到 `who` 那一区，并交回"这棵树会立 KEY"那两份数据 */
+    const withTree = (who: 'rg_ok' | 'rg_camp', by: 'node' | 'choice'): { rs: Row[]; dlg: unknown[] } => {
+      const rs = gatedPair()
+      rs[who === 'rg_ok' ? 0 : 1].interactables!.push(who === 'rg_ok'
+        ? { id: 'npc_c', kind: 'npc', pos: { x: -6, y: 0, z: 6 } }
+        : { id: 'npc_c', kind: 'npc', pos: { x: 24, y: 0, z: 6 } })
+      const effects = { setFlags: [KEY] }
+      const node = by === 'node' ? { id: 'n1', effects } : { id: 'n1', choices: [{ id: 'c1', effects }] }
+      return { rs, dlg: [{ id: 't_test', npc: 'npc_c', nodes: [node] }] }
+    }
+    const a = withTree('rg_ok', 'node')
+    expect(errorsOf(a.rs, { dialogue: a.dlg }), '树的主人在起始区 ⇒ 营地该开得了解锁这一格不该红').toEqual([])
+    const b = withTree('rg_ok', 'choice')
+    expect(errorsOf(b.rs, { dialogue: b.dlg }), '选项里的 setFlags 也是这棵树会立的旗：只读节点就会把真表那 34 条当成不存在').toEqual([])
+    const c = withTree('rg_camp', 'node')
+    const errs = errorsOf(c.rs, { dialogue: c.dlg })
+    expect(errs[0].msg, '那棵树的主人在营地里，而营地由它开的门锁着 ⇒ 自锁，话术要跟着 dialogue 这一类说').toContain('dialogue(t_test) 住在 rg_camp')
+    const ghost = errorsOf(gatedPair(), { dialogue: [{ id: 't_ghost', npc: 'npc_missing', nodes: [{ id: 'n1', effects: { setFlags: [KEY] } }] }] })
+    expect(ghost[0].msg, 'npc 指不到任何 kind:npc 的交互物 ⇒ dialogue-noloc，usable:false，不许当成"总会说到那一句"').toContain('dialogue-noloc')
+  })
+
+  it('几何上就走不到的区，⑥-a 不再补一句"钥匙拿不到"：一个根因只说一遍（⑤ 那三句先响，锁在区里的箱子仍说自己解不开）', () => {
+    const [a, c] = apartPair()
+    c.unlockFlag = KEY
+    c.interactables!.push({ id: 'gt_key', kind: 'gate', pos: { x: 220, y: 0, z: 6 }, setsFlag: KEY })
+    c.interactables!.push({ id: 'ch_lock', kind: 'chest', pos: { x: 215, y: 0, z: -6 }, requiresFlag: KEY })
+    const errs = errorsOf([a, c])
+    expect(errs.map((e) => e.where), `走不到（⑤）与拿不到钥匙（⑥）是两个根因，但区域那一格只许 ⑤ 说：${onlyErrs(errs)}`)
+      .toEqual(['rg_ok ⇢ rg_camp', 'rg_ok', 'rg_camp', 'rg_camp.interactables(ch_lock).requires'])
+  })
+
+  it('锁吃的旗压根没有写方 ⇒ ⑥ 一句不说：那句话归 `ledger-rules.mjs` 的旗标账（两个主人各说半句）', () => {
+    const rs = gatedPair()
+    expect(lockRoster(rs).map((l) => l.where), '这把锁真的在场，所以下面那句"0 条"不是整格没判').toContain('rg_camp.unlockFlag')
+    expect(keyHome(KEY, flagCarriers(rs, undefined, undefined)), 'KEY 没有任何写方 ⇒ 归旗标账，不归这里').toEqual([])
+    expect(errorsOf(rs)).toEqual([])
+  })
+})
+
+describe('⑦ 落进上锁区的边不许无证白送（需求 §9「需不需要钥匙」的后半句）', () => {
+  it('不吃钥匙也不是铸钥匙的门 ⇒ 红，并把运行时那句与两个真表修法一起端出来', () => {
+    const errs = errorsOf(writerIn(gatedPair(null), 'rg_ok'))
+    expect(errs.map((e) => e.where), `营地开着、钥匙在起始区拿得到，而这条边白送 ⇒ 只该红这一条：${onlyErrs(errs)}`).toEqual(['rg_ok.interactables(el_up).to'])
+    expect(errs[0].msg, '这句话的后果是运行时的，不是审美的').toContain('Streaming.isRegionUnlocked')
+    expect(errs[0].msg, '两个修法各有一条真数据当样子，报错要直接把它们端出来').toContain('el_resthold_well')
+    expect(errs[0].msg).toContain('br_brokenbar_gate')
+  })
+
+  it('「门就是钥匙的锻造处」这一豁免认的是 setsFlag == 那把钥匙，不是「这条边有 setsFlag」', () => {
+    const rs = writerIn(gatedPair(null), 'rg_ok')
+    rs[0].interactables![0].setsFlag = KEY
+    expect(errorsOf(rs), '边自己立目的区那把钥匙 ⇒ 走过就拿到，不是无证：这一格是 br_brokenbar_gate 的形状').toEqual([])
+    rs[0].interactables![0].setsFlag = 'flag.something_else'
+    expect(errorsOf(rs).map((e) => e.where), '换成另一面旗：KEY 仍由起始区的写方立得起来 ⇒ 豁免不该跟着走').toEqual(['rg_ok.interactables(el_up).to'])
+  })
+
+  it('自环与落点歧义都不归 ⑦ 判：前者没进任何区，后者是② 的一句话', () => {
+    const loop = writerIn(gatedPair(null), 'rg_ok')
+    loop[0].interactables![0].to = { x: 8, y: 0, z: 8 }
+    expect(errorsOf(loop), '落回自己区的捷径（gt_brokenbar_backdoor 就是这一条）不该被 ⑦ 点名').toEqual([])
+    const both = writerIn(gatedPair(null), 'rg_ok')
+    both[0].interactables![0].to = { x: 10, y: 0, z: 0 } // 正正压在 rg_ok 与 rg_camp 共用的那一面（x=10）上
+    const errs = errorsOf(both)
+    expect(errs.length, '同一个 where 上不许两句话挤成一坨：② 的红只报一次').toBe(1)
+    expect(errs[0].msg).toContain('rg_ok 与 rg_camp')
+  })
+
+  it('真表 8 条边的豁免理由各有主人，其中 3 条靠 forbid 关掉起点 —— 这一腿不是死代码', () => {
+    const carriers = flagCarriers(regions, worldstate, dialogue)
+    const byId = new Map(regions.map((r) => [String(r.id), r]))
+    const reasonOf = (e: ReturnType<typeof travelEdges>[number]): string => {
+      const owners = regionsContaining(regions, e.to)
+      if (owners.length !== 1) return '落点歧义（归②）'
+      const key = byId.get(owners[0])?.unlockFlag as string | undefined
+      if (typeof key !== 'string' || !carriers.has(key)) return '目的区不上锁（或钥匙归旗标账）'
+      if (owners[0] === e.regionId) return '自环'
+      if (e.requires.includes(key)) return '付钥匙'
+      if (e.setsFlag === key) return '锻造处'
+      return unlockReachability(regions, carriers, { forbid: key }).open.has(e.regionId) ? '★真侧门' : '免疫（forbid 关掉起点）'
+    }
+    const reasons = travelEdges(regions).map(reasonOf)
+    expect(reasons.filter((r) => r === '★真侧门'), `无证侧门：${reasons.join(' / ')}`).toEqual([])
+    const tally: Record<string, number> = {}
+    for (const r of reasons) tally[r] = (tally[r] ?? 0) + 1
+    expect(tally, '八条边的豁免分解换了 = 有人改锁或改边：免疫那一腿如果掉到 0，⑦ 就只剩三条静态豁免可说了').toEqual({ 付钥匙: 1, 锻造处: 3, 自环: 1, '免疫（forbid 关掉起点）': 3 })
+    const noKey = unlockReachability(regions, carriers, { forbid: 'flag.left_resthold' })
+    expect(noKey.open.has('rg_earless_deeps'), '排水斜道那条边靠的就是这句话免掉的：起点区在不拿休垒钥匙时必须关着').toBe(false)
+    expect(unlockReachability(regions, carriers).open.has('rg_earless_deeps'), '对照：不禁任何旗时它是开放的（上面那句不是"永远到不了深窖"）').toBe(true)
   })
 })
 
@@ -505,6 +734,19 @@ describe('消费端：判据在生产里有人读，而它的每一个导出都�
     const calls = calledNames(read(VD), 'validate')
     expect(calls, `从 ${VD} 读不到任何 \`validateX(\` 调用 ⇒ 抽取器瞎了；null 与"少了这一个"是两件事，别把前者报成后者`).not.toBeNull()
     expect(calls!.includes('validateWorldGraph'), `主循环调用的是这些：${calls!.join(' ')}；validateWorldGraph 不在里面 ⇒ 声明存在但不跑`).toBe(true)
+  })
+
+  it('消费端把两份名册一起递了过去：⑥⑦ 认的就是 `worldstate.json` 与 `dialogue.json` 这两个名字（§55 的第二半）', () => {
+    const fn = (functionBodies(read(VD), 'validate') ?? []).find((f) => f.name === 'validateWorldGraph')
+    expect(fn, '读不到 `validateWorldGraph()` ⇒ 这一格谈不上"递没递第二参数"').not.toBeUndefined()
+    expect(fn!.body, '第二参数必须成对给两份名册：只递一张，另一张的写方就在判据里凭空消失（真表 30 棵对话树 + 6 条规则）').toMatch(
+      /worldGraphFindings\([^)]*\{\s*worldstate:\s*data\['worldstate\.json'\]\s*,\s*dialogue:\s*data\['dialogue\.json'\]\s*\}/)
+    // 反向：判据本体在没有第二参数时**必须**红，而不是安静（否则这一格递不递都一样）
+    const rs = barePair()
+    expect(errorsOf(rs).map((e) => e.where),
+      '不递名册 ⇒ ⑥⑦ 该喊"门在空转"；这条不红，上面那句静态匹配就只是排版检查').toEqual(['worldstate.json+dialogue.json'])
+    expect(errorsOf(rs, { worldstate: [], dialogue: [{ id: 't_key', npc: 'gt_mid', nodes: [{ id: 'n1', effects: { setFlags: [KEY] } }] }] }))
+      .toEqual([])
   })
 
   it('判据本体的每一个导出都至少有一个读者：没人读的那一格就是 §55 的欠账', () => {

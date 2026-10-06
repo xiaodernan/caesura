@@ -1079,7 +1079,10 @@ function validateItems(weaponIds, rarityIds, affixDefs) {
       report.sub(file, `${w}.use`, it.use, { heal: { min: 0, optional: true }, corruption: { max: -1, int: true, optional: true } })
       if (isObj(it.use)) {
         for (const k of Object.keys(it.use)) {
-          if (k !== 'heal' && k !== 'corruption' && k !== 'throw') report.error(file, `${w}.use.${k}`, '没有消费方（use 只认 heal/corruption/throw——KI-023① 声东击西）')
+          if (k !== 'heal' && k !== 'corruption' && k !== 'throw' && k !== 'inspect') report.error(file, `${w}.use.${k}`, '没有消费方（use 只认 heal/corruption/throw/inspect——KI-023① 声东击西 + KI-046 检视动词）')
+          if (k === 'inspect' && (typeof it.use.inspect !== 'string' || it.use.inspect.trim().length === 0)) {
+            report.error(file, `${w}.use.inspect`, 'inspect 必须是非空字符串（检视文本：Inventory.inspect 播报的就是它）')
+          }
           if (k === 'throw' && isObj(it.use.throw)) {
             const t = it.use.throw
             for (const [tk, tv] of Object.entries(t)) {
@@ -1092,8 +1095,8 @@ function validateItems(weaponIds, rarityIds, affixDefs) {
         }
         // 「至少写一个用法」那一句必须与本条**同一个名单**：只写 `throw` 的消耗品（一颗只会被扔出去的
         // 晶石）是合法的，而条件里漏掉 throw 时上面那句新措辞就是假的（说认三种、实际只认两种）。
-        if (it.use.heal === undefined && it.use.corruption === undefined && it.use.throw === undefined) {
-          report.error(file, `${w}.use`, '必须至少写 heal/corruption/throw 之一，否则这个 use 没有消费方')
+        if (it.use.heal === undefined && it.use.corruption === undefined && it.use.throw === undefined && it.use.inspect === undefined) {
+          report.error(file, `${w}.use`, '必须至少写 heal/corruption/throw/inspect 之一，否则这个 use 没有消费方')
         }
       }
     }
@@ -2064,17 +2067,23 @@ function validateWeather() {
 // ---- regions.json 的世界图几何（KI-100：需求 §9「地图设计」的第一台机器读者）----
 /**
  * 判据本体在 `world-graph-rules.mjs`：①作者标注的点位不许伸出本区 bounds，②每条通行器边的落点必须
- * **恰好**落进一个区域，③一个区域的锚点不许全部共线。这里只递表、只报 findings —— 判据不认识文件。
+ * **恰好**落进一个区域，③一个区域的锚点不许全部共线，④两盒不许重叠出体积，⑤从起始区走遍全图且每区有出路，
+ * ⑥每一把锁的钥匙都拿得到，⑦落进上锁区的边不许无证白送。这里只递表、只报 findings —— 判据不认识文件。
+ *
+ * ⑥⑦ 要认**两份别表的旗标**（`worldstate.json` 的 setFlag 规则、`dialogue.json` 的对话效果），
+ * 所以这一格递的不止 `regions.json`：不递，判据只能把指不到位置的旗标当成别人的账跳过，
+ * 「钥匙锁在自己开的那扇门后面」这一整类就永远读不到。`tests/unit/world-graph.test.ts` 的
+ * 「消费端」那一节钉的正是这个第二参数。
  *
  * `regions.json` 本来就有报告者（区域字段、旗标对账那几段），所以 `mapFindings` 那道门不会因为这一格变绿；
- * 它早就绿着，而绿的那句话是"这张表至少有人看"，不是"这张表的每一维都有人看"。这一格补的正是几何那一维：
+ * 它早就绿着，而绿的那句话是"这张表至少有人看"，不是"这张表的每一维都有人看"。这一格补的正是几何与先后那一维：
  * 在 KI-100 之前，`to` 只被当成 vec3 验一次型，落点在不在虚空、有没有同时踩进两个叠层区，一个读者都没有。
  */
 function validateWorldGraph() {
   const file = 'regions.json'
   // 没有 warn 分支不是漏了：`worldGraphFindings` 今天只产 error，写一条走不到的分派就是给同一句话配第二个口径。
   // 判据哪天要出 WARN，会由那条钉着"这里的出口只有 report.error"的证人先红一次。
-  for (const f of worldGraphFindings(data[file])) report.error(f.file, f.where, f.msg)
+  for (const f of worldGraphFindings(data[file], { worldstate: data['worldstate.json'], dialogue: data['dialogue.json'] })) report.error(f.file, f.where, f.msg)
 }
 
 /** loot.json 里真正会掉出来的物品全集（rolls + firstKill）。点亮源必须落在这里面，否则那一页永远点不亮 */function lootedItemIds() {
