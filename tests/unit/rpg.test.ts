@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { registry } from '@/core/Registry'
 import { registerGameData, progression, items } from '@/data'
-import type { ItemData, MovesetData, ProgressionData, WeaponData } from '@/data/schema'
+import type { EnemyData, ItemData, LootTableData, MovesetData, OriginData, ProgressionData, WeaponData } from '@/data/schema'
 import { Progression, ATTR_KEYS, originOf, originTotal, progressionData } from '@/rpg/Progression'
-import { Inventory, itemOf, rollAffixes } from '@/rpg/Inventory'
+import { Inventory, itemOf, rollAffixes, type GearInstance } from '@/rpg/Inventory'
 import { Equipment, SLOTS, equipSeal } from '@/rpg/Equipment'
 import { upgradeStep, weaponDamageMul, armorDefMul, maxLevelOf, tryUpgrade, salvageValue } from '@/rpg/Upgrade'
 import { LootDirector, allGearItems } from '@/rpg/Loot'
 import { RpgRuntime, gearName } from '@/rpg/Runtime'
-import { refreshPlayer, type ModsSink } from '@/rpg/Settlement'
+import { KillSettlement, gearLabel, refreshPlayer, reportGrants, type ModsSink } from '@/rpg/Settlement'
+import { bus } from '@/core/EventBus'
 import { Rng } from '@/core/Math'
 
 /**
@@ -417,5 +418,265 @@ describe('总装（RpgRuntime）：装备/升级/洗点/使用道具的编排', 
     const boots = inv.addGear('ar_silent_boots')
     eq.equip(inv, boots.uid)
     expect(eq.totals(inv).noiseMul).not.toBe(1)
+  })
+})
+
+/**
+ * 装备线分支死角（批 12）：Equipment / Runtime / Loot / Settlement 的防御腿。
+ * 这些分支今天的数据到不了（表里每件装备都齐全、每个出身都有武器），它们为的是**坏形状**：
+ * 手改档、老版本档、指向已消失实例的槽位——「进得来的每一格都要有主」。
+ * 探针夹具全部带 probe 前缀、只在运行时注册，不进 data/json（§55 管的是世界数值，不是测试）。
+ */
+describe('装备线分支死角（批 12）', () => {
+  registry.register('wp_probe_ghostblade', {
+    id: 'wp_probe_ghostblade', nameKey: 'item.probe', displayName: '探针·无主剑', kind: 'weapon',
+    stack: 1, value: 5, desc: '武器件缺 weaponId 的探针（不进任何表）',
+    gear: { slot: 'weapon', rarity: 'common', weight: 2 },
+  } as unknown as ItemData)
+  registry.register('ar_probe_nodef', {
+    id: 'ar_probe_nodef', nameKey: 'item.probe', displayName: '探针·无甲盔', kind: 'armor',
+    stack: 1, value: 5, desc: '护甲缺 def 的探针（不进任何表）',
+    gear: { slot: 'helm', rarity: 'common', weight: 1 },
+  } as unknown as ItemData)
+  registry.register('ar_probe_tank', {
+    id: 'ar_probe_tank', nameKey: 'item.probe', displayName: '探针·重盔', kind: 'armor',
+    stack: 1, value: 5, desc: '同重量不同 DEF 的探针（adviceStars 的确定性夹具）',
+    gear: { slot: 'helm', rarity: 'common', weight: 1, def: 50 },
+  } as unknown as ItemData)
+  registry.register('ar_probe_tank2', {
+    id: 'ar_probe_tank2', nameKey: 'item.probe', displayName: '探针·更重盔', kind: 'armor',
+    stack: 1, value: 5, desc: '同重量更高 DEF 的探针（同槽比较的确定性夹具）',
+    gear: { slot: 'helm', rarity: 'common', weight: 1, def: 80 },
+  } as unknown as ItemData)
+  registry.register('loot_probe_ghost', {
+    id: 'loot_probe_ghost', nameKey: 'loot.probe', displayName: '探针掉落',
+    rolls: [{ id: 'r_ghost', gearBand: [{ rarity: 'r_ghost', weight: 1 }] }],
+  } as unknown as LootTableData)
+  registry.register('loot_probe_item', {
+    id: 'loot_probe_item', nameKey: 'loot.probe', displayName: '探针补给',
+    rolls: [{ id: 'r_dross', item: 'it_dross' }], // 无 chance 的 roll：attempts 恒真，给件是确定的
+  } as unknown as LootTableData)
+
+  /** 坏档形状：gears 里的实例指向一件非装备。addGear 进不来这个形状，老档/手改档能 */
+  const corrupt = (inv: Inventory): GearInstance => {
+    const g: GearInstance = { uid: 'g_probe_corrupt', itemId: 'it_timbite', level: 0, affixes: [] }
+    inv.gears.push(g)
+    return g
+  }
+  /** 探针出身：六维给满法定的六格，weaponId/gearIds 由用例决定（不进数据表，用完即弹） */
+  const probeOrigin = (id: string, weaponId: string, gearIds?: string[]): OriginData => ({
+    id, nameKey: 'origin.probe', displayName: '探针出身',
+    attrs: { str: 1, dex: 1, ton: 1, vig: 1, ovr: 1, fis: 1 },
+    weaponId, blurb: '探针出身（不进数据表）', ...(gearIds ? { gearIds } : {}),
+  })
+  const withProbeOrigin = (o: OriginData, fn: () => void): void => {
+    const origins = prog().origins
+    origins.push(o)
+    try { fn() } finally { origins.pop() }
+  }
+
+  it('equip 的三条拒绝腿：未知 uid / 实例指向非装备 / 音徽不走通用入口', () => {
+    const inv = new Inventory(21)
+    const eq = new Equipment()
+    expect(eq.equip(inv, 'g_no_such')).toBeNull()
+    expect(eq.equip(inv, corrupt(inv).uid)).toBeNull() // targetSlot 认不出槽位
+    const seal = inv.addGear('seal_firstbeat', 0, [])
+    expect(eq.equip(inv, seal.uid)).toBeNull() // 音徽必须走 equipSeal：A/B 落格只有那一个主人
+    expect(eq.slots.sealA, '通用入口不许碰音徽槽').toBeUndefined()
+  })
+
+  it('槽位指向已消失实例：equipped/weightOf/totals 全部如实按空处理（?? null 腿）', () => {
+    const inv = new Inventory(22)
+    const eq = new Equipment()
+    expect(eq.totals(inv).weaponId).toBeNull()
+    const g = inv.addGear('ar_mutewrap_helm', 0, [])
+    eq.equip(inv, g.uid)
+    inv.removeGear(g.uid) // 卖掉/分解身上那件之后槽位忘了摘 = 坏档的经典形状
+    expect(eq.equipped(inv, 'helm')).toBeNull()
+    expect(eq.weightOf(inv)).toBe(0)
+    expect(eq.totals(inv).defense).toBe(0)
+  })
+
+  it('装备实例指向非装备件：weight/totals 不炸也不进账（gear?.weight ?? 0 与 continue 腿）', () => {
+    const inv = new Inventory(23)
+    const eq = new Equipment()
+    eq.slots.helm = corrupt(inv).uid // 通用 equip 进不来，直改槽位模拟坏档
+    expect(eq.weightOf(inv)).toBe(0)
+    expect(eq.totals(inv).defense).toBe(0)
+  })
+
+  it('preview 的两条 null 腿：未知 uid / 实例指向非装备件', () => {
+    const inv = new Inventory(24)
+    const eq = new Equipment()
+    expect(eq.preview(inv, 'g_no_such')).toBeNull()
+    expect(eq.preview(inv, corrupt(inv).uid)).toBeNull()
+  })
+
+  it('adviceDelta：未知 uid 给 0；表里少一列时那一轴不参与（k===undefined continue 腿）', () => {
+    const inv = new Inventory(25)
+    const eq = new Equipment()
+    expect(eq.adviceDelta(inv, 'g_no_such')).toBe(0)
+    const g = inv.addGear('ar_probe_tank', 0, [])
+    const w = prog().gearAdvice.weights as Record<string, number | undefined>
+    const saved = w.lootLuck
+    delete w.lootLuck // 今天表↔类型是对账的；这一腿为"明天表少一列"而立
+    try {
+      expect(eq.adviceDelta(inv, g.uid)).toBeGreaterThan(0)
+    } finally { w.lootLuck = saved }
+    expect(w.lootLuck, '用例退出后表必须复原').toBe(saved)
+  })
+
+  it('adviceStars：坏件不参与、非正差分不给星、同槽取最高分', () => {
+    const inv = new Inventory(26)
+    const eq = new Equipment()
+    corrupt(inv) // preview 认不出槽 → continue
+    inv.addGear('ar_probe_nodef', 0, []) // 0 DEF / 1kg：差分 = -1.5，不给星
+    inv.addGear('ar_probe_tank', 0, []) // 48.5 分，先占住 best
+    const top = inv.addGear('ar_probe_tank2', 0, []) // 78.5 分，把 best 顶掉
+    expect(eq.adviceStars(inv)).toEqual({ helm: top.uid })
+  })
+
+  it('totalsFrom 的两件腿：武器缺 weaponId 落 null、护甲缺 def 按 0 计', () => {
+    const inv = new Inventory(27)
+    const eq = new Equipment()
+    eq.equip(inv, inv.addGear('wp_probe_ghostblade', 0, []).uid)
+    const t = eq.totals(inv)
+    expect(t.weaponId).toBeNull()
+    expect(t.weaponDamageMul).toBe(1)
+    eq.unequip('weapon')
+    eq.equip(inv, inv.addGear('ar_probe_nodef', 0, []).uid)
+    expect(eq.totals(inv).defense).toBe(0)
+  })
+
+  it('词缀消费链的剩余分支：四种轴各进自己的格，表外词缀一个子都不进账', () => {
+    const inv = new Inventory(28)
+    const eq = new Equipment()
+    eq.equip(inv, inv.addGear('wp_tuning_sword_item', 0, [
+      { id: 'af_harmonic', value: 0.05 },
+      { id: 'af_fermata', value: 2 },
+      { id: 'af_staccato', value: 1 },
+      { id: 'af_bellwarden', value: 0.08 },
+      { id: 'af_probe_ghost', value: 99 }, // 表里查无此词缀 → continue
+    ]).uid)
+    const t = eq.totals(inv)
+    expect(t.execMul).toBeCloseTo(1.05, 5)
+    expect(t.perfectBlockBonusTicks).toBe(2)
+    expect(t.lightStartupTicks).toBe(1)
+    expect(t.bellBonus).toBeCloseTo(0.08, 5)
+    expect(t.critRate, '表外词缀没有偷偷进账').toBe(0)
+  })
+
+  it('RpgRuntime.equip 的两条拒绝腿：未知 uid / 坏实例认不出槽', () => {
+    const rt = new RpgRuntime('origin_tuner')
+    expect(rt.equip('g_no_such')).toMatchObject({ ok: false })
+    expect(rt.equip(corrupt(rt.inv).uid)).toMatchObject({ ok: false })
+  })
+
+  it('useItem 对非消耗品的拒绝腿（音色石是通货不是药，研读不许吃掉它）', () => {
+    const rt = new RpgRuntime('origin_tuner')
+    rt.inv.add('it_timbite', 10)
+    expect(rt.useItem('it_timbite')).toMatchObject({ ok: false, heal: 0, corruption: 0 })
+    expect(rt.inv.count('it_timbite')).toBe(10)
+  })
+
+  it('restore 不带 movements（v3 老档形状）：谱册如实空白而不是编一套', () => {
+    const rt = new RpgRuntime('origin_tuner')
+    rt.restore({})
+    expect(Object.keys(rt.skillLoadout())).toEqual([])
+  })
+
+  it('出身武器的防御腿：weaponId 指向不存在的装备件 ⇒ 构造期就炸（不许静默空手）', () => {
+    withProbeOrigin(probeOrigin('origin_probe_ghost', 'wp_no_such_weapon'), () => {
+      expect(() => new RpgRuntime('origin_probe_ghost')).toThrow(/wp_no_such_weapon/)
+    })
+  })
+
+  it('出身没写 gearIds：只带武器照常上肩（?? [] 空档腿）', () => {
+    withProbeOrigin(probeOrigin('origin_probe_bare', 'wp_drawpin_spear'), () => {
+      const rt = new RpgRuntime('origin_probe_bare')
+      expect(rt.mods().weaponId).toBe('wp_drawpin_spear')
+      expect(rt.eq.slots.sealA).toBeUndefined()
+    })
+  })
+
+  it('出身自带音徽走 equipSeal 落进 A 槽，武器照常上肩（seal 腿）', () => {
+    withProbeOrigin(probeOrigin('origin_probe_seal', 'wp_drawpin_spear', ['seal_firstbeat']), () => {
+      const rt = new RpgRuntime('origin_probe_seal')
+      const sealUid = rt.eq.slots.sealA
+      expect(sealUid).toBeTruthy()
+      expect(rt.inv.gearByUid(sealUid!)!.itemId).toBe('seal_firstbeat')
+      expect(rt.mods().weaponId).toBe('wp_drawpin_spear')
+    })
+  })
+
+  it('onEnemyKilled：无掉落表的敌人给空、chance 闸门两条腿都算数', () => {
+    const inv = new Inventory('probe-bare')
+    const loot = new LootDirector(inv, new Progression('origin_tuner'))
+    expect(loot.onEnemyKilled({ id: 'en_probe_bare' } as unknown as EnemyData)).toEqual([])
+    expect(loot.isFirstKill('en_probe_bare'), '再问已不是首杀 = 空掉落也记进了状态机').toBe(false)
+    const e = { id: 'en_probe_chancy', drops: [
+      { tableId: 'loot_probe_item', chance: 0 }, // draw() < 0 恒假 ⇒ continue
+      { tableId: 'loot_probe_item', chance: 1 }, // draw() < 1 恒真 ⇒ 放行
+    ] } as unknown as EnemyData
+    expect(loot.onEnemyKilled(e).some((g) => g.type === 'item')).toBe(true)
+  })
+
+  it('gearBand 指向不存在的稀有度：这一掷如实落空，保底计数照走（不放水）', () => {
+    const inv = new Inventory('probe-ghost')
+    const loot = new LootDirector(inv, new Progression('origin_tuner'))
+    const before = loot.snapshot().gearStreak
+    expect(loot.grant('loot_probe_ghost')).toEqual([])
+    expect(loot.snapshot().gearStreak).toBe(before + 1)
+  })
+
+  it('loot.restore 的 v4 老档形状：缺首杀/缺计数都从零开始', () => {
+    const inv = new Inventory('probe-restore')
+    const loot = new LootDirector(inv, new Progression('origin_tuner'))
+    loot.onEnemyKilled(registry.get<EnemyData>('en_phantome'))
+    expect(loot.snapshot().firstKilled.length).toBeGreaterThan(0)
+    loot.restore({})
+    expect(loot.snapshot()).toMatchObject({ firstKilled: [], gearStreak: 0 })
+  })
+
+  it('reportGrants：普通件/保底件/多件/遗响 各说各的话', () => {
+    const seen: Array<{ text: string; kind?: string }> = []
+    const off = bus.on('ui.notify', (p) => seen.push(p))
+    try {
+      reportGrants([
+        { type: 'xp', id: 'resonance', count: 40, name: '遗响' },
+        { type: 'item', id: 'it_dross', count: 1, name: '残晶' },
+        { type: 'item', id: 'it_dross', count: 3, name: '残晶', pity: true },
+      ])
+    } finally { off() }
+    expect(seen).toEqual([
+      { text: '获得 残晶', kind: 'reward' },
+      { text: '保底 · 获得 残晶 ×3', kind: 'boss' },
+    ])
+  })
+
+  it('KillSettlement：非敌人与未知 dataId 的 entity.died 不走结算', () => {
+    const rt = new RpgRuntime('origin_tuner')
+    let refreshed = 0
+    const checkpoints: string[] = []
+    const ks = new KillSettlement({ rpg: rt, refresh: () => refreshed++, checkpoint: (r) => checkpoints.push(r) })
+    try {
+      bus.emit('entity.died', { id: 'deco', kind: 'prop', position: { x: 0, y: 0, z: 0 } })
+      bus.emit('entity.died', { id: 'deco', kind: 'prop', dataId: 'no_such_actor_xyz', position: { x: 0, y: 0, z: 0 } })
+      expect(refreshed).toBe(0)
+      expect(checkpoints).toEqual([])
+      expect(rt.prog.rank).toBe(1)
+      // 放行腿：真敌人走完整结算（首杀必有乐谱残页 ⇒ refresh 恰好一次）
+      bus.emit('entity.died', { id: 'e1', kind: 'enemy', dataId: 'en_phantome', position: { x: 1, y: 2, z: 3 } })
+      expect(refreshed).toBe(1)
+    } finally { ks.dispose() }
+  })
+
+  it('gearLabel：未知 uid 原样回落、素件不带尾巴、+n 带等级', () => {
+    const rt = new RpgRuntime('origin_tuner')
+    expect(gearLabel(rt, 'g_no_such')).toBe('g_no_such')
+    const plain = rt.inv.addGear('wp_drawpin_spear_item', 0, [])
+    expect(gearLabel(rt, plain.uid)).toBe(itemOf('wp_drawpin_spear_item').displayName)
+    const plus = rt.inv.addGear('wp_drawpin_spear_item', 3, [])
+    expect(gearLabel(rt, plus.uid)).toBe(`${itemOf('wp_drawpin_spear_item').displayName} +3`)
   })
 })
