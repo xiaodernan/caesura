@@ -682,11 +682,6 @@ export class Enemy {
           this.enter('combat')
         }
         break
-      case 'dead':
-        if (this.stateTick > 360 && this.data.archetype !== 'boss') {
-          // corpse fade handled by visuals; logic entity retired by AISystem
-        }
-        break
     }
     // §15.3「它也会听心跳」：玩家站住不动 ⇒ 她的警觉慢慢回落（屏息是可行解，不是 bug 绕过）
     const hb = this.data.ai.hearsHeartbeat
