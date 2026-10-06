@@ -18,7 +18,7 @@ import { unwrap, wrap } from './Integrity'
  */
 
 /** v11 起带值域状态（`state.*`，narrative §7 的 `STATE.<域>.<对象> = <枚举>`）。迁移链见文末 */
-export const SAVE_VERSION = 11
+export const SAVE_VERSION = 12
 
 /**
  * 读档时接受的版本：凡是 ≤ 当前版本、且迁移链能一路升到当前的，都可以读。
@@ -165,6 +165,17 @@ export function migrateV10toV11(p: Record<string, unknown>): Record<string, unkn
 }
 registerMigration(10, migrateV10toV11)
 
+/**
+ * v11 → v12（KI-026 设置持久化）。音频音量跟着档走：
+ * 老档没有设置块 ⇒ 迁移写 `{ audio: {} }`（空 = 全部走默认，不白送）。
+ */
+registerMigration(11, (p) => {
+  const snap = { ...(p.snapshot as Record<string, unknown>) }
+  if (!snap.settings) snap.settings = { audio: {} }
+  snap.version = 12
+  return { ...p, snapshot: snap }
+})
+
 export interface Snapshot {
   version: number
   /** 游玩秒数（HUD/存档摘要卡用） */
@@ -193,6 +204,8 @@ export interface Snapshot {
   usedInteractables: string[]
   /** 碎掉的可破坏场景物 id（v8 起，KI-023）：碎刺不可再生，读档不能白还一次破势窗 */
   brokenProps: string[]
+  /** 音频/界面设置（v12 起，KI-026）：AudioEngine.setVolume 的持久化 */
+  settings?: { audio: Record<string, number> }
   /** 成长/背包/装备/掉落状态（v2 起）。v1 老档为 null ⇒ 保留运行时基线 */
   rpg: RpgSnapshot | null
   /** 叙事进度（v7 起）：任务状态 / NPC 关系 / 对话已读节点。老档为 null ⇒ 一切从头 */
@@ -371,6 +384,8 @@ export interface SaveWorld {
   interact?: Interactables
   /** KI-023：可破坏场景物（可选）。碎裂状态同属世界状态：不存，读档就把破势窗白还一次 */
   props?: { snapshot(): string[]; restore(ids: string[] | null | undefined): void }
+  /** KI-026：音频设置持久化的消费端（可选）。读档后把存档里的音量灌回 AudioEngine */
+  audio?: { setVolume(bus: string, level: number): void; getVolume(bus: string): number }
   /** Phase 6-B：叙事进度（任务状态 / 关系 / 已读节点），同上可选 */
   quests?: Quests
   /** Phase 6-B：值域状态（`state.*`）。同样是世界状态的一部分：不存，读档就回到缺省那一格 */
@@ -413,6 +428,13 @@ export class SaveGame {
       clearedSlots: w.spawner.clearedKeys(),
       usedInteractables: w.interact ? w.interact.snapshot() : [],
       brokenProps: w.props ? w.props.snapshot() : [],
+      settings: (() => {
+        if (!w.audio) return undefined
+        const buses = ['master', 'music', 'sfx', 'ambience', 'ui']
+        const audio: Record<string, number> = {}
+        for (const b of buses) audio[b] = w.audio.getVolume(b)
+        return { audio }
+      })(),
       rpg: w.rpg ? w.rpg.snapshot() : null,
       quest: w.quests ? w.quests.snapshot() : null,
       states: w.states ? w.states.snapshot() : {}
@@ -493,6 +515,12 @@ export class SaveGame {
     w.interact?.restore(s.usedInteractables)
     // 碎裂的可破坏场景物：v7 及以前的档没记 ⇒ 空集，那份档里的刺会再立一次（见 v7→v8 迁移注释）
     w.props?.restore(s.brokenProps)
+    // KI-026：读档后把存档里的音量灌回 AudioEngine（setVolume 即时生效）
+    if (s.settings?.audio && w.audio) {
+      for (const [bus, vol] of Object.entries(s.settings.audio)) {
+        if (typeof vol === 'number') w.audio.setVolume(bus, vol)
+      }
+    }
     // floorY 不在这里算：调用方 teleport 之后由 world/Surface 给（保持「谁能算出脚下」只有一个答案）
   }
 }

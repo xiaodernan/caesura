@@ -34,6 +34,7 @@ import { VfxLayer } from '@/vfx/VfxLayer'
 import { ColorGrade } from '@/vfx/ColorGrade'
 import { Hud } from '@/ui/Hud'
 import { Stakerite } from '@/ui/Stakerite'
+import { MapUI } from '@/ui/MapUI'
 import { TitleScreen } from '@/ui/TitleScreen'
 import { DialogueBox } from '@/ui/DialogueBox'
 import { CombatDebugger } from '@/tools/CombatDebugger'
@@ -150,12 +151,59 @@ const dialogueBox = new DialogueBox({
 })
 dialogueBox.setSpeakerResolver((id) => registry.maybeGet<NpcData>(id)?.displayName ?? id)
 
-function setPanelOpen(open: boolean): void {
+/**
+ * 区域图（需求 §43，`ui/MapUI.ts`）。**Tab / 手柄 6 号键开的是它** —— TD-002 那条「按着地图的名字在调音」
+ * 从这里结案：`map` 这个虚拟按钮的名字与职责终于一致了。
+ *
+ * 依赖全部注入、面板自己不养第二份事实：区名/坐标/色板/拍网来自 `regions.json`，「踏足」只有一个读数
+ * （`streaming.isExplored`），通行设施是 `Interactables` 的现读清单 + 它自己的 `stateOf`。
+ * 它**不落任何快旅**（§4.3 那条要等「详图选中调音桩 → 确认」，登记在 KI-087）。
+ */
+const mapUi = new MapUI(regions, {
+  regionAt: (pos) => streaming.regionAt(pos),
+  isExplored: (pos) => streaming.isExplored(pos),
+  chunkSize: () => streaming.chunkSize,
+  playerPos: () => player.pos,
+  // 镜头朝向 = 从相机指向玩家（相机在 target + (sin yaw, cos yaw)·dist，见 CameraRig §update）
+  viewDir: () => ({ x: -Math.sin(rig.yaw), z: -Math.cos(rig.yaw) }),
+  facilities: () => interact.all.map((it) => ({
+    id: it.id, kind: it.kind, state: interact.stateOf(it),
+    regionId: it.regionId, regionName: it.regionName, pos: it.pos,
+  })),
+  // 与调音桩面板同一条纪律（KI-061）：面板只"提出"收起来，解冻世界与交还输入是持有者的活
+  onRequestClose: () => setMapOpen(false),
+})
+
+type Overlay = 'panel' | 'map' | null
+/**
+ * **overlay 的唯一所有者**（KI-097 收拢 KI-061/KI-062 那两半）：世界停摆、输入所有权、菜单意图的
+ * 认领与交还，全在这一处。两块面板互相排他——同时开着两块 overlay = 两份 uiStep 抢同一条意图通道，
+ * 而 `paused`/`enabled` 会由先关的那一块解开（那个 bug 与「点背景冻死游戏」同族）。
+ *
+ * `input.uiOwner = ` 因此**在 main.ts 里只有一处**：它不是 `panel`/`map` 的字面量，而是这个 `Overlay`
+ * 变量本身——所有权的值就是"哪一块 overlay 在场"，第二处赋值等于第二份答案。
+ */
+let overlay: Overlay = null
+
+function setOverlay(open: Overlay): void {
+  overlay = open
+  if (open === 'panel') { mapUi.close(); panel.show() }
+  else if (open === 'map') { panel.close(); mapUi.show() }
+  else { panel.close(); mapUi.close() }
   // uiOwner：菜单读数的所有权（KI-062）。开着才发意图、关着一格都不发，也不抢浏览器的默认行为。
   // 玩法那条（enabled）与这条是两件事：世界停摆期间正是菜单需要读数的时候。
-  if (open) { panel.show(); time.paused = true; input.enabled = false; input.uiOwner = 'panel' }
-  else { panel.close(); time.paused = false; input.enabled = true; input.uiOwner = null }
+  time.paused = overlay !== null
+  input.enabled = overlay === null
+  input.uiOwner = overlay
 }
+
+/** 调音桩/商摊面板（既有调用点的名字不变：`__caesura.setPanelOpen`、面板的 onRequestClose） */
+function setPanelOpen(open: boolean): void { setOverlay(open ? 'panel' : null) }
+/** 地图（`map` 键与面板的 onRequestClose 走它） */
+function setMapOpen(open: boolean): void { setOverlay(open ? 'map' : null) }
+/** 关掉当前这块 overlay（Esc 与 `map` 键的"再按一次"共用同一句，免得两处各关一遍） */
+function closeOverlay(): void { setOverlay(null) }
+const overlayOpen = (): boolean => overlay !== null
 new CombatDebugger()
 new Haptics(input)
 
@@ -319,6 +367,10 @@ function openDialogue(npcId: string): void {
 /** 交互物落地：调音桩休息、机关传送（= UE 的 Level Streaming 遮蔽传送） */
 function applyInteract(id: string): void {
   const r = interact.use(id, player.pos)
+  /* 面板的入口**走的是"你对着什么按 E"**，不再是 Tab（KI-097）：`map` 键归位成地图之后，
+     调音桩面板就只有交互这一条路——动词是数据里那个「调音」，玩家按的是眼前那根柱子。
+     `rest` 那一路（回血 + 检查点存档）照旧，面板是它旁边那件顺手的事，不替代它。 */
+  if (r.ok && r.kind === 'checkpoint' && !player.stats.dead && !panel.isOpen) setPanelOpen(true)
   if (r.ok && r.kind === 'shop' && !panel.isOpen) setPanelOpen(true)
   if (r.rest && !player.stats.dead) { player.rest(); checkpoints.request('rest') }
   if (r.ok && r.lootTable) openLootTable(settlementDeps, r.lootTable)
@@ -345,7 +397,7 @@ addEventListener('pointerdown', () => audio.start())
 addEventListener('keydown', (e) => {
   if (e.code === 'Escape' && dialogueBox.isOpen) return // 交给对话框自己处理（先关对话，不解冻世界）
   if (e.code === 'Escape') {
-    if (panel.isOpen) setPanelOpen(false) // 面板开着时 Esc 先收面板，不会顺手把游戏解冻
+    if (overlayOpen()) closeOverlay() // overlay 开着时 Esc 先收它，不会顺手把游戏解冻/又解一次
     else time.paused = !time.paused
   }
 })
@@ -406,15 +458,14 @@ if (import.meta.env.DEV) {
 const core = {
   update(dt: number, t: GameTime, inp: Input) {
     if (inp.frame.edges.has('map')) {
-      if (panel.isOpen) setPanelOpen(false)
-      else {
-        const f = interact.focus(player.pos)
-        if (f?.kind === 'checkpoint') setPanelOpen(true)
-        else if (f?.kind === 'shop') setPanelOpen(true) // KI-055②：交易要人在商摊前，不再是"面板开了在哪都能买"
-        else bus.emit('ui.notify', { text: '需在调音桩前调音', kind: 'info' })
-      }
+      /* `map` 键现在**只开地图**（KI-097 / TD-002：「按着地图的名字在调音」到此结案）。
+         **收起**不走这里：有 overlay 在场时 `time.paused` 与 `enabled=false` 让这一段根本跑不到，
+         关闭走的是 UI 意图通道的 `back`（Tab 在菜单里 = 收起一层，见 `core/Input.ts > UI_BINDS`）。
+         所以这一句只可能在"没有 overlay"时触发；`!overlayOpen()` 是那句意图的显式说法，
+         而不是多一个分支——两块面板叠着开会让两份 uiStep 抢同一条意图通道。 */
+      if (!overlayOpen()) setMapOpen(true)
     }
-    if (panel.isOpen || dialogueBox.isOpen) return // 面板/对话打开时世界停摆：不再吃移动/攻击输入
+    if (overlayOpen() || dialogueBox.isOpen) return // overlay/对话打开时世界停摆：不再吃移动/攻击输入
     if (inp.frame.edges.has('lockOn')) lock.toggle()
     for (const [i, act] of (['ability1', 'ability2', 'ability3'] as const).entries()) {
       if (inp.frame.edges.has(act)) selectWeaponSlot(i)
@@ -490,9 +541,12 @@ const core = {
 }
 
 const loop = new GameLoop(time, input, (alpha, realDelta) => {
-  // 菜单读数喂给面板：世界停摆时 `core.update` 那一段整个跳过，所以意图只能在渲染回调里给
-  // （每帧一次，且 `uiEdges` 是 edge 语义 —— 一直按着不会连发）。KI-062。
-  if (panel.isOpen) panel.uiStep(input.uiEdges)
+  // 菜单读数喂给**在场的那块 overlay**：世界停摆时 `core.update` 那一段整个跳过，所以意图只能在
+  // 渲染回调里给（每帧一次，且 `uiEdges` 是 edge 语义 —— 一直按着不会连发）。KI-062。
+  // 两块面板互斥（`setOverlay` 保证），所以这里是 if/else 而不是两个都喂——都喂就是两份 uiStep
+  // 抢同一条意图通道，一次 ↑↓ 会被数两遍。
+  if (overlay === 'panel') panel.uiStep(input.uiEdges)
+  else if (overlay === 'map') mapUi.uiStep(input.uiEdges)
   arena.update(alpha, realDelta)
   vfx.update(realDelta) // particles run on real time — hitstop must not freeze VFX (tech-arch §4 rule 3)
   audio.update(realDelta)
@@ -517,7 +571,7 @@ const saveBackup = typeof indexedDB === 'undefined' ? null : new IdbStore('caesu
  * 而"摘要卡上的时间是从外面带进来的"这条也就没有证人。
  */
 const saves = new SaveGame(
-  { player, streaming, spawner, clock: rhythm, time, rpg, interact, props, quests, states: worldStates, now: () => Date.now() },
+  { player, streaming, spawner, clock: rhythm, time, rpg, interact, props, quests, states: worldStates, audio: { setVolume: (b: string, v: number) => audio.setVolume(b as never, v), getVolume: (b: string) => audio.getVolume(b) }, now: () => Date.now() },
   savePrimary, saveBackup
 )
 /** 摘要卡的名册（KI-025）：标题屏与调音桩面板都从它读"这几格是什么、能不能读" */
@@ -594,7 +648,7 @@ if (freshBoot) {
   }, originId)
 }
 
-;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, wallGreybox, interact, props, hud, spawner, nodes, worldState, projectileVis, actors: visuals, bossArena, saves, saveRoster, checkpoints, rpg, settlement, panel, setPanelOpen, quests, dialogueEngine, dialogueBox, openDialogue, debugPanels, refreshRpg, saveNow: () => saves.save('autosave'), get title() { return title } }
+;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, wallGreybox, interact, props, hud, spawner, nodes, worldState, projectileVis, actors: visuals, bossArena, saves, saveRoster, checkpoints, rpg, settlement, panel, setPanelOpen, mapUi, setMapOpen, quests, dialogueEngine, dialogueBox, openDialogue, debugPanels, refreshRpg, saveNow: () => saves.save('autosave'), get title() { return title } }
 
 document.getElementById('boot')!.style.display = 'none'
 ;(window as unknown as Record<string, unknown>).__CAESURA_BOOTED__ = true
