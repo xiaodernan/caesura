@@ -331,3 +331,77 @@ describe('集成：不注入绕路口会走进墙里，注入之后一次都不�
     expect(enemy.nav, '改一次就下发到名册里的每一只，不必等下一次 spawn').toBe(gate)
   })
 })
+
+/* ==================== D. 绷直性：string-pulling 无事可做（KI-009 那句「没有平滑」的归因修正） ==================== */
+
+/**
+ * 账本 KI-009 曾把「折线、贴角是直角转弯」记成欠了 string-pulling 平滑。这一组用例把真账立起来：
+ * 这套 A* 住在**完全可见性图**上（任意一对互相可见的角都直连，代价就是欧氏距离），而完全可见性图
+ * 的最短路**天然绷直**——若某个中间拐点真能跳过（直连更短且走得通），那条直连边本来就在图里，
+ * A* 不可能舍近求远。所以「平滑」这道工序没有可做的事；折线照拐角折是几何本身，不是没拉直。
+ *
+ * 判据本身也要有牙：先喂一条**人写的**不绷直折线证明查得出来，再对三张真实布局断言零违规。
+ * 谁把 A* 换成网格阶梯路径（那种路径的中间拐点一大把可摘），这一组当场红。
+ */
+
+/** 绷直性检查：返回「可摘拐点」清单（nᵢ → nᵢ₊₂ 直连走得通且**严格**更短 ⇒ nᵢ₊₁ 是多余的） */
+function tautViolations(walls: readonly WallRef[], radius: number, from: Vec3, route: readonly Vec3[]): string[] {
+  const nodes = [from, ...route]
+  const bad: string[] = []
+  for (let i = 0; i + 2 < nodes.length; i++) {
+    const a = nodes[i]!
+    const mid = nodes[i + 1]!
+    const c = nodes[i + 2]!
+    const direct = Math.hypot(c.x - a.x, c.z - a.z)
+    const detour = Math.hypot(mid.x - a.x, mid.z - a.z) + Math.hypot(c.x - mid.x, c.z - mid.z)
+    // 严格更短才违规：共线平局（中点恰在直线上，direct == detour）一步路都不省，不算违规
+    if (direct < detour - 1e-9 && clear(walls, a, c, radius)) {
+      bad.push(`n${i + 1} 可摘：直连 ${direct.toFixed(3)}m < 绕行 ${detour.toFixed(3)}m 且这一段走得通`)
+    }
+  }
+  return bad
+}
+
+describe('绷直性：完全可见性图的最短路没有可摘的拐点（string-pulling 无事可做）', () => {
+  it('判据有牙：人写的不绷直折线被当场点名（否则"零违规"什么都能绿）', () => {
+    const fake = [at(0, 1), at(1, 1)] // 直连 (0,0)→(1,1) 1.414m < 绕行 2m，且无墙必通
+    const bad = tautViolations([], 0.4, at(0, 0), fake)
+    expect(bad.length, '这个检查必须查得出多余拐点').toBe(1)
+    expect(bad[0]).toMatch(/n1 可摘/)
+  })
+
+  it('判据分得清"绕行"与"平局"：共线折线不违规（一步都没省就不算多余）', () => {
+    const straight = [at(1, 0), at(2, 0)] // direct == detour == 2m
+    expect(tautViolations([], 0.4, at(0, 0), straight)).toEqual([])
+  })
+
+  it('单墙：路线在两个外扩角之间绷直，无一处可摘', () => {
+    const walls = [wallRef('w', 0, 0, 2, 8)]
+    const nav = new Navigator()
+    nav.syncAuthored({ groundY: 0, walls })
+    const from = at(-10, 0)
+    const route = nav.path(from, at(10, 0), 0.4)!
+    expect(route.length, '过去这堵墙恰好折两次（从起点看不见远端那对角）').toBe(3)
+    expect(tautViolations(walls, 0.4, from, route), '最短路不该有可摘的中间拐点').toEqual([])
+  })
+
+  it('双墙错开：近角到远角之间横着一条走得通的直连线，折两次就够，照样无一处可摘', () => {
+    const walls = [wallRef('a', -3, 0, 2, 10), wallRef('b', 3, 0, 2, 10)]
+    const nav = new Navigator()
+    nav.syncAuthored({ groundY: 0, walls })
+    const from = at(-8, 0)
+    const route = nav.path(from, at(8, 0), 0.4)!
+    expect(route.length, 'A 的近角到 B 的远角直连走得通 ⇒ 两个拐点').toBe(3)
+    expect(tautViolations(walls, 0.4, from, route)).toEqual([])
+  })
+
+  it('斜穿单墙：从起点看得见远端角就直连过去，只折必要的那一个角', () => {
+    const walls = [wallRef('w', 0, 0, 2, 8)]
+    const nav = new Navigator()
+    nav.syncAuthored({ groundY: 0, walls })
+    const from = at(-10, -6)
+    const route = nav.path(from, at(10, -2), 0.4)!
+    expect(route.length, '近角拐一次就够').toBe(2)
+    expect(tautViolations(walls, 0.4, from, route)).toEqual([])
+  })
+})
