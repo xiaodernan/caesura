@@ -1,8 +1,8 @@
 import { bus } from '@/core/EventBus'
 import { describe, expect, it } from 'vitest'
 import { registerGameData, movements as movementsData } from '@/data'
-import type { MovementConfig, MovementData } from '@/data/schema'
-import { Inventory } from '@/rpg/Inventory'
+import type { MovementConfig, MovementData, MovementPage } from '@/data/schema'
+import { Inventory, itemOf } from '@/rpg/Inventory'
 import { SCORE, MovementBook, movementConfig, movementName, unlockItemName } from '@/rpg/Movements'
 
 /**
@@ -289,5 +289,127 @@ describe('页旗标缓存：world.flag 广播是唯一写路径', () => {
     expect(b.hasFlag('flag.organ_gate_open')).toBe(false)
     bus.emit('world.flag', { key: 'flag.organ_gate_open', value: '' })
     expect(b.hasFlag('flag.organ_gate_open')).toBe(false)
+  })
+})
+
+describe('谱册分支死角（批 13）：缺省腿、门槛断链与读档四闸', () => {
+  const mkPage = (id: string, unlock: MovementPage['unlock']): MovementPage => ({
+    id, nameKey: `probe.${id}`, displayName: id, desc: '', unlock,
+  })
+
+  /** 探针谱册：真表 + 三张缺省形状的页（只喂给构造器，不进 registry——validate-data 看不见） */
+  const probeBook = (over: Partial<MovementConfig> = {}): MovementBook => {
+    const base = movementConfig()
+    const pages: MovementPage[] = [
+      ...base.pages,
+      mkPage('pg_probe_flag', { flag: 'flag_probe' }),
+      mkPage('pg_probe_free', { count: 0 }), // 没写 item ⇒ ?? '' 腿；count 0 ⇒ 恒付得起
+      mkPage('pg_probe_item', { item: TIM }), // 没写 count ⇒ ?? 1 腿
+    ]
+    return new MovementBook({ ...base, pages, ...over })
+  }
+
+  /** 点亮任意一张页：旗标页先让世界见证，实物页用 rich() 付款——两种形状都保证真亮 */
+  const lightPage = (b: MovementBook, pageId: string): MovementBook => {
+    const flag = b.page(pageId)?.unlock.flag
+    if (flag) bus.emit('world.flag', { key: flag, value: true })
+    expect(b.unlockPage(pageId, rich()).ok, pageId).toBe(true)
+    return b
+  }
+
+  it('canUnlock：未知页/已亮页都是「点不了」，旗标页只认世界见证（126/127）', () => {
+    const b = probeBook()
+    const inv = rich()
+    expect(b.canUnlock('pg_probe_nobody', inv), '认不出的页谈不上点不点').toBe(false)
+    expect(b.canUnlock('pg_probe_item', inv)).toBe(true)
+    expect(b.unlockPage('pg_probe_item', inv).ok).toBe(true)
+    expect(b.canUnlock('pg_probe_item', inv), '已亮 = 不再问第二遍').toBe(false)
+    expect(b.canUnlock('pg_probe_flag', inv), '旗没立 = 点不了').toBe(false)
+    bus.emit('world.flag', { key: 'flag_probe', value: true })
+    expect(b.canUnlock('pg_probe_flag', inv), '见证一到位就点得了').toBe(true)
+  })
+
+  it('unlock 缺省形状：免费页不扣实物（?? \'\' 腿），item 页缺 count 按一张收（?? 1 腿）（128/145/146）', () => {
+    const b = probeBook()
+    const inv = rich()
+    const before = Object.fromEntries(TRACKED.map((id) => [id, inv.count(id)]))
+    expect(b.canUnlock('pg_probe_free', inv), 'count 0 = 免费，连「手里有没有」都不问').toBe(true)
+    expect(b.unlockPage('pg_probe_free', inv).ok).toBe(true)
+    for (const id of TRACKED) expect(inv.count(id), '免费页一分钱不扣').toBe(before[id])
+    expect(inv.count(''), '也不会凭空吃掉空名物').toBe(0)
+
+    const inv2 = new Inventory('mv')
+    inv2.add(TIM, 2)
+    expect(probeBook().unlockPage('pg_probe_item', inv2).ok).toBe(true)
+    expect(inv2.count(TIM), '没写 count 的页按 1 张收').toBe(1)
+  })
+
+  it('upgradeNeed 的 null：认不出的式不报价（169），没学过的式也不报价（171 dark 腿）', () => {
+    const b = book()
+    expect(b.upgradeNeed('mv_nobody')).toBeNull()
+    expect(b.upgradeNeed(cfg().movements[0].id), '0 级 = 谈不上升级').toBeNull()
+  })
+
+  it('满级（读档直灌）同样不报价（171 max 腿）', () => {
+    const m = some((x) => x.levels.length > 1, '可升级')
+    const b = book()
+    b.restore({ lit: [m.page], levels: { [m.id]: m.levels.length } }, FULL)
+    expect(b.levelOf(m.id), 'restore 只收不越界的等级，正好顶到满').toBe(m.levels.length)
+    expect(b.upgradeNeed(m.id)).toBeNull()
+  })
+
+  it('upgradeCost 断链：阶梯比级数短 ⇒ 走到断口就闭嘴（173 !step 腿）', () => {
+    const m = some((x) => x.levels.length > 1, '可升级')
+    const b = lightPage(probeBook({ upgradeCost: [] }), m.page)
+    expect(b.levelOf(m.id)).toBe(1)
+    expect(b.upgradeNeed(m.id), '阶梯空了 = 没有下一级可报价').toBeNull()
+    expect(b.upgrade(m.id, rich())).toMatchObject({ ok: false, reason: 'max' })
+  })
+
+  it('slotRank：里程碑 id 认不出 ⇒ 这个槽在门槛表里根本不存在（195 ?? null 腿）', () => {
+    const base = movementConfig()
+    const b = probeBook({ slots: [{ ...base.slots[0], milestone: 'ms_no_such' }] })
+    expect(b.slotRank(0)).toBeNull()
+    expect(b.slotOpen(0, FULL), '读不出门槛 = 永远不开').toBe(false)
+    expect(b.equip(0, cfg().movements[0].id, FULL), '槽没开，装什么都进不去').toMatchObject({ ok: false, reason: 'locked-slot' })
+  })
+
+  it('learnPassive 的三拒：认不出（303）/ 钱不够（310）/ 研读阶梯断链按 max 闭嘴（309）', () => {
+    const ps = cfg().passives?.find((p) => p.values.length >= 1)
+    expect(ps, '真表里至少有一条可研读的被动').toBeTruthy()
+
+    expect(book().learnPassive('ps_nobody', rich())).toMatchObject({ ok: false, reason: 'unknown' })
+
+    const b2 = lightPage(book(), ps!.page)
+    expect(b2.learnPassive(ps!.id, new Inventory('mv')), '页亮了但身无分文 ⇒ poor').toMatchObject({ ok: false, reason: 'poor' })
+
+    const b3 = lightPage(probeBook({ passiveCost: [] }), ps!.page)
+    expect(b3.learnPassive(ps!.id, rich()), '研读阶梯断链 = 按「已满」闭嘴').toMatchObject({ ok: false, reason: 'max' })
+  })
+
+  it('restore({})：四份账本缺省（lit ?? [] / passives ?? {} / levels ?? {} / slots ?? []）一次全亮（337/338/343/347）', () => {
+    const m = cfg().movements[0]
+    const b = lightPage(book(), m.page)
+    expect(b.equip(0, m.id, b.slotRank(0)!).ok).toBe(true)
+    b.restore({}, FULL) // 空档：连字段都没有，四条 ?? 缺省腿各走各的
+    expect(b.snapshot()).toEqual({ lit: [], levels: {}, slots: cfg().slots.map(() => null), passives: {} })
+    expect(b.loadout()).toEqual({})
+  })
+
+  it('unlockItemName：未知页原样退回（363）；旗标/实物/缺 count 各说各话（365）', () => {
+    expect(unlockItemName('pg_nobody')).toBe('pg_nobody')
+    const flagPage = cfg().pages.find((p) => p.unlock.flag)
+    expect(flagPage, '真表里有旗标页（KI-037）').toBeTruthy()
+    expect(unlockItemName(flagPage!.id)).toBe('恩希尔的最后一拍')
+    const itemPage = cfg().pages.find((p) => !p.unlock.flag && p.unlock.item)!
+    expect(unlockItemName(itemPage.id)).toBe(`${itemOf(itemPage.unlock.item!).displayName} ×${itemPage.unlock.count}`)
+
+    // 缺 count 的页兜底成「×1」：往真表里塞一张探针页再收走（registry 与导出同对象，用完即还原）
+    movementsData.pages.push(mkPage('pg_probe_name', { item: TIM }))
+    try {
+      expect(unlockItemName('pg_probe_name')).toBe(`${itemOf(TIM).displayName} ×1`)
+    } finally {
+      movementsData.pages.pop()
+    }
   })
 })

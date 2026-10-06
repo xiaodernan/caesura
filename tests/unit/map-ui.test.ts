@@ -325,3 +325,123 @@ describe('源码门：面板里没有一个手抄的区名（文件头点名的�
     expect(leaked.map((r) => r.id), '区名被手抄进面板源码：数据改名就会漏改代码').toEqual([])
   })
 })
+
+describe('MapUI 分支死角（批 13）：目标分发与视图闸门的剩余腿', () => {
+  const regions = [
+    mkRegion({ id: 'rg_a', displayName: '雾语林' }),
+    mkRegion({ id: 'rg_b', displayName: '回音滩', grid: { bpm: 66, beatsPerBar: 3, label: '夜拍' } }),
+  ]
+
+  function boot(over: Partial<MapDeps> = {}) {
+    winHandlers = {} // 只听本实例的窗口 handler
+    let closes = 0
+    const deps: MapDeps = {
+      regionAt: () => regions[0],
+      isExplored: () => true,
+      chunkSize: () => 48,
+      playerPos: () => ({ x: 10, y: 0, z: 10 }),
+      viewDir: () => ({ x: 0, z: -1 }),
+      facilities: () => [],
+      onRequestClose: () => { closes++ },
+      ...over,
+    }
+    const ui = new MapUI(regions, deps)
+    const root = (globalThis as unknown as { document: { body: FakeEl } }).document.body.children.at(-1)!
+    return { ui, root, closes: () => closes }
+  }
+
+  it('toggle：关着就开、开着就关（一扇门两个方向都要有读者）', () => {
+    const { ui } = boot()
+    expect(ui.isOpen).toBe(false)
+    ui.toggle()
+    expect(ui.isOpen).toBe(true)
+    ui.toggle()
+    expect(ui.isOpen).toBe(false)
+  })
+
+  it('onClick 的替身腿：target 不是元素 / 没有 closest 的东西，安静地什么都不做', () => {
+    const { ui, root, closes } = boot()
+    ui.show()
+    root.dispatch('click', { target: null })
+    root.dispatch('click', { target: { dataset: {} } })
+    expect(closes()).toBe(0)
+    const veil = new FakeEl()
+    veil.matchSelf = true
+    veil.dataset.act = 'close'
+    root.dispatch('click', { target: veil })
+    expect(closes()).toBe(1)
+  })
+
+  it('uiStep：down 意图平移；空意图集一个方向都不命中 ⇒ 原地不动（236/237）', () => {
+    const { ui, root } = boot()
+    ui.show()
+    const before = vb(root.innerHTML)
+    ui.uiStep(new Set(['down']))
+    const after = vb(root.innerHTML)
+    expect(after.y).toBeGreaterThan(before.y)
+    ui.uiStep(new Set()) // 一个方向都没有：dz=0 走到「无方向提前返回」那条腿
+    expect(vb(root.innerHTML)).toEqual(after)
+  })
+
+  it('onDown 的两条闸门：非拖拽目标不启动拖拽；没有 rect 的替身按 1px 兜底照样跟手', () => {
+    const { ui, root } = boot()
+    ui.show()
+    const plain = new FakeEl() // matchSelf false：closest 找不到 data-map-drag
+    root.dispatch('mousedown', { target: plain, clientX: 100, clientY: 100 })
+    const still = vb(root.innerHTML)
+    for (const fn of winHandlers['mousemove'] ?? []) fn({ clientX: 200, clientY: 200 })
+    expect(vb(root.innerHTML)).toEqual(still)
+    // 命中了但量不到尺寸的替身：w/h 兜底 0 ⇒ 移动时按 1px 算（|| 1 腿）
+    const noRect = new FakeEl()
+    noRect.matchSelf = true
+    ;(noRect as unknown as { getBoundingClientRect?: unknown }).getBoundingClientRect = undefined
+    root.dispatch('mousedown', { target: noRect, clientX: 100, clientY: 100 })
+    for (const fn of winHandlers['mousemove'] ?? []) fn({ clientX: 101, clientY: 100 })
+    expect(vb(root.innerHTML).x).not.toBe(still.x)
+  })
+
+  it('关着的时候滚轮只改档不渲染（render 的开合闸）', () => {
+    const { ui, root } = boot()
+    root.dispatch('wheel', { deltaY: 120 }) // zoomBy 照走，render 进门就被挡回去
+    expect(ui.isOpen).toBe(false)
+    expect(root.innerHTML, '关着的面板不许有任何渲染输出').toBe('')
+  })
+
+  it('labelsHtml：grid.label 写了就带注脚、没写就不带（注脚的形状数据说了算）', () => {
+    const { ui, root } = boot()
+    ui.show()
+    const html = root.innerHTML
+    expect(html).toContain('84BPM/4</text>') // rg_a 没写 label
+    expect(html).toContain('66BPM/3 · 夜拍') // rg_b 带注脚
+  })
+
+  it('渲染信息纪律（§4.2/§4.1）：没踏足的区只有色块没有名字，别的层的区压暗', () => {
+    winHandlers = {}
+    const many = [
+      mkRegion({ id: 'rg_home', displayName: '家' }),
+      mkRegion({ id: 'rg_fog', displayName: '迷雾', bounds: { minX: 500, maxX: 596, minY: -8, maxY: 8, minZ: 0, maxZ: 96 } as RegionData['bounds'] }),
+      mkRegion({ id: 'rg_high', displayName: '高层', bounds: { minX: 0, maxX: 96, minY: 100, maxY: 108, minZ: 0, maxZ: 96 } as RegionData['bounds'] }),
+      mkRegion({ id: 'rg_deep', displayName: '深层', bounds: { minX: 0, maxX: 96, minY: -100, maxY: -60, minZ: 0, maxZ: 96 } as RegionData['bounds'] }),
+      mkRegion({ id: 'rg_flat', displayName: '别处', bounds: { minX: 200, maxX: 296, minY: -8, maxY: 8, minZ: 200, maxZ: 296 } as RegionData['bounds'] }),
+    ]
+    const deps: MapDeps = {
+      regionAt: () => many[0],
+      isExplored: (p) => !(p.x >= 480), // 只有迷雾区的格中心（504/552/600）读不到遮罩
+      chunkSize: () => 48,
+      playerPos: () => ({ x: 10, y: 0, z: 10 }),
+      viewDir: () => ({ x: 0, z: -1 }),
+      facilities: () => [],
+      onRequestClose: () => {},
+    }
+    const ui = new MapUI(many, deps)
+    const root = (globalThis as unknown as { document: { body: FakeEl } }).document.body.children.at(-1)!
+    ui.show()
+    const html = root.innerHTML
+    expect(html).toContain('rg-box lit cur') // 当前区：亮 + 当前章
+    expect(html).toContain('rg-box fog') // 没踏足：磨砂
+    expect(html).toContain('rg-box lit far') // 上层/深层：压暗（minY>here+8 与 maxY≤here-8 两腿都走到）
+    expect(html).toContain('息声领 · 区域图')
+    expect(html, '§4.2：未踏足区的名字不许漏出来').not.toContain('迷雾')
+    expect(html).toContain('高层')
+  })
+})
