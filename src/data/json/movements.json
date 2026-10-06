@@ -36,6 +36,13 @@
    "displayName": "乐章 IV·休止",
    "desc": "这一页上没有音符。它记的是一段空拍——要等未竟厅的那位自己停下，翻开的才是这一页。",
    "unlock": { "flag": "flag.hersil_felled" }
+  },
+  {
+   "id": "mvpage_terminate",
+   "nameKey": "movement.page.terminate",
+   "displayName": "终止 · 断弦的谱页",
+   "desc": "这一页不是从谱册上抄来的。它是断弦在最后一班岗上把它交出来的——你在场，所以它会翻开。",
+   "unlock": { "flag": "flag.terminate_granted" }
   }
  ],
  "movements": [
@@ -136,7 +143,7 @@
 
   {
    "id": "mv_terminate",
-   "page": "mvpage_rest",
+   "page": "mvpage_terminate",
    "nameKey": "movement.terminate",
    "displayName": "终止",
    "desc": "谱面走到最后一条线，你替他把笔放下。不是打断，是收工——那一拍停在它该停的地方。",

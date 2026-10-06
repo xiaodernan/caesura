@@ -1845,6 +1845,9 @@
               "key": "state.haltrune.fate",
               "value": "PASSING_STILL"
             },
+            "setFlags": [
+              "flag.terminate_granted"
+            ],
             "setRelation": {
               "delta": 1
             },
