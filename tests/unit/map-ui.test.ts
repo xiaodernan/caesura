@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { atlasOf, exploredRegionIds, MapUI, regionExplored, ZOOM_LEVELS, MAP_FACILITY_KINDS } from '@/ui/MapUI'
 import type { MapDeps, MapFacility } from '@/ui/MapUI'
@@ -310,5 +312,16 @@ describe('MapUI 渲染：踏足才亮（§4.2）与三态设施', () => {
     expect(thumb).not.toContain('pl-ring')
     expect(thumb).not.toContain('scale-line')
     expect(thumb).not.toContain('rlabel')
+  })
+})
+
+describe('源码门：面板里没有一个手抄的区名（文件头点名的账）', () => {
+  it('MapUI.ts 不硬编码任何 regions.json 的 displayName——名字只能来自数据', () => {
+    const root = fileURLToPath(new URL('../..', import.meta.url))
+    const src = readFileSync(root + 'src/ui/MapUI.ts', 'utf8')
+    const list = JSON.parse(readFileSync(root + 'src/data/json/regions.json', 'utf8')) as RegionData[]
+    expect(list.length, 'regions.json 得先真的有区，门才有意义').toBeGreaterThan(0)
+    const leaked = list.filter((r) => src.includes(r.displayName))
+    expect(leaked.map((r) => r.id), '区名被手抄进面板源码：数据改名就会漏改代码').toEqual([])
   })
 })
