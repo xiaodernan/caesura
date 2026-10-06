@@ -1284,6 +1284,7 @@ export class CombatManager {
     // §14.7「震裂满层碎裂其甲（清一次减伤）」：甲是这层减伤的载体，碎了就永久没了
     if (e.data.ai.armorFront && !e.armorBroken) {
       e.armorBroken = true
+      e.plateBreakTick = this.time.tick
       bus.emit('audio.sfx', { key: 'burst_shell', pos: { ...e.pos }, gain: 1 })
       bus.emit('vfx.request', { key: 'death_shatter', pos: { ...e.pos }, scale: 1.2 })
       bus.emit('ui.notify', { text: '钟甲碎裂！正面减伤失效', kind: 'reward' })

@@ -126,6 +126,8 @@ export class Enemy {
    * 所以「攒震裂」是一次性奖励而不是一轮流循环。消费方只有 strikeEnemy 一处。
    */
   armorBroken = false
+  /** KI-013：碎甲那一 tick（ActorVisuals 据此播碎裂缩放动画；0 = 没碎过） */
+  plateBreakTick = 0
   /** §14.7 敲钟自鸣的下一次准点小节（-1 = 还没参战，进战后才排程） */
   private tollDueBar = -1
   /** §15.2 'cycle' 选招的轮转指针（只在 pickOrder==='cycle' 时有意义） */

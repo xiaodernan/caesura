@@ -172,7 +172,25 @@ export class ActorVisuals {
     }
     const hb = e.activeHitbox
     core.scale.setScalar(hb ? 1.6 : e.frozenTicks > 0 ? 1 : 1 + Math.sin(tick * 0.08) * 0.08)
-    if (v.plate) v.plate.visible = !e.armorBroken // 碎甲是永久状态：板子掉了就是掉了
+    if (v.plate) {
+      // KI-013：碎甲不再直接消失——先放大 1.5 倍 + 闪烁（30 tick），然后才隐去。
+      // e.plateBreakTick = 0 表示没碎过，> 0 时用 (tick - plateBreakTick) 算动画进度。
+      if (e.armorBroken && e.plateBreakTick > 0) {
+        const since = tick - e.plateBreakTick
+        if (since < 30) {
+          v.plate.visible = true
+          const k = since / 30
+          v.plate.scale.setScalar(1 + k * 0.5)
+          const mat = v.plate.material as import('three').MeshStandardMaterial
+          mat.emissiveIntensity = k * 4
+          mat.emissive.set(0xffdd88)
+        } else {
+          v.plate.visible = false // 30 tick 后永久隐去
+        }
+      } else {
+        v.plate.visible = !e.armorBroken
+      }
+    }
     // §5.4 处决演出（KI-002）：执行者正对着**这一具**演 → 受刑者按进度坍塌。
     // 受刑者的身份是"位置对得上"（executing.pos 记的就是它）——不需要第二份标记。
     const exec = this.player.executing
