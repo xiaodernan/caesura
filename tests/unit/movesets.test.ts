@@ -1,7 +1,9 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { registry } from '@/core/Registry'
 import { registerGameData, weaponsRaw } from '@/data'
 import type { MovesetData, WeaponData } from '@/data/schema'
+import { interfaceFields, schemaBlocks } from '../../scripts/schema-vocab.mjs'
 
 /**
  * §64 acceptance ④: frame data is read from the data table (no hardcoded
@@ -83,15 +85,33 @@ describe('KI-039：武器家族的轻击定价必须互相咬住（重量的回�
  * ① 武器↔moveset 必须一对一（validator 同款检查在跑测里也钉住）；
  * ② 武器表里不许再长出 atkBase（`validate-data.mjs` 的 WEAPON_FIELDS 白名单是它的表亲，
  *    反向实测：把 atkBase 塞回 weapons.json ⇒ 两道门各自当场红）。
+ *
+ * **KI-097（2026-10-07）把这一格的名单拆成了从声明现推**：这个字段集在这里曾是这个文件里的
+ * **第三抄**——第一抄 `WEAPON_FIELDS` 住 validate-data 且由 VOCAB_PAIRS 与声明对账，第二抄
+ * 就是 `WeaponData` 声明自己，而这份 `CONSUMED` 手抄本没有任何人对账：抄不会失败，只会
+ * 静悄悄变旧（声明长了新字段、数据用了它，这里忘了跟 ⇒ 当场红；声明删了字段、这里没删 ⇒
+ * 一条谁也不会再触发的死名单继续绿）。现在它由 `interfaceFields(schemaBlocks(...), 'WeaponData')`
+ * 每次现推。`atkBase` 由此**两侧都有界**：数据侧由逐键 membership 兜着，声明侧由一条具名
+ * `not.toContain` 兜着——两侧同时复活也必有一边红（只兜数据侧时，把声明也一起改回来就能全绿）。
  */
 describe('KI-047：底数单一来源——帧表，武器表不再带价格', () => {
-  it('weapons.json 的每一格都在消费方字段集里，atkBase 不许复活', () => {
-    const CONSUMED = ['id', 'nameKey', 'archetype', 'movesetId', 'scaling', 'swingTag', 'skill', 'poiseMul', 'noiseMul']
+  const declared = interfaceFields(schemaBlocks(readFileSync(new URL('../../src/data/schema.ts', import.meta.url), 'utf8')), 'WeaponData')
+
+  it('名单从 WeaponData 现推（KI-097）：读空了先红，读数不许拿空集自证', () => {
+    expect(declared, '抽取器在真 schema.ts 上读不到 WeaponData（接口改名/搬家 ⇒ 下面每条都在空集上过）').not.toBeNull()
+    expect((declared as string[]).length, '字段数掉到 9 以下 ⇒ 声明被削或抽取被削（KI-097 落地时 11 个）').toBeGreaterThanOrEqual(9)
+    for (const must of ['id', 'movesetId']) {
+      expect(declared, `WeaponData 连 ${must} 都没了`).toContain(must)
+    }
+  })
+
+  it('weapons.json 的每一格都在 WeaponData 声明的字段集里，atkBase 声明侧也不许复活', () => {
     for (const w of weaponsRaw) {
       for (const k of Object.keys(w)) {
-        expect(CONSUMED, `${w.id} 带着无消费方的字段 '${k}'（§55）`).toContain(k)
+        expect(declared, `${w.id} 带着 WeaponData 没声明的字段 '${k}'（§55）`).toContain(k)
       }
     }
+    expect(declared, 'atkBase 是 KI-047 删掉的死价格——数据侧逐键兜着，声明侧在这里；两侧一起复活也要有一边红').not.toContain('atkBase')
   })
 
   it('武器↔moveset 一对一：共用一张架式表 = 两把武器永远同价', () => {
