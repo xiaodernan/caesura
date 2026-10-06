@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { registry } from '@/core/Registry'
 import { registerGameData, progression, items } from '@/data'
-import type { ItemData, ProgressionData } from '@/data/schema'
+import type { ItemData, MovesetData, ProgressionData, WeaponData } from '@/data/schema'
 import { Progression, ATTR_KEYS, originOf, originTotal, progressionData } from '@/rpg/Progression'
 import { Inventory, itemOf, rollAffixes } from '@/rpg/Inventory'
 import { Equipment, SLOTS, equipSeal } from '@/rpg/Equipment'
 import { upgradeStep, weaponDamageMul, armorDefMul, maxLevelOf, tryUpgrade, salvageValue } from '@/rpg/Upgrade'
 import { LootDirector, allGearItems } from '@/rpg/Loot'
 import { RpgRuntime, gearName } from '@/rpg/Runtime'
+import { refreshPlayer, type ModsSink } from '@/rpg/Settlement'
 import { Rng } from '@/core/Math'
 
 /**
@@ -326,6 +327,23 @@ describe('总装（RpgRuntime）：装备/升级/洗点/使用道具的编排', 
   it('gearName：注册件给中文名，未知 id 原样回落（面板不显示空串）', () => {
     expect(gearName('wp_tuning_sword_item')).toBe(itemOf('wp_tuning_sword_item').displayName)
     expect(gearName('it_no_such_gear_xyz')).toBe('it_no_such_gear_xyz')
+  })
+
+  it('refreshPlayer：装备栏换了武器，手里那把必须跟着换（换装腿）', () => {
+    const rt = new RpgRuntime('origin_tuner')
+    const spear = rt.inv.addGear('wp_drawpin_spear_item')
+    expect(rt.equip(spear.uid).ok).toBe(true)
+    expect(rt.mods().weaponId).toBe('wp_drawpin_spear')
+    const calls: Array<{ w: unknown; ms: unknown }> = []
+    const player = {
+      weapon: { id: 'wp_tuning_sword' }, // 手里还握着出身那把
+      stats: { poiseDecayMul: 1 },
+      applyRpg: () => {}, setSkills: () => {}, setBeatGrace: () => {}, setExecCancel: () => {},
+      equip: (w: unknown, ms: unknown) => calls.push({ w, ms }),
+    } as unknown as ModsSink
+    refreshPlayer(rt, player)
+    const wd = registry.get<WeaponData>('wp_drawpin_spear')
+    expect(calls).toEqual([{ w: wd, ms: registry.get<MovesetData>(`moveset:${wd.movesetId}`) }])
   })
 
   it('使用消耗品会真的消耗一件（数量不会凭空虚增）', () => {
