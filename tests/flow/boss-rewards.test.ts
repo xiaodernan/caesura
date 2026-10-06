@@ -179,6 +179,10 @@ describe('§7.1 的经济链对账：三场 Boss 战 ⇒ 整本谱册', () => {
     expect(w.rpg.inv.count(SCORE) - beforeScore, '残章的总供给').toBeGreaterThanOrEqual(
       cfg.pages.filter((p) => p.unlock.item === SCORE).reduce((s, p) => s + (p.unlock.count || 0), 0))
     for (const p of cfg.pages) {
+      // 旗标页（乐章 IV/终止）：恩希尔已死 ⇒ worldstate 规则写了旗 ⇒ 这里能点亮
+      if (p.unlock.flag && !w.rpg.moves.hasFlag(p.unlock.flag)) {
+        bus.emit('world.flag', { key: p.unlock.flag, value: true })
+      }
       expect(w.rpg.moves.unlockPage(p.id, w.rpg.inv), p.id).toMatchObject({ ok: true })
       expect(w.rpg.moves.isLit(p.id), `${p.id} 亮了`).toBe(true)
     }
