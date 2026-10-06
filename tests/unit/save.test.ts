@@ -4,17 +4,20 @@ import { GameTime } from '@/core/Time'
 import { RhythmClock } from '@/core/RhythmClock'
 import { registry } from '@/core/Registry'
 import { registerGameData, playerBase, regions } from '@/data'
-import type { MovesetData, WeaponData } from '@/data/schema'
+import type { MovesetData, WeaponData, WorldStateDef } from '@/data/schema'
 import { PlayerController } from '@/player/ThirdPersonController'
 import { AISystem } from '@/ai/AISystem'
 import { CombatManager } from '@/combat/CombatManager'
 import { StreamingSystem, chunkKeyOf } from '@/world/Streaming'
 import { SpawnDirector } from '@/world/SpawnDirector'
 import type { Vec3 } from '@/combat/EntityStats'
-import { SaveGame, MapStore, SAVE_VERSION, type KvStore, type Snapshot } from '@/save/Serializer'
+import { SaveGame, MapStore, SAVE_VERSION, migrateV9toV10, type KvStore, type Snapshot } from '@/save/Serializer'
 import { Checkpoints } from '@/save/Checkpoint'
 import { crc32, unwrap, wrap } from '@/save/Integrity'
-import { migrateTo } from '@/save/Migration'
+import { migrateTo, registerMigration, unregisterMigration } from '@/save/Migration'
+import { WorldStates } from '@/quest/WorldStates'
+import { Quests } from '@/quest/Quests'
+import type { Interactables } from '@/world/Interactables'
 
 /**
  * 存档（需求 §45/§71）。存储层是可注入的 KV，所以「写一半被 kill」「校验和坏了」
@@ -267,5 +270,185 @@ describe('自动存档触发器（调音桩 / Boss 跳阶 / 首次进区域）',
     expect(cp.writes).toBe(writes)
     expect(cp.lastReason, '排在一起的请求会合并原因').toBe('rest+region')
     expect(notes.some((t) => t.includes('已存档 · 调音桩 · 进入新区域'))).toBe(true)
+  })
+})
+
+describe('分支死角（批 15）：备份位、迁移链诊断与值域状态的落档', () => {
+  const BELL: WorldStateDef = {
+    key: 'state.test.bell', displayName: 'Test Bell', values: ['INTACT', 'RUNG'], default: 'INTACT', note: ''
+  }
+
+  it('v4→v5 迁移两条腿：rpg 有 loot 没 rollStreaks ⇒ 补空表；rpg 没有 loot ⇒ 原样留空', () => {
+    const v4base = {
+      version: 4, playSec: 9, regionId: null,
+      player: { x: 0, y: 0, z: 0, hp: 5, stamina: 5, overdrive: 0, weaponId: 'wp_tuning_sword', corruption: 0 },
+      flags: [], clearedSlots: []
+    }
+    const withLoot = migrateTo({ snapshot: { ...v4base, rpg: { loot: {} } } }, 4, 5) as unknown as {
+      snapshot: { rpg: { loot: { rollStreaks: Record<string, number> } } }
+    }
+    expect(withLoot.snapshot.rpg.loot.rollStreaks).toEqual({})
+    // 老档的 rpg 里根本没记过掉落 ⇒ ?? null 腿：不补 rollStreaks，rpg 原样保住
+    const noLoot = migrateTo({ snapshot: { ...v4base, rpg: { movements: { lit: [], levels: {}, slots: [] } } } }, 4, 5) as unknown as {
+      snapshot: { rpg: Record<string, unknown> }
+    }
+    expect('loot' in noLoot.snapshot.rpg).toBe(false)
+  })
+
+  it('值域状态：写过的格入档再灌回（capture 与 restore 的真腿都亮）', async () => {
+    const w = world()
+    const states = new WorldStates([BELL])
+    const store = new MapStore()
+    const saves = new SaveGame(
+      { player: w.player, streaming: w.streaming, spawner: w.spawner, clock: w.rhythm, time: w.time, states }, store
+    )
+    states.set('state.test.bell', 'RUNG')
+    const snap = await saves.save('slot1')
+    expect(snap.states).toEqual({ 'state.test.bell': 'RUNG' })
+    // 读档：新世界先写一个脏值，load 后退回档里那份（restore 是唯一回写路径）
+    const w2 = world()
+    const states2 = new WorldStates([BELL])
+    states2.set('state.test.bell', 'INTACT')
+    const loads = new SaveGame(
+      { player: w2.player, streaming: w2.streaming, spawner: w2.spawner, clock: w2.rhythm, time: w2.time, states: states2 }, store
+    )
+    try {
+      await loads.load('slot1')
+      expect(states2.get('state.test.bell')).toBe('RUNG')
+      expect(states2.isSet('state.test.bell'), '档里写过的格恢复后仍是"写过"').toBe(true)
+    } finally {
+      states.dispose(); states2.dispose()
+    }
+  })
+
+  it('备份位正常收档：save 同步写一份进 backup（try 的成功腿）', async () => {
+    const w = world()
+    const backup = new MapStore()
+    await savesWith(w, new MapStore(), backup).save('slot1')
+    expect(backup.raw.has('slot1')).toBe(true)
+  })
+
+  it('主备全坏 ⇒ 逐条报坏因，备份位那条带 @backup 后缀，最后报 load.none', async () => {
+    const w = world()
+    const primary = new MapStore()
+    const backup = new MapStore()
+    await savesWith(w, primary, backup).save('slot1')
+    primary.raw.set('slot1', 'garbage-primary')
+    backup.raw.set('slot1', 'garbage-backup')
+    const warns: string[] = []
+    const off = bus.on('log', (p) => { if (p.level === 'warn') warns.push(p.msg) })
+    const back = await savesWith(world(), primary, backup).load('slot1')
+    off()
+    expect(back).toBeNull()
+    expect(warns.some((m) => m.startsWith('save.bad slot1@backup ')), '备份位自己的坏因要带出处').toBe(true)
+    expect(warns).toContain('load.none slot1')
+  })
+
+  it('迁移缺步发生在真实 load 路径 ⇒ save.migrate 把缺的那一级说出口，绝不静默', async () => {
+    const w = world()
+    const store = new MapStore()
+    await savesWith(w, store).save('slot1')
+    const raw = JSON.parse(store.raw.get('slot1')!) as { payload: { snapshot: Snapshot } }
+    store.raw.set('slot1', wrap(9, { snapshot: { ...raw.payload.snapshot, version: 9 } }))
+    unregisterMigration(9)
+    try {
+      const warns: string[] = []
+      const off = bus.on('log', (p) => { if (p.level === 'warn') warns.push(p.msg) })
+      const back = await savesWith(world(), store).load('slot1')
+      off()
+      expect(back).toBeNull()
+      expect(warns.some((m) => m.startsWith('save.migrate slot1 ') && m.includes('v9'))).toBe(true)
+    } finally {
+      registerMigration(9, migrateV9toV10) // 装回真品：迁移函数只有一份，不许测试里养副本
+    }
+    expect(await savesWith(world(), store).load('slot1'), '装回那一步后同一格立刻可读').not.toBeNull()
+  })
+
+  it('主键位没写过、备份机上是好档 ⇒ 从备份读回，load.ok 记着 @backup 的出处', async () => {
+    const manual: Snapshot = {
+      version: SAVE_VERSION, playSec: 7, savedAt: null, regionId: null,
+      player: { x: 1, y: 2, z: 3, hp: 30, stamina: 40, overdrive: 0, weaponId: 'wp_tuning_sword', corruption: 2 },
+      flags: [], clearedSlots: [], usedInteractables: [], brokenProps: [],
+      rpg: null, quest: null, states: {}
+    }
+    const backup = new MapStore()
+    await backup.set('slot1', wrap(SAVE_VERSION, { snapshot: manual }))
+    const w = world()
+    const infos: string[] = []
+    const off = bus.on('log', (p) => { if (p.level === 'info') infos.push(p.msg) })
+    const back = await savesWith(w, new MapStore(), backup).load('slot1')
+    off()
+    expect(back, '备份机救场').not.toBeNull()
+    expect(infos).toContain(`load.ok slot1@backup v${SAVE_VERSION}`)
+    expect(w.player.stats.hp).toBe(30)
+  })
+
+  it('档里的 corruption 缺格（手改档才有的形态）⇒ apply 如实落 0，不 NaN', () => {
+    const w = world()
+    const broken = {
+      version: SAVE_VERSION, playSec: 1, savedAt: null, regionId: null,
+      player: { x: 0, y: 0, z: 0, hp: 50, stamina: 50, overdrive: 0, weaponId: 'wp_tuning_sword', corruption: undefined },
+      flags: [], clearedSlots: [], usedInteractables: [], brokenProps: [],
+      rpg: null, quest: null, states: {}
+    } as unknown as Snapshot
+    savesWith(w, new MapStore()).apply(broken)
+    expect(w.player.corruption.value).toBe(0)
+  })
+
+  it('v3→v4：rpg 在但没谱册 ⇒ 补空谱册（页全黑槽全空），不是替玩家点亮一页', () => {
+    const v3 = {
+      version: 3, playSec: 3, regionId: null,
+      player: { x: 0, y: 0, z: 0, hp: 5, stamina: 5, overdrive: 0, weaponId: 'wp_tuning_sword', corruption: 0 },
+      flags: [], clearedSlots: [], rpg: { inventory: { items: {} } }
+    }
+    const moved = migrateTo({ snapshot: v3 }, 3, 5) as unknown as {
+      snapshot: { rpg: { movements: { lit: string[]; levels: Record<string, number>; slots: string[] } } }
+    }
+    expect(moved.snapshot.rpg.movements).toEqual({ lit: [], levels: {}, slots: [] })
+  })
+
+  it('v8→v9：谱册在但没被动栏 ⇒ 补空被动表（没学过的就是没学过）', () => {
+    const v8 = {
+      version: 8, playSec: 3, regionId: null,
+      player: { x: 0, y: 0, z: 0, hp: 5, stamina: 5, overdrive: 0, weaponId: 'wp_tuning_sword', corruption: 0 },
+      flags: [], clearedSlots: [], rpg: { movements: { lit: [], levels: {}, slots: [] } }
+    }
+    const moved = migrateTo({ snapshot: v8 }, 8, 9) as unknown as {
+      snapshot: { rpg: { movements: { passives: Record<string, unknown> } } }
+    }
+    expect(moved.snapshot.rpg.movements.passives).toEqual({})
+  })
+
+  it('四件套世界件（quests/interact/props/audio）：capture 与 apply 的每一条真腿都亮', async () => {
+    const w = world()
+    const interact = { snapshot: () => ['ix_probe_tuned'], restore: () => {} } as unknown as Interactables
+    let propsRestored: string[] | null = null
+    const props = { snapshot: () => ['pr_probe_broken'], restore: (ids: string[] | null | undefined) => { propsRestored = ids ?? null } }
+    const audio = { setVolume: () => {}, getVolume: () => 0.5 }
+    const store = new MapStore()
+    const saves = new SaveGame(
+      {
+        player: w.player, streaming: w.streaming, spawner: w.spawner, clock: w.rhythm, time: w.time,
+        quests: new Quests([], () => {}), interact, props, audio
+      }, store
+    )
+    const snap = await saves.save('slot1')
+    expect(snap.quest, '空任务线也是叙事进度，不是 null').not.toBeNull()
+    expect(snap.usedInteractables).toEqual(['ix_probe_tuned'])
+    expect(snap.brokenProps).toEqual(['pr_probe_broken'])
+    expect(snap.settings?.audio.master).toBe(0.5)
+    // 读档：restore 的真腿逐件跑一遍（quest 灌回、交互物/碎刺复原、音量回灌）
+    const w2 = world()
+    const setCalls2: string[] = []
+    const audio2 = { setVolume: (b: string) => setCalls2.push(b), getVolume: () => 0.5 }
+    const loads = new SaveGame(
+      {
+        player: w2.player, streaming: w2.streaming, spawner: w2.spawner, clock: w2.rhythm, time: w2.time,
+        quests: new Quests([], () => {}), interact, props, audio: audio2
+      }, store
+    )
+    await loads.load('slot1')
+    expect(propsRestored).toEqual(['pr_probe_broken'])
+    expect(setCalls2, '五条音频总线逐一灌回').toHaveLength(5)
   })
 })

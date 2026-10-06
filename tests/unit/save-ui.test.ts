@@ -247,3 +247,45 @@ function originName(id: string): string {
   const prog = registry.get<{ origins: Array<{ id: string; displayName: string }> }>('progression')
   return prog.origins.find((o) => o.id === id)?.displayName ?? id
 }
+
+describe('摘要卡分支死角（批 15）：表查不到的 id 与黄标卡面的真腿', () => {
+  it('出身 id 不在 progression 表 ⇒ 「出身 未知(id)」，与区域那格同一口径', async () => {
+    const { roster } = await rosterWith({
+      patch: (s) => ({
+        ...s,
+        rpg: { ...s.rpg!, progression: { ...s.rpg!.progression, originId: 'origin_never_shipped' } }
+      })
+    })
+    const [v] = saveCards([await cardOf(roster, MANUAL_SLOTS[0])])
+    expect(v.lines[0]).toContain('出身 未知(origin_never_shipped)')
+    expect(v.selectable, '名字查不到不影响这一格能不能读').toBe(true)
+  })
+
+  it('武器 id 不在装备表 ⇒ 「武器 未知(id)」（名字是诊断，不是把键冒充成名字）', async () => {
+    const { roster } = await rosterWith({
+      patch: (s) => ({ ...s, player: { ...s.player, weaponId: 'wp_never_shipped' } })
+    })
+    const [v] = saveCards([await cardOf(roster, MANUAL_SLOTS[0])])
+    expect(v.lines[1]).toBe('武器 未知(wp_never_shipped)')
+  })
+
+  it('regionId 缺格（老档没记区域）⇒ 「区域 未知」，如实空着不编名字', async () => {
+    const { roster } = await rosterWith({ patch: (s) => ({ ...s, regionId: null }) })
+    const [v] = saveCards([await cardOf(roster, MANUAL_SLOTS[0])])
+    expect(v.lines[2]).toBe('区域 未知')
+  })
+
+  it('restored 卡的 HTML：黄标 span 与来源行都渲染（badge / fromKey 的真腿）', async () => {
+    const { roster, store } = await rosterWith()
+    const slot = MANUAL_SLOTS[0]
+    store.raw.set(`${slot}.prev`, store.raw.get(slot)!)
+    await store.set(slot, 'not-a-caesura-payload')
+    const [v] = saveCards([await cardOf(roster, slot)])
+    expect(v.badge).toBe('已恢复备份')
+    expect(v.fromKey).toBe(`${slot}.prev`)
+    const html = saveCardHtml(v, ['load'])
+    expect(html).toContain('class="badge"')
+    expect(html).toContain('已恢复备份')
+    expect(html).toContain(`来源 ${slot}.prev`)
+  })
+})

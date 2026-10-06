@@ -5,7 +5,8 @@ import type { EnemyData, ItemData, LootTableData, MovesetData, OriginData, Progr
 import { Progression, ATTR_KEYS, originOf, originTotal, progressionData } from '@/rpg/Progression'
 import { Inventory, itemOf, rollAffixes, type GearInstance } from '@/rpg/Inventory'
 import { Equipment, SLOTS, equipSeal } from '@/rpg/Equipment'
-import { upgradeStep, weaponDamageMul, armorDefMul, maxLevelOf, tryUpgrade, salvageValue } from '@/rpg/Upgrade'
+import { upgradeStep, weaponDamageMul, armorDefMul, maxLevelOf, tryUpgrade, salvageValue, TIMBITE } from '@/rpg/Upgrade'
+import { sellGear, sellPrice, shopData, stackSellPrice } from '@/rpg/Shop'
 import { LootDirector, allGearItems } from '@/rpg/Loot'
 import { RpgRuntime, gearName } from '@/rpg/Runtime'
 import { KillSettlement, gearLabel, refreshPlayer, reportGrants, type ModsSink } from '@/rpg/Settlement'
@@ -678,5 +679,61 @@ describe('装备线分支死角（批 12）', () => {
     expect(gearLabel(rt, plain.uid)).toBe(itemOf('wp_drawpin_spear_item').displayName)
     const plus = rt.inv.addGear('wp_drawpin_spear_item', 3, [])
     expect(gearLabel(rt, plus.uid)).toBe(`${itemOf('wp_drawpin_spear_item').displayName} +3`)
+  })
+})
+
+describe('营地交易的卖价防御腿（批 15 分支死角）', () => {
+  it('装备件没写档价 ⇒ 卖价如实为 0（表和档不一致时不出 NaN，也不编一个价）', () => {
+    registry.register('it_probe_gear_novalue', {
+      id: 'it_probe_gear_novalue', kind: 'weapon', displayName: '无名剑', stack: 1,
+      gear: { weaponId: 'wp_drawpin_spear' }
+    } as unknown as ItemData)
+    expect(sellPrice('it_probe_gear_novalue')).toBe(0)
+  })
+
+  it('未知 id 与非堆叠类别都卖不出：stackSellPrice 一律 0（不收就是不收）', () => {
+    expect(stackSellPrice('it_no_such_xyz')).toBe(0) // 表里没这件
+    expect(stackSellPrice(TIMBITE)).toBe(0)          // 通货不在可卖名单：买得进的卖不出
+  })
+
+  it('堆叠件没写档价 ⇒ 不收（value 缺格算 0，0 不大于 0 就是不够格当商品）', () => {
+    const kind = shopData().sell.stackKinds[0]
+    registry.register('it_probe_mat_novalue', {
+      id: 'it_probe_mat_novalue', kind, displayName: '无名素材', stack: 9
+    } as unknown as ItemData)
+    expect(stackSellPrice('it_probe_mat_novalue')).toBe(0)
+  })
+
+  it('够格的堆叠件走真腿：按 档价×mul 出正价，不与装备腿共用第二套式子', () => {
+    const kind = shopData().sell.stackKinds[0]
+    registry.register('it_probe_mat_priced', {
+      id: 'it_probe_mat_priced', kind, displayName: '带价素材', stack: 9, value: 4
+    } as unknown as ItemData)
+    expect(stackSellPrice('it_probe_mat_priced')).toBe(Math.round(4 * shopData().sell.mul))
+  })
+
+  it('sellPrice 的拒收腿：未知 id 与非装备件一律 0', () => {
+    expect(sellPrice('it_no_such_xyz')).toBe(0)
+    expect(sellPrice(TIMBITE), '通货不是装备：不按件卖').toBe(0)
+  })
+
+  it('sellGear：实例指向非装备件 ⇒ not-gear 拒收（正常锻造造不出的脏档形态，桩造）', () => {
+    const ghostInv = {
+      gearByUid: (uid: string) => ({ uid, itemId: TIMBITE, level: 0, affixes: [] }),
+      removeGear: () => true,
+      add: () => 0
+    } as unknown as Inventory
+    expect(sellGear(ghostInv, 'g_ghost')).toEqual({ ok: false, reason: 'not-gear' })
+  })
+
+  it('sellGear：未知 uid ⇒ missing；真件卖成功 ⇒ 先查后扣，钱到账件离包', () => {
+    const inv = new Inventory('probe-sell')
+    expect(sellGear(inv, 'g_no_such')).toEqual({ ok: false, reason: 'missing' })
+    const gear = inv.addGear('wp_drawpin_spear_item', 0, [])
+    const r = sellGear(inv, gear.uid)
+    expect(r.ok).toBe(true)
+    expect(r.price).toBeGreaterThan(0)
+    expect(inv.gearByUid(gear.uid), '卖出的件离包').toBeUndefined()
+    expect(inv.count(TIMBITE), '到账的通货恰好是卖价').toBe(r.price)
   })
 })

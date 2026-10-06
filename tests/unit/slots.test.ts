@@ -15,7 +15,8 @@ import {
 } from '@/save/Serializer'
 import { wrap } from '@/save/Integrity'
 import { registerMigration, unregisterMigration } from '@/save/Migration'
-import { AUTOSAVE_SLOT, MANUAL_SLOTS, SlotRoster, saveSlots } from '@/save/Slots'
+import { AUTOSAVE_SLOT, MANUAL_SLOTS, SlotRoster, saveSlots, type SlotCard } from '@/save/Slots'
+import { saveCards } from '@/ui/SaveSlots'
 import { bus } from '@/core/EventBus'
 
 /**
@@ -478,5 +479,24 @@ describe('异常腿：存储半路翻脸时，主档与诊断各归各位', () =
       expect(await saves.load('slot1')).toBeNull()
     } finally { off() }
     expect(msgs).toContain('load.none slot1')
+  })
+})
+
+/* ------------------- 卡面翻译的防御腿（手造卡：真实名册造不出的脏形态） ------------------- */
+
+describe('卡面翻译的兜底腿（批 15）', () => {
+  const base: SlotCard = {
+    slot: 'slot1', kind: 'manual', state: 'blocked', schemaVersion: null,
+    migrated: false, fromKey: null, problem: 'crc', data: null
+  }
+
+  it('problem 不在原话表里 ⇒ 兜底「存档不可读」，不把内部键名印给玩家', () => {
+    const [v] = saveCards([{ ...base, problem: 'no_such_reason' } as unknown as SlotCard])
+    expect(v.note).toBe('存档不可读')
+  })
+
+  it('blocked 却没带原因 ⇒ 同一句兜底（真名册造不出这一形态，防御的正是它）', () => {
+    const [v] = saveCards([{ ...base, problem: null }])
+    expect(v.note).toBe('存档不可读')
   })
 })
