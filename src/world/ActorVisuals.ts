@@ -212,6 +212,16 @@ export class ActorVisuals {
 
   private animateSword(p: PlayerController, tick: number): void {
     const sw = this.sword
+    // KI-002 蓄力反馈：charging 时武器发出辉光，随充能进度变亮，满时闪一下
+    if (p.charging && p.chargeProgress > 0) {
+      const prog = p.chargeProgress
+      const mat = (sw.children[0] as THREE.Mesh | undefined)?.material as THREE.MeshStandardMaterial | undefined
+        ?? (sw as unknown as THREE.Mesh).material as THREE.MeshStandardMaterial
+      mat.emissive.set(0xffaa44)
+      mat.emissiveIntensity = prog * 2.5 + (prog >= 1 ? Math.sin(tick * 0.3) * 0.8 : 0)
+      sw.rotation.x = -0.5 - prog * 1.2 // 慢慢举高
+      return
+    }
     // §5.4（KI-002）：处决蒙太奇的劈砍走姿态函数——高举、落刀、保持（刀不复位）
     if (p.executing) {
       sw.rotation.x = -0.5 + executionPose(p.executing.tick / Math.max(1, p.executing.total)).chop

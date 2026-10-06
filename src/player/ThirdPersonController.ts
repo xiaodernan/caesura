@@ -108,6 +108,8 @@ export class PlayerController {
   crumpleTicks = 0
   chargeTicks = 0
   charging = false
+  /** KI-002 蓄力反馈（§2 排行榜那行）：0..1，ActorVisuals 据此画武器辉光强度 */
+  get chargeProgress(): number { return this.charging ? Math.min(1, this.chargeTicks / CHARGE_TICKS) : 0 }
   executing: { tick: number; total: number; pos: Vec3 } | null = null
   lockedTarget: { getPos(): Vec3; get radius(): number } | null = null
   exhausted = false
