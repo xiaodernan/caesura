@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import * as THREE from 'three'
 import { bus } from '@/core/EventBus'
 import { VfxLayer } from '@/vfx/VfxLayer'
+import { VFX_PALETTE } from '@/vfx/materials'
 
 /**
  * VfxLayer：视觉特效层（KI-010 同因：headless 无法截图，只能覆盖逻辑分支）
@@ -101,5 +102,113 @@ describe('VfxLayer：hitStop / player 锚点 / 统计 / decal / 方向解析', (
     expect(d3.x).toBeCloseTo(0, 6)
     expect(d3.y).toBeCloseTo(0, 6)
     expect(d3.z).toBeCloseTo(1, 6)
+  })
+})
+
+/**
+ * KI-105② 的 vfx 侧（observeWave / observeMark / observeTrail）：观察系统画在脚下的圈
+ * 就是「显形判据」本身（源码注释原话），所以这三个原语的半径、迟滞、色、波形逐格可断言——
+ * 谁偷改一个数，显形判据就被挪了。环行数据落在 Float32Array 里，断言一律 toBeCloseTo（float32 精度）。
+ */
+describe('VfxLayer：KI-105 声纹观察三原语', () => {
+  /** rings 池各实例属性（行主序），从 mesh 几何上公开读出 */
+  function ringAttrs(vfx: VfxLayer): Map<string, THREE.InstancedBufferAttribute> {
+    const geo = ((vfx as any).rings as { mesh: THREE.Mesh }).mesh.geometry
+    return new Map(['aOrigin', 'aColor', 'aBirth', 'aDur', 'aR0', 'aR1', 'aWidth', 'aParam'].map(
+      (k) => [k, geo.getAttribute(k) as THREE.InstancedBufferAttribute],
+    ))
+  }
+  /** 取 row 行的分量 */
+  function row(m: Map<string, THREE.InstancedBufferAttribute>, k: string, r: number): number[] {
+    const a = m.get(k)!
+    return Array.from(a.array.slice(r * a.itemSize, (r + 1) * a.itemSize))
+  }
+  function close(got: number[], want: number[]): void {
+    expect(got).toHaveLength(want.length)
+    want.forEach((v, i) => expect(got[i]).toBeCloseTo(v, 5))
+  }
+
+  it('observeWave：脚下荡开的主环（银，y+0.05）+ 迟 0.12s 的回声环（金，y+0.06），同一 r1/dur、波形各一组', () => {
+    const vfx = makeVfx()
+    vfx.observeWave(2, 0, -3, 4.5, 2.5)
+    const m = ringAttrs(vfx)
+    expect(((vfx as any).rings as { live: number }).live).toBe(2)
+    const silver = new THREE.Color(VFX_PALETTE.silver)
+    const gold = new THREE.Color(VFX_PALETTE.warmGold)
+    // 主环：delay=0（birth=0），r0=0.3 → r1=4.5，dur 原样进 aDur
+    close(row(m, 'aOrigin', 0), [2, 0.05, -3])
+    close(row(m, 'aColor', 0), [silver.r, silver.g, silver.b])
+    close(row(m, 'aBirth', 0), [0])
+    close(row(m, 'aDur', 0), [2.5])
+    close(row(m, 'aR0', 0), [0.3])
+    close(row(m, 'aR1', 0), [4.5])
+    close(row(m, 'aWidth', 0), [0.5])
+    close(row(m, 'aParam', 0), [0, 0.55, 0.3, 0.5]) // split/fringe/wave/intensity
+    // 回声环：迟半步（birth=0.12）、再抬一指（y+0.06）、同半径同时长；split=1、更窄更淡
+    close(row(m, 'aOrigin', 1), [2, 0.06, -3])
+    close(row(m, 'aColor', 1), [gold.r, gold.g, gold.b])
+    close(row(m, 'aBirth', 1), [0.12])
+    close(row(m, 'aDur', 1), [2.5])
+    close(row(m, 'aR1', 1), [4.5])
+    close(row(m, 'aWidth', 1), [0.3])
+    close(row(m, 'aParam', 1), [1, 0.8, 0.22, 0.36])
+  })
+
+  it('observeMark：敌人金宽环（split=1、r1=1.3、intensity=0.9），交互物银窄环（split=0、r1=0.85、intensity=0.6），同 y/同 dur', () => {
+    const vfx = makeVfx()
+    vfx.observeMark(0, 0, 0, true)
+    vfx.observeMark(1, 0, 1, false)
+    const m = ringAttrs(vfx)
+    expect(((vfx as any).rings as { live: number }).live).toBe(2)
+    const silver = new THREE.Color(VFX_PALETTE.silver)
+    const gold = new THREE.Color(VFX_PALETTE.warmGold)
+    close(row(m, 'aOrigin', 0), [0, 0.04, 0])
+    close(row(m, 'aColor', 0), [gold.r, gold.g, gold.b])
+    close(row(m, 'aR0', 0), [0.25])
+    close(row(m, 'aR1', 0), [1.3])
+    close(row(m, 'aWidth', 0), [0.16])
+    close(row(m, 'aParam', 0), [1, 0.7, 0.3, 0.9])
+    close(row(m, 'aOrigin', 1), [1, 0.04, 1])
+    close(row(m, 'aColor', 1), [silver.r, silver.g, silver.b])
+    close(row(m, 'aR0', 1), [0.25])
+    close(row(m, 'aR1', 1), [0.85])
+    close(row(m, 'aWidth', 1), [0.12])
+    close(row(m, 'aParam', 1), [0, 0.7, 0.3, 0.6])
+    // 标记是即时信息：delay=0，短命 0.7s——「信息过去这阵风就散」
+    close(row(m, 'aBirth', 0), [0])
+    close(row(m, 'aBirth', 1), [0])
+    close(row(m, 'aDur', 0), [0.7])
+    close(row(m, 'aDur', 1), [0.7])
+  })
+
+  it('observeTrail：每枚面包屑一枚金环（y+0.045、dur 0.9），age 越老越宽越淡；越过窗口钳在 k=1', () => {
+    const vfx = makeVfx()
+    vfx.observeTrail([
+      { x: 1, z: 2, age: 0 },
+      { x: 3, z: 4, age: 60 * 3 },
+      { x: 5, z: 6, age: 60 * 300 },
+    ], 0, 3)
+    const m = ringAttrs(vfx)
+    expect(((vfx as any).rings as { live: number }).live).toBe(3)
+    const gold = new THREE.Color(VFX_PALETTE.warmGold)
+    // 三枚同族：金、贴地、同波形骨架（delay 0 / split 0 / fringe 0.6 / wave 0.25 / width 0.1）
+    for (const r of [0, 1, 2]) {
+      close(row(m, 'aColor', r), [gold.r, gold.g, gold.b])
+      close(row(m, 'aBirth', r), [0])
+      close(row(m, 'aDur', r), [0.9])
+      close(row(m, 'aWidth', r), [0.1])
+      close(row(m, 'aParam', r).slice(0, 3), [0, 0.6, 0.25])
+    }
+    close(row(m, 'aOrigin', 0), [1, 0.045, 2])
+    close(row(m, 'aOrigin', 1), [3, 0.045, 4])
+    close(row(m, 'aOrigin', 2), [5, 0.045, 6])
+    // k=0 → intensity 0.63、r0 0.12 / r1 0.3；k=1 → intensity 0.08、r0 0.32 / r1 0.55；
+    // 第三枚 age 远超窗口：Math.min 钳住 ⇒ 与走满窗口的那枚全同
+    const ks = [0, 1, 1]
+    ks.forEach((k, r) => {
+      close(row(m, 'aParam', r).slice(3), [0.55 * (1 - k) + 0.08])
+      close(row(m, 'aR0', r), [0.12 + 0.2 * k])
+      close(row(m, 'aR1', r), [0.3 + 0.25 * k])
+    })
   })
 })
