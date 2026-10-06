@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import { resolve } from 'path'
 
 /**
@@ -14,6 +14,17 @@ import { resolve } from 'path'
 export default defineConfig({
   resolve: { alias: { '@': resolve(__dirname, 'src') } },
   server: { port: 5173 },
+  // KI-099：`test.include` 今天才第一次存在，而它必须**锚在 `tests/` 下面**。
+  // vitest 的默认值是仓库级的 glob（`**` 打头，吃 `.test`/`.spec` 两种词干），根目录 walk 会走进
+  // `.scratch/plane_*/` 那些 `git archive` 解出来的冻结副本：它们各有各的 `tests/` 树，同名同案例，
+  // 与这一趟真正要量的那份代码毫无关系。实测（2026-10-02，仓库根跑一条只管 `tests/unit/text-integrity`
+  // 一个文件的筛选器）：收到 **3 个文件 / 51 条用例**，其中 2 个文件在 `.scratch/` 里。
+  // 后果不是崩，是**分母失真**——"套件共 N 条"不再由仓库决定，而由此刻活着几个平面决定。
+  // 这一格收窄不会少收任何真测试：磁盘上 117 个测试文件今天**全部**在 `tests/` 下面（`.scratch/ki099_files.mjs` 量的），
+  // 而这条 pattern 与 `scripts/test.mjs` 的磁盘名册由 `tests/unit/test-scope.test.ts` 逐条对账（两边不一致就是红）。
+  test: {
+    include: ['tests/**/*.{test,spec}.?(c|m)[jt]s?(x)'],
+  },
   build: {
     target: 'es2022',
     // three 拆出来后仍是 531 kB（three.module 只是 three.core 的再导出，原子片切不动）。

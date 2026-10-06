@@ -9,6 +9,12 @@
  * 做法：用 JSON reporter 拿到"这次真正跑了哪些文件"，与磁盘上的测试文件对账；
  * 对不上就重跑（最多 3 次），全都不齐才失败并打印差集。**慢一点没关系，漏跑不可接受。**
  *
+ * 对账是**双向**的（KI-099）：漏跑要重试，多跑要当场点名并退出。旧写法只算 `missing`，
+ * 于是"跑到了名册之外的文件"这一格永远绿——而 vitest 默认的 `include` 打头是仓库级的双星，
+ * 它会把 `.scratch/plane_N/tests/…` 那些平面副本收进来（今天实测：一条只管一个文件的筛选器
+ * 收到 3 个文件、51 条用例）。多跑的那一份不会让门红，只会让**分母**变成"仓库 + 此刻活着几个平面"，
+ * 于是此前每一个"套件共 N 条"的读数都不可复现。收集面本身的收窄在 `vite.config.ts` 的 `test.include`。
+ *
  * 红的时候**点名**（KI-072 补上的那一半）：把「几条用例 / 哪几个含红文件 / 每个文件红的是哪几条、
  * 第一条读数是什么」直接打出来，并把那份 JSON 报告留在原地。为什么算一条修复：旧写法只报两个数，
  * 而第二个数取的是 `numFailedTestSuites`——它数的不是文件（同一份报告：88 个文件里含红用例的只有 5 个，
@@ -18,7 +24,7 @@
  */
 import { execFileSync } from 'node:child_process'
 import { formatReds, summarizeReds } from './report-reds.mjs'
-import { describeScope, positionalFilters, scopeOf } from './test-scope.mjs'
+import { describeScope, positionalFilters, reconcileRoster, scopeOf } from './test-scope.mjs'
 import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
@@ -118,8 +124,22 @@ for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     console.error(`  完整报告留在 ${report}`)
     process.exit(1)
   }
-  const ran = new Set(res.files)
-  const missing = expected.filter((p) => !ran.has(p))
+  const { missing, extras } = reconcileRoster(expected, res.files)
+  if (extras.length > 0) {
+    // **多跑**也要点名（KI-099）。旧写法只算 `missing`，于是这一格永远绿：vitest 的默认 `include`
+    // 是仓库级的，它会从根走进 `.scratch/plane_*/tests/**`（冻结平面上的副本），那些文件被无声加进总数，
+    // 套件读数于是描述的是"仓库 + 此刻活着几个平面"。这里不给重试：名册与收集面是两份写死的判据，
+    // 重试不会让它们相等（与 KI-078 那句"差集不会因为重试而消失"同一条理由）。
+    rmSync(tmp, { recursive: true, force: true })
+    console.error(`\n[test] 这一趟跑到了 ${res.files.length} 个文件，但磁盘名册（tests/ 下 ${onDisk.length} 个）只认其中 ${expected.length} 个。多出来的是：`)
+    for (const p of extras) console.error(`  - ${p}`)
+    console.error('  两种成因，按上面那串路径分辨：①**测试文件不在 `tests/` 下面**（例如 `.scratch/plane_*` 里的副本，')
+    console.error('  而 `vite.config.ts` 的 `test.include` 没有把它挡在外面）；②`tests/` 下出现了这份 walk 不认的拼写')
+    console.error('  （这里只收 `.test.ts`，而 vitest 的 include 还吃 `.spec`、`.tsx`、`.mts`）。')
+    console.error('  该改的是**放它进来的那一步**：把文件移回 `tests/` 并按 `.test.ts` 命名，或让 `test.include` 与本文件的')
+    console.error('  `testFilesOnDisk` 同一套拼写。别把这条判据删掉来"修红"——分母一旦不可复现，之前每一个绿色数字都作废。')
+    process.exit(1)
+  }
   if (missing.length === 0) {
     rmSync(tmp, { recursive: true, force: true })
     console.log(`\n[test] 覆盖核对通过：${describeScope(filters, expected.length, onDisk.length)}，${sum.total} 条用例全绿` +

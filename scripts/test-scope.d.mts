@@ -19,4 +19,14 @@ export function matchesFilter(file: string, filter: string, root: string): boole
 
 export function scopeOf(files: readonly string[], filters: readonly string[], root: string): Scope
 
+/**
+ * 名册 ⇄ 这一趟真跑到的文件集，**双向**差集（KI-099）：两边都折成正斜杠再比，
+ * `ran` 会先去重。`missing` 可以靠重跑消掉（本机 EPERM 的静默跳过），`extras` 不行
+ * （名册与收集面是两份写死的判据）——调用方对后者要当场退出。
+ */
+export function reconcileRoster(
+  expected: readonly string[] | undefined,
+  ran: readonly string[] | undefined
+): { missing: string[]; extras: string[] }
+
 export function describeScope(filters: readonly string[], expectedCount: number, diskCount: number): string

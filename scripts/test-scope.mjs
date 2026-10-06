@@ -85,6 +85,31 @@ export function scopeOf(files, filters, root) {
   return { expected, unmatched: [], scoped: true }
 }
 
+/**
+ * 期望集 ⇄ 这一趟真跑到的文件集，**双向**对账（KI-099）。
+ *
+ * 为什么"只查漏跑"不够（这一格是 KI-099 的现场）：`scripts/test.mjs` 从写下来起只算
+ * `missing = expected 里没跑到的`，于是它保护的是"少跑"这一个方向。而**多跑**从来没人看：
+ * vitest 默认的 `include` 打头是仓库级的双星（从根往下走），它会把
+ * `.scratch/plane_N/tests/…` 里那些与本批无关的平面副本一起收进来——今天实测一条
+ * `tests/unit/text-integrity` 的筛选器收到 **3 个文件 / 51 条用例**，而磁盘那一名册里
+ * 只有 1 个文件。多跑的那两份被无声加进总数：任何"套件一共 N 条"的读数从此描述的是
+ * "仓库 + 此刻活着几个平面"，不是一个可复现的分母——而门禁的数字要能被别人复核。
+ *
+ * 返回两个方向的差集，调用方**两个都要拒**：`missing` 可以重试（本机 EPERM 会静默跳过），
+ * `extras` 不可以（名册与收集面是两份写死的判据，重试不会让它们相等）。
+ */
+export function reconcileRoster(expected, ran) {
+  const exp = (expected ?? []).map(slash)
+  const got = [...new Set((ran ?? []).map(slash))]
+  const expSet = new Set(exp)
+  const gotSet = new Set(got)
+  return {
+    missing: exp.filter((p) => !gotSet.has(p)),
+    extras: got.filter((p) => !expSet.has(p)),
+  }
+}
+
 /** 给人看的那一句：范围是筛选器**说**的，不是脚本自己猜的（`diskCount` 一起印，好让"圈窄了"看得见） */
 export function describeScope(filters, expectedCount, diskCount) {
   if (!filters.length) return `${expectedCount} 个测试文件全部跑到（磁盘名册 ${diskCount}）`
