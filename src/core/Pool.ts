@@ -2,7 +2,6 @@ export class Pool<T> {
   private free: T[] = []
   live = 0
   peak = 0
-  warnedOver = false
 
   constructor(
     private factory: () => T,
