@@ -206,4 +206,12 @@ describe('背包收不下的一笔', () => {
     const t = labTable([{ id: 'tim', item: 'it_timbite' }])
     expect(loot.grant(t), '一件都没进包 ⇒ 返回空，不返回拿不出名字的半份').toEqual([])
   })
+
+  it('既没写 item 也没写 gearBand 的 roll：掷中了也无货可发（roll 的空形状终点）', () => {
+    registerGameData()
+    const inv = { rng: new Rng('loot-empty-roll') } as unknown as Inventory
+    const loot = new LootDirector(inv, new Progression('origin_tuner'))
+    const t = labTable([{ id: 'ghost' }])
+    expect(loot.grant(t)).toEqual([])
+  })
 })

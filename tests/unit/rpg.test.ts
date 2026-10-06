@@ -7,7 +7,7 @@ import { Inventory, itemOf, rollAffixes } from '@/rpg/Inventory'
 import { Equipment, SLOTS, equipSeal } from '@/rpg/Equipment'
 import { upgradeStep, weaponDamageMul, armorDefMul, maxLevelOf, tryUpgrade, salvageValue } from '@/rpg/Upgrade'
 import { LootDirector, allGearItems } from '@/rpg/Loot'
-import { RpgRuntime } from '@/rpg/Runtime'
+import { RpgRuntime, gearName } from '@/rpg/Runtime'
 import { Rng } from '@/core/Math'
 
 /**
@@ -311,6 +311,21 @@ describe('总装（RpgRuntime）：装备/升级/洗点/使用道具的编排', 
     expect(res.ok).toBe(true)
     expect(res.refunded).toBe(2)
     expect(rt.inv.count('it_timbite')).toBe(0)
+  })
+
+  it('没花过点的角色洗不出东西：钱够但不退款也不扣钱（nothing 腿）', () => {
+    const rt = new RpgRuntime('origin_tuner') // 出身底子原封未动：没有已分配的点
+    const cost = rt.prog.respecCost()
+    rt.inv.add('it_timbite', cost) // 钱够 ⇒ 进不到 poor 腿，走的是「洗完发现没点可退」
+    const before = rt.prog.unspent
+    expect(rt.respec()).toMatchObject({ ok: false, refunded: 0, cost, reason: 'nothing' })
+    expect(rt.inv.count('it_timbite'), '没洗成不许扣钱').toBe(cost)
+    expect(rt.prog.unspent).toBe(before)
+  })
+
+  it('gearName：注册件给中文名，未知 id 原样回落（面板不显示空串）', () => {
+    expect(gearName('wp_tuning_sword_item')).toBe(itemOf('wp_tuning_sword_item').displayName)
+    expect(gearName('it_no_such_gear_xyz')).toBe('it_no_such_gear_xyz')
   })
 
   it('使用消耗品会真的消耗一件（数量不会凭空虚增）', () => {
