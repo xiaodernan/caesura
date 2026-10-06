@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { registerGameData, regions } from '@/data'
+import { registerGameData, regions, worldstate } from '@/data'
 import type { RegionData } from '@/data/schema'
 
 /**
@@ -115,5 +115,43 @@ describe('环境叙事节拍（§4 / §29）：落地的还在，且站在自己
     }
     // 反向：表里每个区都必须是真存在的区
     for (const regionId of Object.keys(LANDED)) expect(byId.has(regionId), `${regionId} 存在`).toBe(true)
+  })
+})
+
+describe('§4.8 初句圣所：五环线索链的每一环都要有写方（KI-091 的claim，由这道守卫钉住）', () => {
+  const DEEP = 'rg_earless_deeps'
+  /** 那扇门要的四面线索旗（照 `regions.json` 的 `requiresFlags` 合取） */
+  const CLUES = [
+    'flag.clue_reverse_score',
+    'flag.clue_dome_reflection',
+    'flag.clue_d5_scratch',
+    'flag.clue_lean_corpses',
+  ]
+
+  it('那扇门在深窖里，而且它要的正是那四面旗（合取闸门，不是"走近就开"）', () => {
+    const deep = byId.get(DEEP)!
+    const door = deep.interactables.find((i) => i.id === 'ga_deeps_firstphrase_door')
+    expect(door, '门不该消失').toBeTruthy()
+    expect(door!.kind).toBe('gate')
+    expect([...door!.requiresFlags ?? []].sort()).toEqual([...CLUES].sort())
+  })
+
+  it('每一面线索旗都有写方（worldstate 规则），没有一面是"只被读、没人写"', () => {
+    const written = new Set<string>()
+    for (const rule of worldstate) {
+      const f = (rule as { setFlag?: string }).setFlag
+      if (f) written.add(f)
+    }
+    for (const clue of CLUES) {
+      expect(written.has(clue), `${clue} 必须有写方（否则这扇门永远开不了）`).toBe(true)
+    }
+  })
+
+  it('门后那个拓印箱还在，且带着自己的 secretId（写方与领取点成对）', () => {
+    const deep = byId.get(DEEP)!
+    const chest = deep.interactables.find((i) => i.id === 'ch_first_phrase')
+    expect(chest, '拓印点不该消失').toBeTruthy()
+    expect(chest!.secretId, '领取点必须挂回 secret').toBeTruthy()
+    expect(chest!.verb, '它要有一个"拓下石刻上的初句"这样的动词').toBeTruthy()
   })
 })
