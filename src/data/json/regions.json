@@ -1423,6 +1423,16 @@
      "z": 330
     },
     "radius": 4
+   },
+   {
+    "enemyId": "en_phantome",
+    "count": 2,
+    "center": {
+     "x": -250,
+     "y": -144,
+     "z": 290
+    },
+    "radius": 10
    }
   ],
   "landmarks": [
