@@ -142,6 +142,9 @@ src/
                        任务线在等的旗（quests.json > steps[].advanceOn.flags）× 站在这一区的钟
                        （regions.json > interactables[kind==='bell'].setsFlag）⇒ 一口修好的钟拨一格。
                        纯函数、不认识 three 也不认识 DOM，输出只有一个天气名；画怎么调色归 vfx/ColorGrade
+    Observe.ts         声纹观察 Observe 动词的纯逻辑账本（KI-105，gameplay.md §2.1）：包络（0.5s 淡入出）、
+                       脉冲（3s 波前外扩、0.75s 一声 ping）、标记（每脉冲每目标记一次账）；零 three 依赖，
+                       VfxLayer 的环与 revealed/takeMarks 的判据共用同一份半径算式
     ChunkGreybox.ts    chunk 灰盒表现层：world.chunk → InstancedMesh 挂/摘（§5.5）
     WallGreybox.ts     authored 墙体灰盒（KI-014②）：`regions.json > walls` 那张表里每一块墙一张
                        InstancedMesh（单位立方体 × 每块墙自己的缩放），全场常驻 1 个 drawcall；

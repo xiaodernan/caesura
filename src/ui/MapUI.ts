@@ -55,8 +55,8 @@ export interface MapDeps {
   regionAt: (pos: Vec3) => RegionData | null
   /** 探索遮罩（`streaming.isExplored`） */
   isExplored: (pos: Vec3) => boolean
-  /** 区域格边长（`streaming.chunkSize`，数据侧给的） */
-  chunkSize: number
+  /** 区域格边长（`streaming.chunkSize`，数据侧给的）。惰性读取：`streaming` 在组合根里建得比本面板晚 */
+  chunkSize: () => number
   playerPos: () => Vec3
   /** 镜头朝向（世界 XZ 单位向量）：玩家标记「指向镜头朝向」（ui-ux §4.3） */
   viewDir: () => { x: number; z: number }
@@ -304,7 +304,7 @@ export class MapUI {
     if (!this.open) return
     const player = this.deps.playerPos()
     const current = this.deps.regionAt(player)
-    const revealed = exploredRegionIds(this.regions, this.deps.chunkSize, this.deps.isExplored)
+    const revealed = exploredRegionIds(this.regions, this.deps.chunkSize(), this.deps.isExplored)
     const zoom = ZOOM_LEVELS[this.zoom]
     const thumb = zoom < THUMBNAIL_BELOW
     const v = this.viewSize()
@@ -334,7 +334,7 @@ export class MapUI {
         </main>
         <div class="foot">
           <span>拖拽 / ↑↓←→ 平移 · PgUp·PgDn 缩放 · Enter 回中 · Backspace 收起</span>
-          <span>${thumb ? '缩略图：只画区色块（&lt;0.7×）' : `1 格 = ${this.deps.chunkSize}m`}</span>
+          <span>${thumb ? '缩略图：只画区色块（&lt;0.7×）' : `1 格 = ${this.deps.chunkSize()}m`}</span>
         </div>
       </div>`
   }
@@ -395,7 +395,7 @@ export class MapUI {
   private scaleHtml(): string {
     const k = 1 / ZOOM_LEVELS[this.zoom]
     const v = this.viewSize()
-    const len = this.deps.chunkSize
+    const len = this.deps.chunkSize()
     const x = this.cx - v.w / 2 + 16 * k
     const y = this.cz + v.h / 2 - 16 * k
     return `<g transform="translate(${r2(x)},${r2(y)}) scale(${r2(k)})">

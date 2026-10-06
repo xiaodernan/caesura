@@ -150,6 +150,17 @@ export class Interactables {
 
   focus(pos: Vec3): Interactable | null { return this.nearby(pos)[0] ?? null }
 
+  /**
+   * 观察波及半径内的目标（KI-105：Observe 的读方）。过滤口径与 nearby 逐字相同——
+   * 「不在场的东西显不了形」对值域、旗标、消耗三闸一视同仁；差别只有半径归调用方给
+   * （观察的 26m 不是交互的 2m）且不排序（标记环不排座次）。
+   */
+  within(pos: Vec3, r: number): Interactable[] {
+    const r2 = r * r
+    return this.items
+      .filter((i) => dist2(i.pos, pos) <= r2 && this.regionOpen(i) && !this.used.has(i.id) && !this.stateLocked(i))
+  }
+
   /** 每 tick 调用：焦点变化时才发 UI 提示事件 */
   update(pos: Vec3): void {
     const f = this.focus(pos)

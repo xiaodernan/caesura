@@ -13,6 +13,7 @@ import { StreamingSystem, chunkKeyOf, type ChunkState } from '@/world/Streaming'
 import { Surface } from '@/world/Surface'
 import { SpawnDirector } from '@/world/SpawnDirector'
 import { Interactables, takeInteractEdge } from '@/world/Interactables'
+import { ObserveSystem, OBSERVE_RADIUS, OBSERVE_TRAVEL_TICKS } from '@/world/Observe'
 import { PropSystem } from '@/world/Props'
 import { PropVisuals } from '@/world/PropVisuals'
 import { ChunkGreybox } from '@/world/ChunkGreybox'
@@ -234,6 +235,13 @@ const interact = new Interactables(
   6,
   (req) => worldStates.matches(req.key, req.value),
 )
+/**
+ * KI-105 声纹观察：按住 V 荡开涟漪，波前扫到的敌人/交互物显形（gameplay.md §2.1）。
+ * 逻辑住在 `world/Observe`（纯函数、headless 可量），这里只做两件装配：
+ * 把 held 状态与玩家位置喂进去、把它报出的点画成 VfxLayer 的环——
+ * 大波纹的逻辑波前与视觉波前共用同一份半径算式，圈就是判据本身。
+ */
+const observe = new ObserveSystem()
 /**
  * KI-094②：「修钟之后这一区的天气换掉」那条切换第一次有运行时读者（`world/WeatherSwitch`，
  * 为什么判据是任务线那份旗标名册见那个文件的头注）。旗标的真源在 `world/Interactables`，
@@ -527,6 +535,21 @@ const core = {
     projectileVis.syncTelegraphs(combat.telegraphs())
     bossArena.sync(ai.enemies.filter((e) => !!e.data.boss)) // 立钟与断音柱都在 Boss 场地类里，少一个过滤条件就会漏画后者
     propVis.sync(props.all) // KI-023：音刺的歪斜/残桩跟着耐久走
+    // KI-105 声纹观察：按住 V 荡开涟漪——波前扫到的敌人/交互物画显形环。
+    // 包络闸门关着（没按/淡出完）时这一切空转：takeMarks 交还空账，一个环都不发。
+    observe.hold(inp.frame.held.has('observe'))
+    for (const p of observe.update(t.tick, player.pos.x, player.pos.z)) {
+      // 大波纹从脉冲的出生点荡开（不是玩家此刻的位置——按住时走两步，两圈波纹就该错开）
+      vfx.observeWave(p.x, player.pos.y, p.z, OBSERVE_RADIUS, OBSERVE_TRAVEL_TICKS / 60)
+    }
+    if (observe.active) {
+      const marks = observe.takeMarks(
+        ai.enemies.filter((e) => e.alive).map((e) => ({ id: e.id, x: e.pos.x, y: e.pos.y, z: e.pos.z })),
+        interact.within(player.pos, OBSERVE_RADIUS).map((i) => ({ id: i.id, x: i.pos.x, y: i.pos.y, z: i.pos.z })),
+        t.tick,
+      )
+      for (const m of marks) vfx.observeMark(m.x, m.y, m.z, m.kind === 'enemy')
+    }
   },
   postTick(t: GameTime) {
     // 节拍钟走「逻辑 tick」而不是 time.dt：combat.md §9 末行规定 hitStop 只冻结攻守双方的动画时间，
@@ -648,7 +671,7 @@ if (freshBoot) {
   }, originId)
 }
 
-;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, wallGreybox, interact, props, hud, spawner, nodes, worldState, projectileVis, actors: visuals, bossArena, saves, saveRoster, checkpoints, rpg, settlement, panel, setPanelOpen, mapUi, setMapOpen, quests, dialogueEngine, dialogueBox, openDialogue, debugPanels, refreshRpg, saveNow: () => saves.save('autosave'), get title() { return title } }
+;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, wallGreybox, interact, props, hud, spawner, nodes, worldState, projectileVis, actors: visuals, bossArena, saves, saveRoster, checkpoints, rpg, settlement, panel, setPanelOpen, mapUi, setMapOpen, quests, dialogueEngine, dialogueBox, openDialogue, debugPanels, refreshRpg, observe, saveNow: () => saves.save('autosave'), get title() { return title } }
 
 document.getElementById('boot')!.style.display = 'none'
 ;(window as unknown as Record<string, unknown>).__CAESURA_BOOTED__ = true

@@ -228,11 +228,13 @@ describe('今天的真载体：五张新对账在真文件上零条，抽取也�
     expect(objectKeys(read('src/player/CameraRig.ts'), 'SHAKE_TABLE')).toEqual(
       ['graze', 'normal', 'hurt', 'parry', 'heavy', 'boss', 'execute', 'stomp'])
     expect(arrayLiterals(read('src/core/EventBus.ts'), 'STATUS_IDS')).toHaveLength(5)
-    // 21 = 20 + `throwCrystal`（KI-023① 的 T 键音色晶）。**数与名字一起钉**：只报一个数的话，
-    // 将来任何一格增删都只能靠"撞红"来定位，而撞红只说"不是 21"，说不出变的是谁。
+    // 22 = 20 + `throwCrystal`（KI-023① 的 T 键音色晶）+ `observe`（KI-105 的 V 键声纹观察）。
+    // **数与名字一起钉**：只报一个数的话，
+    // 将来任何一格增删都只能靠"撞红"来定位，而撞红只说"不是 22"，说不出变的是谁。
     const actions = unionMembers(schemaBlocks(read('src/core/Input.ts')), 'ActionName')
-    expect(actions, '输入层的动作全集').toHaveLength(21)
+    expect(actions, '输入层的动作全集').toHaveLength(22)
     expect(actions, 'KI-023① 加的那一格').toContain('throwCrystal')
+    expect(actions, 'KI-105 加的那一格').toContain('observe')
     expect(callArgLiterals(read('src/rpg/Settlement.ts'), 'passiveValue')).toEqual(
       ['ps_metronomefoot', 'ps_tympanicguard', 'ps_featherrest'])
     expect(refFieldUnion(schemaBlocks(read('src/data/schema.ts')), 'Hitbox', 'shape')).toEqual(['cone', 'sphere', 'ring'])

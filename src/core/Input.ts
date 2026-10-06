@@ -3,6 +3,7 @@ export type ActionName =
   | 'sprint' | 'jump' | 'dodge'
   | 'attackLight' | 'attackHeavy' | 'guard' | 'parry'
   | 'lockOn' | 'interact' | 'weaponSkill' | 'weaponSkillB'
+  | 'observe'
   | 'ability1' | 'ability2' | 'ability3'
   | 'map' | 'pause' | 'throwCrystal'
 
@@ -20,6 +21,7 @@ export const DEFAULT_BINDS: Binds = {
     KeyF: 'guard', KeyG: 'parry',
     KeyQ: 'lockOn', KeyE: 'interact', KeyR: 'weaponSkill', KeyC: 'weaponSkillB',
     KeyT: 'throwCrystal',
+    KeyV: 'observe',
     Digit1: 'ability1', Digit2: 'ability2', Digit3: 'ability3',
     Tab: 'map', Escape: 'pause'
   },
@@ -95,7 +97,7 @@ export class Input {
    * （方向键在没菜单时该 scroll 就 scroll，不该被游戏吃掉）。
    * 今天只有 `main.ts` 在面板开合时改它；对话框/标题屏各自留着 DOM 监听器，等各自那一批再并进来。
    */
-  uiOwner: 'panel' | null = null
+  uiOwner: 'panel' | 'map' | null = null
   /** 本帧新出现的 UI 意图（edge 语义：一直按着不放不会连发） */
   uiEdges = new Set<UiIntent>()
   private kbUiHeld = new Set<UiIntent>()

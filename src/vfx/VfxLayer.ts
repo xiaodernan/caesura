@@ -502,6 +502,27 @@ export class VfxLayer {
 
   /* -------------------------------- 原语 -------------------------------- */
 
+  /**
+   * KI-105 声纹观察：脚下荡开的大波纹。主环（银）+ 迟半步的回声环（金），
+   * r0→r1 线性外扩、dur 秒走完——ObserveSystem 的逻辑波前用的是同一条半径算式，
+   * 所以画出来的圈就是「显形判据」本身，不是它的一张示意图。
+   */
+  observeWave(px: number, py: number, pz: number, r1: number, dur: number): void {
+    const sh = this.shape
+    sh.delay = 0; sh.width = 0.5; sh.split = 0; sh.fringe = 0.55; sh.wave = 0.3; sh.intensity = 0.5
+    this.ring(px, py + 0.05, pz, UP.x, UP.y, UP.z, this.colors.silver, 0.3, r1, dur)
+    sh.delay = 0.12; sh.width = 0.3; sh.split = 1; sh.fringe = 0.8; sh.wave = 0.22; sh.intensity = 0.36
+    this.ring(px, py + 0.06, pz, UP.x, UP.y, UP.z, this.colors.warmGold, 0.3, r1, dur)
+  }
+
+  /** KI-105：波前扫到的目标标记（金宽环=敌人、银窄环=交互物），短命——信息过去这阵风就散 */
+  observeMark(px: number, py: number, pz: number, enemy: boolean): void {
+    const sh = this.shape
+    sh.delay = 0; sh.width = enemy ? 0.16 : 0.12; sh.split = enemy ? 1 : 0
+    sh.fringe = 0.7; sh.wave = 0.3; sh.intensity = enemy ? 0.9 : 0.6
+    this.ring(px, py + 0.04, pz, UP.x, UP.y, UP.z, enemy ? this.colors.warmGold : this.colors.silver, 0.25, enemy ? 1.3 : 0.85, 0.7)
+  }
+
   /** 环原语：法向→四元数（RingGeometry 法线为 +Z），波形参数取 this.shape */
   private ring(
     px: number, py: number, pz: number,
