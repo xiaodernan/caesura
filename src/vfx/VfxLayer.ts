@@ -523,6 +523,21 @@ export class VfxLayer {
     this.ring(px, py + 0.04, pz, UP.x, UP.y, UP.z, enemy ? this.colors.warmGold : this.colors.silver, 0.25, enemy ? 1.3 : 0.85, 0.7)
   }
 
+  /**
+   * KI-105②：巡逻线回放（§2.1「敌人巡逻路径以地面波纹显示 3 秒」）。每个面包屑一枚小环，
+   * 与标记环同一族（金、贴地、同 UP）；age 越老波越宽越淡——那是涟漪已经扫过去的来路。
+   * 窗长由调用方给（秒）：本层不 import world 层的常数，归一化的尺留在组合根手里。
+   */
+  observeTrail(pts: readonly { x: number; z: number; age: number }[], py: number, windowSec: number): void {
+    const sh = this.shape
+    for (const p of pts) {
+      const k = Math.min(1, p.age / 60 / windowSec)
+      sh.delay = 0; sh.width = 0.1; sh.split = 0; sh.fringe = 0.6; sh.wave = 0.25
+      sh.intensity = 0.55 * (1 - k) + 0.08
+      this.ring(p.x, py + 0.045, p.z, UP.x, UP.y, UP.z, this.colors.warmGold, 0.12 + 0.2 * k, 0.3 + 0.25 * k, 0.9)
+    }
+  }
+
   /** 环原语：法向→四元数（RingGeometry 法线为 +Z），波形参数取 this.shape */
   private ring(
     px: number, py: number, pz: number,

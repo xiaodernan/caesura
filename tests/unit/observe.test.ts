@@ -4,6 +4,7 @@ import {
   OBSERVE_FADE_TICKS,
   OBSERVE_PULSE_GAP,
   OBSERVE_RADIUS,
+  OBSERVE_TRAIL_STEP,
   OBSERVE_TRAVEL_TICKS,
   type ObserveTarget,
 } from '@/world/Observe'
@@ -177,5 +178,58 @@ describe('KI-105 标记账：每颗脉冲对每个目标只报一次', () => {
     expect(marks.find((m) => m.id === 'in_well')?.kind).toBe('interact')
     run(o, OBSERVE_FADE_TICKS + 2, t + 1, false)
     expect(o.takeMarks([near], [], t + OBSERVE_FADE_TICKS + 5).length).toBe(0)
+  })
+})
+
+describe('KI-105② 巡逻线回放：来路一直在记，显形时放 3 秒', () => {
+  it('每 tick 都喂但按步长采样：60 tick 走过来只记 7 个面包屑', () => {
+    const o = new ObserveSystem()
+    for (let k = 0; k <= 60; k++) o.track('e1', k, 0, k)
+    const trail = o.trailOf('e1', 60)
+    expect(trail.map((p) => p.x)).toEqual([0, 10, 20, 30, 40, 50, 60])
+    expect(trail[0].age).toBe(60)
+    expect(trail[6].age).toBe(0)
+  })
+
+  it('窗剪：3s 窗外的旧点当场剪掉，账本不会越长越大', () => {
+    const o = new ObserveSystem()
+    for (let k = 0; k <= 600; k++) o.track('e1', k, 0, k)
+    const trail = o.trailOf('e1', 600)
+    expect(trail.length).toBe(OBSERVE_TRAVEL_TICKS / OBSERVE_TRAIL_STEP + 1)
+    expect(trail[0]).toEqual({ x: 420, z: 0, age: 180 })
+  })
+
+  it('停喂超过窗长整账注销：敌人死了/流送走了不会在 Map 里留尸', () => {
+    const o = new ObserveSystem()
+    for (let k = 0; k <= 100; k++) {
+      o.track('e1', k, 0, k)
+      o.update(k, 0, 0)
+    }
+    o.update(280, 0, 0)
+    expect(o.trailOf('e1', 280).length).toBeGreaterThan(0) // 窗内还在
+    o.update(281, 0, 0)
+    expect(o.trailOf('e1', 281)).toEqual([]) // 停喂 181 tick > 180：注销
+  })
+
+  it('敌人标记带 3s 来路快照（age 对得上）；交互物不带；快照不随后续 track 长大', () => {
+    const o = new ObserveSystem()
+    for (let k = 0; k <= 60; k++) {
+      o.track('t_walk', k - 58, 0, k) // 从 -58m 一路走到 +2m
+      o.hold(true)
+      o.update(k, 0, 0)
+    }
+    // tick 30 脉冲出生，tick 60 时波前走出 30 tick ≈ 4.3m：2m 的敌人、3m 的交互物都被扫到
+    const marks = o.takeMarks(
+      [{ id: 't_walk', x: 2, y: 0, z: 0 }],
+      [{ id: 'in_x', x: 3, y: 0, z: 0 }],
+      60,
+    )
+    const enemy = marks.find((m) => m.id === 't_walk')!
+    expect(enemy.trail).toHaveLength(7)
+    expect(enemy.trail![6]).toEqual({ x: 2, z: 0, age: 0 })
+    expect(marks.find((m) => m.id === 'in_x')?.trail).toBeUndefined()
+    // 取走的是当时的快照：之后敌人继续走，已递出的标记不跟着长
+    for (let k = 61; k <= 90; k++) o.track('t_walk', k - 58, 0, k)
+    expect(enemy.trail).toHaveLength(7)
   })
 })

@@ -2,8 +2,8 @@
  * KI-105 声纹观察（Observe）——「聋者之眼」的动词腿（gameplay.md §2.1，需求 P2 聋者之眼）。
  *
  * 主角是聋者：世界的信息不走耳朵，走**视觉声纹**。按住 V，一圈涟漪从脚下荡开，波前扫过的地方，
- * 敌人与能交互的东西以地面波纹显形（§43「敌人巡逻路径以地面波纹显示 3 秒」的机制读法：
- * 显形的时长=波前的行程，不另编一个计时器）。
+ * 敌人与能交互的东西以地面波纹显形（gameplay.md §2.1「敌人巡逻路径以地面波纹显示 3 秒」的机制
+ * 读法：显形的时长=波前的行程，不另编一个计时器；巡逻线同理——§2.1② 的回放腿见 `track/trailOf`）。
  *
  * 这条腿同时是 KI-018 的解锁件：无耳深窖的设计正解是「靠听而不是靠看」，而观察动词就是玩家
  * 在近黑区域里的耳朵——没有它，塞进去的幽灵八只会变成「看不见 ⇒ 打不过」的坏题。
@@ -32,11 +32,20 @@ export const OBSERVE_RADIUS = 26
 export const OBSERVE_TRAVEL_TICKS = 180
 /** 按住不松时两颗脉冲的间隔（tick）：0.75s 一声 ping；与行程交叠保证覆盖连续 */
 export const OBSERVE_PULSE_GAP = 45
+/** 巡逻线面包屑的采样间隔（tick）：10 tick 一点 ⇒ 3s 窗口最多 18 点，够画一条可读的线 */
+export const OBSERVE_TRAIL_STEP = 10
 
 export interface Pulse {
   readonly x: number
   readonly z: number
   readonly birthTick: number
+}
+
+/** 巡逻线上的一个面包屑：位置 + 它离「现在」多远（age 供表现层按新旧调浓淡） */
+export interface TrailPoint {
+  readonly x: number
+  readonly z: number
+  readonly age: number
 }
 
 /** 观察的读方目标：只认位置与身份，不认识别的东西（敌人与交互物都长这个形状） */
@@ -53,6 +62,8 @@ export interface ObserveMark {
   readonly y: number
   readonly z: number
   readonly kind: 'enemy' | 'interact'
+  /** §2.1② 巡逻线回放：只有敌人带——它是「这只东西刚从哪儿来」，交互物没有来路可放 */
+  readonly trail?: readonly TrailPoint[]
 }
 
 export class ObserveSystem {
@@ -71,6 +82,12 @@ export class ObserveSystem {
   private readonly bornOut: Pulse[] = []
   /** takeMarks 的返回值：同上 */
   private readonly marksOut: ObserveMark[] = []
+  /**
+   * §2.1② 巡逻线的面包屑账（KI-105②）：`track` 每 tick 喂、按 `OBSERVE_TRAIL_STEP` 采样，
+   * 只留 `OBSERVE_TRAVEL_TICKS`（3s）窗内的点；标记被取走时把**当时的**来路快照递给表现层。
+   * 泄漏守卫：一只敌人停喂超过窗长，它的账整个注销（深窖的怪会死、会被流送回收）。
+   */
+  private readonly trails = new Map<string, { lastTick: number; pts: { x: number; z: number; tick: number }[] }>()
 
   /** 长按观察键。held 语义：每 tick 用 `frame.held.has('observe')` 喂，不是边沿 */
   hold(on: boolean): void {
@@ -97,6 +114,29 @@ export class ObserveSystem {
   }
 
   /**
+   * 巡逻线记账（每 tick 喂一只活敌人；main.ts 的敌人循环里顺手调用）。
+   * 采样按步长跳格——巡逻驻留点不产生点堆积；窗外的旧点当场剪掉，账本不会越长越大。
+   */
+  track(id: string, x: number, z: number, tick: number): void {
+    let e = this.trails.get(id)
+    if (!e) { e = { lastTick: tick, pts: [] }; this.trails.set(id, e) }
+    e.lastTick = tick
+    // 采样按步长跳格：窗内最近一点够老才记新点（首点立刻记）
+    if (e.pts.length === 0 || tick - e.pts[e.pts.length - 1].tick >= OBSERVE_TRAIL_STEP) {
+      e.pts.push({ x, z, tick })
+    }
+    // 剪窗：3s 之外的来路不再是要显示的东西（显示时长=波前行程，同一把尺）
+    while (e.pts.length > 0 && tick - e.pts[0].tick > OBSERVE_TRAVEL_TICKS) e.pts.shift()
+  }
+
+  /** 某只敌人的来路（只读、带 age）；没喂过或窗外 = 空 */
+  trailOf(id: string, tick: number): readonly TrailPoint[] {
+    const e = this.trails.get(id)
+    if (!e) return []
+    return e.pts.map((p) => ({ x: p.x, z: p.z, age: tick - p.tick }))
+  }
+
+  /**
    * 每 tick 推进：包络、脉冲的生与死。返回本 tick 新出生的脉冲（通常 0 或 1 颗），
    * main.ts 拿去发大波纹环——逻辑波前与视觉波前用同一份半径算式，不会各走各的。
    */
@@ -116,6 +156,11 @@ export class ObserveSystem {
     // 退休：波前走满就摘。覆盖的连续性由 GAP < TRAVEL 的新生交叠保证，不靠赖着不走
     for (let i = this.pulses.length - 1; i >= 0; i--) {
       if (tick - this.pulses[i].birthTick > OBSERVE_TRAVEL_TICKS) this.pulses.splice(i, 1)
+    }
+    // 巡逻线账的守卫住在这里而不是 track()：track 只在被喂时跑，死掉/流送走的敌人
+    // 再也没有人喂它——停在 update 里每 tick 扫，停喂超过窗长的账整个注销，Map 不会越长越大
+    for (const [id, e] of this.trails) {
+      if (tick - e.lastTick > OBSERVE_TRAVEL_TICKS) this.trails.delete(id)
     }
     return this.bornOut
   }
@@ -169,7 +214,10 @@ export class ObserveSystem {
         const key = `${p.birthTick}:${t.id}`
         if (this.marked.has(key)) continue
         this.marked.add(key)
-        this.marksOut.push({ id: t.id, x: t.x, y: t.y, z: t.z, kind })
+        // 敌人标记带上来路快照（§2.1② 巡逻线回放）；交互物没有来路可放
+        this.marksOut.push(kind === 'enemy'
+          ? { id: t.id, x: t.x, y: t.y, z: t.z, kind, trail: this.trailOf(t.id, tick) }
+          : { id: t.id, x: t.x, y: t.y, z: t.z, kind })
       }
     }
   }

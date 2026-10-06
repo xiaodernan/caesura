@@ -538,17 +538,25 @@ const core = {
     // KI-105 声纹观察：按住 V 荡开涟漪——波前扫到的敌人/交互物画显形环。
     // 包络闸门关着（没按/淡出完）时这一切空转：takeMarks 交还空账，一个环都不发。
     observe.hold(inp.frame.held.has('observe'))
+    // KI-105②：巡逻来路一直在记（不论观察开否）——不然按下 V 的瞬间敌人只有「此刻」没有「来路」，
+    // §2.1 的 3 秒回放就得从第二次 ping 才开始有东西可放。
+    const liveEnemies = ai.enemies.filter((e) => e.alive)
+    for (const e of liveEnemies) observe.track(e.id, e.pos.x, e.pos.z, t.tick)
     for (const p of observe.update(t.tick, player.pos.x, player.pos.z)) {
       // 大波纹从脉冲的出生点荡开（不是玩家此刻的位置——按住时走两步，两圈波纹就该错开）
       vfx.observeWave(p.x, player.pos.y, p.z, OBSERVE_RADIUS, OBSERVE_TRAVEL_TICKS / 60)
     }
     if (observe.active) {
       const marks = observe.takeMarks(
-        ai.enemies.filter((e) => e.alive).map((e) => ({ id: e.id, x: e.pos.x, y: e.pos.y, z: e.pos.z })),
+        liveEnemies.map((e) => ({ id: e.id, x: e.pos.x, y: e.pos.y, z: e.pos.z })),
         interact.within(player.pos, OBSERVE_RADIUS).map((i) => ({ id: i.id, x: i.pos.x, y: i.pos.y, z: i.pos.z })),
         t.tick,
       )
-      for (const m of marks) vfx.observeMark(m.x, m.y, m.z, m.kind === 'enemy')
+      for (const m of marks) {
+        vfx.observeMark(m.x, m.y, m.z, m.kind === 'enemy')
+        // 敌人标记带来的来路快照画成地面波纹链（窗长秒数 = 行程 tick / 60，同一把尺）
+        if (m.trail?.length) vfx.observeTrail(m.trail, m.y, OBSERVE_TRAVEL_TICKS / 60)
+      }
     }
   },
   postTick(t: GameTime) {
