@@ -178,3 +178,19 @@ describe('PlayerController：核心分支补全', () => {
     expect(far.pos.y).toBe(0) // 3 层的落差不在台阶容差内：不许被人拎起来
   })
 })
+
+describe('PlayerController：takeDamage 的死亡腿（L799-803 第一次有读者）', () => {
+  it('打空血 ⇒ dead 置位、deadTicks 归零、player.died 恰发一声；死了再打不收', () => {
+    const c = fresh()
+    const deaths: number[] = []
+    const off = bus.on('player.died', () => { deaths.push(1) })
+    expect(c.takeDamage(c.stats.hpMax)).toBe(true)
+    off()
+    expect(c.dead_).toBe(true)
+    expect((c as any).deadTicks).toBe(0)
+    expect(deaths).toEqual([1])
+    // 亡者不收刀：early return 挡在 iFrame/dead 那一行，讣告不重发
+    expect(c.takeDamage(5)).toBe(false)
+    expect(deaths).toEqual([1])
+  })
+})
