@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { Rng } from '@/core/Math'
 import { registry } from '@/core/Registry'
 import { registerGameData } from '@/data'
 import type { LootRoll, LootTableData, ProgressionData } from '@/data/schema'
@@ -193,5 +194,16 @@ describe('掉落表数据自检（G5③ 掉落评审的真数据部分）', () =
         expect(best, `${tableId}:${g.id} 的装备档至少要够到稀有`).toBeGreaterThanOrEqual(order.indexOf('rare'))
       }
     }
+  })
+})
+
+describe('背包收不下的一笔', () => {
+  it('inv.add 返回 0 ⇒ 这一格静默落空：不播报半份', () => {
+    registerGameData()
+    // 只换掉 add 这一条腿：LootDirector 对背包的全部预期就是「收下几件」这一格读数
+    const inv = { rng: new Rng('loot-full'), add: () => 0 } as unknown as Inventory
+    const loot = new LootDirector(inv, new Progression('origin_tuner'))
+    const t = labTable([{ id: 'tim', item: 'it_timbite' }])
+    expect(loot.grant(t), '一件都没进包 ⇒ 返回空，不返回拿不出名字的半份').toEqual([])
   })
 })

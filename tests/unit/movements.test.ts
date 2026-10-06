@@ -276,3 +276,18 @@ describe('面板与播报的取词口', () => {
     expect(unlockItemName(page.id)).toContain(String(page.unlock.count))
   })
 })
+
+describe('页旗标缓存：world.flag 广播是唯一写路径', () => {
+  it('value 置假 ⇒ 缓存跟着删——世界收回的见证不再是见证', () => {
+    const b = book()
+    bus.emit('world.flag', { key: 'flag.organ_gate_open', value: true })
+    expect(b.hasFlag('flag.organ_gate_open')).toBe(true)
+    bus.emit('world.flag', { key: 'flag.organ_gate_open', value: false })
+    expect(b.hasFlag('flag.organ_gate_open')).toBe(false)
+    // 0 与 '' 同属「假」：写进来就是删
+    bus.emit('world.flag', { key: 'flag.organ_gate_open', value: 0 })
+    expect(b.hasFlag('flag.organ_gate_open')).toBe(false)
+    bus.emit('world.flag', { key: 'flag.organ_gate_open', value: '' })
+    expect(b.hasFlag('flag.organ_gate_open')).toBe(false)
+  })
+})

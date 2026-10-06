@@ -117,6 +117,16 @@ describe('遮挡原语 firstBlock：一条线段只有一个答案', () => {
   it('水平零位移的线段（垂直落体）不进二次方程：判无遮挡，而不是 NaN', () => {
     expect(firstBlock([cyl('p', 0, 0)], { x: 0, y: 20, z: 0 }, { x: 1e-10, y: 0, z: 0 })).toBeNull()
   })
+
+  it('斜线从柱顶上方插进竖带：截点是 y 穿越 top 的那一格（中段进带，不是从 lo 就在带里）', () => {
+    const c = cyl('mid', 0, 0, 1, 2) // base 0 / top 2
+    // 柱面窗 t∈[0.4, 0.6]；y 从 5 降到 -1，在 t=0.5 处跨过 top=2
+    const hit = firstBlock([c], { x: 0, y: 5, z: -5 }, { x: 0, y: -1, z: 5 })
+    expect(hit, '中段进带的线要被接住').not.toBeNull()
+    expect(hit!.occluderId).toBe('mid')
+    expect(hit!.at.y, '进带那一刻恰好在顶面上').toBeCloseTo(2, 6)
+    expect(hit!.at.z, '顶面交点落在柱面窗的内部').toBeCloseTo(0, 6)
+  })
 })
 
 /* ==================== A2. 盒截面：authored 墙与柱子共用同一套口径 ==================== */

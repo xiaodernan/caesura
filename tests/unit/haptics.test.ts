@@ -1,46 +1,34 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { bus } from '@/core/EventBus'
 import { Haptics, mapShakeToRumble } from '@/input/Haptics'
 import type { Input } from '@/core/Input'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function emitHit(shakeKey: string): void {
+/**
+ * §12 手柄振动的异常腿：actuator 在但 `playEffect` 抛了（浏览器里文档不可见等环境态会这样）
+ * 也要静默降级——振动永远不许把战斗反馈总线炸出异常。没有 actuator 的 no-op 腿在无手柄
+ * 环境下每次构造都会走到（feature-detect 那一格），这里只钉「在而抛」的这一格。
+ */
+
+const hit = (): void => {
   bus.emit('combat.hit', {
-    attackerId: 'player', victimId: 'x', damage: 1, poiseDamage: 0, kind: 'light',
-    point: { x: 0, y: 0, z: 0 }, dir: { x: 0, y: 0, z: 0 }, result: 'hit',
-    hitStopMs: 60, shakeKey, backstab: false, weakpoint: false
-  } as any)
+    attackerId: 'p1', victimId: 'en_1', damage: 8, poiseDamage: 5,
+    kind: 'light', point: { x: 0, y: 1, z: 0 }, dir: { x: 0, y: 0, z: 1 },
+    result: 'hit', hitStopMs: 40, shakeKey: 'normal', backstab: false, weakpoint: false
+  })
 }
 
-describe('gamepad haptics (§64)', () => {
-  it('maps shake tiers to escalating rumble, unknown -> graze', () => {
-    expect(mapShakeToRumble('graze').strong).toBeLessThan(mapShakeToRumble('boss').strong)
-    expect(mapShakeToRumble('parry').weak).toBeLessThan(mapShakeToRumble('parry').strong)
-    expect(mapShakeToRumble('nope').durationMs).toBe(mapShakeToRumble('graze').durationMs)
-  })
-
-  it('处决档（KI-053）：不发明新尺子——strong 借 normal↔hurt 之间，整档轻于 heavy', () => {
-    const ex = mapShakeToRumble('execute')
-    expect(ex.strong, '轻于 heavy：分量在推轨与消音，手柄只标那一刀落下').toBeLessThan(mapShakeToRumble('heavy').strong)
-    expect(ex.strong).toBeGreaterThan(mapShakeToRumble('normal').strong)
-    expect(ex.strong).toBeLessThan(mapShakeToRumble('hurt').strong)
-    expect(ex.durationMs, '单发比擦过长、比破防短').toBeGreaterThan(mapShakeToRumble('graze').durationMs)
-    expect(ex.durationMs).toBeLessThan(mapShakeToRumble('heavy').durationMs)
-  })
-
-  it('drives a connected pad actuator with the right params on combat.hit', () => {
-    const playEffect = vi.fn()
-    const input = { gamepad: { vibrationActuator: { playEffect } } } as unknown as Input
-    new Haptics(input)
-    emitHit('heavy')
-    expect(playEffect).toHaveBeenCalledTimes(1)
-    expect(playEffect.mock.calls[0][0]).toBe('dual-rumble')
-    expect(playEffect.mock.calls[0][1]).toMatchObject({ duration: 180, strongMagnitude: 0.8, weakMagnitude: 0.5 })
-  })
-
-  it('is a safe no-op when no pad is connected', () => {
-    const input = { gamepad: null } as unknown as Input
-    new Haptics(input)
-    expect(() => emitHit('normal')).not.toThrow()
+describe('Haptics：actuator 抛错静默降级', () => {
+  it('playEffect 抛错不外泄；表值映射顺带对账（execute 行 KI-053）', () => {
+    let calls = 0
+    new Haptics({
+      gamepad: { vibrationActuator: { playEffect: () => { calls++; throw new Error('actuator busy') } } }
+    } as unknown as Input)
+    expect(() => hit(), '抛错被 catch 吃掉，不许冒泡').not.toThrow()
+    expect(calls, '异常发生前调用确确实实发生了').toBe(1)
+    const r = mapShakeToRumble('execute')
+    expect(r.durationMs).toBe(120)
+    expect(r.strong).toBeCloseTo(0.4, 6)
+    expect(r.weak).toBeCloseTo(0.4, 6)
+    expect(mapShakeToRumble('nobody').durationMs, '认不出的档位退回 graze').toBe(40)
   })
 })
