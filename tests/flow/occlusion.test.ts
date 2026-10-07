@@ -945,3 +945,44 @@ describe('读者五：玩家自己的挥砍吃遮挡（KI-070，KI-014 未落格
     w.off()
   })
 })
+
+/* ==================== F. 批20 分支死角：strict 口径 / 退化柱 / 进带三岔 ==================== */
+describe('批20 分支死角：strict 口径、退化遮挡体、进带三岔的其余两岔', () => {
+  it('退化遮挡体：半径 0 的柱子什么也挡不住（r<=0 直接判无，而不是让二次方程去 NaN）', () => {
+    expect(firstBlock([cyl('零', 0, 0, 0, 10)], { x: -10, y: 5, z: 0 }, { x: 10, y: 5, z: 0 }),
+      '半径 0 ⇒ 名册里这一块不存在').toBeNull()
+  })
+
+  it('strict 口径（KI-092 挡路的尺子）：穿过照样截、体内也算挡（t≤0 交出来，布尔读者只问 null 与否）', () => {
+    const w = box('w', 0, 0, 2, 8, 3)
+    const hit = firstBlock([w], { x: -10, y: 1.5, z: 0 }, { x: 10, y: 1.5, z: 0 }, 0, true)
+    expect(hit, 'strict 下穿过墙照样被截').not.toBeNull()
+    expect(hit!.at.x, '截在进面 x=-1').toBeCloseTo(-1, 6)
+    const inside = firstBlock([w], { x: 0, y: 1.5, z: 0 }, { x: 10, y: 1.5, z: 0 }, 0, true)
+    expect(inside, '起点在墙肚子里 ⇒ 这条线走不过去').not.toBeNull()
+    expect(inside!.at.x, 't 被 [0,1] 钳住 ⇒ 撞击点就是起点本身，绝不在起点前方').toBeLessThanOrEqual(0)
+  })
+
+  it('贴脸的一丝：起点离墙面 1.05e-6 ⇒ lo 落进 EPS 窗，非 strict 赦免（与 L132 的"整只站在体内"互补）', () => {
+    const w = box('w', 0, 0, 2, 8, 3)
+    // L132 只赦免"已经在体内"的起点；离面一个身位之内的贴脸走的是 slab 算出的 lo≤EPS 这一岔
+    expect(firstBlock([w], { x: -1 - 1.05e-6, y: 1.5, z: 0 }, { x: 10, y: 1.5, z: 0 }),
+      '离面百万分之一米 = 贴脸，不算被挡').toBeNull()
+  })
+
+  it('从柱底下方钻上来进带：截点在 y 穿越 base 的那一格（target=base 那一岔，与既有"从顶上插下来"互为镜像）', () => {
+    const c = cyl('升', 0, 0, 1, 2) // base 0 / top 2
+    // 柱面窗 t∈[0.4,0.6]；y 从 -0.5 升到 0.5，在 t=0.5 处跨过 base=0
+    const hit = firstBlock([c], { x: 0, y: -0.5, z: -5 }, { x: 0, y: 0.5, z: 5 })
+    expect(hit, '下路进带的线也要被接住').not.toBeNull()
+    expect(hit!.at.y, '进带那一刻恰好在底面上').toBeCloseTo(0, 6)
+    expect(hit!.at.z, '底面交点同样落在柱面窗内部').toBeCloseTo(0, 6)
+  })
+
+  it('两端几乎等高却不在带里：slope<EPS 的岔在浮点缝里也要接住（否则落进除以 1e-8 的巨 t）', () => {
+    // slope=9e-8 < EPS=1e-7：y 几乎不动（-4e-8 → 5e-8）。yLo=-4e-9 在带外，yHi=1.4e-8 又够到带里
+    // —— L159 的"整段带外"岔接不住它，只能由 L162 的等高岔收走
+    const c = cyl('平', 0, 0, 1, 10)
+    expect(firstBlock([c], { x: 0, y: -4e-8, z: -5 }, { x: 0, y: 5e-8, z: 5 })).toBeNull()
+  })
+})
