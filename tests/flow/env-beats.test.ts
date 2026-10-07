@@ -98,6 +98,22 @@ describe('环境叙事节拍（§4 / §29）：落地的还在，且站在自己
     }
   })
 
+
+  it('§4.1 R3 是这一区唯一**带条件**的节拍：烟囱只在第一口钟修好之后才出现在世界里', () => {
+    const rest = byId.get('rg_resthold')!
+    const chimney = rest.interactables.find((i) => i.id === 'in_resthold_forge_chimney')!
+    // 它的意义全在那道闸门上（"熄了七十三天的烟囱重新冒烟"）；闸门被谁摘掉，它就退化成一句普通陈设
+    expect(chimney.requiresFlag, 'R3 的闸门').toBe('flag.bell_first_repaired')
+
+    // 反向：§4.1 其余三条是纯陈列（无闸门）——"唯一带条件的那一条"这句话本身也要被量
+    for (const [beat, id] of LANDED.rg_resthold) {
+      if (id === 'in_resthold_forge_chimney') continue
+      const node = rest.interactables.find((i) => i.id === id)!
+      expect(node.requiresFlag, `§4.1 ${beat} 应当是无条件陈列`).toBeUndefined()
+      expect(node.requiresState, `§4.1 ${beat} 应当是无条件陈列`).toBeUndefined()
+    }
+  })
+
   it('每区的条数不低于它登记的下限（§29 的 4 条是目标，差额写在下限表里当欠账）', () => {
     for (const [regionId, floor] of Object.entries(FLOOR)) {
       const landed = (LANDED[regionId] ?? []).length
