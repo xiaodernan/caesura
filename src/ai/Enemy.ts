@@ -855,7 +855,7 @@ export class Enemy {
         bus.emit('vfx.request', { key: 'death_shatter', pos: { ...this.pos }, scale: 2 })
         bus.emit('ui.notify', { text: '钟壳碎裂！这一阶的减伤彻底没了', kind: 'reward' })
         // §15.1「撞 2 钟 = 壳碎（提前进 P2 条件）」：机关本身就是转阶段的捷径，不必把血磨到线
-        if (this.bossPhase === 0 && (this.data.boss?.phases.length ?? 0) > 1) {
+        if (this.bossPhase === 0 && (this.data.boss?.phases.length ?? 0) > 1) { // 【恒死·批23】本支挂在 bells 配置之下 ⇒ boss 恒在且 phases 必为数组：可选链空腿与 ?? 0 兜底不可达（true 腿由撞双钟点亮）
           this.bossPhase = 1
           this.attack = null
           this.phaseRoarPending = true
@@ -876,7 +876,7 @@ export class Enemy {
         if (usable.includes(cand)) { pick = cand; this.cycleIdx = start + i + 1; break }
       }
     } else pick = this.rng.pick(usable)
-    if (!pick) return
+    if (!pick) return // 【恒死·批23】usable ⊆ actions 且非空 ⇒ cycle/随机两支必中其一，pick 不会是 undefined
     const spec = this.data.attacks.find((a) => a.id === pick)
     if (!spec) return
     // §2.1：约束的是**命中帧**落在拍点，不是起手帧 ⇒ 起手要提前一整个前摇。
