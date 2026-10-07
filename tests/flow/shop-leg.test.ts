@@ -36,4 +36,13 @@ describe('KI-055 的 ②：营地那件 shop 交互物是**活的**（数据 + �
     expect(main).toMatch(/r\.kind === 'shop'/)
     expect(main).toMatch(/setPanelOpen\(true\)/)
   })
+
+  it('④ `ItemData.value` 那个"写了没人读"的字段，今天有读方了（KI-055 原话）', () => {
+    // KI-055 原文："`ItemData.value`——这个字段现在已有数据但没有读取方，是 PENDING_FLAG_WRITERS
+    // 同族的'写了没人读'账"。商店落地之后它有了读方：`rpg/Shop.ts` 用 `saleUnit(item.value ?? 0)`，
+    // 而 `saleUnit` 乘的是 `shop.json` 的 `sell.mul`（卖出价住**数据**，不写死在代码里）。
+    const shop = read('src/rpg/Shop.ts')
+    expect(shop).toMatch(/item\.value/)
+    expect(shop).toMatch(/sell\.mul/)
+  })
 })
