@@ -21,7 +21,7 @@
       "COLLUDED"
     ],
     "default": "INTACT",
-    "note": "科温线步 4《学者之乱》三选一写入（§2.2）。取值映射：揭露实验=EXPOSED、包庇=COMPLICIT、共谋=COLLUDED；INTACT 是缺省读数。读方：休垒广场学者之乱支线、营地后门、沉唱堂捕获笼、无面童尾声。"
+    "note": "科温线步 4《学者之乱》三选一写入（§2.2）。取值映射：揭露实验=EXPOSED、包庇=COMPLICIT、共谋=COLLUDED；INTACT 是缺省读数。读方（2026-10-07 逐格量过）：**对话 7 处 / 任务步 1 处 / 陈设 1 处**（`dc_corvin_cage` 的 requiresState = COMPLICIT）。⚠️ 旧注写的「营地后门」**不是**它的读方——后门读的是口令旗 `flag.brokenbar_password`（同一批修正见 §8.1.1 那族的「注释指错机制」）。"
   },
   {
     "key": "state.faceless.identity",
@@ -34,7 +34,7 @@
       "LOST"
     ],
     "default": "INTACT",
-    "note": "无面童线步 4《容器》三选一写入（§2.3/§7 STATE.FACELESS）。取值映射：它是容器=VESSEL、它是孩子=CHILD、它是被选中者=CHOSEN、它迷失了=LOST；INTACT 是缺省读数。读方：初句圣所五环线索链、无面童尾声、谱册最终页、谱架最终解锁"
+    "note": "无面童线步 4《容器》三选一写入（§2.3/§7 STATE.FACELESS）。取值映射：它是容器=VESSEL、它是孩子=CHILD、它是被选中者=CHOSEN、它迷失了=LOST；INTACT 是缺省读数。读方（2026-10-07 逐格量过）：**对话 4 处 / 任务步 1 处 / 陈设 0 处**。⚠️ 旧注写的「初句圣所五环线索链」**不是**它的读方——那扇门（`ga_deeps_firstphrase_door`）读的是**四面线索旗**（`flag.clue_*` 的合取），`regions.json` 里今天没有任何一处读这格值域"
   },
   {
     "key": "state.haltrune.camp",
