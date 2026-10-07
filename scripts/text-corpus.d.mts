@@ -32,6 +32,16 @@ export interface CorpusFinding {
 export const CORPUS_DIRS: string[]
 export const SKIP_DIRS: Set<string>
 
+/** 根目录点文件的形状白名单：每条都要能回答「谁经过它」（KI-098没做② 的收口） */
+export interface RootDotRule {
+  match: RegExp
+  why: string
+}
+export const ROOT_DOT_FILES: RootDotRule[]
+export function isDeclaredRootDotFile(name: string): boolean
+/** 根上名单之外的点文件逐个点名；地板 = 根上必须读得到 .gitignore */
+export function rootDotFileFindings(root: string): CorpusFinding[]
+
 export function looksBinary(bytes: unknown): boolean
 export function decodeUtf8(bytes: Uint8Array): DecodeResult
 export function walkTextCorpus(root: string): CorpusWalk

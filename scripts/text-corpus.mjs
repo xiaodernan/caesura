@@ -70,6 +70,8 @@ export function decodeUtf8(bytes) {
  * 而且全部落在**没人读的东西**上——那样的门会在第一周被关掉。
  * 洞的守卫在 `tests/unit/text-integrity.test.ts` 那条"入库名册 ⇄ 总体"的跨查里：
  * 一个**已入库**的根点文件（今天是且仅是 `.gitignore`）会被逐名点名，不许悄悄长大。
+ * 这条跨查只看得见**已入库**的点文件——没入库的（被 gitignore 的）它看不见，走查也看不见它：
+ * 这条缝的收口是 {@link rootDotFileFindings}（2026-10-08）：根上每个点文件都得对上一条已声明的形状。
  */
 export function walkTextCorpus(root) {
   const files = []
@@ -108,6 +110,63 @@ export function walkTextCorpus(root) {
     push(name, full)
   }
   return { files, binaries, missing }
+}
+
+/**
+ * 根目录点文件的形状名单（KI-098没做② 的收口，2026-10-08）：洞变结构。
+ *
+ * 走查对点前缀的根文件是**瞎**的（`walkTextCorpus` 根循环里那句 `name.startsWith('.')`）——这是刻意的：
+ * 根上躺着的一次性产物没人读、还全是 ANSI ESC，进总体这道门第一天就报 200+ 条、第一周就被关掉。
+ * 而"入库名册 ⇄ 总体"那条跨查只见**已入库**的点文件。两把尺子之间留了一条缝：
+ * **一个被 gitignore 的散文文件可以在根上永久隐身**——不入库，跨查看不见它；点前缀，走查看不见它。
+ *
+ * 封缝的不是让走查睁眼（那等于把门淹死），是让每个点文件都得有名字：对不上一条已声明的形状就点名。
+ * 每一条都要能回答"谁经过它"，新增形状是决定不是顺手（§55 同一纪律——白名单也是一种格子）。
+ */
+export const ROOT_DOT_FILES = [
+  { match: /^\.gitignore$/, why: '已入库的机器配置，git 自己读它；"入库名册 ⇄ 总体"那条跨查逐名盯着已入库的点文件' },
+  { match: /^\.env(\..+)?$/, why: '机器本地配置，.gitignore 显式挡住（!.env.example 反向放行样例）——从不属于交付，也不进总体' },
+  { match: /^\.tmp-.*\.(py|log)$/, why: '各车道的一次性补丁脚本与日志，gitignore 的 .tmp-* 挡着；正是"被某一次写盘解释掉"的高发地，但没人读它们，进总体只会把门淹死' },
+  { match: /^\.tsc.*\.log$/, why: 'tsc 的重定向日志，一次性产物；gitignore 没盖住它们（"可提交垃圾"），普查让这一点保持可见' },
+]
+
+/** 与普查同一份谓词：测试与生产读同一个判定，不各抄一份 */
+export function isDeclaredRootDotFile(name) {
+  return ROOT_DOT_FILES.some((r) => r.match.test(name))
+}
+
+/**
+ * 根目录点文件的普查：名单之外的点名（KI-098没做②）。
+ * 地板是 `.gitignore`：根上一个点文件都读不到 = 这条普查在读一个残缺的根（连它自己的排除口径都丢了），
+ * 不许拿空 findings 冒充干净。非点文件不归它管——它们走查看得见（那是 walkTextCorpus 的总体）。
+ */
+export function rootDotFileFindings(root) {
+  const rootAbs = root.replace(/\/+$/, '')
+  let names
+  try {
+    names = readdirSync(rootAbs)
+      .filter((name) => {
+        if (SKIP_DIRS.has(name) || !name.startsWith('.')) return false
+        try { return statSync(`${rootAbs}/${name}`).isFile() } catch { return false }
+      })
+      .sort()
+  } catch (e) {
+    return [{ level: 'error', file: '(总体)', where: '根', msg: `读不到仓库根 ${rootAbs}（${String(e && e.message ? e.message : e)}）——点文件普查无从谈起。` }]
+  }
+  if (!names.includes('.gitignore')) {
+    return [{ level: 'error', file: '(总体)', where: '根', msg: `根上读不到 .gitignore（点文件普查的总体只剩 ${JSON.stringify(names)}）= 这道普查在读一个残缺的根，不许拿空集冒充干净。` }]
+  }
+  return names
+    .filter((name) => !isDeclaredRootDotFile(name))
+    .map((name) => ({
+      level: 'error',
+      file: name,
+      where: '根',
+      msg: '根上出现名单之外的点文件。走查对点前缀的根文件是瞎的（一次性产物不进总体——否则这道门第一周就被关掉），'
+        + '跨查只见已入库的点文件：一个被 gitignore 的散文/配置可以在根上永久隐身，这个普查是那条缝唯一的读者。'
+        + '所以每个点文件都得有名字：要么往 ROOT_DOT_FILES 加一条已声明的形状并写清"谁经过它"，'
+        + '要么它根本不该住根上——散文住 docs/（走查看得见），一次性产物用名单里已有的名字。',
+    }))
 }
 
 /**

@@ -1,9 +1,11 @@
-import { readdirSync, readFileSync } from 'node:fs'
+import { mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
+import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { ALLOWED_CONTROL, MOJIBAKE_CHAR, findMojibake, findStrayControl, mojibakeFindings, strayControlFindings } from '../../scripts/text-integrity.mjs'
-import { CORPUS_DIRS, corpusFindings, decodeUtf8, looksBinary, walkTextCorpus } from '../../scripts/text-corpus.mjs'
+import { CORPUS_DIRS, corpusFindings, decodeUtf8, isDeclaredRootDotFile, looksBinary, rootDotFileFindings, walkTextCorpus } from '../../scripts/text-corpus.mjs'
 
 /**
  * 数据表「文本完整性」的判据（KI-082）。
@@ -285,5 +287,59 @@ describe('游离控制字符（KI-098）：转义序列被某一次写盘解释�
     expect(src, '名册里缺树也要报错，不许静默少扫一棵').toContain('missing.push(dir)')
     const here = readFileSync(root + 'tests/unit/text-integrity.test.ts', 'utf8')
     expect(here, '哨兵这一例真的调 corpusFindings，而不是自己手抄一份口径').toContain('corpusFindings(root)')
+  })
+})
+
+/**
+ * KI-098没做② 的收口（2026-10-08）：根目录点文件的形状普查 —— 洞变结构。
+ *
+ * 走查（`walkTextCorpus`）对点前缀的根文件是**瞎的**——这是刻意的：根上躺着的一次性产物没人读、
+ * 还全是 ANSI ESC，进总体这道门第一天就报 200+ 条、第一周就被关掉。而"入库名册 ⇄ 总体"那条跨查
+ * 只见**已入库**的点文件。两把尺子中间那条缝里，**一个被 gitignore 的散文文件可以在根上永久隐身**：
+ * 不入库，跨查看不见它；点前缀，走查看不见它。普查（`rootDotFileFindings`）是那条缝唯一的读者。
+ */
+describe('根上点文件形状普查（KI-098没做②）：走查与跨查之间的那条缝', () => {
+  it('真根普查：根上每个点文件都对得上名单里的形状（这一趟一条都不报）', () => {
+    const findings = rootDotFileFindings(root)
+    expect(findings, `根上有没有名分的点文件：${findings.map((f) => f.file).join(' ')}`).toEqual([])
+  })
+
+  it('种植腿：名单之外的点散文被点名，不许悄悄绿（这一条也是真根普查那条的非空证词）', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'caesura-rootdot-'))
+    writeFileSync(join(tmp, '.gitignore'), '')
+    writeFileSync(join(tmp, '.hidden-notes.md'), '# 藏起来的设计笔记\n')
+    const findings = rootDotFileFindings(tmp)
+    expect(findings.length, '缝里的文件必须被点名，不然普查就是一条永远绿着的装饰').toBe(1)
+    expect(findings[0].file).toBe('.hidden-notes.md')
+    expect(findings[0].where).toBe('根')
+    expect(findings[0].msg, '点名要说清两条出路：声明形状，或者不住根上').toContain('ROOT_DOT_FILES')
+    expect(findings[0].msg).toContain('docs/')
+  })
+
+  it('机制见证：走查对点文件瞎、对非点文件不瞎——普查不是重复劳动，是唯一的读者', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'caesura-rootdot-'))
+    writeFileSync(join(tmp, 'README.md'), '非点的散文走查看得见')
+    writeFileSync(join(tmp, '.hidden-notes.md'), '点前缀的散文走查看不见')
+    const names = walkTextCorpus(tmp).files.map((f) => f.file)
+    expect(names, '非点的散文在总体里：它没有藏身处').toEqual(['README.md'])
+    expect(names).not.toContain('.hidden-notes.md')
+  })
+
+  it('形状判定表：机器产物放行、别的东西点名（两栏都是意图，不是正则自证）', () => {
+    for (const n of ['.gitignore', '.env', '.env.local', '.env.example', '.tmp-x.py', '.tmp-bells.log', '.tsc.log', '.tsc2.err.log']) {
+      expect(isDeclaredRootDotFile(n), `${n} 是已声明的机器产物形状，不该被点名`).toBe(true)
+    }
+    for (const n of ['.notes.md', '.todo', '.DS_Store', '.idea', '.envx', '.tmp-x.exe', '.tmp-x']) {
+      expect(isDeclaredRootDotFile(n), `${n} 不在名单里就该被点名（放行它 = 往 ROOT_DOT_FILES 加一条带理由的形状）`).toBe(false)
+    }
+  })
+
+  it('地板腿：根上连 .gitignore 都读不到 ⇒ 普查先喊残缺，不许拿空集冒充干净', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'caesura-rootdot-'))
+    writeFileSync(join(tmp, '.hidden-notes.md'), 'x')
+    const [f] = rootDotFileFindings(tmp)
+    expect(f.where).toBe('根')
+    expect(f.msg, '地板要点名它缺的是谁').toContain('.gitignore')
+    expect(f.msg).toContain('残缺')
   })
 })
