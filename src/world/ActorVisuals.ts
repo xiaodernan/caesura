@@ -215,8 +215,11 @@ export class ActorVisuals {
     // KI-002 蓄力反馈：charging 时武器发出辉光，随充能进度变亮，满时闪一下
     if (p.charging && p.chargeProgress > 0) {
       const prog = p.chargeProgress
-      const mat = (sw.children[0] as THREE.Mesh | undefined)?.material as THREE.MeshStandardMaterial | undefined
-        ?? (sw as unknown as THREE.Mesh).material as THREE.MeshStandardMaterial
+      // 辉光照在"手里那把"的刃口上：sw 的孩子是各 archetype 的武器**组**（Group 没有材质），
+      // 刃才是组里的第一个 Mesh。之前直接取 children[0].material 是 undefined——玩家一蓄力就崩。
+      // find 不会落空：sync 里 showForm 先行，任何时刻恰有一组可见。
+      const cur = sw.children.find((c) => c.visible) as THREE.Group
+      const mat = (cur.children[0] as THREE.Mesh).material as THREE.MeshStandardMaterial
       mat.emissive.set(0xffaa44)
       mat.emissiveIntensity = prog * 2.5 + (prog >= 1 ? Math.sin(tick * 0.3) * 0.8 : 0)
       sw.rotation.x = -0.5 - prog * 1.2 // 慢慢举高

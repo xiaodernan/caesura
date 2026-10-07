@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { bus } from '@/core/EventBus'
 import { CameraRig, SHAKE_TABLE } from '@/player/CameraRig'
+import type { PlayerController } from '@/player/ThirdPersonController'
 
 /**
  * combat.hit 震镜分流（CameraRig 构造函数里的订阅）第一次有读者：
@@ -72,5 +73,62 @@ describe('combat.hit 震镜分流（订阅侧）', () => {
     Object.defineProperty(globalThis, 'innerHeight', { value: 1080, configurable: true })
     r.resize()
     expect(r.cam.aspect).toBeCloseTo(1920 / 1080, 6)
+  })
+})
+
+describe('批17 分支死角：update 路径（蒙太奇推轨 / 入地钳制 / 横滚 / 绕背 yaw 环绕）', () => {
+  /** update 只读 pos/executing、写 camYawRef——手造最小桩，不举真控制器 */
+  const fp = (over: Record<string, unknown> = {}): PlayerController =>
+    ({ pos: { x: 0, y: 0, z: 0 }, executing: null, camYawRef: 0, ...over }) as unknown as PlayerController
+  const posSmoothOf = (r: CameraRig): { x: number; y: number; z: number } =>
+    (r as unknown as { posSmooth: { x: number; y: number; z: number } }).posSmooth
+
+  it('未知 shakeKey 回落 graze 行（SHAKE_TABLE[key] ?? 的右腿）', () => {
+    const r = rig()
+    r.shake('no_such_row')
+    expect(shakesOf(r)).toHaveLength(1)
+    expect(shakesOf(r)[0].amp, '表里没有的键按 graze 兜底').toBeCloseTo(SHAKE_TABLE.graze.amp, 6)
+  })
+
+  it('处决蒙太奇（无锁定）：dist 压推轨系数、FOV 随 execPull 收缩到 50 以下', () => {
+    const r = rig()
+    r.update(0.016, fp({ executing: { tick: 10, total: 60, pos: { x: 0, y: 0, z: -2 } } }), { dx: 0, dy: 0 }, null)
+    expect(r.cam.fov, 'EXEC_DOLLY.fovDelta=-7 乘 execPull（首帧已 >0）⇒ 比 50 低').toBeLessThan(50)
+    expect(r.cam.fov, '但首帧 execPull 还小，远没到 43 的下限').toBeGreaterThan(43)
+  })
+
+  it('低谷地形 + 俯角拉满：posSmooth.y 钳在 0.35，镜头不许入地', () => {
+    const r = rig()
+    const p = fp({ pos: { x: 0, y: -2, z: 0 } })
+    for (let i = 0; i < 12; i++) r.update(0.5, p, { dx: 0, dy: -0.8 }, null)
+    expect(posSmoothOf(r).y, '期望位深陷地下 ⇒ 每帧都被抬回地板之上').toBe(0.35)
+  })
+
+  it('横滚项：parry 的 roll=2 真正累加进 rotation.z；roll=0 的行不带横滚', () => {
+    const baseline = rig()
+    baseline.update(0.01, fp(), { dx: 0, dy: 0 }, null) // 无震镜：rotation.z 只来自 lookAt 姿态
+    const r = rig()
+    r.shake('graze')
+    r.update(0.01, fp(), { dx: 0, dy: 0 }, null)
+    expect(Math.abs(r.cam.rotation.z - baseline.cam.rotation.z),
+      'roll=0 的行不带横滚（残差只是 lookAt 姿态噪声）').toBeLessThan(0.002)
+    const zBefore = r.cam.rotation.z
+    r.shake('parry')
+    r.update(0.01, fp(), { dx: 0, dy: 0 }, null)
+    expect(r.cam.rotation.z - zBefore, 'roll=2 只有 parry 行有：多出 ~0.008 的横滚').toBeGreaterThan(0.004)
+  })
+
+  it('锁定绕背差角 > π：wrapNear 折进 (-π,π]（d>π 腿），yaw 朝折返后的目标追', () => {
+    const r = rig()
+    r.update(0.016, fp(), { dx: 3, dy: 0 }, null) // yaw: 0.6 → -2.4
+    r.update(0.5, fp(), { dx: 0, dy: 0 }, { x: -3, y: 0, z: -1 }) // away≈1.25 ⇒ 原始差 ≈ 4.0 > π
+    expect(r.yaw, '目标角折返到 -π 之外 ⇒ 朝更负方向收敛，而不是绕短弧走回头').toBeLessThan(-2.4)
+  })
+
+  it('锁定绕背差角 < -π：wrapNear 反向折返（d<-π 腿）', () => {
+    const r = rig()
+    r.update(0.016, fp(), { dx: -2, dy: 0 }, null) // yaw: 0.6 → 2.6
+    r.update(0.5, fp(), { dx: 0, dy: 0 }, { x: 3, y: 0, z: -1 }) // away≈-1.25 ⇒ 原始差 ≈ -3.5 < -π
+    expect(r.yaw, '对称的另一侧：折返后朝更正方向收敛').toBeGreaterThan(2.6)
   })
 })

@@ -14,6 +14,7 @@ import { ActorVisuals } from '@/world/ActorVisuals'
 import { BossArenaVisuals } from '@/world/BossArenaVisuals'
 import { executionPose } from '@/world/ExecutionPose'
 import { newAttack } from '@/ai/Enemy'
+import type { Enemy } from '@/ai/Enemy'
 
 registerGameData()
 
@@ -308,5 +309,78 @@ describe('ActorVisuals：受击/拍隙/收束/武器动画的可见分支', () =
     player.action = null
     vis.sync(ai.enemies, 4)
     expect(Math.abs(vis.sword.rotation.x + 0.5), '收工回到 idle').toBeLessThan(0.1)
+  })
+})
+
+describe('批17 分支死角：body 数据缺列回落 / 判定窗核放大 / 碎甲动画窗 / 蓄力辉光', () => {
+  /** 手造最小敌人桩：data 里 body 整个缺或只留空壳，量的是四处 ?? 回落腿 */
+  const bareEnemy = (id: string, body?: object): Enemy =>
+    ({
+      id, pos: { x: -60, y: 0, z: -60 }, yaw: 0,
+      data: { ai: {}, ...(body ? { body } : {}) },
+      attack: null, coreFlash: 0, frozenTicks: 0, intangible: false,
+      activeHitbox: null, armorBroken: false, plateBreakTick: 0,
+      state: 'idle', stateTick: 0, alive: true,
+    }) as unknown as Enemy
+  const visMap = (): Map<string, { core: THREE.Mesh }> => (vis as unknown as { vis: Map<string, { core: THREE.Mesh }> }).vis
+
+  it('body 整缺 / body 空壳：scale·color·emissive·coreColor 四处回落全走灰盒兜底', () => {
+    vis.sync([bareEnemy('en_bare_none'), bareEnemy('en_bare_empty', {})] as unknown as Enemy[], 1001)
+    const gNone = scene.getObjectByName('actor:en_bare_none') as THREE.Group
+    const gEmpty = scene.getObjectByName('actor:en_bare_empty') as THREE.Group
+    expect(gNone, 'body 缺列也照出一具模（灰盒兜底）').toBeTruthy()
+    expect(gEmpty).toBeTruthy()
+    const bodyNone = (gNone.children[0] as THREE.Mesh).material as THREE.MeshStandardMaterial
+    const bodyEmpty = (gEmpty.children[0] as THREE.Mesh).material as THREE.MeshStandardMaterial
+    expect(bodyNone.color.getHex(), 'color 回落 0x555555').toBe(0x555555)
+    expect(bodyNone.emissive.getHex(), 'emissive 回落 0x222222').toBe(0x222222)
+    expect(bodyEmpty.color.getHex(), '空壳同走回落：?. 与 ?? 两腿都量到').toBe(0x555555)
+    const coreNone = (gNone.children[1] as THREE.Mesh).material as THREE.MeshStandardMaterial
+    expect(coreNone.color.getHex(), 'coreColor 回落 0xff4422').toBe(0xff4422)
+    vis.sync(ai.enemies, 1002) // 桩不在名册 ⇒ 顺路回收
+  })
+
+  it('activeHitbox 展开 ⇒ 振源核放大 1.6（判定窗读得出来）', () => {
+    const fake = { ...bareEnemy('en_bare_hb'), activeHitbox: { x: 0, y: 1, z: 0 } } as unknown as Enemy
+    vis.sync([fake] as unknown as Enemy[], 1003)
+    expect(visMap().get('en_bare_hb')!.core.scale.x, 'hb 真腿：setScalar(1.6)').toBeCloseTo(1.6, 5)
+    vis.sync(ai.enemies, 1004)
+  })
+
+  it('碎甲动画窗：碎后 30 tick 内板放大+闪烁，之后才永久隐去', () => {
+    const k = ai.spawn('en_hanged_knight', { x: 50, y: 0, z: -10 }, 'kb17')
+    k.armorBroken = true
+    k.plateBreakTick = 100
+    vis.sync(ai.enemies, 110) // since = 10 < 30：动画窗内
+    const plate = plateOf(k.id)!
+    expect(plate.visible, '动画窗内板还在').toBe(true)
+    expect(plate.scale.x, '1 + k*0.5，k = since/30').toBeCloseTo(1 + (10 / 30) * 0.5, 5)
+    const pm = plate.material as THREE.MeshStandardMaterial
+    expect(pm.emissiveIntensity, '闪烁强度 k*4').toBeCloseTo((10 / 30) * 4, 5)
+    expect(pm.emissive.getHex()).toBe(0xffdd88)
+    vis.sync(ai.enemies, 150) // since = 50 ≥ 30
+    expect(plateOf(k.id)!.visible, '30 tick 后永久隐去').toBe(false)
+    k.armorBroken = false
+    k.plateBreakTick = 0
+    vis.sync(ai.enemies, 151)
+    expect(plateOf(k.id)!.visible, '复原后板重新亮起（外层 else 腿）').toBe(true)
+  })
+
+  it('蓄力反馈：charging ⇒ 刃口辉光随进度变亮、武器举高，满蓄闪一下（KI-002）', () => {
+    player.charging = true
+    player.chargeTicks = 24 // chargeProgress getter ⇒ 24/48 = 0.5
+    vis.sync(ai.enemies, 1)
+    expect(vis.sword.rotation.x, '-0.5 - prog*1.2：慢慢举高').toBeCloseTo(-1.1, 5)
+    const form = vis.sword.children.find((c) => c.visible) as THREE.Group
+    const mat = (form.children[0] as THREE.Mesh).material as THREE.MeshStandardMaterial
+    expect(mat.emissive.getHex(), '刃口染上蓄力橙').toBe(0xffaa44)
+    expect(mat.emissiveIntensity, 'prog*2.5，未满无闪项').toBeCloseTo(1.25, 5)
+    player.chargeTicks = 48 // prog = 1：满蓄
+    vis.sync(ai.enemies, 3)
+    expect(mat.emissiveIntensity, '满蓄叠闪项：2.5 + sin(tick*0.3)*0.8')
+      .toBeCloseTo(2.5 + Math.sin(3 * 0.3) * 0.8, 5)
+    player.charging = false
+    player.chargeTicks = 0
+    vis.sync(ai.enemies, 4)
   })
 })
