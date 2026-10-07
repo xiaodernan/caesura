@@ -921,7 +921,7 @@ export class CombatManager {
             e.onParried(t)
             e.stats.addPoise(this.player.base.parry.poiseDamage, t)
             this.checkCrumple(e, t)
-            if (!e.alive) this.onEnemyKilled(e)
+            if (!e.alive) this.onEnemyKilled(e) // 【死防御·批22c】恒死：onParried 只挂硬直并清攻击位，addPoise 只破势——回调内没有杀敌通道
           } else {
             e.stats.addPoise(8, t)
             this.checkCrumple(e, t)
