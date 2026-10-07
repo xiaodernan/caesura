@@ -947,6 +947,20 @@
     "pos": { "x": -60, "y": 0, "z": -350 }
    },
    {
+    "id": "in_brokenbar_garrison_post",
+    "kind": "inspect",
+    "verb": "看恩希尔插下的驻防桩",
+    "pos": { "x": -160, "y": 0, "z": -360 },
+    "requiresState": { "key": "state.haltrune.camp", "value": "GARRISON" }
+   },
+   {
+    "id": "in_brokenbar_outpost_banner",
+    "kind": "inspect",
+    "verb": "看哨站上的旗",
+    "pos": { "x": -40, "y": 0, "z": -180 },
+    "requiresState": { "key": "state.haltrune.camp", "value": "OUTPOST" }
+   },
+   {
     "id": "st_brokenbar",
     "kind": "checkpoint",
     "pos": {

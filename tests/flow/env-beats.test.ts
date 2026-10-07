@@ -189,3 +189,27 @@ describe('§4.8 初句圣所：五环线索链的每一环都要有写方（KI-0
     expect(secret!.rewardTable, '链尾必须通向一份奖励（否则这条链只是多了一件道具）').toBeTruthy()
   })
 })
+
+describe('营地三形态（§7 STATE.CAMP / KI-081）：每一种都要有**看得见**的一处', () => {
+  it('OUTPOST 与 GARRISON 各有一处陈设按值域换组，闸门钉在正确的值上、且站在地板上', () => {
+    const camp = byId.get('rg_brokenbar_camp')!
+    const byState = (v: string) =>
+      camp.interactables.filter((i) => i.requiresState?.value === v).map((i) => i.id)
+
+    // 正向：两态各一处，且**点名到 id**（不是"有几处"这种糊涂话）
+    expect(byState('OUTPOST')).toEqual(['in_brokenbar_outpost_banner'])
+    expect(byState('GARRISON')).toEqual(['in_brokenbar_garrison_post'])
+
+    // 反向：这两处**只在营地定了之后**才在场 —— 闸门键必须是那格值域、kind 必须是研读点、必须站在地板上
+    for (const v of ['OUTPOST', 'GARRISON']) {
+      for (const id of byState(v)) {
+        const n = camp.interactables.find((i) => i.id === id)!
+        expect(n.requiresState!.key, `${id} 的闸门键`).toBe('state.haltrune.camp')
+        expect(n.kind, `${id} 是"看什么"的载体`).toBe('inspect')
+        expect(n.pos.y, `${id} 站在营地的地板上`).toBe(camp.groundY)
+      }
+    }
+    // 而缺省态（还没替他填名册）下这两处都不在场：值域是 INTACT 时上面两条 `byState` 都是空集
+    expect(camp.interactables.some((i) => i.requiresState?.value === 'INTACT')).toBe(false)
+  })
+})
