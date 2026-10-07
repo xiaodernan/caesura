@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import * as THREE from 'three'
 import { bus } from '@/core/EventBus'
-import { VfxLayer } from '@/vfx/VfxLayer'
+import { VfxLayer, VFX_BUDGET } from '@/vfx/VfxLayer'
 import { VFX_PALETTE } from '@/vfx/materials'
 
 /**
@@ -210,5 +210,84 @@ describe('VfxLayer：KI-105 声纹观察三原语', () => {
       close(row(m, 'aR0', r), [0.12 + 0.2 * k])
       close(row(m, 'aR1', r), [0.3 + 0.25 * k])
     })
+  })
+})
+
+describe('批18 分支死角：预算截断 / 缺省回落 / 未知键告警去重 / 子帧插值', () => {
+  it('impact_sparks / parry_ring / block_spark 各走各的配方；缺 scale 按 1 兜底；dir 全零 ⇒ 折回 +Z', () => {
+    const vfx = makeVfx()
+    bus.emit('vfx.request', { key: 'impact_sparks', pos: { x: 0, y: 1, z: 0 } }) // 无 scale
+    expect(vfx.stats.sparks, 'BURST.impact.count=12，scale 兜底不影响数量').toBe(12)
+    bus.emit('vfx.request', { key: 'parry_ring', pos: { x: 0, y: 1, z: 0 }, scale: 1 })
+    expect(vfx.stats.rings, '弹反双环').toBe(2)
+    expect(vfx.stats.sparks, 'BURST.parry.count=16').toBe(28)
+    bus.emit('vfx.request', { key: 'block_spark', pos: { x: 0, y: 1, z: 0 }, scale: 1 })
+    expect(vfx.stats.rings, '格挡压扁小环').toBe(3)
+    expect(vfx.stats.sparks, 'BURST.block.count=9').toBe(37)
+    bus.emit('vfx.request', { key: 'hit_ring', pos: { x: 0, y: 1, z: 0 }, dir: { x: 0, y: 0, z: 0 } })
+    expect(vfx.stats.rings, '零向量 dir 折回 +Z 后照常出双环').toBe(5)
+  })
+
+  it('update(alpha, realDelta) 两参调用：绘制时钟在 [prev, now] 内按 alpha 采样（子帧插值腿）', () => {
+    const vfx = makeVfx()
+    vfx.update(0.5, 0.1) // prev=0，time=0.1 ⇒ draw = 0 + 0.1*0.5
+    expect((vfx as any).ringMat.uniforms.uTime.value).toBeCloseTo(0.05, 6)
+    vfx.update(0.25, 0.1) // prev=0.1，time=0.2 ⇒ draw = 0.1 + 0.1*0.25
+    expect((vfx as any).ringMat.uniforms.uTime.value).toBeCloseTo(0.125, 6)
+  })
+
+  it('InstanceBuffer 底座：预算满 spawn=-1、未知属性名 throw、vec 缺省分量按 0 回落', () => {
+    const vfx = makeVfx()
+    const rings = (vfx as any).rings
+    while (rings.spawn() >= 0) { /* 领到 -1 为止：预算满真腿 */ }
+    expect(rings.spawn(), '满后再领 ⇒ -1（宁可少发一个特效，也不越预算）').toBe(-1)
+    expect(() => rings.num(0, 'nope', 1)).toThrowError(/unknown instance attribute/)
+    rings.vec(0, 'aQuat', 0.5) // y/z/w 全缺省 ⇒ 三处 ?? 0 回落
+    const q = rings.mesh.geometry.getAttribute('aQuat') as THREE.InstancedBufferAttribute
+    expect(Array.from(q.array.slice(0, 4))).toEqual([0.5, 0, 0, 0])
+  })
+
+  it('四个池几乎打满（留 1 空位）⇒ 首行成功、次行截断：trail/burst/ring/shards 宁可少发不越预算', () => {
+    const vfx = makeVfx()
+    const a = vfx as any
+    while (a.sparks.live < VFX_BUDGET.sparks - 1) a.sparks.spawn()
+    while (a.rings.live < VFX_BUDGET.rings) a.rings.spawn()
+    while (a.shards.live < VFX_BUDGET.shards - 1) a.shards.spawn()
+    while (a.decals.live < VFX_BUDGET.decals) a.decals.spawn()
+    bus.emit('vfx.request', { key: 'trail_sword', pos: { x: 0, y: 1, z: 0 }, scale: 1 }) // 首行成功、spawn 撞满 ⇒ break
+    bus.emit('vfx.request', { key: 'impact_sparks', pos: { x: 0, y: 1, z: 0 }, scale: 1 }) // 已满 ⇒ burst break
+    bus.emit('vfx.request', { key: 'hit_ring', pos: { x: 0, y: 1, z: 0 }, scale: 1 }) // rings 满 ⇒ ring 早退
+    bus.emit('vfx.request', { key: 'death_shatter', pos: { x: 0, y: 1, z: 0 }, scale: 1 }) // 首片成功、次片截断
+    expect(vfx.stats.sparks, '只补上 trail 那一行，其余截断').toBe(VFX_BUDGET.sparks)
+    expect(vfx.stats.rings).toBe(VFX_BUDGET.rings)
+    expect(vfx.stats.shards, '只补上第一片碎核').toBe(VFX_BUDGET.shards)
+  })
+
+  it('延迟发射器：池满 schedule 早退（一个都不排）', () => {
+    const vfx = makeVfx()
+    const pool = (vfx as any).emitterPool
+    while (pool.live < VFX_BUDGET.emitters) pool.obtain() // 把池搬空（obtain 耗尽会续造，按 live 计数）
+    bus.emit('vfx.request', { key: 'ring_echo', pos: { x: 0, y: 1, z: 0 }, scale: 1 })
+    expect(vfx.stats.emitters, '池满 ⇒ schedule 直接早退').toBe(0)
+  })
+
+  it('dispose 时未到期的延迟发射器一并释放', () => {
+    const vfx = makeVfx()
+    bus.emit('vfx.request', { key: 'ring_echo', pos: { x: 0, y: 1, z: 0 }, scale: 1 })
+    expect(vfx.stats.emitters).toBe(1)
+    vfx.dispose()
+    expect(vfx.stats.emitters, 'dispose 释放全部未到期发射器').toBe(0)
+  })
+
+  it('未知 key 告警去重：同一 key 只告一次，不同 key 各告各的', () => {
+    makeVfx() // 挂一个活的 VfxLayer：warnUnknown 的去重集在实例上
+    const warns: string[] = []
+    const off = bus.on('log', (l: { level: string; msg: string }) => { if (l.level === 'warn') warns.push(l.msg) })
+    bus.emit('vfx.request', { key: 'nope_a', pos: { x: 0, y: 0, z: 0 } })
+    bus.emit('vfx.request', { key: 'nope_a', pos: { x: 0, y: 0, z: 0 } })
+    bus.emit('vfx.request', { key: 'nope_b', pos: { x: 0, y: 0, z: 0 } })
+    off()
+    expect(warns.filter((m) => m.includes('nope_a')), '第二次撞上 warned 集 ⇒ 直接返回').toHaveLength(1)
+    expect(warns.filter((m) => m.includes('nope_b'))).toHaveLength(1)
   })
 })
