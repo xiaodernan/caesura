@@ -77,7 +77,7 @@ export class Progression {
   /** 升到下一级所需遗响；已到上限返回 null */
   xpToNext(): number | null {
     if (this.rank >= this.data.maxRank) return null
-    return this.data.rankCurve.find((r) => r.rank === this.rank + 1)?.xp ?? null
+    return this.data.rankCurve.find((r) => r.rank === this.rank + 1)?.xp ?? null //【恒死·批27】rankCurve 覆盖 2..maxRank 全格：rank<maxRank ⇒ rank+1 必在表内，?.xp 不会落空
   }
 
   /**
