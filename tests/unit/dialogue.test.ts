@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { bus } from '@/core/EventBus'
 import { registerGameData, dialogues, quests as questTable } from '@/data'
-import type { DialogueData } from '@/data/schema'
+import type { DialogueData, DialogueEffects, DialogueNode } from '@/data/schema'
 import { DialogueEngine, conditionPass, type DialogueContext } from '@/quest/Dialogue'
 import { WorldStates } from '@/quest/WorldStates'
 import { Quests } from '@/quest/Quests'
@@ -320,5 +320,159 @@ describe('任务状态机（需求 §28：三种推进来源 —— 旗标 / 状
     expect(res.view).toBeNull()
     expect(res.effects).toEqual([])
     expect(res.reason, '终点是正常结束，不是"找不到节点"').toBeUndefined()
+  })
+})
+
+/* ==================== 批21 分支死角：条件求值的罕见岔路 / 引擎的退路收场 ==================== */
+
+describe('批21 分支死角', () => {
+  /**
+   * 手造最小树：引擎对树的形状只做最少假设（id/speaker/text），所以单树引擎即可，
+   * 不与 dialogues 数据互相干扰（同 npc 多树会被 pick 按 priority 挑走）。
+   */
+  const n = (id: string, extra: Partial<DialogueNode> = {}): DialogueNode =>
+    ({ id, speaker: '试', text: id, ...extra })
+  const tree = (nodes: DialogueNode[], rootNode = 'n0'): DialogueData =>
+    ({ id: 'DLG_B21', npc: 'npc_b21', rootNode, nodes })
+  const solo = (t: DialogueData) => new DialogueEngine([t])
+
+  it('relation 显式点名：条件挂在被点名的 npc 头上，而不是说话人头上（?? 的另一腿）', () => {
+    const c = liveCtx()
+    c.rel.set('npc_a', 3)
+    // 说话人是 npc_b，但读的是 npc_a 的关系值
+    expect(conditionPass({ relation: { npc: 'npc_a', op: 'gte', value: 3 } }, 'npc_b', c.ctx)).toBe(true)
+    // lte / eq 的**不成立**腿：现有用例只走过成立那一侧
+    expect(conditionPass({ relation: { npc: 'npc_a', op: 'lte', value: 2 } }, 'npc_b', c.ctx)).toBe(false)
+    expect(conditionPass({ relation: { npc: 'npc_a', op: 'eq', value: 4 } }, 'npc_b', c.ctx)).toBe(false)
+  })
+
+  it('quest.gte 的保守闸门：没传 resolver（?? -1）或表里查无此 state（want<0）⇒ 条件一律不成立', () => {
+    const c = liveCtx()
+    c.quests.start('q_bells')
+    // 不传第 4 参 ⇒ 引擎不知道步序，宁可说条件不成立也不瞎猜
+    expect(conditionPass({ quest: { id: 'q_bells', gte: 'BELLS.STEP1_OPEN' } }, 'npc', c.ctx)).toBe(false)
+    // resolver 明确回答"表里没有这个 state" ⇒ 同样永不成立（数据校验会先报错，这里是运行时兜底）
+    expect(conditionPass({ quest: { id: 'q_bells', gte: 'NOT_A_STATE' } }, 'npc', c.ctx, c.quests)).toBe(false)
+  })
+
+  it('quest.in 的两条失败腿：任务没开（读数 null）与开着但不在集合里', () => {
+    const c = liveCtx()
+    expect(conditionPass({ quest: { id: 'q_bells', in: ['BELLS.STEP1_OPEN'] } }, 'npc', c.ctx)).toBe(false)
+    c.quests.start('q_bells')
+    expect(conditionPass({ quest: { id: 'q_bells', in: ['BELLS.STEP2_OPEN'] } }, 'npc', c.ctx)).toBe(false)
+    expect(conditionPass({ quest: { id: 'q_bells', in: ['BELLS.STEP1_OPEN'] } }, 'npc', c.ctx)).toBe(true)
+  })
+
+  it('state 条件的 in / notIn：值域读数落在集合外 / 被排除集合里（空登记表 ⇒ 读数是空串）', () => {
+    const c = liveCtx()
+    expect(conditionPass({ state: { key: 'state.bells.fourth_dumb', in: ['rung'] } }, 'npc', c.ctx)).toBe(false)
+    expect(conditionPass({ state: { key: 'state.bells.fourth_dumb', notIn: ['rung'] } }, 'npc', c.ctx)).toBe(true)
+    expect(conditionPass({ state: { key: 'state.bells.fourth_dumb', notIn: [''] } }, 'npc', c.ctx)).toBe(false)
+  })
+
+  it('查表退路：treeById / node 对不存在的 id 明确回答 null（会话层据此判死，而不是拿到 undefined）', () => {
+    const e = new DialogueEngine(dialogues, new Quests(questTable))
+    expect(e.treeById('DLG_NOPE')).toBeNull()
+    expect(e.node(e.treeById('DLG_MEG')!, 'ghost')).toBeNull()
+  })
+
+  it('开局就是死链：rootNode 指向不存在的节点 ⇒ no-node 收场（链接完整性校验会先报错，运行时仍不装死）', () => {
+    const t = tree([n('n0')], 'ghost')
+    const res = solo(t).start('npc_b21', liveCtx().ctx)
+    expect(res.view).toBeNull()
+    expect(res.reason).toBe('no-node')
+  })
+
+  it('门卫节点条件不过：有 next 就顺过去，没 next 就整场收场（两腿都试）', () => {
+    const pass = tree([
+      n('gate', { conditions: { flags: { all: ['flag.never'] } }, next: 'real' }),
+      n('real'),
+    ], 'gate')
+    const ok = solo(pass).start('npc_b21', liveCtx().ctx)
+    expect(ok.view!.nodeId).toBe('real')
+    expect(ok.view!.ended).toBe(true)
+
+    const dead = tree([n('gate', { conditions: { flags: { all: ['flag.never'] } } })], 'gate')
+    const no = solo(dead).start('npc_b21', liveCtx().ctx)
+    expect(no.view).toBeNull()
+    expect(no.reason).toBe('no-node')
+  })
+
+  it('emotion 有值就带出去（视图拼装三元的另一腿；现有用例走的都是无 emotion 的节点）', () => {
+    const t = tree([n('n0', { emotion: 'grief' })])
+    const res = solo(t).start('npc_b21', liveCtx().ctx)
+    expect(res.view!.emotion).toBe('grief')
+  })
+
+  it('advance 拿着不存在的 nodeId 问路 ⇒ no-node（区别于终点节点的正常收场）', () => {
+    const t = tree([n('n0', { next: 'n1' }), n('n1')])
+    const res = solo(t).advance(t, 'ghost', 'npc_b21', liveCtx().ctx)
+    expect(res.view).toBeNull()
+    expect(res.reason).toBe('no-node')
+  })
+
+  it('choose 的四条退路：nodeId 不存在 / 节点没有 choices / choiceId 不存在 / 选项条件不过 ⇒ 都收场不炸', () => {
+    const t = tree([
+      n('bare'),
+      n('n0', { choices: [{ id: 'c1', text: '走', style: 'blunt', conditions: { flags: { all: ['flag.never'] } } }] }),
+    ])
+    const e = solo(t)
+    const ctx = liveCtx().ctx
+    expect(e.choose(t, 'ghost', 'c1', 'npc_b21', ctx).reason, '节点不存在').toBe('no-node')
+    expect(e.choose(t, 'bare', 'c1', 'npc_b21', ctx).reason, '节点压根没有选项列表').toBe('no-node')
+    expect(e.choose(t, 'n0', 'nope', 'npc_b21', ctx).reason, '选项 id 不在列表里').toBe('no-node')
+    expect(e.choose(t, 'n0', 'c1', 'npc_b21', ctx).reason, '不可见的选项被硬选 ⇒ 条件闸门拦住').toBe('no-node')
+  })
+
+  it('选项有效果但没有 next：效果当场交出（sink 收到），对话到此为止（无 effects 的同款收场是另一腿）', () => {
+    const sinked: DialogueEffects[] = []
+    const withFx = tree([n('n0', { choices: [{ id: 'c1', text: '走', style: 'blunt', effects: { setFlags: ['flag.done'] } }] })])
+    const res = solo(withFx).choose(withFx, 'n0', 'c1', 'npc_b21', liveCtx().ctx, (x) => sinked.push(x))
+    expect(res.view).toBeNull()
+    expect(res.reason, '这是正常收场，不是 no-node').toBeUndefined()
+    expect(res.effects).toHaveLength(1)
+    expect(sinked, '效果当场交给 sink（没有下一节点可攒）').toHaveLength(1)
+
+    const noFx = tree([n('n0', { choices: [{ id: 'c1', text: '走', style: 'poetic' }] })])
+    const res2 = solo(noFx).choose(noFx, 'n0', 'c1', 'npc_b21', liveCtx().ctx)
+    expect(res2.view).toBeNull()
+    expect(res2.effects).toEqual([])
+  })
+
+  it('onEnter 效果当场结算：进节点就 push 进 effects 并交给 sink（数据里暂无 onEnter 节点 ⇒ 手造一棵）', () => {
+    const sinked: DialogueEffects[] = []
+    const t = tree([n('n0', { effects: { notify: '进门先响一声' }, next: 'n1' }), n('n1')])
+    const res = solo(t).start('npc_b21', liveCtx().ctx, (x) => sinked.push(x))
+    expect(res.effects).toHaveLength(1)
+    expect(sinked, 'onEnter 当场交给 sink').toHaveLength(1)
+    // 视图停在 n0 等玩家按一下继续（advanceTo=n1）——但 onEnter 的账在看到画面之前就已经记了
+    expect(res.view!.nodeId).toBe('n0')
+    expect(res.view!.advanceTo).toBe('n1')
+  })
+
+  it('选项效果攒进 carried 走进下一节点：sink 传不传都要对（传 ⇒ 逐条交出；不传 ⇒ 短路，只攒清单）', () => {
+    const t = tree([
+      n('n0', { choices: [{ id: 'c1', text: '走', style: 'blunt', effects: { setFlags: ['flag.x'] }, next: 'n1' }] }),
+      n('n1'),
+    ])
+    const withSink: DialogueEffects[] = []
+    const a = solo(t).choose(t, 'n0', 'c1', 'npc_b21', liveCtx().ctx, (x) => withSink.push(x))
+    expect(a.view!.nodeId).toBe('n1')
+    expect(withSink, '选项效果在进下一节点那一刻交出').toHaveLength(1)
+
+    const silent = solo(t).choose(t, 'n0', 'c1', 'npc_b21', liveCtx().ctx)
+    expect(silent.view!.nodeId).toBe('n1')
+    expect(silent.effects, '不传 sink 的读者只收清单，一样不少').toHaveLength(1)
+  })
+
+  it('advance 到「按一下继续」的节点 ⇒ 顺着 next 进下一格（终点收场与 ghost 那两腿已有用例）', () => {
+    const t = tree([n('n0', { next: 'n1' }), n('n1')])
+    const res = solo(t).advance(t, 'n0', 'npc_b21', liveCtx().ctx)
+    expect(res.view!.nodeId).toBe('n1')
+  })
+
+  it('flags.any 全不立 ⇒ 不成立（现有用例只走过 any 命中一侧）', () => {
+    const c = liveCtx()
+    expect(conditionPass({ flags: { any: ['flag.x', 'flag.y'] } }, 'npc', c.ctx)).toBe(false)
   })
 })
