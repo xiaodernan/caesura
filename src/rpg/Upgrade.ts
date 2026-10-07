@@ -64,7 +64,7 @@ export function tryUpgrade(inv: Inventory, uid: string): UpgradeResult {
   const cap = maxLevelOf(item)
   if (gear.level >= cap) return { ok: false, reason: 'maxed' }
   const step = upgradeStep(gear.level)
-  if (!step) return { ok: false, reason: 'maxed' }
+  if (!step) return { ok: false, reason: 'maxed' } // 【恒死·批26】upgrade 表覆盖 1..10 且全部稀有度 maxLevel ≤ 10：level < cap ⇒ level+1 必在表内，find 落空不可达
   if (inv.count(TIMBITE) < step.timbite || inv.count(DROSS) < step.dross) return { ok: false, reason: 'poor' }
   inv.remove(TIMBITE, step.timbite)
   inv.remove(DROSS, step.dross)
