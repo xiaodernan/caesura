@@ -25,10 +25,12 @@ export const DEFAULT_BINDS: Binds = {
     Digit1: 'ability1', Digit2: 'ability2', Digit3: 'ability3',
     Tab: 'map', Escape: 'pause'
   },
+  /* 10 = 标准映射的 L3（左摇杆点击）⇒ observe（KI-105①，2026-10-08）：声纹观察是「按一下发一波」的
+     脉冲型动词，点摇杆正是这个手感；轻攻击是连打型，点摇杆没法连，它退守 13（十字键下）。 */
   padButtons: {
     0: 'dodge', 2: 'parry', 1: 'weaponSkill', 3: 'interact',
     4: 'guard', 5: 'lockOn', 6: 'map', 7: 'sprint',
-    8: 'pause', 9: 'attackHeavy', 10: 'attackLight', 11: 'jump',
+    8: 'pause', 9: 'attackHeavy', 10: 'observe', 11: 'jump',
     12: 'dodge', 13: 'attackLight', 14: 'attackHeavy', 15: 'parry',
     16: 'interact', 17: 'pause', 18: 'weaponSkillB'
   },
