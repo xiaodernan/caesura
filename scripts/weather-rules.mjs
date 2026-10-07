@@ -63,8 +63,8 @@ export const PENDING_WEATHER_READINGS = {
  * 给它们编一个条件就是拿我的猜测冒充叙事裁决（§77 那条纪律在数据侧的样子）。
  */
 export const PENDING_WEATHER_SWITCHES = {
-  rg_resthold: '休垒的"落烬"：区内没有 `kind:\'bell\'` 的钟——广场那四件陈设是 `inspect`，按**值域**换组（`state.bells.fourth_dumb` = INTACT/RUNG/MELTED/SEALED，narrative §7 那个抉择）。切换今天只认"被任务线追踪的旗"，要让它认值域得先裁"值域状态算不算天气条件"',
-  rg_brokenbar_camp: '营地的"雾"：那一区的世界变化走的是桥放下来／后门开／`flag.brokenbar_resolved` 那类事件（没有钟，也没有修钟这一步），而文档里没有任何一句说营地为什么起雾。那一格是抄雾语林的样子还是另有条件 ⇒ 欠叙事裁决',
+  rg_resthold: '休垒的"落烬"：区内没有 `kind:\'bell\'` 的钟——广场那四件陈设是 `inspect`，按**值域**换组（`state.bells.fourth_dumb` = INTACT/RUNG/MELTED/SEALED，narrative §7 那个抉择）。切换今天只认"被任务线追踪的旗"。**裁决已做（2026-10-07，art-direction §8.1.2 选 A）**：值域算天气条件——`regions.json` 与 `weatherPresets` 并排加一格 `weatherSwitch: { state: { key, in } }`，推导先读那一格、没有则退回今天的行为、两种来源不叠加。**真正的阻塞是 `src/data/schema.ts`**：类型 / 门禁白名单 / 词表对账三处要同时认这个字段，不能只做两处再用 cast 绕类型。它一接通，这条账就该销',
+  rg_brokenbar_camp: '营地的"雾"：那一区的世界变化走的是桥放下来／后门开／`flag.brokenbar_resolved` 那类事件（没有钟，也没有修钟这一步），而文档里没有任何一句说营地为什么起雾。**裁决已做（2026-10-07，art-direction §8.1.2 选 A）**：走 `flag.brokenbar_resolved` 那条——用 `weatherSwitch: { flag }` 显式声明"这一区的第二格由谁拨"，**不为天气另立新旗**。阻塞同上（`schema.ts` 立类型）。它一接通，这条账就该销',
 }
 
 const isObj = (v) => !!v && typeof v === 'object' && !Array.isArray(v)
