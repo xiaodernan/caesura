@@ -175,3 +175,144 @@ describe('secretId：封存点的旗标与奖励只住在 secret 那一条记录
     expect(() => new Interactables([bad], () => true)).toThrow(/sec\.not_here/)
   })
 })
+
+describe('批19 分支死角：闸门缓存 / 未知对象 / 锁文本回落全表', () => {
+  const at = { x: 0, y: 0, z: 0 }
+  /** 合成单件区域：一个可换 kind/闸门的交互物 + 可选的开放开关 */
+  const one = (item: Record<string, unknown>, open = true): RegionData[] => {
+    const rg = structuredClone(regions[0])
+    rg.interactables = [{ id: 'ix_lab', kind: 'gate', pos: { x: 0, y: 0, z: 0 }, ...item }]
+    return [rg]
+  }
+
+  it('world.flag 的假值腿：setFlag(key, false) 把旗从缓存里拔掉', () => {
+    const it = new Interactables(one({}), () => true)
+    it.setFlag('flag.probe')
+    expect(it.hasFlag('flag.probe')).toBe(true)
+    it.setFlag('flag.probe', false)
+    expect(it.hasFlag('flag.probe'), '假值 ⇒ 缓存同步删除，不是只广播不落账').toBe(false)
+    it.dispose()
+  })
+
+  it('regionOpen：区域查无此地 ⇒ false（归属不在册的一律不开放）', () => {
+    const it = new Interactables(one({}), () => true)
+    expect(it.regionOpen({ regionId: 'rg.nowhere' } as never)).toBe(false)
+    it.dispose()
+  })
+
+  it('use：区域未开 ⇒ “那里还没有通路”；未知 id ⇒ “没有可交互对象”', () => {
+    const shut = new Interactables(one({}), () => false)
+    const r1 = shut.use('ix_lab', at)
+    expect(r1.ok).toBe(false)
+    expect(r1.text).toBe('那里还没有通路')
+    shut.dispose()
+    const it = new Interactables(one({}), () => true)
+    const r2 = it.use('ix.nope', at)
+    expect(r2.ok).toBe(false)
+    expect(r2.text).toBe('没有可交互对象')
+    it.dispose()
+  })
+
+  it('activate 成功且 setsFlag：旗广播、缓存更新、log 播报共用同一份 it.setsFlag', () => {
+    const logs: string[] = []
+    const off = bus.on('log', (l) => { if (l.level === 'info') logs.push(l.msg) })
+    const it = new Interactables(one({ setsFlag: 'flag.ix.open' }), () => true)
+    const r = it.use('ix_lab', at)
+    off()
+    expect(r.ok).toBe(true)
+    expect(r.setsFlag, '结果里带回旗名').toBe('flag.ix.open')
+    expect(it.hasFlag('flag.ix.open'), 'setFlag 广播 ⇒ 自己的缓存也更新').toBe(true)
+    expect(logs.some((m) => m.includes('interact ix_lab')), '播报腿真的在说话').toBe(true)
+    it.dispose()
+  })
+
+  it('锁文本三例：缺旗的井笼、未登记的状态键、旗已齐但值域未到', () => {
+    const el = new Interactables(one({ kind: 'elevator', requiresFlag: 'flag.el.done' }), () => true)
+    expect(el.use('ix_lab', at).text).toBe('井笼不动 —— 机构未接通')
+    el.dispose()
+
+    // requiresState 的 key 没登记进 registry：displayName 回落到键名，把生键直接亮给玩家
+    const st = new Interactables(one({ requiresState: { key: 'st.nope', value: 'awake' } }), () => true)
+    const r = st.use('ix_lab', at)
+    expect(r.ok).toBe(false)
+    expect(r.text, '不假装认识它：键名与期望值原样出现').toMatch(/此处状态未到 —— 需要 st\.nope = awake/)
+    st.dispose()
+    // 注：L231 的 `?? it.requiresFlag ?? '前置条件'` 兜底腿是死防御——lockText 只有两条调用路径，
+    // L199 带 missing（长度 >0 ⇒ missing[0] 必真）与 L202 值域锁（requiresState 必真 ⇒ L225 必然先返回），
+    // missing[0] 落空的前提不存在，兜底永不执行。
+  })
+
+  it('resultText 的回落腿：npc 没带 npcId ⇒ “与某人交谈”；册外 kind ⇒ “机关启动”', () => {
+    const np = new Interactables(one({ kind: 'npc' }), () => true)
+    expect(np.use('ix_lab', at).text).toBe('与某人交谈')
+    np.dispose()
+    const lv = new Interactables(one({ kind: 'lever' as never }), () => true)
+    expect(lv.use('ix_lab', at).text).toBe('机关启动')
+    lv.dispose()
+  })
+
+  it('离得太远：距离闸门排在区域与旗标之后，超出半径就婉拒', () => {
+    const it = new Interactables(one({}), () => true)
+    const r = it.use('ix_lab', { x: 100, y: 0, z: 0 })
+    expect(r.ok).toBe(false)
+    expect(r.text).toBe('离得太远')
+    it.dispose()
+  })
+
+  it('一次性交互物第二次用：此路已尽（used 闸先于一切闸门）', () => {
+    const it = new Interactables(one({}), () => true)
+    expect(it.use('ix_lab', at).ok).toBe(true)
+    const r2 = it.use('ix_lab', at)
+    expect(r2.ok).toBe(false)
+    expect(r2.state).toBe('used')
+    expect(r2.text).toContain('此路已尽')
+    it.dispose()
+  })
+
+  it('全 archetype 成功播报点名：resultText 的 switch 每个案子各说各的话', () => {
+    const cases: Array<[string, string]> = [
+      ['checkpoint', '调音桩已共鸣'], ['gather', '采集 · 音色石碎料'], ['chest', '遗箱已开'],
+      ['soundwall', '音壁裂开 —— 通路已现'], ['bridge', '吊桥落下'], ['bell', '落钟鸣响，回音落在高处'],
+      ['teleport', '位移回响'], ['inspect', '刻痕读进了心里'], ['shop', '摊子上摆着些消耗品'],
+    ]
+    for (const [kind, text] of cases) {
+      const inst = new Interactables(one({ kind }), () => true)
+      const r = inst.use('ix_lab', at)
+      expect(r.ok, kind).toBe(true)
+      expect(r.text, `${kind} 的播报`).toContain(text)
+      inst.dispose()
+    }
+  })
+
+  it('elevator 成功文案两态：带 verb 说吊机，不带说井笼', () => {
+    const plain = new Interactables(one({ kind: 'elevator' }), () => true)
+    expect(plain.use('ix_lab', at).text).toBe('共鸣井启动 —— 井笼开始升降')
+    plain.dispose()
+    const verb = new Interactables(one({ kind: 'elevator', verb: '拉闸' }), () => true)
+    expect(verb.use('ix_lab', at).text).toBe('吊机咬合，回音把人托往高处')
+    verb.dispose()
+  })
+
+  it('npc 播报认册：登记在册的 npcId 说真名，结果里带回 npcId', () => {
+    const it = new Interactables(one({ kind: 'npc', npcId: 'npc_belltongue' }), () => true)
+    const r = it.use('ix_lab', at)
+    expect(r.text, '铃姨在册 ⇒ 说真名').toBe('与铃姨交谈')
+    expect(r.npcId).toBe('npc_belltongue')
+    it.dispose()
+  })
+
+  it('上锁文案点 kind 名：箱子说箱子、音壁说弹反，不说笼统的“需要”', () => {
+    const chest = new Interactables(one({ kind: 'chest', requiresFlag: 'flag.chest.b19' }), () => true)
+    expect(chest.use('ix_lab', at).text).toBe('箱子上着锁')
+    chest.dispose()
+    const wall = new Interactables(one({ kind: 'soundwall', requiresFlag: 'flag.wall.b19' }), () => true)
+    expect(wall.use('ix_lab', at).text).toBe('音壁纹丝不动 —— 需要先学会弹反')
+    wall.dispose()
+  })
+
+  it('登记过的状态键说人名：displayName 上屏，不把生键甩给玩家', () => {
+    const it = new Interactables(one({ requiresState: { key: 'state.bells.fourth_dumb', value: 'rung' } }), () => true)
+    expect(it.use('ix_lab', at).text).toBe('此处状态未到 —— 需要 第四口钟 · 哑钟 = rung')
+    it.dispose()
+  })
+})
