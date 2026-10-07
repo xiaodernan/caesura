@@ -98,3 +98,75 @@ export function mojibakeFindings(entries) {
   }
   return out
 }
+
+/**
+ * 允许留在文本里的控制字符：`TAB`(09) / `LF`(0A) / `CR`(0D)。
+ * 这三个是**排版**，不是损伤。2026-10-02 在总体上的实测：TAB 只有 1 份文件用过
+ * （`tests/flow/dialogue.test.ts`），而 CR 与 LF **两种行尾在本机并存**——工作树 242/275 份是纯 LF、
+ * `git archive` 出的冻结平面却 267/273 份是 CRLF（归档按 `core.autocrlf=true` 转一次）。
+ * 两种都有真读者，把任一种定罪就是一台误报机器。
+ */
+export const ALLOWED_CONTROL = [0x09, 0x0a, 0x0d]
+
+/**
+ * 一段文本里所有**不该存在的控制字符**（C0 里去掉 `ALLOWED_CONTROL`）的位置与码点。
+ *
+ * 为什么这一族值得单独一句判据（KI-098，2026-10-02 实测到一个真件）：
+ * `tests/unit/panel-nav.test.ts:186` 原本写着 `/<button\b[^>]*>/g`，而那条 `\b` 到磁盘上不是
+ * 反斜杠＋b 两个字符，**是一个 U+0008 退格符**——某个写盘/传参环节把转义序列解释掉了一次。
+ * 后果不是崩：JS 正则里裸的 0x08 表示"匹配一个退格字符"，于是这个模式**永远匹配不到任何 HTML**，
+ * `?? []` 接住空集，那条"焦点框不许落在页签或遮罩上"的断言拿着一个空串 `''` 通过了 `not.toMatch`。
+ * 它与 U+FFFD 是同一个病族的两种记号：**文本被改写过一次，而读它的人看不出来**。
+ *
+ * DEL(0x7F)、C1(0x80-0x9F)、U+FFFE/FFFF、BOM 都在同一次普查里量过（`docs/technical-architecture.md` §5.9.35），
+ * 全库 **0 个** ⇒ 按 KI-082 的同一纪律**不为它们编判据**（没有实例的判据就是等着误报的那一种）。
+ */
+export function findStrayControl(text) {
+  const out = []
+  if (typeof text !== 'string' || text.length === 0) return out
+  let line = 1
+  let lineStart = 0
+  for (let i = 0; i < text.length; i++) {
+    const code = text.charCodeAt(i)
+    if (code === 0x0a) { line += 1; lineStart = i + 1; continue }
+    if (code < 0x20 && !ALLOWED_CONTROL.includes(code)) {
+      out.push({ line, column: i - lineStart + 1, index: i, code })
+    }
+  }
+  return out
+}
+
+/**
+ * 「文件 + 文本」清单 → 游离控制字符的 findings（形状与 `mojibakeFindings` 一致）。
+ * 一行报一条，但把这一行上每个码点都点出来——**码点就是要看的字**：`U+0008` 与 `U+001B`
+ * 的修法完全不同（前者是被吃掉的转义，后者是终端序列），合成一句"有控制字符"会把人引去查错的东西。
+ */
+export function strayControlFindings(entries) {
+  const out = []
+  for (const entry of (Array.isArray(entries) ? entries : [])) {
+    if (entry === null || typeof entry !== 'object') continue
+    const file = typeof entry.file === 'string' ? entry.file : '(未命名文件)'
+    const hits = findStrayControl(entry.text)
+    if (hits.length === 0) continue
+    const byLine = new Map()
+    for (const hit of hits) byLine.set(hit.line, [...(byLine.get(hit.line) ?? []), hit])
+    for (const [line, lineHits] of byLine) {
+      const snippet = contextAround(lineTextAt(entry.text, lineHits[0].index), lineHits[0].column)
+      const codes = lineHits
+        .map((h) => `U+${h.code.toString(16).toUpperCase().padStart(4, '0')}（第 ${h.column} 列）`)
+        .join('、')
+      out.push({
+        level: 'error',
+        file,
+        where: `第 ${line} 行`,
+        msg: `出现 ${lineHits.length} 个不该存在的控制字符：${codes}，上下文 ${JSON.stringify(snippet)}。`
+          + '人在源码里打不出这些字符——它们是**转义序列被某一次写盘/传参解释掉了一次**的产物：'
+          + '想写 `\\b` 而磁盘上落成 U+0008 退格符，正则里那个裸退格永远匹配不到任何东西，'
+          + '于是 `match(...) ?? []` 拿到空集、断言拿着空答案通过（一条看起来在守、其实什么都看不见的门）。'
+          + '修法：把那两个字符重新按字面写回（反斜杠＋字母），并把这条判据放在写入之后而不是之前。'
+          + '台账见 docs/technical-architecture.md §5.9.35（KI-098）。',
+      })
+    }
+  }
+  return out
+}

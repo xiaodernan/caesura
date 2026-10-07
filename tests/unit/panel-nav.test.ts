@@ -183,7 +183,8 @@ describe('KI-061 面板键盘导航（§218 方向键 / 焦点记忆 / Back）',
     ;(p as { show(): void }).show()
     expect(rowTags(htmlOf(p)).length, '六维 + 洗点 = 7 行；把页签算进来就会变成 13').toBe(7)
     step(p,'down')
-    const focused = (htmlOf(p).match(/<button[^>]*>/g) ?? []).find((t) => /class="[^"]*focus/.test(t)) ?? ''
+    const focused = (htmlOf(p).match(/<button\b[^>]*>/g) ?? []).find((t) => /class="[^"]*focus/.test(t)) ?? ''
+    expect(focused, '按过 down 之后必须真有一个带焦点框的行（空串会让下面那条断言拿着不存在的东西白过）').not.toBe('')
     expect(focused, '焦点框不许落在页签或遮罩上').not.toMatch(/data-act="tab"|data-act="close"/)
   })
 
