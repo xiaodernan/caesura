@@ -154,4 +154,22 @@ describe('§4.8 初句圣所：五环线索链的每一环都要有写方（KI-0
     expect(chest!.secretId, '领取点必须挂回 secret').toBeTruthy()
     expect(chest!.verb, '它要有一个"拓下石刻上的初句"这样的动词').toBeTruthy()
   })
+
+  it('链尾有后果：拓下初句之后那面旗要打开一个**带奖励的 secret**（不是一个只进背包的奖励）', () => {
+    // 上一轮我先把它写成"遍历 interactables 找 unlockFlag"——`tsc` 当场否掉了那个字段
+    // （`InteractableRef` 上没有 `unlockFlag`）。**读方住在 `regions[].secrets[]`**：
+    // `{ id, unlockFlag, rewardTable, pos }`。这条断言就是那次错假设的正确形状。
+    const written = new Set<string>()
+    for (const rule of worldstate) {
+      const f = (rule as { setFlag?: string }).setFlag
+      if (f) written.add(f)
+    }
+    expect(written.has('flag.found_first_phrase'), '写方：worldstate 规则').toBe(true)
+
+    const secret = regions
+      .flatMap((r) => r.secrets ?? [])
+      .find((x) => x.unlockFlag === 'flag.found_first_phrase')
+    expect(secret, '读方：深窖里那个 secret 拿它当解锁闸门').toBeTruthy()
+    expect(secret!.rewardTable, '链尾必须通向一份奖励（否则这条链只是多了一件道具）').toBeTruthy()
+  })
 })
