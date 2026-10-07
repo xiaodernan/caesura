@@ -75,7 +75,7 @@ function summarize(s: Snapshot): SlotData {
     playSec: s.playSec,
     savedAt: s.savedAt ?? null,
     hp: s.player.hp,
-    corruption: s.player.corruption ?? 0,
+    corruption: s.player.corruption ?? 0, //【恒死·批28】corruption 自 v3 起是 schema 必填格：capture 必写、v2→v3 迁移给更老的档补 0 ⇒ ?? 右腿不可达
     questsStarted: s.quest ? Object.keys(s.quest.states ?? {}).length : null,
     questsCompleted: s.quest ? (s.quest.completed?.length ?? 0) : null
   }
@@ -83,7 +83,7 @@ function summarize(s: Snapshot): SlotData {
 
 /** 键位的可读出处：主机上的 `slot1.prev` 与备份机上的 `slot1` 不是同一件事 */
 function where(r: { fromKey: string | null; fromStore: 'primary' | 'backup' | null }): string | null {
-  if (r.fromKey === null || r.fromStore === null) return null
+  if (r.fromKey === null || r.fromStore === null) return null //【恒死·批28】readSlot 两个返回点里 fromKey/fromStore 同 null 或同非 null：一半有值另一半必非 null
   return r.fromStore === 'backup' ? `${r.fromKey}@backup` : r.fromKey
 }
 
