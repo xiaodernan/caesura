@@ -234,7 +234,7 @@ export class MapUI {
     if (intents.has('right')) dx += 1
     if (intents.has('up')) dz -= 1
     if (intents.has('down')) dz += 1
-    if (dx === 0 && dz === 0) return
+    if (dx === 0 && dz === 0) return //【恒死·批30】UiIntent 值域 8 意图全被上方 if 链吃净：集合非空且不含 back/翻页/confirm ⇒ 必含方向键 ⇒ dx/dz 不同时为 0；新增意图时此腿复活，守门测试会叫
     this.panBy((dx * view.w) / 8, (dz * view.h) / 8)
   }
 
@@ -418,8 +418,8 @@ export class MapUI {
 
     const facilities = this.deps.facilities()
       .filter((f) => isMapFacility(f.kind) && revealed.has(f.regionId))
-      .sort((a, b) => (rank.get(a.regionId) ?? 0) - (rank.get(b.regionId) ?? 0) || a.id.localeCompare(b.id))
-    const openCount = facilities.filter((f) => f.state !== 'locked').length
+      .sort((a, b) => (rank.get(a.regionId) ?? 0) - (rank.get(b.regionId) ?? 0) || a.id.localeCompare(b.id)) //【恒死·批30】两侧 ?? 0 均不可达：revealed 由 exploredRegionIds 只认 this.regions 生成 ⊆ rank 键集，filter 保证 regionId 必在册
+    const openCount = facilities.filter((f) => f.state !== 'locked').length //【恒死·批30】下方 FACILITY_LABEL[kind] ?? kind 的兜底不可达：isMapFacility 过滤后 kind 必在 MAP_FACILITY_KINDS 六类内，而 FACILITY_LABEL 是全六类 Record
     const facilityRows = facilities.map((f) => `<div class="row">
       <span class="name">${FACILITY_LABEL[f.kind as MapFacilityKind] ?? f.kind}
         <span class="note">${f.regionName} · x ${Math.round(f.pos.x)} z ${Math.round(f.pos.z)}</span></span>
