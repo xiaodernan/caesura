@@ -171,6 +171,26 @@ describe('§4.8 初句圣所：五环线索链的每一环都要有写方（KI-0
     expect(chest!.verb, '它要有一个"拓下石刻上的初句"这样的动词').toBeTruthy()
   })
 
+  it('"五环"这个说法要能对上数据：4 面线索旗 + 1 扇门 + 1 个拓印点（文档叫它五环，别让它悬着）', () => {
+    const deep = byId.get(DEEP)!
+    const gate = deep.interactables.find((i) => i.id === 'ga_deeps_firstphrase_door')!
+    const chest = deep.interactables.find((i) => i.id === 'ch_first_phrase')!
+    const clueFlags = [...(gate.requiresFlags ?? [])]
+    // 四环 = 门要的那四面旗；第五环 = 门自己（"以休止轻触井底的门"那一下），
+    // 而拓印点是它的**领取点**（KI-087：写方与领取点成对，缺哪一半都不算）
+    expect(clueFlags.length, '门要的线索旗数').toBe(4)
+    expect(gate.kind, '第五环是那扇门本身').toBe('gate')
+    expect(chest.kind, '拓印点').toBe('chest')
+    expect(chest.secretId, '拓印点挂着 secret').toBeTruthy()
+    // 四环各自都要有写方（worldstate 规则）—— 与上一组断言同源，这里按"环"的读法再钉一次
+    const written = new Set<string>()
+    for (const rule of worldstate) {
+      const f = (rule as { setFlag?: string }).setFlag
+      if (f) written.add(f)
+    }
+    for (const clue of clueFlags) expect(written.has(clue), `线索旗 ${clue} 的写方`).toBe(true)
+  })
+
   it('链尾有后果：拓下初句之后那面旗要打开一个**带奖励的 secret**（不是一个只进背包的奖励）', () => {
     // 上一轮我先把它写成"遍历 interactables 找 unlockFlag"——`tsc` 当场否掉了那个字段
     // （`InteractableRef` 上没有 `unlockFlag`）。**读方住在 `regions[].secrets[]`**：
