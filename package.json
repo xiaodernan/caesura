@@ -6,7 +6,7 @@
   "description": "CAESURA - original third-person action RPG vertical slice",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && node scripts/check-dist.mjs",
     "preview": "vite preview",
     "lint": "tsc --noEmit",
     "test": "node scripts/test.mjs",

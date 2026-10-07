@@ -1053,7 +1053,7 @@ startNewGame() → 移动 3 tick 假输入 → 位置变化断言
 ### 7.1 npm scripts
 
 > **对账（2026-09-26，KI-063 于 2026-09-27 更新）**：这张表是立项时的期望清单，**其中四行不存在**。`package.json` 里真实存在的十个是：
-> `dev` / `build`(= `tsc --noEmit && vite build`) / `preview` / `lint`(= **只有 `tsc --noEmit`，没有 eslint**) /
+> `dev` / `build`(= `tsc --noEmit && vite build && node scripts/check-dist.mjs`——尾巴是 KI-098③ 的构建产物文本哨兵，见 §5.9.35) / `preview` / `lint`(= **只有 `tsc --noEmit`，没有 eslint**) /
 > `test`(= `node scripts/test.mjs`，带覆盖核对的跑测器，见 §6 前言) / `test:flow` / `validate:data` /
 > `check`(= lint + validate:data + test) / `test:raw`（绕过覆盖核对直接跑 vitest；KI-099b 起经 `scripts/test-raw.mjs` 带名册对账，见 §5.9.39） /
 > `coverage`(= `node scripts/coverage.mjs`，**第五道门**：量整个 `src/` 的行覆盖并对账地板文件，KI-064 起**还按包对账**（每包一条只许涨的地板 + 核心包 ≥80% 独立于地板），刻意**不在 `check` 里**，理由见 §6.1 对账 v2/v3)。
@@ -2056,7 +2056,11 @@ Phase 4-B 落三叠箭时只做了**延迟**那一半（`at=[0,32,42]` 让第 2 
 
 **没有实机腿**（§77 口径如实登记）：这一批的东西全在**字节与文本**层面——两份判据是纯函数、跑测器读的是文件、`scripts/*.mjs` 不进 `dist`（构建产物里 grep 不到 `strayControlFindings`），运行时没有任何一格被接线改变。所以本批**没有需要看或听的改动**，视口与听感评审不是"欠做"而是"无适用面"；dev server 仍在 `127.0.0.1:5173`，留给后续需要实机的批次。
 
-**没做（§78，故本条记 Partial）**：① **写坏的那条路径本身不在仓库里**（与 KI-082 的②同一格）——这道门是「发现」不是「防止」，下一次被吃掉的转义仍会先进磁盘、再被门禁喊出来；② 根上那 38 份未入库的一次性产物仍是**已命名的洞**：跨查只保证「已入库的根点文件」不漏，不保证「未入库的点文件」被人看过（今天挡的是没人读的东西，但 `.tmp-*.py` 里如果混进一句要交付的正文，本门看不见它——那要的是"根上不许放正文"那条判据，不是这条）；③ 总体不含 `dist/`、`node_modules/`、`.scratch/`（`SKIP_DIRS`），也就是**构建产物里的坏字符没人扫**——那是一条量"产物字节"的判据（`vite build` 之后 grep dist），本批不编；④ 被压成 `?` 而不是 U+FFFD 的那种坏法仍抓不到（KI-082 的③，没有样本就不编）；⑤ `validate-data.mjs` 目前只把 U+FFFD 判据接在 20 份表的原文上，**没有**改成调用 `corpusFindings`（两条路各有各的读者：校验器要的是"这一份表坏了"，哨兵要的是"交付总体干净"，接成一条会让前者报出 273 份文件的名字）。
+**没做（§78，故本条记 Partial）**：① **写坏的那条路径本身不在仓库里**（与 KI-082 的②同一格）——这道门是「发现」不是「防止」，下一次被吃掉的转义仍会先进磁盘、再被门禁喊出来；② 根上那 38 份未入库的一次性产物仍是**已命名的洞**：跨查只保证「已入库的根点文件」不漏，不保证「未入库的点文件」被人看过（今天挡的是没人读的东西，但 `.tmp-*.py` 里如果混进一句要交付的正文，本门看不见它——那要的是"根上不许放正文"那条判据，不是这条）；③ ~~总体不含 `dist/`、`node_modules/`、`.scratch/`（`SKIP_DIRS`），也就是**构建产物里的坏字符没人扫**——那是一条量"产物字节"的判据（`vite build` 之后 grep dist），本批不编~~（**dist 那一半 2026-10-08 已补**——不是把 dist 塞进交付总体，而是给它自己的总体与消费者，见下「③补齐」；`node_modules/`（依赖）与 `.scratch/`（旁路平面）维持在外，理由不变）；④ 被压成 `?` 而不是 U+FFFD 的那种坏法仍抓不到（KI-082 的③，没有样本就不编）；⑤ `validate-data.mjs` 目前只把 U+FFFD 判据接在 20 份表的原文上，**没有**改成调用 `corpusFindings`（两条路各有各的读者：校验器要的是"这一份表坏了"，哨兵要的是"交付总体干净"，接成一条会让前者报出 273 份文件的名字）。
+
+**③补齐（KI-098③，2026-10-08，工作树平面 @ `ffc71f9`）——构建产物第一次有哨兵**。理由在总体不同：交付总体扫的是**人写的东西**，而 `dist/` 是**用户真正加载的东西**——压缩器、插件、模板填充同样是一次写盘，源码干净而产物坏掉是可能的，产物要有自己的哨兵。落点四处：① `scripts/dist-text-scan.mjs`（+`.d.mts`）——总体走 `dist/`，二进制（含 NUL）**静默跳过**（图片/字体在 dist 里是正常的，与交付总体相反；"跳过会藏坏文件"那一格由**空总体拒绝**兜着，且口径包含"全是 0 字节"——这一格是被自己的 fixture 错误揪出来的：`{ 'dist/.keep': '' }` 让 0 字节文件把总体撑成非空、拒门哑火，真形状是「文本 N 份、其中非空 0 份」照样红）、致命解码先行，两句判据本体仍是 `text-integrity.mjs` 那一份（import 不是复刻，源码门钉死两条 import 行）；② `scripts/check-dist.mjs`——薄 CLI 只管算根／跑一遍／退出码（`process.exit` 只许住在 CLI，判据模块零副作用），`--root=` 显式覆盖给测试与平面用，不认识的参数响亮拒绝；③ 挂进 build 腿：`"build": "tsc --noEmit && vite build && node scripts/check-dist.mjs"`——dist 只在构建后存在 ⇒ **这道门的消费者只能是 build 腿**；④ `tests/unit/dist-text-scan.test.ts` **19 条**（合成 fixture 钉判据：三张空总体形状／U+FFFD／U+0008／非法 UTF-8／CLI spawn 四腿／源码门四格；新克隆上没有 dist 照样全绿——真产物的读数由每次 build 自己给出）。
+
+**KI-098③ 的臂与门禁（预测先落 `.scratch/ki098c_arms_predict.md` 才跑）**：4 臂全 MATCHED——A1 真产物种植（`dist/index.html` 尾部追加一个 U+FFFD ⇒ CLI exit 1 点名文件「1 条 findings」；恢复后对照腿 exit 0，读数 `[dist] 文本 7 份（二进制 0 份按内容跳过）/ 0 findings`——真产物两腿都在 `ffc71f9` 平面的实 build 上）；A2 摘掉 build 腿接线 ⇒ 恰 1 红（"build 腿在 vite build 之后接"那格）；A3 空总体拒门改恒假（`if (false && …)`）⇒ 恰 3 红（三张空总体形状逐名对上）；A4 顶层 findings 分支 `exit(1)`→`exit(0)` ⇒ 恰 1 红（needle 靠无缩进 `\nprocess.exit(1)` 区分 `!exists` 分支的同形行）。全门链（同平面）：tsc **RC=0**；validate **0 ERROR / 4 WARN**；build **RC=0** 且真产物腿自己打出 `[dist] 文本 7 份（二进制 0 份按内容跳过）/ 0 findings`；全量 **2103 条 / 151 文件 / 8 红 / RC=1** ＝ 较 ki099b 基线（2084/150/8）**+19 条 / +0 红 / +1 文件**，8 红逐名与基线完全一致（color-grade 1、doc-section-citations 1、ducking 4、ui-intents 1、world-graph 1，归并发在途线）。
 
 ### 5.9.36 需求 §9「地图设计」第一次有了机器读者：点位归属、落点歧义、锚点共线（KI-100，2026-10-04）— 已落地（Partial：量的是作者标注的坐标，不是可行走路径）
 
