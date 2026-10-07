@@ -65,7 +65,6 @@ export const PENDING_WEATHER_READINGS = {
 export const PENDING_WEATHER_SWITCHES = {
   rg_resthold: '休垒的"落烬"：区内没有 `kind:\'bell\'` 的钟——广场那四件陈设是 `inspect`，按**值域**换组（`state.bells.fourth_dumb` = INTACT/RUNG/MELTED/SEALED，narrative §7 那个抉择）。切换今天只认"被任务线追踪的旗"，要让它认值域得先裁"值域状态算不算天气条件"',
   rg_brokenbar_camp: '营地的"雾"：那一区的世界变化走的是桥放下来／后门开／`flag.brokenbar_resolved` 那类事件（没有钟，也没有修钟这一步），而文档里没有任何一句说营地为什么起雾。那一格是抄雾语林的样子还是另有条件 ⇒ 欠叙事裁决',
-  rg_unfinished_hall: '未竟厅的"失谐风暴"：那一区的门槛是 `flag.organ_gate_open`（管风琴门），它由关卡推进而不是由某口钟的修复立起；§15.2 里恩希尔战改变的是**音乐与拍**，文档没说过它改天气 ⇒ 谁的条件来这一格欠裁决',
 }
 
 const isObj = (v) => !!v && typeof v === 'object' && !Array.isArray(v)

@@ -1130,7 +1130,8 @@
   },
   "chunkSize": 48,
   "weatherPresets": [
-   "clear"
+   "clear",
+   "dissonant-storm"
   ],
   "lightingPreset": "lp_fellcarillon",
   "palette": {
@@ -1666,8 +1667,7 @@
   },
   "chunkSize": 48,
   "weatherPresets": [
-   "clear",
-   "dissonant-storm"
+   "clear"
   ],
   "lightingPreset": "lp_unfinished_hall",
   "palette": {
