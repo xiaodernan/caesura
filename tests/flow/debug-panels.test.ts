@@ -25,7 +25,7 @@ import {
   registerGameData, playerBase, regions, worldstate, quests as questTable,
   worldStates as worldStateTable,
 } from '@/data'
-import type { EnemyData, MovesetData, WeaponData } from '@/data/schema'
+import type { EnemyData, MovesetData, QuestData, WeaponData } from '@/data/schema'
 import { PlayerController } from '@/player/ThirdPersonController'
 import { AISystem } from '@/ai/AISystem'
 import { CombatManager } from '@/combat/CombatManager'
@@ -687,5 +687,114 @@ describe('F2 · 战斗读数面板', () => {
     const txtAfter = panel.textContent
     // 面板已移除但对象还在；dispose 后不应再因事件而变文本（handler 已摘）
     expect(panel.textContent).toBe(txtAfter)
+  })
+})
+
+/* ---------------------------------------- 批 16：两块面板的分支死角补测 */
+
+describe('F4 分支死角（批 16）：deaf / held / tuned / boss 行的读数腿', () => {
+  it('deaf 两腿：素敌印 no，聋乱窗里印 yes(剩余拍数)', () => {
+    const w = makeWorld()
+    const e = w.ai.spawn('en_refrein', at(4), 'f4d')
+    const g = gridOf(w)
+    expect(aiPanelText({ target: e, player: w.player.pos, grid: g, armedSlots: [] })).toMatch(/deaf no\b/)
+    // deaf 是只读 getter（数据 ai.deaf || deafTicks>0 || 阶段聋）：真腿走 deafTicks 这条运行时来源
+    e.deafTicks = 30
+    expect(aiPanelText({ target: e, player: w.player.pos, grid: g, armedSlots: [] })).toContain('deaf yes(30t)')
+  })
+
+  it('held 行五态全亮；一项都不占时整行消失（不是印一个空行）', () => {
+    const w = makeWorld()
+    const e = w.ai.spawn('en_refrein', at(4), 'f4d')
+    const g = gridOf(w)
+    expect(aiPanelText({ target: e, player: w.player.pos, grid: g, armedSlots: [] })).not.toMatch(/\nheld/)
+    e.stunTicks = 12
+    e.stunStopTicks = 3
+    e.frozenTicks = 5
+    e.intangible = true
+    e.revealTicks = 8
+    expect(aiPanelText({ target: e, player: w.player.pos, grid: g, armedSlots: [] }))
+      .toContain('held   stun 12t  hitstop 3t  frozen 5t  phase-gap (intangible)  revealed 8t')
+  })
+
+  it('tuned 行只在有减益时出现，读数就是实例上那份 buff', () => {
+    const w = makeWorld()
+    const e = w.ai.spawn('en_refrein', at(4), 'f4d')
+    const g = gridOf(w)
+    expect(aiPanelText({ target: e, player: w.player.pos, grid: g, armedSlots: [] })).not.toContain('tuned')
+    e.buff = { fromId: 'en_ostlara', attackSpeedMul: 1.2, dmgMul: 1.5 }
+    expect(aiPanelText({ target: e, player: w.player.pos, grid: g, armedSlots: [] }))
+      .toContain('tuned  from en_ostlara: speed x1.2 dmg x1.5')
+  })
+
+  it('boss 行：en_myriad 不定义钟速 ⇒ 回落到网格 bpm；铃铛 RUNG/up 分明；P2 夺拍在 neutral=0 时不印抢回段', () => {
+    const w = makeWorld()
+    const g = gridOf(w)
+    const myriad = w.ai.spawn('en_myriad', at(5), 'f4d')
+    // en_myriad 的 boss 数据没有 bpm/beatsPerBar：钟速走 clockBpm ?? g.bpm 与 beatsPerBar ?? 4 两条回落腿
+    expect(aiPanelText({ target: myriad, player: w.player.pos, grid: g, armedSlots: [] }))
+      .toMatch(/boss\s+phase 1  clock 108\/4/)
+    myriad.bellsRung = [true, false]
+    expect(aiPanelText({ target: myriad, player: w.player.pos, grid: g, armedSlots: [] })).toContain('bells RUNG,up')
+
+    const hersil = w.ai.spawn('en_hersil', at(5), 'f4d')
+    hersil.bossPhase = 1 // P2 的 stealBeat 来自阶段数据（既有用例已盖过 neutral 真腿）
+    const p2 = aiPanelText({ target: hersil, player: w.player.pos, grid: g, armedSlots: [] })
+    expect(p2).toContain('stealBeat')
+    expect(p2, '玩家没抢回拍（neutral=0）时没有"neutral"段可印').not.toContain('neutral')
+  })
+})
+
+describe('F3 分支死角（批 16）：空表、截断、值域缺格与 waits 的"等无可等"', () => {
+  /** 手造任务表（表级判据见既有用例；这里只喂面板装配层，不碰 registry） */
+  const qdef = (
+    id: string,
+    steps: Array<{ state: string; advanceOn?: { flags?: string[]; state?: { key: string; in: string[] } } }>,
+  ): QuestData => ({
+    id, nameKey: `quest.${id}`, displayName: id, npc: 'npc_test', outcome: '',
+    steps: steps.map((s) => ({
+      state: s.state, label: `${id}·${s.state}`,
+      ...(s.advanceOn ? { advanceOn: s.advanceOn } : {}),
+    })),
+  })
+  const readerOf = (step: number, done = false) => ({
+    stepIndex: (_id: string) => step,
+    isComplete: (_id: string) => done,
+  })
+
+  it('表里一条线都没有时明说，而不是印一个空标题', () => {
+    expect(questPanelText([], { flags: [], byRules: [], used: [], relations: {} }))
+      .toContain('(no quests in the table)')
+  })
+
+  it('值域格一个都没写过 ⇒ (all default)；used 超过 12 个截断成省略号', () => {
+    const q = qdef('q_probe_trunc', [{ state: 'S1' }])
+    const world = {
+      flags: ['flag.one'], byRules: ['flag.one'],
+      used: Array.from({ length: 13 }, (_, i) => `ix_probe_${i}`),
+      relations: {},
+      // 不带 states 字段：world.states ?? {} 的右腿 + 空表的 (all default)
+    }
+    const text = questPanelText(questRows([q], readerOf(0)), world)
+    expect(text).toContain('(all default)')
+    expect(text).toContain('used interactables 13: ')
+    expect(text).toContain('…')
+    expect(text, '第 13 个之后的交互物不该出现在面板上').not.toContain('ix_probe_12')
+  })
+
+  it('waits 的"等无可等"：没写闸门与闸门是空对象都如实印 (no advanceOn)；没开线是另一句话', () => {
+    const noGate = qdef('q_probe_nogate', [{ state: 'S1' }, { state: 'S2' }])
+    expect(questRows([noGate], readerOf(1))[0].waits, 'cur 存在但 advanceOn 没写').toBe('(no advanceOn)')
+    const emptyGate = qdef('q_probe_emptygate', [{ state: 'S1', advanceOn: {} }, { state: 'S2' }])
+    expect(questRows([emptyGate], readerOf(0))[0].waits, '闸门写了但什么都不等').toBe('(no advanceOn)')
+    expect(questRows([noGate], readerOf(-1))[0].waits, 'stepIndex=-1 = 没开线，不是没闸门').toBe('(not started)')
+  })
+
+  it('旗标与值域并排印：一步同时等两样时一行里都要看得见', () => {
+    const q = qdef('q_probe_dual', [
+      { state: 'S1', advanceOn: { flags: ['flag.a', 'flag.b'], state: { key: 'state.probe.x', in: ['ON', 'OFF'] } } },
+      { state: 'S2' },
+    ])
+    expect(questRows([q], readerOf(0))[0].waits).toBe('flag.a|flag.b + state.probe.x in ON/OFF')
   })
 })
