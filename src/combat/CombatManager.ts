@@ -204,7 +204,7 @@ export class CombatManager {
     const hb = this.player.activeHitbox
     if (!hb?.box) return
     const swing = this.player.action
-    if (!swing) return // `activeHitbox` 没有招式就是 null；这一行只是把那件事说给类型听（否决的读数要一个"哪一记"的键）
+    if (!swing) return // 【死防御·批22a】activeHitbox getter 首行就是 `if (!this.action) return null`：判定窗存在则招式必存在，此腿运行时不可达，只把那件事说给类型听
     for (const e of this.ai.enemies) {
       if (!e.alive) continue
       if (e.intangible) {
@@ -227,6 +227,7 @@ export class CombatManager {
       const skill = p.action?.skill ?? null
       const kind: EnemyStrike['kind'] = skill
         ? 'skill'
+        // 【死防御·批22a】L207 已保证 action 非空，key 恒为 string：?? 的空串腿不可达
         : (p.action?.key ?? '').startsWith('l') ? 'light' : 'heavy'
       // 起手式只在**真打到人**的那一记上兑现（挥空不该把全音符斩白白用掉）
       const followup = p.takeFollowup(kind === 'heavy')
@@ -235,6 +236,7 @@ export class CombatManager {
         base: hb.damage, poise: hb.poise, hitStopMs: hb.hitStopMs,
         kind,
         // 战技自带层数；武器出手走按键默认（§11），两者都还可以被起手式追加一层
+        // 【死防御·批22a】action 恒非空（L207 守卫）：key 的空串兜底腿不可达
         layers: (skill ? skill.fissureLayers : this.fissureLayersOf(p.action?.key ?? '', p.action?.f, hb)) + (followup?.layers ?? 0),
         mute: hb.flags.includes('mute') || (skill ? skill.muteTicks > 0 : false),
         muteTicks: skill?.muteTicks ?? 0,
@@ -247,6 +249,7 @@ export class CombatManager {
         point, dir: flatDir(p.pos, e.pos),
         reaction: hb.reaction,
         shakeKey: hb.shake,
+        // 【死防御·批22a】action 恒非空（L207 守卫）：?? undefined 只是 null→undefined 的类型塑形，右腿不可达
         sourceAction: p.action ?? undefined
       }, tick)
       // §11 回响：挂不挂影由**这一帧自己声明**（frames.echoOnHit）。不能反过来在结算通道里
@@ -297,10 +300,11 @@ export class CombatManager {
     const hb = this.player.activeHitbox
     if (!hb?.box) return
     const swing = this.player.action
-    if (!swing) return // 同上：判定窗存在就意味着招式存在
+    if (!swing) return // 【死防御·批22a】同 L207：activeHitbox 存在则招式必存在，此腿运行时不可达
     const p = this.player
     const kind: 'light' | 'heavy' | 'skill' = p.action?.skill
       ? 'skill'
+      // 【死防御·批22a】L303 已保证 action 非空，key 恒为 string：?? 的空串腿不可达
       : (p.action?.key ?? '').startsWith('l') ? 'light' : 'heavy'
     for (const prop of props.all) {
       if (!props.hittable(prop)) continue
