@@ -1,8 +1,13 @@
 /**
- * scripts/test-scope.mjs — `scripts/test.mjs` 的「这一趟该跑到哪些文件」判据（纯函数、零依赖）。
+ * scripts/test-scope.mjs — 跑测器的「这一趟该跑到哪些文件」判据 + 磁盘名册 walk（纯函数、只用 node 内置）。
  *
  * 为什么要抽出来（KI-078）：`test.mjs` 一被 import 就会去跑整套测试（顶层就是主流程），
  * 所以它的期望集算法住在里面就等于**没有证人**——`report-reds.mjs` 因为同一个理由被抽出去过一次。
+ *
+ * 消费者两处（KI-099b 起，磁盘名册 walk 也住这里）：`scripts/test.mjs`（主跑测器：漏跑重试、多跑点名）
+ * 与 `scripts/test-raw.mjs`（raw 腿 = `npm run test:raw`，不重试、只对账）。walk 只许有这一份——
+ * 两条腿各抄一份的话，哪天一边改了拼写口径，同一次「全量」就会在两条腿上数出两个分母，
+ * 对账门自己先打架。
  *
  * 判据的形状：期望集 = 磁盘名册 ∩ 位置参数（筛选器）。而筛选器的语义**照抄 vitest 自己那一份**
  * （`cli-api` 里的 `filterFiles`：win32 先把筛选器折成正斜杠，再对"仓库相对路径"做**大小写不敏感的子串**
@@ -11,6 +16,9 @@
  * 而那正是这个脚本存在的全部理由。所以匹配语义不许"近似"（与 vitest 差的那一条分支，理由写在
  * `matchesFilter` 头上）。
  */
+
+import { readdirSync } from 'node:fs'
+import { join } from 'node:path'
 
 const slash = (p) => String(p).replace(/\\/g, '/')
 
@@ -86,6 +94,20 @@ export function scopeOf(files, filters, root) {
 }
 
 /**
+ * 磁盘名册 walk：递归 `dir`，只收 `.test.ts`。名册的**唯一主人**（KI-099b 起）——
+ * 主跑测器与 raw 腿都从这里拿；谁本地再抄一份，同一次「全量」就会在两条腿上数出两个分母。
+ */
+export function testFilesOnDisk(dir) {
+  const out = []
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const p = join(dir, entry.name)
+    if (entry.isDirectory()) out.push(...testFilesOnDisk(p))
+    else if (entry.name.endsWith('.test.ts')) out.push(p)
+  }
+  return out
+}
+
+/**
  * 期望集 ⇄ 这一趟真跑到的文件集，**双向**对账（KI-099）。
  *
  * 为什么"只查漏跑"不够（这一格是 KI-099 的现场）：`scripts/test.mjs` 从写下来起只算
@@ -108,6 +130,19 @@ export function reconcileRoster(expected, ran) {
     missing: exp.filter((p) => !gotSet.has(p)),
     extras: got.filter((p) => !expSet.has(p)),
   }
+}
+
+/**
+ * raw 腿的退出码裁决（KI-099b）。红绿由**报告**数出来（`reportGreen`），不是进程退出码——
+ * 本机那条 EPERM 会让 vitest 记一条 Unhandled Error 并退出 1 而用例全绿（`scripts/test.mjs`
+ * 头上那句"判定只看报告内容"就是这一课）。裁决三格：报告说了红 ⇒ **1**（红优先于对账，
+ * 被叫来看红的人不能被对账挡住视线）；报告全绿而对不上账（`missing`/`extras` 任一非空）⇒ **2**
+ * ——分母没被核过的「全绿」不许读成绿，且与「用例红」的 1 分开，调用方分得清是哪一类；
+ * 全绿且对上账 ⇒ 0。
+ */
+export function rawExitCode(reportGreen, { missing = [], extras = [] } = {}) {
+  if (!reportGreen) return 1
+  return missing.length + extras.length > 0 ? 2 : 0
 }
 
 /** 给人看的那一句：范围是筛选器**说**的，不是脚本自己猜的（`diskCount` 一起印，好让"圈窄了"看得见） */

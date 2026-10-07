@@ -20,6 +20,12 @@ export function matchesFilter(file: string, filter: string, root: string): boole
 export function scopeOf(files: readonly string[], filters: readonly string[], root: string): Scope
 
 /**
+ * 磁盘名册 walk（递归，只收 `.test.ts`）——名册的**唯一主人**（KI-099b 起）：
+ * 主跑测器与 raw 腿都从这里拿，谁本地再抄一份，同一次「全量」就会在两条腿上数出两个分母。
+ */
+export function testFilesOnDisk(dir: string): string[]
+
+/**
  * 名册 ⇄ 这一趟真跑到的文件集，**双向**差集（KI-099）：两边都折成正斜杠再比，
  * `ran` 会先去重。`missing` 可以靠重跑消掉（本机 EPERM 的静默跳过），`extras` 不行
  * （名册与收集面是两份写死的判据）——调用方对后者要当场退出。
@@ -28,5 +34,15 @@ export function reconcileRoster(
   expected: readonly string[] | undefined,
   ran: readonly string[] | undefined
 ): { missing: string[]; extras: string[] }
+
+/**
+ * raw 腿（`npm run test:raw`）的退出码裁决（KI-099b）：红绿由报告数出来（`reportGreen`），
+ * 不是进程退出码（本机那条 EPERM 会让 vitest 退出 1 而用例全绿）。报告说了红 ⇒ 1
+ * （红优先于对账）；全绿但对不上账（`missing`/`extras` 任一非空）⇒ 2；全绿且对上账 ⇒ 0。
+ */
+export function rawExitCode(
+  reportGreen: boolean,
+  diff?: { missing?: readonly string[]; extras?: readonly string[] }
+): number
 
 export function describeScope(filters: readonly string[], expectedCount: number, diskCount: number): string

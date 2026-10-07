@@ -24,8 +24,8 @@
  */
 import { execFileSync } from 'node:child_process'
 import { formatReds, summarizeReds } from './report-reds.mjs'
-import { describeScope, positionalFilters, reconcileRoster, scopeOf } from './test-scope.mjs'
-import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs'
+import { describeScope, positionalFilters, reconcileRoster, scopeOf, testFilesOnDisk } from './test-scope.mjs'
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -34,16 +34,6 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const TESTS = join(ROOT, 'tests')
 const MAX_ATTEMPTS = 3
 const EXTRA = process.argv.slice(2)
-
-function testFilesOnDisk(dir) {
-  const out = []
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const p = join(dir, entry.name)
-    if (entry.isDirectory()) out.push(...testFilesOnDisk(p))
-    else if (entry.name.endsWith('.test.ts')) out.push(p)
-  }
-  return out
-}
 
 function runOnce(reportPath) {
   // 直接跑本地的 vitest 入口，不走 npx：Windows 上 npx 是 .cmd 垫片，execFileSync 找不到它

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { readdirSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { describeScope, matchesFilter, positionalFilters, reconcileRoster, scopeOf } from '../../scripts/test-scope.mjs'
+import { describeScope, matchesFilter, positionalFilters, rawExitCode, reconcileRoster, scopeOf } from '../../scripts/test-scope.mjs'
 
 /**
  * 跑测器的**期望集**要有证人（KI-078）。
@@ -377,5 +377,62 @@ describe('describeScope：那句话要说"范围是筛选器说的"', () => {
     expect(line).toContain('"tests/flow"')
     expect(line).toContain('47 个文件')
     expect(line, '不印全量名册就看不出"这一趟只量了 47/91"').toContain('磁盘名册 91')
+  })
+})
+
+describe('rawExitCode：raw 腿的退出码裁决（KI-099b）', () => {
+  it('全绿且对上账 ⇒ 0', () => {
+    expect(rawExitCode(true, { missing: [], extras: [] })).toBe(0)
+  })
+
+  it('报告说了红 ⇒ 1，且优先于对账（被叫来看红的人不能被对账挡住视线）', () => {
+    expect(rawExitCode(false, { missing: [], extras: [] })).toBe(1)
+    expect(rawExitCode(false, { missing: ['tests/unit/a.test.ts'], extras: [] }), '红优先于对账').toBe(1)
+  })
+
+  it('全绿但漏跑 ⇒ 2（EPERM 静默跳过那一族的「全绿」不许读成绿）', () => {
+    expect(rawExitCode(true, { missing: ['tests/unit/a.test.ts'], extras: [] })).toBe(2)
+  })
+
+  it('全绿但多跑 ⇒ 2', () => {
+    expect(rawExitCode(true, { missing: [], extras: ['.scratch/plane_x/tests/unit/a.test.ts'] })).toBe(2)
+  })
+
+  it('两个方向一起漂也是 2——同一类判决：对不上账', () => {
+    expect(rawExitCode(true, { missing: ['a'], extras: ['b'] })).toBe(2)
+  })
+})
+
+describe('raw 腿真的接了同一份名册与对账（源码门：`test-raw.mjs` 是主跑测器之外的第二条腿，KI-099b）', () => {
+  const src = readFileSync(join(ROOT, 'scripts', 'test-raw.mjs'), 'utf8')
+  const code = src.split(/[\r\n]+/).filter((l) => !l.trim().startsWith('//') && !l.trim().startsWith('*') && !l.trim().startsWith('/*'))
+  const has = (re: RegExp) => code.some((l) => re.test(l))
+
+  it('名册只有一个主人：walk 是 import 的，不是又抄了一份', () => {
+    expect(has(/^import \{[^}]*\btestFilesOnDisk\b[^}]*\} from '\.\/test-scope\.mjs'$/),
+      '没从 test-scope.mjs import 名册 = 第三份 walk 又长出来了').toBe(true)
+    expect(code.filter((l) => /function testFilesOnDisk/.test(l)),
+      '本地再定义一份 walk = 同一次「全量」在两条腿上数出两个分母').toEqual([])
+  })
+
+  it('双向对账接上了：import、调用、两个差集都读，退出码走 rawExitCode', () => {
+    expect(has(/^import \{[^}]*\breconcileRoster\b[^}]*\} from '\.\/test-scope\.mjs'$/), '没 import = 对账没人接').toBe(true)
+    expect(has(/reconcileRoster\(/), 'import 了却不调用 = 判据是装饰').toBe(true)
+    expect(has(/\{ missing, extras \}/), '只解构 missing ⇒ 多跑那一半又被丢掉了').toBe(true)
+    expect(has(/rawExitCode\(/), '退出码不走裁决 = 对账结果没有读者').toBe(true)
+  })
+
+  it('JSON 侧报告是证据源：spawn 参数带着 --reporter=json 与 --outputFile.json，用户自带的 --outputFile 被拒', () => {
+    expect(has(/'--reporter=json'/), '没有 JSON 侧报告 = 对账没有证据源，全绿无从核起').toBe(true)
+    expect(has(/--outputFile\.json=/), '报告不落到本脚本固定的路径 = 对账读不到它').toBe(true)
+    expect(has(/startsWith\('--outputFile'\)/), '用户自带 --outputFile 不拒 = 两份同名打架哪份赢靠运气').toBe(true)
+  })
+
+  it('圈空的筛选器在 vitest 起跑之前拒掉（与主跑测器同一格）', () => {
+    const at = code.findIndex((l) => /if\s*\(scope\.unmatched\.length\)/.test(l))
+    expect(at, '没有这道分支 = 写错的路径会被洗成「该跑 0 个、跑到 0 个」的全绿').toBeGreaterThanOrEqual(0)
+    const block = code.slice(at, at + 6).join('\n')
+    expect(block).toContain('process.exit(1)')
+    expect(code.slice(at - 2, at).join('\n') + block, '停下来必须在 execFileSync 之前').not.toMatch(/execFileSync\(/)
   })
 })
