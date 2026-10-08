@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { registerGameData, cinematics } from '@/data'
+import { registerGameData, cinematics, regions } from '@/data'
 import { readFileSync } from 'node:fs'
 import { Cinematics } from '@/world/Cinematics'
 
@@ -90,10 +90,33 @@ describe('运行时那条腿（`main.ts`）：接了什么、**没接什么**，
     expect(main, '新开局放开场').toMatch(/if \(!slot\) cinematics\.start\('CINE_OPEN'\)/)
   })
 
-  it('**没接**：其余 9 条的触发点一个都没接（谁接的时候顺手把这条断言改掉，别让它一直骗人）', () => {
-    // 除 CINE_OPEN 之外，main.ts 里不该出现任何 CINE_* 字面量 —— 出现了就说明有人接了新触发，
-    // 那时这条断言要连同上面那条一起更新（而不是删掉它）
-    const others = main.match(/CINE_(?!OPEN)[A-Z_]+/g) ?? []
-    expect(others, `main.ts 里出现了未预期的过场触发：${others.join(',')}`).toEqual([])
+  it('**没接**的那 6 条必须一个都不出现（谁接了就顺手把这条改准，别让它一直骗人）', () => {
+    // 触发点分三类，今天只接了前两类：① 新开局（CINE_OPEN）② 进 Boss 区（三条出场）。
+    // **没接**的是③剧情/胜利/结局那 6 条——它们各自的接点是对话节点、Boss 倒下、终局分支。
+    // 这条断言的作用不是"证明没接"，而是**让"没接"这件事会响**：谁接了新的，这里红，逼他改这条。
+    const UNWIRED = [
+      'CINE_STORY_B5',
+      'CINE_STORY_B7',
+      'CINE_WIN',
+      'CINE_END_A',
+      'CINE_END_B',
+      'CINE_END_MONTAGE',
+    ]
+    for (const id of UNWIRED) {
+      expect(main.includes(id), `${id} 在 main.ts 里出现了 ⇒ 有人接了新触发，请把这条与上面那条一起改准`).toBe(false)
+    }
+  })
+
+  it('接了的 4 条按名字点出来（新开局 1 + Boss 出场 3），且 Boss 三条各挂在一个真区域上', () => {
+    expect(main, '新开局').toMatch(/start\('CINE_OPEN'\)/)
+    for (const id of ['CINE_OST_INTRO', 'CINE_HERSIL_INTRO', 'CINE_MYRIAD_INTRO']) {
+      expect(main.includes(id), `Boss 出场 ${id}`).toBe(true)
+    }
+    // 挂点必须是**真区域 id**（写错一个字母就等于那条出场永远不放，而不会有别的东西响）
+    const wired = [...main.matchAll(/(rg_[a-z_]+): '(CINE_[A-Z_]+)'/g)].map((m) => [m[1], m[2]])
+    expect(wired.map(([, c]) => c).sort()).toEqual(['CINE_HERSIL_INTRO', 'CINE_MYRIAD_INTRO', 'CINE_OST_INTRO'])
+    for (const [rg] of wired) {
+      expect(regions.some((r) => r.id === rg), `${rg} 是真区域吗`).toBe(true)
+    }
   })
 })

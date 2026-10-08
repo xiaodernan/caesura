@@ -92,6 +92,19 @@ const player = new PlayerController(playerBase, weapon, moveset)
  */
 const cinematics = new Cinematics(cinematicRows)
 
+/**
+ * §6 三条 **Boss 出场**过场挂在"进区域"上（`CINE_OPEN` 之外的第二类触发）。
+ * 为什么是"进区域"而不是"Boss 交手"：§6 写的是**出场**——那一下发生在开打之前，
+ * 而"进区域"正是这一刻在数据里最诚实的代理（区域网格表本来就在这一步换拍、换雾、换音乐）。
+ * **一条一局只放一次**（`playedCinematics`）：出场是"第一次看见它"，不是"每次路过都演一遍"。
+ */
+const BOSS_INTRO_BY_REGION: Record<string, string> = {
+  rg_drowned_choir: 'CINE_OST_INTRO', // 奥斯塔拉（Mini Boss，§6）
+  rg_unfinished_hall: 'CINE_HERSIL_INTRO', // 恩希尔（主 Boss，B7）
+  rg_earless_deeps: 'CINE_MYRIAD_INTRO', // 万籁（隐藏 Boss，无耳深窖）
+}
+const playedCinematics = new Set<string>()
+
 /** 把成长/装备的汇总灌进玩家（升级、换装、强化、洗点、掉落之后都要调一次）。本体在 rpg/Settlement.ts，可被 flow 测试直接跑 */
 function refreshRpg(): void { refreshPlayer(rpg, player) }
 
@@ -536,6 +549,12 @@ const core = {
       // KI-094②：换区读的是"那一区当前生效的那一格"，不是永远的第一格——区里的钟修过了就是修过后的天气。
       applyWeather(here)
       if (booted) checkpoints.request('region') // 读档后第一次「进区域」是恢复现场，不该顺手覆盖存档
+      // §6 Boss 出场：进 Boss 区放一次（读档后第一次进区是恢复现场，`booted` 已把它挡在外面）
+      const intro = BOSS_INTRO_BY_REGION[here.id]
+      if (booted && intro && !playedCinematics.has(intro)) {
+        playedCinematics.add(intro)
+        cinematics.start(intro)
+      }
       shownRegion = here.id
       bus.emit('ui.notify', { text: here.displayName, kind: 'info' })
       bus.emit('log', { level: 'info', msg: `enter ${here.id} · chunks ${JSON.stringify(streaming.stats())}` })
@@ -650,6 +669,7 @@ let booted = false
 async function startRun(slot: string | null): Promise<void> {
   // 「本局第一次」的台账按局清一次：读档/新开局都是一次新的解释机会（需求 §19）
   glossary.forgetAll()
+  playedCinematics.clear() // 过场也是"每局一次"：读档/新开局都重新给一次出场
   const snap = slot ? await saves.load(slot) : null
   if (snap) {
     streaming.teleport(time.tick, player.pos)
