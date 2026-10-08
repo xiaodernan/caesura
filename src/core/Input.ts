@@ -1,3 +1,5 @@
+import { TICK_DT } from '@/core/Time'
+
 export type ActionName =
   | 'moveUp' | 'moveDown' | 'moveLeft' | 'moveRight'
   | 'sprint' | 'jump' | 'dodge'
@@ -91,6 +93,13 @@ export class Input {
   private padState = { moveX: 0, moveY: 0, lookX: 0, lookY: 0 }
   private bufferedEdges = new Map<ActionName, number>()
   private elapsed = 0
+  /**
+   * KI-112：缓冲窗口不再是常量而是设置值（秒）。默认仍等于 INPUT_BUFFER_SEC——
+   * 设置模块不改它，手感就不变；`frameAssist`（§5.1 的辅助格）在读档/设置侧翻开时，
+   * 窗口在 bufferSec 之外再多保一帧（+TICK_DT，与逻辑 tick 同一把尺）。
+   */
+  bufferSec = INPUT_BUFFER_SEC
+  frameAssist = false
   frame: FrameInput = blankFrame()
   enabled = true
   /* ---------------- UI 意图通道（见 UI_BINDS 上方的理由） ---------------- */
@@ -236,7 +245,7 @@ export class Input {
 
   /** keep an edge alive for INPUT_BUFFER_SEC so systems on longer ticks can consume it */
   buffer(a: ActionName): void {
-    this.bufferedEdges.set(a, this.elapsed + INPUT_BUFFER_SEC)
+    this.bufferedEdges.set(a, this.elapsed + this.bufferSec + (this.frameAssist ? TICK_DT : 0))
   }
 
   consume(a: ActionName): boolean {

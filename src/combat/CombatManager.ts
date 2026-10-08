@@ -128,6 +128,12 @@ interface Threat {
 /** hit-resolution orchestrator — docs/combat.md §5/§7/§12 */
 export class CombatManager {
   rng = new Rng('combat')
+  /**
+   * KI-112：受击伤害倍率（gameplay.md:312 的 70–130% 辅助格）。只乘玩家**收到**的
+   * 那一份（1292 行的 resolveDamage）——回响重放（422）与 Boss 真伤爆发（1331）是
+   * 演出/机制量，不吃难度档；出厂 1 = 现行手感。
+   */
+  damageScale = 1
   /** 弹道运行时（投掷枪 / 远程敌人）；表现层每帧读 list()，逻辑层不认识 three */
   readonly projectiles = new ProjectileSystem()
   private killed = new Set<string>()
@@ -1289,7 +1295,7 @@ export class CombatManager {
       this.checkPlayerCrumple(tick)
       return 'guardBreak'
     }
-    const dmg = resolveDamage({ base: h.damage, defense: p.stats.defense, ranged: h.ranged }, () => this.rng.float())
+    const dmg = resolveDamage({ base: h.damage * this.damageScale, defense: p.stats.defense, ranged: h.ranged }, () => this.rng.float())
     if (!p.takeDamage(dmg.damage, h.dir, h.reaction)) return 'none'
     p.stats.addPoise(h.poise, tick)
     // §9「玩家受击」那一行（`hitStop.hurtMs`）：情境时长，一个数喂四处（相机、事件、被按住的硬直

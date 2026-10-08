@@ -35,6 +35,7 @@ import { CombatManager } from '@/combat/CombatManager'
 import { glossary } from '@/combat/Statuses'
 import { AudioEngine } from '@/audio/AudioEngine'
 import { Haptics } from '@/input/Haptics'
+import { GameplaySettingsStore } from '@/settings/GameplaySettings'
 import { VfxLayer } from '@/vfx/VfxLayer'
 import { ColorGrade } from '@/vfx/ColorGrade'
 import { Hud } from '@/ui/Hud'
@@ -240,7 +241,7 @@ function setMapOpen(open: boolean): void { setOverlay(open ? 'map' : null) }
 function closeOverlay(): void { setOverlay(null) }
 const overlayOpen = (): boolean => overlay !== null
 new CombatDebugger()
-new Haptics(input)
+const haptics = new Haptics(input)
 
 const missingRefs = StreamingSystem.collectMissingRefs(regions, (id) => registry.has(id))
 if (missingRefs.length) bus.emit('log', { level: 'warn', msg: `MissingRef: ${missingRefs.join(', ')}` })
@@ -708,11 +709,17 @@ bus.on('log', (l) => console.info(`[caesura:${l.level}] ${l.msg}`))
 const savePrimary = new LocalStore('caesura.save.', localStorage)
 const saveBackup = typeof indexedDB === 'undefined' ? null : new IdbStore('caesura-save')
 /**
+ * KI-112：玩法/辅助设置的宿主。组合根把四个消费者的实例装进来（bufferMs→Input、
+ * shakeScale→CameraRig、rumbleScale→Haptics、damageScale→CombatManager），
+ * 构造即灌一遍当前值；读档经 `SaveGame.apply` 落到 `restore`（信任边界在 store 里）。
+ */
+const gameplayStore = new GameplaySettingsStore({ input, rig, haptics, combat })
+/**
  * 存档时刻的墙钟只在这里给（KI-025①）：逻辑层不许自己读 `Date`，否则每次跑测都会写出不同的档，
  * 而"摘要卡上的时间是从外面带进来的"这条也就没有证人。
  */
 const saves = new SaveGame(
-  { player, streaming, spawner, clock: rhythm, time, rpg, interact, props, quests, states: worldStates, audio: { engine: audio, setVolume: (b: string, v: number) => audio.setVolume(b as never, v), getVolume: (b: string) => audio.getVolume(b) }, now: () => Date.now() },
+  { player, streaming, spawner, clock: rhythm, time, rpg, interact, props, quests, states: worldStates, audio: { engine: audio, setVolume: (b: string, v: number) => audio.setVolume(b as never, v), getVolume: (b: string) => audio.getVolume(b) }, gameplay: { get: () => gameplayStore.get(), apply: (raw: unknown) => gameplayStore.restore(raw) }, now: () => Date.now() },
   savePrimary, saveBackup
 )
 /** 摘要卡的名册（KI-025）：标题屏与调音桩面板都从它读"这几格是什么、能不能读" */

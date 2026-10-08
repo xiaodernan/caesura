@@ -36,6 +36,12 @@ interface RumbleActuator {
  */
 export class Haptics {
   private last = 0
+  /**
+   * KI-112：振动倍率（ui-ux §6 的 0–200% 格）。幅值乘它后在 Gamepad API 顶格 1 截断，
+   * 时长**不**乘——200% 的振动是"更用力"，不是"振更久"（那会改变节拍回报的时值）。
+   * 设置模块不动它时保持 1，手感与表一致。
+   */
+  scale = 1
 
   constructor(private input: Input) {
     bus.on('combat.hit', (h) => this.pulse(mapShakeToRumble(h.shakeKey)))
@@ -51,8 +57,8 @@ export class Haptics {
     try {
       act.playEffect('dual-rumble', {
         duration: r.durationMs,
-        strongMagnitude: r.strong,
-        weakMagnitude: r.weak
+        strongMagnitude: Math.min(1, r.strong * this.scale),
+        weakMagnitude: Math.min(1, r.weak * this.scale)
       })
     } catch {
       /* actuator present but call unsupported — degrade silently */
