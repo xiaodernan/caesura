@@ -10,7 +10,8 @@ import type { ItemData, MovesetData, NpcData, RegionData, WeaponData } from '@/d
 import { createArena } from '@/world/PlaceholderArena'
 import { activeWeather, questTrackedFlags } from '@/world/WeatherSwitch'
 import { ambienceGain, concentrationMul, corruptionMul, weatherRowOf } from '@/world/WeatherEffects'
-import { lightingRow } from '@/world/Lighting'
+import { lightingLights, lightingRow } from '@/world/Lighting'
+import { SceneLights } from '@/world/SceneLights'
 import { Cinematics } from '@/world/Cinematics'
 import { StreamingSystem, chunkKeyOf, type ChunkState } from '@/world/Streaming'
 import { Surface } from '@/world/Surface'
@@ -71,6 +72,12 @@ rhythm.setBpm(84, 4)
 
 const arena = createArena(canvas, rhythm)
 const rig = new CameraRig()
+/**
+ * §37 第二腿：三层光（极光 hemi / 区域 key / 局部 point）。与 `ColorGrade` 并列的第二个画面读者，
+ * 两者都只吃 `world/Lighting.ts` 的读数。建在 `createArena` 之后立刻由 `applyLighting` 喂第一次——
+ * 灰盒场地是 `MeshStandardMaterial`，没有灯就是一团黑，而这一帧之前没有别的人会点灯。
+ */
+const lights = new SceneLights(arena.scene)
 
 /**
  * 成长系统（Phase 5-B）。出身决定初始六维与初始装备，`?origin=origin_drummer` 可换定弦。
@@ -306,6 +313,12 @@ const applyWeather = (rg: RegionData | null): void => {
  */
 const applyLighting = (rg: RegionData | null): void => {
   grade.setLighting(lightingRow(rg?.lightingPreset ?? null))
+  /*
+   * §37 第二腿：三层光。point 挂在该区**第一个 landmark** 上（§8 那句「局部 point（火/钟/矿）」的
+   * 落点——今天每区第一个 landmark 都是它的主题地标：骨腔／石冢／断祭坛／石桥／第一口钟／矿缝／管风琴）。
+   * 文档没说 point 挂哪，这是实施期裁决，理由记在 `scripts/lighting-rules.mjs > LIGHT_RULINGS`。
+   */
+  lights.setRig(lightingLights(lightingRow(rg?.lightingPreset ?? null)), rg?.landmarks[0]?.pos ?? null)
 }
 applyLighting(homeRegion ?? null)
 // 修钟那一刻人往往就站在那口钟旁边：旗标一广播就重算，否则天气要等下一次跨区才跟得上（IP_SEED §7 说的那件回报）。
@@ -768,7 +781,7 @@ if (freshBoot) {
  * 只有拿得到实例才读得着——`muffleHz`（消音那条低通的实时频率，斜坡走到哪一格）与 `dispose()`
  * （装配层的收尾口；测试与实机从此共用同一个，`AudioEngine` 因此不是一只没有生产消费方的 API）。
  */
-;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, wallGreybox, interact, props, hud, spawner, nodes, worldState, projectileVis, actors: visuals, bossArena, saves, saveRoster, checkpoints, rpg, settlement, panel, setPanelOpen, mapUi, setMapOpen, quests, dialogueEngine, dialogueBox, openDialogue, debugPanels, refreshRpg, observe, saveNow: () => saves.save('autosave'), get title() { return title } }
+;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, lights, player, ai, combat, lock, rig, bus, streaming, surface, greybox, wallGreybox, interact, props, hud, spawner, nodes, worldState, projectileVis, actors: visuals, bossArena, saves, saveRoster, checkpoints, rpg, settlement, panel, setPanelOpen, mapUi, setMapOpen, quests, dialogueEngine, dialogueBox, openDialogue, debugPanels, refreshRpg, observe, saveNow: () => saves.save('autosave'), get title() { return title } }
 
 document.getElementById('boot')!.style.display = 'none'
 ;(window as unknown as Record<string, unknown>).__CAESURA_BOOTED__ = true

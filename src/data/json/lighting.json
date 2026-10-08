@@ -9,6 +9,12 @@
     "dark": "#1A130D",
     "grade": {
       "saturateMul": 1.5
+    },
+    "lights": {
+      "hemiIntensity": 0.7,
+      "keyIntensity": 1.5,
+      "keyDir": [12, 20, 8],
+      "pointIntensity": 64
     }
   },
   {
@@ -18,7 +24,13 @@
     "accent": "#D9B45B",
     "emit": "#EFD9A0",
     "sky": "#8FA8B8",
-    "dark": "#101A19"
+    "dark": "#101A19",
+    "lights": {
+      "hemiIntensity": 0.7,
+      "keyIntensity": 1.5,
+      "keyDir": [12, 20, 8],
+      "pointIntensity": 64
+    }
   },
   {
     "id": "lp_fellcarillon",
@@ -27,6 +39,12 @@
     "accent": "#B98A44",
     "emit": "#D9A94E",
     "dark": "#151E1C",
+    "lights": {
+      "hemiIntensity": 0.7,
+      "keyIntensity": 1.5,
+      "keyDir": [12, 20, 8],
+      "pointIntensity": 64
+    },
     "note": "天光是落日渐层（#C56A3E→#6B3F66 两停），单色格装不下两停 ⇒ sky 省略，雾色按「无天光」走 DARK"
   },
   {
@@ -39,6 +57,12 @@
     "grade": {
       "saturateMul": 0.65
     },
+    "lights": {
+      "hemiIntensity": 0.7,
+      "keyIntensity": 0,
+      "keyDir": [12, 20, 8],
+      "pointIntensity": 64
+    },
     "note": "原文「无天光（纯黑）」⇒ sky 省略；低饱和恐怖由 saturateMul 0.65 承担"
   },
   {
@@ -48,7 +72,13 @@
     "accent": "#A8322E",
     "emit": "#D8642A",
     "sky": "#4F5259",
-    "dark": "#121316"
+    "dark": "#121316",
+    "lights": {
+      "hemiIntensity": 0.7,
+      "keyIntensity": 1.5,
+      "keyDir": [12, 20, 8],
+      "pointIntensity": 64
+    }
   },
   {
     "id": "lp_drowned_choir",
@@ -57,6 +87,12 @@
     "accent": "#CBA25B",
     "emit": "#7FB3A8",
     "dark": "#070B10",
+    "lights": {
+      "hemiIntensity": 0.7,
+      "keyIntensity": 1.5,
+      "keyDir": [12, 20, 8],
+      "pointIntensity": 64
+    },
     "note": "原文「无（地下）」⇒ sky 省略"
   },
   {
@@ -69,6 +105,12 @@
     "dark": "#0A0710",
     "grade": {
       "contrastMul": 1.25
+    },
+    "lights": {
+      "hemiIntensity": 0.7,
+      "keyIntensity": 1.5,
+      "keyDir": [12, 20, 8],
+      "pointIntensity": 64
     }
   }
 ]

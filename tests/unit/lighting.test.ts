@@ -5,8 +5,8 @@ import * as THREE from 'three'
 import { lightingRows, regions } from '@/data'
 import type { LightingRow } from '@/data/schema'
 import { ColorGrade, gradeFilter } from '@/vfx/ColorGrade'
-import { FOG_DARK_SHARE, FOG_SKY_SHARE, hexToRgb, lightingFogRgb, lightingGrade, lightingRow, rgbToHex } from '@/world/Lighting'
-import { lightingFindings } from '../../scripts/lighting-rules.mjs'
+import { FOG_DARK_SHARE, FOG_SKY_SHARE, hexToRgb, lightingFogRgb, lightingGrade, lightingLights, lightingRow, rgbToHex } from '@/world/Lighting'
+import { lightingFindings, LIGHT_RULINGS } from '../../scripts/lighting-rules.mjs'
 
 /**
  * §37 第一腿（KI-094 同族）：`lightingPreset` 这个名字十周来没有任何读者——`regions.json` 七区各写一个
@@ -19,6 +19,11 @@ import { lightingFindings } from '../../scripts/lighting-rules.mjs'
  *   ④ 运行时腿：`ColorGrade` 真的是雾色与 LUT 的写方，且与天气、失谐是**乘在一起**而不是互相覆盖。
  *
  * 不量的那一半写在上面的文件头注里：三层光与跨区过渡带要真几何（KI-008 / Phase 7）。
+ *
+ * **§37 第二腿（2026-10-09）之后这里多两块**：
+ *  ⑤ 三层光读数（`lightingLights`）：颜色从 §2 那六列现推（§8 明写 key=SKY / point=EMIT），
+ *     强度与方向从 `lights` 读，缺省一律 0（没有裁决过的光不许亮）；
+ *  ⑥ 判据 L1–L5：喂合成行，看"没有裁决理由的数"与"零向量方向"各红各的。
  */
 
 const root = fileURLToPath(new URL('../../', import.meta.url))
@@ -147,13 +152,90 @@ describe('文档对账：art-direction §2 那张「唯一合法颜色表」必�
   })
 })
 
+describe('§37 第二腿：三层光读数（颜色从六列现推，强度从 lights 读，缺省一律 0）', () => {
+  it('§8 的映射照念：key/hemi 天色 = SKY 列，hemi 地色 = DARK 列，point = EMIT 列', () => {
+    const r = lightingLights(lightingRow('lp_resthold'))!
+    expect(r.hemiSky).toBe('#8A6F55')
+    expect(r.hemiGround).toBe('#1A130D')
+    expect(r.keyColor).toBe('#8A6F55')
+    expect(r.pointColor).toBe('#FFB86B')
+    // 七行逐行对账：这三条映射对每一行都成立（有一行不成立就是读者自己加了规则）
+    for (const row of lightingRows) {
+      const l = lightingLights(row)!
+      expect(l.pointColor, `${row.id} 的 point 色`).toBe(row.emit)
+      expect(l.hemiGround, `${row.id} 的 hemi 地色`).toBe(row.dark)
+      expect(l.keyColor, `${row.id} 的 key 色`).toBe(row.sky ?? row.sec)
+      expect(l.hemiSky, `${row.id} 的 hemi 天色与 key 色同源（§5.1 与 §8 指的是同一束极光）`).toBe(l.keyColor)
+    }
+  })
+
+  it('SKY 列省略的三行按 SEC 走（裁决 L1）：那不是"找个近似色顶上"，是另一条明文规则', () => {
+    for (const id of ['lp_fellcarillon', 'lp_earless_deeps', 'lp_drowned_choir']) {
+      const row = lightingRow(id)!
+      const l = lightingLights(row)!
+      expect(row.sky).toBeUndefined()
+      expect(l.keyColor).toBe(row.sec)
+      // 雾色走的是 DARK（§8 的 70/30 那一半没有天光份额），三层光走的是 SEC——两条退路不同，
+      // 因为"没有天光"对雾意味着"只剩暗部"，对方向光意味着"还剩次要色"
+      expect(lightingFogRgb(row)).toEqual(hexToRgb(row.dark))
+    }
+  })
+
+  it('深窖的 keyIntensity 是 0（§8 自己开的例外：唯一光源是矿缝），其余六行都是 1.5', () => {
+    expect(lightingLights(lightingRow('lp_earless_deeps'))!.keyIntensity).toBe(0)
+    for (const row of lightingRows) {
+      if (row.id === 'lp_earless_deeps') continue
+      expect(lightingLights(row)!.keyIntensity, `${row.id}`).toBe(1.5)
+    }
+    // 例外只关方向光：极光与 point 两层在深窖仍然亮着（"没有方向光"≠"没有光"）
+    const deeps = lightingLights(lightingRow('lp_earless_deeps'))!
+    expect(deeps.hemiIntensity).toBeGreaterThan(0)
+    expect(deeps.pointIntensity).toBeGreaterThan(0)
+  })
+
+  it('七行全都有 lights：读者对缺失行的退路是三格全 0，而那种黑没有任何别的东西会响', () => {
+    for (const row of lightingRows) {
+      expect(row.lights, `${row.id} 少了 lights`).toBeTypeOf('object')
+      expect(Object.keys(row.lights!).sort()).toEqual(['hemiIntensity', 'keyDir', 'keyIntensity', 'pointIntensity'])
+    }
+    const bare = { ...lightingRow('lp_resthold')! } as LightingRow
+    delete (bare as { lights?: unknown }).lights
+    expect(lightingLights(bare)).toEqual({
+      hemiSky: '#8A6F55', hemiGround: '#1A130D', hemiIntensity: 0,
+      keyColor: '#8A6F55', keyIntensity: 0, keyDir: [0, 0, 0],
+      pointColor: '#FFB86B', pointIntensity: 0,
+    })
+  })
+
+  it('认不出名字 / null / 坏 hex 都不猜：返回 null 由调用方把三盏灯全关掉', () => {
+    expect(lightingLights(null)).toBeNull()
+    expect(lightingLights(lightingRow('lp_nope'))).toBeNull()
+    expect(lightingLights({ ...lightingRow('lp_resthold')!, emit: 'nope' } as LightingRow)).toBeNull()
+    // SKY 坏 ⇒ 推导出的 key/hemi 天色也坏 ⇒ 同一道门拦得住（不是只有显式那几格被查）
+    expect(lightingLights({ ...lightingRow('lp_resthold')!, sky: '#12345' } as LightingRow)).toBeNull()
+  })
+
+  it('每颗强度都在判据的界内，keyDir 不是零向量（真表自己也要过自己那几条界）', () => {
+    for (const row of lightingRows) {
+      const l = row.lights!
+      for (const k of ['hemiIntensity', 'keyIntensity', 'pointIntensity'] as const) {
+        expect(Number.isFinite(l[k]), `${row.id}.${k}`).toBe(true)
+      }
+      expect(l.keyDir.some((v) => v !== 0), `${row.id} 的 keyDir 是零向量`).toBe(true)
+    }
+  })
+})
+
 describe('判据本体可喂（合成夹具）：链断了要会说，不能静默全绿', () => {
+  const rig = { hemiIntensity: 0.7, keyIntensity: 1.5, keyDir: [12, 20, 8], pointIntensity: 64 }
   const good = [
-    { id: 'lp_a', base: '#111111', sec: '#222222', accent: '#333333', emit: '#444444', dark: '#555555' },
-    { id: 'lp_b', base: '#111111', sec: '#222222', accent: '#333333', emit: '#444444', sky: '#666666', dark: '#555555' },
+    { id: 'lp_a', base: '#111111', sec: '#222222', accent: '#333333', emit: '#444444', dark: '#555555', lights: rig, note: '合成行：无天光' },
+    { id: 'lp_b', base: '#111111', sec: '#222222', accent: '#333333', emit: '#444444', sky: '#666666', dark: '#555555', lights: rig },
   ]
-  const why = (rows: unknown[], referenced: string[]): string[] =>
-    lightingFindings('lighting.json', rows, referenced).filter((f) => f.level === 'error').map((f) => f.msg)
+  /** 合成行用自己的小账本（真账本只有七个真 id；喂合成 id 会条条撞 L1） */
+  const rulings = { lp_a: 'x'.repeat(24), lp_b: 'y'.repeat(24) }
+  const why = (rows: unknown[], referenced: string[], withRulings: { [id: string]: string } = rulings): string[] =>
+    lightingFindings('lighting.json', rows, referenced, withRulings).filter((f) => f.level === 'error').map((f) => f.msg)
 
   it('好表 + 两侧引用齐全 ⇒ 零 finding', () => {
     expect(why(good, ['lp_a', 'lp_b'])).toEqual([])
@@ -169,9 +251,44 @@ describe('判据本体可喂（合成夹具）：链断了要会说，不能静�
     expect(why(good, []).join('\n')).toContain('这道门在空转')
   })
 
+  it('§37 第二腿：没有裁决理由的数、假账、写 0 的 hemi、零向量方向、缺 lights、省 sky 不写 note', () => {
+    // L1：有数必须有理由（账本读不到 = 一条都没有 ⇒ 每一行都红）
+    expect(why(good, ['lp_a', 'lp_b'], {}).join('\n')).toContain('却没有裁决理由')
+    // L2：行已不声明而账还挂着 ⇒ 假账该销
+    const noLights = good.map((r) => { const c = { ...r }; delete (c as { lights?: unknown }).lights; return c })
+    expect(why(noLights, ['lp_a', 'lp_b']).join('\n')).toContain('假账该销')
+    // L3：hemi/point 写 0 是没有后果的读数；key 写 0 是 §8 的例外，放行
+    expect(why([{ ...good[0], lights: { ...rig, hemiIntensity: 0 } }], ['lp_a']).join('\n')).toContain('没有后果的读数')
+    expect(why([{ ...good[0], lights: { ...rig, pointIntensity: 0 } }], ['lp_a']).join('\n')).toContain('没有后果的读数')
+    expect(why([{ ...good[0], lights: { ...rig, keyIntensity: 0 } }], ['lp_a'])).toEqual([])
+    // L3 的界
+    expect(why([{ ...good[0], lights: { ...rig, pointIntensity: 6400 } }], ['lp_a']).join('\n')).toContain('出界')
+    // L5：零向量方向
+    expect(why([{ ...good[0], lights: { ...rig, keyDir: [0, 0, 0] } }], ['lp_a']).join('\n')).toContain('零向量')
+    expect(why([{ ...good[0], lights: { ...rig, keyDir: [12, 20] } }], ['lp_a']).join('\n')).toContain('keyDir')
+    // L4：lights 必填
+    expect(why(noLights, ['lp_a', 'lp_b'], {}).join('\n')).toContain('lights 必填')
+    // 未知子字段
+    expect(why([{ ...good[0], lights: { ...rig, warmth: 2 } }], ['lp_a']).join('\n')).toContain('未知字段')
+    // 省了 sky 却不写 note ⇒ 那一行的 key/hemi 颜色要按 SEC 走，理由必须落在表里
+    const noNote = { ...good[0], note: undefined }
+    expect(why([{ ...noNote, sky: undefined }], ['lp_a']).join('\n')).toContain('note 必填')
+    expect(why([{ ...noNote, sky: undefined, note: '无天光' }], ['lp_a'])).toEqual([])
+  })
+
+  it('裁决账本 ⇄ 真表：七行各有理由，没有一条是假账', () => {
+    for (const row of lightingRows) {
+      expect(LIGHT_RULINGS[row.id], `${row.id} 没有裁决理由`).toBeTypeOf('string')
+      expect(LIGHT_RULINGS[row.id].length, `${row.id} 的理由太短`).toBeGreaterThanOrEqual(20)
+    }
+    // 深窖那条必须说出自己为什么偏离基线（它是七行里唯一 keyIntensity ≠ 1.5 的）
+    expect(LIGHT_RULINGS.lp_earless_deeps).toContain('矿缝')
+    expect(LIGHT_RULINGS.lp_earless_deeps.length).toBeGreaterThan(LIGHT_RULINGS.lp_resthold.length)
+  })
+
   it('真表过判据：七行 ⇄ 七区，一条 finding 都没有', () => {
     const referenced = regions.map((r) => r.lightingPreset)
-    expect(lightingFindings('lighting.json', lightingRows, referenced)).toEqual([])
+    expect(lightingFindings('lighting.json', lightingRows, referenced, LIGHT_RULINGS)).toEqual([])
     expect(new Set(referenced).size, '两个区共用一个预设不犯法，但今天七区各自一个').toBe(7)
   })
 })
@@ -211,5 +328,22 @@ describe('运行时腿：雾色与 LUT 真的被写，而且和天气、失谐�
     // 读数层是逻辑层：不许 import three（与 arch-boundaries 那道门同一个理由，这里就近再钉一次）
     const lightingSrc = readFileSync(root + 'src/world/Lighting.ts', 'utf8')
     expect(lightingSrc).not.toMatch(/from 'three'/)
+  })
+
+  it('源码门：三层光只有一个主人，灰盒场地里不再有第二份写死的灯', () => {
+    // `PlaceholderArena` 曾经写死 hemi 0x35406b/0.7 与 key 0xd8c37a/1.5——那是雾语林的配色，
+    // 而玩家出生在休垒。现在那两盏灯归 `SceneLights`，灰盒里一个 THREE.*Light 都不该再有。
+    const arenaSrc = readFileSync(root + 'src/world/PlaceholderArena.ts', 'utf8')
+    expect(arenaSrc, '灰盒场地又自己建了灯 = 同一件事有两个主人').not.toMatch(/new THREE\.(Hemisphere|Directional|Point|Ambient|Spot)Light/)
+    // 绘制层只认读数，自己不做判断：一个 hex 字面量都不该出现在 SceneLights 里
+    const sceneSrc = readFileSync(root + 'src/world/SceneLights.ts', 'utf8')
+    expect(sceneSrc, 'SceneLights 里出现了写死的 hex = 判断从读数层漏出来了').not.toMatch(/#[0-9a-fA-F]{3,6}/)
+    // main.ts 里三层光只被读一次（开局那次 applyLighting），且 SceneLights 建在 createArena 之后
+    expect((mainSrc.match(/lights\.setRig\(/g) ?? []).length, '三层光的写方只该在 applyLighting 里出现一次').toBe(1)
+    expect((mainSrc.match(/applyLighting\(/g) ?? []).length, '光照腿只该在开局与换区被读两处').toBe(2)
+    expect(mainSrc.indexOf('new SceneLights(')).toBeGreaterThan(mainSrc.indexOf('createArena('))
+    // 三层光只听区域：与雾色/LUT 同一条纪律，不听旗标与值域
+    expect(mainSrc).not.toMatch(/bus\.on\('world\.flag'[^\n]*applyLighting/)
+    expect(mainSrc).not.toMatch(/bus\.on\('world\.state'[^\n]*applyLighting/)
   })
 })

@@ -40,6 +40,8 @@ const PRESENTATION = new Set([
   'world/ActorVisuals.ts', 'world/ChunkGreybox.ts', 'world/InteractableGreybox.ts',
   'world/WallGreybox.ts',
   'world/ProjectileVisuals.ts', 'world/BossArenaVisuals.ts', 'world/PlaceholderArena.ts', 'world/PropVisuals.ts',
+  // §37 第二腿：三层光的绘制层。它 import three，但判断全在逻辑层 `world/Lighting.ts`
+  'world/SceneLights.ts',
 ])
 
 const tsFiles = (dir: string): string[] => {

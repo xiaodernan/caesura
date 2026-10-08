@@ -32,15 +32,11 @@ export function createArena(canvas: HTMLCanvasElement, clock: RhythmClock): Aren
   const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 400)
   camera.position.set(0, 2.2, 6)
 
-  const hemi = new THREE.HemisphereLight(0x35406b, 0x1a1410, 0.7)
-  scene.add(hemi)
-  const key = new THREE.DirectionalLight(0xd8c37a, 1.5)
-  key.position.set(12, 20, 8)
-  key.castShadow = true
-  key.shadow.mapSize.set(2048, 2048)
-  key.shadow.camera.left = -40; key.shadow.camera.right = 40
-  key.shadow.camera.top = 40; key.shadow.camera.bottom = -40
-  scene.add(key)
+  // §37 第二腿：三层光不再在这里写死。hemi/key 的色与强度、以及局部 point，全部由
+  // `world/SceneLights.ts` 从 `lighting.json` 那一行搬上来（`main.ts` 建好它之后立刻apply一次）。
+  // 这里曾经写死 0x35406b/0x1a1410/0.7 与 0xd8c37a/1.5——那是雾语林的配色，而玩家出生在休垒，
+  // 于是七区里有六区从来看见的不是自己的光（KI-094 同族：写死的值只对得上一个地方）。
+  // shadow map 的尺寸与视锥跟着 key 光一起搬走了：它现在是 key 的属性，而 key 只有一个主人。
 
   const groundMat = new THREE.MeshStandardMaterial({ color: 0x141821, roughness: 0.92, metalness: 0.1 })
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(240, 240), groundMat)

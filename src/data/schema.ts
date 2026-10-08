@@ -1531,6 +1531,12 @@ export interface WeatherGameplay {
  * 填了就是我编的。**「冷暖」那一格整个没建**：文档只给了定性描述（休垒 +暖），没有数值口径，
  * 按 §55 不许拿猜测冒充裁决。文档写的落点 `curves/grading_<区>.json` 是本仓库外的资产目录，
  * 所以同一份读数收在这里——唯一读者（`vfx/ColorGrade.ts`）在仓库里。
+ *
+ * `lights`（§37 第二腿）只收**文档没给、因而必须显式裁决**的那四格：三层光的强度与 key 的方向。
+ * 三层光的**颜色一格都不新开**——art-direction §8 已经把映射写死了（key 色 = SKY 列、point 色 = EMIT 列），
+ * hemi 的天色同样随 SKY 列（§5.1「区域色板的 SKY 列决定各区看到的带占比」）。再开六个颜色格就是
+ * 给同一件事配第二个主人（KI-066 那一族）。强度与方向文档一个数都没有 ⇒ 落在
+ * `scripts/lighting-rules.mjs > LIGHT_RULINGS` 的裁决账本上（判据 L1 盯着"有数必须有理由"）。
  */
 export interface LightingRow {
   /** 行键 = `regions.json > lightingPreset` 里出现的那个名字 */
@@ -1551,6 +1557,29 @@ export interface LightingRow {
   grade?: { saturateMul?: number; contrastMul?: number }
   /** 这一行与文档的差之所在（只写"为什么少一格"，不写设计愿景） */
   note?: string
+  /**
+   * §37 第二腿：三层光里**文档没给数**的那几格（强度 ×3 + key 方向）。
+   * 颜色不在这里——§8 已把映射写死（见上面的文件头注），由 `world/Lighting.ts` 现推。
+   * 每颗数都必须在 `scripts/lighting-rules.mjs > LIGHT_RULINGS` 上挂着裁决理由（判据 L1）。
+   */
+  lights?: LightingLights
+}
+
+/**
+ * §8「每区三层光：极光 hemi（§5）+ 区域 key（方向光，色=SKY 列）+ 局部 point（火/钟/矿，色=EMIT）」。
+ *
+ * 这里只放**文档没给、必须显式裁决**的四格；`keyIntensity: 0` 是文档自己开的那道口子
+ * （「深窖除外——其唯一光源是矿缝」），所以 0 在这个字段上是合法值而不是坏读数。
+ */
+export interface LightingLights {
+  /** 极光 hemi 强度（无太阳世界的主光源，§5） */
+  hemiIntensity: number
+  /** 区域 key 方向光强度；0 = 这一区没有方向光（§8 的深窖例外） */
+  keyIntensity: number
+  /** key 方向光的方向（世界坐标，从被照物指向光源；§5.1「主方向光方向始终指向 BAND-A 脊线法线」） */
+  keyDir: [number, number, number]
+  /** 局部 point 强度（火/钟/矿；色恒为该行 EMIT 列） */
+  pointIntensity: number
 }
 
 export interface CinematicRow {

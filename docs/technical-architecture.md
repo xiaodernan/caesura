@@ -2360,6 +2360,8 @@ Phase 1（核心战斗原型）＝ `core + player + combat + tools/CombatDebugge
 | `data/json/lighting.json` | 7 行（一行一区），§2 的六色 + §8 的 LUT 两格 + 可省 `note` | 这一区的光长什么样 |
 | `schema.ts > LightingRow` | 九格声明＋`RegionData.lightingPreset` 的书目注释 | 字段名单的主人（判据从源码现推） |
 | `src/world/Lighting.ts` | `hexToRgb`／`rgbToHex`／`lightingFogRgb`／`lightingGrade`／`lightingRow` | §8 那条 70/30 混合与 LUT 缺省中性 |
+| `src/world/Lighting.ts` | ＋`lightingLights()`（§37 第二腿） | 三层光读数：哪一列配哪一盏灯，缺省一律 0 |
+| `src/world/SceneLights.ts` | `SceneLights.setRig()`／`dispose()` | §8 三层光的绘制层（hemi/key/point 三盏，建一次只改参数） |
 | `src/vfx/ColorGrade.ts` | `setLighting()` + `scene.fog.color` 的写方 + `gradeFilter` 第三条腿 | 雾色与每区饱和度/对比乘数 |
 | `src/main.ts` | `applyLighting()`：开局一次 + 换区一次 | 组合根喂名字，画面层不认识区域 |
 | `scripts/lighting-rules.mjs`（+`.d.mts`） | 五色 hex 合法、乘数有界、**两侧引用都交代得清** | 这条链不能静默断 |
@@ -2372,7 +2374,7 @@ Phase 1（核心战斗原型）＝ `core + player + combat + tools/CombatDebugge
 
 **门禁**：`tsc --noEmit` RC=0；`node scripts/validate-data.mjs` **0 ERROR / 2 WARN**（与 §5.9.41 落地后同数，一条没新增）；定向 44 条全绿（`lighting` / `color-grade` / `arch-boundaries` / `doc-audit`）。**一处如实说明**：抓回归的那一刻值得记下来——给 `main.ts` 加光照腿时把开局那次 `applyWeather(homeRegion …)` 一并吞掉了，是 `color-grade.test.ts` 那条「`applyWeather(` 作为语句必须出现两次」的源码门把它喊回来的（KI-094① 立这道门时盯的是"切换没有写方"，今天它抓的是"原有写方被误删"）。
 
-**没做的**：三层光（hemi/key/point）与跨区 70/30 色板过渡带（要真几何与连续地形，KI-008 / Phase 7）；体积光仍只允许用于地标（§8 的预算句，属内容批）；`lightingPreset` 与既有的 `regions.json > palette`（IP_SEED §10 那三色）**并存且不互推**——前者是 §37 的光与色板，后者已经在灰盒/地图上有读者，合并它们要先有一次裁决。
+**没做的**（2026-10-09 复核）：~~三层光（hemi/key/point）~~ **已落第二腿（§5.9.46）**——`lighting.json > lights` + `world/SceneLights.ts`，强度与方向另立裁决账本；**跨区 70/30 色板过渡带仍欠**（要连续地形与「站在两区之间」这个空间概念，今天的 `regionAt` 对任一坐标只回答一个区，KI-008 / Phase 7）；体积光仍只允许用于地标（§8 的预算句，属内容批）；`lightingPreset` 与既有的 `regions.json > palette`（IP_SEED §10 那三色）**并存且不互推**——前者是 §37 的光与色板，后者已经在灰盒/地图上有读者，合并它们要先有一次裁决。
 
 
 ### 5.9.43 一笔假债出表：TD-002「按着地图的名字在调音」结案，连带修一条被自己的注释弄红的源码门（2026-10-08）
@@ -2384,6 +2386,37 @@ Phase 1（核心战斗原型）＝ `core + player + combat + tools/CombatDebugge
 **同批修一条既有红**（`tests/unit/ui-intents.test.ts`，overlay 那一批带进来的）：源码门数 `main.ts` 里 `uiOwner` 的**原文**出现次数，期望 3（一处赋值 + 注释里两次提及）。overlay 那批为了解释"为什么只有一处赋值"而写下的 `input.uiOwner = ` 本身，把这个数点成了 4——**一条为了说清规矩而存在的注释，把守着规矩的判据弄红了**，而它自己头一句写的是"注释不算数"。修法是按同一把尺子量：live 代码里只许那一处赋值（剔注释后数），另留一条地板盯着"解释还在"（只剩一行裸代码而没人说为什么，下一个人会再写一处）。
 
 **一处如实登记**：`main.ts` 三处注释把 overlay/map 这批引作 **KI-097**，而 KNOWN_ISSUES 的 KI-097 是武器字段那一笔——**同一个号被指了两件事**。本批不裁它归谁（裁号要问写注释的那个人），只在 TD-002 的销案注记里记下撞号。
+### 5.9.46 §37 第二腿：三层光第一次有主人——`lighting.json > lights` + `world/SceneLights.ts`（2026-10-09）
+
+§5.9.42 落地时写明「三层光没有落在那里：它要真光源与真几何」。这一批说明那句话说对了一半：**真光源今天就有**——`PlaceholderArena.ts` 里本来就站着 `HemisphereLight(0x35406b, 0x1a1410, 0.7)` 与 `DirectionalLight(0xd8c37a, 1.5)`，只是**颜色写死在代码里**。写死的值只对得上一个地方：那是雾语林的配色，而玩家出生在休垒，于是七区里有六区从来看见的不是自己的光。所以这一批不是「等几何」，而是**把已有的两盏灯接到表上，再补上文档要求的第三盏**。
+
+| 处 | 东西 | 它回答的问题 |
+|---|---|---|
+| `schema.ts > LightingLights` + `LightingRow.lights` | 四格：`hemiIntensity`／`keyIntensity`／`keyDir`／`pointIntensity` | 三层光里**文档没给数**的那几格 |
+| `data/json/lighting.json` | 七行各一组 `lights` | 这一区的三层光多亮、朝哪 |
+| `src/world/Lighting.ts > lightingLights()` | 三层光读数（`LightRig`） | 哪一列配哪一盏灯 |
+| `src/world/SceneLights.ts`（新，表现层） | 三盏灯建一次、只改参数 | 把读数搬到 `THREE.Light` 上 |
+| `scripts/lighting-rules.mjs` | 判据 L1–L5 + `LIGHT_RULINGS` 裁决账本 | 见下 |
+| `src/world/PlaceholderArena.ts` | 删掉写死的 hemi/key | 同一个数不许有两个主人 |
+
+**颜色一格都没新开**。art-direction §8 已经把映射写死了：「区域 key（方向光，色=SKY 列）」「局部 point（火/钟/矿，色=EMIT）」，§5.1 又补了一句「区域色板的 SKY 列决定各区看到的带占比」⇒ 极光 hemi 的天色同样随 SKY 列。再开六个颜色格就是给同一件事配第二个主人（KI-066 那一族）。所以 `lights` 里只有强度与方向——而这两样文档一个数都没给（§5.1 只说主方向光「始终指向 BAND-A 脊线法线」，没给角度）。
+
+**于是判据换了一套（L1–L5），与 §5.9.33③ 的 G1–G4 同一只手**：不再对账文档（文档没数可对），而是盯住**每一颗数都必须挂着裁决理由**。L1 声明了 `lights` 的行必须在 `LIGHT_RULINGS` 上写明「这个数凭什么敢写下来」（≥20 字）；L2 反向能销（行不声明而账还挂着 ⇒ 假账该销，KI-073 一族）；L3 强度有界，且 `hemiIntensity`／`pointIntensity` 不许写 0（整个 `lights` 不写就是 0 ⇒ 写 0 是一格没有后果的读数，§55），但 `keyIntensity: 0` **合法**——§8 自己开了那道口子；L4 真表七行都必须有 `lights`（读者对缺失行的退路是三格全 0，那一区会一团黑，而这种黑没有任何别的东西会响）；L5 `keyDir` 不许是零向量（`DirectionalLight` 的方向 = position − target，零向量等于没有方向）。另有一条不占编号：**省略 `sky` 的行必须写 `note`**——它的 key/hemi 颜色要走 SEC 那条退路，而「为什么没有天光」必须落在表里。
+
+**五条裁决**（逐条写明「文档没有，所以这是实施期裁决」）：
+
+- **强度与方向全部沿用灰盒期 `PlaceholderArena` 的实机口径**（hemi 0.7 / key 1.5 / `key.position` (12,20,8)）。这不是编的数——那一处写死的就是它们，本批只是把它们从代码搬进表里。七行共用同一条基线文字（`LIGHT_BASELINE_RULING`），逐行复制同一段话没有意义；**偏离基线的那一行必须写自己的理由**，今天只有深窖。
+- **`keyIntensity: 0` 是文档自己开的例外**：「禁止无 key 光的纯自发光场景（深窖除外——其唯一光源是矿缝，属设计例外）」。深窖因此是七行里唯一 `keyIntensity ≠ 1.5` 的，而它的裁决理由必须比基线更长（说出「为什么偏离」）。例外只关方向光：极光与 point 两层在深窖仍然亮着——「没有方向光」不等于「没有光」。
+- **SKY 列省略时，key 与 hemi 天色按 SEC 走**。文档在三行里明写「无天光（纯黑）」／「无（地下）」／「落日渐层两停」——单色格装不下两停，而 §8 又只给了深窖一个「没有 key 光」的例外，所以那三行的方向光不能没有，只能另取一色。SEC 是 §2 里「次要」那一档，正是天光退潮之后剩下的颜色。**注意这条退路与雾色那条不是同一条**：`lightingFogRgb` 对没有 `sky` 的行整份取 DARK（「没有天光」对雾意味着「只剩暗部」），三层光走 SEC（「还剩次要色」）。两条退路不同，因为问的不是同一个问题。
+- **point 挂在该区第一个 landmark 上**。§8 只说「局部 point（火/钟/矿）」，没说挂哪；今天每区第一个 landmark 都是它的主题地标（骨腔／石冢／断祭坛／石桥／第一口钟／矿缝／管风琴），所以 `main.ts` 传 `rg.landmarks[0].pos`。没有 landmark 传 null ⇒ point 不亮，而不是挂在原点把整个世界照亮。
+- **`pointIntensity: 64` 的理由是 three 的物理衰减**：`decay = 2` 时 64/8² ≈ 1，正好与 key 的 1.5 同量级；`distance = 24` 把它圈在原地标周围。这两个数（`POINT_DISTANCE`/`POINT_DECAY`）是 `SceneLights` 的静态常量而不是表字段——它们描述的是「局部」这个词本身，不是某一区的脾气。
+
+**表现层只搬参数，一个 hex 都不认**：`SceneLights.ts` 里所有期望值都能从 `lightingLights()` 现推，源码门钉着它不出现任何 hex 字面量。`setRig(null)` = 三盏全关（读不出预设时不留上一区的灯——错色的光比黑帧更难查，黑了你立刻知道，错色的光要对照两地的色板才发现），这与 `ColorGrade.setLighting(null)` 的「不碰」**刻意不同**：那边碰的是屏幕滤镜，留着只是不换；这边留着的是会照亮错东西的光源。三盏灯建一次、之后只改参数——换区不是拆了重建，少一只就是漏光，多一只就是两个主人。
+
+**门禁（2026-10-09，工作树平面）**：`npx tsc --noEmit` **0 错**；`node scripts/validate-data.mjs` **0 ERROR / 2 WARN**（与 §5.9.45 之后同数，L1–L5 一条都没新增）；定向 **5 文件 93 条全绿**（`lighting` 15→29 / 新 `scene-lights` 8 / `arch-boundaries` / `color-grade` / `schema-vocab`）。
+
+**没做的**：①**跨区 70/30 色板过渡带**（§2 那句「钟坠院→深窖 70/30→30/70 线性混合，过渡长度 ≥ 150m，禁止硬切」）——它要的是「站在两区之间」这个空间概念，而今天的流送模型（`world/Streaming.ts > regionAt`）对任何一个坐标只回答一个区；这不是判据能补的，是数据模型的缺口（KI-008 / Phase 7）。②三层光的**强度调平**：今天七行里六行同值，偏离基线只有深窖一处，而那是文档的例外不是调平。③体积光仍只允许用于地标（§8 的预算句，属内容批）。④`lightingPreset` 与 `regions.json > palette` 仍旧并存且不互推（§5.9.42 记的那条欠账，合并要先有一次裁决）。⑤视口评审仍不可做（KI-010）——这一批给的全是数字读数，没有一句「看起来怎么样」。
+
 ### 5.9.44 泛音弓 + 律具·音叉杖入表：四条新机制腿，顺手销一笔弹道双乘（2026-10-08）
 
 **§1.5 那两行 Partial 第一次有表也有读者。** `combat.md` §4.4/§4.5 从立项稿起就写好了弓与杖的完整帧表，`progression.json` §4 的出身表也早就把 `origin_choir` 指到音叉杖、`origin_scavenger` 指到泛音弓——但 `weapons.json` 里只有四把近战，这两把一直是"文档里有、表里没有"。本批把两张架式表逐格抄进 `movesets.json`（`ms_bow` / `ms_staff`），武器件进 `weapons.json` 与 `items.json`，`ActorVisuals.WEAPON_FORMS` 补 bow/staff 两组形状，`ProjectileVisuals` 补 `arrow` 色与几何。
