@@ -135,7 +135,7 @@ Explore → Discover → Fight → Loot → Upgrade → Experiment → Progress 
 |---|---|---|
 | 1（最高） | 翻滚 Roll | 攻击动画中可取消进翻滚（取消窗=攻击 startup 结束后全段+recovery 前 60%） |
 | 2 | 弹反 Parry | 与格挡共享起手，弹反键优先判帧；不可被移动输入抢占 |
-| 3 | 重击 Heavy | 连段窗口内缓冲 200ms（input buffer，见 combat.md §3.2） |
+| 3 | 重击 Heavy | 连段窗口内缓冲 200ms（input buffer，见 combat.md §1.2） |
 | 4 | 轻击 Light / 战技 Movement | 缓冲 200ms；锁定态下沿目标朝向修正（Motion Warp 式根位移，解析实现） |
 | 5 | 格挡 Block（按住） | 低优先姿态，任何主动攻击键解除 |
 | 6 | 交互/拾取/观察 | 仅在非硬直（无攻击/受击/翻滚）状态接受；距离 ≤2.2m |

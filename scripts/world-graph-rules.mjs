@@ -14,17 +14,17 @@
  * 七条判据各自的分母都是实测（①②③ 于 2026-10-03、④⑤ 于 2026-10-04、⑥⑦ 于 2026-10-06，
  * 前两组在 `git archive HEAD` 平面，⑥⑦ 在 worktree@`9f49e16`＋本文件的在途改动上重跑；
  * ④⑤ 落地时真表刚补了三处几何：钟坠院 `minY` 40→48、无耳深窖的排水斜道、未竟厅的钟楼折返楼梯）：
- *   · 113 个锚点（90 个 `pos` = 74 interactables + 11 landmark + 5 secret，外加 23 个 spawnGroups 的 `center`）
+ *   · 116 个锚点（92 个 `pos` = 76 interactables + 11 landmark + 5 secret，外加 24 个 spawnGroups 的 `center`）
  *     全在自己区域的 bounds 内（三格轴都比，y 也算）；
  *   · 8 条通行器边（唯一判据 = 带 `to`，运行时 `Interactables.ts:179` → `world.travel` → `streaming.teleport` 真吃这个字段）
  *     每一条都恰好落进一个区域的 bounds；
  *   · 七个区域各自的锚点最大三角形面积 4256（休垒，21 点）～ 32600（雾语林，16 点），无一为零；
  *   · 21 对盒子只有一格都不重叠：5 对共面接缝、2 对共棱，重叠 0 对；
  *   · 从 `order` 最小的区（休垒）沿「共面接缝 ∪ 通行器出边」可达 7/7，且每一区都至少有一条出路；
- *   · ⑥⑦ 的总体：62 面有写方的旗标（23 个交互物 setsFlag + 6 条 `interactUsed` 规则 + 2 场 Boss + 30 棵对话树
+ *   · ⑥⑦ 的总体：63 面有写方的旗标（23 个交互物 setsFlag + 6 条 `interactUsed` 规则 + 2 场 Boss + 31 棵对话树
  *     + 1 条全局事件）、31 把锁（6 个区域 unlockFlag + 16 个交互物 requires + 5 个 secret + 4 条边的 requires，
  *     锁的旗标次数合计 34，全部由 `requiresOf` 派生）、8 条边、7 个区域；
- *     不动点读数 7/7 区开放、62/62 旗可得、0 把锁解不开、0 条无证侧门，整份 findings 为空。
+ *     不动点读数 7/7 区开放、63/63 旗可得、0 把锁解不开、0 条无证侧门，整份 findings 为空。
  *
  * 刻意留给校验器的那一半：`vec3` 的三格是不是有限数、bounds 的 `min <= max`、kind 的枚举——
  * 那些由 `report.num` / `INTERACTABLE_KINDS` 全场统一管，搬过来等于给同一句话配第二个主人。

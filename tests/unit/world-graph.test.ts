@@ -10,7 +10,7 @@
  * `validate-data.mjs:1642` 只把 `to` 当 vec3 验一次型——落点在哪、是不是虚空、是不是同时踩进
  * 两个叠层区域，这三个问题一个读者都没有。这一份量的是这些事（判据本体住 `scripts/world-graph-rules.mjs`，
  * 门禁与这里读同一段代码）：
- *   ① 作者点位不许伸出本区 bounds（四类和实 113 个点：74 interactables / 11 landmark / 5 secret / 23 spawn center）；
+ *   ① 作者点位不许伸出本区 bounds（四类和实 116 个点：76 interactables / 11 landmark / 5 secret / 24 spawn center）；
  *   ② 每条通行器边的落点必须**恰好**落进一个区域（0 个 = 传进虚空，2 个 = 叠层归属没有唯一答案）；
  *   ③ 一个区域的锚点不许全部共线——这是 §9 那句设计目标的**必要条件**，不是充分条件：
  *      量的是作者标注的点，不是可行走路径。这句限定同时写在判据本体和 §5.9.36 里，
@@ -138,14 +138,14 @@ const box = (id: string, x: [number, number], y: [number, number], z: [number, n
 const A1 = (): Row => box('a', [-5, 5], [-5, 5], [-5, 5])
 
 describe('真表读数：判据吃的必须是一个非空的总体（需求 §9）', () => {
-  it('regions.json 七条判据一个 error 都没有——而这句话的分母是 7 个区域、113 个锚点、8 条通行器边、21 对盒子、31 把锁', () => {
+  it('regions.json 七条判据一个 error 都没有——而这句话的分母是 7 个区域、116 个锚点、8 条通行器边、21 对盒子、31 把锁', () => {
     const errs = errorsOf(regions, KEYS)
     const tally = anchorSources(regions)
     expect(errs, `世界图判据在真表上红了：\n${onlyErrs(errs)}`).toEqual([])
     for (const [k, v] of Object.entries(tally)) {
       expect(v, `锚点名册的「${k}」只剩 ${v} 个：字段名改过而判据还在读旧的那一个，总体就会这样安静地缩小`).toBeGreaterThan(0)
     }
-    expect(tally['spawnGroups.center'], '出怪点一共 23 组，全带 center；这一格掉到 20 以下就是有人把出怪几何改了').toBeGreaterThanOrEqual(20)
+    expect(tally['spawnGroups.center'], '出怪点一共 24 组，全带 center；这一格掉到 20 以下就是有人把出怪几何改了').toBeGreaterThanOrEqual(20)
     expect(travelEdges(regions).length, '一条通行器都没有就不是"干净的总体"，是没读到东西').toBeGreaterThanOrEqual(3)
     expect(regions.length, '区域数掉下去 = 名册被谁摘走一个，七条判据同时缩').toBeGreaterThanOrEqual(5)
     // ④⑤ 的总体自证：接触对是从 regions.length 派生的两两组合里筛出来的，筛空了就是没读到 bounds
@@ -159,7 +159,7 @@ describe('真表读数：判据吃的必须是一个非空的总体（需求 §9
     const posOnly = regions.reduce((n, r) => n + (r.interactables ?? []).filter((i) => i?.pos).length + (r.landmarks ?? []).filter((l) => l?.pos).length + (r.secrets ?? []).filter((s) => s?.pos).length, 0)
     const withCenters = regions.reduce((n, r) => n + anchorPoints(r).length, 0)
     expect(withCenters - posOnly, '差值必须正好等于出怪点的个数：相等才算 center 真的在总体里').toBe(anchorSources(regions)['spawnGroups.center'])
-    expect(posOnly, '只看 pos 的三类今天有 90 个点（它自己变成 113 就说明这格口径已经和 center 混了）').toBe(90)
+    expect(posOnly, '只看 pos 的三类今天有 92 个点（它自己变成 116 就说明这格口径已经和 center 混了）').toBe(92)
   })
 
   it('七个区域的锚点都不共线，而"最窄的那一区"由实测指认（休垒 21 个点、面积 4256）', () => {
@@ -478,7 +478,7 @@ describe('⑥ 每一把锁的钥匙都拿得到（需求 §9「需不需要钥�
     expect(locks.length, '锁名册读空 ⇒ "0 条解不开"是假的：区域 unlockFlag / 交互物 requires / secret / 边，四类都得在场').toBeGreaterThanOrEqual(25)
     expect(carriers.size, '有写方的旗标只剩这么点 ⇒ worldstate 或 dialogue 有一侧没被读').toBeGreaterThanOrEqual(50)
     expect(reach.open.size, `带着锁走图只开放 ${reach.open.size}/${regions.length} 区（${regions.filter((r) => !reach.open.has(String(r.id))).map((r) => r.id).join(' ')} 开不了）`).toBe(regions.length)
-    expect(reach.obtainable.size, `62 面有写方的旗里，${carriers.size - reach.obtainable.size} 面玩家拿不起来：${[...carriers.keys()].filter((f) => !reach.obtainable.has(f)).join(' ')}`).toBe(carriers.size)
+    expect(reach.obtainable.size, `63 面有写方的旗里，${carriers.size - reach.obtainable.size} 面玩家拿不起来：${[...carriers.keys()].filter((f) => !reach.obtainable.has(f)).join(' ')}`).toBe(carriers.size)
     const stuck = locks.filter((l) => !l.flags.every((f) => !carriers.has(f) || reach.obtainable.has(f)))
     expect(stuck.map((l) => l.where), `解不开的锁：${stuck.map((l) => `${l.where} 缺 ${l.flags.join(',')}`).join(' ;; ')}`).toEqual([])
     expect(errorsOf(regions, KEYS), '⑥⑦ 在真表上就该一句不响').toEqual([])
@@ -739,7 +739,7 @@ describe('消费端：判据在生产里有人读，而它的每一个导出都�
   it('消费端把两份名册一起递了过去：⑥⑦ 认的就是 `worldstate.json` 与 `dialogue.json` 这两个名字（§55 的第二半）', () => {
     const fn = (functionBodies(read(VD), 'validate') ?? []).find((f) => f.name === 'validateWorldGraph')
     expect(fn, '读不到 `validateWorldGraph()` ⇒ 这一格谈不上"递没递第二参数"').not.toBeUndefined()
-    expect(fn!.body, '第二参数必须成对给两份名册：只递一张，另一张的写方就在判据里凭空消失（真表 30 棵对话树 + 6 条规则）').toMatch(
+    expect(fn!.body, '第二参数必须成对给两份名册：只递一张，另一张的写方就在判据里凭空消失（真表 31 棵对话树 + 6 条规则）').toMatch(
       /worldGraphFindings\([^)]*\{\s*worldstate:\s*data\['worldstate\.json'\]\s*,\s*dialogue:\s*data\['dialogue\.json'\]\s*\}/)
     // 反向：判据本体在没有第二参数时**必须**红，而不是安静（否则这一格递不递都一样）
     const rs = barePair()
