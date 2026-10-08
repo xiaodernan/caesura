@@ -360,11 +360,12 @@ src/
 {
   "id": "wp_tuning_sword",            // string, 前缀 wp_
   "nameKey": "weapon.tuningSword",    // string, i18n 键（中文名不硬编码在代码）
-  "archetype": "straight_sword",      // enum: straight_sword|greatsword|spear|bow|tuning_rod|unique
+  "archetype": "straight_sword",      // enum: straight_sword|greatsword|spear|needle|bow|staff|unique
   "movesetId": "ms_sword",            // string → data/movesets/，含 L1-L4/H/charged/run/jump/back 全套 FrameData
   "atkBase": 12, "scaling": {"str": 0.6, "dex": 0.9},  // 立项稿带底数；实现里底数只住在 movesets.json 那一记的 damage（strikeEnemy→resolveDamage），atkBase 从无消费方，已于 KI-047 从 schema/数据表/验证器删除——这一格保留只为对照当初的分层意图
   "staminaCost": {"light": 12, "heavy": 24},           // number/tick 触发一次（现状：体力住在每一记的 FrameData.stamina）
   "poisePerHit": 18,
+  "falloff": [{"beyond": 20, "mul": 0.85}, {"beyond": 40, "mul": 0.6}], // §4.4 距离衰减档位（武器级，KI-037①；只有弓写了。按 Projectile.traveled 逐档查，一档都不越 = 不衰减）
   "swingTag": ["damage.physical", "crit.backstab1.5"], // string[] gameplay tags
   "skill": "sk_sword_resonant_cut",   // → SkillData（战技，武器专属）
   "upgradePathId": "up_timbite_sword",// → 强化表（+1..+10 数值/消耗/成功率）
@@ -2381,3 +2382,19 @@ Phase 1（核心战斗原型）＝ `core + player + combat + tools/CombatDebugge
 **同批修一条既有红**（`tests/unit/ui-intents.test.ts`，overlay 那一批带进来的）：源码门数 `main.ts` 里 `uiOwner` 的**原文**出现次数，期望 3（一处赋值 + 注释里两次提及）。overlay 那批为了解释"为什么只有一处赋值"而写下的 `input.uiOwner = ` 本身，把这个数点成了 4——**一条为了说清规矩而存在的注释，把守着规矩的判据弄红了**，而它自己头一句写的是"注释不算数"。修法是按同一把尺子量：live 代码里只许那一处赋值（剔注释后数），另留一条地板盯着"解释还在"（只剩一行裸代码而没人说为什么，下一个人会再写一处）。
 
 **一处如实登记**：`main.ts` 三处注释把 overlay/map 这批引作 **KI-097**，而 KNOWN_ISSUES 的 KI-097 是武器字段那一笔——**同一个号被指了两件事**。本批不裁它归谁（裁号要问写注释的那个人），只在 TD-002 的销案注记里记下撞号。
+### 5.9.44 泛音弓 + 律具·音叉杖入表：四条新机制腿，顺手销一笔弹道双乘（2026-10-08）
+
+**§1.5 那两行 Partial 第一次有表也有读者。** `combat.md` §4.4/§4.5 从立项稿起就写好了弓与杖的完整帧表，`progression.json` §4 的出身表也早就把 `origin_choir` 指到音叉杖、`origin_scavenger` 指到泛音弓——但 `weapons.json` 里只有四把近战，这两把一直是"文档里有、表里没有"。本批把两张架式表逐格抄进 `movesets.json`（`ms_bow` / `ms_staff`），武器件进 `weapons.json` 与 `items.json`，`ActorVisuals.WEAPON_FORMS` 补 bow/staff 两组形状，`ProjectileVisuals` 补 `arrow` 色与几何。
+
+四条机制腿，每条都落在**已有的**通道里而不是新开一条：
+
+- **泛音分叉**：`ProjectileSpec` 复用 §14.4 就有的 `burst`，外加 `spreadDeg` / `branchDamageMul`。`launchPlayerProjectile` 以瞄准方向为中心把 `count` 发对称排布（第 i 发偏 `(i-(count-1)/2)*spreadDeg`），离中心最近的一发是主箭（并列取下标小的一发），其余按 `branchDamageMul` 打折。`count` 是**表上的底数且含主箭**，里程碑只往上加。
+- **主箭自动吸附**：`assistConeDeg`。没有锁定目标时，在锥内（绕出手朝向、半径用这一式自己的射程）挑最近的活敌；分叉枝不另找目标——它们本来就该散出去。判据是"没锁定"，所以锁定了的人照旧打锁定的那个。
+- **距离衰减**：`WeaponData.falloff`（**武器级**，与 `noiseMul` 同族），发射那一刻照抄上弹体，命中时按 `Projectile.traveled` 逐档查。为此给 `Projectile` 加了 `traveled` 记账（`update()` 里逐 tick 累加，冻结时是零长段——§7.2 休止斩"时间没过路程也没过"那条对这把尺子同样成立）。`falloff` 从 `ProjectileSpec` 挪到 `WeaponData`：同一把弓的速射/破鸣箭/跳射该吃同一份衰减，写在招式上就是三处可能不一致的主人。
+- **`bowForkBranches`**：`progression.json` rank12 里程碑 `ms_bow_split`（"满弓分叉 2→3（若用弓）"）经 `MilestoneGrant` → `DerivedStats` → `PlayerMods` → `launchPlayerProjectile` 落地，与既有的 `loadFlat` / `parryWhiffMs` / `corruptionStayPct` 同一条链。
+
+**顺手销一笔账：弹道伤害被武器强化倍率乘了两次。** `launchPlayerProjectile` 出海时写的是 `damage: a.f.damage * weaponDamageMul`，而 `strikeEnemy` 里的 `mvMul` 又乘一次 ⇒ 投掷枪从 Phase 5-B 起一直在吃 `f.damage × mul²`（10 级时 1.8²=3.24 顶 1.8）。修法是让出海那一格只写帧表底数——**伤害管线唯一的主人仍然是 `strikeEnemy` 的 `mvMul`**（分叉枝的折扣除外：它打折的是帧表底数，不是倍率轴）。回归腿 `tests/flow/overtone-bow.test.ts`：`weaponDamageMul=1.5` 时出海的那一发仍是 18 而不是 27，命中最终伤害 == 底数 ×1.5× 标尺。
+
+**KI-039 定价闸按原型分族重裁**：详见 combat.md §3.1 的落地注记。近战四族 ≤1.25× 一字未改（现值 1.167×），弓/杖换成「不得超过近战家族最大值」，且新 archetype 必须在 `familyOf` 里显式站队。
+
+**没做的**：杖的残响柱（停留 0.8s + 区域内 -15% 减速）、杖头弹反回授 12 伤害、乐章战技 +25% 射程、破鸣箭「对格挡目标格挡体力扣减 ×2」——四条都**没有承载体**（本作没有敌人格挡系统、没有区域减速状态、战技射程不走这条），按"字段必须有真实消费方"的规矩不预写，全部登记进 KNOWN_ISSUES 的 pending。弓/杖的真资产（弓臂曲面、杖头音叉）仍是灰盒几何。

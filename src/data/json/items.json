@@ -569,5 +569,43 @@
    },
    "weight": 6
   }
+ },
+ {
+  "id": "wp_overtone_bow_item",
+  "nameKey": "weapon.overtoneBow",
+  "displayName": "泛音弓",
+  "kind": "weapon",
+  "stack": 1,
+  "value": 110,
+  "desc": "弦坊的老弓。拉满时一根弦会唱成三个音——多出来的那两个，自己会找该找的人。",
+  "gear": {
+   "slot": "weapon",
+   "rarity": "uncommon",
+   "weaponId": "wp_overtone_bow",
+   "weight": 9,
+   "salvage": {
+    "dross": 2,
+    "timbite": 35
+   }
+  }
+ },
+ {
+  "id": "wp_tuningfork_staff_item",
+  "nameKey": "weapon.tuningForkStaff",
+  "displayName": "律具·音叉杖",
+  "kind": "weapon",
+  "stack": 1,
+  "value": 130,
+  "desc": "杖头是一支调准了的音叉。它不砍人——它让你跟它一起响。",
+  "gear": {
+   "slot": "weapon",
+   "rarity": "rare",
+   "weaponId": "wp_tuningfork_staff",
+   "weight": 10,
+   "salvage": {
+    "dross": 3,
+    "timbite": 50
+   }
+  }
  }
 ]

@@ -676,27 +676,73 @@ export class CombatManager {
     if (!a) return
     const spec = a.f.projectile
     if (!spec) return
-    const count = spec.burst?.count ?? 1
+    // §4.4 满弓分叉：burst.count 是表上的底数（含主箭），rank12 里程碑的 bowForkBranches 只往上加
+    const count = (spec.burst?.count ?? 1) + this.player.rpg.bowForkBranches
     if (a.shots >= count) return
     if (a.tick < a.f.activeStart + a.shots * (spec.burst?.everyTicks ?? 0)) return
+    const shotIndex = a.shots
     a.shots++
     const p = this.player
     const origin: Vec3 = { x: p.pos.x, y: p.pos.y + (spec.offsetY ?? 1.1), z: p.pos.z }
-    const target = p.lockedTarget ? { x: p.lockedTarget.getPos().x, y: p.lockedTarget.getPos().y + 0.9, z: p.lockedTarget.getPos().z } : null
-    const dir = target ? aimAt(origin, target, spec) : aimFlat(origin, p.yaw, spec)
+    // §4.4「主箭优先最近目标」：锁定目标优先；没锁定而这一式写了 assistConeDeg 时，
+    // 在锥内自动吸附最近的活敌。分叉枝不享受吸附——它们本来就该散出去。
+    const target = p.lockedTarget
+      ? { x: p.lockedTarget.getPos().x, y: p.lockedTarget.getPos().y + 0.9, z: p.lockedTarget.getPos().z }
+      : (spec.assistConeDeg !== undefined ? this.nearestEnemyInCone(origin, spec.range, spec.assistConeDeg, p.yaw) : null)
+    const base = target ? aimAt(origin, target, spec) : aimFlat(origin, p.yaw, spec)
+    // §4.4 泛音分叉：一串弹体以瞄准方向为中心对称排布；离中心最近的那一发是主箭
+    // （并列时取下标小的一发），其余按 branchDamageMul 打折——「18（主）+ 60%/枝」
+    const spread = spec.spreadDeg ?? 0
+    const center = (count - 1) / 2
+    let mainIndex = 0
+    for (let i = 1; i < count; i++) {
+      if (Math.abs(i - center) < Math.abs(mainIndex - center)) mainIndex = i
+    }
+    const isMain = shotIndex === mainIndex
+    let dir = spread === 0 ? base : rotate(base, (shotIndex - center) * spread * Math.PI / 180)
+    // §4.4 速射「移动中散布 +4°」：出手那一刻在动就再叠一层随机偏航（±半宽，seeded rng）
+    if (spec.moveSpreadDeg !== undefined && p.moving) {
+      dir = rotate(dir, (this.rng.float() - 0.5) * spec.moveSpreadDeg * Math.PI / 180)
+    }
     const onBeat = this.rhythm.onBeat(this.player.beatGraceTicks > 0 ? 80 : 50) // 常拍脚（KI-036）
     this.projectiles.spawn({
       hostile: false, ownerId: 'player', kind: spec.kind, origin, dir,
       speed: spec.speed, range: spec.range, radius: spec.radius, gravity: spec.gravity,
-      damage: a.f.damage * p.rpg.weaponDamageMul, poise: a.f.poise, hitStopMs: a.f.hitStopMs,
+      // KI-037：武器强化倍率**只由 strikeEnemy 的 mvMul 乘**（伤害管线唯一的主人）。
+      // 出海时再乘一次就是 f.damage × mul²——投掷枪从 Phase 5-B 起一直在吃这个亏
+      // （10 级时 1.8²=3.24 顶 1.8），本批顺手销账；分叉枝的折扣除外（它打折的是帧表底数）。
+      damage: a.f.damage * (isMain || spec.branchDamageMul === undefined ? 1 : spec.branchDamageMul),
+      poise: a.f.poise, hitStopMs: a.f.hitStopMs,
       layers: a.f.fissureLayers ?? (a.key === 'charged' ? 2 : a.key === 'h' ? 1 : 0),
       pinTicks: spec.pinTicks ?? 0, muteTicks: spec.muteOnHit ?? 0,
       pierce: spec.pierce, onBeat, parryable: true,
+      // §4.4 距离衰减是**武器级**属性（与 noiseMul 同族）：这把武器射出去的一切都吃它
+      falloff: this.player.weapon.falloff,
       sfxHit: spec.sfxHit, vfxHit: spec.vfxHit, shake: spec.shake ?? a.f.shake ?? 'normal',
       reaction: a.f.reaction,
       loudness: a.f.loudness ?? 5
     }, tick)
     this.afterLaunch(p.pos, spec, a.f, dir)
+  }
+
+  /**
+   * §4.4 满弓「主箭优先最近目标」：锥内最近的活敌。锥绕出手朝向（yaw），
+   * 半径用这一式自己的射程——箭飞不到的人不该被吸过来。
+   */
+  private nearestEnemyInCone(from: Vec3, range: number, coneDeg: number, yaw: number): Vec3 | null {
+    const half = (coneDeg * Math.PI / 180) / 2
+    let best: Enemy | null = null
+    let bestD = Infinity
+    for (const e of this.ai.enemies) {
+      if (!e.alive) continue
+      const dx = e.pos.x - from.x, dz = e.pos.z - from.z
+      const d = Math.hypot(dx, dz)
+      if (d >= bestD || d > range) continue
+      if (Math.abs(norm(Math.atan2(dx, dz) - yaw)) > half) continue
+      best = e
+      bestD = d
+    }
+    return best ? { x: best.pos.x, y: best.pos.y + 0.9, z: best.pos.z } : null
   }
 
   /** 敌人射击：同一个 ProjectileSystem，只是 hostile=true */
@@ -781,8 +827,11 @@ export class CombatManager {
 
   private projectileStrikesEnemy(pr: Projectile, e: Enemy, tick: number): void {
     this.projectiles.consume(pr, e.id)
+    // §4.4 泛音弓距离衰减：飞了多远只有命中这一刻量得出来（traveled 由 update 逐 tick 记账）
+    let falloffMul = 1
+    if (pr.falloff) for (const b of pr.falloff) if (pr.traveled > b.beyond) falloffMul = b.mul
     this.strikeEnemy(e, {
-      base: pr.damage, poise: pr.poise, hitStopMs: pr.hitStopMs, kind: 'heavy',
+      base: pr.damage * falloffMul, poise: pr.poise, hitStopMs: pr.hitStopMs, kind: 'heavy',
       reaction: stunTier(pr.reaction),
       layers: pr.layers, mute: pr.muteTicks > 0, backstab: false,
       onBeat: pr.onBeat, ranged: true, pinTicks: pr.pinTicks,

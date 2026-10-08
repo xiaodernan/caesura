@@ -11,11 +11,13 @@ import type { TelegraphLine } from '@/combat/CombatManager'
 const COLOR: Record<string, { body: number; glow: number }> = {
   spear: { body: 0x8d949c, glow: 0xffd479 },
   note: { body: 0x4fd6c8, glow: 0x9ffff2 },
-  shard: { body: 0xb4614f, glow: 0xff9a6a }
+  shard: { body: 0xb4614f, glow: 0xff9a6a },
+  arrow: { body: 0xd8b46a, glow: 0xffe9b0 } // 泛音弓的箭：暖木色，和音色晶的冷色分开
 }
 
 function geometryFor(kind: string): THREE.BufferGeometry {
   if (kind === 'spear') return new THREE.BoxGeometry(0.07, 0.07, 1.7) // 长轴 +Z，朝速度方向摆正
+  if (kind === 'arrow') return new THREE.BoxGeometry(0.045, 0.045, 1.05) // 箭：比枪短一截的细杆（§4.4）
   if (kind === 'note') return new THREE.IcosahedronGeometry(0.24, 0)
   if (kind === 'crystal') return new THREE.OctahedronGeometry(0.3, 0) // 音色晶（KI-023①）：会唱歌的八面体
   return new THREE.TetrahedronGeometry(0.22)

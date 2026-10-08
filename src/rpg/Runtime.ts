@@ -45,6 +45,8 @@ export interface PlayerMods {
   statusPowerMul: number
   /** 环境失谐（Corruption）累积乘数，<1 = 褪色更慢；地板由 progression.json 的 toleranceFloor 兜住 */
   corruptionResistMul: number
+  /** §4.4 泛音弓满弓分叉的额外枝数（rank12 里程碑；0 = 底数 2 枝） */
+  bowForkBranches: number
   /** 战技伤害加成（律色，KI-029）：加数（0.07 = +7%），消费方 activeHitbox 的技能那一支 */
   skillDmg: number
   poiseDmgMul: number
@@ -65,7 +67,7 @@ export function defaultMods(): PlayerMods {
     attrs: { str: 0, dex: 0, ton: 0, vig: 0, ovr: 0, fis: 0 },
     hpMax: 1, staminaMax: 1, poiseMax: 1, defense: 0, loadMax: 999, parryWhiffMs: 0, overdriveMax: 10,
     critRate: 0, critMul: 1.35, execMul: 1, noiseMul: 1, poiseDmgMul: 1, staminaRegenMul: 1,
-    statusPowerMul: 1, corruptionResistMul: 1, skillDmg: 0,
+    statusPowerMul: 1, corruptionResistMul: 1, skillDmg: 0, bowForkBranches: 0,
     perfectBlockBonusTicks: 0, lightStartupTicks: 0, bellBonus: 0, restOverdrive: 0,
     weaponDamageMul: 1, weaponId: null, weight: 0, overloaded: false
   }
@@ -147,6 +149,7 @@ export class RpgRuntime {
       execMul: d.execMul * eq.execMul,
       statusPowerMul: d.statusPowerMul,
       corruptionResistMul: d.corruptionResistMul,
+      bowForkBranches: d.bowForkBranches,
       skillDmg: eq.skillDmg,
       noiseMul: eq.noiseMul,
       poiseDmgMul: eq.poiseDmgMul,

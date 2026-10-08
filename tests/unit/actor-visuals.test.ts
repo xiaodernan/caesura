@@ -142,13 +142,19 @@ describe('KI-007 手里的家伙跟着装备走（外观不再是"永远那一�
     ((vis.sword.getObjectByName(`weapon:${kind}`) as THREE.Group).children[0] as THREE.Mesh).geometry as THREE.BoxGeometry
 
   it('每一种 archetype 一组，任何时刻只亮一组，且换装后亮的是新那把', () => {
-    expect(vis.sword.children.length, '表里五种形状（含无鸣 needle + 回退 unknown）（含回退用的 unknown）').toBe(5)
+    expect(vis.sword.children.length, '表里形状数 = WEAPON_FORMS 的键数（含回退 unknown）').toBe(7)
     give('wp_drawpin_spear')
     expect(shown(), '每一次 sync 之后只该亮一组').toEqual(['weapon:spear'])
     give('wp_tuning_sword')
     expect(shown()).toEqual(['weapon:straight_sword'])
     give('wp_fortissimo_greatsword')
     expect(shown(), '换到大剑：只翻这一组，上一组必须灭掉').toEqual(['weapon:greatsword'])
+    give('wp_overtone_bow')
+    expect(shown(), 'KI-037：弓入表 ⇒ 弓臂那组亮（不再是回退 unknown）').toEqual(['weapon:bow'])
+    give('wp_tuningfork_staff')
+    expect(shown(), 'KI-037：杖入表 ⇒ 长杆那组亮').toEqual(['weapon:staff'])
+    give('wp_needlesilence')
+    expect(shown(), '无鸣：细长黑刃（KI-023）').toEqual(['weapon:needle'])
     give('wp_drawpin_spear')
     expect(shown()).toEqual(['weapon:spear'])
   })
@@ -163,7 +169,8 @@ describe('KI-007 手里的家伙跟着装备走（外观不再是"永远那一�
 
   it('表里没有的形状回退成 "看得见的一把"，而不是空手', () => {
     const w = registry.get<WeaponData>('wp_tuning_sword')
-    player.equip({ ...w, id: 'wp_probe_bow', archetype: 'bow' }, registry.get<MovesetData>(`moveset:${w.movesetId}`))
+    // 用 unique（无名音叉巨剑），它在 WEAPON_FORMS 里没有对应组，应回退到 unknown
+    player.equip({ ...w, id: 'wp_probe_unique', archetype: 'unique' }, registry.get<MovesetData>(`moveset:${w.movesetId}`))
     vis.sync(ai.enemies, 2)
     expect(shown(), '手里空了比看着像剑更糟：玩家会以为装备没生效').toEqual(['weapon:unknown'])
     give('wp_tuning_sword')

@@ -65,6 +65,13 @@ export interface Projectile {
   loudness: number
   /** KI-023①：音色晶那发带着——碎裂时的伪声源响度（onProjectileGone 读它） */
   crystalLoudness?: number
+  /**
+   * §4.4 泛音弓「距离衰减」的档位表（发射那一刻照抄 `ProjectileSpec.falloff`）。
+   * 已经飞了多少米住在 `traveled`——两个格必须在一起，否则结算时拿不到尺子。
+   */
+  falloff?: readonly { beyond: number; mul: number }[]
+  /** 出生以来累计飞过的米数（`update` 逐 tick 累加；距离衰减的唯一尺子） */
+  traveled: number
   dead: boolean
   gone: GoneReason | null
   bornTick: number
@@ -98,6 +105,8 @@ export interface LaunchParams {
   /** §14.4 诱饵惩罚（KI-085）：这一发是假动作时带来时的硬直毫秒数；见 `Projectile.feintPunishMs` */
   feintPunishMs?: number
   loudness?: number
+  /** §4.4 距离衰减档位（原样带到弹体上；命中时按 traveled 查表） */
+  falloff?: readonly { beyond: number; mul: number }[]
   /**
    * KI-023① 声东击西：这一发是音色晶（kind 'crystal'），落地碎裂时按这个响度发一声
    * 伪声源（onProjectileGone 的 crystal 分支读它）。伤害恒 0：它是诱饵不是武器，
@@ -148,6 +157,8 @@ export class ProjectileSystem {
       reaction: l.reaction,
       feintPunishMs: l.feintPunishMs,
       crystalLoudness: l.crystalLoudness,
+      falloff: l.falloff,
+      traveled: 0,
       loudness: l.loudness ?? 4,
       dead: false,
       gone: null,
@@ -171,6 +182,7 @@ export class ProjectileSystem {
       const dx = p.vel.x * dt, dy = p.vel.y * dt, dz = p.vel.z * dt
       p.pos.x += dx; p.pos.y += dy; p.pos.z += dz
       p.rangeLeft -= Math.hypot(dx, dy, dz)
+      p.traveled += Math.hypot(dx, dy, dz) // 距离衰减的尺子：飞过多少米只在这里记账
       if (p.rangeLeft <= 0) this.kill(p, 'range')
       else if (tick - p.bornTick > MAX_LIFE_TICKS) this.kill(p, 'expire')
     }

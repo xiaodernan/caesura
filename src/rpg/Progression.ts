@@ -32,6 +32,12 @@ export interface DerivedStats {
    */
   statusPowerMul: number
   corruptionResistMul: number
+  /**
+   * §4.4 泛音弓满弓分叉的**额外枝数**（rank12 里程碑 `ms_bow_split` 的 grant，KI-037）。
+   * 底数 2 枝住在 `ms_bow.charged.burst.count`（含主箭共 3 发），这一格只加「到 rank12 多一枝」。
+   * 消费方 `PlayerMods.bowForkBranches` → `CombatManager.launchPlayerProjectile`。
+   */
+  bowForkBranches: number
 }
 
 export interface ResonanceGain {
@@ -188,7 +194,8 @@ export class Progression {
       execMul: (1 + a.ovr * d.execMulPerOvr) * (1 + grantSum('execMulPct') / 100),
       statusPowerMul: 1 + fis * d.status.perFisPower,
       // rank10 的 grant 是乘在速率上的时长项（KI-054）：÷1.35 ⇒ 深窖可停留时长 +35%，对任何出身逐字成立
-      corruptionResistMul: Math.max(d.status.toleranceFloor, (1 - fis * d.status.perFisTolerance) / (1 + grantSum('corruptionStayPct') / 100))
+      corruptionResistMul: Math.max(d.status.toleranceFloor, (1 - fis * d.status.perFisTolerance) / (1 + grantSum('corruptionStayPct') / 100)),
+      bowForkBranches: grantSum('bowForkBranches')
     }
   }
 

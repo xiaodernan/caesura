@@ -46,7 +46,7 @@ export interface BurstFeint {
  */
 export interface ProjectileSpec {
   /** 表现层按 kind 选模；未知 kind 走默认弹头 */
-  kind: 'spear' | 'note' | 'shard'
+  kind: 'spear' | 'note' | 'shard' | 'arrow'
   /** 初速 m/s */
   speed: number
   /** 飞行多少米后自然消散（无遮挡近似，见 tech-arch §5.9 已知缺口） */
@@ -71,6 +71,28 @@ export interface ProjectileSpec {
   sfxHit?: string
   vfxHit?: string
   shake?: 'graze' | 'normal' | 'heavy' | 'boss'
+  /**
+   * §4.4 泛音弓「泛音分叉 2 枝 12°」：连发时**相邻两发之间岔开的角**（度）。写了它，
+   * 这一串弹体以瞄准方向为中心对称排布（第 i 发偏 `(i - (count-1)/2) * spreadDeg`）。
+   * 消费方 `CombatManager.launchPlayerProjectile`：离瞄准方向最近的那一发是「主箭」
+   * （吃满伤害，并列时取下标小的一发），其余是「分叉枝」。
+   */
+  spreadDeg?: number
+  /**
+   * §4.4「18（主）+ 60%/枝」：分叉枝的伤害倍率（主箭恒为 1）。只在与 `spreadDeg`
+   * 连用时有意——单独写它，没有任何一发会被打折。
+   */
+  branchDamageMul?: number
+  /**
+   * §4.4 速射「移动中散布 +4°」：出手那一刻玩家在动，就再叠一层随机偏航（±本值/2，
+   * CombatManager 的 seeded rng）。站桩射击不受影响——弓的代价写在机动上。
+   */
+  moveSpreadDeg?: number
+  /**
+   * §4.4 满弓「主箭优先最近目标」：没有锁定目标时，主箭在这只锥（度，绕玩家朝向）里
+   * 自动吸附**最近**的活敌。不写 = 只认锁定目标，否则沿朝向直射。
+   */
+  assistConeDeg?: number
 }
 
 export interface FrameData {
@@ -163,6 +185,13 @@ export interface WeaponData {
   stealthKillFrac?: number
   /** 重击「抹喉弧线」：对 Alert 侧（未进战斗）的目标，重击视为背刺（吃 ×3.5 那条倍率） */
   heavyAlertBackstab?: boolean
+  /**
+   * §4.4 泛音弓「距离衰减：>20m ×0.85，>40m ×0.6」：**武器级**（与 `noiseMul` 同族，
+   * 对这把武器射出去的一切弹体生效）。按已飞距离逐档查（由近及远，`beyond` 严格递增），
+   * 取第一档满足 `traveled > beyond` 的倍率；一档都不越 = 不衰减。消费方
+   * `CombatManager.launchPlayerProjectile`（抄上弹体）→ `projectileStrikesEnemy`（命中时查表）。
+   */
+  falloff?: { beyond: number; mul: number }[]
 }
 
 export type AttrKey = 'str' | 'dex' | 'ton' | 'vig' | 'ovr' | 'fis'
@@ -699,6 +728,13 @@ export interface MilestoneGrant {
    * 换算记在 KI-054 行）；toleranceFloor 仍在最后封底，grant 推不穿设计的地板。
    */
   corruptionStayPct?: number
+  /**
+   * rank12「满弓分叉 2→3（若用弓）」的那条腿（KI-037）：`launchPlayerProjectile` 在
+   * `burst.count` 之上叠加的**额外分叉枝数**。2 枝底数住在 `ms_bow.charged` 自己的
+   * `burst.count`（含主箭），这一格只负责「到了 rank12 多一枝」——两处各写一个总数
+   * 就是两个主人（KI-054 同族纪律）。
+   */
+  bowForkBranches?: number
 }
 
 /** 装备件的静态定义（挂在 ItemData.gear 上）。 */

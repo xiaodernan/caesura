@@ -14,14 +14,16 @@ interface EnemyVis {
 
 /**
  * 手里那把家伙的灰盒外形（KI-007）。表里的键就是 `weapons.json` 的 `archetype`——**选哪一组是数据说的**；
- * 组内这几个尺寸是灰盒美术（真资产来了整组换掉，选择逻辑不动）。`bow/staff/unique` 现在没有能装备的件，
- * 落进 `unknown` 那一组，见 `showForm` 的回退。
+ * 组内这几个尺寸是灰盒美术（真资产来了整组换掉，选择逻辑不动）。KI-037 起 bow/staff 有了能装备的件，
+ * 也各有一组灰盒；`unique`（无名音叉巨剑）还没有件，仍落进 `unknown` 那一组，见 `showForm` 的回退。
  */
 const WEAPON_FORMS: Record<string, { blade: [number, number, number]; metal: number; grip: [number, number, number] }> = {
   straight_sword: { blade: [0.07, 0.95, 0.16], metal: 0xb9c4cc, grip: [0.03, 0.03, 0.22] },
   greatsword: { blade: [0.14, 1.5, 0.3], metal: 0x8f9aa4, grip: [0.045, 0.045, 0.34] },
   spear: { blade: [0.05, 1.9, 0.05], metal: 0xc7bfa8, grip: [0.035, 0.035, 0.5] },
   needle: { blade: [0.035, 1.05, 0.07], metal: 0x14181c, grip: [0.02, 0.02, 0.2] }, // 无鸣：细长黑刃（KI-023）
+  bow: { blade: [0.07, 1.12, 0.13], metal: 0x9a7b4f, grip: [0.028, 0.028, 0.24] }, // 泛音弓：竖持的弓臂（KI-037）
+  staff: { blade: [0.05, 1.62, 0.05], metal: 0xc9b98a, grip: [0.03, 0.03, 0.26] }, // 音叉杖：一根长杆（杖头音叉等真资产）
   unknown: { blade: [0.07, 0.95, 0.16], metal: 0xb9c4cc, grip: [0.03, 0.03, 0.22] }
 }
 
@@ -133,7 +135,7 @@ export class ActorVisuals {
 
   /**
    * 只翻 visible，不重建模：换装是常态而几何体要留给渲染器复用。
-   * 表里没有的 archetype（例如以后真加进来的弓）回退到 `unknown` 那一组**并保持看得见**——
+   * 表里没有的 archetype（今天只剩 `unique`：无名音叉巨剑还没有件）回退到 `unknown` 那一组**并保持看得见**——
    * 「手里空了」比「看着还是把剑」更糟：前者会让玩家以为装备没生效。
    */
   private showForm(p: PlayerController): void {

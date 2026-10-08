@@ -866,5 +866,330 @@
     "loudness": 4
    }
   }
+ },
+ {
+  "id": "ms_bow",
+  "actions": {
+   "l1": {
+    "startup": 15,
+    "activeStart": 15,
+    "activeEnd": 15,
+    "recovery": 36,
+    "damage": 10,
+    "stamina": 10,
+    "poise": 6,
+    "hitStopMs": 60,
+    "projectile": {
+     "kind": "arrow",
+     "speed": 40,
+     "range": 45,
+     "radius": 0.12,
+     "offsetY": 1.2,
+     "gravity": 0,
+     "moveSpreadDeg": 4,
+     "sfxHit": "hit_flesh",
+     "vfxHit": "impact_sparks",
+     "shake": "normal"
+    },
+    "shake": "graze",
+    "sfx": [
+     "bowstring"
+    ],
+    "vfx": [
+     "trail_thrust"
+    ],
+    "loudness": 6,
+    "next": "l2"
+   },
+   "l2": {
+    "startup": 12,
+    "activeStart": 12,
+    "activeEnd": 18,
+    "recovery": 30,
+    "damage": 6,
+    "stamina": 6,
+    "poise": 4,
+    "hitStopMs": 50,
+    "hitbox": {
+     "shape": "cone",
+     "angleDeg": 90,
+     "radius": 2.2,
+     "height": 1.6,
+     "offsetY": 0.9
+    },
+    "lunge": 0.2,
+    "shake": "graze",
+    "sfx": [
+     "swing_1"
+    ],
+    "vfx": [
+     "trail_sword"
+    ],
+    "loudness": 3
+   },
+   "h": {
+    "startup": 36,
+    "activeStart": 36,
+    "activeEnd": 36,
+    "recovery": 72,
+    "damage": 26,
+    "stamina": 20,
+    "poise": 30,
+    "hitStopMs": 90,
+    "projectile": {
+     "kind": "arrow",
+     "speed": 30,
+     "range": 45,
+     "radius": 0.22,
+     "offsetY": 1.2,
+     "gravity": 0,
+     "sfxHit": "hit_metal",
+     "vfxHit": "impact_sparks",
+     "shake": "heavy"
+    },
+    "fissureLayers": 2,
+    "shake": "normal",
+    "sfx": [
+     "bowstring"
+    ],
+    "vfx": [
+     "trail_thrust"
+    ],
+    "loudness": 6
+   },
+   "charged": {
+    "startup": 20,
+    "activeStart": 20,
+    "activeEnd": 26,
+    "recovery": 53,
+    "damage": 18,
+    "stamina": 14,
+    "poise": 10,
+    "hitStopMs": 90,
+    "projectile": {
+     "kind": "arrow",
+     "speed": 40,
+     "range": 45,
+     "radius": 0.12,
+     "offsetY": 1.2,
+     "gravity": 0,
+     "assistConeDeg": 45,
+     "burst": {
+      "count": 3,
+      "everyTicks": 1
+     },
+     "spreadDeg": 12,
+     "branchDamageMul": 0.6,
+     "sfxHit": "hit_flesh",
+     "vfxHit": "impact_sparks",
+     "shake": "normal"
+    },
+    "shake": "graze",
+    "sfx": [
+     "bowstring"
+    ],
+    "vfx": [
+     "trail_thrust"
+    ],
+    "loudness": 7
+   },
+   "jump": {
+    "startup": 12,
+    "activeStart": 12,
+    "activeEnd": 12,
+    "recovery": 30,
+    "damage": 12,
+    "stamina": 12,
+    "poise": 6,
+    "hitStopMs": 60,
+    "projectile": {
+     "kind": "arrow",
+     "speed": 34,
+     "range": 45,
+     "radius": 0.12,
+     "offsetY": 1.2,
+     "gravity": 10.8,
+     "sfxHit": "hit_flesh",
+     "vfxHit": "impact_sparks",
+     "shake": "normal"
+    },
+    "shake": "graze",
+    "sfx": [
+     "bowstring"
+    ],
+    "vfx": [
+     "trail_thrust"
+    ],
+    "loudness": 5
+   }
+  }
+ },
+ {
+  "id": "ms_staff",
+  "actions": {
+   "l1": {
+    "startup": 13,
+    "activeStart": 13,
+    "activeEnd": 19,
+    "recovery": 32,
+    "damage": 7,
+    "stamina": 8,
+    "poise": 4,
+    "hitStopMs": 50,
+    "hitbox": {
+     "shape": "cone",
+     "angleDeg": 60,
+     "radius": 1.9,
+     "height": 1.4,
+     "offsetY": 0.9
+    },
+    "lunge": 0.2,
+    "shake": "graze",
+    "sfx": [
+     "bell_clang"
+    ],
+    "vfx": [
+     "trail_thrust"
+    ],
+    "loudness": 4,
+    "next": "l2"
+   },
+   "l2": {
+    "startup": 12,
+    "activeStart": 12,
+    "activeEnd": 18,
+    "recovery": 31,
+    "damage": 7,
+    "stamina": 8,
+    "poise": 4,
+    "hitStopMs": 50,
+    "hitbox": {
+     "shape": "cone",
+     "angleDeg": 60,
+     "radius": 1.9,
+     "height": 1.4,
+     "offsetY": 0.9
+    },
+    "lunge": 0.2,
+    "shake": "graze",
+    "sfx": [
+     "bell_clang"
+    ],
+    "vfx": [
+     "trail_thrust"
+    ],
+    "loudness": 4,
+    "next": "l3"
+   },
+   "l3": {
+    "startup": 12,
+    "activeStart": 12,
+    "activeEnd": 18,
+    "recovery": 32,
+    "damage": 8,
+    "stamina": 8,
+    "poise": 5,
+    "hitStopMs": 55,
+    "hitbox": {
+     "shape": "cone",
+     "angleDeg": 60,
+     "radius": 1.9,
+     "height": 1.4,
+     "offsetY": 0.9
+    },
+    "lunge": 0.25,
+    "shake": "graze",
+    "sfx": [
+     "bell_clang"
+    ],
+    "vfx": [
+     "trail_thrust"
+    ],
+    "loudness": 4,
+    "next": "l4"
+   },
+   "l4": {
+    "startup": 17,
+    "activeStart": 17,
+    "activeEnd": 23,
+    "recovery": 44,
+    "damage": 10,
+    "stamina": 8,
+    "poise": 8,
+    "hitStopMs": 60,
+    "hitbox": {
+     "shape": "cone",
+     "angleDeg": 70,
+     "radius": 2.1,
+     "height": 1.5,
+     "offsetY": 0.9
+    },
+    "lunge": 0.3,
+    "shake": "graze",
+    "fissureLayers": 2,
+    "sfx": [
+     "bell_toll"
+    ],
+    "vfx": [
+     "ring_echo"
+    ],
+    "loudness": 5
+   },
+   "h": {
+    "startup": 24,
+    "activeStart": 24,
+    "activeEnd": 33,
+    "recovery": 60,
+    "damage": 20,
+    "stamina": 22,
+    "poise": 25,
+    "hitStopMs": 90,
+    "hitbox": {
+     "shape": "ring",
+     "inner": 0.3,
+     "outer": 3,
+     "forward": 0
+    },
+    "multi": 8,
+    "shake": "heavy",
+    "sfx": [
+     "chord_slam"
+    ],
+    "vfx": [
+     "ring_echo"
+    ],
+    "loudness": 6
+   },
+   "charged": {
+    "startup": 20,
+    "activeStart": 20,
+    "activeEnd": 26,
+    "recovery": 50,
+    "damage": 32,
+    "stamina": 26,
+    "poise": 20,
+    "hitStopMs": 110,
+    "projectile": {
+     "kind": "note",
+     "speed": 24,
+     "range": 22,
+     "radius": 0.3,
+     "offsetY": 1.25,
+     "gravity": 0,
+     "sfxLaunch": "chord_slam",
+     "sfxHit": "hit_flesh",
+     "vfxHit": "impact_sparks",
+     "shake": "heavy"
+    },
+    "shake": "heavy",
+    "sfx": [
+     "chord_slam"
+    ],
+    "vfx": [
+     "shock_small"
+    ],
+    "loudness": 5
+   }
+  }
  }
 ]

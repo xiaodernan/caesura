@@ -94,7 +94,7 @@ const ENEMY_ARCHETYPES = new Set(['basic', 'heavy', 'ranged', 'assassin', 'suppo
 const ATTR_KEYS = new Set(['str', 'dex', 'ton', 'vig', 'ovr', 'fis'])
 const BIOMES = new Set(['hub', 'forest', 'ruins', 'underground', 'camp', 'dungeon', 'boss_arena'])
 const HITBOX_SHAPES = new Set(['cone', 'sphere', 'ring'])
-const PROJECTILE_KINDS = new Set(['spear', 'note', 'shard'])
+const PROJECTILE_KINDS = new Set(['spear', 'note', 'shard', 'arrow'])
 const REACTIONS = new Set(['R0', 'R1', 'R2', 'R3', 'R4', 'R5'])
 // CameraRig.SHAKE_TABLE 里**数据可指**的行（hurt/parry/execute 由代码按情境直接发，不经帧表 ⇒ 登记为子集豁免）；
 // 'stomp' 自 KI-051 起是 §10「驼鼓踏地」的 worldShake 行
@@ -112,7 +112,7 @@ const PSEUDO_ACTIONS = new Set(['chase', 'backstep', 'hold'])
 /** WeaponData 的字段全集（KI-047）：每一格都必须有真实消费方，多余键一律 ERROR——
  *  曾有的 `atkBase` 就是从这里出去的：底数住在 movesets.json 的帧表，武器表再带一份
  *  "看起来是价格"的数，KI-039 的错价才躲过了整轮验收。 */
-const WEAPON_FIELDS = new Set(['id', 'nameKey', 'archetype', 'movesetId', 'scaling', 'swingTag', 'skill', 'poiseMul', 'noiseMul', 'stealthKillFrac', 'heavyAlertBackstab'])
+const WEAPON_FIELDS = new Set(['id', 'nameKey', 'archetype', 'movesetId', 'scaling', 'swingTag', 'skill', 'poiseMul', 'noiseMul', 'stealthKillFrac', 'heavyAlertBackstab', 'falloff'])
 /** 出身被动的类型白名单（KI-031③）：加一种 kind = 承诺带来一个消费者，反向探针守着那句话 */
 const ORIGIN_PASSIVE_KINDS = ['lootStackBonus']
 /** 营地商店那三张字段白名单（KI-055）：主人分别是 ShopData / ShopSell / ShopStockEntry */
@@ -138,7 +138,7 @@ const STATUS_FIELDS = {
 const MOVEMENT_ACTIONS = new Set(['weaponSkill', 'weaponSkillB'])
 /** 里程碑 grant 的字段白名单：`schema.ts > MilestoneGrant`。每一项都必须有消费方
  *  （`Progression.derive` 或 mods 出口）；语义写在那条声明自己的注释里，这里不再抄一份。 */
-export const GRANT_FIELDS = ['loadFlat', 'parryWhiffMs', 'execMulPct', 'overdriveFlat', 'corruptionStayPct']
+export const GRANT_FIELDS = ['loadFlat', 'parryWhiffMs', 'execMulPct', 'overdriveFlat', 'corruptionStayPct', 'bowForkBranches']
 /** 战技帧的字段白名单： MovementFrame（schema.ts）。多一个字段就必须多一个消费方 */
 const MOVE_FRAME_FIELDS = ['startup', 'activeStart', 'activeEnd', 'recovery', 'poise', 'hitStopMs', 'hitbox', 'multi', 'shake', 'sfx', 'vfx', 'loudness']
 /** 战技每级的数值字段： MovementLevel。同样一字段一消费口 */
@@ -525,6 +525,18 @@ function projectile(file, where, p) {
       else report.error(f.file, f.where, f.msg)
     }
   }
+  // §4.4 泛音弓分叉四件套（KI-037）：每一格都只在 launchPlayerProjectile 里有读者，
+  // 所以"写了没人读的组合"要在这里当场红，而不是等它变成一份看起来像机制的数据。
+  if (p.spreadDeg !== undefined) report.num(file, `${where}.spreadDeg`, p.spreadDeg, { min: 0, max: 180, name: 'spreadDeg' })
+  if (p.branchDamageMul !== undefined) report.num(file, `${where}.branchDamageMul`, p.branchDamageMul, { min: 0, max: 1, name: 'branchDamageMul' })
+  if (p.moveSpreadDeg !== undefined) report.num(file, `${where}.moveSpreadDeg`, p.moveSpreadDeg, { min: 0, max: 45, name: 'moveSpreadDeg' })
+  if (p.assistConeDeg !== undefined) report.num(file, `${where}.assistConeDeg`, p.assistConeDeg, { min: 1, max: 180, name: 'assistConeDeg' })
+  // 分叉的"形"（spreadDeg）与"价"（branchDamageMul）都挂在连发上：没有 burst 就没有第几枝
+  if ((p.spreadDeg !== undefined || p.branchDamageMul !== undefined) && p.burst === undefined) {
+    report.error(file, `${where}.spreadDeg`, '分叉角/枝伤写在单发弹道上：没有 burst.count 就没有"第几枝"，这两格没有读者')
+  } else if (p.spreadDeg !== undefined && isObj(p.burst) && isNum(p.burst.count) && p.burst.count < 2) {
+    report.error(file, `${where}.spreadDeg`, `burst.count=${p.burst.count}：只发一发就无所谓分叉，spreadDeg 没有读者`)
+  }
 }
 
 /** 帧数据：必填 + 帧序 + 可选项。返回 frames.next（供调用方做引用校验）。 */
@@ -737,6 +749,26 @@ function validateWeapons(movesetIds) {
     if (wp.heavyAlertBackstab !== undefined && typeof wp.heavyAlertBackstab !== 'boolean') report.error(file, `${w}.heavyAlertBackstab`, '必须是布尔')
     if (wp.poiseMul !== undefined) report.num(file, `${w}.poiseMul`, wp.poiseMul, { min: 0, name: 'poiseMul' })
     if (wp.noiseMul !== undefined) report.num(file, `${w}.noiseMul`, wp.noiseMul, { min: 0, name: 'noiseMul' })
+    // §4.4 距离衰减档位（武器级，KI-037）：由近及远逐档查，只许越远越轻
+    if (wp.falloff !== undefined) {
+      if (!isArr(wp.falloff) || wp.falloff.length === 0) report.error(file, `${w}.falloff`, '必须是非空数组（一档都没有＝没有衰减，写它干什么）')
+      else {
+        let prev = -1
+        for (const [i, b] of wp.falloff.entries()) {
+          const bw = `${w}.falloff[${i}]`
+          if (!isObj(b)) { report.error(file, bw, '必须是 {beyond, mul}'); continue }
+          for (const k of Object.keys(b)) if (k !== 'beyond' && k !== 'mul') report.error(file, `${bw}.${k}`, '不认的字段（本档只有 beyond/mul）')
+          const okB = report.num(file, `${bw}.beyond`, b.beyond, { min: 0, name: 'beyond' })
+          const okM = report.num(file, `${bw}.mul`, b.mul, { min: 0, max: 1, name: 'mul' })
+          if (okB && !(b.beyond > prev)) report.error(file, `${bw}.beyond`, `falloff.beyond 必须严格递增（第 ${i} 档 ${b.beyond} <= 前一档 ${prev}）`)
+          if (okB) prev = b.beyond
+          const prevMul = isObj(wp.falloff[i - 1]) ? wp.falloff[i - 1].mul : undefined
+          if (okM && isNum(prevMul) && !(b.mul < prevMul)) {
+            report.error(file, `${bw}.mul`, `falloff.mul 必须随距离递减（第 ${i} 档 ${b.mul} 不轻于前一档 ${prevMul}）`)
+          }
+        }
+      }
+    }
   })
   return ids
 }

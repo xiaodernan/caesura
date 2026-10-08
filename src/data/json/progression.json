@@ -126,7 +126,7 @@
     "ovr": 4,
     "fis": 4
    },
-   "weaponId": "wp_tuning_sword",
+   "weaponId": "wp_overtone_bow",
    "gearIds": [
     "ar_mutewrap_helm",
     "ar_scavenger_cuirass",
@@ -153,7 +153,7 @@
     "ovr": 4,
     "fis": 5
    },
-   "weaponId": "wp_tuning_sword",
+   "weaponId": "wp_tuningfork_staff",
    "gearIds": [
     "ar_choir_hood",
     "ar_scavenger_cuirass",
@@ -689,6 +689,7 @@
    "id": "ms_bow_split",
    "label": "满弓分叉 2→3（若用弓）；处决伤害 +5%",
    "grant": {
+    "bowForkBranches": 1,
     "execMulPct": 5
    }
   },

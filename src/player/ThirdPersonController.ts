@@ -161,6 +161,11 @@ export class PlayerController {
   private skillRamp = new Map<string, number>()
   /** 本 tick 的相对移动输入（战技位移的方向源）。刻意缓存而不是把 Input 传进 tryStartAction：出招入口保持一个签名 */
   private moveIntent = { x: 0, y: 0 }
+  /**
+   * §4.4 泛音弓「移动中散布 +4°」的判据：这一 tick 有没有在推摇杆/方向键。
+   * 0.5 与输入层判疾跑的那条线同源（`ThirdPersonController.update` 里 sprinting 的门）。
+   */
+  get moving(): boolean { return Math.hypot(this.moveIntent.x, this.moveIntent.y) > 0.5 }
 
   constructor(public base: PlayerBaseData, public weapon: WeaponData, public moveset: MovesetData) {
     this.stats = playerStatsFrom(base)
