@@ -235,7 +235,7 @@ src/
 > 当成了清单读，于是"表里有 `ai/Navigation.ts`"被理解成"项目里有导航"。这一节把两边对上：
 > **A = 文件名没落但职责落了（换了载体）**，**B = 文件名和职责都没落（真缺口）**，
 > **C = 真树里有、这张表没写（后来长出来的）**。可复跑的事实来源只有一条命令：`find src -name '*.ts' | sort`
-> （本轮 **72 个文件**（KI-058 之后；本节初稿核的是 68）：其中 `src/data/json/` 那些 `.json` 不计，本闸门只核 `.ts`）。分层与依赖箭头没有因为对账而改变，但**有两层是规划外新增的**，见 C 表的 `input/`。
+> （本轮 **87 个文件**（2026-10-09，KI-112 之后实测；KI-058 时是 72、本节初稿核的是 68——这一路的增量多数来自并行批次，各自在那一批里登记过）：其中 `src/data/json/` 那些 `.json` 不计，本闸门只核 `.ts`）。分层与依赖箭头没有因为对账而改变，但**有两层是规划外新增的**，见 C 表的 `input/`。
 
 **A. 换了载体：表里的路径不存在，职责确实每天都在跑**
 
@@ -293,6 +293,7 @@ src/
 | `world/WallGreybox.ts` | KI-014②a：遮挡必须看得见 |
 | `world/Cinematics.ts` | **§2 规划里 `world/cinematics` 的「逻辑半」**：规划那一行写的是「数据驱动镜头序列（关键帧相机路径 + 动画 clip 触发，JSON 描述）」，而本机没有真几何与相机，所以先落能诚实兑现的那一半——**哪一条在跑、还剩多久、该不该夺输入**（数据是 `data/json/cinematics.json`，判据住 `scripts/cinematic-rules.mjs`：单条 ≤25s / 全清单 ≤180s）。**运行时那条腿**：`main.ts` 接了四处——实例、每帧 `advance(dt*1000)`、输入门（`input.enabled = … && !cinematics.inputLocked`）、以及**两类触发**：**新开局**放开场（`if (!slot) cinematics.start('CINE_OPEN')`；读档不放——开场是"第一次醒来"）、**进 Boss 区**放出场（`BOSS_INTRO_BY_REGION`：沉唱堂→`CINE_OST_INTRO` / 未竟厅→`CINE_HERSIL_INTRO` / 无耳深窖→`CINE_MYRIAD_INTRO`，**一局一次**、读档不重放）、**主 Boss 倒下**放胜利（`boss.defeated` 载荷认人：`p.dataId === 'en_hersil'` ⇒ `CINE_WIN`；**不是"任何 Boss 倒下都放"**——§6 那条的镜头语言是「管风琴过载熄灭」，那是未竟厅那一战）。**仍欠**：① **剧情/结局那 5 条**的触发点（对话节点 / 终局分支；Boss 出场那 3 条已挂在"进区域"上，见下）；② 镜头轨道与字幕时序（要真几何与相机 ⇒ KI-008 / KI-010）；③ `narrative.md §6` 提过却从未定义取值的 `interruptPolicy`。守卫 `tests/flow/cinematics-player.test.ts`（**10 条**，含"接了哪四处 / 其余 9 条一个都没接"的源门）与 `cinematic-budget.test.ts`（9 条） |
 | `tools/DebugPanel.ts` | §2 的 `tools/` 只列了四块面板，没列它们**共用的外壳**。KI-058 补后三块时发现三份"钉在屏幕角落、按 F 键开合、逐 tick 重画文本"的代码会各写一遍且各不相同（第一版的 F1 就是漏了 `pointer-events:none` 的那个）⇒ 抽成一份 `DebugPanelSpec`：面板只交 `{ key, label, anchor, text() }`，DOM 与按键监听归它，读数一律由组合根（`main.ts`，且只在 `import.meta.env.DEV`）以闭包注入。规划外还多了一条分工：`tools/` 里**只有这一个文件碰 DOM**，四块面板各自是纯文本产线（只收读数闭包、只吐字符串），所以 headless 可测（`tests/flow/debug-panels.test.ts` 27 条里只有外壳那 4 条需要一份最小 DOM 替身） |
+| `settings/GameplaySettings.ts` ＋ **整个 `settings/` 目录** | 需求 §46「玩法/辅助」那一格第一次有数据形状（KI-112 第一腿）。§2 那张定表里 `settings/` 从未存在——设置此前只零散落在音频音量三轴与 UI 局部状态里，没有"一份设置对象入档"这件事。现形状：五格 `{bufferMs, frameAssist, shakeScale, rumbleScale, damageScale}`，每格都有规格出处与一个真实读者（`core/Input.ts` 的缓冲窗＋+1 帧辅助、`player/CameraRig.ts.shakeIntensity`、`input/Haptics.ts.scale`（幅值乘、Gamepad 顶格 1 处截断、**时长不乘**）、`combat/CombatManager.ts.damageScale`（只乘玩家**收到**的那一份））；`clampGameplaySettings` 是**读档路径上唯一被信任的入口**（手改的数越界夹取、缺格回默认、NaN 回默认）。存档 v12→v13 由具名 `migrateV12toV13` 承接，而迁移**不写** gameplay 块 ⇒ 老档 `restore(undefined)` 原地 no-op（§78「留空是如实」，不假装重置）。守卫 `tests/flow/settings-persistence.test.ts`（21 条）＋变异臂 7/7（判据与红数见 KNOWN_ISSUES 的 KI-112 行）。**仍欠**：UI 入口（`ui/Stakerite.ts` 的「操作」页）与按键映射数据化 = KI-112 第二腿 |
 
 **这一节往后的读法**（防止又漂回去）：需要"某个能力实现在哪"时，**先读 KNOWN_ISSUES 的状态表与 §2.1，再读这张目录表**；
 新模块交付时必须在 A/B/C 三张表之一加一行，改 `src/` 而不动本节 = 本节的日期就该更新。
