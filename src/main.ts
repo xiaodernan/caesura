@@ -6,11 +6,11 @@ import { Input } from '@/core/Input'
 import { RhythmClock } from '@/core/RhythmClock'
 import { registry } from '@/core/Registry'
 import { registerGameData, playerBase, regions, worldstate, dialogues, quests as questTable, worldStates as worldStateDefs, cinematics as cinematicRows } from '@/data'
-import type { ItemData, MovesetData, NpcData, RegionData, WeaponData } from '@/data/schema'
+import type { ItemData, MovesetData, NpcData, RegionData, Vec3, WeaponData } from '@/data/schema'
 import { createArena } from '@/world/PlaceholderArena'
 import { activeWeather, questTrackedFlags } from '@/world/WeatherSwitch'
 import { ambienceGain, concentrationMul, corruptionMul, weatherRowOf } from '@/world/WeatherEffects'
-import { lightingLights, lightingRow } from '@/world/Lighting'
+import { blendLightRigs, lightingLights, lightingRow } from '@/world/Lighting'
 import { SceneLights } from '@/world/SceneLights'
 import { Cinematics } from '@/world/Cinematics'
 import { StreamingSystem, chunkKeyOf, type ChunkState } from '@/world/Streaming'
@@ -313,12 +313,32 @@ const applyWeather = (rg: RegionData | null): void => {
  */
 const applyLighting = (rg: RegionData | null): void => {
   grade.setLighting(lightingRow(rg?.lightingPreset ?? null))
-  /*
-   * §37 第二腿：三层光。point 挂在该区**第一个 landmark** 上（§8 那句「局部 point（火/钟/矿）」的
-   * 落点——今天每区第一个 landmark 都是它的主题地标：骨腔／石冢／断祭坛／石桥／第一口钟／矿缝／管风琴）。
-   * 文档没说 point 挂哪，这是实施期裁决，理由记在 `scripts/lighting-rules.mjs > LIGHT_RULINGS`。
-   */
-  lights.setRig(lightingLights(lightingRow(rg?.lightingPreset ?? null)), rg?.landmarks[0]?.pos ?? null)
+}
+
+/**
+ * §2 跨区过渡带（art-direction §2：「色板按 70/30→30/70 线性混合，过渡长度 ≥ 150m，禁止硬切」）。
+ *
+ * 与 `applyLighting` 分开两路，因为**两者的节拍不同**：那一只在换区那一刻读一次，这一只每帧读——
+ * 过渡带是"走过去的"，不是"跨过去的那一帧"。读数是 `streaming.paletteBlendAt(pos)`：
+ * 站在边界上 50/50，往自己区里走 150m 退到 100% 自己（带子半宽的裁决见 `TRANSITION_HALF_M`）。
+ *
+ * 每帧算但不每帧写：`ColorGrade.apply()` 对 filter 字符串与雾色各有一条短路，
+ * `SceneLights` 改的是灯的参数而不是 DOM。所以这条路在带子外几乎是免费的。
+ */
+const syncLightingBlend = (pos: Vec3): void => {
+  const blend = streaming.paletteBlendAt(pos)
+  const rowA = lightingRow(streaming.regionAt(pos)?.lightingPreset ?? null)
+  const rowB = blend ? lightingRow(blend.to.lightingPreset) : null
+  const w = blend ? blend.t : 0
+  grade.setLightingBlend(rowA, rowB, w)
+  // 三层光那一侧：一侧读不出就用另一侧（与 `blendLightingSnapshot` 同一条口径，不猜中间色）
+  const rigA = lightingLights(rowA)
+  const rigB = lightingLights(rowB)
+  // point 挂在该区**第一个 landmark** 上（§8 那句「局部 point（火/钟/矿）」的落点：骨腔／石冢／断祭坛／
+  // 石桥／第一口钟／矿缝／管风琴）。三层光 Rig 全库只此一个写方，每帧读一次（带子外几乎免费）；
+  // 文档没说 point 挂哪，这是实施期裁决，理由记在 `scripts/lighting-rules.mjs > LIGHT_RULINGS`。
+  const anchor = streaming.regionAt(pos)?.landmarks[0]?.pos ?? null
+  lights.setRig(rigA && rigB ? blendLightRigs(rigA, rigB, w) : rigA ?? rigB, anchor)
 }
 applyLighting(homeRegion ?? null)
 // 修钟那一刻人往往就站在那口钟旁边：旗标一广播就重算，否则天气要等下一次跨区才跟得上（IP_SEED §7 说的那件回报）。
@@ -578,6 +598,8 @@ const core = {
       combat.occlusion.syncAuthored(here ?? null)
       nav.syncAuthored(here ?? null)
     }
+    // §2 跨区过渡带：每帧算一次（带子外几乎免费，见 syncLightingBlend 的注）
+    syncLightingBlend(player.pos)
     if (here && here.id !== shownRegion) {
       // §2.1 的区域网格表：进区域就换拍（深窖=只有 60BPM 心跳）。Boss 的私有时钟叠在它之上，
       // 所以这里写的是 home，AISystem.syncClock 决定当前用的是谁的拍。

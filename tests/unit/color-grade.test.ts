@@ -3,6 +3,8 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import * as THREE from 'three'
 import { ColorGrade, gradeFilter } from '@/vfx/ColorGrade'
+import { blendLightingSnapshot, lightingFogRgb, lightingRow, lightingSnapshot, rgbToHex } from '@/world/Lighting'
+import type { LightingRow } from '@/data/schema'
 import { regions, weatherRows } from '@/data'
 import type { WeatherRow } from '@/data/schema'
 import { WEATHER_BASELINE_ID } from '../../scripts/weather-rules.mjs'
@@ -171,6 +173,39 @@ describe('仲裁者：天气与失谐各自改输入，动手的只有 apply() �
     expect(fog.density).toBeCloseTo(0.008, 6)
     grade.setWeather(null)
     expect(grade.fogDensity()).toBe(0.008)
+  })
+})
+
+describe('§2 过渡带：setLightingBlend 把两行按 t 混成一份雾色写下去', () => {
+  const rowA = lightingRow('lp_resthold')!
+  const rowB = lightingRow('lp_drowned_choir')! // 深窖：sky 省略、dark 不同 ⇒ 雾色与休垒有差
+  const expectFog = (a: LightingRow | null, b: LightingRow | null, t: number): string =>
+    rgbToHex(blendLightingSnapshot(lightingSnapshot(a), lightingSnapshot(b), t).fogRgb!).slice(1)
+
+  it('t=0/1 各落到一端，0.5 正是 blendLightingSnapshot 那只混出来的色', () => {
+    const { scene, fog } = fogScene(0.028)
+    const grade = new ColorGrade(scene, fakeCanvas().el)
+    grade.setLightingBlend(rowA, rowB, 0)
+    expect(fog.color.getHexString()).toBe(expectFog(rowA, rowB, 0))
+    grade.setLightingBlend(rowA, rowB, 1)
+    expect(fog.color.getHexString()).toBe(expectFog(rowA, rowB, 1))
+    grade.setLightingBlend(rowA, rowB, 0.5)
+    const mid = fog.color.getHexString()
+    expect(mid).toBe(expectFog(rowA, rowB, 0.5))
+    // 真的混了：中间色既不是 A 也不是 B（否则 blend 是假的）
+    expect(mid).not.toBe(expectFog(rowA, rowB, 0))
+    expect(mid).not.toBe(expectFog(rowA, rowB, 1))
+  })
+
+  it('一侧 null ⇒ 落到有的那一侧；两侧都 null ⇒ 不写雾色（不猜中间色）', () => {
+    const { scene, fog } = fogScene(0.028)
+    const grade = new ColorGrade(scene, fakeCanvas().el)
+    grade.setLightingBlend(rowA, null, 0.5)
+    expect(fog.color.getHexString()).toBe(rgbToHex(lightingFogRgb(rowA)!).slice(1))
+    grade.setLightingBlend(null, rowB, 0.5)
+    expect(fog.color.getHexString()).toBe(rgbToHex(lightingFogRgb(rowB)!).slice(1))
+    grade.setLightingBlend(null, null, 0.5)
+    expect(fog.color.getHexString(), '两侧都读不出 ⇒ 保持现状').toBe(rgbToHex(lightingFogRgb(rowB)!).slice(1))
   })
 })
 

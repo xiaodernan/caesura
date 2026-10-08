@@ -8,6 +8,8 @@ import { registry } from '@/core/Registry'
 import { registerGameData, regions } from '@/data'
 import type { RegionData } from '@/data/schema'
 import { PRIORITY, StreamingSystem } from '@/world/Streaming'
+import { TRANSITION_HALF_M, TRANSITION_SEAM_W } from '@/world/Lighting'
+import { boxContacts } from '../../scripts/world-graph-rules.mjs'
 
 registerGameData()
 
@@ -327,5 +329,94 @@ describe('chunk streaming rules (technical-architecture §5.5)', () => {
     t = settle(s, t, { x: 380, y: 0, z: 100 })
     s.update(t + 400, { x: 0, y: 0, z: 0 })
     expect(s.isExplored({ x: 380, y: 0, z: 100 })).toBe(true)
+  })
+})
+
+/** 借 `boxContacts` 的 span（重叠区间）在 `a` 内、贴着接触处造一个探针：相贴轴退 1m 进 a，重叠轴取区间中点 */
+function probeNearContact(a: RegionData, c: { span: { x: [number, number]; y: [number, number]; z: [number, number] } }): { x: number; y: number; z: number } {
+  const b = a.bounds
+  const range = { x: [b.minX, b.maxX], y: [b.minY, b.maxY], z: [b.minZ, b.maxZ] } as const
+  const pos = {} as { x: number; y: number; z: number }
+  for (const ax of ['x', 'y', 'z'] as const) {
+    const [lo, hi] = c.span[ax]
+    const [aMin, aMax] = range[ax]
+    // 相贴轴（span 退化成一点）朝 a 的内侧退 1m；重叠轴取区间中点（必在 a 内）
+    pos[ax] = Math.abs(hi - lo) < 1e-6
+      ? (Math.abs(aMax - lo) < Math.abs(aMin - lo) ? lo - 1 : lo + 1)
+      : (lo + hi) / 2
+  }
+  return pos
+}
+
+describe('§2 跨区过渡带：paletteBlendAt 只认共面接缝，权重从接缝的 0.5 退到带缘的 0', () => {
+  // 两个共面邻区：A 在 x<0、B 在 x≥0，接缝 x=0，y/z 大幅重叠
+  const A = syntheticRegion({ id: 'rg_a', bounds: { minX: -400, maxX: 0, minY: 0, maxY: 48, minZ: -100, maxZ: 100 } })
+  const B = syntheticRegion({ id: 'rg_b', bounds: { minX: 0, maxX: 400, minY: 0, maxY: 48, minZ: -100, maxZ: 100 } })
+  const sys = new StreamingSystem([A, B])
+
+  it('接缝上 0.5、带缘 0、带外 null：权重 = SEAM_W*(1 - dist/HALF)', () => {
+    const d70 = TRANSITION_HALF_M * (1 - 0.3 / TRANSITION_SEAM_W) // 邻居占 30% 的落点（今天 = 80m）
+    // 站在接缝（x=0 归 B，因为 A 是 x<0）：两区各半
+    const seam = sys.paletteBlendAt({ x: 0, y: 24, z: 0 })!
+    expect(seam.from.id).toBe('rg_b')
+    expect(seam.to.id).toBe('rg_a')
+    expect(seam.t).toBeCloseTo(TRANSITION_SEAM_W, 10)
+    // 走进 B 到 70/30 落点：邻居 A 占 30%
+    expect(sys.paletteBlendAt({ x: d70, y: 24, z: 0 })!.t).toBeCloseTo(0.3, 10)
+    // 带子外缘（离接缝 HALF）：全是自己，t=0
+    expect(sys.paletteBlendAt({ x: TRANSITION_HALF_M, y: 24, z: 0 })!.t).toBeCloseTo(0, 10)
+    // A 侧对称：from/to 互换，权重同构
+    const inA = sys.paletteBlendAt({ x: -d70, y: 24, z: 0 })!
+    expect(inA.from.id).toBe('rg_a')
+    expect(inA.to.id).toBe('rg_b')
+    expect(inA.t).toBeCloseTo(0.3, 10)
+  })
+
+  it('离所有接缝都超过半宽 ⇒ null（不混合，读 regionAt 就够）', () => {
+    expect(sys.paletteBlendAt({ x: -(TRANSITION_HALF_M + 150), y: 24, z: 0 })).toBeNull() // A 深处（带宽之外）
+    expect(sys.paletteBlendAt({ x: TRANSITION_HALF_M + 150, y: 24, z: 0 })).toBeNull() // B 深处
+    expect(sys.paletteBlendAt({ x: 9999, y: 24, z: 0 })).toBeNull() // 哪个区都不是
+  })
+
+  it('只朝最近的那个邻区混；平手按行序（确定性，不靠 Map 迭代顺序）', () => {
+    // M 被 E（x 相接）与 N（z 相接）两面夹住
+    const M = syntheticRegion({ id: 'rg_m', bounds: { minX: 0, maxX: 100, minY: 0, maxY: 48, minZ: 0, maxZ: 100 } })
+    const E = syntheticRegion({ id: 'rg_e', bounds: { minX: 100, maxX: 300, minY: 0, maxY: 48, minZ: 0, maxZ: 100 } })
+    const N = syntheticRegion({ id: 'rg_n', bounds: { minX: 0, maxX: 100, minY: 0, maxY: 48, minZ: 100, maxZ: 300 } })
+    const s = new StreamingSystem([M, E, N])
+    // 靠近 E 的缝（dist_E=10 < dist_N=50）⇒ 混 E
+    expect(s.paletteBlendAt({ x: 90, y: 24, z: 50 })!.to.id).toBe('rg_e')
+    // 平手（dist_E=dist_N=5）⇒ 行序在前的 E 赢
+    expect(s.paletteBlendAt({ x: 95, y: 24, z: 95 })!.to.id).toBe('rg_e')
+  })
+
+  it('共棱/共点不算接缝：那种"接壤"没有一条走得过去的缝', () => {
+    // P 与 Q 只共一条棱（x=100 且 y=48 同时相贴，z 重叠）
+    const P = syntheticRegion({ id: 'rg_p', bounds: { minX: 0, maxX: 100, minY: 0, maxY: 48, minZ: 0, maxZ: 100 } })
+    const Q = syntheticRegion({ id: 'rg_q', bounds: { minX: 100, maxX: 200, minY: 48, maxY: 96, minZ: 0, maxZ: 100 } })
+    expect(new StreamingSystem([P, Q]).paletteBlendAt({ x: 95, y: 47, z: 50 }), '共棱不该有过渡带').toBeNull()
+    // 共点（三轴同时相贴）更不算
+    const R = syntheticRegion({ id: 'rg_r', bounds: { minX: 100, maxX: 200, minY: 48, maxY: 96, minZ: 100, maxZ: 200 } })
+    expect(new StreamingSystem([P, R]).paletteBlendAt({ x: 95, y: 47, z: 95 }), '共点不该有过渡带').toBeNull()
+  })
+
+  it('交叉对账：paletteBlendAt 的邻居集 ⇄ boxContacts 的 face 集，是同一份名单', () => {
+    const sys = new StreamingSystem(regions)
+    const contacts = boxContacts(regions)
+    // 每条共面接缝：站在 a 里贴着缝撒一点，必混向 b（不漏任何一条面）
+    for (const c of contacts.filter((k) => k.kind === 'face')) {
+      const a = regions.find((r) => r.id === c.a)!
+      const probe = probeNearContact(a, c)
+      const bl = sys.paletteBlendAt(probe)
+      expect(bl, `共面接缝 ${c.a}↔${c.b} 上应发生混合`).not.toBeNull()
+      expect(bl!.from.id).toBe(c.a)
+      expect(bl!.to.id).toBe(c.b)
+    }
+    // 每条共棱/共点/共体：贴着接触处撒一点，绝不混向那个非面邻居（不多认任何一条）
+    for (const c of contacts.filter((k) => k.kind !== 'face')) {
+      const a = regions.find((r) => r.id === c.a)!
+      const probe = probeNearContact(a, c)
+      expect(sys.paletteBlendAt(probe)?.to?.id, `共${c.kind === 'edge' ? '棱' : '体/点'} ${c.a}↔${c.b} 不该有过渡带`).not.toBe(c.b)
+    }
   })
 })

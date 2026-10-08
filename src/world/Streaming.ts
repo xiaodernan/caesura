@@ -6,7 +6,25 @@
 import { bus } from '@/core/EventBus'
 import type { RegionData, Vec3 } from '@/data/schema'
 
+import { TRANSITION_HALF_M, TRANSITION_SEAM_W } from './Lighting'
+
 export type ChunkState = 'unloaded' | 'preloading' | 'resident' | 'active'
+
+/** §2 跨区过渡带的读数（`StreamingSystem.paletteBlendAt`） */
+export interface PaletteBlend {
+  /** 玩家此刻所在的那一区（`regionAt` 的答案） */
+  from: RegionData
+  /** 带子另一侧的那个邻区 */
+  to: RegionData
+  /** 邻居 `to` 的占比：0 = 带子外缘（全是 `from`），`TRANSITION_SEAM_W` = 站在接缝上（两区各半） */
+  t: number
+}
+
+/**
+ * 两个区的 AABB 相贴判定容差。0 就够（今天的 bounds 全是精确相接），留一点余量是为了
+ * 让手工改 bounds 时差 1e-9 不至于让一条过渡带静默消失——那种消失没有任何东西会报。
+ */
+const REGION_ADJACENCY_EPS = 1e-6
 
 export interface StreamingOptions {
   /** ring（cell 单位的 Chebyshev 距离）内为玩法激活格 */
@@ -108,6 +126,36 @@ export class StreamingSystem {
   regionAt(pos: Vec3): RegionData | null {
     for (const r of this.regions) if (containsPos(r, pos)) return r
     return null
+  }
+
+  /**
+   * §2 跨区过渡带：这一个坐标上的**色板混合**（`{ from, to, t }`）。
+   *
+   * 文档原句（art-direction §2）：「跨区过渡带（如钟坠院→深窖）色板按 70/30→30/70 线性混合，
+   * 过渡长度 ≥ 150m，禁止硬切」。落地口径见 `world/Lighting.ts > TRANSITION_HALF_M` 的裁决注：
+   * 带子以接缝为中线向两侧各探 200m，邻居权重从外缘 0 爬到接缝 0.5，于是 70/30 与 30/70 相距 160m。
+   *
+   * 三个必须讲清的口径：
+   * ① **只有共面接缝的区才参与**（AABB 恰一条轴相贴、另两条重叠，见 `borderDistance`）。隔着一整个区的两个地方
+   *    不该互相染色——那是"隔山配色"，不是过渡带。
+   * ② **只朝最近的那一个邻区混**。同时贴两条边界时（例如休垒的东北角），混两个邻居会得到第三个
+   *    谁也没调过的颜色；取最近的那个，平手按 `regions.json` 的行序（确定性，不靠 Map 迭代顺序）。
+   * ③ 不在带子里（离每条边界都超过半宽）⇒ 返回 null = 不混合，读 `regionAt` 那一行就够。
+   */
+  paletteBlendAt(pos: Vec3): PaletteBlend | null {
+    const here = this.regionAt(pos)
+    if (!here) return null
+    let best: { to: RegionData; dist: number } | null = null
+    for (const other of this.regions) {
+      if (other.id === here.id) continue
+      const d = borderDistance(here, other, pos)
+      if (d === null || d > TRANSITION_HALF_M) continue
+      // 严格小于才替换：平手时保留行序在前的那个（确定性）
+      if (!best || d < best.dist) best = { to: other, dist: d }
+    }
+    if (!best) return null
+    // t = 邻居 `to` 的占比：接缝上 0.5（两区各半），带子外缘 0（全是 `from`）
+    return { from: here, to: best.to, t: TRANSITION_SEAM_W * (1 - best.dist / TRANSITION_HALF_M) }
   }
 
   /** 前置 flag 未满足的区域不参与流送（也就不可能被 spawn/渲染） */
@@ -368,6 +416,47 @@ interface Candidate extends Cell {
   ring: number
   dist: number
   priority: number
+}
+
+/**
+ * `pos` 到「`here` 与 `other` 共用那张边界面」的距离；两区不共面返回 null。
+ *
+ * 只在**共面接缝**上有定义：恰一条轴相贴（gap≈0）、另两条轴重叠。距离 = 到共用面的欧氏距离——
+ * 相贴轴量到接缝面的垂距，重叠轴量到重叠区间的距离（落在重叠里时该项为 0）。于是站在接缝上恒为 0，
+ * 往自己区里走距离线性增长，过渡带的权重才有单调的读数可依。共棱(2)/共点(3)/共体(0)都没有一张可跨的面，
+ * 一律返回 null——这与 `scripts/world-graph-rules.mjs > boxContacts` 的 `kind === 'face'` 是同一份名单。
+ */
+function borderDistance(here: RegionData, other: RegionData, pos: Vec3): number | null {
+  const a = here.bounds
+  const b = other.bounds
+  const axes: Array<['x' | 'y' | 'z', number, number, number, number]> = [
+    ['x', a.minX, a.maxX, b.minX, b.maxX],
+    ['y', a.minY, a.maxY, b.minY, b.maxY],
+    ['z', a.minZ, a.maxZ, b.minZ, b.maxZ],
+  ]
+  let sum = 0
+  let touching = 0
+  for (const [axis, aMin, aMax, bMin, bMax] of axes) {
+    const gap = Math.max(aMin, bMin) - Math.min(aMax, bMax) // <0 重叠 / ≈0 相贴 / >0 相隔
+    if (gap > REGION_ADJACENCY_EPS) return null // 这条轴上两区还隔着一段 ⇒ 根本不相邻
+    const v = pos[axis]
+    if (Math.abs(gap) <= REGION_ADJACENCY_EPS) {
+      // 相贴轴：接缝面就在这儿。玩家在自己那一侧，量到接缝面的垂距。
+      touching++
+      const seam = aMax <= bMin + REGION_ADJACENCY_EPS ? aMax : aMin
+      sum += (v - seam) ** 2
+    } else {
+      // 重叠轴：量到共享重叠区间的距离（落在重叠里时这项为 0）
+      const ovLo = Math.max(aMin, bMin)
+      const ovHi = Math.min(aMax, bMax)
+      if (v < ovLo) sum += (ovLo - v) ** 2
+      else if (v > ovHi) sum += (v - ovHi) ** 2
+    }
+  }
+  // 只有「恰一条轴相贴、另两条重叠」才是共面接缝（有面可跨）。共棱(2)/共点(3)/共体(0)都没有
+  // 一条走得过去的缝，一律不算相邻。
+  if (touching !== 1) return null
+  return Math.sqrt(sum)
 }
 
 function containsPos(r: RegionData, pos: Vec3): boolean {

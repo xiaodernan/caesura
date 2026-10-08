@@ -5,7 +5,7 @@ import * as THREE from 'three'
 import { lightingRows, regions } from '@/data'
 import type { LightingRow } from '@/data/schema'
 import { ColorGrade, gradeFilter } from '@/vfx/ColorGrade'
-import { FOG_DARK_SHARE, FOG_SKY_SHARE, hexToRgb, lightingFogRgb, lightingGrade, lightingLights, lightingRow, rgbToHex } from '@/world/Lighting'
+import { FOG_DARK_SHARE, FOG_SKY_SHARE, TRANSITION_HALF_M, TRANSITION_SEAM_W, blendLightRigs, blendLightingSnapshot, hexToRgb, lightingFogRgb, lightingGrade, lightingLights, lightingRow, lightingSnapshot, rgbToHex } from '@/world/Lighting'
 import { lightingFindings, LIGHT_RULINGS } from '../../scripts/lighting-rules.mjs'
 
 /**
@@ -338,12 +338,86 @@ describe('运行时腿：雾色与 LUT 真的被写，而且和天气、失谐�
     // 绘制层只认读数，自己不做判断：一个 hex 字面量都不该出现在 SceneLights 里
     const sceneSrc = readFileSync(root + 'src/world/SceneLights.ts', 'utf8')
     expect(sceneSrc, 'SceneLights 里出现了写死的 hex = 判断从读数层漏出来了').not.toMatch(/#[0-9a-fA-F]{3,6}/)
-    // main.ts 里三层光只被读一次（开局那次 applyLighting），且 SceneLights 建在 createArena 之后
-    expect((mainSrc.match(/lights\.setRig\(/g) ?? []).length, '三层光的写方只该在 applyLighting 里出现一次').toBe(1)
+    // main.ts 里三层光 Rig 只有一个写方（过渡带每帧混合的 syncLightingBlend），且 SceneLights 建在 createArena 之后
+    expect((mainSrc.match(/lights\.setRig\(/g) ?? []).length, '三层光的写方只该有一处（现在归每帧混合的 syncLightingBlend）').toBe(1)
     expect((mainSrc.match(/applyLighting\(/g) ?? []).length, '光照腿只该在开局与换区被读两处').toBe(2)
     expect(mainSrc.indexOf('new SceneLights(')).toBeGreaterThan(mainSrc.indexOf('createArena('))
     // 三层光只听区域：与雾色/LUT 同一条纪律，不听旗标与值域
     expect(mainSrc).not.toMatch(/bus\.on\('world\.flag'[^\n]*applyLighting/)
     expect(mainSrc).not.toMatch(/bus\.on\('world\.state'[^\n]*applyLighting/)
+  })
+})
+
+describe('§2 跨区过渡带：两份读数按 t 混合，常量自证 70/30↔30/70 的几何', () => {
+  const snapA = lightingSnapshot(lightingRow('lp_resthold')!)
+  const snapB = lightingSnapshot(lightingRow('lp_earless_deeps')!) // 深窖：keyIntensity=0，七行里最"僻"的一行
+  const rigA = lightingLights(lightingRow('lp_resthold'))!
+  const rigB = lightingLights(lightingRow('lp_earless_deeps'))!
+  // lerpHex 走 rgbToHex ⇒ 输出小写；lightingLights 保留 JSON 里的大写。hex 大小写与渲染无关，比对时统一小写。
+  type Rig = ReturnType<typeof blendLightRigs>
+  const lowHex = (r: Rig): Rig => ({
+    ...r,
+    hemiSky: r.hemiSky.toLowerCase(), hemiGround: r.hemiGround.toLowerCase(),
+    keyColor: r.keyColor.toLowerCase(), pointColor: r.pointColor.toLowerCase(),
+  })
+
+  it('blendLightingSnapshot：t=0 全是 a、t=1 全是 b，中间逐通道对得上', () => {
+    const s0 = blendLightingSnapshot(snapA, snapB, 0)
+    expect(s0.fogRgb).toEqual(snapA.fogRgb)
+    expect(s0.grade).toEqual(snapA.grade)
+    expect(lowHex(s0.lights!)).toEqual(lowHex(snapA.lights!))
+    const s1 = blendLightingSnapshot(snapA, snapB, 1)
+    expect(s1.fogRgb).toEqual(snapB.fogRgb)
+    expect(s1.grade).toEqual(snapB.grade)
+    expect(lowHex(s1.lights!)).toEqual(lowHex(snapB.lights!))
+    const mid = blendLightingSnapshot(snapA, snapB, 0.5)
+    // 雾色逐通道取中（lerpRgb 会 round，所以期望值也 round 一下）
+    expect(mid.fogRgb).toEqual([
+      Math.round((snapA.fogRgb![0] + snapB.fogRgb![0]) / 2),
+      Math.round((snapA.fogRgb![1] + snapB.fogRgb![1]) / 2),
+      Math.round((snapA.fogRgb![2] + snapB.fogRgb![2]) / 2),
+    ])
+    expect(mid.grade.saturateMul).toBeCloseTo((snapA.grade.saturateMul + snapB.grade.saturateMul) / 2, 10)
+    expect(mid.grade.contrastMul).toBeCloseTo((snapA.grade.contrastMul + snapB.grade.contrastMul) / 2, 10)
+    // keyIntensity 从 1.5 走到 0：0.5 处正是 0.75（"渐渐长出一盏灯"不是咔一下亮起）
+    expect(mid.lights!.keyIntensity).toBeCloseTo((rigA.keyIntensity + rigB.keyIntensity) / 2, 10)
+  })
+
+  it('一侧读不出 ⇒ 整体退回有的那一侧（雾与灯一起退，不猜中间色）', () => {
+    const empty = lightingSnapshot(null)
+    expect(empty.fogRgb).toBeNull()
+    expect(empty.lights).toBeNull()
+    expect(blendLightingSnapshot(snapA, empty, 0.5)).toEqual(snapA)
+    expect(blendLightingSnapshot(empty, snapA, 0.5)).toEqual(snapA)
+    // 两侧都空 ⇒ 还是空（不凭空造一个过渡）
+    expect(blendLightingSnapshot(empty, empty, 0.5)).toEqual(empty)
+  })
+
+  it('blendLightRigs：hex/强度/keyDir 都插，t 夹到 [0,1]（带子外不外插）', () => {
+    expect(lowHex(blendLightRigs(rigA, rigB, 0))).toEqual(lowHex(rigA))
+    expect(lowHex(blendLightRigs(rigA, rigB, 1))).toEqual(lowHex(rigB))
+    expect(lowHex(blendLightRigs(rigA, rigB, 2))).toEqual(lowHex(rigB)) // 夹到 1
+    expect(lowHex(blendLightRigs(rigA, rigB, -1))).toEqual(lowHex(rigA)) // 夹到 0
+    const mid = blendLightRigs(rigA, rigB, 0.5)
+    expect(mid.keyIntensity).toBeCloseTo(0.75, 10) // (1.5 + 0)/2
+    expect(mid.hemiIntensity).toBeCloseTo(rigA.hemiIntensity, 10) // 两行 hemi 同为 0.7 ⇒ 中点不变
+    for (let i = 0; i < 3; i++) {
+      expect(mid.keyDir[i]).toBeCloseTo((rigA.keyDir[i] + rigB.keyDir[i]) / 2, 10)
+    }
+  })
+
+  it('TRANSITION_HALF_M / TRANSITION_SEAM_W：把"≥150m、70/30↔30/70"算成自证的数', () => {
+    // 权重 = 邻居占比：带子外缘 0、接缝处 SEAM_W。t(d) = SEAM_W * (1 - d/HALF)
+    const w = (d: number): number => TRANSITION_SEAM_W * (1 - d / TRANSITION_HALF_M)
+    expect(TRANSITION_HALF_M).toBe(200)
+    expect(TRANSITION_SEAM_W).toBe(0.5)
+    expect(w(0)).toBeCloseTo(0.5, 10) // 站在接缝：两区各半
+    expect(w(80)).toBeCloseTo(0.3, 10) // 接缝内 80m ⇒ 邻居 30% ⇒ 70/30
+    expect(w(TRANSITION_HALF_M)).toBe(0) // 带子外缘：全是自己
+    // 反解：权重 0.3 与 0.7 各自落在接缝内外 80m，两点相距 160m ≥ 文档的 150m
+    const dOf = (target: number): number => TRANSITION_HALF_M * (1 - target / TRANSITION_SEAM_W)
+    expect(dOf(0.3)).toBeCloseTo(80, 10)
+    expect(dOf(0.7)).toBeCloseTo(-80, 10)
+    expect(Math.abs(dOf(0.3) - dOf(0.7))).toBeGreaterThanOrEqual(150)
   })
 })

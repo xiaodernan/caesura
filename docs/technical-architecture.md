@@ -131,7 +131,7 @@ src/
   world/
     Region.ts          区域定义（RegionData 驱动，§3）：Resthold/Whisperwode/
                        Fellcarillon/EarlessDeeps/BrokenbarCamp/DrownedChoir/UnfinishedHall
-    Streaming.ts       chunk 流送（§5.5）
+    Streaming.ts       chunk 流送（§5.5）＋跨区过渡带读数 `paletteBlendAt`（§5.9.47）
     Surface.ts         垂直分层落点查询 floorAt（RegionData.groundY + 区域闸门，§5.5）
     Interactables.ts   交互物运行时（§65「交互」）：焦点/半径查询、requiresFlag 判定、
                        setsFlag 解锁、oneWay 消耗；只发事件与结果，落地由胶水层做（§5.5）
@@ -2361,9 +2361,10 @@ Phase 1（核心战斗原型）＝ `core + player + combat + tools/CombatDebugge
 | `schema.ts > LightingRow` | 九格声明＋`RegionData.lightingPreset` 的书目注释 | 字段名单的主人（判据从源码现推） |
 | `src/world/Lighting.ts` | `hexToRgb`／`rgbToHex`／`lightingFogRgb`／`lightingGrade`／`lightingRow` | §8 那条 70/30 混合与 LUT 缺省中性 |
 | `src/world/Lighting.ts` | ＋`lightingLights()`（§37 第二腿） | 三层光读数：哪一列配哪一盏灯，缺省一律 0 |
+| `src/world/Lighting.ts` | ＋`lightingSnapshot()`／`blendLightingSnapshot()`／`blendLightRigs()`（§5.9.47 过渡带） | 两份已解析读数按 `t` 线性混合（雾/LUT/三层光一起） |
 | `src/world/SceneLights.ts` | `SceneLights.setRig()`／`dispose()` | §8 三层光的绘制层（hemi/key/point 三盏，建一次只改参数） |
-| `src/vfx/ColorGrade.ts` | `setLighting()` + `scene.fog.color` 的写方 + `gradeFilter` 第三条腿 | 雾色与每区饱和度/对比乘数 |
-| `src/main.ts` | `applyLighting()`：开局一次 + 换区一次 | 组合根喂名字，画面层不认识区域 |
+| `src/vfx/ColorGrade.ts` | `setLighting()`／`setLightingBlend()` + `scene.fog.color` 的写方 + `gradeFilter` 第三条腿 | 雾色与每区饱和度/对比乘数（过渡带走 `setLightingBlend`） |
+| `src/main.ts` | `applyLighting()`：开局一次 + 换区一次；每帧 `syncLightingBlend(pos)` | 组合根喂名字，画面层不认识区域 |
 | `scripts/lighting-rules.mjs`（+`.d.mts`） | 五色 hex 合法、乘数有界、**两侧引用都交代得清** | 这条链不能静默断 |
 
 **为什么落在 `ColorGrade` 身上而不是新开一个管理者**：那一层本来是「画面调色的唯一仲裁者」（KI-094①），而 §37 的雾色与 LUT 乘数说的就是同一块屏幕。`gradeFilter` 因此多一条**可选**腿（`l?: LightingReadings`），不传时既有调用点一个字节都不变——第三条腿是 §11 失谐、天气乘数、光照 LUT **三方相乘**，任何一方单独写都会把另两方盖掉（浏览器里只有最后一个写方说话）。三层光没有落在那里：它要真光源与真几何（KI-008），本批只兑现**可读的那两格**。
@@ -2415,7 +2416,21 @@ Phase 1（核心战斗原型）＝ `core + player + combat + tools/CombatDebugge
 
 **门禁（2026-10-09，工作树平面）**：`npx tsc --noEmit` **0 错**；`node scripts/validate-data.mjs` **0 ERROR / 2 WARN**（与 §5.9.45 之后同数，L1–L5 一条都没新增）；定向 **5 文件 93 条全绿**（`lighting` 15→29 / 新 `scene-lights` 8 / `arch-boundaries` / `color-grade` / `schema-vocab`）。
 
-**没做的**：①**跨区 70/30 色板过渡带**（§2 那句「钟坠院→深窖 70/30→30/70 线性混合，过渡长度 ≥ 150m，禁止硬切」）——它要的是「站在两区之间」这个空间概念，而今天的流送模型（`world/Streaming.ts > regionAt`）对任何一个坐标只回答一个区；这不是判据能补的，是数据模型的缺口（KI-008 / Phase 7）。②三层光的**强度调平**：今天七行里六行同值，偏离基线只有深窖一处，而那是文档的例外不是调平。③体积光仍只允许用于地标（§8 的预算句，属内容批）。④`lightingPreset` 与 `regions.json > palette` 仍旧并存且不互推（§5.9.42 记的那条欠账，合并要先有一次裁决）。⑤视口评审仍不可做（KI-010）——这一批给的全是数字读数，没有一句「看起来怎么样」。
+**没做的**：①~~**跨区 70/30 色板过渡带**~~ **已落（2026-10-09，§5.9.47）**——`Streaming.paletteBlendAt` + `blendLightRigs`，`regionAt` 之外多回答一个「站在两区之间」的邻居权重。②三层光的**强度调平**：今天七行里六行同值，偏离基线只有深窖一处，而那是文档的例外不是调平。③体积光仍只允许用于地标（§8 的预算句，属内容批）。④`lightingPreset` 与 `regions.json > palette` 仍旧并存且不互推（§5.9.42 记的那条欠账，合并要先有一次裁决）。⑤视口评审仍不可做（KI-010）——这一批给的全是数字读数，没有一句「看起来怎么样」。
+
+### 5.9.47 §2 跨区 70/30 过渡带第一次落地：`regionAt` 之外多回答一个「站在两区之间」的权重（KI-110，2026-10-09）
+
+**症状是一句从立项起就挂在 art-direction §2 的话**：「跨区过渡带（如钟坠院→深窖）色板按 70/30→30/70 线性混合，过渡长度 ≥ 150m，禁止硬切」。§5.9.42／§5.9.46 两批把雾色、LUT、三层光各自落了地，但都停在 `regionAt` 那个**离散**答案上——它对任一坐标只回答**一个**区，于是跨过一条边界时颜色是**一帧跳完**的，文档那句「禁止硬切」没有任何东西在守。
+
+**修法四腿，形状是「在离散答案旁边加一个连续读数」**：①`world/Streaming.ts > paletteBlendAt(pos)` 返回 `{ from, to, t }`——`from` 还是 `regionAt` 那一区，`t` 是邻居 `to` 的占比；带子外（离每条接缝都超过半宽）返回 null = 不混合。②`world/Lighting.ts` 新增 `lightingSnapshot(row)`（一行 → 已解析的雾色／LUT／三层光读数）与 `blendLightingSnapshot(a, b, t)`／`blendLightRigs(a, b, t)`：**混合发生在读数层而不是行层**——`sky` 那一格有三行故意省略，行层插值答不出「一边有天光一边没有」，而读数层每一样都已解析成数。③`vfx/ColorGrade.ts > setLightingBlend(a, b, t)` 收混合后的读数写雾色／LUT；`SceneLights` 那侧由组合根喂混合后的 Rig。④`main.ts` 每帧调一次 `syncLightingBlend(player.pos)`（带子外几乎免费：两条短路让它在不混色时一个字节都不写）。
+
+**五条裁决（文档没说的都在这里）**：**①带子以接缝为中线向两侧各探 200m**（`TRANSITION_HALF_M = 200`），邻居权重从带子外缘的 0 线性爬到接缝处的 `TRANSITION_SEAM_W = 0.5`。取 200 而不是 150：`t = 0.5·(1 − d/200)` 下，70/30 与 30/70 各落在接缝内外 **80m** 处，两点相距 **160m ≥ 150m**（文档那句「过渡长度 ≥ 150m」）；取 150 只隔 120m，凑不出那个长度。**②只有共面接缝才参与**（AABB 恰一条轴相贴、另两条重叠）——共棱／共点／共体没有一条走得过去的缝，`borderDistance` 对它们返回 null，与 `scripts/world-graph-rules.mjs > boxContacts` 的 `kind === 'face'` 是**同一份名单**（用例把两份钉在一起互证）。**③只朝最近的那个邻区混**，平手按 `regions.json` 行序（确定性，不靠 Map 迭代顺序）。**④一侧读不出 ⇒ 整体退回有的那一侧**（雾与灯一起退，不猜中间色）——与 `blendLightingSnapshot` 对 null 的处理同一条理由。**⑤失谐乘在 `add()`、声景乘在距离衰减之后**沿用既有口径，过渡带只改「读哪一行」，不改这些乘法顺序。
+
+**一条如实记账**：文档举的例子「钟坠院→深窖」在今天的 `regions.json` bounds 下**并不相邻**（y 差 144m、z 差 192m），所以那条带今天不存在。实测共面接缝是 **5 对**（`rg_resthold↔rg_whisperwode`、`rg_resthold↔rg_brokenbar_camp`、`rg_whisperwode↔rg_drowned_choir`、`rg_whisperwode↔rg_brokenbar_camp`、`rg_whisperwode↔rg_fellcarillon`），共棱 2 对（`rg_brokenbar_camp↔rg_fellcarillon`、`rg_fellcarillon↔rg_unfinished_hall`），共点／共体 0 对。等关卡数据把钟坠院与深窖接上的那天，这条带自动生效，不用改代码。
+
+**门禁（2026-10-09）**：`npx tsc --noEmit` **0 错**；`node scripts/validate-data.mjs` **0 ERROR / 2 WARN**（过渡带不新增数据格，判据数不变）；定向 **5 文件 132 条全绿**（`lighting` / `streaming` / `color-grade` / `scene-lights` / `world-graph`）。
+
+**没做的**：①过渡带只改雾色／LUT／三层光，**没有**改 `SpawnDirector`／音频／敌人浓度（那些是天气的腿，§5.9.45，与过渡带正交）；②`paletteBlendAt` 每帧对七个区各算一次 `borderDistance`，今天是 O(区数) 的常量小循环，区数上到几十上百再考虑预计算接缝表；③视口评审仍不可做（KI-010）——这批同样只有数字读数。
 
 ### 5.9.44 泛音弓 + 律具·音叉杖入表：四条新机制腿，顺手销一笔弹道双乘（2026-10-08）
 

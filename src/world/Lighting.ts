@@ -87,6 +87,110 @@ export function lightingFogRgb(row: LightingRow | null | undefined): [number, nu
 }
 
 /**
+ * §2 跨区过渡带：**带子的半宽**（米）。文档原句是「跨区过渡带（如钟坠院→深窖）色板按 70/30→30/70
+ * 线性混合，过渡长度 ≥ 150m，禁止硬切」。
+ *
+ * 裁决（文档没说的是带子骑在接缝哪一边、两个端点在多远处）：**以接缝为中线，向两侧各探 200m**，
+ * 邻居权重从带子外缘（自己那侧 200m）处的 0 线性升到接缝处的 `TRANSITION_SEAM_W`。于是 70/30 与 30/70
+ * 各落在接缝内外 80m 处，两点相距 **160m ≥ 150m**（文档那句「过渡长度 ≥ 150m」），整条带 400m 连续、
+ * 无任何跳变。选 400m 总宽而不是 300m，是因为 300m 总宽下 70/30 与 30/70 只隔 120m，凑不出文档那个长度。
+ */
+export const TRANSITION_HALF_M = 200
+
+/**
+ * §2 过渡带权重：**站在接缝上时邻居那一侧的占比**（0.5 = 两区各半）。`paletteBlendAt` 返回的 `t` 就是
+ * 「邻居权重」：带子外缘（离接缝 `TRANSITION_HALF_M`）为 0，朝接缝线性爬到本值。取 0.5 是因为接缝是两区的
+ * 对称中线，谁也没有理由多占一寸；也正是这个对称，让 70/30 与 30/70 到接缝等距（各 80m）。
+ */
+export const TRANSITION_SEAM_W = 0.5
+
+/** 0..255 三元组逐通道线性插值 */
+function lerpRgb(a: [number, number, number], b: [number, number, number], t: number): [number, number, number] {
+  return [
+    Math.round(a[0] + (b[0] - a[0]) * t),
+    Math.round(a[1] + (b[1] - a[1]) * t),
+    Math.round(a[2] + (b[2] - a[2]) * t),
+  ]
+}
+
+/** 两个 hex 逐通道插值 ⇒ hex。任一侧不是合法 hex 时返回另一侧（与 `pick` 同一条口径） */
+function lerpHex(a: string, b: string, t: number): string {
+  const ra = hexToRgb(a)
+  const rb = hexToRgb(b)
+  if (!ra) return b
+  if (!rb) return a
+  return rgbToHex(lerpRgb(ra, rb, t))
+}
+
+const lerpNum = (a: number, b: number, t: number): number => a + (b - a) * t
+
+/**
+ * §2 跨区过渡带的**已解析读数**（`lightingFogRgb` / `lightingGrade` / `lightingLights` 三样的并集）。
+ *
+ * 为什么混合发生在**读数层**而不是行层：`sky` 这一格有三行故意省略，而行层的插值答不出
+ * "一边有天光一边没有"该怎么办。读数层每一格都已经结论化（雾色已是 70/30 混出来的一个色、
+ * key 色已按 SEC 退路定好），插值就没有歧义了。
+ */
+export interface LightingSnapshot {
+  /** 雾色（§8 的 70/30 已混完）；null = 不写雾色 */
+  fogRgb: [number, number, number] | null
+  grade: { saturateMul: number; contrastMul: number }
+  lights: LightRig | null
+}
+
+/** 一行 → 已解析读数。`null` 行 ⇒ 三样全空（调用方据此"不写"） */
+export function lightingSnapshot(row: LightingRow | null | undefined): LightingSnapshot {
+  return {
+    fogRgb: lightingFogRgb(row),
+    grade: lightingGrade(row),
+    lights: lightingLights(row),
+  }
+}
+
+/**
+ * 两份读数按 `t` 线性混合（`t` = 0 全是 a，= 1 全是 b）。任一侧为空 ⇒ 原样返回另一侧
+ * （见 `pick`：不猜中间色）。`t` 夹到 [0,1]——带子外的读数不该被外插成色板外的颜色。
+ */
+export function blendLightingSnapshot(a: LightingSnapshot, b: LightingSnapshot, t: number): LightingSnapshot {
+  const k = Math.max(0, Math.min(1, t))
+  // 任一侧读不出 ⇒ 整体退回有的那一侧（雾与灯一起退，不退一半）。猜一个中间色比不混合更糟——
+  // 那一半的数据根本不存在，而"看起来像个过渡"正是最容易骗过自己的那种假象。
+  if (a.fogRgb === null || a.lights === null) return { fogRgb: b.fogRgb, grade: b.grade, lights: b.lights }
+  if (b.fogRgb === null || b.lights === null) return { fogRgb: a.fogRgb, grade: a.grade, lights: a.lights }
+  return {
+    fogRgb: lerpRgb(a.fogRgb, b.fogRgb, k),
+    grade: {
+      saturateMul: lerpNum(a.grade.saturateMul, b.grade.saturateMul, k),
+      contrastMul: lerpNum(a.grade.contrastMul, b.grade.contrastMul, k),
+    },
+    lights: blendLightRigs(a.lights, b.lights, k),
+  }
+}
+
+/**
+ * 两份三层光读数按 `t` 线性混合。`LightRig` 里三个 hex 逐通道插值、三个强度与 `keyDir` 逐分量插值。
+ * 强度为 0 的那一侧（深窖的 key）插过去就是"渐渐长出一盏灯"，这正是 §8 那个例外该有的样子——
+ * 从深窖走向邻区时方向光不是"咔"地一下亮起来。
+ */
+export function blendLightRigs(a: LightRig, b: LightRig, t: number): LightRig {
+  const k = Math.max(0, Math.min(1, t))
+  return {
+    hemiSky: lerpHex(a.hemiSky, b.hemiSky, k),
+    hemiGround: lerpHex(a.hemiGround, b.hemiGround, k),
+    hemiIntensity: lerpNum(a.hemiIntensity, b.hemiIntensity, k),
+    keyColor: lerpHex(a.keyColor, b.keyColor, k),
+    keyIntensity: lerpNum(a.keyIntensity, b.keyIntensity, k),
+    keyDir: [
+      lerpNum(a.keyDir[0], b.keyDir[0], k),
+      lerpNum(a.keyDir[1], b.keyDir[1], k),
+      lerpNum(a.keyDir[2], b.keyDir[2], k),
+    ],
+    pointColor: lerpHex(a.pointColor, b.pointColor, k),
+    pointIntensity: lerpNum(a.pointIntensity, b.pointIntensity, k),
+  }
+}
+
+/**
  * §37 第二腿：这一行的**三层光读数**（art-direction §8 那句「每区三层光」）。
  *
  * 颜色一格都不新开——§8 把映射写死了，这里只是把它念出来：
