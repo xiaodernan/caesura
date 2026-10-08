@@ -653,7 +653,13 @@ const checkpoints = new Checkpoints(saves)
 if (!saveBackup) console.info('[caesura] IndexedDB 不可用 ⇒ 存档只有本地一份')
 bus.on('boss.phase', () => checkpoints.request('boss'))
 // Boss 倒下是这一局里最不该丢进度的一刻：胜利序列同样按 Boss 检查点存一笔
-bus.on('boss.defeated', () => checkpoints.request('boss'))
+bus.on('boss.defeated', (p) => {
+  checkpoints.request('boss')
+  // §6 **胜利**：主 Boss（恩希尔）倒下那一刻——镜头语言写的是"管风琴过载熄灭、振源核冰解"，
+  // 那是未竟厅那一战，所以按 `dataId` 认人而不是"任何 Boss 倒下都放"。
+  // 一局只会死一次 ⇒ 不需要额外的"放过没"台账；`playedCinematics` 清在 `startRun` 里。
+  if (p.dataId === 'en_hersil') cinematics.start('CINE_WIN')
+})
 
 /**
  * 结算与拾取的依赖束（需求 §59 的 Loot 拍）：编排本身在 `rpg/Settlement.ts`（那里才有 §59 的闭环

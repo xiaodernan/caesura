@@ -90,14 +90,13 @@ describe('运行时那条腿（`main.ts`）：接了什么、**没接什么**，
     expect(main, '新开局放开场').toMatch(/if \(!slot\) cinematics\.start\('CINE_OPEN'\)/)
   })
 
-  it('**没接**的那 6 条必须一个都不出现（谁接了就顺手把这条改准，别让它一直骗人）', () => {
+  it('**没接**的那 5 条必须一个都不出现（谁接了就顺手把这条改准，别让它一直骗人）', () => {
     // 触发点分三类，今天只接了前两类：① 新开局（CINE_OPEN）② 进 Boss 区（三条出场）。
     // **没接**的是③剧情/胜利/结局那 6 条——它们各自的接点是对话节点、Boss 倒下、终局分支。
     // 这条断言的作用不是"证明没接"，而是**让"没接"这件事会响**：谁接了新的，这里红，逼他改这条。
     const UNWIRED = [
       'CINE_STORY_B5',
       'CINE_STORY_B7',
-      'CINE_WIN',
       'CINE_END_A',
       'CINE_END_B',
       'CINE_END_MONTAGE',
@@ -107,7 +106,10 @@ describe('运行时那条腿（`main.ts`）：接了什么、**没接什么**，
     }
   })
 
-  it('接了的 4 条按名字点出来（新开局 1 + Boss 出场 3），且 Boss 三条各挂在一个真区域上', () => {
+  it('接了的 5 条按名字点出来（新开局 1 + Boss 出场 3 + 胜利 1），且各自挂在**对的**挂点上', () => {
+    // 胜利那一条必须认人：§6 的镜头语言是"管风琴过载熄灭"，那是主 Boss 恩希尔（未竟厅）那一战，
+    // 不是"任何 Boss 倒下都放"。挂错人不会有别的东西响——所以在这里钉住 `dataId`。
+    expect(main, '胜利认的是主 Boss').toMatch(/p\.dataId === 'en_hersil'[\s\S]{0,80}CINE_WIN/)
     expect(main, '新开局').toMatch(/start\('CINE_OPEN'\)/)
     for (const id of ['CINE_OST_INTRO', 'CINE_HERSIL_INTRO', 'CINE_MYRIAD_INTRO']) {
       expect(main.includes(id), `Boss 出场 ${id}`).toBe(true)
