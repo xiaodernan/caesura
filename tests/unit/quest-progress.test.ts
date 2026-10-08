@@ -182,7 +182,10 @@ const harness = (
       start: () => script.start ?? NORES,
       choose: (_t: unknown, _n: unknown, id: string) => script[id] ?? NORES,
       advance: () => script.advance ?? NORES,
-      treeById: () => (treeGone ? null : { id: 'dlg_s' }),
+      // `nodes` 必须给：`DialogueData.nodes` 是必填格，而 `Settlement.choose()` 要读它找那个选择
+      // （§6 过场腿：`chosen.cinematic`）。早先这个桩返回一棵没有 nodes 的树——那时候没有读者，
+      // 所以它一直绿着；读者一落地它就炸，这正是"夹具说谎"的标准形状。
+      treeById: () => (treeGone ? null : { id: 'dlg_s', nodes: [] }),
     } as unknown as DialogueEngine,
     ctx: {} as DialogueContext,
     inv: {
