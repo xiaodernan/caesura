@@ -239,6 +239,12 @@ describe('KI-062 入口只有一个（源码门）', () => {
     expect(live, '通道接好了却没人念给面板听：每帧喂一次这条要在（而且不能在注释里）').toContain('panel.uiStep(input.uiEdges)')
     expect(main.match(/input\.uiOwner = overlay/g)?.length, '认领与交还是同一次赋值：值就是 Overlay 变量本身（KI-097）').toBe(1)
     expect(main.match(/input\.uiOwner = (?:'panel'|'map'|null)/g), '字面量形状 = 第二份账：所有权不许再有一处直写').toBeNull()
-    expect(main.match(/uiOwner/g)!.length, '一处赋值 + 注释里那两次提及，别处不许再动所有权').toBe(3)
+    // 第三条原来数的是**原文**里的 `uiOwner` 出现次数（=3：一处赋值 + 注释里两次提及），
+    // 于是 overlay 那一批为了解释"为什么只有一处"而写下的 `input.uiOwner = ` 本身就把门点到 4——
+    // 一条为了说清规矩而存在的注释，反过来把守着规矩的判据弄红了（与它自己头一句"注释不算数"相反）。
+    // 现在按同一把尺子量：**live 代码里只许那一处赋值**，注释爱写几遍写几遍；
+    // 另留一条地板盯着"解释还在"——只剩一行裸代码而没人说为什么，下一个人会再写一处。
+    expect(live.match(/uiOwner/g)!.length, 'live 代码里 uiOwner 只允许那一处赋值：别处不许再动所有权').toBe(1)
+    expect(main.match(/uiOwner/g)!.length, '解释"为什么只有一处"的注释不见了：没人说过的规矩下一个人会再犯').toBeGreaterThanOrEqual(3)
   })
 })

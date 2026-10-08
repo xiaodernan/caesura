@@ -85,8 +85,10 @@ describe('文档对账闸门（KI-056）', () => {
       .toEqual(expect.arrayContaining(reserved.filter((k) => bound.has(k))))
     if (unbound.length) expect(ids, `这些键占着预留位却没有面板：${unbound.join(' ')} ⇒ TD-001 必须在册`).toContain('TD-001')
     else expect(ids, '每把预留键都有了读者 ⇒ TD-001 必须同时销案，别让文档留着一笔假债').not.toContain('TD-001')
-    expect(ids, 'KI-056 抓出的两条债里，TD-002 仍在册（TD-003 已于 2026-10-01 销案，见下面那条"留号不留行"）')
-      .toEqual(expect.arrayContaining(['TD-002']))
+    // TD-002（「按着地图的名字在调音」）已于 2026-10-08 结案：结案方式是**把地图真的落了**
+    // （`ui/MapUI.ts` + `map` 键只开地图），不是改键名。所以它和 TD-001 同一条规矩——
+    // 不许留在表里当假债，必须在注记里留号。把下面这句翻回 arrayContaining 就是给假债放行。
+    expect(ids, 'TD-002 已结案（§43 地图落地）却还留在 TD 表里 = 一笔假债').not.toContain('TD-002')
   })
 
   it('销案的 TD 留号不留行：一个编号只能待在 TD 表或那段注记里，两边都在 / 两边都不在都算红', () => {
@@ -99,12 +101,14 @@ describe('文档对账闸门（KI-056）', () => {
     const note = td.slice(at)
     const inTable = [...table.matchAll(/^\|\s*(TD-\d+)\s*\|/gm)].map((m) => m[1])
     const retired = [...new Set([...note.matchAll(/~~(TD-\d+)~~/g)].map((m) => m[1]))]
-    expect(inTable.length, 'TD 表一行都没读到 = 分母是空的').toBeGreaterThanOrEqual(2)
+    // 地板从 2 降到 1：TD-002 结案出表后表里只剩 TD-006 一行。这道判据防的是"分母读空"，
+    // 一行也不是空——真正该红的是"一行都没有"（抽取器坏了 / 整块被删）。
+    expect(inTable.length, 'TD 表一行都没读到 = 分母是空的').toBeGreaterThanOrEqual(1)
     expect(retired.length, '注记里一个销案编号都没读到 = 分子是空的').toBeGreaterThanOrEqual(4)
     const both = retired.filter((id) => inTable.includes(id))
     expect(both, `这些编号已销案却还留在 TD 表里（假债）：${both.join(' ')}`).toEqual([])
-    expect(retired, '已销案的编号必须在那段注记里点名（TD-003 = Milestone tag，2026-10-01 结案）').toEqual(
-      expect.arrayContaining(['TD-001', 'TD-003', 'TD-004', 'TD-005']),
+    expect(retired, '已销案的编号必须在那段注记里点名（TD-003 = Milestone tag，2026-10-01 结案；TD-002 = §43 地图落地，2026-10-08 结案）').toEqual(
+      expect.arrayContaining(['TD-001', 'TD-002', 'TD-003', 'TD-004', 'TD-005']),
     )
   })
 })
