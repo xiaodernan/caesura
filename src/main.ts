@@ -5,10 +5,11 @@ import { GameLoop } from '@/core/GameLoop'
 import { Input } from '@/core/Input'
 import { RhythmClock } from '@/core/RhythmClock'
 import { registry } from '@/core/Registry'
-import { registerGameData, playerBase, regions, worldstate, dialogues, quests as questTable, worldStates as worldStateDefs } from '@/data'
+import { registerGameData, playerBase, regions, worldstate, dialogues, quests as questTable, worldStates as worldStateDefs, cinematics as cinematicRows } from '@/data'
 import type { ItemData, MovesetData, NpcData, RegionData, WeaponData } from '@/data/schema'
 import { createArena } from '@/world/PlaceholderArena'
 import { activeWeather, questTrackedFlags } from '@/world/WeatherSwitch'
+import { Cinematics } from '@/world/Cinematics'
 import { StreamingSystem, chunkKeyOf, type ChunkState } from '@/world/Streaming'
 import { Surface } from '@/world/Surface'
 import { SpawnDirector } from '@/world/SpawnDirector'
@@ -81,6 +82,15 @@ const startWeaponId = rpg.mods().weaponId ?? 'wp_tuning_sword'
 const weapon = registry.get<WeaponData>(startWeaponId)
 const moveset = registry.get<MovesetData>(`moveset:${weapon.movesetId}`)
 const player = new PlayerController(playerBase, weapon, moveset)
+
+/**
+ * §6 过场清单的播放器（需求 §31）。**逻辑层**：它只回答"哪一条在跑 / 还剩多久 / 该不该夺输入"，
+ * 镜头轨道与字幕时序要真几何与相机（KI-008 / KI-010），那条腿没接。
+ * 今天接的触发只有一处：**新开局**放开场（`CINE_OPEN`）——读档不放（开场是"第一次醒来"，
+ * 不是"每次回到调音桩"）。其余 9 条各自的触发点（Boss 区入场 / 对话节点 / 结局分支）**仍未接**，
+ * 如实记在架构文档那张表里。
+ */
+const cinematics = new Cinematics(cinematicRows)
 
 /** 把成长/装备的汇总灌进玩家（升级、换装、强化、洗点、掉落之后都要调一次）。本体在 rpg/Settlement.ts，可被 flow 测试直接跑 */
 function refreshRpg(): void { refreshPlayer(rpg, player) }
@@ -194,7 +204,8 @@ function setOverlay(open: Overlay): void {
   // uiOwner：菜单读数的所有权（KI-062）。开着才发意图、关着一格都不发，也不抢浏览器的默认行为。
   // 玩法那条（enabled）与这条是两件事：世界停摆期间正是菜单需要读数的时候。
   time.paused = overlay !== null
-  input.enabled = overlay === null
+  // 过场期也夺输入（`cinematics.inputLocked`）：夺的是**玩法那条**，菜单那条（uiOwner）照旧
+  input.enabled = overlay === null && !cinematics.inputLocked
   input.uiOwner = overlay
 }
 
@@ -369,7 +380,7 @@ const talk = new DialogueSession({
   setState: (k, v) => worldStates.set(k, v),
   notify: (text, kind) => bus.emit('ui.notify', { text, kind: kind ?? 'info' }),
   refresh: () => refreshRpg(),
-  setPaused: (paused) => { time.paused = paused; input.enabled = !paused },
+  setPaused: (paused) => { time.paused = paused; input.enabled = !paused && !cinematics.inputLocked },
   present: (view) => { if (view) dialogueBox.show(view); else dialogueBox.hide() },
 })
 
@@ -473,6 +484,8 @@ if (import.meta.env.DEV) {
 
 const core = {
   update(dt: number, t: GameTime, inp: Input) {
+    // 过场先走时间：本帧的 `inputLocked` 才是本帧状态（走满那一刻锁自己解除）
+    cinematics.advance(dt * 1000)
     if (inp.frame.edges.has('map')) {
       /* `map` 键现在**只开地图**（KI-097 / TD-002：「按着地图的名字在调音」到此结案）。
          **收起**不走这里：有 overlay 在场时 `time.paused` 与 `enabled=false` 让这一段根本跑不到，
@@ -646,6 +659,8 @@ async function startRun(slot: string | null): Promise<void> {
   }
   // 读档可能恢复了音级/装备/背包 ⇒ 派生值与手里的武器都要跟着回来（顺序：先 restore 再 refresh）
   refreshRpg()
+  // 新开局（不是读档）放 §6 的开场：黑场、声先死、无 UI 无旁白那一条
+  if (!slot) cinematics.start('CINE_OPEN')
   bus.emit('ui.notify', { text: `音级 ${rpg.prog.rank} · 遗响 ${rpg.prog.xp}${rpg.prog.unspent > 0 ? ` · 未分配点 ${rpg.prog.unspent}` : ''}`, kind: 'info' })
   booted = true
   loop.start()

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { registerGameData, cinematics } from '@/data'
+import { readFileSync } from 'node:fs'
 import { Cinematics } from '@/world/Cinematics'
 
 /**
@@ -76,5 +77,23 @@ describe('Cinematics 播放器：起 / 走 / 收 / 锁', () => {
     p.start('CINE_OPEN')
     p.start('CINE_WIN')
     expect(p.current!.id).toBe('CINE_WIN')
+  })
+})
+
+describe('运行时那条腿（`main.ts`）：接了什么、**没接什么**，都钉在源门上', () => {
+  const main = readFileSync('src/main.ts', 'utf8')
+
+  it('接了：过场实例 + 每帧走时间 + 输入门 + 新开局放开场', () => {
+    expect(main, '实例').toMatch(/new Cinematics\(/)
+    expect(main, '每帧走时间').toMatch(/cinematics\.advance\(dt \* 1000\)/)
+    expect(main, '输入门').toMatch(/!cinematics\.inputLocked/)
+    expect(main, '新开局放开场').toMatch(/if \(!slot\) cinematics\.start\('CINE_OPEN'\)/)
+  })
+
+  it('**没接**：其余 9 条的触发点一个都没接（谁接的时候顺手把这条断言改掉，别让它一直骗人）', () => {
+    // 除 CINE_OPEN 之外，main.ts 里不该出现任何 CINE_* 字面量 —— 出现了就说明有人接了新触发，
+    // 那时这条断言要连同上面那条一起更新（而不是删掉它）
+    const others = main.match(/CINE_(?!OPEN)[A-Z_]+/g) ?? []
+    expect(others, `main.ts 里出现了未预期的过场触发：${others.join(',')}`).toEqual([])
   })
 })
