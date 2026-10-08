@@ -241,6 +241,22 @@ describe('chunk streaming rules (technical-architecture §5.5)', () => {
     expect(t).toBeGreaterThan(0)
   })
 
+  it('旗标被摘掉 ⇒ 窗口重算，锁住的区域整体退出流送（写关与写开同是写方）', () => {
+    const s = new StreamingSystem(regions)
+    s.setFlag('flag.choir_entrance_open')
+    const at = { x: 300, y: -40, z: 60 } // 沉唱堂层里
+    let t = settle(s, 0, at)
+    expect(s.all().some((c) => c.regionId === 'rg_drowned_choir'), '旗立着 ⇒ 沉唱堂在场').toBe(true)
+    bus.emit('world.flag', { key: 'flag.choir_entrance_open', value: false })
+    expect(s.hasFlag('flag.choir_entrance_open')).toBe(false)
+    expect(s.isRegionUnlocked(regions.find((r) => r.id === 'rg_drowned_choir')!), '先锁上').toBe(false)
+    // 窗口重算只发生在下一次 update（invalidate 把 playerCell 置空），卸载还隔着 120 tick 防抖
+    for (let k = 0; k < 400; k++) { t++; s.update(t, at) }
+    expect(s.all().some((c) => c.regionId === 'rg_drowned_choir'), '防抖走完 ⇒ 格子整体退出流送').toBe(false)
+    expect(t).toBeGreaterThan(0)
+    s.dispose()
+  })
+
   it('preloads the whole boss arena field, not just the near rings (§5.5)', () => {
     const s = freshSystem()
     const hall = regions.find((r) => r.id === 'rg_unfinished_hall')!

@@ -23,13 +23,18 @@ const HOME: Pos = { x: 0, y: 0, z: 0 }
 const LIFT_POS: Pos = { x: 110, y: 64, z: -350 }  // 钟坠院管风琴吊机（最高一层）
 const WALL_POS: Pos = { x: 330, y: 0, z: 120 }    // 雾语林音壁（setsFlag = choir_entrance_open）
 
-function fixture(unlockAll = false, flags: Set<string> = new Set()) {
+function fixture(
+  unlockAll = false,
+  flags: Set<string> = new Set(),
+  /** 值域谓词（组合根注入的 `requiresState` 读方）；缺省锁死 ⇒ 不成立的变体一个都不画 */
+  stateOk: (req: { key: string; value: string }) => boolean = () => false,
+) {
   const scene = new THREE.Scene()
   const stream = new StreamingSystem(regions)
   if (unlockAll) for (const f of ALL_FLAGS) stream.setFlag(f)
   const greybox = new InteractableGreybox(scene, regions, (pos) => {
     const c = stream.cellOf(pos); return chunkKeyOf(c.cx, c.cy, c.cz)
-  }, (k) => flags.has(k))
+  }, (k) => flags.has(k), stateOk)
   let tick = 0
   let at: Pos = { x: 0, y: 0, z: 0 }
   const goTo = (pos: Pos): void => {
@@ -134,6 +139,38 @@ describe('InteractableGreybox（交互物在灰盒里可见）', () => {
     const freshPeg = slotOf(g.scene, 'st_resthold')
     expect(freshPeg, '休垒调音桩未消耗').toBeDefined()
     expect(sum(spentGate.rgb)).toBeLessThan(sum(freshPeg!.rgb))
+  })
+
+  it('值域组换：world.state 事件重过一遍 requiresState —— 该出现的补上、该退场的摘掉', () => {
+    // 休垒广场同一处陈设有四个变体（state.bells.fourth_dumb 的四格），**同一点上只许站着一个**。
+    // 变体共用坐标 ⇒ slotOf（按位置找）分不出是谁，所以这里数"那一点上有几个实例"：
+    // 换组时退场的没摘掉就会短暂/永久叠成 2 个，正好是这条判据要钉的那件事。
+    // 组换往往就发生在玩家脚下那一格（敲完钟回头陈设就换了），所以不等下一次跨格事件。
+    const atPoint = (scene: THREE.Scene, id: string): number => {
+      const it = allItems.find((i) => i.id === id)!
+      const mesh = scene.getObjectByName(`greybox_node:${it.kind}`) as THREE.InstancedMesh
+      return visible(mesh).filter((p) => Math.abs(p.x - it.pos.x) < 0.5 && Math.abs(p.z - it.pos.z) < 0.5).length
+    }
+    let want = 'INTACT'
+    const f = fixture(true, new Set(), (req) => req.value === want)
+    active = f.dispose
+    f.goTo(HOME)
+    expect(atPoint(f.scene, 'st_plaza_bell'), '值域对得上 ⇒ 那一点上站着它').toBe(1)
+    expect(atPoint(f.scene, 'st_plaza_mourners'), '值域不成立 ⇒ 不在场').toBe(0)
+    expect(atPoint(f.scene, 'st_plaza_copper')).toBe(0)
+    const n0 = f.greybox.liveProps
+    want = 'RUNG'
+    bus.emit('world.state', { key: 'state.bells.fourth_dumb', value: 'RUNG' })
+    expect(atPoint(f.scene, 'st_plaza_bell_rung'), '换上来的补上：点上还是恰好一个（不是叠上去）').toBe(1)
+    expect(atPoint(f.scene, 'st_plaza_mourners'), '同格另一处 RUNG 变体也出现').toBe(1)
+    expect(atPoint(f.scene, 'st_plaza_copper'), 'MELTED 变体依旧不在场').toBe(0)
+    expect(f.greybox.liveProps, '退一进二（rung 取代 bell + mourners 出现）').toBe(n0 + 1)
+    want = 'MELTED'
+    bus.emit('world.state', { key: 'state.bells.fourth_dumb', value: 'MELTED' })
+    expect(atPoint(f.scene, 'st_plaza_bell_melted'), '点上还是恰好一个').toBe(1)
+    expect(atPoint(f.scene, 'st_plaza_mourners'), 'RUNG 的两处都退场').toBe(0)
+    expect(atPoint(f.scene, 'st_plaza_copper'), '铜的那处变体出现').toBe(1)
+    expect(f.greybox.liveProps, '退二进二，水位回到 n0+1').toBe(n0 + 1)
   })
 
   it('走远卸载归还实例；反复横跳每次都落回同一稳态水位（无槽位泄漏）', () => {

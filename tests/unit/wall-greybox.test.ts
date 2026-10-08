@@ -178,6 +178,24 @@ describe('WallGreybox：数据里的每一块墙都跟着流送站住或退场',
     g.dispose(); stream.dispose()
   })
 
+  it('chunk 卸载 ⇒ 该格的墙退场、槽位归还（站住与退场走同一条事件口径）', () => {
+    const { scene, g, stream, keyAt } = rig(withWalls[0])
+    const keys = new Set(streamKeys(stream))
+    const e = ALL.find((x) => keys.has(keyAt(x.wall.pos)))!
+    const key = keyAt(e.wall.pos)
+    const inCell = ALL.filter((x) => keyAt(x.wall.pos) === key).length
+    expect(inCell, '起始格里至少有一块墙').toBeGreaterThan(0)
+    const before = g.live
+    expect(instanceOf(meshOf(scene), e.wall), '卸载前墙站着').not.toBeNull()
+    emitChunk(key, 'unloaded')
+    expect(instanceOf(meshOf(scene), e.wall), '卸载后退场（矩阵归零）').toBeNull()
+    expect(g.live, '槽位连同该格每一块墙一起归还').toBe(before - inCell)
+    emitChunk(key, 'active')
+    expect(g.live, '重新加载回来：容量是数据预算死的，槽位只是复用').toBe(before)
+    expect(instanceOf(meshOf(scene), e.wall), '且同一块墙回到同一个位置口径').not.toBeNull()
+    g.dispose(); stream.dispose()
+  })
+
   it('dispose 之后事件不再改动场景（否则换区会往已销毁的网格上写矩阵）', () => {
     const { scene, stream, keyAt, g } = rig(withWalls[0])
     expect(g.live, '起始格已加载 ⇒ 有墙站着').toBeGreaterThan(0)

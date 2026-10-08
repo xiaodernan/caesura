@@ -20,6 +20,13 @@ export interface ParamEvent {
   kind: 'set' | 'lin' | 'exp' | 'cancel' | 'target'
   value: number
   at: number
+  /**
+   * `setTargetAtTime` 的时间常数（秒）——只有 `kind === 'target'` 有这一格。
+   * KI-092① 起的读者：§8.2 休止那一行写的是"250ms 入 180ms 出"（**到位时长**），
+   * 而音频参数收的是时间常数；不记下它，本文件就只能断言"压到了 −12dB"，
+   * 断言不了"它是 250ms 压下去的而不是一步跳下去的"。
+   */
+  tc?: number
 }
 
 export class FakeParam {
@@ -28,7 +35,7 @@ export class FakeParam {
   /** `cancelScheduledValues` 被调了几次（判"斜坡会不会叠上来"就靠这个数，自动化列表本身要保持干净） */
   cancelCount = 0
   constructor(readonly name: string) {}
-  private push(kind: ParamEvent['kind'], v: number, at: number): this {
+  private push(kind: ParamEvent['kind'], v: number, at: number, tc?: number): this {
     if (kind === 'cancel') {
       // 真语义：t 时刻及之后排的一切作废（不含 cancel 自己，它不是自动化）
       this.cancelCount++

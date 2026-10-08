@@ -233,12 +233,12 @@ describe('KI-062 入口只有一个（源码门）', () => {
     expect(UI_BINDS.keyboard.Tab, 'Tab 的开关两条路靠 owner 互斥，不是靠两处各自判').toBe('back')
   })
 
-  it('main 里：意图每帧喂一次，所有权开合各一次', () => {
+  it('main 里：意图每帧喂一次，所有权的赋值只有一处', () => {
     // 注释里出现同样的字串不算数（探针 N7 第一次就是这样白给的：把喂线注释掉，toContain 仍然通过）
     const live = main.split(/[\r\n]+/).filter((l) => !l.trim().startsWith('//') && !l.trim().startsWith('*')).join('\n')
     expect(live, '通道接好了却没人念给面板听：每帧喂一次这条要在（而且不能在注释里）').toContain('panel.uiStep(input.uiEdges)')
-    expect(main.match(/input\.uiOwner = 'panel'/g)?.length, '开面板时认领').toBe(1)
-    expect(main.match(/input\.uiOwner = null/g)?.length, '关面板时交还').toBe(1)
-    expect(main.match(/uiOwner/g)!.length, '两处赋值 + 注释里那一次提及，别处不许再动所有权').toBe(3)
+    expect(main.match(/input\.uiOwner = overlay/g)?.length, '认领与交还是同一次赋值：值就是 Overlay 变量本身（KI-097）').toBe(1)
+    expect(main.match(/input\.uiOwner = (?:'panel'|'map'|null)/g), '字面量形状 = 第二份账：所有权不许再有一处直写').toBeNull()
+    expect(main.match(/uiOwner/g)!.length, '一处赋值 + 注释里那两次提及，别处不许再动所有权').toBe(3)
   })
 })

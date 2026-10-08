@@ -574,3 +574,134 @@ describe('KI-025②：存档页', () => {
     expect(erases).toEqual([])
   })
 })
+
+describe('调音桩面板：动作分支收尾（Stakerite 缺口行）', () => {
+  it('洗点：没点可退 ⇒ 说"没有可退回的音级点"；有点有钱 ⇒ 洗点完成', async () => {
+    registerGameData()
+    const rt = new RpgRuntime('origin_tuner')
+    const { p, notes } = await panel(rt)
+    p.show()
+    click(rootOf(p), 'respec')
+    expect(notes.some((n) => n.includes('没有可退回的音级点') || n.includes('音色石不足'))).toBe(true)
+    rt.prog.addResonance(400)
+    click(rootOf(p), 'alloc', 'str')
+    rt.inv.add('it_timbite', 500)
+    click(rootOf(p), 'respec')
+    expect(notes.some((n) => n.includes('洗点完成'))).toBe(true)
+  })
+
+  it('分解：不存在的 uid 静默跳过；选中再分解 ⇒ 残晶进账、选中清空', async () => {
+    registerGameData()
+    const rt = new RpgRuntime('origin_tuner')
+    const { p, notes } = await panel(rt)
+    p.show()
+    const before = notes.length
+    click(rootOf(p), 'salvage', 'uid_nope')
+    expect(notes.length).toBe(before)
+    const weapon = rt.inv.gears.find((g) => g.itemId === 'wp_tuning_sword_item')!
+    click(rootOf(p), 'sel', weapon.uid)
+    click(rootOf(p), 'salvage', weapon.uid)
+    expect(rt.inv.gears.some((g) => g.uid === weapon.uid)).toBe(false)
+    expect(notes.some((n) => n.includes('分解'))).toBe(true)
+  })
+
+  it('卖整堆：空包 ⇒ "包里已经没有"；消耗品 ⇒ "营地不收这类货"；残晶 ⇒ 按件数×单价结算', async () => {
+    registerGameData()
+    const rt = new RpgRuntime('origin_tuner')
+    const { p, notes } = await panel(rt)
+    p.show()
+    click(rootOf(p), 'sell-stack', 'it_dross')
+    expect(notes.some((n) => n.includes('包里已经没有这一件了'))).toBe(true)
+    rt.inv.add('it_echo_salve', 1)
+    click(rootOf(p), 'sell-stack', 'it_echo_salve')
+    expect(notes.some((n) => n.includes('营地不收这类货'))).toBe(true)
+    rt.inv.add('it_dross', 3)
+    click(rootOf(p), 'sell-stack', 'it_dross')
+    expect(rt.inv.count('it_dross')).toBe(0)
+    expect(notes.some((n) => n.includes('售出') && n.includes('×3'))).toBe(true)
+  })
+
+  it('交易页读包里实际数量：有可卖残骸 ⇒ "全部售出"行出现', async () => {
+    registerGameData()
+    const rt = new RpgRuntime('origin_tuner')
+    rt.inv.add('it_dross', 3)
+    const { p } = await panel(rt)
+    p.show()
+    const key = (): void => { p.uiStep(new Set(['right'])) }
+    key(); key(); key(); key()
+    expect(html(p)).toContain('全部售出')
+  })
+
+  it('被动研读：页没亮 ⇒ 研读不动；点亮+备齐材料 ⇒ 被动研读', async () => {
+    registerGameData()
+    const rt = new RpgRuntime('origin_tuner')
+    const { p, notes } = await panel(rt)
+    p.show()
+    click(rootOf(p), 'pslearn', 'ps_metronomefoot')
+    expect(notes.some((n) => n.includes('研读不动'))).toBe(true)
+    rt.inv.add('it_resonance_core', 1)
+    rt.inv.add('it_timbite', 30)
+    rt.inv.add('it_score_fragment', 30)
+    click(rootOf(p), 'lit', 'mvpage_prelude')
+    click(rootOf(p), 'pslearn', 'ps_metronomefoot')
+    expect(notes.some((n) => n.includes('被动研读'))).toBe(true)
+  })
+
+  it('战技升级：页没亮 ⇒ "还在没点亮的页里"；亮了没材料 ⇒ 材料不足；备齐 ⇒ 第 2 级', async () => {
+    registerGameData()
+    const rt = new RpgRuntime('origin_tuner')
+    const { p, notes } = await panel(rt)
+    p.show()
+    click(rootOf(p), 'mvup', 'mv_wholenotecut')
+    expect(notes.some((n) => n.includes('还在没点亮的页里'))).toBe(true)
+    rt.inv.add('it_resonance_core', 1)
+    click(rootOf(p), 'lit', 'mvpage_prelude')
+    click(rootOf(p), 'mvup', 'mv_wholenotecut')
+    expect(notes.some((n) => n.includes('材料不足'))).toBe(true)
+    rt.inv.add('it_timbite', 40)
+    rt.inv.add('it_score_fragment', 1)
+    click(rootOf(p), 'mvup', 'mv_wholenotecut')
+    expect(notes.some((n) => n.includes('第 2 级'))).toBe(true)
+  })
+
+  it('买：没钱 ⇒ 音色石不足（buy 的 poor 分支）', async () => {
+    registerGameData()
+    const rt = new RpgRuntime('origin_tuner')
+    const { p, notes } = await panel(rt)
+    p.show()
+    click(rootOf(p), 'buy', 'salve')
+    expect(notes.some((n) => n.includes('音色石不足'))).toBe(true)
+  })
+
+  it('装槽：音级不够 ⇒ locked-slot 那句"第 N 槽要到音级"（mvequip）', async () => {
+    registerGameData()
+    const rt = new RpgRuntime('origin_tuner')
+    const { p, notes } = await panel(rt)
+    p.show()
+    click(rootOf(p), 'mvequip', '0:mv_wholenotecut')
+    expect(notes.some((n) => n.includes('才开'))).toBe(true)
+  })
+
+  it('装槽：槽开了但式子没学会 ⇒ "还没学会这一式"（mvequip 的 dark 分支）', async () => {
+    registerGameData()
+    const rt = new RpgRuntime('origin_tuner')
+    rt.prog.addResonance(400) // 音级 2 ⇒ 第 1 槽开了，谱册还是暗的
+    const { p, notes } = await panel(rt)
+    p.show()
+    click(rootOf(p), 'mvequip', '0:mv_wholenotecut')
+    expect(notes.some((n) => n.includes('还没学会这一式'))).toBe(true)
+  })
+
+  it('焦点框：有 class 的按钮走 class 追加；没有 class 的补 class="focus"', async () => {
+    const { p } = await openSaveTab()
+    // 全站按钮都有 class，无 class 分支走私有 helper 的契约（防将来有人手写裸 button）；
+    // 注意 markFocus 的行号读的是面板当前页： fresh 存档页焦点在第 0 行，正好落在传入的单个按钮上
+    const mark = (p as unknown as { markFocus(h: string): string }).markFocus.bind(p)
+    expect(mark('<button data-act="x">y</button>')).toBe('<button class="focus" data-act="x">y</button>')
+    click(rootOf(p), 'write', 'slot1')
+    const down = (): void => { p.uiStep(new Set(['down'])) }
+    down() // 第一记只把框亮出来，不挪格
+    down() // 确认条在卡片前面：confirm(0) → cancel(1)
+    expect(html(p)).toContain('class="act focus" data-act="cancel"')
+  })
+})

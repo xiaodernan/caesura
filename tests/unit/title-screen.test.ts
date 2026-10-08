@@ -267,3 +267,37 @@ describe('标题屏 · 挑档续玩（KI-025②）', () => {
     expect((win.handlers.keydown ?? []).length, '监听摘掉，不留一个偷偷吃键的幽灵').toBe(before - 1)
   })
 })
+
+describe('标题屏 · 点击收尾（back/new-yes/new-no）', () => {
+  it('挑档屏点"返回定弦" ⇒ 回到定弦，不算决定', async () => {
+    const { t, hit } = await screen(() => roster())
+    const root = (t as unknown as { root: FakeEl }).root
+    click(root, 'continue')
+    expect(view(t)).toContain('返回定弦')
+    click(root, 'back')
+    expect(view(t)).toContain('为她定一根弦')
+    expect(hit.news).toEqual([])
+    expect(hit.continues).toEqual([])
+  })
+
+  it('确认屏点"确认开新弦" ⇒ 开的是被点的那一根；点"取消" ⇒ 回定弦谁也不开', async () => {
+    const { t, hit } = await screen(() => roster())
+    const root = (t as unknown as { root: FakeEl }).root
+    click(root, 'card', 'origin_scavenger')
+    expect(view(t)).toContain('开一根新弦')
+    click(root, 'new-yes')
+    expect(hit.news).toEqual(['origin_scavenger'])
+    click(root, 'card', 'origin_drummer')
+    click(root, 'new-no')
+    expect(hit.news).toEqual(['origin_scavenger'])
+    expect(view(t)).toContain('为她定一根弦')
+  })
+
+  it('点到不认识的动作 ⇒ 静默忽略，不算决定也不重画崩', async () => {
+    const { t, hit } = await screen(() => roster())
+    const root = (t as unknown as { root: FakeEl }).root
+    click(root, 'bogus-action')
+    expect(hit.news).toEqual([])
+    expect(hit.continues).toEqual([])
+  })
+})

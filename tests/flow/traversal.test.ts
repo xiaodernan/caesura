@@ -158,6 +158,18 @@ describe('interactable-driven traversal (Phase 3-C1)', () => {
     w.off()
   })
 
+  it('E 键正式入口 useNearest：焦点是谁就用谁；半径内没焦点返回 null（不硬抓一个）', () => {
+    const w = wire()
+    // 先走空手那一支：区域未开、半径内没有任何焦点 ⇒ 不许"随便抓一个来用"
+    expect(w.interact.useNearest({ x: 130, y: 0, z: 0 }), '没焦点就不硬用一个').toBeNull()
+    const gate = at(w, 'gt_resthold_gate')
+    const r = w.interact.useNearest(gate)
+    expect(r, '半径内有焦点 ⇒ 直接对它按 E').not.toBeNull()
+    expect([r!.id, r!.ok]).toEqual(['gt_resthold_gate', true])
+    expect(w.flags, '与 use() 走同一条 activate 路径 ⇒ 旗标一样落地').toContain('flag.left_resthold')
+    w.off()
+  })
+
   it('E 键仲裁：有焦点时交互吃掉边，没焦点时留给处决/背刺', () => {
     const w = wire()
     const gate = w.interact.focus(at(w, 'gt_resthold_gate'))
