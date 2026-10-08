@@ -1486,6 +1486,23 @@ export interface RegionData {
    * 每个名字都要在 `weather.json` 里有行或挂在 pending 名单上，拼错就是一片区域静默走基线。
    */
   weatherPresets: string[]
+  /**
+   * 「这一区的第二格天气由谁拨」（art-direction §8.1.2 选 A，KI-094② 的最后两格）。
+   *
+   * 为什么需要它：`weatherPresets[1]` 的条件此前提炼自"本区那口被任务线追踪的钟"——它能覆盖
+   * 低语林／沉唱堂／钟坠院，却说不出口另外两种世界变化：营地那份走的是**对话抉择立的旗**
+   * （`flag.brokenbar_resolved`，写方不在本区任何交互物上），休垒那份走的是**值域**
+   * （`state.bells.fourth_dumb` 的四格，而值域没有区属）。这一格把"区属"显式声明出来：
+   * 区属由 regions.json 说，不由值域自己携带。
+   *
+   * 两种形与既有两套读数对齐，不新造语法（`in` 与 `QuestStep.advanceOn.state` 同一形状）：
+   *  - 旗形 `{ flag }`：那面旗立着 ⇒ 换格；
+   *  - 值域形 `{ state: { key, in } }`：那一格的值落进 `in` ⇒ 换格（休垒只把 RUNG/MELTED/SEALED
+   *    算"她做了决定"，`INTACT` 不算——还没抉择不构成换天的理由）。
+   * 不写这一格时退回既有推导（数本区被追踪的钟），两种来源**不叠加**：一个第二格只能有一个
+   * 主人，同时在场由 `weather-rules.mjs` 的 S1 记 ERROR。
+   */
+  weatherSwitch?: { flag: string } | { state: { key: string; in: string[] } }
   lightingPreset: string
   palette: RegionPalette
   spawnGroups: SpawnGroup[]

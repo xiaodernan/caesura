@@ -252,12 +252,20 @@ const observe = new ObserveSystem()
  * 未初始化的 const（TDZ），而开局那次读必须走同一条推导腿——读两次不等于读一次，两处算法才是真的两份账。
  */
 const trackedBells = questTrackedFlags(questTable)
+/**
+ * art-direction §8.1.2 选 A 之后，切换的来源有两种（`world/WeatherSwitch.ts` 的头注）：
+ * 本区被追踪的钟（既有）与 `regions.json > weatherSwitch` 的显式声明。后者的值域形要读一格
+ * `state.*`，所以这里把 `worldStates.get` 一并递进去——**不递就等于那一形永远不成立**，
+ * 而"没接读者"与"值域没动"在画面上是同一片雾，只能在这里分开。
+ */
 const applyWeather = (rg: RegionData | null): void => {
-  grade.setWeather(activeWeather(rg, (k) => interact.hasFlag(k), trackedBells))
+  grade.setWeather(activeWeather(rg, (k) => interact.hasFlag(k), trackedBells, (k) => worldStates.get(k)))
 }
 applyWeather(homeRegion ?? null)
-// 修钟那一刻人往往就站在那口钟旁边：旗标一广播就重算，否则天气要等下一次跨区才跟得上（IP_SEED §7 说的那件回报）
+// 修钟那一刻人往往就站在那口钟旁边：旗标一广播就重算，否则天气要等下一次跨区才跟得上（IP_SEED §7 说的那件回报）。
+// 值域那一形同理——《该不该敲响》的抉择一落地，休垒的天就要跟着换，而下一次跨区可能是几分钟后。
 bus.on('world.flag', () => applyWeather(streaming.regionAt(player.pos) ?? null))
+bus.on('world.state', () => applyWeather(streaming.regionAt(player.pos) ?? null))
 /**
  * 可破坏场景物（KI-023，§15.3 音刺）。三根汇音刺与万籁同区：她的「听」在 sink 这一站被
  * 重定向到刺上，碎刺的聋乱窗经 `world.propBroken` 由 AISystem 落账，碎裂状态跟着存档走（v8）。

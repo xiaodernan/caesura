@@ -31,6 +31,11 @@ type Finding = { level: 'error' | 'warn'; file: string; where: string; msg: stri
 /** 底 = **真表**（从磁盘读，不手抄：抄一份进来，判据与读者就都成了注释） */
 const REAL_REGIONS = readJson<unknown[]>('src/data/json/regions.json')
 const REAL_QUESTS = readJson<unknown[]>('src/data/json/quests.json')
+/** 单测参数（与判据签名一一对应） */
+
+/** 值域登记表（S6 对账 weatherSwitch 值域形的 key/in 用）：key → 合法取值 */
+const REAL_STATES = new Map((readJson<{ key: string; values: string[] }[]>('src/data/json/states.json'))
+  .map((s) => [s.key, { values: s.values }]))
 
 /** 名册推导只吃这一格形状：写开成别名，免得 `[]` 括号配错把"数组"投成"元素"（我第一版就踩了） */
 type QuestLike = { steps?: { advanceOn?: { flags?: string[] } }[] }
@@ -51,11 +56,14 @@ const REGIONS_WITH_BELLS = (REAL_REGIONS as RegionData[]).filter((rg) => repairB
 
 const run = (
   rs: unknown,
-  opts: Partial<{ questFlags: string[] | null; pending: Record<string, string> | null }> = {},
+  opts: RunOpts = {},
 ): Finding[] => weatherSwitchFindings('regions.json', rs,
   opts.questFlags === undefined ? QUEST_FLAGS : opts.questFlags,
-  opts.pending === undefined ? PENDING_WEATHER_SWITCHES : opts.pending)
-const errsOf = (rs: unknown, opts?: Parameters<typeof run>[1]): Finding[] => run(rs, opts).filter((f) => f.level === 'error')
+  opts.pending === undefined ? PENDING_WEATHER_SWITCHES : opts.pending,
+  opts.stateDefs ?? REAL_STATES)
+type RunOpts = Partial<{ questFlags: string[] | null; pending: Record<string, string> | null; stateDefs: Map<string, { values: string[] }> | null }>
+const errsOf = (rs: unknown, opts?: RunOpts, stateDefs?: Map<string, { values: string[] }> | null): Finding[] =>
+  run(rs, { ...opts, stateDefs: stateDefs ?? opts?.stateDefs }).filter((f) => f.level === 'error')
 
 /** 合成区：一口 `kind:'bell'` 的交互物立在哪个旗上，是这套判据唯一的输入 */
 const bell = (id: string, setsFlag?: string): Record<string, unknown> =>
@@ -161,6 +169,85 @@ describe('推导：谁把指针拨到 weatherPresets[1]', () => {
     expect(activeWeather(asRegion(region('rg_bare', [])), () => true, tracked)).toBeNull()
   })
 })
+describe('入口二：weatherSwitch（art-direction §8.1.2 选 A，KI-094② 最后两格）', () => {
+  /** 值域形的键名就用真表那一格（休垒那口钟的四格），不手写第二份名册 */
+  const STATE_KEY = 'state.bells.fourth_dumb'
+  const stateRegion = (): Record<string, unknown> =>
+    ({ ...region('rg_state', ['clear', 'emberfall']), weatherSwitch: { state: { key: STATE_KEY, in: ['RUNG', 'MELTED', 'SEALED'] } } })
+
+  it('旗形：那面旗立着 ⇒ 换格；没立 ⇒ 驻留（营地的形状）', () => {
+    const r = asRegion({ ...region('rg_camp', ['clear', 'fog']), weatherSwitch: { flag: 'flag.brokenbar_resolved' } })
+    expect(activeWeather(r, () => false, tracked), '旗没立 ⇒ 还是驻留那一格').toBe('clear')
+    expect(activeWeather(r, only('flag.brokenbar_resolved'), tracked), '旗立着 ⇒ 换成第二格').toBe('fog')
+    // 别人家的旗不管用（与钣那一股同形：条件必须指向这一区）
+    expect(activeWeather(r, only('flag.bell_second_repaired'), tracked), '别的区的旗不该拨动天气').toBe('clear')
+  })
+
+  it('值域形：in 里的值算成立，INTACT 不算（休垒的形状）', () => {
+    const r = asRegion(stateRegion())
+    for (const v of ['RUNG', 'MELTED', 'SEALED']) {
+      expect(activeWeather(r, () => false, tracked, () => v), `${v} 落进 in ⇒ 该换格`).toBe('emberfall')
+    }
+    expect(activeWeather(r, () => false, tracked, () => 'INTACT'), 'INTACT = 还没抉择，不构成换天的理由').toBe('clear')
+  })
+
+  it('值域形而不传读者 ⇒ 当不成立（不拿空值去比较）', () => {
+    const r = asRegion(stateRegion())
+    // 空值比较会把"这个程序没接值域"变成"值域没动"——两者在画面上同样是一片霧，只能在这里分开。
+    expect(activeWeather(r, () => true, tracked), '不传 stateValue 时值域形不得唤醒').toBe('clear')
+  })
+
+  it('两种来源不叠加：有 weatherSwitch 就不数钟（钟立着也不让位）', () => {
+    const r = asRegion({
+      ...region('rg_both', ['clear', 'fog', 'storm'], [bell('bl_a', 'flag.bell_second_repaired')]),
+      weatherSwitch: { flag: 'flag.never_set' },
+    })
+    expect(activeWeather(r, only('flag.bell_second_repaired'), tracked), '钟的旗立着，但这一区声明了旗形且那面旗没立 ⇒ 仍然驻留').toBe('clear')
+  })
+})
+
+describe('判据新臂：S1 双主人 / S6 形状（weatherSwitch 落地）', () => {
+  it('S6：同时写旗形与值域形 ⇒ ERROR（一个第二格只能有一个主人）', () => {
+    const out = errsOf([{ ...region('rg_two_forms', ['clear', 'fog']), weatherSwitch: { flag: 'flag.x', state: { key: 'state.bells.fourth_dumb', in: ['RUNG'] } } }], { pending: {} })
+    expect(out.map((f) => f.where), 'S6 要在形状就把这种区拦下来').toEqual(['rg_two_forms.weatherSwitch'])
+    expect(out[0].msg).toContain('同时')
+  })
+
+  it('S6：一个都不写（空对象）/ 空白 flag / 空的 in ⇒ 各自一条 ERROR', () => {
+    expect(errsOf([{ ...region('rg_empty', ['clear', 'fog']), weatherSwitch: {} }], { pending: {} })[0].where).toBe('rg_empty.weatherSwitch')
+    expect(errsOf([{ ...region('rg_blank', ['clear', 'fog']), weatherSwitch: { flag: '  ' } }], { pending: {} })[0].where).toBe('rg_blank.weatherSwitch')
+    expect(errsOf([{ ...region('rg_noin', ['clear', 'fog']), weatherSwitch: { state: { key: 'state.bells.fourth_dumb', in: [] } } }], { pending: {} })[0].where)
+      .toBe('rg_noin.weatherSwitch.state.in')
+  })
+
+  it('S6：值域形的 key 不在 states.json / in 里有非法取值 ⇒ 各自一条 ERROR', () => {
+    const states = new Map([['state.bells.fourth_dumb', { values: ['INTACT', 'RUNG', 'MELTED', 'SEALED'] }]])
+    const badKey = errsOf([{ ...region('rg_badkey', ['clear', 'fog']), weatherSwitch: { state: { key: 'state.nope', in: ['RUNG'] } } }], { pending: {}, stateDefs: states })
+    expect(badKey.map((f) => f.where)).toEqual(['rg_badkey.weatherSwitch.state.key'])
+    expect(badKey[0].msg).toContain('states.json')
+    const badVal = errsOf([{ ...region('rg_badval', ['clear', 'fog']), weatherSwitch: { state: { key: 'state.bells.fourth_dumb', in: ['RUNG', 'NOPE'] } } }], { pending: {}, stateDefs: states })
+    expect(badVal.map((f) => f.where)).toEqual(['rg_badval.weatherSwitch.state.in'])
+    expect(badVal[0].msg).toContain('INTACT')
+  })
+
+  it('S1：声明了 weatherSwitch 而只有一格天气 ⇒ ERROR（那一格条件成立了也没有第二格可换）', () => {
+    const out = errsOf([{ ...region('rg_one_slot_switch', ['clear']), weatherSwitch: { flag: 'flag.x' } }], { pending: {} })
+    expect(out.map((f) => f.where)).toEqual(['rg_one_slot_switch.weatherSwitch'])
+  })
+
+  it('S1：weatherSwitch 与本区被追踪的钣同时在场 ⇒ ERROR（两种来源不叠加）', () => {
+    const out = errsOf([{ ...region('rg_both_src', ['clear', 'fog'], [bell('bl_a', 'flag.bell_second_repaired')]), weatherSwitch: { flag: 'flag.x' } }], { pending: {} })
+    expect(out.map((f) => f.where), '只报区本身，不报钟也不报旗（问题在于两个主人，不在任何一个）').toEqual(['rg_both_src'])
+    expect(out[0].msg).toContain('不叠加')
+  })
+
+  it('销账：区有了 weatherSwitch 而账还挂着 ⇒ ERROR 说该销（与钣一族同形）', () => {
+    const out = errsOf([{ ...region('rg_now_declared', ['clear', 'fog']), weatherSwitch: { flag: 'flag.x' } }],
+      { pending: { rg_now_declared: '这条待办已经过期，它该被判据喊出来而不是静静留着（够长的理由）' } })
+    expect(out.map((f) => f.where)).toEqual(['PENDING_WEATHER_SWITCHES.rg_now_declared'])
+  })
+})
+
 
 describe('判据 ⇄ 读者：同一句口径在两个平面各写了一遍，所以必须逐区对账', () => {
   it('`scripts/weather-rules.mjs > trackedBellFlags` 与 `src/world/WeatherSwitch.ts > repairBellFlags` 在真表上逐区逐字相同（含顺序）', () => {
@@ -296,11 +383,13 @@ describe('判据臂：每一臂只改一个形状，红的那条必须归得到�
     expect(errsOf([], { pending: {} })[0]?.msg).toContain('空转')
     // 反证：空名册如果退成"合法"，下面这句就会红——它确保上面那两条不是碰巧。
     // 期望的不是"某一条数"而是"每一个有第二格却没有钟的区各报一条"：数会随数据漂，判据那句话不会。
-    const unmet = (REAL_REGIONS as RegionData[])
-      .filter((rg) => (rg.weatherPresets?.length ?? 0) > 1 && repairBellFlags(rg, tracked).length === 0)
-    expect(unmet.length, '真表里没有"声明了第二格而区内没有钟"的区 ⇒ 这句反证的对照集是空的，它什么也没反证')
+    // weatherSwitch 落地之后，"第二格没主人"的区已经为零（休垒与营地各自声明了一格）。
+    // 所以这里的对照集改成"把声明摘掉之后才缺主人的区"——在合成表上做，不动真表。
+    const unmet = (REAL_REGIONS as RegionData[]).map((rg) => ({ ...rg, weatherSwitch: undefined }))
+      .filter((rg) => (rg.weatherPresets?.length ?? 0) > 1 && repairBellFlags(rg as RegionData, tracked).length === 0)
+    expect(unmet.length, '摘掉 weatherSwitch 之后没有任何一区缺主人 ⇒ 这句反证的对照集是空的，它什么也没反证')
       .toBeGreaterThan(0)
-    expect(errsOf(REAL_REGIONS, { questFlags: QUEST_FLAGS, pending: null }).map((f) => f.where).sort(),
+    expect(errsOf(unmet as unknown, { questFlags: QUEST_FLAGS, pending: null }).map((f) => f.where).sort(),
       '真名册下响的必须是"有第二格而区内没钟"的那几区（摘掉账本 ⇒ 每一笔欠账都得自己站出来）')
       .toEqual(unmet.map((rg) => `${rg.id}.weatherPresets`).sort())
   })

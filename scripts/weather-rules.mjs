@@ -58,15 +58,24 @@ export const PENDING_WEATHER_READINGS = {
 /**
  * 「这一区的第二格天气今天由谁的条件来」还没裁的那些区（KI-094② 判据 S1）。
  *
- * 每条写的都是**那一区的变化在数据里长什么形状**，而不是"待办"：切换的判据是"一口修得动的钟立起
- * 一面任务线在等的旗"（`src/world/WeatherSwitch.ts`），下面这四处的事件都不是那个形状——
- * 给它们编一个条件就是拿我的猜测冒充叙事裁决（§77 那条纪律在数据侧的样子）。
+ * 每条写的都是**那一区的变化在数据里长什么形状**，而不是"待办"：切换的来源今天有两种——
+ * 本区被任务线追踪的钟，与 `regions.json > weatherSwitch` 的显式声明（旗形／值域形）。
+ * **两条原始欠账已于 2026-10-08 销掉**（weatherSwitch 落地），名单现在是空的；新条目只许因为
+ * "这一区的变化连形状都定不下来"而挂，不许因为懒得写那一行声明而挂。
+ */
+/**
+ * 2026-10-08：两条欠账同批销掉——`weatherSwitch` 落地（art-direction §8.1.2 选 A）之后，这两区
+ * 各自的第二格都有了主人，判据 S1 的"该销"分支当场会红，所以条目必须在此删除而不是留着好看：
+ * - `rg_resthold` ⇒ 值域形 `{ state: { key: 'state.bells.fourth_dumb', in: [RUNG/MELTED/SEALED] } }`
+ *   （广场那四件 inspect 陈设按值域换组；`INTACT` 不算——她还没做决定，不构成换天的理由）；
+ * - `rg_brokenbar_camp` ⇒ 旗形 `{ flag: 'flag.brokenbar_resolved' }`（写方是《断弦》步 4 的对话抉择，
+ *   不为天气另立新旗）。
+ * 现在这份名单是空的：今天每个有第二格的区要么有被追踪的钟，要么有 `weatherSwitch`。**新条目只许
+ * 因为"这一区的变化连形状都定不下来"而挂**（例：五环线索合取算不算一个天气条件，哪天要给深窖加
+ * 第二格时先裁这个），不许因为"懒得写那一行声明"而挂。
  */
 export const PENDING_WEATHER_SWITCHES = {
-  rg_resthold: '休垒的"落烬"：区内没有 `kind:\'bell\'` 的钟——广场那四件陈设是 `inspect`，按**值域**换组（`state.bells.fourth_dumb` = INTACT/RUNG/MELTED/SEALED，narrative §7 那个抉择）。切换今天只认"被任务线追踪的旗"。**裁决已做（2026-10-07，art-direction §8.1.2 选 A）**：值域算天气条件——`regions.json` 与 `weatherPresets` 并排加一格 `weatherSwitch: { state: { key, in } }`，推导先读那一格、没有则退回今天的行为、两种来源不叠加。**真正的阻塞是 `src/data/schema.ts`**：类型 / 门禁白名单 / 词表对账三处要同时认这个字段，不能只做两处再用 cast 绕类型。它一接通，这条账就该销',
-  rg_brokenbar_camp: '营地的"雾"：那一区的世界变化走的是桥放下来／后门开／`flag.brokenbar_resolved` 那类事件（没有钟，也没有修钟这一步），而文档里没有任何一句说营地为什么起雾。**裁决已做（2026-10-07，art-direction §8.1.2 选 A）**：走 `flag.brokenbar_resolved` 那条——用 `weatherSwitch: { flag }` 显式声明"这一区的第二格由谁拨"，**不为天气另立新旗**。阻塞同上（`schema.ts` 立类型）。它一接通，这条账就该销',
 }
-
 const isObj = (v) => !!v && typeof v === 'object' && !Array.isArray(v)
 const isArr = (v) => Array.isArray(v)
 const isNum = (v) => typeof v === 'number' && Number.isFinite(v)
@@ -79,16 +88,22 @@ const isNonEmptyStr = (v) => typeof v === 'string' && v.trim().length > 0
  * 读者的算法住在 `src/world/WeatherSwitch.ts`，与这里同一判据、同一份数据 —— 判据与读者各写一份
  * "什么算修好的钟"就是两份账（KI-092 那一族：口径必须有主人）。
  *
- * 五条：
- *  S1 每区都要交代它的切换：`weatherPresets` 只有驻留那一格 ⇒ 没事；有第二格而**没有任何被追踪的钟**
+ * 六条：
+ *  S1 每区都要交代它的切换：`weatherPresets` 只有驻留那一格 ⇒ 没事；有第二格而**没有任何被追踪的钟、也没有 `weatherSwitch`**
  *     ⇒ 必须挂在 `PENDING_WEATHER_SWITCHES` 上写清"这一格今天由谁的条件来"，否则 ERROR（欠账能挂，
  *     不能不挂）；已经挂了账而条件后来出现 ⇒ ERROR 说该销（KI-073 那一族）。
+ *     **两种来源不叠加**（`art-direction §8.1.2`）：`weatherSwitch` 与本区被追踪的钟同时在场
+ *     ⇒ ERROR——一个第二格只能有一个主人，其中一个会被静默叠掉。
  *  S2 一面被追踪的旗不许被两区的钟同时立：那"这面旗改谁的天"没有答案 ⇒ ERROR。
  *  S3 钟数与格数不齐（`bells !== presets.length - 1`）⇒ WARN：多出来的钟拨不动新天气，
  *     少掉的那几格永远等不到（今天没有这种区，这条是给以后拦的）。
  *  S4 `kind === 'bell'` 而立了旗、那面旗**不在任务线名册里** ⇒ WARN：这口钟改了世界而不改天气，
  *     要么它本来就不是"修钟"（今天那口倒钟正是敲响而非修复），要么任务线漏了它。
  *  S5 两侧任一名册读空 ⇒ ERROR 说"这道门在空转"，不退成"名单为空所以什么都合法"。
+ *  S6 `weatherSwitch` 自己的形状（`art-direction §8.1.2` 选 A 落地）：必须正好是一种形——
+ *     旗形 `{ flag }` 或值域形 `{ state: { key, in } }`；两种同时写、一个都不写、空白字符串、空的 `in` 都是 ERROR。
+ *     值域形的 `key` 必须在 `states.json` 登记表里，`in` 里每个取值必须是那一格的成员
+ *     （与 `QuestStep.advanceOn.state` 同一份对账，不为它新立一套语法）。
  *
  * @param {string} file 报告用的文件名
  * @param {unknown} regions `regions.json` 的顶层
@@ -96,7 +111,7 @@ const isNonEmptyStr = (v) => typeof v === 'string' && v.trim().length > 0
  * @param {{ [regionId: string]: string } | null} pending 欠条件的区域账本：区 id → 为什么今天给不出条件
  * @returns {{ level: 'error' | 'warn', file: string, where: string, msg: string }[]}
  */
-export function weatherSwitchFindings(file, regions, questFlags, pending) {
+export function weatherSwitchFindings(file, regions, questFlags, pending, stateDefs = null) {
   const out = []
   const err = (where, msg) => out.push({ level: 'error', file, where: where || file, msg })
   const warn = (where, msg) => out.push({ level: 'warn', file, where: where || file, msg })
@@ -137,18 +152,54 @@ export function weatherSwitchFindings(file, regions, questFlags, pending) {
       err(`${rg.id}.weatherPresets`, '必填且非空：一区至少要说得出它驻留的天气，否则画面那一格对它没有读数')
       continue
     }
-    if (slots > 0 && bells.length === 0) {
-      const why = ledger && ledger[rg.id]
-      if (why) {
-        warn(rg.id, `这一区声明了修钟后的天气而今天没有能让它响的条件：${why}`)
-      } else {
-        err(`${rg.id}.weatherPresets`, `'${rg.id}' 声明了 ${presets.length} 格天气（${presets.join(' → ')}），`
-          + '而区内没有任何一口钟立着被任务线追踪的旗 ⇒ 第二格永远不会奏。要么在那一区放一口修得动的钟，'
-          + '要么把"这一格今天由谁的条件来"写进 PENDING_WEATHER_SWITCHES')
+    // S6：`weatherSwitch` 自己的形状——正好一种形，且值域形的 key/in 要能对上 states.json
+    let declared = null
+    let declaredBad = false
+    if (rg.weatherSwitch !== undefined) {
+      const ws = rg.weatherSwitch
+      const at = `${rg.id}.weatherSwitch`
+      if (!isObj(ws)) { err(at, '必须是对象：旗形 { flag } 或值域形 { state: { key, in } }（art-direction §8.1.2 选 A 的确切形状）'); declaredBad = true }
+      else if (isNonEmptyStr(ws.flag) && isObj(ws.state)) { err(at, '旗形与值域形同时写了：一个第二格只能有一个主人，判据不知道该认哪一句'); declaredBad = true }
+      else if (isNonEmptyStr(ws.flag)) declared = { form: 'flag', flag: ws.flag }
+      else if (isObj(ws.state)) {
+        const st = ws.state
+        const inArr = isArr(st.in) ? st.in : null
+        if (!isNonEmptyStr(st.key)) { err(`${at}.state.key`, 'key 必填且非空（值域的 key 只能由 states.json 说了算）'); declaredBad = true }
+        else if (!inArr || inArr.length === 0 || !inArr.every(isNonEmptyStr)) { err(`${at}.state.in`, 'in 必填且是非空字符串数组：哪几个值算"这一格成立"是设计读数，写在数据里而不是代码里'); declaredBad = true }
+        else if (stateDefs instanceof Map && !stateDefs.has(st.key)) err(`${at}.state.key`, `不在 states.json 登记表里：${st.key}（与 QuestStep.advanceOn.state 同一份对账）`)
+        else if (stateDefs instanceof Map) {
+          const legal = stateDefs.get(st.key).values ?? []
+          const bad = inArr.filter((v) => !legal.includes(v))
+          if (bad.length) err(`${at}.state.in`, `取值 ${bad.map((v) => JSON.stringify(v)).join('/')} 不在 ${st.key} 的取值表里（合法：${legal.join('/')}）`)
+        }
+        if (isNonEmptyStr(st.key) && inArr && inArr.length > 0) declared = { form: 'state', state: st }
+      } else { err(at, '既不是旗形 { flag } 也不是值域形 { state: { key, in } }：两种形状之外没有第三种'); declaredBad = true }
+    }
+
+    if (slots > 0) {
+      // S1：第二格要有且只有一个主人——声明的 weatherSwitch 或本区被追踪的钟，二选一；都没有就挂账
+      if (declared && bells.length > 0) {
+        err(rg.id, `这一区同时写了 weatherSwitch（${declared.form} 形）又有 ${bells.length} 口被追踪的钟（${bells.join(' / ')}）：`
+          + '两种来源不叠加（art-direction §8.1.2）——钟那一条会被静默叠掉，而"谁拨这一格"从此有两个答案')
+      } else if (!declared && !declaredBad && bells.length === 0) {
+        const why = ledger && ledger[rg.id]
+        if (why) {
+          warn(rg.id, `这一区声明了修钟后的天气而今天没有能让它响的条件：${why}`)
+        } else {
+          err(`${rg.id}.weatherPresets`, `'${rg.id}' 声明了 ${presets.length} 格天气（${presets.join(' → ')}），`
+            + '而区内没有任何一口钟立着被任务线追踪的旗、也没有 weatherSwitch ⇒ 第二格永远不会奏。'
+            + '要么在那一区放一口修得动的钟，要么加一格 weatherSwitch 显式声明"这一格由谁拨"，'
+            + '要么把"这一格今天由谁的条件来"写进 PENDING_WEATHER_SWITCHES')
+        }
       }
     }
-    if (ledger && ledger[rg.id] && bells.length > 0) {
-      err(`PENDING_WEATHER_SWITCHES.${rg.id}`, `这一区已经有 ${bells.length} 口被追踪的钟（${bells.join(' / ')}）作为条件，这条待办该销（留着就是两种交代同时挂）`)
+    if (ledger && ledger[rg.id] && (declared || bells.length > 0)) {
+      const src = declared ? `weatherSwitch（${declared.form} 形）` : `${bells.length} 口被追踪的钟（${bells.join(' / ')}）`
+      err(`PENDING_WEATHER_SWITCHES.${rg.id}`, `这一区已经有 ${src} 作为条件，这条待办该销（留着就是两种交代同时挂）`)
+    }
+    // S1 的另一半：声明了 weatherSwitch 而只有一格天气 ⇒ 那一格永远不唤醒（与"钟多于格"同形）
+    if (declared && slots === 0) {
+      err(`${rg.id}.weatherSwitch`, `这一区声明了 weatherSwitch 却只有一格天气（${presets[0]}）：那一格条件成立了也没有第二格可换`)
     }
     if (bells.length > 0 && bells.length !== slots) {
       warn(rg.id, `这一区有 ${bells.length} 口被追踪的钟而天气只有 ${slots} 格可换：${bells.length > slots ? '多出来的钟拨不动新天气' : `第 ${bells.length + 1} 格之后的天气永远等不到`}（bell 数与格数要一起改）`)

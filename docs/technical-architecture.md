@@ -2312,3 +2312,22 @@ Phase 4-B 落三叠箭时只做了**延迟**那一半（`at=[0,32,42]` 让第 2 
 
 
 Phase 1（核心战斗原型）＝ `core + player + combat + tools/CombatDebugger + 占位场景`；Phase 3 ＝ `world/Streaming + generators`；Phase 5 ＝ `rpg + save`；Phase 6 ＝ `quest + audio(对话)`。每模块交付即配 §6 测试，不做「先全写完再测」。
+### 5.9.40 天气的第二格第一次有主人：`weatherSwitch` 落地，`PENDING_WEATHER_SWITCHES` 两条欠账同批销掉（KI-094②，2026-10-08）
+
+§5.9.33 把「调色」那一列接上了读者，但**切换**那一列还空着：每区 `weatherPresets` 的第二格摆在那里，谁把它拨过去没有主人。原来的读法是「本区被任务线追踪的钟」——三口钟各管一区，这件事对铃区成立，对**别的区形状的变化**不成立：休垒广场那四件 inspect 陈设换掉的是「她做没做过那个决定」，破营地的「事情解决了」写在对话抉择立的旗上，两者都不是钟。于是 §8.1.2 裁了 A 案：加一格**显式声明** `regions.json > weatherSwitch`，把「这一区的第二格天气今天由谁的条件来」从隐含的「必须是钟」改成数据自己说。
+
+**两种来源，二选一，不叠加**。区有声明就只读声明；没有声明才数本区被任务线追踪的钟（§5.9.33 的行为原样保留给三个铃区）。「不叠加」不是风格选择而是正确性：一个第二格有两个主人时，`weatherSwitchRung()` 会静默返回声明的那个、钟白拨——所以这件事由判据 **S1 的 ERROR** 喊出来，不靠读者的沉默。
+
+| 处 | 东西 | 它回答的问题 |
+|---|---|---|
+| `schema.ts > RegionData.weatherSwitch?` | 旗形 `{ flag }` 与值域形 `{ state: { key, in } }` 的联合可选字段 | 第二格的条件长几种形状 |
+| `regions.json` | `rg_resthold` 值域形 + `rg_brokenbar_camp` 旗形 | 两个原本没有主人的区各自有了交代 |
+| `src/world/WeatherSwitch.ts` | `weatherSwitchRung()` 入口 + 两种分支 | 拨了几格（0/1），两个来源共用同一个入口 |
+| `scripts/weather-rules.mjs` | 判据五条→**六条**（S1 收窄 + S6 新增），`PENDING_WEATHER_SWITCHES` 销账 | 见下 |
+| `main.ts` | `applyWeather` 传 `(k) => worldStates.get(k)`，并监听 `world.state` 重算 | 值域形的读者是活的（不传读者 = 那一形当不成立，而不是拿 null 去比较） |
+
+**S1 从此是「有且只有一个主人」**：第二格有、而既没有 `weatherSwitch` 也没有被追踪的钟 ⇒ 仍按老规矩挂 `PENDING_WEATHER_SWITCHES`（≥20 字说明）；两种来源同时在场 ⇒ **ERROR**；声明了却只有一格天气 ⇒ 同形的「永远不唤醒」。**S6 管形状**：必须正好是一种形——双形、空形、空 `flag`、空 `in` 全是 ERROR；值域形的 `key` 必须在 `states.json` 登记表里、`in` 的每个取值必须是那一格的成员（复用 `QuestStep.advanceOn.state` 同一份对账语法，不为它另立一套）。形状坏时 S1 不重复报。
+
+**两条欠账同批销掉**（账本现为空对象，头注写明 2026-10-08）：`rg_resthold` ⇒ `{ state: { key: 'state.bells.fourth_dumb', in: ['RUNG','MELTED','SEALED'] } }`——广场那四件陈设按值域换组，**`INTACT` 不算**（她还没做决定，不构成换天的理由）；`rg_brokenbar_camp` ⇒ `{ flag: 'flag.brokenbar_resolved' }`（《断弦》步 4 对话抉择立的那面旗，不另立新旗）。门禁 WARN 因此从 4 条降到 2 条，剩下两条是正当说明（`bell.everySec` 听感口径、倒钟「敲响≠修复」）。
+
+**没做的**（§5.9.33 的 ②–⑥ 仍欠，如实记账）：天气的音频腿、敌人浓度腿、失谐累积速率腿仍零读者，`lightingPreset` 五区仍零运行时读者，换档仍无过渡。

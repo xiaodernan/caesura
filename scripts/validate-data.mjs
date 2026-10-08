@@ -2055,10 +2055,14 @@ function validateWeather() {
    * 手抄一份就等于给这条判据编第二个真源。runtime 那一侧的同名推导在 `src/world/WeatherSwitch.ts`，
    * 两边读的是同一份 `quests.json`，而"它们今天是不是同一批旗"由 `tests/unit/weather-switch.test.ts` 对账。
    */
+  // S6 要拿 states.json 的登记表（`stateDefs`）对账 weatherSwitch 值域形的 key/in——
+  // 不传就会把"拼错的 state key"当成"这一格没人读"而安静地管不着。
+  // 这段注释故意站在名册推导的那一行**之前**：单测要把那一行整段抽出来就地求值，
+  // 中间插注释会把它切成不能编译的碎块（这一回真挥过一次）。
   const questFlags = (isArr(data['quests.json']) ? data['quests.json'] : []).filter(isObj)
     .flatMap((q) => isArr(q.steps) ? q.steps : []).filter(isObj)
     .flatMap((s) => isObj(s.advanceOn) && isArr(s.advanceOn.flags) ? s.advanceOn.flags.filter(isStr) : [])
-  for (const f of weatherSwitchFindings(file, data['regions.json'], questFlags, PENDING_WEATHER_SWITCHES)) {
+  for (const f of weatherSwitchFindings(file, data['regions.json'], questFlags, PENDING_WEATHER_SWITCHES, stateDefs)) {
     if (f.level === 'warn') report.warn(f.file, f.where, f.msg)
     else report.error(f.file, f.where, f.msg)
   }
@@ -2424,6 +2428,11 @@ function collectFlagUsage() {
     // 之前写成 `claim: null` 会把刚认出来的领取点覆盖掉，闸门因此误报"旗立了没人发奖"。
     for (const s of rg.secrets ?? []) if (isObj(s)) secrets.push({ ...s, regionId: rg.id, claim: s.claim ?? null })
     if (isStr(rg.unlockFlag)) read.set(rg.unlockFlag, `${rg.id}.unlockFlag`)
+    // KI-094② 的旗形 weatherSwitch：那面旗也是读方——没有写方的话这一格天气永远不切换，
+    // 而那不是"可选的补充"；不登记进来，它就会在"写了没人读"那条判据里变成死旗标。
+    if (isObj(rg.weatherSwitch) && isStr(rg.weatherSwitch.flag)) {
+      read.set(rg.weatherSwitch.flag, `${rg.id}.weatherSwitch.flag`)
+    }
   }
   for (const s of secrets) if (isStr(s.unlockFlag)) read.set(s.unlockFlag, `${s.regionId}.secrets(${s.id}).unlockFlag`)
   // 谱册页的旗标解锁源（KI-037 乐章 IV）：读方登记进对账——没有写方的页永远点不亮
@@ -2887,6 +2896,8 @@ const dialogueInfo = validateDialogue(npcIds, questIds, itemIds, stateDefs)
   for (const rg of data['regions.json'] ?? []) {
     if (!isObj(rg)) continue
     for (const it of rg.interactables ?? []) if (isObj(it)) put(reads, it.requiresState?.key, `${rg.id}.interactables(${it.id}).requiresState`)
+    // KI-094② 的值域形 weatherSwitch：那一格值域也是读方（否则它会落进"写了没人读"的死数据）
+    if (isObj(rg.weatherSwitch) && isObj(rg.weatherSwitch.state)) put(reads, rg.weatherSwitch.state.key, `${rg.id}.weatherSwitch.state.key`)
   }
   for (const [k, w] of [...reads].sort()) {
     if (writes.has(k)) continue

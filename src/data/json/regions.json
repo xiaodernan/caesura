@@ -24,6 +24,16 @@
    "clear",
    "emberfall"
   ],
+  "weatherSwitch": {
+    "state": {
+      "key": "state.bells.fourth_dumb",
+      "in": [
+        "RUNG",
+        "MELTED",
+        "SEALED"
+      ]
+    }
+  },
   "lightingPreset": "lp_resthold",
   "palette": {
    "base": "#e8e2d4",
@@ -819,6 +829,9 @@
    "clear",
    "fog"
   ],
+  "weatherSwitch": {
+    "flag": "flag.brokenbar_resolved"
+  },
   "lightingPreset": "lp_brokenbar_camp",
   "palette": {
    "base": "#4a4e55",

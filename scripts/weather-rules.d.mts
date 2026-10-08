@@ -45,6 +45,11 @@ export function weatherSwitchFindings(
   regions: unknown,
   questFlags: string[] | null,
   pending: { [regionId: string]: string } | null,
+  /**
+   * S6 对账用的值域登记表（`states.json` 推出的 key → 合法取值）。
+   * 不传 = 跳过 key/in 的成员检查（只能拿它当替代哪个调用方真的读了 states.json）。
+   */
+  stateDefs?: Map<string, { values: string[] }> | null,
 ): WeatherFinding[]
 
 /**

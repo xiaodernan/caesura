@@ -348,3 +348,8 @@ ENV_<区域>_<区块>      环境装配          例 ENV_FELLCARILLON_CLIFF_E
 > 口径提醒：本节裁的是**判据形状**（谁有资格当天气条件），不是**读数**。
 > 任何新接进来的切换都必须复用 §8 已有的雾密度/明度/对比三格，**不许为它编新数**。
 
+> **已落地（2026-10-08，KI-094② 最后两格）**：`schema.ts > RegionData.weatherSwitch` 建类型；
+> `regions.json` 休垒走值域形（`state.bells.fourth_dumb` 的 RUNG/MELTED/SEALED，`INTACT` 不算——还没拉殊不构成换天的理由）、
+> 营地走旗形（`flag.brokenbar_resolved`，不为天气另立新旗）；推导先读这一格、没有才数钣，
+> 两种来源同时在场由判据 S1 记 ERROR。两条 `PENDING_WEATHER_SWITCHES` 同批销掉，门禁 WARN 4 → 2。
+
