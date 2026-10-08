@@ -739,6 +739,8 @@ export interface ItemData {
     heal?: number
     corruption?: number
     throw?: { speed: number; range: number; radius: number; gravity: number; loudness: number; offsetY?: number }
+    /** KI-046 检视动词：研读不消耗。文本存这里，Inventory.inspect 播报并标记 */
+    inspect?: string
   }
 }
 

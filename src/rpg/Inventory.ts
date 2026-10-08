@@ -21,6 +21,8 @@ export interface GearInstance {
 
 export interface ItemSnapshot {
   stacks: { itemId: string; count: number }[]
+  /** KI-046：已研读的物品 id（检视记录跟着档走） */
+  inspected?: string[]
   gears: GearInstance[]
   /**
    * 掉落 RNG 抽到了第几笔（§10「随机种子入档 ⇒ 可复现 QA」）。
@@ -54,6 +56,20 @@ export class Inventory {
   constructor(seed: number | string = 0x51f3a2) {
     this.rng = new Rng(seed)
   }
+
+  /** KI-046：已研读的物品 id 集合 */
+  inspected = new Set<string>()
+
+  /** 研读一件物品（不消耗）：返回检视文本（没有则 null），并把物品标记为已检视 */
+  inspect(itemId: string): string | null {
+    const item = itemOf(itemId)
+    if (!item || this.count(itemId) < 1) return null
+    const text = item.use?.inspect ?? null
+    if (text) this.inspected.add(itemId)
+    return text
+  }
+
+  hasInspected(itemId: string): boolean { return this.inspected.has(itemId) }
 
   count(itemId: string): number {
     return this.stacks.get(itemId) ?? 0
@@ -127,7 +143,8 @@ export class Inventory {
     return {
       stacks: [...this.stacks].map(([itemId, count]) => ({ itemId, count })),
       gears: this.gears.map((g) => ({ uid: g.uid, itemId: g.itemId, level: g.level, affixes: g.affixes.map((a) => ({ ...a })) })),
-      rng: this.rng.state()
+      rng: this.rng.state(),
+      inspected: [...this.inspected]
     }
   }
 
@@ -137,6 +154,9 @@ export class Inventory {
     // v4 及更早的档没有 rng 这一格：那就沿用当前这颗 RNG（如实——那份档确实没记位置），
     // 而不是假装把它倒回开局种子：倒回去会让同一份档重载三次掉出三种东西。
     if (s.rng) this.rng.restore(s.rng)
+    // KI-046：检视记录跟着档走（读了什么就是读了什么）
+    this.inspected.clear()
+    for (const id of s.inspected ?? []) if (itemOf(id).id) this.inspected.add(id)
     for (const st of s.stacks ?? []) {
       if (registry.has(st.itemId)) this.stacks.set(st.itemId, st.count)
     }
