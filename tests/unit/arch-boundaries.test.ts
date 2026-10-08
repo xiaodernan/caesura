@@ -23,6 +23,8 @@ const LOGIC = [
   // §6 过场播放器同样是逻辑层：它只回答"哪一条在跑 / 还剩多久 / 该不该夺输入"，
   // 镜头轨道与字幕时序在表现层（KI-008 / KI-010）。
   'world/Cinematics.ts',
+  // §37 光照读数层同样是逻辑层：它只回答「这一区的雾色与 LUT 读数」，画的那一半在 vfx/ColorGrade。
+  'world/Lighting.ts',
 ]
 /** 表现层：只有这些文件允许 import three / 被表现层模块引用 */
 const PRESENTATION = new Set([
@@ -74,7 +76,7 @@ describe('module dependency boundaries (tech-arch §3)', () => {
 
   it('逻辑层文件确实被扫描到（防止清单漂移把闸门变成空测试）', () => {
     const scanned = LOGIC.flatMap((g) => tsFiles(g))
-    for (const must of ['world/Interactables.ts', 'world/Streaming.ts', 'world/Surface.ts', 'world/WeatherSwitch.ts', 'world/Cinematics.ts', 'combat/CombatManager.ts', 'core/EventBus.ts', 'rpg/Runtime.ts', 'rpg/Settlement.ts', 'save/Serializer.ts']) {
+    for (const must of ['world/Interactables.ts', 'world/Streaming.ts', 'world/Surface.ts', 'world/WeatherSwitch.ts', 'world/Cinematics.ts', 'world/Lighting.ts', 'combat/CombatManager.ts', 'core/EventBus.ts', 'rpg/Runtime.ts', 'rpg/Settlement.ts', 'save/Serializer.ts']) {
       expect(scanned, must).toContain(must)
     }
     expect(scanned.length).toBeGreaterThanOrEqual(20)

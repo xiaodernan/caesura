@@ -9,6 +9,7 @@ import { registerGameData, playerBase, regions, worldstate, dialogues, quests as
 import type { ItemData, MovesetData, NpcData, RegionData, WeaponData } from '@/data/schema'
 import { createArena } from '@/world/PlaceholderArena'
 import { activeWeather, questTrackedFlags } from '@/world/WeatherSwitch'
+import { lightingRow } from '@/world/Lighting'
 import { Cinematics } from '@/world/Cinematics'
 import { StreamingSystem, chunkKeyOf, type ChunkState } from '@/world/Streaming'
 import { Surface } from '@/world/Surface'
@@ -286,7 +287,16 @@ const trackedBells = questTrackedFlags(questTable)
 const applyWeather = (rg: RegionData | null): void => {
   grade.setWeather(activeWeather(rg, (k) => interact.hasFlag(k), trackedBells, (k) => worldStates.get(k)))
 }
+/**
+ * §37 第一腿：这一区的**光**跟着区域换（雾色 + LUT 两格）。与天气分开两路，因为它们本来就是两格
+ * （§5.9.33 欠账②那句「别把它们合成一个假的仲裁者」）：天气会随旗标/值域在一区之内切换，
+ * 光照只随区域走，所以它不听 `world.flag`／`world.state`——听了也是同一份读数，白算。
+ */
+const applyLighting = (rg: RegionData | null): void => {
+  grade.setLighting(lightingRow(rg?.lightingPreset ?? null))
+}
 applyWeather(homeRegion ?? null)
+applyLighting(homeRegion ?? null)
 // 修钟那一刻人往往就站在那口钟旁边：旗标一广播就重算，否则天气要等下一次跨区才跟得上（IP_SEED §7 说的那件回报）。
 // 值域那一形同理——《该不该敲响》的抉择一落地，休垒的天就要跟着换，而下一次跨区可能是几分钟后。
 bus.on('world.flag', () => applyWeather(streaming.regionAt(player.pos) ?? null))
@@ -554,6 +564,7 @@ const core = {
       // 不存在"先换底噪再换雾"那种淡变窗口，写在前写在后同一帧里看不出区别。
       // KI-094②：换区读的是"那一区当前生效的那一格"，不是永远的第一格——区里的钟修过了就是修过后的天气。
       applyWeather(here)
+      applyLighting(here)
       if (booted) checkpoints.request('region') // 读档后第一次「进区域」是恢复现场，不该顺手覆盖存档
       // §6 Boss 出场：进 Boss 区放一次（读档后第一次进区是恢复现场，`booted` 已把它挡在外面）
       const intro = BOSS_INTRO_BY_REGION[here.id]

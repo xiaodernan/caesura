@@ -55,6 +55,9 @@ import { DUCK_FIELDS, duckFindings } from './ducking-rules.mjs'
 // "没被任何一区指到的名字"看它拒不拒）。这里只负责把 §38 的档名名册与被引用的天气名读出来当输入。
 import { PENDING_WEATHER_READINGS, PENDING_WEATHER_SWITCHES, WEATHER_FIELDS, weatherFindings, weatherSwitchFindings } from './weather-rules.mjs'
 import { cinematicBudgetErrors } from './cinematic-rules.mjs'
+// KI-094 同族：§37 区域光照预设表（`lp_*`）那几条**跨文件**判据的本体。这里只把 regions.json 里
+// 被指着的名字读出来当输入，再把 findings 报成 ERROR。
+import { LIGHTING_FIELDS, lightingFindings } from './lighting-rules.mjs'
 // KI-100：世界图那三条**几何**判据的本体（同一族理由：要在测试里喂一条"落点正踩在两个区的缝上"的边、
 // 一个"锚点排成一条直线"的区域，看它拒不拒）。这里只把 `regions.json` 递给它，再把 findings 报成 ERROR。
 import { worldGraphFindings } from './world-graph-rules.mjs'
@@ -67,7 +70,7 @@ import { mapFindings } from './validator-map-rules.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const JSON_DIR = resolve(ROOT, 'src/data/json')
-const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json', 'shop.json', 'states.json', 'ambience.json', 'explore.json', 'battle.json', 'ducking.json', 'weather.json', 'cinematics.json']
+const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json', 'shop.json', 'states.json', 'ambience.json', 'explore.json', 'battle.json', 'ducking.json', 'weather.json', 'cinematics.json', 'lighting.json']
 // Phase 6-B：对话风格枚举与任务标注（narrative.md §3.2 / §28 图例）
 const CHOICE_STYLES = new Set(['blunt', 'poetic', 'silent', 'provoke'])
 const QUEST_TAGS = new Set(['D', 'C', 'H', 'M'])
@@ -224,6 +227,8 @@ const VOCAB_PAIRS = [
   { at: 'DuckRow', from: 'src/data/schema.ts', name: '侧链表字段', source: (c) => interfaceFields(c.blocks, 'DuckRow'), copied: DUCK_FIELDS, where: 'DUCK_FIELDS' },
   /* ---- KI-094：天气表那一行的字段名单（判据住在 `weather-rules.mjs`，名单与它同一份声明） ---- */
   { at: 'WeatherRow', from: 'src/data/schema.ts', name: '天气表字段', source: (c) => interfaceFields(c.blocks, 'WeatherRow'), copied: WEATHER_FIELDS, where: 'WEATHER_FIELDS' },
+  /* ---- KI-094 同族：§37 光照预设表那一行的字段名单（判据住在 `lighting-rules.mjs`，名单与它同一份声明） ---- */
+  { at: 'LightingRow', from: 'src/data/schema.ts', name: '光照预设表字段', source: (c) => interfaceFields(c.blocks, 'LightingRow'), copied: LIGHTING_FIELDS, where: 'LIGHTING_FIELDS' },
   /* ---- KI-086：把剩下那批"能指到主人"的名单逐张量完并入（每张都先量过它读得回来，KI-074 的规矩：
      一条没量过的对账不是门，是安慰）。其中 `PICK_ORDERS` 入表前读回来是 null —— 那是判据认不了
      "嵌在嵌套对象里的内联联合"这一种排版，补的是抽取器，不是名单；`PSEUDO_ACTIONS` 同族，
@@ -2843,6 +2848,25 @@ validateBattle()
 validateDucking()
 // KI-094：天气表要对账两端名册（§38 的档名联合 + 各区 weatherPresets 引用的名字），排在 regions 之后
 /**
+ * §37 区域光照预设（需求 §37 / art-direction §2 六色 + §8 LUT 两格）的判据落点。
+ * 判据本体住 `scripts/lighting-rules.mjs`（hex 合法、乘数有界、两侧引用都交代得清），
+ * 与 `weatherFindings` 同一族纪律：判据要能被合成夹具喂，也要能被校验器读**同一份**实现。
+ *
+ * 排在 `validateRegions` 之后：③④ 两条跨文件判据要读 `regions.json > lightingPresets` 的全体读数。
+ * 表未落地时这道门空转（不是数组就返回），表一落即生效。
+ */
+function validateLighting() {
+  const file = 'lighting.json'
+  if (!isArr(data[file])) return
+  const rows = data[file]
+  const referenced = []
+  for (const rg of data['regions.json'] ?? []) {
+    if (isObj(rg) && isStr(rg.lightingPreset)) referenced.push(rg.lightingPreset)
+  }
+  for (const e of lightingFindings(file, rows, referenced)) report.error(file, e.where, e.msg)
+}
+
+/**
  * §6 过场清单（需求 §31）的判据落点。判据本体住 `cinematic-rules.mjs`（单条 ≤25s / 全清单 ≤180s、
  * id 唯一、`durationMs` 为正、缺字段说话、非数组报"这道门在空转"）——与 `weatherFindings` 同一族纪律：
  * 判据要能被合成夹具喂，也要能被校验器读**同一份**实现。
@@ -2854,6 +2878,8 @@ function validateCinematics() {
   if (!isArr(data[file])) return
   for (const e of cinematicBudgetErrors(data[file])) report.error(file, e.where, e.why)
 }
+
+validateLighting()
 
 validateWeather()
 validateCinematics()

@@ -1,0 +1,74 @@
+[
+  {
+    "id": "lp_resthold",
+    "base": "#3A2C1E",
+    "sec": "#E8DFCB",
+    "accent": "#E07A3F",
+    "emit": "#FFB86B",
+    "sky": "#8A6F55",
+    "dark": "#1A130D",
+    "grade": {
+      "saturateMul": 1.5
+    }
+  },
+  {
+    "id": "lp_whisperwode",
+    "base": "#22302E",
+    "sec": "#6E7F6A",
+    "accent": "#D9B45B",
+    "emit": "#EFD9A0",
+    "sky": "#8FA8B8",
+    "dark": "#101A19"
+  },
+  {
+    "id": "lp_fellcarillon",
+    "base": "#3E4A44",
+    "sec": "#4E8276",
+    "accent": "#B98A44",
+    "emit": "#D9A94E",
+    "dark": "#151E1C",
+    "note": "天光是落日渐层（#C56A3E→#6B3F66 两停），单色格装不下两停 ⇒ sky 省略，雾色按「无天光」走 DARK"
+  },
+  {
+    "id": "lp_earless_deeps",
+    "base": "#0B0D10",
+    "sec": "#39424B",
+    "accent": "#5E8A87",
+    "emit": "#DDE4E6",
+    "dark": "#040506",
+    "grade": {
+      "saturateMul": 0.65
+    },
+    "note": "原文「无天光（纯黑）」⇒ sky 省略；低饱和恐怖由 saturateMul 0.65 承担"
+  },
+  {
+    "id": "lp_brokenbar_camp",
+    "base": "#2B2E33",
+    "sec": "#4A4F55",
+    "accent": "#A8322E",
+    "emit": "#D8642A",
+    "sky": "#4F5259",
+    "dark": "#121316"
+  },
+  {
+    "id": "lp_drowned_choir",
+    "base": "#101820",
+    "sec": "#37414F",
+    "accent": "#CBA25B",
+    "emit": "#7FB3A8",
+    "dark": "#070B10",
+    "note": "原文「无（地下）」⇒ sky 省略"
+  },
+  {
+    "id": "lp_unfinished_hall",
+    "base": "#1C1424",
+    "sec": "#2A1B3D",
+    "accent": "#C9A227",
+    "emit": "#8E44C8",
+    "sky": "#55256E",
+    "dark": "#0A0710",
+    "grade": {
+      "contrastMul": 1.25
+    }
+  }
+]

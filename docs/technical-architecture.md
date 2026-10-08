@@ -269,7 +269,7 @@ src/
 | `player/CameraRig.ts` 的模式枚举与碰撞回弹 | 未落 | 现在的 CameraRig = 平滑跟随 + §10 震镜表 + FOV 脉冲 + 处决推轨 + 锁定时的 target bias；**没有 exploration/combat/lockOn/boss/cinematic 五个模式，也没有弹簧臂射线回弹**（球体射线 5 点采样那句是规划） |
 | `player/LockOn.ts` 的规划四句：`8m~35m 锥形` / `遮挡脱锁` / `boss 强制单锁` | 未落 | **KI-084 把数接进表时逐句核过代码**（不是照抄 §2 那行）：①没有 8m 内圈，也没有任何角度上限——`liveCandidates()` 只筛 `alive` 与水平斜距 `≤ range`，角度只是打分里的一项（所以背后 170° 的目标照样可锁，只要它最近）；②脱锁只有两条：`target.alive == false` 与 `d > range`，**墙不会解开锁定**（`core/Occlusion.ts` 的四个读者里没有 LockOn，KI-014 那条"锁定 AoE"指的是被锁者的 AOE 被遮挡，不是锁定本身被遮挡）；③Boss 没有"强制单锁"，只有 `bossBonus` 让她在同角度上不被贴脸杂兵抢走（那条关系现由 validator 钉住，见 §5.9.22）。**后果**：这三句是设计意图而不是现状，谁要落其中任何一句都得先改这一格，而不是让 §2 那行继续冒充事实 |
 | `world/generators/`（Terrain/Foliage/Rock/Ruin，需求 §52） | 未落 | 地形现在全部 authored 在 `regions.json` + 灰盒盒子；关键区域手工摆放本来就是规划的首选路径，程序化那条没开 |
-| ~~`world/Weather.ts`、`world/Lighting.ts` | 未落 | 与 KI-008 同因：没有真几何与材质就没有雨雾与光照预设。IP_SEED §7 的"铃姨 flag 驱动天气"目前没有任何载体~~ **纠正（2026-09-30，KI-094①）**：天气那一半不再等真几何——它落在 **`src/vfx/ColorGrade.ts`**（画面调色的唯一仲裁者：`scene.fog.density` + `canvas.style.filter`），数据是 `data/json/weather.json`（三行有读数的档，判据在 `scripts/weather-rules.mjs`）。**仍然未落的三句**：①`world/Lighting.ts` 没有落点，`regions.json > lightingPreset` 那一列至今**零运行时读者**（校验器只判它是不是一个名字），7 区色板/光照预设那条腿整条欠着；②"铃姨 flag 驱动天气"= `weatherPresets[1]` 那条切换**今天没有写方**（要的是任务线给的世界状态，KI-094②），所以七区的**驻留**天气全部落回基线那一行，非基线两行（`fog`／`dissonant-storm`）只有 `ColorGrade.setWeather` 这一条入口而它没有外部调用点——这条现状由 `tests/unit/color-grade.test.ts` 量出来而不是写在注释里；③§38 的 `rain` 档没人奏、五个数据侧天气名（`emberfall`/`still`/`drip`/`stone-wind`/`hush`）没有文档读数，挂在 `PENDING_WEATHER_READINGS` 账上（校验器逐条 WARN）。详见 §5.9.33 |
+| ~~`world/Weather.ts`、`world/Lighting.ts` | 未落 | 与 KI-008 同因：没有真几何与材质就没有雨雾与光照预设。IP_SEED §7 的"铃姨 flag 驱动天气"目前没有任何载体~~ **纠正（2026-09-30，KI-094①）**：天气那一半不再等真几何——它落在 **`src/vfx/ColorGrade.ts`**（画面调色的唯一仲裁者：`scene.fog.density` + `canvas.style.filter`），数据是 `data/json/weather.json`（三行有读数的档，判据在 `scripts/weather-rules.mjs`）。**仍然未落的三句**：①~~`world/Lighting.ts` 没有落点，`regions.json > lightingPreset` 那一列至今**零运行时读者**~~ **第一腿已落（2026-10-08，§5.9.42）**：`world/Lighting.ts` + `data/json/lighting.json`，七区各一行，雾色（§8 的 DARK/SKY 70/30）与 LUT 两格第一次有读者。**仍欠**：三层光（hemi/key/point）与跨区 70/30 色板过渡带要真几何与连续地形（KI-008 / Phase 7）；②~~"铃姨 flag 驱动天气"= `weatherPresets[1]` 那条切换今天没有写方~~ **已落地（KI-094②，§5.9.34／§5.9.40）**：写方是"这一区里立着被任务线追踪的旗的那口钟"，A 案之后还有 `weatherSwitch` 那一格显式声明；③§38 的 `rain` 档仍无人奏、五个数据侧天气名（`emberfall`/`still`/`drip`/`stone-wind`/`hush`）没有文档读数，挂在 `PENDING_WEATHER_READINGS` 账上（校验器逐条 WARN，2026-10-08 余两条正当说明）。③§38 的 `rain` 档没人奏、五个数据侧天气名（`emberfall`/`still`/`drip`/`stone-wind`/`hush`）没有文档读数，挂在 `PENDING_WEATHER_READINGS` 账上（校验器逐条 WARN）。详见 §5.9.33 |
 | `ui/MenuStack.ts`、`ui/MapUI.ts`（需求 §43 地图） | 未落 | UI 现只有 HUD、调音桩面板、对话箱、存档两屏、标题屏。**顺带一条命名失真**：`core/Input.ts` 里那个虚拟按钮仍叫 `map`（Tab / 手柄 6 号键），但它今天的消费者（`main.ts` 的 `edges.has('map')`）开的是**调音桩/商摊面板**，不是地图——§43 的地图 UI 从未落地，于是"按着地图的名字在调音"。本轮不改这个键名（改了会连带动 `settings` 与测试口径），只在此登记 |
 | `vfx/GPUParticles.ts`、`vfx/Trails.ts`、`vfx/Decals.ts` | 未落 | 弹痕/震纹贴花与武器拖尾没有，命中反馈目前靠 ring+spark+shard 三件套 |
 | `audio/Mixer.ts` 的三主题淡入淡出（§11 转调） | 未落 | `audio/music.ts` 只有一条休垒 drone + 随机泛音；combat/boss 主题与转调规则没有 |
@@ -1986,7 +1986,7 @@ Phase 4-B 落三叠箭时只做了**延迟**那一半（`at=[0,32,42]` 让第 2 
 
 **实机腿（§77，2026-09-30 跑通，dev server 起在 `127.0.0.1:5173` 的隐藏标签页）**：开局驻留态读回 `scene.fog.density === 0.008`（表里 `clear` 行那个数，**运行时已经不是 `PlaceholderArena` 写死的 0.028**）与 `canvas.style.filter === ''`（没有失谐也没有乘数 ⇒ 合成串为空、一个滤镜都不挂）。再把 `player.corruption.value` 灌到 `cfg.max`、步进 3 帧 ⇒ `saturate(0) brightness(0.7)`（§11「失谐满值剩 70% 亮度」在真 three 运行时里的样子），回 0 再步进 ⇒ 滤镜清空而雾纹丝不动。**两条口径必须写清**：①DOM 读回的是浏览器规范化后的 CSS（`saturate(0.00)` 序列化成 `saturate(0)`），所以这一腿证的是**合成的语义与切换的可逆**，不是那一串字符逐字相等——逐字比在 `color-grade.test.ts` 的假画布上做；②~~七区驻留天气今天全落基线，所以实机换区看不到雾变（那是 `weatherPresets[1]` 那条没接的切换腿，KI-094②），这条实机读数不覆盖它。~~ **纠正（KI-094②）**：那一腿已经接上并有自己的实机读数（§5.9.34 末尾），驻留全落基线那半句仍然成立——所以"走到隔壁区雾就变"仍然看不到，能看到的是"在同一区修好一口被任务线追踪的钟，雾与对比乘数当场换档"。
 
-**没做（§78，故本条记 Partial）**：①~~**`weatherPresets[1]` 那条切换没有写方**——它要的是任务线给的世界状态（`STATE.BELLS.*`），归 KI-094②~~ **已落地（KI-094②，§5.9.34）**：写方就是"这一区里立着被任务线追踪的旗的那口钟"，而它换到 `[1]` 之后**剩下的欠账换了形状**——七区里只有三区（低语林／沉溺合唱／钟坠院）今天有这样的钟，其余四区那一格挂在 `PENDING_WEATHER_SWITCHES` 上等叙事裁决（见 §5.9.34 的欠账表）；②**`lightingPreset` 那一列仍然零读者**，§37 的区域光照/色板预设整条欠着（它和天气是两格，别把它们合成一个假的仲裁者）；③天气的**音频腿**（雨声/风声层随档开合）、**敌人浓度腿**（§38「Storm 期敌人浓度+」）、**失谐累积速率随天气**那半句都没有载体；④§8 的 Storm「间歇冷光」那一格没做——它要的是真几何与材质（KI-008 同因），本批只兑现了它可读的那两格（雾与对比乘数）；⑤`world/PlaceholderArena.ts:25` 那个写死的 `0.028` 从此是**待删**（该文件属并行会话的写入面，本批不动，删它的时机是真几何落地时；`tests/unit/color-grade.test.ts` 钉着它此刻仍在，删掉时那条会红并指名原因）；⑥视口与听感评审**仍不做**：本环境没有可见窗口，"雾换了看不看得出来、褪色压不压得住"这类观感结论一句不写（KI-010 同因）——上面那条实机腿给的是**数字读数**，它不冒充观感。
+**没做（§78，故本条记 Partial）**：①~~**`weatherPresets[1]` 那条切换没有写方**——它要的是任务线给的世界状态（`STATE.BELLS.*`），归 KI-094②~~ **已落地（KI-094②，§5.9.34）**：写方就是"这一区里立着被任务线追踪的旗的那口钟"，而它换到 `[1]` 之后**剩下的欠账换了形状**——七区里只有三区（低语林／沉溺合唱／钟坠院）今天有这样的钟，其余四区那一格挂在 `PENDING_WEATHER_SWITCHES` 上等叙事裁决（见 §5.9.34 的欠账表）；②~~**`lightingPreset` 那一列仍然零读者**~~ **已落第一腿（2026-10-08，§5.9.42）**：`world/Lighting.ts` 出读数、`ColorGrade` 写雾色与 LUT。剩下的是三层光与过渡带（要真几何），它和天气**仍旧是两格**——别把它们合成一个假的仲裁者；③天气的**音频腿**（雨声/风声层随档开合）、**敌人浓度腿**（§38「Storm 期敌人浓度+」）、**失谐累积速率随天气**那半句都没有载体；④§8 的 Storm「间歇冷光」那一格没做——它要的是真几何与材质（KI-008 同因），本批只兑现了它可读的那两格（雾与对比乘数）；⑤`world/PlaceholderArena.ts:25` 那个写死的 `0.028` 从此是**待删**（该文件属并行会话的写入面，本批不动，删它的时机是真几何落地时；`tests/unit/color-grade.test.ts` 钉着它此刻仍在，删掉时那条会红并指名原因）；⑥视口与听感评审**仍不做**：本环境没有可见窗口，"雾换了看不看得出来、褪色压不压得住"这类观感结论一句不写（KI-010 同因）——上面那条实机腿给的是**数字读数**，它不冒充观感。
 
 ### 5.9.34 修钟之后这一区的天真的换了：切换的条件从既有三方关系推导，而不是抄一张对照表（KI-094②，2026-10-01）— 已落地（Partial：四区的第二格欠叙事裁决）
 
@@ -2331,7 +2331,7 @@ Phase 1（核心战斗原型）＝ `core + player + combat + tools/CombatDebugge
 
 **两条欠账同批销掉**（账本现为空对象，头注写明 2026-10-08）：`rg_resthold` ⇒ `{ state: { key: 'state.bells.fourth_dumb', in: ['RUNG','MELTED','SEALED'] } }`——广场那四件陈设按值域换组，**`INTACT` 不算**（她还没做决定，不构成换天的理由）；`rg_brokenbar_camp` ⇒ `{ flag: 'flag.brokenbar_resolved' }`（《断弦》步 4 对话抉择立的那面旗，不另立新旗）。门禁 WARN 因此从 4 条降到 2 条，剩下两条是正当说明（`bell.everySec` 听感口径、倒钟「敲响≠修复」）。
 
-**没做的**（§5.9.33 的 ②–⑥ 仍欠，如实记账）：天气的音频腿、敌人浓度腿、失谐累积速率腿仍零读者，`lightingPreset` 五区仍零运行时读者，换档仍无过渡。
+**没做的**（§5.9.33 的 ③–⑥ 仍欠，如实记账）：天气的音频腿、敌人浓度腿、失谐累积速率腿仍零读者，换档仍无过渡；②已由 §5.9.42 兑现第一腿（雾色 + LUT），三层光与过渡带仍欠。
 
 ### 5.9.41 过场第一次由**玩家自己的选择**触发；音频引擎也第一次有地方可收（TD-006 第二腿①⑤，2026-10-08）
 
@@ -2345,4 +2345,28 @@ Phase 1（核心战斗原型）＝ `core + player + combat + tools/CombatDebugge
 
 **门禁**：`tsc --noEmit` RC=0；`node scripts/validate-data.mjs` 0 ERROR / 2 WARN（与 §5.9.40 落地后同数，一条没新增）；定向测试 145 条全绿（audio-engine / cinematics-player / cinematic-budget / arch-boundaries / doc-audit / ledger-rules / dialogue / schema-vocab）。**一处如实说明**：`muffleHz` 在 headless 里读到的是最后一次 `set` 而不是斜坡当前值（`FakeParam` 没有指数斜坡语义），这件事写在用例注释里，不当成 bug。
 
-**没做的**：TD-006 ③（听感/音量/视口评审）与 ④（`main.ts` 装配层 0%）仍 Blocked；`lightingPreset` 五区仍零运行时读者；天气的音频腿/敌人浓度腿/失谐累积速率腿仍零读者。
+**没做的**：TD-006 ③（听感/音量/视口评审）与 ④（`main.ts` 装配层 0%）仍 Blocked；天气的音频腿/敌人浓度腿/失谐累积速率腿仍零读者；§37 的三层光与跨区过渡带仍欠（§5.9.42 只兑现了雾色与 LUT 两格）。
+
+
+### 5.9.42 `lightingPreset` 第一次有表也有读者：§37 的第一条落地腿（雾色 + LUT 两格，2026-10-08）
+
+`regions.json` 七区各写一个 `lp_*`，这个名字指着一张**不存在的表**——§2.1 那张目录表里 `world/Lighting.ts` 因此标了十周「未落」，校验器只判它是不是一个字符串。本批把它接上：**不只是补数据，而是补一整条链**（表 → schema → 逻辑读数层 → 唯一写方 → 跨文件判据 → 文档对账）。
+
+| 处 | 东西 | 它回答的问题 |
+|---|---|---|
+| `data/json/lighting.json` | 7 行（一行一区），§2 的六色 + §8 的 LUT 两格 + 可省 `note` | 这一区的光长什么样 |
+| `schema.ts > LightingRow` | 九格声明＋`RegionData.lightingPreset` 的书目注释 | 字段名单的主人（判据从源码现推） |
+| `src/world/Lighting.ts` | `hexToRgb`／`rgbToHex`／`lightingFogRgb`／`lightingGrade`／`lightingRow` | §8 那条 70/30 混合与 LUT 缺省中性 |
+| `src/vfx/ColorGrade.ts` | `setLighting()` + `scene.fog.color` 的写方 + `gradeFilter` 第三条腿 | 雾色与每区饱和度/对比乘数 |
+| `src/main.ts` | `applyLighting()`：开局一次 + 换区一次 | 组合根喂名字，画面层不认识区域 |
+| `scripts/lighting-rules.mjs`（+`.d.mts`） | 五色 hex 合法、乘数有界、**两侧引用都交代得清** | 这条链不能静默断 |
+
+**为什么落在 `ColorGrade` 身上而不是新开一个管理者**：那一层本来是「画面调色的唯一仲裁者」（KI-094①），而 §37 的雾色与 LUT 乘数说的就是同一块屏幕。`gradeFilter` 因此多一条**可选**腿（`l?: LightingReadings`），不传时既有调用点一个字节都不变——第三条腿是 §11 失谐、天气乘数、光照 LUT **三方相乘**，任何一方单独写都会把另两方盖掉（浏览器里只有最后一个写方说话）。三层光没有落在那里：它要真光源与真几何（KI-008），本批只兑现**可读的那两格**。
+
+**数据侧的两处诚实交代**。①`sky` 三行故意省略——文档在那三格写的是「无天光（纯黑）」／「无（地下）」／「落日渐层 `#C56A3E→#6B3F66` 两停」，单色格装不下两停，装其中一停就是替作者裁决；`lightingFogRgb` 对没有 `sky` 的行整份取 DARK（那种地方的天光份额是 0，不是「找个近似色顶上」），而少一格的行必须在 `note` 里写明为什么少。②`grade` 只有三行有数（休垒 +0.5 饱和 / 深窖 −35% 饱和 / 未竟厅 +25% 对比，art-direction §8 原文），其余四区不填——填了就是我编的；**「冷暖」那一格整个没建**：文档只给了定性描述，没有数值口径（§55 不许拿猜测冒充裁决）。文档写的落点 `curves/grading_<区>.json` 是本仓库外的资产目录，所以同一份读数收在 `lighting.json`。
+
+**文档对账是这批最该留的一条腿**：art-direction §2 自称「唯一合法颜色表（hex 值级）」，那它就必须**可执行**。`tests/unit/lighting.test.ts` 从 markdown 现推七行六色，与 `lighting.json` 逐格比——改一边不改另一边 ⇒ 红；§8 那句 LUT 的三个数也按文档读数写死在断言里。这条判据故意**不住在校验器里**：`validate-data.mjs` 不该会读 markdown（它是数据门，不是文档门）。
+
+**门禁**：`tsc --noEmit` RC=0；`node scripts/validate-data.mjs` **0 ERROR / 2 WARN**（与 §5.9.41 落地后同数，一条没新增）；定向 44 条全绿（`lighting` / `color-grade` / `arch-boundaries` / `doc-audit`）。**一处如实说明**：抓回归的那一刻值得记下来——给 `main.ts` 加光照腿时把开局那次 `applyWeather(homeRegion …)` 一并吞掉了，是 `color-grade.test.ts` 那条「`applyWeather(` 作为语句必须出现两次」的源码门把它喊回来的（KI-094① 立这道门时盯的是"切换没有写方"，今天它抓的是"原有写方被误删"）。
+
+**没做的**：三层光（hemi/key/point）与跨区 70/30 色板过渡带（要真几何与连续地形，KI-008 / Phase 7）；体积光仍只允许用于地标（§8 的预算句，属内容批）；`lightingPreset` 与既有的 `regions.json > palette`（IP_SEED §10 那三色）**并存且不互推**——前者是 §37 的光与色板，后者已经在灰盒/地图上有读者，合并它们要先有一次裁决。

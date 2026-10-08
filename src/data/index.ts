@@ -22,7 +22,8 @@ import battleRaw from './json/battle.json'
 import duckingRaw from './json/ducking.json'
 import weatherRaw from './json/weather.json'
 import cinematicsRaw from './json/cinematics.json'
-import type { MovesetData, WeaponData, EnemyData, PlayerBaseData, RegionData, ProgressionData, ItemData, LootTableData, NpcData, DialogueData, QuestData, StatusConfig, MovementConfig, WorldStateRule, WorldStateDef, HitReactionTable, ShopData, AmbienceBed, ExploreScore, BattleScore, DuckRow, WeatherRow, CinematicRow } from './schema'
+import lightingRaw from './json/lighting.json'
+import type { MovesetData, WeaponData, EnemyData, PlayerBaseData, RegionData, ProgressionData, ItemData, LootTableData, NpcData, DialogueData, QuestData, StatusConfig, MovementConfig, WorldStateRule, WorldStateDef, HitReactionTable, ShopData, AmbienceBed, ExploreScore, BattleScore, DuckRow, WeatherRow, CinematicRow, LightingRow } from './schema'
 
 export const playerBase = playerRaw as unknown as PlayerBaseData
 export const regions = regionsRaw as unknown as RegionData[]
@@ -66,6 +67,12 @@ export const weatherRows = weatherRaw as unknown as WeatherRow[]
 
 /** §6 过场清单（需求 §31）。判据住 `scripts/cinematic-rules.mjs`（单条 ≤25s / 全清单 ≤180s） */
 export const cinematics = cinematicsRaw as unknown as CinematicRow[]
+/**
+ * §37 区域光照预设表（art-direction §2 的六色 + §8 的 LUT 两格）。行键 = `regions.json > lightingPreset`。
+ * 唯一读者是 `vfx/ColorGrade.ts`（读数经 `world/Lighting.ts`）：雾色与每区的饱和度/对比乘数。
+ * 与 `weatherRows` 同理**不进 `registry`**：`lp_*` 是被区域指着的名字，不是内容 id。
+ */
+export const lightingRows = lightingRaw as unknown as LightingRow[]
 
 let registered = false
 

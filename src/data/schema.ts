@@ -1455,6 +1455,41 @@ export interface WeatherRow {
  * 就是拿猜测冒充设计（KI-049 那族的纪律）。它落之前，这张表只交代上面四格。
  * 判据（单条 ≤25s、全清单 ≤180s）住 `scripts/cinematic-rules.mjs`，与校验器读同一份实现。
  */
+/**
+ * `lighting.json` 的一行（§37 第一腿）：一个**区域光照预设**（`lp_*`）的取色表。
+ *
+ * 六色是 art-direction §2 那张「唯一合法颜色表」逐格抄过来的（BASE/SEC/ACCENT/EMIT/SKY/DARK），
+ * 一份 hex 一格，没有 ±10% 变体的展开——变体是**取色时**的规则，不是表里该多出来的行。
+ * `sky` 可选且三行故意省略：文档自己在那三格写的是「无天光（纯黑）」／「无（地下）」／
+ * 「落日渐层 #C56A3E→#6B3F66 两停」——单色格装不下两停，装其中一停就是替作者裁决。
+ *
+ * `grade` 同理只收文档给了数的两格：art-direction §8 那句「每区 LUT 参数（饱和度/对比/冷暖）」。
+ * 文档只对三区给了数（休垒 +0.5 饱和 / 深窖 −35% 饱和 / 未竟厅 +25% 对比），其余四区不填——
+ * 填了就是我编的。**「冷暖」那一格整个没建**：文档只给了定性描述（休垒 +暖），没有数值口径，
+ * 按 §55 不许拿猜测冒充裁决。文档写的落点 `curves/grading_<区>.json` 是本仓库外的资产目录，
+ * 所以同一份读数收在这里——唯一读者（`vfx/ColorGrade.ts`）在仓库里。
+ */
+export interface LightingRow {
+  /** 行键 = `regions.json > lightingPreset` 里出现的那个名字 */
+  id: string
+  /** 基底（§2 BASE 列） */
+  base: string
+  /** 次要（§2 SEC 列） */
+  sec: string
+  /** 点缀（§2 ACCENT 列） */
+  accent: string
+  /** 发光（§2 EMIT 列） */
+  emit: string
+  /** 天光（§2 SKY 列）。省略 = 这一区没有天光 ⇒ 雾色只取 DARK */
+  sky?: string
+  /** 暗部（§2 DARK 列） */
+  dark: string
+  /** §8 的 LUT 参数（只收给了数的两格）；省略的格按 1.0 中性 */
+  grade?: { saturateMul?: number; contrastMul?: number }
+  /** 这一行与文档的差之所在（只写"为什么少一格"，不写设计愿景） */
+  note?: string
+}
+
 export interface CinematicRow {
   /** `CINE_*`：清单的 ID 列，也是对话节点/选项上 `cinematic` 字段引用的那个名字 */
   id: string
@@ -1529,6 +1564,11 @@ export interface RegionData {
    * 主人，同时在场由 `weather-rules.mjs` 的 S1 记 ERROR。
    */
   weatherSwitch?: { flag: string } | { state: { key: string; in: string[] } }
+  /**
+   * §37 区域光照预设 ⇒ `lighting.json` 的行键（KI-094 同族）。这个名字**必须有真读者**：
+   * `vfx/ColorGrade.ts` 按它写雾色与 LUT 乘数（`world/Lighting.ts` 出读数）。
+   * 三层光那一半（hemi/key/point）要真几何与真光源，属 KI-008，不在这一列里。
+   */
   lightingPreset: string
   palette: RegionPalette
   spawnGroups: SpawnGroup[]
