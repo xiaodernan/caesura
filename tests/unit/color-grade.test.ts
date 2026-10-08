@@ -51,7 +51,11 @@ function fakeCanvas(): { el: HTMLCanvasElement; writes: () => number; value: () 
   return { el: { style } as unknown as HTMLCanvasElement, writes: () => n, value: () => v }
 }
 
-/** 真场景形状（three 在 node 里可以直接构造，不需要 WebGL 上下文）：指数雾 + 构造时那个写死的密度 */
+/** 真场景形状（three 在 node 里可以直接构造，不需要 WebGL 上下文）：指数雾 + 构造前别人写的那一格密度。
+ * 默认的 0.028 不是任何文档的数：它是 KI-094① 之前场景构造里那个写死的数，现在只留在这里当
+ * 「别人写过一格」的合成读数——证明仲裁者构造时按基线把它按掉（下一条用例的 0.028→0.008 那一跳）。
+ * 生产里的场景从 KI-094 遗留⑤（2026-10-01）起不再写密度（`world/PlaceholderArena.ts`），
+ * 所以这里的数不是对生产的复刻，是「万一还有别人写雾」的挡板。 */
 function fogScene(density = 0.028): { scene: THREE.Scene; fog: THREE.FogExp2 } {
   const fog = new THREE.FogExp2(0x0b0e16, density)
   const scene = new THREE.Scene()
@@ -148,8 +152,9 @@ describe('仲裁者：天气与失谐各自改输入，动手的只有 apply() �
     ]
     const grade = new ColorGrade(scene, c.el, rows)
     // 构造走的是基线（它给了 fogDensity ⇒ 0.008）。这里再把它当成"别人写的"改回 0.05：
-    // 今天 `world/PlaceholderArena.ts:25` 那个写死的构造参数就是这么一个别人， KI-094① 之后它该删，
-    // 而删掉之前那一格不能被一条没声明雾密度的天气行悄悄按回基线值。
+    // 生产里原来那个别人（`world/PlaceholderArena.ts:25` 那个写死的构造参数）
+    // 已随 KI-094 遗留⑤（2026-10-01）删掉；这一条钉的是"没声明 fogDensity 的行不许动雾"——
+    // 0.05 只是"别人写过一格"的合成读数，有没有人真的写过它不重要。
     fog.density = 0.05
     grade.setWeather('rainy')
     expect(fog.density, '没声明 fogDensity 的行不该去动雾：那会把别人的雾改成基线值').toBe(0.05)
@@ -160,7 +165,9 @@ describe('仲裁者：天气与失谐各自改输入，动手的只有 apply() �
   it('天气名换成表里没有的 ⇒ 落回基线（判据那侧叫 pending，画面这侧叫按 clear 奏）', () => {
     const { scene, fog } = fogScene(0.028)
     const grade = new ColorGrade(scene, fakeCanvas().el)
-    grade.setWeather('emberfall')
+    // 'emberfall'（落烬）已在 eb97e2e 落成 §38 Rain 的行（雾 0.018 / 明度 ×0.8），不再是“没有读数”的名字。
+    // 这里换成同样属于“区域自己的叫法”、但至今在 weather.json 里仍**没有行**的 'stone-wind'（石风）。
+    grade.setWeather('stone-wind')
     expect(fog.density).toBeCloseTo(0.008, 6)
     grade.setWeather(null)
     expect(grade.fogDensity()).toBe(0.008)
@@ -200,9 +207,13 @@ describe('源码门：这两格今天各只有一个写方', () => {
     expect(writersOf(/grade\.setRegion\(/g), '还有人在调 `grade.setRegion`：那个方法已经不存在，这行代码今天跑不到').toEqual([])
   })
 
-  it('`fog.density` 的赋值点只有 ColorGrade；场景构造那一格仍是 FogExp2（那句类型收窄靠它）', () => {
+  it('`fog.density` 的赋值点只有 ColorGrade；场景构造那一格仍是 FogExp2（那句类型收窄靠它）+ 里面没有密度字面量（KI-094 遗留⑤）', () => {
     expect(writersOf(/\.density\s*=/g)).toEqual(['src/vfx/ColorGrade.ts'])
-    expect(SRC.find((f) => f.path === 'src/world/PlaceholderArena.ts')!.text).toMatch(/scene\.fog = new THREE\.FogExp2\(/)
+    const arena = SRC.find((f) => f.path === 'src/world/PlaceholderArena.ts')!.text
+    expect(arena).toMatch(/scene\.fog = new THREE\.FogExp2\(/)
+    // 遗留⑤（2026-10-01）：场景里那个写死的 0.028 删了。这里钉的不是"今天怎么写"而是"密度这个数
+    // 从此不住在场景里"——`FogExp2(color, density)` 的第二个实参一回来，就等于又给雾编了第二个主人。
+    expect(arena, '场景构造里又出现了雾密度字面量：`FogExp2(color,`␣后面那个数唯一的家是 weather.json').not.toMatch(/new THREE\.FogExp2\([^()]*,/)
   })
 
   it('基线那个 id 字面量在两个平面是同一个字：判据的 WEATHER_BASELINE_ID ⇄ 读者的 BASELINE_ID', () => {

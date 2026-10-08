@@ -22,7 +22,12 @@ export function createArena(canvas: HTMLCanvasElement, clock: RhythmClock): Aren
 
   const scene = new THREE.Scene()
   scene.background = new THREE.Color(0x07080c)
-  scene.fog = new THREE.FogExp2(0x0b0e16, 0.028)
+  // KI-094 遗留⑤（2026-10-01）：雾的**密度**不归场景构造管——这一个数以前写死成 0.028，
+  // 而文档里没有任何一个数长这个样子。密度唯一的读者是 `vfx/ColorGrade`（`weather.json` 那一行的
+  // `fogDensity`），`main.ts` 里它就在下面几行接过去，首帧渲染之前雾已经是表里的数。
+  // 这里只建雾的**形状**（指数雾：art-direction §8 与 ColorGrade 的类型收窄都认它）与颜色，
+  // 密度留默认的 0.00025 —— 一个几乎看不见的占位，而不是一个看起来像读数的数。
+  scene.fog = new THREE.FogExp2(0x0b0e16)
 
   const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 400)
   camera.position.set(0, 2.2, 6)
