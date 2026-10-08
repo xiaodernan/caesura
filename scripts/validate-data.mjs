@@ -54,6 +54,7 @@ import { DUCK_FIELDS, duckFindings } from './ducking-rules.mjs'
 // KI-094：天气表那几条**跨文件**判据的本体（同一族理由：要在测试里喂一行"§38 没有的那一档"、
 // "没被任何一区指到的名字"看它拒不拒）。这里只负责把 §38 的档名名册与被引用的天气名读出来当输入。
 import { PENDING_WEATHER_READINGS, PENDING_WEATHER_SWITCHES, WEATHER_FIELDS, weatherFindings, weatherSwitchFindings } from './weather-rules.mjs'
+import { cinematicBudgetErrors } from './cinematic-rules.mjs'
 // KI-100：世界图那三条**几何**判据的本体（同一族理由：要在测试里喂一条"落点正踩在两个区的缝上"的边、
 // 一个"锚点排成一条直线"的区域，看它拒不拒）。这里只把 `regions.json` 递给它，再把 findings 报成 ERROR。
 import { worldGraphFindings } from './world-graph-rules.mjs'
@@ -66,7 +67,7 @@ import { mapFindings } from './validator-map-rules.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const JSON_DIR = resolve(ROOT, 'src/data/json')
-const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json', 'shop.json', 'states.json', 'ambience.json', 'explore.json', 'battle.json', 'ducking.json', 'weather.json']
+const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json', 'shop.json', 'states.json', 'ambience.json', 'explore.json', 'battle.json', 'ducking.json', 'weather.json', 'cinematics.json']
 // Phase 6-B：对话风格枚举与任务标注（narrative.md §3.2 / §28 图例）
 const CHOICE_STYLES = new Set(['blunt', 'poetic', 'silent', 'provoke'])
 const QUEST_TAGS = new Set(['D', 'C', 'H', 'M'])
@@ -2841,7 +2842,21 @@ validateBattle()
 // KI-092：§8.2 侧链表要对账两处源码名单（引擎的触发口 + 总线名册），所以排在它们所在的模块之外也能读到
 validateDucking()
 // KI-094：天气表要对账两端名册（§38 的档名联合 + 各区 weatherPresets 引用的名字），排在 regions 之后
+/**
+ * §6 过场清单（需求 §31）的判据落点。判据本体住 `cinematic-rules.mjs`（单条 ≤25s / 全清单 ≤180s、
+ * id 唯一、`durationMs` 为正、缺字段说话、非数组报"这道门在空转"）——与 `weatherFindings` 同一族纪律：
+ * 判据要能被合成夹具喂，也要能被校验器读**同一份**实现。
+ *
+ * 这两条上限不是这里编的，是 §6 自己写的；清单未落地时这道门空转（空表不报错），表一落即生效。
+ */
+function validateCinematics() {
+  const file = 'cinematics.json'
+  if (!isArr(data[file])) return
+  for (const e of cinematicBudgetErrors(data[file])) report.error(file, e.where, e.why)
+}
+
 validateWeather()
+validateCinematics()
 // KI-100：世界图几何（点位归属 / 落点歧义 / 锚点共线）——同样只读 regions，所以也排在它之后
 validateWorldGraph()
 // movements 最后跑：它要同时对账 items（点亮源）、loot（源是否真会掉）、progression（开槽里程碑）

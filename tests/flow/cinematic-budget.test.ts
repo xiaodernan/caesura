@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { registerGameData, cinematics } from '@/data'
 import {
   CINE_MAX_ONE_MS,
   CINE_MAX_TOTAL_MS,
@@ -19,16 +20,16 @@ import {
 
 /** §6 清单的真实时长（毫秒）——照 `docs/narrative.md §6` 那张表逐条抄，**这是被测对象不是判据** */
 const DOC_LIST = [
-  { id: 'CINE_OPEN', kind: '开场', durationMs: 25_000 },
-  { id: 'CINE_OST_INTRO', kind: 'MiniBoss出场', durationMs: 10_000 },
-  { id: 'CINE_MYRIAD_INTRO', kind: '隐藏Boss出场', durationMs: 8_000 },
-  { id: 'CINE_HERSIL_INTRO', kind: '主Boss出场', durationMs: 18_000 },
-  { id: 'CINE_STORY_B5', kind: '剧情', durationMs: 15_000 },
-  { id: 'CINE_STORY_B7', kind: '剧情', durationMs: 20_000 },
-  { id: 'CINE_WIN', kind: '胜利', durationMs: 14_000 },
-  { id: 'CINE_END_A', kind: '结局', durationMs: 22_000 },
-  { id: 'CINE_END_B', kind: '结局', durationMs: 22_000 },
-  { id: 'CINE_END_MONTAGE', kind: '结局蒙太奇', durationMs: 10_000 },
+  { id: 'CINE_OPEN', kind: '开场', durationMs: 25_000, lockInput: true },
+  { id: 'CINE_OST_INTRO', kind: 'MiniBoss出场', durationMs: 10_000, lockInput: true },
+  { id: 'CINE_MYRIAD_INTRO', kind: '隐藏Boss出场', durationMs: 8_000, lockInput: true },
+  { id: 'CINE_HERSIL_INTRO', kind: '主Boss出场', durationMs: 18_000, lockInput: true },
+  { id: 'CINE_STORY_B5', kind: '剧情', durationMs: 15_000, lockInput: true },
+  { id: 'CINE_STORY_B7', kind: '剧情', durationMs: 20_000, lockInput: true },
+  { id: 'CINE_WIN', kind: '胜利', durationMs: 14_000, lockInput: true },
+  { id: 'CINE_END_A', kind: '结局', durationMs: 22_000, lockInput: true },
+  { id: 'CINE_END_B', kind: '结局', durationMs: 22_000, lockInput: true },
+  { id: 'CINE_END_MONTAGE', kind: '结局蒙太奇', durationMs: 10_000, lockInput: true },
 ]
 
 describe('§6 过场预算（需求 §31）：单条 ≤25s、全清单 ≤180s', () => {
@@ -44,8 +45,8 @@ describe('§6 过场预算（需求 §31）：单条 ≤25s、全清单 ≤180s'
 
   it('单条超上限 ⇒ 恰红一条，并点名是哪一条（不是"清单不合格"这种糊涂话）', () => {
     const rows = [
-      { id: 'CINE_OK', kind: '剧情', durationMs: 20_000 },
-      { id: 'CINE_TOO_LONG', kind: '剧情', durationMs: 40_000 },
+      { id: 'CINE_OK', kind: '剧情', durationMs: 20_000, lockInput: true },
+      { id: 'CINE_TOO_LONG', kind: '剧情', durationMs: 40_000, lockInput: true },
     ]
     const errs = cinematicBudgetErrors(rows)
     expect(errs).toHaveLength(1)
@@ -58,6 +59,7 @@ describe('§6 过场预算（需求 §31）：单条 ≤25s、全清单 ≤180s'
       id: `CINE_${i}`,
       kind: '剧情',
       durationMs: 24_000,
+      lockInput: true,
     })) // 8 × 24s = 192s > 180s，且每条都不超单条上限
     const errs = cinematicBudgetErrors(rows)
     expect(errs).toHaveLength(1)
@@ -66,16 +68,16 @@ describe('§6 过场预算（需求 §31）：单条 ≤25s、全清单 ≤180s'
   })
 
   it('边界：恰好 25s / 恰好 180s 都算守住（"≤"是含端点的）', () => {
-    expect(cinematicBudgetErrors([{ id: 'A', kind: 'k', durationMs: CINE_MAX_ONE_MS }])).toEqual([])
-    const exact = Array.from({ length: 9 }, (_, i) => ({ id: `E${i}`, kind: 'k', durationMs: 20_000 }))
+    expect(cinematicBudgetErrors([{ id: 'A', kind: 'k', durationMs: CINE_MAX_ONE_MS, lockInput: true }])).toEqual([])
+    const exact = Array.from({ length: 9 }, (_, i) => ({ id: `E${i}`, kind: 'k', durationMs: 20_000, lockInput: true }))
     expect(cinematicTotalMs(exact)).toBe(CINE_MAX_TOTAL_MS)
     expect(cinematicBudgetErrors(exact)).toEqual([])
   })
 
   it('数据自洽：id 重复 / durationMs 非正 / 非数组 各报一条（空转与假绿都不许）', () => {
-    expect(cinematicBudgetErrors([{ id: 'X', kind: 'k', durationMs: 1000 }, { id: 'X', kind: 'k', durationMs: 1000 }])[0].why)
+    expect(cinematicBudgetErrors([{ id: 'X', kind: 'k', durationMs: 1000, lockInput: true }, { id: 'X', kind: 'k', durationMs: 1000, lockInput: true }])[0].why)
       .toContain('id 重复')
-    expect(cinematicBudgetErrors([{ id: 'Y', kind: 'k', durationMs: 0 }])[0].why).toContain('为正')
+    expect(cinematicBudgetErrors([{ id: 'Y', kind: 'k', durationMs: 0, lockInput: true }])[0].why).toContain('为正')
     expect(cinematicBudgetErrors(null as unknown as readonly { id?: unknown }[]).length).toBeGreaterThan(0)
     // 缺字段也要说话（三条 CINE_FIELDS 各一次）
     expect(cinematicBudgetErrors([{}]).length).toBeGreaterThanOrEqual(3)
@@ -85,4 +87,24 @@ describe('§6 过场预算（需求 §31）：单条 ≤25s、全清单 ≤180s'
     expect(cinematicBudgetErrors([])).toEqual([])
     expect(cinematicTotalMs([])).toBe(0)
   })
+})
+
+describe('§6 清单**落地之后**：真表与文档表必须是同一张（不许漂）', () => {
+  it('真表 `cinematics.json` 守得住 §6 的两条预算（判据现在吃的是真数据）', () => {
+    registerGameData()
+    expect(cinematicBudgetErrors(cinematics as unknown as Array<{ id?: unknown; kind?: unknown; durationMs?: unknown }>)).toEqual([])
+  })
+
+  it('真表的 id 与文档表逐条对齐（多一条/少一条/改名 ⇒ 这里红）', () => {
+    registerGameData()
+    const realIds = (cinematics as unknown as Array<{ id: string }>).map((r) => r.id)
+    const docIds = DOC_LIST.map((r) => r.id)
+    expect([...realIds].sort()).toEqual([...docIds].sort())
+  })
+
+  it('真表的总时长 = 164s（与文档逐条相加一致，余量 16s）', () => {
+    registerGameData()
+    expect(cinematicTotalMs(cinematics as unknown as Array<{ durationMs?: unknown }>)).toBe(164_000)
+  })
+
 })

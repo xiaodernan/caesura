@@ -1,0 +1,72 @@
+[
+  {
+    "id": "CINE_OPEN",
+    "kind": "open",
+    "durationMs": 25000,
+    "lockInput": true,
+    "note": "黑场，声先死：极缓推轨掠过哑带，一只手从灰里抬起，拉远露出断铃与休垒剪影"
+  },
+  {
+    "id": "CINE_OST_INTRO",
+    "kind": "boss-intro",
+    "durationMs": 10000,
+    "lockInput": true,
+    "note": "全暗，一记钟响闪一帧，第四记重拍灯落定，剪影与血条对位"
+  },
+  {
+    "id": "CINE_MYRIAD_INTRO",
+    "kind": "boss-intro",
+    "durationMs": 8000,
+    "lockInput": true,
+    "note": "主角视角静帧 3s（低通拉满）→ 音刺特写 → 山体睁眼，不摆 Pose 只被它听见"
+  },
+  {
+    "id": "CINE_HERSIL_INTRO",
+    "kind": "boss-intro",
+    "durationMs": 18000,
+    "lockInput": true,
+    "note": "俯视：307 根音管逐层熄灭，只余第 208 根亮起暖色，与主角胸口灭石同频"
+  },
+  {
+    "id": "CINE_STORY_B5",
+    "kind": "story",
+    "durationMs": 15000,
+    "lockInput": true,
+    "note": "第十三块拼图剥声：盐歌喉咙内结晶碎屑逐层剥离，剥尽只剩一句耳语与肩线"
+  },
+  {
+    "id": "CINE_STORY_B7",
+    "kind": "story",
+    "durationMs": 20000,
+    "lockInput": true,
+    "note": "恩希尔坦白转调动机：环廊 180° 环绕，三百声部逐一回头看向主角"
+  },
+  {
+    "id": "CINE_WIN",
+    "kind": "win",
+    "durationMs": 14000,
+    "lockInput": true,
+    "note": "管风琴过载熄灭：逐段去饱和至骨白，振源核冰解而非爆炸"
+  },
+  {
+    "id": "CINE_END_A",
+    "kind": "ending",
+    "durationMs": 22000,
+    "lockInput": true,
+    "note": "石版谱线逐音褪色，她第一次没有回声；拉远，四钟声部唯独最高一路空着"
+  },
+  {
+    "id": "CINE_END_B",
+    "kind": "ending",
+    "durationMs": 22000,
+    "lockInput": true,
+    "note": "无面童诵读石版：音符飞出去钉进极光、钟与哑带边界；姐姐的音栓成为第二枚灭石"
+  },
+  {
+    "id": "CINE_END_MONTAGE",
+    "kind": "montage",
+    "durationMs": 10000,
+    "lockInput": false,
+    "note": "终局二择后共享的休垒状态变化蒙太奇，按 §9 旗标合成，非独立 over-tell"
+  }
+]

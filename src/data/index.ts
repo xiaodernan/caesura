@@ -21,7 +21,8 @@ import exploreRaw from './json/explore.json'
 import battleRaw from './json/battle.json'
 import duckingRaw from './json/ducking.json'
 import weatherRaw from './json/weather.json'
-import type { MovesetData, WeaponData, EnemyData, PlayerBaseData, RegionData, ProgressionData, ItemData, LootTableData, NpcData, DialogueData, QuestData, StatusConfig, MovementConfig, WorldStateRule, WorldStateDef, HitReactionTable, ShopData, AmbienceBed, ExploreScore, BattleScore, DuckRow, WeatherRow } from './schema'
+import cinematicsRaw from './json/cinematics.json'
+import type { MovesetData, WeaponData, EnemyData, PlayerBaseData, RegionData, ProgressionData, ItemData, LootTableData, NpcData, DialogueData, QuestData, StatusConfig, MovementConfig, WorldStateRule, WorldStateDef, HitReactionTable, ShopData, AmbienceBed, ExploreScore, BattleScore, DuckRow, WeatherRow, CinematicRow } from './schema'
 
 export const playerBase = playerRaw as unknown as PlayerBaseData
 export const regions = regionsRaw as unknown as RegionData[]
@@ -62,6 +63,9 @@ export const duckingRows = duckingRaw as unknown as DuckRow[]
  * `dissonant-storm`）是被 `regions.json > weatherPresets` 指着的名字而不是内容 id，注册表里没有按 id 敲它的门。
  */
 export const weatherRows = weatherRaw as unknown as WeatherRow[]
+
+/** §6 过场清单（需求 §31）。判据住 `scripts/cinematic-rules.mjs`（单条 ≤25s / 全清单 ≤180s） */
+export const cinematics = cinematicsRaw as unknown as CinematicRow[]
 
 let registered = false
 

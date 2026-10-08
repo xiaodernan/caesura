@@ -1444,6 +1444,32 @@ export interface WeatherRow {
   contrastMul?: number
 }
 
+/**
+ * §6 Cinematics 清单（需求 §31）的一行。
+ *
+ * **只收"文档写死了"的字段**：`kind`（清单的「类型」列）、`durationMs`（「时长」列）、
+ * `lockInput`（"全程无 UI"／出场过场夺权这类**已写明的**行为）、`note`（清单的镜头语言简述）。
+ *
+ * ⚠️ **`interruptPolicy` 故意不在这里**：`narrative.md` §6 提过"余量给玩家跳过损耗与
+ * `interruptPolicy` 降级"，但**从没定义过它的取值**——编一套 `'skippable' | 'locked'` 出来
+ * 就是拿猜测冒充设计（KI-049 那族的纪律）。它落之前，这张表只交代上面四格。
+ * 判据（单条 ≤25s、全清单 ≤180s）住 `scripts/cinematic-rules.mjs`，与校验器读同一份实现。
+ */
+export interface CinematicRow {
+  /** `CINE_*`：清单的 ID 列，也是对话节点/选项上 `cinematic` 字段引用的那个名字 */
+  id: string
+  /** §6 清单「类型」列（开场／出场／剧情／胜利／结局／蒙太奇）——**自由文本**：
+   *  不在 schema 里编一套枚举，因为清单是设计侧的写法，且并行会话已按自己的拼法落了表 */
+  kind: string
+  /** 毫秒。判据：单条 ≤ 25s、全清单 ≤ 180s（§6） */
+  durationMs: number
+  /** 演出期是否夺走玩家输入。**可选**：读方缺省按 false（不夺），
+   *  这样"表里还没交代这一格"与"明确不夺"不会在运行时被混为一谈——前者是数据欠账，后者是设计 */
+  lockInput?: boolean
+  /** 清单里那句镜头语言简述（**不是**新写的内容，是文档原文的缩写） */
+  note?: string
+}
+
 export interface RegionData {
   id: string
   /** IP_SEED §14 registered vocabulary */

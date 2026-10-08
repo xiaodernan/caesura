@@ -4,6 +4,7 @@ export interface CinematicRow {
   id?: unknown
   kind?: unknown
   durationMs?: unknown
+  lockInput?: unknown
 }
 
 export interface CinematicIssue {
