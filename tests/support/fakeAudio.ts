@@ -148,6 +148,13 @@ export class FakeAudioContext {
     return { length: len, sampleRate: sr, numberOfChannels: ch, getChannelData: () => data }
   }
   resume(): Promise<void> { this.resumes++; this.state = 'running'; return Promise.resolve() }
+  /**
+   * 真机上 close() 同样是 Promise 且把 state 置 'closed'（TD-006 第二腿①：`AudioEngine.dispose()`
+   * 会关掉自己的 context，否则 dispose 只摘线不关硬件）。这里同步置位 + 计数，让「关过了没有」
+   * 成为可断言的读数——headless 下 close 不存在会让收尾路径抛 TypeError，那正好是最需要它安静的一刻。
+   */
+  closes = 0
+  close(): Promise<void> { this.closes++; this.state = 'closed'; return Promise.resolve() }
   /** 只有测试会调：把时间轴往前推一格（真机由硬件时钟推） */
   advance(sec: number): void { this.currentTime += sec }
   /** 读某类节点建了几个（`MAX_VOICES` 那种"配额"账就从这里读） */

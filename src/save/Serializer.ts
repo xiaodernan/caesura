@@ -385,7 +385,17 @@ export interface SaveWorld {
   /** KI-023：可破坏场景物（可选）。碎裂状态同属世界状态：不存，读档就把破势窗白还一次 */
   props?: { snapshot(): string[]; restore(ids: string[] | null | undefined): void }
   /** KI-026：音频设置持久化的消费端（可选）。读档后把存档里的音量灌回 AudioEngine */
-  audio?: { setVolume(bus: string, level: number): void; getVolume(bus: string): number }
+  audio?: {
+    setVolume(bus: string, level: number): void
+    getVolume(bus: string): number
+    /**
+     * TD-006 第二腿⑤：`AudioEngine` 实例本身（可选，结构式声明）。音量那两格管的是**设置**，
+     * 实例管的是**引擎的生命周期与实时读数**——实机腿要量的两样东西只有拿得到实例才量得着：
+     * `dispose()`（装配层收尾口，测试与实机从此共用同一个）与 `muffleHz`（消音低通的实时频率）。
+     * 存档本身不碰它：引擎不是世界状态，进档的只有音量那几个数。
+     */
+    engine?: { dispose(): void; readonly muffleHz: number | null }
+  }
   /** Phase 6-B：叙事进度（任务状态 / 关系 / 已读节点），同上可选 */
   quests?: Quests
   /** Phase 6-B：值域状态（`state.*`）。同样是世界状态的一部分：不存，读档就回到缺省那一格 */

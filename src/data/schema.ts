@@ -1617,7 +1617,7 @@ export interface DialogueChoice {
   effects?: DialogueEffects
   /** 下一个节点；null/缺省 = 对话结束 */
   next?: string | null
-  /** 挂接 §7 过场清单（Phase 6-C 接；现在只透传，不假装演过） */
+  /** 挂接 §6 过场清单；**已接**（`Settlement.ts` 读它 → `DialogueDeps.playCinematic` → `main.ts` 的 `Cinematics.start`） */
   cinematic?: string
 }
 

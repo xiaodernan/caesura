@@ -34,6 +34,12 @@ export interface DialogueDeps {
   setPaused(paused: boolean): void
   /** 视图出口：main.ts 接到 DialogueBox 上 */
   present(view: DialogueView | null): void
+  /**
+   * §6 过场：玩家刚做的那个选择挂了 `cinematic` 时调它。
+   * **缺省不接**（`?`）——不接 = 过场不演，但选择本身照旧落盘（效果与过场是两件事，不许互相拖累）。
+   * 名字认不出来由接方处理（`Cinematics.start` 对不认识的 id 返回 false，不静默开始一个空演出）。
+   */
+  playCinematic?(id: string): void
 }
 
 export class DialogueSession {
@@ -62,6 +68,10 @@ export class DialogueSession {
     if (!t) return
     const tree = this.tree(t.treeId)
     if (!tree) return
+    // §6：这个选择挂了过场就先放它（Phase 6-C）。**先回吐再推进**——过场是"这一下之后世界安静了"
+    // 的那一段，推进（`turn`）会立刻换到下一个节点，所以顺序反过来就成了"先说话再黑场"。
+    const chosen = tree.nodes.find((n) => n.id === t.nodeId)?.choices?.find((c) => c.id === choiceId)
+    if (chosen?.cinematic) this.deps.playCinematic?.(chosen.cinematic)
     this.turn(this.deps.engine.choose(tree, t.nodeId, choiceId, t.npc, this.deps.ctx, this.sink))
   }
 

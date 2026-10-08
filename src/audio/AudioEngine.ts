@@ -8,6 +8,8 @@
  * 音乐遭遇由 music.ts 自行订阅。这两条 id→行 的解析都住在本类：它是"表 + 图"两头都看得见的那一层。
  * AudioContext 必须在用户手势后 resume —— start() 于首次手势调用；
  * 若构造后即处 suspended，会挂一次性 pointerdown/keydown 自动恢复。
+ * 收尾：`dispose()` 摘掉本类挂在全局总线与 window 上的每一根线并关掉自己的 AudioContext
+ * （TD-006 第二腿①；订阅一律走私有的 `subscribe()`，判据数源码里 `bus.on(` 的处数）。
  */
 import { bus, type GameEvents } from '../core/EventBus'
 import type { MusicGrid } from '../core/RhythmClock'
@@ -109,6 +111,14 @@ export class AudioEngine {
    * 而"出"的斜率住在那位已经消失的主人的 `releaseSec` 上（休止那行是 180ms，其余行走缺省）。
    */
   private duckOwner: Record<string, DuckRequest> = {}
+  /**
+   * TD-006 第二腿①：这只引擎挂在全局 `bus` 上的每一根线。**构造时订阅的每一处都必须走
+   * `subscribe()`**——它把退订函数收进这里，`dispose()` 才有东西可摘。判据住在
+   * `tests/unit/audio-engine.test.ts`：源码里 `bus.on(` 只允许出现在 helper 里那一处。
+   */
+  private readonly subs: Array<() => void> = []
+  /** dispose 之后这只引擎就当不存在：公开的写入口一律不再动作（不抛——调用方常常是收尾路径） */
+  private disposed = false
 
   /** 一次性手势恢复：ctx suspended 时等待 pointerdown/keydown */
   private gesture = (): void => {
@@ -123,22 +133,23 @@ export class AudioEngine {
   }
 
   constructor() {
-    bus.on('audio.sfx', (p) => this.onSfx(p))
-    bus.on('audio.muffle', (p) => this.onMuffle(p.on))
+    this.subscribe('audio.sfx', (p) => this.onSfx(p))
+    this.subscribe('audio.muffle', (p) => this.onMuffle(p.on))
     // KI-092（docs §8.2「弹反成功 | MUSIC+AMB | -6dB / 300ms」那一行）：触发口的合法名单**主人就是
     // 这里 `onDuckTrigger('…')` 的那个字面量**——校验器从本文件现推它，所以加一行表却不接这一句，
     // 数据门禁会直接红（那一行没有执行口），而只接这一句却不给行，白订阅同样红。
-    bus.on('combat.parried', () => this.onDuckTrigger('combat.parried'))
+    this.subscribe('combat.parried', () => this.onDuckTrigger('combat.parried'))
     // KI-092①：休止状态进/出——holdSec 由事件携带（同一个 freezeTicks 的秒形），不是第二份读数
-    bus.on('audio.caesura', (e) => { if (e.on) this.onDuckTrigger('audio.caesura', e.holdSec) })
-    // KI-066：拍网向唯一主人领，不再由音乐层自己猜一份。订阅摘不掉这件事与上面两条同账（TD-006 第二腿）。
-    bus.on('audio.music.grid', (g) => {
+    this.subscribe('audio.caesura', (e) => { if (e.on) this.onDuckTrigger('audio.caesura', e.holdSec) })
+    // KI-066：拍网向唯一主人领，不再由音乐层自己猜一份。这条订阅走 `subscribe()`，
+    // `dispose()` 摘得掉（TD-006 第二腿① 已还）⇒ 测试文件不必再靠「我是第一只引擎」自证前提。
+    this.subscribe('audio.music.grid', (g) => {
       this.grid = g
       this.musicLayer?.setGrid(g)
     })
     // KI-077（docs §1.2 + §4）：区域环境声床。发射方是组合根（`main.ts` 的进区那一处 + 开局那一句），
     // 这里把它从 id 翻成表里的行再注给音乐层——音乐层认形状，不认 `ambience.json`。
-    bus.on('audio.music.ambience', (p) => {
+    this.subscribe('audio.music.ambience', (p) => {
       const bed = ambienceBeds.find((b) => b.id === p.id) ?? null
       if (!bed && !this.warnedBed.has(p.id)) {
         this.warnedBed.add(p.id)
@@ -150,7 +161,7 @@ export class AudioEngine {
     })
     // KI-079（docs §1.2 世界音乐层）：同一只手把 id 翻成行，音乐层只认形状、不认 `explore.json`。
     // 认不出时**保留上一张曲**：换区失败不该把正在奏的旋律掐掉（与上面那条同口径）。
-    bus.on('audio.music.explore', (p) => {
+    this.subscribe('audio.music.explore', (p) => {
       const song = exploreScores.find((s) => s.id === p.id) ?? null
       if (!song && !this.warnedSong.has(p.id)) {
         this.warnedSong.add(p.id)
@@ -161,7 +172,7 @@ export class AudioEngine {
       this.musicLayer?.setExplore(song)
     })
     // KI-080（docs §1.1 + §2.2 的遭遇层）：第三条同一只手。认不出时保留上一档，并说一次（单独一本账）。
-    bus.on('audio.music.battle', (p) => {
+    this.subscribe('audio.music.battle', (p) => {
       const row = battleScores.find((s) => s.id === p.id) ?? null
       if (!row && !this.warnedBattle.has(p.id)) {
         this.warnedBattle.add(p.id)
@@ -173,6 +184,16 @@ export class AudioEngine {
     })
     window.addEventListener('pointerdown', this.gesture)
     window.addEventListener('keydown', this.gesture)
+  }
+
+  /**
+   * **全局总线上唯一的订阅口**（TD-006 第二腿①）。每一次 `bus.on` 都必须经过这里，
+   * 退订函数才收得进 `subs`；漏走这条路的订阅 dispose 摘不掉，而 `bus` 是进程全局的 ——
+   * 它会在这只引擎死掉之后继续收事件，往一只已经没人看的 ctx 里写。
+   * 判据：源码里 `bus.on(` 只允许出现在本函数里（`tests/unit/audio-engine.test.ts` 逐字数）。
+   */
+  private subscribe<K extends keyof GameEvents>(key: K, fn: (p: GameEvents[K]) => void): void {
+    this.subs.push(bus.on(key, fn))
   }
 
   /**
@@ -254,6 +275,7 @@ export class AudioEngine {
   private pendingVolumes = new Map<string, number>()
   /** KI-026：设置持久化的音频消费端。bus 传 null = master */
   setVolume(bus: DuckBusName | 'master', level: number): void {
+    if (this.disposed) return
     const v = Math.max(0, Math.min(1, level))
     this.pendingVolumes.set(bus, v)
     const ctx = this.ctx
@@ -278,6 +300,7 @@ export class AudioEngine {
 
   /** 首次用户手势时调用：建图、resume、启动音乐层 */
   start(): void {
+    if (this.disposed) return
     this.ensureGraph()
     const ctx = this.ctx
     if (!ctx || !this.graph) return
@@ -294,6 +317,7 @@ export class AudioEngine {
 
   /** 每帧调用（真实秒时步；调度内部以 ctx.currentTime 为准，dtReal 仅作调用节奏） */
   update(dtReal: number): void {
+    if (this.disposed) return
     if (dtReal < 0) return
     this.musicLayer?.update()
     // §8.2 的到期就在这一帧兑现：请求自己会过期，但没有这一句没人把电平写回基准（压住 ≠ 压死）
@@ -302,10 +326,47 @@ export class AudioEngine {
 
   /** 更新听者位置与朝向（yaw：绕 Y 轴弧度，0 = 面向 -Z） */
   setListener(x: number, y: number, z: number, facingYaw: number): void {
+    if (this.disposed) return
     this.pose.x = x; this.pose.y = y; this.pose.z = z; this.pose.yaw = facingYaw
     // 建层比建引擎晚（与那三条 id→行 的缓存同一条理由）：首次手势之前的每一帧都到不了音乐层，
     // 所以 `start()` 里还要再补一次；这里这一句管的是"层已经建好"之后的每一帧。
     this.musicLayer?.setListener(this.pose)
+  }
+
+  /**
+   * 摘掉这只引擎挂在全局 `bus` 与 `window` 上的每一根线，并关掉它自己的 AudioContext（TD-006 第二腿①）。
+   *
+   * 为什么生产里也需要它：装配层（`main.ts`）从此把引擎挂上 `__caesura`（TD-006 第二腿⑤），
+   * 于是实机与测试都有同一个收尾口——测试文件不再需要「我是本文件第一只引擎」这种顺序自证
+   * （`tests/unit/audio-engine.test.ts` 的头注写着那条旧规矩，本批起作废）。
+   * 幂等：第二次调用什么都不做（收尾路径常常被叫两遍，抛异常会把真错误埋掉）。
+   * 不抛异常、不撤销已建节点之外的东西：`pendingVolumes` 等纯状态留着，万一有人还读得到。
+   */
+  dispose(): void {
+    if (this.disposed) return
+    this.disposed = true
+    for (const off of this.subs) off()
+    this.subs.length = 0
+    this.detachGesture()
+    this.musicLayer?.dispose()
+    this.musicLayer = null
+    const ctx = this.ctx
+    this.ctx = null
+    this.graph = null
+    // 真机上 close() 是 Promise；测试替身（fakeAudio）没有这个方法 ⇒  typeof 守一道，
+    // 否则 headless 环境下收尾会抛 TypeError，那正好是最需要它安静的一刻。
+    if (ctx && typeof ctx.close === 'function' && ctx.state !== 'closed') {
+      void Promise.resolve(ctx.close()).catch(() => { /* 关失败也照常收尾 */ })
+    }
+  }
+
+  /**
+   * 消音那条低通**此刻**的频率（TD-006 第二腿⑤）：实机腿要量「塌向 100Hz 再 180ms 回来」
+   * 那条斜坡，而实时 `frequency.value` 只有拿得到节点引用才读得着。图未建（首次手势前）⇒ null。
+   * 它是**读数**不是控制器：写仍走 `audio.muffle` 那一条总线（一个入口，第二份写权就是两份账）。
+   */
+  get muffleHz(): number | null {
+    return this.graph?.muffle.frequency.value ?? null
   }
 
   /* ------------------------------------------------------------ */

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { bus } from '@/core/EventBus'
+import { bus, type GameEvents } from '@/core/EventBus'
 import { AudioEngine } from '@/audio/AudioEngine'
 import { ambienceBeds, battleScores, exploreScores, regions } from '@/data'
 import type { AmbienceBed, ExploreScore, ExploreTonal } from '@/data/schema'
@@ -16,9 +16,10 @@ import { FakeAudioContext, FakeNode, fakeWindow, fakeWindowWebkitOnly, type Fake
  *
  * 每条用例装一只自己的假 window：`AudioEngine` 构造时把 pointerdown/keydown 挂在**当时的** `window` 上，
  * 所以换掉 window 就等于把上一批引擎的手势监听关在门外（否则一次 dispatch 会把所有历史引擎的图都建出来）。
- * 但 `bus` 是进程全局的、而 `AudioEngine` 没有 dispose —— 历史引擎仍会收到本用例的 `audio.sfx`，
- * 只是写进它们自己的 ctx，不动本用例的读数。这条账要记着：**它没有 dispose 是 TD-006 的第二腿**，
- * 不是这里可以顺手补的 API（补了没有生产消费方就是 §55 违例）。
+ * `bus` 是进程全局的，所以每条用例结束都在 `afterEach` 里把本文件建过的每一只引擎 `dispose()` 掉
+ * （TD-006 第二腿①，2026-10-08 落地；消费方是 `main.ts` 挂上 `__caesura` 的 `audioEngine`）：
+ * 摘线之后历史引擎连事件都收不到，于是本文件的用例**不再依赖执行顺序**——
+ * 头一条「未知 key 只 warn 一次」从前必须排在最前（老引擎还活着时会各报一遍），现在不需要了。
  */
 
 const live: Array<() => void> = []
@@ -43,9 +44,10 @@ function installWindow(opts: { ctor?: boolean; webkit?: boolean; suspended?: boo
 
 const LAST = (): FakeAudioContext => made[made.length - 1]
 
-/** `AudioEngine` 没有 dispose，而 `bus` 是进程全局的：数一数本文件建过几只，顺序依赖靠这个数说话 */
+/** 本文件建过的每一只引擎（TD-006 第二腿①：`afterEach` 逐只摘线，用例之间因此没有顺序依赖） */
 let engineCount = 0
-const mkEngine = (): AudioEngine => { engineCount++; return new AudioEngine() }
+const engines: AudioEngine[] = []
+const mkEngine = (): AudioEngine => { engineCount++; const e = new AudioEngine(); engines.push(e); return e }
 
 /** 图上那条常驻低通（消音用的就是它） */
 const muffleOf = (ctx: FakeAudioContext): FakeNode => {
@@ -63,14 +65,17 @@ function busAt(ctx: FakeAudioContext, level: number): FakeNode {
 beforeEach(() => { made = [] })
 
 afterEach(() => {
+  // 先摘线再卸 window：引擎活着时下一次 dispatch 会把它自己的图建出来（那是上一批用例的幽灵）
+  while (engines.length) engines.pop()!.dispose()
   while (live.length) live.pop()!()
   w?.uninstall()
 })
 
-describe('未知 key 的可见性（必须排在本文件最前，见下面的 engineCount）', () => {
+describe('未知 key 的可见性（拼错要说，但只说一次）', () => {
   it('拼错的名字：不响，但 log 里恰好一条 warn（同一个 key 第二次不再刷）', () => {
-    // 历史引擎各自有 `warned` 集合，都会对同一个拼错的名字报一遍 ⇒ 这一条要在还没有别的引擎时量
-    expect(engineCount, '这条判据依赖"本文件里我是第一只引擎"，挪动顺序就会变成 N 条').toBe(0)
+    // 曾经这一条必须排在全文件最前：老引擎没有 dispose，都活着，会对同一个拼错的名字各报一遍。
+    // TD-006 第二腿① 之后 `afterEach` 逐只摘线，所以这里不再有顺序前提——下面那行只是留个读数。
+    expect(engineCount, '本文件建过的引擎数（这一条仍是第一个跑的）').toBe(0)
     const msgs: string[] = []
     live.push(bus.on('log', (p) => { if (p.msg.includes('nope')) msgs.push(p.msg) }))
     installWindow()
@@ -490,10 +495,10 @@ describe('start()：把音乐层接上（KI-077：id→行 的解析住在这一
     const msgs: string[] = []
     live.push(bus.on('log', (p) => { if (p.msg.includes('未知环境声床')) msgs.push(p.msg) }))
     const engine = mkEngine()
-    // 分母是"本文件此刻活着的引擎数"而不是 1：`AudioEngine` 没有 dispose（TD-006 第二腿，文件头那本账），
-    // 历史引擎也都订阅着这一条事件，各自按自己的 `warnedBed` 说一句。被量的两件事是"**同一个 id 只说一句**"
+    // 分母是"本文件此刻活着的引擎数"而不是 1：`afterEach` 会把上一批引擎 dispose 掉，但**同一批用例之内**
+    // 所有还活着的引擎都订阅着这一条事件，各自按自己的 `warnedBed` 说一句。被量的两件事是"**同一个 id 只说一句**"
     // 与"说过之后不再每帧说"，写成 ===1 会把这本账读成缺陷。
-    const said = engineCount
+    const said = engines.length
     bus.emit('audio.music.ambience', { id: OPEN.id })
     engine.start()
     const ctx = LAST()
@@ -666,7 +671,7 @@ describe('探索曲的 id→行（KI-079）', () => {
     const msgs: string[] = []
     live.push(bus.on('log', (p) => { if (p.msg.includes('未知探索曲')) msgs.push(p.msg) }))
     const engine = mkEngine()
-    const said = engineCount   // 与 KI-077 那条同一本账：`AudioEngine` 没有 dispose（TD-006 第二腿），历史引擎都订阅着这一条
+    const said = engines.length   // 与 KI-077 那条同一本账：只有**还活着**的引擎订阅着这一条（其余已被 afterEach dispose）
     bus.emit('audio.music.grid', GRID60)
     bus.emit('audio.music.ambience', { id: DEEPS_BED.id })
     bus.emit('audio.music.explore', { id: DEEPS.id })
@@ -877,7 +882,7 @@ describe('战斗档：id→行 的解析与转交（KI-080）', () => {
     fight(ctx, engine, 40)
     // 分母是"本文件此刻活着的引擎数"而不是 1：`AudioEngine` 没有 dispose（TD-006 第二腿，文件头那本账），
     // 历史引擎也都订阅着这一条事件，各自按自己的那本 `warnedBattle` 说一句。被量的是"同一个 id 只说一句"。
-    const said = engineCount
+    const said = engines.length
     const n0 = ctx.nodes.length
     const osc0 = battleOscs(ctx)
     expect(osc0, '上一档一个音都没排，这条量不了"保留"').toBeGreaterThan(0)
@@ -917,5 +922,104 @@ describe('战斗档：id→行 的解析与转交（KI-080）', () => {
     expect([...authored].filter((id) => !referenced.has(id)), '表里有一行永远不会被奏出来（§55 死数据）').toEqual([])
     expect([referenced.size, authored.size, regions.length], '五个 id / 五行 / 七个区——变了就要重看上面两条比的是同一件事')
       .toEqual([5, 5, 7])
+  })
+})
+
+/* ---------------------------------------------------------------------------
+ * TD-006 第二腿①：`dispose()`。这一族用例回答同一件事——**这只引擎死掉之后，全局总线上还留不留它的线**。
+ * `bus` 是进程全局的、订阅是匿名闭包，所以「摘掉了没有」只能靠读数：`listenerCount` 在构造前后各数一次，
+ * 要求**回到原值**（不是"大概没了"）。名字册从源码现推（`this.subscribe('…')` 的字面量），不手抄。
+ * --------------------------------------------------------------------------- */
+describe('dispose()：摘下每一根线（TD-006 第二腿①）', () => {
+  /** 引擎源码里 `this.subscribe('…')` 的每一次 key——名单从源码现推，手抄就是第二份账 */
+  const subscribedKeys = (): string[] => {
+    const src = readFileSync(new URL('../../src/audio/AudioEngine.ts', import.meta.url), 'utf8')
+    return [...src.matchAll(/this\.subscribe\('([^']+)'/g)].map((m) => m[1] as string)
+  }
+
+  it('源码里真实的 `bus.on(` 只有 helper 里那一处（漏走 subscribe 的订阅，dispose 摘不掉）', () => {
+    const src = readFileSync(new URL('../../src/audio/AudioEngine.ts', import.meta.url), 'utf8')
+    const real = src.split('\n').filter((l) => {
+      const s = l.trim()
+      return s.includes('bus.on(') && !s.startsWith('*') && !s.startsWith('//')
+    })
+    expect(real, `每一处订阅都必须走 subscribe()；这几行是漏的：${real.join(' | ')}`).toHaveLength(1)
+    expect(real[0]).toContain('this.subs.push(bus.on(key, fn))')
+    // 反向：helper 真的被用了八次，不是写了个没人走的空壳
+    expect(subscribedKeys().length).toBe(8)
+  })
+
+  it('构造时每一条订阅都挂上，dispose 后逐条归零（读数回到原值）', () => {
+    const keys = subscribedKeys()
+    expect(keys.length).toBeGreaterThan(0)
+    const before = keys.map((k) => bus.listenerCount(k as keyof GameEvents))
+    installWindow()
+    const engine = mkEngine()
+    keys.forEach((k, i) => {
+      expect(bus.listenerCount(k as keyof GameEvents), `${k} 构造后应该多一个听众`).toBe(before[i] + 1)
+    })
+    engine.dispose()
+    expect(keys.map((k) => bus.listenerCount(k as keyof GameEvents)), 'dispose 之后每一条都要回到构造前的读数').toEqual(before)
+  })
+
+  it('dispose 之后引擎不再应声：再发 `audio.sfx` 一条 warn 都没有（行为上看得见的「线没了」）', () => {
+    installWindow()
+    const engine = mkEngine()
+    engine.start()
+    const msgs: string[] = []
+    live.push(bus.on('log', (p) => { if (p.msg.includes('nope_after_dispose')) msgs.push(p.msg) }))
+    engine.dispose()
+    bus.emit('audio.sfx', { key: 'nope_after_dispose', gain: 1 })
+    bus.emit('audio.sfx', { key: 'nope_after_dispose', gain: 1 })
+    expect(msgs, 'dispose 之后还报 warn ⇒ 订阅还挂在总线上').toEqual([])
+  })
+
+  it('dispose 之后手势监听也摘了：再 dispatch 不会给这只引擎建出图来', () => {
+    installWindow()
+    const engine = mkEngine()
+    engine.dispose()
+    const before = made.length
+    w.dispatch('pointerdown')
+    w.dispatch('keydown')
+    expect(made.length, 'dispose 之后 gesture 还在 = window 上的两根监听没摘').toBe(before)
+  })
+
+  it('幂等：连调两次不炸也不多做（收尾路径常被叫两遍），且写入口从此不再动作', () => {
+    installWindow()
+    const engine = mkEngine()
+    engine.start()
+    const ctx = LAST()
+    engine.dispose()
+    expect(ctx.closes, 'dispose 要关掉自己的 AudioContext，不然只摘线不关硬件').toBe(1)
+    engine.dispose()
+    expect(ctx.closes, '第二次 dispose 不该再关一次').toBe(1)
+    // 写入口一律静默：调用方常常是收尾路径，抛异常会把真错误埋掉
+    expect(() => engine.update(0.016)).not.toThrow()
+    expect(() => engine.setListener(1, 2, 3, 0)).not.toThrow()
+    expect(() => engine.setVolume('sfx', 0.5)).not.toThrow()
+    expect(() => engine.start()).not.toThrow()
+    expect(engine.getVolume('sfx'), 'setVolume 被 dispose 挡掉了 ⇒ 读数保持缺省 1').toBe(1)
+    expect(made.length, 'dispose 之后 start() 不许再建一个新 ctx').toBe(1)
+  })
+
+  it('`muffleHz` 读数：没图时 null、建好时全开、dispose 后回到 null（TD-006 第二腿⑤ 的实机腿读它）', () => {
+    installWindow()
+    const engine = mkEngine()
+    expect(engine.muffleHz, '首次手势之前没有图').toBeNull()
+    engine.start()
+    expect(engine.muffleHz).toBe(20000)
+    bus.emit('audio.muffle', { on: true })
+    bus.emit('audio.muffle', { on: false })
+    // headless 只承诺「图形状与参数调度」：指数斜坡不生效FeedbackParam.value，所以这里读到的仍是
+    // 最后一次 set 的 20000；斜坡本身由上面「消音」那一族用例断（events 里 exp→100）。真机上
+    // `frequency.value` 由音频线程推进，这一格才读得出中间态——那句话要在这里说清，别当成 bug。
+    expect(engine.muffleHz).toBe(20000)
+    // 注意 cancel 的语义：t=0 时「t 及之后排的一切」= 全部，所以两轮开关之后**只剩第二轮那两条**
+    // （set + exp），第一组的 exp→100 已被作废——这正是上面「关」那条用例量的同一件事。
+    const ev = muffleOf(LAST()).frequency.events
+    expect(ev.map((e) => e.kind)).toEqual(['set', 'exp'])
+    expect(ev[1].value, '出路回到全开').toBe(20000)
+    engine.dispose()
+    expect(engine.muffleHz, 'dispose 把图也放下了').toBeNull()
   })
 })

@@ -137,6 +137,15 @@ export class EventBus<E extends Record<string, any> = GameEvents> {
     this.handlers.get(key)?.delete(fn as Handler<never>)
   }
 
+  /**
+   * 这一条事件上此刻挂着几个听众（TD-006 第二腿① 的唯一读者：`AudioEngine.dispose()` 的判据）。
+   * 它存在的理由很窄——「订阅摘掉了没有」只能这么量：引擎的订阅是进程全局 `bus` 上的匿名闭包，
+   * 行为上看得见的只是「发事件还有没有人应」。所以判据拿它在构造前后各数一次，要求回到原值。
+   */
+  listenerCount<K extends keyof E>(key: K): number {
+    return this.handlers.get(key)?.size ?? 0
+  }
+
   emit<K extends keyof E>(key: K, payload: E[K]): void {
     const set = this.handlers.get(key)
     if (!set) return

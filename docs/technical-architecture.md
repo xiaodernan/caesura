@@ -2332,3 +2332,17 @@ Phase 1（核心战斗原型）＝ `core + player + combat + tools/CombatDebugge
 **两条欠账同批销掉**（账本现为空对象，头注写明 2026-10-08）：`rg_resthold` ⇒ `{ state: { key: 'state.bells.fourth_dumb', in: ['RUNG','MELTED','SEALED'] } }`——广场那四件陈设按值域换组，**`INTACT` 不算**（她还没做决定，不构成换天的理由）；`rg_brokenbar_camp` ⇒ `{ flag: 'flag.brokenbar_resolved' }`（《断弦》步 4 对话抉择立的那面旗，不另立新旗）。门禁 WARN 因此从 4 条降到 2 条，剩下两条是正当说明（`bell.everySec` 听感口径、倒钟「敲响≠修复」）。
 
 **没做的**（§5.9.33 的 ②–⑥ 仍欠，如实记账）：天气的音频腿、敌人浓度腿、失谐累积速率腿仍零读者，`lightingPreset` 五区仍零运行时读者，换档仍无过渡。
+
+### 5.9.41 过场第一次由**玩家自己的选择**触发；音频引擎也第一次有地方可收（TD-006 第二腿①⑤，2026-10-08）
+
+两件事在同一批落地，共同的判据是「写下来的字段要有真消费方」——`cinematic` 在 `schema.ts` 里躺了很多周，`dispose` 连声明都没有。
+
+**①对话选择挂过场（§6 第三类触发，需求 §31）。** `DialogueChoice.cinematic` 从「只透传」变成真的演：`Settlement.ts` 在 `choose()` 里**先放过场再推进**（`turn` 会立刻换节点，顺序反过来就成了"先说话再黑场"），`DialogueDeps` 因此多一个**可选**注入点 `playCinematic?`——不接 = 过场不演，但选择本身照旧落盘（效果与过场是两件事，不许互相拖累）。`main.ts` 把它接到 `Cinematics.start`，并且**认不出的 id 不静默吞**：返回 false 就播一条 warn。数据侧第一个挂它的是 `DLG_MEG` 步 7 的「把声卷交给她」→ `CINE_STORY_B5`（剥声那句微距，narrative §6 表里 15s）。清单 10 条至此接了 4 处触发（新局开场 / 三条 Boss 出场 / 这一条 / 主 Boss 倒下），**剩 4 条未接**（剧情 B7 与三条结局向的，挂点是终局分支）。`world/Cinematics.ts` 同批补进 `arch-boundaries` 的逻辑层名册——新模块不进名册，那道「逻辑层不许 import three」的闸门就漏一片。
+
+**②`AudioEngine.dispose()`（TD-006 第二腿①）。** `bus` 是进程全局的，`AudioEngine` 构造时在上面挂了八根线；测试文件必须靠「我是本文件第一只引擎」自证前提。现在构造期八处订阅全部走私有的 `subscribe()`，源码里**真实的** `bus.on(` 只许剩 helper 里那一处（这条本身是判据），`dispose()` 退订全部、`detachGesture()`、关掉自己的 `AudioContext`（幂等；关窗前 `typeof ctx.close === 'function'` 防御假上下文）。配套 `EventBus.listenerCount(key)`——它是"每一处订阅都摘得掉"唯一的读者，`audio-engine.test.ts` 逐键 0→1→0；`fakeAudio.ts` 补 `close()` 与 `closes` 计数，让"真机语义"在 headless 里有替身。
+
+**⑤`__caesura.audio.engine`（TD-006 第二腿⑤）。** 实机腿原来读不到消音斜坡所在的滤波器（实时 `frequency.value` 要节点引用），现在 `__caesura` 上挂实例本身，另加一只只读 `muffleHz`。`SaveWorld.audio` 的同名字段是**结构式可选**：存档本身不碰引擎——引擎不是世界状态，进档的只有音量那几个数。
+
+**门禁**：`tsc --noEmit` RC=0；`node scripts/validate-data.mjs` 0 ERROR / 2 WARN（与 §5.9.40 落地后同数，一条没新增）；定向测试 145 条全绿（audio-engine / cinematics-player / cinematic-budget / arch-boundaries / doc-audit / ledger-rules / dialogue / schema-vocab）。**一处如实说明**：`muffleHz` 在 headless 里读到的是最后一次 `set` 而不是斜坡当前值（`FakeParam` 没有指数斜坡语义），这件事写在用例注释里，不当成 bug。
+
+**没做的**：TD-006 ③（听感/音量/视口评审）与 ④（`main.ts` 装配层 0%）仍 Blocked；`lightingPreset` 五区仍零运行时读者；天气的音频腿/敌人浓度腿/失谐累积速率腿仍零读者。

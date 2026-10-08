@@ -86,9 +86,10 @@ const player = new PlayerController(playerBase, weapon, moveset)
 /**
  * §6 过场清单的播放器（需求 §31）。**逻辑层**：它只回答"哪一条在跑 / 还剩多久 / 该不该夺输入"，
  * 镜头轨道与字幕时序要真几何与相机（KI-008 / KI-010），那条腿没接。
- * 今天接的触发只有一处：**新开局**放开场（`CINE_OPEN`）——读档不放（开场是"第一次醒来"，
- * 不是"每次回到调音桩"）。其余 9 条各自的触发点（Boss 区入场 / 对话节点 / 结局分支）**仍未接**，
- * 如实记在架构文档那张表里。
+ * 今天接了五处触发：**新开局**放开场（读档不放——开场是"第一次醒来"，不是"每次回到调音桩"）、
+ * 三条 Boss 出场挂在进区域、一条剧情挂在对话选择上（`Settlement` 经 `playCinematic` 走到这里）、
+ * 胜利那一条挂在主 Boss 倒下。清单 10 条里还剩 4 条**未接**（剧情 B7 与三条结局向的），
+ * 它们的接点是终局分支，如实记在架构文档那张表里。
  */
 const cinematics = new Cinematics(cinematicRows)
 
@@ -395,6 +396,11 @@ const talk = new DialogueSession({
   refresh: () => refreshRpg(),
   setPaused: (paused) => { time.paused = paused; input.enabled = !paused && !cinematics.inputLocked },
   present: (view) => { if (view) dialogueBox.show(view); else dialogueBox.hide() },
+  // §6 过场（Phase 6-C）：选择挂了 `cinematic` 就放它。认不出的 id **不静默吞**——
+  // 数据门禁（`cinematic-rules.mjs`）已经保证表里的 id 都在清单里，认不出就是有人写错了字。
+  playCinematic: (id) => {
+    if (!cinematics.start(id)) bus.emit('log', { level: 'warn', msg: `未知过场 id：${id}（清单里没有）` })
+  },
 })
 
 /** 与 NPC 交谈：没有可说的话就说明一句，不弹空框 */
@@ -642,7 +648,7 @@ const saveBackup = typeof indexedDB === 'undefined' ? null : new IdbStore('caesu
  * 而"摘要卡上的时间是从外面带进来的"这条也就没有证人。
  */
 const saves = new SaveGame(
-  { player, streaming, spawner, clock: rhythm, time, rpg, interact, props, quests, states: worldStates, audio: { setVolume: (b: string, v: number) => audio.setVolume(b as never, v), getVolume: (b: string) => audio.getVolume(b) }, now: () => Date.now() },
+  { player, streaming, spawner, clock: rhythm, time, rpg, interact, props, quests, states: worldStates, audio: { engine: audio, setVolume: (b: string, v: number) => audio.setVolume(b as never, v), getVolume: (b: string) => audio.getVolume(b) }, now: () => Date.now() },
   savePrimary, saveBackup
 )
 /** 摘要卡的名册（KI-025）：标题屏与调音桩面板都从它读"这几格是什么、能不能读" */
@@ -728,6 +734,11 @@ if (freshBoot) {
   }, originId)
 }
 
+/**
+ * 调试/实机量测面（TD-006 第二腿⑤）。`audio.engine` 是 `AudioEngine` 实例本身：实机腿要读的两样东西
+ * 只有拿得到实例才读得着——`muffleHz`（消音那条低通的实时频率，斜坡走到哪一格）与 `dispose()`
+ * （装配层的收尾口；测试与实机从此共用同一个，`AudioEngine` 因此不是一只没有生产消费方的 API）。
+ */
 ;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, player, ai, combat, lock, rig, bus, streaming, surface, greybox, wallGreybox, interact, props, hud, spawner, nodes, worldState, projectileVis, actors: visuals, bossArena, saves, saveRoster, checkpoints, rpg, settlement, panel, setPanelOpen, mapUi, setMapOpen, quests, dialogueEngine, dialogueBox, openDialogue, debugPanels, refreshRpg, observe, saveNow: () => saves.save('autosave'), get title() { return title } }
 
 document.getElementById('boot')!.style.display = 'none'

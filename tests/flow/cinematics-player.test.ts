@@ -1,13 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import { registerGameData, cinematics, regions } from '@/data'
+import { registerGameData, cinematics, regions, dialogues, quests as questTable } from '@/data'
 import { readFileSync } from 'node:fs'
 import { Cinematics } from '@/world/Cinematics'
+import { DialogueEngine } from '@/quest/Dialogue'
+import { DialogueSession } from '@/quest/Settlement'
+import { Quests } from '@/quest/Quests'
 
 /**
  * `src/world/Cinematics.ts`（§6 过场清单的**播放器**，纯逻辑）的行为守卫。
  *
- * 它今天**还没有运行时调用方**（`main.ts` 那条腿未接，镜头轨道与字幕时序要真几何与相机 ⇒ KI-008/KI-010），
- * 所以这个文件**就是它的消费者**：先把"哪一条在跑、还剩多久、该不该夺输入"这三件事钉住，
+ * 运行时调用方**已接**（`main.ts`：新局开场 / 三条 Boss 出场 / 对话选择 / 主 Boss 倒下四处触发，
+ * 其中镜头轨道与字幕时序仍要真几何与相机 ⇒ KI-008/KI-010），
+ * 所以这个文件除了当消费者，还钉住"哪一条在跑、还剩多久、该不该夺输入"这三件事，
  * 接腿的时候不必再猜它怎么工作。
  *
  * ⚠️ 它**不演**也不**决定何时放**——只回答"该不该锁输入"；真去锁 `Input` 的是 `main.ts` 的事。
@@ -90,12 +94,11 @@ describe('运行时那条腿（`main.ts`）：接了什么、**没接什么**，
     expect(main, '新开局放开场').toMatch(/if \(!slot\) cinematics\.start\('CINE_OPEN'\)/)
   })
 
-  it('**没接**的那 5 条必须一个都不出现（谁接了就顺手把这条改准，别让它一直骗人）', () => {
-    // 触发点分三类，今天只接了前两类：① 新开局（CINE_OPEN）② 进 Boss 区（三条出场）。
-    // **没接**的是③剧情/胜利/结局那 6 条——它们各自的接点是对话节点、Boss 倒下、终局分支。
+  it('**没接**的那 4 条必须一个都不出现（谁接了就顺手把这条改准，别让它一直骗人）', () => {
+    // 触发点今天接了四处：① 新局开场 ② 进 Boss 区（三条出场）③ 对话选择（剧情 B5）④ 主 Boss 倒下（胜利）。
+    // **没接**的是剧情 B7 与三条结局向的——它们的接点是终局分支。
     // 这条断言的作用不是"证明没接"，而是**让"没接"这件事会响**：谁接了新的，这里红，逼他改这条。
     const UNWIRED = [
-      'CINE_STORY_B5',
       'CINE_STORY_B7',
       'CINE_END_A',
       'CINE_END_B',
@@ -106,7 +109,27 @@ describe('运行时那条腿（`main.ts`）：接了什么、**没接什么**，
     }
   })
 
-  it('接了的 5 条按名字点出来（新开局 1 + Boss 出场 3 + 胜利 1），且各自挂在**对的**挂点上', () => {
+  it('对话那条腿：选择挂了 `cinematic` 就真的放，而且**先放再推进**（§6 第三类触发）', () => {
+    // 过场是"这一下之后世界安静了"的那一段：`turn` 会立刻换到下一个节点，所以顺序反过来
+    // 就成了"先说话再黑场"。这条用例连顺序一起钉住。
+    const played: string[] = []
+    const quests = new Quests(questTable)
+    const session = new DialogueSession({
+      quests,
+      engine: new DialogueEngine(dialogues, quests),
+      ctx: { hasFlag: (k) => k !== 'flag.meg_soundscroll_complete', relation: () => 0, questState: () => 'not_started', questIndex: () => 0, hasItem: () => false, hasSeen: () => false, state: () => '' },
+      inv: { add: () => 0, remove: () => false, count: () => 0 },
+      setFlag: () => {}, setState: () => {}, notify: () => {}, refresh: () => {}, setPaused: () => {}, present: () => {},
+      playCinematic: (id) => played.push(id),
+    })
+    // 旗标全开（除了"声卷已交"）⇒ 开场落到 n7：那一格的 c1 就挂着 CINE_STORY_B5
+    expect(session.open('npc_meg')).toBe(true)
+    session.choose('c1')
+    expect(played).toEqual(['CINE_STORY_B5'])
+    expect(rows.some((r) => r.id === played[0]), '放出来的 id 真是清单里的一行').toBe(true)
+  })
+
+  it('接了的 4 条按名字点出来（新开局 1 + Boss 出场 3 + 胜利 1），且各自挂在**对的**挂点上', () => {
     // 胜利那一条必须认人：§6 的镜头语言是"管风琴过载熄灭"，那是主 Boss 恩希尔（未竟厅）那一战，
     // 不是"任何 Boss 倒下都放"。挂错人不会有别的东西响——所以在这里钉住 `dataId`。
     expect(main, '胜利认的是主 Boss').toMatch(/p\.dataId === 'en_hersil'[\s\S]{0,80}CINE_WIN/)

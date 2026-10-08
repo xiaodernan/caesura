@@ -1011,6 +1011,7 @@
               ],
               "notify": "完整声卷归位，音栓钥匙插进未竟厅大门"
             },
+            "cinematic": "CINE_STORY_B5",
             "next": "n8"
           }
         ],

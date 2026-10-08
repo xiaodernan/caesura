@@ -10,9 +10,9 @@
  *   ② **总时长 ≤ 180s**（§6 预算：垂直切片总游玩 60 分钟 × 5%）。
  * 另加两条"数据自洽"的常识：id 唯一、`durationMs` 是正数。
  *
- * ⚠️ 今天这张表**还没有数据**（`cinematic` 字段在 `schema.ts` 里声明了、`src/data/json/` 里没人用），
- * 所以本模块的判据先在合成夹具上跑；`cinematics.json` 落地后**同一个判据直接吃真表**，
- * 不需要改这里一个字。
+ * 表已落地（`src/data/json/cinematics.json`，10 行），`cinematic` 字段也已有真消费方：
+ * `DLG_MEG` 的选择挂了 `CINE_STORY_B5`（`Settlement.ts` 读它，`main.ts` 接到 `Cinematics.start`）。
+ * 于是本模块的判据有两个读者：合成夹具（`tests/flow/cinematic-budget.test.ts`）与真表（`validate-data.mjs`）。
  */
 
 /** §6 的预算：单条上限（毫秒） */
