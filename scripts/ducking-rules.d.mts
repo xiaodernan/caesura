@@ -13,6 +13,8 @@ export interface DuckFinding {
 
 /** `schema.ts > DuckRow` 的字段；词表对账（`VOCAB_PAIRS`）读的就是这一张 */
 export const DUCK_FIELDS: string[]
+/** 每行必带的字段（attackSec/releaseSec 只给休止那一行，可缺省走 DUCK_TC_SEC） */
+export const DUCK_REQUIRED_FIELDS: string[]
 /** dB 的下界：越过它就不是"压低"而是静音（静音的主人是 battle.json 的 noMusic） */
 export const DUCK_DB_FLOOR: number
 /** 一次侧链最长的时长（秒）：取自 §8.2 表里最长那一行 */

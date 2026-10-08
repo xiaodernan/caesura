@@ -253,7 +253,7 @@ export class AudioEngine {
    */
   private pendingVolumes = new Map<string, number>()
   /** KI-026：设置持久化的音频消费端。bus 传 null = master */
-  setVolume(bus: 'sfx' | 'music' | 'ambience' | 'ui' | 'master', level: number): void {
+  setVolume(bus: DuckBusName | 'master', level: number): void {
     const v = Math.max(0, Math.min(1, level))
     this.pendingVolumes.set(bus, v)
     const ctx = this.ctx

@@ -7,31 +7,44 @@ import { battleScores, duckingRows } from '@/data'
 import type { DuckRow } from '@/data/schema'
 import { BUS_BASE, DUCK_TC_SEC, activeDucks, deepestFactor, duckFactor, type DuckBusName } from '@/audio/ducking'
 import { stripComments, callArgLiterals, unionMembers, schemaBlocks, interfaceFields } from '../../scripts/schema-vocab.mjs'
-import { duckFindings, DUCK_FIELDS, DUCK_DB_FLOOR, DUCK_HOLD_MAX_SEC } from '../../scripts/ducking-rules.mjs'
+import { duckFindings, DUCK_FIELDS, DUCK_REQUIRED_FIELDS, DUCK_DB_FLOOR, DUCK_HOLD_MAX_SEC } from '../../scripts/ducking-rules.mjs'
 import { FakeAudioContext, FakeNode, fakeWindow, type FakeWindow } from '../support/fakeAudio'
 
 /**
- * docs/audio.md §8.2「Ducking 规则表」第一次有载体（KI-092）。
+ * docs/audio.md §8.2「Ducking 规则表」第一次有载体（KI-092；休止那一行于 **KI-092①** 落地）。
  *
- * 这张表原本六行全是"写在文档里、没有任何一处代码知道它存在"。本文件只载**能载的那一行**：
- * 「弹反成功 | MUSIC+AMB | -6dB / 300ms」是六行里唯一一句触发口已经在事件总线上真实发射的
- * （发射方：`CombatManager.ts` 的 `bus.emit('combat.parried', …)`，见下面第 15 条用例的普查）。
- * 其余四行缺的是**信号**不是数学（休止的进出、Boss telegraph、菜单开合、同型并发的距离裁决），
- * 它们逐行登记在 `docs/KNOWN_ISSUES.md` 的 KI-092，第 2 条用例把"没载的行必须在账上有名字"本身
+ * 这张表原本六行全是"写在文档里、没有任何一处代码知道它存在"。到今天为止载了两行：
+ * 「弹反成功 | MUSIC+AMB | -6dB / 300ms」与「休止状态 | 除心跳/骨传导外全部 | -12→-18dB，250ms 入 180ms 出」。
+ * 判据是"触发口在事件总线上真实发射过"（发射方普查下面有两条：`combat.parried` 与 `audio.caesura`），
+ * 而不是"这一行看起来能做"。
+ *
+ * 休止那一行载的是**两个一半**，各自都要点名：
+ *  - **量**：`-12dB` ⇒ `ducking.json > caesura.db`，三个数（−12 / 250ms 入 / 180ms 出）全部从文档正则现推；
+ *  - **信号**：`CombatManager.caesuraFreeze()` 在休止落地的那一 tick 发 `audio.caesura`，并把它自己那个
+ *    `freezeTicks` 的秒形当 `holdSec` 带上——表里那格 1.2s 只是**没有事件时**的退路（§55：一记演出只有一个时钟）。
+ *  - 没载的**那两腿**（敌音效 −12dB / Boss 音乐 −18dB）写进了 KI-092 的账：它们缺的不是数学，是**总线**——
+ *    今天 `sfx` 一条总线同时装着"敌人发出的声音"和"玩家自己的音效"，`music` 同时装着探索曲与 Boss 曲，
+ *    把整条压下去会把 §5 那句「世界被压低、玩家被凸显」反过来执行。所以判据要求在册，而不是替它编一个数。
+ *
+ * 其余四行缺的是**信号**不是数学（Boss telegraph / 菜单开合 / 同型并发的距离裁决 + 一行归处不同），
+ * 逐行登记在 `docs/KNOWN_ISSUES.md` 的 KI-092，下面第 2 条用例把"没载的行必须在账上有名字"本身
  * 变成了判据——文档里的行不会安静地烂着。
  *
  * 量具的四条口径（都是先量过才敢写的）：
- *  - **数字一律从文档现推**：`-6dB`、`300ms`、`MUSIC+AMB` 都从 §8.2 那一行正则抓出来，
- *    测试里没有一处手抄的 −6（抄了就是把测试变成表的复印件，表改了测试不会红）；
+ *  - **数字一律从文档现推**：`-6dB`、`300ms`、`MUSIC+AMB`、`250ms 入`、`180ms 出` 都从 §8.2 那两行
+ *    正则抓出来，测试里没有一处手抄的 −6 / 0.25（抄了就是把测试变成表的复印件，表改了测试不会红）；
  *  - **读调度而不是读差值**：`FakeParam.setTargetAtTime` 只记录事件、不改 `.value`，所以本文件
- *    断言的是"排出去的那一条自动化写了几、值是多少、排在哪个时刻"，绝不拿两次增益相减去猜；
+ *    断言的是"排出去的那一条自动化写了几、值是多少、**时间常数是多少**、排在哪个时刻"，绝不拿两次增益相减去猜；
  *  - **总线节点按建图顺序认**（master 之后依 `BUS_BASE` 的键序），不按电平认——电平判据（`busAt`）
  *    在 `AudioEngine` 那一份测试里还要用，但这里 `synth.ts` 里也有 0.45 这种峰值数，按值找会认错人；
- *  - `DUCK_TC_SEC` **不是**设计读数（§8.2 只有休止那一行给了斜率，而那一行今天没载），
- *    所以第 16 条只要求它是"只声明一次、有读者"的常数，不拿它去对文档。
+ *  - `DUCK_TC_SEC` **不是**设计读数（§8.2 只有休止那一行给了斜率，而它的两个数住在那两格里），
+ *    所以它只被要求是"只声明一次、有读者"的常数，不拿它去对文档；两个数的换算由 `tcFromReach` 一家管。
  */
 
 const root = fileURLToPath(new URL('../..', import.meta.url))
+
+/** 引擎真实接的侧链触发口（从 AudioEngine.ts 源码现推）：真表对账用这份；合成拒绝面用单触发的 H 保持聚焦 */
+const REAL_HANDLED = callArgLiterals(stripComments(readFileSync(root + 'src/audio/AudioEngine.ts', 'utf8')), 'onDuckTrigger') as string[]
 
 /** §8.2 那张表的三列，逐行从文档正文里抓（表就是这张表的主人） */
 interface DocDuckRow {
@@ -394,7 +407,8 @@ describe('只有一个主人（源码判据）', () => {
     expect(rules).toContain('row.label')
     const schemaText = stripComments(readFileSync(root + 'src/data/schema.ts', 'utf8'))
     expect(interfaceFields(schemaBlocks(schemaText), 'DuckRow')).toEqual(DUCK_FIELDS)
-    expect(duckingRows.every((r) => DUCK_FIELDS.every((f) => r[f as keyof DuckRow] !== undefined)), '有一行缺字段').toBe(true)
+    // 必填六格每行都要带；attackSec/releaseSec 是休止那一行的专属斜率，别的行缺省走 DUCK_TC_SEC（可不带）
+    expect(duckingRows.every((r) => DUCK_REQUIRED_FIELDS.every((f) => r[f as keyof DuckRow] !== undefined)), '有一行缺必填字段').toBe(true)
   })
 
   it('时间常数只有一个主人：DUCK_TC_SEC 声明一次、被侧链读一次', () => {
@@ -424,7 +438,7 @@ describe('判据的拒绝面（合成行，真表一个字都不动）', () => {
   const errWhere = (rows: unknown, handled?: string[] | null, buses?: string[] | null) => run(rows, handled, buses).map((f) => `${f.level}:${f.where}`)
 
   it('接受侧：真表过判据一条都不报（拒绝面全部实测过，接受面也得量一次）', () => {
-    expect(run(duckingRows)).toEqual([])
+    expect(run(duckingRows, REAL_HANDLED)).toEqual([])
   })
 
   it('名单读不到 ⇒ 门自曝"在空转"，绝不退成"什么都合法"', () => {
@@ -442,7 +456,7 @@ describe('判据的拒绝面（合成行，真表一个字都不动）', () => {
     expect(errWhere([{ ...base(), trigger: 'combat.nope' }])).toEqual(['error:[0].trigger', 'error:ducking.json'])
     expect(r1[0].msg).toContain('combat.parried') // 报错要把"引擎只认这几个口"念出来
     expect(errWhere([])).toEqual(['error:ducking.json']) // 反向：表空了，引擎那个口就白接了
-    const r2 = run(duckingRows, ['combat.parried', 'combat.executed'])
+    const r2 = run(duckingRows, [...REAL_HANDLED, 'combat.executed'])
     expect(r2.length).toBe(1)
     expect(r2[0].msg).toContain('combat.executed')
     expect(errWhere([{ ...base(), targets: ['master'] }])).toEqual(['error:[0].targets'])

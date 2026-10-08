@@ -24,6 +24,8 @@
  * 而没有读者时它们就是 §55 名下的死字段（引擎侧那一段见 `AudioEngine > onDuckTrigger/reconcileDucks`）。
  */
 export const DUCK_FIELDS = ['id', 'label', 'trigger', 'targets', 'db', 'holdSec', 'attackSec', 'releaseSec']
+/** 每行必带的字段（attackSec/releaseSec 只给休止那一行，可缺省走 DUCK_TC_SEC）。单一声明：测试与判据都用它 */
+export const DUCK_REQUIRED_FIELDS = ['id', 'label', 'trigger', 'targets', 'db', 'holdSec']
 
 /**
  * −60dB（增益 ≈ 0.001）以下不是"压低"而是静音。静音这件事文档另有说法：§6.3 万籁那一格是
