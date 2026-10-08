@@ -2375,7 +2375,7 @@ Phase 1（核心战斗原型）＝ `core + player + combat + tools/CombatDebugge
 
 **门禁**：`tsc --noEmit` RC=0；`node scripts/validate-data.mjs` **0 ERROR / 2 WARN**（与 §5.9.41 落地后同数，一条没新增）；定向 44 条全绿（`lighting` / `color-grade` / `arch-boundaries` / `doc-audit`）。**一处如实说明**：抓回归的那一刻值得记下来——给 `main.ts` 加光照腿时把开局那次 `applyWeather(homeRegion …)` 一并吞掉了，是 `color-grade.test.ts` 那条「`applyWeather(` 作为语句必须出现两次」的源码门把它喊回来的（KI-094① 立这道门时盯的是"切换没有写方"，今天它抓的是"原有写方被误删"）。
 
-**没做的**（2026-10-09 复核）：~~三层光（hemi/key/point）~~ **已落第二腿（§5.9.46）**——`lighting.json > lights` + `world/SceneLights.ts`，强度与方向另立裁决账本；**跨区 70/30 色板过渡带仍欠**（要连续地形与「站在两区之间」这个空间概念，今天的 `regionAt` 对任一坐标只回答一个区，KI-008 / Phase 7）；体积光仍只允许用于地标（§8 的预算句，属内容批）；`lightingPreset` 与既有的 `regions.json > palette`（IP_SEED §10 那三色）**并存且不互推**——前者是 §37 的光与色板，后者已经在灰盒/地图上有读者，合并它们要先有一次裁决。
+**没做的**（2026-10-09 复核）：~~三层光（hemi/key/point）~~ **已落第二腿（§5.9.46）**——`lighting.json > lights` + `world/SceneLights.ts`，强度与方向另立裁决账本；~~**跨区 70/30 色板过渡带仍欠**~~ **已落（2026-10-09，§5.9.47）**——`paletteBlendAt` + `blendLightRigs`，`regionAt` 之外多答一个邻居权重；体积光仍只允许用于地标（§8 的预算句，属内容批）；`lightingPreset` 与既有的 `regions.json > palette`（IP_SEED §10 那三色）**经裁决维持两套**（2026-10-09，Batch E）：二者**同名（base/accent）不同义、值也不同**——`lightingPreset` 是 §2/§8 大气色（雾/LUT/灯源，`ColorGrade`/`SceneLights` 读），`palette` 是 §10 身份色（灰盒/地图，`ChunkGreybox`/`WallGreybox`/`MapUI` 读），消费者不相交；**不许合并成一个真相源**（并错方向会把地图变暗块、或让屏幕跟着灰盒跑）。schema 的 `RegionPalette` 与 `lightingPreset` 两处字段注释已互相点名，`lighting.test.ts` 有一条源码门钉住这条分离。
 
 
 ### 5.9.43 一笔假债出表：TD-002「按着地图的名字在调音」结案，连带修一条被自己的注释弄红的源码门（2026-10-08）

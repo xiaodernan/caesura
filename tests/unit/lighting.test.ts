@@ -421,3 +421,20 @@ describe('§2 跨区过渡带：两份读数按 t 混合，常量自证 70/30↔
     expect(Math.abs(dOf(0.3) - dOf(0.7))).toBeGreaterThanOrEqual(150)
   })
 })
+
+
+describe('Batch E 裁决：§10 身份色与 §2/§8 大气色是两套，不许合并（2026-10-09）', () => {
+  it('灰盒/地图只读 §10 身份色 palette，不碰 lighting.json 的大气色', () => {
+    for (const f of ['src/world/ChunkGreybox.ts', 'src/world/WallGreybox.ts', 'src/ui/MapUI.ts']) {
+      const src = readFileSync(root + f, 'utf8')
+      expect(src, `${f} 应消费 §10 身份色 palette`).toMatch(/\.palette\.(base|accent|glow)/)
+      expect(src, `${f} 不该读 lighting.json 的大气色`).not.toMatch(/lightingRow|lighting\.json|lightingFogRgb/)
+    }
+  })
+  it('每区身份色是三段 6 位 hex，且 lightingPreset 都在 lighting.json 有对应行', () => {
+    for (const r of regions) {
+      expect(r.palette.base + r.palette.accent + r.palette.glow, `${r.id} 身份色须为三段 6 位 hex`).toMatch(/^(#[0-9a-fA-F]{6}){3}$/)
+      expect(lightingRow(r.lightingPreset), `${r.id} 的 lightingPreset 必须在 lighting.json 有行`).not.toBeNull()
+    }
+  })
+})

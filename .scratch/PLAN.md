@@ -13,7 +13,7 @@
 - 测试：movesets（帧表对账+新闸）、actor-visuals（5→7 组）、新 flow overtone-bow 16 条
 - 文档：combat.md §4.4/§4.5 落地注记、tech-arch archetype 枚举纠正（tuning_rod→staff）、KNOWN_ISSUES、§5.9.44
 
-## ✅ Batch B（代码+测试+文档已完，待提交）—— §5.9.33③ 天气三腿（音频/敌人浓度/失谐累积速率，KI-108）
+## ✅ Batch B（已提交 6e066af）—— §5.9.33③ 天气三腿（音频/敌人浓度/失谐累积速率，KI-108）
 文档无数值口径 ⇒ 先立 `WEATHER_GAMEPLAY_RULINGS` 裁决账本（记"今天给了而文档没有"），再落机制。
 
 **实际落点（与原计划的差异已记录）**：
@@ -26,7 +26,7 @@
 - 声景增益乘在距离衰减之后（不动 `spatialize`）
 - `main.ts > applyWeather` 一推四路；开局那次调用搬到 `spawner` 之后（TDZ）
 
-## ✅ Batch C1（已完，待提交）—— §37 第二腿：三层光第一次有主人（KI-109 / §5.9.46）
+## ✅ Batch C1（已提交 55ee4d5）—— §37 第二腿：三层光第一次有主人（KI-109 / §5.9.46）
 原计划写"要真几何"，**实际勘查后发现真光源一直就在**：`PlaceholderArena.ts` 里写着死的
 `HemisphereLight(0x35406b, 0x1a1410, 0.7)` + `DirectionalLight(0xd8c37a, 1.5)`——那是雾语林的配色，
 而玩家出生在休垒 ⇒ 七区里六区从来看见的不是自己的光。所以这批不是"等几何"，是**把已有的灯接上表**。
@@ -40,7 +40,7 @@
 - point 挂该区第一个 landmark；`setRig(null)` = 三盏全关
 - 门禁：tsc 0 错 / validate 0 ERROR 2 WARN / 定向 5 文件 93 条全绿（lighting 15→29 + 新 scene-lights 8）
 
-## ✅ Batch C2（已完，待提交）—— 跨区 70/30 色板过渡带（KI-110 / §5.9.47）
+## ✅ Batch C2（已提交 a82d103）—— 跨区 70/30 色板过渡带（KI-110 / §5.9.47）
 **走了①，且不需要新数据**：`Streaming.paletteBlendAt(pos) → {from,to,t}` 在 `regionAt` 之外多答一个
 "站在两区之间"的邻居权重（t = 邻居占比，带子外 null）；邻接由 `bounds` 现推（`borderDistance`），
 只认共面接缝（= `boxContacts` 的 face 集）。混合在读数层（`blendLightingSnapshot`/`blendLightRigs`），
@@ -53,18 +53,21 @@
 ## Batch D —— TD-006 ③（听感/音量/视口评审）与 ④（main.ts 装配层覆盖）
 ③ 本环境无可见窗口 ⇒ 只能把"可断言的数字读数"补齐并登记；④ 用 flow 测试给 main.ts 的装配顺序上读者。
 
-## Batch E —— `lightingPreset` × `regions.palette` 合并裁决（§5.9.42 已登记）
-今天两格并存、各有一个读者。要么合并成一个真相源，要么写明"为什么必须是两格"——不许继续含糊。
+## ✅ Batch E（已完，待提交）—— `lightingPreset` × `regions.palette` 裁决：维持两套、不许合并
+**裁决（2026-10-09）**：两套色彩**维持分离、不许合并成一个真相源**。`regions.palette`（§10 身份色
+base/accent/glow，亮）由 `ChunkGreybox`/`WallGreybox`/`MapUI` 读（灰盒几何 + 地图）；
+`lightingPreset`→`lighting.json`（§2 六色 + §8，暗）由 `ColorGrade`（雾/LUT）+ `SceneLights`（三层光）读。
+二者**同名（base/accent）不同义、值也不同**，消费者不相交；并错方向会把地图变暗块、或让屏幕跟灰盒跑。
+落点：schema 三处注释互点名 + tech-arch §5.9.42 记账 + `lighting.test.ts` 源码门（30 条全绿）。
 
-## Batch F+ —— 按 KNOWN_ISSUES / PENDING_* 账本逐条销账
-优先级：PENDING_WEATHER_SWITCHES（四区等叙事裁决）→ KI-094② 的倒钟 WARN → KI-008 真几何族
-→ 各 Partial 行里"只差一个读者"的格子。每销一条：数据 + 读者 + 判据 + 测试 + 文档五件套齐全才动状态。
-
-## Batch D —— TD-006 ③（听感/音量/视口评审）与 ④（main.ts 装配层覆盖）
-③ 本环境无可见窗口 ⇒ 只能把"可断言的数字读数"补齐并登记；④ 用 flow 测试给 main.ts 的装配顺序上读者。
-
-## Batch E —— `lightingPreset` × `regions.palette` 合并裁决（§5.9.42 已登记）
-今天两格并存、各有一个读者。要么合并成一个真相源，要么写明"为什么必须是两格"——不许继续含糊。
+## ✅ KI-111（2026-10-09 撤回）—— 导航拐角圆融：立了、量了、结论是「无可融对象」
+设计先落地再证伪：`Navigator.next` 读数层加前视混合（`LOOKAHEAD=0.2m` 邻域内目标换成沿路径前视点），
+tsc 0 错、四条用例按预测写好——然后探针证伪。**结构性不可达**：完全可见性图 + 每 tick 重算 ⇒
+A* 在到达拐点前就换线（换线距离 d*≈margin/sinθ，且 LOOKAHEAD 的安全预算恰是抢跑的证明 ⇒ 邻域内
+必经拐点是空集）。实测两腿最大转向全等（单墙 30.1°、缝 29.296°），圆融一格没改。**裁决**：①拐角圆融
+不落码（无可融对象）；②KI-009「另立一格」销账；③真实现象是「换线跳变」，融它需给 `stepToward` 加方向
+状态（影响全部移动状态），无观感证词不动（KI-010/§78）。Navigation.ts / navigation.test.ts 逐字节回 HEAD。
+详见 KNOWN_ISSUES KI-111。
 
 ## Batch F+ —— 按 KNOWN_ISSUES / PENDING_* 账本逐条销账
 优先级：PENDING_WEATHER_SWITCHES（四区等叙事裁决）→ KI-094② 的倒钟 WARN → KI-008 真几何族

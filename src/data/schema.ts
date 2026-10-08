@@ -1114,7 +1114,15 @@ export interface RegionBounds {
   minZ: number; maxZ: number
 }
 
-/** hex strings; must match IP_SEED §10 区域色板 */
+/**
+ * §10 区域**身份色**（hex）。灰盒几何（`ChunkGreybox`/`WallGreybox` 的 fill/edge/emissive）与地图
+ * （`MapUI` 的 fill/edge）读这三格——亮、可读，用来"认出这是哪一区"。
+ *
+ * **与 `RegionData.lightingPreset`（§2 六色 + §8 大气/LUT）是两套色彩，不是一套**（Batch E 裁决，2026-10-09）：
+ * 这里的 `base`/`accent` 与 `lighting.json` 的 `base`/`accent` **同名不同义、值也不同**——那边是屏幕调色与
+ * 灯源的"大气色"（暗、有情绪），这边是灰盒/地图的"身份色"（亮、可读）。两者各有主人、消费者不相交，
+ * **不许合并成一个真相源**：把身份色并进大气色会让地图/灰盒变成暗块，把大气色并进身份色会让屏幕跟着灰盒跑。
+ */
 export interface RegionPalette {
   base: string
   accent: string
@@ -1660,8 +1668,11 @@ export interface RegionData {
    * §37 区域光照预设 ⇒ `lighting.json` 的行键（KI-094 同族）。这个名字**必须有真读者**：
    * `vfx/ColorGrade.ts` 按它写雾色与 LUT 乘数（`world/Lighting.ts` 出读数）。
    * 三层光那一半（hemi/key/point）要真几何与真光源，属 KI-008，不在这一列里。
+   * **这不是下面的 `palette`**：那是 §10 身份色（灰盒/地图），这是 §2/§8 大气色（雾/LUT/灯源）；
+   * 两套同名不同义，见 `RegionPalette` 的注释，不许互相推导。
    */
   lightingPreset: string
+  /** §10 身份色（灰盒/地图）——与 `lightingPreset` 的 §2/§8 大气色是两套，见 `RegionPalette`，不许互相推导 */
   palette: RegionPalette
   spawnGroups: SpawnGroup[]
   landmarks: Landmark[]
