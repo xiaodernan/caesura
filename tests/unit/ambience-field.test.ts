@@ -188,3 +188,60 @@ describe('判据只有一个主人：位置数学住 `spatial.ts`，音色参数
     }
   })
 })
+
+
+/**
+ * §5.9.33③ 声景增益腿（`weather.json > gameplay.ambienceGain`）。
+ *
+ * 乘在**距离衰减之后**：`spatialize` 那条数学是全部 SFX 与声景层共用的唯一主人（KI-083），
+ * 在这里改它就等于给一次性音效也加上天气脾气。要放大的是"这一格天气的声景"，不是距离模型。
+ */
+describe('声景层：天气增益（§5.9.33③ 音频腿）', () => {
+  it('缺省 1：不调用 setWeatherGain 时增益就是距离衰减本身', () => {
+    const { ctx, field } = rig()
+    field.setListener({ x: 0, y: 0, z: 0, yaw: 0 })
+    field.setBed(bedOf([src({ pos: { x: 0, y: 0, z: -16 } })]))
+    field.update()
+    const sp = panners(ctx)[0]
+    const g = ctx.edges.find((e) => e.to === sp)?.from as FakeNode
+    expect(g.params.gain.value).toBeCloseTo(spatialize({ x: 0, y: 0, z: -16 }, { x: 0, y: 0, z: 0, yaw: 0 }).att, 10)
+  })
+
+  it('1.5 ⇒ 每一声的增益 = 距离衰减 × 1.5（16m 处 att=0.5 ⇒ 0.75）', () => {
+    const { ctx, field } = rig()
+    const pose = { x: 0, y: 0, z: 0, yaw: 0 }
+    field.setListener(pose)
+    field.setBed(bedOf([src({ pos: { x: 0, y: 0, z: -16 } })]))
+    field.setWeatherGain(1.5)
+    field.update()
+    const sp = panners(ctx)[0]
+    const g = ctx.edges.find((e) => e.to === sp)?.from as FakeNode
+    expect(g.params.gain.value).toBeCloseTo(0.75, 10)
+  })
+
+  it('已经在飞的那一声不被新增益改写（只影响下一声：KI-066 不篡改时间线）', () => {
+    const { ctx, field } = rig()
+    field.setListener({ x: 0, y: 0, z: 0, yaw: 0 })
+    field.setBed(bedOf([src({ pos: { x: 0, y: 0, z: -16 } })]))
+    field.update()
+    const first = ctx.edges.find((e) => e.to === panners(ctx)[0])?.from as FakeNode
+    const before = first.params.gain.value
+    field.setWeatherGain(2)
+    expect(first.params.gain.value, '已经排出去的那一声被回头改了').toBeCloseTo(before, 10)
+    ctx.advance(10)
+    field.update()
+    const second = ctx.edges.find((e) => e.to === panners(ctx)[1])?.from as FakeNode
+    expect(second.params.gain.value).toBeCloseTo(before * 2, 10)
+  })
+
+  it('≤0 按 1 收（增益 0 是把声景层静音，而"这一腿不生效"的写法是不调用它）', () => {
+    const { ctx, field } = rig()
+    field.setListener({ x: 0, y: 0, z: 0, yaw: 0 })
+    field.setBed(bedOf([src({ pos: { x: 0, y: 0, z: -16 } })]))
+    field.setWeatherGain(0)
+    field.update()
+    const sp = panners(ctx)[0]
+    const g = ctx.edges.find((e) => e.to === sp)?.from as FakeNode
+    expect(g.params.gain.value).toBeCloseTo(spatialize({ x: 0, y: 0, z: -16 }, { x: 0, y: 0, z: 0, yaw: 0 }).att, 10)
+  })
+})

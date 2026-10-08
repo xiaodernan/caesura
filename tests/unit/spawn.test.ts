@@ -190,3 +190,113 @@ describe('chunk-driven lifecycle', () => {
     expect(h.live.size).toBe(0)
   })
 })
+
+
+/**
+ * §5.9.33③ 敌人浓度腿（`weather.json > gameplay.concentrationMul`）。
+ *
+ * **这条腿为什么是"铺开半径 ÷ 乘数"而不是"多刷几个"**：slot 的条数由
+ * `regions.json > spawnGroups[].count` 写死，运行时没有任何合法来源能多造一颗怪——
+ * 真要"Storm 期敌人浓度+"按条数兑现，得改关卡数据（给那一区加 spawnGroups），
+ * 那不是天气读数能管的一格。所以这里量的是同一批怪**铺得有多聚**。
+ */
+describe('§5.9.33③ 敌人浓度腿：只改"下一次进格铺在哪"，不动已经活着的', () => {
+  /** 记下每一颗怪**精确**落点的假 host（上面那个 `host()` 只记四舍五入过的坐标） */
+  function posHost(): SpawnHost & { live: Map<string, string>; at: Vec3[] } {
+    const live = new Map<string, string>()
+    const at: Vec3[] = []
+    let n = 0
+    return {
+      live, at,
+      spawn: (enemyId, pos) => { const id = `en#${++n}`; live.set(id, enemyId); at.push({ ...pos }); return { id } },
+      despawn: (id) => live.delete(id),
+      hasFlag: () => true,
+    }
+  }
+
+  it('浓度 1（缺省）⇒ 落点就是基准点：这一腿没接线之前与之后逐格相同', () => {
+    const cellKey = cellKeyOf32()
+    const g = group({ count: 4, center: { x: 40, y: 0, z: 40 }, radius: 12 })
+    const h = posHost()
+    const d = new SpawnDirector([region('rg_a', [g])], h, cellKey)
+    const key = cellKey(g.center)
+    const base = d.slotsInChunk(key).map((s) => s.pos)
+    active(key)
+    expect(h.at).toEqual(base)
+    d.dispose()
+  })
+
+  it('浓度 2 ⇒ 每一颗都向组心收一半；基准点位不漂移（浓度回到 1 时这一组回得了家）', () => {
+    const cellKey = cellKeyOf32()
+    const g = group({ count: 4, center: { x: 40, y: 0, z: 40 }, radius: 12 })
+    const h = posHost()
+    const d = new SpawnDirector([region('rg_a', [g])], h, cellKey)
+    const key = cellKey(g.center)
+    const base = d.slotsInChunk(key).map((s) => s.pos)
+    d.setConcentration(2)
+    active(key)
+    expect(h.at).toHaveLength(4)
+    for (let i = 0; i < 4; i++) {
+      expect(h.at[i].x, `第 ${i} 颗的 x 没有向组心收一半`).toBeCloseTo(40 + (base[i].x - 40) / 2, 10)
+      expect(h.at[i].z, `第 ${i} 颗的 z 没有向组心收一半`).toBeCloseTo(40 + (base[i].z - 40) / 2, 10)
+      expect(h.at[i].y, '高度不参与浓度（收拢的是水平铺开）').toBe(base[i].y)
+    }
+    // 基准没有被就地改写：否则浓度回到 1 时这一组铺不回原地（每次切换都再缩一圈）
+    expect(d.slotsInChunk(key).map((s) => s.pos)).toEqual(base)
+    d.setConcentration(1)
+    gone(key)
+    active(key)
+    expect(h.at.slice(4), '浓度回到 1 之后这一组铺不回原地 = 基准被改写过').toEqual(base)
+    d.dispose()
+  })
+
+  it('浓度 0.5 ⇒ 铺开一倍（同一个乘数两个方向都说得通：它就是"浓度"）', () => {
+    const cellKey = cellKeyOf32()
+    const g = group({ count: 3, center: { x: 0, y: 0, z: 0 }, radius: 10 })
+    const h = posHost()
+    const d = new SpawnDirector([region('rg_a', [g])], h, cellKey)
+    const key = cellKey(g.center)
+    const base = d.slotsInChunk(key).map((s) => s.pos)
+    d.setConcentration(0.5)
+    active(key)
+    for (let i = 0; i < 3; i++) {
+      expect(h.at[i].x).toBeCloseTo(base[i].x * 2, 10)
+      expect(h.at[i].z).toBeCloseTo(base[i].z * 2, 10)
+    }
+    d.dispose()
+  })
+
+  it('只影响"下一次进格"：已经活着的怪一颗都不动，也不多刷也不少刷', () => {
+    const cellKey = cellKeyOf32()
+    const g = group({ count: 3 })
+    const h = posHost()
+    const d = new SpawnDirector([region('rg_a', [g])], h, cellKey)
+    const key = cellKey(g.center)
+    active(key)
+    expect(h.live.size).toBe(3)
+    const before = h.at.map((p) => ({ ...p }))
+    d.setConcentration(3)
+    expect(h.live.size, '换浓度把活着的怪收回去或者说掉了').toBe(3)
+    expect(h.at, '换浓度之后没有任何新的 spawn/despawn').toEqual(before)
+    // 离开再进格才按新浓度落位：新一批全部落在基准半径的三分之一之内
+    gone(key)
+    active(key)
+    expect(h.at.slice(3)).toHaveLength(3)
+    const baseR = Math.max(...before.map((p) => Math.hypot(p.x, p.z)))
+    for (const p of h.at.slice(3)) expect(Math.hypot(p.x, p.z)).toBeLessThan(baseR / 3 + 1e-9)
+    d.dispose()
+  })
+
+  it('≤0 按 1 收：浓度是半径的除数，0 会算出 Infinity 的落点', () => {
+    const cellKey = cellKeyOf32()
+    const g = group({ count: 2 })
+    const h = posHost()
+    const d = new SpawnDirector([region('rg_a', [g])], h, cellKey)
+    const key = cellKey(g.center)
+    const base = d.slotsInChunk(key).map((s) => s.pos)
+    d.setConcentration(0)
+    active(key)
+    expect(h.at).toEqual(base)
+    d.dispose()
+  })
+})

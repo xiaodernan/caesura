@@ -275,6 +275,14 @@ export class MusicLayer {
   }
 
   /**
+   * §5.9.33③ 声景增益腿。与 `setListener` 一字不差的理由：这里只**转交**、不自己存一份——
+   * 存一份就是给同一个数配第二个主人（KI-066 拆掉的正是这一类副本）。
+   */
+  setWeatherGain(mul: number): void {
+    this.field.setWeatherGain(mul)
+  }
+
+  /**
    * KI-079：换探索曲。它与 `setAmbience()` 之间**只有一个顺序**要守：§1.2 那句「旋律层最后」。
    * 所以换床开出的那个 crossfade 窗口还没走完时，新的曲**押在 `songPending` 里**，由 `update()` 到点兑现；
    * 没有窗口在走（开局那一张、或者只换曲不换床的装配形状）就当场换——这一格刻意不做"没有旧曲可淡"的判断，

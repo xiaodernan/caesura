@@ -20,6 +20,9 @@ const LOGIC = [
   'world/Streaming.ts', 'world/Surface.ts', 'world/Interactables.ts', 'world/SpawnDirector.ts', 'world/Props.ts',
   // KI-094②：「哪一格天气生效」是玩法推导，所以它住在逻辑层而不是 `vfx/ColorGrade`（那边只按名字画）。
   'world/WeatherSwitch.ts',
+  // §5.9.33③：天气的玩法三腿同样是逻辑层读数——它只回答"这一格天气的三个乘数是多少"，
+  // 不碰画面也不碰音频图（那两边各是 `vfx/ColorGrade` 与 `audio/*` 的事）。
+  'world/WeatherEffects.ts',
   // §6 过场播放器同样是逻辑层：它只回答"哪一条在跑 / 还剩多久 / 该不该夺输入"，
   // 镜头轨道与字幕时序在表现层（KI-008 / KI-010）。
   'world/Cinematics.ts',

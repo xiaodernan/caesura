@@ -1466,6 +1466,10 @@ export type WeatherDocId = 'clear' | 'rain' | 'fog' | 'storm'
  * 唯一读者是 `src/vfx/ColorGrade.ts`：它把雾密度写进 `scene.fog`，把乘数与失谐的褪色合成成
  * 一条 `canvas.style.filter`。没有这一行 ⇒ 区域按基线（`clear`）奏，而那个事实挂在
  * `PENDING_WEATHER_READINGS` 上，不靠注释。
+ *
+ * **`gameplay` 那一格是另一条腿**（§5.9.33③）：音频／敌人浓度／失谐累积速率。它不在上面那段
+ * "文档只给了它有话说的格"的管辖之内——文档对这三腿**一个数都没给**，所以每一颗敢写下来的乘数
+ * 都必须挂在 `scripts/weather-rules.mjs > WEATHER_GAMEPLAY_RULINGS` 上写明裁决理由（判据 G1）。
  */
 export interface WeatherRow {
   /** 行键 = `regions.json > weatherPresets` 里出现的那个名字 */
@@ -1478,6 +1482,29 @@ export interface WeatherRow {
   brightnessMul?: number
   /** CSS contrast() 的乘子（§2「Fog 对比 ×0.6、Storm 对比 ×1.15」）；不写 = 1.0 中性 */
   contrastMul?: number
+  /** §5.9.33③ 的三条玩法腿（音频／敌人浓度／失谐累积速率）。全可选，缺省即三腿全中性 */
+  gameplay?: WeatherGameplay
+}
+
+/**
+ * `WeatherRow.gameplay` 的三格（§5.9.33③，2026-10-08 落地）。三个乘数共用一套语义：
+ * **1 = 这一腿不生效**，>1 = 更响／更聚／更快，<1 = 反过来。
+ *
+ * 没有"0"这个取值：0 会把一条腿**静默关掉**，而"这一腿不生效"的正确写法是不写这一格
+ * （缺省就是 1）。这与 `brightnessMul`/`contrastMul` 那边"写 1 是没有后果的读数"是同一条纪律的
+ * 两个方向——那边禁的是"写了等于没写"，这边禁的是"写了等于关掉"。
+ */
+export interface WeatherGameplay {
+  /**
+   * 敌人浓度：进格落位时组内铺开半径 **÷ 它**（>1 = 这一组怪聚得更拢）。
+   * 为什么是半径而不是条数：slot 条数由 `regions.json > spawnGroups[].count` 写死，运行时没有
+   * "多刷几个"的合法来源（裁决全文见 `scripts/weather-rules.mjs > WEATHER_GAMEPLAY_RULINGS`）。
+   */
+  concentrationMul?: number
+  /** 失谐累积速率：`CorruptionMeter` 的环境暴露与精英命中两条路都乘它（`combat/Statuses.ts`） */
+  corruptionMul?: number
+  /** 声景层增益：`audio.md` §4 的 L2／L3 每一声的距离衰减再乘它（`audio/ambient-field.ts`） */
+  ambienceGain?: number
 }
 
 /**

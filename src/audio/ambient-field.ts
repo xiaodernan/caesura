@@ -53,6 +53,12 @@ export class AmbienceField {
   private live: Live[] = []
   /** 听者位姿。没有它就算不出声像，所以开局给原点（`AudioEngine` 每帧都会覆盖） */
   private pose: ListenerPose = { x: 0, y: 0, z: 0, yaw: 0 }
+  /**
+   * §5.9.33③ 声景增益腿：`weather.json > gameplay.ambienceGain`，每一声的距离衰减再乘它。
+   * 1 = 这一格天气不放大 L2／L3（今天五张床里只有钟坠院那一格会在风暴期变成 1.5）。
+   * ≤0 按 1 收：校验器（判据 G3）不许表里出现 0，这里守的是直接调用的一条退路。
+   */
+  private weatherGain = 1
 
   constructor(private ctx: AudioContext, private out: AudioNode) {}
 
@@ -69,6 +75,14 @@ export class AmbienceField {
 
   setListener(pose: ListenerPose): void {
     this.pose = pose
+  }
+
+  /**
+   * 换天气增益（§5.9.33③）。与 `setListener` 同一条理由：这里只**存读数**，不算画面——
+   * 已经在飞的那一声不抹（KI-066 那条"不篡改时间线"），新乘数从下一声起生效。
+   */
+  setWeatherGain(mul: number): void {
+    this.weatherGain = mul > 0 ? mul : 1
   }
 
   /**
@@ -91,7 +105,9 @@ export class AmbienceField {
     if (att < AUDIBLE_FLOOR) return
     const motion = src.layer === 'motion'
     const gain = this.ctx.createGain()
-    gain.gain.value = att
+    // 天气乘数乘在**距离衰减之后**：`spatialize` 那条数学是全部 SFX 共用的唯一主人（KI-083），
+    // 在这里改它就等于给一次性音效也加上天气脾气。要放大的是"这一格天气的声景"，不是整个距离模型。
+    gain.gain.value = att * this.weatherGain
     const panner = this.ctx.createStereoPanner()
     panner.pan.value = pan
     gain.connect(panner).connect(this.out)

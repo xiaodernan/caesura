@@ -62,6 +62,19 @@ function busAt(ctx: FakeAudioContext, level: number): FakeNode {
   return n as FakeNode
 }
 
+/**
+ * 出生区（`rg_resthold`）那一行的声床。两个 describe 共用它：KI-083 那边证"id→行 解析出来的那一行
+ * 真的走到了声景层上"，§5.9.33③ 那边证"同一行上面还挂着天气增益"。合成床量不到前一件事，
+ * 所以这里刻意**用真表里的床**——只有它同时踩得住两条链。
+ */
+const openBed = (): AmbienceBed => {
+  const rg = regions.find((r) => r.id === 'rg_resthold')
+  if (!rg) throw new Error('regions.json 里没有出生区 rg_resthold：这一份测试的输入要跟着数据走')
+  const b = ambienceBeds.find((x) => x.id === rg.music.ambience)
+  if (!b) throw new Error('出生区指的声床不在 ambience.json 里')
+  return b
+}
+
 beforeEach(() => { made = [] })
 
 afterEach(() => {
@@ -275,14 +288,6 @@ describe('路由：UI 直通 / 无位置走 sfx / 有位置才 3D', () => {
 })
 
 describe('KI-083：§4 的 L2／L3 声景层（真位置声源）', () => {
-  /** 这一块用**真表里的床**：要证的是"id→行 解析出来的那一行真的走到了声景层上"，合成床量不到这一步 */
-  const openBed = (): AmbienceBed => {
-    const rg = regions.find((r) => r.id === 'rg_resthold')
-    if (!rg) throw new Error('regions.json 里没有出生区 rg_resthold：这一份测试的输入要跟着数据走')
-    const b = ambienceBeds.find((x) => x.id === rg.music.ambience)
-    if (!b) throw new Error('出生区指的声床不在 ambience.json 里')
-    return b
-  }
   /** 这段读数之后建起来的声像名册（声景层每一颗都有一只，一次性 SFX 也各有一只） */
   const pansSince = (ctx: FakeAudioContext, from: number): number[] =>
     ctx.nodes.slice(from).filter((n) => n.kind === 'panner').map((n) => n.params.pan.value).sort((a, b) => a - b)
@@ -351,6 +356,82 @@ describe('KI-083：§4 的 L2／L3 声景层（真位置声源）', () => {
     expect(sfxPans[0], 'SFX 那条读者算出的声像变了').toBeCloseTo(want, 6)
     expect(fieldPans.some((p) => Math.abs(p - want) < 1e-12), '声景层那条读者与 SFX 不是同一份数学').toBe(true)
     void engine
+  })
+})
+
+/**
+ * §5.9.33③ 声景增益腿（`weather.json > gameplay.ambienceGain`）在**引擎这一层**的三件事：
+ * 缓存（首次手势之前）、补发（`start()` 里）、以及 dispose 之后不再说话。
+ *
+ * 读数与"乘在距离衰减之后"那两条判据住在 `tests/unit/ambience-field.test.ts`（数学的主人那边），
+ * 这里只盯引擎作为**缓存与转交者**的身份——少了它，开局那一格天气要等玩家手动换一次区才生效。
+ */
+describe('§5.9.33③ 声景增益腿：引擎层的缓存、补发与退场', () => {
+  /** 这一段之后新建的、接在声像前面的那条增益（声景层每条源一只） */
+  const gainsOf = (ctx: FakeAudioContext, from: number): number[] =>
+    ctx.nodes.slice(from).filter((n) => n.kind === 'panner')
+      .map((p) => (ctx.edges.find((e) => e.to === p)?.from as FakeNode | undefined)?.params.gain.value)
+      .filter((v): v is number => typeof v === 'number')
+
+  it('手势之前设的增益被缓存，start() 补发到声景层（少了补发，开局那一格天气要等换一次区才生效）', () => {
+    installWindow()
+    const engine = mkEngine()
+    const bed = openBed()
+    const pose = { x: 14, y: 1, z: 16, yaw: 0 }
+    engine.setListener(pose.x, pose.y, pose.z, pose.yaw)
+    bus.emit('audio.music.ambience', { id: bed.id })
+    engine.setWeatherGain(1.5)          // 手势之前：这一句只该落进引擎的缓存
+    engine.start()
+    const ctx = LAST()
+    const before = ctx.nodes.length
+    ctx.advance(60)
+    engine.update(1 / 60)
+    const got = gainsOf(ctx, before).sort((a, b) => a - b)
+    const want = bed.sources.map((s) => spatialize(s.pos, pose).att * 1.5).sort((a, b) => a - b)
+    expect(got, 'start() 没把缓存的增益补发给声景层').toEqual(want)
+  })
+
+  it('start() 之后现设的增益从下一声起生效；已经在飞的那一声不回头改', () => {
+    installWindow()
+    const engine = mkEngine()
+    const bed = openBed()
+    const pose = { x: 14, y: 1, z: 16, yaw: 0 }
+    engine.setListener(pose.x, pose.y, pose.z, pose.yaw)
+    bus.emit('audio.music.ambience', { id: bed.id })
+    engine.start()
+    const ctx = LAST()
+    const before = ctx.nodes.length
+    ctx.advance(60)
+    engine.update(1 / 60)
+    const first = gainsOf(ctx, before)
+    const att = bed.sources.map((s) => spatialize(s.pos, pose).att)
+    expect(first.sort((a, b) => a - b), '没设增益时该是距离衰减本身').toEqual([...att].sort((a, b) => a - b))
+    const mid = ctx.nodes.length
+    engine.setWeatherGain(2)
+    ctx.advance(60)
+    engine.update(1 / 60)
+    expect(gainsOf(ctx, mid).sort((a, b) => a - b), '新增益没转交给正在跑的声景层').toEqual(att.map((a) => a * 2).sort((a, b) => a - b))
+    // 只看**第一批**那几只（`before` 之后的节点是按创建顺序排的）：第二批进来之后第一批的值必须原样不动
+    expect(gainsOf(ctx, before).slice(0, first.length).sort((a, b) => a - b), '已经排出去的那一声被回头改了（KI-066 不篡改时间线）').toEqual([...first].sort((a, b) => a - b))
+  })
+
+  it('dispose 之后再设：不抛，也不再产生新的声景声', () => {
+    installWindow()
+    const engine = mkEngine()
+    const bed = openBed()
+    engine.setListener(14, 1, 16, 0)
+    bus.emit('audio.music.ambience', { id: bed.id })
+    engine.start()
+    const ctx = LAST()
+    const before = ctx.nodes.length
+    ctx.advance(60)
+    engine.update(1 / 60)
+    const seen = ctx.nodes.slice(before).filter((n) => n.kind === 'panner').length
+    engine.dispose()
+    expect(() => engine.setWeatherGain(9)).not.toThrow()
+    ctx.advance(60)
+    engine.update(1 / 60)
+    expect(ctx.nodes.slice(before).filter((n) => n.kind === 'panner').length, 'dispose 之后还在响 = 缓存那条路没被堵住').toBe(seen)
   })
 })
 
@@ -997,6 +1078,7 @@ describe('dispose()：摘下每一根线（TD-006 第二腿①）', () => {
     expect(() => engine.update(0.016)).not.toThrow()
     expect(() => engine.setListener(1, 2, 3, 0)).not.toThrow()
     expect(() => engine.setVolume('sfx', 0.5)).not.toThrow()
+    expect(() => engine.setWeatherGain(1.5)).not.toThrow()
     expect(() => engine.start()).not.toThrow()
     expect(engine.getVolume('sfx'), 'setVolume 被 dispose 挡掉了 ⇒ 读数保持缺省 1').toBe(1)
     expect(made.length, 'dispose 之后 start() 不许再建一个新 ctx').toBe(1)

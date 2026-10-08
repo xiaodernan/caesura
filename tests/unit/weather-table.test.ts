@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
-  FOG_DENSITY_MAX, GRADE_MUL_RANGE, PENDING_WEATHER_READINGS, WEATHER_BASELINE_ID, WEATHER_FIELDS,
-  WEATHER_READING_FIELDS, weatherFindings,
+  FOG_DENSITY_MAX, GAMEPLAY_MUL_RANGE, GRADE_MUL_RANGE, PENDING_WEATHER_READINGS, WEATHER_BASELINE_ID,
+  WEATHER_FIELDS, WEATHER_GAMEPLAY_FIELDS, WEATHER_GAMEPLAY_RULINGS, WEATHER_READING_FIELDS, weatherFindings,
 } from '../../scripts/weather-rules.mjs'
 import { interfaceFields, schemaBlocks, unionMembers } from '../../scripts/schema-vocab.mjs'
 
@@ -34,11 +34,12 @@ const DOC_IDS = unionMembers(schemaBlocks(read('../../src/data/schema.ts')), 'We
 
 const run = (
   rows: unknown,
-  opts: Partial<{ docIds: string[] | null; referenced: string[] | null; pending: Record<string, string> | null }> = {},
+  opts: Partial<{ docIds: string[] | null; referenced: string[] | null; pending: Record<string, string> | null; rulings: Record<string, string> | null }> = {},
 ): Finding[] => weatherFindings('weather.json', rows,
   opts.docIds === undefined ? DOC_IDS : opts.docIds,
   opts.referenced === undefined ? REFERENCED : opts.referenced,
-  opts.pending === undefined ? PENDING_WEATHER_READINGS : opts.pending)
+  opts.pending === undefined ? PENDING_WEATHER_READINGS : opts.pending,
+  opts.rulings === undefined ? WEATHER_GAMEPLAY_RULINGS : opts.rulings)
 const errs = (rows: unknown, opts?: Parameters<typeof run>[1]): Finding[] => run(rows, opts).filter((f) => f.level === 'error')
 /** 在真表某一行的基础上**各改一处**：红的那一条必然归得到这一格，而不是归到"某处有个错误" */
 const patch = (id: string, p: Row): Row[] => REAL.map((r) => (r.id === id ? { ...r, ...p } : r))
@@ -52,8 +53,8 @@ const SYNTH: Row[] = [
   { id: 'clear', docWeather: 'clear', fogDensity: 0.008 },
   { id: 'fog', docWeather: 'fog', fogDensity: 0.03, contrastMul: 0.6 },
 ]
-const synthErrs = (rows: unknown, referenced: string[] = ['clear', 'fog']): Finding[] =>
-  weatherFindings('weather.json', rows, DOC_IDS, referenced, {}).filter((f) => f.level === 'error')
+const synthErrs = (rows: unknown, referenced: string[] = ['clear', 'fog'], rulings: Record<string, string> = {}): Finding[] =>
+  weatherFindings('weather.json', rows, DOC_IDS, referenced, {}, rulings).filter((f) => f.level === 'error')
 
 describe('accept 侧：真表零条 ERROR，而它同时是下面每一臂的底', () => {
   it('真表在真名册与真 pending 账下不响（不响是量出来的，不是没跑）', () => {
@@ -285,9 +286,107 @@ describe('门在空转时不许变成绿：三端输入读不到 ⇒ 各自 ERRO
     expect(blind.some((f) => f.msg.includes('基线行'))).toBe(true)
   })
 
-  it('三格读数的名单与 `WeatherRow` 里"可以缺的那三格"逐字相等（判据的口径与 schema 不能各说各话）', () => {
+  it('`WeatherRow` 里"可以缺的那几格" = 三格读数 + gameplay 一格（判据的口径与 schema 不能各说各话）', () => {
     const declared = interfaceFields(schemaBlocks(read('../../src/data/schema.ts')), 'WeatherRow') as string[]
     const optional = declared.filter((f) => !['id', 'docWeather'].includes(f))
-    expect([...WEATHER_READING_FIELDS].sort()).toEqual([...optional].sort())
+    expect([...WEATHER_READING_FIELDS, 'gameplay'].sort()).toEqual([...optional].sort())
+  })
+})
+
+
+/**
+ * §5.9.33③ 玩法三腿（`WeatherRow.gameplay`）。**这一族与上面所有臂的根本差别**：读数那边文档给了数，
+ * 判据对账"抄没抄对"；这边文档**一个数都没给**（art-direction §8 只给雾密度四档与三条画面乘数，
+ * 需求 §38 只剩一句「Storm 期敌人浓度+」）⇒ 判据盯的不再是文档，而是**"每一颗乘数都挂着裁决理由"**。
+ * 没有理由的乘数就是拿猜测冒充设计（§77 那条纪律），而理由是会过期的——行一改，账当天就该销。
+ */
+describe('§5.9.33③ gameplay 三腿：文档没给数，所以每颗乘数都得挂着裁决理由（G1–G4）', () => {
+  it('真表：声明 gameplay 的行与裁决账上的条目一一对应，一个不多一个不少', () => {
+    const withGp = REAL.filter((r) => (r as Row).gameplay !== undefined).map((r) => r.id as string)
+    expect(withGp.sort()).toEqual(Object.keys(WEATHER_GAMEPLAY_RULINGS).sort())
+    for (const [name, why] of Object.entries(WEATHER_GAMEPLAY_RULINGS)) {
+      expect(why.length, `'${name}' 的裁决理由短于 20 字：判据 G1 当天就会红`).toBeGreaterThanOrEqual(20)
+    }
+  })
+
+  it('G1：声明了 gameplay 而账上没有理由 ⇒ 红，而且红在这一行的 gameplay 上', () => {
+    const found = errs(patch('dissonant-storm', { gameplay: { ambienceGain: 1.5 } }), { rulings: {} })
+    expect(found).toHaveLength(1)
+    expect(found[0].where).toBe('[2].gameplay')
+    expect(found[0].msg).toContain('WEATHER_GAMEPLAY_RULINGS')
+  })
+
+  it('G1：理由短于 20 字 ⇒ 红在账本名下（一句"待办"两年后没人能判断它成不成立）', () => {
+    const found = errs(patch('dissonant-storm', { gameplay: { ambienceGain: 1.5 } }), { rulings: { 'dissonant-storm': '风暴就该更响一点' } })
+    expect(found).toHaveLength(1)
+    expect(found[0].where).toBe('WEATHER_GAMEPLAY_RULINGS.dissonant-storm')
+  })
+
+  it('G1 关不死：账本读不到（null）时不放行，照样拦——没有账不等于没有乘数', () => {
+    const found = errs(REAL, { rulings: null })
+    expect(found.some((f) => f.where === '[2].gameplay'), 'rulings = null 时 G1 应当照样红，而不是退成"没账就没判"').toBe(true)
+  })
+
+  it('G2：账上挂着而行已经不声明 gameplay ⇒ 假账该销（两种交代同时挂着就是没人知道信哪个）', () => {
+    const found = errs(patch('dissonant-storm', { gameplay: undefined }))
+    expect(found.some((f) => f.where === 'WEATHER_GAMEPLAY_RULINGS.dissonant-storm' && f.msg.includes('该销'))).toBe(true)
+  })
+
+  it('G3：1 = 没有后果的读数、0/负 = 静默关掉、越界 = 数量级手误、非数字 = 形状错，四条各说各的', () => {
+    const one = errs(patch('dissonant-storm', { gameplay: { concentrationMul: 1 } }))
+    expect(one).toHaveLength(1)
+    expect(one[0].where).toBe('[2].gameplay.concentrationMul')
+    expect(one[0].msg).toContain('没有后果')
+
+    const zero = errs(patch('dissonant-storm', { gameplay: { corruptionMul: 0 } }))
+    expect(zero).toHaveLength(1)
+    expect(zero[0].msg).toContain('静默关掉')
+
+    const over = errs(patch('dissonant-storm', { gameplay: { ambienceGain: 15 } }))
+    expect(over).toHaveLength(1)
+    expect(over[0].msg).toContain('出界')
+
+    const text = errs(patch('dissonant-storm', { gameplay: { ambienceGain: '1.5' } }))
+    expect(text).toHaveLength(1)
+    expect(text[0].msg).toContain('有限数字')
+  })
+
+  it('G3：gameplay 不是对象 / 里面多一格未知字段 ⇒ 各红一条，且红话点名那一格', () => {
+    const shape = errs(patch('dissonant-storm', { gameplay: 1.5 }))
+    expect(shape).toHaveLength(1)
+    expect(shape[0].where).toBe('[2].gameplay')
+
+    const extra = errs(patch('dissonant-storm', { gameplay: { ambienceGain: 1.5, spawnMul: 2 } }))
+    expect(extra).toHaveLength(1)
+    expect(extra[0].where).toBe('[2].gameplay.spawnMul')
+  })
+
+  it('G4：基线行声明 gameplay ⇒ 红（五个欠读数的名字会静默继承一套谁也没裁决过的乘数）', () => {
+    const rows = patch(WEATHER_BASELINE_ID, { gameplay: { ambienceGain: 1.5 } })
+    const rulings = { ...WEATHER_GAMEPLAY_RULINGS, [WEATHER_BASELINE_ID]: '基线非中性只是为了量 G4 这一臂，跑完当场还原' }
+    const found = errs(rows, { rulings })
+    expect(found.some((f) => f.where === `WeatherRow.${WEATHER_BASELINE_ID}.gameplay` && f.msg.includes('基线行'))).toBe(true)
+  })
+
+  it('三腿名单与 `WeatherGameplay` 的声明逐字相等（加腿要连消费方一起加，§55）', () => {
+    const declared = interfaceFields(schemaBlocks(read('../../src/data/schema.ts')), 'WeatherGameplay')
+    expect(declared, '抽取器读不到 WeatherGameplay').not.toBeNull()
+    expect([...(declared as string[])].sort()).toEqual([...WEATHER_GAMEPLAY_FIELDS].sort())
+  })
+
+  it('合成底也过：只写 gameplay 不写读数的行今天合法（读数判据为它让了一条活路）', () => {
+    const rows: Row[] = [
+      { id: 'clear', docWeather: 'clear', fogDensity: 0.008 },
+      { id: 'gust', docWeather: 'rain', gameplay: { ambienceGain: 0.5 } },
+    ]
+    expect(synthErrs(rows, ['clear', 'gust'], { gust: '合成底：只为量"只写玩法腿"这一臂而存在的一行' })).toEqual([])
+  })
+
+  it('乘数区间从判据现读而不是抄：G3 的界与 `GAMEPLAY_MUL_RANGE` 是同一个数', () => {
+    expect(GAMEPLAY_MUL_RANGE.min).toBeGreaterThan(0)
+    expect(GAMEPLAY_MUL_RANGE.max).toBeGreaterThan(GAMEPLAY_MUL_RANGE.min)
+    const under = errs(patch('dissonant-storm', { gameplay: { corruptionMul: GAMEPLAY_MUL_RANGE.min / 2 } }))
+    expect(under).toHaveLength(1)
+    expect(under[0].msg).toContain(`${GAMEPLAY_MUL_RANGE.min}`)
   })
 })

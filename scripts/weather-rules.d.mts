@@ -21,6 +21,10 @@ export const WEATHER_BASELINE_ID: string
 export const FOG_DENSITY_MAX: number
 /** 明度/对比乘数的合法区间：拦的是数量级手误，不是审美 */
 export const GRADE_MUL_RANGE: { min: number; max: number }
+/** §5.9.33③ 三条玩法腿乘数的合法区间（`WeatherRow.gameplay` 的三格；0 与 1 另有专门说法） */
+export const GAMEPLAY_MUL_RANGE: { min: number; max: number }
+/** `schema.ts > WeatherGameplay` 的三格：敌人浓度／失谐累积速率／声景增益 */
+export const WEATHER_GAMEPLAY_FIELDS: string[]
 /**
  * 欠读数的天气名账本：名字 → "为什么今天给不出读数"（≥20 字，判据④双向盯着它别长_dead_条目）。
  * 它是**对象字面量**而不是 `[` 名单，所以 KI-086 那张手抄名单普查对它没话说；能说话的是判据自己。
@@ -32,6 +36,13 @@ export const PENDING_WEATHER_READINGS: { [name: string]: string }
  * 与上面那张欠读数的账同族：条目双向能销（区有了被追踪的钟 ⇒ 该销；区没了第二格 ⇒ 作废）。
  */
 export const PENDING_WEATHER_SWITCHES: { [regionId: string]: string }
+
+/**
+ * §5.9.33③ 的**裁决账本**：天气名 → "这一行 `gameplay` 的乘数凭什么敢写下来"（≥20 字）。
+ * 与两张 `PENDING_*` 不是同一族：那两张记"今天还给不出"，这一张记"今天给了，而文档没有"。
+ * 判据 G1（有乘数必须有理由）与 G2（理由对应的行已不声明 ⇒ 该销）两面盯着它。
+ */
+export const WEATHER_GAMEPLAY_RULINGS: { [name: string]: string }
 
 /**
  * 「修钟之后换天气」那条切换的判据（KI-094②，S1–S5）。量的是三方关系：任务线追踪的旗标 ×
@@ -70,4 +81,6 @@ export function weatherFindings(
   docIds: string[] | null,
   referenced: string[] | null,
   pending: { [name: string]: string } | null,
+  /** §5.9.33③ 裁决账本；null = 这一轮不判 G1/G2（调用方读不到账本时门会自己说空转，见下） */
+  rulings?: { [name: string]: string } | null,
 ): WeatherFinding[]

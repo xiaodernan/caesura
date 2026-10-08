@@ -99,6 +99,12 @@ export class AudioEngine {
    */
   private pose: ListenerPose = { x: 0, y: 0, z: 0, yaw: 0 }
   /**
+   * §5.9.33③ 声景增益腿的当前读数（`weather.json > gameplay.ambienceGain`）。
+   * 缓存理由与 `pose` 那条一字不差：建层比建引擎晚，而 `main.ts` 开局那一句 `applyWeather`
+   * 发在首次用户手势之前——不缓存，那一格的放大要到玩家手动换一次区才补上。
+   */
+  private weatherGain = 1
+  /**
    * 在场的侧链请求（§8.2，KI-092）。它挂在引擎上而不是算完就走，是因为**到期要自己发生**：
    * 表里的 `holdSec` 说的是"压住 300ms"，300ms 之后必须有人在那条总线上把电平写回基准。
    * `onMuffle` 不需要这份状态，因为那一格的开与关都由发射方各说一次（`{ on: boolean }`）。
@@ -312,6 +318,8 @@ export class AudioEngine {
     this.musicLayer = new MusicLayer(ctx, this.graph.buses.music, this.graph.buses.ambience, this.grid, this.bed, this.song, this.battle)
     // KI-083：位姿也要补一次——首次手势之前 `main.ts` 的每一帧都只落在上面那个缓存里（见 `setListener`）
     this.musicLayer.setListener(this.pose)
+    // §5.9.33③：增益读数也要补一次（与位姿同一条理由：开局那一次发生在建图之前）
+    this.musicLayer.setWeatherGain(this.weatherGain)
     this.musicLayer.start()
   }
 
@@ -331,6 +339,16 @@ export class AudioEngine {
     // 建层比建引擎晚（与那三条 id→行 的缓存同一条理由）：首次手势之前的每一帧都到不了音乐层，
     // 所以 `start()` 里还要再补一次；这里这一句管的是"层已经建好"之后的每一帧。
     this.musicLayer?.setListener(this.pose)
+  }
+
+  /**
+   * §5.9.33③ 声景增益腿（`world/WeatherEffects > ambienceGain`）。与 `setListener` 同一条纪律：
+   * 主人在这里，音乐层只转交，`AmbienceField` 只存读数——三层各一件事，没有第二份真相。
+   */
+  setWeatherGain(mul: number): void {
+    if (this.disposed) return
+    this.weatherGain = mul
+    this.musicLayer?.setWeatherGain(mul)
   }
 
   /**

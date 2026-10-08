@@ -53,7 +53,10 @@ import { BURST_FIELDS, FEINT_FIELDS, burstFindings } from './burst-rules.mjs'
 import { DUCK_FIELDS, duckFindings } from './ducking-rules.mjs'
 // KI-094：天气表那几条**跨文件**判据的本体（同一族理由：要在测试里喂一行"§38 没有的那一档"、
 // "没被任何一区指到的名字"看它拒不拒）。这里只负责把 §38 的档名名册与被引用的天气名读出来当输入。
-import { PENDING_WEATHER_READINGS, PENDING_WEATHER_SWITCHES, WEATHER_FIELDS, weatherFindings, weatherSwitchFindings } from './weather-rules.mjs'
+import {
+  PENDING_WEATHER_READINGS, PENDING_WEATHER_SWITCHES, WEATHER_FIELDS, WEATHER_GAMEPLAY_RULINGS,
+  weatherFindings, weatherSwitchFindings,
+} from './weather-rules.mjs'
 import { cinematicBudgetErrors } from './cinematic-rules.mjs'
 // KI-094 同族：§37 区域光照预设表（`lp_*`）那几条**跨文件**判据的本体。这里只把 regions.json 里
 // 被指着的名字读出来当输入，再把 findings 报成 ERROR。
@@ -2084,7 +2087,7 @@ function validateWeather() {
   const docIds = schemaText === null ? null : unionMembers(schemaBlocks(schemaText), 'WeatherDocId')
   const regions = isArr(data['regions.json']) ? data['regions.json'] : []
   const referenced = [...new Set(regions.filter(isObj).flatMap((rg) => isArr(rg.weatherPresets) ? rg.weatherPresets.filter(isStr) : []))]
-  for (const f of weatherFindings(file, data[file], docIds, referenced, PENDING_WEATHER_READINGS)) {
+  for (const f of weatherFindings(file, data[file], docIds, referenced, PENDING_WEATHER_READINGS, WEATHER_GAMEPLAY_RULINGS)) {
     if (f.level === 'warn') report.warn(f.file, f.where, f.msg)
     else report.error(f.file, f.where, f.msg)
   }

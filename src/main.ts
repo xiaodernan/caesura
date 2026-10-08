@@ -9,6 +9,7 @@ import { registerGameData, playerBase, regions, worldstate, dialogues, quests as
 import type { ItemData, MovesetData, NpcData, RegionData, WeaponData } from '@/data/schema'
 import { createArena } from '@/world/PlaceholderArena'
 import { activeWeather, questTrackedFlags } from '@/world/WeatherSwitch'
+import { ambienceGain, concentrationMul, corruptionMul, weatherRowOf } from '@/world/WeatherEffects'
 import { lightingRow } from '@/world/Lighting'
 import { Cinematics } from '@/world/Cinematics'
 import { StreamingSystem, chunkKeyOf, type ChunkState } from '@/world/Streaming'
@@ -285,7 +286,18 @@ const trackedBells = questTrackedFlags(questTable)
  * 而"没接读者"与"值域没动"在画面上是同一片雾，只能在这里分开。
  */
 const applyWeather = (rg: RegionData | null): void => {
-  grade.setWeather(activeWeather(rg, (k) => interact.hasFlag(k), trackedBells, (k) => worldStates.get(k)))
+  const name = activeWeather(rg, (k) => interact.hasFlag(k), trackedBells, (k) => worldStates.get(k))
+  grade.setWeather(name)
+  /*
+   * §5.9.33③：同一条名字推出另外三条腿——声景增益（audio）、失谐累积速率（corruption）、
+   * 敌人浓度（spawner）。四路都从这里推，因为"这一区此刻奏哪一格天气"只许有一个推导入口；
+   * 在四个读者各自现推一遍，就是给同一句话配四个主人（KI-066 那一族）。
+   * 三个读数全部缺省中性（`world/WeatherEffects`），所以没有 gameplay 的天气走这条路与从前逐字相同。
+   */
+  const row = weatherRowOf(name)
+  audio.setWeatherGain(ambienceGain(row))
+  player.corruption.weatherMul = corruptionMul(row)
+  spawner.setConcentration(concentrationMul(row))
 }
 /**
  * §37 第一腿：这一区的**光**跟着区域换（雾色 + LUT 两格）。与天气分开两路，因为它们本来就是两格
@@ -295,7 +307,6 @@ const applyWeather = (rg: RegionData | null): void => {
 const applyLighting = (rg: RegionData | null): void => {
   grade.setLighting(lightingRow(rg?.lightingPreset ?? null))
 }
-applyWeather(homeRegion ?? null)
 applyLighting(homeRegion ?? null)
 // 修钟那一刻人往往就站在那口钟旁边：旗标一广播就重算，否则天气要等下一次跨区才跟得上（IP_SEED §7 说的那件回报）。
 // 值域那一形同理——《该不该敲响》的抉择一落地，休垒的天就要跟着换，而下一次跨区可能是几分钟后。
@@ -448,6 +459,13 @@ const spawner = new SpawnDirector(regions, {
 }, (pos) => { const c = streaming.cellOf(pos); return chunkKeyOf(c.cx, c.cy, c.cz) })
 spawner.syncActive(streaming.byState('active').map((c) => c.key))
 lock.candidates = ai.enemies
+
+/*
+ * §5.9.33③：开局那一格天气的四条腿。**排在 spawner 之后**——`applyWeather` 现在要把敌人浓度
+ * 推给 `SpawnDirector`，而它建得比这一段晚；把调用点搬到读者之后，比在 `applyWeather` 里给
+ * spawner 开一条"可能还没建好"的旁路干净。仍在帧循环之前，所以画面与第一批怪的落位都吃得到这一格。
+ */
+applyWeather(homeRegion ?? null)
 
 addEventListener('pointerdown', () => audio.start())
 addEventListener('keydown', (e) => {

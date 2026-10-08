@@ -14,18 +14,23 @@
     "id": "dissonant-storm",
     "docWeather": "storm",
     "fogDensity": 0.022,
-    "contrastMul": 1.15
+    "contrastMul": 1.15,
+    "gameplay": {
+      "concentrationMul": 1.5,
+      "corruptionMul": 1.5,
+      "ambienceGain": 1.5
+    }
   },
- {
-  "id": "drip",
-  "docWeather": "rain",
-  "fogDensity": 0.018,
-  "brightnessMul": 0.8
- },
- {
-  "id": "emberfall",
-  "docWeather": "rain",
-  "fogDensity": 0.018,
-  "brightnessMul": 0.8
- }
+  {
+    "id": "drip",
+    "docWeather": "rain",
+    "fogDensity": 0.018,
+    "brightnessMul": 0.8
+  },
+  {
+    "id": "emberfall",
+    "docWeather": "rain",
+    "fogDensity": 0.018,
+    "brightnessMul": 0.8
+  }
 ]

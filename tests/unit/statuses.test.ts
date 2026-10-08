@@ -265,3 +265,57 @@ describe('registry 接线', () => {
     expect(statusConfig()).toBe(statuses)
   })
 })
+
+
+/**
+ * §5.9.33③ 失谐累积速率腿（`weather.json > gameplay.corruptionMul` → `CorruptionMeter.weatherMul`）。
+ *
+ * 乘数住在 `add()` 里而不是住在两条调用方各自的手里：环境暴露（`expose`）与精英命中
+ * （`combat/CombatManager`）都走 `add()`，一处即两处。分开写就会出现"精英那条乘了、
+ * 环境那条忘了"这类接线漏网——而那种漏网在实机上听不出来（只是慢一点点）。
+ */
+describe('CorruptionMeter：天气乘数（§5.9.33③ 失谐累积速率腿）', () => {
+  const elite = (): number => statuses.corruption.eliteHit
+
+  it('缺省 1：不接线之前与之后逐格相同（这条腿的全部风险就是"顺手改了默认值"）', () => {
+    const m = new CorruptionMeter()
+    expect(m.weatherMul).toBe(1)
+    expect(m.add(elite())).toBe(elite())
+  })
+
+  it('精英命中那条路乘它：悬钟骑士的一击在风暴里从 +3 变 +4.5', () => {
+    const m = new CorruptionMeter()
+    m.weatherMul = 1.5
+    expect(m.add(elite())).toBeCloseTo(elite() * 1.5, 10)
+    expect(m.value).toBeCloseTo(elite() * 1.5, 10)
+  })
+
+  it('环境暴露那条路乘的是同一个数（两条路共用 add，不许各写一份）', () => {
+    const m = new CorruptionMeter()
+    const per = regions.find((r) => r.id === 'rg_earless_deeps')!.corruption!.perSec
+    m.weatherMul = 1.5
+    m.expose(1, per)
+    expect(m.value).toBeCloseTo(per * 1.5, 10)
+    // 主循环那一条路（tickEnvironment）同样吃得到：它就是 expose + drain
+    const n = new CorruptionMeter()
+    n.weatherMul = 1.5
+    n.tickEnvironment(1, { perSec: per })
+    expect(n.value).toBeCloseTo(per * 1.5, 10)
+  })
+
+  it('与耐受相乘而不是互相覆盖：0.5 耐受 × 1.5 天气 = 0.75', () => {
+    const m = new CorruptionMeter()
+    m.resistMul = 0.5
+    m.weatherMul = 1.5
+    expect(m.add(10)).toBeCloseTo(7.5, 10)
+  })
+
+  it('乘过之后仍然夹在 max 上（放大不该让失谐越过 100）', () => {
+    const c = statuses.corruption
+    const m = new CorruptionMeter()
+    m.weatherMul = 4
+    m.value = c.max - 1
+    expect(m.add(elite())).toBeCloseTo(1, 10)
+    expect(m.value).toBe(c.max)
+  })
+})

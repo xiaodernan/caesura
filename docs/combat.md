@@ -558,6 +558,13 @@
 - **回响的挂点由招式自己声明**（`frames.echoOnHit`）：三把近战武器的重击 `h` 有它，敌人招式没有
   ⇒ 回声影是玩家的身份机制，不是双方共用的一条结算。表里"最多 2 影"这道性能锁在真实帧数据下
   打不到（最快重击循环 67 tick < 存活 90 tick），见 KI-032。
+- **失谐的累积速率吃天气乘数**（2026-10-09，KI-108，§5.9.45）：`CorruptionMeter.weatherMul`（公开字段，与
+  `resistMul` 并列相乘）读 `weather.json > gameplay.corruptionMul`，乘在 `add()` 里——环境暴露与**精英命中**
+  两条路共用同一处。所以上面表里「被喧堕精英命中 +3」不是一个常数：钟坠院起风暴时，悬钟骑士
+  （`en_hanged_knight`，archetype=elite）一击是 `+4.5`（`statuses.json corruption.eliteHit` × 1.5）。
+  缺省 1（中性），不继承基线。环境暴露那条路今天量不到差别——全作唯一有 `corruption` 格的无耳深窖
+  （`rg_earless_deeps`，`perSec:2`）只有驻留一格天气 `clear`；如实记账，乘数接在 `add()` 上，深窖哪天
+  有了第二格天气，那条路当天就生效、不用再改一行代码。
 - **施加时长归施加方**（`statusOnHit.ticks` / `projectile.muteOnHit`，单位是 tick 不是秒）；
   状态表只回答"挂着的时候值多少"。
 - 五态的 `desc` 就是 §19 要求的世界观 tooltip，由 `StatusGlossary` 在"本局第一次见到"时播一次。

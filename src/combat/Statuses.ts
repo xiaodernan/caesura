@@ -43,6 +43,15 @@ export class CorruptionMeter {
   readonly cfg: CorruptionStatus
   /** 耐受乘数（失谐属性给的，`PlayerMods.corruptionResistMul`）；由 applyRpg 灌进来 */
   resistMul = 1
+  /**
+   * 天气乘数（§5.9.33③ 失谐累积速率腿）：`weather.json > gameplay.corruptionMul`，
+   * 由组合根在每次重算天气时灌进来（`world/WeatherEffects > corruptionMul`）。
+   *
+   * 与 `resistMul` **并列相乘而不是合成一格**：一个来自角色（属性/装备），一个来自世界（天气），
+   * 两个主人各自的写方不同——合成一格之后，"这次累积变快了"再也说不清是装备还是天。
+   * 环境暴露（`expose`）与精英命中（`combat/CombatManager`）两条路都走 `add()`，所以一处即两处。
+   */
+  weatherMul = 1
 
   constructor(cfg = statusConfig().corruption) {
     this.cfg = cfg
@@ -51,11 +60,15 @@ export class CorruptionMeter {
   get full(): boolean { return this.value >= this.cfg.max }
   get frac(): number { return this.value / this.cfg.max }
 
-  /** 累积。返回实际加了多少（便于测试断言"耐受生效了"而不是"看起来生效了"） */
+  /**
+   * 累积。返回实际加了多少（便于测试断言"耐受生效了"而不是"看起来生效了"）。
+   * 三个乘数在这里相乘：基准量 × 耐受 × 天气。**只此一处**——分开写在调用方就会出现
+   * "精英那条乘了、环境那条忘了"这类接线漏网。
+   */
   add(amount: number): number {
     if (amount <= 0) return 0
     const before = this.value
-    this.value = Math.min(this.cfg.max, this.value + amount * this.resistMul)
+    this.value = Math.min(this.cfg.max, this.value + amount * this.resistMul * this.weatherMul)
     return this.value - before
   }
 

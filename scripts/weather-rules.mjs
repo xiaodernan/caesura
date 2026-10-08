@@ -15,10 +15,21 @@
  *  ④ 反向：被指到的名字要么有行，要么挂在 `PENDING_WEATHER_READINGS` 上写明"为什么还没有读数"；
  *  ⑤ 基线行（`clear`）必须存在且给得出雾密度——没有读数的名字全都按它奏，那条退路不能是空的。
  * 抽取器读不到名单时返回 null ⇒ 报 ERROR 说"这道门在空转"，绝不退成"名单为空所以什么都合法"。
+ *
+ * **§5.9.33③ 的玩法三腿另有一套判据（G1–G4）**，因为那三格的处境与上面五条正好相反：读数那边是
+ * "文档给了数，对账它抄没抄对"；`gameplay` 这边是**文档一个数都没给**——`art-direction §8` 只给雾密度
+ * 四档与三条画面乘数，需求 §38 只剩一句「Storm 期敌人浓度+」。所以判据不再对账文档，而是盯住
+ * **"每一颗乘数都必须挂着裁决理由"**：
+ *  G1 声明了 `gameplay` 的行必须在 `WEATHER_GAMEPLAY_RULINGS` 上挂着理由（≥20 字）——没有理由的乘数
+ *     就是拿猜测冒充设计（§77 那条纪律的同一族）；
+ *  G2 反向：账上那条理由对应的行已经不声明 `gameplay`（或行没了）⇒ ERROR 假账该销（KI-073 一族）；
+ *  G3 三个乘数须落在 `GAMEPLAY_MUL_RANGE` 内，且不许等于 1（不写就是 1，写出来是没有后果的读数）；
+ *  G4 **基线行不许声明 `gameplay`**：没有读数的名字全部按基线奏，基线一非中性，`still`/`hush`/`drip`
+ *     /`stone-wind`/`emberfall` 就会静默继承一套谁也没裁决过的玩法乘数。
  */
 
 /** `schema.ts > WeatherRow` 的字段（词表对账 `VOCAB_PAIRS` 读的就是这张名单） */
-export const WEATHER_FIELDS = ['id', 'docWeather', 'fogDensity', 'brightnessMul', 'contrastMul']
+export const WEATHER_FIELDS = ['id', 'docWeather', 'fogDensity', 'brightnessMul', 'contrastMul', 'gameplay']
 
 /** 三格读数：一行至少要说出一件可观测的事，否则这一行奏出来和没奏一样 */
 export const WEATHER_READING_FIELDS = ['fogDensity', 'brightnessMul', 'contrastMul']
@@ -40,6 +51,20 @@ export const FOG_DENSITY_MAX = 0.12
  * （把 0.6 写成 6、把乘数写成百分比 80）。0 与 1 各有专门的说法，见判据里那两句。
  */
 export const GRADE_MUL_RANGE = { min: 0.2, max: 5 }
+
+/**
+ * §5.9.33③ 三条玩法腿乘数的合法区间（`WeatherRow.gameplay` 的三格）。
+ *
+ * 与 `GRADE_MUL_RANGE` 同一条理由，但界更窄也更讲得清：这三个乘数一个动的是**刷怪聚拢**
+ * （`concentrationMul` ÷ 组内铺开半径）、一个动的是**失谐累积**（`corruptionMul` × 每击/每秒）、
+ * 一个动的是**声景增益**（`ambienceGain` × 每一声的衰减）。下界 0.1 = 稀到只剩一成也还说得通；
+ * 上界 4 = 再大就不再是"这一格天气的脾气"，而是把整区节奏交给天气（浓度 4 倍会把组心糊成一团、
+ * 增益 4 倍会让贴脸的源越过 1 去削波）。0 与 1 不在这条界里讲——它们各有专门的说法，见判据 G3。
+ */
+export const GAMEPLAY_MUL_RANGE = { min: 0.1, max: 4 }
+
+/** `schema.ts > WeatherGameplay` 的三格（词表对账 `VOCAB_PAIRS` 读的就是这一张） */
+export const WEATHER_GAMEPLAY_FIELDS = ['concentrationMul', 'corruptionMul', 'ambienceGain']
 
 /**
  * 被 `regions.json` 指着、而 `weather.json` 里**故意还没有行**的那几个天气名（KI-094）。
@@ -75,6 +100,20 @@ export const PENDING_WEATHER_READINGS = {
  * 第二格时先裁这个），不许因为"懒得写那一行声明"而挂。
  */
 export const PENDING_WEATHER_SWITCHES = {
+}
+
+/**
+ * §5.9.33③ 的**裁决账本**：天气名 → "这一行 `gameplay` 里的乘数凭什么敢写下来"（≥20 字，判据 G1/G2）。
+ *
+ * 它与上面两张 `PENDING_*` 不是同一族，名字也因此不跟着叫 pending：那两张记的是"今天还给不出"，
+ * 这一张记的是"**今天给了，而文档没有**"。三条玩法腿（敌人浓度／失谐累积速率／声景增益）在需求 §38
+ * 与 art-direction §8 里一句数字都没有，所以每一颗乘数都是实施期裁决，理由必须落在纸面上——
+ * 否则两年后没人分得清"这是美术给的数"还是"那天下午顺手写的 1.5"。
+ *
+ * 与 KI-073 那一族一样**能销**：行不再声明 `gameplay`（或行被删）当天，判据 G2 就报"这条该销"。
+ */
+export const WEATHER_GAMEPLAY_RULINGS = {
+  'dissonant-storm': '文档对这三腿一个数都没给（§8 只给雾密度四档与三条画面乘数，§38 只剩一句「Storm 期敌人浓度+」）。实施期裁决：三腿共用同一个风暴强度 1.5——浓度按「组内铺开半径 ÷ 1.5」兑现，因为 slot 条数由 regions.json 的 spawnGroups.count 写死，天气没有"多刷几个"的合法来源；失谐速率乘在 CorruptionMeter.add 上，环境暴露与精英命中两条路共用同一个乘数，于是钟坠院那只悬钟骑士的一击从 +3 变 +4.5（statuses.json corruption.eliteHit 的同档放大）；声景增益乘在 audio.md §4 的 L2/L3 每一声的距离衰减上，锚的是同一条「风/水物理动源」与 §8 Storm 的「+闪雷」。三腿取同一个数，是不为一条风暴编三个数。',
 }
 const isObj = (v) => !!v && typeof v === 'object' && !Array.isArray(v)
 const isArr = (v) => Array.isArray(v)
@@ -256,8 +295,9 @@ export function trackedBellFlags(region, tracked) {
  * @param {string[] | null} docIds 需求 §38 那四档：从 `src/data/schema.ts` 的 `WeatherDocId` 联合现推；null = 读不到 ⇒ 门在空转
  * @param {string[] | null} referenced `regions.json > weatherPresets` 里出现过的全部名字（去重）；null 或空 ⇒ 门在空转
  * @param {{ [name: string]: string } | null} pending 待裁决名单：名字 → 理由
+ * @param {{ [name: string]: string } | null} rulings §5.9.33③ 裁决账本：名字 → "乘数凭什么敢写下来"（G1/G2）
  */
-export function weatherFindings(file, rows, docIds, referenced, pending) {
+export function weatherFindings(file, rows, docIds, referenced, pending, rulings) {
   const out = []
   const err = (where, msg) => out.push({ level: 'error', file, where: where || file, msg })
   const warn = (where, msg) => out.push({ level: 'warn', file, where: where || file, msg })
@@ -275,6 +315,7 @@ export function weatherFindings(file, rows, docIds, referenced, pending) {
     return out
   }
   const ledger = isObj(pending) ? pending : null
+  const rulingsLedger = isObj(rulings) ? rulings : null
 
   const ids = new Set()
   for (let i = 0; i < rows.length; i++) {
@@ -286,7 +327,7 @@ export function weatherFindings(file, rows, docIds, referenced, pending) {
     }
     for (const k of Object.keys(row)) {
       if (WEATHER_FIELDS.includes(k)) continue
-      err(`${at}.${k}`, `未知字段 ${k}：这一行的字段就是 schema.ts > WeatherRow 那五格，加字段要连消费方一起加（§55）`)
+      err(`${at}.${k}`, `未知字段 ${k}：这一行的字段就是 schema.ts > WeatherRow 那六格，加字段要连消费方一起加（§55）`)
     }
 
     if (!isNonEmptyStr(row.id)) err(`${at}.id`, 'id 必须是非空字符串（行键 = regions.json 里写的那个名字）')
@@ -297,8 +338,8 @@ export function weatherFindings(file, rows, docIds, referenced, pending) {
     else if (!docIds.includes(row.docWeather)) err(`${at}.docWeather`, `'${row.docWeather}' 不是 §38 的那几档（名册：${docIds.join('/')}，主人是 schema.ts > WeatherDocId）`)
 
     const declared = WEATHER_READING_FIELDS.filter((f) => row[f] !== undefined)
-    if (declared.length === 0) {
-      err(at, '一行三格读数都没写：这样的天气奏出来与"没有天气"逐像素相同，那它不该进表（§55）')
+    if (declared.length === 0 && !isObj(row.gameplay)) {
+      err(at, '一行三格读数都没写、也没写 gameplay：这样的天气奏出来与"没有天气"逐像素相同，那它不该进表（§55）')
     }
 
     if (row.fogDensity !== undefined) {
@@ -312,6 +353,34 @@ export function weatherFindings(file, rows, docIds, referenced, pending) {
       if (row[f] === 1) err(`${at}.${f}`, `${f} = 1：不写这一格就是 1，写出来是一格没有后果的读数（§55）`)
       else if (row[f] <= 0) err(`${at}.${f}`, `${f} = ${row[f]}：0 是全黑/全灰，负数在 CSS 里会被夹到 0——都不是天气，是坏掉的滤镜`)
       else if (row[f] < GRADE_MUL_RANGE.min || row[f] > GRADE_MUL_RANGE.max) err(`${at}.${f}`, `${f} = ${row[f]} 出界 [${GRADE_MUL_RANGE.min}, ${GRADE_MUL_RANGE.max}]：文档给的乘数落在 0.6–1.15，这条界拦的是数量级手误（把 0.6 写成 6，或把乘数写成百分比）`)
+    }
+
+    /* ---- §5.9.33③：gameplay 三腿（G3 形状与界 / G1 裁决账）---- */
+    const gp = row.gameplay
+    if (gp !== undefined && !isObj(gp)) {
+      err(`${at}.gameplay`, 'gameplay 必须是对象：它的三格（concentrationMul/corruptionMul/ambienceGain）各自可选，缺的那格按 1 中性')
+    } else if (isObj(gp)) {
+      for (const k of Object.keys(gp)) {
+        if (WEATHER_GAMEPLAY_FIELDS.includes(k)) continue
+        err(`${at}.gameplay.${k}`, `未知字段 ${k}：gameplay 的三格就是 schema.ts > WeatherGameplay 那三格，加腿要连消费方一起加（§55）`)
+      }
+      for (const f of WEATHER_GAMEPLAY_FIELDS) {
+        if (gp[f] === undefined) continue
+        const v = gp[f]
+        if (!isNum(v)) { err(`${at}.gameplay.${f}`, `${f} 必须是有限数字（乘数：1 = 这一腿不生效）`); continue }
+        if (v === 1) err(`${at}.gameplay.${f}`, `${f} = 1：不写这一格就是 1，写出来是一格没有后果的读数（§55）`)
+        else if (v <= 0) err(`${at}.gameplay.${f}`, `${f} = ${v}：0 与负数会把这一腿静默关掉，而"这一腿不生效"的正确写法是不写它（缺省即 1）`)
+        else if (v < GAMEPLAY_MUL_RANGE.min || v > GAMEPLAY_MUL_RANGE.max) {
+          err(`${at}.gameplay.${f}`, `${f} = ${v} 出界 [${GAMEPLAY_MUL_RANGE.min}, ${GAMEPLAY_MUL_RANGE.max}]：文档没给这三腿任何数，这条界拦的是数量级手误（把 1.5 写成 15）`)
+        }
+      }
+      // G1：声明了 gameplay 的行必须挂着裁决理由。没有理由的乘数就是那天下午顺手写的数。
+      const why = isNonEmptyStr(row.id) ? rulingsLedger?.[row.id] : undefined
+      if (!isNonEmptyStr(why)) {
+        err(`${at}.gameplay`, `这一行声明了 gameplay 乘数，却没有在 WEATHER_GAMEPLAY_RULINGS 上挂裁决理由：文档对这三腿一个数都没给，不写理由就等于拿猜测冒充设计`)
+      } else if (why.trim().length < 20) {
+        err(`WEATHER_GAMEPLAY_RULINGS.${row.id}`, '裁决理由必须写清楚这个数凭什么敢写下来（≥20 字）')
+      }
     }
 
     if (!referenced.includes(row.id)) {
@@ -338,6 +407,20 @@ export function weatherFindings(file, rows, docIds, referenced, pending) {
       if (!isNonEmptyStr(why) || why.trim().length < 20) err(`PENDING_WEATHER_READINGS.${name}`, '欠账必须写清楚为什么今天给不出读数（≥20 字）：一句"待办"两年后没人能判断它成不成立')
     }
   }
+  /*
+   * G2：裁决账反向能销。挂着账而那一行已经**不再有 gameplay 这一格** ⇒ 这条理由今天在替一行不存在的话说话。
+   * 两条归因纪律：①"键在但值不是对象"算**活着**——那一格写坏了由 G3 报形状，这里再报一条"该销"就把
+   * 一个病说成两个病（红的话归属就不准了）；②理由长短**只由 G1 管**（那一行真的声明 gameplay 时），
+   * 这里重复一遍就会出现同一个理由红两条。
+   */
+  if (rulingsLedger) {
+    for (const name of Object.keys(rulingsLedger)) {
+      const live = rows.some((r) => isObj(r) && r.id === name && r.gameplay !== undefined)
+      if (!live) {
+        err(`WEATHER_GAMEPLAY_RULINGS.${name}`, `天气 '${name}' 在裁决账上挂着理由，而 weather.json 里它已经没有 gameplay 这一格了：这条该销（留着就是两种交代同时挂）`)
+      }
+    }
+  }
 
   // 反向：§38 那一档今天没人奏 ⇒ 这是"需求还剩一格"，不是数据写错，所以 WARN
   for (const doc of docIds) {
@@ -348,6 +431,10 @@ export function weatherFindings(file, rows, docIds, referenced, pending) {
   const baseline = rows.find((r) => isObj(r) && r.id === WEATHER_BASELINE_ID)
   if (!isObj(baseline) || !isNum(baseline.fogDensity)) {
     err('', `基线行 '${WEATHER_BASELINE_ID}' 必须存在且给出 fogDensity：没有读数的天气名全部按它奏，那条退路不能是空的`)
+  }
+  // G4：基线非中性 ⇒ 今天五个欠读数的名字会静默继承一套谁也没裁决过的玩法乘数。
+  if (isObj(baseline) && isObj(baseline.gameplay)) {
+    err(`WeatherRow.${WEATHER_BASELINE_ID}.gameplay`, `基线行 '${WEATHER_BASELINE_ID}' 不许声明 gameplay：没有读数的天气名全部按它奏，基线一非中性，它们就静默继承了一套谁也没裁决过的乘数`)
   }
 
   return out
