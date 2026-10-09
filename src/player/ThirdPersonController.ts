@@ -112,6 +112,14 @@ export class PlayerController {
   get chargeProgress(): number { return this.charging ? Math.min(1, this.chargeTicks / CHARGE_TICKS) : 0 }
   executing: { tick: number; total: number; pos: Vec3 } | null = null
   lockedTarget: { getPos(): Vec3; get radius(): number } | null = null
+  /**
+   * §4.3「投掷枪……按处决键拾回」的那一格手上状态（KI-006 剩余缺口①）：投出去就是 false，
+   * 捡回来（或"枪回家了"：死亡/跨区/重开）就是 true。写方只有 `CombatManager` 那三处——
+   * 本类只负责在出手门口读它，于是"投不出第二杆"这件事有一个答案而不是两个。
+   * 名字跟着文档那句的主语（引针枪）走，判据却跟着帧表的 `flags:['throw']`：今天带这一格的
+   * 只有 `ms_spear.charged`，所以两者此刻是同一件事；将来若真有第二件可投的武器，改的是表不是这里。
+   */
+  spearInHand = true
   exhausted = false
   private footAccum = 0
   private dead = false
@@ -678,6 +686,15 @@ export class PlayerController {
     const f = skill ? skill.f : this.moveset.actions[key]
     if (!f || this.action || this.roll || this.stunTicks > 0 || this.crumpleTicks > 0) return false
     if (skill && !this.skillGate(key, skill)) return false
+    // §4.3「按处决键拾回」的另一半：投出去的那一件没捡回来，就投不出第二件。判据取帧表的
+    // `flags:["throw"]`（投掷的声明，与 CombatManager 写 `retrievable` 时读同一格），于是"哪些招式
+    // 受这一格管"由表回答，不是代码里的一把武器名。拒绝发生在**扣精力之前**——与 KI-027
+    // 「翻滚被拒那一行」同一条口径：没发生的事不该收费。这句话只在松手那一拍出一次
+    // （`charged` 的入口是蓄力释放沿），所以连打断不会把它刷成噪声。
+    if ((f.flags ?? []).includes('throw') && !this.spearInHand) {
+      bus.emit('ui.notify', { text: '手上没有枪｜按处决键拾回投出的引针枪', kind: 'info' })
+      return false
+    }
     if (this.exhausted || !this.stats.spendStamina(f.stamina, tick)) {
       bus.emit('ui.notify', { text: '精力不足', kind: 'info' })
       return false

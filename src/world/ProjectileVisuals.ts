@@ -6,6 +6,7 @@
  */
 import * as THREE from 'three'
 import type { Projectile } from '@/combat/Projectiles'
+import type { GroundedSpear } from '@/combat/GroundedSpears'
 import type { TelegraphLine } from '@/combat/CombatManager'
 
 const COLOR: Record<string, { body: number; glow: number }> = {
@@ -38,6 +39,11 @@ export class ProjectileVisuals {
   private readonly lineMats: THREE.MeshBasicMaterial[] = []
   private readonly lineGeo = new THREE.BoxGeometry(1, 1, 1)
   private peakLines = 0
+  /**
+   * §4.3 躺在地上等拾回的枪（KI-006 剩余缺口①）：按**地上那一杆**的 id 复用，与飞行中的弹体
+   * 各占一张名册、共用同一个 spear 网格池——一杆枪此刻只能属于其中一张名单，所以不会撞车。
+   */
+  private readonly grounded = new Map<number, THREE.Mesh>()
 
   constructor(private readonly scene: THREE.Scene) {
     this.group.name = 'projectiles'
@@ -48,6 +54,7 @@ export class ProjectileVisuals {
   get peakLive(): number { return this.peak }
   get liveTelegraphs(): number { return this.lines.size }
   get peakTelegraphs(): number { return this.peakLines }
+  get liveGrounded(): number { return this.grounded.size }
 
   sync(list: readonly Projectile[], tick: number): void {
     const alive = new Set(list.map((p) => p.id))
@@ -77,6 +84,34 @@ export class ProjectileVisuals {
     this.peak = Math.max(this.peak, this.used.size)
   }
 
+  /**
+   * §4.3 落地的枪：躺平、不呼吸（它是场地里的一件东西，不是还在打的攻击），名单由组合根注入。
+   * 玩家靠这一眼知道"枪还在那儿、值得走过去按处决键"——看不见等于没有（ActorVisuals 那条同源）。
+   */
+  syncGrounded(list: readonly GroundedSpear[]): void {
+    const alive = new Set(list.map((s) => s.id))
+    for (const [id, mesh] of this.grounded) {
+      if (alive.has(id)) continue
+      this.grounded.delete(id)
+      mesh.visible = false
+      this.poolFor('spear').push(mesh)
+    }
+    for (const s of list) {
+      const mesh = this.grounded.get(s.id) ?? this.acquire('spear')
+      mesh.position.set(s.pos.x, s.pos.y, s.pos.z)
+      this.dir.set(s.dir.x, 0, s.dir.z)
+      if (this.dir.lengthSq() > 1e-8) {
+        this.dir.normalize()
+        mesh.quaternion.setFromUnitVectors(this.zAxis, this.dir)
+      } else {
+        // 零向量兜底：默认 +Z，保证四元数归一
+        mesh.quaternion.identity()
+      }
+      mesh.scale.setScalar(1)
+      this.grounded.set(s.id, mesh)
+    }
+  }
+
   dispose(): void {
     for (const g of this.geos.values()) g.dispose()
     for (const m of this.mats.values()) m.dispose()
@@ -89,6 +124,7 @@ export class ProjectileVisuals {
     this.mats.clear()
     this.lines.clear()
     this.freeLines.length = 0
+    this.grounded.clear()
   }
 
   /**

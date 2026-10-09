@@ -153,19 +153,33 @@ function makeWorld(originId = 'origin_tuner', seed: number | string = 0x51f3a2, 
     for (let i = 0; i < ticks && e.alive; i++) {
       player.stats.hp = player.stats.hpMax
       e.stats.hp = e.stats.hpMax // 死不了的量具：击倒/退避都不会提前结束窗口
-      const d = Math.hypot(e.pos.x - player.pos.x, e.pos.z - player.pos.z)
+      /**
+       * **KI-006① 之后量具多了一条腿：把投出去的枪捡回来。**
+       * 引针枪的蓄力重击是「投掷」，而这一作里投出去的枪现在**留在地上**，手上没枪时再蓄力会被
+       * `tryStartAction` 如实拒掉（那是玩法，不是 bug）。所以脚本必须走真实玩家的回路——
+       * 走向名册里那一杆、到 `crumpleRange` 内按交互键（`CombatManager.tryExecute` 的拾回分支）。
+       * 不加这一腿，律那侧从第二记蓄力起整窗都在挥空手，量的就不再是建卡而是脚本的库存；
+       * 加了这一腿，大剑侧（`spearInHand` 恒 true）走的还是原来那条路，一格读数都不该动。
+       */
+      const fetch = player.spearInHand ? null : combat.groundedSpears.nearestWithin(player.pos, Number.POSITIVE_INFINITY)
+      const goal = fetch ? fetch.pos : e.pos
+      const d = Math.hypot(goal.x - player.pos.x, goal.z - player.pos.z)
       frame.move = d > 1.6 ? { x: 0, y: 1 } : { x: 0, y: 0 }
-      const a = Math.atan2(e.pos.x - player.pos.x, e.pos.z - player.pos.z)
+      const a = Math.atan2(goal.x - player.pos.x, goal.z - player.pos.z)
       player.yaw = a
       player.camYawRef = Math.PI + a
       frame.held.clear()
       const free = player.action === null && player.roll === null && player.stats.stamina > 12 && d < 2.4
       const charged = player.charging && player.chargeTicks >= CHARGE_TICKS
-      if (holding < 0 && i >= nextAttempt) { holding = i; nextAttempt = i + CHARGE_EVERY }
-      if (holding >= 0) {
-        if (charged) { /* 这一 tick 不喂 held ⇒ 松开就是蓄力那一记 */ }
-        else frame.held.add('attackHeavy')
-      } else if (free) frame.edges.add('attackLight')
+      const spearOut = !player.spearInHand
+      if (fetch && d <= player.base.execution.crumpleRange) frame.edges.add('interact')
+      else {
+        if (!spearOut && holding < 0 && i >= nextAttempt) { holding = i; nextAttempt = i + CHARGE_EVERY }
+        if (holding >= 0) {
+          if (charged) { /* 这一 tick 不喂 held ⇒ 松开就是蓄力那一记 */ }
+          else frame.held.add('attackHeavy')
+        } else if (free) frame.edges.add('attackLight')
+      }
       tick()
       if (holding >= 0 && (charged || (i - holding >= CHARGE_GIVEUP && !player.charging))) holding = -1
       const charging = player.action?.key === 'charged'
@@ -429,6 +443,18 @@ describe('G5② 力 / 律 Build 对照：同一颗种子、同一份输入脚本
      * 而是**只有两把剑的蓄力斩声明了 hyper、枪的没有**（§4.1/§4.2 与 §4.3 的数据差）。
      * 上界因此从 2 收到 **2.3**（读数 + 约 6% 余量）而不是放开到"怎么都不红"：
      * 这条带现在防的是"再往重击侧加保护"，而它是否该给轻武线一份等价补偿，是数值裁决，登记在 KI-052 行。
+     *
+     * **KI-006①（投出的枪留在地上，要按交互键拾回）之后重锚第三次——这一次动因在量具身上。**
+     * 引针枪的蓄力重击本来就是「投掷」，但从现在起它是**一件要捡回来的东西**：手上没枪时再蓄力会被
+     * `tryStartAction` 如实拒掉。旧脚本不认识这件事，于是律那侧整窗只投得出第一枪。三趟实测（同一颗种子）：
+     *   HEAD 平面（无留存，旧量具）    力 876/20 命中/6 蓄力/393 碎甲 ⇒ 0.5475；律 406/28/6/987 ⇒ 0.25375；比 **2.16**
+     *   本批 + 拾回腿（现在跑的）      力 **一格不动** 876/20/6/393 ⇒ 0.5475；律 444/23/6/987 ⇒ 0.2775；比 **1.97**
+     *   本批 + 关掉拾回腿（旧调度）    力同上；律 360/33 命中、**只剩 1 次蓄力**、**整窗没碎甲** ⇒ 0.225；比 **2.43 ⇒ 2.3 的上界如实咬住**
+     * 第三趟是关键：它打掉的是这条断言自己的前提（"两条腿各拿 6 次蓄力"、"律现在也碎甲了"），
+     * 量的变成"脚本手里还有几杆枪"，不是建卡——与 KI-017 第二步那次"上一版是量具的错"同一种病。
+     * 所以修的是**量具**：上界 2.3 一格没动、下界 1 一格没动，律那侧因为要走过去捡枪反而多打了 38 点
+     * （捡回途中顺身的走位让它更常贴住目标，蓄力次数不变），比值从 2.16 落到 1.97，**落在带里而不是把带撑大**。
+     * 大剑侧三趟读数逐字相同 ⇒ 这条腿只可能影响投掷那一侧，改动的边界是干净的。
      *
      * **这一版数字与上一版不同，而且上一版是量具的错**：旧脚本按绝对 tick 排按键（`i % 300 < 60` 蓄力），
      * 于是"谁的收招被拉长，谁的按键就被吞掉"——同一份脚本在力身上产生 3 次蓄力、在律身上只剩 1 次，

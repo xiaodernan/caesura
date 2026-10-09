@@ -482,6 +482,9 @@ function applyInteract(id: string): void {
     player.floorY = surface.floorAt(r.to)?.y ?? 0
     streaming.teleport(time.tick, player.pos)
     bus.emit('world.travel', { id: r.id, from: { ...player.pos }, to: r.to })
+    // §4.3 跨区时那一杆枪跟她一起回家：地上的、还在飞的都收回来，否则她到了新区域投不出枪，
+    // 而"投不出枪"在这里不是一个惩罚，是一处没有出口的机制（新区域里那杆旧枪她永远走不回去捡）。
+    combat.restockSpear()
   }
 }
 
@@ -643,6 +646,7 @@ const core = {
     lock.update()
     visuals.sync(ai.enemies, t.tick)
     projectileVis.sync(combat.projectiles.list(), t.tick)
+    projectileVis.syncGrounded(combat.groundedSpears.list()) // §4.3 躺在地上等拾回的那杆枪也得看得见
     projectileVis.syncTelegraphs(combat.telegraphs())
     bossArena.sync(ai.enemies.filter((e) => !!e.data.boss)) // 立钟与断音柱都在 Boss 场地类里，少一个过滤条件就会漏画后者
     propVis.sync(props.all) // KI-023：音刺的歪斜/残桩跟着耐久走
@@ -753,6 +757,7 @@ async function startRun(slot: string | null): Promise<void> {
   // 「本局第一次」的台账按局清一次：读档/新开局都是一次新的解释机会（需求 §19）
   glossary.forgetAll()
   playedCinematics.clear() // 过场也是"每局一次"：读档/新开局都重新给一次出场
+  combat.restockSpear() // §4.3 每一局都是一杆新枪：上一局死在哪儿的那一杆不该跟着存档回来（存档里也没有它）
   const snap = slot ? await saves.load(slot) : null
   if (snap) {
     streaming.teleport(time.tick, player.pos)

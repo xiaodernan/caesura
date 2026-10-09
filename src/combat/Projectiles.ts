@@ -72,6 +72,13 @@ export interface Projectile {
   falloff?: readonly { beyond: number; mul: number }[]
   /** 出生以来累计飞过的米数（`update` 逐 tick 累加；距离衰减的唯一尺子） */
   traveled: number
+  /**
+   * §4.3「按处决键拾回」的身份凭据（KI-006 剩余缺口①）：这一发**是玩家自己投出去的那杆枪**，
+   * 打完了要留在世界里。只有 `launchPlayerProjectile` 在帧表带 `flags:['throw']`（投掷的声明）时写它——
+   * `reflectProjectile` 故意不抄这一格，所以弹回去的敌方音弹永远不会变成一杆捡得起的枪，
+   * 而玩家自己的枪被人（未来可能有的机制）弹回来时也不该凭"它现在归我了"就凭空多出一杆。
+   */
+  retrievable?: boolean
   dead: boolean
   gone: GoneReason | null
   bornTick: number
@@ -113,6 +120,8 @@ export interface LaunchParams {
    * 弹道判定对它整段跳过（穿过人，不撞人）。
    */
   crystalLoudness?: number
+  /** §4.3 拾回身份（KI-006①）：见 `Projectile.retrievable` —— 只有玩家自己投出的枪带它 */
+  retrievable?: boolean
 }
 
 /** 兜底寿命：600 tick = 10 秒，射程与地面都漏不掉也不会常驻 */
@@ -158,6 +167,7 @@ export class ProjectileSystem {
       feintPunishMs: l.feintPunishMs,
       crystalLoudness: l.crystalLoudness,
       falloff: l.falloff,
+      retrievable: l.retrievable,
       traveled: 0,
       loudness: l.loudness ?? 4,
       dead: false,

@@ -13,6 +13,7 @@ import { reactionTier } from './Reactions'
 import { shapeHits, isBackstab } from './HitShapes'
 import type { HitTarget } from './HitShapes'
 import { ProjectileSystem, sphereHits, type GoneReason, type Projectile } from './Projectiles'
+import { GroundedSpearField } from './GroundedSpears'
 import { OcclusionField, type BlockHit } from '@/core/Occlusion'
 import { glossary, statusConfig, tagIs } from './Statuses'
 import type { Vec3 } from './EntityStats'
@@ -136,6 +137,13 @@ export class CombatManager {
   damageScale = 1
   /** 弹道运行时（投掷枪 / 远程敌人）；表现层每帧读 list()，逻辑层不认识 three */
   readonly projectiles = new ProjectileSystem()
+  /**
+   * §4.3「投掷枪……按处决键拾回」里那杆**躺在地上等她的枪**（KI-006 剩余缺口①）。
+   * 它是弹体名册之外的第二张名单，因为两者回答的是两个问题：`projectiles` 说"这一发还在打伤害"，
+   * 这里说"这杆枪还在世界里"。写方只有 `projectilePass` 的回收那一刻与 {@link restockSpear}，
+   * 读方是 `tryExecute` 的拾回分支 + 组合根注入给表现层的名单（逻辑层不认识 three，同 `floorAt` 纪律）。
+   */
+  readonly groundedSpears = new GroundedSpearField()
   private killed = new Set<string>()
   private execCount = new Map<string, number>()
   /** 注入：脚下地面高度查询（world/Surface），用于「射进地面就落地」；缺省则只做射程/寿命到期 */
@@ -187,6 +195,9 @@ export class CombatManager {
     // 遮挡名册每 tick 重新点名**实体那一段**：Boss 离场她的柱子就退出判据。
     // authored 墙不在这里动——它住在区域数据里，由组合根跨区时写（`syncAuthored`）。
     this.occlusion.syncFrom(this.ai.enemies)
+    // §4.3 死了就把那一杆枪整体收回家（地上的 + 还在飞的）。盯状态量而不是订阅复活事件：
+    // `stats.dead` 自己会说"我不在场"，而 `respawn()` 把玩家送回原点时这已经是第三次账目归零。
+    if (this.player.stats.dead) this.restockSpear()
     this.tryExecute(input, tick)
     this.tryThrowCrystal(input, tick)
     this.launchPlayerProjectile(tick)
@@ -726,8 +737,16 @@ export class CombatManager {
       falloff: this.player.weapon.falloff,
       sfxHit: spec.sfxHit, vfxHit: spec.vfxHit, shake: spec.shake ?? a.f.shake ?? 'normal',
       reaction: a.f.reaction,
-      loudness: a.f.loudness ?? 5
+      loudness: a.f.loudness ?? 5,
+      // §4.3 只有**投出去**的那一件要能捡回来。判据取帧表上那一格 `flags:["throw"]`
+      // （KI-006 的账本原话：这一式"暂用蓄力挥势 + flags:[throw] 近似"投掷动作——所以它就是投掷的声明）。
+      // 箭（§4.4 泛音弓）射进人身就没了，"按处决键拾回"是那一杆枪的待遇，不是所有远程武器的。
+      // 这一格同时是 `throw` 旗标的**第一个读者**：在此之前它是表上一行没人消费的数据。
+      retrievable: (a.f.flags ?? []).includes('throw')
     }, tick)
+    // 出手与"手上没有了"必须是同一拍：写在 spawn 之前会让"精力不够投不出去"也欠下一杆枪，
+    // 写在之后就没有"这发存在但手上还有一杆"的中间帧。读者是 `tryStartAction` 的那道拒绝。
+    if ((a.f.flags ?? []).includes('throw')) this.player.spearInHand = false
     this.afterLaunch(p.pos, spec, a.f, dir)
   }
 
@@ -828,7 +847,19 @@ export class CombatManager {
       const fy = this.floorAt?.(pr.pos)
       if (fy !== null && fy !== undefined && pr.pos.y <= fy + 0.06) this.projectiles.kill(pr, 'ground')
     }
-    this.projectiles.reap((p, reason) => this.onProjectileGone(p, reason))
+    this.projectiles.reap((p, reason) => {
+      // §4.3 拾回的前提：这一杆枪**打完了还躺在世界里**。任何离场原因都算——钉在人身上（`hit`）、
+      // 撞在柱面上（`wall`，`pr.pos` 已被写成撞击点）、飞完射程或寿命（`range`/`expire`）之后，
+      // 它都是同一根躺着的枪。位置贴到地面高度：斜插在半空的姿态不是"落地"，而 y 只有这里能量。
+      if (p.retrievable) {
+        const fy = this.floorAt?.(p.pos)
+        this.groundedSpears.plant(
+          { x: p.pos.x, y: typeof fy === 'number' ? fy : p.pos.y, z: p.pos.z },
+          p.vel, tick
+        )
+      }
+      this.onProjectileGone(p, reason)
+    })
   }
 
   private projectileStrikesEnemy(pr: Projectile, e: Enemy, tick: number): void {
@@ -1422,7 +1453,45 @@ export class CombatManager {
     const p = this.player
     if (p.busy || p.executing) return
     const cand = this.findExecuteTarget()
+    // 同一个键的第二动作（§4.3「按处决键拾回」）：附近没有可处决的人，才轮到那杆躺着的枪。
+    // 顺序就是优先级——手里有人可杀时先把人杀了，枪还在那儿等下一次按键。
     if (cand) this.landExecute(cand.e, cand.kind, tick)
+    else this.tryRetrieveSpear(tick)
+  }
+
+  /**
+   * §4.3 拾回：够得着的距离 = 处决的那把尺子（`execution.crumpleRange`）。刻意不新开一格数字——
+   * 「伸手的距离」在玩家身上从来只有一个答案，写进 `player.json` 就是让同一件事有两个主人。
+   */
+  private tryRetrieveSpear(tick: number): void {
+    const reach = this.player.base.execution.crumpleRange
+    const s = this.groundedSpears.nearestWithin(this.player.pos, reach)
+    if (!s) return
+    this.groundedSpears.remove(s.id)
+    this.player.spearInHand = true
+    bus.emit('ui.notify', { text: '拾回引针枪', kind: 'info' })
+    bus.emit('audio.sfx', { key: 'thrust_1', pos: { ...s.pos }, gain: 0.5 })
+    bus.emit('log', { level: 'info', msg: `spear.retrieved at=${s.pos.x.toFixed(1)},${s.pos.z.toFixed(1)} tick=${tick}` })
+  }
+
+  /**
+   * "枪回家了"：那一杆**全部**回到她手上——地上的、以及还在飞的（飞着的这一杆摘掉拾回身份，
+   * 于是它稍后被回收时不会在旧区域种下一杆新枪）。三个入口都汇到这一个方法：死亡
+   * （{@link update} 每 tick 盯 `stats.dead`）、跨区与重开（组合根 `main.ts` 那两个已有事件点）。
+   * 幂等：地上没枪、手上本来就有、空中没弹体时什么都不做，所以每 tick 敲一遍也不会多下一句提示。
+   *
+   * 为什么必须补这一格：`groundedSpears` 与 `spearInHand` 是一对账（一杆枪要么在手上、要么在世界里）。
+   * 跨区/重生时场上的弹体名册整个换掉，如果地上的那杆不回家，玩家在新区域就**永远投不出枪**——
+   * 那是把一个没接线的状态变成一处死玩法，而不是一种难度。
+   */
+  restockSpear(): void {
+    this.groundedSpears.clear()
+    for (const p of this.projectiles.list()) {
+      if (!p.retrievable) continue
+      p.retrievable = false
+      this.projectiles.kill(p, 'expire')
+    }
+    this.player.spearInHand = true
   }
 
   private findExecuteTarget(): { e: Enemy; kind: ExecuteKind } | null {
