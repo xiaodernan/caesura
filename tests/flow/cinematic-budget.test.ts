@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { registerGameData, cinematics } from '@/data'
+import { registerGameData, cinematics, dialogues } from '@/data'
 import {
   CINE_MAX_ONE_MS,
   CINE_MAX_TOTAL_MS,
-  cinematicBudgetErrors,
+  cinematicBudgetErrors, cinematicReferenceErrors,
   cinematicTotalMs,
 } from '../../scripts/cinematic-rules.mjs'
 
@@ -107,4 +107,45 @@ describe('§6 清单**落地之后**：真表与文档表必须是同一张（�
     expect(cinematicTotalMs(cinematics as unknown as Array<{ durationMs?: unknown }>)).toBe(164_000)
   })
 
+})
+
+describe('§6 引用对账：对话里挂的 `cinematic` 名字必须都在清单里（拼错一个字母 = 那一段永远不演）', () => {
+  const rows = [{ id: 'CINE_OPEN', kind: 'k', durationMs: 1000 }]
+
+  it('名字在表里 ⇒ 不报（含"这一条没挂过场"的常见情形）', () => {
+    const trees = [
+      { id: 'T', nodes: [{ id: 'n0', choices: [{ id: 'c1', cinematic: 'CINE_OPEN' }, { id: 'c2' }] }] },
+    ]
+    expect(cinematicReferenceErrors(rows, trees)).toEqual([])
+  })
+
+  it('名字不在表里 ⇒ 报，并且**点名到 树.节点.选项**（不是"有地方挂错了"这种糊涂话）', () => {
+    const trees = [
+      { id: 'DLG_X', nodes: [{ id: 'n7', choices: [{ id: 'c1', cinematic: 'CINE_TYPO' }] }] },
+    ]
+    const errs = cinematicReferenceErrors(rows, trees)
+    expect(errs).toHaveLength(1)
+    expect(errs[0].where).toBe('DLG_X.n7.c1')
+    expect(errs[0].why).toContain('CINE_TYPO')
+  })
+
+  it('真数据两侧都对得上：`dialogue.json` 今天挂的过场名字全在 `cinematics.json` 里', () => {
+    registerGameData()
+    const errs = cinematicReferenceErrors(
+      cinematics as unknown as Array<{ id?: unknown }>,
+      dialogues as unknown as unknown[],
+    )
+    expect(errs, `对不上的引用：${errs.map((e) => `${e.where} → ${e.why}`).join('；')}`).toEqual([])
+  })
+
+  it('反向：真数据里**至少有一条**选择挂着过场（否则这道门在空转——B5 是今天挂上的第一条）', () => {
+    registerGameData()
+    let n = 0
+    for (const t of dialogues as unknown as Array<{ nodes?: Array<{ choices?: Array<{ cinematic?: unknown }> }> }>) {
+      for (const node of t.nodes ?? []) {
+        for (const c of node.choices ?? []) if (typeof c.cinematic === 'string') n++
+      }
+    }
+    expect(n).toBeGreaterThanOrEqual(1)
+  })
 })

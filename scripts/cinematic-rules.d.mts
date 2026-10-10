@@ -23,3 +23,9 @@ export const CINE_FIELDS: readonly string[]
 export function cinematicBudgetErrors(rows: readonly CinematicRow[]): CinematicIssue[]
 /** 全清单总时长（毫秒） */
 export function cinematicTotalMs(rows: readonly CinematicRow[]): number
+
+/** §6 清单的引用对账：对话里挂的 `cinematic` 名字必须都在清单里（空数组 = 都对得上） */
+export function cinematicReferenceErrors(
+  rows: readonly CinematicRow[],
+  trees: readonly unknown[],
+): CinematicIssue[]

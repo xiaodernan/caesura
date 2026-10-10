@@ -38,5 +38,19 @@
   "blurb": "破拍营地叛逃守卫队长，半喧堕化的义体兵。他的兵在他叛逃后仍按生前军阵巡逻至今，他要带他们走完最后一班岗。",
   "homeRegion": "rg_brokenbar_camp",
   "relation": 0
- }
+ },
+  {
+    "id": "npc_tablet",
+    "nameKey": "npc.tablet",
+    "displayName": "石版",
+    "blurb": "未竟厅深处那面刻满谱线的石版。它不说话，但你读它的时候，它回答——恩希尔叠了七十三年的那半句神之歌就刻在上面，尾音是缺的（§3.5：LOST 世界线连这一截也缺）。",
+    "homeRegion": "rg_unfinished_hall"
+  },
+  {
+    "id": "npc_hersil",
+    "nameKey": "npc.hersil",
+    "displayName": "恩希尔",
+    "blurb": "未竟厅的主人，三百个喉咙在他身体里轮值了七十三年。他不守拍——他就是那个不肯落下的终止式。（§3.4 的战前对话只有一次机会，开打之前。）",
+    "homeRegion": "rg_unfinished_hall"
+  }
 ]

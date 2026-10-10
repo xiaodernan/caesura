@@ -1744,6 +1744,21 @@
     "pos": { "x": -40, "y": 152, "z": -300 }
    },
    {
+    "id": "in_unfinishedhall_hersil_parley",
+    "kind": "npc",
+    "npcId": "npc_hersil",
+    "verb": "走进无声域",
+    "pos": { "x": 0, "y": 152, "z": -150 }
+   },
+   {
+    "id": "in_unfinishedhall_tablet",
+    "kind": "npc",
+    "npcId": "npc_tablet",
+    "verb": "读石版",
+    "pos": { "x": 0, "y": 152, "z": -330 },
+    "requiresFlag": "flag.hersil_felled"
+   },
+   {
     "id": "in_unfinishedhall_key_208",
     "kind": "inspect",
     "verb": "看那枚没接音管的音栓",

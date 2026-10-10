@@ -57,7 +57,7 @@ import {
   PENDING_WEATHER_READINGS, PENDING_WEATHER_SWITCHES, WEATHER_FIELDS, WEATHER_GAMEPLAY_RULINGS,
   weatherFindings, weatherSwitchFindings,
 } from './weather-rules.mjs'
-import { cinematicBudgetErrors } from './cinematic-rules.mjs'
+import { cinematicBudgetErrors, cinematicReferenceErrors } from './cinematic-rules.mjs'
 // KI-094 同族：§37 区域光照预设表（`lp_*`）那几条**跨文件**判据的本体。这里只把 regions.json 里
 // 被指着的名字读出来当输入，再把 findings 报成 ERROR。
 import { LIGHTING_FIELDS, lightingFindings } from './lighting-rules.mjs'
@@ -2495,6 +2495,17 @@ function collectFlagUsage() {
       }
     }
   }
+  /*
+   * **规则表也是写方**（2026-10-10 修一处假 ERROR 类）：`worldstate.json` 每条规则的 `setFlag`
+   * 是"这个世界自己会改的事"——`validateWorldstate` 一直在查它的**反方向**（规则立的旗得有人读），
+   * 却没人把它的**正方向**登记进这份普查 ⇒ 于是**凡"只被世界规则写"的旗，一旦被读就吃一条假 ERROR**
+   * （"没有任何写方 ⇒ 它锁着的内容玩家不可达"），而那面旗恰恰是玩家打倒 Boss 才会立的。
+   * 例：`flag.hersil_felled`（`ws_hersil_felled` 在 `bossDefeated` 时立）被 §3.4 战前对话的
+   * `conditions.flags.not` 一读就报 ERROR。**上面那段注释早就写着"与…规则表同权"，实现漏了这一支。**
+   */
+  for (const r of data['worldstate.json'] ?? []) {
+    if (isObj(r) && isStr(r.setFlag)) written.set(r.setFlag, `worldstate.json(${r.id ?? '?'}).setFlag`)
+  }
   return { read, written, interactableIds, secrets }
 }
 
@@ -2912,6 +2923,10 @@ function validateCinematics() {
   const file = 'cinematics.json'
   if (!isArr(data[file])) return
   for (const e of cinematicBudgetErrors(data[file])) report.error(file, e.where, e.why)
+  // 引用对账：对话里挂的 `cinematic` 名字必须都在清单里（拼错一个字母 = 那一段永远不演）
+  for (const e of cinematicReferenceErrors(data[file], data['dialogue.json'])) {
+    report.error('dialogue.json', e.where, e.why)
+  }
 }
 
 validateLighting()

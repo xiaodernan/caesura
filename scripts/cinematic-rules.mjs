@@ -80,3 +80,36 @@ export function cinematicTotalMs(rows) {
   }
   return total
 }
+
+/**
+ * §6 清单的**引用对账**（2026-10-09）：`dialogue.json` 里每个挂了 `cinematic` 的选择，
+ * 那个名字都必须在清单里。
+ *
+ * 为什么需要它：`Cinematics.start()` 对认不出的 id 返回 false（**不静默开始一个空演出**），
+ * 于是拼错一个字母的后果是"那一段永远不演，而不会有别的东西响"——正是本仓库最忌的形状
+ * （账上写着有、实际什么都没发生）。判据只认"**名字在不在表里**"；
+ * "该不该挂在这一步"是叙事读数，由人判（不编）。
+ */
+export function cinematicReferenceErrors(rows, trees) {
+  const known = new Set(
+    (Array.isArray(rows) ? rows : []).map((r) => r?.id).filter((v) => typeof v === 'string'),
+  )
+  const out = []
+  for (const t of Array.isArray(trees) ? trees : []) {
+    const treeId = typeof t?.id === 'string' ? t.id : '?'
+    for (const n of Array.isArray(t?.nodes) ? t.nodes : []) {
+      const nodeId = typeof n?.id === 'string' ? n.id : '?'
+      for (const c of Array.isArray(n?.choices) ? n.choices : []) {
+        const id = c?.cinematic
+        if (typeof id !== 'string' || id.length === 0) continue
+        if (!known.has(id)) {
+          out.push({
+            where: `${treeId}.${nodeId}.${typeof c?.id === 'string' ? c.id : '?'}`,
+            why: `挂了清单里没有的过场 ${id} ⇒ 那一段永远不演，而不会有别的东西响`,
+          })
+        }
+      }
+    }
+  }
+  return out
+}

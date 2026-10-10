@@ -1886,5 +1886,84 @@
       "next": null
     }
     ]
+  },
+  {
+    "id": "DLG_TABLET",
+    "npc": "npc_tablet",
+    "priority": 5,
+    "rootNode": "n0",
+    "fallbackNode": "n0",
+    "nodes": [
+      {
+        "id": "n0",
+        "speaker": "npc_tablet",
+        "emotion": "quiet",
+        "text": "（石版上那半句神之歌：三百歌者叠了七十三年的续奏，只剩最后一小节。你读到尾音的地方——那里是空的。）……你听完了。现在轮到你替她把它唱完，或者，让它自己唱。",
+        "choices": [
+          {
+            "id": "c1",
+            "text": "替她唱完。",
+            "style": "poetic",
+            "cinematic": "CINE_END_A",
+            "next": null
+          },
+          {
+            "id": "c2",
+            "text": "让它自己唱。",
+            "style": "blunt",
+            "cinematic": "CINE_END_B",
+            "next": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "DLG_HERSIL_PREBOSS",
+    "npc": "npc_hersil",
+    "priority": 20,
+    "rootNode": "n0",
+    "fallbackNode": "n0",
+    "nodes": [
+      {
+        "id": "n0",
+        "speaker": "npc_hersil",
+        "emotion": "quiet",
+        "text": "我闻见静了。（管风琴自鸣，如深吸气）七十三年，三百个喉咙在我身体里轮值，没有一个音敢先累。而你——一身拍子的空拍子走进我的厅堂。休止。我认得你这种记号。",
+        "conditions": { "flags": { "not": ["flag.hersil_felled"] } },
+        "choices": [
+          { "id": "c1", "text": "我来带走第一声部。", "style": "blunt", "next": "n1" },
+          {
+            "id": "c2",
+            "text": "那晚的转调，降了半音。不是你弹错——是你不敢让她们唱原调。",
+            "style": "poetic",
+            "conditions": { "flags": { "all": ["flag.bell_keymod_found"] } },
+            "cinematic": "CINE_STORY_B7",
+            "next": "n2"
+          }
+        ]
+      },
+      {
+        "id": "n1",
+        "speaker": "npc_hersil",
+        "emotion": "amused",
+        "text": "（大笑，三个声部同时走音）带走？孩子，她不是行李，她是介音——是我够到那半个神音的唯一滑道。",
+        "next": "n1b"
+      },
+      {
+        "id": "n1b",
+        "speaker": "npc_hersil",
+        "emotion": "amused",
+        "text": "（压低，只剩一个声部，几乎温柔）你以为你是来救人的？你是来打断一个句子的。全世界只有你的静配站在我面前——因为连我都第一次能听见你的不响。来吧。",
+        "next": null
+      },
+      {
+        "id": "n2",
+        "speaker": "npc_hersil",
+        "emotion": "quiet",
+        "text": "（全部管束骤静，1.5s 死寂——Boss 出场唯一一段无音乐）……谁告诉你的。不，别答。你身上带盐巴味的旧留声机，还有那口不肯说话的钟。都只敢给一点。（声音重新叠起三百层）那你也该知道原调了。听完再恨我——或者，加入它。开栓。",
+        "next": null
+      }
+    ]
   }
 ]
