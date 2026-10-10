@@ -735,6 +735,11 @@ export class PlayerController {
       dir: skill && skill.cast.distance > 0 ? this.moveDir() : null
     }
     this.comboQueued = null
+    // `input.action` 此前是声明了没有发射方的死事件；它的读者（PatrolWatch，断弦线步 1
+    // 「走完巡逻且未出手」的判据）要的是**出手那一拍**，不是命中——所以从这条唯一入口发，
+    // 而不挂在 sound.source 上（音色晶落地、命中冲击、击杀噪声都在那条流里，「声东击西」
+    // 恰恰是不动手的玩法）。闪避/交互不走这里：不动手的事不该弄脏判据。
+    bus.emit('input.action', { action: key })
     bus.emit('audio.sfx', { key: f.sfx?.[0] ?? 'swing_1', pos: { ...this.pos }, gain: 0.7 })
     if (f.vfx?.[0]) bus.emit('vfx.request', { key: f.vfx[0], pos: { ...this.pos }, dir: { x: Math.sin(this.yaw), y: 0, z: Math.cos(this.yaw) } })
     bus.emit('sound.source', { id: 'player', pos: { ...this.pos }, loudness: this.noise(((f.loudness ?? 3) / 10) * (this.weapon.noiseMul ?? 1)) })

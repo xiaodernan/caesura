@@ -171,6 +171,12 @@ export class Enemy {
   private rng: Rng
   patrolPoints: Vec3[]
   patrolIdx = 0
+  /**
+   * 断弦线步 1 判据的周期事件（KI-043）：`patrol` 态里把路径点走回第一格的那一 tick 调一次。
+   * 只有巡逻态的绕回才算——被打进战斗再回来，这一圈本来就没走完。读者是 AISystem 装配的
+   * `PatrolWatch`；没有装配时这个字段是 null，巡逻行为零开销。
+   */
+  onPatrolLoop?: () => void
   searchAngle = 0
   callAllySuppressedUntil = 0
   /** 视线段的两个复用端点（`losBlocked` 每次覆写它们，查询方只在调用期间读） */
@@ -594,7 +600,10 @@ export class Enemy {
       case 'patrol': {
         const pt = this.patrolPoints[this.patrolIdx % this.patrolPoints.length]
         stepToward(this, pt, dt, this.data.speed * 0.4, rhythm)
-        if (dist3(this.pos, pt) < 0.6) this.patrolIdx = (this.patrolIdx + 1) % this.patrolPoints.length
+        if (dist3(this.pos, pt) < 0.6) {
+          this.patrolIdx = (this.patrolIdx + 1) % this.patrolPoints.length
+          if (this.patrolIdx === 0) this.onPatrolLoop?.()
+        }
         if (this.alertness >= 60) this.enter('investigate')
         break
       }

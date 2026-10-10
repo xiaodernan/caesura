@@ -7,6 +7,7 @@ import { Quests } from '@/quest/Quests'
 import { WorldStates } from '@/quest/WorldStates'
 import { DialogueEngine, type DialogueContext, type DialogueView } from '@/quest/Dialogue'
 import { DialogueSession } from '@/quest/Settlement'
+import { bus } from '@/core/EventBus'
 import { Inventory } from '@/rpg/Inventory'
 import { MovementBook } from '@/rpg/Movements'
 import type { Vec3 } from '@/combat/EntityStats'
@@ -17,7 +18,8 @@ import type { Vec3 } from '@/combat/EntityStats'
  * 这一批把「尸体军阵的巡逻」接到一个**真的会改世界**的抉择上：替断弦填名册 = 给营地定性，
  * 三种写法各是终幕入场编排的一根线。四条设计承诺在这里被钉住：
  *
- * 1. **步 1 靠机制推进**：只有以纯闪避走完整圈（旗标 `flag.haltrune_patrol_seen`）才开《点名册》；
+ * 1. **步 1 靠机制推进**：只有以纯闪避走完整圈（旗标 `flag.haltrune_patrol_seen`，
+ *    由 `PatrolWatch` 在真巡逻绕回且未出手时立——对话选项不再代写）才开《点名册》；
  *    仅仅"见过面"不算——那时复访给的是中立的那句，不是"名册的事，你想好了吗？"。
  * 2. **决断只由值域承载**：`state.haltrune.camp = OUTPOST/RUINS/GARRISON` 是营地归属的唯一读数，
  *    不另立一枚与它 1:1 重复的旗标（"两条同时立起来时世界是哪一种"就是值域表要消灭的局面）。
@@ -55,12 +57,16 @@ function makeWorld() {
   })
   const last = (): DialogueView => views[views.length - 1]
   const cleanup = (): void => { session.close(); states.dispose(); quests.dispose(); streaming.dispose() }
-  /** 走完一遍巡逻（初见 → 跟队 → 一整圈），返回落到步 2 的世界 */
+  /** 走完一遍巡逻（初见 → 接差事 → 机制判据成立），返回落到步 2 的世界。
+   * 旗的写方已换成机制（PatrolWatch，tests/flow/patrol-watch.test.ts 钉的是那一整条链：
+   * 真巡逻绕回 + 玩家未出手 + 人在队旁）；这里的 emit 与裁判成立那一拍走的是同一条
+   * `world.flag` 广播（旗标的唯一写路径，Streaming.setFlag 内部也是它）。 */
   const walkPatrol = (): void => {
     session.open('npc_haltrune')
     session.choose('c1') // 我不打断他们
-    session.choose('c1') // （跟着他们，走完一整圈）
+    session.choose('c1') // （跟着他们，走完一整圈）—— 只接下差事；旗要靠真的走完一圈
     session.close()
+    bus.emit('world.flag', { key: 'flag.haltrune_patrol_seen', value: true })
   }
   /** 替他填名册：c1/c2/c3 = 友军哨站 / 废墟 / 恩希尔驻防地 */
   const fillRoster = (choice: string): void => {

@@ -313,7 +313,9 @@ describe('KI-089 复访台阶：拒绝之后还有回头路，走远的台词读
     w.session.choose('c1') // 「……那我跟一圈。」
     expect(w.last().nodeId).toBe('n1')
     w.session.choose('c1') // 「（跟着他们，走完一整圈）」
-    expect(w.quests.state('q_haltrune'), '接上之后当场推进到点名册那一步').toBe('HALTRUNE.STEP2_ROSTER')
+    // KI-043：旗的写方已换成机制（PatrolWatch）——接差事只 startQuest，《点名册》要等
+    // 真的跟队绕完一圈且未出手才开（tests/flow/patrol-watch.test.ts 钉那一整条链）。
+    expect(w.quests.state('q_haltrune'), '接上的只是差事：巡逻还没真的走完，任务停在步 1').toBe('HALTRUNE.STEP1_OPEN')
     w.session.close()
     w.off()
   })

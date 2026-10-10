@@ -6,6 +6,7 @@ import type { SightGate } from '@/core/Occlusion'
 import type { NavGate } from './Navigation'
 import type { EnemyData } from '@/data/schema'
 import { registry } from '@/core/Registry'
+import { PatrolWatch } from '@/quest/PatrolWatch'
 
 /**
  * Manages all enemies: 10Hz perception rotation, attack-slot arbitration
@@ -43,6 +44,25 @@ export class AISystem {
    * {@link Enemy.nav} 上，由下面那个循环统一下发。
    */
   nav: NavGate = null
+  /** 缓存本 tick 的玩家位置：巡逻绕回那一拍判"他跟没跟着走"要用（PatrolWatch） */
+  private lastPlayerPos: { x: number; y: number; z: number } | null = null
+  /**
+   * KI-043 断弦线步 1 的判据裁判（构造时默认装配，实机接线不经过组合根）：巡逻敌人绕回
+   * 路径第一格、期间玩家没出过手、且玩家此刻在他身边 ⇒ `flag.haltrune_patrol_seen`
+   * （走 world.flag 广播）。跟队半径用敌人自己的 `ai.vision.range` 表值——"你跟着走，
+   * 就在他的存在圈里"；军阵自己绕圈而玩家在半个地图外不构成"走完了一圈"。
+   * 身份谓词现在是 en_murkshell——灰盒阶段营地守军（murkshell 群）就是《巡逻线尽头》
+   * 那队兵的化身；等"残响军阵"成为专属敌人入表时在这里收窄，不另起裁判。
+   */
+  private readonly patrolWatch = new PatrolWatch(
+    (e, ppos) => {
+      if (e.dataId !== 'en_murkshell') return false
+      if (!ppos) return false
+      const range = registry.get<EnemyData>(e.dataId).ai?.vision?.range ?? 12
+      return Math.hypot(e.pos.x - ppos.x, e.pos.z - ppos.z) <= range
+    },
+    () => bus.emit('world.flag', { key: 'flag.haltrune_patrol_seen', value: true }),
+  )
 
   constructor() {
     bindEnemyRegistry(this.enemies)
@@ -87,6 +107,7 @@ export class AISystem {
   spawn(enemyId: string, pos: { x: number; y: number; z: number }, seed = 'vs'): Enemy {
     const data = registry.get<EnemyData>(enemyId)
     const e = new Enemy(data, pos, seed)
+    e.onPatrolLoop = () => this.patrolWatch.notePatrolLoop({ id: e.id, dataId: data.id, pos: e.pos }, this.lastPlayerPos)
     this.enemies.push(e)
     bus.emit('entity.spawned', { id: e.id, kind: 'enemy', entity: e })
     return e
@@ -136,6 +157,7 @@ export class AISystem {
 
   update(dt: number, tick: number, player: PlayerController, rhythm: RhythmClock): void {
     this.tick = tick
+    this.lastPlayerPos = { ...player.pos }
     this.syncClock(rhythm)
     // KI-024：场地阶段入口每 tick 对账一次（音刺碎尽的那一 tick 她就该换阶，不等下一次血线结算）
     if (this.props) for (const e of this.enemies) e.checkFieldPhase(this.props)

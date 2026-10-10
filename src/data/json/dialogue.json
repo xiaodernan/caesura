@@ -1557,11 +1557,10 @@
                 "delta": 1
               },
               "setFlags": [
-                "flag.haltrune_met",
-                "flag.haltrune_patrol_seen"
+                "flag.haltrune_met"
               ],
               "startQuest": "q_haltrune",
-              "notify": "《巡逻线尽头》记入谱册 —— 他们在等一个不会再来的口令"
+              "notify": "《巡逻线尽头》记入谱册 —— 跟上军阵的拍子，别让手比耳朵快"
             },
             "next": "n3"
           },
@@ -1595,7 +1594,7 @@
         "id": "n3",
         "speaker": "npc_haltrune",
         "emotion": "hollow",
-        "text": "……你数了吗？七个。我记的是四个。他们替我记着正确的那个数。",
+        "text": "（他退回暗处，让军阵的脚步声盖过谈话。）去数吧。别让手比耳朵快。",
         "next": null
       },
       {

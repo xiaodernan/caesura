@@ -255,6 +255,7 @@ src/
 | `quest/QuestState.ts` | `quest/Quests.ts`（+ `quest/Settlement.ts` 落选项效果） | 三步机已落（notStarted→active(step k)→completed）。需求 §30 的 NPC state 公式在 `quest/Dialogue.ts` 的条件里，不是独立状态机 |
 | `quest/WorldFlags.ts` | `world/Streaming.ts` 的 `flags: Set<string>` | **只有命名 bool 这一层**：位图、int/string 层、条件表达式解析器（`"flag.a && npc.b"`）都没有。今天读旗的口径是 `hasFlag/setFlag/flagKeys`，写旗的口径是 `quest/WorldState.ts` 的规则表 |
 | `quest/DialogueRuntime.ts`、`ui/DialogueUI.ts` | `quest/Dialogue.ts`（纯函数树）+ `ui/DialogueBox.ts`（表现） | 逻辑与表现分家比规划更干净：`Dialogue.ts` 不 import DOM |
+| — | `quest/PatrolWatch.ts`（KI-043，规划外长出来的） | 断弦线步 1《巡逻线尽头》的判据裁判：巡逻绕回（`Enemy.onPatrolLoop`）×玩家出手（`input.action` 边沿）×跟队位置（敌人 `ai.vision.range` 表值）三个事件序列 ⇒ 立旗 `flag.haltrune_patrol_seen`（world.flag 广播）。事件型判据，零 tick 计数（需求 §28） |
 | `audio/AudioGraph.ts` | `audio/AudioEngine.ts` | 图结构一致（master→bus→limiter→dest），limiter 用的是 DynamicsCompressor |
 | `audio/Synth.ts` | `audio/synth.ts` | 只有大小写 |
 | `vfx/ImpactRings.ts` | `vfx/VfxLayer.ts` + `vfx/materials.ts` | ring/spark/shard **三类**共用一套"每类一张实例几何 + 一份 GLSL + 一个 Pool"的做法 |
