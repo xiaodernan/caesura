@@ -1,5 +1,4 @@
 import { readFileSync } from 'node:fs'
-import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import {
@@ -20,17 +19,51 @@ import {
  */
 
 /**
- * 本沙箱里 **vitest worker 内部不允许 spawn 子进程**：`spawnSync` 一律回 `EBUSY`
- * （managed / 系统 / PATH 上的 node 全试过，换二进制没用），于是"跑真校验器"那条判据**跑不起来**。
- * 处理方式是**响亮地跳过**而不是静默绿：模块加载时探一次，命中就 `skipIf`，并把原因打出来
- * （见 KI-075）。判据本身一字未改——在能 spawn 的环境里它照旧会因为"账不自洽"而红。
+ * 这条判据**在进程内跑**校验器，所以它的存废不再取决于宿主让不让 spawn 子进程。
+ * KI-075 当年登记的是"本沙箱 vitest worker 内部 spawn 一律回 `EBUSY`"，老写法因此只能探一次再 `skipIf`；
+ * 那个前提在 2026-10-11 被当场否证——worker 里 `spawnSync(process.execPath, ['-e', …])`、`git rev-parse`、
+ * 乃至 spawn 校验脚本本身，三种全部 `error=none / status=0`（一次性探针，用完即删）。
+ * **换路不是为了绕开一条已经不存在的限制**，而是不再让这道门看宿主的脸色：校验脚本一被求值就跑校验、
+ * 末尾 `process.exit(errTotal > 0 ? 1 : 0)`，把 `process.exit` 换成"记下退出码再抛"、把 `console.log`
+ * 收进缓冲区，拿到的就是命令行上那份读数（一趟约 0.4s）。
+ *
+ * 一个 worker 里只能跑**一趟**：ESM/Vite 按 URL 缓存模块，同一 URL 第二次 `import()` 不再求值，
+ * 于是它读到的是第一趟那一刻的磁盘。给 URL 加 query 击穿缓存在这台机器上**不通**，两种写法都试过：
+ * 模板拼 query ⇒ vite 报 `Unknown variable dynamic import`（它去静态解析那个 pattern）；
+ * `file://` URL ⇒ vite 不还原百分号，CJK 路径直接 load 不到。所以这里不是"缓存无关紧要"，
+ * 是**判据不假设第二趟**——第二趟的读数会谎报"这是此刻的表"。上面那条计数就是给这件事站岗的：
+ * 谁将来在这里加第二次调用，当场红，而不是悄悄拿到一份旧报告。要重跑就换进程
+ * （`npx vitest run` 一趟一个进程，下面的变异见证正是这么做的）。
  */
-const SPAWN_BLOCKED = (() => {
-  const probe = spawnSync(process.execPath, ['-e', 'process.stdout.write("ok")'], { encoding: 'utf8' })
-  const code = probe.error ? (probe.error as NodeJS.ErrnoException).code : null
-  if (code) console.warn(`[ledger-rules] 跳过"跑真校验器"那条：本环境 spawn 子进程被拒（${code}）—— 换台能 spawn 的机器复验，见 KI-075`)
-  return code === 'EBUSY'
-})()
+const EXIT_SENTINEL = new Error('__validate-data-exit__')
+// 走变量而不是字面量：校验脚本是 JS，没有 .d.ts，字面 specifier 会让 `tsc --noEmit` 报 TS7016
+// （门就是 lint，红的是这道门而不是这条判据）。路径写错的代价由判据自己收——读不到「总计」那行就是红。
+const VALIDATOR_SPEC = '../../scripts/validate-data.mjs'
+let validatorRuns = 0
+
+async function runValidator(): Promise<{ code: number | null; out: string }> {
+  if (validatorRuns++ > 0) {
+    throw new Error('同一个 worker 里第二次 import 校验器 = 读的是 ESM 缓存，不是此刻的磁盘 ⇒ 判据要的是后者')
+  }
+  const lines: string[] = []
+  const realLog = console.log
+  const realExit = process.exit
+  let code: number | null = null
+  console.log = (...a: unknown[]) => { lines.push(a.map(String).join(' ')) }
+  process.exit = ((c?: number) => {
+    code = c ?? 0
+    throw EXIT_SENTINEL
+  }) as typeof process.exit
+  try {
+    await import(VALIDATOR_SPEC as string)
+  } catch (e) {
+    if (e !== EXIT_SENTINEL) throw e // 脚本自己崩了 ⇒ 让它红到底，别冒充"跑过了"
+  } finally {
+    console.log = realLog
+    process.exit = realExit
+  }
+  return { code, out: lines.join('\n') }
+}
 
 const root = fileURLToPath(new URL('../..', import.meta.url))
 const readJson = <T>(p: string): T => JSON.parse(readFileSync(root + p, 'utf8')) as T
@@ -156,12 +189,17 @@ describe('今天的真账必须自洽（这条响的那天，就是有人该销�
    * 旗标这一格判的是**跑起来的校验器**，不在测试里重抄"谁写了这个旗标"的三个来源
    * （worldstate 规则 / 交互物 setsFlag / 对话 setFlags）——重抄一遍就是第二个主人，
    * 它漂的那天这条测试会绿着说谎。校验器一趟约 1 秒，值得。
+   *
+   * 三条判据各管一件事，缺一不可：`总计：` 那行证明**读到了报告尾部**（拿不到输出的写法一律不算跑过），
+   * 句子名单证明**账自洽**，`code !== null` 证明这趟走到了脚本的**最后一行**而不是中途抛断——
+   * 前两条都在内容上说话，只有第三条管"到底跑完没有"。
    */
-  it.skipIf(SPAWN_BLOCKED)('跑真校验器：输出里没有一条「这条账该销了」（它出现的那天就是有人忘销账的那天）', () => {
-    const r = spawnSync(process.execPath, ['scripts/validate-data.mjs'], { cwd: root, encoding: 'utf8' })
-    const out = `${r.stdout ?? ''}${r.stderr ?? ''}`
-    expect(out, '校验器没给出「总计」那行 = 这一趟没跑成，判据不算跑过').toContain('总计：')
+  it('跑真校验器（进程内）：输出里没有一条「这条账该销了」（它出现的那天就是有人忘销账的那天）', async () => {
+    const { code, out } = await runValidator()
+    const total = out.split(/\r?\n/).find((l) => l.includes('总计：'))
+    expect(total, '校验器没给出「总计」那行 = 这一趟没跑成，判据不算跑过').toBeTruthy()
     expect(out.split(/\r?\n/).filter((l) => l.includes('这条账该销了') || l.includes('账上挂着表里没有的里程碑')
       || l.includes('.字段表') || l.includes('.取值表')), 'KI-076 起：状态名册那两张派生表也归这条判据管').toEqual([])
+    expect(code, `没走到那句 process.exit ⇒ 这趟在半路就断了，读到的东西不算一份报告（读到的总计行：${JSON.stringify(total)}）`).not.toBeNull()
   })
 })
