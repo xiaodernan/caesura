@@ -34,7 +34,12 @@ afterAll(() => {
 
 const groupOf = (id: string): THREE.Group => scene.getObjectByName(`actor:${id}`) as THREE.Group
 /** children = [身体, 振源核, 钟甲板?]，顺序就是 ActorVisuals 里 add 的顺序 */
-const plateOf = (id: string): THREE.Mesh | undefined => groupOf(id)?.children[2] as THREE.Mesh | undefined
+const plateOf = (id: string): THREE.Mesh | undefined => {
+  // KI-013 血条加了 bg+fill（PlaneGeometry），不能再用 children[2] 索引——按几何类型找 BoxGeometry
+  return groupOf(id)?.children.find(
+    (c): c is THREE.Mesh => c instanceof THREE.Mesh && c.geometry instanceof THREE.BoxGeometry
+  )
+}
 const meshCount = (): number => {
   let n = 0
   scene.traverse((o) => { if (o instanceof THREE.Mesh) n++ })
@@ -68,7 +73,7 @@ describe('ActorVisuals：钟甲板挂得对、掉得对、回收不漏', () => {
     const k = ai.spawn('en_hanged_knight', { x: 0, y: 0, z: -22 }, 'k2')
     const s = ai.spawn('en_murkshell', { x: 3, y: 0, z: -22 }, 's2')
     vis.sync(ai.enemies, 4)
-    expect(meshCount() - empty, '一具敌人 = 身体+振源核；带钟甲的多一块板').toBe(5)
+    expect(meshCount() - empty, '一具敌人 = 身体+振源核+血条(bg+fill)；带钟甲的多一块板（血条 bg+fill 每具都有）').toBe(9)
     ai.despawn(k.id)
     ai.despawn(s.id)
     vis.sync(ai.enemies, 5)

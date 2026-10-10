@@ -9,6 +9,8 @@ interface EnemyVis {
   core: THREE.Mesh<THREE.SphereGeometry, THREE.MeshStandardMaterial>
   /** §14.7 钟甲板：只在 `ai.armorFront` 的敌人身上存在，碎甲后隐藏（灰盒级可读性） */
   plate: THREE.Mesh<THREE.BoxGeometry, THREE.MeshStandardMaterial> | null
+  /** KI-013 敌人血条：底板 + 填充条（只在受损时显示） */
+  hpBar: { bg: THREE.Mesh; fill: THREE.Mesh; fillMat: THREE.MeshBasicMaterial } | null
   e: Enemy
 }
 
@@ -29,6 +31,8 @@ const WEAPON_FORMS: Record<string, { blade: [number, number, number]; metal: num
 
 /** placeholder-grade actor visuals (docs/technical-architecture.md §1: assets later, interfaces now) */
 export class ActorVisuals {
+  /** KI-013 血条 Billboard 用：由 main.ts 在构造后注入（避免构造循环） */
+  camera: import('three').Camera | null = null
   private vis = new Map<string, EnemyVis>()
   /** 武器容器：每种 archetype 一个子组，只有手里那一把可见。挥击动画挂在容器上，换装不用改动画 */
   sword: THREE.Group
@@ -104,8 +108,19 @@ export class ActorVisuals {
         plate.position.set(0, 0.95 * s, 0.52 * s)
         group.add(plate)
       }
+      // KI-013 敌人血条：两块薄板（底板深灰 + 填充条渐变色），头顶上方
+      const barW = 1.2 * s
+      const barBg = new THREE.Mesh(
+        new THREE.PlaneGeometry(barW, 0.09 * s),
+        new THREE.MeshBasicMaterial({ color: 0x1a1a1a, side: THREE.DoubleSide, transparent: true, opacity: 0.7 })
+      )
+      barBg.position.set(0, 1.9 * s, 0)
+      const barFillMat = new THREE.MeshBasicMaterial({ color: 0x44cc44, side: THREE.DoubleSide, transparent: true, opacity: 0.9 })
+      const barFill = new THREE.Mesh(new THREE.PlaneGeometry(barW, 0.07 * s), barFillMat)
+      barFill.position.set(0, 1.9 * s, 0.01)
+      group.add(barBg, barFill)
       this.scene.add(group)
-      this.vis.set(e.id, { group, body, core, plate, e })
+      this.vis.set(e.id, { group, body, core, plate, hpBar: { bg: barBg, fill: barFill, fillMat: barFillMat }, e })
     }
     // retire visuals of enemies removed from the roster
     for (const [id, v] of this.vis) {
@@ -209,6 +224,28 @@ export class ActorVisuals {
       group.position.y = -k * 0.9 * s
       group.scale.setScalar(Math.max(0.001, 1 - k))
       if (k >= 1) { this.scene.remove(group); this.vis.delete(e.id) }
+    }
+    // KI-013 敌人血条：受损才显示，满血隐去；面向相机（Billboard）
+    if (v.hpBar) {
+      const frac = e.stats ? e.stats.hp / e.stats.hpMax : 1
+      const show = frac < 1 && e.alive
+      v.hpBar.bg.visible = show
+      v.hpBar.fill.visible = show
+      if (show) {
+        // 面向相机（Billboard 效果：血条 rotation 对齐相机）
+        if (this.camera) {
+          v.hpBar.bg.quaternion.copy(this.camera.quaternion)
+          v.hpBar.fill.quaternion.copy(this.camera.quaternion)
+        }
+        // 填充条从左往右缩
+        const fracW = Math.max(0.02, frac)
+        v.hpBar.fill.scale.x = fracW
+        v.hpBar.fill.position.x = -(1 - fracW) * 1.2 * s / 2
+        // 颜色从绿→黄→红
+        const r = frac < 0.5 ? 1 : (1 - frac) * 2
+        const g = frac < 0.5 ? frac * 2 : 1
+        v.hpBar.fillMat.color.setRGB(r, g, 0.2)
+      }
     }
   }
 
