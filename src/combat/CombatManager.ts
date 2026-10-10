@@ -18,6 +18,7 @@ import { OcclusionField, type BlockHit } from '@/core/Occlusion'
 import { glossary, statusConfig, tagIs } from './Statuses'
 import type { Vec3 } from './EntityStats'
 import type { PropSystem } from '@/world/Props'
+import type { Surface } from '@/world/Surface'
 
 type ExecuteKind = 'A' | 'B' | 'C'
 
@@ -183,6 +184,16 @@ export class CombatManager {
    */
   props: PropSystem | null = null
 
+  /**
+   * §8 R3「可坠崖（营地石桥杀点）」的地形输入（组合根注入，null = 世界没有深渊可坠；
+   * 与 `props` 同一套注入纪律——combat 层不 import world 的运行时，`Surface` 也是 type-only）。
+   * 检查的是**位置谓词**（脚下还有没有可站的地板），不是反应档位：任何来源把人推到深渊上
+   * 都坠（R3 那格 2m 只是位移最大的一个来源）；设计只在 R3 点名，是因为杀点要的就是击退。
+   */
+  surface: Surface | null = null
+  /** 坠亡结算的去重：`onEnemyKilled` 自己有 `killed` 集，但「人悬在深渊上」会连续多 tick 为真 */
+  private readonly fallen = new Set<string>()
+
   checkEncounterMusic(): void {
     const anyAggro = this.ai.enemies.some((e) =>
       e.alive && (e.state === 'combat' || e.state === 'chase' || e.state === 'alert' || e.state === 'callAlly'))
@@ -195,6 +206,23 @@ export class CombatManager {
     // 遮挡名册每 tick 重新点名**实体那一段**：Boss 离场她的柱子就退出判据。
     // authored 墙不在这里动——它住在区域数据里，由组合根跨区时写（`syncAuthored`）。
     this.occlusion.syncFrom(this.ai.enemies)
+    // §8 R3「可坠崖」：脚下没有可站的地板 ⇒ 坠入声渊。放在 update 最前——位移发生在
+    // 上一 tick 的命中结算里，坠亡不该等下一次命中才结算。Boss 豁免：她的走位是断音柱/
+    // 撞钟这类场地机关的输入，§16 的演出实体不许被一记击退推下台（与 KI-052① 的位移
+    // 豁免同源；Boss 自己也不会走出 bounds——她的场地是 authored 的）。
+    if (this.surface) {
+      for (const e of this.ai.enemies) {
+        if (!e.alive || e.isBoss || this.fallen.has(e.id)) continue
+        if (this.surface.floorAt(e.pos) === null) {
+          this.fallen.add(e.id)
+          // 死亡的账本体先落（hp 清零 ⇒ stats.dead ⇒ alive 翻假），`onEnemyKilled` 只是
+          // 演出与结算——没有这一步，人会站在深渊上顶着一场自己的葬礼继续打架。
+          e.stats.damage(e.stats.hp)
+          this.onEnemyKilled(e)
+          bus.emit('ui.notify', { text: `${nameOf(e.data.nameKey)} 坠入声渊`, kind: 'info' })
+        }
+      }
+    }
     // §4.3 死了就把那一杆枪整体收回家（地上的 + 还在飞的）。盯状态量而不是订阅复活事件：
     // `stats.dead` 自己会说"我不在场"，而 `respawn()` 把玩家送回原点时这已经是第三次账目归零。
     if (this.player.stats.dead) this.restockSpear()
