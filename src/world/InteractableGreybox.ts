@@ -227,14 +227,44 @@ export class InteractableGreybox {
    * 只影响 checkpoint 池的那几个实例，别的 kind 不动。main.ts 的 update 里每帧调一次。
    */
   animate(tick: number): void {
+    let colorDirty = false
     for (const [, cur] of this.shown) {
-      if (cur.entry.kind !== 'checkpoint') continue
-      const pool = this.pools.get('checkpoint')!
-      const base = COLOR.checkpoint
-      const pulse = 0.5 + Math.sin(tick * 0.045) * 0.5
-      const bright = base + (0xfff2c8 - base) * pulse * 0.5
-      pool.mesh.setColorAt(cur.index, this.col.setHex(bright).multiplyScalar(cur.active ? 1 : 0.5))
-      if (pool.mesh.instanceColor) pool.mesh.instanceColor.needsUpdate = true
+      const kind = cur.entry.kind
+      const pool = this.pools.get(kind)!
+
+      // 调音桩：呼吸灯（基色 ↔ 焦点色正弦脉动）
+      if (kind === 'checkpoint') {
+        const base = COLOR.checkpoint
+        const pulse = 0.5 + Math.sin(tick * 0.045) * 0.5
+        const bright = base + (0xfff2c8 - base) * pulse * 0.5
+        pool.mesh.setColorAt(cur.index, this.col.setHex(bright).multiplyScalar(cur.active ? 1 : 0.5))
+        colorDirty = true
+      }
+
+      // 采集点：慢速 Y 轴旋转（晶体转动=可采集信号）
+      if (kind === 'gather') {
+        const m = new THREE.Matrix4()
+        const pos = cur.entry.it.pos
+        m.makeRotationY(tick * 0.015)
+        m.setPosition(pos.x, pos.y + LIFT.gather, pos.z)
+        pool.mesh.setMatrixAt(cur.index, m)
+        pool.mesh.instanceMatrix.needsUpdate = true
+      }
+
+      // NPC：微呼吸（Y 缩放 1±0.02，活的）
+      if (kind === 'npc') {
+        const m = new THREE.Matrix4()
+        const pos = cur.entry.it.pos
+        const breathe = 1 + Math.sin(tick * 0.03 + pos.x) * 0.02
+        m.makeScale(1, breathe, 1)
+        m.setPosition(pos.x, pos.y + LIFT.npc, pos.z)
+        pool.mesh.setMatrixAt(cur.index, m)
+        pool.mesh.instanceMatrix.needsUpdate = true
+      }
+    }
+    if (colorDirty) {
+      const cp = this.pools.get('checkpoint')
+      if (cp?.mesh.instanceColor) cp.mesh.instanceColor.needsUpdate = true
     }
   }
 }
