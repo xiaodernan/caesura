@@ -1027,7 +1027,7 @@ describe('dispose()：摘下每一根线（TD-006 第二腿①）', () => {
     expect(real, `每一处订阅都必须走 subscribe()；这几行是漏的：${real.join(' | ')}`).toHaveLength(1)
     expect(real[0]).toContain('this.subs.push(bus.on(key, fn))')
     // 反向：helper 真的被用了八次，不是写了个没人走的空壳
-    expect(subscribedKeys().length).toBe(8)
+    expect(subscribedKeys().length).toBe(9)
   })
 
   it('构造时每一条订阅都挂上，dispose 后逐条归零（读数回到原值）', () => {
