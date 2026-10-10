@@ -1,5 +1,6 @@
 import { describe, expect, it, beforeAll } from 'vitest'
 import { registerGameData } from '@/data'
+import { Input } from '@/core/Input'
 import { AUTOSAVE_SLOT, type SlotCard } from '@/save/Slots'
 import type { TitleHooks } from '@/ui/TitleScreen'
 
@@ -12,6 +13,11 @@ import type { TitleHooks } from '@/ui/TitleScreen'
  * - 名册还没读回来时同样不许开新弦：那不是"没有档"，那是"还不知道有没有档"（§78）；
  * - "续"读的是玩家选中那一格，不是写死的 autosave；
  * - 空格、坏档、可读档三态在卡面上必须可分辨，坏的那一格按不下去但要看懂为什么。
+ *
+ * **键盘从 KI-062 第二腿起走真通道**：本屏不再挂 `keydown`，键码先进 `core/Input.ts` 折成 `UiIntent`，
+ * `poll()` 求出边沿后才喂给 `uiStep()`。所以 `screen()` 一并交回一个 `press`——它按的是完整一记
+ * （按下 → poll → 喂屏 → 松开 → poll），少掉中间那次 poll 就没有边沿，少掉收尾那次下一记同键会被
+ * 判成"一直按着"而没有新边沿（那是 edge 语义，不是 bug）。
  *
  * DOM 用最小替身（与 `stakerite.test.ts` 同一手法）；真实视口排版仍受 KI-010 限制。
  */
@@ -82,6 +88,12 @@ const roster = (over: Record<string, Partial<SlotCard>> = {}): SlotCard[] =>
 
 interface Hit { news: string[]; continues: string[] }
 
+/** 把一记键码打进假窗口（那里只有 `Input` 的监听器，本屏自己一只都不挂）；`up` = 松开 */
+const fire = (code: string, up = false): void => {
+  const e = { code, key: '', repeat: false, preventDefault: () => {} }
+  for (const fn of win.handlers[up ? 'keyup' : 'keydown'] ?? []) fn(e)
+}
+
 async function screen(read: () => SlotCard[]) {
   const { TitleScreen } = await import('@/ui/TitleScreen')
   const hit: Hit = { news: [], continues: [] }
@@ -90,12 +102,29 @@ async function screen(read: () => SlotCard[]) {
     onContinue: (slot) => { hit.continues.push(slot) },
     listSlots: async () => read()
   }
+  // 监听器只数**这一步新添的**：假窗口在整个文件里是同一只，用例之间会累加，
+  // 直接断言总数等于几把上一格的功劳也算进来了。
+  const kbOf = (): number => (win.handlers.keydown ?? []).length
+  const beforeTitle = kbOf()
   const t = new TitleScreen(hooks)
+  const titleKeydowns = kbOf() - beforeTitle // 本屏自己挂的：KI-062 第二腿之后恒为 0
+  const beforeInput = kbOf()
+  // 真通道：所有权 = 标题屏这一格，玩法那条按着组合根的样子关掉（enabled=false）
+  const input = new Input(new FakeEl() as unknown as HTMLElement)
+  input.enabled = false
+  input.uiOwner = 'title'
+  const inputKeydowns = kbOf() - beforeInput
   await new Promise((r) => setTimeout(r, 0)) // 等名册那一次异步读回来
-  return { t, hit, root: (t as unknown as { root: FakeEl }).root }
+  /** 完整一记：按下 → poll 出边沿 → 喂屏 → 松开 → 再 poll（清掉"按着"的状态） */
+  const press = (code: string): void => {
+    fire(code)
+    input.poll(1 / 60)
+    t.uiStep(input.uiEdges)
+    fire(code, true)
+    input.poll(1 / 60)
+  }
+  return { t, hit, press, root: (t as unknown as { root: FakeEl }).root, stats: { titleKeydowns, inputKeydowns } }
 }
-
-const press = (code: string): void => { for (const fn of win.handlers.keydown ?? []) fn({ code, preventDefault: () => {} }) }
 function click(root: FakeEl, act: string, arg = ''): void {
   const el = new FakeEl()
   el.dataset = { act, arg }
@@ -164,7 +193,7 @@ describe('标题屏 · 防误删确认（KI-025②）', () => {
   })
 
   it('确认屏上 Enter 的默认那一记是取消：回到定弦，谁也不开', async () => {
-    const { t, hit } = await screen(() => roster())
+    const { t, hit, press } = await screen(() => roster())
     const root = (t as unknown as { root: FakeEl }).root
     click(root, 'card', 'origin_drummer')
     press('Enter')
@@ -173,7 +202,7 @@ describe('标题屏 · 防误删确认（KI-025②）', () => {
   })
 
   it('→ 之后 Enter 才真的开新弦，而且开的是被点的那一根', async () => {
-    const { t, hit } = await screen(() => roster())
+    const { t, hit, press } = await screen(() => roster())
     const root = (t as unknown as { root: FakeEl }).root
     click(root, 'card', 'origin_scavenger')
     press('ArrowRight')
@@ -185,7 +214,7 @@ describe('标题屏 · 防误删确认（KI-025②）', () => {
   })
 
   it('只有坏档时也要给路看原因：能进挑档屏，但那一格按不下去', async () => {
-    const { t, hit } = await screen(() => roster({
+    const { t, hit, press } = await screen(() => roster({
       autosave: EMPTY, slot1: BLOCKED, slot2: EMPTY, slot3: EMPTY
     }))
     const s = view(t)
@@ -210,7 +239,7 @@ describe('标题屏 · 挑档续玩（KI-025②）', () => {
   registerGameData()
 
   it('「续」进挑档屏：四格都渲染，只有可读的那几格能按', async () => {
-    const { t, hit } = await screen(() => roster({
+    const { t, hit, press } = await screen(() => roster({
       autosave: EMPTY, slot2: BLOCKED, slot3: EMPTY
     }))
     press('ArrowDown')
@@ -234,7 +263,7 @@ describe('标题屏 · 挑档续玩（KI-025②）', () => {
   })
 
   it('焦点只在可读的那几格里绕：空槽与坏档不参与计数', async () => {
-    const { t } = await screen(() => roster({ autosave: EMPTY, slot2: BLOCKED, slot3: EMPTY }))
+    const { t, press } = await screen(() => roster({ autosave: EMPTY, slot2: BLOCKED, slot3: EMPTY }))
     await t.goto('slots')
     const focus = () => (t as unknown as { focus: { kind: string; index: number } }).focus
     expect(focus()).toEqual({ kind: 'slot', index: 0 })
@@ -246,7 +275,7 @@ describe('标题屏 · 挑档续玩（KI-025②）', () => {
   })
 
   it('← / Escape 从挑档屏回定弦，不算一次决定', async () => {
-    const { t, hit } = await screen(() => roster())
+    const { t, hit, press } = await screen(() => roster())
     await t.goto('slots')
     press('ArrowLeft')
     expect(view(t)).toContain('为她定一根弦')
@@ -257,14 +286,57 @@ describe('标题屏 · 挑档续玩（KI-025②）', () => {
     expect(hit.continues).toEqual([])
   })
 
-  it('dispose() 之后键盘监听与 DOM 都不留（谁挂的谁摘）', async () => {
-    const { t, root } = await screen(() => roster())
+  it('定弦屏是根：Escape / B 那一记在根屏上一格效果都没有', async () => {
+    const { t, hit, press } = await screen(() => roster())
+    const before = view(t)
+    press('Escape')
+    expect(view(t), '根屏不许自己关掉自己：back 在 string 模式上不认任何一格').toBe(before)
+    press('Backspace')
+    press('Tab')
+    expect(view(t)).toBe(before)
+    expect(hit.news).toEqual([])
+    expect(hit.continues).toEqual([])
+  })
+
+  it('根屏没有档可挑时按确认没有一格效果（没档的"续"不占 focus，不是漏接）', async () => {
+    const { t, hit, press } = await screen(() => roster({
+      autosave: EMPTY, slot1: EMPTY, slot2: EMPTY, slot3: EMPTY
+    }))
+    expect(view(t)).toContain('本机没有可续的存档')
+    const before = view(t)
+    press('Enter') // 焦点在卡上：无可续档 ⇒ 直接 onNew，不走确认屏
+    expect(view(t), '没档时 onNew 直发，视图不变').toBe(before)
+    expect(hit.news, 'onNew 已被调用').toHaveLength(1)
+    hit.news.length = 0
+    press('Escape') // 回根屏
+    expect(view(t)).toBe(before)
+    expect(hit.news, 'Escape 不再触发 onNew').toEqual([])
+  })
+
+it('全坏档的挑档屏：up 也不动一格（m=0 ⇒ 不许凭空选中空气）', async () => {
+    const { t, press } = await screen(() => roster({
+      autosave: BLOCKED, slot1: BLOCKED, slot2: BLOCKED, slot3: BLOCKED
+    }))
+    await t.goto('slots')
+    expect(view(t)).toContain('挑一格 · Enter 读取 · ← 返回定弦')
+    const focus = () => (t as unknown as { focus: { kind: string; index: number } }).focus
+    const before = focus()
+    press('ArrowUp') // 一格可读的都没有 ⇒ m=0 ⇒ 直接 return
+    expect(focus(), '坏档不参与焦点：up 不许把焦点给空气').toEqual(before)
+  })
+
+  it('dispose() 之后 DOM 摘掉，而这一屏从来就不在 window 上挂 keydown（读数只有 uiStep 一个入口）', async () => {
+    const { t, root, press, stats } = await screen(() => roster())
     expect(root.parent).toBe(body)
-    const before = (win.handlers.keydown ?? []).length
-    expect(before, '这一屏至少挂上了自己的那一个监听').toBeGreaterThan(0)
+    expect(stats.titleKeydowns, '本屏自己挂的 keydown 数：读数只有 core/Input 那一条').toBe(0)
+    expect(stats.inputKeydowns, 'Input 那一条要真在场上，否则 press 喂的是空气').toBe(1)
+    const keydowns = (win.handlers.keydown ?? []).length
     t.dispose()
     expect(root.parent, 'DOM 节点摘掉').toBeNull()
-    expect((win.handlers.keydown ?? []).length, '监听摘掉，不留一个偷偷吃键的幽灵').toBe(before - 1)
+    expect((win.handlers.keydown ?? []).length, 'Input 的那一只不归本屏摘：谁挂的谁摘').toBe(keydowns)
+    const news = view(t)
+    press('Enter')
+    expect(view(t), 'dispose 之后 isOpen=false ⇒ 意图喂进来也不重画').toBe(news)
   })
 })
 
