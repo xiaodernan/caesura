@@ -580,6 +580,20 @@
      "seal"
     ],
     "desc": "战技伤害提升：把乐章弹得更响。"
+   },
+   {
+    "id": "af_chain",
+    "nameKey": "affix.chain",
+    "displayName": "之连",
+    "stat": "comboScaling",
+    "range": [
+     0.03,
+     0.08
+    ],
+    "slots": [
+     "weapon"
+    ],
+    "desc": "连段递变修正：连续命中时每段多打一点。"
    }
   ],
   "suffix": [

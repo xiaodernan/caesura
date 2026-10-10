@@ -108,6 +108,8 @@ export class PlayerController {
   crumpleTicks = 0
   chargeTicks = 0
   charging = false
+  /** KI-029 之连：连段深度（第几段连续攻击；1 = 起手式，0 = 不在连段里） */
+  comboDepth = 0
   /** KI-002 蓄力反馈（§2 排行榜那行）：0..1，ActorVisuals 据此画武器辉光强度 */
   get chargeProgress(): number { return this.charging ? Math.min(1, this.chargeTicks / CHARGE_TICKS) : 0 }
   executing: { tick: number; total: number; pos: Vec3 } | null = null
@@ -221,7 +223,10 @@ export class PlayerController {
       // 战技的伤害写在等级表上（cast.damage），武器帧的 damage 对战技恒为 0——见 rpg/Movements.ts
       // 律色词缀（KI-029）：战技伤害的唯一乘点——技能那一支离开 activeHitbox 前吃 (1+skillDmg)。
       // 近战/弹体/回声重演都不经过这里，各走各的账；面板显示的是等级底数，不含本乘数（已登记）。
-      damage: this.action.skill ? Math.round(this.action.skill.damage * (1 + this.rpg.skillDmg)) : f.damage,
+      // 之连词缀（KI-029 收尾）：连段每多一段，非战技近战多 (comboScaling × (depth-1))——起手式不加。
+      damage: this.action.skill
+        ? Math.round(this.action.skill.damage * (1 + this.rpg.skillDmg))
+        : f.damage * (1 + this.rpg.comboScaling * Math.max(0, this.comboDepth - 1)),
       poise: f.poise, hitStopMs: f.hitStopMs,
       shake: f.shake ?? 'normal', flags: f.flags ?? [], loudness: (f.loudness ?? 3) * (this.weapon.noiseMul ?? 1),
       reaction: f.reaction
@@ -435,6 +440,7 @@ export class PlayerController {
         const key = !this.grounded && this.moveset.actions['jump'] ? 'jump'
           : (input.frame.held.has('sprint') && Math.hypot(input.frame.move.x, input.frame.move.y) > 0.5 && this.moveset.actions['run']) ? 'run'
           : 'l1'
+        this.comboDepth = 1 // 起手式：连段从第一段开始
         this.tryStartAction(key, tick, rhythm)
       } else if (input.frame.edges.has('attackLight') && this.action) {
         const nxt = this.action.f.next
@@ -495,6 +501,7 @@ export class PlayerController {
           const q = this.comboQueued
           this.comboQueued = null
           this.action = null
+          this.comboDepth++ // 连段续接：深度递增（之连词缀的乘数）
           this.tryStartAction(q, tick, rhythm)
         } else this.action = null
       }
