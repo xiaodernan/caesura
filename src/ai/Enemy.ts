@@ -44,6 +44,8 @@ export interface AttackFrame extends ActionStop {
   startupDone?: boolean
   /** 起手音的同一件事的另一半：`tick === 0` 也会被加速步过去（新写的式子从负 tick 起算时更是如此） */
   sfxDone?: boolean
+  /** KI-092②：Boss 大招 telegraph 只发一次（起手那一 tick）；记在招式实例上，"一式一账" */
+  telegraphDuckDone?: boolean
 }
 
 export const newAttack = (spec: AttackSpec, tick: number, noise?: boolean): AttackFrame => ({
@@ -912,6 +914,13 @@ export class Enemy {
     if (!this.attack.sfxDone && f.sfx?.[0]) {
       this.attack.sfxDone = true
       bus.emit('audio.sfx', { key: f.sfx[0], pos: { ...this.pos }, gain: 0.55 + Math.min(0.3, (f.loudness ?? 4) / 20) })
+    }
+    // KI-092②：§8.2「Boss 大招 telegraph」一行的发射口。`tutti` 是数据里的大招标记
+    // （combat.md §697 音栓蓄力大招"全奏 Tutti"），带它的招式起手那一次 ⇒ 音频侧压低 AMB
+    // 全层 1.5s（危险独占听觉空间）。只发一次（telegraphDuckDone），与起手音同一格。
+    if (!this.attack.telegraphDuckDone && f.flags?.includes('tutti')) {
+      this.attack.telegraphDuckDone = true
+      bus.emit('combat.bossTelegraph', undefined) // 载荷由 EventBus 声明为 undefined（无载荷事件）
     }
     // 「读条走完」那一格的两件事（警戒广播、冲刺撞钟）共用一次守卫：判定从 `=== f.startup`
     // 改成"过了那一格且没做过"，否则任何前摇加速都会一步跨过去 ⇒ 广播与撞钟一起静默。
