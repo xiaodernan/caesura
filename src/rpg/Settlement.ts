@@ -66,9 +66,19 @@ export function refreshPlayer(rpg: RpgRuntime, player: ModsSink): void {
 export function openLootTable(deps: SettlementDeps, tableId: string): LootGrant[] {
   const grants = deps.rpg.loot.grant(tableId)
   reportGrants(grants)
+  // KI-026：拾到 epic/unique 装备时自动存档——这一件太好了，不能让玩家因为没存档而丢失
+  const rareGear = grants.some((g) => {
+    if (g.type !== 'gear') return false
+    const gear = deps.rpg.inv.gearByUid(g.id)
+    if (!gear) return false
+    const def = registry.maybeGet<import('@/data/schema').ItemData>(gear.itemId)
+    return (def?.gear?.rarity === 'epic') || def?.gear?.rarity === 'unique'
+  })
+  if (rareGear) deps.checkpoint('rare-loot')
   deps.refresh()
   return grants
 }
+
 
 /** 掉落播报：一件一行，保底件单独说一声（"保底"本身就是给玩家的信息） */
 export function reportGrants(grants: LootGrant[]): void {
