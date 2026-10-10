@@ -1,7 +1,7 @@
 import { beforeEach, beforeAll, describe, expect, it } from 'vitest'
 import { registerGameData } from '@/data'
 import { RpgRuntime } from '@/rpg/Runtime'
-import { Input, UI_BINDS, type UiIntent } from '@/core/Input'
+import { Input, PICK_INTENTS, UI_BINDS, pumpMenu, type UiIntent } from '@/core/Input'
 import type { SavePanelDeps } from '@/ui/Stakerite'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -14,6 +14,11 @@ import { fileURLToPath } from 'node:url'
  * **故意空**的（世界停摆期间不该有任何攻击边沿），而菜单恰恰只在这段窗口里需要读数。
  * 两套挤一条通道的结局，KI-061 刚实测过一次：关面板那一帧"还按着"被当成"刚按下"，
  * 开一次调音桩送自己一次翻滚。
+ *
+ * **第二腿**（本轮）：`DialogueBox` 与 `TitleScreen` 原本自己听 `window` 的 `keydown`，等于在通道之外
+ * 各立了第二个主人。它们现在也只在 `uiStep()` 里读数，于是这条通道有了四格主人（`MenuOwner`），
+ * 键盘名册也随之补齐——菜单里的 `Escape` = 后退一层、`Space`/`E` = 执行、`1-9` = 选第 n 项。
+ * 标题阶段 `GameLoop` 还不开（`time.tick` 那格实测读数要靠它），所以那一屏的读数由 `pumpMenu` 提供。
  */
 
 const root = fileURLToPath(new URL('../..', import.meta.url))
@@ -63,9 +68,15 @@ beforeAll(() => {
   fakePad()
 })
 
-// 每条用例都从"手柄松着、没人被 preventDefault"开始：一条用例挂了就会把上一次推下去的按钮留在场上，
-// 下一条读到的是同一颗假手柄（实测：B 键漏在上一条里 ⇒ 这一条的 Tab 变成"一直按着"，边沿判据白给）
-beforeEach(() => { fakePad(); prevented = [] })
+// 每条用例都从"手柄松着、没人被 preventDefault、window 上一只监听器都没有"开始：一条用例挂了就会把
+// 上一次推下去的按钮留在场上，下一条读到的是同一颗假手柄（实测：B 键漏在上一条里 ⇒ 这一条的 Tab
+// 变成"一直按着"，边沿判据白给）。监听器同理：假窗口在整个文件里是同一只，上一条用例那个仍然
+// 拥有 `uiOwner` 的 `Input` 会替这一条把键抢下来，于是"没有主人时不许 preventDefault"永远红。
+beforeEach(() => {
+  fakePad()
+  prevented = []
+  for (const k of Object.keys(win)) delete win[k]
+})
 
 const key = (code: string, up = false): void => {
   const e = { code, repeat: false, preventDefault: (): void => { prevented.push(`${up ? 'up' : 'down'}:${code}`) } }
@@ -184,6 +195,80 @@ describe('KI-062 UI 意图通道：谁能读、读成什么', () => {
     expect(input.frame.edges.has('jump'), '一直按着 ≠ 新按下').toBe(false)
     expect(input.frame.held.has('jump'), '但它确实被按着').toBe(true)
   })
+
+  /* ---------------- KI-062 第二腿：对话框与标题屏并入同一条通道后，菜单里的键码名册 ---------------- */
+
+  it('Escape / E 在菜单里折成后退与执行；没有主人时它们仍是浏览器/玩法的', () => {
+    const input = new Input(new FakeEl() as unknown as HTMLElement)
+    prevented = []
+    key('Escape')
+    input.poll(1 / 60)
+    expect(intents(input.uiEdges), '没人收读数时 Escape 不该变成意图').toEqual([])
+    expect(prevented, '没人收读数时不许把 Escape 抢下来').not.toContain('down:Escape')
+    expect(input.frame.edges.has('pause'), '关着菜单时 Escape 仍是玩法那条的 pause').toBe(true)
+
+    input.enabled = false
+    input.uiOwner = 'dialogue'
+    key('Escape', true)
+    input.poll(1 / 60)
+    key('Escape')
+    input.poll(1 / 60)
+    expect(intents(input.uiEdges), '开着菜单时 Escape = 后退一层').toEqual(['back'])
+    key('Escape', true)
+    key('KeyE')
+    input.poll(1 / 60)
+    expect(intents(input.uiEdges), '对话框的 hint 写着"空格 / 回车 继续"，E 是同权的执行').toEqual(['confirm'])
+
+    input.uiOwner = 'title'
+    key('KeyE', true)
+    input.poll(1 / 60)
+    key('Enter')
+    input.poll(1 / 60)
+    expect(intents(input.uiEdges), '换一格主人，Enter 的说法不变').toEqual(['confirm'])
+  })
+
+  it('1-9 在菜单里是"选第 n 项"：主键盘与小键盘同一格，同时按只发一次', () => {
+    const input = new Input(new FakeEl() as unknown as HTMLElement)
+    input.enabled = false
+    input.uiOwner = 'dialogue'
+    key('Digit5')
+    input.poll(1 / 60)
+    expect(intents(input.uiEdges)).toEqual(['pick5'])
+    key('Digit5', true)
+    input.poll(1 / 60)
+    key('Numpad5')
+    input.poll(1 / 60)
+    expect(intents(input.uiEdges), '小键盘那一记也是 pick5：面板不该知道按的是哪一块键盘').toEqual(['pick5'])
+    key('Digit3')
+    key('Numpad3')
+    input.poll(1 / 60)
+    expect(intents(input.uiEdges), '两块键盘同时按 = 一次意图（先合并再求边沿）').toEqual(['pick3'])
+    key('Digit3', true)
+    key('Numpad3', true)
+    input.poll(1 / 60)
+    key('Digit0')
+    input.poll(1 / 60)
+    expect(intents(input.uiEdges), '没有 pick0 这一格：数字超出名册就是超出').toEqual([])
+  })
+
+  it('菜单开着时数字键不许再变成玩法技能槽（一条通道只有一个主人，两半都要成立）', () => {
+    const input = new Input(new FakeEl() as unknown as HTMLElement)
+    // 关着：Digit1 走玩法那条（ability1），UI 通道一格不发
+    input.poll(1 / 60)
+    key('Digit1')
+    input.poll(1 / 60)
+    expect(input.frame.edges.has('ability1')).toBe(true)
+    expect(intents(input.uiEdges)).toEqual([])
+    // 开着：`setOverlay` 把 enabled 与 uiOwner 一起翻，于是数字只剩 pick 这一读
+    input.enabled = false
+    input.uiOwner = 'dialogue'
+    input.poll(1 / 60)
+    key('Digit1', true)
+    key('Digit1')
+    input.poll(1 / 60)
+    expect(intents(input.uiEdges)).toEqual(['pick1'])
+    expect(input.frame.edges.size, '面板开着 = 世界停着：技能槽不许吃到菜单里的数字').toBe(0)
+  })
 })
 
 describe('KI-062 两半接得上（一个入口，一次按键只挪一格）', () => {
@@ -223,6 +308,51 @@ describe('KI-062 两半接得上（一个入口，一次按键只挪一格）', 
   })
 })
 
+describe('KI-062 第二腿 标题阶段的泵（pumpMenu）：一帧一次 poll、一次喂读', () => {
+  it('每帧恰好读一次输入、喂一次菜单；stop 之后两样都不再来', () => {
+    const input = new Input(new FakeEl() as unknown as HTMLElement)
+    input.uiOwner = 'title'
+    const queue: ((t: number) => void)[] = []
+    const cancelled: number[] = []
+    let t = 0
+    let feeds = 0
+    const pump = pumpMenu(input, () => { feeds++ }, {
+      raf: (cb) => { queue.push(cb); return queue.length },
+      cancelRaf: (id) => { cancelled.push(id) },
+      now: () => t,
+    })
+    expect(queue.length, '装上就转：不 poll 的话标题屏一根键都收不到').toBe(1)
+
+    key('ArrowRight')
+    queue.shift()!(t += 16)
+    expect(feeds, '一帧一次喂读').toBe(1)
+    expect(intents(input.uiEdges), '喂读时读到的是这一帧刚出现的边沿').toEqual(['right'])
+    queue.shift()!(t += 16)
+    expect(feeds, '第二帧：一直按着不是连发').toBe(2)
+    expect(intents(input.uiEdges)).toEqual([])
+    key('ArrowRight', true)
+
+    pump.stop()
+    const pending = queue.length
+    for (let i = 0; i < pending; i++) queue.shift()!(t += 16)
+    expect(feeds, 'stop 之后不再喂菜单，也不再 poll').toBe(2)
+    expect(cancelled, '谁挂的 rAF 谁取消').toEqual([1])
+    pump.stop()
+    expect(cancelled.length, '第二次 stop 是空操作，不是第二次取消').toBe(1)
+  })
+
+  it('钳住回来的 dt（与 GameLoop 同一把尺）：标签页回前台不许补出半秒的按键史', () => {
+    const dts: number[] = []
+    const fake = { poll: (dt: number): void => { dts.push(dt) }, uiEdges: new Set<UiIntent>() }
+    const queue: ((t: number) => void)[] = []
+    pumpMenu(fake as unknown as Input, () => {}, { raf: (cb) => { queue.push(cb); return 1 }, cancelRaf: () => {}, now: () => 0 })
+    queue.shift()!(0)
+    queue.shift()!(5000)   // 挂机五分钟回来：不许把 5 秒当成一帧的按键史
+    queue.shift()!(5016)
+    expect(dts, '首帧 dt=0，缺席那一帧钳在 0.25，之后恢复正常帧长').toEqual([0, 0.25, 0.016])
+  })
+})
+
 describe('KI-062 入口只有一个（源码门）', () => {
   const ui = readFileSync(root + 'src/ui/Stakerite.ts', 'utf8')
   const main = readFileSync(root + 'src/main.ts', 'utf8')
@@ -246,5 +376,33 @@ describe('KI-062 入口只有一个（源码门）', () => {
     // 另留一条地板盯着"解释还在"——只剩一行裸代码而没人说为什么，下一个人会再写一处。
     expect(live.match(/uiOwner/g)!.length, 'live 代码里 uiOwner 只允许那一处赋值：别处不许再动所有权').toBe(1)
     expect(main.match(/uiOwner/g)!.length, '解释"为什么只有一处"的注释不见了：没人说过的规矩下一个人会再犯').toBeGreaterThanOrEqual(3)
+  })
+
+  it('第二腿：对话框与标题屏也不再自己挂 keydown，四格主人各有各的喂读腿', () => {
+    const srcs = [
+      ['DialogueBox', readFileSync(root + 'src/ui/DialogueBox.ts', 'utf8')],
+      ['TitleScreen', readFileSync(root + 'src/ui/TitleScreen.ts', 'utf8')],
+    ] as const
+    for (const [name, src] of srcs) {
+      expect(src, `${name}：DOM 一条 + 菜单一条 = 两个主人，一次回车被数两遍`).not.toMatch(/addEventListener\(\s*['"]keydown/)
+      expect(src, `${name}：读数入口的签名要和面板同一份约定`).toMatch(/uiStep\(intents: ReadonlySet<UiIntent>\)/)
+    }
+    const live = main.split(/[\r\n]+/).filter((l) => !l.trim().startsWith('//') && !l.trim().startsWith('*')).join('\n')
+    for (const owner of ['panel', 'map', 'dialogue', 'title'] as const) {
+      expect(live, `feedMenu 少喂 ${owner} 这一格：那块屏就成了挂名却不读数的第四者`).toContain(`overlay === '${owner}'`)
+    }
+    // 标题阶段环还不开，喂线要有第二个敲它的人；只有开环那一条腿的话，标题屏一根键都收不到
+    expect(live, '环之前那一段要有泵：pumpMenu(input, feedMenu) 是标题屏唯一的读数来源').toContain('pumpMenu(input, feedMenu)')
+  })
+
+  it('pick 名册的键盘侧一条不缺：1-9 两种拼写都落到同一格', () => {
+    expect(PICK_INTENTS.length, '"直接选第 n 项"的名册长度就是键盘能给的名册长度').toBe(9)
+    for (let i = 0; i < PICK_INTENTS.length; i++) {
+      const n = i + 1
+      expect(UI_BINDS.keyboard[`Digit${n}`], `Digit${n} 没接进通道`).toBe(PICK_INTENTS[i])
+      expect(UI_BINDS.keyboard[`Numpad${n}`], `Numpad${n} 与主键盘不是同一格`).toBe(PICK_INTENTS[i])
+    }
+    expect(UI_BINDS.keyboard.Escape, 'Escape 在菜单里 = 后退一层（玩法那条仍是 pause）').toBe('back')
+    expect(UI_BINDS.keyboard.Space, '对话框的 hint 写着"空格 / 回车 继续"：空格必须等于 confirm').toBe('confirm')
   })
 })

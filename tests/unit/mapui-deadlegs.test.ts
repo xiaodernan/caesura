@@ -1,15 +1,18 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import { registerGameData, regions } from '@/data'
+import { PICK_INTENTS, UI_BINDS, type UiIntent } from '@/core/Input'
 import { atlasOf, MapUI, type MapDeps, type MapFacility } from '@/ui/MapUI'
 
 /**
  * 批30：ui/MapUI.ts 的 4 条死分支经核实**全部恒死**（cov_b29 排行，源码同行尾已标注）：
- * - L237 提前 return：UiIntent 值域 8 意图全被 uiStep 的 if 链吃净，不存在"静默意图"；
+ * - L237 提前 return：当时 UiIntent 值域只有 8 意图，全被 uiStep 的 if 链吃净，不存在"静默意图"；
  * - L421 两侧 ?? 0：revealed ⊆ 本名册 id，filter 保证 regionId 必在 rank 里；
  * - L424 ?? f.kind：isMapFacility 过滤后 kind 必在六类内，FACILITY_LABEL 是全类 Record。
  *
- * 本文件不点亮死腿（没有可点亮的），而是把"uiStep 无静默意图"这个不变量钉住：
- * 将来谁往 UiIntent 里加新值（比如 zoomIn），if 链就会漏接、L237 复活成真腿——这条测试会先红。
+ * **KI-062 第二腿把 L237 从恒死翻成活腿**：通道里多了 `pick1..9`（对话框的"1-9 选择"），
+ * 而地图没有编号行 ⇒ 那一格第一次有了真实读者，读出来的效果就是"什么都不做"。
+ * 因此下面钉的是两条而不是一条：八格导航意图每格都必须有可观察效果（漏接就红），
+ * 九格 pick 在地图上必须静默（谁哪天让"按 3"跳到第 3 个设施，那是新语义，得先把它写进这里）。
  */
 
 registerGameData()
@@ -62,7 +65,7 @@ function makeMap(deps = makeDeps()): { m: MapUI; deps: ReturnType<typeof makeDep
 
 const ATLAS = atlasOf(regions)
 
-describe('批30 守门：uiStep 的每个 UiIntent 都必须有可观察效果（恒死 L237 的结构性根据）', () => {
+describe('批30 守门：地图上的八格导航意图必须有可观察效果，九格 pick 必须静默', () => {
   it('四个方向各平移一次：cx/cz 必离开回中位', () => {
     for (const dir of ['up', 'down', 'left', 'right'] as const) {
       const { m } = makeMap()
@@ -103,6 +106,36 @@ describe('批30 守门：uiStep 的每个 UiIntent 都必须有可观察效果�
     step(m, 'back')
     expect(deps.closes, 'onRequestClose 恰好被叫一次').toHaveLength(1)
     expect(m.isOpen).toBe(true)
+  })
+
+  it('八格导航意图每格都有可观察效果；九格 pick 在地图上静默（L237 那条活腿）', () => {
+    // 名册从 `UI_BINDS` 现推，不是手抄八格：谁往通道里加新意图（zoomIn 之类），
+    // 这里就要求地图上也有一个可观察效果，否则 L237 会把漏接吞成"静默意图"。
+    const bound = new Set<UiIntent>([...Object.values(UI_BINDS.keyboard), ...Object.values(UI_BINDS.padButtons)])
+    const picks = new Set<string>(PICK_INTENTS)
+    const nav = [...bound].filter((i) => !picks.has(i)).sort()
+    expect(nav, '地图上"必须有读者"的那八格').toEqual(['back', 'confirm', 'down', 'left', 'pageNext', 'pagePrev', 'right', 'up'])
+    const state = (m: MapUI, deps: ReturnType<typeof makeDeps>) => {
+      const p = priv(m)
+      return { cx: p.cx, cz: p.cz, zoom: p.zoom, closes: deps.closes.length, html: ((m as unknown as { root: FakeEl }).root).innerHTML }
+    }
+    for (const intent of nav) {
+      const { m, deps } = makeMap()
+      m.show()
+      step(m, 'up')   // 先离开"打开即在中心"那个位置：`confirm` 的效果就是回中，原地按它当然一格都不变
+      const before = state(m, deps)
+      step(m, intent)
+      const after = state(m, deps)
+      expect(JSON.stringify(after) !== JSON.stringify(before), `意图 ${intent} 必须真的改变地图上的某一格（漏接 = 静默意图）`).toBe(true)
+    }
+    for (const pick of PICK_INTENTS) {
+      const { m, deps } = makeMap()
+      m.show()
+      step(m, 'up')   // 与上面同一把尺：在"打开即回中"的位置上量静默是量不出效果的——第一版 A10 刀就是这么漏的（把 pick 改成回中，原地看不出来）
+      const before = state(m, deps)
+      step(m, pick)
+      expect(JSON.stringify(state(m, deps)), `${pick} 在地图上应当静默：地图没有编号行，不许替玩家猜`).toBe(JSON.stringify(before))
+    }
   })
 
   it('右栏设施排序与显示在真表上照常工作（L421 恒死标注不碰正常腿）', () => {

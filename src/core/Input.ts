@@ -52,7 +52,22 @@ export const INPUT_BUFFER_SEC = 0.2
  * 也为什么它是"意图"而不是"键位"：手柄的十字键、左摇杆、键盘的方向键都表达同一件"往下走一格"，
  * 把它们折叠成一个意图，面板就不必知道今天接的是哪种设备——而且三个来源同时按下也只发一次边沿。
  * ------------------------------------------------------------------------- */
-export type UiIntent = 'up' | 'down' | 'left' | 'right' | 'confirm' | 'back' | 'pagePrev' | 'pageNext'
+/* 数字键那一组为什么也进"意图"而不是让面板自己读码：对话框的『1-9 选择』与其余菜单读数必须
+   走同一扇门——两处入口就是两个主人（KI-061 的"一次 ↓ 被数两遍"在这里的同款）。 */
+export type UiIntent =
+  | 'up' | 'down' | 'left' | 'right' | 'confirm' | 'back' | 'pagePrev' | 'pageNext'
+  | `pick${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9}`
+
+/** 九格"直接选第 n 项"的意图名册：顺序即行号，`pickN` ⇄ 第 N 行的换算只有这一处 */
+export const PICK_INTENTS = [
+  'pick1', 'pick2', 'pick3', 'pick4', 'pick5', 'pick6', 'pick7', 'pick8', 'pick9',
+] as const satisfies readonly UiIntent[]
+
+/**
+ * 谁现在拥有菜单（`uiOwner` 的值域）。四格全在这里说清楚，是因为**每加一格就多一个 uiStep 读者**：
+ * 面板/地图之外，对话框与标题屏从前各自挂着 DOM 监听器（KI-062 第二腿把它们接进来）。
+ */
+export type MenuOwner = 'panel' | 'map' | 'dialogue' | 'title'
 
 /**
  * `Tab` 也进 `back` 是有道理的：开着面板时它是"收起来"，关着时它是"在调音桩前打开"——
@@ -65,6 +80,15 @@ export const UI_BINDS: { keyboard: Record<string, UiIntent>; padButtons: Record<
     ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
     Enter: 'confirm', NumpadEnter: 'confirm', Backspace: 'back', Tab: 'back',
     PageUp: 'pagePrev', PageDown: 'pageNext',
+    /* `Escape` 在菜单里 = 后退一层（玩法那条它仍是 `pause`，两者靠 owner 互斥，与 `Tab` 同一条理由）。
+       `Space` / `KeyE` 折成 `confirm`：对话框的 hint 写的就是「空格 / 回车 继续」，而手柄 A 早就等于
+       confirm——键盘不给这两格才是设备间的不一致（面板里它们同样=执行被框住那一行，与 Enter 同权）。
+       数字键在菜单里不再当玩法技能槽用：面板开着时 `enabled=false`，玩法那条本来就是空的。 */
+    Escape: 'back', Space: 'confirm', KeyE: 'confirm',
+    Digit1: 'pick1', Digit2: 'pick2', Digit3: 'pick3', Digit4: 'pick4', Digit5: 'pick5',
+    Digit6: 'pick6', Digit7: 'pick7', Digit8: 'pick8', Digit9: 'pick9',
+    Numpad1: 'pick1', Numpad2: 'pick2', Numpad3: 'pick3', Numpad4: 'pick4', Numpad5: 'pick5',
+    Numpad6: 'pick6', Numpad7: 'pick7', Numpad8: 'pick8', Numpad9: 'pick9',
   },
   // Xbox 布局：十字键 12-15、A=0、B=1、LB=4、RB=5
   padButtons: { 12: 'up', 13: 'down', 14: 'left', 15: 'right', 0: 'confirm', 1: 'back', 4: 'pagePrev', 5: 'pageNext' },
@@ -106,9 +130,10 @@ export class Input {
   /**
    * 谁现在拥有菜单。null ⇒ 这条通道一格都不发，也**不抢**浏览器的默认行为
    * （方向键在没菜单时该 scroll 就 scroll，不该被游戏吃掉）。
-   * 今天只有 `main.ts` 在面板开合时改它；对话框/标题屏各自留着 DOM 监听器，等各自那一批再并进来。
+   * 唯一的写方是 `main.ts` 的 `setOverlay()`（KI-062 第二腿之后，对话框与标题屏也归它管，
+   * 不再各自挂 DOM 监听器——DOM 一条 + 菜单一条就是两个主人）。
    */
-  uiOwner: 'panel' | 'map' | null = null
+  uiOwner: MenuOwner | null = null
   /** 本帧新出现的 UI 意图（edge 语义：一直按着不放不会连发） */
   uiEdges = new Set<UiIntent>()
   private kbUiHeld = new Set<UiIntent>()
@@ -253,5 +278,50 @@ export class Input {
     this.frame.edges.delete(a)
     this.bufferedEdges.delete(a)
     return true
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * 标题阶段的菜单泵（KI-062 第二腿）。
+ *
+ * 为什么不直接开 `GameLoop` 再让它暂停：`GameLoop.tickFrame` 里 `time.tick++` 写在
+ * `if (!this.time.paused)` **之外**——开着环站在标题屏会把「标题在场时 `time.tick` 停在 0」
+ * 那条实测读数（KI-031②）报成"boot 已放行"。这里只读输入、只喂菜单，一格逻辑 tick 都不发。
+ * ------------------------------------------------------------------------- */
+export interface MenuPump {
+  stop(): void
+}
+
+export function pumpMenu(
+  input: Input,
+  onView: () => void,
+  deps: {
+    raf?: (cb: (now: number) => void) => number
+    cancelRaf?: (id: number) => void
+    now?: () => number
+  } = {},
+): MenuPump {
+  const raf = deps.raf ?? ((cb): number => requestAnimationFrame(cb))
+  const cancelRaf = deps.cancelRaf ?? ((id): void => { cancelAnimationFrame(id) })
+  const now = deps.now ?? ((): number => performance.now())
+  let last = now()
+  let id = 0
+  let running = true
+  const step = (t: number): void => {
+    if (!running) return
+    // 与 GameLoop 同一把钳：标签页回到前台不许补出半秒的按键史
+    const dt = Math.min((t - last) / 1000, 0.25)
+    last = t
+    input.poll(dt)
+    onView()
+    id = raf(step)
+  }
+  id = raf(step)
+  return {
+    stop(): void {
+      if (!running) return
+      running = false
+      cancelRaf(id)
+    },
   }
 }

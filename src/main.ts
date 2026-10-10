@@ -2,7 +2,7 @@ import { bus } from '@/core/EventBus'
 import { Vector3 } from 'three'
 import { GameTime, TICK_DT } from '@/core/Time'
 import { GameLoop } from '@/core/GameLoop'
-import { Input } from '@/core/Input'
+import { Input, pumpMenu, type MenuOwner, type MenuPump } from '@/core/Input'
 import { RhythmClock } from '@/core/RhythmClock'
 import { registry } from '@/core/Registry'
 import { registerGameData, playerBase, regions, worldstate, dialogues, quests as questTable, worldStates as worldStateDefs, cinematics as cinematicRows } from '@/data'
@@ -209,10 +209,14 @@ const mapUi = new MapUI(regions, {
   onRequestClose: () => setMapOpen(false),
 })
 
-type Overlay = 'panel' | 'map' | null
+/**
+ * 在场的菜单 = `core/Input.ts` 的那四格所有权（KI-062 第二腿之后，对话框与标题屏也在这一个值域里）。
+ * 别名而不是重写一遍字面量：词表只有 `MenuOwner` 一份，这里再抄一次就是第二份账。
+ */
+type Overlay = MenuOwner | null
 /**
  * **overlay 的唯一所有者**（KI-097 收拢 KI-061/KI-062 那两半）：世界停摆、输入所有权、菜单意图的
- * 认领与交还，全在这一处。两块面板互相排他——同时开着两块 overlay = 两份 uiStep 抢同一条意图通道，
+ * 认领与交还，全在这一处。四块菜单互相排他——同时开着两块 overlay = 两份 uiStep 抢同一条意图通道，
  * 而 `paused`/`enabled` 会由先关的那一块解开（那个 bug 与「点背景冻死游戏」同族）。
  *
  * `input.uiOwner = ` 因此**在 main.ts 里只有一处**：它不是 `panel`/`map` 的字面量，而是这个 `Overlay`
@@ -224,6 +228,8 @@ function setOverlay(open: Overlay): void {
   overlay = open
   if (open === 'panel') { mapUi.close(); panel.show() }
   else if (open === 'map') { panel.close(); mapUi.show() }
+  // 'dialogue' / 'title'：两块面板都收，但世界同样停摆、通道同样有人认领——
+  // 走的是同一条腿，不给它们另开一套"只暂停不认领"的旁路（那正是两个主人的形状）。
   else { panel.close(); mapUi.close() }
   // uiOwner：菜单读数的所有权（KI-062）。开着才发意图、关着一格都不发，也不抢浏览器的默认行为。
   // 玩法那条（enabled）与这条是两件事：世界停摆期间正是菜单需要读数的时候。
@@ -237,8 +243,6 @@ function setOverlay(open: Overlay): void {
 function setPanelOpen(open: boolean): void { setOverlay(open ? 'panel' : null) }
 /** 地图（`map` 键与面板的 onRequestClose 走它） */
 function setMapOpen(open: boolean): void { setOverlay(open ? 'map' : null) }
-/** 关掉当前这块 overlay（Esc 与 `map` 键的"再按一次"共用同一句，免得两处各关一遍） */
-function closeOverlay(): void { setOverlay(null) }
 const overlayOpen = (): boolean => overlay !== null
 new CombatDebugger()
 const haptics = new Haptics(input)
@@ -449,7 +453,12 @@ const talk = new DialogueSession({
   setState: (k, v) => worldStates.set(k, v),
   notify: (text, kind) => bus.emit('ui.notify', { text, kind: kind ?? 'info' }),
   refresh: () => refreshRpg(),
-  setPaused: (paused) => { time.paused = paused; input.enabled = !paused && !cinematics.inputLocked },
+  /**
+   * 对话的"暂停世界"就是**认领 overlay**（KI-062 第二腿）：以前这一句自己写 `time.paused` 与
+   * `input.enabled`，是 overlay 那处之外的第二个写方，而对话框因此只能自己挂一条 DOM `keydown`
+   * 才读得到键。现在它和面板一样只从 `uiStep` 读数，暂停/所有权/交还回到 `setOverlay` 那一处。
+   */
+  setPaused: (paused) => setOverlay(paused ? 'dialogue' : null),
   present: (view) => { if (view) dialogueBox.show(view); else dialogueBox.hide() },
   // §6 过场（Phase 6-C）：选择挂了 `cinematic` 就放它。认不出的 id **不静默吞**——
   // 数据门禁（`cinematic-rules.mjs`）已经保证表里的 id 都在清单里，认不出就是有人写错了字。
@@ -506,11 +515,12 @@ applyWeather(homeRegion ?? null)
 
 addEventListener('pointerdown', () => audio.start())
 addEventListener('keydown', (e) => {
-  if (e.code === 'Escape' && dialogueBox.isOpen) return // 交给对话框自己处理（先关对话，不解冻世界）
-  if (e.code === 'Escape') {
-    if (overlayOpen()) closeOverlay() // overlay 开着时 Esc 先收它，不会顺手把游戏解冻/又解一次
-    else time.paused = !time.paused
-  }
+  /* Esc 的**菜单**那半义（收面板 / 关对话 / 标题屏退回上一层）走 UI 意图通道的 `back`，
+     由在场的那块 overlay 自己在 `feedMenu()` 里读——这里不再替它们关（那是第二个主人，
+     一次 Esc 会被关两遍）。这一句只留"没有菜单在场时"的那半义：开合暂停。
+     时序上也不冲突：keydown 这一刻 owner 还在，`overlayOpen()` 为真 ⇒ 这里不动，
+     下一帧的 poll 才把 `back` 交给面板。 */
+  if (e.code === 'Escape' && !overlayOpen()) time.paused = !time.paused
 })
 
 /* §11 失谐的视觉压力（>60 起屏幕一点点失去颜色）今天住在 `vfx/ColorGrade.ts`（KI-094①）。
@@ -578,7 +588,7 @@ const core = {
          而不是多一个分支——两块面板叠着开会让两份 uiStep 抢同一条意图通道。 */
       if (!overlayOpen()) setMapOpen(true)
     }
-    if (overlayOpen() || dialogueBox.isOpen) return // overlay/对话打开时世界停摆：不再吃移动/攻击输入
+    if (overlayOpen()) return // overlay/对话在场时世界停摆：不再吃移动/攻击输入（对话从 KI-062 第二腿起也是 overlay 的一格）
     if (inp.frame.edges.has('lockOn')) lock.toggle()
     for (const [i, act] of (['ability1', 'ability2', 'ability3'] as const).entries()) {
       if (inp.frame.edges.has(act)) selectWeaponSlot(i)
@@ -686,13 +696,22 @@ const core = {
   }
 }
 
-const loop = new GameLoop(time, input, (alpha, realDelta) => {
-  // 菜单读数喂给**在场的那块 overlay**：世界停摆时 `core.update` 那一段整个跳过，所以意图只能在
-  // 渲染回调里给（每帧一次，且 `uiEdges` 是 edge 语义 —— 一直按着不会连发）。KI-062。
-  // 两块面板互斥（`setOverlay` 保证），所以这里是 if/else 而不是两个都喂——都喂就是两份 uiStep
-  // 抢同一条意图通道，一次 ↑↓ 会被数两遍。
+/**
+ * 每帧把 UI 意图念给**在场的那一块菜单**听（KI-062）。世界停摆时 `core.update` 那一段整个跳过，
+ * 所以读数只能在渲染回调里给；`uiEdges` 是 edge 语义——一直按着不会连发。
+ *
+ * 四块互斥（`setOverlay` 保证），所以这里是 if/else 而不是全都喂——两份 uiStep 抢同一条通道，
+ * 一次 ↑↓ 会被数两遍。这一处也是标题屏唯一的读数入口：环还没开时由 `pumpMenu` 来敲它（见 boot 段）。
+ */
+function feedMenu(): void {
   if (overlay === 'panel') panel.uiStep(input.uiEdges)
   else if (overlay === 'map') mapUi.uiStep(input.uiEdges)
+  else if (overlay === 'dialogue') dialogueBox.uiStep(input.uiEdges)
+  else if (overlay === 'title') title?.uiStep(input.uiEdges)
+}
+
+const loop = new GameLoop(time, input, (alpha, realDelta) => {
+  feedMenu()
   arena.update(alpha, realDelta)
   vfx.update(realDelta) // particles run on real time — hitstop must not freeze VFX (tech-arch §4 rule 3)
   audio.update(realDelta)
@@ -787,15 +806,29 @@ function logRunOrigin(): void {
  * 既有探针配方一条不改。
  */
 let title: TitleScreen | null = null
+let menuPump: MenuPump | null = null
 const freshBoot = params.has('fresh')
 if (freshBoot) {
   logRunOrigin()
   void startRun(null)
 } else {
+  /* 标题屏也是 overlay 的一格（KI-062 第二腿）：认领读数、按住世界走的是 `setOverlay` 那一条腿，
+     不再让它自己挂 DOM 监听器——自己听键的屏与面板共用一条通道时，一次 ↑ 会被数两遍。 */
+  setOverlay('title')
+  /**
+   * 交还：决策一旦出口，先停泵再交还所有权。两处都在 poll 就是两个读数主人（KI-061 的同形状），
+   * 而 `setOverlay(null)` 之后 `enabled=true`，那一记还按着的键因此也不会补发成玩法边沿。
+   */
+  const leaveTitle = (): void => {
+    menuPump?.stop()
+    menuPump = null
+    setOverlay(null)
+  }
   title = new TitleScreen({
     onNew: (id) => {
       const t = title as TitleScreen
       t.dispose()
+      leaveTitle()
       if (id !== rpg.prog.originId) rpg.restring(id)
       logRunOrigin()
       void startRun(null)
@@ -803,11 +836,16 @@ if (freshBoot) {
     onContinue: (slot) => {
       const t = title as TitleScreen
       t.dispose()
+      leaveTitle()
       logRunOrigin()
       void startRun(slot)
     },
     listSlots: () => saveRoster.list()
   }, originId)
+  /* 环这时候还**不能**开：`GameLoop.tickFrame` 的 `time.tick++` 写在 `paused` 判断之外，开着环站在
+     标题屏会把「boot 真被门挡住（`time.tick` 停在 0）」那条 KI-031② 的实测读数假报成已放行。
+     所以这一段用 `pumpMenu`（只 poll 输入 + 只喂菜单），开环时它已经停了。 */
+  menuPump = pumpMenu(input, feedMenu)
 }
 
 /**

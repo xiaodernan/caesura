@@ -1,3 +1,4 @@
+import { PICK_INTENTS, type UiIntent } from '@/core/Input'
 import type { DialogueView } from '@/quest/Dialogue'
 
 /**
@@ -9,6 +10,10 @@ import type { DialogueView } from '@/quest/Dialogue'
  *
  * 它不认识 Quests / 背包 / 旗标：只把玩家的选择回吐给 main.ts（`onChoose` / `onAdvance`），
  * 效果结算在那边统一做——UI 不做第二个真值。
+ *
+ * 读数只有一个入口（KI-062 第二腿）：键盘/手柄的键码在 `core/Input.ts` 折成 `UiIntent` 再由持有者
+ * 每帧喂进 `uiStep()`，本文件**不挂任何 `keydown` 监听器**——DOM 一条 + 菜单一条就是两个主人，
+ * 一次回车会被数两遍（与 `Stakerite` / `MapUI` 同一条纪律，源码门在 `tests/unit/ui-intents.test.ts`）。
  */
 
 const CSS = `
@@ -58,7 +63,6 @@ export class DialogueBox {
       if (el?.dataset.ch) { this.hooks.onChoose(el.dataset.ch); return }
       if (this.view && this.view.choices.length === 0) this.hooks.onAdvance()
     })
-    window.addEventListener('keydown', (e) => this.onKey(e))
   }
 
   /** 说话人 id → 显示名（由 main.ts 注入 npcs.json 的查表，UI 不自己持有数据表） */
@@ -78,20 +82,23 @@ export class DialogueBox {
     this.root.innerHTML = ''
   }
 
-  private onKey(e: KeyboardEvent): void {
+  /**
+   * 菜单读数的唯一入口（与 `Stakerite` / `MapUI` 同一份约定，KI-062）。三条口径值得写给改这里的人：
+   * - `back` 排在最前：**先离开**，同一帧里再按的数字不该被当成"已经选完又退出"；
+   * - 有选项时 `confirm` **不推进**（回到 `return`）：一屏待着五个选项时空格该选一条，不该把整段对话推走；
+   * - 数字超出名册（`pick5` 而只有三个选项）不动作——静默，不替玩家猜"大概想选最后一个"。
+   */
+  uiStep(intents: ReadonlySet<UiIntent>): void {
     const v = this.view
     if (!v) return
-    if (e.code === 'Escape') { e.preventDefault(); this.hooks.onClose(); return }
+    if (intents.has('back')) { this.hooks.onClose(); return }
     if (v.choices.length > 0) {
-      const n = Number(e.key)
-      if (Number.isInteger(n) && n >= 1 && n <= v.choices.length) {
-        e.preventDefault()
-        const c = v.choices[n - 1]
-        if (c) this.hooks.onChoose(c.id)
-      }
+      const n = PICK_INTENTS.findIndex((p) => intents.has(p))
+      const c = n >= 0 ? v.choices[n] : undefined
+      if (c) this.hooks.onChoose(c.id)
       return
     }
-    if (e.code === 'Space' || e.code === 'Enter' || e.code === 'KeyE') { e.preventDefault(); this.hooks.onAdvance() }
+    if (intents.has('confirm')) this.hooks.onAdvance()
   }
 
   private render(): void {

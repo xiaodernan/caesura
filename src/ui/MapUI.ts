@@ -234,7 +234,7 @@ export class MapUI {
     if (intents.has('right')) dx += 1
     if (intents.has('up')) dz -= 1
     if (intents.has('down')) dz += 1
-    if (dx === 0 && dz === 0) return //【恒死·批30】UiIntent 值域 8 意图全被上方 if 链吃净：集合非空且不含 back/翻页/confirm ⇒ 必含方向键 ⇒ dx/dz 不同时为 0；新增意图时此腿复活，守门测试会叫
+    if (dx === 0 && dz === 0) return //【活腿·KI-062 第二腿】pick1..9 落在地图上就是"什么都不做"（地图没有编号行）——批30 说它恒死时 UiIntent 只有八格，那八格全被上方吃净；数字意图进来之后这一格有了真读者，证人见 `tests/unit/mapui-deadlegs.test.ts`
     this.panBy((dx * view.w) / 8, (dz * view.h) / 8)
   }
 

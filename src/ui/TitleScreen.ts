@@ -1,4 +1,5 @@
 import { registry } from '@/core/Registry'
+import type { UiIntent } from '@/core/Input'
 import { ATTR_KEYS } from '@/rpg/Progression'
 import { allGearItems } from '@/rpg/Loot'
 import type { SlotCard } from '@/save/Slots'
@@ -90,7 +91,6 @@ export class TitleScreen {
   private slotsLoaded = false
   /** 确认屏上待开的那根弦：只有"确认"才把它交出去 */
   private pendingOrigin: string | null = null
-  private readonly onKey = (e: KeyboardEvent): void => { this.key(e) }
 
   constructor(private readonly hooks: TitleHooks, preselectId?: string) {
     this.cards = titleCards()
@@ -103,7 +103,6 @@ export class TitleScreen {
     this.root.id = 'title'
     document.body.appendChild(this.root)
     this.root.addEventListener('click', (e) => this.click(e))
-    window.addEventListener('keydown', this.onKey)
     this.show()
     this.render() // 先画一屏（hint 是"正在查看本机存档…"），名册回来再换：构造即空屏会闪一下白
     // 「有没有档可续」是问名册，不是问主存位的裸 key：以前那种问法看不见恢复位，
@@ -131,9 +130,13 @@ export class TitleScreen {
 
   show(): void { this.root.classList.add('on') }
 
-  /** 决策完成后整体退场（DOM 与监听都不留——总线纪律同款：谁挂的谁摘） */
+  /**
+   * 决策完成后整体退场：先灭 `on` 再摘 DOM——`uiStep` 的第一句就是 `isOpen`，所以这一步之后
+   * 就算还有人把意图喂过来（`leaveTitle()` 与钩子之间的空档），这一屏也一格都不动。
+   * 键盘读数从来不由本屏挂，因此这里也没有监听器要摘（KI-062 第二腿）。
+   */
   dispose(): void {
-    window.removeEventListener('keydown', this.onKey)
+    this.root.classList.remove('on')
     this.root.remove()
   }
 
@@ -159,55 +162,60 @@ export class TitleScreen {
     this.render()
   }
 
-  private key(e: KeyboardEvent): void {
-    if (!this.isOpen) return
+  /**
+   * 菜单读数的**唯一入口**（KI-062 第二腿，与 `Stakerite` / `MapUI` / `DialogueBox` 同一份约定）：
+   * 键码与十字键/摇杆都在 `core/Input.ts` 折成 `UiIntent`，由持有者每帧喂进来，本屏不挂 `keydown`。
+   *
+   * 三段屏各有各的"后退"，而**定弦屏没有上层可退** ⇒ 它的 `back` 一格效果都没有（不是漏接：
+   * 这一屏就是根，`tests/unit/title-screen.test.ts` 里那条"根屏不许自己关掉自己"盯着它）。
+   * `slots` 屏的 `←` 仍算后退——那是它原本的说法，手柄上没有"左方向键"这个后退键之外的东西。
+   */
+  uiStep(intents: ReadonlySet<UiIntent>): void {
+    if (!this.isOpen || intents.size === 0) return
     const n = this.cards.length
     switch (this.mode) {
       case 'string':
-        switch (e.code) {
-          case 'ArrowLeft': this.focus = { kind: 'card', index: (this.focus.index + n - 1) % n }; break
-          case 'ArrowRight': this.focus = { kind: 'card', index: (this.focus.index + 1) % n }; break
-          case 'ArrowDown': case 'ArrowUp':
-            if (this.canBrowseSlots) this.focus = { kind: 'continue', index: 0 }
-            else break
-            break
-          case 'Enter':
-            if (this.focus.kind === 'card') this.chooseNew(this.cards[this.focus.index].id)
-            else if (this.canBrowseSlots) { this.mode = 'slots'; this.focus = { kind: 'slot', index: 0 } }
-            break
-          default: return
-        }
+        if (intents.has('left')) this.focus = { kind: 'card', index: (this.focus.index + n - 1) % n }
+        else if (intents.has('right')) this.focus = { kind: 'card', index: (this.focus.index + 1) % n }
+        else if (intents.has('up') || intents.has('down')) {
+          if (!this.canBrowseSlots) return
+          this.focus = { kind: 'continue', index: 0 }
+        } else if (intents.has('confirm')) {
+          if (this.focus.kind === 'card') this.chooseNew(this.cards[this.focus.index].id)
+          else if (this.canBrowseSlots) { this.mode = 'slots'; this.focus = { kind: 'slot', index: 0 } }
+          else return
+        } else return
         break
       case 'slots': {
-        // 焦点只在**可读的那几格**里走；一格都不可读（全是坏档）时这一屏只用来读原因，← 回去
+        // 焦点只在**可读的那几格**里走；一格都不可读（全是坏档）时这一屏只用来读原因，back 回去
         const m = this.slots().length
-        switch (e.code) {
-          case 'ArrowUp': if (m) this.focus = { kind: 'slot', index: (this.focus.index + m - 1) % m }; break
-          case 'ArrowDown': if (m) this.focus = { kind: 'slot', index: (this.focus.index + 1) % m }; break
-          case 'Enter': {
-            const v = this.slots()[this.focus.index]
-            if (v) this.hooks.onContinue(v.slot)
-            return
-          }
-          case 'ArrowLeft': case 'Escape': this.mode = 'string'; this.focus = { kind: 'card', index: 0 }; break
-          default: return
-        }
+        if (intents.has('up')) {
+          if (!m) return
+          this.focus = { kind: 'slot', index: (this.focus.index + m - 1) % m }
+        } else if (intents.has('down')) {
+          if (!m) return
+          this.focus = { kind: 'slot', index: (this.focus.index + 1) % m }
+        } else if (intents.has('confirm')) {
+          const v = this.slots()[this.focus.index]
+          if (v) this.hooks.onContinue(v.slot)
+          return
+        } else if (intents.has('back') || intents.has('left')) {
+          this.mode = 'string'; this.focus = { kind: 'card', index: 0 }
+        } else return
         break
       }
       case 'confirm':
-        switch (e.code) {
-          case 'ArrowLeft': this.focus = { kind: 'new', index: 0 }; break
-          case 'ArrowRight': this.focus = { kind: 'new', index: 1 }; break
-          case 'Enter':
-            if (this.focus.index === 1 && this.pendingOrigin) { const id = this.pendingOrigin; this.pendingOrigin = null; this.hooks.onNew(id) }
-            else { this.mode = 'string'; this.pendingOrigin = null }
-            break
-          case 'Escape': this.mode = 'string'; this.pendingOrigin = null; break
-          default: return
-        }
+        if (intents.has('left')) this.focus = { kind: 'new', index: 0 }
+        else if (intents.has('right')) this.focus = { kind: 'new', index: 1 }
+        else if (intents.has('confirm')) {
+          if (this.focus.index === 1 && this.pendingOrigin) { const id = this.pendingOrigin; this.pendingOrigin = null; this.hooks.onNew(id) }
+          else { this.mode = 'string'; this.pendingOrigin = null }
+        } else if (intents.has('back')) { this.mode = 'string'; this.pendingOrigin = null }
+        else return
         break
+      default:
+        return
     }
-    e.preventDefault()
     this.render()
   }
 
