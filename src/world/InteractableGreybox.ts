@@ -220,4 +220,21 @@ export class InteractableGreybox {
     if (prev) this.paint(prev)
     if (id) this.paint(id)
   }
+
+  /**
+   * KI-013 打磨：调音桩呼吸灯——每 tick 让亮着的 checkpoint 在基色与焦点色之间
+   * 做正弦脉动。InstancedMesh 的 setColorAt 走 instanceColor（GPU 端 per-instance），
+   * 只影响 checkpoint 池的那几个实例，别的 kind 不动。main.ts 的 update 里每帧调一次。
+   */
+  animate(tick: number): void {
+    for (const [, cur] of this.shown) {
+      if (cur.entry.kind !== 'checkpoint') continue
+      const pool = this.pools.get('checkpoint')!
+      const base = COLOR.checkpoint
+      const pulse = 0.5 + Math.sin(tick * 0.045) * 0.5
+      const bright = base + (0xfff2c8 - base) * pulse * 0.5
+      pool.mesh.setColorAt(cur.index, this.col.setHex(bright).multiplyScalar(cur.active ? 1 : 0.5))
+      if (pool.mesh.instanceColor) pool.mesh.instanceColor.needsUpdate = true
+    }
+  }
 }

@@ -602,6 +602,7 @@ const core = {
     streaming.update(t.tick, player.pos)
     player.floorY = surface.floorAt(player.pos)?.y ?? 0 // 层外回落到基准地面
     interact.update(player.pos)
+    nodes.animate(t.tick) // KI-013：调音桩呼吸灯
     const act = takeInteractEdge(inp.frame.edges, interact.focus(player.pos)) // 交互优先于处决/背刺
     if (act) applyInteract(act)
     const here = streaming.regionAt(player.pos)
