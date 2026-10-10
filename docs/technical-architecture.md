@@ -940,14 +940,22 @@ KI-077 收口时如实记了「只兑现 L1+L4，`music.explore`(7) 与 `music.b
 > ① 量的是**整个 src/ 的总行数**，不是上面那句按包切的 80%——`combat/rpg/save/quest` **各自的**数字仍未逐包执行；
 >    承担"每个模块至少被碰到一次"这一半的是**零覆盖名单**（见下），不是那条按包门槛。
 > ② 行覆盖是**被执行的行数**，不是"被断言的行为数"——一行 `x = x + 1` 被跑过一百次也不产生任何保证。
-> ③ 数字先于阈值，所以**地板由实测倒着钉**：`scripts/coverage-floor.json` 写死 `linesPct: 81.84` 与六格零覆盖名单；
+> ③ 数字先于阈值，所以**地板由实测倒着钉**：`scripts/coverage-floor.json` 写死 `linesPct`（首次 bless 是 81.84，
+>    今天 88.56，只随 `--bless` 前移）与那一版的零覆盖名单；
 >    低于地板 = 红、名单变长 = 红、覆盖涨了 = 只提示（门不惩罚进步，但要 `--bless` 才把新地板落盘）。
 >    这条**不挂进 `npm run check`**：共享工作区里别人写一半的模块会把 check 变成我的红；
 >    它的定位是**第五道门**，每批收尾自测跑一次，且**红跑一律不作数**（v8 provider 默认 `reportOnFailure: false`，
 >    脚本先看测试报告再看读数，顺序反了就会把"这次跑红了"误报成"量具坏了"——本批第一次探针就是这么撞上的）。
-> 那六格零覆盖今天是谁：`src/main.ts`（装配层，只在浏览器里活）、`src/tools/CombatDebugger.ts`（DEV 面板）、
-> `src/ui/DialogueBox.ts` 与 `src/world/PropVisuals.ts` / `src/world/PlaceholderArena.ts`（DOM / three 表现层，headless 没有对象可断言），
-> 以及**一个真缺口**：`src/player/LockOn.ts`——它是纯逻辑（目标筛选与打分），却既没有测试、又写着死 `range = 35` 与 `2.2 / 0.06 / +3` 三个权重（§55 双重不符合），登记为 TD-005。
+> 那六格零覆盖**今天只剩两格**（2026-10-11 在 `npm run coverage` 全绿那一跑上量的：`src/main.ts` 1 行没执行、
+> `src/world/PlaceholderArena.ts` 同理，其余全部退出名单）。退出名单的这几格各自有名字可对得上测试文件的读者：
+> `src/ui/DialogueBox.ts`（KI-062 第二腿把它交回 Input 的 UI 意图通道 ⇒ `tests/unit/dialogue-box.test.ts`）、
+> `src/tools/CombatDebugger.ts`（`tests/flow/debug-panels.test.ts`）、`src/world/PropVisuals.ts`
+> （`tests/unit/prop-visuals.test.ts`）、`src/player/LockOn.ts`（KI-084 把 §34 那四个数入表，
+> `tests/unit/lockon-table.test.ts` 与 `tests/unit/lockon.test.ts` 是它的两端；TD-005 那一格随之结案）。
+> **一处对不上账**：`scripts/coverage-floor.json` 的 `zeroFiles` 还留着已经不再零覆盖的 `src/ui/MapUI.ts`
+> （门只惩罚名单变长，变短要 `--bless` 才划掉），而它同时是"地板低于实测"那七条提示里的一条——
+> 这一批**没有**顺手 bless：跑测树里带着并发会话未提交的 `src/audio/AudioEngine.ts` 等文件，
+> 在混合平面上量到的数字落进地板，下次在干净平面上就成了别人的红。bless 要等一棵只有已提交字节的工作区。
 >
 > **对账 v3（KI-064，2026-09-27）：上面限制①那句"按包的数字仍未逐包执行"今天销账。** `scripts/coverage.mjs` 的 `measure()`
 > 现在按 `src/<目录>/` 归组（散在根上的记 `(root)`），判据从三条长成七条，新增的四条是：
