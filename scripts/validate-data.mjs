@@ -968,7 +968,7 @@ function validateProgression() {
   // `Equipment.ADVICE_AXES` 逐字对账——抄漏一条，那条测试就红。
   const ADVICE_AXES = ['defense', 'weight', 'critRate', 'poiseDmgMul', 'staminaRegenMul', 'execMul',
     'noiseMul', 'perfectBlockBonusTicks', 'lightStartupTicks', 'bellBonus', 'restOverdrive',
-    'skillDmg', 'lootLuck', 'weaponDamageMul']
+    'skillDmg', 'lootLuck', 'weaponDamageMul', 'comboScaling']
   if (!isObj(d.gearAdvice)) report.error(file, 'gearAdvice', '必须有（§44 那一栏的权重表；缺了它面板就不该画星标，而不是拿一套代码内置数字继续标）')
   else {
     for (const k of Object.keys(d.gearAdvice)) if (!['weights', 'note'].includes(k)) report.error(file, `gearAdvice.${k}`, '没有消费方')

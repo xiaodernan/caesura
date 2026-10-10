@@ -67,6 +67,15 @@ describe('KI-060 权重表 ↔ 类型 ↔ 校验器：三方不许漂', () => {
     }
   })
 
+  it('反向那一半也钉住：ADVICE_AXES 里每一条轴都有权重行（漏一条 = 那个词缀永远不配星，而没人说出来）', () => {
+    // 上面那条只管"表里写的轴必须存在"，管不到反方向：轴在类型里活着、在名单里被承认，
+    // 却没有 gearAdvice.weights 行 ⇒ adviceDelta 对它永远加 0。KI-029 把「之连」的 comboScaling
+    // 接进装备表时就是这一格空着：面板上那把武器一颗星都不多，看起来像"它不值得"。
+    const w = weights()
+    const missing = ADVICE_AXES.filter((a) => !(a in w))
+    expect(missing, `${missing.join('/')} 是 EquipMods 的数值轴、也进了 ADVICE_AXES，却没有 gearAdvice.weights 行 ⇒ 它的增量永远不进建议分`).toEqual([])
+  })
+
   it('校验器手抄的那份轴名单与 Equipment.ADVICE_AXES 逐字相同（抄漏一条就红）', () => {
     const src = readFileSync(root + 'scripts/validate-data.mjs', 'utf8')
     const m = src.match(/const ADVICE_AXES = \[([\s\S]*?)\]/)

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { bus } from '@/core/EventBus'
 import { registerGameData, dialogues, quests as questTable } from '@/data'
 import type { DialogueData, DialogueEffects, DialogueNode } from '@/data/schema'
-import { DialogueEngine, conditionPass, type DialogueContext } from '@/quest/Dialogue'
+import { DialogueEngine, conditionPass, type DialogueContext, type DialogueResult } from '@/quest/Dialogue'
 import { WorldStates } from '@/quest/WorldStates'
 import { Quests } from '@/quest/Quests'
 
@@ -42,6 +42,28 @@ function liveCtx() {
     setFlag: (k: string) => flags.add(k),
     see: (d: string, n: string) => seen.add(`${d}#${n}`),
   }
+}
+
+/**
+ * 沿**引擎自己的出边**走，回答"从这里往下有没有一条路真的说完"。
+ *
+ * 关键是把"走不下去"和"说完了"分开：引擎的 `choose`/`advance` 返回 null 视图时，只有**不带
+ * `reason`** 的那一次才是落点（`Dialogue.ts` 里两条 `return { view: null, effects }`），
+ * 带 `reason: 'no-node'` 的是被条件挡回来的死路。把死路当落点，这条判据就永远为真。
+ * 每个节点现配一份新鲜 ctx，并且只走生产会走的出边：有选项的节点只试选项（`advance` 在那里
+ * 会顺着 `node.next` 走，而对话框根本不给玩家这条路）。
+ */
+function endReached(t: DialogueData, e: DialogueEngine, nodeId: string, path: string[], budget: number): boolean {
+  if (budget <= 0 || path.includes(nodeId)) return false
+  const node = e.node(t, nodeId)
+  if (!node) return false
+  const seen = [...path, nodeId]
+  const follow = (res: DialogueResult): boolean =>
+    res.view === null ? res.reason === undefined : endReached(t, e, res.view.nodeId, seen, budget - 1)
+  const c = liveCtx()
+  const choices = node.choices ?? []
+  if (choices.length === 0) return follow(e.advance(t, nodeId, t.npc, c.ctx))
+  return choices.some((ch) => follow(e.choose(t, nodeId, ch.id, t.npc, c.ctx)))
 }
 
 describe('条件求值（§3.1 的四种谓词，全部只读）', () => {
@@ -90,12 +112,31 @@ describe('条件求值（§3.1 的四种谓词，全部只读）', () => {
 describe('对话引擎：选树 / 退路 / 一次性节点 / 效果产出', () => {
   const engine = () => new DialogueEngine(dialogues, new Quests(questTable))
 
-  it('真实数据自洽：每棵树都能从 root 走到一个结束节点（门禁同款判据的运行时版）', () => {
+  it('真实数据自洽：每棵树都能从 root 开场，并且走得到一个结束节点（门禁同款判据的运行时版）', () => {
+    // 这条的名字一直写着"走到一个结束节点"，而身体只量到"能开场"——f4560b3 立起 DLG_TABLET
+    // （落点是第二种形状：选完就结束）时这里一声没响，空档就在这。现在它真的沿引擎走。
     for (const t of dialogues) {
       const e = engine()
       const c = liveCtx()
       const res = e.start(t.npc, c.ctx)
       expect(res.view, `${t.id} 应当能开场`).not.toBeNull()
+      expect(endReached(t, e, t.rootNode, [], 24),
+        `${t.id} 从 ${t.rootNode} 出发，没有任何一条路走到"没有下一屏"（引擎自己算的落点）`).toBe(true)
+    }
+  })
+
+  it('落点的第二种形状有引擎作证：真表 DLG_TABLET 两条终局选项选完就把对话结束（不是缺落点）', () => {
+    const e = engine()
+    const tree = dialogues.find((d) => d.id === 'DLG_TABLET')!
+    const c = liveCtx()
+    const start = e.start('npc_tablet', c.ctx)
+    expect(start.view?.choices.map((x) => x.id)).toEqual(['c1', 'c2'])
+    for (const id of ['c1', 'c2']) {
+      const fresh = liveCtx()
+      const res = e.choose(tree, start.view!.nodeId, id, 'npc_tablet', fresh.ctx)
+      expect(res.view, `选完 ${id} 之后还有一屏可读 = 这段没有结束`).toBeNull()
+      // `reason` 只在被拒时才有值：null view 且没有 reason 才是"说完收了"，而不是"这条路走不通"
+      expect(res.reason, `${id} 不该是被拒的选项`).toBeUndefined()
     }
   })
 

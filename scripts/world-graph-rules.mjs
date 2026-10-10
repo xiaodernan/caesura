@@ -15,7 +15,9 @@
  * 前两组在 `git archive HEAD` 平面，⑥⑦ 在 worktree@`9f49e16`＋本文件的在途改动上重跑；
  * ④⑤ 落地时真表刚补了三处几何：钟坠院 `minY` 40→48、无耳深窖的排水斜道、未竟厅的钟楼折返楼梯）：
  *   · 116 个锚点（92 个 `pos` = 76 interactables + 11 landmark + 5 secret，外加 24 个 spawnGroups 的 `center`）
- *     全在自己区域的 bounds 内（三格轴都比，y 也算）；
+ *     全在自己区域的 bounds 内（三格轴都比，y 也算）。这一格会随表长，不是恒等式：f4560b3 之后实测
+ *     118 = 94 个 `pos`（78 interactables + 11 + 5）+ 24 个 `center`，现推的那一条住在
+ *     `tests/unit/world-graph.test.ts` 的「真表读数」那一组，不要把这里的读数当判据；
  *   · 8 条通行器边（唯一判据 = 带 `to`，运行时 `Interactables.ts:179` → `world.travel` → `streaming.teleport` 真吃这个字段）
  *     每一条都恰好落进一个区域的 bounds；
  *   · 七个区域各自的锚点最大三角形面积 4256（休垒，21 点）～ 32600（雾语林，16 点），无一为零；

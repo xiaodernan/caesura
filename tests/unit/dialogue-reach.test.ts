@@ -33,12 +33,27 @@ const real = (): Tree[] => JSON.parse(
   readFileSync(new URL('../../src/data/json/dialogue.json', import.meta.url), 'utf8'),
 ) as Tree[]
 
+/**
+ * 引擎认得的两种"落点"（判据读的是 `src/quest/Dialogue.ts` 的两条退出路，不是测试自己宽的口）：
+ * ① 节点没有选项、也没有 `next` ⇒ 按一下继续就结束（`enter` 里 `advanceTo = choices.length > 0 ? null : (node.next ?? null)`，
+ *    而视图上的 `ended` 就等于 `advanceTo === null`）；
+ * ② 节点有选项，且**某条**选项的 `next` 是空 ⇒ 选完就结束（`choose` 只在 `choice.next` 为真时才 `enter`，
+ *    否则 `return { view: null, effects: carried }`，即"没有下一屏"）。
+ * `DLG_TABLET`（回响石板）走的是②：它的两条选项挂着 `CINE_END_A` / `CINE_END_B`——那是终局分支，
+ * 不是缺落点。f4560b3 那一批立这两棵树时只把①写进了判据，于是这条红在这里响了三天。
+ */
+const terminal = (n: Node): boolean =>
+  (n.choices ?? []).length === 0 ? !n.next : (n.choices ?? []).some((c) => !c.next)
+
 describe('accept 侧：真表全绿，而"绿"是在这张表上量出来的', () => {
-  it('5 棵树里没有孤儿、也没有转不出来的环 ⇒ 判据一声不响', () => {
+  it('7 棵树里没有孤儿、也没有转不出来的环 ⇒ 判据一声不响', () => {
     const trees = real()
-    expect(trees.map((t) => t.id).sort()).toEqual(
-      ['DLG_BELLTONGUE', 'DLG_CORVIN', 'DLG_FACELESS', 'DLG_HALTRUNE', 'DLG_MEG'],
-    )
+    // 名册是**读数**不是愿望：f4560b3 那一批把 §3.4 恩希尔战前对话与回响石板两块立起来之后，
+    // 这里从 5 棵长成 7 棵。写死这一格的意义就在于"有人动了对话表，这条得当场说出来"。
+    expect(trees.map((t) => t.id).sort()).toEqual([
+      'DLG_BELLTONGUE', 'DLG_CORVIN', 'DLG_FACELESS', 'DLG_HALTRUNE',
+      'DLG_HERSIL_PREBOSS', 'DLG_MEG', 'DLG_TABLET',
+    ])
     expect(dialogueReachErrors(trees)).toEqual([])
   })
 
@@ -57,9 +72,23 @@ describe('accept 侧：真表全绿，而"绿"是在这张表上量出来的', (
 
   it('落点那一句仍然在：每棵树都走得到一个结束节点（这条判据不吃掉原来那条）', () => {
     for (const t of real()) {
-      const ends = t.nodes.filter((n) => (n.choices ?? []).length === 0 && !n.next)
-      expect(ends.length, `${t.id} 一个落点都没有`).toBeGreaterThan(0)
+      expect(t.nodes.filter(terminal).length, `${t.id} 一个落点都没有`).toBeGreaterThan(0)
     }
+  })
+
+  it('宽出来的那一半不是"永远为真"：所有选项都另有去处 ⇒ 照样一个落点都没有', () => {
+    const allLeadSomewhere = tree([
+      { id: 'n0', choices: [{ id: 'c1', next: 'n1' }, { id: 'c2', next: 'n1' }] },
+      { id: 'n1', choices: [{ id: 'c3', next: 'n0' }] },
+    ])
+    expect(allLeadSomewhere.nodes.filter(terminal), '这条形状一个落点都没有：判据没有宽到把"永远走不完"也放行')
+      .toEqual([])
+    // 同一张图只动一条选项（把 c2 的 next 拿掉）⇒ 立刻有落点：量的就是这一格形状
+    const oneEnds = tree([
+      { id: 'n0', choices: [{ id: 'c1', next: 'n1' }, { id: 'c2' }] },
+      { id: 'n1', choices: [{ id: 'c3', next: 'n0' }] },
+    ])
+    expect(oneEnds.nodes.filter(terminal).map((n) => n.id)).toEqual(['n0'])
   })
 })
 

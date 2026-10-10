@@ -138,7 +138,9 @@ const box = (id: string, x: [number, number], y: [number, number], z: [number, n
 const A1 = (): Row => box('a', [-5, 5], [-5, 5], [-5, 5])
 
 describe('真表读数：判据吃的必须是一个非空的总体（需求 §9）', () => {
-  it('regions.json 七条判据一个 error 都没有——而这句话的分母是 7 个区域、116 个锚点、8 条通行器边、21 对盒子、31 把锁', () => {
+  it('regions.json 七条判据一个 error 都没有——而这句话的分母是判据现数出来的那几格（区域、四类锚点、通行器边、盒子对），逐格非空', () => {
+    // 名字里原来钉的是"116 个锚点"这类读数；锚点会随表长（f4560b3 之后是 118），所以这里只留下
+    // "每一格都非空、每一格都被现推读数说出"这句能被下面那条条判据证的话。
     const errs = errorsOf(regions, KEYS)
     const tally = anchorSources(regions)
     expect(errs, `世界图判据在真表上红了：\n${onlyErrs(errs)}`).toEqual([])
@@ -155,11 +157,16 @@ describe('真表读数：判据吃的必须是一个非空的总体（需求 §9
     expect(contacts.filter((c) => c.kind === 'overlap'), '共体对必须一条都不许有（KI-102 的④）').toEqual([])
   })
 
-  it('出怪点用的是 center 而不是 pos：只看 pos 的那一版口径会静悄悄少掉 23 个锚点', () => {
+  it('出怪点用的是 center 而不是 pos：只看 pos 的那一版口径会把全部出怪点漏掉', () => {
+    const rows = regions.reduce((n, r) => n + (r.interactables ?? []).length + (r.landmarks ?? []).length + (r.secrets ?? []).length, 0)
     const posOnly = regions.reduce((n, r) => n + (r.interactables ?? []).filter((i) => i?.pos).length + (r.landmarks ?? []).filter((l) => l?.pos).length + (r.secrets ?? []).filter((s) => s?.pos).length, 0)
     const withCenters = regions.reduce((n, r) => n + anchorPoints(r).length, 0)
     expect(withCenters - posOnly, '差值必须正好等于出怪点的个数：相等才算 center 真的在总体里').toBe(anchorSources(regions)['spawnGroups.center'])
-    expect(posOnly, '只看 pos 的三类今天有 92 个点（它自己变成 116 就说明这格口径已经和 center 混了）').toBe(92)
+    // 这一格原来钉的是"今天有 92 个点"。f4560b3 往表里加了两件交互物（现推 78+11+5=94）就把它当场
+    // 弄红——红的是那份手抄读数过期了，不是几何坏了。所以钉的换成**结构**：这三类锚点每一行都带 pos。
+    // 有人改名或漏写 ⇒ rows 不动、posOnly 掉 ⇒ 红；有人加锚点 ⇒ 两边一起涨 ⇒ 不红。
+    expect(posOnly, `${rows} 行锚点里有人不带 pos ⇒ 判据吃的那三份名册正在悄悄缩小（每一行都该有一个点）`).toBe(rows)
+    expect(rows, '锚点行数掉到 90 以下不是"总体缩小"，是根本没读到东西').toBeGreaterThanOrEqual(90)
   })
 
   it('七个区域的锚点都不共线，而"最窄的那一区"由实测指认（休垒 21 个点、面积 4256）', () => {
