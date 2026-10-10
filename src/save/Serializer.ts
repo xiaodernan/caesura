@@ -9,6 +9,7 @@ import type { WorldStates } from '@/quest/WorldStates'
 import type { Interactables } from '@/world/Interactables'
 import type { GameplaySettings } from '@/settings/GameplaySettings'
 import { migrateTo, registerMigration } from './Migration'
+import { MAGIC, crc32 } from './Integrity'
 import { unwrap, wrap } from './Integrity'
 
 /**
@@ -562,5 +563,35 @@ export class SaveGame {
     // 运行时保持当前值（不假装重置成默认——那份档根本没记过设置）
     w.gameplay?.apply(s.settings?.gameplay)
     // floorY 不在这里算：调用方 teleport 之后由 world/Surface 给（保持「谁能算出脚下」只有一个答案）
+  }
+}
+
+
+/**
+ * R6 风险缓解：存档导出/导入（JSON 兜底）。
+ * IndexedDB 可能被浏览器清理或损坏（R6），导出一份 JSON 让玩家自己备份是最低成本的兜底。
+ * 导出 = 读主存位的原始 JSON 字符串；导入 = 校验 CRC + magic 后写入主存位。
+ */
+export async function exportSave(store: KvStore, slot = 'autosave'): Promise<string | null> {
+  const raw = await store.get(slot)
+  return raw // 已经是 JSON 字符串（含 magic/CRC/payload）
+}
+
+export async function importSave(
+  store: KvStore, json: string, slot = 'autosave'
+): Promise<{ ok: boolean; reason?: string }> {
+  try {
+    const parsed = JSON.parse(json)
+    if (!parsed || typeof parsed !== 'object') return { ok: false, reason: 'not-object' }
+    if (!parsed.magic || parsed.magic !== MAGIC) return { ok: false, reason: 'bad-magic' }
+    if (typeof parsed.crc !== 'number') return { ok: false, reason: 'no-crc' }
+    if (!parsed.payload || !parsed.payload.snapshot) return { ok: false, reason: 'no-snapshot' }
+    // CRC 校验用 Integrity.ts 的 crc32（与 wrap 同一条算法，不是第二份）
+    const body = JSON.stringify(parsed.payload)
+    if (crc32(body) !== parsed.crc) return { ok: false, reason: 'crc-mismatch' }
+    await store.set(slot, json)
+    return { ok: true }
+  } catch {
+    return { ok: false, reason: 'parse-error' }
   }
 }
