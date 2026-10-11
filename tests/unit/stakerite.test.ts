@@ -723,10 +723,10 @@ describe('装备页 / 行囊页 / 谱册页的渲染边角（Stakerite 缺口行
     return s.slice(start, end > at ? end : undefined)
   }
   const openTab = async (rt: RpgRuntime, tab: string) => {
-    const { p } = await panel(rt)
+    const { p, notes, applied, used } = await panel(rt)
     p.show()
     click(rootOf(p), 'tab', tab)
-    return { p, root: rootOf(p), s: html(p) }
+    return { p, root: rootOf(p), s: html(p), notes, applied, used }
   }
 
   it('空槽显示「—」也不给卸下按钮；重击底数跟着退到 0', async () => {
@@ -812,5 +812,54 @@ describe('装备页 / 行囊页 / 谱册页的渲染边角（Stakerite 缺口行
     const s = html(p)
     expect(s, '见证过 ⇒ 这一页从此看得见').toContain('恩希尔的最后一拍 · 已见证')
     expect(s, '页没亮之前标题要说「全暗」').toContain('· 全暗')
+  })
+
+  it('被动研读：页没亮按不动；点亮后一级级读到满，档位与当前值都摆出来', async () => {
+    registerGameData()
+    const rt = new RpgRuntime('origin_tuner')
+    const { p, root, notes } = await openTab(rt, 'moves')
+    const s0 = html(p)
+    expect(s0, '页没亮 ⇒ 研读按不动（不是静默无用，是禁用）').toContain('data-act="pslearn" data-arg="ps_metronomefoot" disabled')
+    click(root, 'pslearn', 'ps_metronomefoot')
+    expect(rt.moves.passiveLevel('ps_metronomefoot'), '按不动 ⇒ 一级都没学到').toBe(0)
+
+    const { movementConfig } = await import('@/rpg/Movements')
+    const page = movementConfig().pages[0]
+    rt.inv.add(page.unlock.item ?? '', page.unlock.count ?? 0)
+    click(root, 'lit', page.id)
+    rt.inv.add('it_timbite', 500)
+    rt.inv.add('it_score_fragment', 500)
+
+    click(root, 'pslearn', 'ps_metronomefoot')
+    expect(rt.moves.passiveLevel('ps_metronomefoot'), '第一级').toBe(1)
+    expect(notes.some((n) => n.includes('被动研读'))).toBe(true)
+    let s = html(p)
+    expect(s, '读了一级 ⇒ 按钮改口成「再研读」').toContain('再研读')
+    expect(s, '下一级的价码要摆在行里（价码在前、按钮在后，同一行）')
+      .toMatch(/L1\/3 · 60 石 \/ 60 残页[\s\S]*?ps_metronomefoot/)
+    expect(s, '当前那一个值也要摆出来（不然玩家不知道这一级换来什么）').toContain('（当前 0.6）')
+
+    for (let i = 0; i < 5; i++) click(root, 'pslearn', 'ps_metronomefoot') // 读到顶
+    expect(rt.moves.passiveLevel('ps_metronomefoot'), '三值读到满').toBe(3)
+    s = html(p)
+    expect(s, '满了 ⇒ 写「已满」并且按不动')
+      .toMatch(/L3\/3 · 已满[\s\S]*?ps_metronomefoot[\s\S]*?disabled/)
+  })
+
+  it('交易页的卖出清单：等级与「已装备」都要挂出来；一件可卖的都没有 ⇒ 一句空话', async () => {
+    registerGameData()
+    const rt = new RpgRuntime('origin_tuner')
+    const worn = rt.inv.gears.find((g) => g.itemId === 'ar_mutewrap_helm')!
+    worn.level = 2
+    const { s } = await openTab(rt, 'trade')
+    expect(s, '卖出价按实例算，强化等级不折价（§6.3）').toMatch(/卖出[\s\S]*?ar_mutewrap_helm|哑带裹布/)
+    expect(s, '带等级的件在交易页也要挂 +N').toContain('<span class="tag">+2</span>')
+    expect(s, '已经穿着的那件要说出来（但它照标卖价，卖不卖是玩家的事）').toContain('已装备')
+
+    const bare = new RpgRuntime('origin_tuner')
+    bare.inv.gears.length = 0 // 一件装备都没有（防具全部分解掉的那种局面）
+    const out = await openTab(bare, 'trade')
+    expect(out.s, '没有可卖的装备 ⇒ 一句空话，而不是一个空标题').toContain('行囊里没有可卖的装备')
+    expect(out.s, '残骸那一栏同样：没有可收购的就明说').toContain('包里没有被营地收购的残骸或素材')
   })
 })

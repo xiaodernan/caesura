@@ -79,4 +79,40 @@ describe('GameLoop：start/stop 的 rAF 腿', () => {
     for (let i = 0; i < 61; i++) loop.tickFrame(TICK_DT)
     expect(loop.frameSample.fps).toBe(60)
   })
+
+  it('add(front) ⇒ 后来者排在最前（解析顺序的裁定口：意图要先于战斗跑）', () => {
+    const time = new GameTime()
+    const order: string[] = []
+    const a: Updatable = { update: () => order.push('a') }
+    const b: Updatable = { update: () => order.push('b') }
+    const loop = new GameLoop(time, fakeInput(), () => {})
+    loop.add(a)
+    loop.add(b, true) // 意图那一类要插到最前，不能靠"先加它就一定先跑"的巧合
+    loop.tickFrame(TICK_DT)
+    expect(order).toEqual(['b', 'a'])
+  })
+
+  it('postTick 钩子每 tick 一次，且排在所有 update 之后', () => {
+    const time = new GameTime()
+    const log: string[] = []
+    const sys: Updatable = {
+      update: () => log.push('update'),
+      postTick: () => log.push('post'),
+    }
+    const loop = new GameLoop(time, fakeInput(), () => {})
+    loop.add(sys)
+    loop.tickFrame(TICK_DT * 3)
+    expect(log, '3 tick × (update 后 postTick)').toEqual(['update', 'post', 'update', 'post', 'update', 'post'])
+  })
+
+  it('一帧欠的账有上限：巨长的 realDelta 只补 5 tick，且不把余量留给下一帧', () => {
+    const time = new GameTime()
+    const loop = new GameLoop(time, fakeInput(), () => {})
+    loop.tickFrame(10) // 10s = 600 tick，远超 maxTicksPerFrame
+    expect(time.tick, 'catch-up 上限 5 tick（死亡螺旋守卫）').toBe(loop.maxTicksPerFrame)
+    // 余量清零 ⇒ 第二帧从零开始记，不会把 595 tick 的债一路还下去
+    const afterFirst = time.tick
+    loop.tickFrame(TICK_DT)
+    expect(time.tick, '第二帧只走自己那一份').toBe(afterFirst + 1)
+  })
 })
