@@ -411,8 +411,10 @@ export class Stakerite {
    */
   private runPending(): void {
     const p = this.pending
-    this.pending = null
     if (!p) return
+    // saving 先置位、pending **留到落盘之后再清**：确认条上那句「落盘中…」读的是 saving，
+    // 而那一行的渲染条件是 pending 还在——先清 pending 就等于把这句话永远留在纸上
+    // （玩家点下确认的那一瞬间行会整条消失，慢存储上看起来像「点了没反应」）。
     this.saving = true
     this.render()
     const label = slotLabel(p.slot)
@@ -424,6 +426,7 @@ export class Stakerite {
     void job.catch(() => this.hooks.notify(`${p.act === 'write' ? '写入' : '删除'}失败：存储没有答应`, 'info')).then(() => this.saves.list()).then((cards) => {
       this.saveViews = saveCards(cards)
       this.saving = false
+      this.pending = null
       if (this.open && this.tab === 'save') this.render()
     })
   }

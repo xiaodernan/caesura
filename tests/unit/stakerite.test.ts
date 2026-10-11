@@ -863,3 +863,58 @@ describe('装备页 / 行囊页 / 谱册页的渲染边角（Stakerite 缺口行
     expect(out.s, '残骸那一栏同样：没有可收购的就明说').toContain('包里没有被营地收购的残骸或素材')
   })
 })
+
+/**
+ * 点击路径与存档页的两条守卫。鼠标与键盘走同一点发口（`run`），所以浏览器替鼠标挡掉的
+ * 两条（点空白处、点名册外那一格）必须由这道守卫自己挡——键盘/手柄那条路没人替它挡。
+ */
+describe('调音桩面板：点击路径与存档守卫', () => {
+  const gearTab = async (rt: RpgRuntime) => {
+    const { p, applied } = await panel(rt)
+    p.show()
+    click(rootOf(p), 'tab', 'gear')
+    return { p, root: rootOf(p), s: html(p), applied }
+  }
+
+  it('点到没有 data-act 的地方、或点了不认识的动作 ⇒ 静默忽略，不算一次生效', async () => {
+    registerGameData()
+    const { p, root, applied } = await gearTab(new RpgRuntime('origin_tuner'))
+    const afterTab = applied.length // 切页本身算一次生效（派生值要重算），这里只量后面这两下
+    const bare = new FakeEl() // closest('[data-act]') 找不到 ⇒ null
+    root.dispatch('click', { target: bare })
+    click(root, 'bogus-action')
+    expect(applied.length, '两下都不算一次生效（没有 onApply、没有重画）').toBe(afterTab)
+    expect(html(p), '屏还在原页').toContain('七槽')
+  })
+
+  it('落盘途中再写 ⇒ 拒绝；名册里没有的那一格也拒绝', async () => {
+    registerGameData()
+    let release: (() => void) | null = null
+    let writes = 0
+    const deps: SavePanelDeps = {
+      list: async () => fourSlots({ slot1: EMPTY }),
+      write: async () => { writes++; await new Promise<void>((r) => { release = r }); return null },
+      erase: async () => false,
+    }
+    const { p } = await panel(new RpgRuntime('origin_tuner'), deps)
+    p.show()
+    click(rootOf(p), 'tab', 'save')
+    await flush()
+    click(rootOf(p), 'write', 'slot1')
+    click(rootOf(p), 'confirm') // 落盘开始，挂在闸门上不走完
+    expect(html(p), '落盘期间屏上要说"落盘中…"').toContain('落盘中…')
+    expect(html(p), '确认按钮在落盘期间按不动').toMatch(/data-act="confirm" disabled/)
+
+    click(rootOf(p), 'write', 'slot1') // 落盘途中再下一笔（绕过 disabled 的直调）
+    expect(writes, '同一格不会被写两遍').toBe(1)
+    click(rootOf(p), 'write', 'slot9') // 名册里没有的那一格
+    expect(writes, '名册外的格子拒绝').toBe(1)
+    click(rootOf(p), 'erase', 'slot9')
+    expect(writes, '删也同样拒绝').toBe(1)
+
+    release!()
+    await flush()
+    await flush()
+    expect(writes, '闸门放开后只落刚才那一笔').toBe(1)
+  })
+})
