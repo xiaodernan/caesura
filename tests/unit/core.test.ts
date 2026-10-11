@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { Rng } from '@/core/Math'
-import { GameTime, TICK_HZ } from '@/core/Time'
+import { GameTime, TICK_DT, TICK_HZ } from '@/core/Time'
+import { Registry } from '@/core/Registry'
 import { RhythmClock } from '@/core/RhythmClock'
 
 describe('core determinism', () => {
@@ -16,6 +17,25 @@ describe('core determinism', () => {
     expect(t.rawScale).toBe(0.05)
     t.step(0.06)
     expect(t.rawScale).toBe(1)
+  })
+  it('暂停 ⇒ dt 归零；暂停中的 hitStop 是空操作（解暂停不落进慢放）', () => {
+    const t = new GameTime()
+    t.paused = true
+    expect(t.dt, '世界停摆 ⇒ 逻辑 dt 为 0').toBe(0)
+    t.hitStop(0.5, 0.01)
+    expect(t.rawScale, '暂停中来一发 hitstop 不许动时间尺度').toBe(1)
+    t.paused = false
+    expect(t.dt, '解暂停即恢复正常步长（不攒着一份慢放）').toBe(TICK_DT)
+  })
+  it('Registry：同一个 id 不许有两个主人；读不存在的 id 当场抛', () => {
+    const r = new Registry()
+    r.register('caesura.test.one', { n: 1 })
+    expect(() => r.register('caesura.test.one', { n: 2 }), '第二次注册就是第二个主人').toThrow(/duplicate/)
+    expect(r.get<{ n: number }>('caesura.test.one').n).toBe(1)
+    expect(() => r.get('caesura.test.nope'), '没人注册过的 id 不许读出一个 undefined 悄悄流下去').toThrow(/missing/)
+    expect(r.maybeGet('caesura.test.nope'), 'maybeGet 是唯一允许不在场的读法').toBeUndefined()
+    expect(r.has('caesura.test.one')).toBe(true)
+    expect(r.ids('caesura.test')).toEqual(['caesura.test.one'])
   })
   it('rhythm clock quantizes beats by logic dt', () => {
     const r = new RhythmClock()
