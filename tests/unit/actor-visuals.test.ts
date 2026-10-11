@@ -396,3 +396,103 @@ describe('批17 分支死角：body 数据缺列回落 / 判定窗核放大 / �
     vis.sync(ai.enemies, 4)
   })
 })
+
+/**
+ * KI-013 敌人血条：`ActorVisuals.sync` 里那一段"受损才显示、面向相机、填充与渐变"。
+ * 它挂在每具敌人的 group 上（两块 PlaneGeometry 薄板），此前只有"满血 ⇒ 不显示"那半边
+ * 被顺带量到，显示之后的 billboard / 填充 / 渐变三条一条都没有读方。
+ * 不建 WebGL 上下文：quaternion/scale/position/color 在 node 里同样可断言。
+ */
+describe('ActorVisuals 敌人血条（KI-013）', () => {
+  /** 两块薄板按几何高度分辨（bg 0.09s 高于 fill 0.07s），不靠 children 顺序 */
+  const planesOf = (id: string): THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>[] =>
+    groupOf(id)!.children.filter(
+      (c): c is THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial> =>
+        c instanceof THREE.Mesh && c.geometry instanceof THREE.PlaneGeometry
+    )
+  const barsOf = (id: string) => {
+    const [bg, fill] = planesOf(id).sort((a, b) => b.geometry.parameters.height - a.geometry.parameters.height)
+    return { bg, fill }
+  }
+  const fillColor = (fill: THREE.Mesh) => {
+    const m = fill.material as THREE.MeshBasicMaterial
+    return { r: m.color.r, g: m.color.g, b: m.color.b }
+  }
+
+  it('满血不显示；受损才亮起；死了跟着尸体一起不再显示', () => {
+    const e = ai.spawn('en_murkshell', { x: 30, y: 0, z: -10 }, 'hp1')
+    vis.sync(ai.enemies, 1)
+    let bars = barsOf(e.id)
+    expect(bars.bg.visible, '满血 ⇒ 底板不显示').toBe(false)
+    expect(bars.fill.visible, '满血 ⇒ 填充条不显示').toBe(false)
+
+    e.stats.hp = e.stats.hpMax * 0.5
+    vis.sync(ai.enemies, 2)
+    bars = barsOf(e.id)
+    expect(bars.bg.visible, '掉血 ⇒ 底板亮起').toBe(true)
+    expect(bars.fill.visible, '掉血 ⇒ 填充条亮起').toBe(true)
+
+    e.stats.dead = true
+    vis.sync(ai.enemies, 3)
+    bars = barsOf(e.id)
+    expect(bars.bg.visible, '尸体不该顶着一根满血条').toBe(false)
+  })
+
+  it('面向相机：注入相机 ⇒ 两块板的朝向抄相机；没注入 ⇒ 身份四元数不动', () => {
+    const e = ai.spawn('en_murkshell', { x: 35, y: 0, z: -10 }, 'hp2')
+    e.stats.hp = e.stats.hpMax * 0.5
+    vis.sync(ai.enemies, 1) // camera 还是 null（构造后没注入）
+    let bars = barsOf(e.id)
+    expect(bars.bg.quaternion.equals(new THREE.Quaternion()), '没相机时不抄任何朝向（身份四元数）').toBe(true)
+
+    const cam = new THREE.PerspectiveCamera()
+    cam.quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 3)
+    vis.camera = cam
+    vis.sync(ai.enemies, 2)
+    bars = barsOf(e.id)
+    expect(bars.bg.quaternion.equals(cam.quaternion), '底板朝向 = 相机朝向（Billboard）').toBe(true)
+    expect(bars.fill.quaternion.equals(cam.quaternion), '填充条朝向 = 相机朝向').toBe(true)
+    // 相机摘掉后**不闪回身份**：这一路只"有相机就抄"，从不主动复位——所以留下来的
+    // 是最后一次抄到的朝向（main.ts 构造后一直注入，这条路径只是理论上的）
+    vis.camera = null
+    vis.sync(ai.enemies, 3)
+    bars = barsOf(e.id)
+    expect(bars.bg.quaternion.equals(cam.quaternion), '相机摘了保持最后朝向（不复位、也不崩）').toBe(true)
+  })
+
+  it('填充条从左往右缩：scale.x = max(0.02, frac)，position.x 把左端钉回条形中心', () => {
+    const e = ai.spawn('en_murkshell', { x: 40, y: 0, z: -10 }, 'hp3')
+    const s = e.data.body?.scale ?? 1
+    e.stats.hp = e.stats.hpMax * 0.5
+    vis.sync(ai.enemies, 1)
+    const { fill } = barsOf(e.id)
+    expect(fill.scale.x, '半血 ⇒ 填充条缩到一半').toBeCloseTo(0.5, 5)
+    expect(fill.position.x, '左端对齐：-(1-fracW)*1.2*s/2').toBeCloseTo(-0.5 * 1.2 * s / 2, 5)
+
+    // 见底也要留一线（0.02 地板），否则"还有血"与"空条"在视觉上分不出来。
+    // hp=0 ⇒ frac=0 ⇒ 正落在 max(0.02, frac) 的地板上（hp=1 时 frac=1/45 还在地板之上）
+    e.stats.hp = 0
+    vis.sync(ai.enemies, 2)
+    expect(fill.scale.x, '残血也有 0.02 的可见宽度').toBeCloseTo(0.02, 5)
+    expect(fill.position.x).toBeCloseTo(-(1 - 0.02) * 1.2 * s / 2, 5)
+  })
+
+  it('颜色绿→黄→红：半分界两侧各自一条线性，蓝恒 0.2', () => {
+    const e = ai.spawn('en_murkshell', { x: 45, y: 0, z: -10 }, 'hp4')
+    const set = (frac: number) => {
+      e.stats.hp = e.stats.hpMax * frac
+      vis.sync(ai.enemies, 1)
+      return fillColor(barsOf(e.id).fill)
+    }
+    const green = set(1 * 0.999) // frac<1 才显示；取贴近满血的一格
+    expect(green.g, '满血那一端是绿的').toBeCloseTo(1, 5)
+    expect(green.r, 'r = (1-frac)*2 ⇒ 贴近 0').toBeCloseTo((1 - 0.999) * 2, 5)
+    const yellow = set(0.5)
+    expect(yellow.r, '恰好半分 ⇒ 黄（r=1）').toBeCloseTo(1, 5)
+    expect(yellow.g, '恰好半分 ⇒ 黄（g=1）').toBeCloseTo(1, 5)
+    const red = set(0.25)
+    expect(red.r, '低于半血 ⇒ r 钉在 1').toBeCloseTo(1, 5)
+    expect(red.g, 'g = frac*2 ⇒ 0.5').toBeCloseTo(0.5, 5)
+    for (const c of [green, yellow, red]) expect(c.b, '蓝通道恒 0.2').toBeCloseTo(0.2, 5)
+  })
+})
