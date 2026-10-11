@@ -58,6 +58,9 @@ const COLOR: Record<Kind, number> = {
 const SPENT = 0x4a4e55
 const FOCUS = 0xfff2c8
 const HIDDEN = new THREE.Matrix4().makeScale(0, 0, 0)
+/** 呼吸灯的两端（`animate` 的调音桩脉动）：与 `paint` 同一套色，只是脉动要逐通道插值 */
+const CP_BASE = new THREE.Color(COLOR.checkpoint)
+const CP_FOCUS = new THREE.Color(FOCUS)
 
 export class InteractableGreybox {
   private readonly pools = new Map<Kind, Pool>()
@@ -234,10 +237,12 @@ export class InteractableGreybox {
 
       // 调音桩：呼吸灯（基色 ↔ 焦点色正弦脉动）
       if (kind === 'checkpoint') {
-        const base = COLOR.checkpoint
         const pulse = 0.5 + Math.sin(tick * 0.045) * 0.5
-        const bright = base + (0xfff2c8 - base) * pulse * 0.5
-        pool.mesh.setColorAt(cur.index, this.col.setHex(bright).multiplyScalar(cur.active ? 1 : 0.5))
+        // 脉动必须走 `Color.lerp`：在 packed hex 上加减会跨通道进位
+        // （`0xd9b46a + (0xfff2c8 - 0xd9b46a) * 0.5` = 0xECE589，绿通道被进位从 180 吃到 28）
+        // ⇒ 那一格"提亮"实际上是把调音桩闪成暗红。逐通道插值，两端就是基色与焦点色。
+        this.col.copy(CP_BASE).lerp(CP_FOCUS, pulse * 0.5)
+        pool.mesh.setColorAt(cur.index, this.col.multiplyScalar(cur.active ? 1 : 0.5))
         colorDirty = true
       }
 
