@@ -3,7 +3,7 @@ import { registry } from '@/core/Registry'
 import { registerGameData, progression, items } from '@/data'
 import type { EnemyData, ItemData, LootTableData, MovesetData, OriginData, ProgressionData, WeaponData } from '@/data/schema'
 import { Progression, ATTR_KEYS, originOf, originTotal, progressionData } from '@/rpg/Progression'
-import { Inventory, itemOf, rollAffixes, type GearInstance } from '@/rpg/Inventory'
+import { Inventory, itemOf, rollAffixes, affixValue, type GearInstance, type ItemSnapshot } from '@/rpg/Inventory'
 import { Equipment, SLOTS, equipSeal } from '@/rpg/Equipment'
 import { upgradeStep, weaponDamageMul, armorDefMul, maxLevelOf, tryUpgrade, salvageValue, TIMBITE } from '@/rpg/Upgrade'
 import { sellGear, sellPrice, shopData, stackSellPrice } from '@/rpg/Shop'
@@ -735,5 +735,62 @@ describe('营地交易的卖价防御腿（批 15 分支死角）', () => {
     expect(r.price).toBeGreaterThan(0)
     expect(inv.gearByUid(gear.uid), '卖出的件离包').toBeUndefined()
     expect(inv.count(TIMBITE), '到账的通货恰好是卖价').toBe(r.price)
+  })
+})
+
+/**
+ * `Inventory` 的信任边界：`restore` 的入参是**玩家可以手改的档**（KI-015 的
+ * "registry 悬空引用"一族），所以每一个 `?? []`、每一个 `registry.has` 都不是装饰——
+ * 它们分别对应"这一格当年的档还没有"和"这一格指向的东西已经不在表里"。
+ * 这些腿正常写入一条都不走，漏了的后果是读档白屏或把脏数据带进运行时。
+ */
+describe('Inventory 的信任边界（档可以被手改）', () => {
+  it('addGear 只认装备件；remove / removeGear 的拒绝腿都返回 false 且不动账', () => {
+    const inv = new Inventory('trust-1')
+    expect(() => inv.addGear('it_timbite'), '通货不是装备件').toThrow(/not a gear item/)
+    inv.add('it_timbite', 3)
+    expect(inv.remove('it_timbite', 99), '包里没有 99 件 ⇒ 拒绝').toBe(false)
+    expect(inv.count('it_timbite'), '拒绝就一分不动').toBe(3)
+    expect(inv.removeGear('g_no_such'), '没有这个实例 ⇒ 拒绝').toBe(false)
+    expect(inv.remove('it_not_in_table'), '没拿过的东西也拒绝').toBe(false)
+  })
+
+  it('v3 之前的档：inspected / stacks / gears 三格都可以不存在 ⇒ 从零开始，不炸也不编', () => {
+    const inv = new Inventory('trust-2')
+    inv.add('it_timbite', 5)
+    inv.addGear('ar_choir_hood')
+    inv.inspect('it_echo_salve')
+    inv.restore({} as unknown as ItemSnapshot)
+    expect(inv.count('it_timbite'), '没有 stacks 格 ⇒ 包是空的').toBe(0)
+    expect(inv.gears.length, '没有 gears 格 ⇒ 一件不剩').toBe(0)
+    expect(inv.hasInspected('it_echo_salve'), '没有 inspected 格 ⇒ 什么都没读过').toBe(false)
+  })
+
+  it('档里指向表外/畸形的条目：如实跳过，uid 序号不被脏值带偏', () => {
+    const inv = new Inventory('trust-3')
+    inv.restore({
+      stacks: [{ itemId: 'it_not_in_the_table', count: 3 }],
+      gears: [
+        { uid: 'g7', itemId: 'ar_choir_hood', level: 1 },                            // 缺 affixes 格
+        { uid: 'g99', itemId: 'it_also_not_in_the_table', level: 0, affixes: [] },   // 表外件
+        { uid: 'not-a-number', itemId: 'ar_veilbell_helm', level: 0, affixes: [] },  // 畸形 uid
+      ],
+      inspected: ['it_timbite'],
+    } as unknown as ItemSnapshot)
+    expect(inv.count('it_not_in_the_table'), '表外物品不进包').toBe(0)
+    expect(inv.gears.map((g) => g.itemId).sort(), '表外件跳过，其余如实复原')
+      .toEqual(['ar_choir_hood', 'ar_veilbell_helm'])
+    expect(inv.gears.find((g) => g.itemId === 'ar_choir_hood')!.affixes, '缺 affixes 格 ⇒ 空数组').toEqual([])
+    const fresh = inv.addGear('ar_mutewrap_helm')
+    // uid 序号是模块级的（一个进程一份），所以这里比"大于档里最大的号"而不是某一个具体值
+    expect(Number(fresh.uid.slice(1)), '新实例不许撞上档里已有的号（g7 占了 7）').toBeGreaterThan(7)
+    expect(fresh.uid).not.toBe('g7')
+    expect(fresh.uid).not.toBe('not-a-number')
+    expect(inv.gearByUid('g99'), '表外件没进包，号也不让出来').toBeUndefined()
+    expect(inv.hasInspected('it_timbite'), '检视记录跟着档走').toBe(true)
+  })
+
+  it('affixValue：表外 id 给 0（编不出一个数来）', () => {
+    expect(affixValue('af_not_a_real_affix')).toBe(0)
   })
 })

@@ -1,5 +1,7 @@
 import { describe, expect, it, beforeAll } from 'vitest'
 import { registerGameData } from '@/data'
+import type { ProgressionData } from '@/data/schema'
+import { registry } from '@/core/Registry'
 import { Input } from '@/core/Input'
 import { AUTOSAVE_SLOT, type SlotCard } from '@/save/Slots'
 import type { TitleHooks } from '@/ui/TitleScreen'
@@ -433,5 +435,110 @@ describe('标题屏 · 键盘腿的兜底分支', () => {
     expect(view(t), '没接线的 mode 一记效果都没有，也不许把屏画坏').toBe(before)
     expect(hit.news).toEqual([])
     expect(hit.continues).toEqual([])
+  })
+})
+
+/**
+ * 出身卡面的**数据回落**（`titleCards`）与两条键盘腿。
+ *
+ * 卡面的四个 `??` 全是"表缺一格"时的安静退路：出身没写简介、找不到对应装备件、
+ * 没写被动、属性表少一维。它们正常数据一条都不走（校验器盯着 origins 的完整性），
+ * 漏了的后果是卡上出现 `undefined` 或一整行被动挂在空气上。
+ * 合成表直接换进 registry 再换回来（try/finally），所以只动这一条用例看得到的世界。
+ */
+describe('标题屏 · 出身卡面的数据回落与预选', () => {
+  /** 把 registry 里那一格换成合成值，返回还原函数（用例必须调用） */
+  const swap = (id: string, value: unknown): (() => void) => {
+    const data = (registry as unknown as { data: Map<string, unknown> }).data
+    const prev = data.get(id)
+    data.set(id, value)
+    return () => { data.set(id, prev) }
+  }
+
+  it('出身缺简介 / 找不到装备件 / 没写被动 ⇒ 空串 / 武器 id / null（不许出现 undefined）', async () => {
+    const { titleCards } = await import('@/ui/TitleScreen')
+    const base = registry.get<ProgressionData>('progression')
+    const undo = swap('progression', {
+      ...base,
+      origins: [{ id: 'origin_bare', displayName: '素衣', weaponId: 'wp_not_in_the_table', attrs: {} }],
+    })
+    try {
+      const c = titleCards().find((x) => x.id === 'origin_bare')!
+      expect(c.blurb, '没写简介 ⇒ 空串（卡上不写 undefined）').toBe('')
+      expect(c.passive, '没写被动 ⇒ null ⇒ 那一行不渲染').toBeNull()
+      expect(c.weaponName, '找不到装备件 ⇒ 回落武器 id（卡上不空着）').toBe('wp_not_in_the_table')
+    } finally { undo() }
+    expect(titleCards().length, '还原后仍是表里那五张').toBe(base.origins.length)
+  })
+
+  it('属性表少一维 ⇒ 那一段的标签回落键名，而不是空标签', async () => {
+    const { titleCards } = await import('@/ui/TitleScreen')
+    const base = registry.get<ProgressionData>('progression')
+    const undo = swap('progression', { ...base, attrs: [] }) // 六维标签整表抽掉
+    try {
+      const c = titleCards()[0]
+      expect(c.attrs.length, '六维一格都不能少（ATTR_KEYS 是顺序的主人）').toBe(6)
+      for (const a of c.attrs) expect(a.label, '标签回落成键名').toMatch(/^[a-z]+$/)
+    } finally { undo() }
+  })
+
+  it('构造时给了 preselect ⇒ 焦点直接落在那张卡上（?origin= 的落点）', async () => {
+    const { TitleScreen, titleCards } = await import('@/ui/TitleScreen')
+    const want = titleCards().findIndex((c) => c.id === 'origin_choir')
+    const hooks: TitleHooks = {
+      onNew: () => {}, onContinue: () => {}, listSlots: async () => roster()
+    }
+    const t = new TitleScreen(hooks, 'origin_choir')
+    await new Promise((r) => setTimeout(r, 0))
+    const focus = (t as unknown as { focus: { kind: string; index: number } }).focus
+    expect(focus, '预选的那张卡就是焦点').toEqual({ kind: 'card', index: want })
+    const s = view(t)
+    expect(s.match(/class="card sel"/g)?.length, '选中记号只有一处').toBe(1)
+    t.dispose()
+  })
+
+  it('定弦屏 ← 把焦点往回带一格，并向左绕回最后一张', async () => {
+    const { t, press } = await screen(() => roster())
+    const focus = () => (t as unknown as { focus: { kind: string; index: number } }).focus
+    expect(focus(), '开局焦点在第一张').toEqual({ kind: 'card', index: 0 })
+    press('ArrowLeft')
+    expect(focus(), '第一张再往左 ⇒ 绕到最后一张（不是原地不动）').toEqual({ kind: 'card', index: 4 })
+    press('ArrowRight')
+    expect(focus(), '← 与 → 互为镜像').toEqual({ kind: 'card', index: 0 })
+  })
+
+  it('挑档屏只认上下/确认/后退：→ 那一记什么都不做', async () => {
+    const { t, press } = await screen(() => roster())
+    await t.goto('slots')
+    const focus = () => (t as unknown as { focus: { kind: string; index: number } }).focus
+    const before = focus()
+    press('ArrowRight')
+    expect(focus(), '挑档屏没有"下一列"可去').toEqual(before)
+  })
+
+  it('挑档屏确认而焦点越界（名册中途少了一格）⇒ 不续任何东西', async () => {
+    const { t, hit, press } = await screen(() => roster())
+    await t.goto('slots')
+    ;(t as unknown as { focus: { kind: string; index: number } }).focus = { kind: 'slot', index: 99 }
+    press('Enter')
+    expect(hit.continues, '没有那一格 ⇒ 不许续一个 undefined').toEqual([])
+    expect(view(t), '还留在挑档屏').toContain('挑一格')
+  })
+
+  it('确认屏走键盘：←/→ 挪默认项，确认落在"取消"上就回定弦、不算一次开弦', async () => {
+    const { t, hit, press } = await screen(() => roster()) // 有可读档 ⇒ 点卡进确认屏
+    const root = (t as unknown as { root: FakeEl }).root
+    click(root, 'card', 'origin_tuner')
+    expect(view(t)).toContain('开一根新弦')
+    press('ArrowRight')
+    press('Enter') // 默认项在"确认开新弦" ⇒ 这一下真的开
+    expect(hit.news, '键盘确认与鼠标点击同一条 handler').toEqual(['origin_tuner'])
+
+    click(root, 'card', 'origin_drummer')
+    press('ArrowLeft')
+    press('Enter') // 焦点回"取消" ⇒ 不开弦，屏退回定弦（取消就是"回去挑存档"）
+    expect(hit.news, '按在取消上 ⇒ 不开弦').toEqual(['origin_tuner'])
+    expect(view(t), '退回定弦屏').toContain('为她定一根弦')
+    expect(view(t), '确认条不留在页上').not.toContain('确认开新弦')
   })
 })
