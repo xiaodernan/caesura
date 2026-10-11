@@ -373,3 +373,65 @@ describe('标题屏 · 点击收尾（back/new-yes/new-no）', () => {
     expect(hit.continues).toEqual([])
   })
 })
+
+/**
+ * 键盘腿的四条"没腿"分支：`uiStep` 的 switch 里那几个 `return`。
+ * 挑档屏的 **up** 此前一条读方都没有（只有 down 被绕回过）；确认屏的 up/down、
+ * 定弦屏"焦点在续上却没档可看"、以及 mode 撞上没接线的值，四条兜底各自钉死
+ * "这一记什么也不许发生"——兜底的价值就在于它安静，而安静必须有人看着。
+ */
+describe('标题屏 · 键盘腿的兜底分支', () => {
+  const focusOf = (t: unknown) => (t as unknown as { focus: { kind: string; index: number } }).focus
+
+  it('挑档屏 up：焦点往回走一格，到顶绕回最后一格（down 的镜像）', async () => {
+    const { t, press } = await screen(() => roster()) // 四格全可读 ⇒ m=4
+    await t.goto('slots')
+    expect(focusOf(t)).toEqual({ kind: 'slot', index: 0 })
+    press('ArrowUp') // 0 上一格 ⇒ 绕到最后一格
+    expect(focusOf(t)).toEqual({ kind: 'slot', index: 3 })
+    press('ArrowUp')
+    expect(focusOf(t), '一路往前挨着走，不跳格').toEqual({ kind: 'slot', index: 2 })
+    press('ArrowDown') // 与 up 互为镜像，回来
+    expect(focusOf(t)).toEqual({ kind: 'slot', index: 3 })
+    const s = view(t)
+    expect(s.match(/class="slot sel"/g)?.length, '选中记号只有一处').toBe(1)
+  })
+
+  it('确认屏 up/down 都不是左右：一动都不动，也不算决定', async () => {
+    const { t, hit, press } = await screen(() => roster()) // 有可读档 ⇒ 点卡进确认屏
+    const root = (t as unknown as { root: FakeEl }).root
+    click(root, 'card', 'origin_tuner')
+    expect(view(t)).toContain('开一根新弦')
+    const before = view(t)
+    press('ArrowUp')
+    press('ArrowDown')
+    expect(view(t), '确认屏只认左右：上下不该挪动默认项（破坏性动作的默认项必须是安全那一个）').toBe(before)
+    expect(hit.news, '上下不是确认').toEqual([])
+  })
+
+  it('定弦屏确认而焦点在"续"上、却又没档可看 ⇒ 什么都不发生（string 的兜底）', async () => {
+    // 今天构造上到不了这一格：焦点只在 canBrowseSlots 成立时才被搬到 continue 上。
+    // 但它是 string 模式 confirm 的兜底——真落到这里时，这一记不许把屏开出去。
+    const { t, hit, press } = await screen(() => roster({
+      autosave: EMPTY, slot1: EMPTY, slot2: EMPTY, slot3: EMPTY
+    }))
+    ;(t as unknown as { focus: { kind: string; index: number } }).focus = { kind: 'continue', index: 0 }
+    const before = view(t)
+    press('Enter')
+    expect(view(t), '没有档可挑 ⇒ 确认不开屏也不开弦').toBe(before)
+    expect(hit.news).toEqual([])
+    expect(hit.continues).toEqual([])
+  })
+
+  it('mode 撞上一个没接线的值 ⇒ 静默返回，不重画不崩', async () => {
+    const { t, hit, press } = await screen(() => roster())
+    const before = view(t)
+    ;(t as unknown as { mode: string }).mode = 'not-a-mode'
+    press('Enter')
+    press('ArrowLeft')
+    press('Escape')
+    expect(view(t), '没接线的 mode 一记效果都没有，也不许把屏画坏').toBe(before)
+    expect(hit.news).toEqual([])
+    expect(hit.continues).toEqual([])
+  })
+})
