@@ -2,6 +2,8 @@ import { bus } from '@/core/EventBus'
 import { describe, expect, it, beforeAll, vi } from 'vitest'
 import { registerGameData, regions } from '@/data'
 import { RpgRuntime } from '@/rpg/Runtime'
+import { maxLevelOf } from '@/rpg/Upgrade'
+import { itemOf } from '@/rpg/Inventory'
 import { AUTOSAVE_SLOT, type SlotCard } from '@/save/Slots'
 import type { SavePanelDeps } from '@/ui/Stakerite'
 
@@ -703,5 +705,112 @@ describe('调音桩面板：动作分支收尾（Stakerite 缺口行）', () => 
     down() // 第一记只把框亮出来，不挪格
     down() // 确认条在卡片前面：confirm(0) → cancel(1)
     expect(html(p)).toContain('class="act focus" data-act="cancel"')
+  })
+})
+
+/**
+ * 装备页 / 行囊页 / 谱册页的**渲染边角**。前面那批用例钉的是"点一下发生什么"，
+ * 这一批钉的是"读出来长什么样"——空槽、到顶、已装备、建议分、词缀三态、空行囊、
+ * flag 页解锁源。它们都是纯渲染分支（排版改了才会红的那种），所以每一条都对应
+ * 一句玩家真的会看见的话。
+ */
+describe('装备页 / 行囊页 / 谱册页的渲染边角（Stakerite 缺口行）', () => {
+  /** 某一件装备的那一行：从它前面的 <div class="row"> 到下一个 <div class="row">（对比块跟在行后，一起截进来） */
+  const rowOf = (s: string, uid: string): string => {
+    const at = s.indexOf(uid)
+    const start = s.lastIndexOf('<div class="row">', at)
+    const end = s.indexOf('<div class="row">', at)
+    return s.slice(start, end > at ? end : undefined)
+  }
+  const openTab = async (rt: RpgRuntime, tab: string) => {
+    const { p } = await panel(rt)
+    p.show()
+    click(rootOf(p), 'tab', tab)
+    return { p, root: rootOf(p), s: html(p) }
+  }
+
+  it('空槽显示「—」也不给卸下按钮；重击底数跟着退到 0', async () => {
+    registerGameData()
+    const rt = new RpgRuntime('origin_tuner')
+    const before = await openTab(rt, 'gear')
+    // 出身占五格：武器 + 头/躯干/臂手/腿四件防具（音徽两槽空着）⇒ 五个「卸下」
+    expect((before.s.match(/data-act="unequip"/g) ?? []).length, '出身五格各有一个卸下').toBe(5)
+    rt.eq.unequip('weapon') // 双手空空 ⇒ heavyBase 的 !m.weaponId 分支
+    const { s } = await openTab(rt, 'gear')
+    expect(s, '武器槽空 ⇒ 名字是一横，且那一格没有「卸下」')
+      .toMatch(/武器<\/span><span class="name">—<\/span>\s*<span class="act"><\/span>/)
+    expect((s.match(/data-act="unequip"/g) ?? []).length, '卸掉武器那格，剩四个').toBe(4)
+    expect(s, '没有武器 ⇒ 重击底数报 0，不拿上一把的数顶着').toMatch(/重击底数<\/span><span class="a">0<\/span>/)
+  })
+
+  it('到顶的件写「已满」且强化按不动；还有等级的挂 +N', async () => {
+    registerGameData()
+    const rt = new RpgRuntime('origin_tuner')
+    const maxed = rt.inv.addGear('ar_choir_hood')
+    maxed.level = maxLevelOf(itemOf('ar_choir_hood'))
+    const plus = rt.inv.addGear('ar_veilbell_helm', 3)
+    const { s } = await openTab(rt, 'gear')
+    const a = rowOf(s, maxed.uid)
+    expect(a, '到顶 ⇒ 下一格材料不写，写「已满」').toContain('已满')
+    expect(a, '到顶 ⇒ 强化按不动').toContain(`data-act="upgrade" data-arg="${maxed.uid}" disabled`)
+    expect(rowOf(s, plus.uid), '+3 的件要把等级挂在名字后面').toContain('<span class="tag">+3</span>')
+  })
+
+  it('已经穿着的那件：挂「已装备」、装备与分解都禁用、行下不跟对比块', async () => {
+    registerGameData()
+    const rt = new RpgRuntime('origin_tuner')
+    const worn = rt.inv.gears.find((x) => x.itemId === 'ar_mutewrap_helm')!
+    const { s } = await openTab(rt, 'gear')
+    const row = rowOf(s, worn.uid)
+    expect(row, '穿着的那件要说出来').toContain('<span class="tag">已装备</span>')
+    expect(row, '装备按不动（已经在身上）').toContain(`data-act="equip" data-arg="${worn.uid}" disabled`)
+    expect(row, '分解也按不动（穿着的不许拆）').toContain(`data-act="salvage" data-arg="${worn.uid}" disabled`)
+    expect(row, '它就是「当前」：行下不再来一块对比').not.toContain('换上 ·')
+  })
+
+  it('建议星与建议分：分数最高的那件挂 ★，候选行报出正差值', async () => {
+    registerGameData()
+    const rt = new RpgRuntime('origin_tuner')
+    const g = rt.inv.addGear('ar_choir_hood') // 头部防御 5 > 身上 3 ⇒ 有正的提升
+    const { s } = await openTab(rt, 'gear')
+    expect(rowOf(s, g.uid), '头部槽里它分最高 ⇒ 挂 ★（建议不是闸门，按钮照样能点）').toContain('★ 建议')
+    expect(rowOf(s, g.uid)).toMatch(/建议分 \+\d/)
+  })
+
+  it('词缀三态：素声 / behavior 写绝对值 / 表外 id 原样显示', async () => {
+    registerGameData()
+    const rt = new RpgRuntime('origin_tuner')
+    const plain = rt.inv.addGear('ar_mutewrap_helm', 0, [])
+    const beh = rt.inv.addGear('ar_veilbell_helm', 0, [{ id: 'af_fermata', value: 3 }])
+    const weird = rt.inv.addGear('ar_veilbell_helm', 0, [{ id: 'af_not_in_the_table', value: 0.05 }])
+    const { s } = await openTab(rt, 'gear')
+    expect(rowOf(s, plain.uid), '没词缀就说素声，不留空').toContain('素声 · 无词缀')
+    expect(rowOf(s, beh.uid), 'behavior 词缀报绝对值（之延 = 完美格挡窗 +3 tick）').toContain('之延 +3')
+    expect(rowOf(s, weird.uid), '表外 id 原样显示，不假装认识它').toContain('af_not_in_the_table +5%')
+  })
+
+  it('行囊：出身不带堆叠件 ⇒ 整页「行囊空空」；加了消耗品才出分区与「使用」', async () => {
+    registerGameData()
+    const rt = new RpgRuntime('origin_tuner')
+    const empty = await openTab(rt, 'bag')
+    expect(empty.s, '一件堆叠件都没有 ⇒ 一句空空，而不是五个空标题').toContain('行囊空空')
+    expect(empty.s, '空分区一行都不渲染').not.toContain('<h2>叙事</h2>')
+    const rt2 = new RpgRuntime('origin_tuner')
+    rt2.inv.add('it_echo_salve', 1)
+    const { s } = await openTab(rt2, 'bag')
+    expect(s, '有了消耗品 ⇒ 分区标题与「使用」按钮一起出现').toContain('<h2>消耗品</h2>')
+    expect(s, '有 use 的件才给使用按钮').toContain('data-act="use" data-arg="it_echo_salve"')
+  })
+
+  it('谱册 flag 页：解锁源写的是那次见证，两态各一句', async () => {
+    registerGameData()
+    const rt = new RpgRuntime('origin_tuner')
+    const { p, root } = await openTab(rt, 'moves')
+    expect(html(p), '没见证 ⇒ 明说未见证').toContain('恩希尔的最后一拍 · 未见证')
+    bus.emit('world.flag', { key: 'flag.hersil_felled', value: true })
+    click(root, 'tab', 'moves') // 面板不监听总线，重画一次就是现读
+    const s = html(p)
+    expect(s, '见证过 ⇒ 这一页从此看得见').toContain('恩希尔的最后一拍 · 已见证')
+    expect(s, '页没亮之前标题要说「全暗」').toContain('· 全暗')
   })
 })

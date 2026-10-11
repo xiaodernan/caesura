@@ -655,7 +655,10 @@ export class Stakerite {
       const item = itemOf(g.itemId)
       const worn = Object.values(this.rpg.eq.slots).includes(g.uid)
       const cap = maxLevelOf(item)
-      const step = upgradeStep(g.level)
+      // 到顶看的是**稀有度上限**，不是表的最后一行：表里有 2..10，而素声件 +3 就到顶。
+      // 只问 upgradeStep 会让一件到顶的素声件继续报「40 石 / 1 晶」——那一格它永远走不到，
+      // 而材料够时强化按钮还会亮着（点下去才被告知「已到该稀有度的强化上限」）。
+      const step = g.level < cap ? upgradeStep(g.level) : null
       const canUp = !!step && inv.count(TIMBITE) >= step.timbite && inv.count(DROSS) >= step.dross
       const cost = step ? `${step.timbite} 石 / ${step.dross} 晶` : '已满'
       const star = stars.has(g.uid) ? ' <span class="tag">★ 建议</span>' : ''
