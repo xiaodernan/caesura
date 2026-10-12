@@ -958,3 +958,92 @@ describe('调音桩面板：点击路径与存档守卫', () => {
     expect(closes, '再按一次才真的收起').toEqual([1])
   })
 })
+
+/**
+ * 失败播报：每一条拒绝腿都要说**自己那一种**原因（按钮照旧禁用，但键盘/手柄与竞态
+ * 都能走到这里，那时按钮的灰已经不可见，剩下能说话的就是这一句）。
+ * 只报一句笼统的"不行"，玩家就只剩试错一条路。
+ */
+describe('调音桩面板：失败播报的原因分型', () => {
+  const tradeTab = async (rt: RpgRuntime) => {
+    const { p, notes } = await panel(rt)
+    p.show()
+    click(rootOf(p), 'tab', 'trade')
+    return { p, root: rootOf(p), notes }
+  }
+  const movesTab = async (rt: RpgRuntime) => {
+    const { p, notes } = await panel(rt)
+    p.show()
+    click(rootOf(p), 'tab', 'moves')
+    return { p, root: rootOf(p), notes }
+  }
+
+  it('购入：清单上没有 / 已经带满 —— 两种拒绝各有各的话', async () => {
+    registerGameData()
+    const { shopData } = await import('@/rpg/Shop')
+    const rt = new RpgRuntime('origin_tuner')
+    const { root, notes } = await tradeTab(rt)
+    click(root, 'buy', 'entry_not_in_the_stock')
+    expect(notes.some((n) => n.includes('清单上没有这一项'))).toBe(true)
+    const entry = shopData().stock[0]
+    rt.inv.add('it_timbite', 999) // 钱要够，否则先被「音色石不足」挡住，量不到带满那一条
+    rt.inv.add(entry.item, 999) // 塞到 stack 上限
+    click(root, 'buy', entry.id)
+    expect(notes.some((n) => n.includes('已经带满')), '带满与没钱是两件事').toBe(true)
+  })
+
+  it('使用：不能用的东西要说「这件东西不能用」，不静默也不崩', async () => {
+    registerGameData()
+    const rt = new RpgRuntime('origin_tuner')
+    rt.inv.add('it_timbite', 1)
+    const { p, root, notes } = await tradeTab(rt)
+    click(rootOf(p), 'tab', 'bag')
+    click(root, 'use', 'it_timbite') // 通货没有 use
+    expect(notes.some((n) => n.includes('这件东西不能用'))).toBe(true)
+  })
+
+  it('售出：包里已经没有这一件了（假 uid 不该换来一声"不能卖"）', async () => {
+    registerGameData()
+    const { root, notes } = await tradeTab(new RpgRuntime('origin_tuner'))
+    click(root, 'sell', 'g_no_such_uid')
+    expect(notes.some((n) => n.includes('包里已经没有这一件了'))).toBe(true)
+  })
+
+  it('点亮：已经亮着的那页再说一次 ⇒ 「这一页已经亮着」；表外页 ⇒ 「谱册里没有这一页」', async () => {
+    registerGameData()
+    const { movementConfig } = await import('@/rpg/Movements')
+    const page = movementConfig().pages[0]
+    const rt = new RpgRuntime('origin_tuner')
+    const { root, notes } = await movesTab(rt)
+    click(root, 'lit', 'page_not_in_the_book')
+    expect(notes.some((n) => n.includes('谱册里没有这一页'))).toBe(true)
+    rt.inv.add(page.unlock.item ?? '', page.unlock.count ?? 0)
+    click(root, 'lit', page.id)
+    click(root, 'lit', page.id) // 已经亮着
+    expect(notes.some((n) => n.includes('这一页已经亮着'))).toBe(true)
+  })
+
+  it('研读：表外 passive ⇒ 一句「研读不动」（不崩在 undefined 的 displayName 上）', async () => {
+    registerGameData()
+    const { root, notes } = await movesTab(new RpgRuntime('origin_tuner'))
+    click(root, 'pslearn', 'ps_not_a_real_passive')
+    expect(notes.some((n) => n.includes('研读不动'))).toBe(true)
+  })
+
+  it('战技研读到顶 ⇒ 说「已到这一页的上限」，不重复收钱', async () => {
+    registerGameData()
+    const { movementConfig } = await import('@/rpg/Movements')
+    const mv = movementConfig()
+    const page = mv.pages[0]
+    const move = mv.movements.find((m) => m.page === page.id)!
+    const rt = new RpgRuntime('origin_tuner')
+    const { root, notes } = await movesTab(rt)
+    rt.inv.add(page.unlock.item ?? '', page.unlock.count ?? 0)
+    click(root, 'lit', page.id)
+    rt.inv.add('it_timbite', 900)
+    rt.inv.add('it_score_fragment', 900)
+    for (let i = 0; i < move.levels.length + 2; i++) click(root, 'mvup', move.id)
+    expect(rt.moves.levelOf(move.id), '读到这一页的上限').toBe(move.levels.length)
+    expect(notes.some((n) => n.includes('已到这一页的上限')), '顶了要说顶了').toBe(true)
+  })
+})
