@@ -1047,3 +1047,80 @@ describe('调音桩面板：失败播报的原因分型', () => {
     expect(notes.some((n) => n.includes('已到这一页的上限')), '顶了要说顶了').toBe(true)
   })
 })
+
+/**
+ * 调音页的两条读数与两条关闭守卫。这一页是玩家看自己成长的地方，所以
+ * 「折算后的数」与「已抵上限」必须是读出来的，不是按等级猜的。
+ */
+describe('调音桩面板：调音页读数与关闭守卫', () => {
+  const tuneTab = async (rt: RpgRuntime) => {
+    const { p, notes, applied } = await panel(rt)
+    p.show()
+    return { p, root: rootOf(p), notes, applied }
+  }
+
+  it('音级到顶 ⇒ 经验条写「已抵上限」并铺满（xpToNext 的 null 腿）', async () => {
+    registerGameData()
+    const rt = new RpgRuntime('origin_tuner')
+    rt.prog.addResonance(1e6)
+    expect(rt.prog.rank, '遗照给足 ⇒ 顶到表的上限').toBe(rt.prog.data.maxRank)
+    expect(rt.prog.xpToNext(), '到顶后再没有"下一级"').toBeNull()
+    const { p } = await tuneTab(rt)
+    const s = html(p)
+    expect(s, '到顶要说抵上限，而不是一个除不出来的百分比').toContain('已抵上限')
+    expect(s, '条子铺满').toContain('width:100.0%')
+  })
+
+  it('属性过了软上限 ⇒ 面板把折算后的数念出来（不然玩家按的是另一个数）', async () => {
+    registerGameData()
+    const rt = new RpgRuntime('origin_tuner')
+    const { p, root } = await tuneTab(rt)
+    // 直接摆一个过了软上限的名义值（一局里要靠几十级才攒得到，面板读的是 attrs 与折算值）
+    ;(rt.prog.attrs as unknown as Record<string, number>).str = 45
+    expect(rt.prog.effectiveAttr('str'), '折算真的开始了').toBeLessThan(45 - 0.001)
+    click(root, 'tab', 'tune') // 重画一次（面板不监听进度事件）
+    const s = html(p)
+    expect(s, '折算后的那一档要写在行里').toMatch(/软上限折算后 \d/)
+    expect(s).toContain('基音') // 那一行还在原处
+  })
+
+  it('装槽：把已装的式子卸下来 ⇒ 说「已卸下」', async () => {
+    registerGameData()
+    const { movementConfig } = await import('@/rpg/Movements')
+    const mv = movementConfig()
+    const page = mv.pages[0]
+    const move = mv.movements.find((m) => m.page === page.id)!
+    const rt = new RpgRuntime('origin_tuner')
+    const { p, root, notes } = await tuneTab(rt)
+    rt.inv.add(page.unlock.item ?? '', page.unlock.count ?? 0)
+    click(root, 'lit', page.id)
+    for (let i = 0; i < 400 && rt.prog.rank < rt.moves.slotRank(0)!; i++) rt.prog.addResonance(300)
+    click(root, 'mvequip', `0:${move.id}`)
+    expect(rt.moves.slots[0], '先装上').toBe(move.id)
+    click(root, 'mvequip', '0:') // id 留空 = 卸下
+    expect(rt.moves.slots[0], '槽空了').toBeNull()
+    expect(notes.some((n) => n.includes('已卸下'))).toBe(true)
+    expect(html(p)).toContain('空')
+  })
+
+  it('点了没有 data-arg 的按钮（洗点那一行）⇒ 静默按空串处理，不崩', async () => {
+    registerGameData()
+    const { p, root, applied } = await tuneTab(new RpgRuntime('origin_tuner'))
+    const respec = (p as unknown as { navRows(): { act: string; arg: string }[] }).navRows.call(p)
+      .find((r) => r.act === 'respec')!
+    expect(respec.arg, '那一行的 data-arg 在生产 DOM 里不存在').toBe('')
+    const el = new FakeEl()
+    el.dataset = { act: 'respec' } // 刻意不给 arg：真 DOM 上 dataset.arg 是 undefined
+    root.dispatch('click', { target: el })
+    expect(applied.length, '这一下照旧算一次生效（洗点跑了）').toBeGreaterThan(0)
+  })
+
+  it('面板收着的时候任何渲染请求都是空操作（关了不该再动 DOM）', async () => {
+    registerGameData()
+    const { p, root } = await tuneTab(new RpgRuntime('origin_tuner'))
+    const open_ = html(p)
+    p.close()
+    click(root, 'tab', 'bag') // 收着还去切页
+    expect(html(p), '关了以后一页都不重画').toBe(open_)
+  })
+})
