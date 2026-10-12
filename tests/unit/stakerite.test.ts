@@ -917,4 +917,44 @@ describe('调音桩面板：点击路径与存档守卫', () => {
     await flush()
     expect(writes, '闸门放开后只落刚才那一笔').toBe(1)
   })
+
+  it('名册还没读回来时：那一页一行都没有 ⇒ 导航键与确认都不动，也不崩', async () => {
+    registerGameData()
+    const { p } = await panel(new RpgRuntime('origin_tuner')) // 刻意不 flush：名册还在路上
+    p.show()
+    click(rootOf(p), 'tab', 'save')
+    expect(html(p), '名册没回来 ⇒ 屏上这么说，而不是四张空卡').toContain('名册还在读')
+    p.uiStep(new Set(['down']))    // 没有行可走 ⇒ 原样返回
+    p.uiStep(new Set(['up']))
+    p.uiStep(new Set(['confirm'])) // 没有焦点行 ⇒ 不执行任何动作
+    await flush()
+    expect(html(p), 'flush 之后名册才进来').not.toContain('名册还在读')
+  })
+
+  it('记住的行号超出当前行数 ⇒ 钳回最后一行（焦点不许躲进空气里）', async () => {
+    registerGameData()
+    const { p } = await gearTab(new RpgRuntime('origin_tuner'))
+    const byTab = (p as unknown as { focusByTab: Record<string, number> }).focusByTab
+    const rows = (p as unknown as { navRows(): { act: string; arg: string }[] }).navRows.call(p)
+    byTab.gear = 999 // 模拟"这一页的行数变少了"（分解掉一件、买空一条）
+    p.uiStep(new Set(['down'])) // 第一记只把框亮出来：亮的位置就是钳回来的那一行
+    const last = rows[rows.length - 1]
+    expect(html(p), '焦点落在最后一行上（而不是第 999 行）').toContain(`class="act focus" data-act="${last.act}" data-arg="${last.arg}"`)
+    expect(html(p).match(/class="act focus"/g)?.length, '全页只有一个焦点框').toBe(1)
+  })
+
+  it('确认条挂着时按后退 ⇒ 先撤确认，不直接收面板', async () => {
+    registerGameData()
+    const { p, closes } = await panel(new RpgRuntime('origin_tuner'))
+    p.show()
+    click(rootOf(p), 'tab', 'save')
+    await flush()
+    click(rootOf(p), 'write', 'slot1')
+    expect(html(p), '待确认条在页上').toContain('确认')
+    p.uiStep(new Set(['back']))
+    expect(html(p), '确认条撤掉').not.toContain('data-act="confirm"')
+    expect(closes, '面板没有被請求收起').toEqual([])
+    p.uiStep(new Set(['back']))
+    expect(closes, '再按一次才真的收起').toEqual([1])
+  })
 })
