@@ -122,6 +122,22 @@ describe('断弦线《点名册》：营地归属是一次真的三选一', () =
     w.cleanup()
   })
 
+  it('先跟队后对话也成立：旗已立时接差事，任务当场跳进《点名册》（实机顺序的机器读法）', () => {
+    // 实机走查暴露的顺序：玩家可以先跟军阵走完一圈（裁判立旗），事后才找断弦接差事。
+    // `Quests.settle` 在 start 那一刻评估当前步的 advanceOn.flags——已立的旗不是丢掉的信号。
+    const w = makeWorld()
+    expect(w.streaming.hasFlag('flag.haltrune_patrol_seen'), '还没跟队：旗没立').toBe(false)
+    bus.emit('world.flag', { key: 'flag.haltrune_patrol_seen', value: true }) // 跟队完成（真裁判在 patrol-watch.test.ts）
+    expect(w.quests.state('q_haltrune'), '任务还没接：旗先躺在世界里').toBeNull()
+    w.session.open('npc_haltrune')
+    expect(w.last().nodeId).toBe('n0')
+    w.session.choose('c1') // 我不打断他们
+    w.session.choose('c1') // （跟着他们，走完一整圈）—— 接差事
+    w.session.close()
+    expect(w.quests.state('q_haltrune'), '接差事当场顺推：旗早已立，STEP1 不停留').toBe('HALTRUNE.STEP2_ROSTER')
+    w.cleanup()
+  })
+
   it('三种写法各写各的值（并派生各自的后果旗标），决定之后不可回退', () => {
     //                选项  读数        后果句  关键词     营地不再有守军
     //                选项  读数        后果句  关键词     营地不再有守军  收编（盟军）
