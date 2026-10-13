@@ -929,7 +929,7 @@ export class Enemy {
     // 全层 1.5s（危险独占听觉空间）。只发一次（telegraphDuckDone），与起手音同一格。
     if (!this.attack.telegraphDuckDone && f.flags?.includes('tutti')) {
       this.attack.telegraphDuckDone = true
-      bus.emit('combat.bossTelegraph', undefined) // 载荷由 EventBus 声明为 undefined（无载荷事件）
+      bus.emit('combat.bossTelegraph', undefined) // 无载荷事件；声明跟着发射方走，见本文件底部的 GameEvents 合并块
     }
     // 「读条走完」那一格的两件事（警戒广播、冲刺撞钟）共用一次守卫：判定从 `=== f.startup`
     // 改成"过了那一格且没做过"，否则任何前摇加速都会一步跨过去 ⇒ 广播与撞钟一起静默。
@@ -1007,6 +1007,13 @@ export class Enemy {
 declare module '@/core/EventBus' {
   interface GameEvents {
     'ai.callAlly': { fromId: string; pos: Vec3; range: number }
+    /**
+     * KI-092②：§8.2 ducking 表里「Boss 大招 telegraph」那一行的触发源，**无载荷**——音频侧只要
+     * 「这一下是大招」的信号，不需要位置。发射方是本文件 :932（带 `tutti` 标记的招式起手那一 tick），
+     * 所以声明跟着发射方走，与上面 `ai.callAlly` 同一只手；`EventBus.ts` 里若另有同型声明，
+     * 接口合并同名同型不报错（谁先落地都不用等对方，也不会把主干切成「提交面过不了自己的 lint」）。
+     */
+    'combat.bossTelegraph': undefined
   }
 }
 
