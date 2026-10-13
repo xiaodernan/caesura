@@ -28,7 +28,7 @@ export const NAMED_EVENT_METHODS = ['emit', 'on', 'once', 'off', 'listenerCount'
 export const BUS_RECEIVERS = ['bus', 'this']
 
 /**
- * 主干此刻**已知**的欠账：事件名 → 那一笔账的说法。**空是目标状态**。
+ * 主干此刻**已知**的欠账：事件名 → 那一笔账的说法。**空是目标状态，今天它是空的**。
  *
  * 挂在判据旁边而不是测试文件里，与 `ledger-rules.mjs` 那三份"先记账后接线"名单同一个理由：账要有主人，
  * 而销账判据要读得到它。规则（住在 `tests/unit/event-rules.test.ts`）：
@@ -36,15 +36,16 @@ export const BUS_RECEIVERS = ['bus', 'this']
  * - 这里的键被 HEAD 消除（别人把声明提交了）⇒ 该销：删掉那一格，并把理由点名的那行 KI 在账本里结案；
  * - 理由必须点名一个 `KI-NNN` 并长到说得清谁欠谁（一条没有出处的白名单比没有白名单更坏）。
  *
+ * **2026-10-14 清掉的这一格**（`combat.bossTelegraph` ⇄ KI-114）：发射方 `src/ai/Enemy.ts:932` 随
+ * `11a194e` 上了车，而它的类型前提住在别人未提交的字节里，通道因此关了 31 个提交。结案分两笔，顺序不能反——
+ * `b9d8296` 把声明落到发射方自己那份合并块里（HEAD 上 offender 就此变 0），**紧跟的那一笔必须同时删掉
+ * 这里那一格**，否则这条相等门红在「账上空着而名单挂着」。链上还剩的另一半（订阅方 `AudioEngine.ts:152`
+ * 与 `ducking.json` 仍在音频车道未提交 ⇒ 主干上这条 `emit` 目前是一发没人听的空弹）**不归这条门管**：
+ * 名字已经声明了，这里判的是名册 ⇄ 调用点，不是有没有人听。那一半记在账本 KI-114 那一行里。
+ *
  * @type {Record<string, string>}
  */
-export const HEAD_UNDECLARED_LEDGER = {
-  'combat.bossTelegraph':
-    'KI-114：发射方 `src/ai/Enemy.ts:932` 已随 `11a194e` 进主干，而它的类型前提（`GameEvents` 里那条声明）' +
-    '和那条订阅（`AudioEngine.onDuckTrigger`）此刻住在并发会话未提交的 `src/core/EventBus.ts`、' +
-    '`src/audio/AudioEngine.ts`、`src/data/json/ducking.json` 里 ⇒ 干净检出过不了它自己的 lint。' +
-    '谁先提交那三个文件，谁就当场删掉这一格。',
-}
+export const HEAD_UNDECLARED_LEDGER = {}
 
 /**
  * 词法骨架：把块注释与行注释的**体**涂白（长度与换行数不变 ⇒ 行号继续对得上），并标出每个位置
