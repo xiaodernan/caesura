@@ -1018,6 +1018,24 @@ describe('dispose()：摘下每一根线（TD-006 第二腿①）', () => {
     return [...src.matchAll(/this\.subscribe\('([^']+)'/g)].map((m) => m[1] as string)
   }
 
+  /**
+   * 引擎必须一直挂着的订阅名。钉**身份**而不是条数（KI-115）：`toBe(9)` 由 `a354716` 从 8 抬上来，
+   * 而那一笔只改了这份测试——提交面上的 `AudioEngine.ts` 到今天我重测仍是 8 条，多的那一条
+   * （`:152` 的 `combat.bossTelegraph`）住在未提交的工作副本里。⇒ 数一个数就是替别人的字节作保：
+   * 这一条在 HEAD 平面上红了一整天，而开发用的工作副本绿着，正好是 KI-114 那一刀的第二个症状。
+   * 名单是**单向**的：新增订阅不必改这里（下一条臂实测它绿），删掉一格才红，且红消息点得出是哪一格。
+   */
+  const REQUIRED_SUBSCRIPTIONS = [
+    'audio.sfx',
+    'audio.muffle',
+    'combat.parried',
+    'audio.caesura',
+    'audio.music.grid',
+    'audio.music.ambience',
+    'audio.music.explore',
+    'audio.music.battle',
+  ]
+
   it('源码里真实的 `bus.on(` 只有 helper 里那一处（漏走 subscribe 的订阅，dispose 摘不掉）', () => {
     const src = readFileSync(new URL('../../src/audio/AudioEngine.ts', import.meta.url), 'utf8')
     const real = src.split('\n').filter((l) => {
@@ -1026,8 +1044,11 @@ describe('dispose()：摘下每一根线（TD-006 第二腿①）', () => {
     })
     expect(real, `每一处订阅都必须走 subscribe()；这几行是漏的：${real.join(' | ')}`).toHaveLength(1)
     expect(real[0]).toContain('this.subs.push(bus.on(key, fn))')
-    // 反向：helper 真的被用了八次，不是写了个没人走的空壳
-    expect(subscribedKeys().length).toBe(9)
+    // 反向：helper 真的被逐条走通了，不是写了个没人叫的空壳
+    const keys = subscribedKeys()
+    const missing = REQUIRED_SUBSCRIPTIONS.filter((k) => !keys.includes(k))
+    expect(missing, `这几条订阅不见了，而每一格都有一笔已落地的特性靠它：${missing.join(' ')}`).toEqual([])
+    expect(new Set(keys).size, `现推的订阅名册里有重名 ⇒ 同一条订了两遍或抽取器读重了：${keys.join(' ')}`).toBe(keys.length)
   })
 
   it('构造时每一条订阅都挂上，dispose 后逐条归零（读数回到原值）', () => {
