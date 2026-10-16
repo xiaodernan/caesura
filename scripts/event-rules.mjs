@@ -28,7 +28,7 @@ export const NAMED_EVENT_METHODS = ['emit', 'on', 'once', 'off', 'listenerCount'
 export const BUS_RECEIVERS = ['bus', 'this']
 
 /**
- * 主干此刻**已知**的欠账：事件名 → 那一笔账的说法。**空是目标状态，今天它是空的**。
+ * 主干此刻**已知**的欠账：事件名 → 那一笔账的说法。**空是目标状态，但它不是恒空的判据**。
  *
  * 挂在判据旁边而不是测试文件里，与 `ledger-rules.mjs` 那三份"先记账后接线"名单同一个理由：账要有主人，
  * 而销账判据要读得到它。规则（住在 `tests/unit/event-rules.test.ts`）：
@@ -43,9 +43,16 @@ export const BUS_RECEIVERS = ['bus', 'this']
  * 与 `ducking.json` 仍在音频车道未提交 ⇒ 主干上这条 `emit` 目前是一发没人听的空弹）**不归这条门管**：
  * 名字已经声明了，这里判的是名册 ⇄ 调用点，不是有没有人听。那一半记在账本 KI-114 那一行里。
  *
+ * **2026-10-17 又挂上一格**（`weather.changed` ⇄ KI-126）：形状与 KI-114 相反——那次是发射方先上车、
+ * 声明方还在别人手里，这次是**订阅方先上车，而声明和发射方两边都还没有**。所以它不是"切分切在链中段"，
+ * 是一张不存在的频道；登记的唯一理由是那处调用出自别人正在施工的半成品（`e7313f4` 自己承认），
+ * 我们不去替它写发射方，也不让它把这条门永久红着。
+ *
  * @type {Record<string, string>}
  */
-export const HEAD_UNDECLARED_LEDGER = {}
+export const HEAD_UNDECLARED_LEDGER = {
+  'weather.changed': 'KI-126：`src/vfx/RainSystem.ts:25`（随 `e7313f4` 上车）订阅了一张 HEAD 上既无 `GameEvents` 声明、也无任何发射方的频道——天气切换此刻的链路是组合根把 `activeWeather` 传进去（架构文档的文件地图那一格自己就这么写），这条 `bus.on` 是它的第二套设想，落在声明之前。销法两条都归写雨系统的那一批：要么把声明连同发射方一起交回（同 KI-114 那笔的两段式，顺序不能反），要么删掉这一处订阅；这条门只管名册 ⇄ 调用点，不管有没有人听。',
+}
 
 /**
  * 词法骨架：把块注释与行注释的**体**涂白（长度与换行数不变 ⇒ 行号继续对得上），并标出每个位置
