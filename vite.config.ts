@@ -14,6 +14,11 @@ import { resolve } from 'path'
 export default defineConfig({
   resolve: { alias: { '@': resolve(__dirname, 'src') } },
   server: { port: 5173 },
+  // dev 侧的 transform target 默认停在 es2020——顶层 await（TLA，es2022）会被 esbuild 拒掉，
+  // 而 main.ts 的 VFX 初始化（RainSystem/Trails/Decals/GPUParticles）用的正是它：症状是整页被
+  // "await can only be used inside an async function" 的遮罩盖死，连标题屏都进不来（用户实测）。
+  // build.target 早就是 es2022，dev 这里补齐同一个数——两侧说同一种方言。
+  esbuild: { target: 'es2022' },
   // KI-099：`test.include` 今天才第一次存在，而它必须**锚在 `tests/` 下面**。
   // vitest 的默认值是仓库级的 glob（`**` 打头，吃 `.test`/`.spec` 两种词干），根目录 walk 会走进
   // `.scratch/plane_*/` 那些 `git archive` 解出来的冻结副本：它们各有各的 `tests/` 树，同名同案例，
