@@ -159,6 +159,27 @@ describe('盐歌线步 4《整卷还是散声》：同一件事的三种成色',
     }
   })
 
+  it('结局的两个世界读者：说服给钥匙旗（键子开同一扇门）、放弃开深窖抄本（替代路径）', () => {
+    // 说服：音栓钥匙在手 ⇒ 沉唱堂键子成为未竟厅门的另一把锁眼
+    const w1 = makeWorld()
+    w1.toStep3()
+    w1.session.open('npc_meg')
+    w1.session.choose('c1') // 说服
+    w1.session.close()
+    expect(w1.streaming.hasFlag('flag.organ_key_held'), '钥匙旗由抉择写入').toBe(true)
+    expect(w1.streaming.hasFlag('flag.organ_gate_open'), '有钥匙不等于门已开（还要走到键子跟前）').toBe(false)
+    w1.cleanup()
+
+    // 放弃：她留在休垒 ⇒ 深窖抄经房的摹本成为第三条上未竟厅的路（顺带万籁前置线索）
+    const w2 = makeWorld()
+    w2.toStep3()
+    w2.session.open('npc_meg')
+    w2.session.choose('c3') // 放弃
+    w2.session.close()
+    expect(w2.streaming.hasFlag('flag.organ_key_held'), '没说服就没有钥匙').toBe(false)
+    w2.cleanup()
+  })
+
   it('完成后复访落在 n10；INTACT 缺省意味着"没走到这个抉择"，不是第四种结局', () => {
     const w = makeWorld()
     w.toStep3()

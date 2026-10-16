@@ -1051,7 +1051,8 @@
             "style": "soft",
             "effects": {
               "setFlags": [
-                "flag.meg_soundscroll_complete"
+                "flag.meg_soundscroll_complete",
+                "flag.organ_key_held"
               ],
               "setState": {
                 "key": "state.meg.ending",
