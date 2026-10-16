@@ -145,7 +145,7 @@ describe('盐歌线步 4《整卷还是散声》：同一件事的三种成色',
       // 没去过那里（旗没立）⇒ 那条腿不可见，只有断面（铃姨线）与「还没攒够」
       w.session.open('npc_meg')
       expect(w.last().nodeId).toBe('n3')
-      expect(w.last().choices.map((c) => c.id), '没去过 ⇒ 那条素材腿不出现').toEqual(['c1', 'c2'])
+      expect(w.last().choices.map((c) => c.id), '三条素材的门都没开 ⇒ 只剩「还没攒够」').toEqual(['c4'])
       w.session.close()
       w.streaming.setFlag(flag)
       w.session.open('npc_meg')
