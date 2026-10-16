@@ -25,9 +25,9 @@ import { Inventory } from '@/rpg/Inventory'
 const alive: Array<() => void> = []
 afterEach(() => { for (const off of alive.splice(0)) off() })
 
-function makeWorld(store = new Map<string, string>()) {
+function makeWorld() {
   registerGameData()
-  const streaming = new StreamingSystem(regions, store)
+  const streaming = new StreamingSystem(regions)
   const quests = new Quests(questTable, () => {}, (k) => streaming.hasFlag(k))
   const states = new WorldStates(stateTable)
   const worldState = new WorldState(worldstate, {
