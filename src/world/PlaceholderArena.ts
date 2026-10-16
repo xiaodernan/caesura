@@ -38,9 +38,14 @@ export function createArena(canvas: HTMLCanvasElement, clock: RhythmClock): Aren
   // 于是七区里有六区从来看见的不是自己的光（KI-094 同族：写死的值只对得上一个地方）。
   // shadow map 的尺寸与视锥跟着 key 光一起搬走了：它现在是 key 的属性，而 key 只有一个主人。
 
+  // 这张大地面是「未认领空间的底」，不是世界地板：世界地板是 ChunkGreybox 的调色板
+  // chunk 板（groundY-0.48）。它曾经待在 y=0——把整个世界的调色板地板压在身下，玩家脚下
+  // 永远是这张没吃过任何色板的深蓝黑（用户实测「场景太黑了，啥都看不清」的第一根源）。
+  // 降到 chunk 板之下：露出来的全黑底只在深渊/未流送区可见——那正是深渊该有的样子。
   const groundMat = new THREE.MeshStandardMaterial({ color: 0x141821, roughness: 0.92, metalness: 0.1 })
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(240, 240), groundMat)
   ground.rotation.x = -Math.PI / 2
+  ground.position.y = -0.6
   ground.receiveShadow = true
   scene.add(ground)
 
@@ -76,17 +81,9 @@ export function createArena(canvas: HTMLCanvasElement, clock: RhythmClock): Aren
   )
   scene.add(sky)
 
-  const stone = new THREE.MeshStandardMaterial({ color: 0x1e2430, roughness: 0.8, metalness: 0.2 })
-  for (let i = 0; i < 14; i++) {
-    const a = (i / 14) * Math.PI * 2
-    const r = 16 + (i % 3) * 9
-    const h = 3 + (i % 5) * 2.6
-    const m = new THREE.Mesh(new THREE.BoxGeometry(1.4 + (i % 4) * 0.5, h, 1.4), stone)
-    m.position.set(Math.cos(a) * r, h / 2, Math.sin(a) * r)
-    m.rotation.y = a + i
-    m.castShadow = m.receiveShadow = true
-    scene.add(m)
-  }
+  // Phase 1 练习场的 14 根环形占位柱已拆：现在休垒的陈设由 regions.json 的交互物与
+  // chunk 世界承载，这些深灰柱只剩两个作用——把玩家出生的视野挡成一根黑柱、把「这是
+  // 一个真正的游戏世界」盖回灰盒练习场。没有测试引用它们（grep 实测 0 命中）。
   const bell = new THREE.Mesh(
     new THREE.CylinderGeometry(1.6, 2.4, 5, 20, 1, true),
     new THREE.MeshStandardMaterial({ color: 0x4b3a26, roughness: 0.45, metalness: 0.85, side: THREE.DoubleSide })

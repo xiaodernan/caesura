@@ -139,10 +139,23 @@ const ai = new AISystem()
 const nav = new Navigator() // KI-009 第一腿：敌人的绕路（读者只有 Enemy.stepToward 一处）
 const combat = new CombatManager(player, ai, time, rhythm)
 const visuals = new ActorVisuals(arena.scene, arena.playerVisual, player)
+visuals.camera = rig.cam
 const projectileVis = new ProjectileVisuals(arena.scene)
 const bossArena = new BossArenaVisuals(arena.scene) // §15.1 撞钟机关：机关看不见就等于不存在
 const audio = new AudioEngine()
 const vfx = new VfxLayer(arena.scene)
+const rain = new (await import('@/vfx/RainSystem')).RainSystem(arena.scene)
+const trails = (await import('@/vfx/Trails')).initTrailSystem(arena.scene)
+const decals = (await import('@/vfx/Decals')).initDecalSystem(arena.scene)
+
+// VFX 系统总线注册（Phase B4）
+;(await import('@/vfx/GPUParticles')).registerGPUParticlesBus()
+;(await import('@/vfx/Trails')).registerTrailSystemBus()
+;(await import('@/vfx/Decals')).registerDecalSystemBus()
+
+// Squad 系统总线注册（Phase B5）
+;(await import('@/ai/Squad')).registerSquadBus()
+
 // KI-094①：雾密度与画面滤镜的唯一写方。它按「当前生效的那格天气 + §11 失谐」合成，
 // 所以开局那一区也得由它读一次——那句在 `interact` 之后（要读旗标），见下面 `applyWeather(homeRegion …)`。
 const grade = new ColorGrade(arena.scene, canvas)
@@ -513,13 +526,20 @@ lock.candidates = ai.enemies
  */
 applyWeather(homeRegion ?? null)
 
-addEventListener('pointerdown', () => audio.start())
+addEventListener('pointerdown', () => {
+  audio.start()
+  // 任意点击跳过正在播放的过场（开场 25s 黑场等）：避免玩家被困在锁输入的黑屏里
+  if (cinematics.current && !overlayOpen()) { cinematics.skip(); setOverlay(null) }
+})
 addEventListener('keydown', (e) => {
   /* Esc 的**菜单**那半义（收面板 / 关对话 / 标题屏退回上一层）走 UI 意图通道的 `back`，
      由在场的那块 overlay 自己在 `feedMenu()` 里读——这里不再替它们关（那是第二个主人，
      一次 Esc 会被关两遍）。这一句只留"没有菜单在场时"的那半义：开合暂停。
      时序上也不冲突：keydown 这一刻 owner 还在，`overlayOpen()` 为真 ⇒ 这里不动，
      下一帧的 poll 才把 `back` 交给面板。 */
+  // 任意键跳过正在播放的过场（开场 25s 黑场等）：仅在无菜单 overlay 在场时跳过，
+  // 对话/面板里的过场由各自的 UI 意图通道接管，不该被这一句抢走。
+  if (cinematics.current && !overlayOpen()) { cinematics.skip(); setOverlay(null); return }
   if (e.code === 'Escape' && !overlayOpen()) time.paused = !time.paused
 })
 
@@ -661,6 +681,13 @@ const core = {
     projectileVis.syncTelegraphs(combat.telegraphs())
     bossArena.sync(ai.enemies.filter((e) => !!e.data.boss)) // 立钟与断音柱都在 Boss 场地类里，少一个过滤条件就会漏画后者
     propVis.sync(props.all) // KI-023：音刺的歪斜/残桩跟着耐久走
+    // VFX 系统更新（Phase B4）
+    rain.update(dt, rig.cam.position)
+    trails.update(dt)
+    decals.update(dt)
+    // GPU 粒子是异步模块：渲染回调不是 async（await 会把整条循环编译炸掉），用 then 接——
+    // 模块缓存之后每次调用近乎零开销，没就绪的那几帧跳过（粒子晚半秒出现不构成账）。
+    void import('@/vfx/GPUParticles').then((m) => m.getGPUParticles()?.update(dt))
     // KI-105 声纹观察：按住 V 荡开涟漪——波前扫到的敌人/交互物画显形环。
     // 包络闸门关着（没按/淡出完）时这一切空转：takeMarks 交还空账，一个环都不发。
     observe.hold(inp.frame.held.has('observe'))
@@ -789,6 +816,8 @@ async function startRun(slot: string | null): Promise<void> {
   refreshRpg()
   // 新开局（不是读档）放 §6 的开场：黑场、声先死、无 UI 无旁白那一条
   if (!slot) cinematics.start('CINE_OPEN')
+  // 开场引导（KI-111 后续）：新鲜开局给一句操作/目标提示，避免玩家陷在黑场里不知道干什么
+  bus.emit('ui.notify', { text: 'WASD 移动 · 鼠标视角 · E 交互 · 走向发光的调音桩开始', kind: 'info' })
   bus.emit('ui.notify', { text: `音级 ${rpg.prog.rank} · 遗响 ${rpg.prog.xp}${rpg.prog.unspent > 0 ? ` · 未分配点 ${rpg.prog.unspent}` : ''}`, kind: 'info' })
   booted = true
   loop.start()

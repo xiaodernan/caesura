@@ -19,10 +19,11 @@
    "beatsPerBar": 4,
    "label": "静默"
   },
-  "chunkSize": 48,
+"chunkSize": 48,
+  "navmeshRef": "navmesh/rg_resthold.navmesh.json",
   "weatherPresets": [
-   "clear",
-   "emberfall"
+    "clear",
+    "emberfall"
   ],
   "weatherSwitch": {
     "state": {
@@ -242,9 +243,9 @@
     "kind": "inspect",
     "verb": "察看广场动乱",
     "pos": {
-     "x": 0,
+     "x": -8,
      "y": 0,
-     "z": 0
+     "z": -10
     },
     "requiresFlag": "flag.schism_exposed"
    },
@@ -309,10 +310,11 @@
    "bpm": 84,
    "beatsPerBar": 4
   },
-  "chunkSize": 48,
+"chunkSize": 48,
+  "navmeshRef": "navmesh/rg_whisperwode.navmesh.json",
   "weatherPresets": [
-   "clear",
-   "fog"
+    "clear",
+    "fog"
   ],
   "lightingPreset": "lp_whisperwode",
   "palette": {
@@ -545,10 +547,11 @@
    "bpm": 96,
    "beatsPerBar": 4
   },
-  "chunkSize": 48,
+"chunkSize": 48,
+  "navmeshRef": "navmesh/rg_drowned_choir.navmesh.json",
   "weatherPresets": [
-   "clear",
-   "drip"
+    "clear",
+    "drip"
   ],
   "lightingPreset": "lp_drowned_choir",
   "palette": {
@@ -824,10 +827,11 @@
    "beatsPerBar": 4,
    "label": "军鼓"
   },
-  "chunkSize": 48,
+"chunkSize": 48,
+  "navmeshRef": "navmesh/rg_brokenbar_camp.navmesh.json",
   "weatherPresets": [
-   "clear",
-   "fog"
+    "clear",
+    "fog"
   ],
   "weatherSwitch": {
     "flag": "flag.brokenbar_resolved"
@@ -1155,10 +1159,11 @@
    "bpm": 92,
    "beatsPerBar": 4
   },
-  "chunkSize": 48,
+"chunkSize": 48,
+  "navmeshRef": "navmesh/rg_fellcarillon.navmesh.json",
   "weatherPresets": [
-   "clear",
-   "dissonant-storm"
+    "clear",
+    "dissonant-storm"
   ],
   "lightingPreset": "lp_fellcarillon",
   "palette": {
@@ -1401,9 +1406,10 @@
    "beatsPerBar": 1,
    "label": "无网格领域：只有 60BPM 心跳"
   },
-  "chunkSize": 48,
+"chunkSize": 48,
+  "navmeshRef": "navmesh/rg_earless_deeps.navmesh.json",
   "weatherPresets": [
-   "clear"
+    "clear"
   ],
   "lightingPreset": "lp_earless_deeps",
   "palette": {
@@ -1538,7 +1544,65 @@
      "flag.clue_dome_reflection",
      "flag.clue_d5_scratch",
      "flag.clue_lean_corpses"
-    ]
+    ],
+    "setsFlag": "flag.firstphrase_open",
+    "notify": "门开了一道缝 —— 里面是世上唯一与世隔绝的耳朵"
+   },
+   {
+    "id": "in_firstphrase_ring_oath",
+    "kind": "inspect",
+    "verb": "摸大门楣上的刻痕（誓）",
+    "pos": {
+     "x": -242,
+     "y": -144,
+     "z": 350
+    },
+    "requiresFlags": [
+     "flag.firstphrase_open"
+    ],
+    "setsFlag": "flag.faceless_ring_oath"
+   },
+   {
+    "id": "in_firstphrase_ring_echo",
+    "kind": "inspect",
+    "verb": "贴耳回廊柱（响）",
+    "pos": {
+     "x": -272,
+     "y": -144,
+     "z": 350
+    },
+    "requiresFlags": [
+     "flag.faceless_ring_oath"
+    ],
+    "setsFlag": "flag.faceless_ring_echo"
+   },
+   {
+    "id": "in_firstphrase_ring_dust",
+    "kind": "inspect",
+    "verb": "抚供桌上的灰（尘）",
+    "pos": {
+     "x": -252,
+     "y": -144,
+     "z": 376
+    },
+    "requiresFlags": [
+     "flag.faceless_ring_echo"
+    ],
+    "setsFlag": "flag.faceless_ring_dust"
+   },
+   {
+    "id": "in_firstphrase_ring_home",
+    "kind": "inspect",
+    "verb": "把手按上深处祭坛（归）",
+    "pos": {
+     "x": -276,
+     "y": -144,
+     "z": 376
+    },
+    "requiresFlags": [
+     "flag.faceless_ring_dust"
+    ],
+    "setsFlag": "flag.faceless_clue_ring_complete"
    },
    {
     "id": "ch_first_phrase",
@@ -1692,9 +1756,10 @@
    "beatsPerBar": 4,
    "label": "恩希尔接管前的余拍"
   },
-  "chunkSize": 48,
+"chunkSize": 48,
+  "navmeshRef": "navmesh/rg_unfinished_hall.navmesh.json",
   "weatherPresets": [
-   "clear"
+    "clear"
   ],
   "lightingPreset": "lp_unfinished_hall",
   "palette": {
