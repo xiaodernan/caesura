@@ -59,5 +59,17 @@
     ],
     "default": "ALIVE_AT_POST",
     "note": "断弦线步 4《义体尽头的拍子》写入（§2.4 步 4 / §7 STATE.HALTRUNE）。ALIVE_AT_POST = 他还在岗上（缺省读数；HOSTILE 那条叛哨线未落）；PASSING_STILL = 用休止把他停在最后一拍上；DRUM_LEGEND = 让他敲完自己的最后一个循环，营地从此有一面会自己打更的鼓。读方：任务步 q_haltrune.STEP4_PASSING.advanceOn.state。入口在 DLG_HALTRUNE 的复访中立节点 n10 上（c3）——**不做成独立的 priority 树**，那会抢在步 3 的后果句（n7/n10）前面（见 KI-043）。"
+  },
+  {
+    "key": "state.meg.ending",
+    "displayName": "盐歌 · 声卷的归属",
+    "values": [
+      "INTACT",
+      "CONVINCED",
+      "SILENCED",
+      "RELINQUISHED"
+    ],
+    "default": "INTACT",
+    "note": "盐歌线步 4《整卷还是散声》三选一写入（narrative §2.3 步 4 / §7 STATE.MEG）。取值映射：说服 = CONVINCED（她说出莉安托付的原话，钥匙照给）、夺 = SILENCED（她当夜收摊离城，Hub 环境乐少一个声部）、放弃 = RELINQUISHED（她留在休垒，音栓图改由深窖抄本获取——多一段隐藏 Boss 前置线索）。INTACT 是缺省读数：还没走到这个抉择。三个非缺省值都收束任务（声卷事件完结），但钥匙的成色由值回答——这是值域而不是三面旗标的理由：同一件事的三种成色，不是三件独立发生过的事。"
   }
 ]

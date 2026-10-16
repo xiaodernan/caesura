@@ -989,7 +989,7 @@
         "id": "n7",
         "speaker": "npc_meg",
         "emotion": "soft",
-        "text": "耳语剥出来了。那句话是她最后留给自己的——不是给谁听的。现在声卷全了，音栓钥匙该插进未竟厅大门了。",
+        "text": "耳语剥出来了。那句话是她最后留给自己的——不是给谁听的。（她把声卷按在摊上，没有松手）……你拿到钥匙，就要去未竟厅把她唱掉。我为什么还要给你？",
         "conditions": {
           "flags": {
             "all": [
@@ -1003,15 +1003,51 @@
         "choices": [
           {
             "id": "c1",
-            "text": "（把声卷交给她）",
-            "style": "blunt",
+            "text": "因为她想让你替她听完。（说服）",
+            "style": "soft",
             "effects": {
               "setFlags": [
                 "flag.meg_soundscroll_complete"
               ],
-              "notify": "完整声卷归位，音栓钥匙插进未竟厅大门"
+              "setState": {
+                "key": "state.meg.ending",
+                "value": "CONVINCED"
+              },
+              "notify": "她说出托付的原话：如果来的是我弟弟，就把路给他，把真相留给他自己发现"
             },
             "cinematic": "CINE_STORY_B5",
+            "next": "n8"
+          },
+          {
+            "id": "c2",
+            "text": "（伸手把声卷夺过来）",
+            "style": "provoke",
+            "effects": {
+              "setFlags": [
+                "flag.meg_soundscroll_complete"
+              ],
+              "setState": {
+                "key": "state.meg.ending",
+                "value": "SILENCED"
+              },
+              "notify": "声卷到手。她当夜收拾了摊子 —— 休垒的合唱里从此少一个声部"
+            },
+            "next": "n16"
+          },
+          {
+            "id": "c3",
+            "text": "（收回手）留着吧。这是你的收山之作。（放弃）",
+            "style": "silent",
+            "effects": {
+              "setFlags": [
+                "flag.meg_soundscroll_complete"
+              ],
+              "setState": {
+                "key": "state.meg.ending",
+                "value": "RELINQUISHED"
+              },
+              "notify": "她留在休垒。音栓图改由深窖抄本给出 —— 那是另一条路"
+            },
             "next": "n8"
           }
         ],
@@ -1064,6 +1100,13 @@
           }
         },
         "next": "n5"
+      },
+      {
+        "id": "n16",
+        "speaker": "npc_meg",
+        "emotion": "cold",
+        "text": "（她没有拦。你转身走出十步，身后传来卷起摊布的声音——很轻，像一段被剪掉的录音。）",
+        "next": null
       }
     ]
   },
@@ -1604,165 +1647,165 @@
         "text": "断弦。叛逃的守卫队长。这条手臂已经不是我自己的了——它每天替我敲止血拍。现在，跟我走一圈。",
         "next": null
       },
-    {
-      "id": "n5",
-      "speaker": "npc_haltrune",
-      "emotion": "flat",
-      "text": "名册的事，你想好了吗？",
-      "conditions": {
-        "quest": {
-          "id": "q_haltrune",
-          "in": [
-            "HALTRUNE.STEP2_ROSTER"
-          ]
-        },
-        "state": {
-          "key": "state.haltrune.camp",
-          "eq": "INTACT"
-        }
-      },
-      "choices": [
-        {
-          "id": "c1",
-          "text": "再让我看一遍营地。",
-          "style": "silent",
-          "next": null
-        },
-        {
-          "id": "c2",
-          "text": "（把名册还给他）",
-          "style": "silent",
-          "next": "n6"
-        }
-      ],
-      "next": "n7"
-    },
-    {
-      "id": "n6",
-      "speaker": "npc_haltrune",
-      "emotion": "hollow",
-      "text": "（他把名册摊在篝火旁的石板上。七个名字，四个他记着，三个只剩编号。他把炭笔递给你：该你填了——这营地归谁？）",
-      "conditions": {
-        "quest": {
-          "id": "q_haltrune",
-          "in": [
-            "HALTRUNE.STEP2_ROSTER"
-          ]
-        },
-        "state": {
-          "key": "state.haltrune.camp",
-          "eq": "INTACT"
-        }
-      },
-      "choices": [
-        {
-          "id": "c1",
-          "text": "归还给休垒——建成友军哨站（OUTPOST）。",
-          "style": "blunt",
-          "effects": {
-            "setState": {
-              "key": "state.haltrune.camp",
-              "value": "OUTPOST"
-            },
-            "setFlags": [
-              "flag.brokenbar_resolved",
-              "flag.brokenbar_allied"
-            ],
-            "notify": "营地定性：友军哨站 OUTPOST —— 巡逻队就此停摆"
+      {
+        "id": "n5",
+        "speaker": "npc_haltrune",
+        "emotion": "flat",
+        "text": "名册的事，你想好了吗？",
+        "conditions": {
+          "quest": {
+            "id": "q_haltrune",
+            "in": [
+              "HALTRUNE.STEP2_ROSTER"
+            ]
           },
-          "next": "n7"
+          "state": {
+            "key": "state.haltrune.camp",
+            "eq": "INTACT"
+          }
         },
-        {
-          "id": "c2",
-          "text": "听天由命——任它化作废墟（RUINS）。",
-          "style": "silent",
-          "effects": {
-            "setState": {
-              "key": "state.haltrune.camp",
-              "value": "RUINS"
-            },
-            "setFlags": [
-              "flag.brokenbar_resolved"
-            ],
-            "notify": "营地定性：废墟 RUINS —— 军阵散了，仓库留给了你"
+        "choices": [
+          {
+            "id": "c1",
+            "text": "再让我看一遍营地。",
+            "style": "silent",
+            "next": null
           },
-          "next": "n8"
-        },
-        {
-          "id": "c3",
-          "text": "献给恩希尔——作她的前线驻防地（GARRISON）。",
-          "style": "provoke",
-          "effects": {
-            "setState": {
-              "key": "state.haltrune.camp",
-              "value": "GARRISON"
-            },
-            "notify": "营地定性：恩希尔驻防地 GARRISON —— 营地仍有人守，后门只认口令"
+          {
+            "id": "c2",
+            "text": "（把名册还给他）",
+            "style": "silent",
+            "next": "n6"
+          }
+        ],
+        "next": "n7"
+      },
+      {
+        "id": "n6",
+        "speaker": "npc_haltrune",
+        "emotion": "hollow",
+        "text": "（他把名册摊在篝火旁的石板上。七个名字，四个他记着，三个只剩编号。他把炭笔递给你：该你填了——这营地归谁？）",
+        "conditions": {
+          "quest": {
+            "id": "q_haltrune",
+            "in": [
+              "HALTRUNE.STEP2_ROSTER"
+            ]
           },
-          "next": "n9"
-        }
-      ]
-    },
-    {
-      "id": "n7",
-      "speaker": "npc_haltrune",
-      "emotion": "tired",
-      "text": "（他把名册折好，塞进你手里）友军哨站……好。我们会守着这堆废墟，直到休垒的旗帜插上来。谢了。",
-      "conditions": {
-        "state": {
-          "key": "state.haltrune.camp",
-          "eq": "OUTPOST"
-        }
-      },
-      "next": "n8"
-    },
-    {
-      "id": "n8",
-      "speaker": "npc_haltrune",
-      "emotion": "hollow",
-      "text": "（他没接名册，只是把炭笔折成两半）废墟……也好。烂在泥里，比烂在谁手里都强。",
-      "conditions": {
-        "state": {
-          "key": "state.haltrune.camp",
-          "eq": "RUINS"
-        }
-      },
-      "next": "n9"
-    },
-    {
-      "id": "n9",
-      "speaker": "npc_haltrune",
-      "emotion": "cold",
-      "text": "（他把名册揉成团扔进火里）恩希尔的驻防地……她会喜欢的。我们也就此了结了。",
-      "conditions": {
-        "state": {
-          "key": "state.haltrune.camp",
-          "eq": "GARRISON"
-        }
-      },
-      "next": "n10"
-    },
-    {
-      "id": "n10",
-      "speaker": "npc_haltrune",
-      "emotion": "flat",
-      "text": "（他侧身让开半步，把那条断臂搭在断墙上。臂里的拍子一下、一下，和远处巡逻的脚步对得很齐。）",
-      "conditions": {
-        "flags": {
-          "all": [
-            "flag.haltrune_met"
-          ]
+          "state": {
+            "key": "state.haltrune.camp",
+            "eq": "INTACT"
+          }
         },
-        "quest": {
-          "id": "q_haltrune",
-          "in": [
-            "HALTRUNE.STEP1_OPEN",
-            "HALTRUNE.STEP2_ROSTER",
-            "HALTRUNE.STEP3_LASTWATCH"
-          ]
-        }
+        "choices": [
+          {
+            "id": "c1",
+            "text": "归还给休垒——建成友军哨站（OUTPOST）。",
+            "style": "blunt",
+            "effects": {
+              "setState": {
+                "key": "state.haltrune.camp",
+                "value": "OUTPOST"
+              },
+              "setFlags": [
+                "flag.brokenbar_resolved",
+                "flag.brokenbar_allied"
+              ],
+              "notify": "营地定性：友军哨站 OUTPOST —— 巡逻队就此停摆"
+            },
+            "next": "n7"
+          },
+          {
+            "id": "c2",
+            "text": "听天由命——任它化作废墟（RUINS）。",
+            "style": "silent",
+            "effects": {
+              "setState": {
+                "key": "state.haltrune.camp",
+                "value": "RUINS"
+              },
+              "setFlags": [
+                "flag.brokenbar_resolved"
+              ],
+              "notify": "营地定性：废墟 RUINS —— 军阵散了，仓库留给了你"
+            },
+            "next": "n8"
+          },
+          {
+            "id": "c3",
+            "text": "献给恩希尔——作她的前线驻防地（GARRISON）。",
+            "style": "provoke",
+            "effects": {
+              "setState": {
+                "key": "state.haltrune.camp",
+                "value": "GARRISON"
+              },
+              "notify": "营地定性：恩希尔驻防地 GARRISON —— 营地仍有人守，后门只认口令"
+            },
+            "next": "n9"
+          }
+        ]
       },
-      "choices": [
+      {
+        "id": "n7",
+        "speaker": "npc_haltrune",
+        "emotion": "tired",
+        "text": "（他把名册折好，塞进你手里）友军哨站……好。我们会守着这堆废墟，直到休垒的旗帜插上来。谢了。",
+        "conditions": {
+          "state": {
+            "key": "state.haltrune.camp",
+            "eq": "OUTPOST"
+          }
+        },
+        "next": "n8"
+      },
+      {
+        "id": "n8",
+        "speaker": "npc_haltrune",
+        "emotion": "hollow",
+        "text": "（他没接名册，只是把炭笔折成两半）废墟……也好。烂在泥里，比烂在谁手里都强。",
+        "conditions": {
+          "state": {
+            "key": "state.haltrune.camp",
+            "eq": "RUINS"
+          }
+        },
+        "next": "n9"
+      },
+      {
+        "id": "n9",
+        "speaker": "npc_haltrune",
+        "emotion": "cold",
+        "text": "（他把名册揉成团扔进火里）恩希尔的驻防地……她会喜欢的。我们也就此了结了。",
+        "conditions": {
+          "state": {
+            "key": "state.haltrune.camp",
+            "eq": "GARRISON"
+          }
+        },
+        "next": "n10"
+      },
+      {
+        "id": "n10",
+        "speaker": "npc_haltrune",
+        "emotion": "flat",
+        "text": "（他侧身让开半步，把那条断臂搭在断墙上。臂里的拍子一下、一下，和远处巡逻的脚步对得很齐。）",
+        "conditions": {
+          "flags": {
+            "all": [
+              "flag.haltrune_met"
+            ]
+          },
+          "quest": {
+            "id": "q_haltrune",
+            "in": [
+              "HALTRUNE.STEP1_OPEN",
+              "HALTRUNE.STEP2_ROSTER",
+              "HALTRUNE.STEP3_LASTWATCH"
+            ]
+          }
+        },
+        "choices": [
           {
             "id": "c3",
             "text": "（把那条断臂上的拍子按停）",
@@ -1773,15 +1816,19 @@
               ]
             },
             "conditions": {
-          "quest": {
-            "id": "q_haltrune",
-            "gte": "HALTRUNE.STEP3_LASTWATCH"
-          },
-          "state": {
-            "key": "state.haltrune.camp",
-            "in": ["OUTPOST", "RUINS", "GARRISON"]
-          }
-        },
+              "quest": {
+                "id": "q_haltrune",
+                "gte": "HALTRUNE.STEP3_LASTWATCH"
+              },
+              "state": {
+                "key": "state.haltrune.camp",
+                "in": [
+                  "OUTPOST",
+                  "RUINS",
+                  "GARRISON"
+                ]
+              }
+            },
             "next": "h0"
           },
           {
@@ -1789,101 +1836,105 @@
             "text": "（让他继续站着）",
             "style": "silent",
             "conditions": {
-          "quest": {
-            "id": "q_haltrune",
-            "gte": "HALTRUNE.STEP3_LASTWATCH"
-          },
-          "state": {
-            "key": "state.haltrune.camp",
-            "in": ["OUTPOST", "RUINS", "GARRISON"]
-          }
-        },
+              "quest": {
+                "id": "q_haltrune",
+                "gte": "HALTRUNE.STEP3_LASTWATCH"
+              },
+              "state": {
+                "key": "state.haltrune.camp",
+                "in": [
+                  "OUTPOST",
+                  "RUINS",
+                  "GARRISON"
+                ]
+              }
+            },
             "next": "n11"
           }
         ],
         "next": "n11"
-    },
-    {
-      "id": "n11",
-      "speaker": "npc_haltrune",
-      "emotion": "flat",
-      "text": "（他收回那半步，断墙边的拍子慢了下来）你说过，死人该躺下。可他们还在走。我不跟你争这个——你得自己数一遍：七个，还是四个。",
-      "conditions": {
-        "flags": {
-          "all": [
-            "flag.haltrune_met"
-          ]
-        }
       },
-      "choices": [
-        {
-          "id": "c1",
-          "text": "……那我跟一圈。",
-          "style": "blunt",
-          "next": "n1"
+      {
+        "id": "n11",
+        "speaker": "npc_haltrune",
+        "emotion": "flat",
+        "text": "（他收回那半步，断墙边的拍子慢了下来）你说过，死人该躺下。可他们还在走。我不跟你争这个——你得自己数一遍：七个，还是四个。",
+        "conditions": {
+          "flags": {
+            "all": [
+              "flag.haltrune_met"
+            ]
+          }
         },
-        {
-          "id": "c2",
-          "text": "（转身走开）",
-          "style": "silent",
-          "next": null
-        }
-      ]
-    },
-    {
-      "id": "h0",
-      "speaker": "npc_haltrune",
-      "emotion": "still",
-      "text": "（他的左臂在打拍，比昨天快——他自己听得见那个速度。他把义肢卸下来放在石头上。）两个选择：你用休止把它停在这里，我就停在最后一拍上；或者你走开，让我自己敲完。",
-      "choices": [
-        {
-          "id": "c1",
-          "text": "（用休止按住那面鼓）",
-          "style": "poetic",
-          "effects": {
-            "setState": {
-              "key": "state.haltrune.fate",
-              "value": "PASSING_STILL"
-            },
-            "setFlags": [
-              "flag.terminate_granted"
-            ],
-            "setRelation": {
-              "delta": 1
-            },
-            "notify": "他停在最后一拍上 —— 石头上的义肢最后一次落下时没有响"
+        "choices": [
+          {
+            "id": "c1",
+            "text": "……那我跟一圈。",
+            "style": "blunt",
+            "next": "n1"
           },
-          "next": "h1"
-        },
-        {
-          "id": "c2",
-          "text": "（转身走开）",
-          "style": "silent",
-          "effects": {
-            "setState": {
-              "key": "state.haltrune.fate",
-              "value": "DRUM_LEGEND"
+          {
+            "id": "c2",
+            "text": "（转身走开）",
+            "style": "silent",
+            "next": null
+          }
+        ]
+      },
+      {
+        "id": "h0",
+        "speaker": "npc_haltrune",
+        "emotion": "still",
+        "text": "（他的左臂在打拍，比昨天快——他自己听得见那个速度。他把义肢卸下来放在石头上。）两个选择：你用休止把它停在这里，我就停在最后一拍上；或者你走开，让我自己敲完。",
+        "choices": [
+          {
+            "id": "c1",
+            "text": "（用休止按住那面鼓）",
+            "style": "poetic",
+            "effects": {
+              "setState": {
+                "key": "state.haltrune.fate",
+                "value": "PASSING_STILL"
+              },
+              "setFlags": [
+                "flag.terminate_granted"
+              ],
+              "setRelation": {
+                "delta": 1
+              },
+              "notify": "他停在最后一拍上 —— 石头上的义肢最后一次落下时没有响"
             },
-            "notify": "你走到桥头回头 —— 营地里多了一面鼓。它自己打更，拍子很稳"
+            "next": "h1"
           },
-          "next": "h2"
-        }
-      ]
-    },
-    {
-      "id": "h1",
-      "speaker": "npc_haltrune",
-      "emotion": "quiet",
-      "text": "……稳。谢谢。你比律政院懂什么叫收工。",
-      "next": null
-    },
-    {
-      "id": "h2",
-      "speaker": "npc_haltrune",
-      "emotion": "hollow",
-      "text": "（他没有回头。你听见第一声更，落在正拍上。）",
-      "next": null
-    }
+          {
+            "id": "c2",
+            "text": "（转身走开）",
+            "style": "silent",
+            "effects": {
+              "setState": {
+                "key": "state.haltrune.fate",
+                "value": "DRUM_LEGEND"
+              },
+              "notify": "你走到桥头回头 —— 营地里多了一面鼓。它自己打更，拍子很稳"
+            },
+            "next": "h2"
+          }
+        ]
+      },
+      {
+        "id": "h1",
+        "speaker": "npc_haltrune",
+        "emotion": "quiet",
+        "text": "……稳。谢谢。你比律政院懂什么叫收工。",
+        "next": null
+      },
+      {
+        "id": "h2",
+        "speaker": "npc_haltrune",
+        "emotion": "hollow",
+        "text": "（他没有回头。你听见第一声更，落在正拍上。）",
+        "next": null
+      }
     ]
   },
   {
@@ -1929,14 +1980,31 @@
         "speaker": "npc_hersil",
         "emotion": "quiet",
         "text": "我闻见静了。（管风琴自鸣，如深吸气）七十三年，三百个喉咙在我身体里轮值，没有一个音敢先累。而你——一身拍子的空拍子走进我的厅堂。休止。我认得你这种记号。",
-        "conditions": { "flags": { "not": ["flag.hersil_felled"] } },
+        "conditions": {
+          "flags": {
+            "not": [
+              "flag.hersil_felled"
+            ]
+          }
+        },
         "choices": [
-          { "id": "c1", "text": "我来带走第一声部。", "style": "blunt", "next": "n1" },
+          {
+            "id": "c1",
+            "text": "我来带走第一声部。",
+            "style": "blunt",
+            "next": "n1"
+          },
           {
             "id": "c2",
             "text": "那晚的转调，降了半音。不是你弹错——是你不敢让她们唱原调。",
             "style": "poetic",
-            "conditions": { "flags": { "all": ["flag.bell_keymod_found"] } },
+            "conditions": {
+              "flags": {
+                "all": [
+                  "flag.bell_keymod_found"
+                ]
+              }
+            },
             "cinematic": "CINE_STORY_B7",
             "next": "n2"
           }
