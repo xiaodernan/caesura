@@ -1251,11 +1251,13 @@
                 "delta": 1
               },
               "setFlags": [
-                "flag.faceless_answered"
+                "flag.faceless_answered",
+                "flag.faceless_lied"
               ],
               "notify": "它在灰上写了一个字，又立刻擦掉 —— 你瞥见那是「谢」"
             },
-            "next": "n5"
+            "next": "n5",
+            "notify": "它在灰上写下「他骗你」，然后擦掉了 —— 它知道"
           },
           {
             "id": "c2",
@@ -1311,6 +1313,56 @@
             ]
           }
         },
+        "next": "n17"
+      },
+      {
+        "id": "n17",
+        "speaker": "npc_faceless",
+        "emotion": "blank",
+        "text": "（它不再写字了。灰上只有同一个音符，一遍又一遍——你认得那个音：是它在哑带边缘第一次写的那个。）",
+        "conditions": {
+          "flags": {
+            "all": [
+              "flag.faceless_lied"
+            ],
+            "not": [
+              "flag.faceless_clue_ring_complete",
+              "flag.faceless_identity_written"
+            ]
+          }
+        },
+        "choices": [
+          {
+            "id": "c1",
+            "text": "（带它去未竟厅，看那件振源核嵌甲）",
+            "style": "provoke",
+            "conditions": {
+              "state": {
+                "key": "state.corvin.schism",
+                "eq": "COLLUDED"
+              }
+            },
+            "effects": {
+              "setState": {
+                "key": "state.faceless.identity",
+                "value": "LOST"
+              },
+              "notify": "它盯着那件嵌甲看了很久。地上再没有孩子画谱"
+            },
+            "next": "n14"
+          },
+          {
+            "id": "c2",
+            "text": "（蹲下来，陪它坐一会儿）",
+            "style": "silent",
+            "effects": {
+              "setRelation": {
+                "delta": 1
+              }
+            },
+            "next": "n15"
+          }
+        ],
         "next": "n7"
       },
       {
