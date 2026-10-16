@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { bus } from '@/core/EventBus'
-import { GameTime, TICK_DT } from '@/core/Time'
+import { GameTime, TICK_DT, TICK_HZ } from '@/core/Time'
 import type { Input } from '@/core/Input'
 import { RhythmClock } from '@/core/RhythmClock'
 import { registry } from '@/core/Registry'
@@ -1025,6 +1025,85 @@ describe('§7.2 休止斩把时停镜像到弹体（KI-037 第二步：飞着的
     expect(foe.frozenTicks).toBe(cast.freezeTicks)
     expect(w.combat.projectiles.live, '前提：场上没有弹体').toBe(0)
     expect(w.notes).toContain('休止｜1 个声音停在拍上')
+    w.off()
+  })
+})
+
+/* ---------------- KI-120：出手播报那格报名的出处 ---------------- */
+
+/**
+ * 「弹《终止》时屏上印『无声协奏』」是 KI-119 顺出来的生产缺陷（§4.8 帧表对上了账，播报仍在说谎）。
+ * 这一组钉的是**播报的式名与秒数都从 `movements.json` 现推**：式名走 `movementName(cast.id)`，
+ * 秒数走 `TICK_HZ` 那把唯一的尺。式的名册在这里是从数据筛出来的（哪一级的 `echoCharges`/`silenceTicks`
+ * 非零，哪一式就该播），测试不手抄第二份名单——手抄名单正是这一批要拆的东西。
+ */
+const ANNOUNCING = () => movementConfig().movements.filter((m) =>
+  m.levels.some((l) => (l.echoCharges ?? 0) > 0 || (l.silenceTicks ?? 0) > 0))
+
+/** 装好这一式（可指定升到第几级）并真的打出去，返回那个世界（`notes` 里就是它播的话） */
+function castForAnnounce(movementId: string, slot: number, toLevel = 1): World {
+  const w = makeWorld()
+  const key = equipMove(w, movementId, slot)
+  for (let i = 1; i < toLevel; i++) {
+    const need = w.rpg.moves.upgradeNeed(movementId)
+    expect(need, `${movementId} 没有第 ${i + 1} 级可升`).toBeTruthy()
+    w.rpg.inv.add(TIMBITE, need!.timbite)
+    w.rpg.inv.add(SCORE, need!.score)
+    expect(w.rpg.moves.upgrade(movementId, w.rpg.inv).ok, `升不到 L${i + 1}`).toBe(true)
+  }
+  w.player.setSkills(w.rpg.skillLoadout()) // 等级变了，cast 里那组数要重新推一遍才算
+  const e = w.pin(w.ai.spawn(FOE, { ...FOE_POS }, 'announce'))
+  faceAt(w, e.pos)
+  const cast = w.player.skills[key].cast
+  w.player.stats.overdrive = cast.overdriveCost
+  expect(w.player.tryStartAction(key, w.time.tick), `${movementId} 在槽 ${slot} 出不了手`).toBe(true)
+  return w
+}
+
+describe('§7.2 出手播报的式名从数据现推（KI-120）', () => {
+  it('前提：会播的式是从表里筛出来的，而且不止一条', () => {
+    expect(ANNOUNCING().length, '只筛出一条的话，"不许借别人的名字"那条断言是空的').toBeGreaterThanOrEqual(2)
+    expect(ANNOUNCING().map((m) => m.id), '《终止》带着 silenceTicks，本该在名册里').toContain('mv_terminate')
+  })
+
+  it('每一式弹出时印的是它自己的名字，而不是同族里最先接线那一式的名字', () => {
+    for (const mv of ANNOUNCING()) {
+      const w = castForAnnounce(mv.id, 0)
+      const own = w.notes.filter((n) => n.startsWith(`${mv.displayName}｜`))
+      expect(own.length, `「${mv.id}」弹出里没有以「${mv.displayName}｜」开头的那条：${JSON.stringify(w.notes)}`)
+        .toBeGreaterThan(0)
+      for (const other of ANNOUNCING()) {
+        if (other.id === mv.id) continue
+        expect(w.notes.some((n) => n.startsWith(`${other.displayName}｜`)),
+          `「${mv.id}」播成了「${other.displayName}」：报名抄在代码里就会这样`)
+          .toBe(false)
+      }
+      w.off()
+    }
+  })
+
+  it('静默秒数跟着等级表走：同一式升到 L2 再出手，播报里的数字换成那一级的读数', () => {
+    const mv = ANNOUNCING().find((m) => new Set(m.levels.map((l) => l.silenceTicks ?? 0)).size > 1)
+    expect(mv, '名册里没有跨级变长的静默式 ⇒ 这条腿测不到"数字跟着表走"').toBeTruthy()
+    const id = mv!.id
+    const a = castForAnnounce(id, 0, 1)
+    const b = castForAnnounce(id, 1, 2) // 换一条槽：冷却按输入槽记，同槽连打会被上一记挡死
+    const want = (lv: number) => `${mv!.displayName}｜${((mv!.levels[lv - 1].silenceTicks ?? 0) / TICK_HZ).toFixed(1)}s`
+    expect(a.notes.some((n) => n.startsWith(want(1))), `L1 该播 ${want(1)}，实际 ${JSON.stringify(a.notes)}`).toBe(true)
+    expect(b.notes.some((n) => n.startsWith(want(2))), `L2 该播 ${want(2)}，实际 ${JSON.stringify(b.notes)}`).toBe(true)
+    a.off(); b.off()
+  })
+
+  it('播报里的那个秒数和身上真的挂了几 tick 是同一个数：屏上说的和引擎做的不许两套', () => {
+    const mv = ANNOUNCING().find((m) => m.levels.some((l) => (l.silenceTicks ?? 0) > 0))
+    expect(mv, '名册里没有带静默的式').toBeTruthy()
+    const w = castForAnnounce(mv!.id, 0)
+    const note = w.notes.find((n) => n.startsWith(`${mv!.displayName}｜`))
+    expect(note, `弹出里没有「${mv!.displayName}｜」那一格`).toBeTruthy()
+    const secs = Number(/([0-9.]+)s/.exec(note!)?.[1])
+    expect(Number.isFinite(secs), `那一格里没有秒数：${note}`).toBe(true)
+    expect(w.player.tacet, '前提：静默真的挂上了身').toBeTruthy()
+    expect(secs).toBeCloseTo(w.player.tacet!.ticksLeft / TICK_HZ, 10)
     w.off()
   })
 })

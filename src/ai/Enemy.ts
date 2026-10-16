@@ -1,5 +1,6 @@
 import { bus } from '@/core/EventBus'
 import { Rng, clamp } from '@/core/Math'
+import { TICK_HZ } from '@/core/Time'
 import type { EnemyData, AttackSpec, FrameData, ProjectileSpec } from '@/data/schema'
 import { EntityStats } from '@/combat/EntityStats'
 import { armStats } from '@/combat/Statuses'
@@ -858,7 +859,7 @@ export class Enemy {
       bus.emit('audio.sfx', { key: 'bell_toll', pos: { ...g.positions[i] }, gain: 1 })
       bus.emit('vfx.request', { key: 'shock_small', pos: { ...g.positions[i] }, scale: 2.4 })
       bus.emit('ui.notify', {
-        text: `立钟鸣响 · 钟壳共振解除 ${(g.releaseTicks / 60).toFixed(1)}s（${rung}/${g.positions.length}）`,
+        text: `立钟鸣响 · 钟壳共振解除 ${(g.releaseTicks / TICK_HZ).toFixed(1)}s（${rung}/${g.positions.length}）`,
         kind: 'reward'
       })
       if (rung >= g.breaksAt && !this.shellBroken) {
@@ -999,7 +1000,7 @@ export class Enemy {
     this.cooldowns.set('parryLock', tick + 60)
     if (resonant && resonant > 18) {
       bus.emit('vfx.request', { key: 'shock_small', pos: { ...this.pos }, scale: 1.5 })
-      bus.emit('ui.notify', { text: `钟体共振！失衡 ${(resonant / 60).toFixed(1)}s`, kind: 'info' })
+      bus.emit('ui.notify', { text: `钟体共振！失衡 ${(resonant / TICK_HZ).toFixed(1)}s`, kind: 'info' })
     }
   }
 }

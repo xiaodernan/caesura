@@ -6,12 +6,13 @@ import { clamp } from '@/core/Math'
 import type { FrameData, IncomingGrade, MovesetData, PlayerBaseData, WeaponData } from '@/data/schema'
 import { EntityStats, playerStatsFrom } from '@/combat/EntityStats'
 import { advanceActionFrames, applyActionStop, type ActionStop } from '@/combat/ActionFrames'
-import { armStats, CorruptionMeter } from '@/combat/Statuses'
+import { armStats, CorruptionMeter, statusConfig } from '@/combat/Statuses'
 import { armCrumple, reactionConfig } from '@/combat/Reactions'
-import { msToTicks } from '@/core/Time'
+import { msToTicks, TICK_HZ } from '@/core/Time'
 import type { Vec3 } from '@/combat/EntityStats'
 import type { HitTarget } from '@/combat/HitShapes'
 import { defaultMods, type PlayerMods } from '@/rpg/Runtime'
+import { movementName } from '@/rpg/Movements'
 import type { SkillAction, SkillCast } from '@/rpg/Movements'
 
 /** 蓄力攒满要按满这几 tick；导出是为了量具不再抄第二份常数（§55） */
@@ -719,12 +720,13 @@ export class PlayerController {
       // §7.2 定音回响：存充能。再出一式是**换一批**而不是叠罗汉——"下一次"不该被攒成货币
       if (skill.cast.echoCharges > 0) {
         this.echo = { chargesLeft: skill.cast.echoCharges, windowMul: skill.cast.parryWindowMul }
-        bus.emit('ui.notify', { text: `定音｜弹反充能 ×${skill.cast.echoCharges}`, kind: 'info' })
+        bus.emit('ui.notify', { text: `${movementName(skill.cast.id)}｜弹反充能 ×${skill.cast.echoCharges}`, kind: 'info' })
       }
-      // §7.2 无声协奏：七秒的静默从这一记出手就开始计（时长与加成都是 movements.json 的数）
+      // §7.2 无声协奏：七秒的静默从这一记出手就开始计（时长与加成都是 movements.json 的数）。
+      // 带这一栏的不止它一式（终止也静默，只是短得多），所以报名从 cast.id 现推。
       if (skill.cast.silenceTicks > 0) {
         this.tacet = { ticksLeft: skill.cast.silenceTicks, dmgBonus: skill.cast.silenceDmgBonus }
-        bus.emit('ui.notify', { text: `无声协奏｜${(skill.cast.silenceTicks / 60).toFixed(1)}s 世界听不见你`, kind: 'info' })
+        bus.emit('ui.notify', { text: `${movementName(skill.cast.id)}｜${(skill.cast.silenceTicks / TICK_HZ).toFixed(1)}s 世界听不见你`, kind: 'info' })
       }
     }
     const cut = key.startsWith('l') ? Math.min(this.rpg.lightStartupTicks, Math.max(0, f.activeStart - 1)) : 0
@@ -764,7 +766,7 @@ export class PlayerController {
    */
   private skillGate(key: string, s: SkillAction): boolean {
     if (this.stats.muteTicksLeft > 0) {
-      bus.emit('ui.notify', { text: '闷音｜战技被封', kind: 'info' })
+      bus.emit('ui.notify', { text: `${statusConfig().mute.displayName}｜战技被封`, kind: 'info' })
       return false
     }
     if (this.skillCd.get(key)) return false // 冷却中不出声：按键连打是常态，刷屏才是噪声
