@@ -105,6 +105,14 @@ export class Hud {
   /** 交互提示（[E] …），由 world/Interactables 每帧焦点变化时推送 */
   private prompt: string | null = null
   private promptA = 0
+  /**
+   * 常驻任务行（KI-113②：用户实测「完全不知道要干什么」的 HUD 半句）。`quest.changed`
+   * 事件注释里写的「UI 与调试面板据此播报」——调试面板（F3）早就有这一格，HUD 没有：
+   * 玩家在灰盒里走得再远，任务走到哪一步只有打开调试器才知道。事件自带的 label/序号
+   * 原样上屏，不在这里抄第二份任务数据。`flash` 在步进/收束那一拍亮一次。
+   */
+  private quest: { label: string; index: number; total: number; done: boolean } | null = null
+  private questFlash = 0
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas
@@ -143,6 +151,11 @@ export class Hud {
         while (this.notes.length > 3) this.notes.shift()
       }),
       bus.on('ui.prompt', (p) => { this.prompt = p.text }),
+      bus.on('quest.changed', (p) => {
+        // 任务不在场（没接）时不占屏：started=false 的播报只擦旧行，不画空行
+        this.quest = p.started || p.index >= 0 ? { label: p.label, index: p.index, total: p.total, done: p.completed } : null
+        this.questFlash = 1
+      }),
       bus.on('ui.target', (p) => {
         const fresh = !this.target || this.target.pos === null
         this.target = p
@@ -213,6 +226,7 @@ export class Hud {
     ctx.clearRect(0, 0, this.cssW, this.cssH)
 
     this.drawVignette()
+    this.drawQuest()
     this.drawHpWave()
     this.drawRank()
     this.drawCorruption()
@@ -292,6 +306,31 @@ export class Hud {
   }
 
   // ---------------------------------------------------------------- widgets
+
+  /** 常驻任务行（左上角，KI-113②）：步进/收束那一拍发亮，平时是安静的参考行 */
+  private drawQuest(): void {
+    const q = this.quest
+    if (!q) return
+    const { ctx } = this
+    const s = this.scale()
+    this.questFlash = Math.max(0, this.questFlash - 0.01)
+    const a = 0.5 + 0.4 * clamp01(this.questFlash)
+    const x = 56 * s
+    let y = 44 * s
+    ctx.save()
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'alphabetic'
+    ctx.font = `${Math.round(13 * s)}px ${SERIF}`
+    ctx.fillStyle = css(GOLD, 0.42 + 0.4 * clamp01(this.questFlash))
+    ctx.fillText(q.done ? '谱册 · 一段收束' : `谱册 · ${q.index + 1}/${q.total}`, x, y)
+    y += 20 * s
+    ctx.font = `${Math.round(14 * s)}px ${SERIF}`
+    ctx.fillStyle = css(BONE, a * 0.85)
+    // 长句截断：这一行是「现在该看哪」的指针，不是阅读区——两行封顶的话写在调试器里
+    const label = q.label.length > 30 ? q.label.slice(0, 29) + '…' : q.label
+    ctx.fillText(label, x, y)
+    ctx.restore()
+  }
 
   /** 1.3 HP amplitude bar — a waveform, not a rectangle bar. */
   /** 音级：贴在振幅条左下角的一枚小字（升级时短暂发亮） */
