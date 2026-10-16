@@ -42,6 +42,23 @@ export const DEFAULT_BINDS: Binds = {
 const DEADZONE = 0.2
 export const INPUT_BUFFER_SEC = 0.2
 
+/**
+ * 某个动作此刻绑在哪个键上（KI-113③：HUD 的键位参考行要从**运行时真值**画，不是从文档抄
+ * 第二份——将来 §6 的全键位重映射落地，这一行自动跟着变）。返回给人看的短名（`KeyW`→`W`、
+ * `MouseLeft`→`左键`、`Digit1`→`1`、其余原样），找不到绑定的动作返回 null（HUD 不画空行）。
+ */
+export function keyOf(action: ActionName, binds: Binds = DEFAULT_BINDS): string | null {
+  const code = Object.keys(binds.keyboard).find((k) => binds.keyboard[k] === action) ?? null
+  if (!code) return null
+  const mouse: Record<string, string> = { MouseLeft: '左键', MouseRight: '右键', MouseMiddle: '中键' }
+  if (mouse[code]) return mouse[code]
+  if (code.startsWith('Key')) return code.slice(3)
+  if (code.startsWith('Digit')) return code.slice(5)
+  if (code === 'ControlLeft' || code === 'ControlRight') return 'Ctrl'
+  if (code === 'ShiftLeft' || code === 'ShiftRight') return 'Shift'
+  return code
+}
+
 /* ---------------------------------------------------------------------------
  * UI 意图通道（ui-ux.md §5.2「摇杆/方向键 + 肩键切页 + Back 后退一层」（需求 §46 的 UI 细化，KI-062））。
  *

@@ -1,4 +1,5 @@
 import { bus, type StatusId, type StatusPulse } from '../core/EventBus'
+import { keyOf, type ActionName } from '../core/Input'
 import { registry } from '@/core/Registry'
 import type { ProgressionData } from '@/data/schema'
 import { statuses } from '@/data'
@@ -227,6 +228,7 @@ export class Hud {
 
     this.drawVignette()
     this.drawQuest()
+    this.drawBinds()
     this.drawHpWave()
     this.drawRank()
     this.drawCorruption()
@@ -307,9 +309,37 @@ export class Hud {
 
   // ---------------------------------------------------------------- widgets
 
+  /**
+   * 键位参考列（右下角，KI-113③）：「怎么玩」的字面半句。键名从 `keyOf` 读**运行时绑定**，
+   * 动作中文名是 UI 文案（与对话框 hint 同级）；挑八个最常用的动词，淡灰不抢注意力。
+   * 绑定改了这一列自动跟着变（重映射落地时这里零改动）。
+   */
+  private drawBinds(): void {
+    const { ctx } = this
+    const s = this.scale()
+    const rows: Array<[ActionName, string]> = [
+      ['moveUp', '移动 WASD'], ['dodge', '闪避'], ['attackLight', '轻击'], ['attackHeavy', '重击'],
+      ['parry', '弹反'], ['interact', '交互'], ['weaponSkill', '战技'], ['observe', '声纹观察'], ['map', '地图']
+    ]
+    ctx.save()
+    ctx.textAlign = 'right'
+    ctx.textBaseline = 'alphabetic'
+    ctx.font = `${Math.round(12 * s)}px ${SERIF}`
+    let y = this.cssH - 96 * s
+    for (const [action, label] of rows) {
+      const key = keyOf(action)
+      if (!key) continue
+      ctx.fillStyle = css(BONE, 0.26)
+      ctx.fillText(`${label}`, this.cssW - 56 * s - 44 * s, y)
+      ctx.fillStyle = css(GOLD, 0.34)
+      ctx.fillText(key, this.cssW - 56 * s, y)
+      y -= 19 * s
+    }
+    ctx.restore()
+  }
+
   /** 常驻任务行（左上角，KI-113②）：步进/收束那一拍发亮，平时是安静的参考行 */
-  private drawQuest(): void {
-    const q = this.quest
+  private drawQuest(): void {    const q = this.quest
     if (!q) return
     const { ctx } = this
     const s = this.scale()
