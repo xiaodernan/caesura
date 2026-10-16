@@ -149,7 +149,7 @@ describe('盐歌线步 4《整卷还是散声》：同一件事的三种成色',
       w.session.close()
       w.streaming.setFlag(flag)
       w.session.open('npc_meg')
-      expect(w.last().choices.map((c) => c.id), '去过 ⇒ 第三条腿入场').toEqual(['c1', 'c2', 'c3'])
+      expect(w.last().choices.map((c) => c.id), '开自己那扇门：断面（铃姨旗）仍关着，钟壳（ostlara 旗）也没开').toEqual(['c2', 'c4'])
       w.session.choose(choice)
       expect(w.streaming.hasFlag('flag.meg_second_fragment'), '素材不同，账目相同').toBe(true)
       w.session.close()
