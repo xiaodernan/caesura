@@ -942,9 +942,53 @@
           },
           {
             "id": "c2",
+            "text": "哑带的死寂。那种安静本身就有声音。",
+            "style": "poetic",
+            "conditions": {
+              "flags": {
+                "all": [
+                  "flag.deeps_entrance_open"
+                ]
+              }
+            },
+            "effects": {
+              "setRelation": {
+                "delta": 1
+              },
+              "setFlags": [
+                "flag.meg_second_fragment"
+              ],
+              "notify": "第二段记忆入账：哑带深处，莉安的脚印在灰上拐了个弯——她去过连回声都死的地方"
+            },
+            "next": "n4"
+          },
+          {
+            "id": "c4",
             "text": "还没攒够。",
             "style": "silent",
             "next": null
+          },
+          {
+            "id": "c3",
+            "text": "奥斯塔拉钟壳的第七拍。慢半拍的那一下。",
+            "style": "blunt",
+            "conditions": {
+              "flags": {
+                "all": [
+                  "flag.ostlara_defeated"
+                ]
+              }
+            },
+            "effects": {
+              "setRelation": {
+                "delta": 1
+              },
+              "setFlags": [
+                "flag.meg_second_fragment"
+              ],
+              "notify": "第二段记忆入账：仪典之夜的排练，敲钟的人停了一下——莉安说\"这里要慢半拍\""
+            },
+            "next": "n4"
           }
         ],
         "next": "n9"

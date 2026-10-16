@@ -135,6 +135,27 @@ describe('盐歌线步 4《整卷还是散声》：同一件事的三种成色',
     w3.session.close()
   })
 
+  it('以物易声的三条腿：哑带死寂与钟壳第七拍各自吃探索成果，殊途同归步 3', () => {
+    for (const [flag, choice] of [['flag.deeps_entrance_open', 'c2'], ['flag.ostlara_defeated', 'c3']] as const) {
+      const w = makeWorld()
+      w.session.open('npc_meg')
+      w.session.choose('c1')
+      w.session.choose('c1')
+      w.session.close()
+      // 没去过那里（旗没立）⇒ 那条腿不可见，只有断面（铃姨线）与「还没攒够」
+      w.session.open('npc_meg')
+      expect(w.last().nodeId).toBe('n3')
+      expect(w.last().choices.map((c) => c.id), '没去过 ⇒ 那条素材腿不出现').toEqual(['c1', 'c2'])
+      w.session.close()
+      w.streaming.setFlag(flag)
+      w.session.open('npc_meg')
+      expect(w.last().choices.map((c) => c.id), '去过 ⇒ 第三条腿入场').toEqual(['c1', 'c2', 'c3'])
+      w.session.choose(choice)
+      expect(w.streaming.hasFlag('flag.meg_second_fragment'), '素材不同，账目相同').toBe(true)
+      w.session.close()
+    }
+  })
+
   it('完成后复访落在 n10；INTACT 缺省意味着"没走到这个抉择"，不是第四种结局', () => {
     const w = makeWorld()
     w.toStep3()
