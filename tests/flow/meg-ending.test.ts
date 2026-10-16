@@ -72,7 +72,8 @@ function makeWorld() {
     streaming.setFlag('flag.meg_whisper_extracted', true) // 未竟厅那处交互物写的旗（世界侧，reqState=RUNG 的走查挂别批）
   }
 
-  return { streaming, quests, states, session, views, last, toStep3 }
+  const cleanup = (): void => { session.close(); worldState.dispose(); states.dispose(); quests.dispose(); streaming.dispose() }
+  return { streaming, quests, states, session, views, last, toStep3, cleanup }
 }
 
 describe('盐歌线步 4《整卷还是散声》：同一件事的三种成色', () => {
@@ -149,10 +150,12 @@ describe('盐歌线步 4《整卷还是散声》：同一件事的三种成色',
       w.session.close()
       w.streaming.setFlag(flag)
       w.session.open('npc_meg')
-      expect(w.last().choices.map((c) => c.id), '开自己那扇门：断面（铃姨旗）仍关着，钟壳（ostlara 旗）也没开').toEqual(['c2', 'c4'])
+      const opened = flag === 'flag.deeps_entrance_open' ? 'c2' : 'c3'
+      expect(w.last().choices.map((c) => c.id), '开的是自己那扇门（另一扇仍关着）').toEqual([opened, 'c4'])
       w.session.choose(choice)
       expect(w.streaming.hasFlag('flag.meg_second_fragment'), '素材不同，账目相同').toBe(true)
       w.session.close()
+      w.cleanup() // bus 是全局单例：不销毁的世界会把旗广播进下一轮
     }
   })
 
