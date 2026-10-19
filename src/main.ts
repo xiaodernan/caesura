@@ -544,6 +544,19 @@ bus.on('quest.changed', (p) => {
   if (p.completed) { hud.objective = null; return }
   hud.objective = resolveMarker(p.marker, regions)
 })
+/**
+ * **序章目标**（KI-141）：铃姨线要**跟她说话才开始**（`DLG_BELLTONGUE` 的 n0 两个选项都带
+ * `startQuest: q_bells`）⇒ 在那之前 HUD 上没有任何指向，玩家只能自己乱转找那个白色人形。
+ * 区域行上那一格 `prologueMarker` 说的就是"开任务之前先找谁"（形状与任务步的 marker 同一套）。
+ *
+ * **谁在什么时候喂它**：开跑时（`startRun`）喂一次——那时还没有任何任务步，序章指向是唯一的方向；
+ * 一旦有任务开始，`quest.changed` 那一格把目标换成任务步自己的（**HUD 只有一个 objective 字段**，
+ * 两个主人会打架）。
+ */
+const applyPrologueObjective = (): void => {
+  const region = streaming.regionAt(player.pos)
+  hud.objective = resolveMarker(region?.prologueMarker, regions)
+}
 const dialogueEngine = new DialogueEngine(dialogues, quests)
 const dialogueCtx: DialogueContext = {
   hasFlag: (k) => streaming.hasFlag(k),
@@ -946,6 +959,8 @@ async function startRun(slot: string | null): Promise<void> {
   // **不给坐标**：坐标由目标指示那枚箭头给（KI-137），这里只说"找谁"。
   bus.emit('ui.notify', { text: '休垒的钟声守在等你 —— 找她领第一件委托（发光的调音桩可以先加点）', kind: 'info' })
   bus.emit('ui.notify', { text: `音级 ${rpg.prog.rank} · 遗响 ${rpg.prog.xp}${rpg.prog.unspent > 0 ? ` · 未分配点 ${rpg.prog.unspent}` : ''}`, kind: 'info' })
+  // KI-141：序章目标（还没接任何委托时，箭头指着该先找的人）
+  applyPrologueObjective()
   booted = true
   loop.start()
 }

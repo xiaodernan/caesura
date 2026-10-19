@@ -1806,6 +1806,14 @@ export interface CinematicRow {
 }
 
 export interface RegionData {
+  /**
+   * **序章目标**（KI-141）：这一区在**任何任务开始之前**该先找的人/地方。
+   *
+   * 形状与任务步的 `marker` 同一套（同一个 `QuestMarker` 联合）——**一个主人**：
+   * HUD 只有一个 `objective` 字段，序章指向与任务步指向走同一条解析与画法。
+   * 省略 = 这一区没有序章（那就在任务开始前没有指向）。
+   */
+  prologueMarker?: QuestMarker
   id: string
   /** IP_SEED §14 registered vocabulary */
   nameKey: string

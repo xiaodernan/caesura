@@ -1594,7 +1594,7 @@ function navmeshExists(ref) {
   return roots.some((root) => suffixes.some((s) => existsSync(resolve(ROOT, root, ref + s))))
 }
 
-function validateRegions(enemyIds, lootIds, rarityIds, stateDefs) {
+function validateRegions(enemyIds, lootIds, rarityIds, stateDefs, markerTargets) {
   const file = 'regions.json'
   const list = data[file]
   const ids = new Set()
@@ -1669,6 +1669,13 @@ function validateRegions(enemyIds, lootIds, rarityIds, stateDefs) {
     if (!isObj(rg.palette)) report.error(file, `${w}.palette`, '必须是对象')
     else for (const k of ['base', 'accent', 'glow']) {
       if (!isHex(rg.palette[k])) report.error(file, `${w}.palette.${k}`, `${k} 必须是合法 hex 颜色（#RGB 或 #RRGGBB），实为 ${JSON.stringify(rg.palette[k])}`)
+    }
+
+    // KI-141：这一区在**开任务之前**该先找的人/地方（判据与任务步的 marker 同一份）
+    if (rg.prologueMarker !== undefined) {
+      for (const e of markerFindings(file, `${w}.prologueMarker`, rg.prologueMarker, markerTargets)) {
+        report.error(file, e.where, e.msg)
+      }
     }
 
     // spawnGroups
@@ -2721,6 +2728,41 @@ function validateNpcs() {
  * **npc 名册从 `regions.json` 的交互位上收**（`interactables[].npcId`）——npc 的**位置**住在世界里，
  * 不住在 `npcs.json`；任务表只说"去找铃姨"，不写坐标。
  */
+/**
+ * **目标指示**（任务步的 `marker` 与区域的 `prologueMarker`）的判据本体。
+ *
+ * **同一种形状只有一份判据**：两处指向的形状完全一样（npc / interact / region / pos），
+ * 分开写两份就是两个主人——将来加一形要记得改两处。
+ *
+ * 指错了 ⇒ 玩家永远找不到该去的地方（而画面上那枚箭头还指着另一个方向，比没有箭头更坏）
+ * ⇒ 拼错一个字母当场红。
+ */
+function markerFindings(file, where, marker, targets) {
+  const out = []
+  const err = (w, msg) => out.push({ where: w, msg })
+  if (!isObj(marker)) {
+    err(where, '必须是对象')
+    return out
+  }
+  const kind = marker.kind
+  if (!['npc', 'interact', 'region', 'pos'].includes(kind)) {
+    err(`${where}.kind`, `未知指示种类：${kind}（npc/interact/region/pos）`)
+  } else if (kind === 'pos') {
+    if (!isObj(marker.pos) || !['x', 'y', 'z'].every((k) => isNum(marker.pos?.[k]))) {
+      err(`${where}.pos`, '必须带 x / y / z 三个数')
+    }
+  } else if (!isStr(marker.id)) {
+    err(`${where}.id`, '必须是非空字符串')
+  } else {
+    const pool = kind === 'npc' ? targets.npcIds : kind === 'interact' ? targets.interactIds : targets.regionIds
+    if (!pool.has(marker.id)) {
+      const what = kind === 'npc' ? '世界里的 npc 名册' : kind === 'interact' ? 'regions.json 的交互物' : 'regions.json 的区域'
+      err(`${where}.id`, `悬空引用：'${marker.id}' 不在${what}里`)
+    }
+  }
+  return out
+}
+
 function collectMarkerTargets() {
   const npcIds = new Set()
   const interactIds = new Set()
@@ -2760,32 +2802,9 @@ function validateQuests(npcIds, stateDefs, markerTargets) {
       else if (states.has(st.state)) report.error(file, sw, `state 串重复：${st.state}（已被 ${states.get(st.state)} 用掉）`)
       else states.set(st.state, q.id)
       if (!isStr(st.label)) report.error(file, `${sw}.label`, 'label 必填')
-      /**
-       * KI-137：这一步的**目标指示**。指错了 ⇒ 玩家永远找不到该去的地方（而画面上那枚箭头
-       * 还指着另一个方向，比没有箭头更坏）⇒ 拼错一个字母当场红。
-       */
+      // KI-137：这一步的**目标指示**（判据与区域的序章指向共用同一份，见 markerFindings）
       if (st.marker !== undefined) {
-        const mw = `${sw}.marker`
-        if (!isObj(st.marker)) report.error(file, mw, '必须是对象')
-        else {
-          const kind = st.marker.kind
-          if (!['npc', 'interact', 'region', 'pos'].includes(kind)) {
-            report.error(file, `${mw}.kind`, `未知指示种类：${kind}（npc/interact/region/pos）`)
-          } else if (kind === 'pos') {
-            if (!isObj(st.marker.pos) || !['x', 'y', 'z'].every((k) => isNum(st.marker.pos?.[k]))) {
-              report.error(file, `${mw}.pos`, '必须带 x / y / z 三个数')
-            }
-          } else {
-            if (!isStr(st.marker.id)) report.error(file, `${mw}.id`, '必须是非空字符串')
-            else {
-              const pool = kind === 'npc' ? markerTargets.npcIds : kind === 'interact' ? markerTargets.interactIds : markerTargets.regionIds
-              if (!pool.has(st.marker.id)) {
-                const what = kind === 'npc' ? '世界里的 npc 名册' : kind === 'interact' ? 'regions.json 的交互物' : 'regions.json 的区域'
-                report.error(file, `${mw}.id`, `悬空引用：'${st.marker.id}' 不在${what}里`)
-              }
-            }
-          }
-        }
+        for (const e of markerFindings(file, `${sw}.marker`, st.marker, markerTargets)) report.error(file, e.where, e.msg)
       }
       if (st.tags !== undefined) {
         strArray(file, `${sw}.tags`, st.tags, { nonEmpty: true })
@@ -3012,7 +3031,7 @@ const lootIds = validateLoot(itemIds, rarityIds)
 }
 const enemyIds = validateEnemies(lootIds)
 validatePlayer()
-const regionIds = validateRegions(enemyIds, lootIds, rarityIds, stateDefs)
+const regionIds = validateRegions(enemyIds, lootIds, rarityIds, stateDefs, collectMarkerTargets())
 // KI-077：环境声床表要对账 regions 的 music.ambience，所以排在它后面
 validateAmbience()
 // KI-079：探索曲表同理对账 regions 的 music.explore

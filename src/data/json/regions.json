@@ -1,6 +1,7 @@
 [
   {
     "id": "rg_resthold",
+    "prologueMarker": { "kind": "npc", "id": "npc_belltongue" },
     "nameKey": "region.resthold",
     "displayName": "休垒 Resthold",
     "order": 0,
