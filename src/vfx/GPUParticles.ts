@@ -142,8 +142,15 @@ class EmitterInstance {
     scene.add(this.mesh)
   }
 
-  /** 发射新粒子（从空闲池里取；池空＝没有可复用的位置，这一轮就少发几个） */
-  emit(count: number, origin: THREE.Vector3, inheritVelocity?: THREE.Vector3): number {
+  /**
+   * 发射新粒子（从空闲池里取；池空＝没有可复用的位置，这一轮就少发几个）。
+   *
+   * **方法名不叫 `emit`**（KI-133）：事件总线的 API 名是 `emit`，而这里是一个粒���发射器
+   * 自己的方法——蹭同一个名字会让 `scripts/event-rules.mjs` 的 census 门（"判据不许自己变窄"）
+   * 把 `emitter.emit(...)` 读成"第三种总线接收者写法"，逼着人给假 DOM 类的调用改名。
+   * 那道门的判据是"先回答它是不是事件总线：是就加进名单，不是就换个别的方法名" ⇒ 换名。
+   */
+  spawn(count: number, origin: THREE.Vector3, inheritVelocity?: THREE.Vector3): number {
     let emitted = 0
     while (emitted < count) {
       const p = this.pool.pop()
@@ -233,7 +240,7 @@ class EmitterInstance {
   /** 设置发射器位置（用于 trail/stream 类型） */
   setPosition(pos: THREE.Vector3): void {
     if (this.config.type === 'trail' || this.config.type === 'stream') {
-      this.emit(this.config.spawnRate / 60, pos)
+      this.spawn(this.config.spawnRate / 60, pos)
     }
   }
 
@@ -278,7 +285,7 @@ export class GPUParticles {
   /** 一次性爆发 */
   burst(id: string, pos: THREE.Vector3, count?: number): void {
     const emitter = this.getEmitter(id)
-    if (emitter) emitter.emit(count ?? emitter.config.spawnRate, pos)
+    if (emitter) emitter.spawn(count ?? emitter.config.spawnRate, pos)
   }
 
   /** 持续流/拖尾更新位置 */
