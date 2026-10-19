@@ -150,6 +150,16 @@ describe('拖尾系统（KI-149）', () => {
     const inst = (trails as unknown as { trails: Map<string, { points: unknown[] }> }).trails
     expect(inst.get('trail_arrow')?.points.length ?? 0, '弹道也要有轨迹点').toBeGreaterThanOrEqual(1)
   })
+
+  it('收掉一条拖尾（remove 会把它 dispose 掉并从名册里摘掉）', () => {
+    const scene = newScene()
+    const trails = initTrailSystem(scene)!
+    trails.updateWeapon('trail_blade', new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 1, 0), 1 / 60)
+    const inst = (trails as unknown as { trails: Map<string, unknown> }).trails
+    expect(inst.has('trail_blade'), '先在').toBe(true)
+    ;(trails as unknown as { remove(id: string): void }).remove('trail_blade')
+    expect(inst.has('trail_blade'), '收掉之后名册里不该还有它').toBe(false)
+  })
 })
 
 describe('粒子系统（KI-149）', () => {

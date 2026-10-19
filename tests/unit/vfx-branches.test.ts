@@ -135,7 +135,13 @@ describe('粒子：缎带型与轨迹型（KI-149）', () => {
     const inst = (particles as unknown as { emitters: Map<string, { particles: { prevPositions?: unknown[] }[]; mesh: THREE.Mesh }> }).emitters
     const em = inst.get('fx_probe_ribbon')!
     expect(em.mesh.material, '缎带型用 MeshBasicMaterial').toBeInstanceOf(THREE.MeshBasicMaterial)
-    expect(em.particles.some((p) => (p.prevPositions?.length ?? 0) > 0), '缎带粒子记下了自己的来路').toBe(true)
+    // 缎带型逐帧把当前位置压到来路的最前面（trailLength 封顶）
+    for (let i = 0; i < 8; i++) particles.update(1 / 60)
+    const withTrail = em.particles.filter((p) => (p.prevPositions?.length ?? 0) > 0)
+    expect(withTrail.length, '缎带粒子记下了自己的来路').toBeGreaterThan(0)
+    for (const p of withTrail) {
+      expect(p.prevPositions!.length, '来路长度受 trailLength 封顶').toBeLessThanOrEqual(4)
+    }
   })
 
   it('轨迹型发射器：移动位置时持续补粒子', () => {
