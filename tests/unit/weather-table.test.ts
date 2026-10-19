@@ -10,8 +10,7 @@ import { interfaceFields, schemaBlocks, unionMembers } from '../../scripts/schem
  * 天气表（KI-094①，需求 §38 / art-direction §8）的两端实测。
  *
  * 形状照 `lockon-table.test.ts` / `ducking-table.test.ts`：判据住在 `scripts/weather-rules.mjs`，
- * 门禁与这份测试读**同一段代码**（`validate-data.mjs` 一被 import 就去校验真表并 `process.exit`，
- * 本沙箱 spawn 子进程又被宿主拒 — KI-075）。
+ * 门禁与这份测试读**同一段代码**（`validate-data.mjs` 一被 import 就去校验真表并 `process.exit`）。
  *
  * **这一批为什么值得存在**：入表之前，`regions.json > weatherPresets` 那 8 个名字与需求 §38 的四档
  * 从来没有对过账，而雾密度写死在场景构造参数里。于是"给一区换一个拼错的名字"、"把 0.030 写成 0.3"

@@ -3,7 +3,7 @@
  *
  * 为什么不住在 `validate-data.mjs` 里：与 `explore-rules.mjs`／`battle-rules.mjs` **一字不差**的
  * 同一个理由——那个文件一被 import 就去校验真表并 `process.exit`，于是"喂一张非法床、看它拒不拒"
- * 这一半在测试里做不了，而本沙箱连 spawn 子进程都被宿主拒（KI-075）。一条只有 accept 侧有人量的门
+ * 这一半在测试里做不了。一条只有 accept 侧有人量的门
  * 不算门。判据搬到这里之后，门禁与 `tests/unit/ambience-table.test.ts` 读的是同一段代码。
  *
  * 刻意留在校验器的那一半：`hz`/`peak`/`detune`/`attackSec`/`durSec`/`everySec` 的范围、缺失、

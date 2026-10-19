@@ -161,6 +161,12 @@ export interface FrameData {
 export interface MovesetData {
   id: string
   actions: Record<string, FrameData>
+  /**
+   * 逐武器蓄满阈值（tick）——KI-117②。§4.2 重剑 1400ms/84t、§4.3 引针枪 1000ms/60t、
+   * §4.5 音叉杖 900ms/54t；**省略 = 走全局 `CHARGE_TICKS`（800ms/48t，§4.1 轻剑与 §4.4 弓的基线）**。
+   * 消费方 `PlayerController.chargeThreshold`（chargeProgress 与释放闸门共用它，不是第二个计时器）。
+   */
+  chargeTicks?: number
 }
 
 export interface WeaponData {
@@ -237,6 +243,12 @@ export interface EnemyData {
    */
   fissureMul?: number
   ai: {
+    /**
+     * 阵营标识（Phase B5 / `ai/Squad.ts`）：同 camp 的敌人互为盟友，`callAlly` 只叫同阵营的。
+     * **省略 = 'default'**（`Squad.register` 那一处的回落），不是"没有阵营"——
+     * 全体默认阵营照样能互相呼叫，只是叫的是所有敌人。
+     */
+    camp?: string
     vision: { range: number; fovDeg: number }
     vibration: { range: number }
     hearing: { range: number }

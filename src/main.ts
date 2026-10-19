@@ -104,6 +104,38 @@ const player = new PlayerController(playerBase, weapon, moveset)
 const cinematics = new Cinematics(cinematicRows)
 
 /**
+ * **过场的进出事件在这里发**（`cinematic.start` / `cinematic.end`）。
+ *
+ * 为什么由组合根发而不是让 `Cinematics` 播放器自己发：播放器是**纯逻辑、零总线**的一条小机
+ * （`src/world/Cinematics.ts` 只回答"哪一条在跑、还剩多久、该不该锁输入"），让它去碰总线就多了一份
+ * 依赖方向。而"有演出开始了"这件事本来就是**世界里发生的事**——相机要据此切模式、表现层要据此换镜，
+ * 所以由**组合根**（唯一知道"演出真的放起来了"的地方）广播出去。
+ *
+ * **认不出的 id 不发事件**：起都没起，就不该有一条"演出开始了"（不静默开始一个空演出——
+ * 那是账上写着有、实际什么都没发生的形状）。
+ */
+function startCinematic(id: string): boolean {
+  const row = cinematicRows.find((r) => r.id === id)
+  if (!cinematics.start(id)) return false
+  bus.emit('cinematic.start', { id, durationMs: row?.durationMs })
+  return true
+}
+
+/**
+ * 手动收束一条过场（玩家跳过 / 被战斗打断）：收束事件与"起"那一半成对。
+ * 排队的那条照常接上（`Cinematics.skip` 自己会接），接上时**也会**发一次 `cinematic.start`。
+ */
+function skipCinematic(): void {
+  const wasId = cinematics.current?.id ?? null
+  cinematics.skip()
+  const nowId = cinematics.current?.id ?? null
+  if (wasId !== null && wasId !== nowId) bus.emit('cinematic.end', { id: wasId })
+  if (nowId !== null && nowId !== wasId) {
+    bus.emit('cinematic.start', { id: nowId, durationMs: cinematicRows.find((r) => r.id === nowId)?.durationMs })
+  }
+}
+
+/**
  * §6 三条 **Boss 出场**过场挂在"进区域"上（`CINE_OPEN` 之外的第二类触发）。
  * 为什么是"进区域"而不是"Boss 交手"：§6 写的是**出场**——那一下发生在开打之前，
  * 而"进区域"正是这一刻在数据里最诚实的代理（区域网格表本来就在这一步换拍、换雾、换音乐）。
@@ -314,6 +346,11 @@ const applyWeather = (rg: RegionData | null): void => {
   const name = activeWeather(rg, (k) => interact.hasFlag(k), trackedBells, (k) => worldStates.get(k))
   grade.setWeather(name)
   /*
+   * KI-130：雨第一次有读者。`RainSystem.setWeather` 从 e7313f4 起就存在，但没有任何一处调用它——
+   * 两格 `docWeather: "rain"` 的天气因此从来不下雨。与 `grade` 同一条推导出口，不另算一遍名字。
+   */
+  rain.setWeather(name)
+  /*
    * §5.9.33③：同一条名字推出另外三条腿——声景增益（audio）、失谐累积速率（corruption）、
    * 敌人浓度（spawner）。四路都从这里推，因为"这一区此刻奏哪一格天气"只许有一个推导入口；
    * 在四个读者各自现推一遍，就是给同一句话配四个主人（KI-066 那一族）。
@@ -400,6 +437,10 @@ wallGreybox.syncLoaded(loadedStates.flatMap((s) => streaming.byState(s).map((c) 
 // 关卡侧遮挡名册跟着脚下这片天走（Boss 的柱子每 tick 重名点，墙只在跨区时动一次）
 let wallsRegion = shownRegion
 combat.occlusion.syncAuthored(streaming.regionAt(player.pos) ?? null)
+// 相机碰撞读**同一份**遮挡名册（与挡箭、挡视线同一批盒子）：相机撞墙与箭被墙挡住不许各写一份几何，
+// 否则"看着穿过去了"与"箭飞过去了"会各说各话。传**活引用**即可——那份名册是就地改写的
+// （换区域重写墙、每 tick 重名点 Boss 的柱子），相机跟着它走，不必每帧重建。
+rig.setOccluders(combat.occlusion.list())
 // KI-009 第一腿：绕路读**同一份**墙（`regions.json > walls`），换区域时和遮挡名册一起换。
 // 两份名册各自持有一条同源同构的墙表，这不是"两个真源"——它们是同一份数据在同一处的两次投影，
 // 而且判据共用同一个 `firstBlock`（口径差在 `strict` 那一档，见 core/Occlusion）。
@@ -476,7 +517,7 @@ const talk = new DialogueSession({
   // §6 过场（Phase 6-C）：选择挂了 `cinematic` 就放它。认不出的 id **不静默吞**——
   // 数据门禁（`cinematic-rules.mjs`）已经保证表里的 id 都在清单里，认不出就是有人写错了字。
   playCinematic: (id) => {
-    if (!cinematics.start(id)) bus.emit('log', { level: 'warn', msg: `未知过场 id：${id}（清单里没有）` })
+    if (!startCinematic(id)) bus.emit('log', { level: 'warn', msg: `未知过场 id：${id}（清单里没有）` })
   },
 })
 
@@ -529,7 +570,7 @@ applyWeather(homeRegion ?? null)
 addEventListener('pointerdown', () => {
   audio.start()
   // 任意点击跳过正在播放的过场（开场 25s 黑场等）：避免玩家被困在锁输入的黑屏里
-  if (cinematics.current && !overlayOpen()) { cinematics.skip(); setOverlay(null) }
+  if (cinematics.current && !overlayOpen()) { skipCinematic(); setOverlay(null) }
 })
 addEventListener('keydown', (e) => {
   /* Esc 的**菜单**那半义（收面板 / 关对话 / 标题屏退回上一层）走 UI 意图通道的 `back`，
@@ -539,7 +580,7 @@ addEventListener('keydown', (e) => {
      下一帧的 poll 才把 `back` 交给面板。 */
   // 任意键跳过正在播放的过场（开场 25s 黑场等）：仅在无菜单 overlay 在场时跳过，
   // 对话/面板里的过场由各自的 UI 意图通道接管，不该被这一句抢走。
-  if (cinematics.current && !overlayOpen()) { cinematics.skip(); setOverlay(null); return }
+  if (cinematics.current && !overlayOpen()) { skipCinematic(); setOverlay(null); return }
   if (e.code === 'Escape' && !overlayOpen()) time.paused = !time.paused
 })
 
@@ -599,7 +640,17 @@ if (import.meta.env.DEV) {
 const core = {
   update(dt: number, t: GameTime, inp: Input) {
     // 过场先走时间：本帧的 `inputLocked` 才是本帧状态（走满那一刻锁自己解除）
-    cinematics.advance(dt * 1000)
+    // 走完/接上队列的那一拍要把"开始了"与"结束了"成对发出去——相机据此切模式（§6 演出期间
+    // 相机交给演出）。这一格只认**换人**：走完一条接上排队的另一条 ⇒ 一收一开两件事。
+    {
+      const wasId = cinematics.current?.id ?? null
+      cinematics.advance(dt * 1000)
+      const nowId = cinematics.current?.id ?? null
+      if (wasId !== null && wasId !== nowId) bus.emit('cinematic.end', { id: wasId })
+      if (nowId !== null && nowId !== wasId) {
+        bus.emit('cinematic.start', { id: nowId, durationMs: cinematicRows.find((r) => r.id === nowId)?.durationMs })
+      }
+    }
     if (inp.frame.edges.has('map')) {
       /* `map` 键现在**只开地图**（KI-097 / TD-002：「按着地图的名字在调音」到此结案）。
          **收起**不走这里：有 overlay 在场时 `time.paused` 与 `enabled=false` 让这一段根本跑不到，
@@ -658,7 +709,7 @@ const core = {
       const intro = BOSS_INTRO_BY_REGION[here.id]
       if (booted && intro && !playedCinematics.has(intro)) {
         playedCinematics.add(intro)
-        cinematics.start(intro)
+        startCinematic(intro)
       }
       shownRegion = here.id
       bus.emit('ui.notify', { text: here.displayName, kind: 'info' })
@@ -786,7 +837,7 @@ bus.on('boss.defeated', (p) => {
   // §6 **胜利**：主 Boss（恩希尔）倒下那一刻——镜头语言写的是"管风琴过载熄灭、振源核冰解"，
   // 那是未竟厅那一战，所以按 `dataId` 认人而不是"任何 Boss 倒下都放"。
   // 一局只会死一次 ⇒ 不需要额外的"放过没"台账；`playedCinematics` 清在 `startRun` 里。
-  if (p.dataId === 'en_hersil') cinematics.start('CINE_WIN')
+  if (p.dataId === 'en_hersil') startCinematic('CINE_WIN')
 })
 
 /**
@@ -815,7 +866,7 @@ async function startRun(slot: string | null): Promise<void> {
   // 读档可能恢复了音级/装备/背包 ⇒ 派生值与手里的武器都要跟着回来（顺序：先 restore 再 refresh）
   refreshRpg()
   // 新开局（不是读档）放 §6 的开场：黑场、声先死、无 UI 无旁白那一条
-  if (!slot) cinematics.start('CINE_OPEN')
+  if (!slot) startCinematic('CINE_OPEN')
   // 开场引导（KI-111 后续）：新鲜开局给一句操作/目标提示，避免玩家陷在黑场里不知道干什么
   bus.emit('ui.notify', { text: 'WASD 移动 · 鼠标视角 · E 交互 · 走向发光的调音桩开始', kind: 'info' })
   bus.emit('ui.notify', { text: `音级 ${rpg.prog.rank} · 遗响 ${rpg.prog.xp}${rpg.prog.unspent > 0 ? ` · 未分配点 ${rpg.prog.unspent}` : ''}`, kind: 'info' })

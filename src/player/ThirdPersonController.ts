@@ -57,6 +57,14 @@ export class PlayerController {
   vy = 0
   /** 当前站立面的高度，由 world/Surface 每 tick 注入（垂直分层世界） */
   floorY = 0
+  /**
+   * **指令速度**（米/秒）：这一 tick 走/跑命令里的实际水平速度。
+   *
+   * 为什么是"指令"而不是位置差分：位置差分会把**击退**（`takeDamage` 推的那一下）与
+   * **传送**算成"跑得很快"，而相机的"跑起来把镜头往后拉一点"只该对真正的移动生效。
+   * 消费者唯一：`player/CameraRig.ts` 的非锁定距离微调。
+   */
+  moveSpeed = 0
   action: PlayerAction | null = null
   /**
    * §5.5 那一次翻滚的运行时状态。`dist` 是**这一滚自己的**位移（米，整段走完的总长）：
@@ -112,7 +120,9 @@ export class PlayerController {
   /** KI-029 之连：连段深度（第几段连续攻击；1 = 起手式，0 = 不在连段里） */
   comboDepth = 0
   /** KI-002 蓄力反馈（§2 排行榜那行）：0..1，ActorVisuals 据此画武器辉光强度 */
-  get chargeProgress(): number { return this.charging ? Math.min(1, this.chargeTicks / CHARGE_TICKS) : 0 }
+  get chargeProgress(): number { return this.charging ? Math.min(1, this.chargeTicks / this.chargeThreshold) : 0 }
+  /** 本武器蓄满阈值（tick）：§4.2/4.3/4.5 逐武器 `chargeTicks`；省略 = 全局 `CHARGE_TICKS` 基线（KI-117②） */
+  get chargeThreshold(): number { return this.moveset.chargeTicks ?? CHARGE_TICKS }
   executing: { tick: number; total: number; pos: Vec3 } | null = null
   lockedTarget: { getPos(): Vec3; get radius(): number } | null = null
   /**
@@ -430,7 +440,7 @@ export class PlayerController {
       this.chargeTicks++
     } else if (this.charging && !input.frame.held.has('attackHeavy')) {
       this.charging = false
-      if (this.chargeTicks >= CHARGE_TICKS && canAct) this.tryStartAction('charged', tick)
+      if (this.chargeTicks >= this.chargeThreshold && canAct) this.tryStartAction('charged', tick)
       else if (this.chargeTicks < 8 && canAct && this.action === null) this.tryStartAction('h', tick)
       this.chargeTicks = 0
     }
@@ -508,6 +518,9 @@ export class PlayerController {
       }
     }
     // ---- movement ----
+    // 指令速度每 tick 重算：不能动的那几拍（被控/演出/翻滚）必须归零，
+    // 否则相机会拿着一拍前的速度把镜头往后拉（"停下来了镜头还在退"）。
+    this.moveSpeed = 0
     if (canAct && !this.busyMovementLocked()) {
       const mv = input.frame.move
       const sprinting = input.frame.held.has('sprint') && !this.rpg.overloaded && mv.x * mv.x + mv.y * mv.y > 0.1 && !this.guarding
@@ -523,6 +536,7 @@ export class PlayerController {
         const sp = Math.min(wl, 1) * speed * (this.guarding ? 0.35 : 1) * (this.action ? 0.15 : 1)
         this.pos.x += nx * sp * dt
         this.pos.z += nz * sp * dt
+        this.moveSpeed = sp
         if (!this.action && !this.lockedTarget && !this.guarding) this.yaw += clampAngleDiff(this.yaw, Math.atan2(nx, nz)) * 0.25
         if (sprinting) {
           this.stats.stamina = Math.max(0, this.stats.stamina - this.base.sprintCostPerSec * dt)

@@ -120,14 +120,18 @@ describe('批17 分支死角：update 路径（蒙太奇推轨 / 入地钳制 / 
 
   it('锁定绕背差角 > π：wrapNear 折进 (-π,π]（d>π 腿），yaw 朝折返后的目标追', () => {
     const r = rig()
-    r.update(0.016, fp(), { dx: 3, dy: 0 }, null) // yaw: 0.6 → -2.4
+    // **前置条件直给**（KI-133）：这一格量的是 `wrapNear` 的折返方向，不是"鼠标/摇杆怎么转 yaw"。
+    // 原先的前置是"喂一帧 dx=3 让 yaw 走到 -2.4"——那依赖输入模型（`yaw -= look.dx`），
+    // 而 CameraRig 改成按模式阻尼缩放（`look.dx * yawDamp * dt`）之后那一步算不出这个角度了。
+    // 把 yaw 直接摆到折返所需的那一侧，这一格才真的只量折返。
+    r.yaw = -2.4
     r.update(0.5, fp(), { dx: 0, dy: 0 }, { x: -3, y: 0, z: -1 }) // away≈1.25 ⇒ 原始差 ≈ 4.0 > π
     expect(r.yaw, '目标角折返到 -π 之外 ⇒ 朝更负方向收敛，而不是绕短弧走回头').toBeLessThan(-2.4)
   })
 
   it('锁定绕背差角 < -π：wrapNear 反向折返（d<-π 腿）', () => {
     const r = rig()
-    r.update(0.016, fp(), { dx: -2, dy: 0 }, null) // yaw: 0.6 → 2.6
+    r.yaw = 2.6 // 同上：前置直给，不借输入模型
     r.update(0.5, fp(), { dx: 0, dy: 0 }, { x: 3, y: 0, z: -1 }) // away≈-1.25 ⇒ 原始差 ≈ -3.5 < -π
     expect(r.yaw, '对称的另一侧：折返后朝更正方向收敛').toBeGreaterThan(2.6)
   })

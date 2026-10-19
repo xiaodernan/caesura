@@ -93,6 +93,7 @@ describe('文档对账闸门（KI-056）', () => {
 
   it('销案的 TD 留号不留行：一个编号只能待在 TD 表或那段注记里，两边都在 / 两边都不在都算红', () => {
     // 判据形状与上面那条 F1/F3/F4 的门同一来源（KI-058 立的规矩）：**同生同死**。
+
     // 只查"表里不许有已销案编号"会漏掉另一半——把注记整段删掉也能白得一条绿。
     const td = issues.split('## 2. Technical Debt')[1].split('## 3.')[0]
     const at = td.indexOf('> **销案的债留号不留行**')
@@ -110,5 +111,46 @@ describe('文档对账闸门（KI-056）', () => {
     expect(retired, '已销案的编号必须在那段注记里点名（TD-003 = Milestone tag，2026-10-01 结案；TD-002 = §43 地图落地，2026-10-08 结案）').toEqual(
       expect.arrayContaining(['TD-001', 'TD-002', 'TD-003', 'TD-004', 'TD-005']),
     )
+  })
+
+  /**
+   * KI-113：**不许把"本沙箱连 spawn 子进程都被宿主拒"当作搬判据的理由**。那句话的前提已于 2026-10-11
+   * 被当场否证（KI-075 结案：worker 里 `spawnSync(process.execPath, ['-e', …])`、`git rev-parse`、
+   * 乃至 spawn 校验脚本本身，三种全部 `error=none / status=0`）。
+   *
+   * 那些注释的**结论**大多没错——判据确实该住在 `scripts/*-rules.mjs`——但承重的是另一半：
+   * `validate-data.mjs` 一被 import 就去校验真表并 `process.exit`。这半句今天仍成立，而且不欠宿主脸色。
+   * 留着错理由的代价是它会被**抄下去**：规则模块之间互相指认"同一族理由"，新增模块从邻居那里抄，
+   * 于是一条不存在的宿主限制会世代相传。
+   *
+   * 总体为什么只圈 `scripts/*.mjs`：这条钉的是那句话的**作者面**。测试与账本里同样含"spawn…拒"的几行
+   * 是"当时的事实 + 当场否证"的纠正文（`ledger-rules.test.ts`、`text-integrity.test.ts`、
+   * `dist-text-scan.test.ts` 的探针），一条字符串判据分不清"复述一个已被否证的说法"和"拿它当理由"，
+   * 把那个总体圈进来只会逼人往句子里加豁免标记——那是给假理由化妆。tests/ 与 docs/ 由 KI-113 行里
+   * 那条可复跑的 grep 人工复跑。
+   *
+   * 三道地板与判据出自**同一次扫描**（不是先定一个数再去凑总体）：读不到文件 / 读不到规则模块 /
+   * 读不到行 ⇒ 红在地板上，而不是白送一条"0 条命中"的绿。
+   */
+  it('规则抽取模块的注释不许把"spawn 被宿主拒"当搬判据的理由（KI-113）', () => {
+    const files = readdirSync(root + 'scripts').filter((n) => n.endsWith('.mjs')).sort()
+    const ruleModules = files.filter((n) => n.endsWith('-rules.mjs'))
+    let lines = 0
+    const hits: string[] = []
+    for (const f of files) {
+      readFileSync(`${root}scripts/${f}`, 'utf8').split(/\r?\n/).forEach((l, i) => {
+        lines++
+        // 两个词落在**同一行**才算：`spawn` 在本仓库同时是玩法词（`regions.json > spawnGroups`），
+        // 单独出现不该红；`EBUSY` 单独出现（真去处理一个 spawn 错误码）也不该红。
+        if (/spawn/.test(l) && /(被宿主拒|EBUSY)/.test(l)) hits.push(`${f}:${i + 1}  ${l.trim().slice(0, 100)}`)
+      })
+    }
+    expect(files.length, `scripts/*.mjs 只读到 ${files.length} 个 = 总体空了，这条判据在空转`).toBeGreaterThanOrEqual(20)
+    expect(ruleModules.length, `只读到 ${ruleModules.length} 个 *-rules.mjs = 扫的不是规则模块那一片`).toBeGreaterThanOrEqual(12)
+    expect(lines, `这一次扫描总共只读到 ${lines} 行 = 没读到东西，0 条命中不代表没病`).toBeGreaterThanOrEqual(5000)
+    expect(
+      hits,
+      `这些注释还在拿一条已被实测否证的宿主限制当理由（真理由是"import 即求值 + process.exit"）：\n${hits.join('\n')}`,
+    ).toEqual([])
   })
 })

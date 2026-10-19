@@ -58,10 +58,10 @@ function makeWorld(weaponId = 'wp_overtone_bow') {
   return { time, rhythm, player, ai, combat, frame, tick, hits, off, weapon }
 }
 
-/** 蓄满（CHARGE_TICKS=48）再松手 ⇒ 走 charged 那一式 */
+/** 蓄满再松手 ⇒ 走 charged 那一式（逐武器阈值：弓 48f、杖 54f；统一按 60 拍留余量，KI-117②） */
 function chargeShot(w: World): void {
   w.frame.held.add('attackHeavy')
-  w.tick(48)
+  w.tick(60)
   w.frame.held.delete('attackHeavy')
   w.tick(1)
 }

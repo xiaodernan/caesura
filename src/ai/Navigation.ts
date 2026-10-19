@@ -1,50 +1,48 @@
 /**
- * 敌人的绕路（KI-009 的第一腿，combat.md §595）：Chase 那一格写的是
- * 「路径=简单导航网格（手工 Nav 点或 A* 网格，禁动态避障物理）」——这句话此前一个承载体都没有，
- * 于是追击是「朝目标走直线」：一堵 authored 的塌墙就能把它变成一幅壁画（它贴着墙蹭、在墙角抖，
- * 而玩家的箭与视线早就被**同一堵墙**挡住了）。
+ * 敌人的绕路（KI-009 第二腿：导航网格烘焙 + 运行时加载，combat.md §595）。
  *
- * **几何的真源只有一份**：路线走不走得通，问的是 `core/Occlusion.firstBlock`（`strict` 那一档）
- * ——和箭、视线、挥砍用的是同一个函数、同一份 `regions.json > walls`。KI-014②b 把「挡箭」与
- * 「挡眼」并到了一条线段上，这一腿把「挡路」也并进去：三件事不可能各有一套答案，也不会各差一格。
+ * 两层走法并存：
+ *   ① 烘焙网格（navmeshRef）：A* 在三角形网格上跑，邻接由共享边给出，代价 = 三角形中心欧氏距离。
+ *      优点：离线化、无需每 tick 重建可见性图、适合大区域/复杂走廊。
+ *   ② 运行时可见性图（回落）：当前的墙角展开 + A*，墙数 ≤12 时极快，与 ① 共用 `clear()` 判据。
+ *      优点：零烘焙依赖、动态区域/测试环境直接可用、与箭/视线/挥砍共用同一把尺子。
  *
- * **为什么住在 `ai/`**：读者只有一处（`Enemy.stepToward`），几何来自 `core/`，于是放在这里
- * 就不新增任何依赖箭头（`ai → world` 这一条尤其不新增——与 `SightGate` 让 `ai` 只拿一个函数
- * 是同一个理由）。技术架构的文件表里这一格本来写的就是 `ai/Navigation.ts`。
+ * 选择策略：`syncAuthored` 时若区域有 `navmeshRef` 且烘焙文件存在 ⇒ 用 ①，否则回落 ②。
+ * 两层的 **几何真源只有一份**：烘焙也读 `regions.json > walls`，`clear()` 依然走 `core/Occlusion.firstBlock(strict)`。
+ * 这保证了"挡路"与"挡箭/挡眼/挡刀"永远是同一个答案。
  *
- * **走法**：可见性图 + A*。节点＝每面墙**按这一只的半径外扩后的四个角**＋终点；一条边成立
- * ⇔ 那一段线段不被任何墙截断。贴着外扩角走就是这一版给出的全部「贴边」行为——不要求碰撞回弹，
- * 也不做动态避障（§595 明令禁）。
- *
- * **「string-pulling 平滑」无事可做（这不是偷懒，是这条走法的性质）**：完全可见性图上的最短路
- * **天然绷直**——若某个中间拐点真能跳过（直连更短且走得通），那条直连边本来就在图里、且更短，
- * A* 不可能舍近求远。折线照拐角折是几何本身（绕过一堵墙必须经过它的某个外扩角），不是路径没拉直；
- * `tests/unit/navigation.test.ts` 的绷直性一组用例把这条性质钉住，谁把 A* 换成网格阶梯路径
- * （那种路径的中间拐点一大把可摘）就当场红。要更「圆」的走法是拐角圆融（bevel/arc）——
- * 那要新增一个带消费方的设计数字（§55），另立一格，不在这里顺手编。
- *
- * **没有格子、没有路点表、没有代价权重**：这一版一个设计数字都不新增（要新增的数得连消费方
- * 一起写进表，§55）。唯二的数字是数值余量 `CORNER_MARGIN` 与保险丝 `MAX_WALLS`，两者都不是设计尺寸。
- *
- * **回落是逐字节的**：绕不过去、墙太多、或没有注入导航器 ⇒ 返回目标本身，`stepToward` 的行为
- * 与这一腿之前完全相同。「没有 authored 墙的野外」与全部既有测试里，脚步一格都没变。
- * 唯一的例外是"起点正压在墙的体格里"——那一格先迈出去（{@link Navigator.escape}），因为直线
- * 回落在那里等于穿墙。
+ * 为什么住在 `ai/`：读者只有一处（`Enemy.stepToward`），几何来自 `core/`，
+ * 放在这里不新增依赖箭头（`ai → world` 尤其不新增）。
  */
+
 import { firstBlock } from '@/core/Occlusion'
 import type { BoxOccluder } from '@/core/Occlusion'
 import type { Vec3, WallRef } from '@/data/schema'
+import { registry } from '@/core/Registry'
+
+/**
+ * 烘焙导航网格的运行时形态（data/json/navmesh/*.navmesh.json 的结构）。
+ */
+export interface BakedNavmesh {
+  regionId: string
+  groundY: number
+  bounds: { minX: number; maxX: number; minZ: number; maxZ: number }
+  vertices: { x: number; y: number; z: number }[]
+  triangles: number[][]
+  edges: { v1: number; v2: number; tri1: number; tri2: number }[]
+  centroids: { x: number; z: number }[]
+  step: number
+}
 
 /**
  * 一层可走面：`groundY` 是**这一层的地板**（墙的 `pos.y` 与它被 validator 钉成同一个数）。
- * 导航只回答平面上的事——**查询点**全部落到这条线上（{@link Navigator.at}），于是「站在 y=0 的
- * 搜索圈心」这种只在 x/z 上有意义的点（`Enemy` 的 search/investigate 就是这么算的）不会把线段
- * 算到墙顶上方去。返回的拐点只在 x/z 上有意义：它们的 y 沿用调用方给的目标高度（末项更是原对象），
- * 好让"路线是朝着那个目标画的一条计划"这句话在读数里也成立。
+ * 导航只回答平面上的事——**查询点**全部落到这条线上（{@link Navigator.at}）。
  */
 export interface NavRegion {
   groundY: number
   walls?: readonly WallRef[]
+  navmeshRef?: string
+  id?: string
 }
 
 /**
@@ -56,34 +54,44 @@ export type NavGate = ((from: Vec3, to: Vec3, radius: number) => Vec3) | null
 
 /**
  * 一次绕路最多认几面墙：超过这一数就不再建图、直接回落直线——**宁可走老路，不许掉帧**。
- * 现状（7 区共 12 面墙、单区最多 4 面）离上限很远，它是给意外数据的保险丝而不是预算。
- * 真到那一天，该做的是「只认走廊附近几面墙」的裁剪（那要新增数），不是把上限往上抬。
  */
 const MAX_WALLS = 12
 
 /**
  * 拐点的数值余量（**不是设计尺寸**）：拐点必须落在外扩盒之外这么远。
- *
- * 为什么是 0.15 而不是 `core/Occlusion` 的 `EPS` 那一档：`strict` 把"起点在体内／贴面不算挡"
- * 这两条赦免关掉了，于是只要有一只敌人把**身体**探进外扩盒（它自己那一圈体格半径），从它出发的
- * **每一条边**都不成立 ⇒ A\* 一个解都没有 ⇒ 回落成"直线冲目标"，而本引擎没有位移碰撞，
- * 那一步就直接穿墙而过。
- *
- * 实测把它探进去的不是几何误差，是**死区**：`stepToward`（与这里的 {@link REACHED}）对 0.05m
- * 以内的目标原地不动，所以"走到拐点上"实际是"停在拐点前 0.05m"；拐点若正好压在外扩边界上，
- * 那一点提前量就已经把身体放进盒里了。第一版用 `1e-6`，实机读数：绕到墙角那一刻 `path` 返回 null、
- * 之后 73 tick 它一路从墙里穿过去。余量因此必须大于"死区 + 一 tick 的步长"：最快的敌人
- * （幽灵八 4.2 × 1.1 倍速 ÷ 60）一 tick 走 **0.077m**，加 0.05 死区 = 0.127 ⇒ 取 0.15。
  */
 const CORNER_MARGIN = 0.15
 
 /** 拐点与查询点重合到这个距离以内就算「已经站在那儿了」：与 `stepToward` 的 0.05m 死区同一个数 */
 const REACHED = 0.05
 
+/** 点在三角形内（重心坐标法，仅 x/z 平面） */
+function pointInTriangle(px: number, pz: number, ax: number, az: number, bx: number, bz: number, cx: number, cz: number): boolean {
+  const v0x = cx - ax, v0z = cz - az
+  const v1x = bx - ax, v1z = bz - az
+  const v2x = px - ax, v2z = pz - az
+  const dot00 = v0x * v0x + v0z * v0z
+  const dot01 = v0x * v1x + v0z * v1z
+  const dot02 = v0x * v2x + v0z * v2z
+  const dot11 = v1x * v1x + v1z * v1z
+  const dot12 = v1x * v2x + v1z * v2z
+  const invDenom = 1 / (dot00 * dot11 - dot01 * dot01)
+  const u = (dot11 * dot02 - dot01 * dot12) * invDenom
+  const v = (dot00 * dot12 - dot01 * dot02) * invDenom
+  return u >= -1e-6 && v >= -1e-6 && u + v <= 1 + 1e-6
+}
+
 export class Navigator {
   /** 与 `core/Occlusion` 同形：pos 是**底面中心**，halfX/halfZ 是半尺寸（数据里给的是全尺寸） */
   private occluders: BoxOccluder[] = []
   private groundY = 0
+
+  /** 烘焙网格缓存：regionId → BakedNavmesh */
+  private navmeshCache = new Map<string, BakedNavmesh>()
+
+  /** 当前区域是否在用烘焙网格 */
+  private usingBaked = false
+  private currentNavmesh: BakedNavmesh | null = null
 
   /**
    * 换区域时调用一次（不在每 tick 的热路径上），与 `OcclusionField.syncAuthored` 同一处触发、
@@ -97,6 +105,27 @@ export class Navigator {
       pos: { x: w.pos.x, y: w.pos.y, z: w.pos.z },
       halfX: w.size.x / 2, halfZ: w.size.z / 2, heightM: w.heightM,
     }))
+
+    // 尝试加载烘焙网格
+    const ref = region?.navmeshRef
+    if (ref) {
+      const cached = this.navmeshCache.get(ref)
+      if (cached) {
+        this.currentNavmesh = cached
+        this.usingBaked = true
+        return
+      }
+      // 从 registry 读取（构建期已打包进 bundle，或运行时动态 import）
+      const data = registry.maybeGet<BakedNavmesh>(ref)
+      if (data) {
+        this.navmeshCache.set(ref, data)
+        this.currentNavmesh = data
+        this.usingBaked = true
+        return
+      }
+    }
+    this.currentNavmesh = null
+    this.usingBaked = false
   }
 
   /**
@@ -112,14 +141,6 @@ export class Navigator {
 
   /**
    * 起点已经在某面墙的外扩盒里时的**脱困一步**：走向那面墙最近的那个外扩角。
-   *
-   * 为什么不能回落"直线冲目标"：`strict` 那一档把"体内 = 走不过去"当判据，从体内出发的每一条边
-   * 都不成立 ⇒ `path` 必然是 null，而 `next` 的常规回落是直奔目标——在起点压着墙时那正是最坏的
-   * 答案（没有位移碰撞 ⇒ 它穿过去）。改成先出一面墙：那一点在盒外，迈出去之后下一 tick
-   * 就回到正常的绕路流程。
-   *
-   * 它今天只在"作者把人摆进墙的体格里"这类输入上可达（{@link CORNER_MARGIN} 已经把正常走位
-   * 那条路堵死了），所以它是保险而不是主路——`tests/unit/navigation.test.ts` 有一条用例专门喂它。
    */
   private escape(from: Vec3, radius: number): Vec3 | null {
     let best: Vec3 | null = null
@@ -141,15 +162,131 @@ export class Navigator {
 
   /**
    * 拐点序列（不含 `from`，末项恒为 `to`）；直线可达 ⇒ `[to]`；无路可绕 ⇒ `null`。
-   * 与 {@link next} 分成两个口：引擎每 tick 只要「往哪迈」，而测试与调试要量的是「绕成什么样」。
+   * 优先用烘焙网格；回落可见性图。
    */
   path(from: Vec3, to: Vec3, radius: number): Vec3[] | null {
     const a = this.at(from)
     const b = this.at(to)
-    if (this.clear(a, b, radius)) return [to] // 最常见的分支：一眼看穿，一次线段测试就返回
+
+    // 直线可达是最高优先级（最常见分支），两层共用同一个 clear()
+    if (this.clear(a, b, radius)) return [to]
+
+    // 优先尝试烘焙网格
+    if (this.usingBaked && this.currentNavmesh) {
+      const bakedRoute = this.pathBaked(a, b, to, radius, this.currentNavmesh)
+      if (bakedRoute) return bakedRoute
+      // 烘焙网格找不到路时，不回落可见性图（烘焙覆盖全区域，找不到 = 真绕不过去）
+    }
+
+    // 回落：运行时可见性图（墙数 ≤12 时极快）
+    if (this.occluders.length === 0 || this.occluders.length > MAX_WALLS) return null
+    return this.pathVisibility(a, b, to, radius)
+  }
+
+  /**
+   * 烘焙网格上的 A*：节点 = 三角形，邻接 = 共享边，代价 = 中心欧氏距离。
+   * 起点/终点所在三角形通过点在三角形内判定找到。
+   * 返回的路径：末项是原始 `to` 对象（保持引用），所有拐点 y = `to.y`。
+   */
+  private pathBaked(a: Vec3, b: Vec3, to: Vec3, radius: number, navmesh: BakedNavmesh): Vec3[] | null {
+    const { triangles, edges, centroids, vertices } = navmesh
+
+    // 找起点三角形
+    let startTri = -1
+    for (let i = 0; i < triangles.length; i++) {
+      const [v1, v2, v3] = triangles[i]
+      const p1 = vertices[v1], p2 = vertices[v2], p3 = vertices[v3]
+      if (pointInTriangle(a.x, a.z, p1.x, p1.z, p2.x, p2.z, p3.x, p3.z)) {
+        startTri = i
+        break
+      }
+    }
+    // 找终点三角形
+    let goalTri = -1
+    for (let i = 0; i < triangles.length; i++) {
+      const [v1, v2, v3] = triangles[i]
+      const p1 = vertices[v1], p2 = vertices[v2], p3 = vertices[v3]
+      if (pointInTriangle(b.x, b.z, p1.x, p1.z, p2.x, p2.z, p3.x, p3.z)) {
+        goalTri = i
+        break
+      }
+    }
+    if (startTri < 0 || goalTri < 0) return null
+    if (startTri === goalTri) return [to]
+
+    // A* 在三角形图上
+    const n = triangles.length
+    const g = new Array<number>(n).fill(Infinity)
+    const f = new Array<number>(n).fill(Infinity)
+    const prev = new Array<number>(n).fill(-1)
+    const closed = new Array<boolean>(n).fill(false)
+    const h = (i: number): number => Math.hypot(centroids[i].x - b.x, centroids[i].z - b.z)
+    g[startTri] = 0
+    f[startTri] = h(startTri)
+
+    for (let popped = 0; popped < n; popped++) {
+      let cur = -1
+      let best = Infinity
+      for (let i = 0; i < n; i++) if (!closed[i] && f[i] < best) { best = f[i]; cur = i }
+      if (cur < 0 || cur === goalTri) break
+      closed[cur] = true
+
+      // 遍历邻接三角形（通过共享边）
+      for (const e of edges) {
+        let nei = -1
+        if (e.tri1 === cur) nei = e.tri2
+        else if (e.tri2 === cur) nei = e.tri1
+        if (nei < 0) continue
+
+        const step = Math.hypot(centroids[nei].x - centroids[cur].x, centroids[nei].z - centroids[cur].z)
+        const tentative = g[cur] + step
+        if (tentative >= g[nei]) continue
+        g[nei] = tentative
+        prev[nei] = cur
+        f[nei] = tentative + h(nei)
+      }
+    }
+
+    if (!Number.isFinite(g[goalTri])) return null
+
+    // 回溯三角形序列
+    const triPath: number[] = []
+    let i = goalTri
+    for (let guard = 0; i > -1 && guard <= n; guard++) {
+      triPath.unshift(i)
+      i = prev[i]
+    }
+    if (triPath[0] !== startTri) return null
+
+    // 三角形序列 → 拐点序列（取共享边中点作为拐点，末项接原始 to，y = to.y）
+    const route: Vec3[] = []
+    for (let k = 0; k < triPath.length - 1; k++) {
+      const t1 = triPath[k], t2 = triPath[k + 1]
+      // 找共享边
+      for (const e of edges) {
+        if ((e.tri1 === t1 && e.tri2 === t2) || (e.tri1 === t2 && e.tri2 === t1)) {
+          const v1 = vertices[e.v1], v2 = vertices[e.v2]
+          route.push({ x: (v1.x + v2.x) / 2, y: to.y, z: (v1.z + v2.z) / 2 })
+          break
+        }
+      }
+    }
+    route.push(to)
+
+    // 已经站在头一个拐点上时摘掉（同 visibility 逻辑）
+    while (route.length > 1 && Math.hypot(route[0].x - a.x, route[0].z - a.z) <= REACHED) route.shift()
+    return route
+  }
+
+  /**
+   * 运行时可见性图 A*：节点 = 墙的外扩角 + 终点。
+   * `to` 是原始目标（保持引用、保留 y），`from`/`b` 是投影到地板的点（仅用于几何计算）。
+   * 与原实现完全一致，保留作为回落与测试基线。
+   */
+  private pathVisibility(from: Vec3, b: Vec3, to: Vec3, radius: number): Vec3[] | null {
     if (this.occluders.length === 0 || this.occluders.length > MAX_WALLS) return null
 
-    const nodes: Vec3[] = [a]
+    const nodes: Vec3[] = [from]
     for (const o of this.occluders) {
       const hx = o.halfX + radius + CORNER_MARGIN
       const hz = o.halfZ + radius + CORNER_MARGIN
@@ -179,8 +316,6 @@ export class Navigator {
         if (closed[i] || i === cur) continue
         const step = Math.hypot(nodes[i].x - nodes[cur].x, nodes[i].z - nodes[cur].z)
         const tentative = g[cur] + step
-        // 先算账再看几何：这条边不可能更短时连线段都不用测。**顺序是承重的**——绕路这一支
-        // 每 tick 都要跑一遍，把 `clear()` 放在前面等于给每只交战的敌人平白加上 N² 次 slab 裁剪。
         if (tentative >= g[i]) continue
         if (!this.clear(nodes[cur], nodes[i], radius)) continue
         g[i] = tentative; prev[i] = cur; f[i] = tentative + h(i)
@@ -191,13 +326,10 @@ export class Navigator {
     const route: Vec3[] = []
     let i = goal
     for (let guard = 0; i > 0 && guard <= nodes.length; guard++) {
-      // 末项回原始对象：`to` 的 y 是调用方给的（可能不是这一层的地板），别在这里改掉它
       route.unshift(i === goal ? to : { x: nodes[i].x, y: to.y, z: nodes[i].z })
       i = prev[i]
     }
-    if (i !== 0) return null // 回溯没回到起点 ⇒ 图上有洞，宁可回落直线（老行为，不抛错）
-    // 已经站在头一个拐点上时把它摘掉：`stepToward` 对"一步都不到 0.05m"的目标是**原地不动**，
-    // 留着它就会让走到角上的敌人抱着自己的角卡住（这不是理论风险：路线的第一个拐点正是它刚踩到的那个角）。
+    if (i !== 0) return null
     while (route.length > 1 && Math.hypot(route[0].x - from.x, route[0].z - from.z) <= REACHED) route.shift()
     return route
   }

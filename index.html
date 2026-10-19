@@ -17,6 +17,15 @@
   <div id="app"></div>
   <canvas id="hud"></canvas>
   <div id="boot">CAESURA</div>
+  <script>
+    window.__errs = [];
+    window.addEventListener('error', (e) => {
+      window.__errs.push(String(e.message) + ' @ ' + String(e.filename).split('/').pop() + ':' + e.lineno);
+    });
+    window.addEventListener('unhandledrejection', (e) => {
+      window.__errs.push('rej: ' + String(e.reason).slice(0, 220));
+    });
+  </script>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

@@ -118,6 +118,18 @@ export class Enemy {
    */
   nav: NavGate = null
   /**
+   * Phase B5「小队/仇恨槽位」的**只读投影**（`ai/Squad.ts` 每 tick 写入）：
+   * - `squadThreats`：按仇恨权重降序的仇恨表（`targetId` / `threat` / `hasSlot` / `enteredAt`）；
+   * - `squadHasSlot`：这一只此刻占着攻击槽位（上限 3，§1.2 的承诺）；
+   * - `squadTarget`：当前锁定的攻击目标 id。
+   *
+   * **依赖方向**：`Squad` 认识 `Enemy`，`Enemy` 不认识 `Squad`——所以这里的形状是就地抄的
+   * 结构类型，不是 `import type`。谁写：只有 `Squad.update` 一处。
+   */
+  squadThreats: { targetId: string; threat: number; hasSlot: boolean; enteredAt: number }[] = []
+  squadHasSlot = false
+  squadTarget: string | null = null
+  /**
    * §14.5「拍隙」当前状态：true = 此刻正踩在拍点上，半透明+定身，打不着也走不动。
    * 和 buff 一样是**每 tick 从数据重算的派生态**，不是需要维护的事件态。
    */

@@ -16,9 +16,9 @@
  *    **实装 6f 为准，文档那一格改数并把算术写进备注**。（这两条分开走是刻意的：同一列里三格归文档、
  *    一格归实装，读者必须逐格看见理由，而不是被一句"以表为准"整列抹平。）
  *  - ms⇄f 的换算走引擎自己的 `msToTicks`/`ticksToMs`，60Hz 走 `TICK_HZ` 的主人，不抄第三份 16.667。
- *  - 蓄力那一格量的是**全局蓄满阈值** `CHARGE_TICKS`（引擎只有 48f 一个数；逐武器蓄时长未实装＝KI-117②），
- *    不是招式自己的 startup。所以文档必须写成 `蓄 <ms>ms` 这一族拼写才读得到——§4.4 满弓以前写
- *    `800ms/48f`，被读成前摇 48f ⇄ 数据 20f，本批统一了拼写。
+ *  - 蓄力那一格量的是**蓄满阈值**：逐武器读 `movesets.chargeTicks`（KI-117② 已落），省略即全局
+ *    `CHARGE_TICKS`（48f/800ms）。它不是招式自己的 startup。所以文档必须写成 `蓄 <ms>ms` 这一族拼写
+ *    才读得到——§4.4 满弓以前写 `800ms/48f`，被读成前摇 48f ⇄ 数据 20f，本批统一了拼写。
  *
  * **豁免按身份钉**（节号 + 行标签 + 栏名），不按行号：改一行字会把豁免叫回来重裁，而删一格数据不会。
  * 两张名单各自都带「不许陈旧」那一条——名单里的每一条必须真的命中，没命中就是它该被撤掉。
@@ -105,16 +105,16 @@ function realFrames(a: FrameData): Record<Col, number> {
 
 /**
  * 文档没有格子的数据格（身份键 = 节号|行标签|栏名），11 条各有各的理由：
- *  - `startup` 那五条：蓄力行那一格写的是**蓄满阈值**（由 L5 对着 CHARGE_TICKS 核），不是释放动作的前摇；
+ *  - `startup` 那五条：蓄力行那一格写的是**蓄满阈值**（由 L5 对着所属武器的 chargeTicks 核），不是释放动作的前摇；
  *  - `active` 那六条：弹体招式没有近战判定窗，那一格写的是弹速 / 分叉 / 「单发」/ 「即时」。
  * 加一格数据不等于加一条豁免——真需要豁免时要在这里写明是哪一格，并由 L1 的算术逼着它命中。
  */
 const NO_DOC_CELL = new Map<string, string>([
   ['4.1|蓄力重击|startup', '那一格写蓄满阈值（800ms），释放前摇 20f 文档没有栏'],
-  ['4.2|蓄力重击|startup', '同上（文档写 1400ms，见 KI-117②）'],
-  ['4.3|蓄力重击|startup', '同上（文档写 1000ms，见 KI-117②）'],
+  ['4.2|蓄力重击|startup', '同上（文档写 1400ms；ms_greatsword.chargeTicks=84f 已落表）'],
+  ['4.3|蓄力重击|startup', '同上（文档写 1000ms；ms_spear.chargeTicks=60f 已落表）'],
   ['4.4|满弓（轻蓄）|startup', '同上（这一格以前写作 800ms/48f，被读成前摇；本批统一成「蓄」族拼写）'],
-  ['4.5|蓄力 共振弹|startup', '同上（文档写 900ms，见 KI-117②）'],
+  ['4.5|蓄力 共振弹|startup', '同上（文档写 900ms；ms_staff.chargeTicks=54f 已落表）'],
   ['4.3|蓄力重击|active', '投掷枪：判定在弹体上，文档那一格写「单发」'],
   ['4.4|速射 L|active', '弹体：那一格写弹速 40m/s'],
   ['4.4|满弓（轻蓄）|active', '弹体：那一格写泛音分叉'],
@@ -124,15 +124,10 @@ const NO_DOC_CELL = new Map<string, string>([
 ])
 
 /**
- * 文档声明的蓄满时长与引擎唯一阈值不符的三格 = **未实装的逐武器蓄力时长**（KI-117②）。
- * 它们不是转录噪声：引擎只有 `CHARGE_TICKS = 48` 一个数。`chargeTicks` 落表、这三条撤空之后，
- * L5 的「不许陈旧」会当场喊，直到账本那一行翻成 Implemented（L8 的同生同死）。
+ * KI-117② 已落：逐武器蓄满时长进了 `movesets.json > chargeTicks`，三条「未实装」豁免撤空。
+ * L8 的同生同死兑现——名单空了，而 L5 现在逐格对着**所属武器**的 chargeTicks 核（不是全局 48）。
  */
-const CHARGE_NOT_IMPLEMENTED = new Map<string, number>([
-  ['4.2|蓄力重击', 1400],
-  ['4.3|蓄力重击', 1000],
-  ['4.5|蓄力 共振弹', 900],
-])
+const CHARGE_NOT_IMPLEMENTED = new Map<string, number>()
 
 /**
  * 一趟读完六张表。这里**一次 expect 都不做**：读表发生在 describe 求值时，
@@ -197,10 +192,11 @@ function readTables() {
           const at = (list: number[]) => (list.length > 1 ? list[ki] : list[0])
           if (cell.kind === 'charge') {
             if (col !== 'startup') unlisted.push(`${id}：「蓄」族拼写只许出现在 startup 栏（这一格写着 ${cell.raw}）`)
-            if (cell.ms !== CHARGE_MS) {
+            // KI-117② 已落：蓄满阈值逐武器从 movesets.chargeTicks 读（省略 = 全局 CHARGE_TICKS=48f/800ms）
+            const wantTicks = set.chargeTicks ?? CHARGE_TICKS
+            if (msToTicks(cell.ms) !== wantTicks) {
               const cid = `${secId}|${label}`
-              if (CHARGE_NOT_IMPLEMENTED.get(cid) === cell.ms) chargeHits.add(cid)
-              else chargeOff.push(`${cid} 声明蓄 ${cell.ms}ms ⇄ 引擎唯一阈值 ${CHARGE_TICKS}f=${CHARGE_MS}ms，而这一条不在 KI-117② 的名单里`)
+              chargeOff.push(`${cid} 声明蓄 ${cell.ms}ms(${msToTicks(cell.ms)}f) ⇄ ${msId}.chargeTicks=${wantTicks}f（省略即 ${CHARGE_TICKS}f/${CHARGE_MS}ms）`)
             }
           }
           if (cell.kind !== 'numbers') {
@@ -265,9 +261,9 @@ describe('KI-117：combat.md §4.1–4.6 的武器帧数据表逐格对着 moves
     expect(r.unknownRows, `推不出招式键又不算说明行的行：\n${r.unknownRows.join('\n')}`).toEqual([])
   })
 
-  it('蓄满阈值只有一个主人 CHARGE_TICKS；对不上的必须逐条挂在 KI-117② 的名单上，名单不许陈旧', () => {
-    expect(r.chargeOff, `这些蓄力格既不等于 ${CHARGE_TICKS}f=${CHARGE_MS}ms，也不在 KI-117② 名单里：\n${r.chargeOff.join('\n')}`).toEqual([])
-    expect(r.staleCharge, `名单里这些条目没有命中任何一格（蓄时长已落表或那一格改了拼写，名单必须撤）：${r.staleCharge.join(' ，')}`).toEqual([])
+  it('蓄满阈值逐武器从 movesets.chargeTicks 读（省略 = 全局 CHARGE_TICKS 基线），对不上就红', () => {
+    expect(r.chargeOff, `这些蓄力格与所属武器的 chargeTicks 不符（省略即 ${CHARGE_TICKS}f/${CHARGE_MS}ms）：\n${r.chargeOff.join('\n')}`).toEqual([])
+    expect(r.staleCharge, `KI-117② 已落，豁免名单必须为空：${r.staleCharge.join(' ，')}`).toEqual([])
     expect(r.internal.length + r.drift.length, '前置守卫：上面两条判据读的是同一趟读数').toBeGreaterThanOrEqual(0)
   })
 

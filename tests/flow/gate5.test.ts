@@ -170,7 +170,7 @@ function makeWorld(originId = 'origin_tuner', seed: number | string = 0x51f3a2, 
       player.camYawRef = Math.PI + a
       frame.held.clear()
       const free = player.action === null && player.roll === null && player.stats.stamina > 12 && d < 2.4
-      const charged = player.charging && player.chargeTicks >= CHARGE_TICKS
+      const charged = player.charging && player.chargeTicks >= player.chargeThreshold
       const spearOut = !player.spearInHand
       if (fetch && d <= player.base.execution.crumpleRange) frame.edges.add('interact')
       else {

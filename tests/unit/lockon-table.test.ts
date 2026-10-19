@@ -8,7 +8,7 @@ import { interfaceFields, schemaBlocks } from '../../scripts/schema-vocab.mjs'
  *
  * 形状照 `battle-table.test.ts` / `explore-table.test.ts`（同一族理由）：判据住在
  * `scripts/lockon-rules.mjs`，门禁与这份测试读**同一段代码**；`validate-data.mjs` 一被 import 就去校验
- * 真表并 `process.exit`，而本沙箱 spawn 子进程被宿主拒（KI-075），所以"喂一组对不上的数看它拒不拒"
+ * 真表并 `process.exit`，所以"喂一组对不上的数看它拒不拒"
  * 那一半只有搬出来才量得动。
  *
  * **这一批为什么值得存在**：入表之前那两句文档（§34「Boss 独立锁定框」、tech-arch §3「角度优先→距离」）

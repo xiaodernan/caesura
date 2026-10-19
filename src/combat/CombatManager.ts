@@ -1430,7 +1430,9 @@ export class CombatManager {
     bus.emit('sound.source', { id: 'player', pos: { ...e.pos }, loudness: this.player.weaponImpactNoise(this.player.base.melee.killNoiseLoudness) })
     bus.emit('vfx.request', { key: 'death_shatter', pos: { ...e.pos }, scale: e.data.body?.scale ?? 1 })
     bus.emit('audio.sfx', { key: 'death_shatter', pos: { ...e.pos }, gain: 0.8 })
-    bus.emit('ui.notify', { text: `${nameOf(e.data.nameKey)} 崩解 · 遗响 +${Math.round(e.stats.hpMax * 0.3)}`, kind: 'reward' })
+    // 崩解那一行只报「谁倒了」：遗响的数额归结算层（`rpg/Settlement.ts`），这里写任何数字都是
+    // 凭空造的——Phase 1-B 的 `hpMax * 0.3` 占位在遗响真的由 loot 表掷骰之后成了谎言。
+    bus.emit('ui.notify', { text: `${nameOf(e.data.nameKey)} 崩解`, kind: 'reward' })
     const v = e.data.boss?.victory
     if (v) this.cadenza(e, v)
     this.offTuneMoment(e)

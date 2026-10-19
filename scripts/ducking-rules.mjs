@@ -3,7 +3,7 @@
  *
  * 与 `burst-rules.mjs` / `battle-rules.mjs` / `explore-rules.mjs` / `ambience-rules.mjs` 同一只手、
  * 同一个理由：判据留在 `validate-data.mjs` 里就没法在测试里"喂一行非法数据看它拒不拒"（那文件一被
- * import 就去校验真表并 `process.exit`，而本沙箱连 spawn 子进程都被宿主拒 — KI-075）。搬出来之后
+ * import 就去校验真表并 `process.exit`）。搬出来之后
  * 校验器只当"把 findings 报成 ERROR 的那张嘴"，门禁与 `tests/unit/ducking.test.ts` 读的是同一份代码。
  *
  * 为什么这一张表特别需要"关系"型判据：§8.2 那一行说的是**一个触发口对几条总线的相对压低**。

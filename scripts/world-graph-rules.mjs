@@ -3,7 +3,7 @@
  *
  * 为什么不住在 `validate-data.mjs` 里：那文件一被 import 就去校验真表并 `process.exit`，
  * 于是「喂一条坏边、看它拒不拒」这一半在测试里做不了（`ambience-rules.mjs` / `explore-rules.mjs`
- * 同一个理由，KI-075 记过本沙箱连 spawn 都被宿主拒）。判据搬到这里之后，
+ * 同一个理由）。判据搬到这里之后，
  * 门禁与 `tests/unit/world-graph.test.ts` 读的是同一段代码。
  *
  * 这一节量的是**作者写下的坐标与旗标先后**，不是可行走路径。需求 §9 那句

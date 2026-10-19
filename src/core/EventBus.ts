@@ -43,6 +43,10 @@ export interface GameEvents {
     crit?: boolean
   }
   'combat.parried': { attackerId: string; defenderId: string }
+  /** KI-092②：Boss 大招 telegraph（§8.2 ducking 那一行的触发源）。无载荷——
+   *  ducking 只要"这一下是大招"的信号，不需要位置；发射方是 Enemy 在带 `tutti` 标记的
+   *  招式起手那一 tick（数据驱动 opt-in：见 enemies.json，不是硬编码某一个敌人）。 */
+  'combat.bossTelegraph': undefined
   /** Boss 跳阶（§15.1 转阶段演出）：表现层据此震镜/压低频，main.ts 据此吃 hitstop */
   'boss.phase': { id: string; phase: number; phases: number; nameKey: string }
   /** §16「3 拍入场演出」：她第一次照面那几拍的开场信（`ticks` = 演出总长，表现层据此震镜） */

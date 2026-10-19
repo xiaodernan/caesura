@@ -2,8 +2,8 @@
  * scripts/text-integrity.mjs — 数据表「文本完整性」的判据本体（KI-082，纯函数、零依赖）
  *
  * 为什么单独一个文件（与 `ledger-rules.mjs` / `battle-rules.mjs` 同一条理由）：
- * `validate-data.mjs` 一被 import 就去校验真表并 `process.exit`，而本沙箱连 spawn 子进程都被宿主拒
- * （KI-075）⇒ 判据留在那个文件里，测试就没法"喂一段坏文本看它拒不拒"。搬出来之后，门禁与
+ * `validate-data.mjs` 一被 import 就去校验真表并 `process.exit`
+ * ⇒ 判据留在那个文件里，测试就没法"喂一段坏文本看它拒不拒"。搬出来之后，门禁与
  * `tests/unit/text-integrity.test.ts` 读的是**同一份**代码，而不是两份各自手抄的口径。
  *
  * 病是什么：这台机器上有一条并行的写盘路径，把中文写回 JSON 时会按别的代码页编/解码一次，

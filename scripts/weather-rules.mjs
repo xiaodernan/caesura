@@ -3,7 +3,7 @@
  *
  * 与 `ducking-rules.mjs` / `burst-rules.mjs` / `explore-rules.mjs` 同一只手、同一个理由：判据留在
  * `validate-data.mjs` 里就没法在测试里"喂一行非法数据看它拒不拒"（那文件一被 import 就去校验真表
- * 并 `process.exit`，而本沙箱连 spawn 子进程都被宿主拒 — KI-075）。
+ * 并 `process.exit`）。
  *
  * **这张表为什么全是关系型判据**：一行天气说了三件互相约束的事——「数据侧那个名字有谁能奏到」
  * （regions.json 的 `weatherPresets`）、「它对应需求 §38 的哪一档」（读数只有从那一档才量得出）、

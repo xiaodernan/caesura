@@ -91,7 +91,7 @@ describe('运行时那条腿（`main.ts`）：接了什么、**没接什么**，
     expect(main, '实例').toMatch(/new Cinematics\(/)
     expect(main, '每帧走时间').toMatch(/cinematics\.advance\(dt \* 1000\)/)
     expect(main, '输入门').toMatch(/!cinematics\.inputLocked/)
-    expect(main, '新开局放开场').toMatch(/if \(!slot\) cinematics\.start\('CINE_OPEN'\)/)
+    expect(main, '新开局放开场').toMatch(/if \(!slot\) startCinematic\('CINE_OPEN'\)/)
   })
 
   it('**没接**的那 4 条必须一个都不出现（谁接了就顺手把这条改准，别让它一直骗人）', () => {
@@ -107,6 +107,16 @@ describe('运行时那条腿（`main.ts`）：接了什么、**没接什么**，
     for (const id of UNWIRED) {
       expect(main.includes(id), `${id} 在 main.ts 里出现了 ⇒ 有人接了新触发，请把这条与上面那条一起改准`).toBe(false)
     }
+  })
+
+  it('过场的进出事件由**组合根**发（`cinematic.start` / `cinematic.end`），播放器自己不碰总线', () => {
+    // 相机据此切模式（§6 演出期间相机交给演出）。**发方是 `main.ts` 而不是 `Cinematics`**：
+    // 播放器是"纯逻辑、零总线"的一条小机（它只回答哪一条在跑、还剩多久、该不该锁输入），
+    // 让它去碰总线就多出一条依赖方向；而"有演出真的开始了"本来就是世界里发生的事。
+    expect(main, '起').toMatch(/bus\.emit\('cinematic\.start'/)
+    expect(main, '收').toMatch(/bus\.emit\('cinematic\.end'/)
+    const player = readFileSync('src/world/Cinematics.ts', 'utf8')
+    expect(player, '播放器不许碰总线（那条依赖方向不许被过场事件带进来）').not.toMatch(/from '@\/core\/EventBus'/)
   })
 
   it('对话那条腿：选择挂了 `cinematic` 就真的放，而且**先放再推进**（§6 第三类触发）', () => {
@@ -133,7 +143,7 @@ describe('运行时那条腿（`main.ts`）：接了什么、**没接什么**，
     // 胜利那一条必须认人：§6 的镜头语言是"管风琴过载熄灭"，那是主 Boss 恩希尔（未竟厅）那一战，
     // 不是"任何 Boss 倒下都放"。挂错人不会有别的东西响——所以在这里钉住 `dataId`。
     expect(main, '胜利认的是主 Boss').toMatch(/p\.dataId === 'en_hersil'[\s\S]{0,80}CINE_WIN/)
-    expect(main, '新开局').toMatch(/start\('CINE_OPEN'\)/)
+    expect(main, '新开局').toMatch(/startCinematic\('CINE_OPEN'\)/)
     for (const id of ['CINE_OST_INTRO', 'CINE_HERSIL_INTRO', 'CINE_MYRIAD_INTRO']) {
       expect(main.includes(id), `Boss 出场 ${id}`).toBe(true)
     }
@@ -142,6 +152,69 @@ describe('运行时那条腿（`main.ts`）：接了什么、**没接什么**，
     expect(wired.map(([, c]) => c).sort()).toEqual(['CINE_HERSIL_INTRO', 'CINE_MYRIAD_INTRO', 'CINE_OST_INTRO'])
     for (const [rg] of wired) {
       expect(regions.some((r) => r.id === rg), `${rg} 是真区域吗`).toBe(true)
+    }
+  })
+})
+
+describe('排队（§6 终局蒙太奇就是"结局演完接着播"）', () => {
+  it('**当前没在跑** ⇒ 立刻起它（"排队"不该变成"永不播"）', () => {
+    const p = new Cinematics(rows)
+    expect(p.queue('CINE_END_MONTAGE')).toBe(true)
+    expect(p.current!.id, '直接开演').toBe('CINE_END_MONTAGE')
+    expect(p.queuedId, '没有排队项了').toBeNull()
+  })
+
+  it('**名字不在表里** ⇒ false 且不排（与 start 同一族纪律）', () => {
+    const p = new Cinematics(rows)
+    p.start('CINE_END_A')
+    expect(p.queue('CINE_NOPE')).toBe(false)
+    expect(p.queuedId).toBeNull()
+  })
+
+  it('在跑时排队 ⇒ 前一条**走完那一刻**接上，且这一 tick 的返回值仍是"有演出在跑"', () => {
+    const p = new Cinematics(rows)
+    p.start('CINE_END_A')
+    expect(p.queue('CINE_END_MONTAGE')).toBe(true)
+    expect(p.queuedId).toBe('CINE_END_MONTAGE')
+    const total = p.current!.durationMs
+    expect(p.advance(total), '走完 + 接上 ⇒ 仍在跑').toBe(true)
+    expect(p.current!.id, '接上的是蒙太奇').toBe('CINE_END_MONTAGE')
+    expect(p.current!.elapsedMs, '从 0 起').toBe(0)
+    expect(p.queuedId).toBeNull()
+  })
+
+  it('走完**没有**排队 ⇒ 照旧返回 false、current 变 null', () => {
+    const p = new Cinematics(rows)
+    p.start('CINE_END_A')
+    expect(p.advance(p.current!.durationMs)).toBe(false)
+    expect(p.current).toBeNull()
+  })
+
+  it('`skip()` 之后排队的那条**照常接**（跳过是"这一段我不看了"，不是"后面也别放"）', () => {
+    const p = new Cinematics(rows)
+    p.start('CINE_END_A')
+    p.queue('CINE_END_MONTAGE')
+    p.skip()
+    expect(p.current!.id).toBe('CINE_END_MONTAGE')
+  })
+
+  it('要整条取消 ⇒ **先 `clearQueue()` 再 `skip()`**（`skip()` 自己会接排队的那条，晚一步就来不及）', () => {
+    const p = new Cinematics(rows)
+    p.start('CINE_END_A')
+    p.queue('CINE_END_MONTAGE')
+    p.clearQueue()
+    p.skip()
+    expect(p.current).toBeNull()
+    expect(p.queuedId).toBeNull()
+  })
+
+  it('两条结局各自的下一段都接得上（END_A/END_B → 蒙太奇）', () => {
+    for (const end of ['CINE_END_A', 'CINE_END_B']) {
+      const p = new Cinematics(rows)
+      p.start(end)
+      p.queue('CINE_END_MONTAGE')
+      p.advance(p.current!.durationMs)
+      expect(p.current!.id, `${end} 之后`).toBe('CINE_END_MONTAGE')
     }
   })
 })

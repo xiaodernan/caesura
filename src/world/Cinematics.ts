@@ -27,6 +27,8 @@ export interface CinematicPlayback {
 export class Cinematics {
   private readonly byId = new Map<string, CinematicRow>()
   private active: CinematicPlayback | null = null
+  /** 当前这条**走完之后**接着放的那一条（§6 的终局蒙太奇就是这么接在结局之后的） */
+  private queued: string | null = null
 
   constructor(rows: readonly CinematicRow[]) {
     for (const r of rows) {
@@ -63,9 +65,52 @@ export class Cinematics {
     return true
   }
 
-  /** 手动收束（玩家跳过 / 被战斗打断时由调用方决定要不要调）。 */
+  /**
+   * **排队**：当前这条走完之后接着放的那一条。
+   *
+   * 为什么需要它：§6 的终局蒙太奇是"**二择之后**共享的那一段"——它不属于任何一个结局，
+   * 而是两个结局都演完之后接上来的。没有排队，调用方就得自己盯着"第一条什么时候结束"
+   * （那就等于把播放器的状态搬到调用方去，两处真相）。
+   *
+   * 语义（三条，都是"不静默"）：
+   * - 名字不在表里 ⇒ 返回 false 且**不排**（与 `start` 同一族纪律）；
+   * - **当前没有演出在跑 ⇒ 立刻起它**（"排队"不该变成"永不播"）；
+   * - 已经在跑 ⇒ 排在它后面（同一时刻只存一条，后到的取代先到的）。
+   */
+  queue(id: string): boolean {
+    if (!this.byId.has(id)) return false
+    if (this.active === null) return this.start(id)
+    this.queued = id
+    return true
+  }
+
+  /** 排队中的那一条（没有则 null） */
+  get queuedId(): string | null {
+    return this.queued
+  }
+
+  /** 撤掉排队。**要整条取消的场合顺序是先 `clearQueue()` 再 `skip()`**——
+   *  `skip()` 自己会把排队的那条接上来，晚一步清就来不及了。 */
+  clearQueue(): void {
+    this.queued = null
+  }
+
+  /**
+   * 手动收束（玩家跳过 / 被战斗打断时由调用方决定要不要调）。
+   * **排队的那条照常接**——"跳过"是"这一段我不看了"，不是"后面那一段也别放了"；
+   * 要整条取消就再调 `clearQueue()`。
+   */
   skip(): void {
     this.active = null
+    this.takeQueued()
+  }
+
+  /** 收束之后把排队的那条接上来（没有排队就什么都不做） */
+  private takeQueued(): boolean {
+    if (this.queued === null) return false
+    const next = this.queued
+    this.queued = null
+    return this.start(next)
   }
 
   /**
@@ -79,7 +124,8 @@ export class Cinematics {
     this.active.elapsedMs += deltaMs
     if (this.active.elapsedMs >= this.active.durationMs) {
       this.active = null
-      return false
+      // 走完那一刻把排队的那条接上来（§6：结局演完接着播蒙太奇）
+      return this.takeQueued()
     }
     return true
   }

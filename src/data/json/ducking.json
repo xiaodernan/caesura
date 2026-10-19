@@ -22,5 +22,15 @@
   "holdSec": 1.2,
   "attackSec": 0.25,
   "releaseSec": 0.18
+ },
+ {
+  "id": "bossTelegraph",
+  "label": "Boss 大招 telegraph",
+  "trigger": "combat.bossTelegraph",
+  "targets": [
+   "ambience"
+  ],
+  "db": -8,
+  "holdSec": 1.5
  }
 ]

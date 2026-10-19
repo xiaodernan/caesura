@@ -3,7 +3,7 @@
  * 不建 WebGL 上下文：Mesh 的 position/quaternion 操作在 node 里同样可断言。
  * 只喂 ProjectileVisuals 需要的字段（它 import 的是类型，不是运行时）。
  */
-import { afterAll, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 import * as THREE from 'three'
 import { ProjectileVisuals } from '@/world/ProjectileVisuals'
 import type { Projectile } from '@/combat/Projectiles'
@@ -93,6 +93,54 @@ describe('ProjectileVisuals（弹体名单 -> 可见模）', () => {
   })
 })
 
+describe('ProjectileVisuals.syncGrounded（§4.3 落地的枪）', () => {
+  let scene: THREE.Scene
+  let vis: ProjectileVisuals
+  let group: () => THREE.Group
+
+  beforeEach(() => {
+    scene = new THREE.Scene()
+    vis = new ProjectileVisuals(scene)
+    group = () => scene.getObjectByName('projectiles') as THREE.Group
+  })
+
+  afterEach(() => {
+    vis.dispose()
+  })
+
+  it('落地名单同步：新增/位置更新/移除', () => {
+    vis.syncGrounded([{ id: 1, pos: { x: 1, y: 0, z: 0 }, dir: { x: 0, y: 0, z: 1 }, plantedTick: 10 }])
+    expect(vis.liveGrounded).toBe(1)
+    // 移动位置
+    vis.syncGrounded([{ id: 1, pos: { x: 2, y: 0, z: 0 }, dir: { x: 1, y: 0, z: 0 }, plantedTick: 10 }])
+    const m = group().children[0] as THREE.Mesh
+    expect(m.position.x).toBeCloseTo(2, 1)
+    // 新增 + 保留原有 - 一次性传完整名单
+    vis.syncGrounded([
+      { id: 1, pos: { x: 2, y: 0, z: 0 }, dir: { x: 1, y: 0, z: 0 }, plantedTick: 10 },
+      { id: 2, pos: { x: -1, y: 0, z: -1 }, dir: { x: -1, y: 0, z: 0 }, plantedTick: 11 }
+    ])
+    expect(vis.liveGrounded).toBe(2)
+    // 移除 id=1，保留 id=2
+    vis.syncGrounded([{ id: 2, pos: { x: -1, y: 0, z: -1 }, dir: { x: -1, y: 0, z: 0 }, plantedTick: 11 }])
+    expect(vis.liveGrounded).toBe(1)
+    // 验证剩余的是 id=2
+    const remaining = Array.from(vis['grounded'].keys())
+    expect(remaining).toEqual([2])
+  })
+  it('方向朝向被归一化：零向量兜底 +Z', () => {
+    vis.syncGrounded([{ id: 3, pos: { x: 0, y: 0, z: 0 }, dir: { x: 0, y: 0, z: 0 }, plantedTick: 10 }])
+    const m = group().children[0] as THREE.Mesh
+    expect(m.quaternion.w).toBeCloseTo(1, 5)
+  })
+  it('移除后模型被回收池复用，不再可见', () => {
+    vis.syncGrounded([{ id: 4, pos: { x: 0, y: 0, z: 0 }, dir: { x: 0, y: 0, z: 1 }, plantedTick: 10 }])
+    expect(vis.liveGrounded).toBe(1)
+    vis.syncGrounded([])
+    expect(vis.liveGrounded).toBe(0)
+    expect(group().children.every((c) => !(c as THREE.Mesh).visible)).toBe(true)
+  })
+})
 describe('ProjectileVisuals.syncTelegraphs（§14.4 赤线预告）', () => {
   const scene = new THREE.Scene()
   const vis = new ProjectileVisuals(scene)

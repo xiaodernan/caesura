@@ -23,11 +23,13 @@ import { CORPUS_DIRS, corpusFindings, decodeUtf8, isDeclaredRootDotFile, looksBi
 const root = fileURLToPath(new URL('../..', import.meta.url))
 
 /**
- * 「入库名册 ⇄ 总体」那条跨查要问 `git ls-files` ⇒ 需要 spawn。本仓库的先例（KI-075）是 **vitest worker 内部
- * spawn 一律被宿主拒**（`EBUSY`），照 `ledger-rules.test.ts` 的同一处理方式走：加载时探一次，命中就
- * **响亮地跳过**并把原因打出来，而不是让它静默变成一条绿。
- * 实测订正（2026-10-02）：本机 worker 里 `spawnSync(node -e)` **是能跑的**，所以这条守卫在套件里**真跑过**
- * ——KI-075 那句"spawn 被拒"在这条路上不再复现，但探一次的处理方式留着：换一台被拒的机器它就是跳过而不是红。
+ * 「入库名册 ⇄ 总体」那条跨查要问 `git ls-files` ⇒ 需要 spawn。KI-075 曾登记"**vitest worker 内部
+ * spawn 一律被宿主拒**（`EBUSY`）"，本条照那个先例走"加载时探一次，命中就**响亮地跳过**并把原因打出来，
+ * 而不是让它静默变成一条绿"。两趟实测都站在反面：2026-10-02 与 2026-10-11（#119 结案时探针跑过
+ * `spawnSync(node,['-e'])` 与 `git rev-parse`，全部 `error=none / status=0`）——所以这条守卫在本机套件里
+ * **真跑过**，而 KI-075 已因那个前提不复现而结案（那条判据改成了进程内跑）。探一次的处理方式留着，
+ * 并把"跳不跳"完全交给当场读数（任何 spawn error 都算被挡，不只 `EBUSY`）：换一台真被拒的机器，
+ * 它就是响亮跳过而不是红。
  *
  * 第二个跳过条件 `!AT_REPO_ROOT`：`git ls-files` 列的是**当前工作树**的名字，而 `.scratch/plane_*` 那些
  * 冻结平面是 `git archive` 解出来的目录（不是工作树根，`git` 从那里看到的是外层仓库的空子集）。
@@ -36,8 +38,8 @@ const root = fileURLToPath(new URL('../..', import.meta.url))
 const SPAWN_BLOCKED = (() => {
   const probe = spawnSync(process.execPath, ['-e', 'process.stdout.write("ok")'], { encoding: 'utf8' })
   const code = probe.error ? (probe.error as NodeJS.ErrnoException).code : null
-  if (code) console.warn(`[text-integrity] 跳过「入库名册 ⇄ 总体」那条守卫：本环境 spawn 子进程被拒（${code}）—— 换台能 spawn 的机器复验，见 KI-075`)
-  return code === 'EBUSY'
+  if (code) console.warn(`[text-integrity] 跳过「入库名册 ⇄ 总体」那条守卫：本环境 spawn 子进程被当场实测挡下（${code}）—— 换台能 spawn 的机器复验`)
+  return !!code
 })()
 const AT_REPO_ROOT = (() => {
   const r = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: root, encoding: 'utf8' })

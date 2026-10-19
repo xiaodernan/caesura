@@ -181,12 +181,20 @@ describe('§37 第二腿：三层光读数（颜色从六列现推，强度从 l
     }
   })
 
-  it('深窖的 keyIntensity 是 0（§8 自己开的例外：唯一光源是矿缝），其余六行都是 1.5', () => {
+  it('§8 只禁止"无 key 光的纯自发光场景"：深窖 keyIntensity=0（矿缝例外），其余六行 key>0', () => {
     expect(lightingLights(lightingRow('lp_earless_deeps'))!.keyIntensity).toBe(0)
+    // §8 的硬规矩是「除深窖外 key 不许是 0」；具体强度是基线值，出生区（休垒）在黑屏修复里被提亮（见下）
     for (const row of lightingRows) {
       if (row.id === 'lp_earless_deeps') continue
-      expect(lightingLights(row)!.keyIntensity, `${row.id}`).toBe(1.5)
+      expect(lightingLights(row)!.keyIntensity, `${row.id}`).toBeGreaterThan(0)
     }
+    // 基线 1.5：除休垒外的五张地表行逐行钉住（防强度漂移）
+    for (const id of ['lp_whisperwode', 'lp_fellcarillon', 'lp_brokenbar_camp', 'lp_drowned_choir', 'lp_unfinished_hall']) {
+      expect(lightingLights(lightingRow(id))!.keyIntensity, `${id}`).toBe(1.5)
+    }
+    // 休垒是唯一偏离基线的行：黑屏修复把出生区提亮（hemi 0.7→1.0、key 1.5→2.0），§8 允许（只禁 key=0）
+    expect(lightingLights(lightingRow('lp_resthold'))!.keyIntensity, '休垒黑屏修复后的提亮值').toBe(2.0)
+    expect(lightingLights(lightingRow('lp_resthold'))!.hemiIntensity, '休垒黑屏修复后的提亮值').toBe(1.0)
     // 例外只关方向光：极光与 point 两层在深窖仍然亮着（"没有方向光"≠"没有光"）
     const deeps = lightingLights(lightingRow('lp_earless_deeps'))!
     expect(deeps.hemiIntensity).toBeGreaterThan(0)
@@ -281,7 +289,7 @@ describe('判据本体可喂（合成夹具）：链断了要会说，不能静�
       expect(LIGHT_RULINGS[row.id], `${row.id} 没有裁决理由`).toBeTypeOf('string')
       expect(LIGHT_RULINGS[row.id].length, `${row.id} 的理由太短`).toBeGreaterThanOrEqual(20)
     }
-    // 深窖那条必须说出自己为什么偏离基线（它是七行里唯一 keyIntensity ≠ 1.5 的）
+    // 深窖那条必须说出自己为什么偏离基线（keyIntensity=0，§8 的矿缝例外）
     expect(LIGHT_RULINGS.lp_earless_deeps).toContain('矿缝')
     expect(LIGHT_RULINGS.lp_earless_deeps.length).toBeGreaterThan(LIGHT_RULINGS.lp_resthold.length)
   })
@@ -379,7 +387,7 @@ describe('§2 跨区过渡带：两份读数按 t 混合，常量自证 70/30↔
     ])
     expect(mid.grade.saturateMul).toBeCloseTo((snapA.grade.saturateMul + snapB.grade.saturateMul) / 2, 10)
     expect(mid.grade.contrastMul).toBeCloseTo((snapA.grade.contrastMul + snapB.grade.contrastMul) / 2, 10)
-    // keyIntensity 从 1.5 走到 0：0.5 处正是 0.75（"渐渐长出一盏灯"不是咔一下亮起）
+    // keyIntensity 从 2.0（休垒，黑屏修复提亮）走到 0（深窖）：0.5 处正是 1.0（"渐渐长出一盏灯"不是咔一下亮起）
     expect(mid.lights!.keyIntensity).toBeCloseTo((rigA.keyIntensity + rigB.keyIntensity) / 2, 10)
   })
 
@@ -399,8 +407,8 @@ describe('§2 跨区过渡带：两份读数按 t 混合，常量自证 70/30↔
     expect(lowHex(blendLightRigs(rigA, rigB, 2))).toEqual(lowHex(rigB)) // 夹到 1
     expect(lowHex(blendLightRigs(rigA, rigB, -1))).toEqual(lowHex(rigA)) // 夹到 0
     const mid = blendLightRigs(rigA, rigB, 0.5)
-    expect(mid.keyIntensity).toBeCloseTo(0.75, 10) // (1.5 + 0)/2
-    expect(mid.hemiIntensity).toBeCloseTo(rigA.hemiIntensity, 10) // 两行 hemi 同为 0.7 ⇒ 中点不变
+    expect(mid.keyIntensity).toBeCloseTo(1.0, 10) // (2.0 + 0)/2：休垒黑屏修复后 key 是 2.0
+    expect(mid.hemiIntensity).toBeCloseTo((rigA.hemiIntensity + rigB.hemiIntensity) / 2, 10) // (1.0 + 0.7)/2
     for (let i = 0; i < 3; i++) {
       expect(mid.keyDir[i]).toBeCloseTo((rigA.keyDir[i] + rigB.keyDir[i]) / 2, 10)
     }

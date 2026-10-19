@@ -147,6 +147,9 @@ export class AudioEngine {
     this.subscribe('combat.parried', () => this.onDuckTrigger('combat.parried'))
     // KI-092①：休止状态进/出——holdSec 由事件携带（同一个 freezeTicks 的秒形），不是第二份读数
     this.subscribe('audio.caesura', (e) => { if (e.on) this.onDuckTrigger('audio.caesura', e.holdSec) })
+    // KI-092②：§8.2「Boss 大招 telegraph」一行——Enemy 在带 `tutti` 标记的招式起手那一 tick 发它，
+    // 这里经 onDuckTrigger 压 AMB 全层 1.5s（"危险独占听觉空间"）。与 parry/caesura 同一入口，表在 ducking.json。
+    this.subscribe('combat.bossTelegraph', () => this.onDuckTrigger('combat.bossTelegraph'))
     // KI-066：拍网向唯一主人领，不再由音乐层自己猜一份。这条订阅走 `subscribe()`，
     // `dispose()` 摘得掉（TD-006 第二腿① 已还）⇒ 测试文件不必再靠「我是第一只引擎」自证前提。
     this.subscribe('audio.music.grid', (g) => {

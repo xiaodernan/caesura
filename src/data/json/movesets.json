@@ -230,6 +230,7 @@
  },
  {
   "id": "ms_greatsword",
+  "chargeTicks": 84,
   "actions": {
    "l1": {
     "startup": 27,
@@ -436,6 +437,7 @@
  },
  {
   "id": "ms_spear",
+  "chargeTicks": 60,
   "actions": {
    "l1": {
     "startup": 16,
@@ -1026,6 +1028,7 @@
  },
  {
   "id": "ms_staff",
+  "chargeTicks": 54,
   "actions": {
    "l1": {
     "startup": 13,

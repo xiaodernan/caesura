@@ -9,7 +9,7 @@ import { interfaceFields, schemaBlocks } from '../../scripts/schema-vocab.mjs'
  *
  * 形状照 `lockon-table.test.ts` / `battle-table.test.ts`（同一族理由）：判据住在
  * `scripts/burst-rules.mjs`，门禁与这份测试读**同一段代码**；`validate-data.mjs` 一被 import 就去校验
- * 真表并 `process.exit`，而本沙箱 spawn 子进程被宿主拒（KI-075），所以"喂一组对不上的数看它拒不拒"
+ * 真表并 `process.exit`，所以"喂一组对不上的数看它拒不拒"
  * 那一半只有搬出来才量得动。
  *
  * **这一批为什么值得存在**：combat.md §14.4 那句「三叠箭第 2 拍为假动作（延迟 0.25 拍），骗翻滚后硬直
@@ -240,7 +240,7 @@ describe('判据只有一个主人，而这条链每一格都有读者', () => {
   })
 
   it('抄来的尺子对得上主人：burst-rules 的 TICK_HZ 与 src/core/Time.ts 是同一个数、同一个算式', () => {
-    // 这一条存在的理由：`.mjs` 牵不进 TS 模块（KI-075），所以 TICK_HZ 与那把尺子都是**抄的**——
+    // 这一条存在的理由：node 吃不下 `.ts`，`.mjs` 牵不进 `Time.ts`，所以 TICK_HZ 与那把尺子都是**抄的**——
     // 抄了就要有对账。边界两侧各敲一次的⑤那两臂（上面）才是这条对账的行为证据：尺子脱钩时先红的是它。
     expect(TICK_HZ, '逻辑 tick 的频率换了主人？src/core/Time.ts 是那唯一的一个').toBe(60)
     const rules = readFileSync(new URL('../../scripts/burst-rules.mjs', import.meta.url), 'utf8')

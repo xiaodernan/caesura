@@ -37,6 +37,7 @@ const PRESENTATION = new Set([
   'tools/CombatDebugger.ts', 'tools/DebugPanel.ts',
   'tools/EnemyDebugger.ts', 'tools/QuestDebugger.ts', 'tools/AIDebugger.ts',
   'vfx/VfxLayer.ts', 'vfx/materials.ts', 'vfx/ColorGrade.ts',
+  'vfx/RainSystem.ts', 'vfx/Trails.ts', 'vfx/Decals.ts', 'vfx/GPUParticles.ts',
   'world/ActorVisuals.ts', 'world/ChunkGreybox.ts', 'world/InteractableGreybox.ts',
   'world/WallGreybox.ts',
   'world/ProjectileVisuals.ts', 'world/BossArenaVisuals.ts', 'world/PlaceholderArena.ts', 'world/PropVisuals.ts',

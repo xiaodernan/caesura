@@ -10,8 +10,8 @@ import { MOTIF_R1, battleOstinatoHz } from '@/audio/music'
  * 战斗档表的两端实测（KI-080：`music.battle` 那 5 个 id 从"指向一张不存在的表"变成有读者的一行）。
  *
  * 形状照 `explore-table.test.ts`（同一族理由）：判据住在 `scripts/battle-rules.mjs`，门禁与这份测试读
- * **同一段代码**；`validate-data.mjs` 一被 import 就去校验真表并 `process.exit`，而本沙箱 spawn 子进程
- * 被宿主拒（KI-075），所以"拒不拒"那一半只有搬出来才量得动。
+ * **同一段代码**；`validate-data.mjs` 一被 import 就去校验真表并 `process.exit`，所以"拒不拒"那一半
+ * 只有搬出来才量得动。
  *
  * 刻意不在这里判的那两样：
  *  · `bellEveryBars` 的正整数 —— `report.num` 全场那张嘴（下面那条源码门钉着它别搬过来）；

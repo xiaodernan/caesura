@@ -292,9 +292,14 @@ src/
 | `ui/Stakerite.ts`、`ui/TitleScreen.ts`、`ui/SaveSlots.ts` | 调音桩面板、开场定弦（KI-031②）、存档槽两屏（KI-025②）——都晚于规划 |
 | `world/ActorVisuals.ts`、`world/BossArenaVisuals.ts` | 身体与场地的灰盒表现层。规划把它们算进了 `SceneGraph`，实际各自一份才好测 |
 | `world/WallGreybox.ts` | KI-014②a：遮挡必须看得见 |
-| `world/Cinematics.ts` | **§2 规划里 `world/cinematics` 的「逻辑半」**：规划那一行写的是「数据驱动镜头序列（关键帧相机路径 + 动画 clip 触发，JSON 描述）」，而本机没有真几何与相机，所以先落能诚实兑现的那一半——**哪一条在跑、还剩多久、该不该夺输入**（数据是 `data/json/cinematics.json`，判据住 `scripts/cinematic-rules.mjs`：单条 ≤25s / 全清单 ≤180s）。**运行时那条腿**：`main.ts` 接了四处——实例、每帧 `advance(dt*1000)`、输入门（`input.enabled = … && !cinematics.inputLocked`）、以及**两类触发**：**新开局**放开场（`if (!slot) cinematics.start('CINE_OPEN')`；读档不放——开场是"第一次醒来"）、**进 Boss 区**放出场（`BOSS_INTRO_BY_REGION`：沉唱堂→`CINE_OST_INTRO` / 未竟厅→`CINE_HERSIL_INTRO` / 无耳深窖→`CINE_MYRIAD_INTRO`，**一局一次**、读档不重放）、**主 Boss 倒下**放胜利（`boss.defeated` 载荷认人：`p.dataId === 'en_hersil'` ⇒ `CINE_WIN`；**不是"任何 Boss 倒下都放"**——§6 那条的镜头语言是「管风琴过载熄灭」，那是未竟厅那一战）。**2026-10-10 又接了一类：终局二择**（B8）——`regions.json` 未竟厅加 `in_unfinishedhall_tablet`（**载体复用**：`kind` 写 `npc` + `npcId` 指 `npc_tablet`，因为设定里石版本来就会「说话」；给它加 `dialogue?: string` 的更洁版本**没走**，等真有第二个「非 NPC 但要说话」的载体再动），门控是**已有的** `flag.hersil_felled`；`dialogue.json` 加第 6 棵树 `DLG_TABLET`，两选项各挂 `CINE_END_A` / `CINE_END_B` ⇒ **零新机制**（`DialogueChoice.cinematic` 的通道前面刚接）。**仍欠**：① **剧情那 2 条**（`CINE_STORY_B5`/`B7`；B7 要 §3.4 恩希尔战前对话树，**`DLG_HERSIL` 还不存在**）+ 结局那 3 条里 `CINE_END_MONTAGE` 的**时序**（§6 说它按 §9 旗标合成、在二择之后播 ⇒ 要「结局演完接着播」的机制，今天没有）；Boss 出场那 3 条已挂在"进区域"上，见下）；② §3.5 的三种界面变体（VESSEL 第三选项**通向哪个结局**文档没写、CHOSEN 两行「代价说明」**内容**没写、LOST 降半调是音高读数）与「**结局记哪一格**」的旗标名（要与设计对齐，不擅自发明）；③ 镜头轨道与字幕时序（要真几何与相机 ⇒ KI-008 / KI-010）；③ `narrative.md §6` 提过却从未定义取值的 `interruptPolicy`。守卫 `tests/flow/cinematics-player.test.ts`（**10 条**，含"接了哪四处 / 其余 9 条一个都没接"的源门）与 `cinematic-budget.test.ts`（9 条） |
+| `world/Cinematics.ts` | **§2 规划里 `world/cinematics` 的「逻辑半」**：规划那一行写的是「数据驱动镜头序列（关键帧相机路径 + 动画 clip 触发，JSON 描述）」，而本机没有真几何与相机，所以先落能诚实兑现的那一半——**哪一条在跑、还剩多久、该不该夺输入**（数据是 `data/json/cinematics.json`，判据住 `scripts/cinematic-rules.mjs`：单条 ≤25s / 全清单 ≤180s）。**运行时那条腿**：`main.ts` 接了四处——实例、每帧 `advance(dt*1000)`、输入门（`input.enabled = … && !cinematics.inputLocked`）、以及**两类触发**：**新开局**放开场（`if (!slot) cinematics.start('CINE_OPEN')`；读档不放——开场是"第一次醒来"）、**进 Boss 区**放出场（`BOSS_INTRO_BY_REGION`：沉唱堂→`CINE_OST_INTRO` / 未竟厅→`CINE_HERSIL_INTRO` / 无耳深窖→`CINE_MYRIAD_INTRO`，**一局一次**、读档不重放）、**主 Boss 倒下**放胜利（`boss.defeated` 载荷认人：`p.dataId === 'en_hersil'` ⇒ `CINE_WIN`；**不是"任何 Boss 倒下都放"**——§6 那条的镜头语言是「管风琴过载熄灭」，那是未竟厅那一战）。**2026-10-10 又接了一类：终局二择**（B8）——`regions.json` 未竟厅加 `in_unfinishedhall_tablet`（**载体复用**：`kind` 写 `npc` + `npcId` 指 `npc_tablet`，因为设定里石版本来就会「说话」；给它加 `dialogue?: string` 的更洁版本**没走**，等真有第二个「非 NPC 但要说话」的载体再动），门控是**已有的** `flag.hersil_felled`；`dialogue.json` 加第 6 棵树 `DLG_TABLET`，两选项各挂 `CINE_END_A` / `CINE_END_B` ⇒ **零新机制**（`DialogueChoice.cinematic` 的通道前面刚接）。**仍欠**：① **剧情那 2 条**（`CINE_STORY_B5`/`B7`；B7 要 §3.4 恩希尔战前对话树，**`DLG_HERSIL` 还不存在**）+ 结局那 3 条里 `CINE_END_MONTAGE` 的**调用点**——**逻辑层已备**（`Cinematics.queue(id)`：当前这条走完自动接上，名字不在表里则不排、没在跑则立刻起、`clearQueue()` 可整条取消；守卫 7 条），**差的只是 `main.ts` 一处 `cinematics.queue('CINE_END_MONTAGE')`**（§6 说它按 §9 旗标合成、在二择之后播 ⇒ 要「结局演完接着播」的机制，今天没有）；Boss 出场那 3 条已挂在"进区域"上，见下）；② §3.5 的三种界面变体（VESSEL 第三选项**通向哪个结局**文档没写、CHOSEN 两行「代价说明」**内容**没写、LOST 降半调是音高读数）与「**结局记哪一格**」的旗标名（要与设计对齐，不擅自发明）；③ 镜头轨道与字幕时序（要真几何与相机 ⇒ KI-008 / KI-010）；③ `narrative.md §6` 提过却从未定义取值的 `interruptPolicy`。守卫 `tests/flow/cinematics-player.test.ts`（**10 条**，含"接了哪四处 / 其余 9 条一个都没接"的源门）与 `cinematic-budget.test.ts`（9 条） |
 | `tools/DebugPanel.ts` | §2 的 `tools/` 只列了四块面板，没列它们**共用的外壳**。KI-058 补后三块时发现三份"钉在屏幕角落、按 F 键开合、逐 tick 重画文本"的代码会各写一遍且各不相同（第一版的 F1 就是漏了 `pointer-events:none` 的那个）⇒ 抽成一份 `DebugPanelSpec`：面板只交 `{ key, label, anchor, text() }`，DOM 与按键监听归它，读数一律由组合根（`main.ts`，且只在 `import.meta.env.DEV`）以闭包注入。规划外还多了一条分工：`tools/` 里**只有这一个文件碰 DOM**，四块面板各自是纯文本产线（只收读数闭包、只吐字符串），所以 headless 可测（`tests/flow/debug-panels.test.ts` 27 条里只有外壳那 4 条需要一份最小 DOM 替身） |
-| `settings/GameplaySettings.ts` ＋ **整个 `settings/` 目录** | 需求 §46「玩法/辅助」那一格第一次有数据形状（KI-112 第一腿）。§2 那张定表里 `settings/` 从未存在——设置此前只零散落在音频音量三轴与 UI 局部状态里，没有"一份设置对象入档"这件事。现形状：五格 `{bufferMs, frameAssist, shakeScale, rumbleScale, damageScale}`，每格都有规格出处与一个真实读者（`core/Input.ts` 的缓冲窗＋+1 帧辅助、`player/CameraRig.ts.shakeIntensity`、`input/Haptics.ts.scale`（幅值乘、Gamepad 顶格 1 处截断、**时长不乘**）、`combat/CombatManager.ts.damageScale`（只乘玩家**收到**的那一份））；`clampGameplaySettings` 是**读档路径上唯一被信任的入口**（手改的数越界夹取、缺格回默认、NaN 回默认）。存档 v12→v13 由具名 `migrateV12toV13` 承接，而迁移**不写** gameplay 块 ⇒ 老档 `restore(undefined)` 原地 no-op（§78「留空是如实」，不假装重置）。守卫 `tests/flow/settings-persistence.test.ts`（21 条）＋变异臂 7/7（判据与红数见 KNOWN_ISSUES 的 KI-112 行）。**仍欠**：UI 入口（`ui/Stakerite.ts` 的「操作」页）与按键映射数据化 = KI-112 第二腿 |
+| `settings/GameplaySettings.ts` ＋ **整个 `settings/` 目录** | 需求 §46「玩法/辅助」那一格第一次有数据形状（KI-112 第一腿）。§2 那张定表里 `settings/` 从未存在——设置此前只零散落在音频音量三轴与 UI 局部状态里，没有"一份设置对象入档"这件事。现形状：五格 `{bufferMs, frameAssist, shakeScale, rumbleScale, damageScale}`，每格都有规格出处与一个真实读者（`core/Input.ts` 的缓冲窗＋+1 帧辅助、`player/CameraRig.ts.shakeIntensity`、`input/Haptics.ts.scale`（幅值乘、Gamepad 顶格 1 处截断、**时长不乘**）、`combat/CombatManager.ts.damageScale`（只乘玩家**收到**的那一份））；`clampGameplaySettings` 是**读档路径上唯一被信任的入口**（手改的数越界夹取、缺格回默认、NaN 回默认）。存档 v12→v13 由具名 `migrateV12toV13` 承接，而迁移**不写** gameplay 块 ⇒ 老档 `restore(undefined)` 原地 no-op（§78「留空是如实」，不假装重置）。守卫 `tests/flow/settings-persistence.test.ts`（21 条）＋变异臂 7/7（判据与红数见 KNOWN_ISSUES 的 KI-112 行）。**仍欠**：UI 入口（`ui/Stakerite.ts` 的「操作」页）与按键映射数据化 = KI-112 第二腿 || `vfx/RainSystem.ts` | Phase B3 结案落点：雨粒子系统。`bus.on('weather.changed')` 驱动，组合根把 `activeWeather` 传进来，只管"怎么下"（三角形条带 + 重用缓冲区、无 GC）。 |
+| `vfx/Trails.ts` | Phase B4 结案落点：武器拖尾系统。Tube Ribbon Shader：沿弧长 fade、顶点动画、无 GC。数据驱动：每把武器在 movesets/weapons JSON 里声明 `trail` 配置。 |
+| `vfx/Decals.ts` | Phase B4 结案落点：贴花系统。投影四边形 + 深度防穿插（Polygon Offset）。用于：弹痕、震纹、脚印、血迹、烧焦痕。单次 DrawCall 批量渲染，生存周期管理：创建→淡入→维持→淡出→回收。 |
+| `vfx/GPUParticles.ts` | Phase B4 结案落点：GPU 粒子系统。实例属性环形缓冲 + 顶点动画 shader，CPU 仅管理发射器配置与生存周期。发射器配置全数据驱动（JSON），支持 burst/stream/trail/ribbon 四种类型。 |
+
+
 
 | `combat/GroundedSpears.ts` | §4.3 那句「投出的枪落在地上、按处决键拾回」要求一件**活过弹体生命周期**的东西，而 `ProjectileSystem.reap` 的语义是"这一招结束了"、不是"这个物体离开了世界"——把留存塞回 `Projectile` 就等于让它跟着射程/600 tick 寿命一起消失（那是 KI-006① 从前"做不了"的真正原因）。所以它是名册不是组件：`{id, pos, dir, plantedTick}`，`dir` 在 `plant` 时压平到水平面（地上的枪躺平指向，不继承空中那发的仰角）。**判据不认武器名**：`CombatManager` 只把 `flags:["throw"]` 那一格抄成 `Projectile.retrievable`——KI-006② 早就声明过这一格是投掷的近似，这次它第一次有读者，顺手把「死数据」销成一格；`reflectProjectile` 刻意**不抄这一格**，所以玩家弹回去的那一发永远不会变成一把可捡的枪。拾回距离复用 `execution.crumpleRange`（**不新开 schema 字段**：一件东西的"够得着"只该有一把尺子）。**同一格两处竞争时处决优先**（`tryExecute` 先找塌陷的敌人，找不到才 `tryRetrieveSpear`）——一杆枪不该抢走一次处决。**「回到手上」只有三条通道**：拾回、死亡补枪、换区/重开补枪（`restockSpear`）。第三条顺带把**在飞的**自己那发抹掉 `retrievable` 再 `expire`，否则一次死亡之后空中那一发仍会落地，长出一杆没人认领、也再也捡不回的枪。守卫 `tests/flow/spear-retrieval.test.ts`（**16 条**：飞行终点留存/命中后留存/弓矢不留存/敌方同名 kind 不留存/拾回清场+回手+播报/够不着的拒绝/没枪时二次投掷**不扣体力不开动作**/捡回后能再投/处决优先/死亡当场作废空中那一发/跨区**一次性**补货那条腿/`restockSpear` 幂等/名册单元算术/`main.ts` 接线源门）。**变异见证 15 臂 + 1 对照**（`.scratch/ki006_arms.mjs`，预言先写死再跑，逐臂从 pristine 字节重基、跑完按文件复验还原）：对照 0 红 / 16 绿，15 臂**全数按预言的红**（哪几条用例、几条，逐条比对用例标题）。**第一轮有一臂白过，而红的是量具不是机制**：A8（摘掉 `restockSpear` 整个循环体）当时 16 条全绿——因为人在死亡状态时 `update()` **每 tick** 都敲补货，而补货开头就是 `groundedSpears.clear()`，于是"空中那一发没被作废、飞完又种下一杆"的每一笔账都在下一次 clear 里被抹平，读数回到 0。修法不是放宽判据而是**补一条走真实一次性入口的腿**（`main.ts` 跨区/重开各敲一次，玩家活着，没人替她清），A8 自此当场红在"补货之后那一发不许还在飞"；再补 A15（只摘 `p.retrievable = false`、留着 `kill`）把这一格里**两条独立机制**分别钉住——它红在新那条腿的"作废不等于留下"，而死亡腿仍然绿。**这条记进账本的理由**：一条"每 tick 重算"的出口会把同一格里的掩蔽者一起清掉，凡有这种出口，判据必须另有一条只敲一次的入口。**仍欠**：地上那杆枪的像素评审（本机视口不可用，KI-010 同因），以及 §4.3 原设里"拾回要走 Phase 5 物品/装备环"那一格——本批落的是**动词**，不是装备环。
 
@@ -834,7 +839,7 @@ KI-077 收口时如实记了「只兑现 L1+L4，`music.explore`(7) 与 `music.b
   ① `bedSwapAt` 用 `Infinity` 当"没有窗口在走"的哨兵（不能用 0：假 AudioContext 的 `currentTime` 就从 0 起），而 `setExplore` 最初写的是 `this.bedSwapAt > this.ctx.currentTime` ⇒ 从第一帧之后**每一次换曲都被当成"窗口内"**，押进 `songPending` 等一次永远不会来的兑现，跨区旋律永远念的是出生那一区。修法是把判据换成 `Number.isFinite(this.bedSwapAt)`，并把这条钉成用例「开局那次窗口兑现之后再换曲 ⇒ 仍然当场换」（变异探针 M1 把那一行改回 `>` 之后**恰好红两条**：音乐层一条、引擎那条「图建好之后再发曲」一条）。
   ② 倒影取负写成 `-d` 会给主音留下 `-0`，而度数是要拿去比对的数 ⇒ 改成 `0 - d`；证人仍是 `motifDegrees` 那条（vitest 的 `toEqual` 分得出 `-0` 与 `+0`，M2 实测红 1 条）。
 - **「旋律层最后」的实现只有一条顺序**：换床开出的 crossfade 窗口没走完时，新曲押在 `songPending` 里由 `update()` 到点兑现；没有窗口在走就当场换。这个顺序**在组合根**：`main.ts` 两处发射点都是先 `audio.music.ambience` 后 `audio.music.explore`，反过来写两句都不报错、只是旋律抢跑 ⇒ 由一条源码门钉住（`main.ts` 全场恰好四行、顺序 `ambience,explore,ambience,explore`）。每帧最多排**一个**音（不像战斗层那样 `while` 补排）：调度落后时"把欠的拍补回来"在这里听感上是把过去十秒砸进这一帧，而探索曲没有拍点要对齐，代价换成"一串音被跳过"。
-- **判据搬进 `scripts/explore-rules.mjs`（+ `.d.mts`），校验器只当那张嘴**。理由与 `report-reds.mjs`/`test-scope.mjs` 同一个（KI-072/078 先例）：`validate-data.mjs` 一被 import 就去校验真表并 `process.exit`，而"喂一行非法数据、看它拒不拒"这一半在测试里做不了——本沙箱连 spawn 子进程都被宿主拒（KI-075 那条 `skipIf` 就是这件事的读数）。搬出来之后门禁与 `tests/unit/explore-table.test.ts`（21 条）**读的是同一段代码**。`rootHz`/`peak` 的可闻带刻意留下：那三种说法由 `report.num` 全场统一管，搬过来等于配第二个主人（源码门把这一格钉在原地：校验器里不许出现 `EXPLORE_FORMS.has`/`MIN_ROOT_CENTS`，也不许丢掉 `.rootHz`, `row.rootHz`）。
+- **判据搬进 `scripts/explore-rules.mjs`（+ `.d.mts`），校验器只当那张嘴**。理由与 `report-reds.mjs`/`test-scope.mjs` 同一个（KI-072/078 先例）：`validate-data.mjs` 一被 import 就去校验真表并 `process.exit`，而"喂一行非法数据、看它拒不拒"这一半在测试里做不了（import 即求值这条本身就够——`validate-data.mjs` 从不返回给调用方）。搬出来之后门禁与 `tests/unit/explore-table.test.ts`（21 条）**读的是同一段代码**。`rootHz`/`peak` 的可闻带刻意留下：那三种说法由 `report.num` 全场统一管，搬过来等于配第二个主人（源码门把这一格钉在原地：校验器里不许出现 `EXPLORE_FORMS.has`/`MIN_ROOT_CENTS`，也不许丢掉 `.rootHz`, `row.rootHz`）。
 - **数据门钉的六件事**：字段集合落在两支之一（名单由两支**现拼**，`EXPLORE_FIELDS` 的右边不许出现字段名字面量）、`form` 只有那三个词或显式 `null`、`beatsPerNote` 只有 1/2/0.5、`form:null` 的那一行四格音高参数一格都不许多、主音跨区相距 ≥`MIN_ROOT_CENTS`(50) 音分、与 `regions.json` **双向**对账 + 一区一张曲（两区共用一张 = §1.2 的承诺破了，那条红记在 `regions.json` 名下）。
 - **那条 `music.battle` 的 WARN 是登记，不是豁免**：5 个战斗曲 id 指向一张**还不存在**的表（战斗音乐今天只有一张全局 ostinato 层），判 ERROR 等于逼下一批偷偷造一张没人奏的表来让门禁闭嘴。它的计数**从 regions 现算**，所以不是手抄名单、不需要"销账"——谁建了 `battle.json` 并接上读者，这条连同话术一起消失。校验器读数因此从 5 WARN 变 **6 WARN**。**（2026-09-28 收口）**：KI-080 建了 `battle.json` 并接上读者，这一条连同话术一起消失（`validate:data` **6 WARN → 5 WARN**）；上面那句“从 5 WARN 变 6 WARN”是当时的读数，保留不改。
 - **覆盖**：`explore-table.test.ts` 21 条（accept 侧 4 / refuse 侧 16 / 单一主人源码门 3）、`audio-engine.test.ts` 30 条（KI-079 那 6 条含源码门）、`audio-music.test.ts` 55 条。refuse 侧每条臂都在**合法那一行上只改一处**，并断言"红恰好一条、红在那一格"，另留一条对照臂（什么都不改 ⇒ 零条）；三张词表各挑一个"表外那个词"，并有一条门管着"那个词哪天变成合法值就得换词"，否则那条臂会悄悄空转。
@@ -869,6 +874,34 @@ KI-077 收口时如实记了「只兑现 L1+L4，`music.explore`(7) 与 `music.b
 - **守卫**：`boss-rewards.test.ts` 那条「拿三颗核点不亮这一页」改成了「这一页的解锁源是旗标」（口径变了，断言跟着变而不是删掉）；`movements`/`echo-tacet`/`timbral-affix`/`passives` 四个流测的装配助手各自多一条「旗标页先发一次 `world.flag`」的分支；`worldstate.test.ts` 把谱册页算进旗标读方对账。
 
 ---
+
+## G6 核对：§15 的 12 拍逐拍对到具体载体（2026-10-12）
+
+`production-plan.md` 的 **G6**（Phase 6 出口门）原文是「§15 闭环 12 拍全部有内容（可为 Placeholder 演出）」，
+判据原文在 `IP_SEED.md` §15（139–143 行，**一条流程句**，不是表）⇒ 核它只能**逐拍对到具体机制**
+（"一句具体断言 + 一个具体机制"，本仓库唯一被证明有效的核对法）。
+
+| 拍 | 具体载体 | 状态 |
+|---|---|---|
+| 1 开场（哑带边缘醒来·无 UI 教学关） | `CINE_OPEN`（新开局放，"无 UI 无旁白"写在数据 note 里）+ 教学走 §2「教学即证明」（弹反不等待对话） | Implemented |
+| 2 休垒建立基地 | `rg_resthold` + `st_resthold` 调音桩 + 铃姨线 8 步（`q_bells`） | Implemented |
+| 3 雾语林探索+首敌 | `rg_whisperwode` + `loot_murkshell` / `loot_driftsinger`（首敌掉落） | Implemented |
+| 4 发现沉唱堂暗门（弹反震开音壁） | `kind:'soundwall'`——交互层原话「**音壁纹丝不动 —— 需要先学会弹反**」⇒ 弹反是真门 | Implemented |
+| 5 Mini Boss 奥斯塔拉 | `en_ostlara`（3 阶段）+ `CINE_OST_INTRO`（进沉唱堂放）+ `loot_ostlara` | Implemented |
+| 6 获得乐章战技+升级 | `movements.json`（7 招式 / 5 谱册页）+ `progression.json`（升级） | Implemented |
+| 7 破拍营地多解（潜行/结盟/强攻） | `state.haltrune.camp` 三值 `OUTPOST` / `RUINS` / `GARRISON`（§2.4 步 2–3 三选一写入） | Implemented |
+| 8 钟坠院垂直解谜 | `rg_fellcarillon`（19 处载体）+ 垂直交通（`tp_*` 折返楼梯） | Implemented |
+| 9 无耳深窖+隐藏 Boss 万籁（可选） | `rg_earless_deeps` + `en_myriad` + `CINE_MYRIAD_INTRO` | Implemented |
+| 10 未竟厅恩希尔双阶段 | `rg_unfinished_hall` + `en_hersil`（3 阶段）+ `CINE_HERSIL_INTRO` | Implemented |
+| 11 终局抉择 | `DLG_TABLET`（石版，门控 `flag.hersil_felled`）两选项 → `CINE_END_A` / `CINE_END_B` | Implemented |
+| 12 回到休垒（世界状态改变：极光…） | `CINE_END_MONTAGE`（§6 原话"按 §9 旗标合成"）+ 四格值域（`state.bells.fourth_dumb` / `corvin.schism` / `faceless.identity` / `haltrun.camp`）+ `Cinematics.queue()` | **Partial** |
+
+**结论**：**12 拍全部有内容** ✓（G6 的实质条件满足）。**第 12 拍标 Partial 的两条**：
+① `CINE_END_MONTAGE` 的**调用点**未接（`main.ts` 一处 `cinematics.queue(...)`，那个文件在别人手上）；
+② §3.5 的三种界面变体（VESSEL 第三选项 / CHOSEN 代价说明 / LOST 降半调）**文档没写内容** ⇒ 未落。
+**其余 11 拍**都点得到**数据或代码里的具体件**（不是"差不多做了"）。
+
+⚠️ 本表是**核对读数**，不是第二个真值源：每格的载体都指向**文件/字段/事件**，改了那些地方这张表就该跟着改。
 
 ## 6. 测试策略（需求 §58/§59/§77）
 
@@ -1125,9 +1158,13 @@ manualChunks：`three`（vendor，独立长缓存）、`game-logic`（core/comba
 >
 > `ms-0.2` 那一格**空着留痕**，不补号也不复用。G6 起还没验收过 ⇒ 往后每个出口达成时**当场**打，不再走补打这条路。
 >
-> **这一批没有、也加不出一条"tag 在册"的机器门**，把原因写死在这里免得下一个人再试：tag 不在 `git archive` 出来的平面里
-> （那种平面根本没有 `.git`），而本沙箱**不允许 vitest worker 内部 spawn 子进程**（`spawnSync` 一律回 `EBUSY`，
-> 实测记录在 `tests/unit/ledger-rules.test.ts`）⇒ 任何去执行 `git tag` 的门禁要么永远红要么永远绿。可机检的那一半是
+> **这一批没有"tag 在册"的机器门**，原因写在这里免得下一个人再试：`git archive` 解出来的平面根本没有 `.git`，
+> tag 在那种平面上永远读不到 ⇒ 任何去执行 `git tag` 的门禁要么永远红，要么在见证平面上直接消失。
+> （这里原先还挂着**第二条**理由——"本沙箱不允许 vitest worker 内部 spawn 子进程（`spawnSync` 一律回 `EBUSY`）"——
+> 2026-10-11 实测否证：worker 里 `spawnSync(process.execPath, ['-e', …])`、`git rev-parse`、spawn 校验脚本本身
+> 三种全部 `error=none / status=0`，见 KI-075 结案。**那条不成立，而这一格的结论仍成立**：挡住门的只剩平面这一半。
+> 真要补这道门，形状只能是"无 `.git` 的平面上响亮跳过、工作树上真跑"，与 `tests/unit/text-integrity.test.ts`
+> 那条 `git ls-files` 跨查同一只手。）可机检的那一半是
 > **账本自身**：`tests/unit/doc-audit.test.ts` 从此要求一个编号只能待在 TD 表**或**下面那条"留号不留行"注记里，
 > 两边都在 = 红，两边都不在 = 红。tag 的内容对不对仍只能靠人读（§82）。
 
@@ -1555,8 +1592,8 @@ narrative §7 那张旗标表写的是"什么时候该立哪个旗"，`regions.j
   `§2.3` 被压成 `\uFFFD?.3`（随 `2300ad1` 进主干，直到本批才有人看见）；当日 20:05 更重的一次是
   `states.json` 13 个 U+FFFD、整个文件不是合法 JSON，`quests.json` 也不是合法 JSON。
 - **判据住哪**：`scripts/text-integrity.mjs`（+ `.d.mts`）。与 `ledger-rules.mjs` / `explore-rules.mjs` /
-  `battle-rules.mjs` **同一条理由**：`validate-data.mjs` 一被 import 就去校验真表并 `process.exit`，
-  本沙箱连 spawn 子进程都被拒（KI-075）⇒ 判据留在那里，测试就没法"喂一段坏文本看它拒不拒"。
+  `battle-rules.mjs` **同一条理由**：`validate-data.mjs` 一被 import 就去校验真表并 `process.exit`
+  ⇒ 判据留在那里，测试就没法"喂一段坏文本看它拒不拒"。
   只认 **U+FFFD** 一个字符：合并音标（U+0301）、变体选择符（U+FE0F）、零宽连接符（U+200D）、emoji 组合
   各有正当用途，拿它们定罪就是一台误报机器；`U+FFFE`/`U+FFFF` 那一族（UTF-16 字节序错位）本机没有
   实测证据，**不预先编判据**（§55 那条"没有消费方不写进表"的纪律，对判据同样成立）。
@@ -1618,7 +1655,7 @@ Phase 4-B 落三叠箭时只做了**延迟**那一半（`at=[0,32,42]` 让第 2 
 - **谁挨罚（这批要先裁决的一格）**：§14.4 那句没写主语。查表定夺——`tri` 自己的 `frames.recovery = 104` tick（≈1.73s），敌人收招硬直**早就在表里、而且远长于 0.6s**，所以那半句说的不可能是针喉自己 ⇒ 它是**玩家白滚之后**的那 0.6s。这一格裁决记在这里而不是只写在代码注释里，因为下一个读 §14.4 的人同样会问"谁的硬直"。
 - **五个环节各有承载格**（一条链，没有一环走捷径）：① `Enemy` 发射时按 `a.shots === feint.shot` 决定**这一发**带不带 `feintPunishMs`（诱饵身份从数据表一路带到离手的那一发）；② `ProjectileSpec → Projectile` 把它**跟着弹体走**（不是跟着射手走——反射、跨区回收、射手死亡都不该让一发已经在飞的诱饵变成普通箭）；③ `CombatManager` 在玩家侧结算处读出它，**只在"被无敌帧吃掉"那一支**调 `player.beginFeintPunish(ms)`；④ `ThirdPersonController.beginFeintPunish` 先问"这一滚还在飞吗"——不在飞就返回 false（站着硬吃那一发只是普通 R1，罚第二次读同一个信息没有意义，而且这条判据归玩法层，校验器不许复制它）；⑤ 在飞就把账写进 `roll.punishTicks`，翻滚**自然结束**那一拍（`roll.tick >= roll.total`）兑现成 `stunTicks`。
 - **承载格挂在 `roll` 上是刻意的**：任何提前 `roll = null` 的路径（受击打断、进入处决、复活）连带作废这笔账。理由不是省事，是语义——翻滚没滚完就不存在"为它白滚"，此时补一记硬直会打出一个玩家没做出的选择。这条不是空谈：变异臂 A10 把兑现点搬到取消处，立刻红了"翻滚中途被打断"那条 flow 用例与那条"承载格恰好三处"的 census（见下）。
-- **判据（`scripts/burst-rules.mjs`，与 `lockon/battle/explore/ambience-rules` 同一只手）**：搬出校验器才量得动（`validate-data.mjs` 一被 import 就去校验真表并 `process.exit`，本沙箱连 spawn 子进程都被拒——KI-075），校验器只当把 findings 报成 ERROR/WARN 的那张嘴。五条关系，全是**格与格之间**的，逐字段 `report.num` 一条都说不出：① `shot` 必须落在真会发出去的那一发（`0 ≤ shot < count`）；② 声明了诱饵就必须有可读的显式帧位 `at[shot]`（缺省时每一发都在均匀网格上，"延迟的那一发"在数据里不存在）；③ 诱饵后面必须有真收尾（`shot < count-1`，否则骗空一次翻滚之后场上什么都不会发生）；④ `at[shot]` 必须**晚于** `shot × everyTicks`（不早于网格的那一发不叫假动作）；⑤ `punishMs` 折成 tick 必须**严格大于**诱饵到下一发的间隔（否则玩家被骗空还来得及再滚一次）。**顺序与"同一处手误只说一次"**：③ 报完就走，因为 `shot` 指到最后一发时"不比网格晚"往往也成立，连报两条会把人往错的那一格带（KI-083 的 opaque 守卫同因）。**单位尺子**：`TICK_HZ` 在 `.mjs` 里抄了一份（node 不能直接 import TS），所以有一条门去读 `src/core/Time.ts` 的源码行做对账——抄了就要有对账，否则改帧率只会让判据悄悄换尺子。
+- **判据（`scripts/burst-rules.mjs`，与 `lockon/battle/explore/ambience-rules` 同一只手）**：搬出校验器才量得动（`validate-data.mjs` 一被 import 就去校验真表并 `process.exit`），校验器只当把 findings 报成 ERROR/WARN 的那张嘴。五条关系，全是**格与格之间**的，逐字段 `report.num` 一条都说不出：① `shot` 必须落在真会发出去的那一发（`0 ≤ shot < count`）；② 声明了诱饵就必须有可读的显式帧位 `at[shot]`（缺省时每一发都在均匀网格上，"延迟的那一发"在数据里不存在）；③ 诱饵后面必须有真收尾（`shot < count-1`，否则骗空一次翻滚之后场上什么都不会发生）；④ `at[shot]` 必须**晚于** `shot × everyTicks`（不早于网格的那一发不叫假动作）；⑤ `punishMs` 折成 tick 必须**严格大于**诱饵到下一发的间隔（否则玩家被骗空还来得及再滚一次）。**顺序与"同一处手误只说一次"**：③ 报完就走，因为 `shot` 指到最后一发时"不比网格晚"往往也成立，连报两条会把人往错的那一格带（KI-083 的 opaque 守卫同因）。**单位尺子**：`TICK_HZ` 在 `.mjs` 里抄了一份（node 不能直接 import TS），所以有一条门去读 `src/core/Time.ts` 的源码行做对账——抄了就要有对账，否则改帧率只会让判据悄悄换尺子。
 - **覆盖**：`tests/unit/burst-table.test.ts` 25 条（判据两端：真表那一块零条 + 每一臂各改一格看它红在对的那句话上；含"边界敢不敢敲等号"的两种口径——①③④ 敢，⑤ 的两侧是不同表达式所以用 167/183 tick 各敲一次），`tests/flow/feint-punish.test.ts` 6 条（诱饵被吃掉→`roll.punishTicks = 36` 而 `stunTicks` 仍为 0→翻滚结束那拍起算锁住 35 拍；站着挨诱饵只掉血不欠账；真箭被滚掉零欠账；中途被打断作废；`beginFeintPunish` 三种拒绝形状各配一句"当场没被冻住"；三叠箭端到端——从真表读 `tri`，强制出招，量三发离手时各自带没带 `punishMs`，结果是 `[undefined, 600, undefined]`）。
 - **量这条链的几何（不写下来下一个人只会重新踩）**：弹体 13/60 ≈ 0.217 m/tick，翻滚 3.2/30 ≈ 0.107 m/tick ⇒ **背对诱饵滚**永远只能在无敌窗外接触（它追上你太慢），侧滚则整条走廊都躲开了（命中容差只有 0.81 m）。所以探针必须**朝诱饵滚**（`frame.move={x:0,y:1}`、`camYawRef=0`、弹体起于 z=−5），实测接触落在 `roll.tick = 14` ∈ 无敌窗 `[9,21]`——这一条是被量出来的，不是假设的。**还有一个 off-by-one**：兑现那一拍紧接着同一次 `update()` 就减 1，所以可观测的锁是 `msToTicks(600) − 1 = 35` 而不是 36；用例里写的是 35 并把机制写在断言消息里，免得下一个人把它"修"成 36。
 - **变异见证（10 臂，`10/10 按预测红、0 臂偏/作废；对照 0/31；恢复后 4/4 文件字节一致`）**。其中两笔值得记：**A8**（硬直提前上身）我预测红"骗空之后站不住"那条，实际**没红**——根因是 `takeDamage` 对 `stunTicks` 是**赋值**而不是取大，提前那一笔被后到的 R1 直接冲掉。**预测错的是我，不是测试**：那条 flow 用例本来就在说"作废"，于是把这臂改判到它真正指向的地方（A10 在取消点兑现 ⇒ 红了 F4 与 census）。另一笔是 **A7**（诱饵身份判断被抹平）第一趟多红了一条，因为我那次替换顺手删掉了 `feint.shot`；改成 `(a.shots === feint.shot || true)` 之后恰好 1 红。**跨平面覆盖是这次最有用的一格**：把生产代码改坏会同时红掉 flow 的行为用例与 unit 的读者 census——只有后者红才是"我的测试在测我的方法"，两条一起红才说明这条链真的连着。
@@ -1864,7 +1901,7 @@ Phase 4-B 落三叠箭时只做了**延迟**那一半（`at=[0,32,42]` 让第 2 
 
 **到期要有泵**：`onDuckTrigger()` 只在触发那一刻排斜坡，**把电平写回基准的是 `AudioEngine.update()` 每帧那一次 `reconcileDucks()`**。请求自己会过期，但过期不是一个事件，没人被通知——所以这里有一对用例互证：不泵那一帧 ⇒ 压制一直挂着（红在"该弹回"上），泵了 ⇒ 第二次自动化写的值必须**恰好等于 `BUS_BASE`**（不是上一次的目标值）。同一个系数已经 applied 就不重排，这一格也有专门一条（压着的 0.3s 里跑 5 帧，斜坡总数必须还是 1——删掉那个 if 就是一帧一条新斜坡，听感上是连续咔哒）。
 
-**判据本体搬进 `scripts/ducking-rules.mjs`（+ `.d.mts`）**，理由与 ledger/explore/battle/ambience 四批同一条（`validate-data.mjs` 一被 import 就校验真表并 `process.exit`，本沙箱连 spawn 都被拒 — KI-075）。这张表要判的是**跨文件关系**，逐字段 min/max 对它一句都说不出：
+**判据本体搬进 `scripts/ducking-rules.mjs`（+ `.d.mts`）**，理由与 ledger/explore/battle/ambience 四批同一条（`validate-data.mjs` 一被 import 就校验真表并 `process.exit`；"喂一行非法数据看它拒不拒"因此只能在判据抽成纯函数之后量）。这张表要判的是**跨文件关系**，逐字段 min/max 对它一句都说不出：
 - `trigger` 必须是 `AudioEngine` 真送进侧链的那几个字面量之一，名单从源码现推（`callArgLiterals(引擎文本,'onDuckTrigger')`）；
 - **反向也要判**：引擎接了某个口而表里没有任何一行用它 ⇒ 报"代码里躺着半张表"（白订阅看不见，改表的人以为它有用）；
 - `targets` 必须落在 `ducking.ts > DuckBusName` 上（主人是那条联合，不是这里的一份名单）；
@@ -1969,7 +2006,7 @@ Phase 4-B 落三叠箭时只做了**延迟**那一半（`at=[0,32,42]` 让第 2 
 
 **症状是两串数字与一条字符串**。art-direction §8 给的是四个可读的雾密度（Clear 0.008 / Fog 0.030 / Rain 0.018 / Storm 0.022），§2 给的是三条乘数（Rain 明度 ×0.8、Fog 对比 ×0.6、Storm 对比 ×1.15），而 `regions.json` 每区写着 2 个天气名（`weatherPresets[]`，全场去重 **8** 个名字）——**两头从来没有对过账**：需求 §38 的四档与数据侧的八个名字之间没有任何一条机器关系，拼错一个天气名不会有任何东西响。同时 `world/PlaceholderArena.ts:25` 把雾密度**写死成 `0.028`**（不属于文档任何一个数），换区不改、天气不改，整片世界永远同一片雾。第三条：`canvas.style.filter` 只有一个写方（`main.ts` 的 `setVeil()`，§11 失谐褪色），而天气的明度/对比乘数想说的也是这一串——**任何一方单独往上写，浏览器里就是后盖前的**。
 
-**落点分五处**（形状与 KI-077/079/080/092 同一族：判据住 `scripts/*-rules.mjs`，因为 `validate-data.mjs` 一被 import 就校验真表并 `process.exit`，本沙箱连 spawn 子进程都被拒 — KI-075）：
+**落点分五处**（形状与 KI-077/079/080/092 同一族：判据住 `scripts/*-rules.mjs`，因为 `validate-data.mjs` 一被 import 就校验真表并 `process.exit`）：
 
 | 处 | 东西 | 它回答的问题 |
 |---|---|---|
@@ -2528,6 +2565,54 @@ Phase 1（核心战斗原型）＝ `core + player + combat + tools/CombatDebugge
 **门禁（2026-10-15，落地这一笔的平面＝`a341cde` 的 detached worktree ＋ 只有 `tests/unit/audio-engine.test.ts` 那一份 `+23/−2`；日志一律写在平面外）**：`npx tsc --noEmit` **RC=0（日志 0 字节）**；`node scripts/validate-data.mjs` **0 ERROR / 2 WARN**；`npm run build` **RC=0**，`[dist] 文本 7 份（二进制 0 份按内容跳过）/ 0 findings`（KI-098③ 那条 build 腿）；定向 `node scripts/test.mjs event-rules` **22 条全绿 / RC=0**——注意这一趟与上面 2026-10-12 那趟不是同一种读数：这份平面是 worktree，**有 `.git`**，所以主干自证那四条 HEAD 腿是真的跑了而不是响亮跳过；全量套件 **2502 条 / 176 个文件**，红的只剩 **1 条**，就是 `tests/unit/ledger-rules.test.ts` 那条「进程内跑真校验器」的 `SyntaxError: Invalid or unexpected token`（落在 `scripts/validate-data.mjs:19` 那行 shebang 上，机制与读数是 KI-118 那一笔的活，本节不重复量）。**上一趟 2 条、这一趟 1 条**，中间少的这一条正是 `audio-engine.test.ts:1030` 那枚计数钉——它就是 KI-115 这一笔的落点，落完主干自己不再替别人未提交的订阅作保。`node scripts/coverage.mjs` 仍按它自己的规矩拒收（套件非全绿），那本账排在 KI-118 之后。
 
 **没做的**：①这一条**已经结案了，而且结案的方式就是本节立的那条规矩**：写业务代码的人不替别人的在飞特性作保，声明跟着**发射方**走。2026-10-14 两笔把它拆开落——`b9d8296` 在 `src/ai/Enemy.ts` 自己那份 `GameEvents` 合并块里补上 `'combat.bossTelegraph'` 的声明（主干当场自证，offender 归零），`6010472` 紧跟着一笔清空 `HEAD_UNDECLARED_LEDGER` 并把账本行翻 `Implemented`（顺序反了会被这条门自己否决）；2026-10-15 这一笔落 KI-115 那份测试，把计数钉换成身份名册。原来那句"本批不可落地"讲的仍是别人的字节——那三份文件并没有变绿，只是这一批**不再需要等它们**：`EventBus.ts` 那份合并声明由发射方自己带，`AudioEngine.ts:152` 的订阅与 `ducking.json` 那一行仍在别人手上，那一半的账在 KI-092②，主干上这条 `emit` 今天仍是一发没人听的空弹。字节与补丁的原件留在 `.scratch/ki121/`、`.scratch/ki122/`。②这条门只管**事件名 ⇄ 名册**这一条链，同类形状在别的接口上（`schema.ts` 的字段 ⇄ 表 ⇄ 消费方）今天仍无人看——那是 KI-114 行里点名的推广位。③`dynamic` 那 8 处（src 4 处）如实报数但**没有判据**：名字是算出来的调用点这条门看不见，看不见就许它，是诚实而不是解决。④**全仓的计数钉没有普查**：KI-115 只修了撞上的这一条，形状是「`expect(<现推读数>).toBe(<手抄的数>)`」的同类钉子还可能有几颗——下一批按这一个语法形状数一遍总体，再决定立不立门（与②同一个推广位，只是那条量接口、这条量判据自己）。
+### 5.9.49 播报里的数字要有签发者：一次击杀两行遗响，其中一行是 Phase 1-B 的占位（KI-116，2026-10-13）
+
+**发现方式不是读代码，是给 KI-028 量收入模型时撞上的**。要判音级曲线的口径，得先知道玩家每杀一敌真拿多少遗响；把 `loot.json` 的 xp 掷骰和 `CombatManager` 那句 `遗响 +${Math.round(e.stats.hpMax * 0.3)}` 并排放到一张表上（`.scratch/ki124/measure2.mjs`），**10 种敌人里 9 种对不上**——三个 Boss 差得最远（126 对 400、186 对 900、114 对 500），两支杂兵甚至**报得比表的下限还低**（针喉 17 对 22-30、叠唱 20 对 30-40）。玩家每杀一发两行，其中一行是假的，而这条假句在主干上活了 21 天（`3cf8090`，2026-09-22）。
+
+**为什么它躲过了所有门**：那句是 Phase 1-B 的占位，那时"遗响"还没有结算层；Phase 5-B 建出 `KillSettlement` 之后真数额换了主人，占位句没回来拆。测试数的是**条数与 id**（`entity.died` ×2、`death_shatter` ×2、崩解播报 ×2），从来没人把播报里的数字和成长系统收下的数字对起来——一条假句不影响任何一条断言的真假，于是它永远绿。这类东西不是类型洞也不是数据洞，是**"屏幕上的数字"这件事没有主人**：谁都能往模板串里塞一个自己算出来的数，而那个数的真值住在别处。
+
+**修法换的是归属，不是算法。**把 `hpMax * 0.3` 换成任何别的公式都还是两只手写同一个数——下一次 loot 表调区间，这两处又会分叉，而且分叉得"看起来更合理"。所以崩解那一行不再自带数字（只报谁倒了），遗响的数额只由 `src/rpg/Settlement.ts` 那条 `遗响 +${xp}` 签发。留下的那一行仍然有读者：`tests/flow/multi-kill.test.ts` 同帧双杀那格还在数它的条数。
+
+**见证的形状跟着病灶选**（`tests/flow/multi-kill.test.ts` 新增一组四条，走真链路：战斗层 + `RpgRuntime` + `KillSettlement`）。前两条是**行为**腿：一杀之后屏上恰有一条遗响、它报的数 === `prog.xp` 的差、并且落在**从 `enemy.drops` → loot 表现推**的区间里（区间不抄 progression.md §9.1，抄了就等于用另一只手抄的数来管这只手）；崩解那一行必须存在且**不含任何数字**。第三条把 Boss 那一笔单独钉住（旧写法给奥斯塔拉造出 126，真值是 400）。第四条是**结构**腿：全 `src` 走一遍，发「遗响 +数字」的**文件身份**恰好一只。腿与腿分工明确——行为腿管"报的是不是真数"，结构腿管"还有没有第二只手在报"。
+
+**计数钉一律钉身份**（这是 KI-115 当天学的第二条）：结构腿里 `toEqual(['src/rpg/Settlement.ts:116'])` 是第一版写法，它会在 `Settlement.ts` 上方增删一行时白红一次——那读的是我的键位，不是我的断言。改成两份读数：文件身份集合 === `{结算层那一份}`，外加一条「发射行数 === 1」。臂 B4 专挑这条缝：在**同一个文件**里把正确的数再播一遍，身份子句保持绿、只有计数子句红——实测正是这个形状（红消息是 `expected 2 to be 1`，`deeply equal` 全场不出现）。
+
+**六臂（对照 + 五条变异臂）**（`.scratch/ki125/arms.mjs`，只动生产字节，读数 `.scratch/ki125/arms-run4.log`）：CONTROL 0 红；B1 原样放回 `hpMax * 0.3` ⇒ 4 红；B2 结算层的数 +7 ⇒ 2 红（「播报 16 与真收下 9 不符」 + Boss 越出区间上界）；B3 摘掉结算层那条播报 ⇒ 3 红（两条行为腿读回空列表，结构腿实得"(没有)"）；B4 正确的数播两遍 ⇒ 3 红（①③ `to have a length of 1 but got 2`、④`expected 2 to be 1`，两条消息原话由 `.scratch/ki125/b4msg.mjs` 单独现跑取回）；B5 把崩解行的 `kind` 由 reward 换成 info ⇒ 1 红（只有那条「删数字不该顺手改掉频道」的新断言红——每条子句都要有一臂只打它，不然它就是装饰）**13/13 预期红全中、0 意外红、跑完 2/2 份生产文件 sha 一致**
+
+**电池自己被自己的纪律打过一次，值得记下来**：第一版每臂开头只把"这一臂要动的那个文件"复位，于是 B1 写进 `CombatManager.ts` 的字节残留进了 B2／B3／B4——三臂的红名单全被那行 `崩解 · 遗响 +14` 污染（B3 本该是"读回空列表"，实测红成"14 对 9 不符"）。臂不是复利的，读数必须是**单臂相对 pristine** 的差；每臂开头把两个生产文件全部复位之后，预期红名单才逐臂对上（当时那一趟是 12/12；后来为②那条频道子句补了 B5，最终读数 13/13，见上一段）。顺带一条小红：**变异体的消息文案要按跑测器实际印出的措辞登记**，我预测 B3 红消息含 `to have length 1`，vitest 的原话是 `to have a length of 1 but got +0`——名字全对、措辞猜错，同样按预测不符拒收。
+
+**没做的**：①同形状没有普查——"`ui.notify` 的模板串里自带一个别的子系统才有的数字"这一形状在 `src` 里总共几处、几处是占位，下一批按这一个语法形状数一遍总体再决定推广位；②**门禁读数（2026-10-13 复测，全部在工作副本平面上量，那上面有并发会话未提交的字节）**：全量套件 **2529 条／178 个文件 0 红**、`node scripts/coverage.mjs` **通过**（行覆盖 92.10% ＞ 总地板 88.56%，15 个包各自过线）、`node scripts/validate-data.mjs` **0 ERROR / 2 WARN**；`npm run build` **仍红**，红的 6 条全在 `tests/unit/stakerite.test.ts`（别人的文件，本批一字未动），而 `npm run lint` 就是同一句 `tsc --noEmit` ⇒ 机器级 pre-commit 依旧挡着，本批继续与 KI-113／114／115 同批停放。**coverage 的 `--bless` 今天刻意没做**：地板提示（"涨到 100% 了，把地板抬上来"）是**这份工作副本**的读数，里面掺着别人未提交的测试文件；在此刻 bless 就是把 KI-115 那刀犯的错原样搬进 `coverage-floor.json`——等通道开、平面干净时再落一次。
+
+### 5.9.50 文档表 ⇄ 数据表的第一台对账机：音级曲线那五行从未实装的数（KI-028①，2026-10-13）
+
+**这件事的形状比那五个数更值钱**：`docs/progression.md` §2.3 那张等级曲线表住了 21 天，里面**最后五行的数在它自己描述的那张数据表里查不到**。时间线是当场查的——文档那张表写在 `627d69a`（2026-09-22 00:06），`rankCurve` 落数据在 `b7723ae`（同日 23:40），**文档比它描述的对象早生成约 23 小时，之后没有任何东西回去追认过**。这条链上原本一个机器读者都没有，所以"发现"只能靠有人恰好拿文档的数去乘一乘。
+
+**先量后写把自己也量了一次**：本仓账本里那句「实装 20 级累计 19034」同样是手抄数，现读表滚出来是 **16557**——记账的笔和写文档的笔犯的是同一个错。下面所有数由 `rankCurve`（29 行，rank 2–30）现推：cum@10=1561、@12=2576、@15=5263、@18=10509、@20=16557、@30=156219；逐行比值 **1.2486–1.2553** ⇒「几何增长 r≈1.25、全程连续不改斜率」这一句对实装是**真的**，而旧文档同段那句「10 级后改 1.22+里程碑定额」从未进过任何一版数据（29 行里没有一段斜率是 1.22）。
+
+**被否证的数不是"错位读数"**：1371／2641／3641／17984 与 6560／14330／21613／2830 这八个数，在实装表的 xp 列与累计列**各查一遍，全 false**——它们是另一份从未实装的草稿手抄。唯一的例外恰好最能说明病形：旧 rank 12 那一格写着「564/705」**两个**数，而这两枚正是表里 rank 12 与 rank 13 的 xp。两级塞进一行 ⇒ **rank 11 的 451 整级消失**，那一格的累计 2830 = 1561+564+705 与表推 2576 差 **254 = 705−451**。也就是说：文档内部自洽（它自己的加法是对的），自洽于**一张不存在的表**——比对"当前的值"可以在过期副本上绿，所以判据必须问**签发者**（那张 JSON 表），而不是问文档自己算得对不对。
+
+**裁决：取实装曲线为唯一主人，改文档不改编曲线。** 调陡曲线要连带重做里程碑／装备／伤害三本经济（`Progression.ts:86` 读的是 `rankCurve.find(r => r.rank === this.rank+1)?.xp`，那条线整片玩法都挂在它下面），而文档那五个数没有任何一处代码依赖——代价比不对称。改的是文档五行 + 那句口径 + 状态表那一格的话。
+
+**门**：`tests/unit/progression-curve-doc.test.ts`，七条腿。判据的统一形状是"文档里的每一个数都必须能从表里推出来"，推不出来就红并点名是哪一级：L1 **地板**（解析行数 ≥10 且最低那一级必须被点名——抽取器把自己读窄到 0 行时不许绿）；L2「升至本级需」必须是**一个**整数且 `=== derived.get(rank).xp`；L3「累计」`=== ` 从表滚出来的和；L4 **封顶那一级必须在文档表里**，而 `maxRank` 从数据现推、不手钉；L5 文档自己那句 `r≈<数>` 与表内逐行比值 ±1% 互核——**判据读的是文档那个数**，不是我另钉一个 1.25（这一格由 C5 臂单独作证：把文档改成 `r≈1.10` 就红，改成什么都读不到才说明判据是死的）；L6 §2.3 不许再出现 `1.22`，且缺席判定前先验 `sec.length > 200`（读空的缺席判定是空转）；L7「预期到达位置」那一栏必须自己写明**无机器读者**——把"这一半我没量"变成一条会红的承诺。
+**为什么住在测试而不是 `validate-data.mjs`**：链的一端是 markdown，校验器不该会读文档；同一只手已经在 `tests/unit/lighting.test.ts` 量过三层光的文档对账，理由与形状都照它。行尾按各文件自己算（`docs/progression.md` 今天实测**整份 CRLF**，第一趟的臂就是拿 LF 拼针在 C4 断掉的），解析前统一成 LF。
+
+**见证十臂 + 对照**（`.scratch/ki124/arms.mjs`，只动我自己的三份文件，逐臂开头全量复位、跑完逐字节验回）。**11/11 臂按预登记名单红，变异臂预测红合计 20 条，意外红 0，3/3 份文件字节一致**（`arms-run3.log`）。三条臂是这批的重点：**C8 只动数据**（表里 rank 20 的 xp +100）⇒ 需／累计／比值三条一起红——那是"文档抄表"而非"表抄文档"的方向证明，若门只读文档自己它就得绿；**C9** 把节标题改名 ⇒ 七条全红（抽取器读不到那一节时不许白送绿）；**C10** 把行过滤器从 `\d+` 改窄成 `\d{4}` ⇒ 地板腿与封顶腿红，专门钉 L1 那条"读空"闸真的承重。其余 C1–C7 每条各打一条子句（一格两数／需 +1／累计 −1／删封顶级／改口径数／塞回 1.22／抹掉自我声明）。
+
+**电池自己被量具骗了一趟，记下来**：第一趟只有 **7/11**，四条 FAIL（C1/C2/C3/C8）**只差消息子串**——用例名名单在那一趟就已全中、意外红 0。归因不是判据，是**转发口径**：`scripts/test.mjs` 只打印断言消息的**第一行**（`scripts/report-reds.mjs:36`：`.split(/\r?\n/).find((l) => l.trim())?.slice(0, 200)`），而我的 offender 明细住在 `\n` 之后。换 `scripts/test-raw.mjs`（`stdio: inherit`，vitest 原话进管道）之后 11/11。原话两条留案：
+
+```
+AssertionError: §2.3 与实装曲线对不上 1 行：
+| 12 | 564/705 | 2830 | 万籁前后（47） | ⇒ 「升至本级需」这一格必须是**一个**整数（今天写成 564/705 这种一格两数，就是把两级塞进一行，累计栏跟着错）
+AssertionError: 累计栏对不上 1 行：
+rank 12：文档累计 2830 ≠ 表推 2576（差 254）
+```
+
+**这一族的教训是普适的**：判据红消息读不到时，先怀疑量具转发了几行，别去改判据、更别把 needle 缩到第一行——那样会把"点名到哪一级"这一半从消息里删掉，正是 KI-072 那批花力气装回来的东西。
+
+**门禁读数（2026-10-13，工作副本平面，那上面有并发会话未提交的字节）**：全量套件 **2536 条／179 个文件全绿**（与上一批的 2529/178 恰好差本批这 7 条与这 1 个文件）；`node scripts/validate-data.mjs` **0 ERROR / 2 WARN**（本批不动数据格）；读文档的四道门（`doc-audit` / `doc-section-citations` / `requirement-citations` / `text-integrity`）连同新门 **48 条全绿**。`npx tsc --noEmit` 六条错**全部**落在 `tests/unit/stakerite.test.ts`（并发会话在改的文件，本批一字未动）⇒ `npm run lint`、`npm run build` 与机器级 pre-commit 照旧挡着，本批与 KI-113／114／115／116 同批停放。coverage 这一趟值得单独记：门禁链里它**第一趟红**，`Error: ENOENT … caesura-cov-*\cov\.tmp\coverage-0.json`——那是量具自己的临时目录竞态（本机那条老毛病），不是用例红；同一条命令单跑第二趟 **通过**（行覆盖 92.10% ＞ 总地板 88.56%，15 个包各自过线）。**`--bless` 依旧刻意不做**，理由与 §5.9.49 那条相同：地板提示读的是这份工作副本，里面掺着别人未提交的测试文件。
+
+**没做的**：①**②那半仍然欠**——分钟那一栏（「预期到达位置」与「保证 VS 内升级间隔 3-6 分钟一次」的 §8 前提）没有机器读者，欠一台**收入模型**：每杀一敌真得多少遗响（`loot.json` 的 xp 掷骰 + 结算层实发）× 击杀节奏 ⇄ 表里的需遗响；结案它时要连同 L7 那句自我声明一起翻。②**同一形状没有普查**：本仓还有多少条"文档表格 ⇄ 数据表"的链子是一个人眼读者都没有——`combat.md` §8 受击表、武器表、§2.4 派生公式表都在候选里；下一批按"markdown 里的数字表格"这个形状数一遍总体，再决定要不要立通用门（与 §5.9.48 那条「推广位」共用一格）。③L5 的容差 ±1% 是**我定的**，来源是实装比值带宽（1.2486–1.2553）与"文档只写一位小数"之间留的余量；它没有独立裁决，收入模型建起来时该重议。
+
 ### 5.9.51 文档表 ⇄ 数据表的第二台对账机：combat.md §4 那六张武器帧表与 movesets.json 分家 13 天（KI-117，2026-10-14）
 
 **形状与 §5.9.50 完全同族，只是换了一条链**：`docs/combat.md` §4.1–4.6 六张帧数据表、`src/data/json/movesets.json`、以及中间那层**手抄**——`tests/unit/movesets.test.ts` 里 `expect(gs['l1'].recovery).toBe(60) // 27 + 9 + 24` 那一族钉子，注释写着"逐格对账 combat.md"，而**没有任何一段代码打开过那份文档**。§64 的验收口径「帧数据从表里读，代码里不写死」因此一直是在自述，不在自证。（**引用口径**：本节提到的 §5.9.48 随 KI-115 那一笔（2026-10-15）进主干，而 **§5.9.49／§5.9.50 此刻在干净检出上仍读不到**——那两节是同一族的另外两批（KI-116 的遗响播报、KI-028① 的音级曲线），字节写好、各自压在自己那一批里还没落地。引用它们只为说明形状同源、口径同一只手，本节的推理不依赖那两节已经存在；它们落地后编号自己对上。）

@@ -268,7 +268,8 @@ describe('判据 ⇄ 读者：同一句口径在两个平面各写了一遍，�
   })
 
   it('校验器那条名册推导**执行的必须是同一句**：把它自己的表达式拿出来对真 quests.json 求值，结果要等于运行时的名册', () => {
-    // `validate-data.mjs` 一被 import 就去校验真表并 `process.exit`（KI-075），所以这条对账不能靠 import。
+    // `validate-data.mjs` 一被 import 就去校验真表并 `process.exit`（同一族理由见 `explore-rules.mjs` 顶部），
+    // 所以这条对账不能靠 import。
     // 但只 grep "`advanceOn` 这个词还在"是不够的：把那句换成 `requiresFlag` 今天挑出同一批钟（两条判据在此
     // 重合），换掉的当天没有任何人说话。于是这里**把它写的表达式取出来就地求值**——改的如果是那句的输入，
     // 求出来的名册立刻与运行时那份不一致，红。

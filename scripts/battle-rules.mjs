@@ -2,8 +2,7 @@
  * scripts/battle-rules.mjs — 战斗档表（`battle.json`）的判据本体（KI-080）
  *
  * 与 `explore-rules.mjs` 同一只手、同一个理由：判据留在 `validate-data.mjs` 里就没法在测试里
- * "喂一行非法数据看它拒不拒"（那文件一被 import 就去校验真表并 `process.exit`，而本沙箱连 spawn
- * 子进程都被宿主拒 — KI-075）。搬出来之后校验器只当"把 findings 报成 ERROR/WARN 的那张嘴"，
+ * "喂一行非法数据看它拒不拒"（那文件一被 import 就去校验真表并 `process.exit`）。搬出来之后校验器只当"把 findings 报成 ERROR/WARN 的那张嘴"，
  * 门禁与 `tests/unit/battle-table.test.ts` 读的是**同一份代码**。
  *
  * 刻意留在校验器的那一半：`bellEveryBars` 的正整数由 `report.num` 全场统一管（缺失 / 非有限数 /

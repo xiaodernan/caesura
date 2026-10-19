@@ -9,9 +9,9 @@
  * 结案 KI-088 没做①：那条 KI 给 `FILES` 找到了目录这个主人，而"名册里每张表都有人报、报出去的每张表
  * 都在名册里"这一半它明确留着没做。
  *
- * 为什么判据住在这里而不是 `validate-data.mjs`：同一族老理由（KI-075/KI-079）——那文件一被 import
- * 就去校验真表并 `process.exit`，于是"喂一张缺主人的名册、看它拒不拒"这一半腿在测试里做不了，
- * 而本沙箱连 spawn 子进程都被宿主拒。搬出来之后校验器只当"把 findings 报成 ERROR 的那张嘴"。
+ * 为什么判据住在这里而不是 `validate-data.mjs`：同一族老理由（KI-079 那一批立的）——那文件一被 import
+ * 就去校验真表并 `process.exit`，于是"喂一张缺主人的名册、看它拒不拒"这一半腿在测试里做不了。
+ * 搬出来之后校验器只当"把 findings 报成 ERROR 的那张嘴"。
  *
  * 一条自己也要吃的药：这道门读的正是 `validate-data.mjs` **自己**的源码，所以它的两端都必须由抽取器
  * 现推（`functionBodies`/`assignedLiterals`/`bracketKeys`/`calledNames`/`arrayLiterals`）。这里不接受

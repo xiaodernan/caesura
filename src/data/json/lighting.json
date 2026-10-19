@@ -11,8 +11,8 @@
       "saturateMul": 1.5
     },
     "lights": {
-      "hemiIntensity": 0.7,
-      "keyIntensity": 1.5,
+      "hemiIntensity": 1.0,
+      "keyIntensity": 2.0,
       "keyDir": [12, 20, 8],
       "pointIntensity": 64
     }

@@ -23,6 +23,13 @@ import duckingRaw from './json/ducking.json'
 import weatherRaw from './json/weather.json'
 import cinematicsRaw from './json/cinematics.json'
 import lightingRaw from './json/lighting.json'
+import navmeshResthold from './json/navmesh/rg_resthold.navmesh.json'
+import navmeshWhisperwode from './json/navmesh/rg_whisperwode.navmesh.json'
+import navmeshDrownedChoir from './json/navmesh/rg_drowned_choir.navmesh.json'
+import navmeshBrokenbarCamp from './json/navmesh/rg_brokenbar_camp.navmesh.json'
+import navmeshFellcarillon from './json/navmesh/rg_fellcarillon.navmesh.json'
+import navmeshEarlessDeeps from './json/navmesh/rg_earless_deeps.navmesh.json'
+import navmeshUnfinishedHall from './json/navmesh/rg_unfinished_hall.navmesh.json'
 import type { MovesetData, WeaponData, EnemyData, PlayerBaseData, RegionData, ProgressionData, ItemData, LootTableData, NpcData, DialogueData, QuestData, StatusConfig, MovementConfig, WorldStateRule, WorldStateDef, HitReactionTable, ShopData, AmbienceBed, ExploreScore, BattleScore, DuckRow, WeatherRow, CinematicRow, LightingRow } from './schema'
 
 export const playerBase = playerRaw as unknown as PlayerBaseData
@@ -101,6 +108,14 @@ export function registerGameData(): void {
   for (const b of ambienceBeds) registry.register(b.id, b)
   for (const r of worldstate) registry.register(r.id, r)
   for (const s of worldStates) registry.register(s.key, s)
+  // 导航网格（Phase B1）：每个区域的烘焙网格按 navmeshRef 的 key 进注册表
+  registry.register('navmesh/rg_resthold.navmesh.json', navmeshResthold)
+  registry.register('navmesh/rg_whisperwode.navmesh.json', navmeshWhisperwode)
+  registry.register('navmesh/rg_drowned_choir.navmesh.json', navmeshDrownedChoir)
+  registry.register('navmesh/rg_brokenbar_camp.navmesh.json', navmeshBrokenbarCamp)
+  registry.register('navmesh/rg_fellcarillon.navmesh.json', navmeshFellcarillon)
+  registry.register('navmesh/rg_earless_deeps.navmesh.json', navmeshEarlessDeeps)
+  registry.register('navmesh/rg_unfinished_hall.navmesh.json', navmeshUnfinishedHall)
 }
 
 export { weaponsRaw, enemiesRaw, movesetsRaw, regionsRaw, progressionRaw, itemsRaw, lootRaw, worldstateRaw }

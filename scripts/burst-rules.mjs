@@ -3,7 +3,7 @@
  *
  * 与 `battle-rules.mjs` / `explore-rules.mjs` / `ambience-rules.mjs` / `lockon-rules.mjs` 同一只手、
  * 同一个理由：判据留在 `validate-data.mjs` 里就没法在测试里"喂一组非法数看它拒不拒"（那文件一被
- * import 就去校验真表并 `process.exit`，而本沙箱连 spawn 子进程都被宿主拒 — KI-075）。搬出来之后
+ * import 就去校验真表并 `process.exit`）。搬出来之后
  * 校验器只当"把 findings 报成 ERROR/WARN 的那张嘴"，门禁与 `tests/unit/burst-table.test.ts`
  * 读的是**同一份代码**。
  *
@@ -24,8 +24,8 @@ export const BURST_FIELDS = ['count', 'everyTicks', 'at', 'feint']
 export const FEINT_FIELDS = ['shot', 'punishMs']
 
 /**
- * 逻辑 tick 的频率（Hz）。主人是 `src/core/Time.ts > TICK_HZ`，这里抄一份是因为 `.mjs` 不能被 node
- * 直接 import 的 TS 模块牵进来（ KI-075 同因）。**抄了就要有对账**：
+ * 逻辑 tick 的频率（Hz）。主人是 `src/core/Time.ts > TICK_HZ`，这里抄一份是因为 node 吃不下 `.ts`——
+ * `.mjs` 牵不进那个模块。**抄了就要有对账**：
  * `tests/unit/burst-table.test.ts` 有一条门读 `Time.ts` 的源码行，两处不一致就红。
  */
 export const TICK_HZ = 60

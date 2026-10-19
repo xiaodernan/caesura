@@ -1,5 +1,6 @@
 import { bus } from '@/core/EventBus'
 import { Enemy, bindEnemyRegistry } from './Enemy'
+import { initSquad, registerSquadBus, type SquadConfig } from './Squad'
 import type { PlayerController } from '@/player/ThirdPersonController'
 import type { RhythmClock } from '@/core/RhythmClock'
 import type { SightGate } from '@/core/Occlusion'
@@ -19,6 +20,9 @@ export class AISystem {
   private lastBarBeat = ''
   /** 传给 hear() 的当前逻辑 tick（声源事件不带 tick，用监听方自己的） */
   private tick = 0
+
+  /** Squad 系统（Phase B5：仇恨槽位、CallAlly、编队） */
+  private squad: ReturnType<typeof initSquad>
   /**
    * KI-023 噪音汇聚（§15.3「世界噪音汇聚点」）：组合根注入。返回重定向后的声源
    * （听上去发生在音刺上），null = 原样。**必须在这一处拦**——hear() 已经把
@@ -64,8 +68,12 @@ export class AISystem {
     () => bus.emit('world.flag', { key: 'flag.haltrune_patrol_seen', value: true }),
   )
 
-  constructor() {
+  constructor(config?: Partial<SquadConfig>) {
     bindEnemyRegistry(this.enemies)
+    // Squad 系统初始化（Phase B5）
+    this.squad = initSquad(config)
+    registerSquadBus()
+
     bus.on('sound.source', (e) => {
       if (e.id === 'player') {
         const src = this.noiseSink?.(e) ?? e
@@ -109,6 +117,8 @@ export class AISystem {
     const e = new Enemy(data, pos, seed)
     e.onPatrolLoop = () => this.patrolWatch.notePatrolLoop({ id: e.id, dataId: data.id, pos: e.pos }, this.lastPlayerPos)
     this.enemies.push(e)
+    // Squad 系统注册（Phase B5）
+    this.squad.register(e)
     bus.emit('entity.spawned', { id: e.id, kind: 'enemy', entity: e })
     return e
   }
@@ -122,6 +132,8 @@ export class AISystem {
     const i = this.enemies.findIndex((e) => e.id === id)
     if (i < 0) return false
     const [e] = this.enemies.splice(i, 1)
+    // Squad 系统注销（Phase B5）
+    this.squad.unregister(e.id)
     bus.emit('entity.despawned', { id: e.id, kind: 'enemy' })
     return true
   }
@@ -159,8 +171,13 @@ export class AISystem {
     this.tick = tick
     this.lastPlayerPos = { ...player.pos }
     this.syncClock(rhythm)
+
     // KI-024：场地阶段入口每 tick 对账一次（音刺碎尽的那一 tick 她就该换阶，不等下一次血线结算）
     if (this.props) for (const e of this.enemies) e.checkFieldPhase(this.props)
+
+    // Squad 系统更新（Phase B5：仇恨槽位、CallAlly、编队）
+    this.squad.update(this.tick)
+
     // 10Hz rotated perception
     this.senseCursor++
     if (this.senseCursor % 6 === 0) {
@@ -193,6 +210,9 @@ export class AISystem {
       }
     }
   }
+
+  /** Squad 系统访问器（F4 调试面板、测试用） */
+  get squadSystem() { return this.squad }
 }
 
 declare module '@/core/EventBus' {
