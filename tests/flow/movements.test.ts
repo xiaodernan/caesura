@@ -1,3 +1,4 @@
+import { movementName } from '@/rpg/Movements'
 import { describe, expect, it } from 'vitest'
 import { bus } from '@/core/EventBus'
 import { GameTime, TICK_DT, TICK_HZ } from '@/core/Time'
@@ -717,7 +718,7 @@ describe('§7.2 休止斩的时停（KI-037 第一步：敌人侧的冻结原语
     }
     expect(near.frozenTicks, '窗口要走满，也要准时松开').toBe(0)
     expect(w.hits.slice(seen), '时停不是一条结算通道：这一式不该产出任何命中').toHaveLength(0)
-    expect(w.notes, '玩家要看得见拍子停了').toContain(`休止｜2 个声音停在拍上`)
+    expect(w.notes, '玩家要看得见拍子停了').toContain(`${movementName('mv_caesuracut')}｜2 个声音停在拍上`)
     // 「松手之后它自己走回来」这一半不在这里量：`stateTick` 会在换状态时归零（冻结期间 AI 的感知
     // 照跑，解冻第一 tick 它就可能进 chase），那读数分不清"走回来了"和"归零了"。
     // 它由下面那两例用读条来钉：`attack.tick` 停住、松手后继续走完、该回的血一分不少。
@@ -1010,7 +1011,7 @@ describe('§7.2 休止斩把时停镜像到弹体（KI-037 第二步：飞着的
     expect(w.ai.enemies.filter((x) => x.alive), '前提：场上没有活着的敌人').toHaveLength(0)
     castCaesura(w, key)
     expect(waitShotFrozen(w, pr)).toBe(true)
-    expect(w.notes, '只数敌人的话，这一记就变成"什么都没停"的静音反馈').toContain('休止｜1 个声音停在拍上')
+    expect(w.notes, '只数敌人的话，这一记就变成"什么都没停"的静音反馈').toContain(`${movementName('mv_caesuracut')}｜1 个声音停在拍上`)
     w.off()
   })
 
@@ -1024,7 +1025,7 @@ describe('§7.2 休止斩把时停镜像到弹体（KI-037 第二步：飞着的
     expect(waitFrozen(w, foe)).toBe(true)
     expect(foe.frozenTicks).toBe(cast.freezeTicks)
     expect(w.combat.projectiles.live, '前提：场上没有弹体').toBe(0)
-    expect(w.notes).toContain('休止｜1 个声音停在拍上')
+    expect(w.notes).toContain(`${movementName('mv_caesuracut')}｜1 个声音停在拍上`)
     w.off()
   })
 })

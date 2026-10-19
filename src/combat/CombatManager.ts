@@ -15,6 +15,7 @@ import type { HitTarget } from './HitShapes'
 import { ProjectileSystem, sphereHits, type GoneReason, type Projectile } from './Projectiles'
 import { GroundedSpearField } from './GroundedSpears'
 import { OcclusionField, type BlockHit } from '@/core/Occlusion'
+import { movementName } from '@/rpg/Movements'
 import { glossary, statusConfig, tagIs } from './Statuses'
 import type { Vec3 } from './EntityStats'
 import type { PropSystem } from '@/world/Props'
@@ -433,7 +434,8 @@ export class CombatManager {
     }
     // 场上什么都没有时不出字：那一声"休止"是玩家挣到的信息，不是每次都敲一遍的说明书
     if (n > 0) {
-      bus.emit('ui.notify', { text: `休止｜${n} 个声音停在拍上`, kind: 'info' })
+      // KI-148：报名从 `movements.json` 现推（那一式的中文名只有一个主人，KI-120 同一只手）
+      bus.emit('ui.notify', { text: `${movementName(cast.id)}｜${n} 个声音停在拍上`, kind: 'info' })
       // KI-092①：休止状态到达音频层——Ducking 规则表的那一行终于有了触发源。
       // holdSec = 冻结时长（秒），AudioEngine 据此设压制请求的到期时间（不是第二份秒数，
       // 是同一个 `cast.freezeTicks` 的秒形——§55：一记演出只有一个时钟，所以走 TICK_DT 而不是再写一个 60）。
@@ -1408,7 +1410,8 @@ export class CombatManager {
     e.stats.addPoise(Math.round(c.burst.poise * mul), this.time.tick)
     bus.emit('vfx.request', { key: 'hit_ring', pos: point, scale: 1.6 })
     bus.emit('audio.sfx', { key: 'hit_metal', pos: point, gain: 0.8 })
-    bus.emit('ui.notify', { text: '震裂碎裂！', kind: 'info' })
+    // KI-148：那一层状态的名字从 `statuses.json` 现推（`c` 就是那一行配置）
+    bus.emit('ui.notify', { text: `${c.displayName}碎裂！`, kind: 'info' })
     // §14.7「震裂满层碎裂其甲（清一次减伤）」：甲是这层减伤的载体，碎了就永久没了
     if (e.data.ai.armorFront && !e.armorBroken) {
       e.armorBroken = true

@@ -1,3 +1,4 @@
+import { movementName } from '@/rpg/Movements'
 import { describe, expect, it } from 'vitest'
 import { bus } from '@/core/EventBus'
 import { GameTime, TICK_DT } from '@/core/Time'
@@ -138,7 +139,10 @@ describe('批22c CombatManager 击杀收尾组死腿（每条用例点名它负�
     w.tick(3)
     expect(live.frozenTicks, '活人被按住（30 tick 减去后续衰减）').toBeGreaterThanOrEqual(25)
     expect(corpse.frozenTicks, '尸体不从这一过（L380 continue）').toBe(0)
-    expect(w.notes.some((t) => t.includes('休止｜1 个声音')), '报数只算活的那一个').toBe(true)
+    // 名头是**那一式的名字**（现推）：这一记用的是测试手造的 cast（id 是 `sk_dl22c`），
+    // 数据里没有这一式 ⇒ `movementName` 回落成 id 本身——**这正是"名字只有一个主人"的读法**：
+    // 播报说的一定是数据侧给的名字，而不是抄在代码里的简称。
+    expect(w.notes.some((t) => t.includes(`${movementName('sk_dl22c')}｜1 个声音`)), '报数只算活的那一个').toBe(true)
   })
 
   it('L966/L967 拍点闪避：hitbox 缺席走 L966 continue；ring hitbox 走 outer 腿', () => {

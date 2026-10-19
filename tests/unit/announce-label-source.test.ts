@@ -152,16 +152,16 @@ const show = (e: Site): string =>
  * Implemented —— 同生同死，沿用 KI-117／KI-114 那只手。`shape` 是那一格里**必须仍在**的字面：
  * 谁改了拼写，这条豁免就叫回来重裁，而不是悄悄跟着走。
  */
-const LEDGER: Array<{ file: string; shape: string; ki: string; why: string }> = [
-  {
-    file: 'src/combat/CombatManager.ts', shape: '休止｜', ki: 'KI-121',
-    why: '休止斩的冻结播报把报名抄在代码里；本批该文件由并发会话持有（工作副本带未提交 hunk），只登记不动'
-  },
-  {
-    file: 'src/combat/CombatManager.ts', shape: '震裂碎裂', ki: 'KI-121',
-    why: '整句抄了 statuses.json 的《震裂》；同上，文件不在本批射程'
-  },
-]
+/**
+ * 手抄名字的豁免名册（按身份开）。**今天是空的，而且"空"就是它的目标状态**（KI-148）。
+ *
+ * 名册里曾有两条（KI-121）：战斗层那两处把名字抄在代码里——「休止｜…」（《休止斩》的简称）与
+ * 「震裂碎裂！」（`statuses.json` 的《震裂》）。两处都已交回数据侧现推，名字不再有第二个主人。
+ *
+ * **同生同死**（KI-117／KI-114 那只手）：名册里每一条都点名一笔账，而那一行在 KNOWN_ISSUES 里
+ * 不许写 Implemented；反过来，账上那一行写了"已结案"，名册里就不许还挂着它。
+ */
+const LEDGER: Array<{ file: string; shape: string; ki: string; why: string }> = []
 
 const ledger = read('docs/KNOWN_ISSUES.md')
 const covered = (e: Site): number => LEDGER.filter((x) => x.file === e.file && e.raw.includes(x.shape)).length
@@ -178,7 +178,10 @@ describe('§7.2 播报的名字只有一个主人（KI-120 的门）', () => {
     const files = new Set(R.sites.map((e) => e.file))
     for (const f of ['src/player/ThirdPersonController.ts', 'src/combat/CombatManager.ts', 'src/combat/Statuses.ts'])
       expect(files.has(f), `${f} 明明在播，却没进总体 ⇒ 扫描漏了它`).toBe(true)
-    expect(labelled.length, '带「X｜」名头的播报一条都没读到：本批改掉的那三格就是这一族').toBeGreaterThanOrEqual(3)
+    // **地板从 3 降到 2**（KI-148）：第三格是战斗层那条手抄的「休止｜…」——它交回数据侧之后
+    // 名头变成了 `${movementName(cast.id)}｜…`，**不再是手写的「X｜」**，所以量具读不到它了。
+    // 这不是"量具变窄了"，是那一格**不再属于这一族**（这一族＝名字被抄在代码里）。
+    expect(labelled.length, '带「X｜」名头的播报一条都没读到：这一族是"名字被抄在代码里"').toBeGreaterThanOrEqual(2)
   })
 
   it('名头判据：每一条手写的「X｜」都不许撞上数据侧的名字（撞了就得上册）', () => {
@@ -229,8 +232,10 @@ describe('§7.2 播报的名字只有一个主人（KI-120 的门）', () => {
       expect(e, '探针没读出表达式').toBeTruthy()
       return e!
     }
-    const multi = at("bus.emit('ui.notify', {\n  text: `休止｜${n} 个声音停在拍上`,\n  kind: 'info'\n})")
-    expect(labelOf(multi.lit), '多行对象里那一格没读到').toBe('休止')
+    // **这一格现在长什么样**：名头从数据侧现推（`${movementName(cast.id)}｜…`），
+    // 所以"手写的名头"已经不存在了——量具读到的名头是**空**（那一格的名字不是抄在代码里的）。
+    const multi = at("bus.emit('ui.notify', {\n  text: \`\${movementName(cast.id)}｜\${n} 个声音停在拍上\`,\n  kind: 'info'\n})")
+    expect(labelOf(multi.lit), '多行对象里那一格没读到（名头已是数据侧现推，量具读不到"手写名头"）').toBe(null)
     const ternary = at("bus.emit('ui.notify', { text: this.ramp ? `过载不足｜涨到 ${c}` : '过载不足', kind: 'info' })")
     expect(labelOf(ternary.lit), '三元两支拼起来仍要点得出名头').toBe('过载不足')
     expect(collide(labelOf(ternary.lit) ?? ''), '但"过载不足"不是抄的名字').toEqual([])
