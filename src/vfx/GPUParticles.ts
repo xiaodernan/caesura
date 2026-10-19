@@ -340,20 +340,6 @@ export function getGPUParticles(): GPUParticles | null {
 const vec3 = (p: { x: number; y: number; z: number }): THREE.Vector3 => new THREE.Vector3(p.x, p.y, p.z)
 
 /** 便捷函数：注册到 bus 供系统调用 */
-/**
- * 接上**命中爆发**这一条发射方（KI-135）：`combat.hit` 带着命中点（`point`），
- * 粒子就在那一点炸开。**只有真打中才炸**——`result` 是 `immune`（无敌帧）的那一记不炸，
- * 挡下来（`block`/`perfectBlock`）与弹反（`parry`）各有自己的形状，不归这一格。
- *
- * 发射方住在表现层：战斗层已经发了 `combat.hit`，表现层自己听、自己炸。
- */
-export function registerHitBurstEmitter(): void {
-  bus.on('combat.hit', (h) => {
-    if (h.result !== 'hit' && h.result !== 'graze') return
-    gpuParticles?.burst('fx_hit_spark', new THREE.Vector3(h.point.x, h.point.y, h.point.z))
-  })
-}
-
 export function registerGPUParticlesBus(): void {
   bus.on('vfx.burst', (data: { id: string; pos: { x: number; y: number; z: number }; count?: number }) => {
     gpuParticles?.burst(data.id, vec3(data.pos), data.count)

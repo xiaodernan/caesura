@@ -841,6 +841,11 @@ export class CombatManager {
     this.projectiles.update(dt, tick)
     for (const pr of this.projectiles.list()) {
       if (pr.dead || pr.bornTick === tick) continue // 出生帧不参与判定：否则反射体会当帧打到自己
+      // KI-136：箭矢飞行拖尾。**只有弓那一族**（`kind === 'arrow'`）——拖尾是一条"路径"，
+      // 别的弹体（长枪投掷、法杖音符、伪声源晶）各有自己的形状，不归这一格。
+      if (pr.kind === 'arrow') {
+        bus.emit('vfx.trail.projectile', { id: 'trail_arrow', pos: { ...pr.pos }, vel: { ...pr.vel } })
+      }
       // 声东击西的晶（KI-023①）：是诱饵不是武器——只跳过**命中**分支；遮挡/地面照常结账，
       // 否则它落地不死、碎裂那一声永远发不出来（写测试时当场抓到的过跳）
       const isDecoy = pr.kind === 'crystal'
@@ -1001,6 +1006,11 @@ export class CombatManager {
       return
     }
     bus.emit('vfx.request', { key: 'ring_dust', pos: { ...pr.pos }, scale: reason === 'wall' ? 1.4 : 0.4 })
+    // KI-136：弹着点在地上留一个小坑印。**只有落地那一支**——撞墙的那个落点法线是墙的，
+    // 而贴花要贴平；拿 (0,1,0) 贴在墙上是假的，所以撞墙不贴（它的读数是柱子面上那团灰）。
+    if (reason === 'ground') {
+      bus.emit('vfx.decal.spawn', { configId: 'decal_impact', pos: { ...pr.pos }, normal: { x: 0, y: 1, z: 0 } })
+    }
     bus.emit('audio.sfx', { key: pr.hostile ? 'block_guard' : 'hit_metal', pos: { ...pr.pos }, gain: 0.35 })
   }
 
@@ -1176,7 +1186,7 @@ export class CombatManager {
           this.roarMuffleTicks = msToTicks(roar.muffleMs)
           this.time.hitStop(roar.hitStopMs / 1000)
         }
-        bus.emit('boss.phase', { id: e.id, phase: e.bossPhase + 1, phases: e.data.boss?.phases.length ?? 1, nameKey: e.data.nameKey })
+        bus.emit('boss.phase', { id: e.id, phase: e.bossPhase + 1, phases: e.data.boss?.phases.length ?? 1, nameKey: e.data.nameKey, pos: { ...e.pos } })
         bus.emit('audio.sfx', { key: 'boss_roar', pos: { ...e.pos }, gain: 1 })
         bus.emit('vfx.request', { key: 'shock_small', pos: { ...e.pos }, scale: 2.6 })
         bus.emit('ui.notify', { text: `${nameOf(e.data.nameKey)} · 第 ${e.bossPhase + 1} 阶`, kind: 'boss' })

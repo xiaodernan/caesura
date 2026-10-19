@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { vfxFindings, vfxConfigIds, isHexColor } from '../../scripts/vfx-rules.mjs'
@@ -110,5 +110,26 @@ describe('vfx.json 配置表（Phase B4）', () => {
       const c = toEmitterConfig(row)
       expect(Number.isFinite(c.spawnSize.x) && Number.isFinite(c.acceleration.y)).toBe(true)
     }
+  })
+
+  it('**每一行配置都要有读者**（无消费方的数据不许入表，§55/KI-047）', () => {
+    // 判据：表里的每个 id，必须在 `src/` 下（**代码或数据**）以字面量出现——那就是有人点名它。
+    // 读者有两类，缺一不可：① 代码里的字面量（`spawn('decal_blood', …)` 那种直接点名）；
+    // ② 数据里的字面量（`weapons.json > trail: "trail_blade"`——拖尾的 id 是**武器表**给的，
+    // 代码里读的是 `this.weapon.trail`，不写死任何一个 id）。
+    // 这不是"它应该在某个白名单里"——白名单会变成第二个真相；这里量的是"真有人点名它"。
+    const srcDir = root + 'src/'
+    const files: string[] = []
+    const walk = (dir: string): void => {
+      for (const e of readdirSync(dir, { withFileTypes: true })) {
+        const p = dir + '/' + e.name
+        if (e.isDirectory()) walk(p)
+        else if (e.name.endsWith('.ts') || e.name.endsWith('.json')) files.push(p)
+      }
+    }
+    walk(srcDir)
+    const corpus = files.map((f) => readFileSync(f, 'utf8')).join('\n')
+    const orphans = vfxConfigIds(table).filter((id) => !corpus.includes(id))
+    expect(orphans, `这些配置 id 在 src/ 里没有任何读者（表里不许留没人用的行）：${orphans.join(' ')}`).toEqual([])
   })
 })

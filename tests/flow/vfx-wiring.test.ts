@@ -2,9 +2,10 @@ import { describe, expect, it, beforeAll, beforeEach } from 'vitest'
 import { bus } from '@/core/EventBus'
 import { registry } from '@/core/Registry'
 import { registerGameData } from '@/data'
-import { initDecalSystem, registerDecalSystemBus, registerDecalDeathEmitter, getDecalSystem } from '@/vfx/Decals'
-import { initGPUParticles, registerGPUParticlesBus, registerHitBurstEmitter, getGPUParticles } from '@/vfx/GPUParticles'
+import { initDecalSystem, registerDecalSystemBus, getDecalSystem } from '@/vfx/Decals'
+import { initGPUParticles, registerGPUParticlesBus, getGPUParticles } from '@/vfx/GPUParticles'
 import { initTrailSystem, registerTrailSystemBus, getTrailSystem } from '@/vfx/Trails'
+import { registerVfxWorldEmitters } from '@/vfx/VfxEmitters'
 
 /**
  * Phase B4 的接线门（KI-135）：**三个频道从此有人说话**。
@@ -60,10 +61,10 @@ describe('Phase B4 接线：三个频道真的有人说话（KI-135）', () => {
     // 当场被这条断言抓住：那不是"贴花画多了"，是同一个频道被订阅了两遍）。
     registerGameData()
     registerDecalSystemBus()
-    registerDecalDeathEmitter()
     registerGPUParticlesBus()
-    registerHitBurstEmitter()
     registerTrailSystemBus()
+    // 世界事件 → 表现层的接线归**一处**（KI-136）：`vfx/VfxEmitters.ts`
+    registerVfxWorldEmitters()
   })
 
   beforeEach(() => {
@@ -123,5 +124,27 @@ describe('Phase B4 接线：三个频道真的有人说话（KI-135）', () => {
       up: { x: 0, y: 1, z: 0 },
     })
     expect(trailPoints(), '两帧至少两个轨迹点').toBeGreaterThanOrEqual(2)
+  })
+
+  it('重踏（camera.shake 的 stomp）：地上压出裂痕 ＋ 扬起尘', () => {
+    const decalsBefore = decalCount()
+    const partsBefore = emitterCount()
+    bus.emit('camera.shake', { key: 'stomp', pos: { x: 3, y: 0, z: 4 } })
+    expect(decalCount(), '重踏要压出一道裂痕').toBe(decalsBefore + 1)
+    expect(emitterCount(), '重踏要扬起尘').toBeGreaterThan(partsBefore)
+  })
+
+  it('不是 stomp 的世界事件不贴不扬（别把每一记震镜都当地上有事）', () => {
+    const decalsBefore = decalCount()
+    const partsBefore = emitterCount()
+    bus.emit('camera.shake', { key: 'graze', pos: { x: 0, y: 0, z: 0 } })
+    expect(decalCount()).toBe(decalsBefore)
+    expect(emitterCount()).toBe(partsBefore)
+  })
+
+  it('Boss 换阶段：脚下烧焦一块', () => {
+    const before = decalCount()
+    bus.emit('boss.phase', { id: 'en_boss', phase: 2, phases: 3, nameKey: 'boss.x', pos: { x: 5, y: 0, z: 6 } })
+    expect(decalCount(), '换阶段要烧焦一块地').toBe(before + 1)
   })
 })

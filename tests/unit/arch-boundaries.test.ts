@@ -40,6 +40,8 @@ const PRESENTATION = new Set([
   'vfx/RainSystem.ts', 'vfx/Trails.ts', 'vfx/Decals.ts', 'vfx/GPUParticles.ts',
   // KI-135：配置转换层（数据是纯 JSON，hex/向量/混合模式 → three 的那一步在表现层）
   'vfx/VfxConfig.ts',
+  // KI-136：世界事件 → 表现层的接线归一处（它要 spawn 贴花/粒子 ⇒ 用 three 的向量）
+  'vfx/VfxEmitters.ts',
   'world/ActorVisuals.ts', 'world/ChunkGreybox.ts', 'world/InteractableGreybox.ts',
   'world/WallGreybox.ts',
   'world/ProjectileVisuals.ts', 'world/BossArenaVisuals.ts', 'world/PlaceholderArena.ts', 'world/PropVisuals.ts',

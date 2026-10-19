@@ -337,22 +337,6 @@ export function getDecalSystem(): DecalSystem | null {
  */
 const vec3 = (p: { x: number; y: number; z: number }): THREE.Vector3 => new THREE.Vector3(p.x, p.y, p.z)
 
-/**
- * 接上**倒地贴花**这一条发射方（KI-135）：`entity.died` 是"某个实体死了"的世界事件，
- * 贴花要落在地上 ⇒ 法线取 (0,1,0)。
- *
- * **发射方住在表现层**，不在战斗层：战斗层只管"谁死了"（`entity.died` 已经有那个读者），
- * 要它再为"地上要留一块血"发一条事件，就是给表现层的事找了个战斗层的地址。
- *
- * 贴花种类按 `kind` 分：敌人倒地是血，玩家倒地不贴（玩家的死是另一条叙事线，不该在地上留块红）。
- */
-export function registerDecalDeathEmitter(): void {
-  bus.on('entity.died', (e) => {
-    if (e.kind !== 'enemy') return
-    decalSystem?.spawn('decal_blood', new THREE.Vector3(e.position.x, e.position.y, e.position.z), new THREE.Vector3(0, 1, 0))
-  })
-}
-
 export function registerDecalSystemBus(): void {
   bus.on('vfx.decal.spawn', (data: {
     configId: string
@@ -389,8 +373,8 @@ declare module '@/core/EventBus' {
     /** 生成一张贴花：发射方＝命中/踩踏的一方，接收方＝本文件的 DecalSystem。 */
     'vfx.decal.spawn': {
       configId: string
-      pos: THREE.Vector3
-      normal: THREE.Vector3
+      pos: { x: number; y: number; z: number }
+      normal: { x: number; y: number; z: number }
       rotation?: number
       scale?: number
     }

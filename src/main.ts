@@ -191,9 +191,9 @@ const decals = (await import('@/vfx/Decals')).initDecalSystem(arena.scene)
 ;(await import('@/vfx/GPUParticles')).registerGPUParticlesBus()
 ;(await import('@/vfx/Trails')).registerTrailSystemBus()
 ;(await import('@/vfx/Decals')).registerDecalSystemBus()
-// KI-135：两条发射方（命中爆发、倒地贴花）——频道从此有人说
-;(await import('@/vfx/GPUParticles')).registerHitBurstEmitter()
-;(await import('@/vfx/Decals')).registerDecalDeathEmitter()
+// KI-136：世界事件 → 表现层的接线归**一处**（`vfx/VfxEmitters.ts`）——
+// "敌人倒了会出什么东西"是同一件事，散在三个模块里就成了三个主人。
+;(await import('@/vfx/VfxEmitters')).registerVfxWorldEmitters()
 
 // Squad 系统总线注册（Phase B5）
 ;(await import('@/ai/Squad')).registerSquadBus()

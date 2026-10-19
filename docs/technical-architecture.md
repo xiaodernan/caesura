@@ -298,6 +298,7 @@ src/
 | `vfx/Trails.ts` | Phase B4 结案落点：武器拖尾系统。Tube Ribbon Shader：沿弧长 fade、顶点动画、无 GC。数据驱动：每把武器在 movesets/weapons JSON 里声明 `trail` 配置。 |
 | `vfx/Decals.ts` | Phase B4 结案落点：贴花系统。投影四边形 + 深度防穿插（Polygon Offset）。用于：弹痕、震纹、脚印、血迹、烧焦痕。单次 DrawCall 批量渲染，生存周期管理：创建→淡入→维持→淡出→回收。 |
 | `vfx/GPUParticles.ts` | Phase B4 结案落点：GPU 粒子系统。实例属性环形缓冲 + 顶点动画 shader，CPU 仅管理发射器配置与生存周期。发射器配置全数据驱动（JSON），支持 burst/stream/trail/ribbon 四种类型。 |
+| `vfx/VfxEmitters.ts` | **世界事件 → 表现层的唯一接线处**（Phase B4，KI-136）：`entity.died`（敌人倒地）⇒ 地上留一块血 ＋ 一团死亡粒子；`combat.hit`（打中/擦到）⇒ 命中点炸火花；`camera.shake`（key=`stomp`）⇒ 地上压出裂痕 ＋ 扬起尘；`boss.phase` ⇒ 脚下烧焦一块。**为什么集中在一个文件**：三套表现层各有发射方，若各模块各自订阅世界事件，"敌人倒了会出什么东西"就散在三个文件里——而那是**同一件事**，散开就成了三个主人。**发射方住在表现层**：战斗层与 AI 层只管"谁死了""打中了""换阶段了"（那些事件本来就有读者），要它们再为"地上要留一块血"发一条事件，就是给表现层的事找了个战斗层的地址。**读数**：`vfx.json` 的九行配置，九个读者——`tests/unit/vfx-table.test.ts` 有一条门钉着"每一行配置都要有读者"（表里不许留没人用的行，§55/KI-047）。 |
 | `vfx/VfxConfig.ts` | Phase B4 的**配置转换层**（KI-135）：`vfx.json` 的三段（贴花/拖尾/发射器）是**纯 JSON**（hex 字符串、`{x,y,z}`、混合模式的名字），而三个表现层模块内部用 three 的类型——转换发生在**表现层**（`hex → THREE.Color`、`名字 → THREE.Blending`、向量 → `THREE.Vector3`）。为什么要有这一层：数据层不认识 three（依赖方向单向），战斗层与 AI 层更不该认识；把转换放在表现层，**转换点只有一个**（谁在表现层，谁转）。**三个模块的 `loadConfigs()` 都走它**，所以"表里的一行怎么变成运行时配置"只有一份实现。判据（值域、hex 合法、id 跨段不重名）不住这里——它住 `scripts/vfx-rules.mjs`（要能被合成夹具喂），这一层只做翻译、不做裁决。 |
 
 

@@ -48,7 +48,8 @@ export interface GameEvents {
    *  招式起手那一 tick（数据驱动 opt-in：见 enemies.json，不是硬编码某一个敌人）。 */
   'combat.bossTelegraph': undefined
   /** Boss 跳阶（§15.1 转阶段演出）：表现层据此震镜/压低频，main.ts 据此吃 hitstop */
-  'boss.phase': { id: string; phase: number; phases: number; nameKey: string }
+  /** 换阶段（KI-136）：`pos` 是那一只此刻站的位置——"脚下烧焦一块地"这件事要知道地在哪 */
+  'boss.phase': { id: string; phase: number; phases: number; nameKey: string; pos?: { x: number; y: number; z: number } }
   /** §16「3 拍入场演出」：她第一次照面那几拍的开场信（`ticks` = 演出总长，表现层据此震镜） */
   'boss.intro': { id: string; dataId: string; nameKey: string; ticks: number }
   /** §16「胜利序列（IP §6：音乐停=世界屏息）」：`holdTicks` 后由 CombatManager 补上收尾播报 */
