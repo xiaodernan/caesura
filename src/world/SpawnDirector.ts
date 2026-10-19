@@ -17,6 +17,21 @@ export interface SpawnHost {
   spawn(enemyId: string, pos: Vec3, seed: string): { id: string }
   despawn(id: string): boolean
   hasFlag(key: string): boolean
+  /**
+   * 世界状态的现读（KI-143）：刷怪闸门要能问"这一格世界是什么样"。
+   * **可省**：没有读方时，条件里带 `state.` 的那一组**不刷**（宁可少刷，不可刷错）。
+   */
+  stateOf?(key: string): string | null
+  /**
+   * 世界状态的现读（KI-143）：刷怪闸门要能问"这一格世界是什么样"。
+   * **可省**：没有读方时，条件里带 `state.` 的那一组**不刷**（宁可少刷，不可刷错）。
+   */
+  stateOf?(key: string): string | null
+  /**
+   * 世界状态的现读（KI-143）：刷怪闸门要能问"这一格世界是什么样"。
+   * **可省**：没有读方时，条件里带 `state.` 的那一组**不刷**（宁可少刷，不可刷错）。
+   */
+  stateOf?(key: string): string | null
 }
 
 export interface SpawnSlot {
@@ -47,12 +62,38 @@ export const DEFAULT_SPAWN_OPTIONS: SpawnOptions = { maxAlive: 60, jitter: 0.25 
 
 const GOLDEN_ANGLE = 2.399963229728653
 
-/** 最小 flag 表达式：`flag.a && !flag.b`（析取留给 Phase 6 的对话条件，需要时再加） */
-export function evalCondition(expr: string | undefined, has: (k: string) => boolean): boolean {
+/**
+ * 刷怪闸门的**条件语言**（KI-143 扩了一格）。
+ *
+ * 四形，都用 `&&` 连接（析取留给 Phase 6 的对话条件，需要时再加）：
+ *   · `flag.x`     —— 那一面旗立着
+ *   · `!flag.x`    —— 那一面旗没立
+ *   · `state.K==V` —— 那个世界状态**等于**那个取值（KI-143：破拍营地的营长只在 GARRISON 那条线上）
+ *   · `state.K!=V` —— 那个世界状态**不等于**那个取值
+ *
+ * **没有状态读方 ⇒ 带 `state.` 的那一项为假**（那一组不刷）：宁可少刷，不可刷错
+ * ——"刷出一个不该在这里的精英"比"没刷"坏得多。
+ */
+export function evalCondition(
+  expr: string | undefined,
+  has: (k: string) => boolean,
+  stateOf?: (k: string) => string | null,
+): boolean {
   if (expr === undefined || expr.trim() === '') return true
   return expr.split('&&').every((raw) => {
     const term = raw.trim()
     if (term === '') return true
+    // 状态两形：state.KEY==VALUE / state.KEY!=VALUE
+    // **键是整段**（`state.haltrune.camp` 就是那个状态的完整键）——states.json 里的键本身就带
+    // `state.` 前缀，剥掉前缀再查 ⇒ 永远查不到（那一组就永远不刷，而门会绿）。
+    if (term.startsWith('state.')) {
+      const m = /^(state\.[A-Za-z0-9_.]+)(==|!=)(.+)$/.exec(term)
+      if (!m) return false // 写坏了的形状 ⇒ 不满足（数据门那边会红）
+      const [, key, op, value] = m
+      const current = stateOf ? stateOf(key) : null
+      if (current === null) return false // 没有读方（或这一格还没写过）⇒ 不满足
+      return op === '==' ? current === value : current !== value
+    }
     return term.startsWith('!') ? !has(term.slice(1).trim()) : has(term)
   })
 }
@@ -170,7 +211,7 @@ export class SpawnDirector {
   private spawnChunk(chunkKey: string): void {
     for (const s of this.byChunk.get(chunkKey) ?? []) {
       if (s.instanceId || this.cleared.has(s.key)) continue
-      if (!evalCondition(s.condition, (k) => this.host.hasFlag(k))) continue
+      if (!evalCondition(s.condition, (k) => this.host.hasFlag(k), (k) => this.host.stateOf?.(k) ?? null)) continue
       if (this.aliveCount >= this.options.maxAlive) {
         bus.emit('log', { level: 'warn', msg: `SpawnDirector: 达到 AI 上限 ${this.options.maxAlive}，${s.key} 排队等待` })
         return

@@ -1683,6 +1683,41 @@ function validateRegions(enemyIds, lootIds, rarityIds, stateDefs) {
       report.num(file, `${gw}.radius`, g.radius, { min: 0, name: 'radius' })
       if (g.campId !== undefined && !isStr(g.campId)) report.error(file, `${gw}.campId`, '必须是非空字符串')
       if (g.condition !== undefined && !isStr(g.condition)) report.error(file, `${gw}.condition`, '必须是非空字符串')
+      else if (isStr(g.condition)) {
+        /**
+         * 刷怪闸门的条件语言（KI-143 扩了一格）：
+         *   · `flag.x` / `!flag.x` —— 旗标两形（老形，逐字不动）
+         *   · `state.K==V` / `state.K!=V` —— 世界状态两形（KI-143：破拍营地的营长只在 GARRISON 那条线上）
+         *
+         * 判据：每一项的**形状**要合法；带 `state.` 的那一项，**键必须在 states.json 里**、
+         * **取值必须是那个状态的合法取值**——拼错一个键 ⇒ 那一组永远不刷（玩家看不到设计要的那个精英），
+         * 拼错一个取值 ⇒ 同理，而且更难查（键对了、值错了）。
+         */
+        for (const rawTerm of g.condition.split('&&')) {
+          const term = rawTerm.trim()
+          if (term === '') continue
+          if (term.startsWith('state.')) {
+            const m = /^(state\.[A-Za-z0-9_.]+)(==|!=)(.+)$/.exec(term)
+            if (!m) {
+              report.error(file, `${gw}.condition`, `条件项形状不合法：'${term}'（状态两形是 state.KEY==VALUE / state.KEY!=VALUE）`)
+              continue
+            }
+            const [, key, , value] = m
+            const def = stateDefs.get(key)
+            if (!def) {
+              report.error(file, `${gw}.condition`, `条件项引用了不认识的状态：'${key}'（不在 states.json 里）`)
+              continue
+            }
+            if (Array.isArray(def.values) && !def.values.includes(value)) {
+              report.error(file, `${gw}.condition`, `条件项的取值不在该状态的合法取值里：'${value}'（合法取值：${def.values.join('/')}）`)
+            }
+          } else if (term.startsWith('!')) {
+            if (!term.slice(1).trim()) report.error(file, `${gw}.condition`, `条件项 '${term}' 后面没有旗名`)
+          } else if (!term) {
+            report.error(file, `${gw}.condition`, '条件项为空')
+          }
+        }
+      }
     })
 
     // landmarks

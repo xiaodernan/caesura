@@ -608,6 +608,8 @@ const spawner = new SpawnDirector(regions, {
   spawn: (id, pos, seed) => ai.spawn(id, pos, seed),
   despawn: (id) => ai.despawn(id),
   hasFlag: (k) => streaming.hasFlag(k),
+  // KI-143：刷怪闸门要能问"这一格世界是什么样"（破拍营地的营长只在 GARRISON 那条线上）
+  stateOf: (k) => worldStates.get(k) ?? null,
 }, (pos) => { const c = streaming.cellOf(pos); return chunkKeyOf(c.cx, c.cy, c.cz) })
 spawner.syncActive(streaming.byState('active').map((c) => c.key))
 lock.candidates = ai.enemies

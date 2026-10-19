@@ -891,6 +891,18 @@
         "condition": "!flag.brokenbar_resolved"
       },
       {
+        "enemyId": "en_hanged_knight",
+        "count": 1,
+        "center": {
+         "x": -84,
+         "y": 0,
+         "z": -206
+        },
+        "radius": 2,
+        "campId": "camp_brokenbar",
+        "condition": "state.haltrune.camp==GARRISON"
+      },
+      {
         "enemyId": "en_tympanus",
         "count": 1,
         "center": {
