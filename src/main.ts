@@ -6,6 +6,7 @@ import { Input, pumpMenu, type MenuOwner, type MenuPump } from '@/core/Input'
 import { RhythmClock } from '@/core/RhythmClock'
 import { registry } from '@/core/Registry'
 import { registerGameData, playerBase, regions, worldstate, dialogues, quests as questTable, worldStates as worldStateDefs, cinematics as cinematicRows } from '@/data'
+import { resolveMarker } from '@/quest/Objectives'
 import type { ItemData, MovesetData, NpcData, RegionData, Vec3, WeaponData } from '@/data/schema'
 import { createArena } from '@/world/PlaceholderArena'
 import { activeWeather, questTrackedFlags } from '@/world/WeatherSwitch'
@@ -207,6 +208,36 @@ hud.project = (p) => {
   const v = new Vector3(p.x, p.y, p.z).project(rig.cam)
   if (v.z > 1 || v.z < -1) return null
   return { x: (v.x * 0.5 + 0.5) * innerWidth, y: (1 - (v.y * 0.5 + 0.5)) * innerHeight }
+}
+/**
+ * 目标指示的**边缘投影**（KI-137）：目标在画面里就给它的位置；在画面外（或在相机背后）
+ * 就沿"屏幕中心 → 它"的方向夹到视口边缘内侧，HUD 在那儿画一枚箭头。
+ *
+ * **背后的目标为什么要翻一下**：`Vector3.project` 对相机背后的点会把 x/y 取反，
+ * 直接用会让箭头指向**反方向**（"往回走"却指向前方）。翻回正号才是"它在背后"的正确读法。
+ */
+hud.projectEdge = (p) => {
+  const v = new Vector3(p.x, p.y, p.z).project(rig.cam)
+  const behind = v.z > 1
+  if (behind) { v.x = -v.x; v.y = -v.y }
+  let x = (v.x * 0.5 + 0.5) * innerWidth
+  let y = (1 - (v.y * 0.5 + 0.5)) * innerHeight
+  const inside = !behind && x >= 0 && x <= innerWidth && y >= 0 && y <= innerHeight
+  if (!inside) {
+    const cx = innerWidth / 2
+    const cy = innerHeight / 2
+    let dx = x - cx
+    let dy = y - cy
+    const len = Math.hypot(dx, dy)
+    if (len < 1e-6) { dx = 0; dy = -1 } else { dx /= len; dy /= len }
+    const margin = 48
+    const tx = Math.abs(dx) < 1e-6 ? Infinity : (innerWidth / 2 - margin) / Math.abs(dx)
+    const ty = Math.abs(dy) < 1e-6 ? Infinity : (innerHeight / 2 - margin) / Math.abs(dy)
+    const t = Math.min(tx, ty)
+    x = cx + dx * t
+    y = cy + dy * t
+  }
+  return { x, y, onScreen: inside }
 }
 /**
  * 调音桩面板（需求 §41/§44）。**只在调音桩前能打开**——分配点数与洗点是"回到基地"的奖励，
@@ -485,6 +516,17 @@ const quests = new Quests(
   // 顺序补判要读世界旗标：玩家可能先捡到东西再接到委托（生产路径的唯一注入点）
   (k) => streaming.hasFlag(k),
 )
+/**
+ * **目标指示**（KI-137）：任务步变了 ⇒ HUD 上的箭头要跟着指到新地方。
+ *
+ * 三件事各归一家：① 任务机只说"这一步有一个 marker"（原样透传，不认识世界坐标）；
+ * ② `quest/Objectives.ts` 把 marker 解析成世界坐标（它认识 regions.json 的结构，HUD 不该认识）；
+ * ③ 这里（组合根）把坐标喂给 HUD，投影与夹取也在这一侧（相机在这儿）。
+ */
+bus.on('quest.changed', (p) => {
+  if (p.completed) { hud.objective = null; return }
+  hud.objective = resolveMarker(p.marker, regions)
+})
 const dialogueEngine = new DialogueEngine(dialogues, quests)
 const dialogueCtx: DialogueContext = {
   hasFlag: (k) => streaming.hasFlag(k),

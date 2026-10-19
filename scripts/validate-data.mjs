@@ -2644,7 +2644,29 @@ function validateNpcs() {
   return ids
 }
 
-function validateQuests(npcIds, stateDefs) {
+/**
+ * 世界上"能指的东西"三份名册（KI-137：任务步的 `marker` 要指向其中之一）。
+ *
+ * **npc 名册从 `regions.json` 的交互位上收**（`interactables[].npcId`）——npc 的**位置**住在世界里，
+ * 不住在 `npcs.json`；任务表只说"去找铃姨"，不写坐标。
+ */
+function collectMarkerTargets() {
+  const npcIds = new Set()
+  const interactIds = new Set()
+  const regionIds = new Set()
+  for (const rg of data['regions.json'] ?? []) {
+    if (!isObj(rg)) continue
+    if (isStr(rg.id)) regionIds.add(rg.id)
+    for (const it of rg.interactables ?? []) {
+      if (!isObj(it)) continue
+      if (isStr(it.id)) interactIds.add(it.id)
+      if (isStr(it.npcId)) npcIds.add(it.npcId)
+    }
+  }
+  return { npcIds, interactIds, regionIds }
+}
+
+function validateQuests(npcIds, stateDefs, markerTargets) {
   const file = 'quests.json'
   const list = data[file]
   const ids = new Set()
@@ -2667,6 +2689,33 @@ function validateQuests(npcIds, stateDefs) {
       else if (states.has(st.state)) report.error(file, sw, `state 串重复：${st.state}（已被 ${states.get(st.state)} 用掉）`)
       else states.set(st.state, q.id)
       if (!isStr(st.label)) report.error(file, `${sw}.label`, 'label 必填')
+      /**
+       * KI-137：这一步的**目标指示**。指错了 ⇒ 玩家永远找不到该去的地方（而画面上那枚箭头
+       * 还指着另一个方向，比没有箭头更坏）⇒ 拼错一个字母当场红。
+       */
+      if (st.marker !== undefined) {
+        const mw = `${sw}.marker`
+        if (!isObj(st.marker)) report.error(file, mw, '必须是对象')
+        else {
+          const kind = st.marker.kind
+          if (!['npc', 'interact', 'region', 'pos'].includes(kind)) {
+            report.error(file, `${mw}.kind`, `未知指示种类：${kind}（npc/interact/region/pos）`)
+          } else if (kind === 'pos') {
+            if (!isObj(st.marker.pos) || !['x', 'y', 'z'].every((k) => isNum(st.marker.pos?.[k]))) {
+              report.error(file, `${mw}.pos`, '必须带 x / y / z 三个数')
+            }
+          } else {
+            if (!isStr(st.marker.id)) report.error(file, `${mw}.id`, '必须是非空字符串')
+            else {
+              const pool = kind === 'npc' ? markerTargets.npcIds : kind === 'interact' ? markerTargets.interactIds : markerTargets.regionIds
+              if (!pool.has(st.marker.id)) {
+                const what = kind === 'npc' ? '世界里的 npc 名册' : kind === 'interact' ? 'regions.json 的交互物' : 'regions.json 的区域'
+                report.error(file, `${mw}.id`, `悬空引用：'${st.marker.id}' 不在${what}里`)
+              }
+            }
+          }
+        }
+      }
       if (st.tags !== undefined) {
         strArray(file, `${sw}.tags`, st.tags, { nonEmpty: true })
         for (const t of st.tags ?? []) if (!QUEST_TAGS.has(t)) report.error(file, `${sw}.tags`, `未知标注：${t}（§28 只有 D/C/H/M）`)
@@ -2964,7 +3013,7 @@ validateWorldGraph()
 validateMovements(itemIds)
 // 叙事层（Phase 6-B）：NPC → 任务 → 对话（后者依赖前两者的 id）
 const npcIds = validateNpcs()
-const questIds = validateQuests(npcIds, stateDefs)
+const questIds = validateQuests(npcIds, stateDefs, collectMarkerTargets())
 const dialogueInfo = validateDialogue(npcIds, questIds, itemIds, stateDefs)
 // 叙事层的双向对账（§55 / KI-041 的同一条纪律，两个方向都查）：
 // ① 对话写的旗标必须有人读（区域闸门 / 任务步 / 对话条件），否则是死数据；

@@ -143,6 +143,8 @@ export class Quests {
     this.onEvent({ questId: q.id, state: step.state, index, label: step.label, started, completed })
     bus.emit('quest.changed', {
       questId: q.id, state: step.state, index, total: q.steps.length, label: step.label, started, completed,
+      // KI-137：marker **原样透传**——任务机不认识"世界的哪一点"（那是 Objectives 那一层的事）
+      ...(step.marker ? { marker: step.marker } : {}),
     })
   }
 

@@ -1934,9 +1934,27 @@ export interface NpcData {
  */
 export type QuestTag = 'D' | 'C' | 'H' | 'M'
 
+/**
+ * **目标指示**（KI-137）：这一步指向世界里的哪一个点。
+ *
+ * **只有四种形态**，因为世界上只有这四种"能指的东西"：一个人、一个可交互物、一片区域、一个坐标。
+ * 坐标不写在任务表里（那是**世界的位置**，住在 regions.json）——任务表只说"去找铃姨"，
+ * 位置由那一区的交互位给出（见 `src/quest/Objectives.ts` 的解析）。
+ */
+export type QuestMarker =
+  | { kind: 'npc'; id: string }
+  | { kind: 'interact'; id: string }
+  | { kind: 'region'; id: string }
+  | { kind: 'pos'; pos: { x: number; y: number; z: number } }
+
 export interface QuestStep {
   state: string
   label: string
+  /**
+   * 这一步的**目标指示**：HUD 据此在屏幕边缘画一枚指向它的箭头（KI-137）。
+   * 省略 = 这一步没有世界指向（纯对话抉择一类的步骤）⇒ HUD 不画。
+   */
+  marker?: QuestMarker
   /**
    * 任一旗标被立 ⇒ 顺推一步。**这里就是那些旗标的读方**（§55 的双向对账靠它闭合）。
    * `flags` 与 `state` 至少给一个（校验脚本负责把关）。

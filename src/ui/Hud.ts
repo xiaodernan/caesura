@@ -176,6 +176,20 @@ export class Hud {
   /** main.ts 注入：世界坐标 → CSS 像素（相机外的点返回 null）。没接投影时飘字照常记账、只是不画 */
   project: ((p: { x: number; y: number; z: number }) => { x: number; y: number } | null) | null = null
 
+  /**
+   * **目标指示**（KI-137）：当前目标在世界里的哪一点。
+   *
+   * **为什么需要它**：任务行（KI-113②）回答了"要干什么"，却没回答"往哪走"——灰盒世界里
+   * 没有路标，玩家只能在一片灰盒里乱转（实测反馈：「完全不知道要干什么」）。
+   * 这一格是那一半：目标在画面里就画一枚菱形，在画面外就在屏幕边缘画一枚指向它的箭头。
+   *
+   * **HUD 不认识任务表**：它只收一个世界坐标（组合根解析好的），投影与夹取也由组合根做
+   * （相机在那一侧，HUD 不该知道相机）。
+   */
+  objective: { x: number; y: number; z: number } | null = null
+  /** 组合根注入：世界坐标 → 屏幕位置（画面外时夹到视口边缘，并说清是不是在画面里） */
+  projectEdge: ((p: { x: number; y: number; z: number }) => { x: number; y: number; onScreen: boolean } | null) | null = null
+
   /** 里程碑的 rank 按 id 现查现用（不是构造期快照）：改表法测试与"删行=拔腿"都靠这一刻 */
   private milestoneRank(id: string): number {
     return registry.maybeGet<ProgressionData>('progression')?.milestones.find((m) => m.id === id)?.rank ?? Number.POSITIVE_INFINITY
@@ -228,6 +242,7 @@ export class Hud {
 
     this.drawVignette()
     this.drawQuest()
+    this.drawObjective()
     this.drawBinds()
     this.drawHpWave()
     this.drawRank()
@@ -359,6 +374,45 @@ export class Hud {
     // 长句截断：这一行是「现在该看哪」的指针，不是阅读区——两行封顶的话写在调试器里
     const label = q.label.length > 30 ? q.label.slice(0, 29) + '…' : q.label
     ctx.fillText(label, x, y)
+    ctx.restore()
+  }
+
+  /**
+   * 目标指示箭头（KI-137）：目标在画面里 ⇒ 一枚安静的菱形；在画面外 ⇒ 屏幕边缘一枚指向它的箭头。
+   *
+   * **它不许盖住别的东西**：菱形只画轮廓（不填充），箭头的位置由组合根夹在视口边缘内侧 48px。
+   */
+  private drawObjective(): void {
+    if (!this.objective || !this.projectEdge || this.cssW <= 0) return
+    const at = this.projectEdge(this.objective)
+    if (!at) return
+    const { ctx } = this
+    const s = this.scale()
+    ctx.save()
+    if (at.onScreen) {
+      ctx.strokeStyle = css(GOLD, 0.45)
+      ctx.lineWidth = 1.2 * s
+      ctx.beginPath()
+      ctx.moveTo(at.x, at.y - 8 * s)
+      ctx.lineTo(at.x + 5 * s, at.y)
+      ctx.lineTo(at.x, at.y + 8 * s)
+      ctx.lineTo(at.x - 5 * s, at.y)
+      ctx.closePath()
+      ctx.stroke()
+    } else {
+      const cx = this.cssW / 2
+      const cy = this.cssH / 2
+      const ang = Math.atan2(at.y - cy, at.x - cx)
+      ctx.translate(at.x, at.y)
+      ctx.rotate(ang)
+      ctx.fillStyle = css(GOLD, 0.5)
+      ctx.beginPath()
+      ctx.moveTo(10 * s, 0)
+      ctx.lineTo(-6 * s, 5.5 * s)
+      ctx.lineTo(-6 * s, -5.5 * s)
+      ctx.closePath()
+      ctx.fill()
+    }
     ctx.restore()
   }
 
