@@ -653,6 +653,14 @@
    }
   ]
  },
+ "identityEffects": [
+  {
+   "attr": "dex",
+   "min": 35,
+   "label": "指法 35：翻滚体力 -2",
+   "grant": { "rollStaminaFlat": -2 }
+  }
+ ],
  "milestones": [
   {
    "rank": 2,

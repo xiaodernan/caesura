@@ -212,7 +212,7 @@ describe('今天的真载体：五张新对账在真文件上零条，抽取也�
       S('SlotKey/装备件', (c) => unionMembers(c.blocks, 'SlotKey'), ['weapon', 'helm', 'cuirass', 'gloves', 'greaves', 'seal', 'sealB'],
         { allowMissing: ['sealA'], whyMissing: '今天没有任何一件装备声明 sealA' }),
       S('ItemKind', (c) => unionMembers(c.blocks, 'ItemKind'), ['currency', 'material', 'consumable', 'weapon', 'armor', 'seal', 'lore', 'key']),
-      S('MilestoneGrant', (c) => interfaceFields(c.blocks, 'MilestoneGrant'), ['loadFlat', 'parryWhiffMs', 'execMulPct', 'overdriveFlat', 'corruptionStayPct', 'bowForkBranches']),
+      S('MilestoneGrant', (c) => interfaceFields(c.blocks, 'MilestoneGrant'), ['loadFlat', 'parryWhiffMs', 'execMulPct', 'overdriveFlat', 'corruptionStayPct', 'bowForkBranches', 'rollStaminaFlat']),
       S('MovementFrame', (c) => interfaceFields(c.blocks, 'MovementFrame'), ['startup', 'activeStart', 'activeEnd', 'recovery', 'poise', 'hitStopMs', 'hitbox', 'multi', 'shake', 'sfx', 'vfx', 'loudness']),
       S('MovementLevel', (c) => interfaceFields(c.blocks, 'MovementLevel'), ['cooldownTicks', 'damage', 'trueDamage', 'fissureLayers', 'muteTicks', 'distance', 'freezeTicks', 'echoCharges', 'silenceTicks', 'silenceDmgBonus']),
       S('PropRef.kind', (c) => fieldUnion(c.blocks, 'PropRef', 'kind'), ['soundspine', 'resonance_core']),

@@ -661,9 +661,17 @@ export class PlayerController {
    */
   rollProfile(locked: boolean): { total: number; iframeStart: number; iframeEnd: number; stamina: number } {
     const r = this.base.roll
+    /**
+     * 身份效果（§8.2「指法 35：翻滚体力 -2」，KI-138）：**只加在自由翻滚那一格**——
+     * 锁定侧步是另一个动作（侧步），需求那句话说的是"翻滚"。
+     *
+     * **下限 1**：体力价 0 意味着"永远滚不了"（死档，不是设计）；负的体力价会让
+     * `spendStamina` 变成加体力——那比"没效果"更坏。
+     */
+    const flat = this.rpg.rollStaminaFlat
     return locked
       ? { total: r.lockOnTotal, iframeStart: r.lockOnIframes[0], iframeEnd: r.lockOnIframes[1], stamina: r.lockOnStamina }
-      : { total: r.total, iframeStart: r.iframeStart, iframeEnd: r.iframeEnd, stamina: r.stamina }
+      : { total: r.total, iframeStart: r.iframeStart, iframeEnd: r.iframeEnd, stamina: Math.max(1, r.stamina + flat) }
   }
 
   /**

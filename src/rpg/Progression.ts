@@ -38,6 +38,11 @@ export interface DerivedStats {
    * 消费方 `PlayerMods.bowForkBranches` → `CombatManager.launchPlayerProjectile`。
    */
   bowForkBranches: number
+  /**
+   * 身份效果给的翻滚体力平移（§8.2「指法 35：翻滚体力 -2」，KI-138；负数 = 更便宜，0 = 没有身份效果）。
+   * 消费方 `PlayerMods.rollStaminaFlat` → `ThirdPersonController.rollProfile`（自由翻滚那一格）。
+   */
+  rollStaminaFlat: number
 }
 
 export interface ResonanceGain {
@@ -180,6 +185,20 @@ export class Progression {
      */
     const grantSum = (key: keyof MilestoneGrant): number =>
       this.data.milestones.reduce((s, m) => (m.grant && this.rank >= m.rank ? s + (m.grant[key] ?? 0) : s), 0)
+    /**
+     * 身份效果的合计（§8.2「任一维触及 35」，KI-138）。**门槛两格**：音级到 `ms_identity` 的 rank
+     * ＋ 那一维的**面板值**够 `min`。
+     *
+     * `ms_identity` 的 rank **从里程碑表现读**（不另抄一个数——抄了就多一个主人）。
+     * 门槛用**面板值**而不是软上限折算后的值：这一列问的是"你投入了多少"，
+     * 折算是"它实际当多少"（那是伤害标尺的事）；两者混用会让面板与结算各说各话。
+     */
+    const identityRank = this.data.milestones.find((m) => m.id === 'ms_identity')?.rank ?? Infinity
+    const identitySum = (key: keyof MilestoneGrant): number =>
+      (this.data.identityEffects ?? []).reduce(
+        (s, e) => (this.rank >= identityRank && this.attrs[e.attr] >= e.min ? s + (e.grant[key] ?? 0) : s),
+        0,
+      )
     return {
       hpMax: Math.round(d.hp.base + sum(d.hp.per) + d.hp.perRank * this.rank),
       staminaMax: Math.round(d.stamina.base + sum(d.stamina.per)),
@@ -195,7 +214,9 @@ export class Progression {
       statusPowerMul: 1 + fis * d.status.perFisPower,
       // rank10 的 grant 是乘在速率上的时长项（KI-054）：÷1.35 ⇒ 深窖可停留时长 +35%，对任何出身逐字成立
       corruptionResistMul: Math.max(d.status.toleranceFloor, (1 - fis * d.status.perFisTolerance) / (1 + grantSum('corruptionStayPct') / 100)),
-      bowForkBranches: grantSum('bowForkBranches')
+      bowForkBranches: grantSum('bowForkBranches'),
+      /** 身份效果（§8.2「任一维触及 35」，KI-138）：两格门槛都过了才给 */
+      rollStaminaFlat: identitySum('rollStaminaFlat')
     }
   }
 

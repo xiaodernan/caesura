@@ -47,6 +47,8 @@ export interface PlayerMods {
   corruptionResistMul: number
   /** §4.4 泛音弓满弓分叉的额外枝数（rank12 里程碑；0 = 底数 2 枝） */
   bowForkBranches: number
+  /** 身份效果给的翻滚体力平移（§8.2「指法 35：翻滚体力 -2」，KI-138；0 = 没有身份效果） */
+  rollStaminaFlat: number
   /** 战技伤害加成（律色，KI-029）：加数（0.07 = +7%），消费方 activeHitbox 的技能那一支 */
   skillDmg: number
   /** 之连（KI-029）：连段递变加成，消费方 activeHitbox 的近战连段 */
@@ -69,7 +71,7 @@ export function defaultMods(): PlayerMods {
     attrs: { str: 0, dex: 0, ton: 0, vig: 0, ovr: 0, fis: 0 },
     hpMax: 1, staminaMax: 1, poiseMax: 1, defense: 0, loadMax: 999, parryWhiffMs: 0, overdriveMax: 10,
     critRate: 0, critMul: 1.35, execMul: 1, noiseMul: 1, poiseDmgMul: 1, staminaRegenMul: 1,
-    statusPowerMul: 1, corruptionResistMul: 1, skillDmg: 0, comboScaling: 0, bowForkBranches: 0,
+    statusPowerMul: 1, corruptionResistMul: 1, skillDmg: 0, comboScaling: 0, bowForkBranches: 0, rollStaminaFlat: 0,
     perfectBlockBonusTicks: 0, lightStartupTicks: 0, bellBonus: 0, restOverdrive: 0,
     weaponDamageMul: 1, weaponId: null, weight: 0, overloaded: false
   }
@@ -152,6 +154,7 @@ export class RpgRuntime {
       statusPowerMul: d.statusPowerMul,
       corruptionResistMul: d.corruptionResistMul,
       bowForkBranches: d.bowForkBranches,
+      rollStaminaFlat: d.rollStaminaFlat,
       skillDmg: eq.skillDmg,
       comboScaling: eq.comboScaling,
       noiseMul: eq.noiseMul,

@@ -712,6 +712,8 @@ export interface ProgressionData {
   affixes: { prefix: AffixDef[]; suffix: AffixDef[] }
   /** 洗点/强化之外，升级里程碑（progression.md §8.2「你新能做什么」） */
   milestones: { rank: number; id: string; label: string; grant?: MilestoneGrant }[]
+  /** §8.2 身份效果表（ms_identity 的机制腿，KI-138）；需求只给了指法那一例 */
+  identityEffects?: IdentityEffectRow[]
   /**
    * §44 那一栏「更适合当前 Build」的**建议星标**权重（KI-060，ui-ux.md §3.3）。
    * 键是 `rpg/Equipment.ts > EquipMods` 的数值轴（一张测试脚本↔类型的双向对账钉着，见
@@ -732,6 +734,72 @@ export interface ProgressionData {
  * 消费方：`loadFlat`/`execMulPct`/`overdriveFlat` 走 `Progression.derive`；`parryWhiffMs` 经
  * `PlayerMods.parryWhiffMs` 到 `ThirdPersonController` 的落空后摇（§5.3 失败行）。
  */
+/**
+ * **身份效果**的一行（§8.2「任一维触及 35 = 该维专属效果」，KI-138）。
+ *
+ * **门槛两格**：① 那一维的**面板值**要 ≥ `min`（不是软上限折算后的值——这一列是"你投入了多少"，
+ * 不是"这一维实际当多少"；② 音级要够 `milestone` 那条里程碑的 rank（ms_identity＝终局那一档）。
+ * **效果本身是 `grant`**：与里程碑的机制腿同一套字段（一个主人：`MilestoneGrant`），
+ * 所以新增效果不必新造一条消费链。
+ *
+ * **需求只给了指法那一例**（progression.md §8.2 第 16–18 行），其余各维是设计读数 ⇒ 表里先只写那一行，
+ * 不发明需求没给的数（§55）。
+ */
+export interface IdentityEffectRow {
+  /** 哪一维 */
+  attr: AttrKey
+  /** 面板值门槛 */
+  min: number
+  /** 播报文本（里程碑/面板用） */
+  label: string
+  /** 给什么效果（字段与里程碑 grant 同一套） */
+  grant: MilestoneGrant
+}
+
+/**
+ * **身份效果**的一行（§8.2「任一维触及 35 = 该维专属效果」，KI-138）。
+ *
+ * **门槛两格**：① 那一维的**面板值**要 ≥ `min`（不是软上限折算后的值——这一列是"你投入了多少"，
+ * 不是"这一维实际当多少"；② 音级要够 `milestone` 那条里程碑的 rank（ms_identity＝终局那一档）。
+ * **效果本身是 `grant`**：与里程碑的机制腿同一套字段（一个主人：`MilestoneGrant`），
+ * 所以新增效果不必新造一条消费链。
+ *
+ * **需求只给了指法那一例**（progression.md §8.2 第 16–18 行），其余各维是设计读数 ⇒ 表里先只写那一行，
+ * 不发明需求没给的数（§55）。
+ */
+export interface IdentityEffectRow {
+  /** 哪一维 */
+  attr: AttrKey
+  /** 面板值门槛 */
+  min: number
+  /** 播报文本（里程碑/面板用） */
+  label: string
+  /** 给什么效果（字段与里程碑 grant 同一套） */
+  grant: MilestoneGrant
+}
+
+/**
+ * **身份效果**的一行（§8.2「任一维触及 35 = 该维专属效果」，KI-138）。
+ *
+ * **门槛两格**：① 那一维的**面板值**要 ≥ `min`（不是软上限折算后的值——这一列是"你投入了多少"，
+ * 不是"这一维实际当多少"；② 音级要够 `milestone` 那条里程碑的 rank（ms_identity＝终局那一档）。
+ * **效果本身是 `grant`**：与里程碑的机制腿同一套字段（一个主人：`MilestoneGrant`），
+ * 所以新增效果不必新造一条消费链。
+ *
+ * **需求只给了指法那一例**（progression.md §8.2 第 16–18 行），其余各维是设计读数 ⇒ 表里先只写那一行，
+ * 不发明需求没给的数（§55）。
+ */
+export interface IdentityEffectRow {
+  /** 哪一维 */
+  attr: AttrKey
+  /** 面板值门槛 */
+  min: number
+  /** 播报文本（里程碑/面板用） */
+  label: string
+  /** 给什么效果（字段与里程碑 grant 同一套） */
+  grant: MilestoneGrant
+}
+
 export interface MilestoneGrant {
   loadFlat?: number
   parryWhiffMs?: number
@@ -752,6 +820,12 @@ export interface MilestoneGrant {
    * 就是两个主人（KI-054 同族纪律）。
    */
   bowForkBranches?: number
+  /**
+   * 「指法 35：翻滚体力 -2」（§8.2 身份效果那一列的第一例，KI-138）：**加在翻滚体力价上的平移项**。
+   * 负数 = 更便宜。它是"某一维触及 35"才有的效果，所以它的门槛不在这一格（门槛在
+   * `progression.json > identityEffects` 那一行：哪一维、到多少、给什么）。
+   */
+  rollStaminaFlat?: number
 }
 
 /** 装备件的静态定义（挂在 ItemData.gear 上）。 */

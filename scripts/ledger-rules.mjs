@@ -23,7 +23,7 @@ const isObj = (v) => typeof v === 'object' && v !== null && !Array.isArray(v)
 
 /** 里程碑：欠着机制腿的账（每条必须说清"为什么还没有腿"；腿一出现 ⇒ `milestoneLedgerErrors` 报"该销"） */
 export const PENDING_MILESTONE_GRANTS = {
-  ms_identity: '任一维触及 35 的专属效果：**需求侧其实给了**（progression §8.2 第 16–18 行"任一维触及 35 = 该维专属效果（如指法 35：翻滚体力 -2）"）——所以这条账的理由**不是"需求没定义"**，而是**四维各自的专属效果没有机制腿**：里程碑行没有 `grant` 字段，"触及 35"这个判定也没有消费方。要落它得先决定四维各自给什么（需求只给了一个例子，其余三维是设计读数）',
+  ms_identity: '任一维触及 35 的专属效果：**需求侧其实给了**（progression §8.2 第 16–18 行"任一维触及 35 = 该维专属效果（如指法 35：翻滚体力 -2）"）——所以这条账的理由**不是"需求没定义"**，而是**其余各维的专属效果还没有读数**：**机制腿已落（KI-138，2026-10-20）**——`progression.json > identityEffects` 表（哪一维 / 到多少 / 给什么）＋ `Progression.derive` 的两格门槛（面板值够 min ＋ 音级到 ms_identity 的 rank）＋ 消费链（`PlayerMods.rollStaminaFlat` → `ThirdPersonController.rollProfile` 的自由翻滚体力价），需求给的那一例（**指法 35 ⇒ 翻滚体力 -2**）已逐字兑现。**仍欠**：其余各维各自给什么（需求只给了指法一例，其余是设计读数，§55 不许我编）⇒ 表里只有一行，那是如实的，不是漏写',
 }
 
 /** 里程碑：腿在表现层（HUD 承载体）的那一份。与字段腿可并存，所以销账判据对它只查"死 id" */

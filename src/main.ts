@@ -920,7 +920,12 @@ async function startRun(slot: string | null): Promise<void> {
   // 新开局（不是读档）放 §6 的开场：黑场、声先死、无 UI 无旁白那一条
   if (!slot) startCinematic('CINE_OPEN')
   // 开场引导（KI-111 后续）：新鲜开局给一句操作/目标提示，避免玩家陷在黑场里不知道干什么
-  bus.emit('ui.notify', { text: 'WASD 移动 · 鼠标视角 · E 交互 · 走向发光的调音桩开始', kind: 'info' })
+  bus.emit('ui.notify', { text: 'WASD 移动 · 鼠标视角 · E 交互 · Tab 地图', kind: 'info' })
+  // KI-138：开场两拍要说清"第一件该干什么"。**只说操作是半句**（实测反馈「不知道要干什么」）：
+  // 拍 1 是醒来，拍 2 是"休垒建立基地"（production-plan §6.1）——那两拍里玩家真正要做的是
+  // ① 找钟声守铃姨领第一件委托（她就在休垒，8/0/26），② 顺路在发光的调音桩上加点。
+  // **不给坐标**：坐标由目标指示那枚箭头给（KI-137），这里只说"找谁"。
+  bus.emit('ui.notify', { text: '休垒的钟声守在等你 —— 找她领第一件委托（发光的调音桩可以先加点）', kind: 'info' })
   bus.emit('ui.notify', { text: `音级 ${rpg.prog.rank} · 遗响 ${rpg.prog.xp}${rpg.prog.unspent > 0 ? ` · 未分配点 ${rpg.prog.unspent}` : ''}`, kind: 'info' })
   booted = true
   loop.start()

@@ -141,7 +141,7 @@ const STATUS_FIELDS = {
 const MOVEMENT_ACTIONS = new Set(['weaponSkill', 'weaponSkillB'])
 /** 里程碑 grant 的字段白名单：`schema.ts > MilestoneGrant`。每一项都必须有消费方
  *  （`Progression.derive` 或 mods 出口）；语义写在那条声明自己的注释里，这里不再抄一份。 */
-export const GRANT_FIELDS = ['loadFlat', 'parryWhiffMs', 'execMulPct', 'overdriveFlat', 'corruptionStayPct', 'bowForkBranches']
+export const GRANT_FIELDS = ['loadFlat', 'parryWhiffMs', 'execMulPct', 'overdriveFlat', 'corruptionStayPct', 'bowForkBranches', 'rollStaminaFlat']
 /** 战技帧的字段白名单： MovementFrame（schema.ts）。多一个字段就必须多一个消费方 */
 const MOVE_FRAME_FIELDS = ['startup', 'activeStart', 'activeEnd', 'recovery', 'poise', 'hitStopMs', 'hitbox', 'multi', 'shake', 'sfx', 'vfx', 'loudness']
 /** 战技每级的数值字段： MovementLevel。同样一字段一消费口 */
@@ -925,6 +925,42 @@ function validateProgression() {
    * UI_BOUND 承诺的是**承载体在表现层**（字段腿与它并存不构成为假，例如某个 HUD 刻度同时给负重加成）。
    * 所以"有腿就红"只对 pending 用；两边共用的是"id 必须还在表里"。
    */
+  /**
+   * **身份效果表**（§8.2「任一维触及 35 = 该维专属效果」，KI-138）的判据。
+   *
+   * ① 那一维必须在 `progression.json > attrs` 里（不认识的维 = 永远不触发）；
+   * ② 门槛必须是正数（0 意味着"出生即有"，那不是"触及 35"）；
+   * ③ `grant` 不许空（空效果 = 一行没人读的数据）；
+   * ④ grant 的字段必须在 `GRANT_FIELDS` 里（加字段必须同时在 `Progression.derive` 接线）；
+   * ⑤ **门槛的里程碑必须存在**（`ms_identity`）——那一行是"终局那一档"的 rank 主人。
+   */
+  const identityRows = d.identityEffects
+  if (identityRows !== undefined) {
+    if (!isArr(identityRows)) report.error(file, 'identityEffects', '必须是数组（可以为空数组，但不能缺类型）')
+    else {
+      const attrKeys = new Set((d.attrs ?? []).map((a) => a?.key).filter((k) => isStr(k)))
+      const msIds = new Set((d.milestones ?? []).map((m) => m?.id).filter((x) => isStr(x)))
+      identityRows.forEach((row, i) => {
+        const w = `identityEffects[${i}]`
+        if (!isObj(row)) { report.error(file, w, '必须是对象'); return }
+        if (!isStr(row.attr) || !attrKeys.has(row.attr)) {
+          report.error(file, `${w}.attr`, `悬空引用：'${row.attr}' 不在 progression.json > attrs 里`)
+        }
+        if (!isNum(row.min) || row.min <= 0) report.error(file, `${w}.min`, '必须是正数（"触及 35"的那个门槛）')
+        if (!isStr(row.label)) report.error(file, `${w}.label`, 'label 必填（面板/里程碑要念它）')
+        if (!isObj(row.grant) || Object.keys(row.grant).length === 0) {
+          report.error(file, `${w}.grant`, '必须带至少一个效果字段（空效果 = 一行没人读的数据）')
+        } else {
+          for (const k of Object.keys(row.grant)) {
+            if (!GRANT_FIELDS.includes(k)) report.error(file, `${w}.grant.${k}`, `不认的 grant 字段（只认 ${GRANT_FIELDS.join('/')}）`)
+            if (!isNum(row.grant[k])) report.error(file, `${w}.grant.${k}`, '必须是有限数')
+          }
+        }
+        if (!msIds.has('ms_identity')) report.error(file, w, '门槛里程碑 ms_identity 不在 milestones 里：身份效果没有 rank 门槛')
+      })
+    }
+  }
+
   for (const e of milestoneLedgerErrors({ pending: PENDING_MILESTONE_GRANTS, uiBound: UI_BOUND_MILESTONES, rows: d.milestones, movementMsIds })) {
     report.error(file, e.key, e.msg)
   }
