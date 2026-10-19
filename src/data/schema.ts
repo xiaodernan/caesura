@@ -170,6 +170,11 @@ export interface MovesetData {
 }
 
 export interface WeaponData {
+  /**
+   * 武器拖尾的配置 id（Phase B4，KI-135）：省略 = 这把武器没有拖尾。
+   * 值必须落在 `vfx.json > trails` 的 id 段里（那边是唯一真源）。
+   */
+  trail?: string
   id: string
   nameKey: string
   archetype: 'straight_sword' | 'greatsword' | 'spear' | 'bow' | 'staff' | 'unique' | 'needle'
@@ -1583,6 +1588,107 @@ export interface LightingRow {
    * 每颗数都必须在 `scripts/lighting-rules.mjs > LIGHT_RULINGS` 上挂着裁决理由（判据 L1）。
    */
   lights?: LightingLights
+}
+
+/**
+ * 表现层三件套的配置表（Phase B4，KI-135）：`vfx.json` 的三段行形状。
+ *
+ * **这些是数据形状（纯 JSON，没有 three）**：颜色写 hex 字符串、向量写 `{x,y,z}`、
+ * 混合模式写名字（`normal` / `additive` / `multiply`）。
+ * 转成 three 的那一步住在 `vfx/VfxConfig.ts`——**表现层自己转**，
+ * 依赖方向单向（数据层不认识 three，战斗层也不认识）。
+ *
+ * 判据（值域、hex 合法、id 跨段不重名）住 `scripts/vfx-rules.mjs`。
+ */
+
+/** 一张贴花的配置行（弹痕 / 血迹 / 焦痕 / 裂痕） */
+export interface VfxDecalRow {
+  id: string
+  /** 贴花类型 */
+  type: 'bullet' | 'impact' | 'footstep' | 'blood' | 'scorch' | 'crack' | 'custom'
+  /** 生命周期（秒），-1 = 永久 */
+  lifetime: number
+  /** 淡入 / 淡出时长（秒） */
+  fadeIn: number
+  fadeOut: number
+  /** 尺寸区间（米） */
+  size: { min: number; max: number }
+  /** 颜色（hex）与不透明度 */
+  color: { base: string; opacity: number }
+  /** 法线强度（贴花投影的凹凸） */
+  normalStrength: number
+  /** 粗糙度 / 金属度偏移 */
+  roughnessOffset: number
+  metalnessOffset: number
+  /** 是否随机旋转 / 随机缩放 */
+  randomRotation: boolean
+  randomScale: boolean
+  /** 同时存在的上限（池子大小） */
+  maxInstances: number
+}
+
+/** 一条拖尾的配置行（武器拖尾 / 弹道拖尾） */
+export interface VfxTrailRow {
+  id: string
+  /** 顶点数（历史帧数） */
+  segments: number
+  /** 宽度曲线 [根部, 尖端] */
+  width: [number, number]
+  /** 颜色渐变 [根部, 尖端] */
+  color: [string, string]
+  /** 生命周期（秒） */
+  lifetime: number
+  /** 混合模式 */
+  blending: 'normal' | 'additive' | 'multiply'
+  /** 是否随武器旋转 */
+  followRotation: boolean
+  /** 最小发射间距（米） */
+  minEmitDist: number
+}
+
+/** 一个粒子发射器的配置行 */
+export interface VfxEmitterRow {
+  id: string
+  type: 'burst' | 'stream' | 'trail' | 'ribbon'
+  /** 粒子上限 */
+  maxParticles: number
+  /** 生成率：stream 是每秒个数，burst 是一次性个数 */
+  spawnRate: number
+  /** 生成形状 */
+  spawnShape: 'point' | 'sphere' | 'box' | 'cone' | 'disc'
+  /** 生成范围（米） */
+  spawnSize: { x: number; y: number; z: number }
+  /** 寿命区间（秒） */
+  lifetime: { min: number; max: number }
+  /** 尺寸两端（米） */
+  size: { start: number; end: number }
+  /** 颜色两端 */
+  color: { start: string; end: string }
+  /** 初始速度区间（米/秒） */
+  velocity: { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number } }
+  /** 加速度（米/秒²） */
+  acceleration: { x: number; y: number; z: number }
+  /** 重力（米/秒²，负数向下） */
+  gravity: number
+  /** 阻尼（每秒） */
+  drag: number
+  /** 混合模式 */
+  blending: 'normal' | 'additive' | 'multiply'
+  /** 是否写深度 */
+  depthWrite: boolean
+  /** 是否随距离缩小 */
+  sizeAttenuation: boolean
+  /** 轨迹型专用：轨迹长度（帧） */
+  trailLength?: number
+  /** 缎带型专用：缎带宽度 */
+  ribbonWidth?: number
+}
+
+/** `vfx.json` 整张表：三段（与 `movements.json` 同一族"一张表几段"的形状） */
+export interface VfxTable {
+  decals: VfxDecalRow[]
+  trails: VfxTrailRow[]
+  emitters: VfxEmitterRow[]
 }
 
 /**

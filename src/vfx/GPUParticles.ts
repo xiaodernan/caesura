@@ -1,6 +1,8 @@
 import * as THREE from 'three'
 import { bus } from '@/core/EventBus'
 import { registry } from '@/core/Registry'
+import type { VfxEmitterRow } from '@/data/schema'
+import { toEmitterConfig } from './VfxConfig'
 
 /**
  * GPU 粒子系统（Phase B4 结案落点，tech-arch §1 Niagara 映射）。
@@ -263,11 +265,11 @@ export class GPUParticles {
   }
 
   private loadConfigs(): void {
-    // 从 registry 读取 JSON 配置（构建期打包）。
-    // 'vfx:emitters' 这张表全仓还没有写方（数据侧是另一批的活）：
-    // 用 maybeGet 取，取不到＝没有配置，系统照常构造，只是什么都不画。
-    const configs = registry.maybeGet<EmitterConfig[]>('vfx:emitters') ?? []
-    for (const cfg of configs) {
+    // 配置来自 `vfx.json > emitters`（数据层，KI-135）：表里是纯 JSON，转 three 的那一步在
+    // `VfxConfig.ts`（表现层自己转）。取不到＝没有配置，系统照常构造，只是什么都不画。
+    const rows = registry.maybeGet<VfxEmitterRow[]>('vfx:emitters') ?? []
+    for (const row of rows) {
+      const cfg = toEmitterConfig(row)
       this.configs.set(cfg.id, cfg)
     }
   }
@@ -331,13 +333,33 @@ export function getGPUParticles(): GPUParticles | null {
   return gpuParticles
 }
 
+/**
+ * 总线上的载荷是纯 `{x,y,z}`（发射方住在战斗层／AI 层，那些层不许 import three），
+ * 表现层在这一处把它转成 three 的向量。**转换点只有一个**：谁在表现层，谁转。
+ */
+const vec3 = (p: { x: number; y: number; z: number }): THREE.Vector3 => new THREE.Vector3(p.x, p.y, p.z)
+
 /** 便捷函数：注册到 bus 供系统调用 */
-export function registerGPUParticlesBus(): void {
-  bus.on('vfx.burst', (data: { id: string; pos: THREE.Vector3; count?: number }) => {
-    gpuParticles?.burst(data.id, data.pos, data.count)
+/**
+ * 接上**命中爆发**这一条发射方（KI-135）：`combat.hit` 带着命中点（`point`），
+ * 粒子就在那一点炸开。**只有真打中才炸**——`result` 是 `immune`（无敌帧）的那一记不炸，
+ * 挡下来（`block`/`perfectBlock`）与弹反（`parry`）各有自己的形状，不归这一格。
+ *
+ * 发射方住在表现层：战斗层已经发了 `combat.hit`，表现层自己听、自己炸。
+ */
+export function registerHitBurstEmitter(): void {
+  bus.on('combat.hit', (h) => {
+    if (h.result !== 'hit' && h.result !== 'graze') return
+    gpuParticles?.burst('fx_hit_spark', new THREE.Vector3(h.point.x, h.point.y, h.point.z))
   })
-  bus.on('vfx.stream', (data: { id: string; pos: THREE.Vector3 }) => {
-    gpuParticles?.stream(data.id, data.pos)
+}
+
+export function registerGPUParticlesBus(): void {
+  bus.on('vfx.burst', (data: { id: string; pos: { x: number; y: number; z: number }; count?: number }) => {
+    gpuParticles?.burst(data.id, vec3(data.pos), data.count)
+  })
+  bus.on('vfx.stream', (data: { id: string; pos: { x: number; y: number; z: number } }) => {
+    gpuParticles?.stream(data.id, vec3(data.pos))
   })
   bus.on('vfx.remove', (id: string) => {
     gpuParticles?.remove(id)
@@ -346,13 +368,18 @@ export function registerGPUParticlesBus(): void {
 
 /**
  * 本文件用到的三条事件，声明跟着写方走（写方与读方都在这个文件里，名字不写第二份）。
+ *
+ * **载荷是普通 `{x,y,z}`，不是 `THREE.Vector3`**（KI-135）：发射方住在战斗层／AI 层，
+ * 而那些层**不许 import three**（`tests/unit/arch-boundaries.test.ts`：three 只在表现层出现）。
+ * 载荷要是 `THREE.Vector3`，发射方就得为了发一个事件把 three 拖进战斗层——那是拿依赖方向
+ * 换一条特效通道。约定与 `vfx.request` 同一族：总线上跑的是**纯数据**，表现层自己转 three。
  */
 declare module '@/core/EventBus' {
   interface GameEvents {
     /** 一次性爆发：发射方＝命中/处决/技能特效的一方，接收方＝本文件的 GPUParticles。 */
-    'vfx.burst': { id: string; pos: THREE.Vector3; count?: number }
+    'vfx.burst': { id: string; pos: { x: number; y: number; z: number }; count?: number }
     /** 持续流（火焰、魔法光环）：发射方＝持有发射器的一方，接收方＝本文件的 GPUParticles。 */
-    'vfx.stream': { id: string; pos: THREE.Vector3 }
+    'vfx.stream': { id: string; pos: { x: number; y: number; z: number } }
     /** 移除某个发射器：发射方＝要收掉它的一方，接收方＝本文件的 GPUParticles（载荷就是 id 本身）。 */
     'vfx.remove': string
   }

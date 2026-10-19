@@ -60,6 +60,7 @@ import { cinematicBudgetErrors, cinematicReferenceErrors } from './cinematic-rul
 // KI-094 同族：§37 区域光照预设表（`lp_*`）那几条**跨文件**判据的本体。这里只把 regions.json 里
 // 被指着的名字读出来当输入，再把 findings 报成 ERROR。
 import { LIGHTING_FIELDS, lightingFindings } from './lighting-rules.mjs'
+import { vfxFindings } from './vfx-rules.mjs'
 // KI-100：世界图那三条**几何**判据的本体（同一族理由：要在测试里喂一条"落点正踩在两个区的缝上"的边、
 // 一个"锚点排成一条直线"的区域，看它拒不拒）。这里只把 `regions.json` 递给它，再把 findings 报成 ERROR。
 import { worldGraphFindings } from './world-graph-rules.mjs'
@@ -72,7 +73,7 @@ import { mapFindings } from './validator-map-rules.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const JSON_DIR = resolve(ROOT, 'src/data/json')
-const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json', 'shop.json', 'states.json', 'ambience.json', 'explore.json', 'battle.json', 'ducking.json', 'weather.json', 'cinematics.json', 'lighting.json']
+const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json', 'shop.json', 'states.json', 'ambience.json', 'explore.json', 'battle.json', 'ducking.json', 'weather.json', 'cinematics.json', 'lighting.json', 'vfx.json']
 // Phase 6-B：对话风格枚举与任务标注（narrative.md §3.2 / §28 图例）
 const CHOICE_STYLES = new Set(['blunt', 'poetic', 'silent', 'provoke'])
 const QUEST_TAGS = new Set(['D', 'C', 'H', 'M'])
@@ -114,7 +115,7 @@ const PSEUDO_ACTIONS = new Set(['chase', 'backstep', 'hold'])
 /** WeaponData 的字段全集（KI-047）：每一格都必须有真实消费方，多余键一律 ERROR——
  *  曾有的 `atkBase` 就是从这里出去的：底数住在 movesets.json 的帧表，武器表再带一份
  *  "看起来是价格"的数，KI-039 的错价才躲过了整轮验收。 */
-const WEAPON_FIELDS = new Set(['id', 'nameKey', 'archetype', 'movesetId', 'scaling', 'swingTag', 'skill', 'poiseMul', 'noiseMul', 'stealthKillFrac', 'heavyAlertBackstab', 'falloff'])
+const WEAPON_FIELDS = new Set(['id', 'nameKey', 'archetype', 'movesetId', 'scaling', 'swingTag', 'skill', 'poiseMul', 'noiseMul', 'stealthKillFrac', 'heavyAlertBackstab', 'falloff', 'trail'])
 /** 出身被动的类型白名单（KI-031③）：加一种 kind = 承诺带来一个消费者，反向探针守着那句话 */
 const ORIGIN_PASSIVE_KINDS = ['lootStackBonus']
 /** 营地商店那三张字段白名单（KI-055）：主人分别是 ShopData / ShopSell / ShopStockEntry */
@@ -2919,6 +2920,22 @@ function validateLighting() {
   }
   for (const e of lightingFindings(file, rows, referenced)) report.error(file, e.where, e.msg)
 }
+
+/**
+ * 表现层三件套配置表（Phase B4）的判据落点。判据本体住 `vfx-rules.mjs`
+ * （贴花/拖尾/发射器三段各自的值域、hex 合法、id 跨段不重名），
+ * 与 `lightingFindings` 同一族纪律：判据要能被合成夹具喂，也要能被校验器读**同一份**实现。
+ *
+ * 排在最后：它不读别的表（只读自己），但**发射方那几条 id** 要在别处对账（见 `tests/unit/vfx-table.test.ts`）。
+ */
+function validateVfx() {
+  const file = 'vfx.json'
+  if (!isObj(data[file])) return
+  for (const e of vfxFindings(file, data[file])) report.error(file, e.where, e.why)
+}
+
+// KI-135：表现层三件套的配置表（贴花/拖尾/发射器）——判据住 `vfx-rules.mjs`
+validateVfx()
 
 /**
  * §6 过场清单（需求 §31）的判据落点。判据本体住 `cinematic-rules.mjs`（单条 ≤25s / 全清单 ≤180s、

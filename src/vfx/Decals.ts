@@ -1,6 +1,8 @@
 import * as THREE from 'three'
 import { bus } from '@/core/EventBus'
 import { registry } from '@/core/Registry'
+import type { VfxDecalRow } from '@/data/schema'
+import { toDecalConfig } from './VfxConfig'
 
 /**
  * 贴花系统（Phase B4 结案落点，tech-arch §1 Decals 映射）。
@@ -124,10 +126,11 @@ export class DecalSystem {
   }
 
   private loadConfigs(): void {
-    // 'vfx:decals' 这张表全仓还没有写方（数据侧是另一批的活）：
-    // 用 maybeGet 取，取不到＝没有配置，系统照常构造，只是什么都不画。
-    const configs = registry.maybeGet<DecalConfig[]>('vfx:decals') ?? []
-    for (const cfg of configs) {
+    // 配置来自 `vfx.json > decals`（数据层，KI-135）：表里是纯 JSON，转 three 的那一步在
+    // `VfxConfig.ts`（表现层自己转）。取不到＝没有配置，系统照常构造，只是什么都不画。
+    const rows = registry.maybeGet<VfxDecalRow[]>('vfx:decals') ?? []
+    for (const row of rows) {
+      const cfg = toDecalConfig(row)
       this.configs.set(cfg.id, cfg)
     }
   }
@@ -328,24 +331,46 @@ export function getDecalSystem(): DecalSystem | null {
   return decalSystem
 }
 
+/**
+ * 总线上的载荷是纯 `{x,y,z}`（发射方住在战斗层／AI 层，那些层不许 import three），
+ * 表现层在这一处把它转成 three 的向量。**转换点只有一个**：谁在表现层，谁转。
+ */
+const vec3 = (p: { x: number; y: number; z: number }): THREE.Vector3 => new THREE.Vector3(p.x, p.y, p.z)
+
+/**
+ * 接上**倒地贴花**这一条发射方（KI-135）：`entity.died` 是"某个实体死了"的世界事件，
+ * 贴花要落在地上 ⇒ 法线取 (0,1,0)。
+ *
+ * **发射方住在表现层**，不在战斗层：战斗层只管"谁死了"（`entity.died` 已经有那个读者），
+ * 要它再为"地上要留一块血"发一条事件，就是给表现层的事找了个战斗层的地址。
+ *
+ * 贴花种类按 `kind` 分：敌人倒地是血，玩家倒地不贴（玩家的死是另一条叙事线，不该在地上留块红）。
+ */
+export function registerDecalDeathEmitter(): void {
+  bus.on('entity.died', (e) => {
+    if (e.kind !== 'enemy') return
+    decalSystem?.spawn('decal_blood', new THREE.Vector3(e.position.x, e.position.y, e.position.z), new THREE.Vector3(0, 1, 0))
+  })
+}
+
 export function registerDecalSystemBus(): void {
   bus.on('vfx.decal.spawn', (data: {
     configId: string
-    pos: THREE.Vector3
-    normal: THREE.Vector3
+    pos: { x: number; y: number; z: number }
+    normal: { x: number; y: number; z: number }
     rotation?: number
     scale?: number
   }) => {
-    decalSystem?.spawn(data.configId, data.pos, data.normal, data)
+    decalSystem?.spawn(data.configId, vec3(data.pos), vec3(data.normal), data)
   })
   bus.on('vfx.decal.batch', (data: {
     configId: string
-    positions: THREE.Vector3[]
-    normal: THREE.Vector3
+    positions: { x: number; y: number; z: number }[]
+    normal: { x: number; y: number; z: number }
     rotation?: number
     scale?: number
   }) => {
-    decalSystem?.spawnBatch(data.configId, data.positions, data.normal, data)
+    decalSystem?.spawnBatch(data.configId, data.positions.map(vec3), vec3(data.normal), data)
   })
   bus.on('vfx.decal.clear', (configId?: string) => {
     decalSystem?.clear(configId)
@@ -354,6 +379,10 @@ export function registerDecalSystemBus(): void {
 
 /**
  * 本文件用到的三条事件，声明跟着写方走（写方与读方都在这个文件里，名字不写第二份）。
+ * **载荷是普通 `{x,y,z}`，不是 `THREE.Vector3`**（KI-135）：发射方住在战斗层／AI 层，
+ * 而那些层**不许 import three**（`tests/unit/arch-boundaries.test.ts`：three 只在表现层出现）。
+ * 载荷要是 `THREE.Vector3`，发射方就得为了发一个事件把 three 拖进战斗层——那是拿依赖方向
+ * 换一条特效通道。约定与 `vfx.request` 同一族：总线上跑的是**纯数据**，表现层自己转 three。
  */
 declare module '@/core/EventBus' {
   interface GameEvents {
@@ -368,8 +397,8 @@ declare module '@/core/EventBus' {
     /** 批量生成贴花（爆炸碎片、脚印序列）：发射方＝一次性给一串位置的一方，接收方＝本文件的 DecalSystem。 */
     'vfx.decal.batch': {
       configId: string
-      positions: THREE.Vector3[]
-      normal: THREE.Vector3
+      positions: { x: number; y: number; z: number }[]
+      normal: { x: number; y: number; z: number }
       rotation?: number
       scale?: number
     }

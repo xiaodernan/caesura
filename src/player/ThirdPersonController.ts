@@ -486,6 +486,24 @@ export class PlayerController {
         this.pos.x += Math.sin(this.yaw) * step
         this.pos.z += Math.cos(this.yaw) * step
       }
+      /**
+       * KI-135：武器拖尾的发射方。**在判定窗内每帧发一次**——拖尾要的是"刃口这一路的轨迹"，
+       * 一次性的事件只能给出起点，给不出轨迹。位置是刃口的近似（玩家身前 1.0m、地上 0.2m），
+       * 朝向是玩家面朝的方向，up 取世界上方向（不是相机 up：拖尾属于世界，不属于镜头）。
+       *
+       * 发不发由**武器表**决定（`weapons.json > trail`）：弓与法杖没有这一格 ⇒ 不发
+       * （弓的拖尾是弹道那一族，走 `vfx.trail.projectile`）。
+       */
+      if (this.weapon.trail && this.action.tick >= f.activeStart && this.action.tick <= f.activeEnd) {
+        const fx = Math.sin(this.yaw)
+        const fz = Math.cos(this.yaw)
+        bus.emit('vfx.trail.weapon', {
+          id: this.weapon.trail,
+          pos: { x: this.pos.x + fx * 1.0, y: this.pos.y + 0.2, z: this.pos.z + fz * 1.0 },
+          forward: { x: fx, y: 0, z: fz },
+          up: { x: 0, y: 1, z: 0 }
+        })
+      }
       // 战技位移（错拍步）：走**判定窗**这几 tick，一步的距离由等级表给。
       // 它和 lunge 分开写，是因为两者的时间轴口径本来就不同：lunge 是招式自带的前冲（按
       // startup 起算的老约定），位移是"从出声到落地的这几格"。合并就会改动既有武器的落点。

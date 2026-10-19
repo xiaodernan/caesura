@@ -23,6 +23,8 @@ export interface UntrackedImport {
   reason: 'missing' | 'untracked'
 }
 
+/** `@/` 别名的前缀（`@/vfx/Trails`） */
+export const ALIAS_PREFIX: string
 /** `@/` 别名的根（与 `tsconfig.json > compilerOptions.paths` 对齐） */
 export const ALIAS_ROOT: string
 /** 解析一个本地说明符时的候选落点（按这个顺序试，第一个存在的算它） */

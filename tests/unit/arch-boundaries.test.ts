@@ -38,6 +38,8 @@ const PRESENTATION = new Set([
   'tools/EnemyDebugger.ts', 'tools/QuestDebugger.ts', 'tools/AIDebugger.ts',
   'vfx/VfxLayer.ts', 'vfx/materials.ts', 'vfx/ColorGrade.ts',
   'vfx/RainSystem.ts', 'vfx/Trails.ts', 'vfx/Decals.ts', 'vfx/GPUParticles.ts',
+  // KI-135：配置转换层（数据是纯 JSON，hex/向量/混合模式 → three 的那一步在表现层）
+  'vfx/VfxConfig.ts',
   'world/ActorVisuals.ts', 'world/ChunkGreybox.ts', 'world/InteractableGreybox.ts',
   'world/WallGreybox.ts',
   'world/ProjectileVisuals.ts', 'world/BossArenaVisuals.ts', 'world/PlaceholderArena.ts', 'world/PropVisuals.ts',

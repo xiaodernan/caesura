@@ -1,0 +1,151 @@
+{
+  "decals": [
+    {
+      "id": "decal_blood",
+      "type": "blood",
+      "lifetime": 25,
+      "fadeIn": 0.15,
+      "fadeOut": 2.5,
+      "size": { "min": 0.5, "max": 1.15 },
+      "color": { "base": "#4a0c10", "opacity": 0.85 },
+      "normalStrength": 0.35,
+      "roughnessOffset": 0.15,
+      "metalnessOffset": 0,
+      "randomRotation": true,
+      "randomScale": true,
+      "maxInstances": 24
+    },
+    {
+      "id": "decal_scorch",
+      "type": "scorch",
+      "lifetime": 14,
+      "fadeIn": 0.1,
+      "fadeOut": 1.8,
+      "size": { "min": 0.45, "max": 0.9 },
+      "color": { "base": "#120e0c", "opacity": 0.7 },
+      "normalStrength": 0.6,
+      "roughnessOffset": -0.2,
+      "metalnessOffset": 0,
+      "randomRotation": true,
+      "randomScale": true,
+      "maxInstances": 16
+    },
+    {
+      "id": "decal_impact",
+      "type": "impact",
+      "lifetime": 9,
+      "fadeIn": 0.05,
+      "fadeOut": 1.2,
+      "size": { "min": 0.12, "max": 0.3 },
+      "color": { "base": "#cfd2d6", "opacity": 0.55 },
+      "normalStrength": 0.2,
+      "roughnessOffset": 0.3,
+      "metalnessOffset": 0.1,
+      "randomRotation": true,
+      "randomScale": false,
+      "maxInstances": 32
+    },
+    {
+      "id": "decal_crack",
+      "type": "crack",
+      "lifetime": 40,
+      "fadeIn": 0.2,
+      "fadeOut": 3,
+      "size": { "min": 0.3, "max": 0.75 },
+      "color": { "base": "#2b2b30", "opacity": 0.6 },
+      "normalStrength": 0.8,
+      "roughnessOffset": 0.25,
+      "metalnessOffset": 0,
+      "randomRotation": true,
+      "randomScale": true,
+      "maxInstances": 20
+    }
+  ],
+  "trails": [
+    {
+      "id": "trail_blade",
+      "segments": 14,
+      "width": [0.09, 0.015],
+      "color": ["#dcefff", "#6fa8ff"],
+      "lifetime": 0.22,
+      "blending": "additive",
+      "followRotation": true,
+      "minEmitDist": 0.04
+    },
+    {
+      "id": "trail_arrow",
+      "segments": 10,
+      "width": [0.05, 0.01],
+      "color": ["#ffe9b0", "#ff9a3c"],
+      "lifetime": 0.18,
+      "blending": "additive",
+      "followRotation": false,
+      "minEmitDist": 0.08
+    }
+  ],
+  "emitters": [
+    {
+      "id": "fx_hit_spark",
+      "type": "burst",
+      "maxParticles": 64,
+      "spawnRate": 14,
+      "spawnShape": "sphere",
+      "spawnSize": { "x": 0.18, "y": 0.18, "z": 0.18 },
+      "lifetime": { "min": 0.16, "max": 0.4 },
+      "size": { "start": 0.07, "end": 0.0 },
+      "color": { "start": "#fff4cf", "end": "#ff7a2f" },
+      "velocity": {
+        "min": { "x": -3.2, "y": 0.8, "z": -3.2 },
+        "max": { "x": 3.2, "y": 5.2, "z": 3.2 }
+      },
+      "acceleration": { "x": 0, "y": -9.8, "z": 0 },
+      "gravity": -9.8,
+      "drag": 2.4,
+      "blending": "additive",
+      "depthWrite": false,
+      "sizeAttenuation": true
+    },
+    {
+      "id": "fx_death_burst",
+      "type": "burst",
+      "maxParticles": 96,
+      "spawnRate": 22,
+      "spawnShape": "sphere",
+      "spawnSize": { "x": 0.4, "y": 0.4, "z": 0.4 },
+      "lifetime": { "min": 0.35, "max": 0.9 },
+      "size": { "start": 0.12, "end": 0.0 },
+      "color": { "start": "#e6f0ff", "end": "#6a4cff" },
+      "velocity": {
+        "min": { "x": -2.4, "y": 0.6, "z": -2.4 },
+        "max": { "x": 2.4, "y": 4.2, "z": 2.4 }
+      },
+      "acceleration": { "x": 0, "y": -6.5, "z": 0 },
+      "gravity": -6.5,
+      "drag": 1.6,
+      "blending": "additive",
+      "depthWrite": false,
+      "sizeAttenuation": true
+    },
+    {
+      "id": "fx_dust",
+      "type": "burst",
+      "maxParticles": 40,
+      "spawnRate": 10,
+      "spawnShape": "disc",
+      "spawnSize": { "x": 0.35, "y": 0.12, "z": 0.35 },
+      "lifetime": { "min": 0.3, "max": 0.75 },
+      "size": { "start": 0.16, "end": 0.3 },
+      "color": { "start": "#b9b0a0", "end": "#6b6357" },
+      "velocity": {
+        "min": { "x": -1.1, "y": 0.2, "z": -1.1 },
+        "max": { "x": 1.1, "y": 1.4, "z": 1.1 }
+      },
+      "acceleration": { "x": 0, "y": -1.2, "z": 0 },
+      "gravity": -1.2,
+      "drag": 3.2,
+      "blending": "normal",
+      "depthWrite": false,
+      "sizeAttenuation": true
+    }
+  ]
+}

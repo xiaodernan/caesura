@@ -23,6 +23,7 @@ import duckingRaw from './json/ducking.json'
 import weatherRaw from './json/weather.json'
 import cinematicsRaw from './json/cinematics.json'
 import lightingRaw from './json/lighting.json'
+import vfxRaw from './json/vfx.json'
 import navmeshResthold from './json/navmesh/rg_resthold.navmesh.json'
 import navmeshWhisperwode from './json/navmesh/rg_whisperwode.navmesh.json'
 import navmeshDrownedChoir from './json/navmesh/rg_drowned_choir.navmesh.json'
@@ -30,7 +31,7 @@ import navmeshBrokenbarCamp from './json/navmesh/rg_brokenbar_camp.navmesh.json'
 import navmeshFellcarillon from './json/navmesh/rg_fellcarillon.navmesh.json'
 import navmeshEarlessDeeps from './json/navmesh/rg_earless_deeps.navmesh.json'
 import navmeshUnfinishedHall from './json/navmesh/rg_unfinished_hall.navmesh.json'
-import type { MovesetData, WeaponData, EnemyData, PlayerBaseData, RegionData, ProgressionData, ItemData, LootTableData, NpcData, DialogueData, QuestData, StatusConfig, MovementConfig, WorldStateRule, WorldStateDef, HitReactionTable, ShopData, AmbienceBed, ExploreScore, BattleScore, DuckRow, WeatherRow, CinematicRow, LightingRow } from './schema'
+import type { MovesetData, WeaponData, EnemyData, PlayerBaseData, RegionData, ProgressionData, ItemData, LootTableData, NpcData, DialogueData, QuestData, StatusConfig, MovementConfig, WorldStateRule, WorldStateDef, HitReactionTable, ShopData, AmbienceBed, ExploreScore, BattleScore, DuckRow, WeatherRow, CinematicRow, LightingRow, VfxTable } from './schema'
 
 export const playerBase = playerRaw as unknown as PlayerBaseData
 export const regions = regionsRaw as unknown as RegionData[]
@@ -81,6 +82,18 @@ export const cinematics = cinematicsRaw as unknown as CinematicRow[]
  */
 export const lightingRows = lightingRaw as unknown as LightingRow[]
 
+/**
+ * 表现层三件套的配置表（Phase B4：贴花 / 拖尾 / 发射器，KI-135）。
+ *
+ * **进 `registry`，但用三个带前缀的键**（`vfx:decals` / `vfx:trails` / `vfx:emitters`），
+ * 而不是把 id 一个个塞进顶层：这三张表的 id 与别处的 id（武器、招式、敌人）不在同一个命名空间里，
+ * 顶层混着会让"这个 id 指的是什么"变成猜的（`vfx-rules.mjs` 的跨段重名判据同源）。
+ *
+ * 读者：`vfx/Decals.ts`、`vfx/Trails.ts`、`vfx/GPUParticles.ts`——表现层自己读，
+ * 战斗层与 AI 层不碰它们（依赖方向单向）。
+ */
+export const vfxTable = vfxRaw as unknown as VfxTable
+
 let registered = false
 
 export function registerGameData(): void {
@@ -108,6 +121,10 @@ export function registerGameData(): void {
   for (const b of ambienceBeds) registry.register(b.id, b)
   for (const r of worldstate) registry.register(r.id, r)
   for (const s of worldStates) registry.register(s.key, s)
+  // 表现层三件套的配置（Phase B4）：三个带前缀的键，读者是表现层那三个文件
+  registry.register('vfx:decals', vfxTable.decals)
+  registry.register('vfx:trails', vfxTable.trails)
+  registry.register('vfx:emitters', vfxTable.emitters)
   // 导航网格（Phase B1）：每个区域的烘焙网格按 navmeshRef 的 key 进注册表
   registry.register('navmesh/rg_resthold.navmesh.json', navmeshResthold)
   registry.register('navmesh/rg_whisperwode.navmesh.json', navmeshWhisperwode)

@@ -1,6 +1,8 @@
 import * as THREE from 'three'
 import { bus } from '@/core/EventBus'
 import { registry } from '@/core/Registry'
+import type { VfxTrailRow } from '@/data/schema'
+import { toTrailConfig } from './VfxConfig'
 
 /**
  * 武器拖尾系统（Phase B4 结案落点，tech-arch §1 Trails 映射）。
@@ -200,10 +202,11 @@ export class TrailSystem {
   }
 
   private loadConfigs(): void {
-    // 'vfx:trails' 这张表全仓还没有写方（数据侧是另一批的活）：
-    // 用 maybeGet 取，取不到＝没有配置，系统照常构造，只是什么都不画。
-    const configs = registry.maybeGet<TrailConfig[]>('vfx:trails') ?? []
-    for (const cfg of configs) {
+    // 配置来自 `vfx.json > trails`（数据层，KI-135）：表里是纯 JSON，转 three 的那一步在
+    // `VfxConfig.ts`（表现层自己转）。取不到＝没有配置，系统照常构造，只是什么都不画。
+    const rows = registry.maybeGet<VfxTrailRow[]>('vfx:trails') ?? []
+    for (const row of rows) {
+      const cfg = toTrailConfig(row)
       this.configs.set(cfg.id, cfg)
     }
   }
@@ -276,12 +279,18 @@ export function getTrailSystem(): TrailSystem | null {
   return trailSystem
 }
 
+/**
+ * 总线上的载荷是纯 `{x,y,z}`（发射方住在战斗层／AI 层，那些层不许 import three），
+ * 表现层在这一处把它转成 three 的向量。**转换点只有一个**：谁在表现层，谁转。
+ */
+const vec3 = (p: { x: number; y: number; z: number }): THREE.Vector3 => new THREE.Vector3(p.x, p.y, p.z)
+
 export function registerTrailSystemBus(): void {
-  bus.on('vfx.trail.weapon', (data: { id: string; pos: THREE.Vector3; forward: THREE.Vector3; up: THREE.Vector3 }) => {
-    trailSystem?.updateWeapon(data.id, data.pos, data.forward, data.up, 1/60)
+  bus.on('vfx.trail.weapon', (data: { id: string; pos: { x: number; y: number; z: number }; forward: { x: number; y: number; z: number }; up: { x: number; y: number; z: number } }) => {
+    trailSystem?.updateWeapon(data.id, vec3(data.pos), vec3(data.forward), vec3(data.up), 1/60)
   })
-  bus.on('vfx.trail.projectile', (data: { id: string; pos: THREE.Vector3; vel: THREE.Vector3 }) => {
-    trailSystem?.updateProjectile(data.id, data.pos, data.vel, 1/60)
+  bus.on('vfx.trail.projectile', (data: { id: string; pos: { x: number; y: number; z: number }; vel: { x: number; y: number; z: number } }) => {
+    trailSystem?.updateProjectile(data.id, vec3(data.pos), vec3(data.vel), 1/60)
   })
   bus.on('vfx.trail.hide', (id: string) => {
     trailSystem?.setVisible(id, false)
@@ -290,13 +299,17 @@ export function registerTrailSystemBus(): void {
 
 /**
  * 本文件用到的三条事件，声明跟着写方走（写方与读方都在这个文件里，名字不写第二份）。
+ * **载荷是普通 `{x,y,z}`，不是 `THREE.Vector3`**（KI-135）：发射方住在战斗层／AI 层，
+ * 而那些层**不许 import three**（`tests/unit/arch-boundaries.test.ts`：three 只在表现层出现）。
+ * 载荷要是 `THREE.Vector3`，发射方就得为了发一个事件把 three 拖进战斗层——那是拿依赖方向
+ * 换一条特效通道。约定与 `vfx.request` 同一族：总线上跑的是**纯数据**，表现层自己转 three。
  */
 declare module '@/core/EventBus' {
   interface GameEvents {
     /** 武器拖尾：发射方＝持武器的一方（战斗层每帧递一次武器根节点的位置与朝向），接收方＝本文件的 TrailSystem。 */
-    'vfx.trail.weapon': { id: string; pos: THREE.Vector3; forward: THREE.Vector3; up: THREE.Vector3 }
+    'vfx.trail.weapon': { id: string; pos: { x: number; y: number; z: number }; forward: { x: number; y: number; z: number }; up: { x: number; y: number; z: number } }
     /** 弹道/投射物拖尾：发射方＝投射物的一方，接收方＝本文件的 TrailSystem。 */
-    'vfx.trail.projectile': { id: string; pos: THREE.Vector3; vel: THREE.Vector3 }
+    'vfx.trail.projectile': { id: string; pos: { x: number; y: number; z: number }; vel: { x: number; y: number; z: number } }
     /** 收起某条拖尾：发射方＝要隐藏武器的一方，接收方＝本文件的 TrailSystem（载荷就是 id 本身）。 */
     'vfx.trail.hide': string
   }

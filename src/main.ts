@@ -179,11 +179,21 @@ const vfx = new VfxLayer(arena.scene)
 const rain = new (await import('@/vfx/RainSystem')).RainSystem(arena.scene)
 const trails = (await import('@/vfx/Trails')).initTrailSystem(arena.scene)
 const decals = (await import('@/vfx/Decals')).initDecalSystem(arena.scene)
+/**
+ * KI-135：粒子系统**第一次被初始化**。此前只注册了总线（`registerGPUParticlesBus`），
+ * 而那个注册函数读的是模块级单例 `gpuParticles`——没人调 `initGPUParticles` 时它是 null，
+ * 于是 `vfx.burst` 这个频道"有人听、没人说"：命中爆发那条发射方接了也炸不出东西。
+ * 这一行就是那个 null 与"有东西可炸"之间的距离。
+ */
+;(await import('@/vfx/GPUParticles')).initGPUParticles(arena.scene)
 
 // VFX 系统总线注册（Phase B4）
 ;(await import('@/vfx/GPUParticles')).registerGPUParticlesBus()
 ;(await import('@/vfx/Trails')).registerTrailSystemBus()
 ;(await import('@/vfx/Decals')).registerDecalSystemBus()
+// KI-135：两条发射方（命中爆发、倒地贴花）——频道从此有人说
+;(await import('@/vfx/GPUParticles')).registerHitBurstEmitter()
+;(await import('@/vfx/Decals')).registerDecalDeathEmitter()
 
 // Squad 系统总线注册（Phase B5）
 ;(await import('@/ai/Squad')).registerSquadBus()
