@@ -1,6 +1,6 @@
 import { bus } from '@/core/EventBus'
 import { Vector3 } from 'three'
-import { GameTime, TICK_DT } from '@/core/Time'
+import { GameTime, TICK_DT, TICK_HZ } from '@/core/Time'
 import { GameLoop } from '@/core/GameLoop'
 import { Input, pumpMenu, type MenuOwner, type MenuPump } from '@/core/Input'
 import { RhythmClock } from '@/core/RhythmClock'
@@ -802,7 +802,7 @@ const core = {
     for (const e of liveEnemies) observe.track(e.id, e.pos.x, e.pos.z, t.tick)
     for (const p of observe.update(t.tick, player.pos.x, player.pos.z)) {
       // 大波纹从脉冲的出生点荡开（不是玩家此刻的位置——按住时走两步，两圈波纹就该错开）
-      vfx.observeWave(p.x, player.pos.y, p.z, OBSERVE_RADIUS, OBSERVE_TRAVEL_TICKS / 60)
+      vfx.observeWave(p.x, player.pos.y, p.z, OBSERVE_RADIUS, OBSERVE_TRAVEL_TICKS / TICK_HZ)
     }
     if (observe.active) {
       const marks = observe.takeMarks(
@@ -813,7 +813,7 @@ const core = {
       for (const m of marks) {
         vfx.observeMark(m.x, m.y, m.z, m.kind === 'enemy')
         // 敌人标记带来的来路快照画成地面波纹链（窗长秒数 = 行程 tick / 60，同一把尺）
-        if (m.trail?.length) vfx.observeTrail(m.trail, m.y, OBSERVE_TRAVEL_TICKS / 60)
+        if (m.trail?.length) vfx.observeTrail(m.trail, m.y, OBSERVE_TRAVEL_TICKS / TICK_HZ)
       }
     }
   },

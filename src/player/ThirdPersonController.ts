@@ -262,7 +262,7 @@ export class PlayerController {
 
   /** §7.3 常拍脚（KI-036）：被动等级给的宽限时长（秒），null = 没学。窗宽 ±80ms 是 strikeEnemy 的事 */
   setBeatGrace(durationSec: number | null): void {
-    this.beatGraceDuration = durationSec ? Math.round(durationSec * 60) : 0
+    this.beatGraceDuration = durationSec ? Math.round(durationSec * TICK_HZ) : 0
   }
 
   /** §7.3 轻身法（KI-036）：可取消段占演出的比例，null = 没学。取消窗按比例从演出末尾倒着量，不写第二份秒数 */

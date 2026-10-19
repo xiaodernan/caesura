@@ -1,3 +1,4 @@
+import { TICK_HZ } from '@/core/Time'
 import * as THREE from 'three'
 import { bus } from '@/core/EventBus'
 import { Pool } from '@/core/Pool'
@@ -531,7 +532,7 @@ export class VfxLayer {
   observeTrail(pts: readonly { x: number; z: number; age: number }[], py: number, windowSec: number): void {
     const sh = this.shape
     for (const p of pts) {
-      const k = Math.min(1, p.age / 60 / windowSec)
+      const k = Math.min(1, p.age / TICK_HZ / windowSec)
       sh.delay = 0; sh.width = 0.1; sh.split = 0; sh.fringe = 0.6; sh.wave = 0.25
       sh.intensity = 0.55 * (1 - k) + 0.08
       this.ring(p.x, py + 0.045, p.z, UP.x, UP.y, UP.z, this.colors.warmGold, 0.12 + 0.2 * k, 0.3 + 0.25 * k, 0.9)
