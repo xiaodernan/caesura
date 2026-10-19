@@ -161,13 +161,31 @@ export class Interactables {
       .filter((i) => dist2(i.pos, pos) <= r2 && this.regionOpen(i) && !this.used.has(i.id) && !this.stateLocked(i))
   }
 
+  /**
+   * 提示里**点名那个东西**（KI-136）。
+   *
+   * 原来一律接区域名 ⇒ 玩家看到的是「交谈 · 休垒 Resthold」：**区域名不是他要交互的东西**
+   * （休垒里有 40 多个可交互位）。而**名字其实已经在数据里**——NPC 的 `displayName`
+   * 住在 `npcs.json`（"铃姨"），只是没人读它。
+   *
+   * 口径：① NPC ⇒ 那个人的名字（数据侧现读，不抄第二份）；② 其余 ⇒ 区域名
+   * （那些交互位的 \`verb\` 已经在点名了："察看第四口钟"、"修复钟座"、"交易"）。
+   */
+  private labelOf(f: Interactable): string {
+    if (f.kind === 'npc' && f.npcId) {
+      const npc = registry.maybeGet<NpcData>(f.npcId)
+      if (npc?.displayName) return npc.displayName
+    }
+    return f.regionName
+  }
+
   /** 每 tick 调用：焦点变化时才发 UI 提示事件 */
   update(pos: Vec3): void {
     const f = this.focus(pos)
     const id = f ? f.id : null
     if (id === this.focused) return
     this.focused = id
-    bus.emit('ui.prompt', { text: f ? `${f.verb ?? VERB[f.kind]} · ${f.regionName}` : null, id })
+    bus.emit('ui.prompt', { text: f ? `${f.verb ?? VERB[f.kind]} · ${this.labelOf(f)}` : null, id })
   }
 
   use(id: string, pos: Vec3): InteractResult {
