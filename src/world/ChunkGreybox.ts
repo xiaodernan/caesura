@@ -57,6 +57,22 @@ export class ChunkGreybox {
   get liveFloors(): number { return this.slots.size }
   get peak(): number { return this.peakFloors }
 
+  /**
+   * **构造前就已加载的格**（组合根用一次，否则第一批要等到下一次跨格事件才现身）。
+   *
+   * 这和 `WallGreybox.syncLoaded` 是同一件事（KI-135）：组合根里
+   * `streaming.teleport(0, player.pos)` 发生在 `new ChunkGreybox(...)` **之前**——
+   * 那次传送已经把开局那一批 chunk 事件发出去了（state=active），而**那时还没人订阅**
+   * ⇒ 那些格子的地板**永远不会被铺上**：玩家开局站在 PlaceholderArena 那张深色大地面上，
+   * 整幅画面下半屏是黑的（实测 1.18/255；传送一次重新触发事件后 94.41/255）。
+   *
+   * **为什么这条要单独立一个入口**：事件是**一次性**的——补订阅救不了已经发完的那一批，
+   * 只能让表现层在构造之后**问一次"现在有哪些格是加载好的"**（墙灰盒与地板灰盒各一份）。
+   */
+  syncLoaded(chunks: Iterable<ChunkEvent>): void {
+    for (const c of chunks) this.apply(c)
+  }
+
   dispose(): void {
     this.unsub()
     for (const p of this.pools.values()) {

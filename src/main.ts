@@ -475,6 +475,23 @@ const greybox = new ChunkGreybox(arena.scene, regions, streaming.chunkSize)
 const wallGreybox = new WallGreybox(arena.scene, regions, (pos) => { const c = streaming.cellOf(pos); return chunkKeyOf(c.cx, c.cy, c.cz) })
 const loadedStates: ChunkState[] = ['active', 'resident', 'preloading']
 wallGreybox.syncLoaded(loadedStates.flatMap((s) => streaming.byState(s).map((c) => c.key))) // 构造前就加载好的格：等不到下一次跨格事件
+/**
+ * **地板灰盒也来一次**（KI-135）：`streaming.teleport(0, player.pos)` 在第 339 行就把开局那批
+ * chunk 事件发出去了，而 `new ChunkGreybox(...)` 在这之后 ⇒ 那些格子的地板**永远不会被铺上**。
+ * 后果不是"少一块地板"，是**玩家开局站在 PlaceholderArena 那张深色大地面上**：
+ * 整幅画面下半屏是黑的（实机像素读数：下半 1.18/255；传送一次重新触发事件后 94.41/255），
+ * 而这正是用户报的「场景太黑了，啥都看不清」。墙灰盒早就有了这个补丁（上面那行），
+ * 地板灰盒当时漏了——**同一族病，两个表现层只修了一个**。
+ */
+greybox.syncLoaded(loadedStates.flatMap((s) => streaming.byState(s).map((c) => ({
+  key: c.key,
+  regionId: c.regionId,
+  cx: c.cx, cy: c.cy, cz: c.cz,
+  center: c.center,
+  state: c.state,
+  priority: c.priority,
+  tick: 0,
+}))))
 // 关卡侧遮挡名册跟着脚下这片天走（Boss 的柱子每 tick 重名点，墙只在跨区时动一次）
 let wallsRegion = shownRegion
 combat.occlusion.syncAuthored(streaming.regionAt(player.pos) ?? null)
