@@ -54,6 +54,11 @@ describe('目标指示（KI-137）', () => {
     expect(at).toEqual({ x: first!.pos!.x, y: first!.pos!.y, z: first!.pos!.z })
   })
 
+  it('就地坐标那一形：pos 指示直接给世界坐标', () => {
+    const at = resolveMarker({ kind: 'pos', pos: { x: 1, y: 2, z: 3 } }, regions as RegionData[])
+    expect(at).toEqual({ x: 1, y: 2, z: 3 })
+  })
+
   it('认不出就返回 null（不猜、不落到原点）', () => {
     expect(resolveMarker(undefined, regions as RegionData[])).toBeNull()
     expect(resolveMarker({ kind: 'npc', id: 'npc_not_exist' }, regions as RegionData[])).toBeNull()

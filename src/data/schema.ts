@@ -1699,6 +1699,12 @@ export interface VfxDecalRow {
   randomScale: boolean
   /** 同时存在的上限（池子大小） */
   maxInstances: number
+  /**
+   * 贴图（可选）：按 id 从注册表取。**本仓今天没有真资产**（KI-008：没有可见窗口也没有
+   * 贴图文件），所以表里暂时没有哪一行写它——但字段留着，因为表现层那一格已经接好了
+   * （`vfx/Decals.ts` 的 `getOrCreateMaterial`），资产到位时不必改引擎。
+   */
+  textures?: { albedo?: string; normal?: string; roughness?: string; metalness?: string }
 }
 
 /** 一条拖尾的配置行（武器拖尾 / 弹道拖尾） */
@@ -1712,6 +1718,8 @@ export interface VfxTrailRow {
   color: [string, string]
   /** 生命周期（秒） */
   lifetime: number
+  /** 贴图（可选，按 id 从注册表取；本仓今天没有真资产，见 `VfxDecalRow.textures`） */
+  texture?: string
   /** 混合模式 */
   blending: 'normal' | 'additive' | 'multiply'
   /** 是否随武器旋转 */

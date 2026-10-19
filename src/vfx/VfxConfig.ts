@@ -53,6 +53,7 @@ export function toDecalConfig(row: VfxDecalRow): DecalConfig {
     randomRotation: row.randomRotation,
     randomScale: row.randomScale,
     maxInstances: row.maxInstances,
+    ...(row.textures ? { textures: { ...row.textures } } : {}),
   }
 }
 
@@ -64,6 +65,7 @@ export function toTrailConfig(row: VfxTrailRow): TrailConfig {
     width: [row.width[0], row.width[1]],
     color: [colorOf(row.color[0]), colorOf(row.color[1])],
     lifetime: row.lifetime,
+    ...(row.texture ? { texture: row.texture } : {}),
     blending: blendingOf(row.blending),
     followRotation: row.followRotation,
     minEmitDist: row.minEmitDist,

@@ -175,7 +175,14 @@ export class Navigator {
     if (this.usingBaked && this.currentNavmesh) {
       const bakedRoute = this.pathBaked(a, b, to, radius, this.currentNavmesh)
       if (bakedRoute) return bakedRoute
-      // 烘焙网格找不到路时，不回落可见性图（烘焙覆盖全区域，找不到 = 真绕不过去）
+      // 烘焙网格找不到路时，**不回落可见性图**（烘焙覆盖全区域，找不到 = 真绕不过去）。
+      //
+      // KI-149 修：原实现这里**掉进了下面的可见性图分支**——注释说"不回落"、代码却回落了。
+      // 两者的读数不是一回事：网格知道这一区的**可走面**（哪儿是地板、哪儿是坑），
+      // 可见性图只认 authored 的墙。网格说"走不通"（目标在不可走的一兜里）而可见性图
+      // 说"绕过那面墙就行"⇒ 玩家会被带进一个网格明明说不能去的地方。
+      // 网格在用 ⇒ 它的"走不通"就是**权威读数**。
+      return null
     }
 
     // 回落：运行时可见性图（墙数 ≤12 时极快）

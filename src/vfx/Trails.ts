@@ -123,24 +123,28 @@ class TrailInstance {
     const lifetime = this.config.lifetime
 
     // 老化 & 清理
-    while (this.points.length > 0 && now - this.points[this.points.length - 1].time > lifetime) {
-      this.points.pop()
+    //
+    // **从头上丢**（KI-149）：原实现从**尾巴**上丢（`points[points.length - 1]`），
+    // 而尾点永远是最新的一点 ⇒ `now - 尾点.time` 几乎恒为 0 ⇒ 那条 while **永真**，
+    // 于是拖尾**从不老化**：路径上的点越积越多（还会超出几何体的段数）。
+    while (this.points.length > 0 && now - this.points[0].time > lifetime) {
+      this.points.shift()
+    }
+    // 段数上限：配置里的 `segments` 决定几何体画几段，索引缓冲只覆盖那几段——
+    // 多出来的点**画不出来**（顶点画了、连线没画），所以这里按配置截断。
+    while (this.points.length > this.config.segments) {
+      this.points.shift()
     }
 
     if (this.points.length < 2) return
 
     // 重建几何体
-    const verts = this.points.length * 2
+    // **缓冲区不必再扩**（KI-149）：几何体在构造时按 `segments * 2` 个顶点开好，而点数被
+    // `segments` 截住（见上面的老化段）⇒ 顶点数永远不超过缓冲区的容量。
+    // 原来这里有一段"不够就扩缓冲"的代码——点数上限加上之后它**永远不成立**（死代码），删掉。
     const posAttr = this.geometry.getAttribute('position') as THREE.BufferAttribute
     const uvAttr = this.geometry.getAttribute('uv') as THREE.BufferAttribute
     const colorAttr = this.geometry.getAttribute('color') as THREE.BufferAttribute
-
-    // 确保 buffer 足够大
-    if (posAttr.count < verts) {
-      this.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(verts * 3), 3))
-      this.geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(verts * 2), 2))
-      this.geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(verts * 3), 3))
-    }
 
     const [colorStart, colorEnd] = this.config.color
     const [widthStart, widthEnd] = this.config.width
