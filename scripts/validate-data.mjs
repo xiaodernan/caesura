@@ -654,7 +654,8 @@ function validatePlayer() {
   }
   // 需求 §34 锁定的四个数（KI-084，TD-005 的入表腿）：唯一读者是 `player/LockOn.ts`，构造时注入。
   // 两条**关系**判据（Boss 加分 vs 距离项跨度、跨度 vs 90° 的角度惩罚）住在 `lockon-rules.mjs`，这里只当
-  // 那张把 findings 报成 ERROR 的嘴 —— 留在本文件就没法在测试里"喂一组对不上的数看它拒不拒"（KI-075 同族），
+  // 那张把 findings 报成 ERROR 的嘴 —— 留在本文件就没法在测试里"喂一组对不上的数看它拒不拒"（同一族理由见
+  // `lockon-rules.mjs` 顶部：本文件一被 import 就跑真表并 `process.exit`），
   // 而那两句文档说的是数与数之间的序关系，`report.num` 一次只看一个字段，表达不出来。
   for (const f of lockOnFindings(p.lockOn)) report.error(f.file, f.where, f.msg)
   // 四个数各自的可闻带仍走 `report.sub`：缺失 / 非有限数 / 越界那三种说法全场由它一家管，搬走就是第二个主人。
@@ -1543,8 +1544,15 @@ function validateEnemies(lootIds) {
 }
 
 // ---- regions.json ----
+/**
+ * `navmeshRef` 的落点判据。`regions.json` 里写的是**相对路径**（`navmesh/rg_xxx.navmesh.json`），
+ * 而烘焙器 `scripts/bake-navmesh.mjs` 的输出目录是 `src/data/json/navmesh/`（与 `JSON_DIR` 同一个根，
+ * 因为运行时那份是 `src/data/index.ts` 直接 `import` 进来的 JSON——不是 assets，不进 public）。
+ * 原先这四条 root 里**没有一条**能拼出烘焙器的落点 ⇒ 7 张真网格被判成"找不到实体"（KI-131）：
+ * 门在报"数据写了没落"，而落的东西恰好躺在它没看的那一格。
+ */
 function navmeshExists(ref) {
-  const roots = ['src/world/navmesh', 'src/data/navmesh', 'assets/navmesh', 'public/navmesh']
+  const roots = ['src/data/json', 'src/world/navmesh', 'src/data/navmesh', 'assets/navmesh', 'public/navmesh']
   const suffixes = ['', '.json', '.bin']
   return roots.some((root) => suffixes.some((s) => existsSync(resolve(ROOT, root, ref + s))))
 }
@@ -1905,8 +1913,9 @@ function validateRegions(enemyIds, lootIds, rarityIds, stateDefs) {
 /**
  * 一张环境声床 = 一区的 L1 drone + L2／L3 真位置声源 + L4 铃点。判据本体已经搬进
  * `scripts/ambience-rules.mjs`（KI-083），理由与 explore/battle 那两个模块一字不差：
- * 本文件一被 import 就去校验真表并 `process.exit`，于是"喂一张非法床、看它拒不拒"这一半只能在
- * 能 spawn 的环境里测（KI-075 说这台机器不能），而一条只有 accept 侧有人量的门不算门。
+ * 本文件一被 import 就去校验真表并 `process.exit`，于是"喂一张非法床、看它拒不拒"这一半只能把判据
+ * 抽成纯函数模块再在测试里喂合成表（`tests/unit/ambience-table.test.ts` 就是这么量的），
+ * 而一条只有 accept 侧有人量的门不算门。
  * 这里剩两张嘴：findings → ERROR/WARN，加 `report.num`/`report.sub` 管的那批可闻带——
  * 缺失/非有限数/越界那三种说法全场由它们一家管，搬过去等于给同一句话配第二个主人。
  */
@@ -1992,7 +2001,7 @@ function validateAmbience() {
  * **本体住在 `explore-rules.mjs`**（①字段集合落在 schema 那两支之一 ②§1.2 音乐宪法：音高变形只有三个词、
  * 节奏变形只许 1/2/0.5 ③有调／无调两支的形状不能混 ④与 `regions.json > music.explore` 双向对账 + 一区一主音）。
  * 搬走的唯一理由是"两端都要量得动"：本文件一被 import 就去校验真表并 `process.exit`，
- * 于是拒不拒那一半只能在能 spawn 的环境里测（KI-075 说这台机器不能）。这里剩的是两张嘴：
+ * 于是拒不拒那一半只有在判据抽成纯函数模块之后才量得动。这里剩的是两张嘴：
  * findings → ERROR/WARN，加 `report.num` 管的那两格可闻带（那种说法全场共用，不该有第二个主人）。
  */
 function validateExplore() {

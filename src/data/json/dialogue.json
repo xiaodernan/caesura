@@ -1048,7 +1048,7 @@
           {
             "id": "c1",
             "text": "因为她想让你替她听完。（说服）",
-            "style": "soft",
+            "style": "poetic",
             "effects": {
               "setFlags": [
                 "flag.meg_soundscroll_complete",
@@ -1296,13 +1296,11 @@
                 "delta": 1
               },
               "setFlags": [
-                "flag.faceless_answered",
-                "flag.faceless_lied"
+                "flag.faceless_answered"
               ],
               "notify": "它在灰上写了一个字，又立刻擦掉 —— 你瞥见那是「谢」"
             },
-            "next": "n5",
-            "notify": "它在灰上写下「他骗你」，然后擦掉了 —— 它知道"
+            "next": "n5"
           },
           {
             "id": "c2",
@@ -1329,6 +1327,7 @@
               },
               "setFlags": [
                 "flag.faceless_answered",
+                "flag.faceless_lied",
                 "flag.faceless_told_it_is_an_ear"
               ],
               "notify": "它当场在灰上写下两个字：他骗你。然后它自己擦了"
