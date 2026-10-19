@@ -24,7 +24,6 @@ const CSS = `
 #dialogue .box { background:linear-gradient(180deg, rgba(14,16,22,.86), rgba(9,10,15,.94));
   border-left:3px solid rgba(201,180,88,.65); padding:16px 22px 14px; box-shadow:0 14px 40px rgba(0,0,0,.5); }
 #dialogue .who { font-size:14px; letter-spacing:.22em; color:#c9b458; margin-bottom:8px; }
-#dialogue .who .em { opacity:.5; font-size:12px; letter-spacing:.1em; margin-left:10px; }
 #dialogue .line { font-size:17px; line-height:1.75; letter-spacing:.02em; }
 #dialogue .choices { margin-top:14px; display:flex; flex-direction:column; gap:2px; }
 #dialogue .ch { display:flex; gap:12px; padding:7px 10px; cursor:pointer; border-left:2px solid transparent; }
@@ -105,7 +104,11 @@ export class DialogueBox {
     const v = this.view
     if (!v) return
     const who = this.speakerName(v.speaker)
-    const em = v.emotion ? `<span class="em">${v.emotion}</span>` : ''
+    // **情绪标注不上屏**（KI-137）：节点里的 `emotion` 是**作者面**的标注（narrative §3.2 的情绪一格），
+    // 它的取值是内部英文词（"guarded"／"measured"／"blank"…，全表 26 种）。
+    // 之前这一格被原样印在说话者名字后面 ⇒ 玩家看到的是「铃姨 measured」——
+    // **内部词表漏到了玩家面前**，而 `docs/narrative.md` §27 那张表写的是「无 `emotion` 表现」。
+    // 情绪是**写给作者看**的（将来做立绘/音色时可以接它），不是给玩家读的标签。
     const choices = v.choices.map((c) =>
       `<div class="ch" data-ch="${c.id}"><span class="k">${c.index}</span><span class="t">${c.text}</span><span class="s">${STYLE_LABEL[c.style] ?? ''}</span></div>`,
     ).join('')
@@ -114,7 +117,7 @@ export class DialogueBox {
       : '空格 / 回车 继续 · Esc 离开'
     this.root.innerHTML = `
       <div class="wrap"><div class="box">
-        <div class="who">${who}${em}</div>
+        <div class="who">${who}</div>
         <div class="line">${v.text}</div>
         ${choices ? `<div class="choices">${choices}</div>` : ''}
         <div class="hint">${hint}</div>

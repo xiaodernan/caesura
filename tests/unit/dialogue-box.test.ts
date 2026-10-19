@@ -173,16 +173,20 @@ describe('DialogueBox：字幕层的显示与交互', () => {
     expect(root.innerHTML).toBe('')
   })
 
-  it('emotion 存在 ⇒ 渲染 .em span；emotion 缺失 ⇒ 无 em', async () => {
+  it('情绪标注**不上屏**（它是作者面的标注，不是玩家读的标签，KI-137）', async () => {
     const { DialogueBox } = await import('@/ui/DialogueBox')
     const hooks = { onChoose: () => {}, onAdvance: () => {}, onClose: () => {} }
     const box = new DialogueBox(hooks)
-    box.show(makeView({ emotion: '愤怒', choices: [] }))
+    box.show(makeView({ emotion: 'guarded', choices: [] }))
     const root = body.children.find(c => c.id === 'dialogue')!
-    expect(root.innerHTML).toContain('<span class="em">愤怒</span>')
+    // 数据里的情绪是**内部英文标注**（全表 26 种："guarded"／"measured"／"blank"…），
+    // 原样印在说话者名字后面 ⇒ 玩家看到「铃姨 measured」。
+    // `docs/narrative.md` §27 那张表写的是「无 `emotion` 表现」——文档是权威，标注不上屏。
+    expect(root.innerHTML, '情绪词不许漏到玩家面前').not.toContain('guarded')
+    expect(root.innerHTML, '也没有那个 span').not.toContain('class="em"')
+    // 说话者的名字照旧在（那一格是玩家要读的）
+    expect(root.innerHTML).toContain('hersil')
     box.hide()
-    box.show(makeView({ choices: [] }))
-    expect(root.innerHTML).not.toContain('<span class="em">')
   })
 
   it('四种 style 标签正确映射：blunt=直 poetic=诗 silent=默 provoke=激', async () => {
