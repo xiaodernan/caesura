@@ -700,4 +700,57 @@ describe('KI-151 摇杆 → 相机 → 位移 → 焦点：整条链真的走得
     expect(r.player.stats.stamina, '体力该见底').toBeLessThanOrEqual(0)
     expect(r.player.exhausted, '体力见底 ⇒ exhausted 那一格起来（不许满速白嫖）').toBe(true)
   })
+
+  /**
+   * **回复曲线那三档**（KI-196）：§6.2「时段（末次消耗动作后）」那一行——
+   * 0-500ms → **0/s**（硬缓冲，防「消耗-回满」抖振）、500-1200ms → **22/s**、>1200ms → **38/s**。
+   *
+   * 拍数**现推**：三档的边界在 `player.json > staminaRegen` 里（`hardDelay` 30 拍、
+   * `slowTicks` 72 拍），秒与拍的换算用 `TICK_DT`（那一拍的秒数）——一个手钉的数都没有。
+   *
+   * **怎么起算「末次消耗」**：按一次翻滚（免费那一格，消耗 `playerBase.roll.stamina`）
+   * ⇒ 翻滚那一拍就是消耗发生的那一拍（`spendStamina` 记下它）。
+   *
+   * **起手要低于满格**：满格时回复根本不动（`stamina < staMax` 才回）⇒ 读出来是 0。
+   */
+  it('消耗之后：硬缓冲那一档（0-500ms）内体力一个字节都不许回', () => {
+    const r = newRun()
+    r.player.stats.stamina = playerBase.stamina / 2
+    r.set([0, 0], [0, 0], [0]) // dodge 键（手柄 0 号＝标准映射的 A）
+    r.tick()
+    r.set([0, 0], [0, 0], [])
+    const st0 = r.player.stats.stamina
+    for (let i = 0; i < playerBase.staminaRegen.hardDelay; i++) r.tick()
+    expect(r.player.stats.stamina, '硬缓冲那一档（0/s）内体力一个字节都不许回').toBeCloseTo(st0, 6)
+  })
+
+  it('消耗之后：第二档（500-1200ms）按 slowPerSec 那一格回', () => {
+    const r = newRun()
+    const regen = playerBase.staminaRegen
+    r.player.stats.stamina = playerBase.stamina / 2
+    r.set([0, 0], [0, 0], [0])
+    r.tick()
+    r.set([0, 0], [0, 0], [])
+    for (let i = 0; i < regen.hardDelay; i++) r.tick() // 先走过硬缓冲那一档
+    const st1 = r.player.stats.stamina
+    r.tick() // 这一拍进第二档
+    const perTick = regen.slowPerSec * TICK_DT
+    expect(r.player.stats.stamina - st1, `第二档该按 slowPerSec（${regen.slowPerSec}/s）那一格回`)
+      .toBeCloseTo(perTick, 6)
+  })
+
+  it('消耗之后：第三档（>1200ms）按 fastPerSec 那一格回', () => {
+    const r = newRun()
+    const regen = playerBase.staminaRegen
+    r.player.stats.stamina = playerBase.stamina / 2
+    r.set([0, 0], [0, 0], [0])
+    r.tick()
+    r.set([0, 0], [0, 0], [])
+    for (let i = 0; i < regen.slowTicks; i++) r.tick() // 走过前两档
+    const st1 = r.player.stats.stamina
+    r.tick() // 这一拍进第三档
+    const perTick = regen.fastPerSec * TICK_DT
+    expect(r.player.stats.stamina - st1, `第三档该按 fastPerSec（${regen.fastPerSec}/s）那一格回`)
+      .toBeCloseTo(perTick, 6)
+  })
 })
