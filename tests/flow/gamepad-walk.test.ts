@@ -71,6 +71,12 @@ type Run = {
    * **null 就是没锁定**（默认）。
    */
   lock: { x: number; y: number; z: number } | null
+  /**
+   * **玩家自己的锁定目标**（`player.lockedTarget`）：组合根把 `lock.target` 交给玩家，
+   * 那一格决定"锁定 + 后向"那两格（翻滚的距离与拍数）与"脸朝哪边"。
+   * 形状是结构类型（`{ getPos(); get radius() }`）⇒ 这里喂一个同形的替身，不造敌人。
+   */
+  playerLock: { getPos(): { x: number; y: number; z: number }; get radius(): number } | null
   /** 改摇杆与按键的读数：下一拍生效 */
   set(left?: [number, number], right?: [number, number], buttons?: number[]): void
   /** 真帧序走一拍 */
@@ -100,6 +106,7 @@ function newRun(): Run {
   const run: Run = {
     input, player, rig, time, rhythm,
     lock: null,
+    playerLock: null,
     set(l, r, b) {
       if (l) left = l
       if (r) right = r
@@ -109,6 +116,7 @@ function newRun(): Run {
       pad([left[0], left[1], right[0], right[1]], buttons)
       time.tick++
       input.poll(TICK_DT)
+      player.lockedTarget = run.playerLock
       player.update(TICK_DT, time, input, time.tick, rhythm)
       rig.update(TICK_DT, player, input.frame.look, run.lock, TICK_DT)
     },
@@ -593,5 +601,69 @@ describe('KI-151 摇杆 → 相机 → 位移 → 焦点：整条链真的走得
     r.set([0, 0])
     walk(r, 60)
     expect(Math.abs(wrapPi(r.player.yaw - yaw)), '松手后人的朝向不许自己转（它只在移动时拧）').toBeLessThan(1e-6)
+  })
+
+  /**
+   * **锁定时的那一滚**（KI-192）：锁定中翻滚 ⇒ 走**锁定那一格**（距离与拍数都换），
+   * 没锁定 ⇒ 走自由那一格。
+   *
+   * **"没有输入时滚的是背面"**（`moveDir()` 在没有输入时回落的是朝向的反方向）⇒
+   * 没锁定那一滚走的是 `backDist` 那一格，不是 `dist`（KI-090 那一行的口径）。
+   *
+   * 拍数的算法：触发那一拍之后，逐拍看位置有没有变 ⇒ **还在动的那一拍** ＋ 触发那一拍
+   * ＝ 这一滚的总拍数（与 `rollProfile` 的 `total` 那一格同一支笔）。
+   */
+  it('锁定中滚 ⇒ 走锁定那一格（距离与拍数都换）', () => {
+    const r = newRun()
+    const target = { x: 0, y: 0, z: 8 }
+    r.playerLock = { getPos: () => target, get radius() { return 2 } }
+    const roll = playerBase.roll
+    const from = { x: r.player.pos.x, z: r.player.pos.z }
+    r.set([0, 0], [0, 0], [0]) // dodge 键（手柄 0 号＝标准映射的 A）
+    r.tick()
+    r.set([0, 0], [0, 0], [])
+    let last = 0
+    for (let i = 0; i < 60; i++) {
+      const before = { x: r.player.pos.x, z: r.player.pos.z }
+      r.tick()
+      if (Math.hypot(r.player.pos.x - before.x, r.player.pos.z - before.z) > 1e-9) last = i + 1
+    }
+    const d = Math.hypot(r.player.pos.x - from.x, r.player.pos.z - from.z)
+    expect(Math.abs(d - roll.lockOnDist), '锁定中那一滚该走 `lockOnDist` 那一格').toBeLessThan(0.05)
+    expect(last + 1, '锁定中那一滚的总拍数该是 `lockOnTotal` 那一格').toBe(roll.lockOnTotal)
+  })
+
+  it('没锁定滚 ⇒ 走自由那一格（没有输入时滚的是背面 ⇒ `backDist`）', () => {
+    const r = newRun()
+    const roll = playerBase.roll
+    const from = { x: r.player.pos.x, z: r.player.pos.z }
+    r.set([0, 0], [0, 0], [0])
+    r.tick()
+    r.set([0, 0], [0, 0], [])
+    let last = 0
+    for (let i = 0; i < 60; i++) {
+      const before = { x: r.player.pos.x, z: r.player.pos.z }
+      r.tick()
+      if (Math.hypot(r.player.pos.x - before.x, r.player.pos.z - before.z) > 1e-9) last = i + 1
+    }
+    const d = Math.hypot(r.player.pos.x - from.x, r.player.pos.z - from.z)
+    expect(Math.abs(d - roll.backDist), '没锁定那一滚（没有输入 ⇒ 背面）该走 `backDist` 那一格').toBeLessThan(0.05)
+    expect(last + 1, '没锁定那一滚的总拍数该是 `total` 那一格').toBe(roll.total)
+  })
+
+  it('锁定中滚的方向：由输入/朝向决定（`combat.md` 那一行「1.6m 切线」的『切线』那半句今天读不到）', () => {
+    const r = newRun()
+    const target = { x: 0, y: 0, z: 8 }
+    r.playerLock = { getPos: () => target, get radius() { return 2 } }
+    r.player.yaw = 0 // 面朝 +z（也就是正对着目标）
+    const from = { x: r.player.pos.x, z: r.player.pos.z }
+    r.set([0, 0], [0, 0], [0])
+    r.tick()
+    r.set([0, 0], [0, 0], [])
+    for (let i = 0; i < 60; i++) r.tick()
+    const dz = r.player.pos.z - from.z
+    const dx = r.player.pos.x - from.x
+    expect(Math.abs(dx), '锁定中滚的方向由输入/朝向决定（不是切线）⇒ 不许横向跑').toBeLessThan(0.05)
+    expect(Math.abs(dz), '没有输入时滚的是背面（朝向的反方向）⇒ 位移沿朝向那一轴').toBeGreaterThan(1)
   })
 })
