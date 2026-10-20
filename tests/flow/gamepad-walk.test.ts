@@ -5,7 +5,7 @@ import { Input } from '@/core/Input'
 import { registerGameData, playerBase, regions } from '@/data'
 import { registry } from '@/core/Registry'
 import { PlayerController } from '@/player/ThirdPersonController'
-import { CameraRig } from '@/player/CameraRig'
+import { CameraRig, CameraMode, MODE_CONFIG } from '@/player/CameraRig'
 import { Interactables } from '@/world/Interactables'
 import { OcclusionField } from '@/core/Occlusion'
 import type { MovesetData, WeaponData } from '@/data/schema'
@@ -358,5 +358,63 @@ describe('KI-151 摇杆 → 相机 → 位移 → 焦点：整条链真的走得
     r.set([0, -1], [0, 0])
     for (let i = 0; i < 240; i++) r.tick()
     expect(r.player.pos.z, '没有名册 ⇒ 人穿过墙（这一条是上一条的反向证人）').toBeLessThan(wall.pos.z)
+  })
+
+  /**
+   * **镜头那一半**（KI-165）：人背对着墙站 ⇒ 镜头被拉回墙前（不穿到墙后）。
+   *
+   * 为什么值得单独一条：`CameraRig.collideAndRebound` 那一支**从来没被量过**——组合根把名册
+   * 注进镜头（`src/main.ts` 的 `rig.setOccluders(combat.occlusion.list())`，与玩家、箭、视线同一本），
+   * 但仓库里没有一条腿问过"镜头到底停在哪"。人站在塌墙背后时，镜头要么穿墙（画面穿帮）
+   * 要么被拉回来（画面正常）——今天没人说得清是哪一种。
+   *
+   * 摆位：**人站在墙的北侧 3m、面朝北**（背对着墙）⇒ 镜头在他身后，也就是墙的南边 ⇒
+   * 那条线（视线点到机位）**穿过墙** ⇒ 名册该把它截在墙面上。
+   *
+   * 偏置与半径**全部现推**：`MODE_CONFIG` 里那一格的 `distBase`／`collisionRadius`／
+   * `collier`（`CameraMode.Exploration`），镜头的俯角读 `rig.pitch` 自己那份 ⇒ 一个手钉的数都没有。
+   */
+  it('人背对着墙站：镜头被拉回墙前，不穿到墙后（镜头那一支第一次被量）', () => {
+    const r = newRun()
+    const camp = regions.find((x) => x.id === 'rg_brokenbar_camp')!
+    const wall = camp.walls!.find((w) => w.id === 'wb_camp_watch_screen')!
+    const occ = new OcclusionField()
+    occ.syncAuthored(camp)
+    // 组合根那两行接线：**同一本**名册，镜头与玩家各拿一份活引用
+    r.player.occluders = () => occ.list()
+    r.rig.setOccluders(occ.list())
+    // 人站在墙的北侧 3m（北 = z 大的那一边），**面朝北** ⇒ 镜头在他身后，也就是墙的南边
+    r.player.pos.x = wall.pos.x
+    r.player.pos.y = wall.pos.y
+    r.player.pos.z = wall.pos.z + 3
+    r.player.floorY = wall.pos.y
+    // 面朝北：把镜头转向北边那一点（相机在身后 ⇒ 机身偏置落在南边 ⇒ 那条线穿过墙）
+    aimCamera(r, wall.pos.x, wall.pos.z + 13)
+    const cfg = MODE_CONFIG[CameraMode.Exploration]
+    const northFace = wall.pos.z + wall.size.z / 2
+    const camZ = r.rig.cam.position.z
+    expect(camZ, `镜头该停在墙的北面（z = ${northFace} 那一侧），不该穿到墙后`).toBeGreaterThan(northFace)
+    expect(Math.abs(camZ - (northFace + cfg.collisionRadius)), '镜头该贴在墙面上（墙面 + 镜头自己的半径）')
+      .toBeLessThan(0.2)
+  })
+
+  it('对照：没有名册 ⇒ 镜头穿到墙后（这条钉住"上一条量的是名册，不是相机"）', () => {
+    const r = newRun()
+    const camp = regions.find((x) => x.id === 'rg_brokenbar_camp')!
+    const wall = camp.walls!.find((w) => w.id === 'wb_camp_watch_screen')!
+    // **不注入名册**（组合根那两行接线都没接 ⇒ 镜头与玩家都拿空清单）
+    r.player.pos.x = wall.pos.x
+    r.player.pos.y = wall.pos.y
+    r.player.pos.z = wall.pos.z + 3
+    r.player.floorY = wall.pos.y
+    aimCamera(r, wall.pos.x, wall.pos.z + 13)
+    const cfg = MODE_CONFIG[CameraMode.Exploration]
+    const northFace = wall.pos.z + wall.size.z / 2
+    const camZ = r.rig.cam.position.z
+    expect(camZ, '没有名册 ⇒ 镜头穿到墙后（这一条是上一条的反向证人）').toBeLessThan(northFace)
+    // 而且它就在它**该在**的地方：自由机位 = 目标 + 机位偏置（偏置现推：俯角读镜头自己那份）
+    const freeZ = r.player.pos.z - cfg.distBase * Math.cos(r.rig.pitch)
+    expect(Math.abs(camZ - freeZ), '镜头该在它自由机位上（这一条钉住"没名册时相机没在做别的什么"）')
+      .toBeLessThan(0.2)
   })
 })
