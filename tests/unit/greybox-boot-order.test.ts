@@ -7,7 +7,7 @@ import { StreamingSystem } from '@/world/Streaming'
 import { ChunkGreybox } from '@/world/ChunkGreybox'
 
 /**
- * **开局那批 chunk 事件在表现层订阅之前就发完了**（KI-135）。
+ * **开局那批 chunk 事件在表现层订阅之前就发完了**（KI-183）。
  *
  * **生产顺序**（`src/main.ts`）：`new StreamingSystem(regions)` → `streaming.teleport(0, player.pos)`
  * → …（一百多行）… → `new ChunkGreybox(...)`。
@@ -16,7 +16,7 @@ import { ChunkGreybox } from '@/world/ChunkGreybox'
  *
  * **后果不是"少一块地板"**：玩家开局站在 `PlaceholderArena` 那张深色大地面上（`141821`），
  * 整幅画面下半屏是黑的——实机像素读数：修之前 **1.18/255**，修之后 **94.41/255**
- * （用 `?fresh=1` 冷启动 + `gl.readPixels` 量的，见 KI-135 账本行）。
+ * （用 `?fresh=1` 冷启动 + `gl.readPixels` 量的，见 KI-183 账本行）。
  * 这正是用户报的「场景太黑了，啥都看不清」。
  *
  * **为什么以前没被抓住**：`tests/unit/greybox.test.ts` 的构造顺序是**反的**
@@ -45,7 +45,7 @@ const floorMeshOf = (scene: THREE.Scene, regionId: string): THREE.InstancedMesh 
     (c): c is THREE.InstancedMesh => c instanceof THREE.InstancedMesh && c.name === `greybox_floor:${regionId}`,
   )!
 
-describe('开局那批 chunk：表现层必须补一次（KI-135）', () => {
+describe('开局那批 chunk：表现层必须补一次（KI-183）', () => {
   it('生产顺序复现：先 teleport、后建灰盒 ⇒ 不补 syncLoaded 时那些格子的地板**没铺**', () => {
     const scene = new THREE.Scene()
     const stream = new StreamingSystem(regions)

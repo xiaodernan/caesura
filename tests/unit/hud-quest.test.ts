@@ -4,7 +4,7 @@ import { keyOf, DEFAULT_BINDS, type Binds } from '@/core/Input'
 import { Hud } from '@/ui/Hud'
 
 /**
- * 常驻任务行（KI-113②）：`quest.changed` 事件注释里写着「UI 与调试面板据此播报」，
+ * 常驻任务行（KI-181②）：`quest.changed` 事件注释里写着「UI 与调试面板据此播报」，
  * 调试面板（F3）早有这一格，HUD 没有——玩家在灰盒里走得再远，「现在该干什么」只有
  * 开调试器才知道。本文件钉住 HUD 那一格的三条纪律：
  *  · 事件带的 label/序号**原样上屏**，HUD 不抄第二份任务数据（没有事件就没有行）；
@@ -50,7 +50,7 @@ const STEP = {
   label: '《点名册》：七个还在巡逻的兵，他记的是四个', started: true, completed: false
 }
 
-describe('HUD 键位参考列（KI-113③）：键名从运行时绑定读', () => {
+describe('HUD 键位参考列（KI-181③）：键名从运行时绑定读', () => {
   it('keyOf 的短名换算：KeyW→W、MouseLeft→左键、Digit1→1、Ctrl 收拢', () => {
     expect(keyOf('moveUp')).toBe('W')
     expect(keyOf('attackLight')).toBe('左键')

@@ -4,7 +4,7 @@ import { registerGameData, regions } from '@/data'
 import { Interactables } from '@/world/Interactables'
 
 /**
- * 交互提示要**点名那个东西**（KI-136）。
+ * 交互提示要**点名那个东西**（KI-184）。
  *
  * **病**：提示一律是「动词 · 区域名」⇒ 玩家看到的是「交谈 · 休垒 Resthold」——
  * **区域名不是他要交互的东西**（休垒里有 40 多个可交互位）。而**名字本来就在数据里**：
@@ -21,7 +21,7 @@ const off = bus.on('ui.prompt', (p) => { seen = { text: p.text, id: p.id } })
 afterEach(() => { seen = null })
 afterAll(() => { off() })
 
-describe('交互提示点名那个东西（KI-136）', () => {
+describe('交互提示点名那个东西（KI-184）', () => {
   it('NPC ⇒ 那个人的名字（数据侧现读，不抄第二份）', () => {
     const it = new Interactables(regions, () => true)
     // 休垒的铃姨在 (8, 0, 26)

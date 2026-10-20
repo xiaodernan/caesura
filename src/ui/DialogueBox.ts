@@ -104,7 +104,7 @@ export class DialogueBox {
     const v = this.view
     if (!v) return
     const who = this.speakerName(v.speaker)
-    // **情绪标注不上屏**（KI-137）：节点里的 `emotion` 是**作者面**的标注（narrative §3.2 的情绪一格），
+    // **情绪标注不上屏**（KI-185）：节点里的 `emotion` 是**作者面**的标注（narrative §3.2 的情绪一格），
     // 它的取值是内部英文词（"guarded"／"measured"／"blank"…，全表 26 种）。
     // 之前这一格被原样印在说话者名字后面 ⇒ 玩家看到的是「铃姨 measured」——
     // **内部词表漏到了玩家面前**，而 `docs/narrative.md` §27 那张表写的是「无 `emotion` 表现」。

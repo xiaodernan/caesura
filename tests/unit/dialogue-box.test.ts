@@ -173,7 +173,7 @@ describe('DialogueBox：字幕层的显示与交互', () => {
     expect(root.innerHTML).toBe('')
   })
 
-  it('情绪标注**不上屏**（它是作者面的标注，不是玩家读的标签，KI-137）', async () => {
+  it('情绪标注**不上屏**（它是作者面的标注，不是玩家读的标签，KI-185）', async () => {
     const { DialogueBox } = await import('@/ui/DialogueBox')
     const hooks = { onChoose: () => {}, onAdvance: () => {}, onClose: () => {} }
     const box = new DialogueBox(hooks)

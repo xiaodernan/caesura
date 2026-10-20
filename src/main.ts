@@ -498,7 +498,7 @@ const wallGreybox = new WallGreybox(arena.scene, regions, (pos) => { const c = s
 const loadedStates: ChunkState[] = ['active', 'resident', 'preloading']
 wallGreybox.syncLoaded(loadedStates.flatMap((s) => streaming.byState(s).map((c) => c.key))) // 构造前就加载好的格：等不到下一次跨格事件
 /**
- * **地板灰盒也来一次**（KI-135）：`streaming.teleport(0, player.pos)` 在第 339 行就把开局那批
+ * **地板灰盒也来一次**（KI-183）：`streaming.teleport(0, player.pos)` 在第 339 行就把开局那批
  * chunk 事件发出去了，而 `new ChunkGreybox(...)` 在这之后 ⇒ 那些格子的地板**永远不会被铺上**。
  * 后果不是"少一块地板"，是**玩家开局站在 PlaceholderArena 那张深色大地面上**：
  * 整幅画面下半屏是黑的（实机像素读数：下半 1.18/255；传送一次重新触发事件后 94.41/255），

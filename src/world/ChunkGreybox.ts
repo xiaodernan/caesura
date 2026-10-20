@@ -60,7 +60,7 @@ export class ChunkGreybox {
   /**
    * **构造前就已加载的格**（组合根用一次，否则第一批要等到下一次跨格事件才现身）。
    *
-   * 这和 `WallGreybox.syncLoaded` 是同一件事（KI-135）：组合根里
+   * 这和 `WallGreybox.syncLoaded` 是同一件事（KI-183）：组合根里
    * `streaming.teleport(0, player.pos)` 发生在 `new ChunkGreybox(...)` **之前**——
    * 那次传送已经把开局那一批 chunk 事件发出去了（state=active），而**那时还没人订阅**
    * ⇒ 那些格子的地板**永远不会被铺上**：玩家开局站在 PlaceholderArena 那张深色大地面上，
