@@ -66,6 +66,11 @@ type Run = {
   rig: CameraRig
   time: GameTime
   rhythm: RhythmClock
+  /**
+   * 锁定目标的位置（组合根那一行接线：`lock.target ? lock.target.getPos() : null`）——
+   * **null 就是没锁定**（默认）。
+   */
+  lock: { x: number; y: number; z: number } | null
   /** 改摇杆与按键的读数：下一拍生效 */
   set(left?: [number, number], right?: [number, number], buttons?: number[]): void
   /** 真帧序走一拍 */
@@ -94,6 +99,7 @@ function newRun(): Run {
   let buttons: number[] = []
   const run: Run = {
     input, player, rig, time, rhythm,
+    lock: null,
     set(l, r, b) {
       if (l) left = l
       if (r) right = r
@@ -104,7 +110,7 @@ function newRun(): Run {
       time.tick++
       input.poll(TICK_DT)
       player.update(TICK_DT, time, input, time.tick, rhythm)
-      rig.update(TICK_DT, player, input.frame.look, null, TICK_DT)
+      rig.update(TICK_DT, player, input.frame.look, run.lock, TICK_DT)
     },
   }
   for (let i = 0; i < 40; i++) run.tick() // 暖机：零输入
@@ -158,6 +164,18 @@ function aimCamera(r: Run, x: number, z: number): void {
     if (Math.hypot(p.x - prev.x, p.y - prev.y, p.z - prev.z) < 0.0005) break
     prev = { x: p.x, y: p.y, z: p.z }
   }
+}
+
+/**
+ * **目标相对镜头前向的夹角**（越肩构图 ⇒ 目标本来就偏在一边，这一格偏置是 `CameraRig` 里的
+ * `+0.35`，真读数约 −0.15 rad）⇒ **量的是"偏角变没变"**，不是"偏角等于多少"：
+ * 偏角的那个值是实现常数（不许手钉），而"侧移之后偏角不变"是设计要的那件事
+ * （变了 ⇒ 镜头没跟着绕 ⇒ 目标滑出画面）。
+ */
+function bearing(run: Run, target: { x: number; z: number }): number {
+  const c = run.rig.cam.position
+  const b = Math.atan2(target.x - c.x, target.z - c.z)
+  return wrapPi(b - (run.rig.yaw + Math.PI)) // 镜头前向 = −(sin yaw, cos yaw) ⇒ 方位角 yaw + π
 }
 
 /** 走 n 拍并返回这 n 拍里走过的路程 */
@@ -416,5 +434,57 @@ describe('KI-151 摇杆 → 相机 → 位移 → 焦点：整条链真的走得
     const freeZ = r.player.pos.z - cfg.distBase * Math.cos(r.rig.pitch)
     expect(Math.abs(camZ - freeZ), '镜头该在它自由机位上（这一条钉住"没名册时相机没在做别的什么"）')
       .toBeLessThan(0.2)
+  })
+
+  /**
+   * **锁定那一半**（KI-175）：锁定时相机走**越肩那一格**（KI-170 把它接上了），
+   * 而且**侧移时镜头绕着目标转**——目标在画面里的位置不变。
+   *
+   * 为什么要单独量：镜头的锁定分支（`rig.update` 里 `aim` 那一条）此前**只被替身走过**
+   * （`camYawRef = 0` 的单元腿与 KI-170 那个替身）⇒ "锁定时目标还在画面里"这件事
+   * 在**真链**上（真 `Input` ＋ 真 `CameraRig` ＋ 真帧序 ＋ 真的锁定目标）一次也没被量过。
+   *
+   * 判据是**偏角的变化**：越肩构图 ⇒ 目标本来就偏在一边（那一格偏置是 `CameraRig` 里的
+   * `+0.35`，真读数约 −0.15 rad）⇒ **量"侧移之后偏角变没变"，不量"偏角等于多少"**
+   * （那个值是实现常数，不许手钉）。
+   */
+  it('锁定 ⇒ 相机走越肩那一格（真链）：FOV 就是那一格的值', () => {
+    const r = newRun()
+    r.lock = { x: 0, y: 0, z: 8 }
+    for (let i = 0; i < 200; i++) r.tick()
+    const lockOn = MODE_CONFIG[CameraMode.LockOn]
+    expect(r.rig.getMode(), '锁定时相机该在越肩那一格').toBe(CameraMode.LockOn)
+    expect(r.rig.cam.fov, '锁定时的 FOV 该是越肩那一格的值（combat.md §7 写的是 45°）').toBe(lockOn.fovBase)
+  })
+
+  it('锁定中侧移 ⇒ 镜头绕着目标转，目标在画面里的偏角不变', () => {
+    const r = newRun()
+    const target = { x: 0, z: 8 }
+    r.lock = { x: target.x, y: 0, z: target.z }
+    for (let i = 0; i < 200; i++) r.tick()
+    const before = bearing(r, target)
+    const yawBefore = r.rig.yaw
+    r.set([1, 0]) // 左摇杆推右 = 侧移
+    for (let i = 0; i < 120; i++) r.tick()
+    const after = bearing(r, target)
+    expect(Math.abs(wrapPi(r.rig.yaw - yawBefore)), '侧移时镜头该绕着目标转（不转 ⇒ 目标滑出画面）')
+      .toBeGreaterThan(0.3)
+    expect(Math.abs(wrapPi(after - before)), '目标在画面里的偏角不许变（变了 ⇒ 构图没跟着绕）')
+      .toBeLessThan(0.01)
+  })
+
+  it('对照：没有锁定目标 ⇒ 侧移不动机位（镜头不绕，只跟着人走）', () => {
+    const r = newRun()
+    for (let i = 0; i < 200; i++) r.tick()
+    const cfg = MODE_CONFIG[CameraMode.Exploration]
+    // **静置时**的距离（人在动的时候镜头会拖后一截——那是跟随阻尼，不是构图变了 ⇒ 静置时量）
+    const rest = Math.hypot(r.rig.cam.position.x - r.player.pos.x, r.rig.cam.position.z - r.player.pos.z)
+    expect(Math.abs(rest - cfg.distBase * Math.cos(r.rig.pitch)), '没锁定时镜头与人保持探索那一格的距离')
+      .toBeLessThan(0.1)
+    const yawBefore = r.rig.yaw
+    r.set([1, 0])
+    for (let i = 0; i < 120; i++) r.tick()
+    expect(Math.abs(wrapPi(r.rig.yaw - yawBefore)), '没有锁定目标 ⇒ 镜头不绕（转向只吃右摇杆）')
+      .toBeLessThan(1e-6)
   })
 })
