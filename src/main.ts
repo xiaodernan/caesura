@@ -495,6 +495,14 @@ greybox.syncLoaded(loadedStates.flatMap((s) => streaming.byState(s).map((c) => (
 // 关卡侧遮挡名册跟着脚下这片天走（Boss 的柱子每 tick 重名点，墙只在跨区时动一次）
 let wallsRegion = shownRegion
 combat.occlusion.syncAuthored(streaming.regionAt(player.pos) ?? null)
+/**
+ * **玩家与 authored 墙的碰撞**（KI-154）：注入的是**同一本**遮挡名册（箭、视线、敌人绕路、
+ * 相机撞墙用的都是它）——玩家这边不许再写一份墙的尺寸，那才是"两把尺"。
+ *
+ * 传**活引用**（取名册的函数）而不是拷贝：那份名册是就地改写的（换区域就换内容），
+ * 拷一份会在跨区时变成"玩家撞的是上一片天的墙"。
+ */
+player.occluders = () => combat.occlusion.list()
 // 相机碰撞读**同一份**遮挡名册（与挡箭、挡视线同一批盒子）：相机撞墙与箭被墙挡住不许各写一份几何，
 // 否则"看着穿过去了"与"箭飞过去了"会各说各话。传**活引用**即可——那份名册是就地改写的
 // （换区域重写墙、每 tick 重名点 Boss 的柱子），相机跟着它走，不必每帧重建。

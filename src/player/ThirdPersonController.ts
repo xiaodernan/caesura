@@ -10,6 +10,7 @@ import { armStats, CorruptionMeter, statusConfig } from '@/combat/Statuses'
 import { armCrumple, reactionConfig } from '@/combat/Reactions'
 import { msToTicks, TICK_HZ } from '@/core/Time'
 import type { Vec3 } from '@/combat/EntityStats'
+import type { Occluder } from '@/core/Occlusion'
 import type { HitTarget } from '@/combat/HitShapes'
 import { defaultMods, type PlayerMods } from '@/rpg/Runtime'
 import { movementName } from '@/rpg/Movements'
@@ -48,6 +49,9 @@ export interface PlayerAction extends ActionStop {
    */
   hyperSpent?: boolean
 }
+
+/** 没有遮挡名册时的空清单（默认注入：没有墙的地方不该有任何阻挡，KI-154） */
+const EMPTY_OCCLUDERS: readonly Occluder[] = []
 
 export class PlayerController {
   pos: Vec3 = { x: 0, y: 0, z: 0 }
@@ -105,6 +109,7 @@ export class PlayerController {
    * 且出手吃 `dmgBonus`。它不是成长，是一记出手换来的限时状态——不进存档，死了不清零才奇怪。
    */
   tacet: { ticksLeft: number; dmgBonus: number } | null = null
+
   /** 超载提示的冷却：连打翻滚键不该把同一句话刷屏，但一次都不说就是「按了没反应」 */
   overloadWarnTicks = 0
   stunTicks = 0
@@ -133,6 +138,15 @@ export class PlayerController {
    * 只有 `ms_spear.charged`，所以两者此刻是同一件事；将来若真有第二件可投的武器，改的是表不是这里。
    */
   spearInHand = true
+  /**
+   * **authored 墙的名册**（KI-154）：组合根注入**同一本**遮挡名册（箭、视线、敌人绕路用的那一份）。
+   *
+   * **为什么玩家也要用它**：同一堵塌墙在别处都挡人（挡箭 KI-014②b、挡视线、挡玩家自己的刀 KI-070），
+   * 唯独对玩家自己不是墙 ⇒ 玩家会**穿过**看得见的墙（实测：穿过 1.8m 厚的墙走了 13.8m）。
+   * 那份名册是**活引用**（换区域就换内容），所以这里存的是"取名册的函数"而不是一份拷贝。
+   */
+  occluders: () => readonly Occluder[] = () => EMPTY_OCCLUDERS
+
   exhausted = false
   private footAccum = 0
   private dead = false
@@ -552,8 +566,13 @@ export class PlayerController {
       if (wl > 0.05) {
         const nx = wx / wl, nz = wz / wl
         const sp = Math.min(wl, 1) * speed * (this.guarding ? 0.35 : 1) * (this.action ? 0.15 : 1)
-        this.pos.x += nx * sp * dt
-        this.pos.z += nz * sp * dt
+        // **撞墙**（KI-154）：与墙求交用的是**同一本遮挡名册**（箭/视线/敌人绕路/相机撞墙那一份）。
+        // 解法是**圆 vs 凸体的最小平移量**（见 `moveWithWalls`）：进墙的那一轴被推回，切向那一轴保留 ⇒ 沿墙滑。
+        const stepX = nx * sp * dt
+        const stepZ = nz * sp * dt
+        const moved = this.moveWithWalls(stepX, stepZ)
+        this.pos.x += moved.x
+        this.pos.z += moved.z
         this.moveSpeed = sp
         if (!this.action && !this.lockedTarget && !this.guarding) this.yaw += clampAngleDiff(this.yaw, Math.atan2(nx, nz)) * 0.25
         if (sprinting) {
@@ -672,6 +691,82 @@ export class PlayerController {
     return locked
       ? { total: r.lockOnTotal, iframeStart: r.lockOnIframes[0], iframeEnd: r.lockOnIframes[1], stamina: r.lockOnStamina }
       : { total: r.total, iframeStart: r.iframeStart, iframeEnd: r.iframeEnd, stamina: Math.max(1, r.stamina + flat) }
+  }
+
+  /**
+   * 一步移动撞上墙时的解法（KI-154）：**圆 vs 凸体**的最小平移量（MTV）解法。
+   *
+   * **几何取自同一本名册**（`core/Occlusion` 那一份：箭、视线、敌人绕路、相机撞墙都读它）——
+   * 玩家这边不许再写一份墙的尺寸，那才是"两把尺"。
+   *
+   * **为什么不用 `firstBlock` 那条线段判据**：那条是给"打出去的线"写的；它那一档
+   * `strict`（"走不走得过去"的口径）的语义是"**起点贴面即算挡**"——而玩家恰恰是**贴着墙面走**的：
+   * 圆心正好落在扩大的墙面上时，那条判据会把"贴着墙往前挪一步"读成"起点贴在墙上 ⇒ 一步都走不了"，
+   * 人被冻在墙前。移动要的是**分开**（MTV，把人推出去且保留切向位移），不是**拦停**（射线）。
+   *
+   * **沿墙滑**是 MTV 的副产品：往墙里走的那一轴被推回，切向那一轴原封不动 ⇒ 人贴着墙走而不是被咬住。
+   *
+   * **半径**用玩家自己的 `hitTarget().radius`（玩家的体积只有那一处定义），
+   * **身高**用 `hitTarget().height`（竖带判定：墙比人矮时人该能从上面过去，不该被空气挡住）。
+   */
+  private moveWithWalls(dx: number, dz: number): { x: number; z: number } {
+    const occ = this.occluders()
+    if (occ.length === 0) return { x: dx, z: dz }
+    const body = this.hitTarget()
+    const r = body.radius
+    const bottom = this.pos.y
+    const top = this.pos.y + body.height
+    let nx = this.pos.x + dx
+    let nz = this.pos.z + dz
+    // 最多解两轮：墙角处两块墙可能互相把玩家推进去，两轮足够分开（再多只是抖）
+    for (let iter = 0; iter < 2; iter++) {
+      let separated = false
+      for (const o of occ) {
+        // 竖带：墙比人矮（矮到人跨得过去）或人站在墙顶之上 ⇒ 不算挡
+        if (top <= o.pos.y || bottom >= o.pos.y + o.heightM) continue
+        if (o.shape === 'box') {
+          const hx = o.halfX + r
+          const hz = o.halfZ + r
+          const px = nx - o.pos.x
+          const pz = nz - o.pos.z
+          if (Math.abs(px) >= hx || Math.abs(pz) >= hz) continue
+          // 起点（本体）是不是**已经在墙里**？两条路的推法不一样：
+          const sx = this.pos.x - o.pos.x
+          const sz = this.pos.z - o.pos.z
+          if (Math.abs(sx) < hx && Math.abs(sz) < hz) {
+            // **体内 ⇒ 往"他进来的那一边"推**（不许推到墙的另一侧——那是穿墙，不是分开）。
+            // 实测踩到过：按"新位置穿得最浅的那一轴"推，人在墙正中往南走 ⇒ 被推到南面去了，
+            // 一步之间穿过了整堵墙。**推的方向取起点的偏移**（他在中心哪一侧就退回哪一侧），
+            // 起点**正好在中心**（偏移为 0）时取**位移的反方向**（原路退回）。
+            const penX = hx - Math.abs(sx)
+            const penZ = hz - Math.abs(sz)
+            if (penX < penZ) {
+              nx = o.pos.x + (sx > 0 ? hx : sx < 0 ? -hx : dx > 0 ? -hx : hx)
+            } else {
+              nz = o.pos.z + (sz > 0 ? hz : sz < 0 ? -hz : dz > 0 ? -hz : hz)
+            }
+          } else {
+            // 走进来的：穿得最浅的那一轴被推回，切向那一轴保留 ⇒ 沿墙滑而不是被钉住
+            const penX = hx - Math.abs(px)
+            const penZ = hz - Math.abs(pz)
+            if (penX < penZ) nx = o.pos.x + (px < 0 ? -hx : hx)
+            else nz = o.pos.z + (pz < 0 ? -hz : hz)
+          }
+        } else {
+          const rr = o.radius + r
+          const px = nx - o.pos.x
+          const pz = nz - o.pos.z
+          const d = Math.hypot(px, pz)
+          if (d >= rr) continue
+          const k = d < 1e-6 ? 1 : rr / d
+          nx = o.pos.x + px * k
+          nz = o.pos.z + pz * k
+        }
+        separated = true
+      }
+      if (!separated) break
+    }
+    return { x: nx - this.pos.x, z: nz - this.pos.z }
   }
 
   /**
