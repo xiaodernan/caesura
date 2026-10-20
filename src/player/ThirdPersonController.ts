@@ -585,7 +585,12 @@ export class PlayerController {
         this.moveSpeed = sp
         if (!this.action && !this.lockedTarget && !this.guarding) this.yaw += clampAngleDiff(this.yaw, Math.atan2(nx, nz)) * 0.25
         if (sprinting) {
-          this.stats.stamina = Math.max(0, this.stats.stamina - this.base.sprintCostPerSec * dt)
+          /**
+           * §6.1 消耗表「疾跑 10/s」那一格（KI-194）：走 {@link EntityStats.drain}——
+           * **必须经它记账**，否则回复曲线（§6.2「末次消耗动作后」）不知道刚刚消耗过，
+           * 回复按快档跑 ⇒ 快档压过这一格 ⇒ 疾跑反而净回体力（实测 +28/s）。
+           */
+          this.stats.drain(this.base.sprintCostPerSec * dt, tick)
           if (this.stats.stamina <= 0) this.exhausted = true
         }
         this.footAccum += sp * dt

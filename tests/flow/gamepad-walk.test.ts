@@ -260,23 +260,20 @@ describe('KI-151 摇杆 → 相机 → 位移 → 焦点：整条链真的走得
     expect(r.player.moveSpeed).toBe(0)
   })
 
-  it('按住 LB（键 7）冲刺：单位位移 == 冲刺表速，且体力按 sprintCostPerSec 那一格掉', () => {
+  it('按住 LB（键 7）疾跑：单位位移 == 疾跑表速，且体力净掉 sprintCostPerSec 那一格（**不许拧回复乘子**）', () => {
     const r = newRun()
     /**
-     * 先把体力回复的乘子拧到 0，再量消耗。
-     *
-     * 不是绕路：`rpg.staminaRegenMul` 是**声明过的通道**（`defaultMods` 的字段，装备词缀与超载惩罚
-     * 都写在它上面），而 `stats.update` 每拍按它回一次气。不拧的话满体力那一格根本量不到消耗——
-     * 实测净掉只有 0.167 = **恰好一拍的消耗**（10/60）：每一拍的消耗都被上一拍的回复补回去了，
-     * 只有最后一拍之后没有下一拍来救。所以那一条读数量的其实是"跑测结束在哪一拍"，不是这张表。
+     * **不许再拧 `staminaRegenMul`**（KI-194）：当年拧它是因为"满体力那一格量不到消耗"——
+     * 根因是**回复曲线不知道刚刚消耗过**（快档 38/s 压过疾跑的 10/s ⇒ 疾跑反而回体力）。
+     * 拧掉回复等于把遮羞布按住不放；现在消耗走 `EntityStats.drain`（它记「末次消耗」那一格），
+     * 所以**这一条在真链上直接量得到**。
      */
-    r.player.rpg.staminaRegenMul = 0
     r.set([0, -1], undefined, [7])
     const st0 = r.player.stats.stamina
     const { d } = walk(r, 60)
-    expect(d, `冲刺 1 秒该走 ${playerBase.sprintSpeed}m`).toBeCloseTo(playerBase.sprintSpeed, 1)
-    expect(d / playerBase.moveSpeed, '冲刺必须比走快，否则 7 号键是个装饰').toBeGreaterThan(1.2)
-    expect(st0 - r.player.stats.stamina, `体力掉的必须是表里的 ${playerBase.sprintCostPerSec}/秒`)
+    expect(d, `疾跑 1 秒该走 ${playerBase.sprintSpeed}m`).toBeCloseTo(playerBase.sprintSpeed, 1)
+    expect(d / playerBase.moveSpeed, '疾跑必须比走快，否则 7 号键是个装饰').toBeGreaterThan(1.2)
+    expect(st0 - r.player.stats.stamina, `体力净掉的必须是表里的 ${playerBase.sprintCostPerSec}/秒`)
       .toBeCloseTo(playerBase.sprintCostPerSec, 1)
   })
 
@@ -665,5 +662,42 @@ describe('KI-151 摇杆 → 相机 → 位移 → 焦点：整条链真的走得
     const dx = r.player.pos.x - from.x
     expect(Math.abs(dx), '锁定中滚的方向由输入/朝向决定（不是切线）⇒ 不许横向跑').toBeLessThan(0.05)
     expect(Math.abs(dz), '没有输入时滚的是背面（朝向的反方向）⇒ 位移沿朝向那一轴').toBeGreaterThan(1)
+  })
+
+  /**
+   * **疾跑的体力那一格：必须是净消耗**（KI-194）。
+   *
+   * 修复前这一格在真链上是**反的**：体力 3 起跑 1 秒 ⇒ 体力 31（净 **+28/s**）——
+   * 回复曲线（§6.2「末次消耗动作后」）看不到疾跑在消耗 ⇒ 快档 38/s 压过 10/s。
+   *
+   * **起手要低于满格**才量得到：满格那一格回复根本不动（`stamina < staMax` 才回），
+   * 于是"净掉了多少"读出来的是别的东西（第一版那条腿拧回复乘子就是为了绕过这个）。
+   */
+  it('体力不到满格时疾跑：体力净减少（不许反而变多——修复前实测净 +28/s）', () => {
+    const r = newRun()
+    r.player.stats.stamina = playerBase.stamina / 2 // 半格：回复会跑 ⇒ 才量得到"净"
+    const st0 = r.player.stats.stamina
+    r.set([0, -1], undefined, [7])
+    walk(r, 60)
+    const st1 = r.player.stats.stamina
+    expect(st1, '体力不许变负').toBeGreaterThanOrEqual(0)
+    expect(st1, `体力净减少（起手 ${st0} ⇒ 收尾 ${st1}）`).toBeLessThan(st0)
+  })
+
+  /**
+   * **体力烧到底 ⇒ `exhausted` 那一格起来**（KI-194）：
+   * 疾跑不许是"满速白嫖"——体力见底之后按设计（§6「禁止无限攻击」）就该出不了招。
+   *
+   * 修复前这一格在真链上**永远不起来**：疾跑把体力往上顶 ⇒ 永远烧不干。
+   * 秒数是**算出来的**（半格 ÷ 每秒那一格 ＋ 1s 余量），不是手钉的。
+   */
+  it('疾跑把体力烧到底 ⇒ exhausted 那一格起来（不许满速白嫖）', () => {
+    const r = newRun()
+    r.player.stats.stamina = playerBase.stamina / 2
+    r.set([0, -1], undefined, [7])
+    const secs = playerBase.stamina / 2 / playerBase.sprintCostPerSec + 1
+    walk(r, Math.ceil(secs / TICK_DT)) // TICK_DT 是那一拍的秒数（这一格现推，不手钉 60）
+    expect(r.player.stats.stamina, '体力该见底').toBeLessThanOrEqual(0)
+    expect(r.player.exhausted, '体力见底 ⇒ exhausted 那一格起来（不许满速白嫖）').toBe(true)
   })
 })

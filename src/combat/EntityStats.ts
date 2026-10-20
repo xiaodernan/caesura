@@ -69,6 +69,21 @@ export class EntityStats {
     return true
   }
 
+  /**
+   * **持续性消耗**（疾跑那种按秒流的）：与 {@link spendStamina} 的两处不同——
+   *  ① **不够也照扣**，扣到 0 为止（不是「不够就拒绝」：那是起手门槛的语义）；
+   *  ② 但**照样记下「末次消耗」那一格**（`lastCostTick`）——§6.2 的回复曲线
+   *     「末次消耗动作后」那段就是从它起算的。
+   *
+   * **为什么这一格必须记**（KI-194）：不记的话，回复曲线看到的是「上一次消耗是很久以前」
+   *  ⇒ 回复按快档跑 ⇒ 快档（38/s）压过疾跑那一格（10/s）⇒ **疾跑反而净回体力**。
+   *  疾跑是设计 §6.1 消耗表里的一格（10/s），它必须是**净消耗**。
+   */
+  drain(amount: number, tick: number): void {
+    this.stamina = Math.max(0, this.stamina - amount)
+    this.lastCostTick = tick
+  }
+
   addPoise(dmg: number, tick: number): boolean {
     this.poiseAccum += dmg
     this.lastHitTick = tick
