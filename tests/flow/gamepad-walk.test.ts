@@ -7,6 +7,7 @@ import { registry } from '@/core/Registry'
 import { PlayerController } from '@/player/ThirdPersonController'
 import { CameraRig } from '@/player/CameraRig'
 import { Interactables } from '@/world/Interactables'
+import { OcclusionField } from '@/core/Occlusion'
 import type { MovesetData, WeaponData } from '@/data/schema'
 
 /**
@@ -110,6 +111,55 @@ function newRun(): Run {
   return run
 }
 
+/**
+ * **把镜头对准某个世界点**（右摇杆转，转的是相机自己的 yaw）。
+ *
+ * 为什么转的是 `rig.yaw` 而不是 `camYawRef`：`camYawRef` 是相机的**平滑机位**相对玩家的方位角，
+ * 镜头从旧机位飞到新机位的那一段里它是**乱读**的——第一版就栽在这里：营地那堵墙离出生点 170m，
+ * 镜头飞过去的那几百拍里方位角一路乱转 ⇒ 人歪了 12.5m 撞在墙的**侧面**，量到的根本不是
+ * "正对着那面墙停住"这件事（反向实测臂 A 就是这一条：把落位那一步去掉，臂立刻抓住它）。
+ * `rig.yaw` 是摇杆积分出来的那个数：它是镜头**要去**的方向，读它不会读乱。
+ *
+ * **推力是现量的**：先打一格 0.2 的右摇杆，量出镜头转了多少，再按那一格反算"要转到目标该给多少推力"
+ * ——生产常数（`Input` 的 2.4、`MODE_CONFIG` 的 `yawDamp`、死区 0.2）一个都不手钉。
+ * 于是**一拍正好落到目标**（而不是在死区分辨率附近来回摆：死区外最小的一格是 0.2，
+ * 摆一次的残差是 0.024 rad ⇒ 走 4.7m 就是 0.11m 的歪，"正对着那面墙"这件事就量不到了）。
+ *
+ * 转完还要**等镜头落位**（零输入几拍，等 `posSmooth` 追上机位）：镜头没落位时 `camYawRef`
+ * 还指着旧机位 ⇒ 人按的还是旧方向。落位的判据是**机位不再动了**，不是"角度对上了"——
+ * 镜头从旧机位飞过来的那一路上会**路过**目标角度，拿角度当落位会提前退出（第一版的第二个坑）。
+ */
+function aimCamera(r: Run, x: number, z: number): void {
+  // 增益现量：一格 0.2 的推力能把镜头转多少（rad / 单位推力）
+  const y0 = r.rig.yaw
+  r.set([0, 0], [0.2, 0])
+  r.tick()
+  const gain = Math.abs(r.rig.yaw - y0) / 0.2
+  r.set([0, 0], [0, 0])
+  for (let i = 0; i < 900; i++) {
+    const dx = x - r.player.pos.x
+    const dz = z - r.player.pos.z
+    const dist = Math.hypot(dx, dz)
+    const want = Math.atan2(-dx / dist, -dz / dist)
+    const err = wrapPi(want - r.rig.yaw)
+    if (Math.abs(err) < 0.005) break
+    // 需要的推力 = 误差 / 增益（`yaw -= look.dx * yawDamp * dt` ⇒ 推力与转角反号）
+    let push = err / gain
+    if (Math.abs(push) < 0.2) push = Math.sign(push) * 0.2 // 死区外最小的一格
+    r.set([0, 0], [Math.max(-1, Math.min(1, -push)), 0])
+    r.tick()
+  }
+  r.set([0, 0], [0, 0])
+  // 等镜头落位：机位不再动了就是落位了
+  let prev = { x: r.rig.cam.position.x, y: r.rig.cam.position.y, z: r.rig.cam.position.z }
+  for (let i = 0; i < 900; i++) {
+    r.tick()
+    const p = r.rig.cam.position
+    if (Math.hypot(p.x - prev.x, p.y - prev.y, p.z - prev.z) < 0.0005) break
+    prev = { x: p.x, y: p.y, z: p.z }
+  }
+}
+
 /** 走 n 拍并返回这 n 拍里走过的路程 */
 function walk(run: Run, n: number): { d: number; odometer: number } {
   const from = { ...run.player.pos }
@@ -137,7 +187,7 @@ const BELL = regions.find((r) => r.id === 'rg_resthold')!.interactables.find((i)
 describe('KI-151 摇杆 → 相机 → 位移 → 焦点：整条链真的走得通', () => {
   it('推左摇杆 = 走：60 拍走过的距离 == 表速 × 1 秒，而且朝前不朝后（数从 player.json 现推）', () => {
     const r = newRun()
-    r.set([0, -1]) // 左摇杆推到底 = 屏幕向前
+    r.set([0, -1], [0, 0]) // 左摇杆推到底 = 屏幕向前
     const from = { ...r.player.pos }
     const { d } = walk(r, 60)
     expect(d, `60 拍该走 ${playerBase.moveSpeed}m（表里 ${playerBase.moveSpeed}/s）`)
@@ -164,7 +214,7 @@ describe('KI-151 摇杆 → 相机 → 位移 → 焦点：整条链真的走得
 
   it('松手就停：按住 30 拍再松开，下一拍不再前进（这套积分没有惯性）', () => {
     const r = newRun()
-    r.set([0, -1])
+    r.set([0, -1], [0, 0])
     walk(r, 30)
     const at = { ...r.player.pos }
     r.set([0, 0])
@@ -247,5 +297,66 @@ describe('KI-151 摇杆 → 相机 → 位移 → 焦点：整条链真的走得
       .toBeGreaterThanOrEqual(straight - interact.range)
     expect(odometer / straight, '绕路不许超过直线的 2.5 倍（控制器失准的读数）').toBeLessThan(2.5)
     expect(ticks / 60, `这一趟 ${(ticks / 60).toFixed(1)} 秒走完 ${straight.toFixed(1)}m`).toBeLessThan(30)
+  })
+
+  /**
+   * **碰撞那一半**（KI-154 落地后接上）：前面六条量的是"摇杆 → 相机 → 位移 → 焦点"，
+   * 这一条把**墙**也放进链里：**用摇杆顶一堵 authored 的塌墙，人得停在墙前**。
+   *
+   * 为什么值得单独一条：`gamepad-walk` 此前走的是**空地路线**，于是"撞墙会停"这件事
+   * 在这条链上**一次也没被量过**——链的每一段各自绿过，接缝没人走过（与 KI-151 那行同一形状）。
+   *
+   * 名册是**组合根那一份**（`core/Occlusion` 的 `OcclusionField`，`syncAuthored(region)`）——
+   * 玩家侧、箭侧、视线侧、敌人绕路侧读的是同一本（KI-070 那一行的规矩），
+   * 这条腿注入的就是它 ⇒ 测的不是"某套假几何"，是**生产用的那一本**。
+   */
+  it('摇杆顶墙：人停在墙面 + 半径上，没有穿过去（链上第一次量"撞墙会停"）', () => {
+    const r = newRun()
+    const camp = regions.find((x) => x.id === 'rg_brokenbar_camp')!
+    const wall = camp.walls!.find((w) => w.id === 'wb_camp_watch_screen')!
+    // 名册：与组合根同一本、同一份注入方式
+    const occ = new OcclusionField()
+    occ.syncAuthored(camp)
+    r.player.occluders = () => occ.list()
+    // 站在墙的北侧 6m，**正对着**墙（正对着 ⇒ 打的是**面**，不是墙角）
+    r.player.pos.x = wall.pos.x
+    r.player.pos.y = wall.pos.y
+    r.player.pos.z = wall.pos.z + 6
+    r.player.floorY = wall.pos.y
+    // **先把镜头转到正对墙**（见 `aimCamera`）：相机的 yaw 不是 0（默认 0.6 ⇒ 屏幕前偏着 20°），
+    // 不瞄准就推前，人会斜着撞在墙的**侧面**上 ⇒ 量到的就不是"正对着那面墙停住"这件事了
+    // （第一版就栽在这里：歪了 12.5m）。
+    aimCamera(r, wall.pos.x, wall.pos.z)
+    const radius = r.player.hitTarget().radius
+    const stopZ = wall.pos.z + wall.size.z / 2 + radius
+    r.set([0, -1], [0, 0])
+    // 撞到墙**那一刻**的横向位置：滑行是 KI-154 的设计（MTV 把进墙那一轴推回、切向那一轴保留
+    // ⇒ 人贴着墙会**沿着墙滑**），所以"歪不歪"必须在**接触之前**量；接触之后量到的是合法的那条滑。
+    let hitX: number | null = null
+    for (let i = 0; i < 240; i++) {
+      r.tick()
+      if (hitX === null && r.player.pos.z <= stopZ + 1e-6) hitX = r.player.pos.x
+    }
+    expect(hitX, '这一趟该撞到墙（没撞上 ⇒ 后面那几条量的是别的东西）').not.toBeNull()
+    expect(Math.abs(hitX! - wall.pos.x), '撞到墙那一刻人该是正对着那面墙的（横向偏差）').toBeLessThan(0.1)
+    expect(Math.abs(r.player.pos.z - stopZ), '人该**贴着**墙（墙面 + 半径）停住').toBeLessThan(0.05)
+    expect(r.player.pos.z, `人该停在墙前（z = ${stopZ}），不该穿到墙后`).toBeGreaterThan(wall.pos.z)
+    expect(Math.abs(r.player.pos.x - wall.pos.x), '人还站在这堵墙的正面（不许滑到墙角那一侧去）')
+      .toBeLessThan(wall.size.x / 2)
+  })
+
+  it('对照：同一段路但**没有名册** ⇒ 人穿过去（这条钉住"上一条量的是碰撞，不是走路"）', () => {
+    const r = newRun()
+    const camp = regions.find((x) => x.id === 'rg_brokenbar_camp')!
+    const wall = camp.walls!.find((w) => w.id === 'wb_camp_watch_screen')!
+    // **不注入名册**（默认注入的就是空清单：没有墙的地方不该有任何阻挡）
+    r.player.pos.x = wall.pos.x
+    r.player.pos.y = wall.pos.y
+    r.player.pos.z = wall.pos.z + 6
+    r.player.floorY = wall.pos.y
+    aimCamera(r, wall.pos.x, wall.pos.z)
+    r.set([0, -1], [0, 0])
+    for (let i = 0; i < 240; i++) r.tick()
+    expect(r.player.pos.z, '没有名册 ⇒ 人穿过墙（这一条是上一条的反向证人）').toBeLessThan(wall.pos.z)
   })
 })
