@@ -43,6 +43,22 @@ afterEach(() => {
   g.cancelAnimationFrame = realCancel
 })
 
+/**
+ * **把墙钟钉死**（KI-171）：`performance.now` 由测试接管，返回一个**不动**的数。
+ * 归还的办法原样留着（`configurable: true` ⇒ 同一个属性可以再定义回去）。
+ *
+ * 为什么需要它：`GameLoop.start()` 记的 `last` 与测试取的基址若是两次不同的墙钟读数，
+ * 两次读数之间卡过一拍（16.7ms）补帧就会多跑一格 ⇒ 那条腿数的是"恰好几格"⇒ 机器一卡就红。
+ * 钉死之后基址与 `last` 是同一个数 ⇒ 读数与机器快慢无关。
+ */
+function freezeClock(at: number): () => void {
+  const real = performance.now.bind(performance)
+  Object.defineProperty(performance, 'now', { configurable: true, value: () => at })
+  return () => {
+    Object.defineProperty(performance, 'now', { configurable: true, value: real })
+  }
+}
+
 describe('GameLoop：start/stop 的 rAF 腿', () => {
   it('start 两次 ⇒ 第二次空操作；step 回调推进 tick；stop 后回调停摆且 raf 被取消', () => {
     installRaf()
@@ -53,23 +69,34 @@ describe('GameLoop：start/stop 的 rAF 腿', () => {
     const loop = new GameLoop(time, fakeInput(), () => {})
     loop.add(sys)
     const t0 = time.tick
-    loop.start()
-    const firstCb = rafCb!
-    expect(loop.running).toBe(true)
-    loop.start()
-    expect(rafCb, '第二次 start 不该再排 rAF').toBe(firstCb)
-    // start 里 last = 当时墙钟：回调时间从墙钟基址往后量，两帧各走 2 tick
-    const base = performance.now()
-    firstCb(base + 2 * TICK_DT * 1000)
-    firstCb(base + 4 * TICK_DT * 1000)
-    expect(time.tick - t0, '两帧 × 2 tick').toBe(4)
-    expect(updates).toBe(4)
-    expect(rendered).toBe(2)
-    loop.stop()
-    expect(loop.running).toBe(false)
-    expect(cancelled.length).toBe(1)
-    firstCb(base + 99999)
-    expect(time.tick, 'stop 之后排到的回调是空转').toBe(t0 + 4)
+    /**
+     * **墙钟由这条腿自己给**（KI-171）：这条腿数的是"两帧之间推进了几格 tick"，
+     * 而 `GameLoop.start()` 记的 `last` 取的是**当时的墙钟**——两者若是两次不同的读数，
+     * 中间卡过一拍（16.7ms）补帧就会多跑一格 ⇒ 机器一卡这条腿就红（KI-171 登记的那次红就是它）。
+     * ⇒ **把墙钟钉死**（`performance.now` 由测试接管），基址与 `last` 读到的是同一个数 ⇒ 读数确定。
+     */
+    const restore = freezeClock(1000)
+    try {
+      loop.start()
+      const firstCb = rafCb!
+      expect(loop.running).toBe(true)
+      loop.start()
+      expect(rafCb, '第二次 start 不该再排 rAF').toBe(firstCb)
+      // start 里 last = 当时墙钟：回调时间从墙钟基址往后量，两帧各走 2 tick
+      const base = performance.now()
+      firstCb(base + 2 * TICK_DT * 1000)
+      firstCb(base + 4 * TICK_DT * 1000)
+      expect(time.tick - t0, '两帧 × 2 tick').toBe(4)
+      expect(updates).toBe(4)
+      expect(rendered).toBe(2)
+      loop.stop()
+      expect(loop.running).toBe(false)
+      expect(cancelled.length).toBe(1)
+      firstCb(base + 99999)
+      expect(time.tick, 'stop 之后排到的回调是空转').toBe(t0 + 4)
+    } finally {
+      restore()
+    }
   })
 
   it('61 帧后 fps 窗口出数：每帧 1/60 ⇒ fps 60', () => {
