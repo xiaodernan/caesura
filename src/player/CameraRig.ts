@@ -70,6 +70,12 @@ export const EXEC_DOLLY = { fovDelta: -7, distMul: 0.4, damp: 8 }
  *
  * **这张表就是"五种相机"的全部内容**——`update()` 里不许出现第二份模式常数。
  * `collisionRadius: 0` ＝ 该模式关掉相机碰撞（过场镜头由演出自己管轨道）。
+ *
+ * **每一格都必须有人读**（§55「无消费方的数据不许入表」）：`fovBase` 此前**没人读**
+ * （相机在所有模式里都是 50°，combat.md §7「锁定式越肩推轨，FOV 45°」那一行在运行时是假的）
+ * ⇒ 读者是 {@link CameraRig.setMode}；`collisionDamp` 那一列**含义从未被裁**（是"进墙的缓动"
+ * 还是"出墙的缓动"？设计没说）⇒ 按 §55 **删列**，不替它编一个意思（要加回来，先说清它是什么）。
+ * 守卫：`tests/unit/camera-mode-params.test.ts` 的「模式表里每一列都有人读」那条。
  */
 export const MODE_CONFIG = {
   [CameraMode.Exploration]: {
@@ -82,7 +88,6 @@ export const MODE_CONFIG = {
     fovBase: 50,
     heightOffset: 1.15,
     collisionRadius: 0.35,
-    collisionDamp: 4,
     lookAhead: 0,
   },
   [CameraMode.Combat]: {
@@ -95,7 +100,6 @@ export const MODE_CONFIG = {
     fovBase: 48,
     heightOffset: 1.0,
     collisionRadius: 0.3,
-    collisionDamp: 6,
     lookAhead: 0.2,
   },
   [CameraMode.LockOn]: {
@@ -108,7 +112,6 @@ export const MODE_CONFIG = {
     fovBase: 45,
     heightOffset: 1.15,
     collisionRadius: 0.25,
-    collisionDamp: 8,
     lookAhead: 0.35,
   },
   [CameraMode.Boss]: {
@@ -121,7 +124,6 @@ export const MODE_CONFIG = {
     fovBase: 42,
     heightOffset: 1.3,
     collisionRadius: 0.3,
-    collisionDamp: 10,
     lookAhead: 0.5,
   },
   [CameraMode.Cinematic]: {
@@ -134,7 +136,6 @@ export const MODE_CONFIG = {
     fovBase: 50,
     heightOffset: 1.5,
     collisionRadius: 0,
-    collisionDamp: 0,
     lookAhead: 0,
   },
 } as const
@@ -150,6 +151,11 @@ export interface CameraModeData {
 
 export class CameraRig {
   private mode = CameraMode.Exploration
+  /**
+   * 锁定（越肩）之前的那一格：**解锁后要回到它**——锁定不该把人丢回探索格，
+   * 而是丢回他原来待的那一格（进锁定前若在战斗格，解锁后还在战斗格）。
+   */
+  private preLockMode = CameraMode.Exploration
   yaw = 0.6
   pitch = 0.26
   dist = 5.6
@@ -198,15 +204,19 @@ export class CameraRig {
    * 演出里先后到达，同名两次会让订阅方把"进入"数成两次。
    */
   setMode(mode: CameraMode, data?: CameraModeData): void {
+    const cfg = MODE_CONFIG[mode]
+    /**
+     * **模式自己的 FOV 那一格此前没人读**（相机在所有模式里都是 50°，于是 combat.md §7
+     * 「锁定式越肩推轨，**FOV 45°**」那一行在运行时是假的）⇒ 这里给它读者：
+     * 进哪一格就摆那一格的 FOV（探索 50／战斗 48／越肩 45／Boss 42／过场 50）。
+     *
+     * **cutscene 明确给了 fov 就用它**——那一格是**演出自己**的镜头，不归模式管
+     * （过场期间由 `cinematic.start` 传进来；过场结束回到模式那一行）。
+     */
+    this.baseFov = data?.fov ?? cfg.fovBase
     if (this.mode === mode) return
     const prevMode = this.mode
     this.mode = mode
-    const cfg = MODE_CONFIG[mode]
-
-    // 进场演出若自带 FOV 就用它；否则向新模式的基准 FOV 收敛（收敛在 `update()` 里按阻尼做）
-    if (data?.fov !== undefined) {
-      this.baseFov = data.fov
-    }
 
     // 立即应用新模式的距离边界
     this.dist = clamp(this.dist, cfg.distMin, cfg.distMax)
@@ -263,6 +273,25 @@ export class CameraRig {
    * @param shakeDt 震镜/FOV 用的时间步（逻辑 tick dt，KI-017）
    */
   update(dt: number, player: PlayerController, look: { dx: number; dy: number }, lockTarget: Vec3 | null, shakeDt = dt): void {
+    /**
+     * **锁定 ⇒ 相机走越肩那一格**（combat.md §7「锁定式越肩推轨，**FOV 45°**」）。
+     *
+     * 今天这条线是空的：镜头锁定分支跑的是**探索**那一格的参数 ⇒ FOV 一直是 50、
+     * 距离与前视偏移也一直是探索那几格 ⇒ 设计写的那一格（FOV 45°／距离 4.2／target bias 0.35）
+     * 从来没有兑现过（那几格的读者就是这一行）。
+     *
+     * **过场期间镜头归过场管**（cutscene 指定 FOV、碰撞半径 0）⇒ 锁定不夺走它；
+     * **处决推轨也不算锁定**（`aim` 那一支还管着处决的越肩构图，判据看的是 `lockTarget` 不是 `aim`）。
+     */
+    if (this.mode !== CameraMode.Cinematic) {
+      const wantLock = lockTarget !== null
+      if (wantLock && this.mode !== CameraMode.LockOn) {
+        this.preLockMode = this.mode
+        this.setMode(CameraMode.LockOn)
+      } else if (!wantLock && this.mode === CameraMode.LockOn) {
+        this.setMode(this.preLockMode)
+      }
+    }
     const cfg = MODE_CONFIG[this.mode]
 
     // 输入响应（按模式阻尼）

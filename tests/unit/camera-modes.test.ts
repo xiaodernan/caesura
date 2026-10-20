@@ -113,7 +113,9 @@ describe('CameraRig 五模式配置与切换', () => {
     rig.setMode(CameraMode.Cinematic)
     const cfg = MODE_CONFIG[CameraMode.Cinematic]
     expect(cfg.collisionRadius).toBe(0)
-    expect(cfg.collisionDamp).toBe(0)
+    // `collisionDamp` 那一列在 KI-170 里删掉了：**没有读者、含义也没被裁**
+    // （是"进墙的缓动"还是"出墙的缓动"？设计没说）⇒ 按 §55 不留一列空数据。
+    // 要加回来，先说清它是什么。
   })
 })
 
