@@ -487,4 +487,62 @@ describe('KI-151 摇杆 → 相机 → 位移 → 焦点：整条链真的走得
     expect(Math.abs(wrapPi(r.rig.yaw - yawBefore)), '没有锁定目标 ⇒ 镜头不绕（转向只吃右摇杆）')
       .toBeLessThan(1e-6)
   })
+
+  /**
+   * **沿墙滑那一半**（KI-173）：斜着撞 ⇒ 人**贴着墙滑过去**（不被钉住，也不进墙里）。
+   *
+   * KI-154 的单元腿里那一条是**假相机**量的（`camYawRef = 0`）⇒ 这一条是它的真链版：
+   * 走的方向由**相机**决定（`aimCamera` 把它转到位），撞墙的解法仍是 MTV
+   * （进墙的那一轴被推回，切向那一轴保留 ⇒ 沿墙滑）。
+   */
+  it('斜着撞 ⇒ 沿墙滑（人被推回墙面，切向那一轴照旧走得动）', () => {
+    const r = newRun()
+    const camp = regions.find((x) => x.id === 'rg_brokenbar_camp')!
+    const wall = camp.walls!.find((w) => w.id === 'wb_camp_watch_screen')!
+    const occ = new OcclusionField()
+    occ.syncAuthored(camp)
+    r.player.occluders = () => occ.list()
+    // 从墙的东北角斜着走向墙心 ⇒ 打的是**面**，方向与墙面成 45°
+    r.player.pos.x = wall.pos.x + 6
+    r.player.pos.y = wall.pos.y
+    r.player.pos.z = wall.pos.z + 6
+    r.player.floorY = wall.pos.y
+    aimCamera(r, wall.pos.x, wall.pos.z)
+    const radius = r.player.hitTarget().radius
+    const stopZ = wall.pos.z + wall.size.z / 2 + radius
+    r.set([0, -1], [0, 0])
+    let hitX: number | null = null
+    for (let i = 0; i < 180; i++) {
+      r.tick()
+      if (hitX === null && r.player.pos.z <= stopZ + 1e-6) hitX = r.player.pos.x
+    }
+    expect(hitX, '这一趟该撞到墙（没撞上 ⇒ 后面那几条量的是别的东西）').not.toBeNull()
+    expect(Math.abs(r.player.pos.z - stopZ), '人该**贴着**墙（墙面 + 半径）滑着走').toBeLessThan(0.05)
+    expect(hitX! - r.player.pos.x, '切向那一轴照旧走得动 ⇒ 人沿着墙**滑**过去（不是被钉住）')
+      .toBeGreaterThan(2)
+    expect(r.player.pos.x, '滑动的方向是斜着来的那一边（往 −x）').toBeLessThan(wall.pos.x)
+    expect(Math.abs(r.player.pos.x - wall.pos.x), '滑的人还站在这堵墙的正面（不许滑到墙角那一侧去）')
+      .toBeLessThan(wall.size.x / 2)
+  })
+
+  it('已经贴着墙面时：切向挪一步必须挪得动（贴面即挡会把人钉在墙前）', () => {
+    const r = newRun()
+    const camp = regions.find((x) => x.id === 'rg_brokenbar_camp')!
+    const wall = camp.walls!.find((w) => w.id === 'wb_camp_watch_screen')!
+    const occ = new OcclusionField()
+    occ.syncAuthored(camp)
+    r.player.occluders = () => occ.list()
+    const radius = r.player.hitTarget().radius
+    // 起点在**面内 5mm**（不是恰好落在面上：恰好落在面上要靠浮点运气的福）
+    r.player.pos.x = wall.pos.x
+    r.player.pos.y = wall.pos.y
+    r.player.pos.z = wall.pos.z + wall.size.z / 2 + radius - 0.005
+    r.player.floorY = wall.pos.y
+    // 沿着墙往 +x 走（镜头转向 +x 那一边）
+    aimCamera(r, wall.pos.x + 10, wall.pos.z)
+    r.set([0, -1], [0, 0])
+    for (let i = 0; i < 60; i++) r.tick()
+    expect(r.player.pos.x, '贴着墙面时切向挪一步必须挪得动').toBeGreaterThan(wall.pos.x + 0.5)
+    expect(r.player.pos.z, '切向挪动不许把人推进墙里').toBeGreaterThan(wall.pos.z + wall.size.z / 2 - 0.01)
+  })
 })
