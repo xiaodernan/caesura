@@ -200,7 +200,12 @@ export class ChunkGreybox {
 
   private placeProp(pool: RegionPool, index: number, c: ChunkEvent): void {
     const lm = this.landmarkInCell(pool.region, c)
-    if (!lm) { this.m4.makeScale(0, 0, 0) } else { this.m4.identity(); this.m4.setPosition(lm.pos.x, pool.region.groundY + 8, lm.pos.z) }
+    // lm.pos.y 是世界高度（骨穹顶 20 / 管风琴 180 / 第一口钟 64），不是区域地面：
+    // 棱柱中心 = 锚点 + 几何半高，y=0 的才立在地面、y=20 的悬在休垒上空（KI-160）。
+    if (!lm) { this.m4.makeScale(0, 0, 0) } else {
+      this.m4.identity()
+      this.m4.setPosition(lm.pos.x, lm.pos.y + this.propGeo.parameters.height / 2, lm.pos.z)
+    }
     pool.props.setMatrixAt(index, this.m4)
     pool.props.instanceMatrix.needsUpdate = true
   }

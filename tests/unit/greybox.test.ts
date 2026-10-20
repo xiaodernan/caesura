@@ -108,6 +108,22 @@ describe('ChunkGreybox（world.chunk -> 可见几何）', () => {
     for (const p of visible(upper)) expect(p.y).toBeCloseTo(64 - 0.5 + 0.02, 3)
   })
 
+  it('地标棱柱站在地标自己的世界 y 上（KI-160：y=20 的骨穹顶不再长在出生点地面）', () => {
+    stream.teleport(120, { x: 0, y: 0, z: 0 })
+    const props = scene.getObjectByName('greybox_props:rg_resthold') as THREE.InstancedMesh
+    const placed = visible(props)
+    const at = (x: number, z: number) => placed.find((p) => Math.abs(p.x - x) < 1e-3 && Math.abs(p.z - z) < 1e-3)
+    const half = (props.geometry as THREE.CylinderGeometry).parameters.height / 2
+    // 地面那枚（y=0）中心 = 半高：改法不能顺手把形状半高也丢掉
+    const spike = at(-12, 18)
+    expect(spike, 'stakerite prop placed').toBeDefined()
+    expect(spike!.y).toBeCloseTo(0 + half, 3)
+    // 骨穹顶中心 = 世界 y 20 + 半高：钉住"读 y"这一半（HEAD 上读到的是 8）
+    const dome = at(0, 0)
+    expect(dome, 'bone dome prop placed').toBeDefined()
+    expect(dome!.y).toBeCloseTo(20 + half, 3)
+  })
+
   it('走远后防抖卸载会把实例归还池子（可见数 = 存活 chunk 数）', () => {
     let t = 200
     for (; t < 200 + 600; t++) stream.update(t, { x: 0, y: 0, z: 0 })
