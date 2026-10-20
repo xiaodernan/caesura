@@ -61,6 +61,8 @@ const HIDDEN = new THREE.Matrix4().makeScale(0, 0, 0)
 /** 呼吸灯的两端（`animate` 的调音桩脉动）：与 `paint` 同一套色，只是脉动要逐通道插值 */
 const CP_BASE = new THREE.Color(COLOR.checkpoint)
 const CP_FOCUS = new THREE.Color(FOCUS)
+/** 没共鸣过的调音桩：**不亮**（"桩亮=可复活"，KI-157）——与 `paint` 里那格 `SPENT` 同一个色 */
+const CP_DIM = new THREE.Color(SPENT)
 
 export class InteractableGreybox {
   private readonly pools = new Map<Kind, Pool>()
@@ -211,7 +213,15 @@ export class InteractableGreybox {
     if (!cur) return
     const pool = this.pools.get(cur.entry.kind)!
     const spent = cur.entry.it.setsFlag !== undefined && this.hasFlag(cur.entry.it.setsFlag)
-    const hex = this.focused === id ? FOCUS : spent ? SPENT : COLOR[cur.entry.kind]
+    // **调音桩的旗标语义与其它 kind 相反**（KI-157，gameplay.md §8「重生点｜最近的调音桩
+    // （视觉：桩亮=可复活）」）：对箱子/钟来说旗标＝**已消耗** ⇒ 变灰；对调音桩来说旗标＝
+    // **已共鸣** ⇒ 亮着（那一面旗就是"这根桩可以复活"的凭证）。今天这两条用同一个颜色表，
+    // 于是**玩家刚共鸣过的那根桩正好是变灰的那一根**——"桩亮=可复活"在画面上是反的。
+    const hex = this.focused === id
+      ? FOCUS
+      : cur.entry.kind === 'checkpoint'
+        ? (spent ? COLOR.checkpoint : SPENT)
+        : (spent ? SPENT : COLOR[cur.entry.kind])
     pool.mesh.setColorAt(cur.index, this.col.setHex(hex).multiplyScalar(cur.active ? 1 : 0.5))
     if (pool.mesh.instanceColor) pool.mesh.instanceColor.needsUpdate = true
   }
@@ -237,11 +247,19 @@ export class InteractableGreybox {
 
       // 调音桩：呼吸灯（基色 ↔ 焦点色正弦脉动）
       if (kind === 'checkpoint') {
-        const pulse = 0.5 + Math.sin(tick * 0.045) * 0.5
-        // 脉动必须走 `Color.lerp`：在 packed hex 上加减会跨通道进位
-        // （`0xd9b46a + (0xfff2c8 - 0xd9b46a) * 0.5` = 0xECE589，绿通道被进位从 180 吃到 28）
-        // ⇒ 那一格"提亮"实际上是把调音桩闪成暗红。逐通道插值，两端就是基色与焦点色。
-        this.col.copy(CP_BASE).lerp(CP_FOCUS, pulse * 0.5)
+        // **只有共鸣过的桩才亮**（KI-157：gameplay.md §8「视觉：桩亮=可复活」）——
+        // 没共鸣过的按"未通"压暗，不参与呼吸。**这一条与 `paint` 同源**：两处都读同一个旗标，
+        // 一处画底色、一处画脉动，判据不许各写一份。
+        const lit = cur.entry.it.setsFlag !== undefined && this.hasFlag(cur.entry.it.setsFlag)
+        if (lit) {
+          const pulse = 0.5 + Math.sin(tick * 0.045) * 0.5
+          // 脉动必须走 `Color.lerp`：在 packed hex 上加减会跨通道进位
+          // （`0xd9b46a + (0xfff2c8 - 0xd9b46a) * 0.5` = 0xECE589，绿通道被进位从 180 吃到 28）
+          // ⇒ 那一格"提亮"实际上是把调音桩闪成暗红。逐通道插值，两端就是基色与焦点色。
+          this.col.copy(CP_BASE).lerp(CP_FOCUS, pulse * 0.5)
+        } else {
+          this.col.copy(CP_DIM)
+        }
         pool.mesh.setColorAt(cur.index, this.col.multiplyScalar(cur.active ? 1 : 0.5))
         colorDirty = true
       }

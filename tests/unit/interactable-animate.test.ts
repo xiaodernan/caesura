@@ -22,16 +22,26 @@ registerGameData()
 
 const CHUNK = 48
 
-/** 落位到指定格：绕开流送门（`syncActive` 直调 `onChunk`，与 main.ts 首帧那一次同一条路） */
-function fixture(stateOk: (req: { key: string; value: string }) => boolean = () => false) {
+/** 落位到指定格：绕开流送门（`syncActive` 直调 `onChunk`，与 main.ts 首帧那一次同一条路）
+ *
+ * `hasFlag` 是**点亮谓词**（KI-157）：调音桩"亮不亮"由它说了算 ——
+ * 共鸣过（旗立着）的那根才亮、才呼吸；没共鸣过的按"未通"压暗。
+ * 默认 `() => false` = 一根都没亮（今天数据里玩家还没共鸣过任何一根时的样子）。 */
+function fixture(
+  stateOk: (req: { key: string; value: string }) => boolean = () => false,
+  hasFlag: (key: string) => boolean = () => false,
+) {
   const scene = new THREE.Scene()
   const stream = new StreamingSystem(regions)
   const greybox = new InteractableGreybox(scene, regions, (pos) => {
     const c = stream.cellOf(pos)
     return chunkKeyOf(c.cx, c.cy, c.cz)
-  }, () => false, stateOk)
+  }, hasFlag, stateOk)
   return { scene, stream, greybox, dispose: () => { greybox.dispose(); stream.dispose() } }
 }
+
+/** 休垒那根桩"已共鸣"的谓词（旗名从数据现推，不手抄第二份） */
+const RESTHOLD_LIT = (key: string): boolean => key === 'flag.checkpoint_resthold'
 
 const poolOf = (scene: THREE.Scene, kind: string): THREE.InstancedMesh =>
   scene.getObjectByName(`greybox_node:${kind}`) as THREE.InstancedMesh
@@ -95,8 +105,8 @@ let active: (() => void) | null = null
 afterEach(() => { active?.(); active = null })
 
 describe('InteractableGreybox.animate：KI-013 三条动效的读方', () => {
-  it('调音桩呼吸灯：颜色在基色与焦点色之间脉动，位置一步不动', () => {
-    const f = fixture()
+  it('调音桩呼吸灯：**共鸣过的那根**才呼吸，颜色在基色与焦点色之间脉动，位置一步不动', () => {
+    const f = fixture(() => false, RESTHOLD_LIT)
     active = f.dispose
     f.greybox.syncActive([cellOf(PEG)])
     const mesh = poolOf(f.scene, 'checkpoint')
@@ -130,7 +140,7 @@ describe('InteractableGreybox.animate：KI-013 三条动效的读方', () => {
   })
 
   it('呼吸灯真的往复：亮过也暗过，且每帧都把实例色标脏', () => {
-    const f = fixture()
+    const f = fixture(() => false, RESTHOLD_LIT)
     active = f.dispose
     f.greybox.syncActive([cellOf(PEG)])
     const mesh = poolOf(f.scene, 'checkpoint')
@@ -147,6 +157,23 @@ describe('InteractableGreybox.animate：KI-013 三条动效的读方', () => {
     }
     expect(brighter, '正弦上半周期：比中点亮').toBe(true)
     expect(dimmer, '正弦下半周期：比中点暗').toBe(true)
+  })
+
+  it('没共鸣过的桩**不亮也不呼吸**（KI-157：gameplay.md §8「视觉：桩亮=可复活」）', () => {
+    const f = fixture() // 一根都没共鸣过
+    active = f.dispose
+    f.greybox.syncActive([cellOf(PEG)])
+    const mesh = poolOf(f.scene, 'checkpoint')
+    const peg = slotAt(mesh, { x: PEG_UP[0], y: PEG_UP[1], z: PEG_UP[2] })!
+    const samples: number[] = []
+    for (let t = 0; t <= 300; t += 3) {
+      f.greybox.animate(t)
+      samples.push(lum(colorAt(mesh, peg.index)))
+    }
+    // 不呼吸：亮度一个字节也不许动（脉动是"亮着"的信号）
+    expect(Math.max(...samples) - Math.min(...samples), '没共鸣过的桩不许呼吸').toBeLessThan(1e-6)
+    // 而且明显比"亮着"暗：那根才是玩家能复活回来的那根
+    expect(samples[0], '没共鸣过的桩必须明显暗于基色').toBeLessThan(BASE_LUM * 0.6)
   })
 
   it('采集点绕 Y 慢转：转的是朝向，位置钉死、不放缩', () => {

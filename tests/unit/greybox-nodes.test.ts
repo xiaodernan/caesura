@@ -131,14 +131,19 @@ describe('InteractableGreybox（交互物在灰盒里可见）', () => {
     bus.emit('world.flag', { key: 'flag.choir_entrance_open', value: true })
     expect(sum(slotOf(f.scene, 'sw_whisperwode_soundwall')!.rgb), '消耗后压暗').toBeLessThan(sum(bright!.rgb))
     f.dispose(); active = null
-    // 新实例（= 读档）：谓词里已有 flag，第一次落位就是消耗态
+    // 新实例（= 读档）：谓词里已有 flag，第一次落位就是消耗态。
+    // **比较必须同种**（KI-157）：调音桩的旗标语义与其它 kind **相反**（共鸣过=亮着=可复活），
+    // 拿"闸门（旗立着⇒暗）"跟"调音桩（没共鸣⇒也暗）"比，两边一样暗 ⇒ 什么也没证明。
     const g = fixture(true, new Set(['flag.left_resthold']))
     active = g.dispose
     g.goTo(HOME)
-    const spentGate = slotOf(g.scene, 'gt_resthold_gate')!
-    const freshPeg = slotOf(g.scene, 'st_resthold')
-    expect(freshPeg, '休垒调音桩未消耗').toBeDefined()
-    expect(sum(spentGate.rgb)).toBeLessThan(sum(freshPeg!.rgb))
+    const spentGate = sum(slotOf(g.scene, 'gt_resthold_gate')!.rgb)
+    g.dispose(); active = null
+    const h = fixture(true, new Set())
+    active = h.dispose
+    h.goTo(HOME)
+    const freshGate = sum(slotOf(h.scene, 'gt_resthold_gate')!.rgb)
+    expect(spentGate, '读档后首帧落位即压暗（同一件东西比：旗立着 vs 旗没立）').toBeLessThan(freshGate)
   })
 
   it('值域组换：world.state 事件重过一遍 requiresState —— 该出现的补上、该退场的摘掉', () => {

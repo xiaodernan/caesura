@@ -7,6 +7,7 @@ import { RhythmClock } from '@/core/RhythmClock'
 import { registry } from '@/core/Registry'
 import { registerGameData, playerBase, regions, worldstate, dialogues, quests as questTable, worldStates as worldStateDefs, cinematics as cinematicRows } from '@/data'
 import { resolveMarker } from '@/quest/Objectives'
+import { respawnTarget, type RespawnPost } from '@/world/Respawn'
 import type { ItemData, MovesetData, NpcData, RegionData, Vec3, WeaponData } from '@/data/schema'
 import { createArena } from '@/world/PlaceholderArena'
 import { activeWeather, questTrackedFlags } from '@/world/WeatherSwitch'
@@ -360,6 +361,27 @@ const interact = new Interactables(
   6,
   (req) => worldStates.matches(req.key, req.value),
 )
+/**
+ * **重生点**（KI-157）：gameplay.md「重生点｜最近的调音桩（视觉：桩亮=可复活）」那一行今天第一次有载体。
+ *
+ * 组合根做三件事，**判据本身不在这里**：① 把七根调音桩从 `regions.json` 里挑出来（`kind === 'checkpoint'`）；
+ * ② 把"亮没亮"的读法接上（`interact.hasFlag` —— 玩家共鸣过桩，那面 `flag.checkpoint_*` 就立着）；
+ * ③ 把算出来的重生目标（注：位置**与地板**一起，叠层世界里桩与死亡点不在一层）注进玩家。
+ *
+ * **为什么判据住在 `world/Respawn` 而不是这里**：它是"哪几根桩、亮没亮、多远"的**世界数据**推导，
+ * 组合根只做接线；规则改一个字，这里不该跟着改。
+ */
+const respawnPosts: RespawnPost[] = regions.flatMap((r) =>
+  (r.interactables ?? [])
+    .filter((i) => i.kind === 'checkpoint')
+    .map((i) => ({ id: i.id, pos: { x: i.pos.x, y: i.pos.y, z: i.pos.z }, litFlag: i.setsFlag ?? null })),
+)
+player.respawnTarget = () => {
+  const { post, pos } = respawnTarget(respawnPosts, player.pos, (f) => interact.hasFlag(f))
+  const floorY = surface.floorAt(pos)?.y ?? 0
+  if (post) bus.emit('log', { level: 'info', msg: `respawn -> ${post.id} @${pos.x},${pos.y},${pos.z}` })
+  return { pos, floorY }
+}
 /**
  * KI-105 声纹观察：按住 V 荡开涟漪，波前扫到的敌人/交互物显形（gameplay.md §2.1）。
  * 逻辑住在 `world/Observe`（纯函数、headless 可量），这里只做两件装配：

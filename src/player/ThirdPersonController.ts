@@ -147,6 +147,15 @@ export class PlayerController {
    */
   occluders: () => readonly Occluder[] = () => EMPTY_OCCLUDERS
 
+  /**
+   * **重生目标**（KI-157）：人死之后回到哪儿 —— 组合根注入（判据住在 `world/Respawn`，
+   * 那一行读的是 gameplay.md「重生点｜最近的调音桩（视觉：桩亮=可复活）」）。
+   *
+   * **默认注入 = 世界原点**：没有注入时行为与本批之前逐字相同（这是头less 测试与
+   * 平面跑测的地基）。**地板（`floorY`）也在这里**：叠层世界里位置与地板必须一起搬。
+   */
+  respawnTarget: () => { pos: Vec3; floorY: number } = () => ({ pos: { x: 0, y: 0, z: 0 }, floorY: 0 })
+
   exhausted = false
   private footAccum = 0
   private dead = false
@@ -982,7 +991,13 @@ export class PlayerController {
     this.echo = null; this.parryEchoLive = false; this.tacet = null // 限时的身外之物同理：不跟着人一起回来
     this.stats.hp = this.stats.hpMax
     this.stats.stamina = this.stats.staMax
-    this.pos = { x: 0, y: 0, z: 0 }
+    // **重生点**（KI-157）：组合根注入"人死之后回到哪儿"——gameplay.md「重生点｜最近的调音桩」
+    // 那一行今天第一次有载体（判据住在 `world/Respawn`，这里只负责把人搬到那儿）。
+    // **地板一起搬**：叠层世界里桩与死亡点不在一层 ⇒ 只搬位置不搬地板，人会在半空里掉一帧，
+    // 紧接着被 `floorY` 拉回上一层（那是"从深窖回来却站在休垒地板上"的那种鬼故事）。
+    const t = this.respawnTarget()
+    this.pos = { x: t.pos.x, y: t.pos.y, z: t.pos.z }
+    this.floorY = t.floorY
     bus.emit('ui.notify', { text: '休止被世界重新听见', kind: 'info' })
     this.publishStats()
   }
