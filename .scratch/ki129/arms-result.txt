@@ -1,0 +1,22 @@
+BASELINE: 60/60 passed, 0 failed, exit=0
+ARM BOTH-CELLS: 4 red MATCHED —— 把谎旗同时立在「是孩子」那一格（= KI-129 之前的老数据，"挪一半"）
+ARM EAR-FLAG-DROPPED: 4 red MISMATCH —— 撒谎那一格不再立「是耳朵」旗 ⇒ n6（拆穿过场）的门永远不开，LOST 那条链失去入口
+  多红（这个语义量还有我没点名的读者）：faceless-lost.test.ts :: 共谋 + 谎后抱它去看嵌甲 ⇒ LOST 写入、任务收束、收场句 n14
+    AssertionError: expected 'n7' to be 'n17' // Object.is equality
+    at D:\法环-ki127clean\tests\flow\faceless-lost.test.ts:123:29
+    at file:///D:/%E6%B3%95%E7%8E%AF%E6%B8%B8%E6%88%8F/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///D:/%E6%B3%95%
+ARM NO-READER: 5 red MISMATCH —— 拆掉 n17 那道门的谎旗前提 ⇒ 任何人都能撞进《同一个音符》（把"挪一半"的另一半造出来）
+  多红（这个语义量还有我没点名的读者）：bells.test.ts :: 无面童线步 2：修过钟之后它才问得出那句话 —— 撒谎不是免费的（§2.5 步 2）
+    AssertionError: expected 'n17' to be 'n15' // Object.is equality
+    at D:\法环-ki127clean\tests\flow\bells.test.ts:262:29
+    at file:///D:/%E6%B3%95%E7%8E%AF%E6%B8%B8%E6%88%8F/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///D:/%E6%B3%95%E7%8E%A
+  多红（这个语义量还有我没点名的读者）：faceless-vessel.test.ts :: 没走到圣所的玩家复访：仍是五环指引（n7/n8），不被跳进结局
+    AssertionError: 没走到圣所的玩家复访：仍是五环指引（n7 的 quest 闸是 gte，顺推后的步 3 也落在它）: expected 'n17' to be 'n7' // Object.is equality
+    at D:\法环-ki127clean\tests\flow\faceless-vessel.test.ts:149:82
+    at file:///D:/%E6%B3%95%E7%8E%AF%E6%B8%B8%E6%88%8F/node_modules/@vitest/run
+ARM STRAY-KEY: 1 red MATCHED —— 在某个选项的顶层再写一行没人读的 `notify`（KI-127 被骗的那种形状）
+ARM PROSE-DIVERGES: 1 red MATCHED —— 旗留在撒谎那一格，但把拆穿句改掉 ⇒ 旗与散文各说一套（同源判据要抓的就是这个）
+ARM DEAD-FIELD-FIRED: 1 red MATCHED —— 把探针的 `effects.notify` 拆掉 ⇒ 行为腿唯一该听见的那句没了（判据不能只靠"文本里没人读"）
+VERDICT: 4/6 arms MATCHED，判据宇宙 60 条用例
