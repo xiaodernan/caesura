@@ -172,6 +172,17 @@ function aimCamera(r: Run, x: number, z: number): void {
  * 偏角的那个值是实现常数（不许手钉），而"侧移之后偏角不变"是设计要的那件事
  * （变了 ⇒ 镜头没跟着绕 ⇒ 目标滑出画面）。
  */
+/**
+ * **人的朝向与镜头前向的夹角**（KI-190）。
+ *
+ * 两个约定：**人的朝向向量 ＝ (sin yaw, cos yaw)**（与 `moveWithWalls` 那支、
+ * `hitTarget().facingYaw` 同一支笔）；**镜头前向 ＝ −(sin camYaw, cos camYaw)**
+ * （相机在玩家的 +yaw 那一侧 ⇒ 屏幕前向是它的反方向）。
+ */
+function facingGap(run: Run): number {
+  const camYaw = run.player.camYawRef ?? run.player.yaw
+  return wrapPi(run.player.yaw - (camYaw + Math.PI))
+}
 function bearing(run: Run, target: { x: number; z: number }): number {
   const c = run.rig.cam.position
   const b = Math.atan2(target.x - c.x, target.z - c.z)
@@ -544,5 +555,43 @@ describe('KI-151 摇杆 → 相机 → 位移 → 焦点：整条链真的走得
     for (let i = 0; i < 60; i++) r.tick()
     expect(r.player.pos.x, '贴着墙面时切向挪一步必须挪得动').toBeGreaterThan(wall.pos.x + 0.5)
     expect(r.player.pos.z, '切向挪动不许把人推进墙里').toBeGreaterThan(wall.pos.z + wall.size.z / 2 - 0.01)
+  })
+
+  /**
+   * **人的朝向那一半**（KI-190）：真链上"人是朝哪边走的"与"镜头朝哪边"是**两件事**。
+   *
+   * `player.yaw` 跟着**移动方向**转（每拍向它拧 25%），而镜头只吃右摇杆 ⇒
+   * 侧移时**人转过去、镜头不转** ⇒ 那 90° 就是"看与走各有主人"在手上的样子。
+   * 这一族此前只量过相机那一半（KI-151 的第⑤条：转头之后"推前"落在世界里的方向跟着变）
+   * ⇒ **人这一半一次也没被量过**。
+   *
+   * 约定（不许手钉）：人的朝向向量 ＝ (sin yaw, cos yaw)；镜头前向 ＝ −(sin camYaw, cos camYaw)。
+   */
+  it('推前 ⇒ 人的朝向就是屏幕前方（人与镜头差 0°）', () => {
+    const r = newRun()
+    r.set([0, -1], [0, 0])
+    walk(r, 60)
+    expect(Math.abs(facingGap(r)), '推前时人该正对着屏幕前方（与镜头差 0°）').toBeLessThan(0.05)
+  })
+
+  it('侧移 ⇒ 人转过去、镜头不转（差 90°：看与走各有主人）', () => {
+    const r = newRun()
+    r.set([0, -1], [0, 0])
+    walk(r, 60)
+    const yawBefore = r.rig.yaw
+    r.set([1, 0]) // 左摇杆推右 = 侧移
+    walk(r, 120)
+    expect(Math.abs(wrapPi(r.rig.yaw - yawBefore)), '侧移时镜头不许跟着转（它只吃右摇杆）').toBeLessThan(1e-6)
+    expect(Math.abs(facingGap(r)), '侧移时人该转成侧移方向（与镜头差 90°）').toBeCloseTo(Math.PI / 2, 1)
+  })
+
+  it('松手 ⇒ 人的朝向停住（不转回镜头方向）', () => {
+    const r = newRun()
+    r.set([1, 0]) // 一上来就侧移
+    walk(r, 120)
+    const yaw = r.player.yaw
+    r.set([0, 0])
+    walk(r, 60)
+    expect(Math.abs(wrapPi(r.player.yaw - yaw)), '松手后人的朝向不许自己转（它只在移动时拧）').toBeLessThan(1e-6)
   })
 })
