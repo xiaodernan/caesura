@@ -574,7 +574,13 @@ export class PlayerController {
       const wl = Math.hypot(wx, wz)
       if (wl > 0.05) {
         const nx = wx / wl, nz = wz / wl
-        const sp = Math.min(wl, 1) * speed * (this.guarding ? 0.35 : 1) * (this.action ? 0.15 : 1)
+        /**
+         * §5.1「格挡中移动 ｜ 侧移 1.4m/s、不可疾跑」那一行（KI-198）：
+         * **格挡中走的是数据里那一格**（`guard.moveSpeed`），不再是 `moveSpeed × 0.35`
+         * 那个比例——那个比例按走路速度 4.0 算的 ⇒ 走路速度一改它就跟着漂
+         * （4.6 ⇒ 1.61 m/s）⇒ 设计写的那一格在运行时对不上。
+         */
+        const sp = Math.min(wl, 1) * (this.guarding ? this.base.guard.moveSpeed : speed) * (this.action ? 0.15 : 1)
         // **撞墙**（KI-154）：与墙求交用的是**同一本遮挡名册**（箭/视线/敌人绕路/相机撞墙那一份）。
         // 解法是**圆 vs 凸体的最小平移量**（见 `moveWithWalls`）：进墙的那一轴被推回，切向那一轴保留 ⇒ 沿墙滑。
         const stepX = nx * sp * dt

@@ -530,7 +530,17 @@ export interface PlayerBaseData {
   jumpSpeed: number
   gravity: number
   staminaRegen: { hardDelay: number; slowPerSec: number; slowTicks: number; fastPerSec: number }
-  guard: { startupTicks: number; reduction: number; staPerDmg: number; bleedPoiseFrac: number; /** §5.2 对远程：完美格挡把弹体弹回原主人，带走的比例 */ perfectBlockReflectMul: number; /** §13.0「听觉 Sound」的第四路：格挡接准那一记闷响的响度（未乘武器/词缀） */ impactLoudness: number;
+  guard: {
+    /**
+     * §5.1「格挡中移动 ｜ 侧移 1.4m/s、不可疾跑」那一行的**速度**（KI-198）。
+     *
+     * 此前这一格在运行时**没有承载体**：代码那一格是 `moveSpeed × 0.35` 的**比例**，
+     * 而那个比例是按走路速度 4.0 算的 ⇒ 走路速度改成 4.6 之后它跟着漂成了 **1.61 m/s**
+     * ⇒ 设计写的那一格与运行时对不上。**比例换回设计写的数** ⇒ 承载体落在数据里，
+     * 走路速度再改也不会把它带偏。
+     */
+    moveSpeed: number;
+    startupTicks: number; reduction: number; staPerDmg: number; bleedPoiseFrac: number; /** §5.2 对远程：完美格挡把弹体弹回原主人，带走的比例 */ perfectBlockReflectMul: number; /** §13.0「听觉 Sound」的第四路：格挡接准那一记闷响的响度（未乘武器/词缀） */ impactLoudness: number;
     /**
      * §5.1「破防 Guard Break」：格挡中体力被抽干 → 600ms 大踉跄（代码用 `msToTicks` 派生格数）。
      * 这 36 tick 在 §9 停顿表里**没有**自己的一行（KI-017③ 的口径裁决，2026-09-25）：破防的时间

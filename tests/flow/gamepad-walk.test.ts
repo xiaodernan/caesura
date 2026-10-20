@@ -753,4 +753,72 @@ describe('KI-151 摇杆 → 相机 → 位移 → 焦点：整条链真的走得
     expect(r.player.stats.stamina - st1, `第三档该按 fastPerSec（${regen.fastPerSec}/s）那一格回`)
       .toBeCloseTo(perTick, 6)
   })
+
+  /**
+   * **「格挡中移动」那一格**（KI-198）：combat.md §5.1 那一行写的是
+   * 「侧移 **1.4m/s**、不可疾跑；锁定 strafing 可用」。
+   *
+   * **这一格此前在运行时没有承载体**：代码那一格是 `moveSpeed × 0.35` 的**比例**，
+   * 而那个比例是按走路速度 4.0 算的 ⇒ 走路速度改成 4.6 之后它跟着漂成了 **1.61 m/s**
+   * ⇒ **设计写的那一格与运行时对不上**。现在那一格住在数据里（`guard.moveSpeed`），
+   * 走路速度再改也不会把它带偏。
+   *
+   * **「侧移」那半句是设计没裁**：那一行同时写着「侧移」与「锁定 strafing 可用」，
+   *  ⇒ 「侧移」到底指"格挡中只许横着走"还是"锁定时的侧步"，**没裁** ⇒ 本批只量
+   *  今天的行为（格挡中的移动方向跟走路一样，正对镜头前向），**不替设计裁**。
+   */
+  it('格挡中移动 ⇒ 速度是 `guard.moveSpeed` 那一格（不许是走路那一格，也不许是疾跑那一格）', () => {
+    const r = newRun()
+    r.set([0, -1], [0, 0], [4]) // 4 号键＝格挡（标准映射的 LB）
+    for (let i = 0; i < 30; i++) r.tick() // 先走过起手那一段（§5.1：100ms/6f 之后才进格挡态）
+    const from = { x: r.player.pos.x, z: r.player.pos.z }
+    walk(r, 60)
+    const d = dist2(r.player.pos, from)
+    expect(d, `格挡中 1 秒该走 ${playerBase.guard.moveSpeed}m（设计 §5.1 那一行写的数）`)
+      .toBeCloseTo(playerBase.guard.moveSpeed, 2)
+    expect(d, '格挡中不许是走路那一格').toBeLessThan(playerBase.moveSpeed)
+  })
+
+  /**
+   * **格挡中不可疾跑**（设计 §5.1 那一行的「不可疾跑」）：按住疾跑键也不许变快。
+   */
+  it('格挡中按住疾跑键 ⇒ 速度不变（设计 §5.1「不可疾跑」）', () => {
+    const a = newRun()
+    a.set([0, -1], [0, 0], [4])
+    for (let i = 0; i < 30; i++) a.tick()
+    const fromA = { x: a.player.pos.x, z: a.player.pos.z }
+    walk(a, 60)
+    const dA = dist2(a.player.pos, fromA)
+
+    const b = newRun()
+    b.set([0, -1], [0, 0], [4, 7]) // 7 号键＝疾跑
+    for (let i = 0; i < 30; i++) b.tick()
+    const fromB = { x: b.player.pos.x, z: b.player.pos.z }
+    walk(b, 60)
+    const dB = dist2(b.player.pos, fromB)
+
+    expect(dB, '格挡中按住疾跑键不许变快').toBeCloseTo(dA, 3)
+    expect(dB, '格挡中不许是疾跑那一格').toBeLessThan(playerBase.sprintSpeed)
+  })
+
+  /**
+   * **格挡的起手 100ms/6f**（设计 §5.1「起手」那一行）：按住格挡键，
+   * **前 6 拍不进格挡态**（那几拍走的是走路那一格），第 6 拍才进 ⇒ 速度从走路那格
+   * 掉到格挡那格。
+   *
+   * 拍数现推：`playerBase.guard.startupTicks`（6）——设计那行写的是 100ms/6f。
+   */
+  it('格挡的起手：前 startupTicks 拍不进格挡态（那几拍还是走路那一格）', () => {
+    const r = newRun()
+    r.set([0, -1], [0, 0], [4])
+    const from = { x: r.player.pos.x, z: r.player.pos.z }
+    for (let i = 0; i < playerBase.guard.startupTicks - 1; i++) r.tick()
+    const early = dist2(r.player.pos, from)
+    const ticks = playerBase.guard.startupTicks - 1
+    const walkT = playerBase.moveSpeed * ticks * TICK_DT
+    const guardT = playerBase.guard.moveSpeed * ticks * TICK_DT
+    expect(early, `起手那几拍该还是走路那一格（${playerBase.moveSpeed} m/s），不是格挡那格`)
+      .toBeGreaterThan(guardT)
+    expect(early, `起手那几拍该还是走路那一格（${playerBase.moveSpeed} m/s）`).toBeCloseTo(walkT, 3)
+  })
 })
