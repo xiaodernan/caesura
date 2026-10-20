@@ -153,4 +153,172 @@ describe('文档对账闸门（KI-056）', () => {
       `这些注释还在拿一条已被实测否证的宿主限制当理由（真理由是"import 即求值 + process.exit"）：\n${hits.join('\n')}`,
     ).toEqual([])
   })
+
+  /**
+   * KI-153：**账本的编号第一次有机器读者**。三道门守的是同一件事的两头——
+   * **行要解析得出来**（门 C）与**按号引用要读得到行**（门 B），中间夹着**一个号只许对应一笔债**（门 A）。
+   *
+   * 为什么编号需要机器守：全仓 2607 处 `KI-NNN` 引用散在代码注释、脚本、四份文档里，而登记册是人写的表格。
+   * 人写表格会犯三类病，本批**逐类量出来过**：同一个号被两次登记当不同的事（7 对，读者以为它们是同一笔债）、
+   * 引用一个从未存在过的号（6 个号 / 34 处，读者按号去找账，找到的是空气）、行尾那两个格子被追加的散文
+   * 埋到行中间（6 行 + 23 行未转义竖线 ⇒ 任何按格数解析的读者读出的是垃圾）。
+   * 三道门里**任何一道的分母都出自同一次扫描**（行数 / 文件数 / 命中数 / 唯一号数都当场钉下限）：
+   * 抽取形状被改坏时红在地板上，不白送一条"0 条命中"的绿。
+   */
+
+  /**
+   * 重号豁免名册：**按内容身份键控、自我收缩**，与 `scripts/event-rules.mjs` 的 `HEAD_UNDECLARED_LEDGER` 同一形状。
+   * 键是那个**号**，不是行号——行号每被追加一次就漂一格，挂在行号上的豁免等于挂在一个自更新的坐标上。
+   * 每条理由必须点名 KI-156（那笔"逐对挪号"的债）并长到说得清谁欠谁；名册非空时 KI-156 不许写 Implemented（同生同死）。
+   * 名册为**空**是目标态：号一旦归一，格子当场消失；下一次多出一对重号就红。
+   */
+  const COLLISION_LEDGER: Record<string, string> = {
+    'KI-113':
+      '同号两行讲的是两件事：一行是「规则抽取注释里那句 spawn 被宿主拒的前提已被实测否证」的文档债，另一行是「灰盒世界被 Phase 1 练习场遗迹压在身下、用户实机报告场景太黑」的那次修复。' +
+        '两半都有活读者（前者被本文件的判据与 module-loader 的注释点名，后者的 ②③ 被 HUD 与 Objectives 的注释点名），所以谁让号不是能就地判的事；逐对裁决与引用同步记在 KI-156。',
+    'KI-114':
+      '同号两行讲的是两件事：一行是「主干在自己的平面上过不了自己的 lint——发射方进提交面而类型前提住在别人未提交的文件里」，另一行是「无面童线步 3《容器》的圣所环链」。' +
+        '前一行的形状被 `scripts/event-rules.mjs`、`tests/unit/{event-rules,module-loader,audio-engine}.test.ts` 与架构 §5.9.48 反复按号引用，改它要连那五处一起改；本批只登记，裁决与挪号记在 KI-156。',
+    'KI-135':
+      '同号两行讲的是两件事：一行是「玩家开局站在一片黑上——地板灰盒没接到开局那批 chunk 事件，teleport 发完事件时 ChunkGreybox 还没订阅」，另一行是「Phase B4 三件套（贴花／拖尾／发射器）有人听、没人说，三张配置表没有写方」。' +
+        '两半都活着且各带一份测试（greybox-boot-order 与 vfx-wiring），源于同一次并发追加时没查在册号；挪号要连 `src/vfx/**`、`src/main.ts` 那二十多处按号引用一起改，全在并发会话手上。裁决记在 KI-156。',
+    'KI-136':
+      '同号两行讲的是两件事：一行是「交互提示只说区域名、不说你要跟谁说话」的引导缺口，另一行是「`vfx.json` 九行配置里五行还没有读者，正是 §55／KI-047 那条无消费方的数据不许入表」。' +
+        '两行各自写着本批完工的读数，读者无法从号判断哪一笔是它，也不许合并成一笔（那会丢掉一半证据）。不代修别人手上的行：挪号得连按号引用逐处同步，那需要单独一批。裁决记在 KI-156。',
+    'KI-137':
+      '同号两行讲的是两件事：一行是「对话框的视口走查第一次做了，抓到一处内部英文词漏到玩家面前」，另一行是「玩家醒来知道要干什么却不知道往哪走，于是目标指示 Objectives 第一次有承载体」。' +
+        '第二行是 `src/quest/Objectives.ts`、`src/ui/Hud.ts`、架构文件地图那一格按号点名的承重行，第一行是视口走查的读数；两行都得活着，所以让号这件事不能就地判。裁决与逐处引用同步记在 KI-156。',
+    'KI-138':
+      '同号两行讲的是两件事：一行是「调音桩面板六页的视口走查，结论是没找到缺陷但数字从此在账上」，另一行是「§8.2 任一维触及 35 那一行里程碑的机制腿第一次落下来」。' +
+        '这一对与 KI-135/136/137 同源于 2026-10-20 那一次并发追加（两个人同时往账本尾部取号），四格的理由同源、删除条件同一条：号归一的那一刻一起删。裁决记在 KI-156。',
+    'KI-140':
+      '同号两行讲的是两件事：一行是「KI-010 那一格的浏览器半边走完：休垒→破拍营地→钟坠院→未竟厅，每段都有画面、chunk 数不涨、零脚本错误」，另一行是「五条任务线共 25 步，哪一步只有一行 label 而没有台词接它从未被单独量过」。' +
+        '两行都带未结案的剩余（走查的像素/听感半边与任务线的台词覆盖各自还有腿），合并会让任一半读数失去出处。逐对挪号与引用同步记在 KI-156，本批只登记。',
+  }
+
+  const ledgerLines = issues.split(/\r?\n/)
+
+  it('门 C：每一行 KI 记录的行尾必须是「| P0..P4 | 词表值 |」，而词表从账本第 3 行现推（不许抄第二份）', () => {
+    const vocabLine = ledgerLines.find((l) => l.startsWith('状态词表：'))
+    expect(vocabLine, '账本开头那句「状态词表」不见了 ⇒ 状态值没有出处，这条判据该红在出处上而不是白送绿').toBeTruthy()
+    const vocab = [...vocabLine!.matchAll(/\*\*([A-Za-z]+)\*\*/g)].map((m) => m[1])
+    expect(vocab.length, `从词表行推导出 ${vocab.length} 个值 = 加粗形状被人改写过（§78 的词表不可能只剩两个）`).toBeGreaterThanOrEqual(3)
+    expect(vocab, '词表里必须有 Implemented，否则"这件事落了"没有词可以写').toContain('Implemented')
+
+    const rows = ledgerLines
+      .map((l, i) => ({ l, n: i + 1 }))
+      .filter((r) => /^\|\s*KI-\d{3,4}\s*\|/.test(r.l))
+    expect(rows.length, `只读到 ${rows.length} 行 KI 记录 = 分母读空，这道门在看一个空集合`).toBeGreaterThanOrEqual(140)
+
+    const badTail: string[] = []
+    const badStatus: string[] = []
+    for (const r of rows) {
+      const m = /\|\s*P[0-4]\s*\|\s*([A-Za-z]+)\s*\|\s*$/.exec(r.l)
+      if (!m) badTail.push(`第 ${r.n} 行 ${/^\|\s*(KI-\d+)\s*\|/.exec(r.l)![1]} 尾部 = 「${r.l.slice(-70)}」`)
+      else if (!vocab.includes(m[1])) badStatus.push(`第 ${r.n} 行 ${/^\|\s*(KI-\d+)\s*\|/.exec(r.l)![1]} = ${m[1]}`)
+    }
+    expect(
+      badTail,
+      `这些行读不出严重度/状态两格——登记者的散文被追加到了行尾格子**之后**，任何按格数解析的读者（含本仓的 §1.5 那道门）` +
+        `读到的都是垃圾。修法是把格子的内容搬回描述格里、行尾只留「| Pn | 状态 |」：\n${badTail.join('\n')}`,
+    ).toEqual([])
+    expect(
+      badStatus,
+      `这些状态值不在账本自己声明的词表里（词表 = ${vocab.join('/')}）：${badStatus.join(' ')}` +
+        `——「Closed」「Open」是§78 词表之外的自造值，读数时会被当成"不认识所以跳过"`,
+    ).toEqual([])
+  })
+
+  it('门 A：实测的重号集合必须恰好等于豁免名册（多一个红、少一个红都红；名册空了才叫结案）', () => {
+    const byId = new Map<string, number[]>()
+    ledgerLines.forEach((l, i) => {
+      const m = /^\|\s*(KI-\d{3,4})\s*\|/.exec(l)
+      if (!m) return
+      const id = `KI-${String(Number(m[1].slice(3))).padStart(3, '0')}`
+      byId.set(id, [...(byId.get(id) ?? []), i + 1])
+    })
+    const ids = [...byId.keys()]
+    expect(ids.length, `唯一号只读到 ${ids.length} 个 = 抽取形状坏了，下面的相等判据在看一个几乎空的集合`).toBeGreaterThanOrEqual(100)
+    const dupes = [...byId.entries()].filter(([, ls]) => ls.length > 1).sort((a, b) => (a[0] < b[0] ? -1 : 1))
+    const actual = dupes.map(([id]) => id)
+    const booked = Object.keys(COLLISION_LEDGER).sort()
+    expect(
+      actual,
+      `账本上这些号挂着第二行却没在名册里 = 读者以为"一个号一笔债"，实际读到两件事：\n` +
+        dupes.map(([id, ls]) => `  ${id}  ← 第 ${ls.join(' / ')} 行`).join('\n') +
+        `\n要么逐对裁决谁让号（把号改到没被引用过的那一行并同步全部按号引用，见 KI-156），要么在 COLLISION_LEDGER 登记理由；` +
+        `名册里有而实际没有的 ⇒ 那一笔已经归一，删格子。`,
+    ).toEqual(booked)
+
+    for (const [id, reason] of Object.entries(COLLISION_LEDGER)) {
+      expect(reason.length, `${id} 的豁免理由短到说不出谁欠谁（${reason.slice(0, 40)}…）`).toBeGreaterThanOrEqual(120)
+      expect(reason, `${id} 的豁免理由没点名 KI-156 = 一笔没有出处的白名单`).toContain('KI-156')
+    }
+    // 同生同死：名册非空 ⇒ 那笔"逐对挪号"的债必须在册且没结案。
+    if (booked.length > 0) {
+      const row = ledgerLines.find((l) => /^\|\s*KI-156\s*\|/.test(l))
+      expect(row, `名册挂着 ${booked.length} 笔重号，而账本里没有 KI-156 那一行 = 白名单挂在一笔不存在的债上`).toBeTruthy()
+      const m = /\|\s*P[0-4]\s*\|\s*([A-Za-z]+)\s*\|\s*$/.exec(row!)
+      expect(m, 'KI-156 那一行自己就读不出状态格 = 这笔债没人能销').toBeTruthy()
+      expect(m![1], 'KI-156 已写着 Implemented，豁免名册却还挂着 ⇒ 重号早归一了，名册该删').not.toBe('Implemented')
+    }
+  })
+
+  it('门 B：src/tests/scripts/docs 里每一处 KI- 按号引用都必须能在账本读到行（4 位归一成 3 位）', () => {
+    const skipDirs = new Set(['node_modules', '.git', '.scratch', 'dist', 'Python', 'artifacts', 'coverage'])
+    function walk(dir: string, out: string[] = []): string[] {
+      for (const name of readdirSync(dir)) {
+        if (skipDirs.has(name)) continue
+        const p = `${dir}/${name}`
+        if (statSync(p).isDirectory()) walk(p, out)
+        else if (/\.(ts|tsx|mjs|md|json)$/.test(name)) out.push(p)
+      }
+      return out
+    }
+    const rowIds = new Set(
+      ledgerLines
+        .map((l) => /^\|\s*(KI-\d{3,4})\s*\|/.exec(l)?.[1])
+        .filter((x): x is string => !!x)
+        .map((raw) => `KI-${String(Number(raw.slice(3))).padStart(3, '0')}`),
+    )
+    const SELF = 'docs/KNOWN_ISSUES.md'
+    // `root` 自带结尾分隔符（fileURLToPath 给目录 URL 时带尾），所以 rel 从 `root.length` 切，不是 +1。
+    // 差一个字符时 SELF 排除失效 = 账本被算进它自己的引用总体（第一次跑就中招，读数报出 `ocs/...`）。
+    const relOf = (f: string) => f.slice(root.length).replace(/^[\\/]/, '').replace(/\\/g, '/')
+    const surfaces = ['src', 'tests', 'scripts', 'docs']
+    const filesPerSurface = new Map<string, number>()
+    const unresolved: string[] = []
+    let files = 0
+    let hits = 0
+    const cited = new Set<string>()
+    for (const sub of surfaces) {
+      let n = 0
+      for (const f of walk(root + sub)) {
+        const rel = relOf(f)
+        if (rel === SELF) continue
+        n++
+        const body = readFileSync(f, 'utf8')
+        for (const m of body.matchAll(/KI-\d+/g)) {
+          hits++
+          const id = `KI-${String(Number(m[0].slice(3))).padStart(3, '0')}`
+          cited.add(id)
+          if (!rowIds.has(id)) unresolved.push(`${rel}:${body.slice(0, m.index).split('\n').length} 引 ${m[0]} → ${id} 无行`)
+        }
+      }
+      filesPerSurface.set(sub, n)
+    }
+    files = [...filesPerSurface.values()].reduce((a, b) => a + b, 0)
+    // 四道地板全部出自这一次扫描：某一片总体被扫空时，"0 处未登记"不代表没病。
+    expect(files, `引用总体只读到 ${files} 份文件 = 扫描面塌了`).toBeGreaterThanOrEqual(300)
+    expect(hits, `这一次只数到 ${hits} 处 KI- 引用 = 命中数低于地板，抽取器大概瞎了`).toBeGreaterThanOrEqual(2000)
+    expect(cited.size, `点到的唯一号只有 ${cited.size} 个 = 分母低于地板`).toBeGreaterThanOrEqual(100)
+    for (const sub of surfaces) {
+      expect(filesPerSurface.get(sub) ?? 0, `${sub}/ 一份文件都没读到 = 那一片整个没进总体，未登记的号可以藏在里面`).toBeGreaterThanOrEqual(1)
+    }
+    expect(
+      unresolved,
+      `这些编号被代码/脚本/文档按号引用，而账本里没有那一行 = 读者按号去找账，找到的是空气。` +
+        `要么补登记（号 + 严重度 + §78 状态），要么把引用改成它真正指向的那个号：\n${unresolved.join('\n')}`,
+    ).toEqual([])
+  })
 })
