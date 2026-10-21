@@ -24,6 +24,7 @@
  */
 import { execFileSync } from 'node:child_process'
 import { formatReds, summarizeReds } from './report-reds.mjs'
+import { resultLine } from './red-rate-scan.mjs'
 import { describeScope, positionalFilters, reconcileRoster, scopeOf, testFilesOnDisk } from './test-scope.mjs'
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -69,14 +70,33 @@ const onDisk = testFilesOnDisk(TESTS).map((p) => resolve(p))
  */
 const filters = positionalFilters(EXTRA)
 const scope = scopeOf(onDisk, filters, ROOT)
+
+/**
+ * 唯一出口（KI-152 第一条腿的落点）：七条终出口全部走这里，每条都留一行机器可读的判决。
+ *
+ * 为什么这条门要有：`完整报告留在 <tmp>` 那两句只在**红**的两条出口为真，绿的那条把临时目录整个 `rmSync` 掉了。
+ * 第一版红率量具照着那句去读报告，八趟全 ENOENT，于是把「读不到」数成「这趟 0 红」，报出 `reds/0`。
+ * 人类那几句改一个字，读它的脚本就静默读出垃圾；所以判决走 `red-rate-scan.mjs` 那份**印与读同一把手**的行。
+ *
+ * `reds/total/ranFiles` 故意**不给默认值**：漏传一个就写不进 JSON（`undefined` 被 stringify 丢掉），
+ * 读的那一头当场解析不动 ⇒ 判为"这一趟不可归因"。默认值会把"没数出来"洗成"数出来是 0"，那正是本脚本要防的谎。
+ * 期望集取 `scope.expected.length` 而不是 `expected`：圈空那条出口在 `expected` 被赋上之前就要走，
+ * 那里没有"这一趟"，但有判决可说。
+ */
+function finish(kind, { reds, total, ranFiles, redTitles = [], reportKept = false, code = 1 } = {}) {
+  console.log(resultLine({ kind, reds, total, ranFiles, expectedFiles: scope.expected.length, redTitles, reportKept }))
+  process.exit(code)
+}
+
 if (scope.unmatched.length) {
   console.error(`\n[test] 这些参数在磁盘上一个测试文件都没圈到：${scope.unmatched.map((f) => `"${f}"`).join(' ')}`)
   console.error('  要么路径写错了，要么它是某个**选项的值**而不是位置参数（那一律写成 `--选项=值` 的等号形状，')
   console.error('  或把它补进 `test-scope.mjs` 的 `VALUE_OPTS`）。**不退成全量继续判**：')
   console.error('  vitest 遇到圈空的筛选器会一个文件都不跑，而"该跑 0 个、跑到 0 个"读起来就是全绿。')
-  process.exit(1)
+  finish('scope-unmatched', { reds: 0, total: 0, ranFiles: 0 })
 }
 const expected = scope.expected
+
 let last = null
 let lastMissing = []
 for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
@@ -86,7 +106,7 @@ for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
   if (!res) {
     rmSync(tmp, { recursive: true, force: true })
     console.error(`\n[test] 第 ${attempt} 次连报告都没写出来（vitest 起不来？）`)
-    process.exit(1)
+    finish('no-report', { reds: 0, total: 0, ranFiles: 0 })
   }
   last = res
   /**
@@ -102,7 +122,13 @@ for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     // 而那要同一份报告（重跑一次就要四分钟，而且未必复现同一批红）。
     console.error(`\n[test] ${formatReds(sum)}`)
     console.error(`  完整报告留在 ${report}`)
-    process.exit(1)
+    finish('red', {
+      reds: sum.nRed,
+      total: sum.total,
+      ranFiles: sum.ranFiles,
+      redTitles: sum.files.flatMap((f) => f.reds.map((a) => a.name)).slice(0, 5),
+      reportKept: true,
+    })
   }
   const failed = (res.json.numFailedTests ?? 0) + (res.json.numFailedTestSuites ?? 0)
   if (failed > 0) {
@@ -112,7 +138,7 @@ for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     console.error('  这是**文件级**问题（import 失败、teardown 抛错，或本机那条 EPERM 被记成 Unhandled Error），不是断言红：')
     console.error('  报告里没有一条 status=failed 的用例可点名，所以要用 `npm run test:raw` 看原始输出，别改测试文件。')
     console.error(`  完整报告留在 ${report}`)
-    process.exit(1)
+    finish('suite-red', { reds: 0, total: sum.total, ranFiles: sum.ranFiles, reportKept: true })
   }
   const { missing, extras } = reconcileRoster(expected, res.files)
   if (extras.length > 0) {
@@ -128,13 +154,13 @@ for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     console.error('  （这里只收 `.test.ts`，而 vitest 的 include 还吃 `.spec`、`.tsx`、`.mts`）。')
     console.error('  该改的是**放它进来的那一步**：把文件移回 `tests/` 并按 `.test.ts` 命名，或让 `test.include` 与本文件的')
     console.error('  `testFilesOnDisk` 同一套拼写。别把这条判据删掉来"修红"——分母一旦不可复现，之前每一个绿色数字都作废。')
-    process.exit(1)
+    finish('extras', { reds: 0, total: sum.total, ranFiles: sum.ranFiles })
   }
   if (missing.length === 0) {
     rmSync(tmp, { recursive: true, force: true })
     console.log(`\n[test] 覆盖核对通过：${describeScope(filters, expected.length, onDisk.length)}，${sum.total} 条用例全绿` +
       (res.cleanExit ? '' : '（进程退出码非零，来自本机那条 EPERM 的 Unhandled Error，与用例无关）'))
-    process.exit(0)
+    finish('green', { reds: 0, total: sum.total, ranFiles: sum.ranFiles, code: 0 })
   }
   lastMissing = missing
   rmSync(tmp, { recursive: true, force: true })
@@ -146,5 +172,5 @@ for (const p of lastMissing) console.error(`  - ${p}`)
 console.error(filters.length
   ? `  这不是测试失败，而是**覆盖不足**（范围 ${filters.join(' ')} 内）。重跑；仍然不齐就用 \`npm run test:raw -- ${filters.join(' ')}\` 看 vitest 自己怎么说。`
   : '  这不是测试失败，而是**覆盖不足**：请重跑。全量名册就是这一趟的期望集，没有更小的范围可退。')
-void last
-process.exit(1)
+const lastSum = summarizeReds(last.json, ROOT)
+finish('coverage-void', { reds: 0, total: lastSum.total, ranFiles: lastSum.ranFiles })

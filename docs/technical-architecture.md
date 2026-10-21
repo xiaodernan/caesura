@@ -931,6 +931,26 @@ KI-077 收口时如实记了「只兑现 L1+L4，`music.explore`(7) 与 `music.b
 > 且是被删掉的那一条：它那边"筛选器是绝对路径 ⇒ 直接比前缀"，我们这里没有（跑测器永远以仓库根为 `dir`，折成相对后同一条判定接得住；
 > 变异探针摘掉它零红 ⇒ 那行没有证人）。**已知会误判的那一格**：`--shard`／`--project` 这类真的会收窄 vitest 自己名册的选项
 > 只按"吃值"处理，没跟期望集对账 ⇒ `--shard=1/2` 会被判成漏跑（详见 KNOWN_ISSUES 的 KI-078 行「没做①」）。
+>
+> **每一条终出口都印一行机器可读判决（KI-152，2026-10-22）**：`node scripts/test.mjs` 现在只有一个出口 `finish(kind, …)`，
+> 七条终止路径（`green`／`red`／`suite-red`／`extras`／`coverage-void`／`scope-unmatched`／`no-report`）各自先印一行
+> `[test] RESULT {json}` 再退（只有 `green` 拿 `code: 0`），字段是 `kind／reds／total／ranFiles／expectedFiles／redTitles／reportKept`。
+> 为什么要这一行：红率量具 `scripts/red-rate.mjs` 的第一版去读人类那句「完整报告留在 `<tmp>\report.json`」，而**只有红的那两条出口留着报告**、
+> 绿的那条把临时目录整个 `rmSync` 掉 ⇒ 八趟全部 ENOENT、每趟被数成「0 红」，报出 `reds/0`——**零分母长得和零红一样整齐**。
+> 判据形状由此定下：**读不懂就是没有读数**，不是 0。印（`resultLine`）与读（`parseResultLine`）住在同一份模块
+> `scripts/red-rate-scan.mjs`（+ 手写 `.d.mts` 声明，理由与 `report-reds.mjs` 同一个：`test.mjs` 一被 import 就跑整套测试，没法被任何测试引用）；
+> 字段一律现算、不在打印侧补默认值——一个 `?? 0` 就会把"没数出来"洗成"数出来是 0"。`parseResultLine` 对缺失行／坏 JSON／缺字段／类型不对一律返回 `null`，
+> `rateOf` 把"一趟都没归因"标成 `unusable`，并单独钉**负载没生效**（loaded 中位 ≤ idle 中位 ⇒ 两种环境其实是一种）。
+> 测试在 `tests/unit/red-rate-scan.test.ts`（13 条：七种判决各走一遍 round-trip、多条取最后一条、五种读不懂的形状一律 `null`、
+> 历史那个 `reds/0` 签名必须被拒绝给读数，另加两条**读 HEAD blob** 的源码门——跑测器里只许有一个 `process.exit(`、
+> `finish('kind'` 的名字必须与 `KINDS` 双向对账）。CLI：`npm run red:rate -- <筛选器…> --runs=8 --modes=idle,loaded [--expect-cases=N]`，
+> 退出码 0 = 两种环境都没有红且可归因，1 = 量到了红，2 = 有趟次不可归因或负载没生效 ⇒ **这批没有读数，不是"没病"**。
+>
+> **`scripts/*.mjs` 从此每一份都要被 node 自己解析一遍（KI-248，2026-10-22）**：`tests/unit/script-parse.test.ts` 把 HEAD 的
+> 每一份脚本 blob 落进一次性目录跑 `node --check`（真加载时用的就是同一个解析器）。起因不是设想：上面那个 `red-rate.mjs`
+> 写完后第一次被调用就抛 `SyntaxError: missing ) after argument list`，而它在此之前已被提交面收过一路——`tsc` 绿
+> （`include` 只有 `src`／`tests` 且 `allowJs` 未开）、全量套件绿（没人 import 它）、KI-118 那道"进程内脚本必须加载得动"也绿
+> （CLI 那一份按设计带着 shebang、不进进程内名册）。这条门只管**语法**，与 KI-118 那格不重叠也不互替。
 
 
 ### 6.1 Vitest 单元测试（纯逻辑层，毫秒级）
@@ -3712,3 +3732,54 @@ KI-233 量的是两个乘子都是 1 的那一种；这一批量的是**强度�
 **没做（§78，如实登记）**：① **恢复锁的差额只量不裁**；② **「空中翻滚」整行要不要补承载体没做**；
 ③ **「免摔落伤」那一格没裁**；④ **槽位键改成「按落点算」的那件事没做**（KI-247 已登记）；
 ⑤ **§77 实机腿本轮没跑成** ⇒ 证据只有头less 五条腿 ＋ 四臂，**不拿离线读数冒充实机**。
+
+### 5.9.92 跑测器的判决行、红率量具与"读数自己要有门"（KI-152 ＋ KI-248，2026-10-22）
+
+**这一批没有改玩法，改的是量具**。KI-152 那一行要的是**红率**（`reds/N` 两种环境各量一遍），第一版量具去读
+`scripts/test.mjs` 打印的那句人类读数「完整报告留在 `<tmp>\report.json`」——而**只有红的那两条出口留着报告**，
+绿的那条把临时目录整个 `rmSync` 掉了 ⇒ 八趟全部 ENOENT、每趟被数成"0 红"，报出 `reds/0`。
+**零分母长得和零红一样整齐**：那一批没量出"不复现"，只量出了"我没读到"。
+所以改的是判据的**载体**而不是判据本身（本行原话：一次红就加 sleep 或放宽断言，等于把判据改成"跑得动就算过"）。
+
+| 腿 | 判据 | 真读数 |
+|---|---|---|
+| ① 判决行本身 | 七条终出口各印一行 `[test] RESULT {json}`，印出来就读得回来 | `KINDS = 7`（`green`／`red`／`suite-red`／`extras`／`coverage-void`／`scope-unmatched`／`no-report`），round-trip 七种全过；跑测器里 `process.exit(` 只许出现 **1** 次（在唯一出口 `finish` 内） |
+| ② 读不懂的形状 | 缺失行／坏 JSON／种类不在名单／字段缺或类型不对／`redTitles` 不是数组 ⇒ 一律 `null` | 五型各一条，全部 `null` ⇒ 调用方只能算"不可归因"，**不许算 0 红** |
+| ③ 历史那个签名 | N 趟全不可归因 ⇒ `rateOf` 拒绝给读数 | `counted = 0` ⇒ `unusable`，并把 `reds/0` 原样印出来当反面读数 |
+| ④ 分母 | 每趟收集数与从盘上现推的那个数不符 ⇒ 那一批作废 | 读数：`收集到 15 条 ≠ 钉住的 16 条` |
+| ⑤ 负载生效 | loaded 中位必须**慢过** idle 中位，否则"两种环境"其实是一种 | 单文件 20.49 s → 32.01 s（×1.56）；五文件 21.18 s → 42.23 s（×1.99） |
+| ⑥ 红率（本批要量的那一格） | 单文件 `tests/unit/ui-intents.test.ts`（每趟 `total=16`、`files=1/1`） | **idle `reds/10 = 0`、loaded `reds/10 = 0`** |
+| ⑦ 红率（登记那一次的形状） | 五文件宇宙 `ui-intents` ＋ `input-pad` ＋ `panel-nav` ＋ `map-ui` ＋ `gamepad-walk`（每趟 99 条／5 个文件） | **idle `reds/6 = 0`、loaded `reds/6 = 0`**；合计 **32 趟 0 红、0 趟不可归因** |
+
+**印与读同一把手**：`scripts/red-rate-scan.mjs`（+ 手写 `red-rate-scan.d.mts`，缺它 import 那边就是 TS7016）。
+理由与 `report-reds.mjs`（`summarizeReds` ⇄ `formatReds`）同一个：**门禁的读数自己必须可测**，而 `test.mjs` 一被 import
+就去跑整套测试，没法被任何测试引用。打印侧**不补默认值**——一个 `?? 0` 就会把"没数出来"洗成"数出来是 0"。
+CLI：`npm run red:rate -- <筛选器…> --runs=8 --modes=idle,loaded [--expect-cases=N]`，退出码 0／1／2 = 无红／量到了红／**这批没有读数**。
+
+**反面见证（落地顺序自带的那一次红，不是事故）**：平面上 HEAD 还是父提交时 `tests/unit/red-rate-scan.test.ts` 13 条里红 2 条，
+两条都落在"读 HEAD 的 blob"那一格——`跑测器里有 7 处 process.exit … expected 7 to be 1`、`只读到 0 条 finish 出口 … expected 0 to be ≥ 7`
+⇒ 那一次红证的正是"旧跑测器没有判决行"。同一趟的输出里已经印着 `[test] RESULT {"kind":"red",…,"reportKept":true}`。
+
+**反向实测（`.scratch/ki152/arms.mjs`，跑真链，CONTROL ＋ 四臂 = 29 条子句、0 漏，两份被碰文件逐字节验回）**：
+A2 种一条断言红（把 `.toContain('focus')` 的针尖涂掉一个字母）⇒ `kind=red`、`reds=1/16`、`reportKept=true` 且点名那条用例、红率 `reds/2 = 2`、exit 1；
+A3 在文件顶层抛（收集期就炸，一条用例都没红）⇒ `kind=suite-red`、两趟全不可归因 ⇒ 分母如实印成 `reds/0` 而**不是** `reds/2 = 0`、exit 2；
+A4 删掉一整块用例（分母 16→15）⇒ 跑测器自己仍报全绿（**那一格没有门**），红率因钉住的分母作废、exit 2；
+A5 把判决里的 `reds` 印成字符串 ⇒ `parseResultLine` fail-closed ⇒ 两趟不可归因、exit 2。
+**两条量具纪律是本批当场学到的**：① 臂的预测要能被**原文**否证——A3 第一版把子句瞄在"没被读成绿"上，被原文否证（作废理由那句里本来就写着"全绿"两个字），
+改指 `⇒ idle：reds/0 = 0` 这一句，原预测留在脚本里不涂掉；② 子句 MISS 必须**当场印它读过的原文**，否则 MISS 只会变成第二次猜测
+（第一轮 CONTROL 有两格 MISS 就没留下可归因的读数 ⇒ 如实记为**未归因**，不写成"已排除"）。
+
+**KI-248（本批顺出来的那道洞）**：`scripts/red-rate.mjs` 第一次被调用就抛 `SyntaxError: missing ) after argument list`
+（`String(e && e.code ?? e)`——`&&` 与 `??` 混写必须加括号），而在此之前它已经跟着本批门禁跑过一路：`tsc` 绿
+（`include` 只有 `src`／`tests`，`allowJs` 没开）、全量套件绿（没人 import 它）、KI-118 绿（CLI 那一份带 shebang，按设计不进进程内名册）
+⇒ **"这个仓库跑得动"对那批只被命令行跑的脚本从未被任何机器读者证过**，三道门各管一格，没有一道管源码合不合法。
+结案：`tests/unit/script-parse.test.ts` 让 **node 自己**逐个解析 HEAD 的每一份 `scripts/*.mjs` blob（`node --check` 就是真加载时同一个解析器），
+三道地板与判据出自**同一次扫描**（名册 ≥20 份／被真 spawn 检查的份数 == 名册长度／带 shebang 的 ≥1 份），本批那两个主体另按名字钉进总体，
+探针自己先走两条（合法那份过、`&&` 混 `??` 那一型红且带得出 node 那句），spawn 不动时报"这条判据没跑成"而不是 `ok`，
+反面见证写在门里（把 HEAD 那一份修好的括号摘掉再解析 ⇒ 必须红）。这条门只管**语法**，与 KI-118 那格不重叠也不互替。
+
+**口径与没做（如实登记）**：**不复现 ≠ 已归因**。登记那一次发生在 KI-151 臂电池里 **58.5 s** 的那一趟，比本批 loaded 中位 42.23 s 还重一档
+⇒ 本批只把上界钉成「单文件 0/20、五文件 0/12」，**不宣称结案**。
+① 那条用例**为什么会红**仍未归因；② 第一轮 CONTROL 的两格 MISS 未归因；
+③ 负载形状是 `--workers` 个忙循环，**不是** vitest 同进程并发那种形状（臂电池那一趟比这重），要复刻得另做量具；
+④ 解析门只判语法，不判语义与运行时行为；⑤ `tests/` 与 `src/` 由 tsc 与套件覆盖，本批没扩总体。

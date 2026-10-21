@@ -14,7 +14,8 @@
     "coverage": "node scripts/coverage.mjs",
     "validate:data": "node scripts/validate-data.mjs",
     "check": "npm run lint && npm run validate:data && npm run test",
-    "test:raw": "node scripts/test-raw.mjs"
+    "test:raw": "node scripts/test-raw.mjs",
+    "red:rate": "node scripts/red-rate.mjs"
   },
   "dependencies": {
     "three": "^0.186.0"
