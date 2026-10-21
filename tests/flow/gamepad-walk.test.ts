@@ -1257,4 +1257,90 @@ describe('KI-151 摇杆 → 相机 → 位移 → 焦点：整条链真的走得
     expect(sawAction, '前提：这一趟真的有攻击在册').toBe(true)
     expect(maxWindow, '攻击在册的每一拍都按了弹反 ⇒ 弹反窗一次都没开过（设计 §1.2「仅 Recovery 段可取消」在运行时是"整段都不能"）').toBe(0)
   })
+
+  /**
+   * **「§1.2 硬直中移动输入」与「§5.5 冲刺终止」那两行**（KI-223）：
+   * 「硬直中移动输入 ｜ **不响应**，但**方向键影响翻滚方向预测**」、
+   * 「冲刺终止 ｜ 疾跑中翻滚=停跑｜**疾跑打断保护：不继承速度**」。
+   *
+   * 真链上量到的：**四格都有载体**——硬直中推摇杆人一个字节不动；硬直中推的方向**仍然决定那一滚走哪边**；
+   * 疾跑中翻滚那一滚**走的还是 `roll.dist` 那一格**（与走中翻滚同一个数 ⇒ 不继承速度）；
+   * 翻滚期间疾跑是**停的**（指令速度 0）。
+   * **一条今天读到、但设计没写清的事**：滚完之后**按住疾跑键，疾跑自己就回来了**（不用重新按）
+   * ⇒ 「停跑」那半句是"停到滚完"还是"停到重新按"，设计没写 ⇒ **只量不裁**。
+   */
+  it('硬直中移动输入：不响应（硬直中推摇杆 ⇒ 位置一个字节不动）', () => {
+    const r = newRun()
+    r.player.stunTicks = 30
+    const from = { x: r.player.pos.x, z: r.player.pos.z }
+    r.set([0, -1], [0, 0])
+    for (let i = 0; i < 30; i++) r.tick()
+    expect(Math.hypot(r.player.pos.x - from.x, r.player.pos.z - from.z), '硬直中推摇杆 ⇒ 人不动').toBe(0)
+    expect(r.player.moveSpeed, '硬直中的指令速度是 0（相机也不该被它牵着走）').toBe(0)
+  })
+
+  it('硬直中移动输入：方向键影响翻滚方向预测（硬直中推的方向决定那一滚走哪边）', () => {
+    const r = newRun()
+    r.player.stunTicks = 30
+    r.set([1, 0], [0, 0]) // 推右
+    for (let i = 0; i < 10; i++) r.tick() // 硬直中：推着摇杆
+    const yawDuringStun = r.player.yaw
+    const from = { x: r.player.pos.x, z: r.player.pos.z }
+    r.set([1, 0], [0, 0], [0]) // 硬直中按翻滚（硬直可翻滚取消）
+    r.tick()
+    r.set([0, 0], [0, 0], []) // 松开摇杆 ⇒ 位移就是那一滚自己的
+    let end = { ...from }
+    for (let i = 0; i < 60; i++) {
+      const p0 = { x: r.player.pos.x, z: r.player.pos.z }
+      r.tick()
+      const p1 = { x: r.player.pos.x, z: r.player.pos.z }
+      if (Math.hypot(p1.x - p0.x, p1.z - p0.z) > 1e-9) end = p1
+    }
+    const travel = { x: end.x - from.x, z: end.z - from.z }
+    expect(r.player.yaw, '硬直中朝向没变（那 10 拍推着摇杆也没转）').toBe(yawDuringStun)
+    const gap = travelGap(yawDuringStun, travel)
+    expect(gap, '那一滚走的是**方向键**那一边（与朝向差一大截，不是顺着朝向）').toBeGreaterThan(45)
+    expect(gap, '……也不是"没有输入时滚背面"那一格（那一格是 180°，与 KI-090 没做③ 同一处）').toBeLessThan(170)
+  })
+
+  it('冲刺终止：疾跑中翻滚 ⇒ 那一滚不继承速度（与走中翻滚同一个数）', () => {
+    /** 走／疾跑中各滚一次（摇杆在翻滚那一拍松开 ⇒ 位移就是那一滚自己的） */
+    const rollDist = (sprint: boolean): number => {
+      const r = newRun()
+      r.set([0, -1], [0, 0], sprint ? [7] : [])
+      for (let i = 0; i < 30; i++) r.tick()
+      const from = { x: r.player.pos.x, z: r.player.pos.z }
+      r.set([0, -1], [0, 0], sprint ? [7, 0] : [0])
+      r.tick()
+      r.set([0, 0], [0, 0], sprint ? [7] : [])
+      let end = { ...from }
+      for (let i = 0; i < 60; i++) {
+        const p0 = { x: r.player.pos.x, z: r.player.pos.z }
+        r.tick()
+        const p1 = { x: r.player.pos.x, z: r.player.pos.z }
+        if (Math.hypot(p1.x - p0.x, p1.z - p0.z) > 1e-9) end = p1
+      }
+      return Math.hypot(end.x - from.x, end.z - from.z)
+    }
+    const walk = rollDist(false)
+    const sprint = rollDist(true)
+    expect(walk, '走中翻滚走 `roll.dist` 那一格').toBeCloseTo(playerBase.roll.dist, 2)
+    expect(sprint, '疾跑中翻滚走的**还是** `roll.dist` 那一格 ⇒ 不继承速度（设计 §5.5「疾跑打断保护」）')
+      .toBeCloseTo(walk, 6)
+  })
+
+  it('冲刺终止：翻滚期间疾跑是停的；滚完之后按住疾跑键，它自己就回来（**登记**：设计「停跑」没写清要不要重新按）', () => {
+    const r = newRun()
+    r.set([0, -1], [0, 0], [7]) // 疾跑
+    for (let i = 0; i < 30; i++) r.tick()
+    expect(r.player.moveSpeed, '前提：这一趟真的在疾跑').toBeCloseTo(playerBase.sprintSpeed, 2)
+    r.set([0, -1], [0, 0], [7, 0]) // 疾跑中按翻滚
+    r.tick()
+    expect(r.player.moveSpeed, '翻滚期间疾跑是**停的**（移动被锁住 ⇒ 指令速度 0）').toBe(0)
+    r.set([0, -1], [0, 0], [7]) // 摇杆继续推、疾跑键继续按
+    for (let i = 0; i < 60 && r.player.roll; i++) r.tick() // 等这一滚走完
+    for (let i = 0; i < 10; i++) r.tick()
+    expect(r.player.moveSpeed, '滚完之后按住疾跑键 ⇒ 疾跑自己就回来了（**登记**：设计「停跑」是"停到滚完"还是"停到重新按"，没写）')
+      .toBeCloseTo(playerBase.sprintSpeed, 2)
+  })
 })
