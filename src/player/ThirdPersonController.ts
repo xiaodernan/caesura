@@ -691,6 +691,21 @@ export class PlayerController {
   }
 
   /**
+   * **人的朝向向量** ＝ (sin yaw, cos yaw)——与 `hitTarget().facingYaw`、`moveWithWalls` 那一支同一支笔。
+   *
+   * 战技位移（错拍步）走它，不走 `moveDir()`（KI-209）：
+   *  · combat.md §4.8 那一行写的是「**沿当前朝向**位移 2.5/3/3.5m」；
+   *  · gameplay.md §3.1 那一行写的是「**锁定态下沿目标朝向修正**（Motion Warp 式根位移）」——
+   *    锁定时人的朝向就是目标朝向（主循环每拍 `faceTowards`），所以"沿朝向"才等于"沿目标朝向"；
+   *  · 走 `moveDir()` 的两个坏处都在真链上量到过：**没有输入时它回落成朝向的反方向**
+   *    （这一式于是往后跳，与 combat.md 那一行、`schema.ts` 那句「无输入时沿面向」、
+   *    `moveDir()` 自己的注释「没有输入就朝正前方」三处都对不上）；
+   *    **它读的是上一拍的输入**（`moveIntent` 在 `update()` 里才刷新，而出手在 `update()` 之前）
+   *    ⇒ 玩家"按战技键那一拍"推的方向要等下一拍才生效。
+   */
+  private facingDir(): Vec3 { return { x: Math.sin(this.yaw), y: 0, z: Math.cos(this.yaw) } }
+
+  /**
    * §5.5 那张翻滚表的**唯一读数处**（KI-090）：一次翻滚的时长 / 免伤窗 / 体力价三格都从这里派生。
    *
    * 表里锁定侧步那一行（300ms/18f、4-16f、10 点）此前在代码里是两处各数一遍的：时长硬编码成
@@ -889,7 +904,13 @@ export class PlayerController {
       key, f, tick: cut, hitDone: false, shots: 0, hitIds: new Set<string>(),
       stopTicks: 0, stopDebt: 0,
       skill: skill?.cast ?? null,
-      dir: skill && skill.cast.distance > 0 ? this.moveDir() : null
+      /**
+       * 战技位移（错拍步）的方向 ＝ **出手那一刻的朝向**（KI-209）。
+       * 不再取 `moveDir()`（输入方向）：combat.md §4.8 那一行写的是「沿当前朝向位移」，
+       * gameplay.md §3.1 那一行写的是「锁定态下沿目标朝向修正」——两处都要"朝向"这一支。
+       * 详见 {@link facingDir}。
+       */
+      dir: skill && skill.cast.distance > 0 ? this.facingDir() : null
     }
     this.comboQueued = null
     // `input.action` 此前是声明了没有发射方的死事件；它的读者（PatrolWatch，断弦线步 1

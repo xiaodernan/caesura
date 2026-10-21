@@ -146,6 +146,17 @@ function faceAt(w: World, p: Vec3): void {
   w.player.camYawRef = Math.PI + w.player.yaw
 }
 
+/**
+ * **位移方向与朝向的夹角**（KI-209，度）：朝向向量 ＝ (sin yaw, cos yaw)，
+ * 与 `hitTarget().facingYaw` 同一支笔。0°＝正对朝向，180°＝正对朝向的反面。
+ */
+function gapTo(yaw: number, dx: number, dz: number): number {
+  const l = Math.hypot(dx, dz)
+  if (l < 1e-9) return 0
+  const d = (Math.sin(yaw) * dx + Math.cos(yaw) * dz) / l
+  return (Math.acos(Math.max(-1, Math.min(1, d))) * 180) / Math.PI
+}
+
 /** 让这一式自己收完（各把武器的收势帧不一样长，测试不替它猜） */
 function settle(w: World): void {
   for (let i = 0; i < 200 && w.player.action; i++) w.tick()
@@ -258,7 +269,9 @@ describe('§7 出手：战技与武器共用同一条结算通道', () => {
 describe('§7.2 错拍步：位移是数据给的，不是拍子给的', () => {
   /**
    * 出手前后的净位移 + 同一世界里一次翻滚的持续 tick。
-   * 移动输入只在**出手前一 tick**给：方向在那一刻就被 `moveDir()` 定死，之后按着走会污染测量。
+   * 移动输入仍在**出手前一 tick**给（旧实现的取法：方向取的是上一拍的输入）；
+   * **KI-209 之后方向取的是出手那一刻的朝向**（combat.md §4.8「沿当前朝向位移」）⇒
+   * 这里的输入只负责"让人先动一拍"，不再决定这一步的方向。
    */
   function step(o: { bpm?: number; jitter?: number } = {}): { dx: number; dz: number; distance: number; roll: number } {
     const w = makeWorld()
@@ -286,11 +299,61 @@ describe('§7.2 错拍步：位移是数据给的，不是拍子给的', () => {
     return out
   }
 
-  it('净位移恰等于等级表里的 distance，方向沿出手那一刻的移动输入', () => {
+  it('净位移恰等于等级表里的 distance，方向沿出手那一刻的**当前朝向**（KI-209：修前是沿输入方向）', () => {
     const s = step()
     expect(Math.hypot(s.dx, s.dz), '一步就是表里那么远，不多不少').toBeCloseTo(s.distance, 10)
     expect(s.dx, '没有往旁边漂').toBeCloseTo(0, 10)
-    expect(s.dz, '沿屏幕前方推进').toBeLessThan(0)
+    expect(s.dz, '沿朝向推进（这一式朝 -z）').toBeLessThan(0)
+  })
+
+  /**
+   * **位移方向 ＝ 出手那一刻的朝向**（KI-209）：combat.md §4.8 那一行写的是「沿当前朝向位移」，
+   * gameplay.md §3.1 那一行写的是「锁定态下沿目标朝向修正」——两处都要"朝向"这一支。
+   *
+   * **量法**：让**输入的方向与朝向不同**（输入给 +x，脸朝 -z，差 90°）⇒ 位移必须跟**朝向**。
+   * 修前这一式走的是输入方向（而且是**上一拍**的输入：`moveIntent` 在 `update()` 里才刷新，
+   * 出手却跑在 `update()` 之前）⇒ 这一条当时是红的。
+   */
+  it('战技位移沿出手那一刻的朝向（输入给的是别处也不改）', () => {
+    const w = makeWorld()
+    const key = equipMove(w, SYNC, 0)
+    const distance = w.player.skills[key].cast.distance
+    faceAt(w, { x: 0, y: 0, z: -10 }) // 脸朝 -z，位置清零
+    w.frame.move = { x: 1, y: 0 } // 输入：侧移（+x）——与朝向差 90°
+    w.tick()
+    w.frame.move = { x: 0, y: 0 }
+    const yawAtCast = w.player.yaw
+    const from = { ...w.player.pos }
+    expect(w.player.tryStartAction(key, w.time.tick), '错拍步没踏出去').toBe(true)
+    w.tick(40)
+    const dx = w.player.pos.x - from.x
+    const dz = w.player.pos.z - from.z
+    expect(Math.hypot(dx, dz), '一步就是表里那么远').toBeCloseTo(distance, 2)
+    expect(gapTo(yawAtCast, dx, dz), '位移必须沿出手那一刻的朝向（不是输入方向）').toBeLessThan(0.5)
+    w.off()
+  })
+
+  /**
+   * **没有输入时这一步沿朝向走**（KI-209）：修前它往**朝向的反方向**跳
+   * （`moveDir()` 在没有输入时回落的是朝向的反方向）⇒ 与 combat.md §4.8 那一行
+   * 「沿当前朝向位移」、`schema.ts` 那句「无输入时沿面向」、`moveDir()` 自己的注释
+   * 「没有输入就朝正前方」三处都对不上。
+   */
+  it('没有输入时这一步沿朝向走（修前它往朝向的反方向跳）', () => {
+    const w = makeWorld()
+    const key = equipMove(w, SYNC, 0)
+    faceAt(w, { x: 0, y: 0, z: -10 }) // 脸朝 -z，位置清零
+    w.frame.move = { x: 0, y: 0 }
+    w.tick() // 没有任何输入
+    const yawAtCast = w.player.yaw
+    const from = { ...w.player.pos }
+    expect(w.player.tryStartAction(key, w.time.tick), '错拍步没踏出去').toBe(true)
+    w.tick(40)
+    const dx = w.player.pos.x - from.x
+    const dz = w.player.pos.z - from.z
+    expect(dz, '没有输入时这一步该沿朝向（-z）推进，不许往回跳').toBeLessThan(0)
+    expect(gapTo(yawAtCast, dx, dz), '位移方向就是出手那一刻的朝向').toBeLessThan(0.5)
+    w.off()
   })
 
   it('换到 40 BPM 还是那一步：这一式的尺子不挂在拍子上（§7.2 深窖/夺拍保命锚）', () => {

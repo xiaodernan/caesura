@@ -1080,7 +1080,7 @@ export interface MovementLevel {
   fissureLayers?: number
   /** 挂给命中者的闷音时长（和弦爆）。施加方给时长，与 `statusOnHit.ticks` 同一口径 */
   muteTicks?: number
-  /** 位移距离（米）：错拍步。沿输入方向，无输入时沿面向 */
+  /** 位移距离（米）：错拍步。**沿当前朝向**（玩家的 `facingYaw`；锁定时那一格就是目标朝向）——combat.md §4.8「沿当前朝向位移」＋ gameplay.md §3.1「锁定态下沿目标朝向修正」（KI-209） */
   distance?: number
   /**
    * 时停（休止斩，§7.2「全场敌人时间冻结，玩家正常」）：判定窗第一记落下的那一 tick，

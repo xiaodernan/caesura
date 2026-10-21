@@ -33,6 +33,12 @@ import type { MovesetData, WeaponData } from '@/data/schema'
  * 所有速度、半径、目标位置**全部现推**：`playerBase.moveSpeed/sprintSpeed/sprintCostPerSec`、
  * `Interactables.range`（组合根给的那一格）、铃姨的坐标从 `regions.json` 按 id 查。
  * 一个手钉的数都没有——手钉的数就是下一批的 KI-028。
+ *
+ * **帧序照抄 `src/main.ts` 的主循环**（KI-209 补齐了原来缺的两行）：
+ * `poll` → **战技键边沿 → `tryStartAction`**（主循环 783-785，在 `player.update` 之前）
+ * → `player.update` → **锁定目标 → `faceTowards`**（主循环 833，在 `player.update` 之后）
+ * → `rig.update`。原来这个夹具只抄了三段，缺的那两行正好是"战技怎么出手"与
+ * "锁定时朝向归谁"——本文件 KI-209 那几条腿量的就是这两件事，缺一行量出来的就是假的。
  */
 
 registerGameData()
@@ -117,8 +123,14 @@ function newRun(): Run {
       pad([left[0], left[1], right[0], right[1]], buttons)
       time.tick++
       input.poll(TICK_DT)
+      // 主循环第 783-785 行：战技键的边沿 → 出手（在 `player.update` **之前**）
+      for (const act of ['weaponSkill', 'weaponSkillB'] as const) {
+        if (input.frame.edges.has(act)) player.tryStartAction(act, time.tick, rhythm)
+      }
       player.lockedTarget = run.playerLock
       player.update(TICK_DT, time, input, time.tick, rhythm)
+      // 主循环第 833 行：锁定目标拥有朝向（在 `player.update` 之后、`rig.update` 之前）——KI-209
+      if (run.playerLock) player.faceTowards(run.playerLock.getPos())
       rig.update(TICK_DT, player, input.frame.look, run.lock, TICK_DT)
     },
   }
@@ -191,6 +203,18 @@ function aimCamera(r: Run, x: number, z: number): void {
 function facingGap(run: Run): number {
   const camYaw = run.player.camYawRef ?? run.player.yaw
   return wrapPi(run.player.yaw - (camYaw + Math.PI))
+}
+
+/**
+ * **位移方向与朝向的夹角**（KI-209，度）：朝向向量 ＝ (sin yaw, cos yaw)，
+ * 与 `hitTarget().facingYaw`、`moveWithWalls` 那一支同一支笔。
+ * 量的是**这一段位移落在朝向的哪一边**——0°＝正对朝向，180°＝正对朝向的反面。
+ */
+function travelGap(yaw: number, v: { x: number; z: number }): number {
+  const l = Math.hypot(v.x, v.z)
+  if (l < 1e-9) return 0
+  const d = (Math.sin(yaw) * v.x + Math.cos(yaw) * v.z) / l
+  return (Math.acos(Math.max(-1, Math.min(1, d))) * 180) / Math.PI
 }
 function bearing(run: Run, target: { x: number; z: number }): number {
   const c = run.rig.cam.position
@@ -987,5 +1011,113 @@ describe('KI-151 摇杆 → 相机 → 位移 → 焦点：整条链真的走得
     r.lock = null
     r.tick()
     expect(r.rig.getMode(), '解锁 ⇒ 回锁定前那一格（战斗格），不是写死的探索格').toBe(CameraMode.Combat)
+  })
+
+  /**
+   * **翻滚期间人的朝向冻住**（KI-209 —— KI-190 的「没做②」那半句）：
+   * `hitTarget().facingYaw` 在整段翻滚里指着**起手那一拍**的朝向。
+   *
+   * **谁负责**：没锁定时**没有人负责**——移动那一支的朝向更新
+   * （`ThirdPersonController` 里那条 25%/拍追移动方向）住在 `busyMovementLocked()` 的另一侧，
+   * 翻滚期间那一支整段不走 ⇒ 朝向冻住是**结构性的**，不是没人写。
+   *
+   * **顺带量到的一件事**：往后滚那一滚，位移方向与朝向差 **180°**（脸朝前、人往后走），
+   * 滚完仍朝前 ⇒ **朝向不跟着位移转**。combat.md §5.5 只写了前/侧/后三行与米数，
+   * 「滚起来之后脸该朝哪边」**设计没裁** ⇒ 本批**只量不裁**。
+   */
+  it('翻滚期间朝向冻住（起手那一拍的 yaw 与滚完那一拍一个字节不变）', () => {
+    const r = newRun()
+    r.set([0, -1], [0, 0])
+    for (let i = 0; i < 30; i++) r.tick() // 先走 30 拍让朝向落定（免得"没变"是因为本来就没方向）
+    const yaw0 = r.player.yaw
+    const before = { x: r.player.pos.x, z: r.player.pos.z }
+    r.set([0, 1], [0, 0], [0]) // 推后 ＋ dodge ⇒ 这一滚走「后向」那一格
+    r.tick()
+    r.set([0, 0], [0, 0], []) // 松开推杆：这一滚的方向是起手那一拍定死的，之后不再走
+    let end = { ...before }
+    let moves = 0
+    for (let i = 0; i < 60; i++) {
+      const p0 = { x: r.player.pos.x, z: r.player.pos.z }
+      r.tick()
+      const p1 = { x: r.player.pos.x, z: r.player.pos.z }
+      if (Math.hypot(p1.x - p0.x, p1.z - p0.z) > 1e-9) { end = p1; moves++ }
+    }
+    expect(r.player.yaw, '翻滚期间朝向不许动（`hitTarget().facingYaw` 整段指着起手那一格）').toBe(yaw0)
+    expect(moves, '这一滚确实动了（前提：不许是"没动所以朝向没变"）').toBeGreaterThan(10)
+    const travel = { x: end.x - before.x, z: end.z - before.z }
+    expect(Math.hypot(travel.x, travel.z), '后向那一滚该走 `backDist` 那一格').toBeCloseTo(playerBase.roll.backDist, 2)
+    expect(travelGap(yaw0, travel), '后向那一滚：位移方向与朝向差 180°（脸朝前、人往后走）⇒ 朝向不跟着位移转')
+      .toBeGreaterThan(170)
+  })
+
+  /**
+   * **出招期间朝向同样冻住；招式前冲沿当时的朝向走**（KI-209）。
+   *
+   * 前冲那一格是**帧表的 `lunge`**（`movesets.json > ms_sword > actions.l1`），不手钉。
+   * **前冲段按老约定是 `startup .. startup + activeEnd`（两端都含）** ⇒ 走了 `activeEnd + 1` 帧，
+   * 而每帧走 `lunge / activeEnd` ⇒ 前冲总长 ＝ `lunge × (activeEnd + 1) / activeEnd`
+   * （实测 0.369444m —— 与 KI-017 账上那个"前冲落点"读数逐字相同）。
+   *
+   * **朝向 ≠ 0 是前提**：先走 30 拍让朝向落定，前冲那一格才有方向可量
+   * （朝向正好是 0 时，"前冲沿朝向"与"前冲写死 +z"读起来一模一样 ⇒ 那条腿是空的）。
+   */
+  it('出招期间朝向冻住；招式前冲沿当时的朝向走（帧表 `lunge` 那一格）', () => {
+    const r = newRun()
+    r.set([0, -1], [0, 0])
+    for (let i = 0; i < 30; i++) r.tick() // 朝向落定（yaw ≠ 0：前冲才有方向可量）
+    const yaw0 = r.player.yaw
+    const before = { x: r.player.pos.x, z: r.player.pos.z }
+    r.set([0, 0], [0, 0], [13]) // attackLight（13 号＝标准映射的下）
+    r.tick()
+    r.set([0, 0], [0, 0], [])
+    let end = { ...before }
+    for (let i = 0; i < 40; i++) {
+      const p0 = { x: r.player.pos.x, z: r.player.pos.z }
+      r.tick()
+      const p1 = { x: r.player.pos.x, z: r.player.pos.z }
+      if (Math.hypot(p1.x - p0.x, p1.z - p0.z) > 1e-9) end = p1
+    }
+    expect(r.player.yaw, '出招期间朝向不许动（`hitTarget().facingYaw` 整段指着起手那一格）').toBe(yaw0)
+    const f = registry.get<MovesetData>('ms_sword').actions.l1
+    const lunge = f.lunge ?? 0
+    expect(lunge, '前提：轻击那一式自带前冲（帧表 `lunge` 那一格）').toBeGreaterThan(0)
+    const travel = { x: end.x - before.x, z: end.z - before.z }
+    const want = lunge * ((f.activeEnd + 1) / f.activeEnd)
+    expect(Math.hypot(travel.x, travel.z), `前冲该走 ${want}m（帧表 lunge ${lunge} × (activeEnd+1)/activeEnd）`)
+      .toBeCloseTo(want, 3)
+    expect(travelGap(yaw0, travel), '前冲必须沿当时的朝向（夹角 ≈ 0°）').toBeLessThan(0.5)
+  })
+
+  /**
+   * **锁定时朝向归锁定目标所有**（KI-209）：主循环每拍 `player.faceTowards(lock.target)`
+   * ⇒ **翻滚期间朝向也照转**（35%/拍），不是冻住。
+   *
+   * 于是这一格有个可测的后果：**翻滚的位移方向是起手那一拍定死的，而脸在滚的过程中转了**
+   * ⇒ 滚完之后，脸已经不在位移的方向上了（实测：位移方向与起手时的朝向差 180°，
+   * 与滚完时的朝向差 ≈ 0.12°）。
+   */
+  it('锁定中：翻滚期间朝向也照着目标转（主循环那一行 `faceTowards`）', () => {
+    const r = newRun()
+    r.playerLock = { getPos: () => ({ x: 0, y: 0, z: 8 }), get radius() { return 2 } }
+    r.player.yaw = Math.PI // 背对锁定目标，好让 `faceTowards` 有活干
+    const yaw0 = r.player.yaw
+    const before = { x: r.player.pos.x, z: r.player.pos.z }
+    r.set([0, 0], [0, 0], [0]) // dodge
+    r.tick()
+    r.set([0, 0], [0, 0], [])
+    let end = { ...before }
+    for (let i = 0; i < playerBase.roll.lockOnTotal; i++) {
+      const p0 = { x: r.player.pos.x, z: r.player.pos.z }
+      r.tick()
+      const p1 = { x: r.player.pos.x, z: r.player.pos.z }
+      if (Math.hypot(p1.x - p0.x, p1.z - p0.z) > 1e-9) end = p1
+    }
+    const yawAfterRoll = r.player.yaw
+    expect(Math.abs(wrapPi(yawAfterRoll - yaw0)), '翻滚期间朝向就该跟着目标转（不是滚完才转）')
+      .toBeGreaterThan(0.5)
+    expect(Math.abs(wrapPi(yawAfterRoll)), '转完了该指着目标（yaw → 0）').toBeLessThan(0.05)
+    const travel = { x: end.x - before.x, z: end.z - before.z }
+    expect(Math.hypot(travel.x, travel.z), '锁定那一滚该走 `lockOnDist` 那一格')
+      .toBeCloseTo(playerBase.roll.lockOnDist, 2)
   })
 })
