@@ -1,4 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { bus } from '@/core/EventBus'
 import { GameTime, TICK_DT } from '@/core/Time'
 import { RhythmClock } from '@/core/RhythmClock'
 import { Input } from '@/core/Input'
@@ -195,6 +196,21 @@ function bearing(run: Run, target: { x: number; z: number }): number {
   const c = run.rig.cam.position
   const b = Math.atan2(target.x - c.x, target.z - c.z)
   return wrapPi(b - (run.rig.yaw + Math.PI)) // 镜头前向 = −(sin yaw, cos yaw) ⇒ 方位角 yaw + π
+}
+
+/**
+ * **收集 n 拍里玩家脚步的噪声 loudness**（KI-204）：听 `sound.source` 上 id=player 的那些。
+ * 脚步是**按步幅间隔**发的（走 3.0m 一响、疾跑 2.2m 一响）⇒ 窗口要够长才采得到。
+ */
+function collectNoise(run: Run, stick: [number, number], sprint: boolean, ticks: number): number[] {
+  const out: number[] = []
+  const onSound = (p: { id: string; loudness: number }): void => { if (p.id === 'player') out.push(p.loudness) }
+  bus.on('sound.source', onSound)
+  run.set(stick, [0, 0], sprint ? [7] : [])
+  for (let i = 0; i < ticks; i++) run.tick()
+  run.set([0, 0], [0, 0], [])
+  bus.off('sound.source', onSound)
+  return out
 }
 
 /** 走 n 拍并返回这 n 拍里走过的路程 */
@@ -886,5 +902,36 @@ describe('KI-151 摇杆 → 相机 → 位移 → 焦点：整条链真的走得
     r.tick()
     r.set([0, 0], [0, 0], [])
     expect(r.player.parryActive, '体力够时按弹反键该开窗').toBe(true)
+  })
+
+  /**
+   * **「玩家动词表」对账（KI-204）**：gameplay.md §3.1 那八行——
+   * 行走 ✔／疾跑 ✔（KI-194）／静步 ⚠／跳跃 ✔／**攀爬 ✘**／**定弦钩 ✘**／观察 ✔／锁定 ✔（KI-175/190/192）。
+   *
+   * **没载体的三处（如实登记，见账本）**：
+   * ① **攀爬**（§3.1 写「体力 12/s、仅攀爬面」）——`src` 与 `data` 里**一处都没有**；
+   * ② **定弦钩**（§3.1 写「体力 10、拉向锚点 8m/s」）——`src` 里只有武器技能
+   *    `sk_spear_stringpin_hook` 与任务用的 `storyHooks`，**没有钩点世界几何**；
+   * ③ **静步的"更静"那一档**（§3.1 写「脚步声半径 12m→4m」）——实测轻推摇杆的噪声**与"走"同一档**。
+   *
+   * **腿只用量关系**（疾跑比走更响／轻推与走同一档）⇒ 不手钉数（手钉的数就是下一批的 KI-028）。
+   */
+  it('脚步噪声：疾跑比走更响（噪声分档）', () => {
+    const a = newRun()
+    const la = collectNoise(a, [0, -1], false, 240)
+    const b = newRun()
+    const lb = collectNoise(b, [0, -1], true, 240)
+    expect(la.length, '走该有脚步声').toBeGreaterThan(0)
+    expect(lb.length, '疾跑该有脚步声').toBeGreaterThan(0)
+    expect(Math.max(...lb), '疾跑该比走更响').toBeGreaterThan(Math.max(...la))
+  })
+
+  it('静步（轻推摇杆）⇒ 噪声与「走」同一档（设计 §3.1 的「12m→4m」那一档没有承载体）', () => {
+    const a = newRun()
+    const la = collectNoise(a, [0, -0.3], false, 480)
+    const b = newRun()
+    const lb = collectNoise(b, [0, -1], false, 480)
+    expect(la.length, '轻推该有脚步声').toBeGreaterThan(0)
+    expect(Math.max(...la), '轻推的噪声与「走」同一档').toBeCloseTo(Math.max(...lb), 6)
   })
 })
