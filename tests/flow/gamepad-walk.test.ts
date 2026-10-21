@@ -1180,4 +1180,81 @@ describe('KI-151 摇杆 → 相机 → 位移 → 焦点：整条链真的走得
     const travel = { x: end.x - from.x, z: end.z - from.z }
     expect(travelGap(Math.PI / 2, travel), '没锁定 ⇒ 前冲沿人自己的朝向（不修正）').toBeLessThan(0.5)
   })
+
+  /**
+   * **「§1.2 全局输入缓冲与取消」那三行**（KI-221）：
+   * 「攻击输入缓冲 **200ms**（连段下一段/派生键入队）」、
+   * 「翻滚取消 ｜ 攻击进入 Active 起至 Recovery 结束前 **40%** 可取消进翻滚」、
+   * 「弹反键取消 ｜ **仅 Recovery 段**可取消（高风险高回报连段不允许弹反取消）」。
+   *
+   * 真链上量到的三件事：
+   *  · **缓冲不是 200ms 的计时器**，而是"**从 `activeStart` 起记住到这一式收完**"（≈ 剩下的 300ms）；
+   *    按在 `activeStart` 之前 ⇒ **丢**（不记），按在之后 ⇒ 入队（等这一式收完出下一段）。
+   *  · **翻滚取消的窗在运行时是"整段攻击"**（前摇也能取消）⇒ §1.2 写的是「Active 起至 Recovery 结束前 40%」，
+   *    gameplay.md §3.1 写的是「取消窗＝攻击 startup 结束后全段＋recovery 前 60%」——**两处数字还不一样**，
+   *    而运行时两个窗都没有 ⇒ **三处对不上 ⇒ 只量不裁**。
+   *  · **弹反在整段攻击里都开不了窗**（逐拍扫过）⇒ §1.2「仅 Recovery 段可取消」在运行时**没有承载体**。
+   */
+  it('攻击输入缓冲：按在 `activeStart` 之前 ⇒ 丢；按在之后 ⇒ 入队（等这一式收完出下一段）', () => {
+    const l1 = registry.get<MovesetData>('ms_sword').actions.l1
+    /** 起手一记轻击，在第 gap 拍再按一次轻击 ⇒ 返回连段深度（1 ＝ 没接上） */
+    const pressAt = (gap: number): number => {
+      const r = newRun()
+      r.set([0, 0], [0, 0], [13])
+      r.tick()
+      r.set([0, 0], [0, 0], [])
+      let pressed = false
+      for (let i = 0; i < 90; i++) {
+        if (!pressed && r.player.action && r.player.action.tick === gap) {
+          r.set([0, 0], [0, 0], [13])
+          pressed = true
+        } else r.set([0, 0], [0, 0], [])
+        r.tick()
+      }
+      return r.player.comboDepth
+    }
+    expect(pressAt(l1.activeStart - 1), `按在 activeStart（${l1.activeStart}）之前 ⇒ 不入队`).toBe(1)
+    expect(pressAt(l1.activeStart), `按在 activeStart（${l1.activeStart}）上 ⇒ 入队（等这一式收完出下一段）`).toBe(2)
+  })
+
+  it('翻滚取消：整段攻击都能取消（前摇也能）⇒ 设计那两处取消窗在运行时没有承载体', () => {
+    const l1 = registry.get<MovesetData>('ms_sword').actions.l1
+    /** 起手一记轻击，在第 gap 拍按翻滚 ⇒ 返回这一记有没有被取消掉 */
+    const cancelAt = (gap: number): boolean => {
+      const r = newRun()
+      r.set([0, 0], [0, 0], [13])
+      r.tick()
+      r.set([0, 0], [0, 0], [])
+      let pressed = false
+      let rolled = false
+      for (let i = 0; i < 60; i++) {
+        if (!pressed && r.player.action && r.player.action.tick === gap) {
+          r.set([0, 0], [0, 0], [0]) // dodge
+          pressed = true
+        } else r.set([0, 0], [0, 0], [])
+        r.tick()
+        if (r.player.roll) rolled = true
+      }
+      return rolled
+    }
+    expect(cancelAt(1), '前摇第 1 拍按翻滚 ⇒ 照样取消（设计 §1.2 与 gameplay.md §3.1 的取消窗都从 activeStart 才开始）').toBe(true)
+    expect(cancelAt(l1.activeStart - 1), '……`activeStart` 前一拍也一样').toBe(true)
+  })
+
+  it('弹反键取消：整段攻击里弹反都开不了窗 ⇒ 设计「仅 Recovery 段可取消」在运行时没有承载体', () => {
+    const r = newRun()
+    r.set([0, 0], [0, 0], [13])
+    r.tick()
+    r.set([0, 0], [0, 0], [])
+    let maxWindow = 0
+    let sawAction = false
+    for (let i = 0; i < 90; i++) {
+      // 攻击在册的每一拍都按一次弹反（按下／松开交替 ⇒ 边沿每一拍都来一次）
+      if (r.player.action) { r.set([0, 0], [0, 0], [2]); sawAction = true } else r.set([0, 0], [0, 0], [])
+      r.tick()
+      if (r.player.parryTicksLeft > 0) maxWindow = Math.max(maxWindow, r.player.parryTicksLeft)
+    }
+    expect(sawAction, '前提：这一趟真的有攻击在册').toBe(true)
+    expect(maxWindow, '攻击在册的每一拍都按了弹反 ⇒ 弹反窗一次都没开过（设计 §1.2「仅 Recovery 段可取消」在运行时是"整段都不能"）').toBe(0)
+  })
 })
