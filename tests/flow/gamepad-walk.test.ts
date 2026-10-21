@@ -934,4 +934,58 @@ describe('KI-151 摇杆 → 相机 → 位移 → 焦点：整条链真的走得
     expect(la.length, '轻推该有脚步声').toBeGreaterThan(0)
     expect(Math.max(...la), '轻推的噪声与「走」同一档').toBeCloseTo(Math.max(...lb), 6)
   })
+
+  /**
+   * **相机模式表里那两格没有调用方**（KI-207）：`CameraMode.Combat`（48°）与 `CameraMode.Boss`（42°）
+   * 在 `src` 里**一次都没被 `setMode` 过**——调用方只有三处：`cinematic.start`（⇒ Cinematic）、
+   * `cinematic.end`（⇒ Exploration）、锁定那一支（⇒ LockOn／回锁定前那一格）。
+   *
+   * **设计没裁「什么时候算战斗／什么时候算 Boss」**⇒ 本批**只量今天的行为**（不代裁、不替它接线）。
+   *
+   * **接上那两格之后这条腿要改**（它钉的就是"今天没人进"）——账本里写了这一句。
+   */
+  it('真链上只进过三格：探索／越肩／过场（战斗与 Boss 一次都不出现）', () => {
+    const r = newRun()
+    const seen = new Set<string>()
+    const mark = (): void => { seen.add(r.rig.getMode()) }
+    mark()
+    r.set([0, -1], [0, 0], [])
+    for (let i = 0; i < 60; i++) { r.tick(); mark() }
+    r.set([0, 0], [0, 0], [])
+    // 锁定（越肩那一格）
+    r.lock = { x: 0, y: 0, z: 8 }
+    for (let i = 0; i < 30; i++) { r.tick(); mark() }
+    // 解锁（回锁定前那一格）
+    r.lock = null
+    for (let i = 0; i < 30; i++) { r.tick(); mark() }
+    // 过场（镜头归过场管）
+    bus.emit('cinematic.start', { id: 'probe', durationMs: 500 })
+    for (let i = 0; i < 10; i++) { r.tick(); mark() }
+    bus.emit('cinematic.end', { id: 'probe' })
+    for (let i = 0; i < 10; i++) { r.tick(); mark() }
+    const allowed = [CameraMode.Exploration, CameraMode.LockOn, CameraMode.Cinematic]
+    expect([...seen].filter((m) => !allowed.includes(m as CameraMode)), '真链上不该出现战斗格或 Boss 格（今天没有调用方）').toEqual([])
+    expect(seen.has(CameraMode.Exploration), '这一趟该进过探索格').toBe(true)
+    expect(seen.has(CameraMode.LockOn), '这一趟该进过越肩那一格').toBe(true)
+    expect(seen.has(CameraMode.Cinematic), '这一趟该进过过场那一格').toBe(true)
+  })
+
+  /**
+   * **锁定那一支不认「你在哪一格」**（KI-207）：它记的是**锁定前那一格**（`preLockMode`），
+   * 不是写死的探索格 ⇒ 从**战斗格**锁定，解锁之后要回到**战斗格**。
+   *
+   * （那两格今天没人进，但"锁定不夺走你在的那一格"这条规矩**与谁进哪一格无关**——
+   * 用战斗格当起点量它，正是为了证明它不是"回探索格"写死的。）
+   */
+  it('从战斗格锁定 ⇒ 切越肩；解锁 ⇒ 回到战斗格（不是写死的探索格）', () => {
+    const r = newRun()
+    r.rig.setMode(CameraMode.Combat)
+    expect(r.rig.getMode(), '起点该是战斗格').toBe(CameraMode.Combat)
+    r.lock = { x: 0, y: 0, z: 8 }
+    r.tick()
+    expect(r.rig.getMode(), '锁定 ⇒ 切越肩那一格').toBe(CameraMode.LockOn)
+    r.lock = null
+    r.tick()
+    expect(r.rig.getMode(), '解锁 ⇒ 回锁定前那一格（战斗格），不是写死的探索格').toBe(CameraMode.Combat)
+  })
 })
