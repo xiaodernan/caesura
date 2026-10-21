@@ -1120,4 +1120,64 @@ describe('KI-151 摇杆 → 相机 → 位移 → 焦点：整条链真的走得
     expect(Math.hypot(travel.x, travel.z), '锁定那一滚该走 `lockOnDist` 那一格')
       .toBeCloseTo(playerBase.roll.lockOnDist, 2)
   })
+
+  /**
+   * **「锁定转向」那一行**（KI-219；combat.md §1.2 全局输入缓冲与取消那张表）：
+   * 「锁定攻击根位移修正：**目标在 ±35° 内**自动旋身对齐（解析旋转，非 IK）」。
+   *
+   * 这一行有两半：**根位移修正**（那一记的前冲指向锁定目标）与**那 ±35° 的门**。
+   * 真链上量到的：**前半有载体**（锁定中出手 ⇒ 前冲指向目标，夹角 **0.001°**），
+   * **那扇门在运行时没有承载体**（目标在正后 180° 外，人**照样转过去**）。
+   *
+   * 门该不该有、门画在哪儿，设计没裁 ⇒ 本批**只量不裁**（腿②钉的是**今天的读数**）。
+   */
+  it('锁定中出手 ⇒ 那一记的前冲指向锁定目标（设计 §1.2「锁定攻击根位移修正」那一半）', () => {
+    const r = newRun()
+    const target = { x: 8, y: 0, z: -8 } // 右后方 45°：正前/正后都量不出"修正"
+    r.playerLock = { getPos: () => target, get radius() { return 2 } }
+    r.player.yaw = 0 // 一开始正对 +z
+    for (let i = 0; i < 12; i++) r.tick() // 锁定那一支每拍 faceTowards ⇒ 人转过去
+    const from = { x: r.player.pos.x, z: r.player.pos.z }
+    r.set([0, 0], [0, 0], [13]) // attackLight
+    r.tick()
+    r.set([0, 0], [0, 0], [])
+    let end = { ...from }
+    for (let i = 0; i < 40; i++) {
+      const p0 = { x: r.player.pos.x, z: r.player.pos.z }
+      r.tick()
+      const p1 = { x: r.player.pos.x, z: r.player.pos.z }
+      if (Math.hypot(p1.x - p0.x, p1.z - p0.z) > 1e-9) end = p1
+    }
+    const travel = { x: end.x - from.x, z: end.z - from.z }
+    const toTarget = { x: target.x - from.x, z: target.z - from.z }
+    expect(travelGap(Math.atan2(toTarget.x, toTarget.z), travel), '前冲指向锁定目标（与目标的夹角 ≈ 0°）')
+      .toBeLessThan(0.5)
+  })
+
+  it('登记：目标在正后（180° 外）人照样转（设计 §1.2 那一行的「±35° 内」在运行时没有门）', () => {
+    const r = newRun()
+    r.playerLock = { getPos: () => ({ x: 0, y: 0, z: -8 }), get radius() { return 2 } }
+    r.player.yaw = 0 // 面朝 +z，目标在正后
+    for (let i = 0; i < 12; i++) r.tick()
+    expect(Math.abs(wrapPi(r.player.yaw)), '目标在正后 ⇒ 人照样转过去（**登记**：那 ±35° 的门没有承载体；设计没裁 ⇒ 只量不裁）')
+      .toBeGreaterThan(1.5)
+  })
+
+  it('对照：没锁定时那一记的前冲不修正（沿人自己的朝向）', () => {
+    const r = newRun()
+    r.player.yaw = Math.PI / 2 // 面朝 +x：这样"前冲写死 +z"那种变异才量得出来
+    const from = { x: r.player.pos.x, z: r.player.pos.z }
+    r.set([0, 0], [0, 0], [13]) // attackLight
+    r.tick()
+    r.set([0, 0], [0, 0], [])
+    let end = { ...from }
+    for (let i = 0; i < 40; i++) {
+      const p0 = { x: r.player.pos.x, z: r.player.pos.z }
+      r.tick()
+      const p1 = { x: r.player.pos.x, z: r.player.pos.z }
+      if (Math.hypot(p1.x - p0.x, p1.z - p0.z) > 1e-9) end = p1
+    }
+    const travel = { x: end.x - from.x, z: end.z - from.z }
+    expect(travelGap(Math.PI / 2, travel), '没锁定 ⇒ 前冲沿人自己的朝向（不修正）').toBeLessThan(0.5)
+  })
 })
