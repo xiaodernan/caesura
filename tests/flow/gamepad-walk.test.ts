@@ -821,4 +821,70 @@ describe('KI-151 摇杆 → 相机 → 位移 → 焦点：整条链真的走得
       .toBeGreaterThan(guardT)
     expect(early, `起手那几拍该还是走路那一格（${playerBase.moveSpeed} m/s）`).toBeCloseTo(walkT, 3)
   })
+
+  /**
+   * **弹反的输入窗与落空那一族**（KI-201）：combat.md §5.3 那几行——
+   * 「按下后 **100ms（6f）** 判定区激活」「落空后摇 **450ms（27f）**、期间被击伤害 ×1.25」——
+   * 与 `player.json > parry` 的 `activeTicks`(6) / `whiffRecovery`(27) / `whiffDmgMul`(1.25) **逐字对上**。
+   *
+   * **拍数从按下那一拍算起**（窗一关就进后摇）：`parryActive` 是公开 getter（`parryTicksLeft > 0`），
+   * `parryWhiffTicks` 是公开字段 ⇒ 两格都能直接读，不用猜。
+   */
+  it('按下弹反键 ⇒ 窗口从按下那一拍算起亮 parry.activeTicks 拍', () => {
+    const r = newRun()
+    r.set([0, 0], [0, 0], [2]) // 2 号键＝弹反（标准映射的 X）
+    let active = 0
+    r.tick()
+    if (r.player.parryActive) active++
+    r.set([0, 0], [0, 0], [])
+    while (r.player.parryActive) { r.tick(); active++ }
+    expect(active, `窗口该亮 ${playerBase.parry.activeTicks} 拍（设计 §5.3 的 100ms/6f）`)
+      .toBe(playerBase.parry.activeTicks)
+  })
+
+  it('落空 ⇒ 后摇 parry.whiffRecovery 拍，且这期间再按弹反键不开窗', () => {
+    const r = newRun()
+    r.set([0, 0], [0, 0], [2])
+    r.tick()
+    r.set([0, 0], [0, 0], [])
+    while (r.player.parryActive) r.tick() // 窗走完 ⇒ 落空
+    expect(r.player.parryWhiffTicks, '窗一关就该进后摇（起手＝whiffRecovery）')
+      .toBe(playerBase.parry.whiffRecovery)
+    let whiff = 0
+    while (r.player.parryWhiffTicks > 0) { r.tick(); whiff++ }
+    expect(whiff, `后摇该走 ${playerBase.parry.whiffRecovery} 拍（设计 §5.3 的 450ms/27f）`)
+      .toBe(playerBase.parry.whiffRecovery)
+
+    // 再落一次空：后摇期间按弹反键 ⇒ 不开窗（那道 `parryWhiffTicks <= 0` 的闸）
+    r.set([0, 0], [0, 0], [2])
+    r.tick()
+    r.set([0, 0], [0, 0], [])
+    while (r.player.parryActive) r.tick()
+    const before = r.player.parryWhiffTicks
+    r.set([0, 0], [0, 0], [2])
+    r.tick()
+    r.set([0, 0], [0, 0], [])
+    expect(r.player.parryActive, '后摇期间按弹反键不许开窗').toBe(false)
+    expect(before, '后摇起手该是 whiffRecovery').toBe(playerBase.parry.whiffRecovery)
+  })
+
+  /**
+   * **体力门槛那一格**：按弹反键要体力 ≥ 5（设计 §6.1「弹反 0/5」的 5）⇒ 体力不够时按下去不开窗。
+   */
+  it('体力低于那道 5 的门槛 ⇒ 按弹反键不开窗', () => {
+    const r = newRun()
+    r.player.stats.stamina = 4
+    r.set([0, 0], [0, 0], [2])
+    r.tick()
+    r.set([0, 0], [0, 0], [])
+    r.tick() // 松开那一拍也要过一遍：边沿是按帧算的，不然第二次按下不算"按下"
+    expect(r.player.parryActive, '体力不够（< 5）时按弹反键不该开窗').toBe(false)
+    expect(r.player.parryTicksLeft, '体力不够时窗口该是 0').toBe(0)
+    // 对照：体力够 ⇒ 开窗
+    r.player.stats.stamina = playerBase.stamina
+    r.set([0, 0], [0, 0], [2])
+    r.tick()
+    r.set([0, 0], [0, 0], [])
+    expect(r.player.parryActive, '体力够时按弹反键该开窗').toBe(true)
+  })
 })
