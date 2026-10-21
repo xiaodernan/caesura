@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process'
 import { describe, expect, it } from 'vitest'
 import { readdirSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
@@ -163,12 +164,53 @@ describe('跑测器真的接了这份判据（源码门：一 import `test.mjs` 
       .toEqual([])
   })
 
-  it('圈空的筛选器走的是**开跑之前**的 exit 1，而不是"照跑然后判没跑齐"', () => {
+  it('圈空的筛选器走的是**开跑之前**的唯一出口判死，而不是"照跑然后判没跑齐"', () => {
     const at = code.findIndex((l) => /if\s*\(scope\.unmatched\.length\)/.test(l))
     expect(at, '没有这道分支 = 写错的路径会被洗成"该跑 0 个、跑到 0 个"的全绿').toBeGreaterThanOrEqual(0)
     const block = code.slice(at, at + 8).join('\n')
-    expect(block).toContain('process.exit(1)')
+    // KI-152 把七条终出口的 `process.exit` 收进了 `finish` 这一扇门，所以这一格**不能再 grep 字面的
+    // `process.exit(1)`**（它会红在一段正确的代码上）。判据读的是同一件事的另一半：这一格走哪个种类、
+    // 那个种类带不带自己的退出码。"会不会真的非零退出"由下面两条钉住（门的默认值 + 真跑一趟的退出码）。
+    const call = block.split('\n').find((l) => /finish\('scope-unmatched'/.test(l))
+    expect(call, '这一格没走 `finish(\'scope-unmatched\'…)` = 圈空那条退路又不印判决了').toBeDefined()
+    expect(call, '不许自带 `code:`：退出码只在门上给一次默认，逐格自带就把"哪一格可以绿着退场"变成了散装选择题').not.toMatch(/\bcode\s*[:=]/)
     expect(code.slice(at - 2, at).join('\n') + block, '停下来必须在第一次 runOnce 之前').not.toMatch(/runOnce\(/)
+  })
+
+  it('那扇门自己：默认码是非零，全跑测器只有 `green` 那一格许它写成 0（否则"判死"没有主人）', () => {
+    const door = code.find((l) => /^function finish\(/.test(l))
+    expect(door, '`finish` 的签名读不到 = 退出码的默认值没有主人，上面那条"走唯一出口"就是空话').toBeDefined()
+    expect(door, '默认码必须是**非零**：新增一条终出口而忘了写 code，只有"默认即判死"能接住它').toMatch(/code = 1/)
+    const writes = code.filter((l) => /\bcode\s*[:=]/.test(l))
+    expect(writes.map((l) => l.trim()), '退出码全跑测器只许两处写手：门上的默认（判死）与 green 那一格的 0；多出来的每一条都要先裁决再写进来')
+      .toHaveLength(2)
+    expect(writes.some((l) => /finish\('green'/.test(l) && /code: 0/.test(l)),
+      'green 那一格确实把 0 写在它自己那行上（不是靠默认）')
+      .toBe(true)
+    expect(writes.filter((l) => /code: 0/.test(l)).length, '全跑测器**只有**一处 `code: 0`').toBe(1)
+  })
+
+  it('真跑一趟（进程级）：圈空的筛选器让跑测器非零退出、印出 scope-unmatched 判决，而且一个 vitest 都没起跑', () => {
+    // 这一条是本文件里唯一 spawn 真跑测器的腿，所以它自己要有天花板：筛不到 ⇒ 开跑之前就退，
+    // 正常几百毫秒。若那道挡失效，子进程会跑起整套（几分钟），这里靠 timeout 把它杀掉并判红——
+    // **被杀就是红**，不许读成"没跑到断言所以算了"。耗时进每一条红话：将来它若在负载下旋转，
+    // 读数当场能分辨"这台慢"与"挡失效跑起来了"（KI-122 那条纪律：预算要看得见，别让人回头猜）。
+    const t0 = Date.now()
+    const r = spawnSync(process.execPath, ['scripts/test.mjs', 'tests/unit/no-such-file-ki152.test.ts'], {
+      cwd: ROOT,
+      encoding: 'utf8',
+      timeout: 30_000,
+      maxBuffer: 1 << 26,
+    })
+    const ms = Date.now() - t0
+    expect(r.error, `spawn 跑测器本身跑不起来 = 这条判据没跑成（${(r.error as NodeJS.ErrnoException | undefined)?.code}），耗时 ${ms}ms`).toBeUndefined()
+    expect(r.signal ?? null, `子进程被 timeout 杀掉 = 圈空那道挡失效了，它真的起跑了一整套测试（撑到 ${ms}ms 才被杀）`).toBeNull()
+    expect(ms, `拒得太慢（${ms}ms）：正常应在几百毫秒内退。太慢本身就是要登记的读数`).toBeLessThan(30_000)
+    const out = `${r.stdout ?? ''}\n${r.stderr ?? ''}`
+    expect(r.status, `圈空的筛选器竟然 0 退出（耗时 ${ms}ms）。它的输出尾巴：\n${out.slice(-600)}`).toBe(1)
+    expect(out, '要当场点名是哪几个参数圈空').toContain('一个测试文件都没圈到')
+    expect(out, '退场也要留一行机器可读判决（KI-152 那七条出口里就是这一条）').toMatch(/"kind":"scope-unmatched"/)
+    expect(out, '停下来必须在 vitest 之前：跑起来过的痕迹一条都不许有').not.toMatch(/Test Files|started.*test files|· tests\//i)
   })
 })
 
@@ -252,7 +294,12 @@ describe('跑测器真的双向对账（源码门：`test.mjs` 一 import 就跑
     expect(ok, '成功分支找不到（判据挪了位置，这条门要跟过去）').toBeGreaterThanOrEqual(0)
     expect(at, 'extras 必须在 missing 判绿之前被拒').toBeLessThan(ok)
     const block = code.slice(at, at + 14).join('\n')
-    expect(block).toContain('process.exit(1)')
+    // 同一条 KI-152 的取舍：exit 收进唯一出口之后，这一格 grep 不到字面 `process.exit(1)`。
+    // 这里读种类名 + 那一行自己不带退出码；"判死"这件事的主人在上面那个 describe 里（门的默认值），
+    // 而**窗口里带着 green 那一格**（它明写 `code: 0`）⇒ 负句钉在 `finish('extras'` 那一行，不钉整个窗口。
+    const call = block.split('\n').find((l) => /finish\('extras'/.test(l))
+    expect(call, '这一格没走 `finish(\'extras\'…)` = 多跑那条退路又不印判决了').toBeDefined()
+    expect(call, '不许自带 `code:`：extras 是判死，不是"记下来再说"').not.toMatch(/\bcode\s*[:=]/)
     expect(block.match(/for \(const p of extras\)/g), '要逐条点名，不能只报个数').toHaveLength(1)
     expect(block.includes('lastMissing ='), 'extras 不该走"记下来再重试"那条路').toBe(false)
   })
