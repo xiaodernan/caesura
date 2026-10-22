@@ -196,14 +196,18 @@ export function rollAffixes(item: ItemData, rng: Rng = new Rng()): GearAffix[] {
   return out
 }
 
-/** 词缀数值：数值型在区间内均匀随机；行为型（帧数/次数）取整 */
+/** 词缀数值：在区间内均匀随机；**整数区间**取整，小数区间保留三位小数 */
 export function affixValue(id: string, rng: Rng = new Rng()): number {
   const { progressionData } = rpgTables()
   const def = [...progressionData.affixes.prefix, ...progressionData.affixes.suffix].find((a) => a.id === id)
   if (!def || !def.range) return 0
   const [lo, hi] = def.range
   const raw = lo + (hi - lo) * rng.float()
-  return def.behavior ? Math.round(raw) : Math.round(raw * 1000) / 1000
+  // 取整看**区间是不是整数**，不看 behavior：bellBonus 是「行为型但取比率」的那一族
+  // （af_bellwarden [0.06,0.12]，消费方 CombatManager 拿它当乘数、UI 用百分比显示），
+  // 从前被 behavior 一律取整 ⇒ Math.round(0.06..0.12) 恒为 0，之鸣钟整条词缀失效。
+  // 帧数/次数那一族（perfectBlockWindow / lightStartup）区间本就是整数，走同一条路不变。
+  return Number.isInteger(lo) && Number.isInteger(hi) ? Math.round(raw) : Math.round(raw * 1000) / 1000
 }
 
 let rarityOrderCache: string[] | null = null
