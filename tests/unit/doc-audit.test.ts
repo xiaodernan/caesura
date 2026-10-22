@@ -17,6 +17,34 @@ import { describe, expect, it } from 'vitest'
 const root = fileURLToPath(new URL('../..', import.meta.url))
 const archDoc = readFileSync(root + 'docs/technical-architecture.md', 'utf8')
 const issues = readFileSync(root + 'docs/KNOWN_ISSUES.md', 'utf8')
+const planDoc = readFileSync(root + 'docs/WORKPLAN.md', 'utf8')
+
+/** 认转义的竖线切分（与门 D 同一把尺子）：`\|` 是内容，不是分格 */
+const planCells = (l: string): string[] => l.split(/(?<!\\)\|/).slice(1, -1).map((c) => c.trim())
+/** WORKPLAN 里行首标记的实测拼法（2026-10-23 现量只有 ✅ 与 ⬜ 两种，其余是防"新写法悄悄不进总体"） */
+const PLAN_MARK = /^(✅|⬜|🟡|🔵|⏸|❌)/
+/** 连续以 `|` 开头的行 ＝ 一张表；段首是表头，紧随其后的 `|---|` 是分隔行，两者都不算数据行 */
+function planTables(src: string): Array<{ headLine: number; arity: number; rows: Array<{ n: number; cells: string[] }> }> {
+  const lines = src.split(/\r?\n/)
+  const segs: Array<Array<{ n: number; l: string }>> = []
+  let seg: Array<{ n: number; l: string }> = []
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].startsWith('|')) seg.push({ n: i + 1, l: lines[i] })
+    else if (seg.length) {
+      segs.push(seg)
+      seg = []
+    }
+  }
+  if (seg.length) segs.push(seg)
+  return segs.map((s) => {
+    const sep = /^\|[\s:|-]+$/.test(s[1]?.l ?? '')
+    return {
+      headLine: s[0].n,
+      arity: planCells(s[0].l).length,
+      rows: s.slice(sep ? 2 : 1).map((r) => ({ n: r.n, cells: planCells(r.l) })),
+    }
+  })
+}
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
@@ -347,5 +375,64 @@ describe('文档对账闸门（KI-056）', () => {
       `这些编号被代码/脚本/文档按号引用，而账本里没有那一行 = 读者按号去找账，找到的是空气。` +
         `要么补登记（号 + 严重度 + §78 状态），要么把引用改成它真正指向的那个号：\n${unresolved.join('\n')}`,
     ).toEqual([])
+  })
+
+  /**
+   * 门 E1（KI-299）：WORKPLAN 的每一行**最多只能有一格的开头是状态标记**。
+   *
+   * 病不是设想，是本批自己撞出来的：落盘器 `frag()` 用 `.replace(/\s+$/,'')` 把片段尾部的换行一起削掉了，
+   * 插行时又是「片段 + needle」直接相接 ⇒ `✅ KI-296` 那一行与 `⬜ 下一批` 那一行被粘成**同一行**（7 格），
+   * 而当时这文件里的 11 条门**没有一条读 WORKPLAN**（门 D 只管 KNOWN_ISSUES 的账本行）⇒ 带着病全绿落了地。
+   * WORKPLAN 是「下一批做什么」的唯一入口，粘行之后任何按行解析它的读者把第二行的内容读进了第一行的描述栏。
+   *
+   * 分母先钉：这一趟必须真读到带标记的行首若干行，否则「违规为 0」是空集合给的免费绿（门 D 的载体下限同形）。
+   */
+  it('门 E1：WORKPLAN 的每一行最多只能有一格的开头是状态标记（两行被粘成一行＝描述栏里又开了一行）（KI-299）', () => {
+    const tables = planTables(planDoc)
+    const dataRows = tables.flatMap((t) => t.rows)
+    const marked = dataRows.filter((r) => PLAN_MARK.test(r.cells[0] ?? '@'))
+    expect(
+      marked.length,
+      `只读到 ${marked.length} 行「第一格是状态标记」的 WORKPLAN 行 = 分母读空，这道门在看一个空集合` +
+        `（2026-10-23 本批那行入账后实测 75 行；地板 60）`,
+    ).toBeGreaterThanOrEqual(60)
+
+    const glued = dataRows.filter((r) => r.cells.filter((c) => PLAN_MARK.test(c)).length >= 2)
+    expect(
+      glued,
+      `这些行里有两个及以上的行首标记格 = 两行被粘成了同一行（落盘器把片段尾换行削掉就会这样）。` +
+        `修法：在两段之间补一个行尾，而不是去改判据：\n${glued.map((r) => `第 ${r.n} 行｜${r.cells.map((c) => c.slice(0, 14)).join(' ┃ ')}`).join('\n')}`,
+    ).toEqual([])
+  })
+
+  /**
+   * 门 E2（KI-299）：WORKPLAN 里**与所在表表头格数不齐**的行必须恰好是登记那八行。
+   *
+   * 那一族八行（`✅ KI-257`…`✅ KI-271`）住在进度表里（表头 3 格）却只写了两格——「结论」栏从来没写。
+   * 本批**不裁这件事**（补哪一栏是 WORKPLAN 的作者说了算），所以这道门不许把 3 写死在断言里冒充判据：
+   * 它钉的是「实测不齐集合 ＝ 登记名册」这个相等，两头都红——新添一行不齐的会红（病），
+   * 把名册里某一行补齐了也会红（登记过期，逼人来同步）。粘行那一格也会进这个名册（A1 臂实测它同时打中 E1 与 E2）。
+   */
+  const MISARITY_BOOKED = ['✅ KI-257', '✅ KI-259', '✅ KI-261', '✅ KI-263', '✅ KI-265', '✅ KI-267', '✅ KI-269', '✅ KI-271']
+  it('门 E2：WORKPLAN 里与表头格数不齐的行必须恰好是登记那八行（按第一格身份钉；多一行少一行都红）（KI-299）', () => {
+    const tables = planTables(planDoc)
+    expect(tables.length, `只读到 ${tables.length} 张表 = WORKPLAN 的表格段抽取塌了，下面的名册相等在对空集合`).toBeGreaterThanOrEqual(7)
+    const dataRows = tables.flatMap((t) => t.rows)
+    expect(dataRows.length, `数据行只读到 ${dataRows.length} 条 = 分母低于地板（2026-10-23 本批那行入账后实测 105 条）`).toBeGreaterThanOrEqual(80)
+
+    const off = tables.flatMap((t) =>
+      t.rows
+        .filter((r) => r.cells.length !== t.arity)
+        .map((r) => `第 ${r.n} 行｜${JSON.stringify(r.cells[0] ?? '')}｜${r.cells.length} 格而表头（第 ${t.headLine} 行）${t.arity} 格`),
+    )
+    const ids = tables
+      .flatMap((t) => t.rows.filter((r) => r.cells.length !== t.arity))
+      .map((r) => r.cells[0] ?? '')
+      .sort()
+    expect(
+      ids,
+      `这些行的格数和它所在表的表头不一样，而与登记名册不相等。多出来的＝新病行（把缺的那一格补齐）；` +
+        `少掉的＝那一笔登记已经还掉了，要同步名册。逐条读数：\n${off.join('\n')}`,
+    ).toEqual([...MISARITY_BOOKED].sort())
   })
 })
