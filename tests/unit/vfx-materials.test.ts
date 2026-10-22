@@ -17,7 +17,7 @@ function expectAdditiveGlow(m: THREE.ShaderMaterial): void {
   expect(m.side).toBe(THREE.DoubleSide)
 }
 
-describe("VFX 调色板（art-direction §2/§7.1 唯一合法取色）", () => {
+describe("VFX 调色板（这五颗 hex 与三个工厂的自身形状；对 art-direction §2/§7.1 那两句「唯一合法」的对账在 tests/unit/vfx-hue-table.test.ts）", () => {
   it("五色 hex 与色板定义逐一对齐", () => {
     expect(VFX_PALETTE.warmGold).toBe(0xc9b458)
     expect(VFX_PALETTE.parryWhite).toBe(0xf5f3e6)
