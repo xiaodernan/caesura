@@ -340,10 +340,21 @@ const streaming = new StreamingSystem(regions)
 streaming.teleport(0, player.pos) // 起始区同步加载（§5.5 传送遮蔽等价物）
 const homeRegion = streaming.regionAt(player.pos)
 let shownRegion = homeRegion?.id ?? null
+let shownMegGone = false // §2.3 人声垫片的在场账：她离场那一刻（没有换区事件）也要换床
+/**
+ * §2.3「她在唱歌时，休垒全 BGM 加一层人声垫片——全游戏最温柔的旗帜」：声床的**变体选择**
+ * 住在这里（表里的 `mus_resthold_amb_meg` = 同一张床 + 220Hz 慢呼吸垫片）。她被夺走声卷
+ * （`flag.meg_gone`，stateSet 规则派生）之后，休垒回到没有她的那张床——垫片跟着人走。
+ */
+const ambienceBedOf = (regionId: string | null, baseId: string): string => {
+  if (regionId !== 'rg_resthold') return baseId
+  return streaming.hasFlag('flag.meg_gone') ? baseId : `${baseId}_meg`
+}
+
 // KI-077（docs §1.2/§4）：开局那一张环境声床。这一句必须在 `audio.start()` 之前发——
 // 建图要等首次用户手势，而 `AudioEngine` 缓存事件，所以"玩家出生在哪一区"这件事不会丢。
 if (homeRegion) {
-  bus.emit('audio.music.ambience', { id: homeRegion.music.ambience })
+  bus.emit('audio.music.ambience', { id: ambienceBedOf(homeRegion.id, homeRegion.music.ambience) })
   bus.emit('audio.music.explore', { id: homeRegion.music.explore }) // KI-079：同一句理由，开局那一区的旋律也要在建图之前缓存住
   bus.emit('audio.music.battle', { id: homeRegion.music.battle }) // KI-080：同上，第一次交战之前就得把那一区的战斗档递到
 }
@@ -810,13 +821,14 @@ const core = {
       // 就把旋律押到窗口走完再换（§1.2「和声先换、旋律层最后」）。反过来写就是旋律先跳、底噪后淡。
       // KI-080：战斗档也跟着换，它排在最后而**不参与那个顺序**：它只在交战时被奏出来，
       // 不吃 crossfade 窗口，所以它对调出去也不会改变任何听感——三条里只有头两条之间有序可依。
-      bus.emit('audio.music.ambience', { id: here.music.ambience })
+      bus.emit('audio.music.ambience', { id: ambienceBedOf(here.id, here.music.ambience) })
       bus.emit('audio.music.explore', { id: here.music.explore })
       bus.emit('audio.music.battle', { id: here.music.battle })
       // KI-094①：雾跟着区域换。它排在三条音乐之后而没有顺序可依——滤镜与雾都是**立即生效**的画面量，
       // 不存在"先换底噪再换雾"那种淡变窗口，写在前写在后同一帧里看不出区别。
       // KI-094②：换区读的是"那一区当前生效的那一格"，不是永远的第一格——区里的钟修过了就是修过后的天气。
       applyWeather(here)
+      shownMegGone = streaming.hasFlag('flag.meg_gone') // 换区时同步账面（下面的帧跟从此处起算）
       applyLighting(here)
       if (booted) checkpoints.request('region') // 读档后第一次「进区域」是恢复现场，不该顺手覆盖存档
       // §6 Boss 出场：进 Boss 区放一次（读档后第一次进区是恢复现场，`booted` 已把它挡在外面）
@@ -825,6 +837,13 @@ const core = {
         playedCinematics.add(intro)
         startCinematic(intro)
       }
+
+    // §2.3 垫片的第三入口：她离场的那一刻（玩家就站在休垒，没有换区事件可借）
+    const megGoneNow = streaming.hasFlag('flag.meg_gone')
+    if (megGoneNow !== shownMegGone) {
+      shownMegGone = megGoneNow
+      if (here) bus.emit('audio.music.ambience', { id: ambienceBedOf(here.id, here.music.ambience) })
+    }
       shownRegion = here.id
       bus.emit('ui.notify', { text: here.displayName, kind: 'info' })
       bus.emit('log', { level: 'info', msg: `enter ${here.id} · chunks ${JSON.stringify(streaming.stats())}` })

@@ -68,7 +68,10 @@ describe('环境声床判据的 accept 侧：合法形状一条 ERROR 都不报'
     const regions = REAL_REGIONS()
     const withBed = regions.filter((r) => typeof (r.music as Row | undefined)?.ambience === 'string')
     expect(beds.length, '真表读不到床').toBeGreaterThan(0)
-    expect(withBed.length, '指了环境声床的区域数 ≠ 表里的床数：一区一床那条门今天读的是哪一头？').toBe(beds.length)
+    // 状态变体床（§2.3 盐歌人声垫片：`X_meg`）不算「一区一床」的行——它的引用由组合根
+    // 机械派生（基床 id + 后缀），区域指的仍是基床。变体数出来对账就是 8≠7 的假阳性。
+    const baseBeds = beds.filter((b) => !(typeof b.id === 'string' && b.id.endsWith('_meg') && beds.some((x) => x.id === (b.id as string).slice(0, -4))))
+    expect(withBed.length, '指了环境声床的区域数 ≠ 表里的基床数：一区一床那条门今天读的是哪一头？').toBe(baseBeds.length)
     expect(beds.every((b) => Array.isArray(b.sources) && (b.sources as Row[]).length > 0), '真表里有床没有声景').toBe(true)
     expect(errs(beds, regions)).toEqual([])
     // 声景层那两条：每一张床的每一条源都得落在**它自己那一区**的框里（真表上逐条实测，不是抽查）

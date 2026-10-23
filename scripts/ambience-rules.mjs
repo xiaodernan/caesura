@@ -93,9 +93,18 @@ export function ambienceFindings(beds, regions) {
       const hzs = bed.layers.filter((l) => isObj(l) && isNum(l.hz)).map((l) => l.hz)
       if (hzs.length > 0) {
         const root = Math.min(...hzs)
-        for (const [other, or] of roots) {
-          const cents = Math.abs(1200 * Math.log2(root / or))
-          if (cents < MIN_ROOT_CENTS) err(w, `drone 主音 ${root.toFixed(2)}Hz 与 ${other} 的 ${or.toFixed(2)}Hz 只差 ${cents.toFixed(1)} 音分——§1.2「一区一主音」塌了，跨区听不出换地方`)
+        // 状态变体床（§2.3 盐歌人声垫片那族）：`X_meg` 是床 X 的变体——同一张床加一层，
+        // 主音**必须**与基床相同（同一区的调性不因她在不在而换），所以它不进两两比对
+        //（比对自己人必红），改查同主音这条更强的构造约束。
+        const variantOf = w.endsWith('_meg') ? w.slice(0, -'_meg'.length) : null
+        if (variantOf && roots.has(variantOf)) {
+          const baseRoot = roots.get(variantOf)
+          if (Math.abs(root - baseRoot) > 0.01) err(w, `变体床的主音 ${root.toFixed(2)}Hz 与基床 ${variantOf} 的 ${baseRoot.toFixed(2)}Hz 不同——变体是「同一张床加一层」，不是换调（§1.2 一区一主音）`)
+        } else {
+          for (const [other, or] of roots) {
+            const cents = Math.abs(1200 * Math.log2(root / or))
+            if (cents < MIN_ROOT_CENTS) err(w, `drone 主音 ${root.toFixed(2)}Hz 与 ${other} 的 ${or.toFixed(2)}Hz 只差 ${cents.toFixed(1)} 音分——§1.2「一区一主音」塌了，跨区听不出换地方`)
+          }
         }
         roots.set(w, root)
       }
@@ -178,7 +187,10 @@ export function ambienceFindings(beds, regions) {
     if (regs.length > 1) err('music.ambience', `${regs.join(' / ')} 共用同一张声床 '${a}'——一区一张是 §1.2 的承诺，共用 = 跨那两区什么都没换`, 'regions.json')
   }
   for (const id of ids) {
-    if (!refBy.has(id)) err(id, '没有任何区域指它 ⇒ §55 死数据：这张床永远不会被装进耳朵')
+    // 状态变体床的引用是**组合根机械派生**的（main.ts 的 `ambienceBedOf`：基床 id + '_meg'）——
+    // 基床被区域引用 + 变体行存在 ⇒ 可达；不认这条就会把「她在的时候休垒加一层人声」判成死数据。
+    const variantBase = id.endsWith('_meg') ? id.slice(0, -'_meg'.length) : null
+    if (!refBy.has(id) && !(variantBase && refBy.has(variantBase))) err(id, '没有任何区域指它 ⇒ §55 死数据：这张床永远不会被装进耳朵')
   }
 
   if (belowBand > 0) {

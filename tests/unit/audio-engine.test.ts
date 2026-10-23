@@ -800,13 +800,15 @@ describe('探索曲的 id→行（KI-079）', () => {
   it('main.ts 两处发射点都是"先声床后探索曲"，而且全场只有这两处', () => {
     const src = readFileSync(new URL('../../src/main.ts', import.meta.url), 'utf8').split(/\r?\n/)
     const emits = src.filter((l) => /bus\.emit\('audio\.music\.(ambience|explore|battle)'/.test(l) && !l.trim().startsWith('//'))
-    expect(emits.length, `audio.music.{ambience,explore,battle} 在组合根里应有恰好两组三行发射点，实测 ${emits.length} 行`)
-      .toBe(6)
+    // §2.3 人声垫片的第三入口（她离场的那一刻，玩家就站在休垒、没有换区事件可借）是
+    // **单发一条 ambience** 的：床变了、区没变，探索曲与战斗档不该跟着重奏。三行组仍是两组。
+    expect(emits.length, `两组三行发射点 + 一条单发的声床换床（§2.3 垫片入口），实测 ${emits.length} 行`)
+      .toBe(7)
     expect(emits.map((l) => /audio\.music\.(\w+)/.exec(l)?.[1]), '每一组里声床都排在探索曲之前（顺序就是那句"旋律层最后"）')
-      .toEqual(['ambience', 'explore', 'battle', 'ambience', 'explore', 'battle'])
+      .toEqual(['ambience', 'explore', 'battle', 'ambience', 'explore', 'battle', 'ambience'])
     // KI-080 的另一半：那三行取的必须是**同一条 `music` 上的三个字段**，不许有两行都写 `ambience`
     expect(emits.map((l) => /\.music\.(\w+)/.exec(l)?.[1]), '发射点吃的字段名与事件名不对齐（复制粘贴漏改就是这个形状）')
-      .toEqual(['ambience', 'explore', 'battle', 'ambience', 'explore', 'battle'])
+      .toEqual(['ambience', 'explore', 'battle', 'ambience', 'explore', 'battle', 'ambience'])
   })
 })
 
