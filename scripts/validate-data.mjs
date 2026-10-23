@@ -115,7 +115,7 @@ const PSEUDO_ACTIONS = new Set(['chase', 'backstep', 'hold'])
 /** WeaponData 的字段全集（KI-047）：每一格都必须有真实消费方，多余键一律 ERROR——
  *  曾有的 `atkBase` 就是从这里出去的：底数住在 movesets.json 的帧表，武器表再带一份
  *  "看起来是价格"的数，KI-039 的错价才躲过了整轮验收。 */
-const WEAPON_FIELDS = new Set(['id', 'nameKey', 'archetype', 'movesetId', 'scaling', 'swingTag', 'skill', 'poiseMul', 'noiseMul', 'stealthKillFrac', 'heavyAlertBackstab', 'falloff', 'trail'])
+const WEAPON_FIELDS = new Set(['id', 'nameKey', 'archetype', 'movesetId', 'scaling', 'swingTag', 'skill', 'poiseMul', 'noiseMul', 'stealthKillFrac', 'heavyAlertBackstab', 'falloff', 'trail', 'skillRangeMul', 'parryReflect'])
 /** 出身被动的类型白名单（KI-031③）：加一种 kind = 承诺带来一个消费者，反向探针守着那句话 */
 const ORIGIN_PASSIVE_KINDS = ['lootStackBonus']
 /** 营地商店那三张字段白名单（KI-055）：主人分别是 ShopData / ShopSell / ShopStockEntry */

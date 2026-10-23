@@ -754,7 +754,9 @@ export class CombatManager {
     const onBeat = this.rhythm.onBeat(this.player.beatGraceTicks > 0 ? 80 : 50) // 常拍脚（KI-036）
     this.projectiles.spawn({
       hostile: false, ownerId: 'player', kind: spec.kind, origin, dir,
-      speed: spec.speed, range: spec.range, radius: spec.radius, gravity: spec.gravity,
+      // §4.5 杖的「演奏型：乐章战技 +25% 射程」：乐章战技（a.skill）与蓄力战技（charged——
+      // 杖的共振弹是它唯一的远程，表值 22m 吃这格）都乘；武器普招不吃。
+      speed: spec.speed, range: spec.range * (a.skill || a.key === 'charged' ? (p.weapon.skillRangeMul ?? 1) : 1), radius: spec.radius, gravity: spec.gravity,
       // KI-037：武器强化倍率**只由 strikeEnemy 的 mvMul 乘**（伤害管线唯一的主人）。
       // 出海时再乘一次就是 f.damage × mul²——投掷枪从 Phase 5-B 起一直在吃这个亏
       // （10 级时 1.8²=3.24 顶 1.8），本批顺手销账；分叉枝的折扣除外（它打折的是帧表底数）。
@@ -1277,6 +1279,22 @@ export class CombatManager {
     const facing = Math.abs(norm(Math.atan2(h.from.x - p.pos.x, h.from.z - p.pos.z) - p.yaw)) < Math.PI * 0.55
     if (p.parryActive && facing && h.parryable) {
       h.react(tick, 'parry')
+      // §4.5 杖头音叉（parryReflect）：弹反成功 = 向目标「回授」12 伤害（音叉共鸣）。
+      // 按 attackerId 回查实体——近战与弹体两条路的攻击者都挂在同一格上；回授走 strikeEnemy
+      // 同一条管线（吃防御阶梯，不是真伤）。别的武器没写这一格 ⇒ 六把都不回授。
+      const rf = p.weapon.parryReflect
+      if (rf) {
+        const attacker = this.ai.enemies.find((x) => x.id === h.attackerId && x.alive)
+        if (attacker) {
+          this.strikeEnemy(attacker, {
+            base: rf, poise: 0, hitStopMs: 0, kind: 'skill', layers: 0, mute: false,
+            backstab: false, onBeat: false, ranged: true, pinTicks: 0,
+            point: { x: attacker.pos.x, y: attacker.pos.y + 1.0, z: attacker.pos.z },
+            dir: flatDir(p.pos, attacker.pos), shakeKey: 'graze'
+          }, tick)
+          if (!attacker.alive) this.onEnemyKilled(attacker) // 回授也能收尾（12 伤打死残敌是合法结局）
+        }
+      }
       p.addOverdrive(p.base.parry.overdriveGain)
       p.onParrySuccess() // §5.3：窗口被弹中 ⇒ 不落空，后面的落空锁与赌注倍率都不该发生（KI-054）
       // §9「弹反成功」那一行（`hitStop.parryMs`）：这一格的情境时长同时喂相机、事件与守方硬直——

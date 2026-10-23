@@ -201,6 +201,18 @@ export interface WeaponData {
   /** KI-023 收尾批（无鸣独有，§4.6）：消费方在 findExecuteTarget —— 无消费方的武器不许写（WEAPON_FIELDS 同门） */
   /** 潜行处决的血线覆盖：无鸣 0.5（普通 0.35；设计的 +15pt 平移到实现的基数上） */
   stealthKillFrac?: number
+  /**
+   * §4.5 战技槽行（progression.md §4 build7）：「演奏型：乐章战技在此杖上有 +25% 射程」——
+   * **乐章战技**的弹体射程乘数（只在 `action.skill` 那条路上乘，武器自己的招式不吃）。
+   * 省略 = 1（其余六把武器都没有这一格）。
+   */
+  skillRangeMul?: number
+  /**
+   * §4.5 独特属性行：「杖头音叉=左手律具：可弹反；弹反成功=向目标『回授』12 伤害（音叉共鸣叙事）」——
+   * 弹反成功那一拍向攻击者回授的**底数伤害**（走 strikeEnemy 同一条管线：吃防御阶梯与词缀标尺，
+   * 不是真伤——回授是「共鸣把力打回去」，不是处决）。省略 = 无回授。
+   */
+  parryReflect?: number
   /** 重击「抹喉弧线」：对 Alert 侧（未进战斗）的目标，重击视为背刺（吃 ×3.5 那条倍率） */
   heavyAlertBackstab?: boolean
   /**
