@@ -1196,6 +1196,34 @@
           "z": -330
         },
         "secretId": "sec_brokenbar_ally_path"
+      },
+      {
+        "id": "st_brokenbar_nightdrum",
+        "kind": "inspect",
+        "verb": "听营地深处那面自己打更的鼓",
+        "pos": {
+          "x": -100,
+          "y": 0,
+          "z": -330
+        },
+        "requiresState": {
+          "key": "state.haltrune.fate",
+          "value": "DRUM_LEGEND"
+        }
+      },
+      {
+        "id": "st_brokenbar_stilledarm",
+        "kind": "inspect",
+        "verb": "看刑柱下安放的那条左臂",
+        "pos": {
+          "x": -118,
+          "y": 0,
+          "z": -322
+        },
+        "requiresState": {
+          "key": "state.haltrune.fate",
+          "value": "PASSING_STILL"
+        }
       }
     ],
     "music": {
