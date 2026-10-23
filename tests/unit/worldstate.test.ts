@@ -84,7 +84,9 @@ describe('WorldState 规则语义', () => {
     expect(worldstate.length).toBeGreaterThanOrEqual(3)
     const ids = new Set(worldstate.map((r) => r.id))
     expect(ids.size).toBe(worldstate.length)
-    const ON = new Set(['firstParry', 'bossDefeated', 'interactUsed'])
+    // stateSet（盐歌 SILENCED 派生旗那一批起的第 4 种触发）：与校验器 RULE_ONS 同步——
+    // 那侧是门，这侧是证人，两边名单不一致就是「规则进了表、语义没人认」
+    const ON = new Set(['firstParry', 'bossDefeated', 'interactUsed', 'stateSet'])
     for (const r of worldstate) {
       expect(ON.has(r.on), `${r.id} 的 on=${r.on}`).toBe(true)
       expect(/^(flag|STATE)\./.test(r.setFlag), `${r.id}.setFlag 命名`).toBe(true)
@@ -99,6 +101,8 @@ describe('WorldState 规则语义', () => {
       if (rg.unlockFlag) read.add(rg.unlockFlag)
       for (const it of rg.interactables ?? []) {
         if (it.requiresFlag) read.add(it.requiresFlag)
+        // 不在场旗（收摊/撤离）也是读方——缺席的判定与成色同样吃「写了没人读」这条判据
+        if (it.absentFlag) read.add(it.absentFlag)
         // 合取闸门列进去的每一面也是读方（Phase 6-C）：漏登记一面，这条判据就会把
         // 规则表刚写下的旗判成"没人读"，而它明明锁着一扇门
         for (const f of it.requiresFlags ?? []) read.add(f)

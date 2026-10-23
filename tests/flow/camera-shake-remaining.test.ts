@@ -101,10 +101,12 @@ describe('KI-303 §5.4/§5.5/§10 剩余未量格那一族', () => {
     w.combat.rng = new Rng('ki303_beat')
     w.rhythm.setBpm(84, 4)
 
-    // 对齐到拍点
+    // 对齐到拍点：tick 到下一拍**为止**（ceil 量化的过冲会把落点推到拍后 2-3 tick，
+    // 84BPM 一拍 42.86 tick ⇒ phase 0.05-0.07——KI-303 登记的「0.07 边界读数」正是这个
+    // 过冲的伪影，不是节拍联动的设计缺陷；那半句裁决随本批改判：对齐就是对齐，别过冲）
     let beatInfo = w.rhythm.info()
     const toNextBeat = beatInfo.isBarStart ? 0 : Math.ceil(w.rhythm.toNextBeatSec * 60)
-    for (let i = 0; i < toNextBeat + 2; i++) w.tick(1)
+    for (let i = 0; i < toNextBeat; i++) w.tick(1)
 
     // 在拍点附近按翻滚
     w.frame.edges.add('dodge')
