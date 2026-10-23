@@ -1438,7 +1438,8 @@
           "z": -215
         },
         "verb": "探进钟腔",
-        "secretId": "sec_fellcarillon_bell_interior"
+        "secretId": "sec_fellcarillon_bell_interior",
+        "setsFlag": "flag.bell_tongue_taken"
       },
       {
         "id": "bl_fellcarillon_firstbell_rehang",
@@ -1495,6 +1496,18 @@
           "y": 64,
           "z": -236
         }
+      },
+      {
+        "id": "in_fellcarillon_bellcavity_break",
+        "kind": "inspect",
+        "verb": "看留在腔底的那道断口",
+        "pos": {
+          "x": 205,
+          "y": 64,
+          "z": -212
+        },
+        "requiresFlag": "flag.bell_tongue_taken",
+        "setsFlag": "flag.bell_tongue_examined"
       }
     ],
     "music": {
