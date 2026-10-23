@@ -70,5 +70,15 @@
     ],
     "setFlag": "flag.meg_gone",
     "notify": "她当夜收拾了摊子。休垒的市集少了一个声部"
+  },
+  {
+    "id": "ws_faceless_lost",
+    "on": "stateSet",
+    "stateKey": "state.faceless.identity",
+    "stateIn": [
+      "LOST"
+    ],
+    "setFlag": "flag.faceless_gone",
+    "notify": "它某夜自行走进了哑带。休垒的水缸边只剩一摊没抹平的灰"
   }
 ]

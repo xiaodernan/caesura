@@ -124,7 +124,8 @@
           "y": 0,
           "z": 6
         },
-        "npcId": "npc_faceless"
+        "npcId": "npc_faceless",
+        "absentFlag": "flag.faceless_gone"
       },
       {
         "id": "npc_corvin",
@@ -307,6 +308,48 @@
           "x": -62,
           "y": 0,
           "z": -62
+        }
+      },
+      {
+        "id": "st_plaza_children_scores_vessel",
+        "kind": "inspect",
+        "verb": "看水缸边孩子画的地上的谱",
+        "pos": {
+          "x": -22,
+          "y": 0,
+          "z": 10
+        },
+        "requiresState": {
+          "key": "state.faceless.identity",
+          "value": "VESSEL"
+        }
+      },
+      {
+        "id": "st_plaza_children_scores_child",
+        "kind": "inspect",
+        "verb": "看水缸边孩子画的地上的谱",
+        "pos": {
+          "x": -22,
+          "y": 0,
+          "z": 10
+        },
+        "requiresState": {
+          "key": "state.faceless.identity",
+          "value": "CHILD"
+        }
+      },
+      {
+        "id": "st_plaza_children_scores_chosen",
+        "kind": "inspect",
+        "verb": "看水缸边孩子画的地上的谱",
+        "pos": {
+          "x": -22,
+          "y": 0,
+          "z": 10
+        },
+        "requiresState": {
+          "key": "state.faceless.identity",
+          "value": "CHOSEN"
         }
       }
     ],
