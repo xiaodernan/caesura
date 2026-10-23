@@ -93,6 +93,12 @@ export interface ProjectileSpec {
    * 自动吸附**最近**的活敌。不写 = 只认锁定目标，否则沿朝向直射。
    */
   assistConeDeg?: number
+  /**
+   * §4.5 杖「蓄力 共振弹」命中后的**残响柱**：命中点留一根柱子停留 `ticks`，半径内敌人移速
+   * ×`slowMul`（设计原文「停留 0.8s，区域内敌人减速 -15%」⇒ ticks 48 / slowMul 0.85；
+   * 半径 3m 是裁决——鸣和弦的环外沿同为 3m，同一件武器的共鸣口径）。省略 = 无柱。
+   */
+  pillar?: { radius: number; ticks: number; slowMul: number }
 }
 
 export interface FrameData {

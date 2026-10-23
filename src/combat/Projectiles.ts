@@ -28,6 +28,8 @@ export interface Projectile {
   vel: Vec3
   radius: number
   rangeLeft: number
+  /** §4.5 残响柱（共振弹命中后的区域）：随弹体携带，命中那一拍由 CombatManager 落地成柱 */
+  pillar?: { radius: number; ticks: number; slowMul: number }
   gravity: number
   damage: number
   poise: number
@@ -103,6 +105,8 @@ export interface LaunchParams {
   muteTicks?: number
   onBeat?: boolean
   parryable?: boolean
+  /** §4.5 残响柱：随弹体出海，命中那一拍由 CombatManager 落地成柱 */
+  pillar?: { radius: number; ticks: number; slowMul: number }
   pierce?: number
   sfxHit?: string
   vfxHit?: string
@@ -148,6 +152,7 @@ export class ProjectileSystem {
       vel: { x: l.dir.x * k, y: l.dir.y * k, z: l.dir.z * k },
       radius: l.radius,
       rangeLeft: l.range,
+      pillar: l.pillar,
       gravity: l.gravity ?? 0,
       damage: l.damage,
       poise: l.poise,

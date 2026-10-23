@@ -1185,7 +1185,12 @@
           "sfxLaunch": "chord_slam",
           "sfxHit": "hit_flesh",
           "vfxHit": "impact_sparks",
-          "shake": "heavy"
+          "shake": "heavy",
+          "pillar": {
+            "radius": 3,
+            "ticks": 48,
+            "slowMul": 0.85
+          }
         },
         "shake": "heavy",
         "sfx": [

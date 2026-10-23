@@ -228,6 +228,7 @@ export class CombatManager {
     // `stats.dead` 自己会说"我不在场"，而 `respawn()` 把玩家送回原点时这已经是第三次账目归零。
     if (this.player.stats.dead) this.restockSpear()
     this.tryExecute(input, tick)
+    this.tickPillars(tick)
     this.tryThrowCrystal(input, tick)
     this.launchPlayerProjectile(tick)
     this.launchEnemyProjectiles(tick)
@@ -645,6 +646,11 @@ export class CombatManager {
    * 在别处「再打一遍」就等于发明第二条结算流程。这里只记账与到期，结算仍走 strikeEnemy。
    */
   private echoes: { pos: Vec3; damage: number; poise: number; dueTick: number }[] = []
+  /**
+   * §4.5 残响柱（杖·共振弹命中产物）：`{pos, radius, slowMul, until}`。 CombatManager 是它的
+   * 主人——落柱（弹体命中那一拍）、到期、减速下发（Enemy.slowMul 的唯一写方）都在这里。
+   */
+  private pillars: { pos: Vec3; radius: number; slowMul: number; until: number }[] = []
   /** 给测试与调试器读数用（表现层不 import 逻辑运行时，tech-arch §3） */
   get echoesLive(): number { return this.echoes.length }
 
@@ -656,6 +662,18 @@ export class CombatManager {
     glossary.explain('echo')
     bus.emit('vfx.request', { key: 'ring_echo', pos: { ...at }, scale: 1.3 })
     bus.emit('ui.status', { id: 'echo', value: this.echoes.length, max: c.maxShadows, on: true })
+  }
+
+  /** 残响柱维持：到期摘除；场上的柱按「覆盖取最深」给每具敌人写 slowMul（无柱 = 1 归位） */
+  private tickPillars(tick: number): void {
+    if (this.pillars.length > 0) this.pillars = this.pillars.filter((pl) => pl.until > tick)
+    for (const e of this.ai.enemies) {
+      let mul = 1
+      for (const pl of this.pillars) {
+        if (Math.hypot(e.pos.x - pl.pos.x, e.pos.z - pl.pos.z) <= pl.radius) mul = Math.min(mul, pl.slowMul)
+      }
+      e.slowMul = mul
+    }
   }
 
   private tickEchoes(tick: number): void {
@@ -757,6 +775,7 @@ export class CombatManager {
       // §4.5 杖的「演奏型：乐章战技 +25% 射程」：乐章战技（a.skill）与蓄力战技（charged——
       // 杖的共振弹是它唯一的远程，表值 22m 吃这格）都乘；武器普招不吃。
       speed: spec.speed, range: spec.range * (a.skill || a.key === 'charged' ? (p.weapon.skillRangeMul ?? 1) : 1), radius: spec.radius, gravity: spec.gravity,
+      pillar: spec.pillar, // §4.5 残响柱：随弹体出海，命中那一拍落地
       // KI-037：武器强化倍率**只由 strikeEnemy 的 mvMul 乘**（伤害管线唯一的主人）。
       // 出海时再乘一次就是 f.damage × mul²——投掷枪从 Phase 5-B 起一直在吃这个亏
       // （10 级时 1.8²=3.24 顶 1.8），本批顺手销账；分叉枝的折扣除外（它打折的是帧表底数）。
@@ -1000,6 +1019,11 @@ export class CombatManager {
    * "有人替这一下挡了"的读数，而落地只是"这一发结束了"。
    */
   private onProjectileGone(pr: Projectile, reason: GoneReason): void {
+    // §4.5 残响柱：只在**命中**那一拍落（ground/wall 不落——空放的共鸣没有落点语义）
+    if (pr.pillar && reason === 'hit') {
+      this.pillars.push({ pos: { ...pr.pos }, radius: pr.pillar.radius, slowMul: pr.pillar.slowMul, until: this.time.tick + pr.pillar.ticks })
+      bus.emit('vfx.request', { key: 'ring_echo', pos: { ...pr.pos }, scale: pr.pillar.radius / 3 })
+    }
     if (reason !== 'ground' && reason !== 'wall') return
     // KI-023①：音色晶碎裂 = 一次伪声源广播。§15.3 的解法循环在这里闭合：
     // 「投掷音色晶到 A 点 → 她转向 A」——任何靠听的敌人吃的都是同一路 sound.source。

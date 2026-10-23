@@ -182,6 +182,11 @@ export class Enemy {
   deathTick = -1
   coreFlash = 0
   private rng: Rng
+  /**
+   * §4.5 残响柱的区域减速：CombatManager 每 tick 写（柱覆盖取最深值，无柱 = 1）。
+   * 挂在这里而不在 stepToward 里查柱——移速的消费点有八个，柱的判定只该有一次。
+   */
+  slowMul = 1
   patrolPoints: Vec3[]
   patrolIdx = 0
   /**
@@ -220,6 +225,9 @@ export class Enemy {
       }
     })
   }
+
+  /** 移速消费的唯一口径：档位系数 × 表值 × 区域减速（残响柱等区域效果的落点） */
+  spd(factor: number): number { return this.data.speed * factor * this.slowMul }
 
   get alive(): boolean { return !this.stats.dead }
   get nameKey(): string { return this.data.nameKey }
@@ -612,7 +620,7 @@ export class Enemy {
         break
       case 'patrol': {
         const pt = this.patrolPoints[this.patrolIdx % this.patrolPoints.length]
-        stepToward(this, pt, dt, this.data.speed * 0.4, rhythm)
+        stepToward(this, pt, dt, this.spd(0.4), rhythm)
         if (dist3(this.pos, pt) < 0.6) {
           this.patrolIdx = (this.patrolIdx + 1) % this.patrolPoints.length
           if (this.patrolIdx === 0) this.onPatrolLoop?.()
@@ -621,7 +629,7 @@ export class Enemy {
         break
       }
       case 'investigate': {
-        stepToward(this, this.lastKnown, dt, this.data.speed * 0.65, rhythm)
+        stepToward(this, this.lastKnown, dt, this.spd(0.65), rhythm)
         if (this.alertness >= 100) this.enter('chase')
         else if (this.stateTick > 12 * 24) { this.enter(this.data.archetype === 'basic' ? 'idle' : 'patrol'); this.alertness *= 0.4 }
         break
@@ -640,9 +648,9 @@ export class Enemy {
         const kites = band?.actions.includes('backstep') ?? false
         const wants = band?.actions.includes('chase') ?? dist > 2
         if (band?.actions.includes('hold')) { /* 伪动作 'hold'：不追不逃，站定唱下去（§14.6 叠唱） */ }
-        else if (kites) stepKite(this, p, dt, this.data.speed)
+        else if (kites) stepKite(this, p, dt, this.spd(1))
         else if (wants) stepToward(this, p, dt, this.data.speed, rhythm)
-        else stepAway(this, p, dt, this.data.speed * 0.7)
+        else stepAway(this, p, dt, this.spd(0.7))
         if (this.alertness < 40) this.enter('search')
         const can = this.phaseActions(band?.actions ?? [])
         if (band && hasAttackAction(this, can) && !this.attack && this.stateTick > 24) {
@@ -656,7 +664,7 @@ export class Enemy {
         if (this.attack) {
           this.progressAttack(dt, tick, player, rhythm)
           // 射手边拉弓边挪（§14.4「永远背退拉近」）：出手窗口不站桩，但只走半速
-          if (band?.actions.includes('backstep')) stepKite(this, p, dt, this.data.speed * 0.45)
+          if (band?.actions.includes('backstep')) stepKite(this, p, dt, this.spd(0.45))
         } else {
           if (dist > (this.data.ai.chaseBeyond ?? DEFAULT_CHASE_BEYOND)) { this.enter('chase'); break }
           if (this.data.ai.retreatHpFrac && this.stats.hp / this.stats.hpMax <= this.data.ai.retreatHpFrac) { this.enter('retreat'); break }
@@ -664,8 +672,8 @@ export class Enemy {
           if (this.maybeBarCast(rhythm)) break
           if (band) {
             // 伪动作决定脚下一步：'chase' 贴近、'backstep' 拉开（射手风筝），真招式名才出手
-            if (band.actions.includes('chase')) stepToward(this, p, dt, this.data.speed * 0.9, rhythm)
-            else if (band.actions.includes('backstep')) stepKite(this, p, dt, this.data.speed)
+            if (band.actions.includes('chase')) stepToward(this, p, dt, this.spd(0.9), rhythm)
+            else if (band.actions.includes('backstep')) stepKite(this, p, dt, this.spd(1))
             const can = this.phaseActions(band.actions)
             if (hasAttackAction(this, can)) {
               this.tryAttack(can, rhythm, tick, slotTaken)
@@ -676,7 +684,7 @@ export class Enemy {
         break
       }
       case 'retreat': {
-        stepAway(this, p, dt, this.data.speed * 1.1)
+        stepAway(this, p, dt, this.spd(1.1))
         const ally = nearestAlly(this)
         if (ally) stepToward(this, ally.pos, dt, this.data.speed, rhythm)
         if (this.stats.hp / this.stats.hpMax > this.data.ai.retreatHpFrac! * 1.8) this.enter('combat')
@@ -689,7 +697,7 @@ export class Enemy {
         stepToward(this, {
           x: this.lastKnown.x + Math.cos(this.searchAngle) * r, y: 0,
           z: this.lastKnown.z + Math.sin(this.searchAngle) * r
-        }, dt, this.data.speed * 0.6, rhythm)
+        }, dt, this.spd(0.6), rhythm)
         if (this.alertness >= 100) this.enter('chase')
         else if (this.stateTick > 1200) { this.enter('patrol'); this.alertness = 0 }
         break
