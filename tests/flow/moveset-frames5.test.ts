@@ -161,7 +161,8 @@ describe('KI-267 §4.2–§4.6 那几张 Moveset 表剩下的行：大剑／枪�
     expectStage(stages, 'l2', 14, 12, 34, '枪 L2')
     expectStage(stages, 'l3', 15, 13, 37, '枪 L3')
     expectStage(stages, 'l4', 16, 15, 39, '枪 L4')
-    expectStage(stages, 'l5', 21, 20, 54, '枪 L5（尾段）')
+    // §4.3 三连贯刺改版：一式三刺（hitPhases [6,7,7]），这里钉第一刺；三刺结构由 needlesilence-doublestab 同族守卫钉
+    expectStage(stages, 'l5', 21, 6, 54, '枪 L5（尾段·第一刺）')
     w.ai.despawn(e.id)
     alive.push(w.off)
   })

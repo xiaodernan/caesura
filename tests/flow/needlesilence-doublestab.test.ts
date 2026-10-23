@@ -60,6 +60,9 @@ function makeWorld() {
   return { time, rhythm, player, ai, combat, input, frame, tick, dummy }
 }
 
+/** 枪用例的节拍钟（84BPM 与其余夹具同口径） */
+function rhythmOf(): RhythmClock { return new RhythmClock() }
+
 describe('无鸣 L5「双刺 6+9」：一式两刺，各是独立的一击', () => {
   it('表形状：l5 写 hitPhases [6,9] 且 damage 格已删（两个主人不许并存）', () => {
     registerGameData()
@@ -102,6 +105,40 @@ describe('无鸣 L5「双刺 6+9」：一式两刺，各是独立的一击', () 
     off()
     expect(hits.length, '第一刺空了，第二刺照常结账（恰好一记）').toBe(1)
     expect(hp0 - e.stats.hp, '那唯一的一记就是全部的账').toBe(hits[0])
+  })
+
+  it('同族第二员：枪 L5「三连贯刺 6/7/7」——同一目标三刺各挨一记（§4.3 原数）', () => {
+    registerGameData()
+    const weapon = registry.get<WeaponData>('wp_drawpin_spear')
+    const moveset = registry.get<MovesetData>(`moveset:${weapon.movesetId}`)
+    const player = new PlayerController(playerBase, weapon, moveset)
+    player.pos = { x: 0, y: 0, z: 0 }
+    player.grounded = true
+    player.floorY = 0
+    player.camYawRef = 0
+    const ai = new AISystem()
+    const combat = new CombatManager(player, ai, new GameTime(), rhythmOf())
+    const e = ai.spawn('en_murkshell', { x: 0, y: 0, z: 2 }, 'spear-l5')
+    e.alertness = 0
+    e.stunTicks = 99999
+    const hits: number[] = []
+    const off = bus.on('combat.hit', (p) => { if (p.attackerId === 'player' && p.victimId === e.id) hits.push(p.damage) })
+    const frame = { move: { x: 0, y: 0 }, held: new Set<string>(), edges: new Set<string>() }
+    const input = { frame, enabled: true } as unknown as Input
+    expect(player.tryStartAction('l5', 1)).toBe(true)
+    for (let t = 0; t < 60 && player.action; t++) {
+      const tick = t + 2
+      player.grounded = true
+      player.floorY = 0
+      player.update(1 / 60, { tick: 0, paused: false } as never, input, tick, rhythmOf())
+      ai.update(1 / 60, tick, player, rhythmOf())
+      combat.update(tick, input)
+      frame.edges.clear()
+    }
+    off()
+    expect(hits.length, '三连贯刺：同一目标三刺各挨一记').toBe(3)
+    expect(hits[1] - hits[0] >= 0 && hits[2] >= hits[1], '三刺基数不降（6/7/7 的相对关系经同倍率保持）').toBe(true)
+    void combat
   })
 
   it('连段乘数照乘：两刺各乘各的（comboDepth>1 时 6→7、9→10 的整数账）', () => {

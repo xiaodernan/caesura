@@ -555,7 +555,6 @@
         "activeStart": 21,
         "activeEnd": 29,
         "recovery": 55,
-        "damage": 20,
         "stamina": 12,
         "poise": 20,
         "hitStopMs": 90,
@@ -576,8 +575,10 @@
           "ring_echo"
         ],
         "loudness": 4,
-        "flags": [
-          "multihit"
+        "hitPhases": [
+          6,
+          7,
+          7
         ]
       },
       "h": {
