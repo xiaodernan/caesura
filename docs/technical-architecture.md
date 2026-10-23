@@ -4542,3 +4542,28 @@ B3 给 `extras` 那一格明写 `code: 0` ⇒ 门那一条数出 3 处写手而�
 `npm run coverage` **94.92%**（13329/14041 行、97 个 src 文件）**高于总地板 91.89%**，各包不低于自身地板，零覆盖名单仍是两格 ⇒ **覆盖率门绿**；
 `npm run build` **exit 0**（dist 文本 8 份 / 0 findings）；「doc-audit」**11 条全绿**。
 **没做（§78，如实登记）**：① **「不用物理引擎」那半**在本作**无从对照**（根本没有物理引擎）⇒ 只量了「同一组坐标永远同一结果」这一半；② **「渲染层仅插值」**在头less 下**没有渲染层可量**（`ActorVisuals`／`Hud` 要 DOM 与 WebGL）⇒ 本批只量了逻辑钟那一半；③ **§77 实机腿本轮没跑成**（机器负载与软渲染的慢启动，同 KI-157／KI-161／KI-175 那一段）⇒ 本批的证据只有头less **六条腿 ＋ 十六臂**，**不拿离线读数冒充实机**。
+
+### 5.9.118 §3.4 输入裁决与优先级：翻滚取消窗／弹反优先／连段缓冲／格挡解除／处决屏蔽／InputArbiter（KI-301，2026-10-23）
+
+| 腿 | 那一格 | 真读数 | 与设计 |
+|---|---|---|---|
+| ① | **弹反（与格挡共享起手，弹反键优先判帧）** | 同一 tick 同时按 guard + parry ⇒ **parry 赢**（guardTicks=0, parryTicksLeft=5） | **逐字对上** |
+| ② | **连段缓冲 200ms** | 在 activeStart..activeEnd 期间**按下 attackLight 边沿**会把下一段排入 `comboQueued`；held 不算；下一段在 activeEnd 那一拍起手 | **逐字对上** |
+| ③ | **处决（特殊）：演出期间全输入屏蔽但保留缓冲队列** | 演出期间 `executing!==null` 时 dodge/attackLight 都不生效；执行结束后 action 为 undefined | **逐字对上** |
+| ④ | **翻滚（最高优先）：取消窗** | 代码只检查 `canAct`（非硬直/非倒地/非死亡），**不检查 `busy`** ⇒ **startup 内（第 1 帧）即可取消**，recovery 内也可取消 | **不符**——设计写「startup 结束后全段 ＋ recovery 前 60%」 ⇒ 实现更宽，需补 busy 门槛 ⇒ 登记 |
+| ⑤ | **格挡（按住，低优先）：被主动攻击键解除** | 同 tick 先建立/维持 guard（guardTicks 累加），下一 tick 因 `action!==null` 停止累加但数值保留；动作结束后可重新建立 ⇒ **不立即解除** | **不符**——设计写「任何主动攻击键解除」 ⇒ 登记 |
+| ⑥ | **交互/拾取/观察（仅非硬直、距离 ≤2.2m）** | 空世界无交互物 ⇒ 无从对照 | **登记** |
+| ⑦ | **「实现为单一 InputArbiter」** | **不存在**，裁决散在 `ThirdPersonController.update` 里 | **登记** |
+
+**四处登记**：① **翻滚取消窗比设计更宽**——代码只查 `canAct` 不查 `busy` ⇒ startup 内即可取消 ⇒ 需补 busy 门槛；② **格挡不被攻击键立即解除**——同 tick guard 先跑累加，下一 tick 停止累加但保留数值 ⇒ 不立即解除；③ **交互距离门无从对照**——空世界无交互物；④ **InputArbiter 不存在**——裁决散在 `ThirdPersonController.update` 里。
+
+**三条量具纪律**：① **取消窗要逐拍读「能不能取消」，找边界**（不是只钉一拍）；② **弹反优先判帧要同 tick 同时踩两键看谁赢**；③ **缓冲 200ms 要量「按键时刻 → 起手时刻」的拍差**（缓冲被吃掉还是被丢）。
+
+**反向实测七臂**（独立平面 `D:/ki161-plane` ＝ HEAD `745e5ce` ＋ 本批；共享树一个字不动；每臂跑完把字节铺回去；本批**没有生产码改动**）：臂A 摘翻滚判定（`canAct/roll` → false）⇒ 红 1 条；臂B 加 busy 门槛（`canAct/roll` → `!busy`）⇒ 红 1 条；臂C parry 加 guard 互斥（`!held.guard`）⇒ 红 1 条；臂D 摘 comboQueued（`comboQueued = nxt` → 空）⇒ 红 2 条；臂E attackLight 清 guardTicks（`guardTicks = 0`）⇒ 红 1 条；臂F 去掉 executing return（允许处决期间输入落到正常处理）⇒ 红 1 条；臂G 插 InputArbiter 类（update 开头新建类）⇒ 红 1 条。
+
+**门禁读数**（独立平面 `D:/ki161-plane` ＝ HEAD `745e5ce` ＋ 本批；共享树一个字不动；门禁只在平面上取）：
+`tsc --noEmit` **0**；「validate-data」**总计：0 ERROR / 2 WARN**（本批一个数据格都没动）；
+全量 **278 个测试文件 / 3247 条用例全绿**（判决行 `{"kind":"green","reds":0,"total":3247,"ranFiles":278,"expectedFiles":278,"redTitles":[],"reportKept":false}`）；
+`npm run coverage` **94.92%**（13329/14041 行、97 个 src 文件）**高于总地板 91.89%**，各包不低于自身地板，零覆盖名单仍是两格 ⇒ **覆盖率门绿**；
+`npm run build` **exit 0**（dist 文本 8 份 / 0 findings）；「doc-audit」**13 条全绿**。
+**没做（§78，如实登记）**：① **交互距离门 ≤2.2m** 需造交互物 ⇒ 本批无从对照；② **§77 实机腿本轮没跑成** ⇒ 证据只有头less 八条腿 ＋ 七臂，不拿离线读数冒充实机。
