@@ -838,15 +838,16 @@ const core = {
         startCinematic(intro)
       }
 
-    // §2.3 垫片的第三入口：她离场的那一刻（玩家就站在休垒，没有换区事件可借）
+      shownRegion = here.id
+      bus.emit('ui.notify', { text: here.displayName, kind: 'info' })
+      bus.emit('log', { level: 'info', msg: `enter ${here.id} · chunks ${JSON.stringify(streaming.stats())}` })
+    }
+    // §2.3 垫片的第三入口：她离场的那一刻（玩家就站在休垒，没有换区事件可借）——
+    // 每帧跟旗（在换区 if 之外：换区块只在跨区那一帧跑，她离场没有那一帧可借）
     const megGoneNow = streaming.hasFlag('flag.meg_gone')
     if (megGoneNow !== shownMegGone) {
       shownMegGone = megGoneNow
       if (here) bus.emit('audio.music.ambience', { id: ambienceBedOf(here.id, here.music.ambience) })
-    }
-      shownRegion = here.id
-      bus.emit('ui.notify', { text: here.displayName, kind: 'info' })
-      bus.emit('log', { level: 'info', msg: `enter ${here.id} · chunks ${JSON.stringify(streaming.stats())}` })
     }
     // face locked target while locked & idle-ish
     if (lock.target) player.faceTowards(lock.target.getPos())

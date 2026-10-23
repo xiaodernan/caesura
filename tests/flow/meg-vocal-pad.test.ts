@@ -43,6 +43,19 @@ describe('盐歌在场的人声垫片：变体床与三个入口', () => {
     expect(MAIN).toContain('ambienceBedOf(homeRegion.id, homeRegion.music.ambience)')
   })
 
+  it('跟旗块必须在换区 if **之外**（第一版就插在了 if 里：换区块只在跨区那一帧跑，她离场没有那一帧）', () => {
+    // 源码门（KI-058 手法）：megGoneNow 那行的缩进必须与 `if (here && here.id !== shownRegion)` 同级，
+    // 而不是它的体内（体内 = 4 空格更深）。这条门钉的是「每帧跟旗」这个设计，不是排版洁癖。
+    const lines = MAIN.split('\n')
+    const iIf = lines.findIndex((l) => l.includes('if (here && here.id !== shownRegion)'))
+    const iTrack = lines.findIndex((l) => l.includes('const megGoneNow'))
+    expect(iIf, '换区 if 在源码里').toBeGreaterThan(0)
+    expect(iTrack, '跟旗块在源码里').toBeGreaterThan(iIf)
+    const ifIndent = lines[iIf].length - lines[iIf].trimStart().length
+    const trackIndent = lines[iTrack].length - lines[iTrack].trimStart().length
+    expect(trackIndent, `跟旗块缩进（${trackIndent}）应与换区 if（${ifIndent}）同级——深一级就是插进了 if 体内，只在跨区帧跑`).toBe(ifIndent)
+  })
+
   it('第三入口的行为账：她离场那一拍单发一条声床事件（换床不换区），走到真链上量', () => {
     registerGameData()
     const streaming = new StreamingSystem(regions)
