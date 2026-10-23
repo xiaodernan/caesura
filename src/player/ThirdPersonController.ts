@@ -38,6 +38,8 @@ export interface PlayerAction extends ActionStop {
   key: string; f: FrameData; hitDone: boolean; shots: number
   /** 这一记已经打到过哪些目标（`f.multi` 是名额上限）。判定窗有好几 tick，同一目标不能被同一记打两遍 */
   hitIds: Set<string>
+  /** §4.6 双刺（hitPhases）：当前在第几刺（0 起）。相位跨越时 hitIds/hitDone 整组重置——每刺都是独立的一击 */
+  phase?: number
   /** 非 null ⇒ 这一记是乐章战技（§7）：伤害标尺、真伤、闷音、位移都从它身上取 */
   skill: SkillCast | null
   /** 战技位移（错拍步）的行进方向；null＝不出位移 */
@@ -260,7 +262,8 @@ export class PlayerController {
       // 之连词缀（KI-029 收尾）：连段每多一段，非战技近战多 (comboScaling × (depth-1))——起手式不加。
       damage: this.action.skill
         ? Math.round(this.action.skill.damage * (1 + this.rpg.skillDmg))
-        : f.damage * (1 + this.rpg.comboScaling * Math.max(0, this.comboDepth - 1)),
+        // §4.6 双刺：伤害在当前那一刺的格上（写 hitPhases 时 damage 格作废）；连段乘数照乘
+        : (f.hitPhases ? f.hitPhases[this.action.phase ?? 0] : f.damage) * (1 + this.rpg.comboScaling * Math.max(0, this.comboDepth - 1)),
       poise: f.poise, hitStopMs: f.hitStopMs,
       shake: f.shake ?? 'normal', flags: f.flags ?? [], loudness: (f.loudness ?? 3) * (this.weapon.noiseMul ?? 1),
       reaction: f.reaction
@@ -504,6 +507,17 @@ export class PlayerController {
       // 所以带内走过的帧数不变 ⇒ 前冲的**落点**不变，变的只是它被切成了"停—冲—停"。
       const adv = advanceActionFrames(this.action, f)
       this.action.tick += adv
+      // §4.6 双刺：active 窗等分段，跨进新段的那一拍把上一刺的账整组清掉——
+      // hitIds（同一目标两刺各挨一记）与 hitDone（第二刺还有自己的判定权）一起归零。
+      if (f.hitPhases && f.hitPhases.length > 1 && this.action.tick >= f.activeStart && this.action.tick <= f.activeEnd) {
+        const span = (f.activeEnd - f.activeStart + 1) / f.hitPhases.length
+        const ph = Math.min(f.hitPhases.length - 1, Math.floor((this.action.tick - f.activeStart) / span))
+        if (ph !== (this.action.phase ?? 0)) {
+          this.action.phase = ph
+          this.action.hitIds.clear()
+          this.action.hitDone = false
+        }
+      }
       if (adv > 0 && this.action.tick >= f.startup && this.action.tick <= f.startup + f.activeEnd && f.lunge) {
         const step = (f.lunge / f.activeEnd) * adv
         this.pos.x += Math.sin(this.yaw) * step
@@ -901,7 +915,7 @@ export class PlayerController {
     }
     const cut = key.startsWith('l') ? Math.min(this.rpg.lightStartupTicks, Math.max(0, f.activeStart - 1)) : 0
     this.action = {
-      key, f, tick: cut, hitDone: false, shots: 0, hitIds: new Set<string>(),
+      key, f, tick: cut, hitDone: false, shots: 0, hitIds: new Set<string>(), phase: 0,
       stopTicks: 0, stopDebt: 0,
       skill: skill?.cast ?? null,
       /**

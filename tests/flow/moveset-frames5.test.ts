@@ -173,7 +173,9 @@ describe('KI-267 §4.2–§4.6 那几张 Moveset 表剩下的行：大剑／枪�
     expectStage(stages, 'l2', 10, 7, 26, '静默针 L2')
     expectStage(stages, 'l3', 11, 8, 28, '静默针 L3')
     expectStage(stages, 'l4', 12, 9, 31, '静默针 L4')
-    expectStage(stages, 'l5', 16, 15, 45, '静默针 L5（尾段）')
+    // §4.6 双刺改版：L5 不再是「一记 15」——一式两刺（hitPhases [6,9]），第一刺落在同一帧位。
+    // 这里钉第一刺的帧位与底数；第二刺的结构（相位重置/同目标两刺）由 needlesilence-doublestab 钉。
+    expectStage(stages, 'l5', 16, 6, 45, '静默针 L5（尾段·第一刺）')
     w.ai.despawn(e.id)
     alive.push(w.off)
   })

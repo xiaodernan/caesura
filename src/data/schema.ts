@@ -154,6 +154,13 @@ export interface FrameData {
    * 与 `CombatManager.playerHitsEnemies` 共同消费。
    */
   multi?: number
+  /**
+   * **§4.6 无鸣 L5「双刺 6+9」**：一式两刺——active 窗按段等分，每一段是独立的一击
+   * （各自的伤害、各自的一击一名目标；同一目标可以两段各挨一记）。数组长度即段数；
+   * 写了它，`damage` 那格作废（每段的伤在数组里）。与 `multi` 正交：multi 管一段里打
+   * 几个人，hitPhases 管一式里有几刺。目前唯一的表上居民是无鸣 L5（combat.md §4.6 原数）。
+   */
+  hitPhases?: number[]
   next?: string
   skillTag?: string
 }
@@ -1059,6 +1066,8 @@ export interface MovementFrame {
   hitbox?: Hitbox
   /** 一次出手能打满几个目标（环形技）。没有 hitbox 时写了就是死数据 ⇒ 门禁会拦 */
   multi?: number
+  /** §4.6 双刺（无鸣 L5「双刺 6+9」）：active 窗等分段、每段独立一击各带各的伤。战技帧同形（词表两边一份声明） */
+  hitPhases?: number[]
   shake?: 'graze' | 'normal' | 'heavy' | 'boss'
   sfx?: string[]
   vfx?: string[]

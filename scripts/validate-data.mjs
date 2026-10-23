@@ -143,7 +143,7 @@ const MOVEMENT_ACTIONS = new Set(['weaponSkill', 'weaponSkillB'])
  *  （`Progression.derive` 或 mods 出口）；语义写在那条声明自己的注释里，这里不再抄一份。 */
 export const GRANT_FIELDS = ['loadFlat', 'parryWhiffMs', 'execMulPct', 'overdriveFlat', 'corruptionStayPct', 'bowForkBranches', 'rollStaminaFlat']
 /** 战技帧的字段白名单： MovementFrame（schema.ts）。多一个字段就必须多一个消费方 */
-const MOVE_FRAME_FIELDS = ['startup', 'activeStart', 'activeEnd', 'recovery', 'poise', 'hitStopMs', 'hitbox', 'multi', 'shake', 'sfx', 'vfx', 'loudness']
+const MOVE_FRAME_FIELDS = ['startup', 'activeStart', 'activeEnd', 'recovery', 'poise', 'hitStopMs', 'hitbox', 'multi', 'hitPhases', 'shake', 'sfx', 'vfx', 'loudness']
 /** 战技每级的数值字段： MovementLevel。同样一字段一消费口 */
 const MOVE_LEVEL_FIELDS = ['cooldownTicks', 'damage', 'trueDamage', 'fissureLayers', 'muteTicks', 'distance', 'freezeTicks', 'echoCharges', 'silenceTicks', 'silenceDmgBonus']
 /** 被动 id 白名单（§7.3，KI-036）：一条被动 = 一个消费者（src/rpg/Settlement.ts refreshPlayer）。
@@ -545,8 +545,20 @@ function projectile(file, where, p) {
 /** 帧数据：必填 + 帧序 + 可选项。返回 frames.next（供调用方做引用校验）。 */
 function frames(file, where, f) {
   if (!isObj(f)) { report.error(file, where, 'frames 缺失或不是对象'); return undefined }
-  for (const k of ['startup', 'activeStart', 'activeEnd', 'recovery', 'damage', 'stamina', 'poise', 'hitStopMs']) {
-    report.num(file, `${where}.${k}`, f[k], { min: 0, name: k })
+  // §4.6 双刺（hitPhases）：写了 hitPhases 的帧，damage 那**格**由数组顶（每刺各带各的伤）——
+  // 「必填」改读成「两格必须有一格在场」，都缺才报；都在场是两个主人（activeHitbox 只认 hitPhases）。
+  if (Array.isArray(f.hitPhases)) {
+    if (f.hitPhases.length < 2 || !f.hitPhases.every((d) => isNum(d) && d > 0)) {
+      report.error(file, `${where}.hitPhases`, `双刺的段伤数组至少两段、每段为正（现值 ${JSON.stringify(f.hitPhases)}）`)
+    }
+    if (f.damage !== undefined) report.error(file, `${where}.damage`, '与 hitPhases 同时写 = 同一式伤害的两个主人（写了 hitPhases 就删 damage 格）')
+    for (const k of ['startup', 'activeStart', 'activeEnd', 'recovery', 'stamina', 'poise', 'hitStopMs']) {
+      report.num(file, `${where}.${k}`, f[k], { min: 0, name: k })
+    }
+  } else {
+    for (const k of ['startup', 'activeStart', 'activeEnd', 'recovery', 'damage', 'stamina', 'poise', 'hitStopMs']) {
+      report.num(file, `${where}.${k}`, f[k], { min: 0, name: k })
+    }
   }
   const { startup, activeStart, activeEnd, recovery } = f
   if ([startup, activeStart, activeEnd, recovery].every(isNum)

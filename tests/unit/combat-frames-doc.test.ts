@@ -210,6 +210,15 @@ function readTables() {
               misaligned.push(`${secId} 「${label}」的 ${listName} 有 ${list.length} 个数，而这一行点名 ${keys.length} 式`)
             }
           }
+          // §4.6 双刺（hitPhases）：damage 格是一列段伤（文档「6+9」⇄ 数据 [6,9]）——
+          // 整列对账，不走单数那条（单数会拿第一段去比，+9 那半就没人对了）
+          if (col === 'damage' && Array.isArray((a as { hitPhases?: number[] }).hitPhases)) {
+            const ph = (a as { hitPhases: number[] }).hitPhases
+            if (cell.kind !== 'numbers' || cell.bare.length !== ph.length || cell.bare.some((n, i2) => n !== ph[i2])) {
+              drift.push(`${secId} 「${label}」${k}.damage(hitPhases)：文档 ${cell.raw} ⇄ 数据 [${ph}]`)
+            } else claims++
+            return
+          }
           const vf = at(cell.frames)
           const vm = at(cell.ms)
           const vn = at(cell.bare)
