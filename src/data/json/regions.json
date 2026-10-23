@@ -1,7 +1,10 @@
 [
   {
     "id": "rg_resthold",
-    "prologueMarker": { "kind": "npc", "id": "npc_belltongue" },
+    "prologueMarker": {
+      "kind": "npc",
+      "id": "npc_belltongue"
+    },
     "nameKey": "region.resthold",
     "displayName": "休垒 Resthold",
     "order": 0,
@@ -141,7 +144,22 @@
           "y": 0,
           "z": -28
         },
-        "npcId": "npc_meg"
+        "npcId": "npc_meg",
+        "absentFlag": "flag.meg_gone"
+      },
+      {
+        "id": "in_resthold_meg_stall_rolled",
+        "kind": "inspect",
+        "verb": "看卷起的摊布",
+        "pos": {
+          "x": -28.5,
+          "y": 0,
+          "z": -27
+        },
+        "requiresState": {
+          "key": "state.meg.ending",
+          "value": "SILENCED"
+        }
       },
       {
         "id": "st_plaza_bell",
@@ -895,9 +913,9 @@
         "enemyId": "en_hanged_knight",
         "count": 1,
         "center": {
-         "x": -84,
-         "y": 0,
-         "z": -206
+          "x": -84,
+          "y": 0,
+          "z": -206
         },
         "radius": 2,
         "campId": "camp_brokenbar",

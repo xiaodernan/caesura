@@ -118,9 +118,15 @@ export class Interactables {
 
   stateOf(it: Interactable): InteractState {
     if (this.used.has(it.id)) return 'used'
+    if (this.isAbsent(it)) return 'used' // 不在场的东西没有可读的态：对世界而言它已经不在账上
     if (this.missingFlags(it).length > 0) return 'locked'
     if (this.stateLocked(it)) return 'locked'
     return 'ready'
+  }
+
+  /** 不在场旗：立着 ⇒ 这件东西已从世界消失（收摊/撤离）。缺席不是锁——连 nearby 都不进 */
+  private isAbsent(it: Interactable): boolean {
+    return !!it.absentFlag && this.flags.has(it.absentFlag)
   }
 
   /** 值域闸门：没写过这一格时读到的是登记表里的缺省，与游戏里"还没走到那个抉择"是同一回事 */
@@ -144,7 +150,7 @@ export class Interactables {
       // 值域不成立的变体**不在场**：组换的三个变体住在同一个点上，留着不成立的那两个
       // 会跟已经换上来的那个抢焦点（"对准了却说状态未到"比看不见更怪）。旗标不这样处理——
       // 旗标只改变一件东西的成色，值域改的是"这儿现在有没有它"。
-      .filter((i) => dist2(i.pos, pos) <= r2 && this.regionOpen(i) && !this.used.has(i.id) && !this.stateLocked(i))
+      .filter((i) => dist2(i.pos, pos) <= r2 && this.regionOpen(i) && !this.used.has(i.id) && !this.stateLocked(i) && !this.isAbsent(i))
       .sort((a, b) => dist2(a.pos, pos) - dist2(b.pos, pos))
   }
 
@@ -158,7 +164,7 @@ export class Interactables {
   within(pos: Vec3, r: number): Interactable[] {
     const r2 = r * r
     return this.items
-      .filter((i) => dist2(i.pos, pos) <= r2 && this.regionOpen(i) && !this.used.has(i.id) && !this.stateLocked(i))
+      .filter((i) => dist2(i.pos, pos) <= r2 && this.regionOpen(i) && !this.used.has(i.id) && !this.stateLocked(i) && !this.isAbsent(i))
   }
 
   /**
@@ -192,6 +198,7 @@ export class Interactables {
     const it = this.get(id)
     if (!it) return { id, kind: 'chest', ok: false, state: 'locked', text: '没有可交互对象' }
     if (!this.regionOpen(it)) return { id, kind: it.kind, ok: false, state: 'locked', text: '那里还没有通路' }
+    if (this.isAbsent(it)) return { id, kind: it.kind, ok: false, state: 'used', text: '已经不在了' }
     if (dist2(it.pos, pos) > this.range * this.range) {
       return { id, kind: it.kind, ok: false, state: 'ready', text: '离得太远' }
     }

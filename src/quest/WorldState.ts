@@ -46,6 +46,14 @@ export class WorldState {
         this.rules.forEach((r) => {
           if (r.on === 'interactUsed' && r.interactId === p.id) this.fire(r)
         })
+      }),
+      // 值域落格 ⇒ 派生旗（salt-meg SILENCED ⇒ 收摊旗是第一个读者）。写入口仍是
+      // `WorldStates.set` 那一处（它把住 key/value 都在登记表里），这里只听广播——
+      // 与旗标那三条同一个纪律：不自己存值域，真值只有一份。
+      bus.on('world.state', (p) => {
+        this.rules.forEach((r) => {
+          if (r.on === 'stateSet' && r.stateKey === p.key && r.stateIn?.includes(p.value)) this.fire(r)
+        })
       })
     )
   }

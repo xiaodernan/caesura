@@ -60,5 +60,15 @@
     "interactId": "ga_deeps_firstphrase_door",
     "setFlag": "flag.found_first_phrase",
     "notify": "井底的门认出了聋的手 —— 初句圣所的石刻就在门后"
+  },
+  {
+    "id": "ws_meg_silenced",
+    "on": "stateSet",
+    "stateKey": "state.meg.ending",
+    "stateIn": [
+      "SILENCED"
+    ],
+    "setFlag": "flag.meg_gone",
+    "notify": "她当夜收拾了摊子。休垒的市集少了一个声部"
   }
 ]

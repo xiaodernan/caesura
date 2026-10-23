@@ -214,3 +214,46 @@ describe('InteractableGreybox（交互物在灰盒里可见）', () => {
     f.stream.dispose()
   })
 })
+
+describe('不在场旗（KI 盐歌收摊）：旗立 ⇒ 摘格（事件态与读档态同一判）', () => {
+  const atMeg = { x: -30, y: 0, z: -28 }
+
+  function sceneHasMegBox(scene: THREE.Scene): boolean {
+    // npc_meg 的摊位画在 (-30, LIFT, -28)；找任意一个落在该 xz 的实例
+    for (const o of scene.children) {
+      if (!(o instanceof THREE.InstancedMesh)) continue
+      const m = o.instanceMatrix.array as ArrayLike<number>
+      for (let i = 0; i < o.count; i++) {
+        const x = m[i * 16 + 12], z = m[i * 16 + 14]
+        if (Math.abs(x - atMeg.x) < 0.6 && Math.abs(z - atMeg.z) < 0.6) return true
+      }
+    }
+    return false
+  }
+
+  it('读档态：旗先在世界里（不 emit），初次的 show 走 hasFlag 读数门 ⇒ 不画她的摊位', () => {
+    const flags = new Set<string>(['flag.meg_gone']) // 读档路径：没有事件可听，只有读数
+    const w = fixture(true, flags)
+    w.goTo(atMeg) // 首次入场 ⇒ show() 走缺席门
+    expect(sceneHasMegBox(w.scene), '她已收摊的世界：初画就没有那个摊位').toBe(false)
+    w.dispose()
+  })
+
+  it('事件态：活着的世界里立旗 ⇒ 已画的摊位当场摘掉', () => {
+    const flags = new Set<string>()
+    const w = fixture(true, flags)
+    w.goTo(atMeg)
+    expect(sceneHasMegBox(w.scene), '她在的市集：摊位画着').toBe(true)
+    flags.add('flag.meg_gone')
+    bus.emit('world.flag', { key: 'flag.meg_gone', value: true })
+    expect(sceneHasMegBox(w.scene), '旗立那一拍：摊位当场消失').toBe(false)
+    w.dispose()
+  })
+
+  it('她还在的世界（旗没立）摊位照常画着', () => {
+    const w = fixture(true)
+    w.goTo(atMeg)
+    expect(sceneHasMegBox(w.scene)).toBe(true)
+    w.dispose()
+  })
+})

@@ -1272,6 +1272,13 @@ export interface InteractableRef {
    * 未写入时读到的是 `states.json` 里声明的 `default`（= 还没走到那个抉择）。
    */
   requiresState?: { key: string; value: string }
+  /**
+   * **不在场旗**（值域组换的反面）：这面旗立起来的那一刻，这件东西从世界里**消失**——
+   * 收摊 / 撤离 / 沉没。与 `requiresState` 的差别是方向：那格说"走到哪一格时它在场"，
+   * 这格说"发生了哪件事之后它不在"。缺席不是锁：锁着的东西走过去还能看见提示，
+   * 消失的东西连 `nearby()` 都不进（灰盒不画、E 键不聚焦、use 拒收）。
+   */
+  absentFlag?: string
   setsFlag?: string
   npcId?: string
   /** 交互后把人送去的落点（共鸣井/吊机/吊桥 = 遮蔽传送等价物）；缺省 = 原地生效 */
@@ -1374,11 +1381,19 @@ export interface WallRef {
  */
 export interface WorldStateRule {
   id: string
-  on: 'firstParry' | 'bossDefeated' | 'interactUsed'
+  on: 'firstParry' | 'bossDefeated' | 'interactUsed' | 'stateSet'
   /** on=bossDefeated：哪一份敌人数据 */
   dataId?: string
   /** on=interactUsed：哪个交互物被真正用掉（ok=true） */
   interactId?: string
+  /**
+   * on=stateSet：哪一格值域状态（key 来自 states.json 的登记表）。
+   * **派生旗**的形状——值域记"走到哪一格"，旗标记"发生过没有"；一张规则把值域的那一格
+   * 翻译成一面旗，旗的既有读方（requiresFlag / spawnGroup condition / 出怪表）零改动就能用。
+   */
+  stateKey?: string
+  /** on=stateSet：落在哪几个取值里才触发（值的域由 states.json 把住，这里只列关注的几格） */
+  stateIn?: string[]
   setFlag: string
   /** 立旗那一句 HUD 播报（没有就不播） */
   notify?: string

@@ -123,7 +123,12 @@ export class InteractableGreybox {
       bus.on('world.chunk', (c) => this.onChunk(c.key, c.state)),
       bus.on('ui.prompt', (p) => this.onFocus(p.id)),
       bus.on('world.flag', (f) => {
-        for (const cur of this.shown.values()) if (cur.entry.it.setsFlag === f.key) this.paint(cur.entry.it.id)
+        // 不在场旗：立起来的那一刻把它从格子里摘掉（收摊/撤离）。旗只有 on 广播（没有 off），
+        // 所以读档态走下面的初次入场判定（hasFlag 是注入的读数，不是事件重放）。
+        for (const cur of [...this.shown.values()]) {
+          if (cur.entry.it.setsFlag === f.key) this.paint(cur.entry.it.id)
+          if (cur.entry.it.absentFlag === f.key && f.value) this.hide(cur.entry.it.id)
+        }
       }),
       // 组换发生在"下一格加载"之前也可能（站在原地把钟敲了），所以这里必须自己跟一遍
       bus.on('world.state', () => this.syncStates()),
@@ -183,6 +188,7 @@ export class InteractableGreybox {
 
   private show(e: Entry, active: boolean): void {
     if (e.it.requiresState && !this.stateOk(e.it.requiresState)) return // 不成立的变体不占格子
+    if (e.it.absentFlag && this.hasFlag(e.it.absentFlag)) return // 不在场：读档态与事件态同一判（收摊之后摊位不画）
     const cur = this.shown.get(e.it.id)
     if (cur) { if (cur.active !== active) { cur.active = active; this.paint(e.it.id) } return }
     const pool = this.pools.get(e.kind)

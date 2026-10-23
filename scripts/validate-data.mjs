@@ -123,8 +123,8 @@ const SHOP_FIELDS = new Set(['id', 'sell', 'stock', 'redlines'])
 const SELL_FIELDS = new Set(['mul', 'stackKinds', 'note'])
 const STOCK_FIELDS = new Set(['id', 'item', 'price', 'note'])
 /** 世界状态规则表：`on` 是引擎听得懂的触发口，字段是它能做的动作——加一项必须同时加消费方 */
-const RULE_ONS = new Set(['firstParry', 'bossDefeated', 'interactUsed'])
-const RULE_FIELDS = new Set(['id', 'on', 'dataId', 'interactId', 'setFlag', 'notify'])
+const RULE_ONS = new Set(['firstParry', 'bossDefeated', 'interactUsed', 'stateSet'])
+const RULE_FIELDS = new Set(['id', 'on', 'dataId', 'interactId', 'stateKey', 'stateIn', 'setFlag', 'notify'])
 // tests/flow/support.test.ts 同款判据：tag 末段为 mute 即闷音类，必须自带 ticks
 const MUTE_TAG = /(^|\.)mute$/
 // src/core/EventBus.ts > STATUS_IDS —— 五状态一张表：少一维 HUD 就没得播，多一维就是没人消费的数据（KI-076 起由对账读它，不再抄它）
@@ -1772,6 +1772,10 @@ function validateRegions(enemyIds, lootIds, rarityIds, stateDefs, markerTargets)
           }
         }
       }
+      // 不在场旗（收摊/撤离）：非空字符串即可——域语义由 collectFlagUsage 的双向对账管
+      //（写了没人读 ⇒ 死数据；被读没人写 ⇒ 不可达，两条判据都已经在跑）
+      if (it.absentFlag !== undefined && !isStr(it.absentFlag)) report.error(file, `${iw}.absentFlag`, '必须是非空字符串')
+      if (it.absentFlag !== undefined && it.requiresFlag !== undefined) report.error(file, `${iw}.absentFlag`, '与 requiresFlag 同时写 = 同一件事两处真值（在场门与缺席门各自问一件事，不许都写）')
       if (it.to !== undefined) vec3(file, `${iw}.to`, it.to)
       if (it.kind === 'npc' && !isStr(it.npcId)) report.warn(file, iw, `kind=npc 但没有 npcId`)
     })
@@ -2543,6 +2547,8 @@ function collectFlagUsage() {
       if (!isObj(it)) continue
       interactableIds.add(it.id)
       if (isStr(it.requiresFlag)) read.set(it.requiresFlag, `${rg.id}.interactables(${it.id}).requiresFlag`)
+      // 不在场旗（收摊/撤离）：也是读方——缺席的判定与成色同样吃 §55 双向对账
+      if (isStr(it.absentFlag)) read.set(it.absentFlag, `${rg.id}.interactables(${it.id}).absentFlag`)
       // 合取闸门（Phase 6-C 初句圣所）：列进去的每一面旗都是**读方**——少登记一面，
       // 那面旗就会在下面"写了没人读"那条判据里被判成死数据
       if (isArr(it.requiresFlags)) for (const f of it.requiresFlags) if (isStr(f)) read.set(f, `${rg.id}.interactables(${it.id}).requiresFlags`)
@@ -2614,6 +2620,11 @@ function validateWorldstate() {
     if (!isStr(r.setFlag)) { report.error(file, `${w}.setFlag`, '缺失或非字符串'); return }
     if (r.on === 'bossDefeated' && !enemyIds.has(r.dataId)) report.error(file, `${w}.dataId`, `悬空引用：'${r.dataId}' 不在 enemies.json`)
     if (r.on === 'interactUsed' && !interactableIds.has(r.interactId)) report.error(file, `${w}.interactId`, `悬空引用：'${r.interactId}' 不是任何区域的交互物`)
+    if (r.on === 'stateSet') {
+      const stateRow = (data['states.json'] ?? []).find((x) => isObj(x) && x.key === r.stateKey)
+      if (!isStr(r.stateKey) || !stateRow) report.error(file, `${w}.stateKey`, `stateSet 规则的 stateKey 必须是 states.json 里登记过的 key`)
+      else if (!isArr(r.stateIn) || r.stateIn.length === 0 || !r.stateIn.every((v) => stateRow.values.includes(v))) report.error(file, `${w}.stateIn`, `stateIn 的每个值都必须在 '${r.stateKey}' 的登记域 ${JSON.stringify(stateRow.values)} 里`)
+    }
     if (r.notify !== undefined && !isStr(r.notify)) report.error(file, `${w}.notify`, '必须是非空字符串')
     // §55 的正方向：这条规则立的旗标必须真有人读
     if (!read.has(r.setFlag)) report.error(file, `${w}.setFlag`, `写了 '${r.setFlag}' 但 regions.json 里没有任何读方（写进表却没人读的旗标就是死数据）`)
