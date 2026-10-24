@@ -47,6 +47,10 @@ const PRESENTATION = new Set([
   'world/ProjectileVisuals.ts', 'world/BossArenaVisuals.ts', 'world/PlaceholderArena.ts', 'world/PropVisuals.ts',
   // §37 第二腿：三层光的绘制层。它 import three，但判断全在逻辑层 `world/Lighting.ts`
   'world/SceneLights.ts',
+  // KI-315：hitbox 线框（§17 调试器那一格的承载体）。它 import three 建线段，
+  // 但「画哪、画多大」的数全从 `@/data/schema` 的 box 与 `@/combat/HitShapes` 的那个余量来——
+  // 与 `world/Lighting.ts` 同一分法：判断在逻辑层，这里只是把数变成可见的线。
+  'world/HitboxWire.ts',
 ])
 
 const tsFiles = (dir: string): string[] => {

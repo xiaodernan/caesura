@@ -170,7 +170,7 @@ export class Input {
       if (ui && this.uiOwner) { e.preventDefault(); this.kbUiHeld.add(ui) }
       const a = this.binds.keyboard[e.code]
       if (!a) return
-      if (['Space', 'Tab', 'F1', 'F2', 'F3', 'F4'].includes(e.code)) e.preventDefault()
+      if (['Space', 'Tab', 'F1', 'F2', 'F3', 'F4', 'F6'].includes(e.code)) e.preventDefault()
       this.kbHeld.add(a)
     })
     window.addEventListener('keyup', (e) => {

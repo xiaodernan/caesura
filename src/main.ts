@@ -50,6 +50,7 @@ import { DebugPanel } from '@/tools/DebugPanel'
 import { enemyPanelText } from '@/tools/EnemyDebugger'
 import { questPanelText, questRows } from '@/tools/QuestDebugger'
 import { aiPanelText } from '@/tools/AIDebugger'
+import { HitboxWire, wiresFrom } from '@/world/HitboxWire'
 import { SaveGame, LocalStore, IdbStore } from '@/save/Serializer'
 import { SlotRoster } from '@/save/Slots'
 import { Checkpoints } from '@/save/Checkpoint'
@@ -718,8 +719,12 @@ addEventListener('keydown', (e) => {
  * 只在 DEV 构建里接线：这三块面板读的是引擎内部状态，发布版本里没有它们，
  * 而 `core.postTick` 的循环里连一次函数调用都不会留下（`debugPanels` 恒空）。
  * F2 比这套外壳早落地（`CombatDebugger` 走纯事件流，不需要读实例），不动它。
+ *
+ * `debugWires` 是同一句纪律的三维那一半（KI-315：§17 调试器那一格里「hitbox 线框」的承载体）：
+ * 默认全关、关着连名册都不叫，所以发布构建里这个数组也是空的。
  * ------------------------------------------------------------------------- */
 const debugPanels: DebugPanel[] = []
+const debugWires: HitboxWire[] = []
 if (import.meta.env.DEV) {
   const nearestEnemy = (): (typeof ai.enemies)[number] | null => {
     let t: (typeof ai.enemies)[number] | null = null
@@ -758,6 +763,19 @@ if (import.meta.env.DEV) {
           armedSlots: ai.armedSlots,
         })
       },
+    }),
+  )
+  /* hitbox 线框（KI-315，§17 调试器那一格的最后一格）：把**此刻在场**的每一记出手的那个框画成线段。
+     名册交给 `wiresFrom`——"谁在场、谁敌我、键取什么"只有那一个主人（测试也读那一格，
+     不是我在这里再抄一遍的语义）。`world/HitboxWire` 依旧不认识 CombatManager/AISystem
+     （依赖闸门守着：那里只认领 `pos`/`yaw`/`activeHitbox.box` 三件结构），
+     而 `activeHitbox` 本来就是表现层在读的那个口（`ActorVisuals` 拿它判断"此刻该不该亮"）。
+     键写在这里而不是写在模块里：与 F1/F3/F4 同一套规矩，一把键的主人在它的构造点上。 */
+  debugWires.push(
+    new HitboxWire({
+      scene: arena.scene,
+      key: 'F6',
+      feed: () => wiresFrom(player, ai.enemies),
     }),
   )
 }
@@ -906,6 +924,8 @@ const core = {
     rig.update(t.dt, player, input.frame.look, lock.target ? lock.target.getPos() : null, TICK_DT)
     // 调试面板每逻辑帧重画一次（关着的面板内部直接 return，一个字符串都不生成）
     for (const p of debugPanels) p.refresh()
+    // 线框同一条规矩（KI-315）：关着的 `HitboxWire` 连 `feed()` 都不叫，一帧的线段也不建
+    for (const w of debugWires) w.sync()
   }
 }
 
@@ -1075,7 +1095,7 @@ if (freshBoot) {
  * 只有拿得到实例才读得着——`muffleHz`（消音那条低通的实时频率，斜坡走到哪一格）与 `dispose()`
  * （装配层的收尾口；测试与实机从此共用同一个，`AudioEngine` 因此不是一只没有生产消费方的 API）。
  */
-;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, lights, player, ai, combat, lock, rig, bus, streaming, surface, greybox, wallGreybox, interact, props, hud, spawner, nodes, worldState, projectileVis, actors: visuals, bossArena, saves, saveRoster, checkpoints, rpg, settlement, panel, setPanelOpen, mapUi, setMapOpen, quests, dialogueEngine, dialogueBox, openDialogue, debugPanels, refreshRpg, observe, saveNow: () => saves.save('autosave'), get title() { return title } }
+;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, lights, player, ai, combat, lock, rig, bus, streaming, surface, greybox, wallGreybox, interact, props, hud, spawner, nodes, worldState, projectileVis, actors: visuals, bossArena, saves, saveRoster, checkpoints, rpg, settlement, panel, setPanelOpen, mapUi, setMapOpen, quests, dialogueEngine, dialogueBox, openDialogue, debugPanels, debugWires, refreshRpg, observe, saveNow: () => saves.save('autosave'), get title() { return title } }
 
 document.getElementById('boot')!.style.display = 'none'
 ;(window as unknown as Record<string, unknown>).__CAESURA_BOOTED__ = true

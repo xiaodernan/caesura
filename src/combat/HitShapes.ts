@@ -8,6 +8,14 @@ export interface HitTarget {
   height: number
 }
 
+/**
+ * 贴身豁免的余量（KI-315 从字面量里提出来的）：目标中心离出手点不到 `target.radius + 0.25` 时
+ * 角度判据作废、只看高度层——在目标体积里面比角度本来就没有意义。
+ * 线框要把这一圈**画**出来（不画就等于比判定少一块真命中区），所以它不能只住在判定式里当一个数：
+ * 两处各写一份 `0.25` 就是两个主人，改一边另一边不动＝画出来的框与挨打的框分家。
+ */
+export const POINT_BLANK_GRACE = 0.25
+
 /** analytic shape tests only, no physics engine (docs/technical-architecture.md §2 combat) */
 export function shapeHits(
   box: Hitbox, origin: Vec3, yaw: number, target: HitTarget
@@ -17,7 +25,7 @@ export function shapeHits(
   const dist = Math.hypot(dx, dz)
   if (box.shape === 'cone') {
     if (dist > box.radius + target.radius) return false
-    if (dist < target.radius + 0.25) {
+    if (dist < target.radius + POINT_BLANK_GRACE) {
       // point-blank grapple: angle test is meaningless inside the target volume
       const dy0 = Math.abs((target.pos.y + target.height / 2) - (origin.y + box.offsetY))
       return dy0 < (box.height + target.height) / 2

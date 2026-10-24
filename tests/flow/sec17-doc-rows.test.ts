@@ -509,17 +509,19 @@ describe('KI-300 §17 第四行（AI tick）', () => {
 })
 
 describe('KI-300 §17 第五行（调试器）', () => {
-  it('开发期按键名册：src 里按得出的是 F1／F2／F3／F4，F9 一次也没有（登记：偏差在文档侧）', () => {
+  it('开发期按键名册：src 里按得出的是 F1／F2／F3／F4／F6，F9 一次也没有（登记：偏差在文档侧）', () => {
     const files = srcFiles()
     const roster = [...new Set(files.flatMap((f) => [...f.text.matchAll(/\bF([0-9])\b/g)].map((m) => `F${m[1]}`)))].sort()
-    expect(roster).toEqual(['F1', 'F2', 'F3', 'F4'])
+    /* KI-315 之前这一格钉的是四把键。F6（hitbox 线框的呼出键）落地后名册伸长一格是**预期内的红**：
+       这条腿读的是"src 里真按得出的键"，它不许变成第二把键的主人——所以名字由扫描现推，改码就改名册。 */
+    expect(roster).toEqual(['F1', 'F2', 'F3', 'F4', 'F6'])
     expect(files.reduce((a, f) => a + (f.text.match(/F9/g) ?? []).length, 0)).toBe(0)
     expect(files.filter((f) => f.text.includes("e.key !== 'F2'")).map((f) => f.path)).toEqual(['src/tools/CombatDebugger.ts'])
     expect(files.filter((f) => /key: 'F1' \| 'F3' \| 'F4'/.test(f.text)).map((f) => f.path)).toEqual(['src/tools/DebugPanel.ts'])
     expect(R.get('调试器')!.备注).toContain('F9')
   })
 
-  it('那一格列的四格展示：S/A/R 帧、体力/架势、拍点刻度尺都在 src/tools 里有承载体，只有 hitbox 线框六种拼法零命中', () => {
+  it('那一格列的四格展示：S/A/R 帧、体力/架势、拍点刻度尺都在 src/tools 里有承载体，hitbox 线框由 KI-315 补上第三个家的承载体', () => {
     const tools = srcFiles('src/tools')
     expect(tools.map((f) => f.path).sort()).toEqual([
       'src/tools/AIDebugger.ts',
@@ -537,10 +539,17 @@ describe('KI-300 §17 第五行（调试器）', () => {
     expect(carrier(/poise/)).toEqual(['src/tools/CombatDebugger.ts', 'src/tools/EnemyDebugger.ts'])
     expect(carrier(/beatInBar/)).toEqual(['src/tools/AIDebugger.ts', 'src/tools/CombatDebugger.ts'])
     expect(carrier(/│/)).toEqual(['src/tools/CombatDebugger.ts'])
+    /* 六种拼法的读数（KI-300 落笔时全是 0）里只有 `LineSegments` 变成 1——那一个是**画线框的那个类自己**：
+       线框是三维的，不住在 `src/tools`（那五格是文本面板）而住在 `src/world`。其余五格仍是 0，
+       它们那五种拼法本来就不该出现（Three.js 里画线段没有 `wireframe` 材质开关、也没有 `BoxHelper` 那条捷径）。 */
     const spellings = ['wireframe', 'BoxHelper', 'LineSegments', 'debugDraw', 'drawHitbox', 'hitboxWire']
+    const read = (s: string): string[] => srcFiles().filter((f) => f.text.includes(s)).map((f) => f.path).sort()
+    const readRe = (re: RegExp): string[] => srcFiles().filter((f) => re.test(f.text)).map((f) => f.path).sort()
     expect(
-      spellings.map((s) => `${s}:${srcFiles().filter((f) => f.text.includes(s)).length}`),
-    ).toEqual(['wireframe:0', 'BoxHelper:0', 'LineSegments:0', 'debugDraw:0', 'drawHitbox:0', 'hitboxWire:0'])
+      spellings.map((s) => `${s}:${read(s).length}`),
+    ).toEqual(['wireframe:0', 'BoxHelper:0', 'LineSegments:1', 'debugDraw:0', 'drawHitbox:0', 'hitboxWire:0'])
+    expect(read('LineSegments'), '那一格读数必须落在承载体上，不是落在散文里').toEqual(['src/world/HitboxWire.ts'])
+    expect(readRe(/new THREE\.LineSegments\(/), '承载体必须真的构造线段对象，光提名字不算').toEqual(['src/world/HitboxWire.ts'])
     const cell = R.get('调试器')!.方案
     for (const claim of ['S/A/R', 'hitbox 线框', '体力/架势', '拍点刻度尺']) expect(cell, `那一格该列「${claim}」`).toContain(claim)
   })

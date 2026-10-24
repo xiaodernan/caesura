@@ -105,7 +105,10 @@ describe('文档对账闸门（KI-056）', () => {
     // 预留侧锚在 `e.code` 那份名单上，读者侧锚在**绑定**上（`key: 'F1'` / `e.key !== 'F2'`）。
     // 否则"面板拆了但注释里还写着 'F1'"就能骗过这条——探针 D 第一次正是这么漏的。
     const reservedList = input.match(/\[([^\]]*)\]\.includes\(e\.code\)/)?.[1] ?? ''
-    const reserved = ['F1', 'F2', 'F3', 'F4'].filter((k) => reservedList.includes(`'${k}'`))
+    // 名册从**预留表自己**抽（KI-315）。原先这里手抄了一份 `['F1','F2','F3','F4']`，于是
+    // 「往预留表里加一把 F6、又不给它接读者」恰好从这条门的指缝里漏掉——而上面那句判决写的
+    // 正是"谁加一把不接面板就叫回 TD-001"。手抄的候选表做不到那句话，抽出来的才做得到。
+    const reserved = [...new Set([...reservedList.matchAll(/'(F\d)'/g)].map((m) => m[1]))].sort()
     const bound = new Set([...panels.matchAll(/(?:key:\s*|\.key\s*[!=]==\s*)'(F\d)'/g)].map((m) => m[1]))
     const unbound = reserved.filter((k) => !bound.has(k))
     expect(reserved.length, '预留表里的 F 键整批被删了 = 这条判据在空转').toBeGreaterThanOrEqual(4)
