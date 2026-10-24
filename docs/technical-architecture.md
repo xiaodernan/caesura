@@ -4751,7 +4751,12 @@ CONTROL 0 红。第一趟有**三臂不符**，逐臂裁决如下——这一节
 ① 文档与账本行写盘前 **3 条**——门 A 说 `src/world/HitboxWire.ts` 从没被架构文档提过、门 B 说 KI-315 有按号引用而无账行、`import-targets` 说本地 import 指向没被版本库认领的文件；
 ② 三份文档写盘后 **1 条**——只剩 `import-targets`：`src/main.ts` 与 `tests/unit/hitbox-wire.test.ts` 各有一条 `@/world/HitboxWire` 的本地 import，探针逐条点名报 `untracked`（不是"整个套件红了"）；
 ③ **CAS 提交把新文件进索引之后 0 红**——那两条红的正是"文档"与"git 认领"这两笔债的机器读者，它们该在提交的那一刻翻绿，而不是靠豁免。
-`node scripts/coverage.mjs` 只能在 ③ 之后量（红跑上的覆盖率不作数，`scripts/coverage.mjs` 自己会拒绝），读数与 `doc-audit` 那一趟由紧接着的 follow-up 提交补进本节。
+`node scripts/coverage.mjs` 只能在 ③ 之后量（红跑上的覆盖率不作数，`scripts/coverage.mjs` 自己会拒绝）。
+**③ 的读数**（就是紧接着那一笔补记提交里跑的：先把平面回到提交树，`git diff <提交>` 工作树对提交为空，再跑）——
+`node scripts/test.mjs` ⇒ **294 个测试文件、3350 条用例、0 红**（比平面上那一趟多 4 个文件／15 条用例，全部来自父提交里别道那四份守卫测试，本批一条也没加）；
+`node scripts/coverage.mjs` ⇒ **exit 0**，行覆盖 **94.87%**（13565/14298 行、98 个 src 文件），`world` 包 **97.12%**（2367/2437 行、22 个文件——线框那一份在分母里且被吃着），16 个包各自不低于自己的地板，零覆盖名单 2 格未变长；
+`doc-audit` ⇒ **13 条全绿**（含在上面那一趟里，门 A 与门 B 从此对本批无话可说）；`npm run build` ⇒ **exit 0**（dist 文本 8 份／0 findings）。
+地板按「只许涨」的规矩 bless 上来了，与读数同一笔提交：总地板 91.89% ⇒ **94.87%**，`ai` 99.4% ⇒ 100%、`audio` 98.74% ⇒ 99.9%、`vfx` 99.07% ⇒ 99.8%、`world` 94.32% ⇒ 97.12%（`scripts/coverage-floor.json`）。
 
 **没做（§78，如实登记）**：① §17 除 ⑧b 之外那八项未逐格裁决（文档侧 ③④⑤⑥⑦⑧a 六项＋实装侧 ①② 两项；其中 ② 那一格连口径都还没定）；② **真浏览器目视未验**——
 29 条腿全是进程内的顶点读数，没有一条读 `gl.readPixels`；按 F6 之后「屏幕上真的有线」这一句今天只有间接证据（组进了场景、`visible=true`、几何非空）；
