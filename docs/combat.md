@@ -836,8 +836,8 @@ DR = DEF / (DEF + 120)，上限 55%（远程 DR ×0.6 计算后再取）
 
 | 系统 | 方案 | 备注 |
 |---|---|---|
-| 帧数据/敌人表 | JSON 数据表（`weapons.json`/`enemies.json`/`bosses.json`/`movements.json`，字段=本文列名），需求 §55 数据驱动 | 调参零改码；战技表见 §4.8 |
-| 命中框 | 武器 Active 段=扇形（角度 60-120°）+半径 + 高度层；命中测试=点-扇形解析式 | 不用物理引擎 |
-| BeatClock | WebAudio `currentTime` 驱动（比 performance.now 稳）；渲染层仅插值 | 音频=权威时钟 |
-| AI tick | 状态机 30Hz + 感知 10Hz 轮转预算（32 实体/AI 预算 <2ms/帧） | 与渲染解耦定步长 |
-| 调试器 | Combat Debugger（需求 §54）：屏幕显示 当前帧阶段 S/A/R、hitbox 线框、体力/架势数值、拍点刻度尺 | 开发期按 F9 |
+| 帧数据/敌人表 | JSON 数据表，字段=本文列名：招式帧住在 `movesets.json`（玩家每把武器一套）／`movements.json`（战技）／`enemies.json`（敌人，Boss 的帧也在这里），玩家自身帧（翻滚／格挡）住在 `player.json`，武器属性与 `movesetId` 链接住在 `weapons.json`；需求 §55 数据驱动 | 调参零改码；战技表见 §4.8；Boss 的帧住在敌人表里，不曾为它单立一本 |
+| 命中框 | 武器 Active 段=扇形（角度 30-200°，逐式由表给）+半径 + 高度层；命中测试=点-扇形解析式 | 不用物理引擎；带外不许有格：这一格写着的上下界就是三张表里全部扇形的两端，对账腿是 `tests/flow/sec17-doc-rows.test.ts` |
+| BeatClock | 逻辑 tick（60Hz 定步长）驱动：全仓唯一的喂口是 `main.ts` 里那句每拍 `rhythm.update(TICK_DT)`；音频层相位锁定到这条网格（`audio.music.grid` 的唯一订阅者是 `AudioEngine`）；表现层每拍读逻辑位姿 | 逻辑钟=权威时钟；WebAudio 那个时间只用来定发声时刻，不作拍源 |
+| AI tick | 状态机 30Hz + 感知 10Hz 轮转预算（32 实体一轮）；机器无关的那一格是每一拍的调用次数，帧预算 <2ms 是设计目标（实测随负载摆，跨度登记在 KNOWN_ISSUES 的 KI-300 ③） | 与渲染解耦定步长 |
+| 调试器 | Combat Debugger（需求 §54）：屏幕显示 当前帧阶段 S/A/R、hitbox 线框、体力/架势数值、拍点刻度尺 | 开发期按键：F1 敌人、F2 战斗流、F3 任务与世界、F4 AI 决策、F6 hitbox 线框（仅 DEV 接线；那一串键名必须与 `src` 里按得出的键同册） |

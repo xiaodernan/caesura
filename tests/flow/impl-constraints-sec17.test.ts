@@ -22,11 +22,11 @@ import type { Vec3 } from '@/combat/EntityStats'
  *
  * **这一批量的六条腿**：
  * ① **帧数据/敌人表：调参零改码**（帧表那三格在运行时真走：判定落在第 12 拍、那一式在第 30 拍放手）；
- * ② **命中框：扇形（角度 60-120°）＋半径＋高度层；点-扇形解析式（不用物理引擎）**；
- * ③ **BeatClock：音频不是权威时钟**（运行时是**反过来的** ⇒ 登记）；
- * ④ **AI tick：感知 10Hz 轮转 ✓／状态机不是 30Hz**（⇒ 登记）；
- * ⑤ **32 实体／AI 预算 <2ms/帧**；
- * ⑥ **调试器：Combat Debugger**（**F2**，不是设计写的 F9；只读总线事件流 ⇒ 登记）。
+ * ② **命中框：扇形＋半径＋高度层；点-扇形解析式（不用物理引擎）**（那一格写着的角度带现由 `sec17-doc-rows` 与三张表对账，本文件只量解析式的三道边界）；
+ * ③ **BeatClock：权威是逻辑 tick**（音频层相位锁定到它——文档那一格由 KI-316 改写成这一句，登记见 KI-300 ④）；
+ * ④ **AI tick：感知 10Hz 轮转 ✓／状态机不是 30Hz**（⇒ 仍登记着，那是 KI-316 留在「改实装」那一侧的账）；
+ * ⑤ **32 实体一轮／帧预算 <2ms 是设计目标**（那个 ms 数没有机器无关的判据 ⇒ 本文件量的是每一拍的调用次数＋中位数护栏）；
+ * ⑥ **调试器：Combat Debugger**（呼出键 **F2**；只读总线事件流 ⇒ 登记——按键名册那一格现与 `src` 扫描同册，见 `sec17-doc-rows`）。
  *
  * **三条量具纪律**：
  * ① **帧表要钉「运行时落在第几拍」**，不是钉「表里写着几」；
@@ -111,13 +111,13 @@ describe('KI-297 §17「实现说明（Three.js 落地约束）」那一族', ()
     alive.push(w.off)
   })
 
-  it('腿② **命中框＝扇形（角度 60-120°）＋半径＋高度层；点-扇形解析式（不用物理引擎）** ⇒ 角度边 **70.14°**、外沿 **2.65m**、高度层 **1.7m**，三道边界都两面夹逼 ⇒ 与设计逐字对上', () => {
+  it('腿② **命中框＝扇形＋半径＋高度层；点-扇形解析式（不用物理引擎）** ⇒ 角度边 **70.14°**、外沿 **2.65m**、高度层 **1.7m**，三道边界都两面夹逼（带的实际名册由 sec17-doc-rows 对账）', () => {
     const l1 = L1()
     const box = l1.hitbox!
     if (box.shape !== 'cone') throw new Error('这一记的 Active 段不是扇形')
     expect(box.shape, 'Active 段是扇形（cone）').toBe('cone')
-    expect(box.angleDeg, '角度落在设计的 60-120° 那一段').toBeGreaterThanOrEqual(60)
-    expect(box.angleDeg, '角度落在设计的 60-120° 那一段').toBeLessThanOrEqual(120)
+    expect(box.angleDeg, '这一记（调音剑 L1）的角度落在实际名册的中段；带⇄名册的对账是 sec17-doc-rows 那条腿').toBeGreaterThanOrEqual(60)
+    expect(box.angleDeg, '这一记（调音剑 L1）的角度落在实际名册的中段；带⇄名册的对账是 sec17-doc-rows 那条腿').toBeLessThanOrEqual(120)
     const origin = { x: 0, y: 0, z: 0 }
     const target = { pos: { x: 0, y: 0, z: 1.5 }, facingYaw: 0, radius: 0.55, height: 1.8 }
     const at = (deg: number, dist: number, y = 0) => {
@@ -142,7 +142,7 @@ describe('KI-297 §17「实现说明（Three.js 落地约束）」那一族', ()
     expect(new Set(same).size, '同一组坐标反复判定，答案永远一样（没有物理引擎的随机性）').toBe(1)
   })
 
-  it('腿③ **BeatClock：音频不是权威时钟** ⇒ 拍网**按 tick 推进**（每拍 ＋`(bpm/60)×(1/60)`）、`audio.music.grid` **只在网格真的变了**时发 ⇒ 与设计「WebAudio `currentTime` 驱动」**反过来** ⇒ 登记', () => {
+  it('腿③ **BeatClock：权威是逻辑 tick** ⇒ 拍网**按 tick 推进**（每拍 ＋`(bpm/60)×(1/60)`）、`audio.music.grid` **只在网格真的变了**时发 ⇒ 音频层是订阅者不是源头（文档那一格由 KI-316 改成同这一句）', () => {
     const w = makeWorld()
     const grids: Array<{ bpm: number; beatsPerBar: number }> = []
     const off = bus.on('audio.music.grid', (g) => grids.push({ bpm: g.bpm, beatsPerBar: g.beatsPerBar }))
@@ -196,7 +196,7 @@ describe('KI-297 §17「实现说明（Three.js 落地约束）」那一族', ()
     alive.push(w.off)
   })
 
-  it('腿⑤ **32 实体／AI 预算 <2ms/帧** ⇒ **32 个敌人每一拍都被更新到**（没有一个被漏掉）；一帧的 AI 耗时**中位数 0.082ms** ⇒ 与设计「32 实体/AI 预算 <2ms/帧」逐字对上（量**中位数**，最大值那一格是机器噪声不作数）', () => {
+  it('腿⑤ **32 实体一轮** ⇒ **32 个敌人每一拍都被更新到**（没有一个被漏掉）；一帧的 AI 耗时的**中位数**作护栏（量**中位数**，最大值那一格是机器噪声不作数；<2ms 那一格按 KI-316 是设计目标，不是逐机判据）', () => {
     const w = makeWorld()
     const mobs: ReturnType<typeof w.ai.spawn>[] = []
     for (let i = 0; i < 32; i++) mobs.push(w.ai.spawn('en_murkshell', { x: i * 2, y: 0, z: -10 }, 'budget'))
@@ -215,12 +215,12 @@ describe('KI-297 §17「实现说明（Three.js 落地约束）」那一族', ()
     }
     samples.sort((x, y) => x - y)
     const median = samples[60]
-    expect(median, '32 个实体一帧的 AI 耗时中位数（设计上限 2ms）').toBeLessThan(2)
+    expect(median, '32 个实体一帧的 AI 耗时中位数（文档那一格的设计目标是 2ms）').toBeLessThan(2)
     expect(median, '这一格离上限还有一个数量级（实测约 0.08ms）').toBeLessThan(0.5)
     alive.push(w.off)
   })
 
-  it('腿⑥ **调试器：Combat Debugger** ⇒ 呼出键是 **F2**（**不是设计写的 F9**）；面板**只读总线事件流**（体力/架势数值、拍点刻度尺都从总线来）⇒ 与设计「屏幕显示 当前帧阶段 S/A/R、hitbox 线框、体力/架势数值、拍点刻度尺；开发期按 F9」**三格对上、两格没有承载体** ⇒ 登记', () => {
+  it('腿⑥ **调试器：Combat Debugger** ⇒ 呼出键是 **F2**；面板**只读总线事件流**（体力/架势数值、拍点刻度尺都从总线来）⇒ 那一格四格里这两格当场对上，S/A/R 与 hitbox 线框的承载体由 KI-315＋sec17-doc-rows 钉（按键名册与 `src` 扫描同册）', () => {
     const g = globalThis as unknown as Record<string, unknown>
     const created: Array<{ style: Record<string, string>; textContent: string; remove: () => void }> = []
     const keys: Array<(e: unknown) => void> = []
@@ -240,7 +240,7 @@ describe('KI-297 §17「实现说明（Three.js 落地约束）」那一族', ()
     try {
       expect(panel.style.cssText, '开局是收着的').toContain('display:none')
       press('F9')
-      expect(panel.style.cssText, '**按 F9 什么都不发生**（设计写的是 F9）').toContain('display:none')
+      expect(panel.style.cssText, '**按一把没绑的 F9 什么都不发生**（面板只认 F2；F9 那一格由 KI-316 从文档里摘掉）').toContain('display:none')
       expect(panel.style.display, 'F9 没有改过 display').toBe(undefined)
       press('F2')
       expect(panel.style.display, '**按 F2 才呼出**').toBe('block')

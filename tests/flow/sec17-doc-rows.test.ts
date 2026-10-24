@@ -9,7 +9,7 @@ import { GameLoop } from '@/core/GameLoop'
 import type { Input } from '@/core/Input'
 import { RhythmClock } from '@/core/RhythmClock'
 import { registry } from '@/core/Registry'
-import { registerGameData, playerBase } from '@/data'
+import { registerGameData, playerBase, weaponsRaw, movesetsRaw } from '@/data'
 import { PlayerController } from '@/player/ThirdPersonController'
 import { AISystem } from '@/ai/AISystem'
 import { Enemy } from '@/ai/Enemy'
@@ -19,15 +19,17 @@ import { ActorVisuals } from '@/world/ActorVisuals'
 
 /**
  * KI-300：combat.md §17「实现说明（Three.js 落地约束）」那五行第一次有**打开文档字节来读**的机器读者。
+ * KI-316：KI-300 登记的八面里，对中的六面（③④⑤⑥⑦⑧a）**改的是文档**——文档跟着交付的实装走。
+ *         这一批把那六条腿从「登记分歧」重钉成「文档⇄实装对账」：两侧都由扫描现推，任一侧动就红
+ *         （把文档改回旧的那一句 ⇒ 红；把代码改成违背新的那一句 ⇒ 也红）。
+ *         剩下两面（① 状态机 30Hz、②「感知 10Hz **轮转**」按实体分片）是**改实装**那一侧的账，
+ *         本批不动，两条腿照旧钉着那两格的分歧——红了要重新裁决并写 KNOWN_ISSUES，不许把断言瞄到新读数上。
  *
  * **与 KI-297 的分工**（那批的腿在 `impl-constraints-sec17.test.ts`，文件名与本批只差字序，本批因此改名
  * `sec17-doc-rows`）：KI-297 量的是**运行时的六条真链**，它的文件里一次都没有 `readFileSync`——文档那五格
- * 只作为散文抄在测试标题里，**改文档里的一个数，那批的腿一条都不会红**。本批钉的是**文档字节本身 ⇄ 代码/表
- * 的读数**两侧：文档那一侧由 `sec17Rows()` 现读 docs/combat.md，代码那一侧手钉自本文件落地前的探针趟
- * （平面 checkout 在要提交的那份字节上，读数见 `.scratch/ki300/probe-master.txt`）。任一侧动，那条腿就红
- * ——红了重新裁决并写 KNOWN_ISSUES，而不是把断言瞄到新读数上。
- * 对不上的八面（30Hz／轮转／currentTime／仅插值／60-120°／bosses.json／F9／hitbox 线框）
- * 都写在下面的判决句里，本文件不替文档遮。
+ * 只作为散文抄在测试标题里 ⇒ 改文档里的一个数，那批的腿一条都不会红。本批钉的是**文档字节本身 ⇄ 代码/表
+ * 的读数**两侧：文档那一侧由 `sec17Rows()` 现读 docs/combat.md，代码那一侧由 `srcFiles()`／表普查／运行时现推。
+ * 旧读数（八面分歧的实测值）留在账本 KI-300／KI-316，本文件的判决句只写当前这一批对上的那一份。
  */
 
 const ROOT = new URL('../../', import.meta.url)
@@ -245,16 +247,40 @@ describe('KI-300 §17 那张表本身', () => {
   })
 })
 
-describe('KI-300 §17 第一行（帧数据/敌人表：点名的文件 ⇄ 磁盘名册）', () => {
-  it('那一格点名四个 json，其中 bosses.json 磁盘上没有；帧数据真正住的 movesets.json 没被点名（登记：偏差在文档侧）', () => {
+describe('KI-300 §17 第一行（帧数据/敌人表：点名的表 ⇄ 磁盘名册）', () => {
+  /** 帧键普查的口径：JSON 里**带引号的键名**，不是散文里出现过那个词 */
+  const FRAME_KEYS = ['startup', 'startupTicks', 'activeStart', 'activeEnd', 'recovery', 'hitbox', 'iframeStart']
+  const jsonDir = new URL('src/data/json/', ROOT)
+  const diskJsons = (): string[] => readdirSync(jsonDir).filter((f) => f.endsWith('.json')).sort()
+  const frameBearing = (): string[] =>
+    diskJsons().filter((f) => FRAME_KEYS.some((k) => readFileSync(new URL(f, jsonDir), 'utf8').includes(`"${k}"`)))
+
+  it('那一格点名的表全部在磁盘上、磁盘上带帧的表全部被点名，「每把武器一套」在表上是双射（⑦ 由 KI-316 结案）', () => {
     const cell = `${R.get('帧数据/敌人表')!.方案} ${R.get('帧数据/敌人表')!.备注}`
     const named = [...new Set([...cell.matchAll(/([A-Za-z0-9_-]+\.json)/g)].map((m) => m[1]))].sort()
-    expect(named).toEqual(['bosses.json', 'enemies.json', 'movements.json', 'weapons.json'])
-    const actual = readdirSync(new URL('src/data/json/', ROOT)).filter((f) => f.endsWith('.json')).sort()
-    expect(actual.length).toBe(25)
-    expect(named.filter((n) => !actual.includes(n))).toEqual(['bosses.json'])
-    expect(actual.filter((n) => n === 'movesets.json')).toEqual(['movesets.json'])
-    expect(registry.ids('moveset:').length).toBeGreaterThan(0)
+    expect(
+      named.filter((n) => !diskJsons().includes(n)),
+      '文档点名的表磁盘上没有 = 读者按名去找，找到的是空气（KI-300 那趟读到的是 bosses.json）',
+    ).toEqual([])
+    expect(frameBearing(), '带帧键的表名册：多一张帧表就得同时进文档那一格').toEqual([
+      'enemies.json',
+      'movements.json',
+      'movesets.json',
+      'player.json',
+    ])
+    expect(named.filter((n) => !frameBearing().includes(n)), '点名但不带帧的表只能是说清角色的那一张（武器属性＋招式集链接）').toEqual([
+      'weapons.json',
+    ])
+    expect(named).toEqual(['enemies.json', 'movements.json', 'movesets.json', 'player.json', 'weapons.json'])
+    /** 「玩家每把武器一套」的机器含义：武器指向的招式集必须存在，反过来也不许有没人用的集 */
+    const weaponRows = weaponsRaw as unknown as WeaponData[]
+    const movesetRows = movesetsRaw as unknown as MovesetData[]
+    const used = weaponRows.map((w) => w.movesetId).sort()
+    const owned = movesetRows.map((m) => m.id).sort()
+    expect(used, '六把武器指向的招式集').toEqual(owned)
+    expect(new Set(used).size, '不许两把武器共用同一套（那等于再造一个主人）').toBe(owned.length)
+    expect(movesetRows.filter((m) => !m.actions || Object.keys(m.actions).length === 0).map((m) => m.id)).toEqual([])
+    expect(registry.ids('moveset:').length).toBe(owned.length)
   })
 })
 
@@ -285,13 +311,18 @@ describe('KI-300 §17 第二行（命中框＝点-扇形解析式）', () => {
     expect(shapeHits(box, origin, 0, tgt({ x: 0, y: 0, z: -0.85 }))).toBe(false)
   }, 30_000)
 
-  it('三张表的形状名册 ⇄ 文档那一格的「扇形（角度 60-120°）」：cone 50 格里 13 格在带外，全在玩家侧', () => {
+  it('三张表的形状名册 ⇄ 文档那一格写着的角度带：带＝名册的两端、带外零格（⑥ 由 KI-316 结案）', () => {
     const c = hitboxCensus()
+    const uniq = (a: number[]): number[] => [...new Set(a)].sort((x, yy) => x - yy)
+    const angles = uniq(c.cone.map((r) => r.angleDeg))
     const band = R.get('命中框')!.方案.match(/角度 *(\d+)-(\d+)/)
     expect(band, `命中框那一格该写着「角度 N-M°」，读到=${R.get('命中框')!.方案}`).not.toBeNull()
     const lo = Number(band![1])
     const hi = Number(band![2])
-    expect([lo, hi]).toEqual([60, 120])
+    /** 两侧都现推：那一格写着的上下界必须就是普查的两端——文档改一个数、或表里加一格带外的角，都红 */
+    expect([lo, hi], '文档写着的带 ⇄ 实际名册的两端').toEqual([angles[0], angles[angles.length - 1]])
+    const out = c.cone.filter((r) => r.angleDeg < lo || r.angleDeg > hi)
+    expect(out.map((r) => `${r.carrier}=${r.angleDeg}`), '带外不许有格（KI-300 那趟是 13 格、全在玩家侧）').toEqual([])
     expect(c.enemies).toBe(10)
     expect(c.cone.length).toBe(50)
     const sideCount = (s: ConeRow['side']): number => c.cone.filter((r) => r.side === s).length
@@ -300,31 +331,14 @@ describe('KI-300 §17 第二行（命中框＝点-扇形解析式）', () => {
       enemy: 19,
       movement: 0,
     })
-    const out = c.cone.filter((r) => r.angleDeg < lo || r.angleDeg > hi)
-    expect(out.length).toBe(13)
-    expect(out.map((r) => `${r.carrier}=${r.angleDeg}`).sort()).toEqual([
-      'moveset:ms_greatsword.l1=180',
-      'moveset:ms_greatsword.l2=180',
-      'moveset:ms_greatsword.l3=200',
-      'moveset:ms_greatsword.run=160',
-      'moveset:ms_needlesilence.l5=55',
-      'moveset:ms_spear.h=30',
-      'moveset:ms_spear.l1=40',
-      'moveset:ms_spear.l2=40',
-      'moveset:ms_spear.l3=45',
-      'moveset:ms_spear.l4=45',
-      'moveset:ms_spear.l5=45',
-      'moveset:ms_spear.run=40',
-      'moveset:ms_sword.run=45',
-    ])
-    expect(sideCount('moveset')).toBe(out.length + c.cone.filter((r) => r.side === 'moveset' && r.angleDeg >= lo && r.angleDeg <= hi).length)
-    const uniq = (a: number[]): number[] => [...new Set(a)].sort((x, yy) => x - yy)
-    expect(uniq(c.cone.map((r) => r.angleDeg))).toEqual([30, 40, 45, 55, 60, 70, 80, 90, 100, 110, 120, 160, 180, 200])
+    expect(angles).toEqual([30, 40, 45, 55, 60, 70, 80, 90, 100, 110, 120, 160, 180, 200])
     expect(uniq(c.cone.map((r) => r.radius))).toEqual([1.6, 1.9, 2, 2.1, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.3, 3.4, 3.5, 3.6, 4, 6])
     expect(uniq(c.cone.map((r) => r.height))).toEqual([1.2, 1.4, 1.5, 1.6, 1.7, 1.9, 2, 2.1, 2.2, 2.3, 2.4, 2.6])
     const sum = (shape: string): number =>
       Object.entries(c.shapes).filter(([k]) => k.endsWith(`:${shape}`)).reduce((a, [, v]) => a + v, 0)
     expect({ cone: sum('cone'), ring: sum('ring'), sphere: sum('sphere') }).toEqual({ cone: 50, ring: 15, sphere: 0 })
+    /** 带内数与总数必须相等——否则「带外零格」那一句是被 filter 自己喂出来的空话 */
+    expect(c.cone.filter((r) => r.angleDeg >= lo && r.angleDeg <= hi).length).toBe(c.cone.length)
   })
 
   it('调音剑 L1 的扇形打得到的最远距离＝表那一格的半径加目标半径（读数 2.55 含 lunge 那一拍的一步）', () => {
@@ -392,7 +406,7 @@ describe('KI-300 §17 第二行（命中框＝点-扇形解析式）', () => {
 describe('KI-300 §17 第三行（BeatClock：谁在走这一拍）', () => {
   const snap = (x: ReturnType<RhythmClock['info']>) => ({ ...x, phase: Number(x.phase.toFixed(3)) })
 
-  it('拍钟不自走：唯一的喂口喂的是逻辑定步长，RhythmClock 里既无 currentTime 也不碰音频上下文——文档那一格说 WebAudio 驱动（登记：偏差在文档侧）', () => {
+  it('拍钟不自走：全仓唯一喂口是 main.ts 每拍喂逻辑定步长，而文档那一格点名的就是这个喂口（④ 由 KI-316 结案）', () => {
     const r = new RhythmClock()
     r.setBpm(84, 4)
     expect(snap(r.info())).toEqual({ beatIndex: 0, beatInBar: 1, bar: 0, isBarStart: true, phase: 0 })
@@ -413,11 +427,23 @@ describe('KI-300 §17 第三行（BeatClock：谁在走这一拍）', () => {
       .flatMap((f) => [...f.text.matchAll(/rhythm\.update\(([^)]*)\)/g)].map((m) => `${f.path}(${m[1]})`))
       .sort()
     expect(sites).toEqual(['src/main.ts(TICK_DT)'])
-    expect(R.get('BeatClock')!.方案).toContain('currentTime')
-    expect(R.get('BeatClock')!.备注).toContain('权威时钟')
+    /** 文档那一格自己把喂口写出来了：拿它写的那串实参去和代码扫描比，不是"读起来像" */
+    const 方案 = R.get('BeatClock')!.方案
+    expect([...方案.matchAll(/rhythm\.update\(([^)]*)\)/g)].map((m) => m[1]), '那一格点名的喂口实参').toEqual(['TICK_DT'])
+    expect(/`main\.ts`/.test(方案), '那一格要说清喂口住在哪个文件').toBe(true)
+    expect(方案, '驱动那一格不许再把 WebAudio 的时间当拍源（KI-300 ④ 登记的就是这一句）').not.toContain('currentTime')
+    expect(方案, '那一格该写着权威在逻辑钟这侧').toContain('逻辑 tick')
+    expect(R.get('BeatClock')!.备注).toContain('逻辑钟=权威时钟')
+    /** 「唯一订阅者是 AudioEngine」那半句也得是扫出来的，不是抄来的 */
+    const subs = srcFiles()
+      .filter((f) => /subscribe\(\s*'audio\.music\.grid'/.test(f.text))
+      .map((f) => f.path)
+      .sort()
+    expect(subs).toEqual(['src/audio/AudioEngine.ts'])
+    expect(方案).toContain('AudioEngine')
   })
 
-  it('「渲染层仅插值」只对一半：alpha 算得出来，但 ActorVisuals 没有 render 口，逻辑态不动时位置逐字节相同', () => {
+  it('「渲染层仅插值」那半句由 KI-316 改成交付的形状：alpha 算得出、唯一去处是 HUD 那个不读它的参数，三维表现层每拍读逻辑位姿（⑤）', () => {
     const time = new GameTime()
     const input = { poll() {}, endTick() {}, frame: { edges: new Set<string>() } } as unknown as Input
     const alphas: number[] = []
@@ -436,11 +462,16 @@ describe('KI-300 §17 第三行（BeatClock：谁在走这一拍）', () => {
     w.time.step(TICK_DT * 17)
     vis.sync(w.ai.enemies, w.time.tick)
     const p1 = JSON.stringify(groups.map((g) => ({ ...g.position })))
-    expect(p1).toBe(p0)
+    expect(p1, '逻辑态不动时表现层的位姿逐字节相同：它吃的是逻辑位姿，不是插值出来的位姿').toBe(p0)
     const surface = Object.getOwnPropertyNames(Object.getPrototypeOf(vis)).sort()
     expect(surface).toEqual(['animateSword', 'constructor', 'showForm', 'sync', 'updateEnemy'])
     expect(srcFiles().filter((f) => /\brender\s*\(alpha/.test(f.text)).map((f) => f.path)).toEqual(['src/main.ts'])
-    expect(R.get('BeatClock')!.方案).toContain('仅插值')
+    /** alpha 的那一路读者自己也不读它：形参带下划线且全文只出现这一次＝收了不读 */
+    const hudSrc = readFileSync(new URL('src/ui/Hud.ts', ROOT), 'utf8')
+    expect(hudSrc.match(/_alpha/g) ?? [], 'HUD 那个 alpha 形参除了声明处没有第二个读者').toHaveLength(1)
+    const 方案 = R.get('BeatClock')!.方案
+    expect(方案, '那一格该写着表现层每拍读逻辑位姿').toContain('表现层每拍读逻辑位姿')
+    expect(方案, '那一格不许再写「仅插值」——KI-300 ⑤ 量的就是它只对一半').not.toContain('仅插值')
     w.off()
   })
 })
@@ -500,16 +531,23 @@ describe('KI-300 §17 第四行（AI tick）', () => {
     const median = (sorted[59] + sorted[60]) / 2
     console.log(
       `（诊断，非断言）ai.update 本机本次 32 只／120 拍：平均 ${mean.toFixed(4)}ms／中位 ${median.toFixed(4)}／最大 ${sorted[119].toFixed(4)}——` +
-        `文档那一格「AI 预算 <2ms/帧」没有机器无关的承载体：同一份码换一趟就换一个数，写进断言只会变成旋转红`,
+        `文档那一格现在写的是「帧预算 <2ms 是设计目标」：同一份码换一趟就换一个数（上面三列的跨度就是 KI-300 ③ 登记的那一份），所以它不进断言——机器读的那一格是上面两条每拍调用次数名册`,
     )
     expect(R.get('AI tick')!.备注).toContain('定步长')
-    expect(R.get('AI tick')!.方案).toContain('32 实体')
+    const aiPlan = R.get('AI tick')!.方案
+    expect(aiPlan).toContain('32 实体')
+    /** ③ 由 KI-316 结案：那一格的 ms 数只能以「设计目标」的身份出现；机器读的那一格是上面两条 per-tick 调用次数名册 */
+    expect(
+      aiPlan,
+      '帧预算那个数必须以「设计目标」的身份出现——裸写成一个界就是把没有判据的东西写成承诺（KI-300 ③ 量的正是跨机跨度）',
+    ).toMatch(/<2ms[^|]{0,6}设计目标/)
+    expect(aiPlan, '那一格要指出机器无关的那一格是调用次数').toContain('调用次数')
     w.off()
   })
 })
 
 describe('KI-300 §17 第五行（调试器）', () => {
-  it('开发期按键名册：src 里按得出的是 F1／F2／F3／F4／F6，F9 一次也没有（登记：偏差在文档侧）', () => {
+  it('开发期按键：那一格列的键名与 src 里按得出的键同册（⑧a 由 KI-316 结案；F9 那类名字不许回来）', () => {
     const files = srcFiles()
     const roster = [...new Set(files.flatMap((f) => [...f.text.matchAll(/\bF([0-9])\b/g)].map((m) => `F${m[1]}`)))].sort()
     /* KI-315 之前这一格钉的是四把键。F6（hitbox 线框的呼出键）落地后名册伸长一格是**预期内的红**：
@@ -518,7 +556,11 @@ describe('KI-300 §17 第五行（调试器）', () => {
     expect(files.reduce((a, f) => a + (f.text.match(/F9/g) ?? []).length, 0)).toBe(0)
     expect(files.filter((f) => f.text.includes("e.key !== 'F2'")).map((f) => f.path)).toEqual(['src/tools/CombatDebugger.ts'])
     expect(files.filter((f) => /key: 'F1' \| 'F3' \| 'F4'/.test(f.text)).map((f) => f.path)).toEqual(['src/tools/DebugPanel.ts'])
-    expect(R.get('调试器')!.备注).toContain('F9')
+    /** 文档那一格现在是键名的名册：它列的必须与扫出来的一字不差——少一把＝那把键没人接，多一把＝按下去什么都不发生 */
+    const 备注 = R.get('调试器')!.备注
+    const docKeys = [...new Set([...备注.matchAll(/\bF([0-9])\b/g)].map((m) => `F${m[1]}`))].sort()
+    expect(docKeys, `调试器那一格列的按键（读到 ${docKeys.join('/')}）必须与 src 里按得出的键同册`).toEqual(roster)
+    expect(备注, '那一格不许再写 F9——全仓没有一把键绑它').not.toContain('F9')
   })
 
   it('那一格列的四格展示：S/A/R 帧、体力/架势、拍点刻度尺都在 src/tools 里有承载体，hitbox 线框由 KI-315 补上第三个家的承载体', () => {
