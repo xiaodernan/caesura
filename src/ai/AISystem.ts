@@ -10,7 +10,7 @@ import { registry } from '@/core/Registry'
 import { PatrolWatch } from '@/quest/PatrolWatch'
 
 /**
- * Manages all enemies: 10Hz perception sweep (all entities each round), attack-slot arbitration
+ * Manages all enemies: 10Hz perception rotation, attack-slot arbitration
  * (docs/combat.md §2.1: max 1 enemy hit-frame per beat slot), refrein auras.
  */
 export class AISystem {
@@ -178,7 +178,7 @@ export class AISystem {
     // Squad 系统更新（Phase B5：仇恨槽位、CallAlly、编队）
     this.squad.update(this.tick)
 
-    // 10Hz perception sweep: every 6th tick, and that round visits every enemy
+    // 10Hz rotated perception
     this.senseCursor++
     if (this.senseCursor % 6 === 0) {
       for (const e of this.enemies) e.sense(player, tick, this.sightBlocked)

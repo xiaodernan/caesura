@@ -50,7 +50,7 @@ function makeWorld() {
       rhythm.update(TICK_DT)
     }
   }
-  /** 一具不打人的木桩（stun 按住：每 6 拍一轮的感知不会把它的出手混进读数） */
+  /** 一具不打人的木桩（stun 按住：感知轮转不会把它的出手混进读数） */
   const dummy = (dist = 1.5): Enemy => {
     const e = ai.spawn('en_murkshell', { x: 0, y: 0, z: dist }, 'stab-dummy')
     e.alertness = 0

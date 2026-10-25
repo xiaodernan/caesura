@@ -419,7 +419,7 @@ export class Enemy {
     this.introTicksLeft = 0
   }
 
-  /** perception: called by the AISystem sweep once every 6 ticks (10Hz) */
+  /** perception runs at 10Hz (rotated by AISystem) */
   sense(player: PlayerController, now: number, sight: SightGate = null): void {
     if (!this.alive) return
     const ai = this.data.ai

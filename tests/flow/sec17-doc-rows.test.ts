@@ -22,8 +22,8 @@ import { ActorVisuals } from '@/world/ActorVisuals'
  * KI-316：KI-300 登记的八面里，对中的六面（③④⑤⑥⑦⑧a）**改的是文档**——文档跟着交付的实装走。
  *         这一批把那六条腿从「登记分歧」重钉成「文档⇄实装对账」：两侧都由扫描现推，任一侧动就红
  *         （把文档改回旧的那一句 ⇒ 红；把代码改成违背新的那一句 ⇒ 也红）。
- * KI-317：剩下两面（① 状态机那一格、② 感知那一格）先量后裁：30Hz 化的省与费、感知那一轮的形状都量过，裁给文档侧
- *         （读数与判据在 KI-317 那行账本／架构 §5.9.124）⇒ 八面至此全数走「文档⇄实装对账」，任一侧动就红。
+ *         剩下两面（① 状态机 30Hz、②「感知 10Hz **轮转**」按实体分片）是**改实装**那一侧的账，
+ *         本批不动，两条腿照旧钉着那两格的分歧——红了要重新裁决并写 KNOWN_ISSUES，不许把断言瞄到新读数上。
  *
  * **与 KI-297 的分工**（那批的腿在 `impl-constraints-sec17.test.ts`，文件名与本批只差字序，本批因此改名
  * `sec17-doc-rows`）：KI-297 量的是**运行时的六条真链**，它的文件里一次都没有 `readFileSync`——文档那五格
@@ -34,8 +34,6 @@ import { ActorVisuals } from '@/world/ActorVisuals'
 
 const ROOT = new URL('../../', import.meta.url)
 const DOC = readFileSync(new URL('docs/combat.md', ROOT), 'utf8')
-/** 同一族口径的第二份载体：架构文档的文件地图那一格也写着感知那一轮的形状（KI-317 起，它吃同一条腿） */
-const ARCH = readFileSync(new URL('docs/technical-architecture.md', ROOT), 'utf8')
 registerGameData()
 
 const ESCAPED_PIPE = String.fromCharCode(92) + '|'
@@ -222,17 +220,6 @@ function perTickVisits(n: number, ticks: number, method: 'sense' | 'update'): nu
     w.off()
   }
   return per
-}
-
-/**
- * 从「每拍访问次数」名册里现推**轮的形状**：哪些拍上有访问、相邻两轮间隔几拍、那些拍上各访问了几只。
- * 除数（间隔拍数）是这一族的机器读数——文档里那句「每 N 拍一轮＝M Hz」由它裁决，而不是反过来拿文档的数去断言。
- * 只有一种间隔时返回那个数；出现第二种间隔（说明轮被实体数或状态切分）返回 NaN，让调用方红。
- */
-function roundShape(per: number[]): { divisor: number; on: number[]; perOn: number[] } {
-  const on = per.map((v, i) => (v > 0 ? i : -1)).filter((i) => i >= 0)
-  const gaps = [...new Set(on.slice(1).map((i, k) => i - on[k]))]
-  return { divisor: gaps.length === 1 ? gaps[0] : NaN, on, perOn: on.map((i) => per[i]) }
 }
 
 const R = sec17Rows()
@@ -490,29 +477,16 @@ describe('KI-300 §17 第三行（BeatClock：谁在走这一拍）', () => {
 })
 
 describe('KI-300 §17 第四行（AI tick）', () => {
-  it('感知那一格（②，KI-317 结案）与实装对账：除数由每拍访问名册现推＝6 ⇒ 10Hz；一轮里全场每只各一次；轮长与实体数无关（那里没有按实体分片的「轮转」）', () => {
-    const a = roundShape(perTickVisits(8, 13, 'sense'))
-    const b = roundShape(perTickVisits(32, 13, 'sense'))
-    expect(a.divisor, '8 只时两记感知之间隔了几拍').toBe(6)
-    expect(b.divisor, '32 只时同一个除数：轮长与实体数无关，不是「32 实体一轮」那种逐只预算').toBe(a.divisor)
-    expect(TICK_HZ / b.divisor, '除数折算出来的感知频率').toBe(10)
-    expect(a.perOn, '有感知的那几拍上每只都被访问一次').toEqual([8, 8])
-    expect(b.perOn).toEqual([32, 32])
-    const 方案 = R.get('AI tick')!.方案
-    expect(方案, `那一格写的除数就是量出来的 ${b.divisor}`).toContain(`每 ${b.divisor} 拍`)
-    expect(方案, `那一格写的频率就是折算出来的 ${TICK_HZ / b.divisor}`).toContain(`${TICK_HZ / b.divisor}Hz`)
-    expect(方案, '一轮覆盖全场，不是覆盖某一片').toContain('全场')
-    expect(方案, '轮长与实体数无关是上面那对读数给的').toContain('轮长与实体数无关')
-    expect(方案, 'KI-317 结案：实装里没有按实体分片的轮转，那一格不许再留这个字').not.toContain('轮转')
-    expect(方案, '「32 实体」那一格被同一个读数否证，摘掉了').not.toContain('32 实体')
-    /** 同一句话在 §13.0 的标题与架构的文件地图里各有一份抄本——它们吃同一个现推的除数，不许各写各的 */
-    const 感知句 = [...DOC.matchAll(/感知[^|\n]*?每 (\d+) 拍一轮/g), ...ARCH.matchAll(/感知[^|\n]*?每 (\d+) 拍一轮/g)]
-    expect(感知句.length, '两份文档里以「感知…每 N 拍一轮」的形状出现的句子（§17 那一格／§13.0 的标题／文件地图那一格）')
-      .toBeGreaterThanOrEqual(3)
-    expect([...new Set(感知句.map((m) => Number(m[1])))], '那几份抄本各自写的除数只能是同一个现推出来的数').toEqual([b.divisor])
+  it('感知每 6 拍一次＝10Hz，但那不是「轮转」——同一拍里 32 只一起被感知，没有一只在别拍被单独感知', () => {
+    const per = perTickVisits(32, 13, 'sense')
+    expect(per).toEqual([0, 0, 0, 0, 0, 32, 0, 0, 0, 0, 0, 32, 0])
+    expect(TICK_HZ / 6).toBe(10)
+    expect(per.filter((v) => v !== 0 && v !== 32)).toEqual([])
+    expect(R.get('AI tick')!.方案).toContain('10Hz')
+    expect(R.get('AI tick')!.方案).toContain('轮转')
   })
 
-  it('状态机那一格（①，KI-317 结案）与实装对账：`stateTick` 每拍 +1、`update` 每拍访问每只 ⇒ 周期 1 拍＝TICK_HZ；那一格写的数由这两个读数裁决', () => {
+  it('状态机每拍推进一格＝60Hz，而文档那一格写的是 30Hz（登记：偏差在文档侧）', () => {
     const w = makeWorld()
     const e = w.ai.spawn('en_murkshell', { x: 0, y: 0, z: 8 }, 'probe')
     e.enter('combat')
@@ -535,17 +509,7 @@ describe('KI-300 §17 第四行（AI tick）', () => {
     expect([...new Set(states)]).toEqual(['combat'])
     expect(deltas).toEqual([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
     expect(TICK_HZ).toBe(60)
-    const shape = roundShape(perTickVisits(8, 6, 'update'))
-    expect(shape.divisor, '状态机那条腿每一拍都走 ⇒ 周期是 1 拍，不是 2 拍').toBe(1)
-    expect(shape.perOn, '那一拍上 8 只全被推进，没有谁被跳过').toEqual([8, 8, 8, 8, 8, 8])
-    const 方案 = R.get('AI tick')!.方案
-    const m = 方案.match(/状态机\s*\d+Hz/g) ?? []
-    expect(m, '状态机那一格只该有一个 Hz 说法；出现第二个就是有两份账').toHaveLength(1)
-    expect(m[0], `每拍推一格 ⇒ 那一格写的就是 ${TICK_HZ / shape.divisor}Hz（KI-316 那句「30Hz」由 KI-317 判给文档侧）`).toBe(
-      `状态机 ${TICK_HZ / shape.divisor}Hz`,
-    )
-    expect(方案, '那一格要说清推的是哪一格计数').toContain('stateTick')
-    expect(方案, '30Hz 那一版不是没量过：省与费的结案要在账上').toContain('KI-317')
+    expect(R.get('AI tick')!.方案).toContain('30Hz')
     w.off()
   })
 
@@ -567,17 +531,17 @@ describe('KI-300 §17 第四行（AI tick）', () => {
     const median = (sorted[59] + sorted[60]) / 2
     console.log(
       `（诊断，非断言）ai.update 本机本次 32 只／120 拍：平均 ${mean.toFixed(4)}ms／中位 ${median.toFixed(4)}／最大 ${sorted[119].toFixed(4)}——` +
-        `文档那一格写的是「帧预算 <2ms 是设计目标」：同一份码换一趟就换一个数（上面三列的跨度就是 KI-300 ③ 登记的那一份），所以它不进断言——机器读的那一格是上面两条每拍调用次数名册（30Hz 化那条替代方案的同名册在 KI-317）`,
+        `文档那一格现在写的是「帧预算 <2ms 是设计目标」：同一份码换一趟就换一个数（上面三列的跨度就是 KI-300 ③ 登记的那一份），所以它不进断言——机器读的那一格是上面两条每拍调用次数名册`,
     )
     expect(R.get('AI tick')!.备注).toContain('定步长')
     const aiPlan = R.get('AI tick')!.方案
-    /** 「32 实体」那一格由 KI-317 摘掉：上面那条读数说 32 只是「测的那一档」，不是预算的承诺 */
-    expect(aiPlan, '机器无关的那一格是调用次数：那一格要把这个量纲写全').toContain('每一拍的调用次数')
+    expect(aiPlan).toContain('32 实体')
     /** ③ 由 KI-316 结案：那一格的 ms 数只能以「设计目标」的身份出现；机器读的那一格是上面两条 per-tick 调用次数名册 */
     expect(
       aiPlan,
       '帧预算那个数必须以「设计目标」的身份出现——裸写成一个界就是把没有判据的东西写成承诺（KI-300 ③ 量的正是跨机跨度）',
     ).toMatch(/<2ms[^|]{0,6}设计目标/)
+    expect(aiPlan, '那一格要指出机器无关的那一格是调用次数').toContain('调用次数')
     w.off()
   })
 })
