@@ -151,7 +151,7 @@ describe('万籁的场地阶段（KI-024：音刺碎尽 ⇒ 聋乱期）', () =>
     // 半径内（8m < vibrationRange 10）、移动读数 ⇒ sense() 每 6 tick +40
     w.player.pos = { x: her.pos.x, y: her.pos.y, z: her.pos.z - 8 }
     her.alertness = 0
-    for (let i = 0; i < 13; i++) { setMoving(w); w.tick() } // 两次 sense 轮转；逐 tick 按住移动读数（体力会回满）
+    for (let i = 0; i < 13; i++) { setMoving(w); w.tick() } // 两轮 sense（每 6 拍一轮）；逐 tick 按住移动读数（体力会回满）
     expect(her.alertness, '她感觉到地面的脚步（P1 时这一路判据恒假：vibration.range=0）').toBeGreaterThan(0)
 
     // 站定 ⇒ 不积累（体力回满 = playerIsMoving 为假），已有的警觉按听心跳的规则回落

@@ -24,8 +24,8 @@ import type { Vec3 } from '@/combat/EntityStats'
  * ① **帧数据/敌人表：调参零改码**（帧表那三格在运行时真走：判定落在第 12 拍、那一式在第 30 拍放手）；
  * ② **命中框：扇形＋半径＋高度层；点-扇形解析式（不用物理引擎）**（那一格写着的角度带现由 `sec17-doc-rows` 与三张表对账，本文件只量解析式的三道边界）；
  * ③ **BeatClock：权威是逻辑 tick**（音频层相位锁定到它——文档那一格由 KI-316 改写成这一句，登记见 KI-300 ④）；
- * ④ **AI tick：感知 10Hz 轮转 ✓／状态机不是 30Hz**（⇒ 仍登记着，那是 KI-316 留在「改实装」那一侧的账）；
- * ⑤ **32 实体一轮／帧预算 <2ms 是设计目标**（那个 ms 数没有机器无关的判据 ⇒ 本文件量的是每一拍的调用次数＋中位数护栏）；
+ * ④ **AI tick：感知每 6 拍一轮＝10Hz／状态机每拍推一格＝60Hz**（那两面由 KI-317 先量后裁、裁给文档侧；本文件量的仍是运行时读数）；
+ * ⑤ **每一拍全部实体都被推进／帧预算 <2ms 是设计目标**（那个 ms 数没有机器无关的判据 ⇒ 本文件量的是每一拍的调用次数＋中位数护栏）；
  * ⑥ **调试器：Combat Debugger**（呼出键 **F2**；只读总线事件流 ⇒ 登记——按键名册那一格现与 `src` 扫描同册，见 `sec17-doc-rows`）。
  *
  * **三条量具纪律**：
@@ -166,7 +166,7 @@ describe('KI-297 §17「实现说明（Three.js 落地约束）」那一族', ()
     alive.push(w.off); alive.push(w2.off)
   })
 
-  it('腿④ **AI tick：感知 10Hz 轮转 ✓／状态机不是 30Hz** ⇒ 警觉值**每 6 拍涨一次**（＝10Hz）；`stateTick` **每拍都涨**（＝60Hz，不是设计的 30Hz）⇒ 登记', () => {
+  it('腿④ **AI tick：感知每 6 拍一轮／状态机每拍推一格** ⇒ 警觉值**每 6 拍涨一次**（＝10Hz）；`stateTick` **每拍都涨**（＝60Hz）⇒ 与 §17 那一格同册（那两面由 KI-317 裁决）', () => {
     const w = makeWorld()
     const e = w.ai.spawn('en_murkshell', { x: 0, y: 0, z: -3 }, 'dummy')
     e.enter('idle')
@@ -181,9 +181,9 @@ describe('KI-297 §17「实现说明（Three.js 落地约束）」那一族', ()
     expect(ups.length, '80 拍里她「看见」了至少七次').toBeGreaterThanOrEqual(7)
     const gaps: number[] = []
     for (let i = 1; i < ups.length; i++) gaps.push(ups[i] - ups[i - 1])
-    expect(new Set(gaps), '每一次间隔都恰好 6 拍（＝10Hz 轮转）').toEqual(new Set([6]))
+    expect(new Set(gaps), '每一次间隔都恰好 6 拍（＝10Hz）').toEqual(new Set([6]))
     expect(60 / 6, '那正是 10Hz').toBe(10)
-    // **状态机**：每拍都推进（60Hz），不是设计的 30Hz
+    // **状态机**：每拍都推进（60Hz）——§17 那一格现在写的就是这个数（对账腿在 `sec17-doc-rows`）
     const e2 = w.ai.spawn('en_murkshell', { x: 8, y: 0, z: -3 }, 'dummy2')
     const st: number[] = []
     let prev = -1
@@ -196,7 +196,7 @@ describe('KI-297 §17「实现说明（Three.js 落地约束）」那一族', ()
     alive.push(w.off)
   })
 
-  it('腿⑤ **32 实体一轮** ⇒ **32 个敌人每一拍都被更新到**（没有一个被漏掉）；一帧的 AI 耗时的**中位数**作护栏（量**中位数**，最大值那一格是机器噪声不作数；<2ms 那一格按 KI-316 是设计目标，不是逐机判据）', () => {
+  it('腿⑤ **每一拍全部实体都被推进** ⇒ **32 个敌人每一拍都被更新到**（没有一个被漏掉）；一帧的 AI 耗时的**中位数**作护栏（量**中位数**，最大值那一格是机器噪声不作数；<2ms 那一格按 KI-316 是设计目标，不是逐机判据）', () => {
     const w = makeWorld()
     const mobs: ReturnType<typeof w.ai.spawn>[] = []
     for (let i = 0; i < 32; i++) mobs.push(w.ai.spawn('en_murkshell', { x: i * 2, y: 0, z: -10 }, 'budget'))
