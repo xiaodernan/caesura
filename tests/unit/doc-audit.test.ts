@@ -489,4 +489,83 @@ describe('文档对账闸门（KI-056）', () => {
         `（取 max＋1），并同步它自己那一节内的引用；先落地那一节的字节不许动`,
     ).toEqual([])
   })
+
+  /**
+   * 门 G（KI-321）：账本那一行与工作面那一格是一对——「账本有行 ⇒ 计划有批格」的第一台机器读者。
+   *
+   * 病不是设想，是 2026-10-27 普查量出来的（`.scratch/ki319_pairing3.mjs`／`ki319_pairing4.mjs`／`ki321_gate_replica.mjs`）：
+   * 界之上的 119 行账本里有 **15 个号在 WORKPLAN 一个批格都没有**——其中 14 个（KI-130／132／142／181／182／298／307…314）
+   * 从未被写进工作面，KI-307…314 那八批连架构节也没写，只落了账本；剩下那一个（KI-306）不是没写，
+   * 而是那一整行住在文件**末尾的表外面**，`planTables` 把它读成表头 ⇒ 门 E1／门 E2 谁也看不见它。
+   * 门 B 判的是**反方向**（全仓 2000+ 处按号引用 ⇒ 账本有行），门 F 判的是架构节号的连续，
+   * 两者都读不出「这一批落了账、却没进工作面」。而 WORKPLAN 头部自己写着那句承诺：
+   * 「每做完一件就在下面划掉一行，并把它的编号写进账本（KI-NNN）」——门 G 就是把这句话变成判据。
+   *
+   * 三条自己钉住的规矩：①**界不手打**——它是计划批格里最小的那个号（这份工作面 2026-10-20 才落成，
+   * KI-128 及以下本来就没有格；写死 129 会在有人补登早期行时假红，也会在有人删掉早期行时假绿）；
+   * ②**界两侧都要有人**——界下与界上各 ≥100 行，否则 min() 挪到哪儿都算"判据成立"，那是空集合的免费绿；
+   * ③**表外面不许住批格**——一张表的第一行若长得像批格，说明那一行是落盘器没找到插入点被整行追加出去的，
+   * 它在所有按行解析的读者眼里都不存在（本批实测那一行就是 KI-306）。
+   */
+  it('门 G：账本里号 ≥ 界的每一行必须在 WORKPLAN 有一个批格，而计划批格点的号必须回到账本（KI-321）', () => {
+    const norm = (raw: string) => `KI-${String(Number(raw.slice(3))).padStart(3, '0')}`
+    const ledgerIds = [...new Set(ledgerLines.map((l) => /^\|\s*(KI-\d{3,4})\s*\|/.exec(l)?.[1]).filter((x): x is string => !!x).map(norm))]
+    const tables = planTables(planDoc)
+    const dataRows = tables.flatMap((t) => t.rows)
+    const idsInCell = (s: string) => (s.match(/KI-\d{3,4}/g) ?? []).map(norm)
+    const batch = dataRows.filter((r) => idsInCell(r.cells[0] ?? '@').length)
+    const planIds = new Set(batch.flatMap((r) => idsInCell(r.cells[0] ?? '@')))
+
+    // —— 分母全部出自这一次扫描 ——
+    expect(ledgerIds.length, `账本唯一号只读到 ${ledgerIds.length} 个 = 抽取形状坏了，下面的配对判决在对空集合`).toBeGreaterThanOrEqual(200)
+    expect(tables.length, `只读到 ${tables.length} 张 WORKPLAN 表 = 表格段抽取塌了`).toBeGreaterThanOrEqual(7)
+    expect(
+      batch.length,
+      `只读到 ${batch.length} 行「第一格里含 KI 号」的批格 = 分母读空` +
+        `（2026-10-27 KI-321 补账前实测 106 行、补账后 121 行；地板 100 从补账前那一次扫描留的余量。` +
+        `判据看的是「号」不是「状态标记」——早期阶段表的批格首格就是裸号，一个符号都不带）`,
+    ).toBeGreaterThanOrEqual(100)
+    expect(planIds.size, `批格里点到的唯一号只有 ${planIds.size} 个 = 号抽取塌了，界与配对都没有出处`).toBeGreaterThanOrEqual(100)
+
+    const horizon = Math.min(...[...planIds].map((id) => Number(id.slice(3))))
+    expect(Number.isFinite(horizon), `界推不出来（批格号集合为空）`).toBe(true)
+    const above = ledgerIds.filter((id) => Number(id.slice(3)) >= horizon)
+    const below = ledgerIds.filter((id) => Number(id.slice(3)) < horizon)
+    // 界必须真的把账本切成两半：任何一侧空了，min() 挪到哪儿都判不出差别
+    expect(below.length, `界（KI-${horizon}）之下只有 ${below.length} 行 = 那一侧没人，界挪到哪儿都算成立`).toBeGreaterThanOrEqual(100)
+    expect(above.length, `界（KI-${horizon}）之上只有 ${above.length} 行 = 判据在看一个几乎空的集合`).toBeGreaterThanOrEqual(100)
+
+    const holes = above.filter((id) => !planIds.has(id)).sort()
+    expect(
+      holes,
+      `这些号在账本有行、号又在界（KI-${horizon}，从计划批格派生）之上，而 WORKPLAN 里没有任何一行批格点它 = ` +
+        `那一批落了账却没进工作面；WORKPLAN 头部那句「每做完一件就在下面划掉一行，并把它的编号写进账本」被单向违反了。\n` +
+        `修法二选一：①把那一行补进它所属的那张表（描述栏照账本那一行的原文，别自撰第二份事实），` +
+        `②那一行本来就不是「一批」（纯挪号留下的空号／登记而非落地）就改登账本并说明为什么它不进工作面：\n${holes.join('\n')}`,
+    ).toEqual([])
+
+    const orphanIds = [...planIds].filter((id) => !ledgerIds.includes(id)).sort()
+    expect(
+      orphanIds,
+      `这些号在 WORKPLAN 占了批格而账本没有那一行 = 工作面在承诺一笔没人登记的活。` +
+        `（门 B 从引用侧也判这件事，这里给的是批格口径的定位：哪一行、哪个号）\n` +
+        batch
+          .filter((r) => (r.cells[0] ?? '').includes('KI-'))
+          .filter((r) => (r.cells[0].match(/KI-\d{3,4}/g) ?? []).map(norm).some((id) => orphanIds.includes(id)))
+          .map((r) => `  第 ${r.n} 行｜${r.cells[0]}`)
+          .join('\n') +
+        `\n修法：要么补账本那一行（号＋严重度＋§78 状态），要么把批格改成它真正指向的那个号`,
+    ).toEqual([])
+
+    const gluedHeads = tables
+      .map((t) => ({ t, head: planCells(planDoc.split(/\r?\n/)[t.headLine - 1] ?? '') }))
+      .filter((x) => idsInCell(x.head[0] ?? '@').length)
+      .map((x) => `第 ${x.t.headLine} 行｜${x.head[0]}`)
+    expect(
+      gluedHeads,
+      `这些行长得像批格却住在某张表的**表头位**（它上面没有表头行）＝整行被追加到了表外面，` +
+        `而所有按表解析的读者（门 E1／E2／本门）都把它当表头跳过 ⇒ 那一行对机器不存在。` +
+        `成因通常是落盘器没找到插入点：修法是把整行搬回它所属的那张表里（并让它与那张表的格数一致），不是把判据放宽：\n${gluedHeads.join('\n')}`,
+    ).toEqual([])
+  })
 })
