@@ -5015,3 +5015,49 @@ KI-306 那行账本点名的 `tests/flow/zz-probe-ki306.test.ts` 在 `be3bd0e` �
 全量 **298 个测试文件 / 3359 条用例全绿**（判决行 `{"kind":"green","reds":0,"total":3359,"ranFiles":298,"expectedFiles":298,"redTitles":[],"reportKept":false}`）；
 `npm run coverage` **94.87%**（13565/14298 行、98 个 src 文件）**不低于总地板 94.87%**，16 个包各自不低于自身地板，零覆盖名单仍是两格 ⇒ **覆盖率门绿**；
 `vite build` **exit 0**；「doc-audit」**14 条全绿**（本批 13 → 14）。
+### 5.9.127 敌人 39 式的「第几拍起手／第几拍打到人／第几拍收手」第一次被真链量 ＋ 前冲除数三口径分歧登记（KI-319／KI-320，2026-10-27）
+
+**这一节管什么**：`frames.startup / activeStart / activeEnd / recovery` 这四个数在敌人侧终于有了「运行时第几拍」的读者。此前它们只有文档侧的读者（KI-117 量的是玩家武器 §4 那张表、KI-119 量的是战技 §4.8），敌人 §14/§15 那 39 式一条腿都没立——而 KI-317 的 B3 臂恰恰量到 13 处 `attack.tick` 窗口判定全住在被降频的 `ai.update` 腿上（那条腿自己没被钉住）。本批把它钉住，并顺手量出前冲那一格的除数分歧（登记为 KI-320，数值裁决待裁）。
+
+**承载体**：`tests/flow/enemy-attack-frame-ticks.test.ts`（9 条用例，全部走真的 `ai.update → combat.update` 链）。三条结构性做法值得复述：
+
+- **只跟踪一个招式实例**：`const held = newAttack(spec, 0)` 之后一律用 `e.attack === held` 判「这一式还在」，于是 `hit / clear / samples / travel` 每一格读数都只能由那一行的表驱动；命中另按 `attackerId` 归主，别的个体的结算不许算进来。
+- **入场演出不许吃掉第一格**：预热循环等到 `state === 'combat' && introTicksLeft === 0 && !e.attack` 才挂招，并把敌人几何钉回原点——距离由表说了算，不由导航说了算。
+- **定调与过载都走真链**：`AISystem` 每拍把 `e.buff` 置空、只从最近一只活着的 `buffAura` 源重新挂上 ⇒ 施主必须是真的 `en_refrein`（`e.buff.fromId` 记的是**运行时 id**，所以腿钉「施主的数据 id = `en_refrein`」＋「乘数 = 表里 1.15」两格）；过载期靠把血线压进 `belowHpFrac` 让 `syncBoss` 自己跳阶，不直接指 `bossPhase`。
+
+**读数（本批最终字节那一趟）**：
+
+| 那一条腿 | 量到 |
+|---|---|
+| 名册 | 10 只敌人／39 式带 frames｜近战可命中 29｜带停顿 29｜含 lunge 23｜无伤害式 4（四个子名册由同一份表派生，另有四条地板夹住判据） |
+| 逐招三拍 | 39 式：起手拍 = `startup`、收手拍 = `recovery` 且那一刻的帧恰好 = `recovery`；近战 29 式命中拍 = `activeStart` 且起手音同拍；弹道式离手拍 = `activeStart`；无伤害 4 式零命中仍按 `activeStart` 报声 |
+| 窗口是窗口 | 29 式两面成立（盒外一站到底／过窗尾两拍才跨进来）⇒ 零命中，收手拍一律不动 |
+| §9 停顿 | 29 式：`hit = activeStart`、`clear = recovery`、判定窗世界时间宽度 = `activeEnd − activeStart + 1`（bite 7/7、mallet 13/13、sway 12/12） |
+| §14.6 定调 | `bite ‖ 1.0× hit=24 clear=48 窗内 7 拍 ｜ 1.15× hit=21 noise=21 clear=42 窗内 6 拍 收手提前 6 拍`（另两式 `mallet` 提前 11 拍、`sway` 提前 9 拍） |
+| §15.2 过载 | `noBeatLunge ‖ 1.0× 落刀=26 收手=54 破绽=28 拍 ｜ 过载 落刀=21 收手=49 破绽=28 拍`（前摇 −20% 提前 5 拍，窗口＋收势一格不短） |
+| §2.1 量化 | 自己出手 9 记命中，最偏 0.4286 拍（拍长 42.8571 拍帧） |
+| 前冲那一格 | 23 式净额 = `lunge/(activeEnd−startup) × 窗内实走拍数`，逐点 1e-9；放大 2.50×～17.67×（charge 6m⇒60.00m、bellsmash 1.5m⇒26.50m、noBeatLunge 4.2m⇒22.40m）；对照腿（抹掉 `lunge`）给 `pluck` **−1.0620m** ＝ 射手背退自证 |
+| 「13 处」普查 | `src/ai/Enemy.ts=13`／表现层=2／F4 面板=0／WORKPLAN 写=13 |
+
+**反向实测（14 臂 ＋ CONTROL，臂电池 `.scratch/ki319_arms.mjs`，14/14 MATCHED，每臂收 9 条用例）**：
+
+| 臂 | 刀 | 预期红 | 实到 |
+|---|---|---|---|
+| A1 | 前冲除数 `activeEnd − startup` → `activeEnd` | 前冲那一格 | 1/9 |
+| A2 | 前冲上界 `<= activeEnd` → `< activeEnd` | 前冲那一格 | 1/9 |
+| A3 | 前冲起点 `tick > 0` → `tick > startup` | 前冲那一格 | 1/9 |
+| A4 | 窗口尾放行 `> activeEnd` → `> activeEnd + 3` | 窗口是窗口 | 1/9 |
+| A5 | 收手 `>= recovery` → `> recovery` | 逐招＋窗口＋§9＋§15.2 | 4/9 |
+| A6 | §9 配额 `holdFrom` 挪到 `activeEnd − 3` | 逐招＋§9 | 2/9 |
+| A7 | 窗内许按停 `<= activeEnd` → `<= activeEnd − 2` | §9 | 1/9 |
+| A8 | 过载前摇不吃表（`startupSpeedMul` 恒 1） | §15.2 | 1/9 |
+| A9 | 拆掉「加速不许跨过窗口第一格」的钳制 | §15.2＋普查 | 2/9 |
+| A10 | 光环乘数不接进招式帧 | §14.6 | 1/9 |
+| A11 | 同一句判定翻写法（行为一字不变） | 普查 | 1/9 |
+| A12 | 名册少一式 | 名册 | 1/9 |
+| A13 | 「站得够远」那顶帽子挪近 | 窗口＋前冲 | 2/9 |
+| A14 | 命中量化关掉（`ticksUntilBeatOn` → 0） | §2.1 | 1/9 |
+
+**三把量具教训（都进过账本）**：① **跑测器不能 spawn `npx`**——`execFileSync('npx', …)` 在本机是 `spawnSync npx ENOENT`（Node 不 spawn `.cmd`），第一趟十四臂全 VOID **而退出码还是 0**；换成 `process.execPath + node_modules/vitest/vitest.mjs`，并给 CONTROL 加罢工判据（收不到「9 条全绿」的基线就整副臂不作数）。② **净额要用对照腿量，别用总路径长**——第一版钉「前冲总米数」，`pluck` 与 `backcut` 两式红：出招窗口里射手照样背退、§14.5 虚体闸把窗内若干拍整个关掉、收势走位也被算进总长；换成带符号的接近量跑两趟（正常／抹掉 `lunge`），虚体拍与背退自己现形。③ **臂的预测错要归因，不许顺手改判据**——A9 第一版预测「§14.6 红」，实测红的是 §15.2 与普查：1.15× 一步跨不过窗口第一格，钳制真正承重的是前摇 ×0.8 那条路；断言留着（它是那条路上的真性质），改的是预测。
+
+**门禁读数**（本批最终字节，六道各跑一趟）：`npx tsc --noEmit` **exit 0**；`node scripts/validate-data.mjs` **0 ERROR／2 WARN**（一个数据格都没动）；`node scripts/test.mjs` 全量 **299 个测试文件／3368 条用例全绿，exit 0**（本批新增那 1 个文件、9 条用例都在分母里）；`npm run coverage` **94.87%（13565/14298 行，98 个 src 文件）通过**，且**没有任何一包「已涨到」**——这条腿加的是**语义钉子**（第几拍），不是新行覆盖：它走的每一行本来就有别的测试在执行；`npm run build` **exit 0**（dist 文本 8 份／0 findings）；doc-audit **14 条全绿**。
