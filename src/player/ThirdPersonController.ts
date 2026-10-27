@@ -698,7 +698,7 @@ export class PlayerController {
       const camYaw = this.camYawRef ?? this.yaw
       const s = Math.sin(camYaw), c = Math.cos(camYaw)
       const wx = mv.x * c - mv.y * s, wz = -(mv.x * s + mv.y * c)
-      const l = Math.hypot(wx, wz) || 1 // 【恒死·批24】L591 已保证 mv 非零，旋转保范数 ⇒ hypot 恒 > 0，|| 1 不可达
+      const l = Math.hypot(wx, wz) || 1 // 【恒死·批24】上面 `mv.x !== 0 || mv.y !== 0` 已保证 mv 非零，旋转保范数 ⇒ hypot 恒 > 0，|| 1 不可达
       return { x: wx / l, y: 0, z: wz / l }
     }
     return { x: -Math.sin(this.yaw), y: 0, z: -Math.cos(this.yaw) }
