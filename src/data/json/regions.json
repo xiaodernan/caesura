@@ -1209,7 +1209,8 @@
         "requiresState": {
           "key": "state.haltrune.fate",
           "value": "DRUM_LEGEND"
-        }
+        },
+        "requiresFlag": "flag.haltrune_drum"
       },
       {
         "id": "st_brokenbar_stilledarm",

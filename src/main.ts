@@ -348,8 +348,12 @@ let shownMegGone = false // §2.3 人声垫片的在场账：她离场那一刻�
  * （`flag.meg_gone`，stateSet 规则派生）之后，休垒回到没有她的那张床——垫片跟着人走。
  */
 const ambienceBedOf = (regionId: string | null, baseId: string): string => {
-  if (regionId !== 'rg_resthold') return baseId
-  return streaming.hasFlag('flag.meg_gone') ? baseId : `${baseId}_meg`
+  if (regionId === 'rg_resthold') return streaming.hasFlag('flag.meg_gone') ? baseId : `${baseId}_meg`
+  // §2.4 断弦 DRUM_LEGEND：「一个会自己打更的鼓，某些夜晚玩家路过真能听见」——
+  // 更鼓是营地声床的变体（同床 + 一记周期低鼓挂在鼓的位置）。旗由 stateSet 规则派生
+  // （fate=DRUM_LEGEND ⇒ haltrune_drum），与盐歌人声垫片同一台机器。
+  if (regionId === 'rg_brokenbar_camp') return streaming.hasFlag('flag.haltrune_drum') ? `${baseId}_drum` : baseId
+  return baseId
 }
 
 // KI-077（docs §1.2/§4）：开局那一张环境声床。这一句必须在 `audio.start()` 之前发——

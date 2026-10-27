@@ -96,7 +96,10 @@ export function ambienceFindings(beds, regions) {
         // 状态变体床（§2.3 盐歌人声垫片那族）：`X_meg` 是床 X 的变体——同一张床加一层，
         // 主音**必须**与基床相同（同一区的调性不因她在不在而换），所以它不进两两比对
         //（比对自己人必红），改查同主音这条更强的构造约束。
-        const variantOf = w.endsWith('_meg') ? w.slice(0, -'_meg'.length) : null
+        // 变体后缀的泛化识别：盐歌人声垫片 _meg / 断弦更鼓 _drum / 未来的第三种——
+        // 判据是「去掉最后一段 _xxx 后剩下的前缀是既有床 id」，不枚举后缀名（枚举就是每加一种
+        // 变体都要改一次门，那是把新概念挡在门外的形状）
+        const variantOf = (() => { const m = /^(.+)_([a-z]+)$/.exec(w); return m && ids.has(m[1]) ? m[1] : null })()
         if (variantOf && roots.has(variantOf)) {
           const baseRoot = roots.get(variantOf)
           if (Math.abs(root - baseRoot) > 0.01) err(w, `变体床的主音 ${root.toFixed(2)}Hz 与基床 ${variantOf} 的 ${baseRoot.toFixed(2)}Hz 不同——变体是「同一张床加一层」，不是换调（§1.2 一区一主音）`)
@@ -189,7 +192,8 @@ export function ambienceFindings(beds, regions) {
   for (const id of ids) {
     // 状态变体床的引用是**组合根机械派生**的（main.ts 的 `ambienceBedOf`：基床 id + '_meg'）——
     // 基床被区域引用 + 变体行存在 ⇒ 可达；不认这条就会把「她在的时候休垒加一层人声」判成死数据。
-    const variantBase = id.endsWith('_meg') ? id.slice(0, -'_meg'.length) : null
+    const vm = /^(.+)_([a-z]+)$/.exec(id)
+    const variantBase = vm && ids.has(vm[1]) ? vm[1] : null
     if (!refBy.has(id) && !(variantBase && refBy.has(variantBase))) err(id, '没有任何区域指它 ⇒ §55 死数据：这张床永远不会被装进耳朵')
   }
 

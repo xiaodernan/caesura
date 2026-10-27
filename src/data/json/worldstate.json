@@ -80,5 +80,15 @@
     ],
     "setFlag": "flag.faceless_gone",
     "notify": "它某夜自行走进了哑带。休垒的水缸边只剩一摊没抹平的灰"
+  },
+  {
+    "id": "ws_haltrune_drum",
+    "on": "stateSet",
+    "stateKey": "state.haltrune.fate",
+    "stateIn": [
+      "DRUM_LEGEND"
+    ],
+    "setFlag": "flag.haltrune_drum",
+    "notify": "营地深处传来一声更——很稳，像有人还在值那班岗"
   }
 ]

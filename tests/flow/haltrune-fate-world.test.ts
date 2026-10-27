@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { registerGameData, regions, worldStates as stateTable } from '@/data'
+import { registerGameData, regions, worldStates as stateTable, worldstate } from '@/data'
 import { StreamingSystem } from '@/world/Streaming'
 import { Interactables } from '@/world/Interactables'
+import { WorldState } from '@/quest/WorldState'
 import { WorldStates } from '@/quest/WorldStates'
 
 /**
@@ -22,11 +23,20 @@ function makeWorld() {
   registerGameData()
   const streaming = new StreamingSystem(regions)
   const states = new WorldStates(stateTable)
+  // **stateSet 那一半也得在场**：fate 落到 DRUM_LEGOND 时，「旗」不是凭空立起来的——
+  // 它由 `worldstate.json` 里那条 stateSet 规则派生（`state.haltrune.fate ∈ {DRUM_LEGEND}`
+  // ⇒ `flag.haltrune_drum`），而跑那条规则的是 `WorldState`（`WorldStates` 只是那张登记表）。
+  // 少建这一个 ⇒ 旗永远不立 ⇒ 那面鼓（`requiresFlag`）永远不在场——而这正是本批要量的那一格。
+  const worldState = new WorldState(worldstate, {
+    hasFlag: (k) => streaming.hasFlag(k),
+    setFlag: (k) => streaming.setFlag(k, true)
+  })
   const interact = new Interactables(regions, () => true, 6, (req) => states.get(req.key) === req.value)
   const nearby = (pos: { x: number; y: number; z: number }): string[] => interact.nearby(pos).map((x) => x.id)
   const use = (id: string): { ok: boolean } => interact.use(id, { ...interact.all.find((x) => x.id === id)!.pos })
-  alive.push(() => { interact.dispose(); states.dispose(); streaming.dispose() })
-  return { states, nearby, use, cleanup: () => { interact.dispose(); states.dispose(); streaming.dispose() } }
+  const cleanup = () => { interact.dispose(); worldState.dispose(); states.dispose(); streaming.dispose() }
+  alive.push(cleanup)
+  return { states, nearby, use, cleanup }
 }
 
 describe('断弦终局 fate 的世界读者：三个世界各有一件只有它在场的东西', () => {
