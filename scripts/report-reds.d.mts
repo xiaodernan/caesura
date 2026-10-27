@@ -26,3 +26,5 @@ export interface RedSummary {
 
 export function summarizeReds(json: unknown, root?: string): RedSummary
 export function formatReds(sum: RedSummary): string
+/** 判决行要点的**全量**红名（KI-298）：名单的产地在这里，调用点不许再截一刀。 */
+export function redTitlesOf(sum: RedSummary): string[]

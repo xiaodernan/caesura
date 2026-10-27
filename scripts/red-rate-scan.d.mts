@@ -21,7 +21,7 @@ export interface Verdict {
   ranFiles: number
   /** 跑测器按筛选器算出的期望文件数 */
   expectedFiles: number
-  /** 红用例的名字（有上限，判决行给人读也要给机器读） */
+  /** 红用例的名字（**全量**，不截断：点名数必须与 `reds` 相等，否则这份读数不可信 —— KI-298） */
   redTitles: string[]
   /** 那份 JSON 报告这次留下没有——`false` 时任何去读它的代码都会 ENOENT，第一版量具就死在这一格 */
   reportKept: boolean

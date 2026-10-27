@@ -40,6 +40,23 @@ export function summarizeReds(json, root = '') {
   return { total, nRed: files.reduce((s, f) => s + f.reds.length, 0), ranFiles: results.length, files }
 }
 
+/**
+ * 判决行要点的**全量**红名（KI-298）。
+ *
+ * 为什么名单要有唯一的产地：这份名单一旦在调用点被截一刀，机器读数就与人类读数分家——
+ * 人类那句（`formatReds`）点的是**全部**，判决行点的是前几条 ⇒ 拿判决行做归因的量具
+ * 会把「没点名」读成「没红」（KI-296 的臂 A5 实测：红 6 条，名单只有 5 个名字，而 `reds` 仍然数 6）。
+ * **计数与点名是两个分母**，混用就得到一份自相矛盾的读数。
+ *
+ * 所以：名单在这里成形（不截断），调用点只负责把它递出去。
+ *
+ * @param sum `summarizeReds` 的产物
+ * @returns {string[]} 全部红名，顺序＝文件顺序 × 文件内顺序
+ */
+export function redTitlesOf(sum) {
+  return (sum?.files ?? []).flatMap((f) => (f.reds ?? []).map((a) => a.name))
+}
+
 /** 把上面那份摘要印成门禁输出（单独一个函数：格式也要能被断言钉住） */
 export function formatReds(sum) {
   const out = [`有失败用例：${sum.nRed} 条 / ${sum.files.length} 个含红文件（这一趟跑了 ${sum.total} 条 / ${sum.ranFiles} 个文件）`]

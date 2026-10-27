@@ -23,7 +23,7 @@
  * 用法：node scripts/test.mjs [vitest 额外参数]
  */
 import { execFileSync } from 'node:child_process'
-import { formatReds, summarizeReds } from './report-reds.mjs'
+import { formatReds, redTitlesOf, summarizeReds } from './report-reds.mjs'
 import { resultLine } from './red-rate-scan.mjs'
 import { describeScope, positionalFilters, reconcileRoster, scopeOf, testFilesOnDisk } from './test-scope.mjs'
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
@@ -126,7 +126,13 @@ for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       reds: sum.nRed,
       total: sum.total,
       ranFiles: sum.ranFiles,
-      redTitles: sum.files.flatMap((f) => f.reds.map((a) => a.name)).slice(0, 5),
+      // **名单不许在这里截一刀**（KI-298）。原来这一格是
+      // `sum.files.flatMap((f) => f.reds.map((a) => a.name)).slice(0, 5)`：
+      // 红 6 条时判决行只点 5 个名字，而 `reds` 仍然数 6 ⇒ 读判决行做归因的量具
+      // （`scripts/red-rate-scan.mjs` 的 `byTitle`）会造出一份**少名字**的归因表，
+      // 「没点名」被读成「没红」。名单的**唯一**产地是 `redTitlesOf`（`scripts/report-reds.mjs`），
+      // 它不截断；读者那头还有一道完整性校验（点名数 == 红数，否则整趟不可归因）。
+      redTitles: redTitlesOf(sum),
       reportKept: true,
     })
   }

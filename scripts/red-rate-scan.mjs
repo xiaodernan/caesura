@@ -71,6 +71,17 @@ export function parseResultLine(text) {
     if (typeof obj[k] !== 'number' || !Number.isFinite(obj[k]) || obj[k] < 0) return null
   }
   if (!Array.isArray(obj.redTitles)) return null
+  /**
+   * **点名与计数必须对得上**（KI-298）。这一格是本模块存在的理由的第二半：
+   * 判决行报 `reds` 条、点 `redTitles` 个名字，两个数本该相等——不等就说明**这份名单被截断过**
+   * （`scripts/test.mjs` 曾经那句 `.slice(0, 5)` 就是这么写的：红 6 条只点 5 个名字）。
+   *
+   * 为什么不能放行：读者（`rateOf`）拿 `redTitles` 建按名归因表（`byTitle`）。被截断的名单会造出
+   * 一份**少名字**的归因表，而 `reds` 仍然数对 ⇒ 读数看着自洽，实际上「第 6 条在旋转」这件事
+   * 悄悄消失了。**读不懂就是没有读数，不是 0 红**：所以这里返回 null，让调用方把这一趟算成
+   * 「不可归因」，而不是记下一份错的归因。
+   */
+  if (obj.redTitles.length !== obj.reds) return null
   if (typeof obj.reportKept !== 'boolean') return null
   return obj
 }
@@ -99,7 +110,11 @@ export function rateOf(rows, pin = {}) {
   for (const [i, row] of (rows ?? []).entries()) {
     const p = row?.parsed
     if (!p) {
-      out.push({ i, why: '这一趟的输出里没有可解析的判决行 = 跑测器没走到终出口，不能算 0 红' })
+      out.push({
+        i,
+        why: '这一趟的输出里没有**可解析**的判决行（行缺／坏 JSON／字段缺或类型不对／点名与计数对不上——'
+          + '被截断过的名单也落到这里）= 这一趟不可归因，不能算 0 红',
+      })
       continue
     }
     if (p.kind !== 'green' && p.kind !== 'red') {
