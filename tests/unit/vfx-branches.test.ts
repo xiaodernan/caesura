@@ -85,6 +85,29 @@ describe('贴花：贴图那一格（KI-149）', () => {
 })
 
 describe('拖尾：贴图与移除（KI-149）', () => {
+  it('点数上限只有一个主人（`emit()` 那里）：拖尾的点永远不超过配置里的段数（KI-330）', () => {
+    const cfg: TrailConfig = {
+      id: 'trail_probe_cap',
+      segments: 3,
+      width: [0.1, 0.02],
+      color: [new THREE.Color('#ffffff'), new THREE.Color('#888888')],
+      lifetime: 10,
+      blending: THREE.AdditiveBlending,
+      followRotation: true,
+      minEmitDist: 0.01,
+    }
+    undo.push(withRow('vfx:trails', cfg))
+    const trails = initTrailSystem(newScene())!
+    const trail = trails.getTrail('trail_probe_cap')!
+    const points = (trail as unknown as { points: unknown[] }).points
+    // 连发 10 次（远超 segments=3）⇒ 点数必须被封在 3
+    for (let i = 0; i < 10; i++) {
+      trails.updateWeapon('trail_probe_cap', new THREE.Vector3(i, 0, 0), new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 1, 0), 1 / 60)
+    }
+    expect(points.length, '拖尾一个点都没接到 ⇒ 下面那条封顶断言是在空集合上白送的').toBeGreaterThan(0)
+    expect(points.length, '拖尾点数超过了配置里的段数 ⇒ 几何缓冲会被写穿').toBeLessThanOrEqual(cfg.segments)
+  })
+
   it('配置里写了贴图 ⇒ 材质挂上', () => {
     const tex = new THREE.Texture()
     registry.register('tex/probe_trail', tex)

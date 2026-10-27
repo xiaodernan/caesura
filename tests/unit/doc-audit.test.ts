@@ -1,6 +1,8 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { REGISTER_FILE, SELF_EXEMPT } from '../../scripts/id-rules.mjs'
+import { deliverySurface } from '../../scripts/id-scope-rules.mjs'
 
 /**
  * 文档对账闸门（KI-056）。
@@ -18,6 +20,9 @@ const root = fileURLToPath(new URL('../..', import.meta.url))
 const archDoc = readFileSync(root + 'docs/technical-architecture.md', 'utf8')
 const issues = readFileSync(root + 'docs/KNOWN_ISSUES.md', 'utf8')
 const planDoc = readFileSync(root + 'docs/WORKPLAN.md', 'utf8')
+
+/** 账本在交付总体里的相对路径（门 B 与判据④都拿它当"读者之一"：账本自己引的号也要读得到行） */
+const LEDGER_REL = 'docs/KNOWN_ISSUES.md'
 
 /** 认转义的竖线切分（与门 D 同一把尺子）：`\|` 是内容，不是分格 */
 const planCells = (l: string): string[] => l.split(/(?<!\\)\|/).slice(1, -1).map((c) => c.trim())
@@ -322,61 +327,45 @@ describe('文档对账闸门（KI-056）', () => {
     }
   })
 
-  it('门 B：src/tests/scripts/docs 里每一处 KI- 按号引用都必须能在账本读到行（4 位归一成 3 位）', () => {
-    const skipDirs = new Set(['node_modules', '.git', '.scratch', 'dist', 'Python', 'artifacts', 'coverage'])
-    function walk(dir: string, out: string[] = []): string[] {
-      for (const name of readdirSync(dir)) {
-        if (skipDirs.has(name)) continue
-        const p = `${dir}/${name}`
-        if (statSync(p).isDirectory()) walk(p, out)
-        else if (/\.(ts|tsx|mjs|md|json)$/.test(name)) out.push(p)
-      }
-      return out
-    }
+  it('门 B：交付总体里每一处 KI- 按号引用都必须能在账本读到行（不归一；账本自己也在走查面里）（KI-329）', () => {
+    const surface = deliverySurface(root)
     const rowIds = new Set(
       ledgerLines
-        .map((l) => /^\|\s*(KI-\d{3,4})\s*\|/.exec(l)?.[1])
-        .filter((x): x is string => !!x)
-        .map((raw) => `KI-${String(Number(raw.slice(3))).padStart(3, '0')}`),
+        .map((l) => /^\|\s*(KI-\d+)\s*\|/.exec(l)?.[1])
+        .filter((x): x is string => !!x),
     )
-    const SELF = 'docs/KNOWN_ISSUES.md'
-    // `root` 自带结尾分隔符（fileURLToPath 给目录 URL 时带尾），所以 rel 从 `root.length` 切，不是 +1。
-    // 差一个字符时 SELF 排除失效 = 账本被算进它自己的引用总体（第一次跑就中招，读数报出 `ocs/...`）。
-    const relOf = (f: string) => f.slice(root.length).replace(/^[\\/]/, '').replace(/\\/g, '/')
-    const surfaces = ['src', 'tests', 'scripts', 'docs']
-    const filesPerSurface = new Map<string, number>()
+    const exempt = new Set(SELF_EXEMPT.map((e) => e.token))
     const unresolved: string[] = []
-    let files = 0
-    let hits = 0
     const cited = new Set<string>()
-    for (const sub of surfaces) {
-      let n = 0
-      for (const f of walk(root + sub)) {
-        const rel = relOf(f)
-        if (rel === SELF) continue
-        n++
-        const body = readFileSync(f, 'utf8')
-        for (const m of body.matchAll(/KI-\d+/g)) {
-          hits++
-          const id = `KI-${String(Number(m[0].slice(3))).padStart(3, '0')}`
-          cited.add(id)
-          if (!rowIds.has(id)) unresolved.push(`${rel}:${body.slice(0, m.index).split('\n').length} 引 ${m[0]} → ${id} 无行`)
-        }
+    const perTree = new Map<string, number>()
+    let hits = 0
+    for (const f of surface.files) {
+      const tree = f.rel.includes('/') ? f.rel.split('/')[0] : '(根散文件)'
+      perTree.set(tree, (perTree.get(tree) ?? 0) + 1)
+      for (const m of f.text.matchAll(/KI-\d+/g)) {
+        hits++
+        cited.add(m[0])
+        // 名册那份文件是**唯一**的文件级豁免：它按设计存着已退役的拼写（那是旧拼写唯一的家）。
+        if (f.rel === REGISTER_FILE) continue
+        if (rowIds.has(m[0])) continue
+        // 账本自己引的号：读不到行的那几处必须逐条登记理由（豁免名册在 scripts/id-rules.mjs 里）。
+        if (f.rel === LEDGER_REL && exempt.has(m[0])) continue
+        unresolved.push(`${f.rel}:${f.text.slice(0, m.index).split('\n').length} 引 ${m[0]} → 正册里没有这一行`)
       }
-      filesPerSurface.set(sub, n)
     }
-    files = [...filesPerSurface.values()].reduce((a, b) => a + b, 0)
-    // 四道地板全部出自这一次扫描：某一片总体被扫空时，"0 处未登记"不代表没病。
-    expect(files, `引用总体只读到 ${files} 份文件 = 扫描面塌了`).toBeGreaterThanOrEqual(300)
+    // 五道地板全部出自这一次扫描：某一片总体被扫空时，"0 处未登记"不代表没病。
+    expect(surface.files.length, `交付总体只读到 ${surface.files.length} 份文件 = 扫描面塌了`).toBeGreaterThanOrEqual(500)
+    expect(surface.missing, '交付总体少了目录（那一片的文本没人扫）').toEqual([])
+    expect(surface.unreadable.length, `总体里有 ${surface.unreadable.length} 份文件不是合法 UTF-8（读不出来的引用不会变红，绿是白送的）`).toBe(0)
     expect(hits, `这一次只数到 ${hits} 处 KI- 引用 = 命中数低于地板，抽取器大概瞎了`).toBeGreaterThanOrEqual(2000)
     expect(cited.size, `点到的唯一号只有 ${cited.size} 个 = 分母低于地板`).toBeGreaterThanOrEqual(100)
-    for (const sub of surfaces) {
-      expect(filesPerSurface.get(sub) ?? 0, `${sub}/ 一份文件都没读到 = 那一片整个没进总体，未登记的号可以藏在里面`).toBeGreaterThanOrEqual(1)
+    for (const tree of ['docs', 'src', 'tests', 'scripts', '(根散文件)']) {
+      expect(perTree.get(tree) ?? 0, `${tree} 一份文件都没读到 = 那一片整个没进总体，未登记的号可以藏在里面`).toBeGreaterThanOrEqual(1)
     }
     expect(
       unresolved,
-      `这些编号被代码/脚本/文档按号引用，而账本里没有那一行 = 读者按号去找账，找到的是空气。` +
-        `要么补登记（号 + 严重度 + §78 状态），要么把引用改成它真正指向的那个号：\n${unresolved.join('\n')}`,
+      `这些编号被代码/脚本/文档按号引用，而账本里没有那一行 = 读者按号去找账，找到的是空气。`
+        + `要么补登记（号 + 严重度 + §78 状态），要么把引用改成它真正指向的那个号：\n${unresolved.join('\n')}`,
     ).toEqual([])
   })
 

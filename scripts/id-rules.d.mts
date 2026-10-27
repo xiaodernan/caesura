@@ -38,14 +38,26 @@ export interface RetiredSpelling {
   why: string
 }
 
+/** 账本自引豁免名册的一格：那个读不到行的号 ＋ 为什么它读不到 */
+export interface SelfExempt {
+  token: string
+  why: string
+}
+
 /** 正册在用的四个前缀（§8.2 那条规则句必须与它逐字相等） */
 export const LEDGER_PREFIXES: string[]
 
 /** 正册的号一律几位 */
 export const ID_DIGITS: number
 
+/** 这两份名册住在哪个文件（登记处；别的门扫到它时跳过——登记处里的号是条目，不是引用） */
+export const REGISTER_FILE: string
+
 /** 已退役的 4 位拼写 → 它今天是什么（那里是旧拼写唯一的家；文档里一个字都不许留） */
 export const RETIRED_SPELLINGS: Record<string, RetiredSpelling>
+
+/** 账本自己引的、而正册里读不到行的号，各带一条理由（KI-329） */
+export const SELF_EXEMPT: SelfExempt[]
 
 /** 解析架构 §8.2 那条规则句；读不出来返回 null（不猜：读不到就是读不到） */
 export function parseIdRule(archText: string): IdRule | null
@@ -65,7 +77,7 @@ export function ruleSentenceFindings(input: { archText: string; ledgerText: stri
 /** 判据②：§8.3 指针表 ↔ 正册行（每个号恰好一行） */
 export function seedPointerFindings(input: { archText: string; ledgerText: string }): IdFinding[]
 
-/** 判据③：全库只许一套号（4 位拼写只许出现在名册里） */
+/** 判据③：交付总体里只许一套号（位数不等于 3 的拼写只许出现在名册里） */
 export function retiredSpellingFindings(input: { files: { rel: string; text: string }[]; registerFile: string }): IdFinding[]
 
 /** 名册自证：每一格说得出身它今天是什么，指的那个号必须真的在正册里有一行 */

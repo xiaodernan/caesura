@@ -1,10 +1,11 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import {
   ID_DIGITS,
   LEDGER_PREFIXES,
   RETIRED_SPELLINGS,
+  REGISTER_FILE,
   duplicateIdFindings,
   ledgerRows,
   parseIdRule,
@@ -14,6 +15,7 @@ import {
   seedPointerFindings,
   seedRows,
 } from '../../scripts/id-rules.mjs'
+import { deliverySurface } from '../../scripts/id-scope-rules.mjs'
 
 /**
  * 「号段只有一套」那道门（KI-326）。
@@ -21,13 +23,16 @@ import {
  * **病**：架构 §8.2 那条规则句写着「前缀 + **4** 位序号（例 …）」，而正册 `docs/KNOWN_ISSUES.md` 实测
  * **249 行 KI 全是 3 位**（首格 4 位的＝0 行）、TD/ENV 也是 3 位；PF 与 MA 两个前缀**在正册从来没有行**
  * （§3 那张表今天只有一行「暂无」，§4 用的是 ENV- 不是 MA-）。全库 4 位拼写实测 **14 处**
- * （3 份文件的 8 行上）。门 B 此前用「4 位归一成 3 位再判能不能读到行」把这件事绕开了——
- * **归一不是裁决**：它替写错的人把号擦掉，于是"两套号"这件事在机器眼里根本不存在。
+ * （3 份文件的 8 行上；那是 2026-10-27 那一趟的读数）。门 B 此前用「4 位归一成 3 位再判能不能读到行」
+ * 把这件事绕开了——**归一不是裁决**：它替写错的人把号擦掉，于是"两套号"这件事在机器眼里根本不存在。
+ * 2026-10-28（KI-329）这一族改骑**交付总体**（`scripts/id-scope-rules.mjs` 的 `deliverySurface`）：
+ * 扫描面从手抄的「目录 × 后缀」清单换成仓里那一份第一等口径 ⇒ 门 B／门 I2／这道门读的是同一片地面
+ * （分母由 `deliverySurface` 现给，不写在散文里）。
  *
  * **这道门判三件事**（每件都能被合成夹具喂）：
  *   ① 规则句 ↔ 正册实况同形（前缀集合逐字相等、位数相等、规则句举的例子必须是真的一个号）；
  *   ② §8.3 的指针表 ↔ 正册行（每个号在正册**恰好一行**）；
- *   ③ 全库只许一套号（4 位拼写只许出现在 `scripts/id-rules.mjs` 的「已退役拼写名册」里）。
+   ③ 交付总体里只许有一套号（非 3 位的拼写只许出现在 `scripts/id-rules.mjs` 的「已退役拼写名册」里）。
  *
  * **两条量具纪律**（本仓的老教训）：
  *   - **分母出自同一次扫描**：扫描面塌了、规则句读空了、§8.3 整块没了 ⇒ 红在地板上，不白送一条"0 条命中"的绿；
@@ -38,9 +43,6 @@ import {
 const root = fileURLToPath(new URL('../..', import.meta.url))
 const archDoc = readFileSync(root + 'docs/technical-architecture.md', 'utf8')
 const issues = readFileSync(root + 'docs/KNOWN_ISSUES.md', 'utf8')
-
-/** 名册所在那份文件的相对路径（旧拼写唯一的家；这台门不扫自己那份的"例外"） */
-const REGISTER_FILE = 'scripts/id-rules.mjs'
 
 /**
  * 旧拼写是**拼出来**的：这台门扫 `tests/`，而那种 4 位的字面形状一旦落在本文件里，
@@ -183,25 +185,17 @@ describe('号段只有一套（KI-326）：合成夹具腿', () => {
 })
 
 describe('号段只有一套（KI-326）：真库腿', () => {
-  /** 扫描面：与门 B 同一片（src/tests/scripts/docs），多加 `.mts` 与 `.py`（登记处的两个漏网后缀） */
-  const skipDirs = new Set(['node_modules', '.git', '.scratch', 'dist', 'Python', 'artifacts', 'coverage'])
-  const TEXT_EXT = /\.(ts|tsx|mjs|mts|md|json|py)$/
-  function walk(dir: string, out: string[] = []): string[] {
-    for (const name of readdirSync(dir)) {
-      if (skipDirs.has(name)) continue
-      const p = `${dir}/${name}`
-      if (statSync(p).isDirectory()) walk(p, out)
-      else if (TEXT_EXT.test(name)) out.push(p)
-    }
-    return out
-  }
-  const relOf = (f: string) => f.slice(root.length).replace(/^[\\/]/, '').replace(/\\/g, '/')
-  const scanFiles = ['src', 'tests', 'scripts', 'docs'].flatMap((sub) => walk(`${root}/${sub}`))
+  /** 扫描面：**交付总体**（口径出自 `scripts/id-scope-rules.mjs`，不手抄第二份「目录 × 后缀」清单） */
+  const surface = deliverySurface(root)
+  const scanFiles = surface.files
 
   it('扫描面没有塌（分母与判据出自同一次扫描）', () => {
-    expect(scanFiles.length, `扫描面只读到 ${scanFiles.length} 份文件 = 某一片塌了，未登记的号可以藏在里面`).toBeGreaterThanOrEqual(400)
-    for (const sub of ['src', 'tests', 'scripts', 'docs']) {
-      expect(walk(`${root}/${sub}`).length, `${sub}/ 一份文件都没读到`).toBeGreaterThanOrEqual(1)
+    expect(scanFiles.length, `扫描面只读到 ${scanFiles.length} 份文件 = 某一片塌了，未登记的号可以藏在里面`).toBeGreaterThanOrEqual(500)
+    expect(surface.missing, '交付总体少了目录（那一片的文本没人扫）').toEqual([])
+    expect(surface.unreadable.length, `总体里有 ${surface.unreadable.length} 份文件读不出来（读不出来的引用不会变红，绿是白送的）`).toBe(0)
+    for (const tree of ['docs', 'src', 'tests', 'scripts', '(根散文件)']) {
+      const n = scanFiles.filter((f) => (f.rel.includes('/') ? f.rel.split('/')[0] : '(根散文件)') === tree).length
+      expect(n, `${tree}/ 一份文件都没读到`).toBeGreaterThanOrEqual(1)
     }
   })
 
@@ -233,12 +227,11 @@ describe('号段只有一套（KI-326）：真库腿', () => {
     expect(findings.map((f) => `【${f.key}】${f.msg}`).join('\n')).toBe('')
   })
 
-  it('全库 4 位拼写 0 处（旧拼写只许留在名册里）', () => {
-    const files = scanFiles.map((f) => ({ rel: relOf(f), text: readFileSync(f, 'utf8') }))
-    const findings = retiredSpellingFindings({ files, registerFile: REGISTER_FILE })
+  it('交付总体里非 3 位拼写 0 处（旧拼写只许留在名册里）（KI-329）', () => {
+    const findings = retiredSpellingFindings({ files: scanFiles, registerFile: REGISTER_FILE })
     expect(
       findings.map((f) => `【${f.key}】${f.msg}`).join('\n'),
-      '这些地方还留着 4 位拼写 —— 号段只有一套（正册的 3 位号）；旧拼写本身留在名册里，文档里一个字都不许留。',
+      '这些地方还留着非 3 位拼写 —— 号段只有一套（正册的 3 位号）；旧拼写本身留在名册里，文档里一个字都不许留。',
     ).toBe('')
   })
 

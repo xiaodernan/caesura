@@ -18,13 +18,21 @@ import { FakeAudioContext, fakeWindow, type FakeWindow } from '../support/fakeAu
  *   · 图还没建（没有用户手势 ⇒ 没有 AudioContext）时**先存着**，等图建好再一次性灌进去。
  */
 const engines: AudioEngine[] = []
+/** 本文件建过的每一只 AudioContext（图建好之后要读 master 那条增益上的排程） */
+let made: FakeAudioContext[] = []
 afterEach(() => {
   for (const e of engines.splice(0)) e.dispose()
+  made = []
 })
 
 /** 装一只自己的假 window（引擎把手势监听挂在**当时的** window 上 ⇒ 换 window 就等于关掉上一只） */
 const installWindow = (): FakeWindow => {
-  class Spy extends FakeAudioContext {}
+  class Spy extends FakeAudioContext {
+    constructor() {
+      super()
+      made.push(this)
+    }
+  }
   const w = fakeWindow(Spy)
   w.install()
   return w
@@ -76,5 +84,43 @@ describe('音频消费端音量（KI-142）', () => {
     a.dispose()
     a.setVolume('master', 0.5)
     expect(a.getVolume('master'), 'dispose 之后的写入应当被忽略').toBe(1)
+  })
+
+  it('主音量真的落到 master 那条增益上（0.85 × v），不只是记在读数里', () => {
+    const w = installWindow()
+    const a = new AudioEngine()
+    engines.push(a)
+    // 图还没建时调 `setVolume` 只是**存着**（上面那条已经证过）；这一条要证的是
+    // **图建好之后**主音量真的被排到了 master 的 gain 上——
+    // 那条分支（`applyOne` 的 master 那一支）此前**没有任何一条用例走过**：
+    // 既有用例调 `setVolume('master', …)` 时图都还没建，于是每次都在
+    // 「图/上下文还没有 ⇒ 先存着」那一行就返回了。
+    w.dispatch('pointerdown')
+    a.start()
+    const ctx = made[made.length - 1]
+    const master = ctx.nodes.find((n) => n.kind === 'gain' && Math.abs(n.params.gain.value - 0.85) < 1e-9)
+    expect(master, '图里没有 0.85 那条 master 增益').toBeTruthy()
+    const before = master!.params.gain.events.length
+    a.setVolume('master', 0.5)
+    const events = master!.params.gain.events
+    expect(events.length, '主音量没有被排到 master 的增益上').toBe(before + 1)
+    const last = events[events.length - 1]
+    expect(last.kind, '主音量应当是**排程**上去的（target），不是硬写一个值').toBe('target')
+    expect(last.value, 'master 的目标是它自己的基准电平 × 玩家的主音量').toBeCloseTo(0.85 * 0.5, 6)
+  })
+
+  it('图建好之前调的主音量，在图建好时被灌进 master（玩家开局前调的主音量不能丢）', () => {
+    const w = installWindow()
+    const a = new AudioEngine()
+    engines.push(a)
+    a.setVolume('master', 0.4)
+    w.dispatch('pointerdown')
+    a.start()
+    const ctx = made[made.length - 1]
+    const master = ctx.nodes.find((n) => n.kind === 'gain' && Math.abs(n.params.gain.value - 0.85) < 1e-9)
+    expect(master, '图里没有 0.85 那条 master 增益').toBeTruthy()
+    const targets = master!.params.gain.events.filter((e) => e.kind === 'target')
+    expect(targets.length, '存着的主音量没有被灌进 master').toBeGreaterThanOrEqual(1)
+    expect(targets[targets.length - 1].value, '灌下去的目标应当是 0.85 × v').toBeCloseTo(0.85 * 0.4, 6)
   })
 })

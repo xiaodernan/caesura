@@ -103,7 +103,13 @@ class TrailInstance {
       width,
     })
 
-    // 限制长度
+    // **段数上限只有一个主人，就是这里**（KI-330）：配置里的 `segments` 决定几何体画几段，
+    // 索引缓冲只覆盖那几段——多出来的点**画不出来**（顶点画了、连线没画），
+    // 所以每发射一个点就把超出的那一个丢掉，点数因此永远不超过 `segments`。
+    //
+    // （原来 `update()` 里还挂着**第二道**同样的封顶。它**永远不成立**：
+    //   `emit()` 已经把点数封在 `segments` 以内，而 `update()` 只删点不加点
+    //   ⇒ 那条 while 的条件恒假，是一段没人走到的死代码。已删，见 KI-330。）
     if (this.points.length > this.config.segments) {
       this.points.pop()
     }
@@ -130,17 +136,12 @@ class TrailInstance {
     while (this.points.length > 0 && now - this.points[0].time > lifetime) {
       this.points.shift()
     }
-    // 段数上限：配置里的 `segments` 决定几何体画几段，索引缓冲只覆盖那几段——
-    // 多出来的点**画不出来**（顶点画了、连线没画），所以这里按配置截断。
-    while (this.points.length > this.config.segments) {
-      this.points.shift()
-    }
 
     if (this.points.length < 2) return
 
     // 重建几何体
     // **缓冲区不必再扩**（KI-149）：几何体在构造时按 `segments * 2` 个顶点开好，而点数被
-    // `segments` 截住（见上面的老化段）⇒ 顶点数永远不超过缓冲区的容量。
+    // `segments` 截住（见 `emit()` 那里那道封顶——**它是唯一的主人**）⇒ 顶点数永远不超过缓冲区的容量。
     // 原来这里有一段"不够就扩缓冲"的代码——点数上限加上之后它**永远不成立**（死代码），删掉。
     const posAttr = this.geometry.getAttribute('position') as THREE.BufferAttribute
     const uvAttr = this.geometry.getAttribute('uv') as THREE.BufferAttribute

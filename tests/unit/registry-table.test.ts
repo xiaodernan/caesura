@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import {
@@ -11,6 +11,7 @@ import {
   statusOverviewFindings,
   statusVocab,
 } from '../../scripts/registry-rules.mjs'
+import { deliverySurface } from '../../scripts/id-scope-rules.mjs'
 
 /**
  * 正册那四张表的**行形状**门（KI-327）。
@@ -153,20 +154,9 @@ describe('正册四张表的行形状（KI-327）：合成夹具腿', () => {
 })
 
 describe('正册四张表的行形状（KI-327）：真库腿', () => {
-  /** 扫描面：与门 B／门 H 同一片（src/tests/scripts/docs） */
-  const skipDirs = new Set(['node_modules', '.git', '.scratch', 'dist', 'Python', 'artifacts', 'coverage'])
-  const TEXT_EXT = /\.(ts|tsx|mjs|mts|md|json|py)$/
-  function walk(dir: string, out: string[] = []): string[] {
-    for (const name of readdirSync(dir)) {
-      if (skipDirs.has(name)) continue
-      const p = `${dir}/${name}`
-      if (statSync(p).isDirectory()) walk(p, out)
-      else if (TEXT_EXT.test(name)) out.push(p)
-    }
-    return out
-  }
-  const relOf = (f: string) => f.slice(root.length).replace(/^[\\/]/, '').replace(/\\/g, '/')
-  const scanFiles = ['src', 'tests', 'scripts', 'docs'].flatMap((sub) => walk(`${root}/${sub}`))
+  /** 扫描面：**交付总体**（口径出自 `scripts/id-scope-rules.mjs`，不手抄第二份「目录 × 后缀」清单） */
+  const surface = deliverySurface(root)
+  const scanFiles = surface.files
 
   it('分母没有塌：四张表都在、正册行数够、词表推出四个词', () => {
     const tables = ledgerTables(issues)
@@ -177,7 +167,9 @@ describe('正册四张表的行形状（KI-327）：真库腿', () => {
     const rows = tables.flatMap((t) => t.rows)
     expect(rows.length, `正册只读到 ${rows.length} 行 = 分母读空`).toBeGreaterThanOrEqual(250)
     expect(statusVocab(issues).length, '状态词表推出的词数不对').toBeGreaterThanOrEqual(4)
-    expect(scanFiles.length, `扫描面只读到 ${scanFiles.length} 份文件`).toBeGreaterThanOrEqual(400)
+    expect(scanFiles.length, `扫描面只读到 ${scanFiles.length} 份文件 = 某一片塌了`).toBeGreaterThanOrEqual(500)
+    expect(surface.missing, '交付总体少了目录（那一片的文本没人扫）').toEqual([])
+    expect(surface.unreadable.length, `总体里有 ${surface.unreadable.length} 份文件读不出来（读不出来的引用不会变红，绿是白送的）`).toBe(0)
   })
 
   it('行形状：每一行按 ID 前缀恰 N 格 ＋ 末格取自 §78 词表（0 条）', () => {
@@ -186,7 +178,7 @@ describe('正册四张表的行形状（KI-327）：真库腿', () => {
   })
 
   it('按号引用：TD-/PF-/ENV- 的每一处都读得到行（0 条）', () => {
-    const files = scanFiles.map((f) => ({ rel: relOf(f), text: readFileSync(f, 'utf8') }))
+    const files = scanFiles
     const findings = idReferenceFindings({ files, ledgerText: issues })
     expect(findings.map((f) => `【${f.key}】${f.msg}`).join('\n')).toBe('')
   })
