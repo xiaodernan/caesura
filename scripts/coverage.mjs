@@ -266,6 +266,35 @@ function printReading(m, floor, src) {
 }
 
 /**
+ * 「空报表丢了 source map」的兜底检测（§78：量具坏了 ≠ 覆盖率掉了）。
+ *
+ * 从未被任何测试 import 的文件走 v8 provider 的 `(empty-report)` 分支，它的**可执行行数**
+ * 由 `vitenode.transformRequest` 返回的 source map 决定。`getSources()` 把那次 transform 的
+ * 异常 `.catch(() => void 0)` 吞掉之后会退回**原始源码** —— 于是分母变成"文件行数"
+ * （含空行与注释），同一棵代码的覆盖率会凭空掉几个点，报出来是一句假的"覆盖率掉了"。
+ *
+ * 判据：零覆盖文件的 `lines.total` **恰好等于**它的物理行数，且文件里确实有空行/注释行
+ * （否则"每一行都可执行"的文件会误判）。命中即 exit 2：这不是地板该背的账，也**不许**
+ * 借此 `--bless` 把地板下调（下调＝放松棘轮＝免掉这笔债）。
+ */
+function degenerateEmptyReports(summary) {
+  const out = []
+  for (const [key, data] of Object.entries(summary)) {
+    if (key === 'total') continue
+    if (!data?.lines || data.lines.covered !== 0) continue
+    const relPath = toRepoRel(key)
+    const abs = join(ROOT, relPath)
+    if (!existsSync(abs)) continue
+    const lines = readFileSync(abs, 'utf8').split(/\r?\n/)
+    // 末尾换行会让 split 多出一格空串：按 `wc -l` 的口径（数换行）折掉它
+    const physical = lines[lines.length - 1] === '' ? lines.length - 1 : lines.length
+    const hasNonCode = lines.some((l) => /^\s*(\/\/|\/\*|\*|$)/.test(l))
+    if (data.lines.total === physical && hasNonCode) out.push(`${relPath}（${data.lines.total} 行 = 文件行数）`)
+  }
+  return out
+}
+
+/**
  * CLI 主体。**刻意包在 main() 里**：这份模块被 import 过一次的现场是——`import()` 它的人
  * 看见的不是"取两个纯函数"，而是 40 秒的整套测试跑（顶层副作用）。判"我是被直接运行的"用
  * argv[1] 的绝对路径与 import.meta.url 对照；对不上就只导出、不运行。
@@ -280,13 +309,29 @@ function main() {
   const floor = existsSync(argv.floor) ? JSON.parse(readFileSync(argv.floor, 'utf8')) : null
 
   let m
+  let raw
   if (argv.summary) {
-    m = measure(JSON.parse(readFileSync(argv.summary, 'utf8')))
+    raw = JSON.parse(readFileSync(argv.summary, 'utf8'))
+    m = measure(raw)
     printReading(m, floor, `读数来自 ${rel(argv.summary)}（本次未核对用例是否全绿）`)
   } else {
     const { summary, files } = runVitest()
+    raw = summary
     m = measure(summary)
     printReading(m, floor, `${files} 个测试文件全绿`)
+  }
+
+  // 先验量具、再判地板：空报表丢了 source map 时分母是文件行数 ⇒ 这一趟的读数不作数。
+  // 放在 `--bless` 之前是刻意的：否则一次退化的测量会把地板**下调**写进文件（放松棘轮）。
+  const degenerate = degenerateEmptyReports(raw)
+  if (degenerate.length) {
+    console.error('\n[coverage] 量具坏了：空报表丢了 source map ⇒ 分母退化成**文件行数**（含空行/注释），')
+    console.error('           同一棵代码会凭空掉几个点。这不是覆盖率掉了，别拿这次的数当账：')
+    for (const d of degenerate) console.error(`  - ${d}`)
+    console.error('           成因：从未被 import 的文件走 (empty-report)，行数由 transform 的 source map 决定；')
+    console.error('           那次 transform 抛的错被 provider 的 `.catch(() => void 0)` 吞了 ⇒ 退回原始源码行数。')
+    console.error('           处理：在能拿到 source map 的环境里重量一次；**地板不许因此下调**（KI-330 的同一族）。')
+    process.exit(2)
   }
 
   if (argv.bless) {
