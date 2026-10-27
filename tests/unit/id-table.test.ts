@@ -48,8 +48,9 @@ const REGISTER_FILE = 'scripts/id-rules.mjs'
  */
 const oldSpell = (prefix: string, digits: string): string => `${prefix}-${digits}`
 
-/** 假号同理：门 B 判「按号引用必须读得到行」，夹具里那个不存在的号也得拼出来 */
-const fakeKi = (digits: string): string => `KI-${digits}`
+/** 假号同理：门 B 判「按号引用必须读得到行」，门 I2 判「TD-/PF-/ENV- 的按号引用必须读得到行」⇒ 夹具里那个不存在的号也得拼出来 */
+const fakeId = (prefix: string, digits: string): string => `${prefix}-${digits}`
+const fakeKi = (digits: string): string => fakeId('KI', digits)
 
 /** 合成一份架构文档：§8.2 的规则句 ＋ §8.3 的指针表（形状与真文件同构） */
 const archFixture = (opts: { rule?: string | null; seeds?: string[] } = {}): string => {
@@ -123,10 +124,13 @@ describe('号段只有一套（KI-326）：合成夹具腿', () => {
   })
 
   it('§8.3 指的号在正册没有那一行 ⇒ 红', () => {
-    const arch = archFixture({ seeds: ['KI-001', 'TD-010', 'TD-011', 'ENV-002', 'PF-009'] })
+    // 那个"正册没有的号"是拼出来的：门 I2（按号引用必须读得到行）也扫 tests/，
+    // 字面量落在本文件里会让**另一道门**先红在自己身上（红得没有信息量）。
+    const ghost = fakeId('PF', '009')
+    const arch = archFixture({ seeds: ['KI-001', 'TD-010', 'TD-011', 'ENV-002', ghost] })
     const findings = seedPointerFindings({ archText: arch, ledgerText: GOOD_LEDGER })
     expect(findings.length).toBeGreaterThanOrEqual(1)
-    expect(findings.map((f) => f.msg).join('\n')).toContain('PF-009')
+    expect(findings.map((f) => f.msg).join('\n')).toContain(ghost)
   })
 
   it('§8.3 指的号在正册挂了两行 ⇒ 红（一个号两件事）', () => {
