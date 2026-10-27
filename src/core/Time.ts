@@ -39,7 +39,6 @@ export class GameTime {
   }
 }
 
-export const gameClock = new GameTime()
 
 /** logic ticks since helper: compare/measure in tick units (1 tick = 1/60s) */
 export const msToTicks = (ms: number): number => Math.round(ms / (1000 / TICK_HZ))

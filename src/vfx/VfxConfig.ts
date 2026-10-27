@@ -17,8 +17,6 @@ import type { EmitterConfig } from './GPUParticles'
  * 而这里的转换假定输入已经合法——它不是判据，是翻译。
  */
 
-/** 混合模式名字 → three 的枚举（表里只写名字，不写数字） */
-export const BLENDING_NAMES = ['normal', 'additive', 'multiply'] as const
 
 /** 名字 → `THREE.Blending`。认不出的名字回落 `normal`（不抛：一张表的坏值由判据红，不该把画面带崩） */
 export function blendingOf(name: string): THREE.Blending {

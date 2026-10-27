@@ -1,7 +1,7 @@
 import { registry } from '@/core/Registry'
 import type { ItemData, MovesetData, SlotKey, WeaponData } from '@/data/schema'
 import { itemOf } from '@/rpg/Inventory'
-import { ATTR_KEYS, progressionData } from '@/rpg/Progression'
+import { progressionData } from '@/rpg/Progression'
 import { SLOTS, type EquipMods } from '@/rpg/Equipment'
 import { upgradeStep, maxLevelOf, TIMBITE, DROSS, salvageValue } from '@/rpg/Upgrade'
 import { sellPrice, stackSellPrice, shopData, CURRENCY } from '@/rpg/Shop'
@@ -887,6 +887,3 @@ export class Stakerite {
     return `写入 ${label} —— ${state === 'empty' ? '这一格现在是空的' : '这一格已有的存档会被当前局面覆盖'}。`
   }
 }
-
-/** 面板里要展示的属性键顺序（与 progression.json 一致；改表就跟着改） */
-export const ATTR_ORDER = ATTR_KEYS
