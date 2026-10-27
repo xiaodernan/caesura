@@ -281,11 +281,6 @@ export class DecalSystem {
     }
   }
 
-  /** 手动移除 */
-  remove(id: string): void {
-    // 实际实现需要维护 ID 到实例的映射，这里简化
-  }
-
   /** 清理指定类型 */
   clear(configId?: string): void {
     if (configId) {

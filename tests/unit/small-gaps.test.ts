@@ -32,14 +32,6 @@ describe('comboStageMul：最后一段满倍、其余 0.95', () => {
   })
 })
 
-describe('Occlusion.firstBlock：box 竖带 slope ≠ 0 分支', () => {
-  it('线段斜穿柱体侧面 ⇒ t = (target - ay) / slope', () => {
-    // 这里只做白盒触发：构造一个从侧面斜向穿过的线段
-    // firstBlock 没导出，只记录缺口已知（KI-014 navigation.test.ts 已覆盖该分支）
-    expect(true).toBe(true)
-  })
-})
-
 describe('slotOf：装备件返回 slot、其余返回 null', () => {
   it('武器/防具/音徽返回 gear.slot；消耗品返回 null', () => {
     const weaponItem = { kind: 'weapon', gear: { slot: 'weapon' as const, rarity: 'common', weight: 1 } } as any

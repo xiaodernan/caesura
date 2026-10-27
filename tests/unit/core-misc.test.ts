@@ -87,13 +87,3 @@ describe('RhythmClock：toNextBeatSec', () => {
     expect(rc.toNextBeatSec).toBeCloseTo(beatSec / 2)
   })
 })
-
-describe('Occlusion：box 竖带分支（slope ≠ 0）', () => {
-  it('线段穿过柱体侧面 ⇒ t = (target - ay) / slope', () => {
-    // 这里只做白盒触发：构造一个从侧面斜向穿过的线段
-    // Occlusion.firstBlock 是私有的，这里借 export 的工具函数或直接 new
-    // 实际上 firstBlock 没导出，我们只能从集成角度测
-    // KI-014 的 navigation.test.ts 已在测该分支；这里只记录缺口已知
-    expect(true).toBe(true)
-  })
-})
