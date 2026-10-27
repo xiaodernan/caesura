@@ -22,8 +22,14 @@ export function scopeOf(files: readonly string[], filters: readonly string[], ro
 /**
  * 磁盘名册 walk（递归，只收 `.test.ts`）——名册的**唯一主人**（KI-099b 起）：
  * 主跑测器与 raw 腿都从这里拿，谁本地再抄一份，同一次「全量」就会在两条腿上数出两个分母。
+ *
+ * 走查途中消失的子树被**跳过**（不抛，KI-332）；顶层读不到仍会抛（空名册会读成全绿）。
+ * `opts.readdir` 是接缝：合成夹具用它把「某一层没了」摆出来。
  */
-export function testFilesOnDisk(dir: string): string[]
+export function testFilesOnDisk(
+  dir: string,
+  opts?: { readdir?: (dir: string) => { name: string; isDirectory(): boolean }[] }
+): string[]
 
 /**
  * 名册 ⇄ 这一趟真跑到的文件集，**双向**差集（KI-099）：两边都折成正斜杠再比，

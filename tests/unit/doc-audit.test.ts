@@ -357,6 +357,11 @@ describe('文档对账闸门（KI-056）', () => {
     expect(surface.files.length, `交付总体只读到 ${surface.files.length} 份文件 = 扫描面塌了`).toBeGreaterThanOrEqual(500)
     expect(surface.missing, '交付总体少了目录（那一片的文本没人扫）').toEqual([])
     expect(surface.unreadable.length, `总体里有 ${surface.unreadable.length} 份文件不是合法 UTF-8（读不出来的引用不会变红，绿是白送的）`).toBe(0)
+    expect(
+      surface.vanished,
+      `交付总体里有 ${surface.vanished.length} 份文件在走查途中消失（KI-332）⇒ 这一趟没被读到，`
+        + `它们里面的按号引用这一趟没人查 ⇒ 没被查过的引用不会变红（绿是白送的）：${surface.vanished.slice(0, 8).join(' ')}`,
+    ).toEqual([])
     expect(hits, `这一次只数到 ${hits} 处 KI- 引用 = 命中数低于地板，抽取器大概瞎了`).toBeGreaterThanOrEqual(2000)
     expect(cited.size, `点到的唯一号只有 ${cited.size} 个 = 分母低于地板`).toBeGreaterThanOrEqual(100)
     for (const tree of ['docs', 'src', 'tests', 'scripts', '(根散文件)']) {

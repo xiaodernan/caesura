@@ -19,6 +19,7 @@
 
 import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
+import { isGone } from './text-corpus.mjs'
 
 const slash = (p) => String(p).replace(/\\/g, '/')
 
@@ -96,14 +97,45 @@ export function scopeOf(files, filters, root) {
 /**
  * 磁盘名册 walk：递归 `dir`，只收 `.test.ts`。名册的**唯一主人**（KI-099b 起）——
  * 主跑测器与 raw 腿都从这里拿；谁本地再抄一份，同一次「全量」就会在两条腿上数出两个分母。
+ *
+ * **走查途中消失的东西 ⇒ 跳过，不许抛**（KI-332，2026-10-28）。并发车道往 `tests/` 里写临时文件、
+ * 跑完就删，是这个仓的常态；旧写法在这儿撞上 ENOENT 就把**整个跑测器**炸掉（判决行都没有 ⇒
+ * 读不懂就是没有读数）。
+ *
+ * **为什么这一侧可以「跳过而不点名」，而交付总体那一侧必须点名**（两条腿不对称，别照抄）：
+ * 名册有**第二个读者**——vitest 的收集面。名册跳过的目录，vitest 也收不到 ⇒ 两边一致，
+ * 跑测器读到的分母是**此刻树上真实存在**的那一份，不是谎；而两份读者不一致时，
+ * `reconcileRoster` 的两个方向（漏跑／多跑）会点名。交付总体只有**一个**读者
+ * （`walkTextCorpus`），没人跟它对账 ⇒ 少读的那一份只能由它自己留名（`vanished`），
+ * 再由读它的门变成一条可见的红。
+ *
+ * **顶层不许吞**：顶层那一格读不到 = 这一片树整个不在了（仓坏了）⇒ 响亮地抛。
+ * 吞掉它会让跑测器拿到一份空名册，而 vitest 也一个文件都收不到 ⇒「该跑 0 个、跑到 0 个」
+ * 读起来就是全绿（KI-152 那一族最坏的一种谎）。
+ *
+ * @param {string} dir 起点目录
+ * @param {{ readdir?: (dir: string) => { name: string, isDirectory(): boolean }[] }} [opts]
+ *   `readdir` 是**接缝**：默认读真盘；合成夹具用它把「某一层在走查途中没了」摆出来
+ *   （那种事实在真盘上只能靠竞态撞出来，不确定 ⇒ 不许拿它当证人）。
  */
-export function testFilesOnDisk(dir) {
+export function testFilesOnDisk(dir, opts = {}) {
+  const readdir = opts.readdir ?? ((d) => readdirSync(d, { withFileTypes: true }))
   const out = []
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const p = join(dir, entry.name)
-    if (entry.isDirectory()) out.push(...testFilesOnDisk(p))
-    else if (entry.name.endsWith('.test.ts')) out.push(p)
+  const walk = (cur, depth) => {
+    let entries
+    try {
+      entries = readdir(cur)
+    } catch (e) {
+      if (isGone(e) && depth > 0) return
+      throw e
+    }
+    for (const entry of entries) {
+      const p = join(cur, entry.name)
+      if (entry.isDirectory()) walk(p, depth + 1)
+      else if (entry.name.endsWith('.test.ts')) out.push(p)
+    }
   }
+  walk(dir, 0)
   return out
 }
 

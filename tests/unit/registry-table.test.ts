@@ -170,6 +170,11 @@ describe('正册四张表的行形状（KI-327）：真库腿', () => {
     expect(scanFiles.length, `扫描面只读到 ${scanFiles.length} 份文件 = 某一片塌了`).toBeGreaterThanOrEqual(500)
     expect(surface.missing, '交付总体少了目录（那一片的文本没人扫）').toEqual([])
     expect(surface.unreadable.length, `总体里有 ${surface.unreadable.length} 份文件读不出来（读不出来的引用不会变红，绿是白送的）`).toBe(0)
+    expect(
+      surface.vanished,
+      `交付总体里有 ${surface.vanished.length} 份文件在走查途中消失（KI-332）⇒ 这一趟没被读到，`
+        + `它们里面的按号引用这一趟没人查 ⇒ 没被查过的引用不会变红（绿是白送的）：${surface.vanished.slice(0, 8).join(' ')}`,
+    ).toEqual([])
   })
 
   it('行形状：每一行按 ID 前缀恰 N 格 ＋ 末格取自 §78 词表（0 条）', () => {

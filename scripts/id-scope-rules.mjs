@@ -68,11 +68,16 @@ export const NAMED_HOLES = [
  * 与 `walkTextCorpus` 的差别只有一处：**致命解码**。总体里混进一份不是合法 UTF-8 的文件时，
  * 那份文件的按号引用就**没法读** ⇒ 它必须变成一条可见的读数（`unreadable`），而不是被悄悄跳过。
  *
+ * **第二处差别（KI-332，2026-10-28）**：**走查途中消失**的东西（`vanished`）也照样留名。
+ * 道理与 `unreadable` 一模一样：那份文件这一趟**没被读到** ⇒ 它里面的按号引用这一趟没人查
+ * ⇒ 而没被查过的引用不会变红（绿是白送的）。旧写法在这里是**抛 ENOENT**（整趟炸掉，判决行都没有），
+ * 改法是「跳过并点名」，由读它的门把这格变成一条可见的红（`expect(surface.vanished).toEqual([])`）。
+ *
  * @param {string} root 仓库根（绝对路径）
- * @returns {{ files: {rel: string, text: string}[], unreadable: {rel: string, error: string}[], binaries: string[], missing: string[] }}
+ * @returns {{ files: {rel: string, text: string}[], unreadable: {rel: string, error: string}[], binaries: string[], missing: string[], vanished: string[] }}
  */
 export function deliverySurface(root) {
-  const { files, binaries, missing } = walkTextCorpus(root)
+  const { files, binaries, missing, vanished } = walkTextCorpus(root)
   const out = []
   const unreadable = []
   for (const f of files) {
@@ -83,7 +88,7 @@ export function deliverySurface(root) {
     }
     out.push({ rel: f.file, text: d.text })
   }
-  return { files: out, unreadable, binaries, missing }
+  return { files: out, unreadable, binaries, missing, vanished }
 }
 
 /**

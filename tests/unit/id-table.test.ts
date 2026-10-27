@@ -193,6 +193,11 @@ describe('号段只有一套（KI-326）：真库腿', () => {
     expect(scanFiles.length, `扫描面只读到 ${scanFiles.length} 份文件 = 某一片塌了，未登记的号可以藏在里面`).toBeGreaterThanOrEqual(500)
     expect(surface.missing, '交付总体少了目录（那一片的文本没人扫）').toEqual([])
     expect(surface.unreadable.length, `总体里有 ${surface.unreadable.length} 份文件读不出来（读不出来的引用不会变红，绿是白送的）`).toBe(0)
+    expect(
+      surface.vanished,
+      `交付总体里有 ${surface.vanished.length} 份文件在走查途中消失（KI-332）⇒ 这一趟没被读到，`
+        + `它们里面的按号引用这一趟没人查 ⇒ 没被查过的引用不会变红（绿是白送的）：${surface.vanished.slice(0, 8).join(' ')}`,
+    ).toEqual([])
     for (const tree of ['docs', 'src', 'tests', 'scripts', '(根散文件)']) {
       const n = scanFiles.filter((f) => (f.rel.includes('/') ? f.rel.split('/')[0] : '(根散文件)') === tree).length
       expect(n, `${tree}/ 一份文件都没读到`).toBeGreaterThanOrEqual(1)

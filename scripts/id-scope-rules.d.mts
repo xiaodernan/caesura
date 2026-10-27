@@ -25,6 +25,8 @@ export interface DeliverySurface {
   unreadable: UnreadableFile[]
   binaries: string[]
   missing: string[]
+  /** 走查途中消失的路径（KI-332）：这一趟**没被读到** ⇒ 那一份里的按号引用没人查 ⇒ 必须留名 */
+  vanished: string[]
 }
 
 /** 一个有名有理由的洞（交付总体之外的面积） */

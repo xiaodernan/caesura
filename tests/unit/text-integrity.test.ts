@@ -201,6 +201,11 @@ describe('游离控制字符（KI-098）：转义序列被某一次写盘解释�
   it('总体名册自证：声明的每一棵树都真在仓库里，并且每棵都读到过文件', () => {
     const walk = walkTextCorpus(root)
     expect(walk.missing, '名册里声明却不在仓库的目录 = 这道门读的总体比它以为的少一棵树').toEqual([])
+    expect(
+      walk.vanished,
+      `走查途中消失了 ${walk.vanished.length} 份文件（KI-332）⇒ 这一趟没被读到，`
+        + '它们里面的坏字节这一趟没人看（没被看过的不会变红，绿是白送的）：' + walk.vanished.slice(0, 8).join(' '),
+    ).toEqual([])
     expect(CORPUS_DIRS.length, '总体只剩一棵树以下就不是总体了').toBeGreaterThan(3)
     const per = new Map<string, number>()
     for (const f of walk.files) per.set(f.file.split('/')[0], (per.get(f.file.split('/')[0]) ?? 0) + 1)

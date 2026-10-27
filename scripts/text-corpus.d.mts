@@ -13,6 +13,8 @@ export interface CorpusWalk {
   binaries: string[]
   /** 名册里声明、但仓库里不存在的目录——非空就是「这道门读的总体比它以为的少一棵树」 */
   missing: string[]
+  /** 走查途中消失的路径（KI-332）：跳过但留名——没被读到的东西不会变红（绿是白送的） */
+  vanished: string[]
 }
 
 export interface DecodeResult {
@@ -44,5 +46,10 @@ export function rootDotFileFindings(root: string): CorpusFinding[]
 
 export function looksBinary(bytes: unknown): boolean
 export function decodeUtf8(bytes: Uint8Array): DecodeResult
+/**
+ * 「这东西在走查途中没了」的判据（KI-332）：ENOENT 与 ENOTDIR。
+ * 别的错误码（EACCES／EIO）不是「它没了」，是「我读不了」⇒ 必须抛。
+ */
+export function isGone(err: unknown): boolean
 export function walkTextCorpus(root: string): CorpusWalk
 export function corpusFindings(root: string): CorpusFinding[]

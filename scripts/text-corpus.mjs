@@ -31,6 +31,24 @@ export const CORPUS_DIRS = ['docs', 'src', 'tests', 'scripts']
 export const SKIP_DIRS = new Set(['node_modules', 'dist', 'build', 'coverage', '.coverage', '.git', '.scratch', 'Temp'])
 
 /**
+ * 「这东西在走查途中没了」的判据（KI-332）：ENOENT（被删了）与 ENOTDIR（路径的某一段已经不是目录了）。
+ *
+ * **为什么 ENOTDIR 也要算**：被删掉的目录，它的父目录还留着通往它的路径 ⇒ 沿那条路径 stat 会撞 ENOTDIR，
+ * 而 ENOTDIR 与 ENOENT 是同一件事的两种长相（「那个东西已经不在那儿了」）。只认 ENOENT 的话，
+ * 同一种并发删除会从「跳过并点名」退化成「抛」。
+ *
+ * **只认这两个**：别的错误码（EACCES 权限、EIO 硬件）不是「它没了」，是「我读不了」⇒ 那些必须抛。
+ * 悄悄跳过权限错误会把「读不了」洗成「干净」。
+ *
+ * @param {unknown} err
+ * @returns {boolean}
+ */
+export function isGone(err) {
+  const code = err && typeof err === 'object' ? err.code : undefined
+  return code === 'ENOENT' || code === 'ENOTDIR'
+}
+
+/**
  * 二进制的判据用**内容**而不是扩展名：含 NUL(0x00) 就当二进制。
  * 理由与 git 自己同一条——扩展名是一张会腐烂的手抄名单（今天全库 0 个二进制，明天加一种素材格式就得改表），
  * 而"文本文件里不该有 NUL"这句话不随素材清单变。
@@ -77,9 +95,27 @@ export function walkTextCorpus(root) {
   const files = []
   const binaries = []
   const missing = []
+  /**
+   * **走查途中消失的东西**（KI-332，2026-10-28）：跳过了，但**留名**。
+   *
+   * 为什么留名而不只是跳过：这份总体是**工作副本**，而工作副本是多车道共用的——并发车道
+   * 往 `tests/` 里写临时文件、跑完就删，是这个仓的常态（KI-332 的现场：KI-298 的见证第一版
+   * 就撞上了它）。走查走到那份文件时它刚好没了 ⇒ 旧写法抛 ENOENT，整趟炸掉，**判决行都没有**
+   * （读不懂就是没有读数）。而「跳过且不留名」是另一种谎：总体少了一份，那一份里的按号引用
+   * 这趟**没人读**，而没被读过的引用不会变红（**绿是白送的**）⇒ 地板（527 份）也未必察觉
+   * （少一份还在地板之上）。所以：**跳过，并且点名**——点名的那一份由读它的门（`corpusFindings`、
+   * `deliverySurface` 的三道按号门）变成一条可见的红。
+   */
+  const vanished = []
   const rootAbs = root.replace(/\/+$/, '')
   const push = (rel, abs) => {
-    const bytes = readFileSync(abs)
+    let bytes
+    try {
+      bytes = readFileSync(abs)
+    } catch (e) {
+      if (isGone(e)) { vanished.push(rel); return }
+      throw e
+    }
     if (looksBinary(bytes)) binaries.push(rel)
     else files.push({ file: rel, bytes })
   }
@@ -94,22 +130,52 @@ export function walkTextCorpus(root) {
     }
     if (!st.isDirectory()) { missing.push(dir); continue }
     const walk = (cur, prefix) => {
-      for (const name of readdirSync(cur).sort()) {
+      let names
+      try {
+        names = readdirSync(cur).sort()
+      } catch (e) {
+        // 这一层在走查途中没了（并发车道把它删了）⇒ 整棵子树读不到，留名后跳过
+        if (isGone(e)) { vanished.push(prefix); return }
+        throw e
+      }
+      for (const name of names) {
         if (SKIP_DIRS.has(name)) continue
         const full = `${cur}/${name}`
         const rel = prefix ? `${prefix}/${name}` : name
-        if (statSync(full).isDirectory()) walk(full, rel)
+        let st
+        try {
+          st = statSync(full)
+        } catch (e) {
+          if (isGone(e)) { vanished.push(rel); continue }
+          throw e
+        }
+        if (st.isDirectory()) walk(full, rel)
         else push(rel, full)
       }
     }
     walk(abs, dir)
   }
-  for (const name of readdirSync(rootAbs).sort()) {
+  let rootNames
+  try {
+    rootNames = readdirSync(rootAbs).sort()
+  } catch (e) {
+    if (isGone(e)) { vanished.push('(仓库根)'); return { files, binaries, missing, vanished } }
+    throw e
+  }
+  for (const name of rootNames) {
     const full = `${rootAbs}/${name}`
-    if (SKIP_DIRS.has(name) || name.startsWith('.') || !statSync(full).isFile()) continue
+    if (SKIP_DIRS.has(name) || name.startsWith('.')) continue
+    let st
+    try {
+      st = statSync(full)
+    } catch (e) {
+      if (isGone(e)) { vanished.push(name); continue }
+      throw e
+    }
+    if (!st.isFile()) continue
     push(name, full)
   }
-  return { files, binaries, missing }
+  return { files, binaries, missing, vanished }
 }
 
 /**
@@ -178,7 +244,7 @@ export function corpusFindings(root) {
   if (typeof root !== 'string' || root === '') {
     return [{ level: 'error', file: '(总体)', where: '入参', msg: 'corpusFindings 要一个仓库根的绝对路径，拿到的是空 ⇒ 总体无从谈起。' }]
   }
-  const { files, binaries, missing } = walkTextCorpus(root)
+  const { files, binaries, missing, vanished } = walkTextCorpus(root)
   for (const dir of missing) {
     out.push({
       level: 'error',
@@ -187,6 +253,19 @@ export function corpusFindings(root) {
       msg: `总体名册里的目录 ${dir} 在仓库里不存在 ⇒ 这道门读的总体比它以为的少一棵树。`
         + '要么它是被改名/删掉了（那这些文本从此没人扫），要么有人真加了新的一棵交付树（那把它登记进名册）。'
         + '这一条不允许靠"把它从名册里划掉"变绿：先回答那棵树的文本去哪了。',
+    })
+  }
+  for (const v of vanished) {
+    out.push({
+      level: 'error',
+      file: v,
+      where: '走查',
+      msg: '这份东西在**走查途中消失**了（ENOENT／ENOTDIR）⇒ 这一趟的总体比树上的东西少了一份，'
+        + '而**没被读到的文本不会变红**（绿是白送的）：它里面的坏字节、乱码、游离控制字符，这趟全都没人看见。'
+        + '并发车道往 `tests/` 里写临时文件、跑完就删，是这个仓的常态（KI-332 的现场）。'
+        + '这一格红着是因为「读不懂就是没有读数，不是 0 红」：走查只能给出它**这一趟**读到的总体，'
+        + '读不到的那一份不许被当成干净。重跑一次通常就好（那只是撞上了并发删除）；'
+        + '若它反复出现在同一份路径上，那是那份路径真的有问题（写盘把文件换掉了？）。',
     })
   }
   if (files.length === 0) {

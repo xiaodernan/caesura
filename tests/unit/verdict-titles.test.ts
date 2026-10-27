@@ -1,9 +1,10 @@
 import { execFileSync } from 'node:child_process'
-import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { redTitlesOf, formatReds, summarizeReds } from '../../scripts/report-reds.mjs'
 import { parseResultLine, rateOf, resultLine } from '../../scripts/red-rate-scan.mjs'
+import { inProcessClosure, scriptLiterals, type Spec } from '../../scripts/module-loader-rules.mjs'
 
 /**
  * KI-298：**判决行的红名不许被截断**。
@@ -38,6 +39,39 @@ const runnerSrc = readFileSync(root + 'scripts/test.mjs', 'utf8')
 const codeOf = (src: string): string =>
   src.split(/\r?\n/).map((l) => l.replace(/\/\/.*$/, '')).join('\n')
 const runnerCode = codeOf(runnerSrc)
+
+/**
+ * 每个 `scripts/*.mjs` 自己的**兄弟 import 位**（`from './x.mjs'`／`import('./x.mjs')`／
+ * `const X = './x.mjs'` 且 X 真被 `import(X)` 用过）。
+ *
+ * 判据不是本文件另写一份，是 `scripts/module-loader-rules.mjs` 里现成的 `scriptLiterals`：
+ * 它先把注释涂白再找字面量 ⇒ 散文里写的 `from './x.mjs'` 混不进来；
+ * `prose` 那一桶只是路径字符串（不是导入位）⇒ 不收。
+ */
+const scriptSpecs: Record<string, Spec[]> = {}
+for (const file of readdirSync(root + 'scripts')) {
+  if (!file.endsWith('.mjs')) continue
+  const lits = scriptLiterals(readFileSync(root + 'scripts/' + file, 'utf8'), file, true)
+  scriptSpecs[file] = [...lits.statics, ...lits.dynamics, ...lits.consts]
+}
+
+/**
+ * 跑测器的**兄弟 import 闭包** ＝ 隔离根里必须带齐的那些 `scripts/*.mjs`。
+ *
+ * **为什么不是手抄的名册**：原来那份名单只有三个模块名。KI-332 给 `scripts/test-scope.mjs` 接上
+ * `isGone`（它住在 `scripts/text-corpus.mjs`）之后，`test-scope.mjs → text-corpus.mjs → text-integrity.mjs`
+ * 这条链没被抄过去 ⇒ 隔离根里的跑测器 `ERR_MODULE_NOT_FOUND` ⇒ 那条腿红在一个**看不出因果**的报错上
+ * （报错指向临时根里那个复制的文件，读起来像「隔离装置坏了」，其实是自己抄的名单过期了）。
+ *
+ * 现在这份集合只有一个主人：**跑测器当前字节里的 import 闭包**（`inProcessClosure` 沿 `from './x.mjs'`
+ * 走完闭包，`unresolved` 单列不许吞）。跑测器今天 import 谁，隔离根就带谁 ⇒ 这份名单不会过期。
+ */
+const runnerClosure = inProcessClosure({
+  testSpecs: scriptSpecs['test.mjs'] ?? [],
+  scriptSpecs,
+})
+/** 隔离根要带齐的**脚本模块**：跑测器的兄弟 import 闭包（现推，不许手抄） */
+const MODULES = runnerClosure.names
 
 /**
  * 一份合成报告：跨两个文件、**6 条红**（当年那个 `.slice(0, 5)` 恰好切掉第 6 条）＋ 2 条绿的。
@@ -206,14 +240,11 @@ describe('真跑一趟：跑测器自己在真红的时候印几个名字（KI-2
   const TMP_B = 'tests/unit/zz-red-b.test.ts'
   /** 跑测器里那一句 vitest 入口（复制件只许改这一处） */
   const VITEST_NEEDLE = "join(ROOT, 'node_modules', 'vitest', 'vitest.mjs')"
-  /** 复制件要带齐的东西：跑测器自己 ＋ 它 import 的三个模块 ＋ vitest 的配置与包说明 */
-  const COPIED = [
-    'scripts/report-reds.mjs',
-    'scripts/red-rate-scan.mjs',
-    'scripts/test-scope.mjs',
-    'vite.config.ts',
-    'package.json',
-  ]
+  /**
+   * 隔离根里另外要放的两份**不是跑测器 import 的**东西：vitest 按根去找的 vite 配置与包说明。
+   * 它们不在 import 闭包里（跑测器不 import 它们）⇒ 这份名单是固定的，但理由与模块集合那份不同。
+   */
+  const ROOT_ARTIFACTS = ['vite.config.ts', 'package.json']
 
   it('6 条红 ⇒ 判决行点 6 个名字（跨两份文件：少一个就是当年那个病）', () => {
     // 上面那组腿钉的是模块与调用点的**文本**；这一趟钉的是**行为**：跑测器在真红的时候到底印了几个名字。
@@ -236,21 +267,27 @@ describe('真跑一趟：跑测器自己在真红的时候印几个名字（KI-2
     expect(patched, '跑测器里读不到那一处 vitest 入口 = 形状变了，这一步没法证').not.toBe(runnerSrc)
     expect(patched.replace(vitestEntry, VITEST_NEEDLE), '复制件与原件的差别必须只有那一处路径').toBe(runnerSrc)
 
-    mkdirSync(TMP_ROOT + 'scripts', { recursive: true })
-    mkdirSync(TMP_ROOT + 'tests/unit', { recursive: true })
-    writeFileSync(TMP_ROOT + 'scripts/test.mjs', patched, 'utf8')
-    for (const rel of COPIED) copyFileSync(root + rel, TMP_ROOT + rel)
-    writeFileSync(TMP_ROOT + TMP_A, mk('甲', NAMES_A), 'utf8')
-    writeFileSync(TMP_ROOT + TMP_B, mk('乙', NAMES_B), 'utf8')
-
     let out = ''
     try {
-      execFileSync(process.execPath, ['scripts/test.mjs', TMP_A, TMP_B], {
-        cwd: TMP_ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'],
-      })
-    } catch (e) {
-      // 跑测器在红的时候退 1（那是**对的**退出码）⇒ 输出要从异常里取。
-      out = `${(e as { stdout?: string }).stdout ?? ''}${(e as { stderr?: string }).stderr ?? ''}`
+      mkdirSync(TMP_ROOT + 'scripts', { recursive: true })
+      mkdirSync(TMP_ROOT + 'tests/unit', { recursive: true })
+      writeFileSync(TMP_ROOT + 'scripts/test.mjs', patched, 'utf8')
+      for (const rel of [...MODULES.map((m) => 'scripts/' + m), ...ROOT_ARTIFACTS]) {
+        copyFileSync(root + rel, TMP_ROOT + rel)
+      }
+      for (const m of MODULES) {
+        expect(existsSync(TMP_ROOT + 'scripts/' + m), `闭包里的 ${m} 没落到隔离根里 ⇒ 隔离根里的跑测器加载不动`).toBe(true)
+      }
+      writeFileSync(TMP_ROOT + TMP_A, mk('甲', NAMES_A), 'utf8')
+      writeFileSync(TMP_ROOT + TMP_B, mk('乙', NAMES_B), 'utf8')
+      try {
+        execFileSync(process.execPath, ['scripts/test.mjs', TMP_A, TMP_B], {
+          cwd: TMP_ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'],
+        })
+      } catch (e) {
+        // 跑测器在红的时候退 1（那是**对的**退出码）⇒ 输出要从异常里取。
+        out = `${(e as { stdout?: string }).stdout ?? ''}${(e as { stderr?: string }).stderr ?? ''}`
+      }
     } finally {
       rmSync(TMP_ROOT, { recursive: true, force: true })
     }
@@ -266,4 +303,62 @@ describe('真跑一趟：跑测器自己在真红的时候印几个名字（KI-2
     expect(p!.redTitles.filter((n) => n.includes('甲')).map(tail), '第一份文件的红名一个不少，且顺序不乱').toEqual(NAMES_A)
     expect(p!.redTitles.filter((n) => n.includes('乙')).map(tail), '第二份文件的红名一个不少（跨文件丢名字只有这一格看得见）').toEqual(NAMES_B)
   }, 120000)
+})
+
+/**
+ * 隔离根要带齐的模块集合：**两份读者不许分家**。
+ *
+ * 第一份读者是 `scripts/module-loader-rules.mjs` 那个 `scriptLiterals`（它按**语法位置**分桶、
+ * 先把注释涂白），第二份读者是这里那条**朴素正则**（只认 `from './x.mjs'` 与 `import('./x.mjs')`
+ * 两种拼写，不看语法位置）。两份读者读的是同一批字节，跑的是同一片总体。
+ *
+ * **为什么要有第二个读者**：那份集合原来是**手抄的名册**（三个模块名）⇒ 谁给跑测器再加一句兄弟
+ * import，那份名册就少一份 ⇒ 隔离根里的跑测器 `ERR_MODULE_NOT_FOUND`，报错指向临时根里那个复制的
+ * 文件，读起来像「隔离装置坏了」，其实是自己抄的名单过期了（实测：KI-332 给 `test-scope.mjs`
+ * 接上 `isGone`（住在 `text-corpus.mjs`）之后，`test-scope.mjs → text-corpus.mjs → text-integrity.mjs`
+ * 这条链没被抄过去 ⇒ 那条腿红了）。
+ *
+ * 有了第二个读者：**名册一旦退回手抄就当场红**（朴素闭包里多出来的那个名字不在集合里 ⇒ 差集非空）
+ * ——不必等下一次有人改跑测器才从一条看不懂的报错里反推。
+ */
+describe('隔离根：复制件的模块集合只有一个主人（KI-333）', () => {
+  /** 第二读者：朴素正则，只认两种兄弟 import 的拼写，不看语法位置、不涂白注释 */
+  const naiveSiblings = (src: string): string[] => {
+    const out = new Set<string>()
+    for (const m of src.matchAll(/from\s*'\.\/([\w.-]+\.mjs)'/g)) out.add(m[1])
+    for (const m of src.matchAll(/import\(\s*'\.\/([\w.-]+\.mjs)'\s*\)/g)) out.add(m[1])
+    return [...out]
+  }
+
+  /** 第二读者读出来的闭包（从跑测器出发，沿同样的边走到底） */
+  const naiveClosure = (): string[] => {
+    const seen = new Set<string>()
+    const queue = ['test.mjs']
+    while (queue.length > 0) {
+      const name = queue.shift() as string
+      if (seen.has(name)) continue
+      seen.add(name)
+      queue.push(...naiveSiblings(readFileSync(root + 'scripts/' + name, 'utf8')))
+    }
+    return [...seen]
+  }
+
+  it('闭包不许吞掉一个名字：跑测器的兄弟 import 每一个都解得出来', () => {
+    expect(runnerClosure.unresolved, '闭包里点名了却解不出来的脚本名（拼错的 specifier 或被删掉的脚本）单列一桶，不许吞')
+      .toEqual([])
+    expect(MODULES.length, '跑测器的兄弟 import 闭包推空了 = 这一格在空集上自证干净').toBeGreaterThan(0)
+    const direct = naiveSiblings(runnerSrc)
+    expect(direct.length, '跑测器自己读不到兄弟 import = 形状变了，这一条没法证').toBeGreaterThan(0)
+    const missing = direct.filter((n) => !MODULES.includes(n))
+    expect(missing, '跑测器直接 import 的模块必须都在隔离根要带的集合里（少一个就是隔离根加载不动）').toEqual([])
+  })
+
+  it('两个读者读到的闭包不许分家：朴素正则读到的那份 ⊆ 我们带的那份', () => {
+    const naive = naiveClosure()
+    const missing = naive.filter((n) => n !== 'test.mjs' && !MODULES.includes(n))
+    expect(missing, '第二读者读到的模块不在集合里 ⇒ 那份集合退回手抄了（它今天对不对不重要，下次改跑测器就崩）')
+      .toEqual([])
+    expect(MODULES, '集合里每一份都得是真在仓里的脚本（抄不存在的文件会当场抛 ENOENT，但那时报错难读）')
+      .toEqual(MODULES.filter((m) => existsSync(root + 'scripts/' + m)).sort())
+  })
 })
