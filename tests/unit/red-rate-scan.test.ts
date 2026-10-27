@@ -39,7 +39,11 @@ const GIT = (() => {
 })()
 
 const headBlob = (p: string): string => {
-  const r = spawnSync('git', ['show', `HEAD:${p}`], { cwd: root, encoding: 'utf8' })
+  // `maxBuffer` 是**必需**的，不是保险：`docs/KNOWN_ISSUES.md` 已经涨过 1 MiB，
+  // 而 `spawnSync` 的默认上限恰好是 1 MiB ⇒ 账本一过线这条判据就以 `ENOBUFS` 崩掉，
+  // 崩掉的样子是"门跑不动"而不是"门红了"——那正是它最不该有的失败形状。
+  // 同一份修法在 `tests/unit/script-parse.test.ts` 已经有一份（`1 << 26`）。
+  const r = spawnSync('git', ['show', `HEAD:${p}`], { cwd: root, encoding: 'utf8', maxBuffer: 1 << 26 })
   expect(r.error, `git show HEAD:${p} 跑不起来 = 这条判据没跑成，不许拿空串当"没有那种出口"`).toBeUndefined()
   expect(r.status, `读不到 HEAD 的 ${p}（${(r.stderr ?? '').trim().slice(0, 120)}）`).toBe(0)
   return r.stdout ?? ''
