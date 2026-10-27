@@ -15,7 +15,12 @@ import { CombatManager } from '@/combat/CombatManager'
 import { RpgRuntime } from '@/rpg/Runtime'
 
 /**
- * KI-319：`attack.tick` 那 13 处窗口判定 ⇄「一招在第几拍完成」的对账腿（销 KI-317 的「没做③」）。
+ * KI-319：`attack.tick` 那 11 处窗口判定 ⇄「一招在第几拍完成」的对账腿（销 KI-317 的「没做③」）。
+ *
+ * 「11 处」＝KI-320 改判之后的读数：KI-319 立腿时是 **13** 处，而 KI-320 把前冲那一段的
+ * 两处比较（`attack.tick > 0` 与 `attack.tick <= activeEnd`）换成了**算出来的带界**
+ * （`Math.min`／`Math.max`）⇒ 直接比较点从 13 变 11，窗口判定的**语义**没变（那两格仍在
+ * 决定"这一拍算不算前冲带内"）。账本与 WORKPLAN 里那个数跟着改成 11，理由记在 KI-320 那一行。
  *
  * 在此之前 `frames.startup / activeStart / activeEnd / recovery` 只有**文档侧**的读者
  * （KI-117 那台量的是玩家武器 §4 的表）；敌人 §14/§15 这 39 式没有任何一条腿说过
@@ -78,14 +83,14 @@ function outerOf(box: FrameData['hitbox']): number {
 }
 
 /**
- * 前冲的**全程可走米数**（运行时口径，不是表里那个 `lunge`）：
- * `step = lunge / (activeEnd - startup)` 从第 1 拍走到第 `activeEnd` 拍 ⇒ 总长被放大
- * `activeEnd / (activeEnd - startup)` 倍。玩家侧那条腿（gamepad-walk）的除数是 `activeEnd`，
- * 两侧不是同一个式子——下面那一条腿就是这件分歧的机器读者。
+ * 前冲的**全程可走米数**（KI-320 裁决后的口径）：
+ * `frames.lunge` 那一格说的是「这一式的前冲总共走多少米」，除数是这条位移带的帧数
+ * （第 1..activeEnd 拍）⇒ 净米数 ＝ 表值。老口径的除数写的是判定窗的长度
+ * （`activeEnd - startup`），于是净米数被放大 `activeEnd / (activeEnd - startup)` 倍。
  */
 function lungeTravel(f: Frames): number {
   if (!f.lunge) return 0
-  return f.lunge * (f.activeEnd / Math.max(1, f.activeEnd - f.startup))
+  return f.lunge
 }
 
 type Mode = 'in' | 'far' | 'late'
@@ -332,7 +337,7 @@ describe('KI-319 招式帧 ⇄ 第几拍完成 的对账腿', () => {
     w.ai.despawn(e.id)
   })
 
-  it('前冲那一格：每拍步长的除数是「窗长」，而且铺满 activeEnd 拍（对照腿＝把 lunge 那一格抹掉再跑一趟）', () => {
+  it('前冲那一格：除数是「位移带的帧数」，铺满第 1..activeEnd 拍 ⇒ 净落点就是表里那一格（对照腿＝把 lunge 那一格抹掉再跑一趟）', () => {
     const rows = POP_LUNGE.map(({ id, atk }) => {
       const data = registry.get<EnemyData>(id)
       const f = data.attacks.find((a) => a.id === atk)!.frames!
@@ -345,31 +350,39 @@ describe('KI-319 招式帧 ⇄ 第几拍完成 的对账腿', () => {
     const lines: string[] = []
     const bad: string[] = []
     for (const { t, data, f, on, off } of rows) {
-      const stride = f.lunge! / Math.max(1, f.activeEnd - f.startup)
+      // 带 = `1 .. min(activeEnd, recovery)`（生产上那一条带：带尾被这一式自己的收势截断）
+      const bandEnd = Math.min(f.activeEnd, f.recovery)
+      const stride = f.lunge! / Math.max(1, bandEnd)
       const elig = on.samples
         .map((tk, i) => ({ tk, g: on.ghost[i] }))
-        .filter((x) => x.tk >= 1 && x.tk <= f.activeEnd && !x.g).length
+        .filter((x) => x.tk >= 1 && x.tk <= bandEnd && !x.g).length
       // 两次跑只差 `lunge` 那一格 ⇒ 这个差值就是前冲自己拉近的米数，别移动（追击/背退/虚体）自己被减掉
       const net = on.approach - off.approach
       const why: string[] = []
-      if (!data.ai.beatGhost && elig !== f.activeEnd) why.push(`窗内 ${f.activeEnd} 拍里只有 ${elig} 拍不虚体，虚体闸门不是它的机制`)
+      if (!data.ai.beatGhost && elig !== bandEnd) why.push(`位移带 ${bandEnd} 帧里只有 ${elig} 帧不虚体，虚体闸门不是它的机制`)
       if (Math.abs(net - elig * stride) > 1e-9) {
-        why.push(`前冲净额 ${net.toFixed(6)}m ≠ 每拍步长 ${stride.toFixed(6)}m × 窗内 ${elig} 拍`)
+        why.push(`前冲净额 ${net.toFixed(6)}m ≠ 每帧步长 ${stride.toFixed(6)}m × 带内实走帧数 ${elig}`)
       }
       if (why.length) bad.push(`${t}：${why.join('；')}`)
-      lines.push(`${t} 表 lunge=${f.lunge} S${f.startup}/A${f.activeEnd} ⇒ 前冲净 ${net.toFixed(4)}m／${elig} 拍` +
-        `（每拍 ${(net / elig).toFixed(4)}，表口径 ${stride.toFixed(4)}）｜对表放大 ${(net / f.lunge!).toFixed(2)}×` +
-        `｜对照腿净 ${off.approach.toFixed(4)}m${data.ai.beatGhost ? '（§14.5 虚体闸关掉的那些拍不计）' : ''}`)
+      lines.push(`${t} 表 lunge=${f.lunge} S${f.startup}/A${f.activeEnd} ⇒ 前冲净 ${net.toFixed(4)}m／${elig} 帧` +
+        `（每帧 ${(net / elig).toFixed(4)}，表口径 ${stride.toFixed(4)}）｜对表 ${(net / f.lunge!).toFixed(4)}×` +
+        `｜对照腿净 ${off.approach.toFixed(4)}m${data.ai.beatGhost ? '（§14.5 虚体闸关掉的那些帧不计）' : ''}`)
     }
-    console.log(`\n#### 含 lunge 的 ${rows.length} 式：前冲净额 ⇄ 表口径（敌人侧的除数是窗长 activeEnd−startup）\n${lines.join('\n')}`)
-    expect(bad.join('\n'), '前冲净额 = lunge/(activeEnd−startup) × 窗内实走拍数；对不上的式子逐点名见上').toBe('')
+    console.log(`\n#### 含 lunge 的 ${rows.length} 式：前冲净额 ⇄ 表口径（敌人侧的除数是位移带帧数＝带长）\n${lines.join('\n')}`)
+    expect(bad.join('\n'), '前冲净额 = lunge/带长 × 带内实走帧数；对不上的式子逐点名见上').toBe('')
     expect(rows.length, '这条腿跑到的式数必须等于派生的 lunge 名册').toBe(POP_LUNGE.length)
-    // 每一式的放大倍都 > 1：表里那一格米数是「窗长内的步长」，实走的是 activeEnd 拍 ⇒ 前冲比表写的远
-    expect(rows.every(({ f, on, off }) => (on.approach - off.approach) / f.lunge! > 1),
-      '放大倍若掉到 1，说明除数被改成 activeEnd——那是数值裁决，不是这条腿自己该跟着动的数').toBe(true)
+    // 每一式的净落点都**恰好**是表里那一格（KI-320 裁决：lunge ＝ 这一式总共走多少米）。
+    // 虚体闸（§14.5）会把那些帧的位移吃掉，所以只有不带闸的那几式能要求分毫不差。
+    const exact = rows.filter(({ data }) => !data.ai.beatGhost)
+    expect(exact.length, '能要求「分毫不差」的式数（带虚体闸的那几只吃掉位移，不在那儿）').toBeGreaterThanOrEqual(10)
+    for (const { t, f, on, off } of exact) {
+      const net = on.approach - off.approach
+      expect(Math.abs(net - f.lunge!),
+        `${t}：前冲净落点 ${net.toFixed(6)}m 必须等于表里那一格 ${f.lunge}m（KI-320：除数＝位移带帧数）`).toBeLessThan(1e-9)
+    }
   })
 
-  it('账本那个「13 处」有机器读者：attack.tick 的比较点全库普查', () => {
+  it('账本那个「11 处」有机器读者：attack.tick 的比较点全库普查', () => {
     const CMP = /attack\.tick\s*(?:<=|>=|<|>|===|!==)/g
     const read = (p: string): number => (readFileSync(`${ROOT}${p}`, 'utf8').match(CMP) ?? []).length
     const legFile = 'src/ai/Enemy.ts'

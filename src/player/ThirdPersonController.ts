@@ -506,6 +506,7 @@ export class PlayerController {
       // 往前蹭，否则"停住"变成"原地滑行"。还债的双格步同样落在这条带里（判据 4 保证债在收势前还清），
       // 所以带内走过的帧数不变 ⇒ 前冲的**落点**不变，变的只是它被切成了"停—冲—停"。
       const adv = advanceActionFrames(this.action, f)
+      const tickBefore = this.action.tick
       this.action.tick += adv
       // §4.6 双刺：active 窗等分段，跨进新段的那一拍把上一刺的账整组清掉——
       // hitIds（同一目标两刺各挨一记）与 hitDone（第二刺还有自己的判定权）一起归零。
@@ -518,10 +519,26 @@ export class PlayerController {
           this.action.hitDone = false
         }
       }
-      if (adv > 0 && this.action.tick >= f.startup && this.action.tick <= f.startup + f.activeEnd && f.lunge) {
-        const step = (f.lunge / f.activeEnd) * adv
-        this.pos.x += Math.sin(this.yaw) * step
-        this.pos.z += Math.cos(this.yaw) * step
+      // 前冲的**落点**＝帧表 `lunge` 那一格（KI-320 裁决：那一格说的是这一式总共走多少米）。
+      // 除数是这条位移带**实际含有的帧数**，不是判定窗的长度：老写法除以 `activeEnd`（窗长），
+      // 于是落点比表值多走一拍（+2.4%～+6.7%）。
+      // 带尾被这一式自己的收势截断时（带尾 > `recovery` 的 5 式），带长跟着截断后的长度算
+      // ⇒ 落点仍然是表里那一格（不截断就永远差那几帧：走不完的那截不摊到走过的帧上，
+      // 而是让整式少走那几帧的距离）。
+      // 这一拍推进了几帧就按几帧走，但**只算落在带里的那些帧**——§9 按住的那几帧一步不许蹭，
+      // 还债的双格步跨过带尾时也不能把带外那一帧算进来（老写法只看这一拍结束时的 tick，
+      // 双格步一跨带尾就整段丢两帧）。敌人侧是同一把尺（`src/ai/Enemy.ts` 那段）。
+      if (f.lunge) {
+        const bandEnd = Math.min(f.startup + f.activeEnd, f.recovery)
+        const bandLength = bandEnd - f.startup + 1
+        const from = Math.max(f.startup, tickBefore + 1)
+        const to = Math.min(bandEnd, this.action.tick)
+        const walked = to - from + 1
+        if (bandLength > 0 && walked > 0) {
+          const step = (f.lunge / bandLength) * walked
+          this.pos.x += Math.sin(this.yaw) * step
+          this.pos.z += Math.cos(this.yaw) * step
+        }
       }
       /**
        * KI-135：武器拖尾的发射方。**在判定窗内每帧发一次**——拖尾要的是"刃口这一路的轨迹"，

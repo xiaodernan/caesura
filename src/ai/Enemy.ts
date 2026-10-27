@@ -932,6 +932,7 @@ export class Enemy {
 
   private progressAttack(dt: number, tick: number, player: PlayerController, rhythm: RhythmClock): void {
     if (!this.attack) return
+    const tickBefore = this.attack.tick
     const advanced = this.advanceAttackFrames((this.buff?.attackSpeedMul ?? 1) * this.startupSpeedMul)
     const f = this.attack.spec.frames
     // 赤线 telegraph 期间持续跟踪目标：线是「它会打哪」的诚实承诺，玩家要能看到被牵着
@@ -965,14 +966,26 @@ export class Enemy {
     }
     // 撞钟可能就地跳阶（§15.1「撞 2 钟 = 提前进 P2」），而跳阶会把这一招收掉 ⇒ 别再用陈旧的帧表
     if (!this.attack) return
+    // 前冲的**落点**＝帧表 `lunge` 那一格（KI-320 裁决：那一格说的是这一式总共走多少米）。
+    // 除数是这条位移带**实际含有的帧数**（第 1..`lungeBandEnd` 拍），不是判定窗的长度：
+    // 老写法除以 `activeEnd - startup`（窗长），而它从第 1 拍一路走到 `activeEnd` 拍
+    // ⇒ 净米数被放大 2.50×～17.67×，表里那一格在敌人侧根本不是距离（`charge` 表 6m 实走 60m）。
+    // 带尾同样被这一式自己的收势截断（带尾 = min(判定窗尾, 收势)），截断后带长跟着变
+    // ⇒ 走完这一式的落点仍然是表里那一格。玩家侧是同一把尺（`src/player/ThirdPersonController.ts`）。
+    // 这一拍真正推进了几帧就按几帧走（`tickBefore` 的差值）⇒ 定调加速把拍数压扁时不短走。
+    const lungeBandEnd = Math.min(f.activeEnd, f.recovery)
+    const lungeLength = Math.max(1, lungeBandEnd)
+    const lungeFrom = Math.max(1, tickBefore + 1)
+    const lungeTo = Math.min(lungeBandEnd, this.attack.tick)
+    const lungeFrames = lungeTo - lungeFrom + 1
     // `advanced > 0`：被 §9 按住的那几 tick 不许往前蹭位移——"人定在原地滑行"是这套机制最容易
     // 长出来的假动作，而本作读的就是"它有没有真的停下来"。
-    if (advanced > 0 && this.attack.tick > 0 && this.attack.tick <= f.activeEnd && f.lunge && !this.intangible) {
+    if (advanced > 0 && lungeFrames > 0 && f.lunge && !this.intangible) {
       faceSlow(this, player.pos, 1)
       // don't lunge through the player: stop at melee contact distance
       const dToP = Math.hypot(player.pos.x - this.pos.x, player.pos.z - this.pos.z)
       if (dToP > 0.85) {
-        const step = Math.min(f.lunge / Math.max(1, f.activeEnd - f.startup), dToP - 0.8)
+        const step = Math.min((f.lunge / lungeLength) * lungeFrames, dToP - 0.8)
         this.pos.x += Math.sin(this.yaw) * step
         this.pos.z += Math.cos(this.yaw) * step
       }

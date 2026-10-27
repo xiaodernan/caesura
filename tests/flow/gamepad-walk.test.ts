@@ -1054,9 +1054,11 @@ describe('KI-151 摇杆 → 相机 → 位移 → 焦点：整条链真的走得
    * **出招期间朝向同样冻住；招式前冲沿当时的朝向走**（KI-209）。
    *
    * 前冲那一格是**帧表的 `lunge`**（`movesets.json > ms_sword > actions.l1`），不手钉。
-   * **前冲段按老约定是 `startup .. startup + activeEnd`（两端都含）** ⇒ 走了 `activeEnd + 1` 帧，
-   * 而每帧走 `lunge / activeEnd` ⇒ 前冲总长 ＝ `lunge × (activeEnd + 1) / activeEnd`
-   * （实测 0.369444m —— 与 KI-017 账上那个"前冲落点"读数逐字相同）。
+   * **前冲段是 `startup .. startup + activeEnd`（两端都含）⇒ 共 `activeEnd + 1` 帧**，
+   * 而每帧走 `lunge / (activeEnd + 1)` ⇒ **前冲总长 ＝ 帧表 `lunge` 那一格**（KI-320 裁决：
+   * `lunge` 说的是"这一式的前冲总共走多少米"；实测 **0.35m** ＝ 表值 0.35）。
+   * 老口径的除数写的是 `activeEnd`（判定窗的长度），于是落点是表值的 `×(activeEnd+1)/activeEnd`
+   * ＝ **0.369444m**——比表上写的那一格多走一拍。
    *
    * **朝向 ≠ 0 是前提**：先走 30 拍让朝向落定，前冲那一格才有方向可量
    * （朝向正好是 0 时，"前冲沿朝向"与"前冲写死 +z"读起来一模一样 ⇒ 那条腿是空的）。
@@ -1082,9 +1084,9 @@ describe('KI-151 摇杆 → 相机 → 位移 → 焦点：整条链真的走得
     const lunge = f.lunge ?? 0
     expect(lunge, '前提：轻击那一式自带前冲（帧表 `lunge` 那一格）').toBeGreaterThan(0)
     const travel = { x: end.x - before.x, z: end.z - before.z }
-    const want = lunge * ((f.activeEnd + 1) / f.activeEnd)
-    expect(Math.hypot(travel.x, travel.z), `前冲该走 ${want}m（帧表 lunge ${lunge} × (activeEnd+1)/activeEnd）`)
-      .toBeCloseTo(want, 3)
+    const want = lunge
+    expect(Math.hypot(travel.x, travel.z), `前冲该走 ${want}m（帧表 lunge 那一格本身；除数＝位移带帧数 activeEnd+1）`)
+      .toBeCloseTo(want, 6)
     expect(travelGap(yaw0, travel), '前冲必须沿当时的朝向（夹角 ≈ 0°）').toBeLessThan(0.5)
   })
 
