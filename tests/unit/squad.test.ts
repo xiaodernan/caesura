@@ -74,12 +74,24 @@ describe('Squad 成员注册与注销', () => {
     expect(squad.getMember(e.id)).toBeUndefined()
   })
 
-  it('unregister: 释放攻击槽位', () => {
-    const e = mkEnemy('e1', 'default', { x: 0, y: 0, z: 0 }, true)
-    squad.register(e)
-    const m = squad.getAllMembers()[0]
-    if (m) m.hasAttackSlot = true
-    squad.unregister(e.id)
+  it('unregister: 释放攻击槽位 —— 注销腾出的那一格由下一个候选接住', () => {
+    // 只留 1 格：两个候选、同仇恨 ⇒ 排序退到「先来后到」，e1 拿槽；注销 e1 之后 e2 必须接住那一格。
+    // 旧写法只 `if (m) m.hasAttackSlot = true` 再 unregister，一条断言都没有 —— 删掉释放逻辑照样绿。
+    squad = initSquad({ maxAttackSlots: 1 })
+    const a = mkEnemy('e1')
+    const b = mkEnemy('e2')
+    squad.register(a)
+    squad.register(b)
+    squad.addThreat('e1', 'player', 50)
+    squad.addThreat('e2', 'player', 50)
+    squad.update(1)
+    expect(squad.getMember('e1')?.hasAttackSlot, '同仇恨时先来的拿槽').toBe(true)
+    expect(squad.getMember('e2')?.hasAttackSlot, '只有 1 格 ⇒ 后到的排队').toBe(false)
+
+    squad.unregister('e1')
+    squad.update(2)
+    expect(squad.getMember('e1'), '被注销者真的离场').toBeUndefined()
+    expect(squad.getMember('e2')?.hasAttackSlot, '注销腾出的那一格由 e2 接住').toBe(true)
   })
 })
 

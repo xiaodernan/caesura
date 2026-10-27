@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { registerGameData, regions, quests as questTable } from '@/data'
+import { registerGameData, regions, dialogues, quests as questTable } from '@/data'
 import { StreamingSystem } from '@/world/Streaming'
 import { Interactables } from '@/world/Interactables'
 import { Quests } from '@/quest/Quests'
@@ -58,9 +58,21 @@ describe('断舌检视的世界侧（KI-046 B 方案）：取回后不必先去�
   })
 
   it('对话那条旧出口还在：两条流写同一面旗，谁也不抢谁的账', () => {
-    const w = makeWorld()
     // 对话腿（n5.c1）的既有链已在 bells.test.ts 里钉着——这里只对账「旗的两条写方」
-    // 在数据里都真实存在，防止世界侧这一条把对话侧顶掉（那是另一种两处真值）
-    w.cleanup()
+    // 在数据里都真实存在，防止世界侧这一条把对话侧顶掉（那是另一种两处真值）。
+    // 旧写法只 makeWorld() + cleanup()，一条断言都没有：删掉对话那一支它照样绿。
+    const FLAG = 'flag.bell_tongue_examined'
+    // 写方 ①：对话（节点自带的 effects 或某个选项的 effects）
+    const dialogueWriters = dialogues.flatMap((d) => d.nodes).filter((n) =>
+      (n.effects?.setFlags ?? []).includes(FLAG) ||
+      (n.choices ?? []).some((c) => (c.effects?.setFlags ?? []).includes(FLAG)))
+    // 写方 ②：世界侧（腔底断口的 setsFlag）
+    const worldWriters = regions.flatMap((r) => r.interactables).filter((i) => i.setsFlag === FLAG)
+    // 读方：步 1 的 advanceOn（§55 双向对账的那一端）
+    const consumers = questTable.flatMap((q) => q.steps).filter((s) => (s.advanceOn?.flags ?? []).includes(FLAG))
+
+    expect(dialogueWriters.length, '对话那一支必须还在（删了它 ⇒ 「先找她」那条路断了）').toBe(1)
+    expect(worldWriters.map((i) => i.id), '世界那一支必须还在').toEqual(['in_fellcarillon_bellcavity_break'])
+    expect(consumers.map((s) => s.state), '只有一个读方：步 1').toEqual(['BELLS.STEP1_OPEN'])
   })
 })
