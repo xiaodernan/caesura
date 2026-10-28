@@ -741,8 +741,14 @@ export class CombatManager {
     if (!a) return
     const spec = a.f.projectile
     if (!spec) return
-    // §4.4 满弓分叉：burst.count 是表上的底数（含主箭），rank12 里程碑的 bowForkBranches 只往上加
-    const count = (spec.burst?.count ?? 1) + this.player.rpg.bowForkBranches
+    // §4.4 满弓分叉：`burst.count` 是表上的底数（含主箭），rank12 的 `bowForkBranches` 只往上加——
+    // **加在声明了 `burst` 的那一式上**（KI-334：裁决 KI-328 还欠①，实现追上设计）。合同有四处，
+    // 说的是同一件事：`data/schema.ts` 那一格自己写着「在 `burst.count` **之上**叠加」；`combat.md`
+    // §4.5「**杖不分享叉**（分叉是**弓**的独有腿）」；§4.4 只在**满弓**那一行写「泛音分叉」；
+    // §4.3 枪那一行写的是「蓄力重击…**单发**」。旧写法 `(spec.burst?.count ?? 1) + grant` 把底数
+    // 缺省那一格读成了「有一枝可加」⇒ rank12 下弓的速射／重击／跳跃与杖的共振弹、枪的投掷各多
+    // 一发，而那一发吃的是**满伤**（`branchDamageMul` 只挂在 burst 的枝上）。
+    const count = spec.burst ? spec.burst.count + this.player.rpg.bowForkBranches : 1
     if (a.shots >= count) return
     if (a.tick < a.f.activeStart + a.shots * (spec.burst?.everyTicks ?? 0)) return
     const shotIndex = a.shots

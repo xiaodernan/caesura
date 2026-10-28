@@ -197,10 +197,15 @@ describe('§8.2 rank12 里程碑的两条腿：真链读数（KI-328）', () => 
   })
 })
 
-describe('同一 grant 的外溢面：标签写的是「满弓」，实况不是（只量不裁）', () => {
-  it('腿④ 没有 burst 的招式也各多发一发，且每发吃满伤、方向逐字相同', () => {
-    // 表上六个带 projectile 的招式：只有满弓写了 burst ⇒ 其余五个在 rank12 下都从 1 发变 2 发，
-    // 而 branchDamageMul 只挂在 burst 的枝上 ⇒ 这些"枝"吃的是**满伤**（不是 60%）。
+describe('分叉的**范围**：枝数只加在弓的满弓上（KI-334：实现追上设计，裁决 KI-328 还欠①）', () => {
+  it('腿④ 没有 burst 的招式在 rank12 下**不多发**（分叉是弓的独有腿）', () => {
+    // **设计四处引文，说的是同一件事**：
+    // ① `src/data/schema.ts` 里 `bowForkBranches` 那格**自己**写着「在 `burst.count` **之上**叠加」
+    //    「底数住在 `ms_bow.charged` 自己的 `burst.count`」；
+    // ② `docs/combat.md` §4.5：「**杖不分享叉**（分叉是**弓**的独有腿）」；
+    // ③ `docs/combat.md` §4.4：分叉只写在**满弓**那一行（速射/重击/跳跃/近身轻击四行都没有）；
+    // ④ `docs/combat.md` §4.3：枪的蓄力重击写的是「**单发**」。
+    // ⇒ rank12 的那一枝只加在**声明了 burst 的式子**上；今天全仓只有弓的满弓声明了它。
     const cases: Array<{ weapon: string; key: string; damage: number; kind: string }> = [
       { weapon: 'wp_overtone_bow', key: 'l1', damage: 10, kind: 'arrow' },
       { weapon: 'wp_overtone_bow', key: 'h', damage: 26, kind: 'arrow' },
@@ -235,18 +240,15 @@ describe('同一 grant 的外溢面：标签写的是「满弓」，实况不是
       const after = fire(12)
       expect(before, `${c.weapon}/${c.key}：rank11 只有一发`).toHaveLength(1)
       expect(before[0].damage, `${c.weapon}/${c.key}：rank11 的底数`).toBe(c.damage)
-      expect(after, `${c.weapon}/${c.key}：rank12 变成两发（标签写的是「满弓分叉…（若用弓）」⇒ 实况外溢 ⇒ 只量不裁）`).toHaveLength(2)
-      expect(after[0].damage, `${c.weapon}/${c.key}：两发都吃**满伤**（分叉折扣只挂在 burst 的枝上）`).toBe(c.damage)
-      expect(after[1].damage, `${c.weapon}/${c.key}：第二发同样是满伤`).toBe(c.damage)
+      expect(after, `${c.weapon}/${c.key}：rank12 **不多发**（没有 burst 就没有分叉可加 ⇒ 杖不分享叉、枪是单发）`).toHaveLength(1)
+      expect(after[0].damage, `${c.weapon}/${c.key}：还是帧表底数`).toBe(c.damage)
       expect(after[0].kind, '弹体种类不变').toBe(c.kind)
-      expect(yawOf(after[1]), `${c.weapon}/${c.key}：两发同向（spreadDeg ＝ 0 ⇒ 同一弹道）`).toBeCloseTo(yawOf(after[0]), 10)
     }
   })
 
-  it('腿⑤ 两发落在同一个目标上：29 → 29＋48 ＝ 77（第二记还吃上了破势与震裂）', () => {
+  it('腿⑤ 弓的重击回到一记 29（分叉不在重击上：同一个目标不再吃两记）', () => {
     // **靶子给足血**（`stats.hpMax` 55 → 200）：不改变任何一记的伤害数字（伤害式子里没有目标血量），
-    // 只为了让**第三发若在**（枝数是 2 时）也落在同一个目标上 ⇒ 这一腿对「枝数」敏感
-    // （M4 那一臂就是靠它咬住的：55 血的靶子在第二发就死了 ⇒ 第三发永远量不到 ⇒ 那条臂打不中它）。
+    // 只为了让"若还有第二发"这件事在读数上看得见（修之前那一发是 48：吃上了破势 ×1.5 与震裂两层）。
     const shoot = (rank: number): number[] => {
       const w = makeWorld('wp_overtone_bow', rank)
       w.combat.rng.float = () => 0.5 // 抖动钉死（rand(0.95,1.05) ⇒ 恰为 1.0）
@@ -262,9 +264,9 @@ describe('同一 grant 的外溢面：标签写的是「满弓」，实况不是
     }
     const before = shoot(11)
     const after = shoot(12)
-    expect(before, 'rank11：重击只有一记 ＝ 29（26 底数 × 属性标尺 1.115）').toEqual([29])
-    expect(after, 'rank12：两记 —— 第一记 29、第二记 48（29×1.5 破势 ×1.0848 震裂两层）').toEqual([29, 48])
-    expect(after.reduce((s, d) => s + d, 0), '总伤害 77 ＝ rank11 那 29 的 2.66 倍（不是 2 倍）').toBe(77)
+    expect(before, 'rank11：重击一记 ＝ 29（26 底数 × 属性标尺 1.115）').toEqual([29])
+    expect(after, 'rank12：还是一记 29 —— 那一枝只加在满弓上，重击不吃它（**修之前**这里是两记 29＋48 ＝ 77）').toEqual([29])
+    expect(after.reduce((s, d) => s + d, 0), '总伤害 29 ＝ 与 rank11 逐字相同（分叉不在重击上）').toBe(29)
   })
 
   it('腿⑥ 「需指法≥30」不是门：指法归零，满弓分叉照样在（设计 vs 实况 ⇒ 只量不裁）', () => {
