@@ -13,6 +13,9 @@ import {
  *
  * 刻意没量的那一半：`hz`/`peak`/`detune`/`attackSec`/`durSec`/`everySec` 的可闻带。那些走
  * `report.num`/`report.sub`，缺失/非有限/越界三种说法全场共用，不属于这张表（最后一道源码门把它钉在原地）。
+ *
+ * KI-341 又添了一段：变体床（§2.3 `_meg` / §2.4 `_drum`）的**豁免名册从陈设现推**，
+ * 于是「没声明却长得像变体」回到死数据那一格，而"变体排在基床上面"不再因为表里的次序报假红。
  */
 
 type Finding = { level: 'error' | 'warn'; file: string; where: string; msg: string }
@@ -206,6 +209,78 @@ describe('环境声床判据的结构性脏数据与对账', () => {
     expect(near[0].msg).toContain('一区一主音')
     const far = Number((87.31 * 2 ** ((MIN_ROOT_CENTS + 10) / 1200)).toFixed(4))
     expect(errs([BED_OK, bedB(far)], regions), '差 60 音分也红了 = 把可辨的差别判死').toEqual([])
+  })
+})
+
+describe('变体床的名册由陈设现推（KI-341）：声明了才算自己人', () => {
+  /** 陈设那一格（`regions.json > music.ambienceVariants`）——判据读的是它，不是 id 的拼写 */
+  const regV = (variants: Array<{ suffix: string; condition?: string }>, id = 'rg_a', ambience = 'mus_a_amb'): Row => ({
+    id, bounds: BOUNDS, music: { ambience, ambienceVariants: variants },
+  })
+  /** 变体床：与基床同主音（「加一层」不是「换调」）；`layers` 只给一条，主音就是它 */
+  const variantBed = (suffix: string, hz = 87.31): Row => ({
+    ...BED_OK, id: `mus_a_amb_${suffix}`, layers: [{ hz, wave: 'sine', peak: 0.03, detune: 0 }],
+  })
+  const MEG = [{ suffix: 'meg', condition: '!flag.meg_gone' }]
+
+  it('声明了 ⇒ 那一行不是孤儿，也不与基床比主音（它俩本来就是同一张床）', () => {
+    expect(errs([BED_OK, variantBed('meg')], [regV(MEG)]), `实测：${errs([BED_OK, variantBed('meg')], [regV(MEG)]).map((e) => e.msg).join(' / ')}`).toEqual([])
+  })
+
+  it('与表里的行序无关：变体排在基床**上面**也不许报"一区一主音塌了"（旧写法边读边比，那时必红）', () => {
+    const a = errs([BED_OK, variantBed('meg')], [regV(MEG)])
+    const b = errs([variantBed('meg'), BED_OK], [regV(MEG)])
+    expect(b, `变体排在前面就报 ${b.length} 条：判据读的是表里的次序，不是那张床是什么`).toEqual(a)
+    expect(b).toEqual([])
+  })
+
+  it('没声明、只是名字长得像变体 ⇒ 只红一条死数据（主音与基床相同也不许再补一条"一区一主音塌了"）', () => {
+    // 主音**故意**取与基床同一格（87.31）：D2/D6/D7 三臂量出来的正是这一形——旧写法先报一条"跨区听不出换地方"，
+    // 再报一条死数据。可那张床从来没被任何区指过，耳朵里根本不会有它 ⇒ 前一条是对不响的东西的假指控。
+    const e = errs([BED_OK, variantBed('bogus')], [reg('mus_a_amb')])
+    expect(e.length, `实测：${e.map((x) => x.msg).join(' / ')}`).toBe(1)
+    expect(e[0].where).toBe('mus_a_amb_bogus')
+    expect(e[0].msg).toContain('没有任何区域指它')
+    // 反向对照（豁免不是白送的）：把那张床真的指给另一个区 ⇒ 两区主音相同 ⇒「一区一主音」那句就该响了
+    const heard = errs([BED_OK, variantBed('bogus')], [reg('mus_a_amb', 'rg_a'), reg('mus_a_amb_bogus', 'rg_b')])
+    expect(heard.length, `实测：${heard.map((x) => x.msg).join(' / ')}`).toBe(1)
+    expect(heard[0].msg).toContain('一区一主音')
+  })
+
+  it('声明了但表里没有那一行 ⇒ 红挂在 regions 名下，并把是哪一区的哪一格条件点出来', () => {
+    const e = errs([BED_OK], [regV(MEG)])
+    expect(e.length, `实测：${e.map((x) => x.msg).join(' / ')}`).toBe(1)
+    expect(e[0].file, '缺的那一行是陈设指出来的，红该挂在 regions 名下').toBe('regions.json')
+    expect(e[0].where).toBe('mus_a_amb_meg')
+    expect(e[0].msg).toContain('rg_a(!flag.meg_gone)')
+    expect(e[0].msg).toContain('条件成立那一拍')
+  })
+
+  it('同主音这条构造约束仍然管着变体：换了调的"变体"是另一张床，不是加一层', () => {
+    const e = errs([BED_OK, variantBed('meg', 88.18)], [regV(MEG)])
+    expect(e.length, `实测：${e.map((x) => x.msg).join(' / ')}`).toBe(1)
+    expect(e[0].msg).toContain('变体床的主音')
+    expect(e[0].where, '红挂在变体那一行上').toBe('mus_a_amb_meg')
+  })
+
+  it('真表上的双向各量一次：两条声明都落在真行上；把声明抹掉 ⇒ 那两张床立刻变回死数据', () => {
+    const beds = REAL_BEDS()
+    const regions = REAL_REGIONS()
+    const declared = regions.flatMap((r) => {
+      const music = r.music as Row | undefined
+      const base = music?.ambience as string | undefined
+      const variants = music?.ambienceVariants as Row[] | undefined
+      if (typeof base !== 'string') return []
+      return (variants ?? []).map((v) => `${base}_${String(v.suffix)}`)
+    })
+    expect(declared.length, '真表里一格变体声明都没有 ⇒ 下面两条在空转').toBeGreaterThanOrEqual(2)
+    expect(errs(beds, regions)).toEqual([])
+    const stripped = regions.map((r) => {
+      const music = r.music as Row | undefined
+      return music ? { ...r, music: { ...music, ambienceVariants: undefined } } : r
+    })
+    const dead = errs(beds, stripped).filter((e) => e.msg.includes('没有任何区域指它')).map((e) => e.where).sort()
+    expect(dead, '抹掉声明后重新变成孤儿的床 ≠ 声明派生出来的那几张').toEqual([...declared].sort())
   })
 })
 

@@ -39,6 +39,10 @@ import {
   AMB_BED_FIELDS, AMB_BELL_FIELDS, AMB_LAYER_FIELDS, AMB_SOURCE_FIELDS, AMB_SOURCE_LAYERS, AMB_WAVES,
   ambienceFindings,
 } from './ambience-rules.mjs'
+// KI-341：条件语言（`spawnGroups[].condition` 与 `music.ambienceVariants[].condition` 共用那一套）
+// 的读法本体。判据搬到这里的原因与上面那几份一字不差：本脚本一被 import 就去校验真表并 `process.exit`，
+// "喂一串坏条件、看它拒不拒"那一半就没人量得动。
+import { conditionFlagNames, readCondition } from './condition-rules.mjs'
 // KI-082：文本完整性。中文被写盘路径压坏这件事从此由机器发现，不靠人眼撞见（那一族不与任何既有判据相交）。
 import { mojibakeFindings } from './text-integrity.mjs'
 // KI-084：锁定四数的两条**关系**判据（同一族理由：那两句文档折成的不等式要在测试里喂得出非法数组）。
@@ -154,6 +158,11 @@ const PASSIVE_IDS = new Set(['ps_metronomefoot', 'ps_tympanicguard', 'ps_feather
    ——名单跟读它的那段代码分家，就是"改了这边忘了那边"的经典形状。这里由 import 引进来。 */
 /* KI-079 那五张（两支字段表 + 拼出来的白名单 + 音高变形 + 波形 + 每音拍数档位）住在 `explore-rules.mjs`，
    与上面的 `AMB_*` 不是同一份声明：探索曲的波形主人是 `ExploreTonal.wave`，各有一条对账。 */
+/** 区域 `music` 那一格的字段白名单：主人是 `schema.ts > RegionMusic`。KI-341 把第四格（变体）记进来，
+ *  于是"music 里多写一格而没人读"从沉默变成一条 ERROR。 */
+const MUSIC_FIELDS = ['explore', 'battle', 'ambience', 'ambienceVariants']
+/** 声床变体那一行的字段白名单：主人是 `schema.ts > AmbienceVariant`（两格，缺一格都选不出床） */
+const AMBIENCE_VARIANT_FIELDS = ['suffix', 'condition']
 
 /**
  * 词表对账表（KI-074 起，KI-076 把载体泛化）。上面这些名单每一张都写着「与 X 对齐」——**手抄**。
@@ -214,6 +223,10 @@ const VOCAB_PAIRS = [
   /* ---- KI-083：§4 的 L2／L3 那一支（`sources[]` 是**新的一层**，字段与层名各有一条主人） ---- */
   { at: 'AmbienceSource', from: 'src/data/schema.ts', name: '真位置声源字段', source: (c) => interfaceFields(c.blocks, 'AmbienceSource'), copied: AMB_SOURCE_FIELDS, where: 'AMB_SOURCE_FIELDS' },
   { at: 'AmbienceSource.layer', from: 'src/data/schema.ts', name: '§4 的 L2／L3 层名', source: (c) => fieldUnion(c.blocks, 'AmbienceSource', 'layer'), copied: [...AMB_SOURCE_LAYERS], where: 'AMB_SOURCE_LAYERS' },
+  /* ---- KI-341：区域 music 那一格第一次有了第四个字段（变体），所以它自己也要有主人可对账。
+     在此之前 `music` 的键是靠"逐格点名读"的，多写一格沉默通过 —— 与 KI-047 的 atkBase 同一个形状。 ---- */
+  { at: 'RegionMusic', from: 'src/data/schema.ts', name: '区域 music 字段', source: (c) => interfaceFields(c.blocks, 'RegionMusic'), copied: MUSIC_FIELDS, where: 'MUSIC_FIELDS' },
+  { at: 'AmbienceVariant', from: 'src/data/schema.ts', name: '声床变体行字段', source: (c) => interfaceFields(c.blocks, 'AmbienceVariant'), copied: AMBIENCE_VARIANT_FIELDS, where: 'AMBIENCE_VARIANT_FIELDS' },
   /* ---- KI-079：探索曲那三张 + 音高变形词表（同一份四波形在 schema 里是**另一条声明**，所以另起一张名单，不借 `AMB_WAVES`） ---- */
   { at: 'ExploreForm', from: 'src/data/schema.ts', name: 'R-1 的音高变形', source: (c) => unionMembers(c.blocks, 'ExploreForm'), copied: [...EXPLORE_FORMS], where: 'EXPLORE_FORMS' },
   { at: 'ExploreTonal', from: 'src/data/schema.ts', name: '有调探索曲字段', source: (c) => interfaceFields(c.blocks, 'ExploreTonal'), copied: EXPLORE_TONAL_FIELDS, where: 'EXPLORE_TONAL_FIELDS' },
@@ -1706,36 +1719,24 @@ function validateRegions(enemyIds, lootIds, rarityIds, stateDefs, markerTargets)
       if (g.condition !== undefined && !isStr(g.condition)) report.error(file, `${gw}.condition`, '必须是非空字符串')
       else if (isStr(g.condition)) {
         /**
-         * 刷怪闸门的条件语言（KI-143 扩了一格）：
-         *   · `flag.x` / `!flag.x` —— 旗标两形（老形，逐字不动）
-         *   · `state.K==V` / `state.K!=V` —— 世界状态两形（KI-143：破拍营地的营长只在 GARRISON 那条线上）
+         * 刷怪闸门的条件语言。语法那一把尺子的**唯一主人**是 `scripts/condition-rules.mjs > readCondition`
+         * （KI-341 之前这里自带一台小机器，而 `music.ambienceVariants[].condition` 又要再来第二台 ——
+         * 运行时只有一台解析器（`src/world/SpawnDirector.ts > evalCondition`），判据侧每多抄一台就多一条缝）。
          *
-         * 判据：每一项的**形状**要合法；带 `state.` 的那一项，**键必须在 states.json 里**、
+         * 在它之上这里只加**跨表**那两条：带 `state.` 的那一项，**键必须在 states.json 里**、
          * **取值必须是那个状态的合法取值**——拼错一个键 ⇒ 那一组永远不刷（玩家看不到设计要的那个精英），
          * 拼错一个取值 ⇒ 同理，而且更难查（键对了、值错了）。
          */
-        for (const rawTerm of g.condition.split('&&')) {
-          const term = rawTerm.trim()
-          if (term === '') continue
-          if (term.startsWith('state.')) {
-            const m = /^(state\.[A-Za-z0-9_.]+)(==|!=)(.+)$/.exec(term)
-            if (!m) {
-              report.error(file, `${gw}.condition`, `条件项形状不合法：'${term}'（状态两形是 state.KEY==VALUE / state.KEY!=VALUE）`)
-              continue
-            }
-            const [, key, , value] = m
-            const def = stateDefs.get(key)
-            if (!def) {
-              report.error(file, `${gw}.condition`, `条件项引用了不认识的状态：'${key}'（不在 states.json 里）`)
-              continue
-            }
-            if (Array.isArray(def.values) && !def.values.includes(value)) {
-              report.error(file, `${gw}.condition`, `条件项的取值不在该状态的合法取值里：'${value}'（合法取值：${def.values.join('/')}）`)
-            }
-          } else if (term.startsWith('!')) {
-            if (!term.slice(1).trim()) report.error(file, `${gw}.condition`, `条件项 '${term}' 后面没有旗名`)
-          } else if (!term) {
-            report.error(file, `${gw}.condition`, '条件项为空')
+        const c = readCondition(g.condition)
+        for (const b of c.bad) report.error(file, `${gw}.condition`, `条件项 '${b.term}' 形状不合法：${b.why}`)
+        for (const s of c.states) {
+          const def = stateDefs.get(s.key)
+          if (!def) {
+            report.error(file, `${gw}.condition`, `条件项引用了不认识的状态：'${s.key}'（不在 states.json 里）`)
+            continue
+          }
+          if (Array.isArray(def.values) && !def.values.includes(s.value)) {
+            report.error(file, `${gw}.condition`, `条件项的取值不在该状态的合法取值里：'${s.value}'（合法取值：${def.values.join('/')}）`)
           }
         }
       }
@@ -1923,10 +1924,62 @@ function validateRegions(enemyIds, lootIds, rarityIds, stateDefs, markerTargets)
       }
     }
 
-    // music
+    // music（KI-341：字段全集改由 `RegionMusic` 那条声明裁决 —— 此前只"逐格点名读"三格，
+    // 多写一格沉默通过，与 KI-047 的 `weapons.json.atkBase` 同一个形状）
     if (!isObj(rg.music)) report.error(file, `${w}.music`, '必须是对象')
-    else for (const k of ['explore', 'battle', 'ambience']) {
-      if (!isStr(rg.music[k])) report.error(file, `${w}.music.${k}`, '缺失或非字符串')
+    else {
+      for (const k of Object.keys(rg.music)) {
+        if (MUSIC_FIELDS.includes(k)) continue
+        report.error(file, `${w}.music.${k}`, `music 里没有 '${k}' 这一格（引擎只读 ${MUSIC_FIELDS.join('/')}）⇒ 写了没人看的死数据（§55）`)
+      }
+      for (const k of ['explore', 'battle', 'ambience']) {
+        if (!isStr(rg.music[k])) report.error(file, `${w}.music.${k}`, '缺失或非字符串')
+      }
+      if (rg.music.ambienceVariants !== undefined) {
+        if (!isArr(rg.music.ambienceVariants)) report.error(file, `${w}.music.ambienceVariants`, '必须是数组（没有变体就整格不写）')
+        else {
+          const seenSuffix = new Set()
+          const seenCondition = new Set()
+          rg.music.ambienceVariants.forEach((v, vi) => {
+            const vw = `${w}.music.ambienceVariants[${vi}]`
+            if (!isObj(v)) { report.error(file, vw, '必须是对象'); return }
+            for (const k of Object.keys(v)) {
+              if (AMBIENCE_VARIANT_FIELDS.includes(k)) continue
+              report.error(file, `${vw}.${k}`, `变体行只有 ${AMBIENCE_VARIANT_FIELDS.join('/')} 两格，'${k}' 没人读`)
+            }
+            if (!isStr(v.suffix)) report.error(file, `${vw}.suffix`, '缺失或非字符串')
+            else if (!/^[a-z][a-z0-9]*$/.test(v.suffix)) {
+              report.error(file, `${vw}.suffix`, `后缀拼成 '${v.suffix}'：真床 id 是基床 id 加上下划线再加这个后缀**逐字拼**出来的，只许小写字母开头的字母数字（拼出别的形状就没有那张床）`)
+            } else if (seenSuffix.has(v.suffix)) {
+              report.error(file, `${vw}.suffix`, `后缀重复：'${v.suffix}' 已经在前一行选过同一张床了（次序就是优先级，后一行永远轮不到）`)
+            } else seenSuffix.add(v.suffix)
+            if (!isStr(v.condition)) {
+              report.error(file, `${vw}.condition`, '缺失或非字符串')
+            } else {
+              const c = readCondition(v.condition)
+              for (const b of c.bad) report.error(file, `${vw}.condition`, `条件项 '${b.term}' 形状不合法：${b.why}`)
+              // 一条都读不出来的条件 = 恒真：它排在最前面就把基床盖掉了，而那正是"写了一格却选了个寂寞"
+              if (c.bad.length === 0 && c.flags.length === 0 && c.states.length === 0) {
+                report.error(file, `${vw}.condition`, `这一行没有可比的条件（实为 ${JSON.stringify(v.condition)}）⇒ 恒真：基床永远选不到`)
+              }
+              // 两行同条件：次序给了它们同一个赢家判据，后一行是死数据（前一行已经把这张床选走了）
+              if (seenCondition.has(v.condition)) {
+                report.error(file, `${vw}.condition`, `条件重复：'${v.condition}' 与前面某一行完全一样 ⇒ 后一行永远选不到（要同一张床的两个入口，请并成一行）`)
+              } else seenCondition.add(v.condition)
+              for (const st of c.states) {
+                const def = stateDefs.get(st.key)
+                if (!def) {
+                  report.error(file, `${vw}.condition`, `条件项引用了不认识的状态：'${st.key}'（不在 states.json 里）`)
+                  continue
+                }
+                if (Array.isArray(def.values) && !def.values.includes(st.value)) {
+                  report.error(file, `${vw}.condition`, `条件项的取值不在该状态的合法取值里：'${st.value}'（合法取值：${def.values.join('/')}）`)
+                }
+              }
+            }
+          })
+        }
+      }
     }
 
     report.num(file, `${w}.streamingPriority`, rg.streamingPriority, { name: 'streamingPriority' })
@@ -2581,6 +2634,24 @@ function collectFlagUsage() {
     if (isObj(rg.weatherSwitch) && isStr(rg.weatherSwitch.flag)) {
       read.set(rg.weatherSwitch.flag, `${rg.id}.weatherSwitch.flag`)
     }
+    /* KI-341：条件语言那一族（刷怪闸门 + 声床变体）此前对这份普查**完全隐形**。上面每一种读法都是
+       "认一个旗名字段"，而 `SpawnDirector.evalCondition` 吃的是**一整串表达式**，所以它一个都不认识。
+       两侧都是洞，且都由植入实测（`.scratch/ki334_plant.mjs`，2026-10-28）：
+       ① 把一条真条件的旗名拼成一个从未被写过的名字 ⇒ 校验全绿（玩家那边是那一片永远不刷/那张床永远选不到）；
+       ② 一面只被条件读的旗 ⇒ 吃一条"写了没人读 ⇒ 死数据"的假 ERROR。
+       这一格补的是**读方**登记；表达式形状另有 `condition-rules.mjs` 那把尺子。 */
+    for (const g of rg.spawnGroups ?? []) {
+      if (!isObj(g) || !isStr(g.condition)) continue
+      for (const f of conditionFlagNames(g.condition)) {
+        if (!read.has(f)) read.set(f, `${rg.id}.spawnGroups(${g.enemyId}).condition '${g.condition}'`)
+      }
+    }
+    for (const v of rg.music?.ambienceVariants ?? []) {
+      if (!isObj(v) || !isStr(v.condition)) continue
+      for (const f of conditionFlagNames(v.condition)) {
+        if (!read.has(f)) read.set(f, `${rg.id}.music.ambienceVariants(${v.suffix}).condition '${v.condition}'`)
+      }
+    }
   }
   for (const s of secrets) if (isStr(s.unlockFlag)) read.set(s.unlockFlag, `${s.regionId}.secrets(${s.id}).unlockFlag`)
   // 谱册页的旗标解锁源（KI-037 乐章 IV）：读方登记进对账——没有写方的页永远点不亮
@@ -3178,6 +3249,19 @@ const dialogueInfo = validateDialogue(npcIds, questIds, itemIds, stateDefs)
     for (const it of rg.interactables ?? []) if (isObj(it)) put(reads, it.requiresState?.key, `${rg.id}.interactables(${it.id}).requiresState`)
     // KI-094② 的值域形 weatherSwitch：那一格值域也是读方（否则它会落进"写了没人读"的死数据）
     if (isObj(rg.weatherSwitch) && isObj(rg.weatherSwitch.state)) put(reads, rg.weatherSwitch.state.key, `${rg.id}.weatherSwitch.state.key`)
+    /* KI-341：条件语言里的 `state.K` 也是这一格枚举的读方。上面四种形状都是"认一个 key 字段"，
+       而 `evalCondition` 吃的是一整串表达式 ⇒ 只被刷怪闸门（或声床变体）读的那一格会被判成
+       "写了没人读 ⇒ 死数据"，那是**假 ERROR**；反方向（拼错一个 state 键）同样看不见。
+       表达式怎么切由 `condition-rules.mjs` 那把尺子裁决，这里只登记读方。 */
+    const stateReadsOf = (expr, where) => {
+      for (const s of readCondition(expr).states) put(reads, s.key, where)
+    }
+    for (const g of rg.spawnGroups ?? []) {
+      if (isObj(g) && isStr(g.condition)) stateReadsOf(g.condition, `${rg.id}.spawnGroups(${g.enemyId}).condition '${g.condition}'`)
+    }
+    for (const v of rg.music?.ambienceVariants ?? []) {
+      if (isObj(v) && isStr(v.condition)) stateReadsOf(v.condition, `${rg.id}.music.ambienceVariants(${v.suffix}).condition '${v.condition}'`)
+    }
   }
   for (const [k, w] of [...reads].sort()) {
     if (writes.has(k)) continue
@@ -3185,7 +3269,7 @@ const dialogueInfo = validateDialogue(npcIds, questIds, itemIds, stateDefs)
   }
   for (const [k, w] of [...writes].sort()) {
     if (reads.has(k)) continue
-    report.error('states.json', k, `${w} 写了它，但没有任何读方（对话条件 / 任务步 advanceOn / 交互物 requiresState）⇒ 写进去也没人看的死数据`)
+    report.error('states.json', k, `${w} 写了它，但没有任何读方（对话条件 / 任务步 advanceOn / 交互物 requiresState / 条件语言）⇒ 写进去也没人看的死数据`)
   }
   for (const k of [...stateDefs.keys()].sort()) {
     if (reads.has(k) || writes.has(k)) continue

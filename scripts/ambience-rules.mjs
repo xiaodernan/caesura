@@ -46,6 +46,14 @@ export function ambienceFindings(beds, regions) {
 
   /** 反查表：`regions.json > music.ambience` 指过的床 id → 指它的那些区域 id（双向对账的左半边） */
   const refBy = new Map()
+  /**
+   * 变体床的名册（KI-341）：**从陈设现推**，不再认 id 的拼写。
+   * 此前那道判据是「去掉最后一段 `_xxx` 之后剩下的是既有床 id」——那是让**名字**决定语义：
+   * 谁起一个叫 `mus_x_foo` 的床就自动免掉了两两主音比对，哪怕 regions 里根本没声明过它；
+   * 而真声明（`music.ambienceVariants`）当时还不存在，选床那句话住在组合根里。
+   * 现在唯一主人是那一格陈设：声明了才算变体，没声明的床就是死数据。
+   */
+  const variantBeds = new Map() // 派生出的床 id -> { base, regions: [] }
   /** 区域 id → 那一区的行：既是"一区一床"的另一半，也是声源 `pos` 的框 */
   const regionOf = new Map()
   for (const rg of (isArr(regions) ? regions : []).filter(isObj)) {
@@ -54,6 +62,13 @@ export function ambienceFindings(beds, regions) {
     const a = isObj(rg.music) ? rg.music.ambience : undefined
     if (!isStr(a)) continue // 那一格由 validateRegions 报
     refBy.set(a, [...(refBy.get(a) ?? []), rg.id])
+    for (const v of isArr(rg.music.ambienceVariants) ? rg.music.ambienceVariants : []) {
+      if (!isObj(v) || !isStr(v.suffix)) continue // 后缀的形状由 validateRegions 报
+      const id = `${a}_${v.suffix}`
+      const prev = variantBeds.get(id) ?? { base: a, regions: [] }
+      prev.regions.push(`${rg.id}(${v.condition ?? '?'})`)
+      variantBeds.set(id, prev)
+    }
   }
 
   const ids = new Set()
@@ -89,28 +104,13 @@ export function ambienceFindings(beds, regions) {
       /**
        * §1.2 的结构性承诺：七区七主音。这里只查**彼此不同**（两区同主音 = 跨区听不出换了地方），
        * 不查"是不是 F/C/G…"——那要把文档那张表的音名抄进脚本，正是 KI-074 要拆掉的手抄。
+       *
+       * 只**记账**，比对挪到主循环之后（KI-341）：在循环里边读边比，比的永远是"排在我前面的那些"，
+       * 于是变体床排在基床**上面**时就走进两两比对那一支——同一张床的两个半被当成两个区，
+       * 报出一条"一区一主音塌了"的假红，而真因是表里的行序。名册齐了再比 ⇒ 判据与行序无关。
        */
       const hzs = bed.layers.filter((l) => isObj(l) && isNum(l.hz)).map((l) => l.hz)
-      if (hzs.length > 0) {
-        const root = Math.min(...hzs)
-        // 状态变体床（§2.3 盐歌人声垫片那族）：`X_meg` 是床 X 的变体——同一张床加一层，
-        // 主音**必须**与基床相同（同一区的调性不因她在不在而换），所以它不进两两比对
-        //（比对自己人必红），改查同主音这条更强的构造约束。
-        // 变体后缀的泛化识别：盐歌人声垫片 _meg / 断弦更鼓 _drum / 未来的第三种——
-        // 判据是「去掉最后一段 _xxx 后剩下的前缀是既有床 id」，不枚举后缀名（枚举就是每加一种
-        // 变体都要改一次门，那是把新概念挡在门外的形状）
-        const variantOf = (() => { const m = /^(.+)_([a-z]+)$/.exec(w); return m && ids.has(m[1]) ? m[1] : null })()
-        if (variantOf && roots.has(variantOf)) {
-          const baseRoot = roots.get(variantOf)
-          if (Math.abs(root - baseRoot) > 0.01) err(w, `变体床的主音 ${root.toFixed(2)}Hz 与基床 ${variantOf} 的 ${baseRoot.toFixed(2)}Hz 不同——变体是「同一张床加一层」，不是换调（§1.2 一区一主音）`)
-        } else {
-          for (const [other, or] of roots) {
-            const cents = Math.abs(1200 * Math.log2(root / or))
-            if (cents < MIN_ROOT_CENTS) err(w, `drone 主音 ${root.toFixed(2)}Hz 与 ${other} 的 ${or.toFixed(2)}Hz 只差 ${cents.toFixed(1)} 音分——§1.2「一区一主音」塌了，跨区听不出换地方`)
-          }
-        }
-        roots.set(w, root)
-      }
+      if (hzs.length > 0) roots.set(w, Math.min(...hzs))
     }
 
     if (bed.bell === null || bed.bell === undefined) {
@@ -184,17 +184,52 @@ export function ambienceFindings(beds, regions) {
     }
   }
 
+  /**
+   * 主音这一族的比对（名册齐了才比，KI-341）：
+   * · **声明过的变体床**不进两两比对——它是同一张床的另一半，比对自己人必红；改查一条更强的构造约束：
+   *   主音必须与基床**相同**（§2.3「她在的时候加一层人声」换的是层次，不是这个区的调性）。
+   * · 其余每一对（含**没被任何陈设声明、但 id 长得像变体**的那些）比一次：那是别的区，主音撞了就红。
+   *   但只在**听得见的床**之间比：没人指、也没被声明的那一行已经被下面的双向对账判成死数据，
+   *   它永远不会装进耳朵 ⇒ 再补一条「跨区听不出换地方」是对一张不响的床的假指控（D2/D6/D7 三臂量出来的）。
+   * 基床那一行本身缺席时这里不重复报——那一格由下面的双向对账点名。
+   */
+  const variantOf = (id) => {
+    const d = variantBeds.get(id)
+    return d && refBy.has(d.base) ? d.base : null
+  }
+  const soloRoots = [...roots].filter(([id]) => variantOf(id) === null && refBy.has(id))
+  for (const [id, root] of roots) {
+    const base = variantOf(id)
+    if (base === null) continue
+    const baseRoot = roots.get(base)
+    if (baseRoot === undefined) continue
+    if (Math.abs(root - baseRoot) > 0.01) err(id, `变体床的主音 ${root.toFixed(2)}Hz 与基床 ${base} 的 ${baseRoot.toFixed(2)}Hz 不同——变体是「同一张床加一层」，不是换调（§1.2 一区一主音）`)
+  }
+  for (let i = 0; i < soloRoots.length; i++) {
+    for (let j = i + 1; j < soloRoots.length; j++) {
+      const [aId, aRoot] = soloRoots[i]
+      const [bId, bRoot] = soloRoots[j]
+      const cents = Math.abs(1200 * Math.log2(bRoot / aRoot))
+      // 红挂在**表里排在后面**的那一行上（与搬动之前逐字一致：原来是边读边比，后来者负责报）
+      if (cents < MIN_ROOT_CENTS) err(bId, `drone 主音 ${bRoot.toFixed(2)}Hz 与 ${aId} 的 ${aRoot.toFixed(2)}Hz 只差 ${cents.toFixed(1)} 音分——§1.2「一区一主音」塌了，跨区听不出换地方`)
+    }
+  }
+
   // 与 regions.json 双向对账（两个方向都是 ERROR：少一行 = 那一区永远没有底噪，多一行 = §55 死数据）
   for (const [a, regs] of refBy) {
     if (!ids.has(a)) err(a, `${regs.join(', ')} 指它当环境声床，但表里没有这一行 ⇒ 进那一区永远没有底噪，听感上等价于"音频坏了"`)
     if (regs.length > 1) err('music.ambience', `${regs.join(' / ')} 共用同一张声床 '${a}'——一区一张是 §1.2 的承诺，共用 = 跨那两区什么都没换`, 'regions.json')
   }
   for (const id of ids) {
-    // 状态变体床的引用是**组合根机械派生**的（main.ts 的 `ambienceBedOf`：基床 id + '_meg'）——
-    // 基床被区域引用 + 变体行存在 ⇒ 可达；不认这条就会把「她在的时候休垒加一层人声」判成死数据。
-    const vm = /^(.+)_([a-z]+)$/.exec(id)
-    const variantBase = vm && ids.has(vm[1]) ? vm[1] : null
-    if (!refBy.has(id) && !(variantBase && refBy.has(variantBase))) err(id, '没有任何区域指它 ⇒ §55 死数据：这张床永远不会被装进耳朵')
+    // 变体床的引用是**陈设机械派生**的（`${music.ambience}_${suffix}`，由 `src/world/AmbienceSwitch.ts` 拼）——
+    // 基床被区域引用 + 那一行被某区声明为变体 ⇒ 可达；不认这条就会把「她在的时候休垒加一层人声」判成死数据。
+    if (!refBy.has(id) && !variantBeds.has(id)) err(id, '没有任何区域指它 ⇒ §55 死数据：这张床永远不会被装进耳朵')
+  }
+  // 反方向（KI-341 新长出来的那一半）：陈设里声明了的变体，表里必须有那一行。
+  // 缺了它，条件成立**那一拍**耳朵里装的是一张不存在的床——基床已经被换掉，于是那区直接没有底噪。
+  for (const [id, v] of variantBeds) {
+    if (ids.has(id)) continue
+    err(id, `${v.regions.join(' / ')} 的陈设声明了这一格变体床，但表里没有这一行 ⇒ 条件成立那一拍装的是不存在的床（基床已被换掉，那区直接没有底噪）`, 'regions.json')
   }
 
   if (belowBand > 0) {

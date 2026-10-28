@@ -356,7 +356,13 @@
     "music": {
       "explore": "mus_resthold_explore",
       "battle": "mus_shared_battle",
-      "ambience": "mus_resthold_amb"
+      "ambience": "mus_resthold_amb",
+      "ambienceVariants": [
+        {
+          "suffix": "meg",
+          "condition": "!flag.meg_gone"
+        }
+      ]
     },
     "streamingPriority": 30,
     "secrets": [],
@@ -1230,7 +1236,13 @@
     "music": {
       "explore": "mus_brokenbar_explore",
       "battle": "mus_camp_assault",
-      "ambience": "mus_brokenbar_amb"
+      "ambience": "mus_brokenbar_amb",
+      "ambienceVariants": [
+        {
+          "suffix": "drum",
+          "condition": "flag.haltrune_drum"
+        }
+      ]
     },
     "streamingPriority": 25,
     "unlockFlag": "flag.left_resthold",

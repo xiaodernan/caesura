@@ -1440,7 +1440,34 @@ export interface WorldStateRule {
 export interface RegionMusic {
   explore: string
   battle: string
+  /** 这一区的基床（§4 那张表的 L1＋L2/L3＋L4 一行） */
   ambience: string
+  /**
+   * 声床的**状态变体**（§2.3 盐歌人声垫片 / §2.4 断弦更鼓）：第一条成立的，耳朵里装的就是
+   * `${ambience}_${suffix}` 那张床，而不是基床。没有变体的区不写这一格。
+   *
+   * **数组的次序就是优先级**（第一条成立的赢）——这一格是"选一床"，不是"叠几床"：
+   * 叠床是混音层的事（`AudioEngine` 只装一张 bed），数据里不许读成两床同响。
+   */
+  ambienceVariants?: AmbienceVariant[]
+}
+
+/**
+ * 一区声床的一种**状态变体**（KI-341：从组合根的 `if` 挪进数据）。
+ *
+ * `condition` 用的是刷怪闸门那一套条件语言——主人是 `src/world/SpawnDirector.ts > evalCondition`：
+ * `flag.x` / `!flag.x` / `state.K==V` / `state.K!=V`，`&&` 连接。**不另立第二种条件语法**：
+ * "她还在不在"与"那一组精英刷不刷"问的是同一种事，两处各写一台小机器就会各自漂移。
+ *
+ * 为什么它必须住在数据里而不是住在代码里：旗名的**双向对账**（`scripts/validate-data.mjs > collectFlagUsage`）
+ * 读的是数据。手抄在组合根里的那一句 `hasFlag('flag.meg_gone')` 是第三个载体，而它对量具是隐形的——
+ * 表里把旗改了名，那一层垫片就永远不响，而五道门全绿（KI-322 ③ 记的就是这一格）。
+ */
+export interface AmbienceVariant {
+  /** 变体床的后缀：真床 id = `${music.ambience}_${suffix}`，那一行必须在 `ambience.json` 里存在 */
+  suffix: string
+  /** 条件语言的一串（见 `SpawnDirector.evalCondition`）；形状由校验器按同一把尺子量 */
+  condition: string
 }
 
 /**

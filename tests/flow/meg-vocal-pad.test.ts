@@ -5,13 +5,17 @@ import { StreamingSystem } from '@/world/Streaming'
 import { WorldState } from '@/quest/WorldState'
 import { WorldStates } from '@/quest/WorldStates'
 import { registry } from '@/core/Registry'
-import { bus } from '@/core/EventBus'
+import { ambienceBedFor } from '@/world/AmbienceSwitch'
 
 /**
  * §2.3「她在唱歌时，休垒全 BGM 加一层人声垫片——全游戏最温柔的旗帜」的机器形状：
  * 声床表里的变体行（`mus_resthold_amb_meg` = 同一张床 + 220Hz 慢呼吸正弦垫片）与
  * 组合根的三个入口（开局 / 换区 / **她在玩家站着的时候离场**——没有换区事件可借，
  * 渲染循环自己跟旗换床）。垫片层的人声区与「加一层不是换一张」的音量关系也钉在这里。
+ *
+ * KI-341 起，「哪一区的哪张床在什么条件下换成哪张变体」是**陈设那一份数据**说的
+ * （`regions.json` 的 `music.ambienceVariants`）；这里的源码门反过来钉「组合根不许
+ * 再抄一遍旗名或后缀」，行为腿一律走 `ambienceBedFor` 真调用，不重抄谓词。
  */
 
 const alive: Array<() => void> = []
@@ -36,27 +40,31 @@ describe('盐歌在场的人声垫片：变体床与三个入口', () => {
     }
   })
 
-  it('选床的机械关系写在组合根：`_meg` 后缀派生 + meg_gone 旗是开关（源码门，KI-058 手法）', () => {
-    expect(MAIN).toContain("`${baseId}_meg`")
-    expect(MAIN).toContain("streaming.hasFlag('flag.meg_gone')")
-    expect(MAIN).toContain('ambienceBedOf(here.id, here.music.ambience)')
-    expect(MAIN).toContain('ambienceBedOf(homeRegion.id, homeRegion.music.ambience)')
+  it('选床的账在陈设里（KI-341 起源码门反向钉）：休垒那一行声明后缀与闸门，组合根里不抄旗名/后缀', () => {
+    registerGameData()
+    const resthold = regions.find((r) => r.id === 'rg_resthold')!
+    expect(resthold.music.ambienceVariants, '休垒的变体行').toEqual([{ suffix: 'meg', condition: '!flag.meg_gone' }])
+    const code = MAIN.split(/\r?\n/).filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l)).join('\n')
+    expect(code).toContain('ambienceBedFor(')
+    expect(code, "组合根里出现 'flag.…' 字面量 ⇒ 旗名又从陈设搬回代码（KI-322③ 那格残账复活）").not.toMatch(/['"`]flag\./)
+    expect(code, '后缀 `_meg` 又有人在代码里拼 ⇒ `${ambience}_${suffix}` 长了第二个主人').not.toContain('_meg')
+    expect(code, '按区 id 决定听什么 ⇒ 那一区的账分家').not.toMatch(/=== 'rg_[a-z_]+'/)
   })
 
   it('跟旗块必须在换区 if **之外**（第一版就插在了 if 里：换区块只在跨区那一帧跑，她离场没有那一帧）', () => {
-    // 源码门（KI-058 手法）：megGoneNow 那行的缩进必须与 `if (here && here.id !== shownRegion)` 同级，
-    // 而不是它的体内（体内 = 4 空格更深）。这条门钉的是「每帧跟旗」这个设计，不是排版洁癖。
+    // 源码门（KI-058 手法）：每帧跟读那行（`const bedNow`）的缩进必须与 `if (here && here.id !== shownRegion)`
+    // 同级，而不是它的体内（体内 = 4 空格更深）。这条门钉的是「每帧跟床」这个设计，不是排版洁癖。
     const lines = MAIN.split('\n')
     const iIf = lines.findIndex((l) => l.includes('if (here && here.id !== shownRegion)'))
-    const iTrack = lines.findIndex((l) => l.includes('const megGoneNow'))
+    const iTrack = lines.findIndex((l) => l.includes('const bedNow'))
     expect(iIf, '换区 if 在源码里').toBeGreaterThan(0)
-    expect(iTrack, '跟旗块在源码里').toBeGreaterThan(iIf)
+    expect(iTrack, '每帧跟读块在源码里').toBeGreaterThan(iIf)
     const ifIndent = lines[iIf].length - lines[iIf].trimStart().length
     const trackIndent = lines[iTrack].length - lines[iTrack].trimStart().length
-    expect(trackIndent, `跟旗块缩进（${trackIndent}）应与换区 if（${ifIndent}）同级——深一级就是插进了 if 体内，只在跨区帧跑`).toBe(ifIndent)
+    expect(trackIndent, `跟读块缩进（${trackIndent}）应与换区 if（${ifIndent}）同级——深一级就是插进了 if 体内，只在跨区帧跑`).toBe(ifIndent)
   })
 
-  it('第三入口的行为账：她离场那一拍单发一条声床事件（换床不换区），走到真链上量', () => {
+  it('第三入口的行为账：她离场那一拍改变的是选床的答案（换床不换区），走到真链上量', () => {
     registerGameData()
     const streaming = new StreamingSystem(regions)
     const states = new WorldStates(stateTable)
@@ -65,17 +73,15 @@ describe('盐歌在场的人声垫片：变体床与三个入口', () => {
       setFlag: (k) => streaming.setFlag(k, true)
     })
     alive.push(() => { worldState.dispose(); states.dispose(); streaming.dispose() })
-    const got: string[] = []
-    const off = bus.on('audio.music.ambience', (p) => { got.push(p.id) })
-    alive.push(off)
     // 玩家站在休垒（regionAt 为真）——她被夺走声卷的那一拍
     expect(streaming.regionAt({ x: 0, y: 0, z: 0 })?.id).toBe('rg_resthold')
-    expect(streaming.hasFlag('flag.meg_gone')).toBe(false)
+    const resthold = regions.find((r) => r.id === 'rg_resthold')!
+    const bed = () => ambienceBedFor(resthold.music, (k) => streaming.hasFlag(k), (k) => states.get(k) ?? null)
+    expect(bed(), '她还在 ⇒ 休垒听的是加了一层人声的那张床').toBe('mus_resthold_amb_meg')
     states.set('state.meg.ending', 'SILENCED')
     expect(streaming.hasFlag('flag.meg_gone'), 'stateSet 派生链在跑').toBe(true)
-    // 换床的发射由渲染循环的旗跟块做（源码门已钉）——这里量的是「她的离场确实改变了
-    // 选床函数会读到的那个世界量」：旗从无到有，选床函数的答案随之从变体回到基床。
-    const base = 'mus_resthold_amb'
-    expect(streaming.hasFlag('flag.meg_gone') ? base : `${base}_meg`).toBe('mus_resthold_amb')
+    // 换床的发射由渲染循环的旗跟块做（源码门已钉）——这里量的是「她的离场确实改变了选床的答案」：
+    // 答案由陈设那行变体声明推导，不在测试里重抄一遍谓词（重抄 = 第二个主人，KI-341 要灭的就是它）。
+    expect(bed(), '她离场那一拍，选床的答案从变体回到基床').toBe('mus_resthold_amb')
   })
 })
