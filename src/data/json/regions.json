@@ -1743,6 +1743,7 @@
           "flag.clue_lean_corpses"
         ],
         "setsFlag": "flag.firstphrase_open",
+        "observeOnly": true,
         "notify": "门开了一道缝 —— 里面是世上唯一与世隔绝的耳朵"
       },
       {

@@ -1306,7 +1306,18 @@ export interface InteractableRef {
    * 消失的东西连 `nearby()` 都不进（灰盒不画、E 键不聚焦、use 拒收）。
    */
   absentFlag?: string
+  /**
+   * **只认观察波前的一次轻触**（narrative §4.8 ⑤：「主角以"休止"轻触门——聋者之耳即钥匙，
+   * 任何闻者推门即塌」）。写了这一格的交互物，E 键推不开（`use()` 只回一句锁文），
+   * 只有 `Interactables.observeTouch()` 那条通道能走 `activate()`。
+   * 它**不是** `requiresState`（走到哪一格）也不是 `requiresFlag`（哪件事发生了）：
+   * 它管的是**动词**本身——用哪只手碰它。闸门顺序仍然先问旗与值域，所以缺线索时
+   * 两条通道都会告诉你"还差哪几件"，不会拿一句风味文案把真前置盖住。
+   */
+  observeOnly?: boolean
   setsFlag?: string
+  /** 成功那一句 HUD 播报（KI-338 起有读者；此前三处数据零消费者，走的是按 kind 的通用句） */
+  notify?: string
   npcId?: string
   /** 交互后把人送去的落点（共鸣井/吊机/吊桥 = 遮蔽传送等价物）；缺省 = 原地生效 */
   to?: Vec3

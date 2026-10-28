@@ -211,7 +211,33 @@ export class Interactables {
     return f ? this.activate(f) : null
   }
 
-  private activate(it: Interactable): InteractResult {
+  /**
+   * 观察波前那一次"轻触"（KI-338，narrative §4.8 ⑤）：只有 `observeOnly` 的交互物认这条通道。
+   * 返回 null = 这件东西不归这条动词管（普通交互物，E 键那条路照旧），调用方因此不必自己筛。
+   * 距离不在这里量：调用方是 `ObserveSystem.takeMarks` 交出来的标记，波前已经走过那段路——
+   * 再量一次就是给同一件事写第二份判据。
+   */
+  observeTouch(id: string): InteractResult | null {
+    const it = this.get(id)
+    if (!it || !it.observeOnly) return null
+    if (this.used.has(it.id)) return null
+    return this.activate(it, 'observe')
+  }
+
+  /**
+   * 一整批标记里归这条动词管的那几件（组合根只写一行：它不该为了"哪些标记要试"再长一段循环）。
+   * 顺序照传入顺序；`null` 的那些（普通交互物）不进结果——这就是"用哪只手碰它"的筛选本身。
+   */
+  observeTouches(ids: readonly string[]): InteractResult[] {
+    const out: InteractResult[] = []
+    for (const id of ids) {
+      const r = this.observeTouch(id)
+      if (r) out.push(r)
+    }
+    return out
+  }
+
+  private activate(it: Interactable, via: 'use' | 'observe' = 'use'): InteractResult {
     const base = { id: it.id, kind: it.kind, to: it.to }
     const out = (r: InteractResult): InteractResult => {
       // 世界状态层（quest/WorldState）与调试器都读这条；失败的"为什么不行"同样是它们要的信息
@@ -226,9 +252,14 @@ export class Interactables {
     if (this.stateLocked(it)) {
       return out({ ...base, ok: false, state: 'locked', text: lockText(it) })
     }
+    // 旗与值域都过了，才轮到"用哪只手碰它"：`observeOnly` 的门对 E 只回这一句。
+    // 放在前置之后而不是之前，是为了缺线索时先说"还差哪几件"——风味文案不许盖住真前置。
+    if (it.observeOnly && via !== 'observe') {
+      return out({ ...base, ok: false, state: 'locked', text: '门在等一声休止 —— 推开它的人听不见它' })
+    }
     if (!REPEATABLE.has(it.kind) || it.oneWay) this.used.add(it.id)
     if (it.setsFlag) this.setFlag(it.setsFlag)
-    const text = resultText(it)
+    const text = it.notify ?? resultText(it)
     bus.emit('ui.notify', { text, kind: it.kind === 'chest' || it.kind === 'gather' ? 'reward' : 'info' })
     bus.emit('audio.sfx', { key: SFX[it.kind], pos: it.pos, gain: 0.5 })
     if (it.setsFlag) bus.emit('log', { level: 'info', msg: `interact ${it.id} -> ${it.setsFlag ?? '-'} used=${this.used.has(it.id)}` })

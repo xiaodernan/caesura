@@ -18,7 +18,7 @@ import { Cinematics } from '@/world/Cinematics'
 import { StreamingSystem, chunkKeyOf, type ChunkState } from '@/world/Streaming'
 import { Surface } from '@/world/Surface'
 import { SpawnDirector } from '@/world/SpawnDirector'
-import { Interactables, takeInteractEdge } from '@/world/Interactables'
+import { Interactables, takeInteractEdge, type InteractResult } from '@/world/Interactables'
 import { ObserveSystem, OBSERVE_RADIUS, OBSERVE_TRAVEL_TICKS } from '@/world/Observe'
 import { PropSystem } from '@/world/Props'
 import { PropVisuals } from '@/world/PropVisuals'
@@ -662,7 +662,15 @@ function openDialogue(npcId: string): void {
 
 /** 交互物落地：调音桩休息、机关传送（= UE 的 Level Streaming 遮蔽传送） */
 function applyInteract(id: string): void {
-  const r = interact.use(id, player.pos)
+  applyInteractResult(interact.use(id, player.pos))
+}
+
+/**
+ * 交互结果的落地段（KI-338）：两条动词通道共用——E 键那条（`applyInteract`）与观察波前那条
+ * （`observeTouch`，narrative §4.8 ⑤「以休止轻触门」）。搬成一段而不是在观察那一侧再抄一遍：
+ * 调音桩开面板、遗箱掷掉落、传送收枪这几笔账一旦有两份，迟早只剩一份是真的。
+ */
+function applyInteractResult(r: InteractResult): void {
   /* 面板的入口**走的是"你对着什么按 E"**，不再是 Tab（KI-097）：`map` 键归位成地图之后，
      调音桩面板就只有交互这一条路——动词是数据里那个「调音」，玩家按的是眼前那根柱子。
      `rest` 那一路（回血 + 检查点存档）照旧，面板是它旁边那件顺手的事，不替代它。 */
@@ -954,6 +962,9 @@ const core = {
         vfx.observeMark(m.x, m.y, m.z, m.kind === 'enemy')
         // 敌人标记带来的来路快照画成地面波纹链（窗长秒数 = 行程 tick / 60，同一把尺）
         if (m.trail?.length) vfx.observeTrail(m.trail, m.y, OBSERVE_TRAVEL_TICKS / TICK_HZ)
+        // KI-338：波前扫到 `observeOnly` 的交互物 = 那一次「以休止轻触」。普通交互物不归这条路，
+        // E 键那套流程一个字不变；门那一侧认的是**波前**，不是按 E（任何闻者推门即塌）。
+        if (m.kind === 'interact') for (const r of interact.observeTouches([m.id])) applyInteractResult(r)
       }
     }
   },

@@ -323,8 +323,10 @@ describe('隐藏房可达性：发生了什么 ⇒ 立旗 ⇒ 锁开 ⇒ 东西�
     }
 
     w.standAt(door.id)
-    const opened = w.interact.use(door.id, w.player.pos)
-    expect(opened.ok, '四环齐了，井底的门才开').toBe(true)
+    const refused = w.interact.use(door.id, w.player.pos)
+    expect(refused.ok, 'E 键推不开：那扇门只认波前那一次轻触（KI-338）').toBe(false)
+    const opened = w.interact.observeTouch(door.id)!
+    expect(opened.ok, '四环齐了 + 波前轻触，井底的门才开').toBe(true)
     expect(w.streaming.hasFlag('flag.found_first_phrase'), '开门就是那条 secret 的写方（KI-041 白名单上最后一条）').toBe(true)
 
     w.standAt(claim.id)
