@@ -1,5 +1,6 @@
 import { bus, type StatusId, type StatusPulse } from '../core/EventBus'
-import { keyOf, type ActionName } from '../core/Input'
+import { keyOf, type ActionName, type Binds } from '../core/Input'
+import { actionLabel } from './actionLabels'
 import { registry } from '@/core/Registry'
 import type { ProgressionData } from '@/data/schema'
 import { statuses } from '@/data'
@@ -115,7 +116,13 @@ export class Hud {
   private quest: { label: string; index: number; total: number; done: boolean } | null = null
   private questFlash = 0
 
-  constructor(canvas: HTMLCanvasElement) {
+  /**
+   * @param bindsSource 键位列的读数来源（KI-336）：组合根把 `Input` 本体交进来，这一列画的因此是
+   *   **此刻生效**的那张表而不是 `DEFAULT_BINDS`。只认 `binds` 这一格读数（与 `SaveWorld.audio`
+   *   同一口径的结构式把手）；没接 ⇒ 画默认那张（默认表只有一个主人，不算抄第二份）。
+   *   走构造参数而不是公开字段：这一格漏接就是一条"改了键而屏幕不说谎"的活路，不给它漏的机会。
+   */
+  constructor(canvas: HTMLCanvasElement, private readonly bindsSource: { readonly binds: Binds } | null = null) {
     this.canvas = canvas
     const ctx = canvas.getContext('2d')
     if (!ctx) throw new Error('[Hud] 2d context unavailable')
@@ -327,14 +334,19 @@ export class Hud {
   /**
    * 键位参考列（右下角，KI-181③）：「怎么玩」的字面半句。键名从 `keyOf` 读**运行时绑定**，
    * 动作中文名是 UI 文案（与对话框 hint 同级）；挑八个最常用的动词，淡灰不抢注意力。
-   * 绑定改了这一列自动跟着变（重映射落地时这里零改动）。
+   * KI-336 之后这句话真的成立：读的是 `bindsSource.binds`（`Input` 手里那一张），
+   * 改键或读进一份改过键的档，这一列跟着变，HUD 一格代码都不用动。
    */
   private drawBinds(): void {
     const { ctx } = this
     const s = this.scale()
     const rows: Array<[ActionName, string]> = [
-      ['moveUp', '移动 WASD'], ['dodge', '闪避'], ['attackLight', '轻击'], ['attackHeavy', '重击'],
-      ['parry', '弹反'], ['interact', '交互'], ['weaponSkill', '战技'], ['observe', '声纹观察'], ['map', '地图']
+      // 第一行是**移动那一簇**（W/A/S/D 四格共用一套语义），所以它不取 `actionLabel` 的逐格文字；
+      // 但它也不再写 "WASD"——那是对键位的第二份声明，改过键的屏幕会说谎（KI-336 那句"面板不会说谎"）。
+      ['moveUp', '移动'], ['dodge', actionLabel('dodge')], ['attackLight', actionLabel('attackLight')],
+      ['attackHeavy', actionLabel('attackHeavy')],
+      ['parry', actionLabel('parry')], ['interact', actionLabel('interact')], ['weaponSkill', actionLabel('weaponSkill')],
+      ['observe', actionLabel('observe')], ['map', actionLabel('map')]
     ]
     ctx.save()
     ctx.textAlign = 'right'
@@ -342,7 +354,7 @@ export class Hud {
     ctx.font = `${Math.round(12 * s)}px ${SERIF}`
     let y = this.cssH - 96 * s
     for (const [action, label] of rows) {
-      const key = keyOf(action)
+      const key = keyOf(action, this.bindsSource?.binds)
       if (!key) continue
       ctx.fillStyle = css(BONE, 0.26)
       ctx.fillText(`${label}`, this.cssW - 56 * s - 44 * s, y)

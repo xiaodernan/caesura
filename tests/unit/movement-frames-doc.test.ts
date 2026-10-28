@@ -58,7 +58,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { items, movements } from '@/data'
 import type { MovementData } from '@/data/schema'
-import { DEFAULT_BINDS } from '@/core/Input'
+import { keyOf, type ActionName } from '@/core/Input'
 import { msToTicks, TICK_HZ } from '@/core/Time'
 
 const root = fileURLToPath(new URL('../../', import.meta.url))
@@ -197,12 +197,12 @@ const tableRows = (body: string): string[] =>
 const NOT_IMPLEMENTED_LEADING_RE = /^\*{0,2}\s*未实装/
 
 /**
- * 键位标签的唯一推导：和面板 `Stakerite.keyFor` 同一个表达式（那是它在源码里的第二份，
- * 也是最后一份——文档那一格从此不是第三本账，而是这条推导的**读数**）。
+ * 键位标签的唯一推导：直接调 `core/Input.ts > keyOf`。这一处曾经是手抄的表达式（与面板
+ * `Stakerite.keyFor` 各一份），KI-336 把换算收成一件之后这里也跟着改成读数——文档那一格从此
+ * 不是第三本账，而是这条推导的**读数**：改默认键或改短名换算，这两份文档的句子会一起红。
  */
 function keyLabel(action: string): string {
-  const code = Object.entries(DEFAULT_BINDS.keyboard).find(([, a]) => a === action)?.[0] ?? ''
-  return code.replace(/^(Key|Digit|Mouse)/, '')
+  return keyOf(action as ActionName) ?? ''
 }
 const SLOTS = cfg.slots.map((s) => s.index)
 const SLOT_CELL = `槽 ${SLOTS.join('/')} 任选`

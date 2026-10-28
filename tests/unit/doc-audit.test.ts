@@ -105,16 +105,24 @@ describe('文档对账闸门（KI-056）', () => {
     // 键出现在那儿是应该的。死的是"占着名字没人读"。所以这里查的是读者，而且读者必须是面板本身：
     // 谁往预留表里加一把 F 键又不接面板，这条就会把 TD-001 叫回来。
     const input = readFileSync(root + 'src/core/Input.ts', 'utf8')
-    const panels = readFileSync(root + 'src/main.ts', 'utf8') + readFileSync(root + 'src/tools/CombatDebugger.ts', 'utf8')
+    // 读者侧的名册**从整棵 `src/` 现推**，不手抄文件名（KI-315 那条规矩的同一次沿用）：上一版抄的是
+    // `main.ts` ＋ `CombatDebugger.ts` 那两份，于是 KI-335 把 F5 的绑定搬进 `tools/PerfDebugger.ts >
+    // perfPanelSpec` 的那一刻，一把**真有面板**的键被读成"占着预留位没人读"。抄来的名册必然落后于搬家，
+    // 而"一块面板的绑定住在哪个文件"这一格本来就没有主人——它跟着装配走（装配如今住在被测模块那边）。
+    const panelSrc = walk(root + 'src').map((f) => readFileSync(f, 'utf8')).join('\n')
     // 两侧都要**结构**判据，不能只看字符串出现过：
     // 预留侧锚在 `e.code` 那份名单上，读者侧锚在**绑定**上（`key: 'F1'` / `e.key !== 'F2'`）。
     // 否则"面板拆了但注释里还写着 'F1'"就能骗过这条——探针 D 第一次正是这么漏的。
+    // **名册改成全树抽之后，那一格形状又收紧一道**：`key:` 后面必须紧跟 `,` 或 `}`。全树里有两个地方
+    // 会白送读者——`tools/DebugPanel.ts` 的那串类型联合（`key: 'F1' | 'F3' | 'F4' | 'F5'`，删掉真面板
+    // 它也还在）与 `world/HitboxWire.ts` 注释里那句「构造点写成 `key: 'F6'` 这个形状」。收紧之后
+    // 两者都不算：只有构造点/规格里以对象字面量那一格写下的键才算读者（探针 D 那句判决原样成立）。
     const reservedList = input.match(/\[([^\]]*)\]\.includes\(e\.code\)/)?.[1] ?? ''
     // 名册从**预留表自己**抽（KI-315）。原先这里手抄了一份 `['F1','F2','F3','F4']`，于是
     // 「往预留表里加一把 F6、又不给它接读者」恰好从这条门的指缝里漏掉——而上面那句判决写的
     // 正是"谁加一把不接面板就叫回 TD-001"。手抄的候选表做不到那句话，抽出来的才做得到。
     const reserved = [...new Set([...reservedList.matchAll(/'(F\d)'/g)].map((m) => m[1]))].sort()
-    const bound = new Set([...panels.matchAll(/(?:key:\s*|\.key\s*[!=]==\s*)'(F\d)'/g)].map((m) => m[1]))
+    const bound = new Set([...panelSrc.matchAll(/\bkey:\s*'(F\d)'[,}]|\.key\s*[!=]==\s*'(F\d)'/g)].map((m) => m[1] ?? m[2]))
     const unbound = reserved.filter((k) => !bound.has(k))
     expect(reserved.length, '预留表里的 F 键整批被删了 = 这条判据在空转').toBeGreaterThanOrEqual(4)
     expect([...bound], '这些绑定不在预留表里 = 面板接了一把没预留的键（浏览器会把它抢走）')

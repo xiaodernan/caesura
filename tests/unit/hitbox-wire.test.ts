@@ -490,7 +490,8 @@ describe('接线：组合根、预留表、常量唯一主人', () => {
 
   it('F6 进了 Input 的 preventDefault 预留表（不然浏览器先把它抢走）', () => {
     const list = inputTs.match(/\[([^\]]*)\]\.includes\(e\.code\)/)?.[1] ?? ''
-    expect([...new Set([...list.matchAll(/'(F\d)'/g)].map((m) => m[1]))].sort()).toEqual(['F1', 'F2', 'F3', 'F4', 'F6'])
+    // KI-335 同一形状长一次：F5 是性能面板的呼出键，不进这张表就会被浏览器抢走（刷新）。
+    expect([...new Set([...list.matchAll(/'(F\d)'/g)].map((m) => m[1]))].sort()).toEqual(['F1', 'F2', 'F3', 'F4', 'F5', 'F6'])
   })
 
   it('贴身豁免那 0.25 只有一个主人：判据吃常量，代码里不许再出现裸的 radius + 0.25', () => {

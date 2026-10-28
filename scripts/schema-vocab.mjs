@@ -86,13 +86,42 @@ function matchingBrace(src, open) {
   return -1
 }
 
-/** `export type X = 'a' | 'b'` ⇒ ['a','b']；没有这个类型 ⇒ null */
-export function unionMembers(text, typeName) {
+/**
+ * `export type X = 'a' | 'b'` ⇒ ['a','b']；没有这个类型 ⇒ null。
+ *
+ * KI-336 补第二种排版：**从名册推导的联合**（`export type ActionName = typeof ACTION_NAMES[number]`，
+ * 以及多主人拼起来的 `typeof UI_NAV[number] | typeof UI_PICK[number]`）。这类声明的"值域主人"是数组而不是
+ * type 本身——只认引号字面量的那一版读回来是 null，于是 `carrier:ActionName` 那张门当场喊"我在空转"。
+ * 该改的是判据，不是把名册退回手抄联合（抄回字面量＝把 KI-336 刚消掉的第二主人再请回来）。
+ *
+ * 三条规矩：
+ * - 第三个参数（整份文件原文）不给 ⇒ 派生那一支不走，仍旧返回 null ⇒ 调用方照常喊空转。忘了接线不会变成假绿。
+ * - 每个被点名的数组都要读得回来；只要有一张读不到就整体返回 null（宁可空转，不交残缺集合冒充"没漂移"）。
+ * - 混排（`'a' | typeof Y[number]`）返回 null：那种形状到底谁做主说不清，得人来看。
+ *
+ * 别名块读到**下一个 `export`** 为止（不只是下一条 type/interface）：`schemaBlocks` 按 type/interface 切块，
+ * 紧跟其后的 `export const X = ['a']` 会淌进这一块里——字面量那一支今天就在过量读（读到别人家的引号），
+ * 派生那一支更会把那张数组的初值行当成"混排"当场拒绝。声明里出现 `export` 只可能是下一条声明的开头。
+ */
+export function unionMembers(text, typeName, srcText) {
   const block = text.get(typeName)
   if (!block) return null
   const eq = block.indexOf('=')
   if (eq < 0) return null
-  const lits = [...block.slice(eq + 1).matchAll(/'([^']+)'/g)].map((m) => m[1])
+  const rhs = block.slice(eq + 1).split(/\bexport\b/)[0]
+  const refs = [...rhs.matchAll(/\btypeof\s+([A-Za-z0-9_]+)\s*\[\s*number\s*\]/g)].map((m) => m[1])
+  if (refs.length) {
+    if (srcText === undefined) return null
+    if (/'[^']+/.test(rhs.replace(/\btypeof\s+[A-Za-z0-9_]+\s*\[\s*number\s*\]/g, ''))) return null
+    const out = []
+    for (const r of [...new Set(refs)]) {
+      const lits = arrayLiterals(srcText, r)
+      if (!lits) return null
+      out.push(...lits)
+    }
+    return out.length ? [...new Set(out)] : null
+  }
+  const lits = [...rhs.matchAll(/'([^']+)'/g)].map((m) => m[1])
   return lits.length ? lits : null
 }
 

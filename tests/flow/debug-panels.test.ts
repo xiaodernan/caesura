@@ -39,6 +39,9 @@ import { DebugPanel } from '@/tools/DebugPanel'
 import { enemyPanelText, enemyRows } from '@/tools/EnemyDebugger'
 import { questPanelText, questRows } from '@/tools/QuestDebugger'
 import { aiPanelText, type AiDebugInput } from '@/tools/AIDebugger'
+import { perfPanelSpec, perfPanelText, type PerfSource } from '@/tools/PerfDebugger'
+import { BUDGET_CPU_MS, BUDGET_GPU_MS, FRAME_WINDOW, PerfSampler } from '@/core/PerfSampler'
+import { Pool } from '@/core/Pool'
 import { CombatDebugger } from '@/tools/CombatDebugger'
 import { bus } from '@/core/EventBus'
 
@@ -796,5 +799,250 @@ describe('F3 分支死角（批 16）：空表、截断、值域缺格与 waits 
       { state: 'S2' },
     ])
     expect(questRows([q], readerOf(0))[0].waits).toBe('flag.a|flag.b + state.probe.x in ON/OFF')
+  })
+})
+
+/* ------------------------------------------------------------- F5 · 性能 */
+
+describe('F5 · 性能面板（§5.7 那一格的落地，KI-335）', () => {
+  /** 带 `onToggle` 的外壳：这一块面板与其它三块的唯一结构差别就是这条联动（其余三块没有第二条开关） */
+  const f5shell = (onToggle?: (on: boolean) => void) => {
+    const calls = { n: 0 }
+    const p = new DebugPanel({
+      key: 'F5', label: 'perf', anchor: 'position:fixed;right:12px;bottom:12px',
+      text: () => { calls.n++; return `payload-${calls.n}` },
+      ...(onToggle ? { onToggle } : {}),
+    })
+    live.push(() => p.dispose())
+    return { p, el: (p as unknown as { el: FakeEl }).el, calls }
+  }
+
+  it('开关通知的是**顺序对的那一种**：armed 先起来，再刷第一帧字；关掉时反过来先停采再刷', () => {
+    const seq: string[] = []
+    const { p } = f5shell((on) => seq.push(`toggle:${on}`))
+    p.refresh()
+    expect(seq, '关着时一次都不该通知').toEqual([])
+    press('F5')
+    expect(seq).toEqual(['toggle:true'])
+    expect(p.enabled).toBe(true)
+    press('F5')
+    expect(seq, '通知在 refresh 之前：面板打开那一次刷的是清过窗口的读数，不是上一现场的').toEqual(['toggle:true', 'toggle:false'])
+  })
+
+  it('没有 `onToggle` 的三块老面板照旧工作（这一格是可选的，不是新的构造义务）', () => {
+    const { el, calls } = f5shell()
+    press('F5')
+    expect(el.textContent).toBe('F5 · perf\npayload-1')
+    expect(calls.n).toBe(1)
+  })
+
+  /**
+   * 面板读的四件东西各给一份**结构替身**：`perfPanelSpec` 只认那几格，所以夹具也只长那几格——
+   * 多长的一格面板读不到，而"读不到"正是这几条腿要问的事（组合根里那份真接线没有机器读者）。
+   */
+  function fakeEngines() {
+    // 池走一段真借还：2 发生成 + 2 次复用 ⇒ reuse 2/4，在途 2、空闲 0、峰值 2
+    const pool = new Pool<{ id: number }>(() => ({ id: 1 }), () => {}, 4)
+    const a = pool.obtain()
+    const b = pool.obtain()
+    pool.release(a)
+    pool.release(b)
+    pool.obtain()
+    pool.obtain()
+    return {
+      engines: {
+        vfx: { get emitterPoolStats() { return pool.stats } },
+        streaming: {
+          stats: () => ({ active: 4, resident: 5, preloading: 2, unloaded: 40, queued: 3, inFlight: 2 }),
+          options: { maxInFlight: 4 },
+        },
+        renderer: {
+          info: { render: { calls: 37, triangles: 128000 }, memory: { geometries: 21, textures: 8 } },
+        },
+        loop: { maxTicksPerFrame: 5 },
+      },
+      pool,
+    }
+  }
+  const f5spec = () => {
+    const sampler = new PerfSampler()
+    const { engines, pool } = fakeEngines()
+    const spec = perfPanelSpec(sampler, engines, { frameWindow: FRAME_WINDOW, budget: { cpuMs: BUDGET_CPU_MS, gpuMs: BUDGET_GPU_MS } })
+    return { sampler, spec, engines, pool }
+  }
+
+  it('那一格的三件外壳事（键／标题／停靠位）住在面板自己那里：组合根不再抄第二份', () => {
+    const { spec } = f5spec()
+    expect(spec.key, '§5.7 那句「F 键」落成的那把').toBe('F5')
+    expect(spec.anchor).toBe('position:fixed;right:12px;bottom:12px')
+    expect(spec.label, '标题要说清这五段读的是什么').toContain('分位')
+  })
+
+  it('`onToggle` 联动的是真采样器：开 ⇒ 真的在采，关 ⇒ 连窗口一起清（不是只把字藏起来）', () => {
+    const { spec, sampler } = f5spec()
+    spec.onToggle!(true)
+    expect(sampler.armed, '开这一格 ⇒ 第二道闸门起来').toBe(true)
+    sampler.frame({ deltaMs: 16.7, logicMs: 1, renderMs: 2, ticks: 1, truncated: false })
+    expect(sampler.snapshot().samples).toBe(1)
+    spec.onToggle!(false)
+    expect(sampler.armed).toBe(false)
+    expect(sampler.snapshot().samples, '关 ⇒ 上一现场的账不留').toBe(0)
+  })
+
+  it('池那一行的六个数逐个对着 `emitterPoolStats`：面板不认识 Emitter，也不自己填一个数', () => {
+    const { spec, pool } = f5spec()
+    const st = pool.stats
+    const line = spec.text().split('\n').find((l) => l.includes('vfx.emitter'))!
+    expect(line, '命中率那三格就是 `Pool.stats` 那两格算出来的').toContain(`reuse ${st.hits}/${st.hits + st.misses} (50.0%)`)
+    expect(line).toContain(`live ${String(st.live).padStart(4)}/${st.cap}`)
+    expect(line).toContain(`free ${String(st.free).padStart(4)}`)
+    expect(line).toContain(`peak ${String(st.peak).padStart(4)}`)
+  })
+
+  it('那一行每次刷都重新读池：面板上不许有"接线那一刻"抄下来的旧数', () => {
+    const { spec, pool } = f5spec()
+    const before = spec.text().split('\n').find((l) => l.includes('vfx.emitter'))!
+    pool.obtain() // 空闲栈此时是空的 ⇒ 第三次现造：misses 2→3，在途 2→3
+    const after = spec.text().split('\n').find((l) => l.includes('vfx.emitter'))!
+    expect(after, '借还之后那一行跟着变：读数是现取的，不是 spec 建好时钉死的').toContain('reuse 2/5 (40.0%)')
+    expect(after).toContain('live    3/4')
+    expect(after).not.toBe(before)
+  })
+
+  it('流送那一行有两个主人：六格读数出自 `stats()`，`maxInFlight` 出自 `options`（配额那一格的主人）', () => {
+    const { spec } = f5spec()
+    const line = spec.text().split('\n').find((l) => l.startsWith('—— streaming'))!
+    expect(line).toContain('active 4')
+    expect(line, '分母那个 4 是 `options.maxInFlight`，不是 stats 里的某一格').toContain('in-flight 2/4')
+  })
+
+  it('renderer.info 那四格分两本账：calls/tris 走 render，geom/tex 走 memory', () => {
+    const { spec } = f5spec()
+    expect(spec.text()).toMatch(/calls\s+37\s+tris\s+128,000\s+geom\s+21\s+tex\s+8/)
+  })
+
+  it('catch-up 那一行的上限读的是 `loop.maxTicksPerFrame`：那条环还是那一格的主人', () => {
+    const { spec, sampler } = f5spec()
+    sampler.open()
+    sampler.frame({ deltaMs: 50, logicMs: 1, renderMs: 2, ticks: 3, truncated: true })
+    expect(spec.text().split('\n')[4]).toBe('ticks/frame avg 3.00 max 3 (cap 5) · 丢整拍 1')
+  })
+
+  /** 真采样器 ＋ 真池：面板上那几个数必须能从**引擎的账**里读出来，不是夹具手抄的一份 */
+  function perfWorld() {
+    const sampler = new PerfSampler()
+    sampler.open()
+    for (const d of [10, 20, 30]) sampler.frame({ deltaMs: d, logicMs: 100, renderMs: 2, ticks: 1, truncated: false })
+    sampler.span('logic.ai', () => {})
+    // 池走一段真借还：2 发生成 + 2 次复用 ⇒ reuse 2/4，在途 2、空闲 0、峰值 2
+    const pool = new Pool<{ id: number }>(() => ({ id: 1 }), () => {}, 4)
+    const a = pool.obtain()
+    const b = pool.obtain()
+    pool.release(a)
+    pool.release(b)
+    pool.obtain()
+    pool.obtain()
+    return {
+      sampler,
+      src: {
+        perf: sampler.snapshot(),
+        pools: [{ name: 'vfx.emitter', ...pool.stats }],
+        streaming: { active: 4, resident: 5, preloading: 2, unloaded: 40, queued: 3, inFlight: 2, maxInFlight: 4 },
+        gpu: { calls: 37, triangles: 128000, geometries: 21, textures: 8 },
+        maxTicksPerFrame: 5,
+        frameWindow: FRAME_WINDOW,
+        budget: { cpuMs: BUDGET_CPU_MS, gpuMs: BUDGET_GPU_MS },
+      } satisfies PerfSource,
+      pool,
+    }
+  }
+
+  it('头部那三格来自快照：帧数、窗口占用与「窗口未满」那句一起写出来', () => {
+    const { src } = perfWorld()
+    const head = perfPanelText(src).split('\n')[0]
+    expect(head).toContain('frames 3')
+    expect(head).toContain(`窗口 3/${FRAME_WINDOW}`)
+    expect(head, 'n=3 时下面那些分位数没有意义，面板要自己说这句').toContain('窗口未满')
+    expect(head).toMatch(/fps\s+50\.0/) // 1000/mean(10,20,30) ＝ 50
+  })
+
+  it('三行分位数各读各的口径：frame 那条没有预算判定，logic/render 各按 §5.3 的那两格判超没超', () => {
+    const { src } = perfWorld()
+    const lines = perfPanelText(src).split('\n')
+    // 10/20/30 三个样本的最近秩：P50 第 2 个、P90 与 P99 都落在第 3 个
+    expect(lines[1]).toMatch(/frame ms\s+P50\s+20\.00\s+P90\s+30\.00\s+P99\s+30\.00\s+max\s+30\.00/)
+    expect(lines[1]).not.toMatch(/OVER|≤/)
+    expect(lines[2], 'logic 每帧 100ms，预算 6ms ⇒ 该说超').toMatch(/logic ms.*P99\s+100\.00.*OVER\s+6\.00/)
+    expect(lines[3], 'render 每帧 2ms，预算 12ms ⇒ 该说没超').toMatch(/render ms.*≤\s+12\.00/)
+    expect(lines[3]).not.toMatch(/P90/)
+  })
+
+  it('catch-up 那一行把「上限」与「真的丢了几拍」分开写（老口径里这两件事没人读得到）', () => {
+    const { src } = perfWorld()
+    expect(perfPanelText(src).split('\n')[4]).toBe('ticks/frame avg 1.00 max 1 (cap 5) · 丢整拍 0')
+  })
+
+  it('分段行一格一名：名字就是 `main.ts` 里那个 span 名，而 calls 是 EMA（一记只走 1/60 步）', () => {
+    const { src, sampler } = perfWorld()
+    sampler.span('render.submit', () => {})
+    const text = perfPanelText({ ...src, perf: sampler.snapshot() })
+    const aiRow = text.split('\n').find((l) => l.includes('logic.ai'))
+    const submitRow = text.split('\n').find((l) => l.includes('render.submit'))
+    expect(aiRow, '走过一段却没有行 = 面板在读另一份名册').toBeTruthy()
+    expect(submitRow, '两段各一行，不许并成一格').toBeTruthy()
+    // 两段各只被叫过一次：EMA(0→1) 走一步 ＝ 1/60 ＝ 0.0167 ⇒ 面板上都是 `x 0.02`，不是 `x 1.00`
+    expect(aiRow).toMatch(/x\s*0\.02/)
+    expect(submitRow).toMatch(/x\s*0\.02/)
+  })
+
+  it('池那一行是命中率本体：reuse 的分子/总数在括号里，一次都没领过就写 —，不写 NaN%', () => {
+    const { src, pool } = perfWorld()
+    const line = perfPanelText(src).split('\n').find((l) => l.includes('vfx.emitter'))!
+    // 三个数都对着**池自己**的账，而不是把字面量抄第二遍
+    expect(pool.stats.hits).toBe(2)
+    expect(pool.stats.misses).toBe(2)
+    expect(line).toContain(`live ${String(pool.stats.live).padStart(4)}/${pool.stats.cap}`)
+    expect(line).toContain(`free ${String(pool.stats.free).padStart(4)}`)
+    expect(line).toContain(`peak ${String(pool.stats.peak).padStart(4)}`)
+    expect(line).toMatch(/reuse 2\/4 \(50\.0%\)/)
+    const empty = { ...src, pools: [{ name: 'fresh', live: 0, free: 0, peak: 0, cap: 8, hits: 0, misses: 0 }] }
+    expect(perfPanelText(empty).split('\n').find((l) => l.includes('fresh'))).toContain('reuse 0/0 (—)')
+  })
+
+  it('流送那一行分得清 queued 与 in-flight：配额管的是后者，把两个数写成一格就是给 §5.5 报错账', () => {
+    const { src } = perfWorld()
+    const line = perfPanelText(src).split('\n').find((l) => l.startsWith('—— streaming'))!
+    expect(line).toContain('active 4')
+    expect(line).toContain('preload 2')
+    expect(line).toContain('queued 3')
+    expect(line).toContain('in-flight 2/4')
+    expect(line).toContain('unloaded 40')
+  })
+
+  it('renderer.info 那四格是 drawcall/三角/几何/纹理（§5.3 那张预算表第一次有实测的读者）', () => {
+    const { src } = perfWorld()
+    expect(perfPanelText(src)).toMatch(/calls\s+37\s+tris\s+128,000\s+geom\s+21\s+tex\s+8/)
+  })
+
+  it('那三格常数（窗口／两格预算）真的由调用方说了算：换个数就换个判法，面板里没有自己的那一份', () => {
+    const { src } = perfWorld()
+    // 预算收到 0.001ms ⇒ logic 那行从「OVER 6.00」变成「OVER 0.00」；放到 999ms ⇒ render 那行改口说 ≤
+    const tight = perfPanelText({ ...src, budget: { cpuMs: 0.001, gpuMs: 999 } }).split('\n')
+    expect(tight[2]).toMatch(/OVER\s+0\.00/)
+    expect(tight[3], '预算放宽之后还写着 OVER 就是面板在替玩家做判断').not.toMatch(/OVER/)
+    expect(tight[3]).toMatch(/≤\s*999\.00/)
+    // 窗口那格同理：写成 2 就成了"3/2"，而"窗口未满"那句跟着消失（它判的是 samples < frameWindow）
+    const narrow = perfPanelText({ ...src, frameWindow: 2 }).split('\n')[0]
+    expect(narrow).toContain('窗口 3/2')
+    expect(narrow).not.toContain('窗口未满')
+  })
+
+  it('一个样本都没有时不崩也不吹：整块面板说的是"至少要跑一帧"', () => {
+    const { src } = perfWorld()
+    const empty = { ...src, perf: new PerfSampler().snapshot() }
+    const text = perfPanelText(empty)
+    expect(text).toContain('窗口 0/300')
+    expect(text).toContain('(还没有样本：面板开着至少要跑一帧)')
+    expect(text).toMatch(/P50\s+0\.00/)
   })
 })

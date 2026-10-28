@@ -69,6 +69,14 @@ export const TABLE: Record<string, { amp: number; dur: number }> = {
 }
 
 export const ROSTER = ['fissure', 'mute', 'echo'] as const
+/** KI-336 第二种主人：值域住在数组里，type 只是 typeof ROSTER[number] 这一层推导 */
+export type Derived = typeof ROSTER[number]
+export const ROSTER2 = ['x1', 'x2'] as const
+export type TwoOwners = typeof ROSTER[number] | typeof ROSTER2[number]
+/** 混排：一半住在字面量里、一半住在数组里 ⇒ 谁做主说不清，判据该拒绝而不是猜 */
+export type Mixed = 'loose' | typeof ROSTER[number]
+/** 点名的那张数组读不到 ⇒ 整条返回 null（宁可空转，不交残缺集合） */
+export type BadRef = typeof NO_SUCH_ROSTER[number]
 
 export function useThem(): void {
   eat('ps_one')
@@ -123,6 +131,25 @@ describe('声明怎么读：字面量联合、接口字段、接口里的内联�
   it('`arrayLiterals` 读 `export const X = [...] as const`（主人是一张数组而不是一条 type）', () => {
     expect(arrayLiterals(SYNTH, 'ROSTER')).toEqual(['fissure', 'mute', 'echo'])
     expect(arrayLiterals(SYNTH, 'NOPE')).toBeNull()
+  })
+
+  /* ---- KI-336：`ActionName` 从手抄字面量联合换成名册推导之后，这张门读的是第七种排版 ---- */
+  it('`unionMembers` 读派生联合：值域住在数组里，type 只是 `typeof ROSTER[number]`', () => {
+    expect(unionMembers(B, 'Derived', SYNTH), '一张主人').toEqual(['fissure', 'mute', 'echo'])
+    expect(unionMembers(B, 'TwoOwners', SYNTH), '两位主人拼起来，按书写次序去重').toEqual(['fissure', 'mute', 'echo', 'x1', 'x2'])
+    expect(unionMembers(B, 'Kind', SYNTH), '带第三个参数不许把字面量那一支读坏').toEqual(['a', 'b', 'c'])
+  })
+
+  it('派生那一支的三种"读不懂"都返回 null，不交一个残缺集合冒充词表', () => {
+    expect(unionMembers(B, 'Derived'), '不给整份原文 ⇒ 找不到那张数组 ⇒ null（门自己喊空转，不是假绿）').toBeNull()
+    expect(unionMembers(B, 'BadRef', SYNTH), '点名的数组读不到 ⇒ null').toBeNull()
+    expect(unionMembers(B, 'Mixed', SYNTH), '一半字面量一半派生 ⇒ 谁做主说不清，拒绝而不是猜').toBeNull()
+  })
+
+  it('别名块读到下一个 `export` 为止：紧跟其后的数组初值行不算这个类型的成员（两支都不算）', () => {
+    expect(unionMembers(B, 'Derived', SYNTH), 'ROSTER2 那一行淌在 Derived 块里，不许被当成 ROSTER 的成员').not.toContain('x1')
+    const bleed = schemaBlocks("export type K = 'a' | 'b'\nexport const T = { c: 'x', d: 'y' }\n")
+    expect(unionMembers(bleed, 'K'), '字面量那一支同样在 `export` 处收口').toEqual(['a', 'b'])
   })
 
   it('`callArgLiterals` 只认字面量实参：变量传进来的那条读不到（所以这张普查只对"调用点全是字面量"的载体成立）', () => {
@@ -231,10 +258,13 @@ describe('今天的真载体：五张新对账在真文件上零条，抽取也�
     // 22 = 20 + `throwCrystal`（KI-023① 的 T 键音色晶）+ `observe`（KI-105 的 V 键声纹观察）。
     // **数与名字一起钉**：只报一个数的话，
     // 将来任何一格增删都只能靠"撞红"来定位，而撞红只说"不是 22"，说不出变的是谁。
-    const actions = unionMembers(schemaBlocks(read('src/core/Input.ts')), 'ActionName')
+    // KI-336：这一条的排版从字面量联合换成 `typeof ACTION_NAMES[number]` ⇒ 派生那一支要吃整份原文。
+    const inputText = read('src/core/Input.ts')
+    const actions = unionMembers(schemaBlocks(inputText), 'ActionName', inputText)
     expect(actions, '输入层的动作全集').toHaveLength(22)
     expect(actions, 'KI-023① 加的那一格').toContain('throwCrystal')
     expect(actions, 'KI-105 加的那一格').toContain('observe')
+    expect(unionMembers(schemaBlocks(inputText), 'UiIntent', inputText), '八格导航 + 九格直选，两位主人拼起来').toHaveLength(17)
     expect(callArgLiterals(read('src/rpg/Settlement.ts'), 'passiveValue')).toEqual(
       ['ps_metronomefoot', 'ps_tympanicguard', 'ps_featherrest'])
     expect(refFieldUnion(schemaBlocks(read('src/data/schema.ts')), 'Hitbox', 'shape')).toEqual(['cone', 'sphere', 'ring'])
@@ -247,7 +277,7 @@ describe('今天的真载体：五张新对账在真文件上零条，抽取也�
         copied: ['graze', 'normal', 'heavy', 'boss', 'stomp'], allowMissing: ['hurt', 'parry', 'execute'], whyMissing: '代码直接发',
       },
       { at: 'STATUS_IDS', from: 'src/core/EventBus.ts', source: (c) => arrayLiterals(c.text, 'STATUS_IDS'), copied: ['fissure', 'mute', 'echo', 'corruption', 'overdrive'] },
-      { at: 'ActionName', from: 'src/core/Input.ts', source: (c) => unionMembers(c.blocks, 'ActionName'), copied: ['weaponSkill', 'weaponSkillB'], subset: true, whySubset: '战技只占两条' },
+      { at: 'ActionName', from: 'src/core/Input.ts', source: (c) => unionMembers(c.blocks, 'ActionName', c.text), copied: ['weaponSkill', 'weaponSkillB'], subset: true, whySubset: '战技只占两条' },
       { at: "passiveValue('…')", from: 'src/rpg/Settlement.ts', source: (c) => callArgLiterals(c.text, 'passiveValue'), copied: ['ps_metronomefoot', 'ps_tympanicguard', 'ps_featherrest'] },
       { at: 'Hitbox', from: 'src/data/schema.ts', source: (c) => refFieldUnion(c.blocks, 'Hitbox', 'shape'), copied: ['cone', 'sphere', 'ring'] },
     ]

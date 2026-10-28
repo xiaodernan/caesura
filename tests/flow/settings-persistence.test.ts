@@ -15,7 +15,7 @@ import { CombatManager } from '@/combat/CombatManager'
 import { StreamingSystem } from '@/world/Streaming'
 import { SpawnDirector } from '@/world/SpawnDirector'
 import { RpgRuntime } from '@/rpg/Runtime'
-import { SaveGame, MapStore, READABLE_VERSIONS, migrateV12toV13 } from '@/save/Serializer'
+import { SaveGame, MapStore, READABLE_VERSIONS, SAVE_VERSION, migrateV12toV13 } from '@/save/Serializer'
 import { wrap } from '@/save/Integrity'
 import {
   DEFAULT_GAMEPLAY_SETTINGS,
@@ -359,7 +359,9 @@ describe('KI-112 设置持久化：gameplay 跟档走', () => {
     await w.saves.save('settings')
     // wrap 的信封是 { magic, schemaVersion, crc, payload }，快照住在 payload 里
     const stored = JSON.parse((await store.get('settings'))!) as { payload: { snapshot: { version: number; settings: { gameplay: Record<string, unknown> } } } }
-    expect(stored.payload.snapshot.version, '本腿落在 v13').toBe(13)
+    // KI-112 那一批写这条腿时它是 13；键位数据化（KI-336）把档升到 14，那条字面量当场红——
+    // 这条腿问的是"今天存出去的档带今天的号"，所以号从唯一主人那里读，不再抄第二份。
+    expect(stored.payload.snapshot.version, '写档走的版本 = SAVE_VERSION').toBe(SAVE_VERSION)
     expect(stored.payload.snapshot.settings.gameplay).toEqual({ bufferMs: 240, frameAssist: true, shakeScale: 1.5, rumbleScale: 2, damageScale: 0.7 })
 
     const w2 = makeWorld(store)

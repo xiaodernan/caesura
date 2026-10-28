@@ -8,6 +8,7 @@ import type { Quests, QuestsSnapshot } from '@/quest/Quests'
 import type { WorldStates } from '@/quest/WorldStates'
 import type { Interactables } from '@/world/Interactables'
 import type { GameplaySettings } from '@/settings/GameplaySettings'
+import type { Bindings } from '@/core/Input'
 import { migrateTo, registerMigration } from './Migration'
 import { MAGIC, crc32 } from './Integrity'
 import { unwrap, wrap } from './Integrity'
@@ -19,8 +20,8 @@ import { unwrap, wrap } from './Integrity'
  * 存档里没有一个敌人实例，只有一串槽位身份）。
  */
 
-/** v13 起带玩法/辅助设置块（`settings.gameplay`，KI-112）。迁移链见文末 */
-export const SAVE_VERSION = 13
+/** v13 起带玩法/辅助设置块（`settings.gameplay`，KI-112），v14 起带键位块（`settings.bindings`，KI-336）。迁移链见文末 */
+export const SAVE_VERSION = 14
 
 /**
  * 读档时接受的版本：凡是 ≤ 当前版本、且迁移链能一路升到当前的，都可以读。
@@ -191,6 +192,19 @@ export function migrateV12toV13(p: Record<string, unknown>): Record<string, unkn
 }
 registerMigration(12, migrateV12toV13)
 
+/**
+ * v13 → v14（KI-336）。键位表跟着档走，与 v13 那一笔同一个裁决：**迁移不写这格**。
+ * 老档没记过绑定 ⇒ `settings.bindings` 保持 undefined ⇒ 读档侧 `restore(undefined)` 原地不动，
+ * 运行时用默认表（§78「留空是如实」——写一份假默认等于谎称那份档改过键，还会把"下一批改了默认键"
+ * 的老玩家钉死在他从没选过的那一张表上）。
+ */
+export function migrateV13toV14(p: Record<string, unknown>): Record<string, unknown> {
+  const snap = { ...(p.snapshot as Record<string, unknown>) }
+  snap.version = 14
+  return { ...p, snapshot: snap }
+}
+registerMigration(13, migrateV13toV14)
+
 export interface Snapshot {
   version: number
   /** 游玩秒数（HUD/存档摘要卡用） */
@@ -220,11 +234,11 @@ export interface Snapshot {
   /** 碎掉的可破坏场景物 id（v8 起，KI-023）：碎刺不可再生，读档不能白还一次破势窗 */
   brokenProps: string[]
   /**
-   * 设置（v12 音频 / v13 玩法，KI-026 + KI-112）。`gameplay` 的形状在
-   * `settings/GameplaySettings.ts` 里声明并在读档路径夹取；老档没这格 ⇒ undefined
-   * ⇒ 恢复侧什么都不动。
+   * 设置（v12 音频 / v13 玩法 / v14 键位，KI-026 + KI-112 + KI-336）。`gameplay` 的形状在
+   * `settings/GameplaySettings.ts` 里声明并在读档路径夹取；`bindings` 同理由
+   * `settings/Bindings.ts > clampBindings` 把门。老档没这格 ⇒ undefined ⇒ 恢复侧什么都不动。
    */
-  settings?: { audio: Record<string, number>; gameplay?: GameplaySettings }
+  settings?: { audio: Record<string, number>; gameplay?: GameplaySettings; bindings?: Bindings }
   /** 成长/背包/装备/掉落状态（v2 起）。v1 老档为 null ⇒ 保留运行时基线 */
   rpg: RpgSnapshot | null
   /** 叙事进度（v7 起）：任务状态 / NPC 关系 / 对话已读节点。老档为 null ⇒ 一切从头 */
@@ -421,6 +435,11 @@ export interface SaveWorld {
    * raw 进 apply 前不被信任：夹取在 GameplaySettingsStore.restore（信任边界）里做。
    */
   gameplay?: { get(): GameplaySettings; apply(raw: unknown): void }
+  /**
+   * KI-336：键位表的消费端（可选，结构式声明），与 `gameplay` 同一位子——`get` 供 capture 抄进档，
+   * `apply` 供读档灌回 `Input`。raw 进 apply 前同样不被信任：校验在 `BindingsStore.restore` 里做。
+   */
+  bindings?: { get(): Bindings; apply(raw: unknown): void }
   /** Phase 6-B：叙事进度（任务状态 / 关系 / 已读节点），同上可选 */
   quests?: Quests
   /** Phase 6-B：值域状态（`state.*`）。同样是世界状态的一部分：不存，读档就回到缺省那一格 */
@@ -464,14 +483,14 @@ export class SaveGame {
       usedInteractables: w.interact ? w.interact.snapshot() : [],
       brokenProps: w.props ? w.props.snapshot() : [],
       settings: (() => {
-        // 音频（KI-026）与玩法（KI-112）各自独立：只接了一边的世界也不该丢另一边的档
-        if (!w.audio && !w.gameplay) return undefined
+        // 音频（KI-026）、玩法（KI-112）、键位（KI-336）三块各自独立：只接了其中一边的世界也不该丢其余的档
+        if (!w.audio && !w.gameplay && !w.bindings) return undefined
         const audio: Record<string, number> = {}
         if (w.audio) {
           const buses = ['master', 'music', 'sfx', 'ambience', 'ui']
           for (const b of buses) audio[b] = w.audio.getVolume(b)
         }
-        return { audio, gameplay: w.gameplay ? w.gameplay.get() : undefined }
+        return { audio, gameplay: w.gameplay ? w.gameplay.get() : undefined, bindings: w.bindings ? w.bindings.get() : undefined }
       })(),
       rpg: w.rpg ? w.rpg.snapshot() : null,
       quest: w.quests ? w.quests.snapshot() : null,
@@ -562,6 +581,8 @@ export class SaveGame {
     // KI-112：玩法设置灌回消费者。老档没这格 ⇒ undefined ⇒ restore 自己的"不动"语义，
     // 运行时保持当前值（不假装重置成默认——那份档根本没记过设置）
     w.gameplay?.apply(s.settings?.gameplay)
+    // KI-336：键位表整张换回。同一句 §78：老档没记过绑定 ⇒ 不动，运行时保持当前那一张
+    w.bindings?.apply(s.settings?.bindings)
     // floorY 不在这里算：调用方 teleport 之后由 world/Surface 给（保持「谁能算出脚下」只有一个答案）
   }
 }

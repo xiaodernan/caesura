@@ -38,6 +38,8 @@ import { glossary } from '@/combat/Statuses'
 import { AudioEngine } from '@/audio/AudioEngine'
 import { Haptics } from '@/input/Haptics'
 import { GameplaySettingsStore } from '@/settings/GameplaySettings'
+import { BindingsStore } from '@/settings/Bindings'
+import { makeOpsHandles } from '@/ui/OpsHandles'
 import { VfxLayer } from '@/vfx/VfxLayer'
 import { ColorGrade } from '@/vfx/ColorGrade'
 import { Hud } from '@/ui/Hud'
@@ -50,6 +52,8 @@ import { DebugPanel } from '@/tools/DebugPanel'
 import { enemyPanelText } from '@/tools/EnemyDebugger'
 import { questPanelText, questRows } from '@/tools/QuestDebugger'
 import { aiPanelText } from '@/tools/AIDebugger'
+import { perfPanelSpec } from '@/tools/PerfDebugger'
+import { BUDGET_CPU_MS, BUDGET_GPU_MS, FRAME_WINDOW, PerfSampler } from '@/core/PerfSampler'
 import { HitboxWire, wiresFrom } from '@/world/HitboxWire'
 import { SaveGame, LocalStore, IdbStore } from '@/save/Serializer'
 import { SlotRoster } from '@/save/Slots'
@@ -204,7 +208,7 @@ const decals = (await import('@/vfx/Decals')).initDecalSystem(arena.scene)
 // KI-094①：雾密度与画面滤镜的唯一写方。它按「当前生效的那格天气 + §11 失谐」合成，
 // 所以开局那一区也得由它读一次——那句在 `interact` 之后（要读旗标），见下面 `applyWeather(homeRegion …)`。
 const grade = new ColorGrade(arena.scene, canvas)
-const hud = new Hud(document.getElementById('hud') as HTMLCanvasElement)
+const hud = new Hud(document.getElementById('hud') as HTMLCanvasElement, input)
 /** 飘字要钉在世界坐标上：HUD 不认识相机，投影由这里喂进去（§8.2 ms_crit_ring 的腿） */
 hud.project = (p) => {
   const v = new Vector3(p.x, p.y, p.z).project(rig.cam)
@@ -262,7 +266,7 @@ const panel = new Stakerite(rpg, {
   list: () => saveRoster.list(),
   write: (slot) => saves.save(slot),
   erase: (slot) => saves.erase(slot)
-})
+}, input, makeOpsHandles(input, () => bindingsStore, () => gameplayStore))
 /**
  * 对话框（Phase 6-B）。它只回吐玩家的选择，效果由 `showTurn` → `applyDialogueEffects` 统一落盘：
  * UI 不做第二个真值（与调音桩面板同一条纪律）。
@@ -719,7 +723,28 @@ addEventListener('keydown', (e) => {
    两个写方在浏览器里是后盖前的，谁都不认识谁——把合成收成唯一仲裁者之后，这里只剩下"报失谐读数"。 */
 
 /* ---------------------------------------------------------------------------
- * 运行时调试面板（需求 §54 的 F1/F3/F4，§56 目录表里规划的三个 Debugger）。
+ * §5.7 的采样器（KI-335：技术架构那句「不要猜性能」第一次有了读数口）。
+ *
+ * **两道开关里的第一道就在这里**：`import.meta.env.DEV` ⇒ 发布构建里 Vite 把这一句折成 `null`，
+ * 于是 `span` 变成 `fn()` 本身、`GameLoop` 一个 `performance.now()` 都不叫、F5 那块面板根本不存在。
+ * 第二道是 `PerfSampler.armed`（F5 的 `onToggle` 只管它），默认关着。
+ *
+ * 它不装在 `GameLoop` 里而是从组合根递进去：环不认识"面板"这件事，它只把一个可选的采样口
+ * 用在帧自己那两头上（§5.8 的分层规矩）。
+ * ------------------------------------------------------------------------- */
+const perf: PerfSampler | null = import.meta.env.DEV ? new PerfSampler() : null
+/**
+ * 分段计时的落点。名字是**面板上的那一行**（`logic.*` ＝ 逻辑拍里的事，`post.*` ＝ `postTick`
+ * 里的事，`render.*` ＝ 渲染回调里的事），所以改名要连着改面板，不是一个内部编号。
+ *
+ * 这一句在发布构建里的代价：一次 `perf` 真值判断＋**一个闭包**（`performance.now()` 零次、
+ * 记账零次）。闭包是这套 API 用函数而不是用 `begin()/end()` 配对换来的东西——配对在异常路径上
+ * 会漏 `end`，而漏一次就永远多计一段。这笔账记在账本 KI-335 的「还欠」。
+ */
+const span: <T>(name: string, fn: () => T) => T = perf ? ((name, fn) => perf.span(name, fn)) : ((_name, fn) => fn())
+
+/* ---------------------------------------------------------------------------
+ * 运行时调试面板（需求 §54 的 F1/F3/F4/F5，§56 目录表里规划的三个 Debugger）。
  * 只在 DEV 构建里接线：这三块面板读的是引擎内部状态，发布版本里没有它们，
  * 而 `core.postTick` 的循环里连一次函数调用都不会留下（`debugPanels` 恒空）。
  * F2 比这套外壳早落地（`CombatDebugger` 走纯事件流，不需要读实例），不动它。
@@ -769,6 +794,13 @@ if (import.meta.env.DEV) {
       },
     }),
   )
+  /* F5 · 性能面板（KI-335：§5.7 那句「内建 PerfPanel（F 键）」的承载体，此前根本没有这一格）。
+     接线不在这里，而在下面 `loop` 建好之后那一句——这块面板读的四件东西里最后一件就是那条环
+     （`maxTicksPerFrame` 那一格的主人），而把 `{ loop }` 交出去的位置必须在它被声明之后。
+     读数怎么摆（哪一行的数从哪一格来）整段住在 `tools/PerfDebugger.ts > perfPanelSpec`，
+     于是那一半在 node 里问得出问题；组合根这里只留一行接线（这笔账的理由见那个文件头）。
+     `onToggle` 是这块面板与其它四块的唯一结构差别：其余几块关着只是不生成字，这一块关着要连
+     计时一起停，所以开关得通知采样器（`PerfSampler.armed` 是第二道闸门）。 */
   /* hitbox 线框（KI-315，§17 调试器那一格的最后一格）：把**此刻在场**的每一记出手的那个框画成线段。
      名册交给 `wiresFrom`——"谁在场、谁敌我、键取什么"只有那一个主人（测试也读那一格，
      不是我在这里再抄一遍的语义）。`world/HitboxWire` 依旧不认识 CombatManager/AISystem
@@ -816,13 +848,15 @@ const core = {
     for (const act of ['weaponSkill', 'weaponSkillB'] as const) {
       if (inp.frame.edges.has(act)) player.tryStartAction(act, t.tick, rhythm)
     }
-    player.update(dt, t, inp, t.tick, rhythm)
-    streaming.update(t.tick, player.pos)
-    player.floorY = surface.floorAt(player.pos)?.y ?? 0 // 层外回落到基准地面
-    interact.update(player.pos)
-    nodes.animate(t.tick) // KI-013：调音桩呼吸灯
-    const act = takeInteractEdge(inp.frame.edges, interact.focus(player.pos)) // 交互优先于处决/背刺
-    if (act) applyInteract(act)
+    span('logic.player', () => player.update(dt, t, inp, t.tick, rhythm))
+    span('logic.streaming', () => streaming.update(t.tick, player.pos))
+    span('logic.world', () => {
+      player.floorY = surface.floorAt(player.pos)?.y ?? 0 // 层外回落到基准地面
+      interact.update(player.pos)
+      nodes.animate(t.tick) // KI-013：调音桩呼吸灯
+      const act = takeInteractEdge(inp.frame.edges, interact.focus(player.pos)) // 交互优先于处决/背刺
+      if (act) applyInteract(act)
+    })
     const here = streaming.regionAt(player.pos)
     // authored 遮挡（KI-014②）：跨区就换名册，人不在任何区域里就清空——
     // 留着上一片天的墙会出现"新区域里凭空有空气挡箭"，而那空气在这儿根本没画出来
@@ -873,8 +907,8 @@ const core = {
     }
     // face locked target while locked & idle-ish
     if (lock.target) player.faceTowards(lock.target.getPos())
-    ai.update(dt, t.tick, player, rhythm)
-    combat.update(t.tick, inp, dt)
+    span('logic.ai', () => ai.update(dt, t.tick, player, rhythm))
+    span('logic.combat', () => combat.update(t.tick, inp, dt))
     // §11 失谐：脏音是**区域**往你身上写的（深窖=2/s），不是打得不好的惩罚；
     // 满值后的"褪色"走 fadeDamage——不吃防御阶梯、不硬直、不击退，它是环境而不是攻击。
     // 累积与掉血共用区域那一格做闸门（tickEnvironment），安全区两条都关。
@@ -882,19 +916,23 @@ const core = {
     if (faded > 0) player.fadeDamage(faded)
     grade.setVeil(player.corruption.veil())
     lock.update()
-    visuals.sync(ai.enemies, t.tick)
-    projectileVis.sync(combat.projectiles.list(), t.tick)
-    projectileVis.syncGrounded(combat.groundedSpears.list()) // §4.3 躺在地上等拾回的那杆枪也得看得见
-    projectileVis.syncTelegraphs(combat.telegraphs())
-    bossArena.sync(ai.enemies.filter((e) => !!e.data.boss)) // 立钟与断音柱都在 Boss 场地类里，少一个过滤条件就会漏画后者
-    propVis.sync(props.all) // KI-023：音刺的歪斜/残桩跟着耐久走
+    span('logic.visuals', () => {
+      visuals.sync(ai.enemies, t.tick)
+      projectileVis.sync(combat.projectiles.list(), t.tick)
+      projectileVis.syncGrounded(combat.groundedSpears.list()) // §4.3 躺在地上等拾回的那杆枪也得看得见
+      projectileVis.syncTelegraphs(combat.telegraphs())
+      bossArena.sync(ai.enemies.filter((e) => !!e.data.boss)) // 立钟与断音柱都在 Boss 场地类里，少一个过滤条件就会漏画后者
+      propVis.sync(props.all) // KI-023：音刺的歪斜/残桩跟着耐久走
+    })
     // VFX 系统更新（Phase B4）
-    rain.update(dt, rig.cam.position)
-    trails.update(dt)
-    decals.update(dt)
-    // GPU 粒子是异步模块：渲染回调不是 async（await 会把整条循环编译炸掉），用 then 接——
-    // 模块缓存之后每次调用近乎零开销，没就绪的那几帧跳过（粒子晚半秒出现不构成账）。
-    void import('@/vfx/GPUParticles').then((m) => m.getGPUParticles()?.update(dt))
+    span('logic.vfx', () => {
+      rain.update(dt, rig.cam.position)
+      trails.update(dt)
+      decals.update(dt)
+      // GPU 粒子是异步模块：渲染回调不是 async（await 会把整条循环编译炸掉），用 then 接——
+      // 模块缓存之后每次调用近乎零开销，没就绪的那几帧跳过（粒子晚半秒出现不构成账）。
+      void import('@/vfx/GPUParticles').then((m) => m.getGPUParticles()?.update(dt))
+    })
     // KI-105 声纹观察：按住 V 荡开涟漪——波前扫到的敌人/交互物画显形环。
     // 包络闸门关着（没按/淡出完）时这一切空转：takeMarks 交还空账，一个环都不发。
     observe.hold(inp.frame.held.has('observe'))
@@ -923,13 +961,14 @@ const core = {
     // 节拍钟走「逻辑 tick」而不是 time.dt：combat.md §9 末行规定 hitStop 只冻结攻守双方的动画时间，
     // 节拍/粒子/震镜/音效照常。喂 t.dt 会让命中停顿把整张拍网格拖慢（实机：20 tick 内只前进 0.0233 拍，
     // 应为 0.4667 拍 —— KI-017 的量化读数）。
-    rhythm.update(TICK_DT)
+    span('post.rhythm', () => rhythm.update(TICK_DT))
     // 相机跟随仍按 `t.dt`（停顿那一下镜头该"挂"住），但震镜走 tick——见 CameraRig 与 §9。
-    rig.update(t.dt, player, input.frame.look, lock.target ? lock.target.getPos() : null, TICK_DT)
+    span('post.camera', () => rig.update(t.dt, player, input.frame.look, lock.target ? lock.target.getPos() : null, TICK_DT))
     // 调试面板每逻辑帧重画一次（关着的面板内部直接 return，一个字符串都不生成）
-    for (const p of debugPanels) p.refresh()
     // 线框同一条规矩（KI-315）：关着的 `HitboxWire` 连 `feed()` 都不叫，一帧的线段也不建
-    for (const w of debugWires) w.sync()
+    // 这一段有名字（KI-335）是故意的：**面板开着这件事自己也要吃时间**，把它藏起来就等于撒谎。
+    // F5 上那一条 `post.panels` 读的就是"我为了看见代价，花了多少代价"。
+    span('post.panels', () => { for (const p of debugPanels) p.refresh(); for (const w of debugWires) w.sync() })
   }
 }
 
@@ -949,15 +988,24 @@ function feedMenu(): void {
 
 const loop = new GameLoop(time, input, (alpha, realDelta) => {
   feedMenu()
-  arena.update(alpha, realDelta)
-  vfx.update(realDelta) // particles run on real time — hitstop must not freeze VFX (tech-arch §4 rule 3)
-  audio.update(realDelta)
-  audio.setListener(player.pos.x, player.pos.y + 1, player.pos.z, rig.yaw)
-  hud.render(alpha, realDelta)
+  span('render.scene', () => arena.update(alpha, realDelta))
+  span('render.vfx', () => vfx.update(realDelta)) // particles run on real time — hitstop must not freeze VFX (tech-arch §4 rule 3)
+  span('render.audio', () => { audio.update(realDelta); audio.setListener(player.pos.x, player.pos.y + 1, player.pos.z, rig.yaw) })
+  span('render.hud', () => hud.render(alpha, realDelta))
   rig.cam.aspect = innerWidth / innerHeight
-  arena.renderer.render(arena.scene, rig.cam)
-})
+  // 这一格是面板上最贵的那一条名字：`renderer.render` 在 JS 侧只做到"把命令交出去"，
+  // 剩下的 GPU 时间在浏览器之外（§5.3 的 GPU ≤12ms 那一半今天仍然量不到，账本 KI-335 的「还欠」）
+  span('render.submit', () => arena.renderer.render(arena.scene, rig.cam))
+}, perf)
 loop.add(core)
+
+/* F5 · 性能面板的接线（KI-335）。为什么排在 `loop` 之后：这块面板读的四件东西里最后一件就是这条环，
+   而 `{ loop }` 交出去的位置必须在它声明之后。为什么这里只有一行：读数怎么摆（哪一行的数从哪一格来）
+   整段住在 `tools/PerfDebugger.ts > perfPanelSpec`，那一半因此在 node 里问得出问题；组合根是零覆盖那一格，
+   它每多一行没人执行过的代码，覆盖率棘轮就少 0.0065 个百分点——这笔账记在 KI-335 与那个文件头。
+   `frameWindow`/`budget` 从 `core/PerfSampler` 原样递过去：那几个常数仍然只有一个主人，只是多了一个读者。
+   发布构建里 `perf` 折成 null ⇒ 这一句连着那块面板一起被删掉。 */
+if (perf) debugPanels.push(new DebugPanel(perfPanelSpec(perf, { vfx, streaming, renderer: arena.renderer, loop }, { frameWindow: FRAME_WINDOW, budget: { cpuMs: BUDGET_CPU_MS, gpuMs: BUDGET_GPU_MS } })))
 
 addEventListener('resize', () => { arena.resize(); rig.resize() })
 bus.on('log', (l) => console.info(`[caesura:${l.level}] ${l.msg}`))
@@ -974,12 +1022,14 @@ const saveBackup = typeof indexedDB === 'undefined' ? null : new IdbStore('caesu
  * 构造即灌一遍当前值；读档经 `SaveGame.apply` 落到 `restore`（信任边界在 store 里）。
  */
 const gameplayStore = new GameplaySettingsStore({ input, rig, haptics, combat })
+/** KI-336：键位表的宿主（消费者只有 `Input` 一个——两条通道一起换才不会出现半张新表） */
+const bindingsStore = new BindingsStore({ input })
 /**
  * 存档时刻的墙钟只在这里给（KI-025①）：逻辑层不许自己读 `Date`，否则每次跑测都会写出不同的档，
  * 而"摘要卡上的时间是从外面带进来的"这条也就没有证人。
  */
 const saves = new SaveGame(
-  { player, streaming, spawner, clock: rhythm, time, rpg, interact, props, quests, states: worldStates, audio: { engine: audio, setVolume: (b: string, v: number) => audio.setVolume(b as never, v), getVolume: (b: string) => audio.getVolume(b) }, gameplay: { get: () => gameplayStore.get(), apply: (raw: unknown) => gameplayStore.restore(raw) }, now: () => Date.now() },
+  { player, streaming, spawner, clock: rhythm, time, rpg, interact, props, quests, states: worldStates, audio: { engine: audio, setVolume: (b: string, v: number) => audio.setVolume(b as never, v), getVolume: (b: string) => audio.getVolume(b) }, gameplay: { get: () => gameplayStore.get(), apply: (raw: unknown) => gameplayStore.restore(raw) }, bindings: { get: () => bindingsStore.get(), apply: (raw: unknown) => bindingsStore.restore(raw) }, now: () => Date.now() },
   savePrimary, saveBackup
 )
 /** 摘要卡的名册（KI-025）：标题屏与调音桩面板都从它读"这几格是什么、能不能读" */

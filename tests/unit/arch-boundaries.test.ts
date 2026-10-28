@@ -36,6 +36,9 @@ const PRESENTATION = new Set([
   // 面板只许从组合根拿闭包，不许自己去 import 运行时实例（KI-058 的三块新面板就在这条里）。
   'tools/CombatDebugger.ts', 'tools/DebugPanel.ts',
   'tools/EnemyDebugger.ts', 'tools/QuestDebugger.ts', 'tools/AIDebugger.ts',
+  // KI-335：第五块面板（§5.7 的 PerfPanel 那一格）。它只 `import type` 采样器的快照形状，
+  // 于是它既不碰 three 也不碰逻辑运行时——把它列进这张表是为了让最后那条闸门真的管到它。
+  'tools/PerfDebugger.ts',
   'vfx/VfxLayer.ts', 'vfx/materials.ts', 'vfx/ColorGrade.ts',
   'vfx/RainSystem.ts', 'vfx/Trails.ts', 'vfx/Decals.ts', 'vfx/GPUParticles.ts',
   // KI-135：配置转换层（数据是纯 JSON，hex/向量/混合模式 → three 的那一步在表现层）
@@ -114,6 +117,46 @@ describe('module dependency boundaries (tech-arch §3)', () => {
       for (const spec of importsOf(rel)) if (banned.includes(spec)) offenders.push(`${rel} -> ${spec}`)
     }
     expect(offenders).toEqual([])
+  })
+})
+
+describe('KI-336 默认键位表只有一个主人（显示层不许读默认值当现值）', () => {
+  /**
+   * `DEFAULT_BINDS`/`UI_BINDS` 是**默认值**，不是**此刻的值**。把它们当现值读的地方，改键之后就说谎——
+   * `Stakerite` 那句「改键之后面板不会说谎」正是这样空转了一个版本（它读的是常量表）。
+   * 运行时读数一律走 `Input.binds` / `Input.uiBinds`；默认值只许在两个地方出现：表的主人自己，
+   * 和 `settings/Bindings.ts` 那个"给 store 现推默认快照"的信任边界。
+   * 新增合法读者必须在这里点名并写下理由——这条闸门管的是**import**，注释里的提及不算读（第 3 腿量）。
+   */
+  const TABLE_OWNERS = new Set(['core/Input.ts', 'settings/Bindings.ts'])
+  const DEFAULT_TABLES = ['DEFAULT_BINDS', 'UI_BINDS']
+  const NAMED_IMPORT_RE = /import\s*\{([^}]*)\}\s*from\s*['"]([^'"]+)['"]/g
+  /** 花括号里那些**运行时**的名字：`type X` 编译后消失，不构成读数 */
+  const valueNamesOf = (rel: string): string[] =>
+    [...readFileSync(`${SRC}/${rel}`, 'utf8').matchAll(NAMED_IMPORT_RE)]
+      .flatMap((m) => m[1].split(','))
+      .map((s) => s.trim())
+      .filter((s) => s !== '' && !s.startsWith('type '))
+
+  it('src 里没有第三处运行时读默认键位表', () => {
+    const all = tsFiles('.').map((p) => p.replace(/^\.\//, ''))
+    expect(all.length, '空清单会让这条闸门变成空测试').toBeGreaterThanOrEqual(50)
+    const offenders = all.filter((rel) => !TABLE_OWNERS.has(rel) &&
+      DEFAULT_TABLES.some((d) => valueNamesOf(rel).includes(d)))
+    expect(offenders, `这些文件把默认表当成了此刻的表：${offenders.join(', ')}`).toEqual([])
+  })
+
+  it('信任边界确实是那唯一的默认值读者（它 import 了才谈得上"现推快照"）', () => {
+    expect(valueNamesOf('settings/Bindings.ts')).toContain('DEFAULT_BINDS')
+    expect(valueNamesOf('settings/Bindings.ts')).toContain('UI_BINDS')
+  })
+
+  it('量具反证：注释里的提及不会被误报，运行时读表会被抓到', () => {
+    // `main.ts` 与 `ui/Hud.ts` 都在**注释**里写过 `UI_BINDS`/`DEFAULT_BINDS`（第 1 腿扫全 src），
+    // 这条把它们钉成"扫描器只认 import"，否则第 1 腿会退化成"文档里不许出现这两个名字"。
+    expect(valueNamesOf('ui/Hud.ts'), 'Hud 读的是 keyOf + 注入的 bindsSource，不是常量表').not.toContain('DEFAULT_BINDS')
+    expect(valueNamesOf('main.ts'), '组合根只接线，不抄表').not.toContain('UI_BINDS')
+    expect(valueNamesOf('ui/Stakerite.ts'), '面板同理：槽位标签读运行时表').not.toContain('DEFAULT_BINDS')
   })
 })
 

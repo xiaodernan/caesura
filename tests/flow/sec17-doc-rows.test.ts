@@ -587,8 +587,9 @@ describe('KI-300 §17 第五行（调试器）', () => {
     const files = srcFiles()
     const roster = [...new Set(files.flatMap((f) => [...f.text.matchAll(/\bF([0-9])\b/g)].map((m) => `F${m[1]}`)))].sort()
     /* KI-315 之前这一格钉的是四把键。F6（hitbox 线框的呼出键）落地后名册伸长一格是**预期内的红**：
-       这条腿读的是"src 里真按得出的键"，它不许变成第二把键的主人——所以名字由扫描现推，改码就改名册。 */
-    expect(roster).toEqual(['F1', 'F2', 'F3', 'F4', 'F6'])
+       这条腿读的是"src 里真按得出的键"，它不许变成第二把键的主人——所以名字由扫描现推，改码就改名册。
+       KI-335 同一形状又长一次：F5 是性能面板（§5.7 那格）的呼出键，名册随之多一把。 */
+    expect(roster).toEqual(['F1', 'F2', 'F3', 'F4', 'F5', 'F6'])
     expect(files.reduce((a, f) => a + (f.text.match(/F9/g) ?? []).length, 0)).toBe(0)
     expect(files.filter((f) => f.text.includes("e.key !== 'F2'")).map((f) => f.path)).toEqual(['src/tools/CombatDebugger.ts'])
     expect(files.filter((f) => /key: 'F1' \| 'F3' \| 'F4'/.test(f.text)).map((f) => f.path)).toEqual(['src/tools/DebugPanel.ts'])
@@ -606,6 +607,7 @@ describe('KI-300 §17 第五行（调试器）', () => {
       'src/tools/CombatDebugger.ts',
       'src/tools/DebugPanel.ts',
       'src/tools/EnemyDebugger.ts',
+      'src/tools/PerfDebugger.ts',
       'src/tools/QuestDebugger.ts',
     ])
     const carrier = (re: RegExp): string[] => tools.filter((f) => re.test(f.text)).map((f) => f.path).sort()

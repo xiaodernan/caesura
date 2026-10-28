@@ -377,6 +377,15 @@ export class VfxLayer {
     }
   }
 
+  /**
+   * §5.7「池命中率」在这一格的读数：`Pool<T>` 全库今天只有这一个消费者（§5.1 对账写的正是这句），
+   * 所以面板上那一行 `reuse` 的数只能从这儿取。返回的是 plain number，不带 `Emitter` 实例——
+   * `tools/PerfDebugger.ts` 因此不需要认识 vfx（依赖闸门 §5.8 的那条方向规矩）。
+   */
+  get emitterPoolStats(): { live: number; free: number; peak: number; cap: number; hits: number; misses: number } {
+    return this.emitterPool.stats
+  }
+
   dispose(): void {
     bus.off('vfx.request', this.onRequest)
     bus.off('time.hitStop', this.onHitStop)

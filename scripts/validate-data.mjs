@@ -196,7 +196,9 @@ const VOCAB_PAIRS = [
   },
   { at: 'STATUS_IDS', from: 'src/core/EventBus.ts', name: '五状态名册', source: (c) => arrayLiterals(c.text, 'STATUS_IDS'), copied: STATUS_IDS, where: 'STATUS_IDS' },
   {
-    at: 'ActionName', from: 'src/core/Input.ts', name: '乐章战技占用的输入动作', source: (c) => unionMembers(c.blocks, 'ActionName'), copied: [...MOVEMENT_ACTIONS],
+    at: 'ActionName', from: 'src/core/Input.ts', name: '乐章战技占用的输入动作',
+    // KI-336：`ActionName` 不再是字面量联合，是 `typeof ACTION_NAMES[number]`——派生那一支要吃整份原文
+    source: (c) => unionMembers(c.blocks, 'ActionName', c.text), copied: [...MOVEMENT_ACTIONS],
     subset: true, where: 'MOVEMENT_ACTIONS',
     whySubset: '输入层有 20 个动作，战技槽只占用其中两个；这张表**本来就是**子集，所以少抄不报、多抄（输入层没这个动作）照报',
   },

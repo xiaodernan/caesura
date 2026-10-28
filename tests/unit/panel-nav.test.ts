@@ -4,11 +4,11 @@ import { RpgRuntime } from '@/rpg/Runtime'
 import type { SavePanelDeps } from '@/ui/Stakerite'
 
 /**
- * KI-061：调音桩面板的键盘导航（ui-ux.md §218「方向键 + 肩键切页 + Back 永远后退一层 + 焦点记忆」）
+ * KI-061：调音桩面板的键盘导航（ui-ux.md §5.2「方向键 + 肩键切页 + Back 永远后退一层 + 焦点记忆」）
  * 与它顺手抓出的那条关闭冻结 bug。
  *
  * 为什么这一份测试值得单独存在：面板的鼠标那条路一直有人按（`stakerite.test.ts` 点得动），
- * 键盘那条路没有——而 §242 的出口清单问的是"全路径可达？"。更糟的是遮罩点击那条 close 分支
+ * 键盘那条路没有——而 §7 的出口清单问的是"全路径可达？"。更糟的是遮罩点击那条 close 分支
  * 只摘 DOM、不归还 `time.paused` / `input.enabled`：**点一下背景 = 把游戏冻在看不见的地冻里**，
  * 事后按 Esc 也只解开一半（`input.enabled` 只有 `setPanelOpen` 那处会恢复）。
  * 所以这里既量导航，也量"关闭只有一个主人"。
@@ -100,7 +100,7 @@ async function focusOn(p: object, act: string, skipDisabled = false): Promise<nu
   return -1
 }
 
-describe('KI-061 面板键盘导航（§218 方向键 / 焦点记忆 / Back）', () => {
+describe('KI-061 面板键盘导航（ui-ux §5.2 方向键 / 焦点记忆 / Back）', () => {
   it('↑↓ 移动焦点框；第一行往上按是回绕到最后一行；没按过导航键之前不该有框', async () => {
     const { p } = await makePanel()
     ;(p as { show(): void }).show()

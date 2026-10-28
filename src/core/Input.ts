@@ -1,13 +1,25 @@
 import { TICK_DT } from '@/core/Time'
 
-export type ActionName =
-  | 'moveUp' | 'moveDown' | 'moveLeft' | 'moveRight'
-  | 'sprint' | 'jump' | 'dodge'
-  | 'attackLight' | 'attackHeavy' | 'guard' | 'parry'
-  | 'lockOn' | 'interact' | 'weaponSkill' | 'weaponSkillB'
-  | 'observe'
-  | 'ability1' | 'ability2' | 'ability3'
-  | 'map' | 'pause' | 'throwCrystal'
+/**
+ * 动作名册（KI-336）：类型与运行时名单**同一个主人**。
+ * 联合类型在这里是手写的，而运行时拿不到它——绑定一旦变成数据，`settings/Bindings.ts` 要回答
+ * 「档里这一格的动作名到底存不存在」就只能在另一侧再抄一份名单。抄的副本会漂（§55 的唯一主人），
+ * 所以名单先写成值，类型由它推导：默认表里把一个动作拼错，编译期就红，而不是变成一个没人绑的格子。
+ */
+const ACTION_NAMES = [
+  'moveUp', 'moveDown', 'moveLeft', 'moveRight',
+  'sprint', 'jump', 'dodge',
+  'attackLight', 'attackHeavy', 'guard', 'parry',
+  'lockOn', 'interact', 'weaponSkill', 'weaponSkillB',
+  'observe',
+  'ability1', 'ability2', 'ability3',
+  'map', 'pause', 'throwCrystal'
+] as const
+
+export type ActionName = typeof ACTION_NAMES[number]
+
+/** 可绑动作的运行时名册：信任边界读这一份，不另抄（顺序即默认表的书写顺序） */
+export const BINDABLE_ACTIONS: readonly ActionName[] = ACTION_NAMES
 
 export interface Binds {
   keyboard: Record<string, ActionName>
@@ -15,6 +27,8 @@ export interface Binds {
   padAxes: { moveX: number; moveY: number; camX: number; camY: number }
 }
 
+/** 玩法通道的**默认表**：默认快照的主人（`settings/Bindings.ts > defaultBindings()` 从它现推），
+ *  运行时生效的那一份在 `Input.binds` 里。 */
 export const DEFAULT_BINDS: Binds = {
   keyboard: {
     KeyW: 'moveUp', KeyS: 'moveDown', KeyA: 'moveLeft', KeyD: 'moveRight',
@@ -71,14 +85,36 @@ export function keyOf(action: ActionName, binds: Binds = DEFAULT_BINDS): string 
  * ------------------------------------------------------------------------- */
 /* 数字键那一组为什么也进"意图"而不是让面板自己读码：对话框的『1-9 选择』与其余菜单读数必须
    走同一扇门——两处入口就是两个主人（KI-061 的"一次 ↓ 被数两遍"在这里的同款）。 */
-export type UiIntent =
-  | 'up' | 'down' | 'left' | 'right' | 'confirm' | 'back' | 'pagePrev' | 'pageNext'
-  | `pick${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9}`
+
+/** 菜单导航意图的名册（八格）；`pick1..9` 那一组在下面 `PICK_INTENTS`，两半合起来是 `UiIntent` 的全值域 */
+const UI_NAV = ['up', 'down', 'left', 'right', 'confirm', 'back', 'pagePrev', 'pageNext'] as const
+const UI_PICK = ['pick1', 'pick2', 'pick3', 'pick4', 'pick5', 'pick6', 'pick7', 'pick8', 'pick9'] as const
+
+export type UiIntent = typeof UI_NAV[number] | typeof UI_PICK[number]
 
 /** 九格"直接选第 n 项"的意图名册：顺序即行号，`pickN` ⇄ 第 N 行的换算只有这一处 */
-export const PICK_INTENTS = [
-  'pick1', 'pick2', 'pick3', 'pick4', 'pick5', 'pick6', 'pick7', 'pick8', 'pick9',
-] as const satisfies readonly UiIntent[]
+export const PICK_INTENTS: readonly UiIntent[] = UI_PICK
+/** 八格导航意图的名册（与 `PICK_INTENTS` 合成运行时全值域，信任边界读这两份，不另抄） */
+export const UI_NAV_INTENTS: readonly UiIntent[] = UI_NAV
+export const UI_INTENTS: readonly UiIntent[] = [...UI_NAV, ...UI_PICK]
+
+/** UI 通道的一份绑定表：与玩法那张同形两格 + 摇杆阈值（`stickThreshold` 是它的第三个主人） */
+export interface UiBinds {
+  keyboard: Record<string, UiIntent>
+  padButtons: Record<number, UiIntent>
+  stickThreshold: number
+}
+
+/**
+ * 运行时生效的两张表（玩法 + 菜单）合起来的形状——`settings/Bindings.ts` 存的就是它，
+ * `Input.setBindings()` 收的也是它。分成两格是**两条通道各自成套**：`Tab` 在玩法是 `map`、
+ * 在菜单是 `back`（靠 `uiOwner` 互斥，见上面的理由），所以一条通道内的"一码一动作"不许被
+ * 另一条通道的同码判成冲突。
+ */
+export interface Bindings {
+  gameplay: Binds
+  ui: UiBinds
+}
 
 /**
  * 谁现在拥有菜单（`uiOwner` 的值域）。四格全在这里说清楚，是因为**每加一格就多一个 uiStep 读者**：
@@ -92,7 +128,11 @@ export type MenuOwner = 'panel' | 'map' | 'dialogue' | 'title'
  * 顺带修一条死路：以前"Tab 关面板"写在 `core.update` 里，而面板开着时那一整段被 `paused` 挡住，
  * 所以 Tab 事实上只能开不能关。
  */
-export const UI_BINDS: { keyboard: Record<string, UiIntent>; padButtons: Record<number, UiIntent>; stickThreshold: number } = {
+/**
+ * 菜单通道的**默认表**（KI-336 之后它是数据而不是常量：`settings/Bindings.ts` 从它现推默认快照，
+ * 运行时生效的那一份在 `Input.uiBinds` 里，可由 `setBindings()` 整张换掉）。
+ */
+export const UI_BINDS: UiBinds = {
   keyboard: {
     ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
     Enter: 'confirm', NumpadEnter: 'confirm', Backspace: 'back', Tab: 'back',
@@ -125,7 +165,13 @@ const blankFrame = (): FrameInput => ({
 })
 
 export class Input {
-  private binds: Binds
+  /** 此刻生效的玩法表（构造时是默认表，`setBindings()` 之后是档/设置里那一份） */
+  private liveBinds: Binds
+  /** 此刻生效的菜单表：同上，两条通道各自一张，同码不算冲突（靠 `uiOwner` 互斥） */
+  private liveUi: UiBinds
+  /** 显示层读这一格（HUD 键位列、面板槽位）——读 `DEFAULT_BINDS` 会让改键之后的屏幕说谎 */
+  get binds(): Binds { return this.liveBinds }
+  get uiBinds(): UiBinds { return this.liveUi }
   private kbHeld = new Set<ActionName>()
   private mouseHeld = new Set<ActionName>()
   private padHeld = new Set<ActionName>()
@@ -156,35 +202,51 @@ export class Input {
   private kbUiHeld = new Set<UiIntent>()
   private padUiHeld = new Set<UiIntent>()
   private prevUi = new Set<UiIntent>()
+  /* ---------------- 改键捕获（KI-337） ---------------- */
+  /**
+   * 「操作」页要的那一格是**物理键**，既不是玩法动作也不是菜单意图，所以它只能住在 `Input` 手里：
+   * 面板自己挂 `keydown` 会被源闸门当场判红（DOM 一条 + 菜单一条 = 一次按键被数两遍，见 §5.2）。
+   * 武装之后，下一枚"按下"事件只被记成键名，两条通道一格都不发。
+   */
+  private captureArmed = false
+  private captured: string | null = null
 
   private activePad: Gamepad | null = null
   /** the currently-polled gamepad, for haptics (null when no pad connected) */
   get gamepad(): Gamepad | null { return this.activePad }
 
-  constructor(el: HTMLElement, binds: Binds = DEFAULT_BINDS) {
-    this.binds = binds
+  constructor(el: HTMLElement, binds: Binds = DEFAULT_BINDS, ui: UiBinds = UI_BINDS) {
+    this.liveBinds = binds
+    this.liveUi = ui
     window.addEventListener('keydown', (e) => {
       if (e.repeat) return
+      // 捕获武装着 ⇒ 这一枚键只被记成键名：两条通道都不发，浏览器的默认行为也拦住
+      // （正在改键时按下的那把不该顺手把页面滚动一下、也不该先把面板后退一层）
+      if (this.captureArmed) { e.preventDefault(); this.captured = e.code; this.captureArmed = false; return }
       // UI 意图先记：它和玩法那条互不隶属（面板开着时玩法那条被 enabled 挡着，菜单却正需要读数）
-      const ui = UI_BINDS.keyboard[e.code]
-      if (ui && this.uiOwner) { e.preventDefault(); this.kbUiHeld.add(ui) }
-      const a = this.binds.keyboard[e.code]
+      const intent = this.liveUi.keyboard[e.code]
+      if (intent && this.uiOwner) { e.preventDefault(); this.kbUiHeld.add(intent) }
+      const a = this.liveBinds.keyboard[e.code]
       if (!a) return
-      if (['Space', 'Tab', 'F1', 'F2', 'F3', 'F4', 'F6'].includes(e.code)) e.preventDefault()
+      // 这一串是**应用占住的键的名册**（KI-335 加 F5；`tests/flow/sec17-doc-rows.test.ts` 那条名册腿读的就是它）。
+      // 读的人要分清两件事：面板键真正拦住浏览器的 `preventDefault` 在**面板自己**手里（F1~F6 一律没绑
+      // 动作，走不到这一行 ⇒ 这里那个 `if` 今天对功能键是空转的），删掉这里的一格不会让面板失灵，
+      // 只会让"哪把键被占住"这份名册少一格。那处空转登记在账本 KI-335 的「还欠」。
+      if (['Space', 'Tab', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6'].includes(e.code)) e.preventDefault()
       this.kbHeld.add(a)
     })
     window.addEventListener('keyup', (e) => {
-      const ui = UI_BINDS.keyboard[e.code]
-      if (ui) this.kbUiHeld.delete(ui)
-      const a = this.binds.keyboard[e.code]
+      const intent = this.liveUi.keyboard[e.code]
+      if (intent) this.kbUiHeld.delete(intent)
+      const a = this.liveBinds.keyboard[e.code]
       if (a) this.kbHeld.delete(a)
     })
     el.addEventListener('mousedown', (e) => {
-      const a = this.binds.keyboard[e.button === 0 ? 'MouseLeft' : 'MouseRight']
+      const a = this.liveBinds.keyboard[e.button === 0 ? 'MouseLeft' : 'MouseRight']
       if (a) { this.mouseHeld.add(a); void el.requestPointerLock() }
     })
     window.addEventListener('mouseup', (e) => {
-      const a = this.binds.keyboard[e.button === 0 ? 'MouseLeft' : 'MouseRight']
+      const a = this.liveBinds.keyboard[e.button === 0 ? 'MouseLeft' : 'MouseRight']
       if (a) this.mouseHeld.delete(a)
     })
     window.addEventListener('mousemove', (e) => {
@@ -200,6 +262,49 @@ export class Input {
     el.addEventListener('contextmenu', (e) => e.preventDefault())
   }
 
+  /**
+   * 换整张表：读档与（下一批的）设置页共用的唯一入口。
+   *
+   * 传进来的两张表**逐格抄一遍**，不存引用——store 手里那份之后还会被继续改，
+   * 存引用就是让第二个主人能隔着 `Input` 改玩法。
+   *
+   * 换表那一拍清空键盘/鼠标侧的 held：`keyup` 查的是**新**表，旧表留下的那一格从此没有
+   * 人来摘，一个仍然按着的键会永远挂在 `kbHeld` 里（镜头自己转的那种"鬼键"）。清空之后
+   * 下一次 `poll` 只会看到 `deviceHeld` 为空 ⇒ 不产生边沿，所以这不是 KI-061 那条假边沿的
+   * 复发（那条是"禁用的 held 被记进 prev"，这里是"prev 与 held 一起归零"）。
+   */
+  setBindings(next: Bindings): void {
+    this.liveBinds = {
+      keyboard: { ...next.gameplay.keyboard },
+      padButtons: { ...next.gameplay.padButtons },
+      padAxes: { ...next.gameplay.padAxes }
+    }
+    this.liveUi = { keyboard: { ...next.ui.keyboard }, padButtons: { ...next.ui.padButtons }, stickThreshold: next.ui.stickThreshold }
+    this.kbHeld.clear(); this.mouseHeld.clear(); this.kbUiHeld.clear()
+  }
+
+  /**
+   * 武装改键捕获（KI-337「操作」页）。**每次只等一枚键**：读走即熄灭，
+   * 所以"面板还在等"与"已经拿到键"两种状态不可能同时成立，不需要额外的握手。
+   */
+  armKeyCapture(): void { this.captureArmed = true; this.captured = null }
+
+  cancelKeyCapture(): void { this.captureArmed = false; this.captured = null }
+
+  /**
+   * 取走并熄灭。为什么是"取"不是"看"：同一枚键被看两遍就是两个主人，而改键这条路是
+   * 一次按下 ⇒ 一次换格。**没按时一格都不动**（尤其不许顺手撤掉武装）：面板每帧都要问一次，
+   * 若"还没键"也把武装清了，玩家真正按下的那一枚就没人接了。
+   * 换表那一拍不清捕获（等键的那一行与"这是谁的表"没有因果关系）。
+   */
+  takeKeyCapture(): string | null {
+    if (this.captured === null) return null
+    const code = this.captured
+    this.captured = null
+    this.captureArmed = false
+    return code
+  }
+
   private pollPad(): void {
     this.padHeld.clear()
     this.padUiHeld.clear()
@@ -210,22 +315,22 @@ export class Input {
       if (!p) continue
       this.activePad = p
       const dz = (v: number) => (Math.abs(v) < DEADZONE ? 0 : v)
-      this.padState.moveX = dz(p.axes[this.binds.padAxes.moveX] ?? 0)
-      this.padState.moveY = dz(p.axes[this.binds.padAxes.moveY] ?? 0)
-      this.padState.lookX = dz(p.axes[this.binds.padAxes.camX] ?? 0)
-      this.padState.lookY = dz(p.axes[this.binds.padAxes.camY] ?? 0)
-      for (const [idx, a] of Object.entries(this.binds.padButtons)) {
+      this.padState.moveX = dz(p.axes[this.liveBinds.padAxes.moveX] ?? 0)
+      this.padState.moveY = dz(p.axes[this.liveBinds.padAxes.moveY] ?? 0)
+      this.padState.lookX = dz(p.axes[this.liveBinds.padAxes.camX] ?? 0)
+      this.padState.lookY = dz(p.axes[this.liveBinds.padAxes.camY] ?? 0)
+      for (const [idx, a] of Object.entries(this.liveBinds.padButtons)) {
         if (p.buttons[Number(idx)]?.pressed) this.padHeld.add(a)
       }
       /* 手柄的菜单读数：十字键 + A/B/LB/RB + 左摇杆。摇杆按"过阈值 = 按下"处理，
          于是一直推着不会连发（和按钮同一套 edge 语义），而十字键与摇杆同时推也只算一次。 */
       if (this.uiOwner) {
-        for (const [idx, ui] of Object.entries(UI_BINDS.padButtons)) {
-          if (p.buttons[Number(idx)]?.pressed) this.padUiHeld.add(ui)
+        for (const [idx, intent] of Object.entries(this.liveUi.padButtons)) {
+          if (p.buttons[Number(idx)]?.pressed) this.padUiHeld.add(intent)
         }
-        const th = UI_BINDS.stickThreshold
-        const ax = p.axes[this.binds.padAxes.moveX] ?? 0
-        const ay = p.axes[this.binds.padAxes.moveY] ?? 0
+        const th = this.liveUi.stickThreshold
+        const ax = p.axes[this.liveBinds.padAxes.moveX] ?? 0
+        const ay = p.axes[this.liveBinds.padAxes.moveY] ?? 0
         if (ay <= -th) this.padUiHeld.add('up')
         if (ay >= th) this.padUiHeld.add('down')
         if (ax <= -th) this.padUiHeld.add('left')

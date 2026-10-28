@@ -1,5 +1,6 @@
 import { describe, expect, it, afterEach } from 'vitest'
 import { GameLoop, type Updatable } from '@/core/GameLoop'
+import { PerfSampler } from '@/core/PerfSampler'
 import { GameTime, TICK_DT } from '@/core/Time'
 import type { Input } from '@/core/Input'
 
@@ -9,7 +10,8 @@ import type { Input } from '@/core/Input'
  * 覆盖缺口（start/stop 的 rAF 腿 + fps 窗口）：
  * - start 两次 ⇒ 第二次是空操作（running 守卫），只排一个 rAF
  * - 排到的 step 回调真的推进 tick；stop 后回调不再推进、raf 被取消
- * - 61 帧后 fps 窗口出数（60fps ⇒ 60）
+ * - 61 帧后 fps 窗口出数（60fps ⇒ 60）——KI-335 之后这一格住在采样器里，这里的腿因此变成
+ *   「环把数交给装进来的采样器」那条**接线**腿，采样器自己的账在 `perf-sampler.test.ts`
  *
  * rAF 用最薄的替身：记下回调与 id，测试手动调回调（时间用墙钟 performance.now 做基址，
  * 不靠 rAF 自己推进——headless 里它本来就不会自己走）。
@@ -99,12 +101,14 @@ describe('GameLoop：start/stop 的 rAF 腿', () => {
     }
   })
 
-  it('61 帧后 fps 窗口出数：每帧 1/60 ⇒ fps 60', () => {
+  it('61 帧后 fps 窗口出数：每帧 1/60 ⇒ fps 60（KI-335：这一格从 `frameSample` 搬进采样器）', () => {
     installRaf()
     const time = new GameTime()
-    const loop = new GameLoop(time, fakeInput(), () => {})
+    const perf = new PerfSampler()
+    perf.open()
+    const loop = new GameLoop(time, fakeInput(), () => {}, perf)
     for (let i = 0; i < 61; i++) loop.tickFrame(TICK_DT)
-    expect(loop.frameSample.fps).toBe(60)
+    expect(perf.snapshot().fps, '61 帧 × 16.67ms 的窗口平均').toBeCloseTo(60, 6)
   })
 
   it('add(front) ⇒ 后来者排在最前（解析顺序的裁定口：意图要先于战斗跑）', () => {

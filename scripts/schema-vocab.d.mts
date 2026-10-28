@@ -43,7 +43,11 @@ export interface VocabError {
 
 export function stripComments(text: string): string
 export function schemaBlocks(text: string): Map<string, string>
-export function unionMembers(blocks: Map<string, string>, typeName: string): string[] | null
+/**
+ * 字面量联合（`'a' | 'b'`）或**名册推导**（`typeof ROSTER[number]`，KI-336）两种排版都认。
+ * 派生那一支要按名字去读那张数组，所以必须给整份文件原文（第三个参数）；不给 ⇒ 那一支返回 null。
+ */
+export function unionMembers(blocks: Map<string, string>, typeName: string, srcText?: string): string[] | null
 export function interfaceFields(blocks: Map<string, string>, ifaceName: string): string[] | null
 export function fieldUnion(blocks: Map<string, string>, ifaceName: string, field: string): string[] | null
 export function refFieldUnion(blocks: Map<string, string>, typeName: string, field: string): string[] | null

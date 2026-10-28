@@ -1,5 +1,6 @@
 import { GameTime, TICK_DT } from './Time'
 import { Input } from './Input'
+import type { PerfSampler } from './PerfSampler'
 
 export interface Updatable {
   /** one fixed 60Hz logic tick */
@@ -18,13 +19,18 @@ export class GameLoop {
   running = false
   /** max catch-up ticks per frame (death-spiral guard) */
   maxTicksPerFrame = 5
-  frameSample = { fps: 0, logicMs: 0, renderMs: 0 }
-  private fpsWindow: number[] = []
 
   constructor(
     private time: GameTime,
     private input: Input,
-    private onRender: (alpha: number, realDelta: number) => void
+    private onRender: (alpha: number, realDelta: number) => void,
+    /**
+     * §5.7 的采样器。**装不装是两道开关的第一道**：`main.ts` 只在 DEV 构建里装它（发布构建里
+     * 传 `null`），没装时 `tickFrame` 连一次额外的 `performance.now()` 都不叫
+     * （腿见 `tests/unit/perf-sampler.test.ts`）。装了也不等于在采——面板关着时 `armed` 为 false，
+     * 采样器自己 return（第二道开关）。
+     */
+    private perf: PerfSampler | null = null,
   ) {}
 
   add(s: Updatable, front = false): void {
@@ -47,7 +53,9 @@ export class GameLoop {
 
   /** manual stepping for headless tests */
   tickFrame(realDelta: number): void {
-    const t0 = performance.now()
+    // 只在真的要出数时才叫第二次钟：老口径里 `logicMs ＝ 帧首到帧尾`，那一段其实**把渲染也算进去了**
+    const timing = this.perf?.armed ?? false
+    const t0 = timing ? performance.now() : 0
     this.time.step(realDelta)
     this.input.poll(realDelta)
     this.accumulator += realDelta
@@ -62,17 +70,25 @@ export class GameLoop {
       this.input.endTick()
       ticks++
     }
-    if (ticks === this.maxTicksPerFrame) this.accumulator = 0
+    // 死循环闸门：到拍数上限就把账清零（老口径，连不足一拍的那一截一起丢——本批不动它的行为）。
+    // `truncated` 记的是**更硬的那件事**：清零时账上还剩**整拍** ⇒ 真的有拍被丢掉（老写法里这一格
+    // 全仓没人知道它落下来过几次，而 §5.7 要的正是这个数）。
+    const capHit = ticks === this.maxTicksPerFrame
+    const truncated = capHit && this.accumulator >= TICK_DT
+    if (capHit) this.accumulator = 0
     const alpha = this.accumulator / TICK_DT
+    const mid = timing ? performance.now() : 0
     for (const s of this.systems) s.render?.(alpha, realDelta)
     this.onRender(alpha, realDelta)
-    const t1 = performance.now()
-    this.frameSample.logicMs = t1 - t0
-    this.fpsWindow.push(realDelta)
-    if (this.fpsWindow.length > 60) {
-      this.fpsWindow.shift()
-      const avg = this.fpsWindow.reduce((a, b) => a + b, 0) / this.fpsWindow.length
-      this.frameSample.fps = Math.round(1 / avg)
+    if (timing && this.perf) {
+      const t1 = performance.now()
+      this.perf.frame({
+        deltaMs: realDelta * 1000,
+        logicMs: mid - t0,
+        renderMs: t1 - mid,
+        ticks,
+        truncated,
+      })
     }
   }
 

@@ -6,7 +6,9 @@ import { SLOTS, type EquipMods } from '@/rpg/Equipment'
 import { upgradeStep, maxLevelOf, TIMBITE, DROSS, salvageValue } from '@/rpg/Upgrade'
 import { sellPrice, stackSellPrice, shopData, CURRENCY } from '@/rpg/Shop'
 import { movementName, unlockItemName, SCORE } from '@/rpg/Movements'
-import { DEFAULT_BINDS, type ActionName, type UiIntent } from '@/core/Input'
+import { keyOf, BINDABLE_ACTIONS, type ActionName, type Binds, type UiIntent } from '@/core/Input'
+import { GAMEPLAY_BOUNDS, type GameplaySettings } from '@/settings/GameplaySettings'
+import { actionLabel } from '@/ui/actionLabels'
 import type { RpgRuntime } from '@/rpg/Runtime'
 import type { SlotCard } from '@/save/Slots'
 import { SAVE_CARD_CSS, saveCards, saveCardHtml, slotLabel, type SaveCardView } from '@/ui/SaveSlots'
@@ -14,9 +16,9 @@ import { SAVE_CARD_CSS, saveCards, saveCardHtml, slotLabel, type SaveCardView } 
 /**
  * 调音桩面板（Phase 5-B 的 UI 落点；需求 §41/§44 + progression.md §8.3）。
  *
- * 六页：**调音**（音级/六维分配/洗点）、**装备**（七槽 + 强化）、**行囊**（分类清单）、
+ * 六页（接上把手之后是七页）：**调音**（音级/六维分配/洗点）、**装备**（七槽 + 强化）、**行囊**（分类清单）、
  * **谱册**（乐章战技的点亮/升级/装槽，Phase 5-C2）、**交易**（营地买卖，KI-055）、
- * **存档**（手动槽写入/删除，KI-025②）。
+ * **存档**（手动槽写入/删除，KI-025②）、**操作**（逐行改键 + 玩法五格，KI-337；没接把手就没有这一页）。
  * 用 DOM 而不是 HUD 的 canvas：这是一块要读字、要滚动、要点击的界面，不是战斗中的仪表盘
  * （tech-arch §1 的 UI 分工：HUD 走 canvas，菜单走 DOM overlay）。
  *
@@ -24,7 +26,7 @@ import { SAVE_CARD_CSS, saveCards, saveCardHtml, slotLabel, type SaveCardView } 
  * 由 main.ts 统一把派生值灌回玩家——面板自己不写第二份"应用变更"的逻辑。
  */
 
-type Tab = 'tune' | 'gear' | 'bag' | 'moves' | 'trade' | 'save'
+type Tab = 'tune' | 'gear' | 'bag' | 'moves' | 'trade' | 'save' | 'ops'
 
 const TABS: { id: Tab; label: string; hint: string }[] = [
   { id: 'tune', label: '调音', hint: '分配音级点 · 洗点' },
@@ -33,6 +35,22 @@ const TABS: { id: Tab; label: string; hint: string }[] = [
   { id: 'moves', label: '谱册', hint: '乐章战技 · 主动槽' },
   { id: 'trade', label: '交易', hint: '卖装半价 · 残骸按堆卖 · 购消耗品' },
   { id: 'save', label: '存档', hint: '手动槽 · 写入/删除' }
+]
+
+/**
+ * 「操作」页签**不在上面那张表里**：它要 `OpsPanelDeps` 那组把手才有东西可改，
+ * 没接把手的面板不该给玩家一个点了没反应的页签（那是假可达）。
+ * 页签的名册因此是**现推**的——`tabsOf()` 数的是"这块面板今天接得到什么"（§55 的那条纪律在这里的形状）。
+ */
+const OPS_TAB: { id: Tab; label: string; hint: string } = { id: 'ops', label: '操作', hint: '逐行改键 · 输入缓冲 · 抖动/振动/受击' }
+
+/** 玩法设置里那四格数值（`frameAssist` 是开关，另给一行）；步进量是**界面粒度**，不是规格，所以住在面板这侧 */
+type NumericKey = Exclude<keyof GameplaySettings, 'frameAssist'>
+const OPS_NUMERIC: { key: NumericKey; label: string; step: number; note: string; fmt: (v: number) => string }[] = [
+  { key: 'bufferMs', label: '输入缓冲', step: 20, note: '§5.1 那一格 · 80–240ms', fmt: (v) => `${Math.round(v)}ms` },
+  { key: 'shakeScale', label: '镜头抖动', step: 0.1, note: 'combat §10 · 0–150%', fmt: (v) => `${Math.round(v * 100)}%` },
+  { key: 'rumbleScale', label: '手柄振动', step: 0.1, note: '§6 · 0–200%（弱/强马达同一把尺）', fmt: (v) => `${Math.round(v * 100)}%` },
+  { key: 'damageScale', label: '受击伤害', step: 0.05, note: 'gameplay · 70–130%，只乘玩家收到的那一份', fmt: (v) => `${Math.round(v * 100)}%` }
 ]
 
 /**
@@ -87,6 +105,9 @@ const CSS = `
 .cxs .xp { display:flex; align-items:center; gap:12px; margin-bottom:6px; }
 .cxs .bar { flex:1; height:6px; background:rgba(232,223,203,.12); position:relative; overflow:hidden; }
 .cxs .bar i { position:absolute; inset:0 auto 0 0; background:linear-gradient(90deg,#c9b458,#ffb86b); }
+.cxs .meter { display:inline-block; vertical-align:middle; width:72px; height:6px; margin-left:8px;
+  background:rgba(232,223,203,.12); position:relative; overflow:hidden; }
+.cxs .meter i { position:absolute; inset:0 auto 0 0; background:linear-gradient(90deg,#c9b458,#ffb86b); }
 .cxs .cmp { margin:2px 0 10px 12px; padding:8px 12px; border-left:2px solid rgba(201,180,88,.35);
   background:rgba(0,0,0,.18); }
 .cxs .cmp-head, .cxs .cmp-row { display:grid; grid-template-columns:minmax(84px,1.2fr) 1fr 1.5fr 1fr;
@@ -193,6 +214,30 @@ export interface SavePanelDeps {
   erase: (slot: string) => Promise<boolean>
 }
 
+/**
+ * 「操作」页的把手（KI-337）。与 `SavePanelDeps` 同一条口径：面板只拿函数，
+ * 不认识 `BindingsStore`/`GameplaySettingsStore`，也不认识默认值——
+ * 它要是能自己去拼一张默认表，§55 那句"默认值只有一个主人"当场就有了第二个读者
+ * （`arch-boundaries` 那条闸门就是管这个的）。
+ */
+export interface OpsPanelDeps {
+  /** 现读此刻生效的五格玩法设置（显示用；写回走 `setGameplay`） */
+  gameplay: () => GameplaySettings
+  /** 写一格玩法设置。夹取在信任边界里，面板只负责给一个步进量 */
+  setGameplay: (patch: Partial<GameplaySettings>) => void
+  /** 把一个动作绑到某把键（键名是 `KeyboardEvent.code`，交换与失联的裁决住在 `BindingsStore.rebind`） */
+  rebind: (action: ActionName, code: string) => void
+  /** 把一个动作绑回它在默认表上的那一格 */
+  resetKey: (action: ActionName) => void
+  /** 整张键位回默认 */
+  resetAll: () => void
+  /**
+   * 改键捕获的三个把手（背后是 `Input.armKeyCapture()` 那一组）。
+   * 面板自己不许挂 `keydown`（源码闸门钉着），所以"下一枚物理键"这件事只能问 `Input`。
+   */
+  capture: { arm(): void; cancel(): void; take(): string | null }
+}
+
 export class Stakerite {
   private readonly root: HTMLDivElement
   private tab: Tab = 'tune'
@@ -212,8 +257,20 @@ export class Stakerite {
   private focusByTab: Partial<Record<Tab, number>> = {}
   /** 刚渲染出来的那一页正文（`navRows` 与焦点框都从它这里数行，不另抄名单） */
   private lastBody = ''
+  /** 「操作」页里正在等一枚键的那一行（null = 没在等）。等键状态只有面板这一份，`Input` 那边只有机制 */
+  private awaitingKey: ActionName | null = null
+  /** 刚发生过交换的那一格（用来把"这把键原本归谁"说出来一次，然后随下一次操作消失） */
+  private swapNote: { action: ActionName; code: string; displaced: ActionName | null } | null = null
 
-  constructor(private readonly rpg: RpgRuntime, private readonly hooks: StakeriteHooks, private readonly saves: SavePanelDeps) {
+  constructor(private readonly rpg: RpgRuntime, private readonly hooks: StakeriteHooks, private readonly saves: SavePanelDeps,
+    /**
+     * 槽位标签的读数来源（KI-336）：读 `Input` 手里**此刻生效**的那张表。
+     * 这里原先直接读 `DEFAULT_BINDS`，而它上面那句「改键之后面板不会说谎」在绑定还是常量的年代
+     * 是空头支票——键位变成数据之后，这一格才是那句注释的兑现处；短名换算也交回 `keyOf` 那唯一的主人。
+     */
+    private readonly bindsSource: { readonly binds: Binds } | null = null,
+    /** 「操作」页的把手（KI-337）；没接就没有那一页（见 `OPS_TAB`） */
+    private readonly ops: OpsPanelDeps | null = null) {
     const style = document.createElement('style')
     style.textContent = PANEL_CSS + CSS + SAVE_CARD_CSS
     document.head.appendChild(style)
@@ -240,12 +297,31 @@ export class Stakerite {
     this.open = false
     this.root.classList.remove('on')
     this.pending = null
+    this.standDown()
+  }
+
+  /**
+   * 撤掉"正在等一枚键"这件事（关面板 / 换页 / 换行 / 换页签都算）。
+   * 两边都要动是对的：`awaitingKey` 是面板的话，`capture.cancel()` 是 `Input` 的话——
+   * 只撤一边就会留下一枚"没人认领的下一枚键"，玩家按下去什么也不发生，那比不响更糟。
+   */
+  private standDown(): void {
+    if (this.awaitingKey === null) return
+    this.awaitingKey = null
+    this.ops?.capture.cancel()
+  }
+
+  /** 页签名册现推（§55）：接得到把手才有「操作」这一页 */
+  private tabsOf(): { id: Tab; label: string; hint: string }[] {
+    return this.ops ? [...TABS, OPS_TAB] : TABS
   }
 
   /** 换页：进存档页就现取名册（离开时把未确认的那一笔撤掉，别把确认条留在别的页里） */
   private setTab(tab: Tab): void {
     this.tab = tab
     this.pending = null
+    this.swapNote = null
+    this.standDown()
     if (tab === 'save') this.refreshSaves()
     this.render()
   }
@@ -298,6 +374,12 @@ export class Stakerite {
       case 'mvup': this.upgradeMove(arg); break
       case 'pslearn': this.learnPassive(arg); break
       case 'mvequip': this.equipSlot(arg); break
+      case 'arm': this.armKey(arg as ActionName); return
+      case 'unarm': this.standDown(); this.render(); return
+      case 'resetkey': this.resetOneKey(arg as ActionName); break
+      case 'resetall': this.ops?.resetAll(); this.swapNote = null; this.hooks.notify('键位整张回到默认'); break
+      case 'gstep': this.stepGameplay(arg); break
+      case 'gtoggle': this.ops?.setGameplay({ [arg]: !this.ops.gameplay()[arg as 'frameAssist'] } as Partial<GameplaySettings>); break
       case 'close': this.requestClose(); break
       default: return
     }
@@ -358,6 +440,7 @@ export class Stakerite {
   }
 
   private moveFocus(delta: number): void {
+    this.standDown()   // 等键途中换了行 ⇒ 那一行不再等（不然下一枚键会绑到玩家已经走开的那一行）
     const n = this.navRows().length
     if (!n) return
     // 第一次按导航键只是**把框亮出来**（停在记住的那一行上），不顺手挪一格：
@@ -368,8 +451,9 @@ export class Stakerite {
   }
 
   private page(delta: number): void {
-    const i = TABS.findIndex((t) => t.id === this.tab)
-    this.setTab(TABS[(i + delta + TABS.length) % TABS.length].id)
+    const tabs = this.tabsOf()
+    const i = tabs.findIndex((t) => t.id === this.tab)
+    this.setTab(tabs[(i + delta + tabs.length) % tabs.length].id)
   }
 
   /**
@@ -381,7 +465,11 @@ export class Stakerite {
    * （`tests/unit/ui-intents.test.ts` 里有源码门钉着）。
    */
   uiStep(intents: ReadonlySet<UiIntent>): void {
-    if (!this.open || intents.size === 0) return
+    if (!this.open) return
+    // 捕获排在意图**之前**问：武装那一拍两条通道一格都不发（见 `Input.armKeyCapture` 上那段理由），
+    // 所以"玩家按下了要绑的那把键"这一帧递进来的 `intents` 是空的——先问捕获，那枚键才有读者。
+    if (this.awaitingKey !== null && this.takeCapturedKey()) return
+    if (intents.size === 0) return
     // 左右与肩键都落在换页上：面板只有一维列表可走，横向语义就是"翻页"（§5.2 的肩键切页）
     if (intents.has('pagePrev') || intents.has('left')) { this.page(-1); return }
     if (intents.has('pageNext') || intents.has('right')) { this.page(1); return }
@@ -395,9 +483,30 @@ export class Stakerite {
       return
     }
     if (intents.has('back')) {
+      // 手柄的 `back` 不会被捕获挡（键盘鼠标那一拍才走捕获），所以等键途中它仍会到这里：先退那一步等待
+      if (this.awaitingKey !== null) { this.standDown(); this.render(); return }
       // 「Back 永远后退一层」：确认条还挂着时先撤确认，否则才退面板（解冻由持有者做，见 onRequestClose）
       if (this.pending) { this.pending = null; this.render() } else this.requestClose()
     }
+  }
+
+  /**
+   * 读走那一枚键。返回 true = 这一帧被"改键"这件事消费掉了，不再走意图。
+   * `Escape` 是**取消**而不是绑成 Escape——§5.1 那一行没写"把后退绑走"，而玩家按 Escape 的本意
+   * 就是退出等待；把它绑上去会同时偷走面板唯一的后退键。
+   */
+  private takeCapturedKey(): boolean {
+    const code = this.ops?.capture.take()
+    if (code === null || code === undefined) return false   // 还没按：让这一帧的意图照常走（手柄还能用 ↑↓ 换行，换行即撤等待）
+    const action = this.awaitingKey
+    this.standDown()
+    if (code === 'Escape' || action === null) { this.render(); return true }
+    const binds = this.bindsSource?.binds
+    const displaced = binds ? binds.keyboard[code] ?? null : null
+    this.ops?.rebind(action, code)
+    this.swapNote = { action, code, displaced }
+    this.render()
+    return true
   }
 
   /** 按槽位找卡面（点到的按钮一定在卡上，但 `data-arg` 是字符串——查不到就不动） */
@@ -585,7 +694,8 @@ export class Stakerite {
         : this.tab === 'bag' ? this.renderBag()
           : this.tab === 'moves' ? this.renderMoves()
             : this.tab === 'trade' ? this.renderTrade()
-              : this.renderSave()
+              : this.tab === 'save' ? this.renderSave()
+                : this.renderOps()
     this.lastBody = raw
     const body = this.navUsed ? this.markFocus(raw) : raw
     this.root.innerHTML = `
@@ -595,10 +705,12 @@ export class Stakerite {
           <h1>调音桩</h1>
           <span class="sub">音级 ${this.rpg.prog.rank} · 遗响 ${this.rpg.prog.xp}${this.rpg.prog.unspent > 0 ? ` · 未分配 ${this.rpg.prog.unspent}` : ''}</span>
         </header>
-        <nav>${TABS.map((t) => `<button data-act="tab" data-arg="${t.id}" class="${t.id === this.tab ? 'sel' : ''}">${t.label}</button>`).join('')}</nav>
+        <nav>${this.tabsOf().map((t) => `<button data-act="tab" data-arg="${t.id}" class="${t.id === this.tab ? 'sel' : ''}">${t.label}</button>`).join('')}</nav>
         <main>${body}</main>
         <div class="foot">
-          <span>← → 换页 · ↑ ↓ 选行 · Enter 执行 · Backspace 后退</span><span>Tab 收起</span>
+          <span>${this.awaitingKey
+            ? `等待一枚键 · ${actionLabel(this.awaitingKey)}（Escape 取消）`
+            : '← → 换页 · ↑ ↓ 选行 · Enter 执行 · Backspace 后退'}</span><span>Tab 收起</span>
           <span>音色石 ${this.rpg.inv.count(TIMBITE)}</span><span>残晶 ${this.rpg.inv.count(DROSS)}</span>
           <span>乐谱残页 ${this.rpg.inv.count(SCORE)}</span>
         </div>
@@ -748,8 +860,7 @@ export class Stakerite {
 
   /** 槽位显示绑定本身，而不是面板里再抄一份 'R'/'C'——改键之后面板不会说谎 */
   private keyFor(action: ActionName): string {
-    const code = Object.entries(DEFAULT_BINDS.keyboard).find(([, a]) => a === action)?.[0]
-    return code ? code.replace(/^(Key|Digit|Mouse)/, '') : '—'
+    return keyOf(action, this.bindsSource?.binds) ?? '—'
   }
 
   private renderMoves(): string {
@@ -879,6 +990,97 @@ export class Stakerite {
     return `<h2>手动存档槽（只有站在调音桩前才写得进去）</h2>${confirm}
       <div class="scards">${cards || '<div class="empty">名册还在读…</div>'}</div>
       <div class="row"><span class="name">口径<span class="note">自动档在每个检查点自己落盘，这一页不动它；读档请回标题屏。删掉的是主存位与备份位两处，删完不可恢复。</span></span></div>`
+  }
+
+  /* ------------------------------- 操作（KI-337） ------------------------------- */
+
+  /** 点「改键」＝武装那一行；已在等同一行就撤（再点一次是"我改主意了"，不是第二次武装） */
+  private armKey(action: ActionName): void {
+    if (!this.ops) return
+    if (this.awaitingKey === action) { this.standDown(); this.render(); return }
+    this.awaitingKey = action
+    this.swapNote = null
+    this.ops.capture.arm()
+    this.render()
+  }
+
+  /** 一行回默认：交回给 `BindingsStore.resetKey`，默认格是它算的，不是面板抄的 */
+  private resetOneKey(action: ActionName): void {
+    if (!this.ops) return
+    this.ops.resetKey(action)
+    this.hooks.notify(`${actionLabel(action)} 回到默认那一格`)
+  }
+
+  /**
+   * `data-arg` = `"<格名>:<-1|1>"`。面板只加一个**步进而不是夹取**：
+   * 界在哪由 `GAMEPLAY_BOUNDS` 说（读它的主人，不抄第二份），越界怎么治由 `clampGameplaySettings` 说。
+   * 到端点的按钮写成 `disabled`，而键盘/手柄那条路没人替玩家挡 `disabled`——所以 `run` 上面那道
+   * 闸门（KI-061③ 立的）在这里正是干这件事的。
+   *
+   * 落格到三位小数是因为步长里有 0.1 与 0.05：连按十次 `1 − 0.1` 会得到 0.8999999999999999，
+   * 那个数会被原样写进存档，而存档要的是**往返不漂移**（面板给的是界面粒度，不该顺手给出二进制粒度）。
+   */
+  private stepGameplay(arg: string): void {
+    const spec = OPS_NUMERIC.find((n) => n.key === arg.split(':')[0])
+    const dir = Number(arg.split(':')[1])
+    if (!this.ops || !spec || !Number.isFinite(dir)) return
+    const g = this.ops.gameplay()
+    const next = Math.round((g[spec.key] + spec.step * Math.sign(dir)) * 1000) / 1000
+    this.ops.setGameplay({ [spec.key]: next } as Partial<GameplaySettings>)
+  }
+
+  /**
+   * 「操作」页：`docs/ui-ux.md` §5.1 那句「全动作逐行可改」的玩家入口，外加 KI-112 那五格玩法设置的第一次露面
+   * （五格早就有真实消费者，缺的从来不是机制，是把手）。
+   *
+   * 三条口径写给下一个改这里的人：
+   * ① 键名一律走 `keyOf` + `bindsSource.binds`（**此刻生效**那张表）。抄默认表就是
+   *    `arch-boundaries` 那条闸门要抓的形状，而它抓的是 import，不是注释。
+   * ② 面板不算交换、不算夹取、不算默认格——这三件事各有主人（`BindingsStore.rebind`、
+   *    `clampGameplaySettings`、`defaultBindings()`），面板手里只有函数。
+   * ③ 数值格用步进按钮（◀ ▶）而不是 `<input type="range">`：这一屏要 §7 那句「全路径手柄可达」，
+   *    而拖拽在键盘与手柄上都是需要另外发明的第二条路；§3.8 那句「滑块实时预览」由 `.meter`
+   *    那一槽承担（它是读数，不是控件）。
+   */
+  private renderOps(): string {
+    if (!this.ops) return '<div class="empty">这一页没有把手就没有内容——页签也就不会出现（见 tabsOf）。</div>'
+    const binds = this.bindsSource?.binds
+    const waiting = this.awaitingKey
+    const keys = BINDABLE_ACTIONS.map((a) => {
+      const shown = binds ? keyOf(a, binds) : null
+      const armed = waiting === a
+      const justSwapped = this.swapNote !== null && this.swapNote.action === a ? this.swapNote : null
+      const note = armed ? '按任意键绑定 · Escape 取消'
+        : justSwapped ? (justSwapped.displaced
+            ? `这把键原本归 ${actionLabel(justSwapped.displaced)} ⇒ 已交换，其余格子不动`
+            : '这把键原本是空着的')
+          : binds === undefined ? '没接键位来源 ⇒ 这一列不给键名（键名只有运行时那一个主人）' : ''
+      const extra = armed
+        ? `<button class="act" data-act="resetkey" data-arg="${a}">回默认</button>
+          <button class="act" data-act="unarm">取消</button>`
+        : ''
+      return `<div class="row"><span class="name">${actionLabel(a)}<span class="note">${note}</span></span>
+        <span class="num">${shown ?? '—'}${justSwapped ? ' <span class="over">刚交换</span>' : ''}</span>
+        <span class="act"><button class="act" data-act="arm" data-arg="${a}">${armed ? '等待中' : '改键'}</button>${extra}</span></div>`
+    }).join('')
+    const g = this.ops.gameplay()
+    const numbers = OPS_NUMERIC.map((n) => {
+      const b = GAMEPLAY_BOUNDS[n.key]
+      const v = g[n.key]
+      const frac = Math.max(0, Math.min(1, (v - b.min) / (b.max - b.min)))
+      return `<div class="row"><span class="name">${n.label}<span class="note">${n.note}</span></span>
+        <span class="num">${n.fmt(v)}<span class="meter"><i style="width:${(frac * 100).toFixed(1)}%"></i></span></span>
+        <span class="act"><button class="act" data-act="gstep" data-arg="${n.key}:-1" ${v <= b.min ? 'disabled' : ''}>◀</button>
+          <button class="act" data-act="gstep" data-arg="${n.key}:1" ${v >= b.max ? 'disabled' : ''}>▶</button></span></div>`
+    }).join('')
+    return `<h2>键位（逐行可改）</h2>${keys}
+      <div class="row"><span class="name">整张回默认<span class="note">今天没有"解绑"这一格：删掉一把键＝让它回默认（那一格语义登记在 KI-336 的下半格）</span></span>
+        <span class="act"><button class="act" data-act="resetall">全部回默认</button></span></div>
+      <h2>手感与练习辅助</h2>${numbers}
+      <div class="row"><span class="name">帧辅助<span class="note">输入缓冲在 ${Math.round(g.bufferMs)}ms 之外再多保一帧（+1 tick，与逻辑 tick 同一把尺）</span></span>
+        <span class="num">${g.frameAssist ? '开' : '关'}</span>
+        <span class="act"><button class="act" data-act="gtoggle" data-arg="frameAssist">${g.frameAssist ? '关掉' : '打开'}</button></span></div>
+      <div class="row"><span class="name">口径<span class="note">改完立刻生效并跟着存档走（v14 的 settings.bindings／settings.gameplay 两格）；手柄键位、菜单那条与 3 套配置文件还没接，登记在下面那一行的「还欠」。</span></span></div>`
   }
 
   private pendingText(act: 'write' | 'erase', slot: string, state: SlotCard['state']): string {

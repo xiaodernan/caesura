@@ -67,6 +67,26 @@ describe('VfxLayer：hitStop / player 锚点 / 统计 / decal / 方向解析', (
     expect(s.peakParticles).toBe(0)
   })
 
+  it('emitterPoolStats：F5 面板 `reuse` 那一行的读数就是池自己的账（§5.7，KI-335）', () => {
+    const vfx = makeVfx()
+    const pool = (vfx as any).emitterPool as { stats: typeof vfx.emitterPoolStats }
+    // 构造期把 24 个预热掉：那 24 次 obtain 全走 factory ⇒ 面板在第一次真借还之前如实写 reuse 0/24
+    expect(vfx.emitterPoolStats).toEqual(pool.stats)
+    expect(vfx.emitterPoolStats, 'cap 与 peak 的主人是 VFX_BUDGET.emitters：预热把 24 个全借出去过')
+      .toMatchObject({ live: 0, free: VFX_BUDGET.emitters, peak: VFX_BUDGET.emitters, cap: VFX_BUDGET.emitters, hits: 0, misses: VFX_BUDGET.emitters })
+
+    bus.emit('vfx.request', { key: 'ring_echo', pos: { x: 0, y: 1, z: 0 }, scale: 1 })
+    expect(vfx.emitterPoolStats, '预热过的池，运行期第一次借必然是复用 ⇒ 命中率那个数就是这么来的')
+      .toMatchObject({ hits: 1, live: 1, free: VFX_BUDGET.emitters - 1, misses: VFX_BUDGET.emitters })
+
+    for (let i = 0; i < 20 && vfx.stats.emitters > 0; i++) vfx.update(0.1)
+    expect(vfx.stats.emitters, '发射器到期后回到池里').toBe(0)
+    const done = vfx.emitterPoolStats
+    expect(done, '回收只动 live/free；hits 是累计账，不许被抹平 —— 那两个计数被加进来的正是这一条')
+      .toMatchObject({ hits: 1, live: 0, free: VFX_BUDGET.emitters })
+    expect(done, '三段状态都对齐：任何一格由 VfxLayer 自己填数都会在这里露出来').toEqual(pool.stats)
+  })
+
   it('decalRings：一次 decal_rings 请求落三道同心环；attachPlayer 后仍然成立（y 取 min 不动环数）', () => {
     const vfx = makeVfx()
     bus.emit('vfx.request', { key: 'decal_rings', pos: { x: 0, y: 1, z: 0 }, scale: 1 })
