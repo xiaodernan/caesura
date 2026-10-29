@@ -1,8 +1,7 @@
-import { describe, expect, it, beforeAll, afterEach } from 'vitest'
+import { describe, expect, it, beforeAll } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { CameraRig, CameraMode, MODE_CONFIG } from '@/player/CameraRig'
-import { bus, type GameEvents } from '@/core/EventBus'
 import type { PlayerController } from '@/player/ThirdPersonController'
 import type { Vec3 } from '@/combat/EntityStats'
 
@@ -55,13 +54,6 @@ beforeAll(() => {
   g.window = { innerWidth: 1920, innerHeight: 1080, devicePixelRatio: 1 }
 })
 
-/** `bus` 是进程级单例：本文件挂上去的监听器必须在用例结束后摘掉 */
-const unsubscribers: Array<() => void> = []
-type ModeChangedEvent = GameEvents['camera.modeChanged']
-afterEach(() => {
-  while (unsubscribers.length > 0) unsubscribers.pop()?.()
-})
-
 /**
  * **注释不算读者**（§55 的读法）：一行注释里提到某个格子名，不等于代码读它。
  * 去掉块注释与行注释后再扫——本仓的相机那一段正好写着"collisionDamp 那一列…删列"，
@@ -105,20 +97,22 @@ describe('相机模式表：每一格都有人读（KI-170）', () => {
 
   it('cutscene 明确给的 FOV 压过模式那一格；过场结束回到模式那一行', () => {
     const rig = new CameraRig()
-    const events: ModeChangedEvent[] = []
-    unsubscribers.push(bus.on('camera.modeChanged', (e) => events.push(e)))
-    rig.setMode(CameraMode.Cinematic, { fov: 30, duration: 1 })
+    rig.setMode(CameraMode.Cinematic, { fov: 30 })
     rig.update(dt, playerStub(), look, null, dt)
     expect(rig.cam.fov, 'cutscene 给了 FOV 就用它（那一格是演出自己的镜头）').toBe(30)
     rig.setMode(CameraMode.Exploration)
     rig.update(dt, playerStub(), look, null, dt)
     expect(rig.cam.fov, '过场结束回到模式那一行').toBe(MODE_CONFIG[CameraMode.Exploration].fovBase)
-    expect(events.length, '同模式不重复发事件的规矩没被这一批改掉').toBe(2)
+    expect(rig.getMode(), '过场结束回到探索格').toBe(CameraMode.Exploration)
+    rig.setMode(CameraMode.Exploration)
+    rig.update(dt, playerStub(), look, null, dt)
+    expect(rig.getMode(), '同模式再进一次仍停在探索格').toBe(CameraMode.Exploration)
+    expect(rig.cam.fov, '同模式重进不改变 FOV').toBe(MODE_CONFIG[CameraMode.Exploration].fovBase)
   })
 
   it('过场期间镜头归过场管：锁定不夺走它', () => {
     const rig = new CameraRig()
-    rig.setMode(CameraMode.Cinematic, { fov: 30, duration: 1 })
+    rig.setMode(CameraMode.Cinematic, { fov: 30 })
     rig.update(dt, playerStub(), look, { x: 0, y: 0, z: 8 }, dt)
     expect(rig.getMode(), '过场模式不被锁定抢走').toBe(CameraMode.Cinematic)
     expect(rig.cam.fov, '过场的 FOV 也不被锁定改写').toBe(30)

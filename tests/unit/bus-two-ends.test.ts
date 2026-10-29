@@ -1,10 +1,13 @@
 /**
- * KI-349／KI-351／KI-352／KI-353／KI-354：一条广播频道要**两端**才算通。今天登记 **45** 条：**44** 条两端都有、
- * **0** 条只有接收方、**1** 条只有发射方（`camera.modeChanged`）。
+ * KI-349／KI-351／KI-352／KI-353／KI-354／KI-355：一条广播频道要**两端**才算通。今天登记 **44** 条：
+ * **44** 条两端都有、**0** 条只有接收方、**0** 条只有发射方、**0** 条零端。
  * KI-352 把 `squad.callAlly`／`squad.addThreat` 从登记册上摘掉：小队直接读两条**真**频道
  * （`combat.hit` 写仇恨、`ai.callAlly` 叫盟友），不必再给同一件事起第二个名字。
  * KI-353 把池化那五条（`vfx.decal.batch`／`vfx.decal.clear`／`vfx.stream`／`vfx.remove`／
  * `vfx.trail.hide`）也删了：接口方法留在三个系统上，**频道**等有生产消费方再接。
+ * KI-355 把最后一条只有发射方的 `camera.modeChanged` 也删了：生产读方 0，测试那两处读的是
+ * 模式切换本身（`getMode()`）与 FOV（`cam.fov`），不是载荷 ⇒ 频道与声明一起走；`CameraModeData`
+ * 只剩 `fov` 一格（`pos`／`target`／`duration` 原来只被原样转发给这条频道，没有别的读者）。
  * KI-351 顺手做了两件事：把 `AudioEngine.subscribe('x', …)` 那个订阅口教给扫描器（它让 8 条
  * `audio.*`／`combat.bossTelegraph` 从"只有发射方"变回两端），并删掉三条零读方的频道
  * （`boot.ready`／`entity.spawned`／`world.travel`）。
@@ -138,7 +141,7 @@ describe('KI-349 一条广播频道要两端才算通', () => {
   })
 
   it('普查读到的分母不是手抄的：登记的频道过半两端都有', () => {
-    expect(SRC.declared.size, '登记的频道数（GameEvents 的成员；KI-353 删掉池化五条后是 46）').toBeGreaterThanOrEqual(40)
+    expect(SRC.declared.size, '登记的频道数（GameEvents 的成员；KI-355 删掉 camera.modeChanged 后是 44）').toBeGreaterThanOrEqual(40)
     const both = [...SRC.declared].filter((c) => hasOn(c) && hasEmit(c)).sort()
     expect(both.length, `两端都有的频道：${both.join(', ')}`).toBeGreaterThanOrEqual(30)
   })
@@ -242,11 +245,12 @@ describe('KI-349 一条广播频道要两端才算通', () => {
  * 剩下的要么两端都有，要么是 KI-349 的 LISTEN_ONLY 名册。
  */
 const EMIT_ONLY: Record<string, string> = {
-  'camera.modeChanged': '生产读方 0：只有 tests/unit/camera-modes.test.ts 与 camera-mode-params.test.ts 在读载荷',
+  // KI-355 起是空的：最后一条 `camera.modeChanged` 连同声明与发射一起删了。
+  // 将来若有"有人喊、没人听"的频道，先决定：接读方 / 频道与发射一起删 / 进这里并写明谁在读。
 }
 
 describe('KI-351 只有发射方的频道', () => {
-  it('只有发射方的频道恰好是名册里那一条', () => {
+  it('登记册上不再有只有发射方的频道', () => {
     const emitOnly = [...SRC.declared].filter((c) => hasEmit(c) && !hasOn(c)).sort()
     expect(
       emitOnly,
@@ -255,12 +259,12 @@ describe('KI-351 只有发射方的频道', () => {
     ).toEqual(Object.keys(EMIT_ONLY).sort())
   })
 
-  it('名册每一条都真的"只有测试在听"：src/ 里 0 个读方，tests/ 里数得到', () => {
+  it('名册为空：所有登记过的频道两端都有', () => {
     for (const key of Object.keys(EMIT_ONLY)) {
       expect(SRC.ons.get(key) ?? [], `${key} 在 src/ 里的读方`).toEqual([])
       expect((TESTS.ons.get(key) ?? []).length, `${key} 在 tests/ 里的读方`).toBeGreaterThan(0)
     }
-    expect(Object.keys(EMIT_ONLY), '名册条数').toHaveLength(1)
+    expect(Object.keys(EMIT_ONLY), '名册条数').toHaveLength(0)
   })
 
   it('删掉的三条不再登记：boot.ready／entity.spawned／world.travel', () => {
@@ -319,5 +323,24 @@ describe('KI-354 尸体退役不再广播：观察面是名单本身', () => {
     expect(SRC.ons.get(gone) ?? [], 'src/ 的读方').toEqual([])
     expect(TESTS.emits.get(gone) ?? [], 'tests/ 的发射方').toEqual([])
     expect(TESTS.ons.get(gone) ?? [], 'tests/ 的读方').toEqual([])
+  })
+})
+
+
+describe('KI-355 相机模式不再广播：观察面是 getMode() 与 cam.fov', () => {
+  it('camera.modeChanged 不再登记，也没有任何一端留在源码或测试里', () => {
+    const gone = 'camera.modeChanged'
+    expect(SRC.declared.has(gone), '已从 GameEvents 摘掉').toBe(false)
+    expect(SRC.emits.get(gone) ?? [], 'src/ 的发射方').toEqual([])
+    expect(SRC.ons.get(gone) ?? [], 'src/ 的读方').toEqual([])
+    expect(TESTS.emits.get(gone) ?? [], 'tests/ 的发射方').toEqual([])
+    expect(TESTS.ons.get(gone) ?? [], 'tests/ 的读方').toEqual([])
+  })
+
+  it('过场进出那两条仍是两端：删的是模式广播，不是 cinematic.start／end', () => {
+    for (const key of ['cinematic.start', 'cinematic.end']) {
+      expect(hasEmit(key), `${key} 有发射方`).toBe(true)
+      expect(hasOn(key), `${key} 有读方`).toBe(true)
+    }
   })
 })

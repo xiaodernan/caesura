@@ -1,7 +1,6 @@
-import { describe, expect, it, beforeAll, afterEach } from 'vitest'
+import { describe, expect, it, beforeAll } from 'vitest'
 import { CameraRig, CameraMode, MODE_CONFIG, EXEC_DOLLY, SHAKE_TABLE } from '@/player/CameraRig'
 import { damp, clamp } from '@/core/Math'
-import { bus, type GameEvents } from '@/core/EventBus'
 import type { BoxOccluder } from '@/core/Occlusion'
 import type { PlayerController } from '@/player/ThirdPersonController'
 import type { Vec3 } from '@/combat/EntityStats'
@@ -41,21 +40,6 @@ beforeAll(() => {
   g.window = { innerWidth: 1920, innerHeight: 1080, devicePixelRatio: 1 }
 })
 
-/** `camera.modeChanged` 的载荷形状：取自总线自己的事件表，不另抄一份 */
-type ModeChangedEvent = GameEvents['camera.modeChanged']
-
-/**
- * `bus` 是进程级单例：本文件挂上去的监听器必须在用例结束后摘掉，
- * 否则越积越多、把别的用例的断言一起污染（`bus.on` 的返回值就是退订函数）。
- */
-const unsubscribers: Array<() => void> = []
-const onModeChanged = (sink: (e: ModeChangedEvent) => void): void => {
-  unsubscribers.push(bus.on('camera.modeChanged', sink))
-}
-afterEach(() => {
-  while (unsubscribers.length > 0) unsubscribers.pop()?.()
-})
-
 function makeRig(): CameraRig {
   const rig = new CameraRig()
   return rig
@@ -81,18 +65,13 @@ describe('CameraRig 五模式配置与切换', () => {
     }
   })
 
-  it('模式切换：setMode 更新内部模式并触发事件', () => {
+  it('模式切换：setMode 更新内部模式；同模式再进一次也停在原地', () => {
     const rig = makeRig()
-    const events: ModeChangedEvent[] = []
-    onModeChanged((e) => events.push(e))
 
     expect(rig.getMode()).toBe(CameraMode.Exploration)
 
     rig.setMode(CameraMode.Combat)
     expect(rig.getMode()).toBe(CameraMode.Combat)
-    expect(events.length).toBe(1)
-    expect(events[0].prev).toBe(CameraMode.Exploration)
-    expect(events[0].current).toBe(CameraMode.Combat)
 
     rig.setMode(CameraMode.LockOn)
     expect(rig.getMode()).toBe(CameraMode.LockOn)
@@ -103,9 +82,8 @@ describe('CameraRig 五模式配置与切换', () => {
     rig.setMode(CameraMode.Cinematic)
     expect(rig.getMode()).toBe(CameraMode.Cinematic)
 
-    events.length = 0
     rig.setMode(CameraMode.Cinematic)
-    expect(events.length).toBe(0)
+    expect(rig.getMode(), '同模式再进一次不会跑到别的格').toBe(CameraMode.Cinematic)
   })
 
   it('Cinematic 模式可禁用碰撞', () => {
@@ -181,26 +159,23 @@ function e0(): typeof MODE_CONFIG[CameraMode.Exploration] {
 }
 
 describe('CameraRig 模式切换行为', () => {
-  it('setMode 同模式不重复触发事件', () => {
+  it('setMode 同模式重进只重摆 FOV，模式与距离边界不动', () => {
     const rig = makeRig()
-    const events: ModeChangedEvent[] = []
-    onModeChanged((e) => events.push(e))
-
     rig.setMode(CameraMode.Combat)
-    expect(events.length).toBe(1)
-
+    const dist = rig.dist
     rig.setMode(CameraMode.Combat)
-    expect(events.length).toBe(1)
+    expect(rig.getMode()).toBe(CameraMode.Combat)
+    expect(rig.dist, '同模式不该把距离再夹一次').toBe(dist)
+    rig.update(dt, playerStub, look, lockTarget, shakeDt)
+    expect(rig.cam.fov, 'FOV 仍是战斗那一格').toBe(MODE_CONFIG[CameraMode.Combat].fovBase)
   })
 
-  it('Cinematic 模式数据可选参数', () => {
+  it('Cinematic 数据里只有 fov 是相机的：它压过模式那一格', () => {
     const rig = makeRig()
-    const events: ModeChangedEvent[] = []
-    onModeChanged((e) => events.push(e))
-
-    rig.setMode(CameraMode.Cinematic, { pos: { x: 10, y: 5, z: 10 }, fov: 30, duration: 2 })
-    expect(events.length).toBe(1)
-    expect(events[0].data).toEqual({ pos: { x: 10, y: 5, z: 10 }, fov: 30, duration: 2 })
+    rig.setMode(CameraMode.Cinematic, { fov: 30 })
+    rig.update(dt, playerStub, look, lockTarget, shakeDt)
+    expect(rig.getMode()).toBe(CameraMode.Cinematic)
+    expect(rig.cam.fov, '演出给了 FOV 就用它').toBe(30)
   })
 
   it('getMode 返回当前模式', () => {

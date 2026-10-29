@@ -140,13 +140,11 @@ export const MODE_CONFIG = {
   },
 } as const
 
-/** `setMode` 携带的过场参数。`pos`/`target` 是给镜头轨道预留的（KI-008 的真几何还没落），
- *  今天它们只被**原样转发**到 `camera.modeChanged` 的载荷里，不参与任何计算。 */
+/** `setMode` 携带的过场参数。**今天只有 `fov` 是相机的事**：cutscene 明确给了就用它，
+ *  压过模式那一格。`pos`/`target`/`duration` 曾经只被原样转发到 `camera.modeChanged`
+ *  的载荷里、没有别的读者；KI-355 删掉那条频道后它们也一起走了（§55：无消费方的数据不入表）。 */
 export interface CameraModeData {
-  pos?: Vec3
-  target?: Vec3
   fov?: number
-  duration?: number
 }
 
 export class CameraRig {
@@ -193,15 +191,15 @@ export class CameraRig {
     // 但震源离镜头多远有关系——50 米外一场满幅 3° 是幻痛，不是反馈。
     bus.on('camera.shake', (p) => this.shakeWorldEvent(p.key, p.pos))
     // §6 过场进出：过场期间相机交给演出（碰撞与阻尼都松掉），演完回到探索模式。
-    bus.on('cinematic.start', (d) => this.setMode(CameraMode.Cinematic, { fov: d.fov, duration: d.durationMs }))
+    bus.on('cinematic.start', (d) => this.setMode(CameraMode.Cinematic, { fov: d.fov }))
     bus.on('cinematic.end', () => this.setMode(CameraMode.Exploration))
   }
 
   /**
    * 切换相机模式（可选进入/退出回调数据）。
    *
-   * **同模式不重复发事件**（`:144`）：`cinematic.start` 与 `camera.modeChanged` 会在同一次
-   * 演出里先后到达，同名两次会让订阅方把"进入"数成两次。
+   * **同模式再进一次只重摆 FOV**：`cinematic.start` 与锁定状态可能在同一次演出里先后到达，
+   * 模式不会来回跳，`preLockMode` 也不会被自己覆盖。
    */
   setMode(mode: CameraMode, data?: CameraModeData): void {
     const cfg = MODE_CONFIG[mode]
@@ -215,14 +213,10 @@ export class CameraRig {
      */
     this.baseFov = data?.fov ?? cfg.fovBase
     if (this.mode === mode) return
-    const prevMode = this.mode
     this.mode = mode
 
     // 立即应用新模式的距离边界
     this.dist = clamp(this.dist, cfg.distMin, cfg.distMax)
-
-    // 触发模式切换事件
-    bus.emit('camera.modeChanged', { prev: prevMode, current: mode, data })
   }
 
   /** 获取当前模式 */
@@ -432,10 +426,5 @@ declare module '@/core/EventBus' {
     'cinematic.start': { id: string; fov?: number; durationMs?: number }
     /** §6 过场收束（走完 / 被跳过）：相机回到 `exploration` 模式。 */
     'cinematic.end': { id: string }
-    /**
-     * 相机模式切换（tech-arch §2）。`prev`/`current` 是模式名，`data` 是切换时带的过场参数
-     * （原样转发，不参与计算）。订阅方：调试面板、HUD、镜头相关的表现层。
-     */
-    'camera.modeChanged': { prev: CameraMode; current: CameraMode; data?: CameraModeData }
   }
 }
