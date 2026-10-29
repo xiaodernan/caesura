@@ -685,7 +685,6 @@ function applyInteractResult(r: InteractResult): void {
     player.vy = 0
     player.floorY = surface.floorAt(r.to)?.y ?? 0
     streaming.teleport(time.tick, player.pos)
-    bus.emit('world.travel', { id: r.id, from: { ...player.pos }, to: r.to })
     // §4.3 跨区时那一杆枪跟她一起回家：地上的、还在飞的都收回来，否则她到了新区域投不出枪，
     // 而"投不出枪"在这里不是一个惩罚，是一处没有出口的机制（新区域里那杆旧枪她永远走不回去捡）。
     combat.restockSpear()
@@ -1167,5 +1166,4 @@ if (freshBoot) {
 
 document.getElementById('boot')!.style.display = 'none'
 ;(window as unknown as Record<string, unknown>).__CAESURA_BOOTED__ = true
-bus.emit('boot.ready', undefined)
 console.info('[caesura] online — WASD/Shift/Ctrl-roll/LMB/RMB/F guard/G parry/Q lock/E interact(优先)/execute(处决·背刺)/1·2·3 换装/R·C 乐章战技 I·II/Tab 调音桩面板(需站在调音桩前)/E 与 NPC 交谈/1-9 选对话选项/Esc pause')

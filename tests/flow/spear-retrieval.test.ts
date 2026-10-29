@@ -258,8 +258,8 @@ describe('那一杆枪回家：死亡 / 跨区 / 重开（KI-006① 的三条出
   it('组合根真的接了线：跨区与开新局各调用一次补货，地上的名单交给表现层', () => {
     const src = readFileSync('src/main.ts', 'utf8')
     const sites = src.split('combat.restockSpear()').length - 1
-    expect(sites, '两个入口：跨区（world.travel 之后）与 startRun（每局一次）').toBe(2)
-    const travel = src.indexOf("bus.emit('world.travel'")
+    expect(sites, '两个入口：跨区（`r.to` 那一支）与 startRun（每局一次）').toBe(2)
+    const travel = src.indexOf('if (r.ok && r.to) {')
     expect(travel, '读得到跨区那一句').toBeGreaterThan(0)
     expect(src.indexOf('combat.restockSpear()', travel) - travel, '跨区之后紧跟着就是补货').toBeLessThan(400)
     expect(src.includes('projectileVis.syncGrounded(combat.groundedSpears.list())'),

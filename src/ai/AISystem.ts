@@ -119,7 +119,6 @@ export class AISystem {
     this.enemies.push(e)
     // Squad 系统注册（Phase B5）
     this.squad.register(e)
-    bus.emit('entity.spawned', { id: e.id, kind: 'enemy', entity: e })
     return e
   }
 

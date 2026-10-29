@@ -10,7 +10,6 @@ export interface StatusPulse { id: StatusId; value: number; max: number; on: boo
 
 export interface GameEvents {
   'log': { level: 'info' | 'warn' | 'error'; msg: string }
-  'boot.ready': undefined
   'time.hitStop': { active: boolean }
   'input.action': { action: string }
   'player.stats': {
@@ -27,7 +26,6 @@ export interface GameEvents {
   'ui.status': StatusPulse
   'player.damaged': { amount: number; killerId?: string }
   'player.died': undefined
-  'entity.spawned': { id: string; kind: 'enemy' | 'npc' | 'prop'; entity: unknown }
   'entity.despawned': { id: string; kind: 'enemy' | 'npc' | 'prop' }
   /** `dataId` = 敌人/实体的数据 id（掉落与首杀判定要用；实例 id 每次都不同） */
   'entity.died': { id: string; kind: string; dataId?: string; position: { x: number; y: number; z: number } }
@@ -121,7 +119,6 @@ export interface GameEvents {
    * 靠它，而不是让 main.ts 自己去调每个下游——加了新"按下之后会发生什么"，不必再改组合根。
    */
   'world.interact': { id: string; kind: string; ok: boolean; state: string }
-  'world.travel': { id: string; from: { x: number; y: number; z: number }; to: { x: number; y: number; z: number } }
   'world.chunk': {
     key: string; regionId: string
     cx: number; cy: number; cz: number

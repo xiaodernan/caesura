@@ -23,7 +23,7 @@ function wire() {
   const off = bus.on('world.flag', (f) => {
     if (f.value !== false) flags.push(f.key)
   })
-  const travel = (to: Vec3): void => { stream.teleport(0, to) } // 等价 main.ts 的 world.travel 处理
+  const travel = (to: Vec3): void => { stream.teleport(0, to) } // 等价 main.ts 跨区那一支（`if (r.ok && r.to)`）的处理
   return { stream, interact, surface, flags, off, travel }
 }
 

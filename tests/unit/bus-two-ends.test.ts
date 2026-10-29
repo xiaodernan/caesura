@@ -1,5 +1,9 @@
 /**
- * KI-349：一条广播频道要**两端**才算通——登记了 56 条，34 条两端都有，9 条只有接收方。
+ * KI-349／KI-351：一条广播频道要**两端**才算通。今天登记 **53** 条：**44** 条两端都有、
+ * **7** 条只有接收方（KI-349 的名册）、**2** 条只有发射方（KI-351 的名册）。
+ * KI-351 顺手做了两件事：把 `AudioEngine.subscribe('x', …)` 那个订阅口教给扫描器（它让 8 条
+ * `audio.*`／`combat.bossTelegraph` 从"只有发射方"变回两端），并删掉三条零读方的频道
+ * （`boot.ready`／`entity.spawned`／`world.travel`）。
  *
  * **病是什么**：`GameEvents` 是总线的登记册，`bus.on('x')` 是接收方，`bus.emit('x')` 是发射方。
  * 一条频道只有其中一端时，代码读起来像"接好了"，实际是一次永远不会发生的反应：
@@ -75,7 +79,10 @@ function scan(dir: string): Scan {
       if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression)) {
         const name = n.expression.name.text
         const arg = n.arguments[0]
-        if ((name === 'emit' || name === 'on') && arg && ts.isStringLiteralLike(arg)) {
+        // `subscribe('x', fn)` 是 AudioEngine 的唯一订阅口（TD-006 第二腿①）：它在函数体里
+        // 做 `bus.on(key, …)`，键是变量，AST 在那一行看不见。KI-351 起把**调用点上的字面量键**
+        // 也算接收方——那正是"这个频道有没有读者"的那一侧。
+        if ((name === 'emit' || name === 'on' || name === 'subscribe') && arg && ts.isStringLiteralLike(arg)) {
           push(name === 'emit' ? emits : ons, arg.text, file)
         }
       }
@@ -223,5 +230,44 @@ describe('KI-349 一条广播频道要两端才算通', () => {
     expect(text, '那句确实还在文件里（注释中）').toContain("bus.on('weather.changed'")
     expect(SRC.ons.has('weather.changed'), '注释不该被读成订阅').toBe(false)
     expect(SRC.declared.has('weather.changed'), 'KI-126 已把这条频道删掉').toBe(false)
+  })
+})
+
+
+/**
+ * KI-351：只有**发射方**的频道——镜像的那一侧。KI-349 把"有人听、没人说"收干净了，可"有人说不听"
+ * 同样是一次不会发生的反应：`bus.emit('x')` 之后没有任何读者。
+ *
+ * 这条腿只收**生产方有、生产读方 0、测试读方 > 0** 的频道（名册每条的判据都是机器读的）；
+ * 剩下的要么两端都有，要么是 KI-349 的 LISTEN_ONLY 名册。
+ */
+const EMIT_ONLY: Record<string, string> = {
+  'ai.retired': '生产读方 0：退役名单的观察者只有 tests/unit/ai-retire.test.ts 两腿',
+  'camera.modeChanged': '生产读方 0：只有 tests/unit/camera-modes.test.ts 与 camera-mode-params.test.ts 在读载荷',
+}
+
+describe('KI-351 只有发射方的频道', () => {
+  it('只有发射方的频道恰好是名册里那两条', () => {
+    const emitOnly = [...SRC.declared].filter((c) => hasEmit(c) && !hasOn(c)).sort()
+    expect(
+      emitOnly,
+      '这些频道有人喊、没人听。零读方的应当删掉（本批删了 boot.ready／entity.spawned／world.travel），' +
+        '只有测试在听的进 EMIT_ONLY 并写明谁在读',
+    ).toEqual(Object.keys(EMIT_ONLY).sort())
+  })
+
+  it('名册每一条都真的"只有测试在听"：src/ 里 0 个读方，tests/ 里数得到', () => {
+    for (const key of Object.keys(EMIT_ONLY)) {
+      expect(SRC.ons.get(key) ?? [], `${key} 在 src/ 里的读方`).toEqual([])
+      expect((TESTS.ons.get(key) ?? []).length, `${key} 在 tests/ 里的读方`).toBeGreaterThan(0)
+    }
+    expect(Object.keys(EMIT_ONLY), '名册条数').toHaveLength(2)
+  })
+
+  it('删掉的三条不再登记：boot.ready／entity.spawned／world.travel', () => {
+    for (const gone of ['boot.ready', 'entity.spawned', 'world.travel']) {
+      expect(SRC.declared.has(gone), `${gone} 已从 GameEvents 摘掉`).toBe(false)
+      expect(SRC.emits.get(gone) ?? [], `${gone} 的发射方`).toEqual([])
+    }
   })
 })
