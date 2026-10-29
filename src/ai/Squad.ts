@@ -69,6 +69,14 @@ export const DEFAULT_SQUAD_CONFIG: SquadConfig = {
   combatEntryThreshold: 10,
 }
 
+/** KI-358：槽位排队的只读投影（F4 面板与测试读它；不参与分槽计算） */
+export interface SlotReport {
+  /** 占着攻击槽位的成员 id，按仇恨降序、进入早优先；`[0]` = 当前轮到的 */
+  attacking: string[]
+  /** 有仇恨、够阈值、但没槽的成员 id，同一套排序；`[0]` = 下一个轮到的 */
+  waiting: string[]
+}
+
 /**
  * Squad 管理器：单例，由 AISystem 持有。
  * 所有敌人的 camp、threat、slot 状态集中在这里，Enemy 只保留只读引用。
@@ -233,6 +241,30 @@ export class Squad {
   /** 获取所有成员（调试面板用） */
   getAllMembers(): SquadMember[] {
     return [...this.members.values()]
+  }
+
+  /**
+   * KI-358：槽位排队的只读投影——**谁在打、谁在等、下一个轮到谁**。
+   *
+   * 判据与 `reallocateSlots()` 是同一套：活着、有仇恨、top ≥ `combatEntryThreshold`；
+   * 排序也同一套（仇恨降序、进入早优先）。`attacking[0]` 是当前仇恨最高的占槽者，
+   * `waiting[0]` 是下一个轮到的。只读：调用前后 `hasAttackSlot` 一格不动。
+   *
+   * 玩家-facing 的表达仍欠（KI-133 ①）；这一格先给 F4 面板与门一个机器读得到的形状。
+   */
+  getSlotReport(): SlotReport {
+    const ranked = [...this.members.values()]
+      .filter((m) => m.enemy.alive)
+      .map((m) => ({ member: m, top: m.threats[0]?.threat ?? 0 }))
+      .filter((x) => x.top >= this.config.combatEntryThreshold)
+      .sort((a, b) => {
+        if (Math.abs(a.top - b.top) > 0.01) return b.top - a.top
+        return a.member.combatSince - b.member.combatSince
+      })
+    return {
+      attacking: ranked.filter((x) => x.member.hasAttackSlot).map((x) => x.member.enemy.id),
+      waiting: ranked.filter((x) => !x.member.hasAttackSlot).map((x) => x.member.enemy.id),
+    }
   }
 
   /** 获取某阵营的存活成员数 */

@@ -1,4 +1,5 @@
 import { attackSlotKey, type Enemy } from '@/ai/Enemy'
+import type { SlotReport } from '@/ai/Squad'
 import type { Vec3 } from '@/combat/EntityStats'
 
 /**
@@ -32,6 +33,8 @@ export interface AiDebugInput {
   /** 当前这一拍（`bar:beatInBar:招式拍`，见 `attackSlotKey`）上已被领用的插槽名册（`AISystem.slotTaken` 的**只读**镜像：面板绝不去领用槽位，
    *  否则"看一眼"就能把 Boss 的一招吃掉）。 */
   armedSlots: readonly string[]
+  /** KI-358：小队槽位的只读名册（谁在打、谁在等、下一个轮谁）。不传就不出这一行——旧调用方不用改。 */
+  slots?: SlotReport
 }
 
 function fmtVec(v: Vec3): string {
@@ -73,6 +76,13 @@ export function aiPanelText(input: AiDebugInput): string {
     `slot   want ${wantKey ?? '(no attack in band)'}  armed ${input.armedSlots.length ? `[${input.armedSlots.join(' ')}]` : '(none)'}`,
     `       onGrid ${spec ? spec.onGrid !== false : '—'}  beat ${spec ? spec.beat.join('/') : '—'}`,
   ]
+  if (input.slots) {
+    const sq = input.slots
+    const attackRank = sq.attacking.indexOf(e.id)
+    const waitRank = sq.waiting.indexOf(e.id)
+    const you = attackRank >= 0 ? 'ATTACK' : waitRank >= 0 ? `WAIT #${waitRank + 1}` : 'not queued'
+    out.push(`squad  you ${you}  attacking [${sq.attacking.join(' ')}]  waiting [${sq.waiting.join(' ')}]`)
+  }
   if (e.attack) {
     const f = e.attack.spec.frames
     out.push(`doing  ${e.attack.spec.id} tick ${e.attack.tick}  startup ${f.startup} window ${f.activeStart}-${f.activeEnd} recovery ${f.recovery}  shots ${e.attack.shots}`)

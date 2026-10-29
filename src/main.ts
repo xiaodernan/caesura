@@ -798,6 +798,7 @@ if (import.meta.env.DEV) {
             bar: info.bar, beatInBar: info.beatInBar, tick: time.tick,
           },
           armedSlots: ai.armedSlots,
+          slots: ai.squadSystem.getSlotReport(),
         })
       },
     }),
