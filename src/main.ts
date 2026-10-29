@@ -203,8 +203,8 @@ const decals = (await import('@/vfx/Decals')).initDecalSystem(arena.scene)
 // "敌人倒了会出什么东西"是同一件事，散在三个模块里就成了三个主人。
 ;(await import('@/vfx/VfxEmitters')).registerVfxWorldEmitters()
 
-// Squad 系统总线注册（Phase B5）
-;(await import('@/ai/Squad')).registerSquadBus()
+// Squad 总线由 AISystem 自己注册（KI-352：AISystem 持有唯一 Squad；这里再调一次是空操作，
+// 留着只会让"谁是小队的主人"出现第二个答案）。
 
 // KI-094①：雾密度与画面滤镜的唯一写方。它按「当前生效的那格天气 + §11 失谐」合成，
 // 所以开局那一区也得由它读一次——那句在 `interact` 之后（要读旗标），见下面 `applyWeather(homeRegion …)`。

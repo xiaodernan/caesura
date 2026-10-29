@@ -174,6 +174,20 @@ export class AISystem {
     // KI-024：场地阶段入口每 tick 对账一次（音刺碎尽的那一 tick 她就该换阶，不等下一次血线结算）
     if (this.props) for (const e of this.enemies) e.checkFieldPhase(this.props)
 
+    // §1.2「同屏最多 3 人同时出手」：进入战斗的第一笔仇恨由这里记（KI-352）。
+    // 没人写这一笔，槽位表就永远是空的——上限 3 只活在注释里。只在"表还是空的"时候
+    // 补一笔：衰减到 0 之后仍在战斗态的会重新记；离开这四态就让它自然掉光。
+    for (const e of this.enemies) {
+      if (!e.alive) continue
+      const engaged = e.state === 'combat' || e.state === 'chase' || e.state === 'alert' || e.state === 'callAlly'
+      if (!engaged) continue
+      const m = this.squad.getMember(e.id)
+      // 阈值 + 1：Squad.update 每拍**先衰减再分槽**，恰好等于阈值的一笔会在分槽前
+      // 掉到线下（10 → 9.98）⇒ 永远拿不到第一格。多这一点是为了让"刚进入战斗"
+      // 这件事本身够格。
+      if (m && m.threats.length === 0) this.squad.addThreat(e.id, 'player', this.squad.getConfig().combatEntryThreshold + 1)
+    }
+
     // Squad 系统更新（Phase B5：仇恨槽位、CallAlly、编队）
     this.squad.update(this.tick)
 

@@ -262,24 +262,39 @@ export function getSquad(): Squad | null {
   return squad
 }
 
-/** 便捷函数：注册到 bus 供系统调用 */
+/**
+ * 便捷函数：注册到 bus 供系统调用。
+ *
+ * **幂等**（KI-352）：生产里 main 与 AISystem 各调过一次的历史形状会把每一条都记三笔账；
+ * 这里只接一次线，重复调用是空操作。
+ *
+ * **两条写入口都是真频道**（KI-352）：不再另起 `squad.callAlly`／`squad.addThreat`
+ * 两个名字——那会让"敌人挨了打"与"敌人叫盟友"各有两个主人。
+ *  - `combat.hit`：受害者是小队成员 ⇒ 谁打她、这一记多重就是仇恨权重；
+ *  - `ai.callAlly`：Enemy 真正的广播口；camp 从小队名册现查，不从载荷抄第二份。
+ */
+let wired = false
 export function registerSquadBus(): void {
-  bus.on('squad.callAlly', (payload: CallAllyPayload) => {
-    squad?.callAlly(payload)
+  if (wired) return
+  wired = true
+  bus.on('combat.hit', (h) => {
+    const s = squad
+    if (!s) return
+    if (h.attackerId === h.victimId) return
+    if (!(h.damage > 0)) return
+    if (!s.getMember(h.victimId)) return
+    s.addThreat(h.victimId, h.attackerId, Math.max(1, Math.round(h.damage)))
   })
-  bus.on('squad.addThreat', (payload: { enemyId: string; targetId: string; amount: number }) => {
-    squad?.addThreat(payload.enemyId, payload.targetId, payload.amount)
+  bus.on('ai.callAlly', (e) => {
+    const s = squad
+    const caller = s?.getMember(e.fromId)
+    if (!s || !caller) return
+    s.callAlly({
+      callerId: e.fromId,
+      camp: caller.camp,
+      targetId: 'player',
+      position: { ...e.pos },
+      urgency: 'normal',
+    })
   })
-}
-
-declare module '@/core/EventBus' {
-  interface GameEvents {
-    /**
-     * Phase B5「呼叫盟友」：同 camp 的敌人在半径内接到，建立/提高对共同目标的仇恨。
-     * 载荷就是 {@link CallAllyPayload}——**不抄第二份**，写方与读方共用这一个形状。
-     */
-    'squad.callAlly': CallAllyPayload
-    /** 一次仇恨增量（受伤害 / 挑衅 / 呼叫的结果都走这里）：谁恨谁、加多少。 */
-    'squad.addThreat': { enemyId: string; targetId: string; amount: number }
-  }
 }

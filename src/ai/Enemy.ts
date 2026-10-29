@@ -897,7 +897,12 @@ export class Enemy {
     }
   }
 
-  private tryAttack(actions: string[], rhythm: RhythmClock, tick: number, slotTaken: (k: string) => boolean): void {    const usable = actions.filter((a) => !PSEUDO_ACTIONS.has(a) && !((this.cooldowns.get(a) ?? 0) > tick))
+  private tryAttack(actions: string[], rhythm: RhythmClock, tick: number, slotTaken: (k: string) => boolean): void {
+    // §1.2「同屏最多 3 人同时出手」：仇恨表里已经有人，就必须先拿到攻击槽位（KI-352）。
+    // 表还是空的那只不排队——否则开局第一眼就因为"还没人恨她"而永远不动手。
+    // 槽位由 Squad.update 每拍重排（仇恨高优先、进入早优先）。
+    if (this.squadThreats.length > 0 && !this.squadHasSlot) return
+    const usable = actions.filter((a) => !PSEUDO_ACTIONS.has(a) && !((this.cooldowns.get(a) ?? 0) > tick))
     if (!usable.length) return
     // 'cycle' = 按表的顺序轮转（§15.2「每 4 小节一个乐句，玩家可背谱」：随机背不了谱）
     let pick: string | undefined

@@ -4,7 +4,7 @@ import { registerGameData } from '@/data'
 import { initSquad, getSquad, registerSquadBus } from '@/ai/Squad'
 
 /**
- * 小队系统的**单例与总线接线**（KI-142 补测）。
+ * 小队系统的**单例与总线接线**（KI-142 补测；KI-352 起两条写入口改认真频道）。
  *
  * **为什么补**：`Squad.ts` 此前有七行没被任何测试执行过（覆盖率读数：ai 包 99.40%，
  * 其中这七行是那七行）——单例的取法、优先级的平局判据、两条总线通道，都是"看着简单、
@@ -29,30 +29,45 @@ describe('小队的单例与总线接线（KI-142）', () => {
     expect(getSquad(), '单例取回的就是刚造的那一个').toBe(s)
   })
 
-  it('两条总线通道真的接到小队上：squad.callAlly / squad.addThreat', () => {
+  it('小队的两个写入口认的是真频道：combat.hit 记账、ai.callAlly 叫盟友', () => {
     const s = initSquad()
+    // 三次注册只许接一次线（生产里 main 与 AISystem 各调一次的历史形状）
+    registerSquadBus()
+    registerSquadBus()
     registerSquadBus()
     const e = mkEnemy('en_bus_1')
     s.register(e)
 
-    // ① addThreat：事件 ⇒ 仇恨表上多一笔
-    bus.emit('squad.addThreat', { enemyId: 'en_bus_1', targetId: 'player', amount: 25 })
+    // ① 受击：combat.hit 的受害者是小队成员 ⇒ 仇恨表上多一笔（权重就是这一记的伤害）
+    bus.emit('combat.hit', {
+      attackerId: 'player', victimId: 'en_bus_1', damage: 25, poiseDamage: 0,
+      kind: 'light', point: { x: 0, y: 0, z: 0 }, dir: { x: 0, y: 0, z: 1 },
+      result: 'hit', hitStopMs: 0, shakeKey: 'heavy', backstab: false, weakpoint: false,
+    })
     const member = s.getMember('en_bus_1')
-    expect(member?.threats.length, 'addThreat 通道落到了小队上').toBe(1)
-    expect(member?.threats[0].threat).toBe(25)
+    expect(member?.threats.length, 'combat.hit 落到了小队上（三条订阅会记三笔）').toBe(1)
+    expect(member?.threats[0].threat, '权重就是这一记的伤害').toBe(25)
+    expect(member?.threats[0].targetId).toBe('player')
 
-    // ② callAlly：事件 ⇒ 同 camp 的盟友收到（载荷的形状照 CallAllyPayload：callerId/camp/position/targetId/urgency）
+    // ② 呼叫：ai.callAlly 的呼叫者在小队里 ⇒ 同 camp 盟友也收到（camp 从名册现查，不从载荷抄）
     const ally = mkEnemy('en_bus_2')
     s.register(ally)
-    bus.emit('squad.callAlly', {
-      callerId: 'en_bus_1',
-      camp: 'default',
-      position: { x: 0, y: 0, z: 0 },
-      targetId: 'player',
-      urgency: 'normal',
-    })
+    bus.emit('ai.callAlly', { fromId: 'en_bus_1', pos: { x: 0, y: 0, z: 0 }, range: 18 })
     const allyMember = s.getMember('en_bus_2')
     expect(allyMember?.threats.length ?? 0, 'callAlly 通道让盟友也收到了仇恨').toBeGreaterThan(0)
+  })
+
+  it('受害者不在小队里（玩家挨打 / 名字对不上）⇒ 不凭空造成员', () => {
+    const s = initSquad()
+    registerSquadBus()
+    bus.emit('combat.hit', {
+      attackerId: 'en_ghost', victimId: 'player', damage: 12, poiseDamage: 0,
+      kind: 'enemy', point: { x: 0, y: 0, z: 0 }, dir: { x: 0, y: 0, z: 1 },
+      result: 'hit', hitStopMs: 0, shakeKey: 'heavy', backstab: false, weakpoint: false,
+    })
+    bus.emit('ai.callAlly', { fromId: 'en_nowhere', pos: { x: 0, y: 0, z: 0 }, range: 18 })
+    expect(s.getMember('player'), '玩家不是小队成员').toBeUndefined()
+    expect(s.getMember('en_nowhere'), '没登记过的呼叫者不建成员').toBeUndefined()
   })
 
   it('仇恨归零后 currentTarget 被清空（目标丢了却还指着它，就是追着空气打）', () => {

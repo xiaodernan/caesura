@@ -1,6 +1,8 @@
 /**
- * KI-349／KI-351：一条广播频道要**两端**才算通。今天登记 **53** 条：**44** 条两端都有、
- * **7** 条只有接收方（KI-349 的名册）、**2** 条只有发射方（KI-351 的名册）。
+ * KI-349／KI-351／KI-352：一条广播频道要**两端**才算通。今天登记 **51** 条：**44** 条两端都有、
+ * **5** 条只有接收方（KI-349 的名册，KI-352 又销掉两条）、**2** 条只有发射方（KI-351 的名册）。
+ * KI-352 把 `squad.callAlly`／`squad.addThreat` 从登记册上摘掉：小队直接读两条**真**频道
+ * （`combat.hit` 写仇恨、`ai.callAlly` 叫盟友），不必再给同一件事起第二个名字。
  * KI-351 顺手做了两件事：把 `AudioEngine.subscribe('x', …)` 那个订阅口教给扫描器（它让 8 条
  * `audio.*`／`combat.bossTelegraph` 从"只有发射方"变回两端），并删掉三条零读方的频道
  * （`boot.ready`／`entity.spawned`／`world.travel`）。
@@ -11,8 +13,9 @@
  *    而全仓**没有一处 emit** —— `GameTime.hitStop()` 只改自己的两个字段。这条设计好的凝滞从没发生过。
  *  - `vfx.burst`：`vfx/GPUParticles` 订着它；世界事件那三条线（倒地/命中/重踏）却直调
  *    `getGPUParticles().burst()` 绕开了总线 —— 于是这条频道**一个发射方都没有**（KI-340 已经量过）。
- *  - 另外七条（`squad.callAlly`/`squad.addThreat`/`vfx.decal.batch`/`vfx.decal.clear`/
- *    `vfx.stream`/`vfx.remove`/`vfx.trail.hide`）在生产代码里**没有发射方**，只有测试在发。
+ *  - 另外五条（`vfx.decal.batch`/`vfx.decal.clear`/`vfx.stream`/`vfx.remove`/
+ *    `vfx.trail.hide`）在生产代码里**没有发射方**，只有测试在发。（KI-349 时这一族是七条；
+ *    KI-352 把 `squad.callAlly`/`squad.addThreat` 换成真频道的读法后销掉两条。）
  *
  * **走一遍 `time.hitStop` 的发射方顺手量到的第二件事**：`hitStop(0)` 会把 `scale` 写成 0.05，
  * 却留下 `hitStopRemaining = 0` —— `step()` 的归零分支永远进不去，时钟锁在 **5%** 直到下一次真停顿。
@@ -112,8 +115,6 @@ const hasEmit = (c: string): boolean => (SRC.emits.get(c)?.length ?? 0) > 0
  * 或把频道、订阅、测试一起删掉（像 KI-126 对 `weather.changed` 做的那样）。
  */
 const ROSTER: Record<string, string> = {
-  'squad.callAlly': 'Enemy 直接调 Squad 的方法；只有 tests/unit/squad-bus.test.ts 在发',
-  'squad.addThreat': '同上：只有 tests/unit/squad-bus.test.ts 在发',
   'vfx.decal.batch': '贴花池的批量接口没有生产调用方；只有 tests/unit/vfx-branches.test.ts 在发',
   'vfx.decal.clear': '同上：只有 tests/unit/vfx-branches.test.ts 在发',
   'vfx.stream': '持续流接口没有生产调用方；只有 tests/unit/vfx-branches.test.ts 在发',
@@ -158,7 +159,7 @@ describe('KI-349 一条广播频道要两端才算通', () => {
       expect(SRC.emits.get(key) ?? [], `${key} 在 src/ 里的发射方`).toEqual([])
       expect((TESTS.emits.get(key) ?? []).length, `${key} 在 tests/ 里的发射方`).toBeGreaterThan(0)
     }
-    expect(Object.keys(ROSTER), '名册条数').toHaveLength(7)
+    expect(Object.keys(ROSTER), '名册条数').toHaveLength(5)
   })
 
   it('time.hitStop 只在边上说话：进入一次 true、归零一次 false、叠加只是延长', () => {
@@ -268,6 +269,24 @@ describe('KI-351 只有发射方的频道', () => {
     for (const gone of ['boot.ready', 'entity.spawned', 'world.travel']) {
       expect(SRC.declared.has(gone), `${gone} 已从 GameEvents 摘掉`).toBe(false)
       expect(SRC.emits.get(gone) ?? [], `${gone} 的发射方`).toEqual([])
+    }
+  })
+})
+
+
+describe('KI-352 小队的两个名字换成两条真频道', () => {
+  it('squad.callAlly／squad.addThreat 不再登记、也没有任何一处在发', () => {
+    for (const gone of ['squad.callAlly', 'squad.addThreat']) {
+      expect(SRC.declared.has(gone), `${gone} 已从 GameEvents 摘掉`).toBe(false)
+      expect(SRC.emits.get(gone) ?? [], `${gone} 在 src/ 的发射方`).toEqual([])
+      expect(TESTS.emits.get(gone) ?? [], `${gone} 在 tests/ 的发射方`).toEqual([])
+    }
+  })
+
+  it('小队读的两条频道都是两端：combat.hit 与 ai.callAlly', () => {
+    for (const key of ['combat.hit', 'ai.callAlly']) {
+      expect(hasEmit(key), `${key} 有发射方`).toBe(true)
+      expect(hasOn(key), `${key} 有读方`).toBe(true)
     }
   })
 })
