@@ -727,6 +727,11 @@ export class Enemy {
     if (this.coreFlash > 0) this.coreFlash -= dt
   }
 
+  /**
+   * alert 态的呼救。**不占攻击槽位**（KI-356 裁决）：它造的这一式 `damage: 0`——§1.2
+   * 「同屏最多 3 人同时出手」管的是会伤人的出手，呼救只是广播。前提由
+   * `tests/unit/slot-exempt-casts.test.ts` 钉住（不是这段注释的声称）。
+   */
   private beginCallAlly(tick: number): void {
     const c = this.data.ai.callAlly!
     const spec: AttackSpec = {
@@ -750,6 +755,10 @@ export class Enemy {
    * 走完才回血。**故意不占用 tryAttack 的 RNG 候选**——它是节拍器，不是随机招式。
    * 打断走的是既有的读条机制（`pendingBroadcast` + 受击时 `interruptBroadcast`），
    * 所以「破势/硬直/任何一刀砍在前摇里」都能把这一笔血掐掉，无需新状态。
+   *
+   * **它也不占攻击槽位**（KI-356）：到点必须敲钟，而这一式在数据里是 `damage: 0` 的节拍器
+   * （走完回血）。`slot-exempt-casts.test.ts` 钉住每一处 `barCast.attackId` 的伤害都是 0——
+   * 哪天数据把它改成伤人招式，豁免就不再成立，那条门会先红。
    */
   private maybeBarCast(rhythm: RhythmClock): boolean {
     const t = this.barCast
