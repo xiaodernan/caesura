@@ -732,6 +732,20 @@ export class Enemy {
    * 「同屏最多 3 人同时出手」管的是会伤人的出手，呼救只是广播。前提由
    * `tests/unit/slot-exempt-casts.test.ts` 钉住（不是这段注释的声称）。
    */
+  /**
+   * KI-357：呼救的急迫度从**呼救者自己的血量**派生——快死的那只喊得更急。
+   *
+   * 口径：≤30% hp ⇒ `high`（乘数 ×2）；≥70% ⇒ `low`（×0.5）；其余 `normal`（×1）。
+   * 两端都含等号。`Squad.callAlly` 一直有这条乘数，此前分子永远写死 `normal`，
+   * 于是"越危险越急"在运行时从未发生；边界由 `tests/unit/call-ally-urgency.test.ts` 钉住。
+   */
+  private callUrgency(): 'low' | 'normal' | 'high' {
+    const frac = this.stats.hp / this.stats.hpMax
+    if (frac <= 0.3) return 'high'
+    if (frac >= 0.7) return 'low'
+    return 'normal'
+  }
+
   private beginCallAlly(tick: number): void {
     const c = this.data.ai.callAlly!
     const spec: AttackSpec = {
@@ -742,7 +756,7 @@ export class Enemy {
     this.cooldowns.set('callAlly', tick + 600)
     this.enterCallAlly()
     const bc = () => {
-      bus.emit('ai.callAlly', { fromId: this.id, pos: { ...this.pos }, range: c.range })
+      bus.emit('ai.callAlly', { fromId: this.id, pos: { ...this.pos }, range: c.range, urgency: this.callUrgency() })
       bus.emit('audio.sfx', { key: 'wail', pos: { ...this.pos }, gain: 0.7 })
     }
     this.pendingBroadcast = bc
@@ -940,7 +954,7 @@ export class Enemy {
     this.enter('combat')
     if (spec.id === 'callAlly' || pick === 'scream') {
       const c = this.data.ai.callAlly
-      if (c) this.pendingBroadcast = () => bus.emit('ai.callAlly', { fromId: this.id, pos: { ...this.pos }, range: c.range })
+      if (c) this.pendingBroadcast = () => bus.emit('ai.callAlly', { fromId: this.id, pos: { ...this.pos }, range: c.range, urgency: this.callUrgency() })
     }
   }
 
@@ -1054,7 +1068,7 @@ export class Enemy {
 
 declare module '@/core/EventBus' {
   interface GameEvents {
-    'ai.callAlly': { fromId: string; pos: Vec3; range: number }
+    'ai.callAlly': { fromId: string; pos: Vec3; range: number; urgency?: 'low' | 'normal' | 'high' }
     /**
      * KI-092②：§8.2 ducking 表里「Boss 大招 telegraph」那一行的触发源，**无载荷**——音频侧只要
      * 「这一下是大招」的信号，不需要位置。发射方是本文件 :932（带 `tutti` 标记的招式起手那一 tick），

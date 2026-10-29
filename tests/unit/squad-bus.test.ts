@@ -55,6 +55,21 @@ describe('小队的单例与总线接线（KI-142）', () => {
     bus.emit('ai.callAlly', { fromId: 'en_bus_1', pos: { x: 0, y: 0, z: 0 }, range: 18 })
     const allyMember = s.getMember('en_bus_2')
     expect(allyMember?.threats.length ?? 0, 'callAlly 通道让盟友也收到了仇恨').toBeGreaterThan(0)
+    expect(allyMember?.threats[0].threat, '载荷没写 urgency ⇒ 按 normal 的 50 记账').toBe(50)
+  })
+
+  it('urgency 从载荷进乘数：high 100 / normal 50 / low 25（不再永远是 normal）', () => {
+    const cases = [['high', 100], ['normal', 50], ['low', 25]] as const
+    for (const [urgency, expected] of cases) {
+      const s = initSquad()
+      registerSquadBus()
+      const caller = mkEnemy(`en_caller_${urgency}`)
+      const ally = mkEnemy(`en_ally_${urgency}`)
+      s.register(caller)
+      s.register(ally)
+      bus.emit('ai.callAlly', { fromId: `en_caller_${urgency}`, pos: { x: 0, y: 0, z: 0 }, range: 18, urgency })
+      expect(s.getMember(`en_ally_${urgency}`)?.threats[0]?.threat, `${urgency} 的乘数`).toBe(expected)
+    }
   })
 
   it('受害者不在小队里（玩家挨打 / 名字对不上）⇒ 不凭空造成员', () => {

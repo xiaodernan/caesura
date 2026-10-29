@@ -272,6 +272,7 @@ export function getSquad(): Squad | null {
  * 两个名字——那会让"敌人挨了打"与"敌人叫盟友"各有两个主人。
  *  - `combat.hit`：受害者是小队成员 ⇒ 谁打她、这一记多重就是仇恨权重；
  *  - `ai.callAlly`：Enemy 真正的广播口；camp 从小队名册现查，不从载荷抄第二份。
+ *    载荷的 `urgency` 也照原样进乘数（KI-357）：high ×2／normal ×1／low ×0.5。
  */
 let wired = false
 export function registerSquadBus(): void {
@@ -294,7 +295,7 @@ export function registerSquadBus(): void {
       camp: caller.camp,
       targetId: 'player',
       position: { ...e.pos },
-      urgency: 'normal',
+      urgency: e.urgency ?? 'normal',
     })
   })
 }
