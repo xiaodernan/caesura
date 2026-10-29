@@ -262,3 +262,52 @@ describe('KI-340：技术架构 B 表（真缺口那张）的逐行探针', () =
     expect(read('src/vfx/VfxEmitters.ts')).toMatch(/bus\.on\('entity\.died'/)
   })
 })
+
+
+/**
+ * KI-350：架构 §2 的 B 表（规划里有、树里没有）已经有逐行探针；**C 表（真树里长出来、规划没写）
+ * 此前一个读者都没有**。本批给它第一条机器判据：**每个源文件都必须在架构里点到名**
+ * （相对路径，或至少文件名）。量出来的第一件事：`src/` 下 **105** 个 `.ts` 文件，**0 个**
+ * 在文档里读不到 —— C 表今天为空。
+ *
+ * 这条判据**判的是"文档有没有提到它"**，不是"规划里有没有它"：按名点到即算（文件头注释也算）。
+ * 它是棘轮：新长一个模块而架构一个字都不提，这条腿红着请人来登记。
+ * 第二条腿是**特异性**（按路径点到 ≥85 个，今天 91），第三条是**对照**（一个不存在的名字必须被点到，
+ * 证明谓词不是恒真）。
+ */
+const SRC_FILES: string[] = (() => {
+  const out: string[] = []
+  const walk = (dir: string): void => {
+    for (const e of readdirSync(rel(dir), { withFileTypes: true })) {
+      const p = `${dir}/${e.name}`
+      if (e.isDirectory()) walk(p)
+      else if (e.name.endsWith('.ts') && !e.name.endsWith('.d.ts')) out.push(p)
+    }
+  }
+  walk('src')
+  return out
+})()
+
+/** 文档里点得到名：相对路径优先，文件名也算（14 个只以文件名出现，见 KI-350 账本行） */
+const namedInArch = (file: string): boolean => {
+  const relPath = file.slice('src/'.length)
+  const base = relPath.split('/').pop()!
+  return ARCH.includes(relPath) || ARCH.includes(base)
+}
+
+describe('KI-350：架构 C 表（真树有、规划没写）的第一个读者', () => {
+  it('C 表今天为空：每一个源文件在架构里都点得到名', () => {
+    const offenders = SRC_FILES.filter((f) => !namedInArch(f))
+    expect(offenders, '这些模块在架构里一个字都没有 = 规划外长出来的，C 表该有它们').toEqual([])
+    expect(SRC_FILES.length, '普查的分母（源文件数）').toBeGreaterThanOrEqual(100)
+  })
+
+  it('特异性：至少 85 个是按相对路径点到的（只靠文件名不算点清楚）', () => {
+    const byPath = SRC_FILES.filter((f) => ARCH.includes(f.slice('src/'.length))).length
+    expect(byPath, `按路径点到 ${byPath} / ${SRC_FILES.length}`).toBeGreaterThanOrEqual(85)
+  })
+
+  it('对照：一个文档里从未出现过的模块名一定被点到（判据不是恒真）', () => {
+    expect(namedInArch('src/zz/zz_ghost_module_ki350.ts'), '不存在的名字被当成"点到了"').toBe(false)
+  })
+})
