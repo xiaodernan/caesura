@@ -1,7 +1,6 @@
 import * as THREE from 'three'
 import { bus } from '@/core/EventBus'
 import { getDecalSystem } from './Decals'
-import { getGPUParticles } from './GPUParticles'
 
 /**
  * **世界事件 → 表现层**的唯一接线处（Phase B4，KI-136）。
@@ -13,6 +12,11 @@ import { getGPUParticles } from './GPUParticles'
  *
  * **发射方住在表现层**：战斗层与 AI 层只管"谁死了""打中了""换阶段了"（那些事件本来就有），
  * 要它们再为"地上要留一块血"发一条事件，就是给表现层的事找了个战斗层的地址。
+ *
+ * **KI-349：粒子那一半走总线，不直调系统。** 这个文件原来对着 `getGPUParticles().burst()`
+ * 直调三处，而 `vfx.burst` 这条频道**一个发射方都没有**——「有人听、没人说」的 API 在账上
+ * 读起来像接好了。现在三处都走 `bus.emit('vfx.burst')`：订阅方仍是 `GPUParticles`
+ * （`registerGPUParticlesBus`），世界事件与粒子之间只剩一个口。
  *
  * **表与读的对应**（`vfx.json` 的九行配置，九个读者，`tests/unit/vfx-table.test.ts` 有门钉着）：
  *   · `decal_blood`  ← `entity.died`（敌人）——地上那块血
@@ -35,13 +39,13 @@ export function registerVfxWorldEmitters(): void {
     if (e.kind !== 'enemy') return
     const at = new THREE.Vector3(e.position.x, e.position.y, e.position.z)
     getDecalSystem()?.spawn('decal_blood', at, UP)
-    getGPUParticles()?.burst('fx_death_burst', at)
+    bus.emit('vfx.burst', { id: 'fx_death_burst', pos: { x: at.x, y: at.y, z: at.z } })
   })
 
   // 命中：火花在命中点炸开（无敌帧不算一次世界事件，挡与弹反各有自己的形状）
   bus.on('combat.hit', (h) => {
     if (h.result !== 'hit' && h.result !== 'graze') return
-    getGPUParticles()?.burst('fx_hit_spark', new THREE.Vector3(h.point.x, h.point.y, h.point.z))
+    bus.emit('vfx.burst', { id: 'fx_hit_spark', pos: { x: h.point.x, y: h.point.y, z: h.point.z } })
   })
 
   // 重踏（§10「驼鼓踏地」那一行）：地上压出一道裂痕 ＋ 扬起一片尘
@@ -49,7 +53,7 @@ export function registerVfxWorldEmitters(): void {
     if (p.key !== 'stomp' || !p.pos) return
     const at = new THREE.Vector3(p.pos.x, p.pos.y, p.pos.z)
     getDecalSystem()?.spawn('decal_crack', at, UP)
-    getGPUParticles()?.burst('fx_dust', at)
+    bus.emit('vfx.burst', { id: 'fx_dust', pos: { x: at.x, y: at.y, z: at.z } })
   })
 
   // Boss 换阶段：脚下的地烧焦一块（位置随事件带，KI-136 给 `boss.phase` 补了 `pos`）

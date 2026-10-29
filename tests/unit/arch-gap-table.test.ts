@@ -6,7 +6,7 @@
  *  ① 「三个频道都没有发射方」——`vfx.decal.spawn` 由 `combat/CombatManager` 的弹着点发、`vfx.trail.weapon`
  *    由 `player/ThirdPersonController` 的刃口发、`vfx.trail.projectile` 由弹道发，世界事件那条总线由
  *    `vfx/VfxEmitters.ts`（KI-136）唯一接线；连同 `vfx.request`（环/火花/尖刺那条总口）一共**四个**频道有发射方
- *    ⇒ 只有 `vfx.burst` 一个频道还是"有人听、没人说"；
+ *    ⇒ 当时只有 `vfx.burst` 一个频道还是"有人听、没人说"（KI-349 已接上，本文件那条腿随之改为"五个"）；
  *  ② 「配置表全仓没有写方」——`data/index.ts` 按 `vfx:decals`/`vfx:trails`/`vfx:emitters` 三键注册
  *    `vfx.json` 的九行，三个系统各自 `maybeGet` 读（`tests/unit/vfx-table.test.ts` 钉着九个读者）；
  *  ③ 「都没有真几何」——两侧都是 index+uv+color 的池化 `BufferGeometry`（贴花是四边形池、拖尾是每点两顶点的
@@ -253,11 +253,11 @@ describe('KI-340：技术架构 B 表（真缺口那张）的逐行探针', () =
   it('第 10 行三块调试面板：文件与 F1/F3/F4 读者都在', ROWS[9]!.probe)
   it('第 11 行 core/Registry.ts：load 在、preload 与引用计数仍没有', ROWS[10]!.probe)
 
-  it('第 8 行的更正：四条频道都有发射方，只剩 `vfx.burst` 还"有人听、没人说"', () => {
+  it('第 8 行的更正：五个频道都有发射方，`vfx.burst` 不再"有人听、没人说"（KI-349 接上）', () => {
     const emitters = vfxEmitters()
-    // vfx.request 是环/火花/尖刺那条总口；另外三条是贴花与两种拖尾
-    expect([...emitters.keys()].sort()).toEqual(['vfx.decal.spawn', 'vfx.request', 'vfx.trail.projectile', 'vfx.trail.weapon'])
-    expect(emitters.has('vfx.burst'), 'vfx.burst 的发射方还没接').toBe(false)
+    // vfx.request 是环/火花/尖刺那条总口；另外四条是贴花、两种拖尾与爆发
+    expect([...emitters.keys()].sort()).toEqual(['vfx.burst', 'vfx.decal.spawn', 'vfx.request', 'vfx.trail.projectile', 'vfx.trail.weapon'])
+    expect(emitters.has('vfx.burst'), 'vfx.burst 的发射方').toBe(true)
     expect(read('src/vfx/VfxEmitters.ts'), '世界事件接线仍只有一处').toContain('registerVfxWorldEmitters')
     expect(read('src/vfx/VfxEmitters.ts')).toMatch(/bus\.on\('entity\.died'/)
   })
