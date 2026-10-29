@@ -1,8 +1,10 @@
 /**
- * KI-349／KI-351／KI-352：一条广播频道要**两端**才算通。今天登记 **51** 条：**44** 条两端都有、
- * **5** 条只有接收方（KI-349 的名册，KI-352 又销掉两条）、**2** 条只有发射方（KI-351 的名册）。
+ * KI-349／KI-351／KI-352／KI-353：一条广播频道要**两端**才算通。今天登记 **46** 条：**44** 条两端都有、
+ * **0** 条只有接收方、**2** 条只有发射方（KI-351 的名册）。
  * KI-352 把 `squad.callAlly`／`squad.addThreat` 从登记册上摘掉：小队直接读两条**真**频道
  * （`combat.hit` 写仇恨、`ai.callAlly` 叫盟友），不必再给同一件事起第二个名字。
+ * KI-353 把池化那五条（`vfx.decal.batch`／`vfx.decal.clear`／`vfx.stream`／`vfx.remove`／
+ * `vfx.trail.hide`）也删了：接口方法留在三个系统上，**频道**等有生产消费方再接。
  * KI-351 顺手做了两件事：把 `AudioEngine.subscribe('x', …)` 那个订阅口教给扫描器（它让 8 条
  * `audio.*`／`combat.bossTelegraph` 从"只有发射方"变回两端），并删掉三条零读方的频道
  * （`boot.ready`／`entity.spawned`／`world.travel`）。
@@ -13,9 +15,8 @@
  *    而全仓**没有一处 emit** —— `GameTime.hitStop()` 只改自己的两个字段。这条设计好的凝滞从没发生过。
  *  - `vfx.burst`：`vfx/GPUParticles` 订着它；世界事件那三条线（倒地/命中/重踏）却直调
  *    `getGPUParticles().burst()` 绕开了总线 —— 于是这条频道**一个发射方都没有**（KI-340 已经量过）。
- *  - 另外五条（`vfx.decal.batch`/`vfx.decal.clear`/`vfx.stream`/`vfx.remove`/
- *    `vfx.trail.hide`）在生产代码里**没有发射方**，只有测试在发。（KI-349 时这一族是七条；
- *    KI-352 把 `squad.callAlly`/`squad.addThreat` 换成真频道的读法后销掉两条。）
+ *  - 池化那五条（`vfx.decal.batch`/`vfx.decal.clear`/`vfx.stream`/`vfx.remove`/
+ *    `vfx.trail.hide`）在 KI-349 时进了名册；KI-353 的裁决是**删频道不删接口**（见下）。
  *
  * **走一遍 `time.hitStop` 的发射方顺手量到的第二件事**：`hitStop(0)` 会把 `scale` 写成 0.05，
  * 却留下 `hitStopRemaining = 0` —— `step()` 的归零分支永远进不去，时钟锁在 **5%** 直到下一次真停顿。
@@ -115,11 +116,8 @@ const hasEmit = (c: string): boolean => (SRC.emits.get(c)?.length ?? 0) > 0
  * 或把频道、订阅、测试一起删掉（像 KI-126 对 `weather.changed` 做的那样）。
  */
 const ROSTER: Record<string, string> = {
-  'vfx.decal.batch': '贴花池的批量接口没有生产调用方；只有 tests/unit/vfx-branches.test.ts 在发',
-  'vfx.decal.clear': '同上：只有 tests/unit/vfx-branches.test.ts 在发',
-  'vfx.stream': '持续流接口没有生产调用方；只有 tests/unit/vfx-branches.test.ts 在发',
-  'vfx.remove': '同上：只有 tests/unit/vfx-branches.test.ts 在发',
-  'vfx.trail.hide': '拖尾的收尾接口没有生产调用方；只有 tests/unit/vfx-branches.test.ts 在发',
+  // KI-353 起是空的：池化那五条频道连同声明一起删了（接口方法还在系统上）。
+  // 将来若有"有人听、没人说"的频道，先决定：接发射方 / 频道与订阅一起删 / 进这里并写明谁在发。
 }
 
 const stubScene = (): Scene => ({ add: () => {}, remove: () => {} }) as unknown as Scene
@@ -140,12 +138,12 @@ describe('KI-349 一条广播频道要两端才算通', () => {
   })
 
   it('普查读到的分母不是手抄的：登记的频道过半两端都有', () => {
-    expect(SRC.declared.size, '登记的频道数（GameEvents 的成员）').toBeGreaterThanOrEqual(50)
+    expect(SRC.declared.size, '登记的频道数（GameEvents 的成员；KI-353 删掉池化五条后是 46）').toBeGreaterThanOrEqual(40)
     const both = [...SRC.declared].filter((c) => hasOn(c) && hasEmit(c)).sort()
     expect(both.length, `两端都有的频道：${both.join(', ')}`).toBeGreaterThanOrEqual(30)
   })
 
-  it('只有接收方的频道恰好是名册里那七条——新长出一条就必须先做决定', () => {
+  it('只有接收方的频道恰好是名册里那几条（KI-353 之后为空）——新长出一条就必须先做决定', () => {
     const listenOnly = [...SRC.declared].filter((c) => hasOn(c) && !hasEmit(c)).sort()
     expect(
       listenOnly,
@@ -154,12 +152,13 @@ describe('KI-349 一条广播频道要两端才算通', () => {
     ).toEqual(Object.keys(ROSTER).sort())
   })
 
-  it('名册每一条都真的"只有测试在发"：src/ 里 0 个发射方，tests/ 里数得到', () => {
+  it('登记册里没有零端的频道：每条要么两端、要么在名册里有一条机器判据', () => {
+    const dead = [...SRC.declared].filter((c) => !hasOn(c) && !hasEmit(c)).sort()
+    expect(dead, '登记了却没有任何一端——它连"接好了"的样子都没有，只是一行名字').toEqual([])
     for (const key of Object.keys(ROSTER)) {
       expect(SRC.emits.get(key) ?? [], `${key} 在 src/ 里的发射方`).toEqual([])
       expect((TESTS.emits.get(key) ?? []).length, `${key} 在 tests/ 里的发射方`).toBeGreaterThan(0)
     }
-    expect(Object.keys(ROSTER), '名册条数').toHaveLength(5)
   })
 
   it('time.hitStop 只在边上说话：进入一次 true、归零一次 false、叠加只是延长', () => {
@@ -285,6 +284,27 @@ describe('KI-352 小队的两个名字换成两条真频道', () => {
 
   it('小队读的两条频道都是两端：combat.hit 与 ai.callAlly', () => {
     for (const key of ['combat.hit', 'ai.callAlly']) {
+      expect(hasEmit(key), `${key} 有发射方`).toBe(true)
+      expect(hasOn(key), `${key} 有读方`).toBe(true)
+    }
+  })
+})
+
+
+describe('KI-353 池化那五条频道：删频道、留接口', () => {
+  const GONE = ['vfx.decal.batch', 'vfx.decal.clear', 'vfx.stream', 'vfx.remove', 'vfx.trail.hide']
+
+  it('五条都不再登记，也没有任何一端留在源码或测试里', () => {
+    for (const gone of GONE) {
+      expect(SRC.declared.has(gone), `${gone} 已从 GameEvents 摘掉`).toBe(false)
+      expect(SRC.emits.get(gone) ?? [], `${gone} 在 src/ 的发射方`).toEqual([])
+      expect(SRC.ons.get(gone) ?? [], `${gone} 在 src/ 的读方`).toEqual([])
+      expect(TESTS.emits.get(gone) ?? [], `${gone} 在 tests/ 的发射方`).toEqual([])
+    }
+  })
+
+  it('没有误删真在用的那几条：spawn 与两条拖尾仍在两端', () => {
+    for (const key of ['vfx.decal.spawn', 'vfx.trail.weapon', 'vfx.trail.projectile']) {
       expect(hasEmit(key), `${key} 有发射方`).toBe(true)
       expect(hasOn(key), `${key} 有读方`).toBe(true)
     }

@@ -297,13 +297,12 @@ export function registerTrailSystemBus(): void {
   bus.on('vfx.trail.projectile', (data: { id: string; pos: { x: number; y: number; z: number }; vel: { x: number; y: number; z: number } }) => {
     trailSystem?.updateProjectile(data.id, vec3(data.pos), vec3(data.vel), 1/60)
   })
-  bus.on('vfx.trail.hide', (id: string) => {
-    trailSystem?.setVisible(id, false)
-  })
 }
 
 /**
- * 本文件用到的三条事件，声明跟着写方走（写方与读方都在这个文件里，名字不写第二份）。
+ * 本文件用到的两条事件，声明跟着写方走（写方与读方都在这个文件里，名字不写第二份）。
+ * **KI-353**：`vfx.trail.hide` 频道已删——`setVisible()` 留在系统上（拖尾本身也会随老化淡出），
+ * 等有"必须立刻收起"的消费方时再把频道接回来。
  * **载荷是普通 `{x,y,z}`，不是 `THREE.Vector3`**（KI-135）：发射方住在战斗层／AI 层，
  * 而那些层**不许 import three**（`tests/unit/arch-boundaries.test.ts`：three 只在表现层出现）。
  * 载荷要是 `THREE.Vector3`，发射方就得为了发一个事件把 three 拖进战斗层——那是拿依赖方向
@@ -315,7 +314,5 @@ declare module '@/core/EventBus' {
     'vfx.trail.weapon': { id: string; pos: { x: number; y: number; z: number }; forward: { x: number; y: number; z: number }; up: { x: number; y: number; z: number } }
     /** 弹道/投射物拖尾：发射方＝投射物的一方，接收方＝本文件的 TrailSystem。 */
     'vfx.trail.projectile': { id: string; pos: { x: number; y: number; z: number }; vel: { x: number; y: number; z: number } }
-    /** 收起某条拖尾：发射方＝要隐藏武器的一方，接收方＝本文件的 TrailSystem（载荷就是 id 本身）。 */
-    'vfx.trail.hide': string
   }
 }

@@ -342,22 +342,12 @@ export function registerDecalSystemBus(): void {
   }) => {
     decalSystem?.spawn(data.configId, vec3(data.pos), vec3(data.normal), data)
   })
-  bus.on('vfx.decal.batch', (data: {
-    configId: string
-    positions: { x: number; y: number; z: number }[]
-    normal: { x: number; y: number; z: number }
-    rotation?: number
-    scale?: number
-  }) => {
-    decalSystem?.spawnBatch(data.configId, data.positions.map(vec3), vec3(data.normal), data)
-  })
-  bus.on('vfx.decal.clear', (configId?: string) => {
-    decalSystem?.clear(configId)
-  })
 }
 
 /**
- * 本文件用到的三条事件，声明跟着写方走（写方与读方都在这个文件里，名字不写第二份）。
+ * 本文件用到的那条事件，声明跟着写方走（写方与读方都在这个文件里，名字不写第二份）。
+ * **KI-353**：`batch` 与 `clear` 两条频道已删——接口方法（`spawnBatch`／`clear`）留在系统上，
+ * 等有生产消费方时再把频道接回来（一条频道只在两端都有人时才登记）。
  * **载荷是普通 `{x,y,z}`，不是 `THREE.Vector3`**（KI-135）：发射方住在战斗层／AI 层，
  * 而那些层**不许 import three**（`tests/unit/arch-boundaries.test.ts`：three 只在表现层出现）。
  * 载荷要是 `THREE.Vector3`，发射方就得为了发一个事件把 three 拖进战斗层——那是拿依赖方向
@@ -373,15 +363,5 @@ declare module '@/core/EventBus' {
       rotation?: number
       scale?: number
     }
-    /** 批量生成贴花（爆炸碎片、脚印序列）：发射方＝一次性给一串位置的一方，接收方＝本文件的 DecalSystem。 */
-    'vfx.decal.batch': {
-      configId: string
-      positions: { x: number; y: number; z: number }[]
-      normal: { x: number; y: number; z: number }
-      rotation?: number
-      scale?: number
-    }
-    /** 清理贴花（不给 configId＝全清）：发射方＝要收摊的一方，接收方＝本文件的 DecalSystem。 */
-    'vfx.decal.clear': string | undefined
   }
 }

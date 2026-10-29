@@ -203,36 +203,36 @@ describe('混合模式三种（KI-149）', () => {
   })
 })
 
-describe('那几条总线通道的处理函数本体（KI-149）', () => {
-  it('贴花三条通道：spawn / batch / clear 都真的动到系统', () => {
+describe('池化接口本体（KI-149；KI-353 起不走总线）', () => {
+  it('贴花：spawn 走总线；spawnBatch／clear 是系统方法（频道已删，接口还在）', () => {
     const decals = initDecalSystem(newScene())!
     registerDecalSystemBus()
     bus.emit('vfx.decal.spawn', { configId: 'decal_blood', pos: { x: 1, y: 0, z: 1 }, normal: { x: 0, y: 1, z: 0 } })
-    bus.emit('vfx.decal.batch', {
-      configId: 'decal_blood',
-      positions: [{ x: 2, y: 0, z: 2 }, { x: 3, y: 0, z: 3 }],
-      normal: { x: 0, y: 1, z: 0 },
-    })
+    decals.spawnBatch(
+      'decal_blood',
+      [new THREE.Vector3(2, 0, 2), new THREE.Vector3(3, 0, 3)],
+      new THREE.Vector3(0, 1, 0),
+    )
     const inst = (decals as unknown as { decals: Map<string, { active: boolean }[]> }).decals
     const live = (inst.get('decal_blood') ?? []).filter((d) => d.active).length
-    expect(live, 'spawn + batch 贴了三处').toBe(3)
-    bus.emit('vfx.decal.clear', 'decal_blood')
+    expect(live, 'spawn + spawnBatch 贴了三处').toBe(3)
+    decals.clear('decal_blood')
     expect((inst.get('decal_blood') ?? []).filter((d) => d.active).length, 'clear 之后全没了').toBe(0)
   })
 
-  it('粒子三条通道：burst / stream / remove 都真的动到系统', () => {
+  it('粒子：burst 走总线；stream／remove 是系统方法', () => {
     const particles = initGPUParticles(newScene())!
     registerGPUParticlesBus()
     bus.emit('vfx.burst', { id: 'fx_hit_spark', pos: { x: 0, y: 0, z: 0 }, count: 4 })
     const inst = (particles as unknown as { emitters: Map<string, { particles: { active: boolean }[] }> }).emitters
     expect(inst.get('fx_hit_spark')?.particles.filter((p) => p.active).length ?? 0, 'burst 通道炸出了粒子').toBeGreaterThan(0)
-    bus.emit('vfx.stream', { id: 'fx_dust', pos: { x: 0, y: 0, z: 0 } })
-    expect(inst.has('fx_dust'), 'stream 通道建出了发射器').toBe(true)
-    bus.emit('vfx.remove', 'fx_dust')
-    expect(inst.has('fx_dust'), 'remove 通道收掉了发射器').toBe(false)
+    particles.stream('fx_dust', new THREE.Vector3(0, 0, 0))
+    expect(inst.has('fx_dust'), 'stream 建出了发射器').toBe(true)
+    particles.remove('fx_dust')
+    expect(inst.has('fx_dust'), 'remove 收掉了发射器').toBe(false)
   })
 
-  it('拖尾三条通道：weapon / projectile / hide 都真的动到系统', () => {
+  it('拖尾：weapon／projectile 走总线；setVisible 是系统方法', () => {
     const trails = initTrailSystem(newScene())!
     registerTrailSystemBus()
     bus.emit('vfx.trail.weapon', {
@@ -245,7 +245,7 @@ describe('那几条总线通道的处理函数本体（KI-149）', () => {
     const inst = (trails as unknown as { trails: Map<string, { mesh: THREE.Mesh; points: unknown[] }> }).trails
     expect(inst.get('trail_blade')?.points.length ?? 0, 'weapon 通道攒了点').toBeGreaterThan(0)
     expect(inst.get('trail_arrow')?.points.length ?? 0, 'projectile 通道攒了点').toBeGreaterThan(0)
-    bus.emit('vfx.trail.hide', 'trail_blade')
-    expect(inst.get('trail_blade')?.mesh.visible, 'hide 通道收起了那一条').toBe(false)
+    trails.setVisible('trail_blade', false)
+    expect(inst.get('trail_blade')?.mesh.visible, 'setVisible 收起了那一条').toBe(false)
   })
 })

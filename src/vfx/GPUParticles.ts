@@ -344,16 +344,12 @@ export function registerGPUParticlesBus(): void {
   bus.on('vfx.burst', (data: { id: string; pos: { x: number; y: number; z: number }; count?: number }) => {
     gpuParticles?.burst(data.id, vec3(data.pos), data.count)
   })
-  bus.on('vfx.stream', (data: { id: string; pos: { x: number; y: number; z: number } }) => {
-    gpuParticles?.stream(data.id, vec3(data.pos))
-  })
-  bus.on('vfx.remove', (id: string) => {
-    gpuParticles?.remove(id)
-  })
 }
 
 /**
- * 本文件用到的三条事件，声明跟着写方走（写方与读方都在这个文件里，名字不写第二份）。
+ * 本文件用到的那条事件，声明跟着写方走（写方与读方都在这个文件里，名字不写第二份）。
+ * **KI-353**：`stream` 与 `remove` 两条频道已删——`stream()`／`remove()` 方法留在系统上，
+ * 等有持续效果的消费方时再把频道接回来。
  *
  * **载荷是普通 `{x,y,z}`，不是 `THREE.Vector3`**（KI-135）：发射方住在战斗层／AI 层，
  * 而那些层**不许 import three**（`tests/unit/arch-boundaries.test.ts`：three 只在表现层出现）。
@@ -364,9 +360,5 @@ declare module '@/core/EventBus' {
   interface GameEvents {
     /** 一次性爆发：发射方＝命中/处决/技能特效的一方，接收方＝本文件的 GPUParticles。 */
     'vfx.burst': { id: string; pos: { x: number; y: number; z: number }; count?: number }
-    /** 持续流（火焰、魔法光环）：发射方＝持有发射器的一方，接收方＝本文件的 GPUParticles。 */
-    'vfx.stream': { id: string; pos: { x: number; y: number; z: number } }
-    /** 移除某个发射器：发射方＝要收掉它的一方，接收方＝本文件的 GPUParticles（载荷就是 id 本身）。 */
-    'vfx.remove': string
   }
 }
