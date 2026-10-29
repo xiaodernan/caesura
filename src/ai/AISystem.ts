@@ -219,7 +219,12 @@ export class AISystem {
       if (!e.alive && e.stateTick > 3000) {
         // retire fully faded corpses
         const i = this.enemies.indexOf(e)
-        if (i >= 0) { this.enemies.splice(i, 1); bus.emit('ai.retired', { id: e.id }) }
+        if (i >= 0) {
+          const [gone] = this.enemies.splice(i, 1)
+          // KI-354：退役也是"这个人不在了"——Squad 名册要跟名单一起收。只 splice 不 unregister
+          // 的话，尸体从数组里走了、名册里还留着一份引用，逐 tick 衰减永不出队。
+          this.squad.unregister(gone.id)
+        }
       }
     }
   }
@@ -228,8 +233,3 @@ export class AISystem {
   get squadSystem() { return this.squad }
 }
 
-declare module '@/core/EventBus' {
-  interface GameEvents {
-    'ai.retired': { id: string }
-  }
-}

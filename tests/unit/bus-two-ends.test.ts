@@ -1,6 +1,6 @@
 /**
- * KI-349／KI-351／KI-352／KI-353：一条广播频道要**两端**才算通。今天登记 **46** 条：**44** 条两端都有、
- * **0** 条只有接收方、**2** 条只有发射方（KI-351 的名册）。
+ * KI-349／KI-351／KI-352／KI-353／KI-354：一条广播频道要**两端**才算通。今天登记 **45** 条：**44** 条两端都有、
+ * **0** 条只有接收方、**1** 条只有发射方（`camera.modeChanged`）。
  * KI-352 把 `squad.callAlly`／`squad.addThreat` 从登记册上摘掉：小队直接读两条**真**频道
  * （`combat.hit` 写仇恨、`ai.callAlly` 叫盟友），不必再给同一件事起第二个名字。
  * KI-353 把池化那五条（`vfx.decal.batch`／`vfx.decal.clear`／`vfx.stream`／`vfx.remove`／
@@ -242,12 +242,11 @@ describe('KI-349 一条广播频道要两端才算通', () => {
  * 剩下的要么两端都有，要么是 KI-349 的 LISTEN_ONLY 名册。
  */
 const EMIT_ONLY: Record<string, string> = {
-  'ai.retired': '生产读方 0：退役名单的观察者只有 tests/unit/ai-retire.test.ts 两腿',
   'camera.modeChanged': '生产读方 0：只有 tests/unit/camera-modes.test.ts 与 camera-mode-params.test.ts 在读载荷',
 }
 
 describe('KI-351 只有发射方的频道', () => {
-  it('只有发射方的频道恰好是名册里那两条', () => {
+  it('只有发射方的频道恰好是名册里那一条', () => {
     const emitOnly = [...SRC.declared].filter((c) => hasEmit(c) && !hasOn(c)).sort()
     expect(
       emitOnly,
@@ -261,7 +260,7 @@ describe('KI-351 只有发射方的频道', () => {
       expect(SRC.ons.get(key) ?? [], `${key} 在 src/ 里的读方`).toEqual([])
       expect((TESTS.ons.get(key) ?? []).length, `${key} 在 tests/ 里的读方`).toBeGreaterThan(0)
     }
-    expect(Object.keys(EMIT_ONLY), '名册条数').toHaveLength(2)
+    expect(Object.keys(EMIT_ONLY), '名册条数').toHaveLength(1)
   })
 
   it('删掉的三条不再登记：boot.ready／entity.spawned／world.travel', () => {
@@ -308,5 +307,17 @@ describe('KI-353 池化那五条频道：删频道、留接口', () => {
       expect(hasEmit(key), `${key} 有发射方`).toBe(true)
       expect(hasOn(key), `${key} 有读方`).toBe(true)
     }
+  })
+})
+
+
+describe('KI-354 尸体退役不再广播：观察面是名单本身', () => {
+  it('ai.retired 不再登记，也没有任何一端留在源码或测试里', () => {
+    const gone = 'ai.retired'
+    expect(SRC.declared.has(gone), '已从 GameEvents 摘掉').toBe(false)
+    expect(SRC.emits.get(gone) ?? [], 'src/ 的发射方').toEqual([])
+    expect(SRC.ons.get(gone) ?? [], 'src/ 的读方').toEqual([])
+    expect(TESTS.emits.get(gone) ?? [], 'tests/ 的发射方').toEqual([])
+    expect(TESTS.ons.get(gone) ?? [], 'tests/ 的读方').toEqual([])
   })
 })
