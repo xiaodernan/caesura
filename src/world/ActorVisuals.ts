@@ -11,6 +11,8 @@ interface EnemyVis {
   plate: THREE.Mesh<THREE.BoxGeometry, THREE.MeshStandardMaterial> | null
   /** KI-013 敌人血条：底板 + 填充条（只在受损时显示） */
   hpBar: { bg: THREE.Mesh; fill: THREE.Mesh; fillMat: THREE.MeshBasicMaterial } | null
+  /** KI-370 排队环：没拿到攻击槽位的敌人脚下的一圈（下一个轮到的最亮） */
+  queueRing: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> | null
   e: Enemy
 }
 
@@ -119,8 +121,22 @@ export class ActorVisuals {
       const barFill = new THREE.Mesh(new THREE.PlaneGeometry(barW, 0.07 * s), barFillMat)
       barFill.position.set(0, 1.9 * s, 0.01)
       group.add(barBg, barFill)
+      // KI-370 排队环：贴在脚下、**不扩张**的一圈骨白——扩张的红环是 telegraph（art-direction §7.1），
+      // 这一圈说的是"我在等"，不是"快躲"。排位越靠后越淡，下一个轮到的会呼吸。
+      const queueRing = new THREE.Mesh(
+        new THREE.RingGeometry(0.55 * s, 0.62 * s, 40),
+        new THREE.MeshBasicMaterial({
+          color: 0xe8dfcb, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false,
+        })
+      )
+      queueRing.rotation.x = -Math.PI / 2
+      queueRing.position.y = 0.03
+      queueRing.visible = false
+      group.add(queueRing)
       this.scene.add(group)
-      this.vis.set(e.id, { group, body, core, plate, hpBar: { bg: barBg, fill: barFill, fillMat: barFillMat }, e })
+      this.vis.set(e.id, {
+        group, body, core, plate, hpBar: { bg: barBg, fill: barFill, fillMat: barFillMat }, queueRing, e,
+      })
     }
     // retire visuals of enemies removed from the roster
     for (const [id, v] of this.vis) {
@@ -134,6 +150,10 @@ export class ActorVisuals {
         if (v.plate) {
           v.plate.geometry.dispose()
           v.plate.material.dispose()
+        }
+        if (v.queueRing) {
+          v.queueRing.geometry.dispose()
+          v.queueRing.material.dispose()
         }
         this.vis.delete(id)
       }
@@ -245,6 +265,17 @@ export class ActorVisuals {
         const r = frac < 0.5 ? 1 : (1 - frac) * 2
         const g = frac < 0.5 ? frac * 2 : 1
         v.hpBar.fillMat.color.setRGB(r, g, 0.2)
+      }
+    }
+    // KI-370：排队环——没槽的人脚下有一圈，排位越靠后越淡；下一个轮到的会呼吸。
+    // 环从 `Squad.reallocateSlots()` 的 `squadWaitRank` 来（与 F4 名册同一套排位）。
+    if (v.queueRing) {
+      const rank = e.squadWaitRank
+      const show = e.alive && rank > 0
+      v.queueRing.visible = show
+      if (show) {
+        const base = Math.max(0.16, 0.62 - (rank - 1) * 0.14)
+        v.queueRing.material.opacity = rank === 1 ? base * (0.85 + 0.15 * Math.sin(tick * 0.12)) : base
       }
     }
   }

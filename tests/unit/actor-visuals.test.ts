@@ -73,7 +73,7 @@ describe('ActorVisuals：钟甲板挂得对、掉得对、回收不漏', () => {
     const k = ai.spawn('en_hanged_knight', { x: 0, y: 0, z: -22 }, 'k2')
     const s = ai.spawn('en_murkshell', { x: 3, y: 0, z: -22 }, 's2')
     vis.sync(ai.enemies, 4)
-    expect(meshCount() - empty, '一具敌人 = 身体+振源核+血条(bg+fill)；带钟甲的多一块板（血条 bg+fill 每具都有）').toBe(9)
+    expect(meshCount() - empty, '一具敌人 = 身体+振源核+血条(bg+fill)+排队环；带钟甲的多一块板（血条与排队环每具都有）').toBe(11)
     ai.despawn(k.id)
     ai.despawn(s.id)
     vis.sync(ai.enemies, 5)
@@ -494,5 +494,76 @@ describe('ActorVisuals 敌人血条（KI-013）', () => {
     expect(red.r, '低于半血 ⇒ r 钉在 1').toBeCloseTo(1, 5)
     expect(red.g, 'g = frac*2 ⇒ 0.5').toBeCloseTo(0.5, 5)
     for (const c of [green, yellow, red]) expect(c.b, '蓝通道恒 0.2').toBeCloseTo(0.2, 5)
+  })
+})
+
+/**
+ * KI-370 排队环：没拿到攻击槽位的敌人脚下有一圈骨白；下一个轮到的更亮，
+ * 排位越靠后越淡，占着槽 / 还没进战斗 / 已经死了的人都不带环。
+ * 只读 mesh 的可见性 / 透明度 / 尺寸，不建 WebGL 上下文——
+ * RingGeometry 的 parameters 与 MeshBasicMaterial.opacity 在 node 里同样可断言。
+ */
+describe('ActorVisuals 排队环（KI-370）', () => {
+  const ringOf = (id: string): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> | undefined =>
+    groupOf(id)!.children.find(
+      (c): c is THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> =>
+        c instanceof THREE.Mesh && c.geometry instanceof THREE.RingGeometry
+    )
+
+  it('没在等 ⇒ 不显示；在等 ⇒ 亮起；排位越靠后越淡；下一个轮到的会呼吸', () => {
+    const e = ai.spawn('en_murkshell', { x: 50, y: 0, z: -10 }, 'q1')
+    vis.sync(ai.enemies, 0)
+    const ring = ringOf(e.id)
+    expect(ring, '每具敌人都有这一圈（只是默认不显示）').toBeTruthy()
+    expect(ring!.visible, 'rank 0（占着槽或还没进战斗）⇒ 不显示').toBe(false)
+
+    e.squadWaitRank = 1
+    vis.sync(ai.enemies, 0) // sin(0)=0 ⇒ 呼吸取中位 0.85
+    const r1 = ring!.material.opacity
+    expect(ring!.visible, '在等的人脚下亮起').toBe(true)
+    expect(r1, '下一个轮到的：0.62 × 0.85').toBeCloseTo(0.62 * 0.85, 5)
+
+    e.squadWaitRank = 2
+    vis.sync(ai.enemies, 0)
+    expect(ring!.material.opacity, '第二位的环比下一位淡 0.14').toBeCloseTo(0.62 - 0.14, 5)
+    expect(ring!.material.opacity).toBeLessThan(r1)
+
+    e.squadWaitRank = 3
+    vis.sync(ai.enemies, 0)
+    expect(ring!.material.opacity, '再往后更淡').toBeCloseTo(0.62 - 0.28, 5)
+
+    e.squadWaitRank = 1
+    vis.sync(ai.enemies, 13) // 13×0.12 ≈ 1.56 rad ⇒ sin ≈ +1
+    const bright = ring!.material.opacity
+    vis.sync(ai.enemies, 39) // 39×0.12 ≈ 4.68 rad ⇒ sin ≈ -1
+    const dim = ring!.material.opacity
+    expect(bright, '呼吸的上沿接近满档').toBeCloseTo(0.62, 2)
+    expect(dim).toBeCloseTo(0.62 * 0.7, 2)
+    expect(bright).toBeGreaterThan(dim)
+  })
+
+  it('死了就不带环：尸体脚下不该还剩一个"我在等"', () => {
+    const e = ai.spawn('en_murkshell', { x: 54, y: 0, z: -10 }, 'q2')
+    e.squadWaitRank = 1
+    vis.sync(ai.enemies, 0)
+    const ring = ringOf(e.id)!
+    expect(ring.visible).toBe(true)
+    e.stats.dead = true
+    vis.sync(ai.enemies, 1)
+    expect(ring.visible, '死了 ⇒ 环灭').toBe(false)
+    e.stats.dead = false
+  })
+
+  it('尺寸与朝向跟着体格走：内外半径 = 0.55s / 0.62s，平铺在地上，挂在敌人组里', () => {
+    const e = ai.spawn('en_murkshell', { x: 58, y: 0, z: -10 }, 'q3')
+    vis.sync(ai.enemies, 0)
+    const s = e.data.body?.scale ?? 1
+    const ring = ringOf(e.id)!
+    expect(ring.geometry.parameters.innerRadius).toBeCloseTo(0.55 * s, 5)
+    expect(ring.geometry.parameters.outerRadius).toBeCloseTo(0.62 * s, 5)
+    expect(ring.rotation.x, '躺平（与地面平行）').toBeCloseTo(-Math.PI / 2, 5)
+    expect(ring.position.y).toBeCloseTo(0.03, 5)
+    expect(ring.parent, '挂在 actor 组里 ⇒ 跟着敌人走，不另立一个世界坐标主人').toBe(groupOf(e.id))
+    expect(ring.material.depthWrite, '贴地透明层不写深度（不挡血条/本体）').toBe(false)
   })
 })

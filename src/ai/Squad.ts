@@ -38,6 +38,8 @@ export interface SquadMember {
   hasAttackSlot: boolean
   /** 进入战斗的 tick */
   combatSince: number
+  /** KI-370：等待队列里的排位（0 = 没在等；1 = 下一个轮到） */
+  waitRank: number
 }
 
 /** CallAlly 广播载荷 */
@@ -99,6 +101,7 @@ export class Squad {
       threats: [],
       currentTarget: null,
       hasAttackSlot: false,
+      waitRank: 0,
       combatSince: 0,
     }
     this.members.set(enemy.id, member)
@@ -148,37 +151,48 @@ export class Squad {
     for (const member of this.members.values()) {
       member.enemy.squadThreats = [...member.threats].sort((a, b) => b.threat - a.threat)
       member.enemy.squadHasSlot = member.hasAttackSlot
+      member.enemy.squadWaitRank = member.waitRank
       member.enemy.squadTarget = member.currentTarget
     }
   }
 
-  /** 重新分配攻击槽位：按仇恨权重 + 进入时间排序，前 N 个得槽位 */
-  private reallocateSlots(): void {
-    // 收集所有想要槽位的成员
-    const candidates: SquadMember[] = []
+  /**
+   * KI-370：排队判据与排序的**唯一主人**——
+   * `reallocateSlots()` 与 `getSlotReport()` 都读它。
+   * 只读：不碰 `hasAttackSlot`／`waitRank`（看一眼不许改变谁在打）。
+   */
+  private rankedCandidates(): { member: SquadMember; top: number }[] {
+    const ranked: { member: SquadMember; top: number }[] = []
     for (const member of this.members.values()) {
-      if (!member.enemy.alive) continue
-      // 有仇恨目标且目标存活
-      const topThreat = member.threats[0]
-      if (!topThreat || topThreat.threat < this.config.combatEntryThreshold) continue
-      candidates.push(member)
+      const top = member.threats[0]?.threat ?? 0
+      if (!member.enemy.alive || top < this.config.combatEntryThreshold) continue
+      ranked.push({ member, top })
     }
-
-    // 排序：仇恨降序、进入时间升序（先来后到）
-    candidates.sort((a, b) => {
-      const ta = a.threats[0]?.threat ?? 0
-      const tb = b.threats[0]?.threat ?? 0
-      if (Math.abs(ta - tb) > 0.01) return tb - ta
-      return a.combatSince - b.combatSince
+    ranked.sort((a, b) => {
+      if (Math.abs(a.top - b.top) > 0.01) return b.top - a.top
+      return a.member.combatSince - b.member.combatSince
     })
+    return ranked
+  }
 
-    // 先把所有人的槽位清空
-    for (const m of candidates) m.hasAttackSlot = false
-
-    // 分配前 N 个
+  /**
+   * 重新分配攻击槽位：按仇恨权重 + 进入时间排序，前 N 个得槽位、其余按序排队（KI-370）。
+   *
+   * **排位每拍全清，槽位仍只清候选那一批**：第一次实现顺手把所有人的 `hasAttackSlot`
+   * 也清了，`tests/flow/elite.test.ts` 那条「读条被硬直抹掉」当场红——它量出的是
+   * 「掉到阈值之下的人原先还留着槽位」这一条 KI-133 的既有行为。那一格不是本批的账，
+   * 所以这里只清排位（掉出队列的人不留名次），谁在出手的语义一个字不动。
+   */
+  private reallocateSlots(): void {
+    for (const m of this.members.values()) m.waitRank = 0
+    const ranked = this.rankedCandidates()
     const slots = this.config.maxAttackSlots
-    for (let i = 0; i < Math.min(slots, candidates.length); i++) {
-      candidates[i].hasAttackSlot = true
+    for (const m of ranked) m.member.hasAttackSlot = false
+    for (let i = 0; i < Math.min(slots, ranked.length); i++) {
+      ranked[i].member.hasAttackSlot = true
+    }
+    for (let i = slots; i < ranked.length; i++) {
+      ranked[i].member.waitRank = i - slots + 1
     }
   }
 
@@ -250,17 +264,11 @@ export class Squad {
    * 排序也同一套（仇恨降序、进入早优先）。`attacking[0]` 是当前仇恨最高的占槽者，
    * `waiting[0]` 是下一个轮到的。只读：调用前后 `hasAttackSlot` 一格不动。
    *
-   * 玩家-facing 的表达仍欠（KI-133 ①）；这一格先给 F4 面板与门一个机器读得到的形状。
+   * 这一格给 F4 面板与门一个机器读得到的形状；玩家-facing 的那半边由 KI-370 的 `squadWaitRank`
+   * 与 `ActorVisuals` 脚下的排队环兑现（同一套排位，不另排一份）。
    */
   getSlotReport(): SlotReport {
-    const ranked = [...this.members.values()]
-      .filter((m) => m.enemy.alive)
-      .map((m) => ({ member: m, top: m.threats[0]?.threat ?? 0 }))
-      .filter((x) => x.top >= this.config.combatEntryThreshold)
-      .sort((a, b) => {
-        if (Math.abs(a.top - b.top) > 0.01) return b.top - a.top
-        return a.member.combatSince - b.member.combatSince
-      })
+    const ranked = this.rankedCandidates()
     return {
       attacking: ranked.filter((x) => x.member.hasAttackSlot).map((x) => x.member.enemy.id),
       waiting: ranked.filter((x) => !x.member.hasAttackSlot).map((x) => x.member.enemy.id),

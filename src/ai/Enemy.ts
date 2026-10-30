@@ -130,6 +130,11 @@ export class Enemy {
   squadHasSlot = false
   squadTarget: string | null = null
   /**
+   * KI-370：在等待队列里的排位（0 = 没在等：要么占着槽、要么还没进战斗；1 = 下一个轮到）。
+   * 由 `Squad.reallocateSlots()` 每 tick 写入，玩家-facing 的脚下环（`ActorVisuals`）读它。
+   */
+  squadWaitRank = 0
+  /**
    * §14.5「拍隙」当前状态：true = 此刻正踩在拍点上，半透明+定身，打不着也走不动。
    * 和 buff 一样是**每 tick 从数据重算的派生态**，不是需要维护的事件态。
    */
