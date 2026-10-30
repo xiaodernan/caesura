@@ -10,7 +10,7 @@ import type { Enemy } from '@/ai/Enemy'
 /**
  * KI-372：Phase B5 的小队配置从构造参数搬进数据表（squad.json）。
  *
- * 病：maxAttackSlots / callAllyRadius / 	hreatDecayPerTick / combatEntryThreshold 四个数
+ * 病：maxAttackSlots / callAllyRadius / `threatDecayPerTick` / combatEntryThreshold 四个数
  * 只住在 SquadConfig 的构造参数里——表外没有读者，改一个数要改代码；KI-133 ① 从 Phase B5 起
  * 就记着这一格。本批把值搬进 squad.json，登记为注册表 squad:config，AISystem 构造时取它当缺省。
  *
