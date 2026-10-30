@@ -1012,6 +1012,24 @@ export interface StatusConfig {
   overdrive: OverdriveStatus
 }
 
+/* ============================ Phase B5 小队/仇恨槽位配置（KI-372） ============================ */
+
+/**
+ * `squad.json`：`Squad` 的四个构造参数从代码搬进数据表后的唯一形状。
+ * 读者是 `AISystem` 的构造（`registry.maybeGet<SquadConfigData>('squad:config')`）；
+ * 显式构造参数仍然最后说话，注册表缺席时回落 `Squad.ts` 的 `DEFAULT_SQUAD_CONFIG`。
+ */
+export interface SquadConfigData {
+  /** 最大攻击槽位（§1.2「同屏最多 3 人同时出手」；validator 钉住 1–3） */
+  maxAttackSlots: number
+  /** CallAlly 响应半径（米） */
+  callAllyRadius: number
+  /** 仇恨衰减 / tick（脱战自然降低） */
+  threatDecayPerTick: number
+  /** 进入战斗最小仇恨阈值 */
+  combatEntryThreshold: number
+}
+
 /* ============================ §8 受击反应表（combat.md §8，KI-050） ============================ */
 
 /**

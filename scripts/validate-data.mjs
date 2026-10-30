@@ -77,7 +77,7 @@ import { mapFindings } from './validator-map-rules.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const JSON_DIR = resolve(ROOT, 'src/data/json')
-const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json', 'shop.json', 'states.json', 'ambience.json', 'explore.json', 'battle.json', 'ducking.json', 'weather.json', 'cinematics.json', 'lighting.json', 'vfx.json']
+const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json', 'shop.json', 'states.json', 'ambience.json', 'explore.json', 'battle.json', 'ducking.json', 'weather.json', 'cinematics.json', 'lighting.json', 'vfx.json', 'squad.json']
 // Phase 6-B：对话风格枚举与任务标注（narrative.md §3.2 / §28 图例）
 const CHOICE_STYLES = new Set(['blunt', 'poetic', 'silent', 'provoke'])
 const QUEST_TAGS = new Set(['D', 'C', 'H', 'M'])
@@ -1085,6 +1085,31 @@ function validateStatuses() {
     if (id === 'corruption' && isNum(s.visualStart) && isNum(s.max) && !(s.visualStart < s.max)) {
       report.error(file, id, `visualStart(${s.visualStart}) 必须小于 max(${s.max})，否则去饱和永远不会渐入`)
     }
+  }
+}
+
+// ---- squad.json（KI-372：Phase B5 的四个槽位/呼救数从构造参数搬进数据表）----
+/**
+ * 字段白名单与值域。maxAttackSlots 的上界不是这里编的——§1.2 承诺「同屏最多 3 人同时出手」；
+ * 下限 1 是「没有槽位就没有战斗」的退化线。衰减必须小于进入阈值：否则队列只进不出。
+ */
+const SQUAD_SPECS = {
+  maxAttackSlots: { min: 1, max: 3, int: true },
+  callAllyRadius: { min: 1 },
+  threatDecayPerTick: { min: 0 },
+  combatEntryThreshold: { min: 0.01 },
+}
+
+function validateSquad() {
+  const file = 'squad.json'
+  const d = data[file]
+  if (!isObj(d)) { report.error(file, file, '顶层必须是对象（一张配置，不是行表）'); return }
+  for (const k of Object.keys(d)) {
+    if (!(k in SQUAD_SPECS)) report.error(file, k, '不认的字段：§55 不许写没有消费方的数据')
+  }
+  report.sub(file, 'config', d, SQUAD_SPECS)
+  if (isNum(d.threatDecayPerTick) && isNum(d.combatEntryThreshold) && d.threatDecayPerTick >= d.combatEntryThreshold) {
+    report.error(file, 'config.threatDecayPerTick', '衰减（' + d.threatDecayPerTick + '）必须小于进入阈值（' + d.combatEntryThreshold + '），否则排队只进不出')
   }
 }
 
@@ -3095,6 +3120,7 @@ const stateDefs = validateStates()
 validateStatuses()
 // §8 受击反应表（KI-050）：独立一张小表，没有跨文件引用
 validateReactions()
+validateSquad()
 const movesetIds = validateMovesets()
 const weaponIds = validateWeapons(movesetIds)
 // progression 要先跑：稀有度是 items/loot 的跨文件依据；items 要先跑：掉落表引用物品 id

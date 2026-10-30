@@ -1,5 +1,6 @@
 import { bus } from '@/core/EventBus'
 import type { Enemy } from './Enemy'
+import type { SquadConfigData } from '@/data/schema'
 
 /**
  * 小队/仇恨槽位系统（Phase B5 结案落点，tech-arch §1.2 Squad 映射）。
@@ -51,17 +52,12 @@ export interface CallAllyPayload {
   urgency: 'low' | 'normal' | 'high'
 }
 
-/** Squad 系统配置 */
-export interface SquadConfig {
-  /** 最大攻击槽位（技术架构 §1.2：上限 3） */
-  maxAttackSlots: number
-  /** CallAlly 响应半径 */
-  callAllyRadius: number
-  /** 仇恨衰减/ tick（脱战自然降低） */
-  threatDecayPerTick: number
-  /** 进入战斗最小仇恨阈值 */
-  combatEntryThreshold: number
-}
+/**
+ * 小队/仇恨槽位配置（Phase B5）。**形状的主人是 src/data/schema.ts 的 SquadConfigData，
+ * 值的主人是 squad.json（KI-372）**：AISystem 构造时从注册表 squad:config 取缺省，
+ * 显式构造参数最后说话。这里只留类型别名与那份代码默认（注册表缺席时的回落）。
+ */
+export type SquadConfig = SquadConfigData
 
 /** 默认配置（技术架构 §1.2 承诺：上限 3） */
 export const DEFAULT_SQUAD_CONFIG: SquadConfig = {

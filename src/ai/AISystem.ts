@@ -5,7 +5,7 @@ import type { PlayerController } from '@/player/ThirdPersonController'
 import type { RhythmClock } from '@/core/RhythmClock'
 import type { SightGate } from '@/core/Occlusion'
 import type { NavGate } from './Navigation'
-import type { EnemyData } from '@/data/schema'
+import type { EnemyData, SquadConfigData } from '@/data/schema'
 import { registry } from '@/core/Registry'
 import { PatrolWatch } from '@/quest/PatrolWatch'
 
@@ -70,8 +70,10 @@ export class AISystem {
 
   constructor(config?: Partial<SquadConfig>) {
     bindEnemyRegistry(this.enemies)
-    // Squad 系统初始化（Phase B5）
-    this.squad = initSquad(config)
+    // Squad 系统初始化（Phase B5）。KI-372：四个数的值主人是 squad.json（注册表 squad:config），
+    // 显式构造参数最后说话；注册表缺席（单测直接 new）⇒ 回落 DEFAULT_SQUAD_CONFIG。
+    const tableConfig = registry.maybeGet<SquadConfigData>('squad:config')
+    this.squad = initSquad({ ...(tableConfig ?? {}), ...(config ?? {}) })
     registerSquadBus()
 
     bus.on('sound.source', (e) => {

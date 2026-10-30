@@ -1,0 +1,6 @@
+{
+  "maxAttackSlots": 3,
+  "callAllyRadius": 24,
+  "threatDecayPerTick": 0.02,
+  "combatEntryThreshold": 10
+}

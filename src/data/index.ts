@@ -15,6 +15,7 @@ import movementsRaw from './json/movements.json'
 import worldstateRaw from './json/worldstate.json'
 import statesRaw from './json/states.json'
 import reactionsRaw from './json/reactions.json'
+import squadRaw from './json/squad.json'
 import shopRaw from './json/shop.json'
 import ambienceRaw from './json/ambience.json'
 import exploreRaw from './json/explore.json'
@@ -31,7 +32,7 @@ import navmeshBrokenbarCamp from './json/navmesh/rg_brokenbar_camp.navmesh.json'
 import navmeshFellcarillon from './json/navmesh/rg_fellcarillon.navmesh.json'
 import navmeshEarlessDeeps from './json/navmesh/rg_earless_deeps.navmesh.json'
 import navmeshUnfinishedHall from './json/navmesh/rg_unfinished_hall.navmesh.json'
-import type { MovesetData, WeaponData, EnemyData, PlayerBaseData, RegionData, ProgressionData, ItemData, LootTableData, NpcData, DialogueData, QuestData, StatusConfig, MovementConfig, WorldStateRule, WorldStateDef, HitReactionTable, ShopData, AmbienceBed, ExploreScore, BattleScore, DuckRow, WeatherRow, CinematicRow, LightingRow, VfxTable } from './schema'
+import type { MovesetData, WeaponData, EnemyData, PlayerBaseData, RegionData, ProgressionData, ItemData, LootTableData, NpcData, DialogueData, QuestData, StatusConfig, MovementConfig, WorldStateRule, WorldStateDef, HitReactionTable, ShopData, AmbienceBed, ExploreScore, BattleScore, DuckRow, WeatherRow, CinematicRow, LightingRow, VfxTable, SquadConfigData } from './schema'
 
 export const playerBase = playerRaw as unknown as PlayerBaseData
 export const regions = regionsRaw as unknown as RegionData[]
@@ -94,6 +95,13 @@ export const lightingRows = lightingRaw as unknown as LightingRow[]
  */
 export const vfxTable = vfxRaw as unknown as VfxTable
 
+/**
+ * Phase B5 的小队/仇恨槽位配置（squad.json，KI-372）：四个数此前只住在 Squad.ts 的构造参数里，
+ * 表外没有读者、也没人能在不改代码的情况下调它。登记进 squad:config 之后，AISystem 构造时
+ * 取它当缺省；显式构造参数（模块/测试）仍然最后说话。
+ */
+export const squadConfigData = squadRaw as unknown as SquadConfigData
+
 let registered = false
 
 export function registerGameData(): void {
@@ -115,6 +123,7 @@ export function registerGameData(): void {
   registry.register('player:base', playerBase)
   registry.register('progression', progression)
   registry.register('statuses', statuses)
+  registry.register('squad:config', squadConfigData)
   registry.register('movements', movements)
   registry.register('reactions', reactions)
   registry.register(shop.id, shop)
@@ -135,4 +144,4 @@ export function registerGameData(): void {
   registry.register('navmesh/rg_unfinished_hall.navmesh.json', navmeshUnfinishedHall)
 }
 
-export { weaponsRaw, enemiesRaw, movesetsRaw, regionsRaw, progressionRaw, itemsRaw, lootRaw, worldstateRaw }
+export { weaponsRaw, enemiesRaw, movesetsRaw, regionsRaw, progressionRaw, itemsRaw, lootRaw, worldstateRaw, squadRaw }
