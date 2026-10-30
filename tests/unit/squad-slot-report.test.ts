@@ -71,7 +71,7 @@ describe('KI-358 槽位排队的只读名册', () => {
     s.register(asEnemy(fake('below')))
     s.addThreat('below', 'player', 5)
     s.update(1)
-    expect(s.getSlotReport()).toEqual({ attacking: [], waiting: [] })
+    expect(s.getSlotReport()).toEqual({ attacking: [], waiting: [], waitingGap: null })
   })
 
   it('死人不进名册（名单与投影一起收）', () => {
@@ -103,7 +103,7 @@ describe('KI-358 槽位排队的只读名册', () => {
 })
 
 describe('KI-358 F4 的 squad 行', () => {
-  const panel = (slots?: { attacking: string[]; waiting: string[] }): string => {
+  const panel = (slots?: { attacking: string[]; waiting: string[]; waitingGap: number | null }): string => {
     const e = new Enemy(registry.get<EnemyData>('en_driftsinger'), { x: 0, y: 0, z: 0 }, 'ki358')
     return aiPanelText({
       target: e,
@@ -121,11 +121,47 @@ describe('KI-358 F4 的 squad 行', () => {
       player: { x: 0, y: 0, z: 2 },
       grid: { owner: 'region', bpm: 84, beatsPerBar: 4, bar: 1, beatInBar: 1, tick: 10 },
       armedSlots: [],
-      slots: { attacking: ['en_a'], waiting: ['en_b', e.id] },
+      slots: { attacking: ['en_a'], waiting: ['en_b', e.id], waitingGap: 1.5 },
     })
     expect(text).toContain('squad  you WAIT #2')
     expect(text).toContain('attacking [en_a]')
     expect(text).toContain(`waiting [en_b ${e.id}]`)
+  })
+
+  it('KI-378：等待者最小对间距只量等待者（占槽者的位置不参与）', () => {
+    const s = initSquad({ maxAttackSlots: 1, combatEntryThreshold: 10 })
+    const at = (id: string, x: number, z: number) => {
+      const f = fake(id)
+      f.pos = { x, y: 0, z }
+      return f
+    }
+    s.register(asEnemy(at('h', 10, 1.5)))
+    s.register(asEnemy(at('a', 10, 0)))
+    s.register(asEnemy(at('b', 10, 3)))
+    s.register(asEnemy(at('c', 10, 6)))
+    for (const id of ['h', 'a', 'b', 'c']) s.addThreat(id, 'player', id === 'h' ? 100 : 20)
+    s.update(1)
+    const r = s.getSlotReport()
+    expect(r.attacking).toEqual(['h'])
+    expect(r.waiting).toEqual(['a', 'b', 'c'])
+    expect(r.waitingGap, '三人相距 3／6／3 米，取最近的一对 3；占槽者正站在两人中间 1.5 米处，不许把它算进来').toBeCloseTo(3, 6)
+  })
+
+  it('KI-378：只有一个等待者 ⇒ 间距是 null（不是 0）', () => {
+    const s = initSquad({ maxAttackSlots: 1, combatEntryThreshold: 10 })
+    s.register(asEnemy(fake('h')))
+    s.register(asEnemy(fake('a')))
+    s.addThreat('h', 'player', 100)
+    s.addThreat('a', 'player', 20)
+    s.update(1)
+    expect(s.getSlotReport().waitingGap).toBeNull()
+  })
+
+  it('KI-378：F4 那一行读这一格（间距 / 不足两人时画破折号）', () => {
+    const two = panel({ attacking: ['en_a'], waiting: ['en_b', 'en_c'], waitingGap: 3 })
+    expect(two).toContain('gap 3.00m')
+    const one = panel({ attacking: ['en_a'], waiting: ['en_b'], waitingGap: null })
+    expect(one).toContain('waiting [en_b]  gap —')
   })
 
   it('没接名册的旧调用方不凭空多一行：squad 行整行消失', () => {

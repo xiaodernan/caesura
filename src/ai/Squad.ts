@@ -73,6 +73,12 @@ export interface SlotReport {
   attacking: string[]
   /** 有仇恨、够阈值、但没槽的成员 id，同一套排序；`[0]` = 下一个轮到的 */
   waiting: string[]
+  /**
+   * KI-378：等待者之间**最近的一对**水平距离（米）；不足两人时 null。
+   * 这是 KI-375–377 那三批走位规则的读数面：F4 那一行读它，调队形时不用自己拿眼猜。
+   * 只读投影：只算距离，不碰任何一格状态。
+   */
+  waitingGap: number | null
 }
 
 /**
@@ -305,9 +311,20 @@ export class Squad {
    */
   getSlotReport(): SlotReport {
     const ranked = this.rankedCandidates()
+    const waiting = ranked.filter((x) => !x.member.hasAttackSlot)
+    let waitingGap: number | null = null
+    for (let i = 0; i < waiting.length; i++) {
+      for (let j = i + 1; j < waiting.length; j++) {
+        const p = waiting[i].member.enemy.pos
+        const q = waiting[j].member.enemy.pos
+        const d = Math.hypot(p.x - q.x, p.z - q.z)
+        if (waitingGap === null || d < waitingGap) waitingGap = d
+      }
+    }
     return {
       attacking: ranked.filter((x) => x.member.hasAttackSlot).map((x) => x.member.enemy.id),
-      waiting: ranked.filter((x) => !x.member.hasAttackSlot).map((x) => x.member.enemy.id),
+      waiting: waiting.map((x) => x.member.enemy.id),
+      waitingGap,
     }
   }
 

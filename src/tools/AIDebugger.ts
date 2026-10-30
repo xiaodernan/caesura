@@ -81,7 +81,8 @@ export function aiPanelText(input: AiDebugInput): string {
     const attackRank = sq.attacking.indexOf(e.id)
     const waitRank = sq.waiting.indexOf(e.id)
     const you = attackRank >= 0 ? 'ATTACK' : waitRank >= 0 ? `WAIT #${waitRank + 1}` : 'not queued'
-    out.push(`squad  you ${you}  attacking [${sq.attacking.join(' ')}]  waiting [${sq.waiting.join(' ')}]`)
+    const gapText = sq.waitingGap === null ? '—' : `${sq.waitingGap.toFixed(2)}m`
+    out.push(`squad  you ${you}  attacking [${sq.attacking.join(' ')}]  waiting [${sq.waiting.join(' ')}]  gap ${gapText}`)
   }
   if (e.attack) {
     const f = e.attack.spec.frames
