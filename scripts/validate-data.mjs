@@ -76,7 +76,33 @@ import { dialogueReachErrors } from './dialogue-rules.mjs'
 import { mapFindings } from './validator-map-rules.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const JSON_DIR = resolve(ROOT, 'src/data/json')
+/**
+ * **可注入的数据根**（KI-364）：`node scripts/validate-data.mjs --data-root=<目录>` 让整条流水线去吃另一份陈设。
+ * 这一格欠的不是「再补一条词表腿」而是这个入口本身：植入一株幻影旗，今天只有测试那侧看得见，
+ * 校验器自己报的是与基线**逐字相同**的 0 ERROR／2 WARN（§5.9.143 的 A1v 行）。
+ *
+ * 为什么旗要按「我是不是被当命令行跑的那一个」来认，而不是无条件读 `process.argv`：这份脚本也被测试
+ * **进程内** import（`tests/unit/ledger-rules.test.ts` 那条「进程内跑真校验器」），而那一刻 `process.argv` 装的是
+ * 宿主（vitest）的参数——不认主就把宿主脸色当成自己的命令行，认主又不区分就谁都吃。同一个守卫的先例：
+ * `scripts/head-compiles-rules.mjs` 末尾那段。
+ * 为什么认不出的参数要 `exit 2` 而不是忽略：拼错的旗若被丢掉，这一趟会退回真表，而那份「0 ERROR」与
+ * 「植入被抓住了的那份」在只有 stdout 的读者眼里长得一模一样。
+ */
+const DATA_ROOT_FLAG = '--data-root='
+const DEFAULT_JSON_DIR = resolve(ROOT, 'src/data/json')
+const isCliInvocation = !!process.argv[1] && existsSync(process.argv[1]) && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url))
+const cliArgs = isCliInvocation ? process.argv.slice(2) : []
+const unknownArgs = cliArgs.filter((a) => !a.startsWith(DATA_ROOT_FLAG))
+if (unknownArgs.length > 0) {
+  console.error(`未知参数：${unknownArgs.join(' ')}｜本脚本只认 ${DATA_ROOT_FLAG}<目录>（认不出的旗不能悄悄退回真表）`)
+  process.exit(2)
+}
+const rootArg = cliArgs.find((a) => a.startsWith(DATA_ROOT_FLAG))
+const JSON_DIR = rootArg ? resolve(rootArg.slice(DATA_ROOT_FLAG.length)) : DEFAULT_JSON_DIR
+if (rootArg && !existsSync(JSON_DIR)) {
+  console.error(`${DATA_ROOT_FLAG} 指向的目录不存在：${JSON_DIR}（拼错的路径不算「表很干净」）`)
+  process.exit(2)
+}
 const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json', 'shop.json', 'states.json', 'ambience.json', 'explore.json', 'battle.json', 'ducking.json', 'weather.json', 'cinematics.json', 'lighting.json', 'vfx.json']
 // Phase 6-B：对话风格枚举与任务标注（narrative.md §3.2 / §28 图例）
 const CHOICE_STYLES = new Set(['blunt', 'poetic', 'silent', 'provoke'])
@@ -3273,6 +3299,10 @@ void regionIds
 let errTotal = 0
 let warnTotal = 0
 console.log('CAESURA 数据校验（KI-015 门禁）— src/data/json')
+if (JSON_DIR !== DEFAULT_JSON_DIR) {
+  // 注入的那一行只**追加**，默认路那行字节不许动：读数要么来自真表，要么必须自己承认不是
+  console.log(`⚠ 数据根已注入：${JSON_DIR} —— 这一趟评的不是 src/data/json 里的真表`)
+}
 /**
  * 打印的段 = 11 份 JSON ∪ **报过事的其他名字**。
  * 前半直查出来的一件事（KI-074）：词表对账挂在 `schema.ts` 这个段名下，而这段循环只走 `FILES`，
