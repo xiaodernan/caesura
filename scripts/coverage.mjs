@@ -30,6 +30,9 @@
  *   npm run coverage -- --bless          把本次实测写成地板（红跑不许 bless）
  *   node scripts/coverage.mjs --summary=<coverage-summary.json> [--floor=<f.json>]
  *                                        只判读数（不重跑测试）——门自己的测试用这条
+ *   node scripts/coverage.mjs --summary=<…> --report=<vitest 的 JSON 报告>
+ *                                        让注入读数那条路也吃「红跑上的覆盖率不作数」：报告说红就退 1，
+ *                                        说全绿才出读数（KI-384：这条规矩今天只管真跑那一条路）
  */
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync, readFileSync, writeFileSync, rmSync, existsSync } from 'node:fs'
@@ -182,17 +185,66 @@ export function decide(m, floor) {
 }
 
 function parseArgs(argv) {
-  const out = { bless: false, summary: null, floor: DEFAULT_FLOOR }
+  const out = { bless: false, summary: null, report: null, floor: DEFAULT_FLOOR }
   for (const a of argv) {
     if (a === '--bless') out.bless = true
     else if (a.startsWith('--summary=')) out.summary = resolve(a.slice('--summary='.length))
+    else if (a.startsWith('--report=')) out.report = resolve(a.slice('--report='.length))
     else if (a.startsWith('--floor=')) out.floor = resolve(a.slice('--floor='.length))
     else { console.error(`[coverage] 不认的参数：${a}`); process.exit(2) }
   }
   return out
 }
 
-/** 真跑一遍 vitest（带 v8 provider），返回 {summary, reportJson, green, failed}。 */
+/**
+ * 从 vitest 的 JSON 报告派生「这一趟红在哪几个文件」。**纯函数**，红判决只有一个主人：
+ * 真跑那一趟与 `--summary`+`--report` 那条注入路都读它——同一道规矩的两条出口不许各说一套。
+ *
+ * 为什么不用 `numFailedTestSuites`（旧代码拿它当「几个文件失败」印出来）：那个字段数的是**套件节点**——
+ * 文件根加上每一层 describe，于是它比红的文件数多出「describe 的层数」那一截；只有红在装载期、
+ * 一棵 describe 都没建起来的跑，它才碰巧等于文件数。
+ * 为什么不能只看 failed 断言：**装载期就抛**的文件一条断言都没跑，`numFailedTests` 是 0、而文件级
+ * `status` 是 `failed`（真报告里就量到过）——只看断言会把一次红跑放行，那是比印错数更坏的改动。
+ * ⇒ 两条取并集，且两个数来自同一次 `testResults` 扫描：计数与点名不会互相漂移。
+ * 两个形状各有一条腿钉着（tests/unit/coverage-gate.test.ts：「拒绝句数的是文件」不许那格谎数出现在
+ * 句子里，「装载期就抛的文件（0 条断言、status=failed）也算红」不许只看断言）。
+ */
+export function redRunOf(report) {
+  const results = Array.isArray(report?.testResults) ? report.testResults : null
+  if (!results) return { verdict: 'unknown', cases: 0, files: [], suites: 0 }
+  const files = []
+  let cases = 0
+  for (const t of results) {
+    const failed = (t?.assertionResults ?? []).filter((a) => a?.status === 'failed').length
+    if (failed === 0 && t?.status !== 'failed') continue
+    cases += failed
+    files.push({ name: toRepoRel(String(t?.name ?? '(无名文件)')), assertions: failed })
+  }
+  return { verdict: files.length === 0 ? 'green' : 'red', cases, files, suites: results.length }
+}
+
+/** 那句拒绝话：先说几个文件红、共几条失败断言，再把文件逐个点名（截断即不可归因，同 KI-298 那条教训）。 */
+export function redRunText(r) {
+  const note = r.cases === 0 ? '（没有一条断言跑成：装载期就抛的文件不产出断言）' : ''
+  return `${r.files.length} 个文件红，共 ${r.cases} 条失败断言${note}：${r.files.map((f) => f.name).join(', ')}`
+}
+
+/** 读一份 vitest 报告并判红绿。读不到／认不出 ⇒ `unknown`：核对不了全绿，就不许出读数。 */
+function reportVerdict(path) {
+  try {
+    return redRunOf(JSON.parse(readFileSync(path, 'utf8')))
+  } catch {
+    return { verdict: 'unknown', cases: 0, files: [], suites: 0 }
+  }
+}
+
+/** 红判决（或"核对不了"）落成的那一句——两条出口共用，措辞只有一个主人。 */
+function refusalLine(run, unknownWhat) {
+  const what = run.verdict === 'unknown' ? unknownWhat : redRunText(run)
+  return `\n[coverage] ${what}——红跑上的覆盖率不作数，先让 npm run test 绿。`
+}
+
+/** 真跑一遍 vitest（带 v8 provider），返回 {summary, files}；那一趟红（或报告认不出）就当场拒掉。 */
 function runVitest() {
   const tmp = mkdtempSync(join(tmpdir(), 'caesura-cov-'))
   const covDir = join(tmp, 'cov')
@@ -213,20 +265,11 @@ function runVitest() {
     // 与 test.mjs 同一条教训：**退出码非零不等于用例失败**（本机那条 EPERM 会被记成 Unhandled Error）。
     // 判定只看报告内容。
   }
-  let failedTests = 0
-  let failedSuites = 0
-  let files = -1
-  try {
-    const r = JSON.parse(readFileSync(reportJson, 'utf8'))
-    failedTests = r.numFailedTests ?? 0
-    failedSuites = r.numFailedTestSuites ?? 0
-    files = (r.testResults ?? []).length
-  } catch { failedTests = -1 }
-  if (failedTests !== 0 || failedSuites !== 0) {
+  const run = reportVerdict(reportJson)
+  if (run.verdict !== 'green') {
     // 顺序很重要：v8 provider 默认 `reportOnFailure: false`，红跑连 coverage 报告都不写。
     // 所以先看测试报告，否则这条"没写出报告"会被读成"量具坏了"——真因是**这次跑红了**。
-    const what = failedTests < 0 ? '连测试报告都没拿到' : `${failedTests} 条用例 / ${failedSuites} 个文件失败`
-    console.error(`\n[coverage] ${what}——红跑上的覆盖率不作数，先让 npm run test 绿。`)
+    console.error(refusalLine(run, '连测试报告都没拿到'))
     process.exit(1)
   }
   const summaryPath = join(covDir, 'coverage-summary.json')
@@ -236,7 +279,7 @@ function runVitest() {
   }
   const summary = JSON.parse(readFileSync(summaryPath, 'utf8'))
   rmSync(tmp, { recursive: true, force: true })
-  return { summary, files }
+  return { summary, files: run.suites }
 }
 
 function printReading(m, floor, src) {
@@ -301,8 +344,16 @@ function degenerateEmptyReports(summary) {
  */
 function main() {
   const argv = parseArgs(process.argv.slice(2))
-  if (argv.bless && argv.summary) {
-    console.error('[coverage] 地板只能由真跑写：--bless 不许配 --summary')
+  if (argv.bless && (argv.summary || argv.report)) {
+    console.error('[coverage] 地板只能由真跑写：--bless 不许配 --summary/--report')
+    process.exit(2)
+  }
+  if (argv.report && !argv.summary) {
+    console.error('[coverage] --report 只在配 --summary 时有意义：真跑那一趟自己就有报告，再注入一份是两套来源、没有裁决者。')
+    process.exit(2)
+  }
+  if (argv.report && !existsSync(argv.report)) {
+    console.error(`[coverage] --report 指向的文件不存在：${argv.report}（拒绝在参数层：拿一份读不到的报告核对「全绿」等于没核对）`)
     process.exit(2)
   }
   /** 地板先读一次（可能还不存在）：printReading 要把"每包的地板"并排印出来，bless 也要拿它做下调对照。 */
@@ -311,9 +362,19 @@ function main() {
   let m
   let raw
   if (argv.summary) {
+    /** 注入读数时，「红跑上的覆盖率不作数」这条规矩由谁执行：`--report` 给了就执行，没给就如实说没核对。 */
+    let src = `读数来自 ${rel(argv.summary)}（本次未核对用例是否全绿）`
+    if (argv.report) {
+      const run = reportVerdict(argv.report)
+      if (run.verdict !== 'green') {
+        console.error(refusalLine(run, `--report 那份报告里没有可用的 testResults 名单（${rel(argv.report)}）`))
+        process.exit(1)
+      }
+      src = `读数来自 ${rel(argv.summary)}（用例全绿由 ${rel(argv.report)} 核对：那份报告里 ${run.suites} 个文件、无红文件）`
+    }
     raw = JSON.parse(readFileSync(argv.summary, 'utf8'))
     m = measure(raw)
-    printReading(m, floor, `读数来自 ${rel(argv.summary)}（本次未核对用例是否全绿）`)
+    printReading(m, floor, src)
   } else {
     const { summary, files } = runVitest()
     raw = summary

@@ -49,6 +49,37 @@ function run(...args: string[]) {
   return { code: r.status, out: `${r.stdout ?? ''}${r.stderr ?? ''}` }
 }
 
+/** vitest 的 JSON 报告里这道门真读的键：`testResults[]` 的 name / status / assertionResults[].status。 */
+interface RepFile { name: string; status?: string; failed?: number; passed?: number }
+
+/**
+ * 造一份报告。`liars` 用来塞那些**字段本身会说谎**的计数器（`numFailedTestSuites: 99`）：
+ * 判据一旦改回去读它们，句子立刻带上 99，这条腿当场就能看见是谁在数。
+ */
+function reportDoc(files: RepFile[], liars: Record<string, number> = {}): string {
+  const p = join(TMP, `rep-${++seq}.json`)
+  const doc = {
+    testResults: files.map((f) => ({
+      name: f.name,
+      status: f.status ?? ((f.failed ?? 0) > 0 ? 'failed' : 'passed'),
+      assertionResults: [
+        ...Array.from({ length: f.passed ?? 0 }, () => ({ status: 'passed' })),
+        ...Array.from({ length: f.failed ?? 0 }, () => ({ status: 'failed' }))
+      ]
+    })),
+    numTotalTests: files.reduce((a, f) => a + (f.passed ?? 0) + (f.failed ?? 0), 0),
+    numFailedTests: files.reduce((a, f) => a + (f.failed ?? 0), 0),
+    numTotalTestSuites: 0,
+    numFailedTestSuites: 0,
+    ...liars
+  }
+  writeFileSync(p, JSON.stringify(doc), 'utf8')
+  return p
+}
+
+/** 源码门用：剥掉块注释与整行注释，剩下的才是被执行的那部分。 */
+const stripComments = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+
 afterAll(() => rmSync(TMP, { recursive: true, force: true }))
 
 describe('coverage 门的判读（两侧都从脚本走）', () => {
@@ -314,5 +345,131 @@ describe('纯类型文件的排除名单（schema.ts 那 1359 行不是"没测�
       expect(doc.zeroFiles, `${f} 是纯类型文件，不该出现在零覆盖名单里（它一行代码都没有）`).not.toContain(f)
     }
     expect(existsSync(SCHEMA)).toBe(true)
+  })
+})
+
+describe('红跑的拒绝句（KI-384：分母由文件派生，不读那格数套件的字段）', () => {
+  /** 现场量过的形状：3 个文件红、共 5 条失败断言，而 numFailedTestSuites 读 6（文件根 + describe 逐层）。 */
+  const threeRed = () => reportDoc([
+    { name: `${ROOT}/tests/flow/moveset-frames3.test.ts`, failed: 1, passed: 6 },
+    { name: `${ROOT}/tests/unit/doc-audit.test.ts`, failed: 1, passed: 14 },
+    { name: `${ROOT}/tests/unit/id-scope.test.ts`, failed: 3, passed: 36 },
+    { name: `${ROOT}/tests/unit/coverage-gate.test.ts`, passed: 20 }
+  ], { numFailedTestSuites: 99, numFailedTests: 99, numTotalTestSuites: 99 })
+
+  it('拒绝句数的是文件：3 个文件红就说 3，那格谎数（99）不许出现在句子里', () => {
+    const r = run(`--summary=${summary([{ path: 'src/a.ts', covered: 90, total: 100 }])}`, `--floor=${floorDoc(90, [])}`, `--report=${threeRed()}`)
+    expect(r.code, r.out).toBe(1)
+    expect(r.out).toContain('3 个文件红，共 5 条失败断言')
+    expect(r.out).not.toContain('99')
+  })
+
+  it('逐个点名是文件的路径，不是 describe 链：路径归一成仓库相对、名字数与文件数一致', () => {
+    const r = run(`--summary=${summary([{ path: 'src/a.ts', covered: 90, total: 100 }])}`, `--floor=${floorDoc(90, [])}`, `--report=${threeRed()}`)
+    const line = r.out.split(/\r?\n/).find((l) => l.includes('个文件红')) ?? ''
+    const head = line.split('——')[0]
+    const names = head.slice(head.lastIndexOf('：') + 1).split(',').map((s) => s.trim())
+    expect(names, '红名截断即不可归因（KI-298 同一条教训）').toEqual([
+      'tests/flow/moveset-frames3.test.ts', 'tests/unit/doc-audit.test.ts', 'tests/unit/id-scope.test.ts'
+    ])
+    expect(Number(head.match(/(\d+) 个文件红/)?.[1]), '句子开头那个数必须就是点名的文件个数').toBe(names.length)
+  })
+
+  it('反斜杠的绝对路径也归一成仓库相对（istanbul 的键与 vitest 的 name 两种拼法都认）', () => {
+    const rep = reportDoc([{ name: `${ROOT}\\tests\\unit\\win-path.test.ts`, failed: 2 }])
+    const r = run(`--summary=${summary([{ path: 'src/a.ts', covered: 90, total: 100 }])}`, `--floor=${floorDoc(90, [])}`, `--report=${rep}`)
+    expect(r.code, r.out).toBe(1)
+    expect(r.out).toContain('1 个文件红，共 2 条失败断言：tests/unit/win-path.test.ts')
+  })
+
+  it('装载期就抛的文件（0 条断言、status=failed）也算红：只看断言会放行一次红跑', () => {
+    const rep = reportDoc([
+      { name: `${ROOT}/tests/unit/zz-crash.test.ts`, status: 'failed', passed: 0, failed: 0 },
+      { name: `${ROOT}/tests/unit/zz-ok.test.ts`, passed: 1 }
+    ], { numFailedTests: 0, numFailedTestSuites: 1 })
+    const r = run(`--summary=${summary([{ path: 'src/a.ts', covered: 90, total: 100 }])}`, `--floor=${floorDoc(90, [])}`, `--report=${rep}`)
+    expect(r.code, r.out).toBe(1)
+    expect(r.out).toContain('1 个文件红，共 0 条失败断言（没有一条断言跑成：装载期就抛的文件不产出断言）：tests/unit/zz-crash.test.ts')
+  })
+
+  it('全绿报告 ⇒ 不拒，并且披露行说清核对来自哪份报告', () => {
+    const rep = reportDoc([{ name: `${ROOT}/tests/unit/a.test.ts`, passed: 3 }, { name: `${ROOT}/tests/unit/b.test.ts`, passed: 1 }])
+    const r = run(`--summary=${summary([{ path: 'src/a.ts', covered: 90, total: 100 }])}`, `--floor=${floorDoc(90, [])}`, `--report=${rep}`)
+    expect(r.code, r.out).toBe(0)
+    expect(r.out).toContain('用例全绿由')
+    expect(r.out).toContain('2 个文件、无红文件')
+    expect(r.out).not.toContain('本次未核对用例是否全绿')
+  })
+
+  it('反向：--summary 单独那条路仍然如实说"没核对"，新规矩没把旧路径变成假证', () => {
+    const r = run(`--summary=${summary([{ path: 'src/a.ts', covered: 90, total: 100 }])}`, `--floor=${floorDoc(90, [])}`)
+    expect(r.code, r.out).toBe(0)
+    expect(r.out).toContain('本次未核对用例是否全绿')
+    expect(r.out).not.toContain('用例全绿由')
+  })
+
+  it('注入的报告是红的 ⇒ 在读数之前就退，覆盖率那一行一行都不许印出来', () => {
+    const r = run(`--summary=${summary([{ path: 'src/a.ts', covered: 90, total: 100 }])}`, `--floor=${floorDoc(90, [])}`, `--report=${threeRed()}`)
+    expect(r.code, r.out).toBe(1)
+    expect(r.out, '红了还印读数，读者会拿那个数去写账').not.toContain('行覆盖')
+  })
+
+  it('--report 那份 JSON 里没有 testResults 名单 ⇒ 核对不了全绿，就不出读数', () => {
+    const p = join(TMP, 'shapeless.json')
+    writeFileSync(p, JSON.stringify({ ok: true }), 'utf8')
+    const r = run(`--summary=${summary([{ path: 'src/a.ts', covered: 90, total: 100 }])}`, `--floor=${floorDoc(90, [])}`, `--report=${p}`)
+    expect(r.code, r.out).toBe(1)
+    expect(r.out).toContain('没有可用的 testResults 名单')
+    expect(r.out).not.toContain('行覆盖')
+  })
+
+  it('--report 的文件不存在 ⇒ 参数层就拒，并说是哪道闸门', () => {
+    const r = run(`--summary=${summary([{ path: 'src/a.ts', covered: 90, total: 100 }])}`, `--floor=${floorDoc(90, [])}`, `--report=${join(TMP, 'nope.json')}`)
+    expect(r.code, r.out).toBe(2)
+    expect(r.out).toContain('--report 指向的文件不存在')
+  })
+
+  it('--report 不配 --summary ⇒ 参数层拒：真跑自己就有报告，两份报告没有裁决者', () => {
+    const r = run(`--report=${reportDoc([{ name: `${ROOT}/tests/unit/a.test.ts`, passed: 1 }])}`)
+    expect(r.code, r.out).toBe(2)
+    expect(r.out).toContain('只在配 --summary 时有意义')
+  })
+
+  it('--bless 配 --report ⇒ 地板只能由真跑写（注入的报告不算真跑）', () => {
+    const r = run('--bless', `--report=${reportDoc([{ name: `${ROOT}/tests/unit/a.test.ts`, passed: 1 }])}`)
+    expect(r.code, r.out).toBe(2)
+    expect(r.out).toContain('地板只能由真跑写')
+  })
+
+  it('三格拒绝互斥：参数层／红跑／认不出报告，各有一句只有它说的话', () => {
+    const s = `--summary=${summary([{ path: 'src/a.ts', covered: 90, total: 100 }])}`
+    const f = `--floor=${floorDoc(90, [])}`
+    const missing = run(s, f, `--report=${join(TMP, 'nope.json')}`).out
+    const red = run(s, f, `--report=${threeRed()}`).out
+    const p = join(TMP, 'shapeless2.json')
+    writeFileSync(p, JSON.stringify({ ok: true }), 'utf8')
+    const shapeless = run(s, f, `--report=${p}`).out
+    const noSummary = run(`--report=${p}`).out
+    expect(missing).toContain('--report 指向的文件不存在')
+    expect(shapeless).toContain('没有可用的 testResults 名单')
+    expect(red).toContain('红跑上的覆盖率不作数')
+    expect(noSummary).toContain('只在配 --summary 时有意义')
+    for (const [label, out] of [['不存在', missing], ['认不出', shapeless], ['红跑', red]] as const) {
+      expect(out.includes('--report 指向的文件不存在'), `${label}那句不许被读成"文件不存在"`).toBe(label === '不存在')
+      expect(out.includes('没有可用的 testResults 名单'), `${label}那句不许被读成"报告形状不对"`).toBe(label === '认不出')
+      expect(out.includes('个文件红'), `${label}那句不许被读成"红在几个文件"`).toBe(label === '红跑')
+    }
+  })
+
+  it('两条出口共用同一个红判决主人，且计数器字段不再当判据（真跑那条路没被落下）', () => {
+    const code = stripComments(readFileSync(SCRIPT, 'utf8'))
+    expect(code).toContain('reportVerdict(reportJson)')
+    expect(code).toContain('reportVerdict(argv.report)')
+    expect(code.match(/numFailedTests|numFailedTestSuites/g) ?? [], '红绿判决只能由 testResults 派生').toEqual([])
+  })
+
+  it('那格字段为什么不能用，解释还住在代码旁边（只留一句"别用"是给不出理由的）', () => {
+    const script = readFileSync(SCRIPT, 'utf8')
+    expect(script, '注释里要留下实测的三个形状，否则下一个读者会以为那个字段和文件数差不多').toContain('numFailedTestSuites')
   })
 })
