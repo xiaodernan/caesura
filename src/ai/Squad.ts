@@ -152,7 +152,9 @@ export class Squad {
       member.enemy.squadWaitRank = member.waitRank
       member.enemy.squadTarget = member.currentTarget
       member.enemy.squadHolderPos = this.holderPosFor(member)
-      member.enemy.squadPeerPos = this.peerPosFor(member)
+      const peer = this.peerFor(member)
+      member.enemy.squadPeerPos = peer ? { ...peer.enemy.pos } : null
+      member.enemy.squadPeerRank = peer ? peer.waitRank : 0
       member.enemy.squadOrbitTie = member.waitRank > 0 && member.waitRank % 2 === 0 ? -1 : 1
     }
   }
@@ -213,8 +215,9 @@ export class Squad {
   /**
    * KI-375：等的人还该躲开**另一个也在等的人**——最近的、活着的、排位 > 0 的同伴。
    * 自己不在等 / 只有自己一个 ⇒ null；Enemy.stepAround 拿到 null 就只躲占槽者（KI-374 原样）。
+   * KI-376 起这一格同时给出那位同伴的排位（拥挤时谁退由它决定），所以返回成员本身。
    */
-  private peerPosFor(member: SquadMember): { x: number; y: number; z: number } | null {
+  private peerFor(member: SquadMember): SquadMember | null {
     if (member.waitRank <= 0) return null
     let best: SquadMember | null = null
     let bestDist = Infinity
@@ -226,7 +229,7 @@ export class Squad {
         best = other
       }
     }
-    return best ? { ...best.enemy.pos } : null
+    return best
   }
 
   /** 增加仇恨（受伤害、被挑衅、发现目标等） */

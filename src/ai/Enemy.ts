@@ -145,6 +145,11 @@ export class Enemy {
    */
   squadPeerPos: { x: number; y: number; z: number } | null = null
   /**
+   * KI-376：那位同伴的排位（没有同伴时 0）。拥挤时按它决定谁退——排位更高的让距，
+   * 否则两个同奇偶的等待者会一直同轨（KI-375 只承载两个相位）。
+   */
+  squadPeerRank = 0
+  /**
    * KI-375：两个候选方向打平时走哪边——按排位奇偶写（1 ⇒ +1，2 ⇒ -1），否则两个位置重合的
    * 等待者会拿到同一份判据、同向同速，绕着绕着叠成一具身体。不在等的人恒为 +1。
    */
@@ -1168,6 +1173,19 @@ function stepAround(e: Enemy, t: Vec3, dt: number, speed: number, awayFrom?: Vec
   // 只按占槽者选向会让两个人叠在同一段弧上；所以有同伴时先按同伴选，同伴判据没梯度
   // （两人位置重合，两个候选一样远）再按排位奇偶劈开。没有同伴时仍是 KI-374 原样。
   const peer = e.squadPeerPos
+  // KI-376：两个同奇偶的等待者（奇偶只给两个方向）贴在一起时，「绕圈」这条路走到头也是同一条轨迹。
+  // 裁决：**排位更高的那个退**——径向后退（远离目标），让到同伴 4 倍体格半径之外再回去绕圈；
+  // 奇偶不同的两人归 KI-375 的相位分离管，不走这条。阈值取身体宽度（2×体格半径）再加一具身位。
+  if (
+    peer &&
+    e.squadPeerRank > 0 &&
+    e.squadWaitRank > e.squadPeerRank &&
+    (e.squadWaitRank - e.squadPeerRank) % 2 === 0 &&
+    Math.hypot(e.pos.x - peer.x, e.pos.z - peer.z) < 4 * agentRadius(e)
+  ) {
+    stepAway(e, t, dt, speed)
+    return
+  }
   let sign = e.squadOrbitTie < 0 ? -1 : 1
   if (peer) {
     const dPeerAt = (s: number): number => Math.hypot(
