@@ -684,6 +684,13 @@ export class Enemy {
               this.tryAttack(can, rhythm, tick, slotTaken)
             }
           }
+          // KI-371：等槽的人不站桩——在攻击带里绕圈（切向一步，半径不变、仍走导航闸），
+          // 把「我在等」写成看得见的走位。占着槽的人不走这一支（他们要用自己的距离带出手）。
+          if (this.squadThreats.length > 0 && !this.squadHasSlot) {
+            if (band && !band.actions.includes('chase') && !band.actions.includes('backstep')) {
+              stepAround(this, p, dt, this.spd(0.45))
+            }
+          }
           if (this.alertness < 40) this.enter('search')
         }
         break
@@ -1119,6 +1126,19 @@ function stepToward(e: Enemy, t: Vec3, dt: number, speed: number, _rhythm: Rhyth
  */
 function agentRadius(e: Enemy): number {
   return 0.5 * (e.data.body?.scale ?? 1)
+}
+
+/**
+ * KI-371：等槽者的绕圈——朝「同一半径上的下一个角」走一步。半径由当前位置定，不另立一个距离数；
+ * 仍走 `stepToward`，所以导航闸（KI-009）与拍隙定身（§14.5）原样生效。
+ */
+function stepAround(e: Enemy, t: Vec3, dt: number, speed: number): void {
+  const dx = e.pos.x - t.x
+  const dz = e.pos.z - t.z
+  const r = Math.hypot(dx, dz)
+  if (r < 0.05) return
+  const a = Math.atan2(dz, dx) + 0.4
+  stepToward(e, { x: t.x + Math.cos(a) * r, y: 0, z: t.z + Math.sin(a) * r }, dt, speed, null as never)
 }
 
 function stepAway(e: Enemy, t: Vec3, dt: number, speed: number): void {
