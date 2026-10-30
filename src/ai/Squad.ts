@@ -152,6 +152,8 @@ export class Squad {
       member.enemy.squadWaitRank = member.waitRank
       member.enemy.squadTarget = member.currentTarget
       member.enemy.squadHolderPos = this.holderPosFor(member)
+      member.enemy.squadPeerPos = this.peerPosFor(member)
+      member.enemy.squadOrbitTie = member.waitRank > 0 && member.waitRank % 2 === 0 ? -1 : 1
     }
   }
 
@@ -206,6 +208,25 @@ export class Squad {
       (x) => x.member.hasAttackSlot && x.member.currentTarget === member.currentTarget,
     )
     return holder ? { ...holder.member.enemy.pos } : null
+  }
+
+  /**
+   * KI-375：等的人还该躲开**另一个也在等的人**——最近的、活着的、排位 > 0 的同伴。
+   * 自己不在等 / 只有自己一个 ⇒ null；Enemy.stepAround 拿到 null 就只躲占槽者（KI-374 原样）。
+   */
+  private peerPosFor(member: SquadMember): { x: number; y: number; z: number } | null {
+    if (member.waitRank <= 0) return null
+    let best: SquadMember | null = null
+    let bestDist = Infinity
+    for (const other of this.members.values()) {
+      if (other === member || other.waitRank <= 0 || !other.enemy.alive) continue
+      const d = Math.hypot(other.enemy.pos.x - member.enemy.pos.x, other.enemy.pos.z - member.enemy.pos.z)
+      if (d < bestDist) {
+        bestDist = d
+        best = other
+      }
+    }
+    return best ? { ...best.enemy.pos } : null
   }
 
   /** 增加仇恨（受伤害、被挑衅、发现目标等） */

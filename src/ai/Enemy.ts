@@ -140,6 +140,16 @@ export class Enemy {
    */
   squadHolderPos: { x: number; y: number; z: number } | null = null
   /**
+   * KI-375：最近的**另一个等待者**在哪（同一小队、排位 > 0、活着）——Squad.update 每 tick 写。
+   * 只有等待者拿到它；没有同伴时是 null，stepAround 只看占槽者（KI-374 原样）。
+   */
+  squadPeerPos: { x: number; y: number; z: number } | null = null
+  /**
+   * KI-375：两个候选方向打平时走哪边——按排位奇偶写（1 ⇒ +1，2 ⇒ -1），否则两个位置重合的
+   * 等待者会拿到同一份判据、同向同速，绕着绕着叠成一具身体。不在等的人恒为 +1。
+   */
+  squadOrbitTie = 1
+  /**
    * §14.5「拍隙」当前状态：true = 此刻正踩在拍点上，半透明+定身，打不着也走不动。
    * 和 buff 一样是**每 tick 从数据重算的派生态**，不是需要维护的事件态。
    */
@@ -1154,13 +1164,25 @@ function stepAround(e: Enemy, t: Vec3, dt: number, speed: number, awayFrom?: Vec
   const r = Math.hypot(dx, dz)
   if (r < 0.05) return
   const a = Math.atan2(dz, dx)
-  let sign = 1
-  if (awayFrom) {
+  // KI-375：要躲的不只占槽者，还有「另一个也在等的人」。等的人本来就都往占槽者背面靠，
+  // 只按占槽者选向会让两个人叠在同一段弧上；所以有同伴时先按同伴选，同伴判据没梯度
+  // （两人位置重合，两个候选一样远）再按排位奇偶劈开。没有同伴时仍是 KI-374 原样。
+  const peer = e.squadPeerPos
+  let sign = e.squadOrbitTie < 0 ? -1 : 1
+  if (peer) {
+    const dPeerAt = (s: number): number => Math.hypot(
+      t.x + Math.cos(a + s * 0.4) * r - peer.x,
+      t.z + Math.sin(a + s * 0.4) * r - peer.z,
+    )
+    if (dPeerAt(-1) > dPeerAt(1) + 1e-6) sign = -1
+    else if (dPeerAt(1) > dPeerAt(-1) + 1e-6) sign = 1
+  } else if (awayFrom) {
     const distAt = (s: number): number => Math.hypot(
       t.x + Math.cos(a + s * 0.4) * r - awayFrom.x,
       t.z + Math.sin(a + s * 0.4) * r - awayFrom.z,
     )
     if (distAt(-1) > distAt(1) + 1e-6) sign = -1
+    else if (distAt(1) > distAt(-1) + 1e-6) sign = 1
   }
   const angle = a + sign * 0.4
   stepToward(e, { x: t.x + Math.cos(angle) * r, y: 0, z: t.z + Math.sin(angle) * r }, dt, speed, null as never)

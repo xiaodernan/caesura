@@ -19,7 +19,7 @@ import type { PlayerController } from '@/player/ThirdPersonController'
  * 四条腿：
  *  ① Squad 给等的人写占槽者位置，占槽者自己那一格是 null；
  *  ② 两个等待者分居占槽者两侧 ⇒ 各自朝远离占槽者的方向绕，夹角都变大；
- *  ③ 摘掉那一格（对照组）⇒ 靠内的那一个朝占槽者转，夹角变小——证明这一格是承重的；
+ *  ③ 摘掉那一格与同伴数据（对照组）⇒ 靠内的那一个朝占槽者转，夹角变小——证明这一格是承重的；
  *  ④ 占槽者自己不绕圈：60 tick 里位置不动。
  */
 
@@ -73,7 +73,12 @@ const arcRun = (yieldOn: boolean) => {
     squad.addThreat(e.id, 'player', e === h ? 100 : 20)
   }
   squad.update(1)
-  if (!yieldOn) for (const e of [a, b]) (e as unknown as { squadHolderPos: unknown }).squadHolderPos = null
+  // 对照组读的是「只剩写死 +1」这一条：占槽者、同伴两格都摘掉（KI-375 的同伴判据是本组的上位判据）
+  if (!yieldOn) for (const e of [a, b]) {
+    (e as unknown as { squadHolderPos: unknown }).squadHolderPos = null
+    e.squadPeerPos = null
+    e.squadOrbitTie = 1
+  }
   const g0 = { a: gap(bearing(a, p), bearing(h, p)), b: gap(bearing(b, p), bearing(h, p)) }
   const rhythm = rhythmOf()
   for (let i = 1; i <= 60; i++) for (const e of [a, b]) e.update(TICK_DT, i, p, rhythm, () => false)
