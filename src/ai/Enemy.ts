@@ -1204,6 +1204,17 @@ function stepAround(e: Enemy, t: Vec3, dt: number, speed: number, awayFrom?: Vec
   }
   const angle = a + sign * 0.4
   stepToward(e, { x: t.x + Math.cos(angle) * r, y: 0, z: t.z + Math.sin(angle) * r }, dt, speed, null as never)
+  // KI-377：切向一步走的是弦，每 tick 都会把半径收几毫米——十秒就是三米，等待者最后站在玩家身上。
+  // r 是**走这一步之前**的半径，所以这里只补这一步自己收掉的那一点（≤ 一步的步长，不是瞬移）；
+  // 被击退／绕墙的位移不在这条账上（下一步的 r 就是新位置，不会把人拽回旧圈）。
+  const px = e.pos.x - t.x
+  const pz = e.pos.z - t.z
+  const rp = Math.hypot(px, pz)
+  if (rp > 0.05) {
+    const k = r / rp
+    e.pos.x = t.x + px * k
+    e.pos.z = t.z + pz * k
+  }
 }
 
 function stepAway(e: Enemy, t: Vec3, dt: number, speed: number): void {
