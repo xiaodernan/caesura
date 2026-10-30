@@ -180,6 +180,12 @@ export class Squad {
             .filter((o) => o !== member && o.hasAttackSlot && o.enemy.alive)
             .map((o) => ({ ...o.enemy.pos }))
         : []
+      // KI-383：主攻手之间也有身体——只给占槽的人写「其他占槽者」，等待者读上面那一格。
+      member.enemy.squadSlotPeers = member.hasAttackSlot
+        ? [...this.members.values()]
+            .filter((o) => o !== member && o.hasAttackSlot && o.enemy.alive)
+            .map((o) => ({ ...o.enemy.pos }))
+        : []
       member.enemy.squadNearPeers = member.waitRank > 0
         ? [...this.members.values()]
             .filter((o) => o !== member && o.waitRank > 0 && o.enemy.alive)

@@ -157,6 +157,12 @@ export class Enemy {
    */
   squadHolderBodies: { x: number; y: number; z: number }[] = []
   /**
+   * KI-383：**其他占着槽位的人的身体**（不含自己；活着的同队成员）。Squad.update 每 tick 写。
+   * 主攻手也有身体：没出手时彼此让半步；前冲时不许冲进同伴的身体里（`lungeRoomToAllies`）。
+   * 等待者读的是 `squadHolderBodies`（KI-382），这一格只给已经占槽的人。
+   */
+  squadSlotPeers: { x: number; y: number; z: number }[] = []
+  /**
    * KI-382：等待时要站的圈（米，离目标的水平距离；0 = 没有圈）。Squad.update 按排位写：
    * 排位 1 = 自己近战够得着的边上，每高一排再往外让两具身宽（KI-376 同一把尺）。
    * 圈只**往外**推（`max(当前半径, 圈)`）——已经站得更远的人不被拽回来。
@@ -722,8 +728,12 @@ export class Enemy {
           if (waiting) {
             stepAround(this, p, dt, this.spd(0.45), this.squadHolderPos)
           } else if (band) {
-            // 伪动作决定脚下一步：'chase' 贴近、'backstep' 拉开（射手风筝），真招式名才出手
-            if (band.actions.includes('chase')) stepToward(this, p, dt, this.spd(0.9), rhythm)
+            // KI-383：主攻手也有身体——没出手时先让开占槽同伴，再谈追击/风筝。
+            // 两个人并着肩追同一个点，进近战带就会穿成一具身体；这一支只走切向，距离带不动。
+            const push = slotSeparationOf(this)
+            if (push) {
+              stepToward(this, { x: this.pos.x + push.x * 2, y: 0, z: this.pos.z + push.z * 2 }, dt, this.spd(0.45), null as never)
+            } else if (band.actions.includes('chase')) stepToward(this, p, dt, this.spd(0.9), rhythm)
             else if (band.actions.includes('backstep')) stepKite(this, p, dt, this.spd(1))
           }
           if (band) {
@@ -1068,7 +1078,9 @@ export class Enemy {
       // don't lunge through the player: stop at melee contact distance
       const dToP = Math.hypot(player.pos.x - this.pos.x, player.pos.z - this.pos.z)
       if (dToP > 0.85) {
-        const step = Math.min((f.lunge / lungeLength) * lungeFrames, dToP - 0.8)
+        const want = Math.min((f.lunge / lungeLength) * lungeFrames, dToP - 0.8)
+        // KI-383：前冲的落点也要看同伴的身体——不许从占槽同伴身上穿过去。
+        const step = Math.min(want, lungeRoomToAllies(this, Math.sin(this.yaw), Math.cos(this.yaw), want))
         this.pos.x += Math.sin(this.yaw) * step
         this.pos.z += Math.cos(this.yaw) * step
       }
@@ -1258,28 +1270,29 @@ function stepAround(e: Enemy, t: Vec3, dt: number, speed: number, awayFrom?: Vec
 }
 
 /**
- * KI-382：把「离所有同伴都更远」的方向求出来（单位向量）；没有同伴在体格圈内 ⇒ null。
- * 斥力按贴近程度加权（贴身 ⇒ 一份，两米 ⇒ 0），然后逐个把「朝向那位同伴」的分量投影掉——
+ * KI-382：把「离给出的所有身体都更远」的方向求出来（单位向量）；没有身体在各自的圈内 ⇒ null。
+ * 斥力按贴近程度加权（贴身 ⇒ 一份，圈边 ⇒ 0），然后逐个把「朝向那位同伴」的分量投影掉——
  * 这样两个人同时被对方推开时不会互相抵消成原地抖动，也不会从谁身上穿过去。
+ * 每一组可以有自己的圈（等待者两米、占槽者一具半身宽）；KI-383 又加了「主攻手之间」那一组。
  */
-function separationOf(e: Enemy, t: Vec3, body: number, hold: number): { x: number; z: number } | null {
+function repelFrom(
+  e: Enemy,
+  groups: { points: { x: number; z: number }[]; gap: number }[],
+): { x: number; z: number } | null {
   let vx = 0
   let vz = 0
   let any = false
-  const near = (p: { x: number; z: number }, gap: number): boolean => {
+  const near = (p: { x: number; z: number }, gap: number): void => {
     const px = e.pos.x - p.x
     const pz = e.pos.z - p.z
     const pd = Math.hypot(px, pz)
-    if (pd <= 0.05 || pd >= gap) return false
+    if (pd <= 0.05 || pd >= gap) return
     any = true
     const w = (gap - pd) / gap
     vx += (px / pd) * w
     vz += (pz / pd) * w
-    return true
   }
-  for (const p of e.squadNearPeers) near(p, body)
-  // 一具半身宽 = 接触距离（两具半径）再加半步：投影是按拍的离散量，留半身给一拍误差。
-  for (const p of e.squadHolderBodies) near(p, 3 * agentRadius(e))
+  for (const g of groups) for (const p of g.points) near(p, g.gap)
   if (!any) return null
   const project = (p: { x: number; z: number }, gap: number): void => {
     const px = e.pos.x - p.x
@@ -1291,13 +1304,25 @@ function separationOf(e: Enemy, t: Vec3, body: number, hold: number): { x: numbe
     const toward = vx * ux + vz * uz
     if (toward < 0) { vx -= ux * toward; vz -= uz * toward }
   }
-  for (const p of e.squadNearPeers) project(p, body)
-  for (const p of e.squadHolderBodies) project(p, 3 * agentRadius(e))
+  for (const g of groups) for (const p of g.points) project(p, g.gap)
   const l = Math.hypot(vx, vz)
   if (l < 1e-6) return null
-  let ux = vx / l
-  let uz = vz / l
-  // 还在自己的近战距离以内时，分离**不许把人往玩家身上推**（那一步该由绕圈去补）。
+  return { x: vx / l, z: vz / l }
+}
+
+/**
+ * KI-382：等待者的分离——同伴两米内要让，占槽者一具半身宽内要让；
+ * 还在自己的近战距离以内时，分离**不许把人往玩家身上推**（那一步该由绕圈去补）。
+ */
+function separationOf(e: Enemy, t: Vec3, body: number, hold: number): { x: number; z: number } | null {
+  const push = repelFrom(e, [
+    { points: e.squadNearPeers, gap: body },
+    // 一具半身宽 = 接触距离（两具半径）再加半步：投影是按拍的离散量，留半身给一拍误差。
+    { points: e.squadHolderBodies, gap: 3 * agentRadius(e) },
+  ])
+  if (!push) return null
+  let ux = push.x
+  let uz = push.z
   const r = Math.hypot(e.pos.x - t.x, e.pos.z - t.z)
   if (r > 0.05 && r < hold) {
     const nx = (e.pos.x - t.x) / r
@@ -1310,6 +1335,38 @@ function separationOf(e: Enemy, t: Vec3, body: number, hold: number): { x: numbe
     uz /= nl
   }
   return { x: ux, z: uz }
+}
+
+/**
+ * KI-383：主攻手之间也有身体。没出手时，一具半身宽内先让开同伴——两个人若并着肩追同一个点，
+ * 走到近战带里就成了两具穿在一起的身体（实测六人三槽 951 个样本 <1.2 米、最低 0.841）。
+ * 只取斥力的切向分量（`repelFrom` 投影掉朝对方的分量），所以距离带与绕圈半径都不会被推走。
+ */
+function slotSeparationOf(e: Enemy): { x: number; z: number } | null {
+  if (e.squadSlotPeers.length === 0) return null
+  return repelFrom(e, [{ points: e.squadSlotPeers, gap: 3 * agentRadius(e) }])
+}
+
+/**
+ * KI-383：前冲不许冲进占槽同伴的身体里——沿当前朝向最多还能走多少米。
+ * 解 |P + t·u − Q| = gap 的第一个正根；对向两人同拍各走一半，拍的离散量才不越过接触线。
+ * gap = 2 × 体格半径 + 2 厘米拍误差（接触距离，不是等待者那两米）。
+ */
+export function lungeRoomToAllies(e: Enemy, ux: number, uz: number, maxStep: number): number {
+  const gap = 2 * agentRadius(e) + 0.02
+  let room = maxStep
+  for (const p of e.squadSlotPeers) {
+    const wx = e.pos.x - p.x
+    const wz = e.pos.z - p.z
+    const c = wx * wx + wz * wz - gap * gap
+    if (c <= 0) return 0
+    const b = wx * ux + wz * uz
+    const disc = b * b - c
+    if (disc <= 0) continue
+    const tHit = -b - Math.sqrt(disc)
+    if (tHit >= 0 && tHit * 0.5 < room) room = tHit * 0.5
+  }
+  return Math.max(0, room)
 }
 function stepAway(e: Enemy, t: Vec3, dt: number, speed: number): void {
   stepToward(e, { x: 2 * e.pos.x - t.x, y: 0, z: 2 * e.pos.z - t.z }, dt, speed, null as never)
