@@ -378,9 +378,10 @@ export class Squad {
   /**
    * KI-358：槽位排队的只读投影——**谁在打、谁在等、下一个轮到谁**。
    *
-   * 判据与 `reallocateSlots()` 是同一套：活着、有仇恨、top ≥ `combatEntryThreshold`；
-   * 排序也同一套（仇恨降序、进入早优先）。`attacking[0]` 是当前仇恨最高的占槽者，
-   * `waiting[0]` 是下一个轮到的。只读：调用前后 `hasAttackSlot` 一格不动。
+   * 判据与 `reallocateSlots()` 是同一套（KI-379 起：活着、还在交战的人即使仇恨归零也在名册里；
+   * 有仇恨的人仍要 top ≥ `combatEntryThreshold`）。排序也同一套：仇恨降序；冷队列里
+   * 按任期升序（KI-380，占得少的先轮到）；其余按进入早优先。`attacking[0]` 是当前仇恨最高的
+   * 占槽者，`waiting[0]` 是下一个轮到的。只读：调用前后 `hasAttackSlot` 一格不动。
    *
    * 这一格给 F4 面板与门一个机器读得到的形状；玩家-facing 的那半边由 KI-370 的 `squadWaitRank`
    * 与 `ActorVisuals` 脚下的排队环兑现（同一套排位，不另排一份）。
