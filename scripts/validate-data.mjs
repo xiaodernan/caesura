@@ -42,7 +42,7 @@ import {
 // KI-341：条件语言（`spawnGroups[].condition` 与 `music.ambienceVariants[].condition` 共用那一套）
 // 的读法本体。判据搬到这里的原因与上面那几份一字不差：本脚本一被 import 就去校验真表并 `process.exit`，
 // "喂一串坏条件、看它拒不拒"那一半就没人量得动。
-import { conditionFlagNames, readCondition } from './condition-rules.mjs'
+import { conditionReadsOf, mergeConditionReads, readCondition } from './condition-rules.mjs'
 // KI-082：文本完整性。中文被写盘路径压坏这件事从此由机器发现，不靠人眼撞见（那一族不与任何既有判据相交）。
 import { mojibakeFindings } from './text-integrity.mjs'
 // KI-084：锁定四数的两条**关系**判据（同一族理由：那两句文档折成的不等式要在测试里喂得出非法数组）。
@@ -2634,25 +2634,16 @@ function collectFlagUsage() {
     if (isObj(rg.weatherSwitch) && isStr(rg.weatherSwitch.flag)) {
       read.set(rg.weatherSwitch.flag, `${rg.id}.weatherSwitch.flag`)
     }
-    /* KI-341：条件语言那一族（刷怪闸门 + 声床变体）此前对这份普查**完全隐形**。上面每一种读法都是
-       "认一个旗名字段"，而 `SpawnDirector.evalCondition` 吃的是**一整串表达式**，所以它一个都不认识。
-       两侧都是洞，且都由植入实测（`.scratch/ki334_plant.mjs`，2026-10-28）：
-       ① 把一条真条件的旗名拼成一个从未被写过的名字 ⇒ 校验全绿（玩家那边是那一片永远不刷/那张床永远选不到）；
-       ② 一面只被条件读的旗 ⇒ 吃一条"写了没人读 ⇒ 死数据"的假 ERROR。
-       这一格补的是**读方**登记；表达式形状另有 `condition-rules.mjs` 那把尺子。 */
-    for (const g of rg.spawnGroups ?? []) {
-      if (!isObj(g) || !isStr(g.condition)) continue
-      for (const f of conditionFlagNames(g.condition)) {
-        if (!read.has(f)) read.set(f, `${rg.id}.spawnGroups(${g.enemyId}).condition '${g.condition}'`)
-      }
-    }
-    for (const v of rg.music?.ambienceVariants ?? []) {
-      if (!isObj(v) || !isStr(v.condition)) continue
-      for (const f of conditionFlagNames(v.condition)) {
-        if (!read.has(f)) read.set(f, `${rg.id}.music.ambienceVariants(${v.suffix}).condition '${v.condition}'`)
-      }
-    }
   }
+  /* KI-341：条件语言那一族（刷怪闸门 + 声床变体）此前对这份普查**完全隐形**。上面每一种读法都是
+     "认一个旗名字段"，而 `SpawnDirector.evalCondition` 吃的是**一整串表达式**，所以它一个都不认识。
+     两侧都是洞，且都由植入实测（`.scratch/ki334_plant.mjs`，2026-10-28）：
+     ① 把一条真条件的旗名拼成一个从未被写过的名字 ⇒ 校验全绿（玩家那边是那一片永远不刷/那张床永远选不到）；
+     ② 一面只被条件读的旗 ⇒ 吃一条"写了没人读 ⇒ 死数据"的假 ERROR。
+     KI-342 把**遍历两个宿主 + 形状切分 + 首见者留名**那颗芯整颗交回 `condition-rules.mjs`
+     （`.scratch/ki342_probe.mjs`，2026-10-29 实测：芯在 ⇒ 拼错的旗名报 1 ERROR；把这两支循环挖空 ⇒ 同一个植入 0 ERROR、
+     而钉这段源码的门 17 条全绿——芯此前只有形状证据，没有行为证据）。这里剩下的只有"往旗标名册里灌"这一句。 */
+  mergeConditionReads(read, conditionReadsOf(data['regions.json']).flags)
   for (const s of secrets) if (isStr(s.unlockFlag)) read.set(s.unlockFlag, `${s.regionId}.secrets(${s.id}).unlockFlag`)
   // 谱册页的旗标解锁源（KI-037 乐章 IV）：读方登记进对账——没有写方的页永远点不亮
   const mvCfg = data['movements.json']
@@ -3249,20 +3240,13 @@ const dialogueInfo = validateDialogue(npcIds, questIds, itemIds, stateDefs)
     for (const it of rg.interactables ?? []) if (isObj(it)) put(reads, it.requiresState?.key, `${rg.id}.interactables(${it.id}).requiresState`)
     // KI-094② 的值域形 weatherSwitch：那一格值域也是读方（否则它会落进"写了没人读"的死数据）
     if (isObj(rg.weatherSwitch) && isObj(rg.weatherSwitch.state)) put(reads, rg.weatherSwitch.state.key, `${rg.id}.weatherSwitch.state.key`)
-    /* KI-341：条件语言里的 `state.K` 也是这一格枚举的读方。上面四种形状都是"认一个 key 字段"，
-       而 `evalCondition` 吃的是一整串表达式 ⇒ 只被刷怪闸门（或声床变体）读的那一格会被判成
-       "写了没人读 ⇒ 死数据"，那是**假 ERROR**；反方向（拼错一个 state 键）同样看不见。
-       表达式怎么切由 `condition-rules.mjs` 那把尺子裁决，这里只登记读方。 */
-    const stateReadsOf = (expr, where) => {
-      for (const s of readCondition(expr).states) put(reads, s.key, where)
-    }
-    for (const g of rg.spawnGroups ?? []) {
-      if (isObj(g) && isStr(g.condition)) stateReadsOf(g.condition, `${rg.id}.spawnGroups(${g.enemyId}).condition '${g.condition}'`)
-    }
-    for (const v of rg.music?.ambienceVariants ?? []) {
-      if (isObj(v) && isStr(v.condition)) stateReadsOf(v.condition, `${rg.id}.music.ambienceVariants(${v.suffix}).condition '${v.condition}'`)
-    }
   }
+  /* KI-341：条件语言里的 `state.K` 也是这一格枚举的读方。上面四种形状都是"认一个 key 字段"，
+     而 `evalCondition` 吃的是一整串表达式 ⇒ 只被刷怪闸门（或声床变体）读的那一格会被判成
+     "写了没人读 ⇒ 死数据"，那是**假 ERROR**；反方向（拼错一个 state 键）同样看不见。
+     KI-342：遍历两个宿主 + 切表达式 + 首见者留名那颗芯住在 `condition-rules.mjs`（同一颗芯也喂上面那份旗标名册），
+     这里只剩"往值域读方名册里灌"这一句。 */
+  mergeConditionReads(reads, conditionReadsOf(data['regions.json']).states)
   for (const [k, w] of [...reads].sort()) {
     if (writes.has(k)) continue
     report.error('states.json', k, `${w} 在读它，但没有任何写方（值域的写方今天只有对话效果 effects.setState）⇒ 这一格永远停在 default，它锁着的内容不可达`)

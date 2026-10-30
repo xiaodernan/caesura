@@ -57,3 +57,53 @@ export function readCondition(expr) {
 export function conditionFlagNames(expr) {
   return readCondition(expr).flags.map((f) => f.name)
 }
+
+/**
+ * 一份 `regions.json` ⇒ 条件语言问出口的**读方名册**两张：`{ flags, states }`（KI-342）。
+ *
+ * 为什么这一族「走到哪一格」的遍历也搬进来（KI-341 账本「没做①」的那一格）：住在 `validate-data.mjs`
+ * 里的那两支循环，门只能数到「外壳与 `conditionFlagNames(` 调用还在」——把往名册里登记那一句挖掉、
+ * 外壳原样留着，门是绿的而普查当场又瞎了（`.scratch/ki342_probe.mjs` 2026-10-29 实测：植入一株幻影旗，
+ * 芯在 ⇒ 1 条 ERROR 点名它；去芯 ⇒ **0 ERROR 且门 17 条全绿**）。芯搬进这里之后，它第一次能被喂合成陈设
+ * 量内容对不对；校验器那一侧只剩下一次调用与一次并入，而那两格都有名字可钉。
+ *
+ * 登记的**次序口径**由调用方决定（这里只出名册）：每张名册内部「第一次读到它的那一格」赢，
+ * 与校验器那两张大 Map 并的时候同样是不覆盖已有条目 —— 名册值就是那句 `where`，两条宿主共用一个形状。
+ */
+export function conditionReadsOf(regions) {
+  const flags = new Map()
+  const states = new Map()
+  for (const rg of Array.isArray(regions) ? regions : []) {
+    if (!rg || typeof rg !== 'object') continue
+    /** 这一区里每一个挂着条件的宿主：`[名册值那一段, 表达式]` */
+    const hosts = []
+    for (const g of Array.isArray(rg.spawnGroups) ? rg.spawnGroups : []) {
+      if (g && typeof g === 'object' && typeof g.condition === 'string')
+        hosts.push([`spawnGroups(${g.enemyId}).condition`, g.condition])
+    }
+    for (const v of Array.isArray(rg.music?.ambienceVariants) ? rg.music.ambienceVariants : []) {
+      if (v && typeof v === 'object' && typeof v.condition === 'string')
+        hosts.push([`music.ambienceVariants(${v.suffix}).condition`, v.condition])
+    }
+    for (const [cell, expr] of hosts) {
+      const where = `${rg.id}.${cell} '${expr}'`
+      for (const f of readCondition(expr).flags) if (!flags.has(f.name)) flags.set(f.name, where)
+      for (const s of readCondition(expr).states) if (!states.has(s.key)) states.set(s.key, where)
+    }
+  }
+  return { flags, states }
+}
+
+/**
+ * 把一份名册**并**进普查那一张 Map：那张 Map 里已有的条目赢（别的宿主先登记过就用先那句 `where`）。
+ * 返回真正加进去的格数 —— 那是「这一族对这份普查贡献了几格」的读数，不是装饰。
+ */
+export function mergeConditionReads(target, roster) {
+  let added = 0
+  for (const [key, where] of roster instanceof Map ? roster : []) {
+    if (target.has(key)) continue
+    target.set(key, where)
+    added++
+  }
+  return added
+}

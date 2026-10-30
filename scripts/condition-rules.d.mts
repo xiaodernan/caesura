@@ -37,3 +37,18 @@ export function readCondition(expr: unknown): ConditionTerms
 
 /** 一串条件里所有旗标的名字（给旗标双向对账登记读方用） */
 export function conditionFlagNames(expr: unknown): string[]
+
+/** 一份陈设里条件语言问出口的读方名册：键 = 旗名／`state.KEY`，值 = 第一次读到它的那一格（`where`） */
+export interface ConditionRosters {
+  flags: Map<string, string>
+  states: Map<string, string>
+}
+
+/**
+ * 遍历 `regions.json` 的两个条件宿主（`spawnGroups[].condition` 与 `music.ambienceVariants[].condition`），
+ * 交出读方名册两张。非数组／null 行／条件不是字符串都不抛（那些形状由校验器按宿主点名报错）。
+ */
+export function conditionReadsOf(regions: unknown): ConditionRosters
+
+/** 把名册并进普查那一张 Map（已有条目赢）；返回真正加进去的格数 */
+export function mergeConditionReads(target: Map<string, string>, roster: unknown): number

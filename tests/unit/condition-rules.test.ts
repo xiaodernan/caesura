@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { evalCondition } from '@/world/SpawnDirector'
-import { STATE_TERM_RE, conditionFlagNames, readCondition } from '../../scripts/condition-rules.mjs'
+import { STATE_TERM_RE, conditionFlagNames, conditionReadsOf, mergeConditionReads, readCondition } from '../../scripts/condition-rules.mjs'
 
 /**
  * 条件语言（`flag.x` / `!flag.x` / `state.K==V` / `state.K!=V`，`&&` 连接）的**两端实测**（KI-341）。
@@ -17,6 +17,12 @@ import { STATE_TERM_RE, conditionFlagNames, readCondition } from '../../scripts/
  * 植入实测（`.scratch/ki334_plant.mjs`，2026-10-28）：改一条真条件里的旗名 ⇒ 校验全绿；
  * 一面只被条件读的旗 ⇒ 反倒吃一条"写了没人读 ⇒ 死数据"的假 ERROR。运行时那台机器
  * （`SpawnDirector > evalCondition`）对此一无所知，玩家侧的代价是"那一组永远不刷 / 那张床永远选不到"。
+ *
+ * **KI-342 为什么要再动一次**（也是量出来的）：上面那批把登记写进了校验器，但**芯留在原地**——两支手抄的
+ * 区域循环。植入实测（`.scratch/ki342_probe.mjs`，2026-10-29）：留壳去芯（把往名册里登记那一句挖掉、
+ * 外壳与 `conditionFlagNames(` 调用原样留着）之后，同一株幻影旗从 1 条 ERROR 变成 **0 ERROR，而这文件 17 条全绿**。
+ * 也就是说 KI-341 买的只是"形状有唯一主人"，"普查真的会走到每一格"那一半没人钉过。芯搬进
+ * `condition-rules.mjs > conditionReadsOf` 之后，它第一次能被喂合成陈设量内容，而校验器只剩一次调用＋一次并入。
  */
 
 type RegionRow = {
@@ -191,6 +197,97 @@ describe('判据 ⇄ 运行时同语法：真表里每一条条件，在所有�
   })
 })
 
+describe('芯住在这里：名册「走到哪一格」、每一格留下那句什么', () => {
+  /**
+   * 合成陈设（KI-342 的腿只能喂合成数据）：真表今天每一条条件都有**别处**的读方，所以「普查少了这一族」
+   * 在真表上只表现为 fewer `where`，量不出芯坏没坏。这里一格一格把它摆出来：两个宿主、跨区同名、
+   * 取反、以及四种坏数据形状。
+   */
+  const SYNTH = [
+    {
+      id: 'rg_synth_a',
+      spawnGroups: [
+        { enemyId: 'en_first', condition: 'flag.open && state.rg_synth_a.mood==CALM' },
+        { enemyId: 'en_no_condition' },
+        null,
+        'not-a-group',
+      ],
+      music: {
+        ambienceVariants: [
+          { suffix: 'drum', condition: 'flag.drum' },
+          { suffix: 'meg', condition: '!flag.gone' },
+          { suffix: 'blank' },
+        ],
+      },
+    },
+    { id: 'rg_synth_b', spawnGroups: [{ enemyId: 'en_second', condition: 'flag.drum && state.rg_synth_b.gate!=SHUT' }] },
+    { id: 'rg_synth_c', music: { ambienceVariants: 'not-an-array' } },
+    'not-a-region',
+    null,
+    { id: 'rg_synth_d', spawnGroups: [{ enemyId: 'en_junk', condition: 42 }] },
+  ]
+  const roster = conditionReadsOf(SYNTH)
+
+  it('两个宿主各走到一次：旗与值域两张名册的键与 where 都是量出来的（漏一个宿主 = 那一半隐形）', () => {
+    expect([...roster.flags.keys()], '取反也登记，名字是去掉 ! 的那一段').toEqual(['flag.open', 'flag.drum', 'flag.gone'])
+    expect([...roster.states.keys()], 'state 的键含 state. 前缀整段（与 states.json 同一拼写）').toEqual(['state.rg_synth_a.mood', 'state.rg_synth_b.gate'])
+    expect(roster.flags.get('flag.open'), '刷怪闸门那格的 where').toBe(`rg_synth_a.spawnGroups(en_first).condition 'flag.open && state.rg_synth_a.mood==CALM'`)
+    expect(roster.states.get('state.rg_synth_b.gate'), '第二区的闸门也是走到过的一格').toBe(`rg_synth_b.spawnGroups(en_second).condition 'flag.drum && state.rg_synth_b.gate!=SHUT'`)
+  })
+
+  it('同一把旗被两条宿主读到：第一次那一格留名，后面的不许覆盖（普查那句指路的话只有一个主人）', () => {
+    expect(roster.flags.get('flag.drum'), '声床变体先读到 ⇒ 后面 spawnGroups 那句不许把它挪走').toBe(`rg_synth_a.music.ambienceVariants(drum).condition 'flag.drum'`)
+  })
+
+  it('坏数据不炸也不登记：非数组 / null 行 / 不是对象的行 / condition 不是字符串 / 宿主本身不是数组', () => {
+    expect(roster.flags.has('flag.drum'), '上面那张名册确实建起来了（这一条是给下面那三句当对照）').toBe(true)
+    expect(roster.flags.size, 'rg_synth_c 的 ambienceVariants 是字符串、rg_synth_d 的 condition 是数字 ⇒ 都不许进来').toBe(3)
+    expect(roster.states.size).toBe(2)
+    for (const junk of [undefined, null, 42, 'a string', {}, true]) {
+      const r = conditionReadsOf(junk as unknown as never)
+      expect(r.flags.size, `非数组陈设 ${JSON.stringify(junk)} 应当给两张空名册，而不是抛`).toBe(0)
+      expect(r.states.size).toBe(0)
+    }
+  })
+
+  it('并入普查那张 Map：已有的条目赢、返回真加进去的格数、名册不是 Map 就当空的', () => {
+    const census = new Map([['flag.open', '某处先登记的 where']])
+    const added = mergeConditionReads(census, roster.flags)
+    expect(added, 'flag.drum 与 flag.gone 是新格，flag.open 已有 ⇒ 2').toBe(2)
+    expect(census.get('flag.open'), '别的宿主先登记过就用先那句 where ⇒ 并进来不许覆盖').toBe('某处先登记的 where')
+    expect(census.get('flag.gone'), '新格带着它自己的 where 进来').toBe(`rg_synth_a.music.ambienceVariants(meg).condition '!flag.gone'`)
+    expect(mergeConditionReads(census, roster.flags), '第二次并：一格都不该再少').toBe(0)
+    for (const notAMap of [undefined, null, [], [['flag.x', 'w']], { flag: 'x' }]) {
+      const size = census.size
+      expect(mergeConditionReads(census, notAMap as unknown as never), `名册形状不对（${JSON.stringify(notAMap)}）就当空的，不抛`).toBe(0)
+      expect(census.size).toBe(size)
+    }
+  })
+
+  it('真表对账：名册的键 = 每一条条件的读方并集，而每一格的 where 指得回真表那一格', () => {
+    const real = conditionReadsOf(REGIONS)
+    const union = (of: (expr: string) => string[]) => new Set(population.flatMap((p) => of(p.expr)))
+    expect([...real.flags.keys()].sort(), '名册少了/多了旗 ⇒ 普查与表达式之间有一条缝').toEqual([...union((e) => conditionFlagNames(e))].sort())
+    expect([...real.states.keys()].sort(), '名册少了/多了值域 ⇒ 上面那句旗的对照不覆盖这一族').toEqual(
+      [...union((e) => readCondition(e).states.map((s) => s.key))].sort())
+    /**
+     * 名册每一格的 `where` 必须是真表某一格**逐字**渲染出来的那句。
+     * 这里不按 `区域.宿主(身份)` 建索引去比：同一个 enemyId 可以挂两条闸门（真表里
+     * `en_murkshell` 就有两行），那一层撞名会把「指路话」这一条评成假红。整串比对没有这个问题。
+     */
+    const rendered = new Set<string>()
+    for (const rg of REGIONS) {
+      for (const g of rg.spawnGroups ?? []) if (typeof g.condition === 'string') rendered.add(`${rg.id}.spawnGroups(${g.enemyId}).condition '${g.condition}'`)
+      for (const v of rg.music?.ambienceVariants ?? []) if (typeof v.condition === 'string') rendered.add(`${rg.id}.music.ambienceVariants(${v.suffix}).condition '${v.condition}'`)
+    }
+    for (const [name, where] of [...real.flags, ...real.states]) {
+      expect([...rendered], `'${name}' 的 where 不是真表任何一格的逐字读数（指路话是假的）：${where}`).toContain(where)
+    }
+    expect(real.flags.size, '真表里条件读的旗（今天的读数）').toBeGreaterThanOrEqual(4)
+    expect(real.states.size, '真表里条件读的值域（今天的读数）').toBeGreaterThanOrEqual(1)
+  })
+})
+
 describe('判据只有一个主人：嘴巴在校验器里，语法不在', () => {
   const code = (rel: string): string =>
     read(rel).split(/\r?\n/).filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l)).join('\n')
@@ -198,7 +295,8 @@ describe('判据只有一个主人：嘴巴在校验器里，语法不在', () =
   it('校验器走这份判据，没把条件语言的第二台小机器抄回自己家里', () => {
     const v = code('../../scripts/validate-data.mjs')
     expect(v, "import 换了路 = 门读的不再是判据本体").toContain("from './condition-rules.mjs'")
-    for (const call of ['readCondition(', 'conditionFlagNames(']) {
+    // KI-342：`conditionFlagNames(` 不再是校验器-call 的了（芯整颗搬走），改钉这三句
+    for (const call of ['readCondition(', 'conditionReadsOf(', 'mergeConditionReads(']) {
       expect(v, `校验器不再走 ${call} = 有一条平行实现悄悄长了出来`).toContain(call)
     }
     // 第二台机器的形状 = 在本文件里再抄一遍那条状态正则
@@ -215,25 +313,29 @@ describe('判据只有一个主人：嘴巴在校验器里，语法不在', () =
     return text.slice(i, j)
   }
 
-  it('旗标普查认得这一族：两个宿主各登记一次读方（少登记一个 = 那一半又隐形了）', () => {
+  /**
+   * KI-342 重写这一条。KI-341 那版钉的是「普查里有这两支循环、循环里调了 `conditionFlagNames(`」——
+   * 而留壳去芯实测把这种钉法评的是空气坐实了：登记那一句挖掉，外壳原样，17 条全绿（`.scratch/ki342_probe.mjs`）。
+   * 芯搬走之后校验器只剩两个动作，于是这两格各有名字可钉：**调用芯一次** ＋ **把自己那张 Map 交出去并入**。
+   * 反面同样钉：普查那一段不许再自己切表达式（那＝芯又抄回家里，只是抄得比原来短）。
+   */
+  it('两张普查各自调用芯一次、把自己那张 Map 交出去（芯挪回校验器 / 没人并 = 红）', () => {
     const v = code('../../scripts/validate-data.mjs')
     /**
-     * 这一条**必须**圈住 `collectFlagUsage` 那一段：整片文件里"有这些词"不算数——
+     * 两条都**必须**圈住各自那一段：整片文件里"有这些词"不算数——
      * `spawnGroups` 在校验器里出现十几次，删掉普查里那一支之后全文件的门照样绿（KI-341 的 C5 臂实测到的正是这一格）。
      */
     const flagRegion = between(v, 'function collectFlagUsage() {', 'function validateWorldstate() {')
-    for (const [host, carrier] of [
-      ['rg.spawnGroups', 'conditionFlagNames(g.condition)'],
-      ['rg.music?.ambienceVariants', 'conditionFlagNames(v.condition)'],
-    ] as const) {
-      expect(flagRegion, `旗标普查里没有 '${host}' 那一支 ⇒ 它读的条件又对名册隐形`).toContain(host)
-      expect(flagRegion, `旗标普查里没有 '${carrier}' 那次登记 ⇒ 那个宿主的条件没有读方名册`).toContain(carrier)
-    }
+    expect(flagRegion, '旗标普查不再调用 conditionReadsOf( ⇒ "走到哪一格"又被手抄回这里了').toContain('conditionReadsOf(')
+    expect(flagRegion, '旗标普查没有把名册并进 read 这张 Map ⇒ 条件读的那些旗又对旗标双向对账隐形').toContain('mergeConditionReads(read, ')
+    expect(flagRegion, '旗标普查又开始自己逐个切表达式 ⇒ 芯搬回来了（第二台小机器悄悄长了出来）').not.toContain('conditionFlagNames(')
+    expect(flagRegion, '旗标普查又开始自己切表达式 ⇒ 芯搬回来了').not.toContain('readCondition(')
     // 值域那一族同理：`state.K` 也是 states.json 的读方。那一段住在没有名字的裸块里 ⇒ 锚在它自己的第一行代码上
     const stateRegion = between(v, 'const writes = new Map(dialogueInfo.stateWrites)')
-    for (const carrier of ['stateReadsOf(g.condition', 'stateReadsOf(v.condition']) {
-      expect(stateRegion, `值域双向对账里没有条件语言 '${carrier}' 这一支 ⇒ 只被条件读的那一格会被判成死数据（假 ERROR）`).toContain(carrier)
-    }
+    expect(stateRegion, '值域普查不再调用 conditionReadsOf( ⇒ 同一颗芯又被抄了一遍').toContain('conditionReadsOf(')
+    expect(stateRegion, "值域普查没有把名册并进 reads ⇒ 只被条件读的那一格会被判成死数据（假 ERROR）").toContain('mergeConditionReads(reads, ')
+    expect(stateRegion, '值域普查又开始自己走宿主 ⇒ 芯搬回来了').not.toContain('stateReadsOf(')
+    expect(stateRegion, '值域普查又开始自己切表达式 ⇒ 同一颗芯被抄了第二遍').not.toContain('readCondition(')
   })
 
   it('判据本体自己不发报告：它只返回桶（`report.*` 是校验器那张嘴的事）', () => {
