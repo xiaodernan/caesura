@@ -135,6 +135,11 @@ export class Enemy {
    */
   squadWaitRank = 0
   /**
+   * KI-374：这一只「该朝谁让路」——同一目标当前占着槽位的最高仇恨者的位置（Squad.update 每 tick 写）。
+   * 只有等待者拿到它；占槽者/没排队的人拿到 null（绕圈方向回落 +1，KI-371 原样）。
+   */
+  squadHolderPos: { x: number; y: number; z: number } | null = null
+  /**
    * §14.5「拍隙」当前状态：true = 此刻正踩在拍点上，半透明+定身，打不着也走不动。
    * 和 buff 一样是**每 tick 从数据重算的派生态**，不是需要维护的事件态。
    */
@@ -684,7 +689,7 @@ export class Enemy {
             else if (band.actions.includes('backstep')) {
               // KI-373：等槽的射手**让出背退**——实测背退与绕圈叠在一起是外螺旋（半径每 tick 都涨），
               // 一秒就飘出可读的射程；只绕圈才既不退出射程、又把「我在等」写成走位。拿到槽位立刻恢复风筝。
-              if (waiting) stepAround(this, p, dt, this.spd(0.45))
+              if (waiting) stepAround(this, p, dt, this.spd(0.45), this.squadHolderPos)
               else stepKite(this, p, dt, this.spd(1))
             }
             const can = this.phaseActions(band.actions)
@@ -696,7 +701,7 @@ export class Enemy {
           // 把「我在等」写成看得见的走位。占着槽的人不走这一支（他们要用自己的距离带出手）。
           if (waiting) {
             if (band && !band.actions.includes('chase') && !band.actions.includes('backstep')) {
-              stepAround(this, p, dt, this.spd(0.45))
+              stepAround(this, p, dt, this.spd(0.45), this.squadHolderPos)
             }
           }
           if (this.alertness < 40) this.enter('search')
@@ -1140,13 +1145,29 @@ function agentRadius(e: Enemy): number {
  * KI-371：等槽者的绕圈——朝「同一半径上的下一个角」走一步。半径由当前位置定，不另立一个距离数；
  * 仍走 `stepToward`，所以导航闸（KI-009）与拍隙定身（§14.5）原样生效。
  */
-function stepAround(e: Enemy, t: Vec3, dt: number, speed: number): void {
+/**
+ * KI-371：等槽者的绕圈——朝「同一半径上的下一个角」走一步。半径由当前位置定，不另立一个距离数；
+ * 仍走 stepToward，所以导航闸（KI-009）与拍隙定身（§14.5）原样生效。
+ *
+ * KI-374：wayFrom 给了就**先选方向**——±0.4 rad 两个候选点里离它更远的那个。等待者不再朝
+ * 主攻手转（那会让「我在等」的走位反而挡路）；没给（不在小队/没有占槽者）⇒ 方向仍是 +1。
+ */
+function stepAround(e: Enemy, t: Vec3, dt: number, speed: number, awayFrom?: Vec3 | null): void {
   const dx = e.pos.x - t.x
   const dz = e.pos.z - t.z
   const r = Math.hypot(dx, dz)
   if (r < 0.05) return
-  const a = Math.atan2(dz, dx) + 0.4
-  stepToward(e, { x: t.x + Math.cos(a) * r, y: 0, z: t.z + Math.sin(a) * r }, dt, speed, null as never)
+  const a = Math.atan2(dz, dx)
+  let sign = 1
+  if (awayFrom) {
+    const distAt = (s: number): number => Math.hypot(
+      t.x + Math.cos(a + s * 0.4) * r - awayFrom.x,
+      t.z + Math.sin(a + s * 0.4) * r - awayFrom.z,
+    )
+    if (distAt(-1) > distAt(1) + 1e-6) sign = -1
+  }
+  const angle = a + sign * 0.4
+  stepToward(e, { x: t.x + Math.cos(angle) * r, y: 0, z: t.z + Math.sin(angle) * r }, dt, speed, null as never)
 }
 
 function stepAway(e: Enemy, t: Vec3, dt: number, speed: number): void {

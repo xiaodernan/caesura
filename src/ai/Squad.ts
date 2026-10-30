@@ -83,6 +83,8 @@ export class Squad {
   private members = new Map<string, SquadMember>()
   private config: SquadConfig
   private tick = 1 // 从 1 开始，避免 combatSince 为 0 的歧义
+  /** KI-374：本拍排好序的候选（eallocateSlots 写），写让位方位时读同一份排序 */
+  private rankedThisTick: { member: SquadMember; top: number }[] = []
 
   constructor(config: SquadConfig = DEFAULT_SQUAD_CONFIG) {
     this.config = { ...DEFAULT_SQUAD_CONFIG, ...config }
@@ -149,6 +151,7 @@ export class Squad {
       member.enemy.squadHasSlot = member.hasAttackSlot
       member.enemy.squadWaitRank = member.waitRank
       member.enemy.squadTarget = member.currentTarget
+      member.enemy.squadHolderPos = this.holderPosFor(member)
     }
   }
 
@@ -182,6 +185,7 @@ export class Squad {
   private reallocateSlots(): void {
     for (const m of this.members.values()) m.waitRank = 0
     const ranked = this.rankedCandidates()
+    this.rankedThisTick = ranked
     const slots = this.config.maxAttackSlots
     for (const m of ranked) m.member.hasAttackSlot = false
     for (let i = 0; i < Math.min(slots, ranked.length); i++) {
@@ -190,6 +194,18 @@ export class Squad {
     for (let i = slots; i < ranked.length; i++) {
       ranked[i].member.waitRank = i - slots + 1
     }
+  }
+
+  /**
+   * KI-374：等的人该朝谁让路——**同一目标**、当前占着槽位的最高仇恨者（ankedThisTick[0] 那一位）。
+   * 占槽者自己与没有同目标占槽者的人拿到 null；Enemy.stepAround 拿到 null 就回落 +1（KI-371 原样）。
+   */
+  private holderPosFor(member: SquadMember): { x: number; y: number; z: number } | null {
+    if (member.hasAttackSlot) return null
+    const holder = this.rankedThisTick.find(
+      (x) => x.member.hasAttackSlot && x.member.currentTarget === member.currentTarget,
+    )
+    return holder ? { ...holder.member.enemy.pos } : null
   }
 
   /** 增加仇恨（受伤害、被挑衅、发现目标等） */
