@@ -675,10 +675,18 @@ export class Enemy {
           if (this.data.ai.retreatHpFrac && this.stats.hp / this.stats.hpMax <= this.data.ai.retreatHpFrac) { this.enter('retreat'); break }
           // §14.7 软计时器优先于随机招式：到点就必须敲钟，玩家要打断的是这一拍
           if (this.maybeBarCast(rhythm)) break
+          // KI-373：waiting 提到 if (band) 之前——两条移动分支（射手带的背退、普通带的绕圈）都要读它，
+          // 判据只有这一份：有仇恨、没槽位。
+          const waiting = this.squadThreats.length > 0 && !this.squadHasSlot
           if (band) {
             // 伪动作决定脚下一步：'chase' 贴近、'backstep' 拉开（射手风筝），真招式名才出手
             if (band.actions.includes('chase')) stepToward(this, p, dt, this.spd(0.9), rhythm)
-            else if (band.actions.includes('backstep')) stepKite(this, p, dt, this.spd(1))
+            else if (band.actions.includes('backstep')) {
+              // KI-373：等槽的射手**让出背退**——实测背退与绕圈叠在一起是外螺旋（半径每 tick 都涨），
+              // 一秒就飘出可读的射程；只绕圈才既不退出射程、又把「我在等」写成走位。拿到槽位立刻恢复风筝。
+              if (waiting) stepAround(this, p, dt, this.spd(0.45))
+              else stepKite(this, p, dt, this.spd(1))
+            }
             const can = this.phaseActions(band.actions)
             if (hasAttackAction(this, can)) {
               this.tryAttack(can, rhythm, tick, slotTaken)
@@ -686,7 +694,7 @@ export class Enemy {
           }
           // KI-371：等槽的人不站桩——在攻击带里绕圈（切向一步，半径不变、仍走导航闸），
           // 把「我在等」写成看得见的走位。占着槽的人不走这一支（他们要用自己的距离带出手）。
-          if (this.squadThreats.length > 0 && !this.squadHasSlot) {
+          if (waiting) {
             if (band && !band.actions.includes('chase') && !band.actions.includes('backstep')) {
               stepAround(this, p, dt, this.spd(0.45))
             }
