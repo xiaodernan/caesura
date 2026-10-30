@@ -19,7 +19,8 @@ import type { PlayerController } from '@/player/ThirdPersonController'
  * 四条腿：
  *  ① Squad 给等的人写占槽者位置，占槽者自己那一格是 null；
  *  ② 两个等待者分居占槽者两侧 ⇒ 各自朝远离占槽者的方向绕，夹角都变大；
- *  ③ 摘掉那一格与同伴数据（对照组）⇒ 靠内的那一个朝占槽者转，夹角变小——证明这一格是承重的；
+ *  ③ 摘掉那一格、同伴数据与圈（对照组）⇒ 靠内的那一个朝占槽者转，夹角变小——证明这一格是承重的
+ *     （KI-382 后圈会替等待者选半径，对照组必须把圈也摘掉，只剩「方向写死 +1」这条老路）；
  *  ④ 占槽者自己不绕圈：60 tick 里位置不动。
  */
 
@@ -73,11 +74,15 @@ const arcRun = (yieldOn: boolean) => {
     squad.addThreat(e.id, 'player', e === h ? 100 : 20)
   }
   squad.update(1)
-  // 对照组读的是「只剩写死 +1」这一条：占槽者、同伴两格都摘掉（KI-375 的同伴判据是本组的上位判据）
+  // 对照组读的是「只剩写死 +1」这一条：占槽者、同伴、圈三格都摘掉
+  // （KI-382 的圈会把人拉到自己的半径上，方向夹角就量不到老路了）
   if (!yieldOn) for (const e of [a, b]) {
     (e as unknown as { squadHolderPos: unknown }).squadHolderPos = null
     e.squadPeerPos = null
     e.squadOrbitTie = 1
+    e.squadWaitRing = 0
+    e.squadNearPeers = []
+    e.squadHolderBodies = []
   }
   const g0 = { a: gap(bearing(a, p), bearing(h, p)), b: gap(bearing(b, p), bearing(h, p)) }
   const rhythm = rhythmOf()

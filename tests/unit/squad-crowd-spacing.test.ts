@@ -66,6 +66,7 @@ const crowdRun = () => {
     ranks: [a.squadWaitRank, b.squadWaitRank, c.squadWaitRank],
     peerRanks: [a.squadPeerRank, b.squadPeerRank, c.squadPeerRank],
     gaps: [dist(a, b), dist(a, c), dist(b, c)],
+    radii: [radiusOf(a), radiusOf(b), radiusOf(c)],
     drift: { a: Math.abs(radiusOf(a) - r0.a), c: radiusOf(c) - r0.c },
     ties: [a.squadOrbitTie, b.squadOrbitTie, c.squadOrbitTie],
   }
@@ -86,7 +87,7 @@ const apartRun = () => {
   const r0 = { a: radiusOf(a), c: radiusOf(c) }
   const rhythm = rhythmOf()
   for (let i = 2; i <= 61; i++) for (const e of [a, b, c]) e.update(TICK_DT, i, p, rhythm, () => false)
-  return { peerRanks: [a.squadPeerRank, b.squadPeerRank, c.squadPeerRank], drifts: [Math.abs(radiusOf(a) - r0.a), Math.abs(radiusOf(c) - r0.c)] }
+  return { peerRanks: [a.squadPeerRank, b.squadPeerRank, c.squadPeerRank], drifts: [radiusOf(a) - r0.a, radiusOf(c) - r0.c] }
 }
 
 
@@ -111,6 +112,8 @@ const rankGateRun = () => {
     ranks: [a.squadWaitRank, b.squadWaitRank, c.squadWaitRank, d.squadWaitRank],
     peerRanks: [a.squadPeerRank, c.squadPeerRank],
     drift: { a: radiusOf(a) - r0.a, c: radiusOf(c) - r0.c },
+    ringC: c.squadWaitRing,
+    r0c: r0.c,
     gap: dist(a, c),
   }
 }
@@ -132,27 +135,31 @@ describe('KI-376 三个等待者：拥挤时按排位退让', () => {
     expect([a.squadOrbitTie, b.squadOrbitTie]).toEqual([1, -1])
   })
 
-  it('三个重合的等待者 ⇒ 一秒后两两 ≥ 1 米，一号位仍在绕圈', () => {
+  it('三个重合的等待者 ⇒ 一秒后两两 ≥ 1 米，三个人各走各的圈', () => {
     const run = crowdRun()
     expect(run.ranks, '一个在打、三个在等').toEqual([1, 2, 3])
-    expect(run.ties, '排位 3 与排位 1 同号——正是这一批要修的那一格').toEqual([1, -1, 1])
+    expect(run.ties, '排位 3 与排位 1 同号——KI-375 只有两个切向相位').toEqual([1, -1, 1])
     for (let i = 0; i < 3; i++) expect(run.gaps[i], '身体不再重叠（接触距离 1 米）').toBeGreaterThan(1)
-    expect(run.drift.a, '排位 1 不后退').toBeLessThan(0.4)
-    expect(run.drift.c, '排位 3 真的退开了').toBeGreaterThan(1)
+    // KI-382：分开的承重维度从「拥挤时径向退让」换成「每人一条圈」——半径会动，是设计。
+    expect(run.radii[0], '排位 1 往最内的圈收').toBeLessThan(4)
+    expect(run.radii[2], '排位 3 的圈在最外').toBeGreaterThan(run.radii[0] + 1)
+    expect(run.drift.c, '排位 3 往外走').toBeGreaterThan(0.3)
   })
 
-  it('四人局：低排位不退、高排位退开', () => {
+  it('四人局：低排位不退、高排位往自己的外圈走', () => {
     const run = rankGateRun()
     expect(run.ranks, '一个在打、四个在等').toEqual([1, 2, 3, 4])
     expect(run.peerRanks, '两人互指').toEqual([3, 1])
-    expect(run.drift.a, '一号位不因为身边站着三号位就退').toBeLessThan(0.4)
-    expect(run.drift.c, '三号位退开').toBeGreaterThan(1)
-    expect(run.gap, '一米贴到两米外').toBeGreaterThan(2)
+    expect(run.drift.a, '一号位不因为身边站着三号位就退（它只走自己的圈）').toBeLessThan(0.4)
+    expect(run.ringC, '三号位的圈就在外面（两具身宽）').toBeGreaterThan(run.r0c + 1)
+    expect(run.drift.c, '三号位往外走').toBeGreaterThan(0.2)
+    expect(run.gap, '一米贴到三米外').toBeGreaterThan(2)
   })
 
-  it('不拥挤：同伴 3 米外 ⇒ 三号位照旧绕圈，半径不飘', () => {
+  it('不拥挤：同伴 3 米外 ⇒ 三个人照旧各去自己的圈（圈不是拥挤反应）', () => {
     const run = apartRun()
-    for (const d of run.drifts) expect(d, '日常队形不触发退让').toBeLessThan(0.4)
+    expect(run.drifts[0], '一号位往内收').toBeLessThan(-1)
+    expect(run.drifts[1], '三号位往外走').toBeGreaterThan(0)
     expect(run.peerRanks, '三号位最近的同伴是排位 2').toEqual([2, 3, 2])
   })
 })

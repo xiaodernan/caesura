@@ -20,7 +20,8 @@ import type { PlayerController } from '@/player/ThirdPersonController'
  *  ② 射手带 + 占着槽 ⇒ 照旧背退：距离拉开、方向不偏；
  *  ③ 射手带 + 仇恨表空（没排队）⇒ 照旧背退：这是「不归小队管」而不是「在等」；
  *  ④ 普通攻击带 + 在等 ⇒ 仍绕圈（KI-371 原样）；
- *  ⑤ chase 带 + 在等 ⇒ 仍直线接近（KI-371 原样）。
+ *  ⑤ chase 带 + 在等 ⇒ 守当前半径绕圈，不再直线贴到玩家身上（KI-382 改口径）——没有 Squad
+ *     写圈时圈就是当前位置；⑥ 对照组：chase 带 + 仇恨表空 ⇒ 仍直线接近（这是「不归小队管」）。
  */
 
 registerGameData()
@@ -111,9 +112,22 @@ describe('KI-373 射手带的等待者：绕圈，而不是退出射程', () => 
     expect(Math.abs(distTo(e, p) - r0)).toBeLessThan(0.4)
   })
 
-  it('chase 带 + 在等 ⇒ 仍直线接近（KI-371 原样）', () => {
+  it('chase 带 + 在等 ⇒ 守当前半径绕圈，不再直线贴到玩家身上', () => {
     const e = enemyWith([{ min: 0, max: 99, actions: ['chase'] }], 'archer-chase-wait')
     queued(e, false)
+    const p = fakePlayer(0, 8)
+    const rhythm = rhythmOf()
+    const r0 = distTo(e, p)
+    const a0 = angleTo(e, p)
+
+    drive(e, p, rhythm, 60)
+
+    expect(turn(a0, angleTo(e, p)), '在等 ⇒ 走切向一步（8 米外一秒约 0.13 rad ≈ 1 米弧长）').toBeGreaterThan(0.1)
+    expect(Math.abs(distTo(e, p) - r0), '没有圈可守时圈就是当前位置：不贴脸也不后退').toBeLessThan(0.4)
+  })
+
+  it('对照组：chase 带 + 仇恨表空 ⇒ 仍直线接近（不归小队管）', () => {
+    const e = enemyWith([{ min: 0, max: 99, actions: ['chase'] }], 'archer-chase-free')
     const p = fakePlayer(0, 8)
     const rhythm = rhythmOf()
     const r0 = distTo(e, p)

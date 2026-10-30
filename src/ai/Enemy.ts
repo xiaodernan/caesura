@@ -145,6 +145,24 @@ export class Enemy {
    */
   squadPeerPos: { x: number; y: number; z: number } | null = null
   /**
+   * KI-382：同伴们的身体——所有**也在等**的活着的同队成员（不含自己）。Squad.update 每 tick 写。
+   * `squadPeerPos` 只给最近的一个（KI-375 的切向选向）；这一格给「身体不相犯」用：
+   * 两米内不许再靠近**任何**一个同伴，逐个把朝向对方的那一份速度投影掉。
+   */
+  squadNearPeers: { x: number; y: number; z: number }[] = []
+  /**
+   * KI-382：正在出手的人的身体（所有占着槽的活着的同队成员，不含自己）。
+   * 等的人与他们的接触距离只要一具身宽（2×体格半径）——不是两具：主攻手只在挥招时站在近处，
+   * 等的人给他让的是一步路，不是一整条圈。实测轮转交接的 0.67 米就是这一对撞出来的。
+   */
+  squadHolderBodies: { x: number; y: number; z: number }[] = []
+  /**
+   * KI-382：等待时要站的圈（米，离目标的水平距离；0 = 没有圈）。Squad.update 按排位写：
+   * 排位 1 = 自己近战够得着的边上，每高一排再往外让两具身宽（KI-376 同一把尺）。
+   * 圈只**往外**推（`max(当前半径, 圈)`）——已经站得更远的人不被拽回来。
+   */
+  squadWaitRing = 0
+  /**
    * KI-376：那位同伴的排位（没有同伴时 0）。拥挤时按它决定谁退——排位更高的让距，
    * 否则两个同奇偶的等待者会一直同轨（KI-375 只承载两个相位）。
    */
@@ -698,25 +716,20 @@ export class Enemy {
           // KI-373：waiting 提到 if (band) 之前——两条移动分支（射手带的背退、普通带的绕圈）都要读它，
           // 判据只有这一份：有仇恨、没槽位。
           const waiting = this.squadThreats.length > 0 && !this.squadHasSlot
-          if (band) {
+          // KI-382：等待者的脚步只有一个主人——守自己的圈（排位 1 = 自己够得着的边上，每高一排外让两具身宽）。
+          // KI-371/373 的「按距离带走位」只留给出手的人：等的人若还跟着 'chase' 带往玩家身上贴，圈就不成立
+          // （3.9 米的人会被拉回 2.2，然后在 2.2/5.9 之间来回抖）；射手也不再背退（KI-373 原样）。
+          if (waiting) {
+            stepAround(this, p, dt, this.spd(0.45), this.squadHolderPos)
+          } else if (band) {
             // 伪动作决定脚下一步：'chase' 贴近、'backstep' 拉开（射手风筝），真招式名才出手
             if (band.actions.includes('chase')) stepToward(this, p, dt, this.spd(0.9), rhythm)
-            else if (band.actions.includes('backstep')) {
-              // KI-373：等槽的射手**让出背退**——实测背退与绕圈叠在一起是外螺旋（半径每 tick 都涨），
-              // 一秒就飘出可读的射程；只绕圈才既不退出射程、又把「我在等」写成走位。拿到槽位立刻恢复风筝。
-              if (waiting) stepAround(this, p, dt, this.spd(0.45), this.squadHolderPos)
-              else stepKite(this, p, dt, this.spd(1))
-            }
+            else if (band.actions.includes('backstep')) stepKite(this, p, dt, this.spd(1))
+          }
+          if (band) {
             const can = this.phaseActions(band.actions)
             if (hasAttackAction(this, can)) {
               this.tryAttack(can, rhythm, tick, slotTaken)
-            }
-          }
-          // KI-371：等槽的人不站桩——在攻击带里绕圈（切向一步，半径不变、仍走导航闸），
-          // 把「我在等」写成看得见的走位。占着槽的人不走这一支（他们要用自己的距离带出手）。
-          if (waiting) {
-            if (band && !band.actions.includes('chase') && !band.actions.includes('backstep')) {
-              stepAround(this, p, dt, this.spd(0.45), this.squadHolderPos)
             }
           }
           if (this.alertness < 40) this.enter('search')
@@ -1159,6 +1172,31 @@ function agentRadius(e: Enemy): number {
 }
 
 /**
+ * KI-382：自己的近战够得着多远——攻击帧表里最大的 hitbox 半径（漂调者爪 1.9 米）。
+ * 等待者不站在这个距离以内：那是出手的位置，不是排队的位置。没有近战判定（纯远程/无攻击）⇒ 0。
+ */
+function waitHoldRadius(e: Enemy): number {
+  let reach = 0
+  for (const atk of e.data.attacks ?? []) {
+    const rad = atk.frames.hitbox?.radius ?? 0
+    if (rad > reach) reach = rad
+  }
+  return reach
+}
+
+/**
+ * KI-382：等待者的圈——`waitHoldRadius` 加每高一排两具身宽（4 × 体格半径，KI-376 的尺）。
+ * 排位 1 站在自己够得着的边上；排位越高越往外。相邻两排即使同角度也至少隔 2 米。
+ * 没有近战判定 ⇒ 0（不造第二条硬的，KI-371 原样）。
+ */
+export function waitRingRadius(e: Enemy, rank: number): number {
+  if (rank <= 0) return 0
+  const hold = waitHoldRadius(e)
+  if (hold <= 0) return 0
+  return hold + (rank - 1) * 4 * agentRadius(e)
+}
+
+/**
  * KI-371：等槽者的绕圈——朝「同一半径上的下一个角」走一步。半径由当前位置定，不另立一个距离数；
  * 仍走 `stepToward`，所以导航闸（KI-009）与拍隙定身（§14.5）原样生效。
  *
@@ -1171,23 +1209,16 @@ function stepAround(e: Enemy, t: Vec3, dt: number, speed: number, awayFrom?: Vec
   const r = Math.hypot(dx, dz)
   if (r < 0.05) return
   const a = Math.atan2(dz, dx)
-  // KI-375：要躲的不只占槽者，还有「另一个也在等的人」。等的人本来就都往占槽者背面靠，
-  // 只按占槽者选向会让两个人叠在同一段弧上；所以有同伴时先按同伴选，同伴判据没梯度
-  // （两人位置重合，两个候选一样远）再按排位奇偶劈开。没有同伴时仍是 KI-374 原样。
-  const peer = e.squadPeerPos
-  // KI-376：两个同奇偶的等待者（奇偶只给两个方向）贴在一起时，「绕圈」这条路走到头也是同一条轨迹。
-  // 裁决：**排位更高的那个退**——径向后退（远离目标），让到同伴 4 倍体格半径之外再回去绕圈；
-  // 奇偶不同的两人归 KI-375 的相位分离管，不走这条。阈值取身体宽度（2×体格半径）再加一具身位。
-  if (
-    peer &&
-    e.squadPeerRank > 0 &&
-    e.squadWaitRank > e.squadPeerRank &&
-    (e.squadWaitRank - e.squadPeerRank) % 2 === 0 &&
-    Math.hypot(e.pos.x - peer.x, e.pos.z - peer.z) < 4 * agentRadius(e)
-  ) {
-    stepAway(e, t, dt, speed)
+  // KI-382：同伴有身体。两米（4×体格半径，KI-376 同一把尺）内先做分离，再谈绕圈。
+  // 分离这一步单独走完就返回：KI-377 的补半径只服务绕圈，不能把分离推出来的径向位移又拽回去
+  // （实测：两者同拍执行时斥力被补半径整份抹掉，两人停在 0.28 米不动）。
+  const hold = waitHoldRadius(e)
+  const push = separationOf(e, t, 4 * agentRadius(e), hold)
+  if (push) {
+    stepToward(e, { x: e.pos.x + push.x * 2, y: 0, z: e.pos.z + push.z * 2 }, dt, speed, null as never)
     return
   }
+  const peer = e.squadPeerPos
   let sign = e.squadOrbitTie < 0 ? -1 : 1
   if (peer) {
     const dPeerAt = (s: number): number => Math.hypot(
@@ -1205,20 +1236,81 @@ function stepAround(e: Enemy, t: Vec3, dt: number, speed: number, awayFrom?: Vec
     else if (distAt(1) > distAt(-1) + 1e-6) sign = 1
   }
   const angle = a + sign * 0.4
-  stepToward(e, { x: t.x + Math.cos(angle) * r, y: 0, z: t.z + Math.sin(angle) * r }, dt, speed, null as never)
+  // KI-382：等的人不站在自己的招式够得着的里面——目标半径至少是自己的近战距离（爪 1.9 米）。
+  // 这一条同时把「刚让位、还站在近战带里」的人送回圈上；已经站在圈外的人半径不动（KI-377 原样）。
+  // 圈是**绝对**目标：远了要跟上来、近了要退出去。等待者不是站桩——玩家换位置时整条队跟着换。
+  const wantR = e.squadWaitRing > 0 ? e.squadWaitRing : r
+  stepToward(e, { x: t.x + Math.cos(angle) * wantR, y: 0, z: t.z + Math.sin(angle) * wantR }, dt, speed, null as never)
   // KI-377：切向一步走的是弦，每 tick 都会把半径收几毫米——十秒就是三米，等待者最后站在玩家身上。
   // r 是**走这一步之前**的半径，所以这里只补这一步自己收掉的那一点（≤ 一步的步长，不是瞬移）；
   // 被击退／绕墙的位移不在这条账上（下一步的 r 就是新位置，不会把人拽回旧圈）。
-  const px = e.pos.x - t.x
-  const pz = e.pos.z - t.z
-  const rp = Math.hypot(px, pz)
-  if (rp > 0.05) {
-    const k = r / rp
-    e.pos.x = t.x + px * k
-    e.pos.z = t.z + pz * k
+  // 只有「已经在圈上/圈外」的那一支需要补弦亏；往圈上走的那一支已经有明确的目标半径。
+  if (wantR === r) {
+    const px = e.pos.x - t.x
+    const pz = e.pos.z - t.z
+    const rp = Math.hypot(px, pz)
+    if (rp > 0.05) {
+      const k = r / rp
+      e.pos.x = t.x + px * k
+      e.pos.z = t.z + pz * k
+    }
   }
 }
 
+/**
+ * KI-382：把「离所有同伴都更远」的方向求出来（单位向量）；没有同伴在体格圈内 ⇒ null。
+ * 斥力按贴近程度加权（贴身 ⇒ 一份，两米 ⇒ 0），然后逐个把「朝向那位同伴」的分量投影掉——
+ * 这样两个人同时被对方推开时不会互相抵消成原地抖动，也不会从谁身上穿过去。
+ */
+function separationOf(e: Enemy, t: Vec3, body: number, hold: number): { x: number; z: number } | null {
+  let vx = 0
+  let vz = 0
+  let any = false
+  const near = (p: { x: number; z: number }, gap: number): boolean => {
+    const px = e.pos.x - p.x
+    const pz = e.pos.z - p.z
+    const pd = Math.hypot(px, pz)
+    if (pd <= 0.05 || pd >= gap) return false
+    any = true
+    const w = (gap - pd) / gap
+    vx += (px / pd) * w
+    vz += (pz / pd) * w
+    return true
+  }
+  for (const p of e.squadNearPeers) near(p, body)
+  // 一具半身宽 = 接触距离（两具半径）再加半步：投影是按拍的离散量，留半身给一拍误差。
+  for (const p of e.squadHolderBodies) near(p, 3 * agentRadius(e))
+  if (!any) return null
+  const project = (p: { x: number; z: number }, gap: number): void => {
+    const px = e.pos.x - p.x
+    const pz = e.pos.z - p.z
+    const pd = Math.hypot(px, pz)
+    if (pd <= 0.05 || pd >= gap) return
+    const ux = px / pd
+    const uz = pz / pd
+    const toward = vx * ux + vz * uz
+    if (toward < 0) { vx -= ux * toward; vz -= uz * toward }
+  }
+  for (const p of e.squadNearPeers) project(p, body)
+  for (const p of e.squadHolderBodies) project(p, 3 * agentRadius(e))
+  const l = Math.hypot(vx, vz)
+  if (l < 1e-6) return null
+  let ux = vx / l
+  let uz = vz / l
+  // 还在自己的近战距离以内时，分离**不许把人往玩家身上推**（那一步该由绕圈去补）。
+  const r = Math.hypot(e.pos.x - t.x, e.pos.z - t.z)
+  if (r > 0.05 && r < hold) {
+    const nx = (e.pos.x - t.x) / r
+    const nz = (e.pos.z - t.z) / r
+    const inward = ux * nx + uz * nz
+    if (inward < 0) { ux -= nx * inward; uz -= nz * inward }
+    const nl = Math.hypot(ux, uz)
+    if (nl < 1e-6) return null
+    ux /= nl
+    uz /= nl
+  }
+  return { x: ux, z: uz }
+}
 function stepAway(e: Enemy, t: Vec3, dt: number, speed: number): void {
   stepToward(e, { x: 2 * e.pos.x - t.x, y: 0, z: 2 * e.pos.z - t.z }, dt, speed, null as never)
 }

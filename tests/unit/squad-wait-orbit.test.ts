@@ -15,10 +15,11 @@ import type { PlayerController } from '@/player/ThirdPersonController'
  * 且已经站在自己的攻击带里的敌人沿当前半径走切向一步：半径不变、仍走
  * `stepToward`（导航闸与拍隙定身原样生效），而占着槽的人不走这一支。
  *
- * 三条腿：
+ * 四条腿（KI-382 改口径：等的人只有「守自己的圈」这一支，不再按距离带贴脸）：
  *  ① 在等 ⇒ 绕圈：绕玩家转过的角 > 0.15 rad，半径几乎不变（不贴脸、不后退）；
  *  ② 不在等（仇恨表空）⇒ 不绕圈：位置一格不动（环与走位都不许凭空出现）；
- *  ③ 还没进攻击带（chase 带里）⇒ 先靠近：距离真的缩短，而且方向不偏（绕圈不许替代接近）。
+ *  ③ chase 带 + 在等 ⇒ 走回 Squad 写的圈（2.1 米），不是直线追到玩家身上；
+ *  ④ 对照组：chase 带 + 仇恨表空（不归小队管）⇒ 仍直线接近，方向不偏。
  */
 
 registerGameData()
@@ -91,7 +92,7 @@ describe('KI-371 等槽者的绕圈（不是站桩）', () => {
     expect(e.pos.z).toBeCloseTo(z0, 6)
   })
 
-  it('还没进攻击带（chase 带）⇒ 先靠近，而且方向不偏：绕圈不许替代接近', () => {
+  it('还没进攻击带（chase 带）⇒ 等的人走回自己的圈，不站进出手位里', () => {
     const e = enemyWith(
       [
         { min: 0, max: 1.9, actions: ['claw1'] },
@@ -100,6 +101,26 @@ describe('KI-371 等槽者的绕圈（不是站桩）', () => {
       'orbit-chase'
     )
     queued(e, false)
+    e.squadWaitRing = 2.1
+    const p = fakePlayer(0, 6)
+    const rhythm = rhythmOf()
+
+    drive(e, p, rhythm, 240)
+
+    const r = distTo(e, p)
+    expect(r, 'chase 带里的等待者仍会靠近——圈在 2.1 米，不是 6 米').toBeLessThan(2.3)
+    expect(r, '圈是底线：不站进自己的出手位里（KI-382）').toBeGreaterThan(1.75)
+    expect(e.attack, '没槽位 ⇒ 一次都不出手').toBeNull()
+  })
+
+  it('对照组：chase 带 + 仇恨表空 ⇒ 仍直线接近，方向不偏', () => {
+    const e = enemyWith(
+      [
+        { min: 0, max: 1.9, actions: ['claw1'] },
+        { min: 1.9, max: 99, actions: ['chase'] },
+      ],
+      'orbit-chase-free'
+    )
     const p = fakePlayer(0, 6)
     const rhythm = rhythmOf()
     const before = distTo(e, p)
@@ -108,6 +129,6 @@ describe('KI-371 等槽者的绕圈（不是站桩）', () => {
     drive(e, p, rhythm, 60)
 
     expect(distTo(e, p), 'chase 带里仍是靠近（60 tick 里至少缩短 2 米）').toBeLessThan(before - 2)
-    expect(turn(a0, angleTo(e, p)), 'chase 带里只走直线接近：方向不许被绕圈带偏').toBeLessThan(0.05)
+    expect(turn(a0, angleTo(e, p)), '没有小队 ⇒ 只走直线接近').toBeLessThan(0.05)
   })
 })

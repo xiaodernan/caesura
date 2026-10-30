@@ -60,7 +60,8 @@ const sharedSpotRun = (withPeer: boolean) => {
     squad.addThreat(e.id, 'player', e === h ? 100 : 20)
   }
   squad.update(1)
-  if (!withPeer) for (const e of [a, b]) { e.squadPeerPos = null; e.squadOrbitTie = 1 }
+  // KI-382：对照组的「没有同伴」是整条同伴通道都摘掉——位置、身体、圈三格一起清（只清位置会留下圈的径向分离）
+  if (!withPeer) for (const e of [a, b]) { e.squadPeerPos = null; e.squadOrbitTie = 1; e.squadNearPeers = []; e.squadHolderBodies = []; e.squadWaitRing = 0 }
   const r0 = [distTo(a, p), distTo(b, p)]
   const rhythm = rhythmOf()
   for (let i = 2; i <= 61; i++) for (const e of [a, b]) e.update(TICK_DT, i, p, rhythm, () => false)
@@ -85,7 +86,7 @@ const tailgateRun = (withPeer: boolean) => {
     squad.addThreat(e.id, 'player', e === h ? 100 : 20)
   }
   squad.update(1)
-  if (!withPeer) for (const e of [a, b]) { e.squadPeerPos = null; e.squadOrbitTie = 1 }
+  if (!withPeer) for (const e of [a, b]) { e.squadPeerPos = null; e.squadOrbitTie = 1; e.squadNearPeers = []; e.squadHolderBodies = []; e.squadWaitRing = 0 }
   const rhythm = rhythmOf()
   let minGap = gap(bearing(a, p), bearing(b, p))
   for (let i = 2; i <= 21; i++) {
@@ -116,13 +117,13 @@ describe('KI-375 等待者之间的相位分离', () => {
     expect([a.squadOrbitTie, b.squadOrbitTie], '排位 1 ⇒ +1，排位 2 ⇒ -1').toEqual([1, -1])
   })
 
-  it('两个重合的等待者 ⇒ 一秒后夹开 ≥ 0.2 rad，半径几乎不变', () => {
+  it('两个重合的等待者 ⇒ 一秒后夹开 ≥ 0.2 rad，各自走向自己的圈', () => {
     const run = sharedSpotRun(true)
     expect(run.ranks, '排位按登记顺序：1 与 2').toEqual([1, 2])
     expect(run.gap, '不再粘成一具身体').toBeGreaterThan(0.2)
-    for (let i = 0; i < 2; i++) {
-      expect(Math.abs(run.radii[i] - run.r0[i]), '分开仍走切向').toBeLessThan(0.4)
-    }
+    // KI-382 起：分开不再只靠切向——排位 1 的圈在里、排位 2 的圈在外，半径本来就该动。
+    expect(run.radii[0], '排位 1 往自己的圈（更内）收').toBeLessThan(run.r0[0] - 1)
+    expect(run.radii[1], '排位 2 的圈在外').toBeGreaterThan(run.radii[0] + 0.5)
   })
 
   it('远侧同行：占槽者判据推着两人相向，同伴方位把后面那个按回去', () => {

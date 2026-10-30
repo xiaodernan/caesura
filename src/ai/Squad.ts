@@ -1,5 +1,5 @@
 import { bus } from '@/core/EventBus'
-import type { Enemy } from './Enemy'
+import { waitRingRadius, type Enemy } from './Enemy'
 import type { SquadConfigData } from '@/data/schema'
 
 /**
@@ -174,6 +174,17 @@ export class Squad {
       member.enemy.squadHolderPos = this.holderPosFor(member)
       const peer = this.peerFor(member)
       member.enemy.squadPeerPos = peer ? { ...peer.enemy.pos } : null
+      member.enemy.squadWaitRing = waitRingRadius(member.enemy, member.waitRank)
+      member.enemy.squadHolderBodies = member.waitRank > 0
+        ? [...this.members.values()]
+            .filter((o) => o !== member && o.hasAttackSlot && o.enemy.alive)
+            .map((o) => ({ ...o.enemy.pos }))
+        : []
+      member.enemy.squadNearPeers = member.waitRank > 0
+        ? [...this.members.values()]
+            .filter((o) => o !== member && o.waitRank > 0 && o.enemy.alive)
+            .map((o) => ({ ...o.enemy.pos }))
+        : []
       member.enemy.squadPeerRank = peer ? peer.waitRank : 0
       member.enemy.squadOrbitTie = member.waitRank > 0 && member.waitRank % 2 === 0 ? -1 : 1
     }
