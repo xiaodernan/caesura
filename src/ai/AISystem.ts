@@ -178,11 +178,12 @@ export class AISystem {
 
     // §1.2「同屏最多 3 人同时出手」：进入战斗的第一笔仇恨由这里记（KI-352）。
     // 没人写这一笔，槽位表就永远是空的——上限 3 只活在注释里。只在"表还是空的"时候
-    // 补一笔：衰减到 0 之后仍在战斗态的会重新记；离开这四态就让它自然掉光。
+    // 补一笔：KI-379 起「还在交战」的成员由 `Squad` 留在名册里（数值归零也不删），
+    // 所以这里只需管「离开过四态、仇恨已经掉光、又回来」的那一笔。
+    // 判据与 `Squad` 共用 `isEngaged`，两边不会各说各话。
     for (const e of this.enemies) {
       if (!e.alive) continue
-      const engaged = e.state === 'combat' || e.state === 'chase' || e.state === 'alert' || e.state === 'callAlly'
-      if (!engaged) continue
+      if (!this.squad.isEngaged(e.id)) continue
       const m = this.squad.getMember(e.id)
       // 阈值 + 1：Squad.update 每拍**先衰减再分槽**，恰好等于阈值的一笔会在分槽前
       // 掉到线下（10 → 9.98）⇒ 永远拿不到第一格。多这一点是为了让"刚进入战斗"

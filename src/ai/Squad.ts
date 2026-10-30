@@ -85,6 +85,13 @@ export interface SlotReport {
  * Squad 管理器：单例，由 AISystem 持有。
  * 所有敌人的 camp、threat、slot 状态集中在这里，Enemy 只保留只读引用。
  */
+/**
+ * KI-379：还在交战的那四态（与 `AISystem` 补第一笔仇恨的判据同一份）。
+ * 仇恨**数值**会衰减到 0，人还在打——名册不能因为数值归零就把人删掉，
+ * 否则 `Enemy.tryAttack` 那道「表非空才排队」的闸会整道放行。
+ */
+const ENGAGED_STATES: ReadonlySet<string> = new Set(['combat', 'chase', 'alert', 'callAlly'])
+
 export class Squad {
   private members = new Map<string, SquadMember>()
   private config: SquadConfig
@@ -140,8 +147,9 @@ export class Squad {
       for (const t of member.threats) {
         t.threat = Math.max(0, t.threat - this.config.threatDecayPerTick)
       }
-      // 清理归零仇恨
-      member.threats = member.threats.filter((t) => t.threat > 0.01)
+      // 清理归零仇恨（KI-379：还在交战的成员留在名册里——数值归零不等于不打了）
+      const engaged = this.engagedMember(member)
+      member.threats = member.threats.filter((t) => t.threat > 0.01 || engaged)
       // 目标丢失时清空 currentTarget
       if (member.currentTarget && !member.threats.some((t) => t.targetId === member.currentTarget)) {
         member.currentTarget = null
@@ -174,7 +182,9 @@ export class Squad {
     const ranked: { member: SquadMember; top: number }[] = []
     for (const member of this.members.values()) {
       const top = member.threats[0]?.threat ?? 0
-      if (!member.enemy.alive || top < this.config.combatEntryThreshold) continue
+      if (!member.enemy.alive) continue
+      // KI-379：交战中的成员哪怕仇恨数值已经归零也还在队列里（按 0 参与排序，排在所有有仇恨的人之后）
+      if (top < this.config.combatEntryThreshold && !this.engagedMember(member)) continue
       ranked.push({ member, top })
     }
     ranked.sort((a, b) => {
@@ -236,6 +246,20 @@ export class Squad {
       }
     }
     return best
+  }
+
+  /**
+   * KI-379：这一只此刻算不算「还在交战」——仇恨数值可能已经归零，人还在打。
+   * 判据只有这一份：`update()` 的清理闸、`rankedCandidates()` 的入队闸、`AISystem` 补第一笔仇恨
+   * 都读它，三处不会各说各话。
+   */
+  isEngaged(enemyId: string): boolean {
+    const member = this.members.get(enemyId)
+    return !!member && this.engagedMember(member)
+  }
+
+  private engagedMember(member: SquadMember): boolean {
+    return member.enemy.alive && ENGAGED_STATES.has(member.enemy.state)
   }
 
   /** 增加仇恨（受伤害、被挑衅、发现目标等） */
