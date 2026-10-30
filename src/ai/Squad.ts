@@ -41,6 +41,10 @@ export interface SquadMember {
   combatSince: number
   /** KI-370：等待队列里的排位（0 = 没在等；1 = 下一个轮到） */
   waitRank: number
+  /** KI-380：连着占了多少拍槽——冷队列里按它排「谁该让位」（占得最久的先让） */
+  coldTenure: number
+  /** KI-380：让位之后的冷却到哪一拍——换完人先歇够一条仇恨的寿命，免得每拍来回换 */
+  coldRestUntil: number
 }
 
 /** CallAlly 广播载荷 */
@@ -114,6 +118,8 @@ export class Squad {
       hasAttackSlot: false,
       waitRank: 0,
       combatSince: 0,
+      coldTenure: 0,
+      coldRestUntil: 0,
     }
     this.members.set(enemy.id, member)
 
@@ -156,7 +162,7 @@ export class Squad {
       }
     }
 
-    // 2. 重新分配攻击槽位（权重：仇恨高优先、进入早优先）
+    // 2. 重新分配攻击槽位（KI-370／KI-380：冷队列按任期轮转，见 reallocateSlots）
     this.reallocateSlots()
 
     // 3. 同步到 Enemy（只读投影）
@@ -189,6 +195,10 @@ export class Squad {
     }
     ranked.sort((a, b) => {
       if (Math.abs(a.top - b.top) > 0.01) return b.top - a.top
+      // KI-380：冷队列（仇恨数值都是 0）按任期排——占得少的在前，让位那位排到最后
+      if (a.top <= 0.01 && b.top <= 0.01 && a.member.coldTenure !== b.member.coldTenure) {
+        return a.member.coldTenure - b.member.coldTenure
+      }
       return a.member.combatSince - b.member.combatSince
     })
     return ranked
@@ -201,19 +211,61 @@ export class Squad {
    * 也清了，`tests/flow/elite.test.ts` 那条「读条被硬直抹掉」当场红——它量出的是
    * 「掉到阈值之下的人原先还留着槽位」这一条 KI-133 的既有行为。那一格不是本批的账，
    * 所以这里只清排位（掉出队列的人不留名次），谁在出手的语义一个字不动。
+   *
+   * **KI-380：挥到一半的人不摘槽**。轮转把槽位交出去时，原先那位可能正处在招式的中段——
+   * 立刻摘槽会让「正在出手」与「占着槽」对不上（实测第 1049 拍 `en_3` 在挥、槽已归 `en_4`）。
+   * 所以已在出手的人先保住这一格，等这一式走完再让位；空出来的名额才按排位补。
    */
   private reallocateSlots(): void {
     for (const m of this.members.values()) m.waitRank = 0
-    const ranked = this.rankedCandidates()
+    const candidates = this.rankedCandidates()
+    const ranked = candidates
     this.rankedThisTick = ranked
     const slots = this.config.maxAttackSlots
-    for (const m of ranked) m.member.hasAttackSlot = false
-    for (let i = 0; i < Math.min(slots, ranked.length); i++) {
-      ranked[i].member.hasAttackSlot = true
+    const inRanked = new Set(candidates.map((r) => r.member))
+    const keep = new Set<SquadMember>()
+    for (const m of this.members.values()) {
+      if (!m.hasAttackSlot) continue
+      if (!m.enemy.attack || !inRanked.has(m)) continue
+      if (keep.size < slots) keep.add(m)
     }
-    for (let i = slots; i < ranked.length; i++) {
-      ranked[i].member.waitRank = i - slots + 1
+    const wasHolding: SquadMember[] = []
+    for (const r of candidates) {
+      if (r.member.hasAttackSlot) wasHolding.push(r.member)
+      r.member.hasAttackSlot = keep.has(r.member)
     }
+    let granted = keep.size
+    for (const r of ranked) {
+      if (granted >= slots) break
+      if (r.member.hasAttackSlot) continue
+      if (this.tick < r.member.coldRestUntil) continue
+      r.member.hasAttackSlot = true
+      granted++
+    }
+    // 让位 ⇒ 先歇一条仇恨的寿命再回队列（不歇的话，排位每拍都把它推回来，两人每拍来回换）。
+    // 这一笔要等分槽走完再记：同一拍里被清掉又立刻拿回的人不算「让位」。
+    for (const m of wasHolding) {
+      if (m.hasAttackSlot) continue
+      if ((m.threats[0]?.threat ?? 0) > 0.01) continue
+      m.coldRestUntil = this.tick + this.turnTicks()
+    }
+    let rank = 0
+    for (const r of ranked) {
+      if (r.member.hasAttackSlot) continue
+      r.member.waitRank = ++rank
+    }
+    for (const m of this.members.values()) m.coldTenure = m.hasAttackSlot ? m.coldTenure + 1 : 0
+  }
+
+  /**
+   * KI-380：一格的任期 = 一笔仇恨的寿命（`combatEntryThreshold ÷ threatDecayPerTick`，
+   * 默认 11 ÷ 0.02 = 550 拍）。冷队列里按任期轮转：`rankedCandidates` 把仇恨全为 0 的人
+   * 按「占得少的在前」排，于是让位那位排到最后、刚歇完的那位排到最前。数字从配置推出来，
+   * 不新造手感常数。
+   */
+  private turnTicks(): number {
+    const decay = this.config.threatDecayPerTick
+    return decay > 0 ? Math.max(1, Math.ceil(this.config.combatEntryThreshold / decay)) : 1
   }
 
   /**
