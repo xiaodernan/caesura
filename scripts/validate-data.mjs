@@ -104,6 +104,19 @@ if (rootArg && !existsSync(JSON_DIR)) {
   process.exit(2)
 }
 const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json', 'shop.json', 'states.json', 'ambience.json', 'explore.json', 'battle.json', 'ducking.json', 'weather.json', 'cinematics.json', 'lighting.json', 'vfx.json']
+/**
+ * KI-365②：注入的数据根要先**像数据根**。「名册里的表读不到」这一格有两种完全不同的病：真表里确实少了一张
+ * （那是判决，必须报出来），以及喂进来的那格根本不是数据根——拼错了、指到上一级了、给了个空目录。
+ * 实测（`.scratch/ki365_probe.log`）：给一个存在但空的目录，今天落成的是一堆「表读不到」的 ERROR
+ * （rc=1 加一片 ENOENT），读起来像「这份表很脏」而不是「你给的根不对」——而这两件事对同一个读者长得很像。
+ * 所以注入路上先按**同一张 `FILES`**（不另抄一份名册）查存在性，缺哪几张就点名哪几张并 exit 2。
+ * 默认路**不查**：真表少一张是真缺陷，本来就该由判决那一片 ERROR 报出来，在这里 exit 2 反而会把缺陷咽成一句拒绝。
+ */
+const missingRoster = rootArg ? FILES.filter((f) => !existsSync(resolve(JSON_DIR, f))) : []
+if (missingRoster.length > 0) {
+  console.error(`${DATA_ROOT_FLAG} 指向的目录不像数据根：${JSON_DIR}｜名册里读不到 ${missingRoster.length}/${FILES.length} 张：${missingRoster.join(', ')}（缺表不该落成一片「表读不到」——那读起来像表脏，不像根错）`)
+  process.exit(2)
+}
 // Phase 6-B：对话风格枚举与任务标注（narrative.md §3.2 / §28 图例）
 const CHOICE_STYLES = new Set(['blunt', 'poetic', 'silent', 'provoke'])
 const QUEST_TAGS = new Set(['D', 'C', 'H', 'M'])

@@ -21,11 +21,17 @@
  * 实测（2026-10-30，`.scratch/ki364_plant_probe.mjs`）：植入位 `rg_whisperwode/en_murkshell`、
  * 供体 `flag.schism_complicit`；幻影旗 ⇒ rc=1／1 条 ERROR 点名 `flag.plant_cond_no_writer`，
  * 供体 ⇒ rc=0／判决行与默认路逐字相同。
+ *
+ * KI-365 把 §5.9.144 末尾那三格还欠的一次还清：⑩ 相对数据根（那一趟以前**没有腿**，所以「删掉 `resolve()`」
+ * 是一把等价刀，A9 实测 0 红）；⑪ 存在但空的目录——批前实测是 rc=1 加一片「表读不到」（`.scratch/ki365_probe.log`
+ * 的 P1：`49 ERROR / 0 WARN`），批后是 rc=2 并点名整张名册；⑫ 只缺两张时点名要恰好那两张（判据走整张 `FILES`，
+ * 不是只看头一张）；⑬ 三格拒绝两两分得开（批前 ⑦ 只钉「拒绝发生了」，两格拒绝在「exit 2 ＋ stderr 里有那格路径」
+ * 这一读数上不可区分）。四格的点名判据都从校验器自己的 `FILES` 现推。
  */
 import { spawnSync } from 'node:child_process'
-import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { isAbsolute, join, relative, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { afterAll, describe, expect, it } from 'vitest'
 import { arrayLiterals } from '../../scripts/schema-vocab.mjs'
@@ -56,8 +62,8 @@ afterAll(() => rmSync(PLANE, { recursive: true, force: true }))
 type Verdict = { err: number; warn: number; line: string }
 type Run = { status: number | null; stdout: string; stderr: string; out: string; verdict: Verdict }
 
-const spawn = (args: string[]) => {
-  const r = spawnSync(process.execPath, [VALIDATOR, ...args], { cwd: root, encoding: 'utf8' })
+const spawn = (args: string[], cwd: string = root) => {
+  const r = spawnSync(process.execPath, [VALIDATOR, ...args], { cwd, encoding: 'utf8' })
   expect(r.error, `spawn 校验器没跑起来 = 这一趟没有任何读数（${(r.error as Error | undefined)?.message ?? ''}）`).toBeUndefined()
   return r
 }
@@ -72,16 +78,32 @@ const verdictOf = (out: string): Verdict => {
  * 跑校验器并**要求它有判决行**（评表的那些趟）。
  * 跑不起来不算读数：`spawnSync` 失败时 `status` 是 null，拿那样一趟去断"0 ERROR"就是一条假绿。
  */
-const runValidator = (args: string[]): Run => {
-  const r = spawn(args)
+const runValidator = (args: string[], cwd?: string): Run => {
+  const r = spawn(args, cwd)
   const out = `${r.stdout ?? ''}${r.stderr ?? ''}`
   return { status: r.status, stdout: r.stdout ?? '', stderr: r.stderr ?? '', out, verdict: verdictOf(out) }
 }
 
-/** 拒绝的那些趟（⑦⑧）**以没有判决行为判据**，所以它们走这一份不解析判决的壳。 */
-const runRefusal = (args: string[]) => {
-  const r = spawn(args)
+/** 拒绝的那些趟（⑦⑧⑪⑫⑬）**以没有判决行为判据**，所以它们走这一份不解析判决的壳。 */
+const runRefusal = (args: string[], cwd?: string) => {
+  const r = spawn(args, cwd)
   return { status: r.status, stdout: r.stdout ?? '', stderr: r.stderr ?? '', out: `${r.stdout ?? ''}${r.stderr ?? ''}` }
+}
+
+/** 校验器自己声明的那张工作清单（⑫⑪⑬ 的点名判据都从它派生，手抄一张表名等于把腿钉在我此刻读到的字上）。 */
+const rosterOf = (): string[] => {
+  const r = arrayLiterals(readFileSync(VALIDATOR, 'utf8'), 'FILES')
+  expect(r, '读不到 `const FILES = [...]` = 这几条腿在对着空集自证').not.toBeNull()
+  expect(r!.length, `名册只有 ${r!.length} 张 = 读空了`).toBeGreaterThanOrEqual(20)
+  return r!
+}
+
+/** 拒绝话里「名册里读不到 N/M 张：a, b」那一段，取回来成数组（不靠子串运气：名字被别的名字包含时 `includes` 会认错）。 */
+const namedMissing = (stderr: string): { counts: string; names: string[] } => {
+  const c = /名册里读不到 (\d+)\/(\d+) 张：/.exec(stderr)
+  expect(c, `拒绝话里没有「名册里读不到 N/M 张：」这一段，无法核对点了哪些名：\n${stderr.slice(0, 500)}`).not.toBeNull()
+  const list = /张：([^（]*)/.exec(stderr)![1]
+  return { counts: `${c![1]}/${c![2]}`, names: list.split(', ').map((s) => s.trim()).filter(Boolean) }
 }
 
 let defaultRun: Run | null = null
@@ -96,7 +118,13 @@ const plantInto = (table: string, mutate: (json: any[]) => string): Run & { site
   const json = JSON.parse(readFileSync(join(JSON_DIR, table), 'utf8')) as any[]
   const site = mutate(json)
   writeFileSync(join(PLANE, table), JSON.stringify(json, null, 2), 'utf8')
-  return { ...runValidator([`--data-root=${PLANE}`]), site }
+  try {
+    return { ...runValidator([`--data-root=${PLANE}`]), site }
+  } finally {
+    // 植完当场把那张表交回原件。不留手的话，平面带着这一株种子活到后面的腿：⑩ 第一次跑就撞上了
+    // ⑥ 种进 weapons.json 的非法原型，"注入一份干净副本"这件事在这个文件里只剩第一趟成立。
+    cpSync(join(JSON_DIR, table), join(PLANE, table))
+  }
 }
 
 /** 表里第一格"没有条件"的刷怪组 ⇒ 植入位（往一格本来就没有条件的空位种旗，牵连的判据最少）。 */
@@ -204,12 +232,16 @@ describe('校验器的数据根：注入吃得下、默认路一个字节都不�
     expect(charged[0], 'ERROR 行要点名那个非法的原型拼写').toContain(BOGUS_ARCHETYPE)
   })
 
-  it('⑦数据根拼错 ⇒ exit 2 并点名路径，而且不许打印判决行', () => {
+  it('⑦数据根拼错 ⇒ exit 2 并点名路径，而且不许打印判决行（拒绝的话要说出是**哪道闸门**拒的）', () => {
     const bogus = join(PLANE, 'no-such-table-dir')
     expect(existsSync(bogus), '这条腿要的是一格不存在的目录').toBe(false)
     const r = runRefusal([`--data-root=${bogus}`])
     expect(r.status, '指向不存在的目录却以 0 退出 = 拼错的路径被当成"表很干净"').toBe(2)
     expect(r.stderr, '要把那格不存在的路径原样印出来').toContain(bogus)
+    // KI-365③：只钉「拒绝发生了」不够——§5.9.144 记过，两格拒绝在「exit 2 ＋ stderr 里有那格路径」
+    // 这一读数上不可区分。所以这里钉「目录不存在」这一句自己的拼法。
+    expect(r.stderr, '要说清是「那格不存在」而不是别的原因').toContain('目录不存在')
+    expect(r.stderr, '那格压根没读到过 ⇒ 不许把它报成「不像数据根」').not.toContain('不像数据根')
     expect(r.out.includes('总计：'), '拒绝的那一趟不该产出一份判决').toBe(false)
   })
 
@@ -250,7 +282,7 @@ try {
 }
 real.log('RESULT:' + JSON.stringify({ code, threw, header: lines[0] ?? null, injected: lines.filter((l) => l.startsWith(${JSON.stringify(
       INJECT_MARK,
-    )})), judgment: lines.find((l) => l.startsWith(${JSON.stringify('总计：')})) ?? null, refused: lines.concat(errs).filter((l) => /未知参数|指向的目录不存在/.test(l)) }))
+    )})), judgment: lines.find((l) => l.startsWith(${JSON.stringify('总计：')})) ?? null, refused: lines.concat(errs).filter((l) => /未知参数|指向的目录不存在|不像数据根/.test(l)) }))
 `, 'utf8')
     const inproc = spawnSync(process.execPath, [WRAPPER], {
       cwd: root,
@@ -273,5 +305,81 @@ real.log('RESULT:' + JSON.stringify({ code, threw, header: lines[0] ?? null, inj
     // "参数压根没传进去"白过。
     const cli = runRefusal([`--data-root=${bogus}`, '--nope'])
     expect(cli.status, '同样的参数当命令行跑却不拒绝 ⇒ 这条腿的对照塌了（⑨ 的绿不再说明任何事）').toBe(2)
+  })
+
+  it('⑩从别的 cwd 喂一个**相对**数据根：读数字字相同，而披露行落在绝对拼法上（§5.9.144 还欠①／A9 那把等价刀的靶）', () => {
+    const d = defaultPath()
+    const cwdDir = join(PLANE, 'elsewhere-cwd')
+    mkdirSync(cwdDir, { recursive: true })
+    const rel = relative(cwdDir, PLANE)
+    expect(isAbsolute(rel), `这条腿要的是一串**非绝对**的拼法，量出来却是绝对的：${rel}`).toBe(false)
+    const r = runValidator([`--data-root=${rel}`], cwdDir)
+    expect(r.status, `相对数据根没被吃下（rc=${r.status}）：\n${r.out.slice(0, 500)}`).toBe(0)
+    expect(r.verdict.line, '同一份陈设、两种拼法 ⇒ 判决行不该差一个字').toBe(d.verdict.line)
+    // 关键的一格：旗值写的是相对拼法，披露行必须报出 resolve 之后的绝对目录。少了这一句，
+    // 「不改 resolve 也照样能读到表」就永远没人发现（表本身按 cwd 解析，两种拼法落点相同）。
+    const injectLines = lines(r.out).filter((l) => l.startsWith(INJECT_MARK))
+    expect(injectLines, '注入路必须自己承认换了数据根').toHaveLength(1)
+    expect(injectLines[0], `披露行要印绝对落点（旗值是 '${rel}'）`).toContain(PLANE)
+    const abs = runValidator([`--data-root=${PLANE}`])
+    expect(lines(r.out), '相对旗值那一趟的整份输出要与绝对旗值那一趟逐行相同 ⇒ 换的只是拼法，不是读数').toEqual(lines(abs.out))
+  })
+
+  it('⑪注入一格存在但是空的目录 ⇒ 拒的是「不像数据根」并点名全部名册，而不是落成一片「表读不到」（§5.9.144 还欠②）', () => {
+    const roster = rosterOf()
+    const emptyDir = join(PLANE, 'empty-root')
+    mkdirSync(emptyDir, { recursive: true })
+    expect(readdirSync(emptyDir), '这条腿要的是一格**空**目录').toEqual([])
+    const r = runRefusal([`--data-root=${emptyDir}`])
+    expect(r.status, `空目录被当成一份干净的表 ⇒ 这一趟的读数像在说"没什么毛病"（实际一张也没读到）：\n${r.out.slice(0, 500)}`).toBe(2)
+    expect(r.stderr, '要说清是「这一格不像数据根」').toContain('不像数据根')
+    expect(r.stderr, '那格存在 ⇒ 不许报成「目录不存在」').not.toContain('目录不存在')
+    const { counts, names } = namedMissing(r.stderr)
+    expect(counts, '缺的张数与总张数都要报出来，读者才知道差的是整张名册').toBe(`${roster.length}/${roster.length}`)
+    expect([...names].sort(), '点名必须覆盖整张 FILES 名册（一张不漏）').toEqual([...roster].sort())
+    expect(r.out.includes('总计：'), '拒绝的那一趟不该产出一份判决').toBe(false)
+    // 被这一格取代的旧读数（§5.9.144 的探针表记着）：以前这一趟报一片「JSON 读取/解析失败」，
+    // 读起来像「表很脏」而不是「根给错了」。今天一条都不许再出现。
+    expect(
+      lines(r.out).filter((l) => l.includes('读取/解析失败')),
+      '缺表不该落成一片「表读不到」——那是要报缺陷的路，不是给错根的路',
+    ).toEqual([])
+  })
+
+  it('⑫名册里只缺两张 ⇒ 拒的话恰好点那两张的名，其余一张不牵连（判据走整张名册，不是只看头一张）', () => {
+    const roster = rosterOf()
+    const dropped = [roster[0], roster[roster.length - 1]]
+    expect(new Set(dropped).size, `名册首尾是同一张（${dropped[0]}）⇒ 这一腿只剩一张，测不出「整张名册」`).toBe(2)
+    const partial = join(PLANE, 'partial-root')
+    mkdirSync(partial, { recursive: true })
+    for (const f of roster) if (!dropped.includes(f)) cpSync(join(JSON_DIR, f), join(partial, f))
+    expect(readdirSync(partial).length, '构造缺两份的根').toBe(roster.length - dropped.length)
+    const r = runRefusal([`--data-root=${partial}`])
+    expect(r.status, `缺了 ${dropped.join('／')} 却照常产出判决 ⇒ 注入的根没被检查：\n${r.out.slice(0, 500)}`).toBe(2)
+    const { counts, names } = namedMissing(r.stderr)
+    expect(counts, '缺两张 ⇒ 报的也该是两张/整张名册').toBe(`${dropped.length}/${roster.length}`)
+    expect([...names].sort(), '点名要恰是那两张，多一张少一张都算没归因').toEqual([...dropped].sort())
+    expect(r.out.includes('总计：'), '拒绝的那一趟不该有判决').toBe(false)
+  })
+
+  it('⑬三格拒绝互相分得开：每一格只说自己那一句 ⇒ 读者不必翻源码就知道是谁拒的（§5.9.144 还欠③）', () => {
+    const emptyDir = join(PLANE, 'attribution-empty')
+    mkdirSync(emptyDir, { recursive: true })
+    const missingDir = join(PLANE, 'attribution-missing')
+    expect(existsSync(missingDir), '这一格要的是一串不存在的路径').toBe(false)
+    const runs = [
+      { label: '那格不存在', mark: '目录不存在', r: runRefusal([`--data-root=${missingDir}`]) },
+      { label: '像不出数据根', mark: '不像数据根', r: runRefusal([`--data-root=${emptyDir}`]) },
+      { label: '旗名认不出', mark: '未知参数', r: runRefusal(['--nope']) },
+    ]
+    expect(new Set(runs.map((x) => x.mark)).size, '三格拒绝的话术必须各不相同，否则「哪道闸门拒的」还是读不出来').toBe(3)
+    for (const { label, mark, r } of runs) {
+      expect(r.status, `${label} 这一格没以 2 退出：\n${r.out.slice(0, 300)}`).toBe(2)
+      expect(r.stderr, `${label} 的拒绝话里要点名自己那一句`).toContain(mark)
+      for (const other of runs.map((x) => x.mark).filter((m) => m !== mark)) {
+        expect(r.stderr, `${label} 的话里不该出现别家那一句「${other}」= 两格拒绝又不可区分了`).not.toContain(other)
+      }
+      expect(r.out.includes('总计：'), `${label} 那一趟不该有判决`).toBe(false)
+    }
   })
 })
