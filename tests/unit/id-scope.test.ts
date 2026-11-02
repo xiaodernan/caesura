@@ -7,16 +7,18 @@ import {
   carrierFindings,
   citedIds,
   deliverySurface,
+  exemptProofFindings,
   holeArea,
   holeFindings,
   ledgerSelfFindings,
+  openExemptCarriers,
   populationFindings,
   populationSourceFindings,
   populationSites,
   scopeFindings,
   trackedFiles,
 } from '../../scripts/id-scope-rules.mjs'
-import { REGISTER_FILE, SELF_EXEMPT, ledgerRows } from '../../scripts/id-rules.mjs'
+import { EVIDENCE_SOURCES, REGISTER_FILE, SELF_EXEMPT, ledgerRows } from '../../scripts/id-rules.mjs'
 import { walkTextCorpus } from '../../scripts/text-corpus.mjs'
 
 /**
@@ -34,7 +36,7 @@ import { walkTextCorpus } from '../../scripts/text-corpus.mjs'
  * **为什么值得单独立行**：一条规则的可信度取决于它的**总体**。判据写着「每一处」，而走查漏了一类后缀，
  * 那句「每一处」就是空话——而**空话不会红**（没看过的引用不会变成红，绿是白送的）。
  *
- * **这一格判五件事**（每件都能被合成夹具喂）：
+ * **这一格判六件事**（每件都能被合成夹具喂）：
  *   ① **不许有两份总体**：门实际读到的文件集必须**逐份等于**交付总体（两个方向的差集都空）。
  *   ② **洞不许悄悄长大**：已入库却落在交付总体之外的文件按面积归堆；每一堆都必须有名字、有理由
  *      （今天只有 `.scratch`（证据区）与根点文件两堆）；登记过期也红。
@@ -43,6 +45,8 @@ import { walkTextCorpus } from '../../scripts/text-corpus.mjs'
  *      （名册过期也红），而登记过的号**不许在账本以外被人当现行号引用**。
  *   ⑤ **总体只有一个出处**：喂给按号判据的文件集只有两种合法来源——交付总体（真库那一腿）
  *      与当场拼出来的合成夹具；自己抄的一份清单 ⇒ 红。
+ *   ⑥ **豁免的证据要能被读者现在打开**（KI-385）：名册每一格点一个载体（正册的哪一行／哪一笔提交），
+ *      这一趟真的去开、开出来里面真的有那个号；开不到、没去开、里面没这个号都红。
  *
  * **这一格住在哪里**：判据住在 `scripts/id-scope-rules.mjs`（与 `*-rules.mjs` 那一族同一个理由——
  * 判据要能被合成夹具喂，喂一份假的总体／走查面／已入库名册，看它拒不拒）；真库那一腿才量得到
@@ -177,6 +181,106 @@ describe('按号这一族读的是哪片总体（KI-329）：判据的合成夹�
     })
   })
 
+  describe('判据⑥：豁免的证据必须是一个读者现在就能打开的载体（KI-385）', () => {
+    const exemptToken = ghost('900')
+    const carrierId = ghost('901')
+    const carrierKey = `ledgerRow:${carrierId}`
+    /** 一格名册（可换掉载体那一格），默认指向正册里另一行 —— 那个载体开得动、里面写着这个号 */
+    const entry = (over: { evidence?: { from?: string; ref?: string } } = {}) => ({
+      token: exemptToken,
+      why: LONG_WHY,
+      evidence: { from: 'ledgerRow', ref: carrierId },
+      ...over,
+    })
+    /** 现开出来的载体集合（null ＝ 打不开） */
+    const carriersOf = (text: string | null): Record<string, string | null> => ({ [carrierKey]: text })
+    const okText = `| ${carrierId} | 那一行写着 ${exemptToken} 是头一稿的旧号，落地时整族挪了号 | P3 | Implemented |`
+
+    it('载体开得到、里面真的写着那个号 ⇒ 绿', () => {
+      expect(exemptProofFindings({ exempt: [entry()], carriers: carriersOf(okText) })).toEqual([])
+    })
+
+    it('只有一句散文理由、没有载体 ⇒ 红（这道门在信「作者写下时试过」，读者复查不出来）', () => {
+      const findings = exemptProofFindings({ exempt: [{ token: exemptToken, why: LONG_WHY }], carriers: {} })
+      expect(findings.length).toBe(1)
+      expect(findings[0].msg).toContain('evidence')
+    })
+
+    it('载体种类不在这台门认识的两种里 ⇒ 红（没人知道该去哪儿开它，这一格等于没登记）', () => {
+      const findings = exemptProofFindings({ exempt: [entry({ evidence: { from: 'wiki', ref: '某页' } })], carriers: {} })
+      expect(findings.length).toBe(1)
+      expect(findings[0].msg).toContain('没人知道')
+    })
+
+    it('载体没有名字 ⇒ 红（空载体开不出东西）', () => {
+      // **单独见证那一条**：`ref` 空时载体键是 `ledgerRow:`——把那个键喂进去（并且里面就写着这个号），
+      // 于是「没人去开」「打不开」「里面没这个号」三条都判得上，只剩「没写哪一个」这一条能红。
+      const findings = exemptProofFindings({
+        exempt: [entry({ evidence: { from: 'ledgerRow', ref: '' } })],
+        carriers: { 'ledgerRow:': okText },
+      })
+      expect(findings.map((f) => f.msg).join('\n')).toContain('没写哪一个')
+    })
+
+    it('拿被豁免的那个号自己作证 ⇒ 红（那句「证据」就是被怀疑的那句话本身，循环）', () => {
+      // 同上：那一行开得动、里面也写着这个号 ⇒ 只有「自己作证」这一条能红。
+      const findings = exemptProofFindings({
+        exempt: [entry({ evidence: { from: 'ledgerRow', ref: exemptToken } })],
+        carriers: { [`ledgerRow:${exemptToken}`]: `| ${exemptToken} | 这一行写的就是这个号自己 | P3 | Implemented |` },
+      })
+      expect(findings.map((f) => f.msg).join('\n')).toContain('自己给自己作证')
+    })
+
+    it('这一趟没人去开那个载体 ⇒ 红（判据没跑，绿是白送的）', () => {
+      const findings = exemptProofFindings({ exempt: [entry()], carriers: {} })
+      expect(findings.map((f) => f.msg).join('\n')).toContain('没人去开')
+    })
+
+    it('载体打不开 ⇒ 红（正册没有那一行／git 读不到那一笔，登记挂在一份已经不存在的证据上）', () => {
+      const findings = exemptProofFindings({ exempt: [entry()], carriers: carriersOf(null) })
+      expect(findings.map((f) => f.msg).join('\n')).toContain('打不开')
+    })
+
+    it('载体开得动而里面没有那个号 ⇒ 红（它在说别的事，不是这笔豁免的来历）', () => {
+      const findings = exemptProofFindings({
+        exempt: [entry()],
+        carriers: carriersOf(`| ${ghost('902')} | 这一行写的是另一件事，跟这个号无关 | P3 | Implemented |`),
+      })
+      expect(findings.map((f) => f.msg).join('\n')).toContain('没有这个号')
+    })
+
+    it('一格只报第一条读数（结构坏了就不再判读数，免得一病变四条噪声）', () => {
+      const findings = exemptProofFindings({ exempt: [entry({ evidence: { from: 'wiki', ref: '某页' } })], carriers: {} })
+      expect(findings.length, '载体种类不认识时不该再报「没人去开」——那是同一个病的第二条').toBe(1)
+    })
+
+    it('读者：只开机器认识的种类、同名载体只开一次、形状坏的那格留给判据去红', () => {
+      const opened = openExemptCarriers({
+        exempt: [
+          entry(),
+          entry(),
+          { token: ghost('903'), evidence: { from: 'carrier', ref: 'x' } },
+          { token: ghost('904'), evidence: { from: 'ledgerRow' } },
+          { token: ghost('905') },
+        ],
+        ledgerText: `前言一行\n${okText}\n尾行\n`,
+        root,
+      })
+      expect(Object.keys(opened)).toEqual([carrierKey])
+      expect(opened[carrierKey], '正册那一行的原文要开得出来').toContain(exemptToken)
+    })
+
+    it('读者走 git 那一支时不许抛：一枚编的 sha 开出来是 null（判据才有机会点名是谁的那一格）', () => {
+      const bogus = '0'.repeat(40)
+      const opened = openExemptCarriers({
+        exempt: [{ token: exemptToken, evidence: { from: 'gitCommit', ref: bogus } }],
+        ledgerText: '',
+        root,
+      })
+      expect(opened[`gitCommit:${bogus}`]).toBeNull()
+    })
+  })
+
   describe('判据⑤：喂给按号判据的文件集只有两个合法出处', () => {
     // **地板与分类分开判**：这一组腿只判「来源分类对不对」，「吃交付总体的门至少有几处」是另一格
     // （真库那一腿 + 「门少了」那一腿）。合成夹具是单份文件，天然凑不出默认的地板 3 ⇒
@@ -274,6 +378,8 @@ describe('按号这一族读的是哪片总体（KI-329）：真库腿', () => {
   const surfaceRels = surface.files.map((f) => f.rel)
   const trackedRels = tracked.files.map((f) => f.rel)
   const surfaceSet = new Set(surfaceRels)
+  /** 名册每一格的载体**现开**一遍（判据⑥ 的证据；开不到的那格由判据点名，不在这里抛） */
+  const carriers = openExemptCarriers({ exempt: SELF_EXEMPT, ledgerText, root })
 
   it('交付总体非退化：四棵树 ＋ 根的具名散文件都在，没有哪一片塌掉', () => {
     expect(surface.files.length, `交付总体只读到 ${surface.files.length} 份文件 = 扫描面塌了`).toBeGreaterThanOrEqual(500)
@@ -356,6 +462,31 @@ describe('按号这一族读的是哪片总体（KI-329）：真库腿', () => {
     expect(dangling, '账本自己引着这些号而正册里读不到行，而豁免名册没登记它们').toEqual(booked)
   })
 
+  it('判据⑥：名册每一格的载体这一趟都现开得到，而开出来的里面真的写着那个号', () => {
+    const findings = exemptProofFindings({ exempt: SELF_EXEMPT, carriers })
+    expect(findings.map((f) => `【${f.key}】${f.msg}`).join('\n')).toBe('')
+    const named = [...new Set(SELF_EXEMPT.map((e) => `${e.evidence.from}:${e.evidence.ref}`))].sort()
+    expect(Object.keys(carriers).sort(), '名册每一格点名的载体都要被开一遍：少一格＝那一格的证据从没被读过（登记就退化成一句散文）').toEqual(named)
+  })
+
+  it('判据⑥的反向对照：把任何一格的载体换成一枚编的号 ⇒ 一定红在那一格（正册与 git 两次现读都不是空转）', () => {
+    for (const one of SELF_EXEMPT) {
+      const bogus = 'f'.repeat(40)
+      const mutated = SELF_EXEMPT.map((e) => (e === one ? { ...e, evidence: { from: e.evidence.from, ref: bogus } } : e))
+      const findings = exemptProofFindings({
+        exempt: mutated,
+        carriers: openExemptCarriers({ exempt: mutated, ledgerText, root }),
+      })
+      expect(findings.map((f) => f.key).join(' '), `${one.token} 的载体换成编的号之后，必须红在这一格、且只红在这一格`).toBe(`豁免自证 · ${one.token}`)
+    }
+  })
+
+  it('判据⑥的两种载体都有格在用（只有一种 ⇒ 另一条分支从没被读者走过，那份声明是死代码）', () => {
+    const used = [...new Set(SELF_EXEMPT.map((e) => e.evidence.from))].sort()
+    expect(used, '名册今天用到的载体种类').toEqual(['gitCommit', 'ledgerRow'])
+    expect([...EVIDENCE_SOURCES].sort(), '机器认识的种类与真的有人在用的种类分家了').toEqual(used)
+  })
+
   it('判据⑤：按号判据吃的文件集只有两个合法出处，且三个入口一个都不少', () => {
     const findings = populationSourceFindings({ files: surface.files })
     expect(findings.map((f) => `【${f.key}】${f.msg}`).join('\n')).toBe('')
@@ -374,7 +505,7 @@ describe('按号这一族读的是哪片总体（KI-329）：真库腿', () => {
     )
   })
 
-  it('四条判据合流：今天的仓库上零读数', () => {
+  it('五道判据合流：今天的仓库上零读数', () => {
     const findings = scopeFindings({
       scanned: surfaceRels,
       surface: surfaceRels,
@@ -385,6 +516,7 @@ describe('按号这一族读的是哪片总体（KI-329）：真库腿', () => {
       exempt: SELF_EXEMPT,
       ledgerRel: LEDGER_REL,
       registerRel: REGISTER_REL,
+      carriers,
     })
     expect(findings.map((f) => `【${f.key}】${f.msg}`).join('\n')).toBe('')
   })
