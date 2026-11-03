@@ -9,6 +9,7 @@ import type { WorldStates } from '@/quest/WorldStates'
 import type { Interactables } from '@/world/Interactables'
 import type { GameplaySettings } from '@/settings/GameplaySettings'
 import type { Bindings } from '@/core/Input'
+import type { BindingProfile } from '@/settings/Bindings'
 import { migrateTo, registerMigration } from './Migration'
 import { MAGIC, crc32 } from './Integrity'
 import { unwrap, wrap } from './Integrity'
@@ -237,8 +238,12 @@ export interface Snapshot {
    * 设置（v12 音频 / v13 玩法 / v14 键位，KI-026 + KI-112 + KI-336）。`gameplay` 的形状在
    * `settings/GameplaySettings.ts` 里声明并在读档路径夹取；`bindings` 同理由
    * `settings/Bindings.ts > clampBindings` 把门。老档没这格 ⇒ undefined ⇒ 恢复侧什么都不动。
+   * `bindingsProfiles`（KI-362，v14 之内**加格不推版本**）是那三盒配置文件的快照，逐格由
+   * `clampProfiles` 把门；**一盒都没存 ⇒ 这一格不写**，而不是写一个 `[null,null,null]`——
+   * 同一句话有两种写法就是两个主人（§78「留空是如实」）。它与 `bindings` 各归各：这一格是
+   * 「玩家留了几套」，那一格是「玩家此刻在用哪一张」，混成一格就变成"存个文件顺手换了键"。
    */
-  settings?: { audio: Record<string, number>; gameplay?: GameplaySettings; bindings?: Bindings }
+  settings?: { audio: Record<string, number>; gameplay?: GameplaySettings; bindings?: Bindings; bindingsProfiles?: BindingProfile[] }
   /** 成长/背包/装备/掉落状态（v2 起）。v1 老档为 null ⇒ 保留运行时基线 */
   rpg: RpgSnapshot | null
   /** 叙事进度（v7 起）：任务状态 / NPC 关系 / 对话已读节点。老档为 null ⇒ 一切从头 */
@@ -439,7 +444,17 @@ export interface SaveWorld {
    * KI-336：键位表的消费端（可选，结构式声明），与 `gameplay` 同一位子——`get` 供 capture 抄进档，
    * `apply` 供读档灌回 `Input`。raw 进 apply 前同样不被信任：校验在 `BindingsStore.restore` 里做。
    */
-  bindings?: { get(): Bindings; apply(raw: unknown): void }
+  bindings?: {
+    get(): Bindings
+    apply(raw: unknown): void
+    /**
+     * 配置文件那三盒（KI-362）：与上面那两把并列，但**问的是另一件事**——`get`/`apply` 走的是
+     * 「此刻在用的那一张」，这一格走的是「玩家留了几套」。分成两个把手而不是共用 `get`，
+     * 是因为两块在档里各有名字、各自把门；合成一块就变成读档时"顺手换键"那条路。
+     * `get()` 交回 `undefined` 说的是一盒都没存 ⇒ 档里那一格干脆不写。
+     */
+    profiles: { get(): BindingProfile[] | undefined; apply(raw: unknown): void }
+  }
   /** Phase 6-B：叙事进度（任务状态 / 关系 / 已读节点），同上可选 */
   quests?: Quests
   /** Phase 6-B：值域状态（`state.*`）。同样是世界状态的一部分：不存，读档就回到缺省那一格 */
@@ -490,7 +505,13 @@ export class SaveGame {
           const buses = ['master', 'music', 'sfx', 'ambience', 'ui']
           for (const b of buses) audio[b] = w.audio.getVolume(b)
         }
-        return { audio, gameplay: w.gameplay ? w.gameplay.get() : undefined, bindings: w.bindings ? w.bindings.get() : undefined }
+        return {
+          audio,
+          gameplay: w.gameplay ? w.gameplay.get() : undefined,
+          bindings: w.bindings ? w.bindings.get() : undefined,
+          // KI-362：那三盒跟着走，但**只在存过东西的时候**写（undefined 由 store 那一侧回答，不在这里再数一遍）
+          bindingsProfiles: w.bindings ? w.bindings.profiles.get() : undefined
+        }
       })(),
       rpg: w.rpg ? w.rpg.snapshot() : null,
       quest: w.quests ? w.quests.snapshot() : null,
@@ -583,6 +604,9 @@ export class SaveGame {
     w.gameplay?.apply(s.settings?.gameplay)
     // KI-336：键位表整张换回。同一句 §78：老档没记过绑定 ⇒ 不动，运行时保持当前那一张
     w.bindings?.apply(s.settings?.bindings)
+    // KI-362：那三盒磁带放回去，但**不换现表**——换表只有玩家按「载入」那一步（store 里唯一的灌注点在 `loadProfile`）。
+    // 老档没这块 ⇒ 不动：那份档没记过磁带，而玩家这一局存好的三盒不是它该清的东西。
+    w.bindings?.profiles.apply(s.settings?.bindingsProfiles)
     // floorY 不在这里算：调用方 teleport 之后由 world/Surface 给（保持「谁能算出脚下」只有一个答案）
   }
 }

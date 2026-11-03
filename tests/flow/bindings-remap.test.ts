@@ -15,7 +15,7 @@ import { Stakerite, type SavePanelDeps } from '@/ui/Stakerite'
 import type { SlotCard } from '@/save/Slots'
 import { MapStore, SAVE_VERSION, SaveGame, migrateV13toV14 } from '@/save/Serializer'
 import { wrap } from '@/save/Integrity'
-import { BindingsStore, clampBindings } from '@/settings/Bindings'
+import { BIND_BOUNDS, BindingsStore, PROFILE_SLOTS, clampBindings, clampProfiles, defaultBindings } from '@/settings/Bindings'
 import type { Vec3 } from '@/combat/EntityStats'
 
 /**
@@ -289,12 +289,18 @@ function makeWorld(store = new MapStore(), withBindings = true) {
   const bindings = new BindingsStore({ input })
   const world = {
     player, streaming, spawner, clock: rhythm, time, rpg, audio: makeFakeAudio(),
-    ...(withBindings ? { bindings: { get: () => bindings.get(), apply: (raw: unknown): void => bindings.restore(raw) } } : {})
+    ...(withBindings ? {
+      bindings: {
+        get: () => bindings.get(),
+        apply: (raw: unknown): void => bindings.restore(raw),
+        profiles: { get: () => bindings.getProfiles(), apply: (raw: unknown): void => bindings.applyProfiles(raw) }
+      }
+    } : {})
   }
   return { input, bindings, saves: new SaveGame(world, store) }
 }
 
-type Stored = { payload: { snapshot: { version: number; settings: { bindings?: Record<string, unknown> } } } }
+type Stored = { payload: { snapshot: { version: number; settings: { bindings?: Record<string, unknown>; bindingsProfiles?: unknown } } } }
 const readStored = async (store: MapStore, slot: string): Promise<Stored> =>
   JSON.parse((await store.get(slot))!) as Stored
 
@@ -431,5 +437,452 @@ describe('KI-336 restore 一份没改过键的档 ⇒ 运行时表逐字回默�
     for (const a of BINDABLE_ACTIONS) {
       expect(Object.values(input.binds.keyboard), `${a} 有键`).not.toHaveLength(0)
     }
+  })
+})
+
+/* ---------------------------------------------------- KI-362 配置文件跟档走 */
+
+/**
+ * KI-362：「3 套配置文件」第一次走得进档。这一组只问 unit 问不到的那三件事：
+ *  ① **两块各写各的**：`settings.bindings` 是玩家**此刻在用**的那一张，`settings.bindingsProfiles`
+ *     是那三盒快照。共用同一格就会变成"存一盘磁带顺手换了现表"，而读档那侧也分不开这两件事了。
+ *  ② **不写空块**（§78）：一盒都没存 ⇒ 档里那一格干脆不存在。写了 `[null,null,null]` 与没写
+ *     是同一个意思，两种写法就是两个主人——那正是 KI-336 那一批反复抓的形状。
+ *  ③ **磁带读进来不等于请回运行时**：读档只把三盒放回去，换现表只有玩家按「载入」那一步。
+ *     少这一刀，读一份旧档会静默改掉玩家这一局正在用的键。
+ *
+ * 界外与毒键那一半在 `bindings-data` 里量过了；这里量的是**过了那道边界之后仍然走得进档、走得回来**，
+ * 以及手改档里那三格进来了也仍然玩得下去（按得出动作，不是只躺在对象里）。
+ */
+describe('KI-362 配置文件跟档走：两块各写各的、空块不写、磁带不越权换现表', () => {
+  const settingsOf = async (store: MapStore, slot: string): Promise<Record<string, unknown>> =>
+    (await readStored(store, slot)).payload.snapshot.settings as unknown as Record<string, unknown>
+
+  it('一盒都没存 ⇒ 档里那一格不写；存了一盒 ⇒ 那一格真的是三格，而且第一格里有改过的那一把', async () => {
+    const store = new MapStore()
+    const w = makeWorld(store)
+    await w.saves.save('bindings')
+    expect('bindingsProfiles' in await settingsOf(store, 'bindings'), '没写过 ⇒ 不留下第二种"没写过"的写法').toBe(false)
+
+    w.bindings.rebind('dodge', 'KeyQ')
+    expect(w.bindings.storeProfile(0)).toBe('new')
+    await w.saves.save('bindings')
+    const cell = await settingsOf(store, 'bindings')
+    const tapes = cell.bindingsProfiles as (Record<string, unknown> | null)[]
+    expect(tapes, '交出去的是定长三格，不是"存了几格就写几格"').toHaveLength(PROFILE_SLOTS)
+    expect(clampProfiles(tapes), '过一遍信任边界逐字不动（幂等 ⇒ 存档往返不漂）').toEqual(tapes)
+    expect((tapes[0] as { gameplay: { keyboard: Record<string, string> } }).gameplay.keyboard.KeyQ).toBe('dodge')
+    expect(tapes[1], '没存的那两格是 null，不是一份假默认').toBeNull()
+    expect(tapes[2]).toBeNull()
+    expect((cell.bindings as { gameplay: { keyboard: Record<string, string> } }).gameplay.keyboard.KeyQ,
+      '现表那一格照常写自己那一份：两块各自有主人').toBe('dodge')
+  })
+
+  it('新世界 load ⇒ 三盒回来了而现表仍是 `settings.bindings` 那一张；按下「载入」才换，且换得动', async () => {
+    const store = new MapStore()
+    const w1 = makeWorld(store)
+    w1.bindings.storeProfile(0)                       // 第一盒：存的是**默认**那一张
+    w1.bindings.rebind('dodge', 'KeyQ')               // 然后才把闪避挪走 ⇒ 现表与磁带从此不同
+    await w1.saves.save('bindings')
+
+    const w2 = makeWorld(store)
+    await w2.saves.load('bindings')
+    expect(w2.input.binds.keyboard.KeyQ, '现表跟着档里那一格复原：读档不许把玩家的键洗成默认').toBe('dodge')
+    expect(w2.bindings.profileFlags(), '三盒的形状回来了，第一盒有东西').toEqual([true, false, false])
+    expect(w2.bindings.getProfiles()![0]!.gameplay.keyboard.KeyQ, '而磁带里那张仍是当时那一张：后来挪走的 Q 没追进盒子')
+      .toBe('lockOn')
+    expect(w2.bindings.getProfiles()![0]!.gameplay.keyboard.ControlLeft, '第一盒里闪避还在 Ctrl 上').toBe('dodge')
+    expect(w2.bindings.loadProfile(0), '玩家按下那一行的「载入」才是换表那一步').toBe(true)
+    expect(w2.input.binds.keyboard.KeyQ, '换完了：Q 回到它默认那一位（锁定）').toBe('lockOn')
+    key('KeyQ'); w2.input.poll(TICK_DT)
+    expect(edges(w2.input), '按 Q 发的是锁，不是闪避：磁带真的请回了运行时').not.toContain('dodge')
+    key('ControlLeft'); w2.input.poll(TICK_DT)
+    expect(edges(w2.input), '而 Ctrl 又打得动闪避了').toContain('dodge')
+  })
+
+  it('往返不漂移：save→load→save 之后两块各自逐字相等（存几次都不漂）', async () => {
+    const store = new MapStore()
+    const w = makeWorld(store)
+    w.bindings.rebind('dodge', 'KeyQ')
+    w.bindings.storeProfile(0)
+    w.bindings.unbind('jump')
+    w.bindings.rebind('parry', 'Pad3')
+    w.bindings.storeProfile(2)
+    await w.saves.save('bindings')
+    const first = await settingsOf(store, 'bindings')
+    const w2 = makeWorld(store)
+    await w2.saves.load('bindings')
+    await w2.saves.save('bindings')
+    const second = await settingsOf(store, 'bindings')
+    expect(second.bindingsProfiles, '那三盒过一遍档与新世界 ⇒ 逐字相同').toEqual(first.bindingsProfiles)
+    expect(second.bindings, '现表那一格同一条判据').toEqual(first.bindings)
+    expect(w2.bindings.profileFlags(), '哪一盒存过也照原样回来').toEqual([true, false, true])
+  })
+
+  it('手改档里那三格带毒、多写两格 ⇒ 夹过再进格，三格定长，而载入之后按得出动作', async () => {
+    const store = new MapStore()
+    const w = makeWorld(store)
+    const hostile = wrap(14, {
+      snapshot: {
+        version: 14, playSec: 1, savedAt: null, regionId: null,
+        player: { x: 0, y: 0, z: 0, hp: 90, stamina: 80, overdrive: 0, weaponId: 'wp_tuning_sword', corruption: 0 },
+        flags: [], clearedSlots: [], usedInteractables: [], brokenProps: [],
+        settings: {
+          audio: {},
+          bindingsProfiles: JSON.parse('[{"gameplay":{"keyboard":{"__proto__":{"x":1},"<img>":"dodge","KeyQ":"fly","KeyE":"dodge"}}},{"ui":{"stickThreshold":9}},null,{"gameplay":{"keyboard":{"KeyR":"dodge"}}},{"ui":{"stickThreshold":0.1}}]')
+        },
+        rpg: null, quest: null, states: {}
+      }
+    })
+    await store.set('bindings', hostile)
+    await w.saves.load('bindings')
+    const tapes = w.bindings.getProfiles()!
+    expect(tapes, '多写的那两格不进来：定长三格只有一个主人').toHaveLength(PROFILE_SLOTS)
+    expect(tapes[2], '明写 null 那一格还是空的').toBeNull()
+    const kb = tapes[0]!.gameplay.keyboard
+    expect(Object.prototype.hasOwnProperty.call(kb, '__proto__'), '毒键没进磁带').toBe(false)
+    expect(kb['<img>'], '尖括号那把进不来').toBeUndefined()
+    expect(Object.values(kb), '名册外的 fly 落榜').not.toContain('fly' as ActionName)
+    expect(kb.KeyE, '合法那一格照整张语义进盒').toBe('dodge')
+    expect(tapes.filter((t) => t !== null), '三格之外没有第四盒：多写的那两格整条截掉').toHaveLength(2)
+    expect(tapes[0]!.ui.stickThreshold, '第一格没写 ui ⇒ 走整块默认：第二格那个越界数不渗进别的格').toBe(defaultBindings().ui.stickThreshold)
+    expect(tapes[1]!.ui.stickThreshold, '越界那个数在每一格里同样被夹住').toBe(BIND_BOUNDS.stickThreshold.max)
+    expect(tapes[1]!.ui.keyboard, '而夹过的那一格仍是**整张**：没写的块走默认，不是半张新表').toEqual(defaultBindings().ui.keyboard)
+    expect(w.input.binds.keyboard.KeyE, '读档这一拍磁带不越权：现表仍是默认那一张（E 还是交互）').toBe('interact')
+    expect(w.bindings.loadProfile(0), '而玩家按「载入」请得回那一盒').toBe(true)
+    key('KeyE'); w.input.poll(TICK_DT)
+    expect(edges(w.input), '按新表打得动，才叫那一盒真能玩').toEqual(['dodge'])
+  })
+
+  it('KI-362 之前的 v14 档没这块 ⇒ 三盒一格都不动（§78 留空是如实，与现表同一条裁决）', async () => {
+    const store = new MapStore()
+    const w = makeWorld(store)
+    w.bindings.rebind('dodge', 'KeyQ')
+    w.bindings.storeProfile(1)
+    const tapes = w.bindings.getProfiles()!
+    const before = w.bindings.get()
+    const legacy = makeWorld(store)
+    legacy.bindings.rebind('jump', 'KeyB')
+    await legacy.saves.save('bindings')
+    await w.saves.load('bindings')
+    expect(w.bindings.getProfiles(), '那份档没记过磁带 ⇒ 不许把这一局存好的清空').toEqual(tapes)
+    expect(w.bindings.get(), '而现表照档里那一格换（两块的"没写"读法本来就不同：现表是玩家此刻用的）')
+      .not.toEqual(before)
+    expect(w.input.binds.keyboard.KeyB, '现表那条路照常走').toBe('jump')
+  })
+})
+
+/* ------------------------------------------------- KI-363 清空之后那一格怎么写 */
+
+/**
+ * KI-363：「清空」在档上是什么形状。这一组只问 unit 问不到的那两件事：
+ *  ① **清空三盒之后，那一格整个消失**，而不是写成 `[null,null,null]`——「清空过」与「没写过」
+ *     在档上是同一句话，而同一句话只许一种写法（§78；KI-362 的 A19 那条臂量的正是这条判据）。
+ *  ② **清空只动磁带那一格，现表那一格照写自己那一份**——两块各写各的这条形状在清空这一侧也要成立：
+ *     载入过一盒、再把那盒清空，档里应看到「现表是刚载入那张、而那格磁带是 null」。
+ *     写歪成共用一格，读回来玩家手里就会凭空多一张没人存过的表，或凭空少一张他正在用的。
+ */
+describe('KI-363 清空跟档走：三盒全空 ⇒ 那一格不写，而现表那一格照写自己那一份', () => {
+  const settingsOf = async (store: MapStore, slot: string): Promise<Record<string, unknown>> =>
+    (await readStored(store, slot)).payload.snapshot.settings as unknown as Record<string, unknown>
+
+  it('三盒都存过 ⇒ 那一格要写；逐个清空后再存 ⇒ 那一格整个消失，不是留下三种"没写过"', async () => {
+    const store = new MapStore()
+    const w = makeWorld(store)
+    for (let i = 0; i < PROFILE_SLOTS; i++) expect(w.bindings.storeProfile(i)).toBe('new')
+    await w.saves.save('bindings')
+    const cell = await settingsOf(store, 'bindings')
+    expect('bindingsProfiles' in cell, '三盒都有 ⇒ 那一格在档里').toBe(true)
+    expect(cell.bindingsProfiles as unknown[], '交出去的是定长三格').toHaveLength(PROFILE_SLOTS)
+
+    for (let i = 0; i < PROFILE_SLOTS; i++) expect(w.bindings.clearProfile(i), `第 ${i} 盒清得动`).toBe(true)
+    await w.saves.save('bindings')
+    const after = await settingsOf(store, 'bindings')
+    expect('bindingsProfiles' in after, '全清空之后再存 ⇒ 那一格干脆不写（不留 [null,null,null] 那种第二种「没写过」）').toBe(false)
+    expect(after.bindings, '而现表那一格与清空无关：玩家此刻那张照常写').toBeDefined()
+
+    const w2 = makeWorld(store)
+    await w2.saves.load('bindings')
+    expect(w2.bindings.profileFlags(), '读回来仍是三格空，且没有一个"曾经存过"的影子')
+      .toEqual([false, false, false])
+    expect(w2.bindings.getProfiles(), '新世界也拿不到那一格').toBeUndefined()
+  })
+
+  it('带三盒的老档读回来 ⇒ 只清一盒后再存：那一格仍三格、被点那格是 null、另两盒逐字不动', async () => {
+    const store = new MapStore()
+    const w1 = makeWorld(store)
+    w1.bindings.rebind('dodge', 'KeyQ')
+    w1.bindings.storeProfile(0)
+    w1.bindings.unbind('jump')
+    w1.bindings.storeProfile(2)
+    await w1.saves.save('bindings')
+    const before = await settingsOf(store, 'bindings')
+    const tapesBefore = before.bindingsProfiles as unknown[]
+
+    const w2 = makeWorld(store)
+    await w2.saves.load('bindings')
+    expect(w2.bindings.clearProfile(0), '第二盒没录过、第一盒录过 ⇒ 清的是点名那一盒').toBe(true)
+    await w2.saves.save('bindings')
+    const after = await settingsOf(store, 'bindings')
+    const tapesAfter = after.bindingsProfiles as (Record<string, unknown> | null)[]
+    expect(tapesAfter, '那一格仍是定长三格，不是"清掉一格就少一格"').toHaveLength(PROFILE_SLOTS)
+    expect(tapesAfter[0], '被清空的那一格写的是 null（一格磁带的空态本来就是这么写的）').toBeNull()
+    expect(tapesAfter[2], '没点名的那盒逐字不动').toEqual(tapesBefore[2])
+    expect(after.bindings, '而现表那一格走的是自己那条路：E 仍写着「无」').toEqual(before.bindings)
+  })
+
+  it('载入一盒、再把那盒清空 ⇒ 现表仍是刚载入那张，磁带那一格是 null（两块各写各的在清空这一侧也成立）', async () => {
+    const store = new MapStore()
+    const w1 = makeWorld(store)
+    w1.bindings.storeProfile(1)                       // 第二盒：默认那一张
+    w1.bindings.rebind('dodge', 'KeyQ')               // 然后才把闪避挪走
+    await w1.saves.save('bindings')
+
+    const w2 = makeWorld(store)
+    await w2.saves.load('bindings')
+    expect(w2.bindings.loadProfile(1), '请回第二盒').toBe(true)
+    expect(w2.input.binds.keyboard.KeyQ, 'Q 回到它当时那一位（锁定）').toBe('lockOn')
+    expect(w2.bindings.clearProfile(1), '再把那一盒清空').toBe(true)
+    expect(w2.input.binds.keyboard.KeyQ, '清空不倒回去：手里仍是刚载入那一张').toBe('lockOn')
+    await w2.saves.save('bindings')
+    const cell = await settingsOf(store, 'bindings')
+    const kb = (cell.bindings as { gameplay: { keyboard: Record<string, string> } }).gameplay.keyboard
+    expect(kb.KeyQ, '档里现表那一格写的是刚载入那张 ⇒ Q 记的是锁定').toBe('lockOn')
+    expect('bindingsProfiles' in cell, '那一盒是当时唯一存过的一盒 ⇒ 清空之后整块不写：同一条裁决落在档上，而现表那一格照常写').toBe(false)
+    expect(w2.bindings.profileFlags(), '新世界手里那三格仍是三句「空」：清空过不留下第二种写法').toEqual([false, false, false])
+  })
+})
+
+/* ---------------------------------------------- KI-364 扳机拐点跟档走 */
+
+/**
+ * KI-364：那一格在档上的形状。三条各钉一处：
+ * ① **加格不推版本**：`triggerThreshold` 骑的是既有的 `settings.bindings` 那一格，`SAVE_VERSION` 仍是 14，
+ *    `Serializer` 一个字没改——写出去的一直是 store 交回的那**整张**表；
+ * ② **老档没这一格** ⇒ 读回来是默认那一个数，而这一格上「没写过」不许长出第二种写法：整张语义意味着
+ *    下一次存盘把它补写出来。这与配置文件那三盒**相反**——那三盒的「没存过」由 store 回答 `undefined`，
+ *    因为那里真的有空态；现表这一格从来没有空态可言（§78 那句「留空是如实」管的是缺块，不是缺省值）；
+ * ③ **磁带带得动它**：存一盒 → 把线推高 → 载入那盒 ⇒ 线回到快照那一刻，与键位同生同灭。
+ */
+describe('KI-364 扳机拐点跟档走：加格不推版本、老档没它是默认、磁带里它是快照的一部分', () => {
+  it('改线 → save ⇒ 档里那一格是那个数而版本仍是 14；新世界 load ⇒ 消费者拿到同一个数', async () => {
+    const store = new MapStore()
+    const w = makeWorld(store)
+    w.bindings.setTriggerThreshold(0.3)
+    await w.saves.save('bindings')
+    const stored = await readStored(store, 'bindings')
+    expect(SAVE_VERSION, '本批没推版本：那一格骑的是 v14 已有的那一块').toBe(14)
+    expect(stored.payload.snapshot.version).toBe(14)
+    const g = (stored.payload.snapshot.settings.bindings as { gameplay: { triggerThreshold: number } }).gameplay
+    expect(g.triggerThreshold, '写进档的是生效那一个数，不是玩家往面板里敲的那一串').toBe(0.3)
+    const w2 = makeWorld(store)
+    await w2.saves.load('bindings')
+    expect(w2.bindings.get().gameplay.triggerThreshold, '新世界读回来还是那一个数').toBe(0.3)
+    expect(w2.input.binds.triggerThreshold, '而消费者那一份与 store 那一个同形（漏抄就是屏幕上两个数）').toBe(0.3)
+  })
+
+  it('写过键位却没写这一格的老档 ⇒ 读回来是默认那一个数，下一次存盘把它补写出来（这一格没有空态）', async () => {
+    const store = new MapStore()
+    const w = makeWorld(store)
+    const legacy = wrap(14, {
+      snapshot: {
+        version: 14, playSec: 1, savedAt: null, regionId: null,
+        player: { x: 0, y: 0, z: 0, hp: 90, stamina: 80, overdrive: 0, weaponId: 'wp_tuning_sword', corruption: 0 },
+        flags: [], clearedSlots: [], usedInteractables: [], brokenProps: [],
+        settings: { audio: {}, bindings: { gameplay: { keyboard: { KeyQ: 'dodge' } } } },
+        rpg: null, quest: null, states: {}
+      }
+    })
+    await store.set('bindings', legacy)
+    await w.saves.load('bindings')
+    expect(w.bindings.get().gameplay.triggerThreshold, '档里没这一格 ⇒ 边界补的是默认那一个数，不是 0、也不是 undefined')
+      .toBe(DEFAULT_BINDS.triggerThreshold)
+    expect(w.input.binds.triggerThreshold, '消费者拿到的同形：缺格不许变成"这一把永远推不动"').toBe(DEFAULT_BINDS.triggerThreshold)
+    expect(w.input.binds.keyboard.KeyQ, '同一块里写过的那一格照常生效（补一格不是把整张退回默认）').toBe('dodge')
+    await w.saves.save('bindings')
+    const again = (await readStored(store, 'bindings')).payload.snapshot.settings.bindings as { gameplay: Record<string, unknown> }
+    expect('triggerThreshold' in again.gameplay, '而再存一遍就写上了：整张语义下这一格从来没有"没写过"第二种拼写').toBe(true)
+    expect(again.gameplay.triggerThreshold, '补写出去的就是生效那一个数').toBe(DEFAULT_BINDS.triggerThreshold)
+  })
+
+  it('磁带装的是整张表：存一盒 → 把线推高 → 载入那盒 ⇒ 线回到快照那一刻，与键位同生同灭', async () => {
+    const store = new MapStore()
+    const w = makeWorld(store)
+    w.bindings.rebind('dodge', 'KeyQ')
+    w.bindings.setTriggerThreshold(0.2)
+    expect(w.bindings.storeProfile(0), '那一盒记下的线是 0.2').toBe('new')
+    w.bindings.setTriggerThreshold(0.9)
+    w.bindings.rebind('dodge', 'KeyH')
+    expect(w.bindings.loadProfile(0), '再把那一盒请回来').toBe(true)
+    expect(w.input.binds.keyboard.KeyQ, '键位那半回到快照那一刻').toBe('dodge')
+    expect(w.input.binds.triggerThreshold, '而拐点那一格也回来了：磁带不是半张表').toBe(0.2)
+    await w.saves.save('bindings')
+    const cell = (await readStored(store, 'bindings')).payload.snapshot.settings.bindings as { gameplay: { triggerThreshold: number } }
+    expect(cell.gameplay.triggerThreshold, '档里现表那一格写的是刚载入那张的线，与磁带那一格各写各的').toBe(0.2)
+  })
+})
+
+/* ----------------------------------- KI-369 半张磁带在真存档那一路上的形状 */
+
+/**
+ * KI-369：那三盒在**档里**缺一条通道时，读回来到底是什么。KI-367 的还欠②与 KI-368 的还欠②写的是同一句
+ * 「半张磁带在真存档那一路上的形状未量（`M11` 那一臂被崩形遮蔽）」，而那句里已经指出了路该怎么走：
+ * 从世界那侧走 `SaveGame.save`／`load`，中间经过一次真的 `JSON.parse(JSON.stringify(…))`，
+ * 不是从 store 走 `getProfiles`／`applyProfiles`。本批那八条腿走的就是这条路。
+ *
+ * **文件头按源码钉死的预测（跑完如实记差，不抹）**：R1–R8 全预测为**绿**——本批一个字机制都不改，
+ * 量的是既有形状，而那个形状住在两处源码里：`clampProfiles`（`src/settings/Bindings.ts:397`，逐格交给
+ * `clampBindings`，自己一条规则都不立）与 `clampBindings` 那四条「缺 ⇒ 默认」（`asObject`／`resolvePadMap`／
+ * `clampAxes`／`inBounds`，同文件 :328 那一节）。任何一条实读成红，都是预测写错，改的是预测而不是判据。
+ *
+ * 「只写键盘那半」那个拼写在本批的三份尺里各写一次，是有意的重复，不是第二个主人：本批的判据是
+ * 「缺的名字补默认」，而「哪些名字算手柄那半」的主人仍是 `BIND_CHANNELS`（`:428`，`profile-channels`
+ * 那条穷尽腿钉的是它）。这些字面量少列一个名字只会多缺一格、走的还是同一条路——它红不了，
+ * 也就不会替本批撒谎。
+ */
+
+/** 只写键盘那半的一盒磁带：`gameplay` 只留 `keyboard`＋`unbound`，`ui` 那半要么跟着留两格、要么整块不写 */
+const kbOnlyBox = (keyboard: Record<string, string>, uiKeyboard?: Record<string, string>): Record<string, unknown> => ({
+  gameplay: { keyboard, unbound: [] },
+  ...(uiKeyboard ? { ui: { keyboard: uiKeyboard, unbound: [] } } : {})
+})
+
+/** 一份真经过 JSON 的档：`settings` 里那两格（现表与磁带）各自给足，不借既有那条腿的 blob */
+const saveOf = (settings: Record<string, unknown>): string => {
+  const draft = {
+    snapshot: {
+      version: 14, playSec: 1, savedAt: null, regionId: null,
+      player: { x: 0, y: 0, z: 0, hp: 90, stamina: 80, overdrive: 0, weaponId: 'wp_tuning_sword', corruption: 0 },
+      flags: [], clearedSlots: [], usedInteractables: [], brokenProps: [],
+      settings: { audio: {}, ...settings },
+      rpg: null, quest: null, states: {}
+    }
+  }
+  return wrap(14, JSON.parse(JSON.stringify(draft)))
+}
+
+/** 一张合法的整盒：两张表都写全，而改动的两格都在界内——它过一遍夹取应当逐字不变（幂等那条既有纪律） */
+const fullBox = (): Record<string, unknown> => {
+  const b = JSON.parse(JSON.stringify(defaultBindings())) as
+    { gameplay: { padAxes: Record<string, number> }; ui: { stickThreshold: number } }
+  b.gameplay.padAxes = { moveX: 2, moveY: 3, camX: 0, camY: 1 }
+  b.ui.stickThreshold = 0.4
+  return b as unknown as Record<string, unknown>
+}
+
+describe('KI-369 半张磁带在真存档那一路上的形状：缺的那半补默认、不是补此刻，而这一点改不掉', () => {
+  it('R1 档里那一格只写键盘那半 ⇒ 读回来是一张整表：写过的那半生效，没写的那半是默认那一份', async () => {
+    const store = new MapStore()
+    const w = makeWorld(store)
+    await store.set('bindings', saveOf({ bindingsProfiles: [kbOnlyBox({ KeyQ: 'dodge' }), null, null] }))
+    await w.saves.load('bindings')
+    const tape = w.bindings.getProfiles()![0]!
+    expect(tape, '那一格是「有东西」：半张不是一种「没写过」').toBeTruthy()
+    expect(tape.gameplay.keyboard.KeyQ, '写过的那半照常生效').toBe('dodge')
+    expect(tape.gameplay.padButtons, '没写的那半读成默认那一张').toEqual(defaultBindings().gameplay.padButtons)
+    expect(tape.gameplay.triggerThreshold, '扳机那条线住在缺的那一半里：补的是默认那一个数，不是 undefined').toBe(DEFAULT_BINDS.triggerThreshold)
+    expect(tape.ui.stickThreshold, '菜单那一半同理').toBe(UI_BINDS.stickThreshold)
+    expect(Object.keys(tape.gameplay).sort(), '读回来这张表的名字是完整的：半张不留在磁带里').toEqual(Object.keys(defaultBindings().gameplay).sort())
+  })
+
+  it('R2 缺的那半不取这份档自己的此刻：现表那一格是跳，盒里补的是默认闪避——与屏上按下「存入」那一次不同答', async () => {
+    const store = new MapStore()
+    const w = makeWorld(store)
+    await store.set('bindings', saveOf({
+      bindings: { gameplay: { padButtons: { 0: 'jump' } } },
+      bindingsProfiles: [kbOnlyBox({ KeyQ: 'dodge' }), null, null]
+    }))
+    await w.saves.load('bindings')
+    expect(w.input.binds.padButtons[0], '取证前提：这份档自己的那张现表上，0 号键是跳').toBe('jump')
+    expect(w.bindings.getProfiles()![0]!.gameplay.padButtons[0], '而同一份档里那一盒缺的那半补的是默认那一位，不是这份档的此刻')
+      .toBe(DEFAULT_BINDS.padButtons[0])
+    expect(DEFAULT_BINDS.padButtons[0], '默认那一位确实是闪避（不是碰巧同名）').toBe('dodge')
+  })
+
+  it('R3 按下「载入」（不带通道）之后玩家此刻那一半被换成默认：同一颗物理键从跳变成闪避', async () => {
+    const store = new MapStore()
+    const w = makeWorld(store)
+    await store.set('bindings', saveOf({
+      bindings: { gameplay: { padButtons: { 0: 'jump' } } },
+      bindingsProfiles: [kbOnlyBox({ KeyQ: 'dodge' }), null, null]
+    }))
+    await w.saves.load('bindings')
+    fakePad([0, 0, 0, 0], [0]); w.input.poll(TICK_DT)
+    expect(edges(w.input), '载入之前：0 号键按这份档的此刻那张发跳').toEqual(['jump'])
+    fakePad([0, 0, 0, 0], []); w.input.poll(TICK_DT)
+    expect(w.bindings.loadProfile(0), '玩家按下那一行的「载入」（不带通道 ＝ 两半一起）').toBe(true)
+    fakePad([0, 0, 0, 0], [0]); w.input.poll(TICK_DT)
+    expect(edges(w.input), '同一颗物理键现在发的是默认那一位：KI-367 裁决① 反对的那件事从另一扇门进来了').toEqual(['dodge'])
+  })
+
+  it('R4 按通道那一次（只请回键盘那半）不动另一半：0 号键仍是跳——屏上那一枚选择是这一刀唯一的挡手', async () => {
+    const store = new MapStore()
+    const w = makeWorld(store)
+    await store.set('bindings', saveOf({
+      bindings: { gameplay: { padButtons: { 0: 'jump' } } },
+      bindingsProfiles: [kbOnlyBox({ KeyQ: 'dodge', Tab: 'confirm' }), null, null]
+    }))
+    await w.saves.load('bindings')
+    expect(w.bindings.loadProfile(0, 'kb'), '只请回键盘那半').toBe(true)
+    expect(w.input.binds.keyboard.KeyQ, '写过的那半照常进来').toBe('dodge')
+    expect(w.input.binds.padButtons[0], '缺的那半没有被"补"进来：此刻那一张一个字不动').toBe('jump')
+  })
+
+  it('R5 半张经过一次再存变成整张：补写出去的那几格无声无息，而版本仍是 14', async () => {
+    const store = new MapStore()
+    const w = makeWorld(store)
+    await store.set('bindings', saveOf({ bindingsProfiles: [kbOnlyBox({ KeyQ: 'dodge' }), null, null] }))
+    await w.saves.load('bindings')
+    await w.saves.save('bindings')
+    const stored = await readStored(store, 'bindings')
+    const cells = stored.payload.snapshot.settings.bindingsProfiles as Record<string, Record<string, unknown>>[]
+    expect(stored.payload.snapshot.version, '本批没推版本：那几格骑的还是 v14 已有的那一块').toBe(14)
+    expect(Object.keys(cells[0].gameplay).sort(), '下一份档里不再有半张——而那几格是边界替玩家补的，没人签过字')
+      .toEqual(Object.keys(defaultBindings().gameplay).sort())
+    expect(cells[0].gameplay.triggerThreshold, '补出去的就是生效那一个数').toBe(DEFAULT_BINDS.triggerThreshold)
+  })
+
+  it('R6 同一档里另两盒逐字不动：治法是逐格的，一格半张不牵动邻居，明写 null 那格仍是空', async () => {
+    const store = new MapStore()
+    const w = makeWorld(store)
+    const whole = fullBox()
+    await store.set('bindings', saveOf({ bindingsProfiles: [whole, kbOnlyBox({ KeyQ: 'dodge' }), null] }))
+    await w.saves.load('bindings')
+    const tapes = w.bindings.getProfiles()!
+    expect(tapes[0]!.gameplay.padAxes.moveX, '整张那一盒里写过的那一格照常').toBe(2)
+    expect(tapes[0]!.ui.stickThreshold, '而那一盒的两块都写全：夹取对它是一句幂等').toBe(0.4)
+    expect(tapes[0], '而它逐字就是那一张：补默认只发生在缺名字的盒里，整张的一格都不动').toEqual(whole)
+    expect(tapes[1]!.gameplay.padButtons, '半张那一盒补的是默认').toEqual(defaultBindings().gameplay.padButtons)
+    expect(tapes[2], '明写 null 那一格仍是空磁带（不是第三种存在感）').toBeNull()
+  })
+
+  it('R7 写的那半里有毒键也照样过同一道夹取：半张不是免检的理由', async () => {
+    const store = new MapStore()
+    const w = makeWorld(store)
+    const dirty = JSON.parse('{"__proto__":{"x":1},"<img>":"dodge","KeyZ":"fly","KeyQ":"dodge"}') as Record<string, string>
+    await store.set('bindings', saveOf({ bindingsProfiles: [kbOnlyBox(dirty), null, null] }))
+    await w.saves.load('bindings')
+    const kb = w.bindings.getProfiles()![0]!.gameplay.keyboard
+    expect(Object.prototype.hasOwnProperty.call(kb, '__proto__'), '毒键没进盒').toBe(false)
+    expect(kb['<img>'], '尖括号那把进不来').toBeUndefined()
+    expect(Object.values(kb), '名册外的动作落榜').not.toContain('fly' as ActionName)
+    expect(kb.KeyQ, '合法那一格照进盒').toBe('dodge')
+  })
+
+  it('R8 补默认只发生在盒里：现表那一格仍读回这份档自己那张，两块各写各的在缺格这一侧也成立', async () => {
+    const store = new MapStore()
+    const w = makeWorld(store)
+    await store.set('bindings', saveOf({
+      bindings: { gameplay: { padButtons: { 0: 'jump' } } },
+      bindingsProfiles: [kbOnlyBox({ KeyQ: 'dodge' }), null, null]
+    }))
+    await w.saves.load('bindings')
+    expect(w.bindings.get().gameplay.padButtons[0], '磁带的缺格不渗到现表身上').toBe('jump')
+    expect(w.bindings.get().gameplay.keyboard.KeyQ, '而现表自己没写的那一格走的是现表那条默认，与盒里那半无关')
+      .toBe(defaultBindings().gameplay.keyboard.KeyQ)
+    await w.saves.save('bindings')
+    const again = (await readStored(store, 'bindings')).payload.snapshot.settings as unknown as
+      { bindings: { gameplay: { padButtons: Record<string, string> } } }
+    expect(again.bindings.gameplay.padButtons[0], '再存一次，现表那一格写回的还是跳').toBe('jump')
   })
 })

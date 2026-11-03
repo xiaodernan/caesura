@@ -18,6 +18,13 @@ import type { SkillAction, SkillCast } from '@/rpg/Movements'
 
 /** 蓄力攒满要按满这几 tick；导出是为了量具不再抄第二份常数（§55） */
 export const CHARGE_TICKS = 48
+/**
+ * §6「长按阈值」那一格的**消费者默认**（200ms）：重键按住没超过这条线 ⇒ 松手算一记轻点式重击 `h`，
+ * 过了线又没蓄满 ⇒ 取消。它以前是写在判据句子中间的一个拍数 `8`（=133ms，既不在玩家手里、
+ * 也不在 §6 那格的界内），KI-365 把它换成 `settings/GameplaySettings.holdMs` 灌进来的一个毫秒数。
+ * 设置表里那一格的默认与这里同一个数（`INPUT_BUFFER_SEC`／`bufferMs` 的先例），由一条腿钉住。
+ */
+export const HEAVY_HOLD_MS = 200
 /** 台阶容差：与 world/Surface 的 floorAt tolerance 一致，超过就不算「踩上台阶」 */
 const STEP_UP = 0.5
 
@@ -124,6 +131,25 @@ export class PlayerController {
   crumpleTicks = 0
   chargeTicks = 0
   charging = false
+  /**
+   * 长按阈值毫秒（§6 那一格）。**默认就是上面那一个 `HEAVY_HOLD_MS`**，运行时由
+   * `GameplaySettingsStore.applyToTargets()` 覆盖——这里不夹取、不换算第二份，界与夹取只住在那张表里。
+   */
+  holdMs = HEAVY_HOLD_MS
+  /**
+   * 防连发涨价开关（§6 那一行的「连打关闭」，KI-384）。默认 开 ＝ §7.2 那两行照旧一档一档往上涨。
+   * 它管的是**那份账长不长、还在不在**，不管「付多少」：`skillRamp` 是唯一的账，验价那一句
+   * （`overdriveCostOf`）不认这个开关——于是 `skillRampOf`、那句「连打已涨到」、面板里那一列读的都是同一个答案。
+   * 翻到「关」的那一下把账清掉：只在出手那一句判的话，关掉之后的第一下仍会按涨后的价被拒一次。
+   * 反复灌入同一个值不算翻转（面板每开一次都灌一遍，把灌入当沿来清账会悄悄兑掉涨价）。
+   */
+  private mashGuardOn = true
+  get mashGuard(): boolean { return this.mashGuardOn }
+  set mashGuard(v: boolean) {
+    if (this.mashGuardOn === v) return
+    this.mashGuardOn = v
+    if (!v) this.skillRamp.clear()
+  }
   /** KI-029 之连：连段深度（第几段连续攻击；1 = 起手式，0 = 不在连段里） */
   comboDepth = 0
   /** KI-002 蓄力反馈（§2 排行榜那行）：0..1，ActorVisuals 据此画武器辉光强度 */
@@ -461,13 +487,15 @@ export class PlayerController {
     if (this.overloadWarnTicks > 0) this.overloadWarnTicks--
 
     // ---- heavy hold -> charge ----
+    // 「按住多久算长按」这条线读的是设置里那一格（§6 · 200–800ms），不是写在句子中间的拍数：
+    // 界由 `GAMEPLAY_BOUNDS.holdMs` 说、夹取由 `clampGameplaySettings` 说、灌入只有 `applyToTargets` 一处。
     if (input.frame.held.has('attackHeavy') && this.action === null && !this.busy) {
       this.charging = true
       this.chargeTicks++
     } else if (this.charging && !input.frame.held.has('attackHeavy')) {
       this.charging = false
       if (this.chargeTicks >= this.chargeThreshold && canAct) this.tryStartAction('charged', tick)
-      else if (this.chargeTicks < 8 && canAct && this.action === null) this.tryStartAction('h', tick)
+      else if (this.chargeTicks < msToTicks(this.holdMs) && canAct && this.action === null) this.tryStartAction('h', tick)
       this.chargeTicks = 0
     }
 
@@ -913,8 +941,9 @@ export class PlayerController {
       const cost = this.overdriveCostOf(key, skill)
       this.stats.overdrive = clamp(this.stats.overdrive - cost, 0, this.stats.overdriveMax)
       this.skillCd.set(key, skill.cast.cooldownTicks)
-      // 涨了价才走：连打的第一下按底价付，从第二下起每下贵 `overdriveRamp`（§7.2 防连发）
-      if (skill.cast.overdriveRamp > 0) this.skillRamp.set(key, cost - skill.cast.overdriveCost + skill.cast.overdriveRamp)
+      // 涨了价才走：连打的第一下按底价付，从第二下起每下贵 `overdriveRamp`（§7.2 防连发）。
+      // 「关」的那一档不写这一句（§6 的连打关闭）：账不涨、也不再留着先前涨的那一截（清账在 setter 那一句）。
+      if (skill.cast.overdriveRamp > 0 && this.mashGuardOn) this.skillRamp.set(key, cost - skill.cast.overdriveCost + skill.cast.overdriveRamp)
       if (skill.cast.fissureLayers > 0 || skill.cast.trueDamage > 0) {
         this.followup = { layers: skill.cast.fissureLayers, trueDamage: skill.cast.trueDamage }
       }

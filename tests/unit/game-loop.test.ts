@@ -147,3 +147,112 @@ describe('GameLoop：start/stop 的 rAF 腿', () => {
     expect(time.tick, '第二帧只走自己那一份').toBe(afterFirst + 1)
   })
 })
+
+/**
+ * 一帧的账（KI-347）：什么样的 `realDelta` 算走过一拍、抛出算不算把循环结束掉。
+ *
+ * 这两件事此前没有主人，后果是在真页面上量到的（配方见 `docs/WORKPLAN.md` 的量测配方）：
+ * 一次 `tickFrame(NaN)` 之后 `accumulator` 永久是 NaN ⇒ 逻辑钟从此 0 拍，且 HUD 里那一格
+ * 派生出的颜色变成 `rgba(...,NaN)` ⇒ 之后**每一帧**都抛；一次 `tickFrame(-5)` 之后连着
+ * 120 帧健康帧仍推进 0 拍。而抛出逃出 `tickFrame` 时，`step` 里那句
+ * `requestAnimationFrame(step)` 根本执行不到 ⇒ 循环静默死掉，`running` 还挂着 true，
+ * `start()` 因此永远拒绝重启。
+ */
+describe('GameLoop：坏 delta 与抛出的一帧账（KI-347）', () => {
+  it('非有限的 realDelta 被吃掉而不是被咽下去：那一帧不进时钟，之后每一帧仍然算数', () => {
+    const time = new GameTime()
+    const loop = new GameLoop(time, fakeInput(), () => {})
+    for (let i = 0; i < 20; i++) expect(loop.tickFrame(TICK_DT)).toBe('ran')
+    const t0 = time.tick
+    expect(loop.tickFrame(NaN), '拒绝要能被调用方读到，不是悄悄当它没发生').toBe('rejected')
+    expect(time.tick, '拒绝那一帧时钟一格都不动').toBe(t0)
+    expect([loop.rejectedDeltas, Object.is(loop.lastRejectedDelta, NaN)], 'NaN 那一格要留得下来（它不等于任何数，包括自己）').toEqual([1, true])
+    expect(loop.tickFrame(Infinity)).toBe('rejected')
+    expect([loop.rejectedDeltas, String(loop.lastRejectedDelta)], '留的是最后那一个').toEqual([2, 'Infinity'])
+    for (let i = 0; i < 120; i++) loop.tickFrame(TICK_DT)
+    expect(time.tick - t0, '老写法到这里是 0 拍（永久毒化），现在 120 帧走满 120 拍').toBe(120)
+  })
+
+  it('负的那一个同样被吃掉：它不是"补帧"，是往回拨钟（一次 -5 会让之后 120 帧 0 拍）', () => {
+    const time = new GameTime()
+    const loop = new GameLoop(time, fakeInput(), () => {})
+    loop.tickFrame(TICK_DT)
+    expect(loop.tickFrame(-5)).toBe('rejected')
+    expect(loop.lastRejectedDelta, 'NaN 与 -5 是两种病 ⇒ 那一格要留得下负数').toBe(-5)
+    expect(loop.rejectedDeltas).toBe(1)
+    const t0 = time.tick
+    for (let i = 0; i < 120; i++) loop.tickFrame(TICK_DT)
+    expect(time.tick - t0).toBe(120)
+  })
+
+  it('被吃掉的那一帧不进 fps 窗口：窗口里的每一条都是真走过的帧', () => {
+    const time = new GameTime()
+    const perf = new PerfSampler()
+    perf.open()
+    const loop = new GameLoop(time, fakeInput(), () => {}, perf)
+    for (const d of [10, 20, 30]) perf.frame({ deltaMs: d, logicMs: 1, renderMs: 2, ticks: 1, truncated: false })
+    const before = perf.snapshot().samples
+    loop.tickFrame(NaN)
+    loop.tickFrame(TICK_DT)
+    const s = perf.snapshot()
+    expect(s.samples, '一次 NaN 不该在窗口里留下一条假帧').toBe(before + 1)
+    expect(Number.isFinite(s.fps), '老写法里 NaN 进窗口 ⇒ fps 永久不是数').toBe(true)
+  })
+
+  it('渲染段抛出不是循环结束：记一笔账，下一帧照样排、照样画、照样进窗口', () => {
+    installRaf()
+    const time = new GameTime()
+    const perf = new PerfSampler()
+    perf.open()
+    let renders = 0
+    const sys: Updatable = { update: () => {}, render: () => { renders++; if (renders === 2) throw new TypeError('那一帧画不出来') } }
+    const loop = new GameLoop(time, fakeInput(), () => {}, perf)
+    loop.add(sys)
+    const rafBefore = rafIds
+    loop.start()
+    const cb = rafCb!
+    const base = performance.now()
+    cb(base + TICK_DT * 1000)
+    cb(base + 2 * TICK_DT * 1000)
+    cb(base + 3 * TICK_DT * 1000)
+    expect([renders, loop.renderFaults], '抛出之后第三帧仍被画到').toEqual([3, 1])
+    expect(loop.lastRenderFault).toBe('TypeError: 那一帧画不出来')
+    expect(loop.running, '渲染抛出不许把 running 拨假').toBe(true)
+    expect(rafIds, 'RAF 那一串还在续排').toBeGreaterThan(rafBefore + 2)
+    expect(perf.snapshot().samples, '坏掉画面的那一帧仍然是一帧（时间真的过去了）').toBe(3)
+    loop.stop()
+  })
+
+  it('逻辑段抛出停在真话上：往上交、账上留痕、running 改成假，于是 start() 还起得来', () => {
+    installRaf()
+    const time = new GameTime()
+    let faulted = false
+    const sys: Updatable = { update: () => { if (!faulted) throw new Error('模拟状态不可信') }, render: () => {} }
+    const loop = new GameLoop(time, fakeInput(), () => {})
+    loop.add(sys)
+    loop.start()
+    const cb = rafCb!
+    const beforeThrow = rafIds
+    expect(() => cb(performance.now() + TICK_DT * 1000), '抛出往上交：这一层不许把它折成"什么都没发生"').toThrow('模拟状态不可信')
+    expect([loop.logicFaults, loop.lastLogicFault], '但它同时要在账上留痕').toEqual([1, 'Error: 模拟状态不可信'])
+    expect(rafIds, '抛出之后确实没再排帧——停是真的停').toBe(beforeThrow)
+    expect(loop.running, '停了就必须说停了 ⇒ 这一格是"还能不能重启"的主人').toBe(false)
+    faulted = true
+    const beforeRestart = rafIds
+    loop.start()
+    expect(loop.running).toBe(true)
+    expect(rafIds, '老写法到这里是永久不可恢复（running 一直挂着 true ⇒ start 空转）').toBe(beforeRestart + 1)
+    rafCb!(performance.now() + TICK_DT * 1000)
+    expect(time.tick, '重启之后模拟真的在走').toBeGreaterThan(0)
+    loop.stop()
+  })
+
+  it('抛出物不是 Error 也要有名字：那一格印的是 String(e)，不是 undefined', () => {
+    const time = new GameTime()
+    const loop = new GameLoop(time, fakeInput(), () => {})
+    loop.add({ update: () => {}, render: () => { throw '一句裸字符串' } })
+    loop.tickFrame(TICK_DT)
+    expect(loop.lastRenderFault, '`throw "x"` 那种东西也得进账').toBe('一句裸字符串')
+    expect(loop.renderFaults).toBe(1)
+  })
+})

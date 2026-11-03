@@ -17,7 +17,7 @@ interface Recorder {
   texts: string[]
 }
 
-function makeHud(): { hud: Hud; rec: Recorder } {
+function makeHud(binds: Binds | null = null): { hud: Hud; rec: Recorder } {
   const rec: Recorder = { texts: [] }
   const store: Record<string, unknown> = {}
   const grad = { addColorStop: () => {} }
@@ -32,7 +32,7 @@ function makeHud(): { hud: Hud; rec: Recorder } {
     set(t, k: string, v) { t[k] = v; return true }
   })
   const canvas = { getContext: () => ctx, width: 0, height: 0 } as unknown as HTMLCanvasElement
-  const hud = new Hud(canvas)
+  const hud = new Hud(canvas, binds ? { binds } : null)
   live.push(hud)
   return { hud, rec }
 }
@@ -61,7 +61,8 @@ describe('HUD 键位参考列（KI-181③）：键名从运行时绑定读', () 
   })
 
   it('重映射落地时这一列自动跟着变：改绑定表，keyOf 跟着改（HUD 不抄第二份）', () => {
-    const custom: Binds = { keyboard: { KeyH: 'parry' }, padButtons: {}, padAxes: DEFAULT_BINDS.padAxes }
+    /** 替身从**主人**那里摊开再改那几格：自己逐格抄一遍 `Binds`，那张表长新格时就轮到走查桩红 */
+    const custom: Binds = { ...DEFAULT_BINDS, keyboard: { KeyH: 'parry' }, padButtons: {}, unbound: [], padUnbound: [] }
     expect(keyOf('parry', custom)).toBe('H')
     expect(keyOf('parry', DEFAULT_BINDS)).toBe('G')
   })
@@ -72,8 +73,19 @@ describe('HUD 键位参考列（KI-181③）：键名从运行时绑定读', () 
     hud.render(0, 1 / 60)
     expect(rec.texts.some((t) => t.includes('弹反')), '动作中文名').toBe(true)
     expect(rec.texts.some((t) => t === 'G' || t.includes('G')), '键名（默认绑定的弹反=G）').toBe(true)
-    const noBind: Binds = { keyboard: { KeyE: 'interact' }, padButtons: {}, padAxes: DEFAULT_BINDS.padAxes }
+    // KI-342 之后这一格的来历可以是玩家点名的「无」：那一行同样不进 HUD，不画一个空的键名列
+    const noBind: Binds = { ...DEFAULT_BINDS, keyboard: { KeyE: 'interact' }, padButtons: {}, unbound: ['parry'], padUnbound: [] }
     expect(keyOf('parry', noBind)).toBeNull()
+  })
+
+  it('解绑的那一格在这一列里没有行：不画空键名，也不替「无」发明一个记号', () => {
+    const binds: Binds = { ...DEFAULT_BINDS, keyboard: { KeyE: 'interact' }, padButtons: {}, unbound: ['parry'], padUnbound: [] }
+    const { hud, rec } = makeHud(binds)
+    bus.emit('quest.changed', STEP)
+    hud.render(0, 1 / 60)
+    expect(rec.texts.some((t) => t.includes('弹反')), '玩家关掉的动词：这一列不替它留一行').toBe(false)
+    expect(rec.texts.some((t) => t.includes('交互')), '按得到的那一行照常成对出现').toBe(true)
+    expect(rec.texts, '这一列只画按得到的键，"无"是「操作」页那一格的话').not.toContain('无')
   })
 })
 

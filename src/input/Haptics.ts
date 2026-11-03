@@ -42,6 +42,13 @@ export class Haptics {
    * 设置模块不动它时保持 1，手感与表一致。
    */
   scale = 1
+  /**
+   * KI-359：同一行规格里「弱/强马达独立」那半句的落点。两把尺各乘各的幅值、各在顶格 1 处
+   * 截一刀——合起来再截会让强那一格的余量替弱那一格说话（`heavy` 0.8×2 顶格之后，
+   * `weak` 0.5×2 也只剩 0.7 的可用空间，那是别人的尺子留下的形状，不是玩家调的）。
+   * 默认 1 ⇒ 设置模块没接这一格时与「一把尺」的旧行为逐字相等。
+   */
+  weakScale = 1
 
   constructor(private input: Input) {
     bus.on('combat.hit', (h) => this.pulse(mapShakeToRumble(h.shakeKey)))
@@ -58,7 +65,7 @@ export class Haptics {
       act.playEffect('dual-rumble', {
         duration: r.durationMs,
         strongMagnitude: Math.min(1, r.strong * this.scale),
-        weakMagnitude: Math.min(1, r.weak * this.scale)
+        weakMagnitude: Math.min(1, r.weak * this.weakScale)
       })
     } catch {
       /* actuator present but call unsupported — degrade silently */

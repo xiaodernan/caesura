@@ -1,6 +1,7 @@
 import { bus } from '@/core/EventBus'
 import { Vector3 } from 'three'
 import { GameTime, TICK_DT, TICK_HZ } from '@/core/Time'
+import { PauseControl, readPauseAction } from '@/core/PauseControl'
 import { GameLoop } from '@/core/GameLoop'
 import { Input, pumpMenu, type MenuOwner, type MenuPump } from '@/core/Input'
 import { RhythmClock } from '@/core/RhythmClock'
@@ -76,6 +77,10 @@ document.getElementById('app')!.appendChild(canvas)
 
 const time = new GameTime()
 const input = new Input(canvas)
+/* 世界停摆的那一个主人（KI-387）：组合根此后只向它**提请求**——`setOverlay` 报「菜单在不在场」，
+   动作名册里那枚 `pause` 报「玩家要不要停」（KI-388：由渲染那一路的 `readPauseAction` 读，
+   不再在这里直接吃浏览器的键码）。`time.paused` 那一格由它一处合成，两条来源各占一格、互不覆盖。 */
+const pause = new PauseControl(time)
 const rhythm = new RhythmClock()
 rhythm.setBpm(84, 4)
 
@@ -326,7 +331,9 @@ function setOverlay(open: Overlay): void {
   else { panel.close(); mapUi.close() }
   // uiOwner：菜单读数的所有权（KI-062）。开着才发意图、关着一格都不发，也不抢浏览器的默认行为。
   // 玩法那条（enabled）与这条是两件事：世界停摆期间正是菜单需要读数的时候。
-  time.paused = overlay !== null
+  // 世界停摆：只报「菜单在不在场」这一格（KI-387）——玩家自己按出来的那次暂停归 `PauseControl`
+  // 的另一格管，overlay 的周期不许再把它覆盖掉（老写法 `time.paused = overlay !== null` 正是覆盖的那一句）。
+  pause.holdByOverlay(overlay !== null)
   // 过场期也夺输入（`cinematics.inputLocked`）：夺的是**玩法那条**，菜单那条（uiOwner）照旧
   input.enabled = overlay === null && !cinematics.inputLocked
   input.uiOwner = overlay
@@ -714,16 +721,14 @@ addEventListener('pointerdown', () => {
   // 任意点击跳过正在播放的过场（开场 25s 黑场等）：避免玩家被困在锁输入的黑屏里
   if (cinematics.current && !overlayOpen()) { skipCinematic(); setOverlay(null) }
 })
-addEventListener('keydown', (e) => {
-  /* Esc 的**菜单**那半义（收面板 / 关对话 / 标题屏退回上一层）走 UI 意图通道的 `back`，
-     由在场的那块 overlay 自己在 `feedMenu()` 里读——这里不再替它们关（那是第二个主人，
-     一次 Esc 会被关两遍）。这一句只留"没有菜单在场时"的那半义：开合暂停。
-     时序上也不冲突：keydown 这一刻 owner 还在，`overlayOpen()` 为真 ⇒ 这里不动，
-     下一帧的 poll 才把 `back` 交给面板。 */
+addEventListener('keydown', () => {
+  /* 这一句里今天**没有** Esc 的任何语义（KI-388）。两半义各有各的主人：菜单那半义走 UI 意图通道的
+     `back`，由在场的那块 overlay 自己在 `feedMenu()` 里读；停摆那半义走动作名册里的 `pause`，
+     由渲染那一路的 `readPauseAction` 读。在这里直接吃 `e.code === 'Escape'` 是同一格的第二个主人，
+     而且它绕开玩家自己改过的那两张表——改键面板里那一行「暂停」于是成了假把手。 */
   // 任意键跳过正在播放的过场（开场 25s 黑场等）：仅在无菜单 overlay 在场时跳过，
   // 对话/面板里的过场由各自的 UI 意图通道接管，不该被这一句抢走。
   if (cinematics.current && !overlayOpen()) { skipCinematic(); setOverlay(null); return }
-  if (e.code === 'Escape' && !overlayOpen()) time.paused = !time.paused
 })
 
 /* §11 失谐的视觉压力（>60 起屏幕一点点失去颜色）今天住在 `vfx/ColorGrade.ts`（KI-094①）。
@@ -1001,6 +1006,11 @@ function feedMenu(): void {
 }
 
 const loop = new GameLoop(time, input, (alpha, realDelta) => {
+  /* 手动暂停的读者住在这条路上，不住在 `systems.update`：那一整段被 `if (!time.paused)` 挡着，
+     读者若住在那里就只停得开、醒不过来（`Input.ts:208` 那条 Tab 的老死路同一格，KI-388）。
+     它排在 `feedMenu()` 之前：两路各自吞自己那枚边沿，先后不影响读数，但停摆这一格先到
+     能让同一帧的面板看见已合成的 `paused`。 */
+  readPauseAction(input, pause)
   feedMenu()
   span('render.scene', () => arena.update(alpha, realDelta))
   span('render.vfx', () => vfx.update(realDelta)) // particles run on real time — hitstop must not freeze VFX (tech-arch §4 rule 3)
@@ -1031,11 +1041,12 @@ bus.on('log', (l) => console.info(`[caesura:${l.level}] ${l.msg}`))
 const savePrimary = new LocalStore('caesura.save.', localStorage)
 const saveBackup = typeof indexedDB === 'undefined' ? null : new IdbStore('caesura-save')
 /**
- * KI-112：玩法/辅助设置的宿主。组合根把四个消费者的实例装进来（bufferMs→Input、
- * shakeScale→CameraRig、rumbleScale→Haptics、damageScale→CombatManager），
+ * KI-112：玩法/辅助设置的宿主。组合根把五个消费者的实例装进来（bufferMs→Input、
+ * shakeScale→CameraRig、rumbleScale／rumbleWeakScale→Haptics、damageScale→CombatManager、
+ * holdMs→PlayerController（KI-365 那一格：长按阈值判的是玩家自己那一记松手）），
  * 构造即灌一遍当前值；读档经 `SaveGame.apply` 落到 `restore`（信任边界在 store 里）。
  */
-const gameplayStore = new GameplaySettingsStore({ input, rig, haptics, combat })
+const gameplayStore = new GameplaySettingsStore({ input, rig, haptics, combat, player })
 /** KI-336：键位表的宿主（消费者只有 `Input` 一个——两条通道一起换才不会出现半张新表） */
 const bindingsStore = new BindingsStore({ input })
 /**
@@ -1043,7 +1054,7 @@ const bindingsStore = new BindingsStore({ input })
  * 而"摘要卡上的时间是从外面带进来的"这条也就没有证人。
  */
 const saves = new SaveGame(
-  { player, streaming, spawner, clock: rhythm, time, rpg, interact, props, quests, states: worldStates, audio: { engine: audio, setVolume: (b: string, v: number) => audio.setVolume(b as never, v), getVolume: (b: string) => audio.getVolume(b) }, gameplay: { get: () => gameplayStore.get(), apply: (raw: unknown) => gameplayStore.restore(raw) }, bindings: { get: () => bindingsStore.get(), apply: (raw: unknown) => bindingsStore.restore(raw) }, now: () => Date.now() },
+  { player, streaming, spawner, clock: rhythm, time, rpg, interact, props, quests, states: worldStates, audio: { engine: audio, setVolume: (b: string, v: number) => audio.setVolume(b as never, v), getVolume: (b: string) => audio.getVolume(b) }, gameplay: { get: () => gameplayStore.get(), apply: (raw: unknown) => gameplayStore.restore(raw) }, bindings: { get: () => bindingsStore.get(), apply: (raw: unknown) => bindingsStore.restore(raw), profiles: { get: () => bindingsStore.getProfiles(), apply: (raw: unknown) => bindingsStore.applyProfiles(raw) } }, now: () => Date.now() },
   savePrimary, saveBackup
 )
 /** 摘要卡的名册（KI-025）：标题屏与调音桩面板都从它读"这几格是什么、能不能读" */

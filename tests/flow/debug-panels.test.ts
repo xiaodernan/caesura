@@ -39,7 +39,7 @@ import { DebugPanel } from '@/tools/DebugPanel'
 import { enemyPanelText, enemyRows } from '@/tools/EnemyDebugger'
 import { questPanelText, questRows } from '@/tools/QuestDebugger'
 import { aiPanelText, type AiDebugInput } from '@/tools/AIDebugger'
-import { perfPanelSpec, perfPanelText, type PerfSource } from '@/tools/PerfDebugger'
+import { perfPanelSpec, perfPanelText, type PerfEngines, type PerfSource } from '@/tools/PerfDebugger'
 import { BUDGET_CPU_MS, BUDGET_GPU_MS, FRAME_WINDOW, PerfSampler } from '@/core/PerfSampler'
 import { Pool } from '@/core/Pool'
 import { CombatDebugger } from '@/tools/CombatDebugger'
@@ -849,6 +849,12 @@ describe('F5 · 性能面板（§5.7 那一格的落地，KI-335）', () => {
     pool.release(b)
     pool.obtain()
     pool.obtain()
+    /**
+     * 帧的账那六格是**可变**的夹具（所以要写类型：字面量里的 `null` 会被 TS 收成 `null` 本身，
+     * 下面那条腿再往里塞一条消息就是类型错）。面板读的是这一份，改它 ⇒ 那一行跟着变，
+     * 这才问得出"那一行的数是不是环自己的账"。
+     */
+    const loop: PerfEngines['loop'] = { maxTicksPerFrame: 5, rejectedDeltas: 0, lastRejectedDelta: null, renderFaults: 0, lastRenderFault: null, logicFaults: 0, lastLogicFault: null }
     return {
       engines: {
         vfx: { get emitterPoolStats() { return pool.stats } },
@@ -859,7 +865,7 @@ describe('F5 · 性能面板（§5.7 那一格的落地，KI-335）', () => {
         renderer: {
           info: { render: { calls: 37, triangles: 128000 }, memory: { geometries: 21, textures: 8 } },
         },
-        loop: { maxTicksPerFrame: 5 },
+        loop,
       },
       pool,
     }
@@ -928,6 +934,19 @@ describe('F5 · 性能面板（§5.7 那一格的落地，KI-335）', () => {
     expect(spec.text().split('\n')[4]).toBe('ticks/frame avg 3.00 max 3 (cap 5) · 丢整拍 1')
   })
 
+  it('那一行每一次刷都重新读环的账：面板不自己数"哪一帧算坏帧"，也不把消息提前藏起来', () => {
+    const { spec, engines } = f5spec()
+    expect(spec.text().split('\n')[5], '什么都没发生过 ⇒ 三个 0，而"最近"那一格说的是从没吃过').toBe('坏 delta 被吃掉 0 帧（从没吃过坏帧） · 渲染抛出 0 · 逻辑抛出 0')
+    engines.loop.rejectedDeltas = 2
+    engines.loop.lastRejectedDelta = NaN
+    engines.loop.renderFaults = 1
+    engines.loop.lastRenderFault = 'TypeError: 那一帧画不出来'
+    engines.loop.logicFaults = 3
+    engines.loop.lastLogicFault = 'Error: 模拟状态不可信'
+    const line = spec.text().split('\n')[5]
+    expect(line, 'NaN 与 -5 是两种病 ⇒ 那一格要留数，不能只报"有过"').toBe('坏 delta 被吃掉 2 帧（最近那一个 NaN） · 渲染抛出 1：TypeError: 那一帧画不出来 · 逻辑抛出 3：Error: 模拟状态不可信')
+  })
+
   /** 真采样器 ＋ 真池：面板上那几个数必须能从**引擎的账**里读出来，不是夹具手抄的一份 */
   function perfWorld() {
     const sampler = new PerfSampler()
@@ -950,6 +969,7 @@ describe('F5 · 性能面板（§5.7 那一格的落地，KI-335）', () => {
         streaming: { active: 4, resident: 5, preloading: 2, unloaded: 40, queued: 3, inFlight: 2, maxInFlight: 4 },
         gpu: { calls: 37, triangles: 128000, geometries: 21, textures: 8 },
         maxTicksPerFrame: 5,
+        frame: { rejectedDeltas: 0, lastRejectedDelta: null, renderFaults: 0, lastRenderFault: null, logicFaults: 0, lastLogicFault: null },
         frameWindow: FRAME_WINDOW,
         budget: { cpuMs: BUDGET_CPU_MS, gpuMs: BUDGET_GPU_MS },
       } satisfies PerfSource,

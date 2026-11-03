@@ -96,13 +96,14 @@ const fire = (code: string, up = false): void => {
   for (const fn of win.handlers[up ? 'keyup' : 'keydown'] ?? []) fn(e)
 }
 
-async function screen(read: () => SlotCard[]) {
+async function screen(read: () => SlotCard[], failWith: string | null = null) {
   const { TitleScreen } = await import('@/ui/TitleScreen')
   const hit: Hit = { news: [], continues: [] }
   const hooks: TitleHooks = {
     onNew: (id) => { hit.news.push(id) },
     onContinue: (slot) => { hit.continues.push(slot) },
-    listSlots: async () => read()
+    // `failWith` 是 KI-386 的注入缝：把「问名册」这一问变成**问不出来**，其余一切走同一条通道
+    listSlots: async () => { if (failWith !== null) throw new Error(failWith); return read() }
   }
   // 监听器只数**这一步新添的**：假窗口在整个文件里是同一只，用例之间会累加，
   // 直接断言总数等于几把上一格的功劳也算进来了。
@@ -542,3 +543,100 @@ describe('标题屏 · 出身卡面的数据回落与预选', () => {
     expect(view(t), '确认条不留在页上').not.toContain('确认开新弦')
   })
 })
+
+describe('标题屏 · 名册问不出来（KI-386）', () => {
+  registerGameData()
+
+  /**
+   * 先红预测（写在跑之前，跑完逐格对照）：那一次异步问名册今天**只有成功分支**——构造里那段
+   * `void (async () => {...})()` 全文件零 `catch`、零 `finally`（普查 G5 量到）。注入一条 reject 之后：
+   * ① hint 永久停在「正在查看本机存档…」：一次**读失败**被显示成一个**永远走不到的进行时**；
+   * ② `slotsLoaded` 永远是 false ⇒ `chooseNew` 那道门永远等不到读数，`canBrowseSlots` 也永远是 false
+   *    ⇒ 既开不了新弦、也进不了挑档屏：整屏成死路；
+   * ③ 留一条未处理的 rejection；
+   * ④ 强行进的挑档屏那是一片空的 `.scards`，一格卡都没有也没有一句原因。
+   * 修后要求：失败要说出自己的原因、开新弦要落在一条明说代价的路径上（默认项仍是「取消」）、
+   * 挑档屏那一片说同一句话；而「还没回来不许开新弦」那条安全裁决一格都不许放松（最后一条反向臂盯它）。
+   */
+  const REASON = '存储坏了（量具注入）'
+
+  it('问不出来 ⇒ 屏上那句改口并带上原因，不许停在「正在查看」', async () => {
+    const { t } = await screen(() => roster(), REASON)
+    const s = view(t)
+    expect(s, '失败不是"还没有"，要说出来').toContain('本机存档问不出来')
+    expect(s, '原因要跟着上来，不能只说坏了').toContain(REASON)
+    expect(s).not.toContain('正在查看本机存档')
+  })
+
+  it('问不出来之后点一张出身卡：仍不许直接开弦，但要落在一条明说代价的路上', async () => {
+    const { t, hit } = await screen(() => roster(), REASON)
+    click((t as unknown as { root: FakeEl }).root, 'card', 'origin_drummer')
+    expect(hit.news, '不知道有没有档 ⇒ 不赌').toEqual([])
+    const s = view(t)
+    expect(s, '要有一条说得清代价的明路，不能原地不动').toContain('开一根新弦')
+    expect(s).toContain('本机存档问不出来')
+    expect(s, '破坏性动作的默认项仍是取消').toContain('class="act sel" data-act="new-no"')
+  })
+
+  it('问不出来不留下未处理的 rejection（那一次异步的两条路都要有人接）', async () => {
+    const seen: unknown[] = []
+    const on = (r: unknown): void => { seen.push(r) }
+    process.on('unhandledRejection', on)
+    try {
+      await screen(() => roster(), REASON)
+      await new Promise((r) => setTimeout(r, 10)) // rejection 是在这一轮之后才报的
+    } finally {
+      process.off('unhandledRejection', on)
+    }
+    expect(seen.length, `未处理的 rejection：${String(seen[0] ?? '')}`).toBe(0)
+  })
+
+  it('问不出来之后 ↓ 仍能进挑档屏，那一片说同一句话而不是空一格', async () => {
+    const { t, press } = await screen(() => roster(), REASON)
+    press('ArrowDown')
+    press('Enter')
+    const s = view(t)
+    // 「返回定弦」那一格只住在挑档屏上 ⇒ 它是"进得去"的证人，而不是屏上的字面「挑一格」
+    // （问不出来时那一屏的副标题不说"挑一格"：那里一格都挑不出来，说了就是一句假账）
+    expect(s, '坏消息不许成死路：问不出来也要给进').toContain('data-act="back"')
+    expect(s).toContain('本机存档问不出来')
+    expect(s).toContain(REASON)
+    expect(s.match(/class="slot/g)?.length ?? 0, '一格卡都造不出来 ⇒ 不许摆假卡').toBe(0)
+  })
+
+  it('反向臂·还没回来不等于问不出来：pending 时既不开弦也不能进挑档屏', async () => {
+    const { TitleScreen } = await import('@/ui/TitleScreen')
+    const hit: Hit = { news: [], continues: [] }
+    let release: ((c: SlotCard[]) => void) | null = null
+    const t = new TitleScreen({
+      onNew: (id) => { hit.news.push(id) },
+      onContinue: (s) => { hit.continues.push(s) },
+      listSlots: () => new Promise<SlotCard[]>((res) => { release = res })
+    })
+    const input = new Input(new FakeEl() as unknown as HTMLElement)
+    input.enabled = false
+    input.uiOwner = 'title'
+    const press = (code: string): void => {
+      fire(code); input.poll(1 / 60); t.uiStep(input.uiEdges); fire(code, true); input.poll(1 / 60)
+    }
+    expect(view(t)).toContain('正在查看本机存档…')
+    press('ArrowDown')
+    press('Enter')
+    expect(view(t), '读数没到齐 ⇒ 挑档屏还不存在').not.toContain('data-act="back"')
+    click((t as unknown as { root: FakeEl }).root, 'card', 'origin_drummer')
+    expect(hit.news, '这一格是 KI-025② 的安全裁决，KI-386 不许把它放松').toEqual([])
+    release!(roster())
+    await new Promise((r) => setTimeout(r, 0))
+    expect(view(t), '成功回来之后仍是原来那句').not.toContain('问不出来')
+    t.dispose()
+  })
+
+  it('回归·成功那一路一字不改：四格全空仍直接开弦，屏上不许出现「问不出来」', async () => {
+    const { t, hit } = await screen(() => roster({ autosave: EMPTY, slot1: EMPTY, slot2: EMPTY, slot3: EMPTY }))
+    expect(view(t)).toContain('本机没有可续的存档')
+    expect(view(t)).not.toContain('问不出来')
+    click((t as unknown as { root: FakeEl }).root, 'card', 'origin_drummer')
+    expect(hit.news).toEqual(['origin_drummer'])
+  })
+})
+

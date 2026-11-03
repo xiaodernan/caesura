@@ -1,6 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { TICK_DT } from '@/core/Time'
-import { Input } from '@/core/Input'
+import { DEFAULT_BINDS, Input } from '@/core/Input'
 import { BindingsStore } from '@/settings/Bindings'
 
 /**
@@ -14,8 +14,11 @@ import { BindingsStore } from '@/settings/Bindings'
 
 class FakeEl {
   handlers: Record<string, ((e: unknown) => void)[]> = {}
+  /** KI-360：面板开着时把指针锁进 canvas 是看得见的伤害，量具得数得到它锁了几次 */
+  locks = 0
   addEventListener(t: string, fn: (e: unknown) => void): void { (this.handlers[t] ??= []).push(fn) }
-  requestPointerLock(): void { /* 无头，不锁 */ }
+  requestPointerLock(): void { this.locks++ }
+  dispatch(t: string, e: unknown): void { for (const fn of this.handlers[t] ?? []) fn(e) }
 }
 
 let win: Record<string, ((e: unknown) => void)[]> = {}
@@ -36,6 +39,24 @@ function key(code: string, up = false, repeat = false): void {
 }
 
 const input = (): Input => new Input(new FakeEl() as unknown as HTMLElement)
+
+/** KI-360：鼠标那一枚要从屏幕上送进来，所以这一份量具得**留着**那个元素（`locks` 是要问的一格） */
+function mouseRig(): { inp: Input; el: FakeEl } {
+  const el = new FakeEl()
+  return { inp: new Input(el as unknown as HTMLElement), el }
+}
+/**
+ * 一次按下：`e.button` 用的是 DOM 的口径（0 左／1 中／2 右，3 与 4 是扩展键），
+ * `target` 说的是这一下落在哪儿——KI-360 之后监听器在 window 上，"落在 canvas 上"这件事
+ * 就得由量具自己写出来（默认落在 canvas：这是玩法的一下，只有等待途中那一下才不算）。
+ */
+const mouse = (el: FakeEl, button: number, on: unknown = el): void => {
+  for (const fn of win.mousedown ?? []) fn({ button, target: on, preventDefault: (): void => { prevented.push(`button${button}`) } })
+}
+/** 抬起挂在 window 上（键盘那两条也是），所以它不需要元素 */
+const mouseUp = (button: number): void => {
+  for (const fn of win.mouseup ?? []) fn({ button })
+}
 
 describe('KI-337 改键捕获：武装期间两条通道都哑', () => {
   it('下一枚键只被记成键名：玩法不发、菜单也不发', () => {
@@ -140,3 +161,267 @@ describe('KI-337 改键捕获：武装期间两条通道都哑', () => {
     expect([...inp.frame.edges]).toEqual([])
   })
 })
+
+/** KI-343：手柄那侧的「下一枚物理键」。 fake 一个 standard 布局的手柄，按下哪几把由参数点名；`null` = 没插手柄。
+ *  每次调用都**现造**手柄对象（`getGamepads` 每帧读一次新的），所以模拟量也只能由参数给，不能事后改。 */
+function padWith(pressed: number[] | null, axes: number[] = [0, 0, 0, 0]): void {
+  Object.defineProperty(globalThis, 'navigator', {
+    configurable: true,
+    writable: true,
+    value: {
+      getGamepads: () => (pressed === null ? [null] : [{
+        axes,
+        buttons: Array.from({ length: 19 }, (_, i) => ({ pressed: pressed.includes(i), value: pressed.includes(i) ? 1 : 0 })),
+        mapping: 'standard', connected: true
+      }])
+    }
+  })
+}
+
+describe('KI-343 手柄改键捕获：等的是手柄那一枚，键盘不许替它作答', () => {
+  it('armed-for-pad ⇒ 下一次 poll 里第一枚按下的按钮被记成 `Pad<n>`，而那一帧两条通道都哑', () => {
+    padWith([2])
+    const inp = input()
+    inp.uiOwner = 'panel'
+    inp.armKeyCapture('pad')
+    inp.poll(TICK_DT)
+    expect(inp.takeKeyCapture()).toBe('Pad2')
+    inp.poll(TICK_DT)
+    expect([...inp.frame.edges], '捕获读走之后仍然按着 ⇒ 不该替自己打一次闪避').not.toContain('parry')
+    expect([...inp.uiEdges]).toEqual([])
+  })
+
+  it('等手柄那一枚的途中按键盘 ⇒ 不记录、不灭武装，也不发玩法/菜单（两条通道都哑与来源无关）', () => {
+    padWith([])
+    const inp = input()
+    inp.uiOwner = 'panel'
+    inp.armKeyCapture('pad')
+    key('Tab')   // Tab 在两张表上都有主人：玩法 map ＋ 菜单 back —— 一枚键同时问两条通道
+    expect(inp.takeKeyCapture(), '键盘那枚不该替手柄作答').toBeNull()
+    inp.poll(TICK_DT)
+    expect([...inp.frame.edges], '不发 map').toEqual([])
+    expect([...inp.uiEdges], '不发 back：菜单那条也不许被这一枚键挪一格').toEqual([])
+    expect(prevented, '等待途中的默认行为照样拦住（Tab 不该把焦点从面板上挪走）').toEqual(['Tab'])
+    inp.armKeyCapture('pad')   // 再武装一次仍然能用，说明上面那次没有把它消耗掉
+    expect(inp.takeKeyCapture()).toBeNull()
+    padWith([2])
+    inp.poll(TICK_DT)
+    expect(inp.takeKeyCapture(), '而被键盘挡掉的那次等待，之后仍接得住手柄').toBe('Pad2')
+  })
+
+  it('等键盘那一枚的途中按手柄 ⇒ 同样不记录、不灭武装，两条通道也照哑（反方向同一条口径）', () => {
+    padWith([5])   // 5 = 玩法 lockOn ＋ 菜单 pageNext
+    const inp = input()
+    inp.uiOwner = 'panel'
+    inp.armKeyCapture()
+    inp.poll(TICK_DT)
+    expect(inp.takeKeyCapture(), '手柄那一枚不该填进键盘那次等待').toBeNull()
+    expect([...inp.frame.edges], '不发 lockOn').toEqual([])
+    expect([...inp.uiEdges], '不发 pageNext').toEqual([])
+    key('KeyY'); inp.poll(TICK_DT)
+    expect(inp.takeKeyCapture(), '而键盘那枚照样接得住').toBe('KeyY')
+  })
+
+  it('等键盘途中按下的那把手柄，等完之后仍按着 ⇒ 也不补发一次动词（consumed 到松开为止）', () => {
+    padWith([5])
+    const inp = input()
+    inp.armKeyCapture()
+    inp.poll(TICK_DT)
+    expect([...inp.frame.edges]).toEqual([])
+    key('KeyY'); inp.poll(TICK_DT)          // 捕获被键盘那枚满足，手柄还按着
+    expect(inp.takeKeyCapture()).toBe('KeyY')
+    expect([...inp.frame.edges], '解锁之后的**第一帧**不许把"一直按着"读成刚按下（这一断言的位置就是这条腿的刀口）').toEqual([])
+    inp.poll(TICK_DT)
+    expect([...inp.frame.edges], '第二帧同样：consumed 到松开为止').toEqual([])
+    padWith([]); inp.poll(TICK_DT)
+    padWith([5]); inp.poll(TICK_DT)
+    expect([...inp.frame.edges], '松开再按才是下一次使用它').toEqual(['lockOn'])
+  })
+
+  it('刚绑上的那一把还按着 ⇒ 不产生边沿；松开再按才发（否则改一次键送自己一次动作）', () => {
+    const inp = input()
+    inp.setBindings({
+      gameplay: { ...DEFAULT_BINDS, keyboard: {}, padButtons: { 2: 'dodge' }, padAxes: { moveX: 0, moveY: 1, camX: 2, camY: 3 }, unbound: [], padUnbound: [] },
+      ui: { keyboard: {}, padButtons: {}, stickThreshold: 0.55, unbound: [], padUnbound: [] }
+    })
+    padWith([2])
+    inp.uiOwner = 'panel'
+    inp.armKeyCapture('pad')
+    inp.poll(TICK_DT)
+    expect(inp.takeKeyCapture()).toBe('Pad2')
+    inp.poll(TICK_DT)
+    expect([...inp.frame.edges], '刚绑上那一把仍按着：绑好之后的**第一帧**就不许有边沿（断言晚一帧就是没量到）').toEqual([])
+    inp.poll(TICK_DT)
+    expect([...inp.frame.edges], '一直按着不放不许连发').toEqual([])
+    padWith([])
+    inp.poll(TICK_DT)
+    padWith([2])
+    inp.poll(TICK_DT)
+    expect([...inp.frame.edges], '松开再按才是下一次使用这个动词').toEqual(['dodge'])
+  })
+
+  it('没插手柄 / 一把都没按 ⇒ 一格都不记、武装不灭（接上手柄之后的第一枚仍被接住）', () => {
+    padWith(null)
+    const inp = input()
+    inp.armKeyCapture('pad')
+    inp.poll(TICK_DT)
+    expect(inp.takeKeyCapture(), '没有传感器可读 ⇒ 不许凭空造一个 `Pad0`').toBeNull()
+    padWith([])
+    inp.poll(TICK_DT)
+    expect(inp.takeKeyCapture(), '插上了但一把没按 ⇒ 还是不许作答').toBeNull()
+    padWith([7])
+    inp.poll(TICK_DT)
+    expect(inp.takeKeyCapture(), '武装还在 ⇒ 第一枚真按下的按钮被接住').toBe('Pad7')
+  })
+
+  it('手柄的模拟量（摇杆）不在捕获的形状里：它不记成 `Pad<n>`，也不因为等待而断流', () => {
+    padWith([], [0, -1, 0, 0])   // axes[1] = 左摇杆 Y（padAxes.moveY 的默认下标）推到底
+    const inp = input()
+    inp.uiOwner = 'panel'
+    inp.armKeyCapture('pad')
+    inp.poll(TICK_DT)
+    expect(inp.takeKeyCapture(), '摇杆推到底也不是一枚"下一枚物理键"（捕获只认离散按钮）').toBeNull()
+    expect([...inp.uiEdges], '而导航读数不许因为等待断流：面板还得能用摇杆走到那一行').toEqual(['up'])
+  })
+})
+
+/**
+ * KI-360：键盘那张表里今天就住着 `MouseLeft`／`MouseRight`（默认表把轻击与重击挂在鼠标上，
+ * `CODE_RE` 也明写「`Mouse*` 那三格是 `Input` 自己从 `e.button` 造出来的合成码」），而捕获那一路
+ * 只认物理键与手柄按钮。这一串问的是三件各有来历的事：
+ * ① **作答**：面板上点了「改键」之后按下鼠标，那一行原本永远写着「等待中」——而它等的那一枚
+ *    其实落在得进来（监听器在 canvas 上，可面板那层 `.cxs` 是 `fixed; inset:0; pointer-events:auto`，
+ *    真浏览器里等待途中手指根本碰不到 canvas）。所以这一批把按下那一拍搬到 window，作答才第一次可达。
+ * ② **等待途中的那一下不许变成一次使用**：不发行动、不把指针锁进 canvas（锁走指针玩家就看不见自己刚绑的那一行）、
+ *    也不许替手柄那一次作答。
+ * ③ **三枚标准键各归各的**：`e.button` 老写法是「非左即右」，滚轮按下（1）与扩展键（3／4）都被读成右键那一支。
+ */
+describe('KI-360 鼠标那一枚第一次能作答：等待途中它既不发行动也不锁指针', () => {
+  it('等键盘那一枚的途中按下左键 ⇒ 答案是一枚鼠标键，轻击没被打出去、指针也没被锁', () => {
+    const { inp, el } = mouseRig()
+    inp.armKeyCapture()
+    mouse(el, 0)
+    expect(inp.takeKeyCapture(), '那一行等的是「下一枚代码键」，而左键今天就住在那张表里').toBe('MouseLeft')
+    inp.poll(TICK_DT)
+    expect([...inp.frame.edges], '改键途中按下左键不许顺手打出一记轻击').toEqual([])
+    expect(el.locks, '面板开着时把指针锁进 canvas，玩家就看不见自己刚绑上的那一行').toBe(0)
+    expect(prevented, '等待途中的默认行为照样拦住（中键是浏览器的自动滚动）').toContain('button0')
+  })
+
+  it('那一下落在哪儿都算答案：等键途中点在面板上（不是 canvas）一样作答', () => {
+    const { inp, el } = mouseRig()
+    inp.armKeyCapture()
+    mouse(el, 2, { name: 'veil' })   // 真浏览器里等待途中那一下只会落在面板那层遮罩上，不会落在 canvas 上
+    expect(inp.takeKeyCapture(), '作答看的是传感器，不是坐标').toBe('MouseRight')
+    expect(el.locks, '而不管落在哪儿，等待途中都不许把指针锁走').toBe(0)
+  })
+
+  it('第一枚作答者胜出：答完之后的第二枚鼠标键回到正常通道，发行动也锁指针', () => {
+    const { inp, el } = mouseRig()
+    inp.armKeyCapture()
+    mouse(el, 0)
+    expect(inp.takeKeyCapture()).toBe('MouseLeft')
+    mouse(el, 2)
+    inp.poll(TICK_DT)
+    expect([...inp.frame.edges], '武装已经熄了，这一枚右键就是普通的一记重击').toEqual(['attackHeavy'])
+    expect(el.locks, '捕获只管等待那一段，不管完之后').toBe(1)
+  })
+
+  it('等手柄那一枚的途中按下鼠标 ⇒ 不作答、不灭武装，而重击也没有被打出去', () => {
+    padWith([])
+    const { inp, el } = mouseRig()
+    inp.uiOwner = 'panel'
+    inp.armKeyCapture('pad')
+    mouse(el, 2)
+    inp.poll(TICK_DT)
+    expect(inp.takeKeyCapture(), '鼠标那一枚填不进手柄那一次等待').toBeNull()
+    expect([...inp.frame.edges], '等的是手柄，按下鼠标同样不许发动作').toEqual([])
+    expect(el.locks, '也不许趁等待把指针锁走').toBe(0)
+    padWith([5])
+    inp.poll(TICK_DT)
+    expect(inp.takeKeyCapture(), '武装还在 ⇒ 之后那把手柄照常接得住（与键盘那一条同口径）').toBe('Pad5')
+  })
+
+  it('作答途中按住不放、答完再松 ⇒ 表里从没进过"还按着"，松开再按才是第一次使用', () => {
+    const { inp, el } = mouseRig()
+    inp.armKeyCapture()
+    mouse(el, 0)
+    expect(inp.takeKeyCapture()).toBe('MouseLeft')
+    mouseUp(0)
+    inp.poll(TICK_DT)
+    expect(inp.frame.held.has('attackLight'), '抬起不许被读成一次按下').toBe(false)
+    mouse(el, 0)
+    inp.poll(TICK_DT)
+    expect([...inp.frame.edges], '等待结束之后重新按下，才是这一枚的第一次使用').toEqual(['attackLight'])
+  })
+
+  it('中键在等待里是一枚它自己的答案（`MouseMiddle`），不是右键的替身', () => {
+    const { inp, el } = mouseRig()
+    inp.armKeyCapture()
+    mouse(el, 1)
+    expect(inp.takeKeyCapture(), '三枚标准键各有各的名字，绑的时候也一样').toBe('MouseMiddle')
+  })
+})
+
+/**
+ * KI-361：答案从此带着"是谁答的"。这一格不是为了漂亮——面板按在控制件上的那一下要作废的**只有
+ * 这一下自己答的那一枚**，而它此前问的是"袋里有没有东西"，于是同一帧里玩家按下的那把键被一次无关的
+ * 点击吞掉，等待还被续上（屏幕上既不绑也不说为什么）。来源的主人在 `Input`：只有它知道自己是从
+ * 哪一条监听器收到这一枚的；让面板去从字符串里猜来源，就是给代码拼写找第二个读者（KI-343 反的就是这个）。
+ */
+describe('KI-361 这一枚答案是谁答的：来源第一次有名字，而问名字的人只拿走自己那一只', () => {
+  it('键盘答的那一枚不归「鼠标」那一位读者：它留在袋里，等下一帧那一行来取', () => {
+    const inp = input()
+    inp.armKeyCapture()
+    key('KeyQ')
+    expect(inp.takeKeyCapture('mouse'), '点控制件的那一下只该作废鼠标自己答的那一枚').toBeNull()
+    expect(inp.takeKeyCapture(), '而那一枚键还在：投递那一路（下一帧的 `takeCapturedKey`）照样拿得到').toBe('KeyQ')
+  })
+
+  it('鼠标答的那一枚正是它的读者：交还、熄灭，同一枚答案不许被数两遍', () => {
+    const { inp, el } = mouseRig()
+    inp.armKeyCapture()
+    mouse(el, 0)
+    expect(inp.takeKeyCapture('mouse')).toBe('MouseLeft')
+    expect(inp.takeKeyCapture(), '取走即熄灭——KI-337 那条纪律在新读法下同样成立').toBeNull()
+  })
+
+  it('手柄答的那一枚同样不归鼠标：按名字问才答得出来（三个来源各有各的名字）', () => {
+    padWith([])
+    const inp = input()
+    inp.uiOwner = 'panel'
+    inp.armKeyCapture('pad')
+    padWith([5])
+    inp.poll(TICK_DT)
+    expect(inp.takeKeyCapture('mouse'), 'Pad5 不是这一下点出来的').toBeNull()
+    expect(inp.takeKeyCapture('pad'), '名字是这一格的第三个读数，不是给文案猜的').toBe('Pad5')
+  })
+
+  it('不传参数的老读法一个字没改：谁答的都交还（这条一写出来就该绿——它继承的是 KI-337）', () => {
+    padWith([])
+    const { inp, el } = mouseRig()
+    inp.uiOwner = 'panel'
+    inp.armKeyCapture()
+    key('KeyZ')
+    expect(inp.takeKeyCapture(), '键盘那一路照旧').toBe('KeyZ')
+    inp.armKeyCapture()
+    mouse(el, 2)
+    expect(inp.takeKeyCapture(), '鼠标那一路照旧').toBe('MouseRight')
+    inp.armKeyCapture('pad')
+    padWith([7])
+    inp.poll(TICK_DT)
+    expect(inp.takeKeyCapture(), '手柄那一路照旧').toBe('Pad7')
+  })
+
+  it('换一行重问之后上一枚的来源不许还挂着：`arm` 把名字一起清掉', () => {
+    const { inp, el } = mouseRig()
+    inp.armKeyCapture()
+    key('KeyQ')
+    expect(inp.takeKeyCapture('mouse'), '第一枚是键盘答的，鼠标那一位读者问不到').toBeNull()
+    inp.armKeyCapture()   // 玩家去点另一行的「改键」：上一枚作废，重新开始等一枚
+    mouse(el, 2)          // 这一次答的是右键
+    expect(inp.takeKeyCapture('key'), '新答案的来历是鼠标，不许还挂着上一枚的键盘名字').toBeNull()
+    expect(inp.takeKeyCapture('mouse')).toBe('MouseRight')
+  })
+})
+

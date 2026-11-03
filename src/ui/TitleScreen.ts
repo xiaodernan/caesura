@@ -89,6 +89,11 @@ export class TitleScreen {
   private mode: Mode = 'string'
   private slotViews: SaveCardView[] = []
   private slotsLoaded = false
+  /**
+   * 名册**问不出来**时的那句话（KI-386）：「没回来」与「问不出来」是两件事——前者只能等，
+   * 后者已经等完了、而答案是「不知道」。只有失败那一路会把它写成非 null。
+   */
+  private rosterFault: string | null = null
   /** 确认屏上待开的那根弦：只有"确认"才把它交出去 */
   private pendingOrigin: string | null = null
 
@@ -107,9 +112,18 @@ export class TitleScreen {
     this.render() // 先画一屏（hint 是"正在查看本机存档…"），名册回来再换：构造即空屏会闪一下白
     // 「有没有档可续」是问名册，不是问主存位的裸 key：以前那种问法看不见恢复位，
     // 于是"卡上说没有可续的存档"与"点 load 其实读得出来"能同时成立（一次假账）。
+    /* 这一问有两条路，两条都要有人接（KI-386）。只写成功那一路时，一次抛出把整屏挂在
+       「正在查看本机存档…」上——那是一个永远走不到的进行时：`slotsLoaded` 停在 false，
+       `chooseNew` 那道门因此永远不许开弦，`canBrowseSlots` 也永远进不了挑档屏，
+       玩家既不能开新局也不能看原因，而控制台里还多一条没人认领的 rejection。 */
     void (async () => {
-      this.slotViews = saveCards(await this.hooks.listSlots())
-      this.slotsLoaded = true
+      try {
+        this.slotViews = saveCards(await this.hooks.listSlots())
+        this.slotsLoaded = true
+      } catch (e) {
+        this.slotViews = []
+        this.rosterFault = String((e as Error)?.message ?? e)
+      }
       this.render()
     })()
   }
@@ -122,11 +136,18 @@ export class TitleScreen {
   /** 有没有"摆着却读不出来"的档：这不影响能不能续，但一定要说出来（§78：坏消息也是消息） */
   get hasBlocked(): boolean { return this.slotViews.some((v) => v.state === 'blocked') }
 
+  /** 名册问过而没答上来（KI-386）：这既不是「有档」也不是「没档」，是「不知道」——但它是一次回答，不是等待 */
+  get hasRosterFault(): boolean { return this.rosterFault !== null }
+
+  /** 这一问回过话了没有：成功与失败都算回过，只有「还在路上」不算 */
+  private get rosterSettled(): boolean { return this.slotsLoaded || this.rosterFault !== null }
+
   /**
-   * 能不能进挑档屏：**有可读的档**（去续）或**有读不出来的档**（去看原因）都算。
-   * 只在前者才给进的话，"读不出来"这句话就成了死路——屏上告诉你坏了，又不给看坏在哪。
+   * 能不能进挑档屏：**有可读的档**（去续）、**有读不出来的档**（去看原因）、**名册问不出来**
+   * （去看「问不出来」这句话）都算。只在前两者才给进的话，「读不出来」这句话就成了死路——
+   * 屏上告诉你坏了，又不给看坏在哪（KI-386 把第三种也接进来了：它同样是一句要说出口的话）。
    */
-  private get canBrowseSlots(): boolean { return this.hasSaveable || this.hasBlocked }
+  private get canBrowseSlots(): boolean { return this.hasSaveable || this.hasBlocked || this.hasRosterFault }
 
   show(): void { this.root.classList.add('on') }
 
@@ -151,10 +172,13 @@ export class TitleScreen {
   private slots(): SaveCardView[] { return this.slotViews.filter((v) => v.selectable) }
 
   private chooseNew(originId: string): void {
-    // 名册还没回来 ⇒ 此刻**不知道**有没有档要保护。这时候开新弦等于赌"大概没有吧"，
-    // 而赌输的代价是玩家下一次休息把自动槽写掉——真丢档。所以这一律不动，等读数到齐。
-    if (!this.slotsLoaded) { this.render(); return }
-    if (!this.hasSaveable) { this.hooks.onNew(originId); return }
+    // 名册还在路上 ⇒ 此刻**不知道**有没有档要保护。这时候开新弦等于赌「大概没有吧」，
+    // 而赌输的代价是玩家下一次休息把自动槽写掉——真丢档。所以这一律不动，等这一次问完（KI-025②）。
+    if (!this.rosterSettled) { this.render(); return }
+    // 问出来了、且一格都不可读 ⇒ 没有要保护的东西，直接开，不打扰玩家（原样）
+    if (!this.hasSaveable && !this.hasRosterFault) { this.hooks.onNew(originId); return }
+    // 有可读的档，**或者名册问不出来**：两种都要过确认屏。后者不是「有档」，是「不知道有没有档」——
+    // 而「不知道」恰恰是最需要玩家自己承担一次决定的时刻，屏上必须把这句说出来（KI-386）。
     this.pendingOrigin = originId
     this.mode = 'confirm'
     // 焦点落在"取消"：破坏性动作的默认项必须是安全的那一个（需求 §45 的防误删）
@@ -243,10 +267,16 @@ export class TitleScreen {
         <div class="at">${c.attrs.map((a) => `${a.label} ${a.value}`).join('<br>')}</div>
       </div>`).join('')
     const cont = this.canBrowseSlots
-      ? `<div class="act${this.focus.kind === 'continue' ? ' sel' : ''}" data-act="continue">${this.hasSaveable ? '续 · 挑一格回到上次调音桩' : '查看 · 本机有读不出来的存档'}</div>`
+      ? `<div class="act${this.focus.kind === 'continue' ? ' sel' : ''}" data-act="continue">${
+        this.hasSaveable ? '续 · 挑一格回到上次调音桩'
+          // 三种「进得去」各有各的说法：问不出来 ≠ 有档读不出来 ≠ 没档（KI-386）
+          : this.hasRosterFault ? '查看 · 本机存档问不出来'
+            : '查看 · 本机有读不出来的存档'}</div>`
       : ''
-    const hint = !this.slotsLoaded ? '正在查看本机存档…'
-      : this.hasSaveable ? '←/→ 选弦 · Enter 定弦 · ↓ 挑存档'
+    const hint = !this.rosterSettled ? '正在查看本机存档…'
+      // 失败那一路要说自己的原因：只留一句「坏了」，玩家除了再来一次，没有第二条信息可依据
+      : this.rosterFault !== null ? `本机存档问不出来 · ${this.rosterFault}`
+        : this.hasSaveable ? '←/→ 选弦 · Enter 定弦 · ↓ 挑存档'
         // 「没有可续的档」与「有档但读不出来」是两件事：后者要说出来，否则玩家以为自己很干净，
         // 下一次休息就把那一格覆盖了。原因的原话在卡上（挑档屏/存档页都看得到）。
         : this.hasBlocked ? '本机有存档，但读不出来 · ↓ 看是哪一格' : '本机没有可续的存档'
@@ -260,13 +290,17 @@ export class TitleScreen {
 
   private renderSlots(): string {
     const pick = this.slots()
-    const html = this.slotViews.map((v) => {
-      const i = pick.findIndex((p) => p.slot === v.slot)
-      return `<div class="slot${i >= 0 && i === this.focus.index ? ' sel' : ''}">${saveCardHtml(v, ['load'])}</div>`
-    }).join('')
+    // 名册问不出来 ⇒ 一格卡都造不出来，但这一屏仍进得来（坏消息不许成死路）：那就让它说那一句
+    const fault = this.rosterFault !== null && this.slotViews.length === 0
+    const html = fault
+      ? `<div class="hint">本机存档问不出来 · ${this.rosterFault}</div>`
+      : this.slotViews.map((v) => {
+        const i = pick.findIndex((p) => p.slot === v.slot)
+        return `<div class="slot${i >= 0 && i === this.focus.index ? ' sel' : ''}">${saveCardHtml(v, ['load'])}</div>`
+      }).join('')
     return `
       <h1>止音纪元</h1>
-      <div class="sub">挑一格 · Enter 读取 · ← 返回定弦</div>
+      <div class="sub">${fault ? '问不出来 · ← 返回定弦' : '挑一格 · Enter 读取 · ← 返回定弦'}</div>
       <div class="scards">${html}</div>
       <div class="acts"><div class="act" data-act="back">返回定弦</div></div>`
   }
@@ -274,9 +308,14 @@ export class TitleScreen {
   private renderConfirm(): string {
     const v = this.slotViews.find((x) => x.selectable)
     const line = v ? `${v.label} · ${v.lines.join(' · ')}` : ''
+    /* 两种「要先问一句」的措辞不能混：一种是**看得见**有档（原样），一种是**看不见**有没有档（KI-386）。
+       后者若照抄前者，就是把一次读失败报成一条确定事实——那正是这一批要治的形状。 */
+    const warn = this.rosterFault === null
+      ? '本机已有可读的存档。开新弦不会立刻动它，但下一次休息会把自动槽写掉。'
+      : `本机存档问不出来（${this.rosterFault}）。开新弦不会立刻动它，但下一次休息可能覆盖一份看不见的存档。`
     return `
       <h1>开一根新弦</h1>
-      <div class="sub">本机已有可读的存档。开新弦不会立刻动它，但下一次休息会把自动槽写掉。</div>
+      <div class="sub">${warn}</div>
       <div class="sub">${line}</div>
       <div class="acts">
         <div class="act${this.focus.index === 0 ? ' sel' : ''}" data-act="new-no">取消 · 回去挑存档</div>

@@ -25,6 +25,41 @@ export interface Binds {
   keyboard: Record<string, ActionName>
   padButtons: Record<number, ActionName>
   padAxes: { moveX: number; moveY: number; camX: number; camY: number }
+  /**
+   * 扳机推到多少算按下（KI-364，§6 那一格「扳机死区」）。**整张表里唯一一个数值格**，
+   * 而且它说的是设备（那两把模拟扳机走到第几格）而不是某一行键位，所以它只有一个：
+   * 判据住在 `padOn` 里，在捕获／玩法／菜单三个读者**分岔之前**回答一次——同一根手指的同一个深度
+   * 不许有两个答案（那一条在捕获那一路最量得出来：等着一枚键的时候，半推既不作答也不撤武装）。
+   * 「只有一个」不等于「不分通道」（KI-367 改口：这一句原来写的是「不随通道分家」）：配置文件那三盒
+   * 按通道存／取时，这一格整格住 `settings/Bindings.ts > BIND_CHANNELS.pad` 那半，键盘那半没有它的一份。
+   * 分家分的是同一个值的**那一份归谁搬**，不是把它劈成两个数——主人还是一个，读数面也还是那一个。
+   * 默认值与界各有主人：默认住在下面的 `DEFAULT_BINDS`（这一格是它的一部分），界住在
+   * `settings/Bindings.ts > BIND_BOUNDS.triggerThreshold`，玩家入口在 `setTriggerThreshold`。
+   */
+  triggerThreshold: number
+  /**
+   * 玩家**明说过**「键盘上这一格我不要」的动作（KI-342）。顺序取自动作名册，只有
+   * `settings/Bindings.ts > clampBindings` 一个书写者——它是那张已解析完的键盘表的**投影**
+   * （"这一格没有键"这件事由表本身说一次，这里只补一句"这是我要的"），不是第二张表。
+   *
+   * 为什么非要有这么一格：键盘那张表的语义是**整张**，所以"没被任何一格认领"这个写法已经被
+   * 占去了「恢复默认」的意思（`clampBindings` 的回补那一遍正是这么读的）。用同一个写法同时表达
+   * 两种相反的意思，结局是其中一种必然读不到——要「无」就得给它一个自己的名字。
+   *
+   * 它跟着 `setBindings` 一起抄进运行时那一份，不只是玩法通道要它：设置页那一列的「无」读的是
+   * **消费者手里**这一份（`bindsSource.binds`），漏抄的那一半塌的是整条显示路，不止"按旧键没反应"。
+   */
+  unbound: ActionName[]
+  /**
+   * 玩家**明说过**「手柄这一行我不要」的动作（KI-346）。与上面那份同一条纪律（名册序、去重、
+   * 只认名册、只有一个书写者），区别只在**它管哪张表**：这一份投影的是 `padButtons`，
+   * 那份投影的是 `keyboard`。分成两份而不是共用一份，是因为「无」说的是"这一行在这一张表上不要"——
+   * 面板上一行有四个家（键盘 · 手柄 · 两条名单），在一列上按下的按钮不许替另一列做主。
+   *
+   * 键盘那张有回补那一遍可以盖这份名单，手柄那张不回补，所以它的投影落在**两处**：
+   * 档里残留的那一格、以及整块没写时兜底进来的默认那几格（`clampBindings > resolvePadMap`）。
+   */
+  padUnbound: ActionName[]
 }
 
 /** 玩法通道的**默认表**：默认快照的主人（`settings/Bindings.ts > defaultBindings()` 从它现推），
@@ -50,20 +85,46 @@ export const DEFAULT_BINDS: Binds = {
     12: 'dodge', 13: 'attackLight', 14: 'attackHeavy', 15: 'parry',
     16: 'interact', 17: 'pause', 18: 'weaponSkillB'
   },
-  padAxes: { moveX: 0, moveY: 1, camX: 2, camY: 3 }
+  padAxes: { moveX: 0, moveY: 1, camX: 2, camY: 3 },
+  // 扳机默认拐点是一半（KI-364）：0.5 是"推到行程一半才算按下"，界与治由 `BIND_BOUNDS`/`clampBindings` 说
+  triggerThreshold: 0.5,
+  // 「无」的默认值是"一个都没关"：默认表上每个动作都有键（这条由 `bindings-data` 的双射腿量着）
+  unbound: [],
+  // 手柄那侧同样默认"一个都没关"（KI-346）：那一列上每一行的家都由 `padButtons` 说，名单只说"不要"
+  padUnbound: []
 }
 
 const DEADZONE = 0.2
 export const INPUT_BUFFER_SEC = 0.2
 
 /**
+ * 标准映射里那两把**模拟量**键：6 = LT、7 = RT（其余那些格是数字键，浏览器只报一个布尔）。
+ * 这一格说的是**物理位置**，与「它们此刻绑着谁」无关——把 `map` 从 6 搬到别处，6 仍然是一把扳机；
+ * 把别的动作搬进 6，那个动作从此由玩家那条线回答"按下没"。判据按位置分岔正是本批的立足点：
+ * 一条线管三个读者，而它不改任何一个读者的形状。
+ */
+const PAD_TRIGGER_INDICES = new Set([6, 7])
+
+/**
+ * DOM 报来的 `e.button` ⇒ 键盘那张表里的那一格合成码（KI-360）。名册只有这三格，
+ * 与 `settings/Bindings.ts` 里 `CODE_RE` 收的那三格是同一份（第四、第五枚扩展键浏览器也报，
+ * 但它们在那张表上无处落，所以在这条路上什么都不是）。按下与抬起**共用**这一份：
+ * 两处各写一遍「0 是左键」，同一只手上的一枚中键就能一半算下、一半算抬。
+ */
+const MOUSE_CODES: Record<number, string> = { 0: 'MouseLeft', 1: 'MouseMiddle', 2: 'MouseRight' }
+
+/**
  * 某个动作此刻绑在哪个键上（KI-181③：HUD 的键位参考行要从**运行时真值**画，不是从文档抄
  * 第二份——将来 §6 的全键位重映射落地，这一行自动跟着变）。返回给人看的短名（`KeyW`→`W`、
  * `MouseLeft`→`左键`、`Digit1`→`1`、其余原样），找不到绑定的动作返回 null（HUD 不画空行）。
+ * null 说的是"这一格没有键"，**不说这是谁造成的**：玩家自己关掉的（`Binds.unbound`）与"整张表
+ * 里没人认领它"在这一格里同形，要分清只能去问那份名单——显示侧不许拿一个 null 猜原因。
  */
-export function keyOf(action: ActionName, binds: Binds = DEFAULT_BINDS): string | null {
-  const code = Object.keys(binds.keyboard).find((k) => binds.keyboard[k] === action) ?? null
-  if (!code) return null
+/**
+ * 一枚码的短名（给人看的那一份）。它是**唯一**一张换算表：`keyOf` 用它，菜单那一列的整组读数
+ * 也用它（KI-344）——缩写规则一旦有第二份，同一把键就会在同一个屏幕上有两个名字。
+ */
+export const codeLabel = (code: string): string => {
   const mouse: Record<string, string> = { MouseLeft: '左键', MouseRight: '右键', MouseMiddle: '中键' }
   if (mouse[code]) return mouse[code]
   if (code.startsWith('Key')) return code.slice(3)
@@ -71,6 +132,11 @@ export function keyOf(action: ActionName, binds: Binds = DEFAULT_BINDS): string 
   if (code === 'ControlLeft' || code === 'ControlRight') return 'Ctrl'
   if (code === 'ShiftLeft' || code === 'ShiftRight') return 'Shift'
   return code
+}
+
+export function keyOf(action: ActionName, binds: Binds = DEFAULT_BINDS): string | null {
+  const code = Object.keys(binds.keyboard).find((k) => binds.keyboard[k] === action) ?? null
+  return code === null ? null : codeLabel(code)
 }
 
 /* ---------------------------------------------------------------------------
@@ -103,6 +169,20 @@ export interface UiBinds {
   keyboard: Record<string, UiIntent>
   padButtons: Record<number, UiIntent>
   stickThreshold: number
+  /**
+   * KI-344：菜单那条通道的「无」名单，与 `Binds.unbound` 同一份纪律（只有一个书写者
+   * `clampBindings`，是那张已解析表的投影）。它只在**有回补那一步**的通道上才成立——菜单那条
+   * 有（`resolveCodeMap` 的第二遍替没人认领的意图整组回归），所以"玩家说不要"有东西可盖；
+   * 手柄那张不回补，同一个格子读不出第二种意思（KI-343 那半句）。
+   */
+  unbound: UiIntent[]
+  /**
+   * KI-346：菜单那一行的**手柄**那一份「无」。上面那份管的是键盘那一列，这一份管的是 `padButtons`
+   * 那一列——两份名单各有各的那张表，谁也不许顺手关对方（面板上一行两个家，按在哪一列就是哪一列）。
+   * 与玩法那侧的 `Binds.padUnbound` 同一条纪律，也多一道**出口那一格永远进不来**：
+   * `UI_EXIT_INTENTS` 那句话管的是这条通道的**两张表**，不是其中一列（名册仍只有一个主人）。
+   */
+  padUnbound: UiIntent[]
 }
 
 /**
@@ -150,7 +230,46 @@ export const UI_BINDS: UiBinds = {
   // Xbox 布局：十字键 12-15、A=0、B=1、LB=4、RB=5
   padButtons: { 12: 'up', 13: 'down', 14: 'left', 15: 'right', 0: 'confirm', 1: 'back', 4: 'pagePrev', 5: 'pageNext' },
   stickThreshold: 0.55,
+  // 「无」的默认值同样是"一个都没关"（KI-344）
+  unbound: [],
+  // 手柄那一列同样默认"一个都没关"（KI-346）
+  padUnbound: []
 }
+
+/**
+ * 这一条通道上**不许进「无」名单**的那几格（KI-344）。菜单那条的硬规则不是玩法那句「每格至少一把键」，
+ * 而是「**菜单必须走得出去**」：别的意图关掉只是少一种能力（没有 `confirm` 就执行不了被框住的那一行，
+ * 仍然退得出去），而 `back` 关掉是把这一屏变成陷阱——那一行是这一屏唯一的后退路。
+ * 它与 KI-337 那句「`Escape` 算取消、不算绑成 `Escape`」是同一句的两半：那一屏唯一的后退键，
+ * 捕获时不许顺手绑走，名单里也不许顺手关掉。
+ *
+ * 这一份名册有三个读者（`BindingsStore.unbindUi` 挡请求、`clampBindings` 丢掉手改档里的那一格、
+ * 界面那一行不画「解绑」把手），但只有一个主人——面板不许自己数"哪些行看起来不能关"。
+ */
+export const UI_EXIT_INTENTS: readonly UiIntent[] = ['back']
+
+/**
+ * 玩法这一条通道上**不许进「无」名单**的那几格（KI-389）。菜单那条（上面那份）的硬规则是
+ * 「菜单必须走得出去」，这一份是它对称过来的那一头：「**世界必须停得下来**」。22 枚里关掉别的动词
+ * 只是少一种能力（没有 `confirm` 执行不了被框住的那一行，仍然退得出去），而 `pause` 两列一起关掉
+ * 得到的是一个手动停不下来的世界——没有暂停、没有退出路，只有还在往前跑的循环。
+ *
+ * 为什么只有这一枚：它是 22 枚里唯一替那句话负责的动词（KI-388 结案时量的那一格：`consume('pause')`
+ * 的读者 1 处，而默认表给它键盘 `Escape` 一处、手柄 8／17 两处）。护一枚在默认表上根本没家的动作是
+ * 空话，所以那条腿也钉在 `bindings-data.test.ts` 里。
+ *
+ * 它与 `UI_EXIT_INTENTS` 是**两份**名册、不合并：两句话各自管一条通道。三个读者（`BindingsStore.unbind`
+ * 与 `unbindPad` 挡请求、`clampBindings` 丢掉手改档里的那一格、界面那一行两把「解绑」都不画），
+ * 主人只有一个——面板不许自己数"哪些行看起来不能关"，那是 KI-344 为菜单那条立过的同一格规矩。
+ */
+export const GAMEPLAY_EXIT_ACTIONS: readonly ActionName[] = ['pause']
+
+/**
+ * 一枚改键答案的**来历**（KI-361）：`keydown` 的码、鼠标那一枚合成码、还是轮询到的 `Pad<n>`。
+ * 与 `armKeyCapture(via)` 那个 `'key' | 'pad'` 不是同一件事——那是"这次等哪一列"，这是"谁答了"；
+ * 等键盘那一列时两种传感器都能答，所以这两个名字必须能不相等。
+ */
+export type AnswerSource = 'key' | 'mouse' | 'pad'
 
 export interface FrameInput {
   move: { x: number; y: number }
@@ -202,7 +321,7 @@ export class Input {
   private kbUiHeld = new Set<UiIntent>()
   private padUiHeld = new Set<UiIntent>()
   private prevUi = new Set<UiIntent>()
-  /* ---------------- 改键捕获（KI-337） ---------------- */
+  /* ---------------- 改键捕获（KI-337 键盘 / KI-343 手柄） ---------------- */
   /**
    * 「操作」页要的那一格是**物理键**，既不是玩法动作也不是菜单意图，所以它只能住在 `Input` 手里：
    * 面板自己挂 `keydown` 会被源闸门当场判红（DOM 一条 + 菜单一条 = 一次按键被数两遍，见 §5.2）。
@@ -210,6 +329,31 @@ export class Input {
    */
   private captureArmed = false
   private captured: string | null = null
+  /**
+   * 这次等的是**哪种传感器**（KI-343）。两条通道都哑这件事与来源无关，但"谁来作答"有关：
+   * 等手柄时键盘不许替它作答，等键盘时手柄也不许——否则玩家在面板上用左摇杆走到那一行、
+   * 顺手按了一下 A，改键界面就把那一行绑给了 A。
+   * KI-360 起 `'key'` 那一次等待有**两枚**传感器作答（物理键与鼠标键）：鼠标那一枚在数据层
+   * 就是键盘那张表里的格子（`Mouse*` 合成码），所以它复用这一格，不开第三个 `via`——
+   * 「等的是哪一列」只有一个主人，而那一列上住着几种传感器由那张表自己说。
+   */
+  private captureVia: 'key' | 'pad' = 'key'
+  /**
+   * 手里那一枚答案是**哪一只传感器**答的（KI-361）。它与 `captureVia` 不是一回事：那一格说的是
+   * 「这次等的是哪一列」，这一格说的是「谁作答了」——等键盘那一列时物理键与鼠标键都算答案，
+   * 而屏幕上按在控制件上的那一下只想作废**自己那一枚**（`Stakerite.onClick` 那一声握手）。
+   * 主人只有这一个：只有 `Input` 知道自己是从哪一条监听器收到这一枚的；让面板去从字符串里猜来源
+   * （`isMouseCode(code)`）就是给代码拼写找第二个读者——KI-343 立的「语法才是路由」反的正是这个。
+   */
+  private capturedBy: AnswerSource | null = null
+  /**
+   * 等待途中被吞掉的那些手柄按钮下标（KI-343 的反幻影）。手柄**没有事件**：`pollPad` 每帧重读
+   * 一遍，所以"吞掉一次按下"不能像键盘那样靠"keydown 只会来一次"自然成立——捕获结束之后的
+   * 第一帧会把这个仍然按着的按钮读成一次**新**按下，于是改一次键送自己一次动作。
+   * 口径因此是"到松开为止"：吞掉过的那一把要等它松开（`pressed` 落到 false）才重新作数。
+   * 键盘那条不需要这一格，正是同一个区别的另一面。
+   */
+  private padConsumed = new Set<number>()
 
   private activePad: Gamepad | null = null
   /** the currently-polled gamepad, for haptics (null when no pad connected) */
@@ -222,7 +366,13 @@ export class Input {
       if (e.repeat) return
       // 捕获武装着 ⇒ 这一枚键只被记成键名：两条通道都不发，浏览器的默认行为也拦住
       // （正在改键时按下的那把不该顺手把页面滚动一下、也不该先把面板后退一层）
-      if (this.captureArmed) { e.preventDefault(); this.captured = e.code; this.captureArmed = false; return }
+      // KI-343：等的是手柄那一枚时，这一枚键盘**同样**要哑，但不许记、也不许把武装熄掉——
+      // 「两条通道都哑与来源无关」与「只有对应的传感器能作答」是同一格的正反两面。
+      if (this.captureArmed) {
+        e.preventDefault()
+        if (this.captureVia === 'key') { this.captured = e.code; this.capturedBy = 'key'; this.captureArmed = false }
+        return
+      }
       // UI 意图先记：它和玩法那条互不隶属（面板开着时玩法那条被 enabled 挡着，菜单却正需要读数）
       const intent = this.liveUi.keyboard[e.code]
       if (intent && this.uiOwner) { e.preventDefault(); this.kbUiHeld.add(intent) }
@@ -241,12 +391,31 @@ export class Input {
       const a = this.liveBinds.keyboard[e.code]
       if (a) this.kbHeld.delete(a)
     })
-    el.addEventListener('mousedown', (e) => {
-      const a = this.liveBinds.keyboard[e.button === 0 ? 'MouseLeft' : 'MouseRight']
+    /* 鼠标那一枚的按下**只有这一处**在读（KI-360）。监听器挂在 window 而不是 canvas 上，
+       为的是等待途中那一下：面板开着时 `.cxs` 那层是 `position:fixed; inset:0; pointer-events:auto`，
+       canvas 被它整个盖住，挂在 canvas 上的"下一枚键"等于挂在一个玩家按不到的地方。
+       换到 window 之后，"这一下落在世界上、还是落在面板上"要说清一句：**只有落在自己身上那一下才是玩法输入**
+       （`e.target === el`；canvas 没有子元素，命中它的按下 target 就是它，与挂在 canvas 时同一件事）。
+       等待途中那一下无论落在哪儿都只当一枚答案、不发行动、不锁指针——作答看的是传感器，不是坐标。 */
+    window.addEventListener('mousedown', (e) => {
+      const code = MOUSE_CODES[e.button]
+      if (code === undefined) return
+      if (this.captureArmed) {
+        // 与键盘那一条同口径：等手柄时鼠标不许替它作答，也不许把武装熄掉（之后那把手柄照常接得住）
+        e.preventDefault()
+        if (this.captureVia === 'key') { this.captured = code; this.capturedBy = 'mouse'; this.captureArmed = false }
+        return
+      }
+      if (e.target !== el) return
+      const a = this.liveBinds.keyboard[code]
       if (a) { this.mouseHeld.add(a); void el.requestPointerLock() }
     })
+    /* 抬起**不**问坐标：按下之后把手挪到屏幕哪儿松开都得抬得动（这是它一直挂在 window 上的理由）。
+       也不在这里作答：作答的是按下那一拍，与键盘（keydown）和手柄（轮询到 pressed）同一时机。 */
     window.addEventListener('mouseup', (e) => {
-      const a = this.liveBinds.keyboard[e.button === 0 ? 'MouseLeft' : 'MouseRight']
+      const code = MOUSE_CODES[e.button]
+      if (code === undefined) return
+      const a = this.liveBinds.keyboard[code]
       if (a) this.mouseHeld.delete(a)
     })
     window.addEventListener('mousemove', (e) => {
@@ -277,32 +446,71 @@ export class Input {
     this.liveBinds = {
       keyboard: { ...next.gameplay.keyboard },
       padButtons: { ...next.gameplay.padButtons },
-      padAxes: { ...next.gameplay.padAxes }
+      padAxes: { ...next.gameplay.padAxes },
+      // 扳机那条线逐格抄（KI-364）：这一格漏掉的形状不是报错，是屏幕上写着一个数、这里按另一个数生效
+      triggerThreshold: next.gameplay.triggerThreshold,
+      unbound: [...next.gameplay.unbound],
+      padUnbound: [...next.gameplay.padUnbound]
     }
-    this.liveUi = { keyboard: { ...next.ui.keyboard }, padButtons: { ...next.ui.padButtons }, stickThreshold: next.ui.stickThreshold }
+    /** 菜单那张同样逐格抄，数组那一格也不例外（KI-342 那个坑在两条通道上是同一个坑，KI-346 起是四份名单） */
+    this.liveUi = {
+      keyboard: { ...next.ui.keyboard },
+      padButtons: { ...next.ui.padButtons },
+      stickThreshold: next.ui.stickThreshold,
+      unbound: [...next.ui.unbound],
+      padUnbound: [...next.ui.padUnbound]
+    }
     this.kbHeld.clear(); this.mouseHeld.clear(); this.kbUiHeld.clear()
   }
 
   /**
    * 武装改键捕获（KI-337「操作」页）。**每次只等一枚键**：读走即熄灭，
    * 所以"面板还在等"与"已经拿到键"两种状态不可能同时成立，不需要额外的握手。
+   * `via`（KI-343）说这次等的是键盘那一列还是手柄那一枚，默认 `'key'` —— 既有那一行调用不必跟着改；
+   * 键盘那一列今天住着两种传感器（物理键与 `Mouse*` 那三格，KI-360），两者都算这一枚的答案；
+   * 记下来的形状是 `Pad<n>`（`<n>` = `GamepadButton` 的下标），与 `settings/Bindings.ts` 里
+   * `rebind` 认的那两种目标拼写**是同一门语言**：捕获侧造串、边界侧解析，中间没有第三份表。
    */
-  armKeyCapture(): void { this.captureArmed = true; this.captured = null }
+  armKeyCapture(via: 'key' | 'pad' = 'key'): void {
+    this.captureArmed = true
+    this.captureVia = via
+    this.captured = null
+    this.capturedBy = null
+  }
 
-  cancelKeyCapture(): void { this.captureArmed = false; this.captured = null }
+  cancelKeyCapture(): void { this.captureArmed = false; this.captured = null; this.capturedBy = null }
 
   /**
    * 取走并熄灭。为什么是"取"不是"看"：同一枚键被看两遍就是两个主人，而改键这条路是
    * 一次按下 ⇒ 一次换格。**没按时一格都不动**（尤其不许顺手撤掉武装）：面板每帧都要问一次，
    * 若"还没键"也把武装清了，玩家真正按下的那一枚就没人接了。
    * 换表那一拍不清捕获（等键的那一行与"这是谁的表"没有因果关系）。
+   * `only`（KI-361）是**按来历问**：给了名字就只交回那一来历的答案，来历不符时一格都不动——
+   * 连"没答案"也不许顺手撤武装。这不是新读法：面板那一声握手要的从来就是"这一下自己答的那一枚"，
+   * 不带参数的老读法（投递那一路）一个字没变。
    */
-  takeKeyCapture(): string | null {
+  takeKeyCapture(only?: AnswerSource): string | null {
     if (this.captured === null) return null
+    if (only !== undefined && this.capturedBy !== only) return null
     const code = this.captured
     this.captured = null
+    this.capturedBy = null
     this.captureArmed = false
     return code
+  }
+
+  /**
+   * 这一把此刻算不算按下（KI-364）。扳机那两把读玩家自己那条线与模拟量的比，其余那些格读浏览器报的布尔。
+   *
+   * 为什么扳机不许继续读那个布尔：它是 UA 从 `value` 里折出来的一个数——看不见、改不动，而 §6 那一格
+   * 要的就是"这条线由玩家定"。折回来的那个数因此是这条线的**第二个答案**，而屏幕上写着另一个。
+   * 为什么数字键不许改成读 `value`：规范里数字键的 `value` 也是 0 或 1，理论上等价，但等价的前提是驱动
+   * 守规范；按位置分岔之后，那一类把扳机当数字键报的驱动（布尔真、`value` 是 0）仍然只剩**原有**那一条路，
+   * 不会被这条新线判死。两侧各由一条腿量（`tests/unit/pad-trigger.test.ts` 第 1 与第 3 条），
+   * 而"没别处再读那个布尔"由第 7 条腿钉着——判据只能有一个。
+   */
+  private padOn(i: number, b: GamepadButton): boolean {
+    return PAD_TRIGGER_INDICES.has(i) ? b.value >= this.liveBinds.triggerThreshold : b.pressed
   }
 
   private pollPad(): void {
@@ -319,15 +527,37 @@ export class Input {
       this.padState.moveY = dz(p.axes[this.liveBinds.padAxes.moveY] ?? 0)
       this.padState.lookX = dz(p.axes[this.liveBinds.padAxes.camX] ?? 0)
       this.padState.lookY = dz(p.axes[this.liveBinds.padAxes.camY] ?? 0)
-      for (const [idx, a] of Object.entries(this.liveBinds.padButtons)) {
-        if (p.buttons[Number(idx)]?.pressed) this.padHeld.add(a)
+      /* 离散按钮：一张名册都读完之后才谈"这一把算不算"（KI-343）。
+         等待途中的按下有三件事同时发生：① 若这次等的正是手柄且还没有答案，第一枚被记成 `Pad<n>`
+         并熄灭武装（一次按下 ⇒ 一次换格，第二枚不许再进来）；② 无论如何这一把都进 `padConsumed`，
+         两条通道不发；③ 松开之前它不许变成一次"新按下"。
+         为什么整帧先看完armed再决定：一帧里同时按下 2 与 5 时，若读 2 时顺手把武装熄了，
+         5 就会在同一帧里变成一次 lockOn——"我用改键的那只手送自己一次锁定"。 */
+      const armed = this.captureArmed
+      const awaitingPad = armed && this.captureVia === 'pad'
+      for (let i = 0; i < p.buttons.length; i++) {
+        const b = p.buttons[i]
+        if (!b) continue
+        // 「这一把算不算按下」只有 `padOn` 一个回答（KI-364）：下面三个读者都在这一个字之后才分岔
+        if (!this.padOn(i, b)) { this.padConsumed.delete(i); continue }
+        if (armed) {
+          this.padConsumed.add(i)
+          if (awaitingPad && this.captured === null) { this.captured = `Pad${i}`; this.capturedBy = 'pad'; this.captureArmed = false }
+          continue
+        }
+        if (this.padConsumed.has(i)) continue
+        const a = this.liveBinds.padButtons[i]
+        if (a) this.padHeld.add(a)
+        if (this.uiOwner) {
+          const intent = this.liveUi.padButtons[i]
+          if (intent) this.padUiHeld.add(intent)
+        }
       }
       /* 手柄的菜单读数：十字键 + A/B/LB/RB + 左摇杆。摇杆按"过阈值 = 按下"处理，
-         于是一直推着不会连发（和按钮同一套 edge 语义），而十字键与摇杆同时推也只算一次。 */
+         于是一直推着不会连发（和按钮同一套 edge 语义），而十字键与摇杆同时推也只算一次。
+         摇杆（模拟量）**不进捕获形状**：它不是一枚"下一枚物理键"，绑不成 `Pad<n>`；
+         也不因等待而断流——玩家得靠它走到要改的那一行，而连续推本来就不产生新边沿。 */
       if (this.uiOwner) {
-        for (const [idx, intent] of Object.entries(this.liveUi.padButtons)) {
-          if (p.buttons[Number(idx)]?.pressed) this.padUiHeld.add(intent)
-        }
         const th = this.liveUi.stickThreshold
         const ax = p.axes[this.liveBinds.padAxes.moveX] ?? 0
         const ay = p.axes[this.liveBinds.padAxes.moveY] ?? 0

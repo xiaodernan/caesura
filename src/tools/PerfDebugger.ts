@@ -49,6 +49,20 @@ export interface StreamingRow {
   maxInFlight: number
 }
 
+/**
+ * 帧的账（主人是 `core/GameLoop` 那六格）：面板一格都不自己算，只把数印出来。
+ * 为什么这一格必须出现在面板上：坏帧与抛出**本来就是会发生的事**（本批在真页面上量到一次
+ * 非有限的 `realDelta` 把逻辑钟永久毒化），而"发生了但没有任何读数"正是 §5.7 反对的那件事。
+ */
+export interface FrameAccount {
+  rejectedDeltas: number
+  lastRejectedDelta: number | null
+  renderFaults: number
+  lastRenderFault: string | null
+  logicFaults: number
+  lastLogicFault: string | null
+}
+
 export interface PerfSource {
   perf: PerfSnapshot
   pools: PoolRow[]
@@ -56,6 +70,8 @@ export interface PerfSource {
   gpu: GpuRow
   /** `GameLoop.maxTicksPerFrame`：每帧最多补几拍（§5.5 的 catch-up 上限，主人是那个字段） */
   maxTicksPerFrame: number
+  /** 帧的账（被吃掉的坏 delta / 渲染段抛出 / 逻辑段抛出），由组合根从那一行环原样递过来 */
+  frame: FrameAccount
   /** 帧样本窗口（`core/PerfSampler > FRAME_WINDOW`）。与 `budget` 同一条理由：常数不许有两个主人 */
   frameWindow: number
   /** §5.3 的帧预算两格，由组合根从 `core/PerfSampler` 的那两个常数递过来（常数不许有两个主人） */
@@ -81,7 +97,7 @@ export interface PerfEngines {
   renderer: {
     info: { render: { calls: number; triangles: number }; memory: { geometries: number; textures: number } }
   }
-  loop: { maxTicksPerFrame: number }
+  loop: { maxTicksPerFrame: number } & FrameAccount
 }
 
 /** 采样器在面板这一侧的样子：三个动作，不认识 F5 也不认识 DOM */
@@ -101,6 +117,17 @@ function percentileLine(label: string, p50: number, p90: number | null, p99: num
   return `${label.padEnd(10)} ${parts.join(' ')}${verdict}`
 }
 
+/**
+ * 帧的账那一行：三个数各自带着"最近那一次是什么"，因为 0 与"有过但已被折成 0"是两句话。
+ * 抛出为 0 时不把那两个 `null` 印出来（面板上没有格子的东西不该占一行）。
+ */
+function frameAccountLine(f: FrameAccount): string {
+  const last = f.lastRejectedDelta === null ? '从没吃过坏帧' : `最近那一个 ${String(f.lastRejectedDelta)}`
+  const render = f.renderFaults > 0 ? `${f.renderFaults}：${f.lastRenderFault}` : '0'
+  const logic = f.logicFaults > 0 ? `${f.logicFaults}：${f.lastLogicFault}` : '0'
+  return `坏 delta 被吃掉 ${f.rejectedDeltas} 帧（${last}） · 渲染抛出 ${render} · 逻辑抛出 ${logic}`
+}
+
 export function perfPanelText(src: PerfSource): string {
   const s = src.perf
   const partial = s.samples < src.frameWindow ? `  [窗口未满：分位数读的是这 ${s.samples} 帧]` : ''
@@ -111,6 +138,7 @@ export function perfPanelText(src: PerfSource): string {
     percentileLine('logic ms', s.logicMs.p50, null, s.logicMs.p99, null, src.budget.cpuMs),
     percentileLine('render ms', s.renderMs.p50, null, s.renderMs.p99, null, src.budget.gpuMs),
     `ticks/frame avg ${s.ticksPerFrame.avg.toFixed(2)} max ${s.ticksPerFrame.max} (cap ${src.maxTicksPerFrame}) · 丢整拍 ${s.truncated}`,
+    frameAccountLine(src.frame),
   ]
   lines.push('—— spans (EMA ms · calls/frame · max) ——')
   if (!s.spans.length) lines.push('  (还没有样本：面板开着至少要跑一帧)')
@@ -163,6 +191,8 @@ export function perfPanelSpec(sampler: PerfSamplerLike, engines: PerfEngines, ca
         textures: engines.renderer.info.memory.textures,
       },
       maxTicksPerFrame: engines.loop.maxTicksPerFrame,
+      // 帧的账整块交给那一行环自己：面板不数"哪一帧算坏帧"，那一句只有 `GameLoop` 的边界说得出口
+      frame: engines.loop,
     }),
   }
 }

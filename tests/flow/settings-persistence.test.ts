@@ -6,7 +6,7 @@ import { RhythmClock } from '@/core/RhythmClock'
 import { registry } from '@/core/Registry'
 import { registerGameData, playerBase, regions } from '@/data'
 import type { MovesetData, WeaponData } from '@/data/schema'
-import { PlayerController } from '@/player/ThirdPersonController'
+import { PlayerController, HEAVY_HOLD_MS } from '@/player/ThirdPersonController'
 import { CameraRig } from '@/player/CameraRig'
 import { Haptics } from '@/input/Haptics'
 import { AISystem } from '@/ai/AISystem'
@@ -19,6 +19,7 @@ import { SaveGame, MapStore, READABLE_VERSIONS, SAVE_VERSION, migrateV12toV13 } 
 import { wrap } from '@/save/Integrity'
 import {
   DEFAULT_GAMEPLAY_SETTINGS,
+  GAMEPLAY_BOUNDS,
   GameplaySettingsStore,
   clampGameplaySettings
 } from '@/settings/GameplaySettings'
@@ -76,11 +77,11 @@ function makeWorld(store = new MapStore(), audio = makeFakeAudio()) {
     despawn: (id) => ai.despawn(id),
     hasFlag: (k) => streaming.hasFlag(k)
   }, cellKey)
-  // KI-112：设置靶用真消费者（四件的公开字段就是生产形状），store 构造即灌一遍
+  // KI-112：设置靶用真消费者（五件的公开字段就是生产形状），store 构造即灌一遍
   const input = new Input(new FakeEl() as unknown as HTMLElement)
   const rig = new CameraRig()
   const haptics = new Haptics(input)
-  const settings = new GameplaySettingsStore({ input, rig, haptics, combat })
+  const settings = new GameplaySettingsStore({ input, rig, haptics, combat, player })
   const saves = new SaveGame({ player, streaming, spawner, clock: rhythm, time, rpg, audio, gameplay: { get: () => settings.get(), apply: (raw: unknown) => settings.restore(raw) } }, store)
   function tick(n = 1): void {
     for (let i = 0; i < n; i++) {
@@ -252,7 +253,7 @@ describe('KI-112 Input：缓冲窗口吃设置', () => {
 })
 
 describe('KI-112 Haptics：rumbleScale', () => {
-  it('幅值乘倍率、Gamepad API 顶格 1 截断、时长不缩放', () => {
+  it('倍率只乘自己那一列的幅值、Gamepad API 顶格 1 各截各的、时长不缩放', () => {
     const calls2: Record<string, number>[] = []
     const callsHalf: Record<string, number>[] = []
     const pad = (sink: Record<string, number>[]) => ({
@@ -264,17 +265,129 @@ describe('KI-112 Haptics：rumbleScale', () => {
     hHalf.scale = 0.5
     // 一发 boss（表值 strong 1.0 / weak 0.8 / 320ms）同时喂两个实例：一发双读。
     // 载荷形状照 EventBus 的 combat.hit 配齐（订阅方只读 shakeKey，但形状不该撒谎）
+    // KI-359 改的是这一条腿的**预测**（不是判据）：它原来把一个 `scale` 乘进两个幅值，
+    // 那是 §6「弱/强马达独立」那半句没落地时的形状。两个 `weakScale` 都留在默认 1 ⇒
+    // 弱那一列此刻逐字不吃强马达那把尺，而顶格那一刀各截各的（截不到别人的余量上）。
     bus.emit('combat.hit', {
       attackerId: 'en_test', victimId: 'player', damage: 10, poiseDamage: 0,
       kind: 'enemy', point: { x: 0, y: 0, z: 0 }, dir: { x: 0, y: 0, z: 1 },
       result: 'hit', hitStopMs: 0, shakeKey: 'boss', backstab: false, weakpoint: false
     })
     expect(calls2[0].strongMagnitude, '2× 的 1.0 在 API 顶格 1 截断').toBe(1)
-    expect(calls2[0].weakMagnitude, '0.8×2=1.6 → 1').toBe(1)
+    expect(calls2[0].weakMagnitude, '0.8×1：强那一格的 2 不许乘到弱这一列').toBe(0.8)
     expect(calls2[0].duration, '时长不乘倍率：200% 是更用力，不是振更久').toBe(320)
     expect(callsHalf[0].strongMagnitude).toBeCloseTo(0.5)
-    expect(callsHalf[0].weakMagnitude).toBeCloseTo(0.4)
+    expect(callsHalf[0].weakMagnitude, '砍到 0.5 也只砍强这一列').toBeCloseTo(0.8)
     expect(callsHalf[0].duration).toBe(320)
+  })
+})
+
+describe('KI-359 弱马达那一格：界、缺格、两路消费者与往返', () => {
+  it('新格自己也有界（错型回默认、越界夹取，不是漏网的那一格）', () => {
+    expect(clampGameplaySettings({ rumbleWeakScale: 5 }).rumbleWeakScale, 'ui-ux §6 上限 200%').toBe(2)
+    expect(clampGameplaySettings({ rumbleWeakScale: -0.5 }).rumbleWeakScale).toBe(0)
+    expect(clampGameplaySettings({ rumbleWeakScale: '2' }).rumbleWeakScale, '字符串不是数：回默认，不做隐式换算').toBe(1)
+    expect(clampGameplaySettings({}).rumbleWeakScale, '整块没写这一格 ⇒ 默认 1 = 与旧行为同一读数').toBe(1)
+  })
+
+  it('老档只有五格 ⇒ 那一格读成 1，而玩家调过的强马达那一个数原样留着', () => {
+    // 「为什么不干脆改叫 rumbleStrongScale」的证人：存档按**键名**读，改名等于把 v14 老档里那个数静默抹回 1
+    const w = makeWorld()
+    w.settings.restore({ bufferMs: 150, frameAssist: true, shakeScale: 0.4, rumbleScale: 1.8, damageScale: 0.9 })
+    const g = w.settings.get()
+    expect(g.rumbleScale, '老档那一个数不许因为新格而重读一遍').toBe(1.8)
+    expect(g.rumbleWeakScale, '没写这一格读成「一个都没关」那一种如实').toBe(1)
+    expect(w.haptics.scale).toBe(1.8)
+    expect(w.haptics.weakScale, '缺格不改手感：默认 1 就是今天「一把尺」的行为').toBe(1)
+  })
+
+  it('两个数各自灌进 haptics 的两个字段（不是同一个数灌两遍）', () => {
+    const w = makeWorld()
+    w.settings.set({ rumbleScale: 1.8, rumbleWeakScale: 0.3 })
+    expect(w.haptics.scale).toBe(1.8)
+    expect(w.haptics.weakScale, '消费者那两格本来就是两个幅值，倍率也得是两个').toBe(0.3)
+    w.settings.set({ rumbleWeakScale: 0.9 })
+    expect(w.haptics.scale, '调弱那一格不许顺手加强那一格').toBe(1.8)
+    expect(w.haptics.weakScale).toBe(0.9)
+  })
+
+  it('越界夹取之后才灌给消费者——新格与其余四格同一条路', () => {
+    const w = makeWorld()
+    w.settings.set({ rumbleWeakScale: 9 })
+    expect(w.haptics.weakScale, '消费者见不到界外的数').toBe(2)
+    expect(w.settings.get().rumbleWeakScale).toBe(2)
+  })
+
+  it('save → 新世界 load：两格各自复原，谁也不许替谁补', async () => {
+    const store = new MapStore()
+    const w = makeWorld(store)
+    w.settings.set({ rumbleScale: 1.4, rumbleWeakScale: 0.2 })
+    await w.saves.save('ki359')
+    const stored = JSON.parse((await store.get('ki359'))!) as { payload: { snapshot: { settings: { gameplay: Record<string, unknown> } } } }
+    expect(stored.payload.snapshot.settings.gameplay.rumbleWeakScale, '档里躺着的是那一个数，不是被强那一格顶替的').toBe(0.2)
+    const w2 = makeWorld(store)
+    await w2.saves.load('ki359')
+    expect(w2.settings.get().rumbleScale).toBe(1.4)
+    expect(w2.settings.get().rumbleWeakScale).toBe(0.2)
+    expect(w2.haptics.weakScale, '读档那一遍也走同一个 store ⇒ 消费者拿到的就是档里那份').toBe(0.2)
+  })
+})
+
+describe('KI-365 长按阈值那一格：界、缺格、第五路消费者与往返', () => {
+  it('这一格自己也有界（越界两头夹、错型回默认、整块没写回 200）', () => {
+    expect(clampGameplaySettings({ holdMs: 5000 }).holdMs, 'ui-ux §6 那一行的上限 800ms').toBe(800)
+    expect(clampGameplaySettings({ holdMs: 20 }).holdMs, '下限 200：低于它的"长按"根本按不出来').toBe(200)
+    expect(clampGameplaySettings({ holdMs: '400' }).holdMs, '字符串不是数：回默认，不做隐式换算').toBe(200)
+    expect(clampGameplaySettings({}).holdMs).toBe(200)
+    expect(GAMEPLAY_BOUNDS.holdMs, '界只有表里这一位主人说第二遍（面板读的就是这一个对象）').toEqual({ min: 200, max: 800 })
+  })
+
+  it('消费者声明的那一个默认＝表里那一个默认（`INPUT_BUFFER_SEC`／`bufferMs` 的先例）', () => {
+    const w = makeWorld()
+    expect(HEAVY_HOLD_MS, '判据所在地声明的默认与表里的默认必须是同一个数').toBe(DEFAULT_GAMEPLAY_SETTINGS.holdMs)
+    expect(w.player.holdMs, 'store 构造那一句把它灌进了真玩家（不是玩家自己留了一份）').toBe(HEAVY_HOLD_MS)
+  })
+
+  it('老档缺这一格 ⇒ 读成 200，而**这不是「与旧行为同一读数」**：旧那条线写在判据里，是 133ms', () => {
+    const w = makeWorld()
+    w.settings.restore({ bufferMs: 150, frameAssist: true, shakeScale: 0.4, rumbleScale: 1.8, rumbleWeakScale: 0.6, damageScale: 0.9 })
+    const g = w.settings.get()
+    expect(g.holdMs, 'v14 老档没有这一格 ⇒ 取 §6 那格的下限（离旧的那把线最近的一端）').toBe(200)
+    expect(g.bufferMs, '新格不许让其余六格重读一遍默认').toBe(150)
+    expect(w.input.bufferSec).toBe(0.15)
+    expect(w.haptics.weakScale).toBe(0.6)
+    expect(w.player.holdMs, '而缺格读出来的那一个数照样灌进玩家手里').toBe(200)
+  })
+
+  it('灌第五路只动第五路：调长按不顺手改缓冲、抖动、振动、伤害', () => {
+    const w = makeWorld()
+    w.settings.set({ holdMs: 500 })
+    expect(w.player.holdMs, '第五把消费者的那一个字段就是这一格').toBe(500)
+    expect([w.input.bufferSec, w.rig.shakeIntensity, w.haptics.scale, w.combat.damageScale], '其余四路一个字不动')
+      .toEqual([0.2, 1, 1, 1])
+    w.settings.set({ holdMs: 300 })
+    expect(w.player.holdMs, '再拧一次仍然是它，不是"第一次生效之后卡住"').toBe(300)
+  })
+
+  it('越界夹取之后才灌给玩家——新格与其余五格同一条路', () => {
+    const w = makeWorld()
+    w.settings.set({ holdMs: 9000 })
+    expect(w.player.holdMs, '玩家手里见不到界外的数（界外的数会变成一条按不到的线）').toBe(800)
+    expect(w.settings.get().holdMs).toBe(800)
+  })
+
+  it('save → 新世界 load：那一格复原，而玩家手里就是档里那一份', async () => {
+    const store = new MapStore()
+    const w = makeWorld(store)
+    w.settings.set({ holdMs: 450, bufferMs: 120 })
+    await w.saves.save('ki365')
+    const stored = JSON.parse((await store.get('ki365'))!) as { payload: { snapshot: { settings: { gameplay: Record<string, unknown> } } } }
+    expect(stored.payload.snapshot.settings.gameplay.holdMs, '档里躺着的就是那一个毫秒数').toBe(450)
+    const w2 = makeWorld(store)
+    await w2.saves.load('ki365')
+    expect(w2.settings.get().holdMs).toBe(450)
+    expect(w2.player.holdMs, '读档那一遍也经同一个 store ⇒ 手感用的就是档里那一份').toBe(450)
+    expect(w2.input.bufferSec, '同一趟 restore 里别的格各回各的').toBe(0.12)
   })
 })
 
@@ -351,10 +464,12 @@ describe('KI-112 v12→v13 迁移', () => {
 })
 
 describe('KI-112 设置持久化：gameplay 跟档走', () => {
-  it('改五格 → save → 档里真的有这块 → 新世界 load ⇒ 五路消费者逐格复原', async () => {
+  it('改八格 → save → 档里真的有这块 → 新世界 load ⇒ 八路消费者逐格复原', async () => {
     const store = new MapStore()
     const w = makeWorld(store)
-    w.settings.set({ bufferMs: 240, frameAssist: true, shakeScale: 1.5, rumbleScale: 2, damageScale: 0.7 })
+    // KI-384 把第八格也塞进这一条腿：它写的是 `false`，也就是**非默认**那一边——
+    // 默认开的那一格若原样存成开，load 回来还是开，这条腿分不清「跟档走」和「压根没接」。
+    w.settings.set({ bufferMs: 240, frameAssist: true, shakeScale: 1.5, rumbleScale: 2, rumbleWeakScale: 0.4, damageScale: 0.7, holdMs: 600, mashGuard: false })
     w.tick(2)
     await w.saves.save('settings')
     // wrap 的信封是 { magic, schemaVersion, crc, payload }，快照住在 payload 里
@@ -362,18 +477,23 @@ describe('KI-112 设置持久化：gameplay 跟档走', () => {
     // KI-112 那一批写这条腿时它是 13；键位数据化（KI-336）把档升到 14，那条字面量当场红——
     // 这条腿问的是"今天存出去的档带今天的号"，所以号从唯一主人那里读，不再抄第二份。
     expect(stored.payload.snapshot.version, '写档走的版本 = SAVE_VERSION').toBe(SAVE_VERSION)
-    expect(stored.payload.snapshot.settings.gameplay).toEqual({ bufferMs: 240, frameAssist: true, shakeScale: 1.5, rumbleScale: 2, damageScale: 0.7 })
+    expect(stored.payload.snapshot.settings.gameplay).toEqual({ bufferMs: 240, frameAssist: true, shakeScale: 1.5, rumbleScale: 2, damageScale: 0.7, rumbleWeakScale: 0.4, holdMs: 600, mashGuard: false })
 
     const w2 = makeWorld(store)
     expect(w2.input.bufferSec, '新世界从默认起手').toBe(0.2)
     expect(w2.rig.shakeIntensity).toBe(1)
+    expect(w2.player.holdMs, '新世界也从 §6 那格的下限起手（不是从上一局的 600 起手）').toBe(200)
+    expect(w2.player.mashGuard, '同理第八格：新世界的起手是默认那一边（开），load 才分得出跟没跟档').toBe(true)
     await w2.saves.load('settings')
-    expect(w2.settings.get()).toEqual({ bufferMs: 240, frameAssist: true, shakeScale: 1.5, rumbleScale: 2, damageScale: 0.7 })
+    expect(w2.settings.get()).toEqual({ bufferMs: 240, frameAssist: true, shakeScale: 1.5, rumbleScale: 2, damageScale: 0.7, rumbleWeakScale: 0.4, holdMs: 600, mashGuard: false })
     expect(w2.input.bufferSec, '240ms→秒').toBeCloseTo(0.24, 10)
     expect(w2.input.frameAssist).toBe(true)
     expect(w2.rig.shakeIntensity).toBe(1.5)
     expect(w2.haptics.scale).toBe(2)
+    expect(w2.haptics.weakScale, 'KI-359：这一格**自己**复原——它写的是 0.4 而强马达那一个数是 2，谁也不许替谁补').toBe(0.4)
     expect(w2.combat.damageScale).toBe(0.7)
+    expect(w2.player.holdMs, 'KI-365：第五路消费者的字段就是判据读的那一个 ⇒ 档里那一份走的就是它').toBe(600)
+    expect(w2.player.mashGuard, 'KI-384：第八格走的是同一条灌入路径——档里写关，新世界手里就是关').toBe(false)
   })
 
   it('老档（无 gameplay 块）load ⇒ 消费者保持当前值，不被重置成默认', async () => {

@@ -450,6 +450,33 @@ describe('异常腿：存储半路翻脸时，主档与诊断各归各位', () =
     expect((await new SlotRoster(new ExplodeStore()).card('slot1')).state).toBe('blocked')
   })
 
+  /**
+   * KI-386 的证人：整份名册也**不许**因为一台翻脸的存储而 reject。标题屏那一次问的失败分支
+   * （`TitleScreen` 的 `catch`）钉的是契约（`listSlots: () => Promise<SlotCard[]>` 任何时候都可能拒），
+   * 而这一格量的是今天：真钩子 `saveRoster.list()` 把四格都说成 blocked 再 settle——
+   * 所以那条 reject 的路今天在玩家脚下不可达，缺的是那一路本身，不是一个已经踩到的坑。
+   */
+  it('名册整份问一遍也不砸：翻脸的库 ⇒ 四格都 settle 成 blocked，一条 rejection 都不留', async () => {
+    const seen: unknown[] = []
+    const on = (r: unknown): void => { seen.push(r) }
+    process.on('unhandledRejection', on)
+    let cards: Awaited<ReturnType<SlotRoster['list']>> | null = null
+    let rejected = ''
+    try {
+      cards = await new SlotRoster(new ExplodeStore(), null).list()
+    } catch (e) {
+      rejected = (e as Error).message
+    } finally {
+      // 先等一轮再摘：rejection 是在这一轮之后才报的，先摘就等于把证人请出门再问有没有见过
+      await new Promise((r) => setTimeout(r, 10))
+      process.off('unhandledRejection', on)
+    }
+    expect(rejected, '名册不许把一次读失败往上抛成 reject').toBe('')
+    expect(cards?.map((c) => `${c.slot}:${c.state}`)).toEqual(['autosave:blocked', 'slot1:blocked', 'slot2:blocked', 'slot3:blocked'])
+    expect(cards?.[0].problem, '原因要说得出（parse 是那一格自己的账）').toBe('parse')
+    expect(seen.length, `未处理的 rejection：${String(seen[0] ?? '')}`).toBe(0)
+  })
+
   it('备份机 set 翻脸 ⇒ 主档照样落、save.ok 照样报（备份位失败不影响主档）', async () => {
     const w = world()
     const primary = new MapStore()
