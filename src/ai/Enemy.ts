@@ -1190,7 +1190,8 @@ function agentRadius(e: Enemy): number {
 function waitHoldRadius(e: Enemy): number {
   let reach = 0
   for (const atk of e.data.attacks ?? []) {
-    const rad = atk.frames.hitbox?.radius ?? 0
+    const hb = atk.frames.hitbox
+    const rad = hb && hb.shape !== 'ring' ? hb.radius : 0 // ring 没有半径，运行时本来就是 ?? 0
     if (rad > reach) reach = rad
   }
   return reach

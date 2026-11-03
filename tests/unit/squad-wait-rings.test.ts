@@ -114,7 +114,7 @@ describe('KI-382 等待者各站自己的圈', () => {
     const w = arena(4, { maxAttackSlots: 1 })
     w.ai.update(TICK_DT, 1, w.player, w.rhythm)
     const base = registry.get<EnemyData>('en_driftsinger')
-    const hold = Math.max(...base.attacks.map((a) => a.frames.hitbox?.radius ?? 0))
+    const hold = Math.max(...base.attacks.map((a) => { const hb = a.frames.hitbox; return hb && hb.shape !== 'ring' ? hb.radius : 0 }))
     const body = 0.5 * (base.body?.scale ?? 1)
     expect(hold, '爪的最大判定半径（数据表）').toBeCloseTo(2.1, 5)
     const waiters = w.enemies.filter((e) => e.squadWaitRank > 0).sort((a, b) => a.squadWaitRank - b.squadWaitRank)
