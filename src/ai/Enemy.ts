@@ -1227,12 +1227,12 @@ function stepAround(e: Enemy, t: Vec3, dt: number, speed: number, awayFrom?: Vec
   // （实测：两者同拍执行时斥力被补半径整份抹掉，两人停在 0.28 米不动）。
   const hold = waitHoldRadius(e)
   const push = separationOf(e, t, 4 * agentRadius(e), hold)
-  // KI-391：主攻手的攻击线上不许站人。通道向量不能等斥力让完再算——刚被轮转下来的人
+  // KI-394：主攻手的攻击线上不许站人。通道向量不能等斥力让完再算——刚被轮转下来的人
   // （实测 1.0 米、目标圈 6.1 米）每拍都被同伴斥力接管，通道整整让不出来。两股合成一次走：
   // 斥力 2 份、通道 1.5 份；还在自己的圈里时再加一份向外偏置（回位方向不许被吃掉）。
   const lane = corridorPush(e, t)
   if (push || lane) {
-    // KI-391：回自己的圈优先于「别靠太近」的软斥力。整条队向内压时，身后那一排的斥力
+    // KI-394：回自己的圈优先于「别靠太近」的软斥力。整条队向内压时，身后那一排的斥力
     // 正好指向玩家，与回位偏置同权 —— 平衡点落在环内（实测排位 2 稳定在 3.78/4.1，
     // 相邻两排 1.83 米，全队越往外压得越深）。回到圈上这一支先把斥力的向内分量投影掉，
     // 只留切向；离圈不到 5 厘米时恢复原样（那时斥力只剩同样向外的分量）。
@@ -1275,7 +1275,7 @@ function stepAround(e: Enemy, t: Vec3, dt: number, speed: number, awayFrom?: Vec
     if (dPeerAt(-1) > dPeerAt(1) + 1e-6) sign = -1
     else if (dPeerAt(1) > dPeerAt(-1) + 1e-6) sign = 1
   } else if (e.squadHolderBodies.length > 0 && laneClearance(e, t, a, r) < 2.8 * agentRadius(e)) {
-    // KI-391：主攻线就在旁边时，两个候选方向里挑离线段更远的那个——从方向层就不往线上拐。
+    // KI-394：主攻线就在旁边时，两个候选方向里挑离线段更远的那个——从方向层就不往线上拐。
     // （只在线旁 1.4 米缓冲带内启用；离得远时仍走 KI-374 的占槽者方位，不抢它的判据。）
     const dMinus = laneDistanceAt(e, t, a, r, -1)
     const dPlus = laneDistanceAt(e, t, a, r, 1)
@@ -1294,7 +1294,7 @@ function stepAround(e: Enemy, t: Vec3, dt: number, speed: number, awayFrom?: Vec
   // 这一条同时把「刚让位、还站在近战带里」的人送回圈上；已经站在圈外的人半径不动（KI-377 原样）。
   // 圈是**绝对**目标：远了要跟上来、近了要退出去。等待者不是站桩——玩家换位置时整条队跟着换。
   const wantR = e.squadWaitRing > 0 ? e.squadWaitRing : r
-  // KI-391：只朝「同一圈上前方 0.4 弧度」那一点走，径向分量几乎为零——从 3.78 米走向 4.1 米圈上
+  // KI-394：只朝「同一圈上前方 0.4 弧度」那一点走，径向分量几乎为零——从 3.78 米走向 4.1 米圈上
   // 前方那一点，起手方向甚至是**向内**的（弦的投影），实测排位 2 定在 3.78 米，永远回不到圈。
   // 把半径缺口按比例混进这一步：正好在圈上 ⇒ 纯切向（KI-371 原样）；差 0.4 米 ⇒ 一半是径向；
   // 差得更多（刚被轮转下来）⇒ 径向占主导，先归位再绕。分母 0.25 米是收敛的快慢：
@@ -1411,7 +1411,7 @@ function slotSeparationOf(e: Enemy): { x: number; z: number } | null {
  * 全被挡死 ⇒ null。
  */
 function projectAwayFromBodies(e: Enemy, ux: number, uz: number): { x: number; z: number } | null {
-  // KI-391：这是一道**安全**投影，不是舒适间距。舒适间距（等待者两米、占槽者一具半身宽）
+  // KI-394：这是一道**安全**投影，不是舒适间距。舒适间距（等待者两米、占槽者一具半身宽）
   // 由 separationOf 的软斥力负责；这里只防「这一步走进身体」。用舒适间距当投影线，
   // 后排会把前排的回圈方向整份切掉（实测排位 2 永远差 0.32 米回不到圈）。
   // 取接触线（两具体格半径）再留 10 厘米拍误差。
@@ -1435,7 +1435,7 @@ function projectAwayFromBodies(e: Enemy, ux: number, uz: number): { x: number; z
   return { x: vx / l, z: vz / l }
 }
 
-/** KI-391：点 (x,z) 到「任一占槽者→目标」线段的最短距离（线段两端也算）。 */
+/** KI-394：点 (x,z) 到「任一占槽者→目标」线段的最短距离（线段两端也算）。 */
 function laneDistance(e: Enemy, t: Vec3, x: number, z: number): number {
   let best = Infinity
   for (const h of e.squadHolderBodies) {
@@ -1452,18 +1452,18 @@ function laneDistance(e: Enemy, t: Vec3, x: number, z: number): number {
   return best
 }
 
-/** KI-391：绕圈的两个候选点（±0.4 rad、当前半径）里，哪一个离主攻线更远。 */
+/** KI-394：绕圈的两个候选点（±0.4 rad、当前半径）里，哪一个离主攻线更远。 */
 function laneDistanceAt(e: Enemy, t: Vec3, a: number, r: number, sign: number): number {
   return laneDistance(e, t, t.x + Math.cos(a + sign * 0.4) * r, t.z + Math.sin(a + sign * 0.4) * r)
 }
 
-/** KI-391：两个候选方向离主攻线的距离里更小的那个——小于 2.8 × 体格半径（1.4 米）时方向层才接管。 */
+/** KI-394：两个候选方向离主攻线的距离里更小的那个——小于 2.8 × 体格半径（1.4 米）时方向层才接管。 */
 function laneClearance(e: Enemy, t: Vec3, a: number, r: number): number {
   return Math.min(laneDistanceAt(e, t, a, r, -1), laneDistanceAt(e, t, a, r, 1))
 }
 
 /**
- * KI-391：等待者不许站在「占槽者→目标」的线段上（KI-375 还欠①）。
+ * KI-394：等待者不许站在「占槽者→目标」的线段上（KI-375 还欠①）。
  * 线段半宽取 2 × 体格半径 = 1 米（一具身宽；与 KI-383 的接触距离同一把尺）。
  * 站进去了就朝**自己所在那一侧**的垂线方向让一步——不跨到另一侧（那会从主攻手脸前穿过去）；
  * 正好压线时分不出两侧 ⇒ 按 KI-375 的奇偶方向（`squadOrbitTie`）选。
@@ -1471,7 +1471,7 @@ function laneClearance(e: Enemy, t: Vec3, a: number, r: number): number {
  */
 export function corridorPush(e: Enemy, t: Vec3): { x: number; z: number } | null {
   if (e.squadHolderBodies.length === 0) return null
-  // KI-391：线段的半宽是一具身宽（1.0 米），但**接管点**要提前到 1.4 米：
+  // KI-394：线段的半宽是一具身宽（1.0 米），但**接管点**要提前到 1.4 米：
   // 等贴到 1.0 米才推，绕圈下一步又会把人拉回 0.99，读数就在边界上来回抖（实测稳态 390 个样本）。
   const half = 2 * agentRadius(e)
   const guard = half + 0.4

@@ -148,7 +148,7 @@ describe('KI-382 等待者各站自己的圈', () => {
     expect(r.p10, 'p10').toBeGreaterThanOrEqual(2)
     expect(r.attackPct, '圈没有把出手冻住').toBeGreaterThan(90)
     for (const radius of r.finalRadii) expect(radius, '结束时都站在自己的圈上（不是出手位）').toBeGreaterThan(1.75)
-    // KI-391：圈是绝对目标——只朝「圈上前方 0.4 弧度」那一点走时，径向几乎不动，排位 2/3
+    // KI-394：圈是绝对目标——只朝「圈上前方 0.4 弧度」那一点走时，径向几乎不动，排位 2/3
     // 会稳定停在 3.78/5.61（差 0.32/0.48 米）。现在每个等待者的末拍半径都该贴着自己的圈。
     // 末拍可能正撞上换人（刚被轮转下来的人还在小跑回位），所以量稳态中位数，不量末拍。
     for (const [rank, list] of r.steadyRadius) {

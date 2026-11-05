@@ -10,7 +10,7 @@ import type { EnemyData } from '@/data/schema'
 import type { PlayerController } from '@/player/ThirdPersonController'
 
 /**
- * KI-391：主攻手的攻击线上不许站人（KI-375 还欠①）。
+ * KI-394：主攻手的攻击线上不许站人（KI-375 还欠①）。
  *
  * 量出来的现状：六人三槽 2400 拍里，等待者有 **818/7200 拍（11.4%）** 站在「占槽者→玩家」
  * 的线段一米内，最小横向距离 **0.004 米**（正压在线上）。这不是「相位撞车」——同一场景等待者
@@ -151,7 +151,7 @@ function run(arm: Arm = null) {
   return { occ, steadyOcc, maxRunTicks, min: minAll, under1, attackPct: (100 * attackTicks) / 2400 }
 }
 
-describe('KI-391 主攻手的攻击线上不许站人', () => {
+describe('KI-394 主攻手的攻击线上不许站人', () => {
   it('corridorPush 几何：线两侧各推各的，远处与背后不推', () => {
     const target = { x: 0, y: 0, z: 0 }
     const left = corridorPush(corridorFake(1.5, 0.05, true), target)
