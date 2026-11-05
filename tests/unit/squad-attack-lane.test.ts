@@ -20,14 +20,16 @@ import type { PlayerController } from '@/player/ThirdPersonController'
  * 接管点提前到 1.4 米、目标推到 1.8 米；方向取**自己所在那一侧**的垂线（压线时按奇偶）。
  * 关键的一步是**合成**：刚被轮转下来的人半径常在 1.0 米、目标圈 6.1 米，每拍都被同伴斥力
  * 接管——通道若等斥力让完再算就永远轮不到。斥力 2 份 + 通道 1.5 份 + 回圈偏置一次走完，
- * 离圈远时用全速回位。修后**换人 40 拍以后的稳态遮挡 0**；换人过渡最长约 32 拍（0.5 秒）——
+ * 离圈远时用全速回位。修后**换人 40 拍以后的稳态遮挡 0**；换人过渡最长 26 拍（0.43 秒）——
  * 新人从 2.6 米的外圈走进自己的圈，路上穿过一次主攻线，这是换位本身的代价，不是稳态站位。
  *
  * 腿：
  *  ① `corridorPush` 的几何：线左侧给 +z、右侧给 -z、远处/背后给 null；
  *  ② 离主攻线远的等待者，有没有这一格走得一模一样（不抢无关的人）；
  *  ③ 六人三槽：换人 40 拍以后稳态遮挡 0、总遮挡 <120 拍、最长连续 ≤32 拍，身体间距与出手不掉；
- *  ④ 反向臂：摘掉 `squadHolderBodies` ⇒ 稳态遮挡 1120 拍回来。
+ *  ④ 反向臂：摘掉 `squadHolderBodies` ⇒ 遮挡 1074 拍、最长连续 474 拍回来。
+ *  ⑤ 射手带（背退拉弓）也走同一条线：六名射手三槽 2400 拍 0 个遮挡，反向臂 993 拍；
+ *     他们边打边退，线段一直在动，这条腿量的就是「线在动时也守得住」。
  */
 
 registerGameData()
@@ -62,14 +64,14 @@ const corridorFake = (x: number, z: number, holders: boolean) =>
     squadOrbitTie: 1,
   }) as unknown as Enemy
 
-function arena(n: number) {
+function arena(n: number, id = 'en_driftsinger') {
   const ai = new AISystem({})
   const rhythm = rhythmOf()
   const player = fakePlayer(0, 0)
   const enemies: Enemy[] = []
   for (let i = 0; i < n; i++) {
     const ang = (i / n) * Math.PI * 2
-    const e = ai.spawn('en_driftsinger', { x: Math.cos(ang) * 1.6, y: 0, z: Math.sin(ang) * 1.6 }, 'p' + i)
+    const e = ai.spawn(id, { x: Math.cos(ang) * 1.6, y: 0, z: Math.sin(ang) * 1.6 }, 'p' + i)
     e.alertness = 100
     e.enter('combat')
     enemies.push(e)
@@ -95,8 +97,8 @@ const withArm = <T,>(arm: Arm, fn: () => T): T => {
   }
 }
 
-function run(arm: Arm = null) {
-  const w = arena(6)
+function run(arm: Arm = null, id = 'en_driftsinger') {
+  const w = arena(6, id)
   let key = ''
   let changedAt = -1
   let occ = 0
@@ -194,5 +196,16 @@ describe('KI-394 主攻手的攻击线上不许站人', () => {
     const r = run('holderBodies')
     expect(r.steadyOcc, '没有这一格，等待者又站回攻击线上').toBeGreaterThan(0)
     expect(r.occ).toBeGreaterThan(300)
+  })
+
+  it('射手带：边打边退时线段一直动，六人三槽仍是 0 个遮挡', () => {
+    const r = run(null, 'en_skewer')
+    expect(r.occ, '整场没有一拍站在射线上').toBe(0)
+    expect(r.maxRunTicks).toBe(0)
+    expect(r.min, '射手之间的身体间距').toBeGreaterThan(1.5)
+    expect(r.under1).toBe(0)
+    expect(r.attackPct, '背退拉弓没有被通道挤掉').toBeGreaterThan(85)
+    const arm = run('holderBodies', 'en_skewer')
+    expect(arm.occ, '反向臂：没有占槽者身体，射手又站回射线上').toBeGreaterThan(300)
   })
 })
