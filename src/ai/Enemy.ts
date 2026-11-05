@@ -171,6 +171,15 @@ export class Enemy {
    */
   retreatArmed = true
   /**
+   * KI-398：困兽（§14 状态表 Retreat 的第二条出口「被追上 → Combat（攻速 +10%）」）。
+   *
+   * 撤退不是免死金牌：退开半步之后玩家还贴在它**自己的近身带**里（`distBands[0]`，表里就是它
+   * 够得着的那一条），说明这一逃没逃掉——回头打，招式帧推进 ×1.1。走的是 §15.2 过载期那台
+   * 攒帧加速器（`advanceAttackFrames`），所以判定窗与收势一拍不短：更快落爪不等于更长的破绽。
+   * 与 `retreatArmed` 成对：伤好回战斗时一并清掉（那时它不再是困兽）。
+   */
+  cornered = false
+  /**
    * KI-382：等待时要站的圈（米，离目标的水平距离；0 = 没有圈）。Squad.update 按排位写：
    * 排位 1 = 自己近战够得着的边上，每高一排再往外让两具身宽（KI-376 同一把尺）。
    * 圈只**往外**推（`max(当前半径, 圈)`）——已经站得更远的人不被拽回来。
@@ -765,6 +774,12 @@ export class Enemy {
         if (this.stats.hp / this.stats.hpMax > this.data.ai.retreatHpFrac! * 1.8) {
           // KI-396：伤好了 ⇒ 重新装填撤退（与「撤过一次就打到死」成对：这是唯一的重新武装点）。
           this.retreatArmed = true
+          this.cornered = false
+          this.enter('combat')
+        }
+        else if (this.stateTick > CORNERED_AFTER_TICKS && this.playerInPressingBand(dist)) {
+          // KI-398：被追上 ⇒ 困兽。先让它跑半步再判；玩家还在它自己的近身带里 ⇒ 这一逃没逃掉。
+          this.cornered = true
           this.enter('combat')
         }
         else if (dist > 10) this.enter('combat')
@@ -1039,10 +1054,27 @@ export class Enemy {
     }
   }
 
+  /**
+   * KI-398：玩家是不是贴在它的近身带里——撤退的「被追上」出口读它。
+   *
+   * 只认 `distBands[0]`（表里 min 最小的那一条，作者按升序写）：对射手来说「在狙击距离里」
+   * 是舒适区，不是被追上。带里还必须有真招式（`hasAttackAction`）——第一条带只有 `chase`
+   * 说明它在这个距离上根本够不着，那就继续跑。
+   */
+  private playerInPressingBand(dist: number): boolean {
+    const band = this.data.ai.distBands[0]
+    if (!band || dist < band.min || dist > band.max) return false
+    return hasAttackAction(this, this.phaseActions(band.actions))
+  }
+
   private progressAttack(dt: number, tick: number, player: PlayerController, rhythm: RhythmClock): void {
     if (!this.attack) return
     const tickBefore = this.attack.tick
-    const advanced = this.advanceAttackFrames((this.buff?.attackSpeedMul ?? 1) * this.startupSpeedMul)
+    // KI-398：困兽那 10% 与「定调」光环、过载前摇乘在同一处——三条都只是帧推进的倍率，
+    // 判定窗与收势的钳制（`advanceAttackFrames` 里那一格）对三条一视同仁。
+    const advanced = this.advanceAttackFrames(
+      (this.buff?.attackSpeedMul ?? 1) * (this.cornered ? CORNERED_ATTACK_SPEED_MUL : 1) * this.startupSpeedMul,
+    )
     const f = this.attack.spec.frames
     // 赤线 telegraph 期间持续跟踪目标：线是「它会打哪」的诚实承诺，玩家要能看到被牵着
     if (f.projectile?.telegraph && this.attack.tick >= 0 && this.attack.tick < f.startup) {
@@ -1547,6 +1579,17 @@ function stepKite(e: Enemy, t: Vec3, dt: number, speed: number): void {
   if (limit > 0 && dist3(e.pos, e.home) >= limit) return
   stepAway(e, t, dt, speed)
 }
+
+/**
+ * KI-398：§14 状态表 Retreat 那一格「被追上 → Combat（攻速 +10% 困兽）」。表上写的是百分比，
+ * 这里就是那 10%——帧推进的倍率与 §15.2 过载期同一台攒帧加速器，不新造节奏。
+ */
+const CORNERED_ATTACK_SPEED_MUL = 1.1
+/**
+ * KI-398：撤退里先让它跑半步再判「被追上」——0.4 秒，与 `chase` 里 `stateTick > 24` 同一条呼吸拍
+ * （§13「每招间硬缓冲 0.4-0.8s」的下沿）。判得太早会把「刚转身还没迈步」当成被追上。
+ */
+const CORNERED_AFTER_TICKS = 24
 
 /** 距离带里的伪动作：只决定脚步，不能当成招式出手 */
 const PSEUDO_ACTIONS = new Set(['chase', 'backstep', 'hold'])

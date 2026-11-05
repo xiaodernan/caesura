@@ -59,12 +59,14 @@ describe('Enemy 状态机的两条暗腿', () => {
     a.alertness = 100
     a.stats.hp = 10 // 漂调者 hp 70、retreatHpFrac 0.25 ⇒ 10 ≤ 17.5 破线
     let tick = 0
-    const step = (): void => a.update(TICK_DT, ++tick, fakePlayer(2, 0), rhythm, () => false)
+    // KI-398：玩家站 3 米（在漂调者近身带 0-2.2 之外）。2 米那一格现在是设计里的「被追上」——
+    // 撤退出口会把它接回战斗（`enemy-cornered` 那条腿钉的就是它），而这一条测的是同伴拉力，不是那一格。
+    const step = (): void => a.update(TICK_DT, ++tick, fakePlayer(3, 0), rhythm, () => false)
     step()
     expect(a.state, '血线破线 ⇒ combat 分流进 retreat').toBe('retreat')
     const x0 = a.pos.x
     for (let i = 0; i < 100; i++) step()
-    expect(a.state, '距玩家仅 2m、血未回 ⇒ 一直在退').toBe('retreat')
+    expect(a.state, '玩家在近身带外、血未回 ⇒ 一直在退').toBe('retreat')
     // 纯背退（没有同伴可投奔）100 tick 会把 x 推到 -1.1·4·dt·100 ≈ -7.3；
     // 同伴在 +x 侧以同速往回拉 ⇒ 净剩 -0.1·4·dt·100 ≈ -0.67
     expect(a.pos.x).toBeLessThan(x0)
