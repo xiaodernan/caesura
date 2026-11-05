@@ -383,7 +383,8 @@
     "pauseBars": 1,
     "searchAlertness": 0,
     "lookBackEveryBars": 4
-   }
+   },
+   "drumSurfaceHits": 4
   },
   "attacks": [
    {

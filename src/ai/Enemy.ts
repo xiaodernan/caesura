@@ -300,6 +300,10 @@ export class Enemy {
    * 平时谁看哪一片就是哪一片——回头的那一拍才有意义。
    */
   searchPostAngle = 0
+  /** KI-404 §14.3：鼓面挨了几记「带震裂的背击」（撞满 `ai.drumSurfaceHits` ⇒ 鼓崩） */
+  drumFissureHits = 0
+  /** KI-404：鼓已经崩了——同一面鼓只崩一次，之后再打只是打鼓手 */
+  drumBroken = false
   private lookBackRemainTicks = 0
   private lookBackFaceYaw = 0
   callAllySuppressedUntil = 0

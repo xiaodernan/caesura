@@ -310,6 +310,13 @@ export interface EnemyData {
      */
     beatLossOnDeath?: { pauseBars: number; searchAlertness: number; lookBackEveryBars?: number }
     /**
+     * combat.md §14.3「对鼓面 4 次震裂 → 鼓崩：全营节拍同步紊乱（据点战里 ＝ 巡逻表失效）」。
+     * 鼓长在驼鼓**背上**，所以“打到鼓面”的判据用既有的背刺位（`isBackstab`，> 0.72π），
+     * 不新造部位模型。带震裂的重击从背后撞满这一格 ⇒ 鼓崩：走 `beatLossOnDeath` 的同一套
+     * 全营丢拍（鼓手还活着，只是它的拍没了）。
+     */
+    drumSurfaceHits?: number
+    /**
      * 选招方式。缺省 'random'＝从当前距离带的候选里随机；'cycle'＝按表的顺序轮转
      * （冷却中的跳过，全在冷却就这一拍不出手）。§15.2 的 Main Boss 第一阶写着
      * 「每 4 小节一个乐句，玩家可背谱」——随机选招背不了谱，这条不是为了 AI 更聪明，

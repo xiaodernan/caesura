@@ -533,6 +533,8 @@ export class CombatManager {
       e.stats.addPoise(Math.round(poiseBase * poiseMul * (mv ? 1 : (p.weapon.poiseMul ?? 1)) * p.rpg.poiseDmgMul * e.poiseAccumMul), tick)
     }
     const burst = e.stats.addFissure(s.layers)
+    // §14.3 鼓面：带震裂的背击在驼鼓背上数到 4 ⇒ 鼓崩（KI-404）。回声重演不算新的一记。
+    if (!replay) this.drumSurfaceHit(e, s)
     if (s.mute && e.data.ai.buffAura) e.stunTicks = Math.max(e.stunTicks, 60)
     // §11 闷音挂在它身上：走 EntityStats 那条唯一的计时器（和弹道 muteOnHit 同一个字段），
     // 不另开一套"战技版沉默"——那会变成第二条状态通道。
@@ -1561,6 +1563,24 @@ export class CombatManager {
   private beatLossMoment(e: Enemy): void {
     const bl = e.data.ai.beatLossOnDeath
     if (!bl) return
+    // KI-404：鼓已经先崩了 ⇒ 鼓手倒下不再“再丢一次拍”（那面鼓早就不响了）。
+    // 崩鼓那一条走 `drumBreakMoment`，两个触发源共用同一个结算。
+    if (e.drumBroken) return
+    const { pauseTicks } = this.campLoseBeat(e, bl)
+    bus.emit('vfx.request', { key: 'ring_dust', pos: { ...e.pos }, scale: 2.2 })
+    bus.emit('audio.sfx', { key: 'drum_boom', pos: { ...e.pos }, gain: 1 })
+    bus.emit('ui.notify', { text: `鼓声断了！${this.lastBeatLossHit} 名敌人丢拍 ${(pauseTicks / TICK_HZ).toFixed(1)}s`, kind: 'boss' })
+  }
+
+  /** 上一次 `campLoseBeat` 影响了几个人（播报用；不跨 tick 保存语义，只是返回值的中转） */
+  private lastBeatLossHit = 0
+
+  /**
+   * 全营丢拍的那一段结算：KI-402 的鼓手死亡与 KI-404 的鼓面崩裂共用它——
+   * 两个触发源、一套口径（时长按小节、落脚鼓位、可选集体回头）。
+   * 返回影响人数与冻结 tick 数，让两个播报各说各的那一句话。
+   */
+  private campLoseBeat(e: Enemy, bl: NonNullable<EnemyData['ai']['beatLossOnDeath']>): { hit: number; pauseTicks: number } {
     const perBar = this.rhythm.beatTicks * this.rhythm.beatsPerBar
     const pauseTicks = Math.max(0, Math.round(bl.pauseBars * perBar))
     const lookBackEvery = bl.lookBackEveryBars ? Math.max(0, Math.round(bl.lookBackEveryBars * perBar)) : 0
@@ -1578,9 +1598,34 @@ export class CombatManager {
       if (lookBackEvery > 0) x.armLookBack(lookBackEvery, lookBackHold, e.pos)
       hit++
     }
-    bus.emit('vfx.request', { key: 'ring_dust', pos: { ...e.pos }, scale: 2.2 })
-    bus.emit('audio.sfx', { key: 'drum_boom', pos: { ...e.pos }, gain: 1 })
-    bus.emit('ui.notify', { text: `鼓声断了！${hit} 名敌人丢拍 ${(pauseTicks / TICK_HZ).toFixed(1)}s`, kind: 'boss' })
+    this.lastBeatLossHit = hit
+    return { hit, pauseTicks }
+  }
+
+  /**
+   * §14.3「对鼓面 4 次震裂 → 鼓崩」：鼓长在驼鼓背上 ⇒ 判据是**背刺位**（`isBackstab`，> 0.72π）
+   * 且这一记真的叠了震裂层（轻击没有裂纹，敲不碎鼓皮）。撞满 `ai.drumSurfaceHits` ⇒ 鼓崩：
+   * 鼓手活着、它自己的招式照旧，但全营的拍没了——和杀了鼓手走同一段结算（KI-402/KI-403）。
+   *
+   * 为什么不用“部位”模型：这个项目里没有任何敌人有分部位判定（Boss 的振源核也只是一个
+   * 招式窗口），为一个鼓新造一套坐标是给同一件事开第二个主人。背刺位是现成的那把尺子。
+   */
+  private drumSurfaceHit(e: Enemy, s: EnemyStrike): void {
+    const need = e.data.ai.drumSurfaceHits
+    if (!need || e.drumBroken || !e.alive || !s.backstab || s.layers <= 0) return
+    e.drumFissureHits += 1
+    if (e.drumFissureHits < need) {
+      bus.emit('ui.notify', { text: `鼓面震裂 ${e.drumFissureHits}/${need}`, kind: 'info' })
+      bus.emit('vfx.request', { key: 'hit_ring', pos: { ...s.point }, scale: 1.2 })
+      return
+    }
+    e.drumBroken = true
+    const bl = e.data.ai.beatLossOnDeath
+    if (!bl) return
+    const { pauseTicks } = this.campLoseBeat(e, bl)
+    bus.emit('vfx.request', { key: 'death_shatter', pos: { ...e.pos }, scale: 1.2 })
+    bus.emit('audio.sfx', { key: 'burst_shell', pos: { ...e.pos }, gain: 1 })
+    bus.emit('ui.notify', { text: `鼓皮碎了！${this.lastBeatLossHit} 名敌人丢拍 ${(pauseTicks / TICK_HZ).toFixed(1)}s`, kind: 'boss' })
   }
 
   /** §5.4 Execute/Backstab — trigger detection (interact edge + valid candidate) */
