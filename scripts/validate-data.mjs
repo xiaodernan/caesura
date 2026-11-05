@@ -1430,6 +1430,9 @@ function validateEnemies(lootIds) {
       if (ai.drumSurfaceHits !== undefined && (!Number.isInteger(ai.drumSurfaceHits) || ai.drumSurfaceHits < 1)) {
         report.error(file, `${w}.ai.drumSurfaceHits`, '必须是 ≥1 的整数')
       }
+      if (ai.drumMuteRadius !== undefined && !(typeof ai.drumMuteRadius === 'number' && ai.drumMuteRadius >= 0)) {
+        report.error(file, `${w}.ai.drumMuteRadius`, '必须是非负数')
+      }
       report.sub(file, `${w}.ai.beatGhost`, ai.beatGhost, {
         intangibleWindowTicks: { min: 0, int: true }, dodgeRevealTicks: { min: 0, int: true }, dodgeStunTicks: { min: 0, int: true },
         fakeBeatRevealTicks: { min: 0, int: true }, fakeBeatLoudness: { min: 0 },

@@ -384,7 +384,8 @@
     "searchAlertness": 0,
     "lookBackEveryBars": 4
    },
-   "drumSurfaceHits": 4
+   "drumSurfaceHits": 4,
+   "drumMuteRadius": 6
   },
   "attacks": [
    {

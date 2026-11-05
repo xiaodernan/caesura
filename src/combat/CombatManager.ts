@@ -1039,6 +1039,8 @@ export class CombatManager {
       bus.emit('sound.source', { id: 'player', pos: { ...pr.pos }, loudness: pr.crystalLoudness ?? 0.8 })
       bus.emit('audio.sfx', { key: 'chord_slam', pos: { ...pr.pos }, gain: 0.9 })
       bus.emit('vfx.request', { key: 'death_shatter', pos: { ...pr.pos }, scale: 0.8 })
+      // §6.5「投掷音色晶调包节拍器」（KI-405）：碎在鼓边 ⇒ 鼓静音，全营丢拍。
+      this.timbreMutesDrums(pr.pos)
       return
     }
     bus.emit('vfx.request', { key: 'ring_dust', pos: { ...pr.pos }, scale: reason === 'wall' ? 1.4 : 0.4 })
@@ -1565,7 +1567,7 @@ export class CombatManager {
     if (!bl) return
     // KI-404：鼓已经先崩了 ⇒ 鼓手倒下不再“再丢一次拍”（那面鼓早就不响了）。
     // 崩鼓那一条走 `drumBreakMoment`，两个触发源共用同一个结算。
-    if (e.drumBroken) return
+    if (e.drumBroken || e.drumMuted) return
     const { pauseTicks } = this.campLoseBeat(e, bl)
     bus.emit('vfx.request', { key: 'ring_dust', pos: { ...e.pos }, scale: 2.2 })
     bus.emit('audio.sfx', { key: 'drum_boom', pos: { ...e.pos }, gain: 1 })
@@ -1612,7 +1614,7 @@ export class CombatManager {
    */
   private drumSurfaceHit(e: Enemy, s: EnemyStrike): void {
     const need = e.data.ai.drumSurfaceHits
-    if (!need || e.drumBroken || !e.alive || !s.backstab || s.layers <= 0) return
+    if (!need || e.drumBroken || e.drumMuted || !e.alive || !s.backstab || s.layers <= 0) return
     e.drumFissureHits += 1
     if (e.drumFissureHits < need) {
       bus.emit('ui.notify', { text: `鼓面震裂 ${e.drumFissureHits}/${need}`, kind: 'info' })
@@ -1626,6 +1628,30 @@ export class CombatManager {
     bus.emit('vfx.request', { key: 'death_shatter', pos: { ...e.pos }, scale: 1.2 })
     bus.emit('audio.sfx', { key: 'burst_shell', pos: { ...e.pos }, gain: 1 })
     bus.emit('ui.notify', { text: `鼓皮碎了！${this.lastBeatLossHit} 名敌人丢拍 ${(pauseTicks / TICK_HZ).toFixed(1)}s`, kind: 'boss' })
+  }
+
+  /**
+   * §6.5「投掷音色晶调包节拍器」：晶碎在鼓边 ⇒ 鼓被调包——鼓手没死、鼓也没碎，
+   * 但那一声之后营里再也听不到自己的拍。第三个（也是最后一个）静音触发源，与
+   * 「鼓手死」「鼓面崩」共用同一段 `campLoseBeat`。
+   *
+   * 判据是**落点到鼓的距离**（`ai.drumMuteRadius`）而不是命中：晶按 KI-023 的设计穿过所有人
+   * （`pierce: 99`），鼓面没有碰撞体；「贴到鼓上」是距离能回答的问题，不是碰撞能回答的。
+   */
+  private timbreMutesDrums(at: Vec3): void {
+    for (const e of this.ai.enemies) {
+      if (!e.alive || e.drumMuted || e.drumBroken) continue
+      const r = e.data.ai.drumMuteRadius
+      if (!r) continue
+      if (Math.hypot(e.pos.x - at.x, e.pos.z - at.z) > r) continue
+      const bl = e.data.ai.beatLossOnDeath
+      if (!bl) continue
+      e.drumMuted = true
+      const { pauseTicks } = this.campLoseBeat(e, bl)
+      bus.emit('vfx.request', { key: 'ring_echo', pos: { ...e.pos }, scale: 1.6 })
+      bus.emit('audio.sfx', { key: 'drum_boom', pos: { ...e.pos }, gain: 0.5 })
+      bus.emit('ui.notify', { text: `鼓被调包了！${this.lastBeatLossHit} 名敌人丢拍 ${(pauseTicks / TICK_HZ).toFixed(1)}s`, kind: 'boss' })
+    }
   }
 
   /** §5.4 Execute/Backstab — trigger detection (interact edge + valid candidate) */

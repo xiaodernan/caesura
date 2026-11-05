@@ -304,6 +304,8 @@ export class Enemy {
   drumFissureHits = 0
   /** KI-404：鼓已经崩了——同一面鼓只崩一次，之后再打只是打鼓手 */
   drumBroken = false
+  /** KI-405：鼓被音色晶「调包」过（鼓手与鼓都还在，但那一声之后营里听不到自己的拍） */
+  drumMuted = false
   private lookBackRemainTicks = 0
   private lookBackFaceYaw = 0
   callAllySuppressedUntil = 0
