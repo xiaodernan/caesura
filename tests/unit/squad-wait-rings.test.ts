@@ -48,7 +48,7 @@ function arena(n: number, config: Partial<SquadConfig> = {}) {
   return { ai, rhythm, player, enemies }
 }
 
-type Arm = 'holderBodies' | 'ring' | null
+type Arm = 'holderBodies' | 'ring' | 'ringLane' | null
 
 /** 反向臂：把 Squad 每拍写好的那一格清掉（同一条全流程，不改任何判据）。 */
 function withArm<T>(arm: Arm, fn: () => T): T {
@@ -59,6 +59,10 @@ function withArm<T>(arm: Arm, fn: () => T): T {
     for (const m of this.getAllMembers()) {
       if (arm === 'holderBodies') m.enemy.squadHolderBodies = []
       if (arm === 'ring') m.enemy.squadWaitRing = 0
+      if (arm === 'ringLane') {
+        m.enemy.squadWaitRing = 0
+        m.enemy.squadHolderBodies = []
+      }
     }
   }
   try {
@@ -72,6 +76,8 @@ function run(n: number, config: Partial<SquadConfig> = {}, arm: Arm = null) {
   const w = arena(n, config)
   const gaps: number[] = []
   const steady: number[] = []
+  const steadyRadius = new Map<number, number[]>()
+  const steadyRing = new Map<number, number>()
   let under1 = 0
   let attackTicks = 0
   let key = ''
@@ -96,6 +102,14 @@ function run(n: number, config: Partial<SquadConfig> = {}, arm: Arm = null) {
       if (min < 1) under1++
       if (tick - changedAt > 60) steady.push(min)
     }
+    if (tick - changedAt > 60) {
+      for (const e of waiters) {
+        const list = steadyRadius.get(e.squadWaitRank) ?? []
+        list.push(Math.hypot(e.pos.x, e.pos.z))
+        steadyRadius.set(e.squadWaitRank, list)
+        steadyRing.set(e.squadWaitRank, e.squadWaitRing)
+      }
+    }
   }
   const sorted = [...gaps].sort((a, b) => a - b)
   const q = (p: number): number => sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))] ?? 0
@@ -106,6 +120,9 @@ function run(n: number, config: Partial<SquadConfig> = {}, arm: Arm = null) {
     under1,
     attackPct: (100 * attackTicks) / 2400,
     finalRadii: w.enemies.filter((e) => e.squadWaitRank > 0).map((e) => Math.hypot(e.pos.x, e.pos.z)),
+    finalRings: w.enemies.filter((e) => e.squadWaitRank > 0).map((e) => e.squadWaitRing),
+    steadyRadius,
+    steadyRing,
   }
 }
 
@@ -131,6 +148,14 @@ describe('KI-382 等待者各站自己的圈', () => {
     expect(r.p10, 'p10').toBeGreaterThanOrEqual(2)
     expect(r.attackPct, '圈没有把出手冻住').toBeGreaterThan(90)
     for (const radius of r.finalRadii) expect(radius, '结束时都站在自己的圈上（不是出手位）').toBeGreaterThan(1.75)
+    // KI-391：圈是绝对目标——只朝「圈上前方 0.4 弧度」那一点走时，径向几乎不动，排位 2/3
+    // 会稳定停在 3.78/5.61（差 0.32/0.48 米）。现在每个等待者的末拍半径都该贴着自己的圈。
+    // 末拍可能正撞上换人（刚被轮转下来的人还在小跑回位），所以量稳态中位数，不量末拍。
+    for (const [rank, list] of r.steadyRadius) {
+      const sortedR = [...list].sort((a, b) => a - b)
+      const median = sortedR[Math.floor(sortedR.length / 2)]!
+      expect(Math.abs(median - (r.steadyRing.get(rank) ?? 0)), `排位 ${rank} 的稳态半径`).toBeLessThan(0.3)
+    }
   })
 
   it('六人三槽：同一条圈上的人数更多，稳态读数不变', () => {
@@ -158,10 +183,11 @@ describe('KI-382 等待者各站自己的圈', () => {
     expect(r.min).toBeLessThan(1)
   })
 
-  it('反向臂：摘掉圈 ⇒ 等的人又站回自己的出手位里', () => {
-    const r = withArm('ring', () => run(4, { maxAttackSlots: 1 }))
-    // 圈管的是「站在哪」，不是「彼此隔多远」：摘掉它，身体排斥还在（所以不会再叠），
-    // 但半径停在出手位置（0.8–1.0 米），正是 KI-382 量到的现状。
-    expect(Math.min(...r.finalRadii), '没有圈就没人往外走').toBeLessThan(1.5)
+  it('反向臂：摘掉圈与通道 ⇒ 等的人又站回自己的出手位里', () => {
+    // 通道（按主攻手→目标线段留 1 米缓冲）落地之后，「没了圈」不等于「站回线上」——
+    // 只摘圈、不摘通道时，等待者被通道推在线外（见 squad-attack-lane）。这条腿量的是
+    // 所有间距机制全关掉时的基线：身体排斥还在（不会再叠），但半径停在出手位置。
+    const r = withArm('ringLane', () => run(4, { maxAttackSlots: 1 }))
+    expect(Math.min(...r.finalRadii), '两套机制都摘掉时，没人往外走').toBeLessThan(1.5)
   })
 })

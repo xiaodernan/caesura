@@ -64,12 +64,13 @@ const sharedSpotRun = (withPeer: boolean) => {
   if (!withPeer) for (const e of [a, b]) { e.squadPeerPos = null; e.squadOrbitTie = 1; e.squadNearPeers = []; e.squadHolderBodies = []; e.squadWaitRing = 0 }
   const r0 = [distTo(a, p), distTo(b, p)]
   const rhythm = rhythmOf()
-  for (let i = 2; i <= 61; i++) for (const e of [a, b]) e.update(TICK_DT, i, p, rhythm, () => false)
+  for (let i = 2; i <= 401; i++) for (const e of [a, b]) e.update(TICK_DT, i, p, rhythm, () => false)
   return {
     gap: gap(bearing(a, p), bearing(b, p)),
     radii: [distTo(a, p), distTo(b, p)],
     r0,
     ranks: [a.squadWaitRank, b.squadWaitRank],
+    rings: [a.squadWaitRing, b.squadWaitRing],
   }
 }
 
@@ -117,13 +118,20 @@ describe('KI-375 等待者之间的相位分离', () => {
     expect([a.squadOrbitTie, b.squadOrbitTie], '排位 1 ⇒ +1，排位 2 ⇒ -1').toEqual([1, -1])
   })
 
-  it('两个重合的等待者 ⇒ 一秒后夹开 ≥ 0.2 rad，各自走向自己的圈', () => {
+  it('两个重合的等待者 ⇒ 夹开 ≥ 0.2 rad，最后各自站在自己的圈上', () => {
     const run = sharedSpotRun(true)
     expect(run.ranks, '排位按登记顺序：1 与 2').toEqual([1, 2])
     expect(run.gap, '不再粘成一具身体').toBeGreaterThan(0.2)
     // KI-382 起：分开不再只靠切向——排位 1 的圈在里、排位 2 的圈在外，半径本来就该动。
-    expect(run.radii[0], '排位 1 往自己的圈（更内）收').toBeLessThan(run.r0[0] - 1)
-    expect(run.radii[1], '排位 2 的圈在外').toBeGreaterThan(run.radii[0] + 0.5)
+    // KI-391 起：弦上的目标点与当前位置同半径，径向几乎不动（差 0.3 米时永远回不去），
+    // 所以判据从「一秒内谁在外」改成「各自真的走到自己的圈上」——圈本来就是绝对目标。
+    expect(run.r0[0], '两人从同一点出发').toBeCloseTo(run.r0[1], 6)
+    // 这一场的占槽者不追（合成场景，停在自己 5 米处），通道从它一直连到玩家：等待者过线时会被
+    // 缓冲带停在边界上，读数差 0.08 米（4.18/4.10）。真实场景占槽者在 1 米内，通道只占很小一段；
+    // 所以这里判「在自己的圈上 ±0.3 米」，不写死到厘米。
+    expect(Math.abs(run.radii[0] - run.rings[0]), '排位 1 站在自己的圈上').toBeLessThan(0.3)
+    expect(Math.abs(run.radii[1] - run.rings[1]), '排位 2 站在自己的圈上').toBeLessThan(0.3)
+    expect(run.radii[1] - run.radii[0], '两排之间仍隔着两具身宽').toBeGreaterThan(1.5)
   })
 
   it('远侧同行：占槽者判据推着两人相向，同伴方位把后面那个按回去', () => {
