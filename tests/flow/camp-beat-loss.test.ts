@@ -86,7 +86,8 @@ function force(e: Enemy, id: string, tickIn = 0): void {
 describe('KI-402 鼓停 ⇒ 全营丢拍一小节（§6.1／§6.5）', () => {
   it('数据：驼鼓带 beatLossOnDeath，叠唱带的是另一格（走调时刻）', () => {
     const tym = registry.get<EnemyData>('en_tympanus')
-    expect(tym.ai.beatLossOnDeath).toEqual({ pauseBars: 1, searchAlertness: 0 })
+    // KI-403 在同一格里加了 `lookBackEveryBars`：丢拍之后每 4 小节集体回头一次（§6.5 后半句）
+    expect(tym.ai.beatLossOnDeath).toEqual({ pauseBars: 1, searchAlertness: 0, lookBackEveryBars: 4 })
     expect(tym.ai.offTuneOnDeath, '两种死亡涟漪各归各的号').toBeUndefined()
     const ref = registry.get<EnemyData>('en_refrein')
     expect(ref.ai.beatLossOnDeath).toBeUndefined()

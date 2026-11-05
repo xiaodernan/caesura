@@ -303,8 +303,12 @@ export interface EnemyData {
      * 复用 §7.2「节拍被拿走」那一格 `frozenTicks`），随后落进 `search` 去找鼓位——
      * `searchAlertness` 是落地时的警觉值（0 ＝ 完全丢掉玩家，靠感知重新爬回来）。
      * 单位是小节不是 tick：拍长归 `RhythmClock`（Boss 接管时也一样成立）。
+     *
+     * `lookBackEveryBars`（§6.5「静音驼鼓后……每 4 小节集体回头一次」）：丢拍落地之后的搜场里，
+     * 每这么多个小节整营一起回头一拍——不是随机小动作，而是**同时**转身面向圈外。缺省不填 =
+     * 只丢拍不回头（旧行为）。回头那一下的时长是一拍，由 `RhythmClock` 换算，不另立数字。
      */
-    beatLossOnDeath?: { pauseBars: number; searchAlertness: number }
+    beatLossOnDeath?: { pauseBars: number; searchAlertness: number; lookBackEveryBars?: number }
     /**
      * 选招方式。缺省 'random'＝从当前距离带的候选里随机；'cycle'＝按表的顺序轮转
      * （冷却中的跳过，全在冷却就这一拍不出手）。§15.2 的 Main Boss 第一阶写着

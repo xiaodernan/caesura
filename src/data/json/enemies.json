@@ -381,7 +381,8 @@
    },
    "beatLossOnDeath": {
     "pauseBars": 1,
-    "searchAlertness": 0
+    "searchAlertness": 0,
+    "lookBackEveryBars": 4
    }
   },
   "attacks": [

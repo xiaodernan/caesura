@@ -1554,12 +1554,17 @@ export class CombatManager {
    *   `stunTicks` 会作废读条并走硬直归还，那是被打断，不是丢拍。
    * - **落脚点是鼓位**：`lastKnown` 挪到鼓手倒下的地方。静悄悄杀掉鼓手，他们搜的是鼓，
    *   不是玩家——这条让「先鼓手、后包抄」真的有意义。
+   * - **每 N 小节集体回头**（§6.5，KI-403）：`lookBackEveryBars` 有值时给每个人装一条回头的钟
+   *   （`Enemy.armLookBack`）——平时盯着鼓位搜、每 N 小节同时转身把视锥扫过圈外一拍。
+   *   时长全部按拍换算：间隔 = `lookBackEveryBars × beatsPerBar × beatTicks`，回头那一下 = 一拍。
    */
   private beatLossMoment(e: Enemy): void {
     const bl = e.data.ai.beatLossOnDeath
     if (!bl) return
     const perBar = this.rhythm.beatTicks * this.rhythm.beatsPerBar
     const pauseTicks = Math.max(0, Math.round(bl.pauseBars * perBar))
+    const lookBackEvery = bl.lookBackEveryBars ? Math.max(0, Math.round(bl.lookBackEveryBars * perBar)) : 0
+    const lookBackHold = Math.max(1, Math.round(this.rhythm.beatTicks))
     let hit = 0
     for (const x of this.ai.enemies) {
       if (x === e || !x.alive) continue
@@ -1569,6 +1574,8 @@ export class CombatManager {
       x.alertness = bl.searchAlertness
       x.lastKnown = { ...e.pos }
       if (x.state !== 'dead') x.enter('search')
+      // 圈心 = 鼓位（KI-403）。`lastKnown` 会被感知改成玩家的位置，拿它当圈心营地就会跟着人走。
+      if (lookBackEvery > 0) x.armLookBack(lookBackEvery, lookBackHold, e.pos)
       hit++
     }
     bus.emit('vfx.request', { key: 'ring_dust', pos: { ...e.pos }, scale: 2.2 })

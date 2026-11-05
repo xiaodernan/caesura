@@ -65,6 +65,16 @@ let enemySeq = 0
 /** 敌人脱离 combat 回到追击的距离（数据可用 `ai.chaseBeyond` 覆盖；射手要在更远距离开火） */
 const DEFAULT_CHASE_BEYOND = 12
 
+/**
+ * KI-403 §6.5「集体回头」的两个转速，单位都是**每 tick 的插值系数**（与 `faceSlow` 同一条尺）：
+ * - `LOOK_BACK_TURN_RATE`：回头那一下的甩头速度。一拍（84BPM ≈ 43 tick）里走到 99%，
+ *   看起来是「猛地回头」，不是慢慢蹭。
+ * - `LOOK_BACK_STARE_RATE`：平时盯鼓位的回正速度。慢（约 1.3 秒转回来），所以回头扫过圈外
+ *   之后，他们会带着那个朝向再搜一阵——玩家有足够长的「被看住」窗口要躲。
+ */
+const LOOK_BACK_TURN_RATE = 0.12
+const LOOK_BACK_STARE_RATE = 0.04
+
 export class Enemy {
   id = `en_${++enemySeq}`
   stats: EntityStats
@@ -262,6 +272,36 @@ export class Enemy {
    */
   onPatrolLoop?: () => void
   searchAngle = 0
+  /**
+   * KI-403 §6.5「静音驼鼓后：全营进入 Search 且每 4 小节集体回头一次」。
+   * 三个数都由 `CombatManager` 在那一次丢拍里写给全营（`armLookBack`）：
+   * - `lookBackEveryTicks`：两回之间的间隔（小节数 × 一小节 tick）；0 = 没装这一格；
+   * - `lookBackHoldTicks`：回头那一下站定多久（一拍——转身、扫一眼、再走）；
+   * - `lookBackNextTicks`：离下一次回头还剩多少 tick（只在 `search` 里走）。
+   * 用相对 tick 而不是绝对 tick：丢拍的 `frozenTicks` 会让整段 `update` 短路，
+   * 冻结里的时间不该计入「4 小节」——那一段他们连自己的拍都没有。
+   */
+  lookBackEveryTicks = 0
+  lookBackHoldTicks = 0
+  lookBackNextTicks = 0
+  /** 回头那一拍进行中（测试与表现层读它；`sense` 的「当场看见」也用它） */
+  get lookingBack(): boolean { return this.lookBackRemainTicks > 0 }
+  /**
+   * KI-403：丢拍之后的「搜场圈心」——鼓手倒下的地方。与 `lastKnown` 分开是这一条的命门：
+   * `sense/hear` 会随时把 `lastKnown` 改成玩家的位置，若拿它当圈心，营地会跟着玩家转、
+   * 视锥永远对着人（实测：警觉 27→85 一路爬，4 秒后直接进 combat）。圈心是**鼓**，
+   * `lastKnown` 是**听到/看见的人**——两件事各有各的主人。
+   */
+  searchAnchor: Vec3 | null = null
+  /**
+   * KI-403：这只在鼓位周围的「岗位」方位（丢拍那一刻相对鼓位的角度，之后不再变）。
+   * 不绕圈是刻意的：绕圈意味着「盯着鼓」的视锥会自己扫过整圈，回头那一下就不再是唯一的
+   * 警戒窗口（实测：绕到鼓的另一侧时正对玩家，警觉一路爬到 combat）。岗位固定 + 圈心固定，
+   * 平时谁看哪一片就是哪一片——回头的那一拍才有意义。
+   */
+  searchPostAngle = 0
+  private lookBackRemainTicks = 0
+  private lookBackFaceYaw = 0
   callAllySuppressedUntil = 0
   /** 视线段的两个复用端点（`losBlocked` 每次覆写它们，查询方只在调用期间读） */
   private readonly segA: Vec3 = { x: 0, y: 0, z: 0 }
@@ -485,9 +525,36 @@ export class Enemy {
     this.introTicksLeft = 0
   }
 
+  /**
+   * KI-403 §6.5：把「每 N 小节回头一次」装进这只敌人。
+   * `everyTicks` / `holdTicks` 由调用方按 `RhythmClock` 换算好再给
+   * （唯一的调用方是 `CombatManager.beatLossMoment`），这里不读表、不碰拍速。
+   */
+  armLookBack(everyTicks: number, holdTicks: number, anchor?: Vec3): void {
+    if (anchor) {
+      this.searchAnchor = { ...anchor }
+      const dx = this.pos.x - anchor.x, dz = this.pos.z - anchor.z
+      // 正好站在鼓位上（没有方位可谈）⇒ 用出生时的朝向定岗，不让 atan2(0,0) 给 0。
+      this.searchPostAngle = Math.hypot(dx, dz) > 0.05 ? Math.atan2(dz, dx) : this.yaw
+    }
+    if (!(everyTicks > 0)) {
+      this.lookBackEveryTicks = 0
+      this.lookBackRemainTicks = 0
+      return
+    }
+    this.lookBackEveryTicks = everyTicks
+    this.lookBackHoldTicks = Math.max(1, Math.round(holdTicks))
+    this.lookBackNextTicks = everyTicks
+    this.lookBackRemainTicks = 0
+  }
+
   /** perception: called by the AISystem sweep once every 6 ticks (10Hz) */
   sense(player: PlayerController, now: number, sight: SightGate = null): void {
     if (!this.alive) return
+    // KI-403：丢拍的那一小节里时间是被拿走的——看不见、听不见（`update` 同样整段短路）。
+    // 没有这一行，冻结只是「不动」，玩家走到他脸前照样被记进 `lastKnown`，KI-402 说好的
+    // 那一小节空档就成了一句空话（实测：冻着的 170 拍里警觉从 7 爬到 95，一解冻直接 chase）。
+    if (this.frozenTicks > 0) return
     const ai = this.data.ai
     const p = player.pos
     const dx = p.x - this.pos.x, dz = p.z - this.pos.z
@@ -497,7 +564,12 @@ export class Enemy {
     // 这里整条不成立，于是往下走**震动**那一支——躲进掩体不等于消失，敌人还会听见你移动。
     if (!this.deaf && dist <= ai.vision.range && ang < (ai.vision.fovDeg * Math.PI / 180) / 2
       && !this.losBlocked(p, player.hitTarget().height, sight)) {
-      this.alertness = Math.min(100, this.alertness + 34 * 0.1)
+      // KI-403 §6.5：回头那半拍是**真的在看**。视锥扫过圈外时被框住的人不是「慢慢被注意」，
+      // 是当场被看见（警觉拉满，下一拍进 chase）——否则 §6.5 那句「难度↑」在算术上不成立：
+      // search 里警觉本来就在以 20/s 衰减，3.4/次 的爬升抵掉衰减后永远到不了 100。
+      this.alertness = this.lookBackRemainTicks > 0 && this.frozenTicks <= 0
+        ? 100
+        : Math.min(100, this.alertness + 34 * 0.1)
       this.lastKnown = { ...p }
     } else if (dist <= (this.bossPhaseData?.vibrationRange ?? ai.vibration.range) && (playerIsMoving(player))) {
       // KI-024：聋乱期她改读地面——阶段可以给震动感知换半径。移动才算数：站定仍是安全的，
@@ -786,6 +858,37 @@ export class Enemy {
         break
       }
       case 'search': {
+        // KI-403 §6.5：鼓停之后的搜场有两个拍子——「盯着鼓位（圈心）」和「整营回头」。
+        // 平时他们围着鼓位站住、脸朝圈心（视锥对着鼓，圈外是安全的）；每 N 小节
+        // 所有人同时把身子拧到背后（+π）、站定一拍，视锥扫过**圈外**——玩家要躲的是这一下。
+        // 只装了 `armLookBack` 的敌人才走这一支（普通追丢的 search 原样，KI-403 之前的全部口径不变）。
+        if (this.lookBackEveryTicks > 0) {
+          const anchor = this.searchAnchor ?? this.lastKnown
+          if (this.lookBackRemainTicks > 0) {
+            this.lookBackRemainTicks--
+            this.yaw += norm(this.lookBackFaceYaw - this.yaw) * LOOK_BACK_TURN_RATE
+            if (this.lookBackRemainTicks === 0) this.yaw = this.lookBackFaceYaw
+            break
+          }
+          faceSlow(this, anchor, LOOK_BACK_STARE_RATE)
+          if (--this.lookBackNextTicks <= 0) {
+            this.lookBackNextTicks = this.lookBackEveryTicks
+            this.lookBackRemainTicks = this.lookBackHoldTicks
+            this.lookBackFaceYaw = norm(this.yaw + Math.PI)
+            // 十二个人同时转身要听得见——不然「回头」只存在于数学里。
+            bus.emit('vfx.request', { key: 'ring_dust', pos: { ...this.pos }, scale: 0.8 })
+            bus.emit('audio.sfx', { key: 'footstep', pos: { ...this.pos }, gain: 0.22 })
+            break
+          }
+          const ring = 4 + Math.sin(this.stateTick / 40) * 2
+          stepToward(this, {
+            x: anchor.x + Math.cos(this.searchPostAngle) * ring, y: 0,
+            z: anchor.z + Math.sin(this.searchPostAngle) * ring
+          }, dt, this.spd(0.6), rhythm)
+          if (this.alertness >= 100) this.enter('chase')
+          else if (this.stateTick > 1200) { this.enter('patrol'); this.alertness = 0 }
+          break
+        }
         this.searchAngle += dt * 0.8
         const r = 4 + Math.sin(this.stateTick / 40) * 2
         stepToward(this, {
