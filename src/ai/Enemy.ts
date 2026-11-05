@@ -162,6 +162,14 @@ export class Enemy {
    * 等待者读的是 `squadHolderBodies`（KI-382），这一格只给已经占槽的人。
    */
   squadSlotPeers: { x: number; y: number; z: number }[] = []
+
+  /**
+   * KI-396：残血撤退只装填一次。设计 §14 的撤退出口是「距离恢复 → Combat；被追上 → Combat（困兽）」，
+   * 两条出口都回到战斗——可 `combat` 里的入场判据读的是血量水位（HP ≤ 阈值），伤员一回到战斗就又满足它，
+   * 于是在 10 米边界上每拍互踢（实测六人三槽里三人掉到 10% 后 1163 次状态翻转 = 每拍一次）。
+   * 这里给那条判据补上设计隐含的迟滞：撤过一次就只在**伤好了**（> 阈值 × 1.8，既有的恢复线）才重新装填。
+   */
+  retreatArmed = true
   /**
    * KI-382：等待时要站的圈（米，离目标的水平距离；0 = 没有圈）。Squad.update 按排位写：
    * 排位 1 = 自己近战够得着的边上，每高一排再往外让两具身宽（KI-376 同一把尺）。
@@ -716,7 +724,11 @@ export class Enemy {
           if (band?.actions.includes('backstep')) stepKite(this, p, dt, this.spd(0.45))
         } else {
           if (dist > (this.data.ai.chaseBeyond ?? DEFAULT_CHASE_BEYOND)) { this.enter('chase'); break }
-          if (this.data.ai.retreatHpFrac && this.stats.hp / this.stats.hpMax <= this.data.ai.retreatHpFrac) { this.enter('retreat'); break }
+          if (this.data.ai.retreatHpFrac && this.retreatArmed && this.stats.hp / this.stats.hpMax <= this.data.ai.retreatHpFrac) {
+            this.retreatArmed = false
+            this.enter('retreat')
+            break
+          }
           // §14.7 软计时器优先于随机招式：到点就必须敲钟，玩家要打断的是这一拍
           if (this.maybeBarCast(rhythm)) break
           // KI-373：waiting 提到 if (band) 之前——两条移动分支（射手带的背退、普通带的绕圈）都要读它，
@@ -750,7 +762,11 @@ export class Enemy {
         stepAway(this, p, dt, this.spd(1.1))
         const ally = nearestAlly(this)
         if (ally) stepToward(this, ally.pos, dt, this.data.speed, rhythm)
-        if (this.stats.hp / this.stats.hpMax > this.data.ai.retreatHpFrac! * 1.8) this.enter('combat')
+        if (this.stats.hp / this.stats.hpMax > this.data.ai.retreatHpFrac! * 1.8) {
+          // KI-396：伤好了 ⇒ 重新装填撤退（与「撤过一次就打到死」成对：这是唯一的重新武装点）。
+          this.retreatArmed = true
+          this.enter('combat')
+        }
         else if (dist > 10) this.enter('combat')
         break
       }

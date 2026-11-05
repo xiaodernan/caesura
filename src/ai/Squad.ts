@@ -208,6 +208,10 @@ export class Squad {
       if (!member.enemy.alive) continue
       // KI-379：交战中的成员哪怕仇恨数值已经归零也还在队列里（按 0 参与排序，排在所有有仇恨的人之后）
       if (top < this.config.combatEntryThreshold && !this.engagedMember(member)) continue
+      // KI-396：撤退中的人不占队列。低血量的人仇恨表还排得靠前，于是会重新拿到槽位并一直占着不打
+      //（实测六人三槽、三人掉到 10% 后累计 726 个槽位拍 ≈ 12 秒，攻击率从 95.5% 掉到 94.1%）——
+      // 他在往外走，不参加这一次围攻。挥到一半的不摘（KI-380 那一格：招式走完再让位）。
+      if (member.enemy.state === 'retreat' && !member.enemy.attack) continue
       ranked.push({ member, top })
     }
     ranked.sort((a, b) => {
@@ -240,6 +244,11 @@ export class Squad {
     this.rankedThisTick = ranked
     const slots = this.config.maxAttackSlots
     const inRanked = new Set(candidates.map((r) => r.member))
+    // KI-396：撤退的人（没在挥）先交还槽位。他不在候选里，下面那道「按候选清位」的循环碰不到他，
+    // 于是槽位会一直挂在一个正在往外走的人身上（实测三人掉到 10% 后累计 722 个槽位拍）。
+    for (const m of this.members.values()) {
+      if (m.hasAttackSlot && m.enemy.state === 'retreat' && !m.enemy.attack) m.hasAttackSlot = false
+    }
     const keep = new Set<SquadMember>()
     for (const m of this.members.values()) {
       if (!m.hasAttackSlot) continue
