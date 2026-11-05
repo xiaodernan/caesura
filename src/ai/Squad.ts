@@ -96,6 +96,22 @@ export interface SlotReport {
  */
 const ENGAGED_STATES: ReadonlySet<string> = new Set(['combat', 'chase', 'alert', 'callAlly'])
 
+/**
+ * KI-397：已经离开这一场围攻的状态——候选闸读它。
+ *
+ * `retreat` 是 KI-396 那一格（残血往外走），其余四个是真的脱战（丢了目标 / 回巡逻 / 去看声音）。
+ * `recover` **不在**这里：硬直中的人攻击是空的、也还没回到 combat，但他没有离场
+ * （KI-133 那条「读条被硬直抹掉」要的正是不在这一拍摘他的槽）。
+ * 用黑名单而不是白名单：队列外的新状态默认仍在场，不会静默失配。
+ */
+const OUT_OF_FIGHT_STATES: ReadonlySet<string> = new Set([
+  'retreat',
+  'idle',
+  'patrol',
+  'investigate',
+  'search',
+])
+
 export class Squad {
   private members = new Map<string, SquadMember>()
   private config: SquadConfig
@@ -211,7 +227,10 @@ export class Squad {
       // KI-396：撤退中的人不占队列。低血量的人仇恨表还排得靠前，于是会重新拿到槽位并一直占着不打
       //（实测六人三槽、三人掉到 10% 后累计 726 个槽位拍 ≈ 12 秒，攻击率从 95.5% 掉到 94.1%）——
       // 他在往外走，不参加这一次围攻。挥到一半的不摘（KI-380 那一格：招式走完再让位）。
-      if (member.enemy.state === 'retreat' && !member.enemy.attack) continue
+      // KI-397：同一条闸也管脱战——`search`／`patrol`／`idle`／`investigate` 已经不在打了。
+      // 原先只挡 `retreat`，于是玩家走远、仇恨早已归零之后，仍在搜索的人照样占着三格里的名额
+      //（实测 1800 拍累计 4987 个槽位拍）；挡住之后下面那道「非候选先交还槽位」的循环才会碰到他们。
+      if (OUT_OF_FIGHT_STATES.has(member.enemy.state) && !member.enemy.attack) continue
       ranked.push({ member, top })
     }
     ranked.sort((a, b) => {
@@ -246,8 +265,11 @@ export class Squad {
     const inRanked = new Set(candidates.map((r) => r.member))
     // KI-396：撤退的人（没在挥）先交还槽位。他不在候选里，下面那道「按候选清位」的循环碰不到他，
     // 于是槽位会一直挂在一个正在往外走的人身上（实测三人掉到 10% 后累计 722 个槽位拍）。
+    // KI-397：这条兜底改成「凡是不在候选里的人」——脱战（search/patrol）走的是同一个洞：
+    // 玩家走远后 1800 拍里累计 4987 个槽位拍挂在这几个人的 `hasAttackSlot` 上，仇恨却早已是 0。
+    // 候选自己的槽仍由下面那道循环按 `keep` 重写（KI-133 的既有语义一个字不动）。
     for (const m of this.members.values()) {
-      if (m.hasAttackSlot && m.enemy.state === 'retreat' && !m.enemy.attack) m.hasAttackSlot = false
+      if (m.hasAttackSlot && !inRanked.has(m)) m.hasAttackSlot = false
     }
     const keep = new Set<SquadMember>()
     for (const m of this.members.values()) {
