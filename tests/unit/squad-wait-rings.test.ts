@@ -25,6 +25,7 @@ import type { PlayerController } from '@/player/ThirdPersonController'
  *  ②–④ 四人一槽 / 六人三槽 / 五人两槽，每人每拍量一遍：等待者两两从不低于 1 米；
  *  ⑤ 反向臂：摘掉主攻手的身体格 ⇒ 轮转交接那一刻又贴回 1 米以内；
  *  ⑥ 反向臂：摘掉圈 ⇒ 两个人还是会滑到彼此身上。
+ *  ⑦ 刷怪几何：六只从同一小片地方一起走进来（真实刷怪形状，不是围一圈），也散得开。
  */
 
 registerGameData()
@@ -190,4 +191,49 @@ describe('KI-382 等待者各站自己的圈', () => {
     const r = withArm('ringLane', () => run(4, { maxAttackSlots: 1 }))
     expect(Math.min(...r.finalRadii), '两套机制都摘掉时，没人往外走').toBeLessThan(1.5)
   })
+
+  it('六只从同一小片地方一起走进来：三秒内散到 1 米以上，之后不再贴回去', () => {
+    // 真实刷怪是一队人从同一个入口走进来，不是均匀围成一圈。出生点本身只有 0.4 米间距
+    //（最坏情况：六具身体叠在一格里），量的是队列能不能把它拆开、拆开后守不守得住。
+    expect(clumpRun(0.4).lastUnder1, '0.4 米栅格刷点：180 拍（3 秒）内散开——之后一拍都不许再 <1 米').toBeLessThanOrEqual(180)
+    expect(clumpRun(0.4).attackPct, '散开的过程没有把出手冻住').toBeGreaterThan(75)
+    // 六具身体**完全同点**是 authored 刷点不会出现的退化情形，但引擎得能自己解开：
+    // 没有身体的两个人拿到同一份判据会一直同速同向；能分开是因为各排的圈半径不同。
+    // 实测 581 拍（9.7 秒）清到 1 米以上；摘掉圈 ⇒ 1567 拍。阈值钉 700，防它退化成「摘圈」那一档。
+    expect(clumpRun(0).lastUnder1, '完全同点：10 秒内也得解开').toBeLessThanOrEqual(700)
+  })
 })
+
+/** 六只同一片地方刷出来（间距 `gap` 米；0 = 完全同点），量最晚一拍还有人挨着小于 1 米。 */
+function clumpRun(gap: number): { lastUnder1: number; attackPct: number } {
+  const ai = new AISystem({})
+  const rhythm = new RhythmClock()
+  rhythm.setBpm(84, 4)
+  const player = fakePlayer(0, 0)
+  const enemies = []
+  for (let i = 0; i < 6; i++) {
+    const e = ai.spawn(
+      'en_driftsinger',
+      { x: 3 + (i % 3) * gap, y: 0, z: Math.floor(i / 3) * gap },
+      'clump' + i,
+    )
+    e.alertness = 100
+    e.enter('combat')
+    enemies.push(e)
+  }
+  let lastUnder1 = 0
+  let attackTicks = 0
+  for (let tick = 1; tick <= 2400; tick++) {
+    ai.update(TICK_DT, tick, player, rhythm)
+    rhythm.update(TICK_DT)
+    if (enemies.some((e) => e.attack !== null)) attackTicks++
+    let min = Infinity
+    for (let i = 0; i < 6; i++) {
+      for (let j = i + 1; j < 6; j++) {
+        min = Math.min(min, Math.hypot(enemies[i].pos.x - enemies[j].pos.x, enemies[i].pos.z - enemies[j].pos.z))
+      }
+    }
+    if (min < 1) lastUnder1 = tick
+  }
+  return { lastUnder1, attackPct: (100 * attackTicks) / 2400 }
+}
