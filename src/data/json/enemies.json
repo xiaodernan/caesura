@@ -378,6 +378,10 @@
    "callAlly": {
     "range": 16,
     "broadcastTicks": 48
+   },
+   "beatLossOnDeath": {
+    "pauseBars": 1,
+    "searchAlertness": 0
    }
   },
   "attacks": [

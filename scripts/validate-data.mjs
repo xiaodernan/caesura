@@ -1426,6 +1426,7 @@ function validateEnemies(lootIds) {
       report.sub(file, `${w}.ai.callAlly`, ai.callAlly, { range: { min: 0 }, broadcastTicks: { min: 0, int: true } })
       report.sub(file, `${w}.ai.buffAura`, ai.buffAura, { range: { min: 0 }, attackSpeedMul: { min: 0 }, dmgMul: { min: 0 } })
       report.sub(file, `${w}.ai.offTuneOnDeath`, ai.offTuneOnDeath, { stunTicks: { min: 0, int: true }, resetAlertness: { bool: true } })
+      report.sub(file, `${w}.ai.beatLossOnDeath`, ai.beatLossOnDeath, { pauseBars: { min: 0 }, searchAlertness: { min: 0, max: 100 } })
       report.sub(file, `${w}.ai.beatGhost`, ai.beatGhost, {
         intangibleWindowTicks: { min: 0, int: true }, dodgeRevealTicks: { min: 0, int: true }, dodgeStunTicks: { min: 0, int: true },
         fakeBeatRevealTicks: { min: 0, int: true }, fakeBeatLoudness: { min: 0 },

@@ -298,6 +298,14 @@ export interface EnemyData {
     /** §14.6「击杀它→全场敌人失衡（走调时刻）」：硬直 tick 数 + 是否把警觉清零 */
     offTuneOnDeath?: { stunTicks: number; resetAlertness: boolean }
     /**
+     * §6.1／§6.5「全营巡逻以 4/4 拍军鼓为令（鼓手=驼鼓），鼓停则全营停顿 1 小节」。
+     * 鼓手一死，同营的活人丢拍：`pauseBars` 个小节里整个 `update` 短路（走位与出招一起停，
+     * 复用 §7.2「节拍被拿走」那一格 `frozenTicks`），随后落进 `search` 去找鼓位——
+     * `searchAlertness` 是落地时的警觉值（0 ＝ 完全丢掉玩家，靠感知重新爬回来）。
+     * 单位是小节不是 tick：拍长归 `RhythmClock`（Boss 接管时也一样成立）。
+     */
+    beatLossOnDeath?: { pauseBars: number; searchAlertness: number }
+    /**
      * 选招方式。缺省 'random'＝从当前距离带的候选里随机；'cycle'＝按表的顺序轮转
      * （冷却中的跳过，全在冷却就这一拍不出手）。§15.2 的 Main Boss 第一阶写着
      * 「每 4 小节一个乐句，玩家可背谱」——随机选招背不了谱，这条不是为了 AI 更聪明，

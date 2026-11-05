@@ -1497,6 +1497,7 @@ export class CombatManager {
     const v = e.data.boss?.victory
     if (v) this.cadenza(e, v)
     this.offTuneMoment(e)
+    this.beatLossMoment(e)
   }
 
   /** §16 胜利序列的收尾播报：屏息走完之前它一直等着（安静不能被一行字盖掉） */
@@ -1536,6 +1537,43 @@ export class CombatManager {
     bus.emit('vfx.request', { key: 'ring_echo', pos: { ...e.pos }, scale: 3 })
     bus.emit('audio.sfx', { key: 'burst_shell', pos: { ...e.pos }, gain: 1 })
     bus.emit('ui.notify', { text: `走调时刻！${hit} 名敌人失衡`, kind: 'boss' })
+  }
+
+  /**
+   * §6.1／§6.5「全营巡逻以 4/4 拍军鼓为令（鼓手=驼鼓），鼓停则全营停顿 1 小节」。
+   *
+   * 鼓手倒了，同一营的活人就**丢拍**：先停一小节（走位、出招、读条一起停），再落进 `search`
+   * 去找鼓位。这是潜行解 A 的第二步「砸掉或静音驼鼓」在战斗里的兑现——杀了鼓手不是多一个尸体，
+   * 是整营的可预测性被拿走。
+   *
+   * 三条口径：
+   * - **时长按小节算，不按 tick 算**：`pauseBars × beatsPerBar × RhythmClock.beatTicks`。
+   *   84BPM／4/4 下是 171 tick ≈ 2.86s；钟被 Boss 接管时同一句仍然成立。
+   * - **停 = `frozenTicks`**，不是 `stunTicks`：那一格的语义本来就是「这个生物的节拍被拿走了」，
+   *   招式停在原地、时间（架势／震裂／闷音）也一起停——鼓声没了，营里的时间就没了。
+   *   `stunTicks` 会作废读条并走硬直归还，那是被打断，不是丢拍。
+   * - **落脚点是鼓位**：`lastKnown` 挪到鼓手倒下的地方。静悄悄杀掉鼓手，他们搜的是鼓，
+   *   不是玩家——这条让「先鼓手、后包抄」真的有意义。
+   */
+  private beatLossMoment(e: Enemy): void {
+    const bl = e.data.ai.beatLossOnDeath
+    if (!bl) return
+    const perBar = this.rhythm.beatTicks * this.rhythm.beatsPerBar
+    const pauseTicks = Math.max(0, Math.round(bl.pauseBars * perBar))
+    let hit = 0
+    for (const x of this.ai.enemies) {
+      if (x === e || !x.alive) continue
+      if ((x.data.ai.camp ?? 'default') !== (e.data.ai.camp ?? 'default')) continue
+      x.attack = null
+      x.frozenTicks = Math.max(x.frozenTicks, pauseTicks)
+      x.alertness = bl.searchAlertness
+      x.lastKnown = { ...e.pos }
+      if (x.state !== 'dead') x.enter('search')
+      hit++
+    }
+    bus.emit('vfx.request', { key: 'ring_dust', pos: { ...e.pos }, scale: 2.2 })
+    bus.emit('audio.sfx', { key: 'drum_boom', pos: { ...e.pos }, gain: 1 })
+    bus.emit('ui.notify', { text: `鼓声断了！${hit} 名敌人丢拍 ${(pauseTicks / TICK_HZ).toFixed(1)}s`, kind: 'boss' })
   }
 
   /** §5.4 Execute/Backstab — trigger detection (interact edge + valid candidate) */
