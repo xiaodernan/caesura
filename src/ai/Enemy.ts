@@ -1254,7 +1254,14 @@ export function waitRingRadius(e: Enemy, rank: number): number {
   if (rank <= 0) return 0
   const hold = waitHoldRadius(e)
   if (hold <= 0) return 0
-  return hold + (rank - 1) * 4 * agentRadius(e)
+  const spacing = 4 * agentRadius(e)
+  // KI-400：圈不能排在「放弃阵地」那条线外面。`combat` 在 `dist > chaseBeyond` 那一格会转 `chase`，
+  // 而 `chase` 的脚是全速朝玩家——排位 5 以上的等待者（原式 12.1–22.1 米）每拍都被这一格拽回来，
+  // 最后全挤在脱手线内侧那一条（实测 12 只营地在 11.0 米上叠六个人、1800 拍里 5449 拍在 `chase`）。
+  // 上限取「脱手线再往里一条圈的间距」：最外那一圈离脱手线还有一整排的余量，不是踩在线上。
+  // 号从数据来（`ai.chaseBeyond`，缺省 12），间距仍是 KI-382 的 4 × 体格半径，没有新手感常数。
+  const leash = (e.data.ai.chaseBeyond ?? DEFAULT_CHASE_BEYOND) - spacing
+  return Math.min(hold + (rank - 1) * spacing, Math.max(hold, leash))
 }
 
 /**
