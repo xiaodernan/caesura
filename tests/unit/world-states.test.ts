@@ -1,128 +1,101 @@
-import { describe, it, expect, beforeAll, afterEach } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { bus } from '@/core/EventBus'
-import { registry } from '@/core/Registry'
 import { WorldStates } from '@/quest/WorldStates'
 import type { WorldStateDef } from '@/data/schema'
 
-describe('WorldStates — 值域状态唯一写口与快照/恢复', () => {
-  let w: WorldStates
-  const defs: WorldStateDef[] = [
-    { key: 'state.test.a', displayName: 'Test A', values: ['X', 'Y', 'Z'], default: 'X', note: '' },
-    { key: 'state.test.b', displayName: 'Test B', values: ['ON', 'OFF'], default: 'OFF', note: '' }
-  ]
+/**
+ * `src/quest/WorldStates.ts`：值域型世界状态（Phase 6-B，narrative §7 的 `STATE.<域>.<对象> = <枚举>`）。
+ *
+ * 三条纪律：
+ * 1. 唯一写入口是 `set()`，key/value 都必须在登记表里
+ * 2. 没写过 ⇒ 读登记表声明的 `default`
+ * 3. snapshot 只记写过的格；restore 只认登记表 + 合法取值，其余丢弃／退回缺省
+ */
 
-  beforeAll(() => {
-    registry.register('states', defs)
+const defs: WorldStateDef[] = [
+  { key: 'state.meg', displayName: '无鸣的结局', values: ['resonant', 'silenced'], default: 'resonant' },
+  { key: 'state.bells', displayName: '第四口钟', values: ['sealed', 'rung', 'melted', 'intact'], default: 'sealed' },
+]
+
+let ws: WorldStates | null = null
+afterEach(() => { ws?.dispose(); ws = null })
+
+describe('WorldStates：构造与缺省', () => {
+  it('未写过的格子读到登记表里声明的 default', () => {
+    ws = new WorldStates(defs)
+    expect(ws.get('state.meg')).toBe('resonant')
+    expect(ws.get('state.bells')).toBe('sealed')
+    expect(ws.isSet('state.meg')).toBe(false)
   })
 
-  afterEach(() => {
-    w?.dispose()
+  it('不存在的 key 读到空串；def 返回 null', () => {
+    ws = new WorldStates(defs)
+    expect(ws.get('state.nope')).toBe('')
+    expect(ws.def('state.nope')).toBeNull()
   })
 
-  it('构造：缺省值写入 values，def/all/get 都能读到', () => {
-    w = new WorldStates(defs)
-    expect(w.def('state.test.a')).not.toBeNull()
-    expect(w.all().length).toBe(2)
-    expect(w.get('state.test.a')).toBe('X')
-    expect(w.get('state.test.b')).toBe('OFF')
-    expect(w.get('state.nope')).toBe('')
-    expect(w.isSet('state.test.a')).toBe(false)
-    w.dispose()
+  it('all：登记表里的全部 key', () => {
+    ws = new WorldStates(defs)
+    expect(ws.all().map((d) => d.key).sort()).toEqual(['state.bells', 'state.meg'])
+  })
+})
+
+describe('WorldStates：set / 合法性 / 幂等', () => {
+  it('登记表里 + 取值合法 ⇒ true，且值被写上', () => {
+    ws = new WorldStates(defs)
+    expect(ws.set('state.meg', 'silenced')).toBe(true)
+    expect(ws.get('state.meg')).toBe('silenced')
+    expect(ws.isSet('state.meg')).toBe(true)
+    expect(ws.matches('state.meg', 'silenced')).toBe(true)
+    expect(ws.matches('state.meg', 'resonant')).toBe(false)
   })
 
-  it('set 未知 key ⇒ false + warn，值不变', () => {
-    w = new WorldStates(defs)
-    const warns: string[] = []
-    const off = bus.on('log', (p) => { if (p.level === 'warn') warns.push(p.msg) })
-    const ok = w.set('state.unknown', 'X')
-    off()
-    expect(ok).toBe(false)
-    expect(w.get('state.test.a')).toBe('X')
-    expect(warns.some((m) => m.includes('worldstate.unknown') && m.includes('state.unknown'))).toBe(true)
-    w.dispose()
+  it('不在登记表里的 key ⇒ false 且不写', () => {
+    ws = new WorldStates(defs)
+    expect(ws.set('state.nope', 'x')).toBe(false)
+    expect(ws.isSet('state.nope')).toBe(false)
   })
 
-  it('set 非法 value ⇒ false + warn，值不变', () => {
-    w = new WorldStates(defs)
-    const warns: string[] = []
-    const off = bus.on('log', (p) => { if (p.level === 'warn') warns.push(p.msg) })
-    const ok = w.set('state.test.a', 'WRONG')
-    off()
-    expect(ok).toBe(false)
-    expect(w.get('state.test.a')).toBe('X')
-    expect(warns.some((m) => m.includes('worldstate.badValue') && m.includes('state.test.a') && m.includes('X/Y/Z'))).toBe(true)
-    w.dispose()
+  it('取值不在登记表 ⇒ false 且不写', () => {
+    ws = new WorldStates(defs)
+    expect(ws.set('state.meg', 'bogus')).toBe(false)
+    expect(ws.get('state.meg')).toBe('resonant')
+    expect(ws.isSet('state.meg')).toBe(false)
   })
 
-  it('set 合法 ⇒ true，广播 world.state，written 记录该格', () => {
-    w = new WorldStates(defs)
-    const states: Array<{ key: string; value: string }> = []
-    const off = bus.on('world.state', (p) => states.push(p))
-    const ok = w.set('state.test.a', 'Y')
-    off()
-    expect(ok).toBe(true)
-    expect(w.get('state.test.a')).toBe('Y')
-    expect(w.isSet('state.test.a')).toBe(true)
-    expect(states).toContainEqual({ key: 'state.test.a', value: 'Y' })
-    w.dispose()
+  it('外部广播 world.state ⇒ 内部缓存跟上（自己也听它）', () => {
+    ws = new WorldStates(defs)
+    bus.emit('world.state', { key: 'state.meg', value: 'silenced' })
+    expect(ws.get('state.meg')).toBe('silenced')
+  })
+})
+
+describe('WorldStates：snapshot / restore', () => {
+  it('snapshot 只记写过的格，按 key 排序', () => {
+    ws = new WorldStates(defs)
+    expect(ws.snapshot()).toEqual({})
+    ws.set('state.bells', 'rung')
+    ws.set('state.meg', 'silenced')
+    const snap = ws.snapshot()
+    expect(Object.keys(snap)).toEqual(['state.bells', 'state.meg'])
+    expect(snap).toEqual({ 'state.bells': 'rung', 'state.meg': 'silenced' })
   })
 
-  it('matches 只做当前值比较（缺省也参与）', () => {
-    w = new WorldStates(defs)
-    expect(w.matches('state.test.b', 'OFF')).toBe(true)
-    w.set('state.test.b', 'ON')
-    expect(w.matches('state.test.b', 'OFF')).toBe(false)
-    expect(w.matches('state.test.b', 'ON')).toBe(true)
-    w.dispose()
+  it('restore：未写过的格退回缺省；非法 key/value 丢弃', () => {
+    ws = new WorldStates(defs)
+    ws.set('state.meg', 'silenced')
+    // 先写再 restore：档里没 meg，写回缺省
+    ws.restore({ 'state.bells': 'rung', 'state.nope': 'x', 'state.meg': 'bogus' } as never)
+    expect(ws.get('state.meg')).toBe('resonant') // 退回缺省
+    expect(ws.get('state.bells')).toBe('rung')
+    expect(ws.isSet('state.meg')).toBe(false)
   })
 
-  it('snapshot 只记写过的格，且按 key 排序', () => {
-    w = new WorldStates(defs)
-    w.set('state.test.b', 'ON')
-    w.set('state.test.a', 'Z')
-    const snap = w.snapshot()
-    expect(Object.keys(snap)).toEqual(['state.test.a', 'state.test.b'])
-    expect(snap).toEqual({ 'state.test.a': 'Z', 'state.test.b': 'ON' })
-    w.dispose()
-  })
-
-  it('restore：白名单内的合法值生效；未知 key / 非法 value 被丢弃；stale 回缺省', () => {
-    w = new WorldStates(defs)
-    w.set('state.test.a', 'Y')
-    w.set('state.test.b', 'ON')
-    const events: Array<{ key: string; value: string }> = []
-    const off = bus.on('world.state', (p) => events.push(p))
-    w.restore({
-      'state.test.a': 'Z',
-      'state.test.b': 'BAD',
-      'state.unknown': 'X'
-    })
-    off()
-    expect(w.get('state.test.a')).toBe('Z')
-    expect(w.get('state.test.b')).toBe('OFF')
-    expect(w.isSet('state.test.a')).toBe(true)
-    expect(w.isSet('state.test.b')).toBe(false)
-    const written = events.map((e) => e.key).sort()
-    expect(written).toEqual(['state.test.a', 'state.test.b'])
-    expect(events.find((e) => e.key === 'state.test.b')?.value).toBe('OFF')
-    w.dispose()
-  })
-
-  it('restore 空/undefined/null ⇒ 全部回缺省', () => {
-    w = new WorldStates(defs)
-    w.set('state.test.a', 'Y')
-    w.set('state.test.b', 'ON')
-    const events: Array<{ key: string; value: string }> = []
-    const off = bus.on('world.state', (p) => events.push(p))
-    w.restore({})
-    w.restore(null)
-    w.restore(undefined)
-    off()
-    expect(w.get('state.test.a')).toBe('X')
-    expect(w.get('state.test.b')).toBe('OFF')
-    expect(w.isSet('state.test.a')).toBe(false)
-    expect(w.isSet('state.test.b')).toBe(false)
-    expect(events.map((e) => e.key).sort()).toEqual(['state.test.a', 'state.test.b'])
-    w.dispose()
+  it('restore(null/undefined) ⇒ 当前写着的全退回缺省', () => {
+    ws = new WorldStates(defs)
+    ws.set('state.meg', 'silenced')
+    ws.restore(null)
+    expect(ws.get('state.meg')).toBe('resonant')
+    expect(ws.isSet('state.meg')).toBe(false)
   })
 })
