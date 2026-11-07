@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { bus } from '@/core/EventBus'
 import { RhythmClock } from '@/core/RhythmClock'
 import * as THREE from 'three'
 
