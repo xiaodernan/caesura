@@ -1617,7 +1617,7 @@ export class CombatManager {
     if (!need || e.drumBroken || e.drumMuted || !e.alive || !s.backstab || s.layers <= 0) return
     e.drumFissureHits += 1
     if (e.drumFissureHits < need) {
-      bus.emit('ui.notify', { text: `鼓面震裂 ${e.drumFissureHits}/${need}`, kind: 'info' })
+      bus.emit('ui.notify', { text: `鼓面破裂 ${e.drumFissureHits}/${need}`, kind: 'info' })
       bus.emit('vfx.request', { key: 'hit_ring', pos: { ...s.point }, scale: 1.2 })
       return
     }

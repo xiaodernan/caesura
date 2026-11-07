@@ -1453,7 +1453,6 @@ function stepAround(e: Enemy, t: Vec3, dt: number, speed: number, awayFrom?: Vec
     if (distAt(-1) > distAt(1) + 1e-6) sign = -1
     else if (distAt(1) > distAt(-1) + 1e-6) sign = 1
   }
-  const angle = a + sign * 0.4
   // KI-382：等的人不站在自己的招式够得着的里面——目标半径至少是自己的近战距离（爪 1.9 米）。
   // 这一条同时把「刚让位、还站在近战带里」的人送回圈上；已经站在圈外的人半径不动（KI-377 原样）。
   // 圈是**绝对**目标：远了要跟上来、近了要退出去。等待者不是站桩——玩家换位置时整条队跟着换。

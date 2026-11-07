@@ -10,7 +10,6 @@ import { PlayerController } from '@/player/ThirdPersonController'
 import { AISystem } from '@/ai/AISystem'
 import { CombatManager } from '@/combat/CombatManager'
 import type { Vec3 } from '@/combat/EntityStats'
-import type { Enemy } from '@/ai/Enemy'
 
 /**
  * KI-405：§6.5「投掷音色晶调包节拍器」——潜行解 A 的第三种静音法。
