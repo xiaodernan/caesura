@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { CameraRig, SHAKE_TABLE } from '@/player/CameraRig'
 
 /**
@@ -17,8 +17,6 @@ import { CameraRig, SHAKE_TABLE } from '@/player/CameraRig'
  */
 
 describe('KI-319 §10 震镜包络与弹反 roll 2° 回正', () => {
-  afterEach(() => { })
-
   it('腿① **弹反 shake 真读数**：parry shake amp 0.5° / freq 24Hz / dur 60ms（dur: 0.06s）⇐ §10 表逐字对上', () => {
     expect(SHAKE_TABLE.parry.amp, 'parry amp = 0.5°').toBe(0.5)
     expect(SHAKE_TABLE.parry.freq, 'parry freq = 24Hz').toBe(24)
