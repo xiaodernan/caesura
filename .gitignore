@@ -11,3 +11,7 @@ docs/qa/shots/*
 .workbuddy-ai/
 vite.config.ts.timestamp-*.mjs
 .tmp-*
+
+# 覆盖率/红率量测的临时产物，与 .scratch 探测脚本一样不该入库
+.cov-tmp/
+.scratch/
