@@ -66,7 +66,7 @@ function step(w: ReturnType<typeof camp>, from: number, to: number, onTick?: (ti
   }
 }
 
-const threatCount = (w: ReturnType<typeof camp>, id: string): number => w.ai.squad.getMember(id)?.threats.length ?? -1
+const threatCount = (w: ReturnType<typeof camp>, id: string): number => w.ai.squadSystem.getMember(id)?.threats.length ?? -1
 
 describe('KI-401 脱战后的仇恨表：该留的留、该清的清', () => {
   it('玩家瞬移 60 米：5 秒内条目全清、名次与槽一起放掉', () => {
@@ -85,7 +85,7 @@ describe('KI-401 脱战后的仇恨表：该留的留、该清的清', () => {
     expect(worst - 600, '最后一个清掉的时刻（离开后多少拍）').toBeLessThanOrEqual(240)
     for (const e of w.enemies) {
       expect(threatCount(w, e.id), e.id + ' 的旧账').toBe(0)
-      expect(w.ai.squad.getMember(e.id)?.currentTarget, '目标指针跟着账一起清').toBeNull()
+      expect(w.ai.squadSystem.getMember(e.id)?.currentTarget, '目标指针跟着账一起清').toBeNull()
       expect(e.squadWaitRank, '名次').toBe(0)
       expect(e.squadHasSlot, '槽位').toBe(false)
     }
@@ -96,7 +96,7 @@ describe('KI-401 脱战后的仇恨表：该留的留、该清的清', () => {
     const w = camp(4)
     step(w, 1, 1200)
     for (const e of w.enemies) {
-      const m = w.ai.squad.getMember(e.id)!
+      const m = w.ai.squadSystem.getMember(e.id)!
       expect(m.threats.length, e.id + ' 交了 20 秒，数值早已是 0，条目仍必须留着（KI-379）').toBe(1)
       expect(m.threats[0]!.threat).toBeLessThanOrEqual(0.01)
       expect(e.state).toBe('combat')
@@ -114,7 +114,7 @@ describe('KI-401 脱战后的仇恨表：该留的留、该清的清', () => {
     w.player.pos.x = one.pos.x
     one.enter('chase')
     step(w, 1203, 1203)
-    const m = w.ai.squad.getMember(one.id)!
+    const m = w.ai.squadSystem.getMember(one.id)!
     expect(m.threats.length, '回来时 AISystem 补回一笔，不是第二套账').toBe(1)
     expect(m.threats[0]!.threat, '这一笔要够格（阈值 + 1）').toBeGreaterThan(10)
   })

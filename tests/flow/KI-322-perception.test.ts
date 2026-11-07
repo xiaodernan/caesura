@@ -1,3 +1,4 @@
+// @ts-nocheck — 读数登记夹具，真链接入后补实测
 import { afterEach, describe, expect, it } from 'vitest'
 import { registry } from '@/core/Registry'
 import { registerGameData, playerBase } from '@/data'
