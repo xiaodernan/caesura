@@ -23,8 +23,8 @@ npm run dev            # Vite dev server；浏览器打开 http://localhost:5173
 ## 验证
 
 ```bash
-npm run check          # tsc --noEmit + validate:data + 全部测试（当前：0 错 / 4548 条 / 388 个文件）
-npm test               # 仅测试（磁盘名册 388，4493→4534→4540→4542→4548 随批次递增）
+npm run check          # tsc --noEmit + validate:data + 全部测试（当前：0 错 / 4549 条 / 389 个文件）
+npm test               # 仅测试（磁盘名册 389，4493→4534→4540→4542→4548→4549 随批次递增）
 npm run validate:data  # 数据门（当前：0 ERROR / 2 WARN，均为既有项）
 npm run coverage       # 覆盖率棘轮门（空报表退化按 exit 2 记账，不判 guilty）
 npm run build          # tsc + vite build + check-dist（产物：dist/）

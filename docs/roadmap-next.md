@@ -9,7 +9,7 @@
 
 ## §1. 三条要先认下来的认识
 
-1. **当前主干是绿的。** `npm run check` ⇒ 4548 条 / 388 文件 / 0 fail。`tsc --noEmit` 0 错。
+1. **当前主干是绿的。** `npm run check` ⇒ 4549 条 / 389 文件 / 0 fail。`tsc --noEmit` 0 错。
 2. **竖切片不是完整游戏。** Phase 0–4 全绿、Phase 5（成长）完成、Phase 6（叙事）各自大部分落位；
    Phase 7 及其后的**任何**一帧代码都还没动。
 3. **账本是一切的起点。** 每一笔变更都把它落在 `KNOWN_ISSUES.md` 的某一行。
@@ -45,8 +45,8 @@
 
 ### 3.2 中期（1–3 周）
 
-- **Phase 9 量值盘**：写一个 `scripts/measure-probe.mjs`，跑 1 分钟模拟（不需要 GPU），对 `ai.update` 那一格报告，
-  把结果写入 `./artifacts/perf-probe-<date>.log`（不入库——跟 `artifacts/` 的其它文件一样按 `KI-410` 不入库）。
+- ~~**Phase 9 量值盘**：写一个 `scripts/measure-probe.mjs`，跑 1 分钟模拟（不需要 GPU），对 `ai.update` 那一格报告，
+  把结果写入 `./artifacts/perf-probe-<date>.log`（不入库——跟 `artifacts/` 的其它文件一样按 `KI-410` 不入库）~~ **已落（2026-11-09，KI-418）**：`tests/flow/perf-probe.test.ts`（真数据 12 只混编、3600 拍开局即最大负载）+ `scripts/measure-probe.mjs`（spawn vitest，读数行追加进 `artifacts/perf-probe-<date>.log`）。两趟同场景：mean 0.116 / 0.160 ms、p95 0.255 / 0.382、p99 0.602 / 0.839、max 4.83–8.47、over2ms 4→8（0.11%→0.22%）。帧预算 <2ms 不进断言。
 - **Phase 7 的 CSS 滤镜清退**：当前 `palette-fisrt` 直接靠 CSS `filter: saturate() / brightness()`（KI-173）；
   下一阶段是挂真 `material.opacity` / `blending` 或径向叠加 Shader 来替掉它。
 

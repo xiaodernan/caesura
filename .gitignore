@@ -10,6 +10,8 @@ docs/qa/shots/*
 # 本地工具数据（AI 工作记忆与技能），不属于产品源码
 .workbuddy-ai/
 .worktrees/
+artifacts/
+# KI-410：截图／量值日志是本地读数，不入库
 vite.config.ts.timestamp-*.mjs
 .tmp-*
 
