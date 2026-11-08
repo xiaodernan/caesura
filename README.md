@@ -53,3 +53,4 @@ npm run build          # tsc + vite build + check-dist（产物：dist/）
 
 部分面板／debug 能力仅开发期可用（`npm run dev` 下可见）。
 当前没有对玩家的**正式发行构建**；产物为垂直切片演示级。
+> 入库规则／账本流程见 `docs/CONTRIBUTING.md`；门状态快照见 `docs/PHASE-STATUS.md`。
