@@ -4,6 +4,10 @@
   "version": "0.1.0",
   "type": "module",
   "description": "CAESURA - original third-person action RPG vertical slice",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build && node scripts/check-dist.mjs",
