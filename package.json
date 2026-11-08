@@ -19,6 +19,7 @@
     "validate:data": "node scripts/validate-data.mjs",
     "status": "node scripts/phase-status.mjs",
     "release": "node scripts/release.mjs",
+    "check-links": "node scripts/check-links.mjs",
     "check": "npm run lint && npm run validate:data && npm run test",
     "test:raw": "node scripts/test-raw.mjs",
     "red:rate": "node scripts/red-rate.mjs"
