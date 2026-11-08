@@ -256,6 +256,7 @@ Phase B4 的三件套此前是"有人听、没人说"。
 | 📝 KI-407 | **覆盖率棘轮常红——空报表（empty-report）坍缩，不是覆盖回退**：`aadb32e` 上 `npm run coverage` ⇒ **exit=2**；工具原话：「量具坏了：空报表丢了 source map ⇒ 分母退化成文件行数…这不是覆盖率掉了，别拿这次的数当账…地板不许因此下调（KI-330 的同一族）」。main.ts 组合根从未被 import、empty-report 分母坍缩；**不下调地板、不造桩、不动别道在途 main.ts** | `aadb32e` **4493 全绿**；**全包 100.00%**（除 `(root)` 0/1206）；`world 100.00%`（2486/2486，地板 97.12% → 已涨待 bless）／`ai 100.00%`；零覆盖仅剩 **src/main.ts**；总计 **92.79%（5524/16730 行）**。**缓发**：三出口①cleaner 环境重量／②Harness.ts 真 import／③门级标注空报文件——均裁决项；别道 KI-391~393 落地后由主裁决者选 |
 | 📝 KI-408 | **npm audit 剩 10 条（已修 source-map-js→1.2.2）；全卡 breaking major（vitest@2→5／vite@5→8／coverage-v8@2→5）；含 3 critical——全部 dev tooling，不进发布产物；本会话不硬推** | 起始 11 条；2026-11-08 修 1；剩 **10**（vite high、vitest/coverage-v8/tinypool critical×3、moderate×6）；修 RIT：`--force` 升三件套 ⇒ 须独立 QA 窗口（先量后写：升级→全量回归→磁盘名册→coverage→red-rate→bless）；或接受登记（单机离线，游戏版零注入面） |
 | ✅ KI-409 | **red-rate 复量：in-flight Critical-Path 三件套 8/8 全绿**——idle/loaded 各 4 趟×3 套件（ui-intents/cinematic-exit/cinematic-owner/input-playlock），19 用例 0 reds；负载倍数 2.34×；**不替南道提交，只钉 verify-after-lane 的预期阈值** | 本会话量读数，不改字节；不替代南道 check |
+| 📝 KI-410 | **账本视口证据断链：git 全史零 .png、artifacts/ 从未入库；三处『artifacts/*.png』改『现场截图，未入库——零 .png』**，Stage-5 遗留 5 张仍驻留为「证据留存政策缺桩」 | 三行引用已屏蔽歧义；剩下的是政策裁决 |
 
 **量测配方（可复跑）**：
 1. `npm run dev` 起服；浏览器开 `http://localhost:5173/?fresh=1`（无头通道，直接开跑）；
