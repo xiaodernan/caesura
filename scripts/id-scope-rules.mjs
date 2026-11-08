@@ -62,6 +62,10 @@ export const NAMED_HOLES = [
     why: '证据区：各车道的量具与变异臂落地处（`.scratch/` 下的脚本与日志，**已入库**）。它不是交付件 ⇒ 交付总体那道门管不到它；判据③负责盯住「带按号引用的已入库文件不许落在走查面之外」这一格。',
   },
   {
+    area: '.github',
+    why: 'CI 形状：`.github/workflows/check.yml` 是 GitHub Actions 的机器配置（npm ci → validate:data → lint → test → build），build/CI 本体不在交付总体——交付总体是「玩家拿到的产物要读的东西」，CI YAML 读的是源码，不读玩家。',
+  },
+  {
     area: '(根点文件)',
     why: '根上的点文件（形状名单与理由在 `text-corpus.mjs` 的 `ROOT_DOT_FILES` 里）：机器配置与一次性产物，git 自己读它们；走查对点前缀是瞎的（根循环里那句点前缀判断）⇒ 它们天然落在交付总体之外。',
   },

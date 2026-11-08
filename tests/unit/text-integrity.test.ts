@@ -265,8 +265,12 @@ describe('游离控制字符（KI-098）：转义序列被某一次写盘解释�
     const population = new Set(walkTextCorpus(root).files.map((f) => f.file))
     const hidden = inTrees.filter((t) => !population.has(t))
     expect(hidden, `这些**已入库**的文件落在总体里却没人扫（跳过名单在藏东西）：${hidden.join(' ')}`).toEqual([])
+    // 目前整体入库的根点文件一共三枚：.gitignore / .editorconfig / .gitattributes
+    // （见本会话 2026-11-09 批次：三枚同批入库，每一枚在 text-corpus.mjs 的
+    //   ROOT_DOT_FILES 里都有一条已声明的形状并各带"谁经过它"）。
+    // 再悄悄多一枚、或少掉一枚，都需要同本行一起改。
     const rootDots = tracked.filter((t) => !t.includes('/') && t.startsWith('.'))
-    expect(rootDots, '根的点开头条目被排除是**已命名的洞**；除 .gitignore 之外每多一个都要先把它接进总体').toEqual(['.gitignore'])
+    expect(rootDots, '根的点开头条目被排除是**已命名的洞**：除当前入库的三枚（.editorconfig / .gitattributes / .gitignore）之外每多一个都要先把它接进总体').toEqual(['.editorconfig', '.gitattributes', '.gitignore'])
   })
 
   it('哨兵：整个交付总体（四棵树 + 根的具名散文件）现在一条 findings 都没有', () => {
