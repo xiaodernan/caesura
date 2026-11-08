@@ -190,6 +190,8 @@ export function walkTextCorpus(root) {
  * 每一条都要能回答"谁经过它"，新增形状是决定不是顺手（§55 同一纪律——白名单也是一种格子）。
  */
 export const ROOT_DOT_FILES = [
+  { match: /^\.editorconfig$/, why: '已入库的机器配置（EditorConfig）：跨仓库风格约束 LF／utf-8／尾随换行——由 IDE/编辑器读，不是散文，走查对点前缀瞎于根分支入口即需名分；Windows/macOS 混用不再产出 endline 噪声' },
+  { match: /^\.gitattributes$/, why: '已入库的机器配置（.gitattributes）：统一行尾（* text=auto + 源码 *.ts/.mjs/... eol=lf + 二进制 * .png eol=binary），git check-attr 自己读它；机器配置不进 §78 总体，也不会有人漏勾——本体入库即自证存在' },
   { match: /^\.gitignore$/, why: '已入库的机器配置，git 自己读它；"入库名册 ⇄ 总体"那条跨查逐名盯着已入库的点文件' },
   { match: /^\.env(\..+)?$/, why: '机器本地配置，.gitignore 显式挡住（!.env.example 反向放行样例）——从不属于交付，也不进总体' },
   { match: /^\.tmp-.*\.(py|log)$/, why: '各车道的一次性补丁脚本与日志，gitignore 的 .tmp-* 挡着；正是"被某一次写盘解释掉"的高发地，但没人读它们，进总体只会把门淹死' },

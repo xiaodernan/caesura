@@ -1,0 +1,30 @@
+# EditorConfig for CAESURA《止音纪元》
+# 统一缩进/换行/编码，避免 Windows/macOS/Linux 混用造成的噪声。
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.md]
+# Markdown 语义以两个尾随空格表示换行（必要时少trim）
+trim_trailing_whitespace = false
+
+[*.{json,yml,yaml,mjs,mts,d.mts}]
+indent_size = 2
+indent_style = space
+
+[*.mjs]
+indent_style = tab
+indent_size = 2
+
+[Makefile]
+indent_style = tab
+
+[*.png]
+insert_final_newline = false
