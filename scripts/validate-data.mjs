@@ -76,8 +76,47 @@ import { dialogueReachErrors } from './dialogue-rules.mjs'
 import { mapFindings } from './validator-map-rules.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const JSON_DIR = resolve(ROOT, 'src/data/json')
+/**
+ * **可注入的数据根**（KI-412）：`node scripts/validate-data.mjs --data-root=<目录>` 让整条流水线去吃另一份陈设。
+ * 这一格欠的不是「再补一条词表腿」而是这个入口本身：植入一株幻影旗，今天只有测试那侧看得见，
+ * 校验器自己报的是与基线**逐字相同**的 0 ERROR／2 WARN（§5.9.178 的 A1v 行）。
+ *
+ * 为什么旗要按「我是不是被当命令行跑的那一个」来认，而不是无条件读 `process.argv`：这份脚本也被测试
+ * **进程内** import（`tests/unit/ledger-rules.test.ts` 那条「进程内跑真校验器」），而那一刻 `process.argv` 装的是
+ * 宿主（vitest）的参数——不认主就把宿主脸色当成自己的命令行，认主又不区分就谁都吃。同一个守卫的先例：
+ * `scripts/head-compiles-rules.mjs` 末尾那段。
+ * 为什么认不出的参数要 `exit 2` 而不是忽略：拼错的旗若被丢掉，这一趟会退回真表，而那份「0 ERROR」与
+ * 「植入被抓住了的那份」在只有 stdout 的读者眼里长得一模一样。
+ */
+const DATA_ROOT_FLAG = '--data-root='
+const DEFAULT_JSON_DIR = resolve(ROOT, 'src/data/json')
+const isCliInvocation = !!process.argv[1] && existsSync(process.argv[1]) && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url))
+const cliArgs = isCliInvocation ? process.argv.slice(2) : []
+const unknownArgs = cliArgs.filter((a) => !a.startsWith(DATA_ROOT_FLAG))
+if (unknownArgs.length > 0) {
+  console.error(`未知参数：${unknownArgs.join(' ')}｜本脚本只认 ${DATA_ROOT_FLAG}<目录>（认不出的旗不能悄悄退回真表）`)
+  process.exit(2)
+}
+const rootArg = cliArgs.find((a) => a.startsWith(DATA_ROOT_FLAG))
+const JSON_DIR = rootArg ? resolve(rootArg.slice(DATA_ROOT_FLAG.length)) : DEFAULT_JSON_DIR
+if (rootArg && !existsSync(JSON_DIR)) {
+  console.error(`${DATA_ROOT_FLAG} 指向的目录不存在：${JSON_DIR}（拼错的路径不算「表很干净」）`)
+  process.exit(2)
+}
 const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json', 'shop.json', 'states.json', 'ambience.json', 'explore.json', 'battle.json', 'ducking.json', 'weather.json', 'cinematics.json', 'lighting.json', 'vfx.json', 'squad.json']
+/**
+ * KI-413②：注入的数据根要先**像数据根**。「名册里的表读不到」这一格有两种完全不同的病：真表里确实少了一张
+ * （那是判决，必须报出来），以及喂进来的那格根本不是数据根——拼错了、指到上一级了、给了个空目录。
+ * 实测（`.scratch/ki365_probe.log`）：给一个存在但空的目录，今天落成的是一堆「表读不到」的 ERROR
+ * （rc=1 加一片 ENOENT），读起来像「这份表很脏」而不是「你给的根不对」——而这两件事对同一个读者长得很像。
+ * 所以注入路上先按**同一张 `FILES`**（不另抄一份名册）查存在性，缺哪几张就点名哪几张并 exit 2。
+ * 默认路**不查**：真表少一张是真缺陷，本来就该由判决那一片 ERROR 报出来，在这里 exit 2 反而会把缺陷咽成一句拒绝。
+ */
+const missingRoster = rootArg ? FILES.filter((f) => !existsSync(resolve(JSON_DIR, f))) : []
+if (missingRoster.length > 0) {
+  console.error(`${DATA_ROOT_FLAG} 指向的目录不像数据根：${JSON_DIR}｜名册里读不到 ${missingRoster.length}/${FILES.length} 张：${missingRoster.join(', ')}（缺表不该落成一片「表读不到」——那读起来像表脏，不像根错）`)
+  process.exit(2)
+}
 // Phase 6-B：对话风格枚举与任务标注（narrative.md §3.2 / §28 图例）
 const CHOICE_STYLES = new Set(['blunt', 'poetic', 'silent', 'provoke'])
 const QUEST_TAGS = new Set(['D', 'C', 'H', 'M'])
@@ -2672,7 +2711,7 @@ function collectFlagUsage() {
      两侧都是洞，且都由植入实测（`.scratch/ki334_plant.mjs`，2026-10-28）：
      ① 把一条真条件的旗名拼成一个从未被写过的名字 ⇒ 校验全绿（玩家那边是那一片永远不刷/那张床永远选不到）；
      ② 一面只被条件读的旗 ⇒ 吃一条"写了没人读 ⇒ 死数据"的假 ERROR。
-     KI-342 把**遍历两个宿主 + 形状切分 + 首见者留名**那颗芯整颗交回 `condition-rules.mjs`
+     KI-411 把**遍历两个宿主 + 形状切分 + 首见者留名**那颗芯整颗交回 `condition-rules.mjs`
      （`.scratch/ki342_probe.mjs`，2026-10-29 实测：芯在 ⇒ 拼错的旗名报 1 ERROR；把这两支循环挖空 ⇒ 同一个植入 0 ERROR、
      而钉这段源码的门 17 条全绿——芯此前只有形状证据，没有行为证据）。这里剩下的只有"往旗标名册里灌"这一句。 */
   mergeConditionReads(read, conditionReadsOf(data['regions.json']).flags)
@@ -3277,7 +3316,7 @@ const dialogueInfo = validateDialogue(npcIds, questIds, itemIds, stateDefs)
   /* KI-341：条件语言里的 `state.K` 也是这一格枚举的读方。上面四种形状都是"认一个 key 字段"，
      而 `evalCondition` 吃的是一整串表达式 ⇒ 只被刷怪闸门（或声床变体）读的那一格会被判成
      "写了没人读 ⇒ 死数据"，那是**假 ERROR**；反方向（拼错一个 state 键）同样看不见。
-     KI-342：遍历两个宿主 + 切表达式 + 首见者留名那颗芯住在 `condition-rules.mjs`（同一颗芯也喂上面那份旗标名册），
+     KI-411：遍历两个宿主 + 切表达式 + 首见者留名那颗芯住在 `condition-rules.mjs`（同一颗芯也喂上面那份旗标名册），
      这里只剩"往值域读方名册里灌"这一句。 */
   mergeConditionReads(reads, conditionReadsOf(data['regions.json']).states)
   for (const [k, w] of [...reads].sort()) {
@@ -3306,6 +3345,10 @@ void regionIds
 let errTotal = 0
 let warnTotal = 0
 console.log('CAESURA 数据校验（KI-015 门禁）— src/data/json')
+if (JSON_DIR !== DEFAULT_JSON_DIR) {
+  // 注入的那一行只**追加**，默认路那行字节不许动：读数要么来自真表，要么必须自己承认不是
+  console.log(`⚠ 数据根已注入：${JSON_DIR} —— 这一趟评的不是 src/data/json 里的真表`)
+}
 /**
  * 打印的段 = 11 份 JSON ∪ **报过事的其他名字**。
  * 前半直查出来的一件事（KI-074）：词表对账挂在 `schema.ts` 这个段名下，而这段循环只走 `FILES`，

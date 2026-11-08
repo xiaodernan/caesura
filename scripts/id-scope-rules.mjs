@@ -14,13 +14,17 @@
  * **为什么值得单独立行**：一条规则的可信度取决于它的**总体**。判据写着「每一处」，而走查漏了一类后缀，
  * 那句「每一处」就是空话——而**空话不会红**（没看过的引用不会变成红，绿是白送的）。
  *
- * **这一格判四件事**（每件都能被合成夹具喂）：
+ * **这一格判六件事**（每件都能被合成夹具喂）：
  *   ① **不许有两份总体**：门实际读到的文件集必须**逐份等于**交付总体（两个方向的差集都空）⇒ 谁再手抄一份清单，这格就红。
  *   ② **洞不许悄悄长大**：已入库却落在交付总体之外的文件，按面积归堆；每一堆都必须**有名字、有理由**
  *      （今天只有 `.scratch`（证据区）与根点文件两堆）⇒ 新加一棵树而忘了登记，这格就红。
  *   ③ **带号的已入库文件不许落在走查面之外**：它要么在交付总体里（被按号规则读到），要么在有名有理由的洞里。
  *   ④ **账本自己引的号也要读得到行**：账本不是读者的例外——它自己引的号若读不到行，读者按号去找账同样扑空；
  *      读不到的那几处必须**逐条登记理由**（名册过期也红），而登记过的号**不许在账本以外被人当现行号引用**。
+ *   ⑤ **总体只有一个出处**：喂给按号判据的文件集只有两种合法来源——交付总体与当场拼出来的合成夹具
+ *      （判据住在下面「总体只有一个出处」那一节）。
+ *   ⑥ **豁免的证据要能被读者现在打开**（KI-415）：名册每一格都得点出一个载体（正册的哪一行／哪一笔提交），
+ *      这一趟真的去开它、开出来里面真的有那个号 ⇒ 「登记了理由」不再是「登记了一句话」。
  *
  * **为什么"判据"住在脚本而不是测试文件里**：与 `*-rules.mjs` 那一族同一个理由——
  * 判据要能被**合成夹具**喂（喂一份假的总体／走查面／已入库名册，看它拒不拒），
@@ -30,6 +34,7 @@
 import { readFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { decodeUtf8, looksBinary, walkTextCorpus } from './text-corpus.mjs'
+import { EVIDENCE_SOURCES, ledgerRows } from './id-rules.mjs'
 
 /**
  * 按号引用的形状：`KI-` ＋ 数字（**任何位数**）。
@@ -319,18 +324,153 @@ export function ledgerSelfFindings({ ledgerText, rowIds, exempt, ledgerRel, regi
 }
 
 /**
- * 四条判据的合流（调用方只需要一个入口）。
- * @param {{ scanned: string[], surface: string[], tracked: {rel: string, text: string}[], holes: {area: string, why: string}[], ledgerText?: string, rowIds?: string[], exempt?: {token: string, why: string}[], ledgerRel?: string, registerRel?: string }} input
+ * 五道判据的合流（①②③④⑥；调用方只需要一个入口）。
+ *
+ * **`carriers` 不给 ⇒ 判据⑥ 一定红**（只要名册非空）：这一趟没人去开那些载体，就等于没人判过它们。
+ * @param {{ scanned: string[], surface: string[], tracked: {rel: string, text: string}[], holes: {area: string, why: string}[], ledgerText?: string, rowIds?: string[], exempt?: {token: string, why: string, evidence?: {from: string, ref: string}}[], ledgerRel?: string, registerRel?: string, carriers?: Record<string, string|null> }} input
  * @returns {{ key: string, msg: string }[]}
  */
-export function scopeFindings({ scanned, surface, tracked, holes, ledgerText, rowIds, exempt, ledgerRel, registerRel }) {
+export function scopeFindings({ scanned, surface, tracked, holes, ledgerText, rowIds, exempt, ledgerRel, registerRel, carriers }) {
   const trackedNames = (tracked ?? []).map((f) => f.rel)
   return [
     ...populationFindings({ scanned, surface }),
     ...holeFindings({ tracked: trackedNames, surface, holes }),
     ...carrierFindings({ tracked, scanned, holes }),
     ...ledgerSelfFindings({ ledgerText, rowIds, exempt, ledgerRel, registerRel, surfaceFiles: tracked }),
+    ...exemptProofFindings({ exempt, carriers }),
   ]
+}
+
+/* ─────────────────── 判据⑥：豁免的证据要能被读者**现在**打开 ─────────────────── */
+
+/**
+ * 判据⑥：`SELF_EXEMPT` 每一格的 `evidence` 必须指着一个**这一趟真的开得到**的载体。
+ *
+ * **病（KI-415 量出来的）**：名册此前只有一句 `why`。那句是作者写下时试过一次的散文——
+ * 没有一台机器去把「旧号写在 KI-296 那一行里」这句话读一遍。于是这一格看着像有证据，实际是**自称有证据**：
+ * 号挪走、行删掉、载体根本不是那件事，名册照样放行，门 B 照样绿。
+ * 那枚从未落账的在途占号就是这么被放行的。
+ *
+ * **判什么**（每格只报第一条，报完就下一条 —— 结构坏了不再判读数，免得一条病变成四条噪声）：
+ *   ① 没有 `evidence` ⇒「只有一句散文，没有一个读者能打开的载体」；
+ *   ② `from` 不在 `EVIDENCE_SOURCES` 里 ⇒「没人知道该去哪儿开它」；
+ *   ③ `ref` 不是非空字符串 ⇒「载体没有名字」；
+ *   ④ `ref` 就是被豁免的那个号本身 ⇒「拿自己给自己作证」（循环）；
+ *   ⑤ 这一趟**没人去开**它（`carriers` 里没有这个键）⇒「证据是作者试过一次，读者复查不出来」；
+ *   ⑥ 开出来是 null ⇒「载体打不开」（正册没有那一行／git 读不到那一笔）；
+ *   ⑦ 开出来的文本里没有那个号 ⇒「它在说别的事，不是这笔豁免的来历」。
+ *
+ * @param {{ exempt?: {token: string, evidence?: {from?: string, ref?: string}}[], carriers?: Record<string, string|null> }} input
+ * @returns {{ key: string, msg: string }[]}
+ */
+export function exemptProofFindings({ exempt, carriers }) {
+  const out = []
+  const opened = carriers ?? {}
+  for (const e of exempt ?? []) {
+    const token = e?.token ?? '(无名)'
+    const key = `豁免自证 · ${token}`
+    const ev = e?.evidence
+    if (!ev || typeof ev !== 'object') {
+      out.push({
+        key,
+        msg: `豁免名册里 ${token} 这一格只有一句散文理由，没有一个读者能打开的载体（`
+          + '`evidence` 缺）⇒ 这道门在信"作者写下时试过"，而读者复查不出来。'
+          + '修法：给它一个 `evidence: { from: 种类, ref: 载体的名字 }`。',
+      })
+      continue
+    }
+    if (typeof ev.from !== 'string' || !EVIDENCE_SOURCES.includes(ev.from)) {
+      out.push({
+        key,
+        msg: `豁免名册里 ${token} 这一格的载体种类是 ${JSON.stringify(ev.from ?? null)}，不在机器认识的 ${EVIDENCE_SOURCES.join('／')} 里`
+          + ` ⇒ 没人知道该去哪儿开它，这一格等于没登记。修法：换成认识的种类，或在「openExemptCarriers」里教会机器怎么开它（并给它一条腿）。`,
+      })
+      continue
+    }
+    if (typeof ev.ref !== 'string' || ev.ref.length === 0) {
+      out.push({ key, msg: `豁免名册里 ${token} 这一格说证据在 ${ev.from} 里，却没写哪一个 ⇒ 空载体开不出东西。` })
+      continue
+    }
+    if (ev.ref === e?.token) {
+      out.push({
+        key,
+        msg: `豁免名册里 ${token} 这一格拿 ${ev.ref} 自己给自己作证 ⇒ 那句"证据"就是被怀疑的那句话本身，循环。`
+          + '修法：指向别处——另一行账本记录（那一行写着这次挪号／占号的来历）或一笔已发布的提交。',
+      })
+      continue
+    }
+    const ck = `${ev.from}:${ev.ref}`
+    if (!(ck in opened)) {
+      out.push({
+        key,
+        msg: `${ck} 这一格登记着载体，而这一趟**没人去开它**（读到的载体集合里没有这个键）`
+          + ` ⇒ 判据没跑＝绿是白送的。修法：调用方用「openExemptCarriers」现开名册里每一格的载体，把结果喂进来。`,
+      })
+      continue
+    }
+    const text = opened[ck]
+    if (text === null || typeof text !== 'string') {
+      out.push({
+        key,
+        msg: `豁免名册里 ${token} 指着 ${ck}，而那个载体**打不开**（正册里没有 ${ev.ref} 那一行，或 git 读不到那一笔）`
+          + ` ⇒ 这句豁免登记挂在一份已经不存在的证据上。修法：把载体换成今天真的写着这件事的那一行／那一笔提交。`,
+      })
+      continue
+    }
+    if (!text.includes(token)) {
+      out.push({
+        key,
+        msg: `豁免名册里 ${token} 指着 ${ck}，载体开得动、里面却**没有这个号** ⇒ 它在说别的事，不是这笔豁免的来历`
+          + `（读者按名册去找证据，找到的是别人的故事）。修法：换成真的写着 ${token} 的那个载体。`,
+      })
+    }
+  }
+  return out
+}
+
+/**
+ * 现开名册每一格的载体（**读者**，不是判据）：`{ '种类:名字' → 文本 | null }`。
+ *
+ * 读不到一律给 null，由判据⑥ 红出来并说清是谁的那一格、开的哪一个载体——
+ * **这里不抛**：抛了就变成整趟跑测器没有判决行（KI-298 那条教训），而"载体打不开"本来是一条可读的读数。
+ *
+ * @param {{ exempt?: {evidence?: {from?: string, ref?: string}}[], ledgerText: string, root: string }} input
+ * @returns {Record<string, string|null>}
+ */
+export function openExemptCarriers({ exempt, ledgerText, root }) {
+  const opened = {}
+  for (const e of exempt ?? []) {
+    const from = typeof e?.evidence?.from === 'string' ? e.evidence.from : null
+    const ref = typeof e?.evidence?.ref === 'string' && e.evidence.ref.length > 0 ? e.evidence.ref : null
+    if (!from || !ref) continue
+    if (!EVIDENCE_SOURCES.includes(from)) continue
+    const key = `${from}:${ref}`
+    if (key in opened) continue
+    opened[key] = from === 'gitCommit' ? readCommitText(root, ref) : readLedgerRowText(ledgerText, ref)
+  }
+  return opened
+}
+
+/** 正册里那个号的那一行原文（没有那一行／读不到 ⇒ null，不猜） */
+function readLedgerRowText(ledgerText, ref) {
+  const text = typeof ledgerText === 'string' ? ledgerText : ''
+  const lines = text.split(/\r?\n/)
+  const hits = ledgerRows(text).filter((r) => r.id === ref)
+  if (hits.length === 0) return null
+  return hits.map((r) => lines[r.line - 1] ?? '').join('\n')
+}
+
+/** 那一笔提交的标题＋正文（`git log -1`；跑不起来／不在历史里 ⇒ null） */
+function readCommitText(root, ref) {
+  try {
+    return execFileSync(
+      'git',
+      ['log', '-1', '--format=%H%n%s%n%b', ref],
+      { cwd: root, encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 },
+    )
+  } catch {
+    return null
+  }
 }
 
 /* ───────────────────────── 判据⑤：总体只有一个出处 ───────────────────────── */

@@ -38,10 +38,19 @@ export interface RetiredSpelling {
   why: string
 }
 
-/** 账本自引豁免名册的一格：那个读不到行的号 ＋ 为什么它读不到 */
+/** 一笔豁免的证据：它点名一个读者现在就能打开的载体（种类见 `EVIDENCE_SOURCES`） */
+export interface ExemptEvidence {
+  /** 载体种类（`ledgerRow` ＝ 正册某一行；`gitCommit` ＝ 已历史里的某一笔提交） */
+  from: string
+  /** 载体的名字：那一行的号 / 那个提交的完整 sha */
+  ref: string
+}
+
+/** 账本自引豁免名册的一格：那个读不到行的号 ＋ 为什么它读不到 ＋ 证据住在哪一个载体里 */
 export interface SelfExempt {
   token: string
   why: string
+  evidence: ExemptEvidence
 }
 
 /** 正册在用的四个前缀（§8.2 那条规则句必须与它逐字相等） */
@@ -56,8 +65,11 @@ export const REGISTER_FILE: string
 /** 已退役的 4 位拼写 → 它今天是什么（那里是旧拼写唯一的家；文档里一个字都不许留） */
 export const RETIRED_SPELLINGS: Record<string, RetiredSpelling>
 
-/** 账本自己引的、而正册里读不到行的号，各带一条理由（KI-329） */
+/** 账本自己引的、而正册里读不到行的号，各带一条理由 ＋ 一个现开得到的载体（KI-329／KI-415） */
 export const SELF_EXEMPT: SelfExempt[]
+
+/** `evidence.from` 认识的种类；别种一律由判据⑥ 红出来（没人知道该去哪儿开那个载体） */
+export const EVIDENCE_SOURCES: string[]
 
 /** 解析架构 §8.2 那条规则句；读不出来返回 null（不猜：读不到就是读不到） */
 export function parseIdRule(archText: string): IdRule | null

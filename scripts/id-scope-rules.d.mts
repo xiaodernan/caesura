@@ -68,6 +68,16 @@ export function holeFindings(input: { tracked: string[]; surface: string[]; hole
 /** 判据③：带着按号引用的已入库文件，不许落在走查面之外（除非落在有名有理由的洞里） */
 export function carrierFindings(input: { tracked: SurfaceFile[]; scanned: string[]; holes: NamedHole[] }): ScopeFinding[]
 
+/** 名册里一格的样子（`evidence` 是 KI-415 起的必填格；判据⑥ 会去开它点名的载体，两格都允许缺——缺了就是那条读数） */
+export interface ExemptEntry {
+  token: string
+  why?: string
+  evidence?: { from?: string; ref?: string }
+}
+
+/** 现开出来的载体集合：键是 `种类:名字`，值是文本；打不开的是 null（不猜、不抛） */
+export type OpenedCarriers = Record<string, string | null>
+
 /** 判据④：账本自己引的号也要读得到行；豁免名册逐条自证（过期也红、泄露也红） */
 export function ledgerSelfFindings(input: {
   ledgerText: string
@@ -78,7 +88,20 @@ export function ledgerSelfFindings(input: {
   surfaceFiles: SurfaceFile[]
 }): ScopeFinding[]
 
-/** 四条判据的合流 */
+/** 判据⑥：豁免名册每一格的载体必须这一趟真的开得到、且里面真的写着那个号（KI-415） */
+export function exemptProofFindings(input: {
+  exempt?: ExemptEntry[]
+  carriers?: OpenedCarriers
+}): ScopeFinding[]
+
+/** 现开名册每一格的载体（读者，不是判据）：正册那一行原文／那一笔提交的标题＋正文；打不开给 null */
+export function openExemptCarriers(input: {
+  exempt?: ExemptEntry[]
+  ledgerText: string
+  root: string
+}): OpenedCarriers
+
+/** 五道判据的合流（①②③④⑥；`carriers` 不给 ⇒ 判据⑥ 一定红） */
 export function scopeFindings(input: {
   scanned: string[]
   surface: string[]
@@ -86,9 +109,10 @@ export function scopeFindings(input: {
   holes: NamedHole[]
   ledgerText?: string
   rowIds?: string[]
-  exempt?: { token: string; why: string }[]
+  exempt?: ExemptEntry[]
   ledgerRel?: string
   registerRel?: string
+  carriers?: OpenedCarriers
 }): ScopeFinding[]
 
 /** 按号判据里吃文件总体的那两个入口 */
