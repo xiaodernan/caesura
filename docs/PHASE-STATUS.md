@@ -7,9 +7,9 @@
 
 | 量 | 值 |
 |---|---|
-| KI.rows | 339 |
+| KI.rows | 340 |
 | KI.Implemented | 170 |
-| KI.Partial | 162 |
+| KI.Partial | 163 |
 | KI.Placeholder | 1 |
 | KI.Blocked | 6 |
 | SYS.rows | 92（Implemented 67 / Partial 25 / Placeholder 0 / Blocked 0） |
@@ -18,14 +18,14 @@
 | ARCH.sections | 187（maxSection=187，duplicates=0，holes=none） |
 | PKG.scripts / PKG.deps / PKG.devDeps | 14 / 1 / 6 |
 
-当前全量：门 `tsc --noEmit` 0 错；`validate:data` 0 ERROR／2 WARN（均既有）；测试 **4542 条 / 386 个文件**
+当前全量：门 `tsc --noEmit` 0 错；`validate:data` 0 ERROR／2 WARN（均既有）；测试 **4548 条 / 388 个文件**
 全部跑到且全绿（门 `node scripts/test.mjs`）。
 
 <!-- PHASE-STATUS:BEGIN-KV -->
 ```
-KI.rows=339
+KI.rows=340
 KI.Implemented=170
-KI.Partial=162
+KI.Partial=163
 KI.Placeholder=1
 KI.Blocked=6
 SYS.rows=92

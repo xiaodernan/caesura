@@ -9,7 +9,7 @@
 
 ## §1. 三条要先认下来的认识
 
-1. **当前主干是绿的。** `npm run check` ⇒ 4542 条 / 386 文件 / 0 fail。`tsc --noEmit` 0 错。
+1. **当前主干是绿的。** `npm run check` ⇒ 4548 条 / 388 文件 / 0 fail。`tsc --noEmit` 0 错。
 2. **竖切片不是完整游戏。** Phase 0–4 全绿、Phase 5（成长）完成、Phase 6（叙事）各自大部分落位；
    Phase 7 及其后的**任何**一帧代码都还没动。
 3. **账本是一切的起点。** 每一笔变更都把它落在 `KNOWN_ISSUES.md` 的某一行。
@@ -40,9 +40,8 @@
 ### 3.1 立刻可做（1 天以内）
 
 - ~~**增加一条 IDE 独立的 Boss flow 测试**：`tests/flow/boss-slot-bodies.test.ts`，钉住「占槽者前冲落点按同伴接触线截断」~~ **已落（2026-11-09）**：`tests/flow/boss-slot-bodies.test.ts`，真数据奥斯塔拉 + 两名漂调者、全场 1800 拍：两名主攻手最近距 **1.020 米**（0 样本 <1.0）、反向臂（摘 `Squad.prototype.update` 里 `squadSlotPeers` 写入）最近距 **0.145 米**／under1 **1163** 样本。兄弟口径仍在 `tests/unit/squad-slot-bodies.test.ts`（`tests/unit/` 不是 `tests/flow/`——路线图原文这里的路径是写岔的）。
-- **Phase 7 的一个最小可落点**：在 `vfx/Trails.ts` 中，给 `trail.weapon` 加一条定向测试（武器挥击时拖尾粒子的长度 ≤ 某常量，超过即 push）；
-  若当前实现没有上限，加一条边界测试进去；若已经有上限，补验 `tests/unit/vfx-trail-weapon.test.ts` 使之覆盖这个失败面。
-- **加一条 `tests/unit/squad-slot-bodies.test.ts`**（或 extend）：钉住 `lungeRoomToAllies` 在对向两人同一帧各走一半的行为。
+- ~~**Phase 7 的一个最小可落点**：在 `vfx/Trails.ts` 中，给 `trail.weapon` 加一条定向测试~~ **已落（2026-11-09）**：`tests/unit/vfx-trail-weapon.test.ts`——`trail_blade`（14 段）每帧点数 ≤14、容量恒 28 顶点、`drawRange` 与点数同步；`trail_arrow`（10 段）projectile 那一路同一个契约。上限只有一个主人（`TrailInstance.emit()`），KI-330 已删掉 `update()` 里的第二道封顶。
+- ~~**加一条 `tests/unit/squad-slot-bodies.test.ts`**（或 extend）：钉住 `lungeRoomToAllies` 在对向两人同一帧各走一半的行为~~ **已落扩展项（2026-11-09）**：`tests/unit/squad-slot-bodies.test.ts` 新增「对向两人同一帧各走一半」腿——roomA === roomB、roomA + roomB === d − (2r + 0.02)、maxStep 小于余量时照实走。
 
 ### 3.2 中期（1–3 周）
 
@@ -54,9 +53,9 @@
 ### 3.3 保养型（任何阶段都可做）
 
 - 检查 `PHASE-STATUS.md` 的嵌入数字有没有过时（每次合入后跑 `npm run status` 校一次）；
-- 给 `CONTRIBUTING.md` 加一段"术语表"（本仓内部词汇众多）；
+- ~~给 `CONTRIBUTING.md` 加一段"术语表"（本仓内部词汇众多）~~ **已落（2026-11-09）**：`docs/CONTRIBUTING.md` §8 术语表（37 条，每条都是仓内真在用的词：账本／正册／腿／读数／反向臂／门／磁盘名册／机读区／地板／棘轮……）；
 - 或者做一轮 `Interactables` 引用审计：找 `data/json/` 中所有真值——`weapons.json / enemies.json / items.json / regions.json` 等，
-  核对没有悬空物，给它们 unaware-read/空物 配验收测试。
+  核对没有悬空物，给它们 unaware-read/空物 配验收测试。**本批已落（2026-11-09，KI-417）**：同扫 weapons/enemies/items/loot/regions 五张表——**零**零引用行（weapons／enemies／loot／regions 全部有外部读者）；items.json 恰好五行（`wp_fortissimo_greatsword_item`／`wp_overtone_bow_item`／`wp_tuningfork_staff_item`／`ar_ostlaraweave_cuirass`／`seal_drumlegend`）——装备获取通道尚未接线的缺桩；钉入 `tests/unit/unaware-rows.test.ts` 的 KNOWN_ORPHANS 名册（新增零引用行即红，接线/删行名册先红）。另外：引用完整性早有 `scripts/validate-data.mjs` 的「悬空引用」族门守着（loot⇄items、enemy⇄loot、region⇄spawn、boss⇄worldstate……）——这批做的是它**没盖住**的另一半：零引用行。
 
 ---
 

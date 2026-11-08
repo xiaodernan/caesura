@@ -167,6 +167,36 @@ describe('KI-383 主攻手之间也有身体', () => {
     expect(lungeRoomToAllies(inside, 1, 0, 0.5), '已经在接触线内 ⇒ 这一拍不再靠近').toBe(0)
   })
 
+  it('对向两人同一帧各走一半：各自到接触线的余量各占一半，合计恰等于余量', () => {
+    // KI-383 的那句「对向两人同拍各走一半（gap = 2 × 体格半径 + 2 厘米拍误差）」
+    // 在代码里就是 lungeRoomToAllies 里的 `tHit * 0.5`：A 的 room 与 B 的 room 各取 tHit
+    // 的一半——两个人**同时扑**的时候，加起来正好到同一条接触线，多一寸都碰不上。
+    const base = registry.get<EnemyData>('en_driftsinger')
+    const mk = (x: number, facing: 1 | -1, peerX: number): Enemy =>
+      ({
+        pos: { x, y: 0, z: 0 },
+        data: base,
+        squadSlotPeers: [{ x: peerX, y: 0, z: 0 }],
+      }) as unknown as Enemy
+
+    const d = 1.4
+    const gap = 2 * 0.5 * (base.body?.scale ?? 1) + 0.02 // 两具半身宽 + 2 厘米拍误差
+    const a = mk(0, 1, d)     // A 站在原点，朝东扑
+    const b = mk(d, -1, 0)    // B 站在 d 米处，朝西扑
+
+    const roomA = lungeRoomToAllies(a, 1, 0, 0.5)
+    const roomB = lungeRoomToAllies(b, -1, 0, 0.5)
+
+    expect(roomA, '两个人扑得一样快——各走各的那一半').toBeCloseTo(roomB, 6)
+    expect(roomA + roomB, '两具身体的合力步长，恰好填满「距接触线的余量」').toBeCloseTo(d - gap, 6)
+    // 余量本体：两个都走到极限时，两具身体互不进入对方的半身宽
+    expect(d - roomA - roomB, '合力步长不越过接触线一厘米').toBeCloseTo(gap, 6)
+
+    // 上限：maxStep 比余量小的时候照实走 maxStep，不截断
+    const roomShort = lungeRoomToAllies(a, 1, 0, 0.1)
+    expect(roomShort, '余量够 0.29，maxStep 只给 0.1 ⇒ 走 0.1').toBeCloseTo(0.1, 5)
+  })
+
   it('六人三槽：2400 拍两两最小距 ≥1 米，出手拍不掉', () => {
     const r = run(6)
     expect(r.min, '两两最小距（全部配对，不只等待者）').toBeGreaterThan(0.99)

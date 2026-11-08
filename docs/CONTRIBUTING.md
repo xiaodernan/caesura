@@ -64,7 +64,7 @@ git commit -F <messageFile>
 > caesura@0.1.0 check
 > tsc --noEmit        # 0 错
 > npm run validate:data  # 0 ERROR / 2 WARN (既有)
-> npm run test         # 4542 条 / 386 文件 / 0 fail
+> npm run test         # 4548 条 / 388 文件 / 0 fail
 ```
 
 ## 6. 不允许的事
@@ -82,3 +82,44 @@ git commit -F <messageFile>
 - 结案后：下一位读这行的人怎样才能确认你没说谎？
 
 只要你能回答这两个，本项目就接受你这次贡献。
+
+## 8. 术语表（本仓内部词汇；每一条都是仓库里真在用的说法）
+
+| 词 | 意思 |
+|---|---|
+| 账本 | `docs/KNOWN_ISSUES.md`，每一行一条 KI 记录：病／裁决／读数／还欠。一切变更从账本落起。 |
+| 正册 | 账本里带 `\| KI-nnn \|` 的那张主表；`npm run status` 现取其中 `Implemented / Partial / Placeholder / Blocked` 四档计数。 |
+| KI / TD / PF | 正册号 / 技术债号（§2 表）/ 生产失败号（§3 表）。`KI-408` 读「KI 第 408 号」。 |
+| KI-nxx | 账本编号；正册唯一性由门 B/F 钉住，重号是红条。 |
+| §N | `docs/technical-architecture.md` 的节号（如 `§5.9.187`）。门 F 钉住 §5.9 的连续与无重号。 |
+| 落点 | 变更真正住在哪（文件／函数／数据行）——账本行必须写出落点，不能只写「已处理」。 |
+| 落库 | 已提交进 git 库（commit 里真有那几行），不是「我改过了」。 |
+| 读数 | 量出来的数字（测试计数、覆盖率、拍数、距离、字节数）。账本上的「读数」要能复算。 |
+| 还欠 | 本批明确没做完、留给下一位的东西。每行 KI 都有「还欠」格。 |
+| 不声称 | 本批明确不宣称什么（环境差异、未量部分、未裁决项）。写给未来读者的减震层。 |
+| 腿 | 验证的一格。一条变更通常要同时过多「腿」：架构／测试／validate:data／lint。 |
+| 证据 | 能让下一位无歧义复核的东西：命令、输出、commit 号、行号。 |
+| 反向臂 | 摘掉/破坏机制后重跑，红条按预测回来的那一臂——证明测试真的钉住了它声称钉的东西。 |
+| 臂 | 一个实验面（CONTROL 或某一刀）。「六臂全红」= 六种破坏各自对上的红条数。 |
+| 裁决 / 待裁 | 需要人拍板的事（Boss 数值、美术、玩家人数、升级 major……）。待裁项不在 AI 手里定。 |
+| 主干 | `master`——唯一合并目标；其余车道/worktree 的内容都并入它。 |
+| 车道 | 并发开发流中的一条线（另一台机器/另一个会话/另一个 worktree）。 |
+| 平面 | 一个检出出来跑读数的目录（常指与 `master` 对齐的 worktree 或 `git archive` 解包后的冻结快照）。 |
+| 并入 / 并轨 | 把某条车道的提交合进 `master`；并轨后由主裁决者保持单一主干。 |
+| 工作簿 | 本地仓库工作目录（`D:/法环游戏`）。 |
+| 门 | 机器读取的红线检查（如门 F 节号名册、门 B 账本唯一性、门 I 状态标签）。 |
+| 名册 | 机器扫描出来的清单。`磁盘名册`＝`tests/` 下全部测试文件名单（`scripts/test.mjs` 与测试计数对账用）。 |
+| 机读区 / BEGIN-KV…END-KV | `docs/PHASE-STATUS.md` 里 `<!-- PHASE-STATUS:BEGIN-KV --> … <!-- PHASE-STATUS:END-KV -->` 那个代码块——只允许由 `npm run status` 现取回填，手改即红。 |
+| 地板 | 覆盖率棘轮的下限（`scripts/coverage-floor.json`）。只许涨不许跌；「--bless」= 抬地板。 |
+| 棘轮 | 「只许增不许减」的门——覆盖率／测试计数一类。 |
+| 空报表（empty-report） | 从未被任何测试 import 的文件在 coverage 里走 `(empty-report)` 分支，行数分母退化为文件行数；不是覆盖率掉了。 |
+| 零覆盖 | 有可执行行、但没有任何测试执行过的文件（`zeroCoverageFiles`）。 |
+| 红率 | `scripts/red-rate.mjs` 记录的「某 commit 上有多少条红」。 |
+| worktree | `git worktree` 的目录约定（本仓抛弃式升级/预演用，完工即移除；`.worktrees/` 已 ignore）。 |
+| 夹具 / 假件 | 测试里用来喂判据的替身（假 world／假消费者）。 |
+| 刀口 | 精确的破坏点（一臂对应一刀）。「刀口在第 N 格」＝红要落在那一格。 |
+| Partial / Implemented / Placeholder / Blocked | 账本状态四档；`Placeholder`=占位待设计，`Blocked`=等裁决/等外因。见 §0 与 §78 表。 |
+| 登记 / 记账 | 把一件事写进账本（哪怕不解决它，也写清楚它是什么）。 |
+| 量具 | 量东西的脚本本身（`scripts/coverage.mjs` 等）——量具坏了 ≠ 覆盖率掉了。 |
+| 纯类型文件 | istanbul 记 0 可执行行的文件（如 `src/data/schema.ts`），不进覆盖率分母。 |
+| 全量 | `npm run check`／全套测试（当前：4548 条 / 388 文件——以 `npm test` 现读为准）。 |
