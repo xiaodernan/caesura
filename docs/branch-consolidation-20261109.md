@@ -84,3 +84,12 @@ tests/unit/{action-labels,bindings-data,pause-action,schema-vocab,statuses,ui-in
 并入 master 时平移进主干的五节仍住原位 §5.9.178～182（普查／校验器／注入根／红跑／豁免名册）；
 南道五节经挪号平移到 **§5.9.183～187**（账本 KI-390／KI-391／KI-393 三行与 WORKPLAN 三行在并入 master 时已按预留指准）。
 门 F 现按 1..187 连续无空洞无重号；`artifacts/*.png`（5 张，Stage-5 会话遗留）仍按 KI-410 不入库。
+
+## 并轨后复核（2026-11-09 续二）
+
+南道 lane 落盘（`87d5a3e`）之后已在同主干复跑全程：tsc 0 错 ·
+validate:data 0 ERROR／2 WARN（均既有） · 全量 4540 条／385 个文件，0 红 · 门 F 1..187 连续无空洞无重号。
+追加工具登记：`npm run status`（scripts/phase-status.mjs）从正册／§1.5／TD+PF／§5.9 节号名册现取统计（KI-416），
+发布于 02e3fd4 批次、复核本文有效。
+并轨后主干领先 origin/master 累计七十余笔，落后 0；五张 artifacts 截图仍按 KI-410 不入库；
+artifacts/ 仍不入库；Edge 打开：南道并轨前 `artifacts/` 的 png 作为 Stage-5 历史证据保留在本机盘面。
