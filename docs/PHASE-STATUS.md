@@ -16,7 +16,7 @@
 | TD.rows | 3（2 Partial / 1 Placeholder） |
 | PF.rows | 1（1 Blocked） |
 | ARCH.sections | 187（maxSection=187，duplicates=0，holes=none） |
-| PKG.scripts / PKG.deps / PKG.devDeps | 12 / 1 / 6 |
+| PKG.scripts / PKG.deps / PKG.devDeps | 13 / 1 / 6 |
 
 当前全量：门 `tsc --noEmit` 0 错；`validate:data` 0 ERROR／2 WARN（均既有）；测试 **4540 条 / 385 个文件**
 全部跑到且全绿（门 `node scripts/test.mjs`）。
@@ -47,7 +47,7 @@ ARCH.sections=187
 ARCH.maxSection=187
 ARCH.duplicates=0
 ARCH.holes=none
-PKG.scripts=12
+PKG.scripts=13
 PKG.deps=1
 PKG.devDeps=6
 ```
@@ -107,5 +107,6 @@ PKG.devDeps=6
   里出现的每个 `KEY=VALUE` 必须与 `npm run status` 现读逐字一致——**手改数字=红**。
 - 节号上限／无空洞／无重号由 `tests/unit/doc-audit.test.ts` 门 F 钉住；§78 状态标签由
   `tests/unit/registry-table.test.ts` 门 I 钉住。
+
 
 
