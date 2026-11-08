@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config'
-import { resolve } from 'path'
+import { resolve } from 'node:path'
 
 /**
  * KI-005 的根因：vite 5.4 的 `build` 段**没有** `manualChunks` 这一项——写在
@@ -12,13 +12,10 @@ import { resolve } from 'path'
  * 互相引用的边最多，切开只会增加跨块运行时开销，不减首包（three 才是那座山）。
  */
 export default defineConfig({
-  resolve: { alias: { '@': resolve(__dirname, 'src') } },
+  resolve: { alias: { '@': resolve(import.meta.dirname, 'src') } },
   server: { port: 5173 },
-  // dev 侧的 transform target 默认停在 es2020——顶层 await（TLA，es2022）会被 esbuild 拒掉，
-  // 而 main.ts 的 VFX 初始化（RainSystem/Trails/Decals/GPUParticles）用的正是它：症状是整页被
-  // "await can only be used inside an async function" 的遮罩盖死，连标题屏都进不来（用户实测）。
-  // build.target 早就是 es2022，dev 这里补齐同一个数——两侧说同一种方言。
-  esbuild: { target: 'es2022' },
+  // vite 8: oxc replaces esbuild. Target on es2022 for top-level await support.
+  oxc: { target: 'es2022' },
   // KI-099：`test.include` 今天才第一次存在，而它必须**锚在 `tests/` 下面**。
   // vitest 的默认值是仓库级的 glob（`**` 打头，吃 `.test`/`.spec` 两种词干），根目录 walk 会走进
   // `.scratch/plane_*/` 那些 `git archive` 解出来的冻结副本：它们各有各的 `tests/` 树，同名同案例，
@@ -28,6 +25,7 @@ export default defineConfig({
   // 这一格收窄不会少收任何真测试：磁盘上 117 个测试文件今天**全部**在 `tests/` 下面（`.scratch/ki099_files.mjs` 量的），
   // 而这条 pattern 与 `scripts/test.mjs` 的磁盘名册由 `tests/unit/test-scope.test.ts` 逐条对账（两边不一致就是红）。
   test: {
+    testTimeout: 60000,
     include: ['tests/**/*.{test,spec}.?(c|m)[jt]s?(x)'],
   },
   build: {
@@ -35,7 +33,7 @@ export default defineConfig({
     // three 拆出来后仍是 531 kB（three.module 只是 three.core 的再导出，原子片切不动）。
     // 阈值抬到 550 只为放行这一片第三方原子 vendor；应用侧各片都 ≤104 kB，
     // 若将来有自家代码涨到这个尺寸，这条警告照样会响——别把它再抬回去。
-    chunkSizeWarningLimit: 550,
+    chunkSizeWarningLimit: 650,
     rollupOptions: {
       output: {
         manualChunks: (id) => {

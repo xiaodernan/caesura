@@ -1,4 +1,4 @@
-﻿# CAESURA《止音纪元》— 持续开发计划（2026-10-20 起）
+# CAESURA《止音纪元》— 持续开发计划（2026-10-20 起）
 
 > 这份是**工作面**，不是产品文档：产品的事实住 `docs/technical-architecture.md`，
 > 债住 `docs/KNOWN_ISSUES.md`。这份只回答两件事：现在做哪几件、按什么次序做。
@@ -254,7 +254,7 @@ Phase B4 的三件套此前是"有人听、没人说"。
 | ✅ KI-405 | **音色晶调包节拍器——晶碎在鼓边 6 米内，鼓手与鼓都不死，全营照样丢拍（§6.5）**：`ai.drumMuteRadius = 6`，只有驼鼓带；判据是落点到鼓的距离而不是命中（晶穿过所有人，`pierce: 99`）；晶碎在半径内 `drumMuted`，走 `campLoseBeat`，鼓手与鼓都还在；静音一次性：同一面鼓只调包一次 | 晶落在鼓边 2 米内 `drumMuted`、驼鼓仍 `alive`、`drumBroken` 为 false、同营冻结 **171 拍**（量到落点后 125 拍，冻结走完到 0）、屏上「鼓被调包了」；反向臂：同一颗晶落在 26 米外 ⇒ 不静音、不丢拍；边界：调包后再扔一颗不回响、再杀鼓手不触发第二次丢拍；0 份引用驼鼓／音色晶的 flow 文件 **506 条全绿**（新增 `drum-mute` 4 条）；`validate-data` 0 ERROR（已有 2 WARN）；`tsc --noEmit` 本批 0 错；**还欠**：静音不是限时的（永久调包）、没有“营地改听晶的拍”层、鼓静音不影响驼鼓自身招式、落点判据是水平距离没有高度／遮挡 |
 | ✅ KI-406 | **stub 登记夹具真链化——KI-319／322／323／324 的「读数登记」转化为表⇄运行时对账判据**：KI-322（§13 感知模型）删除（ai-perception 已完整覆盖）；KI-323（§14 破势）6 条真链对账（reactions.json R4 ⇄ armCrumple／addPoise／update 衰减）；KI-324（§8 反应系统）7 条真链对账（R0–R4 表⇄运行时，表里恰齐、无 R5）；KI-319（§10 震镜包络）腿②弹反 roll 真读数（CameraRig.shake ⇒ parry roll=2）、腿③ **30ms 不在 SHAKE_TABLE**（hitstop 不是震镜） | flow **1594 条全绿**／unit **2887 条全绿**／磁盘名册 **381** 个文件；**还欠**：视口走查未做、架构背书见 docs/architecture-20261109-squad-arc.md |
 | 📝 KI-407 | **覆盖率棘轮常红——空报表（empty-report）坍缩，不是覆盖回退**：`aadb32e` 上 `npm run coverage` ⇒ **exit=2**；工具原话：「量具坏了：空报表丢了 source map ⇒ 分母退化成文件行数…这不是覆盖率掉了，别拿这次的数当账…地板不许因此下调（KI-330 的同一族）」。main.ts 组合根从未被 import、empty-report 分母坍缩；**不下调地板、不造桩、不动别道在途 main.ts** | `aadb32e` **4493 全绿**；**全包 100.00%**（除 `(root)` 0/1206）；`world 100.00%`（2486/2486，地板 97.12% → 已涨待 bless）／`ai 100.00%`；零覆盖仅剩 **src/main.ts**；总计 **92.79%（5524/16730 行）**。**缓发**：三出口①cleaner 环境重量／②Harness.ts 真 import／③门级标注空报文件——均裁决项；别道 KI-391~393 落地后由主裁决者选 |
-| 📝 KI-408 | **npm audit 剩 10 条（已修 source-map-js→1.2.2）；全卡 breaking major（vitest@2→5／vite@5→8／coverage-v8@2→5）；含 3 critical——全部 dev tooling，不进发布产物；本会话不硬推** | 起始 11 条；2026-11-08 修 1；剩 **10**（vite high、vitest/coverage-v8/tinypool critical×3、moderate×6）；修 RIT：`--force` 升三件套 ⇒ 须独立 QA 窗口（先量后写：升级→全量回归→磁盘名册→coverage→red-rate→bless）；或接受登记（单机离线，游戏版零注入面） |
+| ✅ KI-408 | **npm audit 剩余 10 条——已结案（2026-11-09，A 路全量升级）**：`npm install --save-dev vitest@5.1.0 @vitest/coverage-v8@5.1.0 vite@8.3.6 --legacy-peer-deps` ⇒ **found 0 vulnerabilities**；`npm test` 4540 条 / 385 文件全绿 0 红；`npm run build` 10 份文本 0 findings；`npm audit` **0 vulnerability**（起始 11 条 → source-map-js 1.2.2 修 1 → 2026-11-09 全量升级归零） | vite.config.ts 顺移 `import.meta.dirname` / `oxc: { target: 'es2022' }` / chunkSizeWarningLimit 抬到 650；CI `node-version: 22.x`；engines `>=22.12.0`；`testTimeout: 60000` 显式入 vite.config；`--legacy-peer-deps` 是该刀的必要构形（vitest 5 ⇄ coverage-v8 5 的 peer range）；**不声称**：nightly CI 也绿（actions/setup-node@v4 钉 22.x LTS）；Windows 全节点一致 |
 | ✅ KI-409 | **red-rate 复量：in-flight Critical-Path 三件套 8/8 全绿**——idle/loaded 各 4 趟×3 套件（ui-intents/cinematic-exit/cinematic-owner/input-playlock），19 用例 0 reds；负载倍数 2.34×；**不替南道提交，只钉 verify-after-lane 的预期阈值** | 本会话量读数，不改字节；不替代南道 check |
 | 📝 KI-410 | **账本视口证据断链：git 全史零 .png、artifacts/ 从未入库；三处『artifacts/*.png』改『现场截图，未入库——零 .png』**，Stage-5 遗留 5 张仍驻留为「证据留存政策缺桩」 | 三行引用已屏蔽歧义；剩下的是政策裁决 |
 | ✅ KI-411 | **普查那两支循环的「芯」交回判据——门第一次量到「登记的内容对不对」**（门禁／工具面）：`conditionReadsOf`／`mergeConditionReads` 新住进 `scripts/condition-rules.mjs`，校验器那两段各剩一次调用＋一次并入（真表判决字节改前改后逐字相同）；`tests/unit/condition-rules.test.ts` **17 → 22** 条，新五腿喂的是合成陈设。前置量测把 §5.9.142 那句「没做①」坐实了：留壳去芯 ＋ 植入 ⇒ **校验器 0 ERROR、门 17 条全绿**；本批之后同一把刀 ⇒ **5 条腿红**（A1），而 **A1v** 如实记下校验器自己对植入**仍然**瞎。 | 账本 KI-411＝Implemented；架构 §5.9.178；结案 §5.9.142「还欠①」；12 臂 ＋ 2 CONTROL 逐名相等；下一格＝给校验器一个可注入的数据根 | （挪号入册：原 KI-342。2026-11-09 并存撞号已挪——主干并发批次已占用该号（KI-342 改键界面， 576bb1c））
@@ -311,6 +311,3 @@ Phase B4 的三件套此前是"有人听、没人说"。
 - 实机走查与像素评审（本机没有可见窗口 ⇒ 只能做几何/数据级验证，登记为 Blocked）。
 - 真几何与真资产（KI-008/010）：灰盒世界的天花板，不是靠写作能绕过去的。
 - 音频时序与混音（§11 三主题淡入淡出）。
-
-
-

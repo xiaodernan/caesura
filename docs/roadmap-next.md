@@ -67,7 +67,6 @@
 | KI | 为什么必须先问 |
 |----|--------------|
 | KI-407 | coverage exit=2，棘轮没过线 |
-| KI-408 | npm audit breaking-major 窗口 |
 | KI-001 | 外接手柄的振动不可用（§64） | 见 `PHASE-STATUS.md` 表格 |
 | KI-010 | Phase 10 实机视口走查（headless tickFrame 已经够，像素截图才需要）|
 | KI-019 | 仅强攻线交战 Boss 判定 |

@@ -98,6 +98,6 @@ artifacts/ 仍不入库；Edge 打开：南道并轨前 `artifacts/` 的 png 作
 
 8 个 detached worktree（caesura-lm、ki143-plane、ki153-plane、ki161-plane、ki319-dev、ki334-dev、ki348-dev、法环-m133plane）全部移入 `git worktree remove --force`（已从 master HEAD 逐个核对：HEAD 均为 ancestor，全部未入册修改另拷至系统 Temp/opencode/worktree-backup-20261109-inflight）。工作区现在只有 `D:/法环游戏` 一个工作簿；`git ls-files` 没有入库的 .png artefact，也没有未忽略的 .tmp/.scratch 产物。
 
-新增已入库：.editorconfig、.gitattributes、.github/workflows/check.yml（GitHub Actions，node 20，npm ci → validate:data → lint → test.mjs → test → build）；scripts/text-corpus.mjs 的 ROOT_DOT_FILES 增加两条已声明的形状（.editorconfig、.gitattributes，理由如声明文本）。
+新增已入库：.editorconfig、.gitattributes、.github/workflows/check.yml（GitHub Actions，node 20→**22.x**（KI-408 结案后升级），npm ci → validate:data → lint → test.mjs → test → build）；scripts/text-corpus.mjs 的 ROOT_DOT_FILES 增加两条已声明的形状（.editorconfig、.gitattributes，理由如声明文本）。
 
-主干领先 origin/master 76 笔、落后 0；其余阻塞项（push 裁决、KI-407 裁决、KI-408 升级窗口、KI-019／Phase 6 联动、Stage 6 裁决）仍在裁决队列里，不构成本轮开发内容。
+主干领先 origin/master 76 笔、落后 0；其余阻塞项（push 裁决、KI-407 裁决、**KI-408 升级窗口已于 2026-11-09 结案（npm audit 0 vulnerability）**、KI-019／Phase 6 联动、Stage 6 裁决）仍在裁决队列里，不构成本轮开发内容。

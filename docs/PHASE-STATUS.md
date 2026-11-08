@@ -1,4 +1,4 @@
-﻿# PHASE-STATUS — 项目实时进度与证据面
+# PHASE-STATUS — 项目实时进度与证据面
 
 > 门读数来源：`npm run status`（`node scripts/phase-status.mjs`）。数字由该工具现取，不手抄；
 > 更新本文档时请改成本文嵌入值并由 `tests/unit/phase-status.test.ts` 把关。
@@ -8,8 +8,8 @@
 | 量 | 值 |
 |---|---|
 | KI.rows | 339 |
-| KI.Implemented | 169 |
-| KI.Partial | 163 |
+| KI.Implemented | 170 |
+| KI.Partial | 162 |
 | KI.Placeholder | 1 |
 | KI.Blocked | 6 |
 | SYS.rows | 92（Implemented 67 / Partial 25 / Placeholder 0 / Blocked 0） |
@@ -24,8 +24,8 @@
 <!-- PHASE-STATUS:BEGIN-KV -->
 ```
 KI.rows=339
-KI.Implemented=169
-KI.Partial=163
+KI.Implemented=170
+KI.Partial=162
 KI.Placeholder=1
 KI.Blocked=6
 SYS.rows=92
@@ -94,7 +94,7 @@ PKG.devDeps=6
 
 - TD-010（无动态 GI）：无 Lumen 等价物；Placeholder 状态；迁 UE5 才能解。
 - KI-407（覆盖率棘轮 exit=2）：三出口待裁（①cleaner 环境重量 ②Harness 拆装 ③门级 annotation）。
-- KI-408（npm audit 10 advisories）：breaking-major 升级窗口（vitest@5／vite@8／coverage-v8@5），预演已做。
+- KI-408（npm audit 10 advisories）：**已结案（2026-11-09，A 路全量升级）**：vitest@5.1.0／vite@8.3.6／coverage-v8@5.1.0 ⇒ `npm audit` **0 vulnerability**、4540 条／385 文件全绿、build 10 份文本 0 findings。
 - §5.3／§5.4（GPU／内存预算）：无可见窗口和 KTX2/Draco，预算 Placeholder。
 - 阶段 7/8/9/10/11：美术／音频打磨单位与户外走查、QA、竖切发布，均未启动。
 - Stage 5 视口走查（KI-010）：可见浏览器窗口出现在近期，完成度评审待契约节奏。
@@ -107,7 +107,3 @@ PKG.devDeps=6
   里出现的每个 `KEY=VALUE` 必须与 `npm run status` 现读逐字一致——**手改数字=红**。
 - 节号上限／无空洞／无重号由 `tests/unit/doc-audit.test.ts` 门 F 钉住；§78 状态标签由
   `tests/unit/registry-table.test.ts` 门 I 钉住。
-
-
-
-
