@@ -220,9 +220,11 @@ describe('读者住在闸门外（KI-388 · 与 Input.ts 那条 Tab 老死路同
   it('过场锁玩法那条输入时，停摆也一并被锁走——这一格是本批**改窄**的行为面，钉住它才说得出', () => {
     const { input, time, pause } = rig()
     /* 老写法（`main.ts` 里那句 `e.code === 'Escape' && !overlayOpen()`）只看有没有菜单，
-       过场进行中按 Esc 停得下来；改走动作名册之后，`enabled = overlay === null && !inputLocked`
-       把这一枚也一起挡住了。本批只登记不解锁——解锁要给 `pause` 划一条不属于玩法的系统通道。 */
-    input.enabled = false // 组合根里这一格由 `cinematics.inputLocked` 写成假（`main.ts` 的 enabled 合成）
+       过场进行中按 Esc 停得下来；改走动作名册之后玩法那条通道把这一枚也一起挡住了。
+       KI-392 之后挡住它的不是 `enabled` 而是每帧现问的 `playLive`：**过场期间没有 overlay，
+       `enabled` 是真的**，这一格过去写成假是在冒充别的状态（菜单在场），结论碰巧一样、机理不一样。
+       本批只登记不解锁——解锁要给 `pause` 划一条不属于玩法的系统通道。 */
+    input.playLive = () => false // 与组合根那一句同形：`main.ts` 把它接成 `!cinematics.inputLocked`
     key('Escape')
     input.poll(TICK_DT)
     expect(readPauseAction(input, pause)).toBe(false)

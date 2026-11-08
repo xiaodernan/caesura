@@ -2,6 +2,7 @@ import { bus } from '@/core/EventBus'
 import { Vector3 } from 'three'
 import { GameTime, TICK_DT, TICK_HZ } from '@/core/Time'
 import { PauseControl, readPauseAction } from '@/core/PauseControl'
+import { readCinematicExit } from '@/core/CinematicExit'
 import { GameLoop } from '@/core/GameLoop'
 import { Input, pumpMenu, type MenuOwner, type MenuPump } from '@/core/Input'
 import { RhythmClock } from '@/core/RhythmClock'
@@ -115,6 +116,16 @@ const player = new PlayerController(playerBase, weapon, moveset)
  * 它们的接点是终局分支，如实记在架构文档那张表里。
  */
 const cinematics = new Cinematics(cinematicRows)
+
+/**
+ * **玩法那条的第二道闸接在这里**（KI-392）：`Input.poll` 每帧现问 `playLive`，所以这一句**只在组合根写一次**，
+ * 之后不需要任何人再"想起来重算"。为什么不并进 `setOverlay()` 里那一格：`enabled` 的唯一书写者是
+ * `setOverlay`，而过场的**起、走满、跳过**都不经过它——并进那一格读到的就是上一次 overlay 变化时的过场状态
+ * （主 Boss 倒下放开场胜利过场那一刻，玩法照样能动）。分家之后两格各按自己的时机成立：
+ * overlay 归 `enabled`（它的真相确实住在 `setOverlay`），"谁在跑"归这道每帧现问的闸。
+ * 菜单那条（`uiOwner`）不受这一句影响——过场锁夺的是玩法，不是菜单读数。
+ */
+input.playLive = () => !cinematics.inputLocked
 
 /**
  * **过场的进出事件在这里发**（`cinematic.start` / `cinematic.end`）。
@@ -308,17 +319,21 @@ const mapUi = new MapUI(regions, {
 })
 
 /**
- * 在场的菜单 = `core/Input.ts` 的那四格所有权（KI-062 第二腿之后，对话框与标题屏也在这一个值域里）。
- * 别名而不是重写一遍字面量：词表只有 `MenuOwner` 一份，这里再抄一次就是第二份账。
+ * 在场的菜单 = `core/Input.ts` 那份所有权名册里**除去第五格**的那些（KI-062 第二腿之后，对话框与标题屏
+ * 也在同一个值域里；KI-390 的过场那一格不在——它不是一条 overlay，为什么不在写在 `MENU_OWNERS` 上方：
+ * 算成 overlay 就会被下面那句 `holdByOverlay` 冻住世界，而**过场自己的时间正走在被冻住的那一段里**）。
+ * 派生而不是重写一遍字面量：词表只有 `MenuOwner` 一份，这里再抄一次就是第二份账。
  */
-type Overlay = MenuOwner | null
+type Overlay = Exclude<MenuOwner, 'cinematic'> | null
 /**
- * **overlay 的唯一所有者**（KI-097 收拢 KI-061/KI-062 那两半）：世界停摆、输入所有权、菜单意图的
+ * **overlay 的唯一所有者**（KI-097 收拢 KI-061/KI-062 那两半）：世界停摆、玩法那条的交还、菜单意图的
  * 认领与交还，全在这一处。四块菜单互相排他——同时开着两块 overlay = 两份 uiStep 抢同一条意图通道，
  * 而 `paused`/`enabled` 会由先关的那一块解开（那个 bug 与「点背景冻死游戏」同族）。
  *
- * `input.uiOwner = ` 因此**在 main.ts 里只有一处**：它不是 `panel`/`map` 的字面量，而是这个 `Overlay`
- * 变量本身——所有权的值就是"哪一块 overlay 在场"，第二处赋值等于第二份答案。
+ * `input.uiOwner = ` 因此**在 main.ts 里只有一处**：它不是 `panel`/`map` 的字面量，而是"现在谁是主人"
+ * 那一格现算的值——第二处赋值等于第二份答案。KI-390 之前这一句住在下面这个函数里（事件时机），
+ * 那是写窄的：过场的起／走满／跳过都不经过这里，第五格就永远补不上；于是它搬进 `feedMenu()`，
+ * 书写的次数一格没多。这里留下的两格（`paused` 的一半与 `enabled`）时机是对的：overlay 的真相就在这里。
  */
 let overlay: Overlay = null
 
@@ -329,14 +344,16 @@ function setOverlay(open: Overlay): void {
   // 'dialogue' / 'title'：两块面板都收，但世界同样停摆、通道同样有人认领——
   // 走的是同一条腿，不给它们另开一套"只暂停不认领"的旁路（那正是两个主人的形状）。
   else { panel.close(); mapUi.close() }
-  // uiOwner：菜单读数的所有权（KI-062）。开着才发意图、关着一格都不发，也不抢浏览器的默认行为。
+  // uiOwner：菜单读数的所有权（KI-062）——开着才发意图、关着一格都不发，也不抢浏览器的默认行为。
   // 玩法那条（enabled）与这条是两件事：世界停摆期间正是菜单需要读数的时候。
   // 世界停摆：只报「菜单在不在场」这一格（KI-387）——玩家自己按出来的那次暂停归 `PauseControl`
   // 的另一格管，overlay 的周期不许再把它覆盖掉（老写法 `time.paused = overlay !== null` 正是覆盖的那一句）。
   pause.holdByOverlay(overlay !== null)
-  // 过场期也夺输入（`cinematics.inputLocked`）：夺的是**玩法那条**，菜单那条（uiOwner）照旧
-  input.enabled = overlay === null && !cinematics.inputLocked
-  input.uiOwner = overlay
+  // 这一格原来后面还跟着「所有权 = overlay」那一句。KI-390 把它搬进 `feedMenu()`：那里的值要**每帧**
+  // 现算（overlay 之外还有过场那一格），留在这里就是拿事件时机去答一个每帧才成立的问题。
+  // 过场期也夺输入，但**不写进这一格**（KI-392，理由写在 `cinematics` 后面那一段）：这一句的书写者只有
+  // `setOverlay`，而过场的起／走满／跳过都不经过它——过场那一半交给每帧现问的 `input.playLive`。
+  input.enabled = overlay === null
 }
 
 /** 调音桩/商摊面板（既有调用点的名字不变：`__caesura.setPanelOpen`、面板的 onRequestClose） */
@@ -997,12 +1014,20 @@ const core = {
  *
  * 四块互斥（`setOverlay` 保证），所以这里是 if/else 而不是全都喂——两份 uiStep 抢同一条通道，
  * 一次 ↑↓ 会被数两遍。这一处也是标题屏唯一的读数入口：环还没开时由 `pumpMenu` 来敲它（见 boot 段）。
+ *
+ * KI-390 之后这里还多了一格：`owner` 是**每帧现算**的（overlay 四格 + 过场锁那一格），
+ * `input.uiOwner` 的唯一书写者跟着搬了进来——所有权与读数从此在同一次调用里，不会隔着一帧说谎。
+ * 第五格没有屏可重绘，它的读者是那句出口（`readCinematicExit`：`confirm`／`back` 收束当前这一条，
+ * 排队的照常接上），玩法那条闸门与 `enabled` 一字未动 ⇒ 过场期间"能动"仍然是不许的，只是终于能跳了。
  */
 function feedMenu(): void {
-  if (overlay === 'panel') panel.uiStep(input.uiEdges)
-  else if (overlay === 'map') mapUi.uiStep(input.uiEdges)
-  else if (overlay === 'dialogue') dialogueBox.uiStep(input.uiEdges)
-  else if (overlay === 'title') title?.uiStep(input.uiEdges)
+  const owner: MenuOwner | null = overlay ?? (cinematics.inputLocked ? 'cinematic' : null)
+  input.uiOwner = owner
+  if (owner === 'panel') panel.uiStep(input.uiEdges)
+  else if (owner === 'map') mapUi.uiStep(input.uiEdges)
+  else if (owner === 'dialogue') dialogueBox.uiStep(input.uiEdges)
+  else if (owner === 'title') title?.uiStep(input.uiEdges)
+  else if (owner === 'cinematic') readCinematicExit(input.uiEdges, () => skipCinematic())
 }
 
 const loop = new GameLoop(time, input, (alpha, realDelta) => {

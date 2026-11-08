@@ -74,3 +74,13 @@
 工作区中南道在途字节未入册、未动；4534 条／384 个测试文件全绿（本次并入树上实测）；
 validate:data 0 ERROR／2 WARN（均既有）；门 `doc-audit`、`arch-gap-table`、`id-scope` 全绿。
 本笔不推送 origin。
+
+## 并轨结算（2026-11-09 续）
+
+南道 KI-391～393 在途字节并轨落盘：
+入册 = src/core/Input.ts、src/main.ts、tests/flow/cinematics-player.test.ts、
+tests/unit/{action-labels,bindings-data,pause-action,schema-vocab,statuses,ui-intents}.test.ts
+＋ 新三把尺 tests/unit/{cinematic-exit,cinematic-owner,input-playlock}.test.ts。
+并入 master 时平移进主干的五节仍住原位 §5.9.178～182（普查／校验器／注入根／红跑／豁免名册）；
+南道五节经挪号平移到 **§5.9.183～187**（账本 KI-390／KI-391／KI-393 三行与 WORKPLAN 三行在并入 master 时已按预留指准）。
+门 F 现按 1..187 连续无空洞无重号；`artifacts/*.png`（5 张，Stage-5 会话遗留）仍按 KI-410 不入库。

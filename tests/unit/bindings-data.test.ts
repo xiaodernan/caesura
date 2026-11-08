@@ -1,3 +1,5 @@
+import { readdirSync, readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import * as INPUT from '@/core/Input'
 import {
@@ -15,6 +17,21 @@ import { BindingsStore, BIND_BOUNDS, PROFILE_SLOTS, clampBindings, clampProfiles
  * `raw` 在这里一律当成**玩家手改过的存档**：`Integrity` 的校验和只防截断，不防恶意，
  * 所以这一组的判据不是"能不能装出想要的键位"，而是"任何 blob 都只能装出玩得下去的那张表"。
  */
+
+/**
+ * KI-391：敌意档②那把键的来路。
+ * 为什么不许写字面抄本：那一串字母的长度是名册张数的一次**手抄**——两数今天相等，
+ * 所以那条腿今天是满覆盖的；名册一涨（KI-390 的甲候选正是涨一枚），多出来的那一枚派成 `Keyundefined`，
+ * 被 `clampBindings` 的语法关丢掉，回补再替它另找一把 ⇒ 老判据「还剩一把键吗」照旧绿，只是**静默少覆盖一格**。
+ * 于是键从名册自己派：`键池[i]` ⇄ `名册[i]`，而「池够不够长」由下面那条腿现问——不够长就红，不许静默。
+ * 字母用 `fromCharCode` 生成而不是再抄一串字母表：那串字母表本身又是一份抄本。
+ */
+const 键池: readonly string[] = [
+  ...Array.from({ length: 26 }, (_, i) => `Key${String.fromCharCode(65 + i)}`),
+  ...Array.from({ length: 10 }, (_, i) => `Digit${i}`)
+]
+const 派键: ReadonlyArray<readonly [string, ActionName]> =
+  BINDABLE_ACTIONS.map((a, i) => [键池[i], a] as const)
 
 describe('KI-336 名册与默认快照：只有一个主人', () => {
   it('动作名册从默认表现推，且默认键盘表是一张双射（整套回补规则的立足点）', () => {
@@ -132,18 +149,18 @@ describe('KI-336 clampBindings：任何 blob 只能装出玩得下去的那张�
   })
 
   it('不失联（四格狠档各量一次）：名单外的动作仍有一把键，名单里的动作一格都不许留，意图一个都不落空', () => {
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUV'
-    const hostile = [
+    const hostile: Array<{ 名: string; raw: Record<string, unknown>; 派?: Map<ActionName, string> }> = [
       // ① 全删：两张键盘表都空着
-      { gameplay: { keyboard: {} }, ui: { keyboard: {} } },
-      // ② 22 个动作各占一把默认表用过的字母键（KeyA…KeyV 与默认表重叠 ⇒ 一路搬家）
-      { gameplay: { keyboard: Object.fromEntries(BINDABLE_ACTIONS.map((a, i) => [`Key${letters[i]}`, a])) } },
+      { 名: '①', raw: { gameplay: { keyboard: {} }, ui: { keyboard: {} } } },
+      // ② 名册里每一枚各占一把**派来的**键（`键池[i]` ⇄ `名册[i]`，今天与默认表重叠 ⇒ 一路搬家）。
+      // 这一档额外带一张 `派` 表，判据因此能问「回来的那一把是不是它自己那把」，而不只问「还剩一把吗」——KI-391
+      { 名: '②', raw: { gameplay: { keyboard: Object.fromEntries(派键) } }, 派: new Map(派键.map(([c, a]) => [a, c] as [ActionName, string])) },
       // ③ 一个动作吃掉所有键
-      { gameplay: { keyboard: Object.fromEntries(Object.keys(DEFAULT_BINDS.keyboard).map((c) => [c, 'dodge'])) } },
+      { 名: '③', raw: { gameplay: { keyboard: Object.fromEntries(Object.keys(DEFAULT_BINDS.keyboard).map((c) => [c, 'dodge'])) } } },
       // ④ KI-342：全删之外还点名了三格「无」——这一档是上面三条的合流，回补要救前者、要放过后者
-      { gameplay: { keyboard: {}, unbound: ['dodge', 'observe', 'throwCrystal'] } }
+      { 名: '④', raw: { gameplay: { keyboard: {}, unbound: ['dodge', 'observe', 'throwCrystal'] } } }
     ]
-    for (const raw of hostile) {
+    for (const { 名, raw, 派 } of hostile) {
       const out = clampBindings(raw)
       const off = new Set(out.gameplay.unbound)
       for (const a of BINDABLE_ACTIONS) {
@@ -151,8 +168,9 @@ describe('KI-336 clampBindings：任何 blob 只能装出玩得下去的那张�
         if (off.has(a)) {
           expect(codes, `${a} 点名了「无」⇒ 回补不许把它请回键盘上（名单与表必须同向）`).toEqual([])
         } else {
-          expect(codes.length, `${a} 必须还有一把键（${JSON.stringify(Object.keys(raw))}）`)
+          expect(codes.length, `${a} 必须还有一把键（${名}：${JSON.stringify(Object.keys(raw))}）`)
             .toBeGreaterThanOrEqual(1)
+          if (派) expect(codes, `${名} 里 ${a} 派的是 ${派.get(a)}，回到表里那一格写的必须还是它——只数「还剩一把」看不见静默搬家（KI-391）`).toEqual([派.get(a)])
         }
       }
       for (const i of UI_INTENTS) {
@@ -238,6 +256,207 @@ describe('KI-336 clampBindings：任何 blob 只能装出玩得下去的那张�
   })
 })
 
+describe('KI-391 派键的来路：不许是名册长度的一份抄本', () => {
+  it('池装得下名册，而且池里每一把都过 clampBindings 的语法关（不够长要响，不许静默少覆盖一格）', () => {
+    expect(键池.length, `池 ${键池.length} 格要 ≥ 名册 ${BINDABLE_ACTIONS.length} 枚——池短一枚，多出来的那枚就派成 undefined`)
+      .toBeGreaterThanOrEqual(BINDABLE_ACTIONS.length)
+    for (const code of 键池) {
+      const out = clampBindings({ gameplay: { keyboard: { [code]: 'interact' } } })
+      expect(out.gameplay.keyboard[code], `${code} 被 clampBindings 丢掉了 ⇒ 它不该待在池里（池里的键必须真能落表）`).toBe('interact')
+    }
+  })
+
+  it('派键与名册同长、两两不同、每一把都在池里（一枚不多，一枚不少）', () => {
+    expect(派键.length, '有几枚动作就有几把派键——多出来的是抄本，少了的那枚会静默没键')
+      .toBe(BINDABLE_ACTIONS.length)
+    expect(new Set(派键.map(([c]) => c)).size, '派键两两不同：两枚挤同一格 ⇒ 敌意档少覆盖一格而老判据仍绿')
+      .toBe(派键.length)
+    for (const [c, a] of 派键) {
+      expect(键池, `${a} 那把 ${c} 不在池里——名册长过池了，去加格子而不是让派键掉出去`).toContain(c)
+      expect(c, `派出来的键名里不许有 undefined（那是池比名册短时那一枚的下场）`).not.toContain('undefined')
+    }
+  })
+
+  it('全仓的尺与码里不许再住一份引号内的 [A-Z] 长串——它只能是某份名册长度的抄本', () => {
+    const root = fileURLToPath(new URL('../../', import.meta.url))
+    const 命中: string[] = []
+    const 扫 = (dir: string): void => {
+      for (const e of readdirSync(`${root}${dir}`, { withFileTypes: true })) {
+        const rel = `${dir}/${e.name}`
+        if (e.isDirectory()) { 扫(rel); continue }
+        if (!/\.ts$/.test(e.name)) continue
+        readFileSync(`${root}${rel}`, 'utf8').split('\n').forEach((l, i) => {
+          for (const m of l.match(/['"`][A-Z]{18,}['"`]/g) ?? []) 命中.push(`${rel}:${i + 1}（${m.length - 2} 字符）`)
+        })
+      }
+    }
+    for (const d of ['tests', 'src']) 扫(d)
+    expect(命中, `引号内连续大写 ≥18 的每一处都是一份手抄名册长度（KI-391）：${命中.join('、')}`).toEqual([])
+  })
+  it('全仓的尺里不许再有一句拿裸整数钉名册自己的长度——那枚数就是名册的一份抄本（KI-393 甲）', () => {
+    const root = fileURLToPath(new URL('../../', import.meta.url))
+    const TOKENS = ['ACTION_NAMES', 'BINDABLE_ACTIONS', 'UI_INTENTS', 'UI_NAV_INTENTS', 'PICK_INTENTS', 'UI_NAV', 'UI_PICK', 'STATUS_IDS', 'ActionName', 'UiIntent']
+    const 像名册 = (s: string): boolean => TOKENS.some((t) => new RegExp('(^|[^A-Za-z_])' + t + '($|[^A-Za-z_])').test(s))
+    const 第 = (文: string, i: number): string => (i >= 0 && i < 文.length ? 文[i] ?? '' : '')
+    /** 先把「不是代码」的那些位置划出去：引号串、模板串、行注释、块注释、正则字面量。
+     *  上一版没有这一层，把本条自己那句 indexOf('expect(') 当成了一处调用点，从那一行起整份文件再没往下看——
+     *  于是这把尺在自己住的那份文件里漏掉了它要抓的一枚，报出来的名单短了一枚，而短名单看着仍是绿的。
+     *  正则字面量必须一起划：本文件里就住着一枚 /['"`][A-Z]{18,}['"`]/，三种引号都在里头，
+     *  不划的话头一枚引号会一路吞掉后面的真代码。 */
+    const 码位 = (文: string): Uint8Array => {
+      const 表 = new Uint8Array(文.length)
+      表.fill(1)
+      const 吞串 = (i: number, q: string): number => {
+        表[i] = 0
+        let j = i + 1
+        while (j < 文.length) {
+          const d = 第(文, j)
+          if (d === '\\') { 表[j] = 0; 表[j + 1] = 0; j += 2; continue }
+          if (d === q) { 表[j] = 0; return j }
+          if (d === '\n' && q !== '`') break
+          表[j] = 0
+          j++
+        }
+        return j - 1
+      }
+      let 上 = ''
+      for (let i = 0; i < 文.length; i++) {
+        if (表[i] !== 1) continue
+        const c = 第(文, i)
+        if (c === "'" || c === '"' || c === '`') { 上 = c; i = 吞串(i, c); continue }
+        if (c === '/' && (第(文, i + 1) === '/' || 第(文, i + 1) === '*')) {
+          const 止 = 第(文, i + 1) === '/' ? 文.indexOf('\n', i) : 文.indexOf('*/', i + 2)
+          const 末 = 止 < 0 ? 文.length - 1 : 第(文, i + 1) === '/' ? 止 : 止 + 1
+          for (let j = i; j <= 末 && j < 文.length; j++) 表[j] = 0
+          i = 止 < 0 ? 文.length : 末
+          continue
+        }
+        /* 正则字面量先**探**再划：在同一条里找得到收尾的那枚斜杠，才把整段划成非代码；
+           找不到就说明这一枚斜杠是除号。上一版边写边划，又拿「紧挨着的前一个字符」（空格也算）当记号，
+           于是 `=> /re/` 里那枚斜杠后面一旦探不到收尾，整行的真括号全被划走，配平再也回不到 0。 */
+        if (c === '/' && (上 === '' || '([{,=:&|?;+-*%~^<>'.includes(上))) {
+          let j = i + 1
+          let 类 = false
+          let 闭 = -1
+          while (j < 文.length) {
+            const d = 第(文, j)
+            if (d === '\n') break
+            if (d === '\\') { j += 2; continue }
+            if (类) { if (d === ']') 类 = false } else if (d === '[') 类 = true
+            else if (d === '/') { 闭 = j; break }
+            j++
+          }
+          if (闭 >= 0) {
+            for (let k = i; k <= 闭; k++) 表[k] = 0
+            let k = 闭 + 1
+            while (k < 文.length && /[a-z]/.test(第(文, k))) { 表[k] = 0; k++ }
+            上 = '/'
+            i = k - 1
+            continue
+          }
+        }
+        if (!/\s/.test(c)) 上 = c
+      }
+      return 表
+    }
+    const 跳串 = (文: string, i: number): number => {
+      const q = 第(文, i)
+      let j = i + 1
+      while (j < 文.length) { if (第(文, j) === '\\') { j += 2; continue } if (第(文, j) === q) return j; j++ }
+      return j
+    }
+    /* 从 expect 的那枚左括号起，按深度走到配对的右括号；非代码位置（串身与注释）一概不参与配平 */
+    const 配平 = (文: string, 表: Uint8Array, 开: number): number => {
+      let d = 0
+      for (let j = 开; j < 文.length; j++) {
+        if (表[j] !== 1) continue
+        const c = 第(文, j)
+        if (c === '(') d++
+        else if (c === ')') { d--; if (d === 0) return j }
+      }
+      return -1
+    }
+    /* 主语取第一个顶层逗号之前的那一段；若它只是个标识符，把它那行 const 的右端拉进来一起看 */
+    const 主语段 = (参: string, 文: string): string => {
+      let d = 0, k = 0
+      for (; k < 参.length; k++) {
+        const c = 参[k] ?? ''
+        if (c === "'" || c === '"' || c === '`') { k = 跳串(参, k); continue }
+        if (c === '(' || c === '[' || c === '{') d++
+        else if (c === ')' || c === ']' || c === '}') d--
+        else if (c === ',' && d === 0) break
+      }
+      const 主 = 参.slice(0, k)
+      const id = /^(\w+)(\.length)?$/.exec(主.trim())
+      if (!id) return 主
+      const 名 = id[1]
+      if (!名) return 主
+      const m = new RegExp('(?:const|let)\\s+' + 名 + '\\s*(?::[^=\\n]*)?=\\s*([^\\n]{0,240})').exec(文)
+      return m ? 主 + '=>' + m[1] : 主
+    }
+    /* expect( 收尾之后只容许一枚「说明」实参，再往下必须紧跟链式调用 */
+    const 尾段 = (文: string, 闭: number): string => {
+      let j = 闭 + 1
+      while (j < 文.length && /\s/.test(第(文, j))) j++
+      if (第(文, j) === ',') {
+        j++
+        let d = 0
+        while (j < 文.length) {
+          const c = 第(文, j)
+          if (c === "'" || c === '"' || c === '`') { j = 跳串(文, j) + 1; continue }
+          if (c === '(') d++
+          else if (c === ')') { if (d === 0) break; d-- }
+          j++
+        }
+        j++
+      }
+      return 文.slice(j, j + 120)
+    }
+    const 裸数 = (尾: string): string | null => {
+      const m = /^\s*(?:\.\s*not)?\s*\.\s*(toBe|toHaveLength|toEqual)\(\s*([^)]{0,80}?)\s*\)/.exec(尾)
+      const v = m?.[2]
+      return v && /^\d+$/.test(v) ? v : null
+    }
+    const 抄本: string[] = []
+    const 瞎处: string[] = []
+    const 漏行: string[] = []
+    const 扫 = (dir: string): void => {
+      for (const e of readdirSync(`${root}${dir}`, { withFileTypes: true })) {
+        const rel = `${dir}/${e.name}`
+        if (e.isDirectory()) { 扫(rel); continue }
+        if (!/\.ts$/.test(e.name)) continue
+        const 文 = readFileSync(`${root}${rel}`, 'utf8')
+        if (!/expect\s*\(/.test(文)) continue
+        const 表 = 码位(文)
+        const 行号 = new Int32Array(文.length + 1)
+        let n = 1
+        for (let k = 0; k < 文.length; k++) { 行号[k] = n; if (第(文, k) === '\n') n++ }
+        行号[文.length] = n
+        const 行 = (i: number): number => 行号[i] ?? 1
+        const 走到 = new Set<number>()
+        for (let i = 0; i < 文.length; i++) {
+          if (表[i] !== 1 || !文.startsWith('expect(', i)) continue
+          if (/[\w$.]/.test(第(文, i - 1))) continue
+          const 站 = i
+          走到.add(行(站))
+          const 闭 = 配平(文, 表, 站 + 6)
+          if (闭 < 0) { 瞎处.push(`${rel}:${行(站)}`); continue }
+          const 数 = 裸数(尾段(文, 闭))
+          const 主 = 数 ? 主语段(文.slice(站 + 7, 闭), 文) : ''
+          i = 闭
+          if (!数 || !像名册(主)) continue
+          抄本.push(`${rel}:${行(站)}（期望 ${数}，主语 ${主.replace(/\s+/g, ' ').slice(0, 60)}）`)
+        }
+        文.split('\n').forEach((l, k) => { if (/^[ \t]*expect\(/.test(l) && !走到.has(k + 1)) 漏行.push(`${rel}:${k + 1}`) })
+      }
+    }
+    扫('tests')
+    expect(瞎处, `凡走到一处 expect( 却配不出右括号，就是这把尺自己瞎了——那一处之后的半份文件不许静悄悄不看（KI-393 甲）：${瞎处.join('、')}`).toEqual([])
+    expect(漏行, `行首那一枚 expect 是本仓尺的写法底色，一处没被走到就是这把尺漏看了那一行（KI-393 甲）：${漏行.join('、')}`).toEqual([])
+    expect(抄本, `名册自己的长度被裸整数钉住的每一处都是一份抄本（KI-393 甲）：${抄本.join('、')}`).toEqual([])
+  })
+})
+
 describe('KI-336 BindingsStore：设置→消费者的那根线', () => {
   function target() {
     const applied: Bindings[] = []
@@ -313,7 +532,7 @@ describe('KI-336 意图名册的换算仍只有一处', () => {
     const nav: UiIntent[] = ['up', 'down', 'left', 'right', 'confirm', 'back', 'pagePrev', 'pageNext']
     for (const n of nav) expect(UI_INTENTS).toContain(n)
     for (let i = 1; i <= 9; i++) expect(UI_INTENTS).toContain(`pick${i}` as UiIntent)
-    expect(UI_INTENTS.length, '8 + 9 = 全值域，多一格少一格都是抄写漂移').toBe(17)
+    expect(UI_INTENTS.length, '导航那一族＋直选那一族＝全值域，多一格少一格都是抄写漂移').toBe(INPUT.UI_NAV_INTENTS.length + INPUT.PICK_INTENTS.length)
   })
 })
 

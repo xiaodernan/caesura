@@ -197,10 +197,22 @@ export interface Bindings {
 }
 
 /**
- * 谁现在拥有菜单（`uiOwner` 的值域）。四格全在这里说清楚，是因为**每加一格就多一个 uiStep 读者**：
- * 面板/地图之外，对话框与标题屏从前各自挂着 DOM 监听器（KI-062 第二腿把它们接进来）。
+ * 谁现在拥有菜单（`uiOwner` 的值域）。名册在这里、类型从名册派生（与 `UI_NAV`／`PICK_INTENTS` 同一家规矩：
+ * 词表只有一份账，别人要循环它就 `import` 这份，不要把四格字面量再抄一遍——`tests/unit/ui-intents.test.ts`
+ * 的那把喂读循环原来就是抄的，KI-390 把它改成按名册走，第五格进来那天它自己会红。
+ *
+ * **五格全在这里说清楚，是因为每加一格就多一个读者**：面板／地图之外，对话框与标题屏从前各自挂着
+ * DOM 监听器（KI-062 第二腿把它们接进来）。第五格 `cinematic` 是**唯一没有 `uiStep` 的那一格**——
+ * 过场没有"被框住的那一行"，它要的只是一个出口，所以它的读者是 `src/core/CinematicExit.ts`
+ * 里那一句（收束当前这条），不是某块屏的重绘。
+ *
+ * **为什么要有第五格而不是把过场也算一条 overlay**：`setOverlay` 那一句 `pause.holdByOverlay(...)`
+ * 会把世界冻住，而 `cinematics.advance` 住在被 `if (!time.paused)` 挡着的 `core.update` 里 ⇒
+ * 过场一旦算作 overlay，它自己的时间就不再往前走（黑场永久停着）。所以这一格只夺**菜单读数**
+ * （意图通道＋`preventDefault`），不夺**世界时间**，也不碰玩法那条闸门（`enabled`／`playLive` 各归各的主人）。
  */
-export type MenuOwner = 'panel' | 'map' | 'dialogue' | 'title'
+export const MENU_OWNERS = ['panel', 'map', 'dialogue', 'title', 'cinematic'] as const
+export type MenuOwner = typeof MENU_OWNERS[number]
 
 /**
  * `Tab` 也进 `back` 是有道理的：开着面板时它是"收起来"，关着时它是"在调音桩前打开"——
@@ -308,12 +320,24 @@ export class Input {
   frameAssist = false
   frame: FrameInput = blankFrame()
   enabled = true
+  /**
+   * 玩法那条的**第二道闸**：`poll` 每帧现问一次，所以「这一拍让不让动」不必由谁在事件时机补写一格布尔。
+   *
+   * 为什么要它（KI-392）：`enabled` 全仓只有一个书写者，住在 `main.ts` 的 `setOverlay()` 里；过场的起、
+   * 走满、跳过都不经过 `setOverlay`，于是把 `!cinematics.inputLocked` 并进那一格，读到的其实是
+   * **上一次 overlay 变化时**的过场状态——主 Boss 倒下那一刻放开的胜利过场，玩法照样能动。
+   * 两格各按自己的时机成立：overlay 归 `enabled`（它的真相就住在 `setOverlay`），"谁在跑"归这道每帧现问的闸。
+   * 默认一路放行 ⇒ 没有接线的读者（含全部既有测试）行为一个字都不变。
+   */
+  playLive: () => boolean = () => true
   /* ---------------- UI 意图通道（见 UI_BINDS 上方的理由） ---------------- */
   /**
    * 谁现在拥有菜单。null ⇒ 这条通道一格都不发，也**不抢**浏览器的默认行为
    * （方向键在没菜单时该 scroll 就 scroll，不该被游戏吃掉）。
-   * 唯一的写方是 `main.ts` 的 `setOverlay()`（KI-062 第二腿之后，对话框与标题屏也归它管，
-   * 不再各自挂 DOM 监听器——DOM 一条 + 菜单一条就是两个主人）。
+   * 唯一的写方在 `main.ts` 的 `feedMenu()` 里——KI-390 之前它住在 `setOverlay()`（事件时机），
+   * 那是写窄的：过场的起／走满／跳过都不经过 `setOverlay`，第五格 `cinematic` 就永远补不上。
+   * 搬进喂读那一段之后，这一格和它下面那两格 `uiEdges` 是**同一帧现算的一对**，不会隔着一帧说谎。
+   * 对话框与标题屏也归它管，不再各自挂 DOM 监听器——DOM 一条 + 菜单一条就是两个主人（KI-062 第二腿）。
    */
   uiOwner: MenuOwner | null = null
   /** 本帧新出现的 UI 意图（edge 语义：一直按着不放不会连发） */
@@ -581,12 +605,15 @@ export class Input {
     this.prevUi = deviceUi
     this.uiEdges = uiEdges
     const deviceHeld = new Set<ActionName>([...this.kbHeld, ...this.mouseHeld, ...this.padHeld])
-    const held = this.enabled ? deviceHeld : new Set<ActionName>()
+    /* 两道闸合成同一格的读数：`enabled`（overlay 那半，事件时机写）与 `playLive`（"谁在跑"那半，每帧现问）。
+       任一挡着，玩法这一条就一格都不发。 */
+    const live = this.enabled && this.playLive()
+    const held = live ? deviceHeld : new Set<ActionName>()
     const edges = new Set<ActionName>()
     // `enabled` 只决定"游戏这一帧看不看得见输入"，不决定"我们还跟不跟设备状态"。
     // 以前禁用期是把 held 清空之后再记进 prevHeld 的，于是"在菜单里一直按着 A"会在关面板
-    // 那一帧被当成新按下 —— 关个调音桩送自己一次翻滚（KI-061 抓出）。
-    if (this.enabled) {
+    // 那一帧被当成新按下 —— 关个调音桩送自己一次翻滚（KI-061 抓出）。`playLive` 同一条规矩。
+    if (live) {
       for (const a of deviceHeld) if (!this.prevHeld.has(a)) edges.add(a)
       for (const [a, until] of this.bufferedEdges) {
         if (until < this.elapsed) this.bufferedEdges.delete(a)

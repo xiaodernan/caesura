@@ -1,6 +1,8 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { STATUS_IDS } from '@/core/EventBus'
+import { BINDABLE_ACTIONS, PICK_INTENTS, UI_NAV_INTENTS } from '@/core/Input'
 import {
   arrayLiterals, callArgLiterals, dirListing, fieldUnion, handCopiedLists, importedNames, interfaceFields, objectKeys,
   refFieldUnion, schemaBlocks, setLiterals, stripComments, unionMembers, vocabCoverageErrors, vocabDriftErrors,
@@ -254,17 +256,17 @@ describe('今天的真载体：五张新对账在真文件上零条，抽取也�
   it('四种形状的载体各读得出东西（读不到就是 null ⇒ 下面的对账会自己报空转）', () => {
     expect(objectKeys(read('src/player/CameraRig.ts'), 'SHAKE_TABLE')).toEqual(
       ['graze', 'normal', 'hurt', 'parry', 'heavy', 'boss', 'execute', 'stomp'])
-    expect(arrayLiterals(read('src/core/EventBus.ts'), 'STATUS_IDS')).toHaveLength(5)
-    // 22 = 20 + `throwCrystal`（KI-023① 的 T 键音色晶）+ `observe`（KI-105 的 V 键声纹观察）。
-    // **数与名字一起钉**：只报一个数的话，
-    // 将来任何一格增删都只能靠"撞红"来定位，而撞红只说"不是 22"，说不出变的是谁。
+    // 解析读出来的格数不许再钉一枚裸整数：那枚数就是名册的抄本，主人是运行时交出来的那一份（KI-393 甲）。
+    expect(arrayLiterals(read('src/core/EventBus.ts'), 'STATUS_IDS')).toHaveLength(STATUS_IDS.length)
+    // **数与名字一起钉**：只报一个数的话，将来任何一格增删都只能靠「撞红」来定位，
+    // 而撞红只说「不是那一枚数」，说不出变的是谁——所以下面那两格 `toContain` 照旧留着。
     // KI-336：这一条的排版从字面量联合换成 `typeof ACTION_NAMES[number]` ⇒ 派生那一支要吃整份原文。
     const inputText = read('src/core/Input.ts')
     const actions = unionMembers(schemaBlocks(inputText), 'ActionName', inputText)
-    expect(actions, '输入层的动作全集').toHaveLength(22)
+    expect(actions, '输入层的动作全集').toHaveLength(BINDABLE_ACTIONS.length)
     expect(actions, 'KI-023① 加的那一格').toContain('throwCrystal')
     expect(actions, 'KI-105 加的那一格').toContain('observe')
-    expect(unionMembers(schemaBlocks(inputText), 'UiIntent', inputText), '八格导航 + 九格直选，两位主人拼起来').toHaveLength(17)
+    expect(unionMembers(schemaBlocks(inputText), 'UiIntent', inputText), '导航那一族＋直选那一族，两位主人拼起来').toHaveLength(UI_NAV_INTENTS.length + PICK_INTENTS.length)
     expect(callArgLiterals(read('src/rpg/Settlement.ts'), 'passiveValue')).toEqual(
       ['ps_metronomefoot', 'ps_tympanicguard', 'ps_featherrest'])
     expect(refFieldUnion(schemaBlocks(read('src/data/schema.ts')), 'Hitbox', 'shape')).toEqual(['cone', 'sphere', 'ring'])

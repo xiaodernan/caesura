@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { BINDABLE_ACTIONS, DEFAULT_BINDS, PICK_INTENTS, UI_INTENTS, type ActionName, type UiIntent } from '@/core/Input'
+import { BINDABLE_ACTIONS, DEFAULT_BINDS, PICK_INTENTS, UI_INTENTS, UI_NAV_INTENTS, type ActionName, type UiIntent } from '@/core/Input'
 import { ACTION_LABELS, UI_INTENT_LABELS, actionLabel, intentLabel, padLabel } from '@/ui/actionLabels'
 
 /**
@@ -139,7 +139,7 @@ describe('KI-343 手柄按钮的名字：名册内给汉字，名册外如实画
 describe('KI-344 菜单意图的名字：格子齐、次序对、同名只有那三对', () => {
   it('名册十七格一字不差，且次序就是画行的次序', () => {
     expect(Object.keys(UI_INTENT_LABELS), '多一格是没人走的意图，少一格是那一行没名字').toEqual([...UI_INTENTS])
-    expect(UI_INTENTS.length, '这一屏要画 17 行菜单（量具先数得住，别让玩家替它数）').toBe(17)
+    expect(UI_INTENTS.length, '这一屏要画的行数＝导航那一族＋直选那一族两位主人相加（量具先数得住，别让玩家替它数）').toBe(UI_NAV_INTENTS.length + PICK_INTENTS.length)
     const pickRows = PICK_INTENTS.map((p) => UI_INTENTS.indexOf(p))
     expect(pickRows, '直接选 1–9 是末尾九格 ⇒ 面板才写得出「导航八格 ＋ 直选九格」')
       .toEqual(UI_INTENTS.slice(-9).map((_, k) => UI_INTENTS.length - 9 + k))

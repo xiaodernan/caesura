@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it, beforeEach } from 'vitest'
 import { bus, STATUS_IDS, type StatusId } from '@/core/EventBus'
 import { registry } from '@/core/Registry'
@@ -20,11 +22,25 @@ registerGameData()
 const enemies = enemiesRaw as unknown as EnemyData[]
 const ids = Object.keys(statuses) as (keyof StatusConfig)[]
 
+/**
+ * `docs/combat.md` §11 那张表的**状态行**就是"文档说今天有几张状态"的主人。
+ * 钉在这里的裸格数是它的一份抄本（KI-393 甲）：表加了行而名册没跟上，抄本只会安静地变旧。
+ */
+const root = fileURLToPath(new URL('../../', import.meta.url))
+const 第十一节 = (): string[] => {
+  const 趟 = readFileSync(`${root}docs/combat.md`, 'utf8').replace(/\r\n/g, '\n').split('\n')
+  const 起 = 趟.findIndex((l) => /^## 11\./.test(l))
+  if (起 < 0) return []
+  const 止 = 趟.findIndex((l, i) => i > 起 && /^## /.test(l))
+  return 趟.slice(起 + 1, 止 < 0 ? 趟.length : 止)
+}
+const 文档状态行数 = (): number => 第十一节().filter((l) => /^\|\s*\*\*[^*]+\*\*\s*\|/.test(l)).length
+
 describe('statuses.json 与 §11 数值表逐格对齐', () => {
   it('五张状态，一张不多一张不少，且和 EventBus 的口径全等', () => {
     expect([...ids].sort()).toEqual([...STATUS_IDS].sort())
     // core 层刻意不 import @/data（arch-boundaries），所以两边各写一份名单，靠这条钉住
-    expect(STATUS_IDS.length).toBe(5)
+    expect(STATUS_IDS.length, '名册格数＝§11 表里的状态行数；读不到行是表改了形状，红要红在这里而不是放过去').toBe(文档状态行数())
   })
 
   it('每张状态都有 tag / displayName / desc：没有解释的状态不算实现完（需求 §19）', () => {

@@ -94,6 +94,17 @@ describe('运行时那条腿（`main.ts`）：接了什么、**没接什么**，
     expect(main, '新开局放开场').toMatch(/if \(!slot\) startCinematic\('CINE_OPEN'\)/)
   })
 
+  it('那条输入门是**每帧现问**的：过场锁不许跟着 overlay 的时机写进 `enabled`（KI-392 先红腿）', () => {
+    // 病的形状：`input.enabled` 全仓只有一个书写者，住在 `setOverlay()` 里（现量 `.scratch/ki392b_scales.json`
+    // 生产书写者 1 处）。起过场／走满／跳过都不经过 `setOverlay` ⇒ 那一句里 `&& !cinematics.inputLocked`
+    // 的那一半只在 overlay 变化那一拍成立过（纠正批：账上 9 条锁输入的过场、合计 154000ms，真锁着的只有定弦屏那两拍）。
+    // 修法按**时机**分家：overlay 那一格仍由 `setOverlay` 写（它的真相就住在那儿），过场那一格由组合根**一次**
+    // 接成函数、`Input.poll` 每帧现读——于是不再需要"谁想起来再算一次"。
+    expect(main, '每帧现问的那道闸接在组合根').toMatch(/input\.playLive\s*=\s*\(\)\s*=>\s*!cinematics\.inputLocked/)
+    expect(main, '过场锁不许再被写进事件时机的那一格').not.toMatch(/input\.enabled\s*=[^\n#]*inputLocked/)
+    // 上面 :93 那把旧尺一个字不改也照绿：`!cinematics.inputLocked` 这串字面还在，只是换了一个位置。
+  })
+
   it('**没接**的那 4 条必须一个都不出现（谁接了就顺手把这条改准，别让它一直骗人）', () => {
     // 触发点今天接了四处：① 新局开场 ② 进 Boss 区（三条出场）③ 对话选择（剧情 B5）④ 主 Boss 倒下（胜利）。
     // **没接**的是剧情 B7 与三条结局向的——它们的接点是终局分支。

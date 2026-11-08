@@ -2,6 +2,7 @@ import { beforeEach, beforeAll, describe, expect, it } from 'vitest'
 import { registerGameData } from '@/data'
 import { RpgRuntime } from '@/rpg/Runtime'
 import { Input, PICK_INTENTS, UI_BINDS, pumpMenu, type UiIntent } from '@/core/Input'
+import * as CORE from '@/core/Input'
 import type { SavePanelDeps } from '@/ui/Stakerite'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -363,11 +364,19 @@ describe('KI-062 入口只有一个（源码门）', () => {
     expect(UI_BINDS.keyboard.Tab, 'Tab 的开关两条路靠 owner 互斥，不是靠两处各自判').toBe('back')
   })
 
-  it('main 里：意图每帧喂一次，所有权的赋值只有一处', () => {
+  it('main 里：意图每帧喂一次，所有权的赋值只有一处、而且住在每帧现算那一段（KI-390 乙案改口）', () => {
     // 注释里出现同样的字串不算数（探针 N7 第一次就是这样白给的：把喂线注释掉，toContain 仍然通过）
     const live = main.split(/[\r\n]+/).filter((l) => !l.trim().startsWith('//') && !l.trim().startsWith('*')).join('\n')
     expect(live, '通道接好了却没人念给面板听：每帧喂一次这条要在（而且不能在注释里）').toContain('panel.uiStep(input.uiEdges)')
-    expect(main.match(/input\.uiOwner = overlay/g)?.length, '认领与交还是同一次赋值：值就是 Overlay 变量本身（KI-097）').toBe(1)
+    /* 这一把尺原来钉的是「`input.uiOwner = overlay` 在 main 里恰好一处」。KI-390 乙案改的是**时机**：
+       第五格 `cinematic` 的起止不经过 `setOverlay`，所以那句赋值要从事件时机搬到每帧现算的那一段
+       （与 KI-392 的 `playLive` 同族）。书写的**次数**一格没多，仍是那一处——于是"只许一处"留着，
+       另加三条钉住它搬去哪：住在 `feedMenu` 体内、那一句同时看得见过场锁、`setOverlay` 里不再写它。 */
+    expect(live.match(/input\.uiOwner\s*=/g)?.length, '所有权的赋值仍只许一处：两处等于两份答案').toBe(1)
+    const feed = live.slice(live.indexOf('function feedMenu'), live.indexOf('const loop = new GameLoop'))
+    expect(feed, '`input.uiOwner` 的赋值要住在 `feedMenu` 里（每帧现算）——住在 `setOverlay` 的事件时机里就补不上过场那一格').toContain('input.uiOwner =')
+    expect(feed, '每帧现算的那一句要同时看见 overlay 与过场锁，否则第五格永远是空的').toMatch(/cinematics\.inputLocked/)
+    expect(live.slice(live.indexOf('function setOverlay'), live.indexOf('function setPanelOpen')), '`setOverlay` 里还写着所有权：那就还是两处书写者').not.toContain('input.uiOwner =')
     expect(main.match(/input\.uiOwner = (?:'panel'|'map'|null)/g), '字面量形状 = 第二份账：所有权不许再有一处直写').toBeNull()
     // 第三条原来数的是**原文**里的 `uiOwner` 出现次数（=3：一处赋值 + 注释里两次提及），
     // 于是 overlay 那一批为了解释"为什么只有一处"而写下的 `input.uiOwner = ` 本身就把门点到 4——
@@ -378,7 +387,7 @@ describe('KI-062 入口只有一个（源码门）', () => {
     expect(main.match(/uiOwner/g)!.length, '解释"为什么只有一处"的注释不见了：没人说过的规矩下一个人会再犯').toBeGreaterThanOrEqual(3)
   })
 
-  it('第二腿：对话框与标题屏也不再自己挂 keydown，四格主人各有各的喂读腿', () => {
+  it('第二腿：对话框与标题屏也不再自己挂 keydown，主人名单里每一格各有各的喂读腿', () => {
     const srcs = [
       ['DialogueBox', readFileSync(root + 'src/ui/DialogueBox.ts', 'utf8')],
       ['TitleScreen', readFileSync(root + 'src/ui/TitleScreen.ts', 'utf8')],
@@ -388,15 +397,23 @@ describe('KI-062 入口只有一个（源码门）', () => {
       expect(src, `${name}：读数入口的签名要和面板同一份约定`).toMatch(/uiStep\(intents: ReadonlySet<UiIntent>\)/)
     }
     const live = main.split(/[\r\n]+/).filter((l) => !l.trim().startsWith('//') && !l.trim().startsWith('*')).join('\n')
-    for (const owner of ['panel', 'map', 'dialogue', 'title'] as const) {
-      expect(live, `feedMenu 少喂 ${owner} 这一格：那块屏就成了挂名却不读数的第四者`).toContain(`overlay === '${owner}'`)
+    /* 这一把尺原来把四格字面量抄在测试里（`['panel','map','dialogue','title'] as const`）——
+       那是 `MenuOwner` 的第二份账：值域加了第五格而这里不会红，"每一格都有读者"这句话就悄悄变成了写窄。
+       现在按 core 交出来的名册逐格循环（KI-390 乙案），名册本身没交出来时先红在这里，
+       而不是让循环空跑一遍假装全绿（那是把钉当腿的另一面：尺自己失效时最该红的是尺）。 */
+    const 名册 = (CORE as unknown as Record<string, unknown>).MENU_OWNERS as readonly string[] | undefined
+    expect(名册, 'core 没交出可枚举的 `MENU_OWNERS`：喂读循环没法按名册走，第四者会变成挂名的第五者').toBeDefined()
+    const feed = live.slice(live.indexOf('function feedMenu'), live.indexOf('const loop = new GameLoop'))
+    for (const owner of 名册 ?? []) {
+      expect(feed, `喂读那一段少了 ${owner} 这一格：那块屏就成了挂名却不读数的第五者`).toContain(`=== '${owner}'`)
     }
     // 标题阶段环还不开，喂线要有第二个敲它的人；只有开环那一条腿的话，标题屏一根键都收不到
     expect(live, '环之前那一段要有泵：pumpMenu(input, feedMenu) 是标题屏唯一的读数来源').toContain('pumpMenu(input, feedMenu)')
   })
 
   it('pick 名册的键盘侧一条不缺：1-9 两种拼写都落到同一格', () => {
-    expect(PICK_INTENTS.length, '"直接选第 n 项"的名册长度就是键盘能给的名册长度').toBe(9)
+    const 主键盘数字格 = Object.keys(UI_BINDS.keyboard).filter((k) => /^Digit\d$/.test(k)).length
+    expect(PICK_INTENTS.length, '直选名册有几格，默认表里 Digit 那一族就该有几格；这里对不上就是有一侧多写或少写').toBe(主键盘数字格)
     for (let i = 0; i < PICK_INTENTS.length; i++) {
       const n = i + 1
       expect(UI_BINDS.keyboard[`Digit${n}`], `Digit${n} 没接进通道`).toBe(PICK_INTENTS[i])
