@@ -13,6 +13,7 @@
     "test:flow": "node scripts/test.mjs tests/flow",
     "coverage": "node scripts/coverage.mjs",
     "validate:data": "node scripts/validate-data.mjs",
+    "status": "node scripts/phase-status.mjs",
     "check": "npm run lint && npm run validate:data && npm run test",
     "test:raw": "node scripts/test-raw.mjs",
     "red:rate": "node scripts/red-rate.mjs"
