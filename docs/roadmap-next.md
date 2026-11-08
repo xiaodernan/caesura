@@ -9,7 +9,7 @@
 
 ## §1. 三条要先认下来的认识
 
-1. **当前主干是绿的。** `npm run check` ⇒ 4540 条 / 385 文件 / 0 fail。`tsc --noEmit` 0 错。
+1. **当前主干是绿的。** `npm run check` ⇒ 4542 条 / 386 文件 / 0 fail。`tsc --noEmit` 0 错。
 2. **竖切片不是完整游戏。** Phase 0–4 全绿、Phase 5（成长）完成、Phase 6（叙事）各自大部分落位；
    Phase 7 及其后的**任何**一帧代码都还没动。
 3. **账本是一切的起点。** 每一笔变更都把它落在 `KNOWN_ISSUES.md` 的某一行。
@@ -39,9 +39,7 @@
 
 ### 3.1 立刻可做（1 天以内）
 
-- **增加一条 IDE 独立的 Boss flow 测试**：
-  `tests/flow/boss-slot-bodies.test.ts`，钉住「占槽者前冲落点按同伴接触线截断」（KI-383 那一格——主攻手之间再不穿模）。
-  模仿现有 `tests/flow/` 中已经 pass 的同一类 boss 流测（参 `tests/flow/squad-ring.test.ts` 和 `tests/flow/squad-wait-rings.test.ts`）。
+- ~~**增加一条 IDE 独立的 Boss flow 测试**：`tests/flow/boss-slot-bodies.test.ts`，钉住「占槽者前冲落点按同伴接触线截断」~~ **已落（2026-11-09）**：`tests/flow/boss-slot-bodies.test.ts`，真数据奥斯塔拉 + 两名漂调者、全场 1800 拍：两名主攻手最近距 **1.020 米**（0 样本 <1.0）、反向臂（摘 `Squad.prototype.update` 里 `squadSlotPeers` 写入）最近距 **0.145 米**／under1 **1163** 样本。兄弟口径仍在 `tests/unit/squad-slot-bodies.test.ts`（`tests/unit/` 不是 `tests/flow/`——路线图原文这里的路径是写岔的）。
 - **Phase 7 的一个最小可落点**：在 `vfx/Trails.ts` 中，给 `trail.weapon` 加一条定向测试（武器挥击时拖尾粒子的长度 ≤ 某常量，超过即 push）；
   若当前实现没有上限，加一条边界测试进去；若已经有上限，补验 `tests/unit/vfx-trail-weapon.test.ts` 使之覆盖这个失败面。
 - **加一条 `tests/unit/squad-slot-bodies.test.ts`**（或 extend）：钉住 `lungeRoomToAllies` 在对向两人同一帧各走一半的行为。

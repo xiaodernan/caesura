@@ -64,7 +64,7 @@ git commit -F <messageFile>
 > caesura@0.1.0 check
 > tsc --noEmit        # 0 错
 > npm run validate:data  # 0 ERROR / 2 WARN (既有)
-> npm run test         # 4540 条 / 385 文件 / 0 fail
+> npm run test         # 4542 条 / 386 文件 / 0 fail
 ```
 
 ## 6. 不允许的事
