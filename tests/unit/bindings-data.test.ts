@@ -529,7 +529,7 @@ describe('KI-336 BindingsStore：设置→消费者的那根线', () => {
 
 describe('KI-336 意图名册的换算仍只有一处', () => {
   it('`UiIntent` 的名册覆盖八格导航 + 九格直选（类型与值同一来源）', () => {
-    const nav: UiIntent[] = ['up', 'down', 'left', 'right', 'confirm', 'back', 'pagePrev', 'pageNext']
+    const nav: UiIntent[] = [...INPUT.UI_NAV_INTENTS]
     for (const n of nav) expect(UI_INTENTS).toContain(n)
     for (let i = 1; i <= 9; i++) expect(UI_INTENTS).toContain(`pick${i}` as UiIntent)
     expect(UI_INTENTS.length, '导航那一族＋直选那一族＝全值域，多一格少一格都是抄写漂移').toBe(INPUT.UI_NAV_INTENTS.length + INPUT.PICK_INTENTS.length)
@@ -1186,7 +1186,7 @@ describe('KI-345 菜单那一节的手柄列 ＋ 摇杆阈值的入口：`Pad<n>
 
   it('那一行在手柄上没有默认键 ⇒ 返回假、一格不动（17 格逐格过：八格回得来、九格本来就无处可回）', () => {
     const homes = UI_INTENTS.filter((i) => cellsOf(UI_BINDS.padButtons, i).length > 0)
-    expect(homes, '默认菜单手柄表上有家的就是这八格（名册与表的双射腿）').toEqual(['up', 'down', 'left', 'right', 'confirm', 'back', 'pagePrev', 'pageNext'])
+    expect(homes, '默认菜单手柄表上有家的就是名册里的导航那一族（名册与表的双射腿）').toEqual([...INPUT.UI_NAV_INTENTS])
     for (const i of UI_INTENTS) {
       const { store } = rig()
       store.rebindUi(i, 'Pad7')

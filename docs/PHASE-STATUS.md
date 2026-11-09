@@ -8,9 +8,9 @@
 | 量 | 值 |
 |---|---|
 | KI.rows | 341 |
-| KI.Implemented | 171 |
+| KI.Implemented | 172 |
 | KI.Partial | 163 |
-| KI.Placeholder | 1 |
+| KI.Placeholder | 0 |
 | KI.Blocked | 6 |
 | SYS.rows | 92（Implemented 67 / Partial 25 / Placeholder 0 / Blocked 0） |
 | TD.rows | 3（2 Partial / 1 Placeholder） |
@@ -24,9 +24,9 @@
 <!-- PHASE-STATUS:BEGIN-KV -->
 ```
 KI.rows=341
-KI.Implemented=171
+KI.Implemented=172
 KI.Partial=163
-KI.Placeholder=1
+KI.Placeholder=0
 KI.Blocked=6
 SYS.rows=92
 SYS.Implemented=67

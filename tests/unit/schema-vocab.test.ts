@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { STATUS_IDS } from '@/core/EventBus'
+import { SHAKE_TABLE } from '@/player/CameraRig'
 import { BINDABLE_ACTIONS, PICK_INTENTS, UI_NAV_INTENTS } from '@/core/Input'
 import {
   arrayLiterals, callArgLiterals, dirListing, fieldUnion, handCopiedLists, importedNames, interfaceFields, objectKeys,
@@ -254,8 +255,7 @@ describe('今天的真载体：五张新对账在真文件上零条，抽取也�
   })
 
   it('四种形状的载体各读得出东西（读不到就是 null ⇒ 下面的对账会自己报空转）', () => {
-    expect(objectKeys(read('src/player/CameraRig.ts'), 'SHAKE_TABLE')).toEqual(
-      ['graze', 'normal', 'hurt', 'parry', 'heavy', 'boss', 'execute', 'stomp'])
+    expect(objectKeys(read('src/player/CameraRig.ts'), 'SHAKE_TABLE')).toEqual(Object.keys(SHAKE_TABLE))
     // 解析读出来的格数不许再钉一枚裸整数：那枚数就是名册的抄本，主人是运行时交出来的那一份（KI-393 甲）。
     expect(arrayLiterals(read('src/core/EventBus.ts'), 'STATUS_IDS')).toHaveLength(STATUS_IDS.length)
     // **数与名字一起钉**：只报一个数的话，将来任何一格增删都只能靠「撞红」来定位，
@@ -278,7 +278,7 @@ describe('今天的真载体：五张新对账在真文件上零条，抽取也�
         at: 'SHAKE_TABLE', from: 'src/player/CameraRig.ts', source: (c) => objectKeys(c.text, 'SHAKE_TABLE'),
         copied: ['graze', 'normal', 'heavy', 'boss', 'stomp'], allowMissing: ['hurt', 'parry', 'execute'], whyMissing: '代码直接发',
       },
-      { at: 'STATUS_IDS', from: 'src/core/EventBus.ts', source: (c) => arrayLiterals(c.text, 'STATUS_IDS'), copied: ['fissure', 'mute', 'echo', 'corruption', 'overdrive'] },
+      { at: 'STATUS_IDS', from: 'src/core/EventBus.ts', source: (c) => arrayLiterals(c.text, 'STATUS_IDS'), copied: [...STATUS_IDS] },
       { at: 'ActionName', from: 'src/core/Input.ts', source: (c) => unionMembers(c.blocks, 'ActionName', c.text), copied: ['weaponSkill', 'weaponSkillB'], subset: true, whySubset: '战技只占两条' },
       { at: "passiveValue('…')", from: 'src/rpg/Settlement.ts', source: (c) => callArgLiterals(c.text, 'passiveValue'), copied: ['ps_metronomefoot', 'ps_tympanicguard', 'ps_featherrest'] },
       { at: 'Hitbox', from: 'src/data/schema.ts', source: (c) => refFieldUnion(c.blocks, 'Hitbox', 'shape'), copied: ['cone', 'sphere', 'ring'] },
