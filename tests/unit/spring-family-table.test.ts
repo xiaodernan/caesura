@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { spawnSync } from 'node:child_process'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import {
@@ -8,6 +9,8 @@ import {
   SERVICE_NAMES,
   breakerWiredFindings,
   commandTargetFindings,
+  containerShapeFindings,
+  imageProvidesNode,
   javaHardcodeFindings,
   javaReadsRepoDataFindings,
   orchestrationOwnerFindings,
@@ -17,6 +20,13 @@ import {
   serviceTopologyFindings,
   spawnShapeFindings,
 } from '../../scripts/spring-family-rules.mjs'
+import {
+  composeImageTags,
+  parseBaseImages,
+  parseGlibcNeeded,
+  parseGlibcProvided,
+  runContainerImageCheck,
+} from '../../services/spring/container-image-check.mjs'
 
 /**
  * KI-422｜Spring Cloud 微服务族（主干守门人）的合约。
@@ -39,6 +49,9 @@ const root = process.cwd()
 const SPRING = join(root, 'services', 'spring')
 
 const read = (p: string): string => readFileSync(p, 'utf8')
+
+/** 仓库里那份真的 Dockerfile（判据腿与核对器的解析器腿共吃这一份字节） */
+const repoDockerfile = read(join(SPRING, 'Dockerfile'))
 
 /** 递归列一份目录下的文件（相对仓库根） */
 function walk(dir: string, out: string[] = []): string[] {
@@ -91,6 +104,36 @@ function composeServices(): string[] {
     if (m) out.push(m[1])
   }
   return out
+}
+
+/**
+ * 合成夹具用的 Dockerfile：**四处都合规**（真有一个 node 阶段并从它抄二进制）。
+ * 夹具腿改一处就应当只红那一处。
+ */
+const FIXTURE_DOCKERFILE = 'FROM node:22 AS node\nCOPY --from=node /usr/local/bin/node /usr/local/bin/node\n'
+
+/**
+ * 合成夹具：一份**四处都合规**的 compose 文本（镜像带 node／每格都 build／
+ * 客户端用服务名找注册中心／主机名用服务名）⇒ 夹具腿改一处就应当只红那一处。
+ */
+function fixtureCompose(): string {
+  const clients = ['caesura-gate', 'caesura-report', 'caesura-gateway']
+  const blocks = SERVICE_NAMES.map((name) => {
+    const lines = [
+      `  ${name}:`,
+      '    build:',
+      '      context: .',
+      '      dockerfile: Dockerfile',
+      `    image: caesura/${name.replace('caesura-', '')}:0.1.0`,
+    ]
+    if (clients.includes(name)) {
+      lines.push(
+        `    command: ["java", "-jar", "x.jar", "--eureka.client.service-url.defaultZone=http://caesura-registry:8761/eureka/", "--eureka.instance.hostname=${name}"]`,
+      )
+    }
+    return lines.join('\n')
+  })
+  return ['services:', ...blocks].join('\n')
 }
 
 const rosterText = read(join(root, ROSTER_RELPATH))
@@ -182,6 +225,169 @@ describe('KI-429｜Spring Cloud 族：编排参数各有主人（熔断／并发
 
   it('进程形状：Windows 上 npm 那一档经过 cmd /c（否则它一出生就死——实测过）', () => {
     expect(spawnShapeFindings({ javaFiles })).toEqual([])
+  })
+})
+
+describe('KI-430｜Spring Cloud 族：容器形态（这一族第一次有容器）', () => {
+  const dockerfile = read(join(SPRING, 'Dockerfile'))
+  const composeText = read(join(SPRING, 'docker-compose.yml'))
+
+  it('容器形态那四件都成立：镜像带 node ／ 每格都 build ／ 找注册中心用服务名 ／ 主机名用服务名', () => {
+    expect(containerShapeFindings({ dockerfile, composeText, serviceNames: SERVICE_NAMES })).toEqual([])
+  })
+
+  it('那份 Dockerfile 真的被读到了（读空了上面那条就是在读空气）', () => {
+    expect(dockerfile.length, 'services/spring/Dockerfile 读空了').toBeGreaterThan(0)
+    expect(dockerfile).toContain('FROM')
+  })
+
+  it('镜像里同时有 JRE 与 Node（门跑的是仓库既有的 npm／node 入口）', () => {
+    expect(dockerfile, '镜像里没有 JRE ⇒ jar 起不来').toMatch(/FROM\s+\S*temurin/i)
+    // 用**判据本身**那份判定（不是另一条弱正则）：第一版的裸正则会被注释里的
+    // 「apt install nodejs」骗过（实测踩过）⇒ 这里必须读真机制。
+    expect(imageProvidesNode(dockerfile), '镜像里没有 node ⇒ 每一道门都会起不来').toBe(true)
+  })
+
+  it('compose 里五个名字都在（容器形态那一格是逐格判的）', () => {
+    for (const name of SERVICE_NAMES) {
+      expect(composeText, `compose 里没有 ${name}`).toContain(`  ${name}:`)
+    }
+  })
+})
+
+/**
+ * KI-430（接手那一半）｜**核对器自己**那三台解析器第一次有腿。
+ *
+ * 为什么这一格值得单独站：`services/spring/container-image-check.mjs` 是本批唯一产出
+ * 「glibc 方向」那个读数的机器，而它**上一次被跑起来的那一刻就崩了**——
+ * `maxGlibcNeeded` 里写的是 `hits.push(…)`，而 `hits` 是一只 `Set`（`TypeError: hits.push is not a function`）。
+ * 崩在**读二进制那一步之前**，所以「静态那半」从来没有过读数：Dockerfile 注释里那两个数
+ * （2.28／2.43）当时是**从另一支探针**手抄进来的，不是这台机器说的。
+ *
+ * 「一跑就崩」这件事判据看不出来——判据读的是 compose／Dockerfile 的**形状**，它不跑这台机器。
+ * ⇒ 这一族的病根与 KI-429 那三道「一出生就死」的门同形：**没被跑过的读数不是读数**。
+ * 修法不是把注释里的数改掉，而是把这三台解析器**变成有腿的出口**：
+ * 腿在合成字节上量，不碰 docker，所以每次门禁都跑得到。
+ */
+describe('KI-430｜容器镜像核对器：三台解析器有腿（那台机器上辈子一跑就崩）', () => {
+  it('模块被 import 的那一刻一个 docker 进程都不起（五个出口都在 ⇒ 顶层那段跑机器的代码在围栏后面）', () => {
+    for (const [name, fn] of [
+      ['parseBaseImages', parseBaseImages],
+      ['composeImageTags', composeImageTags],
+      ['parseGlibcNeeded', parseGlibcNeeded],
+      ['parseGlibcProvided', parseGlibcProvided],
+      ['runContainerImageCheck', runContainerImageCheck],
+    ] as Array<[string, unknown]>) {
+      expect(typeof fn, `${name} 不是函数 ⇒ 这个出口没了，腿就在读空气`).toBe('function')
+    }
+    // 真跑它 = 动 docker。这里只证明**它是可取的**，不在门禁里起容器。
+    expect(typeof runContainerImageCheck, 'runContainerImageCheck 必须由测试**不调用**地存在').toBe('function')
+  })
+
+  /**
+   * 本批实测这一格是**红的**：`composeImageTags` 在 `.mjs` 里有腿、在测试里被真调用（该文件全绿），
+   * 而那份 `.d.mts` 没声明它 ⇒ `npx tsc --noEmit` 报 TS2305。**运行时看得见、类型面看不见**的出口，
+   * 门禁里那条跑 tsc 的门会红着说出来，而跑 vitest 的那条不会——所以这条腿把两面名单钉成**双向相等**。
+   * 它不抄 `world-graph`／`event-rules` 那两条按名读的门：那两族的人口是 `scripts/*-rules.mjs`，
+   * 这一对住在 `services/spring/` 底下，**不在它们的名册里**（这正是漏掉的成因）。
+   * 抽取器认全四种拼法：那两条姊妹门只读 `function|const`，全仓 32 对里有 2 对因此被少数
+   * （`export declare const`／`export async function`）——数错的那一侧会把「两边相等」判成不等。
+   */
+  it('两面名单双向相等：`.d.mts` 声明的每一条 `.mjs` 都得导出，`.mjs` 导出的每一条 `.d.mts` 都得声明（KI-430 本批实测缺过一格）', () => {
+    const stripComments = (t: string): string =>
+      t
+        .split(/\r?\n/)
+        .filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l))
+        .join('\n')
+    const declared = (text: string): string[] =>
+      [
+        ...new Set([
+          ...stripComments(text).matchAll(/^export\s+(?:declare\s+)?(?:async\s+)?(?:function|const|let|class)\s+([A-Za-z_$][\w$]*)/gm),
+        ]),
+      ]
+        .map((m) => m[1])
+        .sort()
+    const mjs = declared(read(join(SPRING, 'container-image-check.mjs')))
+    const dts = declared(read(join(SPRING, 'container-image-check.d.mts')))
+    expect(mjs.length, '.mjs 一条导出都没读到 ⇒ 这条判据在看空集合，相等是白送的').toBeGreaterThanOrEqual(5)
+    expect(dts.length, '.d.mts 一条声明都没读到 ⇒ 同上（那份文件换了形状还是被清空了？）').toBeGreaterThanOrEqual(5)
+    // 名册钉死：这五条就是腿的全体（多一条少一条都要人来说话）
+    expect(mjs, '.mjs 的导出名册').toEqual(['composeImageTags', 'parseBaseImages', 'parseGlibcNeeded', 'parseGlibcProvided', 'runContainerImageCheck'])
+    expect(dts.filter((n) => !mjs.includes(n)), '.d.mts 声明了而 .mjs 没有 ⇒ 那份声明在描述一个不存在的部位').toEqual([])
+    expect(mjs.filter((n) => !dts.includes(n)), '.mjs 导出了而 .d.mts 没声明 ⇒ tsc 里用它是 TS2305，而 vitest 全绿看不见').toEqual([])
+  })
+
+  it('两个底座是从 Dockerfile 现读的：node 那一格认名字轴（AS node），交付那一格是 temurin（判据不许抄数）', () => {
+    const bases = parseBaseImages(repoDockerfile)
+    expect(bases.froms.length, `FROM 应该只有两条（node 阶段 ＋ 交付阶段），实读 ${JSON.stringify(bases.froms)}`).toBe(2)
+    expect(bases.nodeStage, '读不出 node 那个阶段 ⇒ 核对器连源镜像都不知道').toBeTruthy()
+    expect(bases.nodeStage!.alias, 'node 阶段的名字轴就是 `AS node`').toBe('node')
+    expect(bases.target, '读不出交付阶段 ⇒ 连往哪儿抄都不知道').toBeTruthy()
+    expect(bases.target!.image, '交付阶段不是 temurin ⇒ JRE 那一半换了主人，注释要改口').toContain('temurin')
+    expect(bases.target!.image, '源镜像与交付镜像不许是同一个').not.toBe(bases.nodeStage!.image)
+  })
+
+  it('现读就是现读：换一份 Dockerfile 就读到另一对底座（把名字写死在这儿当场翻红）', () => {
+    const other = parseBaseImages('FROM node:24 AS node\nFROM eclipse-temurin:21-jre\nCOPY x y\n')
+    expect([other.nodeStage?.image, other.target?.image], '这两格必须是**从字节里读出来的**，不是核对器里抄的那两个数')
+      .toEqual(['node:24', 'eclipse-temurin:21-jre'])
+  })
+
+  it('名字轴赢过镜像名前缀：`FROM … AS node` 里的镜像哪怕不叫 node，源镜像也认那一个', () => {
+    const b = parseBaseImages('FROM registry.example.com/runtime:1 AS node\nFROM eclipse-temurin:25-jre\n')
+    expect(b.nodeStage?.image, '名字轴（AS node）是主判据 ⇒ 认的那个阶段就是它').toBe('registry.example.com/runtime:1')
+    expect(b.target?.image, '剩下的那一条才是交付镜像').toBe('eclipse-temurin:25-jre')
+    // 上面那份夹具里两个判据**不打架**（没有任何镜像名以 node 开头）⇒ 光靠它，
+    // 把优先级调反也照样绿。真打架的夹具在下面：别名那一格不以 node 开头，**另一格**以 node 开头。
+    const duel = parseBaseImages('FROM registry.example.com/node:22 AS node\nFROM nodejs.org/dist:9\n')
+    expect([duel.nodeStage?.image, duel.target?.image],
+      '两个判据打架时认**名字轴**：镜像名前缀只是个兜底，它赢过别名就是把主人换了')
+      .toEqual(['registry.example.com/node:22', 'nodejs.org/dist:9'])
+  })
+
+  it('glibc 需求表：去重 ＋ **数值**排序 ⇒ 最后一格真的是最高的那个（字典序会把 2.28 排在 2.9 后面）', () => {
+    const need = parseGlibcNeeded('GLIBC_2.2.5\0GLIBC_2.28\0GLIBC_2.9\0GLIBC_2.28\0GLIBC_2.3\0')
+    expect(need, '重复的那一格必须收起来（Set 不是数组——上一版就是把它当数组用）').toEqual(['2.2', '2.3', '2.9', '2.28'])
+    expect(need[need.length - 1], '「最高需要哪一格」取的是**最后一格** ⇒ 排序错了这一格就错').toBe('2.28')
+    expect(parseGlibcNeeded(''), '字节里一个 GLIBC_x.y 都没有 ⇒ 空表，不是 null、也不许抛').toEqual([])
+    expect(parseGlibcNeeded('GLIBC_2_28'), '下划线分隔的写法（符号版本表的真形）不该被当成 2.28 读进来').toEqual([])
+  })
+
+  it('libc 自己提供哪一格：两种拼法都认，都不认就是 null（不许落回默认值把「没读到」说成读到了）', () => {
+    expect(parseGlibcProvided('… stable release version 2.43. …'), 'glibc 在二进制里那句自我播报').toBe('2.43')
+    expect(parseGlibcProvided('GNU C Library (Ubuntu GLIBC 2.39-0ubuntu1) stable'), '括号里那一种拼法也要认').toBe('2.39')
+    expect(parseGlibcProvided('这里什么都没写'), '两种都不认 ⇒ null（这一格没有读数，不是 0）').toBeNull()
+  })
+
+  it('两台解析器吃的是**同一份字节**：需求表的最高那一格与提供的那一格比得起来（否则方向判据是空的）', () => {
+    const need = parseGlibcNeeded('GLIBC_2.28 GLIBC_2.17')
+    const top = need[need.length - 1]
+    const provided = parseGlibcProvided('stable release version 2.43')
+    expect([top, provided], '判据吃的是这两个数；读空了就等于「方向」那一格没有读数').toEqual(['2.28', '2.43'])
+  })
+
+  it('运行那半跑哪一个镜像也是**从 compose 现读**的（写死一个 tag 就是第二个主人；五格都在，逐格可查）', () => {
+    const tags = composeImageTags(read(join(SPRING, 'docker-compose.yml')))
+    expect(tags.length, `compose 里的 image: 那几格读出来 ${JSON.stringify(tags)}，应与五个服务一一对上`).toBe(SERVICE_NAMES.length)
+    for (const name of SERVICE_NAMES) {
+      expect(tags.some((t: string) => t.startsWith(`caesura/${name.replace('caesura-', '')}:`)),
+        `compose 里没有 ${name} 那一格的镜像名 ⇒ 运行那半不知道该跑谁`).toBe(true)
+    }
+    // 缩进在别处的 `image:` 不算（build 那一层下面没有 image，服务层才有）
+    expect(composeImageTags('services:\n  x:\n    build:\n      context: .\n'), '没有 image: 那一格 ⇒ 空表，不猜').toEqual([])
+  })
+
+  it('围栏是真的：`node -e` 只 import 那个模块 ⇒ 一个 docker 都不起、不打印判决、退出码 0', () => {
+    const spec = './services/spring/container-image-check.mjs'
+    const r = spawnSync(
+      process.execPath,
+      ['-e', `import(${JSON.stringify(spec)}).then((m) => process.stdout.write(Object.keys(m).sort().join(',')))`],
+      { cwd: root, encoding: 'utf8', timeout: 60000, windowsHide: true },
+    )
+    expect(r.status, `import 那一刻就跑起了量测（stdout 前 200 字：${String(r.stdout).slice(0, 200)}）⇒ 顶层围栏没了`)
+      .toBe(0)
+    expect(r.stdout.trim(), '被 import 时不许打印判决（那是当命令跑才做的事）')
+      .toBe('composeImageTags,parseBaseImages,parseGlibcNeeded,parseGlibcProvided,runContainerImageCheck')
   })
 })
 
@@ -279,5 +485,69 @@ describe('KI-422｜Spring Cloud 族：判据的合成夹具腿（证明它拒不
       javaFiles: [{ rel: 'a/GateRunner.java', text: 'new ProcessBuilder(command)' }],
     })
     expect(findings.length, '形状那一档没了却一条都不报').toBeGreaterThan(0)
+  })
+
+  it('镜像里没有 node ⇒ 报出来（容器里每一道门都会起不来）', () => {
+    const findings = containerShapeFindings({
+      dockerfile: 'FROM eclipse-temurin:25-jre\nCOPY app.jar /app.jar\n',
+      composeText: fixtureCompose(),
+      serviceNames: SERVICE_NAMES,
+    })
+    expect(findings.some((f) => f.key === '容器镜像' && f.msg.includes('node'))).toBe(true)
+  })
+
+  it('**注释里**写了 apt install nodejs 不算有 node（注释不是机制——这条是被反向实测逼出来的）', () => {
+    const findings = containerShapeFindings({
+      // 只有一句注释提到了 node，真机制一行都没有
+      dockerfile: [
+        '# 另一个做法：在 JRE 镜像里 apt install nodejs npm',
+        'FROM eclipse-temurin:25-jre',
+        'COPY app.jar /app.jar',
+      ].join('\n'),
+      composeText: fixtureCompose(),
+      serviceNames: SERVICE_NAMES,
+    })
+    expect(findings.some((f) => f.key === '容器镜像' && f.msg.includes('node'))).toBe(true)
+  })
+
+  it('注释里那句 apt install nodejs + 真机制都在 ⇒ 不报（别把正常的也误伤）', () => {
+    const findings = containerShapeFindings({
+      dockerfile: [
+        '# 另一个做法：在 JRE 镜像里 apt install nodejs npm',
+        'FROM node:22 AS node',
+        'FROM eclipse-temurin:25-jre',
+        'COPY --from=node /usr/local/bin/node /usr/local/bin/node',
+      ].join('\n'),
+      composeText: fixtureCompose(),
+      serviceNames: SERVICE_NAMES,
+    })
+    expect(findings).toEqual([])
+  })
+
+  it('compose 里有一格没有 build ⇒ 报出来（那格跑的是别人给的镜像）', () => {
+    const compose = fixtureCompose().replace(/ {4}build:\n {6}context: \.\n {6}dockerfile: Dockerfile\n {4}image: caesura\/gate:0\.1\.0/, '    image: caesura/gate:0.1.0')
+    const findings = containerShapeFindings({ dockerfile: FIXTURE_DOCKERFILE, composeText: compose, serviceNames: SERVICE_NAMES })
+    expect(findings.some((f) => f.msg.includes('没有 build'))).toBe(true)
+  })
+
+  it('客户端找注册中心写了 127.0.0.1 ⇒ 报出来（容器里那指的是它自己）', () => {
+    const compose = fixtureCompose().replace('http://caesura-registry:8761/eureka/', 'http://127.0.0.1:8761/eureka/')
+    const findings = containerShapeFindings({ dockerfile: FIXTURE_DOCKERFILE, composeText: compose, serviceNames: SERVICE_NAMES })
+    expect(findings.some((f) => f.key === '容器里的地址' && f.msg.includes('服务名'))).toBe(true)
+  })
+
+  it('注册进 Eureka 的主机名不是自己的服务名 ⇒ 报出来（别的容器会回连到它自己身上）', () => {
+    const compose = fixtureCompose().replace('--eureka.instance.hostname=caesura-gate', '--eureka.instance.hostname=127.0.0.1')
+    const findings = containerShapeFindings({ dockerfile: FIXTURE_DOCKERFILE, composeText: compose, serviceNames: SERVICE_NAMES })
+    expect(findings.some((f) => f.msg.includes('主机名'))).toBe(true)
+  })
+
+  it('四个都合规 ⇒ 一条都不报（判据不许对正确的形态也乱叫）', () => {
+    const findings = containerShapeFindings({
+      dockerfile: FIXTURE_DOCKERFILE,
+      composeText: fixtureCompose(),
+      serviceNames: SERVICE_NAMES,
+    })
+    expect(findings).toEqual([])
   })
 })

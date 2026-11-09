@@ -84,3 +84,13 @@ export function breakerWiredFindings(input: { javaFiles: { rel: string; text: st
 
 /** 判据⑩：进程形状——Windows 上 npm 要经过 `cmd /c`（它证不了退出码，得靠实机读数） */
 export function spawnShapeFindings(input: { javaFiles: { rel: string; text: string }[] }): SpringFinding[]
+
+/** 这个 Dockerfile **真的**把 node 带进镜像了吗（先剥注释再问——注释不是机制） */
+export function imageProvidesNode(dockerfile: string): boolean
+
+/** 判据⑪：容器形态那几件必须成立的事（镜像带 node／每格都从它构建／容器里的地址用服务名） */
+export function containerShapeFindings(input: {
+  dockerfile: string
+  composeText: string
+  serviceNames: string[]
+}): SpringFinding[]

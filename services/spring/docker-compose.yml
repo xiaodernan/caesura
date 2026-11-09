@@ -1,18 +1,26 @@
-# services/spring/docker-compose.yml —— 把五服务族一次起起来（KI-422）
+# services/spring/docker-compose.yml —— 把五服务族一次起起来（KI-422；KI-430 补上容器形态）
 #
-# **先构建再起**（compose 不替你编译）：
+# **先构建再起**（compose 不替你编译 jar）：
 #   cd services/spring && mvn -DskipTests package
-#   cd services/spring && docker compose up
+#   cd services/spring && docker compose up -d --build
 #
 # 仓库挂在 /workspace：门要在这个目录里跑 `npm run …` / `node scripts/…`，
 # 而 node_modules 与 dist 也在里面 ⇒ 门跑的是**这份工作树**，不是容器里另装的一份。
 #
-# 每个服务用同一个 JRE 镜像跑**已经构建好的 jar**（compose 不是构建器）。
-# 需要真的构建镜像的话，另写 Dockerfile —— 那一族不在本批范围内。
+# **镜像从 `Dockerfile` 构建**（KI-430）：那个镜像里**同时有 JRE 与 Node**——
+# 门跑的是仓库既有的 npm／node 入口，镜像里没有 node 的话每一道门都会「起不来」。
+#
+# **容器里的两个地址必须改**（实测踩过）：容器里的 `127.0.0.1` 指的是**它自己**，
+# 所以 ①客户端找注册中心要写 `http://caesura-registry:8761/eureka/`（compose 网络里的服务名）；
+# ②注册进 Eureka 的主机名要写**服务名**（写 127.0.0.1 的话，别的容器会回连到自己身上）。
+# 宿主要访问这一族仍旧走映射出来的端口（`localhost:8099`）——那是另一条路。
 
 services:
   caesura-registry:
-    image: eclipse-temurin:25-jre
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: caesura/registry:0.1.0
     working_dir: /workspace/services/spring
     volumes:
       - ../..:/workspace
@@ -21,7 +29,10 @@ services:
       - "8761:8761"
 
   caesura-config:
-    image: eclipse-temurin:25-jre
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: caesura/config:0.1.0
     working_dir: /workspace/services/spring
     volumes:
       - ../..:/workspace
@@ -30,7 +41,10 @@ services:
       - "8888:8888"
 
   caesura-gate:
-    image: eclipse-temurin:25-jre
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: caesura/gate:0.1.0
     working_dir: /workspace/services/spring
     volumes:
       - ../..:/workspace
@@ -40,24 +54,30 @@ services:
     depends_on:
       - caesura-config
       - caesura-registry
-    command: ["java", "-jar", "caesura-gate/target/caesura-gate-0.1.0.jar"]
+    command: ["java", "-jar", "caesura-gate/target/caesura-gate-0.1.0.jar", "--eureka.client.service-url.defaultZone=http://caesura-registry:8761/eureka/", "--eureka.instance.hostname=caesura-gate"]
     ports:
       - "8081:8081"
 
   caesura-report:
-    image: eclipse-temurin:25-jre
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: caesura/report:0.1.0
     working_dir: /workspace/services/spring
     volumes:
       - ../..:/workspace
     depends_on:
       - caesura-gate
       - caesura-registry
-    command: ["java", "-jar", "caesura-report/target/caesura-report-0.1.0.jar"]
+    command: ["java", "-jar", "caesura-report/target/caesura-report-0.1.0.jar", "--eureka.client.service-url.defaultZone=http://caesura-registry:8761/eureka/", "--eureka.instance.hostname=caesura-report"]
     ports:
       - "8082:8082"
 
   caesura-gateway:
-    image: eclipse-temurin:25-jre
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: caesura/gateway:0.1.0
     working_dir: /workspace/services/spring
     volumes:
       - ../..:/workspace
@@ -65,6 +85,6 @@ services:
       - caesura-gate
       - caesura-report
       - caesura-registry
-    command: ["java", "-jar", "caesura-gateway/target/caesura-gateway-0.1.0.jar"]
+    command: ["java", "-jar", "caesura-gateway/target/caesura-gateway-0.1.0.jar", "--eureka.client.service-url.defaultZone=http://caesura-registry:8761/eureka/", "--eureka.instance.hostname=caesura-gateway"]
     ports:
       - "8099:8099"

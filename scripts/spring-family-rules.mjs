@@ -378,6 +378,127 @@ export function spawnShapeFindings({ javaFiles }) {
 }
 
 /**
+ * 取 compose 里某个服务的那一格（从 `  <name>:` 到下一个同缩进的 `  <name>:` 之前）。
+ * @param {string} text
+ * @param {string} name
+ * @returns {string|null}
+ */
+function composeServiceBlock(text, name) {
+  const lines = String(text ?? '').split(/\r?\n/)
+  let start = -1
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].startsWith(`  ${name}:`)) {
+      start = i
+      break
+    }
+  }
+  if (start < 0) return null
+  const out = []
+  for (let i = start; i < lines.length; i++) {
+    if (i > start && /^ {2}[a-z][\w-]*:\s*$/.test(lines[i])) break
+    out.push(lines[i])
+  }
+  return out.join('\n')
+}
+
+/**
+ * 这个 Dockerfile **真的**把 node 带进镜像了吗？
+ *
+ * **为什么要专门剥掉注释**（这一条是被反向实测逼出来的，KI-430 第一版）：
+ * 第一版判据写的是「文本里出现 `apt install nodejs` 就算有 node」——
+ * 而那份 Dockerfile 的**注释里**正好写着「① 在 JRE 镜像里 `apt install nodejs npm`」
+ * （那是**另一种做法**的说明，不是实际做的事）⇒ **一句注释就把这道门骗过了**，
+ * 真把 `COPY --from=node` 那两行删掉，它还照样绿。
+ *
+ * **注释不是机制**：能在注释里写出来的东西，不会在镜像里存在。
+ * 所以这里先剥掉整行注释，再问「有没有一条**会真的执行**的指令把 node 带进来」。
+ *
+ * 认得的三条路（每条都得是**会执行**的指令）：
+ *   ① `COPY --from=node:22 …`——直接从 node 镜像抄；
+ *   ② 一个叫 `node` 的构建阶段，而那个阶段自己**就是** node 镜像，再从它 `COPY --from=node`；
+ *   ③ 真的 `apt`/`apt-get install` 了一个 node。
+ *
+ * @param {string} dockerfile
+ * @returns {boolean}
+ */
+export function imageProvidesNode(dockerfile) {
+  const code = String(dockerfile ?? '')
+    .split(/\r?\n/)
+    .filter((l) => !/^\s*#/.test(l))
+    .join('\n')
+  // ① 直接从 node 镜像抄
+  if (/COPY\s+--from=node(?:[:@])/i.test(code)) return true
+  // ② 一个真的以 node 镜像为基础、且被 `COPY --from=node` 用上的阶段
+  const stage = /^FROM\s+(\S+)\s+AS\s+node\s*$/im.exec(code)
+  if (stage && /^node(?:[:@])/i.test(stage[1]) && /COPY\s+--from=node(?![-\w])/i.test(code)) return true
+  // ③ 真的装了一个 node
+  return /(?:apt-get|apt)\s+[^\n]*\binstall\b[^\n]*\bnode(?:js)?\b/i.test(code)
+}
+
+/**
+ * 判据⑪（KI-430）：**容器形态**那几件必须成立的事。
+ *
+ * ① **镜像里必须有 node**——门跑的是仓库既有的 npm／node 入口；镜像里没有 node，
+ *    容器里每一道门都会「起不来」（与 Windows 上没有 npm.cmd 是同一种死法）。
+ * ② **每一格都得从那个 Dockerfile 构建**——只写 `image:` 的话，跑的是别人给的镜像，
+ *    「那个镜像里有没有 node／JRE 对不对」就由 compose 说了算（不是由这份仓库说了算）。
+ * ③ **客户端找注册中心要用服务名**：容器里的 `127.0.0.1` 指的是**它自己**。
+ * ④ **注册进 Eureka 的主机名也要用服务名**：写 `127.0.0.1` 的话，别的容器会回连到自己身上。
+ *
+ * **这道门能证什么、不能证什么**：它证的是**形状**（上面四条）；
+ * 它证不了「容器里那一族真跑通了」——那一条由**实机读数**管。
+ *
+ * @param {{ dockerfile: string, composeText: string, serviceNames: string[] }} input
+ * @returns {SpringFinding[]}
+ */
+export function containerShapeFindings({ dockerfile, composeText, serviceNames }) {
+  const out = []
+  const df = String(dockerfile ?? '')
+  const cx = String(composeText ?? '')
+
+  if (!imageProvidesNode(df)) {
+    out.push({
+      key: '容器镜像',
+      msg: 'Dockerfile 里没有 node ⇒ 容器里**每一道门都会「起不来」**（门跑的是仓库既有的 npm／node 入口）。',
+    })
+  }
+
+  const clients = (serviceNames ?? []).filter((n) => n !== 'caesura-registry' && n !== 'caesura-config')
+  for (const name of serviceNames ?? []) {
+    const block = composeServiceBlock(cx, name)
+    if (block === null) {
+      out.push({ key: '容器镜像', msg: `compose 里没有 ${name} 那一格` })
+      continue
+    }
+    if (!/^\s*build:/m.test(block)) {
+      out.push({
+        key: '容器镜像',
+        msg: `compose 里的 ${name} 没有 build: ⇒ 它跑的是别人给的镜像`
+          + '（那个镜像里有没有 node、JRE 对不对，就由 compose 说了算而不是这份仓库说了算）。',
+      })
+    }
+  }
+  for (const name of clients) {
+    const block = composeServiceBlock(cx, name) ?? ''
+    if (!/caesura-registry:8761\/eureka\//.test(block)) {
+      out.push({
+        key: '容器里的地址',
+        msg: `compose 里的 ${name} 找注册中心时没有用服务名（caesura-registry:8761）`
+          + '⇒ 容器里 `127.0.0.1` 指的是**它自己**，注册中心根本不在那儿。',
+      })
+    }
+    if (!new RegExp(`--eureka\\.instance\\.hostname=${name}\\b`).test(block)) {
+      out.push({
+        key: '容器里的地址',
+        msg: `compose 里的 ${name} 注册进 Eureka 时没有用**自己的服务名**当主机名`
+          + '⇒ 别的容器按那个名字回连时，会连到**它自己**身上。',
+      })
+    }
+  }
+  return out
+}
+
+/**
  * 判据⑥（附）：Java 侧不许去读仓库的数据表 —— 判定只有一个主人。
  * @param {{ javaFiles: {rel: string, text: string}[] }} input
  * @returns {SpringFinding[]}
