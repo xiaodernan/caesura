@@ -1197,7 +1197,7 @@ export class Enemy {
       bus.emit('audio.sfx', { key: f.sfx[0], pos: { ...this.pos }, gain: 0.55 + Math.min(0.3, (f.loudness ?? 4) / 20) })
     }
     // KI-092②：§8.2「Boss 大招 telegraph」一行的发射口。`tutti` 是数据里的大招标记
-    // （combat.md §697 音栓蓄力大招"全奏 Tutti"），带它的招式起手那一次 ⇒ 音频侧压低 AMB
+    // （combat.md §15.2 音栓蓄力大招"全奏 Tutti"那一行），带它的招式起手那一次 ⇒ 音频侧压低 AMB
     // 全层 1.5s（危险独占听觉空间）。只发一次（telegraphDuckDone），与起手音同一格。
     if (!this.attack.telegraphDuckDone && f.flags?.includes('tutti')) {
       this.attack.telegraphDuckDone = true

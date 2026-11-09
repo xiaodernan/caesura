@@ -1163,14 +1163,14 @@ const REACTION_FIELDS = {
   R2: ['stunMs', 'displaceM'],
   // 消费方：同上，但要有招式帧的 `reaction:"R3"` 声明才走这一档（今天只有 §4.2 强音大剑跳劈点名）
   R3: ['stunMs', 'displaceM'],
-  R4: ['crumpleMs', 'bossCrumpleMs'], // 消费方：combat/EntityStats.addPoise（经 armCrumple 上弦）
+  R4: ['crumpleMs', 'bossCrumpleMs', 'crumpleDmgMul'], // 消费方：前两格 combat/EntityStats.addPoise（经 armCrumple 上弦）；crumpleDmgMul combat/Reactions.ts:crumpleDamageMul → CombatManager 的破势乘算
 }
 const REACTION_SPECS = {
   R0: { flashMs: { min: 1 } },
   R1: { stunMs: { min: 1 }, displaceM: { min: 0 } },
   R2: { stunMs: { min: 1 }, displaceM: { min: 0 } },
   R3: { stunMs: { min: 1 }, displaceM: { min: 0 } },
-  R4: { crumpleMs: { min: 1 }, bossCrumpleMs: { min: 1 } },
+  R4: { crumpleMs: { min: 1 }, bossCrumpleMs: { min: 1 }, crumpleDmgMul: { min: 1 } },
 }
 
 function validateReactions() {

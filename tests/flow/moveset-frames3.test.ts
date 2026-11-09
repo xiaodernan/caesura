@@ -143,6 +143,103 @@ function yawGapDeg(a: { x: number; y: number; z: number }, b: { x: number; y: nu
   return Math.abs(d)
 }
 
+/* ---------- 腿⑤ 的量具（KI-433 重写）：破势增伤那一格 ---------- */
+
+/** 起手式打在调律剑出身（六维归零）上的底数读数：世界 A 的每一记都钉在这里，B/C 的式子从这里起算 */
+const L1_BASE = 9
+
+interface StrikeRow {
+  tick: number
+  damage: number
+  kind: string
+  depth: number
+  crumpledBefore: boolean
+  leftBefore: number
+  leftAfter: number
+}
+
+/**
+ * **只出起手式**：空闲才按一下，绝不提前排队 ⇒ 每一记都是 `l1`、`comboDepth` 恒 1、底数恒同。
+ * 原腿用 `driveChain`（连段把底数一路往上抬 ⇒ "同一底数 ×倍率"这件事读不出来），重写后只看这一格。
+ * 三条量具纪律：
+ * ① 只数**落在那只怪身上**的命中——敌人打玩家也发 `combat.hit`，不筛就把她的读数混进这一列；
+ * ② `crumpledBefore` 取**这一拍结算之前**的那一格：`addPoise` 在同一次 `combat.update` 里跑在这乘**之后**，
+ *    所以"把窗口推开的那一记"读的确实是窗口还没开的状态（② 就是本腿要钉的那条因果，取样点错了它必红）；
+ * ③ 每一拍只许落一记（同一拍两记 ⇒ 那一拍的 `crumpledBefore` 没法归因）——由 `dups` 自己报出来。
+ */
+function firstStageStrikes(w: World, e: any, ticks: number): { rows: StrikeRow[]; dups: number[] } {
+  const rows: StrikeRow[] = []
+  const dups: number[] = []
+  let ctx = { tick: -1, crumpledBefore: false, depth: 0, leftBefore: 0 }
+  const mark = () => {
+    ctx = { tick: w.time.tick, crumpledBefore: e.stats.crumpleTicksLeft > 0, depth: w.player.comboDepth, leftBefore: e.stats.crumpleTicksLeft }
+  }
+  w.pins.push(mark)
+  let seen = w.hits.length
+  for (let i = 0; i < ticks; i++) {
+    const press = (w.player.action?.key ?? 'null') === 'null'
+    if (press) w.frame.edges.add('attackLight')
+    w.tick()
+    if (press) w.frame.edges.delete('attackLight')
+    const fresh = w.hits.slice(seen)
+    seen = w.hits.length
+    let inTick = 0
+    for (const h of fresh) {
+      if (h.victimId !== e.id) continue
+      inTick++
+      rows.push({ ...ctx, damage: h.damage, kind: h.kind, leftAfter: e.stats.crumpleTicksLeft })
+      if (inTick > 1) dups.push(ctx.tick)
+    }
+  }
+  const k = w.pins.indexOf(mark)
+  if (k >= 0) w.pins.splice(k, 1)
+  return { rows, dups }
+}
+
+/**
+ * 扫 43 个入战相位 × 400 拍：`phase` 那一段空跑，让出手落在拍网的各不相同的位置上。
+ * **底数由调用方给**，不从这一趟的读数里取——世界 B 每一记都吃了加成，
+ * 把它的第一个读数当底数，式子就变成 `round(14 × 1.5) = 21 ≠ 14`，量具自己造出 301 条假违反（探针 v2 踩过）。
+ */
+function sweepCrumple(opts: { poiseHigh: boolean; forceCrumple?: boolean; phases?: number; ticks?: number }, base: number) {
+  const nPhases = opts.phases ?? 43
+  const nTicks = opts.ticks ?? 400
+  const per: StrikeRow[][] = []
+  const dups: number[] = []
+  const mul = registry.get<{ R4: { crumpleDmgMul: number } }>('reactions').R4.crumpleDmgMul
+  for (let phase = 0; phase < nPhases; phase++) {
+    const w = makeWorld()
+    w.tick(phase)
+    const e = dummy(w, -1.6, opts.poiseHigh)
+    if (opts.forceCrumple) w.pins.push(() => { e.stats.crumpleTicksLeft = 999 })
+    const r = firstStageStrikes(w, e, nTicks)
+    per.push(r.rows)
+    dups.push(...r.dups)
+    w.ai.despawn(e.id)
+    w.off()
+  }
+  const rows = per.flat()
+  const viol: string[] = []
+  let violCount = 0
+  const breakRows: StrikeRow[] = []
+  for (const [i, row] of rows.entries()) {
+    const expect = Math.round(base * (row.crumpledBefore ? mul : 1))
+    if (row.damage !== expect) {
+      violCount++
+      if (viol.length < 4) viol.push(`第 ${i} 记：读 ${row.damage}，式子给 ${expect}（破势窗 ${row.leftBefore}>0 ＝ ${row.crumpledBefore}）`)
+    }
+    if (row.leftBefore === 0 && row.leftAfter > 0) breakRows.push(row)
+  }
+  return { rows, per, base, viol, violCount, breakRows, dups, mul, phases: per }
+}
+
+/** 读数分布（红消息里要说得出"到底是哪几档"，只报条数归不了因） */
+function tally(rows: StrikeRow[]): Map<number, number> {
+  const out = new Map<number, number>()
+  for (const r of rows) out.set(r.damage, (out.get(r.damage) ?? 0) + 1)
+  return out
+}
+
 describe('KI-265 §4.x 连段那几行（L2…L4）＋ 破势那一档 ＋ 弓的满弓／破鸣箭／跳跃射击', () => {
   const alive: Array<() => void> = []
   afterEach(() => { for (const off of alive.splice(0)) off() })
@@ -219,21 +316,33 @@ describe('KI-265 §4.x 连段那几行（L2…L4）＋ 破势那一档 ＋ 弓�
     alive.push(w.off)
   })
 
-  it('腿⑤ **破势中的怪身上伤害 ×1.5**：同一套连段，怪的架势值是默认值时 L3 ＝ **18**（＝12×1.5）、L4 ＝ **27**（＝18×1.5）⇒ **设计 §7/§8 那一族里没有这一格** ⇒ 登记', () => {
-    const w = makeWorld()
-    const e = dummy(w, -1.6, false) // **不**把架势值拉高 ⇒ 怪会被连段打崩
-    const stages = driveChain(w, e, 300)
-    const l2 = stages.find((s) => s.key === 'l2')
-    const l3 = stages.find((s) => s.key === 'l3')
-    const l4 = stages.find((s) => s.key === 'l4')
-    expect(l2!.hits.length, 'L2 那一记命中了').toBeGreaterThan(0)
-    expect(l2!.hits[0].damage, 'L2 那一记的伤害（**这一记结算时还没崩** ⇒ 底数 9）').toBe(9)
-    expect(l2!.hits[0].crumpled, '前提：L2 那一记结算时那只怪**还没进破势**').toBe(false)
-    expect(l3!.hits[0].crumpled, '**L3 那一记结算时那只怪已经破势了**（架势累积 ≥ 怪自己的架势值 20 ⇒ 进入破势大踉跄）').toBe(true)
-    expect(l3!.hits[0].damage, 'L3 那一记的伤害（**破势中** ⇒ 12 × 1.5 ＝ 18）').toBe(18)
-    expect(l4!.hits[0].damage, 'L4 那一记的伤害（**破势中** ⇒ 18 × 1.5 ＝ 27）').toBe(27)
-    w.ai.despawn(e.id)
-    alive.push(w.off)
+  it('腿⑤ **破势增伤那一格（KI-433 重写）**：世界 A 每一记 ＝ 底数 **9**、世界 B 每一记 ＝ **14**（＝ round(9 × `R4.crumpleDmgMul` 1.5)）⇒ 43 个入战相位全扫', () => {
+    const A = sweepCrumple({ poiseHigh: true }, L1_BASE)
+    const B = sweepCrumple({ poiseHigh: true, forceCrumple: true }, L1_BASE)
+    expect(A.mul, '表里那一格今天的值（腿钉的是读数，这一条只把读数与那一格对上号）').toBe(1.5)
+    expect(A.dups.length, '量具前提：43 个相位里没有任何一拍落了**两记**在同一只怪身上（同拍两记就没法把加成归到某一记的结算前状态）').toBe(0)
+    expect([...new Set(A.rows.map((r) => r.depth))].join(), '量具前提：只出起手式 ⇒ comboDepth 恒 1').toBe('1')
+    expect([...new Set(A.rows.map((r) => r.kind))].join(), '量具前提：这一列全是 light 出手（战技不吃破势增伤，混进来就是另一件事）').toBe('light')
+    expect(A.rows.length, '世界 A 真的打到了（空读数会让下面每一条式子白过）').toBeGreaterThan(0)
+    expect(tally(A.rows).get(L1_BASE), `世界 A（架势拉高 ⇒ 崩不了）：每一记都读底数 ${L1_BASE}；实际分布 ${JSON.stringify([...tally(A.rows)])}`).toBe(A.rows.length)
+    expect(A.rows.every((r) => !r.crumpledBefore), '世界 A 的每一记结算之前那只怪都不在破势里（前提：这一列读的确实是"没崩"那一档）').toBe(true)
+    expect(A.violCount, `世界 A 按式子 damage ＝ round(${L1_BASE} × 结算前破势 ? ${A.mul} : 1) 核对的违反条数`).toBe(0)
+    expect(B.rows.length, '世界 B 真的打到了').toBeGreaterThan(0)
+    expect(tally(B.rows).get(14), `世界 B（每一拍按住破势窗）：每一记 ＝ 14；实际分布 ${JSON.stringify([...tally(B.rows)])}`).toBe(B.rows.length)
+    expect(B.rows.every((r) => r.crumpledBefore), '世界 B 的每一记结算之前那只怪确实在破势窗里（前提：那根 forceCrumple 的 pin 真的接上了）').toBe(true)
+    expect(B.violCount, `世界 B 同一条式子的违反条数（底数拿错就当场红：把 B 自己的第一个读数当底数会造出 ${B.rows.length} 条假违反）`).toBe(0)
+    expect(Math.round(L1_BASE * A.mul), '把 A、B 两列钉在一起的式子：底数 × 表里那一格 ＝ 破势窗内的读数 ⇒ 改表的那一趟这一条先红，裸倍率再也藏不住').toBe(14)
+  })
+
+  it('腿⑤b **打出破势的那一记自己不吃加成**：默认架势 20 让它自然崩 ⇒ 每一相位恰一次"崩派"，那一记读**底数 9**；其余按 `damage ＝ round(底数 × 结算前破势 ? 1.5 : 1)` 逐记核，违反 0', () => {
+    const C = sweepCrumple({ poiseHigh: false }, L1_BASE)
+    expect(C.rows.length, '量具真的收到了命中（空读数会让下面每一条式子白过）').toBeGreaterThan(0)
+    expect(C.dups.length, '量具前提：没有一拍在同一只怪身上落两记').toBe(0)
+    expect(C.violCount, `关系式 damage ＝ round(${L1_BASE} × (结算前破势 ? ${C.mul} : 1)) 的违反条数（前 4 条样本 ${JSON.stringify(C.viol)}）`).toBe(0)
+    expect(C.breakRows.length, `每一入战相位都恰好把怪打崩一次 ⇒ 崩派记数 ＝ 扫过的相位数 ${C.per.length}；实得 ${C.breakRows.length}`).toBe(C.per.length)
+    expect(C.breakRows.every((r) => r.damage === L1_BASE && !r.crumpledBefore), `那些"把窗口推开"的一记自己一律读底数 ${L1_BASE}：加成取的是这一拍**结算之前**的破势状态 ⇒ 破势不自奖励`).toBe(true)
+    expect(tally(C.rows).get(L1_BASE), `世界 C 里读底数的记数（窗口开起来之前与关掉之后）；分布 ${JSON.stringify([...tally(C.rows)])}`).toBeGreaterThan(0)
+    expect(tally(C.rows).get(14), `世界 C 里吃到增伤的记数（窗口开着的那些）；分布 ${JSON.stringify([...tally(C.rows)])}`).toBeGreaterThan(0)
   })
 
   it('腿⑥ 弓的**满弓（轻蓄）**那一行：蓄满阈值 **48 拍（800ms）**、**三枝**（主箭 ＋ 两枝分叉）**每拍一枝**、分叉各 **12°**、伤害 **18（主）＋ 60%/枝**、整段 **53** 帧（设计 §4.4 的注记：20＋6＋27 ＝ 53）⇒ 逐字对上', () => {

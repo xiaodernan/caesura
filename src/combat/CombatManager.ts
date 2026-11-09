@@ -9,7 +9,7 @@ import type { AISystem } from '@/ai/AISystem'
 import type { Enemy } from '@/ai/Enemy'
 import type { AttrKey, EnemyData, FrameData, IncomingGrade, ProjectileSpec, ReactionStunTier } from '@/data/schema'
 import { resolveDamage } from './DamagePipeline'
-import { reactionTier } from './Reactions'
+import { crumpleDamageMul, reactionTier } from './Reactions'
 import { shapeHits, isBackstab } from './HitShapes'
 import type { HitTarget } from './HitShapes'
 import { ProjectileSystem, sphereHits, type GoneReason, type Projectile } from './Projectiles'
@@ -494,7 +494,11 @@ export class CombatManager {
       // 战技自己那一记都吃到——「7s 内全部行动」说的就是从她手上出去的一切。
       // 回声重演不吃：那是世界在重播旧账，不是她此刻的行动（`replay` 那一支整段豁免，同一先例）。
       if (p.tacet) final = Math.round(final * (1 + p.tacet.dmgBonus))
-      if (crumpled) final = Math.round(final * 1.5)
+      // §8 R4：破势窗口里的每一记都乘 `reactions.json > R4.crumpleDmgMul`（KI-433 之前这里写死 1.5）。
+      // 读的是**这一记落地之前**的 crumpleTicksLeft ⇒ 打出破势的那一记自己不吃加成，否则"把架势推爆"
+      // 那一刀会同时享受它推出来的窗口——自奖励的一击。这一条因果顺序由 `moveset-frames3.test.ts` 腿⑤b
+      // 逐相位量着钉（不是这里抄一个读数）。
+      if (crumpled) final = Math.round(final * crumpleDamageMul())
       // §14.7 钟甲：只有「从它的正面锥里打进来」的这一笔被吃掉。用 s.dir（攻击者→它）反推
       // 来袭方位，所以近战挥砍、玩家投掷枪、以及未来任何走这条通道的伤害都自动受同一规则管。
       const armor = e.data.ai.armorFront

@@ -1071,6 +1071,10 @@ export interface SquadConfigData {
  *   会累加成一笔距离税，实测会顶穿 KI-039 的高甲平衡判据；那一格的 `displaceM` 由玩家受击那一边读。
  * - **R4**＝破势：承载体是 `EntityStats.addPoise` 写出的破势时长
  *   （普通 1.8s；Boss/mini-boss 2.4s，由 `combat/Reactions.ts:armCrumple` 按 `isBoss` 上弦）。
+ *   同一行的 `crumpleDmgMul` 是**另一样东西**：破势中目标身上每一记伤害乘的倍率，
+ *   承载体是 `CombatManager` 的那条乘算（读数：底数 9 ⇒ 破势中 14 ＝ round(9×1.5)），
+ *   由 `combat/Reactions.ts:crumpleDamageMul` 独家读出（KI-433 之前它是写死在代码里的裸 1.5）。
+ *   量它的腿是 `tests/flow/moveset-frames3.test.ts` 的腿⑤（底数 9 ⇒ 破势中 14）。
  * - **R5 不写**：本作没有"浮空"这个状态（敌人不会离地，也没有空中减伤通道），写进去就是造没有消费方的行。
  */
 export interface HitReactionTable {
@@ -1078,7 +1082,7 @@ export interface HitReactionTable {
   R1: { stunMs: number; displaceM: number }
   R2: { stunMs: number; displaceM: number }
   R3: { stunMs: number; displaceM: number }
-  R4: { crumpleMs: number; bossCrumpleMs: number }
+  R4: { crumpleMs: number; bossCrumpleMs: number; crumpleDmgMul: number }
 }
 
 /**

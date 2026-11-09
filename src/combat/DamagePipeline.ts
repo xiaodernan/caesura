@@ -14,7 +14,6 @@ export interface DamageRequest {
   backstabMul?: number
   weakpoint?: boolean
   onBeat?: boolean
-  poiseBreakTarget?: boolean         // crumpled -> true damage execution channel (caller handles)
   rawDamage?: number                 // executions/fissure burst bypass DR
   variance?: number                  // 0..1; 0 disables
   /**
