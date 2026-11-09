@@ -93,7 +93,7 @@
 | `npm run check` | tsc/lint + validate:data + test（除非加了额外工具，否则这就是 CI 的本地对等物）|
 | `npm run release` | `scripts/release.mjs`：tsc → validate:data → test → build → check-dist，全部绿才输出 RELEASE CHECK OK |
 | `npm run status` | 正册 / 系统表 / TD / PF / §5.9 节号名册现取 rollup；嵌入的 PHASE-STATUS.md 钉住一致 |
-| `npm run check-links` | `.md` 文件交叉引用审计（跳过 node_modules 等；当前 21 份 .md，4 链全部可达）|
+| `npm run check-links` | `.md` 文件交叉引用审计（跳过 node_modules 等；当前 23 份 .md，4 链全部可达）|
 | `npm run build` | 产物 dist/ |
 | `npm run validate:data` | 数据门 |
 | `npm run coverage` | 覆盖率棘轮（已 blocked） |
