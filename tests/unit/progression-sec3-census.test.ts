@@ -31,18 +31,27 @@
  *  - **结构腿的必要性**：背刺那条的行为腿只证明「`DamagePipeline` 不吃泛音」；武器侧（`weaponBackstabMul`）
  *    另一条结构腿钉住它今天也只读标签定值——两格分开，才知道将来红的是哪一边。
  *
+ * **KI-424（2026-11-09）：备注栏那一列第一次有了「子句」这一层**——见下面 `Clause` 那段注释。
+ * 一格备注里住着**两样东西**（一条机制承诺 ＋ 半句风味），整格一个判决会把它们混成一句：
+ * 「均衡；弹反流底座」＝散文＋机制；「背刺倍率再 +泛音×0.1%（隐藏天花板）」＝机制＋风味；
+ * 「满弓分叉枝数 2→3 需 指法≥30」＝**今天真的兑现了的那一半 ＋ 没有兑现的那一半**。
+ * 拆开之后：风味半句第一次在机器读数里有了自己的格子，而**兑现了一半的那一格不再被算成「没有」**。
+ * 拆开带来的唯一口径变化：**格级判决从「1 carried / 1 partial / 5 absent」变成「1 carried / 2 partial / 4 absent」**
+ * （无鸣那一格从 absent 升成 partial——它的背刺倍率 3.5 确实比别家高，缺的是「随泛音长」那一半）。
+ *
  * **还欠**（§78，如实登记）：
  *  - ① §3 与 §2.1「直剑/刺剑/枪/弓 +2.0%」、`weapons.json.scaling` 是**三个主人**；本批只把三者摆在一起
  *    （§2.1 那一格是散文，没有腿），谁作数要设计裁决；
  *  - ② 「混合(取最高维×0.7)」那个读法在 `attrScale` 里没有承载体（本门只证 `Math.max`／`0.7` 不在那里）；
  *  - ③ 音叉巨剑整件武器（数值、招式、掉落）都还欠；
- *  - ④ 备注栏那五格的**风味半句**（「隐藏天花板」「终局件」）不在机器读数的形状里。
+ *  - ④ 备注栏那五格的**风味半句**（「隐藏天花板」「终局件」）不在机器读数的形状里 —— **KI-424 已销这一格**：
+ *    子句名册把七格拆成 12 条（机械 9／风味 3），风味子句有自己的判决（`flavor`）且**不许带探针**。
  */
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { items, registerGameData, weaponsRaw } from '@/data'
+import { items, movesetsRaw, progressionRaw, registerGameData, weaponsRaw } from '@/data'
 import type { ItemData, WeaponData } from '@/data/schema'
 import { resolveDamage } from '@/combat/DamagePipeline'
 import { Progression } from '@/rpg/Progression'
@@ -87,6 +96,15 @@ const pctOf = (cell: string): number | null => {
 const WEAPONS = weaponsRaw as unknown as WeaponData[]
 const byId = new Map(WEAPONS.map((w) => [w.id, w]))
 
+/** 招式表与里程碑表（只取子句探针要读的那几格；结构自己收窄，不引第二份名册） */
+const MOVESETS = movesetsRaw as unknown as Array<{
+  id: string
+  actions: Record<string, { projectile?: { burst?: { count?: number } } }>
+}>
+const MILESTONES = (progressionRaw as unknown as {
+  milestones: Array<{ rank: number; id: string; grant?: { bowForkBranches?: number } }>
+}).milestones
+
 /** 文档那一列 ⇄ `scaling` 的键（§2.1 的六维命名） */
 const COL_KEY = [
   ['基音', 'str'],
@@ -97,17 +115,194 @@ type Col = (typeof COL_KEY)[number][0]
 type SkillCol = '基音' | '指法' | '音色'
 
 /**
+ * 一条**子句**的形状（KI-424，2026-11-09）。
+ *
+ * **为什么要有子句**：一格备注里住着**两样东西**——一条机制承诺与半句风味
+ * （「均衡；弹反流底座」＝散文＋机制；「背刺倍率再 +泛音×0.1%（隐藏天花板）」＝机制＋风味）。
+ * 整格一个判决 ⇒ 风味半句不在机器读数的形状里（KI-339 还欠④），而且**兑现了一半会被混成「没有」**
+ * （弓那一格的「满弓分叉枝数 2→3」今天真的兑现了，「需 指法≥30」才没有）。
+ *
+ * **判决由探针独立量出来**：`probe` 返回的就是这一条今天的判决，名册里的 `verdict` 只登记
+ * 「今天探针读数是什么」⇒ 谁把判决改坏而探针没改，那一格当场红；谁把探针改坏而没改判决，也是红。
+ * 风味子句**不许**带探针（带了就说明它其实是一条承诺，只是躲成了风味）。
+ *
+ * **三档的分工**（`probe` 的返回值就是这一条今天的读数）：
+ *  - `carried`：这一整条兑现了；
+ *  - `partial`：**一半兑现了**——底座在、增量不在（「背刺倍率 3.5 在，随泛音长不在」）；
+ *  - `absent`：一条都没兑现。
+ */
+type ClauseKind = 'flavor' | 'mechanical'
+type ClauseVerdict = 'carried' | 'partial' | 'absent' | 'flavor'
+/** 探针能返回的那三档（风味那一档探针量不出来，也不许量） */
+type ProbeVerdict = 'carried' | 'partial' | 'absent'
+interface Clause {
+  /** 子句逐字（必须逐字出现在文档那一格里，且按顺序出现） */
+  text: string
+  kind: ClauseKind
+  /** 今天这一条的判决（＝探针的读数；风味子句恒为 `flavor`） */
+  verdict: ClauseVerdict
+  /** 承载体符号（carried／partial 必填）：它得在 `src/` 的**≥2 个文件**里出现（声明处＋读者处） */
+  carrier?: string
+  /** 没兑现那一半的债主号（absent／partial 必填）：正册里那一行得点名 `ref` */
+  debtOwner?: string
+  /** 债主那一行必须点名的标志串（absent／partial 必填） */
+  ref?: string
+  /** 探针：今天真的量得到的那件事 ⇒ 返回这一条今天的判决 */
+  probe?: () => ProbeVerdict
+}
+
+/**
  * 七行的名册：名字是文档那一格的原字，id 是数据里那一行，`null` ＝ 数据里**没有对面**。
  * 加一行表、加一件武器，先来这里登记——这一张是判据的一部分，不是注释。
+ *
+ * **子句那一层（KI-424）**：每一格拆成若干条，每条各有各的判决与探针。
+ * **整格判决不再是手填的**：它由子句里最差的那一档推出来（门里那一条腿钉住这件事）⇒ 两个粒度不会分家。
+ *
+ * **探针的写法纪律**：探针量的是**今天真读得到的那件事**，不是「我以为它兑现了」——
+ * 所以「有没有」要么扫 `src/` 的真实字节，要么跑一次真实行为（泛音 0 与 80 的成交伤害、
+ * 指法 0 与 99 的枝数、rank12 的授与与消费点），没有第三条路。
  */
-const DOC_ROWS: Array<{ name: string; id: string | null; main: SkillCol | '混合'; remark: string; verdict: 'carried' | 'partial' | 'absent' }> = [
-  { name: '调律剑', id: 'wp_tuning_sword', main: '指法', remark: '均衡；弹反流底座', verdict: 'partial' },
-  { name: '强音大剑', id: 'wp_fortissimo_greatsword', main: '基音', remark: '双持需求：基音≥25', verdict: 'absent' },
-  { name: '引针枪', id: 'wp_drawpin_spear', main: '指法', remark: '距离=泛音联动：背刺倍率 +0.5%/10 点泛音', verdict: 'absent' },
-  { name: '泛音弓', id: 'wp_overtone_bow', main: '指法', remark: '满弓分叉枝数 2→3 需 指法≥30', verdict: 'absent' },
-  { name: '律具·音叉杖', id: 'wp_tuningfork_staff', main: '音色', remark: '战技射程 +25%（combat.md §4.5）', verdict: 'carried' },
-  { name: '无鸣', id: 'wp_needlesilence', main: '指法', remark: '背刺倍率再 +泛音×0.1%（隐藏天花板）', verdict: 'absent' },
-  { name: '音叉巨剑→续章', id: null, main: '混合', remark: '终局件：三系全能', verdict: 'absent' },
+const DOC_ROWS: Array<{ name: string; id: string | null; main: SkillCol | '混合'; remark: string; verdict: 'carried' | 'partial' | 'absent'; clauses: Clause[] }> = [
+  {
+    name: '调律剑', id: 'wp_tuning_sword', main: '指法', remark: '均衡；弹反流底座', verdict: 'partial',
+    clauses: [
+      { text: '均衡', kind: 'flavor', verdict: 'flavor' },
+      {
+        // 「弹反」那一半兑现了（这把剑 `parryable`，而弹反机制本身是全仓最老的那套）；
+        // 「流」那一半**连定义都没有**——「弹反流」这个词全仓只出现一次（docs/progression.md:95），
+        // 没有任何一份文档定义它 ⇒ 量不出来 ⇒ 只能记 partial，并把「缺定义」记成一笔账（KI-428）。
+        text: '弹反流底座', kind: 'mechanical', verdict: 'partial', carrier: 'parry',
+        debtOwner: 'KI-428', ref: '弹反流',
+        probe: () => {
+          const base = byId.get('wp_tuning_sword')!.swingTag.includes('parryable')
+          const flow = srcCodeLines().some((l) => /parryFlow|parry_flow|parryChain|parryStreak/i.test(l))
+          return base && flow ? 'carried' : base ? 'partial' : 'absent'
+        },
+      },
+    ],
+  },
+  {
+    name: '强音大剑', id: 'wp_fortissimo_greatsword', main: '基音', remark: '双持需求：基音≥25', verdict: 'absent',
+    clauses: [
+      {
+        // 底座（双持这个概念）在 src/ 里一个字都没有 ⇒ 一条都没兑现。
+        text: '双持需求：基音≥25', kind: 'mechanical', verdict: 'absent',
+        debtOwner: 'KI-425', ref: '双持需求',
+        probe: () => {
+          const shape = srcCodeLines().filter((l) => /dualWield|dualHanded|offhand/i.test(l))
+          if (!shape.length) return 'absent'
+          const gated = shape.some((l) => /\bstr\b|基音/i.test(l))
+          return gated ? 'carried' : 'partial'
+        },
+      },
+    ],
+  },
+  {
+    name: '引针枪', id: 'wp_drawpin_spear', main: '指法', remark: '距离=泛音联动：背刺倍率 +0.5%/10 点泛音', verdict: 'absent',
+    clauses: [
+      {
+        // 「距离=泛音联动」：射程随泛音变 —— src/ 里没有一行同时写着射程与泛音（剥掉注释行之后仍是 0 行）。
+        text: '距离=泛音联动', kind: 'mechanical', verdict: 'absent',
+        debtOwner: 'KI-426', ref: '距离=泛音联动',
+        probe: () => {
+          const link = srcCodeLines().some((l) => /range/i.test(l) && /\b(ovr|overtone)\b/i.test(l))
+          return link ? 'carried' : 'absent'
+        },
+      },
+      {
+        // 「背刺倍率 +0.5%/10 点泛音」：底座在（枪的 swingTag 里有 crit.backstab2.0），
+        // 增量不在（weaponBackstabMul 的函数体里没有 ovr／attrs，行为腿实测泛音 0→80 成交伤害不动）⇒ partial。
+        text: '背刺倍率 +0.5%/10 点泛音', kind: 'mechanical', verdict: 'partial', carrier: 'crit.backstab',
+        debtOwner: 'KI-426', ref: '+0.5%/10 点泛音',
+        probe: () => {
+          const body = bracedBody(COMBAT_SRC, 'private weaponBackstabMul(')
+          const depends = /ovr|overtone|attrs/i.test(body)
+          const base = byId.get('wp_drawpin_spear')!.swingTag.some((t) => t.startsWith('crit.backstab'))
+          if (!base) return 'absent'
+          if (!depends) return 'partial'
+          return backstabHit(0, 2) !== backstabHit(80, 2) ? 'carried' : 'partial'
+        },
+      },
+    ],
+  },
+  {
+    name: '泛音弓', id: 'wp_overtone_bow', main: '指法', remark: '满弓分叉枝数 2→3 需 指法≥30', verdict: 'absent',
+    clauses: [
+      {
+        // 底数 2 枝住在 `ms_bow.charged.projectile.burst.count`（含主箭 3 发 ⇒ 枝数 2），
+        // rank12 的 ms_bow_split 授与 +1 枝，消费点在 CombatManager.launchPlayerProjectile ⇒ 2→3 兑现。
+        text: '满弓分叉枝数 2→3', kind: 'mechanical', verdict: 'carried', carrier: 'bowForkBranches',
+        probe: () => {
+          const burst = MOVESETS.find((m) => m.id === 'ms_bow')?.actions?.charged?.projectile?.burst
+          const base = typeof burst?.count === 'number' ? burst.count - 1 : 0
+          const grant = MILESTONES.find((m) => m.rank === 12)?.grant?.bowForkBranches ?? 0
+          const wired = /spec\.burst\.count \+ this\.player\.rpg\.bowForkBranches/.test(COMBAT_SRC)
+          if (base !== 2) return 'absent'
+          if (grant === 1 && wired) return 'carried'
+          return grant === 1 ? 'partial' : 'absent'
+        },
+      },
+      {
+        // 「需 指法≥30」：门只有 rank12 —— 指法 0 与 99 是同一个读数 ⇒ 一条都没兑现。
+        text: '需 指法≥30', kind: 'mechanical', verdict: 'absent',
+        debtOwner: 'KI-328', ref: '需 指法≥30',
+        probe: () => {
+          const p = new Progression()
+          p.rank = 12
+          p.attrs = { ...p.attrs, dex: 0 }
+          const zero = p.derive().bowForkBranches
+          p.attrs = { ...p.attrs, dex: 99 }
+          return p.derive().bowForkBranches !== zero ? 'carried' : 'absent'
+        },
+      },
+    ],
+  },
+  {
+    name: '律具·音叉杖', id: 'wp_tuningfork_staff', main: '音色', remark: '战技射程 +25%（combat.md §4.5）', verdict: 'carried',
+    clauses: [
+      {
+        // 杖那一格是七格里唯一整条兑现的：数据里的 1.25 ＋ 消费点（弹体出海那一拍）。
+        text: '战技射程 +25%（combat.md §4.5）', kind: 'mechanical', verdict: 'carried', carrier: 'skillRangeMul',
+        probe: () => {
+          const mul = byId.get('wp_tuningfork_staff')!.skillRangeMul
+          if (mul === undefined) return 'absent'
+          return COMBAT_SRC.includes('skillRangeMul ?? 1') ? 'carried' : 'partial'
+        },
+      },
+    ],
+  },
+  {
+    name: '无鸣', id: 'wp_needlesilence', main: '指法', remark: '背刺倍率再 +泛音×0.1%（隐藏天花板）', verdict: 'partial',
+    clauses: [
+      {
+        // 底座在（无鸣的 crit.backstab3.5 确实比别家的 2.0 高），增量不在（3.5 是写死的定值）⇒ partial。
+        text: '背刺倍率再 +泛音×0.1%', kind: 'mechanical', verdict: 'partial', carrier: 'crit.backstab',
+        debtOwner: 'KI-427', ref: '+泛音×0.1%',
+        probe: () => {
+          const tag = byId.get('wp_needlesilence')!.swingTag.find((t) => t.startsWith('crit.backstab'))
+          if (!tag) return 'absent'
+          const base = Number.parseFloat(tag.slice('crit.backstab'.length))
+          if (!Number.isFinite(base)) return 'absent'
+          return backstabHit(0, base) !== backstabHit(80, base) ? 'carried' : 'partial'
+        },
+      },
+      // 「隐藏天花板」＝风味半句：它不是一条数值承诺，是对**天花板存在**的承诺。
+      // 它不许带探针——带了才说明它其实是一条机制承诺躲成了风味。
+      { text: '隐藏天花板', kind: 'flavor', verdict: 'flavor' },
+    ],
+  },
+  {
+    name: '音叉巨剑→续章', id: null, main: '混合', remark: '终局件：三系全能', verdict: 'absent',
+    clauses: [
+      { text: '终局件', kind: 'flavor', verdict: 'flavor' },
+      {
+        // 「三系全能」：那件武器在 weapons.json 里整行缺席 ⇒ 一条都没兑现。
+        text: '三系全能', kind: 'mechanical', verdict: 'absent',
+        debtOwner: 'KI-339', ref: '音叉巨剑',
+        probe: () => (WEAPONS.some((w) => /giant|sequence|final/i.test(w.id)) ? 'carried' : 'absent'),
+      },
+    ],
+  },
 ]
 
 /** 取 `anchor` 之后第一对花括号里的正文（结构腿用；找不到/没闭合就炸，不静默返回空串） */
@@ -132,6 +327,24 @@ function tsFiles(dir: string, out: string[] = []): string[] {
     const p = join(dir, e.name)
     if (e.isDirectory()) tsFiles(p, out)
     else if (e.name.endsWith('.ts')) out.push(p)
+  }
+  return out
+}
+
+/**
+ * `src/` 下的**代码行**（注释行剥掉）。
+ *
+ * **为什么剥注释**：一句「射程随泛音变」的注释不该算承载体——文档里有承诺，
+ * 代码注释里有许诺，只有真代码才算兑现。这条纪律是 KI-424 的探针能站住的前提。
+ */
+function srcCodeLines(): string[] {
+  const out: string[] = []
+  for (const f of tsFiles(join(root, 'src'))) {
+    for (const l of readFileSync(f, 'utf8').split(/\r?\n/)) {
+      const s = l.trim()
+      if (s.startsWith('//') || s.startsWith('*') || s.startsWith('/*')) continue
+      out.push(l)
+    }
   }
   return out
 }
@@ -225,9 +438,95 @@ describe('KI-339：progression.md §3 那张武器表的逐格读数', () => {
     expect(body).toMatch(/sum \/ 100/) // 今天只有「系数逐项相乘再相加」这一种读法
   })
 
-  it('备注栏七格逐字与读数登记表一致（1 carried / 1 partial / 5 absent）', () => {
+  it('备注栏七格逐字与读数登记表一致（格级判决 1 carried / 2 partial / 4 absent；格级由子句最差的一档推出）', () => {
     expect(S3.rows.map((r) => r.cells[5])).toEqual(DOC_ROWS.map((r) => r.remark))
-    expect(DOC_ROWS.map((r) => r.verdict)).toEqual(['partial', 'absent', 'absent', 'absent', 'carried', 'absent', 'absent'])
+    expect(DOC_ROWS.map((r) => r.verdict)).toEqual(['partial', 'absent', 'absent', 'absent', 'carried', 'partial', 'absent'])
+  })
+
+  // ── KI-424：子句那一层 ────────────────────────────────────────────────
+  it('子句拆分是穷尽的、有序的，间隙只许是分隔符（没有漏字，也没有多字）', () => {
+    const SEP = /^[\s；;：:,，、（）()]*$/
+    for (const row of DOC_ROWS) {
+      const cell = at(row.name).cells[5]!
+      let cursor = 0
+      for (const c of row.clauses) {
+        const i = cell.indexOf(c.text, cursor)
+        expect(i, `${row.name} 的子句「${c.text}」必须逐字出现在备注格里`).toBeGreaterThanOrEqual(0)
+        expect(cell.slice(cursor, i), `${row.name} 在「${c.text}」之前的间隙只许是分隔符`).toMatch(SEP)
+        cursor = i + c.text.length
+      }
+      expect(cell.slice(cursor), `${row.name} 的尾巴只许是分隔符`).toMatch(SEP)
+    }
+  })
+
+  it('风味子句不许带探针（带了就说明它其实是一条承诺，只是躲成了风味）；机械子句必须带探针', () => {
+    for (const row of DOC_ROWS) {
+      for (const c of row.clauses) {
+        if (c.kind === 'flavor') {
+          expect(c.probe, `${row.name}「${c.text}」是风味，不许带探针`).toBeUndefined()
+          expect(c.verdict, `${row.name}「${c.text}」`).toBe('flavor')
+        } else {
+          expect(typeof c.probe, `${row.name}「${c.text}」是机械承诺，必须带探针`).toBe('function')
+        }
+      }
+    }
+  })
+
+  it('每条机械子句的判决就是它的探针今天的读数（名册登记读数，不登记意图）', () => {
+    for (const row of DOC_ROWS) {
+      for (const c of row.clauses) {
+        if (!c.probe) continue
+        expect(c.probe(), `${row.name}「${c.text}」的探针读数`).toBe(c.verdict)
+      }
+    }
+  })
+
+  it('整格判决由子句里最差的那一档推出来（两个粒度不会分家）', () => {
+    const RANK: Record<ClauseVerdict, number> = { flavor: 0, carried: 1, partial: 2, absent: 3 }
+    for (const row of DOC_ROWS) {
+      const worst = row.clauses.reduce<ClauseVerdict>(
+        (a, b) => (RANK[b.verdict] > RANK[a] ? b.verdict : a),
+        'flavor',
+      )
+      expect(row.verdict, `${row.name} 的格级判决`).toBe(worst)
+    }
+  })
+
+  it('承载体符号在 src/ 的 ≥2 个文件里出现（声明处＋读者处，少于两处就只是一句自说自话）', () => {
+    for (const row of DOC_ROWS) {
+      for (const c of row.clauses) {
+        if (c.verdict !== 'carried' && c.verdict !== 'partial') continue
+        expect(c.carrier, `${row.name}「${c.text}」必须点名它的承载体`).toBeTruthy()
+        const n = tsFiles(join(root, 'src')).filter((f) => readFileSync(f, 'utf8').includes(c.carrier!)).length
+        expect(n, `${row.name}「${c.text}」的承载体 ${c.carrier}`).toBeGreaterThanOrEqual(2)
+      }
+    }
+  })
+
+  it('每条没兑现的子句都挂着一笔真账：那一行存在、点名了 ref、且状态还没结', () => {
+    const ledger = readFileSync(join(root, 'docs/KNOWN_ISSUES.md'), 'utf8').split(/\r?\n/)
+    for (const row of DOC_ROWS) {
+      for (const c of row.clauses) {
+        if (c.verdict === 'carried' || c.verdict === 'flavor') continue
+        const owner = c.debtOwner
+        expect(owner, `${row.name}「${c.text}」没兑现 ⇒ 必须挂一笔账`).toBeTruthy()
+        const line = ledger.find((l) => l.startsWith(`| ${owner} |`))
+        expect(line, `账本正册里没有 ${owner} 那一行`).toBeTruthy()
+        expect(line!, `债主 ${owner} 那一行必须点名「${c.ref}」`).toContain(c.ref!)
+        const m = /\|\s*(Implemented|Partial|Placeholder|Blocked)\s*\|\s*$/.exec(line!)
+        expect(m, `债主 ${owner} 的状态词`).toBeTruthy()
+        expect(m![1], `债主 ${owner} 已经结案 ⇒ 这条子句不该还挂在 ${c.verdict} 上`).not.toBe('Implemented')
+      }
+    }
+  })
+
+  it('子句名册的总账：七格 → 12 条（机械 9／风味 3）；判决 2 carried / 3 partial / 4 absent / 3 flavor', () => {
+    const all = DOC_ROWS.flatMap((r) => r.clauses)
+    expect(all).toHaveLength(12)
+    expect(all.filter((c) => c.kind === 'mechanical')).toHaveLength(9)
+    expect(all.filter((c) => c.kind === 'flavor')).toHaveLength(3)
+    const tally = (v: ClauseVerdict) => all.filter((c) => c.verdict === v).length
+    expect([tally('carried'), tally('partial'), tally('absent'), tally('flavor')]).toEqual([2, 3, 4, 3])
   })
 
   it('唯一有承载体的一格：音叉杖「战技射程 +25%」＝数据里的 1.25，且消费点仍在弹体出海那一拍', () => {

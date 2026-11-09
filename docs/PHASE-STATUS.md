@@ -23,11 +23,11 @@
 
 <!-- PHASE-STATUS:BEGIN-KV -->
 ```
-KI.rows=346
-KI.Implemented=176
-KI.Partial=164
+KI.rows=351
+KI.Implemented=177
+KI.Partial=166
 KI.Placeholder=0
-KI.Blocked=6
+KI.Blocked=8
 SYS.rows=92
 SYS.Implemented=67
 SYS.Partial=25
@@ -43,8 +43,8 @@ PF.Implemented=0
 PF.Partial=0
 PF.Placeholder=0
 PF.Blocked=1
-ARCH.sections=190
-ARCH.maxSection=190
+ARCH.sections=191
+ARCH.maxSection=191
 ARCH.duplicates=0
 ARCH.holes=none
 PKG.scripts=14
