@@ -46,7 +46,7 @@
 ### 3.2 中期（1–3 周）
 
 - ~~**Phase 9 量值盘**：写一个 `scripts/measure-probe.mjs`，跑 1 分钟模拟（不需要 GPU），对 `ai.update` 那一格报告，
-  把结果写入 `./artifacts/perf-probe-<date>.log`（不入库——跟 `artifacts/` 的其它文件一样按 `KI-410` 不入库）~~ **已落（2026-11-09，KI-418）**：`tests/flow/perf-probe.test.ts`（真数据 12 只混编、3600 拍开局即最大负载）+ `scripts/measure-probe.mjs`（spawn vitest，读数行追加进 `artifacts/perf-probe-<date>.log`）。两趟同场景：mean 0.116 / 0.160 ms、p95 0.255 / 0.382、p99 0.602 / 0.839、max 4.83–8.47、over2ms 4→8（0.11%→0.22%）。帧预算 <2ms 不进断言。
+  把结果写入 `./artifacts/perf-probe-<date>.log`（不入库——跟 `artifacts/` 的其它文件一样按 `KI-410` 不入库）~~ **已落（2026-11-09，KI-418）**：`tests/flow/perf-probe.test.ts`（真数据 12 只混编、3600 拍开局即最大负载）+ `scripts/measure-probe.mjs`（spawn vitest，读数行追加进 `artifacts/perf-probe-<date>.log`）。两趟同场景：mean 0.116 / 0.160 ms、p95 0.255 / 0.382、p99 0.602 / 0.839、max 4.83–8.47、over2ms 4→8（0.11%→0.22%）。帧预算 <2ms 不进断言。基本盘已归档在 `docs/perf-baseline.md`（含不背书的边界与下一位接手清单）。
 - **Phase 7 的 CSS 滤镜清退**：当前 `palette-fisrt` 直接靠 CSS `filter: saturate() / brightness()`（KI-173）；
   下一阶段是挂真 `material.opacity` / `blending` 或径向叠加 Shader 来替掉它。
 

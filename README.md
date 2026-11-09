@@ -42,6 +42,7 @@ npm run build          # tsc + vite build + check-dist（产物：dist/）
 | `docs/vision.md` · `docs/IP_SEED.md` | 产品定位与原设定 |
 | `docs/branch-consolidation-20261109.md` | 2026-11-09 分支／worktree 收敛记录（并入 origin/master、复原 KI-411、worktree 清单） |
 | `docs/architecture-20261109-backfill.md` · `docs/architecture-20261109-squad-arc.md` | 背书式架构附录（非节号；squad 队列弧等） |
+| `docs/perf-baseline.md` | Phase 9 基本盘（KI-335／KI-418）：测了什么、两趟读数、不背书的边界、下一位接手清单 |
 
 ## 工程约定（本仓库注重的事）
 
