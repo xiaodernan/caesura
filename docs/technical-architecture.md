@@ -7319,3 +7319,57 @@ v14 的老档没有 `holdMs` 这个键，读进来取默认 200 ⇒ **KI-359 那
 > **补登记录（2026-11-09 续，南道 KI-391～393 落盘）**：并发车道 §5.9.178～182 五节按挪号平移到本节位（§5.9.183～187），自 `docs/branch-consolidation-20261109.md` 记录的预留约定兑现——账本 KI-390／KI-391／KI-393 三行与 WORKPLAN 同三行已按本位指准 §5.9.183～187，读数原样保留。
 > 并入 master 时保留下来的 §5.9.178～182（普查／校验器／注入根／红跑／豁免名册）为并入时从 merge-base 复原的节，仍在原位；`.scratch` 与 `.workbuddy-ai` 不入库；`artifacts/*.png` 仍按 KI-410 不入库。
 
+### 5.9.188 主干的读数第一次有了一个只读 HTTP 面，而「services/ 那一棵树」从此进总体（KI-421，2026-11-09）
+
+**这一格落的是「读数怎么被拿到手」**。主干上的每一道门（`npm run lint`／`validate-data`／`npm run test`／`npm run build`）都只能由人在终端敲一条命令跑，而读数只能从那扇终端里抄。`.github` 那一格写着 CI 形状（`npm ci → validate:data → lint → test → build`），可那份 YAML 是**抄下来的命令**，不是服务——「机器怎么把读数拿到手」这件事一直没有人给形状。
+
+**落点**：`services/dev-gateway.mjs`——纯 Node（零依赖、零框架）的本地 HTTP 面，七条路由**全是只读、全基于仓库里的真字节、无状态**：
+
+| 路由 | 它给什么 | 它的诚实边界 |
+|---|---|---|
+| `/api/health` | 仿 Actuator 的 health 形状（版本／范围／node／uptime） | 本地开发面，不是生产探针 |
+| `/api/status` | **就地跑** `scripts/phase-status.mjs` 现取 KI／ARCH／PKG 的机读 rollup | 它 spawn 一个子进程（快的，但没做缓存） |
+| `/api/quality` | `QUALITY_PROFILES` 的原始字节 | **只给字节不给解析后的表**——消费者该读那份源码 |
+| `/api/coverage-floor` | `scripts/coverage-floor.json` 原样 | 地板是地板，不是实得覆盖率 |
+| `/api/metrics` | `artifacts/perf-probe-*.log` 的最新一趟 | **没跑过就如实说没有并给理由**，不拿空集冒充 |
+| `/api/changelog` | `docs/CHANGELOG.md` 的按月提交计数 | 总数**必须等于各月之和**（计数与点名是两个分母） |
+| `/api/registry` | 路由名册（＝discovery 表） | 它就是路由表本身，不是外部注册中心 |
+
+**另一半更便宜也更要紧**：`services/` 那一棵树**登记进交付总体**——`scripts/text-corpus.mjs` 的 `CORPUS_DIRS` 加 `services`、`SKIP_DIRS` 加 `target`（Maven 的 `.class`／`.jar` **含 NUL**，走查会把它判成二进制，而总体里出现二进制是那道门点名的东西），`.gitignore` 加 `services/**/target/`。按仓库纪律（`.github` 那一格的理由：「交付总体是『玩家拿到的产物要读的东西』」）**登记进总体而不是登记成洞**：这棵树里住的是**会被真调用**的服务代码与它的契约，那份契约里的中文与按号引用同样要有人扫；而「登记成洞」等于承认那一整片面积没人看——那是洞在悄悄长大。
+
+**接手与修**：这一份的草稿起不来——`const ROOT = resolve(...)` 而 `resolve()` 读 `ROOT` ⇒ TDZ 崩（`ReferenceError: Cannot access 'ROOT' before initialization`），import 即崩、9 条腿一条都跑不了。接手后先把 ROOT 算出来再定义 `resolve`；并给量具补上「**变异是空操作也要说话**」那一格——一条没改成的东西会安安静静地报「0 红」，那是静默假绿的最坏形状。
+
+**不声称**：这**不是** Spring Boot／Eureka／生产后端（它是那三样东西的**最小诚实形状**）；没有鉴权／TLS／多租户；`artifacts/` 被 gitignore 挡着 ⇒ 新克隆的机器上 `/api/metrics` 必然落在「没有」那一格；本机**无可见浏览器窗口** ⇒ 只做到 HTTP 形状与真字节的实测，没做到「人在浏览器里点一下」（KI-010 同因）。
+
+**读数与剩余欠账见账本 KI-421 那一行。**
+
+
+### 5.9.189 Spring Cloud 微服务族（主干守门人）：五个服务真跑通，而判定权一行都没有搬进 Java（KI-422，2026-11-09）
+
+**这一格是「在项目里加 Spring Cloud 微服务元素」的落法**（它接住 KI-421 还欠①那一格）——而落法本身是被一条纪律逼出来的：**判定唯一主人仍是 Node**。
+
+**为什么不做玩法服务器**：`docs/gameplay.md` 第 6 行明写「无专用服务器」，游戏客户端自带渲染，没有任何生产流量要经过这一层。所以这一族只对**主干自己**有用：把「跑门」从「人在终端敲一串命令」变成「可编排、可发现、可报告」的流水线。
+
+**五个服务，各管一件事**（`services/spring/`，Maven 多模块；Spring Boot **3.5.16** ＋ Spring Cloud **2025.0.3** ＋ JDK 25／Temurin 25.0.1——**为什么不是 Boot 4.x**：那一支要配 Spring Cloud 2026.0.0-RC*，当时还是 RC，拿 RC 当守门人的底座不合适）：
+
+| 服务 | 端口 | 它**唯一**管的事 | 它**不许**管的事 |
+|---|---|---|---|
+| `caesura-registry` | 8761 | 谁活着、地址在哪（Eureka） | 不读仓库数据、不跑门、不持阈值 |
+| `caesura-config` | 8888 | 供出**门名册与阈值**（Config Server，native 后端） | 不判定 |
+| `caesura-gateway` | 8099 | `/gate/**` 与 `/report/**` 两个入口 | 不判定 |
+| `caesura-gate` | 8081 | 按名册**调**仓库既有的 npm／node 入口 | **不判定**（红了就是退出码非零） |
+| `caesura-report` | 8082 | 汇总成仓库既有 `finish()` 那套判决形状 | 不跑门、不持名册 |
+
+**门名册与阈值的唯一出处**是 `services/spring/config/caesura-gates.yml`：五道门（gate-types／gate-data／gate-head-selfcheck／gate-suite／gate-ship），每格带族、命令、上限、是否阻塞。它由配置服务器**原样**供出去（不是副本），`caesura-gate` 通过 `spring.config.import=configserver:` 取回来——**取不到 ⇒ 服务起不来**（一个没有名册的门执行器不是门执行器，它只是一台会假装自己知道该跑什么的机器）。
+
+**这一族量的是「唯一主人有没有被偷走」**（判据住 `scripts/spring-family-rules.mjs`，门在 `tests/unit/spring-family-table.test.ts`，17 条腿）：① 名册形状（每格六个键／id 唯一／timeout-sec 是正整数）；② **门 id 不许在 Java 里出现第二遍**（不许按名硬编码分派）；③ **阈值不许在 Java 里出现第二遍**（名册里 timeout-sec 那个数，Java 里再出现一次就是两个出处）；④ 名册指向的命令**真的存在**（npm script 或 `scripts/*.mjs`）；⑤ 拓扑三方一致（compose ⇄ 模块 ⇄ 期望名单，差集两个方向都空）；⑥ **Java 侧不许去读仓库的数据表**（判定只有一个主人）。
+
+**为什么②③用「字面量不许出现」这种笨办法**：因为「不许有硬编码」没法判——硬编码是意图，字面量是**物证**。这道门能证明的是「阈值那个数在 Java 里只出现一次（名册那一次）」，证不了「Java 心里没有阈值」——那件事得靠人看。它把能证的钉死，把证不了的写在明处。
+
+**实测读数**：`mvn -DskipTests package` 五模块全绿；本机真起五个进程 ⇒ 网关 `GET /gate/gates` 拿到的那份名册 `source` 写着 `config-server:caesura-gates`；`POST /gate/gates/gate-data/run` **真跑了** `node scripts/validate-data.mjs` ⇒ exitCode 0／verdict green／stdout 就是那份「0 ERROR 2 WARN」的原样输出；Eureka 名册里三个客户端都在册；反向实测 **6 臂全按预测命中**（各恰红一条，逐文件 sha256 还原核对 OK）。
+
+**踩过的坑（都留在源码注释里）**：① Config Server 的 **native 后端必须显式 `spring.profiles.active=native`**——不写它，它会去问 git 要一个 uri，然后以「You need to configure a uri for the git repository」起不来；② Gateway 4.3 把路由前缀改成了 `spring.cloud.gateway.server.webflux.routes`（照旧写它会先打一段弃用警告，而警告不是读数）；③ **负载均衡的实例表是异步拉的**——刚起的那一瞬间「本地还没有 caesura-gate」是常态不是故障（report 侧加了**编排层**的重试，重试参数住 YAML 不住 Java）；④ **`repo-root` 少退一级**——名册写 `..` 会让门去找 `<仓>/services/scripts/…` ⇒ 判决是「起不来」，错在**路径**不在门；⑤ 8080 被本机 **Docker Desktop 的后端**占着、8090 被**另一个项目的 Nexus**占着 ⇒ 网关用 8099，**不去动别人的进程**；⑥ **PowerShell 的 `Invoke-WebRequest` 按系统 ANSI 解码响应体** ⇒ 中文读数变乱码——那是**量具**的毛病不是服务的毛病。
+
+**不声称**：这不是玩法服务器；**判定权一行都没有搬进 Java**（Java 只做编排／重试／报告，「什么算红」仍然是 Node 那边的退出码）；没有鉴权／TLS／多租户，**熔断只有重试没有熔断**；容器那一条**只写了 compose、没有真跑过 Docker** ⇒ 不声称容器形态可用；整族跑（`POST /report/family`）没有作为读数登记（它会把全量套件与 build 再跑一遍，与主干那趟量具撞车）⇒ 只验过单门。
+
+**读数与剩余欠账见账本 KI-422 那一行。**

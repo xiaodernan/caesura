@@ -20,15 +20,29 @@ import { mojibakeFindings, strayControlFindings } from './text-integrity.mjs'
  * 在这道门里是静默的：它既不进名册也不报错，"总体"就这样少了一棵树而没人知道。所以这里按 §55
  * （没有消费方的格子不留在表上）把它删掉，同时让走查把**名册里声明却不在仓库的目录**报成错误：
  * 那一天要么是真加了素材树（忘了登记就扫不到），要么是 `src` 被改名（门在读一个残缺总体）。
+ *
+ * **第五棵树 `services`（KI-421，2026-11-09）**：本地开发与服务族那一棵（`services/dev-gateway.mjs`
+ * 起家，将来是 Spring Cloud 微服务族）。它是**真交付件**而不是旁路——`.github` 那一格的理由写着
+ * 「交付总体是『玩家拿到的产物要读的东西』，CI YAML 读的是源码，不读玩家」；而 `services/` 里住的是
+ * **会被玩家/CI 真正调用**的服务代码与它的契约（它自己带一份真 HTTP 门），那份契约里的中文与按号引用
+ * 同样要有人扫。**登记进总体而不是登记成洞** ⇒ 按号那一族的三道门从此也看得见这棵树里的引用。
  */
-export const CORPUS_DIRS = ['docs', 'src', 'tests', 'scripts']
+export const CORPUS_DIRS = ['docs', 'src', 'tests', 'scripts', 'services']
 
 /**
  * 跳过的目录名。**每一条都要能回答"仓库里还有谁经过它"**，所以这些名字全是构建产物 / 依赖 / 一次性平面，
  * 没有一个是"人写的东西"：`.scratch` 里那些平面副本是被 `git archive` 重新生成的，扫它们等于把同一份
  * 文本数两遍（并且会把已经修好的历史红又报一次）。
+ *
+ * **`target`（KI-421，2026-11-09）**：Maven 的构建输出目录（`services/spring` 下每个模块的 `target/`）——
+ * 里面是 `.class` 与 `.jar`，**含 NUL** ⇒ 走查会把它判成二进制，而总体里出现二进制是那道门点名的东西
+ * （「今天全库一个二进制都没有」）。它是构建产物不是人写的东西（与 `dist`／`build` 同一个理由），
+ * 而且它同时被 `.gitignore` 挡住 ⇒ 已入库名册那一侧也看不见它。
+ * （**为什么这里不能照抄那条 glob**：注释里只要出现「星号紧挨着斜杠」，块注释就在那儿提前关掉，
+ * 后半截被当成代码 ⇒ `node --check` 报 `SyntaxError`，而**报错的位置在注释后面好几行**，
+ * 远得像别处的病。实测踩过两次：第一次是那条 glob 本身，第二次是**解释这个坑的那句话**。）
  */
-export const SKIP_DIRS = new Set(['node_modules', 'dist', 'build', 'coverage', '.coverage', '.git', '.scratch', 'Temp'])
+export const SKIP_DIRS = new Set(['node_modules', 'dist', 'build', 'coverage', '.coverage', '.git', '.scratch', 'Temp', 'target'])
 
 /**
  * 「这东西在走查途中没了」的判据（KI-332）：ENOENT（被删了）与 ENOTDIR（路径的某一段已经不是目录了）。

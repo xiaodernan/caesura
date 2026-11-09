@@ -1,0 +1,35 @@
+# caesura-report（判决汇总）—— KI-422
+#
+# 它不跑门、不持有名册：名册问 caesura-gate 要（那份才是从配置服务器来的），
+# 判决也问 caesura-gate 要。它只做**汇总** ⇒ 把它停掉，门照样跑得动，只是没人给结论。
+
+server:
+  port: 8082
+  servlet:
+    context-path: /report
+
+spring:
+  application:
+    name: caesura-report
+
+eureka:
+  instance:
+    hostname: 127.0.0.1
+  client:
+    service-url:
+      defaultZone: http://127.0.0.1:8761/eureka/
+    registry-fetch-interval-seconds: 5
+
+caesura:
+  report:
+    # 「问不到 caesura-gate ⇒ 重试几次、隔多久再问」——**编排参数**，住 YAML 不住 Java。
+    # 为什么需要它：客户端启动时第一次拉注册表是**异步**的，所以刚起的那一瞬间
+    # 「本地还没有 caesura-gate 的实例」是常态，不是故障。重试就是「编排」这一层的活。
+    retry-attempts: 8
+    retry-delay-ms: 2000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

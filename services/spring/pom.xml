@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  services/spring/pom.xml — CAESURA《止音纪元》的 Spring Cloud 微服务族（KI-422，2026-11-09）。
+
+  这一族是**主干守门人**：五个服务各管一件事，判定权**不在 Java 侧**——
+
+    caesura-registry  Eureka：注册与发现（谁活着、地址在哪）
+    caesura-config    Config Server：门名册与阈值的**唯一出处**
+    caesura-gateway   Spring Cloud Gateway：单一入口 /gate/** 与 /report/**
+    caesura-gate      执行器：**只调用**仓库既有的 npm／node 入口，自己不做任何判定
+    caesura-report    汇总：把各门的判决汇成仓库既有 finish() 那套判决形状
+
+  为什么是「守门人」而不是「玩法服务器」：docs/gameplay.md 第 6 行明写「无专用服务器」，
+  游戏客户端自带渲染，没有任何生产流量要经过这一层。这一族只对**主干自己**有用：
+  把「跑门」这件事从「人在终端敲一串命令」变成「一个可编排、可发现、可报告的流水线」。
+
+  版本口径：Spring Boot 3.5.16 ＋ Spring Cloud 2025.0.3（那一支正对 Boot 3.5.x），
+  JDK 25（本机 Temurin 25.0.1 LTS）。**为什么不是 Boot 4.x**：4.0/4.1 那一支要配
+  Spring Cloud 2026.0.0-RC*（当时还是 RC）——拿 RC 当主干守门人的底座不合适。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.5.16</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>caesura</groupId>
+  <artifactId>caesura-spring</artifactId>
+  <version>0.1.0</version>
+  <packaging>pom</packaging>
+  <name>CAESURA Spring Cloud Family</name>
+  <description>主干守门人微服务族（KI-422）：判定权仍在 Node 侧，Java 侧只做编排/重试/熔断/报告</description>
+
+  <modules>
+    <module>caesura-registry</module>
+    <module>caesura-config</module>
+    <module>caesura-gateway</module>
+    <module>caesura-gate</module>
+    <module>caesura-report</module>
+  </modules>
+
+  <properties>
+    <java.version>25</java.version>
+    <maven.compiler.release>25</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <spring-cloud.version>2025.0.3</spring-cloud.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- Spring Cloud 的版本由 BOM 统一管：本仓**不许**在单个模块里钉某个构件版本 -->
+      <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-dependencies</artifactId>
+        <version>${spring-cloud.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-maven-plugin</artifactId>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+</project>

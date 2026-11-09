@@ -1,0 +1,23 @@
+# caesura-config（Spring Cloud Config Server）—— KI-422
+#
+# native 后端：把 `CAESURA_CONFIG_DIR` 指向的那份目录原样供出去（默认 `file:./config`
+# ＝ 本服务工作目录下的 `config/`，也就是仓库里 `services/spring/config/` 那一份）。
+#
+# **它供出去的就是仓库里那一份文件本身，不是副本** —— 改那份 YAML 就等于改门名册。
+# 这条由 tests/unit/spring-family.test.ts 的「native 目录指向仓库里那份名册」那一腿看着。
+
+server:
+  port: 8888
+
+spring:
+  application:
+    name: caesura-config
+  profiles:
+    # native 后端**必须显式激活**：不写这一行，Config Server 会去问 git 要一个 uri，
+    # 然后以「You need to configure a uri for the git repository」起不来（实测过）。
+    active: native
+  cloud:
+    config:
+      server:
+        native:
+          search-locations: "${CAESURA_CONFIG_DIR:file:./config}"

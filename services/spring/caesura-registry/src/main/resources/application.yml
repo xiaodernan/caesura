@@ -1,0 +1,25 @@
+# caesura-registry（Eureka Server）—— KI-422
+#
+# 端口/服务名/注册中心地址这三样是**基础设施身份**，不是判定阈值 ⇒ 它们住 YAML，不住 Java。
+# 这一点由 tests/unit/spring-family.test.ts 那道门看着（Java 里不许出现 ≥100 的整数字面量）。
+
+server:
+  port: 8761
+
+spring:
+  application:
+    name: caesura-registry
+
+eureka:
+  instance:
+    hostname: 127.0.0.1
+  client:
+    # 注册中心自己不注册自己、也不去拉自己的名册（否则启动时要等自己上线）
+    register-with-eureka: false
+    fetch-registry: false
+    service-url:
+      defaultZone: http://127.0.0.1:8761/eureka/
+  server:
+    # 空名册不必等（本地单机起族时省掉一段无意义的等待）
+    wait-time-in-ms-when-sync-empty: 0
+    enable-self-preservation: false

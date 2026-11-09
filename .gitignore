@@ -21,3 +21,6 @@ vite.config.ts.timestamp-*.mjs
 
 # tsc 调试日志残留（2026-10-01 一批零字节与 <1KB 的，多为空），同族不入库
 .tsc*.log
+
+# KI-421：Maven 构建输出（Spring Cloud 微服务族）——含 .class/.jar（含 NUL），是构建产物不是源码
+services/**/target/

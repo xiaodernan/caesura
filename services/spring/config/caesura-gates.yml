@@ -1,0 +1,65 @@
+# services/spring/config/caesura-gates.yml — **门名册与阈值的唯一出处**（KI-422，2026-11-09）
+#
+# 这份文件由 **caesura-config（Spring Cloud Config Server）** 以 native 后端原样供出去，
+# caesura-gate 与 caesura-report 通过 `spring.config.import=configserver:` 把它取回来。
+#
+# 为什么它必须住在**配置服务器**而不是代码里：
+#   - Java 侧一旦自己钉住「超时多少秒」「哪些门算阻塞」，同一道判据就有了两个主人
+#     （仓库那半边在 Node，那半边在 Java）⇒ 改一处不会改另一处，两边慢慢说不同的话。
+#   - 本仓的判据纪律是「**判定唯一主人仍是 Node**」：Java 只负责编排、重试、熔断、报告。
+#     阈值是判定的一部分，所以阈值也必须从 Node 侧那份名册来。
+#   - 这条纪律有一道机器门看着：`tests/unit/spring-family.test.ts` —— Java 源码里
+#     **不许出现任何 ≥100 的整数字面量**（那就是一道没进配置服务器的阈值），
+#     也**不许出现任何一个门 id**（那是不按名册硬编码分派）。
+#
+# 字段口径：
+#   id          门的名字（**唯一**；Java 侧按它取命令，不按它写死分支）
+#   family      族（同一族的门在报告里算同一格）
+#   command     可执行名（`npm` / `node`）
+#   args        参数表
+#   timeout-sec 跑这一道门的上限（**秒**）——它是阈值，所以它住在这里而不是 Java 里
+#   blocking    红了算不算这一族失败（不阻塞的门只出现在报告里，不拉红整族）
+
+caesura:
+  # 仓库根：**相对服务的工作目录**（本族一律是 `services/spring`）⇒ `../..` 就是仓库根。
+  # 写成 `..` 会少退一级 —— 门会去找 `<仓>/services/scripts/validate-data.mjs`，
+  # 那一格不存在 ⇒ 判决是「起不来」（exitCode 1），而错在**路径**不在门本身。
+  # 实测踩过：那一趟报的是 MODULE_NOT_FOUND，路径是 `…\services\scripts\…`。
+  # Docker 里同理：仓库挂在 /workspace，工作目录 /workspace/services/spring ⇒ `../..` = /workspace。
+  repo-root: "../.."
+
+  gates:
+    - id: gate-types
+      family: compile
+      command: npm
+      args: ["run", "lint"]
+      timeout-sec: 900
+      blocking: true
+
+    - id: gate-data
+      family: compile
+      command: node
+      args: ["scripts/validate-data.mjs"]
+      timeout-sec: 600
+      blocking: true
+
+    - id: gate-head-selfcheck
+      family: compile
+      command: node
+      args: ["scripts/head-compiles-rules.mjs"]
+      timeout-sec: 1800
+      blocking: true
+
+    - id: gate-suite
+      family: test
+      command: npm
+      args: ["run", "test"]
+      timeout-sec: 3600
+      blocking: true
+
+    - id: gate-ship
+      family: build
+      command: npm
+      args: ["run", "build"]
+      timeout-sec: 1800
+      blocking: false

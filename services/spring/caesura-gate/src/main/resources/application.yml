@@ -1,0 +1,37 @@
+# caesura-gate（门执行器）—— KI-422
+#
+# 门名册**不在这里**：它由 caesura-config（配置服务器）供出来，这一行 import 就是唯一的取法。
+# `spring.config.import` 刻意**不是** optional —— 配置服务器拿不到 ⇒ 这个服务起不来。
+# 一个没有名册的门执行器不是门执行器。
+#
+# `context-path: /gate` 让服务自己那层与网关那一层同形：直连是 /gate/gates，
+# 走网关（Path=/gate/**）转发过来也是 /gate/gates ⇒ 两条路给出同一份形状。
+
+server:
+  port: 8081
+  servlet:
+    context-path: /gate
+
+spring:
+  application:
+    name: caesura-gate
+  config:
+    import: "configserver:${CAESURA_CONFIG_URL:http://127.0.0.1:8888}"
+  cloud:
+    config:
+      name: caesura-gates
+      fail-fast: true
+
+eureka:
+  instance:
+    hostname: 127.0.0.1
+  client:
+    service-url:
+      defaultZone: http://127.0.0.1:8761/eureka/
+    registry-fetch-interval-seconds: 5
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

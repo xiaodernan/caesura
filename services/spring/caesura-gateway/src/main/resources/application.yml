@@ -1,0 +1,48 @@
+# caesura-gateway（Spring Cloud Gateway）—— KI-422
+#
+# 路由表 = 拓扑，不是判定。`lb://` 表示「地址由注册中心给」（Eureka + LoadBalancer）。
+# 两个入口：
+#   /gate/**    → caesura-gate   （跑一道门 / 看门名册）
+#   /report/**  → caesura-report （汇总一族门的判决）
+#
+# **前缀是 `spring.cloud.gateway.server.webflux.routes`**：Gateway 4.3 把旧前缀
+# （`spring.cloud.gateway.routes`）标成「暂时映射到新键」——照旧写它会先打一段
+# 弃用警告，而警告不是读数。实测踩过。
+
+server:
+  # 8099：本机的 8080 被 Docker Desktop 后端占着、8090 被另一个项目的 Nexus 占着
+  # ⇒ 换端口，不去动别人的进程。
+  port: 8099
+
+spring:
+  application:
+    name: caesura-gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: gate-family
+              uri: lb://caesura-gate
+              predicates:
+                - Path=/gate/**
+            - id: report-family
+              uri: lb://caesura-report
+              predicates:
+                - Path=/report/**
+
+eureka:
+  instance:
+    # 显式写主机名：不写的话客户端会拿机器 hostname 去注册（本机解析出来是 host.docker.internal），
+    # 负载均衡那边回连会打到一个莫名其妙的名字上。
+    hostname: 127.0.0.1
+  client:
+    service-url:
+      defaultZone: http://127.0.0.1:8761/eureka/
+    registry-fetch-interval-seconds: 5
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

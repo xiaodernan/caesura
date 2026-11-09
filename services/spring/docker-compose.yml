@@ -1,0 +1,70 @@
+# services/spring/docker-compose.yml —— 把五服务族一次起起来（KI-422）
+#
+# **先构建再起**（compose 不替你编译）：
+#   cd services/spring && mvn -DskipTests package
+#   cd services/spring && docker compose up
+#
+# 仓库挂在 /workspace：门要在这个目录里跑 `npm run …` / `node scripts/…`，
+# 而 node_modules 与 dist 也在里面 ⇒ 门跑的是**这份工作树**，不是容器里另装的一份。
+#
+# 每个服务用同一个 JRE 镜像跑**已经构建好的 jar**（compose 不是构建器）。
+# 需要真的构建镜像的话，另写 Dockerfile —— 那一族不在本批范围内。
+
+services:
+  caesura-registry:
+    image: eclipse-temurin:25-jre
+    working_dir: /workspace/services/spring
+    volumes:
+      - ../..:/workspace
+    command: ["java", "-jar", "caesura-registry/target/caesura-registry-0.1.0.jar"]
+    ports:
+      - "8761:8761"
+
+  caesura-config:
+    image: eclipse-temurin:25-jre
+    working_dir: /workspace/services/spring
+    volumes:
+      - ../..:/workspace
+    command: ["java", "-jar", "caesura-config/target/caesura-config-0.1.0.jar"]
+    ports:
+      - "8888:8888"
+
+  caesura-gate:
+    image: eclipse-temurin:25-jre
+    working_dir: /workspace/services/spring
+    volumes:
+      - ../..:/workspace
+    environment:
+      # 容器里配置服务器在 compose 网络里，不在 127.0.0.1
+      CAESURA_CONFIG_URL: "http://caesura-config:8888"
+    depends_on:
+      - caesura-config
+      - caesura-registry
+    command: ["java", "-jar", "caesura-gate/target/caesura-gate-0.1.0.jar"]
+    ports:
+      - "8081:8081"
+
+  caesura-report:
+    image: eclipse-temurin:25-jre
+    working_dir: /workspace/services/spring
+    volumes:
+      - ../..:/workspace
+    depends_on:
+      - caesura-gate
+      - caesura-registry
+    command: ["java", "-jar", "caesura-report/target/caesura-report-0.1.0.jar"]
+    ports:
+      - "8082:8082"
+
+  caesura-gateway:
+    image: eclipse-temurin:25-jre
+    working_dir: /workspace/services/spring
+    volumes:
+      - ../..:/workspace
+    depends_on:
+      - caesura-gate
+      - caesura-report
+      - caesura-registry
+    command: ["java", "-jar", "caesura-gateway/target/caesura-gateway-0.1.0.jar"]
+    ports:
+      - "8099:8099"

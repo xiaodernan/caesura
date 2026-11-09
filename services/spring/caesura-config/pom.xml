@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>caesura</groupId>
+    <artifactId>caesura-spring</artifactId>
+    <version>0.1.0</version>
+  </parent>
+  <artifactId>caesura-config</artifactId>
+  <name>caesura-config</name>
+  <description>Spring Cloud Config Server：门名册与阈值的唯一出处（KI-422）</description>
+
+  <dependencies>
+    <!-- 坐标是 `spring-cloud-config-server`（不是 `spring-cloud-starter-config-server`）：
+         2025.0.3 那一支的 config 子 BOM 只管这三个：config-server / config-client / starter-config。 -->
+    <dependency>
+      <groupId>org.springframework.cloud</groupId>
+      <artifactId>spring-cloud-config-server</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+</project>
