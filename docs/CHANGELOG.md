@@ -7,7 +7,7 @@
 > 结构：按 committer 月份升序；每月先一个小节总览，再每条一行（日期 · 短哈希 · 提交主题）。
 > 序号 N 只是行计数，与 KI 号无关。
 
-生成时间点（今的读数）：**660 笔提交**，2026-11 → 2026-09。
+生成时间点（今的读数）：**662 笔提交**，2026-11 → 2026-09。
 
 ## 按月索引
 
@@ -15,7 +15,7 @@
 |---|---|
 | 2026-09 | 170 |
 | 2026-10 | 413 |
-| 2026-11 | 77 |
+| 2026-11 | 79 |
 
 ---
 
@@ -612,82 +612,84 @@
 
 ---
 
-## 2026-11（77 笔）
+## 2026-11（79 笔）
 
-   1. 2026-11-09 · `90ecb24` · docs+plan: Phase 7 基本盘 docs/phase7-plan.md — 逐格对账 + 可落任务拆分（不代笔美术，不代签评审）
-   2. 2026-11-09 · `09e89f6` · docs: CHANGELOG.md — 机器生成的主干变更索引（658 笔，按 committer 月份升序，commit 即准、无主张）
-   3. 2026-11-09 · `5c0aa7d` · docs: Phase 9 基本盘 docs/perf-baseline.md — 第一张性能盘（KI‑335／KI‑418）
-   4. 2026-11-09 · `4c82088` · fix+test+docs: KI‑417 纠形 — 该五行今天可获取（pickGearItem 泛化齿轮掉落），改记为「零按名引用」+ 新加 rarity→gearBand 覆盖腿
-   5. 2026-11-09 · `47fdf81` · test+docs: KI‑393 响亮抄本一族结案 — 字面名册数组改由名册派生，名册一涨不再整批过期
-   6. 2026-11-09 · `74069f5` · feat+test+docs: KI‑418 Phase 9 量值盘落地 — node scripts/measure-probe.mjs（12 只混编 3600 拍，ai.update 每拍耗时可取）
-   7. 2026-11-09 · `3f01aaf` · test+docs: 路线图 #3.1/#3.3 落点结案 — 各走一半、段数上限、术语表、KI‑417 零引用名册
-   8. 2026-11-09 · `ae2c772` · test+docs: KI‑383 flow 落点 — boss-slot-bodies.test.ts（真数据奥斯塔拉+2 漂调者，1800 拍）
-   9. 2026-11-09 · `1e45e7e` · chore+deps+docs: KI‑408 结案 — vitest@5.1.0 / vite@8.3.6 / @vitest/coverage-v8@5.1.0 全量升级，npm audit 0 vulnerability
-  10. 2026-11-09 · `b7edece` · docs: roadmap-next.md #6 工具速查更新 —— 增补 npm run release / check-links
-  11. 2026-11-09 · `6c90f26` · tools: 新增 scripts/check-links.mjs（.md 文件交叉引用审计；跳过 node_modules/.scratch/dist 等；当前 21 份 .md，4 链全部可达）+ npm run check-links；PHASE-STATUS 随 PKG.scripts=14 同步
-  12. 2026-11-09 · `93886c1` · tools: 新增 scripts/release.mjs（tsc → validate:data → test → build → check-dist，全绿才输出 RELEASE CHECK OK）+ npm run release；PHASE-STATUS 随 PKG.scripts=13 同步
-  13. 2026-11-09 · `99e992b` · docs: roadmap-next.md — 从「竖切片」到「可玩本文版」的下一步讲解：逐项指向 KI 账本/PHASE-STATUS，不宣称任何裁决
-  14. 2026-11-09 · `c5428e2` · docs: README 指向 CONTRIBUTING 与 PHASE-STATUS（贡献流程入口可读）
-  15. 2026-11-09 · `ba537cc` · docs+id-scope-rules+test: 放行 .github 机器配置到 NAMED_HOLES（CI 本体不是交付件）＋ 更新 text-integrity 点文件名单（3 枚）＋ CONTRIBUTING.md 入库
-  16. 2026-11-09 · `6e8399c` · docs+converge: 收尾 addendum — 8 个 worktree 全数移除、唯一残余工程簿 D:/法环游戏；master d5145f1 领先 origin/master 76
-  17. 2026-11-09 · `d5145f1` · chore+ci: 编辑器/换行配置入库 —— .editorconfig + .gitattributes（文本 eol=lf／二进制 eol=binary）+ GitHub Actions check.yml + text-corpus 允许两条新点文件声明
-  18. 2026-11-09 · `8218b02` · docs+converge: 并轨结算 addendum — 全量复核（南道并轨后主干复跑：tsc 0 错 / 0 ERROR／2 WARN 均既有 / 4540 条 / 385 文件 / 0 红 / 门 F 1..187）
-  19. 2026-11-09 · `02e3fd4` · docs: LICENSE（版权所有 / All rights reserved）＋ package.json engines（node>=18, npm>=9）
-  20. 2026-11-09 · `c07d384` · tools+test+docs: KI‑416 项目在哪儿第一次可以由机器说出口 —— `npm run status`（正册／#1.5 系统表／TD+PF／#5.9 节号名册现取），PHASE-STATUS.md 嵌入与现读逐字对账；六条腿钉住（门 F 1..187 不变）
-  21. 2026-11-09 · `87d5a3e` · feat+test+docs: 南道 KI‑390～393 并轨落盘 —— 过场第五格 cinematic、playLive 第二道闸、敌意档派键止抄本
-  22. 2026-11-09 · `c700957` · docs: 新增根 README.md — 项目一句话／快速开始／验证指令／文档地图／工程约定（零 KI 号，纯事实）
-  23. 2026-11-09 · `4ee4b7f` · docs+ledger: 账本／计划去掉「架构 #5.9 待树静补登」——背书落在附录，七处 stale 改指已落节
-  24. 2026-11-09 · `985967f` · docs: 分支／工作簿收敛记录（2026-11-09）—— origin/master 并入、普查复原、陈旧豁免清账、worktree 处置与待裁登记
-  25. 2026-11-09 · `33914e8` · merge: origin/master（KI‑364/365/384/385）并入 master —— 校验器可注入数据根、注入根像数据根、红跑按文件计数、豁免名册证据载体
-  26. 2026-11-09 · `ea72d24` · docs: KI‑402~410 architecture backfill - isolated appendix, no inflight bytes
-  27. 2026-11-09 · `0d57c10` · docs: architecture backfill appendix KI‑402~410 (separate document, branch ki406-backfill)
-  28. 2026-11-08 · `44c3620` · docs: KI‑410 ledger evidence-chain break - git holds zero .png, artifacts/ never committed; 3 ledger png refs rewritten to honest '现场截图，未入库'; retains numbers/readouts, kills ghost paths
-  29. 2026-11-08 · `2220510` · docs: KI‑409 red-rate re-measure for in-flight critical path (ui-intents + cinematic-exit/owner/input-playlock) - 8/8 runs green across idle and loaded; pins the verify-after-lane threshold before 南道 lands
-  30. 2026-11-08 · `c53141b` · docs: KI‑407 pretest measurements - emptyReport gate probe 6/6 green (stale marker must go red, zero-coverage must keep one human-named slot, no silent pass); A.3 runbook complete; verdict still awaited
-  31. 2026-11-08 · `1455745` · docs: KI‑408 pretest measurements - vitest@5/vite@8/coverage-v8@5: native install conflicts (needs --legacy-peer-deps); single-file green; two full suites 15/14 reds all Test timed out in 5000ms on walk-tree gates; not an assertion fault; upgrade window required with explicit testTimeout raise
-  32. 2026-11-08 · `03a0a5c` · docs: KI‑408 npm audit remainder registered - 10 advisories all gated on breaking majors (vitest@5/vite@8/coverage-v8@5); dev-tooling only, not shipped; upgrade window required
-  33. 2026-11-08 · `91bb171` · deps: npm audit fix - source-map-js 1.2.1->1.2.2 (GHSA-68fv-2mgg-jv7q); remaining 10 advisories need vitest@5/vite@8 majors, not forced this session
-  34. 2026-11-08 · `30fad54` · docs+build: KI‑407 ledger row single-line fix, WORKPLAN three-cell fix, gitignore .tsc*.log - doc-audit gate green again
-  35. 2026-11-08 · `73b155d` · docs: KI‑407 coverage empty-report exit=2 registered - not a regression; three exits await verdict; floor untouched, not blessed
-  36. 2026-11-08 · `aadb32e` · fix+test: KI‑406 coverage tail head-compiles - drop private lookBackRemainTicks asserts, drop unused bus import
-  37. 2026-11-08 · `79f1dda` · add+test: KI‑406 coverage tail - Enemy lookBack disarm 3 legs, PlaceholderArena arena harness 6 legs - ai 99.76->100.00, world 94.96->100.00
-  38. 2026-11-08 · `355776a` · docs: ignore .cov-tmp and .scratch scratch artifacts (676MB coverage/red-rate dumps)
-  39. 2026-11-08 · `283a26b` · fix+test: KI‑319 shake envelope clean stale afterEach/import
-  40. 2026-11-08 · `c19b3d4` · feat+test+docs: KI‑406 stub to real - KI‑319/322/323/324 table-runtime ledger, ledger row + workplan batch added
-  41. 2026-11-08 · `2cfc626` · feat+test: KI‑319 shake envelope stub to real - parry roll 2 via CameraRig.shake, 30ms absent from SHAKE_TABLE
-  42. 2026-11-08 · `b956410` · feat+test: KI‑322/323/324 stub to real - KI‑322 dropped (ai-perception covers), KI‑323 stagger table-runtime ledger, KI‑324 reactions table-runtime ledger
-  43. 2026-11-08 · `1ab7949` · chore: drop duplicate ExecutionPose/Integrity unit tests - already covered by tests/world/execution-pose.test.ts and save.test.ts
-  44. 2026-11-08 · `08efc82` · add+test: core.GameTime unit test - paused dt, hitStop channel edge, extend-not-reenter, reset
-  45. 2026-11-08 · `def3636` · add+test: tools.PerfDebugger unit test - perfPanelText every row readable
-  46. 2026-11-08 · `a805fee` · add+test: vfx.VfxConfig unit test - blendingOf/colorOf, decal/trail/emitter row conversion
-  47. 2026-11-08 · `c4158e3` · add+test: save.Checkpoint unit test - async queue coalescing, failure counting, flush
-  48. 2026-11-08 · `385f4c9` · add+test: combat.GroundedSpears unit test - plant id seq, normalized dir, nearestWithin horizontal distance, remove/clear
-  49. 2026-11-08 · `b7081a7` · add+test: combat.EntityStats unit test - spendStamina/drain, addPoise crumple, damage/heal clamp, addFissure layers, guarding regen cap
-  50. 2026-11-08 · `8799c0f` · add+test: world.ExecutionPose unit test - collapse ease-in curve, chop three phases, clamp bounds
-  51. 2026-11-08 · `1b730b8` · add+test: save.Integrity unit test - crc32 roundtrip, magic/version/crc gates, tamper detection
-  52. 2026-11-08 · `8c3b496` · add+test: quest.WorldStates unit test - registry whitelist, default read, snapshot/restore, stale rollback
-  53. 2026-11-08 · `468eabb` · add+test: quest.WorldState unit test - rule firing, idempotency, reverse writerOf, flagsWritten
-  54. 2026-11-08 · `be4d9d9` · add+test: quest.Quests unit test - task state machine, relations clamp, seen cache, snapshot restore, flag advance
-  55. 2026-11-07 · `717c1af` · add+test: player.CameraRig unit test - shake table, exec dolly, mode config, falloff
-  56. 2026-11-07 · `1ee91ca` · add+test: settings.Bindings unit test - clampBindings trust boundary and clampProfiles slots
-  57. 2026-11-07 · `d96dd09` · add+test: settings.GameplaySettings unit test - clampGameplaySettings trust boundary and store applyToTargets
-  58. 2026-11-07 · `84b883b` · fix+test: KI‑322/323/401 stub tsc reds - ts-nocheck + squadSystem getter
-  59. 2026-11-07 · `8af9945` · fix+test+docs: KI‑402~405 账本与工作面补登，修复 announce-label-source/head-compiles/import-targets 门红
-  60. 2026-11-06 · `f12b204` · feat+test+docs: KI‑405 音色晶调包节拍器——晶碎在鼓边 6 米内，鼓手与鼓都不死，全营照样丢拍（#6.5）
-  61. 2026-11-06 · `3e6603c` · feat+test+docs: KI‑404 打鼓面 4 记震裂背击 ⇒ 鼓崩、全营丢拍——驼鼓不死也能把营地的拍敲碎（#14.3）
-  62. 2026-11-06 · `b8178b1` · feat+test+docs: KI‑403 鼓停后的搜场每 4 小节整营集体回头——圈心钉在鼓位、回头那拍视锥里的人当场进 chase（#6.5 后半句）
-  63. 2026-11-06 · `011105b` · feat+test+docs: KI‑402 鼓停⇒全营丢拍一小节——驼鼓一死，同营冻结 171 拍再落 Search 搜鼓位（#6.1/#6.5 第一次有机制）
-  64. 2026-11-06 · `3586937` · test+docs: KI‑401 复核仇恨表在脱战后会清——6 只 3.7 秒内全清，交战中 0 值条目仍留着（KI‑396②／KI‑397② 结案）
-  65. 2026-11-06 · `3a2fc8a` · feat+test+docs: KI‑400 营地大排队的等待圈不再排到脱手线外——12 只的 chase 5213 拍归零，外圈从 11 米叠人变回 10 米整圈
-  66. 2026-11-06 · `2e39fd1` · test+docs: KI‑399 乱战长跑的小队不变量——8 只混合 6000 拍 0 违例，尺子自检会响
-  67. 2026-11-06 · `874f37e` · feat+test+docs: KI‑398 撤退的第二条出口「被追上」——回头打，攻速 +10%，判定帧 86→79 拍
-  68. 2026-11-06 · `e83db16` · fix+test+docs: KI‑397 脱战的人不再占着攻击槽——4987 个空名额拍归零，反向臂 5143
-  69. 2026-11-05 · `0390ee9` · fix+test+docs: KI‑396 残血撤退不再每拍与战斗互踢——只装填一次，撤退者也不占槽
-  70. 2026-11-05 · `2b4f7b4` · docs: KI‑383 那一行里的两个裸竖线写成转义形——账本四道门从 4 红归零
-  71. 2026-11-05 · `9cd9207` · test+docs: KI‑395 队列在真实刷点下也量过——六只同一入口进来 139 拍散开，完全同点那格十秒
-  72. 2026-11-05 · `865bc78` · test+docs: KI‑394 还欠② 射手那条线也量过——六名射手三槽 0 个遮挡，反向臂 993 拍
-  73. 2026-11-05 · `dd7b951` · docs+refactor: KI‑394 换号——并发车道先占了 KI‑391，账本与代码注释同步改名
-  74. 2026-11-05 · `e7f4413` · feat+test+docs: KI‑391 主攻手的攻击线上不许站人——等待者让开通道，换人过渡之后稳态为 0
-  75. 2026-11-03 · `cd5f392` · fix+test: KI‑382 收尾——环形 hitbox 没有 radius，waitHoldRadius 的读数改成显式收窄
-  76. 2026-11-03 · `576bb1c` · feat+test+docs: KI‑343～KI‑390 改键／配置盒／扳机／停摆——25 个 KI 一次入库
-  77. 2026-11-02 · `07dd8e2` · feat+test+docs: KI‑385 豁免名册的证据交回读者——那枚从未落账的占号第一次有现开得到的载体
+   1. 2026-11-09 · `c0d561a` · test+docs: KI‑419 凝固声波目录门 — art-direction #1/#2/#7.1 与 materials.ts 第一次由机器对账
+   2. 2026-11-09 · `d053c3d` · docs: CHANGELOG 归一化呈现层（#→#、KI-→非 ASCII 连字符，0 条溯源令牌残留）+ perf-baseline 修正『KI‑3xx』残留
+   3. 2026-11-09 · `90ecb24` · docs+plan: Phase 7 基本盘 docs/phase7-plan.md — 逐格对账 + 可落任务拆分（不代笔美术，不代签评审）
+   4. 2026-11-09 · `09e89f6` · docs: CHANGELOG.md — 机器生成的主干变更索引（658 笔，按 committer 月份升序，commit 即准、无主张）
+   5. 2026-11-09 · `5c0aa7d` · docs: Phase 9 基本盘 docs/perf-baseline.md — 第一张性能盘（KI‑335／KI‑418）
+   6. 2026-11-09 · `4c82088` · fix+test+docs: KI‑417 纠形 — 该五行今天可获取（pickGearItem 泛化齿轮掉落），改记为「零按名引用」+ 新加 rarity→gearBand 覆盖腿
+   7. 2026-11-09 · `47fdf81` · test+docs: KI‑393 响亮抄本一族结案 — 字面名册数组改由名册派生，名册一涨不再整批过期
+   8. 2026-11-09 · `74069f5` · feat+test+docs: KI‑418 Phase 9 量值盘落地 — node scripts/measure-probe.mjs（12 只混编 3600 拍，ai.update 每拍耗时可取）
+   9. 2026-11-09 · `3f01aaf` · test+docs: 路线图 #3.1/#3.3 落点结案 — 各走一半、段数上限、术语表、KI‑417 零引用名册
+  10. 2026-11-09 · `ae2c772` · test+docs: KI‑383 flow 落点 — boss-slot-bodies.test.ts（真数据奥斯塔拉+2 漂调者，1800 拍）
+  11. 2026-11-09 · `1e45e7e` · chore+deps+docs: KI‑408 结案 — vitest@5.1.0 / vite@8.3.6 / @vitest/coverage-v8@5.1.0 全量升级，npm audit 0 vulnerability
+  12. 2026-11-09 · `b7edece` · docs: roadmap-next.md #6 工具速查更新 —— 增补 npm run release / check-links
+  13. 2026-11-09 · `6c90f26` · tools: 新增 scripts/check-links.mjs（.md 文件交叉引用审计；跳过 node_modules/.scratch/dist 等；当前 21 份 .md，4 链全部可达）+ npm run check-links；PHASE-STATUS 随 PKG.scripts=14 同步
+  14. 2026-11-09 · `93886c1` · tools: 新增 scripts/release.mjs（tsc → validate:data → test → build → check-dist，全绿才输出 RELEASE CHECK OK）+ npm run release；PHASE-STATUS 随 PKG.scripts=13 同步
+  15. 2026-11-09 · `99e992b` · docs: roadmap-next.md — 从「竖切片」到「可玩本文版」的下一步讲解：逐项指向 KI 账本/PHASE-STATUS，不宣称任何裁决
+  16. 2026-11-09 · `c5428e2` · docs: README 指向 CONTRIBUTING 与 PHASE-STATUS（贡献流程入口可读）
+  17. 2026-11-09 · `ba537cc` · docs+id-scope-rules+test: 放行 .github 机器配置到 NAMED_HOLES（CI 本体不是交付件）＋ 更新 text-integrity 点文件名单（3 枚）＋ CONTRIBUTING.md 入库
+  18. 2026-11-09 · `6e8399c` · docs+converge: 收尾 addendum — 8 个 worktree 全数移除、唯一残余工程簿 D:/法环游戏；master d5145f1 领先 origin/master 76
+  19. 2026-11-09 · `d5145f1` · chore+ci: 编辑器/换行配置入库 —— .editorconfig + .gitattributes（文本 eol=lf／二进制 eol=binary）+ GitHub Actions check.yml + text-corpus 允许两条新点文件声明
+  20. 2026-11-09 · `8218b02` · docs+converge: 并轨结算 addendum — 全量复核（南道并轨后主干复跑：tsc 0 错 / 0 ERROR／2 WARN 均既有 / 4540 条 / 385 文件 / 0 红 / 门 F 1..187）
+  21. 2026-11-09 · `02e3fd4` · docs: LICENSE（版权所有 / All rights reserved）＋ package.json engines（node>=18, npm>=9）
+  22. 2026-11-09 · `c07d384` · tools+test+docs: KI‑416 项目在哪儿第一次可以由机器说出口 —— `npm run status`（正册／#1.5 系统表／TD+PF／#5.9 节号名册现取），PHASE-STATUS.md 嵌入与现读逐字对账；六条腿钉住（门 F 1..187 不变）
+  23. 2026-11-09 · `87d5a3e` · feat+test+docs: 南道 KI‑390～393 并轨落盘 —— 过场第五格 cinematic、playLive 第二道闸、敌意档派键止抄本
+  24. 2026-11-09 · `c700957` · docs: 新增根 README.md — 项目一句话／快速开始／验证指令／文档地图／工程约定（零 KI 号，纯事实）
+  25. 2026-11-09 · `4ee4b7f` · docs+ledger: 账本／计划去掉「架构 #5.9 待树静补登」——背书落在附录，七处 stale 改指已落节
+  26. 2026-11-09 · `985967f` · docs: 分支／工作簿收敛记录（2026-11-09）—— origin/master 并入、普查复原、陈旧豁免清账、worktree 处置与待裁登记
+  27. 2026-11-09 · `33914e8` · merge: origin/master（KI‑364/365/384/385）并入 master —— 校验器可注入数据根、注入根像数据根、红跑按文件计数、豁免名册证据载体
+  28. 2026-11-09 · `ea72d24` · docs: KI‑402~410 architecture backfill - isolated appendix, no inflight bytes
+  29. 2026-11-09 · `0d57c10` · docs: architecture backfill appendix KI‑402~410 (separate document, branch ki406-backfill)
+  30. 2026-11-08 · `44c3620` · docs: KI‑410 ledger evidence-chain break - git holds zero .png, artifacts/ never committed; 3 ledger png refs rewritten to honest '现场截图，未入库'; retains numbers/readouts, kills ghost paths
+  31. 2026-11-08 · `2220510` · docs: KI‑409 red-rate re-measure for in-flight critical path (ui-intents + cinematic-exit/owner/input-playlock) - 8/8 runs green across idle and loaded; pins the verify-after-lane threshold before 南道 lands
+  32. 2026-11-08 · `c53141b` · docs: KI‑407 pretest measurements - emptyReport gate probe 6/6 green (stale marker must go red, zero-coverage must keep one human-named slot, no silent pass); A.3 runbook complete; verdict still awaited
+  33. 2026-11-08 · `1455745` · docs: KI‑408 pretest measurements - vitest@5/vite@8/coverage-v8@5: native install conflicts (needs --legacy-peer-deps); single-file green; two full suites 15/14 reds all Test timed out in 5000ms on walk-tree gates; not an assertion fault; upgrade window required with explicit testTimeout raise
+  34. 2026-11-08 · `03a0a5c` · docs: KI‑408 npm audit remainder registered - 10 advisories all gated on breaking majors (vitest@5/vite@8/coverage-v8@5); dev-tooling only, not shipped; upgrade window required
+  35. 2026-11-08 · `91bb171` · deps: npm audit fix - source-map-js 1.2.1->1.2.2 (GHSA-68fv-2mgg-jv7q); remaining 10 advisories need vitest@5/vite@8 majors, not forced this session
+  36. 2026-11-08 · `30fad54` · docs+build: KI‑407 ledger row single-line fix, WORKPLAN three-cell fix, gitignore .tsc*.log - doc-audit gate green again
+  37. 2026-11-08 · `73b155d` · docs: KI‑407 coverage empty-report exit=2 registered - not a regression; three exits await verdict; floor untouched, not blessed
+  38. 2026-11-08 · `aadb32e` · fix+test: KI‑406 coverage tail head-compiles - drop private lookBackRemainTicks asserts, drop unused bus import
+  39. 2026-11-08 · `79f1dda` · add+test: KI‑406 coverage tail - Enemy lookBack disarm 3 legs, PlaceholderArena arena harness 6 legs - ai 99.76->100.00, world 94.96->100.00
+  40. 2026-11-08 · `355776a` · docs: ignore .cov-tmp and .scratch scratch artifacts (676MB coverage/red-rate dumps)
+  41. 2026-11-08 · `283a26b` · fix+test: KI‑319 shake envelope clean stale afterEach/import
+  42. 2026-11-08 · `c19b3d4` · feat+test+docs: KI‑406 stub to real - KI‑319/322/323/324 table-runtime ledger, ledger row + workplan batch added
+  43. 2026-11-08 · `2cfc626` · feat+test: KI‑319 shake envelope stub to real - parry roll 2 via CameraRig.shake, 30ms absent from SHAKE_TABLE
+  44. 2026-11-08 · `b956410` · feat+test: KI‑322/323/324 stub to real - KI‑322 dropped (ai-perception covers), KI‑323 stagger table-runtime ledger, KI‑324 reactions table-runtime ledger
+  45. 2026-11-08 · `1ab7949` · chore: drop duplicate ExecutionPose/Integrity unit tests - already covered by tests/world/execution-pose.test.ts and save.test.ts
+  46. 2026-11-08 · `08efc82` · add+test: core.GameTime unit test - paused dt, hitStop channel edge, extend-not-reenter, reset
+  47. 2026-11-08 · `def3636` · add+test: tools.PerfDebugger unit test - perfPanelText every row readable
+  48. 2026-11-08 · `a805fee` · add+test: vfx.VfxConfig unit test - blendingOf/colorOf, decal/trail/emitter row conversion
+  49. 2026-11-08 · `c4158e3` · add+test: save.Checkpoint unit test - async queue coalescing, failure counting, flush
+  50. 2026-11-08 · `385f4c9` · add+test: combat.GroundedSpears unit test - plant id seq, normalized dir, nearestWithin horizontal distance, remove/clear
+  51. 2026-11-08 · `b7081a7` · add+test: combat.EntityStats unit test - spendStamina/drain, addPoise crumple, damage/heal clamp, addFissure layers, guarding regen cap
+  52. 2026-11-08 · `8799c0f` · add+test: world.ExecutionPose unit test - collapse ease-in curve, chop three phases, clamp bounds
+  53. 2026-11-08 · `1b730b8` · add+test: save.Integrity unit test - crc32 roundtrip, magic/version/crc gates, tamper detection
+  54. 2026-11-08 · `8c3b496` · add+test: quest.WorldStates unit test - registry whitelist, default read, snapshot/restore, stale rollback
+  55. 2026-11-08 · `468eabb` · add+test: quest.WorldState unit test - rule firing, idempotency, reverse writerOf, flagsWritten
+  56. 2026-11-08 · `be4d9d9` · add+test: quest.Quests unit test - task state machine, relations clamp, seen cache, snapshot restore, flag advance
+  57. 2026-11-07 · `717c1af` · add+test: player.CameraRig unit test - shake table, exec dolly, mode config, falloff
+  58. 2026-11-07 · `1ee91ca` · add+test: settings.Bindings unit test - clampBindings trust boundary and clampProfiles slots
+  59. 2026-11-07 · `d96dd09` · add+test: settings.GameplaySettings unit test - clampGameplaySettings trust boundary and store applyToTargets
+  60. 2026-11-07 · `84b883b` · fix+test: KI‑322/323/401 stub tsc reds - ts-nocheck + squadSystem getter
+  61. 2026-11-07 · `8af9945` · fix+test+docs: KI‑402~405 账本与工作面补登，修复 announce-label-source/head-compiles/import-targets 门红
+  62. 2026-11-06 · `f12b204` · feat+test+docs: KI‑405 音色晶调包节拍器——晶碎在鼓边 6 米内，鼓手与鼓都不死，全营照样丢拍（#6.5）
+  63. 2026-11-06 · `3e6603c` · feat+test+docs: KI‑404 打鼓面 4 记震裂背击 ⇒ 鼓崩、全营丢拍——驼鼓不死也能把营地的拍敲碎（#14.3）
+  64. 2026-11-06 · `b8178b1` · feat+test+docs: KI‑403 鼓停后的搜场每 4 小节整营集体回头——圈心钉在鼓位、回头那拍视锥里的人当场进 chase（#6.5 后半句）
+  65. 2026-11-06 · `011105b` · feat+test+docs: KI‑402 鼓停⇒全营丢拍一小节——驼鼓一死，同营冻结 171 拍再落 Search 搜鼓位（#6.1/#6.5 第一次有机制）
+  66. 2026-11-06 · `3586937` · test+docs: KI‑401 复核仇恨表在脱战后会清——6 只 3.7 秒内全清，交战中 0 值条目仍留着（KI‑396②／KI‑397② 结案）
+  67. 2026-11-06 · `3a2fc8a` · feat+test+docs: KI‑400 营地大排队的等待圈不再排到脱手线外——12 只的 chase 5213 拍归零，外圈从 11 米叠人变回 10 米整圈
+  68. 2026-11-06 · `2e39fd1` · test+docs: KI‑399 乱战长跑的小队不变量——8 只混合 6000 拍 0 违例，尺子自检会响
+  69. 2026-11-06 · `874f37e` · feat+test+docs: KI‑398 撤退的第二条出口「被追上」——回头打，攻速 +10%，判定帧 86→79 拍
+  70. 2026-11-06 · `e83db16` · fix+test+docs: KI‑397 脱战的人不再占着攻击槽——4987 个空名额拍归零，反向臂 5143
+  71. 2026-11-05 · `0390ee9` · fix+test+docs: KI‑396 残血撤退不再每拍与战斗互踢——只装填一次，撤退者也不占槽
+  72. 2026-11-05 · `2b4f7b4` · docs: KI‑383 那一行里的两个裸竖线写成转义形——账本四道门从 4 红归零
+  73. 2026-11-05 · `9cd9207` · test+docs: KI‑395 队列在真实刷点下也量过——六只同一入口进来 139 拍散开，完全同点那格十秒
+  74. 2026-11-05 · `865bc78` · test+docs: KI‑394 还欠② 射手那条线也量过——六名射手三槽 0 个遮挡，反向臂 993 拍
+  75. 2026-11-05 · `dd7b951` · docs+refactor: KI‑394 换号——并发车道先占了 KI‑391，账本与代码注释同步改名
+  76. 2026-11-05 · `e7f4413` · feat+test+docs: KI‑391 主攻手的攻击线上不许站人——等待者让开通道，换人过渡之后稳态为 0
+  77. 2026-11-03 · `cd5f392` · fix+test: KI‑382 收尾——环形 hitbox 没有 radius，waitHoldRadius 的读数改成显式收窄
+  78. 2026-11-03 · `576bb1c` · feat+test+docs: KI‑343～KI‑390 改键／配置盒／扳机／停摆——25 个 KI 一次入库
+  79. 2026-11-02 · `07dd8e2` · feat+test+docs: KI‑385 豁免名册的证据交回读者——那枚从未落账的占号第一次有现开得到的载体

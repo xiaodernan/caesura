@@ -45,7 +45,7 @@ en_tympanus×2 / en_myriad / en_refrein / en_hanged_knight`）开局即最大负
 |---|---|---|
 | 全量测试 wall 时间 | ~132–152 s | `npm run release` 本次会话两趟汇总 |
 | red-rate（ui-intents／cinematic 三件套） | idle reds/4 = 0、loaded reds/4 = 0；负载倍数 2.34× | KI-409 |
-| 主干计数 | 4550 条 / 389 文件全绿 | `npm run check` |
+| 主干计数 | 4555 条 / 390 文件全绿 | `npm run check` |
 | tsc / validate:data | 0 错 / 0 ERROR／2 WARN（既有） | `npm run release` |
 
 ---
