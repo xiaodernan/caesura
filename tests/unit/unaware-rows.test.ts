@@ -5,16 +5,19 @@ import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
 
 /**
- * KI-417：items.json 里「引用方为零」的行——装备获取通道未接的缺桩，第一次被机器数出来。
+ * KI-417：items.json 里**按名引用为零**的行——本来的判断错了形状，按重新量到的真相改口。
  *
- * §55／KI-047 那族（「无消费方的数据不许入表」）的姊妹判据，作用在**料表**而不是配置表：
- * 真数据扫描（src/ + tests/，排除 items.json 自己）发现恰好五行没有任何文件点名它们——
- * 三把武器的随身物品行（wp_fortissimo_greatsword_item／wp_overtone_bow_item／wp_tuningfork_staff_item）、
- * 钟皮胸甲 ar_ostlaraweave_cuirass（epic）、音徽·留鼓 seal_drumlegend（epic）。
+ * 第一版登记（2026-11-09 晨）把这五行叫「装备获取通道尚未接线的缺桩」。复核（同日）：
+ * `Loot.pickGearItem` 按 `gear.rarity` 从 items.json **泛化**选装备——Loot 表（loot_chest_t1/t2/t3、
+ * camp_store、camp、secret_nave/bellinterior、敌人表 gearBand 各行）今天就在滚 uncommon/rare/rareplus/
+ * epic 四档，而 `scripts/validate-data.mjs` 的 KI-042 腿兜底「gearBand 指到的稀有度没有任何装备件 ⇒ ERROR」。
+ * 也就是说这五行（uncommon×2、rare×1、epic×2）**通过泛化抽取是可获取的**；它们「按名零引用」只是
+ * 「没有 milestone/firstKill/测试点名它们」——这正是泛化掉落的自然形态，不是坏。
  *
- * 本文件**不**删行、不接线——那是装备获取通道（loot/shop 目前不出任何装备件）的设计问题，
- * 由产品方向裁决（KI-417），不在这里代裁。本文件做的是同 KI-136 一个动作：把这五行
- * 钉在一张名册上，让机器红在「又多了第六行」，而不是让缺口悄悄长。
+ * 那这个门钉的是什么，以及它防什么：它钉的是**按名引用为零的行名册**——哪些行今天只靠泛化抽中。
+ * 防的是：以后新加一件只想「挂在随身表不接线就别特步走」的装备行，让它的存在无人对账；
+ * 名册会在它出现时红，逼它要么被泛化掉落成为真的可获取（稀有度被某个 gearBand 真在滚）、
+ * 要么被删（§55 无消费方的数据不许入表——那是产品方向裁决）、要么被点名接线。
  */
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
@@ -65,6 +68,17 @@ describe('KI-417｜items.json 引用方为零的行名册', () => {
   it('名册里的每一行都还在 items.json 里（接线后漏更新名册＝这条红）', () => {
     const ids = new Set(items.map((r) => r.id))
     for (const id of KNOWN_ORPHANS) expect(ids.has(id), id).toBe(true)
+  })
+
+  it('名册里的每一行，其稀有度今天仍被 loot.json 的某个 gearBand 滚到（gearBand 改表后仍能掷中它们——本名册跟着真相走）', () => {
+    const loot = JSON.parse(readFileSync(join(ROOT, 'src/data/json/loot.json'), 'utf8')) as Array<{ rolls?: { gearBand?: { rarity: string }[] }[] }>
+    const rolled = new Set(loot.flatMap((t) => (t.rolls ?? []).flatMap((r) => (r.gearBand ?? []).map((b) => b.rarity))))
+    for (const id of KNOWN_ORPHANS) {
+      const item = items.find((r) => r.id === id)!
+      const rarity = (item as unknown as { gear?: { rarity?: string } }).gear?.rarity
+      if (!rarity) throw new Error(`${id} 要有 gear.rarity`)
+      expect(rolled.has(rarity), `${id}（${rarity}）今天必须至少有一张 gearBand 真在滚这个档——滚不到就是名册里的行悄悄死了`).toBe(true)
+    }
   })
 
   it('反向：语料里只剩 items.json 自己 ⇒ 全表都被标成零引用（判据没把输入表当引用者）', () => {
