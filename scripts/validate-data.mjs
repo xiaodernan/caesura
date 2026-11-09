@@ -61,6 +61,9 @@ import {
   weatherFindings, weatherSwitchFindings,
 } from './weather-rules.mjs'
 import { cinematicBudgetErrors, cinematicReferenceErrors } from './cinematic-rules.mjs'
+// KI-436（结案 KI-434）：§8 受击反应表的名册／区间/档间关系全搬进判据本体，这里只剩那张嘴。
+// 搬的理由是量出来的：删掉区间表里的一格，校验器一条 finding 都不报（KI-433 臂 A6）——两半之间没有对账。
+import { REACTION_FIELDS, REACTION_SPECS, reactionFindings } from './reaction-rules.mjs'
 // KI-094 同族：§37 区域光照预设表（`lp_*`）那几条**跨文件**判据的本体。这里只把 regions.json 里
 // 被指着的名字读出来当输入，再把 findings 报成 ERROR。
 import { LIGHTING_FIELDS, lightingFindings } from './lighting-rules.mjs'
@@ -1153,51 +1156,30 @@ function validateSquad() {
 }
 
 // ---- reactions.json ----
-/** §8 受击反应表：只许写有承载体的行（KI-050 立规，KI-052① 补齐分级那三档）。一行一消费口，加行必须先接线 */
-const REACTION_FIELDS = {
-  // 消费方：ai/Enemy.onDamaged（§8 R0「架势未破，仅抖动材质发光」——材质发光时长是这一档的全部产品）
-  R0: ['flashMs'],
-  // 消费方：player/ThirdPersonController.takeDamage（玩家受击一律 R1 等效）+ CombatManager.applyReactionTier（玩家轻击打在敌人身上）
-  R1: ['stunMs', 'displaceM'],
-  // 消费方：CombatManager.applyReactionTier（重击 / 战技出手的默认档，TIER_BY_KIND）
-  R2: ['stunMs', 'displaceM'],
-  // 消费方：同上，但要有招式帧的 `reaction:"R3"` 声明才走这一档（今天只有 §4.2 强音大剑跳劈点名）
-  R3: ['stunMs', 'displaceM'],
-  R4: ['crumpleMs', 'bossCrumpleMs', 'crumpleDmgMul'], // 消费方：前两格 combat/EntityStats.addPoise（经 armCrumple 上弦）；crumpleDmgMul combat/Reactions.ts:crumpleDamageMul → CombatManager 的破势乘算
-}
-const REACTION_SPECS = {
-  R0: { flashMs: { min: 1 } },
-  R1: { stunMs: { min: 1 }, displaceM: { min: 0 } },
-  R2: { stunMs: { min: 1 }, displaceM: { min: 0 } },
-  R3: { stunMs: { min: 1 }, displaceM: { min: 0 } },
-  R4: { crumpleMs: { min: 1 }, bossCrumpleMs: { min: 1 }, crumpleDmgMul: { min: 1 } },
-}
-
+/**
+ * §8 受击反应表的**嘴**（KI-436：判据本体在 `reaction-rules.mjs`）。
+ * 这里只做两件判据本体做不了的事：
+ *  ① 把 findings 报成 ERROR；
+ *  ② 逐格 min/max 仍然走 `report.sub` —— 那条消息的主人与其余各表同一份，不另写第二份说法。
+ *
+ * `REACTION_SPECS[id] ?? {}` 不是装饰：名册里有一档而区间表里那一档被删掉时，
+ * `report.sub` 拿到 `undefined` 会在 `Object.entries` 上抛 TypeError，**整份报告一条都不印**
+ * （KI-087 在 STATUS 那一族量到过这个崩法，C7b）。兜成 `{}` 之后那一档只是不报数值界，
+ * 而「名册有而区间无」这句话由 `reactionLedgerErrors` 说——它在 `reactionFindings` 的最前面，
+ * 不依赖真表，所以数据读坏了也照样要说。
+ */
 function validateReactions() {
   const file = 'reactions.json'
   const d = data[file]
-  if (!isObj(d)) { report.error(file, file, '顶层必须是对象（按 R 行名键控）'); return }
-  for (const id of Object.keys(REACTION_FIELDS)) {
-    if (d[id] === undefined) report.error(file, id, `缺少 '${id}' 这一行：它已有消费方（onDamaged / takeDamage / applyReactionTier / addPoise），缺行就是运行时抛错`)
+  for (const f of reactionFindings(file, d)) {
+    if (f.level === 'warn') report.warn(f.file, f.where, f.msg)
+    else report.error(f.file, f.where, f.msg)
   }
+  if (!isObj(d)) return
   for (const [id, row] of Object.entries(d)) {
-    if (!REACTION_FIELDS[id]) { report.error(file, id, `'${id}' 在这份 build 里没有承载体：§55 不许写没有消费方的行（R5 浮空＝敌人不会离地，见 KI-052）`); continue }
-    if (!isObj(row)) { report.error(file, id, '必须是对象'); continue }
-    for (const k of Object.keys(row)) {
-      if (!REACTION_FIELDS[id].includes(k)) report.error(file, `${id}.${k}`, `不认的字段：新字段必须同时接上消费方（本行可用：${REACTION_FIELDS[id].join('/')}）`)
-    }
-    report.sub(file, id, row, REACTION_SPECS[id])
-  }
-  // 分级序：R1 < R2 < R3 必须是"越重越疼"，否则这张表是在奖励用轻击
-  const tiers = ['R1', 'R2', 'R3'].map((id) => (isObj(d[id]) ? d[id] : null))
-  if (tiers.every(Boolean)) {
-    const [t1, t2, t3] = tiers
-    if (!(t1.stunMs <= t2.stunMs && t2.stunMs <= t3.stunMs)) report.error(file, 'R1/R2/R3', `硬直时长必须递增：${t1.stunMs}/${t2.stunMs}/${t3.stunMs}`)
-    if (!(t1.displaceM <= t2.displaceM && t2.displaceM <= t3.displaceM)) report.error(file, 'R1/R2/R3', `位移必须递增：${t1.displaceM}/${t2.displaceM}/${t3.displaceM}`)
-  }
-  const r4 = isObj(d.R4) ? d.R4 : null
-  if (r4 && isNum(r4.crumpleMs) && isNum(r4.bossCrumpleMs) && r4.bossCrumpleMs < r4.crumpleMs) {
-    report.error(file, 'R4', `bossCrumpleMs(${r4.bossCrumpleMs}) 必须 ≥ crumpleMs(${r4.crumpleMs})：Boss 不该比小兵破势更短`)
+    // 浮空档（名册不认的 id）没有它的界可问：上面已报「没有承载体」
+    if (!(id in REACTION_FIELDS)) continue
+    report.sub(file, id, row, REACTION_SPECS[id] ?? {})
   }
 }
 

@@ -18,14 +18,14 @@
 | ARCH.sections | 187（maxSection=187，duplicates=0，holes=none） |
 | PKG.scripts / PKG.deps / PKG.devDeps | 14 / 1 / 6 |
 
-当前全量：门 `tsc --noEmit` 0 错；`validate:data` 0 ERROR／2 WARN（均既有）；测试 **4574 条 / 392 个文件**
+当前全量：门 `tsc --noEmit` 0 错；`validate:data` 0 ERROR／2 WARN（均既有）；测试 **4663 条 / 395 个文件**
 全部跑到且全绿（门 `node scripts/test.mjs`）。
 
 <!-- PHASE-STATUS:BEGIN-KV -->
 ```
-KI.rows=358
-KI.Implemented=180
-KI.Partial=168
+KI.rows=359
+KI.Implemented=182
+KI.Partial=167
 KI.Placeholder=0
 KI.Blocked=10
 SYS.rows=92
@@ -43,8 +43,8 @@ PF.Implemented=0
 PF.Partial=0
 PF.Placeholder=0
 PF.Blocked=1
-ARCH.sections=194
-ARCH.maxSection=194
+ARCH.sections=195
+ARCH.maxSection=195
 ARCH.duplicates=0
 ARCH.holes=none
 PKG.scripts=14
