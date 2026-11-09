@@ -283,6 +283,21 @@ describe('分叉的**范围**：枝数只加在弓的满弓上（KI-334：实现
     expect(fire(0), '指法 0：满弓照样 4 发（⇒ 没有「指法≥30」这道门）').toBe(4)
     expect(fire(99), '指法 99：也是 4 发（⇒ 不是"指法越高分叉越多"）').toBe(4)
   })
+
+  it('腿⑨ 「枝数只加在有 burst 的式子上」＝「只加在弓的满弓上」：今天全仓只有满弓声明了 burst（KI-423）', () => {
+    // 这一格钉的是上面那条规则**依赖的前提**：全仓只有弓的满弓声明了 burst ⇒ 那两条等价。
+    // 若将来给别的招式加了 burst ⇒ 这一格会红 ⇒ 那是提醒人回来重裁「分叉的适用范围」
+    // （设计有权加，但那时 `combat.md` §4.5「杖不分享叉」那句要一起改）。
+    const withBurst: string[] = []
+    for (const id of registry.ids('moveset:')) {
+      const ms = registry.get<MovesetData>(id)
+      for (const key of Object.keys(ms.actions)) {
+        const f = ms.actions[key]
+        if (f?.projectile?.burst) withBurst.push(`${ms.id}.${key}`)
+      }
+    }
+    expect(withBurst, '今天全仓只有弓的满弓声明了 burst ⇒「枝数只加在有 burst 的式子上」＝「只加在弓的满弓上」；若给别的招式加了 burst ⇒ 这一格会红 ⇒ 回来重裁「分叉的适用范围」').toEqual(['ms_bow.charged'])
+  })
 })
 
 describe('改表法：这两格读的是表，不是常数（反向实测）', () => {
