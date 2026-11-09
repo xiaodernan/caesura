@@ -243,7 +243,7 @@ export interface Snapshot {
    * 同一句话有两种写法就是两个主人（§78「留空是如实」）。它与 `bindings` 各归各：这一格是
    * 「玩家留了几套」，那一格是「玩家此刻在用哪一张」，混成一格就变成"存个文件顺手换了键"。
    */
-  settings?: { audio: Record<string, number>; gameplay?: GameplaySettings; bindings?: Bindings; bindingsProfiles?: BindingProfile[] }
+  settings?: { audio: Record<string, number>; gameplay?: GameplaySettings; bindings?: Bindings; bindingsProfiles?: BindingProfile[]; quality?: number }
   /** 成长/背包/装备/掉落状态（v2 起）。v1 老档为 null ⇒ 保留运行时基线 */
   rpg: RpgSnapshot | null
   /** 叙事进度（v7 起）：任务状态 / NPC 关系 / 对话已读节点。老档为 null ⇒ 一切从头 */
@@ -441,6 +441,12 @@ export interface SaveWorld {
    */
   gameplay?: { get(): GameplaySettings; apply(raw: unknown): void }
   /**
+   * Phase 7 ／ KI-420：画质档（`settings.quality`）——OPTIONAL 接口，与 `gameplay` 同一位子。
+   * `get` 在 capture 被调用、`apply` 在 restore 开跑前调用；缺档 ⇒ 什么都不做（§78）。
+   * 档位只有一张表（`settings/Quality.ts > QUALITY_PROFILES`）——`get`/`apply` 的实现住在 QualityStore。
+   */
+  quality?: { get(): number; apply(raw: unknown): void }
+  /**
    * KI-336：键位表的消费端（可选，结构式声明），与 `gameplay` 同一位子——`get` 供 capture 抄进档，
    * `apply` 供读档灌回 `Input`。raw 进 apply 前同样不被信任：校验在 `BindingsStore.restore` 里做。
    */
@@ -499,7 +505,7 @@ export class SaveGame {
       brokenProps: w.props ? w.props.snapshot() : [],
       settings: (() => {
         // 音频（KI-026）、玩法（KI-112）、键位（KI-336）三块各自独立：只接了其中一边的世界也不该丢其余的档
-        if (!w.audio && !w.gameplay && !w.bindings) return undefined
+        if (!w.audio && !w.gameplay && !w.bindings && !w.quality) return undefined
         const audio: Record<string, number> = {}
         if (w.audio) {
           const buses = ['master', 'music', 'sfx', 'ambience', 'ui']
@@ -510,7 +516,9 @@ export class SaveGame {
           gameplay: w.gameplay ? w.gameplay.get() : undefined,
           bindings: w.bindings ? w.bindings.get() : undefined,
           // KI-362：那三盒跟着走，但**只在存过东西的时候**写（undefined 由 store 那一侧回答，不在这里再数一遍）
-          bindingsProfiles: w.bindings ? w.bindings.profiles.get() : undefined
+          bindingsProfiles: w.bindings ? w.bindings.profiles.get() : undefined,
+          // KI-420：没接 QualityStore 的世界一个字节都不多
+          ...(w.quality ? { quality: w.quality.get() } : {}),
         }
       })(),
       rpg: w.rpg ? w.rpg.snapshot() : null,
@@ -602,6 +610,8 @@ export class SaveGame {
     // KI-112：玩法设置灌回消费者。老档没这格 ⇒ undefined ⇒ restore 自己的"不动"语义，
     // 运行时保持当前值（不假装重置成默认——那份档根本没记过设置）
     w.gameplay?.apply(s.settings?.gameplay)
+    // KI-420：画质档的灌注（可选；老档没有 quality ⇒ 不动，§78）。坏档由 QualityStore.apply 的信任边界回默认，不喂消费者
+    w.quality?.apply(s.settings?.quality)
     // KI-336：键位表整张换回。同一句 §78：老档没记过绑定 ⇒ 不动，运行时保持当前那一张
     w.bindings?.apply(s.settings?.bindings)
     // KI-362：那三盒磁带放回去，但**不换现表**——换表只有玩家按「载入」那一步（store 里唯一的灌注点在 `loadProfile`）。

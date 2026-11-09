@@ -64,7 +64,7 @@ git commit -F <messageFile>
 > caesura@0.1.0 check
 > tsc --noEmit        # 0 错
 > npm run validate:data  # 0 ERROR / 2 WARN (既有)
-> npm run test         # 4555 条 / 390 文件 / 0 fail
+> npm run test         # 4574 条 / 392 文件 / 0 fail
 ```
 
 ## 6. 不允许的事
@@ -122,4 +122,4 @@ git commit -F <messageFile>
 | 登记 / 记账 | 把一件事写进账本（哪怕不解决它，也写清楚它是什么）。 |
 | 量具 | 量东西的脚本本身（`scripts/coverage.mjs` 等）——量具坏了 ≠ 覆盖率掉了。 |
 | 纯类型文件 | istanbul 记 0 可执行行的文件（如 `src/data/schema.ts`），不进覆盖率分母。 |
-| 全量 | `npm run check`／全套测试（当前：4555 条 / 390 文件——以 `npm test` 现读为准）。 |
+| 全量 | `npm run check`／全套测试（当前：4574 条 / 392 文件——以 `npm test` 现读为准）。 |

@@ -254,13 +254,30 @@ class EmitterInstance {
 }
 
 /** GPU 粒子系统管理器：统一管理所有发射器 */
+/** 有效预算乘数：默认 1，必须是有限正数（0 会让粒子系统悄悄退化成不生成，§55 不许） */
+const budgetMulOf = (v?: number): number =>
+  typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : 1
+
+/** 把一份发射器配置按乘数热缩一遍（spawnRate 与 maxParticles 一起缩放——池子与几何按缩放后尺寸建） */
+const scaleConfig = (cfg: EmitterConfig, mul: number): EmitterConfig => {
+  if (mul === 1) return cfg
+  return {
+    ...cfg,
+    spawnRate: cfg.spawnRate * mul,
+    maxParticles: Math.max(1, Math.floor(cfg.maxParticles * mul)),
+  }
+}
+
+/** GPU 粒子系统：天然可选预算乘数（Phase 7 画质档的扣板）——1 = 与之前逐字节一致 */
 export class GPUParticles {
   private scene: THREE.Scene
   private emitters = new Map<string, EmitterInstance>()
   private configs = new Map<string, EmitterConfig>()
+  private readonly budgetMul: number
 
-  constructor(scene: THREE.Scene) {
+  constructor(scene: THREE.Scene, opts?: { budgetMul?: number }) {
     this.scene = scene
+    this.budgetMul = budgetMulOf(opts?.budgetMul)
     this.loadConfigs()
   }
 
@@ -279,7 +296,8 @@ export class GPUParticles {
     if (this.emitters.has(id)) return this.emitters.get(id)!
     const cfg = this.configs.get(id)
     if (!cfg) return null
-    const instance = new EmitterInstance(cfg, this.scene)
+    const scaled = scaleConfig(cfg, this.budgetMul)
+    const instance = new EmitterInstance(scaled, this.scene)
     this.emitters.set(id, instance)
     return instance
   }
@@ -324,8 +342,8 @@ export class GPUParticles {
 // 全局单例（组合根持有）
 let gpuParticles: GPUParticles | null = null
 
-export function initGPUParticles(scene: THREE.Scene): GPUParticles {
-  gpuParticles = new GPUParticles(scene)
+export function initGPUParticles(scene: THREE.Scene, opts?: { budgetMul?: number }): GPUParticles {
+  gpuParticles = new GPUParticles(scene, opts)
   return gpuParticles
 }
 
