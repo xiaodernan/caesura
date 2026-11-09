@@ -193,6 +193,65 @@ describe('KI-403 鼓停后的搜场：每 4 小节整营集体回头（§6.5）'
     w.off()
   })
 
+  /* KI-437 #1：`Enemy.lookingBack` 落地之前，「回头那一拍还在进行」这句在 `sense` 与 `search`
+     各手写一遍，而 getter 零读者。这两条腿是那句话**现在真的住在 getter 里**的行为证人：
+     第一条量"真满多久"（窗口 = 表里那一拍，不多不少），第二条量 getter 删掉的那半句
+     （`&& frozenTicks <= 0`）本来就是上面那道冻结短路的重复陈述——冻结里连眼睛都没有。 */
+  it('getter 说的窗口恰好是一拍：钟响那一刻为真，站定 43 拍走完立刻为假', () => {
+    const w = makeWorld(84)
+    w.player.pos.x = 40 // 圈外且远在感知之外：这一条只量窗口，不让警觉爬升干扰
+    w.player.pos.z = 0
+    const tym = w.ai.spawn('en_tympanus', { x: 0, y: 0, z: -6 }, 'drum')
+    tym.alertness = 100
+    tym.enter('combat')
+    const a = w.ai.spawn('en_driftsinger', { x: 4, y: 0, z: -6 }, 'ally')
+    a.alertness = 100
+    a.enter('chase')
+    w.tick(2)
+    kill(w, tym)
+    expect(a.lookingBack, '刚装表：钟还没响').toBe(false)
+
+    w.tick(171 + EVERY - 1)
+    expect(a.lookingBack, '走到回头前一拍仍为假').toBe(false)
+
+    w.tick(1) // 钟响那一拍：`lookBackRemainTicks` 落下，getter 当场改口
+    const seen: boolean[] = [a.lookingBack]
+    for (let i = 0; i < HOLD; i++) {
+      w.tick(1)
+      seen.push(a.lookingBack)
+    }
+    expect(seen.filter(Boolean).length, `回头那半拍的窗口 = 表里的一拍（${HOLD}）`).toBe(HOLD)
+    expect(seen[HOLD], '站定那一拍走完，主人立刻说"没在回头"').toBe(false)
+    expect(a.lookingBack, '下一小节之前不再回头').toBe(false)
+    w.tick(EVERY - 2)
+    expect(a.lookingBack, '第二次回头之前一直是假').toBe(false)
+    w.off()
+  })
+
+  it('冻结里连眼睛都没有：把玩家塞到脸前，那 171 拍一格警觉不涨', () => {
+    const w = makeWorld(84)
+    const tym = w.ai.spawn('en_tympanus', { x: 0, y: 0, z: -6 }, 'drum')
+    tym.alertness = 100
+    tym.enter('combat')
+    const a = w.ai.spawn('en_driftsinger', { x: 4, y: 0, z: -6 }, 'ally')
+    a.alertness = 100
+    a.enter('chase')
+    w.tick(2)
+    kill(w, tym)
+    expect(a.frozenTicks, '丢拍那一小节').toBe(171)
+    expect(a.alertness, '丢拍把读条一起清掉').toBe(0)
+    // 站到他的脸正前方（+Z = 他的 yaw 朝向那一支），距离 1.5m——视锥与射程都覆盖得到
+    w.player.pos.x = a.pos.x + Math.sin(a.yaw) * 1.5
+    w.player.pos.z = a.pos.z + Math.cos(a.yaw) * 1.5
+    w.tick(171)
+    expect(a.frozenTicks).toBe(0)
+    expect(a.alertness, '冻结里那 28 次感知轮询一次都没看见 ⇒ `sense` 的短路就是唯一的那道门').toBe(0)
+
+    w.tick(30)
+    expect(a.alertness, '解冻后同一位置立刻看得见（否则上面那句是玩家根本没在视锥里）').toBeGreaterThan(0)
+    w.off()
+  })
+
   it('反向臂：数据里没有 lookBackEveryBars ⇒ 冻结照旧，但永远不回头', () => {
     const w = makeWorld(84)
     w.player.pos.x = 40

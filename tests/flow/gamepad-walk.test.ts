@@ -493,6 +493,49 @@ describe('KI-151 摇杆 → 相机 → 位移 → 焦点：整条链真的走得
   })
 
   /**
+   * **半径那一格的两半都要有腿**（KI-437 #4）：上面两条量的是 `collisionRadius > 0` 的那一半
+   * （Exploration＝0.35 ⇒ 停在墙前）。`src/player/CameraRig.ts` 里「过场期间不撞墙」这句话今天
+   * 只剩一个主人＝表里 `MODE_CONFIG[CameraMode.Cinematic].collisionRadius = 0` 那一格，
+   * 第二个开关 `collisionEnabled` 已删（它的唯一写方 `setCollision()` 在 HEAD 上零调用点：
+   * `git grep setCollision HEAD` 只数到定义那一行 ⇒ 那个字段恒为 true，是一道从不为假的死条件）。
+   *
+   * 但只删开关不算结案：表里那一格若没有一条腿在它身上，「半径作废」这一半就退化成一次表格读数
+   * （`camera-modes` 那两条 `toBe(0)` 钉的是**值**，不是**值起作用**）。这一条把摆位与上面两条完全
+   * 复用，只换模式 ⇒ 摘掉 `cfg.collisionRadius > 0` 这个条件（让碰撞恒开）时，红的正是这一条。
+   */
+  it('过场那一格：同一堵墙、同一个摆位，镜头直穿过去（半径=0 不是表格上的 0，是真的作废）', () => {
+    const r = newRun()
+    const camp = regions.find((x) => x.id === 'rg_brokenbar_camp')!
+    const wall = camp.walls!.find((w) => w.id === 'wb_camp_watch_screen')!
+    const occ = new OcclusionField()
+    occ.syncAuthored(camp)
+    r.player.occluders = () => occ.list()
+    r.rig.setOccluders(occ.list())
+    r.player.pos.x = wall.pos.x
+    r.player.pos.y = wall.pos.y
+    r.player.pos.z = wall.pos.z + 3
+    r.player.floorY = wall.pos.y
+    aimCamera(r, wall.pos.x, wall.pos.z + 13)
+    r.rig.setMode(CameraMode.Cinematic)
+    // 等镜头落位（判据＝机位不再动，不是"角度对上了"：飞过去的一路上会路过目标）
+    for (let i = 0; i < 600; i++) {
+      const before = r.rig.cam.position.clone()
+      r.set([0, 0], [0, 0])
+      r.tick()
+      if (before.distanceTo(r.rig.cam.position) < 1e-4) break
+    }
+    const cfg = MODE_CONFIG[CameraMode.Cinematic]
+    expect(cfg.collisionRadius, '这一条腿的前提就是表里那一格是 0').toBe(0)
+    const northFace = wall.pos.z + wall.size.z / 2
+    const camZ = r.rig.cam.position.z
+    expect(camZ, '过场里镜头该穿到墙的南面（被拉回墙前＝那个 0 没起作用）').toBeLessThan(northFace)
+    // 而且它穿过去之后落在**自由机位**上，不是被别的什么挡住的另一个数
+    const freeZ = r.player.pos.z - cfg.distBase * Math.cos(r.rig.pitch)
+    expect(Math.abs(camZ - freeZ), '过场机位＝目标 + 表里那一格的偏置（没有被碰撞改写过）')
+      .toBeLessThan(0.2)
+  })
+
+  /**
    * **锁定那一半**（KI-175）：锁定时相机走**越肩那一格**（KI-170 把它接上了），
    * 而且**侧移时镜头绕着目标转**——目标在画面里的位置不变。
    *

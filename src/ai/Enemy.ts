@@ -284,7 +284,12 @@ export class Enemy {
   lookBackEveryTicks = 0
   lookBackHoldTicks = 0
   lookBackNextTicks = 0
-  /** 回头那一拍进行中（测试与表现层读它；`sense` 的「当场看见」也用它） */
+  /**
+   * 回头那一拍进行中——**「`lookBackRemainTicks > 0`」这句话唯一的主人**。
+   * 读它的两处都是玩法自己：`sense` 里「回头那半拍真的看得见」（§6.5 难度↑那一支），
+   * `search` 里「这一拍还在站定转身」。此前这句在两个调用点各手写一遍，而这里只声明不生产；
+   * 表现层并没有读它（KI-437 量到旧注释那句「表现层读它」是假的）。
+   */
   get lookingBack(): boolean { return this.lookBackRemainTicks > 0 }
   /**
    * KI-403：丢拍之后的「搜场圈心」——鼓手倒下的地方。与 `lastKnown` 分开是这一条的命门：
@@ -573,9 +578,9 @@ export class Enemy {
       // KI-403 §6.5：回头那半拍是**真的在看**。视锥扫过圈外时被框住的人不是「慢慢被注意」，
       // 是当场被看见（警觉拉满，下一拍进 chase）——否则 §6.5 那句「难度↑」在算术上不成立：
       // search 里警觉本来就在以 20/s 衰减，3.4/次 的爬升抵掉衰减后永远到不了 100。
-      this.alertness = this.lookBackRemainTicks > 0 && this.frozenTicks <= 0
-        ? 100
-        : Math.min(100, this.alertness + 34 * 0.1)
+      // 「回头进行中」这句话只有一个主人（`lookingBack`）；此前这里手写 `lookBackRemainTicks > 0
+      // && frozenTicks <= 0`，后面那半句是上面那道冻结短路的重复陈述——冻结中的敌人到不了这一行。
+      this.alertness = this.lookingBack ? 100 : Math.min(100, this.alertness + 34 * 0.1)
       this.lastKnown = { ...p }
     } else if (dist <= (this.bossPhaseData?.vibrationRange ?? ai.vibration.range) && (playerIsMoving(player))) {
       // KI-024：聋乱期她改读地面——阶段可以给震动感知换半径。移动才算数：站定仍是安全的，
@@ -870,7 +875,7 @@ export class Enemy {
         // 只装了 `armLookBack` 的敌人才走这一支（普通追丢的 search 原样，KI-403 之前的全部口径不变）。
         if (this.lookBackEveryTicks > 0) {
           const anchor = this.searchAnchor ?? this.lastKnown
-          if (this.lookBackRemainTicks > 0) {
+          if (this.lookingBack) {
             this.lookBackRemainTicks--
             this.yaw += norm(this.lookBackFaceYaw - this.yaw) * LOOK_BACK_TURN_RATE
             if (this.lookBackRemainTicks === 0) this.yaw = this.lookBackFaceYaw

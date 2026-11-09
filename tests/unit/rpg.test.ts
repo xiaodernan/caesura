@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { registry } from '@/core/Registry'
 import { registerGameData, progression, items } from '@/data'
 import type { EnemyData, ItemData, LootTableData, MovesetData, OriginData, ProgressionData, WeaponData } from '@/data/schema'
 import { Progression, ATTR_KEYS, originOf, originTotal, progressionData } from '@/rpg/Progression'
-import { Inventory, itemOf, rollAffixes, affixValue, type GearInstance, type ItemSnapshot } from '@/rpg/Inventory'
+import { Inventory, itemOf, rollAffixes, affixValue, type GearAffix, type GearInstance, type ItemSnapshot } from '@/rpg/Inventory'
 import { Equipment, SLOTS, equipSeal } from '@/rpg/Equipment'
 import { upgradeStep, weaponDamageMul, armorDefMul, maxLevelOf, tryUpgrade, salvageValue, TIMBITE } from '@/rpg/Upgrade'
 import { sellGear, sellPrice, shopData, stackSellPrice } from '@/rpg/Shop'
@@ -22,6 +24,21 @@ import { Rng } from '@/core/Math'
 registerGameData()
 
 const prog = (): ProgressionData => progressionData()
+
+/**
+ * `Equipment.ts` 那两个 switch 的「词缀键 → `EquipMods` 字段」映射，从源码现推。
+ * 名单不住在测试里：加一条 case 而表里没人用它，或表里写了一个没人接的 stat，
+ * 都由用这份映射的那条普查当场说出口。
+ */
+function modFieldMapOf(fn: 'applyStat' | 'applyBehavior'): Record<string, string> {
+  const src = readFileSync(fileURLToPath(new URL('../../src/rpg/Equipment.ts', import.meta.url)), 'utf8')
+  const body = new RegExp(`function ${fn}\\b[\\s\\S]*?(\\{[\\s\\S]*?\\n\\})`).exec(src)
+  expect(body, `Equipment.ts 里读不到 ${fn}()：这条对账的对象换形状了`).toBeTruthy()
+  const out: Record<string, string> = {}
+  for (const m of body![1].matchAll(/case '([^']+)':\s*out\.([A-Za-z]+)/g)) out[m[1]] = m[2]
+  expect(Object.keys(out).length, `${fn}() 一个 case 都没读到 = 量具在空转`).toBeGreaterThan(0)
+  return out
+}
 
 describe('音级与遗响（§2.3/§8）', () => {
   it('等级曲线单调递增，且与 progression.md 的前十个锚点一致', () => {
@@ -419,6 +436,43 @@ describe('总装（RpgRuntime）：装备/升级/洗点/使用道具的编排', 
     const boots = inv.addGear('ar_silent_boots')
     eq.equip(inv, boots.uid)
     expect(eq.totals(inv).noiseMul).not.toBe(1)
+  })
+
+  /**
+   * 上面那条腿此前**只量了 noiseMul 一条链**，却写着"每个词缀都有消费链"——那是一句谎旗。
+   * 真实形状是：`af_chain`（之连，`stat: comboScaling`）那条 case 在全仓库从未被执行过，
+   * 因为连段那侧的测试用 `applyRpg({...rpg.mods(), comboScaling})` 把数**注入**进去了，
+   * 出厂路径（`Inventory.addGear` → `Equipment.totals` → `applyStat`）一步没走。
+   *
+   * 这条普查把"消费链"变成读数：对表里**每一条**词缀，造一件宿主装备带着它穿上，
+   * 再问 `totals()` 里那一条落点动没动。落点字段不手抄——从 `Equipment.ts` 那两个 switch 现推，
+   * 所以加一条 case 而忘了对应词缀、或词缀写了没人接的 stat，都会当场红在这里。
+   */
+  it('每条词缀都真的走一遍出厂路径：装上它，`totals()` 里对应那一格必须动', () => {
+    const statField = modFieldMapOf('applyStat')
+    const behaviorField = modFieldMapOf('applyBehavior')
+    const defs = [...progression.affixes.prefix, ...progression.affixes.suffix]
+    const host = (items as ItemData[]).find((it) => it.gear?.slot === 'helm') as ItemData
+    expect(host, '找不到一件能穿的盔当词缀宿主').toBeTruthy()
+    let seed = 900
+    const totalsWith = (affixes: GearAffix[]): Record<string, number> => {
+      const inv = new Inventory(seed++)
+      const eq = new Equipment()
+      eq.equip(inv, inv.addGear(host.id, 0, affixes).uid)
+      return eq.totals(inv) as unknown as Record<string, number>
+    }
+    const base = totalsWith([])
+    for (const a of defs) {
+      const key = a.stat ?? a.behavior
+      expect(key, `${a.id} 既没有 stat 也没有 behavior`).toBeTruthy()
+      const field = (a.stat ? statField : behaviorField)[key!]
+      expect(field, `${a.id} 的 '${key}' 在 Equipment 的两个 switch 里没有落点：这条词缀出厂后没人接`).toBeTruthy()
+      // 数值取表里区间的中点；行为型没有 range，给一个中性的 1——这条腿量的是接线，不是设计数
+      const value = a.range ? (a.range[0] + a.range[1]) / 2 : 1
+      expect(value, `${a.id} 的取值是 0：这条普查量不出动静`).not.toBe(0)
+      expect(totalsWith([{ id: a.id, value }])[field!] - base[field!],
+        `词缀 ${a.id}（${key} → EquipMods.${field}）装上后那一格没动：那条 case 从未被执行`).toBeCloseTo(value, 9)
+    }
   })
 })
 

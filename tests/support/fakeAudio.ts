@@ -42,14 +42,15 @@ export class FakeParam {
       this.events = this.events.filter((e) => e.at < at)
       return this
     }
-    this.events.push({ kind, value: v, at })
+    if (tc === undefined) this.events.push({ kind, value: v, at })
+    else this.events.push({ kind, value: v, at, tc })
     if (kind === 'set') this.value = v
     return this
   }
   setValueAtTime(v: number, at: number): this { return this.push('set', v, at) }
   linearRampToValueAtTime(v: number, at: number): this { return this.push('lin', v, at) }
   exponentialRampToValueAtTime(v: number, at: number): this { return this.push('exp', v, at) }
-  setTargetAtTime(v: number, at: number, tc: number): this { void tc; return this.push('target', v, at) }
+  setTargetAtTime(v: number, at: number, tc: number): this { return this.push('target', v, at, tc) }
   cancelScheduledValues(at: number): this { return this.push('cancel', 0, at) }
   /** 包络里最高的一次自动化值（`peak` 与默认 `setValueAtTime` 的地板 1e-4 都算进去） */
   peakValue(): number {

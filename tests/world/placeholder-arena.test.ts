@@ -3,7 +3,15 @@ import { RhythmClock } from '@/core/RhythmClock'
 import * as THREE from 'three'
 
 /**
- * `src/world/PlaceholderArena.ts`：主菜单/练习场灰盒——项目里唯二「组合根」级零覆盖文件之一。
+ * `src/world/PlaceholderArena.ts`：主菜单/练习场灰盒。
+ *
+ * KI-430 落账时它和 `src/main.ts` 一起被量成「一行都没执行过」，`scripts/coverage-floor.json` 的
+ * `zeroFiles` 因此同时豁免两格；KI-437 逐格裁决后本文件是那一格里补上的腿——覆盖率量具现在量到
+ * `PlaceholderArena.ts` 43/43 行、100%，于是 `zeroFiles` 只剩 `src/main.ts` 一格。
+ * 以 `@/world/PlaceholderArena` 为来源的 import 全仓库只有两处（2026-11-10 现读：`grep -rn "^import .*world/PlaceholderArena" src tests`）——
+ * `src/main.ts:14` 与本文件，而 main.ts 自己就住在零覆盖名单里 ⇒ **下面那行 import 是这一整格覆盖的唯一来源**
+ * （`tests/unit/arch-boundaries.test.ts` 里那一处只是分包白名单上的名字，不构成 import）。
+ * 「名单里多出一格 ⇒ 当场红并点名」这一判据由 `tests/unit/coverage-gate.test.ts` 钉住。
  *
  * 本文件的 mock 只 Mock 掉一格：`THREE.WebGLRenderer`（它需要真实的 canvas + WebGL 上下文，
  * 在 headless 里不存在——与 `tests/support/fakeAudio.ts` 同一条思路：mock 掉环境，真执行逻辑）。

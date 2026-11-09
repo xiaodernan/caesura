@@ -246,10 +246,13 @@ describe('承载体行为：默认全关，关着一口都不叫', () => {
     let calls = 0
     const wire = new HitboxWire({ scene, key: 'F6', feed: () => { calls++; return [input('a', CONE)] } })
     alive.push(() => wire.dispose())
-    expect({ enabled: wire.enabled, visible: wire.groupVisible(), calls, builds: wire.geometryBuilds, live: wire.live })
-      .toEqual({ enabled: false, visible: false, calls: 0, builds: 0, live: 0 })
+    // `calls`（外面那只闭包计数器）与 `wire.feedCalls`（承载体自己报的数）**两把读数都要对得上**：
+    // tech-arch §17 那句「`geometryBuilds`／`feedCalls` 两把读数专门给这两句做见证」此前只兑现了一半——
+    // `feedCalls` 在全仓库没有读者，于是引擎自己报的数从未被任何人和外部事实核对过。
+    expect({ enabled: wire.enabled, visible: wire.groupVisible(), calls, feed: wire.feedCalls, builds: wire.geometryBuilds, live: wire.live })
+      .toEqual({ enabled: false, visible: false, calls: 0, feed: 0, builds: 0, live: 0 })
     for (let i = 0; i < 5; i++) wire.sync()
-    expect({ calls, builds: wire.geometryBuilds, live: wire.live }).toEqual({ calls: 0, builds: 0, live: 0 })
+    expect({ calls, feed: wire.feedCalls, builds: wire.geometryBuilds, live: wire.live }).toEqual({ calls: 0, feed: 0, builds: 0, live: 0 })
     expect(hooked.filter((l) => l.type === 'keydown').length, '一块面板＝一个监听者').toBe(1)
   })
 
@@ -262,13 +265,14 @@ describe('承载体行为：默认全关，关着一口都不叫', () => {
     wire.sync()
     expect({ calls, builds: wire.geometryBuilds, live: wire.live, visible: wire.groupVisible() })
       .toEqual({ calls: 1, builds: 1, live: 1, visible: true })
+    expect(wire.feedCalls, '承载体自己数的 feed 次数与外面那只闭包计数器不一致').toBe(calls)
     press('F6')
     wire.sync()
-    expect({ calls, live: wire.live, visible: wire.groupVisible() }, '关掉之后还叫 feed＝把整场招式又白转一遍线段').toEqual({ calls: 1, live: 0, visible: false })
+    expect({ calls, feed: wire.feedCalls, live: wire.live, visible: wire.groupVisible() }, '关掉之后还叫 feed＝把整场招式又白转一遍线段').toEqual({ calls: 1, feed: 1, live: 0, visible: false })
     const cached = wire.geometryBuilds
     press('F6')
     wire.sync()
-    expect({ calls, live: wire.live, builds: wire.geometryBuilds }).toEqual({ calls: 2, live: 1, builds: cached })
+    expect({ calls, feed: wire.feedCalls, live: wire.live, builds: wire.geometryBuilds }).toEqual({ calls: 2, feed: 2, live: 1, builds: cached })
   })
 
   it('别的键一律不理：F7 与 F2 既不翻开这一块，也不吃 preventDefault', () => {
@@ -500,6 +504,25 @@ describe('接线：组合根、预留表、常量唯一主人', () => {
     expect(code).toContain('target.radius + POINT_BLANK_GRACE')
     expect(code, '两处各写一份 0.25 就是两个主人（画出来的框与挨打的框会分家）').not.toMatch(/radius \+ 0\.25/)
     expect(code.match(/POINT_BLANK_GRACE/g)!.length).toBeGreaterThanOrEqual(2)
+  })
+
+  /**
+   * KI-437 #7：`get key()` 在 HEAD 上**零读者**——`onKey` 里那句写的是 `e.key !== this.spec.key`，
+   * 于是「这一块面板答的是哪把键」同时住在两处（构造点交出来的 `spec.key` 与类里手写的字段读法），
+   * 而那个 getter 一行都没执行过（覆盖率量到 0 命中）。
+   * 名册口径两条：① 只扫 `src/world/HitboxWire.ts`——`SceneLights.ts` 与 `DebugPanel.ts` 里那些
+   * `this.key`／`this.spec.key` 是**别的类的 this**，把它们算进名册就是 KI-437 量具犯的接收者错误；
+   * ② 先剥注释——getter 自己的文档**必须**引用旧拼法，否则这条门会惩罚写注释的人。
+   */
+  it('「这一块面板答的是哪把键」只有一个主人：`this.spec.key` 只许住在 getter 那一行', () => {
+    const lines = stripComments(src('src/world/HitboxWire.ts')).replace(/\r\n/g, '\n').split('\n')
+    const own = lines.filter((l) => /\bthis\.spec\.key\b/.test(l))
+    expect(own, `这句话出现了 ${own.length} 次：${own.map((s) => s.trim()).join(' ｜ ')}`).toHaveLength(1)
+    expect(own[0].trim(), `唯一那一次必须是 getter 的本体，读到的却是：${own[0].trim()}`).toBe(
+      'get key(): string { return this.spec.key }',
+    )
+    const reads = lines.filter((l) => /\bthis\.key\b/.test(l))
+    expect(reads.length, 'getter 没有读者 ⇒ 那一格又回到「声明而不生产」（HEAD 上就是这个形状）').toBeGreaterThanOrEqual(1)
   })
 
   it('依赖闸门那一侧：线框住在表现层，只认领三件结构、不 import 玩法运行时', () => {

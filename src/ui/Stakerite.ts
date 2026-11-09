@@ -481,7 +481,9 @@ export class Stakerite {
 
   get isOpen(): boolean { return this.open }
 
-  toggle(): void { this.open ? this.close() : this.show() }
+  // 这里曾经有过一枚 `toggle()`（开↔关自己翻），它是 KI-061「关闭只认一个主人」那句的第二个主人：
+  // 全仓库没有任何地方叫它——面板的开合只在组合根 `setOverlay` 那一处走 `show()`/`close()`
+  // （2026-11-10 KI-437 用 `git grep '\.toggle(' HEAD -- src` 量过：src 里那一处是 `lock.toggle()`，属主是 LockOn）。
 
   show(): void {
     this.open = true

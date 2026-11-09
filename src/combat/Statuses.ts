@@ -58,7 +58,6 @@ export class CorruptionMeter {
   }
 
   get full(): boolean { return this.value >= this.cfg.max }
-  get frac(): number { return this.value / this.cfg.max }
 
   /**
    * 累积。返回实际加了多少（便于测试断言"耐受生效了"而不是"看起来生效了"）。

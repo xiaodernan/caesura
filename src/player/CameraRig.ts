@@ -165,7 +165,6 @@ export class CameraRig {
   private execPull = 0
   private posSmooth = new THREE.Vector3(0, 2, 6)
   cam: THREE.PerspectiveCamera
-  private collisionEnabled = true
   /**
    * 相机碰撞用的遮挡名册。**与挡箭、挡视线是同一份盒子**（`core/Occlusion`）——
    * 相机撞墙与箭被墙挡住不许各写一份几何，否则"看着穿过去了"与"箭飞过去了"会各说各话。
@@ -221,9 +220,6 @@ export class CameraRig {
 
   /** 获取当前模式 */
   getMode(): CameraMode { return this.mode }
-
-  /** 启用/禁用碰撞（cinematic 模式可禁用） */
-  setCollision(enabled: boolean): void { this.collisionEnabled = enabled }
 
   /**
    * 注入相机碰撞用的遮挡名册（与挡箭/挡视线同一份盒子）。
@@ -333,9 +329,13 @@ export class CameraRig {
       target.z + cy * cp * dist
     )
 
-    // 碰撞回弹（tech-arch §1.2）：相机撞墙时停在墙前，而不是穿过去
+    // 碰撞回弹（tech-arch §1.2）：相机撞墙时停在墙前，而不是穿过去。
+    // **「过场期间不撞墙」这一句的主人只有表那一格**（`MODE_CONFIG.cinematic.collisionRadius = 0`）。
+    // 这里曾挂着第二个开关 `collisionEnabled`：它唯一的写方 `setCollision()` 全仓库零调用点（KI-437 数过），
+    // 于是那个字段永远停在 true——一道从不为假的死条件。KI-165 的臂 D 就是被这一格坑的：那一版把刀装在
+    // `setCollision()` 上，没人叫过它 ⇒ 臂绿、腿绿、谁都没量到东西；刀挪到 `update` 里这一行才咬住。
     let finalPos = desired
-    if (this.collisionEnabled && cfg.collisionRadius > 0 && player.floorY !== undefined) {
+    if (cfg.collisionRadius > 0 && player.floorY !== undefined) {
       finalPos = collideAndRebound(desired, target, cfg.collisionRadius, this.occluders)
     }
 

@@ -209,7 +209,12 @@ export class HitboxWire {
     addEventListener('keydown', this.onKey)
   }
 
-  /** 构造点写成 `key: 'F6'` 这个形状，`doc-audit` 的"死绑定"判据才读得到这一把键的读者 */
+  /**
+   * 这一块面板答的是哪把键——**「`spec.key`」这句话唯一的主人**。
+   * 此前构造点写 `key: 'F6'`、`onKey` 各手写一遍 `this.spec.key`，而这个 getter 零读者。
+   * 它旧注释那句「doc-audit 的死绑定判据读得到这一把键的读者」已被实测否证（KI-437）：
+   * 那道判据吃的是 main.ts 构造点那枚字面量，全仓库没人叫过 `wire.key`。
+   */
   get key(): string { return this.spec.key }
   get live(): number { return this.entries.size }
   get peakLiveCount(): number { return this.peakLive }
@@ -292,7 +297,7 @@ export class HitboxWire {
   }
 
   private readonly onKey = (e: KeyboardEvent): void => {
-    if (e.key !== this.spec.key) return
+    if (e.key !== this.key) return
     e.preventDefault()
     this.enabled = !this.enabled
     this.group.visible = this.enabled

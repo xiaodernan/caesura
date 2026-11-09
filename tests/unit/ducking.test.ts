@@ -5,7 +5,7 @@ import { bus } from '@/core/EventBus'
 import { AudioEngine } from '@/audio/AudioEngine'
 import { battleScores, duckingRows } from '@/data'
 import type { DuckRow } from '@/data/schema'
-import { BUS_BASE, DUCK_TC_SEC, activeDucks, deepestFactor, duckFactor, type DuckBusName } from '@/audio/ducking'
+import { BUS_BASE, DUCK_REACH_TC, DUCK_TC_SEC, activeDucks, deepestFactor, duckFactor, type DuckBusName } from '@/audio/ducking'
 import { stripComments, callArgLiterals, unionMembers, schemaBlocks, interfaceFields } from '../../scripts/schema-vocab.mjs'
 import { duckFindings, DUCK_FIELDS, DUCK_REQUIRED_FIELDS, DUCK_DB_FLOOR, DUCK_HOLD_MAX_SEC } from '../../scripts/ducking-rules.mjs'
 import { FakeAudioContext, FakeNode, fakeWindow, type FakeWindow } from '../support/fakeAudio'
@@ -86,6 +86,21 @@ function holdOf(cell: string): number {
   return Number(sec![1])
 }
 
+/** 文档那一列的两个斜率：`250ms 入 180ms 出` ⇒ `{inSec: 0.25, outSec: 0.18}`（§8.2 只有休止那一行给了这两个数） */
+function msPairOf(cell: string): { inSec: number; outSec: number } {
+  const inn = cell.match(/(\d+(?:\.\d+)?)ms\s*入/)
+  const out = cell.match(/(\d+(?:\.\d+)?)ms\s*出/)
+  expect(inn, `这一格里没有「Nms 入」的读数：${cell}`).toBeTruthy()
+  expect(out, `这一格里没有「Nms 出」的读数：${cell}`).toBeTruthy()
+  return { inSec: Number(inn![1]) / 1000, outSec: Number(out![1]) / 1000 }
+}
+
+/**
+ * 文档说的是**到位时长**，引擎 `setTargetAtTime` 收的是**时间常数**（3τ 走 95%）。
+ * 换算的主人只有一个（`ducking.ts > tcFromReach`），这里只把文档那两个数交给它，不写第二个 `/ 3`。
+ */
+const tcOf = (reachSec: number): number => reachSec / DUCK_REACH_TC
+
 /**
  * 文档的「被压对象」列写成 `MUSIC+AMB` 这种全行大写。名册（`DuckBusName`）才是主人，
  * 所以这里只做两件事：按 `+` 拆开、除 `AMB` 这一处文档缩写外一律小写化，
@@ -107,6 +122,8 @@ const ROSTER = unionMembers(schemaBlocks(readFileSync(root + 'src/audio/ducking.
 const TABLE = duckTable()
 const PARRY_DOC = TABLE.find((r) => r.label === '弹反成功') as DocDuckRow
 const PARRY_ROW = duckingRows.find((r) => r.label === '弹反成功') as DuckRow
+const CAESURA_DOC = TABLE.find((r) => r.label === '休止状态') as DocDuckRow
+const CAESURA_ROW = duckingRows.find((r) => r.id === 'caesura') as DuckRow
 
 function srcFiles(dir: string): string[] {
   const out: string[] = []
@@ -305,6 +322,44 @@ describe('数据 ⇄ 行为（假 AudioContext）', () => {
     expect(ducksOn(buses.music).length, '已经回到基准还在排：那一格是没人要的第四次斜坡').toBe(2)
   })
 
+  /**
+   * KI-092① 的第二半，也是 `ducking.ts > tcFromReach` 在全仓库唯一的执行者。
+   *
+   * 此前休止那一行只被量过「压到几 dB」：`FakeParam.setTargetAtTime` 把第三个实参（时间常数）
+   * 丢掉了，于是「250ms 入 180ms 出」那一格在表里、在引擎里，却在**测架上读不出来**——
+   * 引擎排出去的到底是一条斜坡还是一次阶跃，本文件当时没有判据。现在量具补上了这一格，
+   * 两个数都从 §8.2 那一格正则现推（测试里没有一处手抄的 0.25 / 0.18）。
+   */
+  it('休止那一行的两条斜率：压下去排的是「250ms 入」换算的 τ，弹回排的是「180ms 出」的 τ', () => {
+    const { engine, ctx, buses } = liveEngine()
+    const doc = msPairOf(CAESURA_DOC.amount)
+    expect(CAESURA_ROW, 'ducking.json 里没有休止那一行：§8.2 那句斜率又没有载体了').toBeTruthy()
+    expect(CAESURA_ROW.attackSec, '表里的入斜率与 §8.2 那一格不符').toBeCloseTo(doc.inSec, 9)
+    expect(CAESURA_ROW.releaseSec, '表里的出斜率与 §8.2 那一格不符').toBeCloseTo(doc.outSec, 9)
+
+    bus.emit('audio.caesura', { on: true, holdSec: CAESURA_ROW.holdSec })
+    const down = ducksOn(buses.music)
+    expect(down.length, '休止没把 music 压一次').toBe(1)
+    expect(down[0].value, '排的这一次不是休止那一行').toBeCloseTo(BUS_BASE.music * duckFactor(CAESURA_ROW.db), 12)
+    expect(down[0].tc, '压下去那条没带时间常数 = 引擎把斜坡写成了阶跃（听感上是一次咔哒）').toBeCloseTo(tcOf(doc.inSec), 9)
+
+    // 弹回那一刻请求已经过期消失，斜率只能问当初的主人（`duckOwner`）——这一条就是那一格存在的理由
+    ctx.advance(CAESURA_ROW.holdSec + 0.05)
+    engine.update(1 / 60)
+    const up = ducksOn(buses.music)
+    expect(up.length, '到期没排弹回').toBe(2)
+    expect(up[1].value, '弹回去的不是 BUS_BASE 那个数').toBe(BUS_BASE.music)
+    expect(up[1].tc, '弹回用的不是休止那一行的「180ms 出」').toBeCloseTo(tcOf(doc.outSec), 9)
+  })
+
+  it('文档没给斜率的那些行仍走缺省：弹反那一排不许借用休止的 250ms', () => {
+    const { buses } = liveEngine()
+    parry()
+    const ev = ducksOn(buses.music)
+    expect(ev.length).toBe(1)
+    expect(ev[0].tc, '弹反那一行在 §8.2 没有斜率，引擎却排了一条别人的斜坡').toBe(DUCK_TC_SEC)
+  })
+
   it('压着的那段时间里每帧 update 不重复排同一条斜坡', () => {
     const { engine, ctx, buses } = liveEngine()
     parry()
@@ -416,6 +471,16 @@ describe('只有一个主人（源码判据）', () => {
     expect(users.map(rel).sort()).toEqual(['src/audio/AudioEngine.ts', 'src/audio/ducking.ts'])
     expect([...engineText.matchAll(/DUCK_TC_SEC/g)].length, 'DUCK_TC_SEC 在引擎里被用了不止一次（每条总线的斜坡各排一遍才是对的）').toBe(2)
     expect(DUCK_TC_SEC).toBeGreaterThan(0)
+  })
+
+  it('到位时长→τ 那一步也只有一个主人：换算住在 ducking.ts，引擎只叫一次', () => {
+    const users = srcFiles(root + 'src').filter((f) => stripComments(readFileSync(f, 'utf8')).includes('tcFromReach'))
+    expect(users.map(rel).sort(), 'tcFromReach 的读者名单变了：新增一处就要在这里写理由（第二份除法会把 3 变成没人认识的数）')
+      .toEqual(['src/audio/AudioEngine.ts', 'src/audio/ducking.ts'])
+    expect([...engineText.matchAll(/tcFromReach\(/g)].length, '引擎里换算被叫了不止一次').toBe(1)
+    expect(engineText, 'DUCK_REACH_TC 漏进引擎 = 调用点自己抄了一遍除法').not.toContain('DUCK_REACH_TC')
+    // 那个 3 不是随手砍的一刀：3τ 恰好走到 95%，「到位时长」这个词才读得回来（改常数即改这句话）
+    expect(1 - Math.exp(-DUCK_REACH_TC), `DUCK_REACH_TC=${DUCK_REACH_TC}：τ 换算不再对应 95% 到位`).toBeCloseTo(0.95, 2)
   })
 
   it('校验器的两张白名单来自源码，不是手抄名单', () => {

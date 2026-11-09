@@ -50,8 +50,15 @@ function run(...args: string[]) {
 
 afterAll(() => rmSync(TMP, { recursive: true, force: true }))
 
-/** 一个真实的、从未被 import 的 src 文件（它的物理行数是稳定的读数） */
-const REAL = 'src/world/PlaceholderArena.ts'
+/**
+ * 借一个真实的 src 文件当行数来源（它的物理行数是稳定读数）。
+ *
+ * KI-437 落账前这里填的是 `src/world/PlaceholderArena.ts`，注释写「从未被 import」——那句今年已经过期：
+ * `tests/world/placeholder-arena.test.ts` 就是它的读者。今天唯一真的没有任何测试执行过的 src 文件是
+ * `src/main.ts`（地板 `zeroFiles` 名单里那一格），所以换成它，让「空报表分支」这个前提重新对得上文件名。
+ * 三条腿本身喂的是合成 summary，判决只依赖「total 恰好等于文件行数」这个形状，不依赖真跑过谁。
+ */
+const REAL = 'src/main.ts'
 
 describe('coverage 量具：空报表丢 source map 的检测（§78 量具坏了 ≠ 覆盖率掉了）', () => {
   it('零覆盖 + total 恰好等于文件行数 ⇒ exit 2，且不许报成「低于地板」', () => {

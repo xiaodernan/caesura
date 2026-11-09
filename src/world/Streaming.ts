@@ -187,8 +187,11 @@ export class StreamingSystem {
   get activeCount(): number { return this.byState('active').length }
   get inFlight(): number { return this.byState('preloading').length }
 
-  /** 地图「已探索遮罩」（需求 §43）：cell key 集合 */
-  get exploredCount(): number { return this.explored.size }
+  /**
+   * 地图「已探索遮罩」（需求 §43）。**这一格只答「这一格看过没有」，不给总数**——
+   * 遮罩的唯一读者（`ui/MapUI`）要的是逐格判断，一份 `size` 读数会把「看过几格」
+   * 变成第二个主人，而它没有消费者（KI-437 量过：全仓库零读者）。
+   */
   isExplored(pos: Vec3): boolean {
     const c = this.cellOf(pos)
     const key = keyOf(c.cx, c.cy, c.cz)
