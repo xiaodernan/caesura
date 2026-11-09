@@ -2,15 +2,20 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import {
+  ORCHESTRATION_OWNERS,
   ROSTER_KEYS,
   ROSTER_RELPATH,
   SERVICE_NAMES,
+  breakerWiredFindings,
   commandTargetFindings,
   javaHardcodeFindings,
   javaReadsRepoDataFindings,
+  orchestrationOwnerFindings,
   parseGateRoster,
+  rosterScopeFindings,
   rosterShapeFindings,
   serviceTopologyFindings,
+  spawnShapeFindings,
 } from '../../scripts/spring-family-rules.mjs'
 
 /**
@@ -150,6 +155,36 @@ describe('KI-422｜Spring Cloud 族：拓扑三方一致', () => {
   })
 })
 
+describe('KI-429｜Spring Cloud 族：编排参数各有主人（熔断／并发）', () => {
+  it('编排参数在主人那份 YAML 里真的有一格，Java 源码里不许再出现第二遍', () => {
+    const ymlTexts = Object.fromEntries(ORCHESTRATION_OWNERS.map((o) => [o.owner, read(join(root, o.owner))]))
+    expect(orchestrationOwnerFindings({ owners: ORCHESTRATION_OWNERS, ymlTexts, javaFiles })).toEqual([])
+  })
+
+  it('主人那份 YAML 真的被读到了（读空了这条门就是装饰）', () => {
+    for (const o of ORCHESTRATION_OWNERS) {
+      expect(read(join(root, o.owner)).length, `${o.owner} 读空了`).toBeGreaterThan(0)
+    }
+  })
+
+  it('名册只装判定：编排参数不许混进名册', () => {
+    expect(rosterScopeFindings(rosterText)).toEqual([])
+  })
+
+  it('熔断接上了：三态齐 ＋ 起进程之前问一句 ＋ 开闸时如实说没起进程', () => {
+    expect(breakerWiredFindings({ javaFiles })).toEqual([])
+  })
+
+  it('这一族真的读到了新写的那几份 Java（读空了上面四条就是在读空集合）', () => {
+    const names = javaFiles.map((f) => f.rel)
+    expect(names.some((n) => n.includes('CircuitBreaker.java'))).toBe(true)
+  })
+
+  it('进程形状：Windows 上 npm 那一档经过 cmd /c（否则它一出生就死——实测过）', () => {
+    expect(spawnShapeFindings({ javaFiles })).toEqual([])
+  })
+})
+
 describe('KI-422｜Spring Cloud 族：判据的合成夹具腿（证明它拒不拒）', () => {
   it('名册少一格键 ⇒ 报出来（不是"缺了也认"）', () => {
     const bad = parseGateRoster(['caesura:', '  gates:', '    - id: x', '      family: f', '      command: npm'].join('\n'))
@@ -198,5 +233,51 @@ describe('KI-422｜Spring Cloud 族：判据的合成夹具腿（证明它拒不
   it('Java 去读仓库的数据表 ⇒ 报出来', () => {
     const findings = javaReadsRepoDataFindings({ javaFiles: [{ rel: 'W.java', text: 'read("src/data/json/weapons.json")' }] })
     expect(findings.length).toBeGreaterThan(0)
+  })
+
+  it('Java 里抄了编排参数那个数 ⇒ 报出来（唯一出处被偷走）', () => {
+    const owner = ORCHESTRATION_OWNERS[0]!
+    const ymlTexts = { [owner.owner]: read(join(root, owner.owner)) }
+    const value = /failure-threshold:\s*(\d+)/.exec(ymlTexts[owner.owner]!)![1]!
+    const findings = orchestrationOwnerFindings({
+      owners: [owner],
+      ymlTexts,
+      javaFiles: [{ rel: 'X.java', text: `int limit = ${value};` }],
+    })
+    expect(findings.some((f) => f.key.startsWith('编排参数写死在 Java'))).toBe(true)
+  })
+
+  it('主人那份 YAML 少一格 ⇒ 报出来（这个编排参数没有主人）', () => {
+    const owner = ORCHESTRATION_OWNERS[0]!
+    const findings = orchestrationOwnerFindings({
+      owners: [owner],
+      ymlTexts: { [owner.owner]: 'caesura:\n  circuit:\n    failure-threshold: 3\n' },
+      javaFiles: [],
+    })
+    expect(findings.some((f) => f.msg.includes('cooldown-sec'))).toBe(true)
+  })
+
+  it('编排参数混进名册 ⇒ 报出来（名册只装判定）', () => {
+    const findings = rosterScopeFindings(['caesura:', '  concurrency: 3', '  gates:', '    - id: x'].join('\n'))
+    expect(findings.length, '名册里塞了编排参数却一条都不报').toBeGreaterThan(0)
+    expect(findings[0]!.msg).toContain('concurrency')
+  })
+
+  it('熔断没接上（执行器不问了）⇒ 报出来', () => {
+    const findings = breakerWiredFindings({
+      javaFiles: [
+        { rel: 'a/CircuitBreaker.java', text: 'enum State { CLOSED, OPEN, HALF_OPEN }' },
+        { rel: 'a/GateRunner.java', text: 'public GateVerdict run(Gate gate) { return null; }' },
+      ],
+    })
+    expect(findings.length, '熔断器在那儿，执行器却不问它，却一条都不报').toBeGreaterThan(0)
+    expect(findings.some((f) => f.msg.includes('beforeRun') || f.msg.includes('起进程之前'))).toBe(true)
+  })
+
+  it('进程形状那一档被删了 ⇒ 报出来（Windows 上 npm 会一出生就死）', () => {
+    const findings = spawnShapeFindings({
+      javaFiles: [{ rel: 'a/GateRunner.java', text: 'new ProcessBuilder(command)' }],
+    })
+    expect(findings.length, '形状那一档没了却一条都不报').toBeGreaterThan(0)
   })
 })

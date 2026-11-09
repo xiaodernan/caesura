@@ -23,6 +23,18 @@ public class GateProperties {
     /** 门名册：每一格的门 id、族、命令、上限、是否阻塞 */
     private List<Gate> gates = new ArrayList<>();
 
+    /**
+     * 熔断参数（KI-429）：连续失败几次开闸、冷却多久。
+     *
+     * <p>**编排参数**，住在 {@code caesura-gate} 自己的 {@code application.yml}——
+     * 和重试参数一样，**不在**配置服务器那份门名册里：名册只装**判定**
+     * （门 id／命令／参数表／上限／是否阻塞），编排参数塞进去会让「名册」这个词失去意思。
+     *
+     * <p>两个默认值都是「没开这个功能」（阈值非正 ⇒ 每趟都跑），**不是**阈值本身：
+     * 真正的数只住在那一份 YAML 里，Java 源码里不许再写一遍。
+     */
+    private Circuit circuit = new Circuit();
+
     public String getRepoRoot() {
         return repoRoot;
     }
@@ -37,6 +49,40 @@ public class GateProperties {
 
     public void setGates(List<Gate> gates) {
         this.gates = gates;
+    }
+
+    public Circuit getCircuit() {
+        return circuit;
+    }
+
+    public void setCircuit(Circuit circuit) {
+        this.circuit = circuit;
+    }
+
+    /** 熔断参数（两个数都住在 YAML 里，Java 只是把它们读出来用） */
+    public static class Circuit {
+
+        /** 连着坏几次就开闸；**非正 ⇒ 熔断没开**（不是阈值，是「没开」的记号） */
+        private int failureThreshold = 0;
+
+        /** 开闸之后冷静多少秒 */
+        private long cooldownSec = 0;
+
+        public int getFailureThreshold() {
+            return failureThreshold;
+        }
+
+        public void setFailureThreshold(int failureThreshold) {
+            this.failureThreshold = failureThreshold;
+        }
+
+        public long getCooldownSec() {
+            return cooldownSec;
+        }
+
+        public void setCooldownSec(long cooldownSec) {
+            this.cooldownSec = cooldownSec;
+        }
     }
 
     /**

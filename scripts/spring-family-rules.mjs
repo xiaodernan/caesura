@@ -340,6 +340,44 @@ export function serviceTopologyFindings({ composeServices, moduleNames, expected
 }
 
 /**
+ * 判据⑩（KI-429）：进程形状——Windows 上 {@code npm} 要经过 {@code cmd /c}。
+ *
+ * **这道门是被实机读数逼出来的**：第一趟整族跑读数里，五道门有**三道**（都是 npm 那几道）
+ * **一出生就死**——{@code Cannot run program "npm" ... error=2}：Windows 上 npm 是批处理文件，
+ * {@code CreateProcess} 不能直接起它。
+ *
+ * **它能证**：门执行器里那个「按平台改进程形状」的那一段还在。
+ * **它证不了**：退出码有没有原样传回来（cmd 有可能把它吞掉）——那一条由**实机读数**管。
+ *
+ * @param {{ javaFiles: {rel: string, text: string}[] }} input
+ * @returns {SpringFinding[]}
+ */
+export function spawnShapeFindings({ javaFiles }) {
+  const out = []
+  const files = javaFiles ?? []
+  const runner = files.find((f) => f.rel.includes('GateRunner.java'))
+  if (!runner) {
+    out.push({ key: '进程形状', msg: '找不到门执行器那份源码 ⇒ 进程怎么起无从判断' })
+    return out
+  }
+  if (!runner.text.includes('spawnCommand(command')) {
+    out.push({
+      key: '进程形状',
+      msg: '门执行器没有用那个「按平台改进程形状」的函数 ⇒ Windows 上 npm 这类批处理命令起不来'
+        + '（实测过：一出生就死，报 Cannot run program "npm"）。'
+        + '**认的是调用点**（`spawnCommand(command`），不是方法名——光有那个方法不算接上了。',
+    })
+  }
+  if (!runner.text.includes('"cmd"') || !runner.text.includes('"/c"')) {
+    out.push({
+      key: '进程形状',
+      msg: '门执行器里没有「cmd /c」那一档 ⇒ Windows 上仍然直接 CreateProcess 起 npm ⇒ 起不来。',
+    })
+  }
+  return out
+}
+
+/**
  * 判据⑥（附）：Java 侧不许去读仓库的数据表 —— 判定只有一个主人。
  * @param {{ javaFiles: {rel: string, text: string}[] }} input
  * @returns {SpringFinding[]}
@@ -356,6 +394,167 @@ export function javaReadsRepoDataFindings({ javaFiles }) {
         })
       }
     }
+  }
+  return out
+}
+
+/**
+ * 编排参数名册（KI-429）：**谁拥有它**、它住在哪个键上。
+ *
+ * **值不在这儿**：判据不抄那些数——它从主人那份 YAML 现读。
+ * 抄一份就是第二个主人（那一族病：同一个数两处出处，两边慢慢说不同的话）。
+ *
+ * **为什么编排参数不住配置服务器那份门名册**：名册只装**判定**
+ * （门 id／族／命令／参数表／上限／是否阻塞）；编排参数（重试几次、熔断几道、并发几道）
+ * 住各服务自己的 `application.yml`——和重试参数同一处置。塞进名册会让「名册」这个词失去意思。
+ *
+ * @type {{ owner: string, label: string, keys: string[] }[]}
+ */
+export const ORCHESTRATION_OWNERS = [
+  {
+    owner: 'services/spring/caesura-gate/src/main/resources/application.yml',
+    label: '熔断',
+    keys: ['failure-threshold', 'cooldown-sec'],
+  },
+  {
+    owner: 'services/spring/caesura-report/src/main/resources/application.yml',
+    label: '汇总',
+    keys: ['concurrency'],
+  },
+]
+
+/**
+ * 从一份 YAML 文本里取一个标量（找不到就是 null —— **不猜**）。
+ * @param {string} text
+ * @param {string} key
+ * @returns {string|number|null}
+ */
+function yamlScalar(text, key) {
+  const escaped = String(key).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const m = new RegExp(`^\\s*${escaped}\\s*:\\s*(\\S+)\\s*$`, 'm').exec(String(text ?? ''))
+  if (!m) return null
+  const raw = m[1].trim()
+  if (/^-?\d+$/.test(raw)) return Number(raw)
+  return raw
+}
+
+/**
+ * 判据⑦（KI-429）：编排参数**各有主人**，而 Java 侧不许再写一遍那个数。
+ *
+ * **用字面量当物证，不去猜意图**（与判据②③同一把尺）：同一个数在 Java 里出现第二遍 = 两个出处。
+ *
+ * **为什么只查 Java 那一侧**：两个编排参数**可以合法地同值**（熔断阈值与并发度都可能是 3），
+ * 字面量分不出谁是谁 ⇒ 「它也出现在别的 YAML 里」这一条判不了（也不该判）。
+ * 能判的是：**主人那一格真的在** ＋ **Java 侧不许再抄一遍**。
+ *
+ * @param {{ owners: {owner: string, label: string, keys: string[]}[], ymlTexts: Record<string, string>, javaFiles: {rel: string, text: string}[] }} input
+ * @returns {SpringFinding[]}
+ */
+export function orchestrationOwnerFindings({ owners, ymlTexts, javaFiles }) {
+  const out = []
+  for (const o of owners ?? []) {
+    const text = ymlTexts?.[o.owner] ?? ''
+    if (!text) {
+      out.push({
+        key: `编排参数 · ${o.label}`,
+        msg: `读不到 ${o.owner} ⇒ ${o.label} 那一族的编排参数没有主人。`,
+      })
+      continue
+    }
+    for (const key of o.keys ?? []) {
+      const value = yamlScalar(text, key)
+      if (value === null) {
+        out.push({
+          key: `编排参数 · ${key}`,
+          msg: `${o.owner} 里没有「${key}」这一格 ⇒ ${o.label} 那个编排参数没有主人`
+            + '（Java 侧读不到它 ⇒ 它会用兜底值，而兜底值就是第二个主人）。',
+        })
+        continue
+      }
+      if (typeof value !== 'number') continue
+      // 前后都不能挨着别的数字/小数点 ⇒ 「3」不会在「30」「0.3」里被误认
+      const rx = new RegExp(`(?<![\\d.])${value}(?![\\d.])`)
+      for (const f of javaFiles ?? []) {
+        if (rx.test(f.text)) {
+          out.push({
+            key: `编排参数写死在 Java · ${f.rel}`,
+            msg: `Java 源码里出现了编排参数「${key}」的值 ${value}（主人是 ${o.owner}）⇒ 这个数有了两个出处。`
+              + '修法：Java 只把它从配置里读出来用。',
+          })
+        }
+      }
+    }
+  }
+  return out
+}
+
+/**
+ * 判据⑧（KI-429）：名册**只装判定** —— 编排参数不许混进去。
+ *
+ * @param {string} rosterText
+ * @returns {SpringFinding[]}
+ */
+export function rosterScopeFindings(rosterText) {
+  const out = []
+  const forbidden = ['circuit', 'concurrency', 'retry-attempts', 'retry-delay-ms']
+  const lines = String(rosterText ?? '').split(/\r?\n/)
+  lines.forEach((l, i) => {
+    const m = /^ {2}([A-Za-z][\w-]*)\s*:/.exec(l)
+    if (!m) return
+    if (!forbidden.includes(m[1])) return
+    out.push({
+      key: '名册装了编排参数',
+      msg: `第 ${i + 1} 行：名册里出现了「${m[1]}」⇒ 名册只装判定（门 id／族／命令／参数表／上限／是否阻塞）；`
+        + '编排参数住各服务自己的 application.yml，塞进来会让「名册」这个词失去意思。',
+    })
+  })
+  return out
+}
+
+/**
+ * 判据⑨（KI-429）：熔断必须**接上了**，不是一个摆在那里的类。
+ *
+ * **这道门能证什么、不能证什么**（写在明处）：
+ *  - 它能证：三态齐、门执行器**在起进程之前**问过熔断器、开闸时它如实说「这一趟没起进程」；
+ *  - 它证不了：状态机算得对不对（那一条由 `CircuitBreakerTest.java` 的**真行为**读数管，
+ *    冷却期用可换的时钟推进，不用真等）。
+ *
+ * @param {{ javaFiles: {rel: string, text: string}[] }} input
+ * @returns {SpringFinding[]}
+ */
+export function breakerWiredFindings({ javaFiles }) {
+  const out = []
+  const files = javaFiles ?? []
+  const breaker = files.find((f) => f.rel.includes('CircuitBreaker.java'))
+  if (!breaker) {
+    out.push({
+      key: '熔断',
+      msg: '这一族里没有熔断器那个类 ⇒ 名册与 YAML 里写了熔断参数，运行时却没有熔断。',
+    })
+    return out
+  }
+  for (const state of ['CLOSED', 'OPEN', 'HALF_OPEN']) {
+    if (!breaker.text.includes(state)) {
+      out.push({ key: '熔断', msg: `熔断器里没有 ${state} 那一态（三个态缺一个 ⇒ 状态机不完整）` })
+    }
+  }
+  const runner = files.find((f) => f.rel.includes('GateRunner.java'))
+  if (!runner) {
+    out.push({ key: '熔断', msg: '找不到门执行器那份源码 ⇒ 熔断接在哪儿无从判断' })
+    return out
+  }
+  if (!runner.text.includes('breaker.beforeRun(')) {
+    out.push({
+      key: '熔断',
+      msg: '门执行器没有在起进程之前问熔断器（熔断必须接在**起进程之前**——起完再问就晚了）。'
+        + '**认的是调用点**（`breaker.beforeRun(`），不是方法名——光有那个类不算接上了。',
+    })
+  }
+  if (!runner.text.includes('circuit_open')) {
+    out.push({
+      key: '熔断',
+      msg: '门执行器没有「熔断中」那个判决（开闸时它必须如实说这一趟没起进程）。',
+    })
   }
   return out
 }

@@ -26,6 +26,8 @@ import java.util.Map;
  * @param redTitles   红了的那几道的名字（**不截断**）
  * @param reportKept  完整报告还在不在某个能打开的地方（本族：**不在**——门只把输出尾巴带回来）
  * @param blockingReds 其中有几道是「阻塞门」（不阻塞的红门照样出现在 redTitles 里，只是不拉红整族）
+ * @param concurrency 这一趟最多同时跑了几道门（KI-429：**编排参数**，住 YAML 不住 Java）
+ * @param wallMs      这一族从起跑到收判决一共多少毫秒（**墙钟**，不是各道门之和——有界并发下它更短）
  * @param gates       每道门各自的判决
  */
 public record FamilyVerdict(
@@ -37,5 +39,7 @@ public record FamilyVerdict(
         List<String> redTitles,
         boolean reportKept,
         int blockingReds,
+        int concurrency,
+        long wallMs,
         List<Map<String, Object>> gates) {
 }

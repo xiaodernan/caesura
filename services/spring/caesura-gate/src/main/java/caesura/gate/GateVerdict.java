@@ -12,10 +12,12 @@ package caesura.gate;
  * @param command   实际跑的命令（人读的那一份）
  * @param exitCode  退出码；**超时或起不来时是 -1**（不是 0，也不是 1）
  * @param durationMs 这一趟跑了多少毫秒
- * @param verdict   {@code green} / {@code red} / {@code timeout} / {@code error}
+ * @param verdict   {@code green} / {@code red} / {@code timeout} / {@code error} / {@code circuit_open}
  * @param ranAt     起跑时刻（ISO-8601）
  * @param stdoutTail 标准输出尾巴（人读）
  * @param stderrTail 标准错误尾巴（人读）
+ * @param circuitState 熔断器在这一趟之前的状态（KI-429）：{@code CLOSED} / {@code OPEN} / {@code HALF_OPEN}
+ *                     ——{@code circuit_open} 那一档里它是 {@code OPEN}，那一趟**没有起进程**
  */
 public record GateVerdict(
         String id,
@@ -26,5 +28,6 @@ public record GateVerdict(
         String verdict,
         String ranAt,
         String stdoutTail,
-        String stderrTail) {
+        String stderrTail,
+        String circuitState) {
 }

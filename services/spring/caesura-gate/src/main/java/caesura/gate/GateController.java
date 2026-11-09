@@ -29,12 +29,23 @@ public class GateController {
     private final GateProperties properties;
     private final GateRunner runner;
 
-    public GateController(GateProperties properties, GateRunner runner) {
+    /**
+     * 这份名册是从**哪个配置**取回来的（KI-429）。
+     *
+     * <p>**现读，不写死**：写死的话，实测时换上夹具名册（{@code caesura-gates-probe}），
+     * 回答里还会写着 {@code config-server:caesura-gates} ⇒ 那一句是**谎**（而且是那种
+     * 「看起来像读数」的谎）。配置名只有一个出处：{@code spring.cloud.config.name}。
+     */
+    private final String configName;
+
+    public GateController(GateProperties properties, GateRunner runner,
+            @org.springframework.beans.factory.annotation.Value("${spring.cloud.config.name}") String configName) {
         this.properties = properties;
         this.runner = runner;
+        this.configName = configName;
     }
 
-    /** 门名册：连同「这份名册是从哪儿来的」一起摆上来（来源＝配置服务器） */
+    /** 门名册：连同「这份名册是从哪儿来的」一起摆上来（来源＝配置服务器 ＋ **它供的那一份配置名**） */
     @GetMapping
     public Map<String, Object> gates() {
         List<Map<String, Object>> rows = properties.getGates().stream()
@@ -46,7 +57,7 @@ public class GateController {
                         "blocking", g.isBlocking()))
                 .toList();
         return Map.of(
-                "source", "config-server:caesura-gates",
+                "source", "config-server:" + configName,
                 "repoRoot", properties.getRepoRoot(),
                 "count", rows.size(),
                 "gates", rows);

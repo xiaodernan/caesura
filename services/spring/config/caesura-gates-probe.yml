@@ -1,0 +1,33 @@
+# services/spring/config/caesura-gates-probe.yml — **夹具**，不是名册的第二个主人（KI-429）
+#
+# 它只干一件事：给熔断器一个**会失败的**门，好让「连着坏几道就开闸」这件事能被真跑一遍。
+#
+# **它不参与判定**：判据（`scripts/spring-family-rules.mjs`）读的是**另一份**
+# （`caesura-gates.yml`＝真名册）。这一份只在实测熔断时被配置服务器供出去
+# （起服务时 `--spring.cloud.config.name=caesura-gates-probe`）。
+#
+# 那一格红门**故意**指向一份不存在的脚本：门起进程 ⇒ MODULE_NOT_FOUND ⇒ 退出码非零
+# ⇒ 熔断器记一次失败（熔断器看的是**退出码**，它自己从不对「什么算红」发表意见）。
+# 连着失败到阈值之后，下一道必须是「熔断中」，而且**一个进程都没起**（那一趟 0 毫秒）。
+#
+# 那一道绿门（真的跑得起来）证明一件事：熔断是**按门**记的，
+# 不是整族一刀切（坏掉一道门不该让别的门也跑不了）。
+
+caesura:
+  # 仓库根：相对服务的工作目录（本族一律是 `services/spring`）⇒ `../..` 就是仓库根。
+  repo-root: "../.."
+
+  gates:
+    - id: probe-red
+      family: probe
+      command: node
+      args: ["scripts/no-such-probe-script.mjs"]
+      timeout-sec: 60
+      blocking: true
+
+    - id: probe-green
+      family: probe
+      command: node
+      args: ["scripts/phase-status.mjs"]
+      timeout-sec: 120
+      blocking: true

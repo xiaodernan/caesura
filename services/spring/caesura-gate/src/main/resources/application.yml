@@ -12,6 +12,17 @@ server:
   servlet:
     context-path: /gate
 
+caesura:
+  circuit:
+    # 熔断参数（KI-429）——**编排参数**，住这里不住配置服务器那份名册：
+    # 名册只装**判定**（门 id／命令／参数表／上限／是否阻塞），编排参数塞进去
+    # 会让「名册」这个词失去意思（重试参数也是这么分的）。
+    # 连着坏几道就开闸：开闸之后**一个进程都不起**，直回一个「熔断中」的判决；
+    # 冷却过去再放一道**试探**过去——试探绿了就闭合，败了就重新开闸。
+    # 这两个数是**唯一出处**：Java 源码里不许再写一遍（判据 spring-family-rules 盯着这件事）。
+    failure-threshold: 3
+    cooldown-sec: 120
+
 spring:
   application:
     name: caesura-gate

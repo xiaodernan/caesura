@@ -58,3 +58,29 @@ export function serviceTopologyFindings(input: {
 
 /** 判据⑥：Java 侧不许去读仓库的数据表（判定只有一个主人） */
 export function javaReadsRepoDataFindings(input: { javaFiles: { rel: string; text: string }[] }): SpringFinding[]
+
+/** 编排参数的主人（**值由 YAML 现读**，判据不抄那些数——抄一份就是第二个主人） */
+export interface OrchestrationOwner {
+  owner: string
+  label: string
+  keys: string[]
+}
+
+/** 编排参数名册：谁拥有它、它住在哪个键上 */
+export const ORCHESTRATION_OWNERS: OrchestrationOwner[]
+
+/** 判据⑦：编排参数各有主人，Java 侧不许再写一遍那个数 */
+export function orchestrationOwnerFindings(input: {
+  owners: OrchestrationOwner[]
+  ymlTexts: Record<string, string>
+  javaFiles: { rel: string; text: string }[]
+}): SpringFinding[]
+
+/** 判据⑧：名册只装判定——编排参数不许混进去 */
+export function rosterScopeFindings(rosterText: string): SpringFinding[]
+
+/** 判据⑨：熔断必须接上了（三态齐 ＋ 起进程之前问一句 ＋ 开闸时如实说没起进程） */
+export function breakerWiredFindings(input: { javaFiles: { rel: string; text: string }[] }): SpringFinding[]
+
+/** 判据⑩：进程形状——Windows 上 npm 要经过 `cmd /c`（它证不了退出码，得靠实机读数） */
+export function spawnShapeFindings(input: { javaFiles: { rel: string; text: string }[] }): SpringFinding[]

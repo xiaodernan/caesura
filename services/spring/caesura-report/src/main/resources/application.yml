@@ -27,6 +27,10 @@ caesura:
     # 「本地还没有 caesura-gate 的实例」是常态，不是故障。重试就是「编排」这一层的活。
     retry-attempts: 8
     retry-delay-ms: 2000
+    # 一族最多同时跑几道门（KI-429）——同样住 YAML 不住 Java。
+    # 逐道排队要等好几分钟（最重的几道门是整套测试与构建）；一起跑就快得多。
+    # 但它有上限：上限自己也是一个数，它必须**只有一处出处**（判据 spring-family-rules 盯着）。
+    concurrency: 3
 
 management:
   endpoints:

@@ -28,9 +28,48 @@ public class GateRunner {
     private static final int TAIL_CHARS = 4000;
 
     private final GateProperties properties;
+    private final CircuitBreaker breaker;
 
-    public GateRunner(GateProperties properties) {
+    /** 这一台是不是 Windows（决定进程怎么起；判定不看这个，只看退出码） */
+    private final boolean windows;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public GateRunner(GateProperties properties, CircuitBreaker breaker) {
+        this(properties, breaker, onWindows());
+    }
+
+    /** 测试用：把「是不是 Windows」换掉（形状那一段要能被真读数量） */
+    GateRunner(GateProperties properties, CircuitBreaker breaker, boolean windows) {
         this.properties = properties;
+        this.breaker = breaker;
+        this.windows = windows;
+    }
+
+    /** 这一台是不是 Windows */
+    static boolean onWindows() {
+        return System.getProperty("os.name", "").toLowerCase().startsWith("win");
+    }
+
+    /**
+     * 进程形状：**Windows 上 {@code npm} 是批处理文件**（{@code npm.cmd}），
+     * 而 {@code CreateProcess} 不能直接起它 —— 实测报的是
+     * {@code Cannot run program "npm" ... error=2（系统找不到指定的文件）}：
+     * 名册里写着「npm run lint」，门起进程却**一出生就死**（五道门里有三道是这种死法）。
+     *
+     * <p>所以 Windows 上要经过 {@code cmd /c}。**名册写的是逻辑命令名**（{@code npm}／{@code node}），
+     * 「怎么把它起起来」是这一族自己的事 —— 判定仍然只看**退出码**，一个字没变。
+     *
+     * <p>POSIX 上原样起（{@code npm} 本来就是可执行文件，多一层 shell 只会多一层壳）。
+     */
+    static List<String> spawnCommand(List<String> command, boolean windows) {
+        if (!windows || command.isEmpty()) {
+            return command;
+        }
+        List<String> out = new ArrayList<>();
+        out.add("cmd");
+        out.add("/c");
+        out.addAll(command);
+        return out;
     }
 
     /**
@@ -47,11 +86,21 @@ public class GateRunner {
         String described = describe(command);
         Instant startedAt = Instant.now();
 
+        // 熔断（KI-429）：**起进程之前**先问一句。开闸了就直接回一个判决——
+        // 一个进程都不起（这一趟的 durationMs 是 0，因为它真的什么都没做）。
+        CircuitBreaker.Decision decision = breaker.beforeRun(gate.getId());
+        if (!decision.allowed()) {
+            return new GateVerdict(gate.getId(), gate.getFamily(), described, -1, 0,
+                    "circuit_open", startedAt.toString(), "",
+                    "熔断中（" + decision.reason() + "）：这一道门没有起进程",
+                    decision.state().name());
+        }
+
         Process proc = null;
         Collector out = null;
         Collector err = null;
         try {
-            ProcessBuilder builder = new ProcessBuilder(command);
+            ProcessBuilder builder = new ProcessBuilder(spawnCommand(command, windows));
             builder.directory(root.toFile());
             proc = builder.start();
             out = new Collector(proc.getInputStream());
@@ -61,36 +110,55 @@ public class GateRunner {
 
             boolean finished = proc.waitFor(gate.getTimeoutSec(), TimeUnit.SECONDS);
             if (!finished) {
-                proc.destroyForcibly();
+                killTree(proc);
                 proc.waitFor();
                 long ms = Duration.between(startedAt, Instant.now()).toMillis();
+                breaker.afterRun(gate.getId(), false);
                 return new GateVerdict(gate.getId(), gate.getFamily(), described, -1, ms,
-                        "timeout", startedAt.toString(), tail(out.text()), tail(err.text()));
+                        "timeout", startedAt.toString(), tail(out.text()), tail(err.text()),
+                        decision.state().name());
             }
             out.join();
             err.join();
             long ms = Duration.between(startedAt, Instant.now()).toMillis();
             int exit = proc.exitValue();
+            breaker.afterRun(gate.getId(), exit == 0);
             return new GateVerdict(gate.getId(), gate.getFamily(), described, exit, ms,
-                    exit == 0 ? "green" : "red", startedAt.toString(), tail(out.text()), tail(err.text()));
+                    exit == 0 ? "green" : "red", startedAt.toString(), tail(out.text()), tail(err.text()),
+                    decision.state().name());
         } catch (IOException e) {
             long ms = Duration.between(startedAt, Instant.now()).toMillis();
+            breaker.afterRun(gate.getId(), false);
             return new GateVerdict(gate.getId(), gate.getFamily(), described, -1, ms,
-                    "error", startedAt.toString(), "", "起不来：" + e);
+                    "error", startedAt.toString(), "", "起不来：" + e,
+                    decision.state().name());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             if (proc != null) {
-                proc.destroyForcibly();
+                killTree(proc);
             }
             long ms = Duration.between(startedAt, Instant.now()).toMillis();
+            breaker.afterRun(gate.getId(), false);
             return new GateVerdict(gate.getId(), gate.getFamily(), described, -1, ms,
-                    "error", startedAt.toString(), "", "被中断：" + e);
+                    "error", startedAt.toString(), "", "被中断：" + e,
+                    decision.state().name());
         }
     }
 
     /** 人读的命令串（`npm run lint` 而不是 `["npm","run","lint"]`） */
     private static String describe(List<String> command) {
         return String.join(" ", command);
+    }
+
+    /**
+     * 连**子孙**一起杀。
+     *
+     * <p>为什么：Windows 上经过 {@code cmd /c} 之后，被杀的是壳——壳底下那个
+     * （npm 起的 node）会变成孤儿继续跑，占着机器不放手。只杀壳等于没杀。
+     */
+    private static void killTree(Process proc) {
+        proc.descendants().forEach(ProcessHandle::destroyForcibly);
+        proc.destroyForcibly();
     }
 
     /** 取尾巴；空的不占位（人读时不该看到一大片空白） */
