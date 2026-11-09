@@ -67,7 +67,7 @@ en_tympanus×2 / en_myriad / en_refrein / en_hanged_knight`）开局即最大负
 1. 先在干净机器上 re-run（KI-407 那道环境债：覆盖率空报表）再落基线；本仓没量过第三趟。
 2. 每一项优化批（InstancedMesh / KTX2 / 粒子预算 / 状态机分片）落盘时同命令复量、记三列对比表，
    像 KI-317's `n=32` 那趟实验一样把方差写进答案，不写成"修好了"。
-3. 每一笔 KI-3xx 系优化结案必须带：命令 + commit hash + 至少 3 趟读数（mean/p95/max）+ 方差句。
+3. 每一笔 Phase 9 优化结案必须带：命令 + commit hash + 至少 3 趟读数（mean/p95/max）+ 方差句。
 4. 帧预算 Failures 不归 perf-probe 背书；Phase 9 的 exit 由「可见窗口里 1080p 60FPS 站桩实测」裁决（KI-010 同因），这盘只是逻辑侧底账。
 
 ---
