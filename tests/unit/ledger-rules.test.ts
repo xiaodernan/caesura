@@ -36,9 +36,12 @@ import {
  * （`npx vitest run` 一趟一个进程，下面的变异见证正是这么做的）。
  */
 const EXIT_SENTINEL = new Error('__validate-data-exit__')
-// 走变量而不是字面量：校验脚本是 JS，没有 .d.ts，字面 specifier 会让 `tsc --noEmit` 报 TS7016
-// （门就是 lint，红的是这道门而不是这条判据）。路径写错的代价由判据自己收——读不到「总计」那行就是红。
-const VALIDATOR_SPEC = '../../scripts/validate-data.mjs'
+// 字面 specifier：`scripts/validate-data.d.mts` 落地之后（KI-440），这一枚 import 又回到了类型层。
+// 这里原先写的是 `const VALIDATOR_SPEC = '…'` ＋ `import(VALIDATOR_SPEC as string)`，注释给的理由是「躲 TS7016」。
+// 理由当年成立，代价却比它躲掉的更大（`.scratch/ki440/probe-ts7016.mjs` 在同一份真树上实测）：
+//   字面 specifier 指无声明的脚本 ⇒ `tsc` rc=2、一条 TS7016；同一份脚本换成变量 + `as string` ⇒ rc=0、
+//   0 条 error——路径写错、文件改名、导出删掉，类型层一概看不见。补上声明就两样都不用牺牲。
+// 读不到「总计」那行的代价仍由下面那条判据自己收；路径与名字的错现在由 `tsc` 收。
 let validatorRuns = 0
 
 async function runValidator(): Promise<{ code: number | null; out: string }> {
@@ -55,7 +58,7 @@ async function runValidator(): Promise<{ code: number | null; out: string }> {
     throw EXIT_SENTINEL
   }) as typeof process.exit
   try {
-    await import(VALIDATOR_SPEC as string)
+    await import('../../scripts/validate-data.mjs')
   } catch (e) {
     if (e !== EXIT_SENTINEL) throw e // 脚本自己崩了 ⇒ 让它红到底，别冒充"跑过了"
   } finally {
