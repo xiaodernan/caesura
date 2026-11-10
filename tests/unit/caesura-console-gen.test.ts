@@ -171,8 +171,8 @@ describe('caesura-console-gen (KI-495)', () => {
     })
   })
 
-  it('⑪ buildSystems 真跑 LSM + OS/硬件两维：形状齐、读数是真判词且有界（KI-498）', () => {
-    const sys = buildSystems({ now: () => 1234, lsmKeys: 256, poolAccesses: 500, layoutCount: 1000 })
+  it('⑪ buildSystems 真跑 LSM + OS/硬件 + 缓存防护三维：形状齐、读数是真判词且有界（KI-498 / KI-501）', async () => {
+    const sys = await buildSystems({ now: () => 1234, lsmKeys: 256, poolAccesses: 500, layoutCount: 1000, guardConcurrency: 16, guardKeys: 64 })
     expect(sys.builtAt).toBe(1234)
     // LSM：真跑 256 key，flush/compact/speedup 都是算法计数、speedup>1。
     expect(sys.lsm).toMatchObject({ keys: 256 })
@@ -188,6 +188,13 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(sys.hw!.cacheLine.packedFalseSharing).toBeGreaterThan(0)
     expect(sys.hw!.layout.sequential.speedup).toBeGreaterThan(1)
     expect(sys.hw!.layout.strided.speedup).toBeCloseTo(1, 1)
+    // Guards：击穿 singleflight 合并、穿透布隆省回源、雪崩抖动削峰，都是真判词。
+    expect(sys.guards!.stampede.concurrency).toBe(16)
+    expect(sys.guards!.stampede.singleflightLoads).toBe(1)
+    expect(sys.guards!.stampede.savedLoads).toBe(15)
+    expect(sys.guards!.penetration.bloomDbHits).toBeLessThan(sys.guards!.penetration.naiveDbHits)
+    expect(sys.guards!.avalanche.jitterPeak).toBeLessThan(sys.guards!.avalanche.uniformPeak)
+    expect(sys.guards!.avalanche.peakReduction).toBeGreaterThan(0)
     // 可序列化纯数据、不含函数/Error。
     expect(() => JSON.stringify(sys)).not.toThrow()
   })
@@ -197,7 +204,12 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(withSys.systems).toBeTruthy()
     expect(withSys.systems!.lsm).toBeTruthy()
     expect(withSys.systems!.hw).toBeTruthy()
+    expect(withSys.systems!.guards).toBeTruthy() // KI-501 第三维默认也在
     expect(withSys.scenarios.map((s) => s.id)).toEqual(SCENARIO_IDS) // 五场景顺序不变
+    // guards:false 可单独关掉缓存防护维，lsm/hw 仍在（不连坐）。
+    const noGuards = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, guards: false })
+    expect(noGuards.systems!.guards).toBe(null)
+    expect(noGuards.systems!.lsm).toBeTruthy()
     const without = await buildSnapshot({ runner: fakeRunner(), driveNet: false, systems: false })
     expect(without.systems).toBe(null)
     expect(without.highlights).toBeTruthy() // 既有口径不受影响
@@ -212,10 +224,16 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(snap.systems.hw.cacheLine.paddedFalseSharing).toBe(0)
     expect(snap.systems.hw.layout.sequential.speedup).toBeGreaterThan(1)
     expect(typeof snap.systems.builtAt).toBe('number')
-    // bootstrap.js 与 snapshot.json 是同一份真快照（systems 也在其中）。
+    // KI-501 guards：三件真读数已固化进快照。
+    expect(snap.systems.guards.stampede.singleflightLoads).toBe(1)
+    expect(snap.systems.guards.stampede.savedLoads).toBeGreaterThan(0)
+    expect(snap.systems.guards.penetration.bloomDbHits).toBeLessThan(snap.systems.guards.penetration.naiveDbHits)
+    expect(snap.systems.guards.avalanche.jitterPeak).toBeLessThan(snap.systems.guards.avalanche.uniformPeak)
+    // bootstrap.js 与 snapshot.json 是同一份真快照（含三维 systems）。
     const bootCode = readFileSync(resolve(process.cwd(), 'console/bootstrap.js'), 'utf8')
     const fromBoot = JSON.parse(bootCode.slice(bootCode.indexOf('=') + 1).trim().replace(/;\s*$/, ''))
     expect(fromBoot.systems.lsm.speedup).toBe(snap.systems.lsm.speedup)
     expect(fromBoot.systems.hw.allocation.saved).toBe(snap.systems.hw.allocation.saved)
+    expect(fromBoot.systems.guards).toEqual(snap.systems.guards)
   })
 })

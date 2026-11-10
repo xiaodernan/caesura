@@ -302,4 +302,50 @@ describe('caesura-game-cloud', () => {
     expect(injected.shardedCache).toBe(cache)
     expect((await injected.status()).shardedCache.cache.shards).toEqual(['x', 'y'].sort())
   })
+
+  it('cacheGuard:true 装配防护三件套，status.cacheGuard 读三件对照证据、惰性同引用（KI-501）', async () => {
+    const gc = createGameCloud({
+      gameId: 'g1', gamePort: 7700, sources, cloud: fakeCloud(),
+      cacheGuard: { concurrency: 16, keys: 128, rounds: 3 }, guardNow: () => 6666,
+    })
+    expect(gc.runCacheGuardStudy).toBeTypeOf('function')
+    const st = await gc.status()
+    expect(st.cacheGuard.builtAt).toBe(6666)
+    // 击穿：N 并发合并到 1 次
+    expect(st.cacheGuard.stampede.naiveLoads).toBe(16)
+    expect(st.cacheGuard.stampede.singleflightLoads).toBe(1)
+    expect(st.cacheGuard.stampede.savedLoads).toBe(15)
+    // 穿透：空值墓碑 / 布隆都明显省回源
+    expect(st.cacheGuard.penetration.negativeDbHits).toBeLessThan(st.cacheGuard.penetration.naiveDbHits)
+    expect(st.cacheGuard.penetration.bloomDbHits).toBeLessThan(st.cacheGuard.penetration.naiveDbHits)
+    // 雪崩：抖动削峰
+    expect(st.cacheGuard.avalanche.jitterPeak).toBeLessThan(st.cacheGuard.avalanche.uniformPeak)
+    expect(st.cacheGuard.avalanche.peakReduction).toBeGreaterThan(0)
+    // 惰性缓存：两次 status 同一引用，不反复跑对照
+    expect((await gc.status()).cacheGuard).toBe(st.cacheGuard)
+    // runCacheGuardStudy 可重跑、确定性（同注入 now）
+    const rerun = await gc.runCacheGuardStudy!()
+    expect(rerun.stampede).toEqual(st.cacheGuard.stampede)
+  })
+
+  it('cacheGuard 默认 null 非破坏；可注入现成 study（KI-501）', async () => {
+    const plain = createGameCloud({ gameId: 'g2', gamePort: 7701, sources, cloud: fakeCloud() })
+    expect(plain.runCacheGuardStudy).toBe(null)
+    const ps = await plain.status()
+    expect(ps.cacheGuard).toBe(null)
+    expect(ps.hashRing).toBe(null)
+    expect(ps.shardedCache).toBe(null)
+    // 注入一只现成 study：直接用、不重跑，builtAt 原样带出。
+    const { cacheGuardStudy } = await import('../../scripts/caesura-cache-guard.mjs')
+    const study = await cacheGuardStudy({ concurrency: 4, keys: 32, now: () => 123 })
+    const injected = createGameCloud({
+      gameId: 'g3', gamePort: 7702, sources, cloud: fakeCloud(),
+      cacheGuard: study, guardNow: () => 999,
+    })
+    const st = await injected.status()
+    expect(st.cacheGuard.builtAt).toBe(123) // 注入 study 的 builtAt，不被 guardNow 覆盖
+    expect(st.cacheGuard.stampede.singleflightLoads).toBe(1)
+    // 主链语义逐字不动
+    expect(st.eventChannel).toBeTruthy()
+  })
 })

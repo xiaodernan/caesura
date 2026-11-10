@@ -40,6 +40,7 @@
       renderCache()
       renderNet()
       renderSystems(snap.systems || null)
+      renderGuards(snap.systems ? snap.systems.guards : null)
       setLive(true, result.source)
     }).catch(function (e) {
       setLive(false, 'error')
@@ -446,6 +447,102 @@
         ['跳跃 ' + fmt(str.stride) + ' speedup', isNum(str.speedup) ? fmt(str.speedup, 1) + '×' : '—'],
       ], true)
     note.textContent = '三件均为 Node 侧确定性结构计数：对象池省的是分配次数、padding 给的是同 cache line 对数、SoA 给的是 LRU 行缓存模型 miss 数 —— 非墙钟跑分，真实收益须实测调参。'
+  }
+
+  /* ---------------- 缓存防护三件套（KI-501 前后端协同） ----------------
+   * systems.guards 是与 lsm/hw 并列的第三维独立读数。只读不复核：
+   * 整块缺 ⇒ 三面板各自降级；单块缺 ⇒ 只降那块，不连坐、不画假条/假直方图。
+   */
+  function renderGuards(guards) {
+    renderStampede(guards && guards.stampede)
+    renderPenetration(guards && guards.penetration)
+    renderAvalanche(guards && guards.avalanche)
+  }
+
+  function guardMissing(hero, bars, note, label) {
+    if (hero) hero.innerHTML = '<span class="big">—</span><span class="cap">' + esc(label) + '读数缺失</span>'
+    if (bars) bars.innerHTML = '<div class="nodata">无' + esc(label) + '读数</div>'
+    if (note) note.textContent = 'systems.guards 缺失 —— 重跑 npm run console:data 采集真判词'
+  }
+
+  // 击穿：并发 N → 无防护 N 次回源 vs singleflight 1 次，放大倍数；XFetch 提前续期挤掉 miss。
+  function renderStampede(st) {
+    var hero = $('#stampede-hero'), bars = $('#stampede-bars'), note = $('#stampede-note')
+    if (!st) { guardMissing(hero, bars, note, '击穿'); return }
+    var amp = isNum(st.amplification) ? st.amplification : null
+    hero.innerHTML =
+      '<span class="big">' + esc(fmt(amp, 0)) + '</span><span class="unit">×</span>' +
+      '<span class="cap">并发 <b>' + esc(fmt(st.concurrency)) + '</b> 路<br>' +
+      'singleflight 只回填 <b>' + esc(fmt(st.singleflightLoads)) + '</b> 次</span>'
+    var naive = isNum(st.naiveLoads) ? st.naiveLoads : 0
+    var sf = isNum(st.singleflightLoads) ? st.singleflightLoads : 0
+    var max = Math.max(naive, sf, 1)
+    bars.innerHTML =
+      guardBar('无防护', naive, max, 'bad', 'bad') +
+      guardBar('singleflight', sf, max, 'safe', 'good')
+    note.textContent = '真跑 ' + esc(fmt(st.concurrency)) + ' 路并发 miss 同一热点 key：无防护把后端打 ' +
+      esc(fmt(naive)) + ' 次，singleflight（复用缓存层 load）合并成 ' + esc(fmt(sf)) + ' 次，省 ' +
+      esc(fmt(st.savedLoads)) + ' 次；XFetch 逻辑过期另提前续期挤掉 ' + esc(fmt(st.xfetchAvoidedMisses)) +
+      ' 个并发回源。回源次数是结构计数，非墙钟/QPS。'
+  }
+
+  function guardBar(label, value, max, fillCls, numCls) {
+    var w = max > 0 && isNum(value) ? Math.round(value / max * 100) : 0
+    return '<div class="guard-row"><span class="lab">' + esc(label) + '</span>' +
+      '<span class="track"><i class="fill ' + fillCls + '" style="width:' + w + '%" data-w="' + w + '"></i></span>' +
+      '<span class="num ' + numCls + '">' + esc(fmt(value)) + '</span></div>'
+  }
+
+  // 穿透：不存在的 key 三路回源（无防护 / 空值墓碑 / 布隆），布隆假阳性如实标注。
+  function renderPenetration(pen) {
+    var hero = $('#penetration-hero'), bars = $('#penetration-bars'), note = $('#penetration-note')
+    if (!pen) { guardMissing(hero, bars, note, '穿透'); return }
+    var saved = isNum(pen.bloomSavedRate) ? pen.bloomSavedRate : null
+    hero.innerHTML =
+      '<span class="big jade">' + esc(saved == null ? '—' : fmt(saved * 100, 0)) + '</span><span class="unit">%</span>' +
+      '<span class="cap">布隆省下回源<br><b>' + esc(fmt(pen.absent)) + '</b> 个不存在 key × ' + esc(fmt(pen.rounds)) + ' 轮</span>'
+    var naive = isNum(pen.naiveDbHits) ? pen.naiveDbHits : 0
+    var neg = isNum(pen.negativeDbHits) ? pen.negativeDbHits : 0
+    var bloom = isNum(pen.bloomDbHits) ? pen.bloomDbHits : 0
+    var max = Math.max(naive, neg, bloom, 1)
+    bars.innerHTML =
+      guardBar('无防护', naive, max, 'bad', 'bad') +
+      guardBar('空值墓碑', neg, max, 'good', 'good') +
+      guardBar('布隆前置', bloom, max, 'safe', 'good')
+    note.textContent = '查库里不存在的 key：' + esc(fmt(naive)) + ' 次无防护回源 → 空值墓碑只首轮 ' +
+      esc(fmt(neg)) + ' 次、布隆前置挡掉 ' + esc(fmt(pen.bloomRejected)) + ' 个、只放行 ' + esc(fmt(bloom)) +
+      ' 次。布隆**不零误判**：如实暴露 ' + esc(fmt(pen.bloomFalsePositives)) + ' 个假阳性（会放进少量不存在 key）。回源数是结构计数。'
+  }
+
+  // 雪崩：统一 TTL 单桶峰值 vs TTL 抖动削峰，双直方图（真 histogram 转条高，不编造）。
+  function renderAvalanche(av) {
+    var hero = $('#avalanche-hero'), hist = $('#avalanche-hist'), note = $('#avalanche-note')
+    if (!av) { guardMissing(hero, hist, note, '雪崩'); return }
+    var red = isNum(av.peakReduction) ? av.peakReduction : null
+    hero.innerHTML =
+      '<span class="big jade">' + esc(red == null ? '—' : fmt(red * 100, 0)) + '</span><span class="unit">%</span>' +
+      '<span class="cap">单桶峰值削减<br>' + esc(fmt(av.uniformPeak)) + ' → ' + esc(fmt(av.jitterPeak)) + ' 条同刻过期</span>'
+    var hg = av.histogram || {}
+    hist.innerHTML =
+      histRow('统一 TTL', hg.uniform, av.uniformPeak, false) +
+      histRow('TTL 抖动', hg.jitter, av.jitterPeak, true)
+    note.textContent = '一批 ' + esc(fmt(av.keys)) + ' 个 key 同时写入：统一 TTL 时 ' + esc(fmt(av.uniformPeak)) +
+      ' 条挤在 1 个过期桶（DB 瞬时被打满），加 TTL 抖动后摊到 ' + esc(fmt(av.jitterBuckets)) + ' 个桶、峰值降 ' +
+      esc(fmt(red == null ? 0 : red * 100, 0)) + '%。抖动只挪时刻、不减少总过期数；非墙钟跑分。'
+  }
+
+  function histRow(label, series, peak, jitter) {
+    var arr = Array.isArray(series) ? series : []
+    var max = arr.reduce(function (m, v) { return Math.max(m, isNum(v) ? v : 0) }, 1)
+    var bars = arr.length
+      ? arr.map(function (v) {
+        var h = max > 0 && isNum(v) ? Math.max(2, Math.round(v / max * 100)) : 2
+        return '<i style="height:' + h + '%"></i>'
+      }).join('')
+      : '<span class="nodata">无直方图读数</span>'
+    return '<div class="hist-row"><span class="lab">' + esc(label) + '</span>' +
+      '<div><div class="hist-bars' + (jitter ? ' jitter' : '') + '">' + bars + '</div>' +
+      '<div class="peak">峰值 ' + esc(fmt(peak)) + ' · ' + esc(fmt(arr.length)) + ' 桶</div></div></div>'
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)

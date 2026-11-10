@@ -23,6 +23,7 @@ import { createLsmStore } from './caesura-lsm-store.mjs'
 import { allocationStudy, compareLayouts, createCacheLinePadder, createPackedCounters } from './caesura-hw-perf.mjs'
 import { createHashRing, compareRemapping, createShardRouter } from './caesura-consistent-hash.mjs'
 import { createShardedCache, compareHitRetention } from './caesura-sharded-cache.mjs'
+import { cacheGuardStudy, guardSnapshot } from './caesura-cache-guard.mjs'
 import {
   createAimdCongestion,
   createCubicCongestion,
@@ -238,6 +239,25 @@ export function createGameCloud(opts = {}) {
     return shardedCached
   }
 
+  // KI-501：缓存防护三件套（opt-in）。opts.cacheGuard===true 用缺省规模建；传对象逐项注入
+  // （concurrency/keys/ttlMs/beta/jitterRatio/buckets/rounds/queryKeys/...），或直接塞一只现成 study 实例
+  // （duck-typed：带 stampede/penetration/avalanche 三块）。对照击穿/穿透/雪崩三件套的结构计数。
+  // 默认 cacheGuard:false 不装配、不改任何调用路径（KI-493 缓存 / KI-500 分片 / KI-491 灰度路由语义逐字不动）。
+  const guardCfg = opts.cacheGuard === true ? {} : (opts.cacheGuard && typeof opts.cacheGuard === 'object' ? opts.cacheGuard : null)
+  const guardInjected = guardCfg !== null && opts.cacheGuard &&
+    typeof opts.cacheGuard === 'object' && typeof opts.cacheGuard.stampede === 'object'
+  let guardCached = null
+  async function guardSnapshotForStatus() {
+    if (guardCfg === null) return null
+    if (guardCached) return guardCached
+    // 注入现成 study 直接用（不重跑）；否则真跑一次汇总，惰性缓存不反复付对照成本。
+    const study = guardInjected
+      ? opts.cacheGuard
+      : await cacheGuardStudy({ ...guardCfg, now: opts.guardNow ?? guardCfg.now })
+    guardCached = guardSnapshot(study)
+    return guardCached
+  }
+
   /** 包住一次调用，用真实耗时/成败喂 net 包（未启用则原样返回，零开销）。 */
   async function observeCall(promise) {
     if (!net) return promise
@@ -280,6 +300,8 @@ export function createGameCloud(opts = {}) {
     shardRouter: hashRing ? () => createShardRouter({ ring: hashRing }) : null,
     /** KI-500：分片缓存客户端实例（未配 opts.shardedCache 时为 null）；shardOf/get/set/load/remapOn/stats。 */
     shardedCache,
+    /** KI-501：缓存防护三件套汇总的现算入口（未配 opts.cacheGuard 时为 null）；调一次真跑击穿/穿透/雪崩对照。 */
+    runCacheGuardStudy: guardCfg === null ? null : () => cacheGuardStudy({ ...guardCfg, now: opts.guardNow ?? guardCfg.now }),
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
     gray: runtime.gray,
     /** 把游戏真 EventBus 按白名单routes 接进云事件总线（游戏侧一行：gc.connectGameBus(bus, routes)）。 */
@@ -312,6 +334,7 @@ export function createGameCloud(opts = {}) {
         hw: hw ? hw.snapshot() : null,
         hashRing: hashSnapshot(),
         shardedCache: shardedSnapshot(),
+        cacheGuard: await guardSnapshotForStatus(),
       }
     },
   }

@@ -35,5 +35,7 @@ export function runMeshE2E(opts?: any): {
     hashRingSnapshot: { ring: any; grow: { consistentRate: number; moduloRate: number; theoreticalRate: number; savedRate: number; delta: number }; distribution: any; builtAt: number } | null
     /** KI-500：分片缓存快照（cache/retention），未配 shardedCache 为 null */
     shardedCacheSnapshot: { cache: any; retention: { delta: number; consistentRetention: number; moduloRetention: number; theoretical: number; savedRate: number }; builtAt: number } | null
+    /** KI-501：缓存防护三件套快照（stampede/penetration/avalanche），未配 cacheGuard 为 null */
+    cacheGuardSnapshot: { stampede: any; penetration: any; avalanche: any; builtAt: number } | null
   }>
 }

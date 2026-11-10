@@ -42,10 +42,43 @@ export interface HwReading {
   }
 }
 
-/** KI-498：与五场景并列的独立「系统读数」数据块（LSM 引擎 + OS/硬件适配）。 */
+/** KI-501：与 LSM/HW 并列的第三维「缓存防护」读数（击穿/穿透/雪崩三件套结构计数）。 */
+export interface GuardsReading {
+  stampede: {
+    concurrency: number
+    naiveLoads: number
+    singleflightLoads: number
+    savedLoads: number
+    amplification: number | null
+    xfetchAvoidedMisses: number
+  }
+  penetration: {
+    absent: number
+    rounds: number
+    naiveDbHits: number
+    negativeDbHits: number
+    bloomDbHits: number
+    bloomRejected: number
+    bloomFalsePositives: number | null
+    bloomSavedRate: number | null
+  }
+  avalanche: {
+    keys: number
+    buckets: number
+    uniformPeak: number
+    jitterPeak: number
+    peakReduction: number | null
+    uniformBuckets: number
+    jitterBuckets: number
+    histogram: { uniform: number[]; jitter: number[] }
+  }
+}
+
+/** KI-498 + KI-501：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护）。 */
 export interface SystemsBlock {
   lsm: LsmReading | null
   hw: HwReading | null
+  guards: GuardsReading | null
   builtAt: number
 }
 
@@ -68,15 +101,35 @@ export function buildSnapshot(opts?: {
   runner?: (scenarioId: string) => E2ERunner
   now?: () => number
   driveNet?: boolean
-  /** KI-498：false 关掉 systems 块（兼容旧快照/确定性单测）；缺省真跑两维系统读数。 */
+  /** KI-498：false 关掉 systems 块（兼容旧快照/确定性单测）；缺省真跑三维系统读数。 */
   systems?: boolean
   lsmKeys?: number
   poolAccesses?: number
   layoutCount?: number
+  /** KI-501：false 关掉缓存防护维（兼容旧快照）；guardConcurrency/guardKeys 注入规模。 */
+  guards?: boolean
+  guardConcurrency?: number
+  guardKeys?: number
 }): Promise<ConsoleSnapshot>
 
-/** KI-498：真跑 LSM + OS/硬件两维系统读数，汇成前端「存储/硬件」面板的独立数据块。 */
-export function buildSystems(opts?: { now?: () => number; lsmKeys?: number; poolAccesses?: number; layoutCount?: number }): SystemsBlock
+/** KI-498 + KI-501：真跑 LSM + OS/硬件 + 缓存防护三维系统读数；击穿对照真跑并发 ⇒ async。 */
+export function buildSystems(opts?: {
+  now?: () => number
+  lsmKeys?: number
+  poolAccesses?: number
+  layoutCount?: number
+  guards?: boolean
+  guardConcurrency?: number
+  guardKeys?: number
+}): Promise<SystemsBlock>
+
+/** KI-501：真跑缓存防护三件套（击穿/穿透/雪崩）收敛成前端三面板紧凑读数；单维失败落 null。 */
+export function buildGuardsReading(opts: {
+  now?: () => number
+  guards?: boolean
+  guardConcurrency?: number
+  guardKeys?: number
+}, now: () => number): Promise<GuardsReading | null>
 
 export function realScenarioOpts(id: string): Record<string, any>
 

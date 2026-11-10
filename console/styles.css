@@ -288,6 +288,44 @@ main { padding: clamp(18px, 3vw, 40px) clamp(18px, 4vw, 56px) 48px; max-width: 1
 .hw-card.wide { grid-column: 1 / -1; }
 @media (max-width: 620px) { .hw-grid { grid-template-columns: 1fr; } .hw-card.wide { grid-column: auto; } }
 
+/* ---------- 缓存防护三件套（KI-501：击穿 / 穿透 / 雪崩） ---------- */
+.row-guards { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 1020px) { .row-guards { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 680px)  { .row-guards { grid-template-columns: 1fr; } }
+.panel-guard { display: flex; flex-direction: column; }
+
+/* 面板顶部大数（放大倍数 / 省回源率 / 削峰率） */
+.guard-hero { display: flex; align-items: baseline; gap: 8px; padding: 12px 0 10px; border-bottom: 1px solid var(--line-soft); }
+.guard-hero .big { font-family: var(--mono); font-size: 40px; line-height: 1; color: var(--gold); font-variant-numeric: tabular-nums; text-shadow: 0 0 16px rgba(201,180,88,.24); }
+.guard-hero .big.jade { color: var(--jade); text-shadow: 0 0 16px rgba(79,155,134,.24); }
+.guard-hero .unit { font-family: var(--mono); font-size: 13px; color: var(--gold-dim); }
+.guard-hero .cap { margin-left: auto; font-size: 10px; color: var(--muted); letter-spacing: .06em; text-align: right; line-height: 1.4; }
+.guard-hero .cap b { color: #e2dcc8; font-family: var(--mono); font-weight: 500; }
+
+/* 对照条：无防护 vs 有防护的回源次数 */
+.guard-bars { display: flex; flex-direction: column; gap: 9px; padding: 12px 0 2px; }
+.guard-row { display: grid; grid-template-columns: 68px 1fr 54px; align-items: center; gap: 8px; font-size: 11px; }
+.guard-row .lab { color: var(--muted); }
+.guard-row .track { height: 9px; background: var(--ash-2); border: 1px solid var(--line-soft); position: relative; overflow: hidden; }
+.guard-row .fill { position: absolute; inset: 0 auto 0 0; width: 0; transition: width 1s cubic-bezier(.2,.8,.2,1); }
+.guard-row .fill.bad  { background: linear-gradient(90deg, #7d3340, var(--wine)); }
+.guard-row .fill.good { background: linear-gradient(90deg, var(--gold-dim), var(--gold)); }
+.guard-row .fill.safe { background: linear-gradient(90deg, #356b5d, var(--jade)); }
+.guard-row .num { font-family: var(--mono); text-align: right; color: #e8e3d3; font-variant-numeric: tabular-nums; }
+.guard-row .num.bad { color: #d98b95; }
+.guard-row .num.good { color: var(--jade); }
+
+/* 雪崩：统一 TTL vs 抖动的过期分布直方图 */
+.guard-hist { display: flex; flex-direction: column; gap: 7px; padding: 12px 0 2px; }
+.hist-row { display: grid; grid-template-columns: 68px 1fr; align-items: center; gap: 8px; }
+.hist-row .lab { font-size: 11px; color: var(--muted); }
+.hist-bars { display: flex; align-items: flex-end; gap: 2px; height: 46px; border-bottom: 1px solid var(--line); padding-bottom: 1px; }
+.hist-bars i { flex: 1; min-width: 2px; background: linear-gradient(180deg, var(--gold), var(--gold-dim)); transition: height 1s cubic-bezier(.2,.8,.2,1); }
+.hist-bars.jitter i { background: linear-gradient(180deg, var(--jade), #356b5d); }
+.hist-row .peak { font-family: var(--mono); font-size: 10px; color: var(--gold-dim); }
+
+.panel-guard .note { margin-top: auto; }
+
 /* 空值 / 无数据 */
 .nodata { color: var(--muted); font-family: var(--mono); font-size: 11px; padding: 12px 0; }
 .nodata::before { content: "◇ "; color: var(--gold-dim); }

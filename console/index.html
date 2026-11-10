@@ -139,6 +139,28 @@
       <p class="note" id="hw-note">—</p>
     </article>
   </section>
+
+  <!-- 缓存防护三件套（KI-501 前后端协同：击穿 / 穿透 / 雪崩，与 systems 并列读真判词） -->
+  <section class="row row-guards">
+    <article class="panel panel-guard">
+      <div class="panel-head"><h2>击穿 · Stampede</h2><span class="hint">热点 key 过期瞬间</span></div>
+      <div class="guard-hero" id="stampede-hero"></div>
+      <div class="guard-bars" id="stampede-bars"></div>
+      <p class="note" id="stampede-note">—</p>
+    </article>
+    <article class="panel panel-guard">
+      <div class="panel-head"><h2>穿透 · Penetration</h2><span class="hint">查不存在的 key</span></div>
+      <div class="guard-hero" id="penetration-hero"></div>
+      <div class="guard-bars" id="penetration-bars"></div>
+      <p class="note" id="penetration-note">—</p>
+    </article>
+    <article class="panel panel-guard">
+      <div class="panel-head"><h2>雪崩 · Avalanche</h2><span class="hint">同刻集体过期</span></div>
+      <div class="guard-hero" id="avalanche-hero"></div>
+      <div class="guard-hist" id="avalanche-hist"></div>
+      <p class="note" id="avalanche-note">—</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">

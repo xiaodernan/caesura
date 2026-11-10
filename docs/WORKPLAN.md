@@ -150,6 +150,7 @@ Phase B4 的三件套此前是"有人听、没人说"。
 | ✅ KI-498 | **前后端协同贯穿（P8 第六维收口；`caesura-console-gen` 增 `systems` 数据块真跑 LSM+OS 硬件读数，`console/` 增「存储引擎 / 硬件适配」两面板，五场景与 highlights 口径不动、缺字段诚实降级）**（工程，2026-11-11 已落，详见账本 KI-498） | KI-498 |
 | ✅ KI-499 | **一致性哈希环 + 虚拟节点 + 缓存分片教学件（P8 第七维「算法 / 缓存 / 微服务元素」；新 `caesura-consistent-hash.mjs`：虚拟节点环二分查找 + 加权分布 + 扩容最小重映射 vs 取模对照 + 缓存分片定位器，opt-in 挂 status.hashRing）**（工程，2026-11-11 已落，详见账本 KI-499） | KI-499 |
 | ✅ KI-500 | **分片缓存客户端：一致性哈希分片 + 缓存命中率保留率对照（P8 第八维「缓存 / 算法 / 微服务」；新 `caesura-sharded-cache.mjs`：组合 KI-493 缓存 + KI-499 环，按片路由 get/set/load，扩缩容时一致性哈希保住约 N/(N+1) 命中率 vs 取模约 1/N，opt-in 挂 status.shardedCache）**（工程，2026-11-11 已落，详见账本 KI-500） | KI-500 |
+| ✅ KI-501 | **缓存防护三件套：击穿 / 穿透 / 雪崩教学件 + 前端控制台贯穿（P8 第九维「缓存合理运用 / 算法 / 数据库性能 / 前端美观 / 前后端协同」；新 `caesura-cache-guard.mjs`：击穿 singleflight+逻辑过期、穿透布隆前置+空值墓碑、雪崩 TTL 抖动削峰，`systems.guards` 三面板前端贯穿，opt-in 挂 status.cacheGuard）**（工程，2026-11-11 已落，详见账本 KI-501） | KI-501 |
 
 
 

@@ -284,4 +284,64 @@ describe('caesura-console-ui (KI-495)', () => {
     expect(dom2.els['hw-grid'].innerHTML).toContain('对象池 · GC 分配')
     expect(dom2.els['hw-grid'].innerHTML).toContain(String(real.systems.hw.allocation.saved))
   })
+
+  it('⑩ KI-501 真 guards 读数落进击穿 / 穿透 / 雪崩三面板（不是写死的数）', async () => {
+    const dom = await runApp(real)
+    const g = real.systems.guards
+    // 击穿：放大倍数、无防护 vs singleflight 回源次数、真条宽。
+    const sh = dom.els['stampede-hero'].innerHTML
+    expect(sh).toContain(String(g.stampede.amplification))
+    expect(sh).toContain(String(g.stampede.singleflightLoads))
+    const sb = dom.els['stampede-bars'].innerHTML
+    expect(sb).toContain('无防护')
+    expect(sb).toContain('singleflight')
+    expect(sb).toContain(String(g.stampede.naiveLoads))
+    expect(sb).toContain('width:100%') // 无防护那条铺满（max）
+    expect(sb).toContain('width:')     // singleflight 那条按真比值
+    expect(dom.els['stampede-note'].textContent).toContain('结构计数')
+    // 穿透：布隆省下回源率、三路回源真数、假阳性如实标注。
+    const ph = dom.els['penetration-hero'].innerHTML
+    expect(ph).toContain(String(Math.round(g.penetration.bloomSavedRate * 100)))
+    const pb = dom.els['penetration-bars'].innerHTML
+    expect(pb).toContain('空值墓碑')
+    expect(pb).toContain('布隆前置')
+    expect(pb).toContain(String(g.penetration.naiveDbHits))
+    expect(pb).toContain(String(g.penetration.bloomDbHits))
+    expect(dom.els['penetration-note'].textContent).toContain(String(g.penetration.bloomFalsePositives))
+    expect(dom.els['penetration-note'].textContent).toContain('不零误判')
+    // 雪崩：削峰率、统一 TTL vs 抖动峰值、真 histogram 转条高。
+    const ah = dom.els['avalanche-hero'].innerHTML
+    expect(ah).toContain(String(Math.round(g.avalanche.peakReduction * 100)))
+    expect(ah).toContain(String(g.avalanche.uniformPeak))
+    expect(ah).toContain(String(g.avalanche.jitterPeak))
+    const hist = dom.els['avalanche-hist'].innerHTML
+    expect(hist).toContain('统一 TTL')
+    expect(hist).toContain('TTL 抖动')
+    expect(hist).toContain('hist-bars jitter') // 抖动那行用 jade 色
+    expect((hist.match(/<i style="height:/g) || []).length)
+      .toBe(g.avalanche.histogram.uniform.length + g.avalanche.histogram.jitter.length)
+    expect(dom.els['avalanche-note'].textContent).toContain('不减少总过期数')
+  })
+
+  it('⑪ KI-501 guards 整块缺 / 单块缺诚实降级，不连坐 lsm-hw', async () => {
+    // 整块缺：三面板各自降级，绝不用 0 或假条顶替；lsm/hw 仍照常。
+    const noGuards = JSON.parse(JSON.stringify(real))
+    noGuards.systems.guards = null
+    const dom = await runApp(noGuards)
+    expect(dom.els['stampede-hero'].innerHTML).toContain('击穿读数缺失')
+    expect(dom.els['stampede-bars'].innerHTML).toContain('无击穿读数')
+    expect(dom.els['penetration-bars'].innerHTML).toContain('无穿透读数')
+    expect(dom.els['avalanche-hist'].innerHTML).toContain('无雪崩读数')
+    expect(dom.els['avalanche-note'].textContent).toContain('systems.guards 缺失')
+    expect(dom.els['lsm-gauge'].innerHTML).toContain(real.systems.lsm.speedup.toFixed(1)) // lsm 不连坐
+    expect(dom.els['hw-grid'].innerHTML).toContain('对象池 · GC 分配')
+
+    // 单块缺：只降击穿，穿透/雪崩仍渲染真读数（不连坐同维其它块）。
+    const partial = JSON.parse(JSON.stringify(real))
+    partial.systems.guards.stampede = null
+    const dom2 = await runApp(partial)
+    expect(dom2.els['stampede-hero'].innerHTML).toContain('击穿读数缺失')
+    expect(dom2.els['penetration-hero'].innerHTML).toContain(String(Math.round(real.systems.guards.penetration.bloomSavedRate * 100)))
+    expect(dom2.els['avalanche-hero'].innerHTML).toContain(String(real.systems.guards.avalanche.uniformPeak))
+  })
 })

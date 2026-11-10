@@ -19,6 +19,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { runMeshE2E } from './spring-family-mesh-e2e.mjs'
 import { createLsmStore } from './caesura-lsm-store.mjs'
 import { createGameCloud } from './caesura-game-cloud.mjs'
+import { cacheGuardStudy } from './caesura-cache-guard.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
 export const SCENARIO_IDS = ['main', 'gray', 'resilience', 'cache', 'net']
@@ -58,11 +59,14 @@ export async function buildSnapshot(opts = {}) {
 
   // KI-498：五场景之外并一块「系统读数」（LSM 引擎 + OS/硬件适配），与 scenarios 平级、
   // 不扰动既有场景顺序与 highlights 口径。`systems:false` 可关（兼容旧快照/确定性单测）。
-  const systems = opts.systems === false ? null : buildSystems({
+  const systems = opts.systems === false ? null : await buildSystems({
     now,
     lsmKeys: opts.lsmKeys,
     poolAccesses: opts.poolAccesses,
     layoutCount: opts.layoutCount,
+    guards: opts.guards,
+    guardConcurrency: opts.guardConcurrency,
+    guardKeys: opts.guardKeys,
   })
 
   return {
@@ -76,24 +80,29 @@ export async function buildSnapshot(opts = {}) {
 }
 
 /**
- * KI-498：真跑两维「系统读数」汇成一块独立数据（给前端「存储引擎 / 硬件适配」面板）。
+ * KI-498 + KI-501：真跑三维「系统读数」汇成一块独立数据（给前端「存储引擎 / 硬件适配 / 缓存防护」面板）。
  *
  * <p>与五趟 mesh E2E 判词**并列、不混算**：① LSM 引擎用 CLI benchmark 同款确定性序列
  * （写 N 个 key、每 7 个删一个、flush+compact、喂一批点查），落 flushes/compactions/
  * mergedAway/tombstonesDropped/bloomRejects/speedup/各层段数；② OS/硬件走
- * `createGameCloud({hw:true})` 装配的 `hw.snapshot()`（对象池/cache line/layout 三件对照）。
- * 两者都是**真 Node 侧判词的结构计数**、可注入规模、时钟注入 ⇒ 确定性可测；本件不复核、不重算，
- * 缺哪块就落 null，前端据实降级。</p>
+ * `createGameCloud({hw:true})` 装配的 `hw.snapshot()`（对象池/cache line/layout 三件对照）；
+ * ③ 缓存防护走 `cacheGuardStudy`（击穿 singleflight 合并 / 穿透布隆+空值墓碑 / 雪崩 TTL 抖动削峰）。
+ * 三者都是**真 Node 侧判词的结构计数**、可注入规模、时钟注入 ⇒ 确定性可测；本件不复核、不重算，
+ * 缺哪块就落 null，前端据实降级。因击穿对照真跑并发 loader（Promise.all），本件为 async。</p>
  *
  * @param {object} [opts]
  * @param {() => number} [opts.now] 时钟（注入则 builtAt 确定性）
- * @returns {{lsm:object|null, hw:object|null, builtAt:number}}
+ * @param {boolean} [opts.guards=false] 关掉缓存防护维（兼容旧快照）
+ * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, builtAt:number}>}
  */
-export function buildSystems(opts = {}) {
+export async function buildSystems(opts = {}) {
   const now = typeof opts.now === 'function' ? opts.now : () => Date.now()
   const lsm = buildLsmReading(opts)
   const hw = buildHwReading(opts)
-  return { lsm, hw, builtAt: now() }
+  // KI-501：第三维「缓存防护」真跑三件套（击穿/穿透/雪崩），与 lsm/hw 平级、不混入五场景。
+  // 异步：击穿对照真跑并发 loader + singleflight（Promise.all）；故 buildSystems/buildSnapshot 随之 async。
+  const guards = opts.guards === false ? null : await buildGuardsReading(opts, now)
+  return { lsm, hw, guards, builtAt: now() }
 }
 
 /** LSM 引擎真跑一趟确定性 benchmark，回结构读数（不夹带每行真值）。 */
@@ -153,6 +162,59 @@ function buildHwReading(opts) {
       layout: {
         sequential: { aosMisses: h.layout.sequential.aosMisses, soaMisses: h.layout.sequential.soaMisses, speedup: round(h.layout.sequential.speedup) },
         strided: { stride: h.layout.strided.stride, aosMisses: h.layout.strided.aosMisses, soaMisses: h.layout.strided.soaMisses, speedup: round(h.layout.strided.speedup) },
+      },
+    }
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
+ * KI-501：真跑缓存防护三件套（击穿 / 穿透 / 雪崩），收敛成前端三面板的紧凑读数。
+ * 与 lsm/hw 并列、都是 Node 侧真判词的结构计数；缺哪块就落 null，前端据实降级。
+ * @param {object} opts { now?, guards?:false, guardConcurrency?, guardKeys? }
+ * @param {()=>number} now 时钟（builtAt 注入则确定性）
+ */
+export async function buildGuardsReading(opts, now) {
+  try {
+    const s = await cacheGuardStudy({
+      concurrency: Math.max(2, Math.floor(Number(opts.guardConcurrency ?? 32))),
+      keys: Math.max(8, Math.floor(Number(opts.guardKeys ?? 256))),
+      now,
+      seed: 1979, // 确定性：同一份快照重跑读数逐字一致
+    })
+    const round = (x) => Number.isFinite(x) ? Number(x.toFixed(2)) : null
+    return {
+      // 击穿：并发 → 无防护 vs singleflight 回源次数与放大倍数、XFetch 提前续期
+      stampede: {
+        concurrency: s.stampede.concurrency,
+        naiveLoads: s.stampede.naiveLoads,
+        singleflightLoads: s.stampede.singleflightLoads,
+        savedLoads: s.stampede.savedLoads,
+        amplification: round(s.stampede.amplification),
+        xfetchAvoidedMisses: s.stampede.xfetchAvoidedMisses,
+      },
+      // 穿透：不存在 key 的三路回源 + 布隆假阳性（如实暴露，不零误判）
+      penetration: {
+        absent: s.penetration.absent,
+        rounds: s.penetration.rounds,
+        naiveDbHits: s.penetration.naiveDbHits,
+        negativeDbHits: s.penetration.negativeDbHits,
+        bloomDbHits: s.penetration.bloomDbHits,
+        bloomRejected: s.penetration.bloomRejected,
+        bloomFalsePositives: s.penetration.bloomFalsePositives,
+        bloomSavedRate: round(s.penetration.bloomSavedRate),
+      },
+      // 雪崩：统一 TTL 单桶峰值 vs 抖动削峰 + bucket 分布
+      avalanche: {
+        keys: s.avalanche.keys,
+        buckets: s.avalanche.buckets,
+        uniformPeak: s.avalanche.uniformPeak,
+        jitterPeak: s.avalanche.jitterPeak,
+        peakReduction: round(s.avalanche.peakReduction),
+        uniformBuckets: s.avalanche.uniformBuckets,
+        jitterBuckets: s.avalanche.jitterBuckets,
+        histogram: s.avalanche.histogram,
       },
     }
   } catch (e) {
@@ -369,6 +431,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     console.log(`[console] 真跑 ${SCENARIO_IDS.length} 趟 E2E ⇒ ${outPath} (+ bootstrap.js)`)
     console.log(`[console] highlights: ${JSON.stringify(snap.highlights)}`)
     if (snap.systems) console.log(`[console] systems: lsm.speedup=${snap.systems.lsm?.speedup ?? '—'}× / hw.poolSaved=${snap.systems.hw?.allocation?.saved ?? '—'} / hw.layoutSpeedup=${snap.systems.hw?.layout?.sequential?.speedup ?? '—'}×`)
+    if (snap.systems?.guards) console.log(`[console] guards: stampede ${snap.systems.guards.stampede.naiveLoads}→${snap.systems.guards.stampede.singleflightLoads} 回源 / penetration 布隆省 ${((snap.systems.guards.penetration.bloomSavedRate ?? 0) * 100).toFixed(0)}% / avalanche 削峰 ${((snap.systems.guards.avalanche.peakReduction ?? 0) * 100).toFixed(0)}%`)
     process.exit(0)
   }).catch((e) => { console.error(`[console] 生成失败：${e.message}`); process.exit(1) })
 }

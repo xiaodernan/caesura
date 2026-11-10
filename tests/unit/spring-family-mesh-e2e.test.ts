@@ -276,4 +276,29 @@ describe('spring-family-mesh-e2e', () => {
     const plain = await runMeshE2E().run()
     expect(plain.shardedCacheSnapshot).toBe(null)
   })
+
+  it('e2e KI-501：cacheGuard=true ⇒ 主链照常跑通，cacheGuardSnapshot 带三件套对照证据', async () => {
+    const e = runMeshE2E({ cacheGuard: { concurrency: 16, keys: 128, rounds: 3 }, guardNow: () => 5555 })
+    const r = await e.run()
+    // 主链非破坏：注册/调用/关停都照常。
+    expect(r.started?.registered).toBe(true)
+    expect(r.callRes?.ok).toBe(true)
+    expect(r.stopped?.registered).toBe(false)
+    const g = r.cacheGuardSnapshot
+    expect(g).toBeTruthy()
+    expect(g!.builtAt).toBe(5555)
+    // 击穿：singleflight 把并发合并到 1 次
+    expect(g!.stampede.naiveLoads).toBe(16)
+    expect(g!.stampede.singleflightLoads).toBe(1)
+    expect(g!.stampede.savedLoads).toBe(15)
+    // 穿透：布隆/空值缓存明显省回源
+    expect(g!.penetration.bloomDbHits).toBeLessThan(g!.penetration.naiveDbHits)
+    expect(g!.penetration.negativeDbHits).toBeLessThan(g!.penetration.naiveDbHits)
+    // 雪崩：抖动削峰
+    expect(g!.avalanche.jitterPeak).toBeLessThan(g!.avalanche.uniformPeak)
+    expect(g!.avalanche.peakReduction).toBeGreaterThan(0)
+    // 未配 cacheGuard 时为 null（非破坏）。
+    const plain = await runMeshE2E().run()
+    expect(plain.cacheGuardSnapshot).toBe(null)
+  })
 })

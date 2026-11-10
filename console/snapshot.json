@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794344505263,
+  "generatedAt": 1794346787306,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -460,6 +460,73 @@
         }
       }
     },
-    "builtAt": 1794344505263
+    "guards": {
+      "stampede": {
+        "concurrency": 32,
+        "naiveLoads": 32,
+        "singleflightLoads": 1,
+        "savedLoads": 31,
+        "amplification": 32,
+        "xfetchAvoidedMisses": 13
+      },
+      "penetration": {
+        "absent": 128,
+        "rounds": 4,
+        "naiveDbHits": 512,
+        "negativeDbHits": 128,
+        "bloomDbHits": 3,
+        "bloomRejected": 125,
+        "bloomFalsePositives": 3,
+        "bloomSavedRate": 0.99
+      },
+      "avalanche": {
+        "keys": 256,
+        "buckets": 16,
+        "uniformPeak": 256,
+        "jitterPeak": 37,
+        "peakReduction": 0.86,
+        "uniformBuckets": 1,
+        "jitterBuckets": 8,
+        "histogram": {
+          "uniform": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            256,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "jitter": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            37,
+            35,
+            37,
+            29,
+            30,
+            30,
+            26,
+            32
+          ]
+        }
+      }
+    },
+    "builtAt": 1794346787306
   }
 }
