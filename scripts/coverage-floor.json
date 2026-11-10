@@ -1,5 +1,5 @@
 {
-  "linesPct": 95.58,
+  "linesPct": 95.62,
   "byPackage": {
     "(root)": 0,
     "ai": 100,
@@ -10,18 +10,19 @@
     "input": 100,
     "player": 100,
     "quest": 100,
+    "renderer": 100,
     "rpg": 100,
     "save": 100,
     "settings": 100,
     "tools": 100,
-    "ui": 99.51,
+    "ui": 99.93,
     "vfx": 100,
     "world": 100
   },
   "zeroFiles": [
     "src/main.ts"
   ],
-  "srcFilesAtMeasure": 108,
-  "linesTotal": 10698,
+  "srcFilesAtMeasure": 109,
+  "linesTotal": 10715,
   "note": "由 npm run coverage -- --bless 写入。linesPct 是总地板、byPackage 是按包地板（都只许涨）；zeroFiles 是\"今天确实没有任何测试执行过\"的 src 文件名单，新增一格当场红。§6.1 那句\"逻辑核心包各 ≥80%\"**不写在这里**——它是脚本里的常量（CORE_PACKAGES/CORE_MIN），地板会被 bless 顺手重写，承诺不该跟着量具一起漂。"
 }

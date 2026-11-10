@@ -2954,3 +2954,75 @@ describe('KI-389 玩法那一行「暂停」关不掉：两把把手都不画，
     expect(gameRow(html(r.p), 'dodge'), '关掉之后那一行的出口换成「回默认」').toContain('data-act="resetkey" data-arg="dodge"')
   })
 })
+
+describe('画质档位那一行（Phase 7 F2 UI）：◀▶ 循环四档，夹取在边界', () => {
+  /** 与顶层 `rig()` 同形，但把 quality store 暴露出来——这一组问的正是那一格 */
+  function qualityRig(): { p: Stakerite; quality: QualityStore; notices: string[] } {
+    const inputEl = new FakeEl()
+    const input = new Input(inputEl as unknown as HTMLElement)
+    const bindings = new BindingsStore({ input })
+    const gameplay = new GameplaySettingsStore({ input, rig: { shakeIntensity: 1 }, haptics: { scale: 1, weakScale: 1 }, combat: { damageScale: 1 }, player: { holdMs: 0, mashGuard: false } })
+    const quality = new QualityStore({ particles: { spawnMul: 1 }, renderer: { resolutionScale: 1, shadowMapSize: 1536 } })
+    const rpg = new RpgRuntime('origin_tuner')
+    const notices: string[] = []
+    const p = new Stakerite(
+      rpg,
+      { onApply: () => {}, notify: (m) => notices.push(m), onUse: () => {}, onRequestClose: () => {} },
+      NO_SAVES,
+      input,
+      makeOpsHandles(input, () => bindings, () => gameplay, () => quality, () => 95.58),
+    )
+    p.show()
+    click(p, 'tab', 'ops')
+    return { p, quality, notices }
+  }
+
+  it('「操作」页里有「画质档位」这一行，读数是 QUALITY_NAMES 的唯一主人', () => {
+    const { p } = qualityRig()
+    const h = html(p)
+    expect(h, '标签只有一个主人').toContain('画质档位')
+    expect(h, '默认档 2（高）').toContain('高') // QUALITY_NAMES[2]
+    expect(h, '◀▶ 按钮都在').toContain('data-act="qstep" data-arg="-1"')
+    expect(h, '◀▶ 按钮都在').toContain('data-act="qstep" data-arg="1"')
+  })
+
+  it('▶ 循环四档（2→3→0→1→2 回绕），夹取由 QualityStore 边界做', () => {
+    const { p, quality } = qualityRig()
+    expect(quality.get()).toBe(2)
+    click(p, 'qstep', '1') // 高 → 极高
+    expect(quality.get()).toBe(3)
+    click(p, 'qstep', '1') // 极高 → 低（回绕）
+    expect(quality.get()).toBe(0)
+    click(p, 'qstep', '-1') // 低 → 极高（回绕回去）
+    expect(quality.get()).toBe(3)
+    click(p, 'qstep', '-1') // 极高 → 高
+    expect(quality.get()).toBe(2)
+    click(p, 'qstep', '-1') // 高 → 中
+    expect(quality.get()).toBe(1)
+    click(p, 'qstep', '1') // 中 → 高
+    expect(quality.get()).toBe(2)
+  })
+
+  it('切换后重渲染，面板画出新的档位名（画质档位行真的跟 store 走）', () => {
+    const { p, quality } = qualityRig()
+    expect(html(p)).toContain('高')
+    click(p, 'qstep', '1') // 2 → 3
+    expect(quality.get()).toBe(3)
+    expect(html(p), '画出极高').toContain('极高')
+  })
+
+  it('界外 arg 静默原样（不落到别的格子里去）', () => {
+    const { p, quality } = qualityRig()
+    click(p, 'qstep', 'bogus') // NaN ⇒ 不动
+    expect(quality.get()).toBe(2)
+    click(p, 'qstep', '2') // 只认 ±1（Number.sign(2) 也不是 0 —— 向上是 +1）
+    expect(quality.get()).toBe(3) // sign(2)=1 ⇒ 高 → 极高
+  })
+
+  it('外部 set() 后面板点击按实时读数循环（证明面板不缓存档位）', () => {
+    const { p, quality } = qualityRig()
+    quality.set(3) // 外部换成极高
+    click(p, 'qstep', '1') // 3 → 0（回绕）
+    expect(quality.get()).toBe(0)
+  })
+})

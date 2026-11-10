@@ -38,7 +38,7 @@
 | Stakerite 覆盖率看板 | 读 coverage-floor.json 显示总地板 | b0e0fb7 |
 | Phase 7 F2-第三批 | QualityStore→GPUParticles 预算乘数接线验证（5 腿） | 26347df |
 
-**当前状态**：`npm run check` 全绿：4893 条 / 415 文件，0 个红。所有工作分支/stash 已并轨至 master。
+**当前状态**：`npm run check` 全绿：4907 条 / 415 文件，0 个红。`npm run coverage` 通过（行覆盖 95.62%，ui 99.93%，全包达标）。所有工作分支/stash 已并轨至 master。
 
 ---
 
@@ -57,7 +57,7 @@
 - 更多 VFX/Boss 相关流程测试
 - `docs/perf-baseline.md` 持续完善
 - ~~renderer 分档实际消费（shadow map size / resolution scale 实际应用到渲染管线）~~ ✅ 完成（Phase F-16，消费者写入契约面；真 GL 落点等 Phase 9/10）
-- UI 设置行画质档位选择器（Stakerite 第八页？）
+- ~~UI 设置行画质档位选择器~~ ✅ 早已落地（Stakerite「操作」页画质档位 ◀▶ 行，KI-337；本批补了 5 条流程测试并把 ui 包覆盖率抬回 99.93%）
 
 ### P3：新功能规划
 
