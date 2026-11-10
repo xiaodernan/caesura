@@ -68,6 +68,24 @@ fringe = smoothstep(uThLo, uThHi, fringe);   // uThLo=0.42, uThHi=0.58 默认
 | 色 | 区域 emissive 色，饱和度 55–70%，亮度 ≤ 0.8（防止满屏发光） |
 | 尺寸基准 | 手持单体 4–7cm；矿脉簇 30–80cm；建筑级 ≥ 4m（仅地标使用） |
 
+### 1.4 目录与名册（机器可读，对 `tests/unit/vfx-soundwave-catalog.test.ts`）
+
+以下名册由 `src/vfx/materials.ts` 单一主人维持，缺一不可：
+
+| 条目 | 形状 | 来源 |
+|---|---|---|
+| `VFX_PALETTE.warmGold` | `0xc9b458` | 玩家命中的声纹主色 |
+| `VFX_PALETTE.parryWhite` | `0xf5f3e6` | 弹反白，全游戏唯一「金白爆点」 |
+| `VFX_PALETTE.discordViolet` | `0x9a4fd0` | 失谐/敌意，仅敌方与死亡 |
+| `VFX_PALETTE.ember` | `0xffb86b` | 火星、尘、格挡单向火舌 |
+| `VFX_PALETTE.silver` | `0xdde6ea` | 玩家攻击轨迹 |
+| `makeRingGeometry()` | 单位环 `RingGeometry(0.5,1.5)`，删除 uv | `src/vfx/materials.ts` |
+| `createRingMaterial()` | 声纹环材质（双环 + 干涉条纹 + 伪波形） | `src/vfx/materials.ts` |
+| `createSparkMaterial()` | 粒子材质（火星 / 方向光带） | `src/vfx/materials.ts` |
+| `createShardMaterial()` | 振核碎裂发光四面体 | `src/vfx/materials.ts` |
+
+本名册是 `vfx/soundwave-catalog` 门的机读源：`tests/unit/vfx-soundwave-catalog.test.ts` 逐行对账，缺一则红。
+
 ---
 
 ## 2. 区域色板（hex 值级，唯一合法颜色表）
