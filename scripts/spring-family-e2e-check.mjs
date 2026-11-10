@@ -76,15 +76,15 @@ export const CONFIG_ROSTER_URL = 'http://127.0.0.1:8888/caesura-gates/default'
 export const PROBES = [
   { name: 'registry 名册可读', url: 'http://127.0.0.1:8761/eureka/apps', expect: 'contains-CAESURA-GATE', retries: 15 },
   {
-    name: 'gate 名册（经网关路由）',
+    name: 'gate 名册（经网关路由，6 门：含 gate-perf）',
     url: 'http://127.0.0.1:8099/gate/gates',
-    expect: { jsonPath: ['count'], equals: 5 },
+    expect: { jsonPath: ['count'], equals: 6 },
     retries: 15,
   },
   {
     name: 'report 汇总（经网关路由）',
     url: 'http://127.0.0.1:8099/report/roster',
-    expect: { jsonPath: ['count'], equals: 5 },
+    expect: { jsonPath: ['count'], equals: 6 },
     retries: 15,
   },
   {
