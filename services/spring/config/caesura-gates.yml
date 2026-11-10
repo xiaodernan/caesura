@@ -63,3 +63,10 @@ caesura:
       args: ["run", "build"]
       timeout-sec: 1800
       blocking: false
+
+    - id: gate-perf
+      family: perf
+      command: node
+      args: ["scripts/measure-probe.mjs", "--budget=10", "--report=.scratch/perf-budget-report.json"]
+      timeout-sec: 300
+      blocking: false
