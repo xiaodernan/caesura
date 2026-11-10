@@ -11,33 +11,38 @@
 | Phase B / F1 | ColorGrade.colorGradePass 失谐乘数接口 | e8e5829 |
 | Phase D / F4 | 凝固声波目录门：art-direction §1.4 + vfx-soundwave-catalog.test.ts | 2e6c0d9 |
 | Phase F / Spring Cloud | caesura-client 配置客户端 + spring-health-check 探针 + docker-compose | 9abf6c5 |
-| KI-407 | coverage 棘轮三出口（0/1/2）全部有测试 | (已在 9abf6c5 前完成) |
+| Phase F-2 | spring-config-client（Node.js Config 客户端，4 测试） | 1bffdb1 |
+| KI-407 | coverage 棘轮三出口（0/1/2）全部有测试 + 基线落地 | 07399b9 |
 | Phase C / F3 | Boss 乐句线 HUD：BossPhraseBar.ts + main.ts 接线 + flow 测试 | 08bb3f5 |
 | KI-118 fix | spring-health-check.mjs 移除 shebang（module-loader 门禁） | 0698210 |
 | Phase 7 F2-第二批 | Streaming ring 接线（activateRingBonus/preloadRingBonus） | 08e59a9 |
 | Phase 7 F2-第二批 | renderer 分档接口（QualityTargets.renderer） | 96df2f0 |
+| Phase C-2 | BossPhraseBar 单元测试（5 腿） | 4ea4ed0 |
 
-**当前状态**：`npm run check` 全绿：4803 条 / 400 文件，0 红。
+**当前状态**：`npm run check` 全绿：4812 条 / 402 文件，0 红。
 
 ---
 
 ## 进行中 / 待开工（按优先级）
 
-### P0：KI-407 coverage 基线落地
-
-运行 `npm run coverage -- --bless` 建立覆盖率地板，并提交 `scripts/coverage-floor.json` 更新。这是 TD-004 结案的关键一步。
-
 ### P1：Spring Cloud 微服务继续扩展
 
+- Spring Cloud Bus 事件总线客户端（Node.js 侧，模拟 /actuator/bus-refresh）
+- Config Server 刷新端点客户端（POST /actuator/refresh）
 - `caesura-gate` 与 Node 侧 `scripts/spring-family-rules.mjs` 的 `serviceTopologyFindings` 已三方一致
 - 可加 `caesura-client` 的配置拉取失败降级测试（模拟 config server 不可用时的退路）
-- 可加更多 Spring Cloud 模式（config server 刷新、bus 事件等）
 
 ### P2：Phase 7 后续
 
 - `src/ui/Stakerite.ts` 加「覆盖率看板」行（读 `scripts/coverage.mjs` 输出）
 - 更多 VFX/Boss 相关流程测试
 - `docs/perf-baseline.md` 持续完善
+
+### P3：新功能规划
+
+- 增加 KI 账本行（已开工但未登记的功能）
+- 增加更多单元测试提高覆盖率
+- 完善文档地图
 
 ---
 
