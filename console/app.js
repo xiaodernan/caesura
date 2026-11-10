@@ -39,6 +39,7 @@
       renderGray()
       renderCache()
       renderNet()
+      renderSystems(snap.systems || null)
       setLive(true, result.source)
     }).catch(function (e) {
       setLive(false, 'error')
@@ -366,6 +367,85 @@
       return '<div class="netstat ' + (it.hl ? 'hl' : '') + '"><div class="k">' + esc(it.k) + '</div>' +
         '<div class="v">' + esc(it.v) + (it.v === '—' ? '' : ' <small>' + esc(it.u) + '</small>') + '</div></div>'
     }).join('') + (mode ? '<div class="netstat" style="grid-column:1/-1"><div class="k">AIMD 相位</div>' + mode + '</div>' : '')
+  }
+
+  /* ---------------- 存储引擎 / 硬件适配（KI-498 前后端协同） ----------------
+   * systems 是与五场景并列的独立数据块（真 Node 侧判词的结构计数）。只读不复核：
+   * 缺 systems 或某一维 ⇒ 该面板显示「—」，不画假条、不编 speedup。
+   */
+  function renderSystems(systems) {
+    renderLsm(systems && systems.lsm)
+    renderHw(systems && systems.hw)
+  }
+
+  function renderLsm(lsm) {
+    var gauge = $('#lsm-gauge'), kv = $('#lsm-kv'), note = $('#lsm-note'), levels = $('#lsm-levels')
+    if (!lsm) {
+      gauge.innerHTML = '<span class="big">—</span><span class="cap">LSM 读数缺失</span>'
+      kv.innerHTML = ''
+      if (levels) levels.innerHTML = '<div class="nodata">无存储引擎读数</div>'
+      note.textContent = 'systems.lsm 缺失 —— 重跑 npm run console:data 采集真判词'
+      return
+    }
+    var sp = isNum(lsm.speedup) ? lsm.speedup : null
+    gauge.innerHTML =
+      '<span class="big">' + esc(fmt(sp, 1)) + '</span><span class="unit">×</span>' +
+      '<span class="cap">点查 <b>' + esc(fmt(lsm.comparisons)) + '</b> 次比较<br>' +
+      '线性扫描 <b>' + esc(fmt(lsm.scanBaselineComparisons)) + '</b> 次</span>'
+    var rows = [
+      ['写入 key', fmt(lsm.keys)], ['flush 次数', fmt(lsm.flushes)],
+      ['compaction 次数', fmt(lsm.compactions)], ['归并掉旧版本', fmt(lsm.mergedAway)],
+      ['丢弃 tombstone', fmt(lsm.tombstonesDropped)], ['Bloom 负查', fmt(lsm.bloomRejects)],
+    ]
+    kv.innerHTML = rows.map(function (r) {
+      return '<li><span>' + esc(r[0]) + '</span><span>' + esc(r[1]) + '</span></li>'
+    }).join('')
+    // 各层段数：真读数转成条宽（最多段的那层铺满），不编造。
+    if (levels) {
+      var ls = lsm.levels || []
+      var maxSeg = ls.reduce(function (m, l) { return Math.max(m, isNum(l.segments) ? l.segments : 0) }, 0)
+      levels.innerHTML = ls.length ? ls.map(function (l) {
+        var w = maxSeg > 0 && isNum(l.segments) ? Math.round(l.segments / maxSeg * 100) : 0
+        return '<div class="lsm-level"><span class="lv">L' + esc(fmt(l.level)) + '</span>' +
+          '<span class="seg"><i style="width:' + w + '%"></i></span>' +
+          '<span class="n">' + esc(fmt(l.segments)) + ' 段</span></div>'
+      }).join('') : '<div class="nodata">无分层读数</div>'
+    }
+    note.textContent = '真跑 ' + esc(fmt(lsm.keys)) + ' key：写进 WAL→memtable、顺序 flush 成 SSTable、leveled compaction 归并去重；speedup 为点查比较数 ÷ 线性扫描比较数（算法计数，非墙钟跑分）。'
+  }
+
+  function renderHw(hw) {
+    var grid = $('#hw-grid'), note = $('#hw-note')
+    if (!hw) {
+      grid.innerHTML = '<div class="nodata" style="grid-column:1/-1">无硬件适配读数</div>'
+      note.textContent = 'systems.hw 缺失 —— 重跑 npm run console:data 采集真判词'
+      return
+    }
+    var a = hw.allocation || {}, c = hw.cacheLine || {}, l = hw.layout || {}
+    var seq = l.sequential || {}, str = l.strided || {}
+    function card(title, rows, wide) {
+      return '<div class="hw-card' + (wide ? ' wide' : '') + '"><div class="t">' + esc(title) + '</div>' +
+        rows.map(function (r) {
+          return '<div class="row"><span class="k">' + esc(r[0]) + '</span>' +
+            '<span class="v' + (r[2] ? ' ' + r[2] : '') + '">' + esc(r[1]) + '</span></div>'
+        }).join('') + '</div>'
+    }
+    grid.innerHTML =
+      card('对象池 · GC 分配', [
+        ['取还次数', fmt(a.accesses)], ['直接 new', fmt(a.naiveCreated)],
+        ['用池新建', fmt(a.poolCreated)], ['省下分配', fmt(a.saved), 'good'],
+      ]) +
+      card('缓存行 · false sharing', [
+        ['padded 假共享', fmt(c.paddedFalseSharing), 'good'],
+        ['packed 假共享', fmt(c.packedFalseSharing), 'hot'],
+        ['padding 空间开销', isNum(c.paddingOverhead) ? fmt(c.paddingOverhead, 1) + '×' : '—'],
+      ]) +
+      card('数据布局 · AoS→SoA（顺序扫 ' + esc(fmt(seq.speedup, 1)) + '×）', [
+        ['顺序 AoS miss', fmt(seq.aosMisses)], ['顺序 SoA miss', fmt(seq.soaMisses), 'good'],
+        ['顺序 speedup', isNum(seq.speedup) ? fmt(seq.speedup, 1) + '×' : '—', 'good'],
+        ['跳跃 ' + fmt(str.stride) + ' speedup', isNum(str.speedup) ? fmt(str.speedup, 1) + '×' : '—'],
+      ], true)
+    note.textContent = '三件均为 Node 侧确定性结构计数：对象池省的是分配次数、padding 给的是同 cache line 对数、SoA 给的是 LRU 行缓存模型 miss 数 —— 非墙钟跑分，真实收益须实测调参。'
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)

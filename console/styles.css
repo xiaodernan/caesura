@@ -257,6 +257,37 @@ main { padding: clamp(18px, 3vw, 40px) clamp(18px, 4vw, 56px) 48px; max-width: 1
 .netstat.hl .v { color: var(--gold); }
 .mode-chip { display: inline-block; margin-top: 6px; padding: 2px 8px; font-family: var(--mono); font-size: 9px; letter-spacing: .1em; color: var(--jade); border: 1px solid var(--jade-dim); background: var(--jade-dim); }
 
+/* ---------- 存储引擎 / 硬件适配（KI-498 前后端协同） ---------- */
+.row-systems { grid-template-columns: 1fr 1fr; }
+@media (max-width: 1020px) { .row-systems { grid-template-columns: 1fr; } }
+.panel-lsm, .panel-hw { display: flex; flex-direction: column; }
+
+/* LSM：点查 speedup 大数仪表 */
+.lsm-gauge { display: flex; align-items: baseline; gap: 10px; padding: 14px 0 12px; border-bottom: 1px solid var(--line-soft); }
+.lsm-gauge .big { font-family: var(--mono); font-size: 46px; line-height: 1; color: var(--gold); font-variant-numeric: tabular-nums; text-shadow: 0 0 18px rgba(201,180,88,.28); }
+.lsm-gauge .unit { font-family: var(--mono); font-size: 14px; color: var(--gold-dim); }
+.lsm-gauge .cap { margin-left: auto; font-size: 10px; color: var(--muted); letter-spacing: .08em; text-align: right; }
+.lsm-gauge .cap b { color: #e2dcc8; font-family: var(--mono); font-weight: 500; }
+.lsm-kv-wrap { display: flex; gap: 16px; align-items: flex-start; }
+.lsm-levels { display: flex; flex-direction: column; gap: 6px; min-width: 116px; }
+.lsm-level { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 10px; color: var(--muted); }
+.lsm-level .lv { color: var(--gold-dim); }
+.lsm-level .seg { flex: 1; height: 7px; background: var(--ash-2); border: 1px solid var(--line-soft); position: relative; overflow: hidden; }
+.lsm-level .seg i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, var(--gold-dim), var(--gold)); transition: width 1s cubic-bezier(.2,.8,.2,1); }
+.lsm-level .n { color: #e2dcc8; min-width: 26px; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* 硬件适配：三件对照网格 */
+.hw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.hw-card { padding: 12px 14px; background: var(--ash-2); border: 1px solid var(--line-soft); border-top: 2px solid var(--gold-dim); }
+.hw-card .t { font-size: 10px; letter-spacing: .1em; color: var(--gold-dim); font-family: var(--mono); margin-bottom: 8px; }
+.hw-card .row { display: flex; justify-content: space-between; align-items: baseline; padding: 3px 0; font-size: 11px; }
+.hw-card .row .k { color: var(--muted); }
+.hw-card .row .v { font-family: var(--mono); color: #e8e3d3; font-variant-numeric: tabular-nums; }
+.hw-card .row .v.good { color: var(--jade); }
+.hw-card .row .v.hot { color: var(--wine); }
+.hw-card.wide { grid-column: 1 / -1; }
+@media (max-width: 620px) { .hw-grid { grid-template-columns: 1fr; } .hw-card.wide { grid-column: auto; } }
+
 /* 空值 / 无数据 */
 .nodata { color: var(--muted); font-family: var(--mono); font-size: 11px; padding: 12px 0; }
 .nodata::before { content: "◇ "; color: var(--gold-dim); }

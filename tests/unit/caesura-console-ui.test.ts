@@ -229,4 +229,59 @@ describe('caesura-console-ui (KI-495)', () => {
     expect(fromBootstrap.scenarios.find((s: any) => s.id === 'net').series.length)
       .toBe(real.scenarios.find((s: any) => s.id === 'net').series.length)
   })
+
+  it('⑧ KI-498 真 systems 读数落进 LSM / 硬件适配新面板（不是写死的数）', async () => {
+    const dom = await runApp(real)
+    const sys = real.systems
+    // LSM：speedup 仪表、点查 vs 线性扫描比较数、六项算法计数、各层段数。
+    expect(dom.els['lsm-gauge'].innerHTML).toContain(sys.lsm.speedup.toFixed(1)) // 39.0
+    expect(dom.els['lsm-gauge'].innerHTML).toContain('点查')
+    expect(dom.els['lsm-gauge'].innerHTML).toContain(String(sys.lsm.comparisons)) // 1377
+    expect(dom.els['lsm-gauge'].innerHTML).toContain(String(sys.lsm.scanBaselineComparisons)) // 53760
+    const kv = dom.els['lsm-kv'].innerHTML
+    for (const label of ['flush 次数', 'compaction 次数', '归并掉旧版本', '丢弃 tombstone', 'Bloom 负查']) {
+      expect(kv).toContain(label)
+    }
+    expect(kv).toContain(String(sys.lsm.flushes))
+    expect(kv).toContain(String(sys.lsm.compactions))
+    expect(kv).toContain(String(sys.lsm.tombstonesDropped))
+    // 分层段数：真 levels 转成 L0 / L1 与段数条。
+    const levels = dom.els['lsm-levels'].innerHTML
+    sys.lsm.levels.forEach((lv: any) => expect(levels).toContain('L' + lv.level))
+    expect(levels).toContain('段')
+    expect(dom.els['lsm-note'].textContent).toContain('算法计数，非墙钟跑分')
+    // HW：对象池省分配、padding 假共享 0 vs packed>0、AoS→SoA 布局对照。
+    const grid = dom.els['hw-grid'].innerHTML
+    expect(grid).toContain('对象池 · GC 分配')
+    expect(grid).toContain('缓存行 · false sharing')
+    expect(grid).toContain('AoS→SoA')
+    expect(grid).toContain('省下分配')
+    expect(grid).toContain(String(sys.hw.allocation.saved)) // 1999
+    expect(grid).toContain('padded 假共享')
+    expect(grid).toContain('packed 假共享')
+    expect(grid).toContain('顺序 speedup')
+    expect(grid).toContain(sys.hw.layout.sequential.speedup.toFixed(1) + '×') // 4.0×
+    expect(dom.els['hw-note'].textContent).toContain('非墙钟跑分')
+  })
+
+  it('⑨ KI-498 systems 缺失诚实降级：整块缺不画假数、单维缺只降那维', async () => {
+    // 整块缺：两个面板都降级，绝不用 0 或假 speedup 顶替。
+    const noSystems = { schema: 1, generatedAt: 0, generator: 'x', scenarios: [], highlights: {}, systems: null }
+    const dom = await runApp(noSystems)
+    expect(dom.els['lsm-gauge'].innerHTML).toContain('—')
+    expect(dom.els['lsm-gauge'].innerHTML).toContain('LSM 读数缺失')
+    expect(dom.els['lsm-kv'].innerHTML).toBe('')
+    expect(dom.els['lsm-levels'].innerHTML).toContain('无存储引擎读数')
+    expect(dom.els['lsm-note'].textContent).toContain('systems.lsm 缺失')
+    expect(dom.els['hw-grid'].innerHTML).toContain('无硬件适配读数')
+    expect(dom.els['hw-note'].textContent).toContain('systems.hw 缺失')
+
+    // 单维缺：只降 lsm，hw 仍照常渲染真读数（不连坐）。
+    const partial = JSON.parse(JSON.stringify(real))
+    partial.systems.lsm = null
+    const dom2 = await runApp(partial)
+    expect(dom2.els['lsm-gauge'].innerHTML).toContain('LSM 读数缺失')
+    expect(dom2.els['hw-grid'].innerHTML).toContain('对象池 · GC 分配')
+    expect(dom2.els['hw-grid'].innerHTML).toContain(String(real.systems.hw.allocation.saved))
+  })
 })

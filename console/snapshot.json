@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794341910020,
+  "generatedAt": 1794344505263,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -408,5 +408,58 @@
     "timedOut": 1,
     "cwnd": 4.211568152676383,
     "rto": 200
+  },
+  "systems": {
+    "lsm": {
+      "keys": 512,
+      "flushes": 10,
+      "compactions": 2,
+      "mergedAway": 148,
+      "tombstonesDropped": 74,
+      "bloomRejects": 14,
+      "comparisons": 1377,
+      "scanBaselineComparisons": 53760,
+      "speedup": 39.04,
+      "levels": [
+        {
+          "level": 0,
+          "segments": 0,
+          "entries": 0
+        },
+        {
+          "level": 1,
+          "segments": 1,
+          "entries": 438
+        }
+      ]
+    },
+    "hw": {
+      "allocation": {
+        "accesses": 2000,
+        "naiveCreated": 2000,
+        "poolCreated": 1,
+        "saved": 1999,
+        "reuseRate": 0.9995
+      },
+      "cacheLine": {
+        "paddedFalseSharing": 0,
+        "packedFalseSharing": 7,
+        "paddingOverhead": 8
+      },
+      "layout": {
+        "sequential": {
+          "aosMisses": 1000,
+          "soaMisses": 250,
+          "speedup": 4
+        },
+        "strided": {
+          "stride": 16,
+          "aosMisses": 125,
+          "soaMisses": 125,
+          "speedup": 1
+        }
+      }
+    },
+    "builtAt": 1794344505263
   }
 }

@@ -121,6 +121,24 @@
       <div class="netstats" id="netstats"></div>
     </article>
   </section>
+
+  <!-- 存储引擎 + 硬件适配（KI-498 前后端协同：与五场景并列的独立系统读数） -->
+  <section class="row row-systems">
+    <article class="panel panel-lsm">
+      <div class="panel-head"><h2>存储引擎 · LSM</h2><span class="hint">点查 vs 线性扫描</span></div>
+      <div class="lsm-gauge" id="lsm-gauge"></div>
+      <div class="lsm-kv-wrap">
+        <ul class="kv" id="lsm-kv"></ul>
+        <div class="lsm-levels" id="lsm-levels"></div>
+      </div>
+      <p class="note" id="lsm-note">—</p>
+    </article>
+    <article class="panel panel-hw">
+      <div class="panel-head"><h2>硬件适配 · OS</h2><span class="hint">对象池 / 缓存行 / 布局</span></div>
+      <div class="hw-grid" id="hw-grid"></div>
+      <p class="note" id="hw-note">—</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">

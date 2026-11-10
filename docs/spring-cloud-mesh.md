@@ -2,23 +2,23 @@
 
 > 本文是 CAESURA 项目里「Spring Cloud 微服务家族」的**合成地图**：把散落在 `scripts/` 的 35+ 件 Node 侧
 > Spring Cloud 客户端，收口成游戏可一键拉起的一朵云。本文只描述**架构与边界**，不重复每个件的实现细节
-> （细节见 `docs/KNOWN_ISSUES.md` 的 KI-460~495 账本行与各 `scripts/*.d.mts`）；前端只读可视化层见第 2 节顶部与第 6 节边界。
+> （细节见 `docs/KNOWN_ISSUES.md` 的 KI-460~498 账本行与各 `scripts/*.d.mts`）；前端只读可视化层见第 2 节顶部与第 6 节边界。
 
 ## 1. 总原则（决策原则①，贯穿全族）
 
 - **Spring/Java 侧只做编排/重试/熔断/报告**；**判定与阈值一律由 Node 侧负责**。
 - 因此每个 Node 客户端都是「编排壳 + 判定权在 Node」，不把业务阈值写死进 Spring 配置。
-- **前后端协同同理（KI-495）**：前端 `console/` 只读 Node 侧真跑 E2E 落盘的快照，判定权仍在 Node 判词；前端只渲染、不复核、不另算一套数，缺字段诚实降级为「—」/「无数据」。
+- **前后端协同同理（KI-495 / KI-498 贯穿收口）**：前端 `console/` 只读 Node 侧真跑落盘的快照（五场景 E2E 判词 + 与场景并列的 `systems` 二维读数），判定权仍在 Node 判词；前端只渲染、不复核、不另算一套数，缺字段诚实降级为「—」/「无数据」。
 - `scripts/*.mjs` 必须配 `*.d.mts`（声明导出名完全一致）并通过 `decl-parity` 门；账本/PLAN/PHASE-STATUS 三者计数一致。
 
 ## 2. 分层
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│ 集大成控制台 (console/, KI-495)：零依赖静态页，只读真快照            │
-│  npm run console:data ⇒ 真跑 5 趟 E2E ⇒ snapshot.json + bootstrap.js │
-│  渲染 拓扑/事件流/韧性条/灰度分池/缓存环/cwnd 曲线/计网读数          │
-│  file:// 直开走 bootstrap.js 同源回退；web 服务走 XHR 拉 snapshot.json │
+│ 集大成控制台 (console/, KI-495/498)：零依赖静态页，只读真快照        │
+│  npm run console:data ⇒ 5 场景 E2E + systems 二维 ⇒ snapshot.json    │
+│  渲染 拓扑/事件流/韧性/灰度/缓存环/cwnd/计网 + LSM/硬件二维读数      │
+│  file:// 直开走 bootstrap.js 回退；web 服务走 XHR 拉 snapshot.json   │
 └──────────────────────────────────────────────────────────────────────┘
    ▲ 数据源：下方 E2E（第 5 节）真跑产物 snapshot.json，只读、不回写运行时
 ┌──────────────────────────────────────────────────────────────────────┐
@@ -162,16 +162,17 @@ if (gc.auth.canAccess(claims, 'game:call')) { /* ... */ }
   白名单双向转发；判定权 Node 侧——哪些事件过桥、映射成什么 type，全由 `routes` 定。
 - `game.started`/`game.stopped` 由 `gc.start()/shutdown()` 自动发到云事件总线（KI-484），E2E 可证。
 
-**前端集大成控制台只读真快照（KI-495）**——`console/` 是零框架/零 CDN/零外部依赖的静态页，与 Node 判词解耦：
+**前端集大成控制台只读真快照（KI-495 / KI-498 贯穿收口）**——`console/` 是零框架/零 CDN/零外部依赖的静态页，与 Node 判词解耦：
 
 ```bash
-npm run console:data     # 真跑 5 趟 E2E（main/gray/resilience/cache/net）⇒ console/snapshot.json + bootstrap.js
+npm run console:data     # 真跑 5 趟 E2E（main/gray/resilience/cache/net）+ LSM/OS 硬件二维读数 ⇒ console/snapshot.json + bootstrap.js
 ```
 
 - 数据源唯一：`scripts/caesura-console-gen.mjs` 用真 `runMeshE2E` 跑五场景，把判词 normalize 成 `ConsoleScenario[]` 并 `deriveHighlights` 出八个大数；`generatedAt` 是采集时刻，拒绝手改。
-- 双载体同源：`console/snapshot.json`（web 服务经 XHR 拉取）与 `console/bootstrap.js`（`file://` 直开时同源回退）由同一次生成写出，`app.js` 二者取其一、不编造第二套数。
-- 渲染即判词：拓扑/事件流/韧性条/灰度分池/缓存命中环/cwnd AIMD 曲线/SRTT·RTO·CUBIC·滑窗读数全部来自真快照；缺字段降级为「—」/「无数据」，不画假线、不写假数（暗黑哥特视觉、SVG 手绘、响应式、`prefers-reduced-motion` 降级）。
-- 判定权不越界：前端只渲染，不复核、不重算阈值；`caesura-console-gen` 与 `caesura-console-ui` 分别用真 E2E、`node:vm` + DOM stub 跑真 `app.js` 出可断言证据（10 腿 + 7 腿）。
+- **与五场景并列的 `systems` 数据块（KI-498）**：`buildSystems(opts)` 真跑一只 `createLsmStore` 确定性 benchmark（flush/compaction/tombstone/Bloom/点查 vs 线性扫描 `speedup≈39×`）与 `createGameCloud({hw:true}).status().hw`（对象池省分配、padded vs packed 假共享对、AoS→SoA 顺序扫 `speedup≈4×`）；它是**独立数据块，不混入 `scenarios`/`highlights`/五场景 `ok` 口径**，可注入 `systems:false` 关闭（兼容旧快照与确定性单测）。
+- 双载体同源：`console/snapshot.json`（web 服务经 XHR 拉取）与 `console/bootstrap.js`（`file://` 直开时同源回退）由同一次生成写出，`app.js` 二者取其一、不编造第二套数；`systems` 同样写进两份载体。
+- 渲染即判词：拓扑/事件流/韧性条/灰度分池/缓存命中环/cwnd AIMD 曲线/SRTT·RTO·CUBIC·滑窗读数，以及新增的 **LSM 存储引擎面板**（speedup 仪表、flush/compact/归并/丢 tombstone/Bloom 负查、各层段数条）与 **OS 硬件适配面板**（对象池省分配、false sharing 对数、AoS→SoA 布局 speedup），全部来自真快照；缺字段降级为「—」/「无存储引擎读数」/「无硬件适配读数」，不画假条、不写假数（暗黑哥特视觉、SVG 手绘、响应式、`prefers-reduced-motion` 降级）。
+- 判定权不越界：前端只渲染，不复核、不重算阈值；`caesura-console-gen` 与 `caesura-console-ui` 分别用真 E2E、`node:vm` + DOM stub 跑真 `app.js` 出可断言证据（**13 腿 + 9 腿**，KI-498 各补 3 / 2 腿，含空 `systems` 诚实降级与单维缺失不连坐）。
 
 **灰度/金丝雀加权路由（KI-491）**——把家族里各说各话的 `Weight` predicate 与 `weight` 负载策略收口成一只决策器：
 
@@ -218,11 +219,12 @@ node scripts/spring-family-mesh-e2e.mjs
 - 注入 `authCache:true`+`onlineAuth`+`cacheProbe` 时 `cacheProbe.secondSource='cache'`/`secondCacheHit=true`、`authCacheStats` 命中读数、且 introspection 端点全程只被调一次，证 introspection 结果缓存真生效（KI-493）；
 - 注入 `net:true`+`netNow` 时 `netSnapshot.observes` 证主链 proxyCall 真被观测、`aimd.cwnd>1` 证成功 ACK 喂了慢启动、`rto.srtt>0` 证真实耗时被采样，`status().net` 同步可读（KI-494）。
 - `npm run console:data` 真跑 5 趟 E2E 落 `console/snapshot.json`+`bootstrap.js`，`console/snapshot.json` 的 `highlights` 八个大数全部由真判词 `deriveHighlights` 派生（services/spanCount/canaryHits/cacheHitRate/timedOut/cwnd/rto），`net.series` 是同一只真 AIMD 实例喂出的锯齿轨迹；`caesura-console-ui.test.ts` 用 DOM stub 在 `node:vm` 跑真 `app.js` 喂这份真快照，证每块面板都落真读数、缺字段诚实降级（KI-495）。
+- **前后端协同贯穿证据（KI-498）**：`buildSystems(opts)` 真跑一只 `createLsmStore` benchmark 与 `createGameCloud({hw:true}).status().hw`，一次 `npm run console:data` 同时刷新五场景 + `systems` 二维（CLI 实测 `lsm.speedup≈39.04×` / `hw.poolSaved=1999` / `hw.layoutSpeedup=4×`）；`snapshot.json` 与 `bootstrap.js` 的 `systems` 逐字同源。`caesura-console-gen.test.ts` 13 腿（含 `buildSystems` 真判词、`systems:false` 关闭、已提交快照带真 systems 且与 bootstrap 同源）、`caesura-console-ui.test.ts` 9 腿（真读数落 LSM/HW 新面板、整块缺失与单维缺失诚实降级不连坐）。`systems` 是**与五场景并列的独立数据块、不混入** `ok`/`highlights` 判词口径。
 - `node scripts/caesura-lsm-store.mjs` 一趟确定性 benchmark 证存储引擎：512 key 写入自动 flush 10 段、leveled compaction 归并去重、丢 74 个 tombstone、Bloom 负查零段探测，点查 `scanBaselineComparisons/lsmComparisons` 对照得 `speedup≈39×`；`caesura-lsm-store.test.ts` 20 腿钉住跳表有序/概率层数、Bloom 零假阴性+假阳性有界、WAL 重放、SSTable 稀疏索引、`tombstone` 不复活旧版本、与线性扫描对照读数；`createGameCloud({store:{...}})` 装配证 `status().store` 结构读数可见（KI-496）。
 
 - `node scripts/caesura-hw-perf.mjs` 一趟确定性对照证 OS/硬件适配：对象池 10000 次取还只 `new` 1 次（省 9999 次 GC 分配）、padded 假共享对 0 vs packed 7（空间开销 8×）、顺序扫 AoS 5000 miss vs SoA 1250 miss（`speedup≈4×`）、跳跃扫 stride16 两者都 625 miss（红利消失）；`caesura-hw-perf.test.ts` 16 腿钉住对象池复用/限额丢弃、cache line 跨行隔离、LRU 容量 2 行经典换页、AoS/SoA 顺序加速与跳跃退化、注入确定性；`createGameCloud({hw:true})` 装配证 `status().hw` 三件读数可见（KI-497）。
 
-对应 `tests/unit/spring-family-mesh-e2e.test.ts`（14 腿）；前端证据另见 `tests/unit/caesura-console-gen.test.ts`（10 腿）与 `tests/unit/caesura-console-ui.test.ts`（7 腿）；存储引擎证据见 `tests/unit/caesura-lsm-store.test.ts`（20 腿）、OS/硬件适配见 `tests/unit/caesura-hw-perf.test.ts`（16 腿），两者在 `tests/unit/caesura-game-cloud.test.ts`（+2 腿）证 opt-in 装配。
+对应 `tests/unit/spring-family-mesh-e2e.test.ts`（14 腿）；前端证据另见 `tests/unit/caesura-console-gen.test.ts`（13 腿）与 `tests/unit/caesura-console-ui.test.ts`（9 腿）；存储引擎证据见 `tests/unit/caesura-lsm-store.test.ts`（20 腿）、OS/硬件适配见 `tests/unit/caesura-hw-perf.test.ts`（16 腿），两者在 `tests/unit/caesura-game-cloud.test.ts`（+2 腿）证 opt-in 装配。
 
 ## 6. 边界与「不声称」
 
@@ -242,3 +244,4 @@ node scripts/spring-family-mesh-e2e.mjs
 - 不声称事件桥 import 了浏览器 `src/`——`caesura-game-event-bridge` 依赖注入两只 duck-typed bus，永不反向依赖；默认空路由零转发，载荷原样透传不校验。
 - 不声称前端控制台是实时流/推送——KI-495 `console/` 只读 `npm run console:data` 落盘的**一次性离线快照**，`snapshot.json`（XHR）与 `bootstrap.js`（`file://` 回退）同源；无 WebSocket/SSE、无定时轮询、无后端写入、无交互命令下发（纯只读可视化），要刷新须重跑生成器。
 - 不声称前端视觉是像素级截图验证——KI-495 UI 证据是 `node:vm` + DOM stub 跑真 `app.js` 证「每块面板落真读数 + 缺字段降级 + 零外部依赖」的可断言烟测，非浏览器渲染截图；`styles.css` 内联 grain SVG 的 `xmlns` 是命名空间常量、非网络请求。前端不持有判定权与阈值，所有读数是 Node 判词派生，不复核、不重算。
+- 不声称 KI-498 的 `systems` 是实时推送、墙钟跑分或游戏运行时 HUD——它仍是 `npm run console:data` 一次性离线采集的**独立只读数据块**，无 WebSocket/SSE、无后端写入、刷新须重跑生成器；`lsm.speedup` 是「点查比较数 ÷ 线性扫描比较数」的**算法计数比**、`hw` 三件是对象池分配次数 / cache line 同行对数 / LRU 模型 miss 数（边界逐字继承 KI-496/497），**非墙钟时间 / GC 暂停 / 真 CPU cache 命中率**，真实收益须实测调参；`systems` 不参与五场景 `ok` 判定与 `highlights` 派生、不混入 E2E 判词口径；`console/` 是独立静态页、不进 vite 主包。

@@ -17,6 +17,8 @@ import { writeFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { runMeshE2E } from './spring-family-mesh-e2e.mjs'
+import { createLsmStore } from './caesura-lsm-store.mjs'
+import { createGameCloud } from './caesura-game-cloud.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
 export const SCENARIO_IDS = ['main', 'gray', 'resilience', 'cache', 'net']
@@ -54,12 +56,107 @@ export async function buildSnapshot(opts = {}) {
     scenarios.push(normalizeScenario(id, e.gc, raw))
   }
 
+  // KI-498：五场景之外并一块「系统读数」（LSM 引擎 + OS/硬件适配），与 scenarios 平级、
+  // 不扰动既有场景顺序与 highlights 口径。`systems:false` 可关（兼容旧快照/确定性单测）。
+  const systems = opts.systems === false ? null : buildSystems({
+    now,
+    lsmKeys: opts.lsmKeys,
+    poolAccesses: opts.poolAccesses,
+    layoutCount: opts.layoutCount,
+  })
+
   return {
     schema: 1,
     generatedAt: now(),
     generator: 'caesura-console-gen',
     scenarios,
     highlights: deriveHighlights(scenarios),
+    systems,
+  }
+}
+
+/**
+ * KI-498：真跑两维「系统读数」汇成一块独立数据（给前端「存储引擎 / 硬件适配」面板）。
+ *
+ * <p>与五趟 mesh E2E 判词**并列、不混算**：① LSM 引擎用 CLI benchmark 同款确定性序列
+ * （写 N 个 key、每 7 个删一个、flush+compact、喂一批点查），落 flushes/compactions/
+ * mergedAway/tombstonesDropped/bloomRejects/speedup/各层段数；② OS/硬件走
+ * `createGameCloud({hw:true})` 装配的 `hw.snapshot()`（对象池/cache line/layout 三件对照）。
+ * 两者都是**真 Node 侧判词的结构计数**、可注入规模、时钟注入 ⇒ 确定性可测；本件不复核、不重算，
+ * 缺哪块就落 null，前端据实降级。</p>
+ *
+ * @param {object} [opts]
+ * @param {() => number} [opts.now] 时钟（注入则 builtAt 确定性）
+ * @returns {{lsm:object|null, hw:object|null, builtAt:number}}
+ */
+export function buildSystems(opts = {}) {
+  const now = typeof opts.now === 'function' ? opts.now : () => Date.now()
+  const lsm = buildLsmReading(opts)
+  const hw = buildHwReading(opts)
+  return { lsm, hw, builtAt: now() }
+}
+
+/** LSM 引擎真跑一趟确定性 benchmark，回结构读数（不夹带每行真值）。 */
+function buildLsmReading(opts) {
+  try {
+    const N = Math.max(32, Math.floor(Number(opts.lsmKeys ?? 512)))
+    let seed = 42
+    const rand = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff)
+    const store = createLsmStore({ memtableMax: 64, levelMultiplier: 4, rand })
+    const key = (i) => 'boss:' + String(i).padStart(5, '0')
+    for (let i = 0; i < N; i++) store.put(key(i), { hp: i * 10 })
+    for (let i = 0; i < N; i += 7) store.del(key(i))
+    store.flush()
+    store.compact()
+    const probes = []
+    for (let i = 0; i < N; i += 5) probes.push(key(i))
+    const cmp = store.compareScan(probes.concat(['never:a', 'never:b']))
+    const s = store.stats()
+    const round = (x) => Number.isFinite(x) ? Number(x.toFixed(2)) : null
+    return {
+      keys: N, flushes: s.flushes, compactions: s.compactions,
+      mergedAway: s.mergedAway, tombstonesDropped: s.tombstonesDropped,
+      bloomRejects: s.bloomRejects, comparisons: s.comparisons,
+      scanBaselineComparisons: s.scanBaselineComparisons,
+      speedup: round(cmp.speedup),
+      levels: s.levels.map((l) => ({ level: l.level, segments: l.segments, entries: l.entries })),
+    }
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/** OS/硬件适配三件对照，走 createGameCloud.hw 装配（证接线也可用），回结构读数。 */
+function buildHwReading(opts) {
+  try {
+    const count = Math.max(100, Math.floor(Number(opts.layoutCount ?? 2000)))
+    const gc = createGameCloud({
+      hw: {
+        poolAccesses: Math.max(100, Math.floor(Number(opts.poolAccesses ?? 2000))),
+        counterCount: 8, count, jumpStride: 16,
+      },
+      hwNow: opts.now,
+    })
+    const h = gc.hw.snapshot()
+    const round = (x) => Number.isFinite(x) ? Number(x.toFixed(2)) : null
+    return {
+      allocation: {
+        accesses: h.allocation.accesses, naiveCreated: h.allocation.naiveCreated,
+        poolCreated: h.allocation.poolCreated, saved: h.allocation.saved,
+        reuseRate: Number.isFinite(h.allocation.reuseRate) ? Number(h.allocation.reuseRate.toFixed(4)) : null,
+      },
+      cacheLine: {
+        paddedFalseSharing: h.cacheLine.paddedFalseSharing,
+        packedFalseSharing: h.cacheLine.packedFalseSharing,
+        paddingOverhead: round(h.cacheLine.paddingOverhead),
+      },
+      layout: {
+        sequential: { aosMisses: h.layout.sequential.aosMisses, soaMisses: h.layout.sequential.soaMisses, speedup: round(h.layout.sequential.speedup) },
+        strided: { stride: h.layout.strided.stride, aosMisses: h.layout.strided.aosMisses, soaMisses: h.layout.strided.soaMisses, speedup: round(h.layout.strided.speedup) },
+      },
+    }
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
   }
 }
 
@@ -271,6 +368,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     )
     console.log(`[console] 真跑 ${SCENARIO_IDS.length} 趟 E2E ⇒ ${outPath} (+ bootstrap.js)`)
     console.log(`[console] highlights: ${JSON.stringify(snap.highlights)}`)
+    if (snap.systems) console.log(`[console] systems: lsm.speedup=${snap.systems.lsm?.speedup ?? '—'}× / hw.poolSaved=${snap.systems.hw?.allocation?.saved ?? '—'} / hw.layoutSpeedup=${snap.systems.hw?.layout?.sequential?.speedup ?? '—'}×`)
     process.exit(0)
   }).catch((e) => { console.error(`[console] 生成失败：${e.message}`); process.exit(1) })
 }

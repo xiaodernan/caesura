@@ -8,6 +8,7 @@ import {
   cwndSeries,
   driveNetSeries,
   deriveHighlights,
+  buildSystems,
   SCENARIO_IDS,
   SCENARIO_TITLES,
 } from '../../scripts/caesura-console-gen.mjs'
@@ -168,5 +169,53 @@ describe('caesura-console-gen (KI-495)', () => {
       services: null, spanCount: null, canaryHits: null, cacheHitRate: null,
       timedOut: null, cwnd: null, rto: null,
     })
+  })
+
+  it('⑪ buildSystems 真跑 LSM + OS/硬件两维：形状齐、读数是真判词且有界（KI-498）', () => {
+    const sys = buildSystems({ now: () => 1234, lsmKeys: 256, poolAccesses: 500, layoutCount: 1000 })
+    expect(sys.builtAt).toBe(1234)
+    // LSM：真跑 256 key，flush/compact/speedup 都是算法计数、speedup>1。
+    expect(sys.lsm).toMatchObject({ keys: 256 })
+    expect(sys.lsm!.flushes).toBeGreaterThan(0)
+    expect(sys.lsm!.compactions).toBeGreaterThan(0)
+    expect(sys.lsm!.tombstonesDropped).toBeGreaterThan(0)
+    expect(sys.lsm!.speedup).toBeGreaterThan(1)
+    expect(sys.lsm!.levels.every((l) => l.level >= 0 && l.segments >= 0)).toBe(true)
+    // HW：对象池省分配、padding 假共享 0 vs packed>0、布局顺序 speedup>1 / 跳跃≈1。
+    expect(sys.hw!.allocation).toMatchObject({ accesses: 500, naiveCreated: 500, poolCreated: 1 })
+    expect(sys.hw!.allocation.saved).toBe(499)
+    expect(sys.hw!.cacheLine.paddedFalseSharing).toBe(0)
+    expect(sys.hw!.cacheLine.packedFalseSharing).toBeGreaterThan(0)
+    expect(sys.hw!.layout.sequential.speedup).toBeGreaterThan(1)
+    expect(sys.hw!.layout.strided.speedup).toBeCloseTo(1, 1)
+    // 可序列化纯数据、不含函数/Error。
+    expect(() => JSON.stringify(sys)).not.toThrow()
+  })
+
+  it('⑫ buildSnapshot 默认带 systems 块；systems:false 关闭为 null（兼容旧快照/确定性单测）', async () => {
+    const withSys = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, lsmKeys: 64, poolAccesses: 100, layoutCount: 200 })
+    expect(withSys.systems).toBeTruthy()
+    expect(withSys.systems!.lsm).toBeTruthy()
+    expect(withSys.systems!.hw).toBeTruthy()
+    expect(withSys.scenarios.map((s) => s.id)).toEqual(SCENARIO_IDS) // 五场景顺序不变
+    const without = await buildSnapshot({ runner: fakeRunner(), driveNet: false, systems: false })
+    expect(without.systems).toBe(null)
+    expect(without.highlights).toBeTruthy() // 既有口径不受影响
+  })
+
+  it('⑬ 已提交 snapshot.json 带真 systems 块、与 bootstrap 同源、可喂前端', () => {
+    const snap = JSON.parse(readFileSync(resolve(process.cwd(), 'console/snapshot.json'), 'utf8'))
+    expect(snap.systems).toBeTruthy()
+    expect(snap.systems.lsm.speedup).toBeGreaterThan(1)
+    expect(snap.systems.lsm.flushes).toBeGreaterThan(0)
+    expect(snap.systems.hw.allocation.saved).toBeGreaterThan(0)
+    expect(snap.systems.hw.cacheLine.paddedFalseSharing).toBe(0)
+    expect(snap.systems.hw.layout.sequential.speedup).toBeGreaterThan(1)
+    expect(typeof snap.systems.builtAt).toBe('number')
+    // bootstrap.js 与 snapshot.json 是同一份真快照（systems 也在其中）。
+    const bootCode = readFileSync(resolve(process.cwd(), 'console/bootstrap.js'), 'utf8')
+    const fromBoot = JSON.parse(bootCode.slice(bootCode.indexOf('=') + 1).trim().replace(/;\s*$/, ''))
+    expect(fromBoot.systems.lsm.speedup).toBe(snap.systems.lsm.speedup)
+    expect(fromBoot.systems.hw.allocation.saved).toBe(snap.systems.hw.allocation.saved)
   })
 })
