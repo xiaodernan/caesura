@@ -23,8 +23,8 @@ npm run dev            # Vite dev server；浏览器打开 http://localhost:5173
 ## 验证
 
 ```bash
-npm run check          # tsc --noEmit + validate:data + 全部测试（当前：0 错 / 4574 条 / 392 个文件）
-npm test               # 仅测试（磁盘名册 392，4493→4534→4540→4542→4548→4550→4555→4574 随批次递增）
+npm run check          # tsc --noEmit + validate:data + 全部测试（当前：0 错 / 4949 条 / 418 个文件）
+npm test               # 仅测试（磁盘名册 418，曲线 4540→4555→4574→4883→4891→4907→4933→4949 随批次递增）
 npm run validate:data  # 数据门（当前：0 ERROR / 2 WARN，均为既有项）
 npm run coverage       # 覆盖率棘轮门（空报表退化按 exit 2 记账，不判 guilty）
 npm run build          # tsc + vite build + check-dist（产物：dist/）
@@ -44,7 +44,7 @@ npm run build          # tsc + vite build + check-dist（产物：dist/）
 | `docs/architecture-20261109-backfill.md` · `docs/architecture-20261109-squad-arc.md` | 背书式架构附录（非节号；squad 队列弧等） |
 | `docs/perf-baseline.md` | Phase 9 基本盘（KI-335／KI-418）：测了什么、两趟读数、不背书的边界、下一位接手清单 |
 | `docs/spring-family-e2e.md` | 2026-11-10 Spring Cloud 家族本机端到端实证（host 直跑六件 jar 全绿；容器路径 KI-431 Blocked；常见坑 playbook） |
-| `docs/CHANGELOG.md` | 机器生成的主干变更索引（按 committer 月份升序，共 718 笔提交；commit 即准，不做主张） |
+| `docs/CHANGELOG.md` | 机器生成的主干变更索引（按 committer 月份升序，共 733 笔提交；commit 即准，不做主张） |
 | `docs/phase7-plan.md` | Phase 7 基本盘：交付物逐格对账 + 美术/裁决与代码拆分 + F1-F4 可落任务（先量后动；不代笔美术） |
 
 ## 工程约定（本仓库注重的事）
