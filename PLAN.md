@@ -29,6 +29,9 @@
 | Phase F-17 | Spring Cloud Bus × Config Server 闭环：startConfigWatcher 第 5 形参 `bus` → `config.changed` 自动广播；启动语义改为首趟只登记不吐事件；CLI 创建本地 Bus 打印总线响应（2 条新集成测试） | a416f77 |
 | Phase F-18 | Spring Cloud Gateway 动态路由热加载：`createRouteTable` + `watchRoutes`（mtime 快照 + added/removed 差集 + `route.changed` 广播）+ `refreshRoutes` + CLI `refresh` 子命令（9 条新测试） | abcf512 |
 | Phase F-19 | Spring Cloud 家族端到端真跑通（宿主直跑六件 jar，未碰另一项目进程）：修 client 父引用 + 加入 reactor + finalName 对齐 compose（KI-452）；修 client BOM 版本漂移（Boot 3.5.16 × Cloud 2022.0.4 compatibility-verifier 拒绝）+ 缺 `spring.config.import`（KI-453）；实测 registry/config/gate/report/gateway/client 全部在线、网关双路由 200、两道真门经网关跑 green（`circuitState=CLOSED`） | bf3d106 |
+| Phase F-20 | Spring Cloud 家族判词整族全绿：六件 jar 全起、gate 名册 count=5（含 gate-suite test）、`/report/verdict` 5 门全 green、熔断器全程 CLOSED、Java 侧判定权仍是 Node 侧、healths 稳定 | 92d1a2d |
+| Phase F-21 | 端到端验收器 `scripts/spring-family-e2e-check.mjs` 固化（两阶启动 + 四条探针 + 自动停六件；14 腿单测覆盖纯函数） | e9b979e |
+| Phase F-22 | `gate-perf` 加入门名册：`measure-probe.mjs --budget=10ms` + `perf-budget-rules.mjs`（p95 预算门，10 腿单测）；经网关实测 gate-perf green（4.4s），probes 期望 count 5→6 同步 | 236bf92, 280a9e4 |
 | KI-407 | coverage 棘轮三出口（0/1/2）全部有测试 + 基线落地 | 07399b9 |
 | Phase C / F3 | Boss 乐句线 HUD：BossPhraseBar.ts + main.ts 接线 + flow 测试 | 08bb3f5 |
 | KI-118 fix | spring-health-check.mjs 移除 shebang（module-loader 门禁） | 0698210 |
@@ -39,7 +42,7 @@
 | Stakerite 覆盖率看板 | 读 coverage-floor.json 显示总地板 | b0e0fb7 |
 | Phase 7 F2-第三批 | QualityStore→GPUParticles 预算乘数接线验证（5 腿） | 26347df |
 
-**当前状态**：`npm run check` 全绿：4907 条 / 415 文件，0 个红。`npm run coverage` 通过（行覆盖 95.62%，ui 99.93%，全包达标）。所有工作分支/stash 已并轨至 master。
+**当前状态**：`npm run check` 全绿：4922 条 / 416 文件，0 个红。`npm run coverage` 通过（行覆盖 95.62%，ui 99.93%，全包达标）。`npm run release` 全链路 OK。所有工作分支/stash 已并轨至 master。Spring Cloud 家族端到端可真跑（六件 jar，网关路由，整族判词 green），`gate-perf` 入册，`scripts/spring-family-e2e-check.mjs` 固化。
 
 ---
 
