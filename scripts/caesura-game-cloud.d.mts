@@ -13,12 +13,18 @@ export interface GameCloudOptions {
   transport?: (t: any, path: string, init?: any) => Promise<any>
   cloud?: any
   bus?: { publish(event: string, ...args: unknown[]): boolean }
+  eventsChannel?: string
+  eventsTransport?: string
+  eventBinder?: any
+  requiredScopes?: string[]
 }
 
 /** 创建一只游戏侧开箱即用云。 */
 export function createGameCloud(opts?: GameCloudOptions): {
   runtime: any
   proxy: any
+  events: any
+  auth: any
   start(): Promise<any>
   call(serviceName: string, path: string, init?: any): Promise<any>
   proxyCall(serviceName: string, path: string, init?: any): Promise<any>

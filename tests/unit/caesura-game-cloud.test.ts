@@ -64,4 +64,26 @@ describe('caesura-game-cloud', () => {
     const s = await gc.status()
     expect(s.services).toContain('svc-a')
   })
+
+  it('events 总线可用：start 后收到 game.started 事件，shutdown 后收到 game.stopped', async () => {
+    const gc = createGameCloud({ gameId: 'g1', gamePort: 7700, sources, cloud: fakeCloud() })
+    const got: any[] = []
+    gc.events.onGameEvent('game.started', (p: any) => got.push(['started', p]))
+    gc.events.onGameEvent('game.stopped', (p: any) => got.push(['stopped', p]))
+    await gc.start()
+    expect(got).toEqual([['started', { gameId: 'g1', gameName: 'g1' }]])
+    await gc.shutdown()
+    expect(got[1][0]).toBe('stopped')
+  })
+
+  it('auth 守卫可用：authenticate 解析 Bearer 返回 claims，canAccess 判定作用域', () => {
+    const gc = createGameCloud({ gameId: 'g1', gamePort: 7700, sources, cloud: fakeCloud(), requiredScopes: ['game:play'] })
+    const b64 = (obj: any) =>
+      Buffer.from(JSON.stringify(obj)).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+    const token = `${b64({ alg: 'none' })}.${b64({ sub: 'u1', scope: 'game:play', exp: Math.floor(Date.now() / 1000) + 3600 })}.sig`
+    const claims = gc.auth.authenticate(`Bearer ${token}`)
+    expect(claims.sub).toBe('u1')
+    expect(gc.auth.canAccess(claims, 'game:play')).toBe(true)
+    expect(gc.auth.requiredScopes).toEqual(['game:play'])
+  })
 })

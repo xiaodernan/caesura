@@ -109,6 +109,32 @@ Phase B4 的三件套此前是"有人听、没人说"。
 | ✅ KI-457 | **Node 侧 `readFileSync` 塞进浏览器 bundle，造成一格永久死读**（工程/接线，2026-11-10 已修复）| KI-457 |
 | ✅ KI-458 | **Spring Cloud Config Server + Bus + Client 端到端集成测试**（工程，2026-11-10 已落）| KI-458 |
 | ✅ KI-459 | **refreshApp 返回结构体 + busRefreshUrl 参数化 + circuit-breaker 测试补强（HALF_OPEN / bufferedCalls / 缺字段 tolerated / fetch 网络失败）+ perf-budget-rules fail-closed（重复/未知参数报错，+9 腿）**（工程，2026-11-10 已落）| KI-459 |
+| ✅ KI-460 | **Spring Cloud Stream 消息驱动微服务客户端（Node.js 侧，`scripts/spring-cloud-stream-client.mjs`）**（工程，2026-11-11 已落，详见账本 KI-460） | KI-460 |
+| ✅ KI-461 | **Spring Cloud OpenFeign 声明式 REST 客户端（Node.js 侧，`scripts/spring-cloud-openfeign-client.mjs`）**（工程，2026-11-11 已落，详见账本 KI-461） | KI-461 |
+| ✅ KI-462 | **Spring Cloud Vault 配置/密钥客户端（Node.js 侧，`scripts/spring-cloud-vault-client.mjs`）**（工程，2026-11-11 已落，详见账本 KI-462） | KI-462 |
+| ✅ KI-463 | **Spring Cloud Security OAuth2 Resource Server 客户端（Node.js 侧，`scripts/spring-cloud-security-oauth2-client.mjs`）**（工程，2026-11-11 已落，详见账本 KI-463） | KI-463 |
+| ✅ KI-464 | **Spring Cloud Consul 服务发现客户端（Node.js 侧，`scripts/spring-cloud-consul-client.mjs`）**（工程，2026-11-11 已落，详见账本 KI-464） | KI-464 |
+| ✅ KI-465 | **CaesuraCloud 统一门面（Node.js 侧，`scripts/spring-cloud-facade.mjs`）**（工程，2026-11-11 已落，详见账本 KI-465） | KI-465 |
+| ✅ KI-466 | **Spring Cloud 微服务族可观测性聚合器（Node.js 侧，`scripts/spring-mesh-status.mjs`）**（工程，2026-11-11 已落，详见账本 KI-466） | KI-466 |
+| ✅ KI-467 | **Spring Cloud Task 任务执行客户端（Node.js 侧，`scripts/spring-cloud-task-client.mjs`）**（工程，2026-11-11 已落，详见账本 KI-467） | KI-467 |
+| ✅ KI-468 | **Spring Cloud Function 函数路由客户端（Node.js 侧，`scripts/spring-cloud-function-client.mjs`）**（工程，2026-11-11 已落，详见账本 KI-468） | KI-468 |
+| ✅ KI-469 | **Spring Cloud Contract 消费者驱动契约桩客户端（Node.js 侧，`scripts/spring-cloud-contract-client.mjs`）**（工程，2026-11-11 已落，详见账本 KI-469） | KI-469 |
+| ✅ KI-470 | **Spring Cloud 统一服务注册表（Node.js 侧，`scripts/spring-mesh-registry.mjs`）**（工程，2026-11-11 已落，详见账本 KI-470） | KI-470 |
+| ✅ KI-471 | **游戏侧微服务适配层（Node.js 侧，`scripts/caesura-mesh-adapter.mjs`）**（工程，2026-11-11 已落，详见账本 KI-471） | KI-471 |
+| ✅ KI-472 | **进程内 Resilience4j 风格熔断器（Node.js 侧，`scripts/spring-resilience-breaker.mjs`）**（工程，2026-11-11 已落，详见账本 KI-472） | KI-472 |
+| ✅ KI-473 | **集大成运行时（Node.js 侧，`scripts/caesura-cloud-runtime.mjs`）**（工程，2026-11-11 已落，详见账本 KI-473） | KI-473 |
+| ✅ KI-474 | **服务代理（Node.js 侧，`scripts/caesura-service-proxy.mjs`）**（工程，2026-11-11 已落，详见账本 KI-474） | KI-474 |
+| ✅ KI-475 | **Gateway 可用化收口：predicate 求值 + filter 链（Node.js 侧，`scripts/spring-gateway-matcher.mjs`）**（工程，2026-11-11 已落，详见账本 KI-475） | KI-475 |
+| ✅ KI-476 | **Sleuth 进程内 tracer（Node.js 侧，`scripts/spring-sleuth-tracer.mjs`）**（工程，2026-11-11 已落，详见账本 KI-476） | KI-476 |
+| ✅ KI-477 | **运行时 call 升级为完整服务网格调用（Node.js 侧，`scripts/caesura-cloud-runtime.mjs` 扩展）**（工程，2026-11-11 已落，详见账本 KI-477） | KI-477 |
+| ✅ KI-478 | **游戏侧开箱即用云入口（Node.js 侧，`scripts/caesura-game-cloud.mjs`）**（工程，2026-11-11 已落，详见账本 KI-478） | KI-478 |
+| ✅ KI-479 | **Spring Cloud Kubernetes 客户端（Node.js 侧，`scripts/spring-cloud-kubernetes-client.mjs`）**（工程，2026-11-11 已落，详见账本 KI-479） | KI-479 |
+| ✅ KI-480 | **多源配置优先级聚合器（Node.js 侧，`scripts/caesura-config-aggregator.mjs`）**（工程，2026-11-11 已落，详见账本 KI-480） | KI-480 |
+| ✅ KI-481 | **集大成家族端到端证据（Node.js 侧，`scripts/spring-family-mesh-e2e.mjs`）**（工程，2026-11-11 已落，详见账本 KI-481） | KI-481 |
+| ✅ KI-482 | **游戏生命周期 ↔ 云入口 桥接件（Node.js 侧，`scripts/caesura-game-bootstrap.mjs`）**（工程，2026-11-11 已落，详见账本 KI-482） | KI-482 |
+| ✅ KI-483 | **Spring Cloud 微服务网格合成地图（`docs/spring-cloud-mesh.md`）**（工程，2026-11-11 已落，详见账本 KI-483） | KI-483 |
+| ✅ KI-484 | **游戏事件总线适配层（Node.js 侧，`scripts/caesura-event-bus.mjs`）**（工程，2026-11-11 已落，详见账本 KI-484） | KI-484 |
+| ✅ KI-485 | **游戏鉴权守卫（Node.js 侧，`scripts/caesura-auth-guard.mjs`）**（工程，2026-11-11 已落，详见账本 KI-485） | KI-485 |
 
 
 
