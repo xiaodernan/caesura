@@ -17,6 +17,9 @@ import { createMeshRegistry } from './spring-mesh-registry.mjs'
 import { createRouteTable, loadRoutesFromFile, watchRoutes } from './spring-gateway-route.mjs'
 import { createLoadBalancer, selectTarget, targetToUrl } from './spring-load-balancer.mjs'
 import { createGameMeshAdapter } from './caesura-mesh-adapter.mjs'
+import { createGatewayMatcher } from './spring-gateway-matcher.mjs'
+import { createTracer } from './spring-sleuth-tracer.mjs'
+import { createCircuitBreaker } from './spring-resilience-breaker.mjs'
 
 /**
  * 创建一只集大成运行时。
@@ -36,6 +39,15 @@ export function createCloudRuntime(opts = {}) {
 
   const lbCache = new Map()
   let stopWatcher = null
+
+  // 可选能力：网关可用化（predicate 求值 + filter 链）与进程内追踪；传 true 用默认实现，传对象用注入实现。
+  const gateway = opts.gateway === true ? createGatewayMatcher() : (opts.gateway ?? null)
+  const tracer = opts.tracer === true ? createTracer({ serviceName: gameName }) : (opts.tracer ?? null)
+  const breakerCache = new Map()
+  function getBreaker(name) {
+    if (!breakerCache.has(name)) breakerCache.set(name, createCircuitBreaker(name, opts.breakerOpts ?? {}))
+    return breakerCache.get(name)
+  }
 
   // 把注入的发现源登记进统一注册表
   if (opts.sources) {
@@ -76,22 +88,63 @@ export function createCloudRuntime(opts = {}) {
   }
 
   /**
-   * 对目标服务做一次调用：负载均衡选实例 → 交给 transport。
-   * @returns {Promise<{ok:boolean, target?:any, data?:any, error?:unknown}>}
+   * 对目标服务做一次调用：网关路由匹配（可选）→ 负载均衡选实例 → 起 span（可选）→ 经网关 CircuitBreaker filter 熔断（可选）→ transport。
+   * @returns {Promise<{ok:boolean, target?:any, data?:any, route?:any, span?:any, reason?:string, error?:unknown}>}
    */
   async function call(serviceName, path, init = {}) {
+    // 1) 网关路由匹配（可选）：拿请求去匹配路由表，匹配不到直接短路
+    let route = null
+    if (gateway) {
+      const matched = gateway.matchRoute(routes, { path, method: init?.method, headers: init?.headers })
+      if (!matched) {
+        return { ok: false, target: null, data: undefined, reason: 'no_route', error: new Error(`no gateway route for ${path}`) }
+      }
+      route = matched.route
+    }
+
+    // 2) 负载均衡选实例
     const lb = await loadBalancerFor(serviceName)
     const target = selectTarget(lb)
     if (!target) {
-      return { ok: false, target: null, data: undefined, error: new Error(`no instance for ${serviceName}`) }
+      return { ok: false, target: null, data: undefined, route: route ?? undefined, reason: 'no_instance', error: new Error(`no instance for ${serviceName}`) }
     }
     const url = targetToUrl(target, path)
+
+    // 3) 起 span（可选），把 W3C traceparent 注入请求头
+    let span = null
+    const headers = { ...(init.headers ?? {}) }
+    if (tracer) {
+      span = tracer.startSpan(`${serviceName}${path}`)
+      headers['traceparent'] = tracer.inject(span)
+    }
+    const callInit = span ? { ...init, headers } : init
+
+    // 4) 执行传输；网关 CircuitBreaker filter 存在则用进程内熔断包一层（判定权仍 Node 侧）
     const transport = opts.transport ?? defaultTransport
+    const doTransport = () => transport(
+      { url, serviceName, instanceId: target.instanceId, host: target.host, port: target.port },
+      path, callInit,
+    )
+
+    const finishSpan = (tags) => {
+      if (span) tracer.finish(span, { remoteEndpoint: { serviceName }, tags })
+    }
+
     try {
-      const data = await transport({ url, serviceName, instanceId: target.instanceId, host: target.host, port: target.port }, path, init)
-      return { ok: true, target, data, error: undefined }
+      let data
+      const cbFilter = route?.filters?.find((f) => f.name === 'CircuitBreaker')
+      if (cbFilter) {
+        const r = await getBreaker(cbFilter.args?.name ?? serviceName).run(doTransport)
+        if (!r.ok) throw r.error
+        data = r.result
+      } else {
+        data = await doTransport()
+      }
+      finishSpan({ 'caesura.target': target.instanceId })
+      return { ok: true, target, data, route: route ?? undefined, span: span ?? undefined, error: undefined }
     } catch (error) {
-      return { ok: false, target, data: undefined, error }
+      finishSpan({ error: String(error?.message ?? error) })
+      return { ok: false, target, data: undefined, route: route ?? undefined, span: span ?? undefined, error }
     }
   }
 

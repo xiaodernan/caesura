@@ -29,6 +29,9 @@ export interface RuntimeOptions {
   transport?: (t: RuntimeTransportTarget, path: string, init?: any) => Promise<any>
   bus?: { publish(event: string, ...args: unknown[]): boolean }
   cloud?: any
+  gateway?: any
+  tracer?: any
+  breakerOpts?: { failureThreshold?: number; cooldownMs?: number; halfOpenMax?: number; windowSize?: number }
 }
 
 /** 创建一只集大成运行时。 */
@@ -39,7 +42,7 @@ export function createCloudRuntime(opts?: RuntimeOptions): {
   game: { start(): Promise<any>; stop(): Promise<any>; reportHealth(): Promise<any>; getConfig(k: string): any; status(): Promise<any>; self(): any }
   loadBalancerFor(serviceName: string): Promise<any>
   bootstrap(): Promise<{ started: any }>
-  call(serviceName: string, path: string, init?: any): Promise<{ ok: boolean; target?: any; data?: any; error?: unknown }>
+  call(serviceName: string, path: string, init?: any): Promise<{ ok: boolean; target?: any; data?: any; route?: any; span?: any; reason?: string; error?: unknown }>
   shutdown(): Promise<{ stopped: any }>
   status(): Promise<any>
 }

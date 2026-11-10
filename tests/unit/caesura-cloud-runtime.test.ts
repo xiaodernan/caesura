@@ -77,4 +77,55 @@ describe('caesura-cloud-runtime', () => {
     expect(s.services).toContain('svc-a')
     expect(s.routeCount).toBe(0)
   })
+
+  it('gateway 路由匹配：命中则返回 route 并成功', async () => {
+    const calls: any[] = []
+    const rt = createCloudRuntime({
+      sources, gameId: 'g1', gamePort: 7700, gateway: true,
+      transport: async (t: any, p: string) => { calls.push({ t, p }); return { echo: p } },
+    })
+    rt.routes.add({ id: 'r1', uri: 'lb://svc-a', order: 0, predicates: [{ name: 'Path', args: { patterns: '/api/**' } }], filters: [] })
+    const res = await rt.call('svc-a', '/api/ping')
+    expect(res.ok).toBe(true)
+    expect(res.route?.id).toBe('r1')
+    expect(calls.length).toBe(1)
+  })
+
+  it('gateway 路由匹配：未命中返回 no_route', async () => {
+    const rt = createCloudRuntime({ sources, gameId: 'g1', gamePort: 7700, gateway: true })
+    rt.routes.add({ id: 'r1', uri: 'lb://svc-a', order: 0, predicates: [{ name: 'Path', args: { patterns: '/api/**' } }], filters: [] })
+    const res = await rt.call('svc-a', '/other/x')
+    expect(res.ok).toBe(false)
+    expect(res.reason).toBe('no_route')
+  })
+
+  it('tracer：call 起 span 并把 traceparent 注入传输头', async () => {
+    const rt = createCloudRuntime({
+      sources, gameId: 'g1', gamePort: 7700, tracer: true,
+      transport: async (t: any, p: string, init: any) => { return { tp: init?.headers?.['traceparent'], p } },
+    })
+    const res = await rt.call('svc-a', '/ping')
+    expect(res.ok).toBe(true)
+    expect(res.span).toBeTruthy()
+    expect(res.span.traceId).toMatch(/^[0-9a-f]{32}$/)
+    expect(res.data.tp).toMatch(/^00-[0-9a-f]{32}-[0-9a-f]{16}-01$/)
+  })
+
+  it('gateway CircuitBreaker filter：transport 多次失败则熔断打开并拒绝', async () => {
+    let attempts = 0
+    const rt = createCloudRuntime({
+      sources, gameId: 'g1', gamePort: 7700, gateway: true, breakerOpts: { failureThreshold: 1, cooldownMs: 50 },
+      transport: async () => { attempts++; throw new Error('boom') },
+    })
+    rt.routes.add({
+      id: 'r1', uri: 'lb://svc-a', order: 0,
+      predicates: [{ name: 'Path', args: { patterns: '/api/**' } }],
+      filters: [{ name: 'CircuitBreaker', args: { name: 'svc-a' } }],
+    })
+    const r1 = await rt.call('svc-a', '/api/x')
+    expect(r1.ok).toBe(false)
+    const r2 = await rt.call('svc-a', '/api/x')
+    expect(r2.ok).toBe(false)
+    expect((r2.error as Error).message).toBe('circuit_open')
+  })
 })
