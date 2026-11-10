@@ -60,6 +60,48 @@ describe('spring-config-refresh：配置刷新编排', () => {
     expect(last.init?.method).toBe('POST')
   })
 
+  it('refreshApp：返回结构体（appName/configPropsCount/busRefreshEndpoint/busRefreshBody）', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      json: () => Promise.resolve({ propertySources: [{ name: 'app', source: { 'key1': 'a', 'key2': 'b' } }], status: 200 }),
+      text: () => Promise.resolve('{}'),
+    } as Response)
+
+    const result = await refreshApp('caesura-gate', 'http://localhost:8761', 'http://localhost:8888')
+    expect(result?.appName).toBe('caesura-gate')
+    expect(result?.configPropsCount).toBe(2)
+    expect(result?.busRefreshEndpoint).toBe('http://localhost:8081')
+    expect((result as any)?.busRefreshBody?.status ?? (result as any)?.status).toBeDefined()
+  })
+
+  it('refreshApp：显式 busRefreshUrl 参数时用它（不覆盖前一默认值）', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      json: () => Promise.resolve({ propertySources: [{ name: 'app', source: {} }], status: 200 }),
+      text: () => Promise.resolve('{}'),
+    } as Response)
+
+    const result = await refreshApp('caesura-gate', 'http://localhost:8761', 'http://localhost:8888', 'http://localhost:9999')
+    expect(result?.busRefreshEndpoint).toBe('http://localhost:9999')
+  })
+
+  it('refreshApp：configUrl 包含 :8888 时自动推导 busRefreshUrl 为 :8081', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      json: () => Promise.resolve({ propertySources: [{ name: 'app', source: {} }], status: 200 }),
+      text: () => Promise.resolve('{}'),
+    } as Response)
+
+    const result = await refreshApp('caesura-gate', 'http://localhost:8761', 'http://localhost:8888')
+    expect(result?.busRefreshEndpoint).toBe('http://localhost:8081')
+  })
+
   it('refreshAll：列出全部应用，逐一刷新', async () => {
     const calls: Array<string> = []
     globalThis.fetch = vi.fn().mockImplementation((url) => {

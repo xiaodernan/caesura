@@ -31,15 +31,22 @@ const DEFAULT_EUREKA_URL = 'http://127.0.0.1:8761'
 /** 默认 Config Server 地址 */
 const DEFAULT_CONFIG_URL = 'http://127.0.0.1:8888'
 
-/** 刷新指定应用：先拉取配置，再广播 bus-refresh */
-export async function refreshApp(appName, eurekaUrl, configUrl) {
+/** 刷新指定应用：先拉取配置，再广播 bus-refresh（返回结构体，CLI 是唯一消费方） */
+export async function refreshApp(appName, eurekaUrl, configUrl, busRefreshUrl) {
   // 第一步：拉取配置（验证应用在 Config Server 上可读）
   const config = await fetchConfig(appName, configUrl)
   console.log(`[refresh] ${appName} 配置已拉取：${Object.keys(config).length} 个属性`)
 
-  // 第二步：广播 bus-refresh（针对该应用，或全部实例）
-  const result = await busRefresh(appName, configUrl.replace(':8888', ':8081'))
-  console.log(`[refresh] ${appName} bus-refresh 已发送：status=${result.status}`)
+  // 第二步：广播 bus-refresh（未传 busRefreshUrl 时，按 configUrl 推导：8888→8081，否则原样透传）
+  const target = busRefreshUrl ?? (typeof configUrl === 'string' && configUrl.includes(':8888') ? configUrl.replace(':8888', ':8081') : configUrl ?? 'http://127.0.0.1:8081')
+  const result = await busRefresh(appName, target)
+  console.log(`[refresh] ${appName} bus-refresh 已发送：status=${result?.status ?? 'unknown'}`)
+  return {
+    appName,
+    configPropsCount: Object.keys(config).length,
+    busRefreshEndpoint: target,
+    busRefreshBody: result,
+  }
 }
 
 /** 刷新全部应用：列出 Eureka 中的所有应用，逐一刷新 */

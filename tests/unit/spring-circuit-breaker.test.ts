@@ -39,6 +39,61 @@ describe('spring-circuit-breaker：熔断器状态查询', () => {
     expect(state.failureThreshold).toBe(0.5)
   })
 
+  it('translateCircuitBreaker：HALF_OPEN 状态也可解析（不抛错）', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      json: () => Promise.resolve({
+        name: 'fx_pulse', state: 'HALF_OPEN',
+        failureRate: 0.3, failureThreshold: 0.5,
+        slowCallRate: 0.1, slowCallRateThreshold: 0.8, bufferedCalls: 10,
+      }),
+      text: () => Promise.resolve('{}'),
+    } as Response)
+
+    const state = await getCircuitBreaker('fx_pulse', 'http://localhost:8081')
+    expect(state.state).toBe('HALF_OPEN')
+    expect(state.slowCallRateThreshold).toBe(0.8)
+    expect(state.bufferedCalls).toBe(10)
+  })
+
+  it('HALF_OPEN 之前 drain 完的失败样本：bufferedCalls 透传不改', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true, status: 200, statusText: 'OK',
+      json: () => Promise.resolve({
+        name: 'fx_x', state: 'CLOSED',
+        failureRate: 0.2, failureThreshold: 0.5,
+        slowCallRate: 0, slowCallRateThreshold: 0, bufferedCalls: 47,
+      }),
+      text: () => Promise.resolve('{}'),
+    } as Response)
+
+    const state = await getCircuitBreaker('fx_x', 'http://localhost:8081')
+    expect(state.bufferedCalls).toBe(47)
+  })
+
+  it('json 字段丢失 tolerated：字段不存在不报错（Spring Cloud 某些端点不返回这些 JSON）', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true, status: 200, statusText: 'OK',
+      json: () => Promise.resolve({
+        name: 'fx_y', state: 'CLOSED',
+        failureRate: 0, // 只提供 failureRate 字段
+      }),
+      text: () => Promise.resolve('{}'),
+    } as Response)
+
+    const state = await getCircuitBreaker('fx_y', 'http://localhost:8081')
+    expect(state.name).toBe('fx_y')
+    expect(state.failureRate).toBe(0)
+    expect(state.slowCallRate).toBeUndefined()
+  })
+
+  it('fetch 网络失败 ⇒ 抛错包装错误信息', async () => {
+    globalThis.fetch = vi.fn().mockRejectedValue(new Error('connect ECONNREFUSED'))
+    await expect(getCircuitBreaker('fx_dust', 'http://localhost:8081')).rejects.toThrow(/熔断器查询失败/)
+  })
+
   it('getCircuitBreakers：返回全部熔断器列表', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
