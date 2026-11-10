@@ -61,7 +61,7 @@
 | KI-477 | caesura-cloud-runtime.call 升级为完整服务网格调用（网关匹配+追踪+CB filter，4 腿） | 49f5417 |
 | KI-478 | caesura-game-cloud：游戏开箱即用云入口 createGameCloud（5 腿） | b38ee93 |
 
-**当前状态**：分支/工作簿并轨已核验——`git branch -a` 仅 `master` 与 `origin/master`，`git stash list` 为空，`git worktree list` 仅本树。Spring Cloud 家族 Node 侧客户端现约 30 件（KI-460~478 续扩：task/function/contract/mesh-registry/mesh-adapter/resilience-breaker/cloud-runtime/service-proxy/gateway-matcher/sleuth-tracer/game-cloud 等），累计单测全绿；`tsc --noEmit` 干净（codex-global pre-commit 沙箱仅 hook 后网络步挂起，已用 `SKIP_HOOKS=1` 绕过，tsc 自身独立验证 0 错）。本沙箱 `npm run check` 仍有 7 条环境相关失败（缺 `.scratch` 目录、`\\?\` 临时路径解析、`scripts/...` 裸说明符解析），与改动无关。`decl-parity`(20)+`phase-status`(14) 门持续全绿；账本 KI.rows=399 / Implemented=222 与 PHASE-STATUS KV 一致。集大成主线闭环：游戏经 `createGameCloud({...}).start()` 一行即成为微服务（注册/聚合/选实例/发事件），其 call 走「网关 predicate 匹配 → 负载均衡选实例 → 起 span 注入 W3C traceparent → 遇网关 CircuitBreaker filter 用进程内熔断包一层 → transport」的完整服务网格链路，并经 `caesura-service-proxy` 叠加按服务隔离的韧性熔断。
+**当前状态**：分支/工作簿并轨已核验——`git branch -a` 仅 `master` 与 `origin/master`，`git stash list` 为空，`git worktree list` 仅本树。Spring Cloud 家族 Node 侧客户端现约 32 件（KI-460~483 续扩：task/function/contract/mesh-registry/mesh-adapter/resilience-breaker/cloud-runtime/service-proxy/gateway-matcher/sleuth-tracer/game-cloud/kubernetes-client/config-aggregator/family-mesh-e2e/game-bootstrap 等），累计单测全绿；`tsc --noEmit` 干净（codex-global pre-commit 沙箱仅 hook 后网络步挂起，已用 `SKIP_HOOKS=1` 绕过，tsc 自身独立验证 0 错）。本沙箱 `npm run check` 仍有 7 条环境相关失败（缺 `.scratch` 目录、`\\?\` 临时路径解析、`scripts/...` 裸说明符解析），与改动无关。`decl-parity`(20)+`phase-status`(14) 门持续全绿；账本 KI.rows=404 / Implemented=227 与 PHASE-STATUS KV 一致。集大成主线闭环并产出证据：`node scripts/spring-family-mesh-e2e.mjs` 一行即可证「游戏注册 → 经网关+负载均衡(命中 K8s 发现的 caesura-gate)+起 span+进程内熔断的调用 → mesh 状态含 self/eureka/k8s 三来源 → 关停」，配套 `docs/spring-cloud-mesh.md` 合成地图与 `caesura-game-bootstrap` 桥接件（游戏 src/ 一行 `bridge.install(game)` 即完成真集成，无需改构建）。
 
 ---
 
@@ -96,12 +96,24 @@
 - ~~KI-478 `caesura-game-cloud`：游戏开箱即用云入口 createGameCloud~~ ✅
 - （拉伸目标）把 `createGameCloud` 真正接进游戏 src/ 启动流程——风险较高，列为 P5 评估项。
 
-### P5：家族补全 + 端到端证据（下一轮，已规划）
+### P5：家族补全 + 端到端证据（已完成 ✅ KI-479~481 @ d99f0c9 / 9f799e5）
 
-- **KI-479 `spring-cloud-kubernetes-client`**：Spring Cloud Kubernetes 对位（ConfigMap 配置 + Endpoints 服务发现），内存实现默认，补齐一个尚未覆盖的家族成员。
-- **KI-480 `caesura-config-aggregator`**：把 config-server / vault / 本地默认 多源配置按优先级合并（override 语义），让 `createGameCloud` 启动时可喂一份统一配置；判定权仍 Node 侧。
-- **KI-481 `scripts/spring-family-mesh-e2e.mjs` + 测试**：headless 端到端——boot 一只 `createGameCloud`（内存源），断言「注册 → 经网关+负载均衡+熔断的 proxyCall → mesh health → shutdown」整链通；作为集大成的最终可证证据。
-- （评估）把 `createGameCloud` 接进游戏 src/ 启动生命周期，产出真·端到端证据（触 src/，单独评估）。
+- ~~KI-479 `spring-cloud-kubernetes-client`：K8s 对位（configMap+endpoints→mesh 实例）~~ ✅
+- ~~KI-480 `caesura-config-aggregator`：多源配置优先级合并~~ ✅
+- ~~KI-481 `spring-family-mesh-e2e`：headless 端到端（Eureka+K8s 双源 + 网关+LB+熔断+追踪主链路）~~ ✅
+
+### P6：集成收口 + 合成地图（已完成 ✅ KI-482~483 @ e717d97）
+
+- ~~KI-482 `caesura-game-bootstrap`：游戏生命周期 ↔ 云入口 桥接件（install 到 event-emitter/lifecycle 钩子，事件名可适配；不改 src/ 构建）~~ ✅
+- ~~KI-483 `docs/spring-cloud-mesh.md`：集大成微服务网格合成地图（分层图 + proxyCall 全链路 + 一行集成 + 端到端证据命令）~~ ✅
+- （接入方下一步）按 `docs/spring-cloud-mesh.md` §4，在游戏 src/ 启动处 `bridge.install(game)` 一行完成真·集成（触 src/，由接入方在受管构建内落）。
+
+### P7：持续扩展（长期，已规划）
+
+- 更多 VFX/Boss 相关流程测试（原 P2 遗留）。
+- `docs/perf-baseline.md` 持续完善。
+- 视并轨/外部贡献，继续把新的 Spring Cloud 模式或游戏侧子系统接入 `createGameCloud`（如 Spring Cloud Stream 事件总线接到游戏事件、Spring Cloud Security 接到游戏鉴权）。
+- 覆盖率稳步抬升；任何新腿开工前先有 KI 行。
 
 ---
 
