@@ -47,7 +47,7 @@ const makeWorld = (store = new MapStore(), audio = makeFakeAudio(), withQuality 
     despawn: (id) => ai.despawn(id),
     hasFlag: (k) => streaming.hasFlag(k)
   }, cellKey)
-  const quality = withQuality ? new QualityStore({ particles: { spawnMul: 1 } }) : undefined
+  const quality = withQuality ? new QualityStore({ particles: { spawnMul: 1 }, renderer: { resolutionScale: 1, shadowMapSize: 1536 } }) : undefined
   const saves = new SaveGame({
     player, streaming, spawner, clock: rhythm, time, rpg, audio,
     ...(quality ? { quality: { get: () => quality.get(), apply: (raw: unknown) => quality.apply(raw) } } : {}),

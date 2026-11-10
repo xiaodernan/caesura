@@ -377,7 +377,7 @@ const missingRefs = StreamingSystem.collectMissingRefs(regions, (id) => registry
 if (missingRefs.length) bus.emit('log', { level: 'warn', msg: `MissingRef: ${missingRefs.join(', ')}` })
 /** Phase 7 F2：画质档的宿主。构造即灌默认档（2＝高，与今天逐字一致）；
    读档经 `SaveGame.apply` 落到 `quality?.apply`（信任边界在 QualityStore 里，老档缺块不动）。 */
-const qualityStore = new QualityStore({ particles: { spawnMul: 1 } })
+const qualityStore = new QualityStore({ particles: { spawnMul: 1 }, renderer: { resolutionScale: 1, shadowMapSize: 1536 } })
 const streaming = new StreamingSystem(regions, {
   activateRingBonus: qualityStore.profile().activateRingBonus,
   preloadRingBonus: qualityStore.profile().preloadRingBonus,

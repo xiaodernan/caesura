@@ -53,7 +53,7 @@ function seam(): { input: Input; el: FakeEl; bindings: BindingsStore; gameplay: 
   // store 构造那一句之后它们若还是这两个值，就是没接线。
   const playerTarget = { holdMs: 0, mashGuard: false }
   const gameplay = new GameplaySettingsStore({ input, rig: { shakeIntensity: 1 }, haptics, combat: { damageScale: 1 }, player: playerTarget })
-  const quality = new QualityStore({ particles: { spawnMul: 1 } })
+  const quality = new QualityStore({ particles: { spawnMul: 1 }, renderer: { resolutionScale: 1, shadowMapSize: 1536 } })
   const reads = { bindings: 0, gameplay: 0, quality: 0 }
   const deps = makeOpsHandles(input,
     () => { reads.bindings++; return bindings },

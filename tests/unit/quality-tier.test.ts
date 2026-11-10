@@ -92,7 +92,7 @@ describe('KI-420｜档位表（QUALITY_PROFILES）五腿', () => {
 })
 
 describe('KI-420｜QualityStore 的灌注（构造即灌、set/restore 各灌一次）', () => {
-  const mkTargets = () => ({ particles: { spawnMul: 1 } })
+  const mkTargets = () => ({ particles: { spawnMul: 1 }, renderer: { resolutionScale: 1, shadowMapSize: 1536 } })
 
   it('构造默认档 = 2，注入点直接读到表里的粒子预算', () => {
     const targets = mkTargets()

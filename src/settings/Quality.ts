@@ -68,6 +68,16 @@ export function clampQuality(raw: unknown): QualityTier {
 export interface QualityTargets {
   /** GPUParticles 的生成预算读数（绝对赋值，不是增量） */
   particles: { spawnMul: number }
+  /** 画质档的渲染分档读数（headless 环境无真 WebGL，只留契约，消费者留给 Phase 9/10 落地）。
+   * `resolutionScale`：渲染分辨率比例（1 = 原生）；`shadowMapSize`：阴影贴图边长（像素）。
+   * 两者在 headless 下只记不应用（没有 canvas/GL 上下文），测试只验证数被原样灌入。 */
+  renderer: { resolutionScale: number; shadowMapSize: number }
+}
+
+/** headless 环境的空 targets（只用于测试，不接任何真消费者）。 */
+export const HEADLESS_QUALITY_TARGETS: QualityTargets = {
+  particles: { spawnMul: 1 },
+  renderer: { resolutionScale: 1, shadowMapSize: 1536 },
 }
 
 /**
@@ -119,5 +129,7 @@ export class QualityStore {
   private applyToTargets(): void {
     if (!this.targets) return
     this.targets.particles.spawnMul = this.profile().particleSpawnMul
+    this.targets.renderer.resolutionScale = this.profile().resolutionScale
+    this.targets.renderer.shadowMapSize = this.profile().shadowMapSize
   }
 }

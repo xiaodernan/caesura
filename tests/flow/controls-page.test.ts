@@ -163,7 +163,7 @@ function rig(withOps = true, onOpsTab = true, saves: SavePanelDeps = NO_SAVES): 
   // KI-365：第五把消费者的假件（公开字段就是生产形状）——面板那一行点下去后要在这格里看得见同一个数
   const playerTarget = { holdMs: 0, mashGuard: false }
   const gameplay = new GameplaySettingsStore({ input, rig: { shakeIntensity: 1 }, haptics, combat: { damageScale: 1 }, player: playerTarget })
-  const quality = new QualityStore({ particles: { spawnMul: 1 } })
+  const quality = new QualityStore({ particles: { spawnMul: 1 }, renderer: { resolutionScale: 1, shadowMapSize: 1536 } })
   const notices: string[] = []
   const rpg = new RpgRuntime('origin_tuner')
   const p = new Stakerite(rpg,
@@ -1480,7 +1480,7 @@ function makeWorld(store = new MapStore()) {
   const input = new Input(new FakeEl() as unknown as HTMLElement)
   const bindings = new BindingsStore({ input })
   const gameplay = new GameplaySettingsStore({ input, rig: { shakeIntensity: 1 }, haptics: { scale: 1, weakScale: 1 }, combat: { damageScale: 1 }, player })
-  const quality = new QualityStore({ particles: { spawnMul: 1 } })
+  const quality = new QualityStore({ particles: { spawnMul: 1 }, renderer: { resolutionScale: 1, shadowMapSize: 1536 } })
   const p = new Stakerite(rpg,
     { onApply: () => {}, notify: () => {}, onUse: () => {}, onRequestClose: () => {} },
     NO_SAVES, input, makeOpsHandles(input, () => bindings, () => gameplay, () => quality))
