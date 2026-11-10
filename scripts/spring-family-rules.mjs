@@ -37,7 +37,7 @@ export const ROSTER_RELPATH = 'services/spring/config/caesura-gates.yml'
 export const ROSTER_KEYS = ['id', 'family', 'command', 'args', 'timeout-sec', 'blocking']
 
 /** 这一族期望的服务名（拓扑的名册：compose ⇄ 模块 ⇄ 这张表，三方一致） */
-export const SERVICE_NAMES = ['caesura-registry', 'caesura-config', 'caesura-gateway', 'caesura-gate', 'caesura-report']
+export const SERVICE_NAMES = ['caesura-registry', 'caesura-config', 'caesura-gateway', 'caesura-gate', 'caesura-report', 'caesura-client']
 
 /**
  * 一条读数：{ key, msg }（与 `scripts/id-rules.mjs` 的 `IdFinding` 同形）

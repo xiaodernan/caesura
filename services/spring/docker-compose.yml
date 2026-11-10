@@ -73,6 +73,23 @@ services:
     ports:
       - "8082:8082"
 
+  caesura-client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: caesura/client:0.1.0
+    working_dir: /workspace/services/spring
+    volumes:
+      - ../..:/workspace
+    environment:
+      CAESURA_CONFIG_URL: "http://caesura-config:8888"
+    depends_on:
+      - caesura-config
+      - caesura-registry
+    command: ["java", "-jar", "caesura-client/target/caesura-client-0.1.0.jar", "--eureka.client.service-url.defaultZone=http://caesura-registry:8761/eureka/", "--eureka.instance.hostname=caesura-client"]
+    ports:
+      - "8083:8083"
+
   caesura-gateway:
     build:
       context: .

@@ -1,0 +1,16 @@
+# caesura-client application.yml —— 本地兜底配置（配置服务器不可用时的退路）
+spring:
+  application:
+    name: caesura-client
+
+server:
+  port: 8083
+
+# 与 Node 侧约定：caesura-client 不持有任何业务判据，只做编排与报告。
+# 所有阈值（熔断上限、重试次数、画质档位、粒子预算）由 Node 侧的
+# settings/Quality.ts 与 scripts/spring-family-rules.mjs 统一拍板。
+caesura:
+  client:
+    role: "config-client-demo"
+    version: "0.1.0"
+    orchestrationOnly: true

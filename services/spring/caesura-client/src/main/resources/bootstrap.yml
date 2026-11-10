@@ -1,0 +1,28 @@
+# caesura-client bootstrap.yml —— Config Client 的启动前配置
+# 优先于 application.yml 读取：先向配置服务器索取 caesura-client 的配置段，
+# 拿不到才退回本地 application.yml（Spring Cloud Config 标准降级）。
+spring:
+  application:
+    name: caesura-client
+  cloud:
+    config:
+      uri: ${CAESURA_CONFIG_URL:http://localhost:8888}
+      fail-fast: false
+      retry:
+        max-attempts: 6
+        initial-interval: 1000
+        multiplier: 1.1
+        max-interval: 30000
+
+# Node 侧探针读取的健康端口（scripts/spring-health-check.mjs）：
+#   http://localhost:8083/actuator/health
+management:
+  server:
+    port: 8083
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always

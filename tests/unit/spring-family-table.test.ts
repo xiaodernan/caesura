@@ -137,7 +137,7 @@ const FIXTURE_DOCKERFILE = 'FROM node:22 AS node\nCOPY --from=node /usr/local/bi
  * 客户端用服务名找注册中心／主机名用服务名）⇒ 夹具腿改一处就应当只红那一处。
  */
 function fixtureCompose(): string {
-  const clients = ['caesura-gate', 'caesura-report', 'caesura-gateway']
+  const clients = ['caesura-gate', 'caesura-report', 'caesura-gateway', 'caesura-client']
   const blocks = SERVICE_NAMES.map((name) => {
     const lines = [
       `  ${name}:`,
