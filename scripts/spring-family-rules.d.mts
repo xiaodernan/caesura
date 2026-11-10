@@ -94,3 +94,27 @@ export function containerShapeFindings(input: {
   composeText: string
   serviceNames: string[]
 }): SpringFinding[]
+
+/** 这一族只许调的仓库既有入口（判据④那条链表；夹具那一格「故意起不来」由判据⑬点名） */
+export const REPO_ENTRY_COMMANDS: string[]
+
+/**
+ * 判据⑫：夹具里的编排数字必须与服务读的那一个一致
+ * （`--fail-first` ⇄ `failure-threshold`；`--sleep-ms` 必须长过这一格自己的上限）
+ */
+export function probeNumbersFindings(input: {
+  gates: RosterGate[]
+  failureThreshold?: number | null
+}): SpringFinding[]
+
+/** 判据⑬：夹具名册第一次有自己的机器读者（角色各就各位，缺哪一格就报哪一句没证人） */
+export function probeRosterFindings(input: {
+  rosterText: string
+  scriptFiles: string[]
+  markingRelpath: string
+  entryCommands?: string[]
+  gateAppYml?: string | null
+}): SpringFinding[]
+
+/** 判据⑭：熔断问在起跑**之前**——钉的是源码位置，不是「问过」 */
+export function breakerOrderFindings(input: { javaFiles: { rel: string; text: string }[] }): SpringFinding[]

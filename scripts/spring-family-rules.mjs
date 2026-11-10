@@ -260,6 +260,16 @@ export function javaHardcodeFindings({ roster, javaFiles }) {
 }
 
 /**
+ * 这一族**只许调仓库既有的入口**（判据④的那条链表，KI-422）。
+ *
+ * 它是「什么算一道真的门」的判据，所以住在判据这一侧；值只有一个出处：
+ * 判据④的兜底报名与判据⑬认「起不来那一格」都用这一张表（两处各抄一遍就是两个主人）。
+ *
+ * @type {string[]}
+ */
+export const REPO_ENTRY_COMMANDS = ['npm', 'node']
+
+/**
  * 判据④：名册指向的命令真的存在。
  *
  * `npm` + `["run", "<x>"]` ⇒ package.json 的 scripts 里要有 `<x>`；
@@ -309,7 +319,8 @@ export function commandTargetFindings({ roster, packageScripts, scriptFiles }) {
     }
     out.push({
       key: '命令指向 · ' + id,
-      msg: `这一族只许调仓库既有的入口（npm / node），读到「${command}」⇒ 它会绕开 Node 侧那个判定主人。`,
+      msg: `这一族只许调仓库既有的入口（${REPO_ENTRY_COMMANDS.join(' / ')}），读到「${command}」⇒ 它会绕开 Node 侧那个判定主人。`
+        + '（夹具那一族允许这一格故意起不来：那一条由判据⑬点名，不走这里。）',
     })
   }
   return out
@@ -678,4 +689,215 @@ export function breakerWiredFindings({ javaFiles }) {
     })
   }
   return out
+}
+
+/**
+ * 判据⑫（KI-441）：**夹具里的编排数字必须与服务读的那一个一致**。
+ *
+ * 半开那一趟的形状是这样的：连着坏 `failure-threshold` 道 ⇒ 开闸 ⇒ 冷却过去 ⇒ 放一道试探。
+ * 「试探必须是绿的」这件事由 `--fail-first N` 那一格决定：孩子从前 N 次退 1、第 N+1 次退 0。
+ * 于是 **N 与服务读的阈值是两个出处**——改了 YAML 没改夹具（或反之），那趟就量歪：
+ * N 偏大 ⇒ 试探那一趟还是红的，读不到 `OPEN→HALF_OPEN→CLOSED`；N 偏小 ⇒ 闸在试探之前就又开了。
+ *
+ * 第二格同理：`--sleep-ms S` 是「这一趟还没跑完时第二道请求打进来了」那把锁闩，
+ * 它必须**大于这一格自己的 `timeout-sec`**，否则那一趟真的跑完了，`trialInFlight` 从来没被并发读到过。
+ *
+ * @param {{ gates: Record<string, unknown>[], failureThreshold?: number|null }} input
+ * @returns {SpringFinding[]}
+ */
+export function probeNumbersFindings({ gates, failureThreshold = null }) {
+  const out = []
+  for (const g of gates ?? []) {
+    const id = typeof g.id === 'string' ? g.id : '(无名)'
+    const line = joinedCommand(g)
+    const failFirst = flagValue(line, '--fail-first')
+    if (failFirst !== null) {
+      if (failureThreshold === null || typeof failureThreshold !== 'number') {
+        out.push({
+          key: `夹具数字 · ${id}`,
+          msg: `${id} 写了 --fail-first ${failFirst}，而服务那边读不到 failure-threshold ⇒ 这两个数是不是同一个没有证人`
+            + '（半开那一趟要的是「坏够了的那一次正好是绿的」，两边各自写一个数就没有「正好」）。',
+        })
+      } else if (failFirst !== failureThreshold) {
+        out.push({
+          key: `夹具数字 · ${id}`,
+          msg: `${id} 的 --fail-first 是 ${failFirst}，而这台服务读到的 failure-threshold 是 ${failureThreshold} ⇒ `
+            + '试探那一趟不是绿的（偏大）就是闸提前又开了（偏小），半开那一档量歪。这两处必须同一个数。',
+        })
+      }
+    }
+    const sleepMs = flagValue(line, '--sleep-ms')
+    if (sleepMs !== null) {
+      const t = g['timeout-sec']
+      if (typeof t !== 'number' || !Number.isInteger(t) || t <= 0) {
+        out.push({ key: `夹具数字 · ${id}`, msg: `${id} 要睡 ${sleepMs} 毫秒，可它的 timeout-sec 读不出正整数 ⇒ 比不了大小` })
+      } else if (sleepMs <= t * 1000) {
+        out.push({
+          key: `夹具数字 · ${id}`,
+          msg: `${id} 睡 ${sleepMs} 毫秒，而它的上限是 ${t} 秒（${t * 1000} 毫秒）⇒ 这一趟会在被杀之前跑完，`
+            + '「试探还在跑的时候第二道必须被拒」那一格永远读不到（trialInFlight 只在没跑完的那一段里是真的）。',
+        })
+      }
+    }
+  }
+  return out
+}
+
+/**
+ * 判据⑬（KI-441）：**夹具名册第一次有自己的机器读者**。
+ *
+ * 真名册有判据①②③④盯着；夹具那份（`caesura-gates-probe.yml`）以前**没有读者**——
+ * 它是实测时才供出去的，而实测一趟要几分钟，没人会在改坏它之后还跑一遍。
+ * KI-441 之后它不再是「一次性道具」：账本核对的三句话（开闸 0 个孩子 / 半开恰好 1 个 /
+ * error 那趟 0 个而毫秒数不是 0）全靠这几格**各就各位**。缺任何一格，那句话当天就没有证人。
+ *
+ * 认角色**不抄门 id**：按命令行上的旗标认（与核对器 `rolesFromRoster` 同一套拼法——
+ * 两边是不是同一套由 `tests/unit/spring-family-table.test.ts` 那条对账腿钉住）。
+ *
+ * @param {{ rosterText: string, scriptFiles: string[], markingRelpath: string, entryCommands?: string[], gateAppYml?: string|null }} input
+ * @returns {SpringFinding[]}
+ */
+export function probeRosterFindings({
+  rosterText,
+  scriptFiles,
+  markingRelpath,
+  entryCommands = REPO_ENTRY_COMMANDS,
+  gateAppYml = null,
+}) {
+  const out = []
+  const read = parseGateRoster(rosterText)
+  out.push(...rosterShapeFindings(read))
+  const gates = read.gates ?? []
+  if (!gates.length || read.errors.length) return out
+  if (typeof markingRelpath !== 'string' || markingRelpath === '') {
+    out.push({ key: '夹具读者', msg: '没给记账脚本的路径 ⇒ 分不清哪一格会记账，这一族今天没有读者' })
+    return out
+  }
+  const files = new Set(scriptFiles ?? [])
+  const marking = gates.filter((g) => joinedCommand(g).replace(/\\/g, '/').includes(markingRelpath))
+  const nonMarking = gates.filter((g) => !joinedCommand(g).replace(/\\/g, '/').includes(markingRelpath))
+  const has = (list, flag) => list.some((g) => flagValue(joinedCommand(g), flag) !== null)
+  const exitOne = marking.filter((g) => flagValue(joinedCommand(g), '--exit') === 1)
+
+  if (!exitOne.length) {
+    out.push({ key: '夹具读者', msg: '没有「记账且退非零」的门 ⇒ 熔断没法被真打开，开闸那一档今天没有读数' })
+  }
+  if (!marking.some((g) => flagValue(joinedCommand(g), '--exit') === 0)) {
+    out.push({ key: '夹具读者', msg: '没有「记账且退零」的门 ⇒ 证不了熔断是按门记的（坏一道不该让别的门跑不了）' })
+  }
+  if (!has(marking, '--fail-first')) {
+    out.push({ key: '夹具读者', msg: '没有「坏够了就转绿」的门 ⇒ 半开到闭合那一档只能靠推断，读不到' })
+  }
+  if (!has(marking, '--sleep-ms')) {
+    out.push({ key: '夹具读者', msg: '没有「跑不完」的门 ⇒ 并发那两下打不到同一个 trialInFlight，「恰好一个孩子」没有证人' })
+  }
+  const unspawnable = nonMarking.filter((g) => !entryCommands.includes(String(g.command ?? '')))
+  if (!unspawnable.length) {
+    out.push({
+      key: '夹具读者',
+      msg: `没有「起不来」的门（每格非记账的命令行首都是 ${entryCommands.join('/')}）⇒ `
+        + '第 ③ 句（0 个孩子而毫秒数不是 0）当天没有读数：那种死法只有 error 那一格能造。',
+    })
+  }
+  if (!nonMarking.length) {
+    out.push({
+      key: '夹具读者',
+      msg: '夹具里每一格都记账 ⇒ 账本的**盲区**今天没被走过：「账本里没这一笔」只有在'
+        + '存在不记账的门时才是「没起进程」的证据，全记账时它是同一句话的空转。',
+    })
+  }
+  for (const g of marking) {
+    const id = typeof g.id === 'string' ? g.id : '(无名)'
+    const args = Array.isArray(g.args) ? g.args.map(String) : []
+    const target = args.find((a) => String(a).replace(/\\/g, '/').includes(markingRelpath))
+    if (!target) continue
+    if (!files.has(String(target).replace(/\\/g, '/'))) {
+      out.push({
+        key: `夹具指向不存在的脚本 · ${id}`,
+        msg: `夹具让这一族跑「node ${target}」，而仓里没有这一份文件 ⇒ 那一格一出生就死，`
+          + '它留下的不是「0 个孩子」而是「一个进程都没跑到记账」——两种说法在账本里长得一模一样。',
+      })
+    }
+  }
+  out.push(...probeNumbersFindings({ gates, failureThreshold: thresholdOf(gateAppYml) }))
+  return out
+}
+
+/**
+ * 从 `caesura-gate` 自己那份 `application.yml` 现读熔断阈值（读不到就是 null ⇒ ⑫ 会报名）。
+ *
+ * 这里**不抄值**：判据⑦ 已经用同一个 `yamlScalar` 认过这个键，两处同一把尺。
+ * @param {string|null|undefined} gateAppYml
+ * @returns {number|null}
+ */
+function thresholdOf(gateAppYml) {
+  const v = yamlScalar(gateAppYml ?? '', 'failure-threshold')
+  return typeof v === 'number' ? v : null
+}
+
+/**
+ * 判据⑭（KI-441）：熔断必须问在**起跑之前**——不是「问过」，是**问的位置**。
+ *
+ * 判据⑨ 钉的是「`breaker.beforeRun(` 这一串在不在」，它读不出**顺序**：
+ * 把那一行挪到 `builder.start()` 之后，⑨ 照样绿，而那时进程已经起来了——
+ * 「这一趟没有起进程」那句话当场变成谎话，而判决的形状（exit -1 / durationMs 0）一点没变。
+ * 本批把证人换成孩子的账本之后，这种谎会被 `闸没关上` 抓住；但抓住它要跑一趟真服务，
+ * 而这一条是**源码位置**，进程内就能判——所以把它单独钉住。
+ *
+ * @param {{ javaFiles: {rel: string, text: string}[] }} input
+ * @returns {SpringFinding[]}
+ */
+export function breakerOrderFindings({ javaFiles }) {
+  const out = []
+  const runner = (javaFiles ?? []).find((f) => f.rel.includes('GateRunner.java'))
+  if (!runner) {
+    out.push({ key: '熔断问的时机', msg: '找不到门执行器那份源码 ⇒ 熔断问在起跑之前还是之后无从判断' })
+    return out
+  }
+  const ask = runner.text.indexOf('breaker.beforeRun(')
+  const start = runner.text.indexOf('builder.start(')
+  const refusal = runner.text.indexOf('"circuit_open"')
+  if (ask === -1) {
+    out.push({ key: '熔断问的时机', msg: '门执行器里没有 `breaker.beforeRun(` 那个调用点 ⇒ 顺序判不了（先有那一问，才谈得上问得早不早）' })
+  }
+  if (start === -1) {
+    out.push({ key: '熔断问的时机', msg: '门执行器里没有 `builder.start(` 那个起跑点 ⇒ 「之前」没有参照，顺序判不了' })
+  }
+  if (ask !== -1 && start !== -1 && ask > start) {
+    out.push({
+      key: '熔断问的时机',
+      msg: `熔断器是在起跑**之后**才被问的（` + '`breaker.beforeRun(` 在第 ' + (runner.text.slice(0, ask).split(/\r?\n/).length)
+        + ' 行，`builder.start(` 在第 ' + (runner.text.slice(0, start).split(/\r?\n/).length) + ' 行）⇒ '
+        + '开闸那一趟**已经起了一个进程**，而判决还会说 circuit_open／0 毫秒：形状对、话是谎。',
+    })
+  }
+  if (ask !== -1 && start !== -1 && refusal !== -1 && refusal > start) {
+    out.push({
+      key: '熔断问的时机',
+      msg: '「circuit_open」那个判决在源码里出现在起跑之后 ⇒ 拒绝那一条路径不再是「什么都不做就回话」（它变成了跑完再改口）。',
+    })
+  }
+  return out
+}
+
+/**
+ * 名册那一格 → 人读的那一串（与 Java 的 `GateController` 同一拼法：command + 空格 + args）。
+ * @param {Record<string, unknown>} gate
+ * @returns {string}
+ */
+function joinedCommand(gate) {
+  const args = Array.isArray(gate?.args) ? gate.args.map(String) : []
+  return [String(gate?.command ?? ''), ...args].join(' ').trim()
+}
+
+/**
+ * 从一个命令行串里取 `--flag` 后面的那个整数；没有这个旗标就是 null（**不猜**）。
+ * @param {string} line
+ * @param {string} flag
+ * @returns {number|null}
+ */
+function flagValue(line, flag) {
+  const m = new RegExp(`${flag}\\s+(-?\\d+)(?!\\s*[-\\d])`).exec(String(line ?? ''))
+  if (!m) return null
+  return Number(m[1])
 }

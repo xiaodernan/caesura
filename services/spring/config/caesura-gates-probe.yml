@@ -6,12 +6,26 @@
 # （`caesura-gates.yml`＝真名册）。这一份只在实测熔断时被配置服务器供出去
 # （起服务时 `--spring.cloud.config.name=caesura-gates-probe`）。
 #
-# 那一格红门**故意**指向一份不存在的脚本：门起进程 ⇒ MODULE_NOT_FOUND ⇒ 退出码非零
-# ⇒ 熔断器记一次失败（熔断器看的是**退出码**，它自己从不对「什么算红」发表意见）。
-# 连着失败到阈值之后，下一道必须是「熔断中」，而且**一个进程都没起**（那一趟 0 毫秒）。
+# KI-441 把这一族从「一红一绿」扩成**四种死法**，因为要证的句子从「开闸了吗」变成了
+# **「开闸那一趟到底起了几个进程」**——而后者的证人不能是父亲自己的表。
+# 每一格都标了它**应该**在孩子账本里留下一笔还是不留（`marks` 那一行）：
 #
-# 那一道绿门（真的跑得起来）证明一件事：熔断是**按门**记的，
-# 不是整族一刀切（坏掉一道门不该让别的门也跑不了）。
+#   probe-red          红，但**不记账**（node 起了，可它没跑到记账那一步）⇒ marks 0
+#   probe-green        绿，但**不记账**（跑的是仓库真命令）              ⇒ marks 0
+#   probe-mark-red     红，**记账** ⇒ 这一趟真的有一个孩子               ⇒ marks 1
+#   probe-mark-green   绿，**记账** ⇒ 别的门照跑（熔断按门记）           ⇒ marks 1
+#   probe-flip         头三次红、之后绿（次数从账本自己数）⇒ 半开那一档的绿试探 ⇒ marks 1
+#   probe-unspawnable  **起不来**（这个命令在本机不存在）⇒ error        ⇒ marks 0，**而毫秒数不是 0**
+#   probe-slow         跑过头就超时 ⇒ timeout                            ⇒ marks 1（孩子起了、被杀）
+#
+# 最后两行是本批的落点：**「0 毫秒」从来不是「没起进程」的测量**——
+# `probe-unspawnable` 那一趟什么都没起，可它花的时间不是 0；
+# `probe-red` 那一趟真的起了一个进程，可账本里一笔都没有。
+# 两句话各自否掉一种「看表就知道」的读法。KI-429 当时那句「一个进程都没起（那一趟 0 毫秒）」
+# 拿表当了证人；现在证人换成孩子自己（`services/spring/probe/spawn-mark.mjs`），
+# 核对器是 `services/spring/spawn-ledger-check.mjs`。
+#
+# 那几道绿门证明另一件事：熔断是**按门**记的，不是整族一刀切（坏一道不该让别的门跑不了）。
 
 caesura:
   # 仓库根：相对服务的工作目录（本族一律是 `services/spring`）⇒ `../..` 就是仓库根。
@@ -31,3 +45,41 @@ caesura:
       args: ["scripts/phase-status.mjs"]
       timeout-sec: 120
       blocking: true
+
+    - id: probe-mark-red
+      family: probe
+      command: node
+      args: ["services/spring/probe/spawn-mark.mjs", "--exit", "1"]
+      timeout-sec: 60
+      blocking: true
+
+    - id: probe-mark-green
+      family: probe
+      command: node
+      args: ["services/spring/probe/spawn-mark.mjs", "--exit", "0"]
+      timeout-sec: 60
+      blocking: true
+
+    # 半开那一档要的门：头三次退 1（把闸打开），第四次起退 0（试探必须是绿的，才能证 OPEN→HALF_OPEN→CLOSED）。
+    # 「三次」这个数不是这里自己定的：它必须等于 `caesura-gate/application.yml` 的 failure-threshold
+    # （判据⑫ 钉这两个数一致；改了那一头不改这一头，半开那趟就量歪）。
+    - id: probe-flip
+      family: probe
+      command: node
+      args: ["services/spring/probe/spawn-mark.mjs", "--fail-first", "3"]
+      timeout-sec: 60
+      blocking: true
+
+    - id: probe-unspawnable
+      family: probe
+      command: caesura-no-such-binary
+      args: []
+      timeout-sec: 60
+      blocking: true
+
+    - id: probe-slow
+      family: probe
+      command: node
+      args: ["services/spring/probe/spawn-mark.mjs", "--exit", "0", "--sleep-ms", "8000"]
+      timeout-sec: 1
+      blocking: false

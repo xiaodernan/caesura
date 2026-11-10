@@ -53,6 +53,26 @@ public class CircuitBreaker {
     public record Decision(boolean allowed, State state, String reason) {
     }
 
+    /**
+     * 一道门此刻的**账**（KI-441）。
+     *
+     * <p>为什么要有它：在这之前，半开那一档只能从**下一趟的判决**反推——
+     * 「上一趟被拒了、这一趟放行了 ⇒ 大概是冷却过去了」。那是推断，不是读数。
+     * 而「试探只放一道」这件事，判决里根本没有对应的格子（{@code trialInFlight} 是私有的）。
+     * 这一格把它摆出来，只读，不改状态。
+     *
+     * @param gateId              门 id
+     * @param state               现在的状态
+     * @param consecutiveFailures 连着坏了几道（到阈值就开闸；那个阈值住在 YAML 里）
+     * @param trialInFlight       半开那一档是不是已经有一道试探在跑（**并发时它决定第二道要不要被拒**）
+     * @param openedAtMs          开闸那一刻的钟（没开过闸是 0）
+     * @param cooldownMs          冷却多久（从 YAML 那个秒数现换算，不在这里写死）
+     * @param remainingMs         还差多少毫秒（只有 {@code OPEN} 才可能非 0）
+     */
+    public record Snapshot(String gateId, State state, int consecutiveFailures, boolean trialInFlight,
+            long openedAtMs, long cooldownMs, long remainingMs) {
+    }
+
     /** 一道门一份的记账（每道门各记各的：一道门坏了不该拖累别的门） */
     private static final class Entry {
         private State state = State.CLOSED;
@@ -92,7 +112,7 @@ public class CircuitBreaker {
         synchronized (entry) {
             if (entry.state == State.OPEN) {
                 long elapsed = clock.getAsLong() - entry.openedAtMs;
-                long cooldownMs = properties.getCircuit().getCooldownSec() * 1000L;
+                long cooldownMs = cooldownMs();
                 if (elapsed >= cooldownMs) {
                     entry.state = State.HALF_OPEN;
                     entry.trialInFlight = true;
@@ -144,5 +164,40 @@ public class CircuitBreaker {
     public State stateOf(String gateId) {
         Entry entry = entries.get(gateId);
         return entry == null ? State.CLOSED : entry.state;
+    }
+
+    /**
+     * 现在这道门的**账**（KI-441）：状态之外还有连着坏了几道、试探在不在跑、冷却还差多少。
+     *
+     * <p>与 {@link #stateOf(String)} 一样**只读不改**：特别地，它**不会**把 {@code OPEN} 翻成
+     * {@code HALF_OPEN}——那件事只发生在 {@link #beforeRun(String)} 里，也就是只有真要用这一趟的时候才发生。
+     * 一个看一眼就把状态推进过去的读数器，会把「没放试探」量成「放了试探」。
+     *
+     * @param gateId 门 id
+     * @return 这一道门此刻的账（没见过这道门 ⇒ 一份全零的 {@code CLOSED} 账，而不是 null）
+     */
+    public Snapshot snapshot(String gateId) {
+        Entry entry = entries.get(gateId);
+        long cooldownMs = cooldownMs();
+        if (entry == null) {
+            return new Snapshot(gateId, State.CLOSED, 0, false, 0L, cooldownMs, 0L);
+        }
+        synchronized (entry) {
+            long remaining = entry.state == State.OPEN
+                    ? Math.max(0L, cooldownMs - (clock.getAsLong() - entry.openedAtMs))
+                    : 0L;
+            return new Snapshot(gateId, entry.state, entry.consecutiveFailures, entry.trialInFlight,
+                    entry.openedAtMs, cooldownMs, remaining);
+        }
+    }
+
+    /**
+     * 冷却期换算成毫秒。
+     *
+     * <p>**秒是 YAML 里的单位，毫秒是这里的单位**——换算只许有这一处：
+     * 写第二处就等於给「一秒钟多少毫秒」找了第二个主人（与 {@code tick ⇄ 秒} 那一族同规）。
+     */
+    private long cooldownMs() {
+        return properties.getCircuit().getCooldownSec() * 1000L;
     }
 }
