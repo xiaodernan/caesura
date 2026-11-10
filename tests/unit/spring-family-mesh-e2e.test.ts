@@ -301,4 +301,28 @@ describe('spring-family-mesh-e2e', () => {
     const plain = await runMeshE2E().run()
     expect(plain.cacheGuardSnapshot).toBe(null)
   })
+
+  it('e2e KI-502：rateLimit=true ⇒ 主链照常跑通，rateLimitSnapshot 带五算法突发 + Redis 原子性证据', async () => {
+    const e = runMeshE2E({ rateLimit: { concurrency: 16, capacity: 4, redisCapacity: 4 }, rlNow: () => 7777 })
+    const r = await e.run()
+    // 主链非破坏：注册/调用/关停都照常。
+    expect(r.started?.registered).toBe(true)
+    expect(r.callRes?.ok).toBe(true)
+    expect(r.stopped?.registered).toBe(false)
+    const g = r.rateLimitSnapshot
+    expect(g).toBeTruthy()
+    expect(g!.builtAt).toBe(7777)
+    // 五算法：固定窗口 2× 突发，滑动窗口压在 1
+    expect(g!.strategies.fixedWindow.burstRatio).toBe(2)
+    expect(g!.strategies.slidingLog.burstRatio).toBe(1)
+    expect(g!.verdict.fixedWindowBurst).toBe(true)
+    // Redis 原子不超发 / 非原子超发 / 跨实例共享一致
+    expect(g!.redis.atomicAllowed).toBeLessThanOrEqual(g!.redis.capacity)
+    expect(g!.redis.nonAtomicAllowed).toBeGreaterThan(g!.redis.capacity)
+    expect(g!.redis.overshoot).toBeGreaterThan(0)
+    expect(g!.redis.shared.consistent).toBe(true)
+    // 未配 rateLimit 时为 null（非破坏）。
+    const plain = await runMeshE2E().run()
+    expect(plain.rateLimitSnapshot).toBe(null)
+  })
 })

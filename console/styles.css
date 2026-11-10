@@ -326,6 +326,49 @@ main { padding: clamp(18px, 3vw, 40px) clamp(18px, 4vw, 56px) 48px; max-width: 1
 
 .panel-guard .note { margin-top: auto; }
 
+/* ---------- KI-502 网关限流算法族 ---------- */
+.row-ratelimit { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 1020px) { .row-ratelimit { grid-template-columns: 1fr; } }
+.panel-rl { display: flex; flex-direction: column; }
+.panel-rl .note { margin-top: auto; }
+
+/* 五算法突发放大：任意 1 窗内最多放行 / 配额（burstRatio），1=安全、2=酒红警示 */
+.rl-algo-list { display: flex; flex-direction: column; gap: 10px; padding: 12px 0 2px; }
+.rl-algo { display: grid; grid-template-columns: 96px 1fr 62px; align-items: center; gap: 9px; font-size: 11px; }
+.rl-algo .lab { color: #e2dcc8; }
+.rl-algo .lab small { display: block; color: var(--muted); font-size: 9px; letter-spacing: .03em; margin-top: 2px; }
+.rl-algo .track { height: 10px; background: var(--ash-2); border: 1px solid var(--line-soft); position: relative; overflow: hidden; }
+.rl-algo .track::after { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: var(--line); }
+.rl-algo .fill { position: absolute; inset: 0 auto 0 0; transition: width 1s cubic-bezier(.2,.8,.2,1); }
+.rl-algo .fill.safe { background: linear-gradient(90deg, #356b5d, var(--jade)); }
+.rl-algo .fill.warn { background: linear-gradient(90deg, #7d3340, var(--wine)); }
+.rl-algo .num { font-family: var(--mono); text-align: right; color: #e8e3d3; font-variant-numeric: tabular-nums; }
+.rl-algo .num b { font-weight: 500; }
+.rl-algo .num.warn { color: #d98b95; }
+.rl-algo .num.safe { color: var(--jade); }
+
+/* Redis 令牌桶原子性：原子（玉，封顶 capacity）vs 非原子（酒红，超发）；顶部超发大数 */
+.rl-redis-grid { display: flex; flex-direction: column; gap: 11px; padding: 12px 0 2px; }
+.rl-redis-hero { display: flex; align-items: baseline; gap: 8px; padding-bottom: 9px; border-bottom: 1px solid var(--line-soft); }
+.rl-redis-hero .big { font-family: var(--mono); font-size: 40px; line-height: 1; color: var(--wine); font-variant-numeric: tabular-nums; text-shadow: 0 0 16px rgba(125,51,64,.3); }
+.rl-redis-hero .unit { font-family: var(--mono); font-size: 13px; color: var(--gold-dim); }
+.rl-redis-hero .cap { margin-left: auto; font-size: 10px; color: var(--muted); letter-spacing: .06em; text-align: right; line-height: 1.4; }
+.rl-redis-hero .cap b { color: #e2dcc8; font-family: var(--mono); font-weight: 500; }
+.rl-redis-row { display: grid; grid-template-columns: 64px 1fr 46px; align-items: center; gap: 8px; font-size: 11px; }
+.rl-redis-row .lab { color: var(--muted); }
+.rl-redis-row .track { height: 11px; background: var(--ash-2); border: 1px solid var(--line-soft); position: relative; overflow: hidden; }
+.rl-redis-row .track::after { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: var(--line-soft); }
+.rl-redis-row .fill { position: absolute; inset: 0 auto 0 0; transition: width 1s cubic-bezier(.2,.8,.2,1); }
+.rl-redis-row .fill.atomic { background: linear-gradient(90deg, #356b5d, var(--jade)); }
+.rl-redis-row .fill.raw { background: linear-gradient(90deg, #7d3340, var(--wine)); }
+.rl-redis-row .num { font-family: var(--mono); text-align: right; color: #e8e3d3; font-variant-numeric: tabular-nums; }
+.rl-redis-row .num.bad { color: #d98b95; }
+.rl-redis-row .num.good { color: var(--jade); }
+.rl-share { display: inline-flex; align-items: center; gap: 6px; margin-top: 2px; font-family: var(--mono); font-size: 10px; color: var(--muted); }
+.rl-share .dot { width: 7px; height: 7px; border-radius: 50%; }
+.rl-share .dot.ok { background: var(--jade); box-shadow: 0 0 8px rgba(79,155,134,.5); }
+.rl-share .dot.no { background: var(--wine); }
+
 /* 空值 / 无数据 */
 .nodata { color: var(--muted); font-family: var(--mono); font-size: 11px; padding: 12px 0; }
 .nodata::before { content: "◇ "; color: var(--gold-dim); }

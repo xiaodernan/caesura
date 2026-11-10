@@ -46,6 +46,11 @@ export interface GameCloudOptions {
   /** KI-501：缓存防护三件套（击穿/穿透/雪崩）。true 用缺省规模；对象逐项注入（concurrency/keys/ttlMs/beta/jitterRatio/buckets/rounds/queryKeys/...），或直接塞一只现成 study（带 stampede/penetration/avalanche）。 */
   cacheGuard?: boolean | Record<string, any> | { stampede: any; penetration: any; avalanche: any; [k: string]: any }
   guardNow?: () => number
+  /** KI-502：网关限流算法族 + Redis 原子令牌桶。true 用缺省规模；对象逐项注入（limit/windowMs/capacity/
+   * refillPerSec/leakPerSec/arrivals/concurrency/redisCapacity/redisRefillPerSec/backend/yield/...），或直接塞
+   * 一只现成 study（带 algorithms/redis 两块）。 */
+  rateLimit?: boolean | Record<string, any> | { algorithms: any; redis: any; [k: string]: any }
+  rlNow?: () => number
 }
 
 /** 创建一只游戏侧开箱即用云。 */
@@ -70,6 +75,8 @@ export function createGameCloud(opts?: GameCloudOptions): {
   shardedCache: { shardOf(k: any): string | null; get(k: any): any; set(k: any, v: any, ttlMs?: number): boolean; load(k: any, loader: (...a: any[]) => any, ttlMs?: number): Promise<any>; remapOn(shards: any[], keys?: any[]): any; stats(): any; snapshot(opts?: any): any; [k: string]: any } | null
   /** KI-501：缓存防护三件套汇总的现算入口（未配 opts.cacheGuard 时为 null）；调一次真跑击穿/穿透/雪崩对照。 */
   runCacheGuardStudy: (() => Promise<any>) | null
+  /** KI-502：限流算法族 + Redis 原子性汇总的现算入口（未配 opts.rateLimit 时为 null）。 */
+  runRateLimiterStudy: (() => Promise<any>) | null
   /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）。 */
   gray: any
   /** KI-489：把游戏真 EventBus（duck-typed {on,emit}）按白名单接进云事件总线。 */

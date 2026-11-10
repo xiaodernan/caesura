@@ -344,4 +344,57 @@ describe('caesura-console-ui (KI-495)', () => {
     expect(dom2.els['penetration-hero'].innerHTML).toContain(String(Math.round(real.systems.guards.penetration.bloomSavedRate * 100)))
     expect(dom2.els['avalanche-hero'].innerHTML).toContain(String(real.systems.guards.avalanche.uniformPeak))
   })
+
+  it('⑫ KI-502 真 rateLimit 读数落进五算法突发 + Redis 原子性两面板（不是写死的数）', async () => {
+    const dom = await runApp(real)
+    const rl = real.systems.rateLimit
+    // 五算法：五条都在，固定窗口 2× 判酒红 warn，滑动 1× 判 safe；内联宽度静态可读。
+    const algos = dom.els['rl-algos'].innerHTML
+    for (const name of ['固定窗口', '滑动日志', '滑动计数', '令牌桶', '漏桶']) expect(algos).toContain(name)
+    expect((algos.match(/class="rl-algo"/g) || []).length).toBe(5)
+    expect(algos).toContain('fill warn')
+    expect(algos).toContain('data-ratio="' + rl.strategies.fixedWindow.burstRatio + '"')
+    expect(algos).toContain('fill safe')
+    expect(algos).toContain('data-ratio="' + rl.strategies.slidingLog.burstRatio + '"')
+    expect(dom.els['rl-algo-note'].textContent).toContain('自然分钟对齐')
+    expect(dom.els['rl-algo-note'].textContent).toContain(String(rl.strategies.fixedWindow.maxInWindow))
+    // Redis：超发大数、原子/非原子两路、跨实例共享一致 dot。
+    const rd = dom.els['rl-redis'].innerHTML
+    expect(rd).toContain(String(rl.redis.overshoot))
+    expect(rd).toContain('原子 · Lua')
+    expect(rd).toContain('非原子 · 竞态')
+    expect(rd).toContain('fill atomic')
+    expect(rd).toContain('fill raw')
+    expect(rd).toContain(String(rl.redis.atomicAllowed))
+    expect(rd).toContain(String(rl.redis.nonAtomicAllowed))
+    expect(rd).toContain('dot ok') // 跨实例共享一致
+    expect(dom.els['rl-redis-note'].textContent).toContain('等价 Lua 串行')
+    expect(dom.els['rl-redis-note'].textContent).toContain('丢失更新')
+  })
+
+  it('⑬ KI-502 rateLimit 整块缺 / 单块缺诚实降级，不连坐 guards-lsm-hw', async () => {
+    // 整块缺：两面板各自降级，绝不画 0/假条；guards/lsm/hw 仍照常。
+    const noRl = JSON.parse(JSON.stringify(real))
+    noRl.systems.rateLimit = null
+    const dom = await runApp(noRl)
+    expect(dom.els['rl-algos'].innerHTML).toContain('无限流算法读数')
+    expect(dom.els['rl-redis'].innerHTML).toContain('无Redis 原子性读数')
+    expect(dom.els['rl-algo-note'].textContent).toContain('systems.rateLimit 缺失')
+    expect(dom.els['stampede-hero'].innerHTML).toContain('singleflight') // guards 不连坐
+    expect(dom.els['lsm-gauge'].innerHTML).toContain(real.systems.lsm.speedup.toFixed(1)) // lsm 不连坐
+
+    // 单块缺：只降 Redis，五算法仍渲染真读数（不连坐同维另一块）。
+    const partial = JSON.parse(JSON.stringify(real))
+    partial.systems.rateLimit.redis = null
+    const dom2 = await runApp(partial)
+    expect(dom2.els['rl-redis'].innerHTML).toContain('无Redis 原子性读数')
+    expect(dom2.els['rl-algos'].innerHTML).toContain('固定窗口')
+    expect(dom2.els['rl-algos'].innerHTML).toContain('data-ratio="' + real.systems.rateLimit.strategies.fixedWindow.burstRatio + '"')
+    // 另一向：只降算法，Redis 仍渲染真读数。
+    const partial2 = JSON.parse(JSON.stringify(real))
+    partial2.systems.rateLimit.strategies = null
+    const dom3 = await runApp(partial2)
+    expect(dom3.els['rl-algos'].innerHTML).toContain('无限流算法读数')
+    expect(dom3.els['rl-redis'].innerHTML).toContain(String(real.systems.rateLimit.redis.overshoot))
+  })
 })

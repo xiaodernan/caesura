@@ -75,6 +75,9 @@ export function runMeshE2E(opts = {}) {
     // KI-501：缓存防护三件套（cacheGuard=true 装配；只读击穿/穿透/雪崩对照读数，不改调用路径）。
     cacheGuard: opts.cacheGuard,
     guardNow: opts.guardNow,
+    // KI-502：限流算法族 + Redis 原子令牌桶（rateLimit=true 装配；只读五算法突发对照 + 原子/非原子超发证据，不改调用路径）。
+    rateLimit: opts.rateLimit,
+    rlNow: opts.rlNow,
     sources: {
       eureka: () => (opts.svcA ?? [{ id: 'svc-a:1', name: 'svc-a', address: '10.0.0.1', port: 8080, healthy: true }]),
       k8s: () => k8s.discover('caesura-gate'),
@@ -198,6 +201,7 @@ export function runMeshE2E(opts = {}) {
         hashRingSnapshot: status.hashRing ?? null,
         shardedCacheSnapshot: status.shardedCache ?? null,
         cacheGuardSnapshot: status.cacheGuard ?? null,
+        rateLimitSnapshot: status.rateLimit ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
       }
@@ -227,6 +231,14 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         stampede: { naiveLoads: r.cacheGuardSnapshot.stampede.naiveLoads, singleflightLoads: r.cacheGuardSnapshot.stampede.singleflightLoads, savedLoads: r.cacheGuardSnapshot.stampede.savedLoads, amplification: r.cacheGuardSnapshot.stampede.amplification },
         penetration: { naiveDbHits: r.cacheGuardSnapshot.penetration.naiveDbHits, negativeDbHits: r.cacheGuardSnapshot.penetration.negativeDbHits, bloomDbHits: r.cacheGuardSnapshot.penetration.bloomDbHits, bloomRejected: r.cacheGuardSnapshot.penetration.bloomRejected },
         avalanche: { uniformPeak: r.cacheGuardSnapshot.avalanche.uniformPeak, jitterPeak: r.cacheGuardSnapshot.avalanche.jitterPeak, peakReduction: r.cacheGuardSnapshot.avalanche.peakReduction },
+      } : null,
+      rateLimit: r.rateLimitSnapshot ? {
+        fixedWindowBurstRatio: r.rateLimitSnapshot.strategies.fixedWindow.burstRatio,
+        slidingBurstRatio: r.rateLimitSnapshot.strategies.slidingLog.burstRatio,
+        atomicAllowed: r.rateLimitSnapshot.redis.atomicAllowed,
+        nonAtomicAllowed: r.rateLimitSnapshot.redis.nonAtomicAllowed,
+        overshoot: r.rateLimitSnapshot.redis.overshoot,
+        sharedConsistent: r.rateLimitSnapshot.redis.shared.consistent,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

@@ -20,6 +20,7 @@ import { runMeshE2E } from './spring-family-mesh-e2e.mjs'
 import { createLsmStore } from './caesura-lsm-store.mjs'
 import { createGameCloud } from './caesura-game-cloud.mjs'
 import { cacheGuardStudy } from './caesura-cache-guard.mjs'
+import { rateLimiterStudy, rlSnapshot } from './caesura-rate-limiter.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
 export const SCENARIO_IDS = ['main', 'gray', 'resilience', 'cache', 'net']
@@ -67,6 +68,10 @@ export async function buildSnapshot(opts = {}) {
     guards: opts.guards,
     guardConcurrency: opts.guardConcurrency,
     guardKeys: opts.guardKeys,
+    rateLimit: opts.rateLimit,
+    rlConcurrency: opts.rlConcurrency,
+    rlCapacity: opts.rlCapacity,
+    rlWindowMs: opts.rlWindowMs,
   })
 
   return {
@@ -86,14 +91,17 @@ export async function buildSnapshot(opts = {}) {
  * （写 N 个 key、每 7 个删一个、flush+compact、喂一批点查），落 flushes/compactions/
  * mergedAway/tombstonesDropped/bloomRejects/speedup/各层段数；② OS/硬件走
  * `createGameCloud({hw:true})` 装配的 `hw.snapshot()`（对象池/cache line/layout 三件对照）；
- * ③ 缓存防护走 `cacheGuardStudy`（击穿 singleflight 合并 / 穿透布隆+空值墓碑 / 雪崩 TTL 抖动削峰）。
- * 三者都是**真 Node 侧判词的结构计数**、可注入规模、时钟注入 ⇒ 确定性可测；本件不复核、不重算，
+ * ③ 缓存防护走 `cacheGuardStudy`（击穿 singleflight 合并 / 穿透布隆+空值墓碑 / 雪崩 TTL 抖动削峰）；
+ * ④ 网关限流走 `rateLimiterStudy`（五算法边界突发对照：固定窗口 2× vs 滑动/令牌/漏桶 ≈1，
+ * Redis 原子桶原子不超发 vs 非原子 GET-SET 超发 + 跨实例共享）。
+ * 四者都是**真 Node 侧判词的结构计数**、可注入规模、时钟注入 ⇒ 确定性可测；本件不复核、不重算，
  * 缺哪块就落 null，前端据实降级。因击穿对照真跑并发 loader（Promise.all），本件为 async。</p>
  *
  * @param {object} [opts]
  * @param {() => number} [opts.now] 时钟（注入则 builtAt 确定性）
  * @param {boolean} [opts.guards=false] 关掉缓存防护维（兼容旧快照）
- * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, builtAt:number}>}
+ * @param {boolean} [opts.rateLimit=false] 关掉网关限流维（兼容旧快照）
+ * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, builtAt:number}>}
  */
 export async function buildSystems(opts = {}) {
   const now = typeof opts.now === 'function' ? opts.now : () => Date.now()
@@ -102,7 +110,9 @@ export async function buildSystems(opts = {}) {
   // KI-501：第三维「缓存防护」真跑三件套（击穿/穿透/雪崩），与 lsm/hw 平级、不混入五场景。
   // 异步：击穿对照真跑并发 loader + singleflight（Promise.all）；故 buildSystems/buildSnapshot 随之 async。
   const guards = opts.guards === false ? null : await buildGuardsReading(opts, now)
-  return { lsm, hw, guards, builtAt: now() }
+  // KI-502：第四维「网关限流」真跑五算法突发对照 + Redis 原子/非原子超发，与 lsm/hw/guards 平级、不混入五场景。
+  const rateLimit = opts.rateLimit === false ? null : await buildRateLimitReading(opts, now)
+  return { lsm, hw, guards, rateLimit, builtAt: now() }
 }
 
 /** LSM 引擎真跑一趟确定性 benchmark，回结构读数（不夹带每行真值）。 */
@@ -216,6 +226,48 @@ export async function buildGuardsReading(opts, now) {
         jitterBuckets: s.avalanche.jitterBuckets,
         histogram: s.avalanche.histogram,
       },
+    }
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
+ * KI-502：真跑网关限流族（固定窗口 / 滑动日志 / 滑动计数 / 令牌桶 / 漏桶五算法突发对照 +
+ * Redis 原子令牌桶原子 vs 非原子超发 + 跨实例共享），收敛成前端「限流算法族」面板紧凑读数。
+ * 判定/阈值全 Node 侧；注入规模与固定时钟 ⇒ 快照重跑读数逐字一致；缺哪块就落 null，前端据实降级。
+ * @param {object} opts { rateLimit?:false, rlConcurrency?, rlCapacity?, rlWindowMs? }
+ * @param {()=>number} now 时钟（builtAt 注入则确定性）
+ */
+export async function buildRateLimitReading(opts, now) {
+  try {
+    const capacity = Math.max(2, Math.floor(Number(opts.rlCapacity ?? 8)))
+    const s = await rateLimiterStudy({
+      limit: capacity,
+      windowMs: Math.max(100, Math.floor(Number(opts.rlWindowMs ?? 1000))),
+      capacity,
+      refillPerSec: capacity,
+      leakPerSec: capacity,
+      concurrency: Math.max(8, Math.floor(Number(opts.rlConcurrency ?? 64))),
+      redisCapacity: capacity,
+      redisRefillPerSec: 0,
+      now,
+    })
+    const snap = rlSnapshot(s)
+    // 收敛成前端友好形状：五算法 allowed/burstRatio + Redis 原子/非原子/超发/共享，浮点已由 rlSnapshot round。
+    return {
+      limit: snap.limit,
+      windowMs: snap.windowMs,
+      arrivals: snap.arrivals,
+      strategies: {
+        fixedWindow: snap.strategies.fixedWindow,
+        slidingLog: snap.strategies.slidingLog,
+        slidingCounter: snap.strategies.slidingCounter,
+        tokenBucket: snap.strategies.tokenBucket,
+        leakyBucket: snap.strategies.leakyBucket,
+      },
+      verdict: snap.verdict,
+      redis: snap.redis,
     }
   } catch (e) {
     return null // 缺哪块就落 null，前端据实降级；不编造假数
@@ -432,6 +484,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     console.log(`[console] highlights: ${JSON.stringify(snap.highlights)}`)
     if (snap.systems) console.log(`[console] systems: lsm.speedup=${snap.systems.lsm?.speedup ?? '—'}× / hw.poolSaved=${snap.systems.hw?.allocation?.saved ?? '—'} / hw.layoutSpeedup=${snap.systems.hw?.layout?.sequential?.speedup ?? '—'}×`)
     if (snap.systems?.guards) console.log(`[console] guards: stampede ${snap.systems.guards.stampede.naiveLoads}→${snap.systems.guards.stampede.singleflightLoads} 回源 / penetration 布隆省 ${((snap.systems.guards.penetration.bloomSavedRate ?? 0) * 100).toFixed(0)}% / avalanche 削峰 ${((snap.systems.guards.avalanche.peakReduction ?? 0) * 100).toFixed(0)}%`)
+    if (snap.systems?.rateLimit) console.log(`[console] rateLimit: fixedWindow burst×${snap.systems.rateLimit.strategies.fixedWindow.burstRatio ?? '—'} / sliding burst×${snap.systems.rateLimit.strategies.slidingLog.burstRatio ?? '—'} / Redis 原子 ${snap.systems.rateLimit.redis.atomicAllowed} vs 非原子 ${snap.systems.rateLimit.redis.nonAtomicAllowed}（超发 ${snap.systems.rateLimit.redis.overshoot}）`)
     process.exit(0)
   }).catch((e) => { console.error(`[console] 生成失败：${e.message}`); process.exit(1) })
 }

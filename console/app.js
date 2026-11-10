@@ -41,6 +41,7 @@
       renderNet()
       renderSystems(snap.systems || null)
       renderGuards(snap.systems ? snap.systems.guards : null)
+      renderRateLimit(snap.systems ? snap.systems.rateLimit : null)
       setLive(true, result.source)
     }).catch(function (e) {
       setLive(false, 'error')
@@ -543,6 +544,80 @@
     return '<div class="hist-row"><span class="lab">' + esc(label) + '</span>' +
       '<div><div class="hist-bars' + (jitter ? ' jitter' : '') + '">' + bars + '</div>' +
       '<div class="peak">峰值 ' + esc(fmt(peak)) + ' · ' + esc(fmt(arr.length)) + ' 桶</div></div></div>'
+  }
+
+  /* ---------- KI-502 网关限流算法族：五算法突发对照 + Redis 原子令牌桶 ---------- */
+  function renderRateLimit(rl) {
+    renderRateAlgos(rl && rl.strategies, rl)
+    renderRateRedis(rl && rl.redis)
+  }
+
+  function rateLimitMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">无' + esc(label) + '读数</div>'
+    if (note) note.textContent = 'systems.rateLimit 缺失 —— 重跑 npm run console:data 采集真判词'
+  }
+
+  // 五算法突发放大：任意 windowMs 内最多放行 / 配额（burstRatio），1=安全、2=固定窗口翻边 2×。
+  function renderRateAlgos(strategies, rl) {
+    var list = $('#rl-algos'), note = $('#rl-algo-note')
+    if (!strategies) { rateLimitMissing(list, note, '限流算法'); return }
+    var defs = [
+      ['fixedWindow', '固定窗口', '自然窗对齐 · 翻边突发'],
+      ['slidingLog', '滑动日志', '精确 · O(n) 内存'],
+      ['slidingCounter', '滑动计数', '加权近似 · O(1) 内存'],
+      ['tokenBucket', '令牌桶', '攒桶 · 受控突发'],
+      ['leakyBucket', '漏桶', '匀速漏 · 恒定整形'],
+    ]
+    var parts = defs.map(function (d) {
+      var s = strategies[d[0]]
+      if (!s) return ''
+      var ratio = isNum(s.burstRatio) ? s.burstRatio : null
+      var warn = ratio != null && ratio > 1.5
+      // 比例轴 0..2：1× 落在 50% 中线，2× 顶格；内联宽度静态可读、可被 DOM stub 断言。
+      var w = ratio != null ? Math.max(0, Math.min(100, Math.round(ratio / 2 * 100))) : 0
+      var cls = warn ? 'warn' : 'safe'
+      return '<div class="rl-algo"><span class="lab">' + esc(d[1]) + '<small>' + esc(d[2]) + '</small></span>' +
+        '<span class="track"><i class="fill ' + cls + '" style="width:' + w + '%" data-ratio="' + esc(fmt(ratio)) + '"></i></span>' +
+        '<span class="num ' + cls + '"><b>' + esc(ratio == null ? '—' : '×' + fmt(ratio, 1)) + '</b></span></div>'
+    })
+    list.innerHTML = parts.join('') || '<div class="nodata">无算法读数</div>'
+    var fw = strategies.fixedWindow
+    var sl = strategies.slidingLog
+    note.textContent = '同一条 ' + esc(fmt(rl && rl.arrivals)) + ' 请求的窗口翻边突发轨迹：固定窗口按自然分钟对齐，' +
+      '在翻边 1ms 内两批全放行 ⇒ 任意 1 窗内最多 ' + esc(fmt(fw && fw.maxInWindow)) + ' 条（配额 ' +
+      esc(fmt(rl && rl.limit)) + '，放大 ×' + esc(fmt(fw && fw.burstRatio, 1)) + '）；滑动日志/计数、令牌桶、漏桶都把突发压在 ' +
+      esc(fmt(sl && sl.maxInWindow)) + ' 条（×' + esc(fmt(sl && sl.burstRatio, 1)) +
+      '）。全结构计数，非墙钟 QPS；令牌/漏桶另受 capacity 与补充/漏水速率约束。'
+  }
+
+  // Redis 令牌桶：原子（等价 Lua 串行，封顶 capacity）vs 非原子（GET-SET 竞态，并发全放行超发）。
+  function renderRateRedis(rd) {
+    var grid = $('#rl-redis'), note = $('#rl-redis-note')
+    if (!rd) { rateLimitMissing(grid, note, 'Redis 原子性'); return }
+    var cap = isNum(rd.capacity) ? rd.capacity : 0
+    var atomic = isNum(rd.atomicAllowed) ? rd.atomicAllowed : 0
+    var raw = isNum(rd.nonAtomicAllowed) ? rd.nonAtomicAllowed : 0
+    var max = Math.max(atomic, raw, 1)
+    var over = isNum(rd.overshoot) ? rd.overshoot : null
+    var shared = rd.shared || {}
+    grid.innerHTML =
+      '<div class="rl-redis-hero"><span class="big">' + esc(fmt(over)) + '</span><span class="unit">条超发</span>' +
+      '<span class="cap">' + esc(fmt(rd.concurrency)) + ' 路并发 / 桶容量 <b>' + esc(fmt(cap)) + '</b><br>' +
+      '非原子放行 <b>' + esc(fmt(raw)) + '</b> vs 原子 <b>' + esc(fmt(atomic)) + '</b></span></div>' +
+      '<div class="rl-redis-row"><span class="lab">原子 · Lua</span><span class="track"><i class="fill atomic" style="width:' +
+      Math.round(atomic / max * 100) + '%" data-w="' + Math.round(atomic / max * 100) + '"></i></span>' +
+      '<span class="num good">' + esc(fmt(atomic)) + '</span></div>' +
+      '<div class="rl-redis-row"><span class="lab">非原子 · 竞态</span><span class="track"><i class="fill raw" style="width:' +
+      Math.round(raw / max * 100) + '%" data-w="' + Math.round(raw / max * 100) + '"></i></span>' +
+      '<span class="num bad">' + esc(fmt(raw)) + '</span></div>' +
+      '<div class="rl-share"><i class="dot ' + (shared.consistent ? 'ok' : 'no') + '"></i>' +
+      '跨实例共享 ' + (shared.consistent ? '一致' : '不一致') + ' · A/B 同 backend 同 key 剩余 ' +
+      esc(fmt(shared.aRemaining)) + ' / ' + esc(fmt(shared.bSeenRemaining)) + '</div>'
+    note.textContent = '令牌桶状态存 Redis 风格后端、时钟作命令参数传入（对齐 Spring RedisRateLimiter 把时间戳交给 Lua）。' +
+      '原子路径读-补-判-写在一段不被打断的同步操作里（等价 Lua 串行），恰好放行 ' + esc(fmt(cap)) +
+      ' 条；非原子路径 GET 后让出、N 路都读到同一满桶再写回 ⇒ 丢失更新、放行 ' + esc(fmt(raw)) +
+      ' 条（超发 ' + esc(fmt(over)) + '）。两实例共享同 backend + key 见剩余一致。进程内模拟，' +
+      '非真 Redis/EVAL、非墙钟 QPS。'
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)

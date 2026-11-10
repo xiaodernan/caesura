@@ -24,6 +24,7 @@ import { allocationStudy, compareLayouts, createCacheLinePadder, createPackedCou
 import { createHashRing, compareRemapping, createShardRouter } from './caesura-consistent-hash.mjs'
 import { createShardedCache, compareHitRetention } from './caesura-sharded-cache.mjs'
 import { cacheGuardStudy, guardSnapshot } from './caesura-cache-guard.mjs'
+import { rateLimiterStudy, rlSnapshot } from './caesura-rate-limiter.mjs'
 import {
   createAimdCongestion,
   createCubicCongestion,
@@ -258,6 +259,26 @@ export function createGameCloud(opts = {}) {
     return guardCached
   }
 
+  // KI-502：网关限流算法族 + Redis 原子令牌桶（opt-in）。opts.rateLimit===true 用缺省规模建；
+  // 传对象逐项注入（limit/windowMs/capacity/refillPerSec/leakPerSec/arrivals/concurrency/
+  // redisCapacity/redisRefillPerSec/backend/yield/...），或直接塞一只现成 study
+  // （duck-typed：带 algorithms/redis 两块）。对照五算法边界突发 + Redis 原子 vs 非原子超发。
+  // 默认 rateLimit:false 不装配、不改任何调用路径（KI-486 handler / KI-493 缓存 / KI-491 灰度语义逐字不动）。
+  const rlCfg = opts.rateLimit === true ? {} : (opts.rateLimit && typeof opts.rateLimit === 'object' ? opts.rateLimit : null)
+  const rlInjected = rlCfg !== null && opts.rateLimit &&
+    typeof opts.rateLimit === 'object' && typeof opts.rateLimit.algorithms === 'object'
+  let rlCached = null
+  async function rlSnapshotForStatus() {
+    if (rlCfg === null) return null
+    if (rlCached) return rlCached
+    // 注入现成 study 直接用（不重跑）；否则真跑一次汇总，惰性缓存不反复付对照成本。
+    const study = rlInjected
+      ? opts.rateLimit
+      : await rateLimiterStudy({ ...rlCfg, now: opts.rlNow ?? rlCfg.now })
+    rlCached = rlSnapshot(study)
+    return rlCached
+  }
+
   /** 包住一次调用，用真实耗时/成败喂 net 包（未启用则原样返回，零开销）。 */
   async function observeCall(promise) {
     if (!net) return promise
@@ -302,6 +323,8 @@ export function createGameCloud(opts = {}) {
     shardedCache,
     /** KI-501：缓存防护三件套汇总的现算入口（未配 opts.cacheGuard 时为 null）；调一次真跑击穿/穿透/雪崩对照。 */
     runCacheGuardStudy: guardCfg === null ? null : () => cacheGuardStudy({ ...guardCfg, now: opts.guardNow ?? guardCfg.now }),
+    /** KI-502：限流算法族 + Redis 原子性汇总的现算入口（未配 opts.rateLimit 时为 null）；调一次真跑五算法突发对照 + Redis 原子/非原子。 */
+    runRateLimiterStudy: rlCfg === null ? null : () => rateLimiterStudy({ ...rlCfg, now: opts.rlNow ?? rlCfg.now }),
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
     gray: runtime.gray,
     /** 把游戏真 EventBus 按白名单routes 接进云事件总线（游戏侧一行：gc.connectGameBus(bus, routes)）。 */
@@ -335,6 +358,7 @@ export function createGameCloud(opts = {}) {
         hashRing: hashSnapshot(),
         shardedCache: shardedSnapshot(),
         cacheGuard: await guardSnapshotForStatus(),
+        rateLimit: await rlSnapshotForStatus(),
       }
     },
   }

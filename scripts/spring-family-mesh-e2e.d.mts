@@ -37,5 +37,15 @@ export function runMeshE2E(opts?: any): {
     shardedCacheSnapshot: { cache: any; retention: { delta: number; consistentRetention: number; moduloRetention: number; theoretical: number; savedRate: number }; builtAt: number } | null
     /** KI-501：缓存防护三件套快照（stampede/penetration/avalanche），未配 cacheGuard 为 null */
     cacheGuardSnapshot: { stampede: any; penetration: any; avalanche: any; builtAt: number } | null
+    /** KI-502：限流算法族 + Redis 原子性快照（strategies/verdict/redis），未配 rateLimit 为 null */
+    rateLimitSnapshot: {
+      limit: number
+      windowMs: number
+      arrivals: number
+      strategies: Record<string, { allowed: number; rejected: number; maxInWindow: number; burstRatio: number | null; memory: string | null }>
+      verdict: Record<string, boolean>
+      redis: { concurrency: number; capacity: number; atomicAllowed: number; nonAtomicAllowed: number; overshoot: number; atomicBounded: boolean; nonAtomicOverran: boolean; shared: { key: string; aRemaining: number | null; bSeenRemaining: number | null; consistent: boolean } }
+      builtAt: number
+    } | null
   }>
 }

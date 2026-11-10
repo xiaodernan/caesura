@@ -348,4 +348,49 @@ describe('caesura-game-cloud', () => {
     // 主链语义逐字不动
     expect(st.eventChannel).toBeTruthy()
   })
+
+  it('rateLimit=true ⇒ 装配限流族、status.rateLimit 读真对照证据（KI-502）', async () => {
+    const gc = createGameCloud({
+      gameId: 'grl', gamePort: 7710, sources, cloud: fakeCloud(),
+      rateLimit: { concurrency: 16, capacity: 4, redisCapacity: 4 }, rlNow: () => 6666,
+    })
+    expect(gc.runRateLimiterStudy).toBeTypeOf('function')
+    const st = await gc.status()
+    expect(st.rateLimit.builtAt).toBe(6666)
+    // 五算法突发对照：固定窗口 2× 边界突发，其余压在 1
+    expect(st.rateLimit.strategies.fixedWindow.burstRatio).toBe(2)
+    expect(st.rateLimit.strategies.slidingLog.burstRatio).toBe(1)
+    expect(st.rateLimit.verdict.fixedWindowBurst).toBe(true)
+    // Redis 原子 vs 非原子：原子不超发、非原子超发、跨实例共享一致
+    expect(st.rateLimit.redis.atomicAllowed).toBeLessThanOrEqual(st.rateLimit.redis.capacity)
+    expect(st.rateLimit.redis.nonAtomicAllowed).toBeGreaterThan(st.rateLimit.redis.capacity)
+    expect(st.rateLimit.redis.overshoot).toBeGreaterThan(0)
+    expect(st.rateLimit.redis.shared.consistent).toBe(true)
+    // 惰性缓存：两次 status 同一引用
+    expect((await gc.status()).rateLimit).toBe(st.rateLimit)
+    // 现算入口可重跑、确定性
+    const rerun = await gc.runRateLimiterStudy!()
+    expect(rerun.algorithms.strategies.fixedWindow.burstRatio).toBe(2)
+  })
+
+  it('rateLimit 默认 null 非破坏；可注入现成 study（KI-502）', async () => {
+    const plain = createGameCloud({ gameId: 'grl2', gamePort: 7711, sources, cloud: fakeCloud() })
+    expect(plain.runRateLimiterStudy).toBe(null)
+    const ps = await plain.status()
+    expect(ps.rateLimit).toBe(null)
+    expect(ps.hashRing).toBe(null)
+    expect(ps.cacheGuard).toBe(null)
+    // 注入现成 study：直接用、不重跑，builtAt 原样带出。
+    const { rateLimiterStudy } = await import('../../scripts/caesura-rate-limiter.mjs')
+    const study = await rateLimiterStudy({ now: () => 123, concurrency: 8 })
+    const injected = createGameCloud({
+      gameId: 'grl3', gamePort: 7712, sources, cloud: fakeCloud(),
+      rateLimit: study, rlNow: () => 999,
+    })
+    const st = await injected.status()
+    expect(st.rateLimit.builtAt).toBe(123) // 注入 study 的 builtAt，不被 rlNow 覆盖
+    expect(st.rateLimit.strategies.fixedWindow.burstRatio).toBe(2)
+    // 主链语义逐字不动
+    expect(st.eventChannel).toBeTruthy()
+  })
 })

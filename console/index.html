@@ -161,6 +161,20 @@
       <p class="note" id="avalanche-note">—</p>
     </article>
   </section>
+
+  <!-- 网关限流算法族（KI-502 前后端协同：五算法突发对照 + Redis 原子令牌桶，与 systems 并列读真判词） -->
+  <section class="row row-ratelimit">
+    <article class="panel panel-rl">
+      <div class="panel-head"><h2>限流算法族 · 突发放大</h2><span class="hint">任意 1 窗内最多放行 / 配额</span></div>
+      <div class="rl-algo-list" id="rl-algos"></div>
+      <p class="note" id="rl-algo-note">—</p>
+    </article>
+    <article class="panel panel-rl">
+      <div class="panel-head"><h2>Redis 令牌桶 · 原子性</h2><span class="hint">Lua 串行 vs GET-SET 竞态</span></div>
+      <div class="rl-redis-grid" id="rl-redis"></div>
+      <p class="note" id="rl-redis-note">—</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">

@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794346787306,
+  "generatedAt": 1794348137320,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -527,6 +527,70 @@
         }
       }
     },
-    "builtAt": 1794346787306
+    "rateLimit": {
+      "limit": 8,
+      "windowMs": 1000,
+      "arrivals": 24,
+      "strategies": {
+        "fixedWindow": {
+          "allowed": 24,
+          "rejected": 0,
+          "maxInWindow": 16,
+          "burstRatio": 2,
+          "memory": null
+        },
+        "slidingLog": {
+          "allowed": 16,
+          "rejected": 8,
+          "maxInWindow": 8,
+          "burstRatio": 1,
+          "memory": "O(n)"
+        },
+        "slidingCounter": {
+          "allowed": 16,
+          "rejected": 8,
+          "maxInWindow": 8,
+          "burstRatio": 1,
+          "memory": "O(1)"
+        },
+        "tokenBucket": {
+          "allowed": 16,
+          "rejected": 8,
+          "maxInWindow": 8,
+          "burstRatio": 1,
+          "memory": null
+        },
+        "leakyBucket": {
+          "allowed": 16,
+          "rejected": 8,
+          "maxInWindow": 8,
+          "burstRatio": 1,
+          "memory": null
+        }
+      },
+      "verdict": {
+        "fixedWindowBurst": true,
+        "slidingBounded": true,
+        "tokenControlled": true,
+        "leakySteady": true,
+        "counterIsO1": true
+      },
+      "redis": {
+        "concurrency": 64,
+        "capacity": 8,
+        "atomicAllowed": 8,
+        "nonAtomicAllowed": 64,
+        "overshoot": 56,
+        "atomicBounded": true,
+        "nonAtomicOverran": true,
+        "shared": {
+          "key": "shared:probe",
+          "aRemaining": 5,
+          "bSeenRemaining": 5,
+          "consistent": true
+        }
+      }
+    },
+    "builtAt": 1794348137320
   }
 }

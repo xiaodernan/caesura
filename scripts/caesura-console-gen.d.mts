@@ -74,11 +74,43 @@ export interface GuardsReading {
   }
 }
 
-/** KI-498 + KI-501：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护）。 */
+/** KI-502：网关限流算法族读数（五算法突发对照 + Redis 原子 vs 非原子超发 + 跨实例共享）。 */
+export interface RateLimitReading {
+  limit: number
+  windowMs: number
+  arrivals: number
+  strategies: Record<'fixedWindow' | 'slidingLog' | 'slidingCounter' | 'tokenBucket' | 'leakyBucket', {
+    allowed: number
+    rejected: number
+    maxInWindow: number
+    burstRatio: number | null
+    memory: string | null
+  }>
+  verdict: {
+    fixedWindowBurst: boolean
+    slidingBounded: boolean
+    tokenControlled: boolean
+    leakySteady: boolean
+    counterIsO1: boolean
+  }
+  redis: {
+    concurrency: number
+    capacity: number
+    atomicAllowed: number
+    nonAtomicAllowed: number
+    overshoot: number
+    atomicBounded: boolean
+    nonAtomicOverran: boolean
+    shared: { key: string; aRemaining: number | null; bSeenRemaining: number | null; consistent: boolean }
+  }
+}
+
+/** KI-498 + KI-501 + KI-502：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流）。 */
 export interface SystemsBlock {
   lsm: LsmReading | null
   hw: HwReading | null
   guards: GuardsReading | null
+  rateLimit: RateLimitReading | null
   builtAt: number
 }
 
@@ -110,9 +142,14 @@ export function buildSnapshot(opts?: {
   guards?: boolean
   guardConcurrency?: number
   guardKeys?: number
+  /** KI-502：false 关掉网关限流维（兼容旧快照）；rlConcurrency/rlCapacity/rlWindowMs 注入规模。 */
+  rateLimit?: boolean
+  rlConcurrency?: number
+  rlCapacity?: number
+  rlWindowMs?: number
 }): Promise<ConsoleSnapshot>
 
-/** KI-498 + KI-501：真跑 LSM + OS/硬件 + 缓存防护三维系统读数；击穿对照真跑并发 ⇒ async。 */
+/** KI-498 + KI-501 + KI-502：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流四维系统读数；击穿并发 ⇒ async。 */
 export function buildSystems(opts?: {
   now?: () => number
   lsmKeys?: number
@@ -121,6 +158,10 @@ export function buildSystems(opts?: {
   guards?: boolean
   guardConcurrency?: number
   guardKeys?: number
+  rateLimit?: boolean
+  rlConcurrency?: number
+  rlCapacity?: number
+  rlWindowMs?: number
 }): Promise<SystemsBlock>
 
 /** KI-501：真跑缓存防护三件套（击穿/穿透/雪崩）收敛成前端三面板紧凑读数；单维失败落 null。 */
@@ -130,6 +171,15 @@ export function buildGuardsReading(opts: {
   guardConcurrency?: number
   guardKeys?: number
 }, now: () => number): Promise<GuardsReading | null>
+
+/** KI-502：真跑网关限流族（五算法突发对照 + Redis 原子/非原子超发）收敛成前端紧凑读数；失败落 null。 */
+export function buildRateLimitReading(opts: {
+  now?: () => number
+  rateLimit?: boolean
+  rlConcurrency?: number
+  rlCapacity?: number
+  rlWindowMs?: number
+}, now: () => number): Promise<RateLimitReading | null>
 
 export function realScenarioOpts(id: string): Record<string, any>
 
