@@ -28,7 +28,7 @@
 | Phase F-16 | Phase 7 F2 第二批落点：`src/renderer/QualityRenderer.ts`——renderer 分档实际消费者（applyRendererQuality + RendererQuality.sync()），headless 只记不应用，真 GL 落点等 Phase 9/10（8 测试） | 4351589 |
 | Phase F-17 | Spring Cloud Bus × Config Server 闭环：startConfigWatcher 第 5 形参 `bus` → `config.changed` 自动广播；启动语义改为首趟只登记不吐事件；CLI 创建本地 Bus 打印总线响应（2 条新集成测试） | a416f77 |
 | Phase F-18 | Spring Cloud Gateway 动态路由热加载：`createRouteTable` + `watchRoutes`（mtime 快照 + added/removed 差集 + `route.changed` 广播）+ `refreshRoutes` + CLI `refresh` 子命令（9 条新测试） | abcf512 |
-| Phase F-19 | Spring Cloud 家族端到端真跑通（宿主直跑六件 jar，未碰另一项目进程）：修 client 父引用 + 加入 reactor + finalName 对齐 compose（KI-452）；修 client BOM 版本漂移（Boot 3.5.16 × Cloud 2022.0.4 compatibility-verifier 拒绝）+ 缺 `spring.config.import`（KI-453）；实测 registry/config/gate/report/gateway/client 全部在线、网关双路由 200、两道真门经网关跑 green（`circuitState=CLOSED`） | 待提交 |
+| Phase F-19 | Spring Cloud 家族端到端真跑通（宿主直跑六件 jar，未碰另一项目进程）：修 client 父引用 + 加入 reactor + finalName 对齐 compose（KI-452）；修 client BOM 版本漂移（Boot 3.5.16 × Cloud 2022.0.4 compatibility-verifier 拒绝）+ 缺 `spring.config.import`（KI-453）；实测 registry/config/gate/report/gateway/client 全部在线、网关双路由 200、两道真门经网关跑 green（`circuitState=CLOSED`） | bf3d106 |
 | KI-407 | coverage 棘轮三出口（0/1/2）全部有测试 + 基线落地 | 07399b9 |
 | Phase C / F3 | Boss 乐句线 HUD：BossPhraseBar.ts + main.ts 接线 + flow 测试 | 08bb3f5 |
 | KI-118 fix | spring-health-check.mjs 移除 shebang（module-loader 门禁） | 0698210 |
@@ -51,7 +51,7 @@
 - ~~更多 Spring Cloud 模式（config server 刷新、bus 事件等）~~ ✅ 完成（Phase F-15）
 - ~~Spring Cloud Bus 与 Config Server 联动：config 变更 → bus 自动广播 → 各服务热刷新~~ ✅ 完成（Phase F-17 / KI-450）
 - ~~Spring Cloud Gateway 动态路由热加载（Phase F-7 之上的增强）~~ ✅ 完成（Phase F-18 / KI-451）
-- Spring Cloud Resilience4j 熔断实装测量（下一轮）
+- ~~Spring Cloud Resilience4j 熔断实装测量（下一轮）~~ ✅ 已随 F-19 顺带量出：经网关跑真门，`circuitState=CLOSED` 随判决返回（KI-429/453）
 
 ### P2：Phase 7 后续
 
