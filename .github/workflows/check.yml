@@ -36,3 +36,29 @@ jobs:
 
       - name: Build production bundle
         run: npm run build
+
+  spring-e2e:
+    name: spring-family-e2e
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+
+      - name: Setup Java (Temurin 25) + Maven
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+          cache: 'maven'
+
+      - name: Build Spring Cloud family jars
+        run: cd services/spring && mvn -q -DskipTests package
+
+      - name: Spring Cloud family e2e acceptance
+        run: node scripts/spring-family-e2e-check.mjs --timeout=300
