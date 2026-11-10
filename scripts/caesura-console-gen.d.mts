@@ -137,7 +137,25 @@ export interface BplusReading {
   verdict: Record<string, boolean | string>
 }
 
-/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引）。 */
+/** KI-505：事务与并发控制读数（五档隔离 × 五类异常矩阵 + 死锁环检测 + 2PL + gc 水位 + 不封全局赢家判词）。 */
+export interface MvccTxnReading {
+  config: { levels: string[]; anomalies: string[] }
+  levels: Array<{
+    short: string
+    label: string
+    anomalies: Record<string, { observed: boolean; label: string }>
+    observedCount: number
+    preventedCount: number
+    aborted: number
+  }>
+  deadlock: { graph: Record<string, string[]>; detected: boolean; cycle: string[]; resolved: boolean; victim: string | null; acyclicProbeNoCycle: boolean; stats: Record<string, any> }
+  twoPhaseLock: { lateAcquireBlocked: boolean; reason: string; stats: Record<string, any> }
+  gc: { versions: number; longWaterMark: Record<string, any>; cleanWaterMark: Record<string, any>; longTxnRetainsMoreVersions: boolean }
+  store: Record<string, any>
+  verdict: Record<string, boolean>
+}
+
+/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制）。 */
 export interface SystemsBlock {
   lsm: LsmReading | null
   hw: HwReading | null
@@ -145,6 +163,7 @@ export interface SystemsBlock {
   rateLimit: RateLimitReading | null
   failureDetector: FailureDetectorReading | null
   bplusIndex: BplusReading | null
+  mvccTxn: MvccTxnReading | null
   builtAt: number
 }
 
@@ -190,9 +209,12 @@ export function buildSnapshot(opts?: {
   bpKeyCount?: number
   bpOrder?: number
   bpLeafCapacity?: number
+  /** KI-505：false 关掉事务并发控制维（兼容旧快照）；mvGcVersions 注入版本链规模。 */
+  mvccTxn?: boolean
+  mvGcVersions?: number
 }): Promise<ConsoleSnapshot>
 
-/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引六维系统读数；击穿并发 ⇒ async。 */
+/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制七维系统读数；击穿并发 ⇒ async。 */
 export function buildSystems(opts?: {
   now?: () => number
   lsmKeys?: number
@@ -212,6 +234,9 @@ export function buildSystems(opts?: {
   bpKeyCount?: number
   bpOrder?: number
   bpLeafCapacity?: number
+  /** KI-505：false 关掉事务并发控制维（兼容旧快照）；mvGcVersions 注入版本链规模。 */
+  mvccTxn?: boolean
+  mvGcVersions?: number
 }): Promise<SystemsBlock>
 
 /** KI-501：真跑缓存防护三件套（击穿/穿透/雪崩）收敛成前端三面板紧凑读数；单维失败落 null。 */
@@ -247,6 +272,13 @@ export function buildBplusReading(opts: {
   bpOrder?: number
   bpLeafCapacity?: number
 }, now: () => number): Promise<BplusReading | null>
+
+/** KI-505：真跑事务并发控制（五档隔离异常矩阵 + 死锁环检测 + 2PL + gc 水位）收敛成前端两面板紧凑读数；失败落 null。 */
+export function buildMvccTxnReading(opts: {
+  now?: () => number
+  mvccTxn?: boolean
+  mvGcVersions?: number
+}, now: () => number): Promise<MvccTxnReading | null>
 
 export function realScenarioOpts(id: string): Record<string, any>
 

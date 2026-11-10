@@ -23,6 +23,7 @@ import { cacheGuardStudy } from './caesura-cache-guard.mjs'
 import { rateLimiterStudy, rlSnapshot } from './caesura-rate-limiter.mjs'
 import { failureDetectorStudy, fdSnapshot } from './caesura-failure-detector.mjs'
 import { bplusStudy, bpSnapshot } from './caesura-bplus-tree.mjs'
+import { mvccStudy, mvSnapshot } from './caesura-mvcc-txn.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
 export const SCENARIO_IDS = ['main', 'gray', 'resilience', 'cache', 'net']
@@ -81,6 +82,8 @@ export async function buildSnapshot(opts = {}) {
     bpKeyCount: opts.bpKeyCount,
     bpOrder: opts.bpOrder,
     bpLeafCapacity: opts.bpLeafCapacity,
+    mvccTxn: opts.mvccTxn,
+    mvGcVersions: opts.mvGcVersions,
   })
 
   return {
@@ -116,7 +119,8 @@ export async function buildSnapshot(opts = {}) {
  * @param {boolean} [opts.rateLimit=false] 关掉网关限流维（兼容旧快照）
  * @param {boolean} [opts.failureDetector=false] 关掉故障检测维（兼容旧快照）
  * @param {boolean} [opts.bplusIndex=false] 关掉 B+ 树索引维（兼容旧快照）
- * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, failureDetector:object|null, bplusIndex:object|null, builtAt:number}>}
+ * @param {boolean} [opts.mvccTxn=false] 关掉事务并发控制维（兼容旧快照）
+ * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, failureDetector:object|null, bplusIndex:object|null, mvccTxn:object|null, builtAt:number}>}
  */
 export async function buildSystems(opts = {}) {
   const now = typeof opts.now === 'function' ? opts.now : () => Date.now()
@@ -131,7 +135,8 @@ export async function buildSystems(opts = {}) {
   const failureDetector = opts.failureDetector === false ? null : await buildFailureDetectorReading(opts, now)
   // KI-504：第六维「B+ 树索引」真跑点查比较数/叶链范围查/写放大 vs LSM 三笔账，与其它五维平级、不混入五场景。
   const bplusIndex = opts.bplusIndex === false ? null : await buildBplusReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, builtAt: now() }
+  const mvccTxn = opts.mvccTxn === false ? null : await buildMvccTxnReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, builtAt: now() }
 }
 
 /** LSM 引擎真跑一趟确定性 benchmark，回结构读数（不夹带每行真值）。 */
@@ -365,6 +370,31 @@ export async function buildBplusReading(opts, now) {
 }
 
 /**
+ * KI-505：真跑 `mvccStudy`（五档隔离 × 五类异常矩阵 + 死锁环检测 + 2PL + gc 水位）并收敛成前端
+ * 「事务与并发控制」两面板紧凑读数。判定/阈值全 Node 侧；注入固定时钟 ⇒ 快照重跑逐字一致；
+ * 五行矩阵是确定性调度真判词、死锁是真 DFS 环检测、判词不封 Serializable 全局赢家，缺哪块落 null。
+ * @param {object} opts { mvccTxn?:false, mvGcVersions? }
+ * @param {()=>number} now 时钟（builtAt 注入则确定性）
+ */
+export async function buildMvccTxnReading(opts, now) {
+  try {
+    const s = mvccStudy({ now, ...(opts.mvGcVersions ? { gcVersions: Math.floor(Number(opts.mvGcVersions)) } : {}) })
+    const snap = mvSnapshot(s)
+    return {
+      config: snap.config,
+      levels: snap.levels,
+      deadlock: snap.deadlock,
+      twoPhaseLock: snap.twoPhaseLock,
+      gc: snap.gc,
+      store: snap.store,
+      verdict: snap.verdict,
+    }
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
  * 真跑时每场景的 opts（判定权在此：场景参数固定，业务阈值仍来自各子系统默认/显式注入）。
  * @param {string} id
  */
@@ -577,6 +607,11 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     if (snap.systems?.rateLimit) console.log(`[console] rateLimit: fixedWindow burst×${snap.systems.rateLimit.strategies.fixedWindow.burstRatio ?? '—'} / sliding burst×${snap.systems.rateLimit.strategies.slidingLog.burstRatio ?? '—'} / Redis 原子 ${snap.systems.rateLimit.redis.atomicAllowed} vs 非原子 ${snap.systems.rateLimit.redis.nonAtomicAllowed}（超发 ${snap.systems.rateLimit.redis.overshoot}）`)
     if (snap.systems?.failureDetector) console.log(`[console] failureDetector: 抖动误报 固定 ${snap.systems.failureDetector.fixed.falsePositives} vs φ ${snap.systems.failureDetector.phi.falsePositives} / 真故障检出 固定 ${snap.systems.failureDetector.fixed.detectionLatencyMs}ms vs φ ${snap.systems.failureDetector.phi.detectionLatencyMs}ms / SWIM 间接救回 ${snap.systems.failureDetector.swim.indirectRescues}`)
     if (snap.systems?.bplusIndex) console.log(`[console] bplusIndex: B+ 高 ${snap.systems.bplusIndex.structure.height} 层(估 ${snap.systems.bplusIndex.structure.heightEstimate})/叶 ${snap.systems.bplusIndex.structure.leafCount} / 点查比较 B+ ${snap.systems.bplusIndex.point.bplusComparisons} vs LSM ${snap.systems.bplusIndex.point.lsmComparisons}(${snap.systems.bplusIndex.point.favors}) / 写放大 B+ ${snap.systems.bplusIndex.write.bplusPageRewrites} vs LSM ${snap.systems.bplusIndex.write.lsmSeqWriteUnits}(${snap.systems.bplusIndex.write.favors}) / 对账 ${snap.systems.bplusIndex.agreement.bothAgree ? '一致' : '分叉'}`)
+    if (snap.systems?.mvccTxn) {
+      const mv = snap.systems.mvccTxn
+      const ladder = mv.levels.map((l) => `${l.short}[${l.observedCount}出/${l.aborted}止]`).join(' → ')
+      console.log(`[console] mvccTxn: 五档异常阶梯 ${ladder} / SI 漏写偏斜 ${mv.levels.find((l) => l.short === 'SI')?.anomalies.writeSkew.observed ? '是' : '否'} / 死锁 ${mv.deadlock.cycle?.join('↔')}→牺牲 ${mv.deadlock.victim}(${mv.deadlock.resolved ? '已破' : '未破'}) / 长事务保留版本 ${mv.gc.longTxnRetainsMoreVersions ? '是' : '否'}`)
+    }
     process.exit(0)
   }).catch((e) => { console.error(`[console] 生成失败：${e.message}`); process.exit(1) })
 }

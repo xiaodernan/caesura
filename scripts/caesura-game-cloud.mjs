@@ -27,6 +27,7 @@ import { cacheGuardStudy, guardSnapshot } from './caesura-cache-guard.mjs'
 import { rateLimiterStudy, rlSnapshot } from './caesura-rate-limiter.mjs'
 import { failureDetectorStudy, fdSnapshot } from './caesura-failure-detector.mjs'
 import { bplusStudy, bpSnapshot } from './caesura-bplus-tree.mjs'
+import { mvccStudy, mvSnapshot } from './caesura-mvcc-txn.mjs'
 import {
   createAimdCongestion,
   createCubicCongestion,
@@ -320,6 +321,26 @@ export function createGameCloud(opts = {}) {
     return bpCached
   }
 
+  // KI-505：事务与并发控制（MVCC 多版本可见性 + 五档隔离异常矩阵 + 行锁 2PL 死锁检测，opt-in）。
+  // opts.mvccTxn===true 用缺省规模；传对象逐项注入（now/schedules/victim/gcVersions/gcLongWaterMark/
+  // gcCleanWaterMark/...），或直接塞一只现成 study（duck-typed：带 comparison/deadlock/gc/verdict 四块）。
+  // 默认 mvccTxn:false 不装配、不改任何调用路径（KI-486/493/496/501/502/503/504 语义逐字不动）。
+  const mvCfg = opts.mvccTxn === true ? {} : (opts.mvccTxn && typeof opts.mvccTxn === 'object' ? opts.mvccTxn : null)
+  const mvInjected = mvCfg !== null && opts.mvccTxn &&
+    typeof opts.mvccTxn === 'object' && typeof opts.mvccTxn.comparison === 'object' &&
+    typeof opts.mvccTxn.deadlock === 'object' && typeof opts.mvccTxn.gc === 'object'
+  let mvCached = null
+  async function mvSnapshotForStatus() {
+    if (mvCfg === null) return null
+    if (mvCached) return mvCached
+    // 注入现成 study 直接用（不重跑）；否则真跑一次汇总，惰性缓存不反复付对照成本。
+    const study = mvInjected
+      ? opts.mvccTxn
+      : await mvccStudy({ ...mvCfg, now: opts.txnNow ?? mvCfg.now })
+    mvCached = mvSnapshot(study)
+    return mvCached
+  }
+
   /** 包住一次调用，用真实耗时/成败喂 net 包（未启用则原样返回，零开销）。 */
   async function observeCall(promise) {
     if (!net) return promise
@@ -370,6 +391,8 @@ export function createGameCloud(opts = {}) {
     runFailureDetectorStudy: fdCfg === null ? null : () => failureDetectorStudy({ ...fdCfg, now: opts.fdNow ?? fdCfg.now }),
     /** KI-504：B+ 树索引引擎 + LSM 三笔账汇总的现算入口（未配 opts.bplusIndex 时为 null）；调一次真跑点查比较数 / 范围叶链顺序扫 / 写放大对照。 */
     runBplusStudy: bpCfg === null ? null : () => bplusStudy({ ...bpCfg, now: opts.bpNow ?? bpCfg.now }),
+    /** KI-505：事务并发控制汇总的现算入口（未配 opts.mvccTxn 时为 null）；调一次真跑五档隔离异常矩阵 + 死锁检测 + gc 水位对照。 */
+    runMvccTxnStudy: mvCfg === null ? null : () => mvccStudy({ ...mvCfg, now: opts.txnNow ?? mvCfg.now }),
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
     gray: runtime.gray,
     /** 把游戏真 EventBus 按白名单routes 接进云事件总线（游戏侧一行：gc.connectGameBus(bus, routes)）。 */
@@ -406,6 +429,7 @@ export function createGameCloud(opts = {}) {
         rateLimit: await rlSnapshotForStatus(),
         failureDetector: await fdSnapshotForStatus(),
         bplusIndex: await bpSnapshotForStatus(),
+        mvccTxn: await mvSnapshotForStatus(),
       }
     },
   }

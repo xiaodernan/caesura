@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794350589147,
+  "generatedAt": 1794351974427,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1120,6 +1120,276 @@
         "agreeIsPrerequisite": true
       }
     },
-    "builtAt": 1794350589147
+    "mvccTxn": {
+      "config": {
+        "levels": [
+          "RU",
+          "RC",
+          "RR",
+          "SI",
+          "SER"
+        ],
+        "anomalies": [
+          "dirtyRead",
+          "nonRepeatableRead",
+          "phantom",
+          "lostUpdate",
+          "writeSkew"
+        ]
+      },
+      "levels": [
+        {
+          "short": "RU",
+          "label": "读未提交",
+          "anomalies": {
+            "dirtyRead": {
+              "observed": true,
+              "label": "脏读"
+            },
+            "nonRepeatableRead": {
+              "observed": true,
+              "label": "不可重复读"
+            },
+            "phantom": {
+              "observed": true,
+              "label": "幻读"
+            },
+            "lostUpdate": {
+              "observed": true,
+              "label": "丢失更新"
+            },
+            "writeSkew": {
+              "observed": true,
+              "label": "写偏斜"
+            }
+          },
+          "observedCount": 5,
+          "preventedCount": 0,
+          "aborted": 1
+        },
+        {
+          "short": "RC",
+          "label": "读已提交",
+          "anomalies": {
+            "dirtyRead": {
+              "observed": false,
+              "label": "脏读"
+            },
+            "nonRepeatableRead": {
+              "observed": true,
+              "label": "不可重复读"
+            },
+            "phantom": {
+              "observed": true,
+              "label": "幻读"
+            },
+            "lostUpdate": {
+              "observed": true,
+              "label": "丢失更新"
+            },
+            "writeSkew": {
+              "observed": true,
+              "label": "写偏斜"
+            }
+          },
+          "observedCount": 4,
+          "preventedCount": 1,
+          "aborted": 1
+        },
+        {
+          "short": "RR",
+          "label": "可重复读",
+          "anomalies": {
+            "dirtyRead": {
+              "observed": false,
+              "label": "脏读"
+            },
+            "nonRepeatableRead": {
+              "observed": false,
+              "label": "不可重复读"
+            },
+            "phantom": {
+              "observed": false,
+              "label": "幻读"
+            },
+            "lostUpdate": {
+              "observed": true,
+              "label": "丢失更新"
+            },
+            "writeSkew": {
+              "observed": true,
+              "label": "写偏斜"
+            }
+          },
+          "observedCount": 2,
+          "preventedCount": 3,
+          "aborted": 1
+        },
+        {
+          "short": "SI",
+          "label": "快照隔离",
+          "anomalies": {
+            "dirtyRead": {
+              "observed": false,
+              "label": "脏读"
+            },
+            "nonRepeatableRead": {
+              "observed": false,
+              "label": "不可重复读"
+            },
+            "phantom": {
+              "observed": false,
+              "label": "幻读"
+            },
+            "lostUpdate": {
+              "observed": false,
+              "label": "丢失更新"
+            },
+            "writeSkew": {
+              "observed": true,
+              "label": "写偏斜"
+            }
+          },
+          "observedCount": 1,
+          "preventedCount": 4,
+          "aborted": 2
+        },
+        {
+          "short": "SER",
+          "label": "可串行化",
+          "anomalies": {
+            "dirtyRead": {
+              "observed": false,
+              "label": "脏读"
+            },
+            "nonRepeatableRead": {
+              "observed": false,
+              "label": "不可重复读"
+            },
+            "phantom": {
+              "observed": false,
+              "label": "幻读"
+            },
+            "lostUpdate": {
+              "observed": false,
+              "label": "丢失更新"
+            },
+            "writeSkew": {
+              "observed": false,
+              "label": "写偏斜"
+            }
+          },
+          "observedCount": 0,
+          "preventedCount": 5,
+          "aborted": 3
+        }
+      ],
+      "deadlock": {
+        "graph": {
+          "T1": [
+            "T2"
+          ],
+          "T2": [
+            "T1"
+          ]
+        },
+        "detected": true,
+        "cycle": [
+          "T1",
+          "T2"
+        ],
+        "resolved": true,
+        "victim": "T2",
+        "acyclicProbeNoCycle": true,
+        "stats": {
+          "grants": 3,
+          "blocks": 2,
+          "releases": 1,
+          "conflicts": 2,
+          "deadlocks": 1,
+          "aborts": 1,
+          "plViolations": 0,
+          "heldKeys": 2,
+          "blockedTxns": 0,
+          "activeTxns": 1,
+          "policy": "youngest"
+        }
+      },
+      "twoPhaseLock": {
+        "lateAcquireBlocked": true,
+        "reason": "2pl-violation",
+        "stats": {
+          "grants": 1,
+          "blocks": 0,
+          "releases": 1,
+          "conflicts": 0,
+          "deadlocks": 0,
+          "aborts": 0,
+          "plViolations": 1,
+          "heldKeys": 0,
+          "blockedTxns": 0,
+          "activeTxns": 1,
+          "policy": "youngest"
+        }
+      },
+      "gc": {
+        "versions": 10,
+        "longWaterMark": {
+          "removed": 0,
+          "kept": 10,
+          "waterMarkTs": 2,
+          "liveVersions": 10
+        },
+        "cleanWaterMark": {
+          "removed": 7,
+          "kept": 3,
+          "waterMarkTs": 9,
+          "liveVersions": 3
+        },
+        "longTxnRetainsMoreVersions": true
+      },
+      "store": {
+        "readValue": 100,
+        "committed": true,
+        "stats": {
+          "begins": 1,
+          "reads": 1,
+          "writes": 1,
+          "deletes": 0,
+          "ranges": 0,
+          "committed": 1,
+          "aborted": 0,
+          "rollbacks": 0,
+          "writeConflicts": 0,
+          "writeSkews": 0,
+          "keys": 1,
+          "versions": 2,
+          "commitLogSize": 1,
+          "now": 1794351974428
+        },
+        "final": {
+          "A": {
+            "value": 101,
+            "commitTs": 1794351974428,
+            "tombstone": false
+          }
+        }
+      },
+      "verdict": {
+        "matrixWellFormed": true,
+        "ruSeesAllFive": true,
+        "rcStopsDirtyRead": true,
+        "rrFreezesReadView": true,
+        "siStopsLostUpdateButLeaksWriteSkew": true,
+        "serializableStopsWriteSkew": true,
+        "serializableCostsMostAborts": true,
+        "noUniversalWinner": true,
+        "deadlockDetectedAndBroken": true,
+        "dfsNotTautological": true,
+        "twoPhaseLockEnforced": true,
+        "longTransactionRetainsVersions": true
+      }
+    },
+    "builtAt": 1794351974427
   }
 }

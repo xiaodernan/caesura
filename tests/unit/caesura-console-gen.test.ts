@@ -260,6 +260,12 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(noBp.systems!.lsm).toBeTruthy()
     expect(noBp.systems!.failureDetector).toBeTruthy()
     expect(noBp.systems!.rateLimit).toBeTruthy()
+    // mvccTxn:false 可单独关掉事务并发控制维，其余六维仍在（不连坐）。
+    const noMv = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, mvccTxn: false })
+    expect(noMv.systems!.mvccTxn).toBe(null)
+    expect(noMv.systems!.lsm).toBeTruthy()
+    expect(noMv.systems!.bplusIndex).toBeTruthy()
+    expect(noMv.systems!.failureDetector).toBeTruthy()
     const without = await buildSnapshot({ runner: fakeRunner(), driveNet: false, systems: false })
     expect(without.systems).toBe(null)
     expect(without.highlights).toBeTruthy() // 既有口径不受影响
@@ -301,7 +307,18 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(snap.systems.bplusIndex.write.lsmSeqWriteUnits).toBeGreaterThan(0)
     expect(snap.systems.bplusIndex.verdict.noUniversalWinner).toBe(true)
     expect(snap.systems.bplusIndex.structure.heightLadder.length).toBeGreaterThan(0)
-    // bootstrap.js 与 snapshot.json 是同一份真快照（含六维 systems）。
+    // KI-505 mvccTxn：五档隔离 × 五类异常矩阵 + 死锁环 + 2PL + gc 水位真读数已固化进快照。
+    expect(snap.systems.mvccTxn.levels.length).toBe(5)
+    expect(snap.systems.mvccTxn.config.anomalies.length).toBe(5)
+    expect(snap.systems.mvccTxn.levels.find((l: any) => l.short === 'RU')!.observedCount).toBe(5)
+    expect(snap.systems.mvccTxn.levels.find((l: any) => l.short === 'SI')!.anomalies.writeSkew.observed).toBe(true)
+    expect(snap.systems.mvccTxn.levels.find((l: any) => l.short === 'SER')!.observedCount).toBe(0)
+    expect(snap.systems.mvccTxn.deadlock.detected).toBe(true)
+    expect(snap.systems.mvccTxn.deadlock.resolved).toBe(true)
+    expect(snap.systems.mvccTxn.twoPhaseLock.lateAcquireBlocked).toBe(true)
+    expect(snap.systems.mvccTxn.gc.longTxnRetainsMoreVersions).toBe(true)
+    expect(Object.values(snap.systems.mvccTxn.verdict).every(Boolean)).toBe(true)
+    // bootstrap.js 与 snapshot.json 是同一份真快照（含七维 systems）。
     const bootCode = readFileSync(resolve(process.cwd(), 'console/bootstrap.js'), 'utf8')
     const fromBoot = JSON.parse(bootCode.slice(bootCode.indexOf('=') + 1).trim().replace(/;\s*$/, ''))
     expect(fromBoot.systems.lsm.speedup).toBe(snap.systems.lsm.speedup)
@@ -310,5 +327,34 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(fromBoot.systems.rateLimit).toEqual(snap.systems.rateLimit)
     expect(fromBoot.systems.failureDetector).toEqual(snap.systems.failureDetector)
     expect(fromBoot.systems.bplusIndex).toEqual(snap.systems.bplusIndex)
+    expect(fromBoot.systems.mvccTxn).toEqual(snap.systems.mvccTxn)
+  })
+
+  it('⑭ buildMvccTxnReading 真跑五档矩阵形状齐、读数是真判词、单维关闭不连坐（KI-505）', async () => {
+    const { buildMvccTxnReading } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 4242
+    const reading = await buildMvccTxnReading({ mvGcVersions: 10 }, now)
+    expect(reading).not.toBe(null)
+    expect(reading!.levels.length).toBe(5)
+    expect(reading!.config.anomalies.length).toBe(5)
+    for (const l of reading!.levels) {
+      expect(l.anomalies.writeSkew).toBeTruthy()
+      expect(l.anomalies.lostUpdate).toBeTruthy()
+      expect(typeof l.observedCount).toBe('number')
+      expect(typeof l.aborted).toBe('number')
+    }
+    // 真判词阶梯：RU 全出 / SI 漏写偏斜 / SER 全挡 / 不封全局赢家
+    expect(reading!.levels.find((l) => l.short === 'RU')!.observedCount).toBe(5)
+    expect(reading!.levels.find((l) => l.short === 'SI')!.anomalies.writeSkew.observed).toBe(true)
+    expect(reading!.levels.find((l) => l.short === 'SER')!.observedCount).toBe(0)
+    expect(reading!.deadlock.resolved).toBe(true)
+    expect(reading!.verdict.noUniversalWinner).toBe(true)
+    // 单维关闭由 buildSystems/buildSnapshot 层把关（与 buildBplusReading 一致，reading 本身只管真跑）：落 null，不动其它维
+    const sys = await buildSystems({ now, mvccTxn: false })
+    expect(sys.mvccTxn).toBe(null)
+    expect(sys.bplusIndex).toBeTruthy() // 不连坐
+    expect(sys.failureDetector).toBeTruthy() // 不连坐
+    const snap = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, mvccTxn: false })
+    expect(snap.systems!.mvccTxn).toBe(null)
   })
 })

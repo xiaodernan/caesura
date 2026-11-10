@@ -154,6 +154,7 @@ Phase B4 的三件套此前是"有人听、没人说"。
 | ✅ KI-502 | **网关限流算法族对照 + Redis 原子令牌桶 + 前端水位面板（P8 第十维「计网知识 / 算法知识 / Redis 运用 / 数据库性能 / 前端美观 / 前后端协同」；新 `caesura-rate-limiter.mjs`：固定窗口/滑动窗口日志/滑动窗口计数/令牌桶/漏桶五算法 + Redis 原子令牌桶跨实例共享与非原子超发对照，`systems.rateLimit` 前端贯穿，opt-in 挂 status.rateLimit）**（工程，2026-11-11 已落，详见账本 KI-502） | KI-502 |
 | ✅ KI-503 | **服务故障检测器：φ 累积风险 + SWIM 三态成员协议 + 健康视图缓存（P8 第十一件「算法 / 计网 / 微服务元素 / 缓存 / 数据库性能 / 前端美观 / 前后端协同」；新 `caesura-failure-detector.mjs`：Welford + erfc 的 φ 自适应判定 + SWIM 间接探测/incarnation 单调/reap + 复用 KI-493 的健康视图 TTL 缓存，固定超时 vs φ 诚实权衡对照，`systems.failureDetector` 前端两面板贯穿，opt-in 挂 status.failureDetector）**（工程，2026-11-11 已落，详见账本 KI-503） | KI-503 |
 | ✅ KI-504 | **B+ 树索引引擎 + 与 LSM 点查/范围查/写放大诚实权衡对照（P8 第十二件「数据库性能 / 数据结构与算法 / 操作系统·缓存行·局部性 / 硬件适配 / 前端美观 / 前后端协同」；新 `caesura-bplus-tree.mjs`：阶数可控扇出决定层高 + 叶子双向链表范围顺序扫 + 分裂/删除再平衡(borrow+merge)，与 KI-496 LSM 三笔账对照——B+ 点查/范围查结构代价稳但写原地改页、LSM 顺序写适配 SSD 但读跨层/范围全量归并/compaction 重复搬运，不封全局赢家；`systems.bplusIndex` 前端两面板贯穿，opt-in 挂 status.bplusIndex）**（工程，2026-11-11 已落，详见账本 KI-504） | KI-504 |
+| ✅ KI-505 | **事务与并发控制：MVCC 多版本可见性 + 五档隔离级别异常对照 + 行锁 2PL 死锁检测（P8 第十三件「数据库性能 / 数据结构与算法 / 操作系统·局部性 / 前端美观 / 前后端协同」；新 `caesura-mvcc-txn.mjs`：单 key 多版本链 MVCC 可见性判据 + 水位 gc + 事务 begin/commit/rollback 与 SI/Serializable 写冲突中止 + S/X 行锁两阶段锁 + wait-for graph DFS 环检测选牺牲者，五档隔离(RU/RC/RR/SI/Serializable)喂同一组确定性调度钉死「SI 挡前四类却漏写偏斜、Serializable 全挡但中止率最高」真实取舍、不封全局赢家；`systems.mvccTxn` 前端两面板贯穿，opt-in 挂 status.mvccTxn）**（工程，2026-11-11 已落，详见账本 KI-505） | KI-505 |
 
 
 

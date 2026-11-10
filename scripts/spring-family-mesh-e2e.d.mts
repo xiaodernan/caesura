@@ -70,5 +70,23 @@ export function runMeshE2E(opts?: any): {
       verdict: Record<string, boolean | string>
       builtAt: number
     } | null
+    /** KI-505：事务与并发控制快照（五档隔离 × 五类异常矩阵 / 死锁环检测 / 2PL / gc 水位），未配 mvccTxn 为 null */
+    mvccTxnSnapshot: {
+      config: { levels: string[]; anomalies: string[] }
+      levels: Array<{
+        short: string
+        label: string
+        anomalies: Record<string, { observed: boolean; label: string }>
+        observedCount: number
+        preventedCount: number
+        aborted: number
+      }>
+      deadlock: { graph: Record<string, string[]>; detected: boolean; cycle: string[]; resolved: boolean; victim: string | null; acyclicProbeNoCycle: boolean; stats: any }
+      twoPhaseLock: { lateAcquireBlocked: boolean; reason: string; stats: any }
+      gc: { versions: number; longWaterMark: any; cleanWaterMark: any; longTxnRetainsMoreVersions: boolean }
+      store: any
+      verdict: Record<string, boolean>
+      builtAt: number
+    } | null
   }>
 }

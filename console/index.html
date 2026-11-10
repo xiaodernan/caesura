@@ -208,6 +208,22 @@
       <p class="note" id="bp-compare-note">—</p>
     </article>
   </section>
+
+  <!-- 事务与并发控制（KI-505 前后端协同：五档隔离 × 五类异常矩阵 + MVCC 版本链 / 死锁 wait-for graph） -->
+  <section class="row row-mvcc">
+    <article class="panel panel-mv">
+      <div class="panel-head"><h2>隔离级别 × 并发异常</h2><span class="hint">RU→SER 逐级收紧 · 挡住的格染玉 · 漏掉的染酒红</span></div>
+      <div class="mv-matrix" id="mv-matrix"></div>
+      <div class="mv-abort" id="mv-abort"></div>
+      <p class="note" id="mv-matrix-note">—</p>
+    </article>
+    <article class="panel panel-mv">
+      <div class="panel-head"><h2>MVCC 版本链 · 死锁检测</h2><span class="hint">多版本可见性 · 水位 gc · wait-for graph DFS 找环</span></div>
+      <div class="mv-deadlock" id="mv-deadlock"></div>
+      <div class="mv-gc" id="mv-gc"></div>
+      <p class="note" id="mv-deadlock-note">—</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">

@@ -84,6 +84,9 @@ export function runMeshE2E(opts = {}) {
     // KI-504：B+ 树索引引擎 + LSM 三笔账（bplusIndex=true 装配；只读点查比较数/范围叶链顺序扫/写放大对照证据，不改调用路径）。
     bplusIndex: opts.bplusIndex,
     bpNow: opts.bpNow,
+    // KI-505：事务与并发控制（mvccTxn=true 装配；只读五档隔离异常矩阵/死锁环检测/gc 水位对照证据，不改调用路径）。
+    mvccTxn: opts.mvccTxn,
+    txnNow: opts.txnNow,
     sources: {
       eureka: () => (opts.svcA ?? [{ id: 'svc-a:1', name: 'svc-a', address: '10.0.0.1', port: 8080, healthy: true }]),
       k8s: () => k8s.discover('caesura-gate'),
@@ -210,6 +213,7 @@ export function runMeshE2E(opts = {}) {
         rateLimitSnapshot: status.rateLimit ?? null,
         failureDetectorSnapshot: status.failureDetector ?? null,
         bplusIndexSnapshot: status.bplusIndex ?? null,
+        mvccTxnSnapshot: status.mvccTxn ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
       }
@@ -272,6 +276,16 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         lsmSeqWriteUnits: r.bplusIndexSnapshot.write.lsmSeqWriteUnits,
         bothAgree: r.bplusIndexSnapshot.agreement.bothAgree,
         verdict: r.bplusIndexSnapshot.verdict,
+      } : null,
+      mvccTxn: r.mvccTxnSnapshot ? {
+        levels: r.mvccTxnSnapshot.levels.map((l) => ({ short: l.short, observedCount: l.observedCount, aborted: l.aborted })),
+        siLeaksWriteSkew: r.mvccTxnSnapshot.levels.find((l) => l.short === 'SI')?.anomalies.writeSkew.observed ?? null,
+        deadlockDetected: r.mvccTxnSnapshot.deadlock.detected,
+        deadlockResolved: r.mvccTxnSnapshot.deadlock.resolved,
+        deadlockVictim: r.mvccTxnSnapshot.deadlock.victim,
+        twoPhaseLockEnforced: r.mvccTxnSnapshot.twoPhaseLock.lateAcquireBlocked,
+        longTxnRetainsVersions: r.mvccTxnSnapshot.gc.longTxnRetainsMoreVersions,
+        verdict: r.mvccTxnSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

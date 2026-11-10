@@ -493,6 +493,65 @@ main { padding: clamp(18px, 3vw, 40px) clamp(18px, 4vw, 56px) 48px; max-width: 1
 .bp-agree-row .num b { color: #e8e3d3; font-weight: 500; }
 .bp-agree-row .stamp { margin-left: auto; }
 
+/* ---------- KI-505 事务与并发控制：隔离矩阵 + MVCC 版本链/死锁 ---------- */
+.row-mvcc { margin-top: 4px; }
+.mv-matrix { display: flex; flex-direction: column; gap: 5px; margin: 6px 0 10px; }
+.mv-matrix-head, .mv-matrix-row {
+  display: grid; grid-template-columns: 92px repeat(5, 1fr) 62px;
+  gap: 4px; align-items: center;
+}
+.mv-matrix-head { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; color: var(--gold-dim); padding: 0 2px 4px; }
+.mv-matrix-head .mv-lvl, .mv-matrix-row .mv-lvl { font-family: var(--mono); font-size: 11px; }
+.mv-matrix-head .mv-cell { text-align: center; }
+.mv-matrix-row {
+  padding: 6px 4px; border: 1px solid var(--line-soft); border-left: 2px solid var(--gold-dim);
+  background: linear-gradient(90deg, var(--ash-2), var(--ash-1));
+}
+.mv-matrix-row .mv-lvl { color: var(--silver); font-weight: 600; letter-spacing: .08em; }
+.mv-matrix-row .mv-lvl small { display: block; color: var(--muted); font-weight: 400; font-size: 9px; letter-spacing: 0; }
+.mv-cell {
+  display: flex; align-items: center; justify-content: center; min-height: 26px;
+  font-family: var(--mono); font-size: 11px; border-radius: 2px;
+  border: 1px solid transparent; letter-spacing: .04em;
+}
+/* 挡住（prevented）染玉，漏掉（observed 异常出现）染酒红——与 jade/wine 语义一致 */
+.mv-cell.blocked { background: var(--jade-dim); border-color: rgba(79,155,134,.34); color: var(--jade); }
+.mv-cell.leaked { background: var(--wine-dim); border-color: rgba(165,68,82,.36); color: #d98892; }
+.mv-rowstat { text-align: right; font-family: var(--mono); font-size: 10px; color: var(--muted); }
+.mv-rowstat b { color: var(--silver); font-weight: 600; }
+.mv-abort { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
+.mv-abort .chip {
+  font-family: var(--mono); font-size: 10px; padding: 3px 8px;
+  border: 1px solid var(--line-soft); border-radius: 2px; color: var(--muted);
+}
+.mv-abort .chip b { color: var(--silver); font-weight: 600; }
+.mv-abort .chip.escalates b { color: var(--wine); }
+.mv-deadlock { display: flex; flex-direction: column; gap: 8px; margin: 6px 0 10px; }
+.mv-dl-graph { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mv-node {
+  font-family: var(--mono); font-size: 12px; padding: 6px 12px;
+  border: 1px solid var(--gold-dim); border-radius: 3px; color: var(--gold);
+  background: var(--gold-faint);
+}
+.mv-node.victim { border-color: var(--wine); color: #d98892; background: var(--wine-dim); }
+.mv-arrow { color: var(--muted); font-family: var(--mono); font-size: 14px; }
+.mv-dl-line { font-family: var(--mono); font-size: 11px; color: var(--silver); }
+.mv-dl-line .ok { color: var(--jade); }
+.mv-dl-line .bad { color: var(--wine); }
+.mv-gc { display: flex; gap: 8px; flex-wrap: wrap; }
+.mv-gc .pair {
+  flex: 1; min-width: 130px; padding: 8px 10px; border: 1px solid var(--line-soft);
+  background: var(--ash-2);
+}
+.mv-gc .pair .k { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: .06em; }
+.mv-gc .pair .v { font-family: var(--serif); font-size: 16px; color: var(--gold); margin-top: 3px; }
+.mv-gc .pair .v small { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+@media (max-width: 720px) {
+  .mv-matrix-head, .mv-matrix-row { grid-template-columns: 66px repeat(5, 1fr) 44px; gap: 2px; }
+  .mv-cell { font-size: 9px; min-height: 22px; }
+  .mv-matrix-row .mv-lvl { font-size: 10px; }
+}
+
 /* ---------- 页脚 ---------- */
 .footer {
   display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;

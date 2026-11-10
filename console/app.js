@@ -44,6 +44,7 @@
       renderRateLimit(snap.systems ? snap.systems.rateLimit : null)
       renderFailureDetector(snap.systems ? snap.systems.failureDetector : null)
       renderBplus(snap.systems ? snap.systems.bplusIndex : null)
+      renderMvcc(snap.systems ? snap.systems.mvccTxn : null)
       setLive(true, result.source)
     }).catch(function (e) {
       setLive(false, 'error')
@@ -840,6 +841,113 @@
       '<span class="lab">同批 key 答案逐条对账</span>' +
       '<span class="num">点查分叉 <b>' + esc(fmt(ag.pointMismatches)) + '</b> · 范围分叉 <b>' + esc(fmt(ag.rangeMismatches)) + '</b></span>' +
       '<span class="stamp ' + (ok ? 'jade-t' : 'wine-t') + '">' + (ok ? '✓ 一致 · 对照成立' : '✗ 分叉 · 性能读数不作数') + '</span></div>'
+  }
+
+  // ---------------- KI-505 事务与并发控制：隔离矩阵 + MVCC 版本链/死锁 ----------------
+  function renderMvcc(mv) {
+    renderMvMatrix(mv && mv.levels, mv && mv.config, mv && mv.verdict)
+    renderMvDeadlock(mv && mv.deadlock, mv && mv.twoPhaseLock)
+    renderMvGc(mv && mv.gc)
+  }
+
+  function mvMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">无' + esc(label) + '读数</div>'
+    if (note) note.textContent = 'systems.mvccTxn 缺失 —— 重跑 npm run console:data 采集真判词'
+  }
+
+  // 面板一：五档隔离 × 五类异常热力矩阵。挡住（prevented）染玉，异常真出现（observed）染酒红。
+  function renderMvMatrix(levels, config, verdict) {
+    var box = $('#mv-matrix'), note = $('#mv-matrix-note'), aborts = $('#mv-abort')
+    if (!Array.isArray(levels) || !levels.length || !config || !Array.isArray(config.anomalies)) {
+      mvMissing(box, note, '隔离异常矩阵'); if (aborts) aborts.innerHTML = ''; return
+    }
+    var anomalies = config.anomalies
+    var head = '<div class="mv-matrix-head"><span class="mv-lvl">隔离级别</span>' +
+      anomalies.map(function (a) { return '<span class="mv-cell">' + esc(shortAnomaly(a)) + '</span>' }).join('') +
+      '<span class="mv-rowstat">中止</span></div>'
+    var rows = levels.map(function (l) {
+      var cells = anomalies.map(function (a) {
+        var cell = l.anomalies && l.anomalies[a]
+        if (!cell || typeof cell.observed !== 'boolean') {
+          return '<span class="mv-cell" data-a="' + esc(a) + '" data-state="na">—</span>'
+        }
+        // observed=true ⇒ 该异常在本隔离档真出现 ⇒ 漏掉（酒红）；prevented ⇒ 挡住（玉）
+        var leaked = cell.observed === true
+        return '<span class="mv-cell ' + (leaked ? 'leaked' : 'blocked') + '" data-a="' + esc(a) +
+          '" data-state="' + (leaked ? 'leaked' : 'blocked') + '" title="' + esc(cell.label || a) +
+          (leaked ? '：真出现' : '：已挡住') + '">' + (leaked ? '漏' : '挡') + '</span>'
+      }).join('')
+      return '<div class="mv-matrix-row" data-lvl="' + esc(l.short) + '">' +
+        '<span class="mv-lvl">' + esc(l.short) + '<small>' + esc(l.label || '') + '</small></span>' +
+        cells +
+        '<span class="mv-rowstat"><b>' + esc(fmt(l.aborted)) + '</b></span></div>'
+    }).join('')
+    box.innerHTML = head + rows
+    // 中止率阶梯 chip：隔离越强中止越多（诚实代价），escalates 标最后两档
+    var maxAbort = Math.max.apply(null, levels.map(function (l) { return isNum(l.aborted) ? l.aborted : 0 }).concat([1]))
+    var chips = levels.map(function (l, i) {
+      var esc3 = isNum(l.aborted) ? Math.round(l.aborted / maxAbort * 100) : 0
+      var climbing = i > 0 && isNum(l.aborted) && l.aborted > levels[i - 1].aborted
+      return '<span class="chip' + (climbing ? ' escalates' : '') + '" data-lvl="' + esc(l.short) +
+        '" data-abort="' + esc(fmt(l.aborted)) + '">' + esc(l.short) + ' <b>' + esc(fmt(l.aborted)) +
+        '</b> 止<i style="display:inline-block;width:' + esc3 + 'px;height:4px;background:var(--wine);margin-left:4px"></i></span>'
+    }).join('')
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    aborts.innerHTML = chips + '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' +
+      (noWin ? '✓ 不封 Serializable 全局赢家' : '本配置下归一（换调度会翻）') + '</span>'
+    note.textContent = '同一组确定性并发调度（脏读/不可重复读/幻读/丢失更新/写偏斜）分喂五档隔离，' +
+      '每格是「该异常在此档有没有真出现」的结构判词：玉=挡住、酒红=漏掉。关键阶梯——SI 挡住前四类' +
+      '却**漏写偏斜**、Serializable 全挡但中止最多。中止数是被 first-committer-wins / SSI 反依赖检测' +
+      '回滚的事务数，是确定性调度上的结构计数、非墙钟吞吐；换成别的调度结论会变，不封全局赢家。'
+  }
+
+  // 异常 id → 短标签（矩阵表头窄，用两字）。
+  function shortAnomaly(id) {
+    return ({ dirtyRead: '脏读', nonRepeatableRead: '不可重复', phantom: '幻读', lostUpdate: '丢失更新', writeSkew: '写偏斜' })[id] || id
+  }
+
+  // 面板二上半：wait-for graph 死锁环（节点链）+ 牺牲者 + 2PL + 无环探针。
+  function renderMvDeadlock(dl, twoPhase) {
+    var box = $('#mv-deadlock'), note = $('#mv-deadlock-note')
+    if (!dl || typeof dl.detected !== 'boolean') { mvMissing(box, note, '死锁检测'); return }
+    var cycle = Array.isArray(dl.cycle) ? dl.cycle : []
+    var victim = dl.victim
+    var graph = cycle.length
+      ? cycle.map(function (t, i) {
+          return '<span class="mv-node' + (t === victim ? ' victim' : '') + '" data-txn="' + esc(t) + '">' + esc(t) +
+            (t === victim ? ' · 牺牲' : '') + '</span>' +
+            '<span class="mv-arrow">→</span>' +
+            '<span class="mv-node' + (cycle[(i + 1) % cycle.length] === victim ? ' victim' : '') + '">' + esc(cycle[(i + 1) % cycle.length]) + '</span>' +
+            (i < cycle.length - 1 ? '<span class="mv-arrow">↔</span>' : '')
+        }).join('')
+      : '<span class="mv-node">无环</span>'
+    var resolved = dl.resolved === true
+    var probe = dl.acyclicProbeNoCycle === true
+    var tpl = twoPhase && twoPhase.lateAcquireBlocked === true
+    box.innerHTML =
+      '<div class="mv-dl-graph" data-detected="' + (dl.detected ? 'true' : 'false') + '">' + graph + '</div>' +
+      '<div class="mv-dl-line">wait-for graph DFS 找环 <b class="' + (dl.detected ? 'wine-t' : 'jade-t') + '">' +
+      (dl.detected ? '检出环' : '无环') + '</b> → 牺牲 <b>' + esc(victim || '—') + '</b> → ' +
+      '<b class="' + (resolved ? 'ok' : 'bad') + '">' + (resolved ? '已放锁解开' : '未解开') + '</b></div>' +
+      '<div class="mv-dl-line">无环探针（非恒真） ' + (probe ? '<b class="ok">✓ 无环图如实报无环</b>' : '<b class="bad">✗ 误报环</b>') +
+      ' · 两阶段锁 shrinking 后申请 ' + (tpl ? '<b class="ok">✓ 判 2PL 违规</b>' : '<b class="bad">✗ 未拦</b>') + '</div>'
+    note.textContent = 'MVCC 版本链按「已提交且 commitTs≤快照读 ts、或自己未提交版本对己可见、tombstone 表删除」' +
+      '取对某快照可见的最新版；本件只跑进程内 wait-for graph 的 DFS 三色环检测，检出后按 youngest/min-locks ' +
+      '选牺牲者中止放锁、自动重解被阻塞的请求并复检环已破。无环探针专钉「DFS 不是恒真报有环」。' +
+      '不接真分布式锁、无跨进程等待边、不实现写者优先/公平排队（写饥饿是教学边界）。'
+  }
+
+  // 面板二下半：gc 水位对照（长事务拖住 gc ⇒ 保留更多旧版本）。
+  function renderMvGc(gc) {
+    var box = $('#mv-gc')
+    if (!gc || !isNum(gc.versions)) { mvMissing(box, null, 'gc 水位'); return }
+    var long = gc.longWaterMark || {}, clean = gc.cleanWaterMark || {}
+    box.innerHTML =
+      '<div class="pair" data-wm="long"><div class="k">长事务 · 低水位 ' + esc(fmt(long.waterMarkTs)) + '</div>' +
+      '<div class="v">' + esc(fmt(long.kept)) + '<small> 版留存 / 回收 ' + esc(fmt(long.removed)) + '</small></div></div>' +
+      '<div class="pair" data-wm="clean"><div class="k">无长事务 · 高水位 ' + esc(fmt(clean.waterMarkTs)) + '</div>' +
+      '<div class="v">' + esc(fmt(clean.kept)) + '<small> 版留存 / 回收 ' + esc(fmt(clean.removed)) + '</small></div></div>'
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)

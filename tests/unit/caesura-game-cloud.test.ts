@@ -481,4 +481,56 @@ describe('caesura-game-cloud', () => {
     // 主链语义逐字不动
     expect(st.eventChannel).toBeTruthy()
   })
+
+  it('mvccTxn:true ⇒ 装配事务并发控制、status.mvccTxn 读真五行矩阵/死锁/gc 证据、惰性同引用（KI-505）', async () => {
+    const gc = createGameCloud({
+      gameId: 'gmv1', gamePort: 7719, sources, cloud: fakeCloud(),
+      mvccTxn: { gcVersions: 10 }, txnNow: () => 8888,
+    })
+    expect(gc.runMvccTxnStudy).toBeTypeOf('function')
+    const st = await gc.status()
+    expect(st.mvccTxn.builtAt).toBe(8888)
+    expect(st.mvccTxn.levels.length).toBe(5)                    // RU/RC/RR/SI/SER 五行
+    expect(st.mvccTxn.config.anomalies.length).toBe(5)           // 五类异常
+    const si = st.mvccTxn.levels.find((l: any) => l.short === 'SI')
+    const ser = st.mvccTxn.levels.find((l: any) => l.short === 'SER')
+    const ru = st.mvccTxn.levels.find((l: any) => l.short === 'RU')
+    expect(ru.observedCount).toBe(5)
+    expect(si.anomalies.writeSkew.observed).toBe(true)          // SI 漏写偏斜
+    expect(si.anomalies.lostUpdate.observed).toBe(false)        // SI 挡丢失更新
+    expect(ser.observedCount).toBe(0)                           // SER 全挡
+    expect(ser.aborted).toBeGreaterThan(ru.aborted)             // 但中止更多
+    expect(st.mvccTxn.deadlock.detected).toBe(true)
+    expect(st.mvccTxn.deadlock.resolved).toBe(true)
+    expect(st.mvccTxn.deadlock.acyclicProbeNoCycle).toBe(true)
+    expect(st.mvccTxn.twoPhaseLock.lateAcquireBlocked).toBe(true)
+    expect(st.mvccTxn.gc.longTxnRetainsMoreVersions).toBe(true)
+    expect(Object.values(st.mvccTxn.verdict).every(Boolean)).toBe(true)
+    // 惰性缓存：二次 status 同引用，不反复跑对照
+    expect((await gc.status()).mvccTxn).toBe(st.mvccTxn)
+    // 现算入口可重跑、确定性（同注入 now）
+    const rerun = await gc.runMvccTxnStudy!()
+    expect(rerun.verdict).toEqual(st.mvccTxn.verdict)
+  })
+
+  it('mvccTxn 默认 null 非破坏；可注入现成 study（KI-505）', async () => {
+    const plain = createGameCloud({ gameId: 'gmv2', gamePort: 7720, sources, cloud: fakeCloud() })
+    expect(plain.runMvccTxnStudy).toBe(null)
+    const ps = await plain.status()
+    expect(ps.mvccTxn).toBe(null)
+    expect(ps.bplusIndex).toBe(null)
+    expect(ps.failureDetector).toBe(null)
+    // 注入现成 study：直接用、不重跑，builtAt 原样带出。
+    const { mvccStudy } = await import('../../scripts/caesura-mvcc-txn.mjs')
+    const study = mvccStudy({ now: () => 321 })
+    const injected = createGameCloud({
+      gameId: 'gmv3', gamePort: 7721, sources, cloud: fakeCloud(),
+      mvccTxn: study, txnNow: () => 999,
+    })
+    const st = await injected.status()
+    expect(st.mvccTxn.builtAt).toBe(321) // 注入 study 的 builtAt，不被 txnNow 覆盖
+    expect(st.mvccTxn.deadlock.resolved).toBe(true)
+    // 主链语义逐字不动
+    expect(st.eventChannel).toBeTruthy()
+  })
 })

@@ -63,6 +63,11 @@ export interface GameCloudOptions {
    * 或直接塞一只现成 study（带 comparison/heightLadder/verdict 三块）。 */
   bplusIndex?: boolean | Record<string, any> | { comparison: any; heightLadder: any[]; verdict: any; [k: string]: any }
   bpNow?: () => number
+  /** KI-505：事务与并发控制（MVCC 多版本可见性 + 五档隔离异常矩阵 + 行锁 2PL 死锁检测）。true 用缺省规模；
+   * 对象逐项注入（now/schedules/initialA/initialB/dirtyWrite/updateA1/updateA2/victim/gcVersions/
+   * gcLongWaterMark/gcCleanWaterMark/...），或直接塞一只现成 study（带 comparison/deadlock/gc/verdict 四块）。 */
+  mvccTxn?: boolean | Record<string, any> | { comparison: any; deadlock: any; gc: any; verdict: any; [k: string]: any }
+  txnNow?: () => number
 }
 
 /** 创建一只游戏侧开箱即用云。 */
@@ -93,6 +98,8 @@ export function createGameCloud(opts?: GameCloudOptions): {
   runFailureDetectorStudy: (() => Promise<any>) | null
   /** KI-504：B+ 树索引引擎 + LSM 三笔账汇总的现算入口（未配 opts.bplusIndex 时为 null）；真跑点查比较数 / 范围叶链顺序扫 / 写放大对照。 */
   runBplusStudy: (() => Promise<any>) | null
+  /** KI-505：事务并发控制汇总的现算入口（未配 opts.mvccTxn 时为 null）；真跑五档隔离异常矩阵 + 死锁环检测 + gc 水位对照。 */
+  runMvccTxnStudy: (() => Promise<any>) | null
   /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）。 */
   gray: any
   /** KI-489：把游戏真 EventBus（duck-typed {on,emit}）按白名单接进云事件总线。 */

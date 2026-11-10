@@ -514,4 +514,59 @@ describe('caesura-console-ui (KI-495)', () => {
     expect(dom2.els['bp-structure'].innerHTML).toContain('✓ 真 B+ 树') // 结构照常
     expect(dom2.els['bp-compare'].innerHTML).toContain('data-key="point"') // 三笔账照常
   })
+
+  it('⑱ KI-505 真 mvccTxn 读数落进「隔离×异常矩阵」+「版本链/死锁」两面板（不是写死的数）', async () => {
+    const dom = await runApp(real)
+    const mv = real.systems.mvccTxn
+    // 面板一：五行隔离 × 五类异常热力格，按挡住(玉)/漏掉(酒红)上色 + 中止 chip + 不封全局赢家
+    const matrix = dom.els['mv-matrix'].innerHTML
+    expect(matrix).toContain('mv-matrix-head')
+    for (const l of mv.levels) expect(matrix).toContain('data-lvl="' + l.short + '"')
+    expect(matrix).toContain('data-a="dirtyRead"')
+    expect(matrix).toContain('data-a="writeSkew"')
+    expect(matrix).toContain('class="mv-cell leaked" data-a="writeSkew"') // SI/SER 行里 SER 挡住 → 至少有一格 blocked；writeSkew 在 RU/RC/RR/SI 漏
+    expect(matrix).toContain('class="mv-cell blocked"')                  // SER 全挡 → 有玉格
+    expect(matrix).toContain(String(mv.levels.find((l: any) => l.short === 'SER').aborted))
+    const aborts = dom.els['mv-abort'].innerHTML
+    expect(aborts).toContain('noUniversalWinner')
+    expect(aborts).toContain('不封 Serializable 全局赢家')
+    expect(dom.els['mv-matrix-note'].textContent).toContain('SI 挡住前四类')
+    expect(dom.els['mv-matrix-note'].textContent).toContain('漏写偏斜')
+    // 面板二：死锁 wait-for graph 环 + 牺牲者 + 2PL + 无环探针 + gc 水位对照
+    const dl = dom.els['mv-deadlock'].innerHTML
+    expect(dl).toContain('data-detected="true"')
+    expect(dl).toContain('data-txn="T1"')
+    expect(dl).toContain('DFS 找环')
+    expect(dl).toContain('已放锁解开')
+    expect(dl).toContain('无环图如实报无环')
+    expect(dl).toContain('判 2PL 违规')
+    const gc = dom.els['mv-gc'].innerHTML
+    expect(gc).toContain('data-wm="long"')
+    expect(gc).toContain('data-wm="clean"')
+    expect(gc).toContain(String(mv.gc.longWaterMark.kept))
+    expect(gc).toContain(String(mv.gc.cleanWaterMark.kept))
+    expect(dom.els['mv-deadlock-note'].textContent).toContain('写饥饿是教学边界')
+  })
+
+  it('⑲ KI-505 mvccTxn 整块缺 / 单块缺诚实降级，不连坐 bplusIndex-lsm', async () => {
+    // 整块缺：四子块全降级、绝不画 0/假格；bplusIndex/lsm 仍照常。
+    const noMv = JSON.parse(JSON.stringify(real))
+    noMv.systems.mvccTxn = null
+    const dom = await runApp(noMv)
+    expect(dom.els['mv-matrix'].innerHTML).toContain('无隔离异常矩阵读数')
+    expect(dom.els['mv-abort'].innerHTML).toBe('')
+    expect(dom.els['mv-deadlock'].innerHTML).toContain('无死锁检测读数')
+    expect(dom.els['mv-gc'].innerHTML).toContain('无gc 水位读数')
+    expect(dom.els['mv-matrix-note'].textContent).toContain('systems.mvccTxn 缺失')
+    expect(dom.els['bp-structure'].innerHTML).toContain('✓ 真 B+ 树') // bplusIndex 不连坐
+    expect(dom.els['lsm-gauge'].innerHTML).toContain(String(real.systems.lsm.speedup.toFixed(1))) // lsm 不连坐
+
+    // 单块缺：只降 gc，矩阵/死锁仍渲染真读数（同维不连坐）。
+    const partial = JSON.parse(JSON.stringify(real))
+    partial.systems.mvccTxn.gc = null
+    const dom2 = await runApp(partial)
+    expect(dom2.els['mv-gc'].innerHTML).toContain('无gc 水位读数')
+    expect(dom2.els['mv-matrix'].innerHTML).toContain('data-lvl="RU"') // 矩阵照常
+    expect(dom2.els['mv-deadlock'].innerHTML).toContain('DFS 找环')    // 死锁照常
+  })
 })

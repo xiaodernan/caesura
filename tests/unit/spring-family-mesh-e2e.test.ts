@@ -378,4 +378,30 @@ describe('spring-family-mesh-e2e', () => {
     const plain = await runMeshE2E().run()
     expect(plain.bplusIndexSnapshot).toBe(null)
   })
+
+  it('e2e KI-505：mvccTxn=true ⇒ 主链照常跑通，mvccTxnSnapshot 带五行异常矩阵/死锁环/2PL/gc 证据', async () => {
+    const e = runMeshE2E({ mvccTxn: { gcVersions: 10 }, txnNow: () => 9999 })
+    const r = await e.run()
+    expect(r.started?.registered).toBe(true)          // 主链语义逐字不动
+    expect(r.callRes?.ok).toBe(true)
+    const g = r.mvccTxnSnapshot
+    expect(g).not.toBe(null)
+    expect(g!.builtAt).toBe(9999)
+    expect(g!.levels.length).toBe(5)                   // RU/RC/RR/SI/SER
+    expect(g!.config.anomalies.length).toBe(5)
+    const si = g!.levels.find((l: any) => l.short === 'SI')!
+    const ser = g!.levels.find((l: any) => l.short === 'SER')!
+    expect(si.anomalies.writeSkew.observed).toBe(true) // SI 漏写偏斜
+    expect(si.anomalies.lostUpdate.observed).toBe(false)
+    expect(ser.observedCount).toBe(0)                  // SER 全挡
+    expect(g!.deadlock.detected).toBe(true)
+    expect(g!.deadlock.resolved).toBe(true)
+    expect(g!.deadlock.acyclicProbeNoCycle).toBe(true)
+    expect(g!.twoPhaseLock.lateAcquireBlocked).toBe(true)
+    expect(g!.gc.longTxnRetainsMoreVersions).toBe(true)
+    expect(Object.values(g!.verdict).every(Boolean)).toBe(true)
+    // 未配 mvccTxn 时为 null（非破坏）。
+    const plain = await runMeshE2E().run()
+    expect(plain.mvccTxnSnapshot).toBe(null)
+  })
 })
