@@ -12,6 +12,8 @@
 | Phase D / F4 | 凝固声波目录门：art-direction §1.4 + vfx-soundwave-catalog.test.ts | 2e6c0d9 |
 | Phase F / Spring Cloud | caesura-client 配置客户端 + spring-health-check 探针 + docker-compose | 9abf6c5 |
 | Phase F-2 | spring-config-client（Node.js Config 客户端，4 测试） | 1bffdb1 |
+| Phase F-3 | spring-bus-client（Node.js Bus 客户端，5 测试） | bf490f6 |
+| Phase F-4 | spring-eureka-client（Node.js Eureka 客户端，6 测试） | 551bd2c |
 | KI-407 | coverage 棘轮三出口（0/1/2）全部有测试 + 基线落地 | 07399b9 |
 | Phase C / F3 | Boss 乐句线 HUD：BossPhraseBar.ts + main.ts 接线 + flow 测试 | 08bb3f5 |
 | KI-118 fix | spring-health-check.mjs 移除 shebang（module-loader 门禁） | 0698210 |
@@ -19,7 +21,7 @@
 | Phase 7 F2-第二批 | renderer 分档接口（QualityTargets.renderer） | 96df2f0 |
 | Phase C-2 | BossPhraseBar 单元测试（5 腿） | 4ea4ed0 |
 
-**当前状态**：`npm run check` 全绿：4812 条 / 402 文件，0 红。
+**当前状态**：`npm run check` 全绿：4823 条 / 404 文件，0 红。
 
 ---
 
@@ -27,10 +29,9 @@
 
 ### P1：Spring Cloud 微服务继续扩展
 
-- Spring Cloud Bus 事件总线客户端（Node.js 侧，模拟 /actuator/bus-refresh）
-- Config Server 刷新端点客户端（POST /actuator/refresh）
-- `caesura-gate` 与 Node 侧 `scripts/spring-family-rules.mjs` 的 `serviceTopologyFindings` 已三方一致
-- 可加 `caesura-client` 的配置拉取失败降级测试（模拟 config server 不可用时的退路）
+- spring-config-refresh（综合脚本：先 config-client 拉取，再 bus-client 广播刷新）
+- `caesura-client` 的配置拉取失败降级测试（模拟 config server 不可用时的退路）
+- 更多 Spring Cloud 模式（config server 刷新、bus 事件等）
 
 ### P2：Phase 7 后续
 
