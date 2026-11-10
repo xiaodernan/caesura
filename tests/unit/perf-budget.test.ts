@@ -66,4 +66,47 @@ describe('perf-budget-rules：parseBudgetArgs', () => {
     expect(out.budgetP95).toBe(5)
     expect(out.reportPath).toBe('a.json')
   })
+
+  it('重复 --budget ⇒ 抛错（只允许给一次）', () => {
+    expect(() => parseBudgetArgs(['--budget=5', '--budget=10'])).toThrow(/只允许给一次/)
+  })
+
+  it('重复 --report ⇒ 抛错（只允许给一次）', () => {
+    expect(() => parseBudgetArgs(['--report=a.json', '--report=b.json'])).toThrow(/只允许给一次/)
+  })
+
+  it('未知参数 ⇒ 抛错（fail-closed，不静默吞）', () => {
+    expect(() => parseBudgetArgs(['--timeout=30'])).toThrow(/不认识的参数/)
+    expect(() => parseBudgetArgs(['--budget=5', '--verbose'])).toThrow(/不认识的参数/)
+    expect(() => parseBudgetArgs(['positional'])).toThrow(/不认识的参数/)
+  })
+
+  it('--budget=0 与 --budget=-1 ⇒ 抛错（必须正数）', () => {
+    expect(() => parseBudgetArgs(['--budget=0'])).toThrow()
+    expect(() => parseBudgetArgs(['--budget=-5'])).toThrow()
+  })
+
+  it('--budget=NaN / --budget=Infinity ⇒ 抛错', () => {
+    expect(() => parseBudgetArgs(['--budget=abc'])).toThrow()
+    expect(() => parseBudgetArgs(['--budget=Infinity'])).toThrow()
+  })
+
+  it('budget 值是字符串形式的数字 ⇒ 解析为 number', () => {
+    expect(parseBudgetArgs(['--budget=5.5']).budgetP95).toBe(5.5)
+  })
+
+  it('--budget= 空 ⇒ 抛错（没有数字）', () => {
+    expect(() => parseBudgetArgs(['--budget='])).toThrow()
+  })
+
+  it('--report= 空路径 ⇒ 原样传返回（不炸；路径存在性由调用方 / 写入点错）', () => {
+    // 故意不要求 here：写入点自己可决定是否拒绝空路径
+    expect(parseBudgetArgs(['--report=']).reportPath).toBe('')
+  })
+
+  it('argv 顺序不重要：先 --report 后 --budget 一样能解析', () => {
+    const out = parseBudgetArgs(['--report=a.json', '--budget=7'])
+    expect(out.reportPath).toBe('a.json')
+    expect(out.budgetP95).toBe(7)
+  })
 })

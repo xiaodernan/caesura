@@ -28,19 +28,27 @@ export function budgetFindings(reading, budgetP95) {
 /**
  * 从 argv 读出 --budget=<ms> 与 --report=<path>。
  * 返回 { budgetP95?: number, reportPath?: string } — 缺省时字段未定义，旧行为逐字节保持。
- * budgetP95 非法 ⇒ 抛异常（调用方决定 exit 2）。
+ * 任何重复 flag 或未知参数 ⇒ 抛异常（fail-closed；调用方决定 exit 2）。
  */
 export function parseBudgetArgs(argv) {
   const out = {}
   for (const a of argv) {
     if (a.startsWith('--budget=')) {
+      if (out.budgetP95 !== undefined) {
+        throw new Error(`--budget 只允许给一次，拿到了第二个：${JSON.stringify(a)}`)
+      }
       const v = Number(a.slice('--budget='.length))
       if (!Number.isFinite(v) || v <= 0) {
         throw new Error(`--budget=<ms> 必须是正数，拿到了：${JSON.stringify(a)}`)
       }
       out.budgetP95 = v
     } else if (a.startsWith('--report=')) {
+      if (out.reportPath !== undefined) {
+        throw new Error(`--report 只允许给一次，拿到了第二个：${JSON.stringify(a)}`)
+      }
       out.reportPath = a.slice('--report='.length)
+    } else {
+      throw new Error(`不认识的参数：${JSON.stringify(a)}；只认 --budget=<ms> 与 --report=<path>`)
     }
   }
   return out
