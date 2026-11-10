@@ -126,6 +126,16 @@ export class ColorGrade {
     this.apply()
   }
 
+  /**
+   * F1 后处理链接口：画质失谐乘数（`1 - veil`，供 Material pass 消费）。
+   * 失谐 0 ⇒ 1（原样），失谐 1 ⇒ 0.7（按 VEIL_BRIGHTNESS_SLOPE 的下限），
+   * 与 `gradeFilter` 里的亮度斜率同一条口径。画布上的 `canvas.style.filter`
+   * 已归零（见 `apply()`），此乘数由后处理 pass 读取。
+   */
+  colorGradePass(): number {
+    return 1 - this.veil * VEIL_BRIGHTNESS_SLOPE
+  }
+
   /** 当前生效的雾密度；表里这一行没给 `fogDensity` 时返回 null（= 雾保持场景建好时的样子） */
   fogDensity(): number | null {
     return this.row()?.fogDensity ?? null
