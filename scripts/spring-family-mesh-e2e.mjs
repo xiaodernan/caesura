@@ -87,16 +87,25 @@ export function runMeshE2E(opts = {}) {
       const offStarted = gc.events.onGameEvent('game.started', (p) => gameEvents.push({ type: 'game.started', payload: p }))
       const offStopped = gc.events.onGameEvent('game.stopped', (p) => gameEvents.push({ type: 'game.stopped', payload: p }))
 
-      // KI-488②：调用前经鉴权守卫校验 Bearer；缺域/过期则短路，不发起下游调用。
+      // KI-488② / KI-490：调用前经鉴权守卫校验 Bearer；缺域/过期/在线判拒则短路，不发起下游调用。
+      //   opts.onlineAuth 给了就走 RFC 7662 在线校验（可注入 fetch/policy），否则纯本地快速路径。
       let auth = null
       if (opts.bearer !== null) {
         const bearer = opts.bearer ?? demoBearer()
         const requiredScope = opts.requiredScope ?? 'game:call'
-        try {
-          const claims = gc.auth.authenticate(bearer)
-          auth = { ok: true, sub: claims.sub, scope: claims.scope, allowed: gc.auth.canAccess(claims, requiredScope), requiredScope }
-        } catch (e) {
-          auth = { ok: false, reason: e.message, allowed: false, requiredScope }
+        if (opts.onlineAuth) {
+          const v = await gc.auth.authorizeOnline(bearer, { requiredScopes: [requiredScope], ...opts.onlineAuth })
+          auth = {
+            ok: v.ok, allowed: v.ok, source: v.source, degraded: !!v.degraded, reason: v.reason,
+            sub: v.claims?.sub, scope: v.claims?.scope, requiredScope,
+          }
+        } else {
+          try {
+            const claims = gc.auth.authenticate(bearer)
+            auth = { ok: true, source: 'local', sub: claims.sub, scope: claims.scope, allowed: gc.auth.canAccess(claims, requiredScope), requiredScope }
+          } catch (e) {
+            auth = { ok: false, source: 'local', reason: e.message, allowed: false, requiredScope }
+          }
         }
       }
 

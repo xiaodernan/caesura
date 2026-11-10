@@ -20,7 +20,7 @@
 └───────────────────────────────┬──────────────────────────────────────┘
                                   │ createGameCloud({...}).start()
 ┌─────────────────────────────────▼─────────────────────────────────────┐
-│  caesura-game-cloud  （开箱即用云入口，KI-478/484/485/489）              │
+│  caesura-game-cloud  （开箱即用云入口，KI-478/484/485/489/490）          │
 │    start / call / proxyCall / shutdown / status                         │
 │    + events（KI-484 云事件总线）· auth（KI-485 鉴权守卫）                │
 │    + connectGameBus（KI-489 事件桥，shutdown 自动退桥）                   │
@@ -41,6 +41,7 @@
 │   · 安全/契约   : spring-cloud-security-oauth2 · spring-cloud-vault · spring-cloud-contract        │
 │                  · caesura-auth-guard（KI-485 鉴权守卫）/ caesura-event-bus（KI-484 事件总线）     │
 │                  · caesura-game-event-bridge（KI-489 真 EventBus↔云 桥，依赖注入）                 │
+│                  · caesura-auth-guard.authorizeOnline（KI-490 RFC 7662 introspection 在线校验）   │
 │   · 任务/函数   : spring-cloud-task · spring-cloud-function · spring-cloud-stream · openfeign     │
 │   · 总线/健康   : spring-bus-client · spring-health-check · spring-mesh-health                     │
 │   · K8s         : spring-cloud-kubernetes-client（KI-479，configMap+endpoints→mesh 实例）         │
@@ -105,6 +106,12 @@ gc.connectGameBus(bus, [                                     // KI-489：白名�
 ])
 const claims = gc.auth.authenticate(token)                  // KI-485：Bearer 解析+过期+作用域
 if (gc.auth.canAccess(claims, 'game:call')) { /* ... */ }
+// KI-490：需要在线吊销/不透明令牌时，改走 introspection（判定权仍在你手里）：
+// const v = await gc.auth.authorizeOnline(token, {
+//   introspectionUrl: 'http://idp/oauth2/introspect', fetch: myFetch,
+//   policy: 'fail-closed',   // 端点挂了默认拒；显式 'fail-open' 才降级放行并标 degraded
+// })                          // → { ok, source:'local'|'introspection', claims, reason, degraded? }
+//                              // 不透明 Bearer（非 JWT）有端点时穿过本地、由 IdP 裁决 sub/scope
 // gc.events.publishGameEvent('game.saved', {...})           // KI-484：云侧发事件
 // shutdown() 会自动退桥，不留悬挂订阅
 ```
@@ -127,9 +134,10 @@ node scripts/spring-family-mesh-e2e.mjs
 - `eventTypes` = `["game.started","game.stopped"]` —— 事件总线真收到生命周期事件（KI-484）；
 - `authOK/authAllowed` —— 鉴权守卫校验带 scope 的 Bearer 放行（KI-485）；
 - `retryCount` —— filter 链重试计数（KI-486/487，注入 `retryAttempts`+flaky transport 时 >0）；
-- 注入 `gameBus` 时 `gameBridge` 证真游戏事件过桥、`bridgeOff` 证退桥无悬挂订阅（KI-489）。
+- 注入 `gameBus` 时 `gameBridge` 证真游戏事件过桥、`bridgeOff` 证退桥无悬挂订阅（KI-489）；
+- 注入 `onlineAuth:{introspectionUrl,fetch,policy}` 时 `auth` 证在线校验：active 放行 / inactive 短路拒调 / 端点挂 fail-open 降级放行、fail-closed 拒（KI-490）。
 
-对应 `tests/unit/spring-family-mesh-e2e.test.ts`（9 腿）。
+对应 `tests/unit/spring-family-mesh-e2e.test.ts`（10 腿）。
 
 ## 6. 边界与「不声称」
 
@@ -139,4 +147,5 @@ node scripts/spring-family-mesh-e2e.mjs
 - 不声称进程内熔断跨进程共享——每进程内存一只，按服务名隔离。
 - 不声称 filter 链接了真 Resilience4j/Redis——CircuitBreaker/RateLimit 全进程内内存实现，Retry 不做幂等去重。
 - 不声称鉴权守卫验了签——`caesura-auth-guard` 只解析 JWT claims/过期/作用域，签名校验归网关/资源服务端。
+- 不声称在线校验缓存了结果或接了真 IdP——KI-490 `authorizeOnline` 每次调用都打 introspection 端点（fetch 可注入、默认进程内），不缓存/不重放；`fail-open` 只在调用方显式选择时降级放行，缺省一律 `fail-closed`。
 - 不声称事件桥 import 了浏览器 `src/`——`caesura-game-event-bridge` 依赖注入两只 duck-typed bus，永不反向依赖；默认空路由零转发，载荷原样透传不校验。

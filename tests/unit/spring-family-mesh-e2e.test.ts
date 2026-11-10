@@ -79,6 +79,46 @@ describe('spring-family-mesh-e2e', () => {
     expect(tries).toBe(3)
   })
 
+  it('e2e KI-490：onlineAuth 走 introspection 在线判；active 放行/inactive 拒/端点挂 fail-open 降级', async () => {
+    const calls: any[] = []
+    const transport = async (t: any, p: string) => { calls.push(p); return { path: p } }
+    const bearer = 'Bearer opaque-token'
+    const activeFetch = async () => ({ ok: true, status: 200, json: async () => ({ active: true, scope: 'game:call' }) }) as any
+    const inactiveFetch = async () => ({ ok: true, status: 200, json: async () => ({ active: false }) }) as any
+    const deadFetch = async () => { throw new Error('ECONNREFUSED') }
+
+    const rActive = await runMeshE2E({
+      bearer, transport, requiredScope: 'game:call',
+      onlineAuth: { introspectionUrl: 'http://idp/introspect', fetch: activeFetch, policy: 'fail-closed' },
+    }).run()
+    expect(rActive.auth).toMatchObject({ ok: true, allowed: true, source: 'introspection' })
+    expect(rActive.callRes?.ok).toBe(true)
+
+    const rInactive = await runMeshE2E({
+      bearer, transport, requiredScope: 'game:call',
+      onlineAuth: { introspectionUrl: 'http://idp/introspect', fetch: inactiveFetch, policy: 'fail-closed' },
+    }).run()
+    expect(rInactive.auth).toMatchObject({ ok: false, reason: 'inactive' })
+    expect(rInactive.callRes?.reason).toBe('forbidden')
+
+    const callsBefore = calls.length
+    const rOpen = await runMeshE2E({
+      bearer, transport, requiredScope: 'game:call',
+      onlineAuth: { introspectionUrl: 'http://idp/introspect', fetch: deadFetch, policy: 'fail-open' },
+    }).run()
+    expect(rOpen.auth).toMatchObject({ ok: true, source: 'local', degraded: true, reason: 'introspection_unavailable' })
+    expect(rOpen.callRes?.ok).toBe(true)
+    expect(calls.length).toBe(callsBefore + 1) // 降级放行后真发起了下游调用
+
+    const rClosed = await runMeshE2E({
+      bearer, transport, requiredScope: 'game:call',
+      onlineAuth: { introspectionUrl: 'http://idp/introspect', fetch: deadFetch, policy: 'fail-closed' },
+    }).run()
+    expect(rClosed.auth).toMatchObject({ ok: false, source: 'introspection', degraded: true })
+    expect(rClosed.callRes?.reason).toBe('forbidden')
+    expect(calls.length).toBe(callsBefore + 1) // fail-closed 没发起调用
+  })
+
   it('e2e KI-489：注入真 EventBus 形状的 gameBus ⇒ 游戏事件过桥到云总线、shutdown 退桥', async () => {
     const handlers = new Map<string, Set<Function>>()
     const gameBus = {
