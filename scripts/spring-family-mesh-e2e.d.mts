@@ -17,5 +17,9 @@ export function runMeshE2E(opts?: any): {
     auth: { ok: boolean; allowed: boolean; sub?: string; scope?: string; requiredScope: string; reason?: string } | null
     /** KI-488③：filter 链计数（retries/rateLimited/passed 等） */
     filterStats: any
+    /** KI-489：注入 gameBus 时的桥接证据（installed/stats/crossed 过桥载荷） */
+    gameBridge: any
+    /** KI-489：shutdown 时退桥读数 */
+    bridgeOff: any
   }>
 }

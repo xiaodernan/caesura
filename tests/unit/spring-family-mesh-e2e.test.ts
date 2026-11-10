@@ -78,4 +78,23 @@ describe('spring-family-mesh-e2e', () => {
     expect(r.filterStats.retries).toBe(2)
     expect(tries).toBe(3)
   })
+
+  it('e2e KI-489：注入真 EventBus 形状的 gameBus ⇒ 游戏事件过桥到云总线、shutdown 退桥', async () => {
+    const handlers = new Map<string, Set<Function>>()
+    const gameBus = {
+      on: (k: string, fn: Function) => {
+        if (!handlers.has(k)) handlers.set(k, new Set())
+        handlers.get(k)!.add(fn)
+        return () => handlers.get(k)?.delete(fn)
+      },
+      emit: (k: string, p: any) => { for (const fn of [...(handlers.get(k) ?? [])]) fn(p) },
+    }
+    const e = runMeshE2E({ gameBus, transport: async (t: any, p: string) => ({ path: p }) })
+    const r = await e.run()
+    expect(r.gameBridge?.installed.installed).toBe(true)
+    expect(r.gameBridge?.stats.forward).toBe(1)
+    expect(r.gameBridge?.crossed).toEqual({ id: 'e2e-boss', phase: 2, phases: 3, nameKey: 'boss.x' })
+    expect(r.bridgeOff?.removed).toBe(2) // 1 条 game→cloud + 1 条 cloud→game
+    expect(handlers.get('boss.phase')?.size).toBe(0) // 退桥后无悬挂订阅
+  })
 })

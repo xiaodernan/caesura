@@ -138,6 +138,7 @@ Phase B4 的三件套此前是"有人听、没人说"。
 | ✅ KI-486 | **Spring Cloud Gateway 三只内置 filter handler + 可重入 filter 链（Node.js 侧，`spring-gateway-filter-handlers.mjs` + `spring-gateway-matcher.mjs` 扩展）**（工程，2026-11-11 已落，详见账本 KI-486） | KI-486 |
 | ✅ KI-487 | **集大成运行时 call 接入完整网关 filter 链（Node.js 侧，`caesura-cloud-runtime.mjs` 扩展）**（工程，2026-11-11 已落，详见账本 KI-487） | KI-487 |
 | ✅ KI-488 | **集大成端到端主链覆盖事件+鉴权+filter 链（Node.js 侧，`spring-family-mesh-e2e.mjs` 扩展）**（工程，2026-11-11 已落，详见账本 KI-488） | KI-488 |
+| ✅ KI-489 | **游戏真 EventBus ↔ 云事件总线桥接件（Node.js 侧，`caesura-game-event-bridge.mjs`；`createGameCloud().connectGameBus` 一行接线，shutdown 自动退桥）**（工程，2026-11-11 已落，详见账本 KI-489） | KI-489 |
 
 
 

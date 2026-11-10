@@ -17,6 +17,7 @@ import { createCloudRuntime } from './caesura-cloud-runtime.mjs'
 import { createServiceProxy } from './caesura-service-proxy.mjs'
 import { createGameEventBus } from './caesura-event-bus.mjs'
 import { createAuthGuard } from './caesura-auth-guard.mjs'
+import { createGameEventBridge } from './caesura-game-event-bridge.mjs'
 
 /**
  * 创建一只游戏侧开箱即用云。
@@ -52,11 +53,22 @@ export function createGameCloud(opts = {}) {
   })
   const auth = createAuthGuard({ requiredScopes: opts.requiredScopes })
 
+  // KI-489 游戏真 EventBus ↔ 云事件总线桥：gameBridgeRoutes 给了才建；shutdown 自动退桥，避免悬挂订阅。
+  let bridge = null
+  function connectGameBus(gameBus, routes) {
+    if (bridge) bridge.uninstall()
+    bridge = createGameEventBridge({ gameBus, cloudBus: events, routes, onEvent: opts.onBridgeEvent })
+    return bridge.install()
+  }
+
   return {
     runtime,
     proxy,
     events,
     auth,
+    /** 把游戏真 EventBus 按白名单routes 接进云事件总线（游戏侧一行：gc.connectGameBus(bus, routes)）。 */
+    connectGameBus,
+    bridge: () => bridge,
     /** 拉起：注册游戏实例、广播 lifecycle/runtime 事件、启用网关与追踪、发 game.started 事件。 */
     async start() {
       const r = await runtime.bootstrap()
@@ -67,11 +79,12 @@ export function createGameCloud(opts = {}) {
     async call(serviceName, path, init) { return runtime.call(serviceName, path, init) },
     /** 韧性调用（runtime.call + 按服务隔离的进程内熔断）。 */
     async proxyCall(serviceName, path, init) { return proxy.call(serviceName, path, init) },
-    /** 关停：注销游戏实例 + 广播 stopped + 发 game.stopped 事件。 */
+    /** 关停：退桥 + 注销游戏实例 + 广播 stopped + 发 game.stopped 事件。 */
     async shutdown() {
+      const bridgeOff = bridge ? bridge.uninstall() : null
       const r = await runtime.shutdown()
       await events.publishGameEvent('game.stopped', { gameId, gameName })
-      return r
+      return { ...r, bridgeOff }
     },
     /** 汇总：游戏状态 + 已聚合服务 + 路由数 + 事件频道 + 鉴权作用域。 */
     async status() {

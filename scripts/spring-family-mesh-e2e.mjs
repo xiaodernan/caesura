@@ -67,6 +67,16 @@ export function runMeshE2E(opts = {}) {
     filters,
   })
 
+  // KI-489：注入 gameBus（duck-typed 真 EventBus 形状）时，把游戏事件按白名单桥进云事件总线。
+  let bridge = null
+  if (opts.gameBus) {
+    const routes = opts.gameBridgeRoutes ?? [
+      { from: 'game', key: 'boss.phase', type: 'game.boss.phase' },
+      { from: 'cloud', type: 'remote.notice', key: 'ui.notify' },
+    ]
+    bridge = { routes, installed: gc.connectGameBus(opts.gameBus, routes) }
+  }
+
   return {
     gc,
     k8s,
@@ -91,6 +101,16 @@ export function runMeshE2E(opts = {}) {
       }
 
       const boot = await gc.start()
+
+      // KI-489：桥装好后，若注入了 gameBus，模拟一次真游戏事件 emit，看它是否过桥到云总线。
+      let crossed = null
+      if (bridge?.installed?.installed && typeof opts.gameBus?.emit === 'function') {
+        const offCross = gc.events.onGameEvent('game.boss.phase', (p) => { crossed = p })
+        opts.gameBus.emit('boss.phase', { id: 'e2e-boss', phase: 2, phases: 3, nameKey: 'boss.x' })
+        await Promise.resolve() // publishGameEvent 是异步 fire-and-forget
+        offCross()
+      }
+
       let callRes
       if (auth && !auth.allowed) {
         callRes = { ok: false, reason: 'forbidden', error: new Error(`auth: missing scope ${auth.requiredScope}`) }
@@ -106,6 +126,8 @@ export function runMeshE2E(opts = {}) {
       return {
         started: boot.started, callRes, status, stopped: shut.stopped, spans, services: status.services,
         events: gameEvents, auth, filterStats,
+        gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
+        bridgeOff: shut.bridgeOff ?? null,
       }
     },
   }

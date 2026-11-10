@@ -67,9 +67,10 @@
 | KI-483 | docs/spring-cloud-mesh.md：集大成微服务网格合成地图 | e717d97 |
 | KI-484 | caesura-event-bus：按 type 分发的游戏事件总线（5 腿） | 5e618da |
 | KI-485 | caesura-auth-guard：游戏鉴权守卫（5 腿） | 5e618da |
-| KI-486 | spring-gateway-filter-handlers：Retry/RateLimit/CircuitBreaker handler + 可重入链（8+2 腿） | 待提交 |
-| KI-487 | caesura-cloud-runtime.call 接入完整 filter 链（+3 腿） | 待提交 |
-| KI-488 | spring-family-mesh-e2e 主链覆盖 events+auth+retry（+3 腿） | 待提交 |
+| KI-486 | spring-gateway-filter-handlers：Retry/RateLimit/CircuitBreaker handler + 可重入链（8+2 腿） | 58abd33 |
+| KI-487 | caesura-cloud-runtime.call 接入完整 filter 链（+3 腿） | 58abd33 |
+| KI-488 | spring-family-mesh-e2e 主链覆盖 events+auth+retry（+3 腿） | 58abd33 |
+| KI-489 | caesura-game-event-bridge：游戏真 EventBus ↔ 云事件总线桥（8+1+1 腿，connectGameBus 一行接线） | 待提交 |
 
 **当前状态**：分支/工作簿并轨已核验——`git branch -a` 仅 `master` 与 `origin/master`，`git stash list` 为空，`git worktree list` 仅本树。Spring Cloud 家族 Node 侧客户端现约 35 件（KI-460~488 续扩：task/function/contract/mesh-registry/mesh-adapter/resilience-breaker/cloud-runtime/service-proxy/gateway-matcher/gateway-filter-handlers/sleuth-tracer/game-cloud/game-event-bus/game-auth-guard/kubernetes-client/config-aggregator/family-mesh-e2e/game-bootstrap 等），累计单测全绿；`tsc --noEmit` 干净（codex-global pre-commit 沙箱仅 hook 后网络步挂起，已用 `SKIP_HOOKS=1` 绕过，tsc 自身独立验证 0 错）。本沙箱 `npm run check` 仍有环境相关失败（缺 `.scratch` 目录、`\\?\` 临时路径解析、`scripts/...` 裸说明符解析），与改动无关。`decl-parity`(20)+`phase-status`(14)+`doc-audit`(15)+`import-targets`(15) 门全绿（本轮顺带修绿 doc-audit 历史红门：账本严重度列 P5/P6/P7 误填阶段号→归一 P4，KI-460~485 补进 WORKPLAN 批格）；账本 KI.rows=409 / Implemented=232 与 PHASE-STATUS KV 一致。集大成主线闭环并产出证据：`node scripts/spring-family-mesh-e2e.mjs` 一行即可证「游戏注册 → 事件总线发 game.started → 鉴权守卫校验带 scope Bearer → 经网关 filter 链(Retry 等)+负载均衡(命中 K8s 发现的 caesura-gate)+起 span+进程内熔断的调用 → mesh 状态含 self/eureka/k8s 三来源 → 关停发 game.stopped」，配套 `docs/spring-cloud-mesh.md` 合成地图与 `caesura-game-bootstrap` 桥接件（游戏 src/ 一行 `bridge.install(game)` 即完成真集成，无需改构建）。
 
@@ -125,7 +126,8 @@
 - ~~Gateway Retry/RateLimit filter 可用化并接进 call~~ ✅ 完成（KI-486 可重入链+三 handler / KI-487 call 接完整 filter 链）。
 - 更多 VFX/Boss 相关流程测试（原 P2 遗留，未开工）。
 - `docs/perf-baseline.md` 持续完善（未开工）。
-- （下一步候选）Gateway filter 链补 RequestHeaderSize / 灰度权重 filter；事件总线接真 `core/EventBus`（`GameEvents` 载荷）替换内存 binder；鉴权守卫接 introspection 端点做在线校验。
+- ~~事件总线接真 `core/EventBus`（`GameEvents` 载荷）~~ ✅ 完成（KI-489 依赖注入桥，不 import 浏览器 src/，`gc.connectGameBus(bus, routes)` 一行接线）。
+- （下一步候选）Gateway filter 链补 RequestHeaderSize / 灰度权重 filter；鉴权守卫接 introspection 端点做在线校验；`docs/spring-cloud-mesh.md` 补 KI-484~489 新层（事件桥/鉴权/filter 链）。
 - 覆盖率稳步抬升；任何新腿开工前先有 KI 行。
 
 ---
