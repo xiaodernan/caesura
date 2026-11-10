@@ -204,14 +204,14 @@ describe('spring-gateway-route：动态路由表（进程内热加载）', () =>
     fs.writeFileSync(file, JSON.stringify([{ id: 'r1', uri: 'lb://service-1', order: 0 }]))
 
     const table = createRouteTable()
-    const bus = createBus()
+    const evbus = createBus()
     const events: Array<{ added: string[]; removed: string[] }> = []
-    bus.subscribe('route.changed', (...args: unknown[]) => {
+    evbus.subscribe('route.changed', (...args: unknown[]) => {
       const [added, removed] = args as [string[], string[]]
       events.push({ added, removed })
     })
 
-    const stop = watchRoutes(table, file, 60, undefined, bus)
+    const stop = watchRoutes(table, file, 60, undefined, evbus)
     expect(table.list().map((r) => r.id)).toEqual(['r1'])
 
     // 追加 r2 并改写 routes.json → 应该触发 route.changed
@@ -223,7 +223,7 @@ describe('spring-gateway-route：动态路由表（进程内热加载）', () =>
     return new Promise<void>((resolve, reject) => {
       setTimeout(() => {
         stop()
-        bus.close()
+        evbus.close()
         fs.rmSync(tmpDir, { recursive: true })
         try {
           expect(events.length).toBe(1)
