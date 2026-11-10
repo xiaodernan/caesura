@@ -61,16 +61,16 @@ describe('spring-config-bus：Config Server + Bus + Client 端到端（Node 侧�
     expect((before as Record<string, any>)['server.port']).toBe(8081)
     expect((before as Record<string, any>)['_configError']).toBeUndefined()
     // 3) Bus + watcher：配置文件变化时发布 config.changed
-    const bus = createBus()
-    buses.add(bus)
+    const evbus = createBus()
+    buses.add(evbus)
     const received: Array<{ name: string; config: Record<string, any> }> = []
-    bus.subscribe('config.changed', (...args: unknown[]) => {
+    evbus.subscribe('config.changed', (...args: unknown[]) => {
       const [name, config] = args as [string, Record<string, any>]
       received.push({ name, config })
     })
 
     const stop = startConfigWatcher(configs, dir, 50, (name, cfg) => {
-      bus.publish('config.changed', name, cfg)
+      evbus.publish('config.changed', name, cfg)
     })
 
     // 4) 修改配置文件（点式键——Spring Cloud 本身也这么存）
