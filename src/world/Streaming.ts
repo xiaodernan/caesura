@@ -29,8 +29,12 @@ const REGION_ADJACENCY_EPS = 1e-6
 export interface StreamingOptions {
   /** ring（cell 单位的 Chebyshev 距离）内为玩法激活格 */
   activateRing: number
+  /** 画质档位乘数（QualityStore.profile().activateRingBonus）：一次性叠加在 activateRing 上，构造后不再改 */
+  activateRingBonus: number
   /** 预载圈（§5.5「2 圈预载」）：与激活圈共用一条加载队列，只到 resident 态 */
   preloadRing: number
+  /** 画质档位乘数（QualityStore.profile().preloadRingBonus）：一次性叠加在 preloadRing 上，构造后不再改 */
+  preloadRingBonus: number
   /** 卸载圈（§5.5「3 圈卸载」）：超出该圈且持续 unloadDebounceTicks 才卸载 */
   unloadRing: number
   /** 2s @60Hz */
@@ -45,7 +49,9 @@ export interface StreamingOptions {
 
 export const DEFAULT_OPTIONS: StreamingOptions = {
   activateRing: 1,
+  activateRingBonus: 0,
   preloadRing: 2,
+  preloadRingBonus: 0,
   unloadRing: 3,
   unloadDebounceTicks: 120,
   loadTicks: 3,
@@ -102,7 +108,15 @@ export class StreamingSystem {
     if (sizes.size !== 1) throw new Error(`Streaming: regions disagree on chunkSize (${[...sizes].join(',')})`)
     this.regions = regions
     this.chunkSize = [...sizes][0]
-    this.options = { ...DEFAULT_OPTIONS, ...options }
+    // 激活环与预载圈：DEFAULT_OPTIONS 的基数 + 画质档位乘数（构造期一次性叠加，不再每帧重算）
+    const activateRingBonus = options?.activateRingBonus ?? 0
+    const preloadRingBonus = options?.preloadRingBonus ?? 0
+    this.options = {
+      ...DEFAULT_OPTIONS,
+      ...options,
+      activateRing: DEFAULT_OPTIONS.activateRing + activateRingBonus,
+      preloadRing: DEFAULT_OPTIONS.preloadRing + preloadRingBonus,
+    }
     this.offFlag = bus.on('world.flag', (f) => {
       const truthy = f.value !== false && f.value !== 0 && f.value !== ''
       if (truthy) { if (!this.flags.has(f.key)) { this.flags.add(f.key); this.invalidate() } }

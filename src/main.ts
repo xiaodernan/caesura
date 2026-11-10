@@ -375,7 +375,13 @@ const haptics = new Haptics(input)
 
 const missingRefs = StreamingSystem.collectMissingRefs(regions, (id) => registry.has(id))
 if (missingRefs.length) bus.emit('log', { level: 'warn', msg: `MissingRef: ${missingRefs.join(', ')}` })
-const streaming = new StreamingSystem(regions)
+/** Phase 7 F2：画质档的宿主。构造即灌默认档（2＝高，与今天逐字一致）；
+   读档经 `SaveGame.apply` 落到 `quality?.apply`（信任边界在 QualityStore 里，老档缺块不动）。 */
+const qualityStore = new QualityStore({ particles: { spawnMul: 1 } })
+const streaming = new StreamingSystem(regions, {
+  activateRingBonus: qualityStore.profile().activateRingBonus,
+  preloadRingBonus: qualityStore.profile().preloadRingBonus,
+})
 streaming.teleport(0, player.pos) // 起始区同步加载（§5.5 传送遮蔽等价物）
 const homeRegion = streaming.regionAt(player.pos)
 /**
@@ -1087,9 +1093,6 @@ const saveBackup = typeof indexedDB === 'undefined' ? null : new IdbStore('caesu
 const gameplayStore = new GameplaySettingsStore({ input, rig, haptics, combat, player })
 /** KI-336：键位表的宿主（消费者只有 `Input` 一个——两条通道一起换才不会出现半张新表） */
 const bindingsStore = new BindingsStore({ input })
-/** Phase 7 F2：画质档的宿主。构造即灌默认档（2＝高，与今天逐字一致）；
-   读档经 `SaveGame.apply` 落到 `quality?.apply`（信任边界在 QualityStore 里，老档缺块不动）。 */
-const qualityStore = new QualityStore({ particles: { spawnMul: 1 } })
 /**
  * 存档时刻的墙钟只在这里给（KI-025①）：逻辑层不许自己读 `Date`，否则每次跑测都会写出不同的档，
  * 而"摘要卡上的时间是从外面带进来的"这条也就没有证人。

@@ -11,46 +11,35 @@
 | Phase B / F1 | ColorGrade.colorGradePass 失谐乘数接口 | e8e5829 |
 | Phase D / F4 | 凝固声波目录门：art-direction §1.4 + vfx-soundwave-catalog.test.ts | 2e6c0d9 |
 | Phase F / Spring Cloud | caesura-client 配置客户端 + spring-health-check 探针 + docker-compose | 9abf6c5 |
+| KI-407 | coverage 棘轮三出口（0/1/2）全部有测试 | (已在 9abf6c5 前完成) |
+| Phase C / F3 | Boss 乐句线 HUD：BossPhraseBar.ts + main.ts 接线 + flow 测试 | 08bb3f5 |
+| KI-118 fix | spring-health-check.mjs 移除 shebang（module-loader 门禁） | 0698210 |
 
-**当前状态**：`npm run check` 全绿：4790 条 / 398 文件，0 红。
+**当前状态**：`npm run check` 全绿：4797 条 / 399 文件，0 红。
 
 ---
 
 ## 进行中 / 待开工（按优先级）
 
-### Phase C —— F3 Boss 乐句线 HUD（ui-visible，headless 可证部分）
+### Phase 7 F2 第二批 —— Streaming ring 接线 + renderer 分档（头部优先）
 
-**目标**：`hud.bossPhrase(bar_beat, phraseIdx, total)` 的显示层。
+**Streaming ring**：`QualityStore.profile().activateRingBonus` / `preloadRingBonus` 接进 `StreamingSystem` 构造（一次性读，不每帧重算）。组合根归零覆盖率挡住直接改 `main.ts`，需先量。
 
 落点：
-1. `src/ui/BossPhraseBar.ts` —— 零 game 依赖，只读渲染器，订阅 `ui.notify`/`boss.phase`/`beats`
-2. `src/main.ts` —— 组合根接线（BossPhraseBar 构造、bus 订阅）
-3. `tests/flow/boss-phrase-hud.test.ts` —— 真 AISystem + 真 RhythmClock + tickFrame 发 tick，量渲染输入
-
-还欠：Boss 乐句线数据源（来自 `boss.phase` 事件，已由 `Settlement` 发出），HUD 右侧中条位置。
-
----
-
-### Phase 7 F2 第二批 —— Streaming ring 接线 + renderer 分档
-
-**Streaming ring**：`QualityStore.profile().activateRingBonus`/`preloadRingBonus` 接进 `StreamingSystem` 构造（一次性读，不每帧重算）。组合根归零覆盖率挡住直接改 `main.ts`，需先量。
+1. `src/world/Streaming.ts` —— 构造参数新增 `activateRingBonus` / `preloadRingBonus`（数字，cell 单位）
+2. `src/main.ts` —— 组合根把 `QualityStore.profile().activateRingBonus` 灌进 `StreamingSystem`
+3. `tests/unit/streaming-ring.test.ts` —— 验证 ring bonus 被正确读取并应用
 
 **renderer 分档**：`ColorGrade`/`VfxLayer`/`SceneLights` 按 `QUALITY_PROFILES[t].resolutionScale`/`shadowMapSize` 分档。今日无真 WebGL，headless 跳过断言，只留契约。
 
 ---
 
-### Phase E —— KI-407 coverage 棘轮（已完成，40/40）
+### 后续候选（选做，不阻塞主线）
 
-`scripts/coverage.mjs` 三出口（0/1/2）全部有测试，`scripts/coverage-floor.json` 基线已建。
-
----
-
-## 后续候选（选做，不阻塞主线）
-
-- F3 之后：`src/ui/Stakerite.ts` 加「画质档位」已完成（Phase A），可再加「覆盖率看板」行（读 `scripts/coverage.mjs` 输出）
 - Spring Cloud：`caesura-gate` 与 Node 侧 `scripts/spring-family-rules.mjs` 的 `serviceTopologyFindings` 已三方一致，可再加 `caesura-client` 的配置拉取失败降级测试
-- `docs/technical-architecture.md`：加 `src/ui/BossPhraseBar.ts` 与 `src/vfx/ColorGrade.ts#colorGradePass` 的文件地图行
-- KI-407 之外：`npm run coverage` 真跑基线（--bless）并提交 `scripts/coverage-floor.json` 更新
+- `docs/technical-architecture.md`：加 `src/ui/BossPhraseBar.ts` 与 `src/vfx/ColorGrade.ts#colorGradePass` 的文件地图行（已部分完成）
+- KI-407：`npm run coverage -- --bless` 真跑基线并提交 `scripts/coverage-floor.json` 更新
+- `src/ui/Stakerite.ts` 加「覆盖率看板」行（读 `scripts/coverage.mjs` 输出）
 
 ---
 
