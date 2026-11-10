@@ -148,6 +148,7 @@ Phase B4 的三件套此前是"有人听、没人说"。
 | ✅ KI-496 | **数据库性能 / 数据结构教学件：LSM 风格存储引擎（P8 数据库性能维度；新 `caesura-lsm-store.mjs`：memtable 跳表 + Bloom filter + WAL 预写日志 + SSTable 稀疏索引 + leveled compaction，附与线性扫描对照的点查性能证据）**（工程，2026-11-11 已落，详见账本 KI-496） | KI-496 |
 | ✅ KI-497 | **OS / 硬件适配性能教学件（P8 维度；新 `caesura-hw-perf.mjs`：对象池复用降 GC 分配 + 缓存行 padding 规避 false sharing + AoS→SoA 数据布局 LRU miss 局部性对照，附可复现性能证据，opt-in 挂 status.hw）**（工程，2026-11-11 已落，详见账本 KI-497） | KI-497 |
 | ✅ KI-498 | **前后端协同贯穿（P8 第六维收口；`caesura-console-gen` 增 `systems` 数据块真跑 LSM+OS 硬件读数，`console/` 增「存储引擎 / 硬件适配」两面板，五场景与 highlights 口径不动、缺字段诚实降级）**（工程，2026-11-11 已落，详见账本 KI-498） | KI-498 |
+| ✅ KI-499 | **一致性哈希环 + 虚拟节点 + 缓存分片教学件（P8 第七维「算法 / 缓存 / 微服务元素」；新 `caesura-consistent-hash.mjs`：虚拟节点环二分查找 + 加权分布 + 扩容最小重映射 vs 取模对照 + 缓存分片定位器，opt-in 挂 status.hashRing）**（工程，2026-11-11 已落，详见账本 KI-499） | KI-499 |
 
 
 

@@ -37,6 +37,9 @@ export interface GameCloudOptions {
   /** KI-497：OS/硬件适配对照包。true 用缺省规模建；对象逐项注入规模/阈值（poolAccesses/counterCount/jumpStride/...）。 */
   hw?: boolean | Record<string, any>
   hwNow?: () => number
+  /** KI-499：一致性哈希环 + 缓存分片。true 用缺省节点集建；对象逐项注入（nodes/virtualNodes/hashFn/weightOf/salt/remappingKeys/probeAddNodes），或直接塞一只现成 ring。 */
+  hashRing?: boolean | Record<string, any> | { lookup(k: any): any; [k: string]: any }
+  hashNow?: () => number
 }
 
 /** 创建一只游戏侧开箱即用云。 */
@@ -53,6 +56,10 @@ export function createGameCloud(opts?: GameCloudOptions): {
   store: { put(k: any, v: any): any; get(k: any): any; del?(k: any): any; flush?(): any; compact?(level?: number): any; stats(): any; snapshot?(): any; [k: string]: any } | null
   /** KI-497：OS/硬件适配对照包（未配 opts.hw 时为 null）；snapshot() 现跑三件确定性对照。 */
   hw: { snapshot(): any } | null
+  /** KI-499：一致性哈希环实例（未配 opts.hashRing 时为 null）；addNode/removeNode/lookup/distribution/snapshot。 */
+  hashRing: { addNode(id: any): any; removeNode(id: any): any; hasNode(id: any): boolean; nodeIds(): string[]; lookup(k: any): any; distribution(keys: any[]): any; snapshot(opts?: { ring?: boolean }): any; [k: string]: any } | null
+  /** KI-499：造一只缓存分片路由（同 key 恒落同分片/同槽）；无环时为 null，不改调用路径。 */
+  shardRouter: (() => any) | null
   /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）。 */
   gray: any
   /** KI-489：把游戏真 EventBus（duck-typed {on,emit}）按白名单接进云事件总线。 */

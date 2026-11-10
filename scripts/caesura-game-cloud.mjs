@@ -21,6 +21,7 @@ import { createGameEventBridge } from './caesura-game-event-bridge.mjs'
 import { createRedisCache } from './caesura-redis-cache.mjs'
 import { createLsmStore } from './caesura-lsm-store.mjs'
 import { allocationStudy, compareLayouts, createCacheLinePadder, createPackedCounters } from './caesura-hw-perf.mjs'
+import { createHashRing, compareRemapping, createShardRouter } from './caesura-consistent-hash.mjs'
 import {
   createAimdCongestion,
   createCubicCongestion,
@@ -171,6 +172,38 @@ export function createGameCloud(opts = {}) {
     },
   }
 
+  // KI-499：一致性哈希环 + 缓存分片（opt-in）。opts.hashRing===true 用缺省节点集建一只；传对象
+  // 逐项注入（nodes/virtualNodes/hashFn/weightOf/salt）；也可直接塞一只现成 ring（窑口注入）。
+  // 默认 hashRing:false 不装配、不改任何调用路径（LB 三策略与灰度路由语义逐字不动）——只把环快照与
+  // 「扩容最小重映射 vs 取模」结构计数挂到 status.hashRing 供 E2E/前端控制台取。
+  const hashCfg = opts.hashRing === true ? {} : (opts.hashRing && typeof opts.hashRing === 'object' ? opts.hashRing : null)
+  const hashRing = hashCfg === null
+    ? null
+    : (typeof opts.hashRing === 'object' && typeof opts.hashRing.lookup === 'function'
+      ? opts.hashRing
+      : createHashRing({ ...hashCfg }))
+  // 快照惰性缓存：compareRemapping 会跑 remappingKeys×(before+after lookup)，status 轮询不该反复付成本。
+  let hashCached = null
+  function hashSnapshot() {
+    if (!hashRing) return null
+    if (hashCached) return hashCached
+    const nodes = hashRing.nodeIds()
+    const remapKeys = hashCfg?.remappingKeys ?? 2048
+    const keys = Array.from({ length: remapKeys }, (_, i) => `key:${i}`)
+    const grow = compareRemapping({
+      nodes, addNodes: hashCfg?.probeAddNodes ?? ['node:probe'], keys,
+      hashFn: hashRing.hashFn, salt: hashRing.salt, virtualNodes: hashRing.virtualNodes,
+    })
+    const dist = hashRing.distribution(keys)
+    hashCached = {
+      ring: hashRing.snapshot({ ring: false }),
+      grow: { consistentRate: grow.consistent.rate, moduloRate: grow.modulo.rate, theoreticalRate: grow.theoreticalRate, savedRate: grow.savedRate, delta: grow.delta },
+      distribution: { balanceRatio: dist.balanceRatio, emptyNodes: dist.emptyNodes, perNode: dist.perNode },
+      builtAt: (opts.hashNow ?? (() => Date.now()))(),
+    }
+    return hashCached
+  }
+
   /** 包住一次调用，用真实耗时/成败喂 net 包（未启用则原样返回，零开销）。 */
   async function observeCall(promise) {
     if (!net) return promise
@@ -207,6 +240,10 @@ export function createGameCloud(opts = {}) {
     store,
     /** KI-497：OS/硬件适配对照包（未配 opts.hw 时为 null）；snapshot() 现跑三件确定性对照。 */
     hw,
+    /** KI-499：一致性哈希环实例（未配 opts.hashRing 时为 null）；可直接 addNode/removeNode/lookup/distribution。 */
+    hashRing,
+    /** KI-499：造一只缓存分片路由（同 key 恒落同分片/同槽）；无环时回 null，不改调用路径。 */
+    shardRouter: hashRing ? () => createShardRouter({ ring: hashRing }) : null,
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
     gray: runtime.gray,
     /** 把游戏真 EventBus 按白名单routes 接进云事件总线（游戏侧一行：gc.connectGameBus(bus, routes)）。 */
@@ -237,6 +274,7 @@ export function createGameCloud(opts = {}) {
         authCache: auth.cacheStats(), net: net ? net.snapshot() : null,
         store: store ? store.snapshot() : null,
         hw: hw ? hw.snapshot() : null,
+        hashRing: hashSnapshot(),
       }
     },
   }

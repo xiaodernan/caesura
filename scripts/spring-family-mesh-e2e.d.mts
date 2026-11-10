@@ -31,5 +31,7 @@ export function runMeshE2E(opts?: any): {
     authCacheStats: any | null
     /** KI-494：计网算法快照（aimd/cubic/rto/window/tickets/http），未配 net 为 null */
     netSnapshot: { observes: number; aimd: any; cubic: any; rto: any; window: any; tickets: any; http: any } | null
+    /** KI-499：一致性哈希环快照（ring/grow/distribution），未配 hashRing 为 null */
+    hashRingSnapshot: { ring: any; grow: { consistentRate: number; moduloRate: number; theoreticalRate: number; savedRate: number; delta: number }; distribution: any; builtAt: number } | null
   }>
 }

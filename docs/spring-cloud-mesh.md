@@ -2,7 +2,7 @@
 
 > 本文是 CAESURA 项目里「Spring Cloud 微服务家族」的**合成地图**：把散落在 `scripts/` 的 35+ 件 Node 侧
 > Spring Cloud 客户端，收口成游戏可一键拉起的一朵云。本文只描述**架构与边界**，不重复每个件的实现细节
-> （细节见 `docs/KNOWN_ISSUES.md` 的 KI-460~498 账本行与各 `scripts/*.d.mts`）；前端只读可视化层见第 2 节顶部与第 6 节边界。
+> （细节见 `docs/KNOWN_ISSUES.md` 的 KI-460~499 账本行与各 `scripts/*.d.mts`）；前端只读可视化层见第 2 节顶部与第 6 节边界。
 
 ## 1. 总原则（决策原则①，贯穿全族）
 
@@ -28,7 +28,7 @@
 └───────────────────────────────┬──────────────────────────────────────┘
                                   │ createGameCloud({...}).start()
 ┌─────────────────────────────────▼─────────────────────────────────────┐
-│  caesura-game-cloud  （开箱即用云入口，KI-478/484/485/489/490/491/493/494/496/497）│
+│  caesura-game-cloud  （开箱即用云入口，KI-478/484/485/489/490/491/493/494/496/497/498/499）│
 │    start / call / proxyCall / shutdown / status                         │
 │    + events（KI-484 云事件总线）· auth（KI-485 鉴权守卫）                │
 │    + connectGameBus（KI-489 事件桥，shutdown 自动退桥）                   │
@@ -36,6 +36,7 @@
 │    + net（KI-494 计网可观测包，真调用耗时/成败喂 AIMD/RTO/滑窗，opt-in）   │
 │    + store（KI-496 LSM 存储引擎，结构读数挂 status.store，opt-in）          │
 │    + hw（KI-497 OS/硬件适配对照，结构读数挂 status.hw，opt-in）             │
+│    + hashRing（KI-499 一致性哈希环+缓存分片，挂 status.hashRing，opt-in）   │
 ├───────────────────────────────────────────────────────────────────────┤
 │  caesura-cloud-runtime  （集大成运行时，KI-473/477/487）                 │
 │    call 路径：网关 predicate 匹配 → 完整 filter 链（KI-486/487）         │
@@ -62,6 +63,8 @@
 │                  compaction；点查 vs 线性扫描对照证据，opt-in 挂 status.store）                    │
 │   · OS/硬件适配 : caesura-hw-perf（KI-497 对象池降 GC 分配·cache line padding 规避 false sharing·   │
 │                  AoS→SoA LRU miss 局部性对照；只给结构计数、不实测墙钟，opt-in 挂 status.hw）       │
+│   · 缓存分片   : caesura-consistent-hash（KI-499 一致性哈希环）      │
+│                  虚拟节点·扩容最小重映射对照；挂 status.hashRing）   │
 │   · 任务/函数   : spring-cloud-task · spring-cloud-function · spring-cloud-stream · openfeign     │
 │   · 总线/健康   : spring-bus-client · spring-health-check · spring-mesh-health                     │
 │   · K8s         : spring-cloud-kubernetes-client（KI-479，configMap+endpoints→mesh 实例）         │
@@ -224,7 +227,9 @@ node scripts/spring-family-mesh-e2e.mjs
 
 - `node scripts/caesura-hw-perf.mjs` 一趟确定性对照证 OS/硬件适配：对象池 10000 次取还只 `new` 1 次（省 9999 次 GC 分配）、padded 假共享对 0 vs packed 7（空间开销 8×）、顺序扫 AoS 5000 miss vs SoA 1250 miss（`speedup≈4×`）、跳跃扫 stride16 两者都 625 miss（红利消失）；`caesura-hw-perf.test.ts` 16 腿钉住对象池复用/限额丢弃、cache line 跨行隔离、LRU 容量 2 行经典换页、AoS/SoA 顺序加速与跳跃退化、注入确定性；`createGameCloud({hw:true})` 装配证 `status().hw` 三件读数可见（KI-497）。
 
-对应 `tests/unit/spring-family-mesh-e2e.test.ts`（14 腿）；前端证据另见 `tests/unit/caesura-console-gen.test.ts`（13 腿）与 `tests/unit/caesura-console-ui.test.ts`（9 腿）；存储引擎证据见 `tests/unit/caesura-lsm-store.test.ts`（20 腿）、OS/硬件适配见 `tests/unit/caesura-hw-perf.test.ts`（16 腿），两者在 `tests/unit/caesura-game-cloud.test.ts`（+2 腿）证 opt-in 装配。
+- **一致性哈希 / 缓存分片证据（KI-499）**：`npm run hash:bench` 一趟确定性对照证扩缩容——3→4 节点扩容时一致性哈希只迁 `consistentRate≈0.272`（理论下界 0.25），朴素取模迁 `moduloRate≈0.5155`（≈N/(N+1)），省下约 0.24 的键重映射；缩容 `delta=-1` 对照同样 `consistentRate<moduloRate`；三节点分布 `balanceRatio≈1.28`（虚拟节点环把 key 铺得接近均分）。`caesura-consistent-hash.test.ts` 14 腿钉住环点有序/二分查找、增删节点最小迁移、加权 3:1≈0.75:0.25、均匀度随虚拟节点数单调改善（8→128→512 的 balanceRatio 递减）、弱哈希+少虚拟节点偏斜更大（`balanceRatio` 如实暴露）、同 key 恒落同分片同槽、空环 null 不造节点、注入确定性；`createGameCloud({hashRing:true})` 装配证 `status().hashRing` 环快照与扩容对照读数可见（惰性缓存不反复跑 benchmark）、`spring-family-mesh-e2e` 的 `hashRingSnapshot` 证主链非破坏，`hashRing:false` 缺省不改任何调用路径。
+
+对应 `tests/unit/spring-family-mesh-e2e.test.ts`（15 腿）；前端证据另见 `tests/unit/caesura-console-gen.test.ts`（13 腿）与 `tests/unit/caesura-console-ui.test.ts`（9 腿）；存储引擎证据见 `tests/unit/caesura-lsm-store.test.ts`（20 腿）、OS/硬件适配见 `tests/unit/caesura-hw-perf.test.ts`（16 腿）、一致性哈希见 `tests/unit/caesura-consistent-hash.test.ts`（14 腿），三者连同缓存/计网在 `tests/unit/caesura-game-cloud.test.ts`（15 腿，KI-493~499 opt-in 装配）证装配。
 
 ## 6. 边界与「不声称」
 
@@ -240,6 +245,7 @@ node scripts/spring-family-mesh-e2e.mjs
 - 不声称缓存读路径用了堆/跳表——KI-493 LRU 刻意用 Map+双向链表保持 O(1) 命中/逐出，TTL 走「惰性 + 显式 O(n) 定期清扫」，`singleflight`/字节预算均每进程内存一只、不跨进程共享。
 - 不声称接了真 RocksDB/LevelDB/SQLite——KI-496 `caesura-lsm-store` 是纯教学状态机：无真实文件 I/O/页缓存/块设备对齐，`sink` 只模拟落盘；也不声称比 B+ 树全面更优（LSM 以读放大换顺序写、范围查用收集排序非归并堆迭代，缺省参数仅教学值、真库须实测调参）。Bloom filter 只保证零假阴性、不保证零假阳性；compaction 纯进程内单线程、不并发安全、不跨进程共享。默认 `store:false` 不装配，开了也只挂 `status.store` 结构读数、不反向改变任何调用结果。
 - 不声称 KI-497 `caesura-hw-perf` 实测了性能——三件全是**结构性/确定性计数对照**，不是跑分：对象池只给「分配次数」省了多少（不是 GC 暂停时长/吞吐）、padding 只给「槽位是否落同一 cache line」的结构判词（不是真多核 coherence 流量/时钟周期）、SoA 只给「确定性 LRU 模型下的 miss 数」（不是真 CPU cache 命中率，模型是 JS Map 插入序近似 LRU、无组相联/替换策略/硬件预取）。真实收益取决于硬件/并发模式/数据规模，须实测调参；不声称对象池线程安全或自动归还（`release` 靠调用方配对、泄漏与重复归还没运行时防护）。默认 `hw:false` 不装配，开了也只挂 `status.hw` 结构读数、不反向改变任何调用结果。
+- 不声称 KI-499 `caesura-consistent-hash` 是真 Redis Cluster / 生产一致性哈希——它是**路由判定与迁移计数的教学状态机**：无副本、无虚拟节点持久化、无故障转移、无数据搬迁执行（扩缩容只报「哪些 key 会迁」、不真搬数据，也不缓存命中率/网络带宽）；一致性哈希与缓存分片路由**默认不参与**负载均衡——`hashRing:false` 缺省不装配，接进 `createGameCloud` 也只挂 `status.hashRing` 结构读数，LB 三策略与 KI-491 灰度路由语义逐字不动、不反向改变任何调用结果。重映射率 / `balanceRatio` 是**结构计数比**、非墙钟时间/GC/带宽实测，真实收益取决于 key 集/节点规模/哈希分布，须实测调参；缺省 `ringHash`（FNV-1a+雪崩终混）是教学哈希非加密级，虚拟节点数/权重/哈希函数全可注入。也不声称虚拟节点分布对所有 key 集完美均匀——`distribution().balanceRatio` 如实给出有限样本下的偏差，注入纯 `fnv1a` 或少量虚拟节点即可复现偏斜（这条偏差本身是判词）；加权节点按虚拟点倍数近似分量、非精确配额。
 - 不声称灰度接了真流量镜像/service mesh sidecar——KI-491 `spring-gateway-gray` 纯进程内决策，transport 仍是注入的内存实现；不缓存会话状态（亲和靠 selector 确定性哈希，同 key 必落同池），阈值无服务端下发/热更（由 opts 注入）。
 - 不声称事件桥 import 了浏览器 `src/`——`caesura-game-event-bridge` 依赖注入两只 duck-typed bus，永不反向依赖；默认空路由零转发，载荷原样透传不校验。
 - 不声称前端控制台是实时流/推送——KI-495 `console/` 只读 `npm run console:data` 落盘的**一次性离线快照**，`snapshot.json`（XHR）与 `bootstrap.js`（`file://` 回退）同源；无 WebSocket/SSE、无定时轮询、无后端写入、无交互命令下发（纯只读可视化），要刷新须重跑生成器。

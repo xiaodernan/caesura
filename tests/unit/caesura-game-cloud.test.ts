@@ -228,4 +228,43 @@ describe('caesura-game-cloud', () => {
     expect(plain.hw).toBe(null)
     expect((await plain.status()).hw).toBe(null)
   })
+
+  it('hashRing:true 装配一致性哈希环，status.hashRing 读扩容最小重映射证据（KI-499）', async () => {
+    const gc = createGameCloud({
+      gameId: 'g1', gamePort: 7700, sources, cloud: fakeCloud(),
+      hashRing: { nodes: ['a', 'b', 'c'], remappingKeys: 1000 }, hashNow: () => 8888,
+    })
+    expect(gc.hashRing).toBeTruthy()
+    expect(gc.hashRing!.nodeIds()).toEqual(['a', 'b', 'c'])
+    expect(typeof gc.shardRouter).toBe('function')
+    // 分片路由同 key 恒落同片。
+    const router = gc.shardRouter!()
+    expect(router.route('key:42').shard).toBe(router.route('key:42').shard)
+    const st = await gc.status()
+    expect(st.hashRing.builtAt).toBe(8888)
+    expect(st.hashRing.ring.nodes).toEqual(['a', 'b', 'c'])
+    expect(st.hashRing.ring.virtualPoints).toBeGreaterThan(0)
+    // 扩容最小重映射：一致性 < 取模，且趋理论下界 0.25。
+    expect(st.hashRing.grow.consistentRate).toBeLessThan(st.hashRing.grow.moduloRate)
+    expect(st.hashRing.grow.consistentRate).toBeLessThan(0.4)
+    expect(st.hashRing.grow.moduloRate).toBeGreaterThan(0.4)
+    expect(st.hashRing.grow.theoreticalRate).toBeCloseTo(0.25, 2)
+    expect(st.hashRing.grow.delta).toBe(1)
+    expect(st.hashRing.distribution.emptyNodes).toEqual([])
+    // 惰性缓存：两次 status 读数逐字一致（不反复跑 benchmark）。
+    expect((await gc.status()).hashRing).toBe(st.hashRing)
+  })
+
+  it('hashRing 默认 null 非破坏；可注入现成 ring（KI-499）', async () => {
+    const plain = createGameCloud({ gameId: 'g2', gamePort: 7701, sources, cloud: fakeCloud() })
+    expect(plain.hashRing).toBe(null)
+    expect(plain.shardRouter).toBe(null)
+    expect((await plain.status()).hashRing).toBe(null)
+    // 窑口注入一只现成 ring（有 lookup 方法）也能装配。
+    const { createHashRing } = await import('../../scripts/caesura-consistent-hash.mjs')
+    const ring = createHashRing({ nodes: ['x', 'y'] })
+    const injected = createGameCloud({ gameId: 'g3', gamePort: 7702, sources, cloud: fakeCloud(), hashRing: ring, hashNow: () => 1 })
+    expect(injected.hashRing).toBe(ring)
+    expect((await injected.status()).hashRing.ring.nodes).toEqual(['x', 'y'])
+  })
 })

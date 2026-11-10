@@ -234,4 +234,25 @@ describe('spring-family-mesh-e2e', () => {
     expect(r.bridgeOff?.removed).toBe(2) // 1 条 game→cloud + 1 条 cloud→game
     expect(handlers.get('boss.phase')?.size).toBe(0) // 退桥后无悬挂订阅
   })
+
+  it('e2e KI-499：hashRing=true ⇒ 主链照常跑通，hashRingSnapshot 带扩容最小重映射证据', async () => {
+    const e = runMeshE2E({ hashRing: { nodes: ['svc-a:1', 'svc-a:2', 'gate:1'], remappingKeys: 1000 } })
+    const r = await e.run()
+    // 主链非破坏：注册/调用/关停都照常。
+    expect(r.started?.registered).toBe(true)
+    expect(r.callRes?.ok).toBe(true)
+    expect(r.stopped?.registered).toBe(false)
+    const h = r.hashRingSnapshot
+    expect(h).toBeTruthy()
+    expect(h!.ring.nodes).toEqual(['gate:1', 'svc-a:1', 'svc-a:2'])
+    expect(h!.ring.virtualPoints).toBeGreaterThan(0)
+    expect(h!.grow.consistentRate).toBeLessThan(h!.grow.moduloRate)
+    expect(h!.grow.consistentRate).toBeLessThan(0.4)
+    expect(h!.grow.moduloRate).toBeGreaterThan(0.4)
+    expect(h!.distribution.emptyNodes).toEqual([])
+    expect(typeof h!.builtAt).toBe('number')
+    // 未配 hashRing 时为 null（非破坏）。
+    const plain = await runMeshE2E().run()
+    expect(plain.hashRingSnapshot).toBe(null)
+  })
 })
