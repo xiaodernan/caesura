@@ -28,8 +28,9 @@
 | Phase C-2 | BossPhraseBar 单元测试（5 腿） | 4ea4ed0 |
 | KI-442~445 | 账本行同步（KNOWN_ISSUES/WORKPLAN/PHASE-STATUS KV） | daea06e |
 | Stakerite 覆盖率看板 | 读 coverage-floor.json 显示总地板 | b0e0fb7 |
+| Phase 7 F2-第三批 | QualityStore→GPUParticles 预算乘数接线验证（5 腿） | 26347df |
 
-**当前状态**：`npm run check` 全绿：4852 条 / 410 文件，0 红。
+**当前状态**：`npm run check` 全绿：4857 条 / 411 文件，0 红。
 
 ---
 
