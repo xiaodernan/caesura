@@ -140,6 +140,7 @@ Phase B4 的三件套此前是"有人听、没人说"。
 | ✅ KI-488 | **集大成端到端主链覆盖事件+鉴权+filter 链（Node.js 侧，`spring-family-mesh-e2e.mjs` 扩展）**（工程，2026-11-11 已落，详见账本 KI-488） | KI-488 |
 | ✅ KI-489 | **游戏真 EventBus ↔ 云事件总线桥接件（Node.js 侧，`caesura-game-event-bridge.mjs`；`createGameCloud().connectGameBus` 一行接线，shutdown 自动退桥）**（工程，2026-11-11 已落，详见账本 KI-489） | KI-489 |
 | ✅ KI-490 | **鉴权守卫接 introspection 在线校验（RFC 7662 风格，Node.js 侧，`caesura-auth-guard.mjs` 扩展 `authorizeOnline`；不透明令牌/active 吊销/在线 scope 权威复核/fail-closed 默认+fail-open 降级）**（工程，2026-11-11 已落，详见账本 KI-490） | KI-490 |
+| ✅ KI-491 | **集大成灰度/金丝雀加权路由端到端接线（Node.js 侧，`spring-gateway-gray.mjs` + runtime/cloud/e2e 扩展；metadata 保真/lbStrategy/会话亲和/空池诚实回退）**（工程，2026-11-11 已落，详见账本 KI-491） | KI-491 |
 
 
 

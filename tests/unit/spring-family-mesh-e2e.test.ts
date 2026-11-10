@@ -119,6 +119,42 @@ describe('spring-family-mesh-e2e', () => {
     expect(calls.length).toBe(callsBefore + 1) // fail-closed 没发起调用
   })
 
+  it('e2e KI-491：grayInstances + grayProbes ⇒ 同 key 稳定落同池、金丝雀命中、空池诚实回退', async () => {
+    const transport = async (t: any, p: string) => ({ instanceId: t.instanceId, path: p })
+    const grayInstances = [
+      { id: 'stable:1', name: 'gray-svc', address: '10.0.3.1', port: 8080, healthy: true, metadata: { version: 'v1', weight: 1 } },
+      { id: 'can:1', name: 'gray-svc', address: '10.0.3.2', port: 8080, healthy: true, metadata: { version: 'v2', canary: true, weight: 3 } },
+    ]
+    // selector 把 'v2-user*' 落桶 0（想走金丝雀）、'stable-user' 落桶 0.99（留稳定）。
+    const selector = ({ key }: any) => String(key).startsWith('v2-user') ? 0 : 0.99
+    const e = runMeshE2E({
+      transport, bearer: null,
+      grayInstances,
+      gray: { canaryPercent: 50, grayField: 'version', canaryValue: 'v2', stickyHeader: 'x-player', selector, rand: () => 0 },
+      grayProbes: [
+        { service: 'gray-svc', headers: { 'x-player': 'v2-user-1' } },
+        { service: 'gray-svc', headers: { 'x-player': 'v2-user-1' } }, // 同 key 再来一次 ⇒ 仍 can:1
+        { service: 'gray-svc', headers: { 'x-player': 'stable-user' } },
+        { service: 'empty-canary-svc', headers: { 'x-player': 'v2-user-2' }, canaryPercent: 100 },
+      ],
+    })
+    // 空金丝雀池那一发要有实例可回退，单独注入一个纯稳定服务。
+    e.gc.runtime.mesh.registerSource('onlyStable', () => [
+      { id: 'es:1', name: 'empty-canary-svc', address: '10.0.3.9', port: 8080, healthy: true, metadata: {} },
+    ])
+    const r = await e.run()
+    expect(r.grayProbes).toHaveLength(4)
+    // 同 key 稳定落金丝雀池、命中同一实例（会话亲和）
+    expect(r.grayProbes[0]).toMatchObject({ ok: true, lane: 'canary', fallback: false, instanceId: 'can:1' })
+    expect(r.grayProbes[1]).toMatchObject({ lane: 'canary', instanceId: 'can:1' })
+    // 桶 0.99 > 50% ⇒ 留稳定池
+    expect(r.grayProbes[2]).toMatchObject({ lane: 'primary', instanceId: 'stable:1' })
+    // 想走金丝雀但池空 ⇒ 诚实回退稳定、标 fallback
+    expect(r.grayProbes[3]).toMatchObject({ ok: true, lane: 'primary', fallback: true, instanceId: 'es:1' })
+    expect(r.grayStats!.canary).toBe(2)
+    expect(r.grayStats!.fallback).toBe(1)
+  })
+
   it('e2e KI-489：注入真 EventBus 形状的 gameBus ⇒ 游戏事件过桥到云总线、shutdown 退桥', async () => {
     const handlers = new Map<string, Set<Function>>()
     const gameBus = {

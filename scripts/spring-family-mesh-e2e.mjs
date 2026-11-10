@@ -54,9 +54,14 @@ export function runMeshE2E(opts = {}) {
     cloud: opts.cloud,
     tracer,
     transport,
+    // KI-491：灰度/金丝雀决策器透传（true 或缺省 0%；对象注入阈值/亲和键/selector）+ LB 策略。
+    gray: opts.gray,
+    lbStrategy: opts.lbStrategy,
     sources: {
       eureka: () => (opts.svcA ?? [{ id: 'svc-a:1', name: 'svc-a', address: '10.0.0.1', port: 8080, healthy: true }]),
       k8s: () => k8s.discover('caesura-gate'),
+      // KI-491：注入带 metadata（canary/weight/version）的实例，验灰度分池+会话亲和+空池回退。
+      ...(opts.grayInstances ? { graySrc: () => opts.grayInstances } : {}),
     },
   })
 
@@ -126,6 +131,25 @@ export function runMeshE2E(opts = {}) {
       } else {
         callRes = await gc.proxyCall('caesura-gate', '/api/health')
       }
+
+      // KI-491：灰度探针——一趟 run 发多次带不同亲和 key 的调用，证「同 key 稳定落同池」「阈值生效」
+      // 「空金丝雀池诚实回退」。探针直接走 gc.call（不经 e2e 的 auth 短路），service/path/headers/canaryPercent
+      // 均可逐次注入；结果回带每次的 lane/fallback/命中实例。
+      const grayProbes = []
+      if (Array.isArray(opts.grayProbes)) {
+        for (const probe of opts.grayProbes) {
+          const r = await gc.call(probe.service ?? 'gray-svc', probe.path ?? '/api/health', {
+            method: probe.method,
+            canaryPercent: probe.canaryPercent,
+            headers: probe.headers,
+          })
+          grayProbes.push({
+            key: r.gray?.key, lane: r.gray?.lane, fallback: !!r.gray?.fallback,
+            canaryPercent: r.gray?.canaryPercent, ok: r.ok, reason: r.reason,
+            instanceId: r.target?.instanceId,
+          })
+        }
+      }
       const status = await gc.status()
       const shut = await gc.shutdown()
       offStarted()
@@ -134,7 +158,7 @@ export function runMeshE2E(opts = {}) {
       const filterStats = gc.runtime.filters.stats()
       return {
         started: boot.started, callRes, status, stopped: shut.stopped, spans, services: status.services,
-        events: gameEvents, auth, filterStats,
+        events: gameEvents, auth, filterStats, grayProbes, grayStats: gc.gray?.stats() ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
       }
@@ -154,6 +178,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       authOK: r.auth?.ok,
       authAllowed: r.auth?.allowed,
       retryCount: r.filterStats.retries,
+      grayLanes: r.grayProbes.map((p) => `${p.key}:${p.lane}${p.fallback ? '(fallback)' : ''}`),
+      grayStats: r.grayStats,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))
     process.exit(0)

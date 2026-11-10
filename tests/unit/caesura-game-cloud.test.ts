@@ -111,4 +111,29 @@ describe('caesura-game-cloud', () => {
     expect(handlers.get('boss.phase')?.size).toBe(0)
     off()
   })
+
+  it('gray/lbStrategy 透传到 runtime，gc.gray 与 status 可见（KI-491）', async () => {
+    const graySources = {
+      graySrc: () => [
+        { id: 'stable:1', name: 'gray-svc', address: '10.0.2.1', port: 8080, healthy: true, metadata: { version: 'v1' } },
+        { id: 'can:1', name: 'gray-svc', address: '10.0.2.2', port: 8080, healthy: true, metadata: { version: 'v2' } },
+      ],
+    }
+    const gc = createGameCloud({
+      gameId: 'g1', gamePort: 7700, sources: graySources, cloud: fakeCloud(), lbStrategy: 'weight', gateway: false,
+      gray: { canaryPercent: 100, grayField: 'version', canaryValue: 'v2', stickyHeader: 'x-p', selector: () => 0 },
+      transport: async () => ({ ok: true }),
+    })
+    expect(gc.gray).toBeTruthy()
+    expect(gc.gray.canaryValue).toBe('v2')
+    const r = await gc.call('gray-svc', '/api/x', { headers: { 'x-p': 'u' } })
+    expect(r.gray).toMatchObject({ lane: 'canary', fallback: false })
+    const s = await gc.status()
+    expect(s.gray.canaryPercent).toBe(100)
+    expect(s.gray.stats.decisions).toBeGreaterThanOrEqual(1)
+
+    // 未配 gray 时 gc.gray 为 null（非破坏）
+    const plain = createGameCloud({ gameId: 'g2', gamePort: 7701, sources, cloud: fakeCloud() })
+    expect(plain.gray).toBe(null)
+  })
 })

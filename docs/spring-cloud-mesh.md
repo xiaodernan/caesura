@@ -20,10 +20,11 @@
 └───────────────────────────────┬──────────────────────────────────────┘
                                   │ createGameCloud({...}).start()
 ┌─────────────────────────────────▼─────────────────────────────────────┐
-│  caesura-game-cloud  （开箱即用云入口，KI-478/484/485/489/490）          │
+│  caesura-game-cloud  （开箱即用云入口，KI-478/484/485/489/490/491）      │
 │    start / call / proxyCall / shutdown / status                         │
 │    + events（KI-484 云事件总线）· auth（KI-485 鉴权守卫）                │
 │    + connectGameBus（KI-489 事件桥，shutdown 自动退桥）                   │
+│    + gray（KI-491 灰度/金丝雀加权路由；lbStrategy 可切 weight）           │
 ├───────────────────────────────────────────────────────────────────────┤
 │  caesura-cloud-runtime  （集大成运行时，KI-473/477/487）                 │
 │    call 路径：网关 predicate 匹配 → 完整 filter 链（KI-486/487）         │
@@ -34,7 +35,8 @@
 │   · 门面/发现   : spring-cloud-facade · spring-mesh-registry · spring-discovery · eureka · consul │
 │   · 网关        : spring-gateway-route（表）· spring-gateway-matcher（KI-475 可用化求值/可重入链）  │
 │                  · spring-gateway-filter-handlers（KI-486 Retry/RateLimit/CircuitBreaker）        │
-│   · 负载/熔断   : spring-load-balancer · spring-resilience-breaker（KI-472 进程内熔断）           │
+│   · 负载/熔断   : spring-load-balancer（KI-491 weight 策略可用化）· spring-resilience-breaker（KI-472）│
+│                  · spring-gateway-gray（KI-491 会话亲和/金丝雀分池/池内加权/空池回退）            │
 │   · 追踪        : spring-sleuth-trace（查）· spring-sleuth-tracer（KI-476 进程内造 span）         │
 │   · 配置        : spring-config-client · spring-config-server · spring-config-refresh            │
 │                  · caesura-config-aggregator（KI-480 多源优先级合并）                           │
@@ -120,6 +122,30 @@ if (gc.auth.canAccess(claims, 'game:call')) { /* ... */ }
   白名单双向转发；判定权 Node 侧——哪些事件过桥、映射成什么 type，全由 `routes` 定。
 - `game.started`/`game.stopped` 由 `gc.start()/shutdown()` 自动发到云事件总线（KI-484），E2E 可证。
 
+**灰度/金丝雀加权路由（KI-491）**——把家族里各说各话的 `Weight` predicate 与 `weight` 负载策略收口成一只决策器：
+
+```js
+const gc = createGameCloud({
+  lbStrategy: 'weight',                                   // 负载策略可注入：round-robin(缺省)/random/weight
+  gray: {
+    canaryPercent: 10,                                    // 金丝雀流量比例（Node 侧注入，缺省 0）
+    stickyHeader: 'x-player-id',                          // 会话亲和键；同 key 必落同一池（无状态哈希）
+    grayField: 'version', canaryValue: 'v2',              // 精确值匹配：只把 version=v2 当金丝雀
+    weightField: 'weight',                                // 池内按 metadata.weight 加权
+  },
+  sources: { k8s: () => [
+    { id: 'v1:1', name: 'gate', address: '10.0.0.1', port: 80, metadata: { version: 'v1', weight: 9 } },
+    { id: 'v2:1', name: 'gate', address: '10.0.0.2', port: 80, metadata: { version: 'v2', weight: 1 } },
+  ] },
+})
+const r = await gc.call('gate', '/api/fight', { headers: { 'x-player-id': 'p42' } })
+// r.gray = { lane:'canary'|'primary', fallback, key, bucket, canaryPercent }
+```
+
+- `spring-gateway-gray`（KI-491）**判定权全 Node 侧**：阈值/字段名/亲和键/`selector`/`rand` 全由 opts 注入；不配 `gray` 时运行时逐字维持旧的 round-robin，非破坏。
+- 金丝雀池为空时**诚实回退**稳定池并标 `fallback:true`（不路由到空、也不凭空放行）；`healthy===false` 实例一律滤掉。
+- `toLoadBalancerInstances` 现**保真 `metadata`**（旧版只留 healthy，灰度信息全丢）——这是 `weight` 策略与灰度分池能生效的前提。
+
 ## 5. 端到端证据
 
 ```bash
@@ -135,9 +161,10 @@ node scripts/spring-family-mesh-e2e.mjs
 - `authOK/authAllowed` —— 鉴权守卫校验带 scope 的 Bearer 放行（KI-485）；
 - `retryCount` —— filter 链重试计数（KI-486/487，注入 `retryAttempts`+flaky transport 时 >0）；
 - 注入 `gameBus` 时 `gameBridge` 证真游戏事件过桥、`bridgeOff` 证退桥无悬挂订阅（KI-489）；
-- 注入 `onlineAuth:{introspectionUrl,fetch,policy}` 时 `auth` 证在线校验：active 放行 / inactive 短路拒调 / 端点挂 fail-open 降级放行、fail-closed 拒（KI-490）。
+- 注入 `onlineAuth:{introspectionUrl,fetch,policy}` 时 `auth` 证在线校验：active 放行 / inactive 短路拒调 / 端点挂 fail-open 降级放行、fail-closed 拒（KI-490）；
+- 注入 `grayInstances`+`gray`+`grayProbes` 时 `grayProbes`/`grayStats` 证灰度：同 key 稳定落同一金丝雀实例（会话亲和）、阈值/精确值分池、空金丝雀池诚实回退稳定（KI-491）。
 
-对应 `tests/unit/spring-family-mesh-e2e.test.ts`（10 腿）。
+对应 `tests/unit/spring-family-mesh-e2e.test.ts`（11 腿）。
 
 ## 6. 边界与「不声称」
 
@@ -148,4 +175,5 @@ node scripts/spring-family-mesh-e2e.mjs
 - 不声称 filter 链接了真 Resilience4j/Redis——CircuitBreaker/RateLimit 全进程内内存实现，Retry 不做幂等去重。
 - 不声称鉴权守卫验了签——`caesura-auth-guard` 只解析 JWT claims/过期/作用域，签名校验归网关/资源服务端。
 - 不声称在线校验缓存了结果或接了真 IdP——KI-490 `authorizeOnline` 每次调用都打 introspection 端点（fetch 可注入、默认进程内），不缓存/不重放；`fail-open` 只在调用方显式选择时降级放行，缺省一律 `fail-closed`。
+- 不声称灰度接了真流量镜像/service mesh sidecar——KI-491 `spring-gateway-gray` 纯进程内决策，transport 仍是注入的内存实现；不缓存会话状态（亲和靠 selector 确定性哈希，同 key 必落同池），阈值无服务端下发/热更（由 opts 注入）。
 - 不声称事件桥 import 了浏览器 `src/`——`caesura-game-event-bridge` 依赖注入两只 duck-typed bus，永不反向依赖；默认空路由零转发，载荷原样透传不校验。

@@ -41,6 +41,9 @@ export function createGameCloud(opts = {}) {
     transport: opts.transport,
     cloud: opts.cloud,
     bus: opts.bus,
+    // KI-491：灰度/金丝雀加权路由（true 用缺省 0% / 对象逐项注入阈值/亲和键/selector）与 LB 策略透传。
+    gray: opts.gray,
+    lbStrategy: opts.lbStrategy,
   })
 
   const proxy = createServiceProxy(runtime, { breaker: opts.breakerOpts })
@@ -66,6 +69,8 @@ export function createGameCloud(opts = {}) {
     proxy,
     events,
     auth,
+    /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
+    gray: runtime.gray,
     /** 把游戏真 EventBus 按白名单routes 接进云事件总线（游戏侧一行：gc.connectGameBus(bus, routes)）。 */
     connectGameBus,
     bridge: () => bridge,

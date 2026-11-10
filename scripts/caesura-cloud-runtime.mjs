@@ -21,6 +21,7 @@ import { createGatewayMatcher } from './spring-gateway-matcher.mjs'
 import { createTracer } from './spring-sleuth-tracer.mjs'
 import { createCircuitBreaker } from './spring-resilience-breaker.mjs'
 import { createFilterHandlers } from './spring-gateway-filter-handlers.mjs'
+import { createGrayRouter } from './spring-gateway-gray.mjs'
 
 /**
  * 创建一只集大成运行时。
@@ -44,6 +45,11 @@ export function createCloudRuntime(opts = {}) {
   // 可选能力：网关可用化（predicate 求值 + filter 链）与进程内追踪；传 true 用默认实现，传对象用注入实现。
   const gateway = opts.gateway === true ? createGatewayMatcher() : (opts.gateway ?? null)
   const tracer = opts.tracer === true ? createTracer({ serviceName: gameName }) : (opts.tracer ?? null)
+  // KI-491：灰度/金丝雀决策器。opts.gray 为 true 用默认（0% 金丝雀＝全稳定），为对象则逐项注入；
+  // 不配则根本不建 ⇒ 旧路径逐字保持。判定权 Node 侧（阈值/字段名/亲和键/selector 全由注入决定）。
+  const gray = opts.gray === true ? createGrayRouter() : (opts.gray && typeof opts.gray === 'object' ? createGrayRouter(opts.gray) : null)
+  // KI-491：负载均衡策略可注入（round-robin / random / weight），缺省维持 round-robin 非破坏。
+  const lbStrategy = opts.lbStrategy ?? 'round-robin'
   const breakerCache = new Map()
   function getBreaker(name) {
     if (!breakerCache.has(name)) breakerCache.set(name, createCircuitBreaker(name, opts.breakerOpts ?? {}))
@@ -72,8 +78,10 @@ export function createCloudRuntime(opts = {}) {
     { id: `${gameId}:${gamePort}`, name: gameName, address: gameAddress, port: gamePort, healthy: true },
   ])
 
-  // mesh 聚合出的实例是 {id,name,address,port,healthy} 形状；load-balancer 的 createLoadBalancer
+  // mesh 聚合出的实例是 {id,name,address,port,healthy,...} 形状；load-balancer 的 createLoadBalancer
   // 只认 Eureka 形状（instanceId/hostName/port.{$}/securePort.enabled）。这里做归一桥接，判定权仍在 Node 侧。
+  // KI-491：metadata 必须**保真**——实例上标的 canary/version/weight 是灰度决策与 weight 策略的唯一输入，
+  //   旧版只留 healthy 一格把灰度信息全丢了；这里展开源 metadata 再补 healthy，缺字段仍非破坏。
   function toLoadBalancerInstances(serviceName, instances) {
     return instances.map((inst) => ({
       instanceId: inst.id,
@@ -81,8 +89,21 @@ export function createCloudRuntime(opts = {}) {
       ipAddr: inst.address,
       port: { $: inst.port },
       securePort: { enabled: false },
-      metadata: { healthy: inst.healthy ?? true },
+      metadata: { ...(inst.metadata ?? {}), healthy: inst.healthy ?? true },
     }))
+  }
+
+  // KI-491：灰度决策器产出的是**原始 mesh 实例**，这里把它投影成与 selectTarget 同一形状的 target，
+  // 让下游 doTransport/targetToUrl/span 完全不改。字段映射与 spring-load-balancer 的 eurekaInstancesToTargets 对齐。
+  function rawInstanceToTarget(serviceName, inst) {
+    return {
+      serviceName,
+      instanceId: inst.id,
+      host: inst.address,
+      port: inst.port,
+      scheme: inst.securePort?.enabled ? 'https' : 'http',
+      metadata: { ...(inst.metadata ?? {}), healthy: inst.healthy ?? true },
+    }
   }
 
   /** 为某服务建立（并缓存）一只负载均衡器，实例来自 mesh 聚合视图。 */
@@ -90,7 +111,7 @@ export function createCloudRuntime(opts = {}) {
     if (lbCache.has(serviceName)) return lbCache.get(serviceName)
     const agg = await mesh.aggregate()
     const instances = agg.get(serviceName) ?? []
-    const lb = createLoadBalancer(serviceName, toLoadBalancerInstances(serviceName, instances), 'round-robin')
+    const lb = createLoadBalancer(serviceName, toLoadBalancerInstances(serviceName, instances), lbStrategy)
     lbCache.set(serviceName, lb)
     return lb
   }
@@ -114,11 +135,27 @@ export function createCloudRuntime(opts = {}) {
       route = matched.route
     }
 
-    // 2) 负载均衡选实例
-    const lb = await loadBalancerFor(serviceName)
-    const target = selectTarget(lb)
+    // 2) 选实例。KI-491：配了 gray 就走灰度决策——从 mesh 原始实例按 metadata 分稳定/金丝雀池、
+    //    用亲和 key 哈希决定落哪池、池内按权重选一只；未配 gray 则逐字维持既有 LB 语义
+    //    （round-robin/random/weight 由 lbStrategy 注入），非破坏。
+    let target = null
+    let grayInfo = null
+    if (gray) {
+      const agg = await mesh.aggregate()
+      const rawInstances = agg.get(serviceName) ?? []
+      const decision = gray.decide({ path, method: init?.method, headers: init?.headers, canaryPercent: init?.canaryPercent })
+      const picked = gray.select(rawInstances, decision)
+      grayInfo = {
+        lane: picked.lane, fallback: picked.fallback, reason: picked.reason,
+        key: decision.key, bucket: decision.bucket, canaryPercent: decision.canaryPercent,
+      }
+      if (picked.ok && picked.instance) target = rawInstanceToTarget(serviceName, picked.instance)
+    } else {
+      const lb = await loadBalancerFor(serviceName)
+      target = selectTarget(lb)
+    }
     if (!target) {
-      return { ok: false, target: null, data: undefined, route: route ?? undefined, reason: 'no_instance', error: new Error(`no instance for ${serviceName}`) }
+      return { ok: false, target: null, data: undefined, route: route ?? undefined, gray: grayInfo ?? undefined, reason: 'no_instance', error: new Error(`no instance for ${serviceName}`) }
     }
     const url = targetToUrl(target, path)
 
@@ -160,10 +197,10 @@ export function createCloudRuntime(opts = {}) {
         }
       }
       finishSpan({ 'caesura.target': target.instanceId })
-      return { ok: true, target, data, route: route ?? undefined, span: span ?? undefined, filterStats: filterPack.stats(), error: undefined }
+      return { ok: true, target, data, route: route ?? undefined, span: span ?? undefined, gray: grayInfo ?? undefined, filterStats: filterPack.stats(), error: undefined }
     } catch (error) {
       finishSpan({ error: String(error?.message ?? error) })
-      return { ok: false, target, data: undefined, route: route ?? undefined, span: span ?? undefined, filterStats: filterPack.stats(), error }
+      return { ok: false, target, data: undefined, route: route ?? undefined, span: span ?? undefined, gray: grayInfo ?? undefined, filterStats: filterPack.stats(), error }
     }
   }
 
@@ -196,8 +233,9 @@ export function createCloudRuntime(opts = {}) {
       services: [...agg.keys()],
       routeCount: routes.size(),
       lbCache: [...lbCache.keys()],
+      gray: gray ? { salt: gray.salt, stickyHeader: gray.stickyHeader, grayField: gray.grayField, canaryValue: gray.canaryValue, weightField: gray.weightField, canaryPercent: gray.canaryPercent, stats: gray.stats() } : null,
     }
   }
 
-  return { cloud, mesh, routes, game, filters: filterPack, loadBalancerFor, bootstrap, call, shutdown, status }
+  return { cloud, mesh, routes, game, gray, filters: filterPack, loadBalancerFor, bootstrap, call, shutdown, status }
 }

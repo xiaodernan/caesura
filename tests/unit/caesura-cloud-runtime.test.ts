@@ -186,4 +186,62 @@ describe('caesura-cloud-runtime', () => {
     expect(r2.ok).toBe(false)
     expect((r2.error as Error).message).toBe('circuit_open')
   })
+
+  // —— KI-491：灰度/金丝雀加权路由接进运行时 ——
+  const graySources = {
+    graySrc: () => [
+      { id: 'stable:1', name: 'gray-svc', address: '10.0.1.1', port: 8080, healthy: true, metadata: { version: 'v1', weight: 1 } },
+      { id: 'can:1', name: 'gray-svc', address: '10.0.1.2', port: 8080, healthy: true, metadata: { version: 'v2', canary: true, weight: 1 } },
+    ],
+  }
+
+  it('KI-491① metadata 保真 + lbStrategy=weight：实例权重/meta 不再被丢光', async () => {
+    const rt = createCloudRuntime({ sources: graySources, lbStrategy: 'weight', gameId: 'g1', gamePort: 7700 })
+    const lb = await rt.loadBalancerFor('gray-svc')
+    expect(lb.strategy).toBe('weight')
+    expect(lb.targets).toHaveLength(2)
+    expect(lb.targets[1].metadata).toMatchObject({ version: 'v2', canary: true, weight: 1 }) // 灰度元数据进得了 LB
+    expect(lb.targets[0].metadata.healthy).toBe(true)
+  })
+
+  it('KI-491② 配 gray：canaryPercent=100 + canaryValue=v2 ⇒ call 命中金丝雀池、回带 gray 判词', async () => {
+    const hits: string[] = []
+    const rt = createCloudRuntime({
+      sources: graySources, gameId: 'g1', gamePort: 7700,
+      gray: { canaryPercent: 100, grayField: 'version', canaryValue: 'v2', stickyHeader: 'x-player', selector: () => 0 },
+      transport: async (t: any) => { hits.push(t.instanceId); return { ok: true } },
+    })
+    const r = await rt.call('gray-svc', '/api/fight', { headers: { 'x-player': 'p42' } })
+    expect(r.ok).toBe(true)
+    expect(r.gray).toMatchObject({ lane: 'canary', fallback: false, key: 'p42', canaryPercent: 100 })
+    expect(hits).toEqual(['can:1'])
+    expect((await rt.status()).gray.stats.canary).toBe(1) // status 暴露灰度计数
+  })
+
+  it('KI-491③ 空金丝雀池诚实回退稳定池 + 未配 gray 逐字维持 round-robin', async () => {
+    const onlyStable = {
+      graySrc: () => [{ id: 'stable:1', name: 'gray-svc', address: '10.0.1.1', port: 8000, healthy: true, metadata: {} }],
+    }
+    const hits: string[] = []
+    const grayRt = createCloudRuntime({
+      sources: onlyStable, gameId: 'g1', gamePort: 7700,
+      gray: { canaryPercent: 100 },
+      transport: async (t: any) => { hits.push(t.instanceId); return { ok: true } },
+    })
+    const r = await grayRt.call('gray-svc', '/api/x')
+    expect(r.ok).toBe(true)
+    expect(r.gray).toMatchObject({ lane: 'primary', fallback: true })
+    expect(hits).toEqual(['stable:1']) // 回退到稳定实例，不路由到空
+
+    const plain = createCloudRuntime({
+      sources, gameId: 'g1', gamePort: 7700,
+      transport: async (t: any) => { hits.push(t.instanceId); return { ok: true } },
+    })
+    expect(plain.gray).toBe(null) // 未配 gray 不建决策器
+    const p1 = await plain.call('svc-a', '/p')
+    const p2 = await plain.call('svc-a', '/p')
+    expect(p1.ok && p2.ok).toBe(true)
+    expect(p1.gray).toBeUndefined() // 老路径回带里没有 gray 字段
+    expect(hits.slice(-2)).toEqual(['svc-a:1', 'svc-a:2']) // round-robin 仍轮转
+  })
 })

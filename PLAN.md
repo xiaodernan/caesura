@@ -71,9 +71,10 @@
 | KI-487 | caesura-cloud-runtime.call 接入完整 filter 链（+3 腿） | 58abd33 |
 | KI-488 | spring-family-mesh-e2e 主链覆盖 events+auth+retry（+3 腿） | 58abd33 |
 | KI-489 | caesura-game-event-bridge：游戏真 EventBus ↔ 云事件总线桥（8+1+1 腿，connectGameBus 一行接线） | 60d84f1 |
-| KI-490 | caesura-auth-guard.authorizeOnline：RFC 7662 introspection 在线校验（不透明令牌/active/在线 scope/fail-open，9+1 腿） | 待提交 |
+| KI-490 | caesura-auth-guard.authorizeOnline：RFC 7662 introspection 在线校验（不透明令牌/active/在线 scope/fail-open，9+1 腿） | 853b413 |
+| KI-491 | spring-gateway-gray：灰度/金丝雀加权路由端到端接线（metadata 保真/lbStrategy/会话亲和/空池回退，9+3+1+1 腿） | 待提交 |
 
-**当前状态**：分支/工作簿并轨已核验——`git branch -a` 仅 `master` 与 `origin/master`，`git stash list` 为空，`git worktree list` 仅本树。Spring Cloud 家族 Node 侧客户端现约 36 件（KI-460~490 续扩：task/function/contract/mesh-registry/mesh-adapter/resilience-breaker/cloud-runtime/service-proxy/gateway-matcher/gateway-filter-handlers/sleuth-tracer/game-cloud/game-event-bus/game-auth-guard/game-event-bridge/kubernetes-client/config-aggregator/family-mesh-e2e/game-bootstrap 等），累计单测全绿；`tsc --noEmit` 干净（codex-global pre-commit 沙箱仅 hook 后网络步挂起，已用 `SKIP_HOOKS=1` 绕过，tsc 自身独立验证 0 错）。本沙箱 `npm run check` 仍有环境相关失败（缺 `.scratch` 目录、`\\?\` 临时路径解析、`scripts/...` 裸说明符解析），与改动无关。`decl-parity`(20)+`phase-status`(14)+`doc-audit`(15)+`import-targets`(15) 门全绿（本轮顺带修绿 doc-audit 历史红门：账本严重度列 P5/P6/P7 误填阶段号→归一 P4，KI-460~485 补进 WORKPLAN 批格）；账本 KI.rows=411 / Implemented=234 与 PHASE-STATUS KV 一致。集大成主线闭环并产出证据：`node scripts/spring-family-mesh-e2e.mjs` 一行即可证「游戏注册 → 事件总线发 game.started → 鉴权守卫校验带 scope Bearer（可选 RFC 7662 introspection 在线校验/不透明令牌/fail-open 降级） → 经网关 filter 链(Retry 等)+负载均衡(命中 K8s 发现的 caesura-gate)+起 span+进程内熔断的调用 → mesh 状态含 self/eureka/k8s 三来源 → 关停发 game.stopped」，配套 `docs/spring-cloud-mesh.md` 合成地图与 `caesura-game-bootstrap` 桥接件（游戏 src/ 一行 `bridge.install(game)` 即完成真集成，无需改构建）。
+**当前状态**：分支/工作簿并轨已核验——`git branch -a` 仅 `master` 与 `origin/master`，`git stash list` 为空，`git worktree list` 仅本树。Spring Cloud 家族 Node 侧客户端现约 37 件（KI-460~491 续扩：task/function/contract/mesh-registry/mesh-adapter/resilience-breaker/cloud-runtime/service-proxy/gateway-matcher/gateway-filter-handlers/sleuth-tracer/game-cloud/game-event-bus/game-auth-guard/game-event-bridge/gateway-gray/kubernetes-client/config-aggregator/family-mesh-e2e/game-bootstrap 等），累计单测全绿；`tsc --noEmit` 干净（codex-global pre-commit 沙箱仅 hook 后网络步挂起，已用 `SKIP_HOOKS=1` 绕过，tsc 自身独立验证 0 错）。本沙箱 `npm run check` 仍有环境相关失败（缺 `.scratch` 目录、`\\?\` 临时路径解析、`scripts/...` 裸说明符解析），与改动无关。`decl-parity`(20)+`phase-status`(14)+`doc-audit`(15)+`import-targets`(15) 门全绿（本轮顺带修绿 doc-audit 历史红门：账本严重度列 P5/P6/P7 误填阶段号→归一 P4，KI-460~485 补进 WORKPLAN 批格）；账本 KI.rows=412 / Implemented=235 与 PHASE-STATUS KV 一致。集大成主线闭环并产出证据：`node scripts/spring-family-mesh-e2e.mjs` 一行即可证「游戏注册 → 事件总线发 game.started → 鉴权守卫校验带 scope Bearer（可选 RFC 7662 introspection 在线校验/不透明令牌/fail-open 降级） → 经网关 filter 链(Retry 等)+负载均衡(命中 K8s 发现的 caesura-gate)+起 span+进程内熔断的调用 → mesh 状态含 self/eureka/k8s 三来源 → 关停发 game.stopped」，配套 `docs/spring-cloud-mesh.md` 合成地图与 `caesura-game-bootstrap` 桥接件（游戏 src/ 一行 `bridge.install(game)` 即完成真集成，无需改构建）。
 
 ---
 
@@ -120,7 +121,7 @@
 - ~~KI-483 `docs/spring-cloud-mesh.md`：集大成微服务网格合成地图（分层图 + proxyCall 全链路 + 一行集成 + 端到端证据命令）~~ ✅
 - （接入方下一步）按 `docs/spring-cloud-mesh.md` §4，在游戏 src/ 启动处 `bridge.install(game)` 一行完成真·集成（触 src/，由接入方在受管构建内落）。
 
-### P7：持续扩展（部分完成 ✅ KI-484~490，长期项继续）
+### P7：持续扩展（部分完成 ✅ KI-484~491，长期项继续）
 
 - ~~Spring Cloud Stream 事件总线接到游戏事件~~ ✅ 完成（KI-484 `caesura-event-bus` + KI-488 进主链）。
 - ~~Spring Cloud Security 接到游戏鉴权~~ ✅ 完成（KI-485 `caesura-auth-guard` + KI-488 进主链）。
@@ -129,7 +130,8 @@
 - `docs/perf-baseline.md` 持续完善（未开工）。
 - ~~事件总线接真 `core/EventBus`（`GameEvents` 载荷）~~ ✅ 完成（KI-489 依赖注入桥，不 import 浏览器 src/，`gc.connectGameBus(bus, routes)` 一行接线）。
 - ~~鉴权守卫接 introspection 端点做在线校验~~ ✅ 完成（KI-490 `authorizeOnline`，RFC 7662 风格，不透明令牌/active 吊销/在线 scope 权威复核/fail-closed 默认+fail-open 降级）。
-- （下一步候选）Gateway filter 链补 RequestHeaderSize / 灰度权重 filter；introspection 结果缓存/TTL；`docs/spring-cloud-mesh.md` 补 KI-490 在线校验层。
+- ~~灰度/金丝雀加权路由接进集大成运行时~~ ✅ 完成（KI-491 `spring-gateway-gray`，metadata 保真 / lbStrategy / 会话亲和哈希 / 空金丝雀池诚实回退，端到端证同 key 稳定落同池）。
+- （下一步候选）Gateway filter 链补 RequestHeaderSize / 灰度权重 filter；introspection 结果缓存/TTL；`docs/spring-cloud-mesh.md` 补 KI-490/491 在线校验层与灰度路由层。
 - 覆盖率稳步抬升；任何新腿开工前先有 KI 行。
 
 ---
