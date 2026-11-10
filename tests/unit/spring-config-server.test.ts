@@ -145,14 +145,14 @@ describe('spring-config-server：Spring Cloud Config Server 客户端', () => {
     )
 
     const configs = loadConfigs(tmpDir)
-    const bus = createBus()
+    const evbus = createBus()
     const received: Array<{ name: string; config: Record<string, unknown> }> = []
-    bus.subscribe('config.changed', (...args: unknown[]) => {
+    evbus.subscribe('config.changed', (...args: unknown[]) => {
       const [name, config] = args as [string, Record<string, unknown>]
       received.push({ name, config })
     })
 
-    const stopWatcher = startConfigWatcher(configs, tmpDir, 100, undefined, bus)
+    const stopWatcher = startConfigWatcher(configs, tmpDir, 100, undefined, evbus)
 
     // 修改配置文件
     fs.writeFileSync(
@@ -167,7 +167,7 @@ describe('spring-config-server：Spring Cloud Config Server 客户端', () => {
         expect(received[0]!.name).toBe('caesura-gate')
         expect((received[0]!.config.server as Record<string, unknown>).port).toBe(8082)
         stopWatcher()
-        bus.close()
+        evbus.close()
         fs.rmSync(tmpDir, { recursive: true })
         resolve()
       }, 400)
@@ -186,19 +186,19 @@ describe('spring-config-server：Spring Cloud Config Server 客户端', () => {
     )
 
     const configs = loadConfigs(tmpDir)
-    const bus = createBus()
+    const evbus = createBus()
     const received: string[] = []
-    bus.subscribe('config.changed', (...args: unknown[]) => {
+    evbus.subscribe('config.changed', (...args: unknown[]) => {
       received.push(args[0] as string)
     })
 
-    const stopWatcher = startConfigWatcher(configs, tmpDir, 50, undefined, bus)
+    const stopWatcher = startConfigWatcher(configs, tmpDir, 50, undefined, evbus)
 
     return new Promise<void>((resolve) => {
       setTimeout(() => {
         expect(received).toEqual([]) // 启动期不吐事件
         stopWatcher()
-        bus.close()
+        evbus.close()
         fs.rmSync(tmpDir, { recursive: true })
         resolve()
       }, 250)
