@@ -41,8 +41,15 @@
 | KI-442~445 | 账本行同步（KNOWN_ISSUES/WORKPLAN/PHASE-STATUS KV） | daea06e |
 | Stakerite 覆盖率看板 | 读 coverage-floor.json 显示总地板 | b0e0fb7 |
 | Phase 7 F2-第三批 | QualityStore→GPUParticles 预算乘数接线验证（5 腿） | 26347df |
+| KI-460 | spring-cloud-stream-client：Spring Cloud Stream binder 抽象 + 声明式 producer/consumer（7 腿） | d2a4717 |
+| KI-461 | spring-cloud-openfeign-client：声明式 REST + 路径模板 + LB 寻址（7 腿） | d2a4717 |
+| KI-462 | spring-cloud-vault-client：KV 密钥 + 缓存/TTL + tokenExpired（6 腿） | d2a4717 |
+| KI-463 | spring-cloud-security-oauth2-client：JWT/scope/expire/authorize/introspect（9 腿） | d2a4717 |
+| KI-464 | spring-cloud-consul-client：注册/发现/健康（内存+HTTP，6 腿） | d2a4717 |
+| KI-465 | spring-cloud-facade (CaesuraCloud)：七族客户端统一门面 + request 链路（6 腿） | d2a4717 |
+| KI-466 | spring-mesh-status：整族可观测性聚合快照（5 腿） | d2a4717 |
 
-**当前状态**：`npm run check` 全绿：4922 条 / 416 文件，0 个红。`npm run coverage` 通过（行覆盖 95.62%，ui 99.93%，全包达标）。`npm run release` 全链路 OK。所有工作分支/stash 已并轨至 master。Spring Cloud 家族端到端可真跑（六件 jar，网关路由，整族判词 green），`gate-perf` 入册，`scripts/spring-family-e2e-check.mjs` 固化。
+**当前状态**：分支/工作簿并轨已核验——`git branch -a` 仅 `master` 与 `origin/master`，`git stash list` 为空，`git worktree list` 仅本树（2026-11-09 的八个工作簿已 `git worktree remove --force` 并入主干）。Spring Cloud 家族 Node 侧客户端扩至 22 件（原 15 件 + 本轮 7 件 KI-460~466），配套 46 条单测全绿；`tsc --noEmit` 经 codex-global pre-commit 校验 0 错。本沙箱 `npm run check` 有 7 条环境相关失败（缺 `.scratch` 目录、`\\?\` 临时路径解析、`scripts/...` 裸说明符解析），与本轮改动无关，不归本轮修。`npm run coverage` 行覆盖 95.62%／ui 99.93% 全包达标。六件 jar 端到端可真跑，整族判词 green，`gate-perf` 入册，`scripts/spring-family-e2e-check.mjs` 固化。
 
 ---
 
