@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, afterEach } from 'vitest'
-import { fetchConfig } from '../../scripts/spring-config-client.mjs'
+import { fetchConfig, fetchConfigWithFallback } from '../../scripts/spring-config-client.mjs'
 
 /**
  * Spring Cloud Config 客户端（Node.js 侧）单元测试。
@@ -63,5 +63,32 @@ describe('spring-config-client：Config Server 配置获取', () => {
     })
     const config = await fetchConfig('test-app', 'http://localhost:8888/')
     expect(config['key']).toBe('value')
+  })
+
+  it('fetchConfigWithFallback：成功获取时返回正常配置', async () => {
+    mockFetch(200, {
+      name: 'caesura-gate',
+      profiles: ['default'],
+      label: 'master',
+      version: '1',
+      state: null,
+      propertySources: [{ name: 'application', source: { 'server.port': 8081 } }],
+    })
+    const config = await fetchConfigWithFallback('caesura-gate', 'http://localhost:8888')
+    expect(config['server.port']).toBe(8081)
+    expect(config['_configError']).toBeUndefined()
+  })
+
+  it('fetchConfigWithFallback：HTTP 错误时返回 fallback 并标记错误', async () => {
+    mockFetch(500, { error: 'Internal Server Error' }, false)
+    const config = await fetchConfigWithFallback('caesura-gate', 'http://localhost:8888', { 'server.port': 9090 })
+    expect(config['server.port']).toBe(9090)
+    expect(config['_configError']).toContain('HTTP 500')
+  })
+
+  it('fetchConfigWithFallback：网络不通时返回默认空 fallback', async () => {
+    globalThis.fetch = vi.fn().mockRejectedValue(new Error('connect ECONNREFUSED 127.0.0.1:8888'))
+    const config = await fetchConfigWithFallback('caesura-gate', 'http://localhost:8888')
+    expect(config).toEqual({ _configError: expect.stringContaining('ECONNREFUSED') })
   })
 })

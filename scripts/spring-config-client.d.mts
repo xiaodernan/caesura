@@ -16,3 +16,13 @@ export interface ConfigServerResponse {
 
 /** 获取指定应用的配置，返回展平后的键值对 */
 export function fetchConfig(appName: string, configUrl?: string): Promise<Record<string, unknown>>
+
+/**
+ * 获取指定应用的配置，失败时降级返回 fallback（默认空对象）。
+ * 用于 Config Server 不可用时的容灾。
+ */
+export function fetchConfigWithFallback(
+  appName: string,
+  configUrl?: string,
+  fallback?: Record<string, unknown>,
+): Promise<Record<string, unknown>>

@@ -25,3 +25,19 @@ export function buildConfigResponse(
   label: string,
   config: Record<string, unknown>,
 ): Record<string, unknown>
+
+/**
+ * 启动配置文件监听器
+ *
+ * @param configs 配置映射（变更时会被直接修改）
+ * @param dir 配置目录路径
+ * @param interval 检查间隔（毫秒）
+ * @param onChange 配置变更回调 (appName, config) => void
+ * @returns 停止监听的函数
+ */
+export function startConfigWatcher(
+  configs: Record<string, Record<string, unknown>>,
+  dir: string,
+  interval?: number,
+  onChange?: (name: string, config: Record<string, unknown>) => void,
+): () => void

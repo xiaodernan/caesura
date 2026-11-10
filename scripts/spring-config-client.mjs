@@ -50,6 +50,24 @@ export async function fetchConfig(appName, configUrl) {
   }
 }
 
+/**
+ * 获取指定应用的配置，失败时降级返回 fallback（默认空对象）。
+ * 用于 Config Server 不可用时的容灾：Node 模块不应因配置服务器宕机而崩溃，
+ * 应继续以空配置或默认配置运行，由各模块自行判定阈值。
+ *
+ * @param {string} appName 应用名
+ * @param {string} configUrl 配置服务器 URL
+ * @param {Record<string, unknown>} fallback 降级时返回的配置，默认 {}
+ * @returns {Promise<Record<string, unknown>>} 展平后的配置键值对，或 fallback
+ */
+export async function fetchConfigWithFallback(appName, configUrl, fallback = {}) {
+  try {
+    return await fetchConfig(appName, configUrl)
+  } catch (e) {
+    return { ...fallback, _configError: e.message }
+  }
+}
+
 /** CLI 主体：被直接运行时打印 JSON 并退相应码；被 import 时只交出函数。 */
 if (process.argv[1] && new URL(process.argv[1], 'file://').pathname === new URL(import.meta.url).pathname) {
   const appName = process.argv[2]

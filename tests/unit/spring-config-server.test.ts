@@ -4,6 +4,7 @@ import {
   loadConfigs,
   findConfig,
   buildConfigResponse,
+  startConfigWatcher,
 } from '../../scripts/spring-config-server.mjs'
 
 /**
@@ -26,23 +27,19 @@ describe('spring-config-server：Spring Cloud Config Server 客户端', () => {
 
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'caesura-config-'))
     fs.writeFileSync(
-      path.join(tmpDir, 'caesura-gate.json'),
-      JSON.stringify({ server: { port: 8081 }, caesura: { circuit: { 'failure-threshold': 3 } } }),
+      path.join(tmpDir, 'caesura-gate.yml'),
+      'server:\n  port: 8081\ncaesura_circuit_failure_threshold: 3\ncaesura_circuit_cooldown_sec: 120',
     )
     fs.writeFileSync(
       path.join(tmpDir, 'caesura-report.yml'),
-      'server:\n  port: 8082\ncaesura:\n  report:\n    retry-attempts: 8\n    retry-delay-ms: 2000',
+      'server:\n  port: 8082\ncaesura_report_retry_attempts: 8\ncaesura_report_retry_delay_ms: 2000',
     )
 
     const configs = loadConfigs(tmpDir)
     const gateConfig = configs['caesura-gate'] as Record<string, unknown>
     expect(gateConfig).toBeDefined()
     expect((gateConfig.server as Record<string, unknown>).port).toBe(8081)
-    expect(
-      ((gateConfig.caesura as Record<string, unknown>).circuit as Record<string, unknown>)[
-        'failure-threshold'
-      ],
-    ).toBe(3)
+    expect((gateConfig as Record<string, unknown>)['caesura_circuit_failure_threshold']).toBe(3)
 
     // 清理
     fs.rmSync(tmpDir, { recursive: true })
@@ -96,5 +93,62 @@ describe('spring-config-server：Spring Cloud Config Server 客户端', () => {
     expect(typeof server.listen).toBe('function')
     expect(typeof server.close).toBe('function')
     server.close()
+  })
+
+  it('startConfigWatcher：配置文件变化时自动重新加载并触发回调', () => {
+    const fs = require('node:fs')
+    const path = require('node:path')
+    const os = require('node:os')
+
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'caesura-config-'))
+    fs.writeFileSync(
+      path.join(tmpDir, 'caesura-gate.yml'),
+      'server:\n  port: 8081\ncaesura_circuit_failure_threshold: 3\ncaesura_circuit_cooldown_sec: 120',
+    )
+
+    const configs = loadConfigs(tmpDir)
+    let callbackCalled = false
+
+    const stopWatcher = startConfigWatcher(configs, tmpDir, 100, (name: string, config: Record<string, unknown>) => {
+      callbackCalled = true
+      expect(name).toBe('caesura-gate')
+      expect((config.server as Record<string, unknown>).port).toBe(8082)
+    })
+
+    // 修改配置文件
+    fs.writeFileSync(
+      path.join(tmpDir, 'caesura-gate.yml'),
+      'server:\n  port: 8082\ncaesura_circuit_failure_threshold: 5\ncaesura_circuit_cooldown_sec: 120',
+    )
+
+    // 等待监听器检测变化
+    return new Promise<void>((resolve) => {
+      setTimeout(() => {
+        expect(callbackCalled).toBe(true)
+        stopWatcher()
+        fs.rmSync(tmpDir, { recursive: true })
+        resolve()
+      }, 350)
+    })
+  })
+
+  it('findConfig：查找不存在的应用返回 undefined', () => {
+    const configs = {
+      'caesura-gate': { server: { port: 8081 } },
+    }
+
+    const result = findConfig('nonexistent', 'default', 'master', configs)
+    expect(result).toBeUndefined()
+  })
+
+  it('buildConfigResponse：缺失字段使用默认值', () => {
+    const config = { server: { port: 8081 } } // 没有 version 字段
+    const response = buildConfigResponse('caesura-gate', 'default', 'master', config) as Record<
+      string,
+      unknown
+    >
+
+    expect(response.version).toBe('1') // 默认版本
+    expect(response.state).toBeNull()
   })
 })

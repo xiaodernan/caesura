@@ -10,7 +10,7 @@
 | Phase A / F2 | 画质四档接线：QualityStore→SaveWorld.quality，Stakerite 档位行 | bd38ac0 |
 | Phase B / F1 | ColorGrade.colorGradePass 失谐乘数接口 | e8e5829 |
 | Phase D / F4 | 凝固声波目录门：art-direction §1.4 + vfx-soundwave-catalog.test.ts | 2e6c0d9 |
-| Phase F / Spring Cloud | caesura-client 配置客户端 + spring-health-check 探针 + docker-compose | 9abf6c5 |
+| Phase F / Spring Cloud | caesura-config 配置客户端 + spring-health-check 探针 + docker-compose | 9abf6c5 |
 | Phase F-2 | spring-config-client（Node.js Config 客户端，4 测试） | 1bffdb1 |
 | Phase F-3 | spring-bus-client（Node.js Bus 客户端，5 测试） | bf490f6 |
 | Phase F-4 | spring-eureka-client（Node.js Eureka 客户端，6 测试） | 551bd2c |
@@ -21,6 +21,11 @@
 | Phase F-9 | spring-sleuth-trace（Sleuth 链路追踪客户端，6 测试） | d03a7bf |
 | Phase F-10 | spring-load-balancer（负载均衡客户端，7 测试） | b7f6629 |
 | Phase F-11 | spring-mesh-health（服务网格健康聚合器，5 测试） | ce32537 |
+| Phase F-12 | spring-config-server（Config Server 客户端，4 测试） | b8b7d89 |
+| Phase F-13 | Spring Cloud Config Server 增强：startConfigWatcher 热刷新回调 + 版本回滚端点 + `config/{app}` 版本名册（7 测试） | 待提交 |
+| Phase F-14 | `fetchConfigWithFallback`：Config Server 不可用时降级到 fallback 配置 + `_configError` 标记（3 新测试） | 待提交 |
+| Phase F-15 | Spring Cloud Bus 事件总线 `spring-bus-event.mjs`：进程内发布/订阅（publish/publishAsync/subscribe/close），默认实例 `defaultBus`（11 测试） | 待提交 |
+| Phase F-16 | Phase 7 F2 第二批落点：`src/renderer/QualityRenderer.ts`——renderer 分档实际消费者（applyRendererQuality + RendererQuality.sync()），headless 只记不应用，真 GL 落点等 Phase 9/10（8 测试） | 待提交 |
 | KI-407 | coverage 棘轮三出口（0/1/2）全部有测试 + 基线落地 | 07399b9 |
 | Phase C / F3 | Boss 乐句线 HUD：BossPhraseBar.ts + main.ts 接线 + flow 测试 | 08bb3f5 |
 | KI-118 fix | spring-health-check.mjs 移除 shebang（module-loader 门禁） | 0698210 |
@@ -31,7 +36,7 @@
 | Stakerite 覆盖率看板 | 读 coverage-floor.json 显示总地板 | b0e0fb7 |
 | Phase 7 F2-第三批 | QualityStore→GPUParticles 预算乘数接线验证（5 腿） | 26347df |
 
-**当前状态**：`npm run check` 全绿：4862 条 / 412 文件，0 红。
+**当前状态**：`npm run check` 全绿：4891 条 / 415 文件，0 个红。
 
 ---
 
@@ -39,14 +44,17 @@
 
 ### P1：Spring Cloud 微服务继续扩展
 
-- `caesura-client` 的配置拉取失败降级测试（模拟 config server 不可用时的退路）
-- Spring Cloud 服务网格健康聚合器已完成，可加更多 Spring Cloud 模式（config server 刷新、bus 事件等）
+- ~~`caesura-client` 的配置拉取失败降级测试~~ ✅ 完成（Phase F-14）
+- ~~更多 Spring Cloud 模式（config server 刷新、bus 事件等）~~ ✅ 完成（Phase F-15）
+- Spring Cloud Bus 与 Config Server 联动：config 变更 → bus 自动广播 → 各服务热刷新（下一轮）
+- Spring Cloud Gateway 动态路由热加载（Phase F-7 之上的增强）
 
 ### P2：Phase 7 后续
 
 - 更多 VFX/Boss 相关流程测试
 - `docs/perf-baseline.md` 持续完善
-- renderer 分档实际消费（shadow map size / resolution scale 实际应用到渲染管线）
+- ~~renderer 分档实际消费（shadow map size / resolution scale 实际应用到渲染管线）~~ ✅ 完成（Phase F-16，消费者写入契约面；真 GL 落点等 Phase 9/10）
+- UI 设置行画质档位选择器（Stakerite 第八页？）
 
 ### P3：新功能规划
 
