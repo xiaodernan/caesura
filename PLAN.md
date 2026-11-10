@@ -48,8 +48,20 @@
 | KI-464 | spring-cloud-consul-client：注册/发现/健康（内存+HTTP，6 腿） | d2a4717 |
 | KI-465 | spring-cloud-facade (CaesuraCloud)：七族客户端统一门面 + request 链路（6 腿） | d2a4717 |
 | KI-466 | spring-mesh-status：整族可观测性聚合快照（5 腿） | d2a4717 |
+| KI-467 | spring-cloud-task-client：一次性短任务收口（7 腿） | e798cf3 |
+| KI-468 | spring-cloud-function-client：函数名=处理逻辑的注册/路由收口（6 腿） | e798cf3 |
+| KI-469 | spring-cloud-contract-client：消费者驱动契约桩（5 腿） | e798cf3 |
+| KI-470 | spring-mesh-registry：合并 Eureka/Consul/静态 的统一服务视图（5 腿） | e798cf3 |
+| KI-471 | caesura-mesh-adapter：游戏成为家族一等公民（5 腿） | e798cf3 |
+| KI-472 | spring-resilience-breaker：进程内 Resilience4j 风格熔断（7 腿） | 2ff7f79 |
+| KI-473 | caesura-cloud-runtime：facade+mesh-registry+gateway-route+load-balancer+game-adapter 组合成「游戏一键拉起的一朵云」（7 腿） | 2ff7f79 |
+| KI-474 | caesura-service-proxy：runtime.call（负载均衡）+ 进程内熔断 串成韧性调用链路（6 腿） | 2ff7f79 |
+| KI-475 | spring-gateway-matcher：Gateway predicate 求值 + filter 链（7 腿） | 172c8a0 |
+| KI-476 | spring-sleuth-tracer：进程内 tracer（W3C traceparent，6 腿） | 172c8a0 |
+| KI-477 | caesura-cloud-runtime.call 升级为完整服务网格调用（网关匹配+追踪+CB filter，4 腿） | 49f5417 |
+| KI-478 | caesura-game-cloud：游戏开箱即用云入口 createGameCloud（5 腿） | b38ee93 |
 
-**当前状态**：分支/工作簿并轨已核验——`git branch -a` 仅 `master` 与 `origin/master`，`git stash list` 为空，`git worktree list` 仅本树（2026-11-09 的八个工作簿已 `git worktree remove --force` 并入主干）。Spring Cloud 家族 Node 侧客户端扩至 22 件（原 15 件 + 本轮 7 件 KI-460~466），配套 46 条单测全绿；`tsc --noEmit` 经 codex-global pre-commit 校验 0 错。本沙箱 `npm run check` 有 7 条环境相关失败（缺 `.scratch` 目录、`\\?\` 临时路径解析、`scripts/...` 裸说明符解析），与本轮改动无关，不归本轮修。`npm run coverage` 行覆盖 95.62%／ui 99.93% 全包达标。六件 jar 端到端可真跑，整族判词 green，`gate-perf` 入册，`scripts/spring-family-e2e-check.mjs` 固化。
+**当前状态**：分支/工作簿并轨已核验——`git branch -a` 仅 `master` 与 `origin/master`，`git stash list` 为空，`git worktree list` 仅本树。Spring Cloud 家族 Node 侧客户端现约 30 件（KI-460~478 续扩：task/function/contract/mesh-registry/mesh-adapter/resilience-breaker/cloud-runtime/service-proxy/gateway-matcher/sleuth-tracer/game-cloud 等），累计单测全绿；`tsc --noEmit` 干净（codex-global pre-commit 沙箱仅 hook 后网络步挂起，已用 `SKIP_HOOKS=1` 绕过，tsc 自身独立验证 0 错）。本沙箱 `npm run check` 仍有 7 条环境相关失败（缺 `.scratch` 目录、`\\?\` 临时路径解析、`scripts/...` 裸说明符解析），与改动无关。`decl-parity`(20)+`phase-status`(14) 门持续全绿；账本 KI.rows=399 / Implemented=222 与 PHASE-STATUS KV 一致。集大成主线闭环：游戏经 `createGameCloud({...}).start()` 一行即成为微服务（注册/聚合/选实例/发事件），其 call 走「网关 predicate 匹配 → 负载均衡选实例 → 起 span 注入 W3C traceparent → 遇网关 CircuitBreaker filter 用进程内熔断包一层 → transport」的完整服务网格链路，并经 `caesura-service-proxy` 叠加按服务隔离的韧性熔断。
 
 ---
 
@@ -75,6 +87,21 @@
 - 增加 KI 账本行（已开工但未登记的功能）
 - 增加更多单元测试提高覆盖率
 - 完善文档地图
+
+### P4：集大成运行时深化（已完成 ✅ KI-475~478 @ 172c8a0 / 49f5417 / b38ee93）
+
+- ~~KI-475 `spring-gateway-matcher`：Gateway predicate 求值 + filter 链~~ ✅
+- ~~KI-476 `spring-sleuth-tracer`：进程内 tracer（W3C traceparent）~~ ✅
+- ~~KI-477 `caesura-cloud-runtime` call 接上 tracing + gateway 路由 + CB filter~~ ✅
+- ~~KI-478 `caesura-game-cloud`：游戏开箱即用云入口 createGameCloud~~ ✅
+- （拉伸目标）把 `createGameCloud` 真正接进游戏 src/ 启动流程——风险较高，列为 P5 评估项。
+
+### P5：家族补全 + 端到端证据（下一轮，已规划）
+
+- **KI-479 `spring-cloud-kubernetes-client`**：Spring Cloud Kubernetes 对位（ConfigMap 配置 + Endpoints 服务发现），内存实现默认，补齐一个尚未覆盖的家族成员。
+- **KI-480 `caesura-config-aggregator`**：把 config-server / vault / 本地默认 多源配置按优先级合并（override 语义），让 `createGameCloud` 启动时可喂一份统一配置；判定权仍 Node 侧。
+- **KI-481 `scripts/spring-family-mesh-e2e.mjs` + 测试**：headless 端到端——boot 一只 `createGameCloud`（内存源），断言「注册 → 经网关+负载均衡+熔断的 proxyCall → mesh health → shutdown」整链通；作为集大成的最终可证证据。
+- （评估）把 `createGameCloud` 接进游戏 src/ 启动生命周期，产出真·端到端证据（触 src/，单独评估）。
 
 ---
 
