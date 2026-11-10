@@ -14,32 +14,30 @@
 | KI-407 | coverage 棘轮三出口（0/1/2）全部有测试 | (已在 9abf6c5 前完成) |
 | Phase C / F3 | Boss 乐句线 HUD：BossPhraseBar.ts + main.ts 接线 + flow 测试 | 08bb3f5 |
 | KI-118 fix | spring-health-check.mjs 移除 shebang（module-loader 门禁） | 0698210 |
+| Phase 7 F2-第二批 | Streaming ring 接线（activateRingBonus/preloadRingBonus） | 08e59a9 |
+| Phase 7 F2-第二批 | renderer 分档接口（QualityTargets.renderer） | 96df2f0 |
 
-**当前状态**：`npm run check` 全绿：4797 条 / 399 文件，0 红。
+**当前状态**：`npm run check` 全绿：4803 条 / 400 文件，0 红。
 
 ---
 
 ## 进行中 / 待开工（按优先级）
 
-### Phase 7 F2 第二批 —— Streaming ring 接线 + renderer 分档（头部优先）
+### P0：KI-407 coverage 基线落地
 
-**Streaming ring**：`QualityStore.profile().activateRingBonus` / `preloadRingBonus` 接进 `StreamingSystem` 构造（一次性读，不每帧重算）。组合根归零覆盖率挡住直接改 `main.ts`，需先量。
+运行 `npm run coverage -- --bless` 建立覆盖率地板，并提交 `scripts/coverage-floor.json` 更新。这是 TD-004 结案的关键一步。
 
-落点：
-1. `src/world/Streaming.ts` —— 构造参数新增 `activateRingBonus` / `preloadRingBonus`（数字，cell 单位）
-2. `src/main.ts` —— 组合根把 `QualityStore.profile().activateRingBonus` 灌进 `StreamingSystem`
-3. `tests/unit/streaming-ring.test.ts` —— 验证 ring bonus 被正确读取并应用
+### P1：Spring Cloud 微服务继续扩展
 
-**renderer 分档**：`ColorGrade`/`VfxLayer`/`SceneLights` 按 `QUALITY_PROFILES[t].resolutionScale`/`shadowMapSize` 分档。今日无真 WebGL，headless 跳过断言，只留契约。
+- `caesura-gate` 与 Node 侧 `scripts/spring-family-rules.mjs` 的 `serviceTopologyFindings` 已三方一致
+- 可加 `caesura-client` 的配置拉取失败降级测试（模拟 config server 不可用时的退路）
+- 可加更多 Spring Cloud 模式（config server 刷新、bus 事件等）
 
----
+### P2：Phase 7 后续
 
-### 后续候选（选做，不阻塞主线）
-
-- Spring Cloud：`caesura-gate` 与 Node 侧 `scripts/spring-family-rules.mjs` 的 `serviceTopologyFindings` 已三方一致，可再加 `caesura-client` 的配置拉取失败降级测试
-- `docs/technical-architecture.md`：加 `src/ui/BossPhraseBar.ts` 与 `src/vfx/ColorGrade.ts#colorGradePass` 的文件地图行（已部分完成）
-- KI-407：`npm run coverage -- --bless` 真跑基线并提交 `scripts/coverage-floor.json` 更新
 - `src/ui/Stakerite.ts` 加「覆盖率看板」行（读 `scripts/coverage.mjs` 输出）
+- 更多 VFX/Boss 相关流程测试
+- `docs/perf-baseline.md` 持续完善
 
 ---
 
