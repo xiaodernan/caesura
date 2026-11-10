@@ -533,4 +533,53 @@ describe('caesura-game-cloud', () => {
     // 主链语义逐字不动
     expect(st.eventChannel).toBeTruthy()
   })
+
+  it('distributedTxn:true ⇒ 装配分布式事务、status.distributedTxn 读真三协议×六场景矩阵/三难判词、惰性同引用（KI-506）', async () => {
+    const gc = createGameCloud({
+      gameId: 'gdt1', gamePort: 7722, sources, cloud: fakeCloud(),
+      distributedTxn: true, dtxnNow: () => 7777,
+    })
+    expect(gc.runDistributedTxnStudy).toBeTypeOf('function')
+    const st = await gc.status()
+    expect(st.distributedTxn.builtAt).toBe(7777)
+    expect(st.distributedTxn.config.protocols).toEqual(['2PC', 'Saga', 'TCC'])
+    expect(st.distributedTxn.config.scenarios.length).toBe(6)
+    expect(st.distributedTxn.rows.length).toBe(3)
+    const two = st.distributedTxn.rows.find((r: any) => r.protocol === '2PC')
+    const saga = st.distributedTxn.rows.find((r: any) => r.protocol === 'Saga')
+    const tcc = st.distributedTxn.rows.find((r: any) => r.protocol === 'TCC')
+    expect(two.scenarios.find((s: any) => s.id === 'coordinatorDown').blocked).toBe(3) // 2PC 阻塞
+    expect(saga.scenarios.find((s: any) => s.id === 'compensateFail').dirty).toBe(1)     // Saga 留脏
+    expect(tcc.scenarios.find((s: any) => s.id === 'confirmFlaky').retries).toBeGreaterThan(0) // TCC 幂等重试
+    expect(two.intrusion).toBeLessThan(saga.intrusion)
+    expect(saga.intrusion).toBeLessThan(tcc.intrusion)
+    expect(st.distributedTxn.verdict.noUniversalWinner).toBe(true)
+    expect(Object.values(st.distributedTxn.verdict).every(Boolean)).toBe(true)
+    // 惰性缓存：二次 status 同引用，不反复跑对照
+    expect((await gc.status()).distributedTxn).toBe(st.distributedTxn)
+    // 现算入口可重跑、确定性（同注入 now）
+    const rerun = await gc.runDistributedTxnStudy!()
+    expect(rerun.verdict).toEqual(st.distributedTxn.verdict)
+  })
+
+  it('distributedTxn 默认 null 非破坏；可注入现成 study（KI-506）', async () => {
+    const plain = createGameCloud({ gameId: 'gdt2', gamePort: 7723, sources, cloud: fakeCloud() })
+    expect(plain.runDistributedTxnStudy).toBe(null)
+    const ps = await plain.status()
+    expect(ps.distributedTxn).toBe(null)
+    expect(ps.mvccTxn).toBe(null)
+    expect(ps.bplusIndex).toBe(null)
+    // 注入现成 study：直接用、不重跑，builtAt 原样带出、不被 dtxnNow 覆盖。
+    const { distributedTxnStudy } = await import('../../scripts/caesura-distributed-txn.mjs')
+    const study = distributedTxnStudy({ now: () => 456 })
+    const injected = createGameCloud({
+      gameId: 'gdt3', gamePort: 7724, sources, cloud: fakeCloud(),
+      distributedTxn: study, dtxnNow: () => 999,
+    })
+    const st = await injected.status()
+    expect(st.distributedTxn.builtAt).toBe(456)
+    expect(st.distributedTxn.verdict.noUniversalWinner).toBe(true)
+    // 主链语义逐字不动
+    expect(st.eventChannel).toBeTruthy()
+  })
 })

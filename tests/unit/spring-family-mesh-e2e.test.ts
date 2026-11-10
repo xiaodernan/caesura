@@ -404,4 +404,29 @@ describe('spring-family-mesh-e2e', () => {
     const plain = await runMeshE2E().run()
     expect(plain.mvccTxnSnapshot).toBe(null)
   })
+
+  it('e2e KI-506：distributedTxn=true ⇒ 主链照常跑通，distributedTxnSnapshot 带三协议×六场景矩阵/三难判词', async () => {
+    const e = runMeshE2E({ distributedTxn: true, dtxnNow: () => 6666 })
+    const r = await e.run()
+    expect(r.started?.registered).toBe(true)          // 主链语义逐字不动
+    expect(r.callRes?.ok).toBe(true)
+    const d = r.distributedTxnSnapshot
+    expect(d).not.toBe(null)
+    expect(d!.builtAt).toBe(6666)
+    expect(d!.config.protocols).toEqual(['2PC', 'Saga', 'TCC'])
+    expect(d!.config.scenarios.length).toBe(6)
+    expect(d!.rows.length).toBe(3)
+    const two = d!.rows.find((row: any) => row.protocol === '2PC')!
+    const saga = d!.rows.find((row: any) => row.protocol === 'Saga')!
+    const tcc = d!.rows.find((row: any) => row.protocol === 'TCC')!
+    expect(two.scenarios.find((s: any) => s.id === 'coordinatorDown')!.blocked).toBe(3)
+    expect(saga.scenarios.find((s: any) => s.id === 'compensateFail')!.dirty).toBe(1)
+    expect(tcc.scenarios.find((s: any) => s.id === 'confirmFlaky')!.retries).toBeGreaterThan(0)
+    expect(two.intrusion).toBeLessThan(tcc.intrusion)
+    expect(d!.verdict.noUniversalWinner).toBe(true)
+    expect(Object.values(d!.verdict).every(Boolean)).toBe(true)
+    // 未配 distributedTxn 时为 null（非破坏）。
+    const plain = await runMeshE2E().run()
+    expect(plain.distributedTxnSnapshot).toBe(null)
+  })
 })

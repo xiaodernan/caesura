@@ -28,6 +28,7 @@ import { rateLimiterStudy, rlSnapshot } from './caesura-rate-limiter.mjs'
 import { failureDetectorStudy, fdSnapshot } from './caesura-failure-detector.mjs'
 import { bplusStudy, bpSnapshot } from './caesura-bplus-tree.mjs'
 import { mvccStudy, mvSnapshot } from './caesura-mvcc-txn.mjs'
+import { distributedTxnStudy, dtSnapshot } from './caesura-distributed-txn.mjs'
 import {
   createAimdCongestion,
   createCubicCongestion,
@@ -341,6 +342,27 @@ export function createGameCloud(opts = {}) {
     return mvCached
   }
 
+  // KI-506：分布式事务三协议诚实权衡（2PC 阻塞 / Saga 补偿留脏 / TCC 幂等重试，opt-in）。
+  // opts.distributedTxn===true 用缺省规模；传对象逐项注入（now/participants/sagaSteps/tccSteps/
+  // failIndex/compensateFailIndex/confirmFlakyIndex/confirmFailTimes/maxRetries/...），或直接塞一只
+  // 现成 study（duck-typed：带 comparison/idempotency/sagaOrder/tccRetry/verdict 五块）。
+  // 默认 distributedTxn:false 不装配、不改任何调用路径（KI-486/493/496/501/502/503/504/505 语义逐字不动）。
+  const dtCfg = opts.distributedTxn === true ? {} : (opts.distributedTxn && typeof opts.distributedTxn === 'object' ? opts.distributedTxn : null)
+  const dtInjected = dtCfg !== null && opts.distributedTxn &&
+    typeof opts.distributedTxn === 'object' && typeof opts.distributedTxn.comparison === 'object' &&
+    typeof opts.distributedTxn.idempotency === 'object' && typeof opts.distributedTxn.tccRetry === 'object'
+  let dtCached = null
+  async function dtSnapshotForStatus() {
+    if (dtCfg === null) return null
+    if (dtCached) return dtCached
+    // 注入现成 study 直接用（不重跑）；否则真跑一次汇总，惰性缓存不反复付对照成本。
+    const study = dtInjected
+      ? opts.distributedTxn
+      : await distributedTxnStudy({ ...dtCfg, now: opts.dtxnNow ?? dtCfg.now })
+    dtCached = dtSnapshot(study)
+    return dtCached
+  }
+
   /** 包住一次调用，用真实耗时/成败喂 net 包（未启用则原样返回，零开销）。 */
   async function observeCall(promise) {
     if (!net) return promise
@@ -393,6 +415,8 @@ export function createGameCloud(opts = {}) {
     runBplusStudy: bpCfg === null ? null : () => bplusStudy({ ...bpCfg, now: opts.bpNow ?? bpCfg.now }),
     /** KI-505：事务并发控制汇总的现算入口（未配 opts.mvccTxn 时为 null）；调一次真跑五档隔离异常矩阵 + 死锁检测 + gc 水位对照。 */
     runMvccTxnStudy: mvCfg === null ? null : () => mvccStudy({ ...mvCfg, now: opts.txnNow ?? mvCfg.now }),
+    /** KI-506：分布式事务三协议汇总的现算入口（未配 opts.distributedTxn 时为 null）；调一次真跑 2PC/Saga/TCC × 六场景矩阵 + 三难判词。 */
+    runDistributedTxnStudy: dtCfg === null ? null : () => distributedTxnStudy({ ...dtCfg, now: opts.dtxnNow ?? dtCfg.now }),
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
     gray: runtime.gray,
     /** 把游戏真 EventBus 按白名单routes 接进云事件总线（游戏侧一行：gc.connectGameBus(bus, routes)）。 */
@@ -430,6 +454,7 @@ export function createGameCloud(opts = {}) {
         failureDetector: await fdSnapshotForStatus(),
         bplusIndex: await bpSnapshotForStatus(),
         mvccTxn: await mvSnapshotForStatus(),
+        distributedTxn: await dtSnapshotForStatus(),
       }
     },
   }

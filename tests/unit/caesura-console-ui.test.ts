@@ -569,4 +569,63 @@ describe('caesura-console-ui (KI-495)', () => {
     expect(dom2.els['mv-matrix'].innerHTML).toContain('data-lvl="RU"') // 矩阵照常
     expect(dom2.els['mv-deadlock'].innerHTML).toContain('DFS 找环')    // 死锁照常
   })
+
+  it('⑳ KI-506 真 distributedTxn 读数落进「三协议×六场景」+「三难不可兼得」两面板（不是写死的数）', async () => {
+    const dom = await runApp(real)
+    const dt = real.systems.distributedTxn
+    // 面板一：三协议 × 六场景矩阵（每格读 Node 判词：成/止/阻/脏）+ 侵入度 + 消息横条
+    const matrix = dom.els['dt-matrix'].innerHTML
+    expect(matrix).toContain('dt-mat-head')
+    for (const row of dt.rows) expect(matrix).toContain('data-p="' + row.protocol + '"')
+    for (const s of dt.config.scenarios) expect(matrix).toContain('data-s="' + s.id + '"')
+    expect(matrix).toContain('class="dt-cell blocked" data-p="2PC" data-s="coordinatorDown"')  // 2PC 阻塞
+    expect(matrix).toContain('class="dt-cell dirty" data-p="Saga" data-s="compensateFail"')    // Saga 留脏
+    expect(matrix).toContain('class="dt-cell ok" data-p="TCC" data-s="confirmFlaky"')          // TCC 幂等后提交
+    expect(matrix).toContain(String(dt.rows.find((r: any) => r.protocol === 'TCC').intrusion)) // 侵入度真读数
+    const ladder = dom.els['dt-ladder'].innerHTML
+    expect(ladder).toContain('data-p="2PC"')
+    expect(ladder).toContain('dt-bar')
+    expect(dom.els['dt-matrix-note'].textContent).toContain('侵入度是每服务要写的接口数结构计数')
+    // 面板二：三难向量（玉=占/酒红=缺，逐格 data-v）+ 判词探针 + 不封赢家 dot
+    const tri = dom.els['dt-trilemma'].innerHTML
+    expect(tri).toContain('dt-vec-head')
+    expect(tri).toContain('data-k="noBlock"')
+    expect(tri).toContain('data-k="noDirty"')
+    expect(tri).toContain('data-k="lowIntrusion"')
+    expect(tri).toContain('data-p="2PC" data-k="noBlock" data-v="0"')  // 2PC 缺不阻塞
+    expect(tri).toContain('data-p="Saga" data-k="noDirty" data-v="0"') // Saga 缺不留脏
+    expect(tri).toContain('data-p="TCC" data-k="lowIntrusion" data-v="0"') // TCC 缺侵入最低
+    const probes = dom.els['dt-probes'].innerHTML
+    expect(probes).toContain('data-probe="twoPcBlocks"')
+    expect(probes).toContain('data-probe="sagaDirty"')
+    expect(probes).toContain('data-probe="tccRetry"')
+    expect(probes).toContain('data-verdict="noUniversalWinner"')
+    expect(probes).toContain('不封任何协议全局赢家')
+    expect(dom.els['dt-trilemma-note'].textContent).toContain('换场景或故障点结论会变')
+  })
+
+  it('㉑ KI-506 distributedTxn 整块缺 / 单块缺诚实降级，不连坐 mvccTxn-bplusIndex-lsm', async () => {
+    // 整块缺：四子块全降级、绝不画 0/假格；其它七维仍照常。
+    const noDt = JSON.parse(JSON.stringify(real))
+    noDt.systems.distributedTxn = null
+    const dom = await runApp(noDt)
+    expect(dom.els['dt-matrix'].innerHTML).toContain('无三协议场景矩阵读数')
+    expect(dom.els['dt-ladder'].innerHTML).toBe('')
+    expect(dom.els['dt-trilemma'].innerHTML).toContain('无三难判据读数')
+    expect(dom.els['dt-probes'].innerHTML).toBe('')
+    expect(dom.els['dt-matrix-note'].textContent).toContain('systems.distributedTxn 缺失')
+    expect(dom.els['mv-matrix'].innerHTML).toContain('data-lvl="RU"')      // mvccTxn 不连坐
+    expect(dom.els['bp-structure'].innerHTML).toContain('✓ 真 B+ 树')       // bplusIndex 不连坐
+    expect(dom.els['lsm-gauge'].innerHTML).toContain(String(real.systems.lsm.speedup.toFixed(1))) // lsm 不连坐
+
+    // 单块缺：只降 tccRetry，矩阵/三难向量仍渲染真读数（同维不连坐）。
+    const partial = JSON.parse(JSON.stringify(real))
+    partial.systems.distributedTxn.tccRetry = null
+    const dom2 = await runApp(partial)
+    const probes = dom2.els['dt-probes'].innerHTML
+    expect(probes).toContain('TCC</b> Confirm 幂等重试 — 次') // tccRetry 缺 → 诚实落「—」不画 0，其余探针照常
+    expect(probes).toContain('data-probe="twoPcBlocks"')
+    expect(dom2.els['dt-matrix'].innerHTML).toContain('class="dt-cell blocked"') // 矩阵照常
+    expect(dom2.els['dt-trilemma'].innerHTML).toContain('data-k="noBlock"')      // 三难照常
+  })
 })

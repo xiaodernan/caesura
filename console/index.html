@@ -224,6 +224,22 @@
       <p class="note" id="mv-deadlock-note">—</p>
     </article>
   </section>
+
+  <!-- 分布式事务（KI-506 前后端协同：2PC 阻塞 / Saga 补偿留脏 / TCC 三阶段幂等 × 六场景矩阵 + 三难判词） -->
+  <section class="row row-dtxn">
+    <article class="panel panel-dt">
+      <div class="panel-head"><h2>三协议 × 六场景</h2><span class="hint">成=提交 · 止=中止 · 阻=阻塞 · 脏=留脏 · 侵入度 2PC&lt;Saga&lt;TCC</span></div>
+      <div class="dt-matrix" id="dt-matrix"></div>
+      <div class="dt-ladder" id="dt-ladder"></div>
+      <p class="note" id="dt-matrix-note">—</p>
+    </article>
+    <article class="panel panel-dt">
+      <div class="panel-head"><h2>三难不可兼得</h2><span class="hint">不阻塞 ∧ 不留脏 ∧ 侵入最低 · 不封任何协议赢家</span></div>
+      <div class="dt-trilemma" id="dt-trilemma"></div>
+      <div class="dt-probes" id="dt-probes"></div>
+      <p class="note" id="dt-trilemma-note">—</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">

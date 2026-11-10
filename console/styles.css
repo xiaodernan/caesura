@@ -552,6 +552,56 @@ main { padding: clamp(18px, 3vw, 40px) clamp(18px, 4vw, 56px) 48px; max-width: 1
   .mv-matrix-row .mv-lvl { font-size: 10px; }
 }
 
+/* ---------- 分布式事务（KI-506）---------- */
+.row-dtxn { grid-template-columns: repeat(2, 1fr); }
+.dt-matrix { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 12px; }
+.dt-mat-row { display: grid; grid-template-columns: 52px repeat(6, 1fr) 40px; gap: 4px; align-items: center; }
+.dt-mat-head { font-family: var(--mono); font-size: 10px; letter-spacing: .04em; color: var(--gold-dim); padding-bottom: 3px; border-bottom: 1px solid var(--line-soft); }
+.dt-mat-head .dt-sc { text-align: center; }
+.dt-mat-proto { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--silver); letter-spacing: .04em; }
+.dt-mat-proto small { display: block; font-size: 9px; color: var(--muted); font-weight: 400; }
+.dt-cell {
+  text-align: center; font-family: var(--mono); font-size: 11px; min-height: 24px; line-height: 24px;
+  border: 1px solid var(--line-soft); border-radius: 2px; background: var(--ash-2); color: var(--muted);
+}
+.dt-cell.ok { background: var(--jade-dim); border-color: rgba(79,155,134,.34); color: var(--jade); }
+.dt-cell.stopped { background: var(--ash-2); color: var(--silver); }
+.dt-cell.blocked { background: var(--wine-dim); border-color: rgba(165,68,82,.36); color: #d98892; }
+.dt-cell.dirty { background: var(--wine-dim); border-color: rgba(165,68,82,.5); color: #e59aa2; font-weight: 600; }
+.dt-mat-cost { text-align: right; font-family: var(--mono); font-size: 10px; color: var(--gold-dim); }
+.dt-mat-cost b { color: var(--gold); }
+.dt-ladder { display: flex; flex-direction: column; gap: 5px; }
+.dt-line { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 10.5px; color: var(--silver); }
+.dt-line .tag { color: var(--gold-dim); letter-spacing: .06em; min-width: 34px; }
+.dt-bar { flex: 1; height: 7px; background: var(--ash-2); border: 1px solid var(--line-soft); border-radius: 2px; overflow: hidden; }
+.dt-bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--gold-dim), var(--gold)); }
+.dt-line .num { color: var(--muted); min-width: 58px; text-align: right; }
+.dt-trilemma { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 12px; }
+.dt-vec { display: grid; grid-template-columns: 52px repeat(3, 1fr); gap: 6px; align-items: center; }
+.dt-vec .proto { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--silver); }
+.dt-flag {
+  font-family: var(--mono); font-size: 10.5px; text-align: center; padding: 5px 2px;
+  border: 1px solid var(--line-soft); border-radius: 2px; background: var(--ash-2); color: var(--muted);
+}
+.dt-flag.yes { background: var(--jade-dim); border-color: rgba(79,155,134,.34); color: var(--jade); }
+.dt-flag.no { background: var(--wine-dim); border-color: rgba(165,68,82,.36); color: #d98892; }
+.dt-vec-head { font-family: var(--mono); font-size: 9px; letter-spacing: .04em; color: var(--muted); }
+.dt-vec-head span { text-align: center; }
+.dt-probes { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.dt-probes .chip {
+  font-family: var(--mono); font-size: 10px; padding: 4px 9px;
+  border: 1px solid var(--line-soft); border-radius: 2px; background: var(--ash-2); color: var(--silver);
+}
+.dt-probes .chip b { color: var(--gold); font-weight: 600; }
+.dt-probes .chip.jade-t { border-color: rgba(79,155,134,.4); color: var(--jade); }
+.dt-probes .chip.muted-t { color: var(--muted); }
+@media (max-width: 1020px) { .row-dtxn { grid-template-columns: 1fr; } }
+@media (max-width: 720px) {
+  .dt-mat-row, .dt-vec { grid-template-columns: 44px repeat(3, 1fr) 32px; gap: 2px; }
+  .dt-mat-head .dt-sc:nth-of-type(n+4) { display: none; }
+  .dt-cell { font-size: 9px; min-height: 21px; line-height: 21px; }
+}
+
 /* ---------- 页脚 ---------- */
 .footer {
   display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;

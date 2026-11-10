@@ -68,6 +68,11 @@ export interface GameCloudOptions {
    * gcLongWaterMark/gcCleanWaterMark/...），或直接塞一只现成 study（带 comparison/deadlock/gc/verdict 四块）。 */
   mvccTxn?: boolean | Record<string, any> | { comparison: any; deadlock: any; gc: any; verdict: any; [k: string]: any }
   txnNow?: () => number
+  /** KI-506：分布式事务三协议诚实权衡（2PC 阻塞 / Saga 补偿留脏 / TCC 三阶段幂等）。true 用缺省规模；
+   * 对象逐项注入（now/participants/sagaSteps/tccSteps/failIndex/compensateFailIndex/confirmFlakyIndex/
+   * confirmFailTimes/maxRetries/scenarios/...），或直接塞一只现成 study（带 comparison/idempotency/tccRetry/verdict 五块）。 */
+  distributedTxn?: boolean | Record<string, any> | { comparison: any; idempotency: any; tccRetry: any; verdict: any; [k: string]: any }
+  dtxnNow?: () => number
 }
 
 /** 创建一只游戏侧开箱即用云。 */
@@ -100,6 +105,8 @@ export function createGameCloud(opts?: GameCloudOptions): {
   runBplusStudy: (() => Promise<any>) | null
   /** KI-505：事务并发控制汇总的现算入口（未配 opts.mvccTxn 时为 null）；真跑五档隔离异常矩阵 + 死锁环检测 + gc 水位对照。 */
   runMvccTxnStudy: (() => Promise<any>) | null
+  /** KI-506：分布式事务三协议汇总的现算入口（未配 opts.distributedTxn 时为 null）；真跑 2PC/Saga/TCC × 六场景矩阵 + 三难判词。 */
+  runDistributedTxnStudy: (() => Promise<any>) | null
   /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）。 */
   gray: any
   /** KI-489：把游戏真 EventBus（duck-typed {on,emit}）按白名单接进云事件总线。 */

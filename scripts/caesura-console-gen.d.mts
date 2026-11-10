@@ -155,7 +155,40 @@ export interface MvccTxnReading {
   verdict: Record<string, boolean>
 }
 
-/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制）。 */
+/** KI-506：分布式事务读数（2PC 阻塞 / Saga 补偿留脏 / TCC 三阶段幂等 × 六场景矩阵 + 三难判词 + 不封赢家）。 */
+export interface DistributedTxnReading {
+  config: { protocols: string[]; scenarios: Array<{ id: string; label: string }> }
+  rows: Array<{
+    protocol: string
+    label: string
+    intrusion: number
+    isolation: boolean
+    trilemma: { noBlock: boolean; noDirty: boolean; lowIntrusion: boolean }
+    totals: { committed: number; aborted: number; blocked: number; dirty: number; retries: number; messages: number }
+    scenarios: Array<{
+      id: string
+      label: string
+      protocol: string
+      scenario: string
+      committed: boolean
+      aborted: boolean
+      blocked: number
+      dirty: number
+      retries: number
+      messages: number
+      isolation: boolean
+      intrusion: number
+      atomic: boolean
+      detail: Record<string, any>
+    }>
+  }>
+  idempotency: Record<string, any>
+  sagaOrder: Record<string, any>
+  tccRetry: Record<string, any>
+  verdict: Record<string, boolean>
+}
+
+/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务）。 */
 export interface SystemsBlock {
   lsm: LsmReading | null
   hw: HwReading | null
@@ -164,6 +197,7 @@ export interface SystemsBlock {
   failureDetector: FailureDetectorReading | null
   bplusIndex: BplusReading | null
   mvccTxn: MvccTxnReading | null
+  distributedTxn: DistributedTxnReading | null
   builtAt: number
 }
 
@@ -212,9 +246,12 @@ export function buildSnapshot(opts?: {
   /** KI-505：false 关掉事务并发控制维（兼容旧快照）；mvGcVersions 注入版本链规模。 */
   mvccTxn?: boolean
   mvGcVersions?: number
+  /** KI-506：false 关掉分布式事务维（兼容旧快照）；dtxnRetries 注入 Confirm 失败次数。 */
+  distributedTxn?: boolean
+  dtxnRetries?: number
 }): Promise<ConsoleSnapshot>
 
-/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制七维系统读数；击穿并发 ⇒ async。 */
+/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务八维系统读数；击穿并发 ⇒ async。 */
 export function buildSystems(opts?: {
   now?: () => number
   lsmKeys?: number
@@ -237,6 +274,9 @@ export function buildSystems(opts?: {
   /** KI-505：false 关掉事务并发控制维（兼容旧快照）；mvGcVersions 注入版本链规模。 */
   mvccTxn?: boolean
   mvGcVersions?: number
+  /** KI-506：false 关掉分布式事务维（兼容旧快照）；dtxnRetries 注入 Confirm 失败次数。 */
+  distributedTxn?: boolean
+  dtxnRetries?: number
 }): Promise<SystemsBlock>
 
 /** KI-501：真跑缓存防护三件套（击穿/穿透/雪崩）收敛成前端三面板紧凑读数；单维失败落 null。 */
@@ -279,6 +319,13 @@ export function buildMvccTxnReading(opts: {
   mvccTxn?: boolean
   mvGcVersions?: number
 }, now: () => number): Promise<MvccTxnReading | null>
+
+/** KI-506：真跑分布式事务（2PC 阻塞 / Saga 补偿留脏 / TCC 三阶段幂等 × 六场景矩阵 + 三难判词）收敛成前端两面板紧凑读数；失败落 null。 */
+export function buildDistributedTxnReading(opts: {
+  now?: () => number
+  distributedTxn?: boolean
+  dtxnRetries?: number
+}, now: () => number): Promise<DistributedTxnReading | null>
 
 export function realScenarioOpts(id: string): Record<string, any>
 

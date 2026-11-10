@@ -87,6 +87,9 @@ export function runMeshE2E(opts = {}) {
     // KI-505：事务与并发控制（mvccTxn=true 装配；只读五档隔离异常矩阵/死锁环检测/gc 水位对照证据，不改调用路径）。
     mvccTxn: opts.mvccTxn,
     txnNow: opts.txnNow,
+    // KI-506：分布式事务三协议（distributedTxn=true 装配；只读 2PC/Saga/TCC × 六场景矩阵 + 三难判词，不改调用路径）。
+    distributedTxn: opts.distributedTxn,
+    dtxnNow: opts.dtxnNow,
     sources: {
       eureka: () => (opts.svcA ?? [{ id: 'svc-a:1', name: 'svc-a', address: '10.0.0.1', port: 8080, healthy: true }]),
       k8s: () => k8s.discover('caesura-gate'),
@@ -214,6 +217,7 @@ export function runMeshE2E(opts = {}) {
         failureDetectorSnapshot: status.failureDetector ?? null,
         bplusIndexSnapshot: status.bplusIndex ?? null,
         mvccTxnSnapshot: status.mvccTxn ?? null,
+        distributedTxnSnapshot: status.distributedTxn ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
       }
@@ -286,6 +290,17 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         twoPhaseLockEnforced: r.mvccTxnSnapshot.twoPhaseLock.lateAcquireBlocked,
         longTxnRetainsVersions: r.mvccTxnSnapshot.gc.longTxnRetainsMoreVersions,
         verdict: r.mvccTxnSnapshot.verdict,
+      } : null,
+      distributedTxn: r.distributedTxnSnapshot ? {
+        protocols: r.distributedTxnSnapshot.rows.map((row) => ({
+          protocol: row.protocol, intrusion: row.intrusion, isolation: row.isolation,
+          ladder: row.scenarios.map((s) => s.id + ':' + (s.committed ? '成' : s.blocked > 0 ? '阻' : s.dirty > 0 ? '脏' : '止')).join(' → '),
+          totals: row.totals, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.distributedTxnSnapshot.rows.map((row) => [row.protocol,
+          `${Number(row.trilemma.noBlock)}${Number(row.trilemma.noDirty)}${Number(row.trilemma.lowIntrusion)}`])),
+        noUniversalWinner: r.distributedTxnSnapshot.verdict.noUniversalWinner,
+        verdict: r.distributedTxnSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

@@ -45,6 +45,7 @@
       renderFailureDetector(snap.systems ? snap.systems.failureDetector : null)
       renderBplus(snap.systems ? snap.systems.bplusIndex : null)
       renderMvcc(snap.systems ? snap.systems.mvccTxn : null)
+      renderDistributedTxn(snap.systems ? snap.systems.distributedTxn : null)
       setLive(true, result.source)
     }).catch(function (e) {
       setLive(false, 'error')
@@ -948,6 +949,106 @@
       '<div class="v">' + esc(fmt(long.kept)) + '<small> 版留存 / 回收 ' + esc(fmt(long.removed)) + '</small></div></div>' +
       '<div class="pair" data-wm="clean"><div class="k">无长事务 · 高水位 ' + esc(fmt(clean.waterMarkTs)) + '</div>' +
       '<div class="v">' + esc(fmt(clean.kept)) + '<small> 版留存 / 回收 ' + esc(fmt(clean.removed)) + '</small></div></div>'
+  }
+
+  // ---------------- KI-506 分布式事务：三协议 × 六场景矩阵 + 三难不可兼得 ----------------
+  function renderDistributedTxn(dt) {
+    renderDtMatrix(dt && dt.rows, dt && dt.config, dt && dt.verdict)
+    renderDtLadder(dt && dt.rows)
+    renderDtTrilemma(dt && dt.rows, dt && dt.verdict, dt && dt.sagaOrder, dt && dt.tccRetry)
+  }
+
+  function dtMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">无' + esc(label) + '读数</div>'
+    if (note) note.textContent = 'systems.distributedTxn 缺失 —— 重跑 npm run console:data 采集真判词'
+  }
+
+  // 每格读 Node 侧真判词：成=提交 / 止=中止 / 阻=阻塞 / 脏=留脏；侵入度作行尾代价。
+  function dtState(s) {
+    if (!s) return { cls: '', ch: '—' }
+    if (s.committed) return { cls: 'ok', ch: '成' }
+    if (isNum(s.blocked) && s.blocked > 0) return { cls: 'blocked', ch: '阻' }
+    if (isNum(s.dirty) && s.dirty > 0) return { cls: 'dirty', ch: '脏' }
+    if (s.aborted) return { cls: 'stopped', ch: '止' }
+    return { cls: '', ch: '—' }
+  }
+
+  // 面板一上半：三协议 × 六场景矩阵（格内真判词，不复核）。
+  function renderDtMatrix(rows, config, verdict) {
+    var box = $('#dt-matrix'), note = $('#dt-matrix-note')
+    if (!Array.isArray(rows) || !rows.length || !config || !Array.isArray(config.scenarios)) {
+      dtMissing(box, note, '三协议场景矩阵'); return
+    }
+    var scenarios = config.scenarios
+    var head = '<div class="dt-mat-row dt-mat-head"><span class="dt-mat-proto">协议</span>' +
+      scenarios.map(function (s) { return '<span class="dt-sc" title="' + esc(s.label) + '">' + esc(s.id) + '</span>' }).join('') +
+      '<span class="dt-mat-cost">侵入</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (s) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === s.id }) : null
+        var st = dtState(cell)
+        return '<span class="dt-cell ' + st.cls + '" data-p="' + esc(row.protocol) + '" data-s="' + esc(s.id) +
+          '" data-state="' + (st.cls || 'na') + '" title="' + esc(s.label) + '">' + st.ch + '</span>'
+      }).join('')
+      return '<div class="dt-mat-row" data-p="' + esc(row.protocol) + '">' +
+        '<span class="dt-mat-proto">' + esc(row.protocol) + '<small>' + esc(row.label || '') + '</small></span>' +
+        cells + '<span class="dt-mat-cost"><b>' + esc(fmt(row.intrusion)) + '</b></span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = '同一组确定性故障场景（全成功 / 单点 no / 协调者 prepare 后宕机 / 第 k 步失败 / ' +
+      '补偿再失败 / Confirm 半途失败）分喂三协议，每格是 Node 侧真判词：成=全局提交、止=中止、' +
+      '阻=参与者卡在 prepared 持锁阻塞、脏=补偿失败留脏。侵入度是每服务要写的接口数结构计数' +
+      '（2PC XA 托管最低 / Saga 正反两套 / TCC Try·Confirm·Cancel 三套最重），非真实代码量。'
+  }
+
+  // 面板一下半：消息数横条对照（结构计数，不封谁省谁优）。
+  function renderDtLadder(rows) {
+    var box = $('#dt-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.totals && isNum(r.totals.messages) ? r.totals.messages : 0 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var t = r.totals || {}
+      var w = isNum(t.messages) ? Math.round(t.messages / max * 100) : 0
+      var blocked = isNum(t.blocked) ? t.blocked : 0
+      var dirty = isNum(t.dirty) ? t.dirty : 0
+      return '<div class="dt-line" data-p="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="dt-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">消息 ' + esc(fmt(t.messages)) + ' · 阻' + esc(fmt(blocked)) + ' · 脏' + esc(fmt(dirty)) + '</span></div>'
+    }).join('')
+  }
+
+  // 面板二：三难向量（不阻塞/不留脏/侵入最低，玉=占、酒红=缺）+ 判词探针 + 不封赢家 dot。
+  function renderDtTrilemma(rows, verdict, sagaOrder, tccRetry) {
+    var box = $('#dt-trilemma'), probes = $('#dt-probes'), note = $('#dt-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) { dtMissing(box, note, '三难判据'); if (probes) probes.innerHTML = ''; return }
+    var flags = [['noBlock', '不阻塞'], ['noDirty', '不留脏'], ['lowIntrusion', '侵入最低']]
+    var head = '<div class="dt-vec dt-vec-head"><span class="proto">协议</span>' +
+      flags.map(function (f) { return '<span>' + f[1] + '</span>' }).join('') + '</div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (f) {
+        var yes = t[f[0]] === true
+        return '<span class="dt-flag ' + (yes ? 'yes' : 'no') + '" data-p="' + esc(r.protocol) + '" data-k="' + f[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      return '<div class="dt-vec" data-p="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells + '</div>'
+    }).join('')
+    box.innerHTML = head + body
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var chips = [
+      '<span class="chip" data-probe="twoPcBlocks"><b>2PC</b> 协调者宕机 ' + (v.twoPcBlocksOnCoordinatorDown ? '全员阻塞' : '未阻塞') + '</span>',
+      '<span class="chip" data-probe="sagaDirty"><b>Saga</b> 补偿失败 ' + (v.sagaLeaksDirtyOnCompensateFail ? '留脏' : '无脏') + '</span>',
+      '<span class="chip" data-probe="tccRetry"><b>TCC</b> Confirm 幂等重试 ' + esc(fmt(tccRetry && tccRetry.retries)) + ' 次</span>',
+      '<span class="chip" data-probe="sagaReverse"><b>Saga</b> 逆序补偿 ' + (sagaOrder && sagaOrder.reverseOrder ? '✓' : '✗') + '</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' +
+        (noWin ? '✓ 不封任何协议全局赢家' : '本配置下归一（换场景会翻）') + '</span>',
+    ]
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '三难 = 不阻塞 ∧ 不留脏 ∧ 侵入最低。真实向量三条互不相同、没有一条三个全占：' +
+      '2PC 缺「不阻塞」（协调者 prepare 后宕机、参与者不可自愈地持锁等待），Saga 缺「不留脏」且侵入非最低' +
+      '（补偿是业务反向操作、可能失败甚至不可逆），TCC 缺「侵入最低」（Try/Confirm/Cancel 三套接口换无隔夜脏 + 幂等自愈）。' +
+      '全为确定性故障场景上的结构计数、非墙钟/吞吐/真数据库一致性；换场景或故障点结论会变，不封赢家。'
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)

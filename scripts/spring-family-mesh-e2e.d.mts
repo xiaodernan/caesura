@@ -88,5 +88,38 @@ export function runMeshE2E(opts?: any): {
       verdict: Record<string, boolean>
       builtAt: number
     } | null
+    /** KI-506：分布式事务三协议快照（2PC 阻塞 / Saga 补偿留脏 / TCC 幂等重试 × 六场景 + 三难判词），未配 distributedTxn 为 null */
+    distributedTxnSnapshot: {
+      config: { protocols: string[]; scenarios: Array<{ id: string; label: string }> }
+      rows: Array<{
+        protocol: string
+        label: string
+        intrusion: number
+        isolation: boolean
+        trilemma: { noBlock: boolean; noDirty: boolean; lowIntrusion: boolean }
+        totals: { committed: number; aborted: number; blocked: number; dirty: number; retries: number; messages: number }
+        scenarios: Array<{
+          id: string
+          label: string
+          protocol: string
+          scenario: string
+          committed: boolean
+          aborted: boolean
+          blocked: number
+          dirty: number
+          retries: number
+          messages: number
+          isolation: boolean
+          intrusion: number
+          atomic: boolean
+          detail: Record<string, any>
+        }>
+      }>
+      idempotency: Record<string, any>
+      sagaOrder: Record<string, any>
+      tccRetry: Record<string, any>
+      verdict: Record<string, boolean>
+      builtAt: number
+    } | null
   }>
 }

@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794351974427,
+  "generatedAt": 1794353533837,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1365,12 +1365,12 @@
           "keys": 1,
           "versions": 2,
           "commitLogSize": 1,
-          "now": 1794351974428
+          "now": 1794353533836
         },
         "final": {
           "A": {
             "value": 101,
-            "commitTs": 1794351974428,
+            "commitTs": 1794353533836,
             "tombstone": false
           }
         }
@@ -1390,6 +1390,642 @@
         "longTransactionRetainsVersions": true
       }
     },
-    "builtAt": 1794351974427
+    "distributedTxn": {
+      "config": {
+        "protocols": [
+          "2PC",
+          "Saga",
+          "TCC"
+        ],
+        "scenarios": [
+          {
+            "id": "allOk",
+            "label": "全成功"
+          },
+          {
+            "id": "voteNo",
+            "label": "单点投 no / Try 失败"
+          },
+          {
+            "id": "coordinatorDown",
+            "label": "协调者 prepare 后宕机"
+          },
+          {
+            "id": "stepFail",
+            "label": "第 k 步失败"
+          },
+          {
+            "id": "compensateFail",
+            "label": "补偿再失败"
+          },
+          {
+            "id": "confirmFlaky",
+            "label": "Confirm 半途失败"
+          }
+        ]
+      },
+      "rows": [
+        {
+          "protocol": "2PC",
+          "label": "两阶段提交",
+          "intrusion": 3,
+          "isolation": true,
+          "trilemma": {
+            "noBlock": false,
+            "noDirty": true,
+            "lowIntrusion": true
+          },
+          "totals": {
+            "committed": 3,
+            "aborted": 2,
+            "blocked": 3,
+            "dirty": 0,
+            "retries": 0,
+            "messages": 66
+          },
+          "scenarios": [
+            {
+              "id": "allOk",
+              "label": "全成功",
+              "protocol": "2PC",
+              "scenario": "allOk",
+              "committed": true,
+              "aborted": false,
+              "blocked": 0,
+              "dirty": 0,
+              "retries": 0,
+              "messages": 12,
+              "isolation": true,
+              "intrusion": 3,
+              "atomic": true,
+              "detail": {
+                "phase": "committed",
+                "votesYes": 3,
+                "votesNo": 0,
+                "coordinatorDown": false,
+                "blockedParticipants": 0
+              },
+              "fault": {}
+            },
+            {
+              "id": "voteNo",
+              "label": "单点投 no / Try 失败",
+              "protocol": "2PC",
+              "scenario": "voteNo",
+              "committed": false,
+              "aborted": true,
+              "blocked": 0,
+              "dirty": 0,
+              "retries": 0,
+              "messages": 12,
+              "isolation": true,
+              "intrusion": 3,
+              "atomic": true,
+              "detail": {
+                "phase": "aborted",
+                "votesYes": 2,
+                "votesNo": 1,
+                "coordinatorDown": false,
+                "blockedParticipants": 0
+              },
+              "fault": {
+                "at": "voteNo",
+                "index": 1
+              }
+            },
+            {
+              "id": "coordinatorDown",
+              "label": "协调者 prepare 后宕机",
+              "protocol": "2PC",
+              "scenario": "coordinatorDown",
+              "committed": false,
+              "aborted": false,
+              "blocked": 3,
+              "dirty": 0,
+              "retries": 0,
+              "messages": 6,
+              "isolation": true,
+              "intrusion": 3,
+              "atomic": false,
+              "detail": {
+                "phase": "blocked",
+                "votesYes": 3,
+                "votesNo": 0,
+                "coordinatorDown": true,
+                "blockedParticipants": 3
+              },
+              "fault": {
+                "at": "coordinatorDown"
+              }
+            },
+            {
+              "id": "stepFail",
+              "label": "第 k 步失败",
+              "protocol": "2PC",
+              "scenario": "stepFail",
+              "committed": false,
+              "aborted": true,
+              "blocked": 0,
+              "dirty": 0,
+              "retries": 0,
+              "messages": 12,
+              "isolation": true,
+              "intrusion": 3,
+              "atomic": true,
+              "detail": {
+                "phase": "aborted",
+                "votesYes": 2,
+                "votesNo": 1,
+                "coordinatorDown": false,
+                "blockedParticipants": 0
+              },
+              "fault": {
+                "at": "stepFail",
+                "index": 1
+              }
+            },
+            {
+              "id": "compensateFail",
+              "label": "补偿再失败",
+              "protocol": "2PC",
+              "scenario": "compensateFail",
+              "committed": true,
+              "aborted": false,
+              "blocked": 0,
+              "dirty": 0,
+              "retries": 0,
+              "messages": 12,
+              "isolation": true,
+              "intrusion": 3,
+              "atomic": true,
+              "detail": {
+                "phase": "committed",
+                "votesYes": 3,
+                "votesNo": 0,
+                "coordinatorDown": false,
+                "blockedParticipants": 0
+              },
+              "fault": {
+                "at": "compensateFail",
+                "index": 1,
+                "compIndex": 0
+              }
+            },
+            {
+              "id": "confirmFlaky",
+              "label": "Confirm 半途失败",
+              "protocol": "2PC",
+              "scenario": "confirmFlaky",
+              "committed": true,
+              "aborted": false,
+              "blocked": 0,
+              "dirty": 0,
+              "retries": 0,
+              "messages": 12,
+              "isolation": true,
+              "intrusion": 3,
+              "atomic": true,
+              "detail": {
+                "phase": "committed",
+                "votesYes": 3,
+                "votesNo": 0,
+                "coordinatorDown": false,
+                "blockedParticipants": 0
+              },
+              "fault": {
+                "at": "confirmFlaky",
+                "index": 0,
+                "times": 1
+              }
+            }
+          ]
+        },
+        {
+          "protocol": "Saga",
+          "label": "补偿事务",
+          "intrusion": 6,
+          "isolation": false,
+          "trilemma": {
+            "noBlock": true,
+            "noDirty": false,
+            "lowIntrusion": false
+          },
+          "totals": {
+            "committed": 3,
+            "aborted": 3,
+            "blocked": 0,
+            "dirty": 1,
+            "retries": 0,
+            "messages": 36
+          },
+          "scenarios": [
+            {
+              "id": "allOk",
+              "label": "全成功",
+              "protocol": "Saga",
+              "scenario": "allOk",
+              "committed": true,
+              "aborted": false,
+              "blocked": 0,
+              "dirty": 0,
+              "retries": 0,
+              "messages": 6,
+              "isolation": false,
+              "intrusion": 6,
+              "atomic": true,
+              "detail": {
+                "phase": "committed",
+                "stepsDone": 3,
+                "compensated": 0,
+                "compensationOrder": [],
+                "dirtyData": 0
+              },
+              "fault": {}
+            },
+            {
+              "id": "voteNo",
+              "label": "单点投 no / Try 失败",
+              "protocol": "Saga",
+              "scenario": "voteNo",
+              "committed": false,
+              "aborted": true,
+              "blocked": 0,
+              "dirty": 0,
+              "retries": 0,
+              "messages": 6,
+              "isolation": false,
+              "intrusion": 6,
+              "atomic": true,
+              "detail": {
+                "phase": "aborted",
+                "stepsDone": 1,
+                "compensated": 1,
+                "compensationOrder": [
+                  0
+                ],
+                "dirtyData": 0
+              },
+              "fault": {
+                "at": "voteNo",
+                "index": 1
+              }
+            },
+            {
+              "id": "coordinatorDown",
+              "label": "协调者 prepare 后宕机",
+              "protocol": "Saga",
+              "scenario": "coordinatorDown",
+              "committed": true,
+              "aborted": false,
+              "blocked": 0,
+              "dirty": 0,
+              "retries": 0,
+              "messages": 6,
+              "isolation": false,
+              "intrusion": 6,
+              "atomic": true,
+              "detail": {
+                "phase": "committed",
+                "stepsDone": 3,
+                "compensated": 0,
+                "compensationOrder": [],
+                "dirtyData": 0
+              },
+              "fault": {
+                "at": "coordinatorDown"
+              }
+            },
+            {
+              "id": "stepFail",
+              "label": "第 k 步失败",
+              "protocol": "Saga",
+              "scenario": "stepFail",
+              "committed": false,
+              "aborted": true,
+              "blocked": 0,
+              "dirty": 0,
+              "retries": 0,
+              "messages": 6,
+              "isolation": false,
+              "intrusion": 6,
+              "atomic": true,
+              "detail": {
+                "phase": "aborted",
+                "stepsDone": 1,
+                "compensated": 1,
+                "compensationOrder": [
+                  0
+                ],
+                "dirtyData": 0
+              },
+              "fault": {
+                "at": "stepFail",
+                "index": 1
+              }
+            },
+            {
+              "id": "compensateFail",
+              "label": "补偿再失败",
+              "protocol": "Saga",
+              "scenario": "compensateFail",
+              "committed": false,
+              "aborted": true,
+              "blocked": 0,
+              "dirty": 1,
+              "retries": 0,
+              "messages": 6,
+              "isolation": false,
+              "intrusion": 6,
+              "atomic": false,
+              "detail": {
+                "phase": "dirty",
+                "stepsDone": 1,
+                "compensated": 0,
+                "compensationOrder": [
+                  0
+                ],
+                "dirtyData": 1
+              },
+              "fault": {
+                "at": "compensateFail",
+                "index": 1,
+                "compIndex": 0
+              }
+            },
+            {
+              "id": "confirmFlaky",
+              "label": "Confirm 半途失败",
+              "protocol": "Saga",
+              "scenario": "confirmFlaky",
+              "committed": true,
+              "aborted": false,
+              "blocked": 0,
+              "dirty": 0,
+              "retries": 0,
+              "messages": 6,
+              "isolation": false,
+              "intrusion": 6,
+              "atomic": true,
+              "detail": {
+                "phase": "committed",
+                "stepsDone": 3,
+                "compensated": 0,
+                "compensationOrder": [],
+                "dirtyData": 0
+              },
+              "fault": {
+                "at": "confirmFlaky",
+                "index": 0,
+                "times": 1
+              }
+            }
+          ]
+        },
+        {
+          "protocol": "TCC",
+          "label": "资源预留",
+          "intrusion": 9,
+          "isolation": true,
+          "trilemma": {
+            "noBlock": true,
+            "noDirty": true,
+            "lowIntrusion": false
+          },
+          "totals": {
+            "committed": 4,
+            "aborted": 2,
+            "blocked": 0,
+            "dirty": 0,
+            "retries": 1,
+            "messages": 62
+          },
+          "scenarios": [
+            {
+              "id": "allOk",
+              "label": "全成功",
+              "protocol": "TCC",
+              "scenario": "allOk",
+              "committed": true,
+              "aborted": false,
+              "blocked": 0,
+              "dirty": 0,
+              "retries": 0,
+              "messages": 12,
+              "isolation": true,
+              "intrusion": 9,
+              "atomic": true,
+              "detail": {
+                "phase": "committed",
+                "confirmed": 3,
+                "cancelled": 0,
+                "retries": 0,
+                "dirtyData": 0
+              },
+              "fault": {}
+            },
+            {
+              "id": "voteNo",
+              "label": "单点投 no / Try 失败",
+              "protocol": "TCC",
+              "scenario": "voteNo",
+              "committed": false,
+              "aborted": true,
+              "blocked": 0,
+              "dirty": 0,
+              "retries": 0,
+              "messages": 6,
+              "isolation": true,
+              "intrusion": 9,
+              "atomic": true,
+              "detail": {
+                "phase": "aborted",
+                "confirmed": 0,
+                "cancelled": 1,
+                "retries": 0,
+                "dirtyData": 0
+              },
+              "fault": {
+                "at": "voteNo",
+                "index": 1
+              }
+            },
+            {
+              "id": "coordinatorDown",
+              "label": "协调者 prepare 后宕机",
+              "protocol": "TCC",
+              "scenario": "coordinatorDown",
+              "committed": true,
+              "aborted": false,
+              "blocked": 0,
+              "dirty": 0,
+              "retries": 0,
+              "messages": 12,
+              "isolation": true,
+              "intrusion": 9,
+              "atomic": true,
+              "detail": {
+                "phase": "committed",
+                "confirmed": 3,
+                "cancelled": 0,
+                "retries": 0,
+                "dirtyData": 0
+              },
+              "fault": {
+                "at": "coordinatorDown"
+              }
+            },
+            {
+              "id": "stepFail",
+              "label": "第 k 步失败",
+              "protocol": "TCC",
+              "scenario": "stepFail",
+              "committed": false,
+              "aborted": true,
+              "blocked": 0,
+              "dirty": 0,
+              "retries": 0,
+              "messages": 6,
+              "isolation": true,
+              "intrusion": 9,
+              "atomic": true,
+              "detail": {
+                "phase": "aborted",
+                "confirmed": 0,
+                "cancelled": 1,
+                "retries": 0,
+                "dirtyData": 0
+              },
+              "fault": {
+                "at": "stepFail",
+                "index": 1
+              }
+            },
+            {
+              "id": "compensateFail",
+              "label": "补偿再失败",
+              "protocol": "TCC",
+              "scenario": "compensateFail",
+              "committed": true,
+              "aborted": false,
+              "blocked": 0,
+              "dirty": 0,
+              "retries": 0,
+              "messages": 12,
+              "isolation": true,
+              "intrusion": 9,
+              "atomic": true,
+              "detail": {
+                "phase": "committed",
+                "confirmed": 3,
+                "cancelled": 0,
+                "retries": 0,
+                "dirtyData": 0
+              },
+              "fault": {
+                "at": "compensateFail",
+                "index": 1,
+                "compIndex": 0
+              }
+            },
+            {
+              "id": "confirmFlaky",
+              "label": "Confirm 半途失败",
+              "protocol": "TCC",
+              "scenario": "confirmFlaky",
+              "committed": true,
+              "aborted": false,
+              "blocked": 0,
+              "dirty": 0,
+              "retries": 1,
+              "messages": 14,
+              "isolation": true,
+              "intrusion": 9,
+              "atomic": true,
+              "detail": {
+                "phase": "committed",
+                "confirmed": 3,
+                "cancelled": 0,
+                "retries": 1,
+                "dirtyData": 0
+              },
+              "fault": {
+                "at": "confirmFlaky",
+                "index": 0,
+                "times": 1
+              }
+            }
+          ]
+        }
+      ],
+      "idempotency": {
+        "firstCommitted": true,
+        "replayIdempotent": true,
+        "messagesFirst": 12,
+        "messagesReplay": 0,
+        "rollbackAfterCommitRejected": true,
+        "stats": {
+          "phase": "committed",
+          "participants": 3,
+          "votesYes": 3,
+          "votesNo": 0,
+          "coordinatorDown": false,
+          "blockedParticipants": 0,
+          "acks": 3,
+          "messages": 12,
+          "commitCalls": 1,
+          "rollbackCalls": 0,
+          "resolvedBy": "coordinator",
+          "isolation": true,
+          "intrusion": 3
+        }
+      },
+      "sagaOrder": {
+        "compensationOrder": [
+          1,
+          0
+        ],
+        "expected": [
+          1,
+          0
+        ],
+        "reverseOrder": true,
+        "dirtyData": 0
+      },
+      "tccRetry": {
+        "committed": true,
+        "retries": 1,
+        "phase": "committed",
+        "dirtyData": 0,
+        "messages": 14,
+        "stats": {
+          "phase": "committed",
+          "steps": 3,
+          "tryOk": 3,
+          "confirmed": 3,
+          "cancelled": 0,
+          "dirtyData": 0,
+          "messages": 14,
+          "retries": 1,
+          "blockedParticipants": 0,
+          "isolation": true,
+          "intrusion": 9
+        }
+      },
+      "verdict": {
+        "twoPcBlocksOnCoordinatorDown": true,
+        "sagaLeaksDirtyOnCompensateFail": true,
+        "sagaNeverBlocks": true,
+        "tccSelfHealsConfirm": true,
+        "tccMostIntrusive": true,
+        "twoPcAndTccIsolated": true,
+        "trilemmaDistinguishes": true,
+        "noProtocolWinsAll": true,
+        "noUniversalWinner": true,
+        "twoPcCommitIdempotent": true,
+        "sagaCompensatesInReverse": true,
+        "tccConfirmIdempotentRetry": true
+      }
+    },
+    "builtAt": 1794353533837
   }
 }

@@ -318,7 +318,17 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(snap.systems.mvccTxn.twoPhaseLock.lateAcquireBlocked).toBe(true)
     expect(snap.systems.mvccTxn.gc.longTxnRetainsMoreVersions).toBe(true)
     expect(Object.values(snap.systems.mvccTxn.verdict).every(Boolean)).toBe(true)
-    // bootstrap.js 与 snapshot.json 是同一份真快照（含七维 systems）。
+    // KI-506 distributedTxn：三协议 × 六场景矩阵 + 三难判词真读数已固化进快照。
+    expect(snap.systems.distributedTxn.rows.length).toBe(3)
+    expect(snap.systems.distributedTxn.config.scenarios.length).toBe(6)
+    const dt2 = snap.systems.distributedTxn.rows.find((r: any) => r.protocol === '2PC')!
+    const dtS = snap.systems.distributedTxn.rows.find((r: any) => r.protocol === 'Saga')!
+    const dtT = snap.systems.distributedTxn.rows.find((r: any) => r.protocol === 'TCC')!
+    expect(dt2.scenarios.find((s: any) => s.id === 'coordinatorDown').blocked).toBe(3)
+    expect(dtS.scenarios.find((s: any) => s.id === 'compensateFail').dirty).toBe(1)
+    expect(dtT.scenarios.find((s: any) => s.id === 'confirmFlaky').retries).toBeGreaterThan(0)
+    expect(snap.systems.distributedTxn.verdict.noUniversalWinner).toBe(true)
+    // bootstrap.js 与 snapshot.json 是同一份真快照（含八维 systems）。
     const bootCode = readFileSync(resolve(process.cwd(), 'console/bootstrap.js'), 'utf8')
     const fromBoot = JSON.parse(bootCode.slice(bootCode.indexOf('=') + 1).trim().replace(/;\s*$/, ''))
     expect(fromBoot.systems.lsm.speedup).toBe(snap.systems.lsm.speedup)
@@ -328,6 +338,7 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(fromBoot.systems.failureDetector).toEqual(snap.systems.failureDetector)
     expect(fromBoot.systems.bplusIndex).toEqual(snap.systems.bplusIndex)
     expect(fromBoot.systems.mvccTxn).toEqual(snap.systems.mvccTxn)
+    expect(fromBoot.systems.distributedTxn).toEqual(snap.systems.distributedTxn)
   })
 
   it('⑭ buildMvccTxnReading 真跑五档矩阵形状齐、读数是真判词、单维关闭不连坐（KI-505）', async () => {
@@ -356,5 +367,39 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(sys.failureDetector).toBeTruthy() // 不连坐
     const snap = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, mvccTxn: false })
     expect(snap.systems!.mvccTxn).toBe(null)
+  })
+
+  it('⑮ buildDistributedTxnReading 真跑三协议矩阵形状齐、读数是真判词、单维关闭不连坐（KI-506）', async () => {
+    const { buildDistributedTxnReading } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 5252
+    const reading = await buildDistributedTxnReading({ dtxnRetries: 2 }, now)
+    expect(reading).not.toBe(null)
+    expect(reading!.config.protocols).toEqual(['2PC', 'Saga', 'TCC'])
+    expect(reading!.config.scenarios.length).toBe(6)
+    expect(reading!.rows.length).toBe(3)
+    for (const row of reading!.rows) {
+      expect(row.scenarios.length).toBe(6)
+      expect(typeof row.intrusion).toBe('number')
+      expect(typeof row.totals.messages).toBe('number')
+      expect(row.trilemma).toBeTruthy()
+    }
+    // 真判词：2PC 阻塞 / Saga 留脏 / TCC 幂等重试 / 三难向量互不相同 / 不封赢家
+    const two = reading!.rows.find((r) => r.protocol === '2PC')!
+    const saga = reading!.rows.find((r) => r.protocol === 'Saga')!
+    const tcc = reading!.rows.find((r) => r.protocol === 'TCC')!
+    expect(two.scenarios.find((s) => s.id === 'coordinatorDown')!.blocked).toBe(3)
+    expect(saga.scenarios.find((s) => s.id === 'compensateFail')!.dirty).toBe(1)
+    expect(tcc.scenarios.find((s) => s.id === 'confirmFlaky')!.retries).toBe(2) // 注入 2 次 Confirm 失败
+    expect(two.intrusion).toBeLessThan(tcc.intrusion)
+    expect(reading!.verdict.noUniversalWinner).toBe(true)
+    expect(reading!.sagaOrder.reverseOrder).toBe(true)
+    expect(reading!.tccRetry.retries).toBe(2)
+    // 单维关闭由 buildSystems/buildSnapshot 层把关：落 null，不动其它维
+    const sys = await buildSystems({ now, distributedTxn: false })
+    expect(sys.distributedTxn).toBe(null)
+    expect(sys.mvccTxn).toBeTruthy() // 不连坐
+    expect(sys.bplusIndex).toBeTruthy() // 不连坐
+    const snap = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, distributedTxn: false })
+    expect(snap.systems!.distributedTxn).toBe(null)
   })
 })
