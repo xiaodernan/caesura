@@ -63,6 +63,9 @@ export function runMeshE2E(opts = {}) {
     authCache: opts.authCache,
     authCacheTtlMs: opts.authCacheTtlMs,
     authNegativeTtlMs: opts.authNegativeTtlMs,
+    // KI-494：计网算法可观测包（net=true 装配；proxyCall 用真实耗时/成败喂 AIMD/RTO/滑窗）。
+    net: opts.net,
+    netNow: opts.netNow,
     sources: {
       eureka: () => (opts.svcA ?? [{ id: 'svc-a:1', name: 'svc-a', address: '10.0.0.1', port: 8080, healthy: true }]),
       k8s: () => k8s.discover('caesura-gate'),
@@ -182,6 +185,7 @@ export function runMeshE2E(opts = {}) {
         started: boot.started, callRes, status, stopped: shut.stopped, spans, services: status.services,
         events: gameEvents, auth, filterStats, grayProbes, grayStats: gc.gray?.stats() ?? null,
         cacheProbe, authCacheStats: gc.auth.cacheStats(),
+        netSnapshot: gc.net ? gc.net.snapshot() : null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
       }
@@ -204,6 +208,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       grayLanes: r.grayProbes.map((p) => `${p.key}:${p.lane}${p.fallback ? '(fallback)' : ''}`),
       grayStats: r.grayStats,
       cacheProbe: r.cacheProbe,
+      netSnapshot: r.netSnapshot ? { observes: r.netSnapshot.observes, cwnd: r.netSnapshot.aimd.cwnd, rto: r.netSnapshot.rto.rto } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))
     process.exit(0)

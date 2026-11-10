@@ -19,6 +19,64 @@ import { createGameEventBus } from './caesura-event-bus.mjs'
 import { createAuthGuard } from './caesura-auth-guard.mjs'
 import { createGameEventBridge } from './caesura-game-event-bridge.mjs'
 import { createRedisCache } from './caesura-redis-cache.mjs'
+import {
+  createAimdCongestion,
+  createCubicCongestion,
+  createRtoEstimator,
+  createSlidingWindow,
+  createSessionTickets,
+  createHttpCache,
+} from './caesura-net-stack.mjs'
+
+/**
+ * KI-494：计网算法可观测包（opt-in，opts.net===true 才建）。用真 proxyCall 的时延与成败喂
+ * RTO 估计/AIMD+CUBIC 窗口/滑动窗口，HTTP 缓存与 0-RTT 票据随包暴露供运行时与前端读快照。
+ * 阈值全在 cfg（判定权 Node 侧），本件只编排、不写死任何协议参数。
+ */
+function createNetBundle(cfg = {}) {
+  const aimd = createAimdCongestion(cfg.aimd)
+  const cubic = createCubicCongestion(cfg.cubic)
+  const rto = createRtoEstimator(cfg.rto)
+  const window = createSlidingWindow(cfg.window)
+  const tickets = createSessionTickets(cfg.tickets)
+  const http = createHttpCache(cfg.http)
+  const now = typeof cfg.now === 'function' ? cfg.now : () => Date.now()
+  let observes = 0
+
+  /** 拿一次真实调用的结果喂算法：成功 ACK + RTO 样本，失败按超时/重传统计。 */
+  function observeOutcome(sig = {}) {
+    observes++
+    const ok = sig.ok !== false
+    const rttMs = Number(sig.rttMs ?? 0)
+    const sent = window.send({ seq: observes, ok, rttMs })
+    const seq = sent.seq
+    if (ok) {
+      aimd.onAck()
+      cubic.onAck()
+      rto.sample(rttMs, !!sig.retransmitted)
+      window.ack(seq) // 累计确认本段，释放在途位
+      http.put('/api/net-observe', { ok, rttMs }, `e${seq}`, 60, 30)
+    } else if (sig.retransmitted) {
+      aimd.onDupAck()
+      window.ack(seq) // 重传成功也算确认
+    } else {
+      aimd.onTimeout()
+      rto.onTimeout()
+      // 丢包不 ACK：该段留在在途位，模拟发送端等重传（连续丢包会把窗口填满，正反映滑窗背压）。
+    }
+    return { seq, ok, cwnd: aimd.cwnd, rto: rto.rto, inFlight: window.inFlight }
+  }
+
+  function snapshot() {
+    return {
+      observes,
+      aimd: aimd.state(), cubic: cubic.state(), rto: rto.current(),
+      window: window.state(), tickets: tickets.stats(), http: http.stats(),
+    }
+  }
+
+  return { aimd, cubic, rto, window, tickets, http, observeOutcome, snapshot }
+}
 
 /**
  * 创建一只游戏侧开箱即用云。
@@ -66,6 +124,26 @@ export function createGameCloud(opts = {}) {
     negativeTtlMs: opts.authNegativeTtlMs,
   })
 
+  // KI-494：计网算法可观测包（opt-in）。opts.net===true 用缺省阈值建一只；传对象逐项注入阈值。
+  const net = opts.net === true
+    ? createNetBundle({ now: opts.netNow })
+    : (opts.net && typeof opts.net === 'object' ? createNetBundle({ ...opts.net, now: opts.netNow ?? opts.net.now }) : null)
+  const netClock = opts.netNow ?? (() => Date.now())
+  /** 包住一次调用，用真实耗时/成败喂 net 包（未启用则原样返回，零开销）。 */
+  async function observeCall(promise) {
+    if (!net) return promise
+    const t0 = netClock()
+    let res
+    try {
+      res = await promise
+    } catch (e) {
+      net.observeOutcome({ ok: false, rttMs: netClock() - t0 })
+      throw e
+    }
+    net.observeOutcome({ ok: !!res?.ok, rttMs: netClock() - t0, retransmitted: (res?.filterStats?.retries ?? 0) > 0 })
+    return res
+  }
+
   // KI-489 游戏真 EventBus ↔ 云事件总线桥：gameBridgeRoutes 给了才建；shutdown 自动退桥，避免悬挂订阅。
   let bridge = null
   function connectGameBus(gameBus, routes) {
@@ -81,6 +159,8 @@ export function createGameCloud(opts = {}) {
     auth,
     /** KI-493：鉴权 introspection 缓存实例（未配 opts.authCache 时为 null）。 */
     authCache,
+    /** KI-494：计网算法可观测包（未配 opts.net 时为 null）；可直接 observeOutcome/snapshot。 */
+    net,
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
     gray: runtime.gray,
     /** 把游戏真 EventBus 按白名单routes 接进云事件总线（游戏侧一行：gc.connectGameBus(bus, routes)）。 */
@@ -92,10 +172,10 @@ export function createGameCloud(opts = {}) {
       await events.publishGameEvent('game.started', { gameId, gameName })
       return r
     },
-    /** 裸调用（负载均衡 + 网关匹配 + 追踪 + CB filter）。 */
-    async call(serviceName, path, init) { return runtime.call(serviceName, path, init) },
-    /** 韧性调用（runtime.call + 按服务隔离的进程内熔断）。 */
-    async proxyCall(serviceName, path, init) { return proxy.call(serviceName, path, init) },
+    /** 裸调用（负载均衡 + 网关匹配 + 追踪 + CB filter）；配 net 时用真实结果喂计网算法。 */
+    async call(serviceName, path, init) { return observeCall(runtime.call(serviceName, path, init)) },
+    /** 韧性调用（runtime.call + 按服务隔离的进程内熔断）；配 net 时用真实结果喂计网算法。 */
+    async proxyCall(serviceName, path, init) { return observeCall(proxy.call(serviceName, path, init)) },
     /** 关停：退桥 + 注销游戏实例 + 广播 stopped + 发 game.stopped 事件。 */
     async shutdown() {
       const bridgeOff = bridge ? bridge.uninstall() : null
@@ -103,10 +183,13 @@ export function createGameCloud(opts = {}) {
       await events.publishGameEvent('game.stopped', { gameId, gameName })
       return { ...r, bridgeOff }
     },
-    /** 汇总：游戏状态 + 已聚合服务 + 路由数 + 事件频道 + 鉴权作用域 + 缓存读数。 */
+    /** 汇总：游戏状态 + 已聚合服务 + 路由数 + 事件频道 + 鉴权作用域 + 缓存/计网读数。 */
     async status() {
       const s = await runtime.status()
-      return { ...s, eventChannel: events.channel, authScopes: auth.requiredScopes, authCache: auth.cacheStats() }
+      return {
+        ...s, eventChannel: events.channel, authScopes: auth.requiredScopes,
+        authCache: auth.cacheStats(), net: net ? net.snapshot() : null,
+      }
     },
   }
 }

@@ -146,6 +146,23 @@ describe('spring-family-mesh-e2e', () => {
     expect(r.status.authCache).toMatchObject({ hits: 1 })
   })
 
+  it('e2e KI-494：net=true 用真实 proxyCall 耗时喂计网包，cwnd 增长且 RTO 有样本', async () => {
+    let t = 1000
+    const r = await runMeshE2E({
+      transport: async (_t: any, _p: string) => { t += 8; return { path: '/api/health' } },
+      net: true,
+      netNow: () => t,
+    }).run()
+    expect(r.netSnapshot).not.toBeNull()
+    expect(r.netSnapshot!.observes).toBe(1) // 主链那一次 proxyCall 被真观测
+    expect(r.netSnapshot!.aimd.cwnd).toBeGreaterThan(1) // 成功 ACK ⇒ 慢启动增长
+    expect(r.netSnapshot!.rto.srtt).toBeGreaterThan(0) // 真实耗时被采样
+    expect(r.status.net.observes).toBe(1)
+    // 未配 net 时 netSnapshot 为 null（非破坏）
+    const plain = await runMeshE2E({ transport: async () => ({}) }).run()
+    expect(plain.netSnapshot).toBe(null)
+  })
+
   it('e2e KI-492：路由挂 Bulkhead+TimeLimiter，挂起 transport ⇒ filterStats 读到 timedOut 真触发', async () => {
     // transport 直接挂住不返回；TimeLimiter 到点抛 time_limiter_timeout，整条 call 失败但 filterStats 留证。
     const hanging = async () => new Promise<any>(() => {})

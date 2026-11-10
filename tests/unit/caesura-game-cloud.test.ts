@@ -153,4 +153,30 @@ describe('caesura-game-cloud', () => {
     expect(plain.authCache).toBe(null)
     expect(plain.auth.cacheStats()).toBe(null)
   })
+
+  it('net=true 装配计网可观测包，真实 call 喂 AIMD/RTO，status.net 可见（KI-494）', async () => {
+    let t = 0
+    const gc = createGameCloud({
+      gameId: 'g1', gamePort: 7700, sources, cloud: fakeCloud(), gateway: false,
+      net: true, netNow: () => t,
+      transport: async () => { t += 5; return { ok: true } },
+    })
+    expect(gc.net).toBeTruthy()
+    expect(gc.net!.snapshot().observes).toBe(0)
+    // 三次成功调用：每次都真喂一次 ACK + RTO 样本；RTO 估计首个样本 SRTT=5/RTTVAR=2.5/RTO=15。
+    await gc.call('svc-a', '/api/x')
+    await gc.call('svc-a', '/api/x')
+    await gc.call('svc-a', '/api/x')
+    const snap = gc.net!.snapshot()
+    expect(snap.observes).toBe(3)
+    expect(snap.aimd.cwnd).toBeGreaterThan(1) // 慢启动 ACK 增长
+    expect(snap.rto.srtt).toBeGreaterThan(0) // RTT 样本被真采到
+    const s = await gc.status()
+    expect(s.net.observes).toBe(3)
+    expect(s.net.window.windowSize).toBeGreaterThan(0)
+    // 未配 net 时 gc.net 为 null、status.net 为 null（非破坏）
+    const plain = createGameCloud({ gameId: 'g2', gamePort: 7701, sources, cloud: fakeCloud() })
+    expect(plain.net).toBe(null)
+    expect((await plain.status()).net).toBe(null)
+  })
 })

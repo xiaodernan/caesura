@@ -29,5 +29,7 @@ export function runMeshE2E(opts?: any): {
     cacheProbe: { firstSource: string; secondSource: string; secondCacheHit: boolean; firstOk: boolean; secondOk: boolean; stats: any } | null
     /** KI-493：鉴权缓存 stats()，未配 authCache 为 null */
     authCacheStats: any | null
+    /** KI-494：计网算法快照（aimd/cubic/rto/window/tickets/http），未配 net 为 null */
+    netSnapshot: { observes: number; aimd: any; cubic: any; rto: any; window: any; tickets: any; http: any } | null
   }>
 }

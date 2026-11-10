@@ -20,11 +20,12 @@
 └───────────────────────────────┬──────────────────────────────────────┘
                                   │ createGameCloud({...}).start()
 ┌─────────────────────────────────▼─────────────────────────────────────┐
-│  caesura-game-cloud  （开箱即用云入口，KI-478/484/485/489/490/491/493）  │
+│  caesura-game-cloud  （开箱即用云入口，KI-478/484/485/489/490/491/493/494）│
 │    start / call / proxyCall / shutdown / status                         │
 │    + events（KI-484 云事件总线）· auth（KI-485 鉴权守卫）                │
 │    + connectGameBus（KI-489 事件桥，shutdown 自动退桥）                   │
 │    + gray（KI-491 灰度/金丝雀加权路由；lbStrategy 可切 weight）           │
+│    + net（KI-494 计网可观测包，真调用耗时/成败喂 AIMD/RTO/滑窗，opt-in）   │
 ├───────────────────────────────────────────────────────────────────────┤
 │  caesura-cloud-runtime  （集大成运行时，KI-473/477/487）                 │
 │    call 路径：网关 predicate 匹配 → 完整 filter 链（KI-486/487）         │
@@ -46,6 +47,7 @@
 │                  · caesura-game-event-bridge（KI-489 真 EventBus↔云 桥，依赖注入）                 │
 │                  · caesura-auth-guard.authorizeOnline（KI-490 RFC 7662 introspection 在线校验）   │
 │                  · caesura-redis-cache（KI-493 LRU+TTL+singleflight+字节预算，接鉴权缓存）        │
+│   · 计网算法   : caesura-net-stack（KI-494 Reno/CUBIC 拥塞控制·RTO+Karn·滑窗+SACK·0-RTT·HTTP SWR/ETag）│
 │   · 任务/函数   : spring-cloud-task · spring-cloud-function · spring-cloud-stream · openfeign     │
 │   · 总线/健康   : spring-bus-client · spring-health-check · spring-mesh-health                     │
 │   · K8s         : spring-cloud-kubernetes-client（KI-479，configMap+endpoints→mesh 实例）         │
@@ -122,6 +124,11 @@ if (gc.auth.canAccess(claims, 'game:call')) { /* ... */ }
 // const gc = createGameCloud({ authCache: true, authCacheTtlMs: 30_000, requiredScopes: [...] })
 //   → 第二次同令牌 authorizeOnline 命中 { source:'cache', cacheHit:true }；失败/降级态不缓存
 //   → gc.auth.cacheStats() / status().authCache 读命中率；gc.authCache 是底层 LRU+TTL 缓存实例
+// KI-494：给 createGameCloud 传 net:true 即开计网可观测包，proxyCall/call 用真耗时与成败喂算法：
+// const gc = createGameCloud({ net: true })
+//   → 每次成功调用 ACK 一次 Reno/CUBIC 窗口、采一个 RTO 样本；失败按超时/重传统计
+//   → gc.net.snapshot() / status().net 读 cwnd/ssthresh/SRTT/RTO/滑窗/HTTP 缓存/0-RTT 快照
+//   → 六只状态机阈值全可逐项注入（net:{aimd:{...},rto:{...},...}），判定权仍在 Node 侧
 // gc.events.publishGameEvent('game.saved', {...})           // KI-484：云侧发事件
 // shutdown() 会自动退桥，不留悬挂订阅
 ```
@@ -172,9 +179,10 @@ node scripts/spring-family-mesh-e2e.mjs
 - 注入 `onlineAuth:{introspectionUrl,fetch,policy}` 时 `auth` 证在线校验：active 放行 / inactive 短路拒调 / 端点挂 fail-open 降级放行、fail-closed 拒（KI-490）；
 - 注入 `grayInstances`+`gray`+`grayProbes` 时 `grayProbes`/`grayStats` 证灰度：同 key 稳定落同一金丝雀实例（会话亲和）、阈值/精确值分池、空金丝雀池诚实回退稳定（KI-491）；
 - 注入 `filters:[{Bulkhead},{TimeLimiter}]` + 挂起 transport 时 `filterStats.timedOut`/`bulkheadHeld` 证韧性 filter 真在链上触发（KI-492）；
-- 注入 `authCache:true`+`onlineAuth`+`cacheProbe` 时 `cacheProbe.secondSource='cache'`/`secondCacheHit=true`、`authCacheStats` 命中读数、且 introspection 端点全程只被调一次，证 introspection 结果缓存真生效（KI-493）。
+- 注入 `authCache:true`+`onlineAuth`+`cacheProbe` 时 `cacheProbe.secondSource='cache'`/`secondCacheHit=true`、`authCacheStats` 命中读数、且 introspection 端点全程只被调一次，证 introspection 结果缓存真生效（KI-493）；
+- 注入 `net:true`+`netNow` 时 `netSnapshot.observes` 证主链 proxyCall 真被观测、`aimd.cwnd>1` 证成功 ACK 喂了慢启动、`rto.srtt>0` 证真实耗时被采样，`status().net` 同步可读（KI-494）。
 
-对应 `tests/unit/spring-family-mesh-e2e.test.ts`（13 腿）。
+对应 `tests/unit/spring-family-mesh-e2e.test.ts`（14 腿）。
 
 ## 6. 边界与「不声称」
 
@@ -185,6 +193,7 @@ node scripts/spring-family-mesh-e2e.mjs
 - 不声称 filter 链接了真 Resilience4j/Redis——CircuitBreaker/RateLimit 全进程内内存实现，Retry 不做幂等去重；KI-492 Bulkhead 是 JS 计数器信号量子、跨进程不共享，TimeLimiter **不取消**底层 in-flight 调用（Promise 竞速只让判词先返回，取消归调用方 transport）。
 - 不声称鉴权守卫验了签——`caesura-auth-guard` 只解析 JWT claims/过期/作用域，签名校验归网关/资源服务端。
 - 不声称接了真 Redis/真 IdP——KI-493 `caesura-redis-cache` 默认进程内（RESP 风格 `command` 仅教学子集），真 Redis 后端靠注入 `backend` 适配器；KI-490 在线校验的 `fetch` 可注入、默认进程内。`fail-open` 只在调用方显式选择时降级放行，缺省一律 `fail-closed`。
+- 不声称 `caesura-net-stack`（KI-494）真发包或建连——六只全是纯算法状态机（无 socket），Reno/CUBIC/RTO/滑窗/0-RTT/HTTP 缓存均为 RFC 教学子集：Karn 无时间戳路径按最保守处理、选择性 ACK 不重排数据、0-RTT 只对幂等放行；缺省 α/β/C/ssthresh/TTL 只是 RFC 常见值、非真链路标定，真链路须实测调参（全可注入）。计网包默认 `net:false` 不装配，开了也只观测喂数、不反向改变 `proxyCall` 的调用结果。
 - 不声称在线校验结果永久缓存——KI-493 只在配了 `authCache` 时按注入 TTL 缓存「放行/显式 negative」判词，TTL 内以旧判词为准，故 TTL 是**令牌吊销实时性 vs 端点载荷**的安全权衡、须调用方注入；`fail-open` 降级态与 `local` 判词**绝不缓存**，避免故障态被固化。缓存 key 是令牌的 FNV-1a 哈希，不落明文。
 - 不声称缓存读路径用了堆/跳表——KI-493 LRU 刻意用 Map+双向链表保持 O(1) 命中/逐出，TTL 走「惰性 + 显式 O(n) 定期清扫」，`singleflight`/字节预算均每进程内存一只、不跨进程共享。
 - 不声称灰度接了真流量镜像/service mesh sidecar——KI-491 `spring-gateway-gray` 纯进程内决策，transport 仍是注入的内存实现；不缓存会话状态（亲和靠 selector 确定性哈希，同 key 必落同池），阈值无服务端下发/热更（由 opts 注入）。

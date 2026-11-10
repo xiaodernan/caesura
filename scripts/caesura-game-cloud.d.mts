@@ -28,6 +28,9 @@ export interface GameCloudOptions {
   authCacheMaxEntries?: number
   authCacheMaxBytes?: number
   authNegativeTtlMs?: number
+  /** KI-494：计网算法可观测包。true 用缺省阈值建一只；对象逐项注入六只状态机阈值。 */
+  net?: boolean | Record<string, any>
+  netNow?: () => number
 }
 
 /** 创建一只游戏侧开箱即用云。 */
@@ -38,6 +41,8 @@ export function createGameCloud(opts?: GameCloudOptions): {
   auth: any
   /** KI-493：鉴权 introspection 缓存实例（未配 opts.authCache 时为 null）。 */
   authCache: any
+  /** KI-494：计网算法可观测包（未配 opts.net 时为 null）；observeOutcome/snapshot。 */
+  net: { observeOutcome(sig?: { ok?: boolean; rttMs?: number; retransmitted?: boolean }): any; snapshot(): any; [k: string]: any } | null
   /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）。 */
   gray: any
   /** KI-489：把游戏真 EventBus（duck-typed {on,emit}）按白名单接进云事件总线。 */

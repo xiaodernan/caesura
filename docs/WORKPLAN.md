@@ -143,6 +143,7 @@ Phase B4 的三件套此前是"有人听、没人说"。
 | ✅ KI-491 | **集大成灰度/金丝雀加权路由端到端接线（Node.js 侧，`spring-gateway-gray.mjs` + runtime/cloud/e2e 扩展；metadata 保真/lbStrategy/会话亲和/空池诚实回退）**（工程，2026-11-11 已落，详见账本 KI-491） | KI-491 |
 | ✅ KI-492 | **Spring Cloud Gateway / Resilience4j 补两只韧性 filter handler：Bulkhead 并发舱壁 + TimeLimiter 调用超时（Node.js 侧，`spring-gateway-filter-handlers.mjs` 扩展；零运行时改动接进完整 filter 链）**（工程，2026-11-11 已落，详见账本 KI-492） | KI-492 |
 | ✅ KI-493 | **集大成缓存层 + introspection 结果缓存（Node.js 侧，新 `caesura-redis-cache.mjs` LRU+TTL+singleflight+字节预算+RESP 风格 command，`caesura-auth-guard.mjs` 扩展 `cache` 选项；P8 五维首件）**（工程，2026-11-11 已落，详见账本 KI-493） | KI-493 |
+| ✅ KI-494 | **计网协议栈教学件（Node.js 侧，新 `caesura-net-stack.mjs`：Reno AIMD+CUBIC 拥塞控制 / RTO 指数退避+Karn / 滑动窗口+选择性 ACK / QUIC 0-RTT 票据+防重放 / HTTP SWR+ETag；P8 计网维度）**（工程，2026-11-11 已落，详见账本 KI-494） | KI-494 |
 
 
 
