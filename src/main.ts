@@ -7,6 +7,8 @@ import { GameLoop } from '@/core/GameLoop'
 import { Input, pumpMenu, type MenuOwner, type MenuPump } from '@/core/Input'
 import { RhythmClock } from '@/core/RhythmClock'
 import { registry } from '@/core/Registry'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { registerGameData, playerBase, regions, worldstate, dialogues, quests as questTable, worldStates as worldStateDefs, cinematics as cinematicRows } from '@/data'
 import { resolveMarker } from '@/quest/Objectives'
 import { respawnTarget, type RespawnPost } from '@/world/Respawn'
@@ -292,7 +294,12 @@ const panel = new Stakerite(rpg, {
   list: () => saveRoster.list(),
   write: (slot) => saves.save(slot),
   erase: (slot) => saves.erase(slot)
-}, input, makeOpsHandles(input, () => bindingsStore, () => gameplayStore, () => qualityStore))
+}, input, makeOpsHandles(input, () => bindingsStore, () => gameplayStore, () => qualityStore, () => {
+      try {
+        const floor = JSON.parse(readFileSync(join(process.cwd(), 'scripts', 'coverage-floor.json'), 'utf8'))
+        return typeof floor.linesPct === 'number' ? floor.linesPct : 0
+      } catch { return 0 }
+    }))
 /**
  * 对话框（Phase 6-B）。它只回吐玩家的选择，效果由 `showTurn` → `applyDialogueEffects` 统一落盘：
  * UI 不做第二个真值（与调音桩面板同一条纪律）。

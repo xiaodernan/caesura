@@ -290,6 +290,11 @@ export interface OpsPanelDeps {
   quality: () => number
   setQuality: (tier: QualityTier) => void
   /**
+   * 行覆盖率总地板（Phase 7 / KI-407）。面板只负责显示，不做判断。
+   * 读数来自 `scripts/coverage-floor.json`（由 `npm run coverage -- --bless` 生成）。
+   */
+  coverage: () => number
+  /**
    * 把一个动作绑到某把键。`code` 有两种拼写（KI-343）：`KeyboardEvent.code` 或 `Pad<n>`，
    * **认哪一种由 `BindingsStore.rebind` 回答**（语法本身就是路由），面板只是把捕获那侧给的字符串原样交过去。
    * KI-348 起交回的是 `RowSwap`（与菜单那一格同一份形状）：那一把原本归谁、它搬家没有、
@@ -1772,6 +1777,9 @@ export class Stakerite {
         <span class="act"><button class="act" data-act="resetall">全部回默认</button></span></div>
       <h2>${OPS_SECTIONS.ui}（单元是整组：一行画的是它此刻握着的每一把等价键，改这一行就是只留你按下的那一把。两列、两条通道各一把「改键」与一把「解绑」；关不掉的那一行两把「解绑」都不画）</h2>${menu}${stick}
       <h2>手感与练习辅助</h2>${numbers}${qualityRow}
+      <div class="row"><span class="name">行覆盖率地板<span class="note">\`npm run coverage -- --bless\` 生成的总地板（KI-407），只读不做判断。面板不修改，只展示。</span></span>
+        <span class="num">${(this.ops?.coverage?.() ?? 0).toFixed(2)}%</span>
+        <span class="act"><span class="num">地板</span></span></div>
       <div class="row"><span class="name">帧辅助<span class="note">输入缓冲在 ${Math.round(g.bufferMs)}ms 之外再多保一帧（+1 tick，与逻辑 tick 同一把尺）</span></span>
         <span class="num">${g.frameAssist ? '开' : '关'}</span>
         <span class="act"><button class="act" data-act="gtoggle" data-arg="frameAssist">${g.frameAssist ? '关掉' : '打开'}</button></span></div>

@@ -168,7 +168,7 @@ function rig(withOps = true, onOpsTab = true, saves: SavePanelDeps = NO_SAVES): 
   const rpg = new RpgRuntime('origin_tuner')
   const p = new Stakerite(rpg,
     { onApply: () => {}, notify: (m) => notices.push(m), onUse: () => {}, onRequestClose: () => {} },
-    saves, input, withOps ? makeOpsHandles(input, () => bindings, () => gameplay, () => quality) : null)
+    saves, input, withOps ? makeOpsHandles(input, () => bindings, () => gameplay, () => quality, () => 95.58) : null)
   p.show()
   if (onOpsTab) click(p, 'tab', 'ops')
   return { p, input, inputEl, bindings, gameplay, notices, haptics, playerTarget, rpg }
@@ -1483,7 +1483,7 @@ function makeWorld(store = new MapStore()) {
   const quality = new QualityStore({ particles: { spawnMul: 1 }, renderer: { resolutionScale: 1, shadowMapSize: 1536 } })
   const p = new Stakerite(rpg,
     { onApply: () => {}, notify: () => {}, onUse: () => {}, onRequestClose: () => {} },
-    NO_SAVES, input, makeOpsHandles(input, () => bindings, () => gameplay, () => quality))
+    NO_SAVES, input, makeOpsHandles(input, () => bindings, () => gameplay, () => quality, () => 95.58))
   p.show()
   const saves = new SaveGame({
     player, streaming, spawner, clock, time, rpg, audio: makeFakeAudio(),
