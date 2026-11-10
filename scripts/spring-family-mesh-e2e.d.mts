@@ -47,5 +47,16 @@ export function runMeshE2E(opts?: any): {
       redis: { concurrency: number; capacity: number; atomicAllowed: number; nonAtomicAllowed: number; overshoot: number; atomicBounded: boolean; nonAtomicOverran: boolean; shared: { key: string; aRemaining: number | null; bSeenRemaining: number | null; consistent: boolean } }
       builtAt: number
     } | null
+    /** KI-503：服务故障检测器快照（fixed/phi 对照 + SWIM 三态 + 健康视图），未配 failureDetector 为 null */
+    failureDetectorSnapshot: {
+      threshold: number
+      fixedTimeoutMs: number
+      fixed: { falsePositives: number; truePositives: number; detectionLatencyMs: number | null }
+      phi: { falsePositives: number; truePositives: number; detectionLatencyMs: number | null; maxPhi: number; cap: number }
+      verdict: Record<string, boolean>
+      swim: { counts: { alive: number; suspected: number; faulty: number; total: number }; script: any; members: any[] }
+      health: { nodes: string[]; excluded: string[]; firstFromCache: boolean; secondFromCache: boolean; thirdFromCache: boolean; computed: number; invalidations: number; hitRate: number | null; ttlMs: number }
+      builtAt: number
+    } | null
   }>
 }

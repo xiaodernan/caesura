@@ -171,7 +171,7 @@ describe('caesura-console-gen (KI-495)', () => {
     })
   })
 
-  it('⑪ buildSystems 真跑 LSM + OS/硬件 + 缓存防护 + 网关限流四维：形状齐、读数是真判词且有界（KI-498 / KI-501 / KI-502）', async () => {
+  it('⑪ buildSystems 真跑 LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测五维：形状齐、读数是真判词且有界（KI-498 / KI-501 / KI-502 / KI-503）', async () => {
     const sys = await buildSystems({ now: () => 1234, lsmKeys: 256, poolAccesses: 500, layoutCount: 1000, guardConcurrency: 16, guardKeys: 64 })
     expect(sys.builtAt).toBe(1234)
     // LSM：真跑 256 key，flush/compact/speedup 都是算法计数、speedup>1。
@@ -207,6 +207,21 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(sys.rateLimit!.redis.nonAtomicAllowed).toBeGreaterThan(sys.rateLimit!.redis.capacity)
     expect(sys.rateLimit!.redis.overshoot).toBeGreaterThan(0)
     expect(sys.rateLimit!.redis.shared.consistent).toBe(true)
+    // FailureDetector：固定超时抖动期误报多 / φ 降误报但真故障检测更慢 / SWIM 间接救回 / 健康视图首算。
+    expect(sys.failureDetector!.fixed.falsePositives).toBeGreaterThan(sys.failureDetector!.phi.falsePositives)
+    expect(sys.failureDetector!.phi.falsePositives).toBe(0)
+    expect(sys.failureDetector!.verdict.bothDetectRealFailure).toBe(true)
+    expect(sys.failureDetector!.verdict.fixedFasterButNoisier).toBe(true)
+    expect(sys.failureDetector!.verdict.phiAdaptiveToHistory).toBe(true)
+    expect(sys.failureDetector!.curve.length).toBeGreaterThan(10)
+    expect(sys.failureDetector!.curve.every((p) => typeof p.phi === 'number' && p.phi >= 0)).toBe(true)
+    expect(sys.failureDetector!.swim.script.indirectRescued).toBe(true)
+    expect(sys.failureDetector!.swim.script.gossipRefuted).toBe(true)
+    expect(sys.failureDetector!.health.nodes).toContain('gate-a')
+    expect(sys.failureDetector!.health.excluded).toContain('gate-c')
+    expect(sys.failureDetector!.health.firstFromCache).toBe(false)
+    expect(sys.failureDetector!.health.secondFromCache).toBe(true)
+    expect(sys.failureDetector!.health.thirdFromCache).toBe(false)
     // 可序列化纯数据、不含函数/Error。
     expect(() => JSON.stringify(sys)).not.toThrow()
   })
@@ -218,17 +233,25 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(withSys.systems!.hw).toBeTruthy()
     expect(withSys.systems!.guards).toBeTruthy() // KI-501 第三维默认也在
     expect(withSys.systems!.rateLimit).toBeTruthy() // KI-502 第四维默认也在
+    expect(withSys.systems!.failureDetector).toBeTruthy() // KI-503 第五维默认也在
     expect(withSys.scenarios.map((s) => s.id)).toEqual(SCENARIO_IDS) // 五场景顺序不变
-    // guards:false 可单独关掉缓存防护维，lsm/hw/rateLimit 仍在（不连坐）。
+    // guards:false 可单独关掉缓存防护维，其余四维仍在（不连坐）。
     const noGuards = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, guards: false })
     expect(noGuards.systems!.guards).toBe(null)
     expect(noGuards.systems!.lsm).toBeTruthy()
     expect(noGuards.systems!.rateLimit).toBeTruthy()
-    // rateLimit:false 可单独关掉网关限流维，lsm/hw/guards 仍在（不连坐）。
+    expect(noGuards.systems!.failureDetector).toBeTruthy()
+    // rateLimit:false 可单独关掉网关限流维，其余四维仍在（不连坐）。
     const noRl = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, rateLimit: false })
     expect(noRl.systems!.rateLimit).toBe(null)
     expect(noRl.systems!.guards).toBeTruthy()
     expect(noRl.systems!.lsm).toBeTruthy()
+    expect(noRl.systems!.failureDetector).toBeTruthy()
+    // failureDetector:false 可单独关掉故障检测维，其余四维仍在（不连坐）。
+    const noFd = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, failureDetector: false })
+    expect(noFd.systems!.failureDetector).toBe(null)
+    expect(noFd.systems!.lsm).toBeTruthy()
+    expect(noFd.systems!.rateLimit).toBeTruthy()
     const without = await buildSnapshot({ runner: fakeRunner(), driveNet: false, systems: false })
     expect(without.systems).toBe(null)
     expect(without.highlights).toBeTruthy() // 既有口径不受影响
@@ -254,12 +277,20 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(snap.systems.rateLimit.redis.atomicAllowed).toBeLessThanOrEqual(snap.systems.rateLimit.redis.capacity)
     expect(snap.systems.rateLimit.redis.nonAtomicAllowed).toBeGreaterThan(snap.systems.rateLimit.redis.capacity)
     expect(snap.systems.rateLimit.redis.shared.consistent).toBe(true)
-    // bootstrap.js 与 snapshot.json 是同一份真快照（含四维 systems）。
+    // KI-503 failureDetector：固定 vs φ 对照 + SWIM 三态 + 健康视图读数已固化进快照。
+    expect(snap.systems.failureDetector.fixed.falsePositives).toBeGreaterThan(snap.systems.failureDetector.phi.falsePositives)
+    expect(snap.systems.failureDetector.phi.falsePositives).toBe(0)
+    expect(snap.systems.failureDetector.verdict.bothDetectRealFailure).toBe(true)
+    expect(snap.systems.failureDetector.curve.length).toBeGreaterThan(10)
+    expect(snap.systems.failureDetector.swim.script.indirectRescued).toBe(true)
+    expect(snap.systems.failureDetector.health.nodes).toContain('gate-a')
+    // bootstrap.js 与 snapshot.json 是同一份真快照（含五维 systems）。
     const bootCode = readFileSync(resolve(process.cwd(), 'console/bootstrap.js'), 'utf8')
     const fromBoot = JSON.parse(bootCode.slice(bootCode.indexOf('=') + 1).trim().replace(/;\s*$/, ''))
     expect(fromBoot.systems.lsm.speedup).toBe(snap.systems.lsm.speedup)
     expect(fromBoot.systems.hw.allocation.saved).toBe(snap.systems.hw.allocation.saved)
     expect(fromBoot.systems.guards).toEqual(snap.systems.guards)
     expect(fromBoot.systems.rateLimit).toEqual(snap.systems.rateLimit)
+    expect(fromBoot.systems.failureDetector).toEqual(snap.systems.failureDetector)
   })
 })

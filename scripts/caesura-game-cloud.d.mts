@@ -51,6 +51,12 @@ export interface GameCloudOptions {
    * 一只现成 study（带 algorithms/redis 两块）。 */
   rateLimit?: boolean | Record<string, any> | { algorithms: any; redis: any; [k: string]: any }
   rlNow?: () => number
+  /** KI-503：服务故障检测器（φ 累积风险 + SWIM 成员协议 + 健康视图缓存）。true 用缺省规模；
+   * 对象逐项注入（threshold/fixedTimeoutMs/windowSize/minStdDeviationMs/spikeCount/spikeGapMs/
+   * stableCount/faultCapMs/stepMs/probeIntervalMs/suspicionMult/retransmitLimit/healthTtlMs/...），
+   * 或直接塞一只现成 study（带 comparison/swim/health 三块）。 */
+  failureDetector?: boolean | Record<string, any> | { comparison: any; swim: any; health: any; [k: string]: any }
+  fdNow?: () => number
 }
 
 /** 创建一只游戏侧开箱即用云。 */
@@ -77,6 +83,8 @@ export function createGameCloud(opts?: GameCloudOptions): {
   runCacheGuardStudy: (() => Promise<any>) | null
   /** KI-502：限流算法族 + Redis 原子性汇总的现算入口（未配 opts.rateLimit 时为 null）。 */
   runRateLimiterStudy: (() => Promise<any>) | null
+  /** KI-503：服务故障检测器汇总的现算入口（未配 opts.failureDetector 时为 null）；真跑固定 vs φ 对照 + SWIM + 健康视图。 */
+  runFailureDetectorStudy: (() => Promise<any>) | null
   /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）。 */
   gray: any
   /** KI-489：把游戏真 EventBus（duck-typed {on,emit}）按白名单接进云事件总线。 */

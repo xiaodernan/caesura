@@ -105,12 +105,33 @@ export interface RateLimitReading {
   }
 }
 
-/** KI-498 + KI-501 + KI-502：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流）。 */
+/** KI-503：服务故障检测读数（固定超时 vs φ 对照 + SWIM 三态成员协议 + 健康视图 TTL 缓存）。 */
+export interface FailureDetectorReading {
+  threshold: number
+  fixedTimeoutMs: number
+  fixed: { falsePositives: number; truePositives: number; detectionLatencyMs: number | null }
+  phi: { falsePositives: number; truePositives: number; detectionLatencyMs: number | null; maxPhi: number; cap: number }
+  adaptation: { delayMs: number | null; steadyPhi: number; jitteryPhi: number; jitteryMoreTolerant: boolean; steadyMean: number | null; steadyStddev: number | null; jitteryMean: number | null; jitteryStddev: number | null }
+  verdict: { fixedOverReactsToJitter: boolean; phiReducesFalsePositives: boolean; bothDetectRealFailure: boolean; fixedFasterButNoisier: boolean; phiAdaptiveToHistory: boolean; phiNeverExceedsCap: boolean }
+  curve: Array<{ i: number; gap: number | null; label: string; phi: number; fixedSuspect: boolean; phiSuspect: boolean }>
+  swim: {
+    counts: { alive: number; suspected: number; faulty: number; total: number }
+    indirectRescues: number
+    confirmations: number
+    suspicionTimeoutMs: number
+    script: { directAlive: boolean; indirectRescued: boolean; suspectAfterTotalFailure: boolean; gossipRefuted: boolean; reaped: string[] }
+    members: Array<{ id: string; state: string; incarnation: number; suspectAt: number | null }>
+  }
+  health: { nodes: string[]; excluded: string[]; firstFromCache: boolean; secondFromCache: boolean; thirdFromCache: boolean; computed: number; invalidations: number; hitRate: number | null; ttlMs: number }
+}
+
+/** KI-498 + KI-501 + KI-502 + KI-503：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测）。 */
 export interface SystemsBlock {
   lsm: LsmReading | null
   hw: HwReading | null
   guards: GuardsReading | null
   rateLimit: RateLimitReading | null
+  failureDetector: FailureDetectorReading | null
   builtAt: number
 }
 
@@ -147,9 +168,13 @@ export function buildSnapshot(opts?: {
   rlConcurrency?: number
   rlCapacity?: number
   rlWindowMs?: number
+  /** KI-503：false 关掉故障检测维（兼容旧快照）；fdStableCount/fdSpikeCount 注入轨迹规模。 */
+  failureDetector?: boolean
+  fdStableCount?: number
+  fdSpikeCount?: number
 }): Promise<ConsoleSnapshot>
 
-/** KI-498 + KI-501 + KI-502：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流四维系统读数；击穿并发 ⇒ async。 */
+/** KI-498 + KI-501 + KI-502 + KI-503：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测五维系统读数；击穿并发 ⇒ async。 */
 export function buildSystems(opts?: {
   now?: () => number
   lsmKeys?: number
@@ -162,6 +187,9 @@ export function buildSystems(opts?: {
   rlConcurrency?: number
   rlCapacity?: number
   rlWindowMs?: number
+  failureDetector?: boolean
+  fdStableCount?: number
+  fdSpikeCount?: number
 }): Promise<SystemsBlock>
 
 /** KI-501：真跑缓存防护三件套（击穿/穿透/雪崩）收敛成前端三面板紧凑读数；单维失败落 null。 */
@@ -180,6 +208,14 @@ export function buildRateLimitReading(opts: {
   rlCapacity?: number
   rlWindowMs?: number
 }, now: () => number): Promise<RateLimitReading | null>
+
+/** KI-503：真跑故障检测器（固定 vs φ 对照 + SWIM 三态 + 健康视图）收敛成前端两面板紧凑读数；失败落 null。 */
+export function buildFailureDetectorReading(opts: {
+  now?: () => number
+  failureDetector?: boolean
+  fdStableCount?: number
+  fdSpikeCount?: number
+}, now: () => number): Promise<FailureDetectorReading | null>
 
 export function realScenarioOpts(id: string): Record<string, any>
 

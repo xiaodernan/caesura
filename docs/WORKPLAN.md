@@ -152,6 +152,7 @@ Phase B4 的三件套此前是"有人听、没人说"。
 | ✅ KI-500 | **分片缓存客户端：一致性哈希分片 + 缓存命中率保留率对照（P8 第八维「缓存 / 算法 / 微服务」；新 `caesura-sharded-cache.mjs`：组合 KI-493 缓存 + KI-499 环，按片路由 get/set/load，扩缩容时一致性哈希保住约 N/(N+1) 命中率 vs 取模约 1/N，opt-in 挂 status.shardedCache）**（工程，2026-11-11 已落，详见账本 KI-500） | KI-500 |
 | ✅ KI-501 | **缓存防护三件套：击穿 / 穿透 / 雪崩教学件 + 前端控制台贯穿（P8 第九维「缓存合理运用 / 算法 / 数据库性能 / 前端美观 / 前后端协同」；新 `caesura-cache-guard.mjs`：击穿 singleflight+逻辑过期、穿透布隆前置+空值墓碑、雪崩 TTL 抖动削峰，`systems.guards` 三面板前端贯穿，opt-in 挂 status.cacheGuard）**（工程，2026-11-11 已落，详见账本 KI-501） | KI-501 |
 | ✅ KI-502 | **网关限流算法族对照 + Redis 原子令牌桶 + 前端水位面板（P8 第十维「计网知识 / 算法知识 / Redis 运用 / 数据库性能 / 前端美观 / 前后端协同」；新 `caesura-rate-limiter.mjs`：固定窗口/滑动窗口日志/滑动窗口计数/令牌桶/漏桶五算法 + Redis 原子令牌桶跨实例共享与非原子超发对照，`systems.rateLimit` 前端贯穿，opt-in 挂 status.rateLimit）**（工程，2026-11-11 已落，详见账本 KI-502） | KI-502 |
+| ✅ KI-503 | **服务故障检测器：φ 累积风险 + SWIM 三态成员协议 + 健康视图缓存（P8 第十一件「算法 / 计网 / 微服务元素 / 缓存 / 数据库性能 / 前端美观 / 前后端协同」；新 `caesura-failure-detector.mjs`：Welford + erfc 的 φ 自适应判定 + SWIM 间接探测/incarnation 单调/reap + 复用 KI-493 的健康视图 TTL 缓存，固定超时 vs φ 诚实权衡对照，`systems.failureDetector` 前端两面板贯穿，opt-in 挂 status.failureDetector）**（工程，2026-11-11 已落，详见账本 KI-503） | KI-503 |
 
 
 

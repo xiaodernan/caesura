@@ -325,4 +325,28 @@ describe('spring-family-mesh-e2e', () => {
     const plain = await runMeshE2E().run()
     expect(plain.rateLimitSnapshot).toBe(null)
   })
+
+  it('e2e KI-503：failureDetector=true ⇒ 主链照常跑通，failureDetectorSnapshot 带固定 vs φ 对照 + SWIM 三态 + 健康视图证据', async () => {
+    const e = runMeshE2E({ failureDetector: { stableCount: 20, spikeCount: 2 }, fdNow: () => 8888 })
+    const r = await e.run()
+    // 主链非破坏：注册/调用/关停都照常。
+    expect(r.started?.registered).toBe(true)
+    expect(r.callRes?.ok).toBe(true)
+    expect(r.stopped?.registered).toBe(false)
+    const g = r.failureDetectorSnapshot
+    expect(g).toBeTruthy()
+    expect(g!.builtAt).toBe(8888)
+    // 固定超时抖动期误报多；φ 降误报；两者都能检出真故障（如实保留「固定更快但更吵」权衡）
+    expect(g!.fixed.falsePositives).toBeGreaterThan(g!.phi.falsePositives)
+    expect(g!.phi.falsePositives).toBe(0)
+    expect(g!.verdict.bothDetectRealFailure).toBe(true)
+    expect(g!.verdict.fixedFasterButNoisier).toBe(true)
+    // SWIM 间接探测救回 + 健康视图缓存首算
+    expect(g!.swim.script.indirectRescued).toBe(true)
+    expect(g!.health.nodes).toContain('gate-a')
+    expect(g!.health.excluded).toContain('gate-c')
+    // 未配 failureDetector 时为 null（非破坏）。
+    const plain = await runMeshE2E().run()
+    expect(plain.failureDetectorSnapshot).toBe(null)
+  })
 })

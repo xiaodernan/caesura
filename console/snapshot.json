@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794348137320,
+  "generatedAt": 1794349624433,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -591,6 +591,425 @@
         }
       }
     },
-    "builtAt": 1794348137320
+    "failureDetector": {
+      "threshold": 4,
+      "fixedTimeoutMs": 250,
+      "fixed": {
+        "falsePositives": 3,
+        "truePositives": 1,
+        "detectionLatencyMs": 260
+      },
+      "phi": {
+        "falsePositives": 0,
+        "truePositives": 1,
+        "detectionLatencyMs": 690,
+        "maxPhi": 1.7896,
+        "cap": 100
+      },
+      "adaptation": {
+        "delayMs": 260,
+        "steadyPhi": 0.8445,
+        "jitteryPhi": 0.3622,
+        "jitteryMoreTolerant": true,
+        "steadyMean": 100,
+        "steadyStddev": 0,
+        "jitteryMean": 229.4737,
+        "jitteryStddev": 184.6761
+      },
+      "verdict": {
+        "fixedOverReactsToJitter": true,
+        "phiReducesFalsePositives": true,
+        "bothDetectRealFailure": true,
+        "fixedFasterButNoisier": true,
+        "phiAdaptiveToHistory": true,
+        "phiNeverExceedsCap": true
+      },
+      "curve": [
+        {
+          "i": 0,
+          "gap": 105.2502,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 1,
+          "gap": 104.768,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 2,
+          "gap": 104.7834,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 3,
+          "gap": 103.2451,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 4,
+          "gap": 96.0112,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 5,
+          "gap": 94.9826,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 6,
+          "gap": 95.8655,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 7,
+          "gap": 98.9957,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 8,
+          "gap": 98.6337,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 9,
+          "gap": 95.6089,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 10,
+          "gap": 420,
+          "label": "jitter",
+          "phi": 1.7896,
+          "fixedSuspect": true,
+          "phiSuspect": false
+        },
+        {
+          "i": 11,
+          "gap": 104.84,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 12,
+          "gap": 95.2548,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 13,
+          "gap": 105.8783,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 14,
+          "gap": 98.0813,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 15,
+          "gap": 97.8227,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 16,
+          "gap": 101.3822,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 17,
+          "gap": 98.7251,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 18,
+          "gap": 104.0943,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 19,
+          "gap": 104.406,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 20,
+          "gap": 420,
+          "label": "jitter",
+          "phi": 1.6636,
+          "fixedSuspect": true,
+          "phiSuspect": false
+        },
+        {
+          "i": 21,
+          "gap": 105.3945,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 22,
+          "gap": 98.7491,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 23,
+          "gap": 96.2799,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 24,
+          "gap": 100.3349,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 25,
+          "gap": 105.4279,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 26,
+          "gap": 94.3779,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 27,
+          "gap": 98.113,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 28,
+          "gap": 99.8785,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 29,
+          "gap": 101.9908,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 30,
+          "gap": 420,
+          "label": "jitter",
+          "phi": 1.5581,
+          "fixedSuspect": true,
+          "phiSuspect": false
+        },
+        {
+          "i": 31,
+          "gap": 97.1589,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 32,
+          "gap": 100.6674,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 33,
+          "gap": 99.0221,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 34,
+          "gap": 101.6304,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 35,
+          "gap": 98.157,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 36,
+          "gap": 95.8491,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 37,
+          "gap": 104.6043,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 38,
+          "gap": 104.6381,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        },
+        {
+          "i": 39,
+          "gap": 96.6122,
+          "label": "normal",
+          "phi": 0,
+          "fixedSuspect": false,
+          "phiSuspect": false
+        }
+      ],
+      "swim": {
+        "counts": {
+          "alive": 3,
+          "suspected": 0,
+          "faulty": 1,
+          "total": 4
+        },
+        "indirectRescues": 1,
+        "confirmations": 1,
+        "suspicionTimeoutMs": 3000,
+        "script": {
+          "directAlive": true,
+          "indirectRescued": true,
+          "suspectAfterTotalFailure": true,
+          "gossipRefuted": true,
+          "reaped": [
+            "gate-c"
+          ]
+        },
+        "members": [
+          {
+            "id": "gate-a",
+            "state": "alive",
+            "incarnation": 0,
+            "suspectAt": null
+          },
+          {
+            "id": "gate-b",
+            "state": "alive",
+            "incarnation": 0,
+            "suspectAt": null
+          },
+          {
+            "id": "gate-c",
+            "state": "faulty",
+            "incarnation": 2,
+            "suspectAt": null
+          },
+          {
+            "id": "gate-d",
+            "state": "alive",
+            "incarnation": 2,
+            "suspectAt": null
+          }
+        ]
+      },
+      "health": {
+        "nodes": [
+          "gate-a",
+          "gate-b",
+          "gate-d"
+        ],
+        "excluded": [
+          "gate-c"
+        ],
+        "firstFromCache": false,
+        "secondFromCache": true,
+        "thirdFromCache": false,
+        "computed": 2,
+        "invalidations": 1,
+        "hitRate": 0.3333,
+        "ttlMs": 5000
+      }
+    },
+    "builtAt": 1794349624433
   }
 }

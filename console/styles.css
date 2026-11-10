@@ -369,6 +369,70 @@ main { padding: clamp(18px, 3vw, 40px) clamp(18px, 4vw, 56px) 48px; max-width: 1
 .rl-share .dot.ok { background: var(--jade); box-shadow: 0 0 8px rgba(79,155,134,.5); }
 .rl-share .dot.no { background: var(--wine); }
 
+/* ---------- KI-503 服务故障检测：固定超时 vs φ + SWIM 三态 + 健康视图 ---------- */
+.row-faultdetect { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 1020px) { .row-faultdetect { grid-template-columns: 1fr; } }
+
+.fd-hero { display: flex; align-items: baseline; gap: 8px; padding: 10px 0 12px; border-bottom: 1px solid var(--line-soft); }
+.fd-hero .big { font-family: var(--mono); font-size: 38px; line-height: 1; color: var(--wine); font-variant-numeric: tabular-nums; text-shadow: 0 0 16px rgba(125,51,64,.28); }
+.fd-hero .big.jade { color: var(--jade); text-shadow: 0 0 16px rgba(79,155,134,.24); }
+.fd-hero .unit { font-family: var(--mono); font-size: 12px; color: var(--gold-dim); }
+.fd-hero .cap { margin-left: auto; font-size: 10px; color: var(--muted); letter-spacing: .05em; text-align: right; line-height: 1.5; }
+.fd-hero .cap b { color: #e2dcc8; font-family: var(--mono); font-weight: 500; }
+
+/* φ 曲线：SVG 折线 + 阈值虚线 + 固定超时判定点（真逐点读数） */
+.fd-curve { padding: 12px 0 4px; }
+.fd-curve svg { width: 100%; height: 90px; display: block; overflow: visible; }
+.fd-curve .axis { stroke: var(--line-soft); stroke-width: 1; }
+.fd-curve .thresh { stroke: var(--wine); stroke-width: 1; stroke-dasharray: 4 4; opacity: .7; }
+.fd-curve .phi-line { fill: none; stroke: var(--gold); stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; filter: drop-shadow(0 0 4px rgba(201,180,88,.3)); }
+.fd-curve .fp-dot { fill: var(--wine); }
+.fd-curve .lbl { font-family: var(--mono); font-size: 8px; fill: var(--gold-dim); }
+.fd-curve .thresh-lbl { font-family: var(--mono); font-size: 8px; fill: var(--wine); }
+.fd-curve-legend { display: flex; gap: 14px; flex-wrap: wrap; font-family: var(--mono); font-size: 9px; color: var(--muted); margin-top: 3px; }
+.fd-curve-legend i { display: inline-block; width: 8px; height: 8px; margin-right: 4px; vertical-align: middle; }
+.fd-curve-legend .k-phi { background: var(--gold); }
+.fd-curve-legend .k-fp { background: var(--wine); border-radius: 50%; }
+.fd-curve-legend .k-th { border-top: 1px dashed var(--wine); height: 0; width: 12px; }
+
+/* 自适应对照：同延迟在规律 / 抖动历史下的 φ */
+.fd-adapt { display: flex; flex-direction: column; gap: 6px; padding: 10px 0 2px; }
+.fd-adapt .title { font-family: var(--mono); font-size: 10px; color: var(--gold-dim); letter-spacing: .06em; }
+.fd-adapt-row { display: grid; grid-template-columns: 78px 1fr 48px; align-items: center; gap: 8px; font-size: 11px; }
+.fd-adapt-row .lab { color: var(--muted); }
+.fd-adapt-row .track { height: 9px; background: var(--ash-2); border: 1px solid var(--line-soft); position: relative; overflow: hidden; }
+.fd-adapt-row .fill { position: absolute; inset: 0 auto 0 0; transition: width 1s cubic-bezier(.2,.8,.2,1); }
+.fd-adapt-row .fill.steady { background: linear-gradient(90deg, #7d3340, var(--wine)); }
+.fd-adapt-row .fill.jittery { background: linear-gradient(90deg, #356b5d, var(--jade)); }
+.fd-adapt-row .num { font-family: var(--mono); text-align: right; color: #e8e3d3; font-variant-numeric: tabular-nums; }
+
+/* SWIM 三态成员条 */
+.fd-swim { display: flex; flex-direction: column; gap: 5px; padding: 10px 0 2px; }
+.fd-swim-row { display: grid; grid-template-columns: 96px 1fr auto; align-items: center; gap: 8px; font-family: var(--mono); font-size: 10px; }
+.fd-swim-row .mid { color: #e2dcc8; }
+.fd-swim-row .bar { display: flex; gap: 2px; height: 10px; }
+.fd-swim-row .bar i { width: 14px; border: 1px solid var(--line-soft); }
+.fd-swim-row .bar i.alive { background: var(--jade); }
+.fd-swim-row .bar i.suspected { background: var(--gold); }
+.fd-swim-row .bar i.faulty { background: var(--wine); }
+.fd-swim-row .inc { color: var(--muted); text-align: right; }
+.fd-swim-counts { display: flex; gap: 16px; flex-wrap: wrap; font-family: var(--mono); font-size: 10px; color: var(--muted); padding: 8px 0 2px; border-top: 1px solid var(--line-soft); margin-top: 4px; }
+.fd-swim-counts b { font-weight: 500; }
+.fd-swim-counts .c-alive b { color: var(--jade); }
+.fd-swim-counts .c-suspected b { color: var(--gold); }
+.fd-swim-counts .c-faulty b { color: var(--wine); }
+
+/* 健康视图缓存命中读数 */
+.fd-health { display: flex; flex-direction: column; gap: 4px; padding: 10px 0 2px; border-top: 1px solid var(--line-soft); margin-top: 6px; }
+.fd-health .title { font-family: var(--mono); font-size: 10px; color: var(--gold-dim); letter-spacing: .06em; margin-bottom: 2px; }
+.fd-health .nodes { font-family: var(--mono); font-size: 10px; color: #e2dcc8; }
+.fd-health .nodes .excl { color: var(--wine); }
+.fd-health .cache-row { display: flex; gap: 12px; flex-wrap: wrap; font-family: var(--mono); font-size: 10px; color: var(--muted); }
+.fd-health .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; }
+.fd-health .dot.hit { background: var(--jade); box-shadow: 0 0 8px rgba(79,155,134,.5); }
+.fd-health .dot.miss { background: var(--gold); }
+.fd-health .dot.inv { background: var(--wine); }
+
 /* 空值 / 无数据 */
 .nodata { color: var(--muted); font-family: var(--mono); font-size: 11px; padding: 12px 0; }
 .nodata::before { content: "◇ "; color: var(--gold-dim); }

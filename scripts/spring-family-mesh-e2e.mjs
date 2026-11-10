@@ -78,6 +78,9 @@ export function runMeshE2E(opts = {}) {
     // KI-502：限流算法族 + Redis 原子令牌桶（rateLimit=true 装配；只读五算法突发对照 + 原子/非原子超发证据，不改调用路径）。
     rateLimit: opts.rateLimit,
     rlNow: opts.rlNow,
+    // KI-503：服务故障检测器（failureDetector=true 装配；只读固定超时 vs φ 对照 + SWIM 三态 + 健康视图缓存证据，不改调用路径）。
+    failureDetector: opts.failureDetector,
+    fdNow: opts.fdNow,
     sources: {
       eureka: () => (opts.svcA ?? [{ id: 'svc-a:1', name: 'svc-a', address: '10.0.0.1', port: 8080, healthy: true }]),
       k8s: () => k8s.discover('caesura-gate'),
@@ -202,6 +205,7 @@ export function runMeshE2E(opts = {}) {
         shardedCacheSnapshot: status.shardedCache ?? null,
         cacheGuardSnapshot: status.cacheGuard ?? null,
         rateLimitSnapshot: status.rateLimit ?? null,
+        failureDetectorSnapshot: status.failureDetector ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
       }
@@ -239,6 +243,15 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         nonAtomicAllowed: r.rateLimitSnapshot.redis.nonAtomicAllowed,
         overshoot: r.rateLimitSnapshot.redis.overshoot,
         sharedConsistent: r.rateLimitSnapshot.redis.shared.consistent,
+      } : null,
+      failureDetector: r.failureDetectorSnapshot ? {
+        fixedFalsePositives: r.failureDetectorSnapshot.fixed.falsePositives,
+        phiFalsePositives: r.failureDetectorSnapshot.phi.falsePositives,
+        fixedDetectionMs: r.failureDetectorSnapshot.fixed.detectionLatencyMs,
+        phiDetectionMs: r.failureDetectorSnapshot.phi.detectionLatencyMs,
+        verdict: r.failureDetectorSnapshot.verdict,
+        swim: r.failureDetectorSnapshot.swim.counts,
+        healthNodes: r.failureDetectorSnapshot.health.nodes,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

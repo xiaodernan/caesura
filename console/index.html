@@ -175,6 +175,23 @@
       <p class="note" id="rl-redis-note">—</p>
     </article>
   </section>
+
+  <!-- 服务故障检测（KI-503 前后端协同：固定超时 vs φ 累积风险 + SWIM 三态成员协议 + 健康视图缓存） -->
+  <section class="row row-faultdetect">
+    <article class="panel panel-fd">
+      <div class="panel-head"><h2>故障检测 · 固定超时 vs φ</h2><span class="hint">同一条含 GC 暂停与真故障的心跳轨迹</span></div>
+      <div class="fd-hero" id="fd-hero"></div>
+      <div class="fd-curve" id="fd-curve"></div>
+      <div class="fd-adapt" id="fd-adapt"></div>
+      <p class="note" id="fd-hero-note">—</p>
+    </article>
+    <article class="panel panel-fd">
+      <div class="panel-head"><h2>SWIM 成员协议 · 三态</h2><span class="hint">alive → suspected → faulty</span></div>
+      <div class="fd-swim" id="fd-swim"></div>
+      <div class="fd-health" id="fd-health"></div>
+      <p class="note" id="fd-swim-note">—</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">

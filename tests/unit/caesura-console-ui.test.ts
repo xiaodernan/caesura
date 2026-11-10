@@ -397,4 +397,66 @@ describe('caesura-console-ui (KI-495)', () => {
     expect(dom3.els['rl-algos'].innerHTML).toContain('无限流算法读数')
     expect(dom3.els['rl-redis'].innerHTML).toContain(String(real.systems.rateLimit.redis.overshoot))
   })
+
+  it('⑭ KI-503 真 failureDetector 读数落进「固定 vs φ」+「SWIM 三态」两面板（不是写死的数）', async () => {
+    const fd = real.systems.failureDetector
+    const dom = await runApp(real)
+    // 面板一主读数：固定/φ 抖动误报大数 + 两侧真故障检出延迟。
+    const hero = dom.els['fd-hero'].innerHTML
+    expect(hero).toContain(String(fd.fixed.falsePositives))
+    expect(hero).toContain(String(fd.phi.falsePositives))
+    expect(hero).toContain(String(fd.fixed.detectionLatencyMs))
+    expect(hero).toContain(String(fd.phi.detectionLatencyMs))
+    expect(dom.els['fd-hero-note'].textContent).toContain('权衡') // 如实保留、不粉饰
+    // φ 曲线：真 curve 逐点折线 + 阈值线 + 固定超时误报点（酒红圆点）。
+    const curve = dom.els['fd-curve'].innerHTML
+    expect(curve).toContain('<polyline')
+    expect(curve).toContain('phi-line')
+    expect(curve).toContain('thresh') // 判死阈值虚线
+    expect(curve).toContain('φ=')
+    expect(curve).toContain(String(fd.curve.length)) // 真点数
+    expect((curve.match(/class="fp-dot"/g) || []).length).toBe(fd.curve.filter((p: any) => p.fixedSuspect && p.label !== 'fault').length)
+    // 自适应对照：同延迟规律 vs 抖动两行、data-w 静态可读。
+    const adapt = dom.els['fd-adapt'].innerHTML
+    expect(adapt).toContain('规律历史')
+    expect(adapt).toContain('抖动历史')
+    expect(adapt).toContain('data-w="')
+    // 面板二：SWIM 三态成员（真 id + data-state）+ 计数 + 间接救回。
+    const swim = dom.els['fd-swim'].innerHTML
+    expect(swim).toContain('data-state="alive"')
+    expect(swim).toContain('data-state="faulty"')
+    expect(swim).toContain('gate-a')
+    // 面板渲染的是 alive/suspected/faulty 各自计数（非 total 字段本身）
+    expect(swim).toContain('alive <b>' + fd.swim.counts.alive + '</b>')
+    expect(swim).toContain('faulty <b>' + fd.swim.counts.faulty + '</b>')
+    expect(dom.els['fd-swim-note'].textContent).toContain('间接救回')
+    // 健康视图：真节点 + 剔除节点 + TTL 缓存命中三段。
+    const health = dom.els['fd-health'].innerHTML
+    expect(health).toContain('gate-a')
+    expect(health).toContain('gate-c') // 被剔除
+    expect(health).toContain('命中')
+    expect(health).toContain(String(fd.health.ttlMs))
+  })
+
+  it('⑮ KI-503 failureDetector 整块缺 / 单块缺诚实降级，不连坐 rateLimit-lsm', async () => {
+    // 整块缺：两面板各子块降级、绝不画 0/假折线；rateLimit/lsm 仍照常。
+    const noFd = JSON.parse(JSON.stringify(real))
+    noFd.systems.failureDetector = null
+    const dom = await runApp(noFd)
+    expect(dom.els['fd-hero'].innerHTML).toContain('无故障检测读数')
+    expect(dom.els['fd-curve'].innerHTML).toContain('无φ 曲线读数')
+    expect(dom.els['fd-swim'].innerHTML).toContain('无SWIM 成员读数')
+    expect(dom.els['fd-health'].innerHTML).toContain('无健康视图读数')
+    expect(dom.els['fd-hero-note'].textContent).toContain('systems.failureDetector 缺失')
+    expect(dom.els['rl-algos'].innerHTML).toContain('固定窗口') // rateLimit 不连坐
+    expect(dom.els['lsm-gauge'].innerHTML).toContain(String(real.systems.lsm.speedup.toFixed(1))) // lsm 不连坐
+
+    // 单块缺：只降 SWIM，φ 曲线与健康视图仍渲染真读数（同维不连坐）。
+    const partial = JSON.parse(JSON.stringify(real))
+    partial.systems.failureDetector.swim = null
+    const dom2 = await runApp(partial)
+    expect(dom2.els['fd-swim'].innerHTML).toContain('无SWIM 成员读数')
+    expect(dom2.els['fd-curve'].innerHTML).toContain('<polyline') // φ 曲线照常
+    expect(dom2.els['fd-health'].innerHTML).toContain('gate-a') // 健康视图照常
+  })
 })

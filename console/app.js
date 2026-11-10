@@ -42,6 +42,7 @@
       renderSystems(snap.systems || null)
       renderGuards(snap.systems ? snap.systems.guards : null)
       renderRateLimit(snap.systems ? snap.systems.rateLimit : null)
+      renderFailureDetector(snap.systems ? snap.systems.failureDetector : null)
       setLive(true, result.source)
     }).catch(function (e) {
       setLive(false, 'error')
@@ -618,6 +619,131 @@
       ' 条；非原子路径 GET 后让出、N 路都读到同一满桶再写回 ⇒ 丢失更新、放行 ' + esc(fmt(raw)) +
       ' 条（超发 ' + esc(fmt(over)) + '）。两实例共享同 backend + key 见剩余一致。进程内模拟，' +
       '非真 Redis/EVAL、非墙钟 QPS。'
+  }
+
+  /* ---------- KI-503 服务故障检测：固定超时 vs φ 累积风险 + SWIM 三态 + 健康视图 ---------- */
+  function renderFailureDetector(fd) {
+    renderFdHero(fd)
+    renderFdCurve(fd && fd.curve, fd)
+    renderFdAdapt(fd && fd.adaptation)
+    renderFdSwim(fd && fd.swim)
+    renderFdHealth(fd && fd.health)
+  }
+
+  function fdMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">无' + esc(label) + '读数</div>'
+    if (note) note.textContent = 'systems.failureDetector 缺失 —— 重跑 npm run console:data 采集真判词'
+  }
+
+  // 面板一主读数：抖动期误报（固定 vs φ）大数 + 两侧真故障检测延迟 + 六句判词里最要紧的一句。
+  function renderFdHero(fd) {
+    var hero = $('#fd-hero'), note = $('#fd-hero-note')
+    if (!fd || !fd.fixed || !fd.phi) { fdMissing(hero, note, '故障检测'); return }
+    var fp = isNum(fd.fixed.falsePositives) ? fd.fixed.falsePositives : 0
+    var pp = isNum(fd.phi.falsePositives) ? fd.phi.falsePositives : 0
+    hero.innerHTML =
+      '<span class="big">' + esc(fmt(fp)) + '</span><span class="unit">次抖动误报 · 固定超时</span>' +
+      '<span class="big jade">' + esc(fmt(pp)) + '</span><span class="unit">次 · φ 检测</span>' +
+      '<span class="cap">真故障检出：固定 <b>' + esc(fmt(fd.fixed.detectionLatencyMs)) + 'ms</b> / φ <b>' +
+      esc(fmt(fd.phi.detectionLatencyMs)) + 'ms</b><br>φ 阈值 ' + esc(fmt(fd.threshold, 1)) +
+      ' · 固定窗 ' + esc(fmt(fd.fixedTimeoutMs)) + 'ms</span>'
+    note.textContent = '同一条含 ' + esc(fmt((fd.curve || []).filter(function (p) { return p.label === 'jitter' }).length)) +
+      ' 次 GC 长暂停与一次真故障的心跳轨迹。固定超时（' + esc(fmt(fd.fixedTimeoutMs)) + 'ms）在抖动期误剔除 ' +
+      esc(fmt(fp)) + ' 次；φ 累积风险是连续量，抖动期误报 ' + esc(fmt(pp)) + ' 次、但真故障检出更慢（' +
+      esc(fmt(fd.phi.detectionLatencyMs)) + 'ms vs ' + esc(fmt(fd.fixed.detectionLatencyMs)) +
+      'ms）——如实保留这组权衡，不把 φ 吹成万能。全为结构计数，非墙钟/真网络。'
+  }
+
+  // φ 曲线：真 curve 逐点画折线（横=i、纵=φ），阈值虚线，固定超时误报点标酒红。
+  function renderFdCurve(curve, fd) {
+    var box = $('#fd-curve')
+    if (!Array.isArray(curve) || !curve.length || !fd) { fdMissing(box, null, 'φ 曲线'); return }
+    var W = 100, H = 90, padX = 4, padY = 8
+    var thresh = isNum(fd.threshold) ? fd.threshold : 4
+    var yMax = Math.max(thresh * 1.25, 5)
+    var n = curve.length
+    var xOf = function (i) { return padX + (n <= 1 ? 0 : i / (n - 1) * (W - 2 * padX)) }
+    var yOf = function (v) { return H - padY - Math.max(0, Math.min(yMax, isNum(v) ? v : 0)) / yMax * (H - 2 * padY) }
+    var pts = curve.map(function (p, i) { return xOf(i).toFixed(2) + ',' + yOf(p.phi).toFixed(2) }).join(' ')
+    var threshY = yOf(thresh).toFixed(2)
+    var fps = curve.filter(function (p, i) { return p.fixedSuspect && p.label !== 'fault' })
+    var dots = fps.map(function (p) {
+      var i = curve.indexOf(p)
+      return '<circle class="fp-dot" cx="' + xOf(i).toFixed(2) + '" cy="' + yOf(p.phi).toFixed(2) + '" r="1.6"/>'
+    }).join('')
+    box.innerHTML =
+      '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="φ 累积风险曲线">' +
+      '<line class="axis" x1="0" y1="' + (H - padY) + '" x2="' + W + '" y2="' + (H - padY) + '"/>' +
+      '<line class="thresh" x1="0" y1="' + threshY + '" x2="' + W + '" y2="' + threshY + '"/>' +
+      '<text class="thresh-lbl" x="1" y="' + (Number(threshY) - 1.5) + '">φ=' + esc(fmt(thresh, 1)) + ' 判死线</text>' +
+      '<polyline class="phi-line" points="' + esc(pts) + '"/>' + dots +
+      '</svg>' +
+      '<div class="fd-curve-legend"><span><i class="k-phi"></i>φ 疑难度（' + esc(fmt(n)) + ' 点真值）</span>' +
+      '<span><i class="k-fp"></i>固定超时误报点 ' + esc(fmt(fps.length)) + '</span>' +
+      '<span><i class="k-th"></i>φ 判死阈值</span></div>'
+  }
+
+  // 自适应对照：同一段延迟，规律历史 φ 高（严）、抖动历史 φ 低（宽容）——固定超时做不到看上下文。
+  function renderFdAdapt(a) {
+    var box = $('#fd-adapt')
+    if (!a || !isNum(a.steadyPhi) || !isNum(a.jitteryPhi)) { fdMissing(box, null, '自适应对照'); return }
+    var max = Math.max(a.steadyPhi, a.jitteryPhi, 0.01)
+    var row = function (cls, label, v, hint) {
+      var w = Math.round(v / max * 100)
+      return '<div class="fd-adapt-row"><span class="lab">' + esc(label) + '<small style="display:block;color:var(--muted);font-size:9px">' + esc(hint) + '</small></span>' +
+        '<span class="track"><i class="fill ' + cls + '" style="width:' + w + '%" data-w="' + w + '"></i></span>' +
+        '<span class="num">' + esc(fmt(v, 2)) + '</span></div>'
+    }
+    box.innerHTML = '<div class="title">同一段 ' + esc(fmt(a.delayMs)) + 'ms 延迟 · 不同心跳历史下的 φ</div>' +
+      row('steady', '规律历史', a.steadyPhi, 'σ≈' + fmt(a.steadyStddev, 0) + ' → 更警觉') +
+      row('jittery', '抖动历史', a.jitteryPhi, 'σ≈' + fmt(a.jitteryStddev, 0) + ' → 更宽容')
+  }
+
+  // 面板二：SWIM 三态成员条（每节点一个色块按状态）+ 计数 + 间接探测/确认读数。
+  function renderFdSwim(sw) {
+    var box = $('#fd-swim')
+    if (!sw || !sw.counts || !Array.isArray(sw.members)) { fdMissing(box, $('#fd-swim-note'), 'SWIM 成员'); return }
+    var c = sw.counts
+    var rows = sw.members.map(function (m) {
+      var cls = m.state === 'alive' ? 'alive' : (m.state === 'suspected' ? 'suspected' : 'faulty')
+      return '<div class="fd-swim-row"><span class="mid">' + esc(m.id) + '</span>' +
+        '<span class="bar"><i class="' + cls + '" data-state="' + esc(m.state) + '"></i></span>' +
+        '<span class="inc">inc ' + esc(fmt(m.incarnation)) + ' · ' + esc(m.state) + '</span></div>'
+    }).join('')
+    box.innerHTML = rows +
+      '<div class="fd-swim-counts">' +
+      '<span class="c-alive">alive <b>' + esc(fmt(c.alive)) + '</b></span>' +
+      '<span class="c-suspected">suspected <b>' + esc(fmt(c.suspected)) + '</b></span>' +
+      '<span class="c-faulty">faulty <b>' + esc(fmt(c.faulty)) + '</b></span>' +
+      '<span>间接救回 <b>' + esc(fmt(sw.indirectRescues)) + '</b></span>' +
+      '<span>确认死亡 <b>' + esc(fmt(sw.confirmations)) + '</b></span>' +
+      '<span>怀疑超时 <b>' + esc(fmt(sw.suspicionTimeoutMs)) + 'ms</b></span></div>'
+    var s = sw.script || {}
+    var note = $('#fd-swim-note')
+    if (note) note.textContent = 'SWIM 三态：直接 ping 失败后请中继代探，任一 ACK 即反证存活（间接救回 ' +
+      esc(fmt(sw.indirectRescues)) + ' 次）；suspected 撑过 ' + esc(fmt(sw.suspicionTimeoutMs)) +
+      'ms 疑超时才被 reap 确认死亡。脚本真跑：direct 存活 ' + (s.directAlive ? '✓' : '✗') +
+      ' / 间接救回 ' + (s.indirectRescued ? '✓' : '✗') + ' / 全失败标疑 ' + (s.suspectAfterTotalFailure ? '✓' : '✗') +
+      ' / incarnation 反证 ' + (s.gossipRefuted ? '✓' : '✗') + '。纯进程内、无 UDP gossip。'
+  }
+
+  // 健康视图：alive 且 φ 未越阈的实例列表 + TTL 缓存首算/命中/失效三段读数。
+  function renderFdHealth(h) {
+    var box = $('#fd-health')
+    if (!h || !Array.isArray(h.nodes)) { fdMissing(box, null, '健康视图'); return }
+    var nodes = h.nodes.map(function (x) { return '<b>' + esc(x) + '</b>' }).join(' · ') || '—'
+    var excl = (h.excluded || []).map(function (x) { return '<span class="excl">' + esc(x) + '</span>' }).join(' · ') || '—'
+    var dot = function (hit, cls, label) {
+      return '<span><i class="dot ' + cls + '"></i>' + esc(label) + ' ' + (hit ? '命中' : '未命中') + '</span>'
+    }
+    box.innerHTML = '<div class="title">负载均衡可读的健康实例（φ + SWIM 收敛 · TTL 缓存）</div>' +
+      '<div class="nodes">健康 ' + nodes + '　<span class="excl">剔除 ' + excl + '</span></div>' +
+      '<div class="cache-row">' +
+      dot(h.firstFromCache === false, 'miss', '首算') +
+      dot(h.secondFromCache === true, 'hit', 'TTL 二次读') +
+      '<span><i class="dot inv"></i>' + esc(fmt(h.invalidations)) + ' 次主动失效</span>' +
+      '<span>命中率 ' + esc(fmt(h.hitRate == null ? null : h.hitRate * 100, 0)) + '%</span>' +
+      '<span>TTL ' + esc(fmt(h.ttlMs)) + 'ms</span></div>'
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)

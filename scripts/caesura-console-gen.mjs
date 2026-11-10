@@ -21,6 +21,7 @@ import { createLsmStore } from './caesura-lsm-store.mjs'
 import { createGameCloud } from './caesura-game-cloud.mjs'
 import { cacheGuardStudy } from './caesura-cache-guard.mjs'
 import { rateLimiterStudy, rlSnapshot } from './caesura-rate-limiter.mjs'
+import { failureDetectorStudy, fdSnapshot } from './caesura-failure-detector.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
 export const SCENARIO_IDS = ['main', 'gray', 'resilience', 'cache', 'net']
@@ -72,6 +73,9 @@ export async function buildSnapshot(opts = {}) {
     rlConcurrency: opts.rlConcurrency,
     rlCapacity: opts.rlCapacity,
     rlWindowMs: opts.rlWindowMs,
+    failureDetector: opts.failureDetector,
+    fdStableCount: opts.fdStableCount,
+    fdSpikeCount: opts.fdSpikeCount,
   })
 
   return {
@@ -93,15 +97,18 @@ export async function buildSnapshot(opts = {}) {
  * `createGameCloud({hw:true})` 装配的 `hw.snapshot()`（对象池/cache line/layout 三件对照）；
  * ③ 缓存防护走 `cacheGuardStudy`（击穿 singleflight 合并 / 穿透布隆+空值墓碑 / 雪崩 TTL 抖动削峰）；
  * ④ 网关限流走 `rateLimiterStudy`（五算法边界突发对照：固定窗口 2× vs 滑动/令牌/漏桶 ≈1，
- * Redis 原子桶原子不超发 vs 非原子 GET-SET 超发 + 跨实例共享）。
- * 四者都是**真 Node 侧判词的结构计数**、可注入规模、时钟注入 ⇒ 确定性可测；本件不复核、不重算，
+ * Redis 原子桶原子不超发 vs 非原子 GET-SET 超发 + 跨实例共享）；
+ * ⑤ 故障检测走 `failureDetectorStudy`（固定超时 vs φ 累积风险：抖动期固定超时误报多、φ 降误报但
+ * 真故障检测更慢的诚实权衡 + SWIM 三态成员协议间接探测反证 + 健康视图 TTL 缓存）。
+ * 五者都是**真 Node 侧判词的结构计数**、可注入规模、时钟注入 ⇒ 确定性可测；本件不复核、不重算，
  * 缺哪块就落 null，前端据实降级。因击穿对照真跑并发 loader（Promise.all），本件为 async。</p>
  *
  * @param {object} [opts]
  * @param {() => number} [opts.now] 时钟（注入则 builtAt 确定性）
  * @param {boolean} [opts.guards=false] 关掉缓存防护维（兼容旧快照）
  * @param {boolean} [opts.rateLimit=false] 关掉网关限流维（兼容旧快照）
- * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, builtAt:number}>}
+ * @param {boolean} [opts.failureDetector=false] 关掉故障检测维（兼容旧快照）
+ * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, failureDetector:object|null, builtAt:number}>}
  */
 export async function buildSystems(opts = {}) {
   const now = typeof opts.now === 'function' ? opts.now : () => Date.now()
@@ -112,7 +119,9 @@ export async function buildSystems(opts = {}) {
   const guards = opts.guards === false ? null : await buildGuardsReading(opts, now)
   // KI-502：第四维「网关限流」真跑五算法突发对照 + Redis 原子/非原子超发，与 lsm/hw/guards 平级、不混入五场景。
   const rateLimit = opts.rateLimit === false ? null : await buildRateLimitReading(opts, now)
-  return { lsm, hw, guards, rateLimit, builtAt: now() }
+  // KI-503：第五维「故障检测」真跑固定超时 vs φ 对照 + SWIM 三态 + 健康视图缓存，与其它四维平级、不混入五场景。
+  const failureDetector = opts.failureDetector === false ? null : await buildFailureDetectorReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, builtAt: now() }
 }
 
 /** LSM 引擎真跑一趟确定性 benchmark，回结构读数（不夹带每行真值）。 */
@@ -268,6 +277,45 @@ export async function buildRateLimitReading(opts, now) {
       },
       verdict: snap.verdict,
       redis: snap.redis,
+    }
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
+ * KI-503：真跑服务故障检测器（固定超时 vs φ 累积风险对照 + SWIM 三态成员协议 + 健康视图 TTL 缓存），
+ * 收敛成前端「故障检测」两面板紧凑读数。判定/阈值全 Node 侧；注入规模与固定时钟 ⇒ 快照重跑读数
+ * 逐字一致；φ 曲线是真判词逐点、非画假线；缺哪块就落 null，前端据实降级。
+ * @param {object} opts { failureDetector?:false, fdStableCount?, fdSpikeCount? }
+ * @param {()=>number} now 时钟（builtAt 注入则确定性）
+ */
+export async function buildFailureDetectorReading(opts, now) {
+  try {
+    const compare = {
+      stableCount: Math.max(8, Math.floor(Number(opts.fdStableCount ?? 40))),
+      spikeCount: Math.max(1, Math.floor(Number(opts.fdSpikeCount ?? 3))),
+    }
+    const s = await failureDetectorStudy({ now, compare })
+    const snap = fdSnapshot(s)
+    // 收敛成前端友好形状：φ 曲线（真逐点）+ 固定/φ 对照 + SWIM 三态 + 健康视图命中；浮点已由 fdSnapshot round。
+    return {
+      threshold: snap.threshold,
+      fixedTimeoutMs: snap.fixedTimeoutMs,
+      fixed: snap.fixed,
+      phi: snap.phi,
+      adaptation: snap.adaptation,
+      verdict: snap.verdict,
+      curve: snap.curve,
+      swim: {
+        counts: snap.swim.counts,
+        indirectRescues: snap.swim.indirectRescues,
+        confirmations: snap.swim.confirmations,
+        suspicionTimeoutMs: snap.swim.suspicionTimeoutMs,
+        script: snap.swim.script,
+        members: snap.swim.members,
+      },
+      health: snap.health,
     }
   } catch (e) {
     return null // 缺哪块就落 null，前端据实降级；不编造假数
@@ -485,6 +533,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     if (snap.systems) console.log(`[console] systems: lsm.speedup=${snap.systems.lsm?.speedup ?? '—'}× / hw.poolSaved=${snap.systems.hw?.allocation?.saved ?? '—'} / hw.layoutSpeedup=${snap.systems.hw?.layout?.sequential?.speedup ?? '—'}×`)
     if (snap.systems?.guards) console.log(`[console] guards: stampede ${snap.systems.guards.stampede.naiveLoads}→${snap.systems.guards.stampede.singleflightLoads} 回源 / penetration 布隆省 ${((snap.systems.guards.penetration.bloomSavedRate ?? 0) * 100).toFixed(0)}% / avalanche 削峰 ${((snap.systems.guards.avalanche.peakReduction ?? 0) * 100).toFixed(0)}%`)
     if (snap.systems?.rateLimit) console.log(`[console] rateLimit: fixedWindow burst×${snap.systems.rateLimit.strategies.fixedWindow.burstRatio ?? '—'} / sliding burst×${snap.systems.rateLimit.strategies.slidingLog.burstRatio ?? '—'} / Redis 原子 ${snap.systems.rateLimit.redis.atomicAllowed} vs 非原子 ${snap.systems.rateLimit.redis.nonAtomicAllowed}（超发 ${snap.systems.rateLimit.redis.overshoot}）`)
+    if (snap.systems?.failureDetector) console.log(`[console] failureDetector: 抖动误报 固定 ${snap.systems.failureDetector.fixed.falsePositives} vs φ ${snap.systems.failureDetector.phi.falsePositives} / 真故障检出 固定 ${snap.systems.failureDetector.fixed.detectionLatencyMs}ms vs φ ${snap.systems.failureDetector.phi.detectionLatencyMs}ms / SWIM 间接救回 ${snap.systems.failureDetector.swim.indirectRescues}`)
     process.exit(0)
   }).catch((e) => { console.error(`[console] 生成失败：${e.message}`); process.exit(1) })
 }

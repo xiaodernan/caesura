@@ -393,4 +393,47 @@ describe('caesura-game-cloud', () => {
     // 主链语义逐字不动
     expect(st.eventChannel).toBeTruthy()
   })
+
+  it('failureDetector:true ⇒ 装配故障检测器、status.failureDetector 读真对照/三态/健康视图证据、惰性同引用（KI-503）', async () => {
+    const gc = createGameCloud({
+      gameId: 'gfd1', gamePort: 7713, sources, cloud: fakeCloud(),
+      failureDetector: { stableCount: 20, spikeCount: 2 }, fdNow: () => 6666,
+    })
+    expect(gc.runFailureDetectorStudy).toBeTypeOf('function')
+    const st = await gc.status()
+    expect(st.failureDetector.builtAt).toBe(6666)
+    expect(st.failureDetector.fixed.falsePositives).toBeGreaterThan(st.failureDetector.phi.falsePositives)
+    expect(st.failureDetector.phi.falsePositives).toBe(0)
+    expect(st.failureDetector.verdict.bothDetectRealFailure).toBe(true)
+    expect(st.failureDetector.verdict.fixedFasterButNoisier).toBe(true)
+    expect(st.failureDetector.swim.counts.total).toBeGreaterThan(0)
+    expect(st.failureDetector.swim.script.indirectRescued).toBe(true)
+    expect(st.failureDetector.health.nodes).toContain('gate-a')
+    // 惰性缓存：二次 status 同引用，不反复跑对照
+    expect((await gc.status()).failureDetector).toBe(st.failureDetector)
+    // 现算入口可重跑、确定性（同注入 now）
+    const rerun = await gc.runFailureDetectorStudy!()
+    expect(rerun.comparison.verdict).toEqual(st.failureDetector.verdict)
+  })
+
+  it('failureDetector 默认 null 非破坏；可注入现成 study（KI-503）', async () => {
+    const plain = createGameCloud({ gameId: 'gfd2', gamePort: 7714, sources, cloud: fakeCloud() })
+    expect(plain.runFailureDetectorStudy).toBe(null)
+    const ps = await plain.status()
+    expect(ps.failureDetector).toBe(null)
+    expect(ps.rateLimit).toBe(null)
+    expect(ps.cacheGuard).toBe(null)
+    // 注入现成 study：直接用、不重跑，builtAt 原样带出。
+    const { failureDetectorStudy } = await import('../../scripts/caesura-failure-detector.mjs')
+    const study = await failureDetectorStudy({ now: () => 123, compare: { stableCount: 16 } })
+    const injected = createGameCloud({
+      gameId: 'gfd3', gamePort: 7715, sources, cloud: fakeCloud(),
+      failureDetector: study, fdNow: () => 999,
+    })
+    const st = await injected.status()
+    expect(st.failureDetector.builtAt).toBe(123) // 注入 study 的 builtAt，不被 fdNow 覆盖
+    expect(st.failureDetector.verdict.bothDetectRealFailure).toBe(true)
+    // 主链语义逐字不动
+    expect(st.eventChannel).toBeTruthy()
+  })
 })
