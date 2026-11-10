@@ -4,7 +4,7 @@
 > 它是 Phase 9 的**起点盘**：任何"优化前／优化后"的对比都必须先面对**这一盘上的数**，
 > 谁改一行代码，谁就应该再跑一次 `node scripts/measure-probe.mjs` 再对比。
 >
-> 所有数字均来自 2026-11-09 在本开发机上的实测。环境：Windows、headless（无可见窗口／无 WebGL），
+> 所有数字均来自 2026-11-09 在本开发机上的实测（§1–§5）；§6 是 2026-11-10 同机现量。环境：Windows、headless（无可见窗口／无 WebGL），
 > 不代表目标平台（Steam wishlist 的桌面档）、nightly CI、或任何其他节点。
 
 ---
@@ -77,5 +77,18 @@ en_tympanus×2 / en_myriad / en_refrein / en_hanged_knight`）开局即最大负
 - KI-335 — PerfSampler / F5 面板 / 池命中率（地板已落）
 - KI-418 — measure-probe（本基本盘的出生地）
 - KI-300 / KI-317 — 设计稿 §17 半句「每 tick <2ms」裁给文档侧之后的那份读数
-- `scripts/coverage-floor.json` — 行覆盖 94.95%+ 棘轮；`scripts/red-rate.mjs` — 红率哨兵
+- `scripts/coverage-floor.json` — 行覆盖棘轮（2026-11-10 抬到 95.62%；ui 包 99.93%；renderer 新包入地板）；`scripts/red-rate.mjs` — 红率哨兵
 - `docs/production-plan.md` §Phase 9 — Optimization 的验收口径（profile 先行、记录 Before/After/Trade-offs、≥10fps 预算、≥30 FPS 场景）
+
+---
+
+## 6. 2026-11-10 追加（本次会话现量，同一台开发机）
+
+| 项目 | 读数 | 来源 |
+|---|---|---|
+| perf-probe（`ai.update`，12 只混编 3600 拍） | mean 0.2764 ms / p50 0.1698 / p95 0.4931 / p99 1.5205 / max 18.6574；over2ms 28 条（0.78%） | `tests/flow/perf-probe.test.ts` 本趟现读（coverage 整套跑时的 stdout） |
+| 主干计数 | **4907 条 / 415 文件全绿** | `npm run check` |
+| 行覆盖棘轮 | **95.62%**（10246/10715 行，109 个 src 文件；ui 包 99.93%；renderer 新包加入地板；zeroFiles 仍只有 `src/main.ts`） | `npm run coverage`（本次会话 `--bless`，只抬升） |
+| 发布链路 | tsc OK / validate:data OK / test OK（84.7s）/ build OK / check-dist OK（"RELEASE CHECK OK"） | `npm run release` |
+| 相对 11-09 两趟 | mean 0.116 → 0.160 → **0.276**；max 4.83 → 8.47 → **18.66**。方差仍然是主导项——单趟读数只有量级意义；Phase 9 的 Before/After 对比仍必须同机至少 3 趟取中位 | 本节与第 1 节对照 |
+| 套件规模 | 4555 → **4907**（+352 条，+25 文件）自 11-09 以来；其中 Spring Cloud 家族与画质档/渲染分档各占相当部分，不影响逻辑侧 `ai.update` 的测量对象 | `npm run check` |
