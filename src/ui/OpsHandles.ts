@@ -3,8 +3,6 @@ import type { BindChannel, BindingsStore } from '@/settings/Bindings'
 import type { GameplaySettingsStore } from '@/settings/GameplaySettings'
 import type { QualityStore } from '@/settings/Quality'
 import type { OpsPanelDeps } from './Stakerite'
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
 
 /**
  * 「操作」页把手的唯一装配处（KI-337）。
@@ -32,14 +30,7 @@ export function makeOpsHandles(
     setGameplay: (patch) => gameplay().set(patch),
     quality: () => qualityStore().get(),
     setQuality: (tier) => qualityStore().set(tier),
-    coverage: () => {
-      try {
-        const floor = JSON.parse(readFileSync(join(process.cwd(), 'scripts', 'coverage-floor.json'), 'utf8'))
-        return typeof floor.linesPct === 'number' ? floor.linesPct : 0
-      } catch {
-        return 0
-      }
-    },
+    coverage: () => coverage(),
     rebind: (action: ActionName, code: string) => bindings().rebind(action, code),
     unbind: (action: ActionName) => bindings().unbind(action),
     /** 手柄那一列的「无」（KI-346）：与键盘那把并列，各自写各自那份名单——装配处不认识"哪张表"，只转发 */

@@ -291,7 +291,9 @@ export interface OpsPanelDeps {
   setQuality: (tier: QualityTier) => void
   /**
    * 行覆盖率总地板（Phase 7 / KI-407）。面板只负责显示，不做判断。
-   * 读数来自 `scripts/coverage-floor.json`（由 `npm run coverage -- --bless` 生成）。
+   * **由装配处传入的那个函数说了算**（`makeOpsHandles` 不再读 `scripts/coverage-floor.json`）：
+   * 浏览器 bundle 里 `process`／`readFileSync` 都不存在，那段老代码在浏览器里会静默抛错被吞 ⇒
+   * 屏幕上永远是 0%，而测试里传的 `() => 95.58` 从来不被走到。今天由调用方决定给什么数。
    */
   coverage: () => number
   /**
