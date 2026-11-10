@@ -27,6 +27,7 @@
 | Phase F-15 | Spring Cloud Bus 事件总线 `spring-bus-event.mjs`：进程内发布/订阅（publish/publishAsync/subscribe/close），默认实例 `defaultBus`（11 测试） | 4351589 |
 | Phase F-16 | Phase 7 F2 第二批落点：`src/renderer/QualityRenderer.ts`——renderer 分档实际消费者（applyRendererQuality + RendererQuality.sync()），headless 只记不应用，真 GL 落点等 Phase 9/10（8 测试） | 4351589 |
 | Phase F-17 | Spring Cloud Bus × Config Server 闭环：startConfigWatcher 第 5 形参 `bus` → `config.changed` 自动广播；启动语义改为首趟只登记不吐事件；CLI 创建本地 Bus 打印总线响应（2 条新集成测试） | a416f77 |
+| Phase F-18 | Spring Cloud Gateway 动态路由热加载：`createRouteTable` + `watchRoutes`（mtime 快照 + added/removed 差集 + `route.changed` 广播）+ `refreshRoutes` + CLI `refresh` 子命令（9 条新测试） | abcf512 |
 | KI-407 | coverage 棘轮三出口（0/1/2）全部有测试 + 基线落地 | 07399b9 |
 | Phase C / F3 | Boss 乐句线 HUD：BossPhraseBar.ts + main.ts 接线 + flow 测试 | 08bb3f5 |
 | KI-118 fix | spring-health-check.mjs 移除 shebang（module-loader 门禁） | 0698210 |
@@ -48,7 +49,8 @@
 - ~~`caesura-client` 的配置拉取失败降级测试~~ ✅ 完成（Phase F-14）
 - ~~更多 Spring Cloud 模式（config server 刷新、bus 事件等）~~ ✅ 完成（Phase F-15）
 - ~~Spring Cloud Bus 与 Config Server 联动：config 变更 → bus 自动广播 → 各服务热刷新~~ ✅ 完成（Phase F-17 / KI-450）
-- Spring Cloud Gateway 动态路由热加载（Phase F-7 之上的增强，下一轮）
+- ~~Spring Cloud Gateway 动态路由热加载（Phase F-7 之上的增强）~~ ✅ 完成（Phase F-18 / KI-451）
+- Spring Cloud Resilience4j 熔断实装测量（下一轮）
 
 ### P2：Phase 7 后续
 

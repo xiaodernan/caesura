@@ -7876,3 +7876,25 @@ await import(VALIDATOR_SPEC as string)
 **不声称**：① 不声称有真消息中间件参与——总线是进程内的；② 不声称真 Config Server 与真 Eureka 互联；③ 不声称 `config.changed` 的消费者一定去热刷新自己（那是各订阅方自己的策略）；④ 不声称 Bus 的发布顺序或幂等性；⑤ 不声称本批改变了任何数据表或判决。
 
 **读数与剩余欠账见账本 KI-450 那一行。**
+
+### 5.9.202 Gateway 第一次有进程内的动态路由表：热加载 + 总线广播 + refresh 端点（KI-451，2026-11-10）
+
+**这一格把"动态路由热加载"从配置层拉进了 Node 侧。** KI-447 那批 Angry Birds 把 Gateway 路由查询做成只读（`getRoute`／`getRoutes`）；Spring Cloud Gateway 真正的"热加载"是 `/actuator/gateway/refresh`，而 Node 侧名册没有对应物——**病**：Node 侧想知道"路由变了"只能下一次查询才看见，没有名册、没有版本、没有广播。
+
+**裁决与落点**（`scripts/spring-gateway-route.mjs`，新文件能力）：
+
+| 格 | 形状 |
+|---|---|
+| 内存路由表 | `createRouteTable()`：`add(row)`（id+uri 必填，`order` 默认 0，同 id 覆盖）／`remove(id)`／`get(id)`／`list()`（按 order 升序、同序按 id）／`clear()`／`size()` |
+| 文件加载 | `loadRoutesFromFile(table, filePath)`：routes.json 必须是**数组**（object 直接抛错），整体替换表内容（旧表被清空），返回按 order 排序的名册 |
+| 热加载 | `watchRoutes(table, filePath, interval, onChange, bus)`：首趟只取快照（不触发任何回调/广播，避免启动风暴）；之后只在文件 **mtime 真变**时重读替换，计算 `added`／`removed` 差集并触发 `onChange(added, removed, routes)`；提供 `bus` 时 `publish('route.changed', added, removed, routes)` |
+| 网关刷新 | `refreshRoutes(gatewayUrl)`：POST `/actuator/gateway/refresh`（网关丢路由缓存重读） |
+| CLI | `node scripts/spring-gateway-route.mjs refresh [gatewayUrl]`（原有的路由查询保留） |
+
+**守卫**（`tests/unit/spring-gateway-route.test.ts` 5 → **14** 腿）：新增 fetch 双腿（`refreshRoutes` 成功路径 + HTTP 500 抛错）、表格六腿（add/get/list 排序／覆盖同 id／缺 id 或 uri 抛错／remove·clear／`loadRoutesFromFile` 数组替换与非数组抛错）、热加载两腿（**首趟不触发**＋改文件后触发并断言 added=['r2']／removed=[]；删路由触发 removed=['r2'] 与 onChange 被调用）。**总套件 4902 条 / 415 文件全绿**，tsc 0，validate-data 0 ERROR／2 WARN。
+
+**两处本批踩的坑，写进来给下个批次省事**：① 局部变量名取 `bus` 会被 `event-rules` 的普查当成应用总线（`BUS_RECEIVERS=['bus','this']`，`.subscribe()` 会被当成 GameEvents 引用）——本批在两个文件里各踩一次，统一改名 `evbus`；`bus` 只能作为"参数名"出现（参数不匹配接收者调用形状，不会被普查但要清醒）② 热加载的"首趟只取快照"语义是刻意的：启动即广播会让所有消费者一起重建，那是启动风暴不是刷新。
+
+**不声称**：① 不声称内存表与网关配置同步——变更路径是 routes.json → Node 侧表，与网关自己的配置来源是两条路（`refreshRoutes` 只负责"通知网关重读"，不保证网关真的重读成功）；② 不声称 `route.changed` 的消费者策略（丢缓存／重建连接／各订阅方自定）；③ 不声称 routes.json 有版本/校验和（顺序只按 order+id 再排）；④ 不声称任何真 Gateway 真的被刷新过（全部 headless 进程内读数）。
+
+**读数与剩余欠账见账本 KI-451 那一行。**
