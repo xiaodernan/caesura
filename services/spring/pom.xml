@@ -43,6 +43,7 @@
     <module>caesura-gateway</module>
     <module>caesura-gate</module>
     <module>caesura-report</module>
+    <module>caesura-client</module>
   </modules>
 
   <properties>
