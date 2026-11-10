@@ -19,6 +19,7 @@
 | Phase F-7 | spring-gateway-route（Gateway 路由客户端，5 测试） | af6ddd3 |
 | Phase F-8 | spring-circuit-breaker（熔断器客户端，5 测试） | fc06e67 |
 | Phase F-9 | spring-sleuth-trace（Sleuth 链路追踪客户端，6 测试） | d03a7bf |
+| Phase F-10 | spring-load-balancer（LoadBalancer 客户端，7 测试） | b7f6629 |
 | KI-407 | coverage 棘轮三出口（0/1/2）全部有测试 + 基线落地 | 07399b9 |
 | Phase C / F3 | Boss 乐句线 HUD：BossPhraseBar.ts + main.ts 接线 + flow 测试 | 08bb3f5 |
 | KI-118 fix | spring-health-check.mjs 移除 shebang（module-loader 门禁） | 0698210 |
@@ -28,7 +29,7 @@
 | KI-442~445 | 账本行同步（KNOWN_ISSUES/WORKPLAN/PHASE-STATUS KV） | daea06e |
 | Stakerite 覆盖率看板 | 读 coverage-floor.json 显示总地板 | b0e0fb7 |
 
-**当前状态**：`npm run check` 全绿：4845 条 / 409 文件，0 红。
+**当前状态**：`npm run check` 全绿：4852 条 / 410 文件，0 红。
 
 ---
 
