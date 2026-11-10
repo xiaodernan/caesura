@@ -117,9 +117,11 @@ export function moduleRefsOf(src, path = 'module.ts') {
       const arg = node.arguments[0]
       const bare = arg && ts.isAsExpression(arg) ? arg.expression : arg
       if (bare && ts.isStringLiteral(bare)) push(bare.text, bare, 'dynamic')
-      else if (bare && ts.isIdentifier(bare) && consts.has(bare.text))
-        push(consts.get(bare.text), bare, arg === bare ? 'alias' : 'alias-as-string')
-      else push(null, arg ?? node, 'opaque')
+      else if (bare && ts.isIdentifier(bare) && consts.has(bare.text)) {
+        const resolved = consts.get(bare.text)
+        const isRelative = resolved.startsWith('./') || resolved.startsWith('../')
+        push(consts.get(bare.text), bare, isRelative ? (arg === bare ? 'alias' : 'alias-as-string') : 'dynamic')
+      } else push(null, arg ?? node, 'opaque')
     }
     ts.forEachChild(node, walk)
   }
@@ -184,8 +186,10 @@ export function resolveLocal(spec, fromFile) {
   if (spec.startsWith(ALIAS_PREFIX)) {
     return normalizePath(`${ALIAS_ROOT}/${spec.slice(ALIAS_PREFIX.length)}`)
   }
-  // 路径分隔符统一成 `/`：调用方给 Windows 的 `\` 还是 POSIX 的 `/` 都一样（不统一的话
-  // `src\ai\AISystem.ts` 里的 `./Enemy` 会被解析成仓库根下的 `Enemy`——一个"看起来存在"的错答案）
+  // 相对路径（./ 或 ../）相对导入文件所在目录解析；已是仓库根相对路径（scripts/...）直接返回
+  if (!spec.startsWith('./') && !spec.startsWith('../')) {
+    return normalizePath(spec)
+  }
   const from = fromFile.replace(/\\/g, '/')
   const dir = from.includes('/') ? from.slice(0, from.lastIndexOf('/')) : ''
   const parts = (dir ? dir.split('/') : []).concat(spec.split('/'))
