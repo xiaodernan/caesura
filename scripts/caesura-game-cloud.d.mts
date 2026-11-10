@@ -31,6 +31,9 @@ export interface GameCloudOptions {
   /** KI-494：计网算法可观测包。true 用缺省阈值建一只；对象逐项注入六只状态机阈值。 */
   net?: boolean | Record<string, any>
   netNow?: () => number
+  /** KI-496：LSM 风格存储引擎。true 用缺省阈值建一只；对象逐项注入阈值，或直接塞一只现成 store。 */
+  store?: boolean | Record<string, any> | { put(k: any, v: any): any; get(k: any): any; stats?(): any; snapshot?(): any }
+  storeNow?: () => number
 }
 
 /** 创建一只游戏侧开箱即用云。 */
@@ -43,6 +46,8 @@ export function createGameCloud(opts?: GameCloudOptions): {
   authCache: any
   /** KI-494：计网算法可观测包（未配 opts.net 时为 null）；observeOutcome/snapshot。 */
   net: { observeOutcome(sig?: { ok?: boolean; rttMs?: number; retransmitted?: boolean }): any; snapshot(): any; [k: string]: any } | null
+  /** KI-496：LSM 存储引擎实例（未配 opts.store 时为 null）；put/get/flush/compact/stats/snapshot。 */
+  store: { put(k: any, v: any): any; get(k: any): any; del?(k: any): any; flush?(): any; compact?(level?: number): any; stats(): any; snapshot?(): any; [k: string]: any } | null
   /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）。 */
   gray: any
   /** KI-489：把游戏真 EventBus（duck-typed {on,emit}）按白名单接进云事件总线。 */

@@ -179,4 +179,29 @@ describe('caesura-game-cloud', () => {
     expect(plain.net).toBe(null)
     expect((await plain.status()).net).toBe(null)
   })
+
+  it('store=true 装配 LSM 存储引擎，gc.store 可读写、status.store 可见（KI-496）', async () => {
+    let t = 5000
+    const gc = createGameCloud({
+      gameId: 'g1', gamePort: 7700, sources, cloud: fakeCloud(),
+      store: { memtableMax: 4, levelMultiplier: 2 }, storeNow: () => (t += 1),
+    })
+    expect(gc.store).toBeTruthy()
+    expect(typeof gc.store!.put).toBe('function')
+    expect(gc.store!.stats().flushes).toBe(0)
+    // 真写读 + flush/compact：结构读数走 status 暴露、不改任何调用路径。
+    for (let i = 0; i < 12; i++) gc.store!.put('k' + i, i)
+    expect(gc.store!.get('k3').value).toBe(3)
+    gc.store!.flush?.()
+    gc.store!.compact?.()
+    const st = await gc.status()
+    expect(st.store.flushes).toBeGreaterThan(0)
+    expect(st.store.compactions).toBeGreaterThan(0)
+    expect(st.store.uniqueKeys).toBe(12)
+    expect(st.store.builtAt).toBeGreaterThan(5000)
+    // 未配 store 时 gc.store 为 null、status.store 为 null（非破坏，与 net/authCache 同款）
+    const plain = createGameCloud({ gameId: 'g2', gamePort: 7701, sources, cloud: fakeCloud() })
+    expect(plain.store).toBe(null)
+    expect((await plain.status()).store).toBe(null)
+  })
 })

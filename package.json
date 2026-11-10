@@ -18,6 +18,7 @@
     "coverage": "node scripts/coverage.mjs",
     "validate:data": "node scripts/validate-data.mjs",
     "console:data": "node scripts/caesura-console-gen.mjs --out=console/snapshot.json",
+    "lsm:bench": "node scripts/caesura-lsm-store.mjs",
     "status": "node scripts/phase-status.mjs",
     "status:embed": "node scripts/phase-status-embed.mjs",
     "release": "node scripts/release.mjs",

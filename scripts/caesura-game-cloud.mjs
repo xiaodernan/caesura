@@ -19,6 +19,7 @@ import { createGameEventBus } from './caesura-event-bus.mjs'
 import { createAuthGuard } from './caesura-auth-guard.mjs'
 import { createGameEventBridge } from './caesura-game-event-bridge.mjs'
 import { createRedisCache } from './caesura-redis-cache.mjs'
+import { createLsmStore } from './caesura-lsm-store.mjs'
 import {
   createAimdCongestion,
   createCubicCongestion,
@@ -129,6 +130,16 @@ export function createGameCloud(opts = {}) {
     ? createNetBundle({ now: opts.netNow })
     : (opts.net && typeof opts.net === 'object' ? createNetBundle({ ...opts.net, now: opts.netNow ?? opts.net.now }) : null)
   const netClock = opts.netNow ?? (() => Date.now())
+
+  // KI-496：LSM 风格存储引擎（opt-in）。opts.store===true 用缺省阈值建一只；传对象逐项注入
+  // （memtableMax/levelMultiplier/compare/rand/...）；也可直接塞一只现成 store（窑口注入）。
+  // 与真存储引擎无桥接、不改任何调用路径——只把结构读数挂到 status 供 E2E/前端控制台取。
+  const store = opts.store === true
+    ? createLsmStore({ now: opts.storeNow })
+    : (opts.store && typeof opts.store === 'object' && typeof opts.store.put === 'function'
+      ? opts.store
+      : (opts.store && typeof opts.store === 'object' ? createLsmStore({ ...opts.store, now: opts.storeNow ?? opts.store.now }) : null))
+
   /** 包住一次调用，用真实耗时/成败喂 net 包（未启用则原样返回，零开销）。 */
   async function observeCall(promise) {
     if (!net) return promise
@@ -161,6 +172,8 @@ export function createGameCloud(opts = {}) {
     authCache,
     /** KI-494：计网算法可观测包（未配 opts.net 时为 null）；可直接 observeOutcome/snapshot。 */
     net,
+    /** KI-496：LSM 存储引擎实例（未配 opts.store 时为 null）；可直接 put/get/flush/compact/stats。 */
+    store,
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
     gray: runtime.gray,
     /** 把游戏真 EventBus 按白名单routes 接进云事件总线（游戏侧一行：gc.connectGameBus(bus, routes)）。 */
@@ -183,12 +196,13 @@ export function createGameCloud(opts = {}) {
       await events.publishGameEvent('game.stopped', { gameId, gameName })
       return { ...r, bridgeOff }
     },
-    /** 汇总：游戏状态 + 已聚合服务 + 路由数 + 事件频道 + 鉴权作用域 + 缓存/计网读数。 */
+    /** 汇总：游戏状态 + 已聚合服务 + 路由数 + 事件频道 + 鉴权作用域 + 缓存/计网/存储读数。 */
     async status() {
       const s = await runtime.status()
       return {
         ...s, eventChannel: events.channel, authScopes: auth.requiredScopes,
         authCache: auth.cacheStats(), net: net ? net.snapshot() : null,
+        store: store ? store.snapshot() : null,
       }
     },
   }

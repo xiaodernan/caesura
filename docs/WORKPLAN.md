@@ -145,6 +145,7 @@ Phase B4 的三件套此前是"有人听、没人说"。
 | ✅ KI-493 | **集大成缓存层 + introspection 结果缓存（Node.js 侧，新 `caesura-redis-cache.mjs` LRU+TTL+singleflight+字节预算+RESP 风格 command，`caesura-auth-guard.mjs` 扩展 `cache` 选项；P8 五维首件）**（工程，2026-11-11 已落，详见账本 KI-493） | KI-493 |
 | ✅ KI-494 | **计网协议栈教学件（Node.js 侧，新 `caesura-net-stack.mjs`：Reno AIMD+CUBIC 拥塞控制 / RTO 指数退避+Karn / 滑动窗口+选择性 ACK / QUIC 0-RTT 票据+防重放 / HTTP SWR+ETag；P8 计网维度）**（工程，2026-11-11 已落，详见账本 KI-494） | KI-494 |
 | ✅ KI-495 | **前端集大成控制台 + 真 E2E 数据生成器（P8 前端美观/前后端协同维度；`caesura-console-gen.mjs` 真跑多场景汇快照 + `console/` 零依赖暗黑哥特响应式门面）**（工程，2026-11-11 已落，详见账本 KI-495） | KI-495 |
+| ✅ KI-496 | **数据库性能 / 数据结构教学件：LSM 风格存储引擎（P8 数据库性能维度；新 `caesura-lsm-store.mjs`：memtable 跳表 + Bloom filter + WAL 预写日志 + SSTable 稀疏索引 + leveled compaction，附与线性扫描对照的点查性能证据）**（工程，2026-11-11 已落，详见账本 KI-496） | KI-496 |
 
 
 
