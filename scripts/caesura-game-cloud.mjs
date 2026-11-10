@@ -20,6 +20,7 @@ import { createAuthGuard } from './caesura-auth-guard.mjs'
 import { createGameEventBridge } from './caesura-game-event-bridge.mjs'
 import { createRedisCache } from './caesura-redis-cache.mjs'
 import { createLsmStore } from './caesura-lsm-store.mjs'
+import { allocationStudy, compareLayouts, createCacheLinePadder, createPackedCounters } from './caesura-hw-perf.mjs'
 import {
   createAimdCongestion,
   createCubicCongestion,
@@ -140,6 +141,36 @@ export function createGameCloud(opts = {}) {
       ? opts.store
       : (opts.store && typeof opts.store === 'object' ? createLsmStore({ ...opts.store, now: opts.storeNow ?? opts.store.now }) : null))
 
+  // KI-497：OS/硬件适配对照包（opt-in）。opts.hw===true 用缺省规模建；传对象逐项注入规模/阈值。
+  // 三件都是确定性离线对照（对象池分配次数 / cache line 假共享 / AoS→SoA LRU miss），不改任何
+  // 调用路径、不实测墙钟时间；snapshot() 现跑一遍给 status.hw / E2E / 前端控制台取结构读数。
+  const hwCfg = opts.hw === true ? {} : (opts.hw && typeof opts.hw === 'object' ? opts.hw : null)
+  // 三件都是确定性离线对照，跑一次即定；惰性缓存快照，避免 status() 被轮询时反复跑 benchmark
+  // （这正是本件自己讲的「别在热路径反复付成本」）。要重算可由调用方重建 cloud 或注入新 hwNow。
+  let hwCached = null
+  const hw = hwCfg === null ? null : {
+    snapshot() {
+      if (hwCached) return hwCached
+      const pool = allocationStudy({ accesses: hwCfg.poolAccesses ?? 10000, maxSize: hwCfg.poolMaxSize ?? 64,
+        factory: hwCfg.factory ?? (() => ({ x: 0, y: 0, z: 0 })), reset: hwCfg.reset ?? ((o) => { o.x = o.y = o.z = 0 }) })
+      const counters = hwCfg.counterCount ?? 8
+      const padded = createCacheLinePadder(counters, hwCfg).stats()
+      const packed = createPackedCounters(counters, hwCfg).stats()
+      const seq = compareLayouts({ ...hwCfg, stride: 1 })
+      const jump = compareLayouts({ ...hwCfg, stride: hwCfg.jumpStride ?? 16 })
+      hwCached = {
+        allocation: { accesses: pool.accesses, naiveCreated: pool.naiveCreated, poolCreated: pool.poolCreated, saved: pool.saved, reuseRate: pool.reuseRate },
+        cacheLine: { paddedFalseSharing: padded.falseSharingPairs, packedFalseSharing: packed.falseSharingPairs, paddingOverhead: padded.spanBytes / packed.spanBytes },
+        layout: {
+          sequential: { aosMisses: seq.aos.misses, soaMisses: seq.soa.misses, speedup: seq.speedup },
+          strided: { stride: jump.stride, aosMisses: jump.aos.misses, soaMisses: jump.soa.misses, speedup: jump.speedup },
+        },
+        builtAt: (opts.hwNow ?? (() => Date.now()))(),
+      }
+      return hwCached
+    },
+  }
+
   /** 包住一次调用，用真实耗时/成败喂 net 包（未启用则原样返回，零开销）。 */
   async function observeCall(promise) {
     if (!net) return promise
@@ -174,6 +205,8 @@ export function createGameCloud(opts = {}) {
     net,
     /** KI-496：LSM 存储引擎实例（未配 opts.store 时为 null）；可直接 put/get/flush/compact/stats。 */
     store,
+    /** KI-497：OS/硬件适配对照包（未配 opts.hw 时为 null）；snapshot() 现跑三件确定性对照。 */
+    hw,
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
     gray: runtime.gray,
     /** 把游戏真 EventBus 按白名单routes 接进云事件总线（游戏侧一行：gc.connectGameBus(bus, routes)）。 */
@@ -203,6 +236,7 @@ export function createGameCloud(opts = {}) {
         ...s, eventChannel: events.channel, authScopes: auth.requiredScopes,
         authCache: auth.cacheStats(), net: net ? net.snapshot() : null,
         store: store ? store.snapshot() : null,
+        hw: hw ? hw.snapshot() : null,
       }
     },
   }

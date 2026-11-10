@@ -28,13 +28,14 @@
 └───────────────────────────────┬──────────────────────────────────────┘
                                   │ createGameCloud({...}).start()
 ┌─────────────────────────────────▼─────────────────────────────────────┐
-│  caesura-game-cloud  （开箱即用云入口，KI-478/484/485/489/490/491/493/494/496）│
+│  caesura-game-cloud  （开箱即用云入口，KI-478/484/485/489/490/491/493/494/496/497）│
 │    start / call / proxyCall / shutdown / status                         │
 │    + events（KI-484 云事件总线）· auth（KI-485 鉴权守卫）                │
 │    + connectGameBus（KI-489 事件桥，shutdown 自动退桥）                   │
 │    + gray（KI-491 灰度/金丝雀加权路由；lbStrategy 可切 weight）           │
 │    + net（KI-494 计网可观测包，真调用耗时/成败喂 AIMD/RTO/滑窗，opt-in）   │
 │    + store（KI-496 LSM 存储引擎，结构读数挂 status.store，opt-in）          │
+│    + hw（KI-497 OS/硬件适配对照，结构读数挂 status.hw，opt-in）             │
 ├───────────────────────────────────────────────────────────────────────┤
 │  caesura-cloud-runtime  （集大成运行时，KI-473/477/487）                 │
 │    call 路径：网关 predicate 匹配 → 完整 filter 链（KI-486/487）         │
@@ -59,6 +60,8 @@
 │   · 计网算法   : caesura-net-stack（KI-494 Reno/CUBIC 拥塞控制·RTO+Karn·滑窗+SACK·0-RTT·HTTP SWR/ETag）│
 │   · 存储/数据库 : caesura-lsm-store（KI-496 memtable 跳表·WAL·SSTable 稀疏索引+Bloom·leveled         │
 │                  compaction；点查 vs 线性扫描对照证据，opt-in 挂 status.store）                    │
+│   · OS/硬件适配 : caesura-hw-perf（KI-497 对象池降 GC 分配·cache line padding 规避 false sharing·   │
+│                  AoS→SoA LRU miss 局部性对照；只给结构计数、不实测墙钟，opt-in 挂 status.hw）       │
 │   · 任务/函数   : spring-cloud-task · spring-cloud-function · spring-cloud-stream · openfeign     │
 │   · 总线/健康   : spring-bus-client · spring-health-check · spring-mesh-health                     │
 │   · K8s         : spring-cloud-kubernetes-client（KI-479，configMap+endpoints→mesh 实例）         │
@@ -146,6 +149,11 @@ if (gc.auth.canAccess(claims, 'game:call')) { /* ... */ }
 // gc.store.compact()                          // leveled 归并去重、深层丢 tombstone
 //   → gc.store.stats() / status().store 读 flushes/compactions/mergedAway/comparisons/speedup/levels
 //   → 判定权仍在 Node 侧（层数/位数/比较器/层乘数全注入）；默认 store:false 不装配、不改调用路径
+// KI-497：给 createGameCloud 传 hw:true（或 hw:{poolAccesses,counterCount,cacheLineBytes,...}）即开 OS/硬件对照：
+// const gc = createGameCloud({ hw: true })
+//   → status().hw.snapshot() 现跑三件确定性对照：对象池分配次数 / cache line 假共享对数 / AoS→SoA LRU miss
+//   → 只给结构计数（不实测墙钟/GC 暂停/真多核流量），判定权仍在 Node 侧、阈值全注入
+//   → 默认 hw:false 不装配、不改调用路径；也可直接用 caesura-hw-perf 的 createObjectPool/compareLayouts
 // gc.events.publishGameEvent('game.saved', {...})           // KI-484：云侧发事件
 // shutdown() 会自动退桥，不留悬挂订阅
 ```
@@ -212,7 +220,9 @@ node scripts/spring-family-mesh-e2e.mjs
 - `npm run console:data` 真跑 5 趟 E2E 落 `console/snapshot.json`+`bootstrap.js`，`console/snapshot.json` 的 `highlights` 八个大数全部由真判词 `deriveHighlights` 派生（services/spanCount/canaryHits/cacheHitRate/timedOut/cwnd/rto），`net.series` 是同一只真 AIMD 实例喂出的锯齿轨迹；`caesura-console-ui.test.ts` 用 DOM stub 在 `node:vm` 跑真 `app.js` 喂这份真快照，证每块面板都落真读数、缺字段诚实降级（KI-495）。
 - `node scripts/caesura-lsm-store.mjs` 一趟确定性 benchmark 证存储引擎：512 key 写入自动 flush 10 段、leveled compaction 归并去重、丢 74 个 tombstone、Bloom 负查零段探测，点查 `scanBaselineComparisons/lsmComparisons` 对照得 `speedup≈39×`；`caesura-lsm-store.test.ts` 20 腿钉住跳表有序/概率层数、Bloom 零假阴性+假阳性有界、WAL 重放、SSTable 稀疏索引、`tombstone` 不复活旧版本、与线性扫描对照读数；`createGameCloud({store:{...}})` 装配证 `status().store` 结构读数可见（KI-496）。
 
-对应 `tests/unit/spring-family-mesh-e2e.test.ts`（14 腿）；前端证据另见 `tests/unit/caesura-console-gen.test.ts`（10 腿）与 `tests/unit/caesura-console-ui.test.ts`（7 腿）；存储引擎证据见 `tests/unit/caesura-lsm-store.test.ts`（20 腿）与 `tests/unit/caesura-game-cloud.test.ts`（+1 腿）。
+- `node scripts/caesura-hw-perf.mjs` 一趟确定性对照证 OS/硬件适配：对象池 10000 次取还只 `new` 1 次（省 9999 次 GC 分配）、padded 假共享对 0 vs packed 7（空间开销 8×）、顺序扫 AoS 5000 miss vs SoA 1250 miss（`speedup≈4×`）、跳跃扫 stride16 两者都 625 miss（红利消失）；`caesura-hw-perf.test.ts` 16 腿钉住对象池复用/限额丢弃、cache line 跨行隔离、LRU 容量 2 行经典换页、AoS/SoA 顺序加速与跳跃退化、注入确定性；`createGameCloud({hw:true})` 装配证 `status().hw` 三件读数可见（KI-497）。
+
+对应 `tests/unit/spring-family-mesh-e2e.test.ts`（14 腿）；前端证据另见 `tests/unit/caesura-console-gen.test.ts`（10 腿）与 `tests/unit/caesura-console-ui.test.ts`（7 腿）；存储引擎证据见 `tests/unit/caesura-lsm-store.test.ts`（20 腿）、OS/硬件适配见 `tests/unit/caesura-hw-perf.test.ts`（16 腿），两者在 `tests/unit/caesura-game-cloud.test.ts`（+2 腿）证 opt-in 装配。
 
 ## 6. 边界与「不声称」
 
@@ -227,6 +237,7 @@ node scripts/spring-family-mesh-e2e.mjs
 - 不声称在线校验结果永久缓存——KI-493 只在配了 `authCache` 时按注入 TTL 缓存「放行/显式 negative」判词，TTL 内以旧判词为准，故 TTL 是**令牌吊销实时性 vs 端点载荷**的安全权衡、须调用方注入；`fail-open` 降级态与 `local` 判词**绝不缓存**，避免故障态被固化。缓存 key 是令牌的 FNV-1a 哈希，不落明文。
 - 不声称缓存读路径用了堆/跳表——KI-493 LRU 刻意用 Map+双向链表保持 O(1) 命中/逐出，TTL 走「惰性 + 显式 O(n) 定期清扫」，`singleflight`/字节预算均每进程内存一只、不跨进程共享。
 - 不声称接了真 RocksDB/LevelDB/SQLite——KI-496 `caesura-lsm-store` 是纯教学状态机：无真实文件 I/O/页缓存/块设备对齐，`sink` 只模拟落盘；也不声称比 B+ 树全面更优（LSM 以读放大换顺序写、范围查用收集排序非归并堆迭代，缺省参数仅教学值、真库须实测调参）。Bloom filter 只保证零假阴性、不保证零假阳性；compaction 纯进程内单线程、不并发安全、不跨进程共享。默认 `store:false` 不装配，开了也只挂 `status.store` 结构读数、不反向改变任何调用结果。
+- 不声称 KI-497 `caesura-hw-perf` 实测了性能——三件全是**结构性/确定性计数对照**，不是跑分：对象池只给「分配次数」省了多少（不是 GC 暂停时长/吞吐）、padding 只给「槽位是否落同一 cache line」的结构判词（不是真多核 coherence 流量/时钟周期）、SoA 只给「确定性 LRU 模型下的 miss 数」（不是真 CPU cache 命中率，模型是 JS Map 插入序近似 LRU、无组相联/替换策略/硬件预取）。真实收益取决于硬件/并发模式/数据规模，须实测调参；不声称对象池线程安全或自动归还（`release` 靠调用方配对、泄漏与重复归还没运行时防护）。默认 `hw:false` 不装配，开了也只挂 `status.hw` 结构读数、不反向改变任何调用结果。
 - 不声称灰度接了真流量镜像/service mesh sidecar——KI-491 `spring-gateway-gray` 纯进程内决策，transport 仍是注入的内存实现；不缓存会话状态（亲和靠 selector 确定性哈希，同 key 必落同池），阈值无服务端下发/热更（由 opts 注入）。
 - 不声称事件桥 import 了浏览器 `src/`——`caesura-game-event-bridge` 依赖注入两只 duck-typed bus，永不反向依赖；默认空路由零转发，载荷原样透传不校验。
 - 不声称前端控制台是实时流/推送——KI-495 `console/` 只读 `npm run console:data` 落盘的**一次性离线快照**，`snapshot.json`（XHR）与 `bootstrap.js`（`file://` 回退）同源；无 WebSocket/SSE、无定时轮询、无后端写入、无交互命令下发（纯只读可视化），要刷新须重跑生成器。

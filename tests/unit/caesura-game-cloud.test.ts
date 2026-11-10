@@ -204,4 +204,28 @@ describe('caesura-game-cloud', () => {
     expect(plain.store).toBe(null)
     expect((await plain.status()).store).toBe(null)
   })
+
+  it('hw:true 装配 OS/硬件对照包，status.hw 读三件确定性证据（KI-497）', async () => {
+    let t = 9000
+    const gc = createGameCloud({
+      gameId: 'g1', gamePort: 7700, sources, cloud: fakeCloud(),
+      hw: { poolAccesses: 500, counterCount: 6 }, hwNow: () => (t += 1),
+    })
+    expect(gc.hw).toBeTruthy()
+    expect(typeof gc.hw!.snapshot).toBe('function')
+    const st = await gc.status()
+    expect(st.hw.builtAt).toBeGreaterThan(9000)
+    // 对象池：500 次取还只 new 一次。
+    expect(st.hw.allocation).toMatchObject({ accesses: 500, naiveCreated: 500, poolCreated: 1, saved: 499 })
+    // cache line：padded 零假共享、packed 有假共享。
+    expect(st.hw.cacheLine.paddedFalseSharing).toBe(0)
+    expect(st.hw.cacheLine.packedFalseSharing).toBeGreaterThan(0)
+    // 布局：顺序扫 SoA 更快（speedup>1）、跳跃扫退化到 ≈1。
+    expect(st.hw.layout.sequential.speedup).toBeGreaterThan(1)
+    expect(st.hw.layout.strided.speedup).toBeCloseTo(1, 1)
+    // 未配 hw 时 gc.hw 为 null、status.hw 为 null（非破坏，与 net/store 同款）
+    const plain = createGameCloud({ gameId: 'g2', gamePort: 7701, sources, cloud: fakeCloud() })
+    expect(plain.hw).toBe(null)
+    expect((await plain.status()).hw).toBe(null)
+  })
 })
