@@ -19,7 +19,8 @@
 | Phase F-7 | spring-gateway-route（Gateway 路由客户端，5 测试） | af6ddd3 |
 | Phase F-8 | spring-circuit-breaker（熔断器客户端，5 测试） | fc06e67 |
 | Phase F-9 | spring-sleuth-trace（Sleuth 链路追踪客户端，6 测试） | d03a7bf |
-| Phase F-10 | spring-load-balancer（LoadBalancer 客户端，7 测试） | b7f6629 |
+| Phase F-10 | spring-load-balancer（负载均衡客户端，7 测试） | b7f6629 |
+| Phase F-11 | spring-mesh-health（服务网格健康聚合器，5 测试） | ce32537 |
 | KI-407 | coverage 棘轮三出口（0/1/2）全部有测试 + 基线落地 | 07399b9 |
 | Phase C / F3 | Boss 乐句线 HUD：BossPhraseBar.ts + main.ts 接线 + flow 测试 | 08bb3f5 |
 | KI-118 fix | spring-health-check.mjs 移除 shebang（module-loader 门禁） | 0698210 |
@@ -30,7 +31,7 @@
 | Stakerite 覆盖率看板 | 读 coverage-floor.json 显示总地板 | b0e0fb7 |
 | Phase 7 F2-第三批 | QualityStore→GPUParticles 预算乘数接线验证（5 腿） | 26347df |
 
-**当前状态**：`npm run check` 全绿：4857 条 / 411 文件，0 红。
+**当前状态**：`npm run check` 全绿：4862 条 / 412 文件，0 红。
 
 ---
 
@@ -39,12 +40,13 @@
 ### P1：Spring Cloud 微服务继续扩展
 
 - `caesura-client` 的配置拉取失败降级测试（模拟 config server 不可用时的退路）
-- 更多 Spring Cloud 模式（config server 刷新、bus 事件等）
+- Spring Cloud 服务网格健康聚合器已完成，可加更多 Spring Cloud 模式（config server 刷新、bus 事件等）
 
 ### P2：Phase 7 后续
 
 - 更多 VFX/Boss 相关流程测试
 - `docs/perf-baseline.md` 持续完善
+- renderer 分档实际消费（shadow map size / resolution scale 实际应用到渲染管线）
 
 ### P3：新功能规划
 
