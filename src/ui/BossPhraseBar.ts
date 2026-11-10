@@ -121,7 +121,8 @@ export class BossPhraseBar {
     if (cssW === this.cssW && cssH === this.cssH) return
     this.cssW = cssW
     this.cssH = cssH
-    this.dpr = window.devicePixelRatio ?? 1
+    // headless 环境没有 window.devicePixelRatio，默认 1；浏览器里会按实际 DPR 缩放
+    this.dpr = typeof window !== 'undefined' ? (window.devicePixelRatio ?? 1) : 1
     this.canvas.width = cssW * this.dpr
     this.canvas.height = cssH * this.dpr
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0)

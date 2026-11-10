@@ -12,14 +12,33 @@ import { BossPhraseBar } from '@/ui/BossPhraseBar'
  * 不测 DOM 像素（无 WebGL / 无浏览器布局），只测状态机与边界。
  */
 
-globalThis.innerWidth = 1280
-globalThis.innerHeight = 720
-
 function makeCanvas(): HTMLCanvasElement {
-  const c = document.createElement('canvas')
-  c.width = 1280
-  c.height = 720
-  return c
+  const ctx = {
+    save: () => {},
+    restore: () => {},
+    globalAlpha: 1,
+    fillStyle: '',
+    strokeStyle: '',
+    lineWidth: 1,
+    font: '',
+    textAlign: '',
+    textBaseline: '',
+    fillRect: () => {},
+    strokeRect: () => {},
+    fillText: () => {},
+    beginPath: () => {},
+    arc: () => {},
+    fill: () => {},
+    setTransform: () => {},
+  } as unknown as CanvasRenderingContext2D
+  return {
+    getContext: () => ctx,
+    clientWidth: 1280,
+    clientHeight: 720,
+    width: 1280,
+    height: 720,
+    style: {},
+  } as unknown as HTMLCanvasElement
 }
 
 function emitBossPhase(id: string, phase: number, phases: number, nameKey: string): void {
@@ -41,10 +60,8 @@ describe('KI-429/F3｜BossPhraseBar：乐句线 HUD 状态机与边界', () => {
   it('boss.phase 到 ⇒ phase/phases/nameKey 原样留存，alpha 跳到 1', () => {
     const canvas = makeCanvas()
     const bar = new BossPhraseBar(canvas)
-    // 访问私有字段：通过 draw 的行为间接验证（alpha > 0 才会画）
     emitBossPhase('en_hersil', 2, 3, 'dlg.hersil_phase2')
     bar.tick(0)
-    // draw 不抛，且不会因为 alpha=0 而提前返回
     expect(() => bar.draw()).not.toThrow()
     bar.dispose()
   })
@@ -65,9 +82,7 @@ describe('KI-429/F3｜BossPhraseBar：乐句线 HUD 状态机与边界', () => {
     emitBossPhase('en_hersil', 1, 1, 'dlg.test')
     bar.tick(0)
     expect(() => bar.draw()).not.toThrow()
-    // 连续 tick 2 秒，alpha 应该大幅下降
-    for (let i = 0; i < 40; i++) bar.tick(0.05) // 2 秒
-    // alpha 应该接近 0（实际衰减公式：alpha -= dt * 0.5，2秒后 alpha ≈ 0）
+    for (let i = 0; i < 40; i++) bar.tick(0.05)
     bar.dispose()
   })
 
@@ -85,7 +100,7 @@ describe('KI-429/F3｜BossPhraseBar：乐句线 HUD 状态机与边界', () => {
     const canvas = makeCanvas()
     const bar = new BossPhraseBar(canvas)
     for (let i = 0; i < 100; i++) {
-      bar.tick(0.016) // 60fps 的一帧
+      bar.tick(0.016)
       expect(() => bar.draw()).not.toThrow()
     }
     bar.dispose()
@@ -95,7 +110,6 @@ describe('KI-429/F3｜BossPhraseBar：乐句线 HUD 状态机与边界', () => {
     const canvas = makeCanvas()
     const bar = new BossPhraseBar(canvas)
     bar.dispose()
-    // dispose 后调用 tick/draw 不抛
     bar.tick(0.016)
     expect(() => bar.draw()).not.toThrow()
   })

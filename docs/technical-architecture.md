@@ -293,7 +293,7 @@ src/
 | `rpg/Shop.ts` | KI-055① 商店逻辑层（买清单 / 卖装半价 / 反套利闸门） |
 | `rpg/Movements.ts`、`world/Props.ts`、`world/PropVisuals.ts` | 乐章战技谱册（Phase 5-C2）与**可破坏场景物**这一类实体（KI-023 音刺 / KI-022② 振源核）——后者是规划里没有的**实体类别**，不是文件 |
 | `quest/Settlement.ts` | 与 `rpg/Settlement.ts` **同名不同职**：前者落对话与任务的选项效果，后者是击杀结算。两个同名文件住在同一个仓库里是真实的踩坑点，点名登记 |
-| `ui/Stakerite.ts`、`ui/TitleScreen.ts`、`ui/SaveSlots.ts` | 调音桩面板、开场定弦（KI-031②）、存档槽两屏（KI-025②）——都晚于规划 |
+| `ui/Stakerite.ts`、`ui/TitleScreen.ts`、`ui/SaveSlots.ts`、`ui/BossPhraseBar.ts` | 调音桩面板、开场定弦（KI-031②）、存档槽两屏（KI-025②）、Boss 乐句线 HUD（Phase 7 F3）——都晚于规划 |
 | `world/ActorVisuals.ts`、`world/BossArenaVisuals.ts` | 身体与场地的灰盒表现层。规划把它们算进了 `SceneGraph`，实际各自一份才好测 |
 | `world/HitboxWire.ts` | **§17 调试器那一格「hitbox 线框」的承载体**（KI-315，2026-10-24）：把**此刻在场**的每一记出手的框画成线段——`THREE.LineSegments` 一把组，逐 `box.shape` 画 cone（中面 `offsetY` 上的 apex→两条边→外弧 ＋ 高度层上下两道弧与立柱 ＋ 贴身豁免那一整圈）／sphere（球心 `(0, offsetY, offsetFwd)` 的三条正交大圆）／ring（两条同心圆，外沿 `outer + forward`、内沿不偏心，且**整支不读高度**所以全在 y=0）。**两条规矩都是为了让「线框＝判定」这句可以被测**：① 画 authored box 不画膨胀后的命中区（`shapeHits` 那三条支各把目标体积加在外沿上，而线框在出手那一刻不认识任何目标 ⇒ 画"含谁"就是替结算做裁决；唯一例外是 `POINT_BLANK_GRACE` 那一圈——它是框自己的属性，不画就等于线框比判定少一块真实存在的命中区）；② 顶点住局部空间（+Z＝出手朝向、原点＝出手点）、朝向交在对象上，于是同一个 box 只建一份几何（按 `boxFingerprint` 复用），每帧只挪对象。**纪律与 F1／F3／F4 同一套**（KI-058 搬进三维）：默认全关，`sync()` 没翻开时连 `feed()` 都不叫、一条线段也不建（`geometryBuilds`／`feedCalls` 两把读数钉着），关掉那一刻清空。名册语义集中在 `wiresFrom`（结构类型认领 `pos`／`yaw`／`activeHitbox.box` ⇒ 表现层不 import 玩法运行时，`arch-boundaries` 收进 PRESENTATION 名册）；键由组合根给（`main.ts` DEV 段写 `key: 'F6'`，`Input` 的 preventDefault 预留表同步）。色相只取 `VFX_PALETTE.silver`／`discordViolet` 两颗 ⇒ 不往 art-direction §7.1 的欠账名册添第三颗。守卫 `tests/unit/hitbox-wire.test.ts`（**29 条**）＋反向实测 20 臂（账见 KI-315，读数见 §5.9.122） |
 | `world/WallGreybox.ts` | KI-014②a：遮挡必须看得见 |
