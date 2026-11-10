@@ -59,6 +59,10 @@ export function runMeshE2E(opts = {}) {
     // KI-491：灰度/金丝雀决策器透传（true 或缺省 0%；对象注入阈值/亲和键/selector）+ LB 策略。
     gray: opts.gray,
     lbStrategy: opts.lbStrategy,
+    // KI-493：鉴权 introspection 缓存（authCache=true 用默认预算建一只），配 onlineAuth 可证只打一次端点。
+    authCache: opts.authCache,
+    authCacheTtlMs: opts.authCacheTtlMs,
+    authNegativeTtlMs: opts.authNegativeTtlMs,
     sources: {
       eureka: () => (opts.svcA ?? [{ id: 'svc-a:1', name: 'svc-a', address: '10.0.0.1', port: 8080, healthy: true }]),
       k8s: () => k8s.discover('caesura-gate'),
@@ -116,6 +120,22 @@ export function runMeshE2E(opts = {}) {
         }
       }
 
+      // KI-493：缓存探针——同一在线令牌连打两次 authorizeOnline，证第二次 source='cache' 且端点只被调一次。
+      //   opts.cacheProbe 给 { bearer?, requiredScope?, onlineAuth? }；缓存由 opts.authCache 装配。
+      let cacheProbe = null
+      if (opts.cacheProbe && gc.authCache) {
+        const cp = opts.cacheProbe
+        const bearer = cp.bearer ?? opts.bearer ?? demoBearer()
+        const requiredScope = cp.requiredScope ?? opts.requiredScope ?? 'game:call'
+        const callOpts = { requiredScopes: [requiredScope], ...(cp.onlineAuth ?? opts.onlineAuth ?? {}) }
+        const v1 = await gc.auth.authorizeOnline(bearer, callOpts)
+        const v2 = await gc.auth.authorizeOnline(bearer, callOpts)
+        cacheProbe = {
+          firstSource: v1.source, secondSource: v2.source, secondCacheHit: !!v2.cacheHit,
+          firstOk: v1.ok, secondOk: v2.ok, stats: gc.auth.cacheStats(),
+        }
+      }
+
       const boot = await gc.start()
 
       // KI-489：桥装好后，若注入了 gameBus，模拟一次真游戏事件 emit，看它是否过桥到云总线。
@@ -161,6 +181,7 @@ export function runMeshE2E(opts = {}) {
       return {
         started: boot.started, callRes, status, stopped: shut.stopped, spans, services: status.services,
         events: gameEvents, auth, filterStats, grayProbes, grayStats: gc.gray?.stats() ?? null,
+        cacheProbe, authCacheStats: gc.auth.cacheStats(),
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
       }
@@ -182,6 +203,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       retryCount: r.filterStats.retries,
       grayLanes: r.grayProbes.map((p) => `${p.key}:${p.lane}${p.fallback ? '(fallback)' : ''}`),
       grayStats: r.grayStats,
+      cacheProbe: r.cacheProbe,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))
     process.exit(0)

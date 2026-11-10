@@ -18,6 +18,7 @@ import { createServiceProxy } from './caesura-service-proxy.mjs'
 import { createGameEventBus } from './caesura-event-bus.mjs'
 import { createAuthGuard } from './caesura-auth-guard.mjs'
 import { createGameEventBridge } from './caesura-game-event-bridge.mjs'
+import { createRedisCache } from './caesura-redis-cache.mjs'
 
 /**
  * 创建一只游戏侧开箱即用云。
@@ -54,7 +55,16 @@ export function createGameCloud(opts = {}) {
     transport: opts.eventsTransport,
     binder: opts.eventBinder,
   })
-  const auth = createAuthGuard({ requiredScopes: opts.requiredScopes })
+  // KI-493：鉴权缓存可选装配。opts.authCache=true 用默认预算建一只；也可直接塞一只现成 cache（窑口注入）。
+  const authCache = opts.authCache === true
+    ? createRedisCache({ maxEntries: opts.authCacheMaxEntries, maxBytes: opts.authCacheMaxBytes, ttlMs: opts.authCacheTtlMs })
+    : (opts.authCache ?? null)
+  const auth = createAuthGuard({
+    requiredScopes: opts.requiredScopes,
+    cache: authCache,
+    cacheTtlMs: opts.authCacheTtlMs,
+    negativeTtlMs: opts.authNegativeTtlMs,
+  })
 
   // KI-489 游戏真 EventBus ↔ 云事件总线桥：gameBridgeRoutes 给了才建；shutdown 自动退桥，避免悬挂订阅。
   let bridge = null
@@ -69,6 +79,8 @@ export function createGameCloud(opts = {}) {
     proxy,
     events,
     auth,
+    /** KI-493：鉴权 introspection 缓存实例（未配 opts.authCache 时为 null）。 */
+    authCache,
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
     gray: runtime.gray,
     /** 把游戏真 EventBus 按白名单routes 接进云事件总线（游戏侧一行：gc.connectGameBus(bus, routes)）。 */
@@ -91,10 +103,10 @@ export function createGameCloud(opts = {}) {
       await events.publishGameEvent('game.stopped', { gameId, gameName })
       return { ...r, bridgeOff }
     },
-    /** 汇总：游戏状态 + 已聚合服务 + 路由数 + 事件频道 + 鉴权作用域。 */
+    /** 汇总：游戏状态 + 已聚合服务 + 路由数 + 事件频道 + 鉴权作用域 + 缓存读数。 */
     async status() {
       const s = await runtime.status()
-      return { ...s, eventChannel: events.channel, authScopes: auth.requiredScopes }
+      return { ...s, eventChannel: events.channel, authScopes: auth.requiredScopes, authCache: auth.cacheStats() }
     },
   }
 }

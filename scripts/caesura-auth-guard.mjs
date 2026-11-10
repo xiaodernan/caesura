@@ -26,13 +26,28 @@ import {
   introspectToken,
 } from './spring-cloud-security-oauth2-client.mjs'
 
+/** 确定性 FNV-1a 32 位字符串哈希：把原始令牌变成缓存 key，绝不把令牌明文存进缓存键/读数。 */
+export function tokenCacheKey(token) {
+  let h = 0x811c9dc5
+  const s = String(token)
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i)
+    h = Math.imul(h, 0x01000193) >>> 0
+  }
+  return `introspect:${h.toString(16)}`
+}
+
 /**
  * 创建一只鉴权守卫。
- * @param {{ requiredScopes?: string[] }} [opts]
- * @returns {{ requiredScopes: string[], authenticate: (bearer: string) => any, authorizeOnline: (bearer: string, opts?: object) => Promise<{ok:boolean, source:string, claims?:any, reason?:string, degraded?:boolean, error?:unknown}>, requireScope: (claims: any, scope: string) => boolean, canAccess: (claims: any, scope: string) => boolean, decode: (token: string) => any, hasScope: (claims: any, scope: string) => boolean, isExpired: (claims: any, now?: number) => boolean, introspectToken: (token: string, url: string, opts?: any) => Promise<any> }}
+ * @param {{ requiredScopes?: string[], cache?: object, cacheTtlMs?: number, negativeTtlMs?: number }} [opts]
+ * @returns {{ requiredScopes: string[], authenticate: (bearer: string) => any, authorizeOnline: (bearer: string, opts?: object) => Promise<{ok:boolean, source:string, claims?:any, reason?:string, degraded?:boolean, error?:unknown, cacheHit?:boolean}>, cacheStats: () => object|null, requireScope: (claims: any, scope: string) => boolean, canAccess: (claims: any, scope: string) => boolean, decode: (token: string) => any, hasScope: (claims: any, scope: string) => boolean, isExpired: (claims: any, now?: number) => boolean, introspectToken: (token: string, url: string, opts?: any) => Promise<any> }}
  */
 export function createAuthGuard(opts = {}) {
   const requiredScopes = [...(opts.requiredScopes ?? [])]
+  // KI-493：构造项给一只默认缓存；调用方也可在 authorizeOnline 的 callOpts.cache 逐调用覆盖。
+  const defaultCache = opts.cache ?? null
+  const defaultCacheTtlMs = opts.cacheTtlMs ?? 30_000
+  const defaultNegativeTtlMs = opts.negativeTtlMs ?? 0
 
   /** 解析 Bearer 令牌：解析 + 过期 + 必需作用域；失败抛错，通过返回 claims。 */
   function authenticate(bearer) {
@@ -49,13 +64,18 @@ export function createAuthGuard(opts = {}) {
    *   ② 未给 `introspectionUrl` 且本地通过 ⇒ `{ok:true,source:'local'}`（纯本地，向后兼容）；
    *   ③ 给端点 ⇒ `introspectToken`（fetch 可注入）：响应 `active===false` 拒；以其 `scope`（可为数组或
    *      空格串，字段由 `scopeField` 定）为准复核必需作用域；本地已解析过则以本地 claims 为身份源、
-   *      仅用在线 scope 复核，不透明令牌则以端点响应为 claims 源；
+     *      仅用在线 scope 复核，不透明令牌则以端点响应为 claims 源；
    *   ④ 端点不可用（网络/非 2xx/非 JSON）⇒ `policy`：'fail-open' 降级放行并标 `degraded:true`，
-   *      其余（含缺省 'fail-closed'）拒绝。绝不因为端点挂了就默认放行。</p>
-   *
-   * @param {string} bearer 形如 `Bearer <token>`
-   * @param {{introspectionUrl?:string, fetch?:Function, activeField?:string, scopeField?:string, policy?:'fail-open'|'fail-closed', requiredScopes?:string[]}} [callOpts]
-   */
+   *      其余（含缺省 'fail-closed'）拒绝。绝不因为端点挂了就默认放行；
+   *   ⑤ KI-493 起，配了 `callOpts.cache`（或构造 `opts.cache`）⇒ 以 token 的确定性 FNV-1a 哈希为 key
+   *      缓存「放行裁决」，同令牌二次调用直接 `{ok:true,source:'cache',cacheHit:true}` 返回、不再打端点。
+   *      **安全边界**：默认只缓存 `ok:true 且 source:'introspection'` 的放行（TTL 内以判词为准，故 TTL 须
+   *      调用方按令牌吊销频率注入）；拒绝默认不缓存（`negativeTtlMs` 显式给才缓存，防 bad token 反复打端点）；
+   *      `fail-open` 降级放行**绝不缓存**（避免端点故障的坏状态被固化）。</p>
+ *
+ * @param {string} bearer 形如 `Bearer <token>`
+ * @param {{introspectionUrl?:string, fetch?:Function, activeField?:string, scopeField?:string, policy?:'fail-open'|'fail-closed', requiredScopes?:string[], cache?:object, cacheTtlMs?:number, negativeTtlMs?:number}} [callOpts]
+ */
   async function authorizeOnline(bearer, callOpts = {}) {
     const scopes = Array.isArray(callOpts.requiredScopes) ? callOpts.requiredScopes : requiredScopes
     const policy = callOpts.policy ?? 'fail-closed'
@@ -64,6 +84,35 @@ export function createAuthGuard(opts = {}) {
 
     const url = callOpts.introspectionUrl
     const token = String(bearer).replace(/^\s*Bearer\s+/i, '')
+    // KI-493：只在「在线校验模式」才谈缓存（纯本地已够便宜，缓存反而会掩盖过期）。
+    const cache = callOpts.cache ?? (url ? defaultCache : null)
+    const cacheTtlMs = callOpts.cacheTtlMs ?? defaultCacheTtlMs
+    const negativeTtlMs = callOpts.negativeTtlMs ?? defaultNegativeTtlMs
+    const cacheKey = cache ? tokenCacheKey(token) : null
+
+    // ⑤ 缓存快路径：命中直接回放行/拒绝判词，标 source:'cache' 与 cacheHit:true，绝不再打端点/再算本地。
+    if (cache && cacheKey) {
+      const stored = cache.get(cacheKey)
+      if (stored !== undefined) {
+        return { ...stored, source: 'cache', cacheHit: true }
+      }
+    }
+
+    /** 收口所有终态：按安全边界决定是否写入缓存，再把判词交回。 */
+    function finalize(v) {
+      if (cache && cacheKey) {
+        const eligiblePositive = v.ok && v.source === 'introspection'
+        const eligibleNegative = !v.ok && v.source === 'introspection' && !v.degraded && negativeTtlMs > 0
+        if (eligiblePositive) {
+          // 只存可安全重放的纯数据；丢掉 error（不可序列化/会陈旧）与 degraded/source/cacheHit。
+          cache.set(cacheKey, { ok: true, claims: v.claims, introspection: v.introspection }, cacheTtlMs)
+        } else if (eligibleNegative) {
+          cache.set(cacheKey, { ok: false, claims: v.claims, reason: v.reason }, negativeTtlMs)
+        }
+        // source:'local' 或 degraded（端点故障降级）一律不缓存。
+      }
+      return v
+    }
 
     // ① 本地快速路径。区分「不可解析的不透明令牌」与「可解析但判定不通过」两种失败。
     let claims = null
@@ -89,7 +138,7 @@ export function createAuthGuard(opts = {}) {
     try {
       response = await introspectToken(token, url, { fetch: callOpts.fetch })
     } catch (e) {
-      // ④ 端点不可用：按 Node 侧策略裁决。
+      // ④ 端点不可用：按 Node 侧策略裁决。degraded 判词绝不进缓存（防固化故障态）。
       if (policy === 'fail-open') {
         return { ok: true, source: 'local', claims, degraded: true, reason: 'introspection_unavailable', error: e }
       }
@@ -97,7 +146,7 @@ export function createAuthGuard(opts = {}) {
     }
 
     if (response?.[activeField] === false) {
-      return { ok: false, source: 'introspection', claims, reason: 'inactive' }
+      return finalize({ ok: false, source: 'introspection', claims, reason: 'inactive' })
     }
     // 以 introspection 响应的 scope 为权威复核（可能比本地 claims 更新/更窄）。
     // 不透明令牌以端点响应为 claims 源（含 sub 等）；本地已解析过则保留本地 claims、仅归一 scope。
@@ -108,10 +157,15 @@ export function createAuthGuard(opts = {}) {
     const introClaims = { ...baseClaims, [scopeField]: scopeValue, scope: scopeValue }
     for (const s of scopes) {
       if (!hasScope(introClaims, s)) {
-        return { ok: false, source: 'introspection', claims: introClaims, reason: `missing_scope:${s}` }
+        return finalize({ ok: false, source: 'introspection', claims: introClaims, reason: `missing_scope:${s}` })
       }
     }
-    return { ok: true, source: 'introspection', claims: introClaims, introspection: response }
+    return finalize({ ok: true, source: 'introspection', claims: introClaims, introspection: response })
+  }
+
+  /** KI-493：暴露缓存读数供 E2E 证「第二个同令牌不再打端点」；没配缓存返回 null。 */
+  function cacheStats() {
+    return defaultCache && typeof defaultCache.stats === 'function' ? defaultCache.stats() : null
   }
 
   /** 对已有 claims 做「过期 + 必需作用域」三重判定；通过返回 true，否则抛错。 */
@@ -132,6 +186,7 @@ export function createAuthGuard(opts = {}) {
     requiredScopes,
     authenticate,
     authorizeOnline,
+    cacheStats,
     requireScope,
     canAccess,
     decode: decodeJwt,

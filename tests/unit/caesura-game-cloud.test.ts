@@ -136,4 +136,21 @@ describe('caesura-game-cloud', () => {
     const plain = createGameCloud({ gameId: 'g2', gamePort: 7701, sources, cloud: fakeCloud() })
     expect(plain.gray).toBe(null)
   })
+
+  it('authCache=true 装配 introspection 缓存，gc.authCache 与 status 可见（KI-493）', async () => {
+    const gc = createGameCloud({
+      gameId: 'g1', gamePort: 7700, sources, cloud: fakeCloud(),
+      authCache: true, authCacheTtlMs: 1000, requiredScopes: ['game:play'],
+    })
+    expect(gc.authCache).toBeTruthy()
+    expect(typeof gc.authCache.get).toBe('function')
+    expect(gc.auth.cacheStats()).toMatchObject({ hits: 0, entries: 0 })
+    const s = await gc.status()
+    expect(s.authCache).toMatchObject({ hits: 0, entries: 0 })
+    expect(s.authScopes).toEqual(['game:play'])
+    // 未配 authCache 时 gc.authCache 为 null、cacheStats 为 null（非破坏）
+    const plain = createGameCloud({ gameId: 'g2', gamePort: 7701, sources, cloud: fakeCloud() })
+    expect(plain.authCache).toBe(null)
+    expect(plain.auth.cacheStats()).toBe(null)
+  })
 })

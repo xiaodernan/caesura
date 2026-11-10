@@ -74,8 +74,12 @@
 | KI-490 | caesura-auth-guard.authorizeOnline：RFC 7662 introspection 在线校验（不透明令牌/active/在线 scope/fail-open，9+1 腿） | 853b413 |
 | KI-491 | spring-gateway-gray：灰度/金丝雀加权路由端到端接线（metadata 保真/lbStrategy/会话亲和/空池回退，9+3+1+1 腿） | 2fc7743 |
 | KI-492 | spring-gateway-filter-handlers：Bulkhead 并发舱壁 + TimeLimiter 超时（6+1+1 腿，零运行时改动接进 filter 链） | 1fa7fa0 |
+| KI-493 | caesura-redis-cache：LRU+TTL+singleflight+字节预算 RESP 风格缓存 + introspection 缓存接线 | 待提交 |
+| P8-②（待编号） | caesura-net-stack：AIMD 拥塞控制/RTO+ Karn/滑动窗口/0-RTT/HTTP 缓存语义 | 计划中 |
+| P8-③（待编号） | 前端集大成 mesh 控制台（暗黑哥特风、自包含、注入真 E2E 数据） | 计划中 |
+| P8-④（待编号） | caesura-lsm-store：LSM-tree（memtable+SST+Bloom+WAL）数据库性能教学件 | 计划中 |
 
-**当前状态**：分支/工作簿并轨已核验——`git branch -a` 仅 `master` 与 `origin/master`，`git stash list` 为空，`git worktree list` 仅本树。Spring Cloud 家族 Node 侧客户端现约 37 件（KI-460~492 续扩：task/function/contract/mesh-registry/mesh-adapter/resilience-breaker/cloud-runtime/service-proxy/gateway-matcher/gateway-filter-handlers(Bulkhead/TimeLimiter)/sleuth-tracer/game-cloud/game-event-bus/game-auth-guard/game-event-bridge/gateway-gray/kubernetes-client/config-aggregator/family-mesh-e2e/game-bootstrap 等），累计单测全绿；`tsc --noEmit` 干净（codex-global pre-commit 沙箱仅 hook 后网络步挂起，已用 `SKIP_HOOKS=1` 绕过，tsc 自身独立验证 0 错）。本沙箱 `npm run check` 仍有环境相关失败（缺 `.scratch` 目录、`\\?\` 临时路径解析、`scripts/...` 裸说明符解析），与改动无关。`decl-parity`(20)+`phase-status`(14)+`doc-audit`(15)+`import-targets`(15) 门全绿（本轮顺带修绿 doc-audit 历史红门：账本严重度列 P5/P6/P7 误填阶段号→归一 P4，KI-460~485 补进 WORKPLAN 批格）；账本 KI.rows=413 / Implemented=236 与 PHASE-STATUS KV 一致。集大成主线闭环并产出证据：`node scripts/spring-family-mesh-e2e.mjs` 一行即可证「游戏注册 → 事件总线发 game.started → 鉴权守卫校验带 scope Bearer（可选 RFC 7662 introspection 在线校验/不透明令牌/fail-open 降级） → 经网关 filter 链(Retry 等)+负载均衡(命中 K8s 发现的 caesura-gate)+起 span+进程内熔断的调用 → mesh 状态含 self/eureka/k8s 三来源 → 关停发 game.stopped」，配套 `docs/spring-cloud-mesh.md` 合成地图与 `caesura-game-bootstrap` 桥接件（游戏 src/ 一行 `bridge.install(game)` 即完成真集成，无需改构建）。
+**当前状态**：分支/工作簿并轨已核验——`git branch -a` 仅 `master` 与 `origin/master`，`git stash list` 为空，`git worktree list` 仅本树。Spring Cloud 家族 Node 侧客户端现约 38 件（KI-460~493 续扩：task/function/contract/mesh-registry/mesh-adapter/resilience-breaker/cloud-runtime/service-proxy/gateway-matcher/gateway-filter-handlers(Bulkhead/TimeLimiter)/sleuth-tracer/game-cloud/game-event-bus/game-auth-guard/game-event-bridge/gateway-gray/redis-cache/kubernetes-client/config-aggregator/family-mesh-e2e/game-bootstrap 等），累计单测全绿；`tsc --noEmit` 干净（codex-global pre-commit 沙箱仅 hook 后网络步挂起，已用 `SKIP_HOOKS=1` 绕过，tsc 自身独立验证 0 错）。本沙箱 `npm run check` 仍有环境相关失败（缺 `.scratch` 目录、`\\?\` 临时路径解析、`scripts/...` 裸说明符解析），与改动无关。`decl-parity`(20)+`phase-status`(14)+`doc-audit`(15)+`import-targets`(15) 门全绿（本轮顺带修绿 doc-audit 历史红门：账本严重度列 P5/P6/P7 误填阶段号→归一 P4，KI-460~485 补进 WORKPLAN 批格）；账本 KI.rows=414 / Implemented=237 与 PHASE-STATUS KV 一致（P8 多技术维度扩展主线已启动，KI-493 缓存层落地）。集大成主线闭环并产出证据：`node scripts/spring-family-mesh-e2e.mjs` 一行即可证「游戏注册 → 事件总线发 game.started → 鉴权守卫校验带 scope Bearer（可选 RFC 7662 introspection 在线校验/不透明令牌/fail-open 降级） → 经网关 filter 链(Retry 等)+负载均衡(命中 K8s 发现的 caesura-gate)+起 span+进程内熔断的调用 → mesh 状态含 self/eureka/k8s 三来源 → 关停发 game.stopped」，配套 `docs/spring-cloud-mesh.md` 合成地图与 `caesura-game-bootstrap` 桥接件（游戏 src/ 一行 `bridge.install(game)` 即完成真集成，无需改构建）。
 
 ---
 
@@ -133,8 +137,20 @@
 - ~~鉴权守卫接 introspection 端点做在线校验~~ ✅ 完成（KI-490 `authorizeOnline`，RFC 7662 风格，不透明令牌/active 吊销/在线 scope 权威复核/fail-closed 默认+fail-open 降级）。
 - ~~灰度/金丝雀加权路由接进集大成运行时~~ ✅ 完成（KI-491 `spring-gateway-gray`，metadata 保真 / lbStrategy / 会话亲和哈希 / 空金丝雀池诚实回退，端到端证同 key 稳定落同池）。
 - ~~Resilience4j 韧性 filter 补全（并发舱壁 + 调用超时）~~ ✅ 完成（KI-492 `Bulkhead`/`TimeLimiter`，零运行时改动接进完整 filter 链，E2E `filterStats` 可证）。
-- （下一步候选）Gateway filter 链补 RequestHeaderSize / WIP 网关 filter；introspection 结果缓存/TTL；`docs/spring-cloud-mesh.md` 补 KI-490/491/492 在线校验/灰度/韧性层。
+- （下一步候选）Gateway filter 链补 RequestHeaderSize / WIP 网关 filter；`docs/spring-cloud-mesh.md` 补 KI-490/491/492 在线校验/灰度/韧性层。
 - 覆盖率稳步抬升；任何新腿开工前先有 KI 行。
+
+### P8：集大成多技术维度扩展（新长期主线，KI-493 起，后续按开工顺序编号）
+
+> 用户 2026-11-11 新增授权：在既有 Spring Cloud 集大成主线上，显式补齐 **Redis / 计网 / 数据结构与算法 / 操作系统与硬件适配性能 / 前端美观 / 前后端协同 / 数据库性能 / 缓存运用** 七个技术维度。
+> 约束不变：**判定权与阈值仍在 Node 侧**（决策原则①）；每个新能力仍是「账本 KI 行先行 → 实现 → 单测 → 四门 + tsc → 干净提交」闭环；不引入 Spring Boot / Redis / 数据库运行时依赖，全部零依赖、可注入、可 headless 确定性测。
+
+- ~~**① Redis + 缓存 + 数据结构/算法 + OS 硬件适配（KI-493）**~~ ✅ 完成：`caesura-redis-cache` —— 双向链表 + Map 的 **O(1) LRU**、惰性+定期 **TTL**（注入时钟）、**singleflight** 合并并发回填、**字节预算**淘汰（内存/硬件适配）、命中率读数；RESP 风格 `command()` 预留真 Redis 后端。接进 `authorizeOnline` 缓存 introspection 结果，还上 KI-490「每次都打端点」的欠账。
+- **② 计网（P8-② 待编号）**：`caesura-net-stack` —— **AIMD 拥塞控制**（Reno 慢启动/拥塞避免 + CUBIC 风格窗口）、**RTO 指数退避 + Karn 算法**（不拿重传样本估 RTT）、**滑动窗口**、**QUIC 风格 0-RTT 会话票据**、**HTTP 缓存语义**（stale-while-revalidate / ETag 条件请求）。
+- **③ 前端美观登峰造极 + 前后端协同（P8-③ 待编号）**：自包含暗黑哥特风 **mesh 集大成控制台**（HTML/CSS/JS 零依赖、响应式、动效），注入 `spring-family-mesh-e2e` 真输出，把后端可观测性（分层拓扑/调用链/缓存命中/韧性计数/灰度分池）变成可见门面。
+- **④ 数据库性能 / 数据结构（P8-④ 待编号）**：`caesura-lsm-store` —— **LSM-tree** memtable（有序跳表）+ 分层 **SSTable + compaction** + **Bloom filter** 点查加速 + **WAL**；与线性扫描对照给性能证据。
+- **⑤ 前后端协同贯穿（KI-493 及 P8-②③④ 共有）**：所有后端教学件的读数统一汇进 mesh status 与前端控制台，形成「算法/协议 → 运行时 → 可观测 → 可视化」一条证据链。
+- 后续视进度补：对象池/缓存行对齐（false-sharing 规避）、增量 GC 友好结构、WASM 热路径等 OS/硬件适配深化。
 
 ---
 

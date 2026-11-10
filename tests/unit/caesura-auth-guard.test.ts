@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createAuthGuard } from '../../scripts/caesura-auth-guard.mjs'
+import { createAuthGuard, tokenCacheKey } from '../../scripts/caesura-auth-guard.mjs'
+import { createRedisCache } from '../../scripts/caesura-redis-cache.mjs'
 
 function makeJwt(claims: any): string {
   const b64 = (obj: any) =>
@@ -140,5 +141,92 @@ describe('caesura-auth-guard', () => {
     expect(v.ok).toBe(true)
     expect(v.source).toBe('introspection')
     expect(v.claims.authorities).toEqual(['game:admin']) // 原字段名保留
+  })
+
+  // —— KI-493：introspection 结果缓存 ——
+  it('tokenCacheKey：同令牌同 key、异令牌异 key、不泄漏令牌明文', () => {
+    const k1 = tokenCacheKey('Bearer abc.def.sig')
+    expect(tokenCacheKey('Bearer abc.def.sig')).toBe(k1)
+    expect(tokenCacheKey('Bearer other')).not.toBe(k1)
+    expect(k1.startsWith('introspect:')).toBe(true)
+    expect(k1).not.toContain('abc.def.sig')
+  })
+
+  it('KI-493 同令牌二次 authorizeOnline 命中缓存，端点只打一次', async () => {
+    let hits = 0
+    const fetch = introspectFetch({ active: true, scope: 'game:play', sub: 'u1' })
+    const counted = async () => { hits++; return fetch() }
+    const guard = createAuthGuard({ requiredScopes: ['game:play'], cache: createRedisCache({ ttlMs: 60_000 }) })
+    const opts = { introspectionUrl: 'http://idp/introspect', fetch: counted }
+    const v1 = await guard.authorizeOnline(`Bearer ${valid()}`, opts)
+    const v2 = await guard.authorizeOnline(`Bearer ${valid()}`, opts)
+    expect(v1.source).toBe('introspection')
+    expect(v2).toMatchObject({ ok: true, source: 'cache', cacheHit: true })
+    expect(v2.claims.sub).toBe('u1')
+    expect(hits).toBe(1) // 关键判词：端点只打一次
+    expect(guard.cacheStats()).toMatchObject({ hits: 1 })
+  })
+
+  it('KI-493 不同令牌不互相命中（key 隔离）', async () => {
+    let hits = 0
+    const fetch = introspectFetch({ active: true, scope: 'game:play' })
+    const counted = async () => { hits++; return fetch() }
+    const guard = createAuthGuard({ requiredScopes: ['game:play'], cache: createRedisCache({ ttlMs: 60_000 }) })
+    const opts = { introspectionUrl: 'http://idp/introspect', fetch: counted }
+    const t1 = makeJwt({ sub: 'a', scope: 'game:play', exp: Math.floor(Date.now() / 1000) + 99 })
+    const t2 = makeJwt({ sub: 'b', scope: 'game:play', exp: Math.floor(Date.now() / 1000) + 99 })
+    await guard.authorizeOnline(`Bearer ${t1}`, opts)
+    await guard.authorizeOnline(`Bearer ${t2}`, opts)
+    expect(hits).toBe(2)
+  })
+
+  it('KI-493 拒绝默认不缓存（bad token 每次都打端点，除非给 negativeTtlMs）', async () => {
+    let hits = 0
+    const fetch = introspectFetch({ active: false })
+    const counted = async () => { hits++; return fetch() }
+    const opts = { introspectionUrl: 'http://idp/introspect', fetch: counted }
+    const noNeg = createAuthGuard({ requiredScopes: ['game:play'], cache: createRedisCache({ ttlMs: 60_000 }) })
+    const r1 = await noNeg.authorizeOnline(`Bearer ${valid()}`, opts)
+    const r2 = await noNeg.authorizeOnline(`Bearer ${valid()}`, opts)
+    expect(r1.ok).toBe(false)
+    expect(r2.source).toBe('introspection') // 没缓存、又打了一次
+    expect(hits).toBe(2)
+    // 显式开 negative 缓存 ⇒ 第二次走 cache、端点仍只 2 次（这一只自己的计数）。
+    let negHits = 0
+    const negCounted = async () => { negHits++; return fetch() }
+    const withNeg = createAuthGuard({ requiredScopes: ['game:play'], cache: createRedisCache({ ttlMs: 60_000 }), negativeTtlMs: 5000 })
+    const n1 = await withNeg.authorizeOnline(`Bearer ${valid()}`, { ...opts, fetch: negCounted })
+    const n2 = await withNeg.authorizeOnline(`Bearer ${valid()}`, { ...opts, fetch: negCounted })
+    expect(n1.ok).toBe(false)
+    expect(n2).toMatchObject({ ok: false, source: 'cache', reason: 'inactive' })
+    expect(negHits).toBe(1)
+  })
+
+  it('KI-493 fail-open 降级放行绝不缓存（故障态不固化）', async () => {
+    let hits = 0
+    const boom = async () => { hits++; throw new Error('ECONNREFUSED') }
+    const guard = createAuthGuard({ requiredScopes: ['game:play'], cache: createRedisCache({ ttlMs: 60_000 }) })
+    const opts = { introspectionUrl: 'http://idp/introspect', fetch: boom, policy: 'fail-open' as const }
+    const v1 = await guard.authorizeOnline(`Bearer ${valid()}`, opts)
+    const v2 = await guard.authorizeOnline(`Bearer ${valid()}`, opts)
+    expect(v1).toMatchObject({ ok: true, degraded: true })
+    expect(v2).toMatchObject({ ok: true, degraded: true }) // 仍是降级，不是 cache
+    expect(v2.source).toBe('local')
+    expect(hits).toBe(2) // 两次都真打了端点（正好证明没缓存故障态）
+  })
+
+  it('KI-493 纯本地模式（无端点）不缓存；逐调用 cache 覆盖构造默认', async () => {
+    const guard = createAuthGuard({ requiredScopes: ['game:play'] })
+    const v = await guard.authorizeOnline(`Bearer ${valid()}`)
+    expect(v.source).toBe('local')
+    expect(guard.cacheStats()).toBeNull() // 没配缓存
+    // 逐调用注入缓存也能生效。
+    let hits = 0
+    const fetch = introspectFetch({ active: true, scope: 'game:play' })
+    const counted = async () => { hits++; return fetch() }
+    const opts = { introspectionUrl: 'http://idp/introspect', fetch: counted, cache: createRedisCache({ ttlMs: 60_000 }) }
+    await guard.authorizeOnline(`Bearer ${valid()}`, opts)
+    await guard.authorizeOnline(`Bearer ${valid()}`, opts)
+    expect(hits).toBe(1)
   })
 })

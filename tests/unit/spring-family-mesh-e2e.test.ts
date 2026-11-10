@@ -119,6 +119,33 @@ describe('spring-family-mesh-e2e', () => {
     expect(calls.length).toBe(callsBefore + 1) // fail-closed 没发起调用
   })
 
+  it('e2e KI-493：authCache + onlineAuth 缓存探针 ⇒ 同令牌二次 source=cache、端点只打一次', async () => {
+    let introspections = 0
+    const activeFetch = (async () => {
+      introspections++
+      return { ok: true, status: 200, json: async () => ({ active: true, scope: 'game:call', sub: 'u1' }) }
+    }) as any
+    const r = await runMeshE2E({
+      bearer: null, // 跳开主链 auth 块，让 cacheProbe 自己控制两次调用（否则第一次已被主链填进缓存）
+      transport: async (_t: any, p: string) => ({ path: p }),
+      requiredScope: 'game:call',
+      authCache: true,
+      authCacheTtlMs: 60_000,
+      onlineAuth: { introspectionUrl: 'http://idp/introspect', fetch: activeFetch, policy: 'fail-closed' },
+      cacheProbe: { bearer: 'Bearer opaque-token' },
+    }).run()
+    expect(r.cacheProbe).not.toBeNull()
+    expect(r.cacheProbe!.firstSource).toBe('introspection')
+    expect(r.cacheProbe!.secondSource).toBe('cache')
+    expect(r.cacheProbe!.secondCacheHit).toBe(true)
+    expect(r.cacheProbe!.secondOk).toBe(true)
+    expect(r.cacheProbe!.stats.hits).toBeGreaterThanOrEqual(1)
+    // 两次 authorizeOnline 只有第一次真打端点；无缓存时 introspections 会是 2。
+    expect(introspections).toBe(1)
+    expect(r.authCacheStats).toMatchObject({ hits: 1, misses: 1 })
+    expect(r.status.authCache).toMatchObject({ hits: 1 })
+  })
+
   it('e2e KI-492：路由挂 Bulkhead+TimeLimiter，挂起 transport ⇒ filterStats 读到 timedOut 真触发', async () => {
     // transport 直接挂住不返回；TimeLimiter 到点抛 time_limiter_timeout，整条 call 失败但 filterStats 留证。
     const hanging = async () => new Promise<any>(() => {})

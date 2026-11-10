@@ -20,7 +20,7 @@
 └───────────────────────────────┬──────────────────────────────────────┘
                                   │ createGameCloud({...}).start()
 ┌─────────────────────────────────▼─────────────────────────────────────┐
-│  caesura-game-cloud  （开箱即用云入口，KI-478/484/485/489/490/491）      │
+│  caesura-game-cloud  （开箱即用云入口，KI-478/484/485/489/490/491/493）  │
 │    start / call / proxyCall / shutdown / status                         │
 │    + events（KI-484 云事件总线）· auth（KI-485 鉴权守卫）                │
 │    + connectGameBus（KI-489 事件桥，shutdown 自动退桥）                   │
@@ -45,6 +45,7 @@
 │                  · caesura-auth-guard（KI-485 鉴权守卫）/ caesura-event-bus（KI-484 事件总线）     │
 │                  · caesura-game-event-bridge（KI-489 真 EventBus↔云 桥，依赖注入）                 │
 │                  · caesura-auth-guard.authorizeOnline（KI-490 RFC 7662 introspection 在线校验）   │
+│                  · caesura-redis-cache（KI-493 LRU+TTL+singleflight+字节预算，接鉴权缓存）        │
 │   · 任务/函数   : spring-cloud-task · spring-cloud-function · spring-cloud-stream · openfeign     │
 │   · 总线/健康   : spring-bus-client · spring-health-check · spring-mesh-health                     │
 │   · K8s         : spring-cloud-kubernetes-client（KI-479，configMap+endpoints→mesh 实例）         │
@@ -115,8 +116,12 @@ if (gc.auth.canAccess(claims, 'game:call')) { /* ... */ }
 // const v = await gc.auth.authorizeOnline(token, {
 //   introspectionUrl: 'http://idp/oauth2/introspect', fetch: myFetch,
 //   policy: 'fail-closed',   // 端点挂了默认拒；显式 'fail-open' 才降级放行并标 degraded
-// })                          // → { ok, source:'local'|'introspection', claims, reason, degraded? }
+// })                          // → { ok, source:'local'|'introspection'|'cache', claims, reason, degraded?, cacheHit? }
 //                              // 不透明 Bearer（非 JWT）有端点时穿过本地、由 IdP 裁决 sub/scope
+// KI-493：给 createGameCloud 传 authCache:true 即开 introspection 结果缓存（TTL 内同令牌不再打端点）：
+// const gc = createGameCloud({ authCache: true, authCacheTtlMs: 30_000, requiredScopes: [...] })
+//   → 第二次同令牌 authorizeOnline 命中 { source:'cache', cacheHit:true }；失败/降级态不缓存
+//   → gc.auth.cacheStats() / status().authCache 读命中率；gc.authCache 是底层 LRU+TTL 缓存实例
 // gc.events.publishGameEvent('game.saved', {...})           // KI-484：云侧发事件
 // shutdown() 会自动退桥，不留悬挂订阅
 ```
@@ -166,9 +171,10 @@ node scripts/spring-family-mesh-e2e.mjs
 - 注入 `gameBus` 时 `gameBridge` 证真游戏事件过桥、`bridgeOff` 证退桥无悬挂订阅（KI-489）；
 - 注入 `onlineAuth:{introspectionUrl,fetch,policy}` 时 `auth` 证在线校验：active 放行 / inactive 短路拒调 / 端点挂 fail-open 降级放行、fail-closed 拒（KI-490）；
 - 注入 `grayInstances`+`gray`+`grayProbes` 时 `grayProbes`/`grayStats` 证灰度：同 key 稳定落同一金丝雀实例（会话亲和）、阈值/精确值分池、空金丝雀池诚实回退稳定（KI-491）；
-- 注入 `filters:[{Bulkhead},{TimeLimiter}]` + 挂起 transport 时 `filterStats.timedOut`/`bulkheadHeld` 证韧性 filter 真在链上触发（KI-492）。
+- 注入 `filters:[{Bulkhead},{TimeLimiter}]` + 挂起 transport 时 `filterStats.timedOut`/`bulkheadHeld` 证韧性 filter 真在链上触发（KI-492）；
+- 注入 `authCache:true`+`onlineAuth`+`cacheProbe` 时 `cacheProbe.secondSource='cache'`/`secondCacheHit=true`、`authCacheStats` 命中读数、且 introspection 端点全程只被调一次，证 introspection 结果缓存真生效（KI-493）。
 
-对应 `tests/unit/spring-family-mesh-e2e.test.ts`（12 腿）。
+对应 `tests/unit/spring-family-mesh-e2e.test.ts`（13 腿）。
 
 ## 6. 边界与「不声称」
 
@@ -178,6 +184,8 @@ node scripts/spring-family-mesh-e2e.mjs
 - 不声称进程内熔断跨进程共享——每进程内存一只，按服务名隔离。
 - 不声称 filter 链接了真 Resilience4j/Redis——CircuitBreaker/RateLimit 全进程内内存实现，Retry 不做幂等去重；KI-492 Bulkhead 是 JS 计数器信号量子、跨进程不共享，TimeLimiter **不取消**底层 in-flight 调用（Promise 竞速只让判词先返回，取消归调用方 transport）。
 - 不声称鉴权守卫验了签——`caesura-auth-guard` 只解析 JWT claims/过期/作用域，签名校验归网关/资源服务端。
-- 不声称在线校验缓存了结果或接了真 IdP——KI-490 `authorizeOnline` 每次调用都打 introspection 端点（fetch 可注入、默认进程内），不缓存/不重放；`fail-open` 只在调用方显式选择时降级放行，缺省一律 `fail-closed`。
+- 不声称接了真 Redis/真 IdP——KI-493 `caesura-redis-cache` 默认进程内（RESP 风格 `command` 仅教学子集），真 Redis 后端靠注入 `backend` 适配器；KI-490 在线校验的 `fetch` 可注入、默认进程内。`fail-open` 只在调用方显式选择时降级放行，缺省一律 `fail-closed`。
+- 不声称在线校验结果永久缓存——KI-493 只在配了 `authCache` 时按注入 TTL 缓存「放行/显式 negative」判词，TTL 内以旧判词为准，故 TTL 是**令牌吊销实时性 vs 端点载荷**的安全权衡、须调用方注入；`fail-open` 降级态与 `local` 判词**绝不缓存**，避免故障态被固化。缓存 key 是令牌的 FNV-1a 哈希，不落明文。
+- 不声称缓存读路径用了堆/跳表——KI-493 LRU 刻意用 Map+双向链表保持 O(1) 命中/逐出，TTL 走「惰性 + 显式 O(n) 定期清扫」，`singleflight`/字节预算均每进程内存一只、不跨进程共享。
 - 不声称灰度接了真流量镜像/service mesh sidecar——KI-491 `spring-gateway-gray` 纯进程内决策，transport 仍是注入的内存实现；不缓存会话状态（亲和靠 selector 确定性哈希，同 key 必落同池），阈值无服务端下发/热更（由 opts 注入）。
 - 不声称事件桥 import 了浏览器 `src/`——`caesura-game-event-bridge` 依赖注入两只 duck-typed bus，永不反向依赖；默认空路由零转发，载荷原样透传不校验。
