@@ -108,6 +108,7 @@ Phase B4 的三件套此前是"有人听、没人说"。
 | ✅ KI-454 | **整族终局验证：`POST /report/family` 全绿，`circuitState=CLOSED`**（工程，2026-11-10 实测）。**病**：KI-453 只验了单门（gate-data/gate-types）；整族并发汇总端点未被量过——"五道门同时起时彼此是否互抢/互卡"这一格既没读数也没账。**落点**：六件 jar 全起（registry→config→gate→report→client→gateway），`POST :8099/report/family` 2026-11-10T13:15Z 实测：`kind=green, reds=0, total=5, blockingReds=0, concurrency=3, wallMs=170293ms`；gate-types green 122650ms／gate-data green 1308ms／gate-head-selfcheck green 122640ms／gate-suite green 159221ms（内含 4907/415 全绿）／gate-ship green 47051ms（npm run build 通吃）——wall time 170s ≈ 最慢门；熔断器全程 CLOSED | KI-454 |
 | ✅ KI-457 | **Node 侧 `readFileSync` 塞进浏览器 bundle，造成一格永久死读**（工程/接线，2026-11-10 已修复）| KI-457 |
 | ✅ KI-458 | **Spring Cloud Config Server + Bus + Client 端到端集成测试**（工程，2026-11-10 已落）| KI-458 |
+| ✅ KI-459 | **refreshApp 返回结构体 + busRefreshUrl 参数化 + circuit-breaker 测试补强（HALF_OPEN / bufferedCalls / 缺字段 tolerated / fetch 网络失败）+ perf-budget-rules fail-closed（重复/未知参数报错，+9 腿）**（工程，2026-11-10 已落）| KI-459 |
 
 
 
