@@ -119,6 +119,23 @@ describe('spring-family-mesh-e2e', () => {
     expect(calls.length).toBe(callsBefore + 1) // fail-closed 没发起调用
   })
 
+  it('e2e KI-492：路由挂 Bulkhead+TimeLimiter，挂起 transport ⇒ filterStats 读到 timedOut 真触发', async () => {
+    // transport 直接挂住不返回；TimeLimiter 到点抛 time_limiter_timeout，整条 call 失败但 filterStats 留证。
+    const hanging = async () => new Promise<any>(() => {})
+    const e = runMeshE2E({
+      bearer: null, transport: hanging,
+      filters: [
+        { name: 'Bulkhead', args: { key: 'e2e-gate', maxConcurrent: 2 } },
+        { name: 'TimeLimiter', args: { timeoutMs: 15 } },
+      ],
+    })
+    const r = await e.run()
+    expect(r.callRes.ok).toBe(false)
+    expect((r.callRes.error as Error).message).toBe('time_limiter_timeout')
+    expect(r.filterStats.timedOut).toBe(1)
+    expect(r.filterStats.bulkheadHeld).toBe(1) // 持票进入过（舱壁真在链上）
+  })
+
   it('e2e KI-491：grayInstances + grayProbes ⇒ 同 key 稳定落同池、金丝雀命中、空池诚实回退', async () => {
     const transport = async (t: any, p: string) => ({ instanceId: t.instanceId, path: p })
     const grayInstances = [

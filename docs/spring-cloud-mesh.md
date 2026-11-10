@@ -34,7 +34,8 @@
 │  家族客户端（Node 侧，组合进运行时）：                                  │
 │   · 门面/发现   : spring-cloud-facade · spring-mesh-registry · spring-discovery · eureka · consul │
 │   · 网关        : spring-gateway-route（表）· spring-gateway-matcher（KI-475 可用化求值/可重入链）  │
-│                  · spring-gateway-filter-handlers（KI-486 Retry/RateLimit/CircuitBreaker）        │
+│                  · spring-gateway-filter-handlers（KI-486 Retry/RateLimit/CircuitBreaker           │
+│                    + KI-492 Bulkhead 并发舱壁 / TimeLimiter 调用超时）                            │
 │   · 负载/熔断   : spring-load-balancer（KI-491 weight 策略可用化）· spring-resilience-breaker（KI-472）│
 │                  · spring-gateway-gray（KI-491 会话亲和/金丝雀分池/池内加权/空池回退）            │
 │   · 追踪        : spring-sleuth-trace（查）· spring-sleuth-tracer（KI-476 进程内造 span）         │
@@ -68,8 +69,10 @@ proxyCall('caesura-gate', '/api/health')
                  · CircuitBreaker → 包 spring-resilience-breaker，按 args.name 隔离，复用 runtime 熔断器
                  · Retry          → 失败重跑下游 ≤ args.attempts 次，backoffMs 可注入
                  · RateLimit      → 令牌桶，按 args.key 隔离，桶空抛 rate_limited
+                 · Bulkhead(KI-492)→ 并发舱壁，按 args.key 信号量子，maxConcurrent 满即拒/排队，控 in-flight 并发
+                 · TimeLimiter(KI-492)→ Promise.race 超时，到点抛 time_limiter_timeout，不取消底层 in-flight
                  · 阈值全来自路由 args / opts（判定权 Node 侧）；链尾才 doTransport
-                 · 结果回带 filterStats（retries/rateLimited/passed）供 E2E 读数
+                 · 结果回带 filterStats（retries/rateLimited/bulkheadRejected/timedOut/passed）供 E2E 读数
             5. transport(url) → 真调用（或默认走 CaesuraCloud.request 编排）
             6. tracer.finish(span) → 产出与 spring-sleuth-trace 同源的 span
 ```
@@ -162,9 +165,10 @@ node scripts/spring-family-mesh-e2e.mjs
 - `retryCount` —— filter 链重试计数（KI-486/487，注入 `retryAttempts`+flaky transport 时 >0）；
 - 注入 `gameBus` 时 `gameBridge` 证真游戏事件过桥、`bridgeOff` 证退桥无悬挂订阅（KI-489）；
 - 注入 `onlineAuth:{introspectionUrl,fetch,policy}` 时 `auth` 证在线校验：active 放行 / inactive 短路拒调 / 端点挂 fail-open 降级放行、fail-closed 拒（KI-490）；
-- 注入 `grayInstances`+`gray`+`grayProbes` 时 `grayProbes`/`grayStats` 证灰度：同 key 稳定落同一金丝雀实例（会话亲和）、阈值/精确值分池、空金丝雀池诚实回退稳定（KI-491）。
+- 注入 `grayInstances`+`gray`+`grayProbes` 时 `grayProbes`/`grayStats` 证灰度：同 key 稳定落同一金丝雀实例（会话亲和）、阈值/精确值分池、空金丝雀池诚实回退稳定（KI-491）；
+- 注入 `filters:[{Bulkhead},{TimeLimiter}]` + 挂起 transport 时 `filterStats.timedOut`/`bulkheadHeld` 证韧性 filter 真在链上触发（KI-492）。
 
-对应 `tests/unit/spring-family-mesh-e2e.test.ts`（11 腿）。
+对应 `tests/unit/spring-family-mesh-e2e.test.ts`（12 腿）。
 
 ## 6. 边界与「不声称」
 
@@ -172,7 +176,7 @@ node scripts/spring-family-mesh-e2e.mjs
 - 不声称网关是真 Spring Cloud Gateway 在跑——predicate 由 `spring-gateway-matcher` 在 Node 侧求值。
 - 不声称 span 已上报后端——只产 span 数据，上报由调用方决定。
 - 不声称进程内熔断跨进程共享——每进程内存一只，按服务名隔离。
-- 不声称 filter 链接了真 Resilience4j/Redis——CircuitBreaker/RateLimit 全进程内内存实现，Retry 不做幂等去重。
+- 不声称 filter 链接了真 Resilience4j/Redis——CircuitBreaker/RateLimit 全进程内内存实现，Retry 不做幂等去重；KI-492 Bulkhead 是 JS 计数器信号量子、跨进程不共享，TimeLimiter **不取消**底层 in-flight 调用（Promise 竞速只让判词先返回，取消归调用方 transport）。
 - 不声称鉴权守卫验了签——`caesura-auth-guard` 只解析 JWT claims/过期/作用域，签名校验归网关/资源服务端。
 - 不声称在线校验缓存了结果或接了真 IdP——KI-490 `authorizeOnline` 每次调用都打 introspection 端点（fetch 可注入、默认进程内），不缓存/不重放；`fail-open` 只在调用方显式选择时降级放行，缺省一律 `fail-closed`。
 - 不声称灰度接了真流量镜像/service mesh sidecar——KI-491 `spring-gateway-gray` 纯进程内决策，transport 仍是注入的内存实现；不缓存会话状态（亲和靠 selector 确定性哈希，同 key 必落同池），阈值无服务端下发/热更（由 opts 注入）。

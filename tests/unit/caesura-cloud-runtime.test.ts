@@ -244,4 +244,31 @@ describe('caesura-cloud-runtime', () => {
     expect(p1.gray).toBeUndefined() // 老路径回带里没有 gray 字段
     expect(hits.slice(-2)).toEqual(['svc-a:1', 'svc-a:2']) // round-robin 仍轮转
   })
+
+  it('KI-492：runtime.call 链上 Bulkhead 并发拒绝 + TimeLimiter 超时，filterStats 读到真触发', async () => {
+    let release: () => void = () => {}
+    const gate = new Promise<void>((r) => { release = r })
+    const rt = createCloudRuntime({
+      sources, gameId: 'g1', gamePort: 7700, gateway: true,
+      transport: async () => { await gate; return { ok: true } }, // 挂住 in-flight
+    })
+    rt.routes.add({
+      id: 'r-resilience', uri: 'lb://svc-a', order: 0,
+      predicates: [{ name: 'Path', args: { patterns: '/api/**' } }],
+      filters: [
+        { name: 'Bulkhead', args: { key: 'gate', maxConcurrent: 1 } },
+        { name: 'TimeLimiter', args: { timeoutMs: 20 } },
+      ],
+    })
+    const p1 = rt.call('svc-a', '/api/slow') // 占住唯一舱位并挂到超时
+    await Promise.resolve()
+    const p2 = await rt.call('svc-a', '/api/slow') // 并发进来：舱壁满 ⇒ 立即拒
+    expect(p2.ok).toBe(false)
+    expect((p2.error as Error).message).toBe('bulkhead_full')
+    const r1 = await p1
+    expect(r1.ok).toBe(false)
+    expect((r1.error as Error).message).toBe('time_limiter_timeout') // 持票那趟被超时打断
+    expect(rt.filters.stats()).toMatchObject({ bulkheadRejected: 1, timedOut: 1 })
+    release()
+  })
 })

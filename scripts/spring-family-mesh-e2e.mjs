@@ -47,6 +47,8 @@ export function runMeshE2E(opts = {}) {
   // KI-488③：retryAttempts 有值才给路由挂 Retry filter（默认不挂 ⇒ 老 5 条断言的 calls.length=1 不变）。
   const filters = []
   if (opts.retryAttempts) filters.push({ name: 'Retry', args: { attempts: opts.retryAttempts, backoffMs: opts.retryBackoffMs ?? 0 } })
+  // KI-492：可注入任意额外 filter（如 Bulkhead/TimeLimiter），不配则老证据逐字不变。
+  if (Array.isArray(opts.filters)) filters.push(...opts.filters)
 
   const gc = createGameCloud({
     gameId: opts.gameId ?? 'caesura-game',
