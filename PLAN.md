@@ -15,6 +15,7 @@
 | Phase F-3 | spring-bus-client（Node.js Bus 客户端，5 测试） | bf490f6 |
 | Phase F-4 | spring-eureka-client（Node.js Eureka 客户端，6 测试） | 551bd2c |
 | Phase F-5 | spring-config-refresh（综合刷新脚本，3 测试） | 651ce4f |
+| Phase F-6 | spring-discovery（服务发现+配置综合客户端，3 测试） | e71a50c |
 | KI-407 | coverage 棘轮三出口（0/1/2）全部有测试 + 基线落地 | 07399b9 |
 | Phase C / F3 | Boss 乐句线 HUD：BossPhraseBar.ts + main.ts 接线 + flow 测试 | 08bb3f5 |
 | KI-118 fix | spring-health-check.mjs 移除 shebang（module-loader 门禁） | 0698210 |
@@ -22,8 +23,9 @@
 | Phase 7 F2-第二批 | renderer 分档接口（QualityTargets.renderer） | 96df2f0 |
 | Phase C-2 | BossPhraseBar 单元测试（5 腿） | 4ea4ed0 |
 | KI-442~445 | 账本行同步（KNOWN_ISSUES/WORKPLAN/PHASE-STATUS KV） | daea06e |
+| Stakerite 覆盖率看板 | 读 coverage-floor.json 显示总地板 | b0e0fb7 |
 
-**当前状态**：`npm run check` 全绿：4826 条 / 405 文件，0 红。
+**当前状态**：`npm run check` 全绿：4829 条 / 406 文件，0 红。
 
 ---
 
@@ -36,7 +38,6 @@
 
 ### P2：Phase 7 后续
 
-- `src/ui/Stakerite.ts` 加「覆盖率看板」行（读 `scripts/coverage.mjs` 输出）
 - 更多 VFX/Boss 相关流程测试
 - `docs/perf-baseline.md` 持续完善
 
