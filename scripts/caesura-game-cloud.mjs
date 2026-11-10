@@ -1,0 +1,58 @@
+/**
+ * scripts/caesura-game-cloud.mjs —— 游戏侧「开箱即用」云入口（集大成最终收口）。
+ *
+ * <p>把前几轮的积木（facade / mesh-registry / 网关可用化 / load-balancer / 游戏适配层 / 进程内熔断 / sleuth tracer / service-proxy）
+ * 收口成游戏本体只需一行就能拉起的一朵云：</p>
+ *
+ * ```js
+ * const gc = createGameCloud({ gameId: 'caesura-game', gamePort: 7700, sources: { eureka: () => discoverEureka() } })
+ * await gc.start()                 // 注册游戏实例、广播 lifecycle/runtime 事件、起 tracer/gateway
+ * const data = await gc.proxyCall('caesura-gate', '/api/x')  // 负载均衡 + 进程内熔断 + 调用链追踪
+ * await gc.shutdown()              // 注销 + 广播 stopped
+ * ```
+ *
+ * <p>判词仍由 Node 侧持有（决策原则①）：本件只做编排与默认值收口，不写任何业务阈值；阈值经 opts 注入。</p>
+ */
+import { createCloudRuntime } from './caesura-cloud-runtime.mjs'
+import { createServiceProxy } from './caesura-service-proxy.mjs'
+
+/**
+ * 创建一只游戏侧开箱即用云。
+ * @param {object} [opts] 透传给 createCloudRuntime 的全部选项，并可附 gameName/gameAddress/breakerOpts。
+ */
+export function createGameCloud(opts = {}) {
+  const gameId = opts.gameId ?? 'caesura-game'
+  const gameName = opts.gameName ?? gameId
+
+  const runtime = createCloudRuntime({
+    gameId,
+    gameName,
+    gameAddress: opts.gameAddress,
+    gamePort: opts.gamePort,
+    gameHealth: opts.gameHealth,
+    sources: opts.sources,
+    gateway: opts.gateway ?? true,
+    tracer: opts.tracer ?? true,
+    breakerOpts: opts.breakerOpts,
+    transport: opts.transport,
+    cloud: opts.cloud,
+    bus: opts.bus,
+  })
+
+  const proxy = createServiceProxy(runtime, { breaker: opts.breakerOpts })
+
+  return {
+    runtime,
+    proxy,
+    /** 拉起：注册游戏实例、广播 lifecycle/runtime 事件、启用网关与追踪。 */
+    async start() { return runtime.bootstrap() },
+    /** 裸调用（负载均衡 + 网关匹配 + 追踪 + CB filter）。 */
+    async call(serviceName, path, init) { return runtime.call(serviceName, path, init) },
+    /** 韧性调用（runtime.call + 按服务隔离的进程内熔断）。 */
+    async proxyCall(serviceName, path, init) { return proxy.call(serviceName, path, init) },
+    /** 关停：注销游戏实例 + 广播 stopped。 */
+    async shutdown() { return runtime.shutdown() },
+    /** 汇总：游戏状态 + 已聚合服务 + 路由数。 */
+    async status() { return runtime.status() },
+  }
+}
