@@ -6,6 +6,7 @@ import {
   buildConfigResponse,
   startConfigWatcher,
 } from '../../scripts/spring-config-server.mjs'
+import { createBus } from '../../scripts/spring-bus-event.mjs'
 
 /**
  * Spring Cloud Config Server 客户端单元测试。
@@ -129,6 +130,78 @@ describe('spring-config-server：Spring Cloud Config Server 客户端', () => {
         fs.rmSync(tmpDir, { recursive: true })
         resolve()
       }, 350)
+    })
+  })
+
+  it('startConfigWatcher + Bus：配置变更自动向总线广播 config.changed', () => {
+    const fs = require('node:fs')
+    const path = require('node:path')
+    const os = require('node:os')
+
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'caesura-config-'))
+    fs.writeFileSync(
+      path.join(tmpDir, 'caesura-gate.yml'),
+      'server:\n  port: 8081\ncaesura_circuit_failure_threshold: 3',
+    )
+
+    const configs = loadConfigs(tmpDir)
+    const bus = createBus()
+    const received: Array<{ name: string; config: Record<string, unknown> }> = []
+    bus.subscribe('config.changed', (...args: unknown[]) => {
+      const [name, config] = args as [string, Record<string, unknown>]
+      received.push({ name, config })
+    })
+
+    const stopWatcher = startConfigWatcher(configs, tmpDir, 100, undefined, bus)
+
+    // 修改配置文件
+    fs.writeFileSync(
+      path.join(tmpDir, 'caesura-gate.yml'),
+      'server:\n  port: 8082\ncaesura_circuit_failure_threshold: 5',
+    )
+
+    // 等待监听器检测变化
+    return new Promise<void>((resolve) => {
+      setTimeout(() => {
+        expect(received.length).toBe(1)
+        expect(received[0]!.name).toBe('caesura-gate')
+        expect((received[0]!.config.server as Record<string, unknown>).port).toBe(8082)
+        stopWatcher()
+        bus.close()
+        fs.rmSync(tmpDir, { recursive: true })
+        resolve()
+      }, 400)
+    })
+  })
+
+  it('startConfigWatcher：启动不吐事件（已有文件只登记 mtime，不广播）', () => {
+    const fs = require('node:fs')
+    const path = require('node:path')
+    const os = require('node:os')
+
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'caesura-config-'))
+    fs.writeFileSync(
+      path.join(tmpDir, 'caesura-gate.yml'),
+      'server:\n  port: 8081',
+    )
+
+    const configs = loadConfigs(tmpDir)
+    const bus = createBus()
+    const received: string[] = []
+    bus.subscribe('config.changed', (...args: unknown[]) => {
+      received.push(args[0] as string)
+    })
+
+    const stopWatcher = startConfigWatcher(configs, tmpDir, 50, undefined, bus)
+
+    return new Promise<void>((resolve) => {
+      setTimeout(() => {
+        expect(received).toEqual([]) // 启动期不吐事件
+        stopWatcher()
+        bus.close()
+        fs.rmSync(tmpDir, { recursive: true })
+        resolve()
+      }, 250)
     })
   })
 

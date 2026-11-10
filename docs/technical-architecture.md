@@ -7859,3 +7859,20 @@ await import(VALIDATOR_SPEC as string)
 **不声称**：① 不声称任何真 Config Server／真 Eureka／真消息中间件参与——`spring-config-server` 是本地文件模拟器，全部读数在临时目录与进程内；② 不声称 renderer 的 `shadowMapSize`／`resolutionScale` 已经影响任何真实画面——headless 没有 GL 上下文，本模块只把数灌进 targets；③ 不声称 Bus 事件总线与应用 `core/EventBus` 有任何关系；④ 不声称 `startConfigWatcher` 的 `interval` 轮询是正式产品形状（生产环境应由真 Bus 推送驱动）；⑤ 不声称 KI-446～449 已实机烤火。
 
 **读数与剩余欠账见账本 KI-446～KI-449 那四行。**
+
+### 5.9.201 Bus 与 Config Server 第一次闭环：配置变更自动向总线广播 `config.changed`（KI-450，2026-11-10）
+
+**这一格是 KI-446／KI-448 两格的直连，不是新模块。** 上一批 N-1 面落实的是：Config Server 模拟器（`spring-config-server.mjs`）有了 `startConfigWatcher`（文件变了能重读并 `onChange`），Bus 事件总线（`spring-bus-event.mjs`）有了 `createBus()`——两者各自孤立，没有一条线让前者告诉后者。**病**：配置变更要靠人在 CLI 里手动看一眼，Node 侧脚本之间没有"谁变了谁被告知"这件事。
+
+**裁决与落点**：
+
+- `startConfigWatcher(configs, dir, interval, onChange, bus)` 新增可选第 5 个形参 `bus`（结构类型 `{ publish(event, ...args): boolean }`——不硬依赖 `spring-bus-event.mjs` 的类型，保持脚本两侧的松耦合）。提供 `bus` 时，每次检测到变更（或启动后新增的文件）都向总线 `publish('config.changed', name, parsed)`。
+- **启动语义改了一格，写在这里**：此前 `startConfigWatcher` 首趟扫描就会触发 `onChange`（把现存文件逐一通知一遍——开机即"变更风暴"）；现在首趟只登记 mtime、不吐事件，**启动后新增的文件**视为变更触发，**改动的文件**视为变更触发，未变的不触发。守卫两腿钉住这一格（启动不吐事件／新增文件触发）。
+- CLI 入口（`node scripts/spring-config-server.mjs`）创建本地 Bus 并订阅 `config.changed` 打一条 `[bus] config.changed → <name>` 日志——"开 Bus → 改配置 → 看到总线响应"这条链整条在进程内可跑通。
+- `.d.mts` 同步 `bus` 形参类型。
+
+**守卫**（`tests/unit/spring-config-server.test.ts` 现 9 腿，F-13 那批的 7 条全保留）：新增 `startConfigWatcher + Bus：配置变更自动向总线广播 config.changed`（临时目录真写盘真扫，400ms 内断言总线恰收到 1 条、`name === 'caesura-gate'`、port 为 8082）与 `startConfigWatcher：启动不吐事件`（250ms 内断言总线 0 条）。**总套件 4893 条 / 415 文件全绿**，validate-data 0 ERROR／2 WARN，tsc 0。
+
+**不声称**：① 不声称有真消息中间件参与——总线是进程内的；② 不声称真 Config Server 与真 Eureka 互联；③ 不声称 `config.changed` 的消费者一定去热刷新自己（那是各订阅方自己的策略）；④ 不声称 Bus 的发布顺序或幂等性；⑤ 不声称本批改变了任何数据表或判决。
+
+**读数与剩余欠账见账本 KI-450 那一行。**

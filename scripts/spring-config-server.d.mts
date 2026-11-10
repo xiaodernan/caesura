@@ -27,12 +27,15 @@ export function buildConfigResponse(
 ): Record<string, unknown>
 
 /**
- * 启动配置文件监听器
+ * 启动配置文件监听器。
+ * 启动时先给现存文件登记 mtime（不吐事件）；之后只对真的变了的文件触发。
+ * 提供 `bus` 时，每次检测到变更都向总线发布 `config.changed`（载荷：appName, config）。
  *
  * @param configs 配置映射（变更时会被直接修改）
  * @param dir 配置目录路径
  * @param interval 检查间隔（毫秒）
  * @param onChange 配置变更回调 (appName, config) => void
+ * @param bus 可选的 Spring Cloud Bus 事件总线（spring-bus-event.mjs 的 createBus()）
  * @returns 停止监听的函数
  */
 export function startConfigWatcher(
@@ -40,4 +43,5 @@ export function startConfigWatcher(
   dir: string,
   interval?: number,
   onChange?: (name: string, config: Record<string, unknown>) => void,
+  bus?: { publish(event: string, ...args: unknown[]): boolean },
 ): () => void

@@ -27,6 +27,7 @@
 import { createServer as httpCreateServer } from 'node:http'
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs'
 import { join, extname } from 'node:path'
+import { createBus } from './spring-bus-event.mjs'
 
 /** Default config directory */
 const DEFAULT_CONFIG_DIR = './config'
@@ -404,15 +405,22 @@ function createServer(configs) {
 
 /**
  * Start config file watcher.
+ * 启动时先给每个已存在的文件登记 mtime（不吐事件——避免开机时把现有配置全部广播一遍）；
+ * 之后只对"真的变了"的文件触发 onChange 与 Bus 广播（若提供了 `bus`）。
  *
  * @param {Record<string, Record<string, unknown>>} configs Config map (mutated on change)
  * @param {string} dir Config directory path
  * @param {number} interval Check interval (ms)
  * @param {function} onChange Config change callback (appName, config) => void
+ * @param {{ publish(event: string, ...args: unknown[]): boolean } | undefined} [bus]
+ *   可选：Spring Cloud Bus 事件总线（`spring-bus-event.mjs` 的 createBus() 产出）。
+ *   提供后，每次检测到变更都向总线发布 `config.changed`（载荷：appName, config）。
  * @returns {function} Stop listening function
  */
-function startConfigWatcher(configs, dir, interval = WATCH_INTERVAL_MS, onChange) {
+function startConfigWatcher(configs, dir, interval = WATCH_INTERVAL_MS, onChange, bus) {
   const fileMtimes = new Map()
+  /** 第一趟扫描只给现存文件登记 mtime，不吐事件；之后首见的文件按"新增"处理。 */
+  let seeded = false
 
   function check() {
     try {
@@ -426,9 +434,11 @@ function startConfigWatcher(configs, dir, interval = WATCH_INTERVAL_MS, onChange
 
         const prevMtime = fileMtimes.get(fileKey)
         const currMtime = stat.mtimeMs
-        if (prevMtime !== undefined && prevMtime === currMtime) continue
-
         fileMtimes.set(fileKey, currMtime)
+
+        if (!seeded) continue // 首趟：只登记，不触发
+        if (prevMtime !== undefined && prevMtime === currMtime) continue // 没变就跳过
+
         const content = readFileSync(filePath, 'utf8')
         let parsed
         if (ext === '.json') {
@@ -446,7 +456,15 @@ function startConfigWatcher(configs, dir, interval = WATCH_INTERVAL_MS, onChange
             // Ignore callback errors
           }
         }
+        if (bus && typeof bus.publish === 'function') {
+          try {
+            bus.publish('config.changed', name, parsed)
+          } catch (e) {
+            // Ignore bus errors
+          }
+        }
       }
+      seeded = true
     } catch (e) {
       // Directory does not exist or read failed, ignore
     }
@@ -475,8 +493,14 @@ if (process.argv[1] && new URL(process.argv[1], 'file://').pathname === new URL(
   const configs = loadConfigs(configDir)
   const server = createServer(configs)
 
-  // Start config file watcher
-  const stopWatcher = startConfigWatcher(configs, configDir, WATCH_INTERVAL_MS)
+  // 创建 Bus 事件总线：配置变更自动向总线发布 config.changed
+  const bus = createBus()
+  bus.subscribe('config.changed', (name) => {
+    console.log(`[bus] config.changed → ${name}`)
+  })
+
+  // Start config file watcher（带 Bus 广播）
+  const stopWatcher = startConfigWatcher(configs, configDir, WATCH_INTERVAL_MS, undefined, bus)
 
   server.listen(port, () => {
     console.log(`Spring Cloud Config Server running at http://localhost:${port}`)
@@ -492,11 +516,13 @@ if (process.argv[1] && new URL(process.argv[1], 'file://').pathname === new URL(
   // Graceful shutdown
   process.on('SIGTERM', () => {
     stopWatcher()
+    bus.close()
     server.close()
     process.exit(0)
   })
   process.on('SIGINT', () => {
     stopWatcher()
+    bus.close()
     server.close()
     process.exit(0)
   })
