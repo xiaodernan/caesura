@@ -16,6 +16,8 @@
 | Phase F-4 | spring-eureka-client（Node.js Eureka 客户端，6 测试） | 551bd2c |
 | Phase F-5 | spring-config-refresh（综合刷新脚本，3 测试） | 651ce4f |
 | Phase F-6 | spring-discovery（服务发现+配置综合客户端，3 测试） | e71a50c |
+| Phase F-7 | spring-gateway-route（Gateway 路由客户端，5 测试） | af6ddd3 |
+| Phase F-8 | spring-circuit-breaker（熔断器客户端，5 测试） | fc06e67 |
 | KI-407 | coverage 棘轮三出口（0/1/2）全部有测试 + 基线落地 | 07399b9 |
 | Phase C / F3 | Boss 乐句线 HUD：BossPhraseBar.ts + main.ts 接线 + flow 测试 | 08bb3f5 |
 | KI-118 fix | spring-health-check.mjs 移除 shebang（module-loader 门禁） | 0698210 |
@@ -25,7 +27,7 @@
 | KI-442~445 | 账本行同步（KNOWN_ISSUES/WORKPLAN/PHASE-STATUS KV） | daea06e |
 | Stakerite 覆盖率看板 | 读 coverage-floor.json 显示总地板 | b0e0fb7 |
 
-**当前状态**：`npm run check` 全绿：4829 条 / 406 文件，0 红。
+**当前状态**：`npm run check` 全绿：4839 条 / 408 文件，0 红。
 
 ---
 
@@ -33,6 +35,7 @@
 
 ### P1：Spring Cloud 微服务继续扩展
 
+- spring-sleuth-tracing（分布式链路追踪客户端，查 Zipkin/Trace 数据）
 - `caesura-client` 的配置拉取失败降级测试（模拟 config server 不可用时的退路）
 - 更多 Spring Cloud 模式（config server 刷新、bus 事件等）
 
