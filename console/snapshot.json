@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794349624433,
+  "generatedAt": 1794350589147,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1010,6 +1010,116 @@
         "ttlMs": 5000
       }
     },
-    "builtAt": 1794349624433
+    "bplusIndex": {
+      "config": {
+        "keys": 512,
+        "probes": 77,
+        "rangeQueries": 3,
+        "order": 32,
+        "fanout": 32,
+        "leafCapacity": 32,
+        "overwriteEvery": 13,
+        "lsmMemtableMax": 64
+      },
+      "structure": {
+        "height": 3,
+        "heightEstimate": 3,
+        "leafCount": 32,
+        "nodeCount": 35,
+        "order": 32,
+        "fanout": 32,
+        "invariants": 0,
+        "heightLadder": [
+          {
+            "order": 4,
+            "fanout": 4,
+            "heightEstimate": 6
+          },
+          {
+            "order": 8,
+            "fanout": 8,
+            "heightEstimate": 4
+          },
+          {
+            "order": 16,
+            "fanout": 16,
+            "heightEstimate": 3
+          },
+          {
+            "order": 32,
+            "fanout": 32,
+            "heightEstimate": 3
+          },
+          {
+            "order": 64,
+            "fanout": 64,
+            "heightEstimate": 2
+          },
+          {
+            "order": 128,
+            "fanout": 128,
+            "heightEstimate": 2
+          }
+        ]
+      },
+      "point": {
+        "bplusComparisons": 776,
+        "lsmComparisons": 1158,
+        "favors": "bplus"
+      },
+      "range": {
+        "bplusCost": 360,
+        "lsmCost": 1649,
+        "bplusLeafHops": 10,
+        "bplusResults": 156,
+        "lsmSegments": 1,
+        "lsmSortComparisons": 1137,
+        "lsmResults": 156,
+        "favors": "bplus"
+      },
+      "write": {
+        "bplusPageRewrites": 616,
+        "bplusSplits": 32,
+        "bplusMerges": 0,
+        "bplusBorrows": 0,
+        "lsmSeqWriteUnits": 603,
+        "lsmFlushes": 9,
+        "lsmCompactions": 2,
+        "lsmMergedAway": 40,
+        "favors": "lsm"
+      },
+      "levels": [
+        {
+          "level": 0,
+          "segments": 0,
+          "entries": 0
+        },
+        {
+          "level": 1,
+          "segments": 1,
+          "entries": 512
+        }
+      ],
+      "agreement": {
+        "pointMismatches": 0,
+        "rangeMismatches": 0,
+        "bothAgree": true
+      },
+      "verdict": {
+        "bothAgree": true,
+        "pointFavors": "bplus",
+        "rangeFavors": "bplus",
+        "writeFavors": "lsm",
+        "bplusPointFewerComparisons": true,
+        "bplusRangeIsSequential": true,
+        "lsmRangeNeedsMergeSort": true,
+        "bplusPaysInPlaceRewrites": true,
+        "lsmPaysCompactionRewrites": true,
+        "lsmReadIsCrossLevel": true,
+        "noUniversalWinner": true,
+        "agreeIsPrerequisite": true
+      }
+    },
+    "builtAt": 1794350589147
   }
 }

@@ -459,4 +459,59 @@ describe('caesura-console-ui (KI-495)', () => {
     expect(dom2.els['fd-curve'].innerHTML).toContain('<polyline') // φ 曲线照常
     expect(dom2.els['fd-health'].innerHTML).toContain('gate-a') // 健康视图照常
   })
+
+  it('⑯ KI-504 真 bplusIndex 读数落进「层高/扇出」+「三笔账对照」两面板（不是写死的数）', async () => {
+    const bp = real.systems.bplusIndex
+    const dom = await runApp(real)
+    // 面板一：实测层高 + 稳态估 + 叶数 + 扇出 + 不变式 0 违例，阶梯条逐阶真读数。
+    const st = dom.els['bp-structure'].innerHTML
+    expect(st).toContain('data-h="' + bp.structure.height + '"')
+    expect(st).toContain('data-est="' + bp.structure.heightEstimate + '"')
+    expect(st).toContain('data-leaves="' + bp.structure.leafCount + '"')
+    expect(st).toContain('扇出 <b>' + bp.structure.fanout + '</b>')
+    expect(st).toContain('不变式违例 <b class="jade-t">0</b>') // 真 B+ 树
+    expect(st).toContain('✓ 真 B+ 树')
+    const ladder = dom.els['bp-ladder'].innerHTML
+    bp.structure.heightLadder.forEach((r: any) => {
+      expect(ladder).toContain('data-order="' + r.order + '" data-h="' + r.heightEstimate + '"')
+    })
+    // 面板二：三笔账各自双侧真读数 + favors 上色，对账 dot 一致。
+    const cmp = dom.els['bp-compare'].innerHTML
+    expect(cmp).toContain('data-key="point" data-favors="' + bp.point.favors + '"')
+    expect(cmp).toContain('data-key="range" data-favors="' + bp.range.favors + '"')
+    expect(cmp).toContain('data-key="write" data-favors="' + bp.write.favors + '"')
+    expect(cmp).toContain(String(bp.point.bplusComparisons))
+    expect(cmp).toContain(String(bp.point.lsmComparisons))
+    expect(cmp).toContain(String(bp.write.bplusPageRewrites))
+    expect(cmp).toContain(String(bp.write.lsmSeqWriteUnits))
+    expect(cmp).toContain('三维未归一引擎全拿') // 不封全局赢家
+    expect(cmp).toContain('B+ 顺序扫 ✓')
+    const ag = dom.els['bp-agreement'].innerHTML
+    expect(ag).toContain('data-agree="true"')
+    expect(ag).toContain('✓ 一致 · 对照成立')
+    expect(ag).toContain('点查分叉 <b>0</b>')
+    expect(dom.els['bp-compare-note'].textContent).toContain('非墙钟') // 诚实边界
+  })
+
+  it('⑰ KI-504 bplusIndex 整块缺 / 单块缺诚实降级，不连坐 failureDetector-lsm', async () => {
+    // 整块缺：四子块全降级、绝不画 0/假条；failureDetector/lsm 仍照常。
+    const noBp = JSON.parse(JSON.stringify(real))
+    noBp.systems.bplusIndex = null
+    const dom = await runApp(noBp)
+    expect(dom.els['bp-structure'].innerHTML).toContain('无B+ 树结构读数')
+    expect(dom.els['bp-ladder'].innerHTML).toContain('无层高阶梯读数')
+    expect(dom.els['bp-compare'].innerHTML).toContain('无三笔账对照读数')
+    expect(dom.els['bp-agreement'].innerHTML).toContain('无正确性对账读数')
+    expect(dom.els['bp-structure-note'].textContent).toContain('systems.bplusIndex 缺失')
+    expect(dom.els['fd-hero'].innerHTML).toContain('次抖动误报') // failureDetector 不连坐
+    expect(dom.els['lsm-gauge'].innerHTML).toContain(String(real.systems.lsm.speedup.toFixed(1))) // lsm 不连坐
+
+    // 单块缺：只降 agreement，结构/阶梯/三笔账仍渲染真读数（同维不连坐）。
+    const partial = JSON.parse(JSON.stringify(real))
+    partial.systems.bplusIndex.agreement = null
+    const dom2 = await runApp(partial)
+    expect(dom2.els['bp-agreement'].innerHTML).toContain('无正确性对账读数')
+    expect(dom2.els['bp-structure'].innerHTML).toContain('✓ 真 B+ 树') // 结构照常
+    expect(dom2.els['bp-compare'].innerHTML).toContain('data-key="point"') // 三笔账照常
+  })
 })

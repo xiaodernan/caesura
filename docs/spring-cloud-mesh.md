@@ -2,23 +2,23 @@
 
 > 本文是 CAESURA 项目里「Spring Cloud 微服务家族」的**合成地图**：把散落在 `scripts/` 的 35+ 件 Node 侧
 > Spring Cloud 客户端，收口成游戏可一键拉起的一朵云。本文只描述**架构与边界**，不重复每个件的实现细节
-> （细节见 `docs/KNOWN_ISSUES.md` 的 KI-460~503 账本行与各 `scripts/*.d.mts`）；前端只读可视化层见第 2 节顶部与第 6 节边界。
+> （细节见 `docs/KNOWN_ISSUES.md` 的 KI-460~504 账本行与各 `scripts/*.d.mts`）；前端只读可视化层见第 2 节顶部与第 6 节边界。
 
 ## 1. 总原则（决策原则①，贯穿全族）
 
 - **Spring/Java 侧只做编排/重试/熔断/报告**；**判定与阈值一律由 Node 侧负责**。
 - 因此每个 Node 客户端都是「编排壳 + 判定权在 Node」，不把业务阈值写死进 Spring 配置。
-- **前后端协同同理（KI-495 / KI-498 / KI-501 / KI-502 / KI-503 贯穿收口）**：前端 `console/` 只读 Node 侧真跑落盘的快照（五场景 E2E 判词 + 与场景并列的 `systems` 五维读数：LSM 存储引擎 / OS 硬件适配 / 缓存防护三件套 / 网关限流算法族 / 服务故障检测器），判定权仍在 Node 判词；前端只渲染、不复核、不另算一套数，缺字段诚实降级为「—」/「无数据」。
+- **前后端协同同理（KI-495 / KI-498 / KI-501 / KI-502 / KI-503 / KI-504 贯穿收口）**：前端 `console/` 只读 Node 侧真跑落盘的快照（五场景 E2E 判词 + 与场景并列的 `systems` 六维读数：LSM 存储引擎 / OS 硬件适配 / 缓存防护三件套 / 网关限流算法族 / 服务故障检测器 / B+ 树索引引擎），判定权仍在 Node 判词；前端只渲染、不复核、不另算一套数，缺字段诚实降级为「—」/「无数据」。
 - `scripts/*.mjs` 必须配 `*.d.mts`（声明导出名完全一致）并通过 `decl-parity` 门；账本/PLAN/PHASE-STATUS 三者计数一致。
 
 ## 2. 分层
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│ 集大成控制台 (console/, KI-495/498/501/502/503)：零依赖静态页，只读真快照 │
-│  npm run console:data ⇒ 5 场景 E2E + systems 五维 ⇒ snapshot.json    │
+│ 集大成控制台 (console/, KI-495/498/501/502/503/504)：零依赖，只读真快照 │
+│  npm run console:data ⇒ 5 场景 E2E + systems 六维 ⇒ snapshot.json    │
 │  渲染 拓扑/事件流/韧性/灰度/缓存环/cwnd/计网                         │
-│       + LSM/硬件/缓存防护/限流/故障检测(φ+SWIM) 五维读数             │
+│     + LSM/硬件/缓存防护/限流/故障检测(φ+SWIM)/B+树(叶链vs LSM) 六维     │
 │  file:// 直开走 bootstrap.js 回退；web 服务走 XHR 拉 snapshot.json   │
 └──────────────────────────────────────────────────────────────────────┘
    ▲ 数据源：下方 E2E（第 5 节）真跑产物 snapshot.json，只读、不回写运行时
@@ -29,7 +29,7 @@
 └───────────────────────────────┬──────────────────────────────────────┘
                                   │ createGameCloud({...}).start()
 ┌─────────────────────────────────▼─────────────────────────────────────┐
-│  caesura-game-cloud  （开箱即用云入口，KI-478/484/485/489/490/491/493/494/496/497/498/499/500/501/502/503）│
+│  caesura-game-cloud  （开箱即用云入口，KI-478/484/485/489/490/491/493/494/496/497/498/499/500/501/502/503/504）│
 │    start / call / proxyCall / shutdown / status                         │
 │    + events（KI-484 云事件总线）· auth（KI-485 鉴权守卫）                │
 │    + connectGameBus（KI-489 事件桥，shutdown 自动退桥）                   │
@@ -42,6 +42,7 @@
 │    + cacheGuard（KI-501 击穿/穿透/雪崩防护对照，挂 status.cacheGuard，opt-in）│
 │    + rateLimit（KI-502 限流五算法 + Redis 原子桶，挂 status.rateLimit，opt-in）│
 │    + failureDetector（KI-503 φ 检测 + SWIM 三态 + 健康视图，opt-in）           │
+│    + bplusIndex（KI-504 B+ 树 vs LSM 点查/范围/写放大三笔账，opt-in）        │
 ├───────────────────────────────────────────────────────────────────────┤
 │  caesura-cloud-runtime  （集大成运行时，KI-473/477/487）                 │
 │    call 路径：网关 predicate 匹配 → 完整 filter 链（KI-486/487）         │
@@ -82,6 +83,10 @@
 │   · 故障检测   : caesura-failure-detector（KI-503）——                          │
 │                  φ 累积风险(Welford+erfc 自适应) / SWIM 三态间接探测反证       │
 │                  / 健康视图 TTL 缓存 / 固定超时 vs φ 权衡对照，opt-in 挂 status│
+│   · 索引/数据库 : caesura-bplus-tree（KI-504）——                                  │
+│                  真 B+ 树(阶数可控扇出决定层高·叶双向链范围顺序扫·分裂/删除再     │
+│                  平衡 borrow+merge) vs LSM 三笔账(点查比较/范围归并/写放大)，     │
+│                  逐条对账+不封全局赢家，opt-in 挂 status.bplusIndex               │
 │   · 任务/函数   : spring-cloud-task · spring-cloud-function · spring-cloud-stream · openfeign     │
 │   · 总线/健康   : spring-bus-client · spring-health-check · spring-mesh-health                     │
 │   · K8s         : spring-cloud-kubernetes-client（KI-479，configMap+endpoints→mesh 实例）         │
@@ -182,17 +187,17 @@ if (gc.auth.canAccess(claims, 'game:call')) { /* ... */ }
   白名单双向转发；判定权 Node 侧——哪些事件过桥、映射成什么 type，全由 `routes` 定。
 - `game.started`/`game.stopped` 由 `gc.start()/shutdown()` 自动发到云事件总线（KI-484），E2E 可证。
 
-**前端集大成控制台只读真快照（KI-495 / KI-498 / KI-501 / KI-502 / KI-503 贯穿收口）**——`console/` 是零框架/零 CDN/零外部依赖的静态页，与 Node 判词解耦：
+**前端集大成控制台只读真快照（KI-495 / KI-498 / KI-501 / KI-502 / KI-503 / KI-504 贯穿收口）**——`console/` 是零框架/零 CDN/零外部依赖的静态页，与 Node 判词解耦：
 
 ```bash
-npm run console:data     # 真跑 5 趟 E2E（main/gray/resilience/cache/net）+ systems 五维读数（LSM/OS 硬件/缓存防护/网关限流/故障检测）⇒ console/snapshot.json + bootstrap.js
+npm run console:data     # 真跑 5 趟 E2E（main/gray/resilience/cache/net）+ systems 六维读数（LSM/OS 硬件/缓存防护/网关限流/故障检测/B+ 树索引）⇒ console/snapshot.json + bootstrap.js
 ```
 
 - 数据源唯一：`scripts/caesura-console-gen.mjs` 用真 `runMeshE2E` 跑五场景，把判词 normalize 成 `ConsoleScenario[]` 并 `deriveHighlights` 出八个大数；`generatedAt` 是采集时刻，拒绝手改。
-- **与五场景并列的 `systems` 数据块（KI-498）**：`buildSystems(opts)` 真跑一只 `createLsmStore` 确定性 benchmark（flush/compaction/tombstone/Bloom/点查 vs 线性扫描 `speedup≈39×`）与 `createGameCloud({hw:true}).status().hw`（对象池省分配、padded vs packed 假共享对、AoS→SoA 顺序扫 `speedup≈4×`）；它是**独立数据块，不混入 `scenarios`/`highlights`/五场景 `ok` 口径**，可注入 `systems:false` 关闭（兼容旧快照与确定性单测）。
+- **与五场景并列的 `systems` 数据块（KI-498）**：`buildSystems(opts)` 真跑一只 `createLsmStore` 确定性 benchmark（flush/compaction/tombstone/Bloom/点查 vs 线性扫描 `speedup≈39×`）与 `createGameCloud({hw:true}).status().hw`（对象池省分配、padded vs packed 假共享对、AoS→SoA 顺序扫 `speedup≈4×`）；它是**独立数据块，不混入 `scenarios`/`highlights`/五场景 `ok` 口径**，可注入 `systems:false` 关闭（兼容旧快照与确定性单测）；后续 KI-501/502/503/504 相继并入 `guards`/`rateLimit`/`failureDetector`/`bplusIndex` 四维，现为六维，各自的 `*:false` 可单维关闭、不连坐其它维。
 - 双载体同源：`console/snapshot.json`（web 服务经 XHR 拉取）与 `console/bootstrap.js`（`file://` 直开时同源回退）由同一次生成写出，`app.js` 二者取其一、不编造第二套数；`systems` 同样写进两份载体。
-- 渲染即判词：拓扑/事件流/韧性条/灰度分池/缓存命中环/cwnd AIMD 曲线/SRTT·RTO·CUBIC·滑窗读数，以及 `systems` 四维独立读数——**LSM 存储引擎面板**（speedup 仪表、flush/compact/归并/丢 tombstone/Bloom 负查、各层段数条）、**OS 硬件适配面板**（对象池省分配、false sharing 对数、AoS→SoA 布局 speedup）、**缓存防护三面板**（击穿放大条、穿透回源对照条、雪崩双直方图）、**网关限流两面板**（五算法 burstRatio 横条：1× 玉 / 2× 酒红，Redis 原子 vs 非原子放行条 + 超发大数 + 跨实例共享 dot）、**服务故障检测两面板**（固定超时 vs φ 抖动误报大数 + φ 曲线 SVG 真折线/判死阈值虚线/固定超时误报点、同延迟规律 vs 抖动自适应双条、SWIM 三态成员条、健康视图 TTL 命中三段），全部来自真快照；缺字段降级为「—」/「无存储引擎读数」/「无硬件适配读数」/「无击穿读数」/「无限流算法读数」/「无故障检测读数」，单块缺不连坐其它块，不画假条、不写假数（暗黑哥特视觉、SVG 手绘、响应式、`prefers-reduced-motion` 降级）。
-- 判定权不越界：前端只渲染，不复核、不重算阈值；`caesura-console-gen` 与 `caesura-console-ui` 分别用真 E2E、`node:vm` + DOM stub 跑真 `app.js` 出可断言证据（**13 腿 + 9 腿**，KI-498 各补 3 / 2 腿，含空 `systems` 诚实降级与单维缺失不连坐；演进：KI-501 加 `systems.guards` 三面板、KI-502 加 `systems.rateLimit` 两面板、KI-503 加 `systems.failureDetector` 两面板，现为五维、前端 **13 腿 + 15 腿**，此处保留 KI-498 当初的历史腿数不改写）。
+- 渲染即判词：拓扑/事件流/韧性条/灰度分池/缓存命中环/cwnd AIMD 曲线/SRTT·RTO·CUBIC·滑窗读数，以及 `systems` 四维独立读数——**LSM 存储引擎面板**（speedup 仪表、flush/compact/归并/丢 tombstone/Bloom 负查、各层段数条）、**OS 硬件适配面板**（对象池省分配、false sharing 对数、AoS→SoA 布局 speedup）、**缓存防护三面板**（击穿放大条、穿透回源对照条、雪崩双直方图）、**网关限流两面板**（五算法 burstRatio 横条：1× 玉 / 2× 酒红，Redis 原子 vs 非原子放行条 + 超发大数 + 跨实例共享 dot）、**服务故障检测两面板**（固定超时 vs φ 抖动误报大数 + φ 曲线 SVG 真折线/判死阈值虚线/固定超时误报点、同延迟规律 vs 抖动自适应双条、SWIM 三态成员条、健康视图 TTL 命中三段）、**B+ 树索引两面板**（实测层高+稳态估+扇出+叶数+不变式 0 违例、阶数→层高阶梯条；点查比较/范围结构代价/写放大三组双侧真计数对照条按 favors 上色、不封全局赢家、同批 key 答案逐条对账 dot），全部来自真快照；缺字段降级为「—」/「无存储引擎读数」/「无硬件适配读数」/「无击穿读数」/「无限流算法读数」/「无故障检测读数」/「无 B+ 树结构读数」，单块缺不连坐其它块，不画假条、不写假数（暗黑哥特视觉、SVG 手绘、响应式、`prefers-reduced-motion` 降级）。
+- 判定权不越界：前端只渲染，不复核、不重算阈值；`caesura-console-gen` 与 `caesura-console-ui` 分别用真 E2E、`node:vm` + DOM stub 跑真 `app.js` 出可断言证据（**13 腿 + 9 腿**，KI-498 各补 3 / 2 腿，含空 `systems` 诚实降级与单维缺失不连坐；演进：KI-501 加 `systems.guards` 三面板、KI-502 加 `systems.rateLimit` 两面板、KI-503 加 `systems.failureDetector` 两面板、KI-504 加 `systems.bplusIndex` 两面板，现为六维、前端 **13 腿 + 17 腿**，此处保留 KI-498 当初的历史腿数不改写）。
 
 **灰度/金丝雀加权路由（KI-491）**——把家族里各说各话的 `Weight` predicate 与 `weight` 负载策略收口成一只决策器：
 
@@ -253,7 +258,9 @@ node scripts/spring-family-mesh-e2e.mjs
 
 - **服务故障检测器 / φ 累积风险 + SWIM 三态 + 健康视图证据（KI-503）**：`npm run detect:bench` 一趟确定性对照补上「注册发现之后如何判定实例已死」这块判定链。①**固定超时 vs φ**：同一条含 3 次 GC 长暂停（420ms）+ 一次真故障的确定性心跳轨迹，固定超时（250ms）在抖动期**误剔除 3 次**、真故障 **260ms** 检出；φ 累积风险（定长 `Float64Array` 环形缓冲 + Welford 在线重算 μ/σ + erfc 近似算 `φ=−log10(P(间隔>距上次心跳))`）抖动期**零误报**、真故障 **690ms** 检出——**如实保留「固定更快但更吵 / φ 保守降误报但检测更慢」的真实权衡**，不粉饰 φ 全面更优；②**自适应**：同一段 260ms 延迟喂给规律历史（σ≈0、被可容忍暂停下限钳到 150）得 `φ≈0.84`、喂给本就抖动的历史（σ≈185）得 `φ≈0.36`，证「同延迟在看上下文的 φ 下判词不同」而固定超时做不到；③**SWIM 三态**：直接 ping 失败 → 请 2 个中继间接探测，gate-b 由中继 r2 代 ping 成功**反证存活**（间接救回 1 次、不误标 suspected）、gate-c 全失败标 suspected 且撑过 `3×1000=3000ms` 疑超时被 `reap` 确认死亡（faulty 1）、gate-d 的 suspicion 被更高 incarnation 的 alive gossip 覆盖（旧 gossip 覆盖不了新反证）；④**健康视图缓存**：把 φ 判定与 SWIM alive 收敛成健康实例列表（`gate-a/gate-b/gate-d`，剔除 faulty 的 `gate-c`），TTL 内二次读命中缓存、主动 `invalidate` 后重算。`caesura-failure-detector.test.ts` 14 腿钉住 erfc 数学（erfc(0)=1/对称/单调/Q(0)=0.5）、样本不足不定罪、φ 单调越阈、σ 下限防爆炸、环形缓冲有界与覆盖最旧、Welford 数值稳定与注入确定性、SWIM 直接+间接救回+reap+gossip 反证+incarnation 单调、健康视图 TTL 命中与失效、六句判词、study 纯数据可 JSON 往返。`createGameCloud({failureDetector:true})` 装配证 `status().failureDetector` 五维读数可见（惰性缓存不反复跑对照）、`spring-family-mesh-e2e` 的 `failureDetectorSnapshot` 证主链非破坏，`failureDetector:false` 缺省不改任何调用路径。**前端贯穿**：`buildSystems` 增顶层 `systems.failureDetector`（与 `lsm`/`hw`/`guards`/`rateLimit` 平级、**不混入** `ok`/`highlights`，可 `failureDetector:false` 关、缺则 null 降级），`console/` 加「固定 vs φ」+「SWIM 三态」两面板读真值渲染（φ 曲线 SVG 真折线 + 判死阈值虚线 + 固定超时误报点、同延迟规律/抖动自适应双条、三态成员条与健康视图 TTL 命中三段）、缺字段诚实降级不连坐，快照与 `bootstrap.js` 同源；CLI 实测 `抖动误报 固定 3 vs φ 0 / 真故障 260ms vs 690ms / SWIM 间接救回 1`。判定权全 Node 侧、前端只渲染不复核；不接真 Cassandra/Consul、正态假设是教学简化、非墙钟跑分。
 
-对应 `tests/unit/spring-family-mesh-e2e.test.ts`（19 腿）；前端证据另见 `tests/unit/caesura-console-gen.test.ts`（13 腿）与 `tests/unit/caesura-console-ui.test.ts`（15 腿）；存储引擎证据见 `tests/unit/caesura-lsm-store.test.ts`（20 腿）、OS/硬件适配见 `tests/unit/caesura-hw-perf.test.ts`（16 腿）、一致性哈希见 `tests/unit/caesura-consistent-hash.test.ts`（14 腿）、分片缓存见 `tests/unit/caesura-sharded-cache.test.ts`（13 腿）、缓存防护见 `tests/unit/caesura-cache-guard.test.ts`（15 腿）、网关限流见 `tests/unit/caesura-rate-limiter.test.ts`（16 腿）、故障检测见 `tests/unit/caesura-failure-detector.test.ts`（14 腿），连同缓存/计网/防护/限流/故障检测在 `tests/unit/caesura-game-cloud.test.ts`（23 腿，KI-493~503 opt-in 装配）证装配。
+- **B+ 树索引引擎 / 与 LSM 点查·范围查·写放大诚实对照证据（KI-504）**：`npm run bplus:bench` 一趟确定性对照，把 KI-496 注释里反复「拿 B+ 树当对照系」那段**纸面声称**第一次兑现成一株真 B+ 树。①**真 B+ 树骨架**：阶数可控（扇出=order，奇数取偶/强制≥4，因奇数无法把满节点均分两株）、数据只住叶子且叶子**双向链**串起、内节点只存分隔键+child 指针；512 key 实测长成 **3 层 / 32 叶 / 35 节点**（`heightEstimate` 按 mid 分裂半填充稳态估也 3 层，两者并排不混谈），`heightLadder` 证扇出 4→层高 6、128→层高 2 单调不增。写入含自顶向下**分裂**、删除含自底向上 `borrow`+`merge`+根降高（400 key 交错删 300 条实测 merges/borrows 均 >0、根 6→5 层、删空回 1 层），`validate()` 逐条钉住「所有叶同深 / 分隔键=右孩子最小 key 副本 / 节点填充上下界 / 叶链双向 / 全局严格递增 / 叶 key 总数=size」——**不变式违例 0**，是树不是数组冒充。②**三笔账对照**（同一批 512 key 分灌 B+ 树与 `createLsmStore`，先决条件 `agreement.bothAgree=true` 证两引擎 get/range 逐条一致、答案分叉则性能读数不作数）：**点查比较数** B+ 776 vs LSM 1158（B+ 层高二分 vs LSM memtable 跳表+多层 SSTable 稀疏索引+Bloom 负查，`pointFavors=bplus`）；**范围查结构代价** B+ 360（=定位比较+叶链跳 10、结果天然有序零排序）vs LSM 1649（跨段收集 512 条 + 全量排序 1137 比较，KI-496 明写「收集排序非归并堆」，`rangeFavors=bplus`）；**写放大模型** B+ `pageRewrites=616`（原地改页重排：552 put + 2×32 分裂）vs LSM `seqWriteUnits=603`（顺序追加 WAL 552 条 + 9 flush + 2 compaction + 归并掉 40 旧版本，`writeFavors=lsm`）——判词**不封全局赢家**（`noUniversalWinner=true`），如实保留「B+ 点查/范围查稳但写原地改页、LSM 顺序写适配 SSD 但读跨层/范围全量归并/compaction 重复搬运」这组真实取舍（同 KI-497/503 诚实立场）。`caesura-bplus-tree.test.ts` 16 腿钉住有序不变式/点查二分/叶链范围查/分裂长高/删除 borrow+merge+降高/覆盖与重复删/与 LSM 逐条对账/三笔账各有真读数/六句判词可证伪/注入确定性/study+snapshot 纯数据/空集降级。`createGameCloud({bplusIndex:true})` 装配证 `status().bplusIndex` 六维读数可见（惰性缓存不反复跑对照）、`spring-family-mesh-e2e` 的 `bplusIndexSnapshot` 证主链非破坏，`bplusIndex:false` 缺省不改任何调用路径。**前端贯穿**：`buildSystems` 增顶层 `systems.bplusIndex`（与 `lsm`/`hw`/`guards`/`rateLimit`/`failureDetector` 平级、**不混入** `ok`/`highlights`，可 `bplusIndex:false` 关、缺则 null 降级），`console/` 加「B+ 树层高/扇出」+「三笔账对照」两面板读真值渲染（实测层高+稳态估+扇出+叶数+不变式 0 违例、阶数→层高阶梯条；点查/范围/写放大三组双侧真计数按 favors 上色、不封全局赢家、同批 key 答案逐条对账 dot）、缺字段诚实降级不连坐，快照与 `bootstrap.js` 同源；CLI 实测 `B+ 高 3 层/叶 32 / 点查 776 vs LSM 1158 / 写放大 616 vs 603 / 对账一致`。判定权全 Node 侧、前端只渲染不复核；三笔账全结构计数模型、非墙钟 QPS/字节吞吐，两件都是教学实现。
+
+对应 `tests/unit/spring-family-mesh-e2e.test.ts`（20 腿）；前端证据另见 `tests/unit/caesura-console-gen.test.ts`（13 腿）与 `tests/unit/caesura-console-ui.test.ts`（17 腿）；存储引擎证据见 `tests/unit/caesura-lsm-store.test.ts`（20 腿）、OS/硬件适配见 `tests/unit/caesura-hw-perf.test.ts`（16 腿）、一致性哈希见 `tests/unit/caesura-consistent-hash.test.ts`（14 腿）、分片缓存见 `tests/unit/caesura-sharded-cache.test.ts`（13 腿）、缓存防护见 `tests/unit/caesura-cache-guard.test.ts`（15 腿）、网关限流见 `tests/unit/caesura-rate-limiter.test.ts`（16 腿）、故障检测见 `tests/unit/caesura-failure-detector.test.ts`（14 腿）、B+ 树索引见 `tests/unit/caesura-bplus-tree.test.ts`（16 腿），连同缓存/计网/防护/限流/故障检测/索引在 `tests/unit/caesura-game-cloud.test.ts`（25 腿，KI-493~504 opt-in 装配）证装配。
 
 ## 6. 边界与「不声称」
 
@@ -279,3 +286,4 @@ node scripts/spring-family-mesh-e2e.mjs
 - 不声称前端控制台是实时流/推送——KI-495 `console/` 只读 `npm run console:data` 落盘的**一次性离线快照**，`snapshot.json`（XHR）与 `bootstrap.js`（`file://` 回退）同源；无 WebSocket/SSE、无定时轮询、无后端写入、无交互命令下发（纯只读可视化），要刷新须重跑生成器。
 - 不声称前端视觉是像素级截图验证——KI-495 UI 证据是 `node:vm` + DOM stub 跑真 `app.js` 证「每块面板落真读数 + 缺字段降级 + 零外部依赖」的可断言烟测，非浏览器渲染截图；`styles.css` 内联 grain SVG 的 `xmlns` 是命名空间常量、非网络请求。前端不持有判定权与阈值，所有读数是 Node 判词派生，不复核、不重算。
 - 不声称 KI-498 的 `systems` 是实时推送、墙钟跑分或游戏运行时 HUD——它仍是 `npm run console:data` 一次性离线采集的**独立只读数据块**，无 WebSocket/SSE、无后端写入、刷新须重跑生成器；`lsm.speedup` 是「点查比较数 ÷ 线性扫描比较数」的**算法计数比**、`hw` 三件是对象池分配次数 / cache line 同行对数 / LRU 模型 miss 数（边界逐字继承 KI-496/497），**非墙钟时间 / GC 暂停 / 真 CPU cache 命中率**，真实收益须实测调参；`systems` 不参与五场景 `ok` 判定与 `highlights` 派生、不混入 E2E 判词口径；`console/` 是独立静态页、不进 vite 主包。
+- 不声称 KI-504 `caesura-bplus-tree` 是生产级 B+ 树 / 真数据库索引——它是**纯进程内教学实现**：无真实磁盘页、无缓冲池/页缓存、无 WAL、无并发闩锁（crabbing / latch coupling），`order` / `leafCapacity` 全内存、单线程、非并发安全、不跨进程共享；分隔键只存右孩子最小 key 副本、删除走 `borrow`+`merge` 重排，`validate()` 只在本件内存结构上验「叶同深 / 分隔键副本 / 填充下界 / 叶链双向 / 全局严格递增 / 叶 key 总数=size」六条不变式，不代表任何真库的页布局或磁盘格式。也不声称三笔账是墙钟 / QPS / 字节吞吐跑分——`pointComparisons` / `rangeCost` / `pageRewrites` 与 LSM 侧 `lsmComparisons` / `lsmSortComparisons` / `seqWriteUnits` **全是确定性结构计数模型**（这条 512 key 轨迹上各比了几次、改写了几页 / 追加了几写单元），非真实硬件上的延迟、IOPS 或写放大字节；`pageRewrites=616 vs seqWriteUnits=603` 的口径是「原地改页重写次数」对「顺序追加写单元」两种不同单位，仅用于量出结构取舍、**不可直接换算成真 SSD 写放大**。`heightEstimate` 是 mid 分裂**半填充稳态估计**、不是实测上界（特定插入序下实测层高可能更高），与实测层高并排呈现、不混谈。`noUniversalWinner=true` 与 `pointFavors` / `rangeFavors` / `writeFavors` 只在这两件教学实现、这条确定性轨迹上成立，换 key 分布 / 阶数 / 读写比结论可能不同（如写密集 + 顺序 SSD 场景 LSM 反超），**不封全局赢家**、不粉饰成 B+ 树或 LSM 全面更优；两者正确性对账 `agreement.bothAgree=true` 只是「同批 key 的 get/range 答案逐条一致」这一**先决条件**——一致才让性能读数作数，不一致则读数作废，不代表二者在持久化 / 并发 / 语义上等价。B+ 树索引**默认不参与**运行时——`bplusIndex:false` 缺省不装配，接进 `createGameCloud` 也只挂 `status.bplusIndex` 只读快照（惰性缓存、不反复跑对照），KI-486 handler / KI-493 缓存 / KI-496 LSM / KI-501 防护 / KI-502 限流 / KI-503 故障检测语义逐字不动、不反向改变任何调用结果；前端只读 `systems.bplusIndex` 渲染、不判定不实测。

@@ -234,6 +234,7 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(withSys.systems!.guards).toBeTruthy() // KI-501 第三维默认也在
     expect(withSys.systems!.rateLimit).toBeTruthy() // KI-502 第四维默认也在
     expect(withSys.systems!.failureDetector).toBeTruthy() // KI-503 第五维默认也在
+    expect(withSys.systems!.bplusIndex).toBeTruthy() // KI-504 第六维默认也在
     expect(withSys.scenarios.map((s) => s.id)).toEqual(SCENARIO_IDS) // 五场景顺序不变
     // guards:false 可单独关掉缓存防护维，其余四维仍在（不连坐）。
     const noGuards = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, guards: false })
@@ -247,11 +248,18 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(noRl.systems!.guards).toBeTruthy()
     expect(noRl.systems!.lsm).toBeTruthy()
     expect(noRl.systems!.failureDetector).toBeTruthy()
-    // failureDetector:false 可单独关掉故障检测维，其余四维仍在（不连坐）。
+    // failureDetector:false 可单独关掉故障检测维，其余五维仍在（不连坐）。
     const noFd = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, failureDetector: false })
     expect(noFd.systems!.failureDetector).toBe(null)
     expect(noFd.systems!.lsm).toBeTruthy()
     expect(noFd.systems!.rateLimit).toBeTruthy()
+    expect(noFd.systems!.bplusIndex).toBeTruthy()
+    // bplusIndex:false 可单独关掉 B+ 树索引维，其余五维仍在（不连坐）。
+    const noBp = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, bplusIndex: false })
+    expect(noBp.systems!.bplusIndex).toBe(null)
+    expect(noBp.systems!.lsm).toBeTruthy()
+    expect(noBp.systems!.failureDetector).toBeTruthy()
+    expect(noBp.systems!.rateLimit).toBeTruthy()
     const without = await buildSnapshot({ runner: fakeRunner(), driveNet: false, systems: false })
     expect(without.systems).toBe(null)
     expect(without.highlights).toBeTruthy() // 既有口径不受影响
@@ -284,7 +292,16 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(snap.systems.failureDetector.curve.length).toBeGreaterThan(10)
     expect(snap.systems.failureDetector.swim.script.indirectRescued).toBe(true)
     expect(snap.systems.failureDetector.health.nodes).toContain('gate-a')
-    // bootstrap.js 与 snapshot.json 是同一份真快照（含五维 systems）。
+    // KI-504 bplusIndex：真 B+ 树不变式 0 违例、与 LSM 答案一致、三笔账各自真读数已固化进快照。
+    expect(snap.systems.bplusIndex.structure.invariants).toBe(0)
+    expect(snap.systems.bplusIndex.structure.height).toBeGreaterThanOrEqual(2)
+    expect(snap.systems.bplusIndex.agreement.bothAgree).toBe(true)
+    expect(snap.systems.bplusIndex.point.bplusComparisons).toBeGreaterThan(0)
+    expect(snap.systems.bplusIndex.range.lsmSortComparisons).toBeGreaterThan(0)
+    expect(snap.systems.bplusIndex.write.lsmSeqWriteUnits).toBeGreaterThan(0)
+    expect(snap.systems.bplusIndex.verdict.noUniversalWinner).toBe(true)
+    expect(snap.systems.bplusIndex.structure.heightLadder.length).toBeGreaterThan(0)
+    // bootstrap.js 与 snapshot.json 是同一份真快照（含六维 systems）。
     const bootCode = readFileSync(resolve(process.cwd(), 'console/bootstrap.js'), 'utf8')
     const fromBoot = JSON.parse(bootCode.slice(bootCode.indexOf('=') + 1).trim().replace(/;\s*$/, ''))
     expect(fromBoot.systems.lsm.speedup).toBe(snap.systems.lsm.speedup)
@@ -292,5 +309,6 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(fromBoot.systems.guards).toEqual(snap.systems.guards)
     expect(fromBoot.systems.rateLimit).toEqual(snap.systems.rateLimit)
     expect(fromBoot.systems.failureDetector).toEqual(snap.systems.failureDetector)
+    expect(fromBoot.systems.bplusIndex).toEqual(snap.systems.bplusIndex)
   })
 })

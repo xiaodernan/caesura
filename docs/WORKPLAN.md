@@ -153,6 +153,7 @@ Phase B4 的三件套此前是"有人听、没人说"。
 | ✅ KI-501 | **缓存防护三件套：击穿 / 穿透 / 雪崩教学件 + 前端控制台贯穿（P8 第九维「缓存合理运用 / 算法 / 数据库性能 / 前端美观 / 前后端协同」；新 `caesura-cache-guard.mjs`：击穿 singleflight+逻辑过期、穿透布隆前置+空值墓碑、雪崩 TTL 抖动削峰，`systems.guards` 三面板前端贯穿，opt-in 挂 status.cacheGuard）**（工程，2026-11-11 已落，详见账本 KI-501） | KI-501 |
 | ✅ KI-502 | **网关限流算法族对照 + Redis 原子令牌桶 + 前端水位面板（P8 第十维「计网知识 / 算法知识 / Redis 运用 / 数据库性能 / 前端美观 / 前后端协同」；新 `caesura-rate-limiter.mjs`：固定窗口/滑动窗口日志/滑动窗口计数/令牌桶/漏桶五算法 + Redis 原子令牌桶跨实例共享与非原子超发对照，`systems.rateLimit` 前端贯穿，opt-in 挂 status.rateLimit）**（工程，2026-11-11 已落，详见账本 KI-502） | KI-502 |
 | ✅ KI-503 | **服务故障检测器：φ 累积风险 + SWIM 三态成员协议 + 健康视图缓存（P8 第十一件「算法 / 计网 / 微服务元素 / 缓存 / 数据库性能 / 前端美观 / 前后端协同」；新 `caesura-failure-detector.mjs`：Welford + erfc 的 φ 自适应判定 + SWIM 间接探测/incarnation 单调/reap + 复用 KI-493 的健康视图 TTL 缓存，固定超时 vs φ 诚实权衡对照，`systems.failureDetector` 前端两面板贯穿，opt-in 挂 status.failureDetector）**（工程，2026-11-11 已落，详见账本 KI-503） | KI-503 |
+| ✅ KI-504 | **B+ 树索引引擎 + 与 LSM 点查/范围查/写放大诚实权衡对照（P8 第十二件「数据库性能 / 数据结构与算法 / 操作系统·缓存行·局部性 / 硬件适配 / 前端美观 / 前后端协同」；新 `caesura-bplus-tree.mjs`：阶数可控扇出决定层高 + 叶子双向链表范围顺序扫 + 分裂/删除再平衡(borrow+merge)，与 KI-496 LSM 三笔账对照——B+ 点查/范围查结构代价稳但写原地改页、LSM 顺序写适配 SSD 但读跨层/范围全量归并/compaction 重复搬运，不封全局赢家；`systems.bplusIndex` 前端两面板贯穿，opt-in 挂 status.bplusIndex）**（工程，2026-11-11 已落，详见账本 KI-504） | KI-504 |
 
 
 

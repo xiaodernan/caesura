@@ -22,6 +22,7 @@ import { createGameCloud } from './caesura-game-cloud.mjs'
 import { cacheGuardStudy } from './caesura-cache-guard.mjs'
 import { rateLimiterStudy, rlSnapshot } from './caesura-rate-limiter.mjs'
 import { failureDetectorStudy, fdSnapshot } from './caesura-failure-detector.mjs'
+import { bplusStudy, bpSnapshot } from './caesura-bplus-tree.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
 export const SCENARIO_IDS = ['main', 'gray', 'resilience', 'cache', 'net']
@@ -76,6 +77,10 @@ export async function buildSnapshot(opts = {}) {
     failureDetector: opts.failureDetector,
     fdStableCount: opts.fdStableCount,
     fdSpikeCount: opts.fdSpikeCount,
+    bplusIndex: opts.bplusIndex,
+    bpKeyCount: opts.bpKeyCount,
+    bpOrder: opts.bpOrder,
+    bpLeafCapacity: opts.bpLeafCapacity,
   })
 
   return {
@@ -100,7 +105,9 @@ export async function buildSnapshot(opts = {}) {
  * Redis 原子桶原子不超发 vs 非原子 GET-SET 超发 + 跨实例共享）；
  * ⑤ 故障检测走 `failureDetectorStudy`（固定超时 vs φ 累积风险：抖动期固定超时误报多、φ 降误报但
  * 真故障检测更慢的诚实权衡 + SWIM 三态成员协议间接探测反证 + 健康视图 TTL 缓存）。
- * 五者都是**真 Node 侧判词的结构计数**、可注入规模、时钟注入 ⇒ 确定性可测；本件不复核、不重算，
+ * ⑥ B+ 树索引走 `bplusStudy`（真 B+ 树点查/叶链范围查 vs LSM 三笔账：B+ 点查/范围结构代价稳但
+ * 写原地改页、LSM 顺序写适配 SSD 但读跨层/范围全量归并/compaction 重复搬运，不封全局赢家）。
+ * 六者都是**真 Node 侧判词的结构计数**、可注入规模、时钟注入 ⇒ 确定性可测；本件不复核、不重算，
  * 缺哪块就落 null，前端据实降级。因击穿对照真跑并发 loader（Promise.all），本件为 async。</p>
  *
  * @param {object} [opts]
@@ -108,7 +115,8 @@ export async function buildSnapshot(opts = {}) {
  * @param {boolean} [opts.guards=false] 关掉缓存防护维（兼容旧快照）
  * @param {boolean} [opts.rateLimit=false] 关掉网关限流维（兼容旧快照）
  * @param {boolean} [opts.failureDetector=false] 关掉故障检测维（兼容旧快照）
- * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, failureDetector:object|null, builtAt:number}>}
+ * @param {boolean} [opts.bplusIndex=false] 关掉 B+ 树索引维（兼容旧快照）
+ * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, failureDetector:object|null, bplusIndex:object|null, builtAt:number}>}
  */
 export async function buildSystems(opts = {}) {
   const now = typeof opts.now === 'function' ? opts.now : () => Date.now()
@@ -121,7 +129,9 @@ export async function buildSystems(opts = {}) {
   const rateLimit = opts.rateLimit === false ? null : await buildRateLimitReading(opts, now)
   // KI-503：第五维「故障检测」真跑固定超时 vs φ 对照 + SWIM 三态 + 健康视图缓存，与其它四维平级、不混入五场景。
   const failureDetector = opts.failureDetector === false ? null : await buildFailureDetectorReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, builtAt: now() }
+  // KI-504：第六维「B+ 树索引」真跑点查比较数/叶链范围查/写放大 vs LSM 三笔账，与其它五维平级、不混入五场景。
+  const bplusIndex = opts.bplusIndex === false ? null : await buildBplusReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, builtAt: now() }
 }
 
 /** LSM 引擎真跑一趟确定性 benchmark，回结构读数（不夹带每行真值）。 */
@@ -316,6 +326,38 @@ export async function buildFailureDetectorReading(opts, now) {
         members: snap.swim.members,
       },
       health: snap.health,
+    }
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
+ * KI-504：真跑 `bplusStudy`（B+ 树 vs LSM 三笔账）并收敛成前端「B+ 树索引」两面板紧凑读数。
+ * 判定/阈值全 Node 侧；注入规模与固定时钟 ⇒ 快照重跑读数逐字一致；层高阶梯是真数学估计、
+ * 三笔账是两引擎真结构计数、agreement 是逐条对账，缺哪块就落 null，前端据实降级。
+ * @param {object} opts { bplusIndex?:false, bpKeyCount?, bpOrder?, bpLeafCapacity? }
+ * @param {()=>number} now 时钟（builtAt 注入则确定性）
+ */
+export async function buildBplusReading(opts, now) {
+  try {
+    const s = bplusStudy({
+      now,
+      keyCount: Math.max(32, Math.floor(Number(opts.bpKeyCount ?? 512))),
+      order: opts.bpOrder ? Math.floor(Number(opts.bpOrder)) : undefined,
+      leafCapacity: opts.bpLeafCapacity ? Math.floor(Number(opts.bpLeafCapacity)) : undefined,
+    })
+    const snap = bpSnapshot(s)
+    // 收敛成前端友好形状（浮点与前端展示口径一致，不动 Node 侧判词）。
+    return {
+      config: snap.config,
+      structure: snap.structure,
+      point: snap.point,
+      range: snap.range,
+      write: snap.write,
+      levels: snap.levels,
+      agreement: snap.agreement,
+      verdict: snap.verdict,
     }
   } catch (e) {
     return null // 缺哪块就落 null，前端据实降级；不编造假数
@@ -534,6 +576,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     if (snap.systems?.guards) console.log(`[console] guards: stampede ${snap.systems.guards.stampede.naiveLoads}→${snap.systems.guards.stampede.singleflightLoads} 回源 / penetration 布隆省 ${((snap.systems.guards.penetration.bloomSavedRate ?? 0) * 100).toFixed(0)}% / avalanche 削峰 ${((snap.systems.guards.avalanche.peakReduction ?? 0) * 100).toFixed(0)}%`)
     if (snap.systems?.rateLimit) console.log(`[console] rateLimit: fixedWindow burst×${snap.systems.rateLimit.strategies.fixedWindow.burstRatio ?? '—'} / sliding burst×${snap.systems.rateLimit.strategies.slidingLog.burstRatio ?? '—'} / Redis 原子 ${snap.systems.rateLimit.redis.atomicAllowed} vs 非原子 ${snap.systems.rateLimit.redis.nonAtomicAllowed}（超发 ${snap.systems.rateLimit.redis.overshoot}）`)
     if (snap.systems?.failureDetector) console.log(`[console] failureDetector: 抖动误报 固定 ${snap.systems.failureDetector.fixed.falsePositives} vs φ ${snap.systems.failureDetector.phi.falsePositives} / 真故障检出 固定 ${snap.systems.failureDetector.fixed.detectionLatencyMs}ms vs φ ${snap.systems.failureDetector.phi.detectionLatencyMs}ms / SWIM 间接救回 ${snap.systems.failureDetector.swim.indirectRescues}`)
+    if (snap.systems?.bplusIndex) console.log(`[console] bplusIndex: B+ 高 ${snap.systems.bplusIndex.structure.height} 层(估 ${snap.systems.bplusIndex.structure.heightEstimate})/叶 ${snap.systems.bplusIndex.structure.leafCount} / 点查比较 B+ ${snap.systems.bplusIndex.point.bplusComparisons} vs LSM ${snap.systems.bplusIndex.point.lsmComparisons}(${snap.systems.bplusIndex.point.favors}) / 写放大 B+ ${snap.systems.bplusIndex.write.bplusPageRewrites} vs LSM ${snap.systems.bplusIndex.write.lsmSeqWriteUnits}(${snap.systems.bplusIndex.write.favors}) / 对账 ${snap.systems.bplusIndex.agreement.bothAgree ? '一致' : '分叉'}`)
     process.exit(0)
   }).catch((e) => { console.error(`[console] 生成失败：${e.message}`); process.exit(1) })
 }

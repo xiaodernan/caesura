@@ -58,5 +58,17 @@ export function runMeshE2E(opts?: any): {
       health: { nodes: string[]; excluded: string[]; firstFromCache: boolean; secondFromCache: boolean; thirdFromCache: boolean; computed: number; invalidations: number; hitRate: number | null; ttlMs: number }
       builtAt: number
     } | null
+    /** KI-504：B+ 树索引 + LSM 三笔账快照（点查比较数 / 范围叶链顺序扫 / 写放大对照），未配 bplusIndex 为 null */
+    bplusIndexSnapshot: {
+      config: { keys: number; probes: number; rangeQueries: number; order: number; fanout: number; leafCapacity: number; overwriteEvery: number; lsmMemtableMax: number }
+      structure: { height: number; heightEstimate: number; leafCount: number; nodeCount: number; order: number; fanout: number; invariants: number; heightLadder: Array<{ order: number; fanout: number; heightEstimate: number }> }
+      point: { bplusComparisons: number; lsmComparisons: number; favors: 'bplus' | 'lsm' | 'tie' }
+      range: { bplusCost: number; lsmCost: number; bplusLeafHops: number; bplusResults: number; lsmSegments: number; lsmSortComparisons: number; lsmResults: number; favors: 'bplus' | 'lsm' | 'tie' }
+      write: { bplusPageRewrites: number; bplusSplits: number; bplusMerges: number; bplusBorrows: number; lsmSeqWriteUnits: number; lsmFlushes: number; lsmCompactions: number; lsmMergedAway: number; favors: 'bplus' | 'lsm' | 'tie' }
+      levels: Array<{ level: number; segments: number; entries: number }>
+      agreement: { pointMismatches: number; rangeMismatches: number; bothAgree: boolean }
+      verdict: Record<string, boolean | string>
+      builtAt: number
+    } | null
   }>
 }

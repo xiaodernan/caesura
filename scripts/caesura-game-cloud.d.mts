@@ -57,6 +57,12 @@ export interface GameCloudOptions {
    * 或直接塞一只现成 study（带 comparison/swim/health 三块）。 */
   failureDetector?: boolean | Record<string, any> | { comparison: any; swim: any; health: any; [k: string]: any }
   fdNow?: () => number
+  /** KI-504：B+ 树索引引擎 + 与 LSM 三笔账诚实对照。true 用缺省规模；
+   * 对象逐项注入（keyCount/order/leafCapacity/overwriteEvery/probeEvery/rangeFractions/rangeWidth/
+   * extraMissKeys/lsmMemtableMax/lsmLevelMultiplier/lsmIndexEvery/lsmBitsPerKey/lcgSeed/heightLadder/...），
+   * 或直接塞一只现成 study（带 comparison/heightLadder/verdict 三块）。 */
+  bplusIndex?: boolean | Record<string, any> | { comparison: any; heightLadder: any[]; verdict: any; [k: string]: any }
+  bpNow?: () => number
 }
 
 /** 创建一只游戏侧开箱即用云。 */
@@ -85,6 +91,8 @@ export function createGameCloud(opts?: GameCloudOptions): {
   runRateLimiterStudy: (() => Promise<any>) | null
   /** KI-503：服务故障检测器汇总的现算入口（未配 opts.failureDetector 时为 null）；真跑固定 vs φ 对照 + SWIM + 健康视图。 */
   runFailureDetectorStudy: (() => Promise<any>) | null
+  /** KI-504：B+ 树索引引擎 + LSM 三笔账汇总的现算入口（未配 opts.bplusIndex 时为 null）；真跑点查比较数 / 范围叶链顺序扫 / 写放大对照。 */
+  runBplusStudy: (() => Promise<any>) | null
   /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）。 */
   gray: any
   /** KI-489：把游戏真 EventBus（duck-typed {on,emit}）按白名单接进云事件总线。 */

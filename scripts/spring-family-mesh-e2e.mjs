@@ -81,6 +81,9 @@ export function runMeshE2E(opts = {}) {
     // KI-503：服务故障检测器（failureDetector=true 装配；只读固定超时 vs φ 对照 + SWIM 三态 + 健康视图缓存证据，不改调用路径）。
     failureDetector: opts.failureDetector,
     fdNow: opts.fdNow,
+    // KI-504：B+ 树索引引擎 + LSM 三笔账（bplusIndex=true 装配；只读点查比较数/范围叶链顺序扫/写放大对照证据，不改调用路径）。
+    bplusIndex: opts.bplusIndex,
+    bpNow: opts.bpNow,
     sources: {
       eureka: () => (opts.svcA ?? [{ id: 'svc-a:1', name: 'svc-a', address: '10.0.0.1', port: 8080, healthy: true }]),
       k8s: () => k8s.discover('caesura-gate'),
@@ -206,6 +209,7 @@ export function runMeshE2E(opts = {}) {
         cacheGuardSnapshot: status.cacheGuard ?? null,
         rateLimitSnapshot: status.rateLimit ?? null,
         failureDetectorSnapshot: status.failureDetector ?? null,
+        bplusIndexSnapshot: status.bplusIndex ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
       }
@@ -252,6 +256,22 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         verdict: r.failureDetectorSnapshot.verdict,
         swim: r.failureDetectorSnapshot.swim.counts,
         healthNodes: r.failureDetectorSnapshot.health.nodes,
+      } : null,
+      bplusIndex: r.bplusIndexSnapshot ? {
+        bplusHeight: r.bplusIndexSnapshot.structure.height,
+        bplusHeightEstimate: r.bplusIndexSnapshot.structure.heightEstimate,
+        leafCount: r.bplusIndexSnapshot.structure.leafCount,
+        fanout: r.bplusIndexSnapshot.structure.fanout,
+        invariants: r.bplusIndexSnapshot.structure.invariants,
+        pointFavors: r.bplusIndexSnapshot.point.favors,
+        bplusPointComparisons: r.bplusIndexSnapshot.point.bplusComparisons,
+        lsmPointComparisons: r.bplusIndexSnapshot.point.lsmComparisons,
+        rangeFavors: r.bplusIndexSnapshot.range.favors,
+        writeFavors: r.bplusIndexSnapshot.write.favors,
+        bplusPageRewrites: r.bplusIndexSnapshot.write.bplusPageRewrites,
+        lsmSeqWriteUnits: r.bplusIndexSnapshot.write.lsmSeqWriteUnits,
+        bothAgree: r.bplusIndexSnapshot.agreement.bothAgree,
+        verdict: r.bplusIndexSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

@@ -192,6 +192,22 @@
       <p class="note" id="fd-swim-note">—</p>
     </article>
   </section>
+
+  <!-- B+ 树索引（KI-504 前后端协同：真 B+ 树层高/扇出/叶链范围查 vs LSM 三笔账诚实权衡对照） -->
+  <section class="row row-bplus">
+    <article class="panel panel-bp">
+      <div class="panel-head"><h2>B+ 树 · 层高与扇出</h2><span class="hint">数据只在叶 · 叶子双向链 · 扇出决定层高</span></div>
+      <div class="bp-structure" id="bp-structure"></div>
+      <div class="bp-ladder" id="bp-ladder"></div>
+      <p class="note" id="bp-structure-note">—</p>
+    </article>
+    <article class="panel panel-bp">
+      <div class="panel-head"><h2>B+ 树 vs LSM · 三笔账</h2><span class="hint">点查比较 / 范围归并 / 写放大 · 不封全局赢家</span></div>
+      <div class="bp-compare" id="bp-compare"></div>
+      <div class="bp-agreement" id="bp-agreement"></div>
+      <p class="note" id="bp-compare-note">—</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">

@@ -436,4 +436,49 @@ describe('caesura-game-cloud', () => {
     // 主链语义逐字不动
     expect(st.eventChannel).toBeTruthy()
   })
+
+  it('bplusIndex:true ⇒ 装配 B+ 树对照、status.bplusIndex 读真三笔账证据、惰性同引用（KI-504）', async () => {
+    const gc = createGameCloud({
+      gameId: 'gbp1', gamePort: 7716, sources, cloud: fakeCloud(),
+      bplusIndex: { keyCount: 256, order: 8, leafCapacity: 8 }, bpNow: () => 8888,
+    })
+    expect(gc.runBplusStudy).toBeTypeOf('function')
+    const st = await gc.status()
+    expect(st.bplusIndex.builtAt).toBe(8888)
+    expect(st.bplusIndex.structure.invariants).toBe(0) // 真 B+ 树不变式全过
+    expect(st.bplusIndex.structure.height).toBeGreaterThanOrEqual(2)
+    expect(st.bplusIndex.agreement.bothAgree).toBe(true) // 与 LSM 答案逐条一致
+    expect(st.bplusIndex.point.bplusComparisons).toBeGreaterThan(0)
+    expect(st.bplusIndex.point.lsmComparisons).toBeGreaterThan(0)
+    expect(st.bplusIndex.range.lsmSortComparisons).toBeGreaterThan(0)
+    expect(st.bplusIndex.write.bplusPageRewrites).toBeGreaterThan(0)
+    expect(st.bplusIndex.write.lsmSeqWriteUnits).toBeGreaterThan(0)
+    expect(st.bplusIndex.verdict.noUniversalWinner).toBe(true)
+    expect(st.bplusIndex.structure.heightLadder.length).toBeGreaterThan(0)
+    // 惰性缓存：二次 status 同引用，不反复跑对照
+    expect((await gc.status()).bplusIndex).toBe(st.bplusIndex)
+    // 现算入口可重跑、确定性（同注入 now）
+    const rerun = await gc.runBplusStudy!()
+    expect(rerun.verdict).toEqual(st.bplusIndex.verdict)
+  })
+
+  it('bplusIndex 默认 null 非破坏；可注入现成 study（KI-504）', async () => {
+    const plain = createGameCloud({ gameId: 'gbp2', gamePort: 7717, sources, cloud: fakeCloud() })
+    expect(plain.runBplusStudy).toBe(null)
+    const ps = await plain.status()
+    expect(ps.bplusIndex).toBe(null)
+    expect(ps.failureDetector).toBe(null)
+    // 注入现成 study：直接用、不重跑，builtAt 原样带出。
+    const { bplusStudy } = await import('../../scripts/caesura-bplus-tree.mjs')
+    const study = bplusStudy({ keyCount: 64, now: () => 321 })
+    const injected = createGameCloud({
+      gameId: 'gbp3', gamePort: 7718, sources, cloud: fakeCloud(),
+      bplusIndex: study, bpNow: () => 999,
+    })
+    const st = await injected.status()
+    expect(st.bplusIndex.builtAt).toBe(321) // 注入 study 的 builtAt，不被 bpNow 覆盖
+    expect(st.bplusIndex.agreement.bothAgree).toBe(true)
+    // 主链语义逐字不动
+    expect(st.eventChannel).toBeTruthy()
+  })
 })

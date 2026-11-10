@@ -26,6 +26,7 @@ import { createShardedCache, compareHitRetention } from './caesura-sharded-cache
 import { cacheGuardStudy, guardSnapshot } from './caesura-cache-guard.mjs'
 import { rateLimiterStudy, rlSnapshot } from './caesura-rate-limiter.mjs'
 import { failureDetectorStudy, fdSnapshot } from './caesura-failure-detector.mjs'
+import { bplusStudy, bpSnapshot } from './caesura-bplus-tree.mjs'
 import {
   createAimdCongestion,
   createCubicCongestion,
@@ -299,6 +300,26 @@ export function createGameCloud(opts = {}) {
     return fdCached
   }
 
+  // KI-504：B+ 树索引引擎 + 与 LSM 三笔账诚实对照（opt-in）。opts.bplusIndex===true 用缺省规模建；
+  // 传对象逐项注入（keyCount/order/leafCapacity/overwriteEvery/lsmMemtableMax/heightLadder/...），
+  // 或直接塞一只现成 study（duck-typed：带 comparison/heightLadder/verdict 三块）。B+ 点查比较数 /
+  // 范围叶链顺序扫 / 写放大 vs LSM 顺序追加+compaction 的结构计数对照。默认 bplusIndex:false 不装配、
+  // 不改任何调用路径（KI-486/493/496/501/502/503 语义逐字不动）。
+  const bpCfg = opts.bplusIndex === true ? {} : (opts.bplusIndex && typeof opts.bplusIndex === 'object' ? opts.bplusIndex : null)
+  const bpInjected = bpCfg !== null && opts.bplusIndex &&
+    typeof opts.bplusIndex === 'object' && typeof opts.bplusIndex.comparison === 'object'
+  let bpCached = null
+  async function bpSnapshotForStatus() {
+    if (bpCfg === null) return null
+    if (bpCached) return bpCached
+    // 注入现成 study 直接用（不重跑）；否则真跑一次汇总，惰性缓存不反复付对照成本。
+    const study = bpInjected
+      ? opts.bplusIndex
+      : await bplusStudy({ ...bpCfg, now: opts.bpNow ?? bpCfg.now })
+    bpCached = bpSnapshot(study)
+    return bpCached
+  }
+
   /** 包住一次调用，用真实耗时/成败喂 net 包（未启用则原样返回，零开销）。 */
   async function observeCall(promise) {
     if (!net) return promise
@@ -347,6 +368,8 @@ export function createGameCloud(opts = {}) {
     runRateLimiterStudy: rlCfg === null ? null : () => rateLimiterStudy({ ...rlCfg, now: opts.rlNow ?? rlCfg.now }),
     /** KI-503：服务故障检测器汇总的现算入口（未配 opts.failureDetector 时为 null）；调一次真跑固定超时 vs φ 对照 + SWIM 脚本 + 健康视图读数。 */
     runFailureDetectorStudy: fdCfg === null ? null : () => failureDetectorStudy({ ...fdCfg, now: opts.fdNow ?? fdCfg.now }),
+    /** KI-504：B+ 树索引引擎 + LSM 三笔账汇总的现算入口（未配 opts.bplusIndex 时为 null）；调一次真跑点查比较数 / 范围叶链顺序扫 / 写放大对照。 */
+    runBplusStudy: bpCfg === null ? null : () => bplusStudy({ ...bpCfg, now: opts.bpNow ?? bpCfg.now }),
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
     gray: runtime.gray,
     /** 把游戏真 EventBus 按白名单routes 接进云事件总线（游戏侧一行：gc.connectGameBus(bus, routes)）。 */
@@ -382,6 +405,7 @@ export function createGameCloud(opts = {}) {
         cacheGuard: await guardSnapshotForStatus(),
         rateLimit: await rlSnapshotForStatus(),
         failureDetector: await fdSnapshotForStatus(),
+        bplusIndex: await bpSnapshotForStatus(),
       }
     },
   }

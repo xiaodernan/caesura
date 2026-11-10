@@ -43,6 +43,7 @@
       renderGuards(snap.systems ? snap.systems.guards : null)
       renderRateLimit(snap.systems ? snap.systems.rateLimit : null)
       renderFailureDetector(snap.systems ? snap.systems.failureDetector : null)
+      renderBplus(snap.systems ? snap.systems.bplusIndex : null)
       setLive(true, result.source)
     }).catch(function (e) {
       setLive(false, 'error')
@@ -744,6 +745,101 @@
       '<span><i class="dot inv"></i>' + esc(fmt(h.invalidations)) + ' 次主动失效</span>' +
       '<span>命中率 ' + esc(fmt(h.hitRate == null ? null : h.hitRate * 100, 0)) + '%</span>' +
       '<span>TTL ' + esc(fmt(h.ttlMs)) + 'ms</span></div>'
+  }
+
+  /* ---------- KI-504 B+ 树索引：真 B+ 树层高/扇出/叶链 vs LSM 三笔账诚实对照 ----------
+   * 只读 systems.bplusIndex（node 侧真结构计数），前端不判定、不复核、不实测。
+   * 缺字段 ⇒ 诚实降级、不画假条；三笔账 favors 各按其真读数上色，不封全局赢家。 */
+  function renderBplus(bp) {
+    renderBpStructure(bp && bp.structure)
+    renderBpLadder(bp && bp.structure && bp.structure.heightLadder)
+    renderBpCompare(bp)
+    renderBpAgreement(bp && bp.agreement, bp && bp.verdict)
+  }
+
+  function bpMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">无' + esc(label) + '读数</div>'
+    if (note) note.textContent = 'systems.bplusIndex 缺失 —— 重跑 npm run console:data 采集真判词'
+  }
+
+  // 面板一主读数：实测层高（+ 教学估计）/ 扇出 / 叶子数 / 不变式违例数（0 = 真 B+ 树）。
+  function renderBpStructure(st) {
+    var box = $('#bp-structure'), note = $('#bp-structure-note')
+    if (!st || !isNum(st.height) || !isNum(st.fanout)) { bpMissing(box, note, 'B+ 树结构'); return }
+    var ok = st.invariants === 0
+    box.innerHTML =
+      '<div class="bp-hero">' +
+      '<span class="big" data-h="' + esc(fmt(st.height)) + '">' + esc(fmt(st.height)) + '</span><span class="unit">层实测高</span>' +
+      '<span class="big gold" data-est="' + esc(fmt(st.heightEstimate)) + '">' + esc(fmt(st.heightEstimate)) + '</span><span class="unit">层稳态估</span>' +
+      '<span class="big jade" data-leaves="' + esc(fmt(st.leafCount)) + '">' + esc(fmt(st.leafCount)) + '</span><span class="unit">叶节点</span>' +
+      '<span class="cap">扇出 <b>' + esc(fmt(st.fanout)) + '</b> · 阶 ' + esc(fmt(st.order)) +
+      ' · 节点 <b>' + esc(fmt(st.nodeCount)) + '</b><br>不变式违例 <b class="' + (ok ? 'jade-t' : 'wine-t') + '">' +
+      esc(fmt(st.invariants)) + '</b> ' + (ok ? '✓ 真 B+ 树' : '✗ 结构异常') + '</span></div>'
+    note.textContent = '数据只住叶子、叶子用双向链串起；内节点只存分隔键与孩子指针，扇出 ' + esc(fmt(st.fanout)) +
+      ' 决定层高（越矮胖、点查访问的节点越少）。「稳态估」按 mid 分裂半填充算，与实测并排、差 ±1 属正常；' +
+      '不变式校验钉住「所有叶同深 / 分隔键=右孩最小 / 叶链双向 / 全局递增」。纯进程内、无真磁盘页与缓冲池。'
+  }
+
+  // 层高阶梯：order 越大扇出越高、层高不增（真数学估计，非画假线）。
+  function renderBpLadder(ladder) {
+    var box = $('#bp-ladder')
+    if (!Array.isArray(ladder) || !ladder.length) { bpMissing(box, null, '层高阶梯'); return }
+    var max = Math.max.apply(null, ladder.map(function (r) { return isNum(r.heightEstimate) ? r.heightEstimate : 0 }).concat([1]))
+    var rows = ladder.map(function (r) {
+      var w = Math.round((isNum(r.heightEstimate) ? r.heightEstimate : 0) / max * 100)
+      return '<div class="bp-ladder-row" data-order="' + esc(fmt(r.order)) + '" data-h="' + esc(fmt(r.heightEstimate)) + '">' +
+        '<span class="lab">阶 ' + esc(fmt(r.order)) + ' <small>扇出 ' + esc(fmt(r.fanout)) + '</small></span>' +
+        '<span class="track"><i class="fill" style="width:' + w + '%" data-w="' + w + '"></i></span>' +
+        '<span class="num">' + esc(fmt(r.heightEstimate)) + ' 层</span></div>'
+    }).join('')
+    box.innerHTML = '<div class="title">同一批 key · 阶数（扇出）越大层高不增</div>' + rows
+  }
+
+  // 三笔账：点查比较数 / 范围结构代价 / 写放大模型。只画两侧真计数 + favors 上色，不封全局赢家。
+  function renderBpCompare(bp) {
+    var box = $('#bp-compare'), note = $('#bp-compare-note')
+    if (!bp || !bp.point || !bp.range || !bp.write) { bpMissing(box, note, '三笔账对照'); return }
+    var favorsCls = function (f) { return f === 'bplus' ? 'bplus' : (f === 'lsm' ? 'lsm' : 'tie') }
+    var favorsTxt = function (f) { return f === 'bplus' ? 'B+ 更省' : (f === 'lsm' ? 'LSM 更省' : '持平') }
+    var pair = function (key, label, bv, lv, favors, unit) {
+      var b = isNum(bv) ? bv : 0, l = isNum(lv) ? lv : 0
+      var m = Math.max(b, l, 1)
+      var bw = Math.round(b / m * 100), lw = Math.round(l / m * 100)
+      return '<div class="bp-pair" data-key="' + esc(key) + '" data-favors="' + esc(favors) + '">' +
+        '<div class="bp-pair-head"><span class="lab">' + esc(label) + '</span>' +
+        '<span class="favors ' + favorsCls(favors) + '">' + esc(favorsTxt(favors)) + '</span></div>' +
+        '<div class="bp-bar"><span class="tag">B+</span><span class="track"><i class="fill bplus" style="width:' + bw + '%" data-w="' + bw + '"></i></span><span class="num">' + esc(fmt(bv)) + '</span></div>' +
+        '<div class="bp-bar"><span class="tag">LSM</span><span class="track"><i class="fill lsm" style="width:' + lw + '%" data-w="' + lw + '"></i></span><span class="num">' + esc(fmt(lv)) + '</span></div>' +
+        (unit ? '<div class="bp-unit">' + esc(unit) + '</div>' : '') + '</div>'
+    }
+    var v = bp.verdict || {}
+    box.innerHTML =
+      pair('point', '点查 · 比较数', bp.point.bplusComparisons, bp.point.lsmComparisons, bp.point.favors,
+        'B+ 层高二分 vs LSM memtable 跳表 + 多层 SSTable 稀疏索引 + Bloom 负查') +
+      pair('range', '范围查 · 结构代价', bp.range.bplusCost, bp.range.lsmCost, bp.range.favors,
+        'B+ 沿叶链顺序扫（叶跳 ' + fmt(bp.range.bplusLeafHops) + '）vs LSM 跨 ' + fmt(bp.range.lsmSegments) +
+        ' 段收集 + 全量排序（' + fmt(bp.range.lsmSortComparisons) + ' 比较）') +
+      pair('write', '写放大 · 模型', bp.write.bplusPageRewrites, bp.write.lsmSeqWriteUnits, bp.write.favors,
+        'B+ 原地改页重排（分裂 ' + fmt(bp.write.bplusSplits) + ' / 并 ' + fmt(bp.write.bplusMerges) +
+        ' / 借 ' + fmt(bp.write.bplusBorrows) + '）vs LSM 顺序追加 + compaction（归 ' + fmt(bp.write.lsmMergedAway) + '）') +
+      '<div class="bp-verdict">' +
+      '<span class="' + (v.noUniversalWinner ? 'jade-t' : 'muted-t') + '">' + (v.noUniversalWinner ? '✓ 三维未归一引擎全拿' : '本配置下三维同向（换 order/段数会翻）') + '</span>' +
+      '<span>B+ 顺序扫 ' + (v.bplusRangeIsSequential ? '✓' : '✗') + ' · LSM 归并排序 ' + (v.lsmRangeNeedsMergeSort ? '✓' : '✗') + '</span></div>'
+    note.textContent = '三笔账都是结构计数模型（比较数 / 叶跳 / 分裂归并次数 / 顺序写单元），非墙钟 QPS、' +
+      '字节吞吐或真实引擎跑分；两件都是教学实现（LSM 范围查是收集排序非归并堆）。判词如实给「B+ 点查/范围查稳但写原地改页、' +
+      'LSM 顺序写适配 SSD 但读跨层/范围全量归并/compaction 重复搬运」，不封全局赢家、结论随 key 分布/阶数/段数变。'
+  }
+
+  // 正确性对账：两引擎在同批 key 上的 get/range 逐条一致——这是性能对照成立的前提。
+  function renderBpAgreement(ag, verdict) {
+    var box = $('#bp-agreement')
+    if (!ag || !isNum(ag.pointMismatches) || !isNum(ag.rangeMismatches)) { bpMissing(box, null, '正确性对账'); return }
+    var ok = ag.bothAgree === true
+    box.innerHTML = '<div class="bp-agree-row" data-agree="' + (ok ? 'true' : 'false') + '">' +
+      '<i class="dot ' + (ok ? 'hit' : 'miss') + '"></i>' +
+      '<span class="lab">同批 key 答案逐条对账</span>' +
+      '<span class="num">点查分叉 <b>' + esc(fmt(ag.pointMismatches)) + '</b> · 范围分叉 <b>' + esc(fmt(ag.rangeMismatches)) + '</b></span>' +
+      '<span class="stamp ' + (ok ? 'jade-t' : 'wine-t') + '">' + (ok ? '✓ 一致 · 对照成立' : '✗ 分叉 · 性能读数不作数') + '</span></div>'
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)

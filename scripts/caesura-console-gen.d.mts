@@ -125,13 +125,26 @@ export interface FailureDetectorReading {
   health: { nodes: string[]; excluded: string[]; firstFromCache: boolean; secondFromCache: boolean; thirdFromCache: boolean; computed: number; invalidations: number; hitRate: number | null; ttlMs: number }
 }
 
-/** KI-498 + KI-501 + KI-502 + KI-503：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测）。 */
+/** KI-504：B+ 树索引读数（真 B+ 树 vs LSM 三笔账：点查比较数 / 范围叶链顺序扫 / 写放大 + 正确性对账）。 */
+export interface BplusReading {
+  config: { keys: number; probes: number; rangeQueries: number; order: number; fanout: number; leafCapacity: number; overwriteEvery: number; lsmMemtableMax: number }
+  structure: { height: number; heightEstimate: number; leafCount: number; nodeCount: number; order: number; fanout: number; invariants: number; heightLadder: Array<{ order: number; fanout: number; heightEstimate: number }> }
+  point: { bplusComparisons: number; lsmComparisons: number; favors: 'bplus' | 'lsm' | 'tie' }
+  range: { bplusCost: number; lsmCost: number; bplusLeafHops: number; bplusResults: number; lsmSegments: number; lsmSortComparisons: number; lsmResults: number; favors: 'bplus' | 'lsm' | 'tie' }
+  write: { bplusPageRewrites: number; bplusSplits: number; bplusMerges: number; bplusBorrows: number; lsmSeqWriteUnits: number; lsmFlushes: number; lsmCompactions: number; lsmMergedAway: number; favors: 'bplus' | 'lsm' | 'tie' }
+  levels: Array<{ level: number; segments: number; entries: number }>
+  agreement: { pointMismatches: number; rangeMismatches: number; bothAgree: boolean }
+  verdict: Record<string, boolean | string>
+}
+
+/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引）。 */
 export interface SystemsBlock {
   lsm: LsmReading | null
   hw: HwReading | null
   guards: GuardsReading | null
   rateLimit: RateLimitReading | null
   failureDetector: FailureDetectorReading | null
+  bplusIndex: BplusReading | null
   builtAt: number
 }
 
@@ -172,9 +185,14 @@ export function buildSnapshot(opts?: {
   failureDetector?: boolean
   fdStableCount?: number
   fdSpikeCount?: number
+  /** KI-504：false 关掉 B+ 树索引维（兼容旧快照）；bpKeyCount/bpOrder/bpLeafCapacity 注入规模。 */
+  bplusIndex?: boolean
+  bpKeyCount?: number
+  bpOrder?: number
+  bpLeafCapacity?: number
 }): Promise<ConsoleSnapshot>
 
-/** KI-498 + KI-501 + KI-502 + KI-503：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测五维系统读数；击穿并发 ⇒ async。 */
+/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引六维系统读数；击穿并发 ⇒ async。 */
 export function buildSystems(opts?: {
   now?: () => number
   lsmKeys?: number
@@ -190,6 +208,10 @@ export function buildSystems(opts?: {
   failureDetector?: boolean
   fdStableCount?: number
   fdSpikeCount?: number
+  bplusIndex?: boolean
+  bpKeyCount?: number
+  bpOrder?: number
+  bpLeafCapacity?: number
 }): Promise<SystemsBlock>
 
 /** KI-501：真跑缓存防护三件套（击穿/穿透/雪崩）收敛成前端三面板紧凑读数；单维失败落 null。 */
@@ -216,6 +238,15 @@ export function buildFailureDetectorReading(opts: {
   fdStableCount?: number
   fdSpikeCount?: number
 }, now: () => number): Promise<FailureDetectorReading | null>
+
+/** KI-504：真跑 B+ 树索引（真 B+ 树 vs LSM 三笔账 + 正确性对账）收敛成前端两面板紧凑读数；失败落 null。 */
+export function buildBplusReading(opts: {
+  now?: () => number
+  bplusIndex?: boolean
+  bpKeyCount?: number
+  bpOrder?: number
+  bpLeafCapacity?: number
+}, now: () => number): Promise<BplusReading | null>
 
 export function realScenarioOpts(id: string): Record<string, any>
 

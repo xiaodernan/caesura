@@ -437,6 +437,62 @@ main { padding: clamp(18px, 3vw, 40px) clamp(18px, 4vw, 56px) 48px; max-width: 1
 .nodata { color: var(--muted); font-family: var(--mono); font-size: 11px; padding: 12px 0; }
 .nodata::before { content: "◇ "; color: var(--gold-dim); }
 
+/* ---------- KI-504 B+ 树索引：层高/扇出 + 三笔账诚实对照 ---------- */
+.row-bplus { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 1020px) { .row-bplus { grid-template-columns: 1fr; } }
+
+/* 面板一主读数 */
+.bp-hero { display: flex; align-items: baseline; gap: 8px; padding: 10px 0 12px; border-bottom: 1px solid var(--line-soft); }
+.bp-hero .big { font-family: var(--mono); font-size: 38px; line-height: 1; color: var(--wine); font-variant-numeric: tabular-nums; text-shadow: 0 0 16px rgba(125,51,64,.28); }
+.bp-hero .big.gold { color: var(--gold); text-shadow: 0 0 16px rgba(201,180,88,.24); }
+.bp-hero .big.jade { color: var(--jade); text-shadow: 0 0 16px rgba(79,155,134,.24); }
+.bp-hero .unit { font-family: var(--mono); font-size: 12px; color: var(--gold-dim); }
+.bp-hero .cap { margin-left: auto; font-size: 10px; color: var(--muted); letter-spacing: .05em; text-align: right; line-height: 1.5; }
+.bp-hero .cap b { color: #e2dcc8; font-family: var(--mono); font-weight: 500; }
+.jade-t { color: var(--jade) !important; }
+.wine-t { color: var(--wine) !important; }
+.muted-t { color: var(--muted) !important; }
+
+/* 层高阶梯：阶数越大条越短 */
+.bp-ladder { display: flex; flex-direction: column; gap: 5px; padding: 12px 0 2px; }
+.bp-ladder .title, .bp-pair .bp-unit { font-family: var(--mono); font-size: 10px; color: var(--gold-dim); letter-spacing: .05em; }
+.bp-ladder-row { display: grid; grid-template-columns: 92px 1fr 42px; align-items: center; gap: 8px; font-family: var(--mono); font-size: 10px; }
+.bp-ladder-row .lab { color: var(--muted); }
+.bp-ladder-row .lab small { color: var(--gold-dim); }
+.bp-ladder-row .track { height: 8px; background: var(--ash-2); border: 1px solid var(--line-soft); position: relative; overflow: hidden; }
+.bp-ladder-row .fill { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, #7d3340, var(--wine)); transition: width 1s cubic-bezier(.2,.8,.2,1); }
+.bp-ladder-row .num { text-align: right; color: #e8e3d3; font-variant-numeric: tabular-nums; }
+
+/* 三笔账对照：每维两条（B+ / LSM）真计数 */
+.bp-compare { display: flex; flex-direction: column; gap: 12px; padding: 10px 0 2px; }
+.bp-pair { border-top: 1px solid var(--line-soft); padding-top: 8px; }
+.bp-pair-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+.bp-pair-head .lab { font-family: var(--serif); font-size: 12px; color: #e2dcc8; letter-spacing: .04em; }
+.bp-pair-head .favors { font-family: var(--mono); font-size: 9.5px; padding: 2px 7px; border: 1px solid var(--line-soft); }
+.bp-pair-head .favors.bplus { color: var(--wine); border-color: rgba(125,51,64,.4); background: var(--wine-dim); }
+.bp-pair-head .favors.lsm { color: var(--jade); border-color: rgba(79,155,134,.4); background: var(--jade-dim); }
+.bp-pair-head .favors.tie { color: var(--gold-dim); }
+.bp-bar { display: grid; grid-template-columns: 30px 1fr 56px; align-items: center; gap: 7px; font-family: var(--mono); font-size: 10px; margin: 3px 0; }
+.bp-bar .tag { color: var(--muted); }
+.bp-bar .track { height: 9px; background: var(--ash-2); border: 1px solid var(--line-soft); position: relative; overflow: hidden; }
+.bp-bar .fill { position: absolute; inset: 0 auto 0 0; transition: width 1s cubic-bezier(.2,.8,.2,1); }
+.bp-bar .fill.bplus { background: linear-gradient(90deg, #7d3340, var(--wine)); }
+.bp-bar .fill.lsm { background: linear-gradient(90deg, #356b5d, var(--jade)); }
+.bp-bar .num { text-align: right; color: #e8e3d3; font-variant-numeric: tabular-nums; }
+.bp-pair .bp-unit { color: var(--muted); line-height: 1.45; padding: 3px 0 0 37px; }
+.bp-verdict { display: flex; flex-direction: column; gap: 3px; font-family: var(--mono); font-size: 10px; color: var(--muted); padding-top: 10px; margin-top: 4px; border-top: 1px solid var(--line-soft); }
+
+/* 正确性对账 */
+.bp-agreement { padding-top: 10px; margin-top: 8px; border-top: 1px solid var(--line-soft); }
+.bp-agree-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-family: var(--mono); font-size: 10px; }
+.bp-agree-row .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; }
+.bp-agree-row .dot.hit { background: var(--jade); box-shadow: 0 0 8px rgba(79,155,134,.5); }
+.bp-agree-row .dot.miss { background: var(--wine); }
+.bp-agree-row .lab { color: #e2dcc8; }
+.bp-agree-row .num { color: var(--muted); }
+.bp-agree-row .num b { color: #e8e3d3; font-weight: 500; }
+.bp-agree-row .stamp { margin-left: auto; }
+
 /* ---------- 页脚 ---------- */
 .footer {
   display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;

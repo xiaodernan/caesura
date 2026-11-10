@@ -349,4 +349,33 @@ describe('spring-family-mesh-e2e', () => {
     const plain = await runMeshE2E().run()
     expect(plain.failureDetectorSnapshot).toBe(null)
   })
+
+  it('e2e KI-504：bplusIndex=true ⇒ 主链照常跑通，bplusIndexSnapshot 带点查/范围/写放大三笔账 + 正确性对账证据', async () => {
+    const e = runMeshE2E({ bplusIndex: { keyCount: 256, order: 8, leafCapacity: 8 }, bpNow: () => 9999 })
+    const r = await e.run()
+    // 主链非破坏：注册/调用/关停都照常。
+    expect(r.started?.registered).toBe(true)
+    expect(r.callRes?.ok).toBe(true)
+    expect(r.stopped?.registered).toBe(false)
+    const g = r.bplusIndexSnapshot
+    expect(g).toBeTruthy()
+    expect(g!.builtAt).toBe(9999)
+    // 真 B+ 树 + 与 LSM 答案逐条一致（对照成立的前提）
+    expect(g!.structure.invariants).toBe(0)
+    expect(g!.structure.height).toBeGreaterThanOrEqual(2)
+    expect(g!.agreement.bothAgree).toBe(true)
+    // 三笔账各有真读数，favors 各落一档
+    expect(g!.point.bplusComparisons).toBeGreaterThan(0)
+    expect(g!.point.lsmComparisons).toBeGreaterThan(0)
+    expect(g!.range.lsmSortComparisons).toBeGreaterThan(0)
+    expect(g!.write.bplusPageRewrites).toBeGreaterThan(0)
+    expect(g!.write.lsmSeqWriteUnits).toBeGreaterThan(0)
+    for (const f of [g!.point.favors, g!.range.favors, g!.write.favors]) {
+      expect(['bplus', 'lsm', 'tie']).toContain(f)
+    }
+    expect(g!.verdict.noUniversalWinner).toBe(true)
+    // 未配 bplusIndex 时为 null（非破坏）。
+    const plain = await runMeshE2E().run()
+    expect(plain.bplusIndexSnapshot).toBe(null)
+  })
 })
