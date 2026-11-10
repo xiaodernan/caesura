@@ -75,7 +75,7 @@
 | KI-491 | spring-gateway-gray：灰度/金丝雀加权路由端到端接线（metadata 保真/lbStrategy/会话亲和/空池回退，9+3+1+1 腿） | 2fc7743 |
 | KI-492 | spring-gateway-filter-handlers：Bulkhead 并发舱壁 + TimeLimiter 超时（6+1+1 腿，零运行时改动接进 filter 链） | 1fa7fa0 |
 | KI-493 | caesura-redis-cache：LRU+TTL+singleflight+字节预算 RESP 风格缓存 + introspection 缓存接线 | f5722c6 |
-| KI-494 | caesura-net-stack：AIMD 拥塞控制/RTO+ Karn/滑动窗口/0-RTT/HTTP 缓存语义 | 待提交 |
+| KI-494 | caesura-net-stack：AIMD 拥塞控制/RTO+ Karn/滑动窗口/0-RTT/HTTP 缓存语义 | b2ba973 |
 | P8-③（待编号） | 前端集大成 mesh 控制台（暗黑哥特风、自包含、注入真 E2E 数据） | 计划中 |
 | P8-④（待编号） | caesura-lsm-store：LSM-tree（memtable+SST+Bloom+WAL）数据库性能教学件 | 计划中 |
 
