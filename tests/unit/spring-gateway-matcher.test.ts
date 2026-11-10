@@ -71,4 +71,31 @@ describe('spring-gateway-matcher', () => {
     expect(res).toBe('retry-cb-done')
     expect(m.planFilters(route).map((f) => f.name)).toEqual(['CircuitBreaker', 'Retry'])
   })
+
+  it('runWithFilters 可重入：Retry handler 多次 await next() 会真重跑下游与 terminal（KI-486）', async () => {
+    const m = createGatewayMatcher()
+    const route = { id: 'r', uri: 'lb://a', order: 0, predicates: [], filters: [{ name: 'Retry', args: { attempts: 3 } }] }
+    let termRuns = 0
+    const terminal = async () => { termRuns += 1; if (termRuns < 3) throw new Error(`fail#${termRuns}`); return 'ok' }
+    const handlers = {
+      Retry: async (args: any, ctx: any, next: () => Promise<any>) => {
+        const attempts = Number(args.attempts ?? 3)
+        let last: unknown
+        for (let i = 0; i < attempts; i++) {
+          try { return await next() } catch (e) { last = e }
+        }
+        throw last
+      },
+    }
+    const res = await m.runWithFilters(route, {}, handlers, terminal)
+    expect(res).toBe('ok')
+    expect(termRuns).toBe(3) // 真跑了三次 terminal，而非只前进一次的共享游标
+  })
+
+  it('runWithFilters 缺省 3 参调用仍读 ctx.result（向后兼容 KI-475）', async () => {
+    const m = createGatewayMatcher()
+    const route = { id: 'r', uri: 'lb://a', order: 0, predicates: [], filters: [{ name: 'X', args: {} }] }
+    const res = await m.runWithFilters(route, { result: 42 }, { X: async (_a: any, c: any, next: () => Promise<any>) => next() })
+    expect(res).toBe(42)
+  })
 })

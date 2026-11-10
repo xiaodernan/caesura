@@ -111,6 +111,64 @@ describe('caesura-cloud-runtime', () => {
     expect(res.data.tp).toMatch(/^00-[0-9a-f]{32}-[0-9a-f]{16}-01$/)
   })
 
+  it('gateway Retry filter：transport 先失败两次后成功 ⇒ call 成功且真重试 3 趟、filterStats.retries=2（KI-487）', async () => {
+    let tries = 0
+    const rt = createCloudRuntime({
+      sources, gameId: 'g1', gamePort: 7700, gateway: true,
+      transport: async () => { tries += 1; if (tries < 3) throw new Error(`fail#${tries}`); return { ok: 'finally' } },
+    })
+    rt.routes.add({
+      id: 'r1', uri: 'lb://svc-a', order: 0,
+      predicates: [{ name: 'Path', args: { patterns: '/api/**' } }],
+      filters: [{ name: 'Retry', args: { attempts: 3 } }],
+    })
+    const res = await rt.call('svc-a', '/api/x')
+    expect(res.ok).toBe(true)
+    expect(res.data).toEqual({ ok: 'finally' })
+    expect(tries).toBe(3)
+    expect(res.filterStats.retries).toBe(2)
+    expect(res.filterStats.passed).toBe(1)
+  })
+
+  it('gateway RateLimit filter：令牌桶容量耗尽后 call 以 rate_limited 拒绝（KI-487）', async () => {
+    const rt = createCloudRuntime({
+      sources, gameId: 'g1', gamePort: 7700, gateway: true,
+      transport: async () => 'served',
+    })
+    rt.routes.add({
+      id: 'r1', uri: 'lb://svc-a', order: 0,
+      predicates: [{ name: 'Path', args: { patterns: '/api/**' } }],
+      filters: [{ name: 'RateLimit', args: { capacity: 1, refillPerSec: 0 } }],
+    })
+    const r1 = await rt.call('svc-a', '/api/x')
+    const r2 = await rt.call('svc-a', '/api/x')
+    expect(r1.ok).toBe(true)
+    expect(r1.data).toBe('served')
+    expect(r2.ok).toBe(false)
+    expect((r2.error as Error).message).toBe('rate_limited')
+    expect(r2.filterStats.rateLimited).toBe(1)
+  })
+
+  it('runtime 暴露 filters 包，stats 可读且可注入自定义 handler 覆盖内置（KI-487）', async () => {
+    let customRuns = 0
+    const rt = createCloudRuntime({
+      sources, gameId: 'g1', gamePort: 7700, gateway: true,
+      filterHandlers: { Echo: async (_a: any, _c: any, next: () => Promise<any>) => { customRuns += 1; return `echo:${await next()}` } },
+      transport: async () => 'raw',
+    })
+    expect(rt.filters).toBeTruthy()
+    expect(typeof rt.filters.stats).toBe('function')
+    rt.routes.add({
+      id: 'r1', uri: 'lb://svc-a', order: 0,
+      predicates: [{ name: 'Path', args: { patterns: '/api/**' } }],
+      filters: [{ name: 'Echo', args: {} }],
+    })
+    const res = await rt.call('svc-a', '/api/x')
+    expect(res.ok).toBe(true)
+    expect(res.data).toBe('echo:raw')
+    expect(customRuns).toBe(1)
+  })
+
   it('gateway CircuitBreaker filter：transport 多次失败则熔断打开并拒绝', async () => {
     let attempts = 0
     const rt = createCloudRuntime({

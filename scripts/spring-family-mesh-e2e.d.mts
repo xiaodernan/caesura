@@ -11,5 +11,11 @@ export function runMeshE2E(opts?: any): {
     stopped: any
     spans: any[]
     services: string[]
+    /** KI-488①：事件总线收到的游戏生命周期事件 */
+    events: Array<{ type: string; payload: any }>
+    /** KI-488②：调用前鉴权守卫的判定（opts.bearer===null 时为 null） */
+    auth: { ok: boolean; allowed: boolean; sub?: string; scope?: string; requiredScope: string; reason?: string } | null
+    /** KI-488③：filter 链计数（retries/rateLimited/passed 等） */
+    filterStats: any
   }>
 }

@@ -20,6 +20,7 @@ import { createGameMeshAdapter } from './caesura-mesh-adapter.mjs'
 import { createGatewayMatcher } from './spring-gateway-matcher.mjs'
 import { createTracer } from './spring-sleuth-tracer.mjs'
 import { createCircuitBreaker } from './spring-resilience-breaker.mjs'
+import { createFilterHandlers } from './spring-gateway-filter-handlers.mjs'
 
 /**
  * 创建一只集大成运行时。
@@ -48,6 +49,17 @@ export function createCloudRuntime(opts = {}) {
     if (!breakerCache.has(name)) breakerCache.set(name, createCircuitBreaker(name, opts.breakerOpts ?? {}))
     return breakerCache.get(name)
   }
+
+  // KI-487：内置网关 filter handlers（CircuitBreaker / Retry / RateLimit）。
+  // 熔断器工厂复用上面的 breakerCache ⇒ 同一服务跨多次 call 共享熔断状态；阈值仍由调用方注入（判定权 Node 侧）。
+  const filterPack = createFilterHandlers({
+    breakerFor: getBreaker,
+    breakerOpts: opts.breakerOpts ?? {},
+    sleep: opts.retryBackoff,
+    now: opts.filterNow,
+  })
+  // 调用方可注入自定义 filter handler 或覆盖内置者（如把 RateLimit 换成 Redis 版）。
+  const filterHandlers = { ...filterPack.handlers, ...(opts.filterHandlers ?? {}) }
 
   // 把注入的发现源登记进统一注册表
   if (opts.sources) {
@@ -119,7 +131,8 @@ export function createCloudRuntime(opts = {}) {
     }
     const callInit = span ? { ...init, headers } : init
 
-    // 4) 执行传输；网关 CircuitBreaker filter 存在则用进程内熔断包一层（判定权仍 Node 侧）
+    // 4) 执行传输。KI-487：把整条网关 filter 链真正接进调用——terminal 才是真 transport，
+    //    CircuitBreaker / Retry / RateLimit 由 spring-gateway-filter-handlers 提供（判定权仍 Node 侧，阈值来自路由 args）。
     const transport = opts.transport ?? defaultTransport
     const doTransport = () => transport(
       { url, serviceName, instanceId: target.instanceId, host: target.host, port: target.port },
@@ -132,19 +145,25 @@ export function createCloudRuntime(opts = {}) {
 
     try {
       let data
-      const cbFilter = route?.filters?.find((f) => f.name === 'CircuitBreaker')
-      if (cbFilter) {
-        const r = await getBreaker(cbFilter.args?.name ?? serviceName).run(doTransport)
-        if (!r.ok) throw r.error
-        data = r.result
+      if (gateway && route && typeof gateway.runWithFilters === 'function') {
+        // 有网关且命中路由：跑完整 filter 链，链尾才发真传输。
+        data = await gateway.runWithFilters(route, { serviceName, path, routeId: route.id }, filterHandlers, doTransport)
       } else {
-        data = await doTransport()
+        // 无网关 / 注入的自定义网关无 runWithFilters：退回旧语义（只按 CircuitBreaker filter 包一层）。
+        const cbFilter = route?.filters?.find((f) => f.name === 'CircuitBreaker')
+        if (cbFilter) {
+          const r = await getBreaker(cbFilter.args?.name ?? serviceName).run(doTransport)
+          if (!r.ok) throw r.error
+          data = r.result
+        } else {
+          data = await doTransport()
+        }
       }
       finishSpan({ 'caesura.target': target.instanceId })
-      return { ok: true, target, data, route: route ?? undefined, span: span ?? undefined, error: undefined }
+      return { ok: true, target, data, route: route ?? undefined, span: span ?? undefined, filterStats: filterPack.stats(), error: undefined }
     } catch (error) {
       finishSpan({ error: String(error?.message ?? error) })
-      return { ok: false, target, data: undefined, route: route ?? undefined, span: span ?? undefined, error }
+      return { ok: false, target, data: undefined, route: route ?? undefined, span: span ?? undefined, filterStats: filterPack.stats(), error }
     }
   }
 
@@ -180,5 +199,5 @@ export function createCloudRuntime(opts = {}) {
     }
   }
 
-  return { cloud, mesh, routes, game, loadBalancerFor, bootstrap, call, shutdown, status }
+  return { cloud, mesh, routes, game, filters: filterPack, loadBalancerFor, bootstrap, call, shutdown, status }
 }

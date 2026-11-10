@@ -20,5 +20,10 @@ export function createGatewayMatcher(opts?: GatewayMatcherOptions): {
   evaluatePredicate(pred: GatewayPredicate, req: GatewayRequest): boolean
   matchRoute(table: any, req: GatewayRequest): { route: any; matched: Array<{ name: string; matched: boolean }> } | null
   planFilters(route: any): Array<{ name: string; args: any }>
-  runWithFilters(route: any, ctx: any, handlers?: Record<string, (args: any, ctx: any, next: () => Promise<any>) => any>): Promise<any>
+  runWithFilters(
+    route: any,
+    ctx: any,
+    handlers?: Record<string, (args: any, ctx: any, next: () => Promise<any>) => any>,
+    terminal?: () => Promise<any>,
+  ): Promise<any>
 }

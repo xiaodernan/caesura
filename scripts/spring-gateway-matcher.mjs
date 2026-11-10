@@ -104,22 +104,33 @@ export function createGatewayMatcher(opts = {}) {
 
   /**
    * 按 filter 链顺序执行；handlers 提供各 filter 名的具体执行（缺省透传）。
+   *
+   * <p><b>可重入</b>（KI-486）：每一层的 `next` 是「重跑剩余链」的纯函数，而非只前进一次的共享游标。
+   * 这是 Retry 能成立的前提——handler 多次 `await next()` 会真把下游 filter 与 terminal 各跑一遍；
+   * 旧的单游标写法第二次 `next()` 只会越过链尾拿 `ctx.result`，重试是假的。</p>
+   *
    * @param {object} route 含 filters
-   * @param {object} ctx 调用上下文（须含 result 初始值）
+   * @param {object} ctx 调用上下文（可含 result 初始值）
    * @param {Record<string, (args:any, ctx:any, next:()=>Promise<any>) => any>} [handlers]
+   * @param {() => Promise<any>} [terminal] 链尾动作（如真发起 transport）；缺省返回 ctx.result。
+   *   缺省保持与 KI-475 的 3 参调用逐字同义（终端读 ctx.result）。</p>
    */
-  async function runWithFilters(route, ctx, handlers = {}) {
+  async function runWithFilters(route, ctx, handlers = {}, terminal) {
     const filters = planFilters(route)
-    let i = -1
-    async function next() {
-      i += 1
-      if (i >= filters.length) return ctx.result
+    const tail = typeof terminal === 'function' ? terminal : async () => ctx?.result
+
+    // 从尾部往前把链编译成嵌套函数：每层拿到的 next 都是「从下一层起重跑」的闭包。
+    let chain = tail
+    for (let i = filters.length - 1; i >= 0; i--) {
       const f = filters[i]
       const handler = handlers[f.name]
-      if (handler) return handler(f.args, ctx, next)
-      return next()
+      const downstream = chain
+      chain = async () => {
+        if (handler) return handler(f.args, ctx, downstream)
+        return downstream()
+      }
     }
-    return next()
+    return chain()
   }
 
   return { evaluatePredicate, matchRoute, planFilters, runWithFilters }

@@ -135,6 +135,9 @@ Phase B4 的三件套此前是"有人听、没人说"。
 | ✅ KI-483 | **Spring Cloud 微服务网格合成地图（`docs/spring-cloud-mesh.md`）**（工程，2026-11-11 已落，详见账本 KI-483） | KI-483 |
 | ✅ KI-484 | **游戏事件总线适配层（Node.js 侧，`scripts/caesura-event-bus.mjs`）**（工程，2026-11-11 已落，详见账本 KI-484） | KI-484 |
 | ✅ KI-485 | **游戏鉴权守卫（Node.js 侧，`scripts/caesura-auth-guard.mjs`）**（工程，2026-11-11 已落，详见账本 KI-485） | KI-485 |
+| ✅ KI-486 | **Spring Cloud Gateway 三只内置 filter handler + 可重入 filter 链（Node.js 侧，`spring-gateway-filter-handlers.mjs` + `spring-gateway-matcher.mjs` 扩展）**（工程，2026-11-11 已落，详见账本 KI-486） | KI-486 |
+| ✅ KI-487 | **集大成运行时 call 接入完整网关 filter 链（Node.js 侧，`caesura-cloud-runtime.mjs` 扩展）**（工程，2026-11-11 已落，详见账本 KI-487） | KI-487 |
+| ✅ KI-488 | **集大成端到端主链覆盖事件+鉴权+filter 链（Node.js 侧，`spring-family-mesh-e2e.mjs` 扩展）**（工程，2026-11-11 已落，详见账本 KI-488） | KI-488 |
 
 
 

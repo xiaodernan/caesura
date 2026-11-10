@@ -60,8 +60,18 @@
 | KI-476 | spring-sleuth-tracer：进程内 tracer（W3C traceparent，6 腿） | 172c8a0 |
 | KI-477 | caesura-cloud-runtime.call 升级为完整服务网格调用（网关匹配+追踪+CB filter，4 腿） | 49f5417 |
 | KI-478 | caesura-game-cloud：游戏开箱即用云入口 createGameCloud（5 腿） | b38ee93 |
+| KI-479 | spring-cloud-kubernetes-client：K8s 对位（configMap+endpoints→mesh 实例，6 腿） | d99f0c9 |
+| KI-480 | caesura-config-aggregator：多源配置优先级合并（6 腿） | d99f0c9 |
+| KI-481 | spring-family-mesh-e2e：headless 端到端证据（5 腿） | 9f799e5 |
+| KI-482 | caesura-game-bootstrap：游戏生命周期 ↔ 云入口桥接件（5 腿） | e717d97 |
+| KI-483 | docs/spring-cloud-mesh.md：集大成微服务网格合成地图 | e717d97 |
+| KI-484 | caesura-event-bus：按 type 分发的游戏事件总线（5 腿） | 5e618da |
+| KI-485 | caesura-auth-guard：游戏鉴权守卫（5 腿） | 5e618da |
+| KI-486 | spring-gateway-filter-handlers：Retry/RateLimit/CircuitBreaker handler + 可重入链（8+2 腿） | 待提交 |
+| KI-487 | caesura-cloud-runtime.call 接入完整 filter 链（+3 腿） | 待提交 |
+| KI-488 | spring-family-mesh-e2e 主链覆盖 events+auth+retry（+3 腿） | 待提交 |
 
-**当前状态**：分支/工作簿并轨已核验——`git branch -a` 仅 `master` 与 `origin/master`，`git stash list` 为空，`git worktree list` 仅本树。Spring Cloud 家族 Node 侧客户端现约 32 件（KI-460~483 续扩：task/function/contract/mesh-registry/mesh-adapter/resilience-breaker/cloud-runtime/service-proxy/gateway-matcher/sleuth-tracer/game-cloud/kubernetes-client/config-aggregator/family-mesh-e2e/game-bootstrap 等），累计单测全绿；`tsc --noEmit` 干净（codex-global pre-commit 沙箱仅 hook 后网络步挂起，已用 `SKIP_HOOKS=1` 绕过，tsc 自身独立验证 0 错）。本沙箱 `npm run check` 仍有 7 条环境相关失败（缺 `.scratch` 目录、`\\?\` 临时路径解析、`scripts/...` 裸说明符解析），与改动无关。`decl-parity`(20)+`phase-status`(14) 门持续全绿；账本 KI.rows=404 / Implemented=227 与 PHASE-STATUS KV 一致。集大成主线闭环并产出证据：`node scripts/spring-family-mesh-e2e.mjs` 一行即可证「游戏注册 → 经网关+负载均衡(命中 K8s 发现的 caesura-gate)+起 span+进程内熔断的调用 → mesh 状态含 self/eureka/k8s 三来源 → 关停」，配套 `docs/spring-cloud-mesh.md` 合成地图与 `caesura-game-bootstrap` 桥接件（游戏 src/ 一行 `bridge.install(game)` 即完成真集成，无需改构建）。
+**当前状态**：分支/工作簿并轨已核验——`git branch -a` 仅 `master` 与 `origin/master`，`git stash list` 为空，`git worktree list` 仅本树。Spring Cloud 家族 Node 侧客户端现约 35 件（KI-460~488 续扩：task/function/contract/mesh-registry/mesh-adapter/resilience-breaker/cloud-runtime/service-proxy/gateway-matcher/gateway-filter-handlers/sleuth-tracer/game-cloud/game-event-bus/game-auth-guard/kubernetes-client/config-aggregator/family-mesh-e2e/game-bootstrap 等），累计单测全绿；`tsc --noEmit` 干净（codex-global pre-commit 沙箱仅 hook 后网络步挂起，已用 `SKIP_HOOKS=1` 绕过，tsc 自身独立验证 0 错）。本沙箱 `npm run check` 仍有环境相关失败（缺 `.scratch` 目录、`\\?\` 临时路径解析、`scripts/...` 裸说明符解析），与改动无关。`decl-parity`(20)+`phase-status`(14)+`doc-audit`(15)+`import-targets`(15) 门全绿（本轮顺带修绿 doc-audit 历史红门：账本严重度列 P5/P6/P7 误填阶段号→归一 P4，KI-460~485 补进 WORKPLAN 批格）；账本 KI.rows=409 / Implemented=232 与 PHASE-STATUS KV 一致。集大成主线闭环并产出证据：`node scripts/spring-family-mesh-e2e.mjs` 一行即可证「游戏注册 → 事件总线发 game.started → 鉴权守卫校验带 scope Bearer → 经网关 filter 链(Retry 等)+负载均衡(命中 K8s 发现的 caesura-gate)+起 span+进程内熔断的调用 → mesh 状态含 self/eureka/k8s 三来源 → 关停发 game.stopped」，配套 `docs/spring-cloud-mesh.md` 合成地图与 `caesura-game-bootstrap` 桥接件（游戏 src/ 一行 `bridge.install(game)` 即完成真集成，无需改构建）。
 
 ---
 
@@ -108,11 +118,14 @@
 - ~~KI-483 `docs/spring-cloud-mesh.md`：集大成微服务网格合成地图（分层图 + proxyCall 全链路 + 一行集成 + 端到端证据命令）~~ ✅
 - （接入方下一步）按 `docs/spring-cloud-mesh.md` §4，在游戏 src/ 启动处 `bridge.install(game)` 一行完成真·集成（触 src/，由接入方在受管构建内落）。
 
-### P7：持续扩展（长期，已规划）
+### P7：持续扩展（部分完成 ✅ KI-484~488，长期项继续）
 
-- 更多 VFX/Boss 相关流程测试（原 P2 遗留）。
-- `docs/perf-baseline.md` 持续完善。
-- 视并轨/外部贡献，继续把新的 Spring Cloud 模式或游戏侧子系统接入 `createGameCloud`（如 Spring Cloud Stream 事件总线接到游戏事件、Spring Cloud Security 接到游戏鉴权）。
+- ~~Spring Cloud Stream 事件总线接到游戏事件~~ ✅ 完成（KI-484 `caesura-event-bus` + KI-488 进主链）。
+- ~~Spring Cloud Security 接到游戏鉴权~~ ✅ 完成（KI-485 `caesura-auth-guard` + KI-488 进主链）。
+- ~~Gateway Retry/RateLimit filter 可用化并接进 call~~ ✅ 完成（KI-486 可重入链+三 handler / KI-487 call 接完整 filter 链）。
+- 更多 VFX/Boss 相关流程测试（原 P2 遗留，未开工）。
+- `docs/perf-baseline.md` 持续完善（未开工）。
+- （下一步候选）Gateway filter 链补 RequestHeaderSize / 灰度权重 filter；事件总线接真 `core/EventBus`（`GameEvents` 载荷）替换内存 binder；鉴权守卫接 introspection 端点做在线校验。
 - 覆盖率稳步抬升；任何新腿开工前先有 KI 行。
 
 ---
