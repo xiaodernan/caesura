@@ -5,6 +5,7 @@ import { TICK_DT } from '@/core/Time'
 import { Input, type UiIntent } from '@/core/Input'
 import { BIND_BOUNDS, BindingsStore, defaultBindings } from '@/settings/Bindings'
 import { GAMEPLAY_BOUNDS, GameplaySettingsStore } from '@/settings/GameplaySettings'
+import { QualityStore } from '@/settings/Quality'
 import { makeOpsHandles } from '@/ui/OpsHandles'
 
 /**
@@ -52,10 +53,12 @@ function seam(): { input: Input; el: FakeEl; bindings: BindingsStore; gameplay: 
   // store 构造那一句之后它们若还是这两个值，就是没接线。
   const playerTarget = { holdMs: 0, mashGuard: false }
   const gameplay = new GameplaySettingsStore({ input, rig: { shakeIntensity: 1 }, haptics, combat: { damageScale: 1 }, player: playerTarget })
-  const reads = { bindings: 0, gameplay: 0 }
+  const quality = new QualityStore({ particles: { spawnMul: 1 } })
+  const reads = { bindings: 0, gameplay: 0, quality: 0 }
   const deps = makeOpsHandles(input,
     () => { reads.bindings++; return bindings },
-    () => { reads.gameplay++; return gameplay })
+    () => { reads.gameplay++; return gameplay },
+    () => { reads.quality++; return quality })
   return { input, el, bindings, gameplay, haptics, playerTarget, deps, reads }
 }
 
@@ -101,7 +104,7 @@ describe('KI-337 把手装配处：名册、时机、主人', () => {
 
   it('装配那一刻一个 store 都不碰：组合根里那两个 store 声明在面板之后', () => {
     const { reads } = seam()
-    expect(reads, '建面板的那一拍就去读 store ⇒ 真浏览器里 ReferenceError，假件里永远测不到').toEqual({ bindings: 0, gameplay: 0 })
+    expect(reads, '建面板的那一拍就去读 store ⇒ 真浏览器里 ReferenceError，假件里永远测不到').toEqual({ bindings: 0, gameplay: 0, quality: 0 })
   })
 
   it('每一格只在被点的那一拍取它的主人，一次', () => {
@@ -124,7 +127,7 @@ describe('KI-337 把手装配处：名册、时机、主人', () => {
     once(() => deps.unbindUiPad('down'), 'bindings', 'unbindUiPad 那一拍读一次')
     once(() => deps.resetKey('dodge', 'key'), 'bindings', 'resetKey 那一拍读一次')
     once(() => deps.resetAll(), 'bindings', 'resetAll 那一拍读一次')
-    expect(reads, '每一格各读各的主人：别格不许顺路多读一次').toEqual({ bindings: 6, gameplay: 2 })
+    expect(reads, '每一格各读各的主人：别格不许顺路多读一次').toEqual({ bindings: 6, gameplay: 2, quality: 0 })
   })
 
   it('玩法那一格落到 store，并真的走到消费者：面板写的就是 `Input` 生效的那一个数', () => {
@@ -249,7 +252,7 @@ describe('KI-344 菜单那一节的三把把手：仍然只是转发', () => {
     deps.resetUi('up', 'key')
     deps.resetUi('confirm', 'key')
     deps.resetUi('fly' as UiIntent, 'key')
-    expect(reads, '六次调用读六次 bindings，`gameplay` 那一格一次都不该被菜单的把手碰到').toEqual({ bindings: 6, gameplay: 0 })
+    expect(reads, '六次调用读六次 bindings，`gameplay` 那一格一次都不该被菜单的把手碰到').toEqual({ bindings: 6, gameplay: 0, quality: 0 })
   })
 })
 
@@ -299,7 +302,7 @@ describe('KI-345 菜单那一节多出来的两格：落点与数都只转发，
     deps.rebindUi('confirm', 'Pad7')
     deps.resetUi('confirm', 'pad')
     deps.setStickThreshold(0.4)
-    expect(reads, '三次调用读三次 bindings：一次都不许多，也不许顺路去读玩法那一个').toEqual({ bindings: 3, gameplay: 0 })
+    expect(reads, '三次调用读三次 bindings：一次都不许多，也不许顺路去读玩法那一个').toEqual({ bindings: 3, gameplay: 0, quality: 0 })
   })
 })
 
@@ -339,7 +342,7 @@ describe('KI-346 手柄那一列的「无」：两半都在 store，装配处只
     const { deps, reads } = wire()
     deps.unbindPad('dodge')
     deps.unbindUiPad('down')
-    expect(reads, '两次调用读两次 bindings：一次都不许多，也不许顺路去读玩法那一个').toEqual({ bindings: 2, gameplay: 0 })
+    expect(reads, '两次调用读两次 bindings：一次都不许多，也不许顺路去读玩法那一个').toEqual({ bindings: 2, gameplay: 0, quality: 0 })
   })
 })
 
@@ -363,7 +366,7 @@ describe('KI-348 装配处把玩法那一半的落点原样交回：不折、不
     expect(deps.rebind('dodge', 'Pad20'), '越界 ⇒ 「这一次没发生」，不是一个空回报').toBeNull()
     expect(bindings.get()).toEqual(before)
     expect(deps.rebind('parry', 'KeyY'), '做得成那一次交回的是三个字段').toEqual({ displaced: null, moved: false, onto: 'keyboard' })
-    expect(reads, '两次调用各读一次键位那一个主人（拒绝也要问它），玩法设置那一个一次都不碰').toEqual({ bindings: 2, gameplay: 0 })
+    expect(reads, '两次调用各读一次键位那一个主人（拒绝也要问它），玩法设置那一个一次都不碰').toEqual({ bindings: 2, gameplay: 0, quality: 0 })
   })
 })
 
@@ -529,7 +532,7 @@ describe('KI-362 配置文件那三个把手：仍是转发，不在接线层养
     expect(deps.profiles.load(0), '有东西那一格做得成').toBe(true)
     expect(input.binds.keyboard.KeyQ, '载入换的是消费者手里那张现表').toBe('dodge')
     expect(input.binds.keyboard.KeyE, '而刚才那一把不在磁带里 ⇒ 载入后那一格回它当时的主人（E 还是交互）').toBe('interact')
-    expect(reads, '三次问格子、两次改键、一次载入 = 六次读同一位主人，玩法那一个一次都不碰').toEqual({ bindings: 6, gameplay: 0 })
+    expect(reads, '三次问格子、两次改键、一次载入 = 六次读同一位主人，玩法那一个一次都不碰').toEqual({ bindings: 6, gameplay: 0, quality: 0 })
   })
 
   it('空格与界外是两种拒绝，经端口原样交回：装配处不兜底、消费者那张一格不动', () => {
@@ -541,7 +544,7 @@ describe('KI-362 配置文件那三个把手：仍是转发，不在接线层养
     expect(deps.profiles.store(-1)).toBeNull()
     expect(input.binds.keyboard, '四趟拒绝之后消费者那张逐字没动').toEqual(before)
     expect(bindings.getProfiles(), '磁带也仍是一盒都没存').toBeUndefined()
-    expect(reads, '四次调用读四次主人：拒绝也要问它，一次都不许多').toEqual({ bindings: 4, gameplay: 0 })
+    expect(reads, '四次调用读四次主人：拒绝也要问它，一次都不许多').toEqual({ bindings: 4, gameplay: 0, quality: 0 })
   })
 
   it('袋子里没有数据格：交出去的是三个函数，面板拿不到 store、也拿不到磁带本体', () => {

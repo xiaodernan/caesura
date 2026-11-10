@@ -41,6 +41,7 @@ import { glossary } from '@/combat/Statuses'
 import { AudioEngine } from '@/audio/AudioEngine'
 import { Haptics } from '@/input/Haptics'
 import { GameplaySettingsStore } from '@/settings/GameplaySettings'
+import { QualityStore } from '@/settings/Quality'
 import { BindingsStore } from '@/settings/Bindings'
 import { makeOpsHandles } from '@/ui/OpsHandles'
 import { VfxLayer } from '@/vfx/VfxLayer'
@@ -283,7 +284,7 @@ const panel = new Stakerite(rpg, {
   list: () => saveRoster.list(),
   write: (slot) => saves.save(slot),
   erase: (slot) => saves.erase(slot)
-}, input, makeOpsHandles(input, () => bindingsStore, () => gameplayStore))
+}, input, makeOpsHandles(input, () => bindingsStore, () => gameplayStore, () => qualityStore))
 /**
  * 对话框（Phase 6-B）。它只回吐玩家的选择，效果由 `showTurn` → `applyDialogueEffects` 统一落盘：
  * UI 不做第二个真值（与调音桩面板同一条纪律）。
@@ -1074,12 +1075,15 @@ const saveBackup = typeof indexedDB === 'undefined' ? null : new IdbStore('caesu
 const gameplayStore = new GameplaySettingsStore({ input, rig, haptics, combat, player })
 /** KI-336：键位表的宿主（消费者只有 `Input` 一个——两条通道一起换才不会出现半张新表） */
 const bindingsStore = new BindingsStore({ input })
+/** Phase 7 F2：画质档的宿主。构造即灌默认档（2＝高，与今天逐字一致）；
+   读档经 `SaveGame.apply` 落到 `quality?.apply`（信任边界在 QualityStore 里，老档缺块不动）。 */
+const qualityStore = new QualityStore({ particles: { spawnMul: 1 } })
 /**
  * 存档时刻的墙钟只在这里给（KI-025①）：逻辑层不许自己读 `Date`，否则每次跑测都会写出不同的档，
  * 而"摘要卡上的时间是从外面带进来的"这条也就没有证人。
  */
 const saves = new SaveGame(
-  { player, streaming, spawner, clock: rhythm, time, rpg, interact, props, quests, states: worldStates, audio: { engine: audio, setVolume: (b: string, v: number) => audio.setVolume(b as never, v), getVolume: (b: string) => audio.getVolume(b) }, gameplay: { get: () => gameplayStore.get(), apply: (raw: unknown) => gameplayStore.restore(raw) }, bindings: { get: () => bindingsStore.get(), apply: (raw: unknown) => bindingsStore.restore(raw), profiles: { get: () => bindingsStore.getProfiles(), apply: (raw: unknown) => bindingsStore.applyProfiles(raw) } }, now: () => Date.now() },
+  { player, streaming, spawner, clock: rhythm, time, rpg, interact, props, quests, states: worldStates, audio: { engine: audio, setVolume: (b: string, v: number) => audio.setVolume(b as never, v), getVolume: (b: string) => audio.getVolume(b) }, gameplay: { get: () => gameplayStore.get(), apply: (raw: unknown) => gameplayStore.restore(raw) }, bindings: { get: () => bindingsStore.get(), apply: (raw: unknown) => bindingsStore.restore(raw), profiles: { get: () => bindingsStore.getProfiles(), apply: (raw: unknown) => bindingsStore.applyProfiles(raw) } }, quality: { get: () => qualityStore.get(), apply: (raw: unknown) => qualityStore.apply(raw) }, now: () => Date.now() },
   savePrimary, saveBackup
 )
 /** 摘要卡的名册（KI-025）：标题屏与调音桩面板都从它读"这几格是什么、能不能读" */

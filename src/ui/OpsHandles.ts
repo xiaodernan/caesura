@@ -1,6 +1,7 @@
 import type { ActionName, AnswerSource, UiIntent, Input } from '@/core/Input'
 import type { BindChannel, BindingsStore } from '@/settings/Bindings'
 import type { GameplaySettingsStore } from '@/settings/GameplaySettings'
+import type { QualityStore } from '@/settings/Quality'
 import type { OpsPanelDeps } from './Stakerite'
 
 /**
@@ -20,11 +21,14 @@ import type { OpsPanelDeps } from './Stakerite'
 export function makeOpsHandles(
   input: Input,
   bindings: () => BindingsStore,
-  gameplay: () => GameplaySettingsStore
+  gameplay: () => GameplaySettingsStore,
+  qualityStore: () => QualityStore
 ): OpsPanelDeps {
   return {
     gameplay: () => gameplay().get(),
     setGameplay: (patch) => gameplay().set(patch),
+    quality: () => qualityStore().get(),
+    setQuality: (tier) => qualityStore().set(tier),
     rebind: (action: ActionName, code: string) => bindings().rebind(action, code),
     unbind: (action: ActionName) => bindings().unbind(action),
     /** 手柄那一列的「无」（KI-346）：与键盘那把并列，各自写各自那份名单——装配处不认识"哪张表"，只转发 */

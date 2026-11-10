@@ -9,6 +9,7 @@ import { movementName, unlockItemName, SCORE } from '@/rpg/Movements'
 import { keyOf, codeLabel, BINDABLE_ACTIONS, GAMEPLAY_EXIT_ACTIONS, UI_INTENTS, UI_EXIT_INTENTS, type ActionName, type AnswerSource, type Binds, type UiBinds, type UiIntent } from '@/core/Input'
 import { GAMEPLAY_BOUNDS, type GameplaySettings } from '@/settings/GameplaySettings'
 import { BIND_BOUNDS, type BindChannel } from '@/settings/Bindings'
+import { DEFAULT_QUALITY, QUALITY_NAMES, type QualityTier } from '@/settings/Quality'
 import { actionLabel, intentLabel, padLabel } from '@/ui/actionLabels'
 import type { RpgRuntime } from '@/rpg/Runtime'
 import type { SlotCard } from '@/save/Slots'
@@ -90,6 +91,12 @@ const OPS_TRIGGER = {
   label: '扳机推过多少算按下',
   step: 0.05,
   note: '§6 那一格 · 5–95%，LT/RT 是模拟量，过这条线才算按下；一道线同时管改键、玩法与菜单三个读者'
+} as const
+
+/** 画质档位一行（F2 第一格 UI）：◀▶ 循环四档，面板只负责换，夹取在边界。 */
+const OPS_QUALITY = {
+  label: '画质档位',
+  note: '低/中/高/极高 · 控制粒子生成预算（GPUParticles budgetMul），中=高=发售原样行为'
 } as const
 
 /**
@@ -276,6 +283,12 @@ export interface OpsPanelDeps {
   gameplay: () => GameplaySettings
   /** 写一格玩法设置。夹取在信任边界里，面板只负责给一个步进量 */
   setGameplay: (patch: Partial<GameplaySettings>) => void
+  /**
+   * 画质档（Phase 7 F2）：读现档、写新档。面板只负责◀▶循环四档，
+   * 夹取与信任边界由 `QualityStore.clampQuality` 统一做（面板不夹一次）。
+   */
+  quality: () => number
+  setQuality: (tier: QualityTier) => void
   /**
    * 把一个动作绑到某把键。`code` 有两种拼写（KI-343）：`KeyboardEvent.code` 或 `Pad<n>`，
    * **认哪一种由 `BindingsStore.rebind` 回答**（语法本身就是路由），面板只是把捕获那侧给的字符串原样交过去。
@@ -616,6 +629,7 @@ export class Stakerite {
       case 'gstep': this.stepGameplay(arg); break
       case 'ustep': this.stepStick(arg); break
       case 'tstep': this.stepTrigger(arg); break
+      case 'qstep': this.stepQuality(arg); break
       case 'gtoggle': {
         /* KI-384：两枚开关共用这一个分支，而 `arg` 是屏上任意一枚按钮递进来的名字。闸门写在「当前值是不是布尔」上，
            不写在名字上——落到数值格那一步写进去的是 `false`，边界会把它当错型夹回**默认**：那不是「翻不动」，是替别一格洗格子。 */
@@ -1450,6 +1464,19 @@ export class Stakerite {
   }
 
   /**
+   * 画质档位 ◀▶（F2 UI）：面板只负责循环四档，夹取由 `QualityStore.clampQuality` 统一做。
+   * `data-arg` 是 `1`（下一档）或 `-1`（上一档），绕回边界。
+   */
+  private stepQuality(arg: string): void {
+    if (!this.ops) return
+    const dir = Number(arg)
+    if (!Number.isFinite(dir)) return
+    const cur = this.ops.quality()
+    const next = ((cur + Math.sign(dir) + 4) % 4) as QualityTier
+    this.ops.setQuality(next)
+  }
+
+  /**
    * 那一枚「存取哪一半」（KI-368）。**只换状态、不做事**：它不改任何一格键、不碰那三盒、也没有回声——
    * 一次「选择」同时把「存入」也做掉，就是 KI-361 反对的那一类（同一双手上的两件事被并成一次）。
    * 界外那一枚什么都不改：`data-arg` 是从 DOM 来的字符串，谁都能写，「界外通道」必须与「界外下标」同位
@@ -1677,6 +1704,15 @@ export class Stakerite {
         <span class="act"><button class="act" data-act="gstep" data-arg="${n.key}:-1" ${v <= b.min ? 'disabled' : ''}>◀</button>
           <button class="act" data-act="gstep" data-arg="${n.key}:1" ${v >= b.max ? 'disabled' : ''}>▶</button></span></div>`
     }).join('')
+    /** 画质档位一行（F2 UI）：◀▶ 循环 0→3，读 `ops.quality()`，写 `ops.setQuality()`。 */
+    const q = this.ops.quality()
+    const qName = QUALITY_NAMES[q as QualityTier] ?? QUALITY_NAMES[DEFAULT_QUALITY]
+    const qPrev = QUALITY_NAMES[(q - 1 + 4) % 4 as QualityTier]
+    const qNext = QUALITY_NAMES[(q + 1) % 4 as QualityTier]
+    const qualityRow = `<div class="row"><span class="name">${OPS_QUALITY.label}<span class="note">${OPS_QUALITY.note}</span></span>
+      <span class="num">${qName} (${q})</span>
+      <span class="act"><button class="act" data-act="qstep" data-arg="-1">◀ ${qPrev}</button>
+        <button class="act" data-act="qstep" data-arg="1">${qNext} ▶</button></span></div>`
     /**
      * 摇杆阈值那一行（KI-345）：它属于**菜单那一条通道**（消费者是 `Input` 读 `liveUi.stickThreshold`
      * 那一拍），所以它跟着那一节画，不混进「手感与练习辅助」——那一节的四格各有各的 store，
@@ -1735,7 +1771,7 @@ export class Stakerite {
       <div class="row"><span class="name">整张回默认<span class="note">每行那两格「解绑」写的是名单（键盘与手柄各一份，玩法与菜单各一对，共四份），删存档里的一格写的只是"这一行我没动过"⇒ 回默认。两件事各有各的写法，不靠同一个空缺冒充。</span></span>
         <span class="act"><button class="act" data-act="resetall">全部回默认</button></span></div>
       <h2>${OPS_SECTIONS.ui}（单元是整组：一行画的是它此刻握着的每一把等价键，改这一行就是只留你按下的那一把。两列、两条通道各一把「改键」与一把「解绑」；关不掉的那一行两把「解绑」都不画）</h2>${menu}${stick}
-      <h2>手感与练习辅助</h2>${numbers}
+      <h2>手感与练习辅助</h2>${numbers}${qualityRow}
       <div class="row"><span class="name">帧辅助<span class="note">输入缓冲在 ${Math.round(g.bufferMs)}ms 之外再多保一帧（+1 tick，与逻辑 tick 同一把尺）</span></span>
         <span class="num">${g.frameAssist ? '开' : '关'}</span>
         <span class="act"><button class="act" data-act="gtoggle" data-arg="frameAssist">${g.frameAssist ? '关掉' : '打开'}</button></span></div>

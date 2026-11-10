@@ -19,6 +19,7 @@ import type { SlotCard } from '@/save/Slots'
 import { MapStore, SaveGame } from '@/save/Serializer'
 import { BIND_BOUNDS, BindingsStore, PROFILE_SLOTS, defaultBindings } from '@/settings/Bindings'
 import { DEFAULT_GAMEPLAY_SETTINGS, GAMEPLAY_BOUNDS, GameplaySettingsStore } from '@/settings/GameplaySettings'
+import { QualityStore } from '@/settings/Quality'
 import { actionLabel, intentLabel, padLabel } from '@/ui/actionLabels'
 import { makeOpsHandles } from '@/ui/OpsHandles'
 import type { Vec3 } from '@/combat/EntityStats'
@@ -162,11 +163,12 @@ function rig(withOps = true, onOpsTab = true, saves: SavePanelDeps = NO_SAVES): 
   // KI-365：第五把消费者的假件（公开字段就是生产形状）——面板那一行点下去后要在这格里看得见同一个数
   const playerTarget = { holdMs: 0, mashGuard: false }
   const gameplay = new GameplaySettingsStore({ input, rig: { shakeIntensity: 1 }, haptics, combat: { damageScale: 1 }, player: playerTarget })
+  const quality = new QualityStore({ particles: { spawnMul: 1 } })
   const notices: string[] = []
   const rpg = new RpgRuntime('origin_tuner')
   const p = new Stakerite(rpg,
     { onApply: () => {}, notify: (m) => notices.push(m), onUse: () => {}, onRequestClose: () => {} },
-    saves, input, withOps ? makeOpsHandles(input, () => bindings, () => gameplay) : null)
+    saves, input, withOps ? makeOpsHandles(input, () => bindings, () => gameplay, () => quality) : null)
   p.show()
   if (onOpsTab) click(p, 'tab', 'ops')
   return { p, input, inputEl, bindings, gameplay, notices, haptics, playerTarget, rpg }
@@ -1478,9 +1480,10 @@ function makeWorld(store = new MapStore()) {
   const input = new Input(new FakeEl() as unknown as HTMLElement)
   const bindings = new BindingsStore({ input })
   const gameplay = new GameplaySettingsStore({ input, rig: { shakeIntensity: 1 }, haptics: { scale: 1, weakScale: 1 }, combat: { damageScale: 1 }, player })
+  const quality = new QualityStore({ particles: { spawnMul: 1 } })
   const p = new Stakerite(rpg,
     { onApply: () => {}, notify: () => {}, onUse: () => {}, onRequestClose: () => {} },
-    NO_SAVES, input, makeOpsHandles(input, () => bindings, () => gameplay))
+    NO_SAVES, input, makeOpsHandles(input, () => bindings, () => gameplay, () => quality))
   p.show()
   const saves = new SaveGame({
     player, streaming, spawner, clock, time, rpg, audio: makeFakeAudio(),
