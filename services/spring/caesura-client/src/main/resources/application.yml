@@ -2,6 +2,10 @@
 spring:
   application:
     name: caesura-client
+  config:
+    # Spring Cloud Config 2022 起没有 `spring.config.import` 就不启动（"No spring.config.import property has been defined"）。
+    # `optional:` 保留本地兜底：配置服务器不可用（或没有 caesura-client 的配置段）时不阻断启动（KI-447 同口径）。
+    import: optional:configserver:${CAESURA_CONFIG_URL:http://localhost:8888}
 
 server:
   port: 8083
