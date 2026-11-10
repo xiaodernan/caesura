@@ -76,10 +76,10 @@
 | KI-492 | spring-gateway-filter-handlers：Bulkhead 并发舱壁 + TimeLimiter 超时（6+1+1 腿，零运行时改动接进 filter 链） | 1fa7fa0 |
 | KI-493 | caesura-redis-cache：LRU+TTL+singleflight+字节预算 RESP 风格缓存 + introspection 缓存接线 | f5722c6 |
 | KI-494 | caesura-net-stack：AIMD 拥塞控制/RTO+ Karn/滑动窗口/0-RTT/HTTP 缓存语义 | b2ba973 |
-| P8-③（待编号） | 前端集大成 mesh 控制台（暗黑哥特风、自包含、注入真 E2E 数据） | 计划中 |
+| KI-495 | 前端集大成 mesh 控制台（暗黑哥特风、自包含、注入真 E2E 数据） | 待提交 |
 | P8-④（待编号） | caesura-lsm-store：LSM-tree（memtable+SST+Bloom+WAL）数据库性能教学件 | 计划中 |
 
-**当前状态**：分支/工作簿并轨已核验——`git branch -a` 仅 `master` 与 `origin/master`，`git stash list` 为空，`git worktree list` 仅本树。Spring Cloud 家族 Node 侧客户端现约 39 件（KI-460~494 续扩：task/function/contract/mesh-registry/mesh-adapter/resilience-breaker/cloud-runtime/service-proxy/gateway-matcher/gateway-filter-handlers(Bulkhead/TimeLimiter)/sleuth-tracer/game-cloud/game-event-bus/game-auth-guard/game-event-bridge/gateway-gray/redis-cache/net-stack/kubernetes-client/config-aggregator/family-mesh-e2e/game-bootstrap 等），累计单测全绿；`tsc --noEmit` 干净（codex-global pre-commit 沙箱仅 hook 后网络步挂起，已用 `SKIP_HOOKS=1` 绕过，tsc 自身独立验证 0 错）。本沙箱 `npm run check` 仍有环境相关失败（缺 `.scratch` 目录、`\\?\` 临时路径解析、`scripts/...` 裸说明符解析），与改动无关。`decl-parity`(20)+`phase-status`(14)+`doc-audit`(15)+`import-targets`(15) 门全绿（本轮顺带修绿 doc-audit 历史红门：账本严重度列 P5/P6/P7 误填阶段号→归一 P4，KI-460~485 补进 WORKPLAN 批格）；账本 KI.rows=415 / Implemented=238 与 PHASE-STATUS KV 一致（P8 多技术维度扩展主线：KI-493 缓存层 + KI-494 计网协议栈落地）。集大成主线闭环并产出证据：`node scripts/spring-family-mesh-e2e.mjs` 一行即可证「游戏注册 → 事件总线发 game.started → 鉴权守卫校验带 scope Bearer（可选 RFC 7662 introspection 在线校验/不透明令牌/fail-open 降级） → 经网关 filter 链(Retry 等)+负载均衡(命中 K8s 发现的 caesura-gate)+起 span+进程内熔断的调用 → mesh 状态含 self/eureka/k8s 三来源 → 关停发 game.stopped」，配套 `docs/spring-cloud-mesh.md` 合成地图与 `caesura-game-bootstrap` 桥接件（游戏 src/ 一行 `bridge.install(game)` 即完成真集成，无需改构建）。
+**当前状态**：分支/工作簿并轨已核验——`git branch -a` 仅 `master` 与 `origin/master`，`git stash list` 为空，`git worktree list` 仅本树。Spring Cloud 家族 Node 侧客户端现约 40 件（KI-460~495 续扩：task/function/contract/mesh-registry/mesh-adapter/resilience-breaker/cloud-runtime/service-proxy/gateway-matcher/gateway-filter-handlers(Bulkhead/TimeLimiter)/sleuth-tracer/game-cloud/game-event-bus/game-auth-guard/game-event-bridge/gateway-gray/redis-cache/net-stack/console-gen/kubernetes-client/config-aggregator/family-mesh-e2e/game-bootstrap 等），累计单测全绿；`tsc --noEmit` 干净（codex-global pre-commit 沙箱仅 hook 后网络步挂起，已用 `SKIP_HOOKS=1` 绕过，tsc 自身独立验证 0 错）。本沙箱 `npm run check` 仍有环境相关失败（缺 `.scratch` 目录、`\\?\` 临时路径解析、`scripts/...` 裸说明符解析），与改动无关。`decl-parity`(20)+`phase-status`(14)+`doc-audit`(15)+`import-targets`(15) 门全绿（本轮顺带修绿 doc-audit 历史红门：账本严重度列 P5/P6/P7 误填阶段号→归一 P4，KI-460~485 补进 WORKPLAN 批格）；账本 KI.rows=416 / Implemented=239 与 PHASE-STATUS KV 一致（P8 多技术维度扩展主线：KI-493 缓存层 + KI-494 计网栈 + KI-495 前端控制台落地）。集大成主线闭环并产出证据：`node scripts/spring-family-mesh-e2e.mjs` 一行即可证「游戏注册 → 事件总线发 game.started → 鉴权守卫校验带 scope Bearer（可选 RFC 7662 introspection 在线校验/不透明令牌/fail-open 降级） → 经网关 filter 链(Retry 等)+负载均衡(命中 K8s 发现的 caesura-gate)+起 span+进程内熔断的调用 → mesh 状态含 self/eureka/k8s 三来源 → 关停发 game.stopped」，配套 `docs/spring-cloud-mesh.md` 合成地图与 `caesura-game-bootstrap` 桥接件（游戏 src/ 一行 `bridge.install(game)` 即完成真集成，无需改构建）。
 
 ---
 
@@ -147,9 +147,9 @@
 
 - ~~**① Redis + 缓存 + 数据结构/算法 + OS 硬件适配（KI-493）**~~ ✅ 完成：`caesura-redis-cache` —— 双向链表 + Map 的 **O(1) LRU**、惰性+定期 **TTL**（注入时钟）、**singleflight** 合并并发回填、**字节预算**淘汰（内存/硬件适配）、命中率读数；RESP 风格 `command()` 预留真 Redis 后端。接进 `authorizeOnline` 缓存 introspection 结果，还上 KI-490「每次都打端点」的欠账。
 - ~~**② 计网（KI-494）**~~ ✅ 完成：`caesura-net-stack` —— **AIMD 拥塞控制**（Reno 慢启动/拥塞避免 + CUBIC 风格窗口）、**RTO 指数退避 + Karn 算法**（不拿重传样本估 RTT）、**滑动窗口**、**QUIC 风格 0-RTT 会话票据**、**HTTP 缓存语义**（stale-while-revalidate / ETag 条件请求）。
-- **③ 前端美观登峰造极 + 前后端协同（P8-③ 待编号）**：自包含暗黑哥特风 **mesh 集大成控制台**（HTML/CSS/JS 零依赖、响应式、动效），注入 `spring-family-mesh-e2e` 真输出，把后端可观测性（分层拓扑/调用链/缓存命中/韧性计数/灰度分池）变成可见门面。
+- ~~**③ 前端美观登峰造极 + 前后端协同（KI-495）**~~ ✅ 完成：自包含暗黑哥特风 **mesh 集大成控制台**（HTML/CSS/JS 零依赖、响应式、动效），注入 `spring-family-mesh-e2e` 真输出，把后端可观测性（分层拓扑/调用链/缓存命中/韧性计数/灰度分池）变成可见门面。
 - **④ 数据库性能 / 数据结构（P8-④ 待编号）**：`caesura-lsm-store` —— **LSM-tree** memtable（有序跳表）+ 分层 **SSTable + compaction** + **Bloom filter** 点查加速 + **WAL**；与线性扫描对照给性能证据。
-- **⑤ 前后端协同贯穿（KI-493/494 及 P8-③④ 共有）**：所有后端教学件的读数统一汇进 mesh status 与前端控制台，形成「算法/协议 → 运行时 → 可观测 → 可视化」一条证据链。
+- **⑤ 前后端协同贯穿（KI-493/494/495 及 P8-④ 共有）**：所有后端教学件的读数统一汇进 mesh status 与前端控制台，形成「算法/协议 → 运行时 → 可观测 → 可视化」一条证据链。
 - 后续视进度补：对象池/缓存行对齐（false-sharing 规避）、增量 GC 友好结构、WASM 热路径等 OS/硬件适配深化。
 
 ---

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>止音纪元 · 集大成调度台</title>
+<meta name="description" content="CAESURA 集大成微服务网格的可观测控制台，数据来自真实端到端证据跑。" />
+<link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="sigil" aria-hidden="true">
+      <svg viewBox="0 0 48 48" width="40" height="40">
+        <circle cx="24" cy="24" r="21" fill="none" stroke="currentColor" stroke-width="1" opacity=".5"/>
+        <circle cx="24" cy="24" r="14" fill="none" stroke="currentColor" stroke-width="1"/>
+        <path d="M8 24 Q16 12 24 24 T40 24" fill="none" stroke="currentColor" stroke-width="1.4"/>
+        <line x1="24" y1="3" x2="24" y2="45" stroke="currentColor" stroke-width=".6" opacity=".4"/>
+        <circle cx="24" cy="24" r="2.4" fill="currentColor"/>
+      </svg>
+    </div>
+    <div class="brand-text">
+      <h1>止音纪元 · 集大成调度台</h1>
+      <p>CAESURA / MESH OBSERVATORY</p>
+    </div>
+  </div>
+  <div class="topbar-meta">
+    <div class="live"><span class="led" id="led"></span><span id="live-text">读取真值…</span></div>
+    <div class="stamp">采集于 <time id="generated-at">—</time></div>
+    <div class="src" id="src-badge">SOURCE —</div>
+  </div>
+</header>
+
+<main>
+  <!-- 顶部大数 -->
+  <section class="hero" id="hero" aria-label="核心读数">
+    <article class="metric" data-key="services">
+      <div class="metric-label">在线服务</div>
+      <div class="metric-value"><span class="num" data-num="services">—</span><span class="unit">个来源</span></div>
+      <div class="metric-foot">self · eureka · k8s 聚合</div>
+    </article>
+    <article class="metric" data-key="spanCount">
+      <div class="metric-label">调用链 span</div>
+      <div class="metric-value"><span class="num" data-num="spanCount">—</span><span class="unit">条</span></div>
+      <div class="metric-foot">W3C traceparent</div>
+    </article>
+    <article class="metric" data-key="canaryHits">
+      <div class="metric-label">金丝雀命中</div>
+      <div class="metric-value"><span class="num" data-num="canaryHits">—</span><span class="unit">次</span></div>
+      <div class="metric-foot">会话亲和 · 同 key 同池</div>
+    </article>
+    <article class="metric" data-key="cacheHitRate">
+      <div class="metric-label">鉴权缓存命中率</div>
+      <div class="metric-value"><span class="num" data-num="cacheHitRate" data-pct="1">—</span><span class="unit">%</span></div>
+      <div class="metric-foot">introspection 只打一次</div>
+    </article>
+    <article class="metric accent" data-key="cwnd">
+      <div class="metric-label">拥塞窗口 cwnd</div>
+      <div class="metric-value"><span class="num" data-num="cwnd">—</span><span class="unit">MSS</span></div>
+      <div class="metric-foot">Reno AIMD / CUBIC</div>
+    </article>
+    <article class="metric danger" data-key="timedOut">
+      <div class="metric-label">超时熔断</div>
+      <div class="metric-value"><span class="num" data-num="timedOut">—</span><span class="unit">次</span></div>
+      <div class="metric-foot">TimeLimiter 真触发</div>
+    </article>
+  </section>
+
+  <!-- 分层拓扑 + 事件流 -->
+  <section class="row row-top">
+    <article class="panel panel-topo">
+      <div class="panel-head"><h2>分层调用拓扑</h2><span class="hint">真 proxyCall 全链路</span></div>
+      <div class="topo" id="topo" role="img" aria-label="集大成分层拓扑"></div>
+      <div class="legend">
+        <span><i class="dot ok"></i>正常</span><span><i class="dot flow"></i>活跃链路</span><span><i class="dot warn"></i>韧性事件</span>
+      </div>
+    </article>
+    <article class="panel panel-events">
+      <div class="panel-head"><h2>生命周期事件流</h2><span class="hint">Spring Cloud Stream</span></div>
+      <ol class="timeline" id="events"></ol>
+    </article>
+  </section>
+
+  <!-- 韧性 + 灰度 + 缓存 -->
+  <section class="row row-mid">
+    <article class="panel">
+      <div class="panel-head"><h2>网关韧性 filter 链</h2><span class="hint">Resilience4j 风格</span></div>
+      <div class="bars" id="resilience"></div>
+      <p class="note" id="resilience-note">—</p>
+    </article>
+    <article class="panel">
+      <div class="panel-head"><h2>灰度 / 金丝雀分池</h2><span class="hint">会话亲和</span></div>
+      <div class="gray-split" id="gray-split"></div>
+      <div class="probes" id="gray-probes"></div>
+    </article>
+    <article class="panel">
+      <div class="panel-head"><h2>鉴权结果缓存</h2><span class="hint">RFC 7662 + TTL</span></div>
+      <div class="cache-wrap">
+        <div class="ring" id="cache-ring"></div>
+        <ul class="kv" id="cache-kv"></ul>
+      </div>
+      <p class="note" id="cache-note">—</p>
+    </article>
+  </section>
+
+  <!-- 计网曲线 + 读数 -->
+  <section class="row row-bottom">
+    <article class="panel panel-chart">
+      <div class="panel-head"><h2>拥塞窗口轨迹 · AIMD 锯齿</h2><span class="hint">真算法逐步读数</span></div>
+      <div class="chart" id="chart">
+        <svg id="cwnd-svg" viewBox="0 0 720 240" preserveAspectRatio="none" role="img" aria-label="拥塞窗口轨迹曲线"></svg>
+        <div class="chart-axis" id="chart-axis"></div>
+      </div>
+      <div class="legend" id="chart-legend"></div>
+    </article>
+    <article class="panel panel-netstat">
+      <div class="panel-head"><h2>计网协议读数</h2><span class="hint">Jacobson / 滑窗</span></div>
+      <div class="netstats" id="netstats"></div>
+    </article>
+  </section>
+</main>
+
+<footer class="footer">
+  <span class="seal">CAESURA · 集大成</span>
+  <span id="provenance">数据源：真跑 5 趟端到端证据 · 非硬编码</span>
+  <span class="regen">刷新真值：<code>npm run console:data</code></span>
+</footer>
+
+<script src="./bootstrap.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>

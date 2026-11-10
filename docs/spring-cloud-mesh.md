@@ -2,17 +2,25 @@
 
 > 本文是 CAESURA 项目里「Spring Cloud 微服务家族」的**合成地图**：把散落在 `scripts/` 的 35+ 件 Node 侧
 > Spring Cloud 客户端，收口成游戏可一键拉起的一朵云。本文只描述**架构与边界**，不重复每个件的实现细节
-> （细节见 `docs/KNOWN_ISSUES.md` 的 KI-460~489 账本行与各 `scripts/*.d.mts`）。
+> （细节见 `docs/KNOWN_ISSUES.md` 的 KI-460~495 账本行与各 `scripts/*.d.mts`）；前端只读可视化层见第 2 节顶部与第 6 节边界。
 
 ## 1. 总原则（决策原则①，贯穿全族）
 
 - **Spring/Java 侧只做编排/重试/熔断/报告**；**判定与阈值一律由 Node 侧负责**。
 - 因此每个 Node 客户端都是「编排壳 + 判定权在 Node」，不把业务阈值写死进 Spring 配置。
+- **前后端协同同理（KI-495）**：前端 `console/` 只读 Node 侧真跑 E2E 落盘的快照，判定权仍在 Node 判词；前端只渲染、不复核、不另算一套数，缺字段诚实降级为「—」/「无数据」。
 - `scripts/*.mjs` 必须配 `*.d.mts`（声明导出名完全一致）并通过 `decl-parity` 门；账本/PLAN/PHASE-STATUS 三者计数一致。
 
 ## 2. 分层
 
 ```
+┌──────────────────────────────────────────────────────────────────────┐
+│ 集大成控制台 (console/, KI-495)：零依赖静态页，只读真快照            │
+│  npm run console:data ⇒ 真跑 5 趟 E2E ⇒ snapshot.json + bootstrap.js │
+│  渲染 拓扑/事件流/韧性条/灰度分池/缓存环/cwnd 曲线/计网读数          │
+│  file:// 直开走 bootstrap.js 同源回退；web 服务走 XHR 拉 snapshot.json │
+└──────────────────────────────────────────────────────────────────────┘
+   ▲ 数据源：下方 E2E（第 5 节）真跑产物 snapshot.json，只读、不回写运行时
 ┌──────────────────────────────────────────────────────────────────────┐
 │  游戏本体 (src/)                                                       │
 │   └─ bridge.install(game)  —— 开机即注册 / 关机即注销（caesura-game-bootstrap）│
@@ -137,6 +145,17 @@ if (gc.auth.canAccess(claims, 'game:call')) { /* ... */ }
   白名单双向转发；判定权 Node 侧——哪些事件过桥、映射成什么 type，全由 `routes` 定。
 - `game.started`/`game.stopped` 由 `gc.start()/shutdown()` 自动发到云事件总线（KI-484），E2E 可证。
 
+**前端集大成控制台只读真快照（KI-495）**——`console/` 是零框架/零 CDN/零外部依赖的静态页，与 Node 判词解耦：
+
+```bash
+npm run console:data     # 真跑 5 趟 E2E（main/gray/resilience/cache/net）⇒ console/snapshot.json + bootstrap.js
+```
+
+- 数据源唯一：`scripts/caesura-console-gen.mjs` 用真 `runMeshE2E` 跑五场景，把判词 normalize 成 `ConsoleScenario[]` 并 `deriveHighlights` 出八个大数；`generatedAt` 是采集时刻，拒绝手改。
+- 双载体同源：`console/snapshot.json`（web 服务经 XHR 拉取）与 `console/bootstrap.js`（`file://` 直开时同源回退）由同一次生成写出，`app.js` 二者取其一、不编造第二套数。
+- 渲染即判词：拓扑/事件流/韧性条/灰度分池/缓存命中环/cwnd AIMD 曲线/SRTT·RTO·CUBIC·滑窗读数全部来自真快照；缺字段降级为「—」/「无数据」，不画假线、不写假数（暗黑哥特视觉、SVG 手绘、响应式、`prefers-reduced-motion` 降级）。
+- 判定权不越界：前端只渲染，不复核、不重算阈值；`caesura-console-gen` 与 `caesura-console-ui` 分别用真 E2E、`node:vm` + DOM stub 跑真 `app.js` 出可断言证据（10 腿 + 7 腿）。
+
 **灰度/金丝雀加权路由（KI-491）**——把家族里各说各话的 `Weight` predicate 与 `weight` 负载策略收口成一只决策器：
 
 ```js
@@ -181,8 +200,9 @@ node scripts/spring-family-mesh-e2e.mjs
 - 注入 `filters:[{Bulkhead},{TimeLimiter}]` + 挂起 transport 时 `filterStats.timedOut`/`bulkheadHeld` 证韧性 filter 真在链上触发（KI-492）；
 - 注入 `authCache:true`+`onlineAuth`+`cacheProbe` 时 `cacheProbe.secondSource='cache'`/`secondCacheHit=true`、`authCacheStats` 命中读数、且 introspection 端点全程只被调一次，证 introspection 结果缓存真生效（KI-493）；
 - 注入 `net:true`+`netNow` 时 `netSnapshot.observes` 证主链 proxyCall 真被观测、`aimd.cwnd>1` 证成功 ACK 喂了慢启动、`rto.srtt>0` 证真实耗时被采样，`status().net` 同步可读（KI-494）。
+- `npm run console:data` 真跑 5 趟 E2E 落 `console/snapshot.json`+`bootstrap.js`，`console/snapshot.json` 的 `highlights` 八个大数全部由真判词 `deriveHighlights` 派生（services/spanCount/canaryHits/cacheHitRate/timedOut/cwnd/rto），`net.series` 是同一只真 AIMD 实例喂出的锯齿轨迹；`caesura-console-ui.test.ts` 用 DOM stub 在 `node:vm` 跑真 `app.js` 喂这份真快照，证每块面板都落真读数、缺字段诚实降级（KI-495）。
 
-对应 `tests/unit/spring-family-mesh-e2e.test.ts`（14 腿）。
+对应 `tests/unit/spring-family-mesh-e2e.test.ts`（14 腿）；前端证据另见 `tests/unit/caesura-console-gen.test.ts`（10 腿）与 `tests/unit/caesura-console-ui.test.ts`（7 腿）。
 
 ## 6. 边界与「不声称」
 
@@ -198,3 +218,5 @@ node scripts/spring-family-mesh-e2e.mjs
 - 不声称缓存读路径用了堆/跳表——KI-493 LRU 刻意用 Map+双向链表保持 O(1) 命中/逐出，TTL 走「惰性 + 显式 O(n) 定期清扫」，`singleflight`/字节预算均每进程内存一只、不跨进程共享。
 - 不声称灰度接了真流量镜像/service mesh sidecar——KI-491 `spring-gateway-gray` 纯进程内决策，transport 仍是注入的内存实现；不缓存会话状态（亲和靠 selector 确定性哈希，同 key 必落同池），阈值无服务端下发/热更（由 opts 注入）。
 - 不声称事件桥 import 了浏览器 `src/`——`caesura-game-event-bridge` 依赖注入两只 duck-typed bus，永不反向依赖；默认空路由零转发，载荷原样透传不校验。
+- 不声称前端控制台是实时流/推送——KI-495 `console/` 只读 `npm run console:data` 落盘的**一次性离线快照**，`snapshot.json`（XHR）与 `bootstrap.js`（`file://` 回退）同源；无 WebSocket/SSE、无定时轮询、无后端写入、无交互命令下发（纯只读可视化），要刷新须重跑生成器。
+- 不声称前端视觉是像素级截图验证——KI-495 UI 证据是 `node:vm` + DOM stub 跑真 `app.js` 证「每块面板落真读数 + 缺字段降级 + 零外部依赖」的可断言烟测，非浏览器渲染截图；`styles.css` 内联 grain SVG 的 `xmlns` 是命名空间常量、非网络请求。前端不持有判定权与阈值，所有读数是 Node 判词派生，不复核、不重算。
