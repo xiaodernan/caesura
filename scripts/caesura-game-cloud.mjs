@@ -29,6 +29,7 @@ import { failureDetectorStudy, fdSnapshot } from './caesura-failure-detector.mjs
 import { bplusStudy, bpSnapshot } from './caesura-bplus-tree.mjs'
 import { mvccStudy, mvSnapshot } from './caesura-mvcc-txn.mjs'
 import { distributedTxnStudy, dtSnapshot } from './caesura-distributed-txn.mjs'
+import { raftConsensusStudy, rcSnapshot } from './caesura-raft-consensus.mjs'
 import {
   createAimdCongestion,
   createCubicCongestion,
@@ -363,6 +364,27 @@ export function createGameCloud(opts = {}) {
     return dtCached
   }
 
+  // KI-507：Raft 共识与复制状态机三协议诚实权衡（Raft 单 leader / 多主复制 / Gossip 反熵，opt-in）。
+  // opts.raftConsensus===true 用缺省规模；传对象逐项注入（now/nodes/seed/rand/antiEntropyRounds/
+  // replicationRounds/skipRounds/...），或直接塞一只现成 study（duck-typed：带 comparison/election/
+  // replication/safety/gossip/verdict 六块）。默认 raftConsensus:false 不装配、不改任何调用路径
+  // （KI-486/493/496/501/502/503/504/505/506 语义逐字不动）。
+  const rcCfg = opts.raftConsensus === true ? {} : (opts.raftConsensus && typeof opts.raftConsensus === 'object' ? opts.raftConsensus : null)
+  const rcInjected = rcCfg !== null && opts.raftConsensus &&
+    typeof opts.raftConsensus === 'object' && typeof opts.raftConsensus.comparison === 'object' &&
+    typeof opts.raftConsensus.election === 'object' && typeof opts.raftConsensus.gossip === 'object'
+  let rcCached = null
+  async function rcSnapshotForStatus() {
+    if (rcCfg === null) return null
+    if (rcCached) return rcCached
+    // 注入现成 study 直接用（不重跑，builtAt 原样带出）；否则真跑一次汇总，惰性缓存不反复付对照成本。
+    const study = rcInjected
+      ? opts.raftConsensus
+      : await raftConsensusStudy({ ...rcCfg, now: opts.raftNow ?? rcCfg.now })
+    rcCached = rcSnapshot(study)
+    return rcCached
+  }
+
   /** 包住一次调用，用真实耗时/成败喂 net 包（未启用则原样返回，零开销）。 */
   async function observeCall(promise) {
     if (!net) return promise
@@ -417,6 +439,8 @@ export function createGameCloud(opts = {}) {
     runMvccTxnStudy: mvCfg === null ? null : () => mvccStudy({ ...mvCfg, now: opts.txnNow ?? mvCfg.now }),
     /** KI-506：分布式事务三协议汇总的现算入口（未配 opts.distributedTxn 时为 null）；调一次真跑 2PC/Saga/TCC × 六场景矩阵 + 三难判词。 */
     runDistributedTxnStudy: dtCfg === null ? null : () => distributedTxnStudy({ ...dtCfg, now: opts.dtxnNow ?? dtCfg.now }),
+    /** KI-507：Raft 共识三协议汇总的现算入口（未配 opts.raftConsensus 时为 null）；调一次真跑 Raft/MultiMaster/Gossip × 六场景矩阵 + 三难判词。 */
+    runRaftConsensusStudy: rcCfg === null ? null : () => raftConsensusStudy({ ...rcCfg, now: opts.raftNow ?? rcCfg.now }),
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
     gray: runtime.gray,
     /** 把游戏真 EventBus 按白名单routes 接进云事件总线（游戏侧一行：gc.connectGameBus(bus, routes)）。 */
@@ -455,6 +479,7 @@ export function createGameCloud(opts = {}) {
         bplusIndex: await bpSnapshotForStatus(),
         mvccTxn: await mvSnapshotForStatus(),
         distributedTxn: await dtSnapshotForStatus(),
+        raftConsensus: await rcSnapshotForStatus(),
       }
     },
   }

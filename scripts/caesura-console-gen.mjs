@@ -25,6 +25,7 @@ import { failureDetectorStudy, fdSnapshot } from './caesura-failure-detector.mjs
 import { bplusStudy, bpSnapshot } from './caesura-bplus-tree.mjs'
 import { mvccStudy, mvSnapshot } from './caesura-mvcc-txn.mjs'
 import { distributedTxnStudy, dtSnapshot } from './caesura-distributed-txn.mjs'
+import { raftConsensusStudy, rcSnapshot } from './caesura-raft-consensus.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
 export const SCENARIO_IDS = ['main', 'gray', 'resilience', 'cache', 'net']
@@ -87,6 +88,8 @@ export async function buildSnapshot(opts = {}) {
     mvGcVersions: opts.mvGcVersions,
     distributedTxn: opts.distributedTxn,
     dtxnRetries: opts.dtxnRetries,
+    raftConsensus: opts.raftConsensus,
+    rcRounds: opts.rcRounds,
   })
 
   return {
@@ -124,7 +127,8 @@ export async function buildSnapshot(opts = {}) {
  * @param {boolean} [opts.bplusIndex=false] 关掉 B+ 树索引维（兼容旧快照）
  * @param {boolean} [opts.mvccTxn=false] 关掉事务并发控制维（兼容旧快照）
  * @param {boolean} [opts.distributedTxn=false] 关掉分布式事务维（兼容旧快照）
- * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, failureDetector:object|null, bplusIndex:object|null, mvccTxn:object|null, distributedTxn:object|null, builtAt:number}>}
+ * @param {boolean} [opts.raftConsensus=false] 关掉 Raft 共识维（兼容旧快照）
+ * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, failureDetector:object|null, bplusIndex:object|null, mvccTxn:object|null, distributedTxn:object|null, raftConsensus:object|null, builtAt:number}>}
  */
 export async function buildSystems(opts = {}) {
   const now = typeof opts.now === 'function' ? opts.now : () => Date.now()
@@ -142,7 +146,9 @@ export async function buildSystems(opts = {}) {
   const mvccTxn = opts.mvccTxn === false ? null : await buildMvccTxnReading(opts, now)
   // KI-506：第八维「分布式事务」真跑 2PC/Saga/TCC × 六场景矩阵 + 三难判词，与其它七维平级、不混入五场景。
   const distributedTxn = opts.distributedTxn === false ? null : await buildDistributedTxnReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, builtAt: now() }
+  // KI-507：第九维「Raft 共识」真跑 Raft/MultiMaster/Gossip × 六场景矩阵 + 三难判词，与其它八维平级、不混入五场景。
+  const raftConsensus = opts.raftConsensus === false ? null : await buildRaftConsensusReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, builtAt: now() }
 }
 
 /** LSM 引擎真跑一趟确定性 benchmark，回结构读数（不夹带每行真值）。 */
@@ -428,6 +434,34 @@ export async function buildDistributedTxnReading(opts, now) {
 }
 
 /**
+ * KI-507：真跑 `raftConsensusStudy`（Raft 单 leader 强一致 / 多主复制 / Gossip 反熵 × 六场景矩阵 +
+ * 三难判词）并收敛成前端「Raft 共识」两面板紧凑读数。判定/阈值全 Node 侧；注入固定时钟 ⇒
+ * 快照重跑逐字一致；三协议阶梯是确定性故障场景真判词、判词不封任何协议全局赢家，缺哪块落 null。
+ * @param {object} opts { raftConsensus?:false, rcRounds? }
+ * @param {()=>number} now 时钟（builtAt 注入则确定性）
+ */
+export async function buildRaftConsensusReading(opts, now) {
+  try {
+    const s = raftConsensusStudy({
+      now,
+      ...(opts.rcRounds ? { antiEntropyRounds: Math.max(1, Math.floor(Number(opts.rcRounds))) } : {}),
+    })
+    const snap = rcSnapshot(s)
+    return {
+      config: snap.config,
+      rows: snap.rows,
+      election: snap.election,
+      replication: snap.replication,
+      safety: snap.safety,
+      gossip: snap.gossip,
+      verdict: snap.verdict,
+    }
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
  * 真跑时每场景的 opts（判定权在此：场景参数固定，业务阈值仍来自各子系统默认/显式注入）。
  * @param {string} id
  */
@@ -650,6 +684,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
       const stateOf = (s) => s.committed ? '成' : s.blocked > 0 ? '阻' : s.dirty > 0 ? '脏' : '止'
       const ladders = dt.rows.map((row) => `${row.protocol}[${row.scenarios.map((s) => s.id + ':' + stateOf(s)).join('/')}] 侵入${row.intrusion}`).join(' · ')
       console.log(`[console] distributedTxn: ${ladders} / 三难向量 ${JSON.stringify(Object.fromEntries(dt.rows.map((r) => [r.protocol, `${Number(r.trilemma.noBlock)}${Number(r.trilemma.noDirty)}${Number(r.trilemma.lowIntrusion)}`])))} / 不封赢家 ${dt.verdict.noUniversalWinner ? '是' : '否'}`)
+    }
+    if (snap.systems?.raftConsensus) {
+      const rc = snap.systems.raftConsensus
+      const stateOf = (s) => s.blockedWrites > 0 ? '阻' : s.staleReads > 0 ? '陈' : s.conflicts > 0 ? '冲' : s.converged === false ? '散' : s.committed ? '成' : '?'
+      const ladders = rc.rows.map((row) => `${row.protocol}[${row.scenarios.map((s) => s.id + ':' + stateOf(s)).join('/')}]`).join(' · ')
+      console.log(`[console] raftConsensus: ${ladders} / 三难向量 ${JSON.stringify(Object.fromEntries(rc.rows.map((r) => [r.protocol, `${Number(r.trilemma.linearizable)}${Number(r.trilemma.partitionAvailable)}${Number(r.trilemma.boundedConvergence)}`])))} / 不封赢家 ${rc.verdict.noUniversalWinner ? '是' : '否'}`)
     }
     process.exit(0)
   }).catch((e) => { console.error(`[console] 生成失败：${e.message}`); process.exit(1) })

@@ -328,7 +328,17 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(dtS.scenarios.find((s: any) => s.id === 'compensateFail').dirty).toBe(1)
     expect(dtT.scenarios.find((s: any) => s.id === 'confirmFlaky').retries).toBeGreaterThan(0)
     expect(snap.systems.distributedTxn.verdict.noUniversalWinner).toBe(true)
-    // bootstrap.js 与 snapshot.json 是同一份真快照（含八维 systems）。
+    // KI-507 raftConsensus：三协议 × 六场景矩阵 + 三难判词真读数已固化进快照。
+    expect(snap.systems.raftConsensus.rows.length).toBe(3)
+    expect(snap.systems.raftConsensus.config.scenarios.length).toBe(6)
+    const rcR = snap.systems.raftConsensus.rows.find((r: any) => r.protocol === 'Raft')!
+    const rcM = snap.systems.raftConsensus.rows.find((r: any) => r.protocol === 'MultiMaster')!
+    const rcG = snap.systems.raftConsensus.rows.find((r: any) => r.protocol === 'Gossip')!
+    expect(rcR.scenarios.find((s: any) => s.id === 'networkPartition').blockedWrites).toBeGreaterThan(0)
+    expect(rcM.scenarios.find((s: any) => s.id === 'writeConflict').conflicts).toBeGreaterThan(0)
+    expect(rcG.scenarios.find((s: any) => s.id === 'antiEntropyGap').converged).toBe(false)
+    expect(snap.systems.raftConsensus.verdict.noUniversalWinner).toBe(true)
+    // bootstrap.js 与 snapshot.json 是同一份真快照（含九维 systems）。
     const bootCode = readFileSync(resolve(process.cwd(), 'console/bootstrap.js'), 'utf8')
     const fromBoot = JSON.parse(bootCode.slice(bootCode.indexOf('=') + 1).trim().replace(/;\s*$/, ''))
     expect(fromBoot.systems.lsm.speedup).toBe(snap.systems.lsm.speedup)
@@ -339,6 +349,7 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(fromBoot.systems.bplusIndex).toEqual(snap.systems.bplusIndex)
     expect(fromBoot.systems.mvccTxn).toEqual(snap.systems.mvccTxn)
     expect(fromBoot.systems.distributedTxn).toEqual(snap.systems.distributedTxn)
+    expect(fromBoot.systems.raftConsensus).toEqual(snap.systems.raftConsensus)
   })
 
   it('⑭ buildMvccTxnReading 真跑五档矩阵形状齐、读数是真判词、单维关闭不连坐（KI-505）', async () => {
@@ -401,5 +412,39 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(sys.bplusIndex).toBeTruthy() // 不连坐
     const snap = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, distributedTxn: false })
     expect(snap.systems!.distributedTxn).toBe(null)
+  })
+
+  it('⑯ buildRaftConsensusReading 真跑三协议矩阵形状齐、读数是真判词、单维关闭不连坐（KI-507）', async () => {
+    const { buildRaftConsensusReading } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 6262
+    const reading = await buildRaftConsensusReading({ rcRounds: 8 }, now)
+    expect(reading).not.toBe(null)
+    expect(reading!.config.protocols).toEqual(['Raft', 'MultiMaster', 'Gossip'])
+    expect(reading!.config.scenarios.length).toBe(6)
+    expect(reading!.rows.length).toBe(3)
+    for (const row of reading!.rows) {
+      expect(row.scenarios.length).toBe(6)
+      expect(typeof row.totals.messages).toBe('number')
+      expect(typeof row.trilemma.linearizable).toBe('boolean')
+    }
+    // 真判词：Raft 分区拒写 / 多主并发写冲突 / Gossip 反熵间隙不收敛 / 三难向量互不相同 / 不封赢家
+    const raft = reading!.rows.find((r) => r.protocol === 'Raft')!
+    const mm = reading!.rows.find((r) => r.protocol === 'MultiMaster')!
+    const gossip = reading!.rows.find((r) => r.protocol === 'Gossip')!
+    expect(raft.scenarios.find((s) => s.id === 'networkPartition')!.blockedWrites).toBeGreaterThan(0)
+    expect(mm.scenarios.find((s) => s.id === 'writeConflict')!.conflicts).toBeGreaterThan(0)
+    expect(gossip.scenarios.find((s) => s.id === 'antiEntropyGap')!.converged).toBe(false)
+    const vec = (r: any) => `${Number(r.trilemma.linearizable)}${Number(r.trilemma.partitionAvailable)}${Number(r.trilemma.boundedConvergence)}`
+    expect([vec(raft), vec(mm), vec(gossip)]).toEqual(['101', '011', '010'])
+    expect(reading!.verdict.noUniversalWinner).toBe(true)
+    expect(reading!.election.resolvedByTimeout).toBe(true)
+    expect(reading!.gossip.noBound).toBe(true)
+    // 单维关闭由 buildSystems/buildSnapshot 层把关：落 null，不动其它维
+    const sys = await buildSystems({ now, raftConsensus: false })
+    expect(sys.raftConsensus).toBe(null)
+    expect(sys.distributedTxn).toBeTruthy() // 不连坐
+    expect(sys.mvccTxn).toBeTruthy() // 不连坐
+    const snap = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, raftConsensus: false })
+    expect(snap.systems!.raftConsensus).toBe(null)
   })
 })

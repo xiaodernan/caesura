@@ -628,4 +628,65 @@ describe('caesura-console-ui (KI-495)', () => {
     expect(dom2.els['dt-matrix'].innerHTML).toContain('class="dt-cell blocked"') // 矩阵照常
     expect(dom2.els['dt-trilemma'].innerHTML).toContain('data-k="noBlock"')      // 三难照常
   })
+
+  it('㉒ KI-507 真 raftConsensus 读数落进「三协议×六场景」+「三难不可兼得」两面板（不是写死的数）', async () => {
+    const dom = await runApp(real)
+    const rc = real.systems.raftConsensus
+    // 面板一：三协议 × 六场景矩阵（每格读 Node 判词：成/阻/陈/冲/散）+ 消息横条
+    const matrix = dom.els['rc-matrix'].innerHTML
+    expect(matrix).toContain('rc-mat-head')
+    for (const row of rc.rows) expect(matrix).toContain('data-p="' + row.protocol + '"')
+    for (const s of rc.config.scenarios) expect(matrix).toContain('data-s="' + s.id + '"')
+    expect(matrix).toContain('class="rc-cell denied" data-p="Raft" data-s="networkPartition"')      // Raft 分区拒写
+    expect(matrix).toContain('class="rc-cell conflict" data-p="MultiMaster" data-s="writeConflict"') // 多主冲突
+    expect(matrix).toContain('class="rc-cell diverged" data-p="Gossip" data-s="antiEntropyGap"')     // Gossip 未收敛
+    expect(matrix).toContain(String(rc.rows.find((r: any) => r.protocol === 'Gossip').totals.messages)) // 消息真读数
+    const ladder = dom.els['rc-ladder'].innerHTML
+    expect(ladder).toContain('data-p="Raft"')
+    expect(ladder).toContain('rc-bar')
+    expect(dom.els['rc-matrix-note'].textContent).toContain('反熵间隙结束仍未收敛')
+    // 面板二：三难向量（玉=占/酒红=缺，逐格 data-v）+ 判词探针 + 不封赢家 dot
+    const tri = dom.els['rc-trilemma'].innerHTML
+    expect(tri).toContain('rc-vec-head')
+    expect(tri).toContain('data-k="linearizable"')
+    expect(tri).toContain('data-k="partitionAvailable"')
+    expect(tri).toContain('data-k="boundedConvergence"')
+    expect(tri).toContain('data-p="Raft" data-k="partitionAvailable" data-v="0"')       // Raft 缺分区可用
+    expect(tri).toContain('data-p="MultiMaster" data-k="linearizable" data-v="0"')      // 多主缺线性一致
+    expect(tri).toContain('data-p="Gossip" data-k="boundedConvergence" data-v="0"')     // Gossip 缺确定收敛
+    const probes = dom.els['rc-probes'].innerHTML
+    expect(probes).toContain('data-probe="raftBlocks"')
+    expect(probes).toContain('data-probe="raftElection"')
+    expect(probes).toContain('data-probe="raftSafety"')
+    expect(probes).toContain('data-probe="mmConflict"')
+    expect(probes).toContain('data-probe="gossipGap"')
+    expect(probes).toContain('data-verdict="noUniversalWinner"')
+    expect(probes).toContain('不封任何协议全局赢家')
+    expect(dom.els['rc-trilemma-note'].textContent).toContain('换场景结论会变')
+  })
+
+  it('㉓ KI-507 raftConsensus 整块缺 / 单块缺诚实降级，不连坐 distributedTxn-mvccTxn-lsm', async () => {
+    // 整块缺：四子块全降级、绝不画 0/假格；其它八维仍照常。
+    const noRc = JSON.parse(JSON.stringify(real))
+    noRc.systems.raftConsensus = null
+    const dom = await runApp(noRc)
+    expect(dom.els['rc-matrix'].innerHTML).toContain('无三协议场景矩阵读数')
+    expect(dom.els['rc-ladder'].innerHTML).toBe('')
+    expect(dom.els['rc-trilemma'].innerHTML).toContain('无三难判据读数')
+    expect(dom.els['rc-probes'].innerHTML).toBe('')
+    expect(dom.els['rc-matrix-note'].textContent).toContain('systems.raftConsensus 缺失')
+    expect(dom.els['dt-matrix'].innerHTML).toContain('data-p="2PC"')           // distributedTxn 不连坐
+    expect(dom.els['mv-matrix'].innerHTML).toContain('data-lvl="RU"')          // mvccTxn 不连坐
+    expect(dom.els['lsm-gauge'].innerHTML).toContain(String(real.systems.lsm.speedup.toFixed(1))) // lsm 不连坐
+
+    // 单块缺：只降 gossip 探针，矩阵/三难向量仍渲染真读数（同维不连坐）。
+    const partial = JSON.parse(JSON.stringify(real))
+    partial.systems.raftConsensus.gossip = null
+    const dom2 = await runApp(partial)
+    const probes = dom2.els['rc-probes'].innerHTML
+    expect(probes).toContain('反熵间隙 收敛 · 读陈 无 · 无确定上界 ✗') // gossip 缺 → 诚实落否定，不编读数
+    expect(probes).toContain('data-probe="raftBlocks"')              // 其余探针照常
+    expect(dom2.els['rc-matrix'].innerHTML).toContain('class="rc-cell denied"') // 矩阵照常
+    expect(dom2.els['rc-trilemma'].innerHTML).toContain('data-k="linearizable"') // 三难照常
+  })
 })

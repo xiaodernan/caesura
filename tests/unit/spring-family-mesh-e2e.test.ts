@@ -429,4 +429,28 @@ describe('spring-family-mesh-e2e', () => {
     const plain = await runMeshE2E().run()
     expect(plain.distributedTxnSnapshot).toBe(null)
   })
+
+  it('e2e KI-507：raftConsensus=true ⇒ 主链照常跑通，raftConsensusSnapshot 带三协议×六场景矩阵/三难判词', async () => {
+    const e = runMeshE2E({ raftConsensus: true, raftNow: () => 6666 })
+    const r = await e.run()
+    expect(r.started?.registered).toBe(true)          // 主链语义逐字不动
+    expect(r.callRes?.ok).toBe(true)
+    const d = r.raftConsensusSnapshot
+    expect(d).not.toBe(null)
+    expect(d!.builtAt).toBe(6666)
+    expect(d!.config.protocols).toEqual(['Raft', 'MultiMaster', 'Gossip'])
+    expect(d!.config.scenarios.length).toBe(6)
+    expect(d!.rows.length).toBe(3)
+    const raft = d!.rows.find((row: any) => row.protocol === 'Raft')!
+    const mm = d!.rows.find((row: any) => row.protocol === 'MultiMaster')!
+    const gossip = d!.rows.find((row: any) => row.protocol === 'Gossip')!
+    expect(raft.scenarios.find((s: any) => s.id === 'networkPartition')!.blockedWrites).toBeGreaterThan(0)
+    expect(mm.scenarios.find((s: any) => s.id === 'writeConflict')!.conflicts).toBeGreaterThan(0)
+    expect(gossip.scenarios.find((s: any) => s.id === 'antiEntropyGap')!.converged).toBe(false)
+    expect(d!.verdict.noUniversalWinner).toBe(true)
+    expect(Object.values(d!.verdict).every(Boolean)).toBe(true)
+    // 未配 raftConsensus 时为 null（非破坏）。
+    const plain = await runMeshE2E().run()
+    expect(plain.raftConsensusSnapshot).toBe(null)
+  })
 })

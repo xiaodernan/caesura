@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794353533837,
+  "generatedAt": 1794354639345,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1365,12 +1365,12 @@
           "keys": 1,
           "versions": 2,
           "commitLogSize": 1,
-          "now": 1794353533836
+          "now": 1794354639341
         },
         "final": {
           "A": {
             "value": 101,
-            "commitTs": 1794353533836,
+            "commitTs": 1794354639341,
             "tombstone": false
           }
         }
@@ -2026,6 +2026,660 @@
         "tccConfirmIdempotentRetry": true
       }
     },
-    "builtAt": 1794353533837
+    "raftConsensus": {
+      "config": {
+        "protocols": [
+          "Raft",
+          "MultiMaster",
+          "Gossip"
+        ],
+        "scenarios": [
+          {
+            "id": "allOk",
+            "label": "全成功"
+          },
+          {
+            "id": "leaderElection",
+            "label": "leader 宕机选主空窗"
+          },
+          {
+            "id": "networkPartition",
+            "label": "网络分区少数派"
+          },
+          {
+            "id": "writeConflict",
+            "label": "两主并发写同 key"
+          },
+          {
+            "id": "replicationLag",
+            "label": "异步复制延迟读陈值"
+          },
+          {
+            "id": "antiEntropyGap",
+            "label": "反熵间隙读陈值"
+          }
+        ]
+      },
+      "rows": [
+        {
+          "protocol": "Raft",
+          "label": "单 leader 强一致共识",
+          "trilemma": {
+            "linearizable": true,
+            "partitionAvailable": false,
+            "boundedConvergence": true
+          },
+          "totals": {
+            "committed": 5,
+            "blockedWrites": 2,
+            "staleReads": 0,
+            "conflicts": 0,
+            "messages": 132,
+            "diverged": 0
+          },
+          "scenarios": [
+            {
+              "id": "allOk",
+              "label": "全成功",
+              "protocol": "Raft",
+              "scenario": "allOk",
+              "committed": true,
+              "blockedWrites": 0,
+              "staleReads": 0,
+              "conflicts": 0,
+              "converged": true,
+              "linearizable": true,
+              "messages": 24,
+              "terms": 1,
+              "rounds": 0,
+              "detail": {
+                "commitIndex": 2,
+                "appliedIndex": 2,
+                "applied": 2,
+                "readLinearizable": true
+              },
+              "fault": {
+                "at": "allOk"
+              }
+            },
+            {
+              "id": "leaderElection",
+              "label": "leader 宕机选主空窗",
+              "protocol": "Raft",
+              "scenario": "leaderElection",
+              "committed": true,
+              "blockedWrites": 1,
+              "staleReads": 0,
+              "conflicts": 0,
+              "converged": true,
+              "linearizable": true,
+              "messages": 32,
+              "terms": 3,
+              "rounds": 0,
+              "detail": {
+                "splitVoteDetected": true,
+                "resolvedByTimeout": true,
+                "electionTimeouts": [
+                  77.539,
+                  181.413,
+                  529.654,
+                  988.2,
+                  929.853
+                ],
+                "leaderChanges": 2,
+                "reason": "leader-election"
+              },
+              "fault": {
+                "at": "leaderElection"
+              }
+            },
+            {
+              "id": "networkPartition",
+              "label": "网络分区少数派",
+              "protocol": "Raft",
+              "scenario": "networkPartition",
+              "committed": false,
+              "blockedWrites": 1,
+              "staleReads": 0,
+              "conflicts": 0,
+              "converged": true,
+              "linearizable": true,
+              "messages": 4,
+              "terms": 1,
+              "rounds": 0,
+              "detail": {
+                "reason": "minority-partition",
+                "quorum": 3,
+                "acks": 1,
+                "commitIndex": 0,
+                "appliedIndex": 0
+              },
+              "fault": {
+                "at": "networkPartition"
+              }
+            },
+            {
+              "id": "writeConflict",
+              "label": "两主并发写同 key",
+              "protocol": "Raft",
+              "scenario": "writeConflict",
+              "committed": true,
+              "blockedWrites": 0,
+              "staleReads": 0,
+              "conflicts": 0,
+              "converged": true,
+              "linearizable": true,
+              "messages": 24,
+              "terms": 1,
+              "rounds": 0,
+              "detail": {
+                "commitIndex": 2,
+                "appliedIndex": 2,
+                "applied": 2,
+                "readLinearizable": true
+              },
+              "fault": {
+                "at": "writeConflict",
+                "key": "x",
+                "concurrentValue": "concurrent"
+              }
+            },
+            {
+              "id": "replicationLag",
+              "label": "异步复制延迟读陈值",
+              "protocol": "Raft",
+              "scenario": "replicationLag",
+              "committed": true,
+              "blockedWrites": 0,
+              "staleReads": 0,
+              "conflicts": 0,
+              "converged": true,
+              "linearizable": true,
+              "messages": 24,
+              "terms": 1,
+              "rounds": 0,
+              "detail": {
+                "commitIndex": 2,
+                "appliedIndex": 2,
+                "applied": 2,
+                "readLinearizable": true
+              },
+              "fault": {
+                "at": "replicationLag",
+                "key": "x"
+              }
+            },
+            {
+              "id": "antiEntropyGap",
+              "label": "反熵间隙读陈值",
+              "protocol": "Raft",
+              "scenario": "antiEntropyGap",
+              "committed": true,
+              "blockedWrites": 0,
+              "staleReads": 0,
+              "conflicts": 0,
+              "converged": true,
+              "linearizable": true,
+              "messages": 24,
+              "terms": 1,
+              "rounds": 0,
+              "detail": {
+                "commitIndex": 2,
+                "appliedIndex": 2,
+                "applied": 2,
+                "readLinearizable": true
+              },
+              "fault": {
+                "at": "antiEntropyGap",
+                "key": "x",
+                "skipRounds": 8
+              }
+            }
+          ]
+        },
+        {
+          "protocol": "MultiMaster",
+          "label": "多主复制",
+          "trilemma": {
+            "linearizable": false,
+            "partitionAvailable": true,
+            "boundedConvergence": true
+          },
+          "totals": {
+            "committed": 6,
+            "blockedWrites": 0,
+            "staleReads": 1,
+            "conflicts": 1,
+            "messages": 103,
+            "diverged": 0
+          },
+          "scenarios": [
+            {
+              "id": "allOk",
+              "label": "全成功",
+              "protocol": "MultiMaster",
+              "scenario": "allOk",
+              "committed": true,
+              "blockedWrites": 0,
+              "staleReads": 0,
+              "conflicts": 0,
+              "converged": true,
+              "linearizable": true,
+              "messages": 17,
+              "terms": 0,
+              "rounds": 4,
+              "detail": {
+                "replicated": true,
+                "rounds": 4,
+                "readStale": false,
+                "convergenceBound": 4,
+                "lastWriteNode": "n1"
+              },
+              "fault": {
+                "at": "allOk"
+              }
+            },
+            {
+              "id": "leaderElection",
+              "label": "leader 宕机选主空窗",
+              "protocol": "MultiMaster",
+              "scenario": "leaderElection",
+              "committed": true,
+              "blockedWrites": 0,
+              "staleReads": 0,
+              "conflicts": 0,
+              "converged": true,
+              "linearizable": true,
+              "messages": 17,
+              "terms": 0,
+              "rounds": 4,
+              "detail": {
+                "replicated": true,
+                "rounds": 4,
+                "readStale": false,
+                "convergenceBound": 4,
+                "lastWriteNode": "n1"
+              },
+              "fault": {
+                "at": "leaderElection"
+              }
+            },
+            {
+              "id": "networkPartition",
+              "label": "网络分区少数派",
+              "protocol": "MultiMaster",
+              "scenario": "networkPartition",
+              "committed": true,
+              "blockedWrites": 0,
+              "staleReads": 0,
+              "conflicts": 0,
+              "converged": true,
+              "linearizable": true,
+              "messages": 17,
+              "terms": 0,
+              "rounds": 4,
+              "detail": {
+                "replicated": true,
+                "rounds": 4,
+                "readStale": false,
+                "convergenceBound": 4,
+                "lastWriteNode": "n1"
+              },
+              "fault": {
+                "at": "networkPartition"
+              }
+            },
+            {
+              "id": "writeConflict",
+              "label": "两主并发写同 key",
+              "protocol": "MultiMaster",
+              "scenario": "writeConflict",
+              "committed": true,
+              "blockedWrites": 0,
+              "staleReads": 0,
+              "conflicts": 1,
+              "converged": true,
+              "linearizable": false,
+              "messages": 18,
+              "terms": 0,
+              "rounds": 4,
+              "detail": {
+                "replicated": true,
+                "rounds": 4,
+                "readStale": false,
+                "convergenceBound": 4,
+                "lastWriteNode": "n1"
+              },
+              "fault": {
+                "at": "writeConflict",
+                "key": "x",
+                "concurrentValue": "concurrent"
+              }
+            },
+            {
+              "id": "replicationLag",
+              "label": "异步复制延迟读陈值",
+              "protocol": "MultiMaster",
+              "scenario": "replicationLag",
+              "committed": true,
+              "blockedWrites": 0,
+              "staleReads": 1,
+              "conflicts": 0,
+              "converged": true,
+              "linearizable": false,
+              "messages": 17,
+              "terms": 0,
+              "rounds": 4,
+              "detail": {
+                "replicated": true,
+                "rounds": 4,
+                "readStale": true,
+                "convergenceBound": 4,
+                "lastWriteNode": "n1"
+              },
+              "fault": {
+                "at": "replicationLag",
+                "key": "x"
+              }
+            },
+            {
+              "id": "antiEntropyGap",
+              "label": "反熵间隙读陈值",
+              "protocol": "MultiMaster",
+              "scenario": "antiEntropyGap",
+              "committed": true,
+              "blockedWrites": 0,
+              "staleReads": 0,
+              "conflicts": 0,
+              "converged": true,
+              "linearizable": true,
+              "messages": 17,
+              "terms": 0,
+              "rounds": 4,
+              "detail": {
+                "replicated": true,
+                "rounds": 4,
+                "readStale": false,
+                "convergenceBound": 4,
+                "lastWriteNode": "n1"
+              },
+              "fault": {
+                "at": "antiEntropyGap",
+                "key": "x",
+                "skipRounds": 8
+              }
+            }
+          ]
+        },
+        {
+          "protocol": "Gossip",
+          "label": "反熵最终一致",
+          "trilemma": {
+            "linearizable": false,
+            "partitionAvailable": true,
+            "boundedConvergence": false
+          },
+          "totals": {
+            "committed": 6,
+            "blockedWrites": 0,
+            "staleReads": 2,
+            "conflicts": 3,
+            "messages": 247,
+            "diverged": 1
+          },
+          "scenarios": [
+            {
+              "id": "allOk",
+              "label": "全成功",
+              "protocol": "Gossip",
+              "scenario": "allOk",
+              "committed": true,
+              "blockedWrites": 0,
+              "staleReads": 0,
+              "conflicts": 0,
+              "converged": true,
+              "linearizable": true,
+              "messages": 49,
+              "terms": 0,
+              "rounds": 8,
+              "detail": {
+                "roundsRun": 8,
+                "roundsSkipped": 0,
+                "readStale": false,
+                "convergenceBound": null
+              },
+              "fault": {
+                "at": "allOk"
+              }
+            },
+            {
+              "id": "leaderElection",
+              "label": "leader 宕机选主空窗",
+              "protocol": "Gossip",
+              "scenario": "leaderElection",
+              "committed": true,
+              "blockedWrites": 0,
+              "staleReads": 0,
+              "conflicts": 0,
+              "converged": true,
+              "linearizable": true,
+              "messages": 49,
+              "terms": 0,
+              "rounds": 8,
+              "detail": {
+                "roundsRun": 8,
+                "roundsSkipped": 0,
+                "readStale": false,
+                "convergenceBound": null
+              },
+              "fault": {
+                "at": "leaderElection"
+              }
+            },
+            {
+              "id": "networkPartition",
+              "label": "网络分区少数派",
+              "protocol": "Gossip",
+              "scenario": "networkPartition",
+              "committed": true,
+              "blockedWrites": 0,
+              "staleReads": 0,
+              "conflicts": 0,
+              "converged": true,
+              "linearizable": true,
+              "messages": 49,
+              "terms": 0,
+              "rounds": 8,
+              "detail": {
+                "roundsRun": 8,
+                "roundsSkipped": 0,
+                "readStale": false,
+                "convergenceBound": null
+              },
+              "fault": {
+                "at": "networkPartition"
+              }
+            },
+            {
+              "id": "writeConflict",
+              "label": "两主并发写同 key",
+              "protocol": "Gossip",
+              "scenario": "writeConflict",
+              "committed": true,
+              "blockedWrites": 0,
+              "staleReads": 0,
+              "conflicts": 3,
+              "converged": true,
+              "linearizable": false,
+              "messages": 50,
+              "terms": 0,
+              "rounds": 8,
+              "detail": {
+                "roundsRun": 8,
+                "roundsSkipped": 0,
+                "readStale": false,
+                "convergenceBound": null
+              },
+              "fault": {
+                "at": "writeConflict",
+                "key": "x",
+                "concurrentValue": "concurrent"
+              }
+            },
+            {
+              "id": "replicationLag",
+              "label": "异步复制延迟读陈值",
+              "protocol": "Gossip",
+              "scenario": "replicationLag",
+              "committed": true,
+              "blockedWrites": 0,
+              "staleReads": 1,
+              "conflicts": 0,
+              "converged": true,
+              "linearizable": false,
+              "messages": 49,
+              "terms": 0,
+              "rounds": 8,
+              "detail": {
+                "roundsRun": 8,
+                "roundsSkipped": 0,
+                "readStale": true,
+                "convergenceBound": null
+              },
+              "fault": {
+                "at": "replicationLag",
+                "key": "x"
+              }
+            },
+            {
+              "id": "antiEntropyGap",
+              "label": "反熵间隙读陈值",
+              "protocol": "Gossip",
+              "scenario": "antiEntropyGap",
+              "committed": true,
+              "blockedWrites": 0,
+              "staleReads": 1,
+              "conflicts": 0,
+              "converged": false,
+              "linearizable": false,
+              "messages": 1,
+              "terms": 0,
+              "rounds": 0,
+              "detail": {
+                "roundsRun": 0,
+                "roundsSkipped": 8,
+                "readStale": true,
+                "convergenceBound": null
+              },
+              "fault": {
+                "at": "antiEntropyGap",
+                "key": "x",
+                "skipRounds": 8
+              }
+            }
+          ]
+        }
+      ],
+      "election": {
+        "terms": [
+          1,
+          2,
+          3
+        ],
+        "termMonotonic": true,
+        "splitVoteDetected": true,
+        "resolvedByTimeout": true,
+        "noQuorumLeavesNoLeader": true,
+        "leaderCompleteness": true
+      },
+      "replication": {
+        "committed": true,
+        "commitIndex": 3,
+        "appliedIndex": 3,
+        "orderedApply": true,
+        "nextIndexRetried": true,
+        "minorityBlocked": true,
+        "staleLeaderRejected": true,
+        "stats": {
+          "term": 1,
+          "role": "leader",
+          "leader": "n1",
+          "quorum": 3,
+          "nodes": 5,
+          "logLength": 5,
+          "commitIndex": 4,
+          "appliedIndex": 4,
+          "applied": 4,
+          "matchIndex": {
+            "n1": 4,
+            "n2": 4,
+            "n3": 4,
+            "n4": 4,
+            "n5": 4
+          },
+          "nextIndex": {
+            "n1": 5,
+            "n2": 5,
+            "n3": 5,
+            "n4": 5,
+            "n5": 5
+          },
+          "messages": 30,
+          "blockedWrites": 1,
+          "staleLeaderRejected": 1,
+          "nextIndexRetries": 1,
+          "rejectedReads": 1,
+          "leaderChanges": 1,
+          "converged": true,
+          "linearizable": true,
+          "termsSeen": [
+            1
+          ],
+          "lastLog": {
+            "term": 1,
+            "index": 5
+          }
+        }
+      },
+      "safety": {
+        "termAdvanced": true,
+        "staleWriteRejected": true,
+        "staleReadRejected": true,
+        "noSplitBrainWrite": true,
+        "stateMachine": true
+      },
+      "gossip": {
+        "convergesClean": true,
+        "cleanReadFresh": true,
+        "gapNotConverged": true,
+        "gapReadStale": true,
+        "noBound": true,
+        "roundsRun": 8,
+        "roundsSkipped": 8
+      },
+      "verdict": {
+        "raftBlocksOnLeaderElection": true,
+        "raftBlocksOnPartition": true,
+        "raftNeverStale": true,
+        "multiMasterPartitionAvailable": true,
+        "multiMasterConflictsOnWrite": true,
+        "multiMasterStaleOnLag": true,
+        "gossipPartitionAvailable": true,
+        "gossipStaleOnGap": true,
+        "gossipDivergesOnGap": true,
+        "trilemmaDistinguishes": true,
+        "noProtocolWinsAll": true,
+        "noUniversalWinner": true,
+        "electionTermsMonotonic": true,
+        "electionBreaksTieByTimeout": true,
+        "electionLeaderCompleteness": true,
+        "replicationOrderedApply": true,
+        "replicationNextIndexRetry": true,
+        "safetyNoSplitBrainWrite": true,
+        "gossipConvergesClean": true,
+        "gossipNoConvergenceBound": true
+      }
+    },
+    "builtAt": 1794354639345
   }
 }

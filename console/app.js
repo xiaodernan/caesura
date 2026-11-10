@@ -46,6 +46,7 @@
       renderBplus(snap.systems ? snap.systems.bplusIndex : null)
       renderMvcc(snap.systems ? snap.systems.mvccTxn : null)
       renderDistributedTxn(snap.systems ? snap.systems.distributedTxn : null)
+      renderRaftConsensus(snap.systems ? snap.systems.raftConsensus : null)
       setLive(true, result.source)
     }).catch(function (e) {
       setLive(false, 'error')
@@ -1049,6 +1050,108 @@
       '2PC 缺「不阻塞」（协调者 prepare 后宕机、参与者不可自愈地持锁等待），Saga 缺「不留脏」且侵入非最低' +
       '（补偿是业务反向操作、可能失败甚至不可逆），TCC 缺「侵入最低」（Try/Confirm/Cancel 三套接口换无隔夜脏 + 幂等自愈）。' +
       '全为确定性故障场景上的结构计数、非墙钟/吞吐/真数据库一致性；换场景或故障点结论会变，不封赢家。'
+  }
+
+  // ---------------- KI-507 Raft 共识：三协议 × 六场景矩阵 + 三难不可兼得 ----------------
+  function renderRaftConsensus(rc) {
+    renderRcMatrix(rc && rc.rows, rc && rc.config)
+    renderRcLadder(rc && rc.rows)
+    renderRcTrilemma(rc && rc.rows, rc && rc.verdict, rc && rc.election, rc && rc.replication, rc && rc.gossip)
+  }
+
+  function rcMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">无' + esc(label) + '读数</div>'
+    if (note) note.textContent = 'systems.raftConsensus 缺失 —— 重跑 npm run console:data 采集真判词'
+  }
+
+  // 每格读 Node 侧真判词：成=落地 / 阻=拒写 / 陈=读陈值 / 冲=写冲突 / 散=未收敛（不复核）。
+  function rcState(s) {
+    if (!s) return { cls: '', ch: '—' }
+    if (isNum(s.blockedWrites) && s.blockedWrites > 0) return { cls: 'denied', ch: '阻' }
+    if (s.converged === false) return { cls: 'diverged', ch: '散' }
+    if (isNum(s.staleReads) && s.staleReads > 0) return { cls: 'stale', ch: '陈' }
+    if (isNum(s.conflicts) && s.conflicts > 0) return { cls: 'conflict', ch: '冲' }
+    if (s.committed) return { cls: 'ok', ch: '成' }
+    return { cls: '', ch: '—' }
+  }
+
+  function renderRcMatrix(rows, config) {
+    var box = $('#rc-matrix'), note = $('#rc-matrix-note')
+    if (!Array.isArray(rows) || !rows.length || !config || !Array.isArray(config.scenarios)) {
+      rcMissing(box, note, '三协议场景矩阵'); return
+    }
+    var scenarios = config.scenarios
+    var head = '<div class="rc-mat-row rc-mat-head"><span class="rc-mat-proto">协议</span>' +
+      scenarios.map(function (s) { return '<span class="rc-sc" title="' + esc(s.label) + '">' + esc(s.id) + '</span>' }).join('') +
+      '<span class="rc-mat-cost">消息</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (s) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === s.id }) : null
+        var st = rcState(cell)
+        return '<span class="rc-cell ' + st.cls + '" data-p="' + esc(row.protocol) + '" data-s="' + esc(s.id) +
+          '" data-state="' + (st.cls || 'na') + '" title="' + esc(s.label) + '">' + st.ch + '</span>'
+      }).join('')
+      var t = row.totals || {}
+      return '<div class="rc-mat-row" data-p="' + esc(row.protocol) + '">' +
+        '<span class="rc-mat-proto">' + esc(row.protocol) + '<small>' + esc(row.label || '') + '</small></span>' +
+        cells + '<span class="rc-mat-cost"><b>' + esc(fmt(t.messages)) + '</b></span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = '同一组确定性故障场景（全成功 / leader 宕机选主 / 网络分区少数派 / ' +
+      '两主并发写冲突 / 异步复制延迟读陈值 / 反熵间隙读陈值）分喂三协议，每格是 Node 侧真判词：' +
+      '成=写落地、阻=凑不齐 quorum 或选主空窗拒写、陈=复制延迟读到落后状态、冲=并发写同 key 需合并、' +
+      '散=反熵间隙结束仍未收敛。消息数是结构计数、非墙钟/带宽；不封任何协议全局赢家。'
+  }
+
+  function renderRcLadder(rows) {
+    var box = $('#rc-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.totals && isNum(r.totals.messages) ? r.totals.messages : 0 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var t = r.totals || {}
+      var w = isNum(t.messages) ? Math.round(t.messages / max * 100) : 0
+      var blocked = isNum(t.blockedWrites) ? t.blockedWrites : 0
+      var stale = isNum(t.staleReads) ? t.staleReads : 0
+      var conflicts = isNum(t.conflicts) ? t.conflicts : 0
+      return '<div class="rc-line" data-p="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="rc-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">阻' + esc(fmt(blocked)) + ' · 陈' + esc(fmt(stale)) + ' · 冲' + esc(fmt(conflicts)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderRcTrilemma(rows, verdict, election, replication, gossip) {
+    var box = $('#rc-trilemma'), probes = $('#rc-probes'), note = $('#rc-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) { rcMissing(box, note, '三难判据'); if (probes) probes.innerHTML = ''; return }
+    var flags = [['linearizable', '线性一致'], ['partitionAvailable', '分区可用'], ['boundedConvergence', '确定收敛']]
+    var head = '<div class="rc-vec rc-vec-head"><span class="proto">协议</span>' +
+      flags.map(function (f) { return '<span>' + f[1] + '</span>' }).join('') + '</div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (f) {
+        var yes = t[f[0]] === true
+        return '<span class="rc-flag ' + (yes ? 'yes' : 'no') + '" data-p="' + esc(r.protocol) + '" data-k="' + f[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      return '<div class="rc-vec" data-p="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells + '</div>'
+    }).join('')
+    box.innerHTML = head + body
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var chips = [
+      '<span class="chip" data-probe="raftBlocks"><b>Raft</b> 选主/分区 ' + (v.raftBlocksOnPartition && v.raftBlocksOnLeaderElection ? '均拒写(CP)' : '未拒写') + '</span>',
+      '<span class="chip" data-probe="raftElection"><b>Raft</b> 随机超时破平票 ' + (election && election.resolvedByTimeout ? '✓' : '✗') + ' · term 单调 ' + (election && election.termMonotonic ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-probe="raftSafety"><b>Raft</b> 脑裂旧主只读 ' + (replication && replication.staleLeaderRejected ? '✓' : '✗') + ' · nextIndex 回退 ' + (replication && replication.nextIndexRetried ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-probe="mmConflict"><b>多主</b> 并发写冲突 ' + (v.multiMasterConflictsOnWrite ? '有' : '无') + ' · 复制延迟读陈 ' + (v.multiMasterStaleOnLag ? '有' : '无') + '</span>',
+      '<span class="chip" data-probe="gossipGap"><b>Gossip</b> 反熵间隙 ' + (gossip && gossip.gapNotConverged ? '未收敛' : '收敛') + ' · 读陈 ' + (gossip && gossip.gapReadStale ? '有' : '无') + ' · 无确定上界 ' + (gossip && gossip.noBound ? '✓' : '✗') + '</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' +
+        (noWin ? '✓ 不封任何协议全局赢家' : '本配置下归一（换场景会翻）') + '</span>',
+    ]
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '三难 = 线性一致性 ∧ 分区可用性 ∧ 收敛确定性。真实向量三条互不相同、没有一条三个全占：' +
+      'Raft 缺「分区可用」（单 leader 选主空窗 + 分区少数派凑不齐 quorum 必须拒写，CP 不冒脑裂），' +
+      '但线性一致、多数派确认即确定收敛；多主缺「线性一致」（并发写冲突 + 异步复制延迟读陈），但从不阻塞、拓扑确定有界收敛；' +
+      'Gossip 再缺「确定收敛」（概率反熵说不出第几轮必一致），换来回任节点可写、高可用。' +
+      '全为确定性故障场景结构计数、非墙钟/吞吐/真 etcd·Consul 跑分；换场景结论会变，不封赢家。'
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)

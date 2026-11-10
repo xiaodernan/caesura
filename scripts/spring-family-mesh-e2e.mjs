@@ -90,6 +90,9 @@ export function runMeshE2E(opts = {}) {
     // KI-506：分布式事务三协议（distributedTxn=true 装配；只读 2PC/Saga/TCC × 六场景矩阵 + 三难判词，不改调用路径）。
     distributedTxn: opts.distributedTxn,
     dtxnNow: opts.dtxnNow,
+    // KI-507：Raft 共识三协议（raftConsensus=true 装配；只读 Raft/MultiMaster/Gossip × 六场景矩阵 + 三难判词，不改调用路径）。
+    raftConsensus: opts.raftConsensus,
+    raftNow: opts.raftNow,
     sources: {
       eureka: () => (opts.svcA ?? [{ id: 'svc-a:1', name: 'svc-a', address: '10.0.0.1', port: 8080, healthy: true }]),
       k8s: () => k8s.discover('caesura-gate'),
@@ -218,6 +221,7 @@ export function runMeshE2E(opts = {}) {
         bplusIndexSnapshot: status.bplusIndex ?? null,
         mvccTxnSnapshot: status.mvccTxn ?? null,
         distributedTxnSnapshot: status.distributedTxn ?? null,
+        raftConsensusSnapshot: status.raftConsensus ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
       }
@@ -301,6 +305,17 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
           `${Number(row.trilemma.noBlock)}${Number(row.trilemma.noDirty)}${Number(row.trilemma.lowIntrusion)}`])),
         noUniversalWinner: r.distributedTxnSnapshot.verdict.noUniversalWinner,
         verdict: r.distributedTxnSnapshot.verdict,
+      } : null,
+      raftConsensus: r.raftConsensusSnapshot ? {
+        protocols: r.raftConsensusSnapshot.rows.map((row) => ({
+          protocol: row.protocol,
+          ladder: row.scenarios.map((s) => s.id + ':' + (s.blockedWrites > 0 ? '阻' : s.staleReads > 0 ? '陈' : s.conflicts > 0 ? '冲' : s.converged === false ? '散' : s.committed ? '成' : '?')).join(' → '),
+          totals: row.totals, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.raftConsensusSnapshot.rows.map((row) => [row.protocol,
+          `${Number(row.trilemma.linearizable)}${Number(row.trilemma.partitionAvailable)}${Number(row.trilemma.boundedConvergence)}`])),
+        noUniversalWinner: r.raftConsensusSnapshot.verdict.noUniversalWinner,
+        verdict: r.raftConsensusSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

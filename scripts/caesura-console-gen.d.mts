@@ -188,7 +188,39 @@ export interface DistributedTxnReading {
   verdict: Record<string, boolean>
 }
 
-/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务）。 */
+/** KI-507：Raft 共识读数（Raft 单 leader 强一致 / 多主复制 / Gossip 反熵 × 六场景矩阵 + 三难判词 + 不封赢家）。 */
+export interface RaftConsensusReading {
+  config: { protocols: string[]; scenarios: Array<{ id: string; label: string }> }
+  rows: Array<{
+    protocol: string
+    label: string
+    trilemma: { linearizable: boolean; partitionAvailable: boolean; boundedConvergence: boolean }
+    totals: { committed: number; blockedWrites: number; staleReads: number; conflicts: number; messages: number; diverged: number }
+    scenarios: Array<{
+      id: string
+      label: string
+      protocol: string
+      scenario: string
+      committed: boolean
+      blockedWrites: number
+      staleReads: number
+      conflicts: number
+      converged: boolean
+      linearizable: boolean
+      messages: number
+      terms: number
+      rounds: number
+      detail: Record<string, any>
+    }>
+  }>
+  election: Record<string, any>
+  replication: Record<string, any>
+  safety: Record<string, any>
+  gossip: Record<string, any>
+  verdict: Record<string, boolean>
+}
+
+/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识）。 */
 export interface SystemsBlock {
   lsm: LsmReading | null
   hw: HwReading | null
@@ -198,6 +230,7 @@ export interface SystemsBlock {
   bplusIndex: BplusReading | null
   mvccTxn: MvccTxnReading | null
   distributedTxn: DistributedTxnReading | null
+  raftConsensus: RaftConsensusReading | null
   builtAt: number
 }
 
@@ -249,9 +282,12 @@ export function buildSnapshot(opts?: {
   /** KI-506：false 关掉分布式事务维（兼容旧快照）；dtxnRetries 注入 Confirm 失败次数。 */
   distributedTxn?: boolean
   dtxnRetries?: number
+  /** KI-507：false 关掉 Raft 共识维（兼容旧快照）；rcRounds 注入反熵轮数。 */
+  raftConsensus?: boolean
+  rcRounds?: number
 }): Promise<ConsoleSnapshot>
 
-/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务八维系统读数；击穿并发 ⇒ async。 */
+/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识九维系统读数；击穿并发 ⇒ async。 */
 export function buildSystems(opts?: {
   now?: () => number
   lsmKeys?: number
@@ -277,6 +313,9 @@ export function buildSystems(opts?: {
   /** KI-506：false 关掉分布式事务维（兼容旧快照）；dtxnRetries 注入 Confirm 失败次数。 */
   distributedTxn?: boolean
   dtxnRetries?: number
+  /** KI-507：false 关掉 Raft 共识维（兼容旧快照）；rcRounds 注入反熵轮数。 */
+  raftConsensus?: boolean
+  rcRounds?: number
 }): Promise<SystemsBlock>
 
 /** KI-501：真跑缓存防护三件套（击穿/穿透/雪崩）收敛成前端三面板紧凑读数；单维失败落 null。 */
@@ -326,6 +365,13 @@ export function buildDistributedTxnReading(opts: {
   distributedTxn?: boolean
   dtxnRetries?: number
 }, now: () => number): Promise<DistributedTxnReading | null>
+
+/** KI-507：真跑 Raft 共识（Raft 单 leader / 多主复制 / Gossip 反熵 × 六场景矩阵 + 三难判词）收敛成前端两面板紧凑读数；失败落 null。 */
+export function buildRaftConsensusReading(opts: {
+  now?: () => number
+  raftConsensus?: boolean
+  rcRounds?: number
+}, now: () => number): Promise<RaftConsensusReading | null>
 
 export function realScenarioOpts(id: string): Record<string, any>
 

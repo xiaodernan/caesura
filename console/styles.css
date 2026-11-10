@@ -602,6 +602,59 @@ main { padding: clamp(18px, 3vw, 40px) clamp(18px, 4vw, 56px) 48px; max-width: 1
   .dt-cell { font-size: 9px; min-height: 21px; line-height: 21px; }
 }
 
+/* ---------- Raft 共识（KI-507）---------- */
+.row-raft { grid-template-columns: repeat(2, 1fr); }
+.rc-matrix { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 12px; }
+.rc-mat-row { display: grid; grid-template-columns: 62px repeat(6, 1fr) 44px; gap: 4px; align-items: center; }
+.rc-mat-head { font-family: var(--mono); font-size: 10px; letter-spacing: .04em; color: var(--gold-dim); padding-bottom: 3px; border-bottom: 1px solid var(--line-soft); }
+.rc-mat-head .rc-sc { text-align: center; }
+.rc-mat-proto { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--silver); letter-spacing: .02em; }
+.rc-mat-proto small { display: block; font-size: 9px; color: var(--muted); font-weight: 400; }
+.rc-cell {
+  text-align: center; font-family: var(--mono); font-size: 11px; min-height: 24px; line-height: 24px;
+  border: 1px solid var(--line-soft); border-radius: 2px; background: var(--ash-2); color: var(--muted);
+}
+.rc-cell.ok { background: var(--jade-dim); border-color: rgba(79,155,134,.34); color: var(--jade); }
+.rc-cell.denied { background: var(--wine-dim); border-color: rgba(165,68,82,.36); color: #d98892; }
+.rc-cell.stale { background: var(--wine-dim); border-color: rgba(165,68,82,.44); color: #e59aa2; }
+.rc-cell.conflict { background: var(--wine-dim); border-color: rgba(165,68,82,.5); color: #e59aa2; font-weight: 600; }
+.rc-cell.diverged { background: var(--wine-dim); border-color: rgba(165,68,82,.62); color: #f0a8af; font-weight: 600; }
+.rc-mat-cost { text-align: right; font-family: var(--mono); font-size: 10px; color: var(--gold-dim); }
+.rc-mat-cost b { color: var(--gold); }
+.rc-ladder { display: flex; flex-direction: column; gap: 5px; }
+.rc-line { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 10.5px; color: var(--silver); }
+.rc-line .tag { color: var(--gold-dim); letter-spacing: .06em; min-width: 62px; }
+.rc-bar { flex: 1; height: 7px; background: var(--ash-2); border: 1px solid var(--line-soft); border-radius: 2px; overflow: hidden; }
+.rc-bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--gold-dim), var(--gold)); }
+.rc-line .num { color: var(--muted); min-width: 96px; text-align: right; }
+.rc-trilemma { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 12px; }
+.rc-vec { display: grid; grid-template-columns: 62px repeat(3, 1fr); gap: 6px; align-items: center; }
+.rc-vec .proto { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--silver); }
+.rc-flag {
+  font-family: var(--mono); font-size: 10.5px; text-align: center; padding: 5px 2px;
+  border: 1px solid var(--line-soft); border-radius: 2px; background: var(--ash-2); color: var(--muted);
+}
+.rc-flag.yes { background: var(--jade-dim); border-color: rgba(79,155,134,.34); color: var(--jade); }
+.rc-flag.no { background: var(--wine-dim); border-color: rgba(165,68,82,.36); color: #d98892; }
+.rc-vec-head { font-family: var(--mono); font-size: 9px; letter-spacing: .04em; color: var(--muted); }
+.rc-vec-head span { text-align: center; }
+.rc-probes { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.rc-probes .chip {
+  font-family: var(--mono); font-size: 10px; padding: 4px 9px;
+  border: 1px solid var(--line-soft); border-radius: 2px; background: var(--ash-2); color: var(--silver);
+}
+.rc-probes .chip b { color: var(--gold); font-weight: 600; }
+.rc-probes .chip.jade-t { border-color: rgba(79,155,134,.4); color: var(--jade); }
+.rc-probes .chip.muted-t { color: var(--muted); }
+@media (max-width: 1020px) { .row-raft { grid-template-columns: 1fr; } }
+@media (max-width: 720px) {
+  .rc-mat-row, .rc-vec { grid-template-columns: 46px repeat(3, 1fr) 30px; gap: 2px; }
+  .rc-mat-head .rc-sc:nth-of-type(n+5) { display: none; }
+  .rc-cell { font-size: 9px; min-height: 21px; line-height: 21px; }
+  .rc-line .tag { min-width: 46px; }
+  .rc-line .num { min-width: 74px; }
+}
+
 /* ---------- 页脚 ---------- */
 .footer {
   display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;

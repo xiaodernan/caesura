@@ -582,4 +582,51 @@ describe('caesura-game-cloud', () => {
     // 主链语义逐字不动
     expect(st.eventChannel).toBeTruthy()
   })
+
+  it('raftConsensus:true ⇒ 装配 Raft 共识三协议、status.raftConsensus 读真三协议×六场景矩阵/三难判词、惰性同引用（KI-507）', async () => {
+    const gc = createGameCloud({
+      gameId: 'grc1', gamePort: 7725, sources, cloud: fakeCloud(),
+      raftConsensus: true, raftNow: () => 8888,
+    })
+    expect(gc.runRaftConsensusStudy).toBeTypeOf('function')
+    const st = await gc.status()
+    expect(st.raftConsensus.builtAt).toBe(8888)
+    expect(st.raftConsensus.config.protocols).toEqual(['Raft', 'MultiMaster', 'Gossip'])
+    expect(st.raftConsensus.config.scenarios.length).toBe(6)
+    expect(st.raftConsensus.rows.length).toBe(3)
+    const raft = st.raftConsensus.rows.find((r: any) => r.protocol === 'Raft')
+    const mm = st.raftConsensus.rows.find((r: any) => r.protocol === 'MultiMaster')
+    const gossip = st.raftConsensus.rows.find((r: any) => r.protocol === 'Gossip')
+    expect(raft!.scenarios.find((s: any) => s.id === 'networkPartition')!.blockedWrites).toBeGreaterThan(0) // Raft 分区拒写
+    expect(mm!.scenarios.find((s: any) => s.id === 'writeConflict')!.conflicts).toBeGreaterThan(0)          // 多主冲突
+    expect(gossip!.scenarios.find((s: any) => s.id === 'antiEntropyGap')!.converged).toBe(false)           // Gossip 反熵间隙不收敛
+    expect(st.raftConsensus.verdict.noUniversalWinner).toBe(true)
+    expect(Object.values(st.raftConsensus.verdict).every(Boolean)).toBe(true)
+    // 惰性缓存：二次 status 同引用，不反复跑对照
+    expect((await gc.status()).raftConsensus).toBe(st.raftConsensus)
+    // 现算入口可重跑、确定性（同注入 now）
+    const rerun = await gc.runRaftConsensusStudy!()
+    expect(rerun.verdict).toEqual(st.raftConsensus.verdict)
+  })
+
+  it('raftConsensus 默认 null 非破坏；可注入现成 study（KI-507）', async () => {
+    const plain = createGameCloud({ gameId: 'grc2', gamePort: 7726, sources, cloud: fakeCloud() })
+    expect(plain.runRaftConsensusStudy).toBe(null)
+    const ps = await plain.status()
+    expect(ps.raftConsensus).toBe(null)
+    expect(ps.distributedTxn).toBe(null)
+    expect(ps.mvccTxn).toBe(null)
+    // 注入现成 study：直接用、不重跑，builtAt 原样带出、不被 raftNow 覆盖。
+    const { raftConsensusStudy } = await import('../../scripts/caesura-raft-consensus.mjs')
+    const study = raftConsensusStudy({ now: () => 456 })
+    const injected = createGameCloud({
+      gameId: 'grc3', gamePort: 7727, sources, cloud: fakeCloud(),
+      raftConsensus: study, raftNow: () => 999,
+    })
+    const st = await injected.status()
+    expect(st.raftConsensus.builtAt).toBe(456)
+    expect(st.raftConsensus.verdict.noUniversalWinner).toBe(true)
+    // 主链语义逐字不动
+    expect(st.eventChannel).toBeTruthy()
+  })
 })

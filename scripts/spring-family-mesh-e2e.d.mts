@@ -121,5 +121,27 @@ export function runMeshE2E(opts?: any): {
       verdict: Record<string, boolean>
       builtAt: number
     } | null
+    /** KI-507：Raft 共识三协议快照（Raft 单 leader / 多主复制 / Gossip 反熵 × 六场景 + 三难判词），未配 raftConsensus 为 null */
+    raftConsensusSnapshot: {
+      config: { protocols: string[]; scenarios: Array<{ id: string; label: string }> }
+      rows: Array<{
+        protocol: string
+        label: string
+        trilemma: { linearizable: boolean; partitionAvailable: boolean; boundedConvergence: boolean }
+        totals: { committed: number; blockedWrites: number; staleReads: number; conflicts: number; messages: number; diverged: number }
+        scenarios: Array<{
+          id: string; label: string; protocol: string; scenario: string
+          committed: boolean; blockedWrites: number; staleReads: number; conflicts: number
+          converged: boolean; linearizable: boolean; messages: number; terms: number; rounds: number
+          detail: Record<string, any>
+        }>
+      }>
+      election: Record<string, any>
+      replication: Record<string, any>
+      safety: Record<string, any>
+      gossip: Record<string, any>
+      verdict: Record<string, boolean>
+      builtAt: number
+    } | null
   }>
 }

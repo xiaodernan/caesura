@@ -28,6 +28,7 @@
     "bplus:bench": "node scripts/caesura-bplus-tree.mjs",
     "txn:bench": "node scripts/caesura-mvcc-txn.mjs",
     "disttxn:bench": "node scripts/caesura-distributed-txn.mjs",
+    "raft:bench": "node scripts/caesura-raft-consensus.mjs",
     "status": "node scripts/phase-status.mjs",
     "status:embed": "node scripts/phase-status-embed.mjs",
     "release": "node scripts/release.mjs",
