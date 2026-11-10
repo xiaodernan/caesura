@@ -22,6 +22,3 @@ export function createBus(): {
 
 /** 默认总线实例。 */
 export const defaultBus: ReturnType<typeof createBus>
-
-/** 默认导出。 */
-export default { createBus, defaultBus }

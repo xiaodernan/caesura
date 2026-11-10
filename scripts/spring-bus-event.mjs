@@ -112,6 +112,3 @@ export function createBus() {
 
 /** 默认总线实例（供简单场景直接 import 使用） */
 export const defaultBus = createBus()
-
-// 默认导出
-export default { createBus, defaultBus }
