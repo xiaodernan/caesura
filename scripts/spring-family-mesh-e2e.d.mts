@@ -33,5 +33,7 @@ export function runMeshE2E(opts?: any): {
     netSnapshot: { observes: number; aimd: any; cubic: any; rto: any; window: any; tickets: any; http: any } | null
     /** KI-499：一致性哈希环快照（ring/grow/distribution），未配 hashRing 为 null */
     hashRingSnapshot: { ring: any; grow: { consistentRate: number; moduloRate: number; theoreticalRate: number; savedRate: number; delta: number }; distribution: any; builtAt: number } | null
+    /** KI-500：分片缓存快照（cache/retention），未配 shardedCache 为 null */
+    shardedCacheSnapshot: { cache: any; retention: { delta: number; consistentRetention: number; moduloRetention: number; theoretical: number; savedRate: number }; builtAt: number } | null
   }>
 }

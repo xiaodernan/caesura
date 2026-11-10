@@ -255,4 +255,25 @@ describe('spring-family-mesh-e2e', () => {
     const plain = await runMeshE2E().run()
     expect(plain.hashRingSnapshot).toBe(null)
   })
+
+  it('e2e KI-500：shardedCache=true ⇒ 主链照常跑通，shardedCacheSnapshot 带保留率对照证据', async () => {
+    const e = runMeshE2E({ shardedCache: { shards: ['svc-a:1', 'svc-a:2', 'gate:1'], retentionKeys: 1000 } })
+    const r = await e.run()
+    // 主链非破坏：注册/调用/关停都照常。
+    expect(r.started?.registered).toBe(true)
+    expect(r.callRes?.ok).toBe(true)
+    expect(r.stopped?.registered).toBe(false)
+    const s = r.shardedCacheSnapshot
+    expect(s).toBeTruthy()
+    expect(s!.cache.shards).toEqual(['gate:1', 'svc-a:1', 'svc-a:2'])
+    expect(s!.retention.consistentRetention).toBeGreaterThan(s!.retention.moduloRetention)
+    expect(s!.retention.consistentRetention).toBeGreaterThan(0.6)
+    expect(s!.retention.consistentRetention).toBeLessThan(0.85)
+    expect(s!.retention.theoretical).toBeCloseTo(0.75, 2)
+    expect(s!.retention.savedRate).toBeGreaterThan(0.1)
+    expect(typeof s!.builtAt).toBe('number')
+    // 未配 shardedCache 时为 null（非破坏）。
+    const plain = await runMeshE2E().run()
+    expect(plain.shardedCacheSnapshot).toBe(null)
+  })
 })

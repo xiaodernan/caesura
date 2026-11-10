@@ -22,6 +22,7 @@ import { createRedisCache } from './caesura-redis-cache.mjs'
 import { createLsmStore } from './caesura-lsm-store.mjs'
 import { allocationStudy, compareLayouts, createCacheLinePadder, createPackedCounters } from './caesura-hw-perf.mjs'
 import { createHashRing, compareRemapping, createShardRouter } from './caesura-consistent-hash.mjs'
+import { createShardedCache, compareHitRetention } from './caesura-sharded-cache.mjs'
 import {
   createAimdCongestion,
   createCubicCongestion,
@@ -204,6 +205,39 @@ export function createGameCloud(opts = {}) {
     return hashCached
   }
 
+  // KI-500：分片缓存客户端（opt-in）。opts.shardedCache===true 用缺省三片建；传对象逐项注入
+  // （shards/ring/cacheFactory/cacheOpts/virtualNodes/hashFn/salt/retentionKeys/...），或直接塞一只现成实例。
+  // 组合 KI-493 进程内缓存 + KI-499 一致性哈希环，证明扩缩容时命中率保留率的一致性哈希 vs 取模对照。
+  // 默认 shardedCache:false 不装配、不改任何调用路径（KI-493 缓存 / KI-491 灰度路由语义逐字不动）。
+  const shardedCfg = opts.shardedCache === true ? {} : (opts.shardedCache && typeof opts.shardedCache === 'object' ? opts.shardedCache : null)
+  const shardedCache = shardedCfg === null
+    ? null
+    : (typeof opts.shardedCache === 'object' && typeof opts.shardedCache.shardOf === 'function'
+      ? opts.shardedCache
+      : createShardedCache({ ...shardedCfg }))
+  let shardedCached = null
+  function shardedSnapshot() {
+    if (!shardedCache) return null
+    if (shardedCached) return shardedCached
+    const shards = shardedCache.shards
+    const keys = Array.from({ length: shardedCfg?.retentionKeys ?? 2048 }, (_, i) => `key:${i}`)
+    const next = shardedCfg?.retentionNextShards ?? [...shards, 'shard:probe']
+    const retention = compareHitRetention({ shards, nextShards: next, keys,
+      virtualNodes: shardedCfg?.virtualNodes, hashFn: shardedCfg?.hashFn, salt: shardedCfg?.salt })
+    shardedCached = {
+      cache: shardedCache.snapshot({ ring: false }),
+      retention: {
+        delta: retention.consistent.delta,
+        consistentRetention: retention.consistent.retentionRate,
+        moduloRetention: retention.modulo.retentionRate,
+        theoretical: retention.theoreticalConsistent,
+        savedRate: retention.savedRate,
+      },
+      builtAt: (opts.cacheNow ?? (() => Date.now()))(),
+    }
+    return shardedCached
+  }
+
   /** 包住一次调用，用真实耗时/成败喂 net 包（未启用则原样返回，零开销）。 */
   async function observeCall(promise) {
     if (!net) return promise
@@ -244,6 +278,8 @@ export function createGameCloud(opts = {}) {
     hashRing,
     /** KI-499：造一只缓存分片路由（同 key 恒落同分片/同槽）；无环时回 null，不改调用路径。 */
     shardRouter: hashRing ? () => createShardRouter({ ring: hashRing }) : null,
+    /** KI-500：分片缓存客户端实例（未配 opts.shardedCache 时为 null）；shardOf/get/set/load/remapOn/stats。 */
+    shardedCache,
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
     gray: runtime.gray,
     /** 把游戏真 EventBus 按白名单routes 接进云事件总线（游戏侧一行：gc.connectGameBus(bus, routes)）。 */
@@ -275,6 +311,7 @@ export function createGameCloud(opts = {}) {
         store: store ? store.snapshot() : null,
         hw: hw ? hw.snapshot() : null,
         hashRing: hashSnapshot(),
+        shardedCache: shardedSnapshot(),
       }
     },
   }

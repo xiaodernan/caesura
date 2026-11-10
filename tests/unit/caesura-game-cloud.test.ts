@@ -267,4 +267,39 @@ describe('caesura-game-cloud', () => {
     expect(injected.hashRing).toBe(ring)
     expect((await injected.status()).hashRing.ring.nodes).toEqual(['x', 'y'])
   })
+
+  it('shardedCache:true 装配分片缓存，status.shardedCache 读命中率保留率证据（KI-500）', async () => {
+    const gc = createGameCloud({
+      gameId: 'g1', gamePort: 7700, sources, cloud: fakeCloud(),
+      shardedCache: { shards: ['a', 'b', 'c'], retentionKeys: 1000 }, cacheNow: () => 7777,
+    })
+    expect(gc.shardedCache).toBeTruthy()
+    expect(gc.shardedCache!.shards).toEqual(['a', 'b', 'c'])
+    // 真读写落片。
+    gc.shardedCache!.set('k1', 1)
+    expect(gc.shardedCache!.get('k1')).toBe(1)
+    const st = await gc.status()
+    expect(st.shardedCache.builtAt).toBe(7777)
+    expect(st.shardedCache.cache.shards).toEqual(['a', 'b', 'c'])
+    expect(st.shardedCache.cache.perShard['a'].entries).toBeGreaterThanOrEqual(0)
+    // 扩缩容保留率：一致性哈希 > 取模，趋理论 0.75。
+    expect(st.shardedCache.retention.consistentRetention).toBeGreaterThan(st.shardedCache.retention.moduloRetention)
+    expect(st.shardedCache.retention.consistentRetention).toBeGreaterThan(0.6)
+    expect(st.shardedCache.retention.consistentRetention).toBeLessThan(0.85)
+    expect(st.shardedCache.retention.theoretical).toBeCloseTo(0.75, 2)
+    expect(st.shardedCache.retention.savedRate).toBeGreaterThan(0.1)
+    // 惰性缓存：两次 status 不反复预热 benchmark。
+    expect((await gc.status()).shardedCache).toBe(st.shardedCache)
+  })
+
+  it('shardedCache 默认 null 非破坏；可注入现成实例（KI-500）', async () => {
+    const plain = createGameCloud({ gameId: 'g2', gamePort: 7701, sources, cloud: fakeCloud() })
+    expect(plain.shardedCache).toBe(null)
+    expect((await plain.status()).shardedCache).toBe(null)
+    const { createShardedCache } = await import('../../scripts/caesura-sharded-cache.mjs')
+    const cache = createShardedCache({ shards: ['x', 'y'] })
+    const injected = createGameCloud({ gameId: 'g3', gamePort: 7702, sources, cloud: fakeCloud(), shardedCache: cache, cacheNow: () => 1 })
+    expect(injected.shardedCache).toBe(cache)
+    expect((await injected.status()).shardedCache.cache.shards).toEqual(['x', 'y'].sort())
+  })
 })

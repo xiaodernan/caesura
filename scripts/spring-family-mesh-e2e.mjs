@@ -69,6 +69,9 @@ export function runMeshE2E(opts = {}) {
     // KI-499：一致性哈希环 + 缓存分片（hashRing=true 装配；只读环快照 + 扩容最小重映射证据，不改调用路径）。
     hashRing: opts.hashRing,
     hashNow: opts.hashNow,
+    // KI-500：分片缓存客户端（shardedCache=true 装配；只读命中率保留率对照证据，不改调用路径）。
+    shardedCache: opts.shardedCache,
+    cacheNow: opts.cacheNow,
     sources: {
       eureka: () => (opts.svcA ?? [{ id: 'svc-a:1', name: 'svc-a', address: '10.0.0.1', port: 8080, healthy: true }]),
       k8s: () => k8s.discover('caesura-gate'),
@@ -190,6 +193,7 @@ export function runMeshE2E(opts = {}) {
         cacheProbe, authCacheStats: gc.auth.cacheStats(),
         netSnapshot: gc.net ? gc.net.snapshot() : null,
         hashRingSnapshot: status.hashRing ?? null,
+        shardedCacheSnapshot: status.shardedCache ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
       }
@@ -214,6 +218,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       cacheProbe: r.cacheProbe,
       netSnapshot: r.netSnapshot ? { observes: r.netSnapshot.observes, cwnd: r.netSnapshot.aimd.cwnd, rto: r.netSnapshot.rto.rto } : null,
       hashRing: r.hashRingSnapshot ? { nodes: r.hashRingSnapshot.ring.nodes, virtualPoints: r.hashRingSnapshot.ring.virtualPoints, growConsistentRate: r.hashRingSnapshot.grow.consistentRate, growModuloRate: r.hashRingSnapshot.grow.moduloRate } : null,
+      shardedCache: r.shardedCacheSnapshot ? { shards: r.shardedCacheSnapshot.cache.shards, consistentRetention: r.shardedCacheSnapshot.retention.consistentRetention, moduloRetention: r.shardedCacheSnapshot.retention.moduloRetention } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))
     process.exit(0)
