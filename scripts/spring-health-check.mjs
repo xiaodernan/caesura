@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * scripts/spring-health-check.mjs —— Spring Cloud 家族健康探针（KI-422 扩展）。
  *

@@ -48,6 +48,7 @@ import { VfxLayer } from '@/vfx/VfxLayer'
 import { ColorGrade } from '@/vfx/ColorGrade'
 import { Hud } from '@/ui/Hud'
 import { Stakerite } from '@/ui/Stakerite'
+import { BossPhraseBar } from '@/ui/BossPhraseBar'
 import { MapUI } from '@/ui/MapUI'
 import { TitleScreen } from '@/ui/TitleScreen'
 import { DialogueBox } from '@/ui/DialogueBox'
@@ -227,6 +228,13 @@ const decals = (await import('@/vfx/Decals')).initDecalSystem(arena.scene)
 // 所以开局那一区也得由它读一次——那句在 `interact` 之后（要读旗标），见下面 `applyWeather(homeRegion …)`。
 const grade = new ColorGrade(arena.scene, canvas)
 const hud = new Hud(document.getElementById('hud') as HTMLCanvasElement, input)
+/** Boss 乐句线 HUD（Phase 7 F3）：屏幕右侧中条，专用 canvas，零 game 依赖。 */
+const phraseCanvas = document.createElement('canvas')
+phraseCanvas.style.position = 'fixed'
+phraseCanvas.style.inset = '0'
+phraseCanvas.style.pointerEvents = 'none'
+document.getElementById('app')!.appendChild(phraseCanvas)
+const bossPhraseBar = new BossPhraseBar(phraseCanvas)
 /** 飘字要钉在世界坐标上：HUD 不认识相机，投影由这里喂进去（§8.2 ms_crit_ring 的腿） */
 hud.project = (p) => {
   const v = new Vector3(p.x, p.y, p.z).project(rig.cam)
@@ -1042,6 +1050,10 @@ const loop = new GameLoop(time, input, (alpha, realDelta) => {
   span('render.vfx', () => vfx.update(realDelta)) // particles run on real time — hitstop must not freeze VFX (tech-arch §4 rule 3)
   span('render.audio', () => { audio.update(realDelta); audio.setListener(player.pos.x, player.pos.y + 1, player.pos.z, rig.yaw) })
   span('render.hud', () => hud.render(alpha, realDelta))
+  span('render.phrase', () => {
+    bossPhraseBar.tick(realDelta)
+    bossPhraseBar.draw()
+  })
   rig.cam.aspect = innerWidth / innerHeight
   // 这一格是面板上最贵的那一条名字：`renderer.render` 在 JS 侧只做到"把命令交出去"，
   // 剩下的 GPU 时间在浏览器之外（§5.3 的 GPU ≤12ms 那一半今天仍然量不到，账本 KI-335 的「还欠」）
