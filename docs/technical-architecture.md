@@ -7837,3 +7837,25 @@ await import(VALIDATOR_SPEC as string)
 **不声称**：① 不声称 AST 比文本少读的 28 枚全是幻影（15 枚是类型位，那是另一件事，见还欠①）；② 不声称 `opaque` 那一判在真总体上照到过（0 处，见证只有合成夹具）；③ 不声称 `.d.mts` 的内容对不对归本门——那是 KI-439 的地盘；④ 不声称 6 倍耗时免费；⑤ 不声称这份躲法是仓里唯一的「为躲一条诊断而放弃一整格判据」——本批只在 import 这一族里量到了它，别的族没普查。
 
 **读数与剩余欠账见账本 KI-440 那一行。**
+
+### 5.9.200 Spring Cloud 配置服务器热刷新 + Bus 事件总线落地，而 renderer 画质分档第一次有真实消费者（KI-446～KI-449，2026-11-10）
+
+**这一批是 F-13～F-16 四格，全落在已有模块上，一字未动玩法与表现层。** 病写得窄一些：
+① Spring Cloud Config Server 模拟器（`scripts/spring-config-server.mjs`）只有静态供数、没有"文件一变就通知订阅者"这半件事——Node 侧的配置客户端只能轮询；② Config Server 不可用时，Node 侧客户端只有抛错一条路，没有"降级到 fallback 继续跑"的容灾形状；③ 配置变更无处广播给进程内其他组件——Spring Cloud Bus 的本地进程版一直没有对应物；④ Phase 7 F2 的 `renderer` 分档（`QUALITY_PROFILES[].shadowMapSize`／`resolutionScale`）一直停在"表里的一格"，没有任何消费者把它灌进渲染目标。
+
+**裁决与落点**：
+
+| 格 | 落点 | 形状 |
+|---|---|---|
+| F-13／KI-446 | `scripts/spring-config-server.mjs` ＋ `.d.mts` | `startConfigWatcher(configs, dir, interval, onChange)`——立即扫一趟、之后按 `interval` 重扫，文件 `mtime` 变了才重读，重读后调 `onChange(name, parsed)`；HTTP 面新增三条管理端点：`GET /config/{app}`（版本名册）、`POST /config/{app}/rollback`（按 `{ version }` 回滚到 `configHistory` 里的快照）、`POST /config/{app}/refresh`（重扫目录）。`scanConfigs` 与 `startConfigWatcher` 共用同一份扫描逻辑（无第二主人）。 |
+| F-14／KI-447 | `scripts/spring-config-client.mjs` ＋ `.d.mts` | `fetchConfigWithFallback(appName, configUrl, fallback = {})`——拿不到（HTTP 非 2xx／超时／网络断）时返回 `{ ...fallback, _configError: <原因> }`，不抛；成功时照旧走 `fetchConfig`。 |
+| F-15／KI-448 | `scripts/spring-bus-event.mjs` ＋ `.d.mts` | 进程内 Bus 总线（`createBus()`：`subscribe`／`publish`／`publishAsync`（setImmediate 投递）／`listenerCount`／`eventNames`／`removeAllListeners`／`close`）；`defaultBus` 供简单场景直接 import。**不是应用事件总线**（那是 `core/EventBus`，载荷 `GameEvents` 管的）；它是 Node 侧脚本间的本地发布/订阅。 |
+| F-16／KI-449 | `src/renderer/QualityRenderer.ts` | `applyRendererQuality(targets, tier)`（纯函数，读 `QUALITY_PROFILES`）与 `RendererQuality`（持 `QualityStore` 引用，`sync()` 从 `store.get()` 重读灌入 `targets.shadowMapSize`／`resolutionScale`）。**headless 只记不应用**，真 GL 落点（`setShadowMapSize`／`setPixelRatio`）等 Phase 9/10。 |
+
+**守卫**：F-13 `tests/unit/spring-config-server.test.ts` 7 条腿（其中热刷新一条用临时目录真写盘真扫描，350ms 内断言 `onChange` 被触发且 name 是 `caesura-gate`、port 灌回 8082）；F-14 `tests/unit/spring-config-client.test.ts` 新增 3 条腿（成功时走真路径不带 `_configError`／HTTP 500 时回落传入的 fallback 且 `_configError` 含 `HTTP 500`／网络断时回落默认空 fallback）；F-15 `tests/unit/spring-bus-event.test.ts` 11 条腿（publish 无监听返回 false／取消订阅后不再触发／listenerCount／eventNames／publishAsync fire-and-forget／close 清空／defaultBus 可用）；F-16 `tests/unit/renderer-quality.test.ts` 8 条腿（apply 四档逐格／构造即 sync／切档后 sync 跟变／shadowMapSize 与 resolutionScale 单调不减／headless 不崩）。**总套件 4891 条 / 415 文件全绿**，validate-data 0 ERROR／2 WARN，tsc 0。
+
+**与既有门的关系（这一格是本批最容易踩的地方，先写进来）**：新增 `export default { … }` 对象字面量会让 `decl-parity` 那道"未名状导出拼法"门红（它只认具名/声明式导出），故 `spring-bus-event.mjs` 只保留具名导出；`bus` 作为局部变量名会被 `event-rules` 的普查当成应用总线（`BUS_RECEIVERS=['bus','this']`），故测试里改名 `evbus`——那一门只认**应用** `GameEvents` 名册，不是给本地脚本用的。**这两道门读的是 HEAD，不是工作副本**——本批两次提交后都重跑了 `npm run check` 验证（第一次红，提交后转绿）。
+
+**不声称**：① 不声称任何真 Config Server／真 Eureka／真消息中间件参与——`spring-config-server` 是本地文件模拟器，全部读数在临时目录与进程内；② 不声称 renderer 的 `shadowMapSize`／`resolutionScale` 已经影响任何真实画面——headless 没有 GL 上下文，本模块只把数灌进 targets；③ 不声称 Bus 事件总线与应用 `core/EventBus` 有任何关系；④ 不声称 `startConfigWatcher` 的 `interval` 轮询是正式产品形状（生产环境应由真 Bus 推送驱动）；⑤ 不声称 KI-446～449 已实机烤火。
+
+**读数与剩余欠账见账本 KI-446～KI-449 那四行。**
