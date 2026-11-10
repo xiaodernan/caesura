@@ -85,6 +85,32 @@ POST :8099/gate/gates/gate-types/run
 ## 未验证 / 未完成
 
 - 容器路径（KI-431：环境 Blocked，不因为本文件就能起）。
-- `/report/family` 汇总真跑整族（跑的是 gate-suite `npm run test`，85s 量级）——只验了 `/roster` 的 Eureka 调用链路和 `/gate/*/run` 两条真门。
+- ~~`/report/family` 汇总真跑整族（跑的是 gate-suite `npm run test`，85s 量级）——只验了 `/roster` 的 Eureka 调用链路和 `/gate/*/run` 两条真门。~~ **2026-11-10 本机实测整族 GREEN（见下节）。**
 - `bus-refresh`（配置热刷新经总线广播）——Java 家族侧未跑；Node 侧已落地（KI-450）。
 - Eureka 自保阈值与租约清理在**长时间高负载**下的行为——本次只覆盖"起起来 + 注册 + 反注册"级别。
+
+## 2026-11-10 整族终局验证实录（`POST /report/family` 全绿）
+
+整族并行跑完，五道门全部 green、`circuitState=CLOSED`：
+
+```json
+{"kind":"green","reds":0,"total":5,"ranFiles":5,"expectedFiles":5,"redTitles":[],
+ "blockingReds":0,"concurrency":3,"wallMs":170293,
+ "gates":[
+   {"id":"gate-types","command":"npm run lint","exitCode":0,"durationMs":122650,"verdict":"green","circuitState":"CLOSED"},
+   {"id":"gate-data","command":"node scripts/validate-data.mjs","exitCode":0,"durationMs":1308,"verdict":"green","circuitState":"CLOSED"},
+   {"id":"gate-head-selfcheck","command":"node scripts/head-compiles-rules.mjs","exitCode":0,"durationMs":122640,"verdict":"green","circuitState":"CLOSED"},
+   {"id":"gate-suite","command":"npm run test","exitCode":0,"durationMs":159221,"verdict":"green","circuitState":"CLOSED",
+    "stdoutTail":"[test] RESULT {\"kind\":\"green\",\"reds\":0,\"total\":4907,\"ranFiles\":415,…}"},
+   {"id":"gate-ship","command":"npm run build","exitCode":0,"durationMs":47051,"verdict":"green","circuitState":"CLOSED",
+    "stdoutTail":"dist/index.html ✓ built in 686ms … [dist] 文本 10 份 / 0 findings"}
+ ]}
+```
+
+三条要点：
+
+1. **并发那一格真的在跑**：`concurrency=3`，gate-executor 的 Java 线程池并发执行 `lint`/`validate-data`/`head-compiles-rules`/`test`/`build`，wall time 170s ≈ 最慢那道（gate-suite），不是串行加法。
+2. **熔断器全程 CLOSED**（KI-429）：五次连续 `verdict=green`，无一开闸。
+3. **`.scratch/` 不入库**、`dist/` 不被本条改动（gate-ship 重建了 `dist/` 且本仓 `npm run build` 过 `check-dist` 文本 10 份 / 0 findings）。
+
+**未在这一趟量出来的**：hot path 下的 Eureka 租约过期行为、`bus-refresh` 的 Java 侧、`.dockerignore` 覆盖——各自独立，不替它们作证。
