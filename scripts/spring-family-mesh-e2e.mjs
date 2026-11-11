@@ -530,7 +530,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         strategies: r.cacheReplacementSnapshot.rows.map((row) => ({
           strategy: row.protocol,
           // 每格状态只认真件算好的三布尔（scanResistance/stableHitRate/adaptiveBalance）—绝不拿阈值重算，与 trilemma 同源。
-          ladder: row.scenarios.map((s) => s.id + ':' + (s.scanResistance === false ? '污' : s.stableHitRate === false ? '抖' : s.adaptiveBalance === true ? '漂' : '✓')).join(' → '),
+          ladder: row.scenarios.map((s) => s.id + ':' + (s.scanResistance === false ? '污' : s.stableHitRate === false ? '抖' : s.adaptiveBalance === false ? '僵' : '✓')).join(' → '),
           metrics: row.metrics, trilemma: row.trilemma,
         })),
         trilemmaVectors: Object.fromEntries(r.cacheReplacementSnapshot.rows.map((row) => [row.protocol,
