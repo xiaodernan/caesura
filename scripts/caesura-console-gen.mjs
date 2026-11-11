@@ -37,6 +37,7 @@ import { retryDlqStudy, retryDlqSnapshot } from './caesura-retry-dlq.mjs'
 import { consumerGroupStudy, consumerGroupSnapshot } from './caesura-consumer-group.mjs'
 import { backpressureStudy, backpressureSnapshot } from './caesura-backpressure.mjs'
 import { logCompactionStudy, logCompactionSnapshot } from './caesura-log-compaction.mjs'
+import { bloomFilterStudy, bloomFilterSnapshot } from './caesura-bloom-filter.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
 export const SCENARIO_IDS = ['main', 'gray', 'resilience', 'cache', 'net']
@@ -182,6 +183,20 @@ export async function buildSnapshot(opts = {}) {
     lcInstantSnapshot: opts.lcInstantSnapshot,
     lcZeroReplayCost: opts.lcZeroReplayCost,
     lcRigged: opts.lcRigged,
+    bloomFilter: opts.bloomFilter,
+    bfSeed: opts.bfSeed,
+    bfCapacity: opts.bfCapacity,
+    bfBitsPerKey: opts.bfBitsPerKey,
+    bfCountersPerKey: opts.bfCountersPerKey,
+    bfCounterWidth: opts.bfCounterWidth,
+    bfTableCount: opts.bfTableCount,
+    bfBucketSize: opts.bfBucketSize,
+    bfMaxKicks: opts.bfMaxKicks,
+    bfMaxLoadFactor: opts.bfMaxLoadFactor,
+    bfZeroErrors: opts.bfZeroErrors,
+    bfDeleteImpossible: opts.bfDeleteImpossible,
+    bfUnlimitedRoom: opts.bfUnlimitedRoom,
+    bfRigged: opts.bfRigged,
   })
 
   return {
@@ -250,7 +265,7 @@ export async function buildSnapshot(opts = {}) {
  * @param {boolean} [opts.dqZeroTick] rigged：tick 抹为 1ms（只救时间轮即时精确）
  * @param {boolean} [opts.dqFreeHeapOps] rigged：堆比较免计数
  * @param {boolean} [opts.dqSharedBackend] rigged：进程内结构也假想跨机共享持久
- * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, failureDetector:object|null, bplusIndex:object|null, mvccTxn:object|null, distributedTxn:object|null, raftConsensus:object|null, distributedLock:object|null, idGen:object|null, distributedRateLimit:object|null, configConsistency:object|null, cacheCoherency:object|null, messageDelivery:object|null, delayQueue:object|null, retryDlq:object|null, consumerGroup:object|null, backpressure:object|null, builtAt:number}>}
+ * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, failureDetector:object|null, bplusIndex:object|null, mvccTxn:object|null, distributedTxn:object|null, raftConsensus:object|null, distributedLock:object|null, idGen:object|null, distributedRateLimit:object|null, configConsistency:object|null, cacheCoherency:object|null, messageDelivery:object|null, delayQueue:object|null, retryDlq:object|null, consumerGroup:object|null, backpressure:object|null, logCompaction:object|null, bloomFilter:object|null, builtAt:number}>}
  */
 export async function buildSystems(opts = {}) {
   const now = typeof opts.now === 'function' ? opts.now : () => Date.now()
@@ -290,7 +305,39 @@ export async function buildSystems(opts = {}) {
   const backpressure = opts.backpressure === false ? null : await buildBackpressureReading(opts, now)
   // KI-526：第二十维「append-only 日志压缩 / 回放边界」真跑 SizeTimeRetention/KeyCompaction/SnapshotPlusWal × 六场景矩阵 + 三难判词 + verifyReplayBoundary 双路守恒自证 + 十一枚真件交叉印证，与其它维平级。
   const logCompaction = opts.logCompaction === false ? null : await buildLogCompactionReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, builtAt: now() }
+  // KI-527：第二十一维「布隆/布谷鸟/计数布隆三过滤器」真跑 Bloom/CountingBloom/Cuckoo × 六场景矩阵 + 三难判词（110/011/001）+ verifyFalsePositiveCeiling 双路自证（理论 ε vs 实测）+ 十一枚真件交叉印证，与其它维平级。
+  const bloomFilter = opts.bloomFilter === false ? null : await buildBloomFilterReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, builtAt: now() }
+}
+
+/**
+ * KI-527：布隆/布谷鸟/计数布隆三过滤器（Bloon / CountingBloom / Cuckoo × 六场景矩阵 + 三难向量 + verifyFalsePositiveCeiling 双路自证）。
+ * 失败落 null；读数全真、CLI 双跑字节一致、rigged 因果锁无特例封胜者。
+ * @param {object} opts { bloomFilter?:false, bfSeed?, bfCapacity?, bfBitsPerKey?, bfCountersPerKey?, bfCounterWidth?, bfTableCount?, bfBucketSize?, bfMaxKicks?, bfMaxLoadFactor?, bfZeroErrors?, bfDeleteImpossible?, bfUnlimitedRoom?, bfRigged? }
+ * @param {()=>number} now 时钟（builtAt 注入真值）
+ */
+export async function buildBloomFilterReading(opts, now) {
+  try {
+    const s = await bloomFilterStudy({
+      now,
+      ...(opts.bfSeed ? { seed: Math.max(0, Math.floor(Number(opts.bfSeed))) } : {}),
+      ...(opts.bfCapacity ? { capacity: Math.max(16, Math.floor(Number(opts.bfCapacity))) } : {}),
+      ...(opts.bfBitsPerKey ? { bitsPerKey: Math.max(1, Math.floor(Number(opts.bfBitsPerKey))) } : {}),
+      ...(opts.bfCountersPerKey ? { countersPerKey: Math.max(1, Math.floor(Number(opts.bfCountersPerKey))) } : {}),
+      ...(opts.bfCounterWidth ? { counterWidth: Math.max(1, Math.floor(Number(opts.bfCounterWidth))) } : {}),
+      ...(opts.bfTableCount ? { tableCount: Math.max(2, Math.floor(Number(opts.bfTableCount))) } : {}),
+      ...(opts.bfBucketSize ? { bucketSize: Math.max(1, Math.floor(Number(opts.bfBucketSize))) } : {}),
+      ...(opts.bfMaxKicks ? { maxKicks: Math.max(1, Math.floor(Number(opts.bfMaxKicks))) } : {}),
+      ...(opts.bfMaxLoadFactor ? { maxLoadFactor: Number(opts.bfMaxLoadFactor) } : {}),
+      ...(opts.bfZeroErrors === true ? { zeroErrors: true } : {}),
+      ...(opts.bfDeleteImpossible === true ? { deleteImpossible: true } : {}),
+      ...(opts.bfUnlimitedRoom === true ? { unlimitedRoom: true } : {}),
+      ...(opts.bfRigged === true ? { rigged: true } : {}),
+    })
+    return bloomFilterSnapshot(s)
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
 }
 
 /** LSM 引擎真跑一趟确定性 benchmark，回结构读数（不夹带每行真值）。 */

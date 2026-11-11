@@ -40,6 +40,7 @@
     "group:bench": "node scripts/caesura-consumer-group.mjs",
     "backpressure:bench": "node scripts/caesura-backpressure.mjs",
     "log-compaction:bench": "node scripts/caesura-log-compaction.mjs",
+    "bloom-filter:bench": "node scripts/caesura-bloom-filter.mjs",
     "redis:spring:bench": "node scripts/spring-redis-cache.mjs selfcheck",
     "status": "node scripts/phase-status.mjs",
     "status:embed": "node scripts/phase-status-embed.mjs",

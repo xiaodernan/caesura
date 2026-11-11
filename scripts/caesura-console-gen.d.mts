@@ -557,6 +557,28 @@ export interface LogCompactionReading {
   builtAt: number
 }
 
+/** KI-527：布隆/布谷鸟/计数布隆三过滤器真跑读数（Bloom / CountingBloom / Cuckoo × 六场景 + 三难向量 + verifyFalsePositiveCeiling 双路自证 + 十一枚真件交叉印证）。 */
+export interface BloomFilterReading {
+  config: Record<string, any>
+  rows: Array<{
+    protocol: string
+    scenarios: Array<{
+      id: string; strategy: string; inserted: number; insertFailures: number; probes: number
+      falsePositives: number; correctNegatives: number; correctPositives: number
+      deleteTries: number; deleteSuccess: number; deleteReinserted: number
+      fpRate: number; fillRatio: number; m: number; capacity: number; bitsPerKey: number
+      stashFailures: number; bytes: number; fault: string
+    }>
+    trilemma: { compactFootprint: boolean; insertsNeverFail: boolean; deleteSupport: boolean }
+    metrics: { avgInserts: number; avgBytes: number; bitsPerKey: number; totalFpRate: number; totalInsertFailures: number; totalStashFailures: number; deleteSuccess: number; deleteAttempts: number }
+  }>
+  vectors: Record<string, string>
+  verdict: Record<string, any>
+  crosscheck: { evidence: Record<string, any> }
+  builtAt: number
+}
+
+
 /** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511 + KI-512 + KI-513 + KI-518 + KI-520 + KI-523 + KI-525 + KI-526：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 + 缓存读写一致性 + 消息投递语义 + 延迟消息队列调度 + 消息重试退避与死信 + 消费者组 rebalance + 消费者组积压背压 + append-only 日志压缩与回放边界）。 */
 export interface SystemsBlock {
   lsm: LsmReading | null
@@ -579,6 +601,7 @@ export interface SystemsBlock {
   consumerGroup: ConsumerGroupReading | null
   backpressure: BackpressureReading | null
   logCompaction: LogCompactionReading | null
+  bloomFilter: BloomFilterReading | null
   builtAt: number
 }
 
@@ -722,6 +745,21 @@ export function buildSnapshot(opts?: {
   lcInstantSnapshot?: boolean
   lcZeroReplayCost?: boolean
   lcRigged?: boolean
+  /** KI-527：false 关掉布隆维（兼容旧快照）；bf* 注入规模/阈值/开关（bf* 已被 bloomFilter 占用，且未被 B+ 树占用 bp* 之前） */
+  bloomFilter?: boolean
+  bfSeed?: number
+  bfCapacity?: number
+  bfBitsPerKey?: number
+  bfCountersPerKey?: number
+  bfCounterWidth?: number
+  bfTableCount?: number
+  bfBucketSize?: number
+  bfMaxKicks?: number
+  bfMaxLoadFactor?: number
+  bfZeroErrors?: boolean
+  bfDeleteImpossible?: boolean
+  bfUnlimitedRoom?: boolean
+  bfRigged?: boolean
 }): Promise<ConsoleSnapshot>
 
 /** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511 + KI-512 + KI-513：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 + 缓存读写一致性 + 消息投递语义 十五维系统读数；击穿并发 ⇒ async。 */
@@ -842,6 +880,21 @@ export function buildSystems(opts?: {
   lcInstantSnapshot?: boolean
   lcZeroReplayCost?: boolean
   lcRigged?: boolean
+  /** KI-527：false 关掉布隆维（兼容旧快照）；bf* 注入规模/阈值/开关（bf* 已被 bloomFilter 占用，且未被 B+ 树占用 bp* 之前） */
+  bloomFilter?: boolean
+  bfSeed?: number
+  bfCapacity?: number
+  bfBitsPerKey?: number
+  bfCountersPerKey?: number
+  bfCounterWidth?: number
+  bfTableCount?: number
+  bfBucketSize?: number
+  bfMaxKicks?: number
+  bfMaxLoadFactor?: number
+  bfZeroErrors?: boolean
+  bfDeleteImpossible?: boolean
+  bfUnlimitedRoom?: boolean
+  bfRigged?: boolean
 }): Promise<SystemsBlock>
 
 /** KI-501：真跑缓存防护三件套（击穿/穿透/雪崩）收敛成前端三面板紧凑读数；单维失败落 null。 */
@@ -1031,6 +1084,25 @@ export function buildLogCompactionReading(opts: {
   lcZeroReplayCost?: boolean
   lcRigged?: boolean
 }, now: () => number): Promise<LogCompactionReading | null>
+
+/** KI-527：真跑布隆/布谷鸟/计数布隆三过滤器（Bloom / CountingBloom / Cuckoo × 六场景 + 三难向量 + verifyFalsePositiveCeiling 双路自证 + 十一枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
+export function buildBloomFilterReading(opts: {
+  now?: () => number
+  bloomFilter?: boolean
+  bfSeed?: number
+  bfCapacity?: number
+  bfBitsPerKey?: number
+  bfCountersPerKey?: number
+  bfCounterWidth?: number
+  bfTableCount?: number
+  bfBucketSize?: number
+  bfMaxKicks?: number
+  bfMaxLoadFactor?: number
+  bfZeroErrors?: boolean
+  bfDeleteImpossible?: boolean
+  bfUnlimitedRoom?: boolean
+  bfRigged?: boolean
+}, now: () => number): Promise<BloomFilterReading | null>
 
 export function realScenarioOpts(id: string): Record<string, any>
 

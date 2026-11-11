@@ -430,6 +430,24 @@
       <p class="note" id="lc-trilemma-note">…</p>
     </article>
   </section>
+
+  <!-- 第二十一维 · 布隆/布谷鸟/计数布隆三过滤器诚实权衡（KI-527 前端第二十一维） -->
+  <section class="row row-blf">
+    <article class="panel panel-blf">
+      <div class="panel-head"><h2>第二十一维 · 布隆族过滤器 · 三策略 × 六场景</h2><span class="hint"> Bloom 十位/加门只做到位查·~10 bits/key·Bloom 不删 / 计=计数 4 位每格·~32 bits/key 吃空间/可删 / 布=双表桶化异或替补·空间优/高装载崖壁·可删</span></div>
+      <div class="blf-matrix" id="blf-matrix"></div>
+      <div class="blf-ladder" id="blf-ladder"></div>
+      <p class="note" id="blf-matrix-note">…</p>
+    </article>
+    <article class="panel panel-blf">
+      <div class="panel-head"><h2>三难向量（空间紧凑 ∧ 撞不到崖壁 ∧ 可删）· FP 上界双路自证</h2><span class="hint">Bloom=110 / CountingBloom=011 / Cuckoo=001 · 三向量互异无一 111 不封赢家 · verifyFalsePositiveCeiling 理论 ε vs 实测 FP · rigged 110×3 因果锁死 unlimitedRoom</span></div>
+      <div class="blf-trilemma" id="blf-trilemma"></div>
+      <div class="blf-verif" id="blf-verif"></div>
+      <div class="blf-crosscheck" id="blf-crosscheck"></div>
+      <div class="blf-probes" id="blf-probes"></div>
+      <p class="note" id="blf-trilemma-note">…</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">

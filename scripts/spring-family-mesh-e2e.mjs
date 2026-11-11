@@ -128,6 +128,10 @@ export function runMeshE2E(opts = {}) {
     // 注入时钟用 lcNow（避开 lsm/bp/bpc/cgp/rdq/dld 已占用前缀）。
     logCompaction: opts.logCompaction,
     lcNow: opts.lcNow,
+    // KI-527：布隆/布谷鸟/计数布隆三过滤器诚实权衡（bloomFilter=true 装配；只读 Bloom/CountingBloom/Cuckoo × 六场景矩阵 + 三难向量 + verifyFalsePositiveCeiling 双路自证 + 十一枚真件交叉印证，rigged 110/110/110 因果锁死 unlimitedRoom、绝不硬造全 111，不改调用路径）。
+    // 注入时钟用 bfNow（避开 bf* 分支与 lsm/bp/bpc/cgp/lc/rdq/dld 前缀）。
+    bloomFilter: opts.bloomFilter,
+    bfNow: opts.bfNow,
     sources: {
       eureka: () => (opts.svcA ?? [{ id: 'svc-a:1', name: 'svc-a', address: '10.0.0.1', port: 8080, healthy: true }]),
       k8s: () => k8s.discover('caesura-gate'),
@@ -268,6 +272,7 @@ export function runMeshE2E(opts = {}) {
         consumerGroupSnapshot: status.consumerGroup ?? null,
         backpressureSnapshot: status.backpressure ?? null,
         logCompactionSnapshot: status.logCompaction ?? null,
+        bloomFilterSnapshot: status.bloomFilter ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
       }
@@ -502,6 +507,19 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         replayBoundary: r.logCompactionSnapshot.replayBoundary,
         crosscheck: r.logCompactionSnapshot.crosscheck,
         verdict: r.logCompactionSnapshot.verdict,
+      } : null,
+      bloomFilter: r.bloomFilterSnapshot ? {
+        strategies: r.bloomFilterSnapshot.rows.map((row) => ({
+          strategy: row.protocol,
+          // 每格状态只认真件算好的三布尔（compactFootprint/insertsNeverFail/deleteSupport）——绝不拿阈值重算，与 trilemma 同源。
+          ladder: row.scenarios.map((s) => s.id + ':' + (s.compactFootprint === false ? '肥' : s.insertsNeverFail === false ? '拒' : s.deleteSupport === true ? '删' : '✓')).join(' → '),
+          metrics: row.metrics, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.bloomFilterSnapshot.rows.map((row) => [row.protocol,
+          `${Number(row.trilemma.compactFootprint)}${Number(row.trilemma.insertsNeverFail)}${Number(row.trilemma.deleteSupport)}`])),
+        noUniversalWinner: r.bloomFilterSnapshot.verdict.noUniversalWinner,
+        crosscheck: r.bloomFilterSnapshot.crosscheck,
+        verdict: r.bloomFilterSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

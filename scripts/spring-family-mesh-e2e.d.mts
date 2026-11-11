@@ -388,5 +388,24 @@ export function runMeshE2E(opts?: any): {
       topology: Record<string, string>
       builtAt: number
     } | null
+    /** KI-527：布隆/布谷鸟/计数布隆三过滤器快照（Bloom/CountingBloom/Cuckoo × 六场景 + 三难向量 + verifyFalsePositiveCeiling 双路自证 + 十一枚真件交叉印证），未配 bloomFilter 为 null；rigged 110/110/110 因果锁死 unlimitedRoom、绝不硬造全 111 */
+    bloomFilterSnapshot: {
+      config: Record<string, any>
+      rows: Array<{
+        protocol: string
+        scenarios: Array<{
+          id: string; strategy: string; inserted: number; insertFailures: number; probes: number
+          fpRate: number; fillRatio: number; bytes: number; bitsPerKey: number
+          compactFootprint: boolean; insertsNeverFail: boolean; deleteSupport: boolean
+          fault: string
+        }>
+        trilemma: { compactFootprint: boolean; insertsNeverFail: boolean; deleteSupport: boolean }
+        metrics: { avgInserts: number; avgBytes: number; bitsPerKey: number; totalFpRate: number; totalInsertFailures: number; totalStashFailures: number; deleteSuccess: number; deleteAttempts: number }
+      }>
+      vectors: Record<string, string>
+      crosscheck: { evidence: Record<string, any> }
+      verdict: Record<string, any>
+      builtAt: number
+    } | null
   }>
 }

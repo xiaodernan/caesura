@@ -58,6 +58,7 @@
       renderConsumerGroup(snap.systems ? snap.systems.consumerGroup : null)
       renderBackpressure(snap.systems ? snap.systems.backpressure : null)
       renderLogCompaction(snap.systems ? snap.systems.logCompaction : null)
+      renderBloomFilter(snap.systems ? snap.systems.bloomFilter : null)
       setLive(true, result.source)
     }).catch(function (e) {
       setLive(false, 'error')
@@ -2535,6 +2536,141 @@
       '三口径严格正交：省空间只看 writeAmplification≤预算、回放完整只看 verifyReplayBoundary.replayComplete（相对回放位点）、恢复快只看 replayOps≤预算。' +
       'rigged 因果锁：全保留（补 Retention 完整性）⇒compactFootprint 保持但 replayOps≥totalOps 逼恢复慢；零空间快照（补 Snapshot 省空间）⇒无物化态可载、全量重放逼恢复慢；零成本重放是许愿、不改写真 replayOps —— 三开关无一能翻回恢复快，绝不硬造全 111。' +
       '回放边界双路守恒（成本 A + 完整性 B）稳态非平凡成立，篡改重放成本 / 抹 WAL 段 / 早清 tombstone 三路各自独立翻 false。全为确定性教学状态机，结构计数，不声称墙钟恢复毫秒 / QPS / 真 Kafka log cleaner / 真 RocksDB compaction。'
+  }
+
+  /* ================= KI-527 布隆/布谷鸟/计数布隆三过滤器 · 第二十一维（blf 族） ================= */
+
+  function renderBloomFilter(blf) {
+    renderBlfMatrix(blf && blf.rows, blf && blf.config)
+    renderBlfLadder(blf && blf.rows)
+    renderBlfTrilemma(blf && blf.rows, blf && blf.verdict, blf && blf.crosscheck)
+  }
+
+  function blfMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 暂缺</div>'
+    if (note) note.textContent = 'systems.bloomFilter 缺失 — 跑一次 npm run console:data 即可补齐'
+  }
+
+  function blfState(s) {
+    if (!s) return { cls: '', ch: '·' }
+    // 与 trilemma 同源：只认真件算好的三布尔，绝不拿阈值重算。
+    if (s.compactFootprint === false) return { cls: 'bloat', ch: '肥' }
+    if (s.insertsNeverFail === false) return { cls: 'wall', ch: '崖' }
+    if (s.deleteSupport === true) return { cls: 'del', ch: '删' }
+    return { cls: 'ok', ch: '✓' }
+  }
+
+  function renderBlfMatrix(rows, config) {
+    var box = $('#blf-matrix'), note = $('#blf-matrix-note')
+    if (!Array.isArray(rows) || !rows.length || !config || !Array.isArray(config.scenarios)) {
+      blfMissing(box, note, 'blf 矩阵'); return
+    }
+    var scenarios = config.scenarios
+    var head = '<div class="blf-mat-row blf-mat-head"><span class="blf-mat-proto">策略</span>' +
+      scenarios.map(function (sc) { return '<span class="blf-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="blf-mat-cost">占/崖/删</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = blfState(cell)
+        return '<span class="blf-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="blf-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="blf-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="blf-mat-cost"><b>' + esc(fmt(m.bitsPerKey)) + '</b>/' + esc(fmt(m.totalFpRate)) + '/' + esc(fmt(m.stashFailures)) + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'Bloom / CountingBloom / Cuckoo × 六场景：steadyFilter（稳态 FP 率）/ hotKeyFlood（热键洪泛·插入永真）/ deleteCycle（删除-重插·删除支持）/ highLoadSaturation（高装载崖壁·布谷鸟崖壁）/ burstScale（规模放大 FP 量程）/ overAdmitted（血池压满真值）。' +
+      '每格只认真件算好的三布尔，与三难同源——标「肥」=空间非最优（CB 是 Bloom 3.2× 位数），"崖"=高装载 kick 链枯竭真拒插（Cuckoo@~80%+），"删"=支持删除（CB/Cuckoo，Bloom 不缩）。' +
+      'totalFpRate 来自实测 Bloom过滤器（负键专探），绝不拿 epsilon 的解析式刷屏。维序：compactFootprint / insertsNeverFail / deleteSupport。' +
+      '全为确定性教学状态机，结构计数，不声称真 RocksDB Bloom / 真 RedisBloom / 真 CuckooFilter 工程实现 / 真 MHash 论文严格值。'
+  }
+
+  function renderBlfLadder(rows) {
+    var box = $('#blf-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.totalFpRate) ? r.metrics.totalFpRate : 0 }).concat([0.0001]))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.totalFpRate) ? Math.min(100, Math.round(m.totalFpRate / max * 100)) : 0
+      return '<div class="blf-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="blf-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">占 ' + esc(fmt(m.bitsPerKey)) + 'b/k · FP ' + esc(fmt(m.totalFpRate)) + ' · 拒插 ' + esc(fmt(m.totalInsertFailures)) + ' · 崖 ' + esc(fmt(m.totalStashFailures)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderBlfTrilemma(rows, verdict, crosscheck) {
+    var box = $('#blf-trilemma'), cxBox = $('#blf-crosscheck'), note = $('#blf-trilemma-note'), veBox = $('#blf-verif')
+    if (!Array.isArray(rows) || !rows.length) {
+      blfMissing(box, note, 'blf 判词'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''; return
+    }
+    var flags = [['compactFootprint', '空间紧凑'], ['insertsNeverFail', '崖不到崖壁'], ['deleteSupport', '可删']]
+    var head = '<div class="blf-vec blf-vec-head"><span class="proto">策略</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="blf-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="blf-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    // 验证栏：FP ceiling 理论 vs 实测 + 崖壁真实读数 + 删除循环真读数
+    if (veBox) {
+      var rowBloom = rows.find(function (r) { return r.protocol === 'Bloom' })
+      var rowCBloom = rows.find(function (r) { return r.protocol === 'CountingBloom' })
+      var rowCuckoo = rows.find(function (r) { return r.protocol === 'Cuckoo' })
+      var rb = []
+      rb.push('<div class="blf-rb-row"><b>FP ceiling 双路</b> 理论 ε=(1-e^(-kn/m))^k vs 实测 FP-total ' + esc(fmt(rowBloom ? rowBloom.metrics.totalFpRate : 0)) + '  — 不自称"实测优于理论"，只求覆盖 FP ceiling、成立即 holds、可证伪翻 false</div>')
+      rb.push('<div class="blf-rb-row"><span class="blf-flag ' + ((rowBloom && rowBloom.trilemma.compactFootprint) ? 'yes' : 'no') + '" data-rb="bloomSpace">Bloom ' + ((rowBloom && rowBloom.trilemma.compactFootprint) ? '✓' : '✗') + ' 空间：h[bits/key] = ' + esc(fmt(rowBloom ? rowBloom.metrics.bitsPerKey : 0)) + '</span>' +
+        '<span class="blf-flag ' + ((rowCBloom && !rowCBloom.trilemma.compactFootprint) ? 'yes' : 'no') + '" data-rb="cbSpace">CB ' + ((rowCBloom && !rowCBloom.trilemma.compactFootprint) ? '✓' : '✗') + ' 多花：h[bits/key] = ' + esc(fmt(rowCBloom ? rowCBloom.metrics.bitsPerKey : 0)) + '（≈ Bloom 3.2×）</span>' +
+        '<span class="blf-flag ' + ((rowCuckoo && rowCuckoo.metrics.totalStashFailures > 0) ? 'yes' : 'no') + '" data-rb="cuckooWall">Cuckoo ' + ((rowCuckoo && rowCuckoo.metrics.totalStashFailures > 0) ? '✓' : '✗') + ' 崖壁 ' + esc(fmt(rowCuckoo ? rowCuckoo.metrics.totalStashFailures : 0)) + ' 次拒插</span></div>')
+      veBox.innerHTML = rb.join('')
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>真 <b>compareRemapping</b> 一致性迁移率 ' + esc(fmt(ev.remapConsistentRate)) + ' vs 取模 ' + esc(fmt(ev.remapModuloRate)) + '</div>' +
+          '<div>真 <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 片</div>' +
+          '<div>真 <b>createHashRing</b> ' + esc(fmt(ev.hashRingNodes)) + ' 节点</div>' +
+          '<div>真 <b>createWal</b> append lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>真 <b>createBus</b> filter.added 通知 ' + esc(fmt(ev.notices)) + ' 条 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>真 <b>createRedisCache</b> 复用 entries ' + esc(fmt(ev.redisEntries)) + '（继续压 Bloom bitmap）</div>' +
+          '<div>真 <b>createObjectPool</b> 复用 slots ' + esc(fmt(ev.poolCreated)) + '</div>' +
+          '<div>真 <b>createTokenBucket</b> 回放允许 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>真 <b>createMinHeapDelayQueue</b> rebuild 出队 ' + esc(fmt(ev.heapFired)) + ' 条</div>' +
+          '<div>真 <b>createPackedCounters</b> Σ=' + esc(fmt(ev.counterSum)) + '</div>' +
+          '<div>真 <b>createFullJitterBackoff</b> 抖开 <b>' + esc(fmt(ev.jitterSpread)) + '</b></div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">真件交叉印证缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var chips = [
+      '<span class="chip" data-verdict="bloomDeleteFree"><b>Bloom</b> 不删 ' + (v.bloomDeleteFree ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="countingBloomSpacePays"><b>CountingBloom</b> 空间多花 ' + (v.countingBloomSpacePays ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="cuckooStashWall"><b>Cuckoo</b> 高装载崖壁真 ' + (v.cuckooStashWall ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="countingBloomDeleteSupport"><b>CB</b> 可删 ' + (v.countingBloomDeleteSupport ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="cuckooDeleteSupport"><b>Cuckoo</b> 可删 ' + (v.cuckooDeleteSupport ? '✓' : '✗') + '</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' + (noWin ? '✓ 没有任何策略同时占除 Bloom 空间之外的另外两维（kiki 落入崖壁或删除缺失）' : '判词塌陷') + '</span>',
+    ]
+    var probes = $('#blf-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维序固定 [紧凑 / 守崖壁 / 可删]。默认向量 Bloom=110 / CountingBloom=011 / Cuckoo=001，三者互异、无一 111、恰好各缺一维。' +
+      '三口径正交：compactFootprint 只看 avgBytes*8/avgInserts ≤ 20、insertsNeverFail 只跨 highLoadSaturation/hotKeyFlood/overAdmitted 三场景量（含崖壁强压）、deleteSupport 只在 deleteCycle 量。' +
+      'rigged 因果锁：zeroErrors+deleteImpossible+unlimitedRoom ⇒ 表格与判词同源 110/110/110；单开 zeroErrors 真抹除 compact 维度、deleteImpossible 全 false 删除、unlimitedRoom 抹掉 Cuckoo 崖壁（CB、Cuckoo 都被补满 insertsNeverFail）——Bloom 从一开始 deleteSupport=false，不受任何开关影响。' +
+      'steadyState 的 insertsNeverFail 完美不构成卖点（vacuousTrue）；全结构计数，不声称真 RocksDB / 真 RedisBloom / 真 MHash 论文严格值。'
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)

@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794391585499,
+  "generatedAt": 1794413054995,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1365,12 +1365,12 @@
           "keys": 1,
           "versions": 2,
           "commitLogSize": 1,
-          "now": 1794391585501
+          "now": 1794413054997
         },
         "final": {
           "A": {
             "value": 101,
-            "commitTs": 1794391585501,
+            "commitTs": 1794413054997,
             "tombstone": false
           }
         }
@@ -3646,7 +3646,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794391585499,
+                "lastTimestamp": 1794413054995,
                 "workerId": 1
               },
               "fault": {
@@ -3742,7 +3742,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794391585499,
+                "lastTimestamp": 1794413054995,
                 "workerId": 1
               },
               "fault": {
@@ -3774,7 +3774,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794391585500,
+                "lastTimestamp": 1794413054996,
                 "workerId": 1
               },
               "fault": {
@@ -3806,7 +3806,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794391585499,
+                "lastTimestamp": 1794413054995,
                 "workerId": 1
               },
               "fault": {
@@ -4522,7 +4522,7 @@
         "capacity": 8,
         "perShardCap": 2
       },
-      "builtAt": 1794391585499
+      "builtAt": 1794413054995
     },
     "configConsistency": {
       "config": {
@@ -5020,7 +5020,7 @@
         "burstCount": 12,
         "windowMs": 10000
       },
-      "builtAt": 1794391585499
+      "builtAt": 1794413054995
     },
     "cacheCoherency": {
       "config": {
@@ -5549,7 +5549,7 @@
         "crashAtWrite": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794391585499
+      "builtAt": 1794413054995
     },
     "messageDelivery": {
       "config": {
@@ -6038,10 +6038,10 @@
         "crashAfterSendAt": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794391585499
+      "builtAt": 1794413054995
     },
     "delayQueue": {
-      "builtAt": 1794391585499,
+      "builtAt": 1794413054995,
       "config": {
         "seed": 518,
         "tasks": 12,
@@ -6068,7 +6068,7 @@
               "id": "allOk",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 47804,
+              "lateMs": 5804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6080,7 +6080,7 @@
               "id": "tickSkew",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 47804,
+              "lateMs": 5804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6092,7 +6092,7 @@
               "id": "farFuture",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 48136,
+              "lateMs": 6136,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6104,7 +6104,7 @@
               "id": "manyCancels",
               "protocol": "TimingWheel",
               "fired": 6,
-              "lateMs": 23858,
+              "lateMs": 2858,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6128,7 +6128,7 @@
               "id": "concurrentWorkers",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 47804,
+              "lateMs": 5804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6139,7 +6139,7 @@
           ],
           "totals": {
             "fired": 54,
-            "lateMs": 215406,
+            "lateMs": 26406,
             "duplicatePickups": 0,
             "lostOnRestart": 6,
             "opUnits": 72
@@ -6375,7 +6375,7 @@
       }
     },
     "retryDlq": {
-      "builtAt": 1794391585499,
+      "builtAt": 1794413054995,
       "config": {
         "seed": 520,
         "messages": 16,
@@ -6793,7 +6793,7 @@
       }
     },
     "consumerGroup": {
-      "builtAt": 1794391585499,
+      "builtAt": 1794413054995,
       "config": {
         "seed": 523,
         "consumers": 3,
@@ -7299,7 +7299,7 @@
       }
     },
     "backpressure": {
-      "builtAt": 1794391585499,
+      "builtAt": 1794413054995,
       "config": {
         "steps": 48,
         "mu": 2,
@@ -8344,7 +8344,7 @@
       }
     },
     "logCompaction": {
-      "builtAt": 1794391585499,
+      "builtAt": 1794413054995,
       "config": {
         "seed": 526,
         "ops": 24,
@@ -9404,6 +9404,523 @@
         "SnapshotPlusWal": "全量快照+快照后增量 WAL，按 LSN 去重保 exactly-once：回放完整、恢复快，但快照全量+WAL 追加⇒双写放大>1、空间不省"
       }
     },
-    "builtAt": 1794391585499
+    "bloomFilter": {
+      "builtAt": 1794413054995,
+      "config": {
+        "seed": 527,
+        "zeroErrors": false,
+        "deleteImpossible": false,
+        "unlimitedRoom": false,
+        "rigged": false,
+        "scenarios": [
+          "steadyFilter",
+          "hotKeyFlood",
+          "deleteCycle",
+          "highLoadSaturation",
+          "burstScale",
+          "overAdmitted"
+        ],
+        "capacity": 1024
+      },
+      "rows": [
+        {
+          "protocol": "Bloom",
+          "scenarios": [
+            {
+              "id": "steadyFilter",
+              "strategy": "Bloom",
+              "inserted": 700,
+              "insertFailures": 0,
+              "probes": 1100,
+              "falsePositives": 1,
+              "correctNegatives": 399,
+              "correctPositives": 700,
+              "deleteTries": 0,
+              "deleteSuccess": 0,
+              "deleteReinserted": 0,
+              "foldCount": 0,
+              "fpRate": 0.0009,
+              "fillRatio": 0.6836,
+              "m": 10240,
+              "capacity": 1024,
+              "bitsPerKey": 10,
+              "stashFailures": 0,
+              "bytes": 1280,
+              "fault": "steady"
+            },
+            {
+              "id": "hotKeyFlood",
+              "strategy": "Bloom",
+              "inserted": 140,
+              "insertFailures": 0,
+              "probes": 3440,
+              "falsePositives": 0,
+              "correctNegatives": 80,
+              "correctPositives": 3360,
+              "deleteTries": 0,
+              "deleteSuccess": 0,
+              "deleteReinserted": 0,
+              "foldCount": 0,
+              "fpRate": 0,
+              "fillRatio": 0.1367,
+              "m": 10240,
+              "capacity": 1024,
+              "bitsPerKey": 10,
+              "stashFailures": 0,
+              "bytes": 1280,
+              "fault": "hotKeyFlood"
+            },
+            {
+              "id": "deleteCycle",
+              "strategy": "Bloom",
+              "inserted": 650,
+              "insertFailures": 0,
+              "probes": 0,
+              "falsePositives": 0,
+              "correctNegatives": 0,
+              "correctPositives": 0,
+              "deleteTries": 250,
+              "deleteSuccess": 0,
+              "deleteReinserted": 150,
+              "foldCount": 250,
+              "fpRate": 0,
+              "fillRatio": 0.6348,
+              "m": 10240,
+              "capacity": 1024,
+              "bitsPerKey": 10,
+              "stashFailures": 0,
+              "bytes": 1280,
+              "fault": "deleteCycle"
+            },
+            {
+              "id": "highLoadSaturation",
+              "strategy": "Bloom",
+              "inserted": 2048,
+              "insertFailures": 0,
+              "probes": 2208,
+              "falsePositives": 23,
+              "correctNegatives": 137,
+              "correctPositives": 2048,
+              "deleteTries": 0,
+              "deleteSuccess": 0,
+              "deleteReinserted": 0,
+              "foldCount": 0,
+              "fpRate": 0.0104,
+              "fillRatio": 2,
+              "m": 10240,
+              "capacity": 1024,
+              "bitsPerKey": 10,
+              "stashFailures": 0,
+              "bytes": 1280,
+              "fault": "highLoadSaturation"
+            },
+            {
+              "id": "burstScale",
+              "strategy": "Bloom",
+              "inserted": 1535,
+              "insertFailures": 0,
+              "probes": 2015,
+              "falsePositives": 15,
+              "correctNegatives": 465,
+              "correctPositives": 1535,
+              "deleteTries": 0,
+              "deleteSuccess": 0,
+              "deleteReinserted": 0,
+              "foldCount": 0,
+              "fpRate": 0.0074,
+              "fillRatio": 1.499,
+              "m": 10240,
+              "capacity": 1024,
+              "bitsPerKey": 10,
+              "stashFailures": 0,
+              "bytes": 1280,
+              "fault": "burstScale"
+            },
+            {
+              "id": "overAdmitted",
+              "strategy": "Bloom",
+              "inserted": 4096,
+              "insertFailures": 0,
+              "probes": 4396,
+              "falsePositives": 203,
+              "correctNegatives": 97,
+              "correctPositives": 4096,
+              "deleteTries": 0,
+              "deleteSuccess": 0,
+              "deleteReinserted": 0,
+              "foldCount": 0,
+              "fpRate": 0.0462,
+              "fillRatio": 4,
+              "m": 10240,
+              "capacity": 1024,
+              "bitsPerKey": 10,
+              "stashFailures": 0,
+              "bytes": 1280,
+              "fault": "overAdmitted"
+            }
+          ],
+          "trilemma": {
+            "compactFootprint": true,
+            "insertsNeverFail": true,
+            "deleteSupport": false
+          },
+          "metrics": {
+            "avgInserts": 1117.5,
+            "avgBytes": 1280,
+            "bitsPerKey": 9.1633,
+            "totalFpRate": 0.0042,
+            "totalInsertFailures": 0,
+            "totalStashFailures": 0,
+            "deleteSuccess": 0,
+            "deleteAttempts": 250
+          }
+        },
+        {
+          "protocol": "CountingBloom",
+          "scenarios": [
+            {
+              "id": "steadyFilter",
+              "strategy": "CountingBloom",
+              "inserted": 700,
+              "insertFailures": 0,
+              "probes": 1100,
+              "falsePositives": 28,
+              "correctNegatives": 372,
+              "correctPositives": 700,
+              "deleteTries": 0,
+              "deleteSuccess": 0,
+              "deleteReinserted": 0,
+              "foldCount": 0,
+              "fpRate": 0.0255,
+              "fillRatio": 0.6836,
+              "m": 4096,
+              "capacity": 1024,
+              "bitsPerKey": 0,
+              "stashFailures": 0,
+              "bytes": 4096,
+              "fault": "steady"
+            },
+            {
+              "id": "hotKeyFlood",
+              "strategy": "CountingBloom",
+              "inserted": 140,
+              "insertFailures": 0,
+              "probes": 3440,
+              "falsePositives": 0,
+              "correctNegatives": 80,
+              "correctPositives": 3360,
+              "deleteTries": 0,
+              "deleteSuccess": 0,
+              "deleteReinserted": 0,
+              "foldCount": 0,
+              "fpRate": 0,
+              "fillRatio": 0.1367,
+              "m": 4096,
+              "capacity": 1024,
+              "bitsPerKey": 0,
+              "stashFailures": 0,
+              "bytes": 4096,
+              "fault": "hotKeyFlood"
+            },
+            {
+              "id": "deleteCycle",
+              "strategy": "CountingBloom",
+              "inserted": 650,
+              "insertFailures": 0,
+              "probes": 0,
+              "falsePositives": 0,
+              "correctNegatives": 0,
+              "correctPositives": 0,
+              "deleteTries": 250,
+              "deleteSuccess": 250,
+              "deleteReinserted": 150,
+              "foldCount": 151,
+              "fpRate": 0,
+              "fillRatio": 0.3906,
+              "m": 4096,
+              "capacity": 1024,
+              "bitsPerKey": 0,
+              "stashFailures": 0,
+              "bytes": 4096,
+              "fault": "deleteCycle"
+            },
+            {
+              "id": "highLoadSaturation",
+              "strategy": "CountingBloom",
+              "inserted": 2048,
+              "insertFailures": 0,
+              "probes": 2208,
+              "falsePositives": 85,
+              "correctNegatives": 75,
+              "correctPositives": 2048,
+              "deleteTries": 0,
+              "deleteSuccess": 0,
+              "deleteReinserted": 0,
+              "foldCount": 0,
+              "fpRate": 0.0385,
+              "fillRatio": 2,
+              "m": 4096,
+              "capacity": 1024,
+              "bitsPerKey": 0,
+              "stashFailures": 0,
+              "bytes": 4096,
+              "fault": "highLoadSaturation"
+            },
+            {
+              "id": "burstScale",
+              "strategy": "CountingBloom",
+              "inserted": 1535,
+              "insertFailures": 0,
+              "probes": 2015,
+              "falsePositives": 76,
+              "correctNegatives": 404,
+              "correctPositives": 1535,
+              "deleteTries": 0,
+              "deleteSuccess": 0,
+              "deleteReinserted": 0,
+              "foldCount": 0,
+              "fpRate": 0.0377,
+              "fillRatio": 1.499,
+              "m": 4096,
+              "capacity": 1024,
+              "bitsPerKey": 0,
+              "stashFailures": 0,
+              "bytes": 4096,
+              "fault": "burstScale"
+            },
+            {
+              "id": "overAdmitted",
+              "strategy": "CountingBloom",
+              "inserted": 4096,
+              "insertFailures": 0,
+              "probes": 4396,
+              "falsePositives": 256,
+              "correctNegatives": 44,
+              "correctPositives": 4096,
+              "deleteTries": 0,
+              "deleteSuccess": 0,
+              "deleteReinserted": 0,
+              "foldCount": 0,
+              "fpRate": 0.0582,
+              "fillRatio": 4,
+              "m": 4096,
+              "capacity": 1024,
+              "bitsPerKey": 0,
+              "stashFailures": 0,
+              "bytes": 4096,
+              "fault": "overAdmitted"
+            }
+          ],
+          "trilemma": {
+            "compactFootprint": false,
+            "insertsNeverFail": true,
+            "deleteSupport": true
+          },
+          "metrics": {
+            "avgInserts": 1117.5,
+            "avgBytes": 4096,
+            "bitsPerKey": 29.3226,
+            "totalFpRate": 0.0316,
+            "totalInsertFailures": 0,
+            "totalStashFailures": 0,
+            "deleteSuccess": 250,
+            "deleteAttempts": 250
+          }
+        },
+        {
+          "protocol": "Cuckoo",
+          "scenarios": [
+            {
+              "id": "steadyFilter",
+              "strategy": "Cuckoo",
+              "inserted": 700,
+              "insertFailures": 0,
+              "probes": 1100,
+              "falsePositives": 3,
+              "correctNegatives": 397,
+              "correctPositives": 700,
+              "deleteTries": 0,
+              "deleteSuccess": 0,
+              "deleteReinserted": 0,
+              "foldCount": 0,
+              "fpRate": 0.0027,
+              "fillRatio": 0.6836,
+              "m": 512,
+              "capacity": 1024,
+              "bitsPerKey": 0,
+              "stashFailures": 0,
+              "bytes": 4096,
+              "fault": "steady"
+            },
+            {
+              "id": "hotKeyFlood",
+              "strategy": "Cuckoo",
+              "inserted": 140,
+              "insertFailures": 0,
+              "probes": 3440,
+              "falsePositives": 0,
+              "correctNegatives": 80,
+              "correctPositives": 3360,
+              "deleteTries": 0,
+              "deleteSuccess": 0,
+              "deleteReinserted": 0,
+              "foldCount": 0,
+              "fpRate": 0,
+              "fillRatio": 0.1367,
+              "m": 512,
+              "capacity": 1024,
+              "bitsPerKey": 0,
+              "stashFailures": 0,
+              "bytes": 4096,
+              "fault": "hotKeyFlood"
+            },
+            {
+              "id": "deleteCycle",
+              "strategy": "Cuckoo",
+              "inserted": 650,
+              "insertFailures": 0,
+              "probes": 0,
+              "falsePositives": 0,
+              "correctNegatives": 0,
+              "correctPositives": 0,
+              "deleteTries": 250,
+              "deleteSuccess": 250,
+              "deleteReinserted": 150,
+              "foldCount": 151,
+              "fpRate": 0,
+              "fillRatio": 0.3906,
+              "m": 512,
+              "capacity": 1024,
+              "bitsPerKey": 0,
+              "stashFailures": 0,
+              "bytes": 4096,
+              "fault": "deleteCycle"
+            },
+            {
+              "id": "highLoadSaturation",
+              "strategy": "Cuckoo",
+              "inserted": 2048,
+              "insertFailures": 0,
+              "probes": 2208,
+              "falsePositives": 4,
+              "correctNegatives": 156,
+              "correctPositives": 2048,
+              "deleteTries": 0,
+              "deleteSuccess": 0,
+              "deleteReinserted": 0,
+              "foldCount": 0,
+              "fpRate": 0.0018,
+              "fillRatio": 2,
+              "m": 512,
+              "capacity": 1024,
+              "bitsPerKey": 0,
+              "stashFailures": 0,
+              "bytes": 4096,
+              "fault": "highLoadSaturation"
+            },
+            {
+              "id": "burstScale",
+              "strategy": "Cuckoo",
+              "inserted": 1535,
+              "insertFailures": 0,
+              "probes": 2015,
+              "falsePositives": 9,
+              "correctNegatives": 471,
+              "correctPositives": 1535,
+              "deleteTries": 0,
+              "deleteSuccess": 0,
+              "deleteReinserted": 0,
+              "foldCount": 0,
+              "fpRate": 0.0045,
+              "fillRatio": 1.499,
+              "m": 512,
+              "capacity": 1024,
+              "bitsPerKey": 0,
+              "stashFailures": 0,
+              "bytes": 4096,
+              "fault": "burstScale"
+            },
+            {
+              "id": "overAdmitted",
+              "strategy": "Cuckoo",
+              "inserted": 4095,
+              "insertFailures": 1,
+              "probes": 4396,
+              "falsePositives": 11,
+              "correctNegatives": 289,
+              "correctPositives": 3573,
+              "deleteTries": 0,
+              "deleteSuccess": 0,
+              "deleteReinserted": 0,
+              "foldCount": 0,
+              "fpRate": 0.0025,
+              "fillRatio": 3.999,
+              "m": 512,
+              "capacity": 1024,
+              "bitsPerKey": 0,
+              "stashFailures": 1,
+              "bytes": 4096,
+              "fault": "overAdmitted"
+            }
+          ],
+          "trilemma": {
+            "compactFootprint": false,
+            "insertsNeverFail": false,
+            "deleteSupport": true
+          },
+          "metrics": {
+            "avgInserts": 1117.5,
+            "avgBytes": 4096,
+            "bitsPerKey": 29.3226,
+            "totalFpRate": 0.0036,
+            "totalInsertFailures": 1,
+            "totalStashFailures": 1,
+            "deleteSuccess": 250,
+            "deleteAttempts": 250
+          }
+        }
+      ],
+      "vectors": {
+        "Bloom": "110",
+        "CountingBloom": "011",
+        "Cuckoo": "001"
+      },
+      "verdict": {
+        "vectors": {
+          "Bloom": "110",
+          "CountingBloom": "011",
+          "Cuckoo": "001"
+        },
+        "trilemmaDistinguishes": true,
+        "noUniversalWinner": true,
+        "noStrategyWinsAll": true,
+        "bloomDeleteFree": true,
+        "countingBloomSpacePays": true,
+        "cuckooStashWall": true,
+        "countingBloomDeleteSupport": true,
+        "cuckooDeleteSupport": true,
+        "zeroErrorsBackfiresFpBand": true,
+        "deleteImpossibleBackfiresDeletes": true
+      },
+      "crosscheck": {
+        "evidence": {
+          "remapConsistentRate": 0.18,
+          "remapModuloRate": 0.495,
+          "routerMoved": 9,
+          "hashRingNodes": 4,
+          "walLines": 2,
+          "walReplayed": 2,
+          "notices": 1,
+          "busListeners": 1,
+          "redisEntries": 1,
+          "poolCreated": 2,
+          "bucketAllowed": 3,
+          "bucketRejected": 2,
+          "heapFired": 3,
+          "jitterSpread": 0.13
+        }
+      }
+    },
+    "builtAt": 1794413054995
   }
 }

@@ -145,6 +145,13 @@ export interface GameCloudOptions {
   logCompaction?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck: any; topology: any; [k: string]: any }
   /** KI-526 日志压缩的注入时钟（lc=log compaction，避开 lsm/bp/bpc/cgp/rdq/dld 已占用前缀）。 */
   lcNow?: () => number
+  /**
+   * KI-527：true 装配布隆/布谷鸟/计数布隆三过滤器诚实权衡（Bloom / CountingBloom / Cuckoo + verifyFalsePositiveCeiling 双路自证 + 十一枚真件交叉印证）。
+   * 对象逐项注入（now/seed/capacity/bitsPerKey/bits/counterWidth/tableCount/bucketSize/maxKicks/benchKeys/maxLoadFactor
+   * /unlimitedRoom/zeroErrors/deleteImpossible/rigged/...），或直接塞一只现成 study（带 rows/vectors/verdict 三块 + 元件）。默认 false 不装配。 */
+  bloomFilter?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck?: any; topology?: any; [k: string]: any }
+  /** KI-527 布隆过滤器的注入时钟（bf=Bloom filter，避开 lsm/bp/bpc/cgp/lc/rdq/dld 已占用前缀）。 */
+  bfNow?: () => number
 }
 
 /** 创建一只游戏侧开箱即用云。 */
@@ -203,6 +210,8 @@ export function createGameCloud(opts?: GameCloudOptions): {
   runBackpressureStudy: (() => Promise<any>) | null
   /** KI-526：日志压缩 / 回放边界三策略汇总的现算入口（未配 opts.logCompaction 时为 null）；真跑 SizeTimeRetention/KeyCompaction/SnapshotPlusWal × 六场景矩阵 + 三难向量 + verifyReplayBoundary 双路守恒自证（三路篡改可证伪）+ 十一枚真件交叉印证；rigged 110/110/110 因果锁死 fastRecovery、不硬造全 111。 */
   runLogCompactionStudy: (() => Promise<any>) | null
+  /** KI-527：布隆/布谷鸟/计数布隆三过滤器诚实权衡研究件；缺 opts.bloomFilter 时为 null；Bloom/CountingBloom/Cuckoo × 六场景矩阵 + 三难向量（rigged 110/110/110 因果锁死 unlimitedRoom、绝不硬造全 111）+ verifyFalsePositiveCeiling 双路自证（理论 ε vs 实测 FP 率真读数 + 三路篡改可证伪）+ 十一枚真件交叉印证。 */
+  runBloomFilterStudy: (() => Promise<any>) | null
   /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）。 */
   gray: any
   /** KI-489：把游戏真 EventBus（duck-typed {on,emit}）按白名单接进云事件总线。 */
