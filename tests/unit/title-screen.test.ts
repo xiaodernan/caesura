@@ -640,3 +640,28 @@ describe('标题屏 · 名册问不出来（KI-386）', () => {
   })
 })
 
+describe('余烬仪典（ember rite）视觉装饰：纯 CSS、无障碍安全', () => {
+  it('挂载时注入的 <style> 含余烬仪典关键规则（embers / 呼吸光 / 符环 / 减弱动态）', async () => {
+    await screen(() => roster())
+    const head = (globalThis as unknown as { document: { head: FakeEl } }).document.head
+    const css = head.children.map((c) => (c as unknown as { textContent: string }).textContent).join('\n')
+    expect(css).toContain('#title .embers')
+    expect(css).toContain('tg-rise')
+    expect(css).toContain('tg-breathe')
+    expect(css).toContain('tg-spin')
+    expect(css).toContain('prefers-reduced-motion')
+    expect(css).toContain('#title .card.sel')
+  })
+
+  it('标题与存档两种渲染都注入 14 粒余烬层（aria-hidden）', async () => {
+    const a = await screen(() => roster())
+    const htmlA = view(a.t)
+    expect(htmlA).toContain('class="embers" aria-hidden="true"')
+    expect((htmlA.match(/<i><\/i>/g) ?? []).length).toBe(14)
+    await a.t.goto('slots')
+    const htmlB = view(a.t)
+    expect(htmlB).toContain('class="embers" aria-hidden="true"')
+    a.t.dispose()
+  })
+})
+
