@@ -8,7 +8,7 @@
  * - 题字用 `background-clip:text` 暗金渐变 +「>」引号前缀、mono-ish 字距
  * - 幕布各铺一条 1px 金丝（bar-rule，呼应 Stakerite 的「终局金丝」母题）
  * - win kind（CINE_WIN）题字金饱和度更高；ending kind 偏白银；montage 半透明加快
- * - ESC 跳过提示呼吸（bdr-breathe）
+ * - ESC 跳过提示呼吸（cine-skip-breathe）
  * - `prefers-reduced-motion` 全关动画与 transition
  * - 不接输入、不关自己、不截断 Cinematics 扇出；只读 `hooks.info()`/`hooks.note(id)`
  *
