@@ -132,7 +132,7 @@ export function runMeshE2E(opts = {}) {
     // 注入时钟用 bfNow（避开 bf* 分支与 lsm/bp/bpc/cgp/lc/rdq/dld 前缀）。
     bloomFilter: opts.bloomFilter,
     bfNow: opts.bfNow,
-    // KI-528：LRU/2Q/ARC 三替换策略诚实权衡（cacheReplacement=true 装配；只读 LRU/2Q/ARC × 六场景矩阵 + 三难向量 + verifyDualSweep 双路交叉印证（+ 独立 trace 真 hit 计数）+ 十一枚真件交叉印证，rigged 110/110/110 因果锁死 adaptiveBalance、不得硬造全 111，不改调用路径）。
+    // KI-528：LRU/2Q/ARC 三替换策略诚实权衡（cacheReplacement=true 装配；只读 LRU/2Q/ARC × 六场景矩阵 + 三难向量（默认 010/110/101 互异不封赢家）+ verifyDualSweep 双路交叉印证（真 trace 两路独立重放 + 三路篡改真喂回现算翻 false）+ 十一真件 21 键交叉印证，rigged 两开关真进构造 ⇒ 向量现算收敛 110/110/110、adaptiveBalanceCausallyUnerasable 因果锁死自适应维、绝不硬造全 111，不改调用路径）。
     // 注入时钟用 crNow（避开 cr* 分支与 lsm/bp/bpc/cgp/lc/bf/rdq/dld 已占用前缀）。
     cacheReplacement: opts.cacheReplacement,
     crNow: opts.crNow,

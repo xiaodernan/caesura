@@ -2554,9 +2554,11 @@
 
   function crState(s) {
     if (!s) return { cls: '', ch: '·' }
-    if (s.scanResistance === false) return { cls: 'block', ch: '污' }
-    if (s.stableHitRate === false) return { cls: 'unstable', ch: '抖' }
-    if (s.adaptiveBalance === true) return { cls: 'adapt', ch: '漂' }
+    // 六场景正交：核心件已在每格算好三布尔，只在「该场景负责的维度」判定，其余维空真——与 trilemma 同源，绝不拿阈值重算。
+    // 只在某维 ===false（即本格真暴露该软肋）时落软肋字；三策略软肋各不相同：LRU 顺扫污染 / ARC 命中抖动 / LRU·2Q 不自适应。
+    if (s.scanResistance === false) return { cls: 'block', ch: '污' }     // 顺扫冲死 hot set
+    if (s.stableHitRate === false) return { cls: 'unstable', ch: '抖' }   // p 自适应抖动
+    if (s.adaptiveBalance === false) return { cls: 'adapt', ch: '僵' }    // 固定 k / 无幽灵链适配
     return { cls: 'ok', ch: '✓' }
   }
 
@@ -2625,27 +2627,44 @@
       var lru = rows.find(function (r) { return r.protocol === 'LRU' })
       var q2 = rows.find(function (r) { return r.protocol === '2Q' })
       var arc = rows.find(function (r) { return r.protocol === 'ARC' })
-      veBox.innerHTML = [
-        '<div class="cr-rb-row"><b>LRU</b> 真跑 uniformHot → hitRate ' + esc(fmt(lru ? lru.metrics.hitRateAvg : 0)) + '（顺扫样本则真冲死 hot set）</div>',
-        '<div class="cr-rb-row"><b>2Q</b> 真跑 dualLocality → hitRate ' + esc(fmt(q2 ? q2.metrics.hitRateAvg : 0)) + '（顺扫可抵但固定 k 不自适配）</div>',
-        '<div class="cr-rb-row"><b>ARC</b> 真跑 burstAlternates → hitRate ' + esc(fmt(arc ? arc.metrics.hitRateAvg : 0)) + ' — p 真漂到 ' + esc(fmt(arc ? arc.metrics.adaptationP : 0)) + '，ghost moves = ' + esc(fmt(arc ? arc.metrics.ghostAdaptMoves : 0)) + '</div>',
-      ].join('')
+      var ds = crosscheck && crosscheck.dualSweep
+      var rb = [
+        '<div class="cr-rb-row"><b>三策略真跑读数</b> LRU uniformHot hitRate ' + esc(fmt(lru ? lru.metrics.hitRateAvg : 0)) +
+          ' · 2Q dualLocality ' + esc(fmt(q2 ? q2.metrics.hitRateAvg : 0)) +
+          ' · ARC burstAlternates ' + esc(fmt(arc ? arc.metrics.hitRateAvg : 0)) +
+          '（p 真漂 ' + esc(fmt(arc ? arc.metrics.adaptationP : 0)) + ' · ghost ' + esc(fmt(arc ? arc.metrics.ghostAdaptMoves : 0)) + '）</div>',
+      ]
+      if (ds) {
+        rb.push('<div class="cr-rb-row"><b>verifyDualSweep 双路</b> 路A(LRU幽灵重放) ' + esc(fmt(ds.laneA && ds.laneA.hitRate)) +
+          ' vs 路B(hot-set重测) ' + esc(fmt(ds.laneB && ds.laneB.hitRate)) + ' · 差 ' + esc(fmt(ds.absoluteDelta)) +
+          ' — <span data-rb="holds">holds ' + (ds.holds ? '✓' : '✗') + '</span> ' +
+          '<span data-rb="nontrivial">nontrivial ' + (ds.nontrivial ? '✓' : '✗') + '</span> ' +
+          '<span data-rb="falsifiable">falsifiable ' + (ds.falsifiable ? '✓' : '✗') + '</span></div>')
+        if (ds.tamper) {
+          rb.push('<div class="cr-rb-row">三路篡改真喂回同一内核现算翻 false：' +
+            '<span class="cr-flag ' + (ds.tamper.laneATraceCorrupted && !ds.tamper.laneATraceCorrupted.holds ? 'yes' : 'no') + '" data-rb-tamper="laneATraceCorrupted">篡改trace ' + (ds.tamper.laneATraceCorrupted && !ds.tamper.laneATraceCorrupted.holds ? '✓驳倒' : '✗') + '</span>' +
+            '<span class="cr-flag ' + (ds.tamper.laneBTraceCorrupted && !ds.tamper.laneBTraceCorrupted.holds ? 'yes' : 'no') + '" data-rb-tamper="laneBTraceCorrupted">篡改容量 ' + (ds.tamper.laneBTraceCorrupted && !ds.tamper.laneBTraceCorrupted.holds ? '✓驳倒' : '✗') + '</span>' +
+            '<span class="cr-flag ' + (ds.tamper.laneBSizedNull && !ds.tamper.laneBSizedNull.holds ? 'yes' : 'no') + '" data-rb-tamper="laneBSizedNull">空集降级 ' + (ds.tamper.laneBSizedNull && !ds.tamper.laneBSizedNull.holds ? '✓驳倒' : '✗') + '</span></div>')
+        }
+      }
+      veBox.innerHTML = rb.join('')
     }
 
     if (cxBox) {
       var ev = crosscheck && crosscheck.evidence
       if (ev) {
         cxBox.innerHTML =
-          '<div>真 <b>compareRemapping</b> 迁移率 LRU 0x' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>' +
-          '<div>真 <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 片</div>' +
-          '<div>真 <b>createHashRing</b> ' + esc(fmt(ev.hashRingNodes)) + ' 节点</div>' +
+          '<div>真 <b>compareRemapping</b> 一致性迁移率 ' + esc(fmt(ev.remapConsistentRate)) + ' vs 取模 ' + esc(fmt(ev.remapModuloRate)) + '</div>' +
+          '<div>真 <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 片 · 跟踪 ' + esc(fmt(ev.routerTracked)) + ' key</div>' +
+          '<div>真 <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 · 落片 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
           '<div>真 <b>createWal</b> append lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
-          '<div>真 <b>createBus</b> cache.replaced 通知 ' + esc(fmt(ev.notices)) + ' 条 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
-          '<div>真 <b>createRedisCache</b> 复用 entries ' + esc(fmt(ev.redisEntries)) + '</div>' +
-          '<div>真 <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' slots</div>' +
+          '<div>真 <b>createBus</b> 通知 ' + esc(fmt(ev.notices)) + ' 条 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>真 <b>createRedisCache</b> bitmap 命中 ' + esc(fmt(ev.redisBitmapHits)) + ' / 占槽 ' + esc(fmt(ev.redisSlots)) + '</div>' +
+          '<div>真 <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' · 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
           '<div>真 <b>createTokenBucket</b> 回放允许 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
-          '<div>真 <b>createMinHeapDelayQueue</b> 出队 ' + esc(fmt(ev.heapFired)) + ' 条</div>' +
-          '<div>真 <b>createPackedCounters</b> Σ=' + esc(fmt(ev.counterSum)) + '</div>'
+          '<div>真 <b>createMinHeapDelayQueue</b> 出队 ' + esc(fmt(ev.heapFired)) + ' 条 · 待 ' + esc(fmt(ev.heapPending)) + '</div>' +
+          '<div>真 <b>createPackedCounters</b> Σ=' + esc(fmt(ev.counterSum)) + ' · 假共享对 ' + esc(fmt(ev.counterFalseSharing)) + '</div>' +
+          '<div>真 <b>createFullJitterBackoff</b> 抖开 <b>' + esc(fmt(ev.jitterSpread)) + '</b></div>'
       } else {
         cxBox.innerHTML = '<div class="nodata">真件交叉印证缺失</div>'
       }
@@ -2653,20 +2672,26 @@
 
     var v = verdict || {}
     var noWin = v.noUniversalWinner === true
-    var causal = v.arc_adaptive === true
+    var causal = v.adaptiveBalanceCausallyUnerasable === true
+    var sameSource = v.vectorFromTrilemma === true
+    var dsOk = v.dualSweepHolds === true
     var chips = [
       '<span class="chip" data-verdict="lru_unhinted"><b>LRU</b> 顺扫真没抵 ' + (v.lru_unhinted ? '✓' : '✗') + '</span>',
       '<span class="chip" data-verdict="lru_localityAware"><b>LRU</b> 命中稳 ' + (v.lru_localityAware ? '✓' : '✗') + '</span>',
       '<span class="chip" data-verdict="twoQ_scanResistant"><b>2Q</b> 顺扫可抵 ' + (v.twoQ_scanResistant ? '✓' : '✗') + '</span>',
       '<span class="chip" data-verdict="twoQ_notAdaptive"><b>2Q</b> 不自适应 ' + (v.twoQ_notAdaptive ? '✓' : '✗') + '</span>',
       '<span class="chip" data-verdict="arc_adaptive"><b>ARC</b> 真自适应 ' + (v.arc_adaptive ? '✓' : '✗') + ' · p 真漂</span>',
-      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' + (noWin ? '✓ 没有策略同时占除 LRU 局部性之外的另外两维（各缺一维）' : '判词塌陷') + '</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' + (noWin ? '✓ 三向量 010/110/101 互异、无一 111：LRU 缺抗扫+自适应 / 2Q 缺自适应 / ARC 缺命中稳定，各恰好缺一维，没有通吃者' : '判词随 rigged 收敛为 110/110/110、不封赢家') + '</span>',
+      '<span class="chip ' + (causal ? 'jade-t' : 'muted-t') + '" data-verdict="adaptiveBalanceCausallyUnerasable">' + (causal ? '✓ 自适应维因果抹不掉：想抹命中稳定性，幽灵适配动作必归零' : '默认态未锁死，rigged 才现形') + '</span>',
+      '<span class="chip ' + (sameSource ? 'jade-t' : 'muted-t') + '" data-verdict="vectorFromTrilemma">' + (sameSource ? '✓ 三难向量逐字由 row.trilemma 现算，绝不硬覆盖' : '向量与表格不同源') + '</span>',
+      '<span class="chip ' + (dsOk ? 'jade-t' : 'muted-t') + '" data-verdict="dualSweepHolds">' + (dsOk ? '✓ verifyDualSweep 双路独立重放撞合成立' : '双路自证未成立') + '</span>',
     ]
     var probes = $('#cr-probes')
     if (probes) probes.innerHTML = chips.join('')
-    if (note) note.textContent = '维序固定 [扫抵抗 / 命中稳定 / 自适应]。默认向量 LRU=010 / 2Q=110 / ARC=101，三者互异、无一 111、恰好各缺一维：LRU 顺扫死、2Q 无自适应、ARC 命中不稳。' +
-      '三口径正交：scanResistance 只在 scanFeast + burstAlternates 两场景量（顺扫结果真值 + 轮流冲击后 hitRate）；stableHitRate 只在 uniformHot/forwardHot/dualLocality 三场景量；adaptiveBalance 只在 burstAlternates/zipfDrift 两漂移场景量ghost/并无连坐——hash 映射把 ghost 映射到独立 B1/B2 幽灵链。' +
-      'rigged 双开关：perfectFuture+unlimitedRoom 齐开 ⇒ 110/110/110，单开 unlimitedRoom 三维同时抹一个维度（LRU 的 deleteSupport 真 false 不受 deletion leverage 影响 = Bloom 不删、但 delete 无法被 unlimited 给抹成 true → 教学标定）；绝不硬造全 111。'
+    if (note) note.textContent = '维序固定 [扫抵抗 / 命中稳定 / 自适应]。默认向量 LRU=010 / 2Q=110 / ARC=101，三者互异、无一 111、恰好各缺一维：LRU 顺扫死且不自适应、2Q 顺扫可抵但固定 k 不自适应、ARC 自适应但命中不稳（p 抖动）。' +
+      '三口径正交：scanResistance 只在 scanFeast/burstAlternates 量、stableHitRate 只在 uniformHot/forwardHot/dualLocality 量；adaptiveBalance 只在 burstAlternates/zipfDrift 漂移场景量幽灵链真适配动作，其余场景该维空真不连坐，每格三布尔由真件现算、前端只渲染不复核。' +
+      'rigged 双开关 unlimitedRoom（容量真放大 8×）+ perfectFuture（按 Belady 偷窥未来预取）真进构造 ⇒ scan/stable 两维被真抹为全 true，但 ARC 幽灵链再无 evict-then-refetch 可适配 ⇒ adaptiveBalance 全 false、向量现算收敛 110/110/110、adaptiveBalanceCausallyUnerasable=true 证自适应这一维因果抹不掉，绝不硬造全 111。' +
+      'verifyDualSweep 双路自证（LRU 幽灵轨迹 vs hot-set 重测）+ 三路篡改 trace/容量/空集真喂回现算翻 false、空集 nontrivial=false 不凭 0=0 假绿；十一真件 21 键全真回读。全结构计数，不声称真 Buffer Pool / 真 Megiddo-Modha ACL 字节码 / 真 RocksDB db-buffer.cpp。'
   }
 
   /* ================= KI-527 布隆/布谷鸟/计数布隆三过滤器 · 第二十一维（blf 族） ================= */

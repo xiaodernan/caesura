@@ -737,7 +737,7 @@ export function createGameCloud(opts = {}) {
     runLogCompactionStudy: lcCfg === null ? null : () => logCompactionStudy({ ...lcCfg, now: opts.lcNow ?? lcCfg.now }),
     /** KI-527 布隆/布谷鸟/计数布隆三过滤器诚实权衡研究件；缺 opts.bloomFilter 时为 null；Bloom/CountingBloom/Cuckoo × 六场景矩阵 + 三难向量（默认 110/011/101 互异不封赢家；rigged 011/011/011 由 unlimitedRoom 真算因果锁死 compactFootprint、绝不硬造全 111）+ verifyFalsePositiveCeiling 双路自证（理论 ε vs 实测 FP 率真读数 + 三路篡改真喂回现算翻 false）+ 十一枚真件 21 键交叉印证。 */
     runBloomFilterStudy: bfCfg === null ? null : () => bloomFilterStudy({ ...bfCfg, now: opts.bfNow ?? bfCfg.now }),
-    /** KI-528 LRU/2Q/ARC 三替换策略诚实权衡研究件；缺 opts.cacheReplacement 时为 null；LRU/2Q/ARC × 六场景矩阵 + 三难向量（rigged 110/110/110 因果锁死 adaptiveBalance、不得硬造全 111）+ verifyDualSweep 双路交叉印证（独立 trace 2 路自检真 hit 计数）+ 十一枚真件交叉印证。 */
+    /** KI-528 LRU/2Q/ARC 三替换策略诚实权衡研究件；缺 opts.cacheReplacement 时为 null；LRU/2Q/ARC × 六场景矩阵 + 三难向量（默认 010/110/101 互异不封赢家；rigged 两开关 unlimitedRoom+perfectFuture 真进构造 ⇒ 向量现算收敛 110/110/110、adaptiveBalanceCausallyUnerasable 因果锁死自适应维、绝不硬造全 111）+ verifyDualSweep 双路交叉印证（真 trace 两路独立重放 + 三路篡改真喂回现算翻 false）+ 十一真件 21 键交叉印证。 */
     runCacheReplacementStudy: crCfg === null ? null : () => cacheReplacementStudy({ ...crCfg, now: opts.crNow ?? crCfg.now }),
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
     gray: runtime.gray,

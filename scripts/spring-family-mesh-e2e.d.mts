@@ -407,7 +407,7 @@ export function runMeshE2E(opts?: any): {
       verdict: Record<string, any>
       builtAt: number
     } | null
-    /** KI-528：LRU/2Q/ARC 三替换策略快照（LRU/2Q/ARC × 六场景 + 三难向量 + verifyDualSweep 双路交叉印证 + 十一枚真件交叉印证），未配 cacheReplacement 为 null；rigged 110/110/110 因果锁死 adaptiveBalance；不得硬造全 111 */
+    /** KI-528：LRU/2Q/ARC 三替换策略快照（LRU/2Q/ARC × 六场景 + 三难向量 010/110/101 + verifyDualSweep 双路交叉印证（三路篡改真喂回现算翻 false）+ 十一真件 21 键交叉印证），未配 cacheReplacement 为 null；rigged 两开关真进构造 ⇒ 向量现算收敛 110/110/110、adaptiveBalanceCausallyUnerasable 因果锁死自适应维；不得硬造全 111 */
     cacheReplacementSnapshot: {
       config: Record<string, any>
       rows: Array<{

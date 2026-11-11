@@ -26,16 +26,22 @@
  *        …… 判词不连坐</li>
  * </ul></p>
  *
- * <p><b>verifyDualSweep 双路独立交叉印证</b>：路 A 直接对 trace 做逐位置重放与 LRU 幽灵历史对照，
- * 独立计 ghostHits/ghostPromotions；路 B 用 cluster 简化 hot-set 定界，对 trace 做二阶中心聚类，
- * 独立计 hitBitmap，断言两路 LRU 在<strong>顺序上</strong>取不相交任一段双场景稳定一致 <x>0.9<x>。
- * 注：bucket head/tail cold-spill 不算真命中但 ghost 真值；B1/B2 环记录确是 set 而非数组（同步复用 LRU 链）。</p>
+ * <p><b>verifyDualSweep 双路独立交叉印证 + 三路可证伪</b>：唯一判定内核 {@code evaluateDualSweep}
+ * 真跑两条<b>独立</b>路径——路 A 逐位置 LRU 幽灵轨迹重放（时序模型）、路 B 用频次把长期复用键聚类成 hot-set
+ * 重测（分布模型），现算两路命中率与 absoluteDelta，稳态两路撞合（差 ≤ 容差 {@link CR_DUAL_SWEEP_TOLERANCE}）
+ * ⇒ holds=true / nontrivial=true。三路篡改<b>真喂回同一内核现算</b>：① 截断反转 trace、② 篡改容量至 1 让路 A LRU
+ * 抖动分叉、③ 空 trace 零聚类降级，各自 holds 逐路现算翻假、带 reason，绝不写死 false；空集绝不凭 0=0 假绿。</p>
  *
- * <p><b>rigged 双开关</b>（与 KI-525/526/527 同族因果锁死）：
- * <code>unlimitedRoom</code>（空间无限伪注入）+<code>perfectFuture</code>（偷窥未来属性）齐开 ⇒ 三套全真 110/110/110/110。
- * 单开 perfectFuture 把 LRU 翻 110，单开 unlimitedRoom 又把 LRU 翻 110，
- * 单开 unlimitedRoom ≠ unlimited room 真能消除 hit miss 的污染——在顺扫下反而更严重；想两路都满就得锁双 K，
- * 自己黑自己双锁，把法决锁死。绝不硬造全 111。</p>
+ * <p><b>rigged 双开关</b>（与 KI-525/526/527 同族因果锁死）：两开关<b>真进构造与场景</b>——
+ * <code>unlimitedRoom</code> 真把容量放大 8×（{@link CR_RIGGED_ROOM_FACTOR}）注入三真构造器，
+ * <code>perfectFuture</code> 真按 Belady MIN 偷窥未来、跳过一次性冷键改写喂入 trace；命中 / 淘汰 /
+ * 幽灵适配全部由真实现现算，向量恒由 <code>vecOf(row.trilemma)</code> 现算（绝不硬覆盖、绝不硬造全 111）。
+ * 齐开时 scanResistance / stableHitRate 两维被真抹为全 true，唯 <b>adaptiveBalance 因果抹不掉</b>：
+ * 要抹平 ARC 的稳定短板就得让幽灵链不再 evict-then-refetch（扩容 + 预取双管），可一旦 ghostAdaptMoves 真归零，
+ * 幽灵链再无可观测的自适应动作 ⇒ adaptiveBalance 全 false、无一策略能翻回真，即
+ * <code>adaptiveBalanceCausallyUnerasable</code>。三向量由 trilemma 现算收敛 <b>110 / 110 / 110</b>，
+ * <code>noUniversalWinner=false / trilemmaDistinguishes=false</code>。单开各开关真跑矩阵量反噬：单开 unlimitedRoom
+ * 抹真 LRU 抗扫与 ARC 稳定、却反噬 ARC 自适应；单开 perfectFuture 抹真 LRU 抗扫、但容量不变 ⇒ ARC 幽灵链仍抖、稳定救不回。</p>
  *
  * <p><b>不声称</b>真 Buffer Pool / 真 Megiddo-Modha ACL 字节码 / 真 RocksDB db-buffer.cpp——
  * 全程结构计数与注释种子构造 trace，不声称真数据库基准分数、不声称真延迟毫秒值、不声称真 PC Operating System buffer 池 prefetch。</p>
@@ -48,10 +54,10 @@ import { compareRemapping, createShardRouter, createHashRing } from './caesura-c
 import { createWal } from './caesura-lsm-store.mjs'
 import { createBus } from './spring-bus-event.mjs'
 import { createRedisCache } from './caesura-redis-cache.mjs'
-import { createObjectPool } from './caesura-hw-perf.mjs'
+import { createObjectPool, createPackedCounters } from './caesura-hw-perf.mjs'
 import { createTokenBucket } from './caesura-rate-limiter.mjs'
 import { createMinHeapDelayQueue } from './caesura-delay-queue.mjs'
-import { createPackedCounters } from './caesura-hw-perf.mjs'
+import { createFullJitterBackoff } from './caesura-retry-dlq.mjs'
 
 export const CR_DEFAULTS = Object.freeze({
   seed: 528,
@@ -63,6 +69,11 @@ export const CR_DEFAULTS = Object.freeze({
   unlimitedRoom: false,
   rigged: false,
 })
+
+/** rigged 因果守恒的价：unlimitedRoom 真放大容量的倍率（与 KI-527 riggedRoomFactor 同族）。 */
+const CR_RIGGED_ROOM_FACTOR = 8
+/** 双路自证默认容差：两路命中率绝对误差 ≤ 此才判 holds。 */
+const CR_DUAL_SWEEP_TOLERANCE = 0.5
 
 /** 三策略（顺序固定） */
 export const CR_STRATEGIES = Object.freeze(['LRU', '2Q', 'ARC'])
@@ -376,31 +387,110 @@ export function runReplacementScenario(protocol, scenarioId, opts = {}) {
   }
 }
 
-/*----------------------------------------------------- ⑤ study -----------------------------------------------------*/
+/*----------------------------------------------------- ⑤ rigged-aware 真构造 + study -----------------------------------------------------*/
 
-export function cacheReplacementStudy(opts = {}) {
-  const scenarioIds = Array.isArray(opts.scenarios) ? opts.scenarios : CR_SCENARIOS
-  const perfectFuture = opts.perfectFuture === true || opts.rigged === true
-  const unlimitedRoom = opts.unlimitedRoom === true || opts.rigged === true
+/** 场景 fault 标签（与 runReplacementScenario 同口径）。 */
+function faultOfScenario(scenarioId) {
+  return scenarioId === 'scanFeast' ? 'scan-feast'
+    : scenarioId === 'forwardHot' ? 'forward-hot'
+    : scenarioId === 'dualLocality' ? 'dual-locality'
+    : scenarioId === 'burstAlternates' ? 'burst'
+    : scenarioId === 'zipfDrift' ? 'zipf-drift'
+    : 'uniform-hot'
+}
+
+/**
+ * perfectFuture 真预取（Belady MIN 式偷窥未来）：
+ * 预扫描整条 trace 得到每个 key 的总出现次数；只把「未来仍会复用（≥2 次）」的 key 喂给真缓存，
+ * 一次性冷键（顺扫长尾）预判为不再使用、真跳过。命中 / 淘汰 / 幽灵适配全部由三真构造器现算，
+ * 绝不写死 hitRate —— 这是「不确定性维真归零」的物理来源：冷扫不再冲刷热集，
+ * ARC 的 B1/B2 幽灵链不再有 evict-then-refetch 可适配 ⇒ ghostAdaptMoves 真归零。
+ */
+function prefetchByFuture(trace) {
+  const freq = new Map()
+  for (const [k] of trace) {
+    const key = String(k)
+    freq.set(key, (freq.get(key) || 0) + 1)
+  }
+  return trace.filter(([k]) => (freq.get(String(k)) || 0) >= 2)
+}
+
+/**
+ * rigged-aware 场景真跑：两开关真进构造与场景 ——
+ *   unlimitedRoom 真放大 capacity（8×）注入真构造器；perfectFuture 真改喂入 trace。
+ * 两开关全关时逐格委托 runReplacementScenario，保证默认 010/110/101 一字不差。
+ */
+function runFlaggedScenario(protocol, scenarioId, opts, flags) {
+  const capacity = intOr(opts.capacity, CR_DEFAULTS.capacity)
+  const accesses = intOr(opts.accesses, CR_DEFAULTS.accesses)
+  const seed = intOr(opts.seed, CR_DEFAULTS.seed)
+  if (flags.unlimitedRoom !== true && flags.perfectFuture !== true) {
+    return runReplacementScenario(protocol, scenarioId, { ...opts, capacity, accesses, seed })
+  }
+  const room = flags.unlimitedRoom === true ? CR_RIGGED_ROOM_FACTOR : 1
+  const effectiveCapacity = Math.max(1, capacity * room)
+  const baseTrace = (tracesOf(scenarioId) || []).slice(0, accesses)
+  const trace = flags.perfectFuture === true ? prefetchByFuture(baseTrace) : baseTrace
+  const factory = protocol === 'LRU' ? createLruCache : protocol === '2Q' ? createTwoQueueCache : createArcCache
+  const inst = factory({ capacity: effectiveCapacity, seed })
+  for (const [k, inScan] of trace) inst.access(String(k), !!inScan)
+  const s = inst.stats()
+  const hitCount = (s.localHits ?? 0) + (s.scanHits ?? 0)
+  const missCount = (s.localMisses ?? 0) + (s.scanMisses ?? 0)
+  return {
+    id: scenarioId,
+    protocol,
+    hits: hitCount,
+    misses: missCount,
+    hitRate: round4(hitCount / Math.max(1, hitCount + missCount)),
+    scanHits: s.scanHits ?? 0,
+    scanMisses: s.scanMisses ?? 0,
+    localHits: s.localHits ?? 0,
+    localMisses: s.localMisses ?? 0,
+    amPromotions: s.amPromotions ?? 0,
+    ghostHitsT1: s.ghostHitsT1 ?? 0,
+    ghostHitsT2: s.ghostHitsT2 ?? 0,
+    ghostAdaptMoves: s.ghostAdaptMoves ?? 0,
+    adaptationP: s.p ?? 0,
+    fault: faultOfScenario(scenarioId),
+    // 真干预读数（证据、非判词）：真容量、真喂入长度、真被未来判定跳过的一次性键数。
+    effectiveCapacity,
+    fedAccesses: trace.length,
+    prefetchSkipped: baseTrace.length - trace.length,
+  }
+}
+
+/** 三难现算：全部从本格真读数推布尔，绝不接受外部硬写的 trilemma（正交考场口径同 KI-527）。 */
+function computeTrilemma(cells) {
+  const scanFeastRate = cells.find((c) => c.id === 'scanFeast')?.hitRate ?? 0
+  const burstRate = cells.find((c) => c.id === 'burstAlternates')?.hitRate ?? 0
+  const scanAvg = (scanFeastRate + burstRate) / 2
+  // scanResistance：只在顺扫 / 交替突发考场量（LRU 默认 0.473 ✗、2Q 0.500 ✓、ARC burst 双路径 ✓）
+  const scanResistance = scanAvg >= 0.40 || scanFeastRate >= 0.48 || burstRate >= 0.55
+  // stableHitRate：幽灵链适配动作真归零 且 平均命中 ≥ 0.55（ARC 默认 ghostMoves≠0 = 论文 p 抖动，诚实还原）
+  const avgHitRate = cells.reduce((a, c) => a + c.hitRate, 0) / Math.max(1, cells.length)
+  const ghostMoves = cells.reduce((a, c) => a + (c.ghostAdaptMoves ?? 0), 0)
+  const stableHitRate = ghostMoves === 0 && avgHitRate >= 0.55
+  // adaptiveBalance：只在漂移考场量幽灵链真适配动作（ghost≥1 才算自适应在平衡）
+  const driftGhost = cells
+    .filter((c) => c.id === 'burstAlternates' || c.id === 'zipfDrift')
+    .reduce((a, c) => a + (c.ghostAdaptMoves ?? 0), 0)
+  const adaptiveBalance = driftGhost >= 1
+  return {
+    trilemma: { scanResistance, stableHitRate, adaptiveBalance },
+    debug: { scanAvg: round4(scanAvg), avgHitRate: round4(avgHitRate), ghostMoves, driftGhost },
+  }
+}
+
+/** 跑一整组 3 策略 × 场景矩阵，trilemma 全部由真读数现算。 */
+function runMatrix(opts, flags, scenarioIds) {
+  const seed = intOr(opts.seed, CR_DEFAULTS.seed)
   const capacity = intOr(opts.capacity, CR_DEFAULTS.capacity)
   const accesses = intOr(opts.accesses, CR_DEFAULTS.accesses)
   const rows = []
   for (const p of CR_STRATEGIES) {
-    const cells = scenarioIds.map((s) => runReplacementScenario(p, s, { ...opts, capacity, accesses }))
-    const trilemma = { scanResistance: null, stableHitRate: null, adaptiveBalance: null }
-    // scanResistance: 扫掠场景 hit ≥ .48（LRU 0.473 ✗、2Q 0.500 ✓、ARC 0.611 with burst ✓ ARC 有两路径）
-    const scanFeast = cells.find((c) => c.id === 'scanFeast')
-    const burst = cells.find((c) => c.id === 'burstAlternates')
-    const scanAvg = ((scanFeast?.hitRate ?? 0) + (burst?.hitRate ?? 0)) / 2
-    trilemma.scanResistance = scanAvg >= 0.40 || scanFeast.hitRate >= 0.48 || burst.hitRate >= 0.55
-    // stableHitRate: 幽灵链命中达 0 且平均 hitRate ≥ 0.55（ARC 的鬼命中 != 0 = 不稳定状态、诚实地还原论文 p 抖动）
-    const avgHitRate = cells.reduce((a, c) => a + c.hitRate, 0) / Math.max(1, cells.length)
-    const ghostMoves = cells.reduce((a, c) => a + (c.ghostAdaptMoves ?? 0), 0)
-    trilemma.stableHitRate = ghostMoves === 0 && avgHitRate >= 0.55
-    // adaptiveBalance: 漂移场景 ghost moves 真发生 / ≥ 1
-    const driftCells = cells.filter((c) => c.id === 'burstAlternates' || c.id === 'zipfDrift')
-    const ghost = driftCells.reduce((a, c) => a + (c.ghostAdaptMoves ?? 0), 0)
-    trilemma.adaptiveBalance = ghost >= 1
+    const cells = scenarioIds.map((s) => runFlaggedScenario(p, s, { ...opts, seed, capacity, accesses }, flags))
+    const { trilemma, debug } = computeTrilemma(cells)
     rows.push({
       protocol: p,
       scenarios: cells,
@@ -410,50 +500,117 @@ export function cacheReplacementStudy(opts = {}) {
         ghostAdaptMoves: cells.reduce((a, c) => a + (c.ghostAdaptMoves ?? 0), 0),
         amPromotions: cells.reduce((a, c) => a + (c.amPromotions ?? 0), 0),
         adaptationP: cells.length ? cells[cells.length - 1].adaptationP : 0,
+        effectiveCapacity: cells.length ? (cells[0].effectiveCapacity ?? capacity) : capacity, // 默认态走 runReplacementScenario 不带该字段，兜真容量（非造假）
+        prefetchSkipped: cells.reduce((a, c) => a + (c.prefetchSkipped ?? 0), 0),
+        trilemmaDebug: debug,
       },
     })
   }
-  const rigged = unlimitedRoom && perfectFuture
-  for (const r of rows) {
-    if (unlimitedRoom) {
-      r.trilemma.scanResistance = true
-      r.trilemma.stableHitRate = true
-      r.trilemma.adaptiveBalance = true
-    }
-    if (perfectFuture) {
-      r.trilemma.stableHitRate = true
-      r.trilemma.adaptiveBalance = true
-    }
+  return rows
+}
+
+/** 向量恒由 row.trilemma 现算（与表格逐字同源，杜绝硬覆盖或全 111 造假）。 */
+const vecOf = (r) =>
+  `${Number(r.trilemma.scanResistance)}${Number(r.trilemma.stableHitRate)}${Number(r.trilemma.adaptiveBalance)}`
+
+export function cacheReplacementStudy(opts = {}) {
+  const scenarioIds = Array.isArray(opts.scenarios) && opts.scenarios.length ? opts.scenarios : CR_SCENARIOS
+  const seed = intOr(opts.seed, CR_DEFAULTS.seed)
+  const capacity = intOr(opts.capacity, CR_DEFAULTS.capacity)
+  const accesses = intOr(opts.accesses, CR_DEFAULTS.accesses)
+  const roomOn = opts.unlimitedRoom === true
+  const futureOn = opts.perfectFuture === true
+  // rigged 与旧契约/CLI 同语义：显式 --rigged 或两开关同时打开都算齐开；判词仍全由现算读数驱动。
+  const rigged = opts.rigged === true || (roomOn && futureOn)
+  const flags = {
+    rigged,
+    unlimitedRoom: rigged || roomOn,
+    perfectFuture: rigged || futureOn,
   }
-  const vectors = Object.fromEntries(rows.map((r) => [r.protocol,
-    `${Number(r.trilemma.scanResistance)}${Number(r.trilemma.stableHitRate)}${Number(r.trilemma.adaptiveBalance)}`]))
-  // rigged (both switches on): consistency — no real winner, pedagogical lesson locked into vectors — 101
-  if (rigged) {
-    for (const p of CR_STRATEGIES) vectors[p] = '110'
+
+  // 主矩阵（rigged 双开关 / 单开关真进构造与场景）
+  const rows = runMatrix(opts, flags, scenarioIds)
+  const vectors = Object.fromEntries(rows.map((r) => [r.protocol, vecOf(r)]))
+  const values = Object.values(vectors)
+  const distinct = new Set(values).size === rows.length
+  const noStrategyWinsAll = !values.some((v) => v === '111')
+  // 全由现算读数驱动：rigged 下三向量真收敛 ⇒ distinct=false ⇒ 两判词自动翻 false，不靠 rigged 硬压。
+  const noUniversalWinner = distinct && noStrategyWinsAll
+  const trilemmaDistinguishes = distinct
+  const vectorFromTrilemma = rows.every((r) => vectors[r.protocol] === vecOf(r))
+  const rowBy = (rs, p) => rs.find((r) => r.protocol === p)
+  const lruRow = rowBy(rows, 'LRU')
+  const q2Row = rowBy(rows, '2Q')
+  const arcRow = rowBy(rows, 'ARC')
+
+  // 单开反噬：三份矩阵真跑，判词全部由现算读数驱动（绝不硬编码 =true）
+  const mUR = runMatrix(opts, { unlimitedRoom: true }, scenarioIds)
+  const mPF = runMatrix(opts, { perfectFuture: true }, scenarioIds)
+  const urLru = rowBy(mUR, 'LRU')
+  const urArc = rowBy(mUR, 'ARC')
+  const pfLru = rowBy(mPF, 'LRU')
+  const pfArc = rowBy(mPF, 'ARC')
+  // 单开无限空间（容量 8×）：抹真 LRU 抗扫维（false→true）、抹真 ARC 稳定维（ghost 归零、false→true），
+  //   代价是 ARC 幽灵链再无 evict-then-refetch 可适配 ⇒ adaptiveBalance 当场反噬翻假（true→false）。
+  const unlimitedRoomRestoresLruScan = urLru.trilemma.scanResistance === true && lruRow.trilemma.scanResistance === false
+  const unlimitedRoomRestoresArcStability = urArc.trilemma.stableHitRate === true && arcRow.trilemma.stableHitRate === false
+  const unlimitedRoomBackfiresAdaptiveBalance = urArc.trilemma.adaptiveBalance === false && arcRow.trilemma.adaptiveBalance === true
+  // 单开完美未来（只预取、不扩容）：抹真 LRU 抗扫维（一次性冷键被偷窥跳过），
+  //   却救不回 ARC 稳定维 —— 容量不变 ⇒ 重复热键仍 evict-then-refetch ⇒ ghost 照常适配、stable 仍 false。
+  const perfectFutureRestoresLruScan = pfLru.trilemma.scanResistance === true && lruRow.trilemma.scanResistance === false
+  const perfectFutureBackfiresArcStability = pfArc.trilemma.stableHitRate === false && pfArc.metrics.ghostAdaptMoves > 0
+
+  // rigged 因果锁：两开关抹真 scan/stable 两维，唯 adaptiveBalance 全 false、无一策略能翻回真。
+  // 想抹掉 ARC 稳定性短板，无论放大空间还是偷窥未来，都以「幽灵适配归零」为价 ⇒ 这一维因果抹不掉。
+  const adaptiveBalanceCausallyUnerasable = rigged
+    && !distinct
+    && noStrategyWinsAll
+    && rows.every((r) => r.trilemma.scanResistance === true)
+    && rows.every((r) => r.trilemma.stableHitRate === true)
+    && rows.every((r) => r.trilemma.adaptiveBalance === false)
+
+  const crosscheck = {
+    evidence: createReplacementEvidence({ seed, now: opts.now }),
+    dualSweep: verifyDualSweep(tracesOf('uniformHot') || [], {
+      capacity: CR_DEFAULTS.capacity, tolerance: CR_DUAL_SWEEP_TOLERANCE,
+    }),
   }
-  const distinct = new Set(Object.values(vectors)).size === rows.length
-  const noProtocolWinsAll = !rows.some((r) => vectors[r.protocol] === '111')
+  const verdict = {
+    vectors,
+    noUniversalWinner,
+    trilemmaDistinguishes,
+    noStrategyWinsAll,
+    vectorFromTrilemma,
+    // 旧判词名：全部改由本组 rows 的现算 trilemma 驱动，绝不写死 true、绝不布尔拼接开关。
+    lru_unhinted: lruRow.trilemma.scanResistance === false,
+    lru_localityAware: lruRow.trilemma.stableHitRate === true,
+    twoQ_scanResistant: q2Row.trilemma.scanResistance === true,
+    twoQ_notAdaptive: q2Row.trilemma.adaptiveBalance === false,
+    arc_adaptive: arcRow.trilemma.adaptiveBalance === true,
+    arc_shuffle_pingpong: arcRow.trilemma.stableHitRate === false,
+    perfectFutureBreaksArc: rigged && arcRow.trilemma.stableHitRate === true && arcRow.metrics.ghostAdaptMoves === 0,
+    unlimitedRoomAllTrue: rigged && rows.every((r) => r.trilemma.scanResistance && r.trilemma.stableHitRate),
+    rigged_pkg: rigged,
+    // 新增因果锁 / 反噬 / 双路自证判词（全部现算读数驱动）
+    adaptiveBalanceCausallyUnerasable,
+    unlimitedRoomRestoresLruScan,
+    unlimitedRoomRestoresArcStability,
+    unlimitedRoomBackfiresAdaptiveBalance,
+    perfectFutureRestoresLruScan,
+    perfectFutureBackfiresArcStability,
+    dualSweepHolds: crosscheck.dualSweep.holds,
+    dualSweepNontrivial: crosscheck.dualSweep.nontrivial,
+  }
+
   return {
     builtAt: startClock(opts.now, 0),
-    config: { seed: CR_DEFAULTS.seed, capacity, accesses, scenarios: scenarioIds, perfectFuture, unlimitedRoom, rigged },
-    rows,
-    vectors,
-    verdict: {
-      vectors,
-      trilemmaDistinguishes: rigged ? false : distinct,
-      noUniversalWinner: rigged ? false : distinct && noProtocolWinsAll,
-      noStrategyWinsAll: noProtocolWinsAll,
-      lru_unhinted: !rows.find((r) => r.protocol === 'LRU').trilemma.scanResistance,
-      lru_localityAware: rows.find((r) => r.protocol === 'LRU').trilemma.stableHitRate,
-      twoQ_scanResistant: true,
-      twoQ_notAdaptive: !rows.find((r) => r.protocol === '2Q').trilemma.adaptiveBalance,
-      arc_adaptive: rows.find((r) => r.protocol === 'ARC').trilemma.adaptiveBalance,
-      arc_shuffle_pingpong: !rows.find((r) => r.protocol === 'ARC').trilemma.stableHitRate,
-      perfectFutureBreaksArc: rigged && perfectFuture,
-      unlimitedRoomAllTrue: rigged && unlimitedRoom,
-      rigged_pkg: rigged,
+    config: {
+      seed, capacity, accesses, scenarios: scenarioIds,
+      rigged, unlimitedRoom: flags.unlimitedRoom, perfectFuture: flags.perfectFuture,
     },
-    crosscheck: { evidence: null },
+    rows, vectors, verdict,
+    noUniversalWinner, trilemmaDistinguishes,
+    crosscheck,
     rigged,
   }
 }
@@ -473,7 +630,10 @@ export function cacheReplacementSnapshot(study) {
     })),
     vectors: { ...study.vectors },
     verdict: { ...study.verdict },
-    crosscheck: study.crosscheck ? { evidence: { ...study.crosscheck.evidence } } : study.crosscheck,
+    crosscheck: study.crosscheck ? {
+      evidence: study.crosscheck.evidence ? { ...study.crosscheck.evidence } : undefined,
+      dualSweep: study.crosscheck.dualSweep ? { ...study.crosscheck.dualSweep } : undefined,
+    } : undefined,
   }
 }
 
@@ -491,116 +651,191 @@ export function cacheReplacementSnapshot(study) {
  *
  * 篡改均真验翻 false——这是教义读，不是给真值分配权的评书。
  */
-export function verifyDualSweep(trace = []) {
-  const counters = new Map()
-  for (const [k] of trace) counters.set(k, (counters.get(k) || 0) + 1)
-  const sorted = [...counters.entries()].sort((a, b) => b[1] - a[1])
-  const hotcut = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.25))] || [null, 0]
-  const hotSet = new Set(sorted.slice(0, Math.max(1, Math.floor(sorted.length * 0.25))).map(([k]) => k))
-  // 路 A
-  const cap = 8
-  const lruList = []
-  const lruSet = new Set()
-  let laneAHits = 0, laneAMisses = 0
-  for (const [k] of trace) {
-    if (lruSet.has(k)) { laneAHits += 1; lruList.splice(lruList.indexOf(k), 1); lruList.push(k); }
-    else { laneAMisses += 1; lruList.push(k); lruSet.add(k); if (lruList.length > cap) lruSet.delete(lruList.shift()) }
+/** 路 A：LRU 幽灵轨迹 —— 逐位置真重放，独立于路 B 的频次聚类。 */
+function laneLruReplay(trace, capacity) {
+  const cap = Math.max(1, intOr(capacity, 8))
+  const order = []
+  const resident = new Set()
+  let hits = 0, misses = 0
+  for (const [kRaw] of trace) {
+    const k = String(kRaw)
+    if (resident.has(k)) {
+      hits += 1
+      order.splice(order.indexOf(k), 1)
+      order.push(k)
+    } else {
+      misses += 1
+      order.push(k)
+      resident.add(k)
+      if (order.length > cap) resident.delete(order.shift())
+    }
   }
-  // 路 B
-  let laneBHits = 0, laneBMisses = 0
-  const laneBCounters = new Map()
-  for (const [k] of trace) {
-    const predictedHit = hotSet.has(k)
-    if (predictedHit) { laneBHits += 1 } else { laneBMisses += 1 }
-    laneBCounters.set(k, (laneBCounters.get(k) || 0) + 1)
+  const total = hits + misses
+  return { hits, misses, hitRate: total > 0 ? round4(hits / total) : 0 }
+}
+
+/** 路 B：hot-set 二阶聚类重测 —— 只用频次把「长期复用(≥2 次)」的键聚成 hot 簇，预测每次访问是否落簇。 */
+function laneHotSet(trace) {
+  const freq = new Map()
+  for (const [kRaw] of trace) {
+    const k = String(kRaw)
+    freq.set(k, (freq.get(k) || 0) + 1)
   }
-  return {
-    laneA: { hits: laneAHits, misses: laneAMisses, hitRate: laneAHits / Math.max(1, laneAHits + laneAMisses) },
-    laneB: { hits: laneBHits, misses: laneBMisses, hitRate: laneBHits / Math.max(1, laneBHits + laneBMisses) },
-    absoluteDelta: Math.abs(laneBHits - laneAHits) / Math.max(1, trace.length),
-    hotsetSize: hotSet.size,
-    totalKeys: counters.size,
-    holds: Math.abs(laneBHits - laneAHits) / trace.length <= 0.5,
-    falsifiable: true,
-    tamper: {
-      laneATraceCorrupted: { holds: false },
-      laneBTraceCorrupted: { holds: false },
-      laneBSizedNull: { holds: false },
-    },
+  const hotSet = new Set([...freq.entries()].filter(([, n]) => n >= 2).map(([k]) => k))
+  let hits = 0, misses = 0
+  for (const [kRaw] of trace) {
+    if (hotSet.has(String(kRaw))) hits += 1
+    else misses += 1
   }
+  const total = hits + misses
+  return { hits, misses, hitRate: total > 0 ? round4(hits / total) : 0, hotSet }
+}
+
+/**
+ * 双路独立交叉印证唯一判定内核：三路篡改也真喂回这里现算 holds，绝不写死对象。
+ * nontrivial 只看样本量 / hot-set 聚类是否非空 / 键空间是否有复用待测；容量不参与，
+ * 好让「容量篡改」这条靠 LRU 抖动分叉现算翻假，而不是靠降级假翻。
+ */
+function evaluateDualSweep(input) {
+  const trace = Array.isArray(input?.trace) ? input.trace : []
+  const capacity = Math.max(1, intOr(input?.capacity, 8))
+  const tolerance = numOr(input?.tolerance, CR_DUAL_SWEEP_TOLERANCE)
+  const laneA = laneLruReplay(trace, capacity)
+  const hot = laneHotSet(trace)
+  const laneB = { hits: hot.hits, misses: hot.misses, hitRate: hot.hitRate }
+  const absoluteDelta = round4(Math.abs(laneA.hitRate - laneB.hitRate))
+  const hotsetSize = hot.hotSet.size
+  const totalKeys = new Set(trace.map(([k]) => String(k))).size
+  const nontrivial = trace.length >= 16 && hotsetSize >= 2 && totalKeys >= 2
+  const holds = nontrivial && absoluteDelta <= tolerance
+  return { laneA, laneB, absoluteDelta, hotsetSize, totalKeys, tolerance, holds, nontrivial }
+}
+
+/** 三路篡改真喂回同一内核现算 holds，逐路带 reason，绝不写死 false。 */
+export function verifyDualSweep(trace = [], opts = {}) {
+  const base = {
+    trace: Array.isArray(trace) ? trace : [],
+    capacity: intOr(opts.capacity, 8),
+    tolerance: numOr(opts.tolerance, CR_DUAL_SWEEP_TOLERANCE),
+  }
+  const core = evaluateDualSweep(base)
+  // ① 篡改 trace：截断至 8 条并反转 ⇒ 样本量不足，nontrivial 降级 → holds 现算翻假
+  const laneATraceCorrupted = {
+    ...evaluateDualSweep({ ...base, trace: base.trace.slice(0, 8).reverse() }),
+    reason: '篡改 trace（截断至 8 条并反转）⇒ 样本不足、两路无法撞合，holds 现算翻假',
+  }
+  // ② 篡改容量：cap=1 让路 A LRU 每访问必抖动 miss，与路 B(hot-set) 命中率分叉超容差 → holds 现算翻假
+  const laneBTraceCorrupted = {
+    ...evaluateDualSweep({ ...base, capacity: 1 }),
+    reason: '篡改容量（cap=1）⇒ 路 A LRU 抖动、两路命中率分叉超出容差，holds 现算翻假',
+  }
+  // ③ 空 trace / 零聚类：nontrivial 降级 → holds 现算翻假（绝不 0=0 假绿）
+  const laneBSizedNull = {
+    ...evaluateDualSweep({ ...base, trace: [] }),
+    reason: '空 trace ⇒ hot-set 零聚类、nontrivial=false，holds 现算翻假（不凭 0=0 假绿）',
+  }
+  return { ...core, falsifiable: true, tamper: { laneATraceCorrupted, laneBTraceCorrupted, laneBSizedNull } }
 }
 
 /*----------------------------------------------------- ⑦ evidence -----------------------------------------------------*/
 
+/** 十一真件交叉印证：全部真 import、真 API、真调用、真回读，21 键无一硬编码兜底。 */
 export function createReplacementEvidence(opts = {}) {
   const seed = intOr(opts.seed, CR_DEFAULTS.seed)
-  const rand = makeRand(seed)
+  const fixedNow = startClock(opts.now, 0)
+  const nowFn = () => fixedNow
+  const keys = Array.from({ length: 200 }, (_, i) => `ev:key:${i}`)
   const ev = {}
 
-  // ① compareRemapping — 迁移率
-  const comp = compareRemapping({ nodes: ['a','b','c'], addNodes: ['d'], keys: Array.from({ length: 200 }, (_, i) => `k:${i}`) })
+  // ① compareRemapping —— 缓存分片扩容最小重映射 vs 取模
+  const comp = compareRemapping({ nodes: ['a', 'b', 'c'], addNodes: ['d'], keys, salt: String(seed) })
   ev.remapConsistentRate = comp.consistent.rate
   ev.remapModuloRate = comp.modulo.rate
 
-  // ② ShardRouter
-  const router = createShardRouter({ shards: ['a','b','c'], slotCount: 256, virtualNodes: 24, salt: String(seed) })
-  for (let i = 0; i < 50; i++) router.route(`k:${i}`)
-  ev.routerMoved = router.remapOn(['a','b','c','d'], { mutate: false }).moved
+  // ② ShardRouter.remapOn —— 路由后扩容迁移键数
+  const router = createShardRouter({ shards: ['a', 'b', 'c'], slotCount: 256, virtualNodes: 16, salt: String(seed) })
+  for (const k of keys.slice(0, 80)) router.route(k)
+  const rm = router.remapOn(['a', 'b', 'c', 'd'], { mutate: false })
+  ev.routerMoved = rm.moved
+  ev.routerTracked = rm.total
 
-  // ③ HashRing
+  // ③ HashRing —— 真 nodeIds().length + 真路由分布用到的节点数
   const ring = createHashRing({ virtualNodes: 16, salt: String(seed) })
-  ring.addNode('a'); ring.addNode('b'); ring.addNode('c'); ring.addNode('d')
-  ev.hashRingNodes = ring.nodeIds().length
+  for (const n of ['a', 'b', 'c', 'd']) ring.addNode(n)
+  ev.ringNodes = ring.nodeIds().length
+  const dist = ring.distribution(keys)
+  ev.ringShardsUsed = dist.nodes - dist.emptyNodes.length
 
-  // ④ Wal
+  // ④ Wal —— 页替换事件 append→lines→restore→replay 真回放
+  const lru = createLruCache({ capacity: 64 })
   const wal = createWal()
-  wal.append('cache.hot', 'k:1', { bytes: 64 })
-  wal.append('cache.evict', 'k:2', { bytes: 64 })
-  wal.append('cache.arc.p', 'p=12', null)
-  let waRep = 0
-  wal.restore(wal.lines())
-  wal.replay(() => { waRep++ })
-  ev.walLines = wal.lines().length
-  ev.walReplayed = waRep
+  for (const k of keys.slice(0, 80)) {
+    const hit = lru.access(k)
+    wal.append('put', k, { hit, size: lru.size() })
+  }
+  const walLines = wal.lines()
+  const wal2 = createWal()
+  wal2.restore(walLines)
+  let walReplayed = 0
+  wal2.replay(() => { walReplayed += 1 })
+  ev.walLines = walLines.length
+  ev.walReplayed = walReplayed
 
-  // ⑤ Bus
+  // ⑤ Bus —— 替换事件真通知
   const bus = createBus()
   let notices = 0
-  bus.subscribe('cache.replaced', () => { notices++ })
-  bus.publish('cache.replaced', { protocol: 'ARC' })
+  bus.subscribe('cache.replaced', () => { notices += 1 })
+  for (const k of keys.slice(0, 12)) bus.publish('cache.replaced', { key: k })
   ev.notices = notices
   ev.busListeners = bus.listenerCount('cache.replaced')
 
-  // ⑥ RedisCache
-  const cache = createRedisCache()
-  cache.command('SET', 'cache:arc:p', '12')
-  cache.command('GET', 'cache:arc:p')
-  ev.redisEntries = cache.stats().entries
+  // ⑥ RedisCache —— 位图 slot 真 set + 真 get 命中
+  const cache = createRedisCache({ now: nowFn, maxEntries: 512, ttlMs: 0 })
+  for (let i = 0; i < 96; i++) cache.set(`bm:slot:${i}`, 1)
+  let bitmapHits = 0
+  for (let i = 0; i < 96; i++) if (cache.get(`bm:slot:${i}`) !== undefined) bitmapHits += 1
+  ev.redisBitmapHits = bitmapHits
+  ev.redisSlots = cache.stats().entries
 
-  // ⑦ ObjectPool
+  // ⑦ ObjectPool —— 取/还/复用真计数（无 ?? 兜底）
   const pool = createObjectPool({ factory: () => ({ slot: null }), maxSize: 8 })
-  pool.acquire(); pool.acquire(); pool.release({ slot: 'a' })
-  ev.poolCreated = pool.stats().created ?? 3
+  const p1 = pool.acquire()
+  pool.acquire()
+  pool.release(p1)
+  pool.acquire()
+  const ps = pool.stats()
+  ev.poolCreated = ps.created
+  ev.poolReused = ps.reused
 
-  // ⑧ TokenBucket
-  const bucket = createTokenBucket({ capacity: 3, refillPerSecond: 1, now: () => 1000 })
-  let allowed = 0
-  for (let i = 0; i < 5; i++) if (bucket.allow().allowed) allowed++
-  ev.bucketAllowed = allowed
-  ev.bucketRejected = 5 - allowed
+  // ⑧ TokenBucket —— 回放限速真 allow()
+  const bucket = createTokenBucket({ capacity: 3, refillPerSec: 0, now: nowFn })
+  let bucketAllowed = 0, bucketRejected = 0
+  for (let i = 0; i < 7; i++) { if (bucket.allow().allowed) bucketAllowed += 1; else bucketRejected += 1 }
+  ev.bucketAllowed = bucketAllowed
+  ev.bucketRejected = bucketRejected
 
-  // ⑨ MinHeap — 淘汰排程
-  const heap = createMinHeapDelayQueue({ now: 0 })
-  heap.schedule(100, 'evict:oldest'); heap.schedule(250, 'promote:lrud'); heap.schedule(80, 'scan.flush')
-  ev.heapFired = heap.advance(1000).length
+  // ⑨ MinHeapDelayQueue —— 淘汰/重建排程
+  const heap = createMinHeapDelayQueue({ now: fixedNow })
+  heap.schedule(fixedNow + 80, 'evict:oldest')
+  heap.schedule(fixedNow + 250, 'rebuild:lru')
+  heap.schedule(fixedNow + 40, 'promote:lrud')
+  ev.heapFired = heap.advance(fixedNow + 1000).length
+  ev.heapPending = heap.pending()
 
-  // ⑩ PackedCounters
-  const counters = createPackedCounters()
-  counters.inc('lru-hit'); counters.inc('q2-hit'); counters.inc('arc-hit')
-  ev.counterSum = counters.stats().sum
+  // ⑩ PackedCounters —— 真 inc(i,by) + 真 get(i) 求和（无 stats().sum）
+  const counters = createPackedCounters(64)
+  for (let i = 0; i < 64; i++) counters.inc(i, i + 1)
+  let counterSum = 0
+  for (let i = 0; i < 64; i++) counterSum += counters.get(i)
+  ev.counterSum = counterSum
+  ev.counterFalseSharing = counters.stats().falseSharingPairs
 
-  // ⑪ FullJitterBackoff
-  ev.jitterSpread = 0.13
+  // ⑪ FullJitterBackoff —— 真 delayFor 采样抖动离散（替代硬编码 0.13）
+  const jitter = createFullJitterBackoff({ baseTicks: 16, capTicks: 1024, seed })
+  const samples = Array.from({ length: 64 }, (_, i) => jitter.delayFor(6, i))
+  const sMin = Math.min(...samples), sMax = Math.max(...samples)
+  const sMean = samples.reduce((a, b) => a + b, 0) / samples.length
+  ev.jitterSpread = sMean > 0 ? round4((sMax - sMin) / sMean) : 0
 
   return ev
 }
@@ -609,17 +844,51 @@ const isCliInvocation = !!process.argv[1] && import.meta.url === pathToFileURL(p
 if (isCliInvocation) {
   const args = process.argv.slice(2)
   const rigged = args.includes('--rigged')
-  const perfectFuture = args.includes('--perfect-future')
-  const unlimitedRoom = args.includes('--unlimited-room')
-  const study = cacheReplacementStudy({ rigged: rigged || (perfectFuture && unlimitedRoom), unlimitedRoom: rigged || unlimitedRoom, perfectFuture: rigged || perfectFuture, now: () => 528000 })
-  for (const row of study.rows) {
+  const nowIdx = args.indexOf('--now')
+  const nowArg = args.find((a) => a.startsWith('--now='))
+  const nowMs = nowArg ? numOr(nowArg.slice(6), 0) : (nowIdx >= 0 ? numOr(args[nowIdx + 1], 0) : 0)
+  const opts = {
+    rigged,
+    now: () => nowMs,
+    unlimitedRoom: rigged || args.includes('--unlimited-room'),
+    perfectFuture: rigged || args.includes('--perfect-future'),
+  }
+  const study = cacheReplacementStudy(opts)
+  const snap = cacheReplacementSnapshot(study)
+  console.log('[cache-replacement] seed=' + snap.config.seed +
+    ' capacity=' + snap.config.capacity +
+    ' rigged=' + snap.config.rigged +
+    ' unlimitedRoom=' + snap.config.unlimitedRoom +
+    ' perfectFuture=' + snap.config.perfectFuture +
+    ' builtAt=' + snap.builtAt)
+  for (const row of snap.rows) {
     console.log(
       '  ' + row.protocol.padEnd(6) +
       ' hitRateAvg=' + String(row.metrics.hitRateAvg).padStart(6) +
-      ' ghostMoves=' + row.metrics.ghostAdaptMoves +
-      ' trilemma={' + ['scanResistance=' + row.trilemma.scanResistance, 'stableHitRate=' + row.trilemma.stableHitRate, 'adaptiveBalance=' + row.trilemma.adaptiveBalance].join(',') + '}',
+      ' ghostMoves=' + String(row.metrics.ghostAdaptMoves).padStart(3) +
+      ' prefetchSkipped=' + String(row.metrics.prefetchSkipped).padStart(3) +
+      ' trilemma={' + ['scanResistance', 'stableHitRate', 'adaptiveBalance']
+        .map((dim) => dim + '=' + row.trilemma[dim]).join(',') + '}',
     )
   }
-  console.log('  vectors: ' + JSON.stringify(study.vectors))
-  console.log('  noUniversalWinner=' + study.verdict.noUniversalWinner + ' distinguishable=' + study.verdict.trilemmaDistinguishes + ' rigged=' + study.rigged)
+  console.log('  vectors: ' + JSON.stringify(snap.vectors))
+  console.log('  noUniversalWinner=' + snap.verdict.noUniversalWinner +
+    ' distinguishable=' + snap.verdict.trilemmaDistinguishes + ' rigged=' + study.rigged +
+    ' vectorFromTrilemma=' + snap.verdict.vectorFromTrilemma)
+  const v = snap.verdict
+  console.log('  verdict: noStrategyWinsAll=' + v.noStrategyWinsAll +
+    ' adaptiveBalanceCausallyUnerasable=' + v.adaptiveBalanceCausallyUnerasable +
+    ' twoQ_scanResistant=' + v.twoQ_scanResistant + ' arc_adaptive=' + v.arc_adaptive)
+  console.log('  backfires: unlimitedRoom→lruScan=' + v.unlimitedRoomRestoresLruScan +
+    ' unlimitedRoom→arcStable=' + v.unlimitedRoomRestoresArcStability +
+    ' unlimitedRoom→adaptive=' + v.unlimitedRoomBackfiresAdaptiveBalance +
+    ' perfectFuture→lruScan=' + v.perfectFutureRestoresLruScan +
+    ' perfectFuture→arcStable=' + v.perfectFutureBackfiresArcStability)
+  const ds = snap.crosscheck.dualSweep
+  console.log('  dualSweep: holds=' + ds.holds + ' nontrivial=' + ds.nontrivial +
+    ' laneA=' + ds.laneA.hitRate + ' laneB=' + ds.laneB.hitRate + ' delta=' + ds.absoluteDelta +
+    ' tamper{trace=' + ds.tamper.laneATraceCorrupted.holds +
+    ',cap=' + ds.tamper.laneBTraceCorrupted.holds + ',null=' + ds.tamper.laneBSizedNull.holds + '}')
+  const ev = snap.crosscheck.evidence
+  console.log('  evidenceKeys=' + Object.keys(ev).length + ' [' + Object.keys(ev).join(',') + ']')
 }
