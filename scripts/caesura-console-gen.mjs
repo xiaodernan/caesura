@@ -27,6 +27,7 @@ import { mvccStudy, mvSnapshot } from './caesura-mvcc-txn.mjs'
 import { distributedTxnStudy, dtSnapshot } from './caesura-distributed-txn.mjs'
 import { raftConsensusStudy, rcSnapshot } from './caesura-raft-consensus.mjs'
 import { distributedLockStudy, dlSnapshot } from './caesura-distributed-lock.mjs'
+import { idGenStudy, igSnapshot } from './caesura-idgen.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
 export const SCENARIO_IDS = ['main', 'gray', 'resilience', 'cache', 'net']
@@ -93,6 +94,9 @@ export async function buildSnapshot(opts = {}) {
     rcRounds: opts.rcRounds,
     distributedLock: opts.distributedLock,
     dlockInstances: opts.dlockInstances,
+    idGen: opts.idGen,
+    idGenKeyCount: opts.idGenKeyCount,
+    idGenTreeOrder: opts.idGenTreeOrder,
   })
 
   return {
@@ -133,7 +137,10 @@ export async function buildSnapshot(opts = {}) {
  * @param {boolean} [opts.raftConsensus=false] 关掉 Raft 共识维（兼容旧快照）
  * @param {boolean} [opts.distributedLock=false] 关掉分布式锁维（兼容旧快照）
  * @param {number} [opts.dlockInstances] Redlock 实例数（缺省 5）
- * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, failureDetector:object|null, bplusIndex:object|null, mvccTxn:object|null, distributedTxn:object|null, raftConsensus:object|null, distributedLock:object|null, builtAt:number}>}
+ * @param {boolean} [opts.idGen=false] 关掉分布式 ID 维（兼容旧快照）
+ * @param {number} [opts.idGenKeyCount] 真树交叉印证插入 key 数（缺省 24）
+ * @param {number} [opts.idGenTreeOrder] KI-504 B+ 树阶数（缺省 8）
+ * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, failureDetector:object|null, bplusIndex:object|null, mvccTxn:object|null, distributedTxn:object|null, raftConsensus:object|null, distributedLock:object|null, idGen:object|null, builtAt:number}>}
  */
 export async function buildSystems(opts = {}) {
   const now = typeof opts.now === 'function' ? opts.now : () => Date.now()
@@ -155,7 +162,9 @@ export async function buildSystems(opts = {}) {
   const raftConsensus = opts.raftConsensus === false ? null : await buildRaftConsensusReading(opts, now)
   // KI-508：第十维「分布式锁」真跑 SETNX/Redlock/etcd × 六场景矩阵 + 三难判词，与其它九维平级、不混入五场景。
   const distributedLock = opts.distributedLock === false ? null : await buildDistributedLockReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, builtAt: now() }
+  // KI-509：第十一维「分布式 ID」真跑 UUID/Snowflake/号段 × 六场景矩阵 + 三难判词 + KI-504 真树交叉印证，与其它十维平级。
+  const idGen = opts.idGen === false ? null : await buildIdGenReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, builtAt: now() }
 }
 
 /** LSM 引擎真跑一趟确定性 benchmark，回结构读数（不夹带每行真值）。 */
@@ -496,6 +505,35 @@ export async function buildDistributedLockReading(opts, now) {
 }
 
 /**
+ * KI-509：真跑 `idGenStudy`（UUIDv4 / Snowflake / Redis 号段 × 六场景矩阵 + 三难判词 + KI-504 真
+ * B+ 树交叉印证）并收敛成前端「分布式 ID」两面板紧凑读数。判定/阈值全 Node 侧；注入固定时钟/随机
+ * ⇒ 快照重跑逐字一致；三协议阶梯是确定性故障场景真判词、判词不封任何协议全局赢家，缺哪块落 null。
+ * @param {object} opts { idGen?:false, idGenKeyCount?, idGenTreeOrder? }
+ * @param {()=>number} now 时钟（builtAt 注入则确定性）
+ */
+export async function buildIdGenReading(opts, now) {
+  try {
+    const s = idGenStudy({
+      now,
+      ...(opts.idGenKeyCount ? { keyCount: Math.max(2, Math.floor(Number(opts.idGenKeyCount))) } : {}),
+      ...(opts.idGenTreeOrder ? { order: Math.max(4, Math.floor(Number(opts.idGenTreeOrder))) } : {}),
+    })
+    const snap = igSnapshot(s)
+    return {
+      config: snap.config,
+      rows: snap.rows,
+      uuid: snap.uuid,
+      snowflake: snap.snowflake,
+      segment: snap.segment,
+      btree: snap.btree,
+      verdict: snap.verdict,
+    }
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
  * 真跑时每场景的 opts（判定权在此：场景参数固定，业务阈值仍来自各子系统默认/显式注入）。
  * @param {string} id
  */
@@ -730,6 +768,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
       const stateOf = (s, protocol) => s.doubleOwners > 0 ? '双' : s.staleWritesRejected > 0 ? '护' : s.dirtyWrites > 0 ? '脏' : s.blockedAcquires > 0 ? (protocol === 'SETNX' ? '阻' : '拒') : s.acquired ? '成' : '?'
       const ladders = dl.rows.map((row) => `${row.protocol}[${row.scenarios.map((s) => s.id + ':' + stateOf(s, row.protocol)).join('/')}]`).join(' · ')
       console.log(`[console] distributedLock: ${ladders} / 三难向量 ${JSON.stringify(Object.fromEntries(dl.rows.map((r) => [r.protocol, `${Number(r.trilemma.mutualExclusion)}${Number(r.trilemma.partialFaultTolerance)}${Number(r.trilemma.lowLatency)}`])))} / 不封赢家 ${dl.verdict.noUniversalWinner ? '是' : '否'}`)
+    }
+    if (snap.systems?.idGen) {
+      const ig = snap.systems.idGen
+      const stateOf = (s) => s.duplicates > 0 ? '重' : s.stalled > 0 ? '停' : s.indexFriendly === false ? '裂' : s.wastedIds > 0 ? '隙' : s.centerRounds > 0 ? '迟' : s.issued > 0 ? '成' : '?'
+      const ladders = ig.rows.map((row) => `${row.protocol}[${row.scenarios.map((s) => s.id + ':' + stateOf(s)).join('/')}]`).join(' · ')
+      console.log(`[console] idGen: ${ladders} / 三难向量 ${JSON.stringify(Object.fromEntries(ig.rows.map((r) => [r.protocol, `${Number(r.trilemma.indexFriendly)}${Number(r.trilemma.decentralized)}${Number(r.trilemma.clockRobust)}`])))} / 不封赢家 ${ig.verdict.noUniversalWinner ? '是' : '否'} / 真树随机cmp${ig.btree.random.comparisons}>顺序cmp${ig.btree.sequential.comparisons}(splits反直觉${ig.btree.random.splits}<${ig.btree.sequential.splits})`)
     }
     process.exit(0)
   }).catch((e) => { console.error(`[console] 生成失败：${e.message}`); process.exit(1) })

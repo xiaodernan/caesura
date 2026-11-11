@@ -708,6 +708,68 @@ main { padding: clamp(18px, 3vw, 40px) clamp(18px, 4vw, 56px) 48px; max-width: 1
   .dl-line .num { min-width: 74px; }
 }
 
+/* ---------- KI-509 分布式 ID 三协议（UUID / Snowflake / 号段） ---------- */
+.row-idgen { grid-template-columns: repeat(2, 1fr); }
+.ig-matrix { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 12px; }
+.ig-mat-row { display: grid; grid-template-columns: 68px repeat(6, 1fr) 44px; gap: 4px; align-items: center; }
+.ig-mat-head { font-family: var(--mono); font-size: 10px; letter-spacing: .04em; color: var(--gold-dim); padding-bottom: 3px; border-bottom: 1px solid var(--line-soft); }
+.ig-mat-head .ig-sc { text-align: center; }
+.ig-mat-proto { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--silver); letter-spacing: .02em; }
+.ig-mat-proto small { display: block; font-size: 9px; color: var(--muted); font-weight: 400; }
+.ig-cell {
+  text-align: center; font-family: var(--mono); font-size: 11px; min-height: 24px; line-height: 24px;
+  border: 1px solid var(--line-soft); border-radius: 2px; background: var(--ash-2); color: var(--muted);
+}
+.ig-cell.ok { background: var(--jade-dim); border-color: rgba(79,155,134,.34); color: var(--jade); }
+.ig-cell.split { background: rgba(201,162,58,.1); border-color: rgba(201,162,58,.5); color: var(--gold); font-weight: 600; }
+.ig-cell.halt { background: var(--wine-dim); border-color: rgba(165,68,82,.62); color: #f0a8af; font-weight: 600; }
+.ig-cell.dup { background: var(--wine-dim); border-color: rgba(165,68,82,.62); color: #f0a8af; font-weight: 600; }
+.ig-cell.gap { background: var(--wine-dim); border-color: rgba(165,68,82,.36); color: #d98892; }
+.ig-cell.lag { background: rgba(201,162,58,.07); border-color: rgba(201,162,58,.3); color: var(--gold-dim); }
+.ig-mat-cost { text-align: right; font-family: var(--mono); font-size: 10px; color: var(--gold-dim); }
+.ig-mat-cost b { color: var(--gold); }
+.ig-ladder { display: flex; flex-direction: column; gap: 5px; }
+.ig-line { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 10.5px; color: var(--silver); }
+.ig-line .tag { color: var(--gold-dim); letter-spacing: .06em; min-width: 68px; }
+.ig-bar { flex: 1; height: 7px; background: var(--ash-2); border: 1px solid var(--line-soft); border-radius: 2px; overflow: hidden; }
+.ig-bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--gold-dim), var(--gold)); }
+.ig-line .num { color: var(--muted); min-width: 96px; text-align: right; }
+.ig-trilemma { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 12px; }
+.ig-vec { display: grid; grid-template-columns: 68px repeat(3, 1fr); gap: 6px; align-items: center; }
+.ig-vec .proto { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--silver); }
+.ig-flag {
+  font-family: var(--mono); font-size: 10.5px; text-align: center; padding: 5px 2px;
+  border: 1px solid var(--line-soft); border-radius: 2px; background: var(--ash-2); color: var(--muted);
+}
+.ig-flag.yes { background: var(--jade-dim); border-color: rgba(79,155,134,.34); color: var(--jade); }
+.ig-flag.no { background: var(--wine-dim); border-color: rgba(165,68,82,.36); color: #d98892; }
+.ig-vec-head { font-family: var(--mono); font-size: 9px; letter-spacing: .04em; color: var(--muted); }
+.ig-vec-head span { text-align: center; }
+.ig-btree {
+  font-family: var(--mono); font-size: 10px; line-height: 1.7; color: var(--silver);
+  padding: 8px 10px; margin-bottom: 10px; border: 1px solid var(--line-soft);
+  border-radius: 2px; background: var(--ash-2);
+}
+.ig-btree b { color: var(--gold); font-weight: 600; }
+.ig-btree .jade-t { color: var(--jade); }
+.ig-btree .wine-t { color: #d98892; }
+.ig-probes { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.ig-probes .chip {
+  font-family: var(--mono); font-size: 10px; padding: 4px 9px;
+  border: 1px solid var(--line-soft); border-radius: 2px; background: var(--ash-2); color: var(--silver);
+}
+.ig-probes .chip b { color: var(--gold); font-weight: 600; }
+.ig-probes .chip.jade-t { border-color: rgba(79,155,134,.4); color: var(--jade); }
+.ig-probes .chip.muted-t { color: var(--muted); }
+@media (max-width: 1020px) { .row-idgen { grid-template-columns: 1fr; } }
+@media (max-width: 720px) {
+  .ig-mat-row, .ig-vec { grid-template-columns: 46px repeat(3, 1fr) 30px; gap: 2px; }
+  .ig-mat-head .ig-sc:nth-of-type(n+5) { display: none; }
+  .ig-cell { font-size: 9px; min-height: 21px; line-height: 21px; }
+  .ig-line .tag { min-width: 46px; }
+  .ig-line .num { min-width: 74px; }
+}
+
 /* ---------- 页脚 ---------- */
 .footer {
   display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;

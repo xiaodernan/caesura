@@ -676,4 +676,53 @@ describe('caesura-game-cloud', () => {
     // 主链语义逐字不动
     expect(st.eventChannel).toBeTruthy()
   })
+
+  it('idGen:true ⇒ 装配分布式 ID 三协议、status.idGen 读真三协议×六场景矩阵/三难判词/真树交叉印证、惰性同引用（KI-509）', async () => {
+    const gc = createGameCloud({
+      gameId: 'gid1', gamePort: 7731, sources, cloud: fakeCloud(),
+      idGen: true, idGenNow: () => 8888,
+    })
+    expect(gc.runIdGenStudy).toBeTypeOf('function')
+    const st = await gc.status()
+    expect(st.idGen.builtAt).toBe(8888)
+    expect(st.idGen.config.protocols).toEqual(['UUID', 'Snowflake', 'Segment'])
+    expect(st.idGen.config.scenarios.length).toBe(6)
+    expect(st.idGen.rows.length).toBe(3)
+    const uuid = st.idGen.rows.find((r: any) => r.protocol === 'UUID')
+    const snow = st.idGen.rows.find((r: any) => r.protocol === 'Snowflake')
+    const seg = st.idGen.rows.find((r: any) => r.protocol === 'Segment')
+    expect(uuid!.scenarios.find((s: any) => s.id === 'randomKeyInsert')!.indexFriendly).toBe(false) // UUID 随机主键伤索引
+    expect(snow!.scenarios.find((s: any) => s.id === 'clockBackward')!.stalled).toBeGreaterThan(0)   // Snowflake 回拨停发
+    expect(seg!.scenarios.find((s: any) => s.id === 'centerDown')!.stalled).toBeGreaterThan(0)      // 号段中心宕中断
+    expect(st.idGen.btree.randomCmpGtSequential).toBe(true)  // KI-504 真树交叉印证
+    expect(st.idGen.verdict.noUniversalWinner).toBe(true)
+    expect(Object.values(st.idGen.verdict).every(Boolean)).toBe(true)
+    // 惰性缓存：二次 status 同引用，不反复跑真树对照
+    expect((await gc.status()).idGen).toBe(st.idGen)
+    // 现算入口可重跑、确定性（同注入 now）
+    const rerun = await gc.runIdGenStudy!()
+    expect(rerun.verdict).toEqual(st.idGen.verdict)
+  })
+
+  it('idGen 默认 null 非破坏；可注入现成 study（KI-509）', async () => {
+    const plain = createGameCloud({ gameId: 'gid2', gamePort: 7732, sources, cloud: fakeCloud() })
+    expect(plain.runIdGenStudy).toBe(null)
+    const ps = await plain.status()
+    expect(ps.idGen).toBe(null)
+    expect(ps.distributedLock).toBe(null)
+    expect(ps.raftConsensus).toBe(null)
+    expect(ps.distributedTxn).toBe(null)
+    // 注入现成 study：直接用、不重跑，builtAt 原样带出、不被 idGenNow 覆盖。
+    const { idGenStudy } = await import('../../scripts/caesura-idgen.mjs')
+    const study = idGenStudy({ now: () => 666 })
+    const injected = createGameCloud({
+      gameId: 'gid3', gamePort: 7733, sources, cloud: fakeCloud(),
+      idGen: study, idGenNow: () => 2222,
+    })
+    const st = await injected.status()
+    expect(st.idGen.builtAt).toBe(666)
+    expect(st.idGen.verdict.noUniversalWinner).toBe(true)
+    // 主链语义逐字不动
+    expect(st.eventChannel).toBeTruthy()
+  })
 })

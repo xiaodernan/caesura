@@ -755,4 +755,70 @@ describe('caesura-console-ui (KI-495)', () => {
     expect(dom2.els['dl-matrix'].innerHTML).toContain('class="dl-cell guard"')    // 矩阵照常
     expect(dom2.els['dl-trilemma'].innerHTML).toContain('data-k="mutualExclusion"') // 三难照常
   })
+
+  it('㉖ KI-509 真 idGen 读数落进「三协议×六场景」+「三难不可兼得」两面板（含 KI-504 真树交叉印证，不是写死数）', async () => {
+    const dom = await runApp(real)
+    const ig = real.systems.idGen
+    // 面板一：三协议 × 六场景矩阵（每格读 Node 判词：成/裂/停/重/隙/迟）+ 发号横条
+    const matrix = dom.els['ig-matrix'].innerHTML
+    expect(matrix).toContain('ig-mat-head')
+    for (const row of ig.rows) expect(matrix).toContain('data-p="' + row.protocol + '"')
+    for (const s of ig.config.scenarios) expect(matrix).toContain('data-s="' + s.id + '"')
+    expect(matrix).toContain('class="ig-cell split" data-p="UUID" data-s="randomKeyInsert"')   // UUID 随机主键索引代价
+    expect(matrix).toContain('class="ig-cell halt" data-p="Snowflake" data-s="clockBackward"') // Snowflake 回拨停发
+    expect(matrix).toContain('class="ig-cell halt" data-p="Segment" data-s="centerDown"')      // 号段中心宕中断
+    expect(matrix).toContain('class="ig-cell gap" data-p="Segment" data-s="segmentGap"')       // 号段重启跳号
+    expect(matrix).toContain('class="ig-cell lag" data-p="Segment" data-s="sequenceOverflow"') // 号段取新段 RTT
+    expect(matrix).toContain(String(ig.rows.find((r: any) => r.protocol === 'UUID').totals.issued)) // 发号真读数
+    const ladder = dom.els['ig-ladder'].innerHTML
+    expect(ladder).toContain('data-p="UUID"')
+    expect(ladder).toContain('ig-bar')
+    expect(dom.els['ig-matrix-note'].textContent).toContain('随机主键插真 B+ 树定位比较更高')
+    // 面板二：三难向量（玉=占/酒红=缺，逐格 data-v）+ KI-504 真树交叉印证栏 + 判词探针 + 不封赢家 dot
+    const tri = dom.els['ig-trilemma'].innerHTML
+    expect(tri).toContain('ig-vec-head')
+    expect(tri).toContain('data-k="indexFriendly"')
+    expect(tri).toContain('data-k="decentralized"')
+    expect(tri).toContain('data-k="clockRobust"')
+    expect(tri).toContain('data-p="UUID" data-k="indexFriendly" data-v="0"')      // UUID 缺索引友好
+    expect(tri).toContain('data-p="Snowflake" data-k="clockRobust" data-v="0"')   // Snowflake 缺抗时钟
+    expect(tri).toContain('data-p="Segment" data-k="decentralized" data-v="0"')   // 号段缺去中心
+    const btree = dom.els['ig-btree'].innerHTML
+    expect(btree).toContain('KI-504 真 B+ 树交叉印证')
+    expect(btree).toContain(String(ig.btree.randomCmp))
+    expect(btree).toContain('反直觉')
+    const probes = dom.els['ig-probes'].innerHTML
+    expect(probes).toContain('data-probe="uuidIndex"')
+    expect(probes).toContain('data-probe="snowBack"')
+    expect(probes).toContain('data-probe="segCenter"')
+    expect(probes).toContain('data-verdict="noUniversalWinner"')
+    expect(probes).toContain('不封任何协议全局赢家')
+    expect(dom.els['ig-trilemma-note'].textContent).toContain('换场景结论会变')
+  })
+
+  it('㉗ KI-509 idGen 整块缺 / 单块缺诚实降级，不连坐 distributedLock-raftConsensus-lsm', async () => {
+    // 整块缺：五子块全降级、绝不画 0/假格；其它十维仍照常。
+    const noIg = JSON.parse(JSON.stringify(real))
+    noIg.systems.idGen = null
+    const dom = await runApp(noIg)
+    expect(dom.els['ig-matrix'].innerHTML).toContain('无三协议场景矩阵读数')
+    expect(dom.els['ig-ladder'].innerHTML).toBe('')
+    expect(dom.els['ig-trilemma'].innerHTML).toContain('无三难判据读数')
+    expect(dom.els['ig-btree'].innerHTML).toBe('')
+    expect(dom.els['ig-probes'].innerHTML).toBe('')
+    expect(dom.els['ig-matrix-note'].textContent).toContain('systems.idGen 缺失')
+    expect(dom.els['dl-matrix'].innerHTML).toContain('data-p="SETNX"')            // distributedLock 不连坐
+    expect(dom.els['rc-matrix'].innerHTML).toContain('data-p="Raft"')             // raftConsensus 不连坐
+    expect(dom.els['lsm-gauge'].innerHTML).toContain(String(real.systems.lsm.speedup.toFixed(1))) // lsm 不连坐
+
+    // 单块缺：只降 btree 真树交叉印证，矩阵/三难向量/探针仍渲染真读数（同维不连坐）。
+    const partial = JSON.parse(JSON.stringify(real))
+    partial.systems.idGen.btree = null
+    const dom2 = await runApp(partial)
+    expect(dom2.els['ig-btree'].innerHTML).toContain('无真树交叉印证读数') // btree 缺 → 诚实降级
+    expect(dom2.els['ig-btree'].innerHTML).not.toContain('伤索引')         // 不编造铁证
+    expect(dom2.els['ig-probes'].innerHTML).toContain('data-probe="uuidIndex"')    // 其余探针照常
+    expect(dom2.els['ig-matrix'].innerHTML).toContain('class="ig-cell split"')      // 矩阵照常
+    expect(dom2.els['ig-trilemma'].innerHTML).toContain('data-k="indexFriendly"')   // 三难照常
+  })
 })

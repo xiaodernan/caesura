@@ -254,7 +254,49 @@ export interface DistributedLockReading {
   verdict: Record<string, boolean>
 }
 
-/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁）。 */
+/** KI-509：分布式 ID 三协议（UUIDv4 / Snowflake / Redis 号段）六场景矩阵 + 三难判词 + KI-504 真树交叉印证。 */
+export interface IdGenReading {
+  config: { protocols: string[]; scenarios: Array<{ id: string; label: string }> }
+  rows: Array<{
+    protocol: string
+    label: string
+    trilemma: { indexFriendly: boolean; decentralized: boolean; clockRobust: boolean }
+    totals: { issued: number; unique: number; duplicates: number; stalled: number; pageSplits: number; comparisons: number; wastedIds: number; centerRounds: number; waits: number; messages: number }
+    scenarios: Array<{
+      id: string
+      label: string
+      protocol: string
+      scenario: string
+      issued: number
+      unique: number
+      duplicates: number
+      stalled: number
+      clockRollbacks: number
+      waits: number
+      pageSplits: number
+      comparisons: number
+      cmpBaseline: number
+      wastedIds: number
+      centerRounds: number
+      messages: number
+      latency: number
+      indexFriendly: boolean
+      decentralized: boolean
+      clockRobust: boolean
+      uniqueIds: boolean
+      contiguous: boolean
+      detail: Record<string, any>
+    }>
+  }>
+  uuid: Record<string, any>
+  snowflake: Record<string, any>
+  segment: Record<string, any>
+  /** KI-504 真 B+ 树交叉印证：随机 vs 顺序主键的定位比较/splits 结构计数。 */
+  btree: Record<string, any>
+  verdict: Record<string, boolean>
+}
+
+/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID）。 */
 export interface SystemsBlock {
   lsm: LsmReading | null
   hw: HwReading | null
@@ -266,6 +308,7 @@ export interface SystemsBlock {
   distributedTxn: DistributedTxnReading | null
   raftConsensus: RaftConsensusReading | null
   distributedLock: DistributedLockReading | null
+  idGen: IdGenReading | null
   builtAt: number
 }
 
@@ -323,9 +366,13 @@ export function buildSnapshot(opts?: {
   /** KI-508：false 关掉分布式锁维（兼容旧快照）；dlockInstances 注入 Redlock 实例数。 */
   distributedLock?: boolean
   dlockInstances?: number
+  /** KI-509：false 关掉分布式 ID 维（兼容旧快照）；idGenKeyCount/idGenTreeOrder 注入 KI-504 真树交叉印证规模。 */
+  idGen?: boolean
+  idGenKeyCount?: number
+  idGenTreeOrder?: number
 }): Promise<ConsoleSnapshot>
 
-/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁十维系统读数；击穿并发 ⇒ async。 */
+/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID 十一维系统读数；击穿并发 ⇒ async。 */
 export function buildSystems(opts?: {
   now?: () => number
   lsmKeys?: number
@@ -357,6 +404,10 @@ export function buildSystems(opts?: {
   /** KI-508：false 关掉分布式锁维（兼容旧快照）；dlockInstances 注入 Redlock 实例数。 */
   distributedLock?: boolean
   dlockInstances?: number
+  /** KI-509：false 关掉分布式 ID 维（兼容旧快照）；idGenKeyCount/idGenTreeOrder 注入 KI-504 真树交叉印证规模。 */
+  idGen?: boolean
+  idGenKeyCount?: number
+  idGenTreeOrder?: number
 }): Promise<SystemsBlock>
 
 /** KI-501：真跑缓存防护三件套（击穿/穿透/雪崩）收敛成前端三面板紧凑读数；单维失败落 null。 */
@@ -420,6 +471,14 @@ export function buildDistributedLockReading(opts: {
   distributedLock?: boolean
   dlockInstances?: number
 }, now: () => number): Promise<DistributedLockReading | null>
+
+/** KI-509：真跑分布式 ID（UUIDv4 / Snowflake / Redis 号段 × 六场景矩阵 + 三难判词 + KI-504 真 B+ 树交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
+export function buildIdGenReading(opts: {
+  now?: () => number
+  idGen?: boolean
+  idGenKeyCount?: number
+  idGenTreeOrder?: number
+}, now: () => number): Promise<IdGenReading | null>
 
 export function realScenarioOpts(id: string): Record<string, any>
 

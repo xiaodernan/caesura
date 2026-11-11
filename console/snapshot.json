@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794355857022,
+  "generatedAt": 1794357679726,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1365,12 +1365,12 @@
           "keys": 1,
           "versions": 2,
           "commitLogSize": 1,
-          "now": 1794355857016
+          "now": 1794357679715
         },
         "final": {
           "A": {
             "value": 101,
-            "commitTs": 1794355857016,
+            "commitTs": 1794357679715,
             "tombstone": false
           }
         }
@@ -3348,6 +3348,791 @@
         "fencingMinorityRefusesCP": true
       }
     },
-    "builtAt": 1794355857022
+    "idGen": {
+      "config": {
+        "protocols": [
+          "UUID",
+          "Snowflake",
+          "Segment"
+        ],
+        "scenarios": [
+          {
+            "id": "allOk",
+            "label": "全成功"
+          },
+          {
+            "id": "randomKeyInsert",
+            "label": "随机主键插 B+ 树"
+          },
+          {
+            "id": "clockBackward",
+            "label": "墙钟回拨"
+          },
+          {
+            "id": "centerDown",
+            "label": "中心 Redis 宕机"
+          },
+          {
+            "id": "sequenceOverflow",
+            "label": "同毫秒序列溢出"
+          },
+          {
+            "id": "segmentGap",
+            "label": "重启段跳跃浪费"
+          }
+        ]
+      },
+      "rows": [
+        {
+          "protocol": "UUID",
+          "label": "UUIDv4",
+          "trilemma": {
+            "indexFriendly": false,
+            "decentralized": true,
+            "clockRobust": true
+          },
+          "totals": {
+            "issued": 144,
+            "unique": 144,
+            "duplicates": 0,
+            "stalled": 0,
+            "pageSplits": 3,
+            "comparisons": 102,
+            "wastedIds": 0,
+            "centerRounds": 0,
+            "waits": 0,
+            "messages": 0
+          },
+          "scenarios": [
+            {
+              "id": "allOk",
+              "label": "全成功",
+              "protocol": "UUID",
+              "scenario": "allOk",
+              "issued": 24,
+              "unique": 24,
+              "duplicates": 0,
+              "stalled": 0,
+              "clockRollbacks": 0,
+              "waits": 0,
+              "pageSplits": 0,
+              "comparisons": 0,
+              "cmpBaseline": 0,
+              "wastedIds": 0,
+              "centerRounds": 0,
+              "messages": 0,
+              "latency": 1,
+              "indexFriendly": true,
+              "decentralized": true,
+              "clockRobust": true,
+              "uniqueIds": true,
+              "contiguous": true,
+              "detail": {
+                "note": "UUID 本地无中心、不依赖墙钟；随机主键真树定位比较更高、splits 反而更少（mid 分裂）",
+                "version": 4,
+                "sequentialIds": false
+              },
+              "fault": {
+                "at": "allOk"
+              }
+            },
+            {
+              "id": "randomKeyInsert",
+              "label": "随机主键插 B+ 树",
+              "protocol": "UUID",
+              "scenario": "randomKeyInsert",
+              "issued": 24,
+              "unique": 24,
+              "duplicates": 0,
+              "stalled": 0,
+              "clockRollbacks": 0,
+              "waits": 0,
+              "pageSplits": 3,
+              "comparisons": 102,
+              "cmpBaseline": 77,
+              "wastedIds": 0,
+              "centerRounds": 0,
+              "messages": 0,
+              "latency": 1,
+              "indexFriendly": false,
+              "decentralized": true,
+              "clockRobust": true,
+              "uniqueIds": true,
+              "contiguous": true,
+              "detail": {
+                "note": "UUID 本地无中心、不依赖墙钟；随机主键真树定位比较更高（伤索引），mid 分裂下 splits 反而更少",
+                "cmpBaseline": 77,
+                "randomCmp": 102,
+                "randomFewerSplits": true,
+                "mode": "random"
+              },
+              "fault": {
+                "at": "randomKeyInsert"
+              }
+            },
+            {
+              "id": "clockBackward",
+              "label": "墙钟回拨",
+              "protocol": "UUID",
+              "scenario": "clockBackward",
+              "issued": 24,
+              "unique": 24,
+              "duplicates": 0,
+              "stalled": 0,
+              "clockRollbacks": 0,
+              "waits": 0,
+              "pageSplits": 0,
+              "comparisons": 0,
+              "cmpBaseline": 0,
+              "wastedIds": 0,
+              "centerRounds": 0,
+              "messages": 0,
+              "latency": 1,
+              "indexFriendly": true,
+              "decentralized": true,
+              "clockRobust": true,
+              "uniqueIds": true,
+              "contiguous": true,
+              "detail": {
+                "note": "UUID 本地无中心、不依赖墙钟；随机主键真树定位比较更高、splits 反而更少（mid 分裂）",
+                "version": 4,
+                "sequentialIds": false
+              },
+              "fault": {
+                "at": "clockBackward"
+              }
+            },
+            {
+              "id": "centerDown",
+              "label": "中心 Redis 宕机",
+              "protocol": "UUID",
+              "scenario": "centerDown",
+              "issued": 24,
+              "unique": 24,
+              "duplicates": 0,
+              "stalled": 0,
+              "clockRollbacks": 0,
+              "waits": 0,
+              "pageSplits": 0,
+              "comparisons": 0,
+              "cmpBaseline": 0,
+              "wastedIds": 0,
+              "centerRounds": 0,
+              "messages": 0,
+              "latency": 1,
+              "indexFriendly": true,
+              "decentralized": true,
+              "clockRobust": true,
+              "uniqueIds": true,
+              "contiguous": true,
+              "detail": {
+                "note": "UUID 本地无中心、不依赖墙钟；随机主键真树定位比较更高、splits 反而更少（mid 分裂）",
+                "version": 4,
+                "sequentialIds": false
+              },
+              "fault": {
+                "at": "centerDown"
+              }
+            },
+            {
+              "id": "sequenceOverflow",
+              "label": "同毫秒序列溢出",
+              "protocol": "UUID",
+              "scenario": "sequenceOverflow",
+              "issued": 24,
+              "unique": 24,
+              "duplicates": 0,
+              "stalled": 0,
+              "clockRollbacks": 0,
+              "waits": 0,
+              "pageSplits": 0,
+              "comparisons": 0,
+              "cmpBaseline": 0,
+              "wastedIds": 0,
+              "centerRounds": 0,
+              "messages": 0,
+              "latency": 1,
+              "indexFriendly": true,
+              "decentralized": true,
+              "clockRobust": true,
+              "uniqueIds": true,
+              "contiguous": true,
+              "detail": {
+                "note": "UUID 本地无中心、不依赖墙钟；随机主键真树定位比较更高、splits 反而更少（mid 分裂）",
+                "version": 4,
+                "sequentialIds": false
+              },
+              "fault": {
+                "at": "sequenceOverflow"
+              }
+            },
+            {
+              "id": "segmentGap",
+              "label": "重启段跳跃浪费",
+              "protocol": "UUID",
+              "scenario": "segmentGap",
+              "issued": 24,
+              "unique": 24,
+              "duplicates": 0,
+              "stalled": 0,
+              "clockRollbacks": 0,
+              "waits": 0,
+              "pageSplits": 0,
+              "comparisons": 0,
+              "cmpBaseline": 0,
+              "wastedIds": 0,
+              "centerRounds": 0,
+              "messages": 0,
+              "latency": 1,
+              "indexFriendly": true,
+              "decentralized": true,
+              "clockRobust": true,
+              "uniqueIds": true,
+              "contiguous": true,
+              "detail": {
+                "note": "UUID 本地无中心、不依赖墙钟；随机主键真树定位比较更高、splits 反而更少（mid 分裂）",
+                "version": 4,
+                "sequentialIds": false
+              },
+              "fault": {
+                "at": "segmentGap"
+              }
+            }
+          ]
+        },
+        {
+          "protocol": "Snowflake",
+          "label": "Snowflake 位布局",
+          "trilemma": {
+            "indexFriendly": true,
+            "decentralized": true,
+            "clockRobust": false
+          },
+          "totals": {
+            "issued": 121,
+            "unique": 7,
+            "duplicates": 0,
+            "stalled": 1,
+            "pageSplits": 5,
+            "comparisons": 77,
+            "wastedIds": 0,
+            "centerRounds": 0,
+            "waits": 1,
+            "messages": 0
+          },
+          "scenarios": [
+            {
+              "id": "allOk",
+              "label": "全成功",
+              "protocol": "Snowflake",
+              "scenario": "allOk",
+              "issued": 24,
+              "unique": 1,
+              "duplicates": 0,
+              "stalled": 0,
+              "clockRollbacks": 0,
+              "waits": 0,
+              "pageSplits": 0,
+              "comparisons": 0,
+              "cmpBaseline": 0,
+              "wastedIds": 0,
+              "centerRounds": 0,
+              "messages": 0,
+              "latency": 1,
+              "indexFriendly": true,
+              "decentralized": true,
+              "clockRobust": true,
+              "uniqueIds": false,
+              "contiguous": true,
+              "detail": {
+                "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
+                "lastTimestamp": 1794357679724,
+                "workerId": 1
+              },
+              "fault": {
+                "at": "allOk"
+              }
+            },
+            {
+              "id": "randomKeyInsert",
+              "label": "随机主键插 B+ 树",
+              "protocol": "Snowflake",
+              "scenario": "randomKeyInsert",
+              "issued": 24,
+              "unique": 1,
+              "duplicates": 0,
+              "stalled": 0,
+              "clockRollbacks": 0,
+              "waits": 0,
+              "pageSplits": 5,
+              "comparisons": 77,
+              "cmpBaseline": 77,
+              "wastedIds": 0,
+              "centerRounds": 0,
+              "messages": 0,
+              "latency": 1,
+              "indexFriendly": true,
+              "decentralized": true,
+              "clockRobust": true,
+              "uniqueIds": true,
+              "contiguous": true,
+              "detail": {
+                "note": "Snowflake 时间戳趋势递增 ⇒ 真树定位比较 == 顺序基线（索引友好）；但墙钟回拨致命",
+                "cmpBaseline": 77,
+                "parsed": null
+              },
+              "fault": {
+                "at": "randomKeyInsert"
+              }
+            },
+            {
+              "id": "clockBackward",
+              "label": "墙钟回拨",
+              "protocol": "Snowflake",
+              "scenario": "clockBackward",
+              "issued": 1,
+              "unique": 1,
+              "duplicates": 0,
+              "stalled": 1,
+              "clockRollbacks": 1,
+              "waits": 0,
+              "pageSplits": 0,
+              "comparisons": 0,
+              "cmpBaseline": 0,
+              "wastedIds": 0,
+              "centerRounds": 0,
+              "messages": 0,
+              "latency": 1,
+              "indexFriendly": true,
+              "decentralized": true,
+              "clockRobust": false,
+              "uniqueIds": true,
+              "contiguous": true,
+              "detail": {
+                "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
+                "lastTimestamp": 1000,
+                "workerId": 1
+              },
+              "fault": {
+                "at": "clockBackward"
+              }
+            },
+            {
+              "id": "centerDown",
+              "label": "中心 Redis 宕机",
+              "protocol": "Snowflake",
+              "scenario": "centerDown",
+              "issued": 24,
+              "unique": 1,
+              "duplicates": 0,
+              "stalled": 0,
+              "clockRollbacks": 0,
+              "waits": 0,
+              "pageSplits": 0,
+              "comparisons": 0,
+              "cmpBaseline": 0,
+              "wastedIds": 0,
+              "centerRounds": 0,
+              "messages": 0,
+              "latency": 1,
+              "indexFriendly": true,
+              "decentralized": true,
+              "clockRobust": true,
+              "uniqueIds": false,
+              "contiguous": true,
+              "detail": {
+                "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
+                "lastTimestamp": 1794357679724,
+                "workerId": 1
+              },
+              "fault": {
+                "at": "centerDown"
+              }
+            },
+            {
+              "id": "sequenceOverflow",
+              "label": "同毫秒序列溢出",
+              "protocol": "Snowflake",
+              "scenario": "sequenceOverflow",
+              "issued": 24,
+              "unique": 2,
+              "duplicates": 0,
+              "stalled": 0,
+              "clockRollbacks": 0,
+              "waits": 1,
+              "pageSplits": 0,
+              "comparisons": 0,
+              "cmpBaseline": 0,
+              "wastedIds": 0,
+              "centerRounds": 0,
+              "messages": 0,
+              "latency": 1,
+              "indexFriendly": true,
+              "decentralized": true,
+              "clockRobust": true,
+              "uniqueIds": false,
+              "contiguous": true,
+              "detail": {
+                "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
+                "lastTimestamp": 1794357679725,
+                "workerId": 1
+              },
+              "fault": {
+                "at": "sequenceOverflow"
+              }
+            },
+            {
+              "id": "segmentGap",
+              "label": "重启段跳跃浪费",
+              "protocol": "Snowflake",
+              "scenario": "segmentGap",
+              "issued": 24,
+              "unique": 1,
+              "duplicates": 0,
+              "stalled": 0,
+              "clockRollbacks": 0,
+              "waits": 0,
+              "pageSplits": 0,
+              "comparisons": 0,
+              "cmpBaseline": 0,
+              "wastedIds": 0,
+              "centerRounds": 0,
+              "messages": 0,
+              "latency": 1,
+              "indexFriendly": true,
+              "decentralized": true,
+              "clockRobust": true,
+              "uniqueIds": false,
+              "contiguous": true,
+              "detail": {
+                "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
+                "lastTimestamp": 1794357679724,
+                "workerId": 1
+              },
+              "fault": {
+                "at": "segmentGap"
+              }
+            }
+          ]
+        },
+        {
+          "protocol": "Segment",
+          "label": "Redis 号段 Leaf-segment",
+          "trilemma": {
+            "indexFriendly": true,
+            "decentralized": false,
+            "clockRobust": true
+          },
+          "totals": {
+            "issued": 136,
+            "unique": 136,
+            "duplicates": 0,
+            "stalled": 32,
+            "pageSplits": 5,
+            "comparisons": 77,
+            "wastedIds": 43,
+            "centerRounds": 49,
+            "waits": 0,
+            "messages": 49
+          },
+          "scenarios": [
+            {
+              "id": "allOk",
+              "label": "全成功",
+              "protocol": "Segment",
+              "scenario": "allOk",
+              "issued": 24,
+              "unique": 24,
+              "duplicates": 0,
+              "stalled": 0,
+              "clockRollbacks": 0,
+              "waits": 0,
+              "pageSplits": 0,
+              "comparisons": 0,
+              "cmpBaseline": 0,
+              "wastedIds": 0,
+              "centerRounds": 2,
+              "messages": 2,
+              "latency": 2,
+              "indexFriendly": true,
+              "decentralized": false,
+              "clockRobust": true,
+              "uniqueIds": true,
+              "contiguous": true,
+              "detail": {
+                "note": "号段段内严格递增+不依赖墙钟，但中心宕机中断+重启跳号浪费",
+                "segmentSize": 8,
+                "segmentsFetched": 4
+              },
+              "fault": {
+                "at": "allOk"
+              }
+            },
+            {
+              "id": "randomKeyInsert",
+              "label": "随机主键插 B+ 树",
+              "protocol": "Segment",
+              "scenario": "randomKeyInsert",
+              "issued": 24,
+              "unique": 24,
+              "duplicates": 0,
+              "stalled": 0,
+              "clockRollbacks": 0,
+              "waits": 0,
+              "pageSplits": 5,
+              "comparisons": 77,
+              "cmpBaseline": 77,
+              "wastedIds": 0,
+              "centerRounds": 0,
+              "messages": 0,
+              "latency": 1,
+              "indexFriendly": true,
+              "decentralized": true,
+              "clockRobust": true,
+              "uniqueIds": true,
+              "contiguous": true,
+              "detail": {
+                "note": "号段段内严格递增 ⇒ 真树定位比较 == 顺序基线（索引友好）；但中心宕机中断",
+                "cmpBaseline": 77,
+                "contiguous": true
+              },
+              "fault": {
+                "at": "randomKeyInsert"
+              }
+            },
+            {
+              "id": "clockBackward",
+              "label": "墙钟回拨",
+              "protocol": "Segment",
+              "scenario": "clockBackward",
+              "issued": 24,
+              "unique": 24,
+              "duplicates": 0,
+              "stalled": 0,
+              "clockRollbacks": 0,
+              "waits": 0,
+              "pageSplits": 0,
+              "comparisons": 0,
+              "cmpBaseline": 0,
+              "wastedIds": 0,
+              "centerRounds": 2,
+              "messages": 2,
+              "latency": 2,
+              "indexFriendly": true,
+              "decentralized": false,
+              "clockRobust": true,
+              "uniqueIds": true,
+              "contiguous": true,
+              "detail": {
+                "note": "号段段内严格递增+不依赖墙钟，但中心宕机中断+重启跳号浪费",
+                "segmentSize": 8,
+                "segmentsFetched": 4
+              },
+              "fault": {
+                "at": "clockBackward"
+              }
+            },
+            {
+              "id": "centerDown",
+              "label": "中心 Redis 宕机",
+              "protocol": "Segment",
+              "scenario": "centerDown",
+              "issued": 16,
+              "unique": 16,
+              "duplicates": 0,
+              "stalled": 32,
+              "clockRollbacks": 0,
+              "waits": 0,
+              "pageSplits": 0,
+              "comparisons": 0,
+              "cmpBaseline": 0,
+              "wastedIds": 0,
+              "centerRounds": 33,
+              "messages": 33,
+              "latency": 2,
+              "indexFriendly": true,
+              "decentralized": false,
+              "clockRobust": true,
+              "uniqueIds": true,
+              "contiguous": true,
+              "detail": {
+                "note": "号段段内严格递增+不依赖墙钟，但中心宕机中断+重启跳号浪费",
+                "segmentSize": 8,
+                "segmentsFetched": 2
+              },
+              "fault": {
+                "at": "centerDown"
+              }
+            },
+            {
+              "id": "sequenceOverflow",
+              "label": "同毫秒序列溢出",
+              "protocol": "Segment",
+              "scenario": "sequenceOverflow",
+              "issued": 24,
+              "unique": 24,
+              "duplicates": 0,
+              "stalled": 0,
+              "clockRollbacks": 0,
+              "waits": 0,
+              "pageSplits": 0,
+              "comparisons": 0,
+              "cmpBaseline": 0,
+              "wastedIds": 0,
+              "centerRounds": 4,
+              "messages": 4,
+              "latency": 2,
+              "indexFriendly": true,
+              "decentralized": false,
+              "clockRobust": true,
+              "uniqueIds": true,
+              "contiguous": true,
+              "detail": {
+                "note": "号段段内严格递增+不依赖墙钟，但中心宕机中断+重启跳号浪费",
+                "segmentSize": 8,
+                "segmentsFetched": 4
+              },
+              "fault": {
+                "at": "sequenceOverflow"
+              }
+            },
+            {
+              "id": "segmentGap",
+              "label": "重启段跳跃浪费",
+              "protocol": "Segment",
+              "scenario": "segmentGap",
+              "issued": 24,
+              "unique": 24,
+              "duplicates": 0,
+              "stalled": 0,
+              "clockRollbacks": 0,
+              "waits": 0,
+              "pageSplits": 0,
+              "comparisons": 0,
+              "cmpBaseline": 0,
+              "wastedIds": 43,
+              "centerRounds": 8,
+              "messages": 8,
+              "latency": 2,
+              "indexFriendly": true,
+              "decentralized": false,
+              "clockRobust": true,
+              "uniqueIds": true,
+              "contiguous": false,
+              "detail": {
+                "note": "号段段内严格递增+不依赖墙钟，但中心宕机中断+重启跳号浪费",
+                "segmentSize": 8,
+                "segmentsFetched": 10
+              },
+              "fault": {
+                "at": "segmentGap"
+              }
+            }
+          ]
+        }
+      ],
+      "uuid": {
+        "issued": 2,
+        "globallyUnique": true,
+        "version4": true,
+        "variantBits": true,
+        "bitLength": 128,
+        "localNoCenter": true,
+        "noWallClock": true,
+        "randomCmp": 102,
+        "sequentialCmpBaseline": 77,
+        "randomCmpGtSequential": true,
+        "randomPageSplits": 3,
+        "sequentialPageSplits": 5,
+        "randomFewerSplits": true
+      },
+      "snowflake": {
+        "parseRoundTrip": true,
+        "sameMsSequenceIncrement": true,
+        "trendMonotonic": true,
+        "firstId": 4194308096,
+        "nextId": 4194308097,
+        "parsed": {
+          "timestamp": 1000,
+          "workerId": 1,
+          "sequence": 0
+        },
+        "clockBackwardStalls": true,
+        "forceDuplicateReveals": true,
+        "localNoCenter": true
+      },
+      "segment": {
+        "segmentMonotonic": true,
+        "segmentsFetched": 2,
+        "bufferRefills": 0,
+        "centerDownStalls": true,
+        "centerRounds": 41,
+        "restartGaps": true,
+        "wastedIds": 43,
+        "contiguousWhenClean": true,
+        "noWallClock": true
+      },
+      "btree": {
+        "generator": "caesura-idgen/bplus-crosscheck",
+        "n": 24,
+        "order": 8,
+        "leafCapacity": 8,
+        "sequentialIds": false,
+        "sequential": {
+          "comparisons": 77,
+          "splits": 5,
+          "pageRewrites": 34,
+          "puts": 24,
+          "size": 24,
+          "leafCount": 6,
+          "height": 2
+        },
+        "random": {
+          "comparisons": 102,
+          "splits": 3,
+          "pageRewrites": 30,
+          "puts": 24,
+          "size": 24,
+          "leafCount": 4,
+          "height": 2
+        },
+        "sequentialCmpBaseline": 77,
+        "randomCmp": 102,
+        "randomCmpGtSequential": true,
+        "randomFewerSplits": true,
+        "randomGtSequential": false,
+        "randomWriteAmplification": false
+      },
+      "verdict": {
+        "uuidRandomKeyIndexCost": true,
+        "uuidPaysIndexCost": true,
+        "uuidDecentralizedClockRobust": true,
+        "snowflakeIndexFriendly": true,
+        "snowflakeDecentralized": true,
+        "snowflakeClockBackwardFatal": true,
+        "segmentIndexFriendly": true,
+        "segmentClockRobust": true,
+        "segmentCenterDownStalls": true,
+        "segmentPaysCenterRounds": true,
+        "segmentRestartGaps": true,
+        "randomCmpGtSequential": true,
+        "randomFewerSplits": true,
+        "trilemmaDistinguishes": true,
+        "noProtocolWinsAll": true,
+        "noUniversalWinner": true,
+        "uuidGloballyUnique": true,
+        "uuidVersion4": true,
+        "uuidLocalNoCenter": true,
+        "snowflakeParseRoundTrip": true,
+        "snowflakeTrendMonotonic": true,
+        "snowflakeClockBackwardStalls": true,
+        "snowflakeForceDuplicateReveals": true,
+        "segmentMonotonic": true,
+        "segmentNoWallClock": true,
+        "btreeRandomCmpGtSequential": true,
+        "btreeRandomFewerSplits": true
+      }
+    },
+    "builtAt": 1794357679726
   }
 }

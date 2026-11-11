@@ -96,6 +96,9 @@ export function runMeshE2E(opts = {}) {
     // KI-508：分布式锁三协议（distributedLock=true 装配；只读 SETNX/Redlock/etcd × 六场景矩阵 + 三难判词，不改调用路径）。
     distributedLock: opts.distributedLock,
     dlockNow: opts.dlockNow,
+    // KI-509：分布式 ID 三协议（idGen=true 装配；只读 UUID/Snowflake/号段 × 六场景矩阵 + 三难判词 + KI-504 真树交叉印证，不改调用路径）。
+    idGen: opts.idGen,
+    idGenNow: opts.idGenNow,
     sources: {
       eureka: () => (opts.svcA ?? [{ id: 'svc-a:1', name: 'svc-a', address: '10.0.0.1', port: 8080, healthy: true }]),
       k8s: () => k8s.discover('caesura-gate'),
@@ -226,6 +229,7 @@ export function runMeshE2E(opts = {}) {
         distributedTxnSnapshot: status.distributedTxn ?? null,
         raftConsensusSnapshot: status.raftConsensus ?? null,
         distributedLockSnapshot: status.distributedLock ?? null,
+        idGenSnapshot: status.idGen ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
       }
@@ -331,6 +335,23 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
           `${Number(row.trilemma.mutualExclusion)}${Number(row.trilemma.partialFaultTolerance)}${Number(row.trilemma.lowLatency)}`])),
         noUniversalWinner: r.distributedLockSnapshot.verdict.noUniversalWinner,
         verdict: r.distributedLockSnapshot.verdict,
+      } : null,
+      idGen: r.idGenSnapshot ? {
+        protocols: r.idGenSnapshot.rows.map((row) => ({
+          protocol: row.protocol,
+          ladder: row.scenarios.map((s) => s.id + ':' + (s.duplicates > 0 ? '重' : s.stalled > 0 ? '停' : s.indexFriendly === false ? '裂' : s.wastedIds > 0 ? '隙' : s.centerRounds > 0 ? '迟' : s.issued > 0 ? '成' : '?')).join(' → '),
+          totals: row.totals, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.idGenSnapshot.rows.map((row) => [row.protocol,
+          `${Number(row.trilemma.indexFriendly)}${Number(row.trilemma.decentralized)}${Number(row.trilemma.clockRobust)}`])),
+        noUniversalWinner: r.idGenSnapshot.verdict.noUniversalWinner,
+        btreeCrosscheck: {
+          randomCmpGtSequential: r.idGenSnapshot.btree.randomCmpGtSequential,
+          randomFewerSplits: r.idGenSnapshot.btree.randomFewerSplits,
+          sequentialCmp: r.idGenSnapshot.btree.sequential.comparisons,
+          randomCmp: r.idGenSnapshot.btree.random.comparisons,
+        },
+        verdict: r.idGenSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

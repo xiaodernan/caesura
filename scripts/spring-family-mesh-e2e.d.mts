@@ -165,5 +165,29 @@ export function runMeshE2E(opts?: any): {
       verdict: Record<string, boolean>
       builtAt: number
     } | null
+    /** KI-509：分布式 ID 三协议快照（UUID/Snowflake/号段 × 六场景 + 三难判词 + KI-504 真树交叉印证），未配 idGen 为 null */
+    idGenSnapshot: {
+      config: { protocols: string[]; scenarios: Array<{ id: string; label: string }> }
+      rows: Array<{
+        protocol: string
+        label: string
+        trilemma: { indexFriendly: boolean; decentralized: boolean; clockRobust: boolean }
+        totals: { issued: number; unique: number; duplicates: number; stalled: number; pageSplits: number; comparisons: number; wastedIds: number; centerRounds: number; waits: number; messages: number }
+        scenarios: Array<{
+          id: string; label: string; protocol: string; scenario: string
+          issued: number; unique: number; duplicates: number; stalled: number; clockRollbacks: number; waits: number
+          pageSplits: number; comparisons: number; cmpBaseline: number; wastedIds: number; centerRounds: number
+          messages: number; latency: number
+          indexFriendly: boolean; decentralized: boolean; clockRobust: boolean; uniqueIds: boolean; contiguous: boolean
+          detail: Record<string, any>
+        }>
+      }>
+      uuid: Record<string, any>
+      snowflake: Record<string, any>
+      segment: Record<string, any>
+      btree: Record<string, any>
+      verdict: Record<string, boolean>
+      builtAt: number
+    } | null
   }>
 }

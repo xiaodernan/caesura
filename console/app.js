@@ -48,6 +48,7 @@
       renderDistributedTxn(snap.systems ? snap.systems.distributedTxn : null)
       renderRaftConsensus(snap.systems ? snap.systems.raftConsensus : null)
       renderDistributedLock(snap.systems ? snap.systems.distributedLock : null)
+      renderIdGen(snap.systems ? snap.systems.idGen : null)
       setLive(true, result.source)
     }).catch(function (e) {
       setLive(false, 'error')
@@ -1259,6 +1260,127 @@
       'etcd Lease+Fencing 占「互斥 + 容错」（单调 token 让锁即使误授也拒旧写、Raft 多数复制容错），' +
       '但缺「低延迟」（每把锁都要多数派往返、续租依赖客户端活跃度）。fencing 的旧写被拒是真 token 数值比较、非布尔桩。' +
       '全为确定性故障场景结构计数、非墙钟/QPS/真 etcd·Redis 跑分；换场景结论会变，不封赢家。'
+  }
+
+  /* ---------- KI-509 分布式 ID 三协议（UUID / Snowflake / 号段） ---------- */
+  function renderIdGen(ig) {
+    renderIgMatrix(ig && ig.rows, ig && ig.config)
+    renderIgLadder(ig && ig.rows)
+    renderIgTrilemma(ig && ig.rows, ig && ig.verdict, ig && ig.uuid, ig && ig.snowflake, ig && ig.segment, ig && ig.btree)
+  }
+
+  function igMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">无' + esc(label) + '读数</div>'
+    if (note) note.textContent = 'systems.idGen 缺失 —— 重跑 npm run console:data 采集真判词'
+  }
+
+  // 每格读 Node 侧真判词：成=正常 / 重=回拨重复 / 停=发号中断 / 裂=索引定位代价 / 隙=重启跳号 / 迟=中心 RTT（不复核）。
+  function igState(s) {
+    if (!s) return { cls: '', ch: '—' }
+    if (isNum(s.duplicates) && s.duplicates > 0) return { cls: 'dup', ch: '重' }
+    if (isNum(s.stalled) && s.stalled > 0) return { cls: 'halt', ch: '停' }
+    if (s.indexFriendly === false) return { cls: 'split', ch: '裂' }
+    if (isNum(s.wastedIds) && s.wastedIds > 0) return { cls: 'gap', ch: '隙' }
+    if (isNum(s.centerRounds) && s.centerRounds > 0) return { cls: 'lag', ch: '迟' }
+    if (isNum(s.issued) && s.issued > 0) return { cls: 'ok', ch: '成' }
+    return { cls: '', ch: '—' }
+  }
+
+  function renderIgMatrix(rows, config) {
+    var box = $('#ig-matrix'), note = $('#ig-matrix-note')
+    if (!Array.isArray(rows) || !rows.length || !config || !Array.isArray(config.scenarios)) {
+      igMissing(box, note, '三协议场景矩阵'); return
+    }
+    var scenarios = config.scenarios
+    var head = '<div class="ig-mat-row ig-mat-head"><span class="ig-mat-proto">协议</span>' +
+      scenarios.map(function (s) { return '<span class="ig-sc" title="' + esc(s.label) + '">' + esc(s.id) + '</span>' }).join('') +
+      '<span class="ig-mat-cost">发号</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (s) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === s.id }) : null
+        var st = igState(cell)
+        return '<span class="ig-cell ' + st.cls + '" data-p="' + esc(row.protocol) + '" data-s="' + esc(s.id) +
+          '" data-state="' + (st.cls || 'na') + '" title="' + esc(s.label) + '">' + st.ch + '</span>'
+      }).join('')
+      var t = row.totals || {}
+      return '<div class="ig-mat-row" data-p="' + esc(row.protocol) + '">' +
+        '<span class="ig-mat-proto">' + esc(row.protocol) + '<small>' + esc(row.label || '') + '</small></span>' +
+        cells + '<span class="ig-mat-cost"><b>' + esc(fmt(t.issued)) + '</b></span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = '同一组确定性故障场景（全成功 / 随机主键插 B+ 树 / 墙钟回拨 / 中心 Redis 宕机 / ' +
+      '同毫秒序列溢出 / 重启段跳跃浪费）分喂三协议，每格是 Node 侧真判词：成=发号正常、裂=随机主键插真 B+ 树定位比较更高' +
+      '（索引代价，mid 分裂下 splits 反而更少）、停=墙钟回拨或中心宕机致发号中断、重=回拨激进实现发重复 ID、' +
+      '隙=重启段跳跃浪费 ID 不连续、迟=取新段要中心 RTT。发号数是结构计数、非墙钟/吞吐；不封任何协议全局赢家。'
+  }
+
+  function renderIgLadder(rows) {
+    var box = $('#ig-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.totals && isNum(r.totals.comparisons) ? r.totals.comparisons : 0 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var t = r.totals || {}
+      var w = isNum(t.comparisons) ? Math.round(t.comparisons / max * 100) : 0
+      var dup = isNum(t.duplicates) ? t.duplicates : 0
+      var halt = isNum(t.stalled) ? t.stalled : 0
+      var gate = isNum(t.wastedIds) ? t.wastedIds : 0
+      return '<div class="ig-line" data-p="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="ig-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">重' + esc(fmt(dup)) + ' · 停' + esc(fmt(halt)) + ' · 隙' + esc(fmt(gate)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderIgTrilemma(rows, verdict, uuid, snowflake, segment, btree) {
+    var box = $('#ig-trilemma'), btreeBox = $('#ig-btree'), probes = $('#ig-probes'), note = $('#ig-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      igMissing(box, note, '三难判据'); if (probes) probes.innerHTML = ''; if (btreeBox) btreeBox.innerHTML = ''; return
+    }
+    var flags = [['indexFriendly', '索引友好'], ['decentralized', '去中心'], ['clockRobust', '抗时钟异常']]
+    var head = '<div class="ig-vec ig-vec-head"><span class="proto">协议</span>' +
+      flags.map(function (f) { return '<span>' + f[1] + '</span>' }).join('') + '</div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (f) {
+        var yes = t[f[0]] === true
+        return '<span class="ig-flag ' + (yes ? 'yes' : 'no') + '" data-p="' + esc(r.protocol) + '" data-k="' + f[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      return '<div class="ig-vec" data-p="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells + '</div>'
+    }).join('')
+    box.innerHTML = head + body
+    // KI-504 真 B+ 树交叉印证：索引代价铁证 + 反直觉 splits 读数都如实呈现，不粉饰。
+    if (btreeBox) {
+      if (btree && isNum(btree.randomCmp)) {
+        btreeBox.innerHTML = '<div>KI-504 真 B+ 树交叉印证 · 随机主键定位比较 <b>' + esc(fmt(btree.randomCmp)) + '</b>' +
+          ' &gt; 顺序基线 <b>' + esc(fmt(btree.sequentialCmpBaseline)) + '</b> ' +
+          (btree.randomCmpGtSequential ? '<span class="jade-t">✓ 伤索引</span>' : '<span class="wine-t">✗ 未拉开</span>') + '</div>' +
+          '<div>反直觉：mid 分裂下半满稳态 ⇒ 随机主键 splits <b>' + esc(fmt(btree.randomPageSplits)) + '</b>' +
+          ' &lt; 顺序 <b>' + esc(fmt(btree.sequentialPageSplits)) + '</b> ' +
+          (btree.randomFewerSplits ? '<span class="jade-t">✓ 如实保留</span>' : '') +
+          '（「随机伤索引」真相是定位比较更多 + 缓冲池命中更低，不是 splits 更多）</div>'
+      } else {
+        btreeBox.innerHTML = '<div class="nodata">无真树交叉印证读数</div>'
+      }
+    }
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var chips = [
+      '<span class="chip" data-probe="uuidIndex"><b>UUID</b> 随机主键索引代价 ' + (v.uuidPaysIndexCost ? '裂' : '未裂') + ' · 本地无中心 ' + (v.uuidLocalNoCenter ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-probe="uuidText"><b>UUID</b> 128 位版本 4 ' + (v.uuidVersion4 ? '✓' : '✗') + ' · 全局唯一 ' + (v.uuidGloballyUnique ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-probe="snowBack"><b>Snowflake</b> 墙钟回拨 ' + (v.snowflakeClockBackwardFatal ? '停发/重复（致命）' : '未中') + ' · 趋势递增 ' + (v.snowflakeIndexFriendly ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-probe="snowBits"><b>Snowflake</b> 位布局可反解 ' + (v.snowflakeParseRoundTrip ? '✓' : '✗') + ' · 激进重复可复现 ' + (v.snowflakeForceDuplicateReveals ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-probe="segCenter"><b>号段</b> 中心宕机 ' + (v.segmentCenterDownStalls ? '中断' : '仍可发') + ' · 中心 RTT ' + (v.segmentPaysCenterRounds ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-probe="segGap"><b>号段</b> 重启跳号 ' + (v.segmentRestartGaps ? '浪费、不连续' : '未跳') + ' · 不依赖墙钟 ' + (v.segmentNoWallClock ? '✓' : '✗') + '</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' +
+        (noWin ? '✓ 不封任何协议全局赢家' : '本配置下归一（换场景会翻）') + '</span>',
+    ]
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '三难 = 索引友好（趋势递增）∧ 去中心（无中心存储/协调）∧ 抗时钟异常（回拨不重复/不中断）。真实向量三条互不相同、没有一条三个全占：' +
+      'UUID 缺「索引友好」（本地无中心、不依赖墙钟，但随机主键喂真 B+ 树定位比较更高、缓冲池命中更低）；' +
+      'Snowflake 缺「抗时钟异常」（时间戳趋势递增且本地生成，但墙钟回拨⇒停发或重复、workerId 也需协调）；' +
+      '号段缺「去中心」（段内严格递增且用中心单调 counter 不依赖本地墙钟，但中心宕机 + 双 buffer 耗尽⇒中断、重启跳号浪费）。' +
+      '「随机伤索引」以 KI-504 真树定位比较结构计数为铁证、并如实保留 splits 反转读数；可证伪（rigged 抹掉三类软肋后三协议全退化为 111、三判词翻 false）。' +
+      '全为确定性故障场景结构计数、非墙钟/QPS/吞吐/真 Redis·etcd 跑分；换场景结论会变，不封赢家。'
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)

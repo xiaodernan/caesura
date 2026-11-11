@@ -348,7 +348,19 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(dlR.scenarios.find((s: any) => s.id === 'clockDrift').doubleOwners).toBeGreaterThan(0)
     expect(dlE.scenarios.find((s: any) => s.id === 'staleFencing').staleWritesRejected).toBeGreaterThan(0)
     expect(snap.systems.distributedLock.verdict.noUniversalWinner).toBe(true)
-    // bootstrap.js 与 snapshot.json 是同一份真快照（含十维 systems）。
+    // KI-509 idGen：三协议 × 六场景矩阵 + 三难判词 + KI-504 真树交叉印证真读数已固化进快照。
+    expect(snap.systems.idGen.rows.length).toBe(3)
+    expect(snap.systems.idGen.config.scenarios.length).toBe(6)
+    const igU = snap.systems.idGen.rows.find((r: any) => r.protocol === 'UUID')!
+    const igS = snap.systems.idGen.rows.find((r: any) => r.protocol === 'Snowflake')!
+    const igG = snap.systems.idGen.rows.find((r: any) => r.protocol === 'Segment')!
+    expect(igU.scenarios.find((s: any) => s.id === 'randomKeyInsert').indexFriendly).toBe(false)
+    expect(igS.scenarios.find((s: any) => s.id === 'clockBackward').stalled).toBeGreaterThan(0)
+    expect(igG.scenarios.find((s: any) => s.id === 'centerDown').stalled).toBeGreaterThan(0)
+    expect(snap.systems.idGen.btree.randomCmpGtSequential).toBe(true)   // 真树铁证
+    expect(snap.systems.idGen.btree.randomFewerSplits).toBe(true)       // 反直觉读数如实保留
+    expect(snap.systems.idGen.verdict.noUniversalWinner).toBe(true)
+    // bootstrap.js 与 snapshot.json 是同一份真快照（含十一维 systems）。
     const bootCode = readFileSync(resolve(process.cwd(), 'console/bootstrap.js'), 'utf8')
     const fromBoot = JSON.parse(bootCode.slice(bootCode.indexOf('=') + 1).trim().replace(/;\s*$/, ''))
     expect(fromBoot.systems.lsm.speedup).toBe(snap.systems.lsm.speedup)
@@ -361,6 +373,7 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(fromBoot.systems.distributedTxn).toEqual(snap.systems.distributedTxn)
     expect(fromBoot.systems.raftConsensus).toEqual(snap.systems.raftConsensus)
     expect(fromBoot.systems.distributedLock).toEqual(snap.systems.distributedLock)
+    expect(fromBoot.systems.idGen).toEqual(snap.systems.idGen)
   })
 
   it('⑭ buildMvccTxnReading 真跑五档矩阵形状齐、读数是真判词、单维关闭不连坐（KI-505）', async () => {
@@ -493,5 +506,43 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(sys.distributedTxn).toBeTruthy() // 不连坐
     const snap = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, distributedLock: false })
     expect(snap.systems!.distributedLock).toBe(null)
+  })
+
+  it('⑱ buildIdGenReading 真跑三协议矩阵形状齐、真树交叉印证读数真判词、单维关闭不连坐（KI-509）', async () => {
+    const { buildIdGenReading } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 8282
+    const reading = await buildIdGenReading({ idGenKeyCount: 24, idGenTreeOrder: 8 }, now)
+    expect(reading).not.toBe(null)
+    expect(reading!.config.protocols).toEqual(['UUID', 'Snowflake', 'Segment'])
+    expect(reading!.config.scenarios.length).toBe(6)
+    expect(reading!.rows.length).toBe(3)
+    for (const row of reading!.rows) {
+      expect(row.scenarios.length).toBe(6)
+      expect(typeof row.totals.issued).toBe('number')
+      expect(typeof row.trilemma.indexFriendly).toBe('boolean')
+    }
+    // 真判词：UUID 随机主键索引代价 / Snowflake 回拨停发 / 号段中心宕中断 / 三难向量互不相同 / 不封赢家
+    const uuid = reading!.rows.find((r) => r.protocol === 'UUID')!
+    const snow = reading!.rows.find((r) => r.protocol === 'Snowflake')!
+    const seg = reading!.rows.find((r) => r.protocol === 'Segment')!
+    expect(uuid.scenarios.find((s) => s.id === 'randomKeyInsert')!.indexFriendly).toBe(false)
+    expect(snow.scenarios.find((s) => s.id === 'clockBackward')!.stalled).toBeGreaterThan(0)
+    expect(seg.scenarios.find((s) => s.id === 'centerDown')!.stalled).toBeGreaterThan(0)
+    const vec = (r: any) => `${Number(r.trilemma.indexFriendly)}${Number(r.trilemma.decentralized)}${Number(r.trilemma.clockRobust)}`
+    expect([vec(uuid), vec(snow), vec(seg)]).toEqual(['011', '110', '101'])
+    expect(reading!.verdict.noUniversalWinner).toBe(true)
+    // KI-504 真树交叉印证：定位比较铁证 + 反直觉 splits 读数如实保留
+    expect(reading!.btree.randomCmpGtSequential).toBe(true)
+    expect(reading!.btree.randomFewerSplits).toBe(true)
+    expect(reading!.uuid.globallyUnique).toBe(true)
+    expect(reading!.snowflake.parseRoundTrip).toBe(true)
+    expect(reading!.segment.segmentMonotonic).toBe(true)
+    // 单维关闭由 buildSystems/buildSnapshot 层把关：落 null，不动其它维
+    const sys = await buildSystems({ now, idGen: false })
+    expect(sys.idGen).toBe(null)
+    expect(sys.distributedLock).toBeTruthy() // 不连坐
+    expect(sys.raftConsensus).toBeTruthy() // 不连坐
+    const snap = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, idGen: false })
+    expect(snap.systems!.idGen).toBe(null)
   })
 })

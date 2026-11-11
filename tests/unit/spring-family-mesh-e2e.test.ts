@@ -477,4 +477,29 @@ describe('spring-family-mesh-e2e', () => {
     const plain = await runMeshE2E().run()
     expect(plain.distributedLockSnapshot).toBe(null)
   })
+
+  it('e2e KI-509：idGen=true ⇒ 主链照常跑通，idGenSnapshot 带三协议×六场景矩阵/三难判词/真树交叉印证', async () => {
+    const e = runMeshE2E({ idGen: true, idGenNow: () => 8888 })
+    const r = await e.run()
+    expect(r.started?.registered).toBe(true)          // 主链语义逐字不动
+    expect(r.callRes?.ok).toBe(true)
+    const d = r.idGenSnapshot
+    expect(d).not.toBe(null)
+    expect(d!.builtAt).toBe(8888)
+    expect(d!.config.protocols).toEqual(['UUID', 'Snowflake', 'Segment'])
+    expect(d!.config.scenarios.length).toBe(6)
+    expect(d!.rows.length).toBe(3)
+    const uuid = d!.rows.find((row: any) => row.protocol === 'UUID')!
+    const snow = d!.rows.find((row: any) => row.protocol === 'Snowflake')!
+    const seg = d!.rows.find((row: any) => row.protocol === 'Segment')!
+    expect(uuid.scenarios.find((s: any) => s.id === 'randomKeyInsert')!.indexFriendly).toBe(false)
+    expect(snow.scenarios.find((s: any) => s.id === 'clockBackward')!.stalled).toBeGreaterThan(0)
+    expect(seg.scenarios.find((s: any) => s.id === 'centerDown')!.stalled).toBeGreaterThan(0)
+    expect(d!.btree.randomCmpGtSequential).toBe(true) // KI-504 真树交叉印证透传到 E2E
+    expect(d!.verdict.noUniversalWinner).toBe(true)
+    expect(Object.values(d!.verdict).every(Boolean)).toBe(true)
+    // 未配 idGen 时为 null（非破坏）。
+    const plain = await runMeshE2E().run()
+    expect(plain.idGenSnapshot).toBe(null)
+  })
 })

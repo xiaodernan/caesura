@@ -31,6 +31,7 @@ import { mvccStudy, mvSnapshot } from './caesura-mvcc-txn.mjs'
 import { distributedTxnStudy, dtSnapshot } from './caesura-distributed-txn.mjs'
 import { raftConsensusStudy, rcSnapshot } from './caesura-raft-consensus.mjs'
 import { distributedLockStudy, dlSnapshot } from './caesura-distributed-lock.mjs'
+import { idGenStudy, igSnapshot } from './caesura-idgen.mjs'
 import {
   createAimdCongestion,
   createCubicCongestion,
@@ -406,6 +407,27 @@ export function createGameCloud(opts = {}) {
     return dlCached
   }
 
+  // KI-509：分布式 ID 生成三协议诚实权衡（UUIDv4 / Snowflake / Redis 号段，opt-in）。
+  // opts.idGen===true 用缺省规模；传对象逐项注入（now/rand/seed/keyCount/segmentSize/treeOrder/...），
+  // 或直接塞一只现成 study（duck-typed：带 comparison/uuid/snowflake/segment 四块）。默认
+  // idGen:false 不装配、不改任何调用路径（KI-486/493/496/501/502/503/504/505/506/507/508 语义逐字不动）。
+  const igCfg = opts.idGen === true ? {} : (opts.idGen && typeof opts.idGen === 'object' ? opts.idGen : null)
+  const igInjected = igCfg !== null && opts.idGen &&
+    typeof opts.idGen === 'object' && typeof opts.idGen.comparison === 'object' &&
+    typeof opts.idGen.uuid === 'object' && typeof opts.idGen.snowflake === 'object' &&
+    typeof opts.idGen.segment === 'object'
+  let igCached = null
+  async function igSnapshotForStatus() {
+    if (igCfg === null) return null
+    if (igCached) return igCached
+    // 注入现成 study 直接用（不重跑，builtAt 原样带出）；否则真跑一次汇总，惰性缓存不反复付真树对照成本。
+    const study = igInjected
+      ? opts.idGen
+      : await idGenStudy({ ...igCfg, now: opts.idGenNow ?? igCfg.now })
+    igCached = igSnapshot(study)
+    return igCached
+  }
+
   /** 包住一次调用，用真实耗时/成败喂 net 包（未启用则原样返回，零开销）。 */
   async function observeCall(promise) {
     if (!net) return promise
@@ -464,6 +486,8 @@ export function createGameCloud(opts = {}) {
     runRaftConsensusStudy: rcCfg === null ? null : () => raftConsensusStudy({ ...rcCfg, now: opts.raftNow ?? rcCfg.now }),
     /** KI-508：分布式锁三协议汇总的现算入口（未配 opts.distributedLock 时为 null）；调一次真跑 SETNX/Redlock/etcd × 六场景矩阵 + 三难判词。 */
     runDistributedLockStudy: dlCfg === null ? null : () => distributedLockStudy({ ...dlCfg, now: opts.dlockNow ?? dlCfg.now }),
+    /** KI-509：分布式 ID 三协议汇总的现算入口（未配 opts.idGen 时为 null）；调一次真跑 UUID/Snowflake/号段 × 六场景矩阵 + 三难判词 + KI-504 真树交叉印证。 */
+    runIdGenStudy: igCfg === null ? null : () => idGenStudy({ ...igCfg, now: opts.idGenNow ?? igCfg.now }),
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
     gray: runtime.gray,
     /** 把游戏真 EventBus 按白名单routes 接进云事件总线（游戏侧一行：gc.connectGameBus(bus, routes)）。 */
@@ -504,6 +528,7 @@ export function createGameCloud(opts = {}) {
         distributedTxn: await dtSnapshotForStatus(),
         raftConsensus: await rcSnapshotForStatus(),
         distributedLock: await dlSnapshotForStatus(),
+        idGen: await igSnapshotForStatus(),
       }
     },
   }

@@ -83,6 +83,12 @@ export interface GameCloudOptions {
    * （带 comparison/setnx/redlock/fencing/verdict 五块）。 */
   distributedLock?: boolean | Record<string, any> | { comparison: any; setnx: any; redlock: any; fencing: any; verdict: any; [k: string]: any }
   dlockNow?: () => number
+  /**
+   * KI-509：true 装配分布式 ID 三协议权衡（UUIDv4 / Snowflake / Redis 号段 + KI-504 真 B+ 树交叉印证）。
+   * 对象逐项注入（now/rand/seed/keyCount/segmentSize/treeOrder/leafCapacity/scenarios/...），或直接塞一只
+   * 现成 study（带 comparison/uuid/snowflake/segment/btree/verdict 六块）。默认 false 不装配。 */
+  idGen?: boolean | Record<string, any> | { comparison: any; uuid: any; snowflake: any; segment: any; btree: any; verdict: any; [k: string]: any }
+  idGenNow?: () => number
 }
 
 /** 创建一只游戏侧开箱即用云。 */
@@ -121,6 +127,8 @@ export function createGameCloud(opts?: GameCloudOptions): {
   runRaftConsensusStudy: (() => Promise<any>) | null
   /** KI-508：分布式锁三协议汇总的现算入口（未配 opts.distributedLock 时为 null）；真跑 SETNX/Redlock/etcd × 六场景矩阵 + 三难判词。 */
   runDistributedLockStudy: (() => Promise<any>) | null
+  /** KI-509：分布式 ID 三协议汇总的现算入口（未配 opts.idGen 时为 null）；真跑 UUID/Snowflake/号段 × 六场景矩阵 + 三难判词 + KI-504 真树交叉印证。 */
+  runIdGenStudy: (() => Promise<any>) | null
   /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）。 */
   gray: any
   /** KI-489：把游戏真 EventBus（duck-typed {on,emit}）按白名单接进云事件总线。 */
