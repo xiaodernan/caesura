@@ -901,11 +901,18 @@ function sanitize(x) {
 /* ------------------------------- CLI ------------------------------- */
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  const outArg = process.argv.slice(2).find((a) => a.startsWith('--out='))
+  const argv = process.argv.slice(2)
+  const outArg = argv.find((a) => a.startsWith('--out='))
   const outPath = outArg
     ? resolve(outArg.slice('--out='.length))
     : resolve(dirname(fileURLToPath(import.meta.url)), '..', 'console', 'snapshot.json')
-  buildSnapshot().then((snap) => {
+  // KI-515：可选 `--now=<ms>` 注入固定参考时钟，令 console:data 双跑字节确定（CI/审计/可复现场景）。
+  // 缺省（不传或非法）仍 buildSnapshot() 走真实墙钟，`generatedAt` 保持「采集时刻」语义、不动既有快照。
+  // 核心件自 KI-495 起本就支持 opts.now 注入，根因纯在 CLI 未透传——这里只补这一处透传，零判词变更。
+  const nowArg = argv.find((a) => a.startsWith('--now='))
+  const nowMs = nowArg ? Number(nowArg.slice('--now='.length)) : NaN
+  const snapshotOpts = Number.isFinite(nowMs) ? { now: () => nowMs } : {}
+  buildSnapshot(snapshotOpts).then((snap) => {
     const json = JSON.stringify(snap)
     writeFileSync(outPath, JSON.stringify(snap, null, 2) + '\n', 'utf8')
     // 同一份真快照再写一份 `bootstrap.js` 全局，供 file:// 直开（fetch 被跨源策略挡）时回退——

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { readFileSync, existsSync } from 'node:fs'
+import { readFileSync, existsSync, mkdirSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { execFileSync } from 'node:child_process'
 import {
   buildSnapshot,
   realScenarioOpts,
@@ -777,5 +779,63 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(sys.configConsistency).toBeTruthy() // 不连坐 KI-511
     const snap = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, messageDelivery: false })
     expect(snap.systems!.messageDelivery).toBe(null)
+  })
+
+  /* ---------------- ㉞㉟㊱ KI-515 控制台快照 CLI 真跑时钟确定性 ---------------- */
+  const CLI = fileURLToPath(new URL('../../scripts/caesura-console-gen.mjs', import.meta.url))
+  const TMP = resolve(' .scratch/ki515-test'.trim())  // 项目内 gitignore 目录，Node/Python 互通
+  const FIXED = 1700000000000
+  const runCli = (tag: string, now: number | null): { snap: any; snapRaw: string; bootRaw: string } => {
+    // CLI 把 bootstrap.js 写在 out 同目录，故每个 tag 用独立子目录，双跑产物互不覆盖。
+    const dir = resolve(TMP, tag)
+    mkdirSync(dir, { recursive: true })
+    const out = resolve(dir, 'snapshot.json')
+    const args = [CLI, `--out=${out}`]
+    if (now !== null) args.push(`--now=${now}`)
+    execFileSync(process.execPath, args, { encoding: 'utf8', stdio: 'pipe' })
+    const snapRaw = readFileSync(out, 'utf8')
+    const bootRaw = readFileSync(resolve(dir, 'bootstrap.js'), 'utf8')
+    return { snap: JSON.parse(snapRaw), snapRaw, bootRaw }
+  }
+
+  it('㉞ CLI --now=<ms> 注入生效：generatedAt / systems.builtAt 恒等于固定时钟（KI-515）', () => {
+    const r = runCli('inject', FIXED)
+    const snap = JSON.parse(r.snapRaw)
+    expect(snap.generatedAt).toBe(FIXED)
+    expect(snap.systems.builtAt).toBe(FIXED)
+    // idGen 判词读数存在且成形（此处只钉注入后读数确定成形，判词不漂在 ㉟ 双跑里钉）
+    expect(snap.systems.idGen).toBeTruthy()
+    expect(snap.systems.messageDelivery.vectors).toEqual({ AtMostOnce: '011', AtLeastOnce: '101', ExactlyOnce: '110' })
+    // bootstrap.js 是同一份 JSON 全局挂载，含固定 generatedAt
+    expect(r.bootRaw).toContain(`"generatedAt":${FIXED}`)
+    expect(r.bootRaw).toContain('__BOOTSTRAP_SNAPSHOT__')
+  })
+
+  it('㉟ CLI 固定时钟双跑：snapshot.json 与 bootstrap.js 逐字节一致、idGen 判词不漂（KI-515）', () => {
+    const a = runCli('runA', FIXED)
+    const b = runCli('runB', FIXED)
+    expect(a.snapRaw).toBe(b.snapRaw)                       // snapshot.json 双跑逐字节一致
+    expect(a.bootRaw).toBe(b.bootRaw)                       // bootstrap.js 双跑逐字节一致
+    expect(JSON.stringify(a.snap.systems)).toBe(JSON.stringify(b.snap.systems))
+    expect(JSON.stringify(a.snap.highlights)).toBe(JSON.stringify(b.snap.highlights))
+    // 此前真实墙钟下 idGen unique 会因 Snowflake 同毫秒 sequence 归零 8→7 判词级漂移；固定时钟后恒稳
+    const uA = JSON.stringify(a.snap.systems.idGen.totals ?? a.snap.systems.idGen)
+    const uB = JSON.stringify(b.snap.systems.idGen.totals ?? b.snap.systems.idGen)
+    expect(uA).toBe(uB)
+    expect(a.snap.generatedAt).toBe(FIXED)
+  })
+
+  it('㊱ 缺省（不传 --now）保持真实墙钟语义、且 bootstrap↔snapshot 双载体 systems 逐字同源（KI-515）', () => {
+    // 缺省走真实墙钟：generatedAt 为采集时刻（== 一个合理的近期毫秒），不恒等于 FIXED。
+    const live = runCli('live', null)
+    expect(typeof live.snap.generatedAt).toBe('number')
+    expect(live.snap.generatedAt).toBeGreaterThan(1_600_000_000_000)
+    expect(live.snap.systems.builtAt).toBe(live.snap.generatedAt)
+    // 双载体同源：bootstrap.js 里的 __BOOTSTRAP_SNAPSHOT__ 与 snapshot.json 的 systems 逐字一致。
+    const m = /__BOOTSTRAP_SNAPSHOT__\s*=\s*(\{[\s\S]*\})\s*;?\s*$/.exec(live.bootRaw)
+    expect(m, 'bootstrap.js 未挂出 __BOOTSTRAP_SNAPSHOT__').toBeTruthy()
+    const bootObj = JSON.parse(m![1])
+    expect(JSON.stringify(bootObj.systems)).toBe(JSON.stringify(live.snap.systems))
+    expect(JSON.stringify(bootObj.highlights)).toBe(JSON.stringify(live.snap.highlights))
   })
 })
