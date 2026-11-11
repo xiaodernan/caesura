@@ -1028,4 +1028,87 @@ describe('caesura-console-ui (KI-495)', () => {
     expect(dom2.els['ccc-matrix'].innerHTML).toContain('class="ccc-cell lost"')     // 矩阵照常
     expect(dom2.els['ccc-trilemma'].innerHTML).toContain('data-k="durableOnCrash"')  // 三难照常
   })
+
+  it('㉞ KI-513 真 messageDelivery 读数落进「三协议×六场景」+「三难不可兼得」两面板（含七枚真件交叉印证，不是写死数）', async () => {
+    const dom = await runApp(real)
+    const mmd = real.systems.messageDelivery
+    // 面板一：三协议 × 六场景矩阵（丢/重/贵/等/成，读 Node 判词）+ 结构开销横条
+    const matrix = dom.els['mmd-matrix'].innerHTML
+    expect(matrix).toContain('mmd-mat-head')
+    for (const row of mmd.rows) expect(matrix).toContain('data-p="' + row.protocol + '"')
+    for (const s of mmd.config.scenarios) expect(matrix).toContain('data-s="' + s + '"')
+    expect(matrix).toContain('class="mmd-cell lost" data-p="AtMostOnce" data-s="crashAfterSend"')     // AtMostOnce 静默丢
+    expect(matrix).toContain('class="mmd-cell dup" data-p="AtLeastOnce" data-s="ackLost"')             // AtLeastOnce 重复
+    expect(matrix).toContain('class="mmd-cell expensive" data-p="ExactlyOnce" data-s="allOk"')         // ExactlyOnce 最贵
+    expect(matrix).toContain('class="mmd-cell expensive" data-p="ExactlyOnce" data-s="brokerRetry"')   // 幂等折叠格仍最贵（贵优先于等，与 CLI 同口径）
+    // "等"(idempotent) 是假想分支：仅当 lowOverhead=true 且 idempotentHits>0 才出现，默认快照恒被"贵"压住，不在此断言。
+    expect(matrix).toContain(String(mmd.rows.find((r: any) => r.protocol === 'AtMostOnce').totals.sent)) // 发送数真读数
+    const ladder = dom.els['mmd-ladder'].innerHTML
+    expect(ladder).toContain('data-p="ExactlyOnce"')
+    expect(ladder).toContain('mmd-bar')
+    expect(dom.els['mmd-matrix-note'].textContent).toContain('Exactly-Once 不是免费午餐')
+    // 面板二：三难向量（逐格 data-v）+ 七枚真件交叉印证栏 + 判词探针 + 不封赢家
+    const tri = dom.els['mmd-trilemma'].innerHTML
+    expect(tri).toContain('mmd-vec-head')
+    expect(tri).toContain('data-k="noLoss"')
+    expect(tri).toContain('data-k="noDup"')
+    expect(tri).toContain('data-k="lowOverhead"')
+    expect(tri).toContain('data-p="AtMostOnce" data-k="noLoss" data-v="0"')      // AtMostOnce 缺不丢
+    expect(tri).toContain('data-p="AtLeastOnce" data-k="noDup" data-v="0"')      // AtLeastOnce 缺不重复
+    expect(tri).toContain('data-p="ExactlyOnce" data-k="lowOverhead" data-v="0"') // ExactlyOnce 缺低开销
+    const cx = dom.els['mmd-crosscheck'].innerHTML
+    expect(cx).toContain('createBus')
+    expect(cx).toContain('createGameEventBus')
+    expect(cx).toContain('createGameEventBridge')
+    expect(cx).toContain('createTwoPhaseCommit')
+    expect(cx).toContain('createWal')
+    expect(cx).toContain('createRedisCache')
+    expect(cx).toContain('createHashRing')
+    expect(cx).toContain(String(mmd.crosscheck.wal.distinctIds))          // 真 WAL distinct 真读数
+    expect(cx).toContain(String(mmd.crosscheck.gameEventBus.delivered))    // 真 GameEventBus 交付真读数
+    expect(cx).toContain('跨机复制')                                       // WAL 诚实边界
+    const probes = dom.els['mmd-probes'].innerHTML
+    expect(probes).toContain('data-probe="mmdMost"')
+    expect(probes).toContain('data-probe="mmdLeast"')
+    expect(probes).toContain('data-probe="mmdOnce"')
+    expect(probes).toContain('data-verdict="exactlyOnceNotFree"')
+    expect(probes).toContain('data-verdict="noUniversalWinner"')
+    expect(dom.els['mmd-trilemma-note'].textContent).toContain('换场景结论会变')
+
+    // "等"(idempotent) 分支可达性：freeIdempotency 假想下 ExactlyOnce 低开销翻转 ⇒ 幂等折叠格从"贵"翻"等"，分支非死代码。
+    const freed = JSON.parse(JSON.stringify(real))
+    for (const row of freed.systems.messageDelivery.rows) {
+      if (row.protocol === 'ExactlyOnce') for (const s of row.scenarios) s.lowOverhead = true
+    }
+    const domF = await runApp(freed)
+    expect(domF.els['mmd-matrix'].innerHTML).toContain('class="mmd-cell idempotent" data-p="ExactlyOnce" data-s="brokerRetry"')
+    expect(domF.els['mmd-matrix'].innerHTML).toContain('class="mmd-cell idempotent" data-p="ExactlyOnce" data-s="ackLost"')
+  })
+
+  it('㉟ KI-513 messageDelivery 整块缺 / 单块缺诚实降级，不连坐 ccc-dcc-drl-lsm', async () => {
+    // 整块缺：五子块全降级、绝不画 0/假格；其它维仍照常。
+    const noMmd = JSON.parse(JSON.stringify(real))
+    noMmd.systems.messageDelivery = null
+    const dom = await runApp(noMmd)
+    expect(dom.els['mmd-matrix'].innerHTML).toContain('无三协议场景矩阵读数')
+    expect(dom.els['mmd-ladder'].innerHTML).toBe('')
+    expect(dom.els['mmd-trilemma'].innerHTML).toContain('无三难判据读数')
+    expect(dom.els['mmd-crosscheck'].innerHTML).toBe('')
+    expect(dom.els['mmd-probes'].innerHTML).toBe('')
+    expect(dom.els['mmd-matrix-note'].textContent).toContain('systems.messageDelivery 缺失')
+    expect(dom.els['ccc-matrix'].innerHTML).toContain('data-p="CacheAside"')         // KI-512 不连坐
+    expect(dom.els['dcc-matrix'].innerHTML).toContain('data-p="Polling"')            // KI-511 不连坐
+    expect(dom.els['drl-matrix'].innerHTML).toContain('data-p="Local"')              // KI-510 不连坐
+    expect(dom.els['lsm-gauge'].innerHTML).toContain(String(real.systems.lsm.speedup.toFixed(1))) // lsm 不连坐
+
+    // 单块缺：只降 crosscheck 真件交叉印证，矩阵/三难向量/探针仍渲染真读数（同维不连坐）。
+    const partial = JSON.parse(JSON.stringify(real))
+    partial.systems.messageDelivery.crosscheck = null
+    const dom2 = await runApp(partial)
+    expect(dom2.els['mmd-crosscheck'].innerHTML).toContain('无真件交叉印证读数')   // crosscheck 缺 → 诚实降级
+    expect(dom2.els['mmd-crosscheck'].innerHTML).not.toContain('createWal')        // 不编造铁证
+    expect(dom2.els['mmd-probes'].innerHTML).toContain('data-probe="mmdOnce"')     // 其余探针照常
+    expect(dom2.els['mmd-matrix'].innerHTML).toContain('class="mmd-cell lost"')    // 矩阵照常
+    expect(dom2.els['mmd-trilemma'].innerHTML).toContain('data-k="lowOverhead"')   // 三难照常
+  })
 })

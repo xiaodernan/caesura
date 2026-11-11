@@ -52,6 +52,7 @@
       renderDistributedRateLimit(snap.systems ? snap.systems.distributedRateLimit : null)
       renderConfigConsistency(snap.systems ? snap.systems.configConsistency : null)
       renderCacheCoherency(snap.systems ? snap.systems.cacheCoherency : null)
+      renderMessageDelivery(snap.systems ? snap.systems.messageDelivery : null)
       setLive(true, result.source)
     }).catch(function (e) {
       setLive(false, 'error')
@@ -1756,6 +1757,141 @@
       '进程内 WAL 只能救同机进程崩溃 replay，WAL 与盘同机、整机一起丢 ⇒ 单开 walEnabled 抹不掉 durable 维（真跨机不丢须 quorum 复制，属 Raft 共识的活）。' +
       '判定正交化：cacheCrash 只罚 durable、不连带罚写后可见。真依赖交叉印证取七枚真件读数；可证伪（rigged 原子失效 + 抹库 RTT + 写回同步双写 + 六场景 fault 全空后三协议全退化为 111、三判词翻 false）。' +
       '全为确定性故障场景结构计数、非墙钟/QPS/字节/真 Redis 跑分；换场景结论会变，不封赢家。'
+  }
+
+  /* ================= KI-513：分布式消息投递语义三协议（第十五维）================= */
+
+  function renderMessageDelivery(mmd) {
+    renderMmdMatrix(mmd && mmd.rows, mmd && mmd.config)
+    renderMmdLadder(mmd && mmd.rows)
+    renderMmdTrilemma(mmd && mmd.rows, mmd && mmd.verdict, mmd && mmd.crosscheck)
+  }
+
+  function mmdMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">无' + esc(label) + '读数</div>'
+    if (note) note.textContent = 'systems.messageDelivery 缺失 —— 重跑 npm run console:data 采集真判词'
+  }
+
+  // 每格读 Node 侧真判词：丢=发完即忘静默丢 / 重=ack 丢误判重投致重复 / 贵=幂等+事务+游标开销最高 / 等=重投命中幂等折叠 / 成=不丢不重又省（不复核）。
+  function mmdState(s) {
+    if (!s) return { cls: '', ch: '—' }
+    if (isNum(s.lost) && s.lost > 0) return { cls: 'lost', ch: '丢' }
+    if (isNum(s.duplicates) && s.duplicates > 0) return { cls: 'dup', ch: '重' }
+    if (s.lowOverhead === false) return { cls: 'expensive', ch: '贵' }
+    if (isNum(s.idempotentHits) && s.idempotentHits > 0) return { cls: 'idempotent', ch: '等' }
+    if (isNum(s.sent) && s.sent > 0) return { cls: 'ok', ch: '成' }
+    return { cls: '', ch: '?' }
+  }
+
+  function renderMmdMatrix(rows, config) {
+    var box = $('#mmd-matrix'), note = $('#mmd-matrix-note')
+    if (!Array.isArray(rows) || !rows.length || !config || !Array.isArray(config.scenarios)) {
+      mmdMissing(box, note, '三协议场景矩阵'); return
+    }
+    var scenarios = config.scenarios
+    var head = '<div class="mmd-mat-row mmd-mat-head"><span class="mmd-mat-proto">协议</span>' +
+      scenarios.map(function (s) { return '<span class="mmd-sc">' + esc(s) + '</span>' }).join('') +
+      '<span class="mmd-mat-cost">发/送</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (s) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === s }) : null
+        var st = mmdState(cell)
+        return '<span class="mmd-cell ' + st.cls + '" data-p="' + esc(row.protocol) + '" data-s="' + esc(s) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var t = row.totals || {}
+      return '<div class="mmd-mat-row" data-p="' + esc(row.protocol) + '">' +
+        '<span class="mmd-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="mmd-mat-cost"><b>' + esc(fmt(t.sent)) + '</b></span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = '同一组确定性故障场景（全成功 / 发送后崩溃 / ack 丢失 / broker 重投 / 消费者慢 / 重复突发）分喂三协议：' +
+      'At-Most-Once 发完即忘、不重试不等 ack，开销最低，但发送后崩溃/丢包消息静默丢失（天然不重试⇒不重复）；' +
+      'At-Least-Once 失败重投直到确认，崩溃丢包都补回不丢消息，但 ack 在网络里丢失时误判失败重投同一条⇒消费者收到重复；' +
+      'Exactly-Once 用幂等键+去重表把重投折叠成一次生效，配合持久化游标原子提交⇒不丢不重，但每消息查/写去重表、持事务、写游标⇒端到端开销最高（是 At-Least-Once + 幂等）。' +
+      '发/送 是结构计数、非墙钟/QPS/字节/吞吐跑分。Exactly-Once 不是免费午餐。'
+  }
+
+  function renderMmdLadder(rows) {
+    var box = $('#mmd-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.totals && isNum(r.totals.overheadUnits) ? r.totals.overheadUnits : 0 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var t = r.totals || {}
+      var w = isNum(t.overheadUnits) ? Math.round(t.overheadUnits / max * 100) : 0
+      return '<div class="mmd-line" data-p="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="mmd-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">开销' + esc(fmt(t.overheadUnits)) + ' · 发' + esc(fmt(t.sent)) + ' · 丢' + esc(fmt(t.lost)) + ' · 重' + esc(fmt(t.duplicates)) + ' · 幂等' + esc(fmt(t.idempotentHits)) + ' · 投' + esc(fmt(t.crashScenarios)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderMmdTrilemma(rows, verdict, crosscheck) {
+    var box = $('#mmd-trilemma'), cxBox = $('#mmd-crosscheck'), note = $('#mmd-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      mmdMissing(box, note, '三难判据'); if (cxBox) cxBox.innerHTML = ''; return
+    }
+    var flags = [['noLoss', '不丢消息'], ['noDup', '不重复投递'], ['lowOverhead', '端到端低开销']]
+    var head = '<div class="mmd-vec mmd-vec-head"><span class="proto">协议</span>' +
+      flags.map(function (f) { return '<span>' + f[1] + '</span>' }).join('') + '</div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (f) {
+        var yes = t[f[0]] === true
+        return '<span class="mmd-flag ' + (yes ? 'yes' : 'no') + '" data-p="' + esc(r.protocol) + '" data-k="' + f[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      return '<div class="mmd-vec" data-p="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells + '</div>'
+    }).join('')
+    box.innerHTML = head + body
+    // 真依赖交叉印证：七枚真件读数（createBus / GameEventBus / Bridge / 2PC / WAL / Redis / 环）。
+    if (cxBox) {
+      var bu = crosscheck && crosscheck.bus, ge = crosscheck && crosscheck.gameEventBus
+      var br = crosscheck && crosscheck.bridge, tp = crosscheck && crosscheck.twoPhase
+      var wa = crosscheck && crosscheck.wal, rd = crosscheck && crosscheck.redis, ri = crosscheck && crosscheck.ring
+      if (bu && ge && br && tp && wa && rd && ri) {
+        cxBox.innerHTML =
+          '<div>真 <b>createBus</b> 同步发完即忘：有监听器投递 <b>' + esc(fmt(bu.hits)) + '</b> 次、退订后重发不再投 <span class="jade-t">' +
+          (bu.noReplayOnUnsubscribe ? '✓' : '✗') + '</span>（at-most-once shell）<span class="wine-t">' + (bu.notRealNetwork ? ' 非真网络' : '') + '</span></div>' +
+          '<div>真 <b>createGameEventBus</b> publishGameEvent 交付 <b>' + esc(fmt(ge.delivered)) + '</b> / 错误 <b>' + esc(fmt(ge.errors)) + '</b>，与实收一致 ' + (ge.deliveredMatches ? '✓' : '✗') + '</div>' +
+          '<div>真 <b>createGameEventBridge</b> install ' + (br.installed ? '✓' : '✗') + '、白名单转发 ' + (br.forwardOk ? '✓' : '✗') +
+          '、未路由丢弃 ' + (br.unroutedDropped ? '✓' : '✗') + '（路由 <b>' + esc(fmt(br.routes)) + '</b>）<span class="wine-t">' + (br.notRealRebalance ? ' 非真 rebalance' : '') + '</span></div>' +
+          '<div>真 <b>createTwoPhaseCommit</b> 全 yes 提交 <b>' + esc(fmt(tp.commitMessages)) + '</b> 条，重放已提交事务幂等 ' + (tp.replayIdempotent ? '✓' : '✗') +
+          '，协调者宕阻塞 <b>' + esc(fmt(tp.blockedParticipants)) + '</b> 人<span class="wine-t">' + (tp.notRealXa ? ' 非真 XA' : '') + '</span></div>' +
+          '<div>真 <b>createWal</b> append/restore/replay <b>' + esc(fmt(wa.lines)) + '/' + esc(fmt(wa.restored)) + '/' + esc(fmt(wa.replayed)) +
+          '</b>，带 key 重放 <b>' + esc(fmt(wa.replayed)) + '</b> 条 distinct <b>' + esc(fmt(wa.distinctIds)) + '</b>（同 id 重投 ' + esc(fmt(wa.duplicateIdsReplayed)) +
+          ' 条可去重 ' + (wa.replayDedupePossible ? '✓' : '✗') + '）<span class="wine-t">但 sink 进程内、跨机复制 ' +
+          (wa.replicatedAcrossNodes ? '✓' : '✗') + '</span></div>' +
+          '<div>真 <b>createRedisCache</b> 幂等键首 miss <span class="jade-t">' + (rd.firstMiss ? '✓' : '✗') + '</span> 二次 hit <span class="jade-t">' +
+          (rd.secondHit ? '✓' : '✗') + '</span>（hits <b>' + esc(fmt(rd.hits)) + '</b> / misses <b>' + esc(fmt(rd.misses)) + '</b>）<span class="wine-t">' + (rd.notRealRedis ? ' 非真 Redis' : '') + '</span></div>' +
+          '<div>真 <b>createHashRing</b> 环 <b>' + esc(fmt(ri.keys)) + '</b> key / <b>' + esc(fmt(ri.nodes)) + '</b> 节点 fanout 空片 ' + esc(fmt(ri.emptyNodes)) +
+          ' · balanceRatio ' + esc(fmt(ri.balanceRatio, 3)) + '</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">无真件交叉印证读数（七块缺任一即各自降级）</div>'
+      }
+    }
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var notFree = v.exactlyOnceNotFree === true
+    var plusIdem = v.exactlyOnceIsAtLeastOncePlusIdempotency === true
+    var chips = [
+      '<span class="chip" data-probe="mmdMost"><b>AtMostOnce</b> 静默丢 ' + (v.atMostOnceSilentlyLoses ? '✓' : '✗') + ' · 最省 ' + (v.atMostOnceCheapest ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-probe="mmdLeast"><b>AtLeastOnce</b> 不丢 ' + (v.atLeastOnceNeverLoses ? '✓' : '✗') + ' · 会重复 ' + (v.atLeastOnceDuplicates ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-probe="mmdOnce"><b>ExactlyOnce</b> 不丢不重 ' + (v.exactlyOnceNoLossNoDup ? '✓' : '✗') + ' · 最贵 ' + (v.exactlyOnceMostExpensive ? '✓' : '✗') + '</span>',
+      '<span class="chip ' + (plusIdem ? 'jade-t' : 'muted-t') + '" data-verdict="exactlyOnceIsAtLeastOncePlusIdempotency">' + (plusIdem ? '✓ Exactly-Once = At-Least-Once + 幂等' : '幂等折叠未在真场景命中') + '</span>',
+      '<span class="chip ' + (notFree ? 'jade-t' : 'muted-t') + '" data-verdict="exactlyOnceNotFree">' + (notFree ? '✓ Exactly-Once 不是免费午餐' : 'Exactly-Once 全占（换场景会翻）') + '</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' + (noWin ? '✓ 不封任何协议全局赢家' : '本配置下归一（换场景会翻）') + '</span>',
+    ]
+    var probes = $('#mmd-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '三难 = 不丢消息 ∧ 不重复投递 ∧ 端到端低开销。' +
+      '真实向量 AtMostOnce=011 / AtLeastOnce=101 / ExactlyOnce=110 三条互不相同、没有一条三个全占（不预设各恰好缺一）：' +
+      'AtMostOnce 不重试⇒天然不重复 + 零 ack 零去重开销，只缺「不丢」一难（发送后崩溃静默丢）；' +
+      'AtLeastOnce 重投补回不丢 + 无幂等基础设施仍省，只缺「不重复」一难（ack 丢失误判重投致重复）；' +
+      'ExactlyOnce 幂等键折叠重投⇒不丢不重，只缺「低开销」一难（查/写去重表 + 事务 + 持久化游标，结构开销约为 At-Least-Once 的 5 倍）。' +
+      '判定正交化：ackLost 只罚 noDup、不连带罚 noLoss；单开 ackReliable 只让 AtLeastOnce 退化 111，救不了 At-Most-Once 丢、也救不了 Exactly-Once 贵（呼应 KI-511 瞬时轮询≠零空转 / KI-512 单开 WAL 抹不掉 durable）。' +
+      '真 WAL 带 key 重放可去重，但 sink 进程内、不跨机，整机+盘一起丢仍丢（真跨机不丢须 quorum 复制，属 Raft 共识的活）。' +
+      '真依赖交叉印证取七枚真件读数；可证伪（rigged 抹崩溃 + ack 可靠 + 幂等零开销 + 六场景 fault 全空后三协议全退化为 111、三判词翻 false）。' +
+      '全为确定性故障场景结构计数、非墙钟/QPS/字节/吞吐跑分；换场景结论会变，不封赢家。'
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)

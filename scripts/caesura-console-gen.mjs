@@ -31,6 +31,7 @@ import { idGenStudy, igSnapshot } from './caesura-idgen.mjs'
 import { distributedRateLimitStudy, drlSnapshot } from './caesura-distributed-ratelimit.mjs'
 import { configConsistencyStudy, dccSnapshot } from './caesura-config-consistency.mjs'
 import { cacheCoherencyStudy, cccSnapshot } from './caesura-cache-coherency.mjs'
+import { messageDeliveryStudy, mmdSnapshot } from './caesura-message-delivery.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
 export const SCENARIO_IDS = ['main', 'gray', 'resilience', 'cache', 'net']
@@ -112,6 +113,11 @@ export async function buildSnapshot(opts = {}) {
     cccManyKeys: opts.cccManyKeys,
     cccBackendRttMs: opts.cccBackendRttMs,
     cccWalEnabled: opts.cccWalEnabled,
+    messageDelivery: opts.messageDelivery,
+    mmdMessages: opts.mmdMessages,
+    mmdManyKeys: opts.mmdManyKeys,
+    mmdRetryLimit: opts.mmdRetryLimit,
+    mmdAckReliable: opts.mmdAckReliable,
   })
 
   return {
@@ -167,7 +173,12 @@ export async function buildSnapshot(opts = {}) {
  * @param {number} [opts.cccManyKeys] manyKeys 探针 key 规模（缺省 200）
  * @param {number} [opts.cccBackendRttMs] 写穿透后端库单次 RTT（缺省 40）
  * @param {boolean} [opts.cccWalEnabled] 仅进程内 WAL（抹不掉整机宕 durable 维）
- * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, failureDetector:object|null, bplusIndex:object|null, mvccTxn:object|null, distributedTxn:object|null, raftConsensus:object|null, distributedLock:object|null, idGen:object|null, distributedRateLimit:object|null, configConsistency:object|null, cacheCoherency:object|null, builtAt:number}>}
+ * @param {boolean} [opts.messageDelivery=false] 关掉消息投递语义维（兼容旧快照）
+ * @param {number} [opts.mmdMessages] 默认场景消息条数（缺省 12）
+ * @param {number} [opts.mmdManyKeys] duplicateBurst 探针幂等键规模（缺省 200）
+ * @param {number} [opts.mmdRetryLimit] At-Least-Once 最大重投次数（缺省 3）
+ * @param {boolean} [opts.mmdAckReliable] ack 可靠（抹掉 At-Least-Once 重复，抹不掉另两只软肋）
+ * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, failureDetector:object|null, bplusIndex:object|null, mvccTxn:object|null, distributedTxn:object|null, raftConsensus:object|null, distributedLock:object|null, idGen:object|null, distributedRateLimit:object|null, configConsistency:object|null, cacheCoherency:object|null, messageDelivery:object|null, builtAt:number}>}
  */
 export async function buildSystems(opts = {}) {
   const now = typeof opts.now === 'function' ? opts.now : () => Date.now()
@@ -197,7 +208,9 @@ export async function buildSystems(opts = {}) {
   const configConsistency = opts.configConsistency === false ? null : await buildConfigConsistencyReading(opts, now)
   // KI-512：第十四维「缓存读写一致性」真跑 Cache-Aside/Write-Through/Write-Behind × 六场景矩阵 + 三难判词 + 七枚真件交叉印证，与其它十三维平级。
   const cacheCoherency = opts.cacheCoherency === false ? null : await buildCacheCoherencyReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, builtAt: now() }
+  // KI-513：第十五维「消息投递语义」真跑 At-Most-Once/At-Least-Once/Exactly-Once × 六场景矩阵 + 三难判词 + 七枚真件交叉印证，与其它十四维平级。
+  const messageDelivery = opts.messageDelivery === false ? null : await buildMessageDeliveryReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, builtAt: now() }
 }
 
 /** LSM 引擎真跑一趟确定性 benchmark，回结构读数（不夹带每行真值）。 */
@@ -663,6 +676,41 @@ export async function buildCacheCoherencyReading(opts, now) {
 }
 
 /**
+ * KI-513：真跑 `messageDeliveryStudy`（At-Most-Once / At-Least-Once / Exactly-Once × 六场景矩阵
+ * + 三难判词 + 真 `createBus` 发完即忘 / 真 `createGameEventBus` delivered/errors / 真 `createGameEventBridge`
+ * 路由转发 / 真 `createTwoPhaseCommit` 重放幂等 / 真 `createWal` 带 key 重放去重但进程内不跨机 /
+ * 真 `createRedisCache` 幂等键首 miss 二 hit / 真 `createHashRing` 分区 fanout）并收敛成前端
+ * 「消息投递语义」两面板紧凑读数。判定/阈值全 Node 侧；注入固定时钟/规模 ⇒ 快照重跑逐字一致；
+ * 三协议阶梯是确定性故障场景真判词、判词不封任何协议全局赢家（Exactly-Once 不丢不重却最贵，
+ * 是 At-Least-Once + 幂等；单开 ackReliable 只补 At-Least-Once 一维），缺哪块落 null。
+ * @param {object} opts { messageDelivery?:false, mmdMessages?, mmdManyKeys?, mmdRetryLimit?, mmdAckReliable? }
+ * @param {()=>number} now 时钟（builtAt 注入则确定性）
+ */
+export async function buildMessageDeliveryReading(opts, now) {
+  try {
+    const s = await messageDeliveryStudy({
+      now,
+      ...(opts.mmdMessages ? { messages: Math.max(1, Math.floor(Number(opts.mmdMessages))) } : {}),
+      ...(opts.mmdManyKeys ? { manyKeys: Math.max(1, Math.floor(Number(opts.mmdManyKeys))) } : {}),
+      ...(opts.mmdRetryLimit ? { retryLimit: Math.max(2, Math.floor(Number(opts.mmdRetryLimit))) } : {}),
+      ...(opts.mmdAckReliable === true ? { ackReliable: true } : {}),
+    })
+    const snap = mmdSnapshot(s)
+    return {
+      config: snap.config,
+      rows: snap.rows,
+      vectors: snap.vectors,
+      crosscheck: snap.crosscheck,
+      verdict: snap.verdict,
+      topology: snap.topology,
+      builtAt: snap.builtAt,
+    }
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
  * 真跑时每场景的 opts（判定权在此：场景参数固定，业务阈值仍来自各子系统默认/显式注入）。
  * @param {string} id
  */
@@ -921,6 +969,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
       const stateOf = (s) => s.dirtyPagesLost > 0 ? '丢' : s.staleReads > 0 ? '陈' : s.writeBackendRttMs > 0 ? '阻' : s.coalescedWrites > 0 ? '合' : s.writes > 0 ? '成' : '?'
       const ladders = ccc.rows.map((row) => `${row.protocol}[${row.scenarios.map((s) => s.id + ':' + stateOf(s)).join('/')}]`).join(' · ')
       console.log(`[console] cacheCoherency: ${ladders} / 三难向量 ${JSON.stringify(ccc.vectors)} / 不封赢家 ${ccc.verdict.noUniversalWinner ? '是' : '否'} / WriteBehind不是银弹 ${ccc.verdict.writeBehindNotPanacea ? '是' : '否'} / 真Redis写后读${ccc.crosscheck.redis.writeThenReadSeesNew} 真WAL恢复${ccc.crosscheck.wal.replayed}但整机丢${ccc.crosscheck.wal.wholeNodeLossDurable} 真XFetch单调${ccc.crosscheck.guard.monotonic} 真分片全可读${ccc.crosscheck.sharded.allReadable} 真MVCC需提交${ccc.crosscheck.mvcc.writeThenReadNeedsCommit} 真2PC阻塞${ccc.crosscheck.twoPhase.blockedParticipants} 真环空片${ccc.crosscheck.ring.emptyNodes}`)
+    }
+    if (snap.systems?.messageDelivery) {
+      const mmd = snap.systems.messageDelivery
+      const stateOf = (s) => s.lost > 0 ? '丢' : s.duplicates > 0 ? '重' : !s.lowOverhead ? '贵' : s.idempotentHits > 0 ? '等' : '成'
+      const ladders = mmd.rows.map((row) => `${row.protocol}[${row.scenarios.map((s) => s.id + ':' + stateOf(s)).join('/')}]`).join(' · ')
+      console.log(`[console] messageDelivery: ${ladders} / 三难向量 ${JSON.stringify(mmd.vectors)} / 不封赢家 ${mmd.verdict.noUniversalWinner ? '是' : '否'} / ExactlyOnce不是免费午餐 ${mmd.verdict.exactlyOnceNotFree ? '是' : '否'} / 真Bus发完即忘${mmd.crosscheck.bus.atMostOnceShell} 真GameEventBus交付${mmd.crosscheck.gameEventBus.delivered} 真桥转发${mmd.crosscheck.bridge.forwardOk} 真2PC重放幂等${mmd.crosscheck.twoPhase.replayIdempotent} 真WAL重放${mmd.crosscheck.wal.replayed}条(distinct ${mmd.crosscheck.wal.distinctIds} 可去重${mmd.crosscheck.wal.replayDedupePossible} 但跨机${mmd.crosscheck.wal.replicatedAcrossNodes}) 真Redis幂等键${mmd.crosscheck.redis.idempotentTable} 真环空片${mmd.crosscheck.ring.emptyNodes}`)
     }
     process.exit(0)
   }).catch((e) => { console.error(`[console] 生成失败：${e.message}`); process.exit(1) })

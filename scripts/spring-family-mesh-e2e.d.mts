@@ -255,5 +255,28 @@ export function runMeshE2E(opts?: any): {
       topology: Record<string, any>
       builtAt: number
     } | null
+    /** KI-513：分布式消息投递语义三协议快照（At-Most-Once/At-Least-Once/Exactly-Once × 六场景 + 三难判词 + 真 Bus/GameEventBus/Bridge/2PC/WAL/Redis/环交叉印证），未配 messageDelivery 为 null */
+    messageDeliverySnapshot: {
+      config: Record<string, any>
+      rows: Array<{
+        protocol: string
+        trilemma: { noLoss: boolean; noDup: boolean; lowOverhead: boolean }
+        totals: {
+          sent: number; delivered: number; lost: number; duplicates: number; retries: number
+          overheadUnits: number; idempotentHits: number; crashScenarios: number
+        }
+        scenarios: Array<{
+          id: string; sent: number; delivered: number; lost: number; duplicates: number
+          retries: number; overheadUnits: number; idempotentHits: number
+          crashProbable: boolean; ackLostProbable: boolean
+          noLoss: boolean; noDup: boolean; lowOverhead: boolean
+        }>
+      }>
+      vectors: Record<string, string>
+      crosscheck: Record<string, Record<string, any>>
+      verdict: Record<string, any>
+      topology: Record<string, any>
+      builtAt: number
+    } | null
   }>
 }

@@ -889,4 +889,72 @@ describe('caesura-game-cloud', () => {
     expect(st.cacheCoherency.verdict.noUniversalWinner).toBe(true)
     expect(st.eventChannel).toBeTruthy()
   })
+
+  it('messageDelivery:true ⇒ 装配消息投递三协议、status.messageDelivery 读真三协议×六场景矩阵/三难判词/七枚真件交叉印证、惰性同引用（KI-513）', async () => {
+    const gc = createGameCloud({
+      gameId: 'gidm1', gamePort: 7751, sources, cloud: fakeCloud(),
+      messageDelivery: true, mmdNow: () => 9999,
+    })
+    expect(gc.runMessageDeliveryStudy).toBeTypeOf('function')
+    const st = await gc.status()
+    expect(st.messageDelivery.builtAt).toBe(9999)
+    expect(st.messageDelivery.config.scenarios.length).toBe(6)
+    expect(st.messageDelivery.rows.length).toBe(3)
+    expect(st.messageDelivery.vectors).toEqual({ AtMostOnce: '011', AtLeastOnce: '101', ExactlyOnce: '110' })
+    const most = st.messageDelivery.rows.find((r: any) => r.protocol === 'AtMostOnce')
+    const least = st.messageDelivery.rows.find((r: any) => r.protocol === 'AtLeastOnce')
+    const once = st.messageDelivery.rows.find((r: any) => r.protocol === 'ExactlyOnce')
+    expect(most!.scenarios.find((s: any) => s.id === 'crashAfterSend')!.lost).toBeGreaterThan(0)   // 发完即忘静默丢
+    expect(least!.scenarios.find((s: any) => s.id === 'ackLost')!.duplicates).toBeGreaterThan(0)   // ack 丢误判重投致重复
+    expect(once!.scenarios.find((s: any) => s.id === 'brokerRetry')!.idempotentHits).toBeGreaterThan(0) // 幂等折叠
+    expect(once!.scenarios.find((s: any) => s.id === 'brokerRetry')!.duplicates).toBe(0)          // 折叠后不重复
+    expect(once!.totals.overheadUnits).toBeGreaterThan(least!.totals.overheadUnits)               // 最贵
+    expect(st.messageDelivery.crosscheck.bridge.forwardOk).toBe(true)          // 真桥注入后转发成功
+    expect(st.messageDelivery.crosscheck.wal.distinctIds).toBe(2)              // 真 WAL 取到 key（非 null 假象）
+    expect(st.messageDelivery.crosscheck.wal.replayIds).toEqual(['m:1', 'm:2', 'm:1'])
+    expect(st.messageDelivery.crosscheck.wal.replayDedupePossible).toBe(true)
+    expect(st.messageDelivery.crosscheck.wal.replicatedAcrossNodes).toBe(false) // 进程内不跨机
+    expect(st.messageDelivery.crosscheck.twoPhase.replayIdempotent).toBe(true)  // 真 2PC 重放幂等
+    expect(st.messageDelivery.crosscheck.bus.atMostOnceShell).toBe(true)        // 真 createBus 发完即忘
+    expect(st.messageDelivery.crosscheck.redis.idempotentTable).toBe(true)      // 真 Redis 幂等键表
+    expect(Object.keys(st.messageDelivery.crosscheck).sort()).toEqual(['bridge', 'bus', 'gameEventBus', 'redis', 'ring', 'twoPhase', 'wal'])
+    expect(st.messageDelivery.verdict.noUniversalWinner).toBe(true)
+    expect(st.messageDelivery.verdict.exactlyOnceNotFree).toBe(true)
+    expect(st.messageDelivery.verdict.exactlyOnceIsAtLeastOncePlusIdempotency).toBe(true)
+    const verdictBools = Object.entries(st.messageDelivery.verdict).filter(([k]) => k !== 'vectors').map(([, v]) => v)
+    expect(verdictBools.every(Boolean)).toBe(true)
+    // 惰性缓存：二次 status 同引用
+    expect((await gc.status()).messageDelivery).toBe(st.messageDelivery)
+    // 现算入口可重跑、确定性（同注入 now）
+    const rerun = await gc.runMessageDeliveryStudy!()
+    expect(rerun.vectors).toEqual(st.messageDelivery.vectors)
+    // 不连坐 KI-512
+    expect(st.cacheCoherency).toBe(null)
+  })
+
+  it('messageDelivery 默认 null 非破坏；ackReliable 单开关只补 At-Least-Once 一维；可注入现成 study（KI-513）', async () => {
+    const plain = createGameCloud({ gameId: 'gidm2', gamePort: 7752, sources, cloud: fakeCloud() })
+    expect(plain.runMessageDeliveryStudy).toBe(null)
+    const ps = await plain.status()
+    expect(ps.messageDelivery).toBe(null)
+    expect(ps.cacheCoherency).toBe(null) // 不连坐 KI-512
+    // 单开 ackReliable（faults 全空）：只 At-Least-Once 补 noDup 维成 111，救不了另两只。
+    const ack = createGameCloud({
+      gameId: 'gidm3', gamePort: 7753, sources, cloud: fakeCloud(),
+      messageDelivery: { ackReliable: true, faults: Array.from({ length: 6 }, () => ({})), now: 0 }, mmdNow: () => 0,
+    })
+    const as = await ack.status()
+    expect(as.messageDelivery.vectors).toEqual({ AtMostOnce: '011', AtLeastOnce: '111', ExactlyOnce: '110' })
+    // 注入现成 study：直接用、不重跑，builtAt 原样带出、不被 mmdNow 覆盖。
+    const { messageDeliveryStudy } = await import('../../scripts/caesura-message-delivery.mjs')
+    const study = await messageDeliveryStudy({ now: () => 333 }) as any
+    const injected = createGameCloud({
+      gameId: 'gidm4', gamePort: 7754, sources, cloud: fakeCloud(),
+      messageDelivery: study, mmdNow: () => 2222,
+    })
+    const st = await injected.status()
+    expect(st.messageDelivery.builtAt).toBe(333)
+    expect(st.messageDelivery.verdict.noUniversalWinner).toBe(true)
+    expect(st.eventChannel).toBeTruthy()
+  })
 })

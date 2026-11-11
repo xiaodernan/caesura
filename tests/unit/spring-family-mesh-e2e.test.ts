@@ -593,4 +593,39 @@ describe('spring-family-mesh-e2e', () => {
     expect(plain2.cacheCoherencySnapshot).toBe(null)
     expect(plain2.configConsistencySnapshot).toBe(null)
   })
+
+  it('e2e KI-513：messageDelivery=true ⇒ 主链照常跑通，messageDeliverySnapshot 带三协议×六场景矩阵/三难判词/七枚真件交叉印证', async () => {
+    const e = runMeshE2E({ messageDelivery: true, mmdNow: () => 7777 })
+    const r = await e.run()
+    expect(r.started?.registered).toBe(true)          // 主链语义逐字不动
+    expect(r.callRes?.ok).toBe(true)
+    const d = r.messageDeliverySnapshot
+    expect(d).not.toBe(null)
+    expect(d!.builtAt).toBe(7777)
+    expect(d!.config.scenarios.length).toBe(6)
+    expect(d!.rows.length).toBe(3)
+    expect(d!.vectors).toEqual({ AtMostOnce: '011', AtLeastOnce: '101', ExactlyOnce: '110' })
+    const most = d!.rows.find((row: any) => row.protocol === 'AtMostOnce')!
+    const least = d!.rows.find((row: any) => row.protocol === 'AtLeastOnce')!
+    const once = d!.rows.find((row: any) => row.protocol === 'ExactlyOnce')!
+    expect(most.scenarios.find((s: any) => s.id === 'crashAfterSend')!.lost).toBeGreaterThan(0)
+    expect(least.scenarios.find((s: any) => s.id === 'ackLost')!.duplicates).toBeGreaterThan(0)
+    expect(once.scenarios.find((s: any) => s.id === 'brokerRetry')!.idempotentHits).toBeGreaterThan(0)
+    expect(d!.crosscheck.bridge.forwardOk).toBe(true)              // 真桥透传
+    expect(d!.crosscheck.wal.replayIds).toEqual(['m:1', 'm:2', 'm:1']) // 真 WAL 取到 key 透传
+    expect(d!.crosscheck.wal.replicatedAcrossNodes).toBe(false)
+    expect(d!.crosscheck.twoPhase.replayIdempotent).toBe(true)
+    expect(d!.crosscheck.bus.atMostOnceShell).toBe(true)
+    expect(d!.crosscheck.redis.idempotentTable).toBe(true)
+    expect(Object.keys(d!.crosscheck).sort()).toEqual(['bridge', 'bus', 'gameEventBus', 'redis', 'ring', 'twoPhase', 'wal'])
+    expect(d!.verdict.noUniversalWinner).toBe(true)
+    expect(d!.verdict.exactlyOnceNotFree).toBe(true)
+    const verdictBools = Object.entries(d!.verdict).filter(([k]) => k !== 'vectors').map(([, v]) => v)
+    expect(verdictBools.every(Boolean)).toBe(true)
+    // 未配 messageDelivery 时为 null（非破坏、不连坐 KI-512 / KI-511）。
+    const plain3 = await runMeshE2E().run()
+    expect(plain3.messageDeliverySnapshot).toBe(null)
+    expect(plain3.cacheCoherencySnapshot).toBe(null)
+    expect(plain3.configConsistencySnapshot).toBe(null)
+  })
 })

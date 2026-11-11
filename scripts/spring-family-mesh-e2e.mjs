@@ -108,6 +108,9 @@ export function runMeshE2E(opts = {}) {
     // KI-512：分布式缓存读写一致性三协议（cacheCoherency=true 装配；只读 Cache-Aside/Write-Through/Write-Behind × 六场景矩阵 + 三难判词 + 真 Redis写后读/WAL崩溃恢复/MVCC/2PC/环 交叉印证，不改调用路径）。
     cacheCoherency: opts.cacheCoherency,
     cccNow: opts.cccNow,
+    // KI-513：分布式消息投递语义三协议（messageDelivery=true 装配；只读 At-Most-Once/At-Least-Once/Exactly-Once × 六场景矩阵 + 三难判词 + 真 Bus/GameEventBus/Bridge/2PC/WAL/Redis/环 交叉印证，不改调用路径）。
+    messageDelivery: opts.messageDelivery,
+    mmdNow: opts.mmdNow,
     sources: {
       eureka: () => (opts.svcA ?? [{ id: 'svc-a:1', name: 'svc-a', address: '10.0.0.1', port: 8080, healthy: true }]),
       k8s: () => k8s.discover('caesura-gate'),
@@ -242,6 +245,7 @@ export function runMeshE2E(opts = {}) {
         distributedRateLimitSnapshot: status.distributedRateLimit ?? null,
         configConsistencySnapshot: status.configConsistency ?? null,
         cacheCoherencySnapshot: status.cacheCoherency ?? null,
+        messageDeliverySnapshot: status.messageDelivery ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
       }
@@ -400,6 +404,18 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         noUniversalWinner: r.cacheCoherencySnapshot.verdict.noUniversalWinner,
         crosscheck: r.cacheCoherencySnapshot.crosscheck,
         verdict: r.cacheCoherencySnapshot.verdict,
+      } : null,
+      messageDelivery: r.messageDeliverySnapshot ? {
+        protocols: r.messageDeliverySnapshot.rows.map((row) => ({
+          protocol: row.protocol,
+          ladder: row.scenarios.map((s) => s.id + ':' + (s.lost > 0 ? '丢' : s.duplicates > 0 ? '重' : !s.lowOverhead ? '贵' : s.idempotentHits > 0 ? '等' : '成')).join(' → '),
+          totals: row.totals, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.messageDeliverySnapshot.rows.map((row) => [row.protocol,
+          `${Number(row.trilemma.noLoss)}${Number(row.trilemma.noDup)}${Number(row.trilemma.lowOverhead)}`])),
+        noUniversalWinner: r.messageDeliverySnapshot.verdict.noUniversalWinner,
+        crosscheck: r.messageDeliverySnapshot.crosscheck,
+        verdict: r.messageDeliverySnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

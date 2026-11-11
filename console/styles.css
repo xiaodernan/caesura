@@ -955,6 +955,69 @@ main { padding: clamp(18px, 3vw, 40px) clamp(18px, 4vw, 56px) 48px; max-width: 1
   .ccc-line .num { min-width: 96px; }
 }
 
+/* KI-513：分布式消息投递语义三协议（同 KI-512 ccc 色板，暗黑哥特统一） */
+.row-mmd { grid-template-columns: repeat(2, 1fr); }
+.mmd-matrix { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 12px; }
+.mmd-mat-row { display: grid; grid-template-columns: 92px repeat(6, 1fr) 44px; gap: 4px; align-items: center; }
+.mmd-mat-head { font-family: var(--mono); font-size: 10px; letter-spacing: .04em; color: var(--gold-dim); padding-bottom: 3px; border-bottom: 1px solid var(--line-soft); }
+.mmd-mat-head .mmd-sc { text-align: center; }
+.mmd-mat-proto { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--silver); letter-spacing: .02em; }
+.mmd-cell {
+  text-align: center; font-family: var(--mono); font-size: 10px; min-height: 26px; line-height: 26px;
+  border: 1px solid var(--line-soft); border-radius: 2px; background: var(--ash-2); color: var(--muted);
+  cursor: default; transition: transform .12s ease, box-shadow .12s ease;
+}
+.mmd-cell:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.32); }
+.mmd-cell.ok { background: var(--jade-dim); border-color: rgba(79,155,134,.34); color: var(--jade); }
+.mmd-cell.idempotent { background: rgba(79,155,134,.13); border-color: rgba(79,155,134,.44); color: var(--jade); font-weight: 600; }
+.mmd-cell.expensive { background: rgba(201,162,58,.1); border-color: rgba(201,162,58,.5); color: var(--gold); font-weight: 600; }
+.mmd-cell.block { background: rgba(201,162,58,.07); border-color: rgba(201,162,58,.3); color: var(--gold-dim); }
+.mmd-cell.lost { background: var(--wine-dim); border-color: rgba(165,68,82,.62); color: #f0a8af; font-weight: 600; }
+.mmd-cell.dup { background: var(--wine-dim); border-color: rgba(165,68,82,.36); color: #d98892; }
+.mmd-mat-cost { text-align: right; font-family: var(--mono); font-size: 10px; color: var(--gold-dim); }
+.mmd-mat-cost b { color: var(--gold); }
+.mmd-ladder { display: flex; flex-direction: column; gap: 5px; }
+.mmd-line { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 10.5px; color: var(--silver); }
+.mmd-line .tag { color: var(--gold-dim); letter-spacing: .06em; min-width: 92px; }
+.mmd-bar { flex: 1; height: 7px; background: var(--ash-2); border: 1px solid var(--line-soft); border-radius: 2px; overflow: hidden; }
+.mmd-bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--gold-dim), var(--gold)); }
+.mmd-line .num { color: var(--muted); min-width: 118px; text-align: right; }
+.mmd-trilemma { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 12px; }
+.mmd-vec { display: grid; grid-template-columns: 92px repeat(3, 1fr); gap: 6px; align-items: center; }
+.mmd-vec .proto { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--silver); }
+.mmd-flag {
+  text-align: center; font-family: var(--mono); font-size: 10px; padding: 4px 0;
+  border: 1px solid var(--line-soft); border-radius: 2px; background: var(--ash-2);
+}
+.mmd-flag.yes { background: var(--jade-dim); border-color: rgba(79,155,134,.34); color: var(--jade); }
+.mmd-flag.no { background: var(--wine-dim); border-color: rgba(165,68,82,.36); color: #d98892; }
+.mmd-vec-head { font-family: var(--mono); font-size: 9px; letter-spacing: .04em; color: var(--muted); }
+.mmd-vec-head span { text-align: center; }
+.mmd-crosscheck {
+  font-family: var(--mono); font-size: 10px; line-height: 1.75; color: var(--muted);
+  background: var(--ash-2); border: 1px solid var(--line-soft); border-left: 2px solid var(--gold-dim);
+  border-radius: 2px; padding: 8px 10px; margin: 6px 0 12px;
+}
+.mmd-crosscheck b { color: var(--gold); font-weight: 600; }
+.mmd-crosscheck .jade-t { color: var(--jade); }
+.mmd-crosscheck .wine-t { color: #d98892; }
+.mmd-probes { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.mmd-probes .chip {
+  font-family: var(--mono); font-size: 10px; padding: 4px 9px;
+  border: 1px solid var(--line-soft); border-radius: 2px; background: var(--ash-2); color: var(--silver);
+}
+.mmd-probes .chip b { color: var(--gold); font-weight: 600; }
+.mmd-probes .chip.jade-t { border-color: rgba(79,155,134,.4); color: var(--jade); }
+.mmd-probes .chip.muted-t { color: var(--muted); }
+@media (max-width: 1020px) { .row-mmd { grid-template-columns: 1fr; } }
+@media (max-width: 720px) {
+  .mmd-mat-row, .mmd-vec { grid-template-columns: 64px repeat(3, 1fr) 30px; gap: 2px; }
+  .mmd-mat-head .mmd-sc:nth-of-type(n+5) { display: none; }
+  .mmd-cell { font-size: 9px; min-height: 21px; line-height: 21px; }
+  .mmd-line .tag { min-width: 64px; }
+  .mmd-line .num { min-width: 96px; }
+}
+
 /* ---------- 页脚 ---------- */
 .footer {
   display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;

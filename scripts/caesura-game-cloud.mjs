@@ -35,6 +35,7 @@ import { idGenStudy, igSnapshot } from './caesura-idgen.mjs'
 import { distributedRateLimitStudy, drlSnapshot } from './caesura-distributed-ratelimit.mjs'
 import { configConsistencyStudy, dccSnapshot } from './caesura-config-consistency.mjs'
 import { cacheCoherencyStudy, cccSnapshot } from './caesura-cache-coherency.mjs'
+import { messageDeliveryStudy, mmdSnapshot } from './caesura-message-delivery.mjs'
 import {
   createAimdCongestion,
   createCubicCongestion,
@@ -491,6 +492,26 @@ export function createGameCloud(opts = {}) {
     return cccCached
   }
 
+  // KI-513：分布式消息投递语义三协议诚实权衡（At-Most-Once / At-Least-Once / Exactly-Once，opt-in）。
+  // opts.messageDelivery===true 用缺省规模；传对象逐项注入（now/seed/messages/manyKeys/retryLimit/...
+  // 或 noCrash/ackReliable/freeIdempotency 单开关探针），或直接塞一只现成 study（duck-typed：带 rows/vectors/verdict/crosscheck/topology）。
+  // 默认 messageDelivery:false 不装配、不改任何调用路径（含 KI-512 在内前述语义逐字不动）。
+  const mmdCfg = opts.messageDelivery === true ? {} : (opts.messageDelivery && typeof opts.messageDelivery === 'object' ? opts.messageDelivery : null)
+  const mmdInjected = mmdCfg !== null && opts.messageDelivery &&
+    typeof opts.messageDelivery === 'object' && Array.isArray(opts.messageDelivery.rows) &&
+    opts.messageDelivery.vectors && opts.messageDelivery.verdict && opts.messageDelivery.crosscheck
+  let mmdCached = null
+  async function mmdSnapshotForStatus() {
+    if (mmdCfg === null) return null
+    if (mmdCached) return mmdCached
+    // 注入现成 study 直接用（不重跑，builtAt 原样带出）；否则真跑一次汇总，惰性缓存不反复付七枚真件交叉印证成本。
+    const study = mmdInjected
+      ? opts.messageDelivery
+      : await messageDeliveryStudy({ ...mmdCfg, now: opts.mmdNow ?? mmdCfg.now })
+    mmdCached = mmdSnapshot(study)
+    return mmdCached
+  }
+
   /** 包住一次调用，用真实耗时/成败喂 net 包（未启用则原样返回，零开销）。 */
   async function observeCall(promise) {
     if (!net) return promise
@@ -557,6 +578,8 @@ export function createGameCloud(opts = {}) {
     runConfigConsistencyStudy: dccCfg === null ? null : () => configConsistencyStudy({ ...dccCfg, now: opts.dccNow ?? dccCfg.now }),
     /** KI-512：分布式缓存读写一致性三协议汇总的现算入口（未配 opts.cacheCoherency 时为 null）；调一次真跑 Cache-Aside/Write-Through/Write-Behind × 六场景矩阵 + 三难判词 + 真 Redis写后读/WAL崩溃恢复/MVCC/2PC/环 交叉印证。 */
     runCacheCoherencyStudy: cccCfg === null ? null : () => cacheCoherencyStudy({ ...cccCfg, now: opts.cccNow ?? cccCfg.now }),
+    /** KI-513：分布式消息投递语义三协议汇总的现算入口（未配 opts.messageDelivery 时为 null）；调一次真跑 At-Most-Once/At-Least-Once/Exactly-Once × 六场景矩阵 + 三难判词 + 真 Bus/GameEventBus/Bridge/2PC/WAL/Redis/环 交叉印证。 */
+    runMessageDeliveryStudy: mmdCfg === null ? null : () => messageDeliveryStudy({ ...mmdCfg, now: opts.mmdNow ?? mmdCfg.now }),
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
     gray: runtime.gray,
     /** 把游戏真 EventBus 按白名单routes 接进云事件总线（游戏侧一行：gc.connectGameBus(bus, routes)）。 */
@@ -601,6 +624,7 @@ export function createGameCloud(opts = {}) {
         distributedRateLimit: await drlSnapshotForStatus(),
         configConsistency: await dccSnapshotForStatus(),
         cacheCoherency: await cccSnapshotForStatus(),
+        messageDelivery: await mmdSnapshotForStatus(),
       }
     },
   }

@@ -393,7 +393,38 @@ export interface CacheCoherencyReading {
   builtAt: number
 }
 
-/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511 + KI-512：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 + 缓存读写一致性）。 */
+/** KI-513：消息投递语义三协议（At-Most-Once / At-Least-Once / Exactly-Once）六场景矩阵 + 三难判词 + 七枚真件交叉印证。 */
+export interface MessageDeliveryReading {
+  config: Record<string, any>
+  rows: Array<{
+    protocol: string
+    trilemma: { noLoss: boolean; noDup: boolean; lowOverhead: boolean }
+    totals: {
+      sent: number; delivered: number; lost: number; duplicates: number; retries: number
+      overheadUnits: number; idempotentHits: number; crashScenarios: number
+    }
+    scenarios: Array<{
+      id: string; sent: number; delivered: number; lost: number; duplicates: number; retries: number
+      overheadUnits: number; idempotentHits: number; crashProbable: boolean; ackLostProbable: boolean
+      noLoss: boolean; noDup: boolean; lowOverhead: boolean
+    }>
+  }>
+  vectors: Record<string, string>
+  crosscheck: {
+    bus: Record<string, any>
+    gameEventBus: Record<string, any>
+    bridge: Record<string, any>
+    twoPhase: Record<string, any>
+    wal: Record<string, any>
+    redis: Record<string, any>
+    ring: Record<string, any>
+  }
+  verdict: Record<string, any>
+  topology: Record<string, any>
+  builtAt: number
+}
+
+/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511 + KI-512 + KI-513：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 + 缓存读写一致性 + 消息投递语义）。 */
 export interface SystemsBlock {
   lsm: LsmReading | null
   hw: HwReading | null
@@ -409,6 +440,7 @@ export interface SystemsBlock {
   distributedRateLimit: DistributedRateLimitReading | null
   configConsistency: ConfigConsistencyReading | null
   cacheCoherency: CacheCoherencyReading | null
+  messageDelivery: MessageDeliveryReading | null
   builtAt: number
 }
 
@@ -485,9 +517,15 @@ export function buildSnapshot(opts?: {
   cccManyKeys?: number
   cccBackendRttMs?: number
   cccWalEnabled?: boolean
+  /** KI-513：false 关掉消息投递语义维（兼容旧快照）；mmd* 注入消息规模/幂等键规模/重投上限/ack 可靠。 */
+  messageDelivery?: boolean
+  mmdMessages?: number
+  mmdManyKeys?: number
+  mmdRetryLimit?: number
+  mmdAckReliable?: boolean
 }): Promise<ConsoleSnapshot>
 
-/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 十三维系统读数；击穿并发 ⇒ async。 */
+/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511 + KI-512 + KI-513：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 + 缓存读写一致性 + 消息投递语义 十五维系统读数；击穿并发 ⇒ async。 */
 export function buildSystems(opts?: {
   now?: () => number
   lsmKeys?: number
@@ -538,6 +576,12 @@ export function buildSystems(opts?: {
   cccManyKeys?: number
   cccBackendRttMs?: number
   cccWalEnabled?: boolean
+  /** KI-513：false 关掉消息投递语义维（兼容旧快照）；mmd* 注入消息规模/幂等键规模/重投上限/ack 可靠。 */
+  messageDelivery?: boolean
+  mmdMessages?: number
+  mmdManyKeys?: number
+  mmdRetryLimit?: number
+  mmdAckReliable?: boolean
 }): Promise<SystemsBlock>
 
 /** KI-501：真跑缓存防护三件套（击穿/穿透/雪崩）收敛成前端三面板紧凑读数；单维失败落 null。 */
@@ -636,6 +680,16 @@ export function buildCacheCoherencyReading(opts: {
   cccBackendRttMs?: number
   cccWalEnabled?: boolean
 }, now: () => number): Promise<CacheCoherencyReading | null>
+
+/** KI-513：真跑消息投递语义（At-Most-Once / At-Least-Once / Exactly-Once × 六场景矩阵 + 三难判词 + 七枚真件 Bus/GameEventBus/Bridge/2PC/WAL/Redis/环交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
+export function buildMessageDeliveryReading(opts: {
+  now?: () => number
+  messageDelivery?: boolean
+  mmdMessages?: number
+  mmdManyKeys?: number
+  mmdRetryLimit?: number
+  mmdAckReliable?: boolean
+}, now: () => number): Promise<MessageDeliveryReading | null>
 
 export function realScenarioOpts(id: string): Record<string, any>
 

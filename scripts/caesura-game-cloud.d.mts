@@ -107,6 +107,12 @@ export interface GameCloudOptions {
    * （带 rows/vectors/verdict/crosscheck/topology 五块）。默认 false 不装配。 */
   cacheCoherency?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck: any; topology: any; [k: string]: any }
   cccNow?: () => number
+  /**
+   * KI-513：true 装配分布式消息投递语义三协议权衡（At-Most-Once / At-Least-Once / Exactly-Once + 真 Bus/GameEventBus/Bridge/2PC/WAL/Redis/环 交叉印证）。
+   * 对象逐项注入（now/seed/messages/manyKeys/retryLimit/noCrash/ackReliable/freeIdempotency/...），或直接塞一只现成 study
+   * （带 rows/vectors/verdict/crosscheck/topology 五块）。默认 false 不装配。 */
+  messageDelivery?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck: any; topology: any; [k: string]: any }
+  mmdNow?: () => number
 }
 
 /** 创建一只游戏侧开箱即用云。 */
@@ -153,6 +159,8 @@ export function createGameCloud(opts?: GameCloudOptions): {
   runConfigConsistencyStudy: (() => Promise<any>) | null
   /** KI-512：分布式缓存读写一致性三协议汇总的现算入口（未配 opts.cacheCoherency 时为 null）；真跑 Cache-Aside/Write-Through/Write-Behind × 六场景矩阵 + 三难判词 + 真 Redis写后读/WAL崩溃恢复/XFetch/分片/MVCC/2PC/环 交叉印证。 */
   runCacheCoherencyStudy: (() => Promise<any>) | null
+  /** KI-513：分布式消息投递语义三协议汇总的现算入口（未配 opts.messageDelivery 时为 null）；真跑 At-Most-Once/At-Least-Once/Exactly-Once × 六场景矩阵 + 三难判词 + 真 Bus/GameEventBus/Bridge/2PC/WAL/Redis/环 交叉印证。 */
+  runMessageDeliveryStudy: (() => Promise<any>) | null
   /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）。 */
   gray: any
   /** KI-489：把游戏真 EventBus（duck-typed {on,emit}）按白名单接进云事件总线。 */

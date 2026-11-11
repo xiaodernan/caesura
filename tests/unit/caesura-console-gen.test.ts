@@ -421,6 +421,23 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(snap.systems.cacheCoherency.verdict.noUniversalWinner).toBe(true)
     expect(snap.systems.cacheCoherency.vectors).toEqual({ CacheAside: '001', WriteThrough: '101', WriteBehind: '110' })
     expect(fromBoot.systems.cacheCoherency).toEqual(snap.systems.cacheCoherency) // 第十四维同源
+    // KI-513 messageDelivery：三协议 × 六场景矩阵 + 三难判词 + 七枚真件交叉印证真读数已固化进快照。
+    expect(snap.systems.messageDelivery.rows.length).toBe(3)
+    expect(snap.systems.messageDelivery.config.scenarios.length).toBe(6)
+    const mdM = snap.systems.messageDelivery.rows.find((r: any) => r.protocol === 'AtMostOnce')!
+    const mdL = snap.systems.messageDelivery.rows.find((r: any) => r.protocol === 'AtLeastOnce')!
+    const mdE = snap.systems.messageDelivery.rows.find((r: any) => r.protocol === 'ExactlyOnce')!
+    expect(mdM.scenarios.find((s: any) => s.id === 'crashAfterSend')!.lost).toBeGreaterThan(0) // AtMostOnce 静默丢
+    expect(mdL.scenarios.find((s: any) => s.id === 'ackLost')!.duplicates).toBeGreaterThan(0)  // AtLeastOnce 重复
+    expect(mdE.scenarios.find((s: any) => s.id === 'brokerRetry')!.idempotentHits).toBeGreaterThan(0) // ExactlyOnce 幂等折叠
+    expect(snap.systems.messageDelivery.crosscheck.bridge.forwardOk).toBe(true)               // 真桥注入转发
+    expect(snap.systems.messageDelivery.crosscheck.wal.replayIds).toEqual(['m:1', 'm:2', 'm:1']) // 真 WAL 取到 key
+    expect(snap.systems.messageDelivery.crosscheck.wal.replicatedAcrossNodes).toBe(false)
+    expect(snap.systems.messageDelivery.crosscheck.twoPhase.replayIdempotent).toBe(true)
+    expect(snap.systems.messageDelivery.verdict.exactlyOnceNotFree).toBe(true)
+    expect(snap.systems.messageDelivery.verdict.noUniversalWinner).toBe(true)
+    expect(snap.systems.messageDelivery.vectors).toEqual({ AtMostOnce: '011', AtLeastOnce: '101', ExactlyOnce: '110' })
+    expect(fromBoot.systems.messageDelivery).toEqual(snap.systems.messageDelivery) // 第十五维同源
     expect(Object.keys(fromBoot.systems).sort()).toEqual(Object.keys(snap.systems).sort())
   })
 
@@ -727,5 +744,38 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(sys.distributedRateLimit).toBeTruthy()
     const snap = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, cacheCoherency: false })
     expect(snap.systems!.cacheCoherency).toBe(null)
+  })
+
+  it('㉝ buildMessageDeliveryReading 真跑三协议×六场景矩阵 + 七枚真件交叉印证、注入时钟/规模/ackReliable 生效、单维关闭不连坐（KI-513）', async () => {
+    const { buildMessageDeliveryReading } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 7777
+    const reading = (await buildMessageDeliveryReading({ mmdMessages: 8, mmdManyKeys: 48, mmdRetryLimit: 2 }, now)) as NonNullable<Awaited<ReturnType<typeof buildMessageDeliveryReading>>>
+    expect(reading.builtAt).toBe(7777)
+    expect(reading.vectors).toEqual({ AtMostOnce: '011', AtLeastOnce: '101', ExactlyOnce: '110' })
+    expect(reading.rows.length).toBe(3)
+    expect(reading.rows[0].scenarios.length).toBe(6)
+    expect(reading.config.messages).toBe(8)
+    expect(reading.config.manyKeys).toBe(48)
+    expect(reading.config.retryLimit).toBe(2)
+    expect(Object.keys(reading.crosscheck).sort()).toEqual(['bridge', 'bus', 'gameEventBus', 'redis', 'ring', 'twoPhase', 'wal'])
+    expect(reading.crosscheck.bridge.forwardOk).toBe(true)
+    expect(reading.crosscheck.wal.replayIds).toEqual(['m:1', 'm:2', 'm:1'])
+    expect(reading.crosscheck.wal.distinctIds).toBe(2)
+    expect(reading.crosscheck.wal.replayDedupePossible).toBe(true)
+    expect(reading.crosscheck.wal.replicatedAcrossNodes).toBe(false)
+    expect(reading.verdict.noUniversalWinner).toBe(true)
+    expect(reading.verdict.exactlyOnceNotFree).toBe(true)
+    expect(reading.verdict.exactlyOnceIsAtLeastOncePlusIdempotency).toBe(true)
+    // 单开 ackReliable 只补 At-Least-Once 的 noDup 维成 111，救不了另两只。
+    const withAck = (await buildMessageDeliveryReading({ mmdAckReliable: true }, now)) as NonNullable<Awaited<ReturnType<typeof buildMessageDeliveryReading>>>
+    expect(withAck.vectors).toEqual({ AtMostOnce: '011', AtLeastOnce: '111', ExactlyOnce: '110' })
+    expect(withAck.config.ackReliable).toBe(true)
+    // 单维关闭落 null，不连坐其它维
+    const sys = await buildSystems({ now, messageDelivery: false })
+    expect(sys.messageDelivery).toBe(null)
+    expect(sys.cacheCoherency).toBeTruthy()  // 不连坐 KI-512
+    expect(sys.configConsistency).toBeTruthy() // 不连坐 KI-511
+    const snap = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, messageDelivery: false })
+    expect(snap.systems!.messageDelivery).toBe(null)
   })
 })
