@@ -1135,4 +1135,13 @@ describe('PANEL_CSS · 余烬仪典皮肤（ember rite · 追加 cascade）', ()
     expect(PANEL_CSS).toContain('.cxs button.act:focus-visible')
     expect(PANEL_CSS).toContain('.cxs nav button.sel')
   })
+
+  it('四角窠臼 filigree 规则在 PANEL_CSS 内且完整（四角双线 tip）', async () => {
+    const { PANEL_CSS } = await import('@/ui/Stakerite')
+    expect(PANEL_CSS).toContain('.cxs .panel {')
+    expect(PANEL_CSS).toContain('linear-gradient(to top')
+    expect(PANEL_CSS).toContain('background-repeat: no-repeat')
+    expect(PANEL_CSS).toContain('left 10px top 17px')
+    expect(PANEL_CSS).toContain('right 17px bottom 10px')
+  })
 })

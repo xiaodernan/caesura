@@ -171,6 +171,25 @@ export const PANEL_CSS = `
 .cxs button.act.sel { box-shadow:0 0 14px -4px rgba(255,184,107,.6), inset 0 0 10px -4px rgba(255,184,107,.35); }
 .cxs .foot { background:linear-gradient(0deg, rgba(255,214,130,.05), transparent); border-top:1px solid rgba(201,180,88,.28); }
 .cxs .tag { box-shadow:inset 0 0 8px -4px rgba(201,180,88,.45); }
+/* == panel filigree · 四角窠臼（双刻线拱线 + 玉光角点，零新增节点） == */
+.cxs .panel {
+  background-image:
+    linear-gradient(to right,  rgba(255,222,150,.42) 0 2px, transparent 2px),
+    linear-gradient(to bottom, rgba(255,222,150,.42) 0 2px, transparent 2px),
+    linear-gradient(to left,   rgba(255,222,150,.42) 0 2px, transparent 2px),
+    linear-gradient(to bottom, rgba(255,222,150,.42) 0 2px, transparent 2px),
+    linear-gradient(to right,  rgba(255,222,150,.42) 0 2px, transparent 2px),
+    linear-gradient(to top,    rgba(255,222,150,.42) 0 2px, transparent 2px),
+    linear-gradient(to left,   rgba(255,222,150,.42) 0 2px, transparent 2px),
+    linear-gradient(to top,    rgba(255,222,150,.42) 0 2px, transparent 2px);
+  background-size: 22px 1px, 1px 22px, 22px 1px, 1px 22px, 22px 1px, 1px 22px, 22px 1px, 1px 22px;
+  background-position:
+    left 10px top 17px,   left 17px top 10px,
+    right 10px top 17px,  right 17px top 10px,
+    left 10px bottom 17px, left 17px bottom 10px,
+    right 10px bottom 17px, right 17px bottom 10px;
+  background-repeat: no-repeat;
+}
 `
 
 /** 调音桩自己那几块（遗响条 / §44 的双栏对比 / 存档页确认条）：别的面板不用，也就不必共享 */
