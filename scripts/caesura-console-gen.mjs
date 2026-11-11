@@ -55,6 +55,9 @@ export const SCENARIO_TITLES = {
  */
 export async function buildSnapshot(opts = {}) {
   const now = typeof opts.now === 'function' ? opts.now : () => Date.now()
+  // 同一运行内只取一次时钟：generatedAt 与 systems.builtAt 共用同一读数，
+  // 消除两载体同 run 差 1ms 的裸竞（KI-515 "bootstrap↔snapshot 双载体同源" 契约的必然要求）。
+  const baseNow = now()
   const runner = typeof opts.runner === 'function'
     ? opts.runner
     : (id) => runMeshE2E(realScenarioOpts(id))
@@ -72,7 +75,7 @@ export async function buildSnapshot(opts = {}) {
   // KI-498：五场景之外并一块「系统读数」（LSM 引擎 + OS/硬件适配），与 scenarios 平级、
   // 不扰动既有场景顺序与 highlights 口径。`systems:false` 可关（兼容旧快照/确定性单测）。
   const systems = opts.systems === false ? null : await buildSystems({
-    now,
+    now: () => baseNow,
     lsmKeys: opts.lsmKeys,
     poolAccesses: opts.poolAccesses,
     layoutCount: opts.layoutCount,
@@ -122,7 +125,7 @@ export async function buildSnapshot(opts = {}) {
 
   return {
     schema: 1,
-    generatedAt: now(),
+    generatedAt: baseNow,
     generator: 'caesura-console-gen',
     scenarios,
     highlights: deriveHighlights(scenarios),
