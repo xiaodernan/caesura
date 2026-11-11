@@ -200,16 +200,22 @@ export class AISystem {
       for (const e of this.enemies) e.sense(player, tick, this.sightBlocked)
     }
     // 「定调」光环（§14.6）：每 tick 重算一次，取范围内最近的 buffAura 来源，不叠加
+    // 算法：先筛一次存活施主（A ≪ N），内两层只跑 N·A；距离全程用平方比较（免 sqrt），
+    // 判定语义逐字节一致（最近且在射程、并列取先者）——胜出者只存在于倍率，无距离外显。
     for (const e of this.enemies) e.buff = null
+    const auraHolders = this.enemies.filter((s) => s.alive && !!s.data.ai.buffAura)
     for (const e of this.enemies) {
       if (!e.alive) continue
       let best: Enemy | null = null
-      let bestD = Infinity
-      for (const s of this.enemies) {
-        if (s === e || !s.alive || !s.data.ai.buffAura) continue
-        const d = Math.hypot(e.pos.x - s.pos.x, e.pos.z - s.pos.z)
-        if (d > s.data.ai.buffAura.range || d >= bestD) continue
-        bestD = d; best = s
+      let bestD2 = Infinity
+      for (const s of auraHolders) {
+        if (s === e) continue
+        const dx = e.pos.x - s.pos.x
+        const dz = e.pos.z - s.pos.z
+        const d2 = dx * dx + dz * dz
+        const range = s.data.ai.buffAura!.range
+        if (d2 > range * range || d2 >= bestD2) continue
+        bestD2 = d2; best = s
       }
       if (best) {
         const a = best.data.ai.buffAura!
