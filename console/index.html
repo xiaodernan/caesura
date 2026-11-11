@@ -367,6 +367,21 @@
       <p class="note" id="dld-trilemma-note">…</p>
     </article>
   </section>
+  <section class="row row-rdq">
+    <article class="panel panel-rdq">
+      <div class="panel-head"><h2>第十七维 · 重试退避 × 死信 · 三协议 × 六场景</h2><span class="hint">即=失败即重投·1 tick 最小 RTT / 退=base×2ⁿ⁻¹ 钳 cap·退避压住风暴 / 抖=rand×min(cap, base×2ⁿ⁻¹)·全抖动去同步</span></div>
+      <div class="rdq-matrix" id="rdq-matrix"></div>
+      <div class="rdq-ladder" id="rdq-ladder"></div>
+      <p class="note" id="rdq-matrix-note">…</p>
+    </article>
+    <article class="panel panel-rdq">
+      <div class="panel-head"><h2>三难向量（快速恢复 ∧ 无重试风暴 ∧ 无惊群）</h2><span class="hint">Immediate=100 / Exponential=010 / FullJitter=011 · 不封赢家 · 单开 zeroBackoff 三协议 noStorm 全翻</span></div>
+      <div class="rdq-trilemma" id="rdq-trilemma"></div>
+      <div class="rdq-crosscheck" id="rdq-crosscheck"></div>
+      <div class="rdq-probes" id="rdq-probes"></div>
+      <p class="note" id="rdq-trilemma-note">…</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">

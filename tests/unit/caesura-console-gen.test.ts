@@ -825,6 +825,50 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(snap.systems!.messageDelivery).toBeTruthy()
   })
 
+  it('buildRetryDlqReading 真跑三协议×六场景矩阵 + 七枚真件交叉印证、注入时钟/规模/rigged 生效、单维关闭不连坐（KI-520）', async () => {
+    const { buildRetryDlqReading, buildSystems, buildSnapshot } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 9393
+    const reading = (await buildRetryDlqReading({}, now)) as NonNullable<Awaited<ReturnType<typeof buildRetryDlqReading>>>
+    expect(reading).not.toBe(null)
+    expect(reading.builtAt).toBe(9393)                          // 注入时钟真求值（KI-517 契约延伸）
+    expect(reading.vectors).toEqual({ Immediate: '100', Exponential: '010', FullJitter: '011' })
+    expect(reading.rows.length).toBe(3)
+    expect(reading.rows[0].scenarios.length).toBe(6)
+    expect(reading.config.messages).toBe(16)                    // 缺省规模
+    expect(Object.keys(reading.crosscheck.evidence).sort()).toEqual(['bucketAllowed', 'bucketRejected', 'busListeners', 'deadNotices', 'hashRingEmptyNodes', 'hashRingNodes', 'heapFired', 'idemEntries', 'poolAcquired', 'walLines', 'walReplayed'])
+    expect(reading.crosscheck.evidence.heapFired).toBe(12)
+    expect(reading.crosscheck.evidence.walReplayed).toBe(3)
+    expect(reading.verdict.noUniversalWinner).toBe(true)
+    expect(reading.verdict.fullJitterNotFreeLunch).toBe(true)
+    // 注入规模真生效：config 逐项带出，且向量随规模诚实地变（baseTicks=2 让 FullJitter 首档打散不足丢 noHerd、maxAttempts=3 让 Immediate 施压降到预算内）——不硬套默认向量
+    const scaled = (await buildRetryDlqReading({ rdlqMessages: 8, rdlqMaxAttempts: 3, rdlqBaseTicks: 2 }, now))!
+    expect(scaled.config.messages).toBe(8)
+    expect(scaled.config.maxAttempts).toBe(3)
+    expect(scaled.config.baseTicks).toBe(2)
+    expect(scaled.vectors).toEqual({ Immediate: '110', Exponential: '010', FullJitter: '010' })
+    for (const row of scaled.rows) {
+      const recomputed = `${Number(row.trilemma.fastRecovery)}${Number(row.trilemma.noStorm)}${Number(row.trilemma.noHerd)}`
+      expect(scaled.vectors[row.protocol]).toBe(recomputed)      // 规模变了向量仍由 trilemma 现算
+    }
+    // rigged 三开关：向量由 trilemma 现算 101/101/101、判词翻 false、noStorm 因果抹不掉
+    const rig = (await buildRetryDlqReading({ rdlqZeroBackoff: true, rdlqPerfectJitter: true, rdlqNoRetryBudget: true }, now))!
+    expect(rig.vectors).toEqual({ Immediate: '101', Exponential: '101', FullJitter: '101' })
+    expect(rig.verdict.noUniversalWinner).toBe(false)
+    expect(rig.verdict.trilemmaDistinguishes).toBe(false)
+    expect(rig.verdict.noStormCausallyUnerasable).toBe(true)
+    for (const row of rig.rows) {
+      const recomputed = `${Number(row.trilemma.fastRecovery)}${Number(row.trilemma.noStorm)}${Number(row.trilemma.noHerd)}`
+      expect(rig.vectors[row.protocol]).toBe(recomputed)
+    }
+    // 单维关闭落 null，不连坐第十六维
+    const sys = await buildSystems({ now, retryDlq: false })
+    expect(sys.retryDlq).toBe(null)
+    expect(sys.delayQueue).toBeTruthy() // 不连坐 KI-518
+    const snap = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, retryDlq: false })
+    expect(snap.systems!.retryDlq).toBe(null)
+    expect(snap.systems!.delayQueue).toBeTruthy()
+  })
+
   /* ---------------- ㉞㉟㊱ KI-515 控制台快照 CLI 真跑时钟确定性 ---------------- */
   const CLI = fileURLToPath(new URL('../../scripts/caesura-console-gen.mjs', import.meta.url))
   const TMP = resolve(' .scratch/ki515-test'.trim())  // 项目内 gitignore 目录，Node/Python 互通

@@ -114,6 +114,9 @@ export function runMeshE2E(opts = {}) {
     // KI-518：延迟消息队列调度三协议（delayQueue=true 装配；只读 TimingWheel/MinHeap/RedisZset × 六场景矩阵 + 三难向量 + 七枚真件交叉印证，rigged 向量由 trilemma 现算不硬覆盖，不改调用路径）。
     delayQueue: opts.delayQueue,
     dqNow: opts.dqNow,
+    // KI-520：消息重试退避与死信队列三协议（retryDlq=true 装配；只读 Immediate/Exponential/FullJitter × 六场景矩阵 + 三难向量 + 七枚真件交叉印证，rigged 101/101/101 因果锁死 noStorm、不硬造全 111，不改调用路径）。
+    retryDlq: opts.retryDlq,
+    rdlNow: opts.rdlNow,
     sources: {
       eureka: () => (opts.svcA ?? [{ id: 'svc-a:1', name: 'svc-a', address: '10.0.0.1', port: 8080, healthy: true }]),
       k8s: () => k8s.discover('caesura-gate'),
@@ -250,6 +253,7 @@ export function runMeshE2E(opts = {}) {
         cacheCoherencySnapshot: status.cacheCoherency ?? null,
         messageDeliverySnapshot: status.messageDelivery ?? null,
         delayQueueSnapshot: status.delayQueue ?? null,
+        retryDlqSnapshot: status.retryDlq ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
       }
@@ -432,6 +436,18 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         noUniversalWinner: r.delayQueueSnapshot.verdict.noUniversalWinner,
         crosscheck: r.delayQueueSnapshot.crosscheck,
         verdict: r.delayQueueSnapshot.verdict,
+      } : null,
+      retryDlq: r.retryDlqSnapshot ? {
+        protocols: r.retryDlqSnapshot.rows.map((row) => ({
+          protocol: row.protocol,
+          ladder: row.scenarios.map((s) => s.id + ':' + (s.deadLettered > 0 ? '死' : s.noStorm === false ? '暴' : s.noHerd === false ? '群' : s.fastRecovery === false ? '慢' : '稳')).join(' → '),
+          totals: row.totals, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.retryDlqSnapshot.rows.map((row) => [row.protocol,
+          `${Number(row.trilemma.fastRecovery)}${Number(row.trilemma.noStorm)}${Number(row.trilemma.noHerd)}`])),
+        noUniversalWinner: r.retryDlqSnapshot.verdict.noUniversalWinner,
+        crosscheck: r.retryDlqSnapshot.crosscheck,
+        verdict: r.retryDlqSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

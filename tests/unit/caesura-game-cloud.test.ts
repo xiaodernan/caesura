@@ -1028,4 +1028,86 @@ describe('caesura-game-cloud', () => {
     expect(st.delayQueue.verdict.noUniversalWinner).toBe(true)
     expect(st.eventChannel).toBeTruthy()
   })
+
+  it('retryDlq:true ⇒ 装配重试退避三协议、status.retryDlq 读真矩阵/三难向量/七真件、builtAt 随 rdlNow、惰性同引用（KI-520）', async () => {
+    const gc = createGameCloud({
+      gameId: 'gidrdlq1', gamePort: 7771, sources, cloud: fakeCloud(),
+      retryDlq: true, rdlNow: () => 8888,
+    })
+    expect(gc.runRetryDlqStudy).toBeTypeOf('function')
+    const st = await gc.status()
+    expect(st.retryDlq.builtAt).toBe(8888)                       // 注入时钟真求值（KI-517 契约延伸）
+    expect(st.retryDlq.config.scenarios.length).toBe(6)
+    expect(st.retryDlq.rows.length).toBe(3)
+    expect(st.retryDlq.vectors).toEqual({ Immediate: '100', Exponential: '010', FullJitter: '011' })
+    const imm = st.retryDlq.rows.find((r: any) => r.protocol === 'Immediate')!
+    const exp = st.retryDlq.rows.find((r: any) => r.protocol === 'Exponential')!
+    const fj = st.retryDlq.rows.find((r: any) => r.protocol === 'FullJitter')!
+    expect(imm.trilemma).toEqual({ fastRecovery: true, noStorm: false, noHerd: false }) // 快但风暴+惊群
+    expect(exp.trilemma).toEqual({ fastRecovery: false, noStorm: true, noHerd: false }) // 不风暴但慢+仍惊群
+    expect(fj.trilemma).toEqual({ fastRecovery: false, noStorm: true, noHerd: true })   // 占两维仍缺低延迟、非银弹
+    expect(imm.scenarios.find((s: any) => s.id === 'manyAttempts')!.deadLettered).toBeGreaterThan(0) // 死信真落地
+    const ev = st.retryDlq.crosscheck.evidence
+    expect(Object.keys(ev).sort()).toEqual(['bucketAllowed', 'bucketRejected', 'busListeners', 'deadNotices', 'hashRingEmptyNodes', 'hashRingNodes', 'heapFired', 'idemEntries', 'poolAcquired', 'walLines', 'walReplayed'])
+    expect(ev.heapFired).toBe(12)
+    expect(ev.bucketAllowed).toBe(3)
+    expect(ev.bucketRejected).toBe(2)
+    expect(ev.walLines).toBe(3)
+    expect(ev.walReplayed).toBe(3)
+    expect(ev.idemEntries).toBe(1)
+    expect(ev.deadNotices).toBe(2)
+    expect(ev.busListeners).toBe(1)
+    expect(ev.poolAcquired).toBe(3)
+    expect(st.retryDlq.verdict.noUniversalWinner).toBe(true)
+    expect(st.retryDlq.verdict.fullJitterNotFreeLunch).toBe(true)
+    expect(st.retryDlq.verdict.noStormCausallyUnerasable).toBe(false) // 默认三开关未开
+    // 惰性缓存：二次 status 同引用
+    expect((await gc.status()).retryDlq).toBe(st.retryDlq)
+    // 现算入口可重跑、确定性（builtAt 也随 rdlNow）
+    const rerun = await gc.runRetryDlqStudy!()
+    expect(rerun.vectors).toEqual(st.retryDlq.vectors)
+    // 不连坐 KI-518
+    expect(st.delayQueue).toBe(null)
+  })
+
+  it('retryDlq 默认 null 非破坏；单开 zeroBackoff/perfectJitter 各自局部、rigged 向量现算 101/101/101 因果锁死 noStorm；可注入现成 study（KI-520）', async () => {
+    const plain = createGameCloud({ gameId: 'gidrdlq2', gamePort: 7772, sources, cloud: fakeCloud() })
+    expect(plain.runRetryDlqStudy).toBe(null)
+    const ps = await plain.status()
+    expect(ps.retryDlq).toBe(null)
+    expect(ps.delayQueue).toBe(null)
+    // 单开 zeroBackoff：恢复延迟归零抹 fastRecovery，但长故障施压暴涨 ⇒ noStorm 反噬，三协议全 100
+    const zero = createGameCloud({
+      gameId: 'gidrdlq3', gamePort: 7773, sources, cloud: fakeCloud(),
+      retryDlq: { zeroBackoff: true, now: 0 }, rdlNow: () => 0,
+    })
+    expect((await zero.status()).retryDlq.vectors).toEqual({ Immediate: '100', Exponential: '100', FullJitter: '100' })
+    // 单开 perfectJitter：只打散惊群，不给 Immediate 补 noStorm
+    const perf = createGameCloud({
+      gameId: 'gidrdlq4', gamePort: 7774, sources, cloud: fakeCloud(),
+      retryDlq: { perfectJitter: true, now: 0 }, rdlNow: () => 0,
+    })
+    expect((await perf.status()).retryDlq.vectors).toEqual({ Immediate: '101', Exponential: '011', FullJitter: '011' })
+    // rigged 三开关：向量由 trilemma 现算 101/101/101，noStorm 无一能翻回
+    const rig = createGameCloud({
+      gameId: 'gidrdlq5', gamePort: 7775, sources, cloud: fakeCloud(),
+      retryDlq: { rigged: true, now: 0 }, rdlNow: () => 0,
+    })
+    const rs = await rig.status()
+    expect(rs.retryDlq.vectors).toEqual({ Immediate: '101', Exponential: '101', FullJitter: '101' })
+    expect(rs.retryDlq.verdict.noUniversalWinner).toBe(false)
+    expect(rs.retryDlq.verdict.trilemmaDistinguishes).toBe(false)
+    expect(rs.retryDlq.verdict.noStormCausallyUnerasable).toBe(true)
+    for (const row of rs.retryDlq.rows) expect(row.trilemma.noStorm).toBe(false)
+    // 注入现成 study：直接用、builtAt 原样带出、不被 rdlNow 覆盖
+    const { retryDlqStudy } = await import('../../scripts/caesura-retry-dlq.mjs')
+    const study = retryDlqStudy({ now: () => 555 })
+    const injected = createGameCloud({
+      gameId: 'gidrdlq6', gamePort: 7776, sources, cloud: fakeCloud(),
+      retryDlq: study, rdlNow: () => 2222,
+    })
+    const st = await injected.status()
+    expect(st.retryDlq.builtAt).toBe(555)
+    expect(st.retryDlq.verdict.noUniversalWinner).toBe(true)
+  })
 })

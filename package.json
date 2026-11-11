@@ -36,6 +36,7 @@
     "cache:coherency:bench": "node scripts/caesura-cache-coherency.mjs",
     "delivery:bench": "node scripts/caesura-message-delivery.mjs",
     "delay:bench": "node scripts/caesura-delay-queue.mjs",
+    "retry:bench": "node scripts/caesura-retry-dlq.mjs",
     "redis:spring:bench": "node scripts/spring-redis-cache.mjs selfcheck",
     "status": "node scripts/phase-status.mjs",
     "status:embed": "node scripts/phase-status-embed.mjs",

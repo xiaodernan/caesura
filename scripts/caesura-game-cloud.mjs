@@ -37,6 +37,7 @@ import { configConsistencyStudy, dccSnapshot } from './caesura-config-consistenc
 import { cacheCoherencyStudy, cccSnapshot } from './caesura-cache-coherency.mjs'
 import { messageDeliveryStudy, mmdSnapshot } from './caesura-message-delivery.mjs'
 import { delayQueueStudy, delayQueueSnapshot } from './caesura-delay-queue.mjs'
+import { retryDlqStudy, retryDlqSnapshot } from './caesura-retry-dlq.mjs'
 import {
   createAimdCongestion,
   createCubicCongestion,
@@ -512,6 +513,25 @@ export function createGameCloud(opts = {}) {
     return dqCached
   }
 
+  // KI-520 消息重试退避与死信队列三协议诚实权衡（立刻重试 / 纯指数退避 / 指数退避+全抖动；opt-in）。
+  // opts.retryDlq===true 走钳制默认参数（可覆盖 now/seed/messages/maxAttempts/baseTicks/... ）；
+  // opts.retryDlq 为对象且 rows/vectors/verdict/crosscheck 齐全时当已构形 study 直接注入；
+  // 默认 retryDlq:false 非破坏（同 KI-518 法），显式开才接；不声称真 MQ/真 Redis DLQ/真跨机持久化。
+  const rdlCfg = opts.retryDlq === true ? {} : (opts.retryDlq && typeof opts.retryDlq === 'object' ? opts.retryDlq : null)
+  const rdlInjected = rdlCfg !== null && opts.retryDlq &&
+    typeof opts.retryDlq === 'object' && Array.isArray(opts.retryDlq.rows) &&
+    opts.retryDlq.vectors && opts.retryDlq.verdict && opts.retryDlq.crosscheck
+  let rdlCached = null
+  async function rdlSnapshotForStatus() {
+    if (rdlCfg === null) return null
+    if (rdlCached) return rdlCached
+    const study = rdlInjected
+      ? opts.retryDlq
+      : await retryDlqStudy({ ...rdlCfg, now: opts.rdlNow ?? rdlCfg.now })
+    rdlCached = retryDlqSnapshot(study)
+    return rdlCached
+  }
+
   // KI-513：分布式消息投递语义三协议诚实权衡（At-Most-Once / At-Least-Once / Exactly-Once，opt-in）。
   // opts.messageDelivery===true 用缺省规模；传对象逐项注入（now/seed/messages/manyKeys/retryLimit/...
   // 或 noCrash/ackReliable/freeIdempotency 单开关探针），或直接塞一只现成 study（duck-typed：带 rows/vectors/verdict/crosscheck/topology）。
@@ -602,6 +622,8 @@ export function createGameCloud(opts = {}) {
     runMessageDeliveryStudy: mmdCfg === null ? null : () => messageDeliveryStudy({ ...mmdCfg, now: opts.mmdNow ?? mmdCfg.now }),
     /** KI-518 延迟消息队列三协议诚实权衡研究件；缺 opts.delayQueue 时为 null；时间轮/最小堆/RedisZset × 六场景矩阵 + 三难向量 + 真件交叉印证（ring/Redis INCR/WAL/Bus/TokenBucket/B+树/对象池）。 */
     runDelayQueueStudy: dqCfg === null ? null : () => delayQueueStudy({ ...dqCfg, now: opts.dqNow ?? dqCfg.now }),
+    /** KI-520 消息重试退避与死信队列三协议诚实权衡研究件；缺 opts.retryDlq 时为 null；立刻重试/纯指数退避/指数退避+全抖动 × 六场景矩阵 + 三难向量（rigged 101/101/101 不硬造全 111）+ 七枚真件交叉印证（最小堆/令牌桶/WAL/哈希环/幂等缓存/死信总线/对象池）。 */
+    runRetryDlqStudy: rdlCfg === null ? null : () => retryDlqStudy({ ...rdlCfg, now: opts.rdlNow ?? rdlCfg.now }),
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
     gray: runtime.gray,
     /** 把游戏真 EventBus 按白名单routes 接进云事件总线（游戏侧一行：gc.connectGameBus(bus, routes)）。 */
@@ -648,6 +670,7 @@ export function createGameCloud(opts = {}) {
         cacheCoherency: await cccSnapshotForStatus(),
         messageDelivery: await mmdSnapshotForStatus(),
         delayQueue: await dqSnapshotForStatus(),
+        retryDlq: await rdlSnapshotForStatus(),
       }
     },
   }

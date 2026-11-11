@@ -656,4 +656,35 @@ describe('spring-family-mesh-e2e', () => {
     expect(plainDq.delayQueueSnapshot).toBe(null)
     expect(plainDq.messageDeliverySnapshot).toBe(null)
   })
+
+  it('e2e KI-520：retryDlq=true ⇒ 主链照常跑通，retryDlqSnapshot 带三协议×六场景/三难向量/七真件交叉印证', async () => {
+    const e = runMeshE2E({ retryDlq: true, rdlNow: () => 8888 })
+    const r = await e.run()
+    expect(r.started?.registered).toBe(true)          // 主链语义逐字不动
+    expect(r.callRes?.ok).toBe(true)
+    const d = r.retryDlqSnapshot
+    expect(d).not.toBe(null)
+    expect(d!.builtAt).toBe(8888)
+    expect(d!.config.scenarios.length).toBe(6)
+    expect(d!.rows.length).toBe(3)
+    expect(d!.vectors).toEqual({ Immediate: '100', Exponential: '010', FullJitter: '011' })
+    const imm = d!.rows.find((row: any) => row.protocol === 'Immediate')!
+    const fj = d!.rows.find((row: any) => row.protocol === 'FullJitter')!
+    expect(imm.trilemma).toEqual({ fastRecovery: true, noStorm: false, noHerd: false })
+    expect(fj.trilemma).toEqual({ fastRecovery: false, noStorm: true, noHerd: true })
+    expect(imm.scenarios.find((s: any) => s.id === 'manyAttempts')!.deadLettered).toBeGreaterThan(0) // 死信真落地
+    const ev = d!.crosscheck.evidence
+    expect(Object.keys(ev).sort()).toEqual(['bucketAllowed', 'bucketRejected', 'busListeners', 'deadNotices', 'hashRingEmptyNodes', 'hashRingNodes', 'heapFired', 'idemEntries', 'poolAcquired', 'walLines', 'walReplayed'])
+    expect(ev.heapFired).toBe(12)
+    expect(ev.walReplayed).toBe(3)
+    expect(ev.bucketRejected).toBe(2)
+    expect(ev.idemEntries).toBe(1)
+    expect(d!.verdict.noUniversalWinner).toBe(true)
+    expect(d!.verdict.fullJitterNotFreeLunch).toBe(true)
+    expect(r).toHaveProperty('retryDlqSnapshot')
+    // 未配 retryDlq 时为 null（非破坏、不连坐 KI-518）
+    const plainRdlq = await runMeshE2E().run()
+    expect(plainRdlq.retryDlqSnapshot).toBe(null)
+    expect(plainRdlq.delayQueueSnapshot).toBe(null)
+  })
 })

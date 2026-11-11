@@ -119,6 +119,12 @@ export interface GameCloudOptions {
    * （带 rows/vectors/verdict/crosscheck/topology 五块）。默认 false 不装配。 */
   delayQueue?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck: any; topology: any; [k: string]: any }
   dqNow?: () => number
+  /**
+   * KI-520：true 装配消息重试退避与死信队列三协议权衡（Immediate / Exponential / FullJitter + 真最小堆/令牌桶/WAL/哈希环/幂等缓存/死信总线/对象池 交叉印证）。
+   * 对象逐项注入（now/seed/messages/maxAttempts/baseTicks/capTicks/outageTicks/recoverAtTick/stormBudget/herdBudget/lagBudget/zeroBackoff/perfectJitter/noRetryBudget/rigged/...），
+   * 或直接塞一只现成 study（带 rows/vectors/verdict/crosscheck/topology 五块）。默认 false 不装配。 */
+  retryDlq?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck: any; topology: any; [k: string]: any }
+  rdlNow?: () => number
 }
 
 /** 创建一只游戏侧开箱即用云。 */
@@ -169,6 +175,8 @@ export function createGameCloud(opts?: GameCloudOptions): {
   runMessageDeliveryStudy: (() => Promise<any>) | null
   /** KI-518：延迟消息队列调度三协议汇总的现算入口（未配 opts.delayQueue 时为 null）；真跑 TimingWheel/MinHeap/RedisZset × 六场景矩阵 + 三难向量 + 七枚真件交叉印证；rigged 向量由 trilemma 现算不硬覆盖。 */
   runDelayQueueStudy: (() => Promise<any>) | null
+  /** KI-520：消息重试退避与死信队列三协议汇总的现算入口（未配 opts.retryDlq 时为 null）；真跑 Immediate/Exponential/FullJitter × 六场景矩阵 + 三难向量 + 七枚真件交叉印证；rigged 101/101/101 因果锁死 noStorm、不硬造全 111。 */
+  runRetryDlqStudy: (() => Promise<any>) | null
   /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）。 */
   gray: any
   /** KI-489：把游戏真 EventBus（duck-typed {on,emit}）按白名单接进云事件总线。 */

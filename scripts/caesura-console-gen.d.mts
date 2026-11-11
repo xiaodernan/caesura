@@ -448,7 +448,33 @@ export interface DelayQueueReading {
   builtAt: number
 }
 
-/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511 + KI-512 + KI-513 + KI-518：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 + 缓存读写一致性 + 消息投递语义 + 延迟消息队列调度）。 */
+/** KI-520：消息重试退避 × 死信队列三协议（Immediate / Exponential / FullJitter × 六场景 + 三难向量 + 七枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
+export interface RetryDlqReading {
+  config: Record<string, any>
+  rows: Array<{
+    protocol: string
+    scenarios: Array<{
+      id: string; protocol: string; delivered: number; retries: number; deadLettered: number
+      stormPerMsg: number; herdPeaks: number; herdRatio: number; peakConcurrency: number; recoveryLag: number
+      fastRecovery: boolean; noStorm: boolean; noHerd: boolean; fault: string
+    }>
+    totals: { delivered: number; retries: number; deadLettered: number; stormPerMsg: number; herdPeaks: number; recoveryLag: number }
+    trilemma: { fastRecovery: boolean; noStorm: boolean; noHerd: boolean }
+  }>
+  vectors: Record<string, string>
+  crosscheck: {
+    evidence: {
+      heapFired: number; bucketAllowed: number; bucketRejected: number; walLines: number; walReplayed: number
+      hashRingNodes: number; hashRingEmptyNodes: number; idemEntries: number
+      deadNotices: number; busListeners: number; poolAcquired: number
+    }
+  }
+  verdict: Record<string, any>
+  topology: Record<string, string>
+  builtAt: number
+}
+
+/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511 + KI-512 + KI-513 + KI-518 + KI-520：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 + 缓存读写一致性 + 消息投递语义 + 延迟消息队列调度 + 消息重试退避与死信）。 */
 export interface SystemsBlock {
   lsm: LsmReading | null
   hw: HwReading | null
@@ -466,6 +492,7 @@ export interface SystemsBlock {
   cacheCoherency: CacheCoherencyReading | null
   messageDelivery: MessageDeliveryReading | null
   delayQueue: DelayQueueReading | null
+  retryDlq: RetryDlqReading | null
   builtAt: number
 }
 
@@ -557,6 +584,17 @@ export function buildSnapshot(opts?: {
   dqZeroTick?: boolean
   dqFreeHeapOps?: boolean
   dqSharedBackend?: boolean
+  /** KI-520：false 关掉消息重试退避与死信维（兼容旧快照）；rdlq* 注入规模/退避档/rigged 开关。 */
+  retryDlq?: boolean
+  rdlqMessages?: number
+  rdlqMaxAttempts?: number
+  rdlqBaseTicks?: number
+  rdlqCapTicks?: number
+  rdlqOutageTicks?: number
+  rdlqRecoverAtTick?: number
+  rdlqZeroBackoff?: boolean
+  rdlqPerfectJitter?: boolean
+  rdlqNoRetryBudget?: boolean
 }): Promise<ConsoleSnapshot>
 
 /** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511 + KI-512 + KI-513：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 + 缓存读写一致性 + 消息投递语义 十五维系统读数；击穿并发 ⇒ async。 */
@@ -625,6 +663,17 @@ export function buildSystems(opts?: {
   dqZeroTick?: boolean
   dqFreeHeapOps?: boolean
   dqSharedBackend?: boolean
+  /** KI-520：false 关掉消息重试退避与死信维（兼容旧快照）；rdlq* 注入规模/退避档/rigged 开关。 */
+  retryDlq?: boolean
+  rdlqMessages?: number
+  rdlqMaxAttempts?: number
+  rdlqBaseTicks?: number
+  rdlqCapTicks?: number
+  rdlqOutageTicks?: number
+  rdlqRecoverAtTick?: number
+  rdlqZeroBackoff?: boolean
+  rdlqPerfectJitter?: boolean
+  rdlqNoRetryBudget?: boolean
 }): Promise<SystemsBlock>
 
 /** KI-501：真跑缓存防护三件套（击穿/穿透/雪崩）收敛成前端三面板紧凑读数；单维失败落 null。 */
@@ -746,6 +795,21 @@ export function buildDelayQueueReading(opts: {
   dqFreeHeapOps?: boolean
   dqSharedBackend?: boolean
 }, now: () => number): Promise<DelayQueueReading | null>
+
+/** KI-520：真跑消息重试退避 × 死信队列三协议（Immediate / Exponential / FullJitter × 六场景矩阵 + 三难向量 + 七枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
+export function buildRetryDlqReading(opts: {
+  now?: () => number
+  retryDlq?: boolean
+  rdlqMessages?: number
+  rdlqMaxAttempts?: number
+  rdlqBaseTicks?: number
+  rdlqCapTicks?: number
+  rdlqOutageTicks?: number
+  rdlqRecoverAtTick?: number
+  rdlqZeroBackoff?: boolean
+  rdlqPerfectJitter?: boolean
+  rdlqNoRetryBudget?: boolean
+}, now: () => number): Promise<RetryDlqReading | null>
 
 export function realScenarioOpts(id: string): Record<string, any>
 

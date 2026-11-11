@@ -1170,3 +1170,54 @@ describe('KI-518 · delayQueue 延迟消息队列面板：三协议 × 六场景
     expect(dom2.els['dld-probes'].innerHTML).toContain('data-verdict="noUniversalWinner"')
   })
 })
+
+describe('KI-520 · retryDlq 重试退避 × 死信面板：三协议 × 六场景 + 三难向量 + 真件交叉印证', () => {
+  const real2 = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+
+  it('真快照下渲染：矩阵/横条/判词/交叉印证/探针全部到位', async () => {
+    const dom = await runApp(real2)
+    const rdlq = real2.systems.retryDlq
+    expect(rdlq).toBeTruthy()
+    const matrix = dom.els['rdq-matrix'].innerHTML
+    expect(matrix).toContain('rdq-mat-head')
+    for (const row of rdlq.rows) expect(matrix).toContain('data-p="' + row.protocol + '"')
+    for (const s of rdlq.config.scenarios) expect(matrix).toContain('data-s="' + s + '"')
+    expect(dom.els['rdq-ladder'].innerHTML).toContain('data-p="FullJitter"')
+    const tri = dom.els['rdq-trilemma'].innerHTML
+    expect(tri).toContain('rdq-vec-head')
+    expect(tri).toContain('data-k="fastRecovery"')
+    expect(tri).toContain('data-p="Immediate" data-k="fastRecovery" data-v="1"')
+    expect(tri).toContain('data-p="Immediate" data-k="noStorm" data-v="0"')
+    expect(tri).toContain('data-p="Exponential" data-k="noStorm" data-v="1"')
+    expect(tri).toContain('data-p="FullJitter" data-k="noHerd" data-v="1"')
+    const cx = dom.els['rdq-crosscheck'].innerHTML
+    expect(cx).toContain('createMinHeapDelayQueue')
+    expect(cx).toContain('createTokenBucket')
+    expect(cx).toContain('createWal')
+    expect(cx).toContain('createHashRing')
+    expect(cx).toContain('createRedisCache')
+    expect(cx).toContain('createBus')
+    expect(cx).toContain('createObjectPool')
+    const probes = dom.els['rdq-probes'].innerHTML
+    expect(probes).toContain('data-verdict="noUniversalWinner"')
+    expect(probes).toContain('data-verdict="immediateStorms"')
+    expect(probes).toContain('data-verdict="exponentialNoStorm"')
+  })
+
+  it('systems.retryDlq 缺失 / 证据缺失：真实降级、绝不伪造', async () => {
+    const noRdq = JSON.parse(JSON.stringify(real2))
+    noRdq.systems.retryDlq = null
+    const dom = await runApp(noRdq)
+    expect(dom.els['rdq-matrix'].innerHTML).toContain('暂缺')
+    expect(dom.els['rdq-ladder'].innerHTML).toBe('')
+    expect(dom.els['rdq-trilemma'].innerHTML).toContain('暂缺')
+    expect(dom.els['rdq-matrix-note'].textContent).toContain('systems.retryDlq 缺失')
+
+    const partial = JSON.parse(JSON.stringify(real2))
+    partial.systems.retryDlq.crosscheck = null
+    const dom2 = await runApp(partial)
+    expect(dom2.els['rdq-crosscheck'].innerHTML).toContain('真件交叉印证缺失')
+    expect(dom2.els['rdq-crosscheck'].innerHTML).not.toContain('createWal')
+    expect(dom2.els['rdq-probes'].innerHTML).toContain('data-verdict="noUniversalWinner"')
+  })
+})

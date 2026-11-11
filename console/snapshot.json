@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794391585499,
+  "generatedAt": 1794380367996,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1365,12 +1365,12 @@
           "keys": 1,
           "versions": 2,
           "commitLogSize": 1,
-          "now": 1794391585501
+          "now": 1794380367998
         },
         "final": {
           "A": {
             "value": 101,
-            "commitTs": 1794391585501,
+            "commitTs": 1794380367998,
             "tombstone": false
           }
         }
@@ -3646,7 +3646,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794391585499,
+                "lastTimestamp": 1794380367996,
                 "workerId": 1
               },
               "fault": {
@@ -3742,7 +3742,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794391585499,
+                "lastTimestamp": 1794380367996,
                 "workerId": 1
               },
               "fault": {
@@ -3774,7 +3774,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794391585500,
+                "lastTimestamp": 1794380367997,
                 "workerId": 1
               },
               "fault": {
@@ -3806,7 +3806,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794391585499,
+                "lastTimestamp": 1794380367996,
                 "workerId": 1
               },
               "fault": {
@@ -4522,7 +4522,7 @@
         "capacity": 8,
         "perShardCap": 2
       },
-      "builtAt": 1794391585499
+      "builtAt": 1794380367996
     },
     "configConsistency": {
       "config": {
@@ -5020,7 +5020,7 @@
         "burstCount": 12,
         "windowMs": 10000
       },
-      "builtAt": 1794391585499
+      "builtAt": 1794380367996
     },
     "cacheCoherency": {
       "config": {
@@ -5549,7 +5549,7 @@
         "crashAtWrite": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794391585499
+      "builtAt": 1794380367996
     },
     "messageDelivery": {
       "config": {
@@ -6038,10 +6038,10 @@
         "crashAfterSendAt": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794391585499
+      "builtAt": 1794380367996
     },
     "delayQueue": {
-      "builtAt": 1794391585499,
+      "builtAt": 1794380367996,
       "config": {
         "seed": 518,
         "tasks": 12,
@@ -6068,7 +6068,7 @@
               "id": "allOk",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 47804,
+              "lateMs": 5804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6080,7 +6080,7 @@
               "id": "tickSkew",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 47804,
+              "lateMs": 5804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6092,7 +6092,7 @@
               "id": "farFuture",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 48136,
+              "lateMs": 6136,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6104,7 +6104,7 @@
               "id": "manyCancels",
               "protocol": "TimingWheel",
               "fired": 6,
-              "lateMs": 23858,
+              "lateMs": 2858,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6128,7 +6128,7 @@
               "id": "concurrentWorkers",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 47804,
+              "lateMs": 5804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6139,7 +6139,7 @@
           ],
           "totals": {
             "fired": 54,
-            "lateMs": 215406,
+            "lateMs": 26406,
             "duplicatePickups": 0,
             "lostOnRestart": 6,
             "opUnits": 72
@@ -6374,6 +6374,424 @@
         "RedisZset": "ZRANGEBYSCORE/ZREM 原子摘取（可注入 atomicPick）；跨 worker 共享；轮询晚点 + 中心 RTT"
       }
     },
-    "builtAt": 1794391585499
+    "retryDlq": {
+      "builtAt": 0,
+      "config": {
+        "seed": 520,
+        "messages": 16,
+        "maxAttempts": 4,
+        "baseTicks": 4,
+        "capTicks": 16,
+        "outageTicks": 24,
+        "recoverAtTick": 8,
+        "stormBudget": 2,
+        "herdBudget": 0.5,
+        "lagBudget": 0,
+        "zeroBackoff": false,
+        "perfectJitter": false,
+        "noRetryBudget": false,
+        "scenarios": [
+          "allOk",
+          "transientFailure",
+          "sustainedOutage",
+          "synchronizedFailures",
+          "manyAttempts",
+          "downstreamSlow"
+        ]
+      },
+      "rows": [
+        {
+          "protocol": "Immediate",
+          "scenarios": [
+            {
+              "id": "allOk",
+              "protocol": "Immediate",
+              "delivered": 16,
+              "retries": 0,
+              "deadLettered": 0,
+              "stormPerMsg": 0,
+              "herdPeaks": 0,
+              "herdRatio": 0,
+              "peakConcurrency": 4,
+              "recoveryLag": 0,
+              "fastRecovery": true,
+              "noStorm": true,
+              "noHerd": true,
+              "fault": "全程健康、零失败"
+            },
+            {
+              "id": "transientFailure",
+              "protocol": "Immediate",
+              "delivered": 0,
+              "retries": 64,
+              "deadLettered": 16,
+              "stormPerMsg": 0,
+              "herdPeaks": 0,
+              "herdRatio": 0,
+              "peakConcurrency": 16,
+              "recoveryLag": 0,
+              "fastRecovery": true,
+              "noStorm": true,
+              "noHerd": true,
+              "fault": "短故障后恢复，量恢复延迟"
+            },
+            {
+              "id": "sustainedOutage",
+              "protocol": "Immediate",
+              "delivered": 0,
+              "retries": 64,
+              "deadLettered": 16,
+              "stormPerMsg": 3,
+              "herdPeaks": 0,
+              "herdRatio": 0,
+              "peakConcurrency": 16,
+              "recoveryLag": 0,
+              "fastRecovery": true,
+              "noStorm": false,
+              "noHerd": true,
+              "fault": "长故障全程失败，量重试风暴"
+            },
+            {
+              "id": "synchronizedFailures",
+              "protocol": "Immediate",
+              "delivered": 16,
+              "retries": 16,
+              "deadLettered": 0,
+              "stormPerMsg": 0,
+              "herdPeaks": 16,
+              "herdRatio": 1,
+              "peakConcurrency": 16,
+              "recoveryLag": 0,
+              "fastRecovery": true,
+              "noStorm": true,
+              "noHerd": false,
+              "fault": "N 条同刻首投失败，量惊群"
+            },
+            {
+              "id": "manyAttempts",
+              "protocol": "Immediate",
+              "delivered": 15,
+              "retries": 4,
+              "deadLettered": 1,
+              "stormPerMsg": 0,
+              "herdPeaks": 0,
+              "herdRatio": 0,
+              "peakConcurrency": 5,
+              "recoveryLag": 0,
+              "fastRecovery": true,
+              "noStorm": true,
+              "noHerd": true,
+              "fault": "单条永不成功，量死信上限"
+            },
+            {
+              "id": "downstreamSlow",
+              "protocol": "Immediate",
+              "delivered": 0,
+              "retries": 64,
+              "deadLettered": 16,
+              "stormPerMsg": 0,
+              "herdPeaks": 0,
+              "herdRatio": 0,
+              "peakConcurrency": 16,
+              "recoveryLag": 0,
+              "fastRecovery": true,
+              "noStorm": true,
+              "noHerd": true,
+              "fault": "下游恢复慢，量恢复延迟与施压交叉"
+            }
+          ],
+          "totals": {
+            "delivered": 47,
+            "retries": 212,
+            "deadLettered": 49,
+            "stormPerMsg": 3,
+            "herdPeaks": 16,
+            "recoveryLag": 0
+          },
+          "trilemma": {
+            "fastRecovery": true,
+            "noStorm": false,
+            "noHerd": false
+          }
+        },
+        {
+          "protocol": "Exponential",
+          "scenarios": [
+            {
+              "id": "allOk",
+              "protocol": "Exponential",
+              "delivered": 16,
+              "retries": 0,
+              "deadLettered": 0,
+              "stormPerMsg": 0,
+              "herdPeaks": 0,
+              "herdRatio": 0,
+              "peakConcurrency": 4,
+              "recoveryLag": 0,
+              "fastRecovery": true,
+              "noStorm": true,
+              "noHerd": true,
+              "fault": "全程健康、零失败"
+            },
+            {
+              "id": "transientFailure",
+              "protocol": "Exponential",
+              "delivered": 16,
+              "retries": 16,
+              "deadLettered": 0,
+              "stormPerMsg": 0,
+              "herdPeaks": 0,
+              "herdRatio": 0,
+              "peakConcurrency": 4,
+              "recoveryLag": 3,
+              "fastRecovery": false,
+              "noStorm": true,
+              "noHerd": true,
+              "fault": "短故障后恢复，量恢复延迟"
+            },
+            {
+              "id": "sustainedOutage",
+              "protocol": "Exponential",
+              "delivered": 0,
+              "retries": 64,
+              "deadLettered": 16,
+              "stormPerMsg": 0.25,
+              "herdPeaks": 0,
+              "herdRatio": 0,
+              "peakConcurrency": 4,
+              "recoveryLag": 0,
+              "fastRecovery": true,
+              "noStorm": true,
+              "noHerd": true,
+              "fault": "长故障全程失败，量重试风暴"
+            },
+            {
+              "id": "synchronizedFailures",
+              "protocol": "Exponential",
+              "delivered": 16,
+              "retries": 16,
+              "deadLettered": 0,
+              "stormPerMsg": 0,
+              "herdPeaks": 16,
+              "herdRatio": 1,
+              "peakConcurrency": 16,
+              "recoveryLag": 0,
+              "fastRecovery": true,
+              "noStorm": true,
+              "noHerd": false,
+              "fault": "N 条同刻首投失败，量惊群"
+            },
+            {
+              "id": "manyAttempts",
+              "protocol": "Exponential",
+              "delivered": 15,
+              "retries": 4,
+              "deadLettered": 1,
+              "stormPerMsg": 0,
+              "herdPeaks": 0,
+              "herdRatio": 0,
+              "peakConcurrency": 4,
+              "recoveryLag": 0,
+              "fastRecovery": true,
+              "noStorm": true,
+              "noHerd": true,
+              "fault": "单条永不成功，量死信上限"
+            },
+            {
+              "id": "downstreamSlow",
+              "protocol": "Exponential",
+              "delivered": 16,
+              "retries": 16,
+              "deadLettered": 0,
+              "stormPerMsg": 0,
+              "herdPeaks": 0,
+              "herdRatio": 0,
+              "peakConcurrency": 4,
+              "recoveryLag": 3,
+              "fastRecovery": false,
+              "noStorm": true,
+              "noHerd": true,
+              "fault": "下游恢复慢，量恢复延迟与施压交叉"
+            }
+          ],
+          "totals": {
+            "delivered": 79,
+            "retries": 116,
+            "deadLettered": 17,
+            "stormPerMsg": 0.25,
+            "herdPeaks": 16,
+            "recoveryLag": 6
+          },
+          "trilemma": {
+            "fastRecovery": false,
+            "noStorm": true,
+            "noHerd": false
+          }
+        },
+        {
+          "protocol": "FullJitter",
+          "scenarios": [
+            {
+              "id": "allOk",
+              "protocol": "FullJitter",
+              "delivered": 16,
+              "retries": 0,
+              "deadLettered": 0,
+              "stormPerMsg": 0,
+              "herdPeaks": 0,
+              "herdRatio": 0,
+              "peakConcurrency": 4,
+              "recoveryLag": 0,
+              "fastRecovery": true,
+              "noStorm": true,
+              "noHerd": true,
+              "fault": "全程健康、零失败"
+            },
+            {
+              "id": "transientFailure",
+              "protocol": "FullJitter",
+              "delivered": 16,
+              "retries": 34,
+              "deadLettered": 0,
+              "stormPerMsg": 0,
+              "herdPeaks": 0,
+              "herdRatio": 0,
+              "peakConcurrency": 8,
+              "recoveryLag": 13,
+              "fastRecovery": false,
+              "noStorm": true,
+              "noHerd": true,
+              "fault": "短故障后恢复，量恢复延迟"
+            },
+            {
+              "id": "sustainedOutage",
+              "protocol": "FullJitter",
+              "delivered": 0,
+              "retries": 64,
+              "deadLettered": 16,
+              "stormPerMsg": 1.0097,
+              "herdPeaks": 0,
+              "herdRatio": 0,
+              "peakConcurrency": 8,
+              "recoveryLag": 0,
+              "fastRecovery": true,
+              "noStorm": true,
+              "noHerd": true,
+              "fault": "长故障全程失败，量重试风暴"
+            },
+            {
+              "id": "synchronizedFailures",
+              "protocol": "FullJitter",
+              "delivered": 16,
+              "retries": 16,
+              "deadLettered": 0,
+              "stormPerMsg": 0,
+              "herdPeaks": 5,
+              "herdRatio": 0.3125,
+              "peakConcurrency": 16,
+              "recoveryLag": 0,
+              "fastRecovery": true,
+              "noStorm": true,
+              "noHerd": true,
+              "fault": "N 条同刻首投失败，量惊群"
+            },
+            {
+              "id": "manyAttempts",
+              "protocol": "FullJitter",
+              "delivered": 15,
+              "retries": 4,
+              "deadLettered": 1,
+              "stormPerMsg": 0,
+              "herdPeaks": 0,
+              "herdRatio": 0,
+              "peakConcurrency": 5,
+              "recoveryLag": 0,
+              "fastRecovery": true,
+              "noStorm": true,
+              "noHerd": true,
+              "fault": "单条永不成功，量死信上限"
+            },
+            {
+              "id": "downstreamSlow",
+              "protocol": "FullJitter",
+              "delivered": 16,
+              "retries": 34,
+              "deadLettered": 0,
+              "stormPerMsg": 0,
+              "herdPeaks": 0,
+              "herdRatio": 0,
+              "peakConcurrency": 8,
+              "recoveryLag": 13,
+              "fastRecovery": false,
+              "noStorm": true,
+              "noHerd": true,
+              "fault": "下游恢复慢，量恢复延迟与施压交叉"
+            }
+          ],
+          "totals": {
+            "delivered": 79,
+            "retries": 152,
+            "deadLettered": 17,
+            "stormPerMsg": 1.0097,
+            "herdPeaks": 5,
+            "recoveryLag": 26
+          },
+          "trilemma": {
+            "fastRecovery": false,
+            "noStorm": true,
+            "noHerd": true
+          }
+        }
+      ],
+      "vectors": {
+        "Immediate": "100",
+        "Exponential": "010",
+        "FullJitter": "011"
+      },
+      "crosscheck": {
+        "evidence": {
+          "heapFired": 12,
+          "bucketAllowed": 3,
+          "bucketRejected": 2,
+          "walLines": 3,
+          "walReplayed": 3,
+          "hashRingNodes": 2,
+          "hashRingEmptyNodes": 0,
+          "idemEntries": 1,
+          "deadNotices": 2,
+          "busListeners": 1,
+          "poolAcquired": 3
+        }
+      },
+      "verdict": {
+        "vectors": {
+          "Immediate": "100",
+          "Exponential": "010",
+          "FullJitter": "011"
+        },
+        "trilemmaDistinguishes": true,
+        "noProtocolWinsAll": true,
+        "noUniversalWinner": true,
+        "immediateFastest": true,
+        "immediateStorms": true,
+        "immediateHerds": true,
+        "exponentialNoStorm": true,
+        "exponentialHerds": true,
+        "exponentialSlowRecovery": true,
+        "fullJitterNoStorm": true,
+        "fullJitterNoHerd": true,
+        "fullJitterNotFreeLunch": true,
+        "dlqLands": true,
+        "dlqReleasedWhenNoBudget": true,
+        "permanentOutageVacuousTrue": true,
+        "noStormCausallyUnerasable": false
+      },
+      "topology": {
+        "Immediate": "失败即重投（最小 RTT 1 tick）；恢复最快；长故障风暴 + 同刻惊群",
+        "Exponential": "base×2^(n-1) 钳 cap；不风暴；恢复要等退避档；无抖动仍同步撞车",
+        "FullJitter": "rand×min(cap, base×2^(n-1))；不风暴 + 不惊群；仍等退避档 ⇒ 缺低恢复延迟，非银弹"
+      }
+    },
+    "builtAt": 1794380367996
   }
 }

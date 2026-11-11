@@ -54,6 +54,7 @@
       renderCacheCoherency(snap.systems ? snap.systems.cacheCoherency : null)
       renderMessageDelivery(snap.systems ? snap.systems.messageDelivery : null)
       renderDelayQueue(snap.systems ? snap.systems.delayQueue : null)
+      renderRetryDlq(snap.systems ? snap.systems.retryDlq : null)
       setLive(true, result.source)
     }).catch(function (e) {
       setLive(false, 'error')
@@ -2008,6 +2009,123 @@
     if (note) note.textContent = '维序固定 [低开销 / 即时精确 / 共享可持久化]。向量 TimingWheel=100 / MinHeap=010 / RedisZset=001，互异、无一 111。' +
       '可证伪：rigged zeroTick+freeHeapOps+sharedBackend 齐开 ⇒ 时间轮与最小堆退化 111，但 ZSET 的轮询周期晚点 + 中心 RTT 没有对应开关可抹 ⇒ 向量现算 111/111/001、判词仍翻 false（不硬覆盖成全 111）；单开 zeroTick 只让时间轮精确（不连坐）。' +
       'workerRestart 只罚 sharedDurable 不连带罚 punctual。全为确定性教学状态机，结构计数，不声称墙钟/QPS/真跨机/真 Lua/真有序集合。'
+  }
+
+
+  /* ================= KI-520 消息重试退避 × 死信 · 第十七维（rdq 族） ================= */
+
+  function renderRetryDlq(rdlq) {
+    renderRdqMatrix(rdlq && rdlq.rows, rdlq && rdlq.config)
+    renderRdqLadder(rdlq && rdlq.rows)
+    renderRdqTrilemma(rdlq && rdlq.rows, rdlq && rdlq.verdict, rdlq && rdlq.crosscheck)
+  }
+
+  function rdqMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 暂缺</div>'
+    if (note) note.textContent = 'systems.retryDlq 缺失 — 跑一次 npm run console:data 即可补齐'
+  }
+
+  function rdqState(s) {
+    if (!s) return { cls: '', ch: '·' }
+    if (isNum(s.deadLettered) && s.deadLettered > 0) return { cls: 'lost', ch: '死' }
+    if (isNum(s.retries) && s.retries > 64) return { cls: 'expensive', ch: '重' }
+    if (s.noStorm === false) return { cls: 'lost', ch: '暴' }
+    if (s.noHerd === false) return { cls: 'dup', ch: '惊' }
+    if (s.fastRecovery && s.noStorm && s.noHerd) return { cls: 'ok', ch: '✓' }
+    return { cls: '', ch: '?' }
+  }
+
+  function renderRdqMatrix(rows, config) {
+    var box = $('#rdq-matrix'), note = $('#rdq-matrix-note')
+    if (!Array.isArray(rows) || !rows.length || !config || !Array.isArray(config.scenarios)) {
+      rdqMissing(box, note, 'rdq 矩阵'); return
+    }
+    var scenarios = config.scenarios
+    var head = '<div class="rdq-mat-row rdq-mat-head"><span class="rdq-mat-proto">协议</span>' +
+      scenarios.map(function (sc) { return '<span class="rdq-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="rdq-mat-cost">死/暴/怀</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = rdqState(cell)
+        return '<span class="rdq-cell ' + st.cls + '" data-p="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var t = row.totals || {}
+      return '<div class="rdq-mat-row" data-p="' + esc(row.protocol) + '">' +
+        '<span class="rdq-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="rdq-mat-cost"><b>' + esc(fmt(t.deadLettered)) + '</b></span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = '失败即重投(Immediate)/ 指数退避(Exponential)/ 全抖动退避(FullJitter) × 六场景。' +
+      'Immediate 零退避 1 tick 重试 ⇒ 风暴全由自身挤死预算；Exponential 退避压低施压频率但同刻失败会共振惊群——同一 delay 同时重试；' +
+      'FullJitter 每条独立 rand 撒开 ⇒ 无风暴 ∧ 无惊群，代价是恢复更慢藏在 recoveryLag 里。' +
+      '全为确定性教学状态机，结构计数，不声称墙钟/QPS/真 MQ/真 Redis DLQ。'
+  }
+
+  function renderRdqLadder(rows) {
+    var box = $('#rdq-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.totals && isNum(r.totals.retries) ? r.totals.retries : 0 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var t = r.totals || {}
+      var w = isNum(t.retries) ? Math.round(t.retries / max * 100) : 0
+      return '<div class="rdq-line" data-p="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="rdq-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">重试 ' + esc(fmt(t.retries)) + ' · 死信 ' + esc(fmt(t.deadLettered)) + ' · stormΣ ' + esc(fmt(t.stormPerMsg)) + ' · 惊峰 ' + esc(fmt(t.herdPeaks)) + ' · lag ' + esc(fmt(t.recoveryLag)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderRdqTrilemma(rows, verdict, crosscheck) {
+    var box = $('#rdq-trilemma'), cxBox = $('#rdq-crosscheck'), note = $('#rdq-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      rdqMissing(box, note, 'rdq 判词'); if (cxBox) cxBox.innerHTML = ''; return
+    }
+    var flags = [['fastRecovery', '快速恢复'], ['noStorm', '无重试风暴'], ['noHerd', '无惊群']]
+    var head = '<div class="rdq-vec rdq-vec-head"><span class="proto">协议</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '</div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="rdq-flag ' + (yes ? 'yes' : 'no') + '" data-p="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      return '<div class="rdq-vec" data-p="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells + '</div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>真 <b>createMinHeapDelayQueue</b> advance 出队 <b>' + esc(fmt(ev.heapFired)) + '</b> 条（tile 20/8% 上限样本）</div>' +
+          '<div>真 <b>createTokenBucket</b> 5 次 allow 中放行 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> 次（拒 ' + esc(fmt(ev.bucketRejected)) + '）</div>' +
+          '<div>真 <b>createWal</b> append ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b>（sink 进程内、重机损毁不 durable）</div>' +
+          '<div>真 <b>createHashRing</b> ' + esc(fmt(ev.hashRingNodes)) + ' 节点 · 空片 ' + esc(fmt(ev.hashRingEmptyNodes)) + '</div>' +
+          '<div>真 <b>createRedisCache</b> 幂等键双写后 entries=' + esc(fmt(ev.idemEntries)) + '（命中去重证）</div>' +
+          '<div>真 <b>createBus</b> 死信通知 listenerCount <b>' + esc(fmt(ev.busListeners)) + '</b> · publish ' + esc(fmt(ev.deadNotices)) + ' 条</div>' +
+          '<div>真 <b>createObjectPool</b> acquire×3（任务对象复用）</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">真件交叉印证缺失</div>'
+      }
+    }
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var ziStorm = v.immediateStorms ? '是' : '否'
+    var expNoStorm = v.exponentialNoStorm ? '是' : '否'
+    var jitterNoHerd = v.fullJitterNoHerd ? '是' : '否'
+    var chips = [
+      '<span class="chip" data-verdict="immediateStorms"><b>Immediate</b> 风暴 ' + ziStorm + ' · 同刻惊群必然</span>',
+      '<span class="chip" data-verdict="exponentialNoStorm"><b>Exponential</b> 无风暴 ' + expNoStorm + ' · 单 delay 同刻共振</span>',
+      '<span class="chip" data-verdict="fullJitterNoHerd"><b>FullJitter</b> 无惊群 ' + jitterNoHerd + ' · 恢复代价藏在 lag 里</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' + (noWin ? '✓ 没有协议同时占三难' : '判词塌陷') + '</span>',
+    ]
+    var probes = $('#rdq-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维序固定 [快速恢复 / 无重试风暴 / 无惊群]。向量 Immediate=100 / Exponential=010 / FullJitter=011，三者互异、无一 111。' +
+      '可证伪：rigged zeroBackoff+perfectJitter+noRetryBudget 齐开 ⇒ 三协议退 001/001/001、判词翻 false；' +
+      'fastRecovery 只罚有故障恢复的场景、slow=010 那行 single switch 只动一处。workerRestart 不以此维为卖点（本件不考重启）。' +
+      '全为确定性教学状态机，结构计数，不声称墙钟/QPS/真 MQ/真 Redis DLQ。'
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)

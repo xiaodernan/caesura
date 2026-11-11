@@ -33,6 +33,7 @@ import { configConsistencyStudy, dccSnapshot } from './caesura-config-consistenc
 import { cacheCoherencyStudy, cccSnapshot } from './caesura-cache-coherency.mjs'
 import { messageDeliveryStudy, mmdSnapshot } from './caesura-message-delivery.mjs'
 import { delayQueueStudy, delayQueueSnapshot } from './caesura-delay-queue.mjs'
+import { retryDlqStudy, retryDlqSnapshot } from './caesura-retry-dlq.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
 export const SCENARIO_IDS = ['main', 'gray', 'resilience', 'cache', 'net']
@@ -130,6 +131,16 @@ export async function buildSnapshot(opts = {}) {
     dqZeroTick: opts.dqZeroTick,
     dqFreeHeapOps: opts.dqFreeHeapOps,
     dqSharedBackend: opts.dqSharedBackend,
+    retryDlq: opts.retryDlq,
+    rdlqMessages: opts.rdlqMessages,
+    rdlqMaxAttempts: opts.rdlqMaxAttempts,
+    rdlqBaseTicks: opts.rdlqBaseTicks,
+    rdlqCapTicks: opts.rdlqCapTicks,
+    rdlqOutageTicks: opts.rdlqOutageTicks,
+    rdlqRecoverAtTick: opts.rdlqRecoverAtTick,
+    rdlqZeroBackoff: opts.rdlqZeroBackoff,
+    rdlqPerfectJitter: opts.rdlqPerfectJitter,
+    rdlqNoRetryBudget: opts.rdlqNoRetryBudget,
   })
 
   return {
@@ -231,7 +242,8 @@ export async function buildSystems(opts = {}) {
   // KI-513：第十五维「消息投递语义」真跑 At-Most-Once/At-Least-Once/Exactly-Once × 六场景矩阵 + 三难判词 + 七枚真件交叉印证，与其它十四维平级。
   const messageDelivery = opts.messageDelivery === false ? null : await buildMessageDeliveryReading(opts, now)
   const delayQueue = opts.delayQueue === false ? null : await buildDelayQueueReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, builtAt: now() }
+  const retryDlq = opts.retryDlq === false ? null : await buildRetryDlqReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, builtAt: now() }
 }
 
 /** LSM 引擎真跑一趟确定性 benchmark，回结构读数（不夹带每行真值）。 */
@@ -757,6 +769,32 @@ export async function buildDelayQueueReading(opts, now) {
 }
 
 /**
+ * KI-520：真跑 `retryDlqStudy`（Immediate / Exponential / FullJitter × 六场景矩阵
+ *   + 三难向量 + 七枚真件交叉印证），缺件落 null、前端据实降级；不编造假数。
+ * @param {object} opts { retryDlq?:false, rdlqMessages?, rdlqMaxAttempts?, rdlqBaseTicks?, rdlqCapTicks?, rdlqOutageTicks?, rdlqRecoverAtTick?, rdlqZeroBackoff?, rdlqPerfectJitter?, rdlqNoRetryBudget? }
+ * @param {()=>number} now 时钟（builtAt 注入则确定性）
+ */
+export async function buildRetryDlqReading(opts, now) {
+  try {
+    const s = await retryDlqStudy({
+      now,
+      ...(opts.rdlqMessages ? { messages: Math.max(1, Math.floor(Number(opts.rdlqMessages))) } : {}),
+      ...(opts.rdlqMaxAttempts ? { maxAttempts: Math.max(1, Math.floor(Number(opts.rdlqMaxAttempts))) } : {}),
+      ...(opts.rdlqBaseTicks ? { baseTicks: Math.max(1, Math.floor(Number(opts.rdlqBaseTicks))) } : {}),
+      ...(opts.rdlqCapTicks ? { capTicks: Math.max(1, Math.floor(Number(opts.rdlqCapTicks))) } : {}),
+      ...(opts.rdlqOutageTicks ? { outageTicks: Math.max(0, Math.floor(Number(opts.rdlqOutageTicks))) } : {}),
+      ...(opts.rdlqRecoverAtTick ? { recoverAtTick: Math.max(0, Math.floor(Number(opts.rdlqRecoverAtTick))) } : {}),
+      ...(opts.rdlqZeroBackoff === true ? { zeroBackoff: true } : {}),
+      ...(opts.rdlqPerfectJitter === true ? { perfectJitter: true } : {}),
+      ...(opts.rdlqNoRetryBudget === true ? { noRetryBudget: true } : {}),
+    })
+    return retryDlqSnapshot(s)
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
  * 真跑时每场景的 opts（判定权在此：场景参数固定，业务阈值仍来自各子系统默认/显式注入）。
  * @param {string} id
  */
@@ -1022,6 +1060,11 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
       const stateOf = (s) => s.dirtyPagesLost > 0 ? '丢' : s.staleReads > 0 ? '陈' : s.writeBackendRttMs > 0 ? '阻' : s.coalescedWrites > 0 ? '合' : s.writes > 0 ? '成' : '?'
       const ladders = ccc.rows.map((row) => `${row.protocol}[${row.scenarios.map((s) => s.id + ':' + stateOf(s)).join('/')}]`).join(' · ')
       console.log(`[console] cacheCoherency: ${ladders} / 三难向量 ${JSON.stringify(ccc.vectors)} / 不封赢家 ${ccc.verdict.noUniversalWinner ? '是' : '否'} / WriteBehind不是银弹 ${ccc.verdict.writeBehindNotPanacea ? '是' : '否'} / 真Redis写后读${ccc.crosscheck.redis.writeThenReadSeesNew} 真WAL恢复${ccc.crosscheck.wal.replayed}但整机丢${ccc.crosscheck.wal.wholeNodeLossDurable} 真XFetch单调${ccc.crosscheck.guard.monotonic} 真分片全可读${ccc.crosscheck.sharded.allReadable} 真MVCC需提交${ccc.crosscheck.mvcc.writeThenReadNeedsCommit} 真2PC阻塞${ccc.crosscheck.twoPhase.blockedParticipants} 真环空片${ccc.crosscheck.ring.emptyNodes}`)
+    }
+    if (snap.systems?.retryDlq) {
+      const rdlq = snap.systems.retryDlq
+      const ladders = rdlq.rows.map((r) => r.protocol + '[' + r.scenarios.map((c) => (c.delivered > 0 && c.deadLettered) ? c.id + ':陷' : c.id + ':通').join('/') + ']').join(' · ')
+      console.log('[console] retryDlq: ' + ladders + ' / 三难向量 ' + JSON.stringify(rdlq.vectors) + ' / 不封赢家 ' + (rdlq.verdict.noUniversalWinner ? '是' : '否') + ' / Immediate 风暴 ' + (rdlq.verdict.immediateStorms ? '是' : '否') + ' · Exponential 无风暴 ' + (rdlq.verdict.exponentialNoStorm ? '是' : '否') + ' · FullJitter 无惊群 ' + (rdlq.verdict.fullJitterNoHerd ? '是' : '否'))
     }
     if (snap.systems?.delayQueue) {
       const dld = snap.systems.delayQueue

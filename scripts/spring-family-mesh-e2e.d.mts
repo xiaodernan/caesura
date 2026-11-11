@@ -296,5 +296,24 @@ export function runMeshE2E(opts?: any): {
       topology: Record<string, string>
       builtAt: number
     } | null
+    /** KI-520：消息重试退避与死信队列三协议快照（Immediate/Exponential/FullJitter × 六场景 + 三难向量 + 七枚真件交叉印证），未配 retryDlq 为 null；rigged 101/101/101 因果锁死 noStorm、不硬造全 111 */
+    retryDlqSnapshot: {
+      config: Record<string, any>
+      rows: Array<{
+        protocol: string
+        scenarios: Array<{
+          id: string; protocol: string; delivered: number; retries: number; deadLettered: number
+          stormPerMsg: number; herdPeaks: number; herdRatio: number; peakConcurrency: number; recoveryLag: number
+          fastRecovery: boolean; noStorm: boolean; noHerd: boolean; fault: string
+        }>
+        totals: { delivered: number; retries: number; deadLettered: number; stormPerMsg: number; herdPeaks: number; recoveryLag: number }
+        trilemma: { fastRecovery: boolean; noStorm: boolean; noHerd: boolean }
+      }>
+      vectors: Record<string, string>
+      crosscheck: { evidence: Record<string, any> }
+      verdict: Record<string, any>
+      topology: Record<string, string>
+      builtAt: number
+    } | null
   }>
 }
