@@ -440,12 +440,29 @@
       <p class="note" id="blf-matrix-note">…</p>
     </article>
     <article class="panel panel-blf">
-      <div class="panel-head"><h2>三难向量（空间紧凑 ∧ 撞不到崖壁 ∧ 可删）· FP 上界双路自证</h2><span class="hint">Bloom=110 / CountingBloom=011 / Cuckoo=001 · 三向量互异无一 111 不封赢家 · verifyFalsePositiveCeiling 理论 ε vs 实测 FP · rigged 110×3 因果锁死 unlimitedRoom</span></div>
+      <div class="panel-head"><h2>三难向量（空间紧凑 ∧ 撞不到崖壁 ∧ 可删）· FP 上界双路自证</h2><span class="hint">Bloom=110 / CountingBloom=011 / Cuckoo=101 · 三向量互异无一 111 不封赢家 · verifyFalsePositiveCeiling 理论 ε vs 实测 FP · rigged 011×3 因果锁死 unlimitedRoom+eternalStasis+noDeletesNeeded</span></div>
       <div class="blf-trilemma" id="blf-trilemma"></div>
       <div class="blf-verif" id="blf-verif"></div>
       <div class="blf-crosscheck" id="blf-crosscheck"></div>
       <div class="blf-probes" id="blf-probes"></div>
       <p class="note" id="blf-trilemma-note">…</p>
+    </article>
+  </section>
+  <!-- 第二十二维 · LRU / 2Q / ARC 三替换策略（KI-528） -->
+  <section class="row row-cr">
+    <article class="panel panel-cr">
+      <div class="panel-head"><h2>第二十二维 · LRU/2Q/ARC · 三策略 × 六场景</h2><span class="hint">古=MRU ease LRU…最近热冲扫掠最拉 / 段=2Q（A1in 冷快进+Am 热 LRU MRU、顺扫可抵但不自适配）/ 途=megiddo ARC（T1/T2 + B1/B2 幽灵 + DAG 双步长 p 自适应，可抖动但不自封赢家）</span></div>
+      <div class="cr-matrix" id="cr-matrix"></div>
+      <div class="cr-ladder" id="cr-ladder"></div>
+      <p class="note" id="cr-matrix-note">…</p>
+    </article>
+    <article class="panel panel-cr">
+      <div class="panel-head"><h2>三难向量（扫抵抗 ∧ 命中稳定 ∧ 自适应）· 双路自证</h2><span class="hint">LRU=010 / 2Q=110 / ARC=101 · 三向量互异无一 111 不封赢家 · verifyDualSweep 真轨迹 ×2 路自证 + 三路篡改可证伪</span></div>
+      <div class="cr-trilemma" id="cr-trilemma"></div>
+      <div class="cr-verif" id="cr-verif"></div>
+      <div class="cr-crosscheck" id="cr-crosscheck"></div>
+      <div class="cr-probes" id="cr-probes"></div>
+      <p class="note" id="cr-trilemma-note">…</p>
     </article>
   </section>
 </main>

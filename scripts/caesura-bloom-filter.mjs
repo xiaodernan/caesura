@@ -1,46 +1,50 @@
 /**
- * scripts/caesura-bloom-filter.mjs —— 布隆/布谷鸟/计数布隆三过滤器诚实权衡教学件（KI-527，P8 第三十四件）。
+ * scripts/caesura-bloom-filter.mjs —— 布隆 / 计数布隆 / 布谷鸟三过滤器「空间—插入—删除」三难诚实权衡教学件（KI-527，P8 第三十四件）。
  *
- * <p>精准补 KI-496/499/501/518/520/523/525/526 存储与吞吐族最后缺的「集合成员判重的空间-插入-删除三难」：
- * Bloom 缺删除、CountingBloom 吃空间、Cuckoo 高装载崖壁。LSM/B+树/一致性哈希都回答过
- * 「数据怎么存对」，却没人回答「membership 判重三难怎么不一起崩」。</p>
+ * <p>补 KI-496/499/501/518/520/523/525/526 存储与吞吐族最后缺的一维：<b>集合成员判重的三难</b>。
+ * LSM/B+树/一致性哈希/回溯压都回答过「数据怎么存对、怎么压、怎么不丢」，却没人正面回答
+ * 「membership 判重能不能同时紧凑、插入永不失败、又支持删除」——本件用三策略真跑给出诚实答案：<b>不能</b>。</p>
  *
- * <p>三真判结构：</p>
+ * <p>三难维序固定 <code>[compactFootprint, insertsNeverFail, deleteSupport]</code>。默认态向量
+ * （全部由 <code>vecOf(row.trilemma)</code> 现算，<b>绝不硬造任何字符串、绝不硬造全 111</b>）：</p>
  * <ul>
- *   <li><b>Bloom=110</b>：10 bits/key 位图——空间足够近最优、O(k) 恒定查找（可证 m 与 k 都是最优值）、
- *       无删除功能（这是 Bloom 的领域、不必伪装）</li>
- *   <li><b>CountingBloom=011</b>：与 Bloom 同形但每格 4 位计数器（吃空间、可删；SSTables/LSM 装得下）</li>
- *   <li><b>Cuckoo=001</b>：布谷鸟双表桶化——空间被桶圆西化（2 的幂 rounding 上升）+ 非 compact Bloom、
- *       O(1) 但高装载后 kick 链枯竭直接拒插（这而不是 quote 血池）、删除真写零、
- *       误判率最低（2 table lookup, 2^-8 FP ≈ 0.0039）——空间与崖壁各付一维</li>
+ *   <li><b>Bloom = 110</b>：位图 ~10 bits/key（紧凑✓）· add 永不失败✓ · remove 恒 false（无删除✗）。</li>
+ *   <li><b>CountingBloom = 011</b>：4×counter/key = 32 bits/key（吃空间✗）· add 永不失败✓ · 计数真减删除✓。</li>
+ *   <li><b>Cuckoo = 101</b>：1 byte fingerprint / 95% 装载 = ~16 bits/key（紧凑✓）· 高装载撞真崖壁拒插✗ · 真写零删除✓。</li>
+ * </ul>
+ * <p>三向量互异、无一 111，故 <code>noUniversalWinner=true / trilemmaDistinguishes=true</code>：
+ * 任何维度上都没有「全胜」策略——紧凑的不能删，能删的不省空间，省空间又会撞崖壁。</p>
+ *
+ * <p><b>正交考场（BF_DIM_SCENARIOS_F，单维只在本维考场分、其余空真不连坐）</b>：</p>
+ * <ul>
+ *   <li><code>boundedFalsePositive → compactFootprint</code>：只在 steadyFilter / burstScale / overAdmitted 量结构 bits/key。</li>
+ *   <li><code>insertsNeverFail</code>：只在 hotKeyFlood / highLoadSaturation 量真插入失败数。</li>
+ *   <li><code>deleteSupport</code>：只在 deleteCycle 量真删除成功率。</li>
  * </ul>
  *
- * <p>三难 [compactFootprint/insertsNeverFail/deleteSupport]（维序同名）：
- *   <b>Bloom=110</b>（空间✓/恒定✓/删除✗）·<b>CountingBloom=011</b>（空间✗/恒定✓/删除✓）·<b>Cuckoo=001</b>（空间✗/崖壁✗/删除✓）</p>
+ * <p><b>rigged 三开关（unlimitedRoom / eternalStasis / noDeletesNeeded）</b>与 KI-525/526 同族因果锁：
+ * 三开关<b>真进入构造与场景</b>——<code>unlimitedRoom</code> 真放大三策略空间预算（Cuckoo 表拉满、不再撞崖壁），
+ * <code>eternalStasis</code> 真让 deleteCycle 无 churn（delTries 真归零），<code>noDeletesNeeded</code> 真作为判据空真语义
+ * （「无需删除」时删除维空真成立）。三者齐开时由 row.trilemma 现算收敛 <b>011 / 011 / 011</b>：inserts 与 delete
+ * 两维被抹真，唯 <b>compactFootprint 因果抹不掉</b>（想让插入永不失败，就得为无限空间付账，bits/key 必然爆表）——
+ * 即 <code>compactFootprintCausallyUnerasable</code>。向量非全 111、坍缩同向量，故
+ * <code>noStrategyWinsAll=true / noUniversalWinner=false / trilemmaDistinguishes=false</code>。
+ * 单开任一开关均<b>真跑矩阵</b>量出反噬判词（现算读数驱动，绝不硬编码 =true）：单开 unlimitedRoom 抹真 Cuckoo
+ * 插入维却坐实其空间维翻假；单开 eternalStasis 只冻结删除、删除维仍不可证伪；单开 noDeletesNeeded 不静止则空真不生效。</p>
  *
- * <p>向量逐一互异、无一 111，恰好各缺一维（维序自左向右，Bloom 付 deleteSupport、CountingBloom 付 compactFootprint、
- *   Cuckoo 付 compactFootprint 与 insertsNeverFail）——任何单维度上没有「全胜」答案。这三件就是要证明：
- *   bloom 的空间-FP 最优不拐弯抹角地免费，计数bloom 用 3 倍空间换 delete 的便利，Cuckoo 的崖壁是硬约束、不是调参，
- *   如实按 4 种场景下真值计、用 row.trilemma 现算——绝不硬覆盖成 111。</p>
+ * <p><b>verifyFalsePositiveCeiling 双路自证 + 三路可证伪</b>：路 A 现算理论上界 ε=(1−e^(−kn/m))^k；
+ * 路 B 用两枚独立否定集真探 FP，断言实测落在邻域 [ε×0.2, ε×1.5+0.5% 地板]，空集 nontrivial=false（绝不硬绿）。
+ * 三路篡改（篡改 bits 让理论上界失真 / 零误判却给真否定集 / 绕过否定集 probes）被<b>真喂回 verify 函数本身</b>
+ * 逐路现算翻 false，holds 由判定内核现算，绝不写死对象。</p>
  *
- * <p>判词正交化（与 KI-513~526 家族一线）——单开关只打一维、单维空真不连坐：
- * <ul>
- *   <li><code>boundedFalsePositive</code>：只在 steadyFilter/burstScale/overAdmitted 量（大规模均摊、规模放大、血池压测三场景）</li>
- *   <li><code>insertsNeverFail</code>：只在 hotKeyFlood（热键洪泛）/highLoadSaturation（高装载崖壁）量——判 Bloom/CB 永不拒绝 vs Cuckoo 高装载拒绝</li>
- *   <li><code>deleteSupport</code>：只在 deleteCycle（删除-重插循环）量</li>
- * </ul></p>
+ * <p><b>Cuckoo 真装载崖壁</b>：单表 power-of-2 桶化、1 byte fingerprint、hardCapacity=floor(slots×maxLoad)；
+ * add 在两候选桶 {i1, i1^hash(fp)} 都满时走带 <b>undo 回滚</b>的 kick 链，maxKicks 走完仍无处安放 ⇒ 回滚全部改动、
+ * stashFailures++、add() 返回 false，<b>绝不覆盖已占 fingerprint 造成静默丢 key</b>；highLoadSaturation / overAdmitted
+ * 真触发拒插。</p>
  *
- * <p><b>rigged 三开关</b>（与 KI-525/526 同族因果锁死）：
- * <code>zeroErrors</code>（强抹所有误判）+ <code>deleteImpossible</code>（强禁所有删除）+ <code>unlimitedRoom</code>（容量无限不撞崖壁）
- * 齐开 ⇒ 真实现算收敛 111/111/111（绝不硬造全 111；表格与判词同源，单开只抹一维各自反噬）。</p>
- *
- * <p><b>verifyFalsePositiveCeiling 双路自证</b>：
- * 路 A 现算理论上界 ε=(1-e^(-kn/m))^k（直接代入此次跑的 m/n/k）；路 B 前进
- * 跑运行时 tail probes 探数 FP 采集率，硬断言 邻域 {实测 ≤ ε×1.5 且 ≥ ε×0.2} 保持。
- * 【绝不是硬编码采样的“OK”——空 bps 集合 true=true 本身是骗。</p>
- *
- * <p><b>不声称</b>真 RocksDB Bloom / 真 RedisBloom.BF 模块 / 真 SplitHash 按位切分 / 真 CuckooFilter wrap — 全程结构计数教育尺寸；
- * 不声称墙钟插入毫秒 / QPS（全为结构 op 计数）；三 LFK 位置在位错误是教学简化、不建逐插入微循环；不封赢家；不声称前端判定/实测。</p>
+ * <p><b>不声称</b>真 RocksDB Bloom / 真 RedisBloom.BF / 真 CuckooFilter C++ wrap / 墙钟毫秒 / QPS；三 LFK 位置在位错误
+ * 是教学简化；evidence 的十一真件仅为「同一确定性事实/原语在此跑通」的交叉印证，不冒充过滤器内核实测；
+ * builtAt 走注入时钟（KI-517 契约），CLI 固定 --now 双跑字节一致。</p>
  *
  * @module caesura-bloom-filter
  */
@@ -52,24 +56,26 @@ import { createBus } from './spring-bus-event.mjs'
 import { createRedisCache } from './caesura-redis-cache.mjs'
 import { createObjectPool, createPackedCounters } from './caesura-hw-perf.mjs'
 import { createTokenBucket } from './caesura-rate-limiter.mjs'
-import { createRedisZsetDelayQueue, createMinHeapDelayQueue } from './caesura-delay-queue.mjs'
+import { createMinHeapDelayQueue } from './caesura-delay-queue.mjs'
+import { createFullJitterBackoff } from './caesura-retry-dlq.mjs'
 
 export const BF_DEFAULTS = Object.freeze({
   seed: 527,
   capacity: 1024,
-  bitsPerKey: 10,          // Bloom 位传尺
-  countersPerKey: 4,        // CountingBloom 字节/key
+  bitsPerKey: 10,           // Bloom 位传尺（bits/key）
+  countersPerKey: 4,        // CountingBloom 计数器/key（吃空间）
   counterWidth: 4,          // 4 位计数器 → 单槽最多 15
-  tableCount: 2,            // Cuckoo 双表
-  bucketSize: 4,            // Cuckoo 桶槽数
+  tableCount: 2,            // 保留：Cuckoo 双候选位置语义（标准单表 xor）
+  bucketSize: 4,            // Cuckoo 每桶槽数
   maxKicks: 8,
   benchKeys: 64,
-  maxLoadFactor: 0.95,      // Cuckoo 装载崖壁线（非入口）
-  zeroErrors: false,        // rigged
-  deleteImpossible: false,  // rigged
-  unlimitedRoom: false,     // rigged
-  eternalStasis: false,     // rigged
-  noDeletesNeeded: false,   // rigged
+  maxLoadFactor: 0.95,      // Cuckoo 装载崖壁线
+  compactBitsPerKeyBudget: 20, // compactFootprint 预算线（≤ 判紧凑）
+  riggedRoomFactor: 8,      // unlimitedRoom 空间放大倍率（因果守恒的价）
+  // rigged 三开关（新）；旧 zeroErrors/deleteImpossible 由 verdict 现算别名承载，不再参与构造
+  unlimitedRoom: false,
+  eternalStasis: false,
+  noDeletesNeeded: false,
   rigged: false,
 })
 
@@ -79,15 +85,14 @@ export const BF_SCENARIOS = Object.freeze([
   'steadyFilter', 'hotKeyFlood', 'deleteCycle', 'highLoadSaturation', 'burstScale', 'overAdmitted',
 ])
 
-/** 维序（顺序固定）：[compactFootprint, insertsNeverFail, deleteSupport]、键名同词 */
-const BF_DIM_SCENARIOS = Object.freeze({
-  steadyFilter:     { fpr: true, insert: false, delete: false },
-  hotKeyFlood:      { fpr: false, insert: true, delete: false },
-  deleteCycle:      { fpr: false, insert: false, delete: true },
-  highLoadSaturation:{ fpr: false, insert: true, delete: false },
-  burstScale:       { fpr: true, insert: false, delete: false },
-  overAdmitted:     { fpr: true, insert: false, delete: false },
+/** 三难正交考场：一维只在本维负责的场景里打分，其余场景该维空真不连坐。 */
+const BF_DIM_SCENARIOS_F = Object.freeze({
+  boundedFalsePositive: new Set(['steadyFilter', 'burstScale', 'overAdmitted']), // → compactFootprint
+  insertsNeverFail: new Set(['hotKeyFlood', 'highLoadSaturation']),
+  deleteSupport: new Set(['deleteCycle']),
 })
+
+const BF_COMPACT_BUDGET_BITS_PER_KEY = 20
 
 /* --------------------------- 判定工具 --------------------------- */
 
@@ -95,20 +100,17 @@ function intOr(v, fallback) {
   const n = Number(v)
   return Number.isFinite(n) ? Math.floor(Math.max(0, n)) : fallback
 }
-
 function numOr(v, fallback) {
   const n = Number(v)
   return Number.isFinite(n) ? n : fallback
 }
-
-/** 注入时钟：数字或函数（builtAt 契约要求对函数求值，同 KI-517/KI-526 startClock 习惯） */
+/** 注入时钟：数字或函数（builtAt 契约要求对函数求值，同 KI-517/KI-526 startClock 习惯）。 */
 function startClock(v, fallback) {
   const n = typeof v === 'function' ? numOr(v(), NaN) : numOr(v, NaN)
   return Number.isFinite(n) ? n : fallback
 }
-
 function round4(n) { return Math.round(n * 1e4) / 1e4 }
-
+function round6(n) { return Math.round(n * 1e6) / 1e6 }
 function makeRand(seed) {
   let a = intOr(seed, BF_DEFAULTS.seed) >>> 0
   return function rand() {
@@ -119,8 +121,7 @@ function makeRand(seed) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296
   }
 }
-
-/** Murmur-ish 确定性串哈希（h1） */
+/** Murmur-ish 确定性串哈希（双哈希展开用）。 */
 function hashString(str, seed) {
   let h = seed >>> 0
   for (let i = 0; i < str.length; i++) {
@@ -132,27 +133,25 @@ function hashString(str, seed) {
   h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35)
   return (h ^ (h >>> 16)) >>> 0
 }
-
-/** 双哈希展开 k 个位置（Bloom 双杂散到 i 面位） */
+/** 双哈希展开 k 个位置：h1 + i*h2 (mod m)，h2 取奇。 */
 function positionsFor(key, k, m) {
   const h1 = hashString(key, 0x9e3779b9) >>> 0
   const h2 = hashString(key, 0x51ab3bae) | 1
   const out = new Array(k)
-  for (let i = 0; i < k; i++) {
-    out[i] = (((h1 + i * h2) >>> 0) % Math.max(1, m))
-  }
+  for (let i = 0; i < k; i++) out[i] = (((h1 + i * h2) >>> 0) % Math.max(1, m))
   return out
 }
 
 /* --------------------------- 三策略真实现 --------------------------- */
 
-/** Bloom Filter：m bits 位图，k 个最优哈希（true/false 判重），不删 */
+/** Bloom Filter：m bits 位图、k 最优哈希（true/false 判重），无删除（remove 恒 false）。 */
 export function createBloomFilter(opts = {}) {
   const cap = intOr(opts.capacity, BF_DEFAULTS.capacity)
-  const m = intOr(opts.bits, Math.max(64, intOr(opts.bitsPerKey, BF_DEFAULTS.bitsPerKey) * cap))
-  const k = intOr(opts.hashFunctions, Math.max(2, Math.round((m / Math.max(1, cap)) * Math.LN2)))
+  const baseBpk = intOr(opts.bitsPerKey, BF_DEFAULTS.bitsPerKey)
+  const room = opts.unlimitedRoom === true ? BF_DEFAULTS.riggedRoomFactor : 1
+  const m = intOr(opts.bits, Math.max(64, baseBpk * cap * room))
+  const k = intOr(opts.hashFunctions, Math.max(2, Math.round(baseBpk * Math.LN2)))
   const table = new Uint8Array(Math.ceil(m / 8))
-  const rand = makeRand(opts.seed ?? BF_DEFAULTS.seed)
   let added = 0
   function positions(key) { return positionsFor(String(key), k, m) }
   function add(key) {
@@ -164,20 +163,20 @@ export function createBloomFilter(opts = {}) {
     for (const h of positions(key)) if ((table[h >>> 3] & (1 << (h & 7))) === 0) return false
     return true
   }
-  // Bloom 不支持删除：装到这个 API 上就是根本不返回 false——这才是 Bloom 的领域
-  function remove(_key) { return false }
+  function remove(_key) { return false } // Bloom 的领域：根本不支持删除
   return {
-    protocol: 'Bloom',
-    add, contains, remove,
-    stats: () => ({ added, bits: m, bytes: table.length, hashFunctions: k, capacity: cap, fillRatio: added / cap }),
+    protocol: 'Bloom', add, contains, remove,
+    stats: () => ({ added, bits: m, bytes: table.length, hashFunctions: k, capacity: cap, fillRatio: added / cap, stashFailures: 0, insertFailures: 0, room }),
   }
 }
 
-/** CountingBloom Filter：复合计数（可删），吃空间 */
+/** CountingBloom Filter：每格计数（可真删），4×counter/key 吃空间。 */
 export function createCountingBloomFilter(opts = {}) {
   const cap = intOr(opts.capacity, BF_DEFAULTS.capacity)
-  const m = intOr(opts.counters, Math.max(64, intOr(opts.countersPerKey, BF_DEFAULTS.countersPerKey) * cap))
-  const k = intOr(opts.hashFunctions, Math.max(2, Math.round((m / Math.max(1, cap)) * Math.LN2)))
+  const baseCpk = intOr(opts.countersPerKey, BF_DEFAULTS.countersPerKey)
+  const room = opts.unlimitedRoom === true ? BF_DEFAULTS.riggedRoomFactor : 1
+  const m = intOr(opts.counters, Math.max(64, baseCpk * cap * room))
+  const k = intOr(opts.hashFunctions, Math.max(2, Math.round(baseCpk * Math.LN2)))
   const width = Math.min(8, Math.max(2, intOr(opts.counterWidth, BF_DEFAULTS.counterWidth)))
   const maxCount = (1 << width) - 1
   const table = new Uint8Array(m)
@@ -191,217 +190,194 @@ export function createCountingBloomFilter(opts = {}) {
   function contains(key) { for (const h of positions(key)) if (table[h] === 0) return false; return true }
   function remove(key) {
     const hashes = positions(key)
-    for (const h of hashes) if (table[h] === 0) return false // 计数出现 0 = 没人加过 ⇒ 不存在
-    for (const h of hashes) if (table[h] > 0) table[h] -= 1
+    for (const h of hashes) if (table[h] === 0) return false // 有格为 0 ⇒ 该 key 计数不足，不存在
+    for (const h of hashes) table[h] -= 1
     added = Math.max(0, added - 1)
     return true
   }
   return {
-    protocol: 'CountingBloom',
-    add, contains, remove,
-    stats: () => ({ added, counters: m, bytes: table.length, hashFunctions: k, capacity: cap, counterWidth: width, fillRatio: added / cap }),
+    protocol: 'CountingBloom', add, contains, remove,
+    stats: () => ({ added, counters: m, bytes: table.length, hashFunctions: k, capacity: cap, counterWidth: width, fillRatio: added / cap, stashFailures: 0, insertFailures: 0, room }),
   }
 }
 
-/** Cuckoo Filter：双表桶化 + stash，fallback 满则拒绝插入（honest fail-kick） */
+/**
+ * Cuckoo Filter：单表 power-of-2 桶化 + 1 byte fingerprint + xor 双候选桶。
+ * 真装载崖壁：hardCapacity 上限 + 带 undo 回滚的 kick 链；失败 stashFailures++、add() 返回 false、
+ * 绝不覆盖已占 fingerprint 造成静默丢 key。
+ */
 export function createCuckooFilter(opts = {}) {
   const cap = intOr(opts.capacity, BF_DEFAULTS.capacity)
   const bucketSize = Math.max(1, intOr(opts.bucketSize, BF_DEFAULTS.bucketSize))
-  const tableCount = Math.max(2, intOr(opts.tableCount, BF_DEFAULTS.tableCount))
   const maxLoad = numOr(opts.maxLoadFactor, BF_DEFAULTS.maxLoadFactor)
-  // 布谷鸟桶数必须 2 的幂（异或回绕才能落在合法 bin 内）；≈ cap/(4·0.95) 再取 ceil pow2
-  const slotsPerTable = 2 ** Math.max(3, Math.ceil(Math.log2(Math.max(1, Math.floor(cap / bucketSize / maxLoad)))))
-  const fingerprintWidth = 1 // 1 字节 fingerprint（教学简化）
-  const table0 = new Array(slotsPerTable * bucketSize).fill(0)
-  const table1 = new Array(slotsPerTable * bucketSize).fill(0)
+  const room = opts.unlimitedRoom === true ? BF_DEFAULTS.riggedRoomFactor : 1
+  const effectiveCap = cap * room
+  const targetBuckets = effectiveCap / (bucketSize * maxLoad)
+  const numBuckets = 2 ** Math.max(2, Math.ceil(Math.log2(Math.max(1, targetBuckets))))
+  const mask = numBuckets - 1
+  const fingerprintWidth = 1
+  const table = new Uint8Array(numBuckets * bucketSize) // 0 = 空；非 0 = fingerprint
+  const hardCapacity = Math.max(1, Math.floor(numBuckets * bucketSize * maxLoad))
   const maxKicks = intOr(opts.maxKicks, BF_DEFAULTS.maxKicks)
-  let inserted = 0
-  let stashFailures = 0
   const rand = makeRand(opts.seed ?? BF_DEFAULTS.seed)
-  const table = (i) => (i === 0 ? table0 : table1)
-  // 迷彩值：非零 1 字节（Cuckoo 双表中表示“有”）
-  function fingerprint(key) { return (hashString(String(key), 0x7feb352d) & 0xff) | 1 }
-  // 键的根槽：i1 = hash(key) & bins-1（bin 为 2 的幂，落盘稳定）
-  function rootSlot(key) { return hashString(String(key), 0x9e3779b9) & (slotsPerTable - 1) }
-  // 迷彩替补槽：i2 = i1 ^ h(fp) & bins-1（与根槽独立，kick 链里只拿到 fp 也能精确重定向）
-  function altSlot(fp) { return hashString(String(fp), 0x51ab3bae) & (slotsPerTable - 1) }
-  function insertBucket(tab, bucket, fp) {
-    const start = bucket * bucketSize
-    for (let s = 0; s < bucketSize; s++) if (tab[start + s] === 0) { tab[start + s] = fp; return true }
-    return false
+  let inserted = 0, stashFailures = 0, insertFailures = 0
+
+  const fpOf = (key) => (hashString(String(key), 0x7feb352d) & 0xff) | 1 // 非零 1 byte
+  const i1Of = (key) => hashString(String(key), 0x9e3779b9) & mask
+  const altOf = (bucket, fp) => bucket ^ (hashString(String(fp), 0x51ab3bae) & mask)
+  function findInBucket(b, fp) {
+    const s = b * bucketSize
+    for (let i = 0; i < bucketSize; i++) if (table[s + i] === fp) return s + i
+    return -1
   }
-  function findSlot(tab, bucket, fp) {
-    const start = bucket * bucketSize
-    for (let s = 0; s < bucketSize; s++) if (tab[start + s] === fp) return true
-    return false
-  }
-  function evictAny(tab, bucket) {
-    // kick 链：确定性随机播种下可复现
-    const start = bucket * bucketSize
-    const slot = Math.floor(rand() * bucketSize)
-    const fp = tab[start + slot]
-    tab[start + slot] = 0
-    return fp
-  }
-  function insert(key) {
-    const fp = fingerprint(key)
-    const i1 = rootSlot(key) // 根槽：落实到键，分布均匀
-    if (insertBucket(table0, i1, fp)) { inserted += 1; return true }
-    const i2 = (i1 ^ altSlot(fp)) & (slotsPerTable - 1)
-    if (insertBucket(table1, i2, fp)) { inserted += 1; return true }
-    // kick 链：异轨双表异或迁移；两表都满 + maxKicks 内无法找回空槽 ⇒ 诚实拒插
-    let curFp = fp
-    let which = 0
-    let bucket = i1
-    for (let n = 0; n < maxKicks; n++) {
-      const victim = evictAny(table(which), bucket)
-      if (victim === 0) { inserted += 1; return true }
-      curFp = victim
-      which ^= 1
-      bucket = bucket ^ altSlot(curFp) // 异轨迁移（power-of-2 bins，异或保持在合法范围）
-      if (insertBucket(table(which), bucket, curFp)) { inserted += 1; return true }
-    }
-    stashFailures += 1 // 装载崖壁：kick 链枯竭 ⇒ 拒插入（这才是真的崖壁）
-    return false
+  function emptyInBucket(b) {
+    const s = b * bucketSize
+    for (let i = 0; i < bucketSize; i++) if (table[s + i] === 0) return s + i
+    return -1
   }
   function contains(key) {
-    const fp = fingerprint(key)
-    const i1 = rootSlot(key)
-    if (findSlot(table0, i1, fp)) return true
-    const i2 = (i1 ^ altSlot(fp)) & (slotsPerTable - 1)
-    if (findSlot(table1, i2, fp)) return true
+    const fp = fpOf(key), b1 = i1Of(key), b2 = altOf(b1, fp)
+    return findInBucket(b1, fp) >= 0 || findInBucket(b2, fp) >= 0
+  }
+  function add(key) {
+    if (contains(key)) return true // 幂等，避免重复 fingerprint 污染判重
+    if (inserted >= hardCapacity) { stashFailures += 1; insertFailures += 1; return false } // 装载崖壁
+    const fp = fpOf(key), b1 = i1Of(key), b2 = altOf(b1, fp)
+    let slot = emptyInBucket(b1)
+    if (slot >= 0) { table[slot] = fp; inserted += 1; return true }
+    slot = emptyInBucket(b2)
+    if (slot >= 0) { table[slot] = fp; inserted += 1; return true }
+    // kick 链：每步把 curFp 落进被踢槽，被踢 victim 去它的 alt 桶；带 undo，失败整体回滚
+    const undo = []
+    let curFp = fp, curBucket = b1
+    for (let n = 0; n < maxKicks; n++) {
+      const pick = curBucket * bucketSize + Math.floor(rand() * bucketSize)
+      const victim = table[pick] // 该候选桶已满 ⇒ victim 非 0
+      undo.push({ slot: pick, prev: victim })
+      table[pick] = curFp
+      const alt = altOf(curBucket, victim)
+      const es = emptyInBucket(alt)
+      if (es >= 0) { table[es] = victim; inserted += 1; return true }
+      curFp = victim
+      curBucket = alt
+    }
+    // maxKicks 走完仍无处安放 ⇒ 回滚（绝不静默丢已占 key）
+    for (let j = undo.length - 1; j >= 0; j--) table[undo[j].slot] = undo[j].prev
+    stashFailures += 1
+    insertFailures += 1
     return false
   }
   function remove(key) {
-    const fp = fingerprint(key)
-    let bucket = rootSlot(key)
-    for (let s = 0; s < bucketSize; s++) {
-      const idx = bucket * bucketSize + s
-      if (table0[idx] === fp) { table0[idx] = 0; inserted = Math.max(0, inserted - 1); return true }
-    }
-    bucket = (rootSlot(key) ^ altSlot(fp)) & (slotsPerTable - 1)
-    for (let s = 0; s < bucketSize; s++) {
-      const idx = bucket * bucketSize + s
-      if (table1[idx] === fp) { table1[idx] = 0; inserted = Math.max(0, inserted - 1); return true }
-    }
+    const fp = fpOf(key), b1 = i1Of(key), b2 = altOf(b1, fp)
+    let idx = findInBucket(b1, fp)
+    if (idx < 0) idx = findInBucket(b2, fp)
+    if (idx >= 0) { table[idx] = 0; inserted = Math.max(0, inserted - 1); return true }
     return false
   }
   return {
-    protocol: 'Cuckoo',
-    add: insert, // Cuckoo 无 'contains-first' 语义——统一名 add
-    contains, remove,
-    stats: () => ({ inserted, slotsPerTable, buckets: slotsPerTable, bytesPerSlot: fingerprintWidth, maxLoadFactor: maxLoad, stashFailures, capacity: cap, fillRatio: inserted / cap, bytes: slotsPerTable * tableCount * bucketSize * fingerprintWidth }),
+    protocol: 'Cuckoo', add, contains, remove,
+    stats: () => ({
+      inserted, numBuckets, bucketSize, fingerprintWidth, hardCapacity, maxKicks,
+      maxLoadFactor: maxLoad, stashFailures, insertFailures, capacity: cap,
+      fillRatio: inserted / cap, bytes: table.length, room,
+    }),
   }
 }
 
 /* --------------------------- ④ 场景 --------------------------- */
 
 const ALL_SUBFILTERS = { Bloom: createBloomFilter, CountingBloom: createCountingBloomFilter, Cuckoo: createCuckooFilter }
+function subFilterFactory(protocol, opts) { return ALL_SUBFILTERS[protocol](opts) }
 
-function subFilterFactory(protocol, opts) {
-  return ALL_SUBFILTERS[protocol](opts)
-}
-
-/** 六正交场景注入：每个场景真写入操作 + 真查询序列，输出真实（op/metric） */
+/** 六正交场景真跑：每场景真写入 + 真查询序列，输出真实 op/metric。flags 由 study 透传。 */
 export function runBloomFilterScenario(protocol, scenarioId, o = {}) {
   const seedBase = intOr(o.seed, BF_DEFAULTS.seed)
-  const rand = makeRand((seedBase ^ (scenarioId.length * 0x9e3779b1)) >>> 0)
+  const rand = makeRand((seedBase ^ (Math.max(1, scenarioId.length) * 0x9e3779b1)) >>> 0)
   const randStream = (n, offset) => Array.from({ length: n }, (_, i) => `${offset}-key-${i}-${(rand() * 0xffffffff) >>> 0}`)
-  const mk = subFilterFactory(protocol, { seed: seedBase, capacity: intOr(o.capacity, BF_DEFAULTS.capacity) })
+  const flags = o.flags || {}
+  const capacity = intOr(o.capacity, BF_DEFAULTS.capacity)
+  const mk = subFilterFactory(protocol, { seed: seedBase, capacity, unlimitedRoom: flags.unlimitedRoom === true })
 
-  let inserted = 0, insertFailures = 0, falsePositives = 0, probes = 0, correctNegatives = 0, correctPositives = 0
-  let deleteTries = 0, deleteSuccess = 0, deleteReinserted = 0
-  let foldCount = 0
+  let inserted = 0, insertFailures = 0, falsePositives = 0, probes = 0, negProbes = 0
+  let correctNegatives = 0, correctPositives = 0
+  let deleteTries = 0, deleteSuccess = 0, deleteReinserted = 0, foldCount = 0
 
-  const probePositive = (key) => {
-    probes += 1
-    const present = mk.contains(key)
-    if (present) correctPositives += 1
-  }
+  const probePositive = (key) => { probes += 1; if (mk.contains(key)) correctPositives += 1 }
   const probeNegative = (key) => {
-    probes += 1
-    const present = mk.contains(key)
-    if (present) falsePositives += 1
-    else correctNegatives += 1
+    probes += 1; negProbes += 1
+    if (mk.contains(key)) falsePositives += 1; else correctNegatives += 1
   }
-  const insertKey = (key) => {
-    const ok = mk.add(key) === true
-    if (ok) inserted += 1
-    else insertFailures += 1
-  }
-  const queryRound = (insertCount, negCount, posCount, offset, seedAcc) => {
+  const insertKey = (key) => { if (mk.add(key) === true) inserted += 1; else insertFailures += 1 }
+  const queryRound = (insertCount, negCount, posCount, offset) => {
     const posKeys = randStream(insertCount, `${offset}-pos`)
     for (const k of posKeys) insertKey(k)
     for (const k of posKeys) probePositive(k)
     const negKeys = randStream(negCount, `${offset}-neg`)
     for (const k of negKeys) probeNegative(k)
+    return { posKeys, negKeys }
   }
 
   switch (scenarioId) {
     case 'steadyFilter':
-      queryRound(700, 400, 300, 1, 11)
+      queryRound(700, 400, 300, 1)
       break
     case 'hotKeyFlood': {
       const baseKeys = randStream(140, 2)
       for (const k of baseKeys) insertKey(k)
-      for (let round = 0; round < 24; round++) {
-        for (const k of baseKeys) probePositive(k)
-      }
+      for (let round = 0; round < 24; round++) for (const k of baseKeys) probePositive(k)
       for (let i = 0; i < 80; i++) probeNegative(`flood-miss-${i}`)
       break
     }
     case 'deleteCycle': {
       const keySet = randStream(500, 3)
       for (const k of keySet) insertKey(k)
-      for (let i = 0; i < 250; i++) {
-        const ok = mk.remove(keySet[i])
-        deleteTries += 1
-        if (ok) deleteSuccess += 1
+      if (flags.eternalStasis !== true) {
+        // 非静止：真删 250、真重插 150，并自查删除效果
+        for (let i = 0; i < 250; i++) { const ok = mk.remove(keySet[i]); deleteTries += 1; if (ok) deleteSuccess += 1 }
+        const reinserted = keySet.slice(0, 150)
+        for (const k of reinserted) { insertKey(k); deleteReinserted += 1 }
+        let afterDeletePresent = 0
+        for (const k of keySet.slice(0, 250)) if (mk.contains(k)) afterDeletePresent += 1
+        foldCount += afterDeletePresent
       }
-      const reinserted = keySet.slice(0, 150)
-      for (const k of reinserted) {
-        insertKey(k)
-        deleteReinserted += 1
-      }
-      // 删除效果真自查
-      let afterDeletePresent = 0
-      for (const k of keySet.slice(0, 250)) {
-        if (mk.contains(k)) afterDeletePresent += 1
-      }
-      if (afterDeletePresent > 0) foldCount += afterDeletePresent // 垃圾计数
+      // eternalStasis=true：永恒静止、无 churn ⇒ deleteTries 真保持 0（判据改由 noDeletesNeeded 空真语义裁决）
       break
     }
-    case 'highLoadSaturation': {
-      const cap = intOr(o.capacity, BF_DEFAULTS.capacity)
-      // 2× 装载压测 → Cuckoo ≈ 98% 装载区必然撞崖壁（fail-kick），Bloom/CB 仍容
-      queryRound(cap * 2, 160, 40, 4, 33)
+    case 'highLoadSaturation':
+      // 2× 装载压测 → Cuckoo ≈ 95% 装载必撞崖壁（hardCapacity / kick 枯竭），Bloom/CB 仍容
+      queryRound(capacity * 2, 160, 40, 4)
       break
-    }
-    case 'burstScale': {
-      const cap = intOr(o.capacity, BF_DEFAULTS.capacity)
-      // 两尺度：半满 + 满（FP 量程考察）
-      queryRound(Math.floor(cap / 2), 240, 120, 5, 44)
-      queryRound(Math.floor(cap - 1), 240, 120, 6, 55)
+    case 'burstScale':
+      queryRound(Math.floor(capacity / 2), 240, 120, 5)
+      queryRound(Math.floor(capacity - 1), 240, 120, 6)
       break
-    }
-    case 'overAdmitted': {
-      // 血池压满：4× 装载 → Cuckoo 内存满（kick 枯竭），Bloom/CountingBloom 靠位图/计数也守不住——真读數
-      const cap2 = Math.floor(intOr(o.capacity, BF_DEFAULTS.capacity) * 4)
-      queryRound(cap2, 300, 200, 7, 88)
+    case 'overAdmitted':
+      // 血池压满：4× 装载 → Cuckoo 内存满、kick 枯竭真拒插；Bloom/CB 位图/计数饱和但 add 仍成功
+      queryRound(capacity * 4, 300, 200, 7)
       break
-    }
     default:
-      queryRound(128, 64, 64, 9, 99)
+      queryRound(128, 64, 64, 9)
   }
 
-  const fpRate = probes > 0 ? round4(falsePositives / probes) : 0
   const stats = mk.stats()
+  const bitsPerKey = round4((stats.bytes ?? 0) * 8 / Math.max(1, stats.capacity ?? capacity))
+  const inFootprintExam = BF_DIM_SCENARIOS_F.boundedFalsePositive.has(scenarioId)
+  const inInsertExam = BF_DIM_SCENARIOS_F.insertsNeverFail.has(scenarioId)
+  const inDeleteExam = BF_DIM_SCENARIOS_F.deleteSupport.has(scenarioId)
+  // 每格各自判定、其余维空真不连坐（同 KI-523/525/526 正交口径）：
+  // 空间维按本格结构 bits/key 真算；插入维按本格真失败数；删除维只在 deleteCycle 考场真算，非考场空真 true。
+  const compactFootprint = bitsPerKey <= BF_COMPACT_BUDGET_BITS_PER_KEY
+  const insertsNeverFail = inInsertExam ? (insertFailures + (stats.stashFailures ?? 0) === 0) : true
+  const deleteSupport = inDeleteExam
+    ? (deleteTries > 0 ? (deleteSuccess / deleteTries >= 0.8) : (flags.noDeletesNeeded === true))
+    : true
   return {
     id: scenarioId,
     strategy: protocol,
     inserted,
     insertFailures,
     probes,
+    negProbes,
     falsePositives,
     correctNegatives,
     correctPositives,
@@ -409,160 +385,235 @@ export function runBloomFilterScenario(protocol, scenarioId, o = {}) {
     deleteSuccess,
     deleteReinserted,
     foldCount,
-    fpRate,
-    fillRatio: round4(stats.fillRatio ?? (inserted / Math.max(1, stats.capacity ?? capOfScenario(scenarioId)))),
-    m: stats.bits ?? stats.counters ?? stats.slotsPerTable ?? 0,
-    capacity: stats.capacity ?? 0,
-    bitsPerKey: round4((stats.bits ?? 0) / Math.max(1, stats.capacity ?? intOr(o.capacity, BF_DEFAULTS.capacity))),
+    fpRate: negProbes > 0 ? round4(falsePositives / negProbes) : 0,
+    fillRatio: round4(stats.fillRatio ?? 0),
+    m: stats.bits ?? stats.counters ?? stats.numBuckets ?? 0,
+    capacity: stats.capacity ?? capacity,
+    bitsPerKey,
     stashFailures: stats.stashFailures ?? 0,
     bytes: stats.bytes ?? 0,
-    fault: scenarioId === 'steadyFilter' ? 'steady' :
-           scenarioId === 'hotKeyFlood' ? 'hotKeyFlood' :
-           scenarioId === 'deleteCycle' ? 'deleteCycle' :
-           scenarioId === 'highLoadSaturation' ? 'highLoadSaturation' :
-           scenarioId === 'burstScale' ? 'burstScale' : 'overAdmitted',
+    fault: scenarioId,
+    // 三难正交三布尔 + 考场标记：前端矩阵/mesh-e2e ladder 直接读，绝不拿阈值重算
+    compactFootprint,
+    insertsNeverFail,
+    deleteSupport,
+    inFootprintExam,
+    inInsertExam,
+    inDeleteExam,
   }
 }
 
-function capOfScenario(_s) { return BF_DEFAULTS.capacity }
+/** 三难现算：全部从本维考场的真读数推布尔，绝不接受外部硬写的 trilemma。 */
+function computeTrilemma(cells, flags) {
+  const fpCells = cells.filter((c) => BF_DIM_SCENARIOS_F.boundedFalsePositive.has(c.id))
+  const insCells = cells.filter((c) => BF_DIM_SCENARIOS_F.insertsNeverFail.has(c.id))
+  const delCells = cells.filter((c) => BF_DIM_SCENARIOS_F.deleteSupport.has(c.id))
 
-const SCENARIO_IDS = BF_SCENARIOS
+  // compactFootprint：结构 bits/key 预算（与场景插入数无关，取 FP 考场均值）
+  const bitsPerKey = fpCells.length
+    ? fpCells.reduce((a, c) => a + c.bitsPerKey, 0) / fpCells.length
+    : BF_COMPACT_BUDGET_BITS_PER_KEY + 1
+  const compactFootprint = bitsPerKey <= BF_COMPACT_BUDGET_BITS_PER_KEY
 
-/** 父维度考校场：判词正交化（只在该维度负责场景里分，非考场空真） */
-const BF_DIM_SCENARIOS_F = Object.freeze({
-  boundedFalsePositive: new Set(['steadyFilter', 'burstScale']),
-  insertsNeverFail: new Set(['hotKeyFlood', 'highLoadSaturation', 'overAdmitted']),
-  deleteSupport: new Set(['deleteCycle']),
-})
+  // insertsNeverFail：本维考场真失败数（insertFailures + stashFailures）恒 0
+  const anyFail = insCells.some((c) => c.insertFailures > 0 || c.stashFailures > 0)
+  const insertsNeverFail = !anyFail
 
-/* --------------------------- ⑤ study + snapshot + evidence --------------------------- */
+  // deleteSupport：本维考场真删除成功率；delTries=0 时按 noDeletesNeeded 空真语义裁决（默认 false，不可证伪）
+  const delTries = delCells.reduce((a, c) => a + c.deleteTries, 0)
+  const delSuc = delCells.reduce((a, c) => a + c.deleteSuccess, 0)
+  const deleteSupport = delTries > 0 ? (delSuc / delTries >= 0.8) : (flags.noDeletesNeeded === true)
 
-export function bloomFilterStudy(opts = {}) {
-  const scenarioIds = Array.isArray(opts.scenarios) ? opts.scenarios : BF_SCENARIOS
+  return {
+    trilemma: { compactFootprint, insertsNeverFail, deleteSupport },
+    debug: { bitsPerKey: round4(bitsPerKey), delTries, delSuc, anyFail,
+             totalFpRate: round4(fpCells.length ? fpCells.reduce((a, c) => a + c.fpRate, 0) / fpCells.length : 0) },
+  }
+}
+
+/** 跑一整组 3 策略 × 场景矩阵，返回 rows（含从读数现算的 trilemma）。 */
+function runMatrix(opts, flags, scenarioIds) {
   const seed = intOr(opts.seed, BF_DEFAULTS.seed)
-  const rigZeroErrors = opts.zeroErrors === true || opts.rigged === true
-  const rigDeleteImpossible = opts.deleteImpossible === true || opts.rigged === true
-  const rigUnlimitedRoom = opts.unlimitedRoom === true || opts.rigged === true
-
+  const capacity = intOr(opts.capacity, BF_DEFAULTS.capacity)
   const rows = []
   for (const p of BF_STRATEGIES) {
-    const cells = scenarioIds.map((s) => runBloomFilterScenario(p, s, { ...opts, seed }))
-    const trilemma = { compactFootprint: null, insertsNeverFail: null, deleteSupport: null }
-    // 一维都在各自考场打分（只分它负责的场景；其余场景该维空真不连坐）
-    const fprCells = cells.filter((c) => BF_DIM_SCENARIOS_F.boundedFalsePositive.has(c.id))
-    const insCells = cells.filter((c) => BF_DIM_SCENARIOS_F.insertsNeverFail.has(c.id))
-    const delCells = cells.filter((c) => BF_DIM_SCENARIOS_F.deleteSupport.has(c.id))
-    // compactFootprint: bitsPerKey（Bloom ≈10、Cuckoo ≈14-16（1 字节迷彩 + 双表）、CB = 32）
-    const statsFingerprint = fprCells.length
-    const avgInserts = fprCells.reduce((a, c) => a + c.inserted, 0) / Math.max(1, fprCells.length)
-    const avgBytes = fprCells.reduce((a, c) => a + (c.bytes || 0), 0) / Math.max(1, fprCells.length)
-    const bitsPerKeyAvg = avgInserts > 0 ? (avgBytes * 8) / avgInserts : 8
-    trilemma.compactFootprint = bitsPerKeyAvg <= 20
-    // insertsNeverFail: 不允许任何插入失败
-    const anyFail = insCells.some((c) => c.insertFailures > 0 || (c.stashFailures ?? 0) > 0)
-    trilemma.insertsNeverFail = !anyFail
-    // deleteSupport: deleteCycle Delete success 有真 deletes
-    const delCalls = delCells.reduce((a, c) => a + (c.deleteTries || 0), 0)
-    const delSuc = delCells.reduce((a, c) => a + (c.deleteSuccess || 0), 0)
-    trilemma.deleteSupport = delCalls > 0 ? delSuc / delCalls >= 0.8 : null
-
-    const totalFpr = fprCells.reduce((a, c) => a + c.fpRate, 0) / Math.max(1, fprCells.length)
+    const cells = scenarioIds.map((s) => runBloomFilterScenario(p, s, { seed, capacity, flags }))
+    const { trilemma, debug } = computeTrilemma(cells, flags)
     rows.push({
       protocol: p,
       scenarios: cells,
       trilemma,
       metrics: {
-        avgInserts: round4(avgInserts),
-        avgBytes: round4(avgBytes),
-        bitsPerKey: round4(bitsPerKeyAvg),
-        totalFpRate: round4(totalFpr),
-        totalInsertFailures: cells.reduce((a, c) => a + (c.insertFailures || 0), 0),
-        totalStashFailures: cells.reduce((a, c) => a + (c.stashFailures || 0), 0),
-        deleteSuccess: delSuc,
-        deleteAttempts: delCalls,
+        bitsPerKey: debug.bitsPerKey,
+        totalFpRate: debug.totalFpRate,
+        totalInsertFailures: cells.reduce((a, c) => a + c.insertFailures, 0),
+        totalStashFailures: cells.reduce((a, c) => a + c.stashFailures, 0),
+        deleteAttempts: debug.delTries,
+        deleteSuccess: debug.delSuc,
+        deleteReinserted: cells.reduce((a, c) => a + c.deleteReinserted, 0),
+        foldCount: cells.reduce((a, c) => a + c.foldCount, 0),
       },
     })
   }
+  return rows
+}
 
-  // rigged 单开/全开：各按各表只抹一维（家族同范——绝不连坐）：
-  //   zeroErrors ⇒ compactFootprint 全真（容错吃空间、无限裕）
-  //   deleteImpossible ⇒ deleteSupport 全假（删无所谓，Bloom 不在乎、CB/Cuckoo 必露）
-  //   unlimitedRoom ⇒ insertsNeverFail 全真（撞墙去死角、Cuckoo 真的崖壁就了）
-  const rigged = rigZeroErrors && rigDeleteImpossible && rigUnlimitedRoom
-  for (const r of rows) {
-    if (rigZeroErrors) r.trilemma.compactFootprint = true
-    if (rigDeleteImpossible) r.trilemma.deleteSupport = false
-    if (rigUnlimitedRoom) r.trilemma.insertsNeverFail = true
+const vecOf = (r) =>
+  `${Number(r.trilemma.compactFootprint)}${Number(r.trilemma.insertsNeverFail)}${Number(r.trilemma.deleteSupport)}`
+
+/* --------------------------- ⑤ verify（可证伪） --------------------------- */
+
+/** FP 理论上界判定内核：唯一真值来源，喂回篡改输入也走这里现算 holds。 */
+function evaluateCeiling(input) {
+  const bits = intOr(input?.bits, 0)
+  const keys = intOr(input?.keys, 0)
+  const k = intOr(input?.hashFunctions, 0)
+  const probes = intOr(input?.negativeProbes, 0)
+  const fp = numOr(input?.measuredFpr, NaN)
+  const raw2 = input?.secondMeasuredFpr
+  const fp2 = (raw2 === undefined || raw2 === null) ? NaN : numOr(raw2, NaN)
+  const nontrivial = bits >= 256 && keys >= 64 && k >= 2 && probes >= 16 && Number.isFinite(fp)
+  const theory = nontrivial ? Math.pow(1 - Math.exp((-k * keys) / bits), k) : 0
+  const tolerated = theory * 1.5 + 0.005
+  const lower = theory * 0.2
+  const inBand = (v) => Number.isFinite(v) && v >= lower && v <= tolerated
+  const holds = nontrivial && inBand(fp) && (!Number.isFinite(fp2) || inBand(fp2))
+  return {
+    theory: round6(theory), measured: fp, measuredAlt: Number.isFinite(fp2) ? fp2 : null,
+    tolerated: round6(tolerated), lower: round6(lower), holds, nontrivial,
   }
-  const vectors = Object.fromEntries(rows.map((r) => [r.protocol,
-    `${Number(r.trilemma.compactFootprint)}${Number(r.trilemma.insertsNeverFail)}${Number(r.trilemma.deleteSupport)}`]))
-  const distinct = new Set(Object.values(vectors)).size === rows.length
-  const noProtocolWinsAll = !rows.some((r) => vectors[r.protocol] === '111')
-  const crosscheck = { evidence: createBloomFilterEvidence({ seed }) }
+}
+
+/**
+ * verifyFalsePositiveCeiling —— Bloom/CountingBloom 的「理论上界 vs 实测」双路自证 + 三路可证伪。
+ * 三路篡改被真喂回本函数（withTamper=false 走同一判定内核）逐路现算，holds 绝不写死。
+ */
+function verifyCeiling(input, withTamper) {
+  const core = evaluateCeiling(input)
+  if (!withTamper) return core
+  const bits = intOr(input?.bits, 0)
+  const k = intOr(input?.hashFunctions, 0)
+  const fp2raw = input?.secondMeasuredFpr
+  const base = {
+    bits, keys: intOr(input?.keys, 0), hashFunctions: k,
+    negativeProbes: intOr(input?.negativeProbes, 0), measuredFpr: numOr(input?.measuredFpr, NaN),
+    ...((fp2raw === undefined || fp2raw === null) ? {} : { secondMeasuredFpr: numOr(fp2raw, NaN) }),
+  }
+  // ① 信任配置失真：把 bits 缩到 1/16（仍 ≥256 保 nontrivial）⇒ ε 暴涨，原实测跌破下界
+  const tamperBits = Math.max(256, Math.floor(bits / 16))
+  const trustConfig = { ...verifyCeiling({ ...base, bits: tamperBits }, false), tamperBits,
+    reason: '篡改 bits ⇒ 理论上界 ε 失真，实测掉出邻域' }
+  // ② 零误判却给真否定集：fp=0 但 probes>0、理论 ε>0 ⇒ 0 跌破 lower
+  const zeroFpr = { ...verifyCeiling({ ...base, measuredFpr: 0, secondMeasuredFpr: 0 }, false),
+    reason: '零误判却给真否定集 ⇒ 与 ε>0 矛盾，跌破下界' }
+  // ③ 绕过否定集 probes：probes=0 ⇒ nontrivial=false ⇒ holds=false
+  const skipProbe = { ...verifyCeiling({ ...base, negativeProbes: 0 }, false),
+    reason: '绕过否定集 probes ⇒ nontrivial 降级，不可证伪' }
+  return { ...core, falsifiable: true, tamper: { trustConfig, zeroFpr, skipProbe } }
+}
+
+export function verifyFalsePositiveCeiling(input) { return verifyCeiling(input, true) }
+
+/** 真跑一枚稳态 Bloom，用两枚独立否定集真探 FP，产出喂给 verify 的输入（真撞合、非硬绿）。 */
+function runFpCeilingProbe(seed) {
+  const capacity = BF_DEFAULTS.capacity
+  const bitsPerKey = BF_DEFAULTS.bitsPerKey
+  const bits = bitsPerKey * capacity
+  const k = Math.max(2, Math.round(bitsPerKey * Math.LN2))
+  const keys = capacity
+  const negativeProbes = 4000
+  const bf = createBloomFilter({ capacity, bitsPerKey, seed })
+  for (let i = 0; i < keys; i++) bf.add(`ceiling-pos-${seed}-${i}`)
+  let fa = 0, fb = 0
+  for (let i = 0; i < negativeProbes; i++) if (bf.contains(`ceiling-neg-a-${seed}-${i}`)) fa++
+  for (let i = 0; i < negativeProbes; i++) if (bf.contains(`ceiling-neg-b-${seed}-${i}`)) fb++
+  return { bits, keys, hashFunctions: k, negativeProbes,
+    measuredFpr: fa / negativeProbes, secondMeasuredFpr: fb / negativeProbes }
+}
+
+/* --------------------------- ⑥ study + snapshot + evidence --------------------------- */
+
+export function bloomFilterStudy(opts = {}) {
+  const scenarioIds = Array.isArray(opts.scenarios) && opts.scenarios.length ? opts.scenarios : BF_SCENARIOS
+  const seed = intOr(opts.seed, BF_DEFAULTS.seed)
+  const rigged = opts.rigged === true
+  const flags = {
+    rigged,
+    unlimitedRoom: rigged || opts.unlimitedRoom === true,
+    eternalStasis: rigged || opts.eternalStasis === true,
+    noDeletesNeeded: rigged || opts.noDeletesNeeded === true,
+  }
+
+  // 主矩阵
+  const rows = runMatrix(opts, flags, scenarioIds)
+  const vectors = Object.fromEntries(rows.map((r) => [r.protocol, vecOf(r)]))
+  const values = Object.values(vectors)
+  const distinct = new Set(values).size === rows.length
+  const noStrategyWinsAll = !values.some((v) => v === '111')
+  const noUniversalWinner = rigged ? false : (distinct && noStrategyWinsAll)
+  const trilemmaDistinguishes = rigged ? false : distinct
+  const rowBy = (rs, p) => rs.find((r) => r.protocol === p)
+
+  // 单开反噬：三份矩阵真跑，判词全部由现算读数驱动（绝不硬编码 =true）
+  const mUR = runMatrix(opts, { unlimitedRoom: true }, scenarioIds)
+  const mES = runMatrix(opts, { eternalStasis: true }, scenarioIds)
+  const mND = runMatrix(opts, { noDeletesNeeded: true }, scenarioIds)
+  const urCuckoo = rowBy(mUR, 'Cuckoo').trilemma
+  const unlimitedRoomBackfiresCompactFootprint = urCuckoo.insertsNeverFail === true && urCuckoo.compactFootprint === false
+  const eternalStasisBackfiresDeletes = BF_STRATEGIES.every((p) => rowBy(mES, p).trilemma.deleteSupport === false)
+  const noDeletesNeededBackfiresDeletes = rowBy(mND, 'Bloom').trilemma.deleteSupport === false
+
+  // rigged 因果锁：三维被两开关抹真，唯空间维因果抹不掉
+  const compactFootprintCausallyUnerasable =
+    rigged
+    && rows.every((r) => r.trilemma.compactFootprint === false)
+    && rows.every((r) => r.trilemma.insertsNeverFail === true)
+    && rows.every((r) => r.trilemma.deleteSupport === true)
+    && distinct === false
+    && noStrategyWinsAll === true
+
+  const bloomRow = rowBy(rows, 'Bloom')
+  const cbRow = rowBy(rows, 'CountingBloom')
+  const cuckooRow = rowBy(rows, 'Cuckoo')
+  const crosscheck = {
+    evidence: createBloomFilterEvidence({ seed, now: opts.now }),
+    fpCeiling: verifyFalsePositiveCeiling(runFpCeilingProbe(seed)),
+  }
+  const verdict = {
+    vectors,
+    noUniversalWinner,
+    trilemmaDistinguishes,
+    noStrategyWinsAll,
+    vectorFromTrilemma: rows.every((r) => vectors[r.protocol] === vecOf(r)),
+    bloomDeleteFree: bloomRow.trilemma.deleteSupport === false,
+    countingBloomSpacePays: cbRow.trilemma.compactFootprint === false,
+    cuckooStashWall: cuckooRow.metrics.totalStashFailures > 0 || cuckooRow.metrics.totalInsertFailures > 0,
+    countingBloomDeleteSupport: cbRow.trilemma.deleteSupport === true,
+    cuckooDeleteSupport: cuckooRow.trilemma.deleteSupport === true,
+    compactFootprintCausallyUnerasable,
+    unlimitedRoomBackfiresCompactFootprint,
+    eternalStasisBackfiresDeletes,
+    noDeletesNeededBackfiresDeletes,
+    // 旧判词名：现算别名（由单开矩阵读数驱动，绝不写死 true）
+    zeroErrorsBackfiresFpBand: unlimitedRoomBackfiresCompactFootprint,
+    deleteImpossibleBackfiresDeletes: noDeletesNeededBackfiresDeletes,
+    fpCeilingHolds: crosscheck.fpCeiling.holds,
+  }
 
   return {
     builtAt: startClock(opts.now, 0),
-    config: { seed, zeroErrors: rigZeroErrors, deleteImpossible: rigDeleteImpossible, unlimitedRoom: rigUnlimitedRoom, rigged, scenarios: scenarioIds, capacity: intOr(opts.capacity, BF_DEFAULTS.capacity) },
-    rows,
-    vectors,
-    trilemmaDistinguishes: rigged ? false : distinct,
-    noUniversalWinner: rigged ? false : distinct && noProtocolWinsAll,
+    config: {
+      seed, capacity: intOr(opts.capacity, BF_DEFAULTS.capacity), scenarios: scenarioIds,
+      rigged, unlimitedRoom: flags.unlimitedRoom, eternalStasis: flags.eternalStasis, noDeletesNeeded: flags.noDeletesNeeded,
+    },
+    rows, vectors, verdict,
+    noUniversalWinner, trilemmaDistinguishes,
     rigged,
     crosscheck,
-    verdict: {
-      vectors,
-      trilemmaDistinguishes: rigged ? false : distinct,
-      noUniversalWinner: rigged ? false : distinct && noProtocolWinsAll,
-      noStrategyWinsAll: noProtocolWinsAll,
-      bloomDeleteFree: rows.find((r) => r.protocol === 'Bloom').trilemma.deleteSupport === false,
-      countingBloomSpacePays: rows.find((r) => r.protocol === 'CountingBloom').trilemma.compactFootprint === false,
-      cuckooStashWall: rows.find((r) => r.protocol === 'Cuckoo').metrics.totalStashFailures > 0 || rows.find((r) => r.protocol === 'Cuckoo').metrics.totalInsertFailures > 0,
-      countingBloomDeleteSupport: rows.find((r) => r.protocol === 'CountingBloom').trilemma.deleteSupport === true,
-      cuckooDeleteSupport: rows.find((r) => r.protocol === 'Cuckoo').trilemma.deleteSupport === true,
-      zeroErrorsBackfiresFpBand,
-      deleteImpossibleBackfiresDeletes,
-    },
   }
 }
-
-const zeroErrorsBackfiresFpBand = true // 单开 zeroErrors 只抹掉所有误判 ⇒ Bloom vector 全真等于强行篡改理论保护下限，位满即 false
-const deleteImpossibleBackfiresDeletes = true // 单开 deleteImpossible 抹掉所有删除 ⇒ CountingBloom/Cuckoo deleteSupport 真算翻 false
 
 export const compareBloomFilter = bloomFilterStudy
-
-/**
- * verifyFalsePositiveCeiling —— `Bloom`/`CountingBloom` 的「理论上界 vs 实测」双路自证。
- *
- * <p>路 A：按此次跑的 bits/m/keys/k 现算理论上用界 ε = (1 − e^(−kn/m))^k。
- * 路 B：用两颗独立 seed 各自 hash 一枚否定集逐只过滤器再验——硬断言实测 FP 率
- * 落在 { ε×0.2, ε×1.5 + 0.5% 地板 } 邻域内，空集降级 nontrivial=false（与 KI-525 family 同范，绝不硬绿）。</p>
- *
- * <p>三路篡改喂给它自己，也应该全翻 false——它才算是货真价值判词。</p>
- *
- * @param {{ bits: number, keys: number, hashFunctions: number, negativeProbes: number, measuredFpr: number, secondMeasuredFpr?: number }} input
- * @returns {{ theory: number, measured: number, tolerated: number, holds: boolean, nontrivial: boolean, falsifiable: true,
- *             tamper: { trustConfig: object, zeroFpr: object, skipProbe: object } }}
- */
-export function verifyFalsePositiveCeiling(input) {
-  const bits = intOr(input.bits, 0)
-  const keys = intOr(input.keys, 0)
-  const k = intOr(input.hashFunctions, 0)
-  const fp = numOr(input.measuredFpr, NaN)
-  const fp2 = Number.isFinite(Number(input.secondMeasuredFpr)) ? numOr(input.secondMeasuredFpr, NaN) : NaN
-  const probes = intOr(input.negativeProbes, 0)
-  const nontrivial = bits >= 256 && keys >= 64 && k >= 2 && probes >= 16 && Number.isFinite(fp)
-  const n = Math.max(1, keys)
-  const theory = nontrivial ? Math.pow(1 - Math.exp((-k * n) / bits), k) : 0
-  const tolerated = theory * 1.5 + 0.005
-  const lower = theory * 0.2
-  const holds = nontrivial && fp <= tolerated && fp >= lower && (!Number.isFinite(fp2) || (fp2 <= tolerated && fp2 >= lower))
-  const tamper = {
-    trustConfig: { holds: false, reason: 'bits/keys/k 被冻结 ⇒ ε 必红（弹性最优值不再是真值）' },
-    zeroFpr: { holds: false, reason: '零误判却给出真实否定集 ⇒ undefined/NaN 语义"（与「一定为零」不符）' },
-    skipProbe: { holds: false, reason: '绕过否定集 probes ⇒ 路 B 失据，holds 必 false' },
-  }
-  return { theory, measured: fp, measuredAlt: Number.isFinite(fp2) ? fp2 : null, tolerated, lower, holds, nontrivial, falsifiable: true, tamper }
-}
 
 export function bloomFilterSnapshot(study) {
   if (!study || typeof study !== 'object' || !Array.isArray(study.rows)) return null
@@ -577,102 +628,160 @@ export function bloomFilterSnapshot(study) {
     })),
     vectors: { ...study.vectors },
     verdict: { ...study.verdict },
-    crosscheck: study.crosscheck ? { evidence: { ...study.crosscheck.evidence } } : study.crosscheck,
+    crosscheck: study.crosscheck ? {
+      evidence: study.crosscheck.evidence ? { ...study.crosscheck.evidence } : undefined,
+      fpCeiling: study.crosscheck.fpCeiling ? { ...study.crosscheck.fpCeiling } : undefined,
+    } : undefined,
   }
 }
 
-/** 十一枚真件交叉印证 */
+/** 十一真件交叉印证：全部真 import、真 API、真调用、真回读，21 键无一硬编码兜底。 */
 export function createBloomFilterEvidence(opts = {}) {
   const seed = intOr(opts.seed, BF_DEFAULTS.seed)
-  const rand = makeRand(seed)
-  const evidence = {}
+  const fixedNow = startClock(opts.now, 0)
+  const nowFn = () => fixedNow
+  const keys = Array.from({ length: 200 }, (_, i) => `ev:key:${i}`)
+  const ev = {}
 
-  // ① compareRemapping — 迁移率
-  const comp = compareRemapping({ nodes: ['a','b','c'], addNodes: ['d'], keys: Array.from({ length: 200 }, (_, i) => `k:${i}`) })
-  evidence.remapConsistentRate = comp.consistent.rate
-  evidence.remapModuloRate = comp.modulo.rate
+  // ① compareRemapping —— 扩容最小重映射 vs 取模
+  const comp = compareRemapping({ nodes: ['a', 'b', 'c'], addNodes: ['d'], keys, salt: String(seed) })
+  ev.remapConsistentRate = comp.consistent.rate
+  ev.remapModuloRate = comp.modulo.rate
 
-  // ② ShardRouter
-  const router = createShardRouter({ shards: ['a','b','c'], slotCount: 256, virtualNodes: 24, salt: String(seed) })
-  for (let i = 0; i < 50; i++) router.route(`k:${i}`)
-  const remap = router.remapOn(['a','b','c','d'], { mutate: false })
-  evidence.routerMoved = remap.moved
+  // ② ShardRouter.remapOn —— 路由后扩容迁移键数
+  const router = createShardRouter({ shards: ['a', 'b', 'c'], slotCount: 256, virtualNodes: 16, salt: String(seed) })
+  for (const k of keys.slice(0, 80)) router.route(k)
+  const rm = router.remapOn(['a', 'b', 'c', 'd'], { mutate: false })
+  ev.routerMoved = rm.moved
+  ev.routerTracked = rm.total
 
-  // ③ HashRing
+  // ③ HashRing —— 真 nodeIds().length + 真路由分布用到的节点数
   const ring = createHashRing({ virtualNodes: 16, salt: String(seed) })
-  ring.addNode('a'); ring.addNode('b'); ring.addNode('c'); ring.addNode('d')
-  evidence.hashRingNodes = ring.nodeIds().length
+  for (const n of ['a', 'b', 'c', 'd']) ring.addNode(n)
+  ev.ringNodes = ring.nodeIds().length
+  const dist = ring.distribution(keys)
+  ev.ringShardsUsed = dist.nodes - dist.emptyNodes.length
 
-  // ④ Wal
+  // ④ Wal —— Bloom 判重日志真回放
+  const bf = createBloomFilter({ capacity: 256, bitsPerKey: 10, seed })
   const wal = createWal()
-  wal.append('bloom', 'k:1', { bytes: 8 })
-  wal.append('cuckoo', 'k:2', { bytes: 1 })
-  wal.restore(wal.lines())
-  let walRep = 0
-  wal.replay(() => { walRep++ })
-  evidence.walLines = wal.lines().length
-  evidence.walReplayed = walRep
+  for (const k of keys.slice(0, 80)) {
+    bf.add(k)
+    wal.append('put', k, { hit: bf.contains(k), slot: positionsFor(k, 3, 256)[0] })
+  }
+  const walLines = wal.lines()
+  const wal2 = createWal()
+  wal2.restore(walLines)
+  let walReplayed = 0
+  wal2.replay(() => { walReplayed += 1 })
+  ev.walLines = walLines.length
+  ev.walReplayed = walReplayed
 
-  // ⑤ Bus
+  // ⑤ Bus —— 过滤器事件真通知
   const bus = createBus()
   let notices = 0
-  bus.subscribe('filter.added', () => { notices++ })
-  bus.publish('filter.added', { proto: 'Bloom' })
-  evidence.notices = notices
-  evidence.busListeners = bus.listenerCount('filter.added')
+  bus.subscribe('filter.added', () => { notices += 1 })
+  for (const k of keys.slice(0, 12)) bus.publish('filter.added', { key: k })
+  ev.notices = notices
+  ev.busListeners = bus.listenerCount('filter.added')
 
-  // ⑥ createRedisCache — Bloom 在真 Redis 中的 slot 探针
-  const cache = createRedisCache()
-  cache.command('SET', 'filter:Bloom:bitmap', 'bit8')
-  evidence.redisEntries = cache.stats().entries
+  // ⑥ RedisCache —— 位图 slot 真 set + 真 get 命中
+  const cache = createRedisCache({ now: nowFn, maxEntries: 512, ttlMs: 0 })
+  for (let i = 0; i < 96; i++) cache.set(`bm:slot:${i}`, 1)
+  let bitmapHits = 0
+  for (let i = 0; i < 96; i++) if (cache.get(`bm:slot:${i}`) !== undefined) bitmapHits += 1
+  ev.redisBitmapHits = bitmapHits
+  ev.redisSlots = cache.stats().entries
 
-  // ⑦ ObjectPool
+  // ⑦ ObjectPool —— 取/还/复用真计数（无 ?? 兜底）
   const pool = createObjectPool({ factory: () => ({ slot: null }), maxSize: 8 })
-  pool.acquire(); pool.acquire(); pool.release({ slot: 'a' })
-  evidence.poolCreated = pool.stats().created ?? 3
+  const p1 = pool.acquire(), p2 = pool.acquire()
+  pool.release(p1)
+  pool.acquire()
+  const ps = pool.stats()
+  ev.poolCreated = ps.created
+  ev.poolReused = ps.reused
 
-  // ⑧ TokenBucket — 回放限速
-  const bucket = createTokenBucket({ capacity: 3, refillPerSecond: 1, now: () => 1000 })
-  let allowed = 0
-  for (let i = 0; i < 5; i++) if (bucket.allow().allowed) allowed++
-  evidence.bucketAllowed = allowed
-  evidence.bucketRejected = 5 - allowed
+  // ⑧ TokenBucket —— 回放限速真 allow()
+  const bucket = createTokenBucket({ capacity: 3, refillPerSec: 0, now: nowFn })
+  let bucketAllowed = 0, bucketRejected = 0
+  for (let i = 0; i < 7; i++) { if (bucket.allow().allowed) bucketAllowed += 1; else bucketRejected += 1 }
+  ev.bucketAllowed = bucketAllowed
+  ev.bucketRejected = bucketRejected
 
-  // ⑨ MinHeap — Bloom 定时重建排程
-  const heap = createMinHeapDelayQueue({ now: 0 })
-  heap.schedule(100, 'rebuild:bloom'); heap.schedule(250, 'rebuild:cuckoo'); heap.schedule(80, 'rebuild:cbloom')
-  evidence.heapFired = heap.advance(1000).length
+  // ⑨ MinHeapDelayQueue —— Bloom 定时重建排程
+  const heap = createMinHeapDelayQueue({ now: fixedNow })
+  heap.schedule(fixedNow + 80, 'rebuild:bloom')
+  heap.schedule(fixedNow + 250, 'rebuild:cuckoo')
+  heap.schedule(fixedNow + 40, 'rebuild:cbloom')
+  ev.heapFired = heap.advance(fixedNow + 1000).length
+  ev.heapPending = heap.pending()
 
-  // ⑩ PackedCounters — 紧凑计数器
-  const counters = createPackedCounters()
-  counters.inc('counters_bloom'); counters.inc('counters_cuckoo'); counters.inc('counters_cbloom')
-  evidence.counterSum = counters.stats().sum
+  // ⑩ PackedCounters —— 真 inc(i,by) + 真 get(i) 求和（无 stats().sum）
+  const counters = createPackedCounters(64)
+  for (let i = 0; i < 64; i++) counters.inc(i, i + 1)
+  let counterSum = 0
+  for (let i = 0; i < 64; i++) counterSum += counters.get(i)
+  ev.counterSum = counterSum
+  ev.counterFalseSharing = counters.stats().falseSharingPairs
 
-  // ⑪ FullJitterBackoff — 回放退避
-  evidence.jitterSpread = 0.13
+  // ⑪ FullJitterBackoff —— 真 delayFor 采样抖动离散（替代硬编码 0.13）
+  const jitter = createFullJitterBackoff({ baseTicks: 16, capTicks: 1024, seed })
+  const samples = Array.from({ length: 64 }, (_, i) => jitter.delayFor(6, i))
+  const sMin = Math.min(...samples), sMax = Math.max(...samples)
+  const sMean = samples.reduce((a, b) => a + b, 0) / samples.length
+  ev.jitterSpread = sMean > 0 ? round4((sMax - sMin) / sMean) : 0
 
-  return evidence
+  return ev
 }
+
+/* --------------------------- CLI --------------------------- */
 
 const isCliInvocation = !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href
 if (isCliInvocation) {
   const args = process.argv.slice(2)
   const rigged = args.includes('--rigged')
-  const study = bloomFilterStudy({ rigged, now: () => 0 })
+  const nowIdx = args.indexOf('--now')
+  const nowArg = args.find((a) => a.startsWith('--now='))
+  const nowMs = nowArg ? numOr(nowArg.slice(6), 0) : (nowIdx >= 0 ? numOr(args[nowIdx + 1], 0) : 0)
+  const opts = {
+    rigged,
+    now: () => nowMs,
+    unlimitedRoom: rigged || args.includes('--unlimited-room') || args.includes('--unlimitedRoom'),
+    eternalStasis: rigged || args.includes('--eternal-stasis') || args.includes('--eternalStasis'),
+    noDeletesNeeded: rigged || args.includes('--no-deletes-needed') || args.includes('--noDeletesNeeded'),
+  }
+  const study = bloomFilterStudy(opts)
   const snap = bloomFilterSnapshot(study)
   console.log('[bloom-filter] seed=' + study.config.seed +
-    ' zeroErrors=' + study.config.zeroErrors +
-    ' deleteImpossible=' + study.config.deleteImpossible +
-    ' unlimitedRoom=' + study.config.unlimitedRoom)
+    ' rigged=' + study.config.rigged +
+    ' unlimitedRoom=' + study.config.unlimitedRoom +
+    ' eternalStasis=' + study.config.eternalStasis +
+    ' noDeletesNeeded=' + study.config.noDeletesNeeded +
+    ' builtAt=' + study.builtAt)
   for (const row of snap.rows) {
-    console.log(
-      '  ' + row.protocol.padEnd(14) +
+    console.log('  ' + row.protocol.padEnd(14) +
       ' bits/key=' + String(row.metrics.bitsPerKey).padStart(5) +
       ' totalFpRate=' + String(row.metrics.totalFpRate).padStart(7) +
       ' stashFailures=' + row.metrics.totalStashFailures +
-      ' trilemma={' + ['compactFootprint=' + row.trilemma.compactFootprint, 'insertsNeverFail=' + row.trilemma.insertsNeverFail, 'deleteSupport=' + row.trilemma.deleteSupport].join(',') + '}',
-    )
+      ' trilemma={' + ['compactFootprint', 'insertsNeverFail', 'deleteSupport']
+        .map((dim) => dim + '=' + row.trilemma[dim]).join(',') + '}')
   }
   console.log('  vectors: ' + JSON.stringify(snap.vectors))
-  console.log('  noUniversalWinner=' + study.noUniversalWinner + ' distinguishable=' + study.trilemmaDistinguishes + ' rigged=' + study.rigged)
+  console.log('  noUniversalWinner=' + study.noUniversalWinner +
+    ' distinguishable=' + study.trilemmaDistinguishes + ' rigged=' + study.rigged)
+  const v = snap.verdict
+  console.log('  verdict: compactFootprintCausallyUnerasable=' + v.compactFootprintCausallyUnerasable +
+    ' noStrategyWinsAll=' + v.noStrategyWinsAll +
+    ' vectorFromTrilemma=' + v.vectorFromTrilemma)
+  console.log('  backfires: unlimitedRoom→compact=' + v.unlimitedRoomBackfiresCompactFootprint +
+    ' eternalStasis→deletes=' + v.eternalStasisBackfiresDeletes +
+    ' noDeletesNeeded→deletes=' + v.noDeletesNeededBackfiresDeletes)
+  const fc = study.crosscheck.fpCeiling
+  console.log('  fpCeiling: holds=' + fc.holds + ' nontrivial=' + fc.nontrivial +
+    ' theory=' + fc.theory + ' measured=' + fc.measured +
+    ' tamper{trust=' + fc.tamper.trustConfig.holds +
+    ',zero=' + fc.tamper.zeroFpr.holds + ',skip=' + fc.tamper.skipProbe.holds + '}')
+  const ev = study.crosscheck.evidence
+  console.log('  evidenceKeys=' + Object.keys(ev).length + ' [' + Object.keys(ev).join(',') + ']')
 }

@@ -1482,3 +1482,92 @@ describe('KI-526 · logCompaction 日志压缩面板：三策略 × 六场景 + 
     expect(css).toContain('@media (max-width: 720px)')
   })
 })
+
+describe('KI-527 · bloomFilter 布隆/布谷鸟/计数布隆面板：三策略 × 六场景 + 正交三难向量 + FP ceiling 双路自证 + 十一真件交叉印证', () => {
+  const realBf = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+
+  it('三策略 × 六场景矩阵状态字直读 cell 三布尔 + 指标梯 + 软肋字（肥/崖/缺删）与三难同源', async () => {
+    const dom = await runApp(realBf)
+    const matrix = dom.els['blf-matrix'].innerHTML
+    expect(matrix).toContain('blf-mat-head')
+    for (const s of ['Bloom', 'CountingBloom', 'Cuckoo']) expect(matrix).toContain('data-strategy="' + s + '"')
+    expect(matrix).toContain('data-s="steadyFilter"')
+    expect(matrix).toContain('data-s="overAdmitted"')
+    const states = [...matrix.matchAll(/data-state="([^"]+)"/g)].map((m: any) => m[1])
+    expect(states.length).toBe(18) // 3 策略 × 6 场景
+    for (const st of states) expect(['bloat', 'wall', 'nodel', 'ok']).toContain(st)
+    expect(matrix).toContain('class="blf-cell nodel"')  // Bloom 缺删（deleteCycle）
+    expect(matrix).toContain('class="blf-cell bloat"')  // CountingBloom 计数吃空间
+    expect(matrix).toContain('class="blf-cell wall"')   // Cuckoo 高装载崖壁
+    const ladder = dom.els['blf-ladder'].innerHTML
+    for (const s of ['Bloom', 'CountingBloom', 'Cuckoo']) expect(ladder).toContain('data-strategy="' + s + '"')
+    expect(ladder).toContain('blf-bar')
+    expect(dom.els['blf-matrix-note'].textContent).toContain('三布尔')
+  })
+
+  it('三难向量三行 + 向量串 110/011/101 + 不封赢家 + 因果锁/FP 判词 chips', async () => {
+    const dom = await runApp(realBf)
+    const tri = dom.els['blf-trilemma'].innerHTML
+    expect(tri).toContain('blf-vec-head')
+    expect(tri).toContain('data-vec="110"') // Bloom
+    expect(tri).toContain('data-vec="011"') // CountingBloom
+    expect(tri).toContain('data-vec="101"') // Cuckoo
+    for (const k of ['compactFootprint', 'insertsNeverFail', 'deleteSupport']) expect(tri).toContain('data-k="' + k + '"')
+    const probes = dom.els['blf-probes'].innerHTML
+    for (const k of ['noUniversalWinner', 'compactFootprintCausallyUnerasable', 'fpCeilingHolds', 'bloomDeleteFree', 'cuckooStashWall']) {
+      expect(probes, '判词 chip ' + k + ' 必须落 DOM').toContain('data-verdict="' + k + '"')
+    }
+    expect(dom.els['blf-trilemma-note'].textContent).toContain('Cuckoo=101')
+    expect(dom.els['blf-trilemma-note'].textContent).not.toContain('Cuckoo=001')
+  })
+
+  it('FP ceiling 双路自证栏 + 三路篡改真喂回标记 + 十一真件交叉印证全部真 API 名落 DOM', async () => {
+    const dom = await runApp(realBf)
+    const vf = dom.els['blf-verif'].innerHTML
+    expect(vf).toContain('data-rb="holds"')
+    expect(vf).toContain('data-rb="nontrivial"')
+    expect(vf).toContain('data-rb="falsifiable"')
+    expect(vf).toContain('data-rb-tamper="trustConfig"')
+    expect(vf).toContain('data-rb-tamper="zeroFpr"')
+    expect(vf).toContain('data-rb-tamper="skipProbe"')
+    const cx = dom.els['blf-crosscheck'].innerHTML
+    for (const api of [
+      'compareRemapping', 'createShardRouter', 'createHashRing', 'createWal', 'createBus',
+      'createRedisCache', 'createObjectPool', 'createTokenBucket', 'createMinHeapDelayQueue',
+      'createPackedCounters', 'createFullJitterBackoff',
+    ]) expect(cx, '真件 ' + api + ' 必须落 DOM').toContain(api)
+  })
+
+  it('systems.bloomFilter 缺失 / 交叉印证缺失：真实降级、绝不伪造', async () => {
+    const noBf = JSON.parse(JSON.stringify(realBf))
+    noBf.systems.bloomFilter = null
+    const dom = await runApp(noBf)
+    expect(dom.els['blf-matrix'].innerHTML).toContain('暂缺')
+    expect(dom.els['blf-ladder'].innerHTML).toBe('')
+    expect(dom.els['blf-trilemma'].innerHTML).toContain('暂缺')
+    expect(dom.els['blf-matrix-note'].textContent).toContain('systems.bloomFilter 缺失')
+    const partial = JSON.parse(JSON.stringify(realBf))
+    partial.systems.bloomFilter.crosscheck = null
+    const dom2 = await runApp(partial)
+    expect(dom2.els['blf-crosscheck'].innerHTML).toContain('真件交叉印证缺失')
+    expect(dom2.els['blf-crosscheck'].innerHTML).not.toContain('createHashRing')
+  })
+
+  it('第二十一维 markup 与 CSS 契约：row-blf 两面板 + blf-* 视觉族 + 向量真值 + reduced-motion 兜底', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-blf')
+    expect(html).toContain('id="blf-matrix"')
+    expect(html).toContain('id="blf-verif"')
+    expect(html).toContain('Cuckoo=101')
+    expect(html).not.toContain('Cuckoo=001')
+    expect(css).toContain('.blf-cell.bloat')            // 空间肥
+    expect(css).toContain('.blf-cell.wall')             // 高装载崖壁
+    expect(css).toContain('.blf-cell.nodel')            // 不支持删除
+    expect(css).toContain('.blf-cell.ok')               // 空真无病征
+    expect(css).toContain('.blf-bar > i')               // 指标梯
+    expect(css).toContain('.blf-verif')                 // FP ceiling 自证栏
+    expect(css).toContain('prefers-reduced-motion')     // 前庭友好兜底
+    expect(css).toContain('@media (max-width: 720px)')
+  })
+})

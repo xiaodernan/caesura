@@ -622,6 +622,51 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(seven.every((x) => x === 526000)).toBe(true)
   })
 
+  it('⑱-bloomFilter buildBloomFilterReading 真跑：bf* 注入生效 / bloomFilter:false 关闭 / rigged 因果锁可证伪 / 新三开关单开反噬 / 八时钟同源（KI-527）', async () => {
+    const { buildBloomFilterReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 527000
+    const bf = (await buildBloomFilterReading({}, now))!
+    expect(bf).not.toBe(null)
+    expect(bf.builtAt).toBe(527000)                            // KI-517 母版：builtAt 对注入时钟求值
+    expect(bf.rows.length).toBe(3)
+    expect(bf.config.scenarios.length).toBe(6)
+    expect(bf.vectors).toEqual({ Bloom: '110', CountingBloom: '011', Cuckoo: '101' })
+    // bf* 注入（bfSeed/bfCapacity/bfBitsPerKey），不复用被其它维占用的前缀
+    const tuned = (await buildBloomFilterReading({ bfSeed: 9, bfCapacity: 2048, bfBitsPerKey: 12 }, now))!
+    expect(tuned.config.seed).toBe(9)
+    expect(tuned.config.capacity).toBe(2048)
+    // 新三开关单开：各自现算反噬判词，绝不硬造全 111
+    const ur = (await buildBloomFilterReading({ bfUnlimitedRoom: true }, now))!
+    expect(ur.verdict.unlimitedRoomBackfiresCompactFootprint).toBe(true)
+    const es = (await buildBloomFilterReading({ bfEternalStasis: true }, now))!
+    expect(es.verdict.eternalStasisBackfiresDeletes).toBe(true)
+    const nd = (await buildBloomFilterReading({ bfNoDeletesNeeded: true }, now))!
+    expect(nd.verdict.noDeletesNeededBackfiresDeletes).toBe(true)
+    // 旧名兼容别名：bfZeroErrors→unlimitedRoom、bfDeleteImpossible→noDeletesNeeded，透传不静默失效
+    const legacyZ = (await buildBloomFilterReading({ bfZeroErrors: true }, now))!
+    expect(legacyZ.verdict.unlimitedRoomBackfiresCompactFootprint).toBe(true)
+    const legacyD = (await buildBloomFilterReading({ bfDeleteImpossible: true }, now))!
+    expect(legacyD.verdict.noDeletesNeededBackfiresDeletes).toBe(true)
+    // rigged 齐开：三向量退 011·空间紧凑因果抹不掉，判词可证伪
+    const rig = (await buildBloomFilterReading({ bfRigged: true }, now))!
+    expect(rig.vectors).toEqual({ Bloom: '011', CountingBloom: '011', Cuckoo: '011' })
+    expect(rig.verdict.compactFootprintCausallyUnerasable).toBe(true)
+    expect(rig.verdict.noUniversalWinner).toBe(false)
+    // FP ceiling 双路自证 + 三路篡改真喂回
+    expect(bf.crosscheck.fpCeiling.holds).toBe(true)
+    expect(bf.crosscheck.fpCeiling.tamper.trustConfig.holds).toBe(false)
+    expect(Object.keys(bf.crosscheck.evidence).length).toBe(21)
+    // bloomFilter:false 关闭不连坐其它维
+    const off = await buildSystems({ now, bloomFilter: false })
+    expect(off.bloomFilter).toBe(null)
+    expect(off.logCompaction).not.toBe(null)
+    expect(off.backpressure).not.toBe(null)
+    // 八时钟同源（systems + delayQueue/retryDlq/consumerGroup/backpressure/logCompaction/bloomFilter/builtAt）
+    const full = await buildSystems({ now })
+    const eight = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt, full.bloomFilter?.builtAt]
+    expect(eight.every((x) => x === 527000)).toBe(true)
+  })
+
   it('⑭ buildMvccTxnReading 真跑五档矩阵形状齐、读数是真判词、单维关闭不连坐（KI-505）', async () => {
     const { buildMvccTxnReading } = await import('../../scripts/caesura-console-gen.mjs')
     const now = () => 4242

@@ -42,6 +42,7 @@ import { consumerGroupStudy, consumerGroupSnapshot } from './caesura-consumer-gr
 import { backpressureStudy, backpressureSnapshot } from './caesura-backpressure.mjs'
 import { logCompactionStudy, logCompactionSnapshot } from './caesura-log-compaction.mjs'
 import { bloomFilterStudy, bloomFilterSnapshot } from './caesura-bloom-filter.mjs'
+import { cacheReplacementStudy, cacheReplacementSnapshot } from './caesura-cache-replacement.mjs'
 import {
   createAimdCongestion,
   createCubicCongestion,
@@ -598,7 +599,7 @@ export function createGameCloud(opts = {}) {
 
   // KI-527 布隆/布谷鸟/计数布隆三过滤器诚实权衡（Bloom / CountingBloom / Cuckoo；opt-in、status/ bf* ）。
   // opts.bloomFilter===true 走钳制默认参数（可覆盖 now/seed/capacity/bitsPerKey/bits/counterWidth/tableCount/bucketSize/maxKicks/benchKeys/maxLoadFactor
-  // /unlimitedRoom/zeroErrors/deleteImpossible/rigged 等）；传对象且 rows/vectors/verdict 齐全时当现成 study 注入；默认 bloomFilter:false 非破坏
+  // /unlimitedRoom/eternalStasis/noDeletesNeeded/rigged 等）；传对象且 rows/vectors/verdict 齐全时当现成 study 注入；默认 bloomFilter:false 非破坏
   //（同 KI-513/518/520/523/525/526 法），显式开才接；不声称真 RocksDB Bloom / 真 RedisBloom / 真 Cuckoo 论文规格实现 / 真墙钟压测毫秒。
   // 注意命名：bf*（Bloom Filter），避开 bp*/bpc*/cgp*/lc* 等已占用前缀。
   const bfCfg = opts.bloomFilter === true ? {} : (opts.bloomFilter && typeof opts.bloomFilter === 'object' ? opts.bloomFilter : null)
@@ -614,6 +615,26 @@ export function createGameCloud(opts = {}) {
       : await bloomFilterStudy({ ...bfCfg, now: opts.bfNow ?? bfCfg.now })
     bfCached = bloomFilterSnapshot(study)
     return bfCached
+  }
+
+  // KI-528 LRU / 2Q / ARC 三替换策略诚实权衡（page-race LRU / segQ² / megiddo ARC；opt-in、status/ cr*）。
+  // opts.cacheReplacement===true 走钳制默认参数（可覆盖 now/seed/capacity/accesses/perfectFuture/unlimitedRoom/scenarios/rigged 等）；
+  // 传对象且 rows/vectors/verdict 齐全时当现成 study 注入；默认 cacheReplacement:false 非破坏（同 KI-513/518/520/523/525/526/527 法），
+  // 显式开才接；不声称真 Megiddo-Modha ACL 字节码 / 真 Buffer Pool / 真 RocksDB db-buffer.cpp / 真 BloomFilter 基准分数 / 真墙钟延迟毫秒。
+  // 注意命名：cr*（cache replacement），避开 bp*/bpc*/cgp*/lc*/bf* 等已占用前缀。
+  const crCfg = opts.cacheReplacement === true ? {} : (opts.cacheReplacement && typeof opts.cacheReplacement === 'object' ? opts.cacheReplacement : null)
+  const crInjected = crCfg !== null && opts.cacheReplacement &&
+    typeof opts.cacheReplacement === 'object' && Array.isArray(opts.cacheReplacement.rows) &&
+    opts.cacheReplacement.vectors && opts.cacheReplacement.verdict
+  let crCached = null
+  async function crSnapshotForStatus() {
+    if (crCfg === null) return null
+    if (crCached) return crCached
+    const study = crInjected
+      ? opts.cacheReplacement
+      : await cacheReplacementStudy({ ...crCfg, now: opts.crNow ?? crCfg.now })
+    crCached = cacheReplacementSnapshot(study)
+    return crCached
   }
 
   // KI-513：分布式消息投递语义三协议诚实权衡（At-Most-Once / At-Least-Once / Exactly-Once，opt-in）。
@@ -714,8 +735,10 @@ export function createGameCloud(opts = {}) {
     runBackpressureStudy: bpcCfg === null ? null : () => backpressureStudy({ ...bpcCfg, now: opts.bpcNow ?? bpcCfg.now }),
     /** KI-526 日志压缩 / 回放边界三策略诚实权衡研究件；缺 opts.logCompaction 时为 null；SizeTimeRetention/KeyCompaction/SnapshotPlusWal × 六场景矩阵 + 三难向量（rigged 110/110/110 因果锁死 fastRecovery、不硬造全 111）+ verifyReplayBoundary 双路守恒自证（篡改重放成本/抹 WAL 段/早清 tombstone 三路可证伪）+ 十一枚真件交叉印证。 */
     runLogCompactionStudy: lcCfg === null ? null : () => logCompactionStudy({ ...lcCfg, now: opts.lcNow ?? lcCfg.now }),
-    /** KI-527 布隆/布谷鸟/计数布隆三过滤器诚实权衡研究件；缺 opts.bloomFilter 时为 null；Bloom/CountingBloom/Cuckoo × 六场景矩阵 + 三难向量（rigged 110/110/110 因果锁死 unlimitedRoom、绝不硬造全 111）+ verifyFalsePositiveCeiling 双路自证（理论 ε vs 实测 FP 率真读数 + 三路篡改可证伪）+ 十一枚真件交叉印证。 */
+    /** KI-527 布隆/布谷鸟/计数布隆三过滤器诚实权衡研究件；缺 opts.bloomFilter 时为 null；Bloom/CountingBloom/Cuckoo × 六场景矩阵 + 三难向量（默认 110/011/101 互异不封赢家；rigged 011/011/011 由 unlimitedRoom 真算因果锁死 compactFootprint、绝不硬造全 111）+ verifyFalsePositiveCeiling 双路自证（理论 ε vs 实测 FP 率真读数 + 三路篡改真喂回现算翻 false）+ 十一枚真件 21 键交叉印证。 */
     runBloomFilterStudy: bfCfg === null ? null : () => bloomFilterStudy({ ...bfCfg, now: opts.bfNow ?? bfCfg.now }),
+    /** KI-528 LRU/2Q/ARC 三替换策略诚实权衡研究件；缺 opts.cacheReplacement 时为 null；LRU/2Q/ARC × 六场景矩阵 + 三难向量（rigged 110/110/110 因果锁死 adaptiveBalance、不得硬造全 111）+ verifyDualSweep 双路交叉印证（独立 trace 2 路自检真 hit 计数）+ 十一枚真件交叉印证。 */
+    runCacheReplacementStudy: crCfg === null ? null : () => cacheReplacementStudy({ ...crCfg, now: opts.crNow ?? crCfg.now }),
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
     gray: runtime.gray,
     /** 把游戏真 EventBus 按白名单routes 接进云事件总线（游戏侧一行：gc.connectGameBus(bus, routes)）。 */
@@ -767,6 +790,7 @@ export function createGameCloud(opts = {}) {
         backpressure: await bpcSnapshotForStatus(),
         logCompaction: await lcSnapshotForStatus(),
         bloomFilter: await bfSnapshotForStatus(),
+        cacheReplacement: await crSnapshotForStatus(),
       }
     },
   }

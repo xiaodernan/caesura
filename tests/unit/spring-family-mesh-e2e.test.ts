@@ -806,4 +806,49 @@ describe('spring-family-mesh-e2e', () => {
     expect(plain.backpressureSnapshot).toBe(null)
     expect(plain.consumerGroupSnapshot).toBe(null)
   })
+
+  it("e2e KI-527：bloomFilter=true ⇒ 主链照常跑通，bloomFilterSnapshot 带三策略×六场景/三难向量 110/011/101/FP ceiling 双路自证/十一真件交叉印证", async () => {
+    const e = runMeshE2E({ bloomFilter: true, bfNow: () => 8888 })
+    const r = await e.run()
+    expect(r.started?.registered).toBe(true)          // 主链语义逐字不动
+    expect(r.callRes?.ok).toBe(true)
+    const d = r.bloomFilterSnapshot
+    expect(d).not.toBe(null)
+    expect(d!.builtAt).toBe(8888)
+    expect(d!.config.scenarios.length).toBe(6)
+    expect(d!.rows.length).toBe(3)
+    expect(d!.vectors).toEqual({ Bloom: '110', CountingBloom: '011', Cuckoo: '101' })
+    const bloom = d!.rows.find((row: any) => row.protocol === 'Bloom')!
+    const cb = d!.rows.find((row: any) => row.protocol === 'CountingBloom')!
+    const cuckoo = d!.rows.find((row: any) => row.protocol === 'Cuckoo')!
+    expect(bloom.trilemma).toEqual({ compactFootprint: true, insertsNeverFail: true, deleteSupport: false })
+    expect(cb.trilemma).toEqual({ compactFootprint: false, insertsNeverFail: true, deleteSupport: true })
+    expect(cuckoo.trilemma).toEqual({ compactFootprint: true, insertsNeverFail: false, deleteSupport: true })
+    expect(cuckoo.metrics.totalStashFailures).toBeGreaterThan(0) // Cuckoo 装载崖壁真拒插
+    const ev = d!.crosscheck.evidence
+    expect(Object.keys(ev).length).toBe(21)           // 十一真件 21 键真回读
+    expect(ev.walReplayed).toBeGreaterThan(0)
+    const fc = d!.crosscheck.fpCeiling
+    expect(fc.holds).toBe(true)
+    expect(fc.tamper.trustConfig.holds).toBe(false)   // 三路篡改真喂回现算翻 false
+    expect(fc.tamper.zeroFpr.holds).toBe(false)
+    expect(fc.tamper.skipProbe.holds).toBe(false)
+    expect(d!.verdict.noUniversalWinner).toBe(true)
+    expect(d!.verdict.cuckooStashWall).toBe(true)
+    // cell 级三布尔：前端/CLI  ladder 状态字只认真件算好的三布尔，绝不拿阈值重算
+    const deleteCell = bloom.scenarios.find((s: any) => s.id === 'deleteCycle')!
+    expect(deleteCell.deleteSupport).toBe(false)                 // Bloom 缺删
+    expect(cb.scenarios.every((s: any) => s.compactFootprint === false)).toBe(true) // CB 六场景全吃空间
+    const loadCell = cuckoo.scenarios.find((s: any) => s.id === 'highLoadSaturation')!
+    expect(loadCell.insertsNeverFail).toBe(false)                // Cuckoo 高装载撞崖壁
+    // rigged 透传：011/011/011 因果锁死 compactFootprint
+    const rig = await runMeshE2E({ bloomFilter: { rigged: true } }).run()
+    expect(rig.bloomFilterSnapshot!.vectors).toEqual({ Bloom: '011', CountingBloom: '011', Cuckoo: '011' })
+    expect(rig.bloomFilterSnapshot!.verdict.compactFootprintCausallyUnerasable).toBe(true)
+    expect(rig.bloomFilterSnapshot!.verdict.noUniversalWinner).toBe(false)
+    // 未配 bloomFilter 时为 null（非破坏、不连坐其它维）
+    const bare = await runMeshE2E().run()
+    expect(bare.bloomFilterSnapshot).toBe(null)
+    expect(bare.logCompactionSnapshot).toBe(null)
+  })
 })

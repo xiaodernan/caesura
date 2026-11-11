@@ -128,10 +128,14 @@ export function runMeshE2E(opts = {}) {
     // 注入时钟用 lcNow（避开 lsm/bp/bpc/cgp/rdq/dld 已占用前缀）。
     logCompaction: opts.logCompaction,
     lcNow: opts.lcNow,
-    // KI-527：布隆/布谷鸟/计数布隆三过滤器诚实权衡（bloomFilter=true 装配；只读 Bloom/CountingBloom/Cuckoo × 六场景矩阵 + 三难向量 + verifyFalsePositiveCeiling 双路自证 + 十一枚真件交叉印证，rigged 110/110/110 因果锁死 unlimitedRoom、绝不硬造全 111，不改调用路径）。
+    // KI-527：布隆/布谷鸟/计数布隆三过滤器诚实权衡（bloomFilter=true 装配；只读 Bloom/CountingBloom/Cuckoo × 六场景矩阵 + 三难向量 110/011/101 + verifyFalsePositiveCeiling 双路自证 + 十一枚真件 21 键交叉印证，rigged 011/011/011 由 unlimitedRoom 真算因果锁死 compactFootprint、绝不硬造全 111，不改调用路径）。
     // 注入时钟用 bfNow（避开 bf* 分支与 lsm/bp/bpc/cgp/lc/rdq/dld 前缀）。
     bloomFilter: opts.bloomFilter,
     bfNow: opts.bfNow,
+    // KI-528：LRU/2Q/ARC 三替换策略诚实权衡（cacheReplacement=true 装配；只读 LRU/2Q/ARC × 六场景矩阵 + 三难向量 + verifyDualSweep 双路交叉印证（+ 独立 trace 真 hit 计数）+ 十一枚真件交叉印证，rigged 110/110/110 因果锁死 adaptiveBalance、不得硬造全 111，不改调用路径）。
+    // 注入时钟用 crNow（避开 cr* 分支与 lsm/bp/bpc/cgp/lc/bf/rdq/dld 已占用前缀）。
+    cacheReplacement: opts.cacheReplacement,
+    crNow: opts.crNow,
     sources: {
       eureka: () => (opts.svcA ?? [{ id: 'svc-a:1', name: 'svc-a', address: '10.0.0.1', port: 8080, healthy: true }]),
       k8s: () => k8s.discover('caesura-gate'),
@@ -273,6 +277,7 @@ export function runMeshE2E(opts = {}) {
         backpressureSnapshot: status.backpressure ?? null,
         logCompactionSnapshot: status.logCompaction ?? null,
         bloomFilterSnapshot: status.bloomFilter ?? null,
+        cacheReplacementSnapshot: status.cacheReplacement ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
       }
@@ -512,7 +517,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         strategies: r.bloomFilterSnapshot.rows.map((row) => ({
           strategy: row.protocol,
           // 每格状态只认真件算好的三布尔（compactFootprint/insertsNeverFail/deleteSupport）——绝不拿阈值重算，与 trilemma 同源。
-          ladder: row.scenarios.map((s) => s.id + ':' + (s.compactFootprint === false ? '肥' : s.insertsNeverFail === false ? '拒' : s.deleteSupport === true ? '删' : '✓')).join(' → '),
+          ladder: row.scenarios.map((s) => s.id + ':' + (s.compactFootprint === false ? '肥' : s.insertsNeverFail === false ? '崖' : s.deleteSupport === false ? '缺删' : '✓')).join(' → '),
           metrics: row.metrics, trilemma: row.trilemma,
         })),
         trilemmaVectors: Object.fromEntries(r.bloomFilterSnapshot.rows.map((row) => [row.protocol,
@@ -520,6 +525,19 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         noUniversalWinner: r.bloomFilterSnapshot.verdict.noUniversalWinner,
         crosscheck: r.bloomFilterSnapshot.crosscheck,
         verdict: r.bloomFilterSnapshot.verdict,
+      } : null,
+      cacheReplacement: r.cacheReplacementSnapshot ? {
+        strategies: r.cacheReplacementSnapshot.rows.map((row) => ({
+          strategy: row.protocol,
+          // 每格状态只认真件算好的三布尔（scanResistance/stableHitRate/adaptiveBalance）—绝不拿阈值重算，与 trilemma 同源。
+          ladder: row.scenarios.map((s) => s.id + ':' + (s.scanResistance === false ? '污' : s.stableHitRate === false ? '抖' : s.adaptiveBalance === true ? '漂' : '✓')).join(' → '),
+          metrics: row.metrics, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.cacheReplacementSnapshot.rows.map((row) => [row.protocol,
+          `${Number(row.trilemma.scanResistance)}${Number(row.trilemma.stableHitRate)}${Number(row.trilemma.adaptiveBalance)}`])),
+        noUniversalWinner: r.cacheReplacementSnapshot.verdict.noUniversalWinner,
+        crosscheck: r.cacheReplacementSnapshot.crosscheck,
+        verdict: r.cacheReplacementSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

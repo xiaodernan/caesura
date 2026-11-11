@@ -1364,4 +1364,93 @@ describe('caesura-game-cloud', () => {
     expect(injected.logCompaction.builtAt).toBe(555)
     expect(injected.logCompaction.config.seed).toBe(99)
   })
+
+  it("bloomFilter:true ⇒ 装配布隆/布谷鸟/计数布隆三过滤器、status.bloomFilter 读真矩阵/三难向量/FP ceiling 双路自证/十一真件、builtAt 随 bfNow、惰性同引用（KI-527）", async () => {
+    const gc = createGameCloud({
+      gameId: 'gidbf1', gamePort: 7821, sources, cloud: fakeCloud(),
+      bloomFilter: true, bfNow: () => 9999,
+    })
+    expect(gc.runBloomFilterStudy).toBeTypeOf('function')
+    const st = await gc.status()
+    expect(st.bloomFilter.builtAt).toBe(9999)                    // 注入时钟真求值（KI-517 契约延伸）
+    expect(st.bloomFilter.config.scenarios.length).toBe(6)
+    expect(st.bloomFilter.rows.length).toBe(3)
+    expect(st.bloomFilter.vectors).toEqual({ Bloom: '110', CountingBloom: '011', Cuckoo: '101' })
+    const bloom = st.bloomFilter.rows.find((r: any) => r.protocol === 'Bloom')!
+    const cb = st.bloomFilter.rows.find((r: any) => r.protocol === 'CountingBloom')!
+    const cuckoo = st.bloomFilter.rows.find((r: any) => r.protocol === 'Cuckoo')!
+    expect(bloom.trilemma).toEqual({ compactFootprint: true, insertsNeverFail: true, deleteSupport: false })  // 只缺删
+    expect(cb.trilemma).toEqual({ compactFootprint: false, insertsNeverFail: true, deleteSupport: true })    // 只缺空间
+    expect(cuckoo.trilemma).toEqual({ compactFootprint: true, insertsNeverFail: false, deleteSupport: true }) // 只缺插入不失败
+    expect(cuckoo.metrics.totalStashFailures).toBeGreaterThan(0) // Cuckoo 装载崖壁真拒插
+    expect(cuckoo.metrics.totalInsertFailures).toBeGreaterThan(0)
+    // FP ceiling 双路自证稳态成立 + 三路篡改真喂回现算翻 false
+    const fc = st.bloomFilter.crosscheck.fpCeiling
+    expect(fc.holds).toBe(true)
+    expect(fc.nontrivial).toBe(true)
+    expect(fc.falsifiable).toBe(true)
+    expect(fc.tamper.trustConfig.holds).toBe(false)
+    expect(fc.tamper.zeroFpr.holds).toBe(false)
+    expect(fc.tamper.skipProbe.holds).toBe(false)
+    // 十一真件交叉印证：21 键真回读、非硬编码
+    const ev = st.bloomFilter.crosscheck.evidence
+    expect(Object.keys(ev).sort()).toEqual(['bucketAllowed', 'bucketRejected', 'busListeners', 'counterFalseSharing', 'counterSum', 'heapFired', 'heapPending', 'jitterSpread', 'notices', 'poolCreated', 'poolReused', 'redisBitmapHits', 'redisSlots', 'remapConsistentRate', 'remapModuloRate', 'ringNodes', 'ringShardsUsed', 'routerMoved', 'routerTracked', 'walLines', 'walReplayed'])
+    expect(ev.walReplayed).toBeGreaterThan(0)
+    expect(ev.heapFired).toBeGreaterThan(0)
+    expect(ev.bucketAllowed).toBeGreaterThan(0)
+    expect(st.bloomFilter.verdict.noUniversalWinner).toBe(true)
+    expect(st.bloomFilter.verdict.trilemmaDistinguishes).toBe(true)
+    expect(st.bloomFilter.verdict.bloomDeleteFree).toBe(true)
+    expect(st.bloomFilter.verdict.cuckooStashWall).toBe(true)
+    // 惰性缓存：二次 status 同引用
+    expect((await gc.status()).bloomFilter).toBe(st.bloomFilter)
+    const rerun = await gc.runBloomFilterStudy!()
+    expect(rerun.vectors).toEqual(st.bloomFilter.vectors)
+    // 不连坐其它维
+    expect(st.logCompaction).toBe(null)
+    expect(st.backpressure).toBe(null)
+    expect(st.consumerGroup).toBe(null)
+  })
+
+  it('bloomFilter 默认 null 非破坏；单开 unlimitedRoom/eternalStasis/noDeletesNeeded 各自局部、rigged 011/011/011 因果锁死 compactFootprint；可注入现成 study（KI-527）', async () => {
+    const plain = createGameCloud({ gameId: 'gidbf2', gamePort: 7822, sources, cloud: fakeCloud() })
+    expect(plain.runBloomFilterStudy).toBe(null)
+    const ps = await plain.status()
+    expect(ps.bloomFilter).toBe(null)
+    expect(ps.logCompaction).toBe(null)
+    // 单开 unlimitedRoom：补 Cuckoo 不失败必反噬空间紧凑
+    const ur = await (await createGameCloud({
+      gameId: 'gidbf3', gamePort: 7823, sources, cloud: fakeCloud(),
+      bloomFilter: { unlimitedRoom: true, now: 0 },
+    })).status()
+    expect(ur.bloomFilter.verdict.unlimitedRoomBackfiresCompactFootprint).toBe(true)
+    // 单开 eternalStasis：抹删除必反噬 deletes 维
+    const es = await (await createGameCloud({
+      gameId: 'gidbf4', gamePort: 7824, sources, cloud: fakeCloud(),
+      bloomFilter: { eternalStasis: true, now: 0 },
+    })).status()
+    expect(es.bloomFilter.verdict.eternalStasisBackfiresDeletes).toBe(true)
+    // 单开 noDeletesNeeded：同样只反噬 deletes 维
+    const nd = await (await createGameCloud({
+      gameId: 'gidbf5', gamePort: 7825, sources, cloud: fakeCloud(),
+      bloomFilter: { noDeletesNeeded: true, now: 0 },
+    })).status()
+    expect(nd.bloomFilter.verdict.noDeletesNeededBackfiresDeletes).toBe(true)
+    // rigged 三开关齐开：真实现算 011/011/011、因果锁死 compactFootprint
+    const rig = await (await createGameCloud({
+      gameId: 'gidbf6', gamePort: 7826, sources, cloud: fakeCloud(),
+      bloomFilter: { rigged: true, now: 0 },
+    })).status()
+    expect(rig.bloomFilter.vectors).toEqual({ Bloom: '011', CountingBloom: '011', Cuckoo: '011' })
+    expect(rig.bloomFilter.verdict.compactFootprintCausallyUnerasable).toBe(true)
+    expect(rig.bloomFilter.verdict.noUniversalWinner).toBe(false)
+    // 注入现成 study（duck-typed）
+    const { bloomFilterStudy } = await import('../../scripts/caesura-bloom-filter.mjs')
+    const injected = await (await createGameCloud({
+      gameId: 'gidbf7', gamePort: 7827, sources, cloud: fakeCloud(),
+      bloomFilter: bloomFilterStudy({ seed: 99, now: 555 }),
+    })).status()
+    expect(injected.bloomFilter.builtAt).toBe(555)
+    expect(injected.bloomFilter.config.seed).toBe(99)
+  })
 })

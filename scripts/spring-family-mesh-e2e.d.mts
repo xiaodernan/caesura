@@ -291,7 +291,7 @@ export function runMeshE2E(opts?: any): {
         trilemma: { lowCost: boolean; punctual: boolean; sharedDurable: boolean }
       }>
       vectors: Record<string, string>
-      crosscheck: { evidence: Record<string, any> }
+      crosscheck: { evidence: Record<string, any>; fpCeiling: Record<string, any> }
       verdict: Record<string, any>
       topology: Record<string, string>
       builtAt: number
@@ -310,7 +310,7 @@ export function runMeshE2E(opts?: any): {
         trilemma: { fastRecovery: boolean; noStorm: boolean; noHerd: boolean }
       }>
       vectors: Record<string, string>
-      crosscheck: { evidence: Record<string, any> }
+      crosscheck: { evidence: Record<string, any>; fpCeiling: Record<string, any> }
       verdict: Record<string, any>
       topology: Record<string, string>
       builtAt: number
@@ -329,7 +329,7 @@ export function runMeshE2E(opts?: any): {
         metrics: { avgImbalance: number; starved: boolean; moveSum: number; opPerPart: number }
       }>
       vectors: Record<string, string>
-      crosscheck: { evidence: Record<string, any> }
+      crosscheck: { evidence: Record<string, any>; fpCeiling: Record<string, any> }
       verdict: Record<string, any>
       topology: Record<string, string>
       builtAt: number
@@ -352,7 +352,7 @@ export function runMeshE2E(opts?: any): {
       }>
       vectors: Record<string, string>
       littleLaw: { steadyHolds: boolean; steadyNontrivial: boolean; overloadBreaks: boolean; steady: Array<Record<string, any>>; overload: Array<Record<string, any>>; note: string }
-      crosscheck: { evidence: Record<string, any> }
+      crosscheck: { evidence: Record<string, any>; fpCeiling: Record<string, any> }
       verdict: Record<string, any>
       topology: Record<string, string>
       builtAt: number
@@ -383,12 +383,12 @@ export function runMeshE2E(opts?: any): {
         steady: Array<Record<string, any>>
         tamper: { replayOps: Record<string, any>; walGap: Record<string, any>; tombstone: Record<string, any> }
         note: string }
-      crosscheck: { evidence: Record<string, any> }
+      crosscheck: { evidence: Record<string, any>; fpCeiling: Record<string, any> }
       verdict: Record<string, any>
       topology: Record<string, string>
       builtAt: number
     } | null
-    /** KI-527：布隆/布谷鸟/计数布隆三过滤器快照（Bloom/CountingBloom/Cuckoo × 六场景 + 三难向量 + verifyFalsePositiveCeiling 双路自证 + 十一枚真件交叉印证），未配 bloomFilter 为 null；rigged 110/110/110 因果锁死 unlimitedRoom、绝不硬造全 111 */
+    /** KI-527：布隆/布谷鸟/计数布隆三过滤器快照（Bloom/CountingBloom/Cuckoo × 六场景 + 三难向量 110/011/101 + verifyFalsePositiveCeiling 双路自证 + 十一枚真件 21 键交叉印证），未配 bloomFilter 为 null；rigged 011/011/011 由 unlimitedRoom 真算因果锁死 compactFootprint、绝不硬造全 111 */
     bloomFilterSnapshot: {
       config: Record<string, any>
       rows: Array<{
@@ -403,7 +403,26 @@ export function runMeshE2E(opts?: any): {
         metrics: { avgInserts: number; avgBytes: number; bitsPerKey: number; totalFpRate: number; totalInsertFailures: number; totalStashFailures: number; deleteSuccess: number; deleteAttempts: number }
       }>
       vectors: Record<string, string>
-      crosscheck: { evidence: Record<string, any> }
+      crosscheck: { evidence: Record<string, any>; fpCeiling: Record<string, any> }
+      verdict: Record<string, any>
+      builtAt: number
+    } | null
+    /** KI-528：LRU/2Q/ARC 三替换策略快照（LRU/2Q/ARC × 六场景 + 三难向量 + verifyDualSweep 双路交叉印证 + 十一枚真件交叉印证），未配 cacheReplacement 为 null；rigged 110/110/110 因果锁死 adaptiveBalance；不得硬造全 111 */
+    cacheReplacementSnapshot: {
+      config: Record<string, any>
+      rows: Array<{
+        protocol: string
+        scenarios: Array<{
+          id: string; protocol: string; hits: number; misses: number; hitRate: number
+          scanHits: number; scanMisses: number; localHits: number; localMisses: number
+          amPromotions?: number; ghostHitsT1?: number; ghostHitsT2?: number; ghostAdaptMoves?: number
+          fault: string
+        }>
+        trilemma: { scanResistance: boolean; stableHitRate: boolean; adaptiveBalance: boolean }
+        metrics: { hitRateAvg: number; ghostAdaptMoves: number; amPromotions: number; adaptationP: number }
+      }>
+      vectors: Record<string, string>
+      crosscheck: { evidence: Record<string, any>; fpCeiling: Record<string, any> }
       verdict: Record<string, any>
       builtAt: number
     } | null

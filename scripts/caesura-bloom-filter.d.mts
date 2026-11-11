@@ -17,70 +17,38 @@ export const BF_DEFAULTS: Readonly<{
   eternalStasis: boolean
   noDeletesNeeded: boolean
   rigged: boolean
+  [k: string]: any
 }>
 export const BF_STRATEGIES: readonly string[]
 export const BF_SCENARIOS: readonly string[]
 
-export interface BloomStats {
-  added: number
-  bits: number
-  bytes: number
-  hashFunctions: number
-  capacity: number
-  fillRatio: number
+/** 三过滤器统一实例接口：add/contains/remove + stats */
+export interface SubFilterInstance {
+  protocol: 'Bloom' | 'CountingBloom' | 'Cuckoo'
+  add(key: any): boolean
+  contains(key: any): boolean
+  remove(key: any): boolean
+  stats(): Record<string, number | boolean | string | null | undefined>
 }
-export interface CountingBloomStats {
-  added: number
-  counters: number
-  bytes: number
-  hashFunctions: number
-  capacity: number
-  counterWidth: number
-  fillRatio: number
-}
-export interface CuckooStats {
-  inserted: number
-  slotsPerTable: number
-  buckets: number
-  bytesPerSlot: number
-  maxLoadFactor: number
-  stashFailures: number
-  capacity: number
-  fillRatio: number
-  bytes: number
-}
-export interface BloomFilterInstance {
-  protocol: 'Bloom'
-  add(key: string): boolean
-  contains(key: string): boolean
-  remove(_key: string): false
-  stats(): BloomStats
-}
-export interface CountingBloomInstance {
-  protocol: 'CountingBloom'
-  add(key: string): boolean
-  contains(key: string): boolean
-  remove(key: string): boolean
-  stats(): CountingBloomStats
-}
-export interface CuckooInstance {
-  protocol: 'Cuckoo'
-  add(key: string): boolean
-  contains(key: string): boolean
-  remove(key: string): boolean
-  stats(): CuckooStats
-}
-export function createBloomFilter(opts?: { capacity?: number; bits?: number; bitsPerKey?: number; hashFunctions?: number; seed?: number }): BloomFilterInstance
-export function createCountingBloomFilter(opts?: { capacity?: number; counters?: number; countersPerKey?: number; counterWidth?: number; hashFunctions?: number; seed?: number }): CountingBloomInstance
-export function createCuckooFilter(opts?: { capacity?: number; bucketSize?: number; tableCount?: number; maxKicks?: number; maxLoadFactor?: number; seed?: number }): CuckooInstance
 
-/** 六正交场景：稳态 filter / 热键洪泛 / 删除循环 / 高装载崖壁 / 规模放大 / 血池超载 */
+export function createBloomFilter(opts?: {
+  capacity?: number; bits?: number; bitsPerKey?: number; hashFunctions?: number; seed?: number; [k: string]: any
+}): SubFilterInstance
+export function createCountingBloomFilter(opts?: {
+  capacity?: number; counters?: number; countersPerKey?: number; counterWidth?: number; hashFunctions?: number; seed?: number; [k: string]: any
+}): SubFilterInstance
+export function createCuckooFilter(opts?: {
+  capacity?: number; bucketSize?: number; tableCount?: number; maxKicks?: number; maxLoadFactor?: number; seed?: number; [k: string]: any
+}): SubFilterInstance
+
+/** 六正交场景真跑 cell：全部为真实结构计数，非硬编码 */
 export interface BloomCell {
   id: string
   strategy: string
   inserted: number
   insertFailures: number
   probes: number
+  negProbes: number
   falsePositives: number
   correctNegatives: number
   correctPositives: number
@@ -96,118 +64,126 @@ export interface BloomCell {
   stashFailures: number
   bytes: number
   fault: string
+  [k: string]: any
 }
+
+export interface BloomFilterTrilemma {
+  compactFootprint: boolean
+  insertsNeverFail: boolean
+  deleteSupport: boolean
+}
+
+export interface BloomFilterMetrics {
+  bitsPerKey: number
+  totalFpRate: number
+  totalInsertFailures: number
+  totalStashFailures: number
+  deleteAttempts: number
+  deleteSuccess: number
+  deleteReinserted: number
+  foldCount: number
+  [k: string]: any
+}
+
 export interface BloomRow {
-  protocol: 'Bloom' | 'CountingBloom' | 'Cuckoo'
+  protocol: string
   scenarios: BloomCell[]
-  trilemma: { compactFootprint: boolean; insertsNeverFail: boolean; deleteSupport: boolean }
-  metrics: {
-    avgInserts: number
-    avgBytes: number
-    bitsPerKey: number
-    totalFpRate: number
-    totalInsertFailures: number
-    totalStashFailures: number
-    deleteSuccess: number
-    deleteAttempts: number
-  }
+  trilemma: BloomFilterTrilemma
+  metrics: BloomFilterMetrics
 }
+
+export function runBloomFilterScenario(
+  protocol: string,
+  scenarioId: string,
+  o?: Record<string, any>,
+): BloomCell
+
+export interface BloomFilterVerdict {
+  vectors: Record<string, string>
+  noUniversalWinner: boolean
+  trilemmaDistinguishes: boolean
+  noStrategyWinsAll: boolean
+  vectorFromTrilemma: boolean
+  bloomDeleteFree: boolean
+  countingBloomSpacePays: boolean
+  cuckooStashWall: boolean
+  countingBloomDeleteSupport: boolean
+  cuckooDeleteSupport: boolean
+  compactFootprintCausallyUnerasable: boolean
+  unlimitedRoomBackfiresCompactFootprint: boolean
+  eternalStasisBackfiresDeletes: boolean
+  noDeletesNeededBackfiresDeletes: boolean
+  zeroErrorsBackfiresFpBand: boolean
+  deleteImpossibleBackfiresDeletes: boolean
+  fpCeilingHolds: boolean
+  [k: string]: any
+}
+
 export interface BloomFilterStudy {
   builtAt: number
-  config: {
-    seed: number
-    zeroErrors: boolean
-    deleteImpossible: boolean
-    unlimitedRoom: boolean
-    eternalStasis: boolean
-    noDeletesNeeded: boolean
-    rigged: boolean
-    scenarios: string[] | readonly string[]
-    capacity: number
-  }
+  config: Record<string, any>
   rows: BloomRow[]
   vectors: Record<string, string>
-  trilemmaDistinguishes: boolean
+  verdict: BloomFilterVerdict
   noUniversalWinner: boolean
+  trilemmaDistinguishes: boolean
   rigged: boolean
-  verdict: {
-    vectors: Record<string, string>
-    trilemmaDistinguishes: boolean
-    noUniversalWinner: boolean
-    noStrategyWinsAll: boolean
-    bloomDeleteFree: boolean
-    countingBloomSpacePays: boolean
-    cuckooStashWall: boolean
-    countingBloomDeleteSupport: boolean
-    cuckooDeleteSupport: boolean
-    zeroErrorsBackfiresFpBand: boolean
-    deleteImpossibleBackfiresDeletes: boolean
-  }
+  crosscheck: Record<string, any>
 }
+
 export function bloomFilterStudy(opts?: {
   now?: number | (() => number)
   seed?: number
   capacity?: number
   scenarios?: readonly string[]
+  rigged?: boolean
   zeroErrors?: boolean
   deleteImpossible?: boolean
   unlimitedRoom?: boolean
-  rigged?: boolean
+  eternalStasis?: boolean
+  noDeletesNeeded?: boolean
+  [k: string]: any
 }): BloomFilterStudy
 
 /** compareBloomFilter 同构别名：指向同一 bloomFilterStudy。 */
 export const compareBloomFilter: typeof bloomFilterStudy
 
-export interface BloomFilterSnapshot {
+export function bloomFilterSnapshot(study: BloomFilterStudy | null | undefined): {
   builtAt: number
-  config: BloomFilterStudy['config']
-  rows: BloomFilterStudy['rows']
+  config: Record<string, any>
+  rows: BloomRow[]
   vectors: Record<string, string>
-  verdict: BloomFilterStudy['verdict']
-}
-export function bloomFilterSnapshot(study: BloomFilterStudy | null | Record<string, never>): BloomFilterSnapshot | null
+  verdict: BloomFilterVerdict
+} | null
 
-export function verifyFalsePositiveCeiling(input: {
+export interface FpCeilingInput {
   bits: number
   keys: number
   hashFunctions: number
   negativeProbes: number
   measuredFpr: number
   secondMeasuredFpr?: number
-}): {
+  [k: string]: any
+}
+
+export interface FpCeilingReading {
   theory: number
-  measured: number
+  measured: number | null
   measuredAlt: number | null
   tolerated: number
   lower: number
   holds: boolean
   nontrivial: boolean
-  falsifiable: true
+  falsifiable: boolean
   tamper: {
-    trustConfig: { holds: false; reason: string }
-    zeroFpr: { holds: false; reason: string }
-    skipProbe: { holds: false; reason: string }
+    trustConfig: Record<string, any>
+    zeroFpr: Record<string, any>
+    skipProbe: Record<string, any>
   }
 }
 
-export interface BloomEvidence {
-  remapConsistentRate: number
-  remapModuloRate: number
-  routerMoved: number
-  hashRingNodes: number
-  walLines: number
-  walReplayed: number
-  notices: number
-  busListeners: number
-  redisEntries: number
-  poolCreated: number
-  bucketAllowed: number
-  bucketRejected: number
-  heapFired: number
-  counterSum: number
-  jitterSpread: number
-  [key: string]: number
-}
-export function createBloomFilterEvidence(opts?: { seed?: number }): BloomEvidence
+/** 双路守恒自证：理论上界 ε=(1-e^(-kn/m))^k vs 真否定集采样，三路篡改真喂回现算翻 false */
+export function verifyFalsePositiveCeiling(input: FpCeilingInput): FpCeilingReading
 
-export function runBloomFilterScenario(protocol: string, scenarioId: string, opts?: Record<string, unknown>): BloomCell
+/** 十一枚同仓真件交叉印证，evidence 21 键全真 API 真回读、计数不硬编码 */
+export function createBloomFilterEvidence(opts?: { seed?: number; [k: string]: any }): Record<string, number>
