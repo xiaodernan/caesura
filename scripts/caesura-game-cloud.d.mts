@@ -159,6 +159,13 @@ export interface GameCloudOptions {
   cacheReplacement?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck?: any; topology?: any; [k: string]: any }
   /** KI-528 缓存替换的注入时钟（cr=cache replacement，避开 lsm/bp/bpc/cgp/lc/bf/rdq/dld 已占用前缀）。 */
   crNow?: () => number
+  /**
+   * KI-529：true 装配流式窗口聚合与 Watermark 迟到处置三策略诚实权衡（Tumbling / Sliding / Session + verifyWatermarkMonotonicity 双路交叉印证 + 十一枚真件交叉印证）。
+   * 对象逐项注入（now/seed/windowSize/slideStep/sessionGap/allowedLateness/events/frozenWatermark/infiniteLateness/freeState/scenarios/rigged/...），
+   * 或直接塞一只现成 study（带 rows/vectors/verdict/crosscheck 四块）。默认 false 不装配。 */
+  streamWindow?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck?: any; topology?: any; [k: string]: any }
+  /** KI-529 流式窗口的注入时钟（sw=stream window，避开 lsm/bp/bpc/cgp/lc/bf/cr/rdq/dld 已占用前缀）。 */
+  swNow?: () => number
 }
 
 /** 创建一只游戏侧开箱即用云。 */
@@ -221,6 +228,8 @@ export function createGameCloud(opts?: GameCloudOptions): {
   runBloomFilterStudy: (() => Promise<any>) | null
   /** KI-528：LRU/2Q/ARC 三替换策略诚实权衡研究件；缺 opts.cacheReplacement 时为 null；LRU/2Q/ARC × 六场景矩阵 + 三难向量（默认 010/110/101 互异不封赢家；rigged 两开关 unlimitedRoom+perfectFuture 真进构造 ⇒ 向量现算收敛 110/110/110、adaptiveBalanceCausallyUnerasable 因果锁死自适应维、绝不硬造全 111）+ verifyDualSweep 双路交叉印证（真 trace 两路独立重放 + 三路篡改真喂回现算翻 false）+ 十一真件 21 键交叉印证。 */
   runCacheReplacementStudy: (() => Promise<any>) | null
+  /** KI-529：流式窗口聚合与 Watermark 迟到处置三策略诚实权衡研究件；缺 opts.streamWindow 时为 null；Tumbling/Sliding/Session × 六场景矩阵 + 三难向量（rigged 011/011/011 因果锁死 resultCompleteness、不得硬造全 111）+ verifyWatermarkMonotonicity 双路自证（到达序 watermark 单调 + 承诺地平线 / 处置守恒，三路篡改现算翻 false）+ 十一枚真件 21 键交叉印证。 */
+  runStreamWindowStudy: (() => Promise<any>) | null
   /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）。 */
   gray: any
   /** KI-489：把游戏真 EventBus（duck-typed {on,emit}）按白名单接进云事件总线。 */

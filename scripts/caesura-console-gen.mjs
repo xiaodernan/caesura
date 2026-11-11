@@ -39,6 +39,7 @@ import { backpressureStudy, backpressureSnapshot } from './caesura-backpressure.
 import { logCompactionStudy, logCompactionSnapshot } from './caesura-log-compaction.mjs'
 import { bloomFilterStudy, bloomFilterSnapshot } from './caesura-bloom-filter.mjs'
 import { cacheReplacementStudy, cacheReplacementSnapshot } from './caesura-cache-replacement.mjs'
+import { streamWindowStudy, streamWindowSnapshot } from './caesura-stream-window.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
 export const SCENARIO_IDS = ['main', 'gray', 'resilience', 'cache', 'net']
@@ -205,6 +206,17 @@ export async function buildSnapshot(opts = {}) {
     crPerfectFuture: opts.crPerfectFuture,
     crUnlimitedRoom: opts.crUnlimitedRoom,
     crRigged: opts.crRigged,
+    streamWindow: opts.streamWindow,
+    swSeed: opts.swSeed,
+    swWindowSize: opts.swWindowSize,
+    swSlideStep: opts.swSlideStep,
+    swSessionGap: opts.swSessionGap,
+    swAllowedLateness: opts.swAllowedLateness,
+    swEvents: opts.swEvents,
+    swFrozenWatermark: opts.swFrozenWatermark,
+    swInfiniteLateness: opts.swInfiniteLateness,
+    swFreeState: opts.swFreeState,
+    swRigged: opts.swRigged,
   })
 
   return {
@@ -273,7 +285,7 @@ export async function buildSnapshot(opts = {}) {
  * @param {boolean} [opts.dqZeroTick] rigged：tick 抹为 1ms（只救时间轮即时精确）
  * @param {boolean} [opts.dqFreeHeapOps] rigged：堆比较免计数
  * @param {boolean} [opts.dqSharedBackend] rigged：进程内结构也假想跨机共享持久
- * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, failureDetector:object|null, bplusIndex:object|null, mvccTxn:object|null, distributedTxn:object|null, raftConsensus:object|null, distributedLock:object|null, idGen:object|null, distributedRateLimit:object|null, configConsistency:object|null, cacheCoherency:object|null, messageDelivery:object|null, delayQueue:object|null, retryDlq:object|null, consumerGroup:object|null, backpressure:object|null, logCompaction:object|null, bloomFilter:object|null, cacheReplacement:object|null, builtAt:number}>}
+ * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, failureDetector:object|null, bplusIndex:object|null, mvccTxn:object|null, distributedTxn:object|null, raftConsensus:object|null, distributedLock:object|null, idGen:object|null, distributedRateLimit:object|null, configConsistency:object|null, cacheCoherency:object|null, messageDelivery:object|null, delayQueue:object|null, retryDlq:object|null, consumerGroup:object|null, backpressure:object|null, logCompaction:object|null, bloomFilter:object|null, cacheReplacement:object|null, streamWindow:object|null, builtAt:number}>}
  */
 export async function buildSystems(opts = {}) {
   const now = typeof opts.now === 'function' ? opts.now : () => Date.now()
@@ -317,7 +329,9 @@ export async function buildSystems(opts = {}) {
   const bloomFilter = opts.bloomFilter === false ? null : await buildBloomFilterReading(opts, now)
   // KI-528：第二十二维「LRU/2Q/ARC 三替换策略」真跑六场景 + 三难判词（010/110/101） + verifyDualSweep 双路交叉印证 + 十一枚真件交叉印证，与其它维平级。
   const cacheReplacement = opts.cacheReplacement === false ? null : await buildCacheReplacementReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, builtAt: now() }
+  // KI-529：第二十三维「Tumbling/Sliding/Session 流式窗口聚合 + Watermark 迟到处置」真跑六场景 + 三难判词（011/110/101） + verifyWatermarkMonotonicity 双路交叉印证（到达序 watermark 单调 + 承诺地平线 / 处置守恒） + 十一枚真件交叉印证，与其它维平级。
+  const streamWindow = opts.streamWindow === false ? null : await buildStreamWindowReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, builtAt: now() }
 }
 
 /**
@@ -372,6 +386,33 @@ export async function buildCacheReplacementReading(opts, now) {
       ...(opts.crRigged === true ? { rigged: true } : {}),
     })
     return cacheReplacementSnapshot(s)
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
+ * KI-529：Tumbling / Sliding / Session 流式窗口聚合与 Watermark 迟到处置三策略诚实权衡。
+ * 失败落 null；读数全真、CLI 双跑字节一致、rigged 不硬封胜者。
+ * @param {object} opts { streamWindow?:false, swSeed?, swWindowSize?, swSlideStep?, swSessionGap?, swAllowedLateness?, swEvents?, swFrozenWatermark?, swInfiniteLateness?, swFreeState?, swRigged? }
+ * @param {()=>number} now 时钟（builtAt 注入真值）
+ */
+export async function buildStreamWindowReading(opts, now) {
+  try {
+    const s = await streamWindowStudy({
+      now,
+      ...(opts.swSeed ? { seed: Math.max(0, Math.floor(Number(opts.swSeed))) } : {}),
+      ...(opts.swWindowSize ? { windowSize: Math.max(16, Math.floor(Number(opts.swWindowSize))) } : {}),
+      ...(opts.swSlideStep ? { slideStep: Math.max(1, Math.floor(Number(opts.swSlideStep))) } : {}),
+      ...(opts.swSessionGap ? { sessionGap: Math.max(1, Math.floor(Number(opts.swSessionGap))) } : {}),
+      ...(opts.swAllowedLateness !== undefined ? { allowedLateness: Math.max(0, Math.floor(Number(opts.swAllowedLateness))) } : {}),
+      ...(opts.swEvents ? { events: Math.max(32, Math.floor(Number(opts.swEvents))) } : {}),
+      ...(opts.swFrozenWatermark === true ? { frozenWatermark: true } : {}),
+      ...(opts.swInfiniteLateness === true ? { infiniteLateness: true } : {}),
+      ...(opts.swFreeState === true ? { freeState: true } : {}),
+      ...(opts.swRigged === true ? { rigged: true } : {}),
+    })
+    return streamWindowSnapshot(s)
   } catch (e) {
     return null // 缺哪块就落 null，前端据实降级；不编造假数
   }

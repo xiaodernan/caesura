@@ -1660,3 +1660,92 @@ describe('KI-528 · cacheReplacement 缓存替换面板：三策略 × 六场景
     expect(css).toContain('@media (max-width: 720px)')
   })
 })
+
+describe('KI-529 · streamWindow 流式窗口面板：三策略 × 六场景 + 正交三难向量 + 双路自证 + 十一真件交叉印证', () => {
+  const realSw = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+
+  it('三策略 × 六场景矩阵状态字直读 cell 三布尔 + 指标梯 + 软肋字（缺/迟/胀）与三难同源', async () => {
+    const dom = await runApp(realSw)
+    const matrix = dom.els['sw-matrix'].innerHTML
+    expect(matrix).toContain('sw-mat-head')
+    for (const s of ['Tumbling', 'Sliding', 'Session']) expect(matrix).toContain('data-strategy="' + s + '"')
+    expect(matrix).toContain('data-s="alignedBursts"')
+    expect(matrix).toContain('data-s="lateBeyondGap"')
+    const states = [...matrix.matchAll(/data-state="([^"]+)"/g)].map((m: any) => m[1])
+    expect(states.length).toBe(18) // 3 策略 × 6 场景
+    for (const st of states) expect(['pair', 'late', 'bloat', 'ok']).toContain(st)
+    expect(matrix).toContain('class="sw-cell pair"')   // Tumbling boundaryStraddle 跨边界必切
+    expect(matrix).toContain('class="sw-cell late"')   // Session lateBeyondGap 跨 gap 迟到
+    expect(matrix).toContain('class="sw-cell bloat"')  // Sliding 重叠状态放大
+    const ladder = dom.els['sw-ladder'].innerHTML
+    for (const s of ['Tumbling', 'Sliding', 'Session']) expect(ladder).toContain('data-strategy="' + s + '"')
+    expect(ladder).toContain('sw-bar')
+    expect(dom.els['sw-matrix-note'].textContent).toContain('三布尔')
+  })
+
+  it('三难向量三行 + 向量串 011/110/101 + 不封赢家 + 判词 chips', async () => {
+    const dom = await runApp(realSw)
+    const tri = dom.els['sw-trilemma'].innerHTML
+    expect(tri).toContain('sw-vec-head')
+    expect(tri).toContain('data-vec="011"') // Tumbling
+    expect(tri).toContain('data-vec="110"') // Sliding
+    expect(tri).toContain('data-vec="101"') // Session
+    for (const k of ['resultCompleteness', 'lateTolerance', 'stateEfficiency']) expect(tri).toContain('data-k="' + k + '"')
+    const probes = dom.els['sw-probes'].innerHTML
+    for (const k of ['noUniversalWinner', 'tumbling_crossBoundaryLoss', 'sliding_stateAmplified', 'session_gapFragile']) {
+      expect(probes, '判词 chip ' + k + ' 必须落 DOM').toContain('data-verdict="' + k + '"')
+    }
+    expect(dom.els['sw-trilemma-note'].textContent).toContain('Tumbling=011')
+    expect(dom.els['sw-trilemma-note'].textContent).not.toContain('LRU=010') // 不串抄 KI-528 文案
+  })
+
+  it('verifyWatermarkMonotonicity 双路自证栏 + 三路篡改真喂回标记 + 十一真件交叉印证全部真 API 名落 DOM', async () => {
+    const dom = await runApp(realSw)
+    const vf = dom.els['sw-verif'].innerHTML
+    expect(vf).toContain('data-rb="holds"')
+    expect(vf).toContain('data-rb="nontrivial"')
+    expect(vf).toContain('data-rb="falsifiable"')
+    expect(vf).toContain('data-rb-tamper="watermarkInverted"')
+    expect(vf).toContain('data-rb-tamper="dispositionTampered"')
+    expect(vf).toContain('data-rb-tamper="emptySet"')
+    const cx = dom.els['sw-crosscheck'].innerHTML
+    for (const api of [
+      'compareRemapping', 'createShardRouter', 'createHashRing', 'createWal', 'createBus',
+      'createRedisCache', 'createObjectPool', 'createTokenBucket', 'createMinHeapDelayQueue',
+      'createPackedCounters', 'createFullJitterBackoff', 'verifyWatermarkMonotonicity',
+    ]) expect(cx, '真件 ' + api + ' 必须落 DOM').toContain(api)
+    expect(cx).toContain('jitterSpread')
+  })
+
+  it('systems.streamWindow 缺失 / 交叉印证缺失：真实降级、绝不伪造', async () => {
+    const noSw = JSON.parse(JSON.stringify(realSw))
+    noSw.systems.streamWindow = null
+    const dom = await runApp(noSw)
+    expect(dom.els['sw-matrix'].innerHTML).toContain('暂缺')
+    expect(dom.els['sw-ladder'].innerHTML).toBe('')
+    expect(dom.els['sw-trilemma'].innerHTML).toContain('暂缺')
+    expect(dom.els['sw-matrix-note'].textContent).toContain('systems.streamWindow 缺失')
+    const partial = JSON.parse(JSON.stringify(realSw))
+    partial.systems.streamWindow.crosscheck = null
+    const dom2 = await runApp(partial)
+    expect(dom2.els['sw-crosscheck'].innerHTML).toContain('真件交叉印证缺失')
+    expect(dom2.els['sw-crosscheck'].innerHTML).not.toContain('createHashRing')
+  })
+
+  it('第二十三维 markup 与 CSS 契约：row-sw 两面板 + sw-* 视觉族 + 向量真值 + reduced-motion 兜底', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-sw')
+    expect(html).toContain('id="sw-matrix"')
+    expect(html).toContain('id="sw-verif"')
+    expect(html).toContain('Tumbling=011 / Sliding=110 / Session=101')
+    expect(css).toContain('.sw-cell.pair')            // 跨边界结果缺
+    expect(css).toContain('.sw-cell.late')            // 迟到拒绝
+    expect(css).toContain('.sw-cell.bloat')           // 状态膨胀
+    expect(css).toContain('.sw-cell.ok')              // 空真无病征
+    expect(css).toContain('.sw-bar > i')              // 指标梯
+    expect(css).toContain('.sw-verif')                // 双路自证栏
+    expect(css).toContain('prefers-reduced-motion')   // 前庭友好兜底
+    expect(css).toContain('@media (max-width: 720px)')
+  })
+})

@@ -429,5 +429,27 @@ export function runMeshE2E(opts?: any): {
       verdict: Record<string, any>
       builtAt: number
     } | null
+    /** KI-529：流式窗口聚合与 Watermark 迟到处置三策略快照（Tumbling/Sliding/Session × 六场景 + 三难向量 011/110/101 + verifyWatermarkMonotonicity 双路交叉印证（到达序 watermark 单调 + 承诺地平线 / 处置守恒，三路篡改真喂回现算翻 false）+ 十一真件 21 键交叉印证），未配 streamWindow 为 null；rigged 三开关真进构造 ⇒ 向量现算收敛 011/011/011、resultCompletenessCausallyUnerasable 因果锁死结果维；不得硬造全 111 */
+    streamWindowSnapshot: {
+      config: Record<string, any>
+      rows: Array<{
+        protocol: string
+        scenarios: Array<{
+          id: string; protocol: string; windowCount: number; emittedWindows: number; stateReplicas: number
+          rawAmplification: number; amplification: number; pairs: number; coveredPairs: number; pairCoverage: number
+          lateTotal: number; lateAccepted: number; lateSideOutput: number; lateAcceptRate: number
+          closeEvents: number; monotonicViolations: number; watermarkFinal: number
+          fault: string
+          resultCompleteness: boolean; lateTolerance: boolean; stateEfficiency: boolean
+          inResultExam: boolean; inLateExam: boolean; inStateExam: boolean
+        }>
+        trilemma: { resultCompleteness: boolean; lateTolerance: boolean; stateEfficiency: boolean }
+        metrics: { windowCount: number; emittedWindows: number; stateReplicas: number; amplificationAvg: number; pairCoverageAvg: number; lateAccepted: number; lateSideOutput: number; watermarkFinal: number; trilemmaDebug?: Record<string, any> }
+      }>
+      vectors: Record<string, string>
+      crosscheck: { evidence: Record<string, any>; watermark: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+      verdict: Record<string, any>
+      builtAt: number
+    } | null
   }>
 }

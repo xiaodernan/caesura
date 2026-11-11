@@ -136,6 +136,10 @@ export function runMeshE2E(opts = {}) {
     // 注入时钟用 crNow（避开 cr* 分支与 lsm/bp/bpc/cgp/lc/bf/rdq/dld 已占用前缀）。
     cacheReplacement: opts.cacheReplacement,
     crNow: opts.crNow,
+    // KI-529：流式窗口聚合与 Watermark 迟到处置三策略诚实权衡（streamWindow=true 装配；只读 Tumbling/Sliding/Session × 六场景矩阵 + 三难向量（默认 011/110/101 互异不封赢家）+ verifyWatermarkMonotonicity 双路交叉印证（到达序 watermark 单调 + 承诺地平线 / 处置守恒，三路篡改真喂回现算翻 false）+ 十一真件 21 键交叉印证，rigged 三开关真进构造 ⇒ 向量现算收敛 011/011/011、resultCompletenessCausallyUnerasable 因果锁死结果维、绝不硬造全 111，不改调用路径）。
+    // 注入时钟用 swNow（避开 sw* 分支与 lsm/bp/bpc/cgp/lc/bf/cr/rdq/dld 已占用前缀）。
+    streamWindow: opts.streamWindow,
+    swNow: opts.swNow,
     sources: {
       eureka: () => (opts.svcA ?? [{ id: 'svc-a:1', name: 'svc-a', address: '10.0.0.1', port: 8080, healthy: true }]),
       k8s: () => k8s.discover('caesura-gate'),
@@ -278,6 +282,7 @@ export function runMeshE2E(opts = {}) {
         logCompactionSnapshot: status.logCompaction ?? null,
         bloomFilterSnapshot: status.bloomFilter ?? null,
         cacheReplacementSnapshot: status.cacheReplacement ?? null,
+        streamWindowSnapshot: status.streamWindow ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
       }
@@ -538,6 +543,19 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         noUniversalWinner: r.cacheReplacementSnapshot.verdict.noUniversalWinner,
         crosscheck: r.cacheReplacementSnapshot.crosscheck,
         verdict: r.cacheReplacementSnapshot.verdict,
+      } : null,
+      streamWindow: r.streamWindowSnapshot ? {
+        strategies: r.streamWindowSnapshot.rows.map((row) => ({
+          strategy: row.protocol,
+          // 每格状态只认真件算好的三布尔（resultCompleteness/lateTolerance/stateEfficiency）—绝不拿阈值重算，与 trilemma 同源。
+          ladder: row.scenarios.map((s) => s.id + ':' + (s.resultCompleteness === false ? '缺' : s.lateTolerance === false ? '迟' : s.stateEfficiency === false ? '胀' : '✓')).join(' → '),
+          metrics: row.metrics, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.streamWindowSnapshot.rows.map((row) => [row.protocol,
+          `${Number(row.trilemma.resultCompleteness)}${Number(row.trilemma.lateTolerance)}${Number(row.trilemma.stateEfficiency)}`])),
+        noUniversalWinner: r.streamWindowSnapshot.verdict.noUniversalWinner,
+        crosscheck: r.streamWindowSnapshot.crosscheck,
+        verdict: r.streamWindowSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

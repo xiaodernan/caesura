@@ -708,6 +708,52 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(nine.every((x) => x === 528000)).toBe(true)
   })
 
+  it('⑳-streamWindow buildStreamWindowReading 真跑：sw* 注入生效 / streamWindow:false 关闭 / rigged 因果锁可证伪 / 双路自证 + 十一真件 / 十时钟同源（KI-529）', async () => {
+    const { buildStreamWindowReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 529000
+    const sw = (await buildStreamWindowReading({}, now))!
+    expect(sw).not.toBe(null)
+    expect(sw.builtAt).toBe(529000)
+    expect(sw.rows.length).toBe(3)
+    expect(sw.config.scenarios.length).toBe(6)
+    expect(sw.vectors).toEqual({ Tumbling: '011', Sliding: '110', Session: '101' })
+    // sw* 注入（swSeed/swWindowSize/swSlideStep/swSessionGap/swAllowedLateness），不复用被其它维占用的前缀
+    const tuned = (await buildStreamWindowReading({ swSeed: 9, swWindowSize: 80, swSlideStep: 20, swSessionGap: 30 }, now))!
+    expect(tuned.config.seed).toBe(9)
+    expect(tuned.config.windowSize).toBe(80)
+    expect(tuned.config.slideStep).toBe(20)
+    expect(tuned.config.sessionGap).toBe(30)
+    // 单开关各自现算反噬
+    const fz = (await buildStreamWindowReading({ swFrozenWatermark: true }, now))!
+    expect(fz.verdict.frozenCollapsesCompleteness).toBe(true)
+    const fr = (await buildStreamWindowReading({ swFreeState: true }, now))!
+    expect(fr.verdict.freeRestoresSlidingState).toBe(true)
+    const inf = (await buildStreamWindowReading({ swInfiniteLateness: true }, now))!
+    expect(inf.verdict.infiniteRestoresSessionLate).toBe(true)
+    // rigged 齐开：三向量退 011·结果完整因果抹不掉，判词可证伪
+    const rig = (await buildStreamWindowReading({ swRigged: true }, now))!
+    expect(rig.vectors).toEqual({ Tumbling: '011', Sliding: '011', Session: '011' })
+    expect(rig.verdict.resultCompletenessCausallyUnerasable).toBe(true)
+    expect(rig.verdict.noUniversalWinner).toBe(false)
+    // 双路自证 + 三路篡改 + 十一真件 21 键
+    const wm = (sw.crosscheck as any).watermark
+    expect(wm.holds).toBe(true)
+    expect(wm.nontrivial).toBe(true)
+    expect(wm.tamper.emptySet.holds).toBe(false)
+    expect(Object.keys((sw.crosscheck as any).evidence).length).toBe(21)
+    // cell 三布尔 + 考场标记直读同源
+    const tum = sw.rows.find((r: any) => r.protocol === 'Tumbling')!
+    expect(tum.scenarios.find((c: any) => c.id === 'boundaryStraddle')!.resultCompleteness).toBe(false)
+    // streamWindow:false 关闭不连坐
+    const off = await buildSystems({ now, streamWindow: false })
+    expect(off.streamWindow).toBe(null)
+    expect(off.cacheReplacement).not.toBe(null)
+    // 十时钟同源
+    const full = await buildSystems({ now })
+    const ten = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt, full.bloomFilter?.builtAt, full.cacheReplacement?.builtAt, full.streamWindow?.builtAt]
+    expect(ten.every((x) => x === 529000)).toBe(true)
+  })
+
   it('⑭ buildMvccTxnReading 真跑五档矩阵形状齐、读数是真判词、单维关闭不连坐（KI-505）', async () => {
     const { buildMvccTxnReading } = await import('../../scripts/caesura-console-gen.mjs')
     const now = () => 4242

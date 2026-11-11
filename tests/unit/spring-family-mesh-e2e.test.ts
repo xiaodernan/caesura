@@ -894,4 +894,37 @@ describe('spring-family-mesh-e2e', () => {
     expect(bare.cacheReplacementSnapshot).toBe(null)
     expect(bare.bloomFilterSnapshot).toBe(null)
   })
+
+  it("e2e KI-529：streamWindow=true ⇒ 主链照常跑通，streamWindowSnapshot 带三策略×六场景/三难向量 011/110/101/双路自证/十一真件交叉印证", async () => {
+    const e = runMeshE2E({ streamWindow: true, swNow: () => 8888 })
+    const r = await e.run()
+    expect(r.started?.registered).toBe(true)
+    expect(r.callRes?.ok).toBe(true)
+    const d = r.streamWindowSnapshot
+    expect(d).not.toBe(null)
+    expect(d!.builtAt).toBe(8888)                  // swNow 注入时钟真求值
+    expect(d!.config.scenarios.length).toBe(6)
+    expect(d!.rows.length).toBe(3)
+    expect(d!.vectors).toEqual({ Tumbling: '011', Sliding: '110', Session: '101' })
+    expect(d!.verdict.noUniversalWinner).toBe(true)
+    expect(d!.verdict.vectorFromTrilemma).toBe(true)
+    // 双路自证稳态 + 三路篡改真喂回现算翻 false
+    expect(d!.crosscheck.watermark.holds).toBe(true)
+    expect(d!.crosscheck.watermark.nontrivial).toBe(true)
+    expect(d!.crosscheck.watermark.tamper.watermarkInverted.holds).toBe(false)
+    expect(d!.crosscheck.watermark.tamper.dispositionTampered.holds).toBe(false)
+    expect(d!.crosscheck.watermark.tamper.emptySet.holds).toBe(false)
+    // 十一真件 21 键
+    expect(Object.keys(d!.crosscheck.evidence).length).toBe(21)
+    // CLI 投影 ladder 软肋字口径与前端 swState 一致（只在 ===false 落 缺/迟/胀）
+    const rig = await runMeshE2E({ streamWindow: { rigged: true } }).run()
+    expect(rig.streamWindowSnapshot!.vectors).toEqual({ Tumbling: '011', Sliding: '011', Session: '011' })
+    expect(rig.streamWindowSnapshot!.verdict.resultCompletenessCausallyUnerasable).toBe(true)
+    expect(rig.streamWindowSnapshot!.verdict.noUniversalWinner).toBe(false)
+    // 未配 streamWindow 时为 null（非破坏、不连坐其它维）
+    const bare = await runMeshE2E().run()
+    expect(bare.streamWindowSnapshot).toBe(null)
+    expect(bare.cacheReplacementSnapshot).toBe(null)
+    expect(bare.bloomFilterSnapshot).toBe(null)
+  })
 })

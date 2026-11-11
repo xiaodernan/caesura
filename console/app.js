@@ -60,6 +60,7 @@
       renderLogCompaction(snap.systems ? snap.systems.logCompaction : null)
       renderBloomFilter(snap.systems ? snap.systems.bloomFilter : null)
       renderCacheReplacement(snap.systems ? snap.systems.cacheReplacement : null)
+      renderStreamWindow(snap.systems ? snap.systems.streamWindow : null)
       setLive(true, result.source)
     }).catch(function (e) {
       setLive(false, 'error')
@@ -2692,6 +2693,153 @@
       '三口径正交：scanResistance 只在 scanFeast/burstAlternates 量、stableHitRate 只在 uniformHot/forwardHot/dualLocality 量；adaptiveBalance 只在 burstAlternates/zipfDrift 漂移场景量幽灵链真适配动作，其余场景该维空真不连坐，每格三布尔由真件现算、前端只渲染不复核。' +
       'rigged 双开关 unlimitedRoom（容量真放大 8×）+ perfectFuture（按 Belady 偷窥未来预取）真进构造 ⇒ scan/stable 两维被真抹为全 true，但 ARC 幽灵链再无 evict-then-refetch 可适配 ⇒ adaptiveBalance 全 false、向量现算收敛 110/110/110、adaptiveBalanceCausallyUnerasable=true 证自适应这一维因果抹不掉，绝不硬造全 111。' +
       'verifyDualSweep 双路自证（LRU 幽灵轨迹 vs hot-set 重测）+ 三路篡改 trace/容量/空集真喂回现算翻 false、空集 nontrivial=false 不凭 0=0 假绿；十一真件 21 键全真回读。全结构计数，不声称真 Buffer Pool / 真 Megiddo-Modha ACL 字节码 / 真 RocksDB db-buffer.cpp。'
+  }
+
+  /* ================= KI-529 Tumbling/Sliding/Session 流式窗口 · 第二十三维（sw 族） ================= */
+
+  function renderStreamWindow(sw) {
+    renderSwMatrix(sw && sw.rows, sw && sw.config)
+    renderSwLadder(sw && sw.rows)
+    renderSwTrilemma(sw && sw.rows, sw && sw.verdict, sw && sw.crosscheck)
+  }
+
+  function swMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 暂缺</div>'
+    if (note) note.textContent = 'systems.streamWindow 缺失 — 跑一次 npm run console:data 即可补齐'
+  }
+
+  function swState(s) {
+    if (!s) return { cls: '', ch: '·' }
+    if (s.resultCompleteness === false) return { cls: 'pair', ch: '缺' }
+    if (s.lateTolerance === false) return { cls: 'late', ch: '迟' }
+    if (s.stateEfficiency === false) return { cls: 'bloat', ch: '胀' }
+    return { cls: 'ok', ch: '✓' }
+  }
+
+  function renderSwMatrix(rows, config) {
+    var box = $('#sw-matrix'), note = $('#sw-matrix-note')
+    if (!Array.isArray(rows) || !rows.length || !config || !Array.isArray(config.scenarios)) {
+      swMissing(box, note, 'sw 矩阵'); return
+    }
+    var scenarios = config.scenarios
+    var head = '<div class="sw-mat-row sw-mat-head"><span class="sw-mat-proto">策略</span>' +
+      scenarios.map(function (sc) { return '<span class="sw-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="sw-mat-cost">覆盖/放大/迟到</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = swState(cell)
+        return '<span class="sw-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="sw-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="sw-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="sw-mat-cost"><b>' + esc(fmt(m.pairCoverageAvg)) + '</b>/' + esc(fmt(m.amplificationAvg)) + '/' + esc(fmt(m.lateSideOutput)) + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'Tumbling / Sliding / Session × 六场景：alignedBursts（整点突发、量状态放大）/ boundaryStraddle（跨 TUMBLING 边界的关联对，唯独 Sliding/Session 收进同一窗）/ overlapReuse（宽对跨越固定边界、会话 gap 以内，唯独 Sliding/Session 覆盖）/ sessionGaps（4 段密集切 4 会话）/ lateWithinAllowance（迟到但仍在 allow 内 ⇒ 三策略都纳入）/ lateBeyondGap（gap 已关会话的迟到 ⇒ Session 判定出生即过时只剩 sideOutput、Tumbling/Sliding 固定窗末+allow 未到可重开）。' +
+      '每格只认真件算好的三布尔（resultCompleteness/lateTolerance/stateEfficiency）——绝不拿阈值重算。' +
+      'Tumbling 低覆盖/稳省状态/容忍迟到；Sliding 高覆盖/放大 4 倍状态；Session 覆盖好但一次跨 gap 迟到即 sideOutput。'
+  }
+
+  function renderSwLadder(rows) {
+    var box = $('#sw-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.pairCoverageAvg) ? r.metrics.pairCoverageAvg : 0 }).concat([0.0001]))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.pairCoverageAvg) ? Math.round(m.pairCoverageAvg / max * 100) : 0
+      return '<div class="sw-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="sw-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">覆盖 ' + esc(fmt(m.pairCoverageAvg)) + ' · 放大 ' + esc(fmt(m.amplificationAvg)) + ' · 迟拒 ' + esc(fmt(m.lateSideOutput)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderSwTrilemma(rows, verdict, crosscheck) {
+    var box = $('#sw-trilemma'), veBox = $('#sw-verif'), cxBox = $('#sw-crosscheck'), note = $('#sw-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      swMissing(box, note, 'sw 判词'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''; return
+    }
+    var flags = [['resultCompleteness', '结果完整'], ['lateTolerance', '迟到容忍'], ['stateEfficiency', '状态省']]
+    var head = '<div class="sw-vec sw-vec-head"><span class="proto">策略</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="sw-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="sw-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    if (veBox) {
+      var tum = rows.find(function (r) { return r.protocol === 'Tumbling' })
+      var sli = rows.find(function (r) { return r.protocol === 'Sliding' })
+      var ses = rows.find(function (r) { return r.protocol === 'Session' })
+      var wm = crosscheck && crosscheck.watermark
+      var rb = [
+        '<div class="sw-rb-row"><b>Tumbling</b> 真跑 boundaryStraddle → pairCoverageAvg ' + esc(fmt(tum ? tum.metrics.pairCoverageAvg : 0)) + '（固定窗必切跨边界对，emitted=' + esc(fmt(tum ? tum.metrics.emittedWindows : 0)) + ' 扇窗）</div>',
+        '<div class="sw-rb-row"><b>Sliding</b> 真跑 alignedBursts → amplificationAvg ' + esc(fmt(sli ? sli.metrics.amplificationAvg : 0)) + '（size/step 重叠，每事件真复制多份进不同窗，状态放大 &gt;1）</div>',
+        '<div class="sw-rb-row"><b>Session</b> 真跑 lateBeyondGap → lateAccepted ' + esc(fmt(ses ? ses.metrics.lateAccepted : 0)) + ' / 拒 ' + esc(fmt(ses ? ses.metrics.lateSideOutput : 0)) + '（gap 已关会话的迟到，出生即过时 ⇒ sideOutput）</div>',
+      ]
+      if (wm) {
+        rb.push('<div class="sw-rb-row"><b>verifyWatermarkMonotonicity 双路</b> 路A 单调+关窗守恒 ' + esc(fmt(wm.laneA && wm.laneA.closed)) + ' 窗 · 路B 处置守恒 ' + esc(fmt(wm.laneB && wm.laneB.lateTotal)) + ' 迟到 — ' +
+          '<span data-rb="holds">holds ' + (wm.holds ? '✓' : '✗') + '</span> ' +
+          '<span data-rb="nontrivial">nontrivial ' + (wm.nontrivial ? '✓' : '✗') + '</span> ' +
+          '<span data-rb="falsifiable">falsifiable ' + (wm.falsifiable ? '✓' : '✗') + '</span></div>')
+        if (wm.tamper) {
+          rb.push('<div class="sw-rb-row">三路篡改真喂回同一内核现算翻 false：' +
+            '<span class="sw-flag ' + (wm.tamper.watermarkInverted && !wm.tamper.watermarkInverted.holds ? 'yes' : 'no') + '" data-rb-tamper="watermarkInverted">反转水位 ' + (wm.tamper.watermarkInverted && !wm.tamper.watermarkInverted.holds ? '✓驳倒' : '✗') + '</span>' +
+            '<span class="sw-flag ' + (wm.tamper.dispositionTampered && !wm.tamper.dispositionTampered.holds ? 'yes' : 'no') + '" data-rb-tamper="dispositionTampered">篡改处置 ' + (wm.tamper.dispositionTampered && !wm.tamper.dispositionTampered.holds ? '✓驳倒' : '✗') + '</span>' +
+            '<span class="sw-flag ' + (wm.tamper.emptySet && !wm.tamper.emptySet.holds ? 'yes' : 'no') + '" data-rb-tamper="emptySet">空集降级 ' + (wm.tamper.emptySet && !wm.tamper.emptySet.holds ? '✓驳倒' : '✗') + '</span></div>')
+        }
+      }
+      veBox.innerHTML = rb.join('')
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      var wm = crosscheck && crosscheck.watermark
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>真 <b>compareRemapping</b> 迁移率 一致性 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>' +
+          '<div>真 <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 片</div>' +
+          '<div>真 <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 命中 ' + esc(fmt(ev.ringShardsUsed)) + ' 个</div>' +
+          '<div>真 <b>createWal</b> append lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>真 <b>createBus</b> window.finalized 通知 ' + esc(fmt(ev.notices)) + ' 条 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>真 <b>createRedisCache</b> 聚合槽 set+get 命中 ' + esc(fmt(ev.redisBitmapHits)) + ' · entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+          '<div>真 <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+          '<div>真 <b>createTokenBucket</b> 回放允许 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>真 <b>createMinHeapDelayQueue</b> 出队 ' + esc(fmt(ev.heapFired)) + ' 条 · pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+          '<div>真 <b>createPackedCounters</b> Σ=' + esc(fmt(ev.counterSum)) + ' · falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>' +
+          '<div>真 <b>createFullJitterBackoff</b> jitterSpread 抖开 <b>' + esc(fmt(ev.jitterSpread)) + '</b></div>' +
+          (wm ? '<div>真 <b>verifyWatermarkMonotonicity</b> holds=<b>' + (wm.holds ? 'true' : 'false') + '</b> nontrivial=<b>' + (wm.nontrivial ? 'true' : 'false') + '</b> · laneA{·步 ' + esc(fmt(wm.laneA && wm.laneA.steps)) + ' 关窗 ' + esc(fmt(wm.laneA && wm.laneA.closed)) + ' 地平线 ' + esc(fmt(wm.laneA && wm.laneA.behindHorizon)) + '} · laneB{迟到 ' + esc(fmt(wm.laneB && wm.laneB.lateTotal)) + ' 纳 ' + esc(fmt(wm.laneB && wm.laneB.accepted)) + '}</div>' : '')
+      } else {
+        cxBox.innerHTML = '<div class="nodata">真件交叉印证缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var chips = [
+      '<span class="chip" data-verdict="tumbling_crossBoundaryLoss"><b>Tumbling</b> 跨边界必切 ' + (v.tumbling_crossBoundaryLoss ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="tumbling_stateCheap"><b>Tumbling</b> 状态省 ' + (v.tumbling_stateCheap ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="sliding_overlapComplete"><b>Sliding</b> 重叠全覆盖 ' + (v.sliding_overlapComplete ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="sliding_stateAmplified"><b>Sliding</b> 状态放大 ' + (v.sliding_stateAmplified ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="session_gapFragile"><b>Session</b> 跨 gap 迟到即拒 ' + (v.session_gapFragile ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="session_stateCheap"><b>Session</b> 会话省状态 ' + (v.session_stateCheap ? '✓' : '✗') + '</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' + (noWin ? '✓ 三向量互异（011/110/101），无全局赢家、恰好各缺一维' : '判词塌陷') + '</span>',
+    ]
+    var probes = $('#sw-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维序固定 [结果完整 / 迟到容忍 / 状态省]。默认向量 Tumbling=011 / Sliding=110 / Session=101，三者互异、无一 111、恰好各缺一维：Tumbling 切跨边界关联对、Sliding 状态放大 4 倍、Session 判定 gap 已关会话的迟到只剩 sideOutput。' +
+      '三口径正交：resultCompleteness 只在 boundaryStraddle / overlapReuse 两场景量真 pairCoverage（两扇窗；session 成员下标逐扇核对，不凭 group 集合误判）；lateTolerance 只在 lateWithinAllowance / lateBeyondGap 量真 lateAccepted 率（< 0.6 即判罚 Session 迟钝）；stateEfficiency 只在 alignedBursts / overlapReuse 量真 stateReplicas 放大（≤ 1.5 才合格）。' +
+      'rigged 三开关：frozenWatermark（关窗永不推进）+ infiniteLateness（迟到永不超期）+ freeState（放大归一为 1）齐开 ⇒ 三维全部因果判死 resultCompleteness 仍塌（011/011/011），绝不硬造全 111。'
   }
 
   /* ================= KI-527 布隆/布谷鸟/计数布隆三过滤器 · 第二十一维（blf 族） ================= */

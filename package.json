@@ -42,6 +42,7 @@
     "log-compaction:bench": "node scripts/caesura-log-compaction.mjs",
     "bloom-filter:bench": "node scripts/caesura-bloom-filter.mjs",
     "cache-replacement:bench": "node scripts/caesura-cache-replacement.mjs",
+    "stream-window:bench": "node scripts/caesura-stream-window.mjs",
     "redis:spring:bench": "node scripts/spring-redis-cache.mjs selfcheck",
     "status": "node scripts/phase-status.mjs",
     "status:embed": "node scripts/phase-status-embed.mjs",

@@ -601,6 +601,29 @@ export interface CacheReplacementReading {
   builtAt: number
 }
 
+/** KI-529：Tumbling/Sliding/Session 流式窗口聚合与 Watermark 迟到处置真跑读数（三策略 × 六场景 + 三难向量 + verifyWatermarkMonotonicity 双路交叉印证 + 十一枚真件交叉印证）。 */
+export interface StreamWindowReading {
+  config: Record<string, any>
+  rows: Array<{
+    protocol: string
+    scenarios: Array<{
+      id: string; protocol: string; windowCount: number; emittedWindows: number; stateReplicas: number
+      rawAmplification: number; amplification: number; pairs: number; coveredPairs: number; pairCoverage: number
+      lateTotal: number; lateAccepted: number; lateSideOutput: number; lateAcceptRate: number
+      closeEvents: number; monotonicViolations: number; watermarkFinal: number
+      fault: string
+      resultCompleteness: boolean; lateTolerance: boolean; stateEfficiency: boolean
+      inResultExam: boolean; inLateExam: boolean; inStateExam: boolean
+    }>
+    trilemma: { resultCompleteness: boolean; lateTolerance: boolean; stateEfficiency: boolean }
+    metrics: { windowCount: number; emittedWindows: number; stateReplicas: number; amplificationAvg: number; pairCoverageAvg: number; lateAccepted: number; lateSideOutput: number; watermarkFinal: number; trilemmaDebug?: Record<string, any> }
+  }>
+  vectors: Record<string, string>
+  verdict: Record<string, any>
+  crosscheck: { evidence: Record<string, any>; watermark: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+  builtAt: number
+}
+
 
 
 /** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511 + KI-512 + KI-513 + KI-518 + KI-520 + KI-523 + KI-525 + KI-526：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 + 缓存读写一致性 + 消息投递语义 + 延迟消息队列调度 + 消息重试退避与死信 + 消费者组 rebalance + 消费者组积压背压 + append-only 日志压缩与回放边界）。 */
@@ -627,6 +650,7 @@ export interface SystemsBlock {
   logCompaction: LogCompactionReading | null
   bloomFilter: BloomFilterReading | null
   cacheReplacement: CacheReplacementReading | null
+  streamWindow: StreamWindowReading | null
   builtAt: number
 }
 
@@ -795,6 +819,18 @@ export function buildSnapshot(opts?: {
   crPerfectFuture?: boolean
   crUnlimitedRoom?: boolean
   crRigged?: boolean
+  /** KI-529：false 关掉流式窗口维（兼容旧快照）；sw* 注入规模/阈值/rigged */
+  streamWindow?: boolean
+  swSeed?: number
+  swWindowSize?: number
+  swSlideStep?: number
+  swSessionGap?: number
+  swAllowedLateness?: number
+  swEvents?: number
+  swFrozenWatermark?: boolean
+  swInfiniteLateness?: boolean
+  swFreeState?: boolean
+  swRigged?: boolean
 }): Promise<ConsoleSnapshot>
 
 /** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511 + KI-512 + KI-513：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 + 缓存读写一致性 + 消息投递语义 十五维系统读数；击穿并发 ⇒ async。 */
@@ -940,6 +976,18 @@ export function buildSystems(opts?: {
   crPerfectFuture?: boolean
   crUnlimitedRoom?: boolean
   crRigged?: boolean
+  /** KI-529：false 关掉流式窗口维（兼容旧快照）；sw* 注入规模/阈值/rigged */
+  streamWindow?: boolean
+  swSeed?: number
+  swWindowSize?: number
+  swSlideStep?: number
+  swSessionGap?: number
+  swAllowedLateness?: number
+  swEvents?: number
+  swFrozenWatermark?: boolean
+  swInfiniteLateness?: boolean
+  swFreeState?: boolean
+  swRigged?: boolean
 }): Promise<SystemsBlock>
 
 /** KI-501：真跑缓存防护三件套（击穿/穿透/雪崩）收敛成前端三面板紧凑读数；单维失败落 null。 */
@@ -1162,6 +1210,22 @@ export function buildCacheReplacementReading(opts: {
   crUnlimitedRoom?: boolean
   crRigged?: boolean
 }, now: () => number): Promise<CacheReplacementReading | null>
+
+/** KI-529：真跑 Tumbling/Sliding/Session 流式窗口聚合与 Watermark 迟到处置（三策略 × 六场景 + 三难向量 + verifyWatermarkMonotonicity 双路交叉印证 + 十一枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
+export function buildStreamWindowReading(opts: {
+  now?: () => number
+  streamWindow?: boolean
+  swSeed?: number
+  swWindowSize?: number
+  swSlideStep?: number
+  swSessionGap?: number
+  swAllowedLateness?: number
+  swEvents?: number
+  swFrozenWatermark?: boolean
+  swInfiniteLateness?: boolean
+  swFreeState?: boolean
+  swRigged?: boolean
+}, now: () => number): Promise<StreamWindowReading | null>
 
 export function realScenarioOpts(id: string): Record<string, any>
 

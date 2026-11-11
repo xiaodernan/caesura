@@ -1537,4 +1537,99 @@ describe('caesura-game-cloud', () => {
     expect(injected.cacheReplacement.builtAt).toBe(555)
     expect(injected.cacheReplacement.config.seed).toBe(99)
   })
+
+  it("streamWindow:true ⇒ 装配 Tumbling/Sliding/Session 三策略、status.streamWindow 读真矩阵/三难向量 011/110/101/双路自证/十一真件、builtAt 随 swNow、惰性同引用（KI-529）", async () => {
+    const gc = createGameCloud({
+      gameId: 'gidsw1', gamePort: 7837, sources, cloud: fakeCloud(),
+      streamWindow: true, swNow: () => 9999,
+    })
+    expect(gc.runStreamWindowStudy).toBeTypeOf('function')
+    const st = await gc.status()
+    expect(st.streamWindow.builtAt).toBe(9999)
+    expect(st.streamWindow.config.scenarios.length).toBe(6)
+    expect(st.streamWindow.rows.length).toBe(3)
+    expect(st.streamWindow.vectors).toEqual({ Tumbling: '011', Sliding: '110', Session: '101' })
+    const tum = st.streamWindow.rows.find((r: any) => r.protocol === 'Tumbling')!
+    const sli = st.streamWindow.rows.find((r: any) => r.protocol === 'Sliding')!
+    const ses = st.streamWindow.rows.find((r: any) => r.protocol === 'Session')!
+    expect(tum.trilemma).toEqual({ resultCompleteness: false, lateTolerance: true, stateEfficiency: true })
+    expect(sli.trilemma).toEqual({ resultCompleteness: true, lateTolerance: true, stateEfficiency: false })
+    expect(ses.trilemma).toEqual({ resultCompleteness: true, lateTolerance: false, stateEfficiency: true })
+    // cell 三布尔 + 考场标记直读同源
+    const boundary = tum.scenarios.find((c: any) => c.id === 'boundaryStraddle')!
+    expect(boundary.resultCompleteness).toBe(false)
+    expect(boundary.inResultExam).toBe(true)
+    expect(ses.scenarios.find((c: any) => c.id === 'lateBeyondGap')!.lateSideOutput).toBeGreaterThan(0)
+    // 双路自证稳态成立 + 三路篡改真喂回现算翻 false
+    const wm = st.streamWindow.crosscheck.watermark
+    expect(wm.holds).toBe(true)
+    expect(wm.nontrivial).toBe(true)
+    expect(wm.laneA.closed).toBeGreaterThanOrEqual(1)
+    expect(wm.tamper.watermarkInverted.holds).toBe(false)
+    expect(wm.tamper.dispositionTampered.holds).toBe(false)
+    expect(wm.tamper.emptySet.holds).toBe(false)
+    // 十一真件 21 键真回读
+    const ev = st.streamWindow.crosscheck.evidence
+    expect(Object.keys(ev).length).toBe(21)
+    expect(ev.walReplayed).toBeGreaterThan(0)
+    expect(ev.jitterSpread).toBeGreaterThanOrEqual(0)
+    expect(st.streamWindow.verdict.noUniversalWinner).toBe(true)
+    expect(st.streamWindow.verdict.vectorFromTrilemma).toBe(true)
+    expect(st.streamWindow.verdict.watermarkHolds).toBe(true)
+    expect(st.streamWindow.verdict.frozenCollapsesCompleteness).toBe(true)
+    expect(st.streamWindow.verdict.infiniteRestoresSessionLate).toBe(true)
+    expect(st.streamWindow.verdict.freeRestoresSlidingState).toBe(true)
+    // 惰性缓存：二次 status 同引用
+    expect((await gc.status()).streamWindow).toBe(st.streamWindow)
+    const rerun = await gc.runStreamWindowStudy!()
+    expect(rerun.vectors).toEqual(st.streamWindow.vectors)
+    // 不连坐其它维
+    expect(st.bloomFilter).toBe(null)
+    expect(st.cacheReplacement).toBe(null)
+  })
+
+  it('streamWindow 默认 null 非破坏；单开 frozen/infinite/free 各自局部、rigged 011/011/011 因果锁死 resultCompleteness；可注入现成 study（KI-529）', async () => {
+    const plain = createGameCloud({ gameId: 'gidsw2', gamePort: 7838, sources, cloud: fakeCloud() })
+    expect(plain.runStreamWindowStudy).toBe(null)
+    const ps = await plain.status()
+    expect(ps.streamWindow).toBe(null)
+    expect(ps.cacheReplacement).toBe(null)
+    // 单开 frozenWatermark：无窗定稿 ⇒ 结果完整维真塌
+    const fz = await (await createGameCloud({
+      gameId: 'gidsw3', gamePort: 7839, sources, cloud: fakeCloud(),
+      streamWindow: { frozenWatermark: true, now: 0 },
+    })).status()
+    expect(fz.streamWindow.verdict.frozenCollapsesCompleteness).toBe(true)
+    expect(fz.streamWindow.rows.every((r: any) => r.metrics.emittedWindows === 0)).toBe(true)
+    expect(fz.streamWindow.rows.every((r: any) => r.trilemma.resultCompleteness === false)).toBe(true)
+    // 单开 freeState：Sliding 放大归一 ⇒ 状态省维真抹
+    const fr = await (await createGameCloud({
+      gameId: 'gidsw4', gamePort: 7840, sources, cloud: fakeCloud(),
+      streamWindow: { freeState: true, now: 0 },
+    })).status()
+    expect(fr.streamWindow.verdict.freeRestoresSlidingState).toBe(true)
+    // 单开 infiniteLateness：Session 迟到维真抹
+    const inf = await (await createGameCloud({
+      gameId: 'gidsw5', gamePort: 7841, sources, cloud: fakeCloud(),
+      streamWindow: { infiniteLateness: true, now: 0 },
+    })).status()
+    expect(inf.streamWindow.verdict.infiniteRestoresSessionLate).toBe(true)
+    // rigged 三开关齐开：真实现算 011/011/011、因果锁死 resultCompleteness
+    const rig = await (await createGameCloud({
+      gameId: 'gidsw6', gamePort: 7842, sources, cloud: fakeCloud(),
+      streamWindow: { rigged: true, now: 0 },
+    })).status()
+    expect(rig.streamWindow.vectors).toEqual({ Tumbling: '011', Sliding: '011', Session: '011' })
+    expect(rig.streamWindow.verdict.resultCompletenessCausallyUnerasable).toBe(true)
+    expect(rig.streamWindow.verdict.noUniversalWinner).toBe(false)
+    expect(rig.streamWindow.verdict.vectorFromTrilemma).toBe(true)
+    // 注入现成 study（duck-typed）
+    const { streamWindowStudy } = await import('../../scripts/caesura-stream-window.mjs')
+    const injected = await (await createGameCloud({
+      gameId: 'gidsw7', gamePort: 7843, sources, cloud: fakeCloud(),
+      streamWindow: streamWindowStudy({ seed: 99, now: 555 }),
+    })).status()
+    expect(injected.streamWindow.builtAt).toBe(555)
+    expect(injected.streamWindow.config.seed).toBe(99)
+  })
 })

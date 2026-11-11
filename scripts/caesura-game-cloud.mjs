@@ -43,6 +43,7 @@ import { backpressureStudy, backpressureSnapshot } from './caesura-backpressure.
 import { logCompactionStudy, logCompactionSnapshot } from './caesura-log-compaction.mjs'
 import { bloomFilterStudy, bloomFilterSnapshot } from './caesura-bloom-filter.mjs'
 import { cacheReplacementStudy, cacheReplacementSnapshot } from './caesura-cache-replacement.mjs'
+import { streamWindowStudy, streamWindowSnapshot } from './caesura-stream-window.mjs'
 import {
   createAimdCongestion,
   createCubicCongestion,
@@ -637,6 +638,26 @@ export function createGameCloud(opts = {}) {
     return crCached
   }
 
+  // KI-529 流式窗口聚合与 Watermark 迟到处置三策略诚实权衡（Tumbling/Sliding/Session；opt-in、status/ sw*）。
+  // opts.streamWindow===true 走钳制默认参数（可覆盖 now/seed/windowSize/slideStep/sessionGap/allowedLateness/events/frozenWatermark/infiniteLateness/freeState/rigged 等）；
+  // 传对象且 rows/vectors/verdict 齐全时当现成 study 注入；默认 streamWindow:false 非破坏（同 KI-513/518/520/523/525/526/527/528 法），
+  // 显式开才接；不声称真 Flink / Kafka Streams 事件时间语义 / 真 RocksDB 状态后端 / 真 checkpoint 容错 / 真并行 watermark 传播 / 真墙钟吞吐跑分。
+  // 注意命名：sw*（stream window），避开 bp*/bpc*/cgp*/lc*/bf*/cr* 等已占用前缀。
+  const swCfg = opts.streamWindow === true ? {} : (opts.streamWindow && typeof opts.streamWindow === 'object' ? opts.streamWindow : null)
+  const swInjected = swCfg !== null && opts.streamWindow &&
+    typeof opts.streamWindow === 'object' && Array.isArray(opts.streamWindow.rows) &&
+    opts.streamWindow.vectors && opts.streamWindow.verdict
+  let swCached = null
+  async function swSnapshotForStatus() {
+    if (swCfg === null) return null
+    if (swCached) return swCached
+    const study = swInjected
+      ? opts.streamWindow
+      : await streamWindowStudy({ ...swCfg, now: opts.swNow ?? swCfg.now })
+    swCached = streamWindowSnapshot(study)
+    return swCached
+  }
+
   // KI-513：分布式消息投递语义三协议诚实权衡（At-Most-Once / At-Least-Once / Exactly-Once，opt-in）。
   // opts.messageDelivery===true 用缺省规模；传对象逐项注入（now/seed/messages/manyKeys/retryLimit/...
   // 或 noCrash/ackReliable/freeIdempotency 单开关探针），或直接塞一只现成 study（duck-typed：带 rows/vectors/verdict/crosscheck/topology）。
@@ -739,6 +760,8 @@ export function createGameCloud(opts = {}) {
     runBloomFilterStudy: bfCfg === null ? null : () => bloomFilterStudy({ ...bfCfg, now: opts.bfNow ?? bfCfg.now }),
     /** KI-528 LRU/2Q/ARC 三替换策略诚实权衡研究件；缺 opts.cacheReplacement 时为 null；LRU/2Q/ARC × 六场景矩阵 + 三难向量（默认 010/110/101 互异不封赢家；rigged 两开关 unlimitedRoom+perfectFuture 真进构造 ⇒ 向量现算收敛 110/110/110、adaptiveBalanceCausallyUnerasable 因果锁死自适应维、绝不硬造全 111）+ verifyDualSweep 双路交叉印证（真 trace 两路独立重放 + 三路篡改真喂回现算翻 false）+ 十一真件 21 键交叉印证。 */
     runCacheReplacementStudy: crCfg === null ? null : () => cacheReplacementStudy({ ...crCfg, now: opts.crNow ?? crCfg.now }),
+    /** KI-529 流式窗口聚合与 Watermark 迟到处置三策略诚实权衡研究件；缺 opts.streamWindow 时为 null；Tumbling/Sliding/Session × 六场景矩阵 + 三难向量（默认 011/110/101 互异不封赢家；rigged 三开关 frozenWatermark+infiniteLateness+freeState 真进构造 ⇒ 向量现算收敛 011/011/011、resultCompletenessCausallyUnerasable 因果锁死结果维、绝不硬造全 111）+ verifyWatermarkMonotonicity 双路自证（到达序 watermark 单调 + 承诺地平线 behindHorizon / 处置守恒 accepted+sideOutput==lateTotal，三路篡改真喂回现算翻 false）+ 十一枚真件 21 键交叉印证。 */
+    runStreamWindowStudy: swCfg === null ? null : () => streamWindowStudy({ ...swCfg, now: opts.swNow ?? swCfg.now }),
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
     gray: runtime.gray,
     /** 把游戏真 EventBus 按白名单routes 接进云事件总线（游戏侧一行：gc.connectGameBus(bus, routes)）。 */
@@ -791,6 +814,7 @@ export function createGameCloud(opts = {}) {
         logCompaction: await lcSnapshotForStatus(),
         bloomFilter: await bfSnapshotForStatus(),
         cacheReplacement: await crSnapshotForStatus(),
+        streamWindow: await swSnapshotForStatus(),
       }
     },
   }

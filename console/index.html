@@ -465,6 +465,23 @@
       <p class="note" id="cr-trilemma-note">…</p>
     </article>
   </section>
+  <!-- 第二十三维 · Tumbling / Sliding / Session 流式窗口 × Watermark 迟到处置（KI-529） -->
+  <section class="row row-sw">
+    <article class="panel panel-sw">
+      <div class="panel-head"><h2>第二十三维 · Tumbling/Sliding/Session · 三策略 × 六场景</h2><span class="hint">滚=Tumbling（固定不重叠、最省状态但必切跨边界关联对）/ 滑=Sliding（size/step 重叠、任意≤size 对都接住但状态放大 &gt;1）/ 会话=Session（按 gap 动态切分、对归同一会话但迟到越过会话末只剩 sideOutput）</span></div>
+      <div class="sw-matrix" id="sw-matrix"></div>
+      <div class="sw-ladder" id="sw-ladder"></div>
+      <p class="note" id="sw-matrix-note">…</p>
+    </article>
+    <article class="panel panel-sw">
+      <div class="panel-head"><h2>三难向量（结果完整 ∧ 迟到容忍 ∧ 状态省）· 双路自证</h2><span class="hint">Tumbling=011 / Sliding=110 / Session=101 · 三向量互异无一 111 不封赢家 · verifyWatermarkMonotonicity 真轨迹 ×2 路自证 + 三路篡改可证伪（反转流到达序 → 承诺地平线违约 / allowedLateness 归零 → accepted 归零 / 空事件集 → nontrivial=false）</span></div>
+      <div class="sw-trilemma" id="sw-trilemma"></div>
+      <div class="sw-verif" id="sw-verif"></div>
+      <div class="sw-crosscheck" id="sw-crosscheck"></div>
+      <div class="sw-probes" id="sw-probes"></div>
+      <p class="note" id="sw-trilemma-note">…</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">
