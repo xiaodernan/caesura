@@ -41,6 +41,7 @@ import { bloomFilterStudy, bloomFilterSnapshot } from './caesura-bloom-filter.mj
 import { cacheReplacementStudy, cacheReplacementSnapshot } from './caesura-cache-replacement.mjs'
 import { streamWindowStudy, streamWindowSnapshot } from './caesura-stream-window.mjs'
 import { streamCardinalityStudy, cardinalitySnapshot } from './caesura-hyperloglog.mjs'
+import { crdtStudy, crdtSnapshot } from './caesura-crdt.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
 export const SCENARIO_IDS = ['main', 'gray', 'resilience', 'cache', 'net']
@@ -207,6 +208,14 @@ export async function buildSnapshot(opts = {}) {
     crPerfectFuture: opts.crPerfectFuture,
     crUnlimitedRoom: opts.crUnlimitedRoom,
     crRigged: opts.crRigged,
+    crdt: opts.crdt,
+    crdtSeed: opts.crdtSeed,
+    crdtReplicas: opts.crdtReplicas,
+    crdtOpsPerNode: opts.crdtOpsPerNode,
+    crdtCausalDelivery: opts.crdtCausalDelivery,
+    crdtInfiniteMetadata: opts.crdtInfiniteMetadata,
+    crdtUniformClock: opts.crdtUniformClock,
+    crdtRigged: opts.crdtRigged,
     hyperLogLog: opts.hyperLogLog,
     hllSeed: opts.hllSeed,
     hllCardinality: opts.hllCardinality,
@@ -292,7 +301,7 @@ export async function buildSnapshot(opts = {}) {
  * @param {boolean} [opts.dqZeroTick] rigged：tick 抹为 1ms（只救时间轮即时精确）
  * @param {boolean} [opts.dqFreeHeapOps] rigged：堆比较免计数
  * @param {boolean} [opts.dqSharedBackend] rigged：进程内结构也假想跨机共享持久
- * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, failureDetector:object|null, bplusIndex:object|null, mvccTxn:object|null, distributedTxn:object|null, raftConsensus:object|null, distributedLock:object|null, idGen:object|null, distributedRateLimit:object|null, configConsistency:object|null, cacheCoherency:object|null, messageDelivery:object|null, delayQueue:object|null, retryDlq:object|null, consumerGroup:object|null, backpressure:object|null, logCompaction:object|null, bloomFilter:object|null, cacheReplacement:object|null, streamWindow:object|null, hyperLogLog:object|null, builtAt:number}>}
+ * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, failureDetector:object|null, bplusIndex:object|null, mvccTxn:object|null, distributedTxn:object|null, raftConsensus:object|null, distributedLock:object|null, idGen:object|null, distributedRateLimit:object|null, configConsistency:object|null, cacheCoherency:object|null, messageDelivery:object|null, delayQueue:object|null, retryDlq:object|null, consumerGroup:object|null, backpressure:object|null, logCompaction:object|null, bloomFilter:object|null, cacheReplacement:object|null, streamWindow:object|null, hyperLogLog:object|null, crdt:object|null, builtAt:number}>}
  */
 export async function buildSystems(opts = {}) {
   const now = typeof opts.now === 'function' ? opts.now : () => Date.now()
@@ -340,7 +349,9 @@ export async function buildSystems(opts = {}) {
   const streamWindow = opts.streamWindow === false ? null : await buildStreamWindowReading(opts, now)
   // KI-530：第二十四维「ExactSet/HyperLogLog/LinearCounting 基数估计算法族」真跑六场景 + 三难判词（101/110/010） + verifySparseEstimate 双路交叉印证（真 Set vs HLL 3σ_band + 三路篡改现算翻 false） + 十一枚真件交叉印证，与其它维平级。
   const hyperLogLog = opts.hyperLogLog === false ? null : await buildCardinalityReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, builtAt: now() }
+  // KI-531：第二十五维「LWWRegister/GCounter/OrSet(add-wins) CRDT 冲突消解」真跑六场景 + 三难判词维序 [SEC/expressiveness/compact]（011/100/110，rigged 唯一翻 GCounter compact⇒101、三因果锁钉死） + verifyConvergence 双路自证（三副本乱序+重复 anti-entropy 后 value 逐字相等 + 真值不变量 + 三路篡改现算翻 false） + 十一枚真件交叉印证，与其它维平级。
+  const crdt = opts.crdt === false ? null : await buildCrdtReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, builtAt: now() }
 }
 
 /**
@@ -395,6 +406,32 @@ export async function buildCacheReplacementReading(opts, now) {
       ...(opts.crRigged === true ? { rigged: true } : {}),
     })
     return cacheReplacementSnapshot(s)
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
+ * KI-531：CRDT 最终一致冲突消解三策略 LWWRegister / GCounter / OrSet(add-wins) 诚实权衡。
+ * 维序 [strongEventualConvergence / expressiveness / compactMetadata]（默认 011/100/110）。
+ * 失败落 null；读数全真、CLI 双跑字节一致、rigged 三开关齐开唯一翻 GCounter compact⇒101、三因果锁钉死不硬封胜者。
+ * @param {object} opts { crdt?:false, crdtSeed?, crdtReplicas?, crdtOpsPerNode?, crdtSkewTicks?, crdtUniformClock?, crdtInfiniteMetadata?, crdtCoordinatedDelete?, crdtRigged? }
+ * @param {()=>number} now 时钟（builtAt 注入真值）
+ */
+export async function buildCrdtReading(opts, now) {
+  try {
+    const s = await crdtStudy({
+      now,
+      ...(opts.crdtSeed ? { seed: Math.max(0, Math.floor(Number(opts.crdtSeed))) } : {}),
+      ...(opts.crdtReplicas ? { replicaCount: Math.max(2, Math.floor(Number(opts.crdtReplicas))) } : {}),
+      ...(opts.crdtOpsPerNode ? { opsPerNode: Math.max(16, Math.floor(Number(opts.crdtOpsPerNode))) } : {}),
+      ...(opts.crdtSkewTicks ? { skewTicks: Math.max(0, Math.floor(Number(opts.crdtSkewTicks))) } : {}),
+      ...(opts.crdtUniformClock === true ? { uniformClock: true } : {}),
+      ...(opts.crdtInfiniteMetadata === true ? { infiniteMetadata: true } : {}),
+      ...(opts.crdtCoordinatedDelete === true ? { coordinatedDelete: true } : {}),
+      ...(opts.crdtRigged === true ? { rigged: true } : {}),
+    })
+    return crdtSnapshot(s)
   } catch (e) {
     return null // 缺哪块就落 null，前端据实降级；不编造假数
   }

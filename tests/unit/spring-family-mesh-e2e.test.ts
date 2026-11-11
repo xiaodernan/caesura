@@ -959,4 +959,43 @@ describe('spring-family-mesh-e2e', () => {
     const bare = await runMeshE2E().run()
     expect(bare.hyperLogLogSnapshot).toBe(null)
   })
+
+  it("e2e KI-531：crdt=true ⇒ 主链透传、crdtSnapshot 真跑，向量 011/100/110 / 双路自证 / 十一证据键 / rigged 因果锁", async () => {
+    const e = runMeshE2E({ crdt: true, crdtNow: () => 5310 })
+    const r = await e.run()
+    expect(r.started?.registered).toBe(true)
+    expect(r.callRes?.ok).toBe(true)
+    const d = r.crdtSnapshot
+    expect(d).not.toBe(null)
+    expect(d!.builtAt).toBe(5310)
+    expect(d!.config.scenarios.length).toBe(6)
+    expect(d!.rows.length).toBe(3)
+    expect(d!.vectors).toEqual({ LWWRegister: '011', GCounter: '100', OrSet: '110' })
+    expect(d!.verdict.trilemmaDistinguishes).toBe(true)
+    expect(d!.verdict.secStrictAllConverge).toBe(true)
+    expect(d!.verdict.noUniversalWinner).toBe(true)
+    expect(d!.verdict.vectorFromTrilemma).toBe(true)
+    // 双路自证 + 三路篡改现算翻 false
+    expect(d!.crosscheck.convergence.holds).toBe(true)
+    expect(d!.crosscheck.convergence.nontrivial).toBe(true)
+    expect(d!.crosscheck.convergence.tamper.dropReplica.holds).toBe(false)
+    expect(d!.crosscheck.convergence.tamper.reverseLwwDecision.holds).toBe(false)
+    expect(d!.crosscheck.convergence.tamper.emptySet.holds).toBe(false)
+    expect(Object.keys(d!.crosscheck.evidence).length).toBe(21)
+    // rigged：三开关齐开唯一翻 GCounter compact（100→101），三因果结构锁钉死，主教义不破
+    const rig = await runMeshE2E({ crdt: { rigged: true } }).run()
+    expect(rig.crdtSnapshot!.vectors).toEqual({ LWWRegister: '011', GCounter: '101', OrSet: '110' })
+    expect(rig.crdtSnapshot!.baseVectors).toEqual({ LWWRegister: '011', GCounter: '100', OrSet: '110' })
+    expect(rig.crdtSnapshot!.verdict.decrementCausallyUnerasable).toBe(true)
+    expect(rig.crdtSnapshot!.verdict.lwwConcurrentLossCausallyUnerasable).toBe(true)
+    expect(rig.crdtSnapshot!.verdict.orSetTagHistoryCausallyUnerasable).toBe(true)
+    expect(rig.crdtSnapshot!.verdict.causalLocksAllHold).toBe(true)
+    expect(rig.crdtSnapshot!.verdict.noUniversalWinner).toBe(true)
+    expect(rig.crdtSnapshot!.verdict.noUniversalWinnerStrict).toBe(true)
+
+    // 未配 crdt 时为 null、不连坐其它维
+    const bare = await runMeshE2E().run()
+    expect(bare.crdtSnapshot).toBe(null)
+    expect(bare.hyperLogLogSnapshot).toBe(null)
+  })
 })

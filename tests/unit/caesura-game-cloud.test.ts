@@ -1713,4 +1713,89 @@ describe('caesura-game-cloud', () => {
     expect(injected.hyperLogLog.builtAt).toBe(555)
     expect(injected.hyperLogLog.config.seed).toBe(99)
   })
+
+  it("crdt:true ⇒ 装配 LWWRegister/GCounter/OrSet 三真 CRDT、status.crdt 读真矩阵/三难向量 011/100/110/双路自证+三路可证伪/三因果锁/十一真件、builtAt 随 crdtNow、惰性同引用（KI-531）", async () => {
+    const gc = createGameCloud({
+      gameId: 'gidcrdt1', gamePort: 7854, sources, cloud: fakeCloud(),
+      crdt: true, crdtNow: () => 53100,
+    })
+    expect(gc.runCrdtStudy).toBeTypeOf('function')
+    const st = await gc.status()
+    expect(st.crdt.builtAt).toBe(53100)
+    expect(st.crdt.config.scenarios.length).toBe(6)
+    expect(st.crdt.rows.length).toBe(3)
+    expect(st.crdt.vectors).toEqual({ LWWRegister: '011', GCounter: '100', OrSet: '110' })
+    expect(st.crdt.baseVectors).toEqual({ LWWRegister: '011', GCounter: '100', OrSet: '110' })
+    const lww = st.crdt.rows.find((r: any) => r.protocol === 'LWWRegister')!
+    const gc2 = st.crdt.rows.find((r: any) => r.protocol === 'GCounter')!
+    const os = st.crdt.rows.find((r: any) => r.protocol === 'OrSet')!
+    expect(lww.trilemma).toEqual({ strongEventualConvergence: false, expressiveness: true, compactMetadata: true })
+    expect(gc2.trilemma).toEqual({ strongEventualConvergence: true, expressiveness: false, compactMetadata: false })
+    expect(os.trilemma).toEqual({ strongEventualConvergence: true, expressiveness: true, compactMetadata: false })
+    // 诚实口径：三者严格 SEC 全收敛、LWW 破在并发意图、OrSet add-wins
+    expect(st.crdt.verdict.secStrictAllConverge).toBe(true)
+    expect(st.crdt.verdict.lwwSecBreaksOnConcurrentIntent).toBe(true)
+    expect(st.crdt.verdict.orSetIsAddWins).toBe(true)
+    // 双路自证 + 三路篡改真喂回现算翻 false（基线先真绿）
+    const vc = st.crdt.crosscheck.convergence
+    expect(vc.holds).toBe(true)
+    expect(vc.nontrivial).toBe(true)
+    expect(vc.tamper.dropReplica.holds).toBe(false)
+    expect(vc.tamper.dropReplica.baselineHolds).toBe(true)
+    expect(vc.tamper.reverseLwwDecision.holds).toBe(false)
+    expect(vc.tamper.emptySet.holds).toBe(false)
+    // 十一真件 21 键真回读
+    const ev = st.crdt.crosscheck.evidence
+    expect(Object.keys(ev).length).toBe(21)
+    expect(ev.jitterSpread).toBeGreaterThanOrEqual(0)
+    expect(st.crdt.verdict.noUniversalWinner).toBe(true)
+    expect(st.crdt.verdict.vectorFromTrilemma).toBe(true)
+    expect(st.crdt.verdict.causalLocksAllHold).toBe(true)
+    expect(st.crdt.verdict.decrementCausallyUnerasable).toBe(true)
+    expect(st.crdt.verdict.lwwConcurrentLossCausallyUnerasable).toBe(true)
+    expect(st.crdt.verdict.orSetTagHistoryCausallyUnerasable).toBe(true)
+    // 惰性缓存：二次 status 同引用
+    expect((await gc.status()).crdt).toBe(st.crdt)
+    const rerun = await gc.runCrdtStudy!()
+    expect(rerun.vectors).toEqual(st.crdt.vectors)
+    // 不连坐其它维
+    expect(st.hyperLogLog).toBe(null)
+    expect(st.streamWindow).toBe(null)
+  })
+
+  it('crdt 默认 null 非破坏；rigged 三开关唯一翻 GCounter compact⇒101、三因果锁钉死不硬造 111；可注入现成 study（KI-531）', async () => {
+    const bare = await createGameCloud({ gameId: 'gidcrdt2', gamePort: 7855, sources, cloud: fakeCloud() }).status()
+    expect(bare.crdt).toBe(null)
+    expect(bare.hyperLogLog).toBe(null)
+    // 单开各开关向量仍 011/100/110，不硬造 111
+    let port = 7856
+    for (const one of [{ uniformClock: true }, { infiniteMetadata: true }, { coordinatedDelete: true }]) {
+      const s = await (await createGameCloud({
+        gameId: 'gidcrdt-single-' + port, gamePort: port++, sources, cloud: fakeCloud(),
+        crdt: { ...one, now: 0 },
+      })).status()
+      expect(s.crdt.vectors).toEqual({ LWWRegister: '011', GCounter: '100', OrSet: '110' })
+      expect(s.crdt.rigged).toBe(false)
+    }
+    // rigged 三开关齐开：唯一翻 GCounter compact、三条因果锁钉死、noUniversalWinner 仍真
+    const rig = await (await createGameCloud({
+      gameId: 'gidcrdt4', gamePort: 7857, sources, cloud: fakeCloud(),
+      crdt: { rigged: true, now: 0 },
+    })).status()
+    expect(rig.crdt.vectors).toEqual({ LWWRegister: '011', GCounter: '101', OrSet: '110' })
+    expect(rig.crdt.baseVectors).toEqual({ LWWRegister: '011', GCounter: '100', OrSet: '110' })
+    expect(rig.crdt.verdict.noUniversalWinner).toBe(true)
+    expect(rig.crdt.verdict.noUniversalWinnerStrict).toBe(true)
+    expect(rig.crdt.verdict.gcounterCompactErasableByFreeMemory).toBe(true)
+    expect(rig.crdt.verdict.causalLocksAllHold).toBe(true)
+    expect(rig.crdt.verdict.vectorFromTrilemma).toBe(true)
+    // 注入现成 study（duck-typed）
+    const { crdtStudy } = await import('../../scripts/caesura-crdt.mjs')
+    const injected = await (await createGameCloud({
+      gameId: 'gidcrdt5', gamePort: 7858, sources, cloud: fakeCloud(),
+      crdt: crdtStudy({ seed: 99, now: 555 }),
+    })).status()
+    expect(injected.crdt.builtAt).toBe(555)
+    expect(injected.crdt.config.seed).toBe(99)
+  })
 })

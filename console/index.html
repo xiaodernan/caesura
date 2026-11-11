@@ -499,6 +499,23 @@
       <p class="note" id="hll-trilemma-note">…</p>
     </article>
   </section>
+  <!-- 第二十五维 · LWW-Register / G-Counter / OR-Set CRDT 冲突消解（KI-531） -->
+  <section class="row row-crdt">
+    <article class="panel panel-crdt">
+      <div class="panel-head"><h2>第二十五维 · LWWRegister/GCounter/OrSet · 三 CRDT × 六场景</h2><span class="hint">决=LWWRegister（(clock,nodeId) 决胜·并发写静默丢·O(1) 恒 24B）/ 计=GCounter（分片只增 merge=max·真收敛·decrement 真拒·O(nodes)）/ 集=OrSet（add-wins observed-remove·tag 并集收敛·O(ops)）</span></div>
+      <div class="crdt-matrix" id="crdt-matrix"></div>
+      <div class="crdt-ladder" id="crdt-ladder"></div>
+      <p class="note" id="crdt-matrix-note">…</p>
+    </article>
+    <article class="panel panel-crdt">
+      <div class="panel-head"><h2>三难向量（强收敛 ∧ 反向表达力 ∧ 紧凑元数据）· 双路自证</h2><span class="hint">LWWRegister=011 / GCounter=100 / OrSet=110 · 三向量互异无一 111 不封赢家 · rigged 唯一翻 GCounter compact⇒101、三因果锁钉死 · verifyConvergence 双路自证 + 三路篡改真喂回现算翻 false（丢副本 / 反转决胜 / 空集）</span></div>
+      <div class="crdt-trilemma" id="crdt-trilemma"></div>
+      <div class="crdt-verif" id="crdt-verif"></div>
+      <div class="crdt-crosscheck" id="crdt-crosscheck"></div>
+      <div class="crdt-probes" id="crdt-probes"></div>
+      <p class="note" id="crdt-trilemma-note">…</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">

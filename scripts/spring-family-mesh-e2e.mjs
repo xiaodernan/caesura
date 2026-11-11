@@ -144,6 +144,15 @@ export function runMeshE2E(opts = {}) {
     // 注入时钟用 hllNow（避开 hll* 分支与 lsm/bp/bpc/cgp/lc/bf/cr/sw/rdq/dld 已占用前缀）。
     hyperLogLog: opts.hyperLogLog,
     hllNow: opts.hllNow,
+    // KI-531：CRDT 最终一致冲突消解三策略诚实权衡（crdt=true 装配；只读 LWWRegister/GCounter/OrSet(add-wins) × 六场景矩阵 +
+    // 三难向量维序 [strongEventualConvergence/expressiveness/compactMetadata]（默认 011/100/110 互异不封赢家；
+    // rigged 三开关 uniformClock/infiniteMetadata/coordinatedDelete 齐开后唯一翻 GCounter compact⇒101，另两条因果锁——
+    // LWW 并发丢/OrSet tag 历史不可压——钉死，主教义 noUniversalWinner 仍真、绝不硬造 111）+ verifyConvergence 双路自证
+    // （三副本乱序+重复 anti-entropy 后 value 逐字相等 + 真值不变量 + 三路篡改真喂回现算翻 false）+ 十一真件 21 键交叉印证，
+    // 诚实口径：三者严格 SEC 全收敛、LWW 破在并发意图非副本分歧、OrSet 是 add-wins（observed-remove），不改调用路径）。
+    // 注入时钟用 crdtNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/rdq/dld 已占用前缀）。
+    crdt: opts.crdt,
+    crdtNow: opts.crdtNow,
     sources: {
       eureka: () => (opts.svcA ?? [{ id: 'svc-a:1', name: 'svc-a', address: '10.0.0.1', port: 8080, healthy: true }]),
       k8s: () => k8s.discover('caesura-gate'),
@@ -288,6 +297,7 @@ export function runMeshE2E(opts = {}) {
         cacheReplacementSnapshot: status.cacheReplacement ?? null,
         streamWindowSnapshot: status.streamWindow ?? null,
         hyperLogLogSnapshot: status.hyperLogLog ?? null,
+        crdtSnapshot: status.crdt ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
       }
@@ -574,6 +584,22 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         noUniversalWinner: r.hyperLogLogSnapshot.verdict.noUniversalWinner,
         crosscheck: r.hyperLogLogSnapshot.crosscheck,
         verdict: r.hyperLogLogSnapshot.verdict,
+      } : null,
+      crdt: r.crdtSnapshot ? {
+        strategies: r.crdtSnapshot.rows.map((row) => ({
+          strategy: row.protocol,
+          // 每格状态只认真件现算好的三布尔（strongEventualConvergence/expressiveness/compactMetadata）—绝不拿阈值重算，与 trilemma/vectors 同源。
+          // '乱'=并发意图被静默吞(SEC破) / '锁'=不可反向减删(expressiveness破) / '胀'=元数据随规模膨胀(compact破)。
+          ladder: row.scenarios.map((s) => s.id + ':' + (s.strongEventualConvergence === false ? '乱' : s.expressiveness === false ? '锁' : s.compactMetadata === false ? '胀' : '✓')).join(' → '),
+          metrics: row.metrics, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.crdtSnapshot.rows.map((row) => [row.protocol,
+          `${Number(row.trilemma.strongEventualConvergence)}${Number(row.trilemma.expressiveness)}${Number(row.trilemma.compactMetadata)}`])),
+        vectors: r.crdtSnapshot.vectors,
+        baseVectors: r.crdtSnapshot.baseVectors,
+        noUniversalWinner: r.crdtSnapshot.verdict.noUniversalWinner,
+        crosscheck: r.crdtSnapshot.crosscheck,
+        verdict: r.crdtSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

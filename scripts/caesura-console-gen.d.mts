@@ -644,6 +644,30 @@ export interface CardinalityReading {
   builtAt: number
 }
 
+/** KI-531：LWWRegister/GCounter/OrSet(add-wins) CRDT 冲突消解真跑读数（三 CRDT × 六场景 + 三难维序 [SEC/expressiveness/compactMetadata] 011/100/110 + rigged 唯一翻 GCounter compact⇒101 + 三因果锁 + verifyConvergence 双路自证三路可证伪 + 十一枚真件 21 键交叉印证）。 */
+export interface CrdtReading {
+  config: Record<string, any>
+  rows: Array<{
+    protocol: string
+    vector: string
+    scenarios: Array<{
+      id: string; fault: string
+      inserts: number; replicaDigest: string; secConverged: boolean
+      value: string | number | null | (string | number | null)[]
+      strongEventualConvergence: boolean; expressiveness: boolean; compactMetadata: boolean
+      inSecExam: boolean; inExpressiveExam: boolean; inCompactExam: boolean
+    }>
+    trilemma: { strongEventualConvergence: boolean; expressiveness: boolean; compactMetadata: boolean }
+    metrics: { lwwConflictInvocations: number; compactBytes: number; convergenceGuarantee: boolean; convergenceLeak?: string }
+  }>
+  vectors: Record<string, string>
+  baseVectors: Record<string, string>
+  verdict: Record<string, any>
+  crosscheck: { evidence: Record<string, any>; convergence: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+  builtAt: number
+}
+
+
 
 
 
@@ -673,6 +697,7 @@ export interface SystemsBlock {
   cacheReplacement: CacheReplacementReading | null
   streamWindow: StreamWindowReading | null
   hyperLogLog: CardinalityReading | null
+  crdt: CrdtReading | null
   builtAt: number
 }
 
@@ -861,6 +886,16 @@ export function buildSnapshot(opts?: {
   hllPerfectHash?: boolean
   hllUnlimitedMemory?: boolean
   hllRigged?: boolean
+  /** KI-531：false 关掉 CRDT 维（兼容旧快照）；crdt* 注入规模/阈值/rigged */
+  crdt?: boolean
+  crdtSeed?: number
+  crdtReplicas?: number
+  crdtOpsPerNode?: number
+  crdtSkewTicks?: number
+  crdtUniformClock?: boolean
+  crdtInfiniteMetadata?: boolean
+  crdtCoordinatedDelete?: boolean
+  crdtRigged?: boolean
 }): Promise<ConsoleSnapshot>
 
 /** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511 + KI-512 + KI-513：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 + 缓存读写一致性 + 消息投递语义 十五维系统读数；击穿并发 ⇒ async。 */
@@ -1026,6 +1061,16 @@ export function buildSystems(opts?: {
   hllPerfectHash?: boolean
   hllUnlimitedMemory?: boolean
   hllRigged?: boolean
+  /** KI-531：false 关掉 CRDT 维（兼容旧快照）；crdt* 注入规模/阈值/rigged */
+  crdt?: boolean
+  crdtSeed?: number
+  crdtReplicas?: number
+  crdtOpsPerNode?: number
+  crdtSkewTicks?: number
+  crdtUniformClock?: boolean
+  crdtInfiniteMetadata?: boolean
+  crdtCoordinatedDelete?: boolean
+  crdtRigged?: boolean
 }): Promise<SystemsBlock>
 
 /** KI-501：真跑缓存防护三件套（击穿/穿透/雪崩）收敛成前端三面板紧凑读数；单维失败落 null。 */
@@ -1276,6 +1321,20 @@ export function buildCardinalityReading(opts: {
   hllUnlimitedMemory?: boolean
   hllRigged?: boolean
 }, now: () => number): Promise<CardinalityReading | null>
+
+/** KI-531：真跑 CRDT 最终一致冲突消解三策略（LWW-Register/G-Counter/OR-Set × 六场景 + 三难向量 + verifyConvergence 双路交叉印证 + 十一枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
+export function buildCrdtReading(opts: {
+  now?: () => number
+  crdt?: boolean
+  crdtSeed?: number
+  crdtReplicas?: number
+  crdtOpsPerNode?: number
+  crdtSkewTicks?: number
+  crdtUniformClock?: boolean
+  crdtInfiniteMetadata?: boolean
+  crdtCoordinatedDelete?: boolean
+  crdtRigged?: boolean
+}, now: () => number): Promise<CrdtReading | null>
 
 export function realScenarioOpts(id: string): Record<string, any>
 

@@ -62,6 +62,7 @@
       renderCacheReplacement(snap.systems ? snap.systems.cacheReplacement : null)
       renderStreamWindow(snap.systems ? snap.systems.streamWindow : null)
       renderCardinality(snap.systems ? snap.systems.hyperLogLog : null)
+      renderCrdt(snap.systems ? snap.systems.crdt : null)
       setLive(true, result.source)
     }).catch(function (e) {
       setLive(false, 'error')
@@ -483,7 +484,7 @@
   function guardMissing(hero, bars, note, label) {
     if (hero) hero.innerHTML = '<span class="big">—</span><span class="cap">' + esc(label) + '读数缺失</span>'
     if (bars) bars.innerHTML = '<div class="nodata">无' + esc(label) + '读数</div>'
-    if (note) note.textContent = 'systems.guards 缺失 —— 重跑 npm run console:data 采集真判词'
+    if (note) note.textContent = 'systems.guards 缺失 —— ' + esc(label) + '读数诚实降级，不画假数、不连坐其它维；跑一次 npm run console:data 补齐真读数。'
   }
 
   // 击穿：并发 N → 无防护 N 次回源 vs singleflight 1 次，放大倍数；XFetch 提前续期挤掉 miss。
@@ -1052,13 +1053,13 @@
     box.innerHTML = head + body
     var v = verdict || {}
     var noWin = v.noUniversalWinner === true
+    // KI-506 distributedTxn 真判词 chips（读 verdict 真值；tccRetry 缺时落「—」不画 0）。
+    var retryTxt = tccRetry && isNum(tccRetry.retries) ? String(tccRetry.retries) : '—'
     var chips = [
-      '<span class="chip" data-probe="twoPcBlocks"><b>2PC</b> 协调者宕机 ' + (v.twoPcBlocksOnCoordinatorDown ? '全员阻塞' : '未阻塞') + '</span>',
-      '<span class="chip" data-probe="sagaDirty"><b>Saga</b> 补偿失败 ' + (v.sagaLeaksDirtyOnCompensateFail ? '留脏' : '无脏') + '</span>',
-      '<span class="chip" data-probe="tccRetry"><b>TCC</b> Confirm 幂等重试 ' + esc(fmt(tccRetry && tccRetry.retries)) + ' 次</span>',
-      '<span class="chip" data-probe="sagaReverse"><b>Saga</b> 逆序补偿 ' + (sagaOrder && sagaOrder.reverseOrder ? '✓' : '✗') + '</span>',
-      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' +
-        (noWin ? '✓ 不封任何协议全局赢家' : '本配置下归一（换场景会翻）') + '</span>',
+      '<span class="chip" data-probe="twoPcBlocks"><b>2PC</b> 协调者宕机持锁阻塞 ' + (v.twoPcBlocksOnCoordinatorDown ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-probe="sagaDirty"><b>Saga</b> 补偿失败留脏 ' + (v.sagaLeaksDirtyOnCompensateFail ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-probe="tccRetry"><b>TCC</b> Confirm 幂等重试 ' + esc(retryTxt) + ' 次</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' + (noWin ? '✓ 三向量互异，不封任何协议全局赢家' : '判词塌陷') + '</span>',
     ]
     if (probes) probes.innerHTML = chips.join('')
     if (note) note.textContent = '三难 = 不阻塞 ∧ 不留脏 ∧ 侵入最低。真实向量三条互不相同、没有一条三个全占：' +
@@ -2991,6 +2992,155 @@
     if (note) note.textContent = '维序固定 [估计精确 / 常数内存 / 无约束并]。默认向量 ExactSet=101 / HyperLogLog=110 / LinearCounting=010，三者互异、无一 111、恰好各缺一维：ExactSet 内存 O(n) 线性涨；HLL PFMERGE 只在同 precision 下 union（mergeable=false）；LinearCounting 位图饱和（bits≈n 时 estimate 真开始失真）。' +
       '三口径正交：estimatorAccuracy 只在 nearExact/highFill/heavyInsertFlow/zipfSkew 四场景量真 maxErr（truth 非零 ⇒ 真实相对误差）；fixedMemory 全场景量 footprint≤32KB（ExactSet 破）；mergeable 按「独立实例 sketch 能否无约束 union」判（ExactSet addAll 合法 ⇒ true；HyperLogLog PFMERGE 需同 precision+same hash ⇒ false；LinearCounting 需同 m ⇒ false）。' +
       'rigged 双开关：unlimitedMemory（ExactSet 内存无界）+ perfectHash（散列碰撞归零）齐开 ⇒ ExactSet 现算真收敛 111（内存免费+误差归零+天然可并的反事实赢家，非写死），HyperLogLog=110、LinearCounting 因果锁死仍 010（perfectHash 抹误差、unlimitedRoom 免内存都救不回 LC 位图饱和的容量事实——位图位数 < 不同元素数必然碰撞，散列完美治不了位数限制）。rigged 三向量 111/110/010 仍互异、绝不硬造全策略 111。'
+  }
+
+  /* ================= KI-531 LWW-Register/G-Counter/OR-Set CRDT 冲突消解 · 第二十五维（crdt 族） ================= */
+
+  function renderCrdt(crdt) {
+    renderCrdtMatrix(crdt && crdt.rows, crdt && crdt.config)
+    renderCrdtLadder(crdt && crdt.rows)
+    renderCrdtTrilemma(crdt && crdt.rows, crdt && crdt.verdict, crdt && crdt.crosscheck)
+  }
+
+  function crdtMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 暂缺</div>'
+    if (note) note.textContent = 'systems.crdt 缺失 — 跑一次 npm run console:data 即可补齐'
+  }
+
+  function crdtCell(c) {
+    if (!c) return { cls: '', ch: '·' }
+    // 状态字按新维序 [strongEventualConvergence / expressiveness / compactMetadata] 逐维取证：
+    // 乱=并发意图被静默吞（SEC 教学位破）/ 锁=不可反向减删（expressiveness 破）/ 胀=元数据随规模膨胀（compact 破）。
+    if (c.strongEventualConvergence === false) return { cls: 'drop', ch: '乱' }
+    if (c.expressiveness === false) return { cls: 'drop', ch: '锁' }
+    if (c.compactMetadata === false) return { cls: 'diverge', ch: '胀' }
+    return { cls: 'live', ch: '✓' }
+  }
+
+  function renderCrdtMatrix(rows, config) {
+    var box = $('#crdt-matrix'), note = $('#crdt-matrix-note')
+    if (!Array.isArray(rows) || !rows.length || !config || !Array.isArray(config.scenarios)) {
+      crdtMissing(box, note, 'crdt 矩阵'); return
+    }
+    var scenarios = config.scenarios
+    var head = '<div class="crdt-mat-row crdt-mat-head"><span class="crdt-mat-proto">CRDT</span>' +
+      scenarios.map(function (sc) { return '<span class="crdt-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="crdt-mat-cost">收敛/表达/紧凑</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = crdtCell(cell)
+        return '<span class="crdt-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="crdt-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="crdt-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="crdt-mat-cost"><b>' + esc(fmt(m.compactBytes)) + '</b>B / ' + esc(m.convergenceGuarantee ? 'SEC' : '≠SEC') + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'LWWRegister / GCounter / OrSet(add-wins) × 六场景：allReplicaExchange / outOfOrderDelivery / duplicateDelivery / concurrentWrite / clockSkew / removeAddRace。' +
+      '每格只认真件现算好的三布尔（strongEventualConvergence/expressiveness/compactMetadata）——绝不拿阈值重算。' +
+      '乱=并发意图被静默吞 / 锁=不可反向减删 / 胀=元数据随规模膨胀。' +
+      'LWW: (clock,nodeId) 决胜但并发写静默丢 / GCounter: 分片只增 merge=max·decrement 真拒 / OrSet: add-wins observed-remove·tag 堆积 O(ops)。'
+  }
+
+  function renderCrdtLadder(rows) {
+    var box = $('#crdt-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.compactBytes) ? r.metrics.compactBytes : 1 }))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.compactBytes) ? Math.round(m.compactBytes / max * 100) : 0
+      return '<div class="crdt-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="crdt-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">元数据 ' + esc(String(m.compactBytes)) + 'B · ' + (m.convergenceGuarantee ? 'SEC 真收敛' : '非 SEC') + '</span></div>'
+    }).join('')
+  }
+
+  function renderCrdtTrilemma(rows, verdict, crosscheck) {
+    var box = $('#crdt-trilemma'), veBox = $('#crdt-verif'), cxBox = $('#crdt-crosscheck'), note = $('#crdt-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      crdtMissing(box, note, 'crdt 判词'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''; return
+    }
+    // 顺序必须与后端 vectorOf 维序 [strongEventualConvergence / expressiveness / compactMetadata] 逐字一致，
+    // 否则前端拼出的向量与 snapshot.vectors 对不上。
+    var flags = [['strongEventualConvergence', '强最终收敛'], ['expressiveness', '反向表达力'], ['compactMetadata', '紧凑元数据']]
+    var head = '<div class="crdt-vec crdt-vec-head"><span class="proto">CRDT</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="crdt-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="crdt-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    if (veBox) {
+      var lww = rows.find(function (r) { return r.protocol === 'LWWRegister' })
+      var gc = rows.find(function (r) { return r.protocol === 'GCounter' })
+      var os = rows.find(function (r) { return r.protocol === 'OrSet' })
+      var cv = crosscheck && crosscheck.convergence
+      veBox.innerHTML = [
+        '<div class="crdt-rb-row" data-rb="secStrictAllConverge"><b>LWWRegister</b> 真跑 concurrentWrite → 3 个并发写只留最大戳 1 个（并发意图被吞）；严格副本值仍收敛，SEC 教学位=✗ 破在意图非分歧</div>',
+        '<div class="crdt-rb-row" data-rb="decrementCausallyUnerasable"><b>GCounter</b> 真跑 allReplicaExchange → 三副本 Σ 守恒、merge=max 幂等交换结合 SEC=✓；decrement 真返回 false（grow-only 不可减），元数据 O(nodes)=' + esc(fmt(gc ? gc.metrics.compactBytes : 0)) + 'B</div>',
+        '<div class="crdt-rb-row" data-rb="orSetIsAddWins"><b>OrSet</b> add-wins：真跑 removeAddRace → observed remove 只删可见 tag，并发 add 存活；remove() 真删可见元素（expressiveness=✓），元数据 O(ops)=' + esc(fmt(os ? os.metrics.compactBytes : 0)) + 'B（不降）</div>',
+      ].join('') +
+        (cv ? '<div class="crdt-rb-row" data-rb="holds">verifyConvergence holds=' + (cv.holds ? 'true' : 'false') +
+          ' · <span data-rb="nontrivial">nontrivial=' + (cv.nontrivial ? 'true' : 'false') + '</span>' +
+          ' · <span data-rb="falsifiable">falsifiable=true</span></div>' +
+          '<div class="crdt-rb-row" data-rb-tamper="dropReplica">篡改①丢副本 merge ⇒ holds=false（真喂回现算）</div>' +
+          '<div class="crdt-rb-row" data-rb-tamper="reverseLwwDecision">篡改②反转 LWW 决胜 ⇒ holds=false（真喂回现算）</div>' +
+          '<div class="crdt-rb-row" data-rb-tamper="emptySet">篡改③空事件集 ⇒ holds=false（真喂回现算）</div>' : '')
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      var conv = crosscheck && crosscheck.convergence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>真 <b>compareRemapping</b> 迁移率 一致性 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>' +
+          '<div>真 <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 片</div>' +
+          '<div>真 <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 命中 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
+          '<div>真 <b>createWal</b> lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>真 <b>createBus</b> crdt.converged 通知 ' + esc(fmt(ev.notices)) + ' 条 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>真 <b>createRedisCache</b> 聚合槽 set+get 命中 ' + esc(fmt(ev.redisBitmapHits)) + ' · entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+          '<div>真 <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+          '<div>真 <b>createTokenBucket</b> 回放允许 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>真 <b>createMinHeapDelayQueue</b> 出队 ' + esc(fmt(ev.heapFired)) + ' 条 · pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+          '<div>真 <b>createPackedCounters</b> Σ=' + esc(fmt(ev.counterSum)) + ' · falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>' +
+          '<div>真 <b>createFullJitterBackoff</b> jitterSpread=' + esc(fmt(ev.jitterSpread)) + '（64 样本全抖动）</div>' +
+          (conv ? '<div>真 <b>verifyConvergence</b> holds=<b>' + (conv.holds ? 'true' : 'false') + '</b> nontrivial=<b>' + (conv.nontrivial ? 'true' : 'false') + '</b> · laneA{converged=' + (conv.laneA && conv.laneA.secConverged ? 'true' : 'false') + ' after=' + esc(JSON.stringify(conv.laneA && conv.laneA.after)) + '} · laneB{increments=' + esc(fmt(conv.laneB && conv.laneB.truth && conv.laneB.truth.increments)) + '}</div>' : '')
+      } else {
+        cxBox.innerHTML = '<div class="nodata">真件交叉印证缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var chips = [
+      '<span class="chip" data-verdict="secStrictAllConverge"><b>诚实口径</b> 三者严格 SEC 全收敛 ' + (v.secStrictAllConverge ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="lwwConcurrentLossCausallyUnerasable"><b>锁①</b> LWW 并发丢任何时钟都救不了 ' + (v.lwwConcurrentLossCausallyUnerasable ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="decrementCausallyUnerasable"><b>锁②</b> GCounter 不可减三开关都救不了 ' + (v.decrementCausallyUnerasable ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="orSetTagHistoryCausallyUnerasable"><b>锁③</b> OrSet tag 历史内存免费也不可压 ' + (v.orSetTagHistoryCausallyUnerasable ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="gcounterCompactErasableByFreeMemory"><b>唯一可抹</b> GCounter compact 外部成本（rigged⇒101） ' + (v.gcounterCompactErasableByFreeMemory ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="orSetIsAddWins"><b>OrSet</b> add-wins（observed-remove） ' + (v.orSetIsAddWins ? '✓' : '✗') + '</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' + (noWin ? '✓ 三向量互异（011/100/110），无全局赢家、无 111' : '判词塌陷') + '</span>',
+    ]
+    var probes = $('#crdt-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维序 [strongEventualConvergence / expressiveness / compactMetadata]，三位全部真跑现算、不查表：' +
+      'LWWRegister=011（严格副本值收敛，但并发写静默丢 ⇒ SEC 教学位✗；可覆盖写任意值含 null⇒表达✓；O(1) 恒 24B⇒紧凑✓）；' +
+      'GCounter=100（分片 merge=max 真收敛、增量不丢⇒SEC✓；decrement 真拒⇒表达✗；O(nodes)⇒紧凑✗）；' +
+      'OrSet=110（add-wins tag 并集真收敛、并发 add 全活⇒SEC✓；remove() 真删可见⇒表达✓；O(ops) tag 堆积⇒紧凑✗）。' +
+      '诚实标定：三者严格 SEC 全为真（都是合格 CRDT，副本逐字收敛），LWW 的 SEC 教学位✗ 破在「并发意图被吞」而非副本分歧，绝不谎称 LWW 副本不收敛；OrSet 采用 add-wins（observed-remove），并发 add 存活是已知代价。' +
+      'rigged 三开关 uniformClock / infiniteMetadata / coordinatedDelete 齐开：唯一抹掉 GCounter 的 compact 外部成本（100→101，与 KI-530 ExactSet 101→111 同构），' +
+      '但三条因果结构锁真跑钉死——LWW 并发丢（完美时钟也救不了）/ GCounter decrement 不可减（三开关全给仍 false）/ OrSet tag 历史不可压（压成计数则并发 race 收敛出错）⇒ noUniversalWinner 仍真、绝不硬造 111。'
   }
 
   /* ================= KI-527 布隆/布谷鸟/计数布隆三过滤器 · 第二十一维（blf 族） ================= */

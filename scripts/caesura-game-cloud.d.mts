@@ -173,6 +173,13 @@ export interface GameCloudOptions {
   hyperLogLog?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck?: any; topology?: any; [k: string]: any }
   /** KI-530 基数估计的注入时钟（hll=hyperloglog，避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/rdq/dld 已占用前缀）。 */
   hllNow?: () => number
+  /**
+   * KI-531：true 装配 CRDT 最终一致冲突消解三策略诚实权衡（LWWRegister / GCounter / OrSet(add-wins) + verifyConvergence 双路自证 + 十一枚真件交叉印证）。
+   * 对象逐项注入（now/seed/replicaCount/opsPerNode/skewTicks/uniformClock/infiniteMetadata/coordinatedDelete/rigged 等），
+   * 或直接塞一只现成 study（带 rows/vectors/verdict/crosscheck 四块）。默认 false 不装配。 */
+  crdt?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck?: any; topology?: any; [k: string]: any }
+  /** KI-531 CRDT 的注入时钟（crdt=Conflict-free Replicated Data Type，避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/rdq/dld 已占用前缀）。 */
+  crdtNow?: () => number
 }
 
 /** 创建一只游戏侧开箱即用云。 */
@@ -239,6 +246,8 @@ export function createGameCloud(opts?: GameCloudOptions): {
   runStreamWindowStudy: (() => Promise<any>) | null
   /** KI-530：基数估计算法族诚实权衡研究件；缺 opts.hyperLogLog 时为 null；ExactSet/HyperLogLog/LinearCounting × 六场景矩阵 + 三难向量（ExactSet=101 / HyperLogLog=110 / LinearCounting=010，互异无一 111，rigged 预言机开关后 ExactSet 真收敛 111、HLL/LC 仍 110；绝不硬造全 111）+ verifySparseEstimate 双路自证（真 Set vs HLL 3σ + 三路篡改现算翻 false）+ 十一枚真件交叉印证。 */
   runStreamCardinalityStudy: (() => Promise<any>) | null
+  /** KI-531：CRDT 最终一致冲突消解三策略诚实权衡研究件；缺 opts.crdt 时为 null；LWWRegister/GCounter/OrSet(add-wins) × 六场景矩阵 + 三难向量维序 [strongEventualConvergence/expressiveness/compactMetadata]（默认 011/100/110 互异不封赢家；rigged 三开关 uniformClock/infiniteMetadata/coordinatedDelete 齐开后唯一翻 GCounter compact⇒101，LWW 并发丢/OrSet tag 不可压/decrement 不可减三条因果结构锁钉死、noUniversalWinner 仍真、绝不硬造 111；三者严格 SEC 全收敛、LWW 破在并发意图、OrSet add-wins）+ verifyConvergence 双路自证（三副本乱序+重复 anti-entropy 后 value 逐字相等 + 真值不变量 + 三路篡改真喂回现算翻 false）+ 十一枚真件 21 键交叉印证。 */
+  runCrdtStudy: (() => Promise<any>) | null
   /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）。 */
   gray: any
   /** KI-489：把游戏真 EventBus（duck-typed {on,emit}）按白名单接进云事件总线。 */

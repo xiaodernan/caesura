@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794435043013,
+  "generatedAt": 1794438148538,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1365,12 +1365,12 @@
           "keys": 1,
           "versions": 2,
           "commitLogSize": 1,
-          "now": 1794435043015
+          "now": 1794438148540
         },
         "final": {
           "A": {
             "value": 101,
-            "commitTs": 1794435043015,
+            "commitTs": 1794438148540,
             "tombstone": false
           }
         }
@@ -3646,7 +3646,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794435043013,
+                "lastTimestamp": 1794438148538,
                 "workerId": 1
               },
               "fault": {
@@ -3742,7 +3742,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794435043013,
+                "lastTimestamp": 1794438148538,
                 "workerId": 1
               },
               "fault": {
@@ -3774,7 +3774,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794435043014,
+                "lastTimestamp": 1794438148539,
                 "workerId": 1
               },
               "fault": {
@@ -3806,7 +3806,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794435043013,
+                "lastTimestamp": 1794438148538,
                 "workerId": 1
               },
               "fault": {
@@ -4522,7 +4522,7 @@
         "capacity": 8,
         "perShardCap": 2
       },
-      "builtAt": 1794435043013
+      "builtAt": 1794438148538
     },
     "configConsistency": {
       "config": {
@@ -5020,7 +5020,7 @@
         "burstCount": 12,
         "windowMs": 10000
       },
-      "builtAt": 1794435043013
+      "builtAt": 1794438148538
     },
     "cacheCoherency": {
       "config": {
@@ -5549,7 +5549,7 @@
         "crashAtWrite": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794435043013
+      "builtAt": 1794438148538
     },
     "messageDelivery": {
       "config": {
@@ -6038,10 +6038,10 @@
         "crashAfterSendAt": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794435043013
+      "builtAt": 1794438148538
     },
     "delayQueue": {
-      "builtAt": 1794435043013,
+      "builtAt": 1794438148538,
       "config": {
         "seed": 518,
         "tasks": 12,
@@ -6068,7 +6068,7 @@
               "id": "allOk",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 82804,
+              "lateMs": 47804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6080,7 +6080,7 @@
               "id": "tickSkew",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 82804,
+              "lateMs": 47804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6092,7 +6092,7 @@
               "id": "farFuture",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 83136,
+              "lateMs": 48136,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6104,7 +6104,7 @@
               "id": "manyCancels",
               "protocol": "TimingWheel",
               "fired": 6,
-              "lateMs": 37858,
+              "lateMs": 23858,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6128,7 +6128,7 @@
               "id": "concurrentWorkers",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 82804,
+              "lateMs": 47804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6139,7 +6139,7 @@
           ],
           "totals": {
             "fired": 54,
-            "lateMs": 369406,
+            "lateMs": 215406,
             "duplicatePickups": 0,
             "lostOnRestart": 6,
             "opUnits": 72
@@ -6375,7 +6375,7 @@
       }
     },
     "retryDlq": {
-      "builtAt": 1794435043013,
+      "builtAt": 1794438148538,
       "config": {
         "seed": 520,
         "messages": 16,
@@ -6793,7 +6793,7 @@
       }
     },
     "consumerGroup": {
-      "builtAt": 1794435043013,
+      "builtAt": 1794438148538,
       "config": {
         "seed": 523,
         "consumers": 3,
@@ -7299,7 +7299,7 @@
       }
     },
     "backpressure": {
-      "builtAt": 1794435043013,
+      "builtAt": 1794438148538,
       "config": {
         "steps": 48,
         "mu": 2,
@@ -8344,7 +8344,7 @@
       }
     },
     "logCompaction": {
-      "builtAt": 1794435043013,
+      "builtAt": 1794438148538,
       "config": {
         "seed": 526,
         "ops": 24,
@@ -9405,7 +9405,7 @@
       }
     },
     "bloomFilter": {
-      "builtAt": 1794435043013,
+      "builtAt": 1794438148538,
       "config": {
         "seed": 527,
         "capacity": 1024,
@@ -10104,7 +10104,7 @@
       }
     },
     "cacheReplacement": {
-      "builtAt": 1794435043013,
+      "builtAt": 1794438148538,
       "config": {
         "seed": 528,
         "capacity": 16,
@@ -10747,7 +10747,7 @@
       }
     },
     "streamWindow": {
-      "builtAt": 1794435043013,
+      "builtAt": 1794438148538,
       "config": {
         "seed": 529,
         "windowSize": 100,
@@ -12806,7 +12806,7 @@
       }
     },
     "hyperLogLog": {
-      "builtAt": 1794435043013,
+      "builtAt": 1794438148538,
       "config": {
         "seed": 530,
         "cardinality": 4096,
@@ -29725,6 +29725,461 @@
         }
       }
     },
-    "builtAt": 1794435043013
+    "crdt": {
+      "builtAt": 1794438148538,
+      "config": {
+        "seed": 531,
+        "replicaCount": 3,
+        "opsPerNode": 64,
+        "skewTicks": 25,
+        "scenarios": [
+          "allReplicaExchange",
+          "outOfOrderDelivery",
+          "duplicateDelivery",
+          "concurrentWrite",
+          "clockSkew",
+          "removeAddRace"
+        ],
+        "rigged": false,
+        "uniformClock": false,
+        "infiniteMetadata": false,
+        "coordinatedDelete": false
+      },
+      "rows": [
+        {
+          "protocol": "LWWRegister",
+          "vector": "011",
+          "scenarios": [
+            {
+              "id": "allReplicaExchange",
+              "fault": "eager-regroup",
+              "inserts": 67,
+              "replicaDigest": "null",
+              "secConverged": true,
+              "value": null,
+              "strongEventualConvergence": false,
+              "expressiveness": true,
+              "compactMetadata": true,
+              "inSecExam": true,
+              "inExpressiveExam": false,
+              "inCompactExam": true
+            },
+            {
+              "id": "outOfOrderDelivery",
+              "fault": "disorder",
+              "inserts": 38,
+              "replicaDigest": "null",
+              "secConverged": true,
+              "value": null,
+              "strongEventualConvergence": false,
+              "expressiveness": true,
+              "compactMetadata": true,
+              "inSecExam": false,
+              "inExpressiveExam": false,
+              "inCompactExam": true
+            },
+            {
+              "id": "duplicateDelivery",
+              "fault": "duplicate",
+              "inserts": 64,
+              "replicaDigest": "null",
+              "secConverged": true,
+              "value": null,
+              "strongEventualConvergence": false,
+              "expressiveness": true,
+              "compactMetadata": true,
+              "inSecExam": false,
+              "inExpressiveExam": false,
+              "inCompactExam": true
+            },
+            {
+              "id": "concurrentWrite",
+              "fault": "conflict",
+              "inserts": 10,
+              "replicaDigest": "\"v2\"",
+              "secConverged": true,
+              "value": "v2",
+              "strongEventualConvergence": false,
+              "expressiveness": true,
+              "compactMetadata": true,
+              "inSecExam": true,
+              "inExpressiveExam": true,
+              "inCompactExam": true
+            },
+            {
+              "id": "clockSkew",
+              "fault": "clock-skew",
+              "inserts": 3,
+              "replicaDigest": "\"v-fast-clock\"",
+              "secConverged": true,
+              "value": "v-fast-clock",
+              "strongEventualConvergence": false,
+              "expressiveness": true,
+              "compactMetadata": true,
+              "inSecExam": false,
+              "inExpressiveExam": false,
+              "inCompactExam": true
+            },
+            {
+              "id": "removeAddRace",
+              "fault": "observed-remove",
+              "inserts": 3,
+              "replicaDigest": "null",
+              "secConverged": true,
+              "value": null,
+              "strongEventualConvergence": false,
+              "expressiveness": true,
+              "compactMetadata": true,
+              "inSecExam": false,
+              "inExpressiveExam": true,
+              "inCompactExam": true
+            }
+          ],
+          "trilemma": {
+            "strongEventualConvergence": false,
+            "expressiveness": true,
+            "compactMetadata": true
+          },
+          "metrics": {
+            "lwwConflictInvocations": 2,
+            "compactBytes": 24,
+            "convergenceGuarantee": false,
+            "convergenceLeak": "concurrent intent dropped 2/3"
+          }
+        },
+        {
+          "protocol": "GCounter",
+          "vector": "100",
+          "scenarios": [
+            {
+              "id": "allReplicaExchange",
+              "fault": "eager-regroup",
+              "inserts": 67,
+              "replicaDigest": "64",
+              "secConverged": true,
+              "value": 64,
+              "strongEventualConvergence": true,
+              "expressiveness": false,
+              "compactMetadata": false,
+              "inSecExam": true,
+              "inExpressiveExam": false,
+              "inCompactExam": true
+            },
+            {
+              "id": "outOfOrderDelivery",
+              "fault": "disorder",
+              "inserts": 38,
+              "replicaDigest": "38",
+              "secConverged": true,
+              "value": 38,
+              "strongEventualConvergence": true,
+              "expressiveness": false,
+              "compactMetadata": false,
+              "inSecExam": false,
+              "inExpressiveExam": false,
+              "inCompactExam": true
+            },
+            {
+              "id": "duplicateDelivery",
+              "fault": "duplicate",
+              "inserts": 64,
+              "replicaDigest": "64",
+              "secConverged": true,
+              "value": 64,
+              "strongEventualConvergence": true,
+              "expressiveness": false,
+              "compactMetadata": false,
+              "inSecExam": false,
+              "inExpressiveExam": false,
+              "inCompactExam": true
+            },
+            {
+              "id": "concurrentWrite",
+              "fault": "conflict",
+              "inserts": 10,
+              "replicaDigest": "3",
+              "secConverged": true,
+              "value": 3,
+              "strongEventualConvergence": true,
+              "expressiveness": false,
+              "compactMetadata": false,
+              "inSecExam": true,
+              "inExpressiveExam": true,
+              "inCompactExam": true
+            },
+            {
+              "id": "clockSkew",
+              "fault": "clock-skew",
+              "inserts": 3,
+              "replicaDigest": "0",
+              "secConverged": true,
+              "value": 0,
+              "strongEventualConvergence": true,
+              "expressiveness": false,
+              "compactMetadata": false,
+              "inSecExam": false,
+              "inExpressiveExam": false,
+              "inCompactExam": true
+            },
+            {
+              "id": "removeAddRace",
+              "fault": "observed-remove",
+              "inserts": 3,
+              "replicaDigest": "0",
+              "secConverged": true,
+              "value": 0,
+              "strongEventualConvergence": true,
+              "expressiveness": false,
+              "compactMetadata": false,
+              "inSecExam": false,
+              "inExpressiveExam": true,
+              "inCompactExam": true
+            }
+          ],
+          "trilemma": {
+            "strongEventualConvergence": true,
+            "expressiveness": false,
+            "compactMetadata": false
+          },
+          "metrics": {
+            "lwwConflictInvocations": 0,
+            "compactBytes": 1024,
+            "convergenceGuarantee": true
+          }
+        },
+        {
+          "protocol": "OrSet",
+          "vector": "110",
+          "scenarios": [
+            {
+              "id": "allReplicaExchange",
+              "fault": "eager-regroup",
+              "inserts": 67,
+              "replicaDigest": "[\"x\",\"y\",\"z\"]",
+              "secConverged": true,
+              "value": [
+                "x",
+                "y",
+                "z"
+              ],
+              "strongEventualConvergence": true,
+              "expressiveness": true,
+              "compactMetadata": false,
+              "inSecExam": true,
+              "inExpressiveExam": false,
+              "inCompactExam": true
+            },
+            {
+              "id": "outOfOrderDelivery",
+              "fault": "disorder",
+              "inserts": 38,
+              "replicaDigest": "[]",
+              "secConverged": true,
+              "value": [],
+              "strongEventualConvergence": true,
+              "expressiveness": true,
+              "compactMetadata": false,
+              "inSecExam": false,
+              "inExpressiveExam": false,
+              "inCompactExam": true
+            },
+            {
+              "id": "duplicateDelivery",
+              "fault": "duplicate",
+              "inserts": 64,
+              "replicaDigest": "[]",
+              "secConverged": true,
+              "value": [],
+              "strongEventualConvergence": true,
+              "expressiveness": true,
+              "compactMetadata": false,
+              "inSecExam": false,
+              "inExpressiveExam": false,
+              "inCompactExam": true
+            },
+            {
+              "id": "concurrentWrite",
+              "fault": "conflict",
+              "inserts": 10,
+              "replicaDigest": "[\"x\",\"y\",\"z\"]",
+              "secConverged": true,
+              "value": [
+                "x",
+                "y",
+                "z"
+              ],
+              "strongEventualConvergence": true,
+              "expressiveness": true,
+              "compactMetadata": false,
+              "inSecExam": true,
+              "inExpressiveExam": true,
+              "inCompactExam": true
+            },
+            {
+              "id": "clockSkew",
+              "fault": "clock-skew",
+              "inserts": 3,
+              "replicaDigest": "[]",
+              "secConverged": true,
+              "value": [],
+              "strongEventualConvergence": true,
+              "expressiveness": true,
+              "compactMetadata": false,
+              "inSecExam": false,
+              "inExpressiveExam": false,
+              "inCompactExam": true
+            },
+            {
+              "id": "removeAddRace",
+              "fault": "observed-remove",
+              "inserts": 3,
+              "replicaDigest": "[\"y\"]",
+              "secConverged": true,
+              "value": [
+                "y"
+              ],
+              "strongEventualConvergence": true,
+              "expressiveness": true,
+              "compactMetadata": false,
+              "inSecExam": false,
+              "inExpressiveExam": true,
+              "inCompactExam": true
+            }
+          ],
+          "trilemma": {
+            "strongEventualConvergence": true,
+            "expressiveness": true,
+            "compactMetadata": false
+          },
+          "metrics": {
+            "lwwConflictInvocations": 0,
+            "compactBytes": 1536,
+            "convergenceGuarantee": true
+          }
+        }
+      ],
+      "vectors": {
+        "LWWRegister": "011",
+        "GCounter": "100",
+        "OrSet": "110"
+      },
+      "baseVectors": {
+        "LWWRegister": "011",
+        "GCounter": "100",
+        "OrSet": "110"
+      },
+      "verdict": {
+        "vectors": {
+          "LWWRegister": "011",
+          "GCounter": "100",
+          "OrSet": "110"
+        },
+        "baseVectors": {
+          "LWWRegister": "011",
+          "GCounter": "100",
+          "OrSet": "110"
+        },
+        "noUniversalWinner": true,
+        "noUniversalWinnerStrict": true,
+        "trilemmaDistinguishes": true,
+        "noStrategyWinsAll": true,
+        "vectorFromTrilemma": true,
+        "secStrictAllConverge": true,
+        "lwwSecBreaksOnConcurrentIntent": true,
+        "orSetIsAddWins": true,
+        "lwwLosesConcurrentWrites": true,
+        "gcounterSecConverges": true,
+        "gcounterIntention": true,
+        "orSetConcurrentAddsSurvive": true,
+        "orSetCompactUnbounded": true,
+        "gcounterCompactErasableByFreeMemory": false,
+        "uniformClockErasesSkewMispick": true,
+        "lwwConcurrentLossCausallyUnerasable": true,
+        "decrementCausallyUnerasable": true,
+        "orSetTagHistoryCausallyUnerasable": true,
+        "causalLocksAllHold": true,
+        "riggedApplied": false,
+        "rigged_pkg": false
+      },
+      "crosscheck": {
+        "evidence": {
+          "remapConsistentRate": 0.28,
+          "remapModuloRate": 0.52,
+          "routerMoved": 26,
+          "routerTracked": 80,
+          "ringNodes": 4,
+          "ringShardsUsed": 4,
+          "walLines": 80,
+          "walReplayed": 80,
+          "notices": 12,
+          "busListeners": 1,
+          "redisBitmapHits": 96,
+          "redisSlots": 96,
+          "poolCreated": 2,
+          "poolReused": 1,
+          "bucketAllowed": 3,
+          "bucketRejected": 4,
+          "heapFired": 3,
+          "heapPending": 0,
+          "counterSum": 2080,
+          "counterFalseSharing": 56,
+          "jitterSpread": 1.8933
+        },
+        "convergence": {
+          "laneA": {
+            "beforeAll": [
+              22,
+              21,
+              21
+            ],
+            "after": [
+              64,
+              64,
+              64
+            ],
+            "digests": [
+              "64",
+              "64",
+              "64"
+            ],
+            "secConverged": true,
+            "expected": 64
+          },
+          "laneB": {
+            "truth": {
+              "increments": 64
+            },
+            "laneBOk": true,
+            "orSetOk": true,
+            "lwwOk": true,
+            "orMerged": [
+              "y"
+            ]
+          },
+          "holds": true,
+          "nontrivial": true,
+          "falsifiable": true,
+          "tamper": {
+            "dropReplica": {
+              "holds": false,
+              "baselineHolds": true,
+              "reason": "丢弃一个副本的 merge ⇒ 副本分叉（SEC 破）"
+            },
+            "reverseLwwDecision": {
+              "holds": false,
+              "baselineHolds": true,
+              "reason": "反转 LWW 决胜算式 ⇒ 收敛到错值（真喂回现算）"
+            },
+            "emptySet": {
+              "holds": false,
+              "baselineHolds": true,
+              "reason": "空事件集 ⇒ nontrivial=false，绝不 0=0 假绿"
+            }
+          },
+          "events": 67
+        }
+      }
+    },
+    "builtAt": 1794438148538
   }
 }

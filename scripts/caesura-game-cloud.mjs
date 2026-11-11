@@ -45,6 +45,7 @@ import { bloomFilterStudy, bloomFilterSnapshot } from './caesura-bloom-filter.mj
 import { cacheReplacementStudy, cacheReplacementSnapshot } from './caesura-cache-replacement.mjs'
 import { streamWindowStudy, streamWindowSnapshot } from './caesura-stream-window.mjs'
 import { streamCardinalityStudy, cardinalitySnapshot } from './caesura-hyperloglog.mjs'
+import { crdtStudy, crdtSnapshot } from './caesura-crdt.mjs'
 import {
   createAimdCongestion,
   createCubicCongestion,
@@ -679,6 +680,27 @@ export function createGameCloud(opts = {}) {
     return hllCached
   }
 
+  // KI-531：CRDT 最终一致冲突消解三策略诚实权衡（LWWRegister/GCounter/OrSet(add-wins)；opt-in、status/ crdt*）。
+  // opts.crdt===true 走钳制默认参数（可覆盖 now/seed/replicaCount/opsPerNode/skewTicks/uniformClock/infiniteMetadata/coordinatedDelete/rigged 等）；
+  // 传对象且 rows/vectors/verdict 齐全时当现成 study 注入；默认 crdt:false 非破坏（同 KI-513/.../530 法），
+  // 显式开才接；不声称真 Riak/Dynamo/Cassandra CRDT 生产实现（无真 anti-entropy 网络/真版本向量压缩/真 tombstone GC）、
+  // 不声称真因果序/真向量时钟/真 dot 上下文、不声称墙钟 QPS/收敛延迟。
+  // 注意命名：crdt*（CRDT），避开 bp*/bpc*/cgp*/lc*/bf*/cr*/sw*/hll* 等已占用前缀。
+  const crdtCfg = opts.crdt === true ? {} : (opts.crdt && typeof opts.crdt === 'object' ? opts.crdt : null)
+  const crdtInjected = crdtCfg !== null && opts.crdt &&
+    typeof opts.crdt === 'object' && Array.isArray(opts.crdt.rows) &&
+    opts.crdt.vectors && opts.crdt.verdict
+  let crdtCached = null
+  async function crdtSnapshotForStatus() {
+    if (crdtCfg === null) return null
+    if (crdtCached) return crdtCached
+    const study = crdtInjected
+      ? opts.crdt
+      : await crdtStudy({ ...crdtCfg, now: opts.crdtNow ?? crdtCfg.now })
+    crdtCached = crdtSnapshot(study)
+    return crdtCached
+  }
+
   // KI-513：分布式消息投递语义三协议诚实权衡（At-Most-Once / At-Least-Once / Exactly-Once，opt-in）。
   // opts.messageDelivery===true 用缺省规模；传对象逐项注入（now/seed/messages/manyKeys/retryLimit/...
   // 或 noCrash/ackReliable/freeIdempotency 单开关探针），或直接塞一只现成 study（duck-typed：带 rows/vectors/verdict/crosscheck/topology）。
@@ -785,6 +807,8 @@ export function createGameCloud(opts = {}) {
     runStreamWindowStudy: swCfg === null ? null : () => streamWindowStudy({ ...swCfg, now: opts.swNow ?? swCfg.now }),
     /** KI-530：基数估计算法族诚实权衡研究件；缺 opts.hyperLogLog 时为 null；ExactSet/HyperLogLog/LinearCounting × 六场景矩阵 + 三难向量（默认 101/110/010 互异不封赢家；rigged 齐开后 ExactSet 现算真收敛 111 反事实、HLL=110、LC 位图饱和因果锁死仍 010、绝不硬造全策略 111）+ verifySparseEstimate 双路自证（真 Set vs HLL ε 噪声带 / 三路篡改真喂回同一内核现算翻 false）+ 十一枚真件交叉印证。 */
     runStreamCardinalityStudy: hllCfg === null ? null : () => streamCardinalityStudy({ ...hllCfg, now: opts.hllNow ?? hllCfg.now }),
+    /** KI-531：CRDT 最终一致冲突消解三策略诚实权衡研究件；缺 opts.crdt 时为 null；LWWRegister/GCounter/OrSet(add-wins) × 六场景矩阵 + 三难向量维序 [strongEventualConvergence/expressiveness/compactMetadata]（默认 011/100/110 互异不封赢家；rigged 三开关 uniformClock/infiniteMetadata/coordinatedDelete 齐开后唯一翻 GCounter compact⇒101，LWW 并发丢/OrSet tag 历史不可压/decrement 不可减三条因果结构锁钉死，noUniversalWinner 仍真、绝不硬造 111；诚实口径：三者严格 SEC 全收敛、LWW 破在并发意图、OrSet add-wins）+ verifyConvergence 双路自证（三副本乱序+重复 anti-entropy 后 value 逐字相等 + 真值不变量 + 三路篡改真喂回现算翻 false）+ 十一枚真件 21 键交叉印证。 */
+    runCrdtStudy: crdtCfg === null ? null : () => crdtStudy({ ...crdtCfg, now: opts.crdtNow ?? crdtCfg.now }),
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
     gray: runtime.gray,
     /** 把游戏真 EventBus 按白名单routes 接进云事件总线（游戏侧一行：gc.connectGameBus(bus, routes)）。 */
@@ -839,6 +863,7 @@ export function createGameCloud(opts = {}) {
         cacheReplacement: await crSnapshotForStatus(),
         streamWindow: await swSnapshotForStatus(),
         hyperLogLog: await hllSnapshotForStatus(),
+        crdt: await crdtSnapshotForStatus(),
       }
     },
   }

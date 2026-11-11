@@ -44,6 +44,7 @@
     "cache-replacement:bench": "node scripts/caesura-cache-replacement.mjs",
     "stream-window:bench": "node scripts/caesura-stream-window.mjs",
     "hyperloglog:bench": "node scripts/caesura-hyperloglog.mjs",
+    "crdt:bench": "node scripts/caesura-crdt.mjs",
     "redis:spring:bench": "node scripts/spring-redis-cache.mjs selfcheck",
     "status": "node scripts/phase-status.mjs",
     "status:embed": "node scripts/phase-status-embed.mjs",

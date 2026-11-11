@@ -843,6 +843,43 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(eleven.every((x) => x === 530000)).toBe(true)
   })
 
+  it('㉒-crdt buildCrdtReading 真跑：crdt* 注入生效 / crdt:false 关闭 / rigged 因果锁可证伪 / 双路自证 + 十一真件 / 十二时钟同源（KI-531）', async () => {
+    const { buildCrdtReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 531000
+    const crdt = (await buildCrdtReading({}, now))!
+    expect(crdt).not.toBe(null)
+    expect(crdt.builtAt).toBe(531000)
+    expect(crdt.rows.length).toBe(3)
+    expect(crdt.config.scenarios.length).toBe(6)
+    expect(crdt.vectors).toEqual({ LWWRegister: '011', GCounter: '100', OrSet: '110' })
+    expect(crdt.baseVectors).toEqual({ LWWRegister: '011', GCounter: '100', OrSet: '110' })
+    const tuned = (await buildCrdtReading({ crdtSeed: 12, crdtOpsPerNode: 24 }, now))!
+    expect(tuned.config.seed).toBe(12)
+    expect(tuned.config.opsPerNode).toBe(24)
+    const rig = (await buildCrdtReading({ crdtRigged: true }, now))!
+    // rigged 三开关齐开：唯一翻 GCounter compact（100→101），三因果锁钉死，主教义不破
+    expect(rig.vectors).toEqual({ LWWRegister: '011', GCounter: '101', OrSet: '110' })
+    expect(rig.baseVectors).toEqual({ LWWRegister: '011', GCounter: '100', OrSet: '110' })
+    expect(rig.verdict.decrementCausallyUnerasable).toBe(true)
+    expect(rig.verdict.lwwConcurrentLossCausallyUnerasable).toBe(true)
+    expect(rig.verdict.orSetTagHistoryCausallyUnerasable).toBe(true)
+    expect(rig.verdict.causalLocksAllHold).toBe(true)
+    expect(rig.verdict.noUniversalWinner).toBe(true)
+    expect(rig.verdict.noUniversalWinnerStrict).toBe(true)
+    const conv = (crdt.crosscheck as any).convergence
+    expect(conv.holds).toBe(true)
+    expect(conv.nontrivial).toBe(true)
+    expect(conv.tamper.emptySet.holds).toBe(false)
+    expect(Object.keys((crdt.crosscheck as any).evidence).length).toBe(21)
+    const off = await buildSystems({ now, crdt: false, hyperLogLog: false })
+    expect(off.crdt).toBe(null)
+    expect(off.hyperLogLog).toBe(null)
+    expect(off.cacheReplacement).not.toBe(null)
+    const full = await buildSystems({ now })
+    const twelve = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt, full.bloomFilter?.builtAt, full.cacheReplacement?.builtAt, full.streamWindow?.builtAt, full.hyperLogLog?.builtAt, full.crdt?.builtAt]
+    expect(twelve.every((x) => x === 531000)).toBe(true)
+  })
+
   it('⑭ buildMvccTxnReading 真跑五档矩阵形状齐、读数是真判词、单维关闭不连坐（KI-505）', async () => {
     const { buildMvccTxnReading } = await import('../../scripts/caesura-console-gen.mjs')
     const now = () => 4242

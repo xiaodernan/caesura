@@ -1838,4 +1838,82 @@ describe('KI-529 · streamWindow 流式窗口面板：三策略 × 六场景 + �
     }
     expect(cx).toContain('jitterSpread')
   })
+
+  // ============ KI-531 CRDT 最终一致冲突消解三策略 · 前端第二十五维 ============
+  it('第二十五维 crdt-* 面板：三策略真落 DOM、向量 011/100/110 与维序 [SEC/expressiveness/compact] 一致', async () => {
+    const dom = await runApp(JSON.parse(JSON.stringify(realSw as any)))
+    const matrix = dom.els['crdt-matrix'].innerHTML
+    for (const proto of ['LWWRegister', 'GCounter', 'OrSet']) {
+      expect(matrix, '矩阵策略行 ' + proto).toContain('data-strategy="' + proto + '"')
+    }
+    // 18 cell 状态字：3 策略 × 6 场景，只认 {乱,锁,胀,✓}
+    const states = [...matrix.matchAll(/data-state="([^"]+)"/g)].map((m: any) => m[1])
+    expect(states.length).toBe(18)
+    for (const st of states) expect(['live', 'drop', 'diverge', 'na']).toContain(st)
+    const tri = dom.els['crdt-trilemma'].innerHTML
+    // 三维表头顺序与向量拼接顺序一致：expressiveness 在 compactMetadata 之前
+    expect(tri).toContain('data-k="strongEventualConvergence"')
+    expect(tri).toContain('data-k="expressiveness"')
+    expect(tri).toContain('data-k="compactMetadata"')
+    expect(tri).toContain('data-vec="011"') // LWWRegister
+    expect(tri).toContain('data-vec="100"') // GCounter
+    expect(tri).toContain('data-vec="110"') // OrSet
+    expect(dom.els['crdt-ladder'].innerHTML).toContain('LWWRegister')
+    expect(dom.els['crdt-ladder'].innerHTML).toContain('GCounter')
+    expect(dom.els['crdt-ladder'].innerHTML).toContain('OrSet')
+  })
+
+  it('KI-531 可证伪 DOM：三路篡改真喂回标记 + 双路自证 + 三因果锁 chips + 11 真件 21 键落 DOM', async () => {
+    const dom = await runApp(JSON.parse(JSON.stringify(realSw as any)))
+    const vf = dom.els['crdt-verif'].innerHTML
+    expect(vf).toContain('data-rb="secStrictAllConverge"')
+    expect(vf).toContain('data-rb="decrementCausallyUnerasable"')
+    expect(vf).toContain('data-rb="orSetIsAddWins"')
+    expect(vf).toContain('data-rb="holds"')            // 双路自证
+    expect(vf).toContain('data-rb="nontrivial"')
+    expect(vf).toContain('data-rb-tamper="dropReplica"')
+    expect(vf).toContain('data-rb-tamper="reverseLwwDecision"')
+    expect(vf).toContain('data-rb-tamper="emptySet"')
+    const probes = dom.els['crdt-probes'].innerHTML
+    for (const lock of ['lwwConcurrentLossCausallyUnerasable', 'decrementCausallyUnerasable',
+      'orSetTagHistoryCausallyUnerasable', 'noUniversalWinner', 'orSetIsAddWins']) {
+      expect(probes, '因果锁 chip ' + lock).toContain('data-verdict="' + lock + '"')
+    }
+    expect(probes).toContain('三向量互异')
+    const cx = dom.els['crdt-crosscheck'].innerHTML
+    for (const api of ['compareRemapping', 'createShardRouter', 'createHashRing', 'createWal', 'createBus',
+      'createRedisCache', 'createObjectPool', 'createTokenBucket', 'createMinHeapDelayQueue',
+      'createPackedCounters', 'createFullJitterBackoff', 'verifyConvergence']) {
+      expect(cx, '真件 ' + api + ' 必须落 DOM').toContain(api)
+    }
+    expect(cx).toContain('jitterSpread')
+    // 诚实口径：不再出现旧 remove-wins / 旧向量 / 旧三开关字样
+    expect(dom.els['crdt-trilemma-note'].textContent).not.toContain('remove-wins')
+    expect(dom.els['crdt-trilemma-note'].textContent).toContain('add-wins')
+  })
+
+  it('第二十五维 markup/CSS 契约 + systems.crdt 缺失真实降级（前端第二十五维）', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-crdt')
+    expect(html).toContain('id="crdt-matrix"')
+    expect(html).toContain('id="crdt-verif"')
+    expect(html).toContain('LWWRegister=011 / GCounter=100 / OrSet=110')
+    expect(css).toContain('.crdt-cell.drop')       // 乱/锁 wine
+    expect(css).toContain('.crdt-cell.diverge')    // 胀 金
+    expect(css).toContain('.crdt-cell.live')       // ✓ jade
+    expect(css).toContain('.crdt-flag.yes')
+    expect(css).toContain('.crdt-bar > i')         // 元数据梯
+    expect(css).toContain('.crdt-verif')           // 可证伪栏
+    expect(css).toContain('@media')
+  })
+
+  it('systems.crdt 缺失：crdt-matrix/trilemma 真实降级、绝不伪造第二套数', async () => {
+    const noCrdt = JSON.parse(JSON.stringify(realSw as any))
+    noCrdt.systems.crdt = null
+    const dom = await runApp(noCrdt)
+    expect(dom.els['crdt-matrix'].innerHTML).toContain('暂缺')
+    expect(dom.els['crdt-trilemma'].innerHTML).toContain('暂缺')
+    expect(dom.els['crdt-matrix-note'].textContent).toContain('systems.crdt 缺失')
+  })
 })

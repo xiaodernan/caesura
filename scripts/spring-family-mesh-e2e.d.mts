@@ -470,5 +470,27 @@ export function runMeshE2E(opts?: any): {
       verdict: Record<string, any>
       builtAt: number
     } | null
+    /** KI-531：CRDT 最终一致冲突消解三策略快照（LWWRegister/GCounter/OrSet(add-wins) × 六场景 + 三难向量维序 [strongEventualConvergence/expressiveness/compactMetadata] 默认 011/100/110 + verifyConvergence 双路交叉印证（三副本乱序+重复 anti-entropy 后 value 逐字相等 + 真值不变量 + 三路篡改真喂回现算翻 false）+ 十一真件 21 键交叉印证），未配 crdt 为 null；rigged 三开关 uniformClock/infiniteMetadata/coordinatedDelete 齐开后唯一翻 GCounter compact⇒101、三条因果结构锁（LWW 并发丢/decrement 不可减/OrSet tag 不可压）钉死、noUniversalWinner 仍真绝不硬造 111；诚实口径：三者严格 SEC 全收敛、LWW 破在并发意图、OrSet add-wins */
+    crdtSnapshot: {
+      config: Record<string, any>
+      rows: Array<{
+        protocol: string
+        vector?: string
+        scenarios: Array<{
+          id: string; fault: string
+          inserts: number; replicaDigest: string; secConverged: boolean
+          value: string | number | null | (string | number | null)[]
+          strongEventualConvergence: boolean; expressiveness: boolean; compactMetadata: boolean
+          inSecExam: boolean; inExpressiveExam: boolean; inCompactExam: boolean
+        }>
+        trilemma: { strongEventualConvergence: boolean; expressiveness: boolean; compactMetadata: boolean }
+        metrics: { lwwConflictInvocations: number; compactBytes: number; convergenceGuarantee: boolean; convergenceLeak?: string }
+      }>
+      vectors: Record<string, string>
+      baseVectors?: Record<string, string>
+      crosscheck: { evidence: Record<string, any>; convergence: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+      verdict: Record<string, any>
+      builtAt: number
+    } | null
   }>
 }
