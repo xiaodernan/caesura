@@ -61,6 +61,7 @@
       renderBloomFilter(snap.systems ? snap.systems.bloomFilter : null)
       renderCacheReplacement(snap.systems ? snap.systems.cacheReplacement : null)
       renderStreamWindow(snap.systems ? snap.systems.streamWindow : null)
+      renderCardinality(snap.systems ? snap.systems.hyperLogLog : null)
       setLive(true, result.source)
     }).catch(function (e) {
       setLive(false, 'error')
@@ -2840,6 +2841,156 @@
     if (note) note.textContent = '维序固定 [结果完整 / 迟到容忍 / 状态省]。默认向量 Tumbling=011 / Sliding=110 / Session=101，三者互异、无一 111、恰好各缺一维：Tumbling 切跨边界关联对、Sliding 状态放大 4 倍、Session 判定 gap 已关会话的迟到只剩 sideOutput。' +
       '三口径正交：resultCompleteness 只在 boundaryStraddle / overlapReuse 两场景量真 pairCoverage（两扇窗；session 成员下标逐扇核对，不凭 group 集合误判）；lateTolerance 只在 lateWithinAllowance / lateBeyondGap 量真 lateAccepted 率（< 0.6 即判罚 Session 迟钝）；stateEfficiency 只在 alignedBursts / overlapReuse 量真 stateReplicas 放大（≤ 1.5 才合格）。' +
       'rigged 三开关：frozenWatermark（关窗永不推进）+ infiniteLateness（迟到永不超期）+ freeState（放大归一为 1）齐开 ⇒ 三维全部因果判死 resultCompleteness 仍塌（011/011/011），绝不硬造全 111。'
+  }
+
+  /* ================= KI-530 ExactSet/HyperLogLog/LinearCounting 基数估计算法族 · 第二十四维（hll 族） ================= */
+
+  function renderCardinality(hll) {
+    renderHllMatrix(hll && hll.rows, hll && hll.config)
+    renderHllLadder(hll && hll.rows)
+    renderHllTrilemma(hll && hll.rows, hll && hll.verdict, hll && hll.crosscheck)
+  }
+
+  function hllMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 暂缺</div>'
+    if (note) note.textContent = 'systems.hyperLogLog 缺失 — 跑一次 npm run console:data 即可补齐'
+  }
+
+  function hllCell(c) {
+    if (!c) return { cls: '', ch: '·' }
+    // exact cards = jade, approximate estimate within 3σ = gold, saturated/broken = wine
+    if (c.estimatorAccuracy === false) return { cls: 'sat', ch: '失' }
+    return c.estimate == null || c.protocol === 'ExactSet'
+      ? { cls: 'exact', ch: '精' }
+      : { cls: 'approx', ch: '≈' }
+  }
+
+  function renderHllMatrix(rows, config) {
+    var box = $('#hll-matrix'), note = $('#hll-matrix-note')
+    if (!Array.isArray(rows) || !rows.length || !config || !Array.isArray(config.scenarios)) {
+      hllMissing(box, note, 'hll 矩阵'); return
+    }
+    var scenarios = config.scenarios
+    var head = '<div class="hll-mat-row hll-mat-head"><span class="hll-mat-proto">估计器</span>' +
+      scenarios.map(function (sc) { return '<span class="hll-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="hll-mat-cost">误差/内存</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = hllCell(cell)
+        var err = cell && cell.relativeError != null ? ' err=' + fmt(cell.relativeError) : ''
+        return '<span class="hll-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) + '"' +
+          ' data-state="' + (st.cls || 'na') + '" data-err="' + esc(String(cell && cell.relativeError)) + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="hll-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="hll-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="hll-mat-cost"><b>' + esc(fmt(m.maxRelativeError)) + '</b>/' + esc(String(m.footprintBytes)) + 'B</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'ExactSet / HyperLogLog / LinearCounting × 六场景：nearExact（4096 不同 ×2 replay）/ highFill（26000 不同 ×2）/ disjMerge（2048+2048 并集 ∪）/ heavyInsertFlow（~256 不同 zipf-ish 24000 插入）/ zipfSkew（1024 不同 zipf-skew 12000 插入）/ sparseLowCardinality（64 不同 ×2）。' +
+      '每格只认真件算好的三布尔（estimatorAccuracy/fixedMemory/mergeable）——绝不拿阈值重算。' +
+      'ExactSet: 精确无误差·O(n) 内存；HyperLogLog: 16384 寄存器 6 bit ≈ 12KB 常数·ε≈0.81%；LinearCounting: 4096 bits 位图·n≪bits 内准、饱和真失真。'
+  }
+
+  function renderHllLadder(rows) {
+    var box = $('#hll-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.maxRelativeError) ? r.metrics.maxRelativeError : 0 }).concat([0.0001]))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.maxRelativeError) ? Math.round(m.maxRelativeError / Math.max(max, 0.001) * 100) : 0
+      var card = Math.max(1, m.exactCard ?? 1)
+      return '<div class="hll-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="hll-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">最大误差 ' + esc(fmt(m.maxRelativeError)) + ' · 真件 ' + esc(String(card)) + ' · 内存 ' + esc(String(m.footprintBytes)) + 'B</span></div>'
+    }).join('')
+  }
+
+  function renderHllTrilemma(rows, verdict, crosscheck) {
+    var box = $('#hll-trilemma'), veBox = $('#hll-verif'), cxBox = $('#hll-crosscheck'), note = $('#hll-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      hllMissing(box, note, 'hll 判词'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''; return
+    }
+    var flags = [['estimatorAccuracy', '估计精确'], ['fixedMemory', '常数内存'], ['mergeable', '无约束并']]
+    var head = '<div class="hll-vec hll-vec-head"><span class="proto">估计器</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="hll-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="hll-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    if (veBox) {
+      var es = rows.find(function (r) { return r.protocol === 'ExactSet' })
+      var hll = rows.find(function (r) { return r.protocol === 'HyperLogLog' })
+      var lc = rows.find(function (r) { return r.protocol === 'LinearCounting' })
+      var veRows = [
+        '<div class="hll-rb-row"><b>ExactSet</b> 真跑 nearExact → 误差 ' + esc(fmt(es ? es.metrics.maxRelativeError : 0)) + '（Set 去重真计数，O(n) 内存 ' + esc(fmt(es && es.metrics.footprintBytes)) + '）</div>',
+        '<div class="hll-rb-row"><b>HyperLogLog</b> 真跑 nearExact → estimate ' + esc(fmt((hll && hll.scenarios.find(function (sc) { return sc.id === 'nearExact' }) || {}).estimate)) + ' / 真值 4096（ε≈' + esc(fmt(hll ? hll.metrics.maxRelativeError : 0)) + '·12KB 常数内存）</div>',
+        '<div class="hll-rb-row"><b>LinearCounting</b> 真跑 highFill → estimate ' + esc(fmt((lc && lc.scenarios.find(function (sc) { return sc.id === 'highFill' }) || {}).estimate)) + ' / 真值 26000（4096 bits 位图·饱和真开始失真·ε=' + esc(fmt(lc ? lc.metrics.maxRelativeError : 0)) + '）</div>',
+      ]
+      // verifySparseEstimate 双路自证 + 三路篡改真喂回同一内核现算翻 false → 落可证伪 DOM（与 CLI / UI 测试同口径）。
+      var estVerify = crosscheck && crosscheck.estimate
+      if (estVerify) {
+        veRows.push('<div class="hll-rb-row"><b>verifySparseEstimate 双路</b> 路A 真 Set ' + esc(fmt(estVerify.laneA && estVerify.laneA.exact)) + ' · 路B HLL ' + esc(fmt(estVerify.laneB && estVerify.laneB.estimate)) + '（ε 噪声带内）— ' +
+          '<span data-rb="holds">holds ' + (estVerify.holds ? '✓' : '✗') + '</span> ' +
+          '<span data-rb="nontrivial">nontrivial ' + (estVerify.nontrivial ? '✓' : '✗') + '</span> ' +
+          '<span data-rb="falsifiable">falsifiable ' + (estVerify.falsifiable ? '✓' : '✗') + '</span></div>')
+        if (estVerify.tamper) {
+          veRows.push('<div class="hll-rb-row">三路篡改真喂回同一内核现算翻 false：' +
+            '<span class="hll-flag ' + (estVerify.tamper.registerCorrupted && !estVerify.tamper.registerCorrupted.holds ? 'no' : 'yes') + '" data-rb-tamper="registerCorrupted">寄存器腐化 ' + (estVerify.tamper.registerCorrupted && !estVerify.tamper.registerCorrupted.holds ? '✓驳倒' : '✗') + '</span>' +
+            '<span class="hll-flag ' + (estVerify.tamper.bitsTooBig && !estVerify.tamper.bitsTooBig.holds ? 'no' : 'yes') + '" data-rb-tamper="bitsTooBig">位图规模篡改 ' + (estVerify.tamper.bitsTooBig && !estVerify.tamper.bitsTooBig.holds ? '✓驳倒' : '✗') + '</span>' +
+            '<span class="hll-flag ' + (estVerify.tamper.emptySet && !estVerify.tamper.emptySet.holds ? 'no' : 'yes') + '" data-rb-tamper="emptySet">空集降级 ' + (estVerify.tamper.emptySet && !estVerify.tamper.emptySet.holds ? '✓驳倒' : '✗') + '</span></div>')
+        }
+      }
+      veBox.innerHTML = veRows.join('')
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      var ve = crosscheck && crosscheck.estimate
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>真 <b>compareRemapping</b> 迁移率 一致性 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>' +
+          '<div>真 <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 片</div>' +
+          '<div>真 <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 命中 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
+          '<div>真 <b>createWal</b> lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>真 <b>createBus</b> card.emitted 通知 ' + esc(fmt(ev.notices)) + ' 条 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>真 <b>createRedisCache</b> 聚合槽 set+get 命中 ' + esc(fmt(ev.redisBitmapHits)) + ' · entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+          '<div>真 <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+          '<div>真 <b>createTokenBucket</b> 回放允许 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>真 <b>createMinHeapDelayQueue</b> 出队 ' + esc(fmt(ev.heapFired)) + ' 条 · pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+          '<div>真 <b>createPackedCounters</b> Σ=' + esc(fmt(ev.counterSum)) + ' · falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>' +
+          '<div>真 <b>createFullJitterBackoff</b> jitterSpread 抖开 <b>' + esc(fmt(ev.jitterSpread)) + '</b></div>' +
+          (ve ? '<div>真 <b>verifySparseEstimate</b> holds=<b>' + (ve.holds ? 'true' : 'false') + '</b> nontrivial=<b>' + (ve.nontrivial ? 'true' : 'false') + '</b> · laneA{exact=' + esc(fmt(ve.laneA && ve.laneA.exact)) + '} laneB{est=' + esc(fmt(ve.laneB && ve.laneB.estimate)) + ' relErr=' + esc(fmt(ve.laneB && ve.laneB.relError)) + '}</div>' : '')
+      } else {
+        cxBox.innerHTML = '<div class="nodata">真件交叉印证缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var chips = [
+      '<span class="chip" data-verdict="exactSetAccurate"><b>ExactSet</b> 估计精确 ' + (v.exactSetAccurate ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="hllFixed12k"><b>HLL</b> 12KB 常数 ' + (v.hllFixed12k ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="hllRestrictedPmerge"><b>HLL</b> PFMERGE 受限 ' + (v.hllRestrictedPmerge ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="linearCountingSaturates"><b>LC</b> 饱和失真 ' + (v.linearCountingSaturates ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="exactSetGrowsUnbounded"><b>ExactSet</b> 内存无界 ' + (v.exactSetGrowsUnbounded ? '✓' : '✗') + '</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' + (noWin ? '✓ 三向量互异（101/110/010），无全局赢家、恰好各缺一维' : '判词塌陷') + '</span>',
+    ]
+    var probes = $('#hll-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维序固定 [估计精确 / 常数内存 / 无约束并]。默认向量 ExactSet=101 / HyperLogLog=110 / LinearCounting=010，三者互异、无一 111、恰好各缺一维：ExactSet 内存 O(n) 线性涨；HLL PFMERGE 只在同 precision 下 union（mergeable=false）；LinearCounting 位图饱和（bits≈n 时 estimate 真开始失真）。' +
+      '三口径正交：estimatorAccuracy 只在 nearExact/highFill/heavyInsertFlow/zipfSkew 四场景量真 maxErr（truth 非零 ⇒ 真实相对误差）；fixedMemory 全场景量 footprint≤32KB（ExactSet 破）；mergeable 按「独立实例 sketch 能否无约束 union」判（ExactSet addAll 合法 ⇒ true；HyperLogLog PFMERGE 需同 precision+same hash ⇒ false；LinearCounting 需同 m ⇒ false）。' +
+      'rigged 双开关：unlimitedMemory（ExactSet 内存无界）+ perfectHash（散列碰撞归零）齐开 ⇒ ExactSet 现算真收敛 111（内存免费+误差归零+天然可并的反事实赢家，非写死），HyperLogLog=110、LinearCounting 因果锁死仍 010（perfectHash 抹误差、unlimitedRoom 免内存都救不回 LC 位图饱和的容量事实——位图位数 < 不同元素数必然碰撞，散列完美治不了位数限制）。rigged 三向量 111/110/010 仍互异、绝不硬造全策略 111。'
   }
 
   /* ================= KI-527 布隆/布谷鸟/计数布隆三过滤器 · 第二十一维（blf 族） ================= */

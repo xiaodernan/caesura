@@ -451,5 +451,24 @@ export function runMeshE2E(opts?: any): {
       verdict: Record<string, any>
       builtAt: number
     } | null
+    /** KI-530：基数估计算法族诚实权衡快照（ExactSet/HyperLogLog/LinearCounting × 六场景 + 三难向量 101/110/010 + verifySparseEstimate 双路交叉印证 + 十一真件 21 键交叉印证），未配 hyperLogLog 为 null；rigged 预言机开关后 ExactSet 收敛 111、HLL/LC 仍 110；不得硬造全 111 */
+    hyperLogLogSnapshot: {
+      config: Record<string, any>
+      rows: Array<{
+        protocol: string
+        scenarios: Array<{
+          id: string; protocol: string; truth: number; estimate: number | null; relativeError: number | null
+          footprintBytes: number; inserts: number; fault?: string
+          estimatorAccuracy: boolean; fixedMemory: boolean; mergeable: boolean
+          inAccuracyExam: boolean; inMemoryExam: boolean; inMergeExam: boolean
+        }>
+        trilemma: { estimatorAccuracy: boolean; fixedMemory: boolean; mergeable: boolean }
+        metrics: { exactCard: number; maxRelativeError: number; footprintBytes: number; mergeOk: boolean; trilemmaDebug?: Record<string, any> }
+      }>
+      vectors: Record<string, string>
+      crosscheck: { evidence: Record<string, any>; estimate: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+      verdict: Record<string, any>
+      builtAt: number
+    } | null
   }>
 }

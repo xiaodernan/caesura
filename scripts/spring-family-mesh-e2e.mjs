@@ -140,6 +140,10 @@ export function runMeshE2E(opts = {}) {
     // 注入时钟用 swNow（避开 sw* 分支与 lsm/bp/bpc/cgp/lc/bf/cr/rdq/dld 已占用前缀）。
     streamWindow: opts.streamWindow,
     swNow: opts.swNow,
+    // KI-530：基数估计算法族诚实权衡（hyperLogLog=true 装配；只读 ExactSet/HyperLogLog/LinearCounting × 六场景矩阵 + 三难向量（默认 101/110/010 互异不封赢家）+ verifySparseEstimate 双路交叉印证 + 十一真件 21 键交叉印证，rigged 双开关后 ExactSet 现算收敛 111 反事实、HLL=110、LC 位图饱和因果锁死仍 010、绝不硬造全策略 111，不改调用路径）。
+    // 注入时钟用 hllNow（避开 hll* 分支与 lsm/bp/bpc/cgp/lc/bf/cr/sw/rdq/dld 已占用前缀）。
+    hyperLogLog: opts.hyperLogLog,
+    hllNow: opts.hllNow,
     sources: {
       eureka: () => (opts.svcA ?? [{ id: 'svc-a:1', name: 'svc-a', address: '10.0.0.1', port: 8080, healthy: true }]),
       k8s: () => k8s.discover('caesura-gate'),
@@ -283,6 +287,7 @@ export function runMeshE2E(opts = {}) {
         bloomFilterSnapshot: status.bloomFilter ?? null,
         cacheReplacementSnapshot: status.cacheReplacement ?? null,
         streamWindowSnapshot: status.streamWindow ?? null,
+        hyperLogLogSnapshot: status.hyperLogLog ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
       }
@@ -556,6 +561,19 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         noUniversalWinner: r.streamWindowSnapshot.verdict.noUniversalWinner,
         crosscheck: r.streamWindowSnapshot.crosscheck,
         verdict: r.streamWindowSnapshot.verdict,
+      } : null,
+      hyperLogLog: r.hyperLogLogSnapshot ? {
+        strategies: r.hyperLogLogSnapshot.rows.map((row) => ({
+          strategy: row.protocol,
+          // 每格状态只认真件算好的三布尔（estimatorAccuracy/fixedMemory/mergeable）—绝不拿阈值重算，与 trilemma 同源。
+          ladder: row.scenarios.map((s) => s.id + ':' + (s.estimatorAccuracy === false ? '失' : s.fixedMemory === false ? '碎' : s.mergeable === false ? '裂' : '✓')).join(' → '),
+          metrics: row.metrics, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.hyperLogLogSnapshot.rows.map((row) => [row.protocol,
+          `${Number(row.trilemma.estimatorAccuracy)}${Number(row.trilemma.fixedMemory)}${Number(row.trilemma.mergeable)}`])),
+        noUniversalWinner: r.hyperLogLogSnapshot.verdict.noUniversalWinner,
+        crosscheck: r.hyperLogLogSnapshot.crosscheck,
+        verdict: r.hyperLogLogSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

@@ -482,6 +482,23 @@
       <p class="note" id="sw-trilemma-note">…</p>
     </article>
   </section>
+  <!-- 第二十四维 · ExactSet / HyperLogLog / LinearCounting 基数估计算法族（KI-530） -->
+  <section class="row row-hll">
+    <article class="panel panel-hll">
+      <div class="panel-head"><h2>第二十四维 · ExactSet/HyperLogLog/LinearCounting · 三估计器 × 六场景</h2><span class="hint">精径=ExactSet（Set 真去重·精确·O(n) 吃内存线性涨）/ 超径=HyperLogLog（16384 寄存器 6bit ≈ 12KB 常数 + 1.04/√m≈0.81% 标准误差·Redis PFADD 同款·PFMERGE 只在同 precision 下 union）/ 经径=LinearCounting（4096 bits 位图·-m·ln(1-t/m) 直译·n≪m 期极准·接近饱和真开始失真）</span></div>
+      <div class="hll-matrix" id="hll-matrix"></div>
+      <div class="hll-ladder" id="hll-ladder"></div>
+      <p class="note" id="hll-matrix-note">…</p>
+    </article>
+    <article class="panel panel-hll">
+      <div class="panel-head"><h2>三难向量（估计精确 ∧ 常数内存 ∧ 无约束可并）· 双路自证</h2><span class="hint">ExactSet=101 / HyperLogLog=110 / LinearCounting=010 · 三向量互异无一 111 不封赢家 · verifySparseEstimate 真轨迹 ×2 路自证 + 三路篡改可证伪（corrupt 1 寄存器 ⇒ estimate 偏离带 / 抹 cardinality ⇒ nontrivial=false / bits 非法 ⇒ holds 翻红）</span></div>
+      <div class="hll-trilemma" id="hll-trilemma"></div>
+      <div class="hll-verif" id="hll-verif"></div>
+      <div class="hll-crosscheck" id="hll-crosscheck"></div>
+      <div class="hll-probes" id="hll-probes"></div>
+      <p class="note" id="hll-trilemma-note">…</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">

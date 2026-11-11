@@ -1748,4 +1748,94 @@ describe('KI-529 · streamWindow 流式窗口面板：三策略 × 六场景 + �
     expect(css).toContain('prefers-reduced-motion')   // 前庭友好兜底
     expect(css).toContain('@media (max-width: 720px)')
   })
+
+  it('第二十四维 hll-* 面板：系统集成落落 DOM、三向量与 hll-* CSS 族一致', async () => {
+    const full = JSON.parse(JSON.stringify(realSw as any))
+    const dom = await runApp(full)
+    // 矩阵行：三策略行（cell 直接三布尔渲染）
+    for (const proto of ['ExactSet', 'HyperLogLog', 'LinearCounting']) {
+      expect(dom.els['hll-matrix'].innerHTML).toContain(proto)
+      expect(dom.els['hll-matrix'].innerHTML).toContain('data-strategy="' + proto + '"')
+    }
+    // 三难向量：101/110/010 直接落 DOM
+    expect(dom.els['hll-trilemma'].innerHTML).toContain('101')
+    expect(dom.els['hll-trilemma'].innerHTML).toContain('110')
+    expect(dom.els['hll-trilemma'].innerHTML).toContain('010')
+    // 梯度条 bar 包含策略行
+    expect(dom.els['hll-ladder'].innerHTML).toContain('ExactSet')
+    expect(dom.els['hll-ladder'].innerHTML).toContain('HyperLogLog')
+    expect(dom.els['hll-ladder'].innerHTML).toContain('LinearCounting')
+    // 双路自证栏
+    expect(dom.els['hll-verif'].innerHTML).toContain('ExactSet')
+    expect(dom.els['hll-verif'].innerHTML).toContain('LinearCounting')
+  })
+
+  it('第二十四维 hll-* 交叉印证真件落 DOM：createMinHeapDelayQueue / createPackedCounters / createWal / createBus 全名', async () => {
+    const dom = await runApp(JSON.parse(JSON.stringify(realSw as any)))
+    for (const nm of ['createMinHeapDelayQueue', 'createPackedCounters', 'createWal', 'createBus', 'createRedisCache', 'createHashRing', 'createShardRouter', 'createTokenBucket', 'createObjectPool', 'createFullJitterBackoff']) {
+      expect(dom.els['hll-crosscheck'].innerHTML, '落 DOM 真件：' + nm).toContain(nm)
+    }
+  })
+
+  it('第二十四维 hll-* chips：noUniversalWinner=true —— 判词「三向量互异、无全局赢家、恰好各缺一维」', async () => {
+    const dom = await runApp(JSON.parse(JSON.stringify(realSw as any)))
+    expect(dom.els['hll-probes'].innerHTML).toContain('noUniversalWinner')
+    expect(dom.els['hll-probes'].innerHTML).toContain('三向量互异')
+  })
+
+  it('systems.hyperLogLog 缺失：hll-matrix/ladder/trilemma 真实降级、绝不伪造', async () => {
+    const noHll = JSON.parse(JSON.stringify(realSw as any))
+    noHll.systems.hyperLogLog = null
+    const dom = await runApp(noHll)
+    expect(dom.els['hll-matrix'].innerHTML).toContain('暂缺')
+    expect(dom.els['hll-ladder'].innerHTML).toBe('')
+    expect(dom.els['hll-trilemma'].innerHTML).toContain('暂缺')
+    expect(dom.els['hll-matrix-note'].textContent).toContain('systems.hyperLogLog 缺失')
+    const partial = JSON.parse(JSON.stringify(realSw as any))
+    partial.systems.hyperLogLog.crosscheck = null
+    const dom2 = await runApp(partial)
+    expect(dom2.els['hll-crosscheck'].innerHTML).toContain('真件交叉印证缺失')
+    expect(dom2.els['hll-crosscheck'].innerHTML).not.toContain('createHashRing')
+  })
+
+  it('第二十四维 markup 与 CSS 契约：row-hll 两面板 + hll-* 视觉族 + 向量真值 + reduced-motion 兜底', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-hll')
+    expect(html).toContain('id="hll-matrix"')
+    expect(html).toContain('id="hll-verif"')
+    expect(html).toContain('ExactSet=101 / HyperLogLog=110 / LinearCounting=010')
+    expect(css).toContain('.hll-cell.approx')        // ≈ estimate 金
+    expect(css).toContain('.hll-cell.exact')         // 精确 jade
+    expect(css).toContain('.hll-cell.sat')           // 饱和失真 wine
+    expect(css).toContain('.hll-bar > i')            // 指标梯
+    expect(css).toContain('.hll-verif')              // 双路自证栏
+    expect(css).toContain('prefers-reduced-motion')  // 前庭友好兜底
+    expect(css).toContain('@media (max-width: 720px)')
+  })
+
+  it('KI-530 可证伪 DOM：18 cell 状态字（sat/exact/approx）+ verifySparseEstimate 双路自证 + 三路篡改真喂回标记 + 第 11 真件', async () => {
+    const dom = await runApp(JSON.parse(JSON.stringify(realSw as any)))
+    const matrix = dom.els['hll-matrix'].innerHTML
+    const states = [...matrix.matchAll(/data-state="([^"]+)"/g)].map((m: any) => m[1])
+    expect(states.length).toBe(18) // 3 估计器 × 6 场景
+    for (const st of states) expect(['sat', 'exact', 'approx']).toContain(st)
+    expect(matrix).toContain('class="hll-cell sat"')    // LinearCounting highFill 饱和
+    expect(matrix).toContain('class="hll-cell exact"')  // ExactSet 精确
+    expect(matrix).toContain('class="hll-cell approx"') // HyperLogLog ε 带内
+    const vf = dom.els['hll-verif'].innerHTML
+    expect(vf).toContain('data-rb="holds"')
+    expect(vf).toContain('data-rb="nontrivial"')
+    expect(vf).toContain('data-rb="falsifiable"')
+    expect(vf).toContain('data-rb-tamper="registerCorrupted"')
+    expect(vf).toContain('data-rb-tamper="bitsTooBig"')
+    expect(vf).toContain('data-rb-tamper="emptySet"')
+    const cx = dom.els['hll-crosscheck'].innerHTML
+    for (const api of ['compareRemapping', 'createShardRouter', 'createHashRing', 'createWal', 'createBus',
+      'createRedisCache', 'createObjectPool', 'createTokenBucket', 'createMinHeapDelayQueue',
+      'createPackedCounters', 'createFullJitterBackoff', 'verifySparseEstimate']) {
+      expect(cx, '真件 ' + api + ' 必须落 DOM').toContain(api)
+    }
+    expect(cx).toContain('jitterSpread')
+  })
 })

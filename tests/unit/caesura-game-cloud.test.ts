@@ -1632,4 +1632,85 @@ describe('caesura-game-cloud', () => {
     expect(injected.streamWindow.builtAt).toBe(555)
     expect(injected.streamWindow.config.seed).toBe(99)
   })
+
+  it("hyperLogLog:true ⇒ 装配 ExactSet/HyperLogLog/LinearCounting 三估计器、status.hyperLogLog 读真矩阵/三难向量 101/110/010/双路自证/十一真件、builtAt 随 hllNow、惰性同引用（KI-530）", async () => {
+    const gc = createGameCloud({
+      gameId: 'gidhll1', gamePort: 7844, sources, cloud: fakeCloud(),
+      hyperLogLog: true, hllNow: () => 53000,
+    })
+    expect(gc.runStreamCardinalityStudy).toBeTypeOf('function')
+    const st = await gc.status()
+    expect(st.hyperLogLog.builtAt).toBe(53000)
+    expect(st.hyperLogLog.config.scenarios.length).toBe(6)
+    expect(st.hyperLogLog.rows.length).toBe(3)
+    expect(st.hyperLogLog.vectors).toEqual({ ExactSet: '101', HyperLogLog: '110', LinearCounting: '010' })
+    const es = st.hyperLogLog.rows.find((r: any) => r.protocol === 'ExactSet')!
+    const hll = st.hyperLogLog.rows.find((r: any) => r.protocol === 'HyperLogLog')!
+    const lc = st.hyperLogLog.rows.find((r: any) => r.protocol === 'LinearCounting')!
+    expect(es.trilemma).toEqual({ estimatorAccuracy: true, fixedMemory: false, mergeable: true })
+    expect(hll.trilemma).toEqual({ estimatorAccuracy: true, fixedMemory: true, mergeable: false })
+    expect(lc.trilemma).toEqual({ estimatorAccuracy: false, fixedMemory: true, mergeable: false })
+    // 双路自证稳态成立 + 三路篡改真喂回现算翻 false
+    const ve = st.hyperLogLog.crosscheck.estimate
+    expect(ve.holds).toBe(true)
+    expect(ve.nontrivial).toBe(true)
+    expect(ve.tamper.registerCorrupted.holds).toBe(false)
+    expect(ve.tamper.bitsTooBig.holds).toBe(false)
+    expect(ve.tamper.emptySet.holds).toBe(false)
+    // 十一真件 21 键真回读
+    const ev = st.hyperLogLog.crosscheck.evidence
+    expect(Object.keys(ev).length).toBe(21)
+    expect(ev.jitterSpread).toBeGreaterThanOrEqual(0)
+    expect(st.hyperLogLog.verdict.noUniversalWinner).toBe(true)
+    expect(st.hyperLogLog.verdict.vectorFromTrilemma).toBe(true)
+    expect(st.hyperLogLog.verdict.linearCountingSaturates).toBe(true)
+    expect(st.hyperLogLog.verdict.linearCountingSaturationCausallyUnerasable).toBe(true)
+    // 惰性缓存：二次 status 同引用
+    expect((await gc.status()).hyperLogLog).toBe(st.hyperLogLog)
+    const rerun = await gc.runStreamCardinalityStudy!()
+    expect(rerun.vectors).toEqual(st.hyperLogLog.vectors)
+    // 不连坐其它维
+    expect(st.streamWindow).toBe(null)
+    expect(st.bloomFilter).toBe(null)
+  })
+
+  it('hyperLogLog 默认 null 非破坏；单开 perfectHash/unlimitedMemory 各自局部、rigged 111/110/010 因果锁死 LC 饱和；可注入现成 study（KI-530）', async () => {
+    const plain = createGameCloud({ gameId: 'gidhll2', gamePort: 7845, sources, cloud: fakeCloud() })
+    expect(plain.runStreamCardinalityStudy).toBe(null)
+    const ps = await plain.status()
+    expect(ps.hyperLogLog).toBe(null)
+    expect(ps.cacheReplacement).toBe(null)
+    // 单开 perfectHash：HLL/LC accuracy 抹，但 LC 位图饱和因果锁死仍 010
+    const ph = await (await createGameCloud({
+      gameId: 'gidhll3', gamePort: 7846, sources, cloud: fakeCloud(),
+      hyperLogLog: { perfectHash: true, now: 0 },
+    })).status()
+    expect(ph.hyperLogLog.vectors.LinearCounting).toBe('010')
+    expect(ph.hyperLogLog.verdict.perfectHashErasesError).toBe(true)
+    // 单开 unlimitedMemory：ExactSet 内存维抹 ⇒ 111
+    const um = await (await createGameCloud({
+      gameId: 'gidhll4', gamePort: 7847, sources, cloud: fakeCloud(),
+      hyperLogLog: { unlimitedMemory: true, now: 0 },
+    })).status()
+    expect(um.hyperLogLog.vectors.ExactSet).toBe('111')
+    expect(um.hyperLogLog.verdict.unlimitedRoomErasesGrowth).toBe(true)
+    // rigged 双开关齐开：现算 111/110/010、LC 饱和因果锁死、绝不硬造全策略 111
+    const rig = await (await createGameCloud({
+      gameId: 'gidhll5', gamePort: 7848, sources, cloud: fakeCloud(),
+      hyperLogLog: { rigged: true, now: 0 },
+    })).status()
+    expect(rig.hyperLogLog.vectors).toEqual({ ExactSet: '111', HyperLogLog: '110', LinearCounting: '010' })
+    expect(rig.hyperLogLog.verdict.noUniversalWinner).toBe(false)
+    expect(rig.hyperLogLog.verdict.trilemmaDistinguishes).toBe(true)
+    expect(rig.hyperLogLog.verdict.linearCountingSaturationCausallyUnerasable).toBe(true)
+    expect(rig.hyperLogLog.verdict.vectorFromTrilemma).toBe(true)
+    // 注入现成 study（duck-typed）
+    const { streamCardinalityStudy } = await import('../../scripts/caesura-hyperloglog.mjs')
+    const injected = await (await createGameCloud({
+      gameId: 'gidhll6', gamePort: 7849, sources, cloud: fakeCloud(),
+      hyperLogLog: streamCardinalityStudy({ seed: 99, now: 555 }),
+    })).status()
+    expect(injected.hyperLogLog.builtAt).toBe(555)
+    expect(injected.hyperLogLog.config.seed).toBe(99)
+  })
 })

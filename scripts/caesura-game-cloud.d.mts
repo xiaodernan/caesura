@@ -166,6 +166,13 @@ export interface GameCloudOptions {
   streamWindow?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck?: any; topology?: any; [k: string]: any }
   /** KI-529 流式窗口的注入时钟（sw=stream window，避开 lsm/bp/bpc/cgp/lc/bf/cr/rdq/dld 已占用前缀）。 */
   swNow?: () => number
+  /**
+   * KI-530：true 装配基数估计算法族诚实权衡（ExactSet / HyperLogLog / LinearCounting + verifySparseEstimate 双路交叉印证 + 十一枚真件交叉印证）。
+   * 对象逐项注入（now/seed/cardinality/mRegisters/scenarios/perfectHash/unlimitedMemory/rigged 等），
+   * 或直接塞一只现成 study（带 rows/vectors/verdict/crosscheck 四块）。默认 false 不装配。 */
+  hyperLogLog?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck?: any; topology?: any; [k: string]: any }
+  /** KI-530 基数估计的注入时钟（hll=hyperloglog，避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/rdq/dld 已占用前缀）。 */
+  hllNow?: () => number
 }
 
 /** 创建一只游戏侧开箱即用云。 */
@@ -230,6 +237,8 @@ export function createGameCloud(opts?: GameCloudOptions): {
   runCacheReplacementStudy: (() => Promise<any>) | null
   /** KI-529：流式窗口聚合与 Watermark 迟到处置三策略诚实权衡研究件；缺 opts.streamWindow 时为 null；Tumbling/Sliding/Session × 六场景矩阵 + 三难向量（rigged 011/011/011 因果锁死 resultCompleteness、不得硬造全 111）+ verifyWatermarkMonotonicity 双路自证（到达序 watermark 单调 + 承诺地平线 / 处置守恒，三路篡改现算翻 false）+ 十一枚真件 21 键交叉印证。 */
   runStreamWindowStudy: (() => Promise<any>) | null
+  /** KI-530：基数估计算法族诚实权衡研究件；缺 opts.hyperLogLog 时为 null；ExactSet/HyperLogLog/LinearCounting × 六场景矩阵 + 三难向量（ExactSet=101 / HyperLogLog=110 / LinearCounting=010，互异无一 111，rigged 预言机开关后 ExactSet 真收敛 111、HLL/LC 仍 110；绝不硬造全 111）+ verifySparseEstimate 双路自证（真 Set vs HLL 3σ + 三路篡改现算翻 false）+ 十一枚真件交叉印证。 */
+  runStreamCardinalityStudy: (() => Promise<any>) | null
   /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）。 */
   gray: any
   /** KI-489：把游戏真 EventBus（duck-typed {on,emit}）按白名单接进云事件总线。 */

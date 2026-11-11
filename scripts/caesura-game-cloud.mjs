@@ -44,6 +44,7 @@ import { logCompactionStudy, logCompactionSnapshot } from './caesura-log-compact
 import { bloomFilterStudy, bloomFilterSnapshot } from './caesura-bloom-filter.mjs'
 import { cacheReplacementStudy, cacheReplacementSnapshot } from './caesura-cache-replacement.mjs'
 import { streamWindowStudy, streamWindowSnapshot } from './caesura-stream-window.mjs'
+import { streamCardinalityStudy, cardinalitySnapshot } from './caesura-hyperloglog.mjs'
 import {
   createAimdCongestion,
   createCubicCongestion,
@@ -658,6 +659,26 @@ export function createGameCloud(opts = {}) {
     return swCached
   }
 
+  // KI-530：基数估计算法族诚实权衡（ExactSet/HyperLogLog/LinearCounting；opt-in、status/ hll*）。
+  // opts.hyperLogLog===true 走钳制默认参数（可覆盖 now/seed/cardinality/mRegisters/scenarios/rigged/perfectHash/unlimitedMemory 等）；
+  // 传对象且 rows/vectors/verdict 齐全时当现成 study 注入；默认 hyperLogLog:false 非破坏（同 KI-513/.../529 法），
+  // 显式开才接；不声称真 Redis PFADD 字节级实现（MurmurHash64A 是教学替代）/ 不声称真 PFADD 实现细节 / 真 PFMERGE 合并算法特例 / 真墙钟吞吐跑分。
+  // 注意命名：hll*（hyperloglog），避开 bp*/bpc*/cgp*/lc*/bf*/cr*/sw* 等已占用前缀。
+  const hllCfg = opts.hyperLogLog === true ? {} : (opts.hyperLogLog && typeof opts.hyperLogLog === 'object' ? opts.hyperLogLog : null)
+  const hllInjected = hllCfg !== null && opts.hyperLogLog &&
+    typeof opts.hyperLogLog === 'object' && Array.isArray(opts.hyperLogLog.rows) &&
+    opts.hyperLogLog.vectors && opts.hyperLogLog.verdict
+  let hllCached = null
+  async function hllSnapshotForStatus() {
+    if (hllCfg === null) return null
+    if (hllCached) return hllCached
+    const study = hllInjected
+      ? opts.hyperLogLog
+      : await streamCardinalityStudy({ ...hllCfg, now: opts.hllNow ?? hllCfg.now })
+    hllCached = cardinalitySnapshot(study)
+    return hllCached
+  }
+
   // KI-513：分布式消息投递语义三协议诚实权衡（At-Most-Once / At-Least-Once / Exactly-Once，opt-in）。
   // opts.messageDelivery===true 用缺省规模；传对象逐项注入（now/seed/messages/manyKeys/retryLimit/...
   // 或 noCrash/ackReliable/freeIdempotency 单开关探针），或直接塞一只现成 study（duck-typed：带 rows/vectors/verdict/crosscheck/topology）。
@@ -762,6 +783,8 @@ export function createGameCloud(opts = {}) {
     runCacheReplacementStudy: crCfg === null ? null : () => cacheReplacementStudy({ ...crCfg, now: opts.crNow ?? crCfg.now }),
     /** KI-529 流式窗口聚合与 Watermark 迟到处置三策略诚实权衡研究件；缺 opts.streamWindow 时为 null；Tumbling/Sliding/Session × 六场景矩阵 + 三难向量（默认 011/110/101 互异不封赢家；rigged 三开关 frozenWatermark+infiniteLateness+freeState 真进构造 ⇒ 向量现算收敛 011/011/011、resultCompletenessCausallyUnerasable 因果锁死结果维、绝不硬造全 111）+ verifyWatermarkMonotonicity 双路自证（到达序 watermark 单调 + 承诺地平线 behindHorizon / 处置守恒 accepted+sideOutput==lateTotal，三路篡改真喂回现算翻 false）+ 十一枚真件 21 键交叉印证。 */
     runStreamWindowStudy: swCfg === null ? null : () => streamWindowStudy({ ...swCfg, now: opts.swNow ?? swCfg.now }),
+    /** KI-530：基数估计算法族诚实权衡研究件；缺 opts.hyperLogLog 时为 null；ExactSet/HyperLogLog/LinearCounting × 六场景矩阵 + 三难向量（默认 101/110/010 互异不封赢家；rigged 齐开后 ExactSet 现算真收敛 111 反事实、HLL=110、LC 位图饱和因果锁死仍 010、绝不硬造全策略 111）+ verifySparseEstimate 双路自证（真 Set vs HLL ε 噪声带 / 三路篡改真喂回同一内核现算翻 false）+ 十一枚真件交叉印证。 */
+    runStreamCardinalityStudy: hllCfg === null ? null : () => streamCardinalityStudy({ ...hllCfg, now: opts.hllNow ?? hllCfg.now }),
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
     gray: runtime.gray,
     /** 把游戏真 EventBus 按白名单routes 接进云事件总线（游戏侧一行：gc.connectGameBus(bus, routes)）。 */
@@ -815,6 +838,7 @@ export function createGameCloud(opts = {}) {
         bloomFilter: await bfSnapshotForStatus(),
         cacheReplacement: await crSnapshotForStatus(),
         streamWindow: await swSnapshotForStatus(),
+        hyperLogLog: await hllSnapshotForStatus(),
       }
     },
   }

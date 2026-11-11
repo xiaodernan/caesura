@@ -40,6 +40,7 @@ import { logCompactionStudy, logCompactionSnapshot } from './caesura-log-compact
 import { bloomFilterStudy, bloomFilterSnapshot } from './caesura-bloom-filter.mjs'
 import { cacheReplacementStudy, cacheReplacementSnapshot } from './caesura-cache-replacement.mjs'
 import { streamWindowStudy, streamWindowSnapshot } from './caesura-stream-window.mjs'
+import { streamCardinalityStudy, cardinalitySnapshot } from './caesura-hyperloglog.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
 export const SCENARIO_IDS = ['main', 'gray', 'resilience', 'cache', 'net']
@@ -206,7 +207,13 @@ export async function buildSnapshot(opts = {}) {
     crPerfectFuture: opts.crPerfectFuture,
     crUnlimitedRoom: opts.crUnlimitedRoom,
     crRigged: opts.crRigged,
-    streamWindow: opts.streamWindow,
+    hyperLogLog: opts.hyperLogLog,
+    hllSeed: opts.hllSeed,
+    hllCardinality: opts.hllCardinality,
+    hllMRegisters: opts.hllMRegisters,
+    hllPerfectHash: opts.hllPerfectHash,
+    hllUnlimitedMemory: opts.hllUnlimitedMemory,
+    hllRigged: opts.hllRigged,
     swSeed: opts.swSeed,
     swWindowSize: opts.swWindowSize,
     swSlideStep: opts.swSlideStep,
@@ -285,7 +292,7 @@ export async function buildSnapshot(opts = {}) {
  * @param {boolean} [opts.dqZeroTick] rigged：tick 抹为 1ms（只救时间轮即时精确）
  * @param {boolean} [opts.dqFreeHeapOps] rigged：堆比较免计数
  * @param {boolean} [opts.dqSharedBackend] rigged：进程内结构也假想跨机共享持久
- * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, failureDetector:object|null, bplusIndex:object|null, mvccTxn:object|null, distributedTxn:object|null, raftConsensus:object|null, distributedLock:object|null, idGen:object|null, distributedRateLimit:object|null, configConsistency:object|null, cacheCoherency:object|null, messageDelivery:object|null, delayQueue:object|null, retryDlq:object|null, consumerGroup:object|null, backpressure:object|null, logCompaction:object|null, bloomFilter:object|null, cacheReplacement:object|null, streamWindow:object|null, builtAt:number}>}
+ * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, failureDetector:object|null, bplusIndex:object|null, mvccTxn:object|null, distributedTxn:object|null, raftConsensus:object|null, distributedLock:object|null, idGen:object|null, distributedRateLimit:object|null, configConsistency:object|null, cacheCoherency:object|null, messageDelivery:object|null, delayQueue:object|null, retryDlq:object|null, consumerGroup:object|null, backpressure:object|null, logCompaction:object|null, bloomFilter:object|null, cacheReplacement:object|null, streamWindow:object|null, hyperLogLog:object|null, builtAt:number}>}
  */
 export async function buildSystems(opts = {}) {
   const now = typeof opts.now === 'function' ? opts.now : () => Date.now()
@@ -331,7 +338,9 @@ export async function buildSystems(opts = {}) {
   const cacheReplacement = opts.cacheReplacement === false ? null : await buildCacheReplacementReading(opts, now)
   // KI-529：第二十三维「Tumbling/Sliding/Session 流式窗口聚合 + Watermark 迟到处置」真跑六场景 + 三难判词（011/110/101） + verifyWatermarkMonotonicity 双路交叉印证（到达序 watermark 单调 + 承诺地平线 / 处置守恒） + 十一枚真件交叉印证，与其它维平级。
   const streamWindow = opts.streamWindow === false ? null : await buildStreamWindowReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, builtAt: now() }
+  // KI-530：第二十四维「ExactSet/HyperLogLog/LinearCounting 基数估计算法族」真跑六场景 + 三难判词（101/110/010） + verifySparseEstimate 双路交叉印证（真 Set vs HLL 3σ_band + 三路篡改现算翻 false） + 十一枚真件交叉印证，与其它维平级。
+  const hyperLogLog = opts.hyperLogLog === false ? null : await buildCardinalityReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, builtAt: now() }
 }
 
 /**
@@ -386,6 +395,29 @@ export async function buildCacheReplacementReading(opts, now) {
       ...(opts.crRigged === true ? { rigged: true } : {}),
     })
     return cacheReplacementSnapshot(s)
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
+ * KI-530：ExactSet / HyperLogLog / LinearCounting 基数估计算法族诚实权衡。
+ * 失败落 null；读数全真、CLI 双跑字节一致、rigged 不硬封胜者。
+ * @param {object} opts { hyperLogLog?:false, hllSeed?, hllCardinality?, hllMRegisters?, hllPerfectHash?, hllUnlimitedMemory?, hllRigged? }
+ * @param {()=>number} now 时钟（builtAt 注入真值）
+ */
+export async function buildCardinalityReading(opts, now) {
+  try {
+    const s = await streamCardinalityStudy({
+      now,
+      ...(opts.hllSeed ? { seed: Math.max(0, Math.floor(Number(opts.hllSeed))) } : {}),
+      ...(opts.hllCardinality ? { cardinality: Math.max(64, Math.floor(Number(opts.hllCardinality))) } : {}),
+      ...(opts.hllMRegisters ? { mRegisters: Math.max(16, Math.floor(Number(opts.hllMRegisters))) } : {}),
+      ...(opts.hllPerfectHash === true ? { perfectHash: true } : {}),
+      ...(opts.hllUnlimitedMemory === true ? { unlimitedMemory: true } : {}),
+      ...(opts.hllRigged === true ? { rigged: true } : {}),
+    })
+    return cardinalitySnapshot(s)
   } catch (e) {
     return null // 缺哪块就落 null，前端据实降级；不编造假数
   }

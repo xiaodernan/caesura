@@ -926,5 +926,37 @@ describe('spring-family-mesh-e2e', () => {
     expect(bare.streamWindowSnapshot).toBe(null)
     expect(bare.cacheReplacementSnapshot).toBe(null)
     expect(bare.bloomFilterSnapshot).toBe(null)
+    expect(bare.streamWindowSnapshot).toBe(null)
+  })
+
+  it("e2e KI-530：hyperLogLog=true ⇒ 主链透传、hyperLogLogSnapshot 双路现算、向量 101/110/010/双路自证/十一证据键", async () => {
+    const e = runMeshE2E({ hyperLogLog: true, hllNow: () => 5300 })
+    const r = await e.run()
+    expect(r.started?.registered).toBe(true)
+    expect(r.callRes?.ok).toBe(true)
+    const d = r.hyperLogLogSnapshot
+    expect(d).not.toBe(null)
+    expect(d!.builtAt).toBe(5300)                  // hllNow 注入时钟真值
+    expect(d!.config.scenarios.length).toBe(6)
+    expect(d!.rows.length).toBe(3)
+    expect(d!.vectors).toEqual({ ExactSet: '101', HyperLogLog: '110', LinearCounting: '010' })
+    expect(d!.verdict.noUniversalWinner).toBe(true)
+    expect(d!.verdict.vectorFromTrilemma).toBe(true)
+    // 双路自证恒等式 + 三路篡改现算翻 false
+    expect(d!.crosscheck.estimate.holds).toBe(true)
+    expect(d!.crosscheck.estimate.nontrivial).toBe(true)
+    expect(d!.crosscheck.estimate.tamper.registerCorrupted.holds).toBe(false)
+    expect(d!.crosscheck.estimate.tamper.emptySet.holds).toBe(false)
+    expect(d!.crosscheck.estimate.tamper.bitsTooBig.holds).toBe(false)
+    // 十一枚真件 21 键
+    expect(Object.keys(d!.crosscheck.evidence).length).toBe(21)
+    // rigged：预言机开关后 ExactSet 真收敛 111，HLL/LC 仍 110
+    const rig = await runMeshE2E({ hyperLogLog: { rigged: true } }).run()
+    expect(rig.hyperLogLogSnapshot!.vectors).toEqual({ ExactSet: '111', HyperLogLog: '110', LinearCounting: '010' })
+    expect(rig.hyperLogLogSnapshot!.verdict.noUniversalWinner).toBe(false)
+    expect(rig.hyperLogLogSnapshot!.verdict.trilemmaDistinguishes).toBe(true) // 111/110/010 三向量在 rigged 下依然互异（饱和相关容量——位图被填满不可抹）
+    // 未配 hyperLogLog 时为 null、不装配不影响主链
+    const bare = await runMeshE2E().run()
+    expect(bare.hyperLogLogSnapshot).toBe(null)
   })
 })

@@ -754,6 +754,95 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(ten.every((x) => x === 529000)).toBe(true)
   })
 
+  it('㉑-cardinality buildCardinalityReading 真跑：hll* 注入生效 / hyperLogLog:false 关闭 / rigged 预言机可证伪 / 双路自证 + 十一真件 / 十一时钟同源（KI-530）', async () => {
+    const { buildCardinalityReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 530000
+    const hll = (await buildCardinalityReading({}, now))!
+    expect(hll).not.toBe(null)
+    expect(hll.builtAt).toBe(530000)
+    expect(hll.rows.length).toBe(3)
+    expect(hll.config.scenarios.length).toBe(6)
+    expect(hll.vectors).toEqual({ ExactSet: '101', HyperLogLog: '110', LinearCounting: '010' })
+    // hll* 注入（hllSeed/hllCardinality/hllMRegisters），不复用被其它维占用的前缀
+    const tuned = (await buildCardinalityReading({ hllSeed: 7, hllCardinality: 2048, hllMRegisters: 8192 }, now))!
+    expect(tuned.config.seed).toBe(7)
+    expect(tuned.config.cardinality).toBe(2048)
+    // 单开开关各自现算反噬
+    const ph = (await buildCardinalityReading({ hllPerfectHash: true }, now))!
+    expect(ph.verdict.perfectHashErasesError).toBe(true)
+    expect(ph.vectors.HyperLogLog).toBe('110')
+    const um = (await buildCardinalityReading({ hllUnlimitedMemory: true }, now))!
+    expect(um.verdict.unlimitedRoomErasesGrowth).toBe(true)
+    expect(um.vectors.ExactSet).toBe('111')
+    // rigged 齐开：ExactSet 真收敛 111（预言机合并），HLL/LC 仍 110/010；causal 抹不掉饱和量
+    const rig = (await buildCardinalityReading({ hllRigged: true }, now))!
+    expect(rig.vectors).toEqual({ ExactSet: '111', HyperLogLog: '110', LinearCounting: '010' })
+    expect(rig.verdict.linearCountingSaturationCausallyUnerasable).toBe(true)
+    expect(rig.verdict.noUniversalWinner).toBe(false)
+    expect(rig.verdict.trilemmaDistinguishes).toBe(true)
+    // 双路自证 + 三路篡改 + 十一真件 21 键
+    const est = (hll.crosscheck as any).estimate
+    expect(est.holds).toBe(true)
+    expect(est.nontrivial).toBe(true)
+    expect(est.tamper.emptySet.holds).toBe(false)
+    expect(Object.keys((hll.crosscheck as any).evidence).length).toBe(21)
+    // cell 三布尔 + 考场标记直读同源
+    const lc = hll.rows.find((r: any) => r.protocol === 'LinearCounting')!
+    expect(lc.scenarios.find((c: any) => c.id === 'highFill')!.estimatorAccuracy).toBe(false)
+    // hyperLogLog:false 关闭不连坐
+    const off = await buildSystems({ now, hyperLogLog: false, streamWindow: false })
+    expect(off.hyperLogLog).toBe(null)
+    expect(off.streamWindow).toBe(null)
+    expect(off.cacheReplacement).not.toBe(null)
+    // 十一时钟同源
+    const full = await buildSystems({ now })
+    const eleven = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt, full.bloomFilter?.builtAt, full.cacheReplacement?.builtAt, full.streamWindow?.builtAt, full.hyperLogLog?.builtAt]
+    expect(eleven.every((x) => x === 530000)).toBe(true)
+  })
+
+  it('㉑-hyperLogLog buildCardinalityReading 真跑：hll* 注入生效 / hyperLogLog:false 关闭 / rigged 因果锁可证伪 / 双路自证 + 十一真件 / 十一时钟同源（KI-530）', async () => {
+    const { buildCardinalityReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 530000
+    const h = (await buildCardinalityReading({}, now))!
+    expect(h).not.toBe(null)
+    expect(h.builtAt).toBe(530000)
+    expect(h.rows.length).toBe(3)
+    expect(h.config.scenarios.length).toBe(6)
+    expect(h.vectors).toEqual({ ExactSet: '101', HyperLogLog: '110', LinearCounting: '010' })
+    // hll* 注入（hllSeed/hllCardinality/hllMRegisters），不复用被其它维占用的前缀
+    const tuned = (await buildCardinalityReading({ hllSeed: 9, hllCardinality: 4096, hllMRegisters: 1024 }, now))!
+    expect(tuned.config.seed).toBe(9)
+    // 单开关各自现算反噬：LC 位图饱和因果锁死，perfectHash 抹不掉
+    const ph = (await buildCardinalityReading({ hllPerfectHash: true }, now))!
+    expect(ph.verdict.perfectHashErasesError).toBe(true)
+    expect(ph.vectors.LinearCounting).toBe('010')
+    const um = (await buildCardinalityReading({ hllUnlimitedMemory: true }, now))!
+    expect(um.verdict.unlimitedRoomErasesGrowth).toBe(true)
+    expect(um.vectors.ExactSet).toBe('111')
+    // rigged 齐开：现算 111/110/010、LC 饱和因果抹不掉、绝不硬造全策略 111
+    const rig = (await buildCardinalityReading({ hllRigged: true }, now))!
+    expect(rig.vectors).toEqual({ ExactSet: '111', HyperLogLog: '110', LinearCounting: '010' })
+    expect(rig.verdict.linearCountingSaturationCausallyUnerasable).toBe(true)
+    expect(rig.verdict.noUniversalWinner).toBe(false)
+    // 双路自证 + 三路篡改 + 十一真件 21 键
+    const ve = (h.crosscheck as any).estimate
+    expect(ve.holds).toBe(true)
+    expect(ve.nontrivial).toBe(true)
+    expect(ve.tamper.registerCorrupted.holds).toBe(false)
+    expect(ve.tamper.bitsTooBig.holds).toBe(false)
+    expect(ve.tamper.emptySet.holds).toBe(false)
+    expect(Object.keys((h.crosscheck as any).evidence).length).toBe(21)
+    expect((h.crosscheck as any).evidence.jitterSpread).toBeGreaterThanOrEqual(0)
+    // hyperLogLog:false 关闭不连坐
+    const off = await buildSystems({ now, hyperLogLog: false })
+    expect(off.hyperLogLog).toBe(null)
+    expect(off.streamWindow).not.toBe(null)
+    // 十一时钟同源
+    const full = await buildSystems({ now })
+    const eleven = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt, full.bloomFilter?.builtAt, full.cacheReplacement?.builtAt, full.streamWindow?.builtAt, full.hyperLogLog?.builtAt]
+    expect(eleven.every((x) => x === 530000)).toBe(true)
+  })
+
   it('⑭ buildMvccTxnReading 真跑五档矩阵形状齐、读数是真判词、单维关闭不连坐（KI-505）', async () => {
     const { buildMvccTxnReading } = await import('../../scripts/caesura-console-gen.mjs')
     const now = () => 4242
