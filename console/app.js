@@ -49,6 +49,7 @@
       renderRaftConsensus(snap.systems ? snap.systems.raftConsensus : null)
       renderDistributedLock(snap.systems ? snap.systems.distributedLock : null)
       renderIdGen(snap.systems ? snap.systems.idGen : null)
+      renderDistributedRateLimit(snap.systems ? snap.systems.distributedRateLimit : null)
       setLive(true, result.source)
     }).catch(function (e) {
       setLive(false, 'error')
@@ -1381,6 +1382,124 @@
       '号段缺「去中心」（段内严格递增且用中心单调 counter 不依赖本地墙钟，但中心宕机 + 双 buffer 耗尽⇒中断、重启跳号浪费）。' +
       '「随机伤索引」以 KI-504 真树定位比较结构计数为铁证、并如实保留 splits 反转读数；可证伪（rigged 抹掉三类软肋后三协议全退化为 111、三判词翻 false）。' +
       '全为确定性故障场景结构计数、非墙钟/QPS/吞吐/真 Redis·etcd 跑分；换场景结论会变，不封赢家。'
+  }
+
+  /* ---------- KI-510 分布式限流：本地桶 / Redis 中心桶 / 一致性哈希分片桶 三协议诚实权衡（前端只读 Node 快照） ---------- */
+  function renderDistributedRateLimit(drl) {
+    renderDrlMatrix(drl && drl.rows, drl && drl.config)
+    renderDrlLadder(drl && drl.rows)
+    renderDrlTrilemma(drl && drl.rows, drl && drl.verdict, drl && drl.crosscheck)
+  }
+
+  function drlMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">无' + esc(label) + '读数</div>'
+    if (note) note.textContent = 'systems.distributedRateLimit 缺失 —— 重跑 npm run console:data 采集真判词'
+  }
+
+  // 每格读 Node 侧真判词：成=正常 / 超=N×C 超发 / 迟=中心 RTT / 碎=配额碎片化早拒 / 降=单片故障降级（不复核）。
+  function drlState(s) {
+    if (!s) return { cls: '', ch: '—' }
+    if (isNum(s.degradedShard) && s.degradedShard > 0) return { cls: 'degrade', ch: '降' }
+    if (isNum(s.fragmented) && s.fragmented > 0) return { cls: 'frag', ch: '碎' }
+    if (isNum(s.overAllowed) && s.overAllowed > 0) return { cls: 'over', ch: '超' }
+    if (isNum(s.centerRounds) && s.centerRounds > 0) return { cls: 'lag', ch: '迟' }
+    if (isNum(s.allowed) && s.allowed > 0) return { cls: 'ok', ch: '成' }
+    return { cls: '', ch: '?' }
+  }
+
+  function renderDrlMatrix(rows, config) {
+    var box = $('#drl-matrix'), note = $('#drl-matrix-note')
+    if (!Array.isArray(rows) || !rows.length || !config || !Array.isArray(config.scenarios)) {
+      drlMissing(box, note, '三协议场景矩阵'); return
+    }
+    var scenarios = config.scenarios
+    var head = '<div class="drl-mat-row drl-mat-head"><span class="drl-mat-proto">协议</span>' +
+      scenarios.map(function (s) { return '<span class="drl-sc">' + esc(s) + '</span>' }).join('') +
+      '<span class="drl-mat-cost">放行</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (s) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === s }) : null
+        var st = drlState(cell)
+        return '<span class="drl-cell ' + st.cls + '" data-p="' + esc(row.protocol) + '" data-s="' + esc(s) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var t = row.totals || {}
+      return '<div class="drl-mat-row" data-p="' + esc(row.protocol) + '">' +
+        '<span class="drl-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="drl-mat-cost"><b>' + esc(fmt(t.allowed)) + '</b></span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = '同一组确定性故障场景（全成功 / 同 key 突发 / 80% key 倾斜 / 中心·命中片宕机 / 中途扩容 / 多副本并发）分喂三协议：' +
+      'Local 每实例本地桶零中心 RTT、故障隔离，但集群上限 N×C ⇒ 六场景全超发；Central 单 Redis key 原子扣减全局精确 = C，但每请求吃中心 RTT、' +
+      '中心宕机则全瘫；Sharded 复用 KI-499 真一致性哈希环分片、单片故障只降级该片且扩容最小重映射，但同 key 必落同片 ⇒ 配额碎片化早拒、' +
+      '且仍吃中心 RTT —— Sharded 不是银弹（只占「单点故障不瘫痪」一维）。放行数是结构计数、非墙钟/QPS/吞吐。'
+  }
+
+  function renderDrlLadder(rows) {
+    var box = $('#drl-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.totals && isNum(r.totals.centerRounds) ? r.totals.centerRounds : 0 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var t = r.totals || {}
+      var w = isNum(t.centerRounds) ? Math.round(t.centerRounds / max * 100) : 0
+      return '<div class="drl-line" data-p="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="drl-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">超' + esc(fmt(t.overAllowed)) + ' · 碎' + esc(fmt(t.fragmented)) + ' · RTT' + esc(fmt(t.centerRounds)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderDrlTrilemma(rows, verdict, crosscheck) {
+    var box = $('#drl-trilemma'), cxBox = $('#drl-crosscheck'), note = $('#drl-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      drlMissing(box, note, '三难判据'); if (cxBox) cxBox.innerHTML = ''; return
+    }
+    var flags = [['globalExact', '全局配额精确'], ['partialFaultTolerance', '单点故障不瘫痪'], ['noCenterRTT', '无中心 RTT']]
+    var head = '<div class="drl-vec drl-vec-head"><span class="proto">协议</span>' +
+      flags.map(function (f) { return '<span>' + f[1] + '</span>' }).join('') + '</div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (f) {
+        var yes = t[f[0]] === true
+        return '<span class="drl-flag ' + (yes ? 'yes' : 'no') + '" data-p="' + esc(r.protocol) + '" data-k="' + f[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      return '<div class="drl-vec" data-p="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells + '</div>'
+    }).join('')
+    box.innerHTML = head + body
+    // 真依赖交叉印证：真 Redis 原子桶 vs 非原子超发 + 真一致性哈希环偏斜空片 / 扩容最小重映射。
+    if (cxBox) {
+      var c = crosscheck && crosscheck.central, s = crosscheck && crosscheck.sharded
+      if (c && s) {
+        cxBox.innerHTML = '<div>真 Redis 令牌桶 · 原子放行 <b>' + esc(fmt(c.atomicAllowed)) + '</b> ≤ 配额（精确 ' + (c.atomicExact ? '✓' : '✗') +
+          '）· 非原子并发放行 <b>' + esc(fmt(c.nonAtomicAllowed)) + '</b> ⇒ 丢失更新超发 <span class="wine-t">' + esc(fmt(c.nonAtomicOvershoot)) + '</span></div>' +
+          '<div>真一致性哈希环 · 均匀环分布比 <b>' + esc(fmt(s.balanceRatio)) + '</b>、空片 ' + esc(fmt((s.emptyNodes || []).length)) +
+          ' · 坏 hash 偏斜 ⇒ 空片 <b>' + esc(fmt(s.skewEmptyNodes)) + '</b>、命中极差 ' + esc(fmt(s.skewSpread)) + ' &gt; ' + esc(fmt(s.spread)) +
+          '（配额碎片化成因铁证）</div>' +
+          '<div>扩容 4→5 片 · 一致性哈希重映射 <b>' + esc(fmt(s.remapRate)) + '</b> &lt; 朴素取模 ' + esc(fmt(s.moduloRate)) + '（最小迁移）</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">无真件交叉印证读数（central / sharded 单块缺各自降级）</div>'
+      }
+    }
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var notPanacea = v.shardedNotPanacea === true
+    var chips = [
+      '<span class="chip" data-probe="drlLocal"><b>Local</b> 零中心 RTT · N×C 超发 ' + (v.localOvershoots ? '✓（六场景全超）' : '未超') + '</span>',
+      '<span class="chip" data-probe="drlCentral"><b>Central</b> 全局精确 ' + (v.centralExact ? '✓' : '✗') + ' · 中心 RTT + 单点' + '</span>',
+      '<span class="chip" data-probe="drlSharded"><b>Sharded</b> 配额碎片化 ' + (v.shardedFragmented ? '✓' : '未现') + ' · 单片降级 + 最小重映射</span>',
+      '<span class="chip ' + (notPanacea ? 'jade-t' : 'muted-t') + '" data-verdict="shardedNotPanacea">' +
+        (notPanacea ? '✓ 分片不是银弹（缺全局精确 + 无中心 RTT 两维）' : '分片全占（换场景会翻）') + '</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' +
+        (noWin ? '✓ 不封任何协议全局赢家' : '本配置下归一（换场景会翻）') + '</span>',
+    ]
+    var probes = $('#drl-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '三难 = 全局配额精确（集群放行 ≤ C）∧ 单点故障不瘫痪（一台/一片宕不全停）∧ 无中心 RTT（判定不进中心）。' +
+      '真实向量 Local=011 / Central=100 / Sharded=010 三条互不相同、没有一条三个全占：Local 零 RTT 且故障隔离但 N×C 超发；' +
+      'Central 原子全局精确但每请求中心 RTT、中心单点宕则全瘫；Sharded 单片故障只降级该片、扩容最小重映射，但配额按片切死 ⇒ ' +
+      '环偏斜 + key 倾斜两个独立成因都致热片先耗尽冷片有余（完美均匀的环也救不了「同 key 必落同片」），且仍吃中心 RTT。' +
+      '真依赖交叉印证取 createRedisTokenBucket 原子/非原子 + createHashRing 分布/重映射真读数；可证伪（rigged 单实例 + 中心在线 + ' +
+      '完美均匀 + key 均衡后三协议全退化为 111、三判词翻 false）。全为确定性故障场景结构计数、非墙钟/QPS/吞吐/真 Redis 跑分；换场景结论会变，不封赢家。'
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)

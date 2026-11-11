@@ -502,4 +502,32 @@ describe('spring-family-mesh-e2e', () => {
     const plain = await runMeshE2E().run()
     expect(plain.idGenSnapshot).toBe(null)
   })
+
+  it('e2e KI-510：distributedRateLimit=true ⇒ 主链照常跑通，distributedRateLimitSnapshot 带三协议×六场景矩阵/三难判词/真件交叉印证', async () => {
+    const e = runMeshE2E({ distributedRateLimit: true, drNow: () => 7777 })
+    const r = await e.run()
+    expect(r.started?.registered).toBe(true)          // 主链语义逐字不动
+    expect(r.callRes?.ok).toBe(true)
+    const d = r.distributedRateLimitSnapshot
+    expect(d).not.toBe(null)
+    expect(d!.builtAt).toBe(7777)
+    expect(d!.config.scenarios.length).toBe(6)
+    expect(d!.rows.length).toBe(3)
+    expect(d!.vectors).toEqual({ Local: '011', Central: '100', Sharded: '010' })
+    const local = d!.rows.find((row: any) => row.protocol === 'Local')!
+    const central = d!.rows.find((row: any) => row.protocol === 'Central')!
+    const sharded = d!.rows.find((row: any) => row.protocol === 'Sharded')!
+    expect(local.scenarios.every((s: any) => s.overAllowed > 0)).toBe(true)
+    expect(central.scenarios.find((s: any) => s.id === 'centerDown')!.centerStalled).toBe(64)
+    expect(sharded.scenarios.find((s: any) => s.id === 'skewKeys')!.fragmented).toBeGreaterThan(0)
+    expect(d!.crosscheck.central.atomicExact).toBe(true)             // 真 Redis 原子桶透传
+    expect(d!.crosscheck.sharded.skewEmptyNodes).toBeGreaterThan(0)  // 真环偏斜透传
+    expect(d!.verdict.noUniversalWinner).toBe(true)
+    const verdictBools = Object.entries(d!.verdict).filter(([k]) => k !== 'vectors').map(([, v]) => v)
+    expect(verdictBools.every(Boolean)).toBe(true)
+    // 未配 distributedRateLimit 时为 null（非破坏、不连坐 KI-509）。
+    const plain = await runMeshE2E().run()
+    expect(plain.distributedRateLimitSnapshot).toBe(null)
+    expect(plain.idGenSnapshot).toBe(null)
+  })
 })

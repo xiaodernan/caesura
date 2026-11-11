@@ -28,6 +28,7 @@ import { distributedTxnStudy, dtSnapshot } from './caesura-distributed-txn.mjs'
 import { raftConsensusStudy, rcSnapshot } from './caesura-raft-consensus.mjs'
 import { distributedLockStudy, dlSnapshot } from './caesura-distributed-lock.mjs'
 import { idGenStudy, igSnapshot } from './caesura-idgen.mjs'
+import { distributedRateLimitStudy, drlSnapshot } from './caesura-distributed-ratelimit.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
 export const SCENARIO_IDS = ['main', 'gray', 'resilience', 'cache', 'net']
@@ -97,6 +98,10 @@ export async function buildSnapshot(opts = {}) {
     idGen: opts.idGen,
     idGenKeyCount: opts.idGenKeyCount,
     idGenTreeOrder: opts.idGenTreeOrder,
+    distributedRateLimit: opts.distributedRateLimit,
+    drlInstances: opts.drlInstances,
+    drlShards: opts.drlShards,
+    drlCapacity: opts.drlCapacity,
   })
 
   return {
@@ -140,7 +145,11 @@ export async function buildSnapshot(opts = {}) {
  * @param {boolean} [opts.idGen=false] 关掉分布式 ID 维（兼容旧快照）
  * @param {number} [opts.idGenKeyCount] 真树交叉印证插入 key 数（缺省 24）
  * @param {number} [opts.idGenTreeOrder] KI-504 B+ 树阶数（缺省 8）
- * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, failureDetector:object|null, bplusIndex:object|null, mvccTxn:object|null, distributedTxn:object|null, raftConsensus:object|null, distributedLock:object|null, idGen:object|null, builtAt:number}>}
+ * @param {boolean} [opts.distributedRateLimit=false] 关掉分布式限流维（兼容旧快照）
+ * @param {number} [opts.drlInstances] Local 网关副本数（缺省 4）
+ * @param {number} [opts.drlShards] Sharded 分片数（缺省 4）
+ * @param {number} [opts.drlCapacity] 全局名义配额 C（缺省 8）
+ * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, failureDetector:object|null, bplusIndex:object|null, mvccTxn:object|null, distributedTxn:object|null, raftConsensus:object|null, distributedLock:object|null, idGen:object|null, distributedRateLimit:object|null, builtAt:number}>}
  */
 export async function buildSystems(opts = {}) {
   const now = typeof opts.now === 'function' ? opts.now : () => Date.now()
@@ -164,7 +173,9 @@ export async function buildSystems(opts = {}) {
   const distributedLock = opts.distributedLock === false ? null : await buildDistributedLockReading(opts, now)
   // KI-509：第十一维「分布式 ID」真跑 UUID/Snowflake/号段 × 六场景矩阵 + 三难判词 + KI-504 真树交叉印证，与其它十维平级。
   const idGen = opts.idGen === false ? null : await buildIdGenReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, builtAt: now() }
+  // KI-510：第十二维「分布式限流」真跑 本地桶/中心桶/分片桶 × 六场景矩阵 + 三难判词 + 真 Redis 原子桶/真环交叉印证，与其它十一维平级。
+  const distributedRateLimit = opts.distributedRateLimit === false ? null : await buildDistributedRateLimitReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, builtAt: now() }
 }
 
 /** LSM 引擎真跑一趟确定性 benchmark，回结构读数（不夹带每行真值）。 */
@@ -534,6 +545,37 @@ export async function buildIdGenReading(opts, now) {
 }
 
 /**
+ * KI-510：真跑 `distributedRateLimitStudy`（本地桶 / Redis 中心桶 / 一致性哈希分片桶 × 六场景矩阵
+ * + 三难判词 + 真 `createRedisTokenBucket` 原子对照 / 真 `createHashRing` 分布偏斜与最小重映射）
+ * 并收敛成前端「分布式限流」两面板紧凑读数。判定/阈值全 Node 侧；注入固定时钟/seed ⇒ 快照重跑
+ * 逐字一致；三协议阶梯是确定性故障场景真判词、判词不封任何协议全局赢家（Sharded 不是银弹），缺哪块落 null。
+ * @param {object} opts { distributedRateLimit?:false, drlInstances?, drlShards?, drlCapacity? }
+ * @param {()=>number} now 时钟（builtAt 注入则确定性）
+ */
+export async function buildDistributedRateLimitReading(opts, now) {
+  try {
+    const s = await distributedRateLimitStudy({
+      now,
+      ...(opts.drlInstances ? { instances: Math.max(1, Math.floor(Number(opts.drlInstances))) } : {}),
+      ...(opts.drlShards ? { shards: Math.max(2, Math.floor(Number(opts.drlShards))) } : {}),
+      ...(opts.drlCapacity ? { capacity: Math.max(1, Math.floor(Number(opts.drlCapacity))) } : {}),
+    })
+    const snap = drlSnapshot(s)
+    return {
+      config: snap.config,
+      rows: snap.rows,
+      vectors: snap.vectors,
+      crosscheck: snap.crosscheck,
+      verdict: snap.verdict,
+      topology: snap.topology,
+      builtAt: snap.builtAt,
+    }
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
  * 真跑时每场景的 opts（判定权在此：场景参数固定，业务阈值仍来自各子系统默认/显式注入）。
  * @param {string} id
  */
@@ -774,6 +816,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
       const stateOf = (s) => s.duplicates > 0 ? '重' : s.stalled > 0 ? '停' : s.indexFriendly === false ? '裂' : s.wastedIds > 0 ? '隙' : s.centerRounds > 0 ? '迟' : s.issued > 0 ? '成' : '?'
       const ladders = ig.rows.map((row) => `${row.protocol}[${row.scenarios.map((s) => s.id + ':' + stateOf(s)).join('/')}]`).join(' · ')
       console.log(`[console] idGen: ${ladders} / 三难向量 ${JSON.stringify(Object.fromEntries(ig.rows.map((r) => [r.protocol, `${Number(r.trilemma.indexFriendly)}${Number(r.trilemma.decentralized)}${Number(r.trilemma.clockRobust)}`])))} / 不封赢家 ${ig.verdict.noUniversalWinner ? '是' : '否'} / 真树随机cmp${ig.btree.random.comparisons}>顺序cmp${ig.btree.sequential.comparisons}(splits反直觉${ig.btree.random.splits}<${ig.btree.sequential.splits})`)
+    }
+    if (snap.systems?.distributedRateLimit) {
+      const drl = snap.systems.distributedRateLimit
+      const stateOf = (s) => s.degradedShard > 0 ? '降' : s.fragmented > 0 ? '碎' : s.overAllowed > 0 ? '超' : s.centerRounds > 0 ? '迟' : s.allowed > 0 ? '成' : '?'
+      const ladders = drl.rows.map((row) => `${row.protocol}[${row.scenarios.map((s) => s.id + ':' + stateOf(s)).join('/')}]`).join(' · ')
+      console.log(`[console] distributedRateLimit: ${ladders} / 三难向量 ${JSON.stringify(Object.fromEntries(drl.rows.map((r) => [r.protocol, `${Number(r.trilemma.globalExact)}${Number(r.trilemma.partialFaultTolerance)}${Number(r.trilemma.noCenterRTT)}`])))} / 不封赢家 ${drl.verdict.noUniversalWinner ? '是' : '否'} / Sharded不是银弹 ${drl.verdict.shardedNotPanacea ? '是' : '否'} / 真Redis桶atomic${drl.crosscheck.central.atomicAllowed}vs非原子${drl.crosscheck.central.nonAtomicAllowed}(超发${drl.crosscheck.central.nonAtomicOvershoot}) 真环偏斜空片${drl.crosscheck.sharded.skewEmptyNodes}重映射${drl.crosscheck.sharded.remapRate}`)
     }
     process.exit(0)
   }).catch((e) => { console.error(`[console] 生成失败：${e.message}`); process.exit(1) })

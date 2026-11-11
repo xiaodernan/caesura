@@ -725,4 +725,53 @@ describe('caesura-game-cloud', () => {
     // 主链语义逐字不动
     expect(st.eventChannel).toBeTruthy()
   })
+
+  it('distributedRateLimit:true ⇒ 装配分布式限流三协议、status.distributedRateLimit 读真三协议×六场景矩阵/三难判词/真件交叉印证、惰性同引用（KI-510）', async () => {
+    const gc = createGameCloud({
+      gameId: 'gid4', gamePort: 7734, sources, cloud: fakeCloud(),
+      distributedRateLimit: true, drNow: () => 9999,
+    })
+    expect(gc.runDistributedRateLimitStudy).toBeTypeOf('function')
+    const st = await gc.status()
+    expect(st.distributedRateLimit.builtAt).toBe(9999)
+    expect(st.distributedRateLimit.config.scenarios.length).toBe(6)
+    expect(st.distributedRateLimit.rows.length).toBe(3)
+    expect(st.distributedRateLimit.vectors).toEqual({ Local: '011', Central: '100', Sharded: '010' })
+    const local = st.distributedRateLimit.rows.find((r: any) => r.protocol === 'Local')
+    const central = st.distributedRateLimit.rows.find((r: any) => r.protocol === 'Central')
+    const sharded = st.distributedRateLimit.rows.find((r: any) => r.protocol === 'Sharded')
+    expect(local!.scenarios.every((s: any) => s.overAllowed > 0)).toBe(true)          // Local 全场景 N×C 超发
+    expect(central!.scenarios.find((s: any) => s.id === 'centerDown')!.centerStalled).toBe(64) // 中心宕全瘫
+    expect(sharded!.scenarios.find((s: any) => s.id === 'skewKeys')!.fragmented).toBeGreaterThan(0) // 分片配额碎片
+    expect(st.distributedRateLimit.crosscheck.central.atomicExact).toBe(true)          // 真 Redis 原子桶
+    expect(st.distributedRateLimit.crosscheck.sharded.skewEmptyNodes).toBeGreaterThan(0) // 真环偏斜空片
+    expect(st.distributedRateLimit.verdict.noUniversalWinner).toBe(true)
+    const verdictBools = Object.entries(st.distributedRateLimit.verdict).filter(([k]) => k !== 'vectors').map(([, v]) => v)
+    expect(verdictBools.every(Boolean)).toBe(true)
+    // 惰性缓存：二次 status 同引用
+    expect((await gc.status()).distributedRateLimit).toBe(st.distributedRateLimit)
+    // 现算入口可重跑、确定性（同注入 now）
+    const rerun = await gc.runDistributedRateLimitStudy!()
+    expect(rerun.verdict).toEqual(st.distributedRateLimit.verdict)
+  })
+
+  it('distributedRateLimit 默认 null 非破坏；可注入现成 study（KI-510）', async () => {
+    const plain = createGameCloud({ gameId: 'gid5', gamePort: 7735, sources, cloud: fakeCloud() })
+    expect(plain.runDistributedRateLimitStudy).toBe(null)
+    const ps = await plain.status()
+    expect(ps.distributedRateLimit).toBe(null)
+    expect(ps.idGen).toBe(null) // 不连坐 KI-509
+    // 注入现成 study：直接用、不重跑，builtAt 原样带出、不被 drNow 覆盖。
+    const { distributedRateLimitStudy } = await import('../../scripts/caesura-distributed-ratelimit.mjs')
+    const study = await distributedRateLimitStudy({ now: () => 666 }) as any
+    const injected = createGameCloud({
+      gameId: 'gid6', gamePort: 7736, sources, cloud: fakeCloud(),
+      distributedRateLimit: study, drNow: () => 2222,
+    })
+    const st = await injected.status()
+    expect(st.distributedRateLimit.builtAt).toBe(666)
+    expect(st.distributedRateLimit.verdict.noUniversalWinner).toBe(true)
+    // 主链语义逐字不动
+    expect(st.eventChannel).toBeTruthy()
+  })
 })

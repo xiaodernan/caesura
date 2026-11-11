@@ -32,6 +32,7 @@ import { distributedTxnStudy, dtSnapshot } from './caesura-distributed-txn.mjs'
 import { raftConsensusStudy, rcSnapshot } from './caesura-raft-consensus.mjs'
 import { distributedLockStudy, dlSnapshot } from './caesura-distributed-lock.mjs'
 import { idGenStudy, igSnapshot } from './caesura-idgen.mjs'
+import { distributedRateLimitStudy, drlSnapshot } from './caesura-distributed-ratelimit.mjs'
 import {
   createAimdCongestion,
   createCubicCongestion,
@@ -428,6 +429,26 @@ export function createGameCloud(opts = {}) {
     return igCached
   }
 
+  // KI-510：分布式限流的分布式化三协议诚实权衡（本地桶 / Redis 中心桶 / 一致性哈希分片桶，opt-in）。
+  // opts.distributedRateLimit===true 用缺省规模；传对象逐项注入（now/seed/instances/shards/capacity/...），
+  // 或直接塞一只现成 study（duck-typed：带 rows/vectors/verdict/crosscheck 四块）。默认
+  // distributedRateLimit:false 不装配、不改任何调用路径（含 KI-509 在内前述语义逐字不动）。
+  const drlCfg = opts.distributedRateLimit === true ? {} : (opts.distributedRateLimit && typeof opts.distributedRateLimit === 'object' ? opts.distributedRateLimit : null)
+  const drlInjected = drlCfg !== null && opts.distributedRateLimit &&
+    typeof opts.distributedRateLimit === 'object' && Array.isArray(opts.distributedRateLimit.rows) &&
+    opts.distributedRateLimit.vectors && opts.distributedRateLimit.verdict && opts.distributedRateLimit.crosscheck
+  let drlCached = null
+  async function drlSnapshotForStatus() {
+    if (drlCfg === null) return null
+    if (drlCached) return drlCached
+    // 注入现成 study 直接用（不重跑，builtAt 原样带出）；否则真跑一次汇总，惰性缓存不反复付真环/原子桶交叉印证成本。
+    const study = drlInjected
+      ? opts.distributedRateLimit
+      : await distributedRateLimitStudy({ ...drlCfg, now: opts.drNow ?? drlCfg.now })
+    drlCached = drlSnapshot(study)
+    return drlCached
+  }
+
   /** 包住一次调用，用真实耗时/成败喂 net 包（未启用则原样返回，零开销）。 */
   async function observeCall(promise) {
     if (!net) return promise
@@ -488,6 +509,8 @@ export function createGameCloud(opts = {}) {
     runDistributedLockStudy: dlCfg === null ? null : () => distributedLockStudy({ ...dlCfg, now: opts.dlockNow ?? dlCfg.now }),
     /** KI-509：分布式 ID 三协议汇总的现算入口（未配 opts.idGen 时为 null）；调一次真跑 UUID/Snowflake/号段 × 六场景矩阵 + 三难判词 + KI-504 真树交叉印证。 */
     runIdGenStudy: igCfg === null ? null : () => idGenStudy({ ...igCfg, now: opts.idGenNow ?? igCfg.now }),
+    /** KI-510：分布式限流三协议汇总的现算入口（未配 opts.distributedRateLimit 时为 null）；调一次真跑 本地桶/中心桶/分片桶 × 六场景矩阵 + 三难判词 + 真 Redis 原子桶/真一致性哈希环交叉印证。 */
+    runDistributedRateLimitStudy: drlCfg === null ? null : () => distributedRateLimitStudy({ ...drlCfg, now: opts.drNow ?? drlCfg.now }),
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
     gray: runtime.gray,
     /** 把游戏真 EventBus 按白名单routes 接进云事件总线（游戏侧一行：gc.connectGameBus(bus, routes)）。 */
@@ -529,6 +552,7 @@ export function createGameCloud(opts = {}) {
         raftConsensus: await rcSnapshotForStatus(),
         distributedLock: await dlSnapshotForStatus(),
         idGen: await igSnapshotForStatus(),
+        distributedRateLimit: await drlSnapshotForStatus(),
       }
     },
   }

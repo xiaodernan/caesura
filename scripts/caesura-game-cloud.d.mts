@@ -89,6 +89,12 @@ export interface GameCloudOptions {
    * 现成 study（带 comparison/uuid/snowflake/segment/btree/verdict 六块）。默认 false 不装配。 */
   idGen?: boolean | Record<string, any> | { comparison: any; uuid: any; snowflake: any; segment: any; btree: any; verdict: any; [k: string]: any }
   idGenNow?: () => number
+  /**
+   * KI-510：true 装配分布式限流三协议权衡（本地桶 / Redis 中心桶 / 一致性哈希分片桶 + 真 Redis 原子桶/真环交叉印证）。
+   * 对象逐项注入（now/seed/instances/shards/capacity/requests/skewRatio/...），或直接塞一只现成 study
+   * （带 rows/vectors/verdict/crosscheck/topology 五块）。默认 false 不装配。 */
+  distributedRateLimit?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck: any; topology: any; [k: string]: any }
+  drNow?: () => number
 }
 
 /** 创建一只游戏侧开箱即用云。 */
@@ -129,6 +135,8 @@ export function createGameCloud(opts?: GameCloudOptions): {
   runDistributedLockStudy: (() => Promise<any>) | null
   /** KI-509：分布式 ID 三协议汇总的现算入口（未配 opts.idGen 时为 null）；真跑 UUID/Snowflake/号段 × 六场景矩阵 + 三难判词 + KI-504 真树交叉印证。 */
   runIdGenStudy: (() => Promise<any>) | null
+  /** KI-510：分布式限流三协议汇总的现算入口（未配 opts.distributedRateLimit 时为 null）；真跑 本地桶/中心桶/分片桶 × 六场景矩阵 + 三难判词 + 真 Redis 原子桶/真环交叉印证。 */
+  runDistributedRateLimitStudy: (() => Promise<any>) | null
   /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）。 */
   gray: any
   /** KI-489：把游戏真 EventBus（duck-typed {on,emit}）按白名单接进云事件总线。 */

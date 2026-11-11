@@ -821,4 +821,69 @@ describe('caesura-console-ui (KI-495)', () => {
     expect(dom2.els['ig-matrix'].innerHTML).toContain('class="ig-cell split"')      // 矩阵照常
     expect(dom2.els['ig-trilemma'].innerHTML).toContain('data-k="indexFriendly"')   // 三难照常
   })
+
+  it('㉘ KI-510 真 distributedRateLimit 读数落进「三协议×六场景」+「三难不可兼得」两面板（含真 Redis 原子桶/真环交叉印证，不是写死数）', async () => {
+    const dom = await runApp(real)
+    const drl = real.systems.distributedRateLimit
+    // 面板一：三协议 × 六场景矩阵（成/超/迟/碎/降，读 Node 判词）+ 中心 RTT 横条
+    const matrix = dom.els['drl-matrix'].innerHTML
+    expect(matrix).toContain('drl-mat-head')
+    for (const row of drl.rows) expect(matrix).toContain('data-p="' + row.protocol + '"')
+    for (const s of drl.config.scenarios) expect(matrix).toContain('data-s="' + s + '"')
+    expect(matrix).toContain('class="drl-cell over" data-p="Local" data-s="allOk"')        // Local 六场景超发
+    expect(matrix).toContain('class="drl-cell lag" data-p="Central" data-s="allOk"')       // Central 中心 RTT
+    expect(matrix).toContain('class="drl-cell frag" data-p="Sharded" data-s="skewKeys"')   // Sharded 配额碎片
+    expect(matrix).toContain('class="drl-cell degrade" data-p="Sharded" data-s="centerDown"') // 单片降级
+    expect(matrix).toContain(String(drl.rows.find((r: any) => r.protocol === 'Local').totals.allowed)) // 放行真读数
+    const ladder = dom.els['drl-ladder'].innerHTML
+    expect(ladder).toContain('data-p="Central"')
+    expect(ladder).toContain('drl-bar')
+    expect(dom.els['drl-matrix-note'].textContent).toContain('Sharded 不是银弹')
+    // 面板二：三难向量（逐格 data-v）+ 真件交叉印证栏 + 判词探针 + 不封赢家
+    const tri = dom.els['drl-trilemma'].innerHTML
+    expect(tri).toContain('drl-vec-head')
+    expect(tri).toContain('data-k="globalExact"')
+    expect(tri).toContain('data-k="partialFaultTolerance"')
+    expect(tri).toContain('data-k="noCenterRTT"')
+    expect(tri).toContain('data-p="Local" data-k="globalExact" data-v="0"')            // Local 缺全局精确
+    expect(tri).toContain('data-p="Central" data-k="partialFaultTolerance" data-v="0"') // Central 缺容错
+    expect(tri).toContain('data-p="Sharded" data-k="noCenterRTT" data-v="0"')          // Sharded 仍吃 RTT
+    const cx = dom.els['drl-crosscheck'].innerHTML
+    expect(cx).toContain('真 Redis 令牌桶')
+    expect(cx).toContain('真一致性哈希环')
+    expect(cx).toContain(String(drl.crosscheck.sharded.skewEmptyNodes))                // 偏斜空片真读数
+    const probes = dom.els['drl-probes'].innerHTML
+    expect(probes).toContain('data-probe="drlLocal"')
+    expect(probes).toContain('data-probe="drlCentral"')
+    expect(probes).toContain('data-probe="drlSharded"')
+    expect(probes).toContain('data-verdict="shardedNotPanacea"')
+    expect(probes).toContain('data-verdict="noUniversalWinner"')
+    expect(dom.els['drl-trilemma-note'].textContent).toContain('换场景结论会变')
+  })
+
+  it('㉙ KI-510 distributedRateLimit 整块缺 / 单块缺诚实降级，不连坐 idGen-distributedLock-lsm', async () => {
+    // 整块缺：五子块全降级、绝不画 0/假格；其它维仍照常。
+    const noDrl = JSON.parse(JSON.stringify(real))
+    noDrl.systems.distributedRateLimit = null
+    const dom = await runApp(noDrl)
+    expect(dom.els['drl-matrix'].innerHTML).toContain('无三协议场景矩阵读数')
+    expect(dom.els['drl-ladder'].innerHTML).toBe('')
+    expect(dom.els['drl-trilemma'].innerHTML).toContain('无三难判据读数')
+    expect(dom.els['drl-crosscheck'].innerHTML).toBe('')
+    expect(dom.els['drl-probes'].innerHTML).toBe('')
+    expect(dom.els['drl-matrix-note'].textContent).toContain('systems.distributedRateLimit 缺失')
+    expect(dom.els['ig-matrix'].innerHTML).toContain('data-p="UUID"')            // idGen 不连坐
+    expect(dom.els['dl-matrix'].innerHTML).toContain('data-p="SETNX"')           // distributedLock 不连坐
+    expect(dom.els['lsm-gauge'].innerHTML).toContain(String(real.systems.lsm.speedup.toFixed(1))) // lsm 不连坐
+
+    // 单块缺：只降 crosscheck 真件交叉印证，矩阵/三难向量/探针仍渲染真读数（同维不连坐）。
+    const partial = JSON.parse(JSON.stringify(real))
+    partial.systems.distributedRateLimit.crosscheck = null
+    const dom2 = await runApp(partial)
+    expect(dom2.els['drl-crosscheck'].innerHTML).toContain('无真件交叉印证读数') // crosscheck 缺 → 诚实降级
+    expect(dom2.els['drl-crosscheck'].innerHTML).not.toContain('丢失更新')       // 不编造铁证
+    expect(dom2.els['drl-probes'].innerHTML).toContain('data-probe="drlLocal"')  // 其余探针照常
+    expect(dom2.els['drl-matrix'].innerHTML).toContain('class="drl-cell over"')   // 矩阵照常
+    expect(dom2.els['drl-trilemma'].innerHTML).toContain('data-k="globalExact"')  // 三难照常
+  })
 })

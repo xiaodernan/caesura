@@ -99,6 +99,9 @@ export function runMeshE2E(opts = {}) {
     // KI-509：分布式 ID 三协议（idGen=true 装配；只读 UUID/Snowflake/号段 × 六场景矩阵 + 三难判词 + KI-504 真树交叉印证，不改调用路径）。
     idGen: opts.idGen,
     idGenNow: opts.idGenNow,
+    // KI-510：分布式限流三协议（distributedRateLimit=true 装配；只读 本地桶/中心桶/分片桶 × 六场景矩阵 + 三难判词 + 真 Redis 原子桶/真环交叉印证，不改调用路径）。
+    distributedRateLimit: opts.distributedRateLimit,
+    drNow: opts.drNow,
     sources: {
       eureka: () => (opts.svcA ?? [{ id: 'svc-a:1', name: 'svc-a', address: '10.0.0.1', port: 8080, healthy: true }]),
       k8s: () => k8s.discover('caesura-gate'),
@@ -230,6 +233,7 @@ export function runMeshE2E(opts = {}) {
         raftConsensusSnapshot: status.raftConsensus ?? null,
         distributedLockSnapshot: status.distributedLock ?? null,
         idGenSnapshot: status.idGen ?? null,
+        distributedRateLimitSnapshot: status.distributedRateLimit ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
       }
@@ -352,6 +356,18 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
           randomCmp: r.idGenSnapshot.btree.random.comparisons,
         },
         verdict: r.idGenSnapshot.verdict,
+      } : null,
+      distributedRateLimit: r.distributedRateLimitSnapshot ? {
+        protocols: r.distributedRateLimitSnapshot.rows.map((row) => ({
+          protocol: row.protocol,
+          ladder: row.scenarios.map((s) => s.id + ':' + (s.degradedShard > 0 ? '降' : s.fragmented > 0 ? '碎' : s.overAllowed > 0 ? '超' : s.centerRounds > 0 ? '迟' : s.allowed > 0 ? '成' : '?')).join(' → '),
+          totals: row.totals, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.distributedRateLimitSnapshot.rows.map((row) => [row.protocol,
+          `${Number(row.trilemma.globalExact)}${Number(row.trilemma.partialFaultTolerance)}${Number(row.trilemma.noCenterRTT)}`])),
+        noUniversalWinner: r.distributedRateLimitSnapshot.verdict.noUniversalWinner,
+        crosscheck: r.distributedRateLimitSnapshot.crosscheck,
+        verdict: r.distributedRateLimitSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

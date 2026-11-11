@@ -189,5 +189,25 @@ export function runMeshE2E(opts?: any): {
       verdict: Record<string, boolean>
       builtAt: number
     } | null
+    /** KI-510：分布式限流三协议快照（本地桶/中心桶/分片桶 × 六场景 + 三难判词 + 真 Redis 原子桶/真环交叉印证），未配 distributedRateLimit 为 null */
+    distributedRateLimitSnapshot: {
+      config: Record<string, any>
+      rows: Array<{
+        protocol: string
+        trilemma: { globalExact: boolean; partialFaultTolerance: boolean; noCenterRTT: boolean }
+        totals: { allowed: number; rejected: number; overAllowed: number; centerRounds: number; fragmented: number }
+        scenarios: Array<{
+          id: string; allowed: number; rejected: number; overAllowed: number; centerRounds: number
+          fragmented: number; isolatedFailures: number; degradedShard: number
+          hotKeyHits: number; centerStalled: number
+          globalExact: boolean; partialFaultTolerance: boolean; noCenterRTT: boolean
+        }>
+      }>
+      vectors: Record<string, string>
+      crosscheck: { central: Record<string, any>; sharded: Record<string, any> }
+      verdict: Record<string, any>
+      topology: Record<string, any>
+      builtAt: number
+    } | null
   }>
 }

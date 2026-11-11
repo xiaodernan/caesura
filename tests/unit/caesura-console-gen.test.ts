@@ -360,7 +360,20 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(snap.systems.idGen.btree.randomCmpGtSequential).toBe(true)   // 真树铁证
     expect(snap.systems.idGen.btree.randomFewerSplits).toBe(true)       // 反直觉读数如实保留
     expect(snap.systems.idGen.verdict.noUniversalWinner).toBe(true)
-    // bootstrap.js 与 snapshot.json 是同一份真快照（含十一维 systems）。
+    // KI-510 distributedRateLimit：三协议 × 六场景矩阵 + 三难判词 + 真 Redis 原子桶/真环交叉印证真读数已固化进快照。
+    expect(snap.systems.distributedRateLimit.rows.length).toBe(3)
+    expect(snap.systems.distributedRateLimit.config.scenarios.length).toBe(6)
+    const drlL = snap.systems.distributedRateLimit.rows.find((r: any) => r.protocol === 'Local')!
+    const drlC = snap.systems.distributedRateLimit.rows.find((r: any) => r.protocol === 'Central')!
+    const drlS = snap.systems.distributedRateLimit.rows.find((r: any) => r.protocol === 'Sharded')!
+    expect(drlL.scenarios.every((s: any) => s.overAllowed > 0)).toBe(true)                    // Local 六场景 N×C 超发
+    expect(drlC.scenarios.find((s: any) => s.id === 'centerDown').centerStalled).toBeGreaterThan(0) // 中心宕全瘫
+    expect(drlS.scenarios.find((s: any) => s.id === 'skewKeys').fragmented).toBeGreaterThan(0)     // 配额碎片化
+    expect(snap.systems.distributedRateLimit.crosscheck.central.atomicExact).toBe(true)       // 真 Redis 原子桶
+    expect(snap.systems.distributedRateLimit.crosscheck.sharded.skewEmptyNodes).toBeGreaterThan(0) // 真环偏斜
+    expect(snap.systems.distributedRateLimit.verdict.shardedNotPanacea).toBe(true)            // Sharded 不是银弹
+    expect(snap.systems.distributedRateLimit.verdict.noUniversalWinner).toBe(true)
+    // bootstrap.js 与 snapshot.json 是同一份真快照（含十二维 systems）。
     const bootCode = readFileSync(resolve(process.cwd(), 'console/bootstrap.js'), 'utf8')
     const fromBoot = JSON.parse(bootCode.slice(bootCode.indexOf('=') + 1).trim().replace(/;\s*$/, ''))
     expect(fromBoot.systems.lsm.speedup).toBe(snap.systems.lsm.speedup)
@@ -374,6 +387,7 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(fromBoot.systems.raftConsensus).toEqual(snap.systems.raftConsensus)
     expect(fromBoot.systems.distributedLock).toEqual(snap.systems.distributedLock)
     expect(fromBoot.systems.idGen).toEqual(snap.systems.idGen)
+    expect(fromBoot.systems.distributedRateLimit).toEqual(snap.systems.distributedRateLimit)
   })
 
   it('⑭ buildMvccTxnReading 真跑五档矩阵形状齐、读数是真判词、单维关闭不连坐（KI-505）', async () => {
@@ -544,5 +558,45 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(sys.raftConsensus).toBeTruthy() // 不连坐
     const snap = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, idGen: false })
     expect(snap.systems!.idGen).toBe(null)
+  })
+
+  it('⑲ buildDistributedRateLimitReading 真跑三协议矩阵形状齐、真件交叉印证真判词、单维关闭不连坐（KI-510）', async () => {
+    const { buildDistributedRateLimitReading } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 9393
+    const reading = await buildDistributedRateLimitReading({ drlInstances: 4, drlShards: 4, drlCapacity: 8 }, now)
+    expect(reading).not.toBe(null)
+    expect(reading!.config.scenarios.length).toBe(6)
+    expect(reading!.rows.length).toBe(3)
+    expect(reading!.vectors).toEqual({ Local: '011', Central: '100', Sharded: '010' })
+    for (const row of reading!.rows) {
+      expect(row.scenarios.length).toBe(6)
+      expect(typeof row.totals.allowed).toBe('number')
+      expect(typeof row.trilemma.globalExact).toBe('boolean')
+      for (const s of row.scenarios) {
+        expect(typeof s.hotKeyHits).toBe('number')   // 三协议专有病征读数形状齐
+        expect(typeof s.centerStalled).toBe('number')
+      }
+    }
+    const local = reading!.rows.find((r) => r.protocol === 'Local')!
+    const central = reading!.rows.find((r) => r.protocol === 'Central')!
+    const sharded = reading!.rows.find((r) => r.protocol === 'Sharded')!
+    expect(local.scenarios.every((s) => s.overAllowed > 0)).toBe(true)
+    expect(central.scenarios.find((s) => s.id === 'centerDown')!.centerStalled).toBeGreaterThan(0)
+    expect(sharded.scenarios.find((s) => s.id === 'skewKeys')!.fragmented).toBeGreaterThan(0)
+    // 真件交叉印证
+    expect(reading!.crosscheck.central.atomicExact).toBe(true)
+    expect(reading!.crosscheck.central.nonAtomicOvershoot).toBeGreaterThan(0)
+    expect(reading!.crosscheck.sharded.skewEmptyNodes).toBeGreaterThan(0)
+    expect(reading!.crosscheck.sharded.remapRate).toBeLessThan(reading!.crosscheck.sharded.moduloRate)
+    expect(reading!.verdict.shardedNotPanacea).toBe(true)
+    expect(reading!.verdict.noUniversalWinner).toBe(true)
+    expect(reading!.builtAt).toBe(9393)
+    // 单维关闭由 buildSystems/buildSnapshot 层把关：落 null，不动其它维
+    const sys = await buildSystems({ now, distributedRateLimit: false })
+    expect(sys.distributedRateLimit).toBe(null)
+    expect(sys.idGen).toBeTruthy() // 不连坐 KI-509
+    expect(sys.distributedLock).toBeTruthy()
+    const snap = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, distributedRateLimit: false })
+    expect(snap.systems!.distributedRateLimit).toBe(null)
   })
 })

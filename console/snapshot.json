@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794357679726,
+  "generatedAt": 1794359109417,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1365,12 +1365,12 @@
           "keys": 1,
           "versions": 2,
           "commitLogSize": 1,
-          "now": 1794357679715
+          "now": 1794359109395
         },
         "final": {
           "A": {
             "value": 101,
-            "commitTs": 1794357679715,
+            "commitTs": 1794359109395,
             "tombstone": false
           }
         }
@@ -3646,7 +3646,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794357679724,
+                "lastTimestamp": 1794359109403,
                 "workerId": 1
               },
               "fault": {
@@ -3742,7 +3742,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794357679724,
+                "lastTimestamp": 1794359109403,
                 "workerId": 1
               },
               "fault": {
@@ -3774,7 +3774,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794357679725,
+                "lastTimestamp": 1794359109404,
                 "workerId": 1
               },
               "fault": {
@@ -3806,7 +3806,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794357679724,
+                "lastTimestamp": 1794359109403,
                 "workerId": 1
               },
               "fault": {
@@ -4133,6 +4133,397 @@
         "btreeRandomFewerSplits": true
       }
     },
-    "builtAt": 1794357679726
+    "distributedRateLimit": {
+      "config": {
+        "seed": 510,
+        "instances": 4,
+        "shards": 4,
+        "capacity": 8,
+        "requests": 64,
+        "rigged": false,
+        "scenarios": [
+          "allOk",
+          "burstSameKey",
+          "skewKeys",
+          "centerDown",
+          "scaleOut",
+          "multiInstance"
+        ]
+      },
+      "rows": [
+        {
+          "protocol": "Local",
+          "scenarios": [
+            {
+              "id": "allOk",
+              "allowed": 32,
+              "rejected": 32,
+              "overAllowed": 24,
+              "centerRounds": 0,
+              "fragmented": 0,
+              "isolatedFailures": 0,
+              "degradedShard": 0,
+              "hotKeyHits": 0,
+              "centerStalled": 0,
+              "globalExact": false,
+              "partialFaultTolerance": true,
+              "noCenterRTT": true
+            },
+            {
+              "id": "burstSameKey",
+              "allowed": 32,
+              "rejected": 32,
+              "overAllowed": 24,
+              "centerRounds": 0,
+              "fragmented": 0,
+              "isolatedFailures": 0,
+              "degradedShard": 0,
+              "hotKeyHits": 0,
+              "centerStalled": 0,
+              "globalExact": false,
+              "partialFaultTolerance": true,
+              "noCenterRTT": true
+            },
+            {
+              "id": "skewKeys",
+              "allowed": 32,
+              "rejected": 32,
+              "overAllowed": 24,
+              "centerRounds": 0,
+              "fragmented": 0,
+              "isolatedFailures": 0,
+              "degradedShard": 0,
+              "hotKeyHits": 0,
+              "centerStalled": 0,
+              "globalExact": false,
+              "partialFaultTolerance": true,
+              "noCenterRTT": true
+            },
+            {
+              "id": "centerDown",
+              "allowed": 24,
+              "rejected": 40,
+              "overAllowed": 16,
+              "centerRounds": 0,
+              "fragmented": 0,
+              "isolatedFailures": 15,
+              "degradedShard": 0,
+              "hotKeyHits": 0,
+              "centerStalled": 0,
+              "globalExact": false,
+              "partialFaultTolerance": true,
+              "noCenterRTT": true
+            },
+            {
+              "id": "scaleOut",
+              "allowed": 32,
+              "rejected": 32,
+              "overAllowed": 24,
+              "centerRounds": 0,
+              "fragmented": 0,
+              "isolatedFailures": 0,
+              "degradedShard": 0,
+              "hotKeyHits": 0,
+              "centerStalled": 0,
+              "globalExact": false,
+              "partialFaultTolerance": true,
+              "noCenterRTT": true
+            },
+            {
+              "id": "multiInstance",
+              "allowed": 32,
+              "rejected": 32,
+              "overAllowed": 24,
+              "centerRounds": 0,
+              "fragmented": 0,
+              "isolatedFailures": 0,
+              "degradedShard": 0,
+              "hotKeyHits": 0,
+              "centerStalled": 0,
+              "globalExact": false,
+              "partialFaultTolerance": true,
+              "noCenterRTT": true
+            }
+          ],
+          "totals": {
+            "allowed": 184,
+            "rejected": 200,
+            "overAllowed": 136,
+            "centerRounds": 0,
+            "fragmented": 0
+          },
+          "trilemma": {
+            "globalExact": false,
+            "partialFaultTolerance": true,
+            "noCenterRTT": true
+          }
+        },
+        {
+          "protocol": "Central",
+          "scenarios": [
+            {
+              "id": "allOk",
+              "allowed": 8,
+              "rejected": 56,
+              "overAllowed": 0,
+              "centerRounds": 64,
+              "fragmented": 0,
+              "isolatedFailures": 0,
+              "degradedShard": 0,
+              "hotKeyHits": 64,
+              "centerStalled": 0,
+              "globalExact": true,
+              "partialFaultTolerance": false,
+              "noCenterRTT": false
+            },
+            {
+              "id": "burstSameKey",
+              "allowed": 8,
+              "rejected": 56,
+              "overAllowed": 0,
+              "centerRounds": 64,
+              "fragmented": 0,
+              "isolatedFailures": 0,
+              "degradedShard": 0,
+              "hotKeyHits": 64,
+              "centerStalled": 0,
+              "globalExact": true,
+              "partialFaultTolerance": false,
+              "noCenterRTT": false
+            },
+            {
+              "id": "skewKeys",
+              "allowed": 8,
+              "rejected": 56,
+              "overAllowed": 0,
+              "centerRounds": 64,
+              "fragmented": 0,
+              "isolatedFailures": 0,
+              "degradedShard": 0,
+              "hotKeyHits": 64,
+              "centerStalled": 0,
+              "globalExact": true,
+              "partialFaultTolerance": false,
+              "noCenterRTT": false
+            },
+            {
+              "id": "centerDown",
+              "allowed": 0,
+              "rejected": 64,
+              "overAllowed": 0,
+              "centerRounds": 0,
+              "fragmented": 0,
+              "isolatedFailures": 0,
+              "degradedShard": 0,
+              "hotKeyHits": 64,
+              "centerStalled": 64,
+              "globalExact": true,
+              "partialFaultTolerance": false,
+              "noCenterRTT": false
+            },
+            {
+              "id": "scaleOut",
+              "allowed": 8,
+              "rejected": 56,
+              "overAllowed": 0,
+              "centerRounds": 64,
+              "fragmented": 0,
+              "isolatedFailures": 0,
+              "degradedShard": 0,
+              "hotKeyHits": 64,
+              "centerStalled": 0,
+              "globalExact": true,
+              "partialFaultTolerance": false,
+              "noCenterRTT": false
+            },
+            {
+              "id": "multiInstance",
+              "allowed": 8,
+              "rejected": 56,
+              "overAllowed": 0,
+              "centerRounds": 64,
+              "fragmented": 0,
+              "isolatedFailures": 0,
+              "degradedShard": 0,
+              "hotKeyHits": 64,
+              "centerStalled": 0,
+              "globalExact": true,
+              "partialFaultTolerance": false,
+              "noCenterRTT": false
+            }
+          ],
+          "totals": {
+            "allowed": 40,
+            "rejected": 344,
+            "overAllowed": 0,
+            "centerRounds": 320,
+            "fragmented": 0
+          },
+          "trilemma": {
+            "globalExact": true,
+            "partialFaultTolerance": false,
+            "noCenterRTT": false
+          }
+        },
+        {
+          "protocol": "Sharded",
+          "scenarios": [
+            {
+              "id": "allOk",
+              "allowed": 8,
+              "rejected": 56,
+              "overAllowed": 0,
+              "centerRounds": 64,
+              "fragmented": 0,
+              "isolatedFailures": 0,
+              "degradedShard": 0,
+              "hotKeyHits": 0,
+              "centerStalled": 0,
+              "globalExact": true,
+              "partialFaultTolerance": true,
+              "noCenterRTT": false
+            },
+            {
+              "id": "burstSameKey",
+              "allowed": 6,
+              "rejected": 58,
+              "overAllowed": 0,
+              "centerRounds": 64,
+              "fragmented": 58,
+              "isolatedFailures": 0,
+              "degradedShard": 0,
+              "hotKeyHits": 0,
+              "centerStalled": 0,
+              "globalExact": false,
+              "partialFaultTolerance": true,
+              "noCenterRTT": false
+            },
+            {
+              "id": "skewKeys",
+              "allowed": 6,
+              "rejected": 58,
+              "overAllowed": 0,
+              "centerRounds": 64,
+              "fragmented": 58,
+              "isolatedFailures": 0,
+              "degradedShard": 0,
+              "hotKeyHits": 0,
+              "centerStalled": 0,
+              "globalExact": false,
+              "partialFaultTolerance": true,
+              "noCenterRTT": false
+            },
+            {
+              "id": "centerDown",
+              "allowed": 6,
+              "rejected": 58,
+              "overAllowed": 0,
+              "centerRounds": 48,
+              "fragmented": 58,
+              "isolatedFailures": 0,
+              "degradedShard": 16,
+              "hotKeyHits": 0,
+              "centerStalled": 0,
+              "globalExact": false,
+              "partialFaultTolerance": true,
+              "noCenterRTT": false
+            },
+            {
+              "id": "scaleOut",
+              "allowed": 8,
+              "rejected": 56,
+              "overAllowed": 0,
+              "centerRounds": 64,
+              "fragmented": 0,
+              "isolatedFailures": 0,
+              "degradedShard": 0,
+              "hotKeyHits": 0,
+              "centerStalled": 0,
+              "globalExact": true,
+              "partialFaultTolerance": true,
+              "noCenterRTT": false
+            },
+            {
+              "id": "multiInstance",
+              "allowed": 8,
+              "rejected": 56,
+              "overAllowed": 0,
+              "centerRounds": 64,
+              "fragmented": 0,
+              "isolatedFailures": 0,
+              "degradedShard": 0,
+              "hotKeyHits": 0,
+              "centerStalled": 0,
+              "globalExact": true,
+              "partialFaultTolerance": true,
+              "noCenterRTT": false
+            }
+          ],
+          "totals": {
+            "allowed": 42,
+            "rejected": 342,
+            "overAllowed": 0,
+            "centerRounds": 368,
+            "fragmented": 174
+          },
+          "trilemma": {
+            "globalExact": false,
+            "partialFaultTolerance": true,
+            "noCenterRTT": false
+          }
+        }
+      ],
+      "vectors": {
+        "Local": "011",
+        "Central": "100",
+        "Sharded": "010"
+      },
+      "crosscheck": {
+        "central": {
+          "source": "createRedisTokenBucket(真件)",
+          "concurrency": 64,
+          "atomicAllowed": 8,
+          "nonAtomicAllowed": 64,
+          "atomicExact": true,
+          "nonAtomicOvershoot": 56
+        },
+        "sharded": {
+          "source": "createHashRing(真件)",
+          "keys": 512,
+          "shards": 4,
+          "newShardCount": 5,
+          "balanceRatio": 1.1897,
+          "skewBalanceRatio": null,
+          "emptyNodes": [],
+          "spread": 22,
+          "skewSpread": 512,
+          "skewEmptyNodes": 3,
+          "remapRate": 0.1895,
+          "moduloRate": 0.2
+        }
+      },
+      "verdict": {
+        "vectors": {
+          "Local": "011",
+          "Central": "100",
+          "Sharded": "010"
+        },
+        "trilemmaDistinguishes": true,
+        "noProtocolWinsAll": true,
+        "noUniversalWinner": true,
+        "localOvershoots": true,
+        "centralExact": true,
+        "shardedFragmented": true,
+        "shardedNotPanacea": true
+      },
+      "topology": {
+        "instances": 4,
+        "shards": 4,
+        "capacity": 8,
+        "perShardCap": 2
+      },
+      "builtAt": 1794359109417
+    },
+    "builtAt": 1794359109417
   }
 }
