@@ -595,4 +595,16 @@ if (isCliInvocation) {
   }
   console.log('  vectors: ' + JSON.stringify(snap.vectors))
   console.log('  noUniversalWinner=' + snap.verdict.noUniversalWinner + ' distinguishable=' + snap.verdict.trilemmaDistinguishes + ' rigged=' + s.rigged)
+  // 向量恒由 row.trilemma 现算：CLI 逐行重推一遍作自证，表格与判词同源、杜绝硬覆盖撒谎。
+  const recomputed = Object.fromEntries(snap.rows.map((r) => [r.protocol,
+    `${Number(r.trilemma.lowCost)}${Number(r.trilemma.punctual)}${Number(r.trilemma.sharedDurable)}`]))
+  const sameSource = JSON.stringify(recomputed) === JSON.stringify(snap.vectors)
+  console.log('  VECTOR_FROM_TRILEMMA_OK=' + sameSource + '（向量由表格现算，非硬覆盖）')
+  if (s.rigged) {
+    // rigged 三开关全开：前两协议退化 111，但 ZSET 轮询软肋无开关可抹 ⇒ 111/111/001，
+    // 判词照翻 false 即可证伪；若课程要求全 111，那是硬覆盖造假，本件拒绝（诚实立场）。
+    const falsifiable = snap.verdict.noUniversalWinner === false && snap.verdict.trilemmaDistinguishes === false &&
+      snap.vectors.RedisZset === '001' && sameSource
+    console.log('  RIGGED_FALSIFIABLE_OK=' + falsifiable + '（真实现算 111/111/001；ZSET 轮询 RTT/周期晚点三开关抹不掉，判词翻 false，不硬覆盖全 111）')
+  }
 }

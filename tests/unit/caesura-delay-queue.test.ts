@@ -285,10 +285,12 @@ describe('KI-518 延迟消息队列：时间轮 / 最小堆 / Redis ZSET 三协�
       expect(a).toBe(b)
       expect(a).toContain('vectors')
       expect(a).toContain('"TimingWheel":"100"')
+      expect(a).toContain('VECTOR_FROM_TRILEMMA_OK=true') // 向量由表格现算、非硬覆盖
       const rigged = run('--rigged')
       expect(rigged).toContain('"TimingWheel":"111"')
       expect(rigged).toContain('"RedisZset":"001"') // ZSET 轮询软肋三开关抹不掉，不硬覆盖全 111
       expect(rigged).toContain('noUniversalWinner=false')
+      expect(rigged).toContain('RIGGED_FALSIFIABLE_OK=true') // rigged 可证伪自证行
     })
   })
 })
