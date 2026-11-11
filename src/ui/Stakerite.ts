@@ -147,6 +147,30 @@ export const PANEL_CSS = `
 .cxs .empty { opacity:.45; font-size:13px; padding:10px 2px; }
 .cxs .over { color:#a8695f; border:1px solid rgba(168,105,95,.6); padding:1px 6px; font-size:11px; letter-spacing:.08em; }
 .cxs .tag { font-size:11px; padding:1px 6px; border:1px solid rgba(201,180,88,.45); color:#c9b458; }
+/* == ember rite panel skin: 追加仪典皮肤——同级选择器后写覆盖，先排版后点金 == */
+.cxs .veil { background:radial-gradient(ellipse 92% 82% at 50% 38%, rgba(26,22,18,.78) 0%, rgba(7,8,12,.94) 78%); }
+.cxs .panel { border:1px solid rgba(201,180,88,.42); background:linear-gradient(180deg, rgba(30,27,24,.97) 0%, rgba(18,17,18,.985) 40%, rgba(10,11,14,.98) 100%);
+  box-shadow:0 0 0 1px rgba(0,0,0,.55), 0 0 0 2px rgba(201,180,88,.07), 0 30px 90px rgba(0,0,0,.68), inset 0 1px 0 rgba(255,222,150,.1), inset 0 0 60px rgba(201,180,88,.04); }
+.cxs header { background:linear-gradient(180deg, rgba(255,214,130,.05), transparent); border-bottom:1px solid rgba(201,180,88,.28); }
+.cxs header h1 { background:linear-gradient(180deg, #fbf3dc, #cbb98a 55%, #8d7d55); -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 0 1.1vh rgba(255,214,130,.32)); letter-spacing:.3em; }
+.cxs header h1::before { content:'✦ '; -webkit-text-fill-color:#c9b458; filter:none; }
+.cxs nav button { transition:opacity .22s, color .22s, text-shadow .22s, border-color .22s; }
+.cxs nav button:hover { opacity:.85; }
+.cxs nav button.sel { color:#ffcf8a; text-shadow:0 0 1.4vh rgba(255,184,107,.5); border-bottom-color:#ffb86b; box-shadow:0 2px 12px -6px rgba(255,184,107,.65); }
+.cxs main { scrollbar-width:thin; scrollbar-color:rgba(201,180,88,.35) transparent; }
+.cxs main::-webkit-scrollbar { width:6px; }
+.cxs main::-webkit-scrollbar-thumb { background:rgba(201,180,88,.32); border-radius:3px; }
+.cxs .row { transition:background .18s ease; }
+.cxs .row:hover { background:rgba(255,184,107,.055); }
+.cxs h2 { display:flex; align-items:center; gap:10px; }
+.cxs h2::before { content:''; display:inline-block; width:22px; height:1px; background:linear-gradient(90deg, #ffb86b, transparent); }
+.cxs button.act { transition:background .2s, border-color .2s, box-shadow .2s, transform .12s; }
+.cxs button.act:active:not(:disabled) { transform:translateY(1px); }
+.cxs button.act:focus-visible { outline:2px solid #ffd98a; outline-offset:2px; }
+.cxs button.act.sel { box-shadow:0 0 14px -4px rgba(255,184,107,.6), inset 0 0 10px -4px rgba(255,184,107,.35); }
+.cxs .foot { background:linear-gradient(0deg, rgba(255,214,130,.05), transparent); border-top:1px solid rgba(201,180,88,.28); }
+.cxs .tag { box-shadow:inset 0 0 8px -4px rgba(201,180,88,.45); }
 `
 
 /** 调音桩自己那几块（遗响条 / §44 的双栏对比 / 存档页确认条）：别的面板不用，也就不必共享 */

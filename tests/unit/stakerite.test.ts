@@ -1124,3 +1124,15 @@ describe('调音桩面板：调音页读数与关闭守卫', () => {
     expect(html(p), '关了以后一页都不重画').toBe(open_)
   })
 })
+
+describe('PANEL_CSS · 余烬仪典皮肤（ember rite · 追加 cascade）', () => {
+  it('导出覆盖面板全皮肤的仪典关键规则（veil/panel/h1 金箔/sel 辉光/焦点环/滚动条）', async () => {
+    const { PANEL_CSS } = await import('@/ui/Stakerite')
+    expect(PANEL_CSS).toContain('ember rite')
+    expect(PANEL_CSS).toContain('.cxs .veil')
+    expect(PANEL_CSS).toContain('inset 0 1px 0 rgba(255,222,150,.1)')
+    expect(PANEL_CSS).toContain('.cxs header h1::before')
+    expect(PANEL_CSS).toContain('.cxs button.act:focus-visible')
+    expect(PANEL_CSS).toContain('.cxs nav button.sel')
+  })
+})
