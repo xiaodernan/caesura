@@ -30,6 +30,7 @@ import { distributedLockStudy, dlSnapshot } from './caesura-distributed-lock.mjs
 import { idGenStudy, igSnapshot } from './caesura-idgen.mjs'
 import { distributedRateLimitStudy, drlSnapshot } from './caesura-distributed-ratelimit.mjs'
 import { configConsistencyStudy, dccSnapshot } from './caesura-config-consistency.mjs'
+import { cacheCoherencyStudy, cccSnapshot } from './caesura-cache-coherency.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
 export const SCENARIO_IDS = ['main', 'gray', 'resilience', 'cache', 'net']
@@ -106,6 +107,11 @@ export async function buildSnapshot(opts = {}) {
     configConsistency: opts.configConsistency,
     dccClients: opts.dccClients,
     dccPollIntervalMs: opts.dccPollIntervalMs,
+    cacheCoherency: opts.cacheCoherency,
+    cccWrites: opts.cccWrites,
+    cccManyKeys: opts.cccManyKeys,
+    cccBackendRttMs: opts.cccBackendRttMs,
+    cccWalEnabled: opts.cccWalEnabled,
   })
 
   return {
@@ -156,7 +162,12 @@ export async function buildSnapshot(opts = {}) {
  * @param {boolean} [opts.configConsistency=false] 关掉配置一致性维（兼容旧快照）
  * @param {number} [opts.dccClients] 默认客户端副本数（缺省 8）
  * @param {number} [opts.dccPollIntervalMs] Polling 拉取周期 T（缺省 1000）
- * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, failureDetector:object|null, bplusIndex:object|null, mvccTxn:object|null, distributedTxn:object|null, raftConsensus:object|null, distributedLock:object|null, idGen:object|null, distributedRateLimit:object|null, configConsistency:object|null, builtAt:number}>}
+ * @param {boolean} [opts.cacheCoherency=false] 关掉缓存读写一致性维（兼容旧快照）
+ * @param {number} [opts.cccWrites] 默认场景写次数（缺省 8）
+ * @param {number} [opts.cccManyKeys] manyKeys 探针 key 规模（缺省 200）
+ * @param {number} [opts.cccBackendRttMs] 写穿透后端库单次 RTT（缺省 40）
+ * @param {boolean} [opts.cccWalEnabled] 仅进程内 WAL（抹不掉整机宕 durable 维）
+ * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, failureDetector:object|null, bplusIndex:object|null, mvccTxn:object|null, distributedTxn:object|null, raftConsensus:object|null, distributedLock:object|null, idGen:object|null, distributedRateLimit:object|null, configConsistency:object|null, cacheCoherency:object|null, builtAt:number}>}
  */
 export async function buildSystems(opts = {}) {
   const now = typeof opts.now === 'function' ? opts.now : () => Date.now()
@@ -184,7 +195,9 @@ export async function buildSystems(opts = {}) {
   const distributedRateLimit = opts.distributedRateLimit === false ? null : await buildDistributedRateLimitReading(opts, now)
   // KI-511：第十三维「配置一致性」真跑 轮询/长轮询/watch 推送 × 六场景矩阵 + 三难判词 + 真 Config响应/watcher/bus/环交叉印证，与其它十二维平级。
   const configConsistency = opts.configConsistency === false ? null : await buildConfigConsistencyReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, builtAt: now() }
+  // KI-512：第十四维「缓存读写一致性」真跑 Cache-Aside/Write-Through/Write-Behind × 六场景矩阵 + 三难判词 + 七枚真件交叉印证，与其它十三维平级。
+  const cacheCoherency = opts.cacheCoherency === false ? null : await buildCacheCoherencyReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, builtAt: now() }
 }
 
 /** LSM 引擎真跑一趟确定性 benchmark，回结构读数（不夹带每行真值）。 */
@@ -616,6 +629,40 @@ export async function buildConfigConsistencyReading(opts, now) {
 }
 
 /**
+ * KI-512：真跑 `cacheCoherencyStudy`（Cache-Aside / Write-Through / Write-Behind × 六场景矩阵
+ * + 三难判词 + 真 `createRedisCache` 写后读 / 真 `createWal` 进程内恢复但非跨机 / 真 `shouldEarlyExpire`
+ * XFetch / 真 `createShardedCache` 多片 / 真 `createMvccStore` 版本链 / 真 `createTwoPhaseCommit` 协调阻塞 /
+ * 真 `createHashRing` 分布）并收敛成前端「缓存读写一致性」两面板紧凑读数。判定/阈值全 Node 侧；注入
+ * 固定时钟/规模 ⇒ 快照重跑逐字一致；三协议阶梯是确定性故障场景真判词、判词不封任何协议全局赢家
+ * （Write-Behind 不是银弹，进程内 WAL 抹不掉整机宕 durable 维），缺哪块落 null。
+ * @param {object} opts { cacheCoherency?:false, cccWrites?, cccManyKeys?, cccBackendRttMs?, cccWalEnabled? }
+ * @param {()=>number} now 时钟（builtAt 注入则确定性）
+ */
+export async function buildCacheCoherencyReading(opts, now) {
+  try {
+    const s = await cacheCoherencyStudy({
+      now,
+      ...(opts.cccWrites ? { writes: Math.max(1, Math.floor(Number(opts.cccWrites))) } : {}),
+      ...(opts.cccManyKeys ? { manyKeys: Math.max(1, Math.floor(Number(opts.cccManyKeys))) } : {}),
+      ...(opts.cccBackendRttMs ? { backendRttMs: Math.max(1, Math.floor(Number(opts.cccBackendRttMs))) } : {}),
+      ...(opts.cccWalEnabled === true ? { walEnabled: true } : {}),
+    })
+    const snap = cccSnapshot(s)
+    return {
+      config: snap.config,
+      rows: snap.rows,
+      vectors: snap.vectors,
+      crosscheck: snap.crosscheck,
+      verdict: snap.verdict,
+      topology: snap.topology,
+      builtAt: snap.builtAt,
+    }
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
  * 真跑时每场景的 opts（判定权在此：场景参数固定，业务阈值仍来自各子系统默认/显式注入）。
  * @param {string} id
  */
@@ -868,6 +915,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
       const stateOf = (s) => s.centerBroken ? '断' : s.versionGaps > 0 ? '缺' : s.idleFetches > 0 ? '空' : s.perceivedDelay > 0 ? '迟' : s.connections > 0 ? '连' : '成'
       const ladders = dcc.rows.map((row) => `${row.protocol}[${row.scenarios.map((s) => s.id + ':' + stateOf(s)).join('/')}]`).join(' · ')
       console.log(`[console] configConsistency: ${ladders} / 三难向量 ${JSON.stringify(Object.fromEntries(dcc.rows.map((r) => [r.protocol, `${Number(r.trilemma.degradeOnCenterDown)}${Number(r.trilemma.noIdleOverhead)}${Number(r.trilemma.instantPerceive)}`])))} / 不封赢家 ${dcc.verdict.noUniversalWinner ? '是' : '否'} / Watch不是银弹 ${dcc.verdict.watchNotPanacea ? '是' : '否'} / 真Config快照version${dcc.crosscheck.configServer.responseVersion} 真watcher首趟无事件${dcc.crosscheck.configWatcher.seededNoEvents} 真bus链${dcc.crosscheck.bus.eventChainWorks} 真稳定桶${dcc.crosscheck.gray.stableBuckets}/${dcc.crosscheck.gray.keys} 真XFetch${dcc.crosscheck.guard.monotonic} 真TTL失效${dcc.crosscheck.redisCache.expiredCount} 真环空片${dcc.crosscheck.ring.emptyNodes}`)
+    }
+    if (snap.systems?.cacheCoherency) {
+      const ccc = snap.systems.cacheCoherency
+      const stateOf = (s) => s.dirtyPagesLost > 0 ? '丢' : s.staleReads > 0 ? '陈' : s.writeBackendRttMs > 0 ? '阻' : s.coalescedWrites > 0 ? '合' : s.writes > 0 ? '成' : '?'
+      const ladders = ccc.rows.map((row) => `${row.protocol}[${row.scenarios.map((s) => s.id + ':' + stateOf(s)).join('/')}]`).join(' · ')
+      console.log(`[console] cacheCoherency: ${ladders} / 三难向量 ${JSON.stringify(ccc.vectors)} / 不封赢家 ${ccc.verdict.noUniversalWinner ? '是' : '否'} / WriteBehind不是银弹 ${ccc.verdict.writeBehindNotPanacea ? '是' : '否'} / 真Redis写后读${ccc.crosscheck.redis.writeThenReadSeesNew} 真WAL恢复${ccc.crosscheck.wal.replayed}但整机丢${ccc.crosscheck.wal.wholeNodeLossDurable} 真XFetch单调${ccc.crosscheck.guard.monotonic} 真分片全可读${ccc.crosscheck.sharded.allReadable} 真MVCC需提交${ccc.crosscheck.mvcc.writeThenReadNeedsCommit} 真2PC阻塞${ccc.crosscheck.twoPhase.blockedParticipants} 真环空片${ccc.crosscheck.ring.emptyNodes}`)
     }
     process.exit(0)
   }).catch((e) => { console.error(`[console] 生成失败：${e.message}`); process.exit(1) })

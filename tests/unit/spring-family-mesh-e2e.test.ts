@@ -560,4 +560,37 @@ describe('spring-family-mesh-e2e', () => {
     expect(plain.configConsistencySnapshot).toBe(null)
     expect(plain.distributedRateLimitSnapshot).toBe(null)
   })
+
+  it('e2e KI-512：cacheCoherency=true ⇒ 主链照常跑通，cacheCoherencySnapshot 带三协议×六场景矩阵/三难判词/七枚真件交叉印证', async () => {
+    const e = runMeshE2E({ cacheCoherency: true, cccNow: () => 6666 })
+    const r = await e.run()
+    expect(r.started?.registered).toBe(true)          // 主链语义逐字不动
+    expect(r.callRes?.ok).toBe(true)
+    const d = r.cacheCoherencySnapshot
+    expect(d).not.toBe(null)
+    expect(d!.builtAt).toBe(6666)
+    expect(d!.config.scenarios.length).toBe(6)
+    expect(d!.rows.length).toBe(3)
+    expect(d!.vectors).toEqual({ CacheAside: '001', WriteThrough: '101', WriteBehind: '110' })
+    const aside = d!.rows.find((row: any) => row.protocol === 'CacheAside')!
+    const through = d!.rows.find((row: any) => row.protocol === 'WriteThrough')!
+    const behind = d!.rows.find((row: any) => row.protocol === 'WriteBehind')!
+    expect(aside.scenarios.find((s: any) => s.id === 'readAfterWrite')!.staleReads).toBeGreaterThan(0)
+    expect(through.scenarios.find((s: any) => s.id === 'writeHeavy')!.writeBackendRounds).toBeGreaterThan(0)
+    expect(behind.scenarios.find((s: any) => s.id === 'cacheCrash')!.dirtyPagesLost).toBeGreaterThan(0)
+    expect(d!.crosscheck.wal.replicatedAcrossNodes).toBe(false)     // 真 WAL 不跨机透传
+    expect(d!.crosscheck.wal.wholeNodeLossDurable).toBe(false)      // 整机宕不 durable 透传
+    expect(d!.crosscheck.mvcc.writeThenReadNeedsCommit).toBe(true)  // 真 MVCC 透传
+    expect(d!.crosscheck.twoPhase.downPhase).toBe('blocked')        // 真 2PC 透传
+    expect(d!.crosscheck.redis.writeThenReadSeesNew).toBe(true)     // 真 Redis 透传
+    expect(Object.keys(d!.crosscheck).sort()).toEqual(['guard', 'mvcc', 'redis', 'ring', 'sharded', 'twoPhase', 'wal'])
+    expect(d!.verdict.noUniversalWinner).toBe(true)
+    expect(d!.verdict.writeBehindNotPanacea).toBe(true)
+    const verdictBools = Object.entries(d!.verdict).filter(([k]) => k !== 'vectors').map(([, v]) => v)
+    expect(verdictBools.every(Boolean)).toBe(true)
+    // 未配 cacheCoherency 时为 null（非破坏、不连坐 KI-511）。
+    const plain2 = await runMeshE2E().run()
+    expect(plain2.cacheCoherencySnapshot).toBe(null)
+    expect(plain2.configConsistencySnapshot).toBe(null)
+  })
 })

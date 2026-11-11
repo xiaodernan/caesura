@@ -405,6 +405,22 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(fromBoot.systems.idGen).toEqual(snap.systems.idGen)
     expect(fromBoot.systems.distributedRateLimit).toEqual(snap.systems.distributedRateLimit)
     expect(fromBoot.systems.configConsistency).toEqual(snap.systems.configConsistency) // 第十三维同源
+    // KI-512 cacheCoherency：三协议 × 六场景矩阵 + 三难判词 + 七枚真件交叉印证真读数已固化进快照。
+    expect(snap.systems.cacheCoherency.rows.length).toBe(3)
+    expect(snap.systems.cacheCoherency.config.scenarios.length).toBe(6)
+    const ccA = snap.systems.cacheCoherency.rows.find((r: any) => r.protocol === 'CacheAside')!
+    const ccT = snap.systems.cacheCoherency.rows.find((r: any) => r.protocol === 'WriteThrough')!
+    const ccB = snap.systems.cacheCoherency.rows.find((r: any) => r.protocol === 'WriteBehind')!
+    expect(ccA.scenarios.find((s: any) => s.id === 'readAfterWrite')!.staleReads).toBeGreaterThan(0) // CacheAside 非原子窗口陈旧读
+    expect(ccT.scenarios.every((s: any) => s.writeBackendRttMs > 0)).toBe(true)                       // WriteThrough 每写吃库 RTT
+    expect(ccB.scenarios.find((s: any) => s.id === 'cacheCrash')!.dirtyPagesLost).toBeGreaterThan(0) // WriteBehind 整机宕丢脏页
+    expect(snap.systems.cacheCoherency.crosscheck.wal.replicatedAcrossNodes).toBe(false)             // 真 WAL 非跨机
+    expect(snap.systems.cacheCoherency.crosscheck.wal.wholeNodeLossDurable).toBe(false)
+    expect(snap.systems.cacheCoherency.crosscheck.twoPhase.blockedParticipants).toBeGreaterThan(0)   // 真 2PC 协调阻塞
+    expect(snap.systems.cacheCoherency.verdict.writeBehindNotPanacea).toBe(true)                     // Write-Behind 不是银弹
+    expect(snap.systems.cacheCoherency.verdict.noUniversalWinner).toBe(true)
+    expect(snap.systems.cacheCoherency.vectors).toEqual({ CacheAside: '001', WriteThrough: '101', WriteBehind: '110' })
+    expect(fromBoot.systems.cacheCoherency).toEqual(snap.systems.cacheCoherency) // 第十四维同源
     expect(Object.keys(fromBoot.systems).sort()).toEqual(Object.keys(snap.systems).sort())
   })
 
@@ -657,5 +673,59 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(sys.idGen).toBeTruthy()
     const snap = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, configConsistency: false })
     expect(snap.systems!.configConsistency).toBe(null)
+  })
+
+  it('㉜ buildCacheCoherencyReading 真跑三协议×六场景矩阵 + 七枚真件交叉印证、注入时钟/规模/WAL 生效、单维关闭不连坐（KI-512）', async () => {
+    const { buildCacheCoherencyReading } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 9393
+    const reading = (await buildCacheCoherencyReading({ cccWrites: 6, cccManyKeys: 48, cccBackendRttMs: 12 }, now)) as NonNullable<Awaited<ReturnType<typeof buildCacheCoherencyReading>>>
+    expect(reading).not.toBe(null)
+    expect(reading.vectors).toEqual({ CacheAside: '001', WriteThrough: '101', WriteBehind: '110' })
+    expect(reading.config.scenarios.length).toBe(6)
+    expect(reading.rows.length).toBe(3)
+    for (const row of reading.rows) {
+      expect(row.scenarios.length).toBe(6)
+      expect(typeof row.totals.writeBackendRttMs).toBe('number')
+      expect(typeof row.trilemma.durableOnCrash).toBe('boolean')
+      for (const s of row.scenarios) {
+        expect(typeof s.staleReads).toBe('number')       // 三协议专有病征读数形状齐
+        expect(typeof s.dirtyPagesLost).toBe('number')
+        expect(typeof s.writeBackendRttMs).toBe('number')
+      }
+    }
+    // 注入规模生效：manyKeys=48 ⇒ 交叉印证里 written=48。
+    expect(reading.crosscheck.sharded.written).toBe(48)
+    expect(reading.builtAt).toBe(9393)
+    // 真判词：CacheAside 陈旧读 / WriteThrough 每写阻塞 / WriteBehind 宕丢脏页 + 合并。
+    const aside = reading.rows.find((r) => r.protocol === 'CacheAside')!
+    const through = reading.rows.find((r) => r.protocol === 'WriteThrough')!
+    const behind = reading.rows.find((r) => r.protocol === 'WriteBehind')!
+    expect(aside.scenarios.find((s) => s.id === 'readAfterWrite')!.staleReads).toBeGreaterThan(0)
+    expect(through.scenarios.every((s) => s.writeBackendRttMs > 0)).toBe(true)
+    expect(behind.scenarios.find((s) => s.id === 'cacheCrash')!.dirtyPagesLost).toBeGreaterThan(0)
+    expect(behind.totals.coalescedWrites).toBeGreaterThan(0)
+    // 七枚真件交叉印证
+    expect(reading.crosscheck.redis.writeThenReadSeesNew).toBe(true)
+    expect(reading.crosscheck.wal.replayed).toBeGreaterThan(0)
+    expect(reading.crosscheck.wal.replicatedAcrossNodes).toBe(false)       // 进程内 WAL 不跨机
+    expect(reading.crosscheck.wal.wholeNodeLossDurable).toBe(false)
+    expect(reading.crosscheck.guard.monotonic).toBe(true)
+    expect(reading.crosscheck.sharded.allReadable).toBe(true)
+    expect(reading.crosscheck.mvcc.writeThenReadNeedsCommit).toBe(true)
+    expect(reading.crosscheck.twoPhase.blockedParticipants).toBeGreaterThan(0)
+    expect(reading.crosscheck.ring.emptyNodes).toBeGreaterThanOrEqual(0)
+    expect(reading.verdict.writeBehindNotPanacea).toBe(true)
+    expect(reading.verdict.noUniversalWinner).toBe(true)
+    // 单开 WAL 抹不掉 durable 维：向量仍 110。
+    const withWal = (await buildCacheCoherencyReading({ cccWalEnabled: true }, now)) as NonNullable<Awaited<ReturnType<typeof buildCacheCoherencyReading>>>
+    expect(withWal.vectors).toEqual({ CacheAside: '001', WriteThrough: '101', WriteBehind: '110' })
+    expect(withWal.config.walEnabled).toBe(true)
+    // 单维关闭落 null，不连坐其它维
+    const sys = await buildSystems({ now, cacheCoherency: false })
+    expect(sys.cacheCoherency).toBe(null)
+    expect(sys.configConsistency).toBeTruthy() // 不连坐 KI-511
+    expect(sys.distributedRateLimit).toBeTruthy()
+    const snap = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, cacheCoherency: false })
+    expect(snap.systems!.cacheCoherency).toBe(null)
   })
 })

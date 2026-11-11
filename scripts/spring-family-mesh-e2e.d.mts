@@ -232,5 +232,28 @@ export function runMeshE2E(opts?: any): {
       topology: Record<string, any>
       builtAt: number
     } | null
+    /** KI-512：分布式缓存读写一致性三协议快照（Cache-Aside/Write-Through/Write-Behind × 六场景 + 三难判词 + 真 Redis写后读/WAL崩溃恢复/XFetch/分片/MVCC/2PC/环交叉印证），未配 cacheCoherency 为 null */
+    cacheCoherencySnapshot: {
+      config: Record<string, any>
+      rows: Array<{
+        protocol: string
+        trilemma: { readYourWrites: boolean; noWriteBlocking: boolean; durableOnCrash: boolean }
+        totals: {
+          staleWindowMsSum: number; staleReads: number; writeBackendRounds: number; writeBackendRttMs: number
+          dirtyPagesLost: number; coalescedWrites: number; crashedScenarios: number
+        }
+        scenarios: Array<{
+          id: string; writes: number; keyN: number; staleWindowMs: number; staleReads: number
+          writeBackendRounds: number; writeBackendRttMs: number; dirtyPagesLost: number; dirtyPagesPending: number
+          flushLagMs: number; coalescedWrites: number; walEnabled: boolean; crossNodeReplicated: boolean
+          crashed: boolean; readYourWrites: boolean; noWriteBlocking: boolean; durableOnCrash: boolean
+        }>
+      }>
+      vectors: Record<string, string>
+      crosscheck: Record<string, Record<string, any>>
+      verdict: Record<string, any>
+      topology: Record<string, any>
+      builtAt: number
+    } | null
   }>
 }

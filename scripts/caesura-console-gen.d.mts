@@ -361,7 +361,39 @@ export interface ConfigConsistencyReading {
   builtAt: number
 }
 
-/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性）。 */
+/** KI-512：缓存读写一致性三协议（Cache-Aside / Write-Through / Write-Behind）六场景矩阵 + 三难判词 + 七枚真件交叉印证。 */
+export interface CacheCoherencyReading {
+  config: Record<string, any>
+  rows: Array<{
+    protocol: string
+    trilemma: { readYourWrites: boolean; noWriteBlocking: boolean; durableOnCrash: boolean }
+    totals: {
+      staleWindowMsSum: number; staleReads: number; writeBackendRounds: number; writeBackendRttMs: number
+      dirtyPagesLost: number; coalescedWrites: number; crashedScenarios: number
+    }
+    scenarios: Array<{
+      id: string; writes: number; keyN: number; staleWindowMs: number; staleReads: number
+      writeBackendRounds: number; writeBackendRttMs: number; dirtyPagesLost: number; dirtyPagesPending: number
+      flushLagMs: number; coalescedWrites: number; walEnabled: boolean; crossNodeReplicated: boolean; crashed: boolean
+      readYourWrites: boolean; noWriteBlocking: boolean; durableOnCrash: boolean
+    }>
+  }>
+  vectors: Record<string, string>
+  crosscheck: {
+    redis: Record<string, any>
+    wal: Record<string, any>
+    guard: Record<string, any>
+    sharded: Record<string, any>
+    mvcc: Record<string, any>
+    twoPhase: Record<string, any>
+    ring: Record<string, any>
+  }
+  verdict: Record<string, any>
+  topology: Record<string, any>
+  builtAt: number
+}
+
+/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511 + KI-512：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 + 缓存读写一致性）。 */
 export interface SystemsBlock {
   lsm: LsmReading | null
   hw: HwReading | null
@@ -376,6 +408,7 @@ export interface SystemsBlock {
   idGen: IdGenReading | null
   distributedRateLimit: DistributedRateLimitReading | null
   configConsistency: ConfigConsistencyReading | null
+  cacheCoherency: CacheCoherencyReading | null
   builtAt: number
 }
 
@@ -446,6 +479,12 @@ export function buildSnapshot(opts?: {
   configConsistency?: boolean
   dccClients?: number
   dccPollIntervalMs?: number
+  /** KI-512：false 关掉缓存读写一致性维（兼容旧快照）；ccc* 注入写规模/后端 RTT/WAL。 */
+  cacheCoherency?: boolean
+  cccWrites?: number
+  cccManyKeys?: number
+  cccBackendRttMs?: number
+  cccWalEnabled?: boolean
 }): Promise<ConsoleSnapshot>
 
 /** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 十三维系统读数；击穿并发 ⇒ async。 */
@@ -493,6 +532,12 @@ export function buildSystems(opts?: {
   configConsistency?: boolean
   dccClients?: number
   dccPollIntervalMs?: number
+  /** KI-512：false 关掉缓存读写一致性维（兼容旧快照）；ccc* 注入写规模/后端 RTT/WAL。 */
+  cacheCoherency?: boolean
+  cccWrites?: number
+  cccManyKeys?: number
+  cccBackendRttMs?: number
+  cccWalEnabled?: boolean
 }): Promise<SystemsBlock>
 
 /** KI-501：真跑缓存防护三件套（击穿/穿透/雪崩）收敛成前端三面板紧凑读数；单维失败落 null。 */
@@ -581,6 +626,16 @@ export function buildConfigConsistencyReading(opts: {
   dccClients?: number
   dccPollIntervalMs?: number
 }, now: () => number): Promise<ConfigConsistencyReading | null>
+
+/** KI-512：真跑缓存读写一致性（Cache-Aside / Write-Through / Write-Behind × 六场景矩阵 + 三难判词 + 七枚真件 Redis/WAL/XFetch/Sharded/MVCC/2PC/环交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
+export function buildCacheCoherencyReading(opts: {
+  now?: () => number
+  cacheCoherency?: boolean
+  cccWrites?: number
+  cccManyKeys?: number
+  cccBackendRttMs?: number
+  cccWalEnabled?: boolean
+}, now: () => number): Promise<CacheCoherencyReading | null>
 
 export function realScenarioOpts(id: string): Record<string, any>
 

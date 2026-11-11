@@ -825,4 +825,68 @@ describe('caesura-game-cloud', () => {
     expect(st.configConsistency.verdict.noUniversalWinner).toBe(true)
     expect(st.eventChannel).toBeTruthy()
   })
+
+  it('cacheCoherency:true ⇒ 装配缓存读写一致性三协议、status.cacheCoherency 读真三协议×六场景矩阵/三难判词/七枚真件交叉印证、惰性同引用（KI-512）', async () => {
+    const gc = createGameCloud({
+      gameId: 'gidc1', gamePort: 7741, sources, cloud: fakeCloud(),
+      cacheCoherency: true, cccNow: () => 8888,
+    })
+    expect(gc.runCacheCoherencyStudy).toBeTypeOf('function')
+    const st = await gc.status()
+    expect(st.cacheCoherency.builtAt).toBe(8888)
+    expect(st.cacheCoherency.config.scenarios.length).toBe(6)
+    expect(st.cacheCoherency.rows.length).toBe(3)
+    expect(st.cacheCoherency.vectors).toEqual({ CacheAside: '001', WriteThrough: '101', WriteBehind: '110' })
+    const aside = st.cacheCoherency.rows.find((r: any) => r.protocol === 'CacheAside')
+    const through = st.cacheCoherency.rows.find((r: any) => r.protocol === 'WriteThrough')
+    const behind = st.cacheCoherency.rows.find((r: any) => r.protocol === 'WriteBehind')
+    expect(aside!.scenarios.find((s: any) => s.id === 'readAfterWrite')!.staleReads).toBeGreaterThan(0) // 旁路窗口陈旧读
+    expect(through!.scenarios.find((s: any) => s.id === 'writeHeavy')!.writeBackendRounds).toBeGreaterThan(0) // 写穿透阻塞
+    expect(behind!.scenarios.find((s: any) => s.id === 'cacheCrash')!.dirtyPagesLost).toBeGreaterThan(0)        // 写回整机宕丢脏页
+    expect(st.cacheCoherency.crosscheck.wal.replicatedAcrossNodes).toBe(false)   // 真 WAL 不跨机
+    expect(st.cacheCoherency.crosscheck.wal.wholeNodeLossDurable).toBe(false)    // 整机宕不 durable
+    expect(st.cacheCoherency.crosscheck.mvcc.writeThenReadNeedsCommit).toBe(true) // 真 MVCC 提交后才读新
+    expect(st.cacheCoherency.crosscheck.twoPhase.downPhase).toBe('blocked')       // 真 2PC 协调者宕全员阻塞
+    expect(st.cacheCoherency.crosscheck.redis.writeThenReadSeesNew).toBe(true)    // 真 Redis 写后读可见
+    expect(Object.keys(st.cacheCoherency.crosscheck).sort()).toEqual(['guard', 'mvcc', 'redis', 'ring', 'sharded', 'twoPhase', 'wal'])
+    expect(st.cacheCoherency.verdict.noUniversalWinner).toBe(true)
+    expect(st.cacheCoherency.verdict.writeBehindNotPanacea).toBe(true)
+    expect(st.cacheCoherency.verdict.walNotDurableAcrossNode).toBe(true)
+    const verdictBools = Object.entries(st.cacheCoherency.verdict).filter(([k]) => k !== 'vectors').map(([, v]) => v)
+    expect(verdictBools.every(Boolean)).toBe(true)
+    // 惰性缓存：二次 status 同引用
+    expect((await gc.status()).cacheCoherency).toBe(st.cacheCoherency)
+    // 现算入口可重跑、确定性（同注入 now）
+    const rerun = await gc.runCacheCoherencyStudy!()
+    expect(rerun.verdict).toEqual(st.cacheCoherency.verdict)
+    // 不连坐 KI-511
+    expect(st.configConsistency).toBe(null)
+  })
+
+  it('cacheCoherency 默认 null 非破坏；walEnabled 单开关抹不掉 durable 维；可注入现成 study（KI-512）', async () => {
+    const plain = createGameCloud({ gameId: 'gidc2', gamePort: 7742, sources, cloud: fakeCloud() })
+    expect(plain.runCacheCoherencyStudy).toBe(null)
+    const ps = await plain.status()
+    expect(ps.cacheCoherency).toBe(null)
+    expect(ps.configConsistency).toBe(null) // 不连坐 KI-511
+    // 单开 walEnabled（仅进程内 WAL）：WriteBehind 仍 110，durable 维不翻。
+    const wal = createGameCloud({
+      gameId: 'gidc3', gamePort: 7743, sources, cloud: fakeCloud(),
+      cacheCoherency: { walEnabled: true }, cccNow: () => 5555,
+    })
+    const ws = await wal.status()
+    expect(ws.cacheCoherency.vectors).toEqual({ CacheAside: '001', WriteThrough: '101', WriteBehind: '110' })
+    expect(ws.cacheCoherency.verdict.noUniversalWinner).toBe(true)
+    // 注入现成 study：直接用、不重跑，builtAt 原样带出、不被 cccNow 覆盖。
+    const { cacheCoherencyStudy } = await import('../../scripts/caesura-cache-coherency.mjs')
+    const study = await cacheCoherencyStudy({ now: () => 444 }) as any
+    const injected = createGameCloud({
+      gameId: 'gidc4', gamePort: 7744, sources, cloud: fakeCloud(),
+      cacheCoherency: study, cccNow: () => 2222,
+    })
+    const st = await injected.status()
+    expect(st.cacheCoherency.builtAt).toBe(444)
+    expect(st.cacheCoherency.verdict.noUniversalWinner).toBe(true)
+    expect(st.eventChannel).toBeTruthy()
+  })
 })

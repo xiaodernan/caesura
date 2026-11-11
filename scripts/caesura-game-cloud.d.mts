@@ -101,6 +101,12 @@ export interface GameCloudOptions {
    * （带 rows/vectors/verdict/crosscheck/topology 五块）。默认 false 不装配。 */
   configConsistency?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck: any; topology: any; [k: string]: any }
   dccNow?: () => number
+  /**
+   * KI-512：true 装配分布式缓存读写一致性三协议权衡（Cache-Aside / Write-Through / Write-Behind + 真 Redis写后读/WAL/MVCC/2PC/环 交叉印证）。
+   * 对象逐项注入（now/seed/writes/manyKeys/backendRttMs/flushThreshold/walEnabled/...），或直接塞一只现成 study
+   * （带 rows/vectors/verdict/crosscheck/topology 五块）。默认 false 不装配。 */
+  cacheCoherency?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck: any; topology: any; [k: string]: any }
+  cccNow?: () => number
 }
 
 /** 创建一只游戏侧开箱即用云。 */
@@ -145,6 +151,8 @@ export function createGameCloud(opts?: GameCloudOptions): {
   runDistributedRateLimitStudy: (() => Promise<any>) | null
   /** KI-511：分布式配置一致性三协议汇总的现算入口（未配 opts.configConsistency 时为 null）；真跑 轮询/长轮询/watch 推送 × 六场景矩阵 + 三难判词 + 真 Config响应/watcher/bus/hashSelector/XFetch/RedisTTL/环 交叉印证。 */
   runConfigConsistencyStudy: (() => Promise<any>) | null
+  /** KI-512：分布式缓存读写一致性三协议汇总的现算入口（未配 opts.cacheCoherency 时为 null）；真跑 Cache-Aside/Write-Through/Write-Behind × 六场景矩阵 + 三难判词 + 真 Redis写后读/WAL崩溃恢复/XFetch/分片/MVCC/2PC/环 交叉印证。 */
+  runCacheCoherencyStudy: (() => Promise<any>) | null
   /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）。 */
   gray: any
   /** KI-489：把游戏真 EventBus（duck-typed {on,emit}）按白名单接进云事件总线。 */

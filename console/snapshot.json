@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794360452689,
+  "generatedAt": 1794363080256,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1365,12 +1365,12 @@
           "keys": 1,
           "versions": 2,
           "commitLogSize": 1,
-          "now": 1794360452657
+          "now": 1794363080222
         },
         "final": {
           "A": {
             "value": 101,
-            "commitTs": 1794360452657,
+            "commitTs": 1794363080222,
             "tombstone": false
           }
         }
@@ -3646,7 +3646,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794360452665,
+                "lastTimestamp": 1794363080229,
                 "workerId": 1
               },
               "fault": {
@@ -3742,7 +3742,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794360452665,
+                "lastTimestamp": 1794363080229,
                 "workerId": 1
               },
               "fault": {
@@ -3774,7 +3774,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794360452666,
+                "lastTimestamp": 1794363080230,
                 "workerId": 1
               },
               "fault": {
@@ -3806,7 +3806,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794360452665,
+                "lastTimestamp": 1794363080229,
                 "workerId": 1
               },
               "fault": {
@@ -4522,7 +4522,7 @@
         "capacity": 8,
         "perShardCap": 2
       },
-      "builtAt": 1794360452678
+      "builtAt": 1794363080242
     },
     "configConsistency": {
       "config": {
@@ -5020,8 +5020,537 @@
         "burstCount": 12,
         "windowMs": 10000
       },
-      "builtAt": 1794360452689
+      "builtAt": 1794363080253
     },
-    "builtAt": 1794360452689
+    "cacheCoherency": {
+      "config": {
+        "seed": 512,
+        "writes": 8,
+        "manyKeys": 200,
+        "backendRttMs": 40,
+        "windowMs": 10000,
+        "walEnabled": false,
+        "rigged": false,
+        "scenarios": [
+          "allOk",
+          "readAfterWrite",
+          "writeHeavy",
+          "cacheCrash",
+          "asyncFlush",
+          "manyKeys"
+        ]
+      },
+      "rows": [
+        {
+          "protocol": "CacheAside",
+          "scenarios": [
+            {
+              "id": "allOk",
+              "writes": 8,
+              "keyN": 8,
+              "staleWindowMs": 29.3627,
+              "staleReads": 0,
+              "writeBackendRounds": 8,
+              "writeBackendRttMs": 320,
+              "dirtyPagesLost": 0,
+              "dirtyPagesPending": 0,
+              "flushLagMs": 0,
+              "coalescedWrites": 0,
+              "walEnabled": false,
+              "crossNodeReplicated": false,
+              "crashed": false,
+              "readYourWrites": false,
+              "noWriteBlocking": false,
+              "durableOnCrash": true
+            },
+            {
+              "id": "readAfterWrite",
+              "writes": 8,
+              "keyN": 8,
+              "staleWindowMs": 26.6884,
+              "staleReads": 5,
+              "writeBackendRounds": 8,
+              "writeBackendRttMs": 320,
+              "dirtyPagesLost": 0,
+              "dirtyPagesPending": 0,
+              "flushLagMs": 0,
+              "coalescedWrites": 0,
+              "walEnabled": false,
+              "crossNodeReplicated": false,
+              "crashed": false,
+              "readYourWrites": false,
+              "noWriteBlocking": false,
+              "durableOnCrash": true
+            },
+            {
+              "id": "writeHeavy",
+              "writes": 32,
+              "keyN": 8,
+              "staleWindowMs": 26.5215,
+              "staleReads": 0,
+              "writeBackendRounds": 32,
+              "writeBackendRttMs": 1280,
+              "dirtyPagesLost": 0,
+              "dirtyPagesPending": 0,
+              "flushLagMs": 0,
+              "coalescedWrites": 0,
+              "walEnabled": false,
+              "crossNodeReplicated": false,
+              "crashed": false,
+              "readYourWrites": false,
+              "noWriteBlocking": false,
+              "durableOnCrash": true
+            },
+            {
+              "id": "cacheCrash",
+              "writes": 8,
+              "keyN": 8,
+              "staleWindowMs": 29.3627,
+              "staleReads": 0,
+              "writeBackendRounds": 8,
+              "writeBackendRttMs": 320,
+              "dirtyPagesLost": 0,
+              "dirtyPagesPending": 0,
+              "flushLagMs": 0,
+              "coalescedWrites": 0,
+              "walEnabled": false,
+              "crossNodeReplicated": false,
+              "crashed": true,
+              "readYourWrites": false,
+              "noWriteBlocking": false,
+              "durableOnCrash": true
+            },
+            {
+              "id": "asyncFlush",
+              "writes": 8,
+              "keyN": 8,
+              "staleWindowMs": 29.3627,
+              "staleReads": 0,
+              "writeBackendRounds": 8,
+              "writeBackendRttMs": 320,
+              "dirtyPagesLost": 0,
+              "dirtyPagesPending": 0,
+              "flushLagMs": 0,
+              "coalescedWrites": 0,
+              "walEnabled": false,
+              "crossNodeReplicated": false,
+              "crashed": false,
+              "readYourWrites": false,
+              "noWriteBlocking": false,
+              "durableOnCrash": true
+            },
+            {
+              "id": "manyKeys",
+              "writes": 8,
+              "keyN": 200,
+              "staleWindowMs": 29.3627,
+              "staleReads": 0,
+              "writeBackendRounds": 8,
+              "writeBackendRttMs": 320,
+              "dirtyPagesLost": 0,
+              "dirtyPagesPending": 0,
+              "flushLagMs": 0,
+              "coalescedWrites": 0,
+              "walEnabled": false,
+              "crossNodeReplicated": false,
+              "crashed": false,
+              "readYourWrites": false,
+              "noWriteBlocking": false,
+              "durableOnCrash": true
+            }
+          ],
+          "totals": {
+            "staleWindowMsSum": 170.6607,
+            "staleReads": 5,
+            "writeBackendRounds": 72,
+            "writeBackendRttMs": 2880,
+            "dirtyPagesLost": 0,
+            "coalescedWrites": 0,
+            "crashedScenarios": 1
+          },
+          "trilemma": {
+            "readYourWrites": false,
+            "noWriteBlocking": false,
+            "durableOnCrash": true
+          }
+        },
+        {
+          "protocol": "WriteThrough",
+          "scenarios": [
+            {
+              "id": "allOk",
+              "writes": 8,
+              "keyN": 8,
+              "staleWindowMs": 0,
+              "staleReads": 0,
+              "writeBackendRounds": 8,
+              "writeBackendRttMs": 320,
+              "dirtyPagesLost": 0,
+              "dirtyPagesPending": 0,
+              "flushLagMs": 0,
+              "coalescedWrites": 0,
+              "walEnabled": false,
+              "crossNodeReplicated": false,
+              "crashed": false,
+              "readYourWrites": true,
+              "noWriteBlocking": false,
+              "durableOnCrash": true
+            },
+            {
+              "id": "readAfterWrite",
+              "writes": 8,
+              "keyN": 8,
+              "staleWindowMs": 0,
+              "staleReads": 0,
+              "writeBackendRounds": 8,
+              "writeBackendRttMs": 320,
+              "dirtyPagesLost": 0,
+              "dirtyPagesPending": 0,
+              "flushLagMs": 0,
+              "coalescedWrites": 0,
+              "walEnabled": false,
+              "crossNodeReplicated": false,
+              "crashed": false,
+              "readYourWrites": true,
+              "noWriteBlocking": false,
+              "durableOnCrash": true
+            },
+            {
+              "id": "writeHeavy",
+              "writes": 32,
+              "keyN": 8,
+              "staleWindowMs": 0,
+              "staleReads": 0,
+              "writeBackendRounds": 32,
+              "writeBackendRttMs": 1280,
+              "dirtyPagesLost": 0,
+              "dirtyPagesPending": 0,
+              "flushLagMs": 0,
+              "coalescedWrites": 0,
+              "walEnabled": false,
+              "crossNodeReplicated": false,
+              "crashed": false,
+              "readYourWrites": true,
+              "noWriteBlocking": false,
+              "durableOnCrash": true
+            },
+            {
+              "id": "cacheCrash",
+              "writes": 8,
+              "keyN": 8,
+              "staleWindowMs": 0,
+              "staleReads": 0,
+              "writeBackendRounds": 8,
+              "writeBackendRttMs": 320,
+              "dirtyPagesLost": 0,
+              "dirtyPagesPending": 0,
+              "flushLagMs": 0,
+              "coalescedWrites": 0,
+              "walEnabled": false,
+              "crossNodeReplicated": false,
+              "crashed": true,
+              "readYourWrites": true,
+              "noWriteBlocking": false,
+              "durableOnCrash": true
+            },
+            {
+              "id": "asyncFlush",
+              "writes": 8,
+              "keyN": 8,
+              "staleWindowMs": 0,
+              "staleReads": 0,
+              "writeBackendRounds": 8,
+              "writeBackendRttMs": 320,
+              "dirtyPagesLost": 0,
+              "dirtyPagesPending": 0,
+              "flushLagMs": 0,
+              "coalescedWrites": 0,
+              "walEnabled": false,
+              "crossNodeReplicated": false,
+              "crashed": false,
+              "readYourWrites": true,
+              "noWriteBlocking": false,
+              "durableOnCrash": true
+            },
+            {
+              "id": "manyKeys",
+              "writes": 8,
+              "keyN": 200,
+              "staleWindowMs": 0,
+              "staleReads": 0,
+              "writeBackendRounds": 8,
+              "writeBackendRttMs": 320,
+              "dirtyPagesLost": 0,
+              "dirtyPagesPending": 0,
+              "flushLagMs": 0,
+              "coalescedWrites": 0,
+              "walEnabled": false,
+              "crossNodeReplicated": false,
+              "crashed": false,
+              "readYourWrites": true,
+              "noWriteBlocking": false,
+              "durableOnCrash": true
+            }
+          ],
+          "totals": {
+            "staleWindowMsSum": 0,
+            "staleReads": 0,
+            "writeBackendRounds": 72,
+            "writeBackendRttMs": 2880,
+            "dirtyPagesLost": 0,
+            "coalescedWrites": 0,
+            "crashedScenarios": 1
+          },
+          "trilemma": {
+            "readYourWrites": true,
+            "noWriteBlocking": false,
+            "durableOnCrash": true
+          }
+        },
+        {
+          "protocol": "WriteBehind",
+          "scenarios": [
+            {
+              "id": "allOk",
+              "writes": 8,
+              "keyN": 8,
+              "staleWindowMs": 0,
+              "staleReads": 0,
+              "writeBackendRounds": 0,
+              "writeBackendRttMs": 0,
+              "dirtyPagesLost": 0,
+              "dirtyPagesPending": 0,
+              "flushLagMs": 0,
+              "coalescedWrites": 6,
+              "walEnabled": false,
+              "crossNodeReplicated": false,
+              "crashed": false,
+              "readYourWrites": true,
+              "noWriteBlocking": true,
+              "durableOnCrash": true
+            },
+            {
+              "id": "readAfterWrite",
+              "writes": 8,
+              "keyN": 8,
+              "staleWindowMs": 0,
+              "staleReads": 0,
+              "writeBackendRounds": 0,
+              "writeBackendRttMs": 0,
+              "dirtyPagesLost": 0,
+              "dirtyPagesPending": 0,
+              "flushLagMs": 0,
+              "coalescedWrites": 6,
+              "walEnabled": false,
+              "crossNodeReplicated": false,
+              "crashed": false,
+              "readYourWrites": true,
+              "noWriteBlocking": true,
+              "durableOnCrash": true
+            },
+            {
+              "id": "writeHeavy",
+              "writes": 32,
+              "keyN": 8,
+              "staleWindowMs": 0,
+              "staleReads": 0,
+              "writeBackendRounds": 0,
+              "writeBackendRttMs": 0,
+              "dirtyPagesLost": 0,
+              "dirtyPagesPending": 0,
+              "flushLagMs": 0,
+              "coalescedWrites": 24,
+              "walEnabled": false,
+              "crossNodeReplicated": false,
+              "crashed": false,
+              "readYourWrites": true,
+              "noWriteBlocking": true,
+              "durableOnCrash": true
+            },
+            {
+              "id": "cacheCrash",
+              "writes": 8,
+              "keyN": 8,
+              "staleWindowMs": 0,
+              "staleReads": 0,
+              "writeBackendRounds": 0,
+              "writeBackendRttMs": 0,
+              "dirtyPagesLost": 8,
+              "dirtyPagesPending": 8,
+              "flushLagMs": 25,
+              "coalescedWrites": 0,
+              "walEnabled": false,
+              "crossNodeReplicated": false,
+              "crashed": true,
+              "readYourWrites": true,
+              "noWriteBlocking": true,
+              "durableOnCrash": false
+            },
+            {
+              "id": "asyncFlush",
+              "writes": 8,
+              "keyN": 8,
+              "staleWindowMs": 0,
+              "staleReads": 0,
+              "writeBackendRounds": 0,
+              "writeBackendRttMs": 0,
+              "dirtyPagesLost": 0,
+              "dirtyPagesPending": 0,
+              "flushLagMs": 0,
+              "coalescedWrites": 6,
+              "walEnabled": false,
+              "crossNodeReplicated": false,
+              "crashed": false,
+              "readYourWrites": true,
+              "noWriteBlocking": true,
+              "durableOnCrash": true
+            },
+            {
+              "id": "manyKeys",
+              "writes": 8,
+              "keyN": 200,
+              "staleWindowMs": 0,
+              "staleReads": 0,
+              "writeBackendRounds": 0,
+              "writeBackendRttMs": 0,
+              "dirtyPagesLost": 0,
+              "dirtyPagesPending": 0,
+              "flushLagMs": 0,
+              "coalescedWrites": 6,
+              "walEnabled": false,
+              "crossNodeReplicated": false,
+              "crashed": false,
+              "readYourWrites": true,
+              "noWriteBlocking": true,
+              "durableOnCrash": true
+            }
+          ],
+          "totals": {
+            "staleWindowMsSum": 0,
+            "staleReads": 0,
+            "writeBackendRounds": 0,
+            "writeBackendRttMs": 0,
+            "dirtyPagesLost": 8,
+            "coalescedWrites": 48,
+            "crashedScenarios": 1
+          },
+          "trilemma": {
+            "readYourWrites": true,
+            "noWriteBlocking": true,
+            "durableOnCrash": false
+          }
+        }
+      ],
+      "vectors": {
+        "CacheAside": "001",
+        "WriteThrough": "101",
+        "WriteBehind": "110"
+      },
+      "crosscheck": {
+        "redis": {
+          "source": "createRedisCache.set/get/stats(真件)",
+          "firstVersion": "v1",
+          "secondVersion": "v2",
+          "hits": 2,
+          "writeThenReadSeesNew": true,
+          "notRealRedis": true
+        },
+        "wal": {
+          "source": "createWal.append/lines/restore/replay(真件)",
+          "sinkIsArray": true,
+          "sinkLines": 3,
+          "lines": 3,
+          "restored": 3,
+          "replayed": 3,
+          "replayOps": [
+            "put",
+            "put",
+            "del"
+          ],
+          "processCrashRecoverable": true,
+          "replicatedAcrossNodes": false,
+          "wholeNodeLossDurable": false
+        },
+        "guard": {
+          "source": "shouldEarlyExpire(真件)",
+          "youngEarly": false,
+          "oldEarly": true,
+          "monotonic": true,
+          "reducesProbabilityNotWindow": true
+        },
+        "sharded": {
+          "source": "createShardedCache.set/get/stats(真件)",
+          "written": 200,
+          "readHits": 200,
+          "shards": 3,
+          "perShardHits": [
+            77,
+            59,
+            64
+          ],
+          "spread": 18,
+          "allReadable": true
+        },
+        "mvcc": {
+          "source": "createMvccStore.seed/begin/read/commit(真件)",
+          "isolation": "read-committed",
+          "beforeCommitVersion": "v1",
+          "afterCommitVersion": "v2",
+          "committed": true,
+          "versions": 2,
+          "writeThenReadNeedsCommit": true
+        },
+        "twoPhase": {
+          "source": "createTwoPhaseCommit.prepare/commit(真件)",
+          "prepareAllYes": true,
+          "commitPhase": "committed",
+          "commitMessages": 8,
+          "downPhase": "blocked",
+          "blockedParticipants": 2,
+          "atomicCrossStoreNeedsCoordination": true,
+          "notRealXa": true
+        },
+        "ring": {
+          "source": "createHashRing.distribution(真件)",
+          "keys": 512,
+          "nodes": 4,
+          "fanoutKeys": 200,
+          "spread": 48,
+          "emptyNodes": 0,
+          "balanceRatio": 1.4324
+        }
+      },
+      "verdict": {
+        "vectors": {
+          "CacheAside": "001",
+          "WriteThrough": "101",
+          "WriteBehind": "110"
+        },
+        "trilemmaDistinguishes": true,
+        "noProtocolWinsAll": true,
+        "noUniversalWinner": true,
+        "asideHasStaleWindow": true,
+        "asideBlocksOnBackend": true,
+        "asideDurable": true,
+        "throughConsistent": true,
+        "throughBlocksOnBackend": true,
+        "behindNoWriteBlocking": true,
+        "behindLosesDirtyOnCrash": true,
+        "behindCoalescesWrites": true,
+        "walNotDurableAcrossNode": true,
+        "writeBehindNotPanacea": true
+      },
+      "topology": {
+        "writes": 8,
+        "manyKeys": 200,
+        "backendRttMs": 40,
+        "flushThreshold": 4,
+        "flushLagMs": 200,
+        "crashAtWrite": 3,
+        "windowMs": 10000
+      },
+      "builtAt": 1794363080256
+    },
+    "builtAt": 1794363080256
   }
 }

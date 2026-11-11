@@ -51,6 +51,7 @@
       renderIdGen(snap.systems ? snap.systems.idGen : null)
       renderDistributedRateLimit(snap.systems ? snap.systems.distributedRateLimit : null)
       renderConfigConsistency(snap.systems ? snap.systems.configConsistency : null)
+      renderCacheCoherency(snap.systems ? snap.systems.cacheCoherency : null)
       setLive(true, result.source)
     }).catch(function (e) {
       setLive(false, 'error')
@@ -1623,6 +1624,138 @@
       'LongPolling 即时 + 零空转但缺「可降级」一难（中心宕则挂起全断）；WatchPush 零空转但缺「可降级 + 即时」两难（中心须可寻址注册、风暴削峰合并延迟 + 版本号兜底）。' +
       '判定正交化：centerDown 只罚可降级、不连带罚即时。真依赖交叉印证取七枚真件读数；可证伪（rigged 轮询瞬时 + 中心恒在线 + 无风暴 + 六场景 fault 全空后三协议全退化为 111、三判词翻 false）。' +
       '全为确定性故障场景结构计数、非墙钟/QPS/字节/真 socket 跑分；换场景结论会变，不封赢家。'
+  }
+
+  /* ---------- KI-512 分布式缓存读写一致性：Cache-Aside / Write-Through / Write-Behind 三协议诚实权衡（前端只读 Node 快照） ---------- */
+  function renderCacheCoherency(ccc) {
+    renderCccMatrix(ccc && ccc.rows, ccc && ccc.config)
+    renderCccLadder(ccc && ccc.rows)
+    renderCccTrilemma(ccc && ccc.rows, ccc && ccc.verdict, ccc && ccc.crosscheck)
+  }
+
+  function cccMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">无' + esc(label) + '读数</div>'
+    if (note) note.textContent = 'systems.cacheCoherency 缺失 —— 重跑 npm run console:data 采集真判词'
+  }
+
+  // 每格读 Node 侧真判词：丢=整机宕丢未刷回脏页 / 陈=非原子窗口陈旧读 / 存=宕而不丢 / 阻=写路径阻塞于库 RTT / 合=异步攒批合并 / 成=写后读可见（不复核）。
+  function cccState(s) {
+    if (!s) return { cls: '', ch: '—' }
+    if (isNum(s.dirtyPagesLost) && s.dirtyPagesLost > 0) return { cls: 'lost', ch: '丢' }
+    if (isNum(s.staleReads) && s.staleReads > 0) return { cls: 'stale', ch: '陈' }
+    if (s.crashed === true) return { cls: 'crash', ch: '存' }
+    if (isNum(s.writeBackendRttMs) && s.writeBackendRttMs > 0) return { cls: 'block', ch: '阻' }
+    if (isNum(s.coalescedWrites) && s.coalescedWrites > 0) return { cls: 'coalesce', ch: '合' }
+    if (isNum(s.writes) && s.writes > 0) return { cls: 'ok', ch: '成' }
+    return { cls: '', ch: '?' }
+  }
+
+  function renderCccMatrix(rows, config) {
+    var box = $('#ccc-matrix'), note = $('#ccc-matrix-note')
+    if (!Array.isArray(rows) || !rows.length || !config || !Array.isArray(config.scenarios)) {
+      cccMissing(box, note, '三协议场景矩阵'); return
+    }
+    var scenarios = config.scenarios
+    var head = '<div class="ccc-mat-row ccc-mat-head"><span class="ccc-mat-proto">协议</span>' +
+      scenarios.map(function (s) { return '<span class="ccc-sc">' + esc(s) + '</span>' }).join('') +
+      '<span class="ccc-mat-cost">写RTT</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (s) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === s }) : null
+        var st = cccState(cell)
+        return '<span class="ccc-cell ' + st.cls + '" data-p="' + esc(row.protocol) + '" data-s="' + esc(s) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var t = row.totals || {}
+      return '<div class="ccc-mat-row" data-p="' + esc(row.protocol) + '">' +
+        '<span class="ccc-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="ccc-mat-cost"><b>' + esc(fmt(t.writeBackendRttMs)) + '</b></span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = '同一组确定性故障场景（全成功 / 写完立刻读 / 写密集 / 缓存整机宕 / 异步刷回 / 海量 key）分喂三协议：' +
+      'Cache-Aside 先更库再删缓存、读 miss 回填，写落库不丢但更库/删缓存非原子窗口有陈旧读 + 每次写同步打库被 RTT 阻塞；' +
+      'Write-Through 同步双写缓存与库、始终一致不丢写，但每次写都吃库 RTT 写阻塞；' +
+      'Write-Behind 只写缓存、异步攒批合并刷回，写延迟最低且不阻塞，但整机宕未刷回脏页全丢——进程内 WAL 与盘同机，一起丢。' +
+      '写RTT 是结构计数、非墙钟/QPS/字节/真 Redis 跑分。Write-Behind 不是银弹。'
+  }
+
+  function renderCccLadder(rows) {
+    var box = $('#ccc-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.totals && isNum(r.totals.writeBackendRttMs) ? r.totals.writeBackendRttMs : 0 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var t = r.totals || {}
+      var w = isNum(t.writeBackendRttMs) ? Math.round(t.writeBackendRttMs / max * 100) : 0
+      return '<div class="ccc-line" data-p="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="ccc-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">陈' + esc(fmt(t.staleReads)) + ' · 阻' + esc(fmt(t.writeBackendRttMs)) + 'ms · 丢' + esc(fmt(t.dirtyPagesLost)) + ' · 合' + esc(fmt(t.coalescedWrites)) + ' · 宕' + esc(fmt(t.crashedScenarios)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderCccTrilemma(rows, verdict, crosscheck) {
+    var box = $('#ccc-trilemma'), cxBox = $('#ccc-crosscheck'), note = $('#ccc-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      cccMissing(box, note, '三难判据'); if (cxBox) cxBox.innerHTML = ''; return
+    }
+    var flags = [['readYourWrites', '写后立刻可见'], ['noWriteBlocking', '写路径不阻塞'], ['durableOnCrash', '整机宕不丢写']]
+    var head = '<div class="ccc-vec ccc-vec-head"><span class="proto">协议</span>' +
+      flags.map(function (f) { return '<span>' + f[1] + '</span>' }).join('') + '</div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (f) {
+        var yes = t[f[0]] === true
+        return '<span class="ccc-flag ' + (yes ? 'yes' : 'no') + '" data-p="' + esc(r.protocol) + '" data-k="' + f[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      return '<div class="ccc-vec" data-p="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells + '</div>'
+    }).join('')
+    box.innerHTML = head + body
+    // 真依赖交叉印证：七枚真件读数（Redis 写后读 / WAL 进程内恢复但非跨机 / XFetch / Sharded / MVCC / 2PC / 环）。
+    if (cxBox) {
+      var rd = crosscheck && crosscheck.redis, wa = crosscheck && crosscheck.wal
+      var gd = crosscheck && crosscheck.guard, sh = crosscheck && crosscheck.sharded
+      var mv = crosscheck && crosscheck.mvcc, tp = crosscheck && crosscheck.twoPhase, ri = crosscheck && crosscheck.ring
+      if (rd && wa && gd && sh && mv && tp && ri) {
+        cxBox.innerHTML =
+          '<div>真 <b>createRedisCache</b> 写 ' + esc(String(rd.secondVersion)) + ' 后读见新值 <span class="jade-t">' + (rd.writeThenReadSeesNew ? '✓' : '✗') +
+          '</span>（缓存命中 <b>' + esc(fmt(rd.hits)) + '</b>；' + esc(String(rd.firstVersion)) + '→' + esc(String(rd.secondVersion)) + '）<span class="wine-t">' + (rd.notRealRedis ? ' 非真 Redis' : '') + '</span></div>' +
+          '<div>真 <b>createWal</b> append/restore/replay <b>' + esc(fmt(wa.lines)) + '/' + esc(fmt(wa.restored)) + '/' + esc(fmt(wa.replayed)) +
+          '</b>，进程崩溃可恢复 ' + (wa.processCrashRecoverable ? '✓' : '✗') + '，<span class="wine-t">但 sink 进程内、跨机复制 ' +
+          (wa.replicatedAcrossNodes ? '✓' : '✗') + '、整机+盘一起丢 ' + (wa.wholeNodeLossDurable ? '✓' : '✗') + '</span> ⇒ 单开 WAL 抹不掉 durable 维</div>' +
+          '<div>真 <b>shouldEarlyExpire</b> XFetch 随 age→TTL 单调 ' + (gd.monotonic ? '✓' : '✗') +
+          '（young ' + (gd.youngEarly ? '早' : '否') + ' / old ' + (gd.oldEarly ? '早' : '否') + '，降概率非消窗口）· 真 <b>createShardedCache</b> 写/读 <b>' +
+          esc(fmt(sh.written)) + '/' + esc(fmt(sh.readHits)) + '</b>，' + esc(fmt(sh.shards)) + ' 片全可读 ' + (sh.allReadable ? '✓' : '✗') + '</div>' +
+          '<div>真 <b>createMvccStore</b> 库侧写后读已提交新值需版本链 ' + esc(String(mv.beforeCommitVersion)) + '→' + esc(String(mv.afterCommitVersion)) +
+          '（需提交 ' + (mv.writeThenReadNeedsCommit ? '✓' : '✗') + '）· 真 <b>createTwoPhaseCommit</b> 全 yes 提交 <b>' + esc(fmt(tp.commitMessages)) +
+          '</b> 条，协调者宕则阻塞 <b>' + esc(fmt(tp.blockedParticipants)) + '</b> 人<span class="wine-t">' + (tp.notRealXa ? ' 非真 XA' : '') + '</span></div>' +
+          '<div>真 <b>createHashRing</b> 环 ' + esc(fmt(ri.keys)) + ' key / ' + esc(fmt(ri.nodes)) + ' 节点 fanout 空片 ' + esc(fmt(ri.emptyNodes)) +
+          ' · balanceRatio ' + esc(fmt(ri.balanceRatio, 3)) + '</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">无真件交叉印证读数（七块缺任一即各自降级）</div>'
+      }
+    }
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var notPanacea = v.writeBehindNotPanacea === true
+    var walNot = v.walNotDurableAcrossNode === true
+    var chips = [
+      '<span class="chip" data-probe="cccAside"><b>CacheAside</b> 陈旧窗口 ' + (v.asideHasStaleWindow ? '✓' : '✗') + ' · 写阻塞 ' + (v.asideBlocksOnBackend ? '✓' : '✗') + ' · 宕不丢 ' + (v.asideDurable ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-probe="cccThrough"><b>WriteThrough</b> 强一致 ' + (v.throughConsistent ? '✓' : '✗') + ' · 写阻塞 ' + (v.throughBlocksOnBackend ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-probe="cccBehind"><b>WriteBehind</b> 不阻塞 ' + (v.behindNoWriteBlocking ? '✓' : '✗') + ' · 宕丢脏页 ' + (v.behindLosesDirtyOnCrash ? '✓' : '✗') + ' · 合并 ' + (v.behindCoalescesWrites ? '✓' : '✗') + '</span>',
+      '<span class="chip ' + (walNot ? 'jade-t' : 'muted-t') + '" data-probe="cccWal">' + (walNot ? '✓ 进程内 WAL 跨机不保、整机宕仍丢写' : 'WAL 跨机保写') + '</span>',
+      '<span class="chip ' + (notPanacea ? 'jade-t' : 'muted-t') + '" data-verdict="writeBehindNotPanacea">' + (notPanacea ? '✓ Write-Behind 不是银弹（缺整机宕不丢写）' : 'Write-Behind 全占（换场景会翻）') + '</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' + (noWin ? '✓ 不封任何协议全局赢家' : '本配置下归一（换场景会翻）') + '</span>',
+    ]
+    var probes = $('#ccc-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '三难 = 写后读立刻可见 ∧ 写路径不阻塞 ∧ 整机宕不丢写。' +
+      '真实向量 CacheAside=001 / WriteThrough=101 / WriteBehind=110 三条互不相同、没有一条三个全占（不预设各恰好缺一）：' +
+      'CacheAside 只占 durable 一维、缺「写后可见 + 写不阻塞」两难（更库/删缓存非原子窗口 + 同步打库）；' +
+      'WriteThrough 一致 + 不丢但缺「写不阻塞」一难（每次写吃库 RTT）；' +
+      'WriteBehind 写后可见 + 不阻塞但缺「整机宕不丢写」一难（未刷回脏页全丢）。' +
+      '进程内 WAL 只能救同机进程崩溃 replay，WAL 与盘同机、整机一起丢 ⇒ 单开 walEnabled 抹不掉 durable 维（真跨机不丢须 quorum 复制，属 Raft 共识的活）。' +
+      '判定正交化：cacheCrash 只罚 durable、不连带罚写后可见。真依赖交叉印证取七枚真件读数；可证伪（rigged 原子失效 + 抹库 RTT + 写回同步双写 + 六场景 fault 全空后三协议全退化为 111、三判词翻 false）。' +
+      '全为确定性故障场景结构计数、非墙钟/QPS/字节/真 Redis 跑分；换场景结论会变，不封赢家。'
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)

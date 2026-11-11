@@ -954,4 +954,78 @@ describe('caesura-console-ui (KI-495)', () => {
     expect(dom2.els['dcc-matrix'].innerHTML).toContain('class="dcc-cell over"')     // 矩阵照常
     expect(dom2.els['dcc-trilemma'].innerHTML).toContain('data-k="instantPerceive"') // 三难照常
   })
+
+  it('㉜ KI-512 真 cacheCoherency 读数落进「三协议×六场景」+「三难不可兼得」两面板（含七枚真件交叉印证，不是写死数）', async () => {
+    const dom = await runApp(real)
+    const ccc = real.systems.cacheCoherency
+    // 面板一：三协议 × 六场景矩阵（丢/陈/存/阻/合/成，读 Node 判词）+ 写 RTT 横条
+    const matrix = dom.els['ccc-matrix'].innerHTML
+    expect(matrix).toContain('ccc-mat-head')
+    for (const row of ccc.rows) expect(matrix).toContain('data-p="' + row.protocol + '"')
+    for (const s of ccc.config.scenarios) expect(matrix).toContain('data-s="' + s + '"')
+    expect(matrix).toContain('class="ccc-cell stale" data-p="CacheAside" data-s="readAfterWrite"')    // CacheAside 非原子窗口陈旧读
+    expect(matrix).toContain('class="ccc-cell lost" data-p="WriteBehind" data-s="cacheCrash"')        // WriteBehind 整机宕丢脏页
+    expect(matrix).toContain('class="ccc-cell crash" data-p="WriteThrough" data-s="cacheCrash"')      // WriteThrough 宕而不丢
+    expect(matrix).toContain('class="ccc-cell coalesce" data-p="WriteBehind" data-s="writeHeavy"')    // WriteBehind 写回合并
+    expect(matrix).toContain('class="ccc-cell block" data-p="WriteThrough" data-s="writeHeavy"')      // WriteThrough 写阻塞
+    expect(matrix).toContain(String(ccc.rows.find((r: any) => r.protocol === 'CacheAside').totals.writeBackendRttMs)) // 写 RTT 真读数
+    const ladder = dom.els['ccc-ladder'].innerHTML
+    expect(ladder).toContain('data-p="WriteBehind"')
+    expect(ladder).toContain('ccc-bar')
+    expect(dom.els['ccc-matrix-note'].textContent).toContain('Write-Behind 不是银弹')
+    // 面板二：三难向量（逐格 data-v）+ 七枚真件交叉印证栏 + 判词探针 + 不封赢家
+    const tri = dom.els['ccc-trilemma'].innerHTML
+    expect(tri).toContain('ccc-vec-head')
+    expect(tri).toContain('data-k="readYourWrites"')
+    expect(tri).toContain('data-k="noWriteBlocking"')
+    expect(tri).toContain('data-k="durableOnCrash"')
+    expect(tri).toContain('data-p="CacheAside" data-k="readYourWrites" data-v="0"')     // CacheAside 缺写后可见
+    expect(tri).toContain('data-p="WriteThrough" data-k="noWriteBlocking" data-v="0"')  // WriteThrough 缺写不阻塞
+    expect(tri).toContain('data-p="WriteBehind" data-k="durableOnCrash" data-v="0"')    // WriteBehind 缺整机宕不丢写
+    const cx = dom.els['ccc-crosscheck'].innerHTML
+    expect(cx).toContain('createRedisCache')
+    expect(cx).toContain('createWal')
+    expect(cx).toContain('shouldEarlyExpire')
+    expect(cx).toContain('createShardedCache')
+    expect(cx).toContain('createMvccStore')
+    expect(cx).toContain('createTwoPhaseCommit')
+    expect(cx).toContain('createHashRing')
+    expect(cx).toContain(String(ccc.crosscheck.sharded.readHits))            // 分片全可读真读数
+    expect(cx).toContain(String(ccc.crosscheck.twoPhase.blockedParticipants)) // 2PC 阻塞真读数
+    expect(cx).toContain('整机+盘一起丢')                                     // WAL 诚实边界
+    const probes = dom.els['ccc-probes'].innerHTML
+    expect(probes).toContain('data-probe="cccAside"')
+    expect(probes).toContain('data-probe="cccThrough"')
+    expect(probes).toContain('data-probe="cccBehind"')
+    expect(probes).toContain('data-probe="cccWal"')
+    expect(probes).toContain('data-verdict="writeBehindNotPanacea"')
+    expect(probes).toContain('data-verdict="noUniversalWinner"')
+    expect(dom.els['ccc-trilemma-note'].textContent).toContain('换场景结论会变')
+  })
+
+  it('㉝ KI-512 cacheCoherency 整块缺 / 单块缺诚实降级，不连坐 dcc-drl-lsm', async () => {
+    // 整块缺：五子块全降级、绝不画 0/假格；其它维仍照常。
+    const noCcc = JSON.parse(JSON.stringify(real))
+    noCcc.systems.cacheCoherency = null
+    const dom = await runApp(noCcc)
+    expect(dom.els['ccc-matrix'].innerHTML).toContain('无三协议场景矩阵读数')
+    expect(dom.els['ccc-ladder'].innerHTML).toBe('')
+    expect(dom.els['ccc-trilemma'].innerHTML).toContain('无三难判据读数')
+    expect(dom.els['ccc-crosscheck'].innerHTML).toBe('')
+    expect(dom.els['ccc-probes'].innerHTML).toBe('')
+    expect(dom.els['ccc-matrix-note'].textContent).toContain('systems.cacheCoherency 缺失')
+    expect(dom.els['dcc-matrix'].innerHTML).toContain('data-p="Polling"')             // KI-511 不连坐
+    expect(dom.els['drl-matrix'].innerHTML).toContain('data-p="Local"')               // KI-510 不连坐
+    expect(dom.els['lsm-gauge'].innerHTML).toContain(String(real.systems.lsm.speedup.toFixed(1))) // lsm 不连坐
+
+    // 单块缺：只降 crosscheck 真件交叉印证，矩阵/三难向量/探针仍渲染真读数（同维不连坐）。
+    const partial = JSON.parse(JSON.stringify(real))
+    partial.systems.cacheCoherency.crosscheck = null
+    const dom2 = await runApp(partial)
+    expect(dom2.els['ccc-crosscheck'].innerHTML).toContain('无真件交叉印证读数')   // crosscheck 缺 → 诚实降级
+    expect(dom2.els['ccc-crosscheck'].innerHTML).not.toContain('createRedisCache') // 不编造铁证
+    expect(dom2.els['ccc-probes'].innerHTML).toContain('data-probe="cccWal"')      // 其余探针照常
+    expect(dom2.els['ccc-matrix'].innerHTML).toContain('class="ccc-cell lost"')     // 矩阵照常
+    expect(dom2.els['ccc-trilemma'].innerHTML).toContain('data-k="durableOnCrash"')  // 三难照常
+  })
 })

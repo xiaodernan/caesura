@@ -105,6 +105,9 @@ export function runMeshE2E(opts = {}) {
     // KI-511：分布式配置一致性三协议（configConsistency=true 装配；只读 轮询/长轮询/watch 推送 × 六场景矩阵 + 三难判词 + 真 Config响应/watcher/bus/环交叉印证，不改调用路径）。
     configConsistency: opts.configConsistency,
     dccNow: opts.dccNow,
+    // KI-512：分布式缓存读写一致性三协议（cacheCoherency=true 装配；只读 Cache-Aside/Write-Through/Write-Behind × 六场景矩阵 + 三难判词 + 真 Redis写后读/WAL崩溃恢复/MVCC/2PC/环 交叉印证，不改调用路径）。
+    cacheCoherency: opts.cacheCoherency,
+    cccNow: opts.cccNow,
     sources: {
       eureka: () => (opts.svcA ?? [{ id: 'svc-a:1', name: 'svc-a', address: '10.0.0.1', port: 8080, healthy: true }]),
       k8s: () => k8s.discover('caesura-gate'),
@@ -238,6 +241,7 @@ export function runMeshE2E(opts = {}) {
         idGenSnapshot: status.idGen ?? null,
         distributedRateLimitSnapshot: status.distributedRateLimit ?? null,
         configConsistencySnapshot: status.configConsistency ?? null,
+        cacheCoherencySnapshot: status.cacheCoherency ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
       }
@@ -384,6 +388,18 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         noUniversalWinner: r.configConsistencySnapshot.verdict.noUniversalWinner,
         crosscheck: r.configConsistencySnapshot.crosscheck,
         verdict: r.configConsistencySnapshot.verdict,
+      } : null,
+      cacheCoherency: r.cacheCoherencySnapshot ? {
+        protocols: r.cacheCoherencySnapshot.rows.map((row) => ({
+          protocol: row.protocol,
+          ladder: row.scenarios.map((s) => s.id + ':' + (s.dirtyPagesLost > 0 ? '丢' : s.staleReads > 0 ? '旧' : s.writeBackendRounds > 0 ? '阻' : s.coalescedWrites > 0 ? '并' : '成')).join(' → '),
+          totals: row.totals, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.cacheCoherencySnapshot.rows.map((row) => [row.protocol,
+          `${Number(row.trilemma.readYourWrites)}${Number(row.trilemma.noWriteBlocking)}${Number(row.trilemma.durableOnCrash)}`])),
+        noUniversalWinner: r.cacheCoherencySnapshot.verdict.noUniversalWinner,
+        crosscheck: r.cacheCoherencySnapshot.crosscheck,
+        verdict: r.cacheCoherencySnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))
