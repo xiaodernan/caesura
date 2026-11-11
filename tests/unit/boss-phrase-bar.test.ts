@@ -82,4 +82,35 @@ describe('BossPhraseBar 单元测试', () => {
     bar.tick(0.016)
     expect(() => bar.draw()).not.toThrow()
   })
+
+  it('Phase F-41 朱砂乐谱：真 canvas 样件统计 —— 面板分层/金丝/朱引线/朱「命」印/staff 连珠钉', () => {
+    const counts = { fillRect: 0, arc: 0 }
+    const strokes: string[] = []
+    const ctx = {
+      save: () => {}, restore: () => {},
+      globalAlpha: 1,
+      fillStyle: '', strokeStyle: '', lineWidth: 1, font: '', textAlign: '', textBaseline: '',
+      fillRect: () => { counts.fillRect++ },
+      strokeRect: () => {},
+      fillText: (t: string) => { strokes.push(String(t)) },
+      beginPath: () => {},
+      arc: () => { counts.arc++ },
+      fill: () => {},
+      setTransform: () => {},
+    } as unknown as CanvasRenderingContext2D
+    const canvas = {
+      getContext: () => ctx,
+      clientWidth: 1280, clientHeight: 720, width: 1280, height: 720, style: {},
+    } as unknown as HTMLCanvasElement
+    const bar = new BossPhraseBar(canvas)
+    emitBossPhase('en_hersil', 2, 3, 'dlg.hersil_phase2')
+    bar.draw()
+    bar.dispose()
+    // 面板+双金丝+朱引线+朱印+staff+4 拍钉 ≥ 10 块填充；当前拍（默认 beatInBar=1）有朱连珠弧
+    expect(counts.fillRect).toBeGreaterThanOrEqual(10)
+    expect(counts.arc, '当前拍连珠应画一枚朱弧').toBe(1)
+    expect(strokes, '朱「命」印在场').toContain('命')
+    expect(strokes, 'nameKey 原样画出').toContain('dlg.hersil_phase2')
+    expect(strokes, '段次小字').toContain('第2 / 3 段')
+  })
 })

@@ -60,7 +60,12 @@ export class BossPhraseBar {
     this.flash = Math.max(0, this.flash - dt * 3)
   }
 
-  /** 由外部 render loop 调用：把当前状态画到 canvas。 */
+  /** 由外部 render loop 调用：把当前状态画到 canvas。
+   *  Phase F-41 朱砂乐谱（headless 可证、零渐变零阴影）：
+   *  - 断牍纸面板（深靛三层背景）+ 双缘金丝 1px 细线 + 左缘朱砂引线
+   *  - 右上朱「命」13×13 小印（段印，§9 朱砂规范；Canvas 真绘不自称美术评审）
+   *  - 下半截五线制式乐谱：水平 staff 细梁 + 四拍钉（当前拍为朱砂上凸 14px 连珠）
+   */
   draw(): void {
     const ctx = this.ctx
     if (this.phase === null || this.phases === null) return
@@ -71,45 +76,56 @@ export class BossPhraseBar {
     ctx.save()
     ctx.globalAlpha = this.alpha
 
-    // 背景条：半透明深色，闪烁时稍亮
-    const barW = 220
-    const barH = 34
+    // 断牍纸面板：墨靛三层暗纹（与 dialogues 宣纸皮对仗）
+    const barW = 236
+    const barH = 74
     const x = this.cssW - barW - 24
     const y = this.cssH / 2 - barH / 2
-
-    ctx.fillStyle = `rgba(20, 14, 24, ${0.75 * this.alpha + 0.15 * this.flash})`
+    ctx.fillStyle = `rgba(15, 13, 20, ${0.82 * this.alpha + 0.1 * this.flash})`
     ctx.fillRect(x, y, barW, barH)
+    // 上下缘金丝 1px 细线（闪动时提鲜）+ 左缘朱砂引线 3px
+    ctx.fillStyle = `rgba(201, 180, 88, ${0.3 + 0.55 * this.flash})`
+    ctx.fillRect(x, y, barW, 1)
+    ctx.fillRect(x, y + barH - 1, barW, 1)
+    ctx.fillStyle = 'rgba(166, 64, 50, 0.85)'
+    ctx.fillRect(x, y, 3, barH)
 
-    // 边框：闪烁时琥珀色，平时骨白
-    ctx.strokeStyle = this.flash > 0 ? `rgba(255, 184, 107, ${this.alpha})` : `rgba(232, 223, 203, ${0.5 * this.alpha})`
-    ctx.lineWidth = 2
-    ctx.strokeRect(x, y, barW, barH)
-
-    // 标题：Boss 名称键（nameKey 来自事件，表现层不做本地化——本地化由上层做）
-    ctx.fillStyle = `rgba(232, 223, 203, ${this.alpha})`
-    ctx.font = 'bold 14px Georgia, "Songti SC", "STSong", "SimSun", serif'
-    ctx.textAlign = 'left'
+    // 右上朱「命」印：段印（13×13），flash 时内刻墨晕提鲜
+    ctx.fillStyle = 'rgba(166, 64, 50, 0.92)'
+    ctx.fillRect(x + barW - 20, y + 6, 13, 13)
+    ctx.fillStyle = '#f4e9d8'
+    ctx.font = '600 10px Georgia, "Songti SC", "STSong", serif'
+    ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    const label = this.nameKey ?? `phase-${this.phase}`
-    ctx.fillText(label, x + 12, y + barH / 2 - 8)
+    ctx.fillText('命', x + barW - 13.5, y + 12.7)
 
-    // 阶段进度：X / Y
-    ctx.font = '12px Georgia, "Songti SC", "STSong", "SimSun", serif'
-    ctx.fillText(`${this.phase} / ${this.phases}`, x + 12, y + barH / 2 + 10)
+    // 乐句线名（nameKey）+ 段次小字（沿用副标金）
+    ctx.fillStyle = '#efe6d2'
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'alphabetic'
+    ctx.font = '600 13px Georgia, "Songti SC", serif'
+    ctx.fillText(this.nameKey ?? `phase-${this.phase}`, x + 12, y + 17)
+    ctx.fillStyle = 'rgba(227, 207, 143, 0.85)'
+    ctx.font = '10px Georgia, "Songti SC", serif'
+    ctx.fillText(`第${this.phase} / ${this.phases} 段`, x + 12, y + 35)
 
-    // 拍位指示器：当前拍在小节内的位置（1-based），用 4 个小点表示 4 拍
-    const beatsPerBar = 4
-    const dotW = 6
-    const dotGap = 8
-    const dotsStartX = x + barW - 12 - beatsPerBar * (dotW + dotGap)
-    for (let i = 0; i < beatsPerBar; i++) {
-      const isCurrent = i + 1 === this.beatInBar
-      ctx.fillStyle = isCurrent
-        ? `rgba(255, 184, 107, ${this.alpha})`
-        : `rgba(232, 223, 203, ${0.3 * this.alpha})`
-      ctx.beginPath()
-      ctx.arc(dotsStartX + i * (dotW + dotGap), y + barH / 2, dotW / 2, 0, Math.PI * 2)
-      ctx.fill()
+    // 中央乐谱 staff：一条细梁 + 四拍钉（1-based 对齐 rhythm.beat.beatInBar）
+    const staffY = y + barH - 12
+    ctx.fillStyle = 'rgba(232, 223, 203, 0.22)'
+    ctx.fillRect(x + 12, staffY, barW - 24, 1)
+    const beats = 4
+    const slot = (barW - 24) / (beats + 1)
+    for (let i = 0; i < beats; i++) {
+      const bx = x + 12 + slot * (i + 1)
+      const cur = i + 1 === this.beatInBar
+      ctx.fillStyle = cur ? 'rgba(212, 106, 78, 0.95)' : 'rgba(232, 223, 203, 0.28)'
+      ctx.fillRect(bx - 1.5, staffY - (cur ? 7 : 5), 3, cur ? 14 : 10)
+      if (cur) {
+        ctx.fillStyle = 'rgba(212, 106, 78, 0.75)'
+        ctx.beginPath()
+        ctx.arc(bx, staffY - 10, 2.6, 0, Math.PI * 2)
+        ctx.fill()
+      }
     }
 
     ctx.restore()
