@@ -32,6 +32,7 @@
 | Phase F-20 | Spring Cloud 家族判词整族全绿：六件 jar 全起、gate 名册 count=5（含 gate-suite test）、`/report/verdict` 5 门全 green、熔断器全程 CLOSED、Java 侧判定权仍是 Node 侧、healths 稳定 | 92d1a2d |
 | Phase F-21 | 端到端验收器 `scripts/spring-family-e2e-check.mjs` 固化（两阶启动 + 四条探针 + 自动停六件；14 腿单测覆盖纯函数） | e9b979e |
 | Phase F-22 | `gate-perf` 加入门名册：`measure-probe.mjs --budget=10ms` + `perf-budget-rules.mjs`（p95 预算门，10 腿单测）；经网关实测 gate-perf green（4.4s），probes 期望 count 5→6 同步 | 236bf92, 280a9e4 |
+| Phase F-23 | 标题页「余烬仪典（Ember Rite）」视觉层：纯 CSS 环境光呼吸（tg-breathe）/ 慢旋符环（tg-spin 140s）/ 14 粒静态余烬（nth-child 确定性、tg-rise）/ 鎏金渐变主标题（background-clip:text + drop-shadow 呼吸）/ 副题两端金线 / 原点卡悬停升起 + 顶部金线扫过 + 选中态金环脉搏（tg-selpulse）/ 按钮金下划线生长 / focus-visible 键盘焦点环 + prefers-reduced-motion 全关；零 JS 动画、零图片资源、零 npm 依赖；title 套件 35→37 腿（新增 <style> 规则断言 + 三视图 14 粒 aria-hidden 断言） | 21c92a1, bde68b1 |
 | KI-407 | coverage 棘轮三出口（0/1/2）全部有测试 + 基线落地 | 07399b9 |
 | Phase C / F3 | Boss 乐句线 HUD：BossPhraseBar.ts + main.ts 接线 + flow 测试 | 08bb3f5 |
 | KI-118 fix | spring-health-check.mjs 移除 shebang（module-loader 门禁） | 0698210 |
