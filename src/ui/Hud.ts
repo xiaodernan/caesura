@@ -938,17 +938,54 @@ export class Hud {
     if (!this.dead) return
     const { ctx } = this
     const a = clamp01(this.deadT / 0.8)
-    ctx.fillStyle = `rgba(7,8,12,${(0.6 * a).toFixed(3)})`
-    ctx.fillRect(0, 0, this.cssW, this.cssH)
-    const size = Math.min(this.cssW, this.cssH) * 0.16
+    const pulse = 0.72 + 0.28 * Math.sin(this.time * 2.4)
+    const w = this.cssW, h = this.cssH
+    const cx = w / 2, cy = h / 2
+
+    // 墨染：边缘内陷的死亡黑暗（中心不死齐黑、边缘一层层暗下去）
+    const ash = ctx.createRadialGradient(cx, cy, Math.min(w, h) * 0.34, cx, cy, Math.max(w, h) * 0.78)
+    ash.addColorStop(0, 'rgba(10,10,14,0)')
+    ash.addColorStop(1, `rgba(7,8,12,${(0.6 * a * pulse).toFixed(3)})`)
+    ctx.fillStyle = ash
+    ctx.fillRect(0, 0, w, h)
+
+    // 往生双环（外环淡金徽暖、内环暗金收束——熄火前最后的回响）
+    const rad = Math.min(w, h) * 0.25 * (0.88 + 0.12 * pulse)
+    ctx.strokeStyle = css([201, 180, 88], 0.78 * a * pulse)
+    ctx.lineWidth = 1
+    ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2); ctx.stroke()
+    ctx.strokeStyle = css([201, 180, 88], 0.32 * a)
+    ctx.lineWidth = 1.6
+    ctx.beginPath(); ctx.arc(cx, cy, rad * 0.82, 0, Math.PI * 2); ctx.stroke()
+
+    // 一缕明火余烬从左上擦过（扇形弧形态静止、但呼吸微闪——配合尸体时钟）
+    ctx.strokeStyle = css([255, 170, 80], 0.55 * a * pulse)
+    ctx.lineWidth = 2.4
+    ctx.shadowColor = css([255, 170, 80], 0.9)
+    ctx.shadowBlur = 10 * pulse
+    ctx.beginPath(); ctx.arc(cx, cy, rad * 0.62, -2.4, -1.5); ctx.stroke()
+    ctx.shadowBlur = 0
+
+    // 止音主字 + 副字
+    const size = Math.min(w, h) * 0.16
     ctx.font = `${size}px ${SERIF}`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillStyle = css(BONE, 0.92 * a)
-    ctx.fillText('休 止', this.cssW / 2, this.cssH / 2)
+    ctx.fillText('休 止', cx, cy)
     const s = this.scale()
     ctx.font = `${14 * s}px ${SERIF}`
     ctx.fillStyle = css(BONE, 0.45 * a)
-    ctx.fillText('你的节拍停在这里', this.cssW / 2, this.cssH / 2 + size * 0.75)
+    ctx.fillText('你的节拍停在这里', cx, cy + size * 0.75)
+
+    // 往生一印：右下角的暗金小方框 + 极简的「寂」（余烬落尽之后的字）
+    const boxU = 9 * s
+    const bx = w - boxU * 3.2, by = h - boxU * 3.2
+    ctx.strokeStyle = css([201, 180, 88], 0.75 * a)
+    ctx.lineWidth = 1.2
+    ctx.strokeRect(bx, by, boxU * 2, boxU * 2)
+    ctx.fillStyle = css([201, 180, 88], 0.9 * a)
+    ctx.font = `${boxU * 1.35}px ${SERIF}`
+    ctx.fillText('寂', bx + boxU, by + boxU)
   }
 }
