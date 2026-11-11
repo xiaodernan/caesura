@@ -13,6 +13,9 @@ import { resolve } from 'node:path'
  */
 export default defineConfig({
   resolve: { alias: { '@': resolve(import.meta.dirname, 'src') } },
+  // GitHub Pages serves this project from /caesura/; local development keeps /
+  // so the same source remains convenient to run on localhost.
+  base: process.env.GITHUB_ACTIONS ? '/caesura/' : '/',
   server: { port: 5173 },
   // vite 8: oxc replaces esbuild. Target on es2022 for top-level await support.
   oxc: { target: 'es2022' },
