@@ -424,7 +424,31 @@ export interface MessageDeliveryReading {
   builtAt: number
 }
 
-/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511 + KI-512 + KI-513：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 + 缓存读写一致性 + 消息投递语义）。 */
+/** KI-518：延迟消息队列调度三协议（TimingWheel / MinHeap / RedisZset）六场景矩阵 + 三难向量 + 七枚真件交叉印证。形状与 messageDelivery 不同构：crosscheck 只有 evidence 一块。 */
+export interface DelayQueueReading {
+  config: Record<string, any>
+  rows: Array<{
+    protocol: string
+    scenarios: Array<{
+      id: string; protocol: string; fired: number; lateMs: number; duplicatePickups: number
+      lostOnRestart: number; opUnits: number; lowCost: boolean; punctual: boolean; sharedDurable: boolean
+    }>
+    totals: { fired: number; lateMs: number; duplicatePickups: number; lostOnRestart: number; opUnits: number }
+    trilemma: { lowCost: boolean; punctual: boolean; sharedDurable: boolean }
+  }>
+  vectors: Record<string, string>
+  crosscheck: {
+    evidence: {
+      hashRingNodes: number; hashRingEmptyNodes: number; redisEntries: number; walLines: number
+      busDelivered: number; tokenBucketOk: boolean; bplusRangeCount: number; poolAcquired: number
+    }
+  }
+  verdict: Record<string, any>
+  topology: Record<string, string>
+  builtAt: number
+}
+
+/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511 + KI-512 + KI-513 + KI-518：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 + 缓存读写一致性 + 消息投递语义 + 延迟消息队列调度）。 */
 export interface SystemsBlock {
   lsm: LsmReading | null
   hw: HwReading | null
@@ -441,6 +465,7 @@ export interface SystemsBlock {
   configConsistency: ConfigConsistencyReading | null
   cacheCoherency: CacheCoherencyReading | null
   messageDelivery: MessageDeliveryReading | null
+  delayQueue: DelayQueueReading | null
   builtAt: number
 }
 
@@ -523,6 +548,15 @@ export function buildSnapshot(opts?: {
   mmdManyKeys?: number
   mmdRetryLimit?: number
   mmdAckReliable?: boolean
+  /** KI-518：false 关掉延迟消息队列调度维（兼容旧快照）；dq* 注入规模/tick/轮询周期/rigged 开关。 */
+  delayQueue?: boolean
+  dqTasks?: number
+  dqTickMs?: number
+  dqWheelSlots?: number
+  dqPollIntervalMs?: number
+  dqZeroTick?: boolean
+  dqFreeHeapOps?: boolean
+  dqSharedBackend?: boolean
 }): Promise<ConsoleSnapshot>
 
 /** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511 + KI-512 + KI-513：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 + 缓存读写一致性 + 消息投递语义 十五维系统读数；击穿并发 ⇒ async。 */
@@ -582,6 +616,15 @@ export function buildSystems(opts?: {
   mmdManyKeys?: number
   mmdRetryLimit?: number
   mmdAckReliable?: boolean
+  /** KI-518：false 关掉延迟消息队列调度维（兼容旧快照）；dq* 注入规模/tick/轮询周期/rigged 开关。 */
+  delayQueue?: boolean
+  dqTasks?: number
+  dqTickMs?: number
+  dqWheelSlots?: number
+  dqPollIntervalMs?: number
+  dqZeroTick?: boolean
+  dqFreeHeapOps?: boolean
+  dqSharedBackend?: boolean
 }): Promise<SystemsBlock>
 
 /** KI-501：真跑缓存防护三件套（击穿/穿透/雪崩）收敛成前端三面板紧凑读数；单维失败落 null。 */
@@ -690,6 +733,19 @@ export function buildMessageDeliveryReading(opts: {
   mmdRetryLimit?: number
   mmdAckReliable?: boolean
 }, now: () => number): Promise<MessageDeliveryReading | null>
+
+/** KI-518：真跑延迟消息队列调度三协议（TimingWheel / MinHeap / RedisZset × 六场景矩阵 + 三难向量 + 七枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
+export function buildDelayQueueReading(opts: {
+  now?: () => number
+  delayQueue?: boolean
+  dqTasks?: number
+  dqTickMs?: number
+  dqWheelSlots?: number
+  dqPollIntervalMs?: number
+  dqZeroTick?: boolean
+  dqFreeHeapOps?: boolean
+  dqSharedBackend?: boolean
+}, now: () => number): Promise<DelayQueueReading | null>
 
 export function realScenarioOpts(id: string): Record<string, any>
 

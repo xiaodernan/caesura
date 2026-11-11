@@ -628,4 +628,32 @@ describe('spring-family-mesh-e2e', () => {
     expect(plain3.cacheCoherencySnapshot).toBe(null)
     expect(plain3.configConsistencySnapshot).toBe(null)
   })
+
+  it('e2e KI-518：delayQueue=true ⇒ 主链照常跑通，delayQueueSnapshot 带三协议×六场景/三难向量/七真件交叉印证', async () => {
+    const e = runMeshE2E({ delayQueue: true, dqNow: () => 8888 })
+    const r = await e.run()
+    expect(r.started?.registered).toBe(true)          // 主链语义逐字不动
+    expect(r.callRes?.ok).toBe(true)
+    const d = r.delayQueueSnapshot
+    expect(d).not.toBe(null)
+    expect(d!.builtAt).toBe(8888)
+    expect(d!.config.scenarios.length).toBe(6)
+    expect(d!.rows.length).toBe(3)
+    expect(d!.vectors).toEqual({ TimingWheel: '100', MinHeap: '010', RedisZset: '001' })
+    const w = d!.rows.find((row: any) => row.protocol === 'TimingWheel')!
+    const h = d!.rows.find((row: any) => row.protocol === 'MinHeap')!
+    const z = d!.rows.find((row: any) => row.protocol === 'RedisZset')!
+    expect(w.scenarios.find((s: any) => s.id === 'tickSkew')!.lateMs).toBeGreaterThan(0)
+    expect(h.totals.lateMs).toBe(0)
+    expect(z.scenarios.find((s: any) => s.id === 'workerRestart')!.lostOnRestart).toBe(0)
+    expect(Object.keys(d!.crosscheck.evidence).sort()).toEqual(['bplusRangeCount', 'busDelivered', 'hashRingEmptyNodes', 'hashRingNodes', 'poolAcquired', 'redisEntries', 'tokenBucketOk', 'walLines'])
+    expect(d!.crosscheck.evidence.poolAcquired).toBe(2)
+    expect(d!.verdict.noUniversalWinner).toBe(true)
+    const verdictBools = Object.entries(d!.verdict).filter(([k]) => k !== 'vectors').map(([, v]) => v)
+    expect(verdictBools.every(Boolean)).toBe(true)
+    // 未配 delayQueue 时为 null（非破坏、不连坐 KI-513）
+    const plainDq = await runMeshE2E().run()
+    expect(plainDq.delayQueueSnapshot).toBe(null)
+    expect(plainDq.messageDeliverySnapshot).toBe(null)
+  })
 })

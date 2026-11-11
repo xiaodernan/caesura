@@ -53,6 +53,7 @@
       renderConfigConsistency(snap.systems ? snap.systems.configConsistency : null)
       renderCacheCoherency(snap.systems ? snap.systems.cacheCoherency : null)
       renderMessageDelivery(snap.systems ? snap.systems.messageDelivery : null)
+      renderDelayQueue(snap.systems ? snap.systems.delayQueue : null)
       setLive(true, result.source)
     }).catch(function (e) {
       setLive(false, 'error')
@@ -1892,6 +1893,121 @@
       '真 WAL 带 key 重放可去重，但 sink 进程内、不跨机，整机+盘一起丢仍丢（真跨机不丢须 quorum 复制，属 Raft 共识的活）。' +
       '真依赖交叉印证取七枚真件读数；可证伪（rigged 抹崩溃 + ack 可靠 + 幂等零开销 + 六场景 fault 全空后三协议全退化为 111、三判词翻 false）。' +
       '全为确定性故障场景结构计数、非墙钟/QPS/字节/吞吐跑分；换场景结论会变，不封赢家。'
+  }
+
+
+  /* ================= KI-518 延迟消息队列三协议权衡 · 第十六维（dld 族） ================= */
+
+  function renderDelayQueue(dld) {
+    renderDldMatrix(dld && dld.rows, dld && dld.config)
+    renderDldLadder(dld && dld.rows)
+    renderDldTrilemma(dld && dld.rows, dld && dld.verdict, dld && dld.crosscheck)
+  }
+
+  function dldMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 暂缺</div>'
+    if (note) note.textContent = 'systems.delayQueue 缺失 — 跑一次 npm run console:data 即可补齐'
+  }
+
+  function dldState(s) {
+    if (!s) return { cls: '', ch: '·' }
+    if (isNum(s.lateMs) && s.lateMs > 0) return { cls: 'lost', ch: '晩' }
+    if (isNum(s.lostOnRestart) && s.lostOnRestart > 0) return { cls: 'lost', ch: '丢' }
+    if (isNum(s.duplicatePickups) && s.duplicatePickups > 0) return { cls: 'dup', ch: '重' }
+    if (s.punctual === true) return { cls: 'ok', ch: '准' }
+    if (s.lowCost === false) return { cls: 'expensive', ch: '贵' }
+    return { cls: '', ch: '?' }
+  }
+
+  function renderDldMatrix(rows, config) {
+    var box = $('#dld-matrix'), note = $('#dld-matrix-note')
+    if (!Array.isArray(rows) || !rows.length || !config || !Array.isArray(config.scenarios)) {
+      dldMissing(box, note, 'dld 矩阵'); return
+    }
+    var scenarios = config.scenarios
+    var head = '<div class="dld-mat-row dld-mat-head"><span class="dld-mat-proto">协议</span>' +
+      scenarios.map(function (sc) { return '<span class="dld-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="dld-mat-cost">晚/丢/重</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = dldState(cell)
+        return '<span class="dld-cell ' + st.cls + '" data-p="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var t = row.totals || {}
+      return '<div class="dld-mat-row" data-p="' + esc(row.protocol) + '">' +
+        '<span class="dld-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="dld-mat-cost"><b>' + esc(fmt(t.lateMs)) + '</b></span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = '同一组确定性场景分喂三协议：tickSkew（非整 tick 到期）/ farFuture（远期任务）/ manyCancels（批量取消）/ workerRestart（进程内重启）/ concurrentWorkers（并发摘取）。' +
+      '时间轮 Θ(1) 挂槽但 tick 粒度晚点 + 进程内单点；最小堆到期即时精确但 O(log n) 且同样进程内；Redis ZSET 跨 worker 共享可持久化但轮询晚点 + 中心 RTT + 非原子重复消费。' +
+      '不声称墙钟 QPS/延迟，全结构计数。'
+  }
+
+  function renderDldLadder(rows) {
+    var box = $('#dld-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.totals && isNum(r.totals.opUnits) ? r.totals.opUnits : 0 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var t = r.totals || {}
+      var w = isNum(t.opUnits) ? Math.round(t.opUnits / max * 100) : 0
+      return '<div class="dld-line" data-p="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="dld-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">opUnits ' + esc(fmt(t.opUnits)) + ' · late ' + esc(fmt(t.lateMs)) + ' · lost ' + esc(fmt(t.lostOnRestart)) + ' · dup ' + esc(fmt(t.duplicatePickups)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderDldTrilemma(rows, verdict, crosscheck) {
+    var box = $('#dld-trilemma'), cxBox = $('#dld-crosscheck'), note = $('#dld-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      dldMissing(box, note, 'dld 判词'); if (cxBox) cxBox.innerHTML = ''; return
+    }
+    var flags = [['lowCost', '低开销'], ['punctual', '即时精确'], ['sharedDurable', '共享可持久']]
+    var head = '<div class="dld-vec dld-vec-head"><span class="proto">协议</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '</div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="dld-flag ' + (yes ? 'yes' : 'no') + '" data-p="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      return '<div class="dld-vec" data-p="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells + '</div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>真 <b>createHashRing</b> ' + esc(fmt(ev.hashRingNodes)) + ' 节点 · 空片 ' + esc(fmt(ev.hashRingEmptyNodes)) + '</div>' +
+          '<div>真 <b>createRedisCache</b> 幂等键双写后 entries <b>' + esc(fmt(ev.redisEntries)) + '</b> 条</div>' +
+          '<div>真 <b>createWal</b> append/replay 行数 <b>' + esc(fmt(ev.walLines)) + '</b>（进程内 sink、不跨机 durable）</div>' +
+          '<div>真 <b>createBus</b> fire-and-forget 交付 <b>' + esc(fmt(ev.busDelivered)) + '</b> 条</div>' +
+          '<div>真 <b>createTokenBucket</b> 固定 tick 白名单 allow() <b>' + (ev.tokenBucketOk === true ? '✓' : '✗') + '</b>（refillPerSec 真生效）</div>' +
+          '<div>真 <b>createBPlusTree</b> dueAt 有序插入 + range 捞到期 <b>' + esc(fmt(ev.bplusRangeCount)) + '</b> 条</div>' +
+          '<div>真 <b>createObjectPool</b> stats().acquired <b>' + esc(fmt(ev.poolAcquired)) + '</b> 次（非硬编码，复用省 GC 分配）</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">真件交叉印证缺失</div>'
+      }
+    }
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var heapZ = v.minHeapZeroLateMs === true
+    var zsetSurvives = v.redisZsetNeverSilentLossOnRestart === true
+    var wheelLoss = v.timingWheelLosesOnRestart === true || v.wheelRestartLoses === true
+    var chips = [
+      '<span class="chip" data-verdict="wheelCheapest"><b>TimingWheel</b> 最省 ' + (v.wheelCheapest ? '✓' : '✗') + ' · 重启丢 ' + (wheelLoss ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="minHeapZeroLateMs"><b>MinHeap</b> 零晚点 ' + (heapZ ? '✓' : '✗') + ' · 比较数累积 ' + (v.heapPaysComparisons ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="redisZsetNeverSilentLossOnRestart"><b>RedisZset</b> 重启不丢 ' + (zsetSurvives ? '✓' : '✗') + ' · 轮询成本 ' + (v.zsetPaysPollRtt ? '✓' : '✗') + '</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' + (noWin ? '✓ 没有任何协议能同时占三难' : '判词塌陷') + '</span>',
+    ]
+    var probes = $('#dld-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维序固定 [低开销 / 即时精确 / 共享可持久化]。向量 TimingWheel=100 / MinHeap=010 / RedisZset=001，互异、无一 111。' +
+      '可证伪：rigged zeroTick+freeHeapOps+sharedBackend 齐开 ⇒ 时间轮与最小堆退化 111，但 ZSET 的轮询周期晚点 + 中心 RTT 没有对应开关可抹 ⇒ 向量现算 111/111/001、判词仍翻 false（不硬覆盖成全 111）；单开 zeroTick 只让时间轮精确（不连坐）。' +
+      'workerRestart 只罚 sharedDurable 不连带罚 punctual。全为确定性教学状态机，结构计数，不声称墙钟/QPS/真跨机/真 Lua/真有序集合。'
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)

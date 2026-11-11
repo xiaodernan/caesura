@@ -1112,3 +1112,61 @@ describe('caesura-console-ui (KI-495)', () => {
     expect(dom2.els['mmd-trilemma'].innerHTML).toContain('data-k="lowOverhead"')   // 三难照常
   })
 })
+
+describe('KI-518 · delayQueue 延迟消息队列面板：三协议 × 六场景 + 三难向量 + 真件交叉印证', () => {
+  const real = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+  it('真快照下渲染：矩阵/横条/判词/交叉印证/探针全部到位', async () => {
+    const dom = await runApp(real)
+    const dld = real.systems.delayQueue
+    expect(dld).toBeTruthy()
+    const matrix = dom.els['dld-matrix'].innerHTML
+    expect(matrix).toContain('dld-mat-head')
+    for (const row of dld.rows) expect(matrix).toContain('data-p="' + row.protocol + '"')
+    for (const s of dld.config.scenarios) expect(matrix).toContain('data-s="' + s + '"')
+    expect(matrix).toContain('class="dld-cell lost" data-p="TimingWheel" data-s="tickSkew"')
+    expect(matrix).toContain('class="dld-cell ok" data-p="MinHeap" data-s="tickSkew"')
+    const ladder = dom.els['dld-ladder'].innerHTML
+    expect(ladder).toContain('data-p="MinHeap"')
+    expect(ladder).toContain('dld-bar')
+    expect(dom.els['dld-matrix-note'].textContent).toContain('不声称墙钟')
+    const tri = dom.els['dld-trilemma'].innerHTML
+    expect(tri).toContain('dld-vec-head')
+    expect(tri).toContain('data-k="lowCost"')
+    expect(tri).toContain('data-k="punctual"')
+    expect(tri).toContain('data-k="sharedDurable"')
+    expect(tri).toContain('data-p="TimingWheel" data-k="punctual" data-v="0"')
+    expect(tri).toContain('data-p="MinHeap" data-k="punctual" data-v="1"')
+    expect(tri).toContain('data-p="RedisZset" data-k="sharedDurable" data-v="1"')
+    const cx = dom.els['dld-crosscheck'].innerHTML
+    expect(cx).toContain('createHashRing')
+    expect(cx).toContain('createRedisCache')
+    expect(cx).toContain('createWal')
+    expect(cx).toContain('createBus')
+    expect(cx).toContain('createTokenBucket')
+    expect(cx).toContain('createBPlusTree')
+    expect(cx).toContain('createObjectPool')
+    const probes = dom.els['dld-probes'].innerHTML
+    expect(probes).toContain('data-verdict="minHeapZeroLateMs"')
+    expect(probes).toContain('data-verdict="noUniversalWinner"')
+    expect(dom.els['dld-trilemma-note'].textContent).toContain('TimingWheel=100')
+  })
+
+  it('systems.delayQueue 缺失 / crosscheck 缺失：真实降级、绝不伪造', async () => {
+    const noDld = JSON.parse(JSON.stringify(real))
+    noDld.systems.delayQueue = null
+    const dom = await runApp(noDld)
+    expect(dom.els['dld-matrix'].innerHTML).toContain('暂缺')
+    expect(dom.els['dld-ladder'].innerHTML).toBe('')
+    expect(dom.els['dld-trilemma'].innerHTML).toContain('暂缺')
+    expect(dom.els['dld-crosscheck'].innerHTML).toBe('')
+    expect(dom.els['dld-probes'].innerHTML).toBe('')
+    expect(dom.els['dld-matrix-note'].textContent).toContain('systems.delayQueue 缺失')
+
+    const partial = JSON.parse(JSON.stringify(real))
+    partial.systems.delayQueue.crosscheck = null
+    const dom2 = await runApp(partial)
+    expect(dom2.els['dld-crosscheck'].innerHTML).toContain('真件交叉印证缺失')
+    expect(dom2.els['dld-crosscheck'].innerHTML).not.toContain('createWal')
+    expect(dom2.els['dld-probes'].innerHTML).toContain('data-verdict="noUniversalWinner"')
+  })
+})

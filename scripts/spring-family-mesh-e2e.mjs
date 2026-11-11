@@ -111,6 +111,9 @@ export function runMeshE2E(opts = {}) {
     // KI-513：分布式消息投递语义三协议（messageDelivery=true 装配；只读 At-Most-Once/At-Least-Once/Exactly-Once × 六场景矩阵 + 三难判词 + 真 Bus/GameEventBus/Bridge/2PC/WAL/Redis/环 交叉印证，不改调用路径）。
     messageDelivery: opts.messageDelivery,
     mmdNow: opts.mmdNow,
+    // KI-518：延迟消息队列调度三协议（delayQueue=true 装配；只读 TimingWheel/MinHeap/RedisZset × 六场景矩阵 + 三难向量 + 七枚真件交叉印证，rigged 向量由 trilemma 现算不硬覆盖，不改调用路径）。
+    delayQueue: opts.delayQueue,
+    dqNow: opts.dqNow,
     sources: {
       eureka: () => (opts.svcA ?? [{ id: 'svc-a:1', name: 'svc-a', address: '10.0.0.1', port: 8080, healthy: true }]),
       k8s: () => k8s.discover('caesura-gate'),
@@ -246,6 +249,7 @@ export function runMeshE2E(opts = {}) {
         configConsistencySnapshot: status.configConsistency ?? null,
         cacheCoherencySnapshot: status.cacheCoherency ?? null,
         messageDeliverySnapshot: status.messageDelivery ?? null,
+        delayQueueSnapshot: status.delayQueue ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
       }
@@ -416,6 +420,18 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         noUniversalWinner: r.messageDeliverySnapshot.verdict.noUniversalWinner,
         crosscheck: r.messageDeliverySnapshot.crosscheck,
         verdict: r.messageDeliverySnapshot.verdict,
+      } : null,
+      delayQueue: r.delayQueueSnapshot ? {
+        protocols: r.delayQueueSnapshot.rows.map((row) => ({
+          protocol: row.protocol,
+          ladder: row.scenarios.map((s) => s.id + ':' + (s.lateMs > 0 ? '晚' : s.lostOnRestart > 0 ? '丢' : s.duplicatePickups > 0 ? '重' : !s.lowCost ? '贵' : s.punctual ? '准' : '稳')).join(' → '),
+          totals: row.totals, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.delayQueueSnapshot.rows.map((row) => [row.protocol,
+          `${Number(row.trilemma.lowCost)}${Number(row.trilemma.punctual)}${Number(row.trilemma.sharedDurable)}`])),
+        noUniversalWinner: r.delayQueueSnapshot.verdict.noUniversalWinner,
+        crosscheck: r.delayQueueSnapshot.crosscheck,
+        verdict: r.delayQueueSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

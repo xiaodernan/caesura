@@ -957,4 +957,75 @@ describe('caesura-game-cloud', () => {
     expect(st.messageDelivery.verdict.noUniversalWinner).toBe(true)
     expect(st.eventChannel).toBeTruthy()
   })
+
+  it('delayQueue:true ⇒ 装配延迟队列三协议、status.delayQueue 读真矩阵/三难向量/七真件、惰性同引用（KI-518）', async () => {
+    const gc = createGameCloud({
+      gameId: 'giddq1', gamePort: 7761, sources, cloud: fakeCloud(),
+      delayQueue: true, dqNow: () => 8888,
+    })
+    expect(gc.runDelayQueueStudy).toBeTypeOf('function')
+    const st = await gc.status()
+    expect(st.delayQueue.builtAt).toBe(8888)
+    expect(st.delayQueue.config.scenarios.length).toBe(6)
+    expect(st.delayQueue.rows.length).toBe(3)
+    expect(st.delayQueue.vectors).toEqual({ TimingWheel: '100', MinHeap: '010', RedisZset: '001' })
+    const w = st.delayQueue.rows.find((r: any) => r.protocol === 'TimingWheel')!
+    const h = st.delayQueue.rows.find((r: any) => r.protocol === 'MinHeap')!
+    const z = st.delayQueue.rows.find((r: any) => r.protocol === 'RedisZset')!
+    expect(w.scenarios.find((s: any) => s.id === 'tickSkew')!.lateMs).toBeGreaterThan(0)   // 时间轮晚点
+    expect(h.totals.lateMs).toBe(0)                                                        // 堆零晚点
+    expect(h.totals.opUnits).toBeGreaterThan(0)                                            // 堆 O(log n)
+    expect(z.scenarios.find((s: any) => s.id === 'workerRestart')!.lostOnRestart).toBe(0)  // ZSET 不丢
+    expect(z.scenarios.find((s: any) => s.id === 'concurrentWorkers')!.duplicatePickups).toBeGreaterThan(0)
+    const ev = st.delayQueue.crosscheck.evidence
+    expect(Object.keys(ev).sort()).toEqual(['bplusRangeCount', 'busDelivered', 'hashRingEmptyNodes', 'hashRingNodes', 'poolAcquired', 'redisEntries', 'tokenBucketOk', 'walLines'])
+    expect(ev.walLines).toBe(2)
+    expect(ev.bplusRangeCount).toBe(30)
+    expect(ev.poolAcquired).toBe(2)
+    expect(st.delayQueue.verdict.noUniversalWinner).toBe(true)
+    expect(st.delayQueue.verdict.minHeapZeroLateMs).toBe(true)
+    expect(st.delayQueue.verdict.redisZsetNeverSilentLossOnRestart).toBe(true)
+    // 惰性缓存：二次 status 同引用
+    expect((await gc.status()).delayQueue).toBe(st.delayQueue)
+    // 现算入口可重跑、确定性
+    const rerun = await gc.runDelayQueueStudy!()
+    expect(rerun.vectors).toEqual(st.delayQueue.vectors)
+    // 不连坐 KI-513
+    expect(st.messageDelivery).toBe(null)
+  })
+
+  it('delayQueue 默认 null 非破坏；单开 zeroTick 只补时间轮 punctual；rigged 向量现算 111/111/001；可注入现成 study（KI-518）', async () => {
+    const plain = createGameCloud({ gameId: 'giddq2', gamePort: 7762, sources, cloud: fakeCloud() })
+    expect(plain.runDelayQueueStudy).toBe(null)
+    const ps = await plain.status()
+    expect(ps.delayQueue).toBe(null)
+    expect(ps.messageDelivery).toBe(null) // 不连坐 KI-513
+    // 单开 zeroTick：时间轮恒 lowCost=1，补 punctual ⇒ 110，仍缺共享持久；救不了堆比较/ZSET 轮询
+    const zero = createGameCloud({
+      gameId: 'giddq3', gamePort: 7763, sources, cloud: fakeCloud(),
+      delayQueue: { zeroTick: true, now: 0 }, dqNow: () => 0,
+    })
+    const zs = await zero.status()
+    expect(zs.delayQueue.vectors).toEqual({ TimingWheel: '110', MinHeap: '010', RedisZset: '001' })
+    // rigged 三开关：向量由 trilemma 现算，ZSET 保留 001，判词翻 false
+    const rig = createGameCloud({
+      gameId: 'giddq4', gamePort: 7764, sources, cloud: fakeCloud(),
+      delayQueue: { zeroTick: true, freeHeapOps: true, sharedBackend: true, now: 0 }, dqNow: () => 0,
+    })
+    const rs = await rig.status()
+    expect(rs.delayQueue.vectors).toEqual({ TimingWheel: '111', MinHeap: '111', RedisZset: '001' })
+    expect(rs.delayQueue.verdict.noUniversalWinner).toBe(false)
+    expect(rs.delayQueue.verdict.trilemmaDistinguishes).toBe(false)
+    // 注入现成 study：直接用、不重跑，builtAt 原样带出、不被 dqNow 覆盖
+    const { delayQueueStudy } = await import('../../scripts/caesura-delay-queue.mjs')
+    const study = delayQueueStudy({ now: () => 555 })
+    const injected = createGameCloud({
+      gameId: 'giddq5', gamePort: 7765, sources, cloud: fakeCloud(),
+      delayQueue: study, dqNow: () => 2222,
+    })
+    const st = await injected.status()
+    expect(st.delayQueue.builtAt).toBe(555)
+    expect(st.delayQueue.verdict.noUniversalWinner).toBe(true)
+    expect(st.eventChannel).toBeTruthy()
+  })
 })

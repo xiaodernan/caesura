@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794380367996,
+  "generatedAt": 1794391585499,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1365,12 +1365,12 @@
           "keys": 1,
           "versions": 2,
           "commitLogSize": 1,
-          "now": 1794380367906
+          "now": 1794391585501
         },
         "final": {
           "A": {
             "value": 101,
-            "commitTs": 1794380367906,
+            "commitTs": 1794391585501,
             "tombstone": false
           }
         }
@@ -3610,7 +3610,7 @@
           },
           "totals": {
             "issued": 121,
-            "unique": 8,
+            "unique": 7,
             "duplicates": 0,
             "stalled": 1,
             "pageSplits": 5,
@@ -3627,7 +3627,7 @@
               "protocol": "Snowflake",
               "scenario": "allOk",
               "issued": 24,
-              "unique": 2,
+              "unique": 1,
               "duplicates": 0,
               "stalled": 0,
               "clockRollbacks": 0,
@@ -3646,7 +3646,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794380367927,
+                "lastTimestamp": 1794391585499,
                 "workerId": 1
               },
               "fault": {
@@ -3742,7 +3742,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794380367928,
+                "lastTimestamp": 1794391585499,
                 "workerId": 1
               },
               "fault": {
@@ -3774,7 +3774,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794380367929,
+                "lastTimestamp": 1794391585500,
                 "workerId": 1
               },
               "fault": {
@@ -3806,7 +3806,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794380367928,
+                "lastTimestamp": 1794391585499,
                 "workerId": 1
               },
               "fault": {
@@ -4522,7 +4522,7 @@
         "capacity": 8,
         "perShardCap": 2
       },
-      "builtAt": 1794380367957
+      "builtAt": 1794391585499
     },
     "configConsistency": {
       "config": {
@@ -5020,7 +5020,7 @@
         "burstCount": 12,
         "windowMs": 10000
       },
-      "builtAt": 1794380367980
+      "builtAt": 1794391585499
     },
     "cacheCoherency": {
       "config": {
@@ -5549,7 +5549,7 @@
         "crashAtWrite": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794380367988
+      "builtAt": 1794391585499
     },
     "messageDelivery": {
       "config": {
@@ -6038,8 +6038,342 @@
         "crashAfterSendAt": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794380367996
+      "builtAt": 1794391585499
     },
-    "builtAt": 1794380367996
+    "delayQueue": {
+      "builtAt": 1794391585499,
+      "config": {
+        "seed": 518,
+        "tasks": 12,
+        "tickMs": 1000,
+        "wheelSlots": 8,
+        "pollIntervalMs": 1000,
+        "zeroTick": false,
+        "freeHeapOps": false,
+        "sharedBackend": false,
+        "scenarios": [
+          "allOk",
+          "tickSkew",
+          "farFuture",
+          "manyCancels",
+          "workerRestart",
+          "concurrentWorkers"
+        ]
+      },
+      "rows": [
+        {
+          "protocol": "TimingWheel",
+          "scenarios": [
+            {
+              "id": "allOk",
+              "protocol": "TimingWheel",
+              "fired": 12,
+              "lateMs": 47804,
+              "duplicatePickups": 0,
+              "lostOnRestart": 0,
+              "opUnits": 12,
+              "lowCost": true,
+              "punctual": false,
+              "sharedDurable": false
+            },
+            {
+              "id": "tickSkew",
+              "protocol": "TimingWheel",
+              "fired": 12,
+              "lateMs": 47804,
+              "duplicatePickups": 0,
+              "lostOnRestart": 0,
+              "opUnits": 12,
+              "lowCost": true,
+              "punctual": false,
+              "sharedDurable": false
+            },
+            {
+              "id": "farFuture",
+              "protocol": "TimingWheel",
+              "fired": 12,
+              "lateMs": 48136,
+              "duplicatePickups": 0,
+              "lostOnRestart": 0,
+              "opUnits": 12,
+              "lowCost": true,
+              "punctual": false,
+              "sharedDurable": false
+            },
+            {
+              "id": "manyCancels",
+              "protocol": "TimingWheel",
+              "fired": 6,
+              "lateMs": 23858,
+              "duplicatePickups": 0,
+              "lostOnRestart": 0,
+              "opUnits": 12,
+              "lowCost": true,
+              "punctual": false,
+              "sharedDurable": false
+            },
+            {
+              "id": "workerRestart",
+              "protocol": "TimingWheel",
+              "fired": 0,
+              "lateMs": 0,
+              "duplicatePickups": 0,
+              "lostOnRestart": 6,
+              "opUnits": 12,
+              "lowCost": true,
+              "punctual": true,
+              "sharedDurable": false
+            },
+            {
+              "id": "concurrentWorkers",
+              "protocol": "TimingWheel",
+              "fired": 12,
+              "lateMs": 47804,
+              "duplicatePickups": 0,
+              "lostOnRestart": 0,
+              "opUnits": 12,
+              "lowCost": true,
+              "punctual": false,
+              "sharedDurable": false
+            }
+          ],
+          "totals": {
+            "fired": 54,
+            "lateMs": 215406,
+            "duplicatePickups": 0,
+            "lostOnRestart": 6,
+            "opUnits": 72
+          },
+          "trilemma": {
+            "lowCost": true,
+            "punctual": false,
+            "sharedDurable": false
+          }
+        },
+        {
+          "protocol": "MinHeap",
+          "scenarios": [
+            {
+              "id": "allOk",
+              "protocol": "MinHeap",
+              "fired": 12,
+              "lateMs": 0,
+              "duplicatePickups": 0,
+              "lostOnRestart": 0,
+              "opUnits": 47,
+              "lowCost": false,
+              "punctual": true,
+              "sharedDurable": false
+            },
+            {
+              "id": "tickSkew",
+              "protocol": "MinHeap",
+              "fired": 12,
+              "lateMs": 0,
+              "duplicatePickups": 0,
+              "lostOnRestart": 0,
+              "opUnits": 47,
+              "lowCost": false,
+              "punctual": true,
+              "sharedDurable": false
+            },
+            {
+              "id": "farFuture",
+              "protocol": "MinHeap",
+              "fired": 12,
+              "lateMs": 0,
+              "duplicatePickups": 0,
+              "lostOnRestart": 0,
+              "opUnits": 47,
+              "lowCost": false,
+              "punctual": true,
+              "sharedDurable": false
+            },
+            {
+              "id": "manyCancels",
+              "protocol": "MinHeap",
+              "fired": 6,
+              "lateMs": 0,
+              "duplicatePickups": 0,
+              "lostOnRestart": 0,
+              "opUnits": 47,
+              "lowCost": false,
+              "punctual": true,
+              "sharedDurable": false
+            },
+            {
+              "id": "workerRestart",
+              "protocol": "MinHeap",
+              "fired": 0,
+              "lateMs": 0,
+              "duplicatePickups": 0,
+              "lostOnRestart": 6,
+              "opUnits": 11,
+              "lowCost": false,
+              "punctual": true,
+              "sharedDurable": false
+            },
+            {
+              "id": "concurrentWorkers",
+              "protocol": "MinHeap",
+              "fired": 12,
+              "lateMs": 0,
+              "duplicatePickups": 0,
+              "lostOnRestart": 0,
+              "opUnits": 47,
+              "lowCost": false,
+              "punctual": true,
+              "sharedDurable": false
+            }
+          ],
+          "totals": {
+            "fired": 54,
+            "lateMs": 0,
+            "duplicatePickups": 0,
+            "lostOnRestart": 6,
+            "opUnits": 246
+          },
+          "trilemma": {
+            "lowCost": false,
+            "punctual": true,
+            "sharedDurable": false
+          }
+        },
+        {
+          "protocol": "RedisZset",
+          "scenarios": [
+            {
+              "id": "allOk",
+              "protocol": "RedisZset",
+              "fired": 12,
+              "lateMs": 5804,
+              "duplicatePickups": 0,
+              "lostOnRestart": 0,
+              "opUnits": 201,
+              "lowCost": false,
+              "punctual": false,
+              "sharedDurable": true
+            },
+            {
+              "id": "tickSkew",
+              "protocol": "RedisZset",
+              "fired": 12,
+              "lateMs": 5804,
+              "duplicatePickups": 0,
+              "lostOnRestart": 0,
+              "opUnits": 201,
+              "lowCost": false,
+              "punctual": false,
+              "sharedDurable": true
+            },
+            {
+              "id": "farFuture",
+              "protocol": "RedisZset",
+              "fired": 12,
+              "lateMs": 6136,
+              "duplicatePickups": 0,
+              "lostOnRestart": 0,
+              "opUnits": 201,
+              "lowCost": false,
+              "punctual": false,
+              "sharedDurable": true
+            },
+            {
+              "id": "manyCancels",
+              "protocol": "RedisZset",
+              "fired": 6,
+              "lateMs": 2858,
+              "duplicatePickups": 0,
+              "lostOnRestart": 0,
+              "opUnits": 201,
+              "lowCost": false,
+              "punctual": false,
+              "sharedDurable": true
+            },
+            {
+              "id": "workerRestart",
+              "protocol": "RedisZset",
+              "fired": 12,
+              "lateMs": 5804,
+              "duplicatePickups": 0,
+              "lostOnRestart": 0,
+              "opUnits": 201,
+              "lowCost": false,
+              "punctual": false,
+              "sharedDurable": true
+            },
+            {
+              "id": "concurrentWorkers",
+              "protocol": "RedisZset",
+              "fired": 12,
+              "lateMs": 5804,
+              "duplicatePickups": 12,
+              "lostOnRestart": 0,
+              "opUnits": 201,
+              "lowCost": false,
+              "punctual": false,
+              "sharedDurable": true
+            }
+          ],
+          "totals": {
+            "fired": 66,
+            "lateMs": 32210,
+            "duplicatePickups": 12,
+            "lostOnRestart": 0,
+            "opUnits": 1206
+          },
+          "trilemma": {
+            "lowCost": false,
+            "punctual": false,
+            "sharedDurable": true
+          }
+        }
+      ],
+      "vectors": {
+        "TimingWheel": "100",
+        "MinHeap": "010",
+        "RedisZset": "001"
+      },
+      "crosscheck": {
+        "evidence": {
+          "hashRingNodes": 2,
+          "hashRingEmptyNodes": 0,
+          "redisEntries": 1,
+          "walLines": 2,
+          "busDelivered": 2,
+          "tokenBucketOk": true,
+          "bplusRangeCount": 30,
+          "poolAcquired": 2
+        }
+      },
+      "verdict": {
+        "vectors": {
+          "TimingWheel": "100",
+          "MinHeap": "010",
+          "RedisZset": "001"
+        },
+        "trilemmaDistinguishes": true,
+        "noProtocolWinsAll": true,
+        "noUniversalWinner": true,
+        "wheelCheapest": true,
+        "wheelUnpunctual": true,
+        "heapPunctual": true,
+        "heapPaysComparisons": true,
+        "heapRestartLoses": true,
+        "zsetSharedDurable": true,
+        "zsetPaysPollRtt": true,
+        "zsetNonAtomicDuplicatePickups": true,
+        "wheelRestartLoses": true,
+        "timingWheelLosesOnRestart": true,
+        "minHeapZeroLateMs": true,
+        "redisZsetNeverSilentLossOnRestart": true
+      },
+      "topology": {
+        "TimingWheel": "单层环形桶 + 巡槽发射；tick 粒度晚点；进程内单点；远期任务反复整圈巡检",
+        "MinHeap": "二叉最小堆、堆顶即最近；零晚点；O(log n)；进程内单点",
+        "RedisZset": "ZRANGEBYSCORE/ZREM 原子摘取（可注入 atomicPick）；跨 worker 共享；轮询晚点 + 中心 RTT"
+      }
+    },
+    "builtAt": 1794391585499
   }
 }

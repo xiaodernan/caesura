@@ -440,6 +440,29 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(snap.systems.messageDelivery.verdict.noUniversalWinner).toBe(true)
     expect(snap.systems.messageDelivery.vectors).toEqual({ AtMostOnce: '011', AtLeastOnce: '101', ExactlyOnce: '110' })
     expect(fromBoot.systems.messageDelivery).toEqual(snap.systems.messageDelivery) // 第十五维同源
+    // KI-518 delayQueue：三协议 × 六场景矩阵 + 三难向量 + 七枚真件交叉印证真读数已固化进快照（第十六维）。
+    expect(snap.systems.delayQueue.rows.length).toBe(3)
+    expect(snap.systems.delayQueue.config.scenarios.length).toBe(6)
+    const dqW = snap.systems.delayQueue.rows.find((r: any) => r.protocol === 'TimingWheel')!
+    const dqH = snap.systems.delayQueue.rows.find((r: any) => r.protocol === 'MinHeap')!
+    const dqZ = snap.systems.delayQueue.rows.find((r: any) => r.protocol === 'RedisZset')!
+    expect(dqW.scenarios.find((s: any) => s.id === 'tickSkew')!.lateMs).toBeGreaterThan(0)     // 时间轮 tick 粒度晚点
+    expect(dqH.totals.lateMs).toBe(0)                                                          // 最小堆零晚点
+    expect(dqH.totals.opUnits).toBeGreaterThan(0)                                              // O(log n) 比较数
+    expect(dqZ.scenarios.find((s: any) => s.id === 'workerRestart')!.lostOnRestart).toBe(0)    // ZSET 共享可持久不丢
+    expect(dqZ.scenarios.find((s: any) => s.id === 'concurrentWorkers')!.duplicatePickups).toBeGreaterThan(0) // 非原子重复
+    const ev = snap.systems.delayQueue.crosscheck.evidence
+    expect(ev.hashRingNodes).toBe(2)
+    expect(ev.hashRingEmptyNodes).toBe(0)   // 真 distribution().emptyNodes.length（新回读字段）
+    expect(ev.walLines).toBe(2)             // 真 append('put',k,v) 3 参
+    expect(ev.bplusRangeCount).toBe(30)     // 真 range() 条数
+    expect(ev.poolAcquired).toBe(2)         // 真 stats().acquired（非硬编码）
+    expect(ev.tokenBucketOk).toBe(true)     // refillPerSec 真生效
+    expect(snap.systems.delayQueue.verdict.noUniversalWinner).toBe(true)
+    expect(snap.systems.delayQueue.verdict.minHeapZeroLateMs).toBe(true)
+    expect(snap.systems.delayQueue.verdict.redisZsetNeverSilentLossOnRestart).toBe(true)
+    expect(snap.systems.delayQueue.vectors).toEqual({ TimingWheel: '100', MinHeap: '010', RedisZset: '001' })
+    expect(fromBoot.systems.delayQueue).toEqual(snap.systems.delayQueue) // 第十六维同源
     expect(Object.keys(fromBoot.systems).sort()).toEqual(Object.keys(snap.systems).sort())
   })
 
@@ -779,6 +802,27 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(sys.configConsistency).toBeTruthy() // 不连坐 KI-511
     const snap = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, messageDelivery: false })
     expect(snap.systems!.messageDelivery).toBe(null)
+  })
+
+  it('buildDelayQueueReading 单开 dqZeroTick 只让时间轮精确、dq rigged 向量现算 111/111/001；单维关闭不连坐（KI-518）', async () => {
+    const { buildSystems, buildDelayQueueReading, buildSnapshot } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 4242
+    const zero = (await buildDelayQueueReading({ dqZeroTick: true }, now)) as NonNullable<Awaited<ReturnType<typeof buildDelayQueueReading>>>
+    expect(zero.vectors).toEqual({ TimingWheel: '110', MinHeap: '010', RedisZset: '001' }) // 时间轮恒 lowCost=1，补 punctual ⇒ 110，仍缺共享持久
+    // rigged 三开关齐开：向量由 trilemma 现算，ZSET 轮询软肋抹不掉 ⇒ 111/111/001，非硬覆盖全 111
+    const rig = (await buildDelayQueueReading({ dqZeroTick: true, dqFreeHeapOps: true, dqSharedBackend: true }, now))!
+    expect(rig.vectors).toEqual({ TimingWheel: '111', MinHeap: '111', RedisZset: '001' })
+    for (const row of rig.rows) {
+      const recomputed = `${Number(row.trilemma.lowCost)}${Number(row.trilemma.punctual)}${Number(row.trilemma.sharedDurable)}`
+      expect(rig.vectors[row.protocol]).toBe(recomputed)
+    }
+    // 单维关闭落 null，不连坐第十五维
+    const sys = await buildSystems({ now, delayQueue: false })
+    expect(sys.delayQueue).toBe(null)
+    expect(sys.messageDelivery).toBeTruthy() // 不连坐 KI-513
+    const snap = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, delayQueue: false })
+    expect(snap.systems!.delayQueue).toBe(null)
+    expect(snap.systems!.messageDelivery).toBeTruthy()
   })
 
   /* ---------------- ㉞㉟㊱ KI-515 控制台快照 CLI 真跑时钟确定性 ---------------- */

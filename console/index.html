@@ -352,6 +352,21 @@
       <p class="note" id="mmd-trilemma-note">—</p>
     </article>
   </section>
+  <section class="row row-dld">
+    <article class="panel panel-dld">
+      <div class="panel-head"><h2>第十六维 · 延迟消息队列 · 三协议 × 六场景</h2><span class="hint">轮=Θ(1) 挂槽·tick 粒度晚点 / 堆=堆顶即最近·到期即时精确 / ZSET=score 捞到期·共享可持久化但轮询晚点 + 中心 RTT</span></div>
+      <div class="dld-matrix" id="dld-matrix"></div>
+      <div class="dld-ladder" id="dld-ladder"></div>
+      <p class="note" id="dld-matrix-note">…</p>
+    </article>
+    <article class="panel panel-dld">
+      <div class="panel-head"><h2>三难向量（低开销 ∧ 即时精确 ∧ 共享可持久化）</h2><span class="hint">TimingWheel=100 / MinHeap=010 / RedisZset=001 · 不封赢家 · 单开 zeroTick 只救时间轮</span></div>
+      <div class="dld-trilemma" id="dld-trilemma"></div>
+      <div class="dld-crosscheck" id="dld-crosscheck"></div>
+      <div class="dld-probes" id="dld-probes"></div>
+      <p class="note" id="dld-trilemma-note">…</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">

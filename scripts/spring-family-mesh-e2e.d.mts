@@ -278,5 +278,23 @@ export function runMeshE2E(opts?: any): {
       topology: Record<string, any>
       builtAt: number
     } | null
+    /** KI-518：延迟消息队列调度三协议快照（TimingWheel/MinHeap/RedisZset × 六场景 + 三难向量 + 七枚真件交叉印证），未配 delayQueue 为 null；rigged 向量由 trilemma 现算不硬覆盖 */
+    delayQueueSnapshot: {
+      config: Record<string, any>
+      rows: Array<{
+        protocol: string
+        scenarios: Array<{
+          id: string; protocol: string; fired: number; lateMs: number; duplicatePickups: number
+          lostOnRestart: number; opUnits: number; lowCost: boolean; punctual: boolean; sharedDurable: boolean
+        }>
+        totals: { fired: number; lateMs: number; duplicatePickups: number; lostOnRestart: number; opUnits: number }
+        trilemma: { lowCost: boolean; punctual: boolean; sharedDurable: boolean }
+      }>
+      vectors: Record<string, string>
+      crosscheck: { evidence: Record<string, any> }
+      verdict: Record<string, any>
+      topology: Record<string, string>
+      builtAt: number
+    } | null
   }>
 }

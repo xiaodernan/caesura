@@ -113,6 +113,12 @@ export interface GameCloudOptions {
    * （带 rows/vectors/verdict/crosscheck/topology 五块）。默认 false 不装配。 */
   messageDelivery?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck: any; topology: any; [k: string]: any }
   mmdNow?: () => number
+  /**
+   * KI-518：true 装配延迟消息队列调度三协议权衡（TimingWheel / MinHeap / RedisZset + 真环/Redis/WAL/Bus/TokenBucket/B+树/对象池 交叉印证）。
+   * 对象逐项注入（now/seed/tickMs/wheelSlots/pollIntervalMs/tasks/zeroTick/freeHeapOps/sharedBackend/rigged/...），或直接塞一只现成 study
+   * （带 rows/vectors/verdict/crosscheck/topology 五块）。默认 false 不装配。 */
+  delayQueue?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck: any; topology: any; [k: string]: any }
+  dqNow?: () => number
 }
 
 /** 创建一只游戏侧开箱即用云。 */
@@ -161,6 +167,8 @@ export function createGameCloud(opts?: GameCloudOptions): {
   runCacheCoherencyStudy: (() => Promise<any>) | null
   /** KI-513：分布式消息投递语义三协议汇总的现算入口（未配 opts.messageDelivery 时为 null）；真跑 At-Most-Once/At-Least-Once/Exactly-Once × 六场景矩阵 + 三难判词 + 真 Bus/GameEventBus/Bridge/2PC/WAL/Redis/环 交叉印证。 */
   runMessageDeliveryStudy: (() => Promise<any>) | null
+  /** KI-518：延迟消息队列调度三协议汇总的现算入口（未配 opts.delayQueue 时为 null）；真跑 TimingWheel/MinHeap/RedisZset × 六场景矩阵 + 三难向量 + 七枚真件交叉印证；rigged 向量由 trilemma 现算不硬覆盖。 */
+  runDelayQueueStudy: (() => Promise<any>) | null
   /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）。 */
   gray: any
   /** KI-489：把游戏真 EventBus（duck-typed {on,emit}）按白名单接进云事件总线。 */
