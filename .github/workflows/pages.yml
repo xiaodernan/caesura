@@ -33,6 +33,13 @@ jobs:
       - name: Build production bundle
         run: npm run build
 
+      - name: Publish 集大成 control panel alongside the game
+        # console/ is a static, zero-dependency showcase (snapshot.json + bootstrap.js + styles.css + app.js):
+        # 27 honestly-labeled dimensions of real benchmarks, so a visitor can see the game AND the systems work.
+        run: |
+          mkdir -p dist/console
+          cp -R console/. dist/console/
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
