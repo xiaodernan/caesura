@@ -3,6 +3,7 @@ import { Vector3 } from 'three'
 import { GameTime, TICK_DT, TICK_HZ } from '@/core/Time'
 import { PauseControl, readPauseAction } from '@/core/PauseControl'
 import { PauseOverlay } from '@/ui/PauseOverlay'
+import { BossPhaseBanner } from '@/ui/BossPhaseBanner'
 import { readCinematicExit } from '@/core/CinematicExit'
 import { GameLoop } from '@/core/GameLoop'
 import { Input, pumpMenu, type MenuOwner, type MenuPump } from '@/core/Input'
@@ -231,6 +232,8 @@ const grade = new ColorGrade(arena.scene, canvas)
 const hud = new Hud(document.getElementById('hud') as HTMLCanvasElement, input)
 /** 玩家手动暂停的「止音仪典」全屏提示（仅在玩家边界触发，覆盖在场景/HUD 之上不接收输入/点击）。 */
 const pauseOverlay = new PauseOverlay({ pause })
+/** Boss 换段誓约（Phase F-47）：boss.phase 事件触发时，全屏中央闪显Boss 名 + 「第 N 阶」副标，1.4s 后淡出（pure DOM，不接输入）。 */
+new BossPhaseBanner() // side-effect only: bus.on 注册 + DOM 挂载，引用交给总线，主舞台上不读它
 /** Boss 乐句线 HUD（Phase 7 F3）：屏幕右侧中条，专用 canvas，零 game 依赖。 */
 const phraseCanvas = document.createElement('canvas')
 phraseCanvas.style.position = 'fixed'
