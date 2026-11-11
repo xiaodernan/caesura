@@ -587,14 +587,17 @@ export interface CacheReplacementReading {
       id: string; protocol: string; hits: number; misses: number; hitRate: number
       scanHits: number; scanMisses: number; localHits: number; localMisses: number
       amPromotions?: number; ghostHitsT1?: number; ghostHitsT2?: number; ghostAdaptMoves?: number
+      adaptationP?: number
       fault: string
+      scanResistance: boolean; stableHitRate: boolean; adaptiveBalance: boolean
+      inScanExam: boolean; inStableExam: boolean; inAdaptiveExam: boolean
     }>
     trilemma: { scanResistance: boolean; stableHitRate: boolean; adaptiveBalance: boolean }
-    metrics: { hitRateAvg: number; ghostAdaptMoves: number; amPromotions: number; adaptationP: number }
+    metrics: { hitRateAvg: number; ghostAdaptMoves: number; amPromotions: number; adaptationP: number; prefetchSkipped?: number; effectiveCapacity?: number; trilemmaDebug?: Record<string, any> }
   }>
   vectors: Record<string, string>
   verdict: Record<string, any>
-  crosscheck: { evidence: Record<string, any>; fpCeiling: Record<string, any> }
+  crosscheck: { evidence: Record<string, any>; fpCeiling: Record<string, any>; dualSweep: { holds: boolean; tamper: Record<string, any> } & Record<string, any> }
   builtAt: number
 }
 
@@ -929,6 +932,14 @@ export function buildSystems(opts?: {
   bfEternalStasis?: boolean
   bfNoDeletesNeeded?: boolean
   bfRigged?: boolean
+  /** KI-528：false 关掉替换维（兼容旧快照）；cr* 注入规模/阈值/rigged */
+  cacheReplacement?: boolean
+  crSeed?: number
+  crCapacity?: number
+  crAccesses?: number
+  crPerfectFuture?: boolean
+  crUnlimitedRoom?: boolean
+  crRigged?: boolean
 }): Promise<SystemsBlock>
 
 /** KI-501：真跑缓存防护三件套（击穿/穿透/雪崩）收敛成前端三面板紧凑读数；单维失败落 null。 */

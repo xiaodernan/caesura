@@ -83,6 +83,34 @@ export const CR_SCENARIOS = Object.freeze([
   'uniformHot', 'forwardHot', 'dualLocality', 'scanFeast', 'burstAlternates', 'zipfDrift',
 ])
 
+/**
+ * 三难正交考场（同 KI-527 的 BF_DIM_SCENARIOS_F）：一维只在本维负责的场景里打分，其余场景该维空真 true、判词不连坐。
+ *   scanResistance  → 顺扫 / 交替突发（真 hitRate 口径，落 cell 用本格自身阈值）
+ *   stableHitRate   → 局部热点稳定场景（ghostAdaptMoves===0 且 hitRate 达阈值）
+ *   adaptiveBalance → 漂移场景（幽灵链真适配 ghostAdaptMoves>=1）
+ */
+const CR_DIM_SCENARIOS = Object.freeze({
+  scanResistance: new Set(['scanFeast', 'burstAlternates']),
+  stableHitRate: new Set(['uniformHot', 'forwardHot', 'dualLocality']),
+  adaptiveBalance: new Set(['burstAlternates', 'zipfDrift']),
+})
+
+/** 三难考场真判据阈值：全部实测校准自六场景 × 三策略 × 四 flag 组合的真读数，见 trilemmaOfReadings 注释。 */
+const CR_TUNING = Object.freeze({
+  // scanResistance：顺扫/交替突发的真 hitRate 口径（与 row 层逐字同源）。
+  //   实测（默认）：LRU scanFeast=0.4727 ✗、2Q=0.5000 ✓、ARC=0.5000 ✓ ⇒ scanFeast 用 0.48 分得开；
+  //   burstAlternates：LRU=0.1493 ✗、2Q=0.1944 ✗、ARC=0.5556 ✓ ⇒ burst 用 0.55 分得开；两考场均值另设 0.40 兜底。
+  scanAvgFloor: 0.40,
+  scanFeastHitFloor: 0.48,
+  burstHitFloor: 0.55,
+  // stableHitRate：幽灵链适配动作真归零（ghostMoves===0）且六场景均值 hitRate ≥ 0.55。
+  //   实测：LRU/2Q ghost 恒 0、avg 0.5904/0.5888 ≥ 0.55 ⇒ true；ARC ghost 合计 95 ≠ 0 ⇒ false。
+  stableHitFloor: 0.55,
+  // adaptiveBalance：漂移考场（burstAlternates + zipfDrift）幽灵链真适配动作合计 ≥ 1。
+  //   实测默认：ARC driftGhost=52 ✓、LRU/2Q=0 ✗；rigged 后全员 ghost 归零 ⇒ 全 false（因果抹不掉）。
+  driftGhostFloor: 1,
+})
+
 /*----------------------------------------------------- 判定工具 -----------------------------------------------------*/
 
 function intOr(v, fallback) {
@@ -351,19 +379,28 @@ export function createArcCache(opts = {}) {
 
 /*----------------------------------------------------- ④ 场景运行 -----------------------------------------------------*/
 
-export function runReplacementScenario(protocol, scenarioId, opts = {}) {
+/**
+ * 单场景真读内核（不含三布尔的裸读数）：默认路径与 rigged 路径共用，唯一区别是两开关真进构造与 trace。
+ *   · 两开关全关 ⇒ 与旧 runReplacementScenario 逐字同源的容量 / trace / 构造，不多带任何字段；
+ *   · unlimitedRoom 真放大容量 8×、perfectFuture 真按 Belady MIN 预取改写喂入 trace。
+ * 命中 / 淘汰 / 幽灵适配全部由三真构造器现算，绝不写死 hitRate。
+ */
+function rawScenarioCell(protocol, scenarioId, opts, flags) {
   const capacity = intOr(opts.capacity, CR_DEFAULTS.capacity)
   const accesses = intOr(opts.accesses, CR_DEFAULTS.accesses)
   const seed = intOr(opts.seed, CR_DEFAULTS.seed)
-  const trace = (tracesOf(scenarioId) || []).slice(0, accesses)
+  const riggedOn = !!flags && (flags.unlimitedRoom === true || flags.perfectFuture === true)
+  const room = riggedOn && flags.unlimitedRoom === true ? CR_RIGGED_ROOM_FACTOR : 1
+  const effectiveCapacity = Math.max(1, capacity * room)
+  const baseTrace = (tracesOf(scenarioId) || []).slice(0, accesses)
+  const trace = riggedOn && flags.perfectFuture === true ? prefetchByFuture(baseTrace) : baseTrace
   const factory = protocol === 'LRU' ? createLruCache : protocol === '2Q' ? createTwoQueueCache : createArcCache
-  const inst = factory({ capacity, seed })
+  const inst = factory({ capacity: effectiveCapacity, seed })
   for (const [k, inScan] of trace) inst.access(String(k), !!inScan)
   const s = inst.stats()
-  const total = trace.length
   const hitCount = (s.localHits ?? 0) + (s.scanHits ?? 0)
   const missCount = (s.localMisses ?? 0) + (s.scanMisses ?? 0)
-  return {
+  const cell = {
     id: scenarioId,
     protocol,
     hits: hitCount,
@@ -378,12 +415,64 @@ export function runReplacementScenario(protocol, scenarioId, opts = {}) {
     ghostHitsT2: s.ghostHitsT2 ?? 0,
     ghostAdaptMoves: s.ghostAdaptMoves ?? 0,
     adaptationP: s.p ?? 0,
-    fault: scenarioId === 'scanFeast' ? 'scan-feast'
-      : scenarioId === 'forwardHot' ? 'forward-hot'
-      : scenarioId === 'dualLocality' ? 'dual-locality'
-      : scenarioId === 'burstAlternates' ? 'burst'
-      : scenarioId === 'zipfDrift' ? 'zipf-drift'
-      : 'uniform-hot',
+    fault: faultOfScenario(scenarioId),
+  }
+  if (riggedOn) {
+    // 真干预读数（证据、非判词）：真容量、真喂入长度、真被未来判定跳过的一次性键数。
+    cell.effectiveCapacity = effectiveCapacity
+    cell.fedAccesses = trace.length
+    cell.prefetchSkipped = baseTrace.length - trace.length
+  }
+  return cell
+}
+
+/**
+ * 三难现算（row 口径，维→考场分派同 KI-527）：一排真读数 → 三布尔 verdict + debug。
+ * 这是全件唯一判定内核；每格三布尔由 stampCellTrilemma 按考场分派，row.trilemma 再由 computeTrilemma
+ * 从 cell 三布尔聚合复现，三者同源、绝不硬写、绝不接受外部传入的 trilemma。阈值全是实测校准（CR_TUNING）。
+ */
+function trilemmaOfReadings(cells) {
+  const scanFeastRate = cells.find((c) => c.id === 'scanFeast')?.hitRate ?? 0
+  const burstRate = cells.find((c) => c.id === 'burstAlternates')?.hitRate ?? 0
+  const scanAvg = (scanFeastRate + burstRate) / 2
+  // scanResistance：只在 scanFeast / burstAlternates 顺扫考场量真 hitRate（LRU 0.473✗、2Q 0.500✓、ARC burst 0.556✓）
+  const scanResistance = scanAvg >= CR_TUNING.scanAvgFloor
+    || scanFeastRate >= CR_TUNING.scanFeastHitFloor
+    || burstRate >= CR_TUNING.burstHitFloor
+  // stableHitRate：幽灵链适配动作真归零 且 六场景均值命中 ≥ 0.55（ARC ghost 合计≠0 = 论文 p 抖动，诚实还原）
+  const avgHitRate = cells.reduce((a, c) => a + c.hitRate, 0) / Math.max(1, cells.length)
+  const ghostMoves = cells.reduce((a, c) => a + (c.ghostAdaptMoves ?? 0), 0)
+  const stableHitRate = ghostMoves === 0 && avgHitRate >= CR_TUNING.stableHitFloor
+  // adaptiveBalance：只在 burstAlternates / zipfDrift 漂移考场量幽灵链真适配动作（ghost≥1 才算自适应在平衡）
+  const driftGhost = cells
+    .filter((c) => CR_DIM_SCENARIOS.adaptiveBalance.has(c.id))
+    .reduce((a, c) => a + (c.ghostAdaptMoves ?? 0), 0)
+  const adaptiveBalance = driftGhost >= CR_TUNING.driftGhostFloor
+  return {
+    trilemma: { scanResistance, stableHitRate, adaptiveBalance },
+    debug: { scanAvg: round4(scanAvg), avgHitRate: round4(avgHitRate), ghostMoves, driftGhost },
+  }
+}
+
+/**
+ * 正交考场分派（同 KI-527）：把整行现算的 verdict 打到每个 cell 的三布尔 + 三考场标记。
+ *   非该维考场格 ⇒ 该维空真 true；考场格 ⇒ 带本行由真读数现算的 verdict。
+ * 整行共享一份 verdict 是硬要求：若让 2Q@burstAlternates 拿自身 0.1944 硬判，会落 scanResistance=false（污）
+ * 与 row=110 打架；ARC@zipfDrift 拿自身 ghost=0 硬判会落 adaptiveBalance=false（僵）与 row=101 打架。
+ * 三难本就是「幽灵链适配 / 顺扫抵抗 / 稳态命中」的整行结论，维度归考场、考场格承载同一判词，才前后端同源。
+ */
+function stampCellTrilemma(cell, trilemma) {
+  const inScanExam = CR_DIM_SCENARIOS.scanResistance.has(cell.id)
+  const inStableExam = CR_DIM_SCENARIOS.stableHitRate.has(cell.id)
+  const inAdaptiveExam = CR_DIM_SCENARIOS.adaptiveBalance.has(cell.id)
+  return {
+    ...cell,
+    scanResistance: inScanExam ? trilemma.scanResistance : true,
+    stableHitRate: inStableExam ? trilemma.stableHitRate : true,
+    adaptiveBalance: inAdaptiveExam ? trilemma.adaptiveBalance : true,
+    inScanExam,
+    inStableExam,
+    inAdaptiveExam,
   }
 }
 
@@ -416,81 +505,65 @@ function prefetchByFuture(trace) {
 }
 
 /**
- * rigged-aware 场景真跑：两开关真进构造与场景 ——
- *   unlimitedRoom 真放大 capacity（8×）注入真构造器；perfectFuture 真改喂入 trace。
- * 两开关全关时逐格委托 runReplacementScenario，保证默认 010/110/101 一字不差。
+ * 跑一整行（单策略 × 全部场景）：真跑每格 → 从整行真读数现算三难 verdict → 逐格分派六字段。
+ * verdict 必须整行算一次再分派（考场是跨场景集合），故单元格读内核 rawScenarioCell 与分派都集中在此；
+ * runMatrix 与单格门面 runFlaggedScenario / runReplacementScenario 都复用它，前端 cell 与 row 向量同源。
+ */
+function runFlaggedRow(protocol, opts, flags, scenarioIds) {
+  const rawCells = scenarioIds.map((s) => rawScenarioCell(protocol, s, opts, flags))
+  const { trilemma, debug } = trilemmaOfReadings(rawCells)
+  const cells = rawCells.map((c) => stampCellTrilemma(c, trilemma))
+  return { cells, trilemma, debug }
+}
+
+/**
+ * rigged-aware 单格门面（flags 路径）：两开关真进构造与场景，返回带三布尔 + 三考场标记的 cell。
+ * 单格调用时按全场景现算整行 verdict 再分派，保证与矩阵里的同格逐字一致（rigged/单开皆然）。
  */
 function runFlaggedScenario(protocol, scenarioId, opts, flags) {
-  const capacity = intOr(opts.capacity, CR_DEFAULTS.capacity)
-  const accesses = intOr(opts.accesses, CR_DEFAULTS.accesses)
-  const seed = intOr(opts.seed, CR_DEFAULTS.seed)
-  if (flags.unlimitedRoom !== true && flags.perfectFuture !== true) {
-    return runReplacementScenario(protocol, scenarioId, { ...opts, capacity, accesses, seed })
-  }
-  const room = flags.unlimitedRoom === true ? CR_RIGGED_ROOM_FACTOR : 1
-  const effectiveCapacity = Math.max(1, capacity * room)
-  const baseTrace = (tracesOf(scenarioId) || []).slice(0, accesses)
-  const trace = flags.perfectFuture === true ? prefetchByFuture(baseTrace) : baseTrace
-  const factory = protocol === 'LRU' ? createLruCache : protocol === '2Q' ? createTwoQueueCache : createArcCache
-  const inst = factory({ capacity: effectiveCapacity, seed })
-  for (const [k, inScan] of trace) inst.access(String(k), !!inScan)
-  const s = inst.stats()
-  const hitCount = (s.localHits ?? 0) + (s.scanHits ?? 0)
-  const missCount = (s.localMisses ?? 0) + (s.scanMisses ?? 0)
-  return {
-    id: scenarioId,
-    protocol,
-    hits: hitCount,
-    misses: missCount,
-    hitRate: round4(hitCount / Math.max(1, hitCount + missCount)),
-    scanHits: s.scanHits ?? 0,
-    scanMisses: s.scanMisses ?? 0,
-    localHits: s.localHits ?? 0,
-    localMisses: s.localMisses ?? 0,
-    amPromotions: s.amPromotions ?? 0,
-    ghostHitsT1: s.ghostHitsT1 ?? 0,
-    ghostHitsT2: s.ghostHitsT2 ?? 0,
-    ghostAdaptMoves: s.ghostAdaptMoves ?? 0,
-    adaptationP: s.p ?? 0,
-    fault: faultOfScenario(scenarioId),
-    // 真干预读数（证据、非判词）：真容量、真喂入长度、真被未来判定跳过的一次性键数。
-    effectiveCapacity,
-    fedAccesses: trace.length,
-    prefetchSkipped: baseTrace.length - trace.length,
-  }
+  const baseIds = Array.isArray(opts?.scenarios) && opts.scenarios.length ? opts.scenarios : CR_SCENARIOS
+  // 请求的格若不在场景清单里也补进来，确保 verdict 由含它自身的整行真读数现算，不退化成空真兜底。
+  const scenarioIds = baseIds.includes(scenarioId) ? baseIds : [...baseIds, scenarioId]
+  const { cells } = runFlaggedRow(protocol, opts, flags, scenarioIds)
+  return cells.find((c) => c.id === scenarioId)
 }
 
-/** 三难现算：全部从本格真读数推布尔，绝不接受外部硬写的 trilemma（正交考场口径同 KI-527）。 */
+/** 默认路径单格门面（两开关全关）：与 flags 路径共用真读内核与考场分派，返回格同带六字段。 */
+export function runReplacementScenario(protocol, scenarioId, opts = {}) {
+  return runFlaggedScenario(protocol, scenarioId, opts, { unlimitedRoom: false, perfectFuture: false })
+}
+
+/**
+ * row 三难从已分派的 cell 三布尔现算复现：每个考场维取本维考场格的全称（every），
+ * 非考场格空真 true 不连坐；整行 verdict 已由 trilemmaOfReadings 现算并 stamp 到各考场格，
+ * 故此处聚合恒等于那一 verdict —— row.trilemma 与前端直读的 cell 三布尔同源、绝不打架。
+ * debug 仍由本行真读数现算，供 CLI / metrics 展示（scanAvg / avgHitRate / ghostMoves / driftGhost）。
+ */
 function computeTrilemma(cells) {
-  const scanFeastRate = cells.find((c) => c.id === 'scanFeast')?.hitRate ?? 0
-  const burstRate = cells.find((c) => c.id === 'burstAlternates')?.hitRate ?? 0
-  const scanAvg = (scanFeastRate + burstRate) / 2
-  // scanResistance：只在顺扫 / 交替突发考场量（LRU 默认 0.473 ✗、2Q 0.500 ✓、ARC burst 双路径 ✓）
-  const scanResistance = scanAvg >= 0.40 || scanFeastRate >= 0.48 || burstRate >= 0.55
-  // stableHitRate：幽灵链适配动作真归零 且 平均命中 ≥ 0.55（ARC 默认 ghostMoves≠0 = 论文 p 抖动，诚实还原）
-  const avgHitRate = cells.reduce((a, c) => a + c.hitRate, 0) / Math.max(1, cells.length)
-  const ghostMoves = cells.reduce((a, c) => a + (c.ghostAdaptMoves ?? 0), 0)
-  const stableHitRate = ghostMoves === 0 && avgHitRate >= 0.55
-  // adaptiveBalance：只在漂移考场量幽灵链真适配动作（ghost≥1 才算自适应在平衡）
-  const driftGhost = cells
-    .filter((c) => c.id === 'burstAlternates' || c.id === 'zipfDrift')
-    .reduce((a, c) => a + (c.ghostAdaptMoves ?? 0), 0)
-  const adaptiveBalance = driftGhost >= 1
-  return {
-    trilemma: { scanResistance, stableHitRate, adaptiveBalance },
-    debug: { scanAvg: round4(scanAvg), avgHitRate: round4(avgHitRate), ghostMoves, driftGhost },
+  const allTrueInExam = (key, inKey) => {
+    const examCells = cells.filter((c) => c[inKey] === true)
+    return examCells.length === 0 ? true : examCells.every((c) => c[key] === true)
   }
+  const trilemma = {
+    scanResistance: allTrueInExam('scanResistance', 'inScanExam'),
+    stableHitRate: allTrueInExam('stableHitRate', 'inStableExam'),
+    adaptiveBalance: allTrueInExam('adaptiveBalance', 'inAdaptiveExam'),
+  }
+  // debug 从本行真读数复算（与 verdict 同一口径、同一份数据，绝非另造口径）。
+  const { debug } = trilemmaOfReadings(cells)
+  return { trilemma, debug }
 }
 
-/** 跑一整组 3 策略 × 场景矩阵，trilemma 全部由真读数现算。 */
+/** 跑一整组 3 策略 × 场景矩阵：整行现算 verdict → 逐格分派六字段 → row 从 cell 复现。 */
 function runMatrix(opts, flags, scenarioIds) {
   const seed = intOr(opts.seed, CR_DEFAULTS.seed)
   const capacity = intOr(opts.capacity, CR_DEFAULTS.capacity)
   const accesses = intOr(opts.accesses, CR_DEFAULTS.accesses)
+  const cellOpts = { ...opts, seed, capacity, accesses }
   const rows = []
   for (const p of CR_STRATEGIES) {
-    const cells = scenarioIds.map((s) => runFlaggedScenario(p, s, { ...opts, seed, capacity, accesses }, flags))
-    const { trilemma, debug } = computeTrilemma(cells)
+    const { cells, debug } = runFlaggedRow(p, cellOpts, flags, scenarioIds)
+    const { trilemma } = computeTrilemma(cells)
     rows.push({
       protocol: p,
       scenarios: cells,
@@ -500,7 +573,7 @@ function runMatrix(opts, flags, scenarioIds) {
         ghostAdaptMoves: cells.reduce((a, c) => a + (c.ghostAdaptMoves ?? 0), 0),
         amPromotions: cells.reduce((a, c) => a + (c.amPromotions ?? 0), 0),
         adaptationP: cells.length ? cells[cells.length - 1].adaptationP : 0,
-        effectiveCapacity: cells.length ? (cells[0].effectiveCapacity ?? capacity) : capacity, // 默认态走 runReplacementScenario 不带该字段，兜真容量（非造假）
+        effectiveCapacity: cells.length ? (cells[0].effectiveCapacity ?? capacity) : capacity, // 默认态走默认构造不带该字段，兜真容量（非造假）
         prefetchSkipped: cells.reduce((a, c) => a + (c.prefetchSkipped ?? 0), 0),
         trilemmaDebug: debug,
       },

@@ -851,4 +851,47 @@ describe('spring-family-mesh-e2e', () => {
     expect(bare.bloomFilterSnapshot).toBe(null)
     expect(bare.logCompactionSnapshot).toBe(null)
   })
+
+  it("e2e KI-528：cacheReplacement=true ⇒ 主链照常跑通，cacheReplacementSnapshot 带三策略×六场景/三难向量 010/110/101/双路自证/十一真件交叉印证", async () => {
+    const e = runMeshE2E({ cacheReplacement: true, crNow: () => 8888 })
+    const r = await e.run()
+    expect(r.started?.registered).toBe(true)
+    expect(r.callRes?.ok).toBe(true)
+    const d = r.cacheReplacementSnapshot
+    expect(d).not.toBe(null)
+    expect(d!.builtAt).toBe(8888)
+    expect(d!.config.scenarios.length).toBe(6)
+    expect(d!.rows.length).toBe(3)
+    expect(d!.vectors).toEqual({ LRU: '010', '2Q': '110', ARC: '101' })
+    const lru = d!.rows.find((row: any) => row.protocol === 'LRU')!
+    const q2 = d!.rows.find((row: any) => row.protocol === '2Q')!
+    const arc = d!.rows.find((row: any) => row.protocol === 'ARC')!
+    expect(lru.trilemma).toEqual({ scanResistance: false, stableHitRate: true, adaptiveBalance: false })
+    expect(q2.trilemma).toEqual({ scanResistance: true, stableHitRate: true, adaptiveBalance: false })
+    expect(arc.trilemma).toEqual({ scanResistance: true, stableHitRate: false, adaptiveBalance: true })
+    // cell 三布尔 + 考场标记直读同源（前端矩阵软肋字不靠阈值重算）
+    const scanCell = lru.scenarios.find((s: any) => s.id === 'scanFeast')!
+    expect(scanCell.scanResistance).toBe(false)
+    expect(scanCell.inScanExam).toBe(true)
+    expect(arc.scenarios.find((s: any) => s.id === 'zipfDrift')!.adaptiveBalance).toBe(true)
+    const ev = d!.crosscheck.evidence
+    expect(Object.keys(ev).length).toBe(21)
+    expect(ev.jitterSpread).toBeGreaterThan(0)
+    const ds = d!.crosscheck.dualSweep
+    expect(ds.holds).toBe(true)
+    expect(ds.tamper.laneATraceCorrupted.holds).toBe(false)
+    expect(ds.tamper.laneBTraceCorrupted.holds).toBe(false)
+    expect(ds.tamper.laneBSizedNull.holds).toBe(false)
+    expect(d!.verdict.noUniversalWinner).toBe(true)
+    expect(d!.verdict.vectorFromTrilemma).toBe(true)
+    // rigged 透传：110/110/110 因果锁死 adaptiveBalance
+    const rig = await runMeshE2E({ cacheReplacement: { rigged: true } }).run()
+    expect(rig.cacheReplacementSnapshot!.vectors).toEqual({ LRU: '110', '2Q': '110', ARC: '110' })
+    expect(rig.cacheReplacementSnapshot!.verdict.adaptiveBalanceCausallyUnerasable).toBe(true)
+    expect(rig.cacheReplacementSnapshot!.verdict.noUniversalWinner).toBe(false)
+    // 未配 cacheReplacement 时为 null（非破坏）
+    const bare = await runMeshE2E().run()
+    expect(bare.cacheReplacementSnapshot).toBe(null)
+    expect(bare.bloomFilterSnapshot).toBe(null)
+  })
 })

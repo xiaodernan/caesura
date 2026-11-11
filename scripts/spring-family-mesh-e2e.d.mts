@@ -416,13 +416,16 @@ export function runMeshE2E(opts?: any): {
           id: string; protocol: string; hits: number; misses: number; hitRate: number
           scanHits: number; scanMisses: number; localHits: number; localMisses: number
           amPromotions?: number; ghostHitsT1?: number; ghostHitsT2?: number; ghostAdaptMoves?: number
+          adaptationP?: number
           fault: string
+          scanResistance: boolean; stableHitRate: boolean; adaptiveBalance: boolean
+          inScanExam: boolean; inStableExam: boolean; inAdaptiveExam: boolean
         }>
         trilemma: { scanResistance: boolean; stableHitRate: boolean; adaptiveBalance: boolean }
-        metrics: { hitRateAvg: number; ghostAdaptMoves: number; amPromotions: number; adaptationP: number }
+        metrics: { hitRateAvg: number; ghostAdaptMoves: number; amPromotions: number; adaptationP: number; prefetchSkipped?: number; effectiveCapacity?: number; trilemmaDebug?: Record<string, any> }
       }>
       vectors: Record<string, string>
-      crosscheck: { evidence: Record<string, any>; fpCeiling: Record<string, any> }
+      crosscheck: { evidence: Record<string, any>; fpCeiling: Record<string, any>; dualSweep: { holds: boolean; tamper: Record<string, any> } & Record<string, any> }
       verdict: Record<string, any>
       builtAt: number
     } | null

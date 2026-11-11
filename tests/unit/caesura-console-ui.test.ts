@@ -1571,3 +1571,92 @@ describe('KI-527 · bloomFilter 布隆/布谷鸟/计数布隆面板：三策略 
     expect(css).toContain('@media (max-width: 720px)')
   })
 })
+
+describe('KI-528 · cacheReplacement 缓存替换面板：三策略 × 六场景 + 正交三难向量 + 双路自证 + 十一真件交叉印证', () => {
+  const realCr = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+
+  it('三策略 × 六场景矩阵状态字直读 cell 三布尔 + 指标梯 + 软肋字（污/抖/僵）与三难同源', async () => {
+    const dom = await runApp(realCr)
+    const matrix = dom.els['cr-matrix'].innerHTML
+    expect(matrix).toContain('cr-mat-head')
+    for (const s of ['LRU', '2Q', 'ARC']) expect(matrix).toContain('data-strategy="' + s + '"')
+    expect(matrix).toContain('data-s="uniformHot"')
+    expect(matrix).toContain('data-s="zipfDrift"')
+    const states = [...matrix.matchAll(/data-state="([^"]+)"/g)].map((m: any) => m[1])
+    expect(states.length).toBe(18) // 3 策略 × 6 场景
+    for (const st of states) expect(['block', 'unstable', 'adapt', 'ok']).toContain(st)
+    expect(matrix).toContain('class="cr-cell block"')     // LRU scanFeast 顺扫污染
+    expect(matrix).toContain('class="cr-cell unstable"')  // ARC 命中抖动
+    expect(matrix).toContain('class="cr-cell adapt"')     // LRU/2Q 僵（不自适应）
+    const ladder = dom.els['cr-ladder'].innerHTML
+    for (const s of ['LRU', '2Q', 'ARC']) expect(ladder).toContain('data-strategy="' + s + '"')
+    expect(ladder).toContain('cr-bar')
+    expect(dom.els['cr-matrix-note'].textContent).toContain('三布尔')
+  })
+
+  it('三难向量三行 + 向量串 010/110/101 + 不封赢家 + 因果锁/同源/双路判词 chips', async () => {
+    const dom = await runApp(realCr)
+    const tri = dom.els['cr-trilemma'].innerHTML
+    expect(tri).toContain('cr-vec-head')
+    expect(tri).toContain('data-vec="010"') // LRU
+    expect(tri).toContain('data-vec="110"') // 2Q
+    expect(tri).toContain('data-vec="101"') // ARC
+    for (const k of ['scanResistance', 'stableHitRate', 'adaptiveBalance']) expect(tri).toContain('data-k="' + k + '"')
+    const probes = dom.els['cr-probes'].innerHTML
+    for (const k of ['noUniversalWinner', 'vectorFromTrilemma', 'dualSweepHolds', 'lru_unhinted', 'arc_adaptive']) {
+      expect(probes, '判词 chip ' + k + ' 必须落 DOM').toContain('data-verdict="' + k + '"')
+    }
+    expect(dom.els['cr-trilemma-note'].textContent).toContain('ARC=101')
+    expect(dom.els['cr-trilemma-note'].textContent).not.toContain('Bloom') // 不串抄 KI-527 文案
+  })
+
+  it('verifyDualSweep 双路自证栏 + 三路篡改真喂回标记 + 十一真件交叉印证全部真 API 名落 DOM', async () => {
+    const dom = await runApp(realCr)
+    const vf = dom.els['cr-verif'].innerHTML
+    expect(vf).toContain('data-rb="holds"')
+    expect(vf).toContain('data-rb="nontrivial"')
+    expect(vf).toContain('data-rb="falsifiable"')
+    expect(vf).toContain('data-rb-tamper="laneATraceCorrupted"')
+    expect(vf).toContain('data-rb-tamper="laneBTraceCorrupted"')
+    expect(vf).toContain('data-rb-tamper="laneBSizedNull"')
+    const cx = dom.els['cr-crosscheck'].innerHTML
+    for (const api of [
+      'compareRemapping', 'createShardRouter', 'createHashRing', 'createWal', 'createBus',
+      'createRedisCache', 'createObjectPool', 'createTokenBucket', 'createMinHeapDelayQueue',
+      'createPackedCounters', 'createFullJitterBackoff',
+    ]) expect(cx, '真件 ' + api + ' 必须落 DOM').toContain(api)
+    expect(cx).toContain('jitterSpread')
+  })
+
+  it('systems.cacheReplacement 缺失 / 交叉印证缺失：真实降级、绝不伪造', async () => {
+    const noCr = JSON.parse(JSON.stringify(realCr))
+    noCr.systems.cacheReplacement = null
+    const dom = await runApp(noCr)
+    expect(dom.els['cr-matrix'].innerHTML).toContain('暂缺')
+    expect(dom.els['cr-ladder'].innerHTML).toBe('')
+    expect(dom.els['cr-trilemma'].innerHTML).toContain('暂缺')
+    expect(dom.els['cr-matrix-note'].textContent).toContain('systems.cacheReplacement 缺失')
+    const partial = JSON.parse(JSON.stringify(realCr))
+    partial.systems.cacheReplacement.crosscheck = null
+    const dom2 = await runApp(partial)
+    expect(dom2.els['cr-crosscheck'].innerHTML).toContain('真件交叉印证缺失')
+    expect(dom2.els['cr-crosscheck'].innerHTML).not.toContain('createHashRing')
+  })
+
+  it('第二十二维 markup 与 CSS 契约：row-cr 两面板 + cr-* 视觉族 + 向量真值 + reduced-motion 兜底', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-cr')
+    expect(html).toContain('id="cr-matrix"')
+    expect(html).toContain('id="cr-verif"')
+    expect(html).toContain('LRU=010 / 2Q=110 / ARC=101')
+    expect(css).toContain('.cr-cell.block')            // 顺扫污染
+    expect(css).toContain('.cr-cell.unstable')         // 命中抖动
+    expect(css).toContain('.cr-cell.adapt')            // 不自适应
+    expect(css).toContain('.cr-cell.ok')               // 空真无病征
+    expect(css).toContain('.cr-bar > i')               // 指标梯
+    expect(css).toContain('.cr-verif')                 // 双路自证栏
+    expect(css).toContain('prefers-reduced-motion')    // 前庭友好兜底
+    expect(css).toContain('@media (max-width: 720px)')
+  })
+})

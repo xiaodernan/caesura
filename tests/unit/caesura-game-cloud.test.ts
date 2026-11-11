@@ -1453,4 +1453,88 @@ describe('caesura-game-cloud', () => {
     expect(injected.bloomFilter.builtAt).toBe(555)
     expect(injected.bloomFilter.config.seed).toBe(99)
   })
+
+  it("cacheReplacement:true ⇒ 装配 LRU/2Q/ARC 三替换策略、status.cacheReplacement 读真矩阵/三难向量 010/110/101/双路自证/十一真件、builtAt 随 crNow、惰性同引用（KI-528）", async () => {
+    const gc = createGameCloud({
+      gameId: 'gidcr1', gamePort: 7831, sources, cloud: fakeCloud(),
+      cacheReplacement: true, crNow: () => 9999,
+    })
+    expect(gc.runCacheReplacementStudy).toBeTypeOf('function')
+    const st = await gc.status()
+    expect(st.cacheReplacement.builtAt).toBe(9999)
+    expect(st.cacheReplacement.config.scenarios.length).toBe(6)
+    expect(st.cacheReplacement.rows.length).toBe(3)
+    expect(st.cacheReplacement.vectors).toEqual({ LRU: '010', '2Q': '110', ARC: '101' })
+    const lru = st.cacheReplacement.rows.find((r: any) => r.protocol === 'LRU')!
+    const q2 = st.cacheReplacement.rows.find((r: any) => r.protocol === '2Q')!
+    const arc = st.cacheReplacement.rows.find((r: any) => r.protocol === 'ARC')!
+    expect(lru.trilemma).toEqual({ scanResistance: false, stableHitRate: true, adaptiveBalance: false })
+    expect(q2.trilemma).toEqual({ scanResistance: true, stableHitRate: true, adaptiveBalance: false })
+    expect(arc.trilemma).toEqual({ scanResistance: true, stableHitRate: false, adaptiveBalance: true })
+    // cell 三布尔 + 考场标记直读同源，矩阵软肋字不靠阈值重算
+    const scanCell = lru.scenarios.find((c: any) => c.id === 'scanFeast')!
+    expect(scanCell.scanResistance).toBe(false)
+    expect(scanCell.inScanExam).toBe(true)
+    expect(arc.scenarios.find((c: any) => c.id === 'burstAlternates')!.adaptiveBalance).toBe(true)
+    // 双路自证稳态成立 + 三路篡改真喂回现算翻 false
+    const ds = st.cacheReplacement.crosscheck.dualSweep
+    expect(ds.holds).toBe(true)
+    expect(ds.nontrivial).toBe(true)
+    expect(ds.tamper.laneATraceCorrupted.holds).toBe(false)
+    expect(ds.tamper.laneBTraceCorrupted.holds).toBe(false)
+    expect(ds.tamper.laneBSizedNull.holds).toBe(false)
+    // 十一真件 21 键真回读
+    const ev = st.cacheReplacement.crosscheck.evidence
+    expect(Object.keys(ev).length).toBe(21)
+    expect(ev.walReplayed).toBeGreaterThan(0)
+    expect(ev.jitterSpread).toBeGreaterThan(0)
+    expect(st.cacheReplacement.verdict.noUniversalWinner).toBe(true)
+    expect(st.cacheReplacement.verdict.vectorFromTrilemma).toBe(true)
+    expect(st.cacheReplacement.verdict.dualSweepHolds).toBe(true)
+    // 惰性缓存：二次 status 同引用
+    expect((await gc.status()).cacheReplacement).toBe(st.cacheReplacement)
+    const rerun = await gc.runCacheReplacementStudy!()
+    expect(rerun.vectors).toEqual(st.cacheReplacement.vectors)
+    // 不连坐其它维
+    expect(st.bloomFilter).toBe(null)
+    expect(st.logCompaction).toBe(null)
+  })
+
+  it('cacheReplacement 默认 null 非破坏；单开 unlimitedRoom/perfectFuture 各自局部、rigged 110/110/110 因果锁死 adaptiveBalance；可注入现成 study（KI-528）', async () => {
+    const plain = createGameCloud({ gameId: 'gidcr2', gamePort: 7832, sources, cloud: fakeCloud() })
+    expect(plain.runCacheReplacementStudy).toBe(null)
+    const ps = await plain.status()
+    expect(ps.cacheReplacement).toBe(null)
+    expect(ps.bloomFilter).toBe(null)
+    // 单开 unlimitedRoom：抹 scan/stable 必反噬 adaptive
+    const ur = await (await createGameCloud({
+      gameId: 'gidcr3', gamePort: 7833, sources, cloud: fakeCloud(),
+      cacheReplacement: { unlimitedRoom: true, now: 0 },
+    })).status()
+    expect(ur.cacheReplacement.verdict.trilemmaDistinguishes).toBe(false)
+    expect(ur.cacheReplacement.vectors.ARC).toBe('110')
+    // 单开 perfectFuture：抹 LRU 抗扫维
+    const pf = await (await createGameCloud({
+      gameId: 'gidcr4', gamePort: 7834, sources, cloud: fakeCloud(),
+      cacheReplacement: { perfectFuture: true, now: 0 },
+    })).status()
+    expect(pf.cacheReplacement.vectors.LRU).toBe('110')
+    // rigged 双开关齐开：真实现算 110/110/110、因果锁死 adaptiveBalance
+    const rig = await (await createGameCloud({
+      gameId: 'gidcr5', gamePort: 7835, sources, cloud: fakeCloud(),
+      cacheReplacement: { rigged: true, now: 0 },
+    })).status()
+    expect(rig.cacheReplacement.vectors).toEqual({ LRU: '110', '2Q': '110', ARC: '110' })
+    expect(rig.cacheReplacement.verdict.adaptiveBalanceCausallyUnerasable).toBe(true)
+    expect(rig.cacheReplacement.verdict.noUniversalWinner).toBe(false)
+    expect(rig.cacheReplacement.verdict.vectorFromTrilemma).toBe(true)
+    // 注入现成 study（duck-typed）
+    const { cacheReplacementStudy } = await import('../../scripts/caesura-cache-replacement.mjs')
+    const injected = await (await createGameCloud({
+      gameId: 'gidcr6', gamePort: 7836, sources, cloud: fakeCloud(),
+      cacheReplacement: cacheReplacementStudy({ seed: 99, now: 555 }),
+    })).status()
+    expect(injected.cacheReplacement.builtAt).toBe(555)
+    expect(injected.cacheReplacement.config.seed).toBe(99)
+  })
 })

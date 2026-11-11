@@ -667,6 +667,47 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(eight.every((x) => x === 527000)).toBe(true)
   })
 
+  it('⑲-cacheReplacement buildCacheReplacementReading 真跑：cr* 注入生效 / cacheReplacement:false 关闭 / rigged 因果锁可证伪 / 双路自证 + 十一真件 / 九时钟同源（KI-528）', async () => {
+    const { buildCacheReplacementReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 528000
+    const cr = (await buildCacheReplacementReading({}, now))!
+    expect(cr).not.toBe(null)
+    expect(cr.builtAt).toBe(528000)
+    expect(cr.rows.length).toBe(3)
+    expect(cr.config.scenarios.length).toBe(6)
+    expect(cr.vectors).toEqual({ LRU: '010', '2Q': '110', ARC: '101' })
+    // cr* 注入（crSeed/crCapacity/crAccesses），不复用被其它维占用的前缀
+    const tuned = (await buildCacheReplacementReading({ crSeed: 9, crCapacity: 32, crAccesses: 128 }, now))!
+    expect(tuned.config.seed).toBe(9)
+    expect(tuned.config.capacity).toBe(32)
+    expect(tuned.config.accesses).toBe(128)
+    // 双开关单开：各自现算反噬，绝不硬造全 111
+    const ur = (await buildCacheReplacementReading({ crUnlimitedRoom: true }, now))!
+    expect(ur.verdict.trilemmaDistinguishes).toBe(false)
+    const pf = (await buildCacheReplacementReading({ crPerfectFuture: true }, now))!
+    expect(pf.vectors.LRU).toBe('110')
+    // rigged 齐开：三向量退 110·自适应因果抹不掉，判词可证伪
+    const rig = (await buildCacheReplacementReading({ crRigged: true }, now))!
+    expect(rig.vectors).toEqual({ LRU: '110', '2Q': '110', ARC: '110' })
+    expect(rig.verdict.adaptiveBalanceCausallyUnerasable).toBe(true)
+    expect(rig.verdict.noUniversalWinner).toBe(false)
+    // 双路自证 + 三路篡改 + 十一真件 21 键
+    expect((cr.crosscheck as any).dualSweep.holds).toBe(true)
+    expect((cr.crosscheck as any).dualSweep.tamper.laneBSizedNull.holds).toBe(false)
+    expect(Object.keys((cr.crosscheck as any).evidence).length).toBe(21)
+    // cell 三布尔 + 考场标记直读同源
+    const lru = cr.rows.find((r: any) => r.protocol === 'LRU')!
+    expect(lru.scenarios.find((c: any) => c.id === 'scanFeast')!.scanResistance).toBe(false)
+    // cacheReplacement:false 关闭不连坐
+    const off = await buildSystems({ now, cacheReplacement: false })
+    expect(off.cacheReplacement).toBe(null)
+    expect(off.bloomFilter).not.toBe(null)
+    // 九时钟同源
+    const full = await buildSystems({ now })
+    const nine = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt, full.bloomFilter?.builtAt, full.cacheReplacement?.builtAt]
+    expect(nine.every((x) => x === 528000)).toBe(true)
+  })
+
   it('⑭ buildMvccTxnReading 真跑五档矩阵形状齐、读数是真判词、单维关闭不连坐（KI-505）', async () => {
     const { buildMvccTxnReading } = await import('../../scripts/caesura-console-gen.mjs')
     const now = () => 4242

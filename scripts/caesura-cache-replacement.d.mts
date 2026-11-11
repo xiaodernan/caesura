@@ -69,6 +69,14 @@ export interface ReplacementCell {
   effectiveCapacity?: number
   fedAccesses?: number
   prefetchSkipped?: number
+  /** 三难正交三布尔（每格按考场分派、与 row.trilemma 同源；非本维考场格空真 true） */
+  scanResistance: boolean
+  stableHitRate: boolean
+  adaptiveBalance: boolean
+  /** 三考场标记：本格是否属于对应维的负责考场 */
+  inScanExam: boolean
+  inStableExam: boolean
+  inAdaptiveExam: boolean
 }
 export interface ReplacementTrilemma {
   scanResistance: boolean

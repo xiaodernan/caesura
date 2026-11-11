@@ -2664,7 +2664,7 @@
           '<div>真 <b>createTokenBucket</b> 回放允许 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
           '<div>真 <b>createMinHeapDelayQueue</b> 出队 ' + esc(fmt(ev.heapFired)) + ' 条 · 待 ' + esc(fmt(ev.heapPending)) + '</div>' +
           '<div>真 <b>createPackedCounters</b> Σ=' + esc(fmt(ev.counterSum)) + ' · 假共享对 ' + esc(fmt(ev.counterFalseSharing)) + '</div>' +
-          '<div>真 <b>createFullJitterBackoff</b> 抖开 <b>' + esc(fmt(ev.jitterSpread)) + '</b></div>'
+          '<div>真 <b>createFullJitterBackoff</b> jitterSpread 抖开 <b>' + esc(fmt(ev.jitterSpread)) + '</b></div>'
       } else {
         cxBox.innerHTML = '<div class="nodata">真件交叉印证缺失</div>'
       }
@@ -2819,7 +2819,7 @@
           '<div>真 <b>createTokenBucket</b> 回放允许 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
           '<div>真 <b>createMinHeapDelayQueue</b> rebuild 出队 ' + esc(fmt(ev.heapFired)) + ' 条 · 待 ' + esc(fmt(ev.heapPending)) + '</div>' +
           '<div>真 <b>createPackedCounters</b> Σ=' + esc(fmt(ev.counterSum)) + ' · 假共享对 ' + esc(fmt(ev.counterFalseSharing)) + '</div>' +
-          '<div>真 <b>createFullJitterBackoff</b> 抖开 <b>' + esc(fmt(ev.jitterSpread)) + '</b></div>'
+          '<div>真 <b>createFullJitterBackoff</b> jitterSpread 抖开 <b>' + esc(fmt(ev.jitterSpread)) + '</b></div>'
       } else {
         cxBox.innerHTML = '<div class="nodata">真件交叉印证缺失</div>'
       }

@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794416405340,
+  "generatedAt": 1794418896792,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1365,12 +1365,12 @@
           "keys": 1,
           "versions": 2,
           "commitLogSize": 1,
-          "now": 1794416405342
+          "now": 1794418896794
         },
         "final": {
           "A": {
             "value": 101,
-            "commitTs": 1794416405342,
+            "commitTs": 1794418896794,
             "tombstone": false
           }
         }
@@ -3646,7 +3646,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794416405340,
+                "lastTimestamp": 1794418896792,
                 "workerId": 1
               },
               "fault": {
@@ -3742,7 +3742,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794416405340,
+                "lastTimestamp": 1794418896792,
                 "workerId": 1
               },
               "fault": {
@@ -3774,7 +3774,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794416405341,
+                "lastTimestamp": 1794418896793,
                 "workerId": 1
               },
               "fault": {
@@ -3806,7 +3806,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794416405340,
+                "lastTimestamp": 1794418896792,
                 "workerId": 1
               },
               "fault": {
@@ -4522,7 +4522,7 @@
         "capacity": 8,
         "perShardCap": 2
       },
-      "builtAt": 1794416405340
+      "builtAt": 1794418896792
     },
     "configConsistency": {
       "config": {
@@ -5020,7 +5020,7 @@
         "burstCount": 12,
         "windowMs": 10000
       },
-      "builtAt": 1794416405340
+      "builtAt": 1794418896792
     },
     "cacheCoherency": {
       "config": {
@@ -5549,7 +5549,7 @@
         "crashAtWrite": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794416405340
+      "builtAt": 1794418896792
     },
     "messageDelivery": {
       "config": {
@@ -6038,10 +6038,10 @@
         "crashAfterSendAt": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794416405340
+      "builtAt": 1794418896792
     },
     "delayQueue": {
-      "builtAt": 1794416405340,
+      "builtAt": 1794418896792,
       "config": {
         "seed": 518,
         "tasks": 12,
@@ -6068,7 +6068,7 @@
               "id": "allOk",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 68804,
+              "lateMs": 26804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6080,7 +6080,7 @@
               "id": "tickSkew",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 68804,
+              "lateMs": 26804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6092,7 +6092,7 @@
               "id": "farFuture",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 69136,
+              "lateMs": 27136,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6104,7 +6104,7 @@
               "id": "manyCancels",
               "protocol": "TimingWheel",
               "fired": 6,
-              "lateMs": 30858,
+              "lateMs": 16858,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6128,7 +6128,7 @@
               "id": "concurrentWorkers",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 68804,
+              "lateMs": 26804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6139,7 +6139,7 @@
           ],
           "totals": {
             "fired": 54,
-            "lateMs": 306406,
+            "lateMs": 124406,
             "duplicatePickups": 0,
             "lostOnRestart": 6,
             "opUnits": 72
@@ -6375,7 +6375,7 @@
       }
     },
     "retryDlq": {
-      "builtAt": 1794416405340,
+      "builtAt": 1794418896792,
       "config": {
         "seed": 520,
         "messages": 16,
@@ -6793,7 +6793,7 @@
       }
     },
     "consumerGroup": {
-      "builtAt": 1794416405340,
+      "builtAt": 1794418896792,
       "config": {
         "seed": 523,
         "consumers": 3,
@@ -7299,7 +7299,7 @@
       }
     },
     "backpressure": {
-      "builtAt": 1794416405340,
+      "builtAt": 1794418896792,
       "config": {
         "steps": 48,
         "mu": 2,
@@ -8344,7 +8344,7 @@
       }
     },
     "logCompaction": {
-      "builtAt": 1794416405340,
+      "builtAt": 1794418896792,
       "config": {
         "seed": 526,
         "ops": 24,
@@ -9405,7 +9405,7 @@
       }
     },
     "bloomFilter": {
-      "builtAt": 1794416405340,
+      "builtAt": 1794418896792,
       "config": {
         "seed": 527,
         "capacity": 1024,
@@ -10104,7 +10104,7 @@
       }
     },
     "cacheReplacement": {
-      "builtAt": 1794416405340,
+      "builtAt": 1794418896792,
       "config": {
         "seed": 528,
         "capacity": 16,
@@ -10117,9 +10117,9 @@
           "burstAlternates",
           "zipfDrift"
         ],
-        "perfectFuture": false,
+        "rigged": false,
         "unlimitedRoom": false,
-        "rigged": false
+        "perfectFuture": false
       },
       "rows": [
         {
@@ -10140,7 +10140,13 @@
               "ghostHitsT2": 0,
               "ghostAdaptMoves": 0,
               "adaptationP": 0,
-              "fault": "uniform-hot"
+              "fault": "uniform-hot",
+              "scanResistance": true,
+              "stableHitRate": true,
+              "adaptiveBalance": true,
+              "inScanExam": false,
+              "inStableExam": true,
+              "inAdaptiveExam": false
             },
             {
               "id": "forwardHot",
@@ -10157,7 +10163,13 @@
               "ghostHitsT2": 0,
               "ghostAdaptMoves": 0,
               "adaptationP": 0,
-              "fault": "forward-hot"
+              "fault": "forward-hot",
+              "scanResistance": true,
+              "stableHitRate": true,
+              "adaptiveBalance": true,
+              "inScanExam": false,
+              "inStableExam": true,
+              "inAdaptiveExam": false
             },
             {
               "id": "dualLocality",
@@ -10174,7 +10186,13 @@
               "ghostHitsT2": 0,
               "ghostAdaptMoves": 0,
               "adaptationP": 0,
-              "fault": "dual-locality"
+              "fault": "dual-locality",
+              "scanResistance": true,
+              "stableHitRate": true,
+              "adaptiveBalance": true,
+              "inScanExam": false,
+              "inStableExam": true,
+              "inAdaptiveExam": false
             },
             {
               "id": "scanFeast",
@@ -10191,7 +10209,13 @@
               "ghostHitsT2": 0,
               "ghostAdaptMoves": 0,
               "adaptationP": 0,
-              "fault": "scan-feast"
+              "fault": "scan-feast",
+              "scanResistance": false,
+              "stableHitRate": true,
+              "adaptiveBalance": true,
+              "inScanExam": true,
+              "inStableExam": false,
+              "inAdaptiveExam": false
             },
             {
               "id": "burstAlternates",
@@ -10208,7 +10232,13 @@
               "ghostHitsT2": 0,
               "ghostAdaptMoves": 0,
               "adaptationP": 0,
-              "fault": "burst"
+              "fault": "burst",
+              "scanResistance": false,
+              "stableHitRate": true,
+              "adaptiveBalance": false,
+              "inScanExam": true,
+              "inStableExam": false,
+              "inAdaptiveExam": true
             },
             {
               "id": "zipfDrift",
@@ -10225,7 +10255,13 @@
               "ghostHitsT2": 0,
               "ghostAdaptMoves": 0,
               "adaptationP": 0,
-              "fault": "zipf-drift"
+              "fault": "zipf-drift",
+              "scanResistance": true,
+              "stableHitRate": true,
+              "adaptiveBalance": false,
+              "inScanExam": false,
+              "inStableExam": false,
+              "inAdaptiveExam": true
             }
           ],
           "trilemma": {
@@ -10237,7 +10273,15 @@
             "hitRateAvg": 0.5904,
             "ghostAdaptMoves": 0,
             "amPromotions": 0,
-            "adaptationP": 0
+            "adaptationP": 0,
+            "effectiveCapacity": 16,
+            "prefetchSkipped": 0,
+            "trilemmaDebug": {
+              "scanAvg": 0.311,
+              "avgHitRate": 0.5904,
+              "ghostMoves": 0,
+              "driftGhost": 0
+            }
           }
         },
         {
@@ -10258,7 +10302,13 @@
               "ghostHitsT2": 0,
               "ghostAdaptMoves": 0,
               "adaptationP": 0,
-              "fault": "uniform-hot"
+              "fault": "uniform-hot",
+              "scanResistance": true,
+              "stableHitRate": true,
+              "adaptiveBalance": true,
+              "inScanExam": false,
+              "inStableExam": true,
+              "inAdaptiveExam": false
             },
             {
               "id": "forwardHot",
@@ -10275,7 +10325,13 @@
               "ghostHitsT2": 0,
               "ghostAdaptMoves": 0,
               "adaptationP": 0,
-              "fault": "forward-hot"
+              "fault": "forward-hot",
+              "scanResistance": true,
+              "stableHitRate": true,
+              "adaptiveBalance": true,
+              "inScanExam": false,
+              "inStableExam": true,
+              "inAdaptiveExam": false
             },
             {
               "id": "dualLocality",
@@ -10292,7 +10348,13 @@
               "ghostHitsT2": 0,
               "ghostAdaptMoves": 0,
               "adaptationP": 0,
-              "fault": "dual-locality"
+              "fault": "dual-locality",
+              "scanResistance": true,
+              "stableHitRate": true,
+              "adaptiveBalance": true,
+              "inScanExam": false,
+              "inStableExam": true,
+              "inAdaptiveExam": false
             },
             {
               "id": "scanFeast",
@@ -10309,7 +10371,13 @@
               "ghostHitsT2": 0,
               "ghostAdaptMoves": 0,
               "adaptationP": 0,
-              "fault": "scan-feast"
+              "fault": "scan-feast",
+              "scanResistance": true,
+              "stableHitRate": true,
+              "adaptiveBalance": true,
+              "inScanExam": true,
+              "inStableExam": false,
+              "inAdaptiveExam": false
             },
             {
               "id": "burstAlternates",
@@ -10326,7 +10394,13 @@
               "ghostHitsT2": 0,
               "ghostAdaptMoves": 0,
               "adaptationP": 0,
-              "fault": "burst"
+              "fault": "burst",
+              "scanResistance": true,
+              "stableHitRate": true,
+              "adaptiveBalance": false,
+              "inScanExam": true,
+              "inStableExam": false,
+              "inAdaptiveExam": true
             },
             {
               "id": "zipfDrift",
@@ -10343,7 +10417,13 @@
               "ghostHitsT2": 0,
               "ghostAdaptMoves": 0,
               "adaptationP": 0,
-              "fault": "zipf-drift"
+              "fault": "zipf-drift",
+              "scanResistance": true,
+              "stableHitRate": true,
+              "adaptiveBalance": false,
+              "inScanExam": false,
+              "inStableExam": false,
+              "inAdaptiveExam": true
             }
           ],
           "trilemma": {
@@ -10355,7 +10435,15 @@
             "hitRateAvg": 0.5888,
             "ghostAdaptMoves": 0,
             "amPromotions": 130,
-            "adaptationP": 0
+            "adaptationP": 0,
+            "effectiveCapacity": 16,
+            "prefetchSkipped": 0,
+            "trilemmaDebug": {
+              "scanAvg": 0.3472,
+              "avgHitRate": 0.5888,
+              "ghostMoves": 0,
+              "driftGhost": 0
+            }
           }
         },
         {
@@ -10376,7 +10464,13 @@
               "ghostHitsT2": 1,
               "ghostAdaptMoves": 7,
               "adaptationP": 5,
-              "fault": "uniform-hot"
+              "fault": "uniform-hot",
+              "scanResistance": true,
+              "stableHitRate": false,
+              "adaptiveBalance": true,
+              "inScanExam": false,
+              "inStableExam": true,
+              "inAdaptiveExam": false
             },
             {
               "id": "forwardHot",
@@ -10393,7 +10487,13 @@
               "ghostHitsT2": 0,
               "ghostAdaptMoves": 3,
               "adaptationP": 3,
-              "fault": "forward-hot"
+              "fault": "forward-hot",
+              "scanResistance": true,
+              "stableHitRate": false,
+              "adaptiveBalance": true,
+              "inScanExam": false,
+              "inStableExam": true,
+              "inAdaptiveExam": false
             },
             {
               "id": "dualLocality",
@@ -10410,7 +10510,13 @@
               "ghostHitsT2": 12,
               "ghostAdaptMoves": 33,
               "adaptationP": 4,
-              "fault": "dual-locality"
+              "fault": "dual-locality",
+              "scanResistance": true,
+              "stableHitRate": false,
+              "adaptiveBalance": true,
+              "inScanExam": false,
+              "inStableExam": true,
+              "inAdaptiveExam": false
             },
             {
               "id": "scanFeast",
@@ -10427,7 +10533,13 @@
               "ghostHitsT2": 0,
               "ghostAdaptMoves": 0,
               "adaptationP": 0,
-              "fault": "scan-feast"
+              "fault": "scan-feast",
+              "scanResistance": true,
+              "stableHitRate": true,
+              "adaptiveBalance": true,
+              "inScanExam": true,
+              "inStableExam": false,
+              "inAdaptiveExam": false
             },
             {
               "id": "burstAlternates",
@@ -10444,7 +10556,13 @@
               "ghostHitsT2": 20,
               "ghostAdaptMoves": 52,
               "adaptationP": 8,
-              "fault": "burst"
+              "fault": "burst",
+              "scanResistance": true,
+              "stableHitRate": true,
+              "adaptiveBalance": true,
+              "inScanExam": true,
+              "inStableExam": false,
+              "inAdaptiveExam": true
             },
             {
               "id": "zipfDrift",
@@ -10461,7 +10579,13 @@
               "ghostHitsT2": 0,
               "ghostAdaptMoves": 0,
               "adaptationP": 0,
-              "fault": "zipf-drift"
+              "fault": "zipf-drift",
+              "scanResistance": true,
+              "stableHitRate": true,
+              "adaptiveBalance": true,
+              "inScanExam": false,
+              "inStableExam": false,
+              "inAdaptiveExam": true
             }
           ],
           "trilemma": {
@@ -10473,7 +10597,15 @@
             "hitRateAvg": 0.7154,
             "ghostAdaptMoves": 95,
             "amPromotions": 0,
-            "adaptationP": 0
+            "adaptationP": 0,
+            "effectiveCapacity": 16,
+            "prefetchSkipped": 0,
+            "trilemmaDebug": {
+              "scanAvg": 0.5278,
+              "avgHitRate": 0.7154,
+              "ghostMoves": 95,
+              "driftGhost": 52
+            }
           }
         }
       ],
@@ -10488,9 +10620,10 @@
           "2Q": "110",
           "ARC": "101"
         },
-        "trilemmaDistinguishes": true,
         "noUniversalWinner": true,
+        "trilemmaDistinguishes": true,
         "noStrategyWinsAll": true,
+        "vectorFromTrilemma": true,
         "lru_unhinted": true,
         "lru_localityAware": true,
         "twoQ_scanResistant": true,
@@ -10499,12 +10632,120 @@
         "arc_shuffle_pingpong": true,
         "perfectFutureBreaksArc": false,
         "unlimitedRoomAllTrue": false,
-        "rigged_pkg": false
+        "rigged_pkg": false,
+        "adaptiveBalanceCausallyUnerasable": false,
+        "unlimitedRoomRestoresLruScan": true,
+        "unlimitedRoomRestoresArcStability": true,
+        "unlimitedRoomBackfiresAdaptiveBalance": true,
+        "perfectFutureRestoresLruScan": true,
+        "perfectFutureBackfiresArcStability": true,
+        "dualSweepHolds": true,
+        "dualSweepNontrivial": true
       },
       "crosscheck": {
-        "evidence": {}
+        "evidence": {
+          "remapConsistentRate": 0.21,
+          "remapModuloRate": 0.515,
+          "routerMoved": 17,
+          "routerTracked": 80,
+          "ringNodes": 4,
+          "ringShardsUsed": 4,
+          "walLines": 80,
+          "walReplayed": 80,
+          "notices": 12,
+          "busListeners": 1,
+          "redisBitmapHits": 96,
+          "redisSlots": 96,
+          "poolCreated": 2,
+          "poolReused": 1,
+          "bucketAllowed": 3,
+          "bucketRejected": 4,
+          "heapFired": 3,
+          "heapPending": 0,
+          "counterSum": 2080,
+          "counterFalseSharing": 56,
+          "jitterSpread": 1.9557
+        },
+        "dualSweep": {
+          "laneA": {
+            "hits": 219,
+            "misses": 37,
+            "hitRate": 0.8555
+          },
+          "laneB": {
+            "hits": 247,
+            "misses": 9,
+            "hitRate": 0.9648
+          },
+          "absoluteDelta": 0.1093,
+          "hotsetSize": 18,
+          "totalKeys": 27,
+          "tolerance": 0.5,
+          "holds": true,
+          "nontrivial": true,
+          "falsifiable": true,
+          "tamper": {
+            "laneATraceCorrupted": {
+              "laneA": {
+                "hits": 4,
+                "misses": 4,
+                "hitRate": 0.5
+              },
+              "laneB": {
+                "hits": 6,
+                "misses": 2,
+                "hitRate": 0.75
+              },
+              "absoluteDelta": 0.25,
+              "hotsetSize": 2,
+              "totalKeys": 4,
+              "tolerance": 0.5,
+              "holds": false,
+              "nontrivial": false,
+              "reason": "篡改 trace（截断至 8 条并反转）⇒ 样本不足、两路无法撞合，holds 现算翻假"
+            },
+            "laneBTraceCorrupted": {
+              "laneA": {
+                "hits": 50,
+                "misses": 206,
+                "hitRate": 0.1953
+              },
+              "laneB": {
+                "hits": 247,
+                "misses": 9,
+                "hitRate": 0.9648
+              },
+              "absoluteDelta": 0.7695,
+              "hotsetSize": 18,
+              "totalKeys": 27,
+              "tolerance": 0.5,
+              "holds": false,
+              "nontrivial": true,
+              "reason": "篡改容量（cap=1）⇒ 路 A LRU 抖动、两路命中率分叉超出容差，holds 现算翻假"
+            },
+            "laneBSizedNull": {
+              "laneA": {
+                "hits": 0,
+                "misses": 0,
+                "hitRate": 0
+              },
+              "laneB": {
+                "hits": 0,
+                "misses": 0,
+                "hitRate": 0
+              },
+              "absoluteDelta": 0,
+              "hotsetSize": 0,
+              "totalKeys": 0,
+              "tolerance": 0.5,
+              "holds": false,
+              "nontrivial": false,
+              "reason": "空 trace ⇒ hot-set 零聚类、nontrivial=false，holds 现算翻假（不凭 0=0 假绿）"
+            }
+          }
+        }
       }
     },
-    "builtAt": 1794416405340
+    "builtAt": 1794418896792
   }
 }

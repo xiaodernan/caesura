@@ -2,6 +2,7 @@ import { bus } from '@/core/EventBus'
 import { Vector3 } from 'three'
 import { GameTime, TICK_DT, TICK_HZ } from '@/core/Time'
 import { PauseControl, readPauseAction } from '@/core/PauseControl'
+import { PauseOverlay } from '@/ui/PauseOverlay'
 import { readCinematicExit } from '@/core/CinematicExit'
 import { GameLoop } from '@/core/GameLoop'
 import { Input, pumpMenu, type MenuOwner, type MenuPump } from '@/core/Input'
@@ -228,6 +229,8 @@ const decals = (await import('@/vfx/Decals')).initDecalSystem(arena.scene)
 // 所以开局那一区也得由它读一次——那句在 `interact` 之后（要读旗标），见下面 `applyWeather(homeRegion …)`。
 const grade = new ColorGrade(arena.scene, canvas)
 const hud = new Hud(document.getElementById('hud') as HTMLCanvasElement, input)
+/** 玩家手动暂停的「止音仪典」全屏提示（仅在玩家边界触发，覆盖在场景/HUD 之上不接收输入/点击）。 */
+const pauseOverlay = new PauseOverlay({ pause })
 /** Boss 乐句线 HUD（Phase 7 F3）：屏幕右侧中条，专用 canvas，零 game 依赖。 */
 const phraseCanvas = document.createElement('canvas')
 phraseCanvas.style.position = 'fixed'
@@ -1051,6 +1054,7 @@ const loop = new GameLoop(time, input, (alpha, realDelta) => {
      它排在 `feedMenu()` 之前：两路各自吞自己那枚边沿，先后不影响读数，但停摆这一格先到
      能让同一帧的面板看见已合成的 `paused`。 */
   readPauseAction(input, pause)
+  pauseOverlay.update()
   feedMenu()
   span('render.scene', () => arena.update(alpha, realDelta))
   span('render.vfx', () => vfx.update(realDelta)) // particles run on real time — hitstop must not freeze VFX (tech-arch §4 rule 3)
