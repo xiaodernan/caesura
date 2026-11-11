@@ -763,8 +763,8 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(hll.rows.length).toBe(3)
     expect(hll.config.scenarios.length).toBe(6)
     expect(hll.vectors).toEqual({ ExactSet: '101', HyperLogLog: '110', LinearCounting: '010' })
-    // hll* 注入（hllSeed/hllCardinality/hllMRegisters），不复用被其它维占用的前缀
-    const tuned = (await buildCardinalityReading({ hllSeed: 7, hllCardinality: 2048, hllMRegisters: 8192 }, now))!
+    // hll* 注入（hllSeed/hllCardinality），不复用被其它维占用的前缀
+    const tuned = (await buildCardinalityReading({ hllSeed: 7, hllCardinality: 2048 }, now))!
     expect(tuned.config.seed).toBe(7)
     expect(tuned.config.cardinality).toBe(2048)
     // 单开开关各自现算反噬

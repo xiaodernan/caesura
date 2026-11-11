@@ -84,6 +84,7 @@ export interface CardinalityStudy {
   config: {
     seed: number
     cardinality: number
+    mRegisters: number
     scenarios: string[] | readonly string[]
     rigged: boolean
     perfectHash: boolean

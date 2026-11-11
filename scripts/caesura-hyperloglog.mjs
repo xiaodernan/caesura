@@ -408,11 +408,14 @@ function runMatrix(opts, flags, scenarioIds) {
 export function streamCardinalityStudy(opts = {}) {
   const scenarioIds = Array.isArray(opts.scenarios) && opts.scenarios.length ? opts.scenarios : HLL_SCENARIOS
   const seed = intOr(opts.seed, HLL_DEFAULTS.seed)
+  const cardinality = intOr(opts.cardinality, HLL_DEFAULTS.cardinality)
+  const mRegisters = intOr(opts.mRegisters, HLL_DEFAULTS.mRegisters)
   const perfectHash = opts.perfectHash === true
   const unlimitedMemory = opts.unlimitedMemory === true
   const rigged = opts.rigged === true || (perfectHash && unlimitedMemory)
   const flags = { rigged, perfectHash: rigged || perfectHash, unlimitedMemory: rigged || unlimitedMemory }
-  const rows = runMatrix({ seed, perfectHash: flags.perfectHash, unlimitedMemory: flags.unlimitedMemory }, flags, scenarioIds)
+  const cfg = { seed, cardinality, mRegisters, perfectHash: flags.perfectHash, unlimitedMemory: flags.unlimitedMemory }
+  const rows = runMatrix(cfg, flags, scenarioIds)
   const vectors = Object.fromEntries(rows.map((r) => [r.protocol, vectorOf(r.trilemma)]))
   const values = Object.values(vectors)
   const distinct = new Set(values).size === rows.length
@@ -421,13 +424,13 @@ export function streamCardinalityStudy(opts = {}) {
   const trilemmaDistinguishes = distinct
   const vectorFromTrilemma = rows.every((r) => vectors[r.protocol] === vectorOf(r.trilemma))
 
-  // 单开反噬：恒以「无开关的纯净基线」作对照
+  // 单开反噬：恒以「无开关的纯净基线」作对照（与本次 opts 无关）
   const baseFlags = { perfectHash: false, unlimitedMemory: false, rigged: false }
-  const baseRows = runMatrix({ seed }, baseFlags, scenarioIds)
+  const baseRows = runMatrix(cfg, baseFlags, scenarioIds)
   const baseEs = baseRows.find((r) => r.protocol === 'ExactSet')
   const baseHll = baseRows.find((r) => r.protocol === 'HyperLogLog')
-  const mPerfect = runMatrix({ seed }, { perfectHash: true }, scenarioIds)
-  const mUnlimited = runMatrix({ seed }, { unlimitedMemory: true }, scenarioIds)
+  const mPerfect = runMatrix(cfg, { perfectHash: true }, scenarioIds)
+  const mUnlimited = runMatrix(cfg, { unlimitedMemory: true }, scenarioIds)
   const phHll = mPerfect.find((r) => r.protocol === 'HyperLogLog')
   const umEs = mUnlimited.find((r) => r.protocol === 'ExactSet')
   // perfectHash 抹掉碰撞 ⇒ 所有估计=真值 ⇒ accuracy 全翻 true
@@ -463,7 +466,7 @@ export function streamCardinalityStudy(opts = {}) {
   }
   return {
     builtAt: startClock(opts.now, 0),
-    config: { seed, cardinality: HLL_DEFAULTS.cardinality, scenarios: scenarioIds, rigged, perfectHash: flags.perfectHash, unlimitedMemory: flags.unlimitedMemory },
+    config: { seed, cardinality, mRegisters, scenarios: scenarioIds, rigged, perfectHash: flags.perfectHash, unlimitedMemory: flags.unlimitedMemory },
     rows,
     vectors,
     verdict,

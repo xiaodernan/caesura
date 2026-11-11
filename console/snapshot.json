@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794433057031,
+  "generatedAt": 1794435043013,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1365,12 +1365,12 @@
           "keys": 1,
           "versions": 2,
           "commitLogSize": 1,
-          "now": 1794433057033
+          "now": 1794435043015
         },
         "final": {
           "A": {
             "value": 101,
-            "commitTs": 1794433057033,
+            "commitTs": 1794435043015,
             "tombstone": false
           }
         }
@@ -3646,7 +3646,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794433057031,
+                "lastTimestamp": 1794435043013,
                 "workerId": 1
               },
               "fault": {
@@ -3742,7 +3742,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794433057031,
+                "lastTimestamp": 1794435043013,
                 "workerId": 1
               },
               "fault": {
@@ -3774,7 +3774,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794433057032,
+                "lastTimestamp": 1794435043014,
                 "workerId": 1
               },
               "fault": {
@@ -3806,7 +3806,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794433057031,
+                "lastTimestamp": 1794435043013,
                 "workerId": 1
               },
               "fault": {
@@ -4522,7 +4522,7 @@
         "capacity": 8,
         "perShardCap": 2
       },
-      "builtAt": 1794433057031
+      "builtAt": 1794435043013
     },
     "configConsistency": {
       "config": {
@@ -5020,7 +5020,7 @@
         "burstCount": 12,
         "windowMs": 10000
       },
-      "builtAt": 1794433057031
+      "builtAt": 1794435043013
     },
     "cacheCoherency": {
       "config": {
@@ -5549,7 +5549,7 @@
         "crashAtWrite": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794433057031
+      "builtAt": 1794435043013
     },
     "messageDelivery": {
       "config": {
@@ -6038,10 +6038,10 @@
         "crashAfterSendAt": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794433057031
+      "builtAt": 1794435043013
     },
     "delayQueue": {
-      "builtAt": 1794433057031,
+      "builtAt": 1794435043013,
       "config": {
         "seed": 518,
         "tasks": 12,
@@ -6375,7 +6375,7 @@
       }
     },
     "retryDlq": {
-      "builtAt": 1794433057031,
+      "builtAt": 1794435043013,
       "config": {
         "seed": 520,
         "messages": 16,
@@ -6793,7 +6793,7 @@
       }
     },
     "consumerGroup": {
-      "builtAt": 1794433057031,
+      "builtAt": 1794435043013,
       "config": {
         "seed": 523,
         "consumers": 3,
@@ -7299,7 +7299,7 @@
       }
     },
     "backpressure": {
-      "builtAt": 1794433057031,
+      "builtAt": 1794435043013,
       "config": {
         "steps": 48,
         "mu": 2,
@@ -8344,7 +8344,7 @@
       }
     },
     "logCompaction": {
-      "builtAt": 1794433057031,
+      "builtAt": 1794435043013,
       "config": {
         "seed": 526,
         "ops": 24,
@@ -9405,7 +9405,7 @@
       }
     },
     "bloomFilter": {
-      "builtAt": 1794433057031,
+      "builtAt": 1794435043013,
       "config": {
         "seed": 527,
         "capacity": 1024,
@@ -10104,7 +10104,7 @@
       }
     },
     "cacheReplacement": {
-      "builtAt": 1794433057031,
+      "builtAt": 1794435043013,
       "config": {
         "seed": 528,
         "capacity": 16,
@@ -10747,7 +10747,7 @@
       }
     },
     "streamWindow": {
-      "builtAt": 1794433057031,
+      "builtAt": 1794435043013,
       "config": {
         "seed": 529,
         "windowSize": 100,
@@ -12806,10 +12806,11 @@
       }
     },
     "hyperLogLog": {
-      "builtAt": 1794433057031,
+      "builtAt": 1794435043013,
       "config": {
         "seed": 530,
         "cardinality": 4096,
+        "mRegisters": 16384,
         "scenarios": [
           "nearExact",
           "highFill",
@@ -29724,6 +29725,6 @@
         }
       }
     },
-    "builtAt": 1794433057031
+    "builtAt": 1794435043013
   }
 }
