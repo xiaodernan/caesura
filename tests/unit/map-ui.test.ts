@@ -444,4 +444,39 @@ describe('MapUI 分支死角（批 13）：目标分发与视图闸门的剩余�
     expect(html, '§4.2：未踏足区的名字不许漏出来').not.toContain('迷雾')
     expect(html).toContain('高层')
   })
+
+  it('Phase F-40 朱砂「北」针：宣纸圆盘罗盘 + SVG 字形双印 + 冷青光环（纯装饰、不挂事件）', () => {
+    winHandlers = {}
+    const deps: MapDeps = {
+      regionAt: () => null,
+      isExplored: () => true,
+      chunkSize: () => 48,
+      playerPos: () => ({ x: 10, y: 0, z: 10 }),
+      viewDir: () => ({ x: 0, z: -1 }),
+      facilities: () => [],
+      onRequestClose: () => {},
+    }
+    const ui = new MapUI([mkRegion({ id: 'rg_compass', displayName: '苻原' })], deps)
+    ui.show()
+    const body = (globalThis as unknown as { document: { body: FakeEl } }).document.body
+    const root = body.children.at(-1)!
+    const html = root.innerHTML
+    // 罗盘：宣纸暗底圆盘 + 双圈 + 四刻度 + 北针（+「北」字），纯静态覆盖层
+    expect(html).toContain('class="mapui-compass"')
+    expect(html).toContain('class="north"')
+    expect(html).toContain('class="n" x="24" y="30" text-anchor="middle">北</text>')
+    // 冷青呼吸光环与 pl-ring 同半径共居玩家变换内
+    expect(html).toContain('class="pl-halo"')
+    // 样式表随构造注入 head（与 MapUI 其余皮肤同一注入路）
+    const head = (globalThis as unknown as { document: { head: FakeEl } }).document.head
+    const styleEl = head.children.find((el) => (el.textContent ?? '').includes('#mapui .mapui-compass'))
+    expect(styleEl, '北针样式应随构造注入 head').toBeTruthy()
+    const css = (styleEl as unknown as { textContent: string }).textContent
+    expect(css).toContain('.mapui-compass')
+    expect(css).toContain('.pl-halo')
+    expect(css).toContain('paint-order:stroke')
+    expect(css).toContain('prefers-reduced-motion')
+    expect(css).not.toContain('border-image') // 全框渐变草稿不许回潮
+    expect(css).not.toContain('blur(') // 不拿 filter 偷画模糊层（paint 成本）
+  })
 })

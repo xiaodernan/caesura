@@ -130,10 +130,25 @@ const CSS = `
 /* 地图要摊开看：比调音桩那张窄面板宽一档，但仍然只盖住画面而不是铺满 */
 #mapui .panel { width:min(1120px, 95vw); }
 #mapui main.split { display:flex; gap:18px; align-items:stretch; min-height:0; }
-#mapui .atlas-wrap { flex:1 1 auto; min-width:0; display:flex; }
+/* 图匣底衬：position:relative 供朱砂「北」针覆盖层锚定 */
+#mapui .atlas-wrap { flex:1 1 auto; min-width:0; display:flex; position:relative; }
 #mapui .atlas { width:100%; height:100%; min-height:340px; max-height:62vh; touch-action:none;
   background:radial-gradient(ellipse at 40% 30%, rgba(232,223,203,.05), rgba(0,0,0,.42));
-  border:1px solid rgba(201,180,88,.22); cursor:grab; }
+  border:1px solid rgba(201,180,88,.22); border-radius:2px; cursor:grab;
+  box-shadow: inset 0 0 0 1px rgba(201,180,88,.12), inset 0 0 64px rgba(0,0,0,.38); }
+
+#mapui .mapui-compass { position:absolute; top:10px; right:12px; width:52px; height:52px; pointer-events:none; opacity:.92; }
+#mapui .mapui-compass .dial { fill:rgba(9,10,15,.72); stroke:rgba(201,180,88,.85); stroke-width:1.1; }
+#mapui .mapui-compass .dial2 { fill:none; stroke:rgba(201,180,88,.35); stroke-width:.6; }
+#mapui .mapui-compass .tick { stroke:rgba(201,180,88,.9); stroke-width:1.5; stroke-linecap:square; }
+#mapui .mapui-compass .north { stroke:#e3cf8f; stroke-width:2; stroke-linecap:square; }
+#mapui .mapui-compass .n { fill:#e3cf8f; font-size:12px; font-family: Georgia, "Songti SC", "STSong", serif; }
+/* SVG 子树字形双印：描边盖底 + 料色自填（paint-order），任何区域底色上都读得清 */
+#mapui .rlabel, #mapui .rsub { paint-order:stroke; stroke:rgba(9,10,15,.82); stroke-width:2.4px; stroke-linejoin:round; }
+/* 玩家光环：一圈冷青淡晕呼吸（与 pl-ring 同半径，len 不闪） */
+#mapui .pl-halo { fill:none; stroke:#b9e6ff; stroke-width:6; stroke-opacity:.22; animation: mapui-halo 2.6s ease-in-out infinite alternate; }
+@keyframes mapui-halo { 0% { stroke-opacity:.14 } 100% { stroke-opacity:.5 } }
+@media (prefers-reduced-motion: reduce) { #mapui .pl-halo { animation:none; } }
 #mapui .atlas:active { cursor:grabbing; }
 #mapui .side { flex:0 0 320px; width:320px; overflow:auto; max-height:62vh; }
 /* 区域色块：填色/描边取该区 palette（数据里的三个颜色）。不透明度那一条是「多层世界」的读法——
@@ -329,6 +344,13 @@ export class MapUI {
               <g>${thumb ? '' : this.playerHtml(player)}</g>
               ${thumb ? '' : this.scaleHtml()}
             </svg>
+            <svg class="mapui-compass" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+              <circle class="dial" cx="24" cy="24" r="16"/>
+              <circle class="dial2" cx="24" cy="24" r="12.8"/>
+              <path class="tick" d="M24 4v6.4M24 37.6v6.4M4 24h6.4M37.6 24h6.4"/>
+              <path class="north" d="M24 10.8v4.6"/>
+              <text class="n" x="24" y="30" text-anchor="middle">北</text>
+            </svg>
           </div>
           <div class="side">${this.sideHtml(revealed, current)}</div>
         </main>
@@ -386,6 +408,7 @@ export class MapUI {
     const dir = this.deps.viewDir()
     const deg = Math.round((Math.atan2(dir.x, -dir.z) * 180) / Math.PI)
     return `<g transform="translate(${r2(p.x - this.atlas.minX)},${r2(p.z - this.atlas.minZ)}) scale(${r2(k)})">
+      <circle class="pl-halo" r="13" />
       <circle class="pl-ring" r="13" />
       <g transform="rotate(${deg})"><polygon class="pl" points="0,-9 5,7 0,3 -5,7" /></g>
     </g>`
