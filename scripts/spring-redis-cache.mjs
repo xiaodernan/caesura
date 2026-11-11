@@ -34,6 +34,8 @@ import {
 const DEFAULT_PORT = 6379
 const DEFAULT_MAX_KEYS = 256
 const DEFAULT_TTL_SEC = 300
+/** 裸 `SET key v NX`（无 PX）的默认过期：10 年≈「永不过期」的教学口径 */
+const DEFAULT_PX_MS = 10_000_000_000
 
 /** 创建一个独立的 LRU/TTL 缓存单元（嵌入在 server 里，也可以独立用） */
 export function createCacheInstance(opts = {}) {
@@ -77,6 +79,36 @@ export function createCacheInstance(opts = {}) {
       store.set(key, { value, expiresAt: Date.now() + ttlSec * 1000 })
       return 'OK'
     },
+    /** SET key value NX PX <ms>：仅 key 不存在时写入并带毫秒过期，已存在返回 null（真 Redis 口径） */
+    setNx(key, value, pxMs) {
+      sweepExpired()
+      if (store.has(key)) return null
+      if (store.size >= maxKeys) {
+        const oldest = store.keys().next().value
+        if (oldest !== undefined) store.delete(oldest)
+      }
+      store.set(key, { value, expiresAt: Date.now() + Math.max(1, Math.trunc(pxMs ?? DEFAULT_PX_MS)) })
+      return 'OK'
+    },
+    /** SET key value XX：仅 key 已存在时写入（锁续期用）；不存在返回 null */
+    setXx(key, value, pxMs) {
+      sweepExpired()
+      if (!store.has(key)) return null
+      if (store.has(key)) store.delete(key)
+      store.set(key, { value, expiresAt: Date.now() + Math.max(1, Math.trunc(pxMs ?? DEFAULT_PX_MS)) })
+      return 'OK'
+    },
+    /** SET key value PX <ms>：无条件写入并带毫秒过期 */
+    setPx(key, value, pxMs) {
+      sweepExpired()
+      if (store.size >= maxKeys && !store.has(key)) {
+        const oldest = store.keys().next().value
+        if (oldest !== undefined) store.delete(oldest)
+      }
+      if (store.has(key)) store.delete(key)
+      store.set(key, { value, expiresAt: Date.now() + Math.max(1, Math.trunc(pxMs)) })
+      return 'OK'
+    },
     del(key) {
       return store.delete(key) ? 1 : 0
     },
@@ -114,6 +146,44 @@ export function createCacheInstance(opts = {}) {
 const KEYS_LIMIT = 1024
 
 /**
+ * 模块级 SET 参数解析（真 Redis 子集）：
+ *   `SET key value [NX | XX] [PX <ms>]`
+ * 大小写不敏感、NX/PX 顺序自由、各至多一次；value 只取一个参数（不 JOIN 多词）。
+ * 返回 { key, value, mode, pxMs } 或 { error }。
+ */
+function parseSetArgs(args) {
+  if (args.length < 2) return { error: 'wrong number of arguments' }
+  const key = String(args[0])
+  const value = String(args[1]) // value 恒为一个参数；再多的 token 进入 NX/PX 解析，解析不了即报错
+  let i = 2
+  let mode = null
+  let pxMs = null
+  while (i < args.length) {
+    const t = String(args[i]).toUpperCase()
+    if (t === 'NX' || t === 'XX') {
+      if (mode !== null) return { error: 'syntax error' }
+      mode = t
+      i += 1
+      continue
+    }
+    if (t === 'EX') return { error: 'SET EX 教学件不支持（只收 PX <ms>）' }
+    if (t === 'PX') {
+      if (pxMs !== null) return { error: 'syntax error' }
+      if (i + 1 >= args.length) return { error: 'syntax error' }
+      const n = Number(args[i + 1])
+      if (!Number.isFinite(n) || n <= 0 || !Number.isFinite(Math.floor(n)) || n > 2592000000000) {
+        return { error: 'invalid expire time in PX' }
+      }
+      pxMs = Math.floor(n)
+      i += 2
+      continue
+    }
+    return { error: 'syntax error' }
+  }
+  return { key, value, mode, pxMs }
+}
+
+/**
  * 模块级命令→回包纯函数：输入内存缓存与一条已解析命令，返回 { reply }。
  * 命令级错误（参数不对、整数非法、未知命令、KEYS 超限）一律回 -ERR **不断连**——
  * 与真实 Redis 一致：pipelining 里一条命令写错不该炸掉整条连接。
@@ -128,8 +198,18 @@ function redisCommandReply(cache, cmd) {
       case 'PING':
         return { reply: buildSimpleString('PONG') }
       case 'SET': {
-        if (args.length < 2) return { reply: buildError('wrong number of arguments') }
-        return { reply: buildSimpleString(cache.set(args[0], args.slice(1).join(' '))) }
+        const parsed = parseSetArgs(args)
+        if (parsed.error) return { reply: buildError(parsed.error) }
+        if (parsed.mode === 'NX') {
+          const ok = cache.setNx(parsed.key, parsed.value, parsed.pxMs ?? DEFAULT_PX_MS)
+          return { reply: ok === null ? '$-1\r\n' : buildSimpleString(ok) }
+        }
+        if (parsed.mode === 'XX') {
+          const ok = cache.setXx(parsed.key, parsed.value, parsed.pxMs ?? DEFAULT_PX_MS)
+          return { reply: ok === null ? '$-1\r\n' : buildSimpleString(ok) }
+        }
+        if (parsed.pxMs !== null) return { reply: buildSimpleString(cache.setPx(parsed.key, parsed.value, parsed.pxMs)) }
+        return { reply: buildSimpleString(cache.set(parsed.key, parsed.value)) }
       }
       case 'GET': {
         if (args.length !== 1) return { reply: buildError('wrong number of arguments') }
@@ -257,6 +337,12 @@ export function createRedisClient(opts = {}) {
     connect: ensureConnected,
     ping: () => call('PING'),
     set: (key, value) => call('SET', key, value),
+    /** SET key value NX [PX <ms>]：不存在才写入；已存在返回 null（真 Redis 口径） */
+    setNx: (key, value, pxMs) => pxMs === undefined ? call('SET', key, value, 'NX') : call('SET', key, value, 'NX', 'PX', String(pxMs)),
+    /** SET key value XX [PX <ms>]：仅已存在时写入（锁续期用）；不存在返回 null */
+    setXx: (key, value, pxMs) => pxMs === undefined ? call('SET', key, value, 'XX') : call('SET', key, value, 'XX', 'PX', String(pxMs)),
+    /** SET key value PX <ms>：无条件写入并带毫秒过期 */
+    setPx: (key, value, pxMs) => call('SET', key, value, 'PX', String(pxMs)),
     get: (key) => call('GET', key),
     del: (key) => call('DEL', key),
     exists: (key) => call('EXISTS', key),

@@ -5,6 +5,12 @@
 export interface CacheInstance {
   get(key: string): string | null
   set(key: string, value: string, ttlSec?: number): string
+  /** SET NX：仅不存在时写入并带毫秒过期；已存在返回 null */
+  setNx(key: string, value: string, pxMs?: number): string | null
+  /** SET XX：仅已存在时写入并带毫秒过期；不存在返回 null */
+  setXx(key: string, value: string, pxMs?: number): string | null
+  /** SET PX：无条件写入并带毫秒过期 */
+  setPx(key: string, value: string, pxMs: number): string
   del(key: string): number
   exists(key: string): number
   keys(): string[]
@@ -24,6 +30,12 @@ export interface RedisClientHandle {
   connect(): Promise<void>
   ping(): Promise<string>
   set(key: string, value: string): Promise<string>
+  /** SET key value NX [PX]：不存在才写入；已存在返回 null */
+  setNx(key: string, value: string, pxMs?: number): Promise<string | null>
+  /** SET key value XX [PX]：仅已存在时写入；不存在返回 null */
+  setXx(key: string, value: string, pxMs?: number): Promise<string | null>
+  /** SET key value PX <ms>：无条件写入并带毫秒过期 */
+  setPx(key: string, value: string, pxMs: number): Promise<string>
   get(key: string): Promise<string | null>
   del(key: string): Promise<number>
   exists(key: string): Promise<number>
