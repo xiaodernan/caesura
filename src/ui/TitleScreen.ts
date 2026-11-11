@@ -47,27 +47,71 @@ export function titleCards(): TitleCard[] {
 }
 
 const CSS = `
-#title{position:fixed;inset:0;z-index:60;display:none;flex-direction:column;align-items:center;justify-content:center;gap:2.2vh;background:radial-gradient(ellipse at 50% 40%,#171413 0%,#0b0a0a 70%);color:#e8dfcb;font-family:Georgia,"Songti SC","STSong","SimSun",serif}
+#title{position:fixed;inset:0;z-index:60;display:none;flex-direction:column;align-items:center;justify-content:center;gap:2.2vh;background:radial-gradient(ellipse at 50% 40%,#171413 0%,#0b0a0a 70%);color:#e8dfcb;font-family:Georgia,"Songti SC","STSong","SimSun",serif;overflow:hidden}
 #title.on{display:flex}
-#title h1{margin:0;font-size:5.4vh;font-weight:normal;letter-spacing:1.2vh;color:#e8dfcb}
-#title .sub{font-size:1.9vh;letter-spacing:.6vh;color:#8a7f6d}
-#title .cards{display:flex;gap:1.4vw}
-#title .card{width:15vw;padding:1.6vh 1vw;border:1px solid #3d372e;background:rgba(23,20,19,.72);cursor:pointer;text-align:center}
-#title .card.sel{border-color:#c9b458;box-shadow:0 0 2.4vh rgba(201,180,88,.35)}
-#title .card .nm{font-size:2.3vh;color:#ffb86b}
-#title .card .wp{font-size:1.7vh;color:#c9b458;margin:.6vh 0}
-#title .card .bl{font-size:1.45vh;color:#8a7f6d;min-height:8vh;line-height:1.5}
-#title .card .ps{font-size:1.45vh;color:#d0a76a;margin:.3vh 0}
-#title .card .at{font-size:1.5vh;color:#b7ab95;text-align:left;display:inline-block}
-#title .acts{display:flex;gap:2vw;font-size:2vh}
-#title .act{padding:.8vh 2.4vh;border:1px solid #3d372e;cursor:pointer;color:#b7ab95}
-#title .act.sel{border-color:#ffb86b;color:#ffb86b}
-#title .hint{font-size:1.5vh;color:#5f584c}
+/* == ember rite: ambient spotlight + slow sigil ring (pure CSS, zero JS) == */
+#title::before{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 64% 50% at 50% 32%,rgba(255,184,107,.085) 0%,rgba(255,184,107,.03) 36%,transparent 70%);animation:tg-breathe 9s ease-in-out infinite}
+#title::after{content:'';position:absolute;left:50%;top:36%;width:78vh;height:78vh;transform:translate(-50%,-50%);border:1px solid rgba(201,180,88,.11);border-radius:50%;box-shadow:0 0 14vh rgba(201,180,88,.055),inset 0 0 14vh rgba(201,180,88,.05);pointer-events:none;animation:tg-spin 140s linear infinite}
+@keyframes tg-breathe{0%,100%{opacity:.55}50%{opacity:1}}
+@keyframes tg-spin{from{transform:translate(-50%,-50%) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+/* == drifting ember motes (one i each, deterministic nth-child lanes) == */
+#title .embers{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+#title .embers i{position:absolute;bottom:-1vh;width:.34vh;height:.34vh;border-radius:50%;background:#ffb86b;opacity:0;box-shadow:0 0 .9vh rgba(255,184,107,.8);animation:tg-rise linear infinite}
+#title .embers i:nth-child(1){left:8%;animation-duration:12s;animation-delay:0s}
+#title .embers i:nth-child(2){left:15%;animation-duration:9s;animation-delay:2.4s}
+#title .embers i:nth-child(3){left:21%;animation-duration:14s;animation-delay:5.1s}
+#title .embers i:nth-child(4){left:27%;animation-duration:10s;animation-delay:1.2s}
+#title .embers i:nth-child(5){left:33%;animation-duration:15s;animation-delay:7.8s}
+#title .embers i:nth-child(6){left:39%;animation-duration:11s;animation-delay:3.6s}
+#title .embers i:nth-child(7){left:45%;animation-duration:13s;animation-delay:6.3s}
+#title .embers i:nth-child(8){left:51%;animation-duration:9.5s;animation-delay:.8s}
+#title .embers i:nth-child(9){left:57%;animation-duration:16s;animation-delay:4.4s}
+#title .embers i:nth-child(10){left:63%;animation-duration:12.5s;animation-delay:8.9s}
+#title .embers i:nth-child(11){left:70%;animation-duration:10.5s;animation-delay:2.1s}
+#title .embers i:nth-child(12){left:77%;animation-duration:14.5s;animation-delay:5.7s}
+#title .embers i:nth-child(13){left:84%;animation-duration:11.5s;animation-delay:7.2s}
+#title .embers i:nth-child(14){left:91%;animation-duration:13.5s;animation-delay:1.6s}
+@keyframes tg-rise{0%{transform:translate3d(0,0,0) scale(1);opacity:0}6%{opacity:.9}45%{opacity:.55}100%{transform:translate3d(3.4vw,-97vh,0) scale(.35);opacity:0}}
+/* == headline: liquid-metal gradient glyph + breathing glow == */
+#title h1{margin:0;font-size:5.4vh;font-weight:normal;letter-spacing:1.2vh;background:linear-gradient(180deg,#fbf3dc 0%,#eee3c4 30%,#cbb98a 58%,#8d7d55 88%,#6f6242 100%);-webkit-background-clip:text;background-clip:text;color:transparent;animation:tg-glow 7s ease-in-out infinite;text-indent:1.2vh}
+@keyframes tg-glow{0%,100%{filter:drop-shadow(0 0 2.1vh rgba(255,214,130,.24))}50%{filter:drop-shadow(0 0 4.6vh rgba(255,214,130,.44))}}
+/* == subtitle: flanking gold hairlines == */
+#title .sub{font-size:1.9vh;letter-spacing:.6vh;color:#a99c86;position:relative;padding:0 10vw}
+#title .sub::before{content:'';position:absolute;top:50%;left:0;width:8vw;height:1px;background:linear-gradient(90deg,transparent,rgba(201,180,88,.75) 70%,rgba(255,205,120,.9))}
+#title .sub::after{content:'';position:absolute;top:50%;right:0;width:8vw;height:1px;background:linear-gradient(270deg,transparent,rgba(201,180,88,.75) 70%,rgba(255,205,120,.9))}
+#title .cards{display:flex;gap:1.4vw;position:relative;z-index:1}
+/* == origin cards: hover lift + top gold sweep + selected gold-ring pulse == */
+#title .card{width:15vw;padding:1.6vh 1vw;border:1px solid #3d372e;background:linear-gradient(180deg,rgba(31,28,26,.78) 0%,rgba(23,20,19,.72) 55%,rgba(16,14,13,.78) 100%);cursor:pointer;text-align:center;position:relative;overflow:hidden;transition:transform .3s cubic-bezier(.2,.9,.3,1.15),border-color .3s,box-shadow .3s}
+#title .card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,217,138,0),transparent);transition:background .3s}
+#title .card:hover{transform:translateY(-.75vh);border-color:#6b5f3f;box-shadow:0 1.6vh 3.4vh rgba(0,0,0,.5),0 0 2.2vh rgba(201,180,88,.14)}
+#title .card:hover::after{background:linear-gradient(90deg,transparent,rgba(255,217,138,.85),transparent)}
+#title .card.sel{border-color:#c9b458;animation:tg-selpulse 2.6s ease-in-out infinite}
+@keyframes tg-selpulse{0%,100%{box-shadow:0 0 0 1px rgba(201,180,88,.4),0 0 2.4vh rgba(201,180,88,.24),inset 0 0 2.2vh rgba(201,180,88,.07)}50%{box-shadow:0 0 0 1px rgba(201,180,88,.6),0 0 4.2vh rgba(201,180,88,.44),inset 0 0 3.1vh rgba(201,180,88,.13)}}
+#title .card .nm{font-size:2.3vh;color:#ffcf8a;text-shadow:0 0 1.8vh rgba(255,184,107,.4),0 .3vh .6vh rgba(0,0,0,.55)}
+#title .card .wp{font-size:1.7vh;color:#c9b458;margin:.6vh 0;letter-spacing:.12em}
+#title .card .bl{font-size:1.45vh;color:#96897a;min-height:8vh;line-height:1.55}
+#title .card .ps{font-size:1.45vh;color:#e0b87a;margin:.3vh 0}
+#title .card .at{font-size:1.5vh;color:#c2b5a0;text-align:left;display:inline-block;line-height:1.6}
+#title .acts{display:flex;gap:2vw;font-size:2vh;position:relative;z-index:1}
+/* == actions: growing gold underline + selected inner glow == */
+#title .act{padding:.8vh 2.4vh;border:1px solid #3d372e;cursor:pointer;color:#c2b5a0;position:relative;letter-spacing:.24em;transition:color .25s,border-color .25s,box-shadow .25s}
+#title .act::after{content:'';position:absolute;left:50%;bottom:.35vh;width:0;height:1px;background:#ffb86b;box-shadow:0 0 .8vh rgba(255,184,107,.75);transition:left .3s ease,width .3s ease}
+#title .act:hover{color:#ffb86b;border-color:#ffb86b}
+#title .act:hover::after{left:12%;width:76%}
+#title .act.sel{border-color:#ffb86b;color:#ffb86b;box-shadow:0 0 1.8vh rgba(255,184,107,.28),inset 0 0 1.4vh rgba(255,184,107,.12)}
+#title .hint{font-size:1.5vh;color:#6f6759;border-top:1px solid rgba(201,180,88,.14);padding-top:1.1vh;letter-spacing:.18em}
 #title .slot.sel .scard{border-color:#c9b458;box-shadow:0 0 2.4vh rgba(201,180,88,.35)}
 #title .slot .scard{cursor:default}
-/* 摘要卡的基准字号：卡片那一套是 em（见 SaveSlots.SAVE_CARD_CSS），尺度由宿主给 */
 #title .scards{font-size:1.7vh}
+/* == accessibility: visible keyboard focus ring + reduced-motion kill switch == */
+#title .card:focus-visible,#title .act:focus-visible{outline:2px solid #ffd98a;outline-offset:3px}
+#title ::-webkit-scrollbar{width:.6vh}
+#title ::-webkit-scrollbar-thumb{background:#3d372e;border-radius:1vh}
+@media (prefers-reduced-motion: reduce){#title *,#title *::before,#title *::after{animation:none !important;transition:none !important}}
 `
+
+/** 静态余烬粒子层：14 粒子、位置/周期/延迟全部写死在 CSS 的 nth-child 里（确定性、无随机、离屏即关） */
+const EMBERS = Array.from({ length: 14 }, () => '<i></i>').join('')
 
 export interface TitleHooks {
   /** 选定出身开新弦：由 main.ts 调 `rpg.restring(id)` + 开环（确认屏之后才会走到） */
@@ -281,6 +325,7 @@ export class TitleScreen {
         // 下一次休息就把那一格覆盖了。原因的原话在卡上（挑档屏/存档页都看得到）。
         : this.hasBlocked ? '本机有存档，但读不出来 · ↓ 看是哪一格' : '本机没有可续的存档'
     return `
+      <div class="embers" aria-hidden="true">${EMBERS}</div>
       <h1>止音纪元</h1>
       <div class="sub">CAESURA · 为她定一根弦</div>
       <div class="cards">${cards}</div>
@@ -299,6 +344,7 @@ export class TitleScreen {
         return `<div class="slot${i >= 0 && i === this.focus.index ? ' sel' : ''}">${saveCardHtml(v, ['load'])}</div>`
       }).join('')
     return `
+      <div class="embers" aria-hidden="true">${EMBERS}</div>
       <h1>止音纪元</h1>
       <div class="sub">${fault ? '问不出来 · ← 返回定弦' : '挑一格 · Enter 读取 · ← 返回定弦'}</div>
       <div class="scards">${html}</div>
@@ -314,6 +360,7 @@ export class TitleScreen {
       ? '本机已有可读的存档。开新弦不会立刻动它，但下一次休息会把自动槽写掉。'
       : `本机存档问不出来（${this.rosterFault}）。开新弦不会立刻动它，但下一次休息可能覆盖一份看不见的存档。`
     return `
+      <div class="embers" aria-hidden="true">${EMBERS}</div>
       <h1>开一根新弦</h1>
       <div class="sub">${warn}</div>
       <div class="sub">${line}</div>
