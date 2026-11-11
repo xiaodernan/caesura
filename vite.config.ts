@@ -12,7 +12,17 @@ import { resolve } from 'node:path'
  * 互相引用的边最多，切开只会增加跨块运行时开销，不减首包（three 才是那座山）。
  */
 export default defineConfig({
-  resolve: { alias: { '@': resolve(import.meta.dirname, 'src') } },
+  resolve: {
+    alias: {
+      '@': resolve(import.meta.dirname, 'src'),
+      // KI-118 间接-引用判据钉住的那条裸说明符：tests/unit/ledger-rules.test.ts 以
+      // `const VALIDATOR_SPEC = 'scripts/validate-data.mjs'` + `import(VALIDATOR_SPEC)` 进程内跑真校验器。
+      // 带显式 `base`（5dc5978 GitHub Pages 基路径）时 vite-node 的裸说明符入口会丢掉 SSR 解析，
+      // 报「Cannot find package 'scripts/validate-data.mjs'」；alias 强制把它指到这棵树里真正的文件。
+      // 只给这个精确键开门，scripts/ 整体不放进解析（不扩大任何其它裸说明符的名册）。
+      'scripts/validate-data.mjs': resolve(import.meta.dirname, 'scripts/validate-data.mjs'),
+    },
+  },
   // GitHub Pages serves this project from /caesura/; local development keeps /
   // so the same source remains convenient to run on localhost.
   base: process.env.GITHUB_ACTIONS ? '/caesura/' : '/',
