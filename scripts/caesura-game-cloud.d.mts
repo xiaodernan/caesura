@@ -78,6 +78,11 @@ export interface GameCloudOptions {
    * （带 comparison/election/replication/safety/gossip/verdict 六块）。 */
   raftConsensus?: boolean | Record<string, any> | { comparison: any; election: any; replication: any; safety: any; gossip: any; verdict: any; [k: string]: any }
   raftNow?: () => number
+  /** KI-508：分布式锁与租约三协议诚实权衡（单 Redis SETNX+TTL / Redlock 多数派 / etcd Lease+Fencing）。true 用缺省规模；
+   * 对象逐项注入（now/instances/nodes/seed/rand/ttlMs/scenarios/...），或直接塞一只现成 study
+   * （带 comparison/setnx/redlock/fencing/verdict 五块）。 */
+  distributedLock?: boolean | Record<string, any> | { comparison: any; setnx: any; redlock: any; fencing: any; verdict: any; [k: string]: any }
+  dlockNow?: () => number
 }
 
 /** 创建一只游戏侧开箱即用云。 */
@@ -114,6 +119,8 @@ export function createGameCloud(opts?: GameCloudOptions): {
   runDistributedTxnStudy: (() => Promise<any>) | null
   /** KI-507：Raft 共识三协议汇总的现算入口（未配 opts.raftConsensus 时为 null）；真跑 Raft/MultiMaster/Gossip × 六场景矩阵 + 三难判词。 */
   runRaftConsensusStudy: (() => Promise<any>) | null
+  /** KI-508：分布式锁三协议汇总的现算入口（未配 opts.distributedLock 时为 null）；真跑 SETNX/Redlock/etcd × 六场景矩阵 + 三难判词。 */
+  runDistributedLockStudy: (() => Promise<any>) | null
   /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）。 */
   gray: any
   /** KI-489：把游戏真 EventBus（duck-typed {on,emit}）按白名单接进云事件总线。 */

@@ -220,7 +220,41 @@ export interface RaftConsensusReading {
   verdict: Record<string, boolean>
 }
 
-/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识）。 */
+/** KI-508：分布式锁读数（单 Redis SETNX+TTL / Redlock 多数派 / etcd Lease+Fencing × 六场景矩阵 + 三难判词 + 不封赢家）。 */
+export interface DistributedLockReading {
+  config: { protocols: string[]; scenarios: Array<{ id: string; label: string }> }
+  rows: Array<{
+    protocol: string
+    label: string
+    trilemma: { mutualExclusion: boolean; partialFaultTolerance: boolean; lowLatency: boolean }
+    totals: { acquired: number; doubleOwners: number; dirtyWrites: number; blockedAcquires: number; staleWritesRejected: number; messages: number; fencedCount: number }
+    scenarios: Array<{
+      id: string
+      label: string
+      protocol: string
+      scenario: string
+      acquired: boolean
+      doubleOwners: number
+      dirtyWrites: number
+      blockedAcquires: number
+      staleWritesRejected: number
+      fencedProtected: boolean
+      mutualExcluded: boolean
+      converged: boolean
+      messages: number
+      latency: number
+      quorum: number
+      rounds: number
+      detail: Record<string, any>
+    }>
+  }>
+  setnx: Record<string, any>
+  redlock: Record<string, any>
+  fencing: Record<string, any>
+  verdict: Record<string, boolean>
+}
+
+/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁）。 */
 export interface SystemsBlock {
   lsm: LsmReading | null
   hw: HwReading | null
@@ -231,6 +265,7 @@ export interface SystemsBlock {
   mvccTxn: MvccTxnReading | null
   distributedTxn: DistributedTxnReading | null
   raftConsensus: RaftConsensusReading | null
+  distributedLock: DistributedLockReading | null
   builtAt: number
 }
 
@@ -285,9 +320,12 @@ export function buildSnapshot(opts?: {
   /** KI-507：false 关掉 Raft 共识维（兼容旧快照）；rcRounds 注入反熵轮数。 */
   raftConsensus?: boolean
   rcRounds?: number
+  /** KI-508：false 关掉分布式锁维（兼容旧快照）；dlockInstances 注入 Redlock 实例数。 */
+  distributedLock?: boolean
+  dlockInstances?: number
 }): Promise<ConsoleSnapshot>
 
-/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识九维系统读数；击穿并发 ⇒ async。 */
+/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁十维系统读数；击穿并发 ⇒ async。 */
 export function buildSystems(opts?: {
   now?: () => number
   lsmKeys?: number
@@ -316,6 +354,9 @@ export function buildSystems(opts?: {
   /** KI-507：false 关掉 Raft 共识维（兼容旧快照）；rcRounds 注入反熵轮数。 */
   raftConsensus?: boolean
   rcRounds?: number
+  /** KI-508：false 关掉分布式锁维（兼容旧快照）；dlockInstances 注入 Redlock 实例数。 */
+  distributedLock?: boolean
+  dlockInstances?: number
 }): Promise<SystemsBlock>
 
 /** KI-501：真跑缓存防护三件套（击穿/穿透/雪崩）收敛成前端三面板紧凑读数；单维失败落 null。 */
@@ -372,6 +413,13 @@ export function buildRaftConsensusReading(opts: {
   raftConsensus?: boolean
   rcRounds?: number
 }, now: () => number): Promise<RaftConsensusReading | null>
+
+/** KI-508：真跑分布式锁（单 Redis SETNX+TTL / Redlock 多数派 / etcd Lease+Fencing × 六场景矩阵 + 三难判词）收敛成前端两面板紧凑读数；失败落 null。 */
+export function buildDistributedLockReading(opts: {
+  now?: () => number
+  distributedLock?: boolean
+  dlockInstances?: number
+}, now: () => number): Promise<DistributedLockReading | null>
 
 export function realScenarioOpts(id: string): Record<string, any>
 

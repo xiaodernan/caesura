@@ -256,6 +256,22 @@
       <p class="note" id="rc-trilemma-note">—</p>
     </article>
   </section>
+
+  <!-- 分布式锁与租约（KI-508 前后端协同：单 Redis SETNX+TTL / Redlock 多数派 / etcd Lease+Fencing × 六场景矩阵 + 三难判词） -->
+  <section class="row row-dlock">
+    <article class="panel panel-dl">
+      <div class="panel-head"><h2>三协议 × 六场景</h2><span class="hint">成=加锁 · 双=双主写脏 · 脏=旧写落库 · 阻=单点宕机 · 拒=少数派拒锁 · 护=fencing 拒旧写</span></div>
+      <div class="dl-matrix" id="dl-matrix"></div>
+      <div class="dl-ladder" id="dl-ladder"></div>
+      <p class="note" id="dl-matrix-note">—</p>
+    </article>
+    <article class="panel panel-dl">
+      <div class="panel-head"><h2>三难不可兼得</h2><span class="hint">互斥安全 ∧ 部分容错 ∧ 低延迟 · 不封任何协议赢家</span></div>
+      <div class="dl-trilemma" id="dl-trilemma"></div>
+      <div class="dl-probes" id="dl-probes"></div>
+      <p class="note" id="dl-trilemma-note">—</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">

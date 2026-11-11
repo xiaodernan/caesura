@@ -26,6 +26,7 @@ import { bplusStudy, bpSnapshot } from './caesura-bplus-tree.mjs'
 import { mvccStudy, mvSnapshot } from './caesura-mvcc-txn.mjs'
 import { distributedTxnStudy, dtSnapshot } from './caesura-distributed-txn.mjs'
 import { raftConsensusStudy, rcSnapshot } from './caesura-raft-consensus.mjs'
+import { distributedLockStudy, dlSnapshot } from './caesura-distributed-lock.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
 export const SCENARIO_IDS = ['main', 'gray', 'resilience', 'cache', 'net']
@@ -90,6 +91,8 @@ export async function buildSnapshot(opts = {}) {
     dtxnRetries: opts.dtxnRetries,
     raftConsensus: opts.raftConsensus,
     rcRounds: opts.rcRounds,
+    distributedLock: opts.distributedLock,
+    dlockInstances: opts.dlockInstances,
   })
 
   return {
@@ -128,7 +131,9 @@ export async function buildSnapshot(opts = {}) {
  * @param {boolean} [opts.mvccTxn=false] 关掉事务并发控制维（兼容旧快照）
  * @param {boolean} [opts.distributedTxn=false] 关掉分布式事务维（兼容旧快照）
  * @param {boolean} [opts.raftConsensus=false] 关掉 Raft 共识维（兼容旧快照）
- * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, failureDetector:object|null, bplusIndex:object|null, mvccTxn:object|null, distributedTxn:object|null, raftConsensus:object|null, builtAt:number}>}
+ * @param {boolean} [opts.distributedLock=false] 关掉分布式锁维（兼容旧快照）
+ * @param {number} [opts.dlockInstances] Redlock 实例数（缺省 5）
+ * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, failureDetector:object|null, bplusIndex:object|null, mvccTxn:object|null, distributedTxn:object|null, raftConsensus:object|null, distributedLock:object|null, builtAt:number}>}
  */
 export async function buildSystems(opts = {}) {
   const now = typeof opts.now === 'function' ? opts.now : () => Date.now()
@@ -148,7 +153,9 @@ export async function buildSystems(opts = {}) {
   const distributedTxn = opts.distributedTxn === false ? null : await buildDistributedTxnReading(opts, now)
   // KI-507：第九维「Raft 共识」真跑 Raft/MultiMaster/Gossip × 六场景矩阵 + 三难判词，与其它八维平级、不混入五场景。
   const raftConsensus = opts.raftConsensus === false ? null : await buildRaftConsensusReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, builtAt: now() }
+  // KI-508：第十维「分布式锁」真跑 SETNX/Redlock/etcd × 六场景矩阵 + 三难判词，与其它九维平级、不混入五场景。
+  const distributedLock = opts.distributedLock === false ? null : await buildDistributedLockReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, builtAt: now() }
 }
 
 /** LSM 引擎真跑一趟确定性 benchmark，回结构读数（不夹带每行真值）。 */
@@ -462,6 +469,33 @@ export async function buildRaftConsensusReading(opts, now) {
 }
 
 /**
+ * KI-508：真跑 `distributedLockStudy`（单 Redis SETNX+TTL / Redlock 多数派 / etcd Lease+Fencing ×
+ * 六场景矩阵 + 三难判词）并收敛成前端「分布式锁」两面板紧凑读数。判定/阈值全 Node 侧；注入固定
+ * 时钟 ⇒ 快照重跑逐字一致；三协议阶梯是确定性故障场景真判词、判词不封任何协议全局赢家，缺哪块落 null。
+ * @param {object} opts { distributedLock?:false, dlockInstances? }
+ * @param {()=>number} now 时钟（builtAt 注入则确定性）
+ */
+export async function buildDistributedLockReading(opts, now) {
+  try {
+    const s = distributedLockStudy({
+      now,
+      ...(opts.dlockInstances ? { instances: Math.max(1, Math.floor(Number(opts.dlockInstances))) } : {}),
+    })
+    const snap = dlSnapshot(s)
+    return {
+      config: snap.config,
+      rows: snap.rows,
+      setnx: snap.setnx,
+      redlock: snap.redlock,
+      fencing: snap.fencing,
+      verdict: snap.verdict,
+    }
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
  * 真跑时每场景的 opts（判定权在此：场景参数固定，业务阈值仍来自各子系统默认/显式注入）。
  * @param {string} id
  */
@@ -690,6 +724,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
       const stateOf = (s) => s.blockedWrites > 0 ? '阻' : s.staleReads > 0 ? '陈' : s.conflicts > 0 ? '冲' : s.converged === false ? '散' : s.committed ? '成' : '?'
       const ladders = rc.rows.map((row) => `${row.protocol}[${row.scenarios.map((s) => s.id + ':' + stateOf(s)).join('/')}]`).join(' · ')
       console.log(`[console] raftConsensus: ${ladders} / 三难向量 ${JSON.stringify(Object.fromEntries(rc.rows.map((r) => [r.protocol, `${Number(r.trilemma.linearizable)}${Number(r.trilemma.partitionAvailable)}${Number(r.trilemma.boundedConvergence)}`])))} / 不封赢家 ${rc.verdict.noUniversalWinner ? '是' : '否'}`)
+    }
+    if (snap.systems?.distributedLock) {
+      const dl = snap.systems.distributedLock
+      const stateOf = (s, protocol) => s.doubleOwners > 0 ? '双' : s.staleWritesRejected > 0 ? '护' : s.dirtyWrites > 0 ? '脏' : s.blockedAcquires > 0 ? (protocol === 'SETNX' ? '阻' : '拒') : s.acquired ? '成' : '?'
+      const ladders = dl.rows.map((row) => `${row.protocol}[${row.scenarios.map((s) => s.id + ':' + stateOf(s, row.protocol)).join('/')}]`).join(' · ')
+      console.log(`[console] distributedLock: ${ladders} / 三难向量 ${JSON.stringify(Object.fromEntries(dl.rows.map((r) => [r.protocol, `${Number(r.trilemma.mutualExclusion)}${Number(r.trilemma.partialFaultTolerance)}${Number(r.trilemma.lowLatency)}`])))} / 不封赢家 ${dl.verdict.noUniversalWinner ? '是' : '否'}`)
     }
     process.exit(0)
   }).catch((e) => { console.error(`[console] 生成失败：${e.message}`); process.exit(1) })

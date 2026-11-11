@@ -629,4 +629,51 @@ describe('caesura-game-cloud', () => {
     // 主链语义逐字不动
     expect(st.eventChannel).toBeTruthy()
   })
+
+  it('distributedLock:true ⇒ 装配分布式锁三协议、status.distributedLock 读真三协议×六场景矩阵/三难判词、惰性同引用（KI-508）', async () => {
+    const gc = createGameCloud({
+      gameId: 'gdl1', gamePort: 7728, sources, cloud: fakeCloud(),
+      distributedLock: true, dlockNow: () => 9999,
+    })
+    expect(gc.runDistributedLockStudy).toBeTypeOf('function')
+    const st = await gc.status()
+    expect(st.distributedLock.builtAt).toBe(9999)
+    expect(st.distributedLock.config.protocols).toEqual(['SETNX', 'Redlock', 'ETCD'])
+    expect(st.distributedLock.config.scenarios.length).toBe(6)
+    expect(st.distributedLock.rows.length).toBe(3)
+    const setnx = st.distributedLock.rows.find((r: any) => r.protocol === 'SETNX')
+    const redlock = st.distributedLock.rows.find((r: any) => r.protocol === 'Redlock')
+    const etcd = st.distributedLock.rows.find((r: any) => r.protocol === 'ETCD')
+    expect(setnx!.scenarios.find((s: any) => s.id === 'gcPause')!.doubleOwners).toBeGreaterThan(0)            // SETNX GC 暂停双主
+    expect(redlock!.scenarios.find((s: any) => s.id === 'clockDrift')!.doubleOwners).toBeGreaterThan(0)      // Redlock 漂移双主
+    expect(etcd!.scenarios.find((s: any) => s.id === 'staleFencing')!.staleWritesRejected).toBeGreaterThan(0) // etcd fencing 拒旧写
+    expect(st.distributedLock.verdict.noUniversalWinner).toBe(true)
+    expect(Object.values(st.distributedLock.verdict).every(Boolean)).toBe(true)
+    // 惰性缓存：二次 status 同引用，不反复跑对照
+    expect((await gc.status()).distributedLock).toBe(st.distributedLock)
+    // 现算入口可重跑、确定性（同注入 now）
+    const rerun = await gc.runDistributedLockStudy!()
+    expect(rerun.verdict).toEqual(st.distributedLock.verdict)
+  })
+
+  it('distributedLock 默认 null 非破坏；可注入现成 study（KI-508）', async () => {
+    const plain = createGameCloud({ gameId: 'gdl2', gamePort: 7729, sources, cloud: fakeCloud() })
+    expect(plain.runDistributedLockStudy).toBe(null)
+    const ps = await plain.status()
+    expect(ps.distributedLock).toBe(null)
+    expect(ps.raftConsensus).toBe(null)
+    expect(ps.distributedTxn).toBe(null)
+    // 注入现成 study：直接用、不重跑，builtAt 原样带出、不被 dlockNow 覆盖。
+    const { distributedLockStudy } = await import('../../scripts/caesura-distributed-lock.mjs')
+    const study = distributedLockStudy({ now: () => 555 })
+    const injected = createGameCloud({
+      gameId: 'gdl3', gamePort: 7730, sources, cloud: fakeCloud(),
+      distributedLock: study, dlockNow: () => 1111,
+    })
+    const st = await injected.status()
+    expect(st.distributedLock.builtAt).toBe(555)
+    expect(st.distributedLock.verdict.noUniversalWinner).toBe(true)
+    // 主链语义逐字不动
+    expect(st.eventChannel).toBeTruthy()
+  })
 })

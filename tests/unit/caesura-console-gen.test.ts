@@ -338,7 +338,17 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(rcM.scenarios.find((s: any) => s.id === 'writeConflict').conflicts).toBeGreaterThan(0)
     expect(rcG.scenarios.find((s: any) => s.id === 'antiEntropyGap').converged).toBe(false)
     expect(snap.systems.raftConsensus.verdict.noUniversalWinner).toBe(true)
-    // bootstrap.js 与 snapshot.json 是同一份真快照（含九维 systems）。
+    // KI-508 distributedLock：三协议 × 六场景矩阵 + 三难判词真读数已固化进快照。
+    expect(snap.systems.distributedLock.rows.length).toBe(3)
+    expect(snap.systems.distributedLock.config.scenarios.length).toBe(6)
+    const dlS = snap.systems.distributedLock.rows.find((r: any) => r.protocol === 'SETNX')!
+    const dlR = snap.systems.distributedLock.rows.find((r: any) => r.protocol === 'Redlock')!
+    const dlE = snap.systems.distributedLock.rows.find((r: any) => r.protocol === 'ETCD')!
+    expect(dlS.scenarios.find((s: any) => s.id === 'gcPause').doubleOwners).toBeGreaterThan(0)
+    expect(dlR.scenarios.find((s: any) => s.id === 'clockDrift').doubleOwners).toBeGreaterThan(0)
+    expect(dlE.scenarios.find((s: any) => s.id === 'staleFencing').staleWritesRejected).toBeGreaterThan(0)
+    expect(snap.systems.distributedLock.verdict.noUniversalWinner).toBe(true)
+    // bootstrap.js 与 snapshot.json 是同一份真快照（含十维 systems）。
     const bootCode = readFileSync(resolve(process.cwd(), 'console/bootstrap.js'), 'utf8')
     const fromBoot = JSON.parse(bootCode.slice(bootCode.indexOf('=') + 1).trim().replace(/;\s*$/, ''))
     expect(fromBoot.systems.lsm.speedup).toBe(snap.systems.lsm.speedup)
@@ -350,6 +360,7 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(fromBoot.systems.mvccTxn).toEqual(snap.systems.mvccTxn)
     expect(fromBoot.systems.distributedTxn).toEqual(snap.systems.distributedTxn)
     expect(fromBoot.systems.raftConsensus).toEqual(snap.systems.raftConsensus)
+    expect(fromBoot.systems.distributedLock).toEqual(snap.systems.distributedLock)
   })
 
   it('⑭ buildMvccTxnReading 真跑五档矩阵形状齐、读数是真判词、单维关闭不连坐（KI-505）', async () => {
@@ -446,5 +457,41 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(sys.mvccTxn).toBeTruthy() // 不连坐
     const snap = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, raftConsensus: false })
     expect(snap.systems!.raftConsensus).toBe(null)
+  })
+
+  it('⑰ buildDistributedLockReading 真跑三协议矩阵形状齐、读数是真判词、单维关闭不连坐（KI-508）', async () => {
+    const { buildDistributedLockReading } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 7272
+    const reading = await buildDistributedLockReading({ dlockInstances: 5 }, now)
+    expect(reading).not.toBe(null)
+    expect(reading!.config.protocols).toEqual(['SETNX', 'Redlock', 'ETCD'])
+    expect(reading!.config.scenarios.length).toBe(6)
+    expect(reading!.rows.length).toBe(3)
+    for (const row of reading!.rows) {
+      expect(row.scenarios.length).toBe(6)
+      expect(typeof row.totals.messages).toBe('number')
+      expect(typeof row.trilemma.mutualExclusion).toBe('boolean')
+    }
+    // 真判词：SETNX GC 暂停双主 / Redlock 漂移双主 / etcd fencing 拒旧写 / 三难向量互不相同 / 不封赢家
+    const setnx = reading!.rows.find((r) => r.protocol === 'SETNX')!
+    const redlock = reading!.rows.find((r) => r.protocol === 'Redlock')!
+    const etcd = reading!.rows.find((r) => r.protocol === 'ETCD')!
+    expect(setnx.scenarios.find((s) => s.id === 'gcPause')!.doubleOwners).toBeGreaterThan(0)
+    expect(redlock.scenarios.find((s) => s.id === 'clockDrift')!.doubleOwners).toBeGreaterThan(0)
+    expect(etcd.scenarios.find((s) => s.id === 'staleFencing')!.staleWritesRejected).toBeGreaterThan(0)
+    const vec = (r: any) => `${Number(r.trilemma.mutualExclusion)}${Number(r.trilemma.partialFaultTolerance)}${Number(r.trilemma.lowLatency)}`
+    expect([vec(setnx), vec(redlock), vec(etcd)]).toEqual(['001', '010', '110'])
+    expect(reading!.verdict.noUniversalWinner).toBe(true)
+    expect(reading!.setnx.ttlAutoRelease).toBe(true)
+    expect(reading!.redlock.toleratesNodeDown).toBe(true)
+    expect(reading!.fencing.tokenMonotonic).toBe(true)
+    expect(reading!.fencing.rejectsStaleWrite).toBe(true)
+    // 单维关闭由 buildSystems/buildSnapshot 层把关：落 null，不动其它维
+    const sys = await buildSystems({ now, distributedLock: false })
+    expect(sys.distributedLock).toBe(null)
+    expect(sys.raftConsensus).toBeTruthy() // 不连坐
+    expect(sys.distributedTxn).toBeTruthy() // 不连坐
+    const snap = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, distributedLock: false })
+    expect(snap.systems!.distributedLock).toBe(null)
   })
 })

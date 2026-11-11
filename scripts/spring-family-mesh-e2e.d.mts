@@ -143,5 +143,27 @@ export function runMeshE2E(opts?: any): {
       verdict: Record<string, boolean>
       builtAt: number
     } | null
+    /** KI-508：分布式锁三协议快照（SETNX/Redlock/etcd × 六场景 + 三难判词），未配 distributedLock 为 null */
+    distributedLockSnapshot: {
+      config: { protocols: string[]; scenarios: Array<{ id: string; label: string }> }
+      rows: Array<{
+        protocol: string
+        label: string
+        trilemma: { mutualExclusion: boolean; partialFaultTolerance: boolean; lowLatency: boolean }
+        totals: { acquired: number; doubleOwners: number; dirtyWrites: number; blockedAcquires: number; staleWritesRejected: number; messages: number; fencedCount: number }
+        scenarios: Array<{
+          id: string; label: string; protocol: string; scenario: string
+          acquired: boolean; doubleOwners: number; dirtyWrites: number; blockedAcquires: number
+          staleWritesRejected: number; fencedProtected: boolean; mutualExcluded: boolean; converged: boolean
+          messages: number; latency: number; quorum: number; rounds: number
+          detail: Record<string, any>
+        }>
+      }>
+      setnx: Record<string, any>
+      redlock: Record<string, any>
+      fencing: Record<string, any>
+      verdict: Record<string, boolean>
+      builtAt: number
+    } | null
   }>
 }

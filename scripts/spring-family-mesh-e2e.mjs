@@ -93,6 +93,9 @@ export function runMeshE2E(opts = {}) {
     // KI-507：Raft 共识三协议（raftConsensus=true 装配；只读 Raft/MultiMaster/Gossip × 六场景矩阵 + 三难判词，不改调用路径）。
     raftConsensus: opts.raftConsensus,
     raftNow: opts.raftNow,
+    // KI-508：分布式锁三协议（distributedLock=true 装配；只读 SETNX/Redlock/etcd × 六场景矩阵 + 三难判词，不改调用路径）。
+    distributedLock: opts.distributedLock,
+    dlockNow: opts.dlockNow,
     sources: {
       eureka: () => (opts.svcA ?? [{ id: 'svc-a:1', name: 'svc-a', address: '10.0.0.1', port: 8080, healthy: true }]),
       k8s: () => k8s.discover('caesura-gate'),
@@ -222,6 +225,7 @@ export function runMeshE2E(opts = {}) {
         mvccTxnSnapshot: status.mvccTxn ?? null,
         distributedTxnSnapshot: status.distributedTxn ?? null,
         raftConsensusSnapshot: status.raftConsensus ?? null,
+        distributedLockSnapshot: status.distributedLock ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
       }
@@ -316,6 +320,17 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
           `${Number(row.trilemma.linearizable)}${Number(row.trilemma.partitionAvailable)}${Number(row.trilemma.boundedConvergence)}`])),
         noUniversalWinner: r.raftConsensusSnapshot.verdict.noUniversalWinner,
         verdict: r.raftConsensusSnapshot.verdict,
+      } : null,
+      distributedLock: r.distributedLockSnapshot ? {
+        protocols: r.distributedLockSnapshot.rows.map((row) => ({
+          protocol: row.protocol,
+          ladder: row.scenarios.map((s) => s.id + ':' + (s.doubleOwners > 0 ? '双' : s.staleWritesRejected > 0 ? '护' : s.dirtyWrites > 0 ? '脏' : s.blockedAcquires > 0 ? (row.protocol === 'SETNX' ? '阻' : '拒') : s.acquired ? '成' : '?')).join(' → '),
+          totals: row.totals, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.distributedLockSnapshot.rows.map((row) => [row.protocol,
+          `${Number(row.trilemma.mutualExclusion)}${Number(row.trilemma.partialFaultTolerance)}${Number(row.trilemma.lowLatency)}`])),
+        noUniversalWinner: r.distributedLockSnapshot.verdict.noUniversalWinner,
+        verdict: r.distributedLockSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

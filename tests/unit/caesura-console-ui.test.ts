@@ -689,4 +689,70 @@ describe('caesura-console-ui (KI-495)', () => {
     expect(dom2.els['rc-matrix'].innerHTML).toContain('class="rc-cell denied"') // 矩阵照常
     expect(dom2.els['rc-trilemma'].innerHTML).toContain('data-k="linearizable"') // 三难照常
   })
+
+  it('㉔ KI-508 真 distributedLock 读数落进「三协议×六场景」+「三难不可兼得」两面板（不是写死的数）', async () => {
+    const dom = await runApp(real)
+    const dl = real.systems.distributedLock
+    // 面板一：三协议 × 六场景矩阵（每格读 Node 判词：成/双/护/脏/阻/拒）+ 消息横条
+    const matrix = dom.els['dl-matrix'].innerHTML
+    expect(matrix).toContain('dl-mat-head')
+    for (const row of dl.rows) expect(matrix).toContain('data-p="' + row.protocol + '"')
+    for (const s of dl.config.scenarios) expect(matrix).toContain('data-s="' + s.id + '"')
+    expect(matrix).toContain('class="dl-cell double" data-p="SETNX" data-s="gcPause"')       // SETNX GC 暂停双主
+    expect(matrix).toContain('class="dl-cell double" data-p="Redlock" data-s="clockDrift"')  // Redlock 漂移双主
+    expect(matrix).toContain('class="dl-cell guard" data-p="ETCD" data-s="staleFencing"')    // etcd fencing 拒旧写
+    expect(matrix).toContain('class="dl-cell denied" data-p="SETNX" data-s="nodeDown"')      // SETNX 单点宕机阻
+    expect(matrix).toContain('class="dl-cell denied" data-p="ETCD" data-s="partitionMinority"') // etcd 少数派拒锁
+    expect(matrix).toContain(String(dl.rows.find((r: any) => r.protocol === 'ETCD').totals.messages)) // 消息真读数
+    const ladder = dom.els['dl-ladder'].innerHTML
+    expect(ladder).toContain('data-p="SETNX"')
+    expect(ladder).toContain('dl-bar')
+    expect(dom.els['dl-matrix-note'].textContent).toContain('fencing 用单调 token 拒绝旧写')
+    // 面板二：三难向量（玉=占/酒红=缺，逐格 data-v）+ 判词探针 + 不封赢家 dot
+    const tri = dom.els['dl-trilemma'].innerHTML
+    expect(tri).toContain('dl-vec-head')
+    expect(tri).toContain('data-k="mutualExclusion"')
+    expect(tri).toContain('data-k="partialFaultTolerance"')
+    expect(tri).toContain('data-k="lowLatency"')
+    expect(tri).toContain('data-p="SETNX" data-k="mutualExclusion" data-v="0"')     // SETNX 缺互斥
+    expect(tri).toContain('data-p="SETNX" data-k="partialFaultTolerance" data-v="0"') // SETNX 缺容错
+    expect(tri).toContain('data-p="Redlock" data-k="lowLatency" data-v="0"')        // Redlock 缺低延迟
+    expect(tri).toContain('data-p="ETCD" data-k="mutualExclusion" data-v="1"')      // etcd 占互斥
+    expect(tri).toContain('data-p="ETCD" data-k="lowLatency" data-v="0"')           // etcd 缺低延迟
+    const probes = dom.els['dl-probes'].innerHTML
+    expect(probes).toContain('data-probe="setnxGc"')
+    expect(probes).toContain('data-probe="setnxTtl"')
+    expect(probes).toContain('data-probe="redlockDrift"')
+    expect(probes).toContain('data-probe="redlockFence"')
+    expect(probes).toContain('data-probe="etcdFence"')
+    expect(probes).toContain('data-probe="etcdRenew"')
+    expect(probes).toContain('data-verdict="noUniversalWinner"')
+    expect(probes).toContain('不封任何协议全局赢家')
+    expect(dom.els['dl-trilemma-note'].textContent).toContain('换场景结论会变')
+  })
+
+  it('㉕ KI-508 distributedLock 整块缺 / 单块缺诚实降级，不连坐 raftConsensus-distributedTxn-lsm', async () => {
+    // 整块缺：四子块全降级、绝不画 0/假格；其它九维仍照常。
+    const noDl = JSON.parse(JSON.stringify(real))
+    noDl.systems.distributedLock = null
+    const dom = await runApp(noDl)
+    expect(dom.els['dl-matrix'].innerHTML).toContain('无三协议场景矩阵读数')
+    expect(dom.els['dl-ladder'].innerHTML).toBe('')
+    expect(dom.els['dl-trilemma'].innerHTML).toContain('无三难判据读数')
+    expect(dom.els['dl-probes'].innerHTML).toBe('')
+    expect(dom.els['dl-matrix-note'].textContent).toContain('systems.distributedLock 缺失')
+    expect(dom.els['rc-matrix'].innerHTML).toContain('data-p="Raft"')             // raftConsensus 不连坐
+    expect(dom.els['dt-matrix'].innerHTML).toContain('data-p="2PC"')              // distributedTxn 不连坐
+    expect(dom.els['lsm-gauge'].innerHTML).toContain(String(real.systems.lsm.speedup.toFixed(1))) // lsm 不连坐
+
+    // 单块缺：只降 fencing 探针，矩阵/三难向量仍渲染真读数（同维不连坐）。
+    const partial = JSON.parse(JSON.stringify(real))
+    partial.systems.distributedLock.fencing = null
+    const dom2 = await runApp(partial)
+    const probes = dom2.els['dl-probes'].innerHTML
+    expect(probes).toContain('单调 token ✗ · 旧 token 写 未拒 · 不脏写 ✗') // fencing 缺 → 诚实落否定，不编读数
+    expect(probes).toContain('data-probe="setnxGc"')                     // 其余探针照常
+    expect(dom2.els['dl-matrix'].innerHTML).toContain('class="dl-cell guard"')    // 矩阵照常
+    expect(dom2.els['dl-trilemma'].innerHTML).toContain('data-k="mutualExclusion"') // 三难照常
+  })
 })

@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794354639345,
+  "generatedAt": 1794355857022,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1365,12 +1365,12 @@
           "keys": 1,
           "versions": 2,
           "commitLogSize": 1,
-          "now": 1794354639341
+          "now": 1794355857016
         },
         "final": {
           "A": {
             "value": 101,
-            "commitTs": 1794354639341,
+            "commitTs": 1794355857016,
             "tombstone": false
           }
         }
@@ -2680,6 +2680,674 @@
         "gossipNoConvergenceBound": true
       }
     },
-    "builtAt": 1794354639345
+    "distributedLock": {
+      "config": {
+        "protocols": [
+          "SETNX",
+          "Redlock",
+          "ETCD"
+        ],
+        "scenarios": [
+          {
+            "id": "allOk",
+            "label": "全成功"
+          },
+          {
+            "id": "gcPause",
+            "label": "持锁者 GC 长暂停 TTL 过期"
+          },
+          {
+            "id": "clockDrift",
+            "label": "实例墙钟漂移"
+          },
+          {
+            "id": "nodeDown",
+            "label": "少数实例/节点宕机"
+          },
+          {
+            "id": "partitionMinority",
+            "label": "客户端落少数派分区"
+          },
+          {
+            "id": "staleFencing",
+            "label": "旧持锁者过期凭证写"
+          }
+        ]
+      },
+      "rows": [
+        {
+          "protocol": "SETNX",
+          "label": "单 Redis SETNX+TTL",
+          "trilemma": {
+            "mutualExclusion": false,
+            "partialFaultTolerance": false,
+            "lowLatency": true
+          },
+          "totals": {
+            "acquired": 5,
+            "doubleOwners": 1,
+            "dirtyWrites": 2,
+            "blockedAcquires": 1,
+            "staleWritesRejected": null,
+            "messages": 10,
+            "fencedCount": 0
+          },
+          "scenarios": [
+            {
+              "id": "allOk",
+              "label": "全成功",
+              "protocol": "SETNX",
+              "scenario": "allOk",
+              "acquired": true,
+              "doubleOwners": 0,
+              "dirtyWrites": 0,
+              "blockedAcquires": 0,
+              "fencedProtected": false,
+              "mutualExcluded": true,
+              "converged": true,
+              "messages": 1,
+              "latency": 1,
+              "quorum": 1,
+              "rounds": 0,
+              "detail": {
+                "owner": "c1",
+                "ttlExpires": 0,
+                "writeFenced": null,
+                "note": "单实例一次 RTT；GC 暂停 TTL 过期即双主"
+              },
+              "fault": {
+                "at": "allOk"
+              }
+            },
+            {
+              "id": "gcPause",
+              "label": "持锁者 GC 长暂停 TTL 过期",
+              "protocol": "SETNX",
+              "scenario": "gcPause",
+              "acquired": true,
+              "doubleOwners": 1,
+              "dirtyWrites": 1,
+              "blockedAcquires": 0,
+              "fencedProtected": false,
+              "mutualExcluded": false,
+              "converged": true,
+              "messages": 3,
+              "latency": 1,
+              "quorum": 1,
+              "rounds": 0,
+              "detail": {
+                "owner": "new",
+                "ttlExpires": 1,
+                "writeFenced": false,
+                "note": "单实例一次 RTT；GC 暂停 TTL 过期即双主"
+              },
+              "fault": {
+                "at": "gcPause"
+              }
+            },
+            {
+              "id": "clockDrift",
+              "label": "实例墙钟漂移",
+              "protocol": "SETNX",
+              "scenario": "clockDrift",
+              "acquired": true,
+              "doubleOwners": 0,
+              "dirtyWrites": 0,
+              "blockedAcquires": 0,
+              "fencedProtected": false,
+              "mutualExcluded": true,
+              "converged": true,
+              "messages": 1,
+              "latency": 1,
+              "quorum": 1,
+              "rounds": 0,
+              "detail": {
+                "owner": "c1",
+                "ttlExpires": 0,
+                "writeFenced": null,
+                "note": "单实例一次 RTT；GC 暂停 TTL 过期即双主"
+              },
+              "fault": {
+                "at": "clockDrift"
+              }
+            },
+            {
+              "id": "nodeDown",
+              "label": "少数实例/节点宕机",
+              "protocol": "SETNX",
+              "scenario": "nodeDown",
+              "acquired": false,
+              "doubleOwners": 0,
+              "dirtyWrites": 0,
+              "blockedAcquires": 1,
+              "fencedProtected": false,
+              "mutualExcluded": true,
+              "converged": true,
+              "messages": 1,
+              "latency": 1,
+              "quorum": 1,
+              "rounds": 0,
+              "detail": {
+                "reason": "single-point-down",
+                "owner": null,
+                "ttlExpires": 0,
+                "writeFenced": null,
+                "note": "单实例一次 RTT；GC 暂停 TTL 过期即双主"
+              },
+              "fault": {
+                "at": "nodeDown"
+              }
+            },
+            {
+              "id": "partitionMinority",
+              "label": "客户端落少数派分区",
+              "protocol": "SETNX",
+              "scenario": "partitionMinority",
+              "acquired": true,
+              "doubleOwners": 0,
+              "dirtyWrites": 0,
+              "blockedAcquires": 0,
+              "fencedProtected": false,
+              "mutualExcluded": true,
+              "converged": true,
+              "messages": 1,
+              "latency": 1,
+              "quorum": 1,
+              "rounds": 0,
+              "detail": {
+                "owner": "c1",
+                "ttlExpires": 0,
+                "writeFenced": null,
+                "note": "单实例一次 RTT；GC 暂停 TTL 过期即双主"
+              },
+              "fault": {
+                "at": "partitionMinority"
+              }
+            },
+            {
+              "id": "staleFencing",
+              "label": "旧持锁者过期凭证写",
+              "protocol": "SETNX",
+              "scenario": "staleFencing",
+              "acquired": true,
+              "doubleOwners": 0,
+              "dirtyWrites": 1,
+              "blockedAcquires": 0,
+              "fencedProtected": false,
+              "mutualExcluded": false,
+              "converged": true,
+              "messages": 3,
+              "latency": 1,
+              "quorum": 1,
+              "rounds": 0,
+              "detail": {
+                "owner": "new",
+                "ttlExpires": 0,
+                "writeFenced": false,
+                "note": "单实例一次 RTT；GC 暂停 TTL 过期即双主"
+              },
+              "fault": {
+                "at": "staleFencing"
+              }
+            }
+          ]
+        },
+        {
+          "protocol": "Redlock",
+          "label": "Redlock 多数派",
+          "trilemma": {
+            "mutualExclusion": false,
+            "partialFaultTolerance": true,
+            "lowLatency": false
+          },
+          "totals": {
+            "acquired": 5,
+            "doubleOwners": 1,
+            "dirtyWrites": 2,
+            "blockedAcquires": 1,
+            "staleWritesRejected": 0,
+            "messages": 40,
+            "fencedCount": 0
+          },
+          "scenarios": [
+            {
+              "id": "allOk",
+              "label": "全成功",
+              "protocol": "Redlock",
+              "scenario": "allOk",
+              "acquired": true,
+              "doubleOwners": 0,
+              "dirtyWrites": 0,
+              "blockedAcquires": 0,
+              "staleWritesRejected": 0,
+              "fencedProtected": false,
+              "mutualExcluded": true,
+              "converged": true,
+              "messages": 5,
+              "latency": 3,
+              "quorum": 3,
+              "rounds": 3,
+              "detail": {
+                "instances": 5,
+                "quorum": 3,
+                "acks": 3,
+                "clockDrifts": 0,
+                "writeFenced": null,
+                "note": "墙钟 quorum 抗少数宕机，但漂移/无 fencing 破互斥"
+              },
+              "fault": {
+                "at": "allOk"
+              }
+            },
+            {
+              "id": "gcPause",
+              "label": "持锁者 GC 长暂停 TTL 过期",
+              "protocol": "Redlock",
+              "scenario": "gcPause",
+              "acquired": true,
+              "doubleOwners": 0,
+              "dirtyWrites": 0,
+              "blockedAcquires": 0,
+              "staleWritesRejected": 0,
+              "fencedProtected": false,
+              "mutualExcluded": true,
+              "converged": true,
+              "messages": 5,
+              "latency": 3,
+              "quorum": 3,
+              "rounds": 3,
+              "detail": {
+                "instances": 5,
+                "quorum": 3,
+                "acks": 3,
+                "clockDrifts": 0,
+                "writeFenced": null,
+                "note": "墙钟 quorum 抗少数宕机，但漂移/无 fencing 破互斥"
+              },
+              "fault": {
+                "at": "gcPause"
+              }
+            },
+            {
+              "id": "clockDrift",
+              "label": "实例墙钟漂移",
+              "protocol": "Redlock",
+              "scenario": "clockDrift",
+              "acquired": true,
+              "doubleOwners": 1,
+              "dirtyWrites": 1,
+              "blockedAcquires": 0,
+              "staleWritesRejected": 0,
+              "fencedProtected": false,
+              "mutualExcluded": false,
+              "converged": true,
+              "messages": 11,
+              "latency": 3,
+              "quorum": 3,
+              "rounds": 3,
+              "detail": {
+                "reason": "clock-drift-split",
+                "instances": 5,
+                "quorum": 3,
+                "acks": 3,
+                "clockDrifts": 1,
+                "writeFenced": false,
+                "note": "墙钟 quorum 抗少数宕机，但漂移/无 fencing 破互斥"
+              },
+              "fault": {
+                "at": "clockDrift"
+              }
+            },
+            {
+              "id": "nodeDown",
+              "label": "少数实例/节点宕机",
+              "protocol": "Redlock",
+              "scenario": "nodeDown",
+              "acquired": true,
+              "doubleOwners": 0,
+              "dirtyWrites": 0,
+              "blockedAcquires": 0,
+              "staleWritesRejected": 0,
+              "fencedProtected": false,
+              "mutualExcluded": true,
+              "converged": true,
+              "messages": 3,
+              "latency": 3,
+              "quorum": 3,
+              "rounds": 3,
+              "detail": {
+                "instances": 5,
+                "quorum": 3,
+                "acks": 3,
+                "clockDrifts": 0,
+                "writeFenced": null,
+                "note": "墙钟 quorum 抗少数宕机，但漂移/无 fencing 破互斥"
+              },
+              "fault": {
+                "at": "nodeDown"
+              }
+            },
+            {
+              "id": "partitionMinority",
+              "label": "客户端落少数派分区",
+              "protocol": "Redlock",
+              "scenario": "partitionMinority",
+              "acquired": false,
+              "doubleOwners": 0,
+              "dirtyWrites": 0,
+              "blockedAcquires": 1,
+              "staleWritesRejected": 0,
+              "fencedProtected": false,
+              "mutualExcluded": true,
+              "converged": true,
+              "messages": 5,
+              "latency": 3,
+              "quorum": 3,
+              "rounds": 3,
+              "detail": {
+                "reason": "minority-partition",
+                "instances": 5,
+                "quorum": 3,
+                "acks": 5,
+                "clockDrifts": 0,
+                "writeFenced": null,
+                "note": "墙钟 quorum 抗少数宕机，但漂移/无 fencing 破互斥"
+              },
+              "fault": {
+                "at": "partitionMinority"
+              }
+            },
+            {
+              "id": "staleFencing",
+              "label": "旧持锁者过期凭证写",
+              "protocol": "Redlock",
+              "scenario": "staleFencing",
+              "acquired": true,
+              "doubleOwners": 0,
+              "dirtyWrites": 1,
+              "blockedAcquires": 0,
+              "staleWritesRejected": 0,
+              "fencedProtected": false,
+              "mutualExcluded": false,
+              "converged": true,
+              "messages": 11,
+              "latency": 3,
+              "quorum": 3,
+              "rounds": 3,
+              "detail": {
+                "instances": 5,
+                "quorum": 3,
+                "acks": 3,
+                "clockDrifts": 0,
+                "writeFenced": false,
+                "note": "墙钟 quorum 抗少数宕机，但漂移/无 fencing 破互斥"
+              },
+              "fault": {
+                "at": "staleFencing"
+              }
+            }
+          ]
+        },
+        {
+          "protocol": "ETCD",
+          "label": "etcd Lease+Fencing",
+          "trilemma": {
+            "mutualExclusion": true,
+            "partialFaultTolerance": true,
+            "lowLatency": false
+          },
+          "totals": {
+            "acquired": 5,
+            "doubleOwners": 0,
+            "dirtyWrites": 0,
+            "blockedAcquires": 1,
+            "staleWritesRejected": 2,
+            "messages": 27,
+            "fencedCount": 2
+          },
+          "scenarios": [
+            {
+              "id": "allOk",
+              "label": "全成功",
+              "protocol": "ETCD",
+              "scenario": "allOk",
+              "acquired": true,
+              "doubleOwners": 0,
+              "dirtyWrites": 0,
+              "blockedAcquires": 0,
+              "staleWritesRejected": 0,
+              "fencedProtected": false,
+              "mutualExcluded": true,
+              "converged": true,
+              "messages": 3,
+              "latency": 3,
+              "quorum": 3,
+              "rounds": 3,
+              "detail": {
+                "nodes": 5,
+                "quorum": 3,
+                "acks": 5,
+                "currentToken": 1,
+                "fencingToken": 1,
+                "writeFenced": null,
+                "note": "Raft 复制租约 + 单调 fencing：锁误授也拒旧写，代价多数往返延迟"
+              },
+              "fault": {
+                "at": "allOk"
+              }
+            },
+            {
+              "id": "gcPause",
+              "label": "持锁者 GC 长暂停 TTL 过期",
+              "protocol": "ETCD",
+              "scenario": "gcPause",
+              "acquired": true,
+              "doubleOwners": 0,
+              "dirtyWrites": 0,
+              "blockedAcquires": 0,
+              "staleWritesRejected": 1,
+              "fencedProtected": true,
+              "mutualExcluded": true,
+              "converged": true,
+              "messages": 8,
+              "latency": 3,
+              "quorum": 3,
+              "rounds": 6,
+              "detail": {
+                "nodes": 5,
+                "quorum": 3,
+                "acks": 5,
+                "currentToken": 2,
+                "fencingToken": 2,
+                "writeFenced": true,
+                "note": "Raft 复制租约 + 单调 fencing：锁误授也拒旧写，代价多数往返延迟"
+              },
+              "fault": {
+                "at": "gcPause"
+              }
+            },
+            {
+              "id": "clockDrift",
+              "label": "实例墙钟漂移",
+              "protocol": "ETCD",
+              "scenario": "clockDrift",
+              "acquired": true,
+              "doubleOwners": 0,
+              "dirtyWrites": 0,
+              "blockedAcquires": 0,
+              "staleWritesRejected": 0,
+              "fencedProtected": false,
+              "mutualExcluded": true,
+              "converged": true,
+              "messages": 3,
+              "latency": 3,
+              "quorum": 3,
+              "rounds": 3,
+              "detail": {
+                "nodes": 5,
+                "quorum": 3,
+                "acks": 5,
+                "currentToken": 1,
+                "fencingToken": 1,
+                "writeFenced": null,
+                "note": "Raft 复制租约 + 单调 fencing：锁误授也拒旧写，代价多数往返延迟"
+              },
+              "fault": {
+                "at": "clockDrift"
+              }
+            },
+            {
+              "id": "nodeDown",
+              "label": "少数实例/节点宕机",
+              "protocol": "ETCD",
+              "scenario": "nodeDown",
+              "acquired": true,
+              "doubleOwners": 0,
+              "dirtyWrites": 0,
+              "blockedAcquires": 0,
+              "staleWritesRejected": 0,
+              "fencedProtected": false,
+              "mutualExcluded": true,
+              "converged": true,
+              "messages": 3,
+              "latency": 3,
+              "quorum": 3,
+              "rounds": 3,
+              "detail": {
+                "nodes": 5,
+                "quorum": 3,
+                "acks": 3,
+                "currentToken": 1,
+                "fencingToken": 1,
+                "writeFenced": null,
+                "note": "Raft 复制租约 + 单调 fencing：锁误授也拒旧写，代价多数往返延迟"
+              },
+              "fault": {
+                "at": "nodeDown"
+              }
+            },
+            {
+              "id": "partitionMinority",
+              "label": "客户端落少数派分区",
+              "protocol": "ETCD",
+              "scenario": "partitionMinority",
+              "acquired": false,
+              "doubleOwners": 0,
+              "dirtyWrites": 0,
+              "blockedAcquires": 1,
+              "staleWritesRejected": 0,
+              "fencedProtected": false,
+              "mutualExcluded": true,
+              "converged": true,
+              "messages": 3,
+              "latency": 3,
+              "quorum": 3,
+              "rounds": 3,
+              "detail": {
+                "reason": "minority-partition",
+                "nodes": 5,
+                "quorum": 3,
+                "currentToken": 0,
+                "writeFenced": null,
+                "note": "Raft 复制租约 + 单调 fencing：锁误授也拒旧写，代价多数往返延迟"
+              },
+              "fault": {
+                "at": "partitionMinority"
+              }
+            },
+            {
+              "id": "staleFencing",
+              "label": "旧持锁者过期凭证写",
+              "protocol": "ETCD",
+              "scenario": "staleFencing",
+              "acquired": true,
+              "doubleOwners": 0,
+              "dirtyWrites": 0,
+              "blockedAcquires": 0,
+              "staleWritesRejected": 1,
+              "fencedProtected": true,
+              "mutualExcluded": true,
+              "converged": true,
+              "messages": 7,
+              "latency": 3,
+              "quorum": 3,
+              "rounds": 6,
+              "detail": {
+                "nodes": 5,
+                "quorum": 3,
+                "acks": 5,
+                "currentToken": 2,
+                "fencingToken": 2,
+                "writeFenced": true,
+                "note": "Raft 复制租约 + 单调 fencing：锁误授也拒旧写，代价多数往返延迟"
+              },
+              "fault": {
+                "at": "staleFencing"
+              }
+            }
+          ]
+        }
+      ],
+      "setnx": {
+        "acquired": true,
+        "mutexWhileLive": true,
+        "ttlAutoRelease": true,
+        "gcPauseDoubleOwner": true,
+        "gcPauseDirtyWrite": true,
+        "singlePointDown": true,
+        "noFencing": true
+      },
+      "redlock": {
+        "quorumAcquire": true,
+        "quorum": 3,
+        "instances": 5,
+        "toleratesNodeDown": true,
+        "minorityRefuses": true,
+        "clockDriftDoubleOwner": true,
+        "clockDrifts": true,
+        "noFencingDirtyWrite": true
+      },
+      "fencing": {
+        "tokenMonotonic": true,
+        "firstToken": 1,
+        "nextToken": 2,
+        "rejectsStaleWrite": true,
+        "noDirtyOnStale": true,
+        "fencedProtected": true,
+        "minorityRefusesCP": true,
+        "toleratesNodeDown": true,
+        "leaseRenewFresh": true,
+        "expiredLeaseCannotRenew": true,
+        "quorum": 3
+      },
+      "verdict": {
+        "setnxGcPauseDoubleOwner": true,
+        "setnxSinglePointDown": true,
+        "setnxLowLatencyOnly": true,
+        "redlockClockDriftDoubleOwner": true,
+        "redlockToleratesNodeDown": true,
+        "redlockMinorityRefuses": true,
+        "redlockNoFencing": true,
+        "etcdNeverDirty": true,
+        "etcdToleratesNodeDown": true,
+        "etcdMinorityRefusesCP": true,
+        "etcdFencingRejectsStale": true,
+        "etcdPaysQuorumLatency": true,
+        "trilemmaDistinguishes": true,
+        "noProtocolWinsAll": true,
+        "noUniversalWinner": true,
+        "setnxMutexWhileLive": true,
+        "setnxTtlAutoRelease": true,
+        "redlockQuorumAcquire": true,
+        "redlockNoFencingDirtyWrite": true,
+        "fencingTokenMonotonic": true,
+        "fencingLeaseRenewFresh": true,
+        "fencingExpiredLeaseNoRenew": true,
+        "fencingRejectsStaleWrite": true,
+        "fencingNoDirtyOnStale": true,
+        "fencingMinorityRefusesCP": true
+      }
+    },
+    "builtAt": 1794355857022
   }
 }

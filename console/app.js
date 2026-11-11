@@ -47,6 +47,7 @@
       renderMvcc(snap.systems ? snap.systems.mvccTxn : null)
       renderDistributedTxn(snap.systems ? snap.systems.distributedTxn : null)
       renderRaftConsensus(snap.systems ? snap.systems.raftConsensus : null)
+      renderDistributedLock(snap.systems ? snap.systems.distributedLock : null)
       setLive(true, result.source)
     }).catch(function (e) {
       setLive(false, 'error')
@@ -1152,6 +1153,112 @@
       '但线性一致、多数派确认即确定收敛；多主缺「线性一致」（并发写冲突 + 异步复制延迟读陈），但从不阻塞、拓扑确定有界收敛；' +
       'Gossip 再缺「确定收敛」（概率反熵说不出第几轮必一致），换来回任节点可写、高可用。' +
       '全为确定性故障场景结构计数、非墙钟/吞吐/真 etcd·Consul 跑分；换场景结论会变，不封赢家。'
+  }
+
+  /* ================= KI-508 分布式锁与租约：三协议 × 六场景矩阵 + 三难不可兼得两面板 =================
+   * 只读 Node 侧 dlSnapshot 真判词，前端不复核、不重算、不实测。整块缺/单块缺都诚实降级，不连坐其它维。 */
+  function renderDistributedLock(dl) {
+    renderDlMatrix(dl && dl.rows, dl && dl.config)
+    renderDlLadder(dl && dl.rows)
+    renderDlTrilemma(dl && dl.rows, dl && dl.verdict, dl && dl.setnx, dl && dl.redlock, dl && dl.fencing)
+  }
+
+  function dlMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">无' + esc(label) + '读数</div>'
+    if (note) note.textContent = 'systems.distributedLock 缺失 —— 重跑 npm run console:data 采集真判词'
+  }
+
+  // 每格读 Node 侧真判词：成=加锁 / 双=双主写脏 / 护=fencing 拒旧写 / 脏=旧写落库 / 阻=单点宕机 / 拒=少数派拒锁（不复核）。
+  function dlState(s, protocol) {
+    if (!s) return { cls: '', ch: '—' }
+    if (isNum(s.doubleOwners) && s.doubleOwners > 0) return { cls: 'double', ch: '双' }
+    if (isNum(s.staleWritesRejected) && s.staleWritesRejected > 0) return { cls: 'guard', ch: '护' }
+    if (isNum(s.dirtyWrites) && s.dirtyWrites > 0) return { cls: 'dirty', ch: '脏' }
+    if (isNum(s.blockedAcquires) && s.blockedAcquires > 0) return { cls: 'denied', ch: protocol === 'SETNX' ? '阻' : '拒' }
+    if (s.acquired) return { cls: 'ok', ch: '成' }
+    return { cls: '', ch: '—' }
+  }
+
+  function renderDlMatrix(rows, config) {
+    var box = $('#dl-matrix'), note = $('#dl-matrix-note')
+    if (!Array.isArray(rows) || !rows.length || !config || !Array.isArray(config.scenarios)) {
+      dlMissing(box, note, '三协议场景矩阵'); return
+    }
+    var scenarios = config.scenarios
+    var head = '<div class="dl-mat-row dl-mat-head"><span class="dl-mat-proto">协议</span>' +
+      scenarios.map(function (s) { return '<span class="dl-sc" title="' + esc(s.label) + '">' + esc(s.id) + '</span>' }).join('') +
+      '<span class="dl-mat-cost">消息</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (s) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === s.id }) : null
+        var st = dlState(cell, row.protocol)
+        return '<span class="dl-cell ' + st.cls + '" data-p="' + esc(row.protocol) + '" data-s="' + esc(s.id) +
+          '" data-state="' + (st.cls || 'na') + '" title="' + esc(s.label) + '">' + st.ch + '</span>'
+      }).join('')
+      var t = row.totals || {}
+      return '<div class="dl-mat-row" data-p="' + esc(row.protocol) + '">' +
+        '<span class="dl-mat-proto">' + esc(row.protocol) + '<small>' + esc(row.label || '') + '</small></span>' +
+        cells + '<span class="dl-mat-cost"><b>' + esc(fmt(t.messages)) + '</b></span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = '同一组确定性故障场景（全成功 / 持锁者 GC 长暂停 / 实例时钟漂移 / ' +
+      '少数节点宕机 / 客户端落少数派分区 / 旧持锁者过期凭证写）分喂三协议，每格是 Node 侧真判词：' +
+      '成=加锁落地、双=TTL 过期或时钟漂移致两客户端同时持锁写脏、护=fencing 用单调 token 拒绝旧写、' +
+      '脏=无 fencing 兜不住旧写落库、阻=单点宕机即不可用、拒=多数派凑不齐 quorum 拒加锁（CP）。' +
+      '消息数是结构计数、非墙钟/带宽；不封任何协议全局赢家。'
+  }
+
+  function renderDlLadder(rows) {
+    var box = $('#dl-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.totals && isNum(r.totals.messages) ? r.totals.messages : 0 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var t = r.totals || {}
+      var w = isNum(t.messages) ? Math.round(t.messages / max * 100) : 0
+      var doubled = isNum(t.doubleOwners) ? t.doubleOwners : 0
+      var dirty = isNum(t.dirtyWrites) ? t.dirtyWrites : 0
+      var rejected = isNum(t.staleWritesRejected) ? t.staleWritesRejected : 0
+      return '<div class="dl-line" data-p="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="dl-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">双' + esc(fmt(doubled)) + ' · 脏' + esc(fmt(dirty)) + ' · 护' + esc(fmt(rejected)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderDlTrilemma(rows, verdict, setnx, redlock, fencing) {
+    var box = $('#dl-trilemma'), probes = $('#dl-probes'), note = $('#dl-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) { dlMissing(box, note, '三难判据'); if (probes) probes.innerHTML = ''; return }
+    var flags = [['mutualExclusion', '互斥安全'], ['partialFaultTolerance', '部分容错'], ['lowLatency', '低延迟']]
+    var head = '<div class="dl-vec dl-vec-head"><span class="proto">协议</span>' +
+      flags.map(function (f) { return '<span>' + f[1] + '</span>' }).join('') + '</div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (f) {
+        var yes = t[f[0]] === true
+        return '<span class="dl-flag ' + (yes ? 'yes' : 'no') + '" data-p="' + esc(r.protocol) + '" data-k="' + f[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      return '<div class="dl-vec" data-p="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells + '</div>'
+    }).join('')
+    box.innerHTML = head + body
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var chips = [
+      '<span class="chip" data-probe="setnxGc"><b>SETNX</b> GC 暂停 ' + (v.setnxGcPauseDoubleOwner ? '双主写脏' : '未双主') + ' · 单点宕机 ' + (v.setnxSinglePointDown ? '不可用' : '仍可用') + '</span>',
+      '<span class="chip" data-probe="setnxTtl"><b>SETNX</b> TTL 自动释放 ' + (setnx && setnx.ttlAutoRelease ? '✓' : '✗') + ' · 活着互斥 ' + (setnx && setnx.mutexWhileLive ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-probe="redlockDrift"><b>Redlock</b> 时钟漂移 ' + (v.redlockClockDriftDoubleOwner ? '双主写脏' : '未双主') + ' · 少数宕机 ' + (v.redlockToleratesNodeDown ? '容错' : '不可用') + '</span>',
+      '<span class="chip" data-probe="redlockFence"><b>Redlock</b> 无 fencing ' + (v.redlockNoFencingDirtyWrite ? '旧写落库' : '已挡住') + ' · 少数派 ' + (v.redlockMinorityRefuses ? '拒加锁' : '仍可写') + '</span>',
+      '<span class="chip jade-t" data-probe="etcdFence"><b>etcd</b> 单调 token ' + (fencing && fencing.tokenMonotonic ? '✓' : '✗') + ' · 旧 token 写 ' + (fencing && fencing.rejectsStaleWrite ? '真拒' : '未拒') + ' · 不脏写 ' + (fencing && fencing.noDirtyOnStale ? '✓' : '✗') + '</span>',
+      '<span class="chip jade-t" data-probe="etcdRenew"><b>etcd</b> 续租 ' + (fencing && fencing.leaseRenewFresh ? '✓' : '✗') + ' · 过期租约不可续 ' + (fencing && fencing.expiredLeaseCannotRenew ? '✓' : '✗') + ' · 少数派 CP 拒锁 ' + (fencing && fencing.minorityRefusesCP ? '✓' : '✗') + '</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' +
+        (noWin ? '✓ 不封任何协议全局赢家' : '本配置下归一（换场景会翻）') + '</span>',
+    ]
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '三难 = 互斥安全 ∧ 部分容错可用 ∧ 低延迟。真实向量三条互不相同、没有一条三个全占：' +
+      'SETNX 缺「互斥 + 容错」（一次 RTT 最低延迟，但 GC 暂停 TTL 过期即双主写脏、单点宕机全盘不可用）；' +
+      'Redlock 缺「互斥 + 低延迟」（quorum 抗少数宕机，但实例墙钟漂移可让两客户端各凑齐多数、且无 fencing 兜不住旧写，多数往返延迟居中）；' +
+      'etcd Lease+Fencing 占「互斥 + 容错」（单调 token 让锁即使误授也拒旧写、Raft 多数复制容错），' +
+      '但缺「低延迟」（每把锁都要多数派往返、续租依赖客户端活跃度）。fencing 的旧写被拒是真 token 数值比较、非布尔桩。' +
+      '全为确定性故障场景结构计数、非墙钟/QPS/真 etcd·Redis 跑分；换场景结论会变，不封赢家。'
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)

@@ -453,4 +453,28 @@ describe('spring-family-mesh-e2e', () => {
     const plain = await runMeshE2E().run()
     expect(plain.raftConsensusSnapshot).toBe(null)
   })
+
+  it('e2e KI-508：distributedLock=true ⇒ 主链照常跑通，distributedLockSnapshot 带三协议×六场景矩阵/三难判词', async () => {
+    const e = runMeshE2E({ distributedLock: true, dlockNow: () => 7777 })
+    const r = await e.run()
+    expect(r.started?.registered).toBe(true)          // 主链语义逐字不动
+    expect(r.callRes?.ok).toBe(true)
+    const d = r.distributedLockSnapshot
+    expect(d).not.toBe(null)
+    expect(d!.builtAt).toBe(7777)
+    expect(d!.config.protocols).toEqual(['SETNX', 'Redlock', 'ETCD'])
+    expect(d!.config.scenarios.length).toBe(6)
+    expect(d!.rows.length).toBe(3)
+    const setnx = d!.rows.find((row: any) => row.protocol === 'SETNX')!
+    const redlock = d!.rows.find((row: any) => row.protocol === 'Redlock')!
+    const etcd = d!.rows.find((row: any) => row.protocol === 'ETCD')!
+    expect(setnx.scenarios.find((s: any) => s.id === 'gcPause')!.doubleOwners).toBeGreaterThan(0)
+    expect(redlock.scenarios.find((s: any) => s.id === 'clockDrift')!.doubleOwners).toBeGreaterThan(0)
+    expect(etcd.scenarios.find((s: any) => s.id === 'staleFencing')!.staleWritesRejected).toBeGreaterThan(0)
+    expect(d!.verdict.noUniversalWinner).toBe(true)
+    expect(Object.values(d!.verdict).every(Boolean)).toBe(true)
+    // 未配 distributedLock 时为 null（非破坏）。
+    const plain = await runMeshE2E().run()
+    expect(plain.distributedLockSnapshot).toBe(null)
+  })
 })
