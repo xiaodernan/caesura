@@ -36,6 +36,7 @@
 | Phase F-24 | Stakerite / MapUI 全屏 overlay 面板仪典化（ember rite）：PANEL_CSS 追加 cascade——veil 暖色径向聚光 / panel 双金环描边 + 内上沿金丝高光 + 深渊阴影 / header h1 液态金属渐变字 + ✦ 徽记 + drop-shadow 呼吸 / nav sel 琥珀文字辉光 + 金线下划线 / main 金线滚动条 / row hover 暖光 / h2 金柱前缀 / act 按钮按压位移 + focus-visible 暖金焦点环 / foot 暖色渐变档脚 / tag 内发光；覆盖 Stakerite 装备卡·血弦·比级·存档·设置 + MapUI 全屏家族；零 markup 改动、零 npm 依赖；+1 腿（stakerite 套件 61 绿） | 685e638 |
 | Phase F-25 | AI 主循环热路径算法优化：定调（buffAura）O(N²)→O(N·A)（先筛存活施主、内两层不再逐对 alive 判定）+ 距离比较全程平方化免 sqrt；判定语义逐字节一致（范围内最近施主、并列取先者；buff 只外显倍率不外显距离）；measure-probe 实测 ai.update（12 敌 × 3600 tick）p50 0.064ms / p95 0.221ms / p99 0.635ms / max 8.32ms（13/3600 ticks >2ms≈0.36%）——不声称墙钟收益，只声称常数项与 sqrt 次数削减；support / enemy-attack-frame-ticks / combat-deadlegs 34 绿 | 64c8509 |
 | Phase F-26 | RESP pipelining 真排水（KI-516）：createRedisServer drain 循环（同 TCP 段排干所有完整命令）+ redisCommandReply 模块级纯函数（命令级错误 -ERR 不断连、真 Redis 语义）；client rawCall/call/pipeline 三层（pipeline 严格按序回收、不 reject）；+4 腿（21 全绿）；修掉 KI-514 发布即带的 pipelined 第二条起悬死真缺陷 | 289dfd3 |
+| Phase F-27 | spring-family-e2e-check 新增 RESP/Redis 内核腿：spawn `node scripts/spring-redis-cache.mjs selfcheck` 为非 HTTP 第六腿——断言真 TCP one-write pipeline（PING,SET,GET）全绿；零 Java 依赖、零端口、~0.3s；CI spring-e2e 随跑；不声称替代 Java 侧探针、不声称墙钟基准 | 待提交 |
 | KI-407 | coverage 棘轮三出口（0/1/2）全部有测试 + 基线落地 | 07399b9 |
 | Phase C / F3 | Boss 乐句线 HUD：BossPhraseBar.ts + main.ts 接线 + flow 测试 | 08bb3f5 |
 | KI-118 fix | spring-health-check.mjs 移除 shebang（module-loader 门禁） | 0698210 |

@@ -306,6 +306,19 @@ async function main() {
     if (!r.ok) allOk = false
   }
 
+  // RESP/Redis 内核：纯 Node 子进程真 socket 验一轮 selfcheck（server drain + one-write pipeline）
+  // —— 不依赖 Java 服务、不占用端口、~0.3s，是 HTTP 探针之外的非 Java 腿。
+  {
+    const r = spawnSync(process.execPath, [join(ROOT, 'scripts', 'spring-redis-cache.mjs'), 'selfcheck'], {
+      encoding: 'utf8',
+      timeout: 20000,
+    })
+    const ok = r.status === 0 && typeof r.stdout === 'string' && r.stdout.includes('pipeline(PING,SET,GET)')
+    const witness = (typeof r.stdout === 'string' ? r.stdout.split('\n').find((l) => l.includes('pipeline(')) : undefined)?.trim() ?? 'selfcheck 未输出 pipeline 行'
+    console.log(`[e2e-check] 探针 ${ok ? 'pass' : 'FAIL'} — RESP/Redis 内核自检（${witness}）`)
+    if (!ok) allOk = false
+  }
+
   // ── 可选：经网关跑一道真门 ────────────────────────────────────────
   if (runGate) {
     try {
