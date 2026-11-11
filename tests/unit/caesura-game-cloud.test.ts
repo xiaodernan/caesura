@@ -774,4 +774,55 @@ describe('caesura-game-cloud', () => {
     // 主链语义逐字不动
     expect(st.eventChannel).toBeTruthy()
   })
+
+  it('configConsistency:true ⇒ 装配配置一致性三协议、status.configConsistency 读真三协议×六场景矩阵/三难判词/真件交叉印证、惰性同引用（KI-511）', async () => {
+    const gc = createGameCloud({
+      gameId: 'gid7', gamePort: 7737, sources, cloud: fakeCloud(),
+      configConsistency: true, dccNow: () => 9999,
+    })
+    expect(gc.runConfigConsistencyStudy).toBeTypeOf('function')
+    const st = await gc.status()
+    expect(st.configConsistency.builtAt).toBe(9999)
+    expect(st.configConsistency.config.scenarios.length).toBe(6)
+    expect(st.configConsistency.rows.length).toBe(3)
+    expect(st.configConsistency.vectors).toEqual({ Polling: '100', LongPolling: '011', WatchPush: '010' })
+    const polling = st.configConsistency.rows.find((r: any) => r.protocol === 'Polling')
+    const longPolling = st.configConsistency.rows.find((r: any) => r.protocol === 'LongPolling')
+    const watch = st.configConsistency.rows.find((r: any) => r.protocol === 'WatchPush')
+    expect(polling!.scenarios.find((s: any) => s.id === 'idleNoChange')!.idleFetches).toBeGreaterThan(0) // Polling 空转
+    expect(polling!.scenarios.find((s: any) => s.id === 'centerDown')!.degraded).toBe(true)             // Polling 可降级
+    expect(longPolling!.scenarios.find((s: any) => s.id === 'centerDown')!.centerBroken).toBe(true)      // 长轮询中心宕全断
+    expect(watch!.scenarios.find((s: any) => s.id === 'burstChanges')!.versionGaps).toBeGreaterThan(0)   // Watch 广播风暴版本缺口
+    expect(st.configConsistency.crosscheck.configWatcher.seededNoEvents).toBe(true)  // 真 watcher 首趟纯播种
+    expect(st.configConsistency.crosscheck.bus.eventChainWorks).toBe(true)           // 真 bus 事件链
+    expect(st.configConsistency.crosscheck.gray.stableBuckets).toBe(64)              // 真 hashSelector 稳定桶
+    expect(st.configConsistency.verdict.noUniversalWinner).toBe(true)
+    expect(st.configConsistency.verdict.watchNotPanacea).toBe(true)
+    const verdictBools = Object.entries(st.configConsistency.verdict).filter(([k]) => k !== 'vectors').map(([, v]) => v)
+    expect(verdictBools.every(Boolean)).toBe(true)
+    // 惰性缓存：二次 status 同引用
+    expect((await gc.status()).configConsistency).toBe(st.configConsistency)
+    // 现算入口可重跑、确定性（同注入 now）
+    const rerun = await gc.runConfigConsistencyStudy!()
+    expect(rerun.verdict).toEqual(st.configConsistency.verdict)
+  })
+
+  it('configConsistency 默认 null 非破坏；可注入现成 study（KI-511）', async () => {
+    const plain = createGameCloud({ gameId: 'gid8', gamePort: 7738, sources, cloud: fakeCloud() })
+    expect(plain.runConfigConsistencyStudy).toBe(null)
+    const ps = await plain.status()
+    expect(ps.configConsistency).toBe(null)
+    expect(ps.distributedRateLimit).toBe(null) // 不连坐 KI-510
+    // 注入现成 study：直接用、不重跑，builtAt 原样带出、不被 dccNow 覆盖。
+    const { configConsistencyStudy } = await import('../../scripts/caesura-config-consistency.mjs')
+    const study = await configConsistencyStudy({ now: () => 666 }) as any
+    const injected = createGameCloud({
+      gameId: 'gid9', gamePort: 7739, sources, cloud: fakeCloud(),
+      configConsistency: study, dccNow: () => 2222,
+    })
+    const st = await injected.status()
+    expect(st.configConsistency.builtAt).toBe(666)
+    expect(st.configConsistency.verdict.noUniversalWinner).toBe(true)
+    expect(st.eventChannel).toBeTruthy()
+  })
 })

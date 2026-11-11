@@ -373,7 +373,23 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(snap.systems.distributedRateLimit.crosscheck.sharded.skewEmptyNodes).toBeGreaterThan(0) // 真环偏斜
     expect(snap.systems.distributedRateLimit.verdict.shardedNotPanacea).toBe(true)            // Sharded 不是银弹
     expect(snap.systems.distributedRateLimit.verdict.noUniversalWinner).toBe(true)
-    // bootstrap.js 与 snapshot.json 是同一份真快照（含十二维 systems）。
+    // KI-511 configConsistency：三协议 × 六场景矩阵 + 三难判词 + 七枚真件交叉印证真读数已固化进快照。
+    expect(snap.systems.configConsistency.rows.length).toBe(3)
+    expect(snap.systems.configConsistency.config.scenarios.length).toBe(6)
+    const dccP = snap.systems.configConsistency.rows.find((r: any) => r.protocol === 'Polling')!
+    const dccL = snap.systems.configConsistency.rows.find((r: any) => r.protocol === 'LongPolling')!
+    const dccW = snap.systems.configConsistency.rows.find((r: any) => r.protocol === 'WatchPush')!
+    expect(dccP.scenarios.find((s: any) => s.id === 'idleNoChange').idleFetches).toBeGreaterThan(0)  // Polling 空转
+    expect(dccP.scenarios.find((s: any) => s.id === 'centerDown').degraded).toBe(true)              // Polling 可降级
+    expect(dccL.scenarios.find((s: any) => s.id === 'centerDown').centerBroken).toBe(true)           // 长轮询中心宕全断
+    expect(dccW.scenarios.find((s: any) => s.id === 'burstChanges').versionGaps).toBeGreaterThan(0)  // Watch 风暴版本缺口
+    expect(snap.systems.configConsistency.crosscheck.configWatcher.seededNoEvents).toBe(true)        // 真 watcher 首趟纯播种
+    expect(snap.systems.configConsistency.crosscheck.bus.eventChainWorks).toBe(true)                 // 真 bus 事件链
+    expect(snap.systems.configConsistency.crosscheck.gray.stableBuckets).toBe(64)                    // 真 hashSelector 稳定桶
+    expect(snap.systems.configConsistency.verdict.watchNotPanacea).toBe(true)                        // Watch 不是银弹
+    expect(snap.systems.configConsistency.verdict.noUniversalWinner).toBe(true)
+    expect(snap.systems.configConsistency.vectors).toEqual({ Polling: '100', LongPolling: '011', WatchPush: '010' })
+    // bootstrap.js 与 snapshot.json 是同一份真快照（含十三维 systems）。
     const bootCode = readFileSync(resolve(process.cwd(), 'console/bootstrap.js'), 'utf8')
     const fromBoot = JSON.parse(bootCode.slice(bootCode.indexOf('=') + 1).trim().replace(/;\s*$/, ''))
     expect(fromBoot.systems.lsm.speedup).toBe(snap.systems.lsm.speedup)
@@ -388,6 +404,8 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(fromBoot.systems.distributedLock).toEqual(snap.systems.distributedLock)
     expect(fromBoot.systems.idGen).toEqual(snap.systems.idGen)
     expect(fromBoot.systems.distributedRateLimit).toEqual(snap.systems.distributedRateLimit)
+    expect(fromBoot.systems.configConsistency).toEqual(snap.systems.configConsistency) // 第十三维同源
+    expect(Object.keys(fromBoot.systems).sort()).toEqual(Object.keys(snap.systems).sort())
   })
 
   it('⑭ buildMvccTxnReading 真跑五档矩阵形状齐、读数是真判词、单维关闭不连坐（KI-505）', async () => {
@@ -598,5 +616,46 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(sys.distributedLock).toBeTruthy()
     const snap = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, distributedRateLimit: false })
     expect(snap.systems!.distributedRateLimit).toBe(null)
+  })
+
+  it('㉛ buildConfigConsistencyReading 真跑三协议×六场景矩阵 + 七枚真件交叉印证、注入时钟/规模生效、单维关闭不连坐（KI-511）', async () => {
+    const { buildConfigConsistencyReading, buildSystems, buildSnapshot } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 9393
+    const reading = (await buildConfigConsistencyReading({ dccClients: 8 }, now)) as NonNullable<Awaited<ReturnType<typeof buildConfigConsistencyReading>>>
+    expect(reading).not.toBe(null)
+    expect(reading.vectors).toEqual({ Polling: '100', LongPolling: '011', WatchPush: '010' })
+    for (const row of reading.rows) {
+      expect(row.scenarios.length).toBe(6)
+      expect(typeof row.totals.connections).toBe('number')
+      expect(typeof row.trilemma.degradeOnCenterDown).toBe('boolean')
+      for (const s of row.scenarios) {
+        expect(typeof s.versionGaps).toBe('number')   // 三协议专有病征读数形状齐
+        expect(typeof s.idleFetches).toBe('number')
+      }
+    }
+    const polling = reading.rows.find((r) => r.protocol === 'Polling')!
+    const longPolling = reading.rows.find((r) => r.protocol === 'LongPolling')!
+    const watch = reading.rows.find((r) => r.protocol === 'WatchPush')!
+    expect(polling.scenarios.find((s) => s.id === 'idleNoChange')!.idleFetches).toBeGreaterThan(0)
+    expect(longPolling.scenarios.find((s) => s.id === 'centerDown')!.centerBroken).toBe(true)
+    expect(watch.scenarios.find((s) => s.id === 'burstChanges')!.versionGaps).toBeGreaterThan(0)
+    // 七枚真件交叉印证
+    expect(reading.crosscheck.configServer.stateIsNull).toBe(true)
+    expect(reading.crosscheck.configWatcher.seededNoEvents).toBe(true)
+    expect(reading.crosscheck.bus.eventChainWorks).toBe(true)
+    expect(reading.crosscheck.gray.stableBuckets).toBe(64)
+    expect(reading.crosscheck.guard.monotonic).toBe(true)
+    expect(reading.crosscheck.redisCache.expiredCount).toBeGreaterThan(0)
+    expect(typeof reading.crosscheck.ring.emptyNodes).toBe('number')
+    expect(reading.verdict.watchNotPanacea).toBe(true)
+    expect(reading.verdict.noUniversalWinner).toBe(true)
+    expect(reading.builtAt).toBe(9393)
+    // 单维关闭落 null，不连坐其它维
+    const sys = await buildSystems({ now, configConsistency: false })
+    expect(sys.configConsistency).toBe(null)
+    expect(sys.distributedRateLimit).toBeTruthy() // 不连坐 KI-510
+    expect(sys.idGen).toBeTruthy()
+    const snap = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, configConsistency: false })
+    expect(snap.systems!.configConsistency).toBe(null)
   })
 })

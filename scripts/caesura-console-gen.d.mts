@@ -329,7 +329,39 @@ export interface DistributedRateLimitReading {
   builtAt: number
 }
 
-/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流）。 */
+/** KI-511：分布式配置一致性三协议（轮询 / 长轮询 / watch 推送）六场景矩阵 + 三难判词 + 真 Config响应/watcher/bus/hashSelector/XFetch/RedisTTL/环交叉印证。 */
+export interface ConfigConsistencyReading {
+  config: Record<string, any>
+  rows: Array<{
+    protocol: string
+    trilemma: { degradeOnCenterDown: boolean; noIdleOverhead: boolean; instantPerceive: boolean }
+    totals: {
+      perceivedDelaySum: number; idleFetches: number; connections: number; reconnects: number
+      versionGaps: number; staleClients: number; degradedScenarios: number; centerBrokenScenarios: number
+    }
+    scenarios: Array<{
+      id: string; clients: number; detectedAt: number | null; perceivedDelay: number
+      idleFetches: number; connections: number; reconnects: number; versionGaps: number
+      staleClients: number; degraded: boolean; centerBroken: boolean; changes: number; coalesced: number
+      degradeOnCenterDown: boolean; noIdleOverhead: boolean; instantPerceive: boolean
+    }>
+  }>
+  vectors: Record<string, string>
+  crosscheck: {
+    configServer: Record<string, any>
+    configWatcher: Record<string, any>
+    bus: Record<string, any>
+    gray: Record<string, any>
+    guard: Record<string, any>
+    redisCache: Record<string, any>
+    ring: Record<string, any>
+  }
+  verdict: Record<string, any>
+  topology: Record<string, any>
+  builtAt: number
+}
+
+/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性）。 */
 export interface SystemsBlock {
   lsm: LsmReading | null
   hw: HwReading | null
@@ -343,6 +375,7 @@ export interface SystemsBlock {
   distributedLock: DistributedLockReading | null
   idGen: IdGenReading | null
   distributedRateLimit: DistributedRateLimitReading | null
+  configConsistency: ConfigConsistencyReading | null
   builtAt: number
 }
 
@@ -409,9 +442,13 @@ export function buildSnapshot(opts?: {
   drlInstances?: number
   drlShards?: number
   drlCapacity?: number
+  /** KI-511：false 关掉配置一致性维（兼容旧快照）；dccClients/dccPollIntervalMs 注入规模与轮询周期。 */
+  configConsistency?: boolean
+  dccClients?: number
+  dccPollIntervalMs?: number
 }): Promise<ConsoleSnapshot>
 
-/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 十二维系统读数；击穿并发 ⇒ async。 */
+/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 十三维系统读数；击穿并发 ⇒ async。 */
 export function buildSystems(opts?: {
   now?: () => number
   lsmKeys?: number
@@ -452,6 +489,10 @@ export function buildSystems(opts?: {
   drlInstances?: number
   drlShards?: number
   drlCapacity?: number
+  /** KI-511：false 关掉配置一致性维（兼容旧快照）；dccClients/dccPollIntervalMs 注入规模与轮询周期。 */
+  configConsistency?: boolean
+  dccClients?: number
+  dccPollIntervalMs?: number
 }): Promise<SystemsBlock>
 
 /** KI-501：真跑缓存防护三件套（击穿/穿透/雪崩）收敛成前端三面板紧凑读数；单维失败落 null。 */
@@ -532,6 +573,14 @@ export function buildDistributedRateLimitReading(opts: {
   drlShards?: number
   drlCapacity?: number
 }, now: () => number): Promise<DistributedRateLimitReading | null>
+
+/** KI-511：真跑配置一致性（轮询 / 长轮询 / watch 推送 × 六场景矩阵 + 三难判词 + 真 Config响应/watcher/bus/hashSelector/XFetch/RedisTTL/环交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
+export function buildConfigConsistencyReading(opts: {
+  now?: () => number
+  configConsistency?: boolean
+  dccClients?: number
+  dccPollIntervalMs?: number
+}, now: () => number): Promise<ConfigConsistencyReading | null>
 
 export function realScenarioOpts(id: string): Record<string, any>
 

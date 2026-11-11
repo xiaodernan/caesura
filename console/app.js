@@ -50,6 +50,7 @@
       renderDistributedLock(snap.systems ? snap.systems.distributedLock : null)
       renderIdGen(snap.systems ? snap.systems.idGen : null)
       renderDistributedRateLimit(snap.systems ? snap.systems.distributedRateLimit : null)
+      renderConfigConsistency(snap.systems ? snap.systems.configConsistency : null)
       setLive(true, result.source)
     }).catch(function (e) {
       setLive(false, 'error')
@@ -1500,6 +1501,128 @@
       '环偏斜 + key 倾斜两个独立成因都致热片先耗尽冷片有余（完美均匀的环也救不了「同 key 必落同片」），且仍吃中心 RTT。' +
       '真依赖交叉印证取 createRedisTokenBucket 原子/非原子 + createHashRing 分布/重映射真读数；可证伪（rigged 单实例 + 中心在线 + ' +
       '完美均匀 + key 均衡后三协议全退化为 111、三判词翻 false）。全为确定性故障场景结构计数、非墙钟/QPS/吞吐/真 Redis 跑分；换场景结论会变，不封赢家。'
+  }
+
+  /* ---------- KI-511 分布式配置一致性：轮询 / 长轮询 / watch 推送 三协议诚实权衡（前端只读 Node 快照） ---------- */
+  function renderConfigConsistency(dcc) {
+    renderDccMatrix(dcc && dcc.rows, dcc && dcc.config)
+    renderDccLadder(dcc && dcc.rows)
+    renderDccTrilemma(dcc && dcc.rows, dcc && dcc.verdict, dcc && dcc.crosscheck)
+  }
+
+  function dccMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">无' + esc(label) + '读数</div>'
+    if (note) note.textContent = 'systems.configConsistency 缺失 —— 重跑 npm run console:data 采集真判词'
+  }
+
+  // 每格读 Node 侧真判词：成=即时省连接 / 空=无变更空转 / 迟=0~T 感知延迟 / 断=中心宕全断 / 缺=广播风暴版本缺口 / 连=常驻连接（不复核）。
+  function dccState(s) {
+    if (!s) return { cls: '', ch: '—' }
+    if (s.centerBroken === true) return { cls: 'degrade', ch: '断' }
+    if (isNum(s.versionGaps) && s.versionGaps > 0) return { cls: 'frag', ch: '缺' }
+    if (isNum(s.idleFetches) && s.idleFetches > 0) return { cls: 'over', ch: '空' }
+    if (isNum(s.perceivedDelay) && s.perceivedDelay > 0) return { cls: 'lag', ch: '迟' }
+    if (isNum(s.connections) && s.connections > 0) return { cls: 'ok', ch: '连' }
+    return { cls: '', ch: '?' }
+  }
+
+  function renderDccMatrix(rows, config) {
+    var box = $('#dcc-matrix'), note = $('#dcc-matrix-note')
+    if (!Array.isArray(rows) || !rows.length || !config || !Array.isArray(config.scenarios)) {
+      dccMissing(box, note, '三协议场景矩阵'); return
+    }
+    var scenarios = config.scenarios
+    var head = '<div class="dcc-mat-row dcc-mat-head"><span class="dcc-mat-proto">协议</span>' +
+      scenarios.map(function (s) { return '<span class="dcc-sc">' + esc(s) + '</span>' }).join('') +
+      '<span class="dcc-mat-cost">连接</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (s) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === s }) : null
+        var st = dccState(cell)
+        return '<span class="dcc-cell ' + st.cls + '" data-p="' + esc(row.protocol) + '" data-s="' + esc(s) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var t = row.totals || {}
+      return '<div class="dcc-mat-row" data-p="' + esc(row.protocol) + '">' +
+        '<span class="dcc-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="dcc-mat-cost"><b>' + esc(fmt(t.connections)) + '</b></span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = '同一组确定性故障场景（全成功 / 变更贴脸 / 长空闲无变更 / 中心宕机 / 密集变更风暴 / 海量客户端）分喂三协议：' +
+      'Polling 每 T 秒拉全量快照、服务端无状态、中心宕持旧快照续命，但 0~T 感知延迟 + 无变更也空转；LongPolling 挂起请求、变更近零延迟 + 无变更零空转，' +
+      '但每客户端常驻挂起连接、空闲超时重连、中心宕则挂起全断；WatchPush 真 bus 事件链主动广播、变更即时 + 连接按需稳态复用，' +
+      '但客户端须可寻址注册（中心一挂全断）、广播风暴须削峰（合并延迟 + 版本号兜底 reorder/丢失）—— Watch 不是银弹（缺可降级 + 即时两维）。' +
+      '连接/延迟/缺口均结构计数、非墙钟/QPS/字节/真 socket 跑分。'
+  }
+
+  function renderDccLadder(rows) {
+    var box = $('#dcc-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.totals && isNum(r.totals.connections) ? r.totals.connections : 0 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var t = r.totals || {}
+      var w = isNum(t.connections) ? Math.round(t.connections / max * 100) : 0
+      return '<div class="dcc-line" data-p="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="dcc-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">空' + esc(fmt(t.idleFetches)) + ' · 迟' + esc(fmt(t.perceivedDelaySum)) + ' · 缺' + esc(fmt(t.versionGaps)) + ' · 连' + esc(fmt(t.connections)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderDccTrilemma(rows, verdict, crosscheck) {
+    var box = $('#dcc-trilemma'), cxBox = $('#dcc-crosscheck'), note = $('#dcc-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      dccMissing(box, note, '三难判据'); if (cxBox) cxBox.innerHTML = ''; return
+    }
+    var flags = [['degradeOnCenterDown', '中心宕可降级'], ['noIdleOverhead', '无空闲轮询开销'], ['instantPerceive', '变更即时感知']]
+    var head = '<div class="dcc-vec dcc-vec-head"><span class="proto">协议</span>' +
+      flags.map(function (f) { return '<span>' + f[1] + '</span>' }).join('') + '</div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (f) {
+        var yes = t[f[0]] === true
+        return '<span class="dcc-flag ' + (yes ? 'yes' : 'no') + '" data-p="' + esc(r.protocol) + '" data-k="' + f[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      return '<div class="dcc-vec" data-p="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells + '</div>'
+    }).join('')
+    box.innerHTML = head + body
+    // 真依赖交叉印证：七枚真件读数（Config 快照 / watcher 首趟 / bus 事件链 / hashSelector 稳定桶 / XFetch / RedisTTL / 环分布）。
+    if (cxBox) {
+      var cs = crosscheck && crosscheck.configServer, cw = crosscheck && crosscheck.configWatcher
+      var bu = crosscheck && crosscheck.bus, gr = crosscheck && crosscheck.gray
+      var gd = crosscheck && crosscheck.guard, rc = crosscheck && crosscheck.redisCache, ri = crosscheck && crosscheck.ring
+      if (cs && cw && bu && gr && gd && rc && ri) {
+        cxBox.innerHTML = '<div>真 Config Server 响应 · version <b>' + esc(String(cs.responseVersion)) + '</b>、state=null <b>' + (cs.stateIsNull ? '✓' : '✗') +
+          '</b>（即时快照、不热刷新）· app-profile 优先级版本 <b>' + esc(String(cs.pickedPriorityVersion)) + '</b> · 版本链单调 ' + (cs.versionChainMonotonic ? '✓' : '✗') + '</div>' +
+          '<div>真 <b>startConfigWatcher</b> 首趟 <span class="jade-t">纯 mtime 播种</span>：不读内容 ' + (cw.contentLoadedOnFirstPass ? '✗' : '✓') +
+          ' · onChange/bus 事件 <b>' + esc(fmt(cw.firstPassOnChange)) + '/' + esc(fmt(cw.firstPassBusEvents)) + '</b> ⇒ 生产 Config 也是轮询</div>' +
+          '<div>真 <b>createBus</b> 事件链 <span class="jade-t">' + (bu.eventChainWorks ? '✓ 通' : '✗') + '</span> · 真 <b>hashSelector</b> 稳定桶 <b>' +
+          esc(fmt(gr.stableBuckets)) + '/' + esc(fmt(gr.keys)) + '</b> · 真 <b>XFetch</b> 单调 ' + (gd.monotonic ? '✓' : '✗') + '</div>' +
+          '<div>真 <b>RedisCache</b> 越过 TTL 惰性失效 <b>' + esc(fmt(rc.expiredCount)) + '</b> · 真 <b>HashRing</b> fanout 分布空片 ' + esc(fmt(ri.emptyNodes)) +
+          ' · 命中极差 ' + esc(fmt(ri.spread)) + ' · balanceRatio ' + esc(fmt(ri.balanceRatio)) + '</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">无真件交叉印证读数（七块缺任一即各自降级）</div>'
+      }
+    }
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var notPanacea = v.watchNotPanacea === true
+    var chips = [
+      '<span class="chip" data-probe="dccPolling"><b>Polling</b> 0~T 延迟 ' + (v.pollingLags ? '✓' : '未现') + ' · 空转 ' + (v.pollingIdles ? '✓' : '未现') + ' · 中心宕可降级</span>',
+      '<span class="chip" data-probe="dccLongPolling"><b>LongPolling</b> 常驻连接 ' + (v.longPollingHoldsConnections ? '✓' : '✗') + ' · 超时重连 ' + (v.longPollingReconnects ? '✓' : '✗') + ' · 中心宕全断</span>',
+      '<span class="chip" data-probe="dccWatch"><b>WatchPush</b> 须可寻址 ' + (v.watchNeedsAddressing ? '✓' : '✗') + ' · 风暴版本缺口 ' + (v.watchVersionGaps ? '✓' : '未现') + '</span>',
+      '<span class="chip ' + (notPanacea ? 'jade-t' : 'muted-t') + '" data-verdict="watchNotPanacea">' +
+        (notPanacea ? '✓ Watch 不是银弹（缺中心宕可降级 + 变更即时两维）' : 'Watch 全占（换场景会翻）') + '</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' +
+        (noWin ? '✓ 不封任何协议全局赢家' : '本配置下归一（换场景会翻）') + '</span>',
+    ]
+    var probes = $('#dcc-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '三难 = 中心宕机可降级（中心挂了还能用旧配置撑）∧ 无空闲轮询开销（无变更零空转/零全量拉取）∧ 变更即时感知。' +
+      '真实向量 Polling=100 / LongPolling=011 / WatchPush=010 三条互不相同、没有一条三个全占（不预设各恰好缺一）：Polling 唯一可降级但缺「无空闲 + 即时」两难；' +
+      'LongPolling 即时 + 零空转但缺「可降级」一难（中心宕则挂起全断）；WatchPush 零空转但缺「可降级 + 即时」两难（中心须可寻址注册、风暴削峰合并延迟 + 版本号兜底）。' +
+      '判定正交化：centerDown 只罚可降级、不连带罚即时。真依赖交叉印证取七枚真件读数；可证伪（rigged 轮询瞬时 + 中心恒在线 + 无风暴 + 六场景 fault 全空后三协议全退化为 111、三判词翻 false）。' +
+      '全为确定性故障场景结构计数、非墙钟/QPS/字节/真 socket 跑分；换场景结论会变，不封赢家。'
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)

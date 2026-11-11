@@ -102,6 +102,9 @@ export function runMeshE2E(opts = {}) {
     // KI-510：分布式限流三协议（distributedRateLimit=true 装配；只读 本地桶/中心桶/分片桶 × 六场景矩阵 + 三难判词 + 真 Redis 原子桶/真环交叉印证，不改调用路径）。
     distributedRateLimit: opts.distributedRateLimit,
     drNow: opts.drNow,
+    // KI-511：分布式配置一致性三协议（configConsistency=true 装配；只读 轮询/长轮询/watch 推送 × 六场景矩阵 + 三难判词 + 真 Config响应/watcher/bus/环交叉印证，不改调用路径）。
+    configConsistency: opts.configConsistency,
+    dccNow: opts.dccNow,
     sources: {
       eureka: () => (opts.svcA ?? [{ id: 'svc-a:1', name: 'svc-a', address: '10.0.0.1', port: 8080, healthy: true }]),
       k8s: () => k8s.discover('caesura-gate'),
@@ -234,6 +237,7 @@ export function runMeshE2E(opts = {}) {
         distributedLockSnapshot: status.distributedLock ?? null,
         idGenSnapshot: status.idGen ?? null,
         distributedRateLimitSnapshot: status.distributedRateLimit ?? null,
+        configConsistencySnapshot: status.configConsistency ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
       }
@@ -368,6 +372,18 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         noUniversalWinner: r.distributedRateLimitSnapshot.verdict.noUniversalWinner,
         crosscheck: r.distributedRateLimitSnapshot.crosscheck,
         verdict: r.distributedRateLimitSnapshot.verdict,
+      } : null,
+      configConsistency: r.configConsistencySnapshot ? {
+        protocols: r.configConsistencySnapshot.rows.map((row) => ({
+          protocol: row.protocol,
+          ladder: row.scenarios.map((s) => s.id + ':' + (s.centerBroken ? '断' : s.versionGaps > 0 ? '缺' : s.idleFetches > 0 ? '空' : s.perceivedDelay > 0 ? '迟' : s.connections > 0 ? '连' : '成')).join(' → '),
+          totals: row.totals, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.configConsistencySnapshot.rows.map((row) => [row.protocol,
+          `${Number(row.trilemma.degradeOnCenterDown)}${Number(row.trilemma.noIdleOverhead)}${Number(row.trilemma.instantPerceive)}`])),
+        noUniversalWinner: r.configConsistencySnapshot.verdict.noUniversalWinner,
+        crosscheck: r.configConsistencySnapshot.crosscheck,
+        verdict: r.configConsistencySnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

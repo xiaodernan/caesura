@@ -209,5 +209,28 @@ export function runMeshE2E(opts?: any): {
       topology: Record<string, any>
       builtAt: number
     } | null
+    /** KI-511：分布式配置一致性三协议快照（轮询/长轮询/watch 推送 × 六场景 + 三难判词 + 真 Config响应/watcher/bus/hashSelector/XFetch/RedisTTL/环交叉印证），未配 configConsistency 为 null */
+    configConsistencySnapshot: {
+      config: Record<string, any>
+      rows: Array<{
+        protocol: string
+        trilemma: { degradeOnCenterDown: boolean; noIdleOverhead: boolean; instantPerceive: boolean }
+        totals: {
+          perceivedDelaySum: number; idleFetches: number; connections: number; reconnects: number
+          versionGaps: number; staleClients: number; degradedScenarios: number; centerBrokenScenarios: number
+        }
+        scenarios: Array<{
+          id: string; clients: number; detectedAt: number | null; perceivedDelay: number
+          idleFetches: number; connections: number; reconnects: number; versionGaps: number
+          staleClients: number; degraded: boolean; centerBroken: boolean; changes: number; coalesced: number
+          degradeOnCenterDown: boolean; noIdleOverhead: boolean; instantPerceive: boolean
+        }>
+      }>
+      vectors: Record<string, string>
+      crosscheck: Record<string, Record<string, any>>
+      verdict: Record<string, any>
+      topology: Record<string, any>
+      builtAt: number
+    } | null
   }>
 }

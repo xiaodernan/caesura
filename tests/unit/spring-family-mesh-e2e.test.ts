@@ -530,4 +530,34 @@ describe('spring-family-mesh-e2e', () => {
     expect(plain.distributedRateLimitSnapshot).toBe(null)
     expect(plain.idGenSnapshot).toBe(null)
   })
+
+  it('e2e KI-511：configConsistency=true ⇒ 主链照常跑通，configConsistencySnapshot 带三协议×六场景矩阵/三难判词/真件交叉印证', async () => {
+    const e = runMeshE2E({ configConsistency: true, dccNow: () => 7777 })
+    const r = await e.run()
+    expect(r.started?.registered).toBe(true)          // 主链语义逐字不动
+    expect(r.callRes?.ok).toBe(true)
+    const d = r.configConsistencySnapshot
+    expect(d).not.toBe(null)
+    expect(d!.builtAt).toBe(7777)
+    expect(d!.config.scenarios.length).toBe(6)
+    expect(d!.rows.length).toBe(3)
+    expect(d!.vectors).toEqual({ Polling: '100', LongPolling: '011', WatchPush: '010' })
+    const polling = d!.rows.find((row: any) => row.protocol === 'Polling')!
+    const longPolling = d!.rows.find((row: any) => row.protocol === 'LongPolling')!
+    const watch = d!.rows.find((row: any) => row.protocol === 'WatchPush')!
+    expect(polling.scenarios.find((s: any) => s.id === 'idleNoChange')!.idleFetches).toBeGreaterThan(0)
+    expect(longPolling.scenarios.find((s: any) => s.id === 'centerDown')!.centerBroken).toBe(true)
+    expect(watch.scenarios.find((s: any) => s.id === 'burstChanges')!.versionGaps).toBeGreaterThan(0)
+    expect(d!.crosscheck.configWatcher.seededNoEvents).toBe(true)   // 真 watcher 首趟纯播种透传
+    expect(d!.crosscheck.bus.eventChainWorks).toBe(true)            // 真 bus 事件链透传
+    expect(d!.crosscheck.gray.stableBuckets).toBe(64)               // 真 hashSelector 透传
+    expect(d!.verdict.noUniversalWinner).toBe(true)
+    expect(d!.verdict.watchNotPanacea).toBe(true)
+    const verdictBools = Object.entries(d!.verdict).filter(([k]) => k !== 'vectors').map(([, v]) => v)
+    expect(verdictBools.every(Boolean)).toBe(true)
+    // 未配 configConsistency 时为 null（非破坏、不连坐 KI-510）。
+    const plain = await runMeshE2E().run()
+    expect(plain.configConsistencySnapshot).toBe(null)
+    expect(plain.distributedRateLimitSnapshot).toBe(null)
+  })
 })

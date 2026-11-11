@@ -32,6 +32,7 @@
     "dlock:bench": "node scripts/caesura-distributed-lock.mjs",
     "idgen:bench": "node scripts/caesura-idgen.mjs",
     "ratelimit:cluster:bench": "node scripts/caesura-distributed-ratelimit.mjs",
+    "config:consistency:bench": "node scripts/caesura-config-consistency.mjs",
     "status": "node scripts/phase-status.mjs",
     "status:embed": "node scripts/phase-status-embed.mjs",
     "release": "node scripts/release.mjs",

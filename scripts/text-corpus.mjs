@@ -14,7 +14,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { mojibakeFindings, strayControlFindings } from './text-integrity.mjs'
 
 /**
- * 总体 = 这四棵树加仓库根的**具名散文件**：交付的东西都在这里，旁路目录不算交付。
+ * 总体 = 这六棵树加仓库根的**具名散文件**：交付的东西都在这里，旁路目录不算交付。
  *
  * 这一张名单原本是五棵树（多一个 `tools`），2026-10-02 实测**它不存在**——而一个不存在的目录名
  * 在这道门里是静默的：它既不进名册也不报错，"总体"就这样少了一棵树而没人知道。所以这里按 §55
@@ -26,8 +26,14 @@ import { mojibakeFindings, strayControlFindings } from './text-integrity.mjs'
  * 「交付总体是『玩家拿到的产物要读的东西』，CI YAML 读的是源码，不读玩家」；而 `services/` 里住的是
  * **会被玩家/CI 真正调用**的服务代码与它的契约（它自己带一份真 HTTP 门），那份契约里的中文与按号引用
  * 同样要有人扫。**登记进总体而不是登记成洞** ⇒ 按号那一族的三道门从此也看得见这棵树里的引用。
+ *
+ * **第六棵树 `console`（KI-511，2026-11-11）**：零框架/零 CDN 静态前端交付件（`index.html` /
+ * `styles.css` / `app.js` / `snapshot.json` / `bootstrap.js`）——**玩家真正打开、要读的东西**，是交付总体的
+ * 正中目标而非旁路。它带 `KI-` 溯源注释（面板是哪个 KI 落的、真快照哪一维来自哪条判词），这些按号引用
+ * 与 `services/` 同理该被按号那一族门走查；登记进总体而不是登记成洞 ⇒ 「交付总体里只有一套号」这句话
+ * 从此也管得到前端，**再也不会有一棵带着按号引用的已入库目录悄悄落在走查面之外**。
  */
-export const CORPUS_DIRS = ['docs', 'src', 'tests', 'scripts', 'services']
+export const CORPUS_DIRS = ['docs', 'src', 'tests', 'scripts', 'services', 'console']
 
 /**
  * 跳过的目录名。**每一条都要能回答"仓库里还有谁经过它"**，所以这些名字全是构建产物 / 依赖 / 一次性平面，

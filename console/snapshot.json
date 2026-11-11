@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794359109417,
+  "generatedAt": 1794360452689,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1365,12 +1365,12 @@
           "keys": 1,
           "versions": 2,
           "commitLogSize": 1,
-          "now": 1794359109395
+          "now": 1794360452657
         },
         "final": {
           "A": {
             "value": 101,
-            "commitTs": 1794359109395,
+            "commitTs": 1794360452657,
             "tombstone": false
           }
         }
@@ -3646,7 +3646,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794359109403,
+                "lastTimestamp": 1794360452665,
                 "workerId": 1
               },
               "fault": {
@@ -3742,7 +3742,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794359109403,
+                "lastTimestamp": 1794360452665,
                 "workerId": 1
               },
               "fault": {
@@ -3774,7 +3774,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794359109404,
+                "lastTimestamp": 1794360452666,
                 "workerId": 1
               },
               "fault": {
@@ -3806,7 +3806,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794359109403,
+                "lastTimestamp": 1794360452665,
                 "workerId": 1
               },
               "fault": {
@@ -4522,8 +4522,506 @@
         "capacity": 8,
         "perShardCap": 2
       },
-      "builtAt": 1794359109417
+      "builtAt": 1794360452678
     },
-    "builtAt": 1794359109417
+    "configConsistency": {
+      "config": {
+        "seed": 511,
+        "clients": 8,
+        "manyClients": 200,
+        "pollIntervalMs": 1000,
+        "windowMs": 10000,
+        "rigged": false,
+        "scenarios": [
+          "allOk",
+          "quickChange",
+          "idleNoChange",
+          "centerDown",
+          "burstChanges",
+          "manyClients"
+        ]
+      },
+      "rows": [
+        {
+          "protocol": "Polling",
+          "scenarios": [
+            {
+              "id": "allOk",
+              "clients": 8,
+              "detectedAt": 5393.503,
+              "perceivedDelay": 392.503,
+              "idleFetches": 9,
+              "connections": 0,
+              "reconnects": 0,
+              "versionGaps": 0,
+              "staleClients": 4,
+              "degraded": false,
+              "centerBroken": false,
+              "changes": 1,
+              "coalesced": 0,
+              "degradeOnCenterDown": true,
+              "noIdleOverhead": false,
+              "instantPerceive": false
+            },
+            {
+              "id": "quickChange",
+              "clients": 8,
+              "detectedAt": 1393.503,
+              "perceivedDelay": 392.503,
+              "idleFetches": 9,
+              "connections": 0,
+              "reconnects": 0,
+              "versionGaps": 0,
+              "staleClients": 4,
+              "degraded": false,
+              "centerBroken": false,
+              "changes": 1,
+              "coalesced": 0,
+              "degradeOnCenterDown": true,
+              "noIdleOverhead": false,
+              "instantPerceive": false
+            },
+            {
+              "id": "idleNoChange",
+              "clients": 8,
+              "detectedAt": null,
+              "perceivedDelay": 0,
+              "idleFetches": 10,
+              "connections": 0,
+              "reconnects": 0,
+              "versionGaps": 0,
+              "staleClients": 0,
+              "degraded": false,
+              "centerBroken": false,
+              "changes": 0,
+              "coalesced": 0,
+              "degradeOnCenterDown": true,
+              "noIdleOverhead": false,
+              "instantPerceive": true
+            },
+            {
+              "id": "centerDown",
+              "clients": 8,
+              "detectedAt": 7143.503,
+              "perceivedDelay": 2142.503,
+              "idleFetches": 9,
+              "connections": 0,
+              "reconnects": 0,
+              "versionGaps": 0,
+              "staleClients": 8,
+              "degraded": true,
+              "centerBroken": false,
+              "changes": 1,
+              "coalesced": 0,
+              "degradeOnCenterDown": true,
+              "noIdleOverhead": false,
+              "instantPerceive": true
+            },
+            {
+              "id": "burstChanges",
+              "clients": 8,
+              "detectedAt": 5028.9197,
+              "perceivedDelay": 478.9197,
+              "idleFetches": 0,
+              "connections": 0,
+              "reconnects": 0,
+              "versionGaps": 0,
+              "staleClients": 4,
+              "degraded": false,
+              "centerBroken": false,
+              "changes": 12,
+              "coalesced": 0,
+              "degradeOnCenterDown": true,
+              "noIdleOverhead": true,
+              "instantPerceive": false
+            },
+            {
+              "id": "manyClients",
+              "clients": 200,
+              "detectedAt": 5516.3198,
+              "perceivedDelay": 515.3198,
+              "idleFetches": 9,
+              "connections": 0,
+              "reconnects": 0,
+              "versionGaps": 0,
+              "staleClients": 100,
+              "degraded": false,
+              "centerBroken": false,
+              "changes": 1,
+              "coalesced": 0,
+              "degradeOnCenterDown": true,
+              "noIdleOverhead": false,
+              "instantPerceive": false
+            }
+          ],
+          "totals": {
+            "perceivedDelaySum": 3921.7484999999997,
+            "idleFetches": 46,
+            "connections": 0,
+            "reconnects": 0,
+            "versionGaps": 0,
+            "staleClients": 120,
+            "degradedScenarios": 1,
+            "centerBrokenScenarios": 0
+          },
+          "trilemma": {
+            "degradeOnCenterDown": true,
+            "noIdleOverhead": false,
+            "instantPerceive": false
+          }
+        },
+        {
+          "protocol": "LongPolling",
+          "scenarios": [
+            {
+              "id": "allOk",
+              "clients": 8,
+              "detectedAt": 5001,
+              "perceivedDelay": 0,
+              "idleFetches": 0,
+              "connections": 8,
+              "reconnects": 5,
+              "versionGaps": 0,
+              "staleClients": 0,
+              "degraded": false,
+              "centerBroken": false,
+              "changes": 1,
+              "coalesced": 0,
+              "degradeOnCenterDown": true,
+              "noIdleOverhead": true,
+              "instantPerceive": true
+            },
+            {
+              "id": "quickChange",
+              "clients": 8,
+              "detectedAt": 1001,
+              "perceivedDelay": 0,
+              "idleFetches": 0,
+              "connections": 8,
+              "reconnects": 5,
+              "versionGaps": 0,
+              "staleClients": 0,
+              "degraded": false,
+              "centerBroken": false,
+              "changes": 1,
+              "coalesced": 0,
+              "degradeOnCenterDown": true,
+              "noIdleOverhead": true,
+              "instantPerceive": true
+            },
+            {
+              "id": "idleNoChange",
+              "clients": 8,
+              "detectedAt": null,
+              "perceivedDelay": 0,
+              "idleFetches": 0,
+              "connections": 8,
+              "reconnects": 5,
+              "versionGaps": 0,
+              "staleClients": 0,
+              "degraded": false,
+              "centerBroken": false,
+              "changes": 0,
+              "coalesced": 0,
+              "degradeOnCenterDown": true,
+              "noIdleOverhead": true,
+              "instantPerceive": true
+            },
+            {
+              "id": "centerDown",
+              "clients": 8,
+              "detectedAt": 5001,
+              "perceivedDelay": 0,
+              "idleFetches": 0,
+              "connections": 8,
+              "reconnects": 5,
+              "versionGaps": 0,
+              "staleClients": 8,
+              "degraded": false,
+              "centerBroken": true,
+              "changes": 1,
+              "coalesced": 0,
+              "degradeOnCenterDown": false,
+              "noIdleOverhead": true,
+              "instantPerceive": true
+            },
+            {
+              "id": "burstChanges",
+              "clients": 8,
+              "detectedAt": 4000,
+              "perceivedDelay": 0,
+              "idleFetches": 0,
+              "connections": 8,
+              "reconnects": 5,
+              "versionGaps": 0,
+              "staleClients": 0,
+              "degraded": false,
+              "centerBroken": false,
+              "changes": 12,
+              "coalesced": 0,
+              "degradeOnCenterDown": true,
+              "noIdleOverhead": true,
+              "instantPerceive": true
+            },
+            {
+              "id": "manyClients",
+              "clients": 200,
+              "detectedAt": 5001,
+              "perceivedDelay": 0,
+              "idleFetches": 0,
+              "connections": 200,
+              "reconnects": 5,
+              "versionGaps": 0,
+              "staleClients": 0,
+              "degraded": false,
+              "centerBroken": false,
+              "changes": 1,
+              "coalesced": 0,
+              "degradeOnCenterDown": true,
+              "noIdleOverhead": true,
+              "instantPerceive": true
+            }
+          ],
+          "totals": {
+            "perceivedDelaySum": 0,
+            "idleFetches": 0,
+            "connections": 240,
+            "reconnects": 30,
+            "versionGaps": 0,
+            "staleClients": 8,
+            "degradedScenarios": 0,
+            "centerBrokenScenarios": 1
+          },
+          "trilemma": {
+            "degradeOnCenterDown": false,
+            "noIdleOverhead": true,
+            "instantPerceive": true
+          }
+        },
+        {
+          "protocol": "WatchPush",
+          "scenarios": [
+            {
+              "id": "allOk",
+              "clients": 8,
+              "detectedAt": 5001,
+              "perceivedDelay": 0,
+              "idleFetches": 0,
+              "connections": 8,
+              "reconnects": 0,
+              "versionGaps": 0,
+              "staleClients": 0,
+              "degraded": false,
+              "centerBroken": false,
+              "changes": 1,
+              "coalesced": 0,
+              "degradeOnCenterDown": true,
+              "noIdleOverhead": true,
+              "instantPerceive": true
+            },
+            {
+              "id": "quickChange",
+              "clients": 8,
+              "detectedAt": 1001,
+              "perceivedDelay": 0,
+              "idleFetches": 0,
+              "connections": 8,
+              "reconnects": 0,
+              "versionGaps": 0,
+              "staleClients": 0,
+              "degraded": false,
+              "centerBroken": false,
+              "changes": 1,
+              "coalesced": 0,
+              "degradeOnCenterDown": true,
+              "noIdleOverhead": true,
+              "instantPerceive": true
+            },
+            {
+              "id": "idleNoChange",
+              "clients": 8,
+              "detectedAt": null,
+              "perceivedDelay": 0,
+              "idleFetches": 0,
+              "connections": 8,
+              "reconnects": 0,
+              "versionGaps": 0,
+              "staleClients": 0,
+              "degraded": false,
+              "centerBroken": false,
+              "changes": 0,
+              "coalesced": 0,
+              "degradeOnCenterDown": true,
+              "noIdleOverhead": true,
+              "instantPerceive": true
+            },
+            {
+              "id": "centerDown",
+              "clients": 8,
+              "detectedAt": 5001,
+              "perceivedDelay": 0,
+              "idleFetches": 0,
+              "connections": 8,
+              "reconnects": 0,
+              "versionGaps": 0,
+              "staleClients": 8,
+              "degraded": false,
+              "centerBroken": true,
+              "changes": 1,
+              "coalesced": 0,
+              "degradeOnCenterDown": false,
+              "noIdleOverhead": true,
+              "instantPerceive": true
+            },
+            {
+              "id": "burstChanges",
+              "clients": 8,
+              "detectedAt": 5214.5415,
+              "perceivedDelay": 114.5415,
+              "idleFetches": 0,
+              "connections": 8,
+              "reconnects": 0,
+              "versionGaps": 7,
+              "staleClients": 0,
+              "degraded": false,
+              "centerBroken": false,
+              "changes": 12,
+              "coalesced": 7,
+              "degradeOnCenterDown": true,
+              "noIdleOverhead": true,
+              "instantPerceive": false
+            },
+            {
+              "id": "manyClients",
+              "clients": 200,
+              "detectedAt": 5001,
+              "perceivedDelay": 0,
+              "idleFetches": 0,
+              "connections": 200,
+              "reconnects": 0,
+              "versionGaps": 0,
+              "staleClients": 0,
+              "degraded": false,
+              "centerBroken": false,
+              "changes": 1,
+              "coalesced": 0,
+              "degradeOnCenterDown": true,
+              "noIdleOverhead": true,
+              "instantPerceive": true
+            }
+          ],
+          "totals": {
+            "perceivedDelaySum": 114.5415,
+            "idleFetches": 0,
+            "connections": 240,
+            "reconnects": 0,
+            "versionGaps": 7,
+            "staleClients": 8,
+            "degradedScenarios": 0,
+            "centerBrokenScenarios": 1
+          },
+          "trilemma": {
+            "degradeOnCenterDown": false,
+            "noIdleOverhead": true,
+            "instantPerceive": false
+          }
+        }
+      ],
+      "vectors": {
+        "Polling": "100",
+        "LongPolling": "011",
+        "WatchPush": "010"
+      },
+      "crosscheck": {
+        "configServer": {
+          "source": "buildConfigResponse/findConfig(真件)",
+          "responseVersion": "2",
+          "stateIsNull": true,
+          "propertySources": 1,
+          "pickedPriorityVersion": "3",
+          "versionChain": [
+            "1",
+            "2",
+            "3"
+          ],
+          "versionChainMonotonic": true,
+          "rollbackDirectlyImported": false
+        },
+        "configWatcher": {
+          "source": "startConfigWatcher/createBus(真件)",
+          "available": true,
+          "firstPassOnChange": 0,
+          "firstPassBusEvents": 0,
+          "contentLoadedOnFirstPass": false,
+          "seededNoEvents": true,
+          "intervalStopped": true
+        },
+        "bus": {
+          "source": "createBus(真件)",
+          "delivered": 1,
+          "listenerCount": 1,
+          "firstPayloadVersion": "2",
+          "eventChainWorks": true
+        },
+        "gray": {
+          "source": "hashSelector(真件)",
+          "keys": 64,
+          "stableBuckets": 64,
+          "allInUnitRange": true
+        },
+        "guard": {
+          "source": "shouldEarlyExpire(真件)",
+          "youngEarly": false,
+          "oldEarly": true,
+          "monotonic": true
+        },
+        "redisCache": {
+          "source": "createRedisCache.stats(真件)",
+          "seeded": 8,
+          "missedAfterTtl": 8,
+          "expiredCount": 8,
+          "lazyExpiredAll": true
+        },
+        "ring": {
+          "source": "createHashRing.distribution(真件)",
+          "keys": 512,
+          "nodes": 4,
+          "fanoutClients": 200,
+          "spread": 17,
+          "emptyNodes": 0,
+          "balanceRatio": 1.1417
+        }
+      },
+      "verdict": {
+        "vectors": {
+          "Polling": "100",
+          "LongPolling": "011",
+          "WatchPush": "010"
+        },
+        "trilemmaDistinguishes": true,
+        "noProtocolWinsAll": true,
+        "noUniversalWinner": true,
+        "pollingLags": true,
+        "pollingIdles": true,
+        "pollingDegrades": true,
+        "longPollingHoldsConnections": true,
+        "longPollingReconnects": true,
+        "watchNeedsAddressing": true,
+        "watchVersionGaps": true,
+        "centerDownBreaksPush": true,
+        "watchNotPanacea": true
+      },
+      "topology": {
+        "clients": 8,
+        "manyClients": 200,
+        "pollIntervalMs": 1000,
+        "lpTimeoutMs": 2000,
+        "burstCoalesceMs": 300,
+        "burstCount": 12,
+        "windowMs": 10000
+      },
+      "builtAt": 1794360452689
+    },
+    "builtAt": 1794360452689
   }
 }

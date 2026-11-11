@@ -886,4 +886,72 @@ describe('caesura-console-ui (KI-495)', () => {
     expect(dom2.els['drl-matrix'].innerHTML).toContain('class="drl-cell over"')   // 矩阵照常
     expect(dom2.els['drl-trilemma'].innerHTML).toContain('data-k="globalExact"')  // 三难照常
   })
+
+  it('㉚ KI-511 真 configConsistency 读数落进「三协议×六场景」+「三难不可兼得」两面板（含七枚真件交叉印证，不是写死数）', async () => {
+    const dom = await runApp(real)
+    const dcc = real.systems.configConsistency
+    // 面板一：三协议 × 六场景矩阵（成/空/迟/断/缺/连，读 Node 判词）+ 常驻连接横条
+    const matrix = dom.els['dcc-matrix'].innerHTML
+    expect(matrix).toContain('dcc-mat-head')
+    for (const row of dcc.rows) expect(matrix).toContain('data-p="' + row.protocol + '"')
+    for (const s of dcc.config.scenarios) expect(matrix).toContain('data-s="' + s + '"')
+    expect(matrix).toContain('class="dcc-cell over" data-p="Polling" data-s="idleNoChange"')      // Polling 空转
+    expect(matrix).toContain('class="dcc-cell degrade" data-p="LongPolling" data-s="centerDown"') // 长轮询中心宕全断
+    expect(matrix).toContain('class="dcc-cell frag" data-p="WatchPush" data-s="burstChanges"')    // Watch 风暴版本缺口
+    expect(matrix).toContain('class="dcc-cell lag" data-p="Polling" data-s="burstChanges"')       // Polling 0~T 延迟
+    expect(matrix).toContain(String(dcc.rows.find((r: any) => r.protocol === 'WatchPush').totals.connections)) // 连接真读数
+    const ladder = dom.els['dcc-ladder'].innerHTML
+    expect(ladder).toContain('data-p="Polling"')
+    expect(ladder).toContain('dcc-bar')
+    expect(dom.els['dcc-matrix-note'].textContent).toContain('Watch 不是银弹')
+    // 面板二：三难向量（逐格 data-v）+ 七枚真件交叉印证栏 + 判词探针 + 不封赢家
+    const tri = dom.els['dcc-trilemma'].innerHTML
+    expect(tri).toContain('dcc-vec-head')
+    expect(tri).toContain('data-k="degradeOnCenterDown"')
+    expect(tri).toContain('data-k="noIdleOverhead"')
+    expect(tri).toContain('data-k="instantPerceive"')
+    expect(tri).toContain('data-p="Polling" data-k="noIdleOverhead" data-v="0"')      // Polling 缺无空闲
+    expect(tri).toContain('data-p="LongPolling" data-k="degradeOnCenterDown" data-v="0"') // 长轮询缺可降级
+    expect(tri).toContain('data-p="WatchPush" data-k="instantPerceive" data-v="0"')    // Watch 缺即时
+    const cx = dom.els['dcc-crosscheck'].innerHTML
+    expect(cx).toContain('真 Config Server 响应')
+    expect(cx).toContain('startConfigWatcher')
+    expect(cx).toContain('createBus')
+    expect(cx).toContain('hashSelector')
+    expect(cx).toContain(String(dcc.crosscheck.gray.stableBuckets))                   // 稳定桶真读数
+    expect(cx).toContain(String(dcc.crosscheck.redisCache.expiredCount))              // TTL 失效真读数
+    const probes = dom.els['dcc-probes'].innerHTML
+    expect(probes).toContain('data-probe="dccPolling"')
+    expect(probes).toContain('data-probe="dccLongPolling"')
+    expect(probes).toContain('data-probe="dccWatch"')
+    expect(probes).toContain('data-verdict="watchNotPanacea"')
+    expect(probes).toContain('data-verdict="noUniversalWinner"')
+    expect(dom.els['dcc-trilemma-note'].textContent).toContain('换场景结论会变')
+  })
+
+  it('㉛ KI-511 configConsistency 整块缺 / 单块缺诚实降级，不连坐 drl-idGen-lsm', async () => {
+    // 整块缺：五子块全降级、绝不画 0/假格；其它维仍照常。
+    const noDcc = JSON.parse(JSON.stringify(real))
+    noDcc.systems.configConsistency = null
+    const dom = await runApp(noDcc)
+    expect(dom.els['dcc-matrix'].innerHTML).toContain('无三协议场景矩阵读数')
+    expect(dom.els['dcc-ladder'].innerHTML).toBe('')
+    expect(dom.els['dcc-trilemma'].innerHTML).toContain('无三难判据读数')
+    expect(dom.els['dcc-crosscheck'].innerHTML).toBe('')
+    expect(dom.els['dcc-probes'].innerHTML).toBe('')
+    expect(dom.els['dcc-matrix-note'].textContent).toContain('systems.configConsistency 缺失')
+    expect(dom.els['drl-matrix'].innerHTML).toContain('data-p="Local"')             // KI-510 不连坐
+    expect(dom.els['ig-matrix'].innerHTML).toContain('data-p="UUID"')               // idGen 不连坐
+    expect(dom.els['lsm-gauge'].innerHTML).toContain(String(real.systems.lsm.speedup.toFixed(1))) // lsm 不连坐
+
+    // 单块缺：只降 crosscheck 真件交叉印证，矩阵/三难向量/探针仍渲染真读数（同维不连坐）。
+    const partial = JSON.parse(JSON.stringify(real))
+    partial.systems.configConsistency.crosscheck = null
+    const dom2 = await runApp(partial)
+    expect(dom2.els['dcc-crosscheck'].innerHTML).toContain('无真件交叉印证读数')   // crosscheck 缺 → 诚实降级
+    expect(dom2.els['dcc-crosscheck'].innerHTML).not.toContain('startConfigWatcher') // 不编造铁证
+    expect(dom2.els['dcc-probes'].innerHTML).toContain('data-probe="dccPolling"')  // 其余探针照常
+    expect(dom2.els['dcc-matrix'].innerHTML).toContain('class="dcc-cell over"')     // 矩阵照常
+    expect(dom2.els['dcc-trilemma'].innerHTML).toContain('data-k="instantPerceive"') // 三难照常
+  })
 })
