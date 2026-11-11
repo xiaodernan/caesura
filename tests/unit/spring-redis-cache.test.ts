@@ -178,4 +178,84 @@ describe('spring-redis-cache：端到端 PING/SET/GET/DEL via RESP', () => {
     expect(await c.get('c')).toBe('3')
     await c.quit()
   })
+
+  it('RESP pipelining：服务端须在同一 TCP 段内排干多条命令（历史缺陷：第二条起永不回复）', async () => {
+    const { server } = createRedisServer({ maxKeys: 8, defaultTtlSec: 60 })
+    servers.push(server)
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()))
+    const addr = server.address() as { port: number }
+
+    const c = createRedisClient({ port: addr.port })
+    await c.connect()
+    // 一轮 pipeline：PING + SET + GET + DEL + EXISTS 五条命令一次发出
+    const out = (await c.pipeline([
+      ['PING'],
+      ['SET', 'pk', 'pv'],
+      ['GET', 'pk'],
+      ['DEL', 'pk'],
+      ['EXISTS', 'pk'],
+    ])) as unknown[]
+    expect(out).toEqual(['PONG', 'OK', 'pv', 1, 0])
+    await c.quit()
+  })
+
+  it('pipeline：空批返回 []，不写任何字节也不卡连接', async () => {
+    const { server } = createRedisServer({ maxKeys: 8, defaultTtlSec: 60 })
+    servers.push(server)
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()))
+    const addr = server.address() as { port: number }
+    const c = createRedisClient({ port: addr.port })
+    await c.connect()
+    expect(await c.pipeline([])).toEqual([])
+    expect(await c.ping()).toBe('PONG')
+    await c.quit()
+  })
+
+  it('pipeline：坏参数 mid-batch —— 服务端回 -ERR 但连接不瘫（致命错误除外）', async () => {
+    const { server } = createRedisServer({ maxKeys: 8, defaultTtlSec: 60 })
+    servers.push(server)
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()))
+    const addr = server.address() as { port: number }
+    const c = createRedisClient({ port: addr.port })
+    await c.connect()
+    // EXPIRE 传非整数 → 该条回 -ERR（以 { error } 原样返回、不 reject），连接保持健康，后续命令正常排干
+    const [pong, err] = (await c.pipeline([
+      ['PING'],
+      ['EXPIRE', 'k', 'not-a-number'],
+    ])) as unknown[]
+    expect(pong).toBe('PONG')
+    expect(err).toEqual({ error: 'ERR integer expected' })
+    expect(await c.ping()).toBe('PONG')
+    await c.quit()
+  })
+
+  it('pipeline：尾部半包命令延迟 flush —— 两条命令拆成两段仍全部回包（TCP 分片安全）', async () => {
+    const { server } = createRedisServer({ maxKeys: 8, defaultTtlSec: 60 })
+    servers.push(server)
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()))
+    const addr = server.address() as { port: number }
+    const c = createRedisClient({ port: addr.port })
+    await c.connect()
+    // 直接往裸 socket 写：第一条命令完整、第二条命令跨两段字节
+    const net = await import('node:net')
+    const replies: string[] = []
+    await new Promise<void>((resolve, reject) => {
+      const raw = net.connect(addr.port, '127.0.0.1', () => {
+        const part = '*1\r\n$4\r\nPING\r\n*1\r\n$4\r\n'
+        raw.write(part)
+        setTimeout(() => {
+          raw.write('PING\r\n')
+        }, 30)
+      })
+      raw.setEncoding('utf8')
+      raw.on('data', (chunk: string) => {
+        replies.push(chunk)
+        if (replies.join('').match(/PONG/g)?.length === 2) { raw.end(); resolve() }
+      })
+      raw.on('error', reject)
+      setTimeout(() => { raw.end(); reject(new Error('timeout waiting for both PONGs')) }, 10000)
+    })
+    expect(replies.join('').match(/PONG/g)?.length).toBe(2)
+    await c.quit()
+  })
 })

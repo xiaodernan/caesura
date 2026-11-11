@@ -113,6 +113,60 @@ export function createCacheInstance(opts = {}) {
 /** RESP 行为：LIST / SHOW 数据量限制，避免大 KEYS 拖死 server */
 const KEYS_LIMIT = 1024
 
+/**
+ * 模块级命令→回包纯函数：输入内存缓存与一条已解析命令，返回 { reply }。
+ * 命令级错误（参数不对、整数非法、未知命令、KEYS 超限）一律回 -ERR **不断连**——
+ * 与真实 Redis 一致：pipelining 里一条命令写错不该炸掉整条连接。
+ * 连接只在 framing 级错误（对端字节拼不成数组命令）时被对端关闭。
+ */
+function redisCommandReply(cache, cmd) {
+  const [rawOp, ...rawArgs] = cmd.map((a) => String(a))
+  const op = (rawOp ?? '').toUpperCase()
+  const args = rawArgs
+  try {
+    switch (op) {
+      case 'PING':
+        return { reply: buildSimpleString('PONG') }
+      case 'SET': {
+        if (args.length < 2) return { reply: buildError('wrong number of arguments') }
+        return { reply: buildSimpleString(cache.set(args[0], args.slice(1).join(' '))) }
+      }
+      case 'GET': {
+        if (args.length !== 1) return { reply: buildError('wrong number of arguments') }
+        const v = cache.get(args[0])
+        return { reply: v === null ? '$-1\r\n' : buildBulkString(v) }
+      }
+      case 'DEL': {
+        const n = cache.del(args[0])
+        return { reply: buildInteger(n) }
+      }
+      case 'EXISTS': {
+        const n = cache.exists(args[0])
+        return { reply: buildInteger(n) }
+      }
+      case 'KEYS':
+        if (cache.size() > KEYS_LIMIT) return { reply: buildError(`KEYS forbidden: ${cache.size()} keys > ${KEYS_LIMIT}`) }
+        return { reply: buildArray(cache.keys()) }
+      case 'TTL': {
+        const n = cache.ttl(args[0])
+        return { reply: buildInteger(n) }
+      }
+      case 'EXPIRE': {
+        if (args.length !== 2) return { reply: buildError('wrong number of arguments') }
+        const sec = Number(args[1])
+        if (!Number.isFinite(sec) || sec < 0) return { reply: buildError('integer expected') }
+        return { reply: buildInteger(cache.expire(args[0], sec)) }
+      }
+      case 'FLUSHALL':
+        return { reply: buildSimpleString(cache.flushall()) }
+      default:
+        return { reply: buildError(`unknown command '${op.toLowerCase()}'`) }
+    }
+  } catch (e) {
+    return { reply: buildError(String((e && e.message) ?? e)) }
+  }
+}
+
 /** 创建 RESP server：args 数组→case；返回 { server, cache } */
 export function createRedisServer(opts = {}) {
   const cache = createCacheInstance(opts)
@@ -122,78 +176,20 @@ export function createRedisServer(opts = {}) {
     socket.on('data', (chunk) => {
       buffer += chunk
 
-      // RESP 单命令单答；parseOne 返回不完整时等下一段
-      const parsed = parseOne(buffer)
-      if (!parsed) return
-
-      // 只处理一个命令；多命令管道留作将来扩展
-      const cmd = parsed.value
-      buffer = parsed.rest
-
-      if (!Array.isArray(cmd)) {
-        socket.end(buildError('protocol: expected array command'))
-        return
-      }
-
-      const [rawOp, ...rawArgs] = cmd.map((a) => String(a))
-      const op = rawOp.toUpperCase()
-      const args = rawArgs
-
-      let reply
-      try {
-        switch (op) {
-          case 'PING':
-            reply = buildSimpleString('PONG')
-            break
-          case 'SET': {
-            if (args.length < 2) { reply = buildError('wrong number of arguments'); socket.end(reply); return }
-            reply = buildSimpleString(cache.set(args[0], args.slice(1).join(' ')))
-            break
-          }
-          case 'GET': {
-            if (args.length !== 1) { reply = buildError('wrong number of arguments'); socket.end(reply); return }
-            const v = cache.get(args[0])
-            reply = v === null ? '$-1\r\n' : buildBulkString(v)
-            break
-          }
-          case 'DEL': {
-            const n = cache.del(args[0])
-            reply = buildInteger(n)
-            break
-          }
-          case 'EXISTS': {
-            const n = cache.exists(args[0])
-            reply = buildInteger(n)
-            break
-          }
-          case 'KEYS':
-            if (cache.size() > KEYS_LIMIT) { reply = buildError(`KEYS forbidden: ${cache.size()} keys > ${KEYS_LIMIT}`); socket.end(reply); return }
-            reply = buildArray(cache.keys())
-            break
-          case 'TTL': {
-            const n = cache.ttl(args[0])
-            reply = buildInteger(n)
-            break
-          }
-          case 'EXPIRE': {
-            if (args.length !== 2) { reply = buildError('wrong number of arguments'); socket.end(reply); return }
-            const sec = Number(args[1])
-            if (!Number.isFinite(sec) || sec < 0) { reply = buildError('integer expected'); socket.end(reply); return }
-            reply = buildInteger(cache.expire(args[0], sec))
-            break
-          }
-          case 'FLUSHALL':
-            reply = buildSimpleString(cache.flushall())
-            break
-          default:
-            reply = buildError(`unknown command '${op.toLowerCase()}'`)
-            socket.end(reply)
-            return
+      // RESP pipelining：一个 TCP 段里可以有多条命令，遂条排干（drain）再逐个回包；
+      // parseOne 返回不完整时停止等待下一段字节（不乱猜、不提前回）。
+      for (;;) {
+        const parsed = parseOne(buffer)
+        if (!parsed) break
+        const cmd = parsed.value
+        buffer = parsed.rest
+        if (!Array.isArray(cmd)) {
+          socket.end(buildError('protocol: expected array command'))
+          return
         }
-      } catch (e) {
-        reply = buildError(String(e?.message ?? e))
+        const { reply } = redisCommandReply(cache, cmd)
+        socket.write(reply)
       }
-      socket.write(reply)
     })
   })
   return { server, cache }
@@ -240,16 +236,21 @@ export function createRedisClient(opts = {}) {
     }).join('')
   }
 
-  async function call(...args) {
+  /** 底层：入队一条应答；解析值原样返回（-ERR 为 { error } 对象），不 reject */
+  function rawCall(args) {
     if (!socket) throw new Error('客户端未连接')
     const cmd = encodeArray(args)
-    return new Promise((resolve, reject) => {
-      waiters.push((v) => {
-        if (v && typeof v === 'object' && v.error) reject(new Error(v.error))
-        else resolve(v)
-      })
+    return new Promise((resolve) => {
+      waiters.push((v) => resolve(v))
       socket.write(cmd)
     })
+  }
+
+  /** 单条命令：遇 -ERR 直接 reject（程序化取值用） */
+  async function call(...args) {
+    const v = await rawCall(args)
+    if (v && typeof v === 'object' && v.error) throw new Error(v.error)
+    return v
   }
 
   return {
@@ -263,6 +264,12 @@ export function createRedisClient(opts = {}) {
     ttl: (key) => call('TTL', key),
     expire: (key, sec) => call('EXPIRE', key, String(sec)),
     flushall: () => call('FLUSHALL'),
+    /**
+     * RESP pipelining：一轮 RTT 里发 N 条命令、按 RESP 顺序回收 N 个**解析结果**——
+     * -ERR 以 { error } 对象原样返回、不 reject（单条命令的 call() 才会 reject），
+     * 让批量调用方逐条核对而不是被整批炸掉。
+     */
+    pipeline: (cmds) => Promise.all(cmds.map((c) => rawCall(c))),
     quit: () => new Promise((r) => { if (socket) socket.end(() => r()) }),
   }
 }
@@ -285,12 +292,8 @@ if (process.argv[1] && process.argv[1].endsWith('spring-redis-cache.mjs')) {
       const port = typeof addr === 'object' && addr ? addr.port : 0
       console.log(`[selfcheck] server on :${port}, running sequence…`)
       const c = createRedisClient({ port })
-      c.connect().then(() => c.ping())
-        .then((p) => { console.log(`[selfcheck] PING → ${p}`) })
-        .then(() => c.set('k1', 'v1'))
-        .then((r) => { console.log(`[selfcheck] SET k1 → ${r}`) })
-        .then(() => c.get('k1'))
-        .then((v) => { console.log(`[selfcheck] GET k1 → ${v}`) })
+      c.connect().then(() => c.pipeline([['PING'], ['SET', 'k1', 'v1'], ['GET', 'k1']]))
+        .then(([p, r, v]) => { console.log(`[selfcheck] pipeline(PING,SET,GET) → ${JSON.stringify([p, r, v])}`) })
         .then(() => c.ttl('k1'))
         .then((n) => { console.log(`[selfcheck] TTL k1 → ${n}`) })
         .then(() => { server.close(); process.exit(0) })

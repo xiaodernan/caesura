@@ -31,6 +31,8 @@ export interface RedisClientHandle {
   ttl(key: string): Promise<number>
   expire(key: string, sec: number): Promise<number>
   flushall(): Promise<string>
+  /** RESP pipelining：一轮 RTT 内发出 N 条命令、按发送序回收 N 个应答；-ERR 以 { error } 原样返回、不 reject。 */
+  pipeline(commands: ReadonlyArray<ReadonlyArray<string | number>>): Promise<unknown[]>
   quit(): Promise<void>
 }
 
