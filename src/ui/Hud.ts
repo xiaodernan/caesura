@@ -248,6 +248,7 @@ export class Hud {
     ctx.clearRect(0, 0, this.cssW, this.cssH)
 
     this.drawVignette()
+    this.drawCorruptionVeil()
     this.drawQuest()
     this.drawObjective()
     this.drawBinds()
@@ -528,6 +529,17 @@ export class Hud {
     ctx.moveTo(x0, y)
     ctx.lineTo(x0 + w * this.corrFrac, y)
     ctx.stroke()
+    // 末端余烬：一盏脉冲的小灯，沿血条尽头沁出失谐的光
+    const tipX = x0 + w * this.corrFrac
+    const pulse = 0.55 + 0.45 * Math.sin(this.time * 6.4)
+    ctx.save()
+    ctx.shadowColor = css(col, 0.9)
+    ctx.shadowBlur = 12 * s * pulse
+    ctx.fillStyle = css([255, 170, 110], 0.7 + 0.3 * pulse)
+    ctx.beginPath()
+    ctx.arc(tipX, y, (1.5 + 1.1 * pulse) * s, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.restore()
     if (this.corrFrac >= 0.999) {
       ctx.font = `${Math.round(11 * s)}px ${SERIF}`
       ctx.textAlign = 'left'
@@ -879,6 +891,46 @@ export class Hud {
     g.addColorStop(1, `rgba(108,26,20,${(0.42 * this.vign).toFixed(3)})`)
     ctx.fillStyle = g
     ctx.fillRect(0, 0, w, h)
+  }
+
+  /** 失谐的末梢：腐败的边缘在屏幕四周压下一层暗红（与 drawVignette 的「中心放射」相反，它是「边缘淤血」）。
+   *  强度随 corrFrac 单调收紧， corrFrac < 0.12 时整幅不画，零额外成本。 */
+  private drawCorruptionVeil(): void {
+    if (this.corrFrac <= 0.12) return
+    const { ctx } = this
+    const w = this.cssW
+    const h = this.cssH
+    if (w <= 0 || h <= 0) return
+    const s = this.scale()
+    const ramp = clamp01((this.corrFrac - 0.12) / 0.88)
+    const edge = 0.10 + 0.16 * ramp
+    const bandW = Math.max(h * 0.26, 72 * s)
+    const bandH = Math.max(w * 0.18, 96 * s)
+    ctx.save()
+    // 上沿
+    const top = ctx.createLinearGradient(0, 0, 0, bandW)
+    top.addColorStop(0, css(GREYRED, edge))
+    top.addColorStop(1, css(GREYRED, 0))
+    ctx.fillStyle = top
+    ctx.fillRect(0, 0, w, bandW)
+    // 下沿
+    const bot = ctx.createLinearGradient(0, h, 0, h - bandW)
+    bot.addColorStop(0, css(GREYRED, edge))
+    bot.addColorStop(1, css(GREYRED, 0))
+    ctx.fillStyle = bot
+    ctx.fillRect(0, h - bandW, w, bandW)
+    // 左右沿
+    const left = ctx.createLinearGradient(0, 0, bandH, 0)
+    left.addColorStop(0, css(GREYRED, edge * 0.8))
+    left.addColorStop(1, css(GREYRED, 0))
+    ctx.fillStyle = left
+    ctx.fillRect(0, 0, bandH, h)
+    const right = ctx.createLinearGradient(w, 0, w - bandH, 0)
+    right.addColorStop(0, css(GREYRED, edge * 0.8))
+    right.addColorStop(1, css(GREYRED, 0))
+    ctx.fillStyle = right
+    ctx.fillRect(w - bandH, 0, bandH, h)
+    ctx.restore()
   }
 
   /** death: the full-screen caesura. */

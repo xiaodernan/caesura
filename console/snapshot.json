@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794380367996,
+  "generatedAt": 1794391585499,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1365,12 +1365,12 @@
           "keys": 1,
           "versions": 2,
           "commitLogSize": 1,
-          "now": 1794380367998
+          "now": 1794391585501
         },
         "final": {
           "A": {
             "value": 101,
-            "commitTs": 1794380367998,
+            "commitTs": 1794391585501,
             "tombstone": false
           }
         }
@@ -3646,7 +3646,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794380367996,
+                "lastTimestamp": 1794391585499,
                 "workerId": 1
               },
               "fault": {
@@ -3742,7 +3742,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794380367996,
+                "lastTimestamp": 1794391585499,
                 "workerId": 1
               },
               "fault": {
@@ -3774,7 +3774,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794380367997,
+                "lastTimestamp": 1794391585500,
                 "workerId": 1
               },
               "fault": {
@@ -3806,7 +3806,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794380367996,
+                "lastTimestamp": 1794391585499,
                 "workerId": 1
               },
               "fault": {
@@ -4522,7 +4522,7 @@
         "capacity": 8,
         "perShardCap": 2
       },
-      "builtAt": 1794380367996
+      "builtAt": 1794391585499
     },
     "configConsistency": {
       "config": {
@@ -5020,7 +5020,7 @@
         "burstCount": 12,
         "windowMs": 10000
       },
-      "builtAt": 1794380367996
+      "builtAt": 1794391585499
     },
     "cacheCoherency": {
       "config": {
@@ -5549,7 +5549,7 @@
         "crashAtWrite": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794380367996
+      "builtAt": 1794391585499
     },
     "messageDelivery": {
       "config": {
@@ -6038,10 +6038,10 @@
         "crashAfterSendAt": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794380367996
+      "builtAt": 1794391585499
     },
     "delayQueue": {
-      "builtAt": 1794380367996,
+      "builtAt": 1794391585499,
       "config": {
         "seed": 518,
         "tasks": 12,
@@ -6068,7 +6068,7 @@
               "id": "allOk",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 5804,
+              "lateMs": 47804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6080,7 +6080,7 @@
               "id": "tickSkew",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 5804,
+              "lateMs": 47804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6092,7 +6092,7 @@
               "id": "farFuture",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 6136,
+              "lateMs": 48136,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6104,7 +6104,7 @@
               "id": "manyCancels",
               "protocol": "TimingWheel",
               "fired": 6,
-              "lateMs": 2858,
+              "lateMs": 23858,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6128,7 +6128,7 @@
               "id": "concurrentWorkers",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 5804,
+              "lateMs": 47804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6139,7 +6139,7 @@
           ],
           "totals": {
             "fired": 54,
-            "lateMs": 26406,
+            "lateMs": 215406,
             "duplicatePickups": 0,
             "lostOnRestart": 6,
             "opUnits": 72
@@ -6375,7 +6375,7 @@
       }
     },
     "retryDlq": {
-      "builtAt": 0,
+      "builtAt": 1794391585499,
       "config": {
         "seed": 520,
         "messages": 16,
@@ -6792,6 +6792,6 @@
         "FullJitter": "rand×min(cap, base×2^(n-1))；不风暴 + 不惊群；仍等退避档 ⇒ 缺低恢复延迟，非银弹"
       }
     },
-    "builtAt": 1794380367996
+    "builtAt": 1794391585499
   }
 }
