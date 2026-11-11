@@ -140,6 +140,20 @@ export const SAVE_CARD_CSS = `
 .scard .btn:hover{background:rgba(255,184,107,.18)}
 .scard .btn.off{opacity:.4;cursor:not-allowed}
 .scard .btn.off:hover{background:none}
+/* == ember rite card skin ==（追加 cascade，先排版后点金） */
+.scard{background:linear-gradient(180deg, rgba(31,28,26,.8) 0%, rgba(23,20,19,.72) 55%, rgba(16,14,13,.8) 100%);border-color:rgba(201,180,88,.28);box-shadow:0 1.2vh 2.8vh rgba(0,0,0,.45), inset 0 1px 0 rgba(255,222,150,.08);transition:transform .25s cubic-bezier(.2,.9,.3,1.15), border-color .25s, box-shadow .25s;position:relative;overflow:hidden}
+.scard::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,217,138,.55),transparent);opacity:.8}
+.scard:hover{transform:translateY(-.35em);border-color:rgba(255,217,138,.45);box-shadow:0 1.6vh 3.6vh rgba(0,0,0,.55), 0 0 2vh rgba(201,180,88,.15), inset 0 1px 0 rgba(255,222,150,.12)}
+.scard.ok{border-color:rgba(201,180,88,.4);box-shadow:0 1.2vh 2.8vh rgba(0,0,0,.45), inset 0 1px 0 rgba(255,222,150,.1), inset 0 0 2.6vh rgba(201,180,88,.06)}
+.scard.blocked{border-color:rgba(168,105,95,.65);box-shadow:inset 0 1px 0 rgba(255,170,150,.09)}
+.scard.restored{border-color:rgba(201,180,88,.6);box-shadow:0 0 2.4vh rgba(201,180,88,.22), inset 0 0 2.4vh rgba(201,180,88,.09)}
+.scard.restored .badge{background:linear-gradient(180deg,#e9d27a,#c9a458);box-shadow:0 0 .9vh rgba(255,217,138,.5)}
+.scard .hd{text-shadow:0 0 1.4vh rgba(255,184,107,.35)}
+.scard .badge{background:linear-gradient(180deg,#cbb26b,#c9a458);box-shadow:0 1px 2px rgba(0,0,0,.5), 0 0 .8vh rgba(201,180,88,.35)}
+.scard .btn{transition:background .2s, border-color .2s, color .2s, box-shadow .2s;letter-spacing:.12em}
+.scard .btn:hover{border-color:#ffb86b;color:#ffcf8a;box-shadow:0 0 1.2vh rgba(255,184,107,.3)}
+.scard .btn:active{transform:translateY(1px)}
+.scard .btn:focus-visible{outline:2px solid #ffd98a;outline-offset:2px}
 `
 
 /**

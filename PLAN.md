@@ -37,6 +37,7 @@
 | Phase F-25 | AI 主循环热路径算法优化：定调（buffAura）O(N²)→O(N·A)（先筛存活施主、内两层不再逐对 alive 判定）+ 距离比较全程平方化免 sqrt；判定语义逐字节一致（范围内最近施主、并列取先者；buff 只外显倍率不外显距离）；measure-probe 实测 ai.update（12 敌 × 3600 tick）p50 0.064ms / p95 0.221ms / p99 0.635ms / max 8.32ms（13/3600 ticks >2ms≈0.36%）——不声称墙钟收益，只声称常数项与 sqrt 次数削减；support / enemy-attack-frame-ticks / combat-deadlegs 34 绿 | 64c8509 |
 | Phase F-26 | RESP pipelining 真排水（KI-516）：createRedisServer drain 循环（同 TCP 段排干所有完整命令）+ redisCommandReply 模块级纯函数（命令级错误 -ERR 不断连、真 Redis 语义）；client rawCall/call/pipeline 三层（pipeline 严格按序回收、不 reject）；+4 腿（21 全绿）；修掉 KI-514 发布即带的 pipelined 第二条起悬死真缺陷 | 289dfd3 |
 | Phase F-27 | spring-family-e2e-check 新增 RESP/Redis 内核腿：spawn `node scripts/spring-redis-cache.mjs selfcheck` 为非 HTTP 第六腿——断言真 TCP one-write pipeline（PING,SET,GET）全绿；零 Java 依赖、零端口、~0.3s；CI spring-e2e 随跑；不声称替代 Java 侧探针、不声称墙钟基准 | 41d0e63 |
+| Phase F-28 | 存档摘要卡（SAVE_CARD_CSS）余烬仪典化：scard 暖背木渐变 + 顶金线 + hover 升起 + ok/restored 金辉 + badge 鎏金胶囊 + btn hover 金色辉光 + focus-visible 暖金环 + active 位移；覆盖标题页选档页 + 暂停菜单「存档」页（同一组件双处复用、零 markup 改动、零 npm 依赖）；+1 腿（save-ui 套件 82→83） | 待提交 |
 | KI-407 | coverage 棘轮三出口（0/1/2）全部有测试 + 基线落地 | 07399b9 |
 | Phase C / F3 | Boss 乐句线 HUD：BossPhraseBar.ts + main.ts 接线 + flow 测试 | 08bb3f5 |
 | KI-118 fix | spring-health-check.mjs 移除 shebang（module-loader 门禁） | 0698210 |

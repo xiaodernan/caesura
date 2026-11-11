@@ -289,3 +289,14 @@ describe('摘要卡分支死角（批 15）：表查不到的 id 与黄标卡面
     expect(html).toContain(`来源 ${slot}.prev`)
   })
 })
+
+describe('SAVE_CARD_CSS · 余烬仪典摘要卡皮肤（ember rite · 追加 cascade）', () => {
+  it('导出含仪典关键规则（暖背木/顶金线/hover 升起/restored 辉光/focus-visible）', async () => {
+    const { SAVE_CARD_CSS } = await import('@/ui/SaveSlots')
+    expect(SAVE_CARD_CSS).toContain('ember rite')
+    expect(SAVE_CARD_CSS).toContain('.scard:hover')
+    expect(SAVE_CARD_CSS).toContain('inset 0 1px 0 rgba(255,222,150,.08)')
+    expect(SAVE_CARD_CSS).toContain('.scard.restored')
+    expect(SAVE_CARD_CSS).toContain('.scard .btn:focus-visible')
+  })
+})
