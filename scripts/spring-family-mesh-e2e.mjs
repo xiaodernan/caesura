@@ -124,6 +124,10 @@ export function runMeshE2E(opts = {}) {
     // 注入时钟用 bpcNow（bp* 已被 KI-504 B+ 树占用）。
     backpressure: opts.backpressure,
     bpcNow: opts.bpcNow,
+    // KI-526：append-only 日志压缩 / 回放边界三策略（logCompaction=true 装配；只读 SizeTimeRetention/KeyCompaction/SnapshotPlusWal × 六场景矩阵 + 三难向量 + verifyReplayBoundary 双路守恒自证 + 十一枚真件交叉印证，rigged 110/110/110 因果锁死 fastRecovery、不硬造全 111，不改调用路径）。
+    // 注入时钟用 lcNow（避开 lsm/bp/bpc/cgp/rdq/dld 已占用前缀）。
+    logCompaction: opts.logCompaction,
+    lcNow: opts.lcNow,
     sources: {
       eureka: () => (opts.svcA ?? [{ id: 'svc-a:1', name: 'svc-a', address: '10.0.0.1', port: 8080, healthy: true }]),
       k8s: () => k8s.discover('caesura-gate'),
@@ -263,6 +267,7 @@ export function runMeshE2E(opts = {}) {
         retryDlqSnapshot: status.retryDlq ?? null,
         consumerGroupSnapshot: status.consumerGroup ?? null,
         backpressureSnapshot: status.backpressure ?? null,
+        logCompactionSnapshot: status.logCompaction ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
       }
@@ -483,6 +488,20 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         littleLaw: r.backpressureSnapshot.littleLaw,
         crosscheck: r.backpressureSnapshot.crosscheck,
         verdict: r.backpressureSnapshot.verdict,
+      } : null,
+      logCompaction: r.logCompactionSnapshot ? {
+        strategies: r.logCompactionSnapshot.rows.map((row) => ({
+          strategy: row.strategy,
+          // 每格状态只认真件算好的三布尔，绝不拿阈值重算（六场景正交、其余维空真，与三难同源）。
+          ladder: row.scenarios.map((s) => s.id + ':' + (s.compactFootprint === false ? '占' : s.replayCompleteness === false ? '丢' : s.fastRecovery === false ? '滞' : '稳')).join(' → '),
+          metrics: row.metrics, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.logCompactionSnapshot.rows.map((row) => [row.strategy,
+          `${Number(row.trilemma.compactFootprint)}${Number(row.trilemma.replayCompleteness)}${Number(row.trilemma.fastRecovery)}`])),
+        noUniversalWinner: r.logCompactionSnapshot.verdict.noUniversalWinner,
+        replayBoundary: r.logCompactionSnapshot.replayBoundary,
+        crosscheck: r.logCompactionSnapshot.crosscheck,
+        verdict: r.logCompactionSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

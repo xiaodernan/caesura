@@ -766,4 +766,44 @@ describe('spring-family-mesh-e2e', () => {
     expect(plain.retryDlqSnapshot).toBe(null)
     expect(plain.delayQueueSnapshot).toBe(null)
   })
+
+  it("e2e KI-526：logCompaction=true ⇒ 主链照常跑通，logCompactionSnapshot 带三策略×六场景/三难向量/回放边界守恒/十一真件交叉印证", async () => {
+    const e = runMeshE2E({ logCompaction: true, lcNow: () => 7777 })
+    const r = await e.run()
+    expect(r.started?.registered).toBe(true)          // 主链语义逐字不动
+    expect(r.callRes?.ok).toBe(true)
+    const d = r.logCompactionSnapshot
+    expect(d).not.toBe(null)
+    expect(d!.builtAt).toBe(7777)
+    expect(d!.config.scenarios.length).toBe(6)
+    expect(d!.rows.length).toBe(3)
+    expect(d!.vectors).toEqual({ SizeTimeRetention: '101', KeyCompaction: '110', SnapshotPlusWal: '011' })
+    const ret = d!.rows.find((row: any) => row.strategy === 'SizeTimeRetention')!
+    const key = d!.rows.find((row: any) => row.strategy === 'KeyCompaction')!
+    const snap = d!.rows.find((row: any) => row.strategy === 'SnapshotPlusWal')!
+    expect(ret.trilemma).toEqual({ compactFootprint: true, replayCompleteness: false, fastRecovery: true })
+    expect(key.trilemma).toEqual({ compactFootprint: true, replayCompleteness: true, fastRecovery: false })
+    expect(snap.trilemma).toEqual({ compactFootprint: false, replayCompleteness: true, fastRecovery: true })
+    expect(ret.scenarios.find((s: any) => s.id === 'slowConsumer')!.missingOps).toBeGreaterThan(0)
+    const crash = snap.scenarios.find((s: any) => s.id === 'crashMidReplay')!
+    expect(crash.dedupSkipped).toBeGreaterThan(0)     // exactly-once 真去重证据
+    expect(crash.exactlyOnce).toBe(true)
+    const ev = d!.crosscheck.evidence
+    expect(Object.keys(ev).sort()).toEqual(['bloomHit', 'bloomMiss', 'bucketAllowed', 'bucketRejected', 'busListeners', 'counterFalseSharing', 'counterSum', 'heapFired', 'jitterSpread', 'notices', 'poolCreated', 'poolReused', 'ringFirst', 'ringShardsUsed', 'shardHits', 'walLastSeq', 'walLines', 'walReplayed', 'zqFired', 'zqLostOnRestart', 'zqPendingAfterRestore'])
+    expect(ev.walReplayed).toBe(6)
+    expect(d!.replayBoundary.holds).toBe(true)
+    expect(d!.replayBoundary.falsifiable).toBe(true)
+    expect(d!.verdict.noUniversalWinner).toBe(true)
+    expect(d!.verdict.snapshotExactlyOnce).toBe(true)
+    // rigged 透传：因果锁死 fastRecovery、110/110/110
+    const rig = await runMeshE2E({ logCompaction: { rigged: true } }).run()
+    expect(rig.logCompactionSnapshot!.vectors).toEqual({ SizeTimeRetention: '110', KeyCompaction: '110', SnapshotPlusWal: '110' })
+    expect(rig.logCompactionSnapshot!.verdict.fastRecoveryCausallyUnerasable).toBe(true)
+    expect(rig.logCompactionSnapshot!.verdict.noUniversalWinner).toBe(false)
+    // 未配 logCompaction 时为 null（非破坏、不连坐 KI-518/520/523/525）
+    const plain = await runMeshE2E().run()
+    expect(plain.logCompactionSnapshot).toBe(null)
+    expect(plain.backpressureSnapshot).toBe(null)
+    expect(plain.consumerGroupSnapshot).toBe(null)
+  })
 })

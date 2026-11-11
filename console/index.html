@@ -414,6 +414,22 @@
       <p class="note" id="bpc-trilemma-note">…</p>
     </article>
   </section>
+  <section class="row row-lc">
+    <article class="panel panel-lc">
+      <div class="panel-head"><h2>第二十维 · append-only 日志压缩 · 三策略 × 六场景</h2><span class="hint">截=超大小/时间窗删最老段·空间省恢复快却丢慢消费者历史 / 键=同 key 只留最新值+tombstone·空间省重放幂等却恢复慢·早清墓碑致复活 / 照=全量快照+快照后增量 WAL 按 LSN 去重·回放完整恢复快却双写放大不省空间</span></div>
+      <div class="lc-matrix" id="lc-matrix"></div>
+      <div class="lc-ladder" id="lc-ladder"></div>
+      <p class="note" id="lc-matrix-note">…</p>
+    </article>
+    <article class="panel panel-lc">
+      <div class="panel-head"><h2>三难向量（省空间 ∧ 回放完整 ∧ 恢复快）· 回放边界守恒自证</h2><span class="hint">SizeTimeRetention=101 / KeyCompaction=110 / SnapshotPlusWal=011 · 三向量互异无一 111 · verifyReplayBoundary 双路守恒·三路篡改可证伪 · rigged 110×3 因果锁死 fastRecovery</span></div>
+      <div class="lc-trilemma" id="lc-trilemma"></div>
+      <div class="lc-replay" id="lc-replay"></div>
+      <div class="lc-crosscheck" id="lc-crosscheck"></div>
+      <div class="lc-probes" id="lc-probes"></div>
+      <p class="note" id="lc-trilemma-note">…</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">

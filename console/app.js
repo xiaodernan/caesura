@@ -57,6 +57,7 @@
       renderRetryDlq(snap.systems ? snap.systems.retryDlq : null)
       renderConsumerGroup(snap.systems ? snap.systems.consumerGroup : null)
       renderBackpressure(snap.systems ? snap.systems.backpressure : null)
+      renderLogCompaction(snap.systems ? snap.systems.logCompaction : null)
       setLive(true, result.source)
     }).catch(function (e) {
       setLive(false, 'error')
@@ -2391,6 +2392,149 @@
       '三口径严格正交：零丢失只看 dropped===0（反压 rejected 不算丢）、低时延只看 avgWait≤预算、高吞吐只看 acceptedRate=(arrivals−rejected)/arrivals≥预算（主动丢弃不拖慢上游，故 Shedding 不伤吞吐维）。' +
       'rigged 因果锁：零丢失∧有界时延∧无限缓冲齐开 ⇒ 四策略真实现算退 110 且高吞吐 causallyUnerasable（有界队列锁 W、L=λW 逼出 L 有界、μ<λ 唯一出路是反压、acceptedRate 被钳到 μ/λ），三开关无一能翻回该维，绝不硬造全 111。' +
       'Little′s Law 稳态自证非平凡（非全零排队）、过载端 endQueue>0 时稳态形式如实破裂。全为确定性教学状态机，结构计数，不声称墙钟/QPS/真 Kafka/真 broker。'
+  }
+
+  /* ============ KI-526 第二十维：append-only 日志压缩 / 回放边界 ============ */
+  function renderLogCompaction(lc) {
+    renderLcMatrix(lc && lc.rows, lc && lc.config)
+    renderLcLadder(lc && lc.rows)
+    renderLcTrilemma(lc && lc.rows, lc && lc.verdict, lc && lc.crosscheck, lc && lc.replayBoundary)
+  }
+
+  function lcMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 暂缺</div>'
+    if (note) note.textContent = 'systems.logCompaction 缺失 — 跑一次 npm run console:data 即可补齐'
+  }
+
+  function lcState(s) {
+    if (!s) return { cls: '', ch: '·' }
+    // 六场景正交：核心件已在每格算好三布尔，只在「该场景负责的维度」判定，其余维空真——与 trilemma 同源，绝不拿阈值重算。
+    if (s.compactFootprint === false) return { cls: 'occupy', ch: '占' }
+    if (s.replayCompleteness === false) return { cls: 'drop', ch: '丢' }
+    if (s.fastRecovery === false) return { cls: 'stall', ch: '滞' }
+    return { cls: 'ok', ch: '✓' }
+  }
+
+  function renderLcMatrix(rows, config) {
+    var box = $('#lc-matrix'), note = $('#lc-matrix-note')
+    if (!Array.isArray(rows) || !rows.length || !config || !Array.isArray(config.scenarios)) {
+      lcMissing(box, note, 'lc 矩阵'); return
+    }
+    var scenarios = config.scenarios
+    var head = '<div class="lc-mat-row lc-mat-head"><span class="lc-mat-proto">策略</span>' +
+      scenarios.map(function (sc) { return '<span class="lc-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="lc-mat-cost">压/重放/丢</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = lcState(cell)
+        return '<span class="lc-cell ' + st.cls + '" data-strategy="' + esc(row.strategy) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="lc-mat-row" data-strategy="' + esc(row.strategy) + '">' +
+        '<span class="lc-mat-proto">' + esc(row.strategy) + '</span>' +
+        cells + '<span class="lc-mat-cost"><b>' + esc(fmt(m.compactedOps)) + '</b>/' + esc(fmt(m.replayOps)) + '/' + esc(fmt(m.missingOps)) + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'SizeTimeRetention / KeyCompaction / SnapshotPlusWal × 六正交场景：steadyAppend（稳态追加）/ hotKeyChurn（热 key 反复更新）/ tombstoneBurst（批量删除·墓碑边界）/ slowConsumer（慢消费者积压）/ crashMidReplay（回放中途崩溃·LSN 幂等）/ retentionPressure（日志暴涨）。' +
+      '每格只在「该场景负责的维度」判定，其余维空真——标「占」=省空间维破（writeAmplification>1 或占用高），「丢」=回放完整维破（该回放位点不丢历史 / 不重不漏 / 无墓碑复活），「滞」=恢复快维破（replayOps 超预算），「✓」=该格在其负责维度无病征（空真不算赢家）。' +
+      '状态字直接读核心件算好的 compactFootprint/replayCompleteness/fastRecovery 三布尔，与三难向量同源，绝不拿阈值重算。tombstone 复活单列诚实判词、不污染 KeyCompaction 完整性维。全为确定性教学状态机，结构计数，不声称墙钟恢复毫秒 / QPS / 真 Kafka log cleaner / 真 RocksDB compaction。'
+  }
+
+  function renderLcLadder(rows) {
+    var box = $('#lc-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.replayOps) ? r.metrics.replayOps : 0 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.replayOps) ? Math.round(m.replayOps / max * 100) : 0
+      return '<div class="lc-line" data-strategy="' + esc(r.strategy) + '"><span class="tag">' + esc(r.strategy) + '</span>' +
+        '<span class="lc-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">压 ' + esc(fmt(m.compactedOps)) + ' · 重放 ' + esc(fmt(m.replayOps)) + ' · 峰写放大 ' + esc(fmt(m.peakWriteAmplification, 2)) + ' · 丢 ' + esc(fmt(m.missingOps)) + ' · 复活 ' + esc(fmt(m.tombstoneResurrect)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderLcTrilemma(rows, verdict, crosscheck, replayBoundary) {
+    var box = $('#lc-trilemma'), rbBox = $('#lc-replay'), cxBox = $('#lc-crosscheck'), note = $('#lc-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      lcMissing(box, note, 'lc 判词'); if (rbBox) rbBox.innerHTML = ''; if (cxBox) cxBox.innerHTML = ''; return
+    }
+    var flags = [['compactFootprint', '省空间'], ['replayCompleteness', '回放完整'], ['fastRecovery', '恢复快']]
+    var head = '<div class="lc-vec lc-vec-head"><span class="proto">策略</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="lc-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.strategy) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="lc-vec" data-strategy="' + esc(r.strategy) + '"><span class="proto">' + esc(r.strategy) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    // 回放边界守恒双路自证：稳态真撞合 + 三路篡改各自翻 false
+    if (rbBox) {
+      if (replayBoundary) {
+        var rb = [
+          '<div class="lc-rb-row"><b>A 成本守恒</b> replayOps ≥ totalOps − compactedOps − foldedOps · <b>B 完整性守恒</b> 按模式分派（retention 覆盖回放位点 / key 无墓碑复活 / snapshot WAL 不断档）</div>'
+        ]
+        rb.push('<div class="lc-rb-row"><span class="lc-flag ' + (replayBoundary.holds ? 'yes' : 'no') + '" data-rb="holds">稳态守恒 ' + (replayBoundary.holds ? '成立' : '破裂') + '</span>' +
+          '<span class="lc-flag ' + (replayBoundary.nontrivial ? 'yes' : 'no') + '" data-rb="nontrivial">非平凡 ' + (replayBoundary.nontrivial ? '是' : '否') + '</span>' +
+          '<span class="lc-flag ' + (replayBoundary.falsifiable ? 'yes' : 'no') + '" data-rb="falsifiable">可证伪 ' + (replayBoundary.falsifiable ? '是' : '否') + '</span></div>')
+        var tamper = replayBoundary.tamper || {}
+        rb.push('<div class="lc-rb-row"><span class="lc-flag ' + (tamper.replayOps && tamper.replayOps.holds === false ? 'yes' : 'no') + '" data-rb-tamper="replayOps">篡改重放成本 ⇒ ' + (tamper.replayOps && tamper.replayOps.holds === false ? '翻 false' : '未翻') + '</span>' +
+          '<span class="lc-flag ' + (tamper.walGap && tamper.walGap.replayComplete === false ? 'yes' : 'no') + '" data-rb-tamper="walGap">抹 WAL 段 ⇒ ' + (tamper.walGap && tamper.walGap.replayComplete === false ? '翻 false' : '未翻') + '</span>' +
+          '<span class="lc-flag ' + (tamper.tombstone && tamper.tombstone.replayComplete === false ? 'yes' : 'no') + '" data-rb-tamper="tombstone">早清墓碑 ⇒ ' + (tamper.tombstone && tamper.tombstone.replayComplete === false ? '翻 false' : '未翻') + '</span></div>')
+        rb.push('<p class="lc-rb-note">' + esc(replayBoundary.note || '') + '</p>')
+        rbBox.innerHTML = rb.join('')
+      } else {
+        rbBox.innerHTML = '<div class="nodata">回放边界守恒读数缺失</div>'
+      }
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>真 <b>createWal</b> append seq ' + esc(fmt(ev.walLastSeq)) + ' / lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>真 <b>createRedisZsetDelayQueue</b> retention 时间窗 fire ' + esc(fmt(ev.zqFired)) + ' · 恢复后 pending ' + esc(fmt(ev.zqPendingAfterRestore)) + ' · 重启丢 ' + esc(fmt(ev.zqLostOnRestart)) + '</div>' +
+          '<div>真 <b>createMinHeapDelayQueue</b> 按 LSN 精确排程 advance 出队 <b>' + esc(fmt(ev.heapFired)) + '</b> 条</div>' +
+          '<div>真 <b>createShardedCache</b> key 分片压缩命中 <b>' + esc(fmt(ev.shardHits)) + '</b></div>' +
+          '<div>真 <b>createBloomFilter</b> tombstone 判重 hit=' + esc(String(ev.bloomHit)) + ' miss=' + esc(String(ev.bloomMiss)) + '</div>' +
+          '<div>真 <b>createPackedCounters</b> 段计数 Σ=' + esc(fmt(ev.counterSum)) + ' 假共享=' + esc(fmt(ev.counterFalseSharing)) + '</div>' +
+          '<div>真 <b>createTokenBucket</b> 回放限速 allow <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>真 <b>createObjectPool</b> 回放记录 建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 <b>' + esc(fmt(ev.poolReused)) + '</b>（省 GC）</div>' +
+          '<div>真 <b>createBus</b> compaction-done 通知 <b>' + esc(fmt(ev.notices)) + '</b> 条 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>真 <b>createHashRing</b> 快照分片用 ' + esc(fmt(ev.ringShardsUsed)) + ' 片 · 首 key 落 ' + esc(String(ev.ringFirst)) + '</div>' +
+          '<div>真 <b>createFullJitterBackoff</b> 回放失败退避抖开 <b>' + esc(fmt(ev.jitterSpread)) + '</b></div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">真件交叉印证缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var causal = v.fastRecoveryCausallyUnerasable === true
+    var chips = [
+      '<span class="chip" data-verdict="retentionDropsSlowConsumer"><b>SizeTimeRetention</b> 慢消费者丢历史 ' + (v.retentionDropsSlowConsumer ? '是' : '否') + '</span>',
+      '<span class="chip" data-verdict="keyCompactionPaysRecovery"><b>KeyCompaction</b> 全量重放付恢复 ' + (v.keyCompactionPaysRecovery ? '是' : '否') + '</span>',
+      '<span class="chip" data-verdict="keyCompactionResurrectsUnderShortRetention"><b>KeyCompaction</b> 短墓碑保留致复活 ' + (v.keyCompactionResurrectsUnderShortRetention ? '是' : '否') + ' · 单列不连坐</span>',
+      '<span class="chip" data-verdict="snapshotPaysWriteAmplification"><b>SnapshotPlusWal</b> 双写放大不省空间 ' + (v.snapshotPaysWriteAmplification ? '是' : '否') + '</span>',
+      '<span class="chip" data-verdict="snapshotExactlyOnce"><b>SnapshotPlusWal</b> exactly-once 真去重 ' + (v.snapshotExactlyOnce ? '是' : '否') + '</span>',
+      '<span class="chip" data-verdict="replayBoundaryFalsifiable">回放边界三路篡改可证伪 ' + (v.replayBoundaryFalsifiable ? '是' : '否') + '</span>',
+      '<span class="chip ' + (causal ? 'jade-t' : 'muted-t') + '" data-verdict="fastRecoveryCausallyUnerasable">' + (causal ? '✓ 全保留+零空间快照+零成本重放齐开·恢复快真算抹不掉（保全部⇒重放≥总量、空快照⇒无物化态可载）' : 'rigged 三开关未触发：三向量退 110、无一 111，绝不硬造全赢家') + '</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' + (noWin ? '✓ 没有任何策略同时占三难' : '判词塌陷') + '</span>',
+    ]
+    var probes = $('#lc-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维序固定 [省空间 / 回放完整 / 恢复快]。默认向量 SizeTimeRetention=101 / KeyCompaction=110 / SnapshotPlusWal=011，三者互异、无一 111，恰好各缺一维。' +
+      '三口径严格正交：省空间只看 writeAmplification≤预算、回放完整只看 verifyReplayBoundary.replayComplete（相对回放位点）、恢复快只看 replayOps≤预算。' +
+      'rigged 因果锁：全保留（补 Retention 完整性）⇒compactFootprint 保持但 replayOps≥totalOps 逼恢复慢；零空间快照（补 Snapshot 省空间）⇒无物化态可载、全量重放逼恢复慢；零成本重放是许愿、不改写真 replayOps —— 三开关无一能翻回恢复快，绝不硬造全 111。' +
+      '回放边界双路守恒（成本 A + 完整性 B）稳态非平凡成立，篡改重放成本 / 抹 WAL 段 / 早清 tombstone 三路各自独立翻 false。全为确定性教学状态机，结构计数，不声称墙钟恢复毫秒 / QPS / 真 Kafka log cleaner / 真 RocksDB compaction。'
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)

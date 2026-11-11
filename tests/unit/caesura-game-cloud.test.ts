@@ -1277,4 +1277,91 @@ describe('caesura-game-cloud', () => {
     expect(injected.backpressure.builtAt).toBe(555)
     expect(injected.backpressure.config.seed).toBe(99)
   })
+
+  it("logCompaction:true ⇒ 装配日志压缩三策略、status.logCompaction 读真矩阵/三难向量/回放边界守恒/十一真件、builtAt 随 lcNow、惰性同引用（KI-526）", async () => {
+    const gc = createGameCloud({
+      gameId: 'gidlc1', gamePort: 7801, sources, cloud: fakeCloud(),
+      logCompaction: true, lcNow: () => 8888,
+    })
+    expect(gc.runLogCompactionStudy).toBeTypeOf('function')
+    const st = await gc.status()
+    expect(st.logCompaction.builtAt).toBe(8888)                    // 注入时钟真求值（KI-517 契约延伸）
+    expect(st.logCompaction.config.scenarios.length).toBe(6)
+    expect(st.logCompaction.rows.length).toBe(3)
+    expect(st.logCompaction.vectors).toEqual({ SizeTimeRetention: '101', KeyCompaction: '110', SnapshotPlusWal: '011' })
+    const ret = st.logCompaction.rows.find((r: any) => r.strategy === 'SizeTimeRetention')!
+    const key = st.logCompaction.rows.find((r: any) => r.strategy === 'KeyCompaction')!
+    const snap = st.logCompaction.rows.find((r: any) => r.strategy === 'SnapshotPlusWal')!
+    expect(ret.trilemma).toEqual({ compactFootprint: true, replayCompleteness: false, fastRecovery: true })   // 只丢回放完整
+    expect(key.trilemma).toEqual({ compactFootprint: true, replayCompleteness: true, fastRecovery: false })  // 只亏恢复快
+    expect(snap.trilemma).toEqual({ compactFootprint: false, replayCompleteness: true, fastRecovery: true }) // 只占空间
+    // 回放边界守恒双路：稳态非平凡成立 + 三路篡改各自翻 false
+    expect(st.logCompaction.replayBoundary.holds).toBe(true)
+    expect(st.logCompaction.replayBoundary.nontrivial).toBe(true)
+    expect(st.logCompaction.replayBoundary.falsifiable).toBe(true)
+    // 十一真件交叉印证：21 字段真回读、非硬编码
+    const ev = st.logCompaction.crosscheck.evidence
+    expect(Object.keys(ev).sort()).toEqual(['bloomHit', 'bloomMiss', 'bucketAllowed', 'bucketRejected', 'busListeners', 'counterFalseSharing', 'counterSum', 'heapFired', 'jitterSpread', 'notices', 'poolCreated', 'poolReused', 'ringFirst', 'ringShardsUsed', 'shardHits', 'walLastSeq', 'walLines', 'walReplayed', 'zqFired', 'zqLostOnRestart', 'zqPendingAfterRestore'])
+    expect(ev.walReplayed).toBe(6)
+    expect(ev.walLastSeq).toBe(6)
+    expect(ev.counterSum).toBe(36)
+    expect(ev.notices).toBe(2)
+    // exactly-once 真去重证据（非恒真）
+    const crash = snap.scenarios.find((c: any) => c.id === 'crashMidReplay')
+    expect(crash.dedupSkipped).toBeGreaterThan(0)
+    expect(crash.exactlyOnce).toBe(true)
+    expect(st.logCompaction.verdict.snapshotExactlyOnce).toBe(true)
+    expect(st.logCompaction.verdict.noUniversalWinner).toBe(true)
+    // 惰性缓存：二次 status 同引用
+    expect((await gc.status()).logCompaction).toBe(st.logCompaction)
+    const rerun = await gc.runLogCompactionStudy!()
+    expect(rerun.vectors).toEqual(st.logCompaction.vectors)
+    // 不连坐 KI-518/520/523/525
+    expect(st.delayQueue).toBe(null)
+    expect(st.retryDlq).toBe(null)
+    expect(st.consumerGroup).toBe(null)
+    expect(st.backpressure).toBe(null)
+  })
+
+  it('logCompaction 默认 null 非破坏；单开 unlimitedRetention/instantSnapshot/zeroReplayCost 各自局部、rigged 110/110/110 因果锁死 fastRecovery；可注入现成 study（KI-526）', async () => {
+    const plain = createGameCloud({ gameId: 'gidlc2', gamePort: 7802, sources, cloud: fakeCloud() })
+    expect(plain.runLogCompactionStudy).toBe(null)
+    const ps = await plain.status()
+    expect(ps.logCompaction).toBe(null)
+    expect(ps.backpressure).toBe(null)
+    // 单开 unlimitedRetention：补 Retention 回放完整必反噬快恢复
+    const ur = await (await createGameCloud({
+      gameId: 'gidlc3', gamePort: 7803, sources, cloud: fakeCloud(),
+      logCompaction: { unlimitedRetention: true, now: 0 },
+    })).status()
+    expect(ur.logCompaction.verdict.unlimitedRetentionBackfiresRecovery).toBe(true)
+    // 单开 instantSnapshot：补 Snapshot 省空间必反噬快恢复
+    const is = await (await createGameCloud({
+      gameId: 'gidlc4', gamePort: 7804, sources, cloud: fakeCloud(),
+      logCompaction: { instantSnapshot: true, now: 0 },
+    })).status()
+    expect(is.logCompaction.verdict.instantSnapshotBackfiresRecovery).toBe(true)
+    // 单开 zeroReplayCost 是许愿：向量一字不改
+    const zr = await (await createGameCloud({
+      gameId: 'gidlc5', gamePort: 7805, sources, cloud: fakeCloud(),
+      logCompaction: { zeroReplayCost: true, now: 0 },
+    })).status()
+    expect(zr.logCompaction.verdict.zeroReplayCostErasesNothing).toBe(true)
+    // rigged 三开关齐开：真实现算 110/110/110、因果锁死 fastRecovery
+    const rig = await (await createGameCloud({
+      gameId: 'gidlc6', gamePort: 7806, sources, cloud: fakeCloud(),
+      logCompaction: { rigged: true, now: 0 },
+    })).status()
+    expect(rig.logCompaction.vectors).toEqual({ SizeTimeRetention: '110', KeyCompaction: '110', SnapshotPlusWal: '110' })
+    expect(rig.logCompaction.verdict.fastRecoveryCausallyUnerasable).toBe(true)
+    expect(rig.logCompaction.verdict.noUniversalWinner).toBe(false)
+    // 注入现成 study（duck-typed）
+    const { logCompactionStudy } = await import('../../scripts/caesura-log-compaction.mjs')
+    const injected = await (await createGameCloud({
+      gameId: 'gidlc7', gamePort: 7807, sources, cloud: fakeCloud(),
+      logCompaction: logCompactionStudy({ seed: 99, now: 555 }),
+    })).status()
+    expect(injected.logCompaction.builtAt).toBe(555)
+    expect(injected.logCompaction.config.seed).toBe(99)
+  })
 })

@@ -36,6 +36,7 @@ import { delayQueueStudy, delayQueueSnapshot } from './caesura-delay-queue.mjs'
 import { retryDlqStudy, retryDlqSnapshot } from './caesura-retry-dlq.mjs'
 import { consumerGroupStudy, consumerGroupSnapshot } from './caesura-consumer-group.mjs'
 import { backpressureStudy, backpressureSnapshot } from './caesura-backpressure.mjs'
+import { logCompactionStudy, logCompactionSnapshot } from './caesura-log-compaction.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
 export const SCENARIO_IDS = ['main', 'gray', 'resilience', 'cache', 'net']
@@ -168,6 +169,19 @@ export async function buildSnapshot(opts = {}) {
     bpcBoundedLatency: opts.bpcBoundedLatency,
     bpcUnlimitedBuffer: opts.bpcUnlimitedBuffer,
     bpcRigged: opts.bpcRigged,
+    logCompaction: opts.logCompaction,
+    lcSeed: opts.lcSeed,
+    lcOps: opts.lcOps,
+    lcKeySpace: opts.lcKeySpace,
+    lcRetentionOps: opts.lcRetentionOps,
+    lcDeleteRetention: opts.lcDeleteRetention,
+    lcSnapshotAt: opts.lcSnapshotAt,
+    lcFootprintBudget: opts.lcFootprintBudget,
+    lcReplayBudget: opts.lcReplayBudget,
+    lcUnlimitedRetention: opts.lcUnlimitedRetention,
+    lcInstantSnapshot: opts.lcInstantSnapshot,
+    lcZeroReplayCost: opts.lcZeroReplayCost,
+    lcRigged: opts.lcRigged,
   })
 
   return {
@@ -274,7 +288,9 @@ export async function buildSystems(opts = {}) {
   const consumerGroup = opts.consumerGroup === false ? null : await buildConsumerGroupReading(opts, now)
   // KI-525：第十九维「消费者组积压背压」真跑 Backpressure/Buffering/Shedding/Scaling × 六正交负载场景 + 三难判词 + Little's Law 双路自证 + 十一枚真件交叉印证，与其它维平级。
   const backpressure = opts.backpressure === false ? null : await buildBackpressureReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, builtAt: now() }
+  // KI-526：第二十维「append-only 日志压缩 / 回放边界」真跑 SizeTimeRetention/KeyCompaction/SnapshotPlusWal × 六场景矩阵 + 三难判词 + verifyReplayBoundary 双路守恒自证 + 十一枚真件交叉印证，与其它维平级。
+  const logCompaction = opts.logCompaction === false ? null : await buildLogCompactionReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, builtAt: now() }
 }
 
 /** LSM 引擎真跑一趟确定性 benchmark，回结构读数（不夹带每行真值）。 */
@@ -883,6 +899,36 @@ export async function buildBackpressureReading(opts, now) {
 }
 
 /**
+ * KI-526：append-only 日志压缩 / 回放边界三策略（SizeTimeRetention / KeyCompaction / SnapshotPlusWal × 六正交负载场景
+ * + 三难向量 + verifyReplayBoundary 双路守恒自证（三路篡改可证伪）+ 十一枚真件交叉印证；缺省 null，前端第二十维）
+ * @param {object} opts { logCompaction?:false, lcOps?, lcKeySpace?, lcRetentionOps?, lcDeleteRetention?, lcSnapshotAt?, lcFootprintBudget?, lcReplayBudget?, lcSeed?, lcUnlimitedRetention?, lcInstantSnapshot?, lcZeroReplayCost?, lcRigged? }
+ * @param {()=>number} now 时钟（builtAt 注入真值；KI-517 母版：builtAt 与 generatedAt 共读同一 baseNow）
+ * 注：lc* = log compaction；避开 lsm(LSM 引擎)/bp(B+ 树)/bpc(积压背压)/cgp(消费者组)/rdq(重试死信)/dld(延迟队列) 已占用前缀。
+ */
+export async function buildLogCompactionReading(opts, now) {
+  try {
+    const s = await logCompactionStudy({
+      now,
+      ...(opts.lcOps ? { ops: Math.max(4, Math.floor(Number(opts.lcOps))) } : {}),
+      ...(opts.lcKeySpace ? { keySpace: Math.max(2, Math.floor(Number(opts.lcKeySpace))) } : {}),
+      ...(opts.lcRetentionOps ? { retentionOps: Math.max(1, Math.floor(Number(opts.lcRetentionOps))) } : {}),
+      ...(opts.lcDeleteRetention ? { deleteRetention: Math.max(1, Math.floor(Number(opts.lcDeleteRetention))) } : {}),
+      ...(opts.lcSnapshotAt ? { snapshotAt: Math.max(1, Math.floor(Number(opts.lcSnapshotAt))) } : {}),
+      ...(opts.lcFootprintBudget ? { footprintBudget: Number(opts.lcFootprintBudget) } : {}),
+      ...(opts.lcReplayBudget ? { replayBudget: Math.max(1, Math.floor(Number(opts.lcReplayBudget))) } : {}),
+      ...(opts.lcSeed ? { seed: Math.max(0, Math.floor(Number(opts.lcSeed))) } : {}),
+      ...(opts.lcUnlimitedRetention === true ? { unlimitedRetention: true } : {}),
+      ...(opts.lcInstantSnapshot === true ? { instantSnapshot: true } : {}),
+      ...(opts.lcZeroReplayCost === true ? { zeroReplayCost: true } : {}),
+      ...(opts.lcRigged === true ? { rigged: true } : {}),
+    })
+    return logCompactionSnapshot(s)
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
  * 真跑时每场景的 opts（判定权在此：场景参数固定，业务阈值仍来自各子系统默认/显式注入）。
  * @param {string} id
  */
@@ -1165,6 +1211,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
       const stateOf = (s) => s.noLoss === false ? '丢' : s.lowLatency === false ? '滞' : s.highThroughput === false ? '压' : '稳'
       const ladders = bpc.rows.map((r) => r.strategy + '[' + r.scenarios.map((s) => s.id + ':' + stateOf(s)).join('/') + ']').join(' · ')
       console.log(`[console] backpressure: ${ladders} / 三难向量 ${JSON.stringify(bpc.vectors)} / 不封赢家 ${bpc.verdict.noUniversalWinner ? '是' : '否'} / Backpressure拒突发 ${bpc.verdict.backpressureRejectsBursts ? '是' : '否'} · Buffering付时延 ${bpc.verdict.bufferingPaysLatency ? '是' : '否'} · Shedding真丢 ${bpc.verdict.sheddingDropsMessages ? '是' : '否'} · Scaling停服 ${bpc.verdict.scalingStallsOnRebalance ? '是' : '否'} · Little稳态 ${bpc.littleLaw.steadyHolds ? '立' : '破'} · 过载破裂 ${bpc.littleLaw.overloadBreaks ? '是' : '否'} · 高吞吐因果抹不掉 ${bpc.verdict.highThroughputCausallyUnerasable ? '是' : '否'}`)
+    }
+    if (snap.systems?.logCompaction) {
+      const lc = snap.systems.logCompaction
+      const stateOf = (s) => s.compactFootprint === false ? '占' : s.replayCompleteness === false ? '丢' : s.fastRecovery === false ? '滞' : '稳'
+      const ladders = lc.rows.map((r) => r.strategy + '[' + r.scenarios.map((s) => s.id + ':' + stateOf(s)).join('/') + ']').join(' · ')
+      console.log(`[console] logCompaction: ${ladders} / 三难向量 ${JSON.stringify(lc.vectors)} / 不封赢家 ${lc.verdict.noUniversalWinner ? '是' : '否'} / Retention丢慢消费者 ${lc.verdict.retentionDropsSlowConsumer ? '是' : '否'} · KeyCompaction付恢复 ${lc.verdict.keyCompactionPaysRecovery ? '是' : '否'} · Snapshot双写放大 ${lc.verdict.snapshotPaysWriteAmplification ? '是' : '否'} · ExactlyOnce真去重 ${lc.verdict.snapshotExactlyOnce ? '是' : '否'} · 守恒自证 ${lc.replayBoundary.holds ? '立' : '破'} · 可证伪 ${lc.replayBoundary.falsifiable ? '是' : '否'} · 恢复快因果抹不掉 ${lc.verdict.fastRecoveryCausallyUnerasable ? '是' : '否'}`)
     }
     if (snap.systems?.delayQueue) {
       const dld = snap.systems.delayQueue

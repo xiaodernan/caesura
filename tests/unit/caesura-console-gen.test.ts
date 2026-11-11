@@ -523,6 +523,33 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(bp.verdict.sheddingDropsMessages).toBe(true)
     expect(bp.verdict.scalingStallsOnRebalance).toBe(true)
     expect(fromBoot.systems.backpressure).toEqual(bp)         // 第十九维双载体同源
+    // KI-526 logCompaction：三策略 × 六场景 + 正交三难向量 + verifyReplayBoundary 双路守恒 + 十一真件交叉印证（第二十维）。
+    const lc = snap.systems.logCompaction
+    expect(lc.rows.length).toBe(3)
+    expect(lc.config.scenarios.length).toBe(6)
+    expect(lc.config.scenarios).toEqual(['steadyAppend', 'hotKeyChurn', 'tombstoneBurst', 'slowConsumer', 'crashMidReplay', 'retentionPressure'])
+    expect(lc.vectors).toEqual({ SizeTimeRetention: '101', KeyCompaction: '110', SnapshotPlusWal: '011' })
+    for (const row of lc.rows) {
+      const recomputed = `${Number(row.trilemma.compactFootprint)}${Number(row.trilemma.replayCompleteness)}${Number(row.trilemma.fastRecovery)}`
+      expect(lc.vectors[row.strategy]).toBe(recomputed)
+      expect(row.scenarios.length).toBe(6)
+    }
+    expect(new Set(Object.values(lc.vectors)).size).toBe(3)  // 三向量互异
+    expect(Object.values(lc.vectors).every((v: any) => v !== '111')).toBe(true)
+    const lcEv = lc.crosscheck.evidence
+    expect(Object.keys(lcEv).length).toBe(21)                 // 十一真件 21 字段真回读
+    expect(lcEv.walReplayed).toBeGreaterThan(0)               // 真 WAL restore+replay
+    expect(lcEv.heapFired).toBeGreaterThan(0)                 // 真最小堆 LSN 排程
+    expect(lcEv.ringShardsUsed).toBeGreaterThan(0)            // 真哈希环快照分片
+    expect(lc.replayBoundary.holds).toBe(true)                // 稳态守恒双路自证
+    expect(lc.replayBoundary.nontrivial).toBe(true)           // 非平凡
+    expect(lc.replayBoundary.falsifiable).toBe(true)          // 三路篡改可证伪
+    expect(lc.verdict.noUniversalWinner).toBe(true)
+    expect(lc.verdict.retentionDropsSlowConsumer).toBe(true)
+    expect(lc.verdict.keyCompactionPaysRecovery).toBe(true)
+    expect(lc.verdict.snapshotPaysWriteAmplification).toBe(true)
+    expect(lc.verdict.snapshotExactlyOnce).toBe(true)         // exactly-once 真去重
+    expect(fromBoot.systems.logCompaction).toEqual(lc)        // 第二十维双载体同源
     expect(Object.keys(fromBoot.systems).sort()).toEqual(Object.keys(snap.systems).sort())
   })
 
@@ -552,10 +579,47 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(off.backpressure).toBe(null)
     expect(off.consumerGroup).not.toBe(null)
     expect(off.delayQueue).not.toBe(null)
-    // 六时钟同源
+    // 七时钟同源
     const full = await buildSystems({ now })
-    const six = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt]
-    expect(six.every((x) => x === 525000)).toBe(true)
+    const seven = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt]
+    expect(seven.every((x) => x === 525000)).toBe(true)
+  })
+
+  it('⑰-logCompaction buildLogCompactionReading 真跑：lc* 注入生效 / logCompaction:false 关闭 / rigged 因果锁可证伪 / 单开三开关反噬（KI-526）', async () => {
+    const { buildLogCompactionReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 526000
+    const lc = (await buildLogCompactionReading({}, now))!
+    expect(lc).not.toBe(null)
+    expect(lc.builtAt).toBe(526000)                           // KI-517 母版：builtAt 对注入时钟求值
+    expect(lc.rows.length).toBe(3)
+    expect(lc.vectors).toEqual({ SizeTimeRetention: '101', KeyCompaction: '110', SnapshotPlusWal: '011' })
+    // lc* 注入（lcOps/lcKeySpace/lcSeed），不复用被 LSM/B+ 树/背压占用的前缀
+    const tuned = (await buildLogCompactionReading({ lcOps: 30, lcKeySpace: 20, lcSeed: 9 }, now))!
+    expect(tuned.config.ops).toBe(30)
+    expect(tuned.config.keySpace).toBe(20)
+    expect(tuned.config.seed).toBe(9)
+    // 三开关单开：各自反噬恢复快维，绝不硬造全 111
+    const ur = (await buildLogCompactionReading({ lcUnlimitedRetention: true }, now))!
+    expect(ur.verdict.unlimitedRetentionBackfiresRecovery).toBe(true)
+    const ins = (await buildLogCompactionReading({ lcInstantSnapshot: true }, now))!
+    expect(ins.verdict.instantSnapshotBackfiresRecovery).toBe(true)
+    const zr = (await buildLogCompactionReading({ lcZeroReplayCost: true }, now))!
+    expect(zr.verdict.zeroReplayCostErasesNothing).toBe(true)
+    // rigged 齐开：三向量退 110·恢复快因果抹不掉，判词可证伪
+    const rig = (await buildLogCompactionReading({ lcRigged: true }, now))!
+    expect(rig.vectors).toEqual({ SizeTimeRetention: '110', KeyCompaction: '110', SnapshotPlusWal: '110' })
+    expect(rig.verdict.fastRecoveryCausallyUnerasable).toBe(true)
+    expect(rig.verdict.noUniversalWinner).toBe(false)
+    // logCompaction:false 关闭不连坐其它维
+    const off = await buildSystems({ now, logCompaction: false })
+    expect(off.logCompaction).toBe(null)
+    expect(off.backpressure).not.toBe(null)
+    expect(off.consumerGroup).not.toBe(null)
+    expect(off.delayQueue).not.toBe(null)
+    // 七时钟同源
+    const full = await buildSystems({ now })
+    const seven = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt]
+    expect(seven.every((x) => x === 526000)).toBe(true)
   })
 
   it('⑭ buildMvccTxnReading 真跑五档矩阵形状齐、读数是真判词、单维关闭不连坐（KI-505）', async () => {

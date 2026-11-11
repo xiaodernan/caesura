@@ -138,6 +138,13 @@ export interface GameCloudOptions {
   backpressure?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck: any; littleLaw: any; [k: string]: any }
   /** KI-525 积压背压的注入时钟（bpc=backpressure；bp* 已被 KI-504 B+ 树的 bpNow 占用，故不复用）。 */
   bpcNow?: () => number
+  /**
+   * KI-526：true 装配 append-only 日志压缩 / 回放边界三策略权衡（SizeTimeRetention / KeyCompaction / SnapshotPlusWal + verifyReplayBoundary 双路守恒自证 + 十一枚真件交叉印证）。
+   * 对象逐项注入（now/seed/ops/keySpace/retentionOps/retentionMs/deleteRetention/snapshotAt/footprintBudget/replayBudget
+   * /unlimitedRetention/instantSnapshot/zeroReplayCost/rigged/...），或直接塞一只现成 study（带 rows/vectors/verdict/crosscheck/topology 五块）。默认 false 不装配。 */
+  logCompaction?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck: any; topology: any; [k: string]: any }
+  /** KI-526 日志压缩的注入时钟（lc=log compaction，避开 lsm/bp/bpc/cgp/rdq/dld 已占用前缀）。 */
+  lcNow?: () => number
 }
 
 /** 创建一只游戏侧开箱即用云。 */
@@ -194,6 +201,8 @@ export function createGameCloud(opts?: GameCloudOptions): {
   runConsumerGroupStudy: (() => Promise<any>) | null
   /** KI-525：积压背压 / 流量削峰四策略汇总的现算入口（未配 opts.backpressure 时为 null）；真跑 Backpressure/Buffering/Shedding/Scaling × 六场景矩阵 + 三难向量 + Little's Law 双路自证 + 十一枚真件交叉印证；rigged 110/110/110/110 因果锁死 highThroughput、不硬造全 111。 */
   runBackpressureStudy: (() => Promise<any>) | null
+  /** KI-526：日志压缩 / 回放边界三策略汇总的现算入口（未配 opts.logCompaction 时为 null）；真跑 SizeTimeRetention/KeyCompaction/SnapshotPlusWal × 六场景矩阵 + 三难向量 + verifyReplayBoundary 双路守恒自证（三路篡改可证伪）+ 十一枚真件交叉印证；rigged 110/110/110 因果锁死 fastRecovery、不硬造全 111。 */
+  runLogCompactionStudy: (() => Promise<any>) | null
   /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）。 */
   gray: any
   /** KI-489：把游戏真 EventBus（duck-typed {on,emit}）按白名单接进云事件总线。 */

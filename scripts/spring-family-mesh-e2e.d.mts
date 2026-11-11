@@ -357,5 +357,36 @@ export function runMeshE2E(opts?: any): {
       topology: Record<string, string>
       builtAt: number
     } | null
+    /** KI-526：日志压缩 / 回放边界三策略快照（SizeTimeRetention/KeyCompaction/SnapshotPlusWal × 六场景 + 三难向量 + verifyReplayBoundary 双路守恒自证 + 十一枚真件交叉印证），未配 logCompaction 为 null；rigged 110/110/110 因果锁死 fastRecovery、不硬造全 111 */
+    logCompactionSnapshot: {
+      config: Record<string, any>
+      rows: Array<{
+        strategy: string
+        scenarios: Array<{
+          id: string; strategy: string; totalOps: number; currentLsn: number; replayFromLsn: number
+          compactedOps: number; retainedOps: number; replayOps: number; missingOps: number
+          writeAmplification: number; cutoffLsn: number; tombstoneResurrect: number
+          snapshotLsn?: number; snapshotEmpty?: boolean; dedupSkipped?: number; exactlyOnce?: boolean
+          compactFootprint: boolean; replayCompleteness: boolean; fastRecovery: boolean
+          inFootprintExam: boolean; inCompletenessExam: boolean; inRecoveryExam: boolean
+          replayBoundary: { mode: string; totalOps: number; compactedOps: number; replayOps: number
+            foldedOps: number; minReplay: number; costGap: number; snapshotLsn: number; currentLsn: number
+            walFromLsn: number; walToLsn: number; replayFromLsn: number; distinctKeys: number
+            tombstoneCleared: boolean; resurrected: boolean; walCovers: boolean
+            replayCostConserved: boolean; replayComplete: boolean; nontrivial: boolean; holds: boolean }
+        }>
+        trilemma: { compactFootprint: boolean; replayCompleteness: boolean; fastRecovery: boolean }
+        metrics: { compactedOps: number; replayOps: number; peakWriteAmplification: number; missingOps: number; tombstoneResurrect: number }
+      }>
+      vectors: Record<string, string>
+      replayBoundary: { holds: boolean; nontrivial: boolean; falsifiable: boolean
+        steady: Array<Record<string, any>>
+        tamper: { replayOps: Record<string, any>; walGap: Record<string, any>; tombstone: Record<string, any> }
+        note: string }
+      crosscheck: { evidence: Record<string, any> }
+      verdict: Record<string, any>
+      topology: Record<string, string>
+      builtAt: number
+    } | null
   }>
 }

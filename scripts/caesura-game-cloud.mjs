@@ -40,6 +40,7 @@ import { delayQueueStudy, delayQueueSnapshot } from './caesura-delay-queue.mjs'
 import { retryDlqStudy, retryDlqSnapshot } from './caesura-retry-dlq.mjs'
 import { consumerGroupStudy, consumerGroupSnapshot } from './caesura-consumer-group.mjs'
 import { backpressureStudy, backpressureSnapshot } from './caesura-backpressure.mjs'
+import { logCompactionStudy, logCompactionSnapshot } from './caesura-log-compaction.mjs'
 import {
   createAimdCongestion,
   createCubicCongestion,
@@ -573,6 +574,27 @@ export function createGameCloud(opts = {}) {
     return bpcCached
   }
 
+  // KI-526 append-only 日志压缩 / 回放边界三策略诚实权衡（SizeTimeRetention / KeyCompaction / SnapshotPlusWal；opt-in）。
+  // opts.logCompaction===true 走钳制默认参数（可覆盖 now/seed/ops/keySpace/retentionOps/deleteRetention/snapshotAt
+  // /footprintBudget/replayBudget/unlimitedRetention/instantSnapshot/zeroReplayCost/rigged 等）；传对象且
+  // rows/vectors/verdict/crosscheck 齐全时当现成 study 注入；默认 logCompaction:false 非破坏（同 KI-513/518/520/523/525 法），
+  // 显式开才接；不声称真 Kafka log cleaner / 真 RocksDB compaction / 真快照分发 / 真墙钟恢复毫秒。
+  // 注意命名：lc*（log compaction），避开 bp*（B+ 树）/bpc*（积压背压）/cgp*（消费者组）/rdq*/dld* 已占用前缀。
+  const lcCfg = opts.logCompaction === true ? {} : (opts.logCompaction && typeof opts.logCompaction === 'object' ? opts.logCompaction : null)
+  const lcInjected = lcCfg !== null && opts.logCompaction &&
+    typeof opts.logCompaction === 'object' && Array.isArray(opts.logCompaction.rows) &&
+    opts.logCompaction.vectors && opts.logCompaction.verdict && opts.logCompaction.crosscheck
+  let lcCached = null
+  async function lcSnapshotForStatus() {
+    if (lcCfg === null) return null
+    if (lcCached) return lcCached
+    const study = lcInjected
+      ? opts.logCompaction
+      : await logCompactionStudy({ ...lcCfg, now: opts.lcNow ?? lcCfg.now })
+    lcCached = logCompactionSnapshot(study)
+    return lcCached
+  }
+
   // KI-513：分布式消息投递语义三协议诚实权衡（At-Most-Once / At-Least-Once / Exactly-Once，opt-in）。
   // opts.messageDelivery===true 用缺省规模；传对象逐项注入（now/seed/messages/manyKeys/retryLimit/...
   // 或 noCrash/ackReliable/freeIdempotency 单开关探针），或直接塞一只现成 study（duck-typed：带 rows/vectors/verdict/crosscheck/topology）。
@@ -669,6 +691,8 @@ export function createGameCloud(opts = {}) {
     runConsumerGroupStudy: cgpCfg === null ? null : () => consumerGroupStudy({ ...cgpCfg, now: opts.cgpNow ?? cgpCfg.now }),
     /** KI-525 积压背压 / 流量削峰四策略诚实权衡研究件；缺 opts.backpressure 时为 null；Backpressure/Buffering/Shedding/Scaling × 六场景矩阵 + 三难向量（rigged 110/110/110/110 因果锁死 highThroughput、不硬造全 111）+ Little's Law 双路自证 + 十一枚真件交叉印证。 */
     runBackpressureStudy: bpcCfg === null ? null : () => backpressureStudy({ ...bpcCfg, now: opts.bpcNow ?? bpcCfg.now }),
+    /** KI-526 日志压缩 / 回放边界三策略诚实权衡研究件；缺 opts.logCompaction 时为 null；SizeTimeRetention/KeyCompaction/SnapshotPlusWal × 六场景矩阵 + 三难向量（rigged 110/110/110 因果锁死 fastRecovery、不硬造全 111）+ verifyReplayBoundary 双路守恒自证（篡改重放成本/抹 WAL 段/早清 tombstone 三路可证伪）+ 十一枚真件交叉印证。 */
+    runLogCompactionStudy: lcCfg === null ? null : () => logCompactionStudy({ ...lcCfg, now: opts.lcNow ?? lcCfg.now }),
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
     gray: runtime.gray,
     /** 把游戏真 EventBus 按白名单routes 接进云事件总线（游戏侧一行：gc.connectGameBus(bus, routes)）。 */
@@ -718,6 +742,7 @@ export function createGameCloud(opts = {}) {
         retryDlq: await rdlSnapshotForStatus(),
         consumerGroup: await cgpSnapshotForStatus(),
         backpressure: await bpcSnapshotForStatus(),
+        logCompaction: await lcSnapshotForStatus(),
       }
     },
   }

@@ -527,7 +527,37 @@ export interface BackpressureReading {
   builtAt: number
 }
 
-/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511 + KI-512 + KI-513 + KI-518 + KI-520 + KI-523 + KI-525：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 + 缓存读写一致性 + 消息投递语义 + 延迟消息队列调度 + 消息重试退避与死信 + 消费者组 rebalance + 消费者组积压背压）。 */
+/** KI-526：append-only 日志压缩 / 回放边界三策略（SizeTimeRetention / KeyCompaction / SnapshotPlusWal × 六正交场景 + 三难向量 + verifyReplayBoundary 双路守恒自证 + 十一枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。lc* = log compaction，避开 lsm/bp/bpc/cgp/rdq/dld 已占用前缀。 */
+export interface LogCompactionReading {
+  config: Record<string, any>
+  rows: Array<{
+    strategy: string
+    scenarios: Array<{
+      id: string; strategy: string; totalOps: number; currentLsn: number; replayFromLsn: number
+      compactedOps: number; retainedOps: number; replayOps: number; missingOps: number
+      writeAmplification: number; cutoffLsn: number; tombstoneResurrect: number
+      snapshotLsn?: number; snapshotEmpty?: boolean; dedupSkipped?: number; exactlyOnce?: boolean
+      replayBoundary: Record<string, any>
+      compactFootprint: boolean; replayCompleteness: boolean; fastRecovery: boolean
+      inFootprintExam: boolean; inCompletenessExam: boolean; inRecoveryExam: boolean
+    }>
+    trilemma: { compactFootprint: boolean; replayCompleteness: boolean; fastRecovery: boolean }
+    metrics: { compactedOps: number; replayOps: number; peakWriteAmplification: number; missingOps: number; tombstoneResurrect: number }
+  }>
+  vectors: Record<string, string>
+  topology: Record<string, string>
+  replayBoundary: {
+    holds: boolean; nontrivial: boolean; falsifiable: boolean
+    steady: Array<Record<string, any>>
+    tamper: { replayOps: Record<string, any>; walGap: Record<string, any>; tombstone: Record<string, any> }
+    note: string
+  }
+  crosscheck: { evidence: Record<string, number | boolean | string | null> }
+  verdict: Record<string, any>
+  builtAt: number
+}
+
+/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511 + KI-512 + KI-513 + KI-518 + KI-520 + KI-523 + KI-525 + KI-526：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 + 缓存读写一致性 + 消息投递语义 + 延迟消息队列调度 + 消息重试退避与死信 + 消费者组 rebalance + 消费者组积压背压 + append-only 日志压缩与回放边界）。 */
 export interface SystemsBlock {
   lsm: LsmReading | null
   hw: HwReading | null
@@ -548,6 +578,7 @@ export interface SystemsBlock {
   retryDlq: RetryDlqReading | null
   consumerGroup: ConsumerGroupReading | null
   backpressure: BackpressureReading | null
+  logCompaction: LogCompactionReading | null
   builtAt: number
 }
 
@@ -677,6 +708,20 @@ export function buildSnapshot(opts?: {
   bpcBoundedLatency?: boolean
   bpcUnlimitedBuffer?: boolean
   bpcRigged?: boolean
+  /** KI-526：false 关掉日志压缩 / 回放边界维（兼容旧快照）；lc* 注入日志规模/预算/单开关/因果锁。 */
+  logCompaction?: boolean
+  lcSeed?: number
+  lcOps?: number
+  lcKeySpace?: number
+  lcRetentionOps?: number
+  lcDeleteRetention?: number
+  lcSnapshotAt?: number
+  lcFootprintBudget?: number
+  lcReplayBudget?: number
+  lcUnlimitedRetention?: boolean
+  lcInstantSnapshot?: boolean
+  lcZeroReplayCost?: boolean
+  lcRigged?: boolean
 }): Promise<ConsoleSnapshot>
 
 /** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511 + KI-512 + KI-513：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 + 缓存读写一致性 + 消息投递语义 十五维系统读数；击穿并发 ⇒ async。 */
@@ -783,6 +828,20 @@ export function buildSystems(opts?: {
   bpcBoundedLatency?: boolean
   bpcUnlimitedBuffer?: boolean
   bpcRigged?: boolean
+  /** KI-526：false 关掉日志压缩 / 回放边界维（兼容旧快照）；lc* 注入日志规模/预算/单开关/因果锁。 */
+  logCompaction?: boolean
+  lcSeed?: number
+  lcOps?: number
+  lcKeySpace?: number
+  lcRetentionOps?: number
+  lcDeleteRetention?: number
+  lcSnapshotAt?: number
+  lcFootprintBudget?: number
+  lcReplayBudget?: number
+  lcUnlimitedRetention?: boolean
+  lcInstantSnapshot?: boolean
+  lcZeroReplayCost?: boolean
+  lcRigged?: boolean
 }): Promise<SystemsBlock>
 
 /** KI-501：真跑缓存防护三件套（击穿/穿透/雪崩）收敛成前端三面板紧凑读数；单维失败落 null。 */
@@ -954,6 +1013,24 @@ export function buildBackpressureReading(opts: {
   bpcUnlimitedBuffer?: boolean
   bpcRigged?: boolean
 }, now: () => number): Promise<BackpressureReading | null>
+
+/** KI-526：真跑 append-only 日志压缩 / 回放边界三策略（SizeTimeRetention / KeyCompaction / SnapshotPlusWal × 六正交负载场景 + 三难向量 + verifyReplayBoundary 双路守恒自证 + 十一枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。lc* = log compaction，避开 lsm/bp/bpc/cgp/rdq/dld 已占用前缀。 */
+export function buildLogCompactionReading(opts: {
+  now?: () => number
+  logCompaction?: boolean
+  lcSeed?: number
+  lcOps?: number
+  lcKeySpace?: number
+  lcRetentionOps?: number
+  lcDeleteRetention?: number
+  lcSnapshotAt?: number
+  lcFootprintBudget?: number
+  lcReplayBudget?: number
+  lcUnlimitedRetention?: boolean
+  lcInstantSnapshot?: boolean
+  lcZeroReplayCost?: boolean
+  lcRigged?: boolean
+}, now: () => number): Promise<LogCompactionReading | null>
 
 export function realScenarioOpts(id: string): Record<string, any>
 

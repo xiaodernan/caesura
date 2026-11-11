@@ -1389,3 +1389,96 @@ describe('KI-525 · backpressure 消费者组积压背压面板：四策略 × �
     expect(css).toContain('@media (max-width: 720px)')
   })
 })
+
+describe('KI-526 · logCompaction 日志压缩面板：三策略 × 六场景 + 正交三难向量 + 回放边界守恒自证 + 十一真件交叉印证', () => {
+  const realLc = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+
+  it('三策略 × 六场景矩阵状态字直读三布尔 + 指标梯 + 与三难向量同源', async () => {
+    const dom = await runApp(realLc)
+    const matrix = dom.els['lc-matrix'].innerHTML
+    expect(matrix).toContain('lc-mat-head')
+    for (const s of ['SizeTimeRetention', 'KeyCompaction', 'SnapshotPlusWal']) expect(matrix).toContain('data-strategy="' + s + '"')
+    expect(matrix).toContain('data-s="steadyAppend"')
+    expect(matrix).toContain('data-s="retentionPressure"')
+    const states = [...matrix.matchAll(/data-state="([^"]+)"/g)].map((m: any) => m[1])
+    expect(states.length).toBe(18) // 3 策略 × 6 场景
+    for (const st of states) expect(['occupy', 'drop', 'stall', 'ok']).toContain(st)
+    expect(matrix).toContain('class="lc-cell occupy"')  // SnapshotPlusWal 双写放大
+    expect(matrix).toContain('class="lc-cell drop"')    // SizeTimeRetention 慢消费者丢历史
+    const ladder = dom.els['lc-ladder'].innerHTML
+    for (const s of ['SizeTimeRetention', 'KeyCompaction', 'SnapshotPlusWal']) expect(ladder).toContain('data-strategy="' + s + '"')
+    expect(ladder).toContain('lc-bar')
+    expect(dom.els['lc-matrix-note'].textContent).toContain('三布尔')
+  })
+
+  it('三难向量三行 + 向量串 101/110/011 + 不封赢家 + 判词 chips', async () => {
+    const dom = await runApp(realLc)
+    const tri = dom.els['lc-trilemma'].innerHTML
+    expect(tri).toContain('lc-vec-head')
+    expect(tri).toContain('data-vec="101"') // SizeTimeRetention
+    expect(tri).toContain('data-vec="110"') // KeyCompaction
+    expect(tri).toContain('data-vec="011"') // SnapshotPlusWal
+    for (const k of ['compactFootprint', 'replayCompleteness', 'fastRecovery']) expect(tri).toContain('data-k="' + k + '"')
+    const probes = dom.els['lc-probes'].innerHTML
+    expect(probes).toContain('data-verdict="noUniversalWinner"')
+    expect(probes).toContain('data-verdict="fastRecoveryCausallyUnerasable"')
+    expect(probes).toContain('data-verdict="retentionDropsSlowConsumer"')
+    expect(probes).toContain('data-verdict="snapshotExactlyOnce"')
+    expect(probes).toContain('data-verdict="replayBoundaryFalsifiable"')
+    expect(dom.els['lc-trilemma-note'].textContent).toContain('101')
+  })
+
+  it('回放边界守恒面板 + 十一真件交叉印证全部真 API 名落 DOM', async () => {
+    const dom = await runApp(realLc)
+    const rb = dom.els['lc-replay'].innerHTML
+    expect(rb).toContain('data-rb="holds"')
+    expect(rb).toContain('data-rb="nontrivial"')
+    expect(rb).toContain('data-rb="falsifiable"')
+    expect(rb).toContain('data-rb-tamper="replayOps"')
+    expect(rb).toContain('data-rb-tamper="walGap"')
+    expect(rb).toContain('data-rb-tamper="tombstone"')
+    expect(rb).toContain('replayOps')
+    const cx = dom.els['lc-crosscheck'].innerHTML
+    for (const api of [
+      'createWal', 'createRedisZsetDelayQueue', 'createMinHeapDelayQueue', 'createShardedCache',
+      'createBloomFilter', 'createPackedCounters', 'createTokenBucket', 'createObjectPool',
+      'createBus', 'createHashRing', 'createFullJitterBackoff',
+    ]) expect(cx, '真件 ' + api + ' 必须落 DOM').toContain(api)
+  })
+
+  it('systems.logCompaction 缺失 / 证据缺失：真实降级、绝不伪造', async () => {
+    const noLc = JSON.parse(JSON.stringify(realLc))
+    noLc.systems.logCompaction = null
+    const dom = await runApp(noLc)
+    expect(dom.els['lc-matrix'].innerHTML).toContain('暂缺')
+    expect(dom.els['lc-ladder'].innerHTML).toBe('')
+    expect(dom.els['lc-trilemma'].innerHTML).toContain('暂缺')
+    expect(dom.els['lc-matrix-note'].textContent).toContain('systems.logCompaction 缺失')
+    const partial = JSON.parse(JSON.stringify(realLc))
+    partial.systems.logCompaction.crosscheck = null
+    const dom2 = await runApp(partial)
+    expect(dom2.els['lc-crosscheck'].innerHTML).toContain('真件交叉印证缺失')
+    expect(dom2.els['lc-crosscheck'].innerHTML).not.toContain('createWal')
+    const noRb = JSON.parse(JSON.stringify(realLc))
+    noRb.systems.logCompaction.replayBoundary = null
+    const dom3 = await runApp(noRb)
+    expect(dom3.els['lc-replay'].innerHTML).toContain('缺失')
+  })
+
+  it('第二十维 markup 与 CSS 契约：row-lc 两面板 + lc-* 视觉族 + reduced-motion 兜底', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-lc')
+    expect(html).toContain('id="lc-matrix"')
+    expect(html).toContain('id="lc-replay"')
+    expect(html).toContain('第二十维')
+    expect(css).toContain('.lc-cell.occupy')          // 省空间破
+    expect(css).toContain('.lc-cell.drop')            // 回放完整破
+    expect(css).toContain('.lc-cell.stall')           // 恢复快破
+    expect(css).toContain('.lc-cell.ok')              // 空真无病征
+    expect(css).toContain('.lc-bar > i')              // 指标梯
+    expect(css).toContain('.lc-replay')               // 回放边界自证栏
+    expect(css).toContain('prefers-reduced-motion')   // 前庭友好兜底
+    expect(css).toContain('@media (max-width: 720px)')
+  })
+})
