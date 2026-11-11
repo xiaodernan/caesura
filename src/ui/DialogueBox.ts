@@ -21,17 +21,42 @@ const CSS = `
   font-family: Georgia, "Songti SC", "STSong", "SimSun", serif; color:#e8dfcb; pointer-events:none; }
 #dialogue.on { display:block; pointer-events:auto; }
 #dialogue .wrap { max-width:min(960px, 92vw); margin:0 auto 34px; padding:0 12px; }
-#dialogue .box { background:linear-gradient(180deg, rgba(14,16,22,.86), rgba(9,10,15,.94));
-  border-left:3px solid rgba(201,180,88,.65); padding:16px 22px 14px; box-shadow:0 14px 40px rgba(0,0,0,.5); }
-#dialogue .who { font-size:14px; letter-spacing:.22em; color:#c9b458; margin-bottom:8px; }
-#dialogue .line { font-size:17px; line-height:1.75; letter-spacing:.02em; }
-#dialogue .choices { margin-top:14px; display:flex; flex-direction:column; gap:2px; }
-#dialogue .ch { display:flex; gap:12px; padding:7px 10px; cursor:pointer; border-left:2px solid transparent; }
+/* 宣纸底 + 荼痕：纵向不等深暗纹 ＋ 右下一角温暖茶染径向
+   + 1px 外框金丝（box-shadow inset），与左缘引线一明一暗对仗 */
+#dialogue .box { position:relative;
+  background:
+    radial-gradient(120% 90% at 92% 100%, rgba(84,62,36,.28) 0%, rgba(84,62,36,0) 55%),
+    linear-gradient(180deg, rgba(26,23,16,.90) 0%, rgba(20,18,13,.92) 48%, rgba(13,12,10,.96) 100%);
+  border:0; padding:16px 22px 14px; border-radius:2px;
+  box-shadow:0 0 0 1px rgba(201,180,88,.22), inset 0 0 0 1px rgba(201,180,88,.12), 0 14px 40px rgba(0,0,0,.5); }
+/* 左缘引线：纵向渐变金线（纯伪元素，零 DOM） */
+#dialogue .box::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; border-radius:2px 0 0 2px;
+  background:linear-gradient(180deg, #e3cf8f 0%, #c9b458 32%, #8f7f43 64%, #b7a058 88%, #e3cf8f 100%);
+  pointer-events:none; opacity:.92; }
+/* 朱砂「言」印：对话·字说出声之印（纯伪元素，零 DOM、零事件、零 GPU 图层） */
+#dialogue .box::after { content:'言'; position:absolute; top:12px; right:14px;
+  width:26px; height:26px; border-radius:3px; background:rgba(166,64,50,.92);
+  color:#f4e9d8; font:600 15px/26px Georgia, "Songti SC", "STSong", serif; text-align:center;
+  transform:rotate(-6deg); opacity:.88; pointer-events:none;
+  box-shadow:0 0 0 .5px rgba(244,233,216,.35), 0 1px 3px rgba(0,0,0,.55), inset 0 0 5px rgba(0,0,0,.35); }
+/* 说话人名：字距 + 底部一缕金丝收束（内联块，宽度随字收缩） */
+#dialogue .who { display:inline-block; font-size:14px; letter-spacing:.22em; color:#d8c36a; margin-bottom:8px;
+  padding-bottom:3px; border-bottom:1px solid rgba(201,180,88,.35); text-shadow:0 1px 2px rgba(0,0,0,.6); }
+#dialogue .line { font-size:17px; line-height:1.75; letter-spacing:.02em; color:#efe6d2; text-shadow:0 1px 2px rgba(0,0,0,.45); }
+/* 选择区上沿：一缕极淡金丝分隔 */
+#dialogue .choices { margin-top:14px; padding-top:10px; border-top:1px solid rgba(201,180,88,.14); display:flex; flex-direction:column; gap:2px; }
+#dialogue .ch { display:flex; gap:12px; align-items:baseline; padding:7px 10px; cursor:pointer; border-left:2px solid transparent; border-radius:2px; transition:background .18s ease, border-left-color .18s ease; }
 #dialogue .ch:hover { background:rgba(255,184,107,.10); border-left-color:#ffb86b; }
+/* 悬停时右侧生出一角「›」角标：表示按方向键/enter 即可落笔 */
+#dialogue .ch::after { content:'›'; margin-left:auto; align-self:center; color:#ffb86b; opacity:0; transform:translateX(-4px); transition:opacity .18s ease, transform .18s ease; font-size:14px; }
+#dialogue .ch:hover::after { opacity:.85; transform:translateX(0); }
 #dialogue .ch .k { color:#ffb86b; opacity:.85; min-width:16px; font-variant-numeric:tabular-nums; }
 #dialogue .ch .t { flex:1; font-size:15px; line-height:1.6; }
 #dialogue .ch .s { font-size:11px; opacity:.4; letter-spacing:.1em; align-self:center; }
 #dialogue .hint { margin-top:10px; font-size:12px; opacity:.45; letter-spacing:.08em; }
+@media (prefers-reduced-motion: reduce) {
+  #dialogue .ch, #dialogue .ch::after { transition:none; }
+}
 `
 
 const STYLE_LABEL: Record<string, string> = { blunt: '直', poetic: '诗', silent: '默', provoke: '激' }

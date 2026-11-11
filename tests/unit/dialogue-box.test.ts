@@ -321,6 +321,21 @@ describe('DialogueBox：字幕层的显示与交互', () => {
     expect(close).not.toHaveBeenCalled()
   })
 
+  it('Phase F-38 芳墨宣纸皮：构造注入的真样式表里真有朱砂「言」印/引线/角标/荼痕 + reduced-motion 兜底', async () => {
+    const { DialogueBox } = await import('@/ui/DialogueBox')
+    const box = new DialogueBox({ onChoose: () => {}, onAdvance: () => {}, onClose: () => {} })
+    const styleEl = head.children.find((el) => (el.textContent ?? '').includes('#dialogue .box::after'))
+    expect(styleEl, '宣纸皮应随构造注入 head（伪元素印是皮肤的心脏）').toBeTruthy()
+    const css = (styleEl as unknown as { textContent: string }).textContent
+    expect(css).toContain("content:'言'")           // 朱砂「言」印（对话·字说出声之印）
+    expect(css).toContain('#dialogue .box::before')  // 左缘金线（渐变引线）
+    expect(css).toContain('radial-gradient')         // 荼痕茶染径向（右下角温染）
+    expect(css).toContain('.ch::after')              // 悬停「›」角标
+    expect(css).toContain('prefers-reduced-motion')  // 前庭友好兜底（与项目其余皮肤同一纪律）
+    expect(css).not.toContain('border-image')        // 全框渐变草稿不许回潮（它会盖掉四边框）
+    box.hide()
+  })
+
   it('构造一只框不在窗口上多挂任何监听器：读数只有 uiStep 这一个入口（行为证人）', async () => {
     const { DialogueBox } = await import('@/ui/DialogueBox')
     const before = (win.handlers.keydown ?? []).length
