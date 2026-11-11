@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import { readFileSync, existsSync, mkdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -493,7 +493,69 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(snap.systems.consumerGroup.verdict.stickyNotFreeLunch).toBe(true)
     expect(snap.systems.consumerGroup.vectors).toEqual({ Range: '001', RoundRobin: '100', Sticky: '110' })
     expect(fromBoot.systems.consumerGroup).toEqual(snap.systems.consumerGroup) // 第十八维同源
+    // KI-525 backpressure：四策略 × 六负载 + 正交三难向量 + Little's Law 双路自证 + 十一真件交叉印证（第十九维）。
+    const bp = snap.systems.backpressure
+    expect(bp.rows.length).toBe(4)
+    expect(bp.config.scenarios.length).toBe(6)
+    expect(bp.config.scenarios).toEqual(['steadyTrickle', 'burstAbsorb', 'sustainedOverload', 'latencySpike', 'downstreamStall', 'memoryPressure'])
+    expect(bp.vectors).toEqual({ Backpressure: '110', Buffering: '101', Shedding: '011', Scaling: '100' })
+    // 向量恒由每 row 的 trilemma 现算（绝不前端阈值重算、绝不硬编码全 111）
+    for (const row of bp.rows) {
+      const recomputed = `${Number(row.trilemma.noLoss)}${Number(row.trilemma.lowLatency)}${Number(row.trilemma.highThroughput)}`
+      expect(bp.vectors[row.strategy]).toBe(recomputed)
+      expect(row.scenarios.length).toBe(6)
+    }
+    expect(new Set(Object.values(bp.vectors)).size).toBe(4)  // 四向量互异
+    expect(Object.values(bp.vectors).every((v: any) => v !== '111')).toBe(true)
+    const bpEv = bp.crosscheck.evidence
+    expect(Object.keys(bpEv).length).toBe(20)                 // 十一真件 20 字段真回读
+    expect(bpEv.bucketAllowed).toBeGreaterThan(0)            // 真令牌桶
+    expect(bpEv.zqFired).toBeGreaterThan(0)                  // 真 RedisZset 缓冲
+    expect(bpEv.heapFired).toBeGreaterThan(0)                // 真最小堆
+    expect(bpEv.walReplayed).toBeGreaterThan(0)              // 真 WAL restore+replay
+    expect(bpEv.poolReused).toBeGreaterThan(0)               // 真对象池复用
+    expect(bp.littleLaw.steadyHolds).toBe(true)              // 稳态 L=λW 自证
+    expect(bp.littleLaw.steadyNontrivial).toBe(true)         // 非平凡（非全零排队）
+    expect(bp.littleLaw.overloadBreaks).toBe(true)           // 过载端稳态形式破裂
+    expect(bp.verdict.noUniversalWinner).toBe(true)
+    expect(bp.verdict.backpressureRejectsBursts).toBe(true)
+    expect(bp.verdict.bufferingPaysLatency).toBe(true)
+    expect(bp.verdict.sheddingDropsMessages).toBe(true)
+    expect(bp.verdict.scalingStallsOnRebalance).toBe(true)
+    expect(fromBoot.systems.backpressure).toEqual(bp)         // 第十九维双载体同源
     expect(Object.keys(fromBoot.systems).sort()).toEqual(Object.keys(snap.systems).sort())
+  })
+
+  it('⑯-backpressure buildBackpressureReading 真跑：bpc* 注入生效 / backpressure:false 关闭 / rigged 因果锁可证伪 / 六时钟同源（KI-525）', async () => {
+    const { buildBackpressureReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 525000
+    const bp = (await buildBackpressureReading({}, now))!
+    expect(bp).not.toBe(null)
+    expect(bp.builtAt).toBe(525000)                           // KI-517 母版：builtAt 对注入时钟求值
+    // bpc* 注入（bpcSteps/bpcMu/bpcSeed），不复用被 B+ 树占用的 bp*
+    const tuned = (await buildBackpressureReading({ bpcSteps: 20, bpcMu: 3, bpcSeed: 9 }, now))!
+    expect(tuned.config.steps).toBe(20)
+    expect(tuned.config.mu).toBe(3)
+    expect(tuned.config.seed).toBe(9)
+    // 三开关单开：各自反噬一维，绝不硬造全 111
+    const zero = (await buildBackpressureReading({ bpcZeroLoss: true }, now))!
+    expect(zero.verdict.zeroLossBackfiresLatency).toBe(true)
+    const bounded = (await buildBackpressureReading({ bpcBoundedLatency: true }, now))!
+    expect(bounded.verdict.boundedLatencyBackfiresNoLoss).toBe(true)
+    // rigged 齐开：四向量退 110·高吞吐因果抹不掉，判词可证伪
+    const rig = (await buildBackpressureReading({ bpcRigged: true }, now))!
+    expect(rig.vectors).toEqual({ Backpressure: '110', Buffering: '110', Shedding: '110', Scaling: '110' })
+    expect(rig.verdict.highThroughputCausallyUnerasable).toBe(true)
+    expect(rig.verdict.noUniversalWinner).toBe(false)
+    // backpressure:false 关闭不连坐其它维
+    const off = await buildSystems({ now, backpressure: false })
+    expect(off.backpressure).toBe(null)
+    expect(off.consumerGroup).not.toBe(null)
+    expect(off.delayQueue).not.toBe(null)
+    // 六时钟同源
+    const full = await buildSystems({ now })
+    const six = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt]
+    expect(six.every((x) => x === 525000)).toBe(true)
   })
 
   it('⑭ buildMvccTxnReading 真跑五档矩阵形状齐、读数是真判词、单维关闭不连坐（KI-505）', async () => {

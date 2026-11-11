@@ -724,4 +724,46 @@ describe('spring-family-mesh-e2e', () => {
     expect(plain.retryDlqSnapshot).toBe(null)
     expect(plain.delayQueueSnapshot).toBe(null)
   })
+
+  it("e2e KI-525：backpressure=true ⇒ 主链照常跑通，backpressureSnapshot 带四策略×六场景/三难向量/Little's Law/十一真件交叉印证", async () => {
+    const e = runMeshE2E({ backpressure: true, bpcNow: () => 9999 })
+    const r = await e.run()
+    expect(r.started?.registered).toBe(true)          // 主链语义逐字不动
+    expect(r.callRes?.ok).toBe(true)
+    const d = r.backpressureSnapshot
+    expect(d).not.toBe(null)
+    expect(d!.builtAt).toBe(9999)
+    expect(d!.config.scenarios.length).toBe(6)
+    expect(d!.rows.length).toBe(4)
+    expect(d!.vectors).toEqual({ Backpressure: '110', Buffering: '101', Shedding: '011', Scaling: '100' })
+    const bp = d!.rows.find((row: any) => row.strategy === 'Backpressure')!
+    const buf = d!.rows.find((row: any) => row.strategy === 'Buffering')!
+    const shed = d!.rows.find((row: any) => row.strategy === 'Shedding')!
+    const scal = d!.rows.find((row: any) => row.strategy === 'Scaling')!
+    expect(bp.trilemma).toEqual({ noLoss: true, lowLatency: true, highThroughput: false })
+    expect(buf.trilemma).toEqual({ noLoss: true, lowLatency: false, highThroughput: true })
+    expect(shed.trilemma).toEqual({ noLoss: false, lowLatency: true, highThroughput: true })
+    expect(scal.trilemma).toEqual({ noLoss: true, lowLatency: false, highThroughput: false })
+    expect(bp.scenarios.find((s: any) => s.id === 'burstAbsorb')!.rejected).toBeGreaterThan(0)
+    expect(shed.scenarios.find((s: any) => s.id === 'sustainedOverload')!.dropped).toBeGreaterThan(0)
+    const ev = d!.crosscheck.evidence
+    expect(Object.keys(ev).sort()).toEqual(['bloomHit', 'bloomMiss', 'bucketAllowed', 'bucketRejected', 'busListeners', 'counterFalseSharing', 'counterSum', 'heapFired', 'jitterSpread', 'leakyAllowed', 'leakyRejected', 'poolCreated', 'poolReused', 'shardHits', 'walLines', 'walReplayed', 'watermarkNotices', 'zqFired', 'zqLostOnRestart', 'zqPendingAfterRestore'])
+    expect(ev.heapFired).toBe(9)
+    expect(ev.walReplayed).toBe(4)
+    expect(d!.littleLaw.steadyHolds).toBe(true)
+    expect(d!.littleLaw.overloadBreaks).toBe(true)
+    expect(d!.verdict.noUniversalWinner).toBe(true)
+    expect(d!.verdict.sheddingNotFreeLunch).toBe(true)
+    // rigged 透传：因果锁死 highThroughput、110/110/110/110
+    const rig = await runMeshE2E({ backpressure: { rigged: true } }).run()
+    expect(rig.backpressureSnapshot!.vectors).toEqual({ Backpressure: '110', Buffering: '110', Shedding: '110', Scaling: '110' })
+    expect(rig.backpressureSnapshot!.verdict.highThroughputCausallyUnerasable).toBe(true)
+    expect(rig.backpressureSnapshot!.verdict.noUniversalWinner).toBe(false)
+    // 未配 backpressure 时为 null（非破坏、不连坐 KI-518/520/523）
+    const plain = await runMeshE2E().run()
+    expect(plain.backpressureSnapshot).toBe(null)
+    expect(plain.consumerGroupSnapshot).toBe(null)
+    expect(plain.retryDlqSnapshot).toBe(null)
+    expect(plain.delayQueueSnapshot).toBe(null)
+  })
 })

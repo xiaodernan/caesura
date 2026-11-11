@@ -501,7 +501,33 @@ export interface ConsumerGroupReading {
   builtAt: number
 }
 
-/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511 + KI-512 + KI-513 + KI-518 + KI-520 + KI-523：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 + 缓存读写一致性 + 消息投递语义 + 延迟消息队列调度 + 消息重试退避与死信 + 消费者组 rebalance）。 */
+/** KI-525：消费者组积压背压 / 流量削峰四策略真跑读数（Backpressure / Buffering / Shedding / Scaling × 六正交负载场景 + 三难向量 + Little's Law 双路自证 + 十一枚真件交叉印证）。 */
+export interface BackpressureReading {
+  config: Record<string, any>
+  rows: Array<{
+    strategy: string
+    scenarios: Array<{
+      id: string; strategy: string; arrivals: number; accepted: number; admitted: number
+      rejected: number; dropped: number; served: number; endQueue: number; waitSum: number
+      queueLenSum: number; avgWait: number; peakQueue: number; acceptedRate: number; muEffective: number
+      backpressureTicks: number; littleLaw: Record<string, any>
+      noLoss: boolean; lowLatency: boolean; highThroughput: boolean; fault: string; rebalances?: number
+    }>
+    trilemma: { noLoss: boolean; lowLatency: boolean; highThroughput: boolean }
+    metrics: { dropped: number; rejected: number; avgWait: number; peakQueue: number; rebalances: number }
+  }>
+  vectors: Record<string, string>
+  topology: Record<string, string>
+  littleLaw: {
+    steadyHolds: boolean; steadyNontrivial: boolean; overloadBreaks: boolean
+    steady: Array<Record<string, any>>; overload: Array<Record<string, any>>; note: string
+  }
+  crosscheck: { evidence: Record<string, number | boolean> }
+  verdict: Record<string, any>
+  builtAt: number
+}
+
+/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511 + KI-512 + KI-513 + KI-518 + KI-520 + KI-523 + KI-525：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 + 缓存读写一致性 + 消息投递语义 + 延迟消息队列调度 + 消息重试退避与死信 + 消费者组 rebalance + 消费者组积压背压）。 */
 export interface SystemsBlock {
   lsm: LsmReading | null
   hw: HwReading | null
@@ -521,6 +547,7 @@ export interface SystemsBlock {
   delayQueue: DelayQueueReading | null
   retryDlq: RetryDlqReading | null
   consumerGroup: ConsumerGroupReading | null
+  backpressure: BackpressureReading | null
   builtAt: number
 }
 
@@ -637,6 +664,19 @@ export function buildSnapshot(opts?: {
   cgpZeroMovement?: boolean
   cgpPerfectBalance?: boolean
   cgpFreeCompute?: boolean
+  /** KI-525：false 关掉消费者组积压背压维（兼容旧快照）；bpc* 注入规模/预算/单开关（bp* 已被 KI-504 B+ 树占用）。 */
+  backpressure?: boolean
+  bpcSteps?: number
+  bpcMu?: number
+  bpcAcceptBudget?: number
+  bpcLatencyBudget?: number
+  bpcBufferCap?: number
+  bpcMemoryCap?: number
+  bpcSeed?: number
+  bpcZeroLoss?: boolean
+  bpcBoundedLatency?: boolean
+  bpcUnlimitedBuffer?: boolean
+  bpcRigged?: boolean
 }): Promise<ConsoleSnapshot>
 
 /** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511 + KI-512 + KI-513：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 + 缓存读写一致性 + 消息投递语义 十五维系统读数；击穿并发 ⇒ async。 */
@@ -730,6 +770,19 @@ export function buildSystems(opts?: {
   cgpZeroMovement?: boolean
   cgpPerfectBalance?: boolean
   cgpFreeCompute?: boolean
+  /** KI-525：false 关掉消费者组积压背压维（兼容旧快照）；bpc* 注入规模/预算/单开关（bp* 已被 KI-504 B+ 树占用）。 */
+  backpressure?: boolean
+  bpcSteps?: number
+  bpcMu?: number
+  bpcAcceptBudget?: number
+  bpcLatencyBudget?: number
+  bpcBufferCap?: number
+  bpcMemoryCap?: number
+  bpcSeed?: number
+  bpcZeroLoss?: boolean
+  bpcBoundedLatency?: boolean
+  bpcUnlimitedBuffer?: boolean
+  bpcRigged?: boolean
 }): Promise<SystemsBlock>
 
 /** KI-501：真跑缓存防护三件套（击穿/穿透/雪崩）收敛成前端三面板紧凑读数；单维失败落 null。 */
@@ -884,6 +937,23 @@ export function buildConsumerGroupReading(opts: {
   cgpPerfectBalance?: boolean
   cgpFreeCompute?: boolean
 }, now: () => number): Promise<ConsumerGroupReading | null>
+
+/** KI-525：真跑消费者组积压背压 / 流量削峰四策略（Backpressure / Buffering / Shedding / Scaling × 六正交负载场景 + 三难向量 + Little's Law 双路自证 + 十一枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。bpc* = backpressure（bp* 已被 KI-504 B+ 树占用）。 */
+export function buildBackpressureReading(opts: {
+  now?: () => number
+  backpressure?: boolean
+  bpcSteps?: number
+  bpcMu?: number
+  bpcAcceptBudget?: number
+  bpcLatencyBudget?: number
+  bpcBufferCap?: number
+  bpcMemoryCap?: number
+  bpcSeed?: number
+  bpcZeroLoss?: boolean
+  bpcBoundedLatency?: boolean
+  bpcUnlimitedBuffer?: boolean
+  bpcRigged?: boolean
+}, now: () => number): Promise<BackpressureReading | null>
 
 export function realScenarioOpts(id: string): Record<string, any>
 

@@ -1290,3 +1290,102 @@ describe('KI-523 · consumerGroup 消费者组 rebalance 面板：三协议 × �
     expect(dom2.els['cgp-probes'].innerHTML).toContain('data-verdict="noUniversalWinner"')
   })
 })
+
+describe('KI-525 · backpressure 消费者组积压背压面板：四策略 × 六负载 + 正交三难向量 + Little′s Law 自证 + 十一真件交叉印证', () => {
+  const realBp = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+
+  it('四策略 × 六负载矩阵状态字直读三布尔 + 指标梯 + 与三难向量同源', async () => {
+    const dom = await runApp(realBp)
+    const matrix = dom.els['bpc-matrix'].innerHTML
+    expect(matrix).toContain('bpc-mat-head')
+    expect(matrix).toContain('data-strategy="Backpressure"')
+    expect(matrix).toContain('data-strategy="Buffering"')
+    expect(matrix).toContain('data-strategy="Shedding"')
+    expect(matrix).toContain('data-strategy="Scaling"')
+    expect(matrix).toContain('data-s="steadyTrickle"')
+    expect(matrix).toContain('data-s="memoryPressure"')
+    // 每个格子都带 data-state，且值只来自三布尔判定的四类之一
+    const states = [...matrix.matchAll(/data-state="([^"]+)"/g)].map((m: any) => m[1])
+    expect(states.length).toBe(24) // 4 策略 × 6 场景
+    for (const st of states) expect(['drop', 'stall', 'press', 'ok']).toContain(st)
+    // 状态字与 cell 三布尔同源：Shedding 持续过载/下游停摆应判「丢」
+    expect(matrix).toContain('class="bpc-cell drop"')
+    // 指标梯四行
+    const ladder = dom.els['bpc-ladder'].innerHTML
+    for (const s of ['Backpressure', 'Buffering', 'Shedding', 'Scaling']) expect(ladder).toContain('data-strategy="' + s + '"')
+    expect(ladder).toContain('bpc-bar')
+    expect(dom.els['bpc-matrix-note'].textContent).toContain('三布尔')
+  })
+
+  it('三难向量四行 + 向量串 110/101/011/100 + 不封赢家 + 判词 chips', async () => {
+    const dom = await runApp(realBp)
+    const tri = dom.els['bpc-trilemma'].innerHTML
+    expect(tri).toContain('bpc-vec-head')
+    expect(tri).toContain('data-vec="110"') // Backpressure
+    expect(tri).toContain('data-vec="101"') // Buffering
+    expect(tri).toContain('data-vec="011"') // Shedding
+    expect(tri).toContain('data-vec="100"') // Scaling
+    expect(tri).toContain('data-k="noLoss"')
+    expect(tri).toContain('data-k="lowLatency"')
+    expect(tri).toContain('data-k="highThroughput"')
+    const probes = dom.els['bpc-probes'].innerHTML
+    expect(probes).toContain('data-verdict="noUniversalWinner"')
+    expect(probes).toContain('data-verdict="highThroughputCausallyUnerasable"')
+    expect(probes).toContain('data-verdict="backpressureRejectsBursts"')
+    expect(probes).toContain('data-verdict="sheddingNotFreeLunch"')
+    expect(probes).toContain('data-verdict="scalingStallsOnRebalance"')
+    expect(dom.els['bpc-trilemma-note'].textContent).toContain('110')
+  })
+
+  it('Little′s Law 自证面板 + 十一真件交叉印证全部真 API 名落 DOM', async () => {
+    const dom = await runApp(realBp)
+    const ll = dom.els['bpc-littlelaw'].innerHTML
+    expect(ll).toContain('data-ll="steadyHolds"')
+    expect(ll).toContain('data-ll="steadyNontrivial"')
+    expect(ll).toContain('data-ll="overloadBreaks"')
+    expect(ll).toContain('λW')                     // L=λW 公式直陈
+    expect(ll).toContain('bpc-ll-sample')          // 稳态样本读数
+    const cx = dom.els['bpc-crosscheck'].innerHTML
+    for (const api of [
+      'createTokenBucket', 'createLeakyBucket', 'createRedisZsetDelayQueue', 'createMinHeapDelayQueue',
+      'createWal', 'createShardedCache', 'createBloomFilter', 'createFullJitterBackoff',
+      'createPackedCounters', 'createObjectPool', 'createBus',
+    ]) expect(cx, '真件 ' + api + ' 必须落 DOM').toContain(api)
+  })
+
+  it('systems.backpressure 缺失 / 证据缺失：真实降级、绝不伪造', async () => {
+    const noBp = JSON.parse(JSON.stringify(realBp))
+    noBp.systems.backpressure = null
+    const dom = await runApp(noBp)
+    expect(dom.els['bpc-matrix'].innerHTML).toContain('暂缺')
+    expect(dom.els['bpc-ladder'].innerHTML).toBe('')
+    expect(dom.els['bpc-trilemma'].innerHTML).toContain('暂缺')
+    expect(dom.els['bpc-matrix-note'].textContent).toContain('systems.backpressure 缺失')
+
+    const partial = JSON.parse(JSON.stringify(realBp))
+    partial.systems.backpressure.crosscheck = null
+    const dom2 = await runApp(partial)
+    expect(dom2.els['bpc-crosscheck'].innerHTML).toContain('真件交叉印证缺失')
+    expect(dom2.els['bpc-crosscheck'].innerHTML).not.toContain('createWal')
+    const noLl = JSON.parse(JSON.stringify(realBp))
+    noLl.systems.backpressure.littleLaw = null
+    const dom3 = await runApp(noLl)
+    expect(dom3.els['bpc-littlelaw'].innerHTML).toContain('缺失')
+  })
+
+  it('第十九维 markup 与 CSS 契约：row-bpc 两面板 + bpc-* 视觉族 + reduced-motion 兜底', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-bpc')
+    expect(html).toContain('id="bpc-matrix"')
+    expect(html).toContain('id="bpc-littlelaw"')
+    expect(html).toContain('第十九维')
+    expect(css).toContain('.bpc-cell.drop')           // 零丢失破
+    expect(css).toContain('.bpc-cell.stall')          // 低时延破
+    expect(css).toContain('.bpc-cell.press')          // 高吞吐破
+    expect(css).toContain('.bpc-cell.ok')             // 空真无病征
+    expect(css).toContain('.bpc-bar > i')             // 指标梯
+    expect(css).toContain('prefers-reduced-motion')   // 前庭友好兜底
+    expect(css).toContain('@media (max-width: 720px)')
+  })
+})

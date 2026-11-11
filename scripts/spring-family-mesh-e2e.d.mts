@@ -334,5 +334,28 @@ export function runMeshE2E(opts?: any): {
       topology: Record<string, string>
       builtAt: number
     } | null
+    /** KI-525：积压背压 / 流量削峰四策略快照（Backpressure/Buffering/Shedding/Scaling × 六场景 + 三难向量 + Little's Law 双路自证 + 十一枚真件交叉印证），未配 backpressure 为 null；rigged 110/110/110/110 因果锁死 highThroughput、不硬造全 111 */
+    backpressureSnapshot: {
+      config: Record<string, any>
+      rows: Array<{
+        strategy: string
+        scenarios: Array<{
+          id: string; strategy: string; arrivals: number; accepted: number; admitted: number
+          rejected: number; dropped: number; served: number; endQueue: number; waitSum: number
+          queueLenSum: number; avgWait: number; peakQueue: number; acceptedRate: number; muEffective: number
+          backpressureTicks: number; fault: string; rebalances?: number
+          noLoss: boolean; lowLatency: boolean; highThroughput: boolean
+          littleLaw: { L: number; W: number; lambda: number; Lpred: number; gap: number; steadyStateReached: boolean; holds: boolean; nontrivial?: boolean }
+        }>
+        trilemma: { noLoss: boolean; lowLatency: boolean; highThroughput: boolean }
+        metrics: { dropped: number; rejected: number; avgWait: number; peakQueue: number; rebalances: number }
+      }>
+      vectors: Record<string, string>
+      littleLaw: { steadyHolds: boolean; steadyNontrivial: boolean; overloadBreaks: boolean; steady: Array<Record<string, any>>; overload: Array<Record<string, any>>; note: string }
+      crosscheck: { evidence: Record<string, any> }
+      verdict: Record<string, any>
+      topology: Record<string, string>
+      builtAt: number
+    } | null
   }>
 }

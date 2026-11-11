@@ -56,6 +56,7 @@
       renderDelayQueue(snap.systems ? snap.systems.delayQueue : null)
       renderRetryDlq(snap.systems ? snap.systems.retryDlq : null)
       renderConsumerGroup(snap.systems ? snap.systems.consumerGroup : null)
+      renderBackpressure(snap.systems ? snap.systems.backpressure : null)
       setLive(true, result.source)
     }).catch(function (e) {
       setLive(false, 'error')
@@ -2247,6 +2248,149 @@
       '单开 zeroMovement 冻结归属会让新成员饥饿（zeroMovementStarvesJoiner=' + (starve ? '是' : '否') + '）。' +
       'steadyState 的最小迁移为维序空真、非卖点（vacuousTrue），不拿稳态冒充迁移优势。' +
       '全为确定性教学状态机，结构计数，不声称墙钟/QPS/真 Kafka/真 broker。'
+  }
+
+  /* ================= KI-525 消费者组积压背压 / 流量削峰四策略诚实权衡 · 第十九维（bpc 族） ================= */
+
+  function renderBackpressure(bpc) {
+    renderBpcMatrix(bpc && bpc.rows, bpc && bpc.config)
+    renderBpcLadder(bpc && bpc.rows)
+    renderBpcTrilemma(bpc && bpc.rows, bpc && bpc.verdict, bpc && bpc.crosscheck, bpc && bpc.littleLaw)
+  }
+
+  function bpcMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 暂缺</div>'
+    if (note) note.textContent = 'systems.backpressure 缺失 — 跑一次 npm run console:data 即可补齐'
+  }
+
+  function bpcState(s) {
+    if (!s) return { cls: '', ch: '·' }
+    // 六负载场景正交：核心件已在每格算好三布尔，只在「该场景负责的维度」判定，其余维空真——与 trilemma 同源，绝不拿阈值重算。
+    if (s.noLoss === false) return { cls: 'drop', ch: '丢' }
+    if (s.lowLatency === false) return { cls: 'stall', ch: '滞' }
+    if (s.highThroughput === false) return { cls: 'press', ch: '压' }
+    return { cls: 'ok', ch: '✓' }
+  }
+
+  function renderBpcMatrix(rows, config) {
+    var box = $('#bpc-matrix'), note = $('#bpc-matrix-note')
+    if (!Array.isArray(rows) || !rows.length || !config || !Array.isArray(config.scenarios)) {
+      bpcMissing(box, note, 'bpc 矩阵'); return
+    }
+    var scenarios = config.scenarios
+    var head = '<div class="bpc-mat-row bpc-mat-head"><span class="bpc-mat-proto">策略</span>' +
+      scenarios.map(function (sc) { return '<span class="bpc-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="bpc-mat-cost">丢/滞/收</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = bpcState(cell)
+        return '<span class="bpc-cell ' + st.cls + '" data-strategy="' + esc(row.strategy) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="bpc-mat-row" data-strategy="' + esc(row.strategy) + '">' +
+        '<span class="bpc-mat-proto">' + esc(row.strategy) + '</span>' +
+        cells + '<span class="bpc-mat-cost"><b>' + esc(fmt(m.dropped)) + '</b>/' + esc(fmt(m.avgWait)) + '/' + esc(fmt(m.rejected)) + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'Backpressure / Buffering / Shedding / Scaling × 六正交负载场景：steadyTrickle（稳态细流）/ burstAbsorb（突发吸纳）/ sustainedOverload（持续过载）/ latencySpike（时延尖峰）/ downstreamStall（下游停摆）/ memoryPressure（内存压力）。' +
+      '每格只在「该场景负责的维度」判定，其余维空真——标「丢」=零丢失维破（dropped>0，反压 rejected 不算丢），「滞」=低时延维破（avgWait 超预算），「压」=高吞吐维破（acceptedRate 低于准入预算），「✓」=该格在其负责维度无病征（空真不算赢家）。' +
+      '状态字直接读核心件算好的 noLoss/lowLatency/highThroughput 三布尔，与三难向量同源，绝不拿阈值重算。全为确定性教学状态机，结构计数，不声称墙钟/QPS/真 Kafka/真 broker。'
+  }
+
+  function renderBpcLadder(rows) {
+    var box = $('#bpc-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.peakQueue) ? r.metrics.peakQueue : 0 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.peakQueue) ? Math.round(m.peakQueue / max * 100) : 0
+      return '<div class="bpc-line" data-strategy="' + esc(r.strategy) + '"><span class="tag">' + esc(r.strategy) + '</span>' +
+        '<span class="bpc-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">峰队 ' + esc(fmt(m.peakQueue)) + ' · 均待 ' + esc(fmt(m.avgWait)) + ' · 丢 ' + esc(fmt(m.dropped)) + ' · 拒 ' + esc(fmt(m.rejected)) + ' · rebal ' + esc(fmt(m.rebalances)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderBpcTrilemma(rows, verdict, crosscheck, littleLaw) {
+    var box = $('#bpc-trilemma'), llBox = $('#bpc-littlelaw'), cxBox = $('#bpc-crosscheck'), note = $('#bpc-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      bpcMissing(box, note, 'bpc 判词'); if (llBox) llBox.innerHTML = ''; if (cxBox) cxBox.innerHTML = ''; return
+    }
+    var flags = [['noLoss', '零丢失'], ['lowLatency', '低时延'], ['highThroughput', '高吞吐']]
+    var head = '<div class="bpc-vec bpc-vec-head"><span class="proto">策略</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="bpc-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.strategy) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="bpc-vec" data-strategy="' + esc(r.strategy) + '"><span class="proto">' + esc(r.strategy) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    // Little's Law 双路自证：稳态 L=λW 非平凡成立、过载端队列不排空则如实破裂。
+    if (llBox) {
+      if (littleLaw) {
+        var ll = [
+          '<div class="bpc-ll-row"><b>L</b> = 稳态平均队长 · <b>W</b> = 逐消息平均等待 · <b>λ</b> = 稳态吞吐率 served/steps · <b>L′</b> = λ·W</div>'
+        ]
+        ll.push('<div class="bpc-ll-row"><span class="bpc-flag ' + (littleLaw.steadyHolds ? 'yes' : 'no') + '" data-ll="steadyHolds">稳态 L=λW ' + (littleLaw.steadyHolds ? '成立' : '破裂') + '</span>' +
+          '<span class="bpc-flag ' + (littleLaw.steadyNontrivial ? 'yes' : 'no') + '" data-ll="steadyNontrivial">非平凡 ' + (littleLaw.steadyNontrivial ? '是' : '否') + '</span>' +
+          '<span class="bpc-flag ' + (littleLaw.overloadBreaks ? 'yes' : 'no') + '" data-ll="overloadBreaks">过载破裂 ' + (littleLaw.overloadBreaks ? '是' : '否') + '</span></div>')
+        var samples = (Array.isArray(littleLaw.steady) ? littleLaw.steady : []).slice(0, 4).map(function (s) {
+          return '<span class="bpc-ll-sample" data-ll-strategy="' + esc(s.strategy) + '">' + esc(s.strategy) + ': L=' + esc(fmt(s.L, 2)) + ' λW=' + esc(fmt(s.Lpred, 2)) + ' gap=' + esc(fmt(s.gap, 2)) + '</span>'
+        }).join('')
+        if (samples) ll.push('<div class="bpc-ll-samples">' + samples + '</div>')
+        ll.push('<p class="bpc-ll-note">' + esc(littleLaw.note || '') + '</p>')
+        llBox.innerHTML = ll.join('')
+      } else {
+        llBox.innerHTML = '<div class="nodata">Little\'s Law 读数缺失</div>'
+      }
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>真 <b>createTokenBucket</b> 准入 allow <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>真 <b>createLeakyBucket</b> 整形 allow <b>' + esc(fmt(ev.leakyAllowed)) + '</b> / 拒 ' + esc(fmt(ev.leakyRejected)) + '</div>' +
+          '<div>真 <b>createRedisZsetDelayQueue</b> durable 缓冲 fire ' + esc(fmt(ev.zqFired)) + ' · 恢复后 pending ' + esc(fmt(ev.zqPendingAfterRestore)) + ' · 重启丢 ' + esc(fmt(ev.zqLostOnRestart)) + '</div>' +
+          '<div>真 <b>createMinHeapDelayQueue</b> 精确排程 advance 出队 <b>' + esc(fmt(ev.heapFired)) + '</b> 条</div>' +
+          '<div>真 <b>createWal</b> 积压 append ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>真 <b>createShardedCache</b> 分片缓冲命中 <b>' + esc(fmt(ev.shardHits)) + '</b></div>' +
+          '<div>真 <b>createBloomFilter</b> 重复消费判重 hit=' + esc(String(ev.bloomHit)) + ' miss=' + esc(String(ev.bloomMiss)) + '</div>' +
+          '<div>真 <b>createFullJitterBackoff</b> shedding 退避抖开 <b>' + esc(fmt(ev.jitterSpread)) + '</b></div>' +
+          '<div>真 <b>createPackedCounters</b> 队列深度紧凑计数 Σ=' + esc(fmt(ev.counterSum)) + ' 假共享=' + esc(fmt(ev.counterFalseSharing)) + '</div>' +
+          '<div>真 <b>createObjectPool</b> 消息对象 建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 <b>' + esc(fmt(ev.poolReused)) + '</b>（省 GC）</div>' +
+          '<div>真 <b>createBus</b> 水位告警通知 <b>' + esc(fmt(ev.watermarkNotices)) + '</b> 条 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">真件交叉印证缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var causal = v.highThroughputCausallyUnerasable === true
+    var chips = [
+      '<span class="chip" data-verdict="backpressureRejectsBursts"><b>Backpressure</b> 突发真反压 ' + (v.backpressureRejectsBursts ? '是' : '否') + '</span>',
+      '<span class="chip" data-verdict="bufferingPaysLatency"><b>Buffering</b> 削峰付时延 ' + (v.bufferingPaysLatency ? '是' : '否') + '</span>',
+      '<span class="chip" data-verdict="sheddingNotFreeLunch"><b>Shedding</b> 主动真丢 ' + (v.sheddingDropsMessages ? '是' : '否') + ' · 非银弹 ' + (v.sheddingNotFreeLunch ? '是' : '否') + '</span>',
+      '<span class="chip" data-verdict="scalingStallsOnRebalance"><b>Scaling</b> 扩容付 rebalance 空窗 ' + (v.scalingStallsOnRebalance ? '是' : '否') + '</span>',
+      '<span class="chip" data-verdict="bufferingDropsUnderMemoryPressure"><b>Buffering</b> 内存压紧真丢 ' + (v.bufferingDropsUnderMemoryPressure ? '是' : '否') + '</span>',
+      '<span class="chip ' + (causal ? 'jade-t' : 'muted-t') + '" data-verdict="highThroughputCausallyUnerasable">' + (causal ? '✓ 零丢失∧低时延∧无限缓冲齐开·高吞吐真算抹不掉（L=λW 逼出反压）' : 'rigged 三开关未触发：四向量退 110、无一 111，绝不硬造全赢家') + '</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' + (noWin ? '✓ 没有任何策略同时占三难' : '判词塌陷') + '</span>',
+    ]
+    var probes = $('#bpc-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维序固定 [零丢失 / 低时延 / 高吞吐]。默认向量 Backpressure=110 / Buffering=101 / Shedding=011 / Scaling=100，四者互异、无一 111。' +
+      '三口径严格正交：零丢失只看 dropped===0（反压 rejected 不算丢）、低时延只看 avgWait≤预算、高吞吐只看 acceptedRate=(arrivals−rejected)/arrivals≥预算（主动丢弃不拖慢上游，故 Shedding 不伤吞吐维）。' +
+      'rigged 因果锁：零丢失∧有界时延∧无限缓冲齐开 ⇒ 四策略真实现算退 110 且高吞吐 causallyUnerasable（有界队列锁 W、L=λW 逼出 L 有界、μ<λ 唯一出路是反压、acceptedRate 被钳到 μ/λ），三开关无一能翻回该维，绝不硬造全 111。' +
+      'Little′s Law 稳态自证非平凡（非全零排队）、过载端 endQueue>0 时稳态形式如实破裂。全为确定性教学状态机，结构计数，不声称墙钟/QPS/真 Kafka/真 broker。'
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)

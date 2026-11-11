@@ -1237,3 +1237,75 @@ main { padding: clamp(18px, 3vw, 40px) clamp(18px, 4vw, 56px) 48px; max-width: 1
   .cgp-line .tag { min-width: 84px; }
   .cgp-line .num { min-width: 108px; }
 }
+
+/* === 第十九维：backpressure · 消费者组积压背压 / 流量削峰四策略诚实权衡（bpc 族，与 cgp/rdq 视觉同语系）=== */
+.row-bpc { grid-template-columns: repeat(2, 1fr); }
+.bpc-matrix { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 12px; }
+.bpc-mat-row { display: grid; grid-template-columns: 112px repeat(6, 1fr) 66px; gap: 4px; align-items: center; }
+.bpc-mat-head { font-family: var(--mono); font-size: 10px; letter-spacing: .04em; color: var(--gold-dim); padding-bottom: 3px; border-bottom: 1px solid var(--line-soft); }
+.bpc-mat-head .bpc-sc { text-align: center; }
+.bpc-mat-proto { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--silver); letter-spacing: .02em; }
+.bpc-cell {
+  text-align: center; font-family: var(--mono); font-size: 11px; padding: 5px 0;
+  border: 1px solid var(--line-soft); border-radius: 2px; background: var(--ash-2);
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+.bpc-cell:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.32); }
+.bpc-cell.drop { background: var(--wine-dim); border-color: rgba(165,68,82,.62); color: #f0a8af; font-weight: 600; }
+.bpc-cell.stall { background: rgba(201,162,58,.12); border-color: rgba(201,162,58,.5); color: var(--gold); font-weight: 600; }
+.bpc-cell.press { background: rgba(138,116,196,.12); border-color: rgba(138,116,196,.5); color: #c2b4e8; font-weight: 600; }
+.bpc-cell.ok { background: var(--jade-dim); border-color: rgba(79,155,134,.34); color: var(--jade); }
+.bpc-mat-cost { text-align: right; font-family: var(--mono); font-size: 10px; color: var(--gold-dim); }
+.bpc-mat-cost b { color: var(--gold); }
+.bpc-ladder { display: flex; flex-direction: column; gap: 5px; }
+.bpc-line { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 10.5px; color: var(--silver); }
+.bpc-line .tag { color: var(--gold-dim); letter-spacing: .06em; min-width: 112px; }
+.bpc-bar { flex: 1; height: 7px; background: var(--ash-2); border: 1px solid var(--line-soft); border-radius: 2px; overflow: hidden; }
+.bpc-bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--gold-dim), var(--gold)); }
+.bpc-line .num { color: var(--muted); min-width: 200px; text-align: right; }
+.bpc-trilemma { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 12px; }
+.bpc-vec { display: grid; grid-template-columns: 112px repeat(3, 1fr) 46px; gap: 6px; align-items: center; }
+.bpc-vec .proto { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--silver); }
+.bpc-vec .vec { font-family: var(--mono); font-size: 11px; text-align: center; color: var(--gold); letter-spacing: .1em; }
+.bpc-flag {
+  text-align: center; font-family: var(--mono); font-size: 10px; padding: 4px 0;
+  border: 1px solid var(--line-soft); border-radius: 2px; background: var(--ash-2);
+}
+.bpc-flag.yes { background: var(--jade-dim); border-color: rgba(79,155,134,.34); color: var(--jade); }
+.bpc-flag.no { background: var(--wine-dim); border-color: rgba(165,68,82,.36); color: #d98892; }
+.bpc-vec-head { font-family: var(--mono); font-size: 9px; letter-spacing: .04em; color: var(--muted); }
+.bpc-vec-head span { text-align: center; }
+.bpc-littlelaw {
+  font-family: var(--mono); font-size: 10px; line-height: 1.7; color: var(--muted);
+  background: var(--ash-2); border: 1px solid var(--line-soft); border-left: 2px solid var(--jade);
+  border-radius: 2px; padding: 8px 10px; margin: 6px 0 12px;
+}
+.bpc-littlelaw b { color: var(--gold); font-weight: 600; }
+.bpc-ll-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 5px; }
+.bpc-ll-row .bpc-flag { padding: 3px 8px; }
+.bpc-ll-samples { display: flex; gap: 6px; flex-wrap: wrap; }
+.bpc-ll-sample { font-size: 9.5px; color: var(--silver); background: var(--ash-1); border: 1px solid var(--line-soft); border-radius: 2px; padding: 2px 6px; }
+.bpc-ll-note { margin: 5px 0 0; font-size: 9.5px; color: var(--muted); }
+.bpc-crosscheck {
+  font-family: var(--mono); font-size: 10px; line-height: 1.75; color: var(--muted);
+  background: var(--ash-2); border: 1px solid var(--line-soft); border-left: 2px solid var(--gold-dim);
+  border-radius: 2px; padding: 8px 10px; margin: 6px 0 12px;
+}
+.bpc-crosscheck b { color: var(--gold); font-weight: 600; }
+.bpc-probes { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.bpc-probes .chip {
+  font-family: var(--mono); font-size: 10px; padding: 4px 9px;
+  border: 1px solid var(--line-soft); border-radius: 2px; background: var(--ash-2); color: var(--silver);
+}
+.bpc-probes .chip b { color: var(--gold); font-weight: 600; }
+.bpc-probes .chip.jade-t { border-color: rgba(79,155,134,.4); color: var(--jade); }
+.bpc-probes .chip.muted-t { color: var(--muted); }
+@media (max-width: 1020px) { .row-bpc { grid-template-columns: 1fr; } }
+@media (max-width: 720px) {
+  .bpc-mat-row, .bpc-vec { grid-template-columns: repeat(3, 1fr); }
+  .bpc-mat-head .bpc-sc:nth-of-type(n+5) { display: none; }
+  .bpc-cell { font-size: 9px; min-height: 22px; line-height: 22px; }
+  .bpc-line .tag { min-width: 84px; }
+  .bpc-line .num { min-width: 108px; }
+}
+@media (prefers-reduced-motion: reduce) { .bpc-cell { transition: none; } }

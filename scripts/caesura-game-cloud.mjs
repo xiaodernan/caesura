@@ -39,6 +39,7 @@ import { messageDeliveryStudy, mmdSnapshot } from './caesura-message-delivery.mj
 import { delayQueueStudy, delayQueueSnapshot } from './caesura-delay-queue.mjs'
 import { retryDlqStudy, retryDlqSnapshot } from './caesura-retry-dlq.mjs'
 import { consumerGroupStudy, consumerGroupSnapshot } from './caesura-consumer-group.mjs'
+import { backpressureStudy, backpressureSnapshot } from './caesura-backpressure.mjs'
 import {
   createAimdCongestion,
   createCubicCongestion,
@@ -552,6 +553,26 @@ export function createGameCloud(opts = {}) {
     return cgpCached
   }
 
+  // KI-525 消费者组积压背压 / 流量削峰四策略诚实权衡（Backpressure / Buffering / Shedding / Scaling；opt-in）。
+  // opts.backpressure===true 走钳制默认参数（可覆盖 now/seed/steps/mu/acceptBudget/latencyBudget/bufferCap/memoryCap
+  // /zeroLoss/boundedLatency/unlimitedBuffer/rigged 等）；传对象且 rows/vectors/verdict/crosscheck 齐全时当现成 study 注入；
+  // 默认 backpressure:false 非破坏（同 KI-513/518/520/523 法），显式开才接；不声称真 broker / 真 HPA / 真压测吞吐。
+  // 注意：bp* 缩写已被 KI-504 B+ 树（bplusIndex）占用，本件统一用 bpc*（backpressure）避免撞名。
+  const bpcCfg = opts.backpressure === true ? {} : (opts.backpressure && typeof opts.backpressure === 'object' ? opts.backpressure : null)
+  const bpcInjected = bpcCfg !== null && opts.backpressure &&
+    typeof opts.backpressure === 'object' && Array.isArray(opts.backpressure.rows) &&
+    opts.backpressure.vectors && opts.backpressure.verdict && opts.backpressure.crosscheck
+  let bpcCached = null
+  async function bpcSnapshotForStatus() {
+    if (bpcCfg === null) return null
+    if (bpcCached) return bpcCached
+    const study = bpcInjected
+      ? opts.backpressure
+      : await backpressureStudy({ ...bpcCfg, now: opts.bpcNow ?? bpcCfg.now })
+    bpcCached = backpressureSnapshot(study)
+    return bpcCached
+  }
+
   // KI-513：分布式消息投递语义三协议诚实权衡（At-Most-Once / At-Least-Once / Exactly-Once，opt-in）。
   // opts.messageDelivery===true 用缺省规模；传对象逐项注入（now/seed/messages/manyKeys/retryLimit/...
   // 或 noCrash/ackReliable/freeIdempotency 单开关探针），或直接塞一只现成 study（duck-typed：带 rows/vectors/verdict/crosscheck/topology）。
@@ -646,6 +667,8 @@ export function createGameCloud(opts = {}) {
     runRetryDlqStudy: rdlCfg === null ? null : () => retryDlqStudy({ ...rdlCfg, now: opts.rdlNow ?? rdlCfg.now }),
     /** KI-523 消费者组 rebalance / 分区所有权三协议诚实权衡研究件；缺 opts.consumerGroup 时为 null；Range/RoundRobin/Sticky × 六场景矩阵 + 三难向量（rigged 101/101/101 不硬造全 111）+ 九枚真件交叉印证（compareRemapping/shardRouter/hashRing/WAL/Bus/Redis/ObjectPool/TokenBucket/MinHeap）。 */
     runConsumerGroupStudy: cgpCfg === null ? null : () => consumerGroupStudy({ ...cgpCfg, now: opts.cgpNow ?? cgpCfg.now }),
+    /** KI-525 积压背压 / 流量削峰四策略诚实权衡研究件；缺 opts.backpressure 时为 null；Backpressure/Buffering/Shedding/Scaling × 六场景矩阵 + 三难向量（rigged 110/110/110/110 因果锁死 highThroughput、不硬造全 111）+ Little's Law 双路自证 + 十一枚真件交叉印证。 */
+    runBackpressureStudy: bpcCfg === null ? null : () => backpressureStudy({ ...bpcCfg, now: opts.bpcNow ?? bpcCfg.now }),
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
     gray: runtime.gray,
     /** 把游戏真 EventBus 按白名单routes 接进云事件总线（游戏侧一行：gc.connectGameBus(bus, routes)）。 */
@@ -694,6 +717,7 @@ export function createGameCloud(opts = {}) {
         delayQueue: await dqSnapshotForStatus(),
         retryDlq: await rdlSnapshotForStatus(),
         consumerGroup: await cgpSnapshotForStatus(),
+        backpressure: await bpcSnapshotForStatus(),
       }
     },
   }

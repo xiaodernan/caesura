@@ -120,6 +120,10 @@ export function runMeshE2E(opts = {}) {
     // KI-523：消费者组 rebalance / 分区所有权三协议（consumerGroup=true 装配；只读 Range/RoundRobin/Sticky × 六场景矩阵 + 三难向量 + 九枚真件交叉印证，rigged 101/101/101 因果锁死 minimalMovement、不硬造全 111，不改调用路径）。
     consumerGroup: opts.consumerGroup,
     cgpNow: opts.cgpNow,
+    // KI-525：积压背压 / 流量削峰四策略（backpressure=true 装配；只读 Backpressure/Buffering/Shedding/Scaling × 六场景矩阵 + 三难向量 + Little's Law 双路自证 + 十一枚真件交叉印证，rigged 110/110/110/110 因果锁死 highThroughput、不硬造全 111，不改调用路径）。
+    // 注入时钟用 bpcNow（bp* 已被 KI-504 B+ 树占用）。
+    backpressure: opts.backpressure,
+    bpcNow: opts.bpcNow,
     sources: {
       eureka: () => (opts.svcA ?? [{ id: 'svc-a:1', name: 'svc-a', address: '10.0.0.1', port: 8080, healthy: true }]),
       k8s: () => k8s.discover('caesura-gate'),
@@ -258,6 +262,7 @@ export function runMeshE2E(opts = {}) {
         delayQueueSnapshot: status.delayQueue ?? null,
         retryDlqSnapshot: status.retryDlq ?? null,
         consumerGroupSnapshot: status.consumerGroup ?? null,
+        backpressureSnapshot: status.backpressure ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
       }
@@ -464,6 +469,20 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         noUniversalWinner: r.consumerGroupSnapshot.verdict.noUniversalWinner,
         crosscheck: r.consumerGroupSnapshot.crosscheck,
         verdict: r.consumerGroupSnapshot.verdict,
+      } : null,
+      backpressure: r.backpressureSnapshot ? {
+        strategies: r.backpressureSnapshot.rows.map((row) => ({
+          strategy: row.strategy,
+          // 每格状态只认真件算好的三布尔，绝不拿阈值重算（六场景正交、其余维空真，与三难同源）。
+          ladder: row.scenarios.map((s) => s.id + ':' + (s.noLoss === false ? '丢' : s.lowLatency === false ? '滞' : s.highThroughput === false ? '压' : '稳')).join(' → '),
+          metrics: row.metrics, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.backpressureSnapshot.rows.map((row) => [row.strategy,
+          `${Number(row.trilemma.noLoss)}${Number(row.trilemma.lowLatency)}${Number(row.trilemma.highThroughput)}`])),
+        noUniversalWinner: r.backpressureSnapshot.verdict.noUniversalWinner,
+        littleLaw: r.backpressureSnapshot.littleLaw,
+        crosscheck: r.backpressureSnapshot.crosscheck,
+        verdict: r.backpressureSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

@@ -35,6 +35,7 @@ import { messageDeliveryStudy, mmdSnapshot } from './caesura-message-delivery.mj
 import { delayQueueStudy, delayQueueSnapshot } from './caesura-delay-queue.mjs'
 import { retryDlqStudy, retryDlqSnapshot } from './caesura-retry-dlq.mjs'
 import { consumerGroupStudy, consumerGroupSnapshot } from './caesura-consumer-group.mjs'
+import { backpressureStudy, backpressureSnapshot } from './caesura-backpressure.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
 export const SCENARIO_IDS = ['main', 'gray', 'resilience', 'cache', 'net']
@@ -155,6 +156,18 @@ export async function buildSnapshot(opts = {}) {
     cgpZeroMovement: opts.cgpZeroMovement,
     cgpPerfectBalance: opts.cgpPerfectBalance,
     cgpFreeCompute: opts.cgpFreeCompute,
+    backpressure: opts.backpressure,
+    bpcSeed: opts.bpcSeed,
+    bpcSteps: opts.bpcSteps,
+    bpcMu: opts.bpcMu,
+    bpcAcceptBudget: opts.bpcAcceptBudget,
+    bpcLatencyBudget: opts.bpcLatencyBudget,
+    bpcBufferCap: opts.bpcBufferCap,
+    bpcMemoryCap: opts.bpcMemoryCap,
+    bpcZeroLoss: opts.bpcZeroLoss,
+    bpcBoundedLatency: opts.bpcBoundedLatency,
+    bpcUnlimitedBuffer: opts.bpcUnlimitedBuffer,
+    bpcRigged: opts.bpcRigged,
   })
 
   return {
@@ -223,7 +236,7 @@ export async function buildSnapshot(opts = {}) {
  * @param {boolean} [opts.dqZeroTick] rigged：tick 抹为 1ms（只救时间轮即时精确）
  * @param {boolean} [opts.dqFreeHeapOps] rigged：堆比较免计数
  * @param {boolean} [opts.dqSharedBackend] rigged：进程内结构也假想跨机共享持久
- * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, failureDetector:object|null, bplusIndex:object|null, mvccTxn:object|null, distributedTxn:object|null, raftConsensus:object|null, distributedLock:object|null, idGen:object|null, distributedRateLimit:object|null, configConsistency:object|null, cacheCoherency:object|null, messageDelivery:object|null, delayQueue:object|null, builtAt:number}>}
+ * @returns {Promise<{lsm:object|null, hw:object|null, guards:object|null, rateLimit:object|null, failureDetector:object|null, bplusIndex:object|null, mvccTxn:object|null, distributedTxn:object|null, raftConsensus:object|null, distributedLock:object|null, idGen:object|null, distributedRateLimit:object|null, configConsistency:object|null, cacheCoherency:object|null, messageDelivery:object|null, delayQueue:object|null, retryDlq:object|null, consumerGroup:object|null, backpressure:object|null, builtAt:number}>}
  */
 export async function buildSystems(opts = {}) {
   const now = typeof opts.now === 'function' ? opts.now : () => Date.now()
@@ -259,7 +272,9 @@ export async function buildSystems(opts = {}) {
   const retryDlq = opts.retryDlq === false ? null : await buildRetryDlqReading(opts, now)
   // KI-523：第十八维「消费者组 rebalance」真跑 Range/RoundRobin/Sticky × 六场景矩阵 + 三难判词 + 九枚真件交叉印证，与其它维平级。
   const consumerGroup = opts.consumerGroup === false ? null : await buildConsumerGroupReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, builtAt: now() }
+  // KI-525：第十九维「消费者组积压背压」真跑 Backpressure/Buffering/Shedding/Scaling × 六正交负载场景 + 三难判词 + Little's Law 双路自证 + 十一枚真件交叉印证，与其它维平级。
+  const backpressure = opts.backpressure === false ? null : await buildBackpressureReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, builtAt: now() }
 }
 
 /** LSM 引擎真跑一趟确定性 benchmark，回结构读数（不夹带每行真值）。 */
@@ -840,6 +855,34 @@ export async function buildConsumerGroupReading(opts, now) {
 }
 
 /**
+ * KI-525：消费者组积压背压 / 流量削峰四策略（Backpressure / Buffering / Shedding / Scaling × 六正交负载场景 + 三难向量 + Little's Law 双路自证 + 十一枚真件交叉印证；缺省 null，前端第十九维）
+ * @param {object} opts { backpressure?:false, bpcSteps?, bpcMu?, bpcAcceptBudget?, bpcLatencyBudget?, bpcBufferCap?, bpcMemoryCap?, bpcSeed?, bpcZeroLoss?, bpcBoundedLatency?, bpcUnlimitedBuffer?, bpcRigged? }
+ * @param {()=>number} now 时钟（builtAt 注入真值；KI-517 母版：builtAt 与 generatedAt 共读同一 baseNow）
+ * 注：bpc* = backpressure；bp* 已被 KI-504 B+ 树 bplusIndex 占用，故不复用。
+ */
+export async function buildBackpressureReading(opts, now) {
+  try {
+    const s = await backpressureStudy({
+      now,
+      ...(opts.bpcSteps ? { steps: Math.max(1, Math.floor(Number(opts.bpcSteps))) } : {}),
+      ...(opts.bpcMu ? { mu: Math.max(1, Math.floor(Number(opts.bpcMu))) } : {}),
+      ...(opts.bpcAcceptBudget ? { acceptBudget: Number(opts.bpcAcceptBudget) } : {}),
+      ...(opts.bpcLatencyBudget ? { latencyBudget: Math.max(0, Number(opts.bpcLatencyBudget)) } : {}),
+      ...(opts.bpcBufferCap ? { bufferCap: Math.max(1, Math.floor(Number(opts.bpcBufferCap))) } : {}),
+      ...(opts.bpcMemoryCap ? { memoryCap: Math.max(1, Math.floor(Number(opts.bpcMemoryCap))) } : {}),
+      ...(opts.bpcSeed ? { seed: Math.max(0, Math.floor(Number(opts.bpcSeed))) } : {}),
+      ...(opts.bpcZeroLoss === true ? { zeroLoss: true } : {}),
+      ...(opts.bpcBoundedLatency === true ? { boundedLatency: true } : {}),
+      ...(opts.bpcUnlimitedBuffer === true ? { unlimitedBuffer: true } : {}),
+      ...(opts.bpcRigged === true ? { rigged: true } : {}),
+    })
+    return backpressureSnapshot(s)
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
  * 真跑时每场景的 opts（判定权在此：场景参数固定，业务阈值仍来自各子系统默认/显式注入）。
  * @param {string} id
  */
@@ -1116,6 +1159,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
       const stateOf = (s) => s.starved ? '饥' : s.balanced === false ? '斜' : s.minimalMovement === false ? '迁' : s.cheap === false ? '贵' : '稳'
       const ladders = cgp.rows.map((r) => r.protocol + '[' + r.scenarios.map((s) => s.id + ':' + stateOf(s)).join('/') + ']').join(' · ')
       console.log(`[console] consumerGroup: ${ladders} / 三难向量 ${JSON.stringify(cgp.vectors)} / 不封赢家 ${cgp.verdict.noUniversalWinner ? '是' : '否'} / Range最省 ${cgp.verdict.rangeCheapest ? '是' : '否'} · Sticky最小迁移 ${cgp.verdict.stickyMinimalMovement ? '是' : '否'} · Sticky非银弹 ${cgp.verdict.stickyNotFreeLunch ? '是' : '否'} · 均衡零迁移因果锁 ${cgp.verdict.minimalMovementCausallyUnerasable ? '是' : '否'}`)
+    }
+    if (snap.systems?.backpressure) {
+      const bpc = snap.systems.backpressure
+      const stateOf = (s) => s.noLoss === false ? '丢' : s.lowLatency === false ? '滞' : s.highThroughput === false ? '压' : '稳'
+      const ladders = bpc.rows.map((r) => r.strategy + '[' + r.scenarios.map((s) => s.id + ':' + stateOf(s)).join('/') + ']').join(' · ')
+      console.log(`[console] backpressure: ${ladders} / 三难向量 ${JSON.stringify(bpc.vectors)} / 不封赢家 ${bpc.verdict.noUniversalWinner ? '是' : '否'} / Backpressure拒突发 ${bpc.verdict.backpressureRejectsBursts ? '是' : '否'} · Buffering付时延 ${bpc.verdict.bufferingPaysLatency ? '是' : '否'} · Shedding真丢 ${bpc.verdict.sheddingDropsMessages ? '是' : '否'} · Scaling停服 ${bpc.verdict.scalingStallsOnRebalance ? '是' : '否'} · Little稳态 ${bpc.littleLaw.steadyHolds ? '立' : '破'} · 过载破裂 ${bpc.littleLaw.overloadBreaks ? '是' : '否'} · 高吞吐因果抹不掉 ${bpc.verdict.highThroughputCausallyUnerasable ? '是' : '否'}`)
     }
     if (snap.systems?.delayQueue) {
       const dld = snap.systems.delayQueue

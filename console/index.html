@@ -398,6 +398,22 @@
       <p class="note" id="cgp-trilemma-note">…</p>
     </article>
   </section>
+  <section class="row row-bpc">
+    <article class="panel panel-bpc">
+      <div class="panel-head"><h2>第十九维 · 积压背压 · 四策略 × 六负载</h2><span class="hint">压=令牌桶准入限速到 μ·突发反压退回上游 / 缓=全量接纳排大队列削峰填谷·内存压紧真丢 / 弃=队列钳小阈值过载主动丢弃·低时延高吞吐但零丢失不保 / 扩=持续过载触发扩容·先付 rebalance 空窗停服拒收</span></div>
+      <div class="bpc-matrix" id="bpc-matrix"></div>
+      <div class="bpc-ladder" id="bpc-ladder"></div>
+      <p class="note" id="bpc-matrix-note">…</p>
+    </article>
+    <article class="panel panel-bpc">
+      <div class="panel-head"><h2>三难向量（零丢失 ∧ 低时延 ∧ 高吞吐）· Little's Law 自证</h2><span class="hint">Backpressure=110 / Buffering=101 / Shedding=011 / Scaling=100 · 四向量互异无一 111 · L=λW 稳态自证非平凡·过载破裂</span></div>
+      <div class="bpc-trilemma" id="bpc-trilemma"></div>
+      <div class="bpc-littlelaw" id="bpc-littlelaw"></div>
+      <div class="bpc-crosscheck" id="bpc-crosscheck"></div>
+      <div class="bpc-probes" id="bpc-probes"></div>
+      <p class="note" id="bpc-trilemma-note">…</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">

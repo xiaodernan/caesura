@@ -1191,4 +1191,90 @@ describe('caesura-game-cloud', () => {
     expect(injected.consumerGroup.builtAt).toBe(555)
     expect(injected.consumerGroup.config.seed).toBe(99)
   })
+
+  it("backpressure:true ⇒ 装配积压背压四策略、status.backpressure 读真矩阵/三难向量/Little's Law/十一真件、builtAt 随 bpcNow、惰性同引用（KI-525）", async () => {
+    const gc = createGameCloud({
+      gameId: 'gidbp1', gamePort: 7791, sources, cloud: fakeCloud(),
+      backpressure: true, bpcNow: () => 9999,
+    })
+    expect(gc.runBackpressureStudy).toBeTypeOf('function')
+    const st = await gc.status()
+    expect(st.backpressure.builtAt).toBe(9999)                    // 注入时钟真求值（KI-517 契约延伸）
+    expect(st.backpressure.config.scenarios.length).toBe(6)
+    expect(st.backpressure.rows.length).toBe(4)
+    expect(st.backpressure.vectors).toEqual({ Backpressure: '110', Buffering: '101', Shedding: '011', Scaling: '100' })
+    const bp = st.backpressure.rows.find((r: any) => r.strategy === 'Backpressure')!
+    const buf = st.backpressure.rows.find((r: any) => r.strategy === 'Buffering')!
+    const shed = st.backpressure.rows.find((r: any) => r.strategy === 'Shedding')!
+    const scal = st.backpressure.rows.find((r: any) => r.strategy === 'Scaling')!
+    expect(bp.trilemma).toEqual({ noLoss: true, lowLatency: true, highThroughput: false })   // 只丢吞吐
+    expect(buf.trilemma).toEqual({ noLoss: true, lowLatency: false, highThroughput: true })  // 只亏时延
+    expect(shed.trilemma).toEqual({ noLoss: false, lowLatency: true, highThroughput: true }) // 只丢消息
+    expect(scal.trilemma).toEqual({ noLoss: true, lowLatency: false, highThroughput: false }) // 只占零丢失
+    // Little's Law 双路：稳态非平凡成立 + 过载破裂
+    expect(st.backpressure.littleLaw.steadyHolds).toBe(true)
+    expect(st.backpressure.littleLaw.steadyNontrivial).toBe(true)
+    expect(st.backpressure.littleLaw.overloadBreaks).toBe(true)
+    // 十一真件交叉印证：21 字段真回读、非硬编码
+    const ev = st.backpressure.crosscheck.evidence
+    expect(Object.keys(ev).sort()).toEqual(['bloomHit', 'bloomMiss', 'bucketAllowed', 'bucketRejected', 'busListeners', 'counterFalseSharing', 'counterSum', 'heapFired', 'jitterSpread', 'leakyAllowed', 'leakyRejected', 'poolCreated', 'poolReused', 'shardHits', 'walLines', 'walReplayed', 'watermarkNotices', 'zqFired', 'zqLostOnRestart', 'zqPendingAfterRestore'])
+    expect(ev.heapFired).toBe(9)
+    expect(ev.walReplayed).toBe(4)
+    expect(ev.watermarkNotices).toBe(2)
+    expect(ev.bloomMiss).toBe(false)
+    expect(ev.counterSum).toBe(36)
+    expect(st.backpressure.verdict.noUniversalWinner).toBe(true)
+    expect(st.backpressure.verdict.sheddingNotFreeLunch).toBe(true)
+    // 惰性缓存：二次 status 同引用
+    expect((await gc.status()).backpressure).toBe(st.backpressure)
+    const rerun = await gc.runBackpressureStudy!()
+    expect(rerun.vectors).toEqual(st.backpressure.vectors)
+    // 不连坐 KI-518/520/523
+    expect(st.delayQueue).toBe(null)
+    expect(st.retryDlq).toBe(null)
+    expect(st.consumerGroup).toBe(null)
+  })
+
+  it('backpressure 默认 null 非破坏；单开 zeroLoss/boundedLatency/unlimitedBuffer 各自局部、rigged 110/110/110/110 因果锁死 highThroughput；可注入现成 study（KI-525）', async () => {
+    const plain = createGameCloud({ gameId: 'gidbp2', gamePort: 7792, sources, cloud: fakeCloud() })
+    expect(plain.runBackpressureStudy).toBe(null)
+    const ps = await plain.status()
+    expect(ps.backpressure).toBe(null)
+    expect(ps.delayQueue).toBe(null)
+    expect(ps.consumerGroup).toBe(null)
+    // 单开 zeroLoss：补 Shedding 零丢失必积压、反噬低时延
+    const zl = await (await createGameCloud({
+      gameId: 'gidbp3', gamePort: 7793, sources, cloud: fakeCloud(),
+      backpressure: { zeroLoss: true, now: 0 },
+    })).status()
+    expect(zl.backpressure.verdict.zeroLossBackfiresLatency).toBe(true)
+    // 单开 boundedLatency：补低时延必逼出丢弃、反噬零丢失
+    const bl = await (await createGameCloud({
+      gameId: 'gidbp4', gamePort: 7794, sources, cloud: fakeCloud(),
+      backpressure: { boundedLatency: true, now: 0 },
+    })).status()
+    expect(bl.backpressure.verdict.boundedLatencyBackfiresNoLoss).toBe(true)
+    // 单开 unlimitedBuffer：只抹 memoryPressure 溢出、不动向量
+    const ub = await (await createGameCloud({
+      gameId: 'gidbp5', gamePort: 7795, sources, cloud: fakeCloud(),
+      backpressure: { unlimitedBuffer: true, now: 0 },
+    })).status()
+    expect(ub.backpressure.verdict.unlimitedBufferErasesOomOnly).toBe(true)
+    // rigged 三开关齐开：真实现算 110/110/110/110、因果锁死 highThroughput
+    const rig = await (await createGameCloud({
+      gameId: 'gidbp6', gamePort: 7796, sources, cloud: fakeCloud(),
+      backpressure: { rigged: true, now: 0 },
+    })).status()
+    expect(rig.backpressure.vectors).toEqual({ Backpressure: '110', Buffering: '110', Shedding: '110', Scaling: '110' })
+    expect(rig.backpressure.verdict.highThroughputCausallyUnerasable).toBe(true)
+    expect(rig.backpressure.verdict.noUniversalWinner).toBe(false)
+    // 注入现成 study（duck-typed）
+    const { backpressureStudy } = await import('../../scripts/caesura-backpressure.mjs')
+    const injected = await (await createGameCloud({
+      gameId: 'gidbp7', gamePort: 7797, sources, cloud: fakeCloud(),
+      backpressure: backpressureStudy({ seed: 99, now: 555 }),
+    })).status()
+    expect(injected.backpressure.builtAt).toBe(555)
+    expect(injected.backpressure.config.seed).toBe(99)
+  })
 })
