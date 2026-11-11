@@ -463,6 +463,36 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(snap.systems.delayQueue.verdict.redisZsetNeverSilentLossOnRestart).toBe(true)
     expect(snap.systems.delayQueue.vectors).toEqual({ TimingWheel: '100', MinHeap: '010', RedisZset: '001' })
     expect(fromBoot.systems.delayQueue).toEqual(snap.systems.delayQueue) // 第十六维同源
+    // KI-523 consumerGroup：三协议 × 六场景 + 正交三难向量 + 九真件交叉印证真读数已固化进快照（第十八维）。
+    expect(snap.systems.consumerGroup.rows.length).toBe(3)
+    expect(snap.systems.consumerGroup.config.scenarios.length).toBe(6)
+    const cgR = snap.systems.consumerGroup.rows.find((r: any) => r.protocol === 'Range')!
+    const cgRR = snap.systems.consumerGroup.rows.find((r: any) => r.protocol === 'RoundRobin')!
+    const cgS = snap.systems.consumerGroup.rows.find((r: any) => r.protocol === 'Sticky')!
+    expect(cgR.scenarios.find((s: any) => s.id === 'partitionSkew')!.imbalance).toBeGreaterThan(1) // Range 多 topic 余数偏斜
+    expect(cgR.scenarios.find((s: any) => s.id === 'memberJoin')!.moveRate).toBeGreaterThan(0)     // 成员加入迁移
+    expect(cgS.metrics.moveSum).toBeLessThan(cgRR.metrics.moveSum)                                  // Sticky 迁移最少
+    expect(cgS.metrics.opPerPart).toBeGreaterThan(cgR.metrics.opPerPart)                           // Sticky 最贵，非银弹
+    // 正交布尔：每格只在负责维度判定，快照 cell 携带三布尔与 trilemma 同源
+    for (const row of snap.systems.consumerGroup.rows) {
+      for (const c of row.scenarios) {
+        expect(typeof c.balanced).toBe('boolean')
+        expect(typeof c.minimalMovement).toBe('boolean')
+        expect(typeof c.cheap).toBe('boolean')
+        const recomputed = `${Number(row.trilemma.balanced)}${Number(row.trilemma.minimalMovement)}${Number(row.trilemma.cheap)}`
+        expect(snap.systems.consumerGroup.vectors[row.protocol]).toBe(recomputed) // 向量恒由 trilemma 现算
+      }
+    }
+    const cgpEv = snap.systems.consumerGroup.crosscheck.evidence
+    expect(Object.keys(cgpEv).length).toBe(16)
+    expect(cgpEv.walReplayed).toBeGreaterThan(0)         // 真 WAL restore+replay
+    expect(cgpEv.heapFired).toBeGreaterThan(0)           // 真最小堆 advance 出队
+    expect(cgpEv.rebalanceNotices).toBeGreaterThan(0)    // 真总线通知
+    expect(cgpEv.bucketRejected).toBeGreaterThan(0)      // 真令牌桶防抖拒流
+    expect(snap.systems.consumerGroup.verdict.noUniversalWinner).toBe(true)
+    expect(snap.systems.consumerGroup.verdict.stickyNotFreeLunch).toBe(true)
+    expect(snap.systems.consumerGroup.vectors).toEqual({ Range: '001', RoundRobin: '100', Sticky: '110' })
+    expect(fromBoot.systems.consumerGroup).toEqual(snap.systems.consumerGroup) // 第十八维同源
     expect(Object.keys(fromBoot.systems).sort()).toEqual(Object.keys(snap.systems).sort())
   })
 
@@ -867,6 +897,73 @@ describe('caesura-console-gen (KI-495)', () => {
     const snap = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, retryDlq: false })
     expect(snap.systems!.retryDlq).toBe(null)
     expect(snap.systems!.delayQueue).toBeTruthy()
+  })
+
+  it('buildConsumerGroupReading 真跑三协议×六场景 + 正交三难向量 + 九真件、注入时钟/规模/rigged 生效、单维关闭不连坐（KI-523）', async () => {
+    const { buildConsumerGroupReading, buildSystems, buildSnapshot } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 9393
+    const reading = (await buildConsumerGroupReading({}, now)) as NonNullable<Awaited<ReturnType<typeof buildConsumerGroupReading>>>
+    expect(reading).not.toBe(null)
+    expect(reading.builtAt).toBe(9393)                          // 注入时钟真求值（KI-517 契约延伸）
+    expect(reading.vectors).toEqual({ Range: '001', RoundRobin: '100', Sticky: '110' })
+    expect(reading.rows.length).toBe(3)
+    expect(reading.rows[0].scenarios.length).toBe(6)
+    expect(Object.keys(reading.crosscheck.evidence).sort()).toEqual(['bucketAllowed', 'bucketRejected', 'busListeners', 'groupMetaEntries', 'hashRingEmptyNodes', 'hashRingNodes', 'heapFired', 'poolAcquired', 'rebalanceNotices', 'remapConsistentRate', 'remapModuloRate', 'remapSavedRate', 'routerMoved', 'routerRate', 'walLines', 'walReplayed'])
+    expect(reading.crosscheck.evidence.walReplayed).toBeGreaterThan(0)
+    expect(reading.verdict.noUniversalWinner).toBe(true)
+    expect(reading.verdict.rangeCheapest).toBe(true)
+    expect(reading.verdict.rangeSkews).toBe(true)
+    expect(reading.verdict.roundRobinBalanced).toBe(true)
+    expect(reading.verdict.roundRobinMigrates).toBe(true)
+    expect(reading.verdict.stickyMinimalMovement).toBe(true)
+    expect(reading.verdict.stickyNotFreeLunch).toBe(true)
+    expect(reading.verdict.steadyStateVacuousTrue).toBe(true)
+    // 向量恒由 row.trilemma 现算（与矩阵同源，杜绝硬覆盖撒谎）
+    for (const row of reading.rows) {
+      const recomputed = `${Number(row.trilemma.balanced)}${Number(row.trilemma.minimalMovement)}${Number(row.trilemma.cheap)}`
+      expect(reading.vectors[row.protocol]).toBe(recomputed)
+      // 每格三正交布尔齐备
+      for (const c of row.scenarios) {
+        expect(typeof c.balanced).toBe('boolean')
+        expect(typeof c.minimalMovement).toBe('boolean')
+        expect(typeof c.cheap).toBe('boolean')
+      }
+    }
+    // 规模注入真生效：config 逐项带出，向量随规模诚实地变（bigPartitions=12 让 Range 首档省不住 cheap）——不硬套默认向量
+    const scaled = (await buildConsumerGroupReading({ cgpBigPartitions: 12, cgpBigConsumers: 4, cgpMovePartitions: 6, cgpSeed: 77 }, now))!
+    expect(scaled.config.bigPartitions).toBe(12)
+    expect(scaled.config.bigConsumers).toBe(4)
+    expect(scaled.config.movePartitions).toBe(6)
+    expect(scaled.config.seed).toBe(77)
+    for (const row of scaled.rows) {
+      const recomputed = `${Number(row.trilemma.balanced)}${Number(row.trilemma.minimalMovement)}${Number(row.trilemma.cheap)}`
+      expect(scaled.vectors[row.protocol]).toBe(recomputed)      // 规模变了向量仍由 trilemma 现算
+    }
+    // rigged 三开关：向量由 trilemma 现算 101/101/101、判词翻 false、minimalMovement 因果抹不掉
+    const rig = (await buildConsumerGroupReading({ cgpPerfectBalance: true, cgpZeroMovement: true, cgpFreeCompute: true }, now))!
+    expect(rig.vectors).toEqual({ Range: '101', RoundRobin: '101', Sticky: '101' })
+    expect(rig.verdict.noUniversalWinner).toBe(false)
+    expect(rig.verdict.trilemmaDistinguishes).toBe(false)
+    expect(rig.verdict.minimalMovementCausallyUnerasable).toBe(true)
+    for (const row of rig.rows) {
+      const recomputed = `${Number(row.trilemma.balanced)}${Number(row.trilemma.minimalMovement)}${Number(row.trilemma.cheap)}`
+      expect(rig.vectors[row.protocol]).toBe(recomputed)
+    }
+    // 单开 zeroMovement：冻结归属⇒新成员饥饿，balanced 反噬；单开 freeCompute 只抬 cheap
+    const zm = (await buildConsumerGroupReading({ cgpZeroMovement: true }, now))!
+    expect(zm.verdict.zeroMovementStarvesJoiner).toBe(true)
+    expect(zm.verdict.minimalMovementCausallyUnerasable).toBe(false) // 未叠 perfectBalance，不触发因果锁
+    const fc = (await buildConsumerGroupReading({ cgpFreeCompute: true }, now))!
+    expect(fc.rows.every((r: any) => r.trilemma.cheap === true)).toBe(true) // freeCompute 只抹 cheap 维
+    // 单维关闭落 null，不连坐第十六/十七维
+    const sys = await buildSystems({ now, consumerGroup: false })
+    expect(sys.consumerGroup).toBe(null)
+    expect(sys.delayQueue).toBeTruthy()  // 不连坐 KI-518
+    expect(sys.retryDlq).toBeTruthy()    // 不连坐 KI-520
+    const snap = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, consumerGroup: false })
+    expect(snap.systems!.consumerGroup).toBe(null)
+    expect(snap.systems!.delayQueue).toBeTruthy()
+    expect(snap.systems!.retryDlq).toBeTruthy()
   })
 
   /* ---------------- ㉞㉟㊱ KI-515 控制台快照 CLI 真跑时钟确定性 ---------------- */

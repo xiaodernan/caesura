@@ -409,6 +409,7 @@ function buildStudy(o = {}) {
       partitionsPerTopic: intOr(o.partitionsPerTopic, CGP_DEFAULTS.partitionsPerTopic),
       movePartitions: intOr(o.movePartitions, CGP_DEFAULTS.movePartitions),
       bigPartitions: intOr(o.bigPartitions, CGP_DEFAULTS.bigPartitions),
+      bigConsumers: intOr(o.bigConsumers, CGP_DEFAULTS.bigConsumers),
       balanceBudget, movementBudget, computeBudget,
       perfectBalance: pb, zeroMovement: zm, freeCompute: fc,
       scenarios: scenarioIds,
