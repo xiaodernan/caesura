@@ -687,4 +687,41 @@ describe('spring-family-mesh-e2e', () => {
     expect(plainRdlq.retryDlqSnapshot).toBe(null)
     expect(plainRdlq.delayQueueSnapshot).toBe(null)
   })
+
+  it('e2e KI-523：consumerGroup=true ⇒ 主链照常跑通，consumerGroupSnapshot 带三协议×六场景/三难向量/九真件交叉印证', async () => {
+    const e = runMeshE2E({ consumerGroup: true, cgpNow: () => 8888 })
+    const r = await e.run()
+    expect(r.started?.registered).toBe(true)          // 主链语义逐字不动
+    expect(r.callRes?.ok).toBe(true)
+    const d = r.consumerGroupSnapshot
+    expect(d).not.toBe(null)
+    expect(d!.builtAt).toBe(8888)
+    expect(d!.config.scenarios.length).toBe(6)
+    expect(d!.rows.length).toBe(3)
+    expect(d!.vectors).toEqual({ Range: '001', RoundRobin: '100', Sticky: '110' })
+    const range = d!.rows.find((row: any) => row.protocol === 'Range')!
+    const rr = d!.rows.find((row: any) => row.protocol === 'RoundRobin')!
+    const sticky = d!.rows.find((row: any) => row.protocol === 'Sticky')!
+    expect(range.trilemma).toEqual({ balanced: false, minimalMovement: false, cheap: true })
+    expect(rr.trilemma).toEqual({ balanced: true, minimalMovement: false, cheap: false })
+    expect(sticky.trilemma).toEqual({ balanced: true, minimalMovement: true, cheap: false })
+    expect(range.scenarios.find((s: any) => s.id === 'partitionSkew')!.imbalance).toBe(2)
+    expect(sticky.scenarios.find((s: any) => s.id === 'memberJoin')!.moveRate).toBe(0.125)
+    const ev = d!.crosscheck.evidence
+    expect(Object.keys(ev).sort()).toEqual(['bucketAllowed', 'bucketRejected', 'busListeners', 'groupMetaEntries', 'hashRingEmptyNodes', 'hashRingNodes', 'heapFired', 'poolAcquired', 'rebalanceNotices', 'remapConsistentRate', 'remapModuloRate', 'remapSavedRate', 'routerMoved', 'routerRate', 'walLines', 'walReplayed'])
+    expect(ev.walReplayed).toBe(2)
+    expect(ev.rebalanceNotices).toBe(2)
+    expect(ev.heapFired).toBe(9)
+    expect(d!.verdict.noUniversalWinner).toBe(true)
+    expect(d!.verdict.stickyNotFreeLunch).toBe(true)
+    // rigged 透传：因果锁死 minimalMovement、101/101/101
+    const rig = await runMeshE2E({ consumerGroup: { rigged: true } }).run()
+    expect(rig.consumerGroupSnapshot!.vectors).toEqual({ Range: '101', RoundRobin: '101', Sticky: '101' })
+    expect(rig.consumerGroupSnapshot!.verdict.minimalMovementCausallyUnerasable).toBe(true)
+    // 未配 consumerGroup 时为 null（非破坏、不连坐 KI-518/520）
+    const plain = await runMeshE2E().run()
+    expect(plain.consumerGroupSnapshot).toBe(null)
+    expect(plain.retryDlqSnapshot).toBe(null)
+    expect(plain.delayQueueSnapshot).toBe(null)
+  })
 })

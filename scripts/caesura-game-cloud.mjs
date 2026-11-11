@@ -38,6 +38,7 @@ import { cacheCoherencyStudy, cccSnapshot } from './caesura-cache-coherency.mjs'
 import { messageDeliveryStudy, mmdSnapshot } from './caesura-message-delivery.mjs'
 import { delayQueueStudy, delayQueueSnapshot } from './caesura-delay-queue.mjs'
 import { retryDlqStudy, retryDlqSnapshot } from './caesura-retry-dlq.mjs'
+import { consumerGroupStudy, consumerGroupSnapshot } from './caesura-consumer-group.mjs'
 import {
   createAimdCongestion,
   createCubicCongestion,
@@ -532,6 +533,25 @@ export function createGameCloud(opts = {}) {
     return rdlCached
   }
 
+  // KI-523 消费者组 rebalance / 分区所有权三协议诚实权衡（Range / RoundRobin / Sticky；opt-in）。
+  // opts.consumerGroup===true 走钳制默认参数（可覆盖 now/seed/consumers/partitionsPerTopic/bigPartitions/... ）；
+  // opts.consumerGroup 为对象且 rows/vectors/verdict/crosscheck 齐全时当已构形 study 直接注入；
+  // 默认 consumerGroup:false 非破坏（同 KI-513/518/520 法），显式开才接；不声称真 Kafka broker/真协调者/真跨机迁移。
+  const cgpCfg = opts.consumerGroup === true ? {} : (opts.consumerGroup && typeof opts.consumerGroup === 'object' ? opts.consumerGroup : null)
+  const cgpInjected = cgpCfg !== null && opts.consumerGroup &&
+    typeof opts.consumerGroup === 'object' && Array.isArray(opts.consumerGroup.rows) &&
+    opts.consumerGroup.vectors && opts.consumerGroup.verdict && opts.consumerGroup.crosscheck
+  let cgpCached = null
+  async function cgpSnapshotForStatus() {
+    if (cgpCfg === null) return null
+    if (cgpCached) return cgpCached
+    const study = cgpInjected
+      ? opts.consumerGroup
+      : await consumerGroupStudy({ ...cgpCfg, now: opts.cgpNow ?? cgpCfg.now })
+    cgpCached = consumerGroupSnapshot(study)
+    return cgpCached
+  }
+
   // KI-513：分布式消息投递语义三协议诚实权衡（At-Most-Once / At-Least-Once / Exactly-Once，opt-in）。
   // opts.messageDelivery===true 用缺省规模；传对象逐项注入（now/seed/messages/manyKeys/retryLimit/...
   // 或 noCrash/ackReliable/freeIdempotency 单开关探针），或直接塞一只现成 study（duck-typed：带 rows/vectors/verdict/crosscheck/topology）。
@@ -624,6 +644,8 @@ export function createGameCloud(opts = {}) {
     runDelayQueueStudy: dqCfg === null ? null : () => delayQueueStudy({ ...dqCfg, now: opts.dqNow ?? dqCfg.now }),
     /** KI-520 消息重试退避与死信队列三协议诚实权衡研究件；缺 opts.retryDlq 时为 null；立刻重试/纯指数退避/指数退避+全抖动 × 六场景矩阵 + 三难向量（rigged 101/101/101 不硬造全 111）+ 七枚真件交叉印证（最小堆/令牌桶/WAL/哈希环/幂等缓存/死信总线/对象池）。 */
     runRetryDlqStudy: rdlCfg === null ? null : () => retryDlqStudy({ ...rdlCfg, now: opts.rdlNow ?? rdlCfg.now }),
+    /** KI-523 消费者组 rebalance / 分区所有权三协议诚实权衡研究件；缺 opts.consumerGroup 时为 null；Range/RoundRobin/Sticky × 六场景矩阵 + 三难向量（rigged 101/101/101 不硬造全 111）+ 九枚真件交叉印证（compareRemapping/shardRouter/hashRing/WAL/Bus/Redis/ObjectPool/TokenBucket/MinHeap）。 */
+    runConsumerGroupStudy: cgpCfg === null ? null : () => consumerGroupStudy({ ...cgpCfg, now: opts.cgpNow ?? cgpCfg.now }),
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
     gray: runtime.gray,
     /** 把游戏真 EventBus 按白名单routes 接进云事件总线（游戏侧一行：gc.connectGameBus(bus, routes)）。 */
@@ -671,6 +693,7 @@ export function createGameCloud(opts = {}) {
         messageDelivery: await mmdSnapshotForStatus(),
         delayQueue: await dqSnapshotForStatus(),
         retryDlq: await rdlSnapshotForStatus(),
+        consumerGroup: await cgpSnapshotForStatus(),
       }
     },
   }

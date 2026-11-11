@@ -125,6 +125,12 @@ export interface GameCloudOptions {
    * 或直接塞一只现成 study（带 rows/vectors/verdict/crosscheck/topology 五块）。默认 false 不装配。 */
   retryDlq?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck: any; topology: any; [k: string]: any }
   rdlNow?: () => number
+  /**
+   * KI-523：true 装配消费者组 rebalance / 分区所有权三协议权衡（Range / RoundRobin / Sticky + 九枚真件交叉印证）。
+   * 对象逐项注入（now/seed/consumers/partitionsPerTopic/moveConsumers/movePartitions/bigConsumers/bigPartitions/balanceBudget/movementBudget/computeBudget/perfectBalance/zeroMovement/freeCompute/rigged/...），
+   * 或直接塞一只现成 study（带 rows/vectors/verdict/crosscheck/topology 五块）。默认 false 不装配。 */
+  consumerGroup?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck: any; topology: any; [k: string]: any }
+  cgpNow?: () => number
 }
 
 /** 创建一只游戏侧开箱即用云。 */
@@ -177,6 +183,8 @@ export function createGameCloud(opts?: GameCloudOptions): {
   runDelayQueueStudy: (() => Promise<any>) | null
   /** KI-520：消息重试退避与死信队列三协议汇总的现算入口（未配 opts.retryDlq 时为 null）；真跑 Immediate/Exponential/FullJitter × 六场景矩阵 + 三难向量 + 七枚真件交叉印证；rigged 101/101/101 因果锁死 noStorm、不硬造全 111。 */
   runRetryDlqStudy: (() => Promise<any>) | null
+  /** KI-523：消费者组 rebalance / 分区所有权三协议汇总的现算入口（未配 opts.consumerGroup 时为 null）；真跑 Range/RoundRobin/Sticky × 六场景矩阵 + 三难向量 + 九枚真件交叉印证；rigged 101/101/101 因果锁死 minimalMovement、不硬造全 111。 */
+  runConsumerGroupStudy: (() => Promise<any>) | null
   /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）。 */
   gray: any
   /** KI-489：把游戏真 EventBus（duck-typed {on,emit}）按白名单接进云事件总线。 */

@@ -213,8 +213,14 @@ describe('caesura-console-ui (KI-495)', () => {
     expect(js.replace(/http:\/\/www\.w3\.org\/2000\/svg/g, '')).not.toMatch(/https?:\/\//)
     // 本地资源都在
     expect(html).toContain('./styles.css')
-    expect(html).toContain('./bootstrap.js')
-    expect(html).toContain('./app.js')
+    expect(html).toContain('<div class="aurora" aria-hidden="true">')
+    expect(css).toContain('.aurora')
+    expect(css).toContain('@keyframes aurora-breathe')
+    expect(css).toContain('prefers-reduced-motion')
+    expect(html).toContain('<div class="grain" aria-hidden="true">')
+    expect(html).toContain('<div class="vignette" aria-hidden="true">')
+    expect(css).toContain('.grain, .vignette { position: fixed')
+    expect(html).toContain('<link rel="stylesheet" href="./styles.css" />')
   })
 
   it('⑦ bootstrap 与 snapshot 是同一份真数据（file:// 回退不编造第二套数）', () => {
@@ -1219,5 +1225,68 @@ describe('KI-520 · retryDlq 重试退避 × 死信面板：三协议 × 六场�
     expect(dom2.els['rdq-crosscheck'].innerHTML).toContain('真件交叉印证缺失')
     expect(dom2.els['rdq-crosscheck'].innerHTML).not.toContain('createWal')
     expect(dom2.els['rdq-probes'].innerHTML).toContain('data-verdict="noUniversalWinner"')
+  })
+})
+
+describe('KI-523 · consumerGroup 消费者组 rebalance 面板：三协议 × 六场景 + 正交三难向量 + 九真件交叉印证', () => {
+  const real3 = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+
+  it('真快照下渲染：矩阵/横条/判词/交叉印证/探针全部到位', async () => {
+    const dom = await runApp(real3)
+    const cgp = real3.systems.consumerGroup
+    expect(cgp).toBeTruthy()
+    const matrix = dom.els['cgp-matrix'].innerHTML
+    expect(matrix).toContain('cgp-mat-head')
+    for (const row of cgp.rows) expect(matrix).toContain('data-p="' + row.protocol + '"')
+    for (const s of cgp.config.scenarios) expect(matrix).toContain('data-s="' + s + '"')
+    // 正交布尔：每格标注直接读核心件 balanced/minimalMovement/cheap，与 trilemma 同源，绝不拿阈值重算。
+    for (const row of cgp.rows) {
+      for (const c of row.scenarios) {
+        const expectState = c.starved ? 'starve' : c.balanced === false ? 'skew' : c.minimalMovement === false ? 'migrate' : c.cheap === false ? 'costly' : 'ok'
+        expect(matrix).toContain('data-p="' + row.protocol + '" data-s="' + c.id + '" data-state="' + expectState + '"')
+      }
+    }
+    // 默认向量与已知病征落点
+    expect(cgp.vectors).toEqual({ Range: '001', RoundRobin: '100', Sticky: '110' })
+    expect(matrix).toContain('data-p="Range" data-s="partitionSkew" data-state="skew"')
+    expect(matrix).toContain('data-p="Range" data-s="memberJoin" data-state="migrate"')
+    expect(matrix).toContain('data-p="RoundRobin" data-s="manyPartitions" data-state="costly"')
+    expect(matrix).toContain('data-p="Sticky" data-s="steadyState" data-state="ok"')
+    expect(dom.els['cgp-ladder'].innerHTML).toContain('data-p="Sticky"')
+    const tri = dom.els['cgp-trilemma'].innerHTML
+    expect(tri).toContain('cgp-vec-head')
+    expect(tri).toContain('data-k="balanced"')
+    expect(tri).toContain('data-p="Range" data-k="balanced" data-v="0"')
+    expect(tri).toContain('data-p="Range" data-k="cheap" data-v="1"')
+    expect(tri).toContain('data-p="RoundRobin" data-k="balanced" data-v="1"')
+    expect(tri).toContain('data-p="Sticky" data-k="minimalMovement" data-v="1"')
+    expect(tri).toContain('data-p="Sticky" data-k="cheap" data-v="0"')
+    const cx = dom.els['cgp-crosscheck'].innerHTML
+    for (const api of ['compareRemapping', 'createShardRouter.remapOn', 'createHashRing', 'createWal', 'createBus', 'createRedisCache', 'createObjectPool', 'createTokenBucket', 'createMinHeapDelayQueue']) {
+      expect(cx).toContain(api)
+    }
+    const probes = dom.els['cgp-probes'].innerHTML
+    expect(probes).toContain('data-verdict="noUniversalWinner"')
+    expect(probes).toContain('data-verdict="rangeCheapest"')
+    expect(probes).toContain('data-verdict="roundRobinBalanced"')
+    expect(probes).toContain('data-verdict="stickyNotFreeLunch"')
+    expect(probes).toContain('data-verdict="minimalMovementCausallyUnerasable"')
+  })
+
+  it('systems.consumerGroup 缺失 / 证据缺失：真实降级、绝不伪造', async () => {
+    const noCgp = JSON.parse(JSON.stringify(real3))
+    noCgp.systems.consumerGroup = null
+    const dom = await runApp(noCgp)
+    expect(dom.els['cgp-matrix'].innerHTML).toContain('暂缺')
+    expect(dom.els['cgp-ladder'].innerHTML).toBe('')
+    expect(dom.els['cgp-trilemma'].innerHTML).toContain('暂缺')
+    expect(dom.els['cgp-matrix-note'].textContent).toContain('systems.consumerGroup 缺失')
+
+    const partial = JSON.parse(JSON.stringify(real3))
+    partial.systems.consumerGroup.crosscheck = null
+    const dom2 = await runApp(partial)
+    expect(dom2.els['cgp-crosscheck'].innerHTML).toContain('真件交叉印证缺失')
+    expect(dom2.els['cgp-crosscheck'].innerHTML).not.toContain('createWal')
+    expect(dom2.els['cgp-probes'].innerHTML).toContain('data-verdict="noUniversalWinner"')
   })
 })

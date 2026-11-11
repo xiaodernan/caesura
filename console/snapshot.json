@@ -6792,6 +6792,511 @@
         "FullJitter": "rand×min(cap, base×2^(n-1))；不风暴 + 不惊群；仍等退避档 ⇒ 缺低恢复延迟，非银弹"
       }
     },
+    "consumerGroup": {
+      "builtAt": 1794391585499,
+      "config": {
+        "seed": 523,
+        "consumers": 3,
+        "partitionsPerTopic": 4,
+        "movePartitions": 8,
+        "bigPartitions": 200,
+        "balanceBudget": 1.4,
+        "movementBudget": 0.5,
+        "computeBudget": 2,
+        "perfectBalance": false,
+        "zeroMovement": false,
+        "freeCompute": false,
+        "scenarios": [
+          "steadyState",
+          "partitionSkew",
+          "heteroSubscriptions",
+          "memberJoin",
+          "memberLeave",
+          "manyPartitions"
+        ]
+      },
+      "rows": [
+        {
+          "protocol": "Range",
+          "scenarios": [
+            {
+              "id": "steadyState",
+              "protocol": "Range",
+              "consumers": 3,
+              "partitions": 12,
+              "imbalance": 0,
+              "starved": false,
+              "moveRate": 0,
+              "opUnits": 12,
+              "opPerPart": 1,
+              "loads": [
+                4,
+                4,
+                4
+              ],
+              "fault": "稳态分配",
+              "balanced": true,
+              "minimalMovement": true,
+              "cheap": true
+            },
+            {
+              "id": "partitionSkew",
+              "protocol": "Range",
+              "consumers": 3,
+              "partitions": 8,
+              "imbalance": 2,
+              "starved": false,
+              "moveRate": 0,
+              "opUnits": 8,
+              "opPerPart": 1,
+              "loads": [
+                2,
+                2,
+                4
+              ],
+              "fault": "稳态分配",
+              "balanced": false,
+              "minimalMovement": true,
+              "cheap": true
+            },
+            {
+              "id": "heteroSubscriptions",
+              "protocol": "Range",
+              "consumers": 3,
+              "partitions": 8,
+              "imbalance": 2,
+              "starved": false,
+              "moveRate": 0,
+              "opUnits": 8,
+              "opPerPart": 1,
+              "loads": [
+                2,
+                4,
+                2
+              ],
+              "fault": "稳态分配",
+              "balanced": false,
+              "minimalMovement": true,
+              "cheap": true
+            },
+            {
+              "id": "memberJoin",
+              "protocol": "Range",
+              "consumers": 5,
+              "partitions": 8,
+              "imbalance": 1,
+              "starved": false,
+              "moveRate": 0.75,
+              "opUnits": 8,
+              "opPerPart": 1,
+              "loads": [
+                1,
+                2,
+                1,
+                2,
+                2
+              ],
+              "fault": "成员加入",
+              "balanced": true,
+              "minimalMovement": false,
+              "cheap": true
+            },
+            {
+              "id": "memberLeave",
+              "protocol": "Range",
+              "consumers": 3,
+              "partitions": 8,
+              "imbalance": 1,
+              "starved": false,
+              "moveRate": 0.375,
+              "opUnits": 8,
+              "opPerPart": 1,
+              "loads": [
+                2,
+                3,
+                3
+              ],
+              "fault": "成员退出",
+              "balanced": true,
+              "minimalMovement": true,
+              "cheap": true
+            },
+            {
+              "id": "manyPartitions",
+              "protocol": "Range",
+              "consumers": 8,
+              "partitions": 200,
+              "imbalance": 0,
+              "starved": false,
+              "moveRate": 0,
+              "opUnits": 200,
+              "opPerPart": 1,
+              "loads": [
+                25,
+                25,
+                25,
+                25,
+                25,
+                25,
+                25,
+                25
+              ],
+              "fault": "稳态分配",
+              "balanced": true,
+              "minimalMovement": true,
+              "cheap": true
+            }
+          ],
+          "trilemma": {
+            "balanced": false,
+            "minimalMovement": false,
+            "cheap": true
+          },
+          "metrics": {
+            "avgImbalance": 1.5,
+            "starved": false,
+            "moveSum": 1.125,
+            "opPerPart": 1
+          }
+        },
+        {
+          "protocol": "RoundRobin",
+          "scenarios": [
+            {
+              "id": "steadyState",
+              "protocol": "RoundRobin",
+              "consumers": 3,
+              "partitions": 12,
+              "imbalance": 0,
+              "starved": false,
+              "moveRate": 0,
+              "opUnits": 36,
+              "opPerPart": 3,
+              "loads": [
+                4,
+                4,
+                4
+              ],
+              "fault": "稳态分配",
+              "balanced": true,
+              "minimalMovement": true,
+              "cheap": true
+            },
+            {
+              "id": "partitionSkew",
+              "protocol": "RoundRobin",
+              "consumers": 3,
+              "partitions": 8,
+              "imbalance": 1,
+              "starved": false,
+              "moveRate": 0,
+              "opUnits": 24,
+              "opPerPart": 3,
+              "loads": [
+                3,
+                3,
+                2
+              ],
+              "fault": "稳态分配",
+              "balanced": true,
+              "minimalMovement": true,
+              "cheap": true
+            },
+            {
+              "id": "heteroSubscriptions",
+              "protocol": "RoundRobin",
+              "consumers": 3,
+              "partitions": 8,
+              "imbalance": 2,
+              "starved": false,
+              "moveRate": 0,
+              "opUnits": 16,
+              "opPerPart": 2,
+              "loads": [
+                2,
+                4,
+                2
+              ],
+              "fault": "稳态分配",
+              "balanced": false,
+              "minimalMovement": true,
+              "cheap": true
+            },
+            {
+              "id": "memberJoin",
+              "protocol": "RoundRobin",
+              "consumers": 5,
+              "partitions": 8,
+              "imbalance": 1,
+              "starved": false,
+              "moveRate": 0.5,
+              "opUnits": 40,
+              "opPerPart": 5,
+              "loads": [
+                2,
+                2,
+                2,
+                1,
+                1
+              ],
+              "fault": "成员加入",
+              "balanced": true,
+              "minimalMovement": true,
+              "cheap": true
+            },
+            {
+              "id": "memberLeave",
+              "protocol": "RoundRobin",
+              "consumers": 3,
+              "partitions": 8,
+              "imbalance": 1,
+              "starved": false,
+              "moveRate": 0.625,
+              "opUnits": 24,
+              "opPerPart": 3,
+              "loads": [
+                3,
+                3,
+                2
+              ],
+              "fault": "成员退出",
+              "balanced": true,
+              "minimalMovement": false,
+              "cheap": true
+            },
+            {
+              "id": "manyPartitions",
+              "protocol": "RoundRobin",
+              "consumers": 8,
+              "partitions": 200,
+              "imbalance": 0,
+              "starved": false,
+              "moveRate": 0,
+              "opUnits": 1600,
+              "opPerPart": 8,
+              "loads": [
+                25,
+                25,
+                25,
+                25,
+                25,
+                25,
+                25,
+                25
+              ],
+              "fault": "稳态分配",
+              "balanced": true,
+              "minimalMovement": true,
+              "cheap": false
+            }
+          ],
+          "trilemma": {
+            "balanced": true,
+            "minimalMovement": false,
+            "cheap": false
+          },
+          "metrics": {
+            "avgImbalance": 1.25,
+            "starved": false,
+            "moveSum": 1.125,
+            "opPerPart": 8
+          }
+        },
+        {
+          "protocol": "Sticky",
+          "scenarios": [
+            {
+              "id": "steadyState",
+              "protocol": "Sticky",
+              "consumers": 3,
+              "partitions": 12,
+              "imbalance": 0,
+              "starved": false,
+              "moveRate": 0,
+              "opUnits": 48,
+              "opPerPart": 4,
+              "loads": [
+                4,
+                4,
+                4
+              ],
+              "fault": "稳态分配",
+              "balanced": true,
+              "minimalMovement": true,
+              "cheap": true
+            },
+            {
+              "id": "partitionSkew",
+              "protocol": "Sticky",
+              "consumers": 3,
+              "partitions": 8,
+              "imbalance": 1,
+              "starved": false,
+              "moveRate": 0,
+              "opUnits": 32,
+              "opPerPart": 4,
+              "loads": [
+                3,
+                3,
+                2
+              ],
+              "fault": "稳态分配",
+              "balanced": true,
+              "minimalMovement": true,
+              "cheap": true
+            },
+            {
+              "id": "heteroSubscriptions",
+              "protocol": "Sticky",
+              "consumers": 3,
+              "partitions": 8,
+              "imbalance": 1,
+              "starved": false,
+              "moveRate": 0,
+              "opUnits": 24,
+              "opPerPart": 3,
+              "loads": [
+                2,
+                3,
+                3
+              ],
+              "fault": "稳态分配",
+              "balanced": true,
+              "minimalMovement": true,
+              "cheap": true
+            },
+            {
+              "id": "memberJoin",
+              "protocol": "Sticky",
+              "consumers": 5,
+              "partitions": 8,
+              "imbalance": 1,
+              "starved": false,
+              "moveRate": 0.125,
+              "opUnits": 20,
+              "opPerPart": 2.5,
+              "loads": [
+                1,
+                2,
+                2,
+                2,
+                1
+              ],
+              "fault": "成员加入",
+              "balanced": true,
+              "minimalMovement": true,
+              "cheap": true
+            },
+            {
+              "id": "memberLeave",
+              "protocol": "Sticky",
+              "consumers": 3,
+              "partitions": 8,
+              "imbalance": 1,
+              "starved": false,
+              "moveRate": 0.25,
+              "opUnits": 20,
+              "opPerPart": 2.5,
+              "loads": [
+                3,
+                3,
+                2
+              ],
+              "fault": "成员退出",
+              "balanced": true,
+              "minimalMovement": true,
+              "cheap": true
+            },
+            {
+              "id": "manyPartitions",
+              "protocol": "Sticky",
+              "consumers": 8,
+              "partitions": 200,
+              "imbalance": 0,
+              "starved": false,
+              "moveRate": 0,
+              "opUnits": 1800,
+              "opPerPart": 9,
+              "loads": [
+                25,
+                25,
+                25,
+                25,
+                25,
+                25,
+                25,
+                25
+              ],
+              "fault": "稳态分配",
+              "balanced": true,
+              "minimalMovement": true,
+              "cheap": false
+            }
+          ],
+          "trilemma": {
+            "balanced": true,
+            "minimalMovement": true,
+            "cheap": false
+          },
+          "metrics": {
+            "avgImbalance": 1,
+            "starved": false,
+            "moveSum": 0.375,
+            "opPerPart": 9
+          }
+        }
+      ],
+      "vectors": {
+        "Range": "001",
+        "RoundRobin": "100",
+        "Sticky": "110"
+      },
+      "crosscheck": {
+        "evidence": {
+          "remapConsistentRate": 0.333333,
+          "remapModuloRate": 0.541667,
+          "remapSavedRate": 0.208334,
+          "routerMoved": 5,
+          "routerRate": 0.3125,
+          "hashRingNodes": 3,
+          "hashRingEmptyNodes": 0,
+          "walLines": 2,
+          "walReplayed": 2,
+          "rebalanceNotices": 2,
+          "busListeners": 1,
+          "groupMetaEntries": 1,
+          "poolAcquired": 3,
+          "bucketAllowed": 2,
+          "bucketRejected": 2,
+          "heapFired": 9
+        }
+      },
+      "verdict": {
+        "vectors": {
+          "Range": "001",
+          "RoundRobin": "100",
+          "Sticky": "110"
+        },
+        "trilemmaDistinguishes": true,
+        "noUniversalWinner": true,
+        "noProtocolWinsAll": true,
+        "rangeCheapest": true,
+        "rangeSkews": true,
+        "roundRobinBalanced": true,
+        "roundRobinMigrates": true,
+        "stickyBalanced": true,
+        "stickyMinimalMovement": true,
+        "stickyNotFreeLunch": true,
+        "zeroMovementStarvesJoiner": false,
+        "minimalMovementCausallyUnerasable": false,
+        "steadyStateVacuousTrue": true
+      },
+      "topology": {
+        "Range": "每 topic 连续段分给按序订阅者；opUnits 最省，但多 topic 余数累积压前几个 + 异构必偏斜；成员变动段尾挪动",
+        "RoundRobin": "摊平 (topic,partition) 全局轮询跳未订阅；同构多 topic 更均衡，但 rebalance 全局从头重排 ⇒ 成员一变大规模迁移",
+        "Sticky": "保留 prev 合法归属 → 贪心补缺给最轻 → 有限轮均衡；最小迁移 + 负载感知，但 opUnits 最贵、停摆最长 ⇒ 非银弹"
+      }
+    },
     "builtAt": 1794391585499
   }
 }

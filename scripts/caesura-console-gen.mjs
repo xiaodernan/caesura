@@ -34,6 +34,7 @@ import { cacheCoherencyStudy, cccSnapshot } from './caesura-cache-coherency.mjs'
 import { messageDeliveryStudy, mmdSnapshot } from './caesura-message-delivery.mjs'
 import { delayQueueStudy, delayQueueSnapshot } from './caesura-delay-queue.mjs'
 import { retryDlqStudy, retryDlqSnapshot } from './caesura-retry-dlq.mjs'
+import { consumerGroupStudy, consumerGroupSnapshot } from './caesura-consumer-group.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
 export const SCENARIO_IDS = ['main', 'gray', 'resilience', 'cache', 'net']
@@ -141,6 +142,19 @@ export async function buildSnapshot(opts = {}) {
     rdlqZeroBackoff: opts.rdlqZeroBackoff,
     rdlqPerfectJitter: opts.rdlqPerfectJitter,
     rdlqNoRetryBudget: opts.rdlqNoRetryBudget,
+    consumerGroup: opts.consumerGroup,
+    cgpSeed: opts.cgpSeed,
+    cgpConsumers: opts.cgpConsumers,
+    cgpPartitionsPerTopic: opts.cgpPartitionsPerTopic,
+    cgpMovePartitions: opts.cgpMovePartitions,
+    cgpBigConsumers: opts.cgpBigConsumers,
+    cgpBigPartitions: opts.cgpBigPartitions,
+    cgpBalanceBudget: opts.cgpBalanceBudget,
+    cgpMovementBudget: opts.cgpMovementBudget,
+    cgpComputeBudget: opts.cgpComputeBudget,
+    cgpZeroMovement: opts.cgpZeroMovement,
+    cgpPerfectBalance: opts.cgpPerfectBalance,
+    cgpFreeCompute: opts.cgpFreeCompute,
   })
 
   return {
@@ -243,7 +257,9 @@ export async function buildSystems(opts = {}) {
   const messageDelivery = opts.messageDelivery === false ? null : await buildMessageDeliveryReading(opts, now)
   const delayQueue = opts.delayQueue === false ? null : await buildDelayQueueReading(opts, now)
   const retryDlq = opts.retryDlq === false ? null : await buildRetryDlqReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, builtAt: now() }
+  // KI-523：第十八维「消费者组 rebalance」真跑 Range/RoundRobin/Sticky × 六场景矩阵 + 三难判词 + 九枚真件交叉印证，与其它维平级。
+  const consumerGroup = opts.consumerGroup === false ? null : await buildConsumerGroupReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, builtAt: now() }
 }
 
 /** LSM 引擎真跑一趟确定性 benchmark，回结构读数（不夹带每行真值）。 */
@@ -795,6 +811,35 @@ export async function buildRetryDlqReading(opts, now) {
 }
 
 /**
+ * KI-523：真跑 `consumerGroupStudy`（Range / RoundRobin / Sticky × 六场景矩阵
+ *   + 三难向量 + 九枚真件交叉印证），缺件落 null、前端据实降级；不编造假数。
+ * @param {object} opts { consumerGroup?:false, cgpSeed?, cgpConsumers?, cgpPartitionsPerTopic?, cgpMovePartitions?, cgpBigConsumers?, cgpBigPartitions?, cgpBalanceBudget?, cgpMovementBudget?, cgpComputeBudget?, cgpZeroMovement?, cgpPerfectBalance?, cgpFreeCompute? }
+ * @param {()=>number} now 时钟（builtAt 注入则确定性）
+ */
+export async function buildConsumerGroupReading(opts, now) {
+  try {
+    const s = await consumerGroupStudy({
+      now,
+      ...(opts.cgpSeed ? { seed: Math.max(0, Math.floor(Number(opts.cgpSeed))) } : {}),
+      ...(opts.cgpConsumers ? { consumers: Math.max(1, Math.floor(Number(opts.cgpConsumers))) } : {}),
+      ...(opts.cgpPartitionsPerTopic ? { partitionsPerTopic: Math.max(1, Math.floor(Number(opts.cgpPartitionsPerTopic))) } : {}),
+      ...(opts.cgpMovePartitions ? { movePartitions: Math.max(1, Math.floor(Number(opts.cgpMovePartitions))) } : {}),
+      ...(opts.cgpBigConsumers ? { bigConsumers: Math.max(1, Math.floor(Number(opts.cgpBigConsumers))) } : {}),
+      ...(opts.cgpBigPartitions ? { bigPartitions: Math.max(1, Math.floor(Number(opts.cgpBigPartitions))) } : {}),
+      ...(opts.cgpBalanceBudget ? { balanceBudget: Number(opts.cgpBalanceBudget) } : {}),
+      ...(opts.cgpMovementBudget ? { movementBudget: Number(opts.cgpMovementBudget) } : {}),
+      ...(opts.cgpComputeBudget ? { computeBudget: Number(opts.cgpComputeBudget) } : {}),
+      ...(opts.cgpZeroMovement === true ? { zeroMovement: true } : {}),
+      ...(opts.cgpPerfectBalance === true ? { perfectBalance: true } : {}),
+      ...(opts.cgpFreeCompute === true ? { freeCompute: true } : {}),
+    })
+    return consumerGroupSnapshot(s)
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
  * 真跑时每场景的 opts（判定权在此：场景参数固定，业务阈值仍来自各子系统默认/显式注入）。
  * @param {string} id
  */
@@ -1065,6 +1110,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
       const rdlq = snap.systems.retryDlq
       const ladders = rdlq.rows.map((r) => r.protocol + '[' + r.scenarios.map((c) => (c.delivered > 0 && c.deadLettered) ? c.id + ':陷' : c.id + ':通').join('/') + ']').join(' · ')
       console.log('[console] retryDlq: ' + ladders + ' / 三难向量 ' + JSON.stringify(rdlq.vectors) + ' / 不封赢家 ' + (rdlq.verdict.noUniversalWinner ? '是' : '否') + ' / Immediate 风暴 ' + (rdlq.verdict.immediateStorms ? '是' : '否') + ' · Exponential 无风暴 ' + (rdlq.verdict.exponentialNoStorm ? '是' : '否') + ' · FullJitter 无惊群 ' + (rdlq.verdict.fullJitterNoHerd ? '是' : '否'))
+    }
+    if (snap.systems?.consumerGroup) {
+      const cgp = snap.systems.consumerGroup
+      const stateOf = (s) => s.starved ? '饥' : s.balanced === false ? '斜' : s.minimalMovement === false ? '迁' : s.cheap === false ? '贵' : '稳'
+      const ladders = cgp.rows.map((r) => r.protocol + '[' + r.scenarios.map((s) => s.id + ':' + stateOf(s)).join('/') + ']').join(' · ')
+      console.log(`[console] consumerGroup: ${ladders} / 三难向量 ${JSON.stringify(cgp.vectors)} / 不封赢家 ${cgp.verdict.noUniversalWinner ? '是' : '否'} / Range最省 ${cgp.verdict.rangeCheapest ? '是' : '否'} · Sticky最小迁移 ${cgp.verdict.stickyMinimalMovement ? '是' : '否'} · Sticky非银弹 ${cgp.verdict.stickyNotFreeLunch ? '是' : '否'} · 均衡零迁移因果锁 ${cgp.verdict.minimalMovementCausallyUnerasable ? '是' : '否'}`)
     }
     if (snap.systems?.delayQueue) {
       const dld = snap.systems.delayQueue

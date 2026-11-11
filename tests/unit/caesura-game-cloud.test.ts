@@ -1110,4 +1110,85 @@ describe('caesura-game-cloud', () => {
     expect(st.retryDlq.builtAt).toBe(555)
     expect(st.retryDlq.verdict.noUniversalWinner).toBe(true)
   })
+
+  it('consumerGroup:true ⇒ 装配消费者组 rebalance 三协议、status.consumerGroup 读真矩阵/三难向量/九真件、builtAt 随 cgpNow、惰性同引用（KI-523）', async () => {
+    const gc = createGameCloud({
+      gameId: 'gidcgp1', gamePort: 7781, sources, cloud: fakeCloud(),
+      consumerGroup: true, cgpNow: () => 8888,
+    })
+    expect(gc.runConsumerGroupStudy).toBeTypeOf('function')
+    const st = await gc.status()
+    expect(st.consumerGroup.builtAt).toBe(8888)                    // 注入时钟真求值（KI-517 契约延伸）
+    expect(st.consumerGroup.config.scenarios.length).toBe(6)
+    expect(st.consumerGroup.rows.length).toBe(3)
+    expect(st.consumerGroup.vectors).toEqual({ Range: '001', RoundRobin: '100', Sticky: '110' })
+    const range = st.consumerGroup.rows.find((r: any) => r.protocol === 'Range')!
+    const rr = st.consumerGroup.rows.find((r: any) => r.protocol === 'RoundRobin')!
+    const sticky = st.consumerGroup.rows.find((r: any) => r.protocol === 'Sticky')!
+    expect(range.trilemma).toEqual({ balanced: false, minimalMovement: false, cheap: true })  // 只便宜
+    expect(rr.trilemma).toEqual({ balanced: true, minimalMovement: false, cheap: false })      // 只均衡
+    expect(sticky.trilemma).toEqual({ balanced: true, minimalMovement: true, cheap: false })   // 均衡+最小迁移、最贵非银弹
+    // 六场景真读数（工程原型已校准）
+    expect(range.scenarios.find((s: any) => s.id === 'partitionSkew')!.imbalance).toBe(2)
+    expect(sticky.scenarios.find((s: any) => s.id === 'memberJoin')!.moveRate).toBe(0.125)
+    expect(rr.scenarios.find((s: any) => s.id === 'manyPartitions')!.opPerPart).toBe(8)
+    // 九真件交叉印证：16 字段真回读、非硬编码
+    const ev = st.consumerGroup.crosscheck.evidence
+    expect(Object.keys(ev).sort()).toEqual(['bucketAllowed', 'bucketRejected', 'busListeners', 'groupMetaEntries', 'hashRingEmptyNodes', 'hashRingNodes', 'heapFired', 'poolAcquired', 'rebalanceNotices', 'remapConsistentRate', 'remapModuloRate', 'remapSavedRate', 'routerMoved', 'routerRate', 'walLines', 'walReplayed'])
+    expect(ev.remapConsistentRate).toBeLessThan(ev.remapModuloRate) // 一致性哈希比取模迁移少
+    expect(ev.remapSavedRate).toBeGreaterThan(0)
+    expect(ev.walLines).toBe(2)
+    expect(ev.walReplayed).toBe(2)
+    expect(ev.rebalanceNotices).toBe(2)
+    expect(ev.bucketAllowed).toBe(2)
+    expect(ev.bucketRejected).toBe(2)
+    expect(ev.heapFired).toBe(9)
+    expect(st.consumerGroup.verdict.noUniversalWinner).toBe(true)
+    expect(st.consumerGroup.verdict.stickyNotFreeLunch).toBe(true)
+    // 惰性缓存：二次 status 同引用
+    expect((await gc.status()).consumerGroup).toBe(st.consumerGroup)
+    const rerun = await gc.runConsumerGroupStudy!()
+    expect(rerun.vectors).toEqual(st.consumerGroup.vectors)
+    // 不连坐 KI-518/520
+    expect(st.delayQueue).toBe(null)
+    expect(st.retryDlq).toBe(null)
+  })
+
+  it('consumerGroup 默认 null 非破坏；单开 zeroMovement/perfectBalance/freeCompute 各自局部、rigged 101/101/101 因果锁死 minimalMovement；可注入现成 study（KI-523）', async () => {
+    const plain = createGameCloud({ gameId: 'gidcgp2', gamePort: 7782, sources, cloud: fakeCloud() })
+    expect(plain.runConsumerGroupStudy).toBe(null)
+    const ps = await plain.status()
+    expect(ps.consumerGroup).toBe(null)
+    expect(ps.delayQueue).toBe(null)
+    expect(ps.retryDlq).toBe(null)
+    // 单开 zeroMovement：新成员饥饿 starved ⇒ balanced 反噬、minimalMovement 冻结为 true
+    const zm = await (await createGameCloud({
+      gameId: 'gidcgp3', gamePort: 7783, sources, cloud: fakeCloud(),
+      consumerGroup: { zeroMovement: true, now: 0 },
+    })).status()
+    expect(zm.consumerGroup.vectors).toEqual({ Range: '011', RoundRobin: '010', Sticky: '010' })
+    expect(zm.consumerGroup.verdict.zeroMovementStarvesJoiner).toBe(true)
+    // 单开 freeCompute：只抹 cheap，Sticky 摸到 111（默认态够不着）
+    const fc = await (await createGameCloud({
+      gameId: 'gidcgp4', gamePort: 7784, sources, cloud: fakeCloud(),
+      consumerGroup: { freeCompute: true, now: 0 },
+    })).status()
+    expect(fc.consumerGroup.vectors).toEqual({ Range: '001', RoundRobin: '101', Sticky: '111' })
+    // rigged 三开关齐开：真实现算 101/101/101、因果锁死 minimalMovement
+    const rig = await (await createGameCloud({
+      gameId: 'gidcgp5', gamePort: 7785, sources, cloud: fakeCloud(),
+      consumerGroup: { rigged: true, now: 0 },
+    })).status()
+    expect(rig.consumerGroup.vectors).toEqual({ Range: '101', RoundRobin: '101', Sticky: '101' })
+    expect(rig.consumerGroup.verdict.minimalMovementCausallyUnerasable).toBe(true)
+    expect(rig.consumerGroup.verdict.noUniversalWinner).toBe(false)
+    // 注入现成 study（duck-typed）
+    const { consumerGroupStudy } = await import('../../scripts/caesura-consumer-group.mjs')
+    const injected = await (await createGameCloud({
+      gameId: 'gidcgp6', gamePort: 7786, sources, cloud: fakeCloud(),
+      consumerGroup: consumerGroupStudy({ seed: 99, now: 555 }),
+    })).status()
+    expect(injected.consumerGroup.builtAt).toBe(555)
+    expect(injected.consumerGroup.config.seed).toBe(99)
+  })
 })

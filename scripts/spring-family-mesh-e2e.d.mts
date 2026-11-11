@@ -315,5 +315,24 @@ export function runMeshE2E(opts?: any): {
       topology: Record<string, string>
       builtAt: number
     } | null
+    /** KI-523：消费者组 rebalance / 分区所有权三协议快照（Range/RoundRobin/Sticky × 六场景 + 三难向量 + 九枚真件交叉印证），未配 consumerGroup 为 null；rigged 101/101/101 因果锁死 minimalMovement、不硬造全 111 */
+    consumerGroupSnapshot: {
+      config: Record<string, any>
+      rows: Array<{
+        protocol: string
+        scenarios: Array<{
+          id: string; protocol: string; consumers: number; partitions: number; imbalance: number
+          starved: boolean; moveRate: number; opUnits: number; opPerPart: number; loads: number[]; fault: string
+          balanced: boolean; minimalMovement: boolean; cheap: boolean
+        }>
+        trilemma: { balanced: boolean; minimalMovement: boolean; cheap: boolean }
+        metrics: { avgImbalance: number; starved: boolean; moveSum: number; opPerPart: number }
+      }>
+      vectors: Record<string, string>
+      crosscheck: { evidence: Record<string, any> }
+      verdict: Record<string, any>
+      topology: Record<string, string>
+      builtAt: number
+    } | null
   }>
 }

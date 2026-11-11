@@ -474,7 +474,34 @@ export interface RetryDlqReading {
   builtAt: number
 }
 
-/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511 + KI-512 + KI-513 + KI-518 + KI-520：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 + 缓存读写一致性 + 消息投递语义 + 延迟消息队列调度 + 消息重试退避与死信）。 */
+/** KI-523：消费者组 rebalance / 分区所有权三协议真跑读数（Range / RoundRobin / Sticky × 六场景 + 三难向量 + 九枚真件交叉印证）。 */
+export interface ConsumerGroupReading {
+  config: Record<string, any>
+  rows: Array<{
+    protocol: string
+    scenarios: Array<{
+      id: string; protocol: string; consumers: number; partitions: number; imbalance: number
+      starved: boolean; moveRate: number; opUnits: number; opPerPart: number; loads: number[]; fault: string
+      balanced: boolean; minimalMovement: boolean; cheap: boolean
+    }>
+    trilemma: { balanced: boolean; minimalMovement: boolean; cheap: boolean }
+    metrics: { avgImbalance: number; starved: boolean; moveSum: number; opPerPart: number }
+  }>
+  vectors: Record<string, string>
+  crosscheck: {
+    evidence: {
+      remapConsistentRate: number; remapModuloRate: number; remapSavedRate: number
+      routerMoved: number; routerRate: number; hashRingNodes: number; hashRingEmptyNodes: number
+      walLines: number; walReplayed: number; rebalanceNotices: number; busListeners: number
+      groupMetaEntries: number; poolAcquired: number; bucketAllowed: number; bucketRejected: number; heapFired: number
+    }
+  }
+  verdict: Record<string, any>
+  topology: Record<string, string>
+  builtAt: number
+}
+
+/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511 + KI-512 + KI-513 + KI-518 + KI-520 + KI-523：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 + 缓存读写一致性 + 消息投递语义 + 延迟消息队列调度 + 消息重试退避与死信 + 消费者组 rebalance）。 */
 export interface SystemsBlock {
   lsm: LsmReading | null
   hw: HwReading | null
@@ -493,6 +520,7 @@ export interface SystemsBlock {
   messageDelivery: MessageDeliveryReading | null
   delayQueue: DelayQueueReading | null
   retryDlq: RetryDlqReading | null
+  consumerGroup: ConsumerGroupReading | null
   builtAt: number
 }
 
@@ -595,6 +623,20 @@ export function buildSnapshot(opts?: {
   rdlqZeroBackoff?: boolean
   rdlqPerfectJitter?: boolean
   rdlqNoRetryBudget?: boolean
+  /** KI-523：false 关掉消费者组 rebalance 维（兼容旧快照）；cgp* 注入规模/预算/单开关。 */
+  consumerGroup?: boolean
+  cgpSeed?: number
+  cgpConsumers?: number
+  cgpPartitionsPerTopic?: number
+  cgpMovePartitions?: number
+  cgpBigConsumers?: number
+  cgpBigPartitions?: number
+  cgpBalanceBudget?: number
+  cgpMovementBudget?: number
+  cgpComputeBudget?: number
+  cgpZeroMovement?: boolean
+  cgpPerfectBalance?: boolean
+  cgpFreeCompute?: boolean
 }): Promise<ConsoleSnapshot>
 
 /** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511 + KI-512 + KI-513：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 + 缓存读写一致性 + 消息投递语义 十五维系统读数；击穿并发 ⇒ async。 */
@@ -674,6 +716,20 @@ export function buildSystems(opts?: {
   rdlqZeroBackoff?: boolean
   rdlqPerfectJitter?: boolean
   rdlqNoRetryBudget?: boolean
+  /** KI-523：false 关掉消费者组 rebalance 维（兼容旧快照）；cgp* 注入规模/预算/单开关。 */
+  consumerGroup?: boolean
+  cgpSeed?: number
+  cgpConsumers?: number
+  cgpPartitionsPerTopic?: number
+  cgpMovePartitions?: number
+  cgpBigConsumers?: number
+  cgpBigPartitions?: number
+  cgpBalanceBudget?: number
+  cgpMovementBudget?: number
+  cgpComputeBudget?: number
+  cgpZeroMovement?: boolean
+  cgpPerfectBalance?: boolean
+  cgpFreeCompute?: boolean
 }): Promise<SystemsBlock>
 
 /** KI-501：真跑缓存防护三件套（击穿/穿透/雪崩）收敛成前端三面板紧凑读数；单维失败落 null。 */
@@ -810,6 +866,24 @@ export function buildRetryDlqReading(opts: {
   rdlqPerfectJitter?: boolean
   rdlqNoRetryBudget?: boolean
 }, now: () => number): Promise<RetryDlqReading | null>
+
+/** KI-523：真跑消费者组 rebalance / 分区所有权三协议（Range / RoundRobin / Sticky × 六场景矩阵 + 三难向量 + 九枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
+export function buildConsumerGroupReading(opts: {
+  now?: () => number
+  consumerGroup?: boolean
+  cgpSeed?: number
+  cgpConsumers?: number
+  cgpPartitionsPerTopic?: number
+  cgpMovePartitions?: number
+  cgpBigConsumers?: number
+  cgpBigPartitions?: number
+  cgpBalanceBudget?: number
+  cgpMovementBudget?: number
+  cgpComputeBudget?: number
+  cgpZeroMovement?: boolean
+  cgpPerfectBalance?: boolean
+  cgpFreeCompute?: boolean
+}, now: () => number): Promise<ConsumerGroupReading | null>
 
 export function realScenarioOpts(id: string): Record<string, any>
 

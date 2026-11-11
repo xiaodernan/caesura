@@ -55,6 +55,7 @@
       renderMessageDelivery(snap.systems ? snap.systems.messageDelivery : null)
       renderDelayQueue(snap.systems ? snap.systems.delayQueue : null)
       renderRetryDlq(snap.systems ? snap.systems.retryDlq : null)
+      renderConsumerGroup(snap.systems ? snap.systems.consumerGroup : null)
       setLive(true, result.source)
     }).catch(function (e) {
       setLive(false, 'error')
@@ -2126,6 +2127,126 @@
       '可证伪：rigged zeroBackoff+perfectJitter+noRetryBudget 齐开 ⇒ 三协议退 001/001/001、判词翻 false；' +
       'fastRecovery 只罚有故障恢复的场景、slow=010 那行 single switch 只动一处。workerRestart 不以此维为卖点（本件不考重启）。' +
       '全为确定性教学状态机，结构计数，不声称墙钟/QPS/真 MQ/真 Redis DLQ。'
+  }
+
+  /* ================= KI-523 消费者组 rebalance / 分区所有权 · 第十八维（cgp 族） ================= */
+
+  function renderConsumerGroup(cgp) {
+    renderCgpMatrix(cgp && cgp.rows, cgp && cgp.config)
+    renderCgpLadder(cgp && cgp.rows)
+    renderCgpTrilemma(cgp && cgp.rows, cgp && cgp.verdict, cgp && cgp.crosscheck)
+  }
+
+  function cgpMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 暂缺</div>'
+    if (note) note.textContent = 'systems.consumerGroup 缺失 — 跑一次 npm run console:data 即可补齐'
+  }
+
+  function cgpState(s) {
+    if (!s) return { cls: '', ch: '·' }
+    // 六场景正交：核心件已在每格算好三布尔，只在「该场景负责的维度」判定，其余维空真——与 trilemma 同源，绝不拿阈值重算。
+    if (s.starved === true) return { cls: 'starve', ch: '饥' }
+    if (s.balanced === false) return { cls: 'skew', ch: '斜' }
+    if (s.minimalMovement === false) return { cls: 'migrate', ch: '迁' }
+    if (s.cheap === false) return { cls: 'costly', ch: '贵' }
+    return { cls: 'ok', ch: '✓' }
+  }
+
+  function renderCgpMatrix(rows, config) {
+    var box = $('#cgp-matrix'), note = $('#cgp-matrix-note')
+    if (!Array.isArray(rows) || !rows.length || !config || !Array.isArray(config.scenarios)) {
+      cgpMissing(box, note, 'cgp 矩阵'); return
+    }
+    var scenarios = config.scenarios
+    var head = '<div class="cgp-mat-row cgp-mat-head"><span class="cgp-mat-proto">协议</span>' +
+      scenarios.map(function (sc) { return '<span class="cgp-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="cgp-mat-cost">移/斜</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = cgpState(cell)
+        return '<span class="cgp-cell ' + st.cls + '" data-p="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="cgp-mat-row" data-p="' + esc(row.protocol) + '">' +
+        '<span class="cgp-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="cgp-mat-cost"><b>' + esc(fmt(m.moveSum)) + '</b>/' + esc(fmt(m.avgImbalance)) + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'Range / RoundRobin / Sticky × 六场景：steadyState（稳态）/ partitionSkew（多 topic 余数偏斜）/ heteroSubscriptions（异构订阅）/ memberJoin（新成员加入）/ memberLeave（成员退出）/ manyPartitions（大分区量开销）。' +
+      '六场景正交：每格只在「该场景负责的维度」判定，其余维空真——标「斜」=公平场景负载不均衡超预算，「饥」=有消费者零分区，「迁」=成员变动场景迁移超预算，「贵」=大分区场景单分区 op 超预算，「✓」=该格在其负责维度无病征（空真不算赢家）。' +
+      '标含义直接读核心件算好的 balanced/minimalMovement/cheap 三布尔，与三难向量同源，绝不拿阈值重算。stall 停摆只以 opUnits 结构计数代理，不声称墙钟秒数。全为确定性教学状态机，不声称真 Kafka / 真 broker / 真墙钟。'
+  }
+
+  function renderCgpLadder(rows) {
+    var box = $('#cgp-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.moveSum) ? r.metrics.moveSum : 0 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.moveSum) ? Math.round(m.moveSum / max * 100) : 0
+      return '<div class="cgp-line" data-p="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="cgp-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">moveΣ ' + esc(fmt(m.moveSum)) + ' · 均斜 ' + esc(fmt(m.avgImbalance)) + ' · op/part ' + esc(fmt(m.opPerPart)) + ' · 饥 ' + (m.starved ? '是' : '否') + '</span></div>'
+    }).join('')
+  }
+
+  function renderCgpTrilemma(rows, verdict, crosscheck) {
+    var box = $('#cgp-trilemma'), cxBox = $('#cgp-crosscheck'), note = $('#cgp-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      cgpMissing(box, note, 'cgp 判词'); if (cxBox) cxBox.innerHTML = ''; return
+    }
+    var flags = [['balanced', '分配均衡'], ['minimalMovement', '最小迁移'], ['cheap', '算法轻量']]
+    var head = '<div class="cgp-vec cgp-vec-head"><span class="proto">协议</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '</div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="cgp-flag ' + (yes ? 'yes' : 'no') + '" data-p="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      return '<div class="cgp-vec" data-p="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells + '</div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>真 <b>compareRemapping</b> 增节点迁移率 一致性 <b>' + esc(fmt(ev.remapConsistentRate)) + '</b> vs 取模 ' + esc(fmt(ev.remapModuloRate)) + ' · 省 ' + esc(fmt(ev.remapSavedRate)) + '</div>' +
+          '<div>真 <b>createShardRouter.remapOn</b> 迁移 <b>' + esc(fmt(ev.routerMoved)) + '</b> 片 · 率 ' + esc(fmt(ev.routerRate)) + '</div>' +
+          '<div>真 <b>createHashRing</b> ' + esc(fmt(ev.hashRingNodes)) + ' 节点 · 空片 ' + esc(fmt(ev.hashRingEmptyNodes)) + '</div>' +
+          '<div>真 <b>createWal</b> append ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b>（进程内 sink）</div>' +
+          '<div>真 <b>createBus</b> rebalance 通知 <b>' + esc(fmt(ev.rebalanceNotices)) + '</b> 条 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>真 <b>createRedisCache</b> 组元数代次幂等双写后 entries=' + esc(fmt(ev.groupMetaEntries)) + '</div>' +
+          '<div>真 <b>createObjectPool</b> acquire <b>' + esc(fmt(ev.poolAcquired)) + '</b> 次（分配结果对象复用省 GC）</div>' +
+          '<div>真 <b>createTokenBucket</b> rebalance 防抖 allow 放行 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>真 <b>createMinHeapDelayQueue</b> 迁移任务 advance 出队 <b>' + esc(fmt(ev.heapFired)) + '</b> 条</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">真件交叉印证缺失</div>'
+      }
+    }
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var causal = v.minimalMovementCausallyUnerasable === true
+    var starve = v.zeroMovementStarvesJoiner === true
+    var chips = [
+      '<span class="chip" data-verdict="rangeCheapest"><b>Range</b> 最省 ' + (v.rangeCheapest ? '是' : '否') + ' · 多 topic 偏斜 ' + (v.rangeSkews ? '是' : '否') + '</span>',
+      '<span class="chip" data-verdict="roundRobinBalanced"><b>RoundRobin</b> 均衡 ' + (v.roundRobinBalanced ? '是' : '否') + ' · 成员变动迁移 ' + (v.roundRobinMigrates ? '是' : '否') + '</span>',
+      '<span class="chip" data-verdict="stickyNotFreeLunch"><b>Sticky</b> 均衡∧最小迁移 ' + (v.stickyBalanced && v.stickyMinimalMovement ? '是' : '否') + ' · 非银弹 ' + (v.stickyNotFreeLunch ? '是' : '否') + '</span>',
+      '<span class="chip ' + (causal ? 'jade-t' : 'muted-t') + '" data-verdict="minimalMovementCausallyUnerasable">' + (causal ? '✓ 均衡与零迁移逻辑相克 · minimalMovement 真算抹不掉' : '因果锁未触发') + '</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' + (noWin ? '✓ 没有任何协议同时占三难' : '判词塌陷') + '</span>',
+    ]
+    var probes = $('#cgp-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维序固定 [分配均衡 / 成员变动最小迁移 / 算法轻量]。向量 Range=001 / RoundRobin=100 / Sticky=110，三者互异、无一 111。' +
+      '可证伪：rigged perfectBalance+zeroMovement+freeCompute 齐开 ⇒ 三协议退 101/101/101、判词翻 false；' +
+      '但 perfectBalance（强制完美均衡⇒成员变动必推倒重排）与 zeroMovement（冻结归属⇒零迁移）逻辑相克，' +
+      'minimalMovement 维真算无法翻回 1（causallyUnerasable），freeCompute 只抹 cheap 维——绝不硬造全 111。' +
+      '单开 zeroMovement 冻结归属会让新成员饥饿（zeroMovementStarvesJoiner=' + (starve ? '是' : '否') + '）。' +
+      'steadyState 的最小迁移为维序空真、非卖点（vacuousTrue），不拿稳态冒充迁移优势。' +
+      '全为确定性教学状态机，结构计数，不声称墙钟/QPS/真 Kafka/真 broker。'
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)

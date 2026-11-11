@@ -117,6 +117,9 @@ export function runMeshE2E(opts = {}) {
     // KI-520：消息重试退避与死信队列三协议（retryDlq=true 装配；只读 Immediate/Exponential/FullJitter × 六场景矩阵 + 三难向量 + 七枚真件交叉印证，rigged 101/101/101 因果锁死 noStorm、不硬造全 111，不改调用路径）。
     retryDlq: opts.retryDlq,
     rdlNow: opts.rdlNow,
+    // KI-523：消费者组 rebalance / 分区所有权三协议（consumerGroup=true 装配；只读 Range/RoundRobin/Sticky × 六场景矩阵 + 三难向量 + 九枚真件交叉印证，rigged 101/101/101 因果锁死 minimalMovement、不硬造全 111，不改调用路径）。
+    consumerGroup: opts.consumerGroup,
+    cgpNow: opts.cgpNow,
     sources: {
       eureka: () => (opts.svcA ?? [{ id: 'svc-a:1', name: 'svc-a', address: '10.0.0.1', port: 8080, healthy: true }]),
       k8s: () => k8s.discover('caesura-gate'),
@@ -254,6 +257,7 @@ export function runMeshE2E(opts = {}) {
         messageDeliverySnapshot: status.messageDelivery ?? null,
         delayQueueSnapshot: status.delayQueue ?? null,
         retryDlqSnapshot: status.retryDlq ?? null,
+        consumerGroupSnapshot: status.consumerGroup ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
       }
@@ -448,6 +452,18 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         noUniversalWinner: r.retryDlqSnapshot.verdict.noUniversalWinner,
         crosscheck: r.retryDlqSnapshot.crosscheck,
         verdict: r.retryDlqSnapshot.verdict,
+      } : null,
+      consumerGroup: r.consumerGroupSnapshot ? {
+        protocols: r.consumerGroupSnapshot.rows.map((row) => ({
+          protocol: row.protocol,
+          ladder: row.scenarios.map((s) => s.id + ':' + (s.starved ? '饥' : s.imbalance > 1 ? '斜' : s.moveRate > 0.5 ? '迁' : s.opPerPart > 2 ? '贵' : '稳')).join(' → '),
+          metrics: row.metrics, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.consumerGroupSnapshot.rows.map((row) => [row.protocol,
+          `${Number(row.trilemma.balanced)}${Number(row.trilemma.minimalMovement)}${Number(row.trilemma.cheap)}`])),
+        noUniversalWinner: r.consumerGroupSnapshot.verdict.noUniversalWinner,
+        crosscheck: r.consumerGroupSnapshot.crosscheck,
+        verdict: r.consumerGroupSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))
