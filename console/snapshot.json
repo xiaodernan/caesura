@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794485037419,
+  "generatedAt": 1794489559394,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1365,12 +1365,12 @@
           "keys": 1,
           "versions": 2,
           "commitLogSize": 1,
-          "now": 1794485037421
+          "now": 1794489559396
         },
         "final": {
           "A": {
             "value": 101,
-            "commitTs": 1794485037421,
+            "commitTs": 1794489559396,
             "tombstone": false
           }
         }
@@ -3646,7 +3646,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794485037419,
+                "lastTimestamp": 1794489559394,
                 "workerId": 1
               },
               "fault": {
@@ -3742,7 +3742,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794485037419,
+                "lastTimestamp": 1794489559394,
                 "workerId": 1
               },
               "fault": {
@@ -3774,7 +3774,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794485037420,
+                "lastTimestamp": 1794489559395,
                 "workerId": 1
               },
               "fault": {
@@ -3806,7 +3806,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794485037419,
+                "lastTimestamp": 1794489559394,
                 "workerId": 1
               },
               "fault": {
@@ -4522,7 +4522,7 @@
         "capacity": 8,
         "perShardCap": 2
       },
-      "builtAt": 1794485037419
+      "builtAt": 1794489559394
     },
     "configConsistency": {
       "config": {
@@ -5020,7 +5020,7 @@
         "burstCount": 12,
         "windowMs": 10000
       },
-      "builtAt": 1794485037419
+      "builtAt": 1794489559394
     },
     "cacheCoherency": {
       "config": {
@@ -5549,7 +5549,7 @@
         "crashAtWrite": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794485037419
+      "builtAt": 1794489559394
     },
     "messageDelivery": {
       "config": {
@@ -6038,10 +6038,10 @@
         "crashAfterSendAt": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794485037419
+      "builtAt": 1794489559394
     },
     "delayQueue": {
-      "builtAt": 1794485037419,
+      "builtAt": 1794489559394,
       "config": {
         "seed": 518,
         "tasks": 12,
@@ -6092,7 +6092,7 @@
               "id": "farFuture",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 55136,
+              "lateMs": 62136,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6139,7 +6139,7 @@
           ],
           "totals": {
             "fired": 54,
-            "lateMs": 243406,
+            "lateMs": 250406,
             "duplicatePickups": 0,
             "lostOnRestart": 6,
             "opUnits": 72
@@ -6375,7 +6375,7 @@
       }
     },
     "retryDlq": {
-      "builtAt": 1794485037419,
+      "builtAt": 1794489559394,
       "config": {
         "seed": 520,
         "messages": 16,
@@ -6793,7 +6793,7 @@
       }
     },
     "consumerGroup": {
-      "builtAt": 1794485037419,
+      "builtAt": 1794489559394,
       "config": {
         "seed": 523,
         "consumers": 3,
@@ -7299,7 +7299,7 @@
       }
     },
     "backpressure": {
-      "builtAt": 1794485037419,
+      "builtAt": 1794489559394,
       "config": {
         "steps": 48,
         "mu": 2,
@@ -8344,7 +8344,7 @@
       }
     },
     "logCompaction": {
-      "builtAt": 1794485037419,
+      "builtAt": 1794489559394,
       "config": {
         "seed": 526,
         "ops": 24,
@@ -9405,7 +9405,7 @@
       }
     },
     "bloomFilter": {
-      "builtAt": 1794485037419,
+      "builtAt": 1794489559394,
       "config": {
         "seed": 527,
         "capacity": 1024,
@@ -10104,7 +10104,7 @@
       }
     },
     "cacheReplacement": {
-      "builtAt": 1794485037419,
+      "builtAt": 1794489559394,
       "config": {
         "seed": 528,
         "capacity": 16,
@@ -10747,7 +10747,7 @@
       }
     },
     "streamWindow": {
-      "builtAt": 1794485037419,
+      "builtAt": 1794489559394,
       "config": {
         "seed": 529,
         "windowSize": 100,
@@ -12806,7 +12806,7 @@
       }
     },
     "hyperLogLog": {
-      "builtAt": 1794485037419,
+      "builtAt": 1794489559394,
       "config": {
         "seed": 530,
         "cardinality": 4096,
@@ -29726,7 +29726,7 @@
       }
     },
     "crdt": {
-      "builtAt": 1794485037419,
+      "builtAt": 1794489559394,
       "config": {
         "seed": 531,
         "replicaCount": 3,
@@ -30182,7 +30182,7 @@
       }
     },
     "springBatch": {
-      "builtAt": 1794485037419,
+      "builtAt": 1794489559394,
       "config": {
         "seed": 532,
         "items": 96,
@@ -30621,7 +30621,7 @@
       "rigged": false
     },
     "traceSampling": {
-      "builtAt": 1794485037419,
+      "builtAt": 1794489559394,
       "config": {
         "seed": 533,
         "items": 64,
@@ -31323,7 +31323,7 @@
       "rigged": false
     },
     "distributedSession": {
-      "builtAt": 1794485037419,
+      "builtAt": 1794489559394,
       "config": {
         "seed": 535,
         "sessions": 96,
@@ -31679,7 +31679,7 @@
       "rigged": false
     },
     "transactionalOutbox": {
-      "builtAt": 1794485037419,
+      "builtAt": 1794489559394,
       "config": {
         "seed": 534,
         "items": 96,
@@ -32130,7 +32130,7 @@
       "rigged": false
     },
     "loadBalance": {
-      "builtAt": 1794485037419,
+      "builtAt": 1794489559394,
       "config": {
         "seed": 536,
         "requests": 96,
@@ -32550,7 +32550,7 @@
       "rigged": false
     },
     "circuitBreaker": {
-      "builtAt": 1794485037419,
+      "builtAt": 1794489559394,
       "config": {
         "seed": 537,
         "calls": 96,
@@ -33080,7 +33080,7 @@
       "rigged": false
     },
     "llmGateway": {
-      "builtAt": 1794485037419,
+      "builtAt": 1794489559394,
       "config": {
         "seed": 538,
         "mode": "offline",
@@ -33475,7 +33475,7 @@
       "rigged": false
     },
     "gatewayRouting": {
-      "builtAt": 1794485037419,
+      "builtAt": 1794489559394,
       "config": {
         "seed": 539,
         "requests": 96,
@@ -33812,6 +33812,432 @@
       },
       "rigged": false
     },
-    "builtAt": 1794485037419
+    "idempotentConsumer": {
+      "builtAt": 1794489559394,
+      "config": {
+        "seed": 540,
+        "messages": 96,
+        "bloomBits": 512,
+        "bloomK": 3,
+        "redisTtlMs": 30000,
+        "scenarios": [
+          "consistentStream",
+          "atLeastOnceRedelivery",
+          "burstRedelivery",
+          "falsePositiveBurst",
+          "coldRestart",
+          "cleanRerun"
+        ],
+        "rigged": false,
+        "unboundedRam": false,
+        "zeroRttNetwork": false,
+        "collisionFreeBloom": false
+      },
+      "rows": [
+        {
+          "protocol": "InMemoryDedupSet",
+          "scenarios": [
+            {
+              "id": "consistentStream",
+              "messages": 96,
+              "exact": 96,
+              "rejected": 0,
+              "falsePositiveRejections": 0,
+              "oom": 0,
+              "exactDedup": true,
+              "lowOverhead": true,
+              "durableBounded": false,
+              "fault": "happy-path",
+              "loadFactor": null,
+              "fpr": 0
+            },
+            {
+              "id": "atLeastOnceRedelivery",
+              "messages": 192,
+              "exact": 96,
+              "rejected": 96,
+              "falsePositiveRejections": 0,
+              "oom": 0,
+              "exactDedup": true,
+              "lowOverhead": true,
+              "durableBounded": false,
+              "fault": "at-least-once",
+              "loadFactor": null,
+              "fpr": 0
+            },
+            {
+              "id": "burstRedelivery",
+              "messages": 144,
+              "exact": 96,
+              "rejected": 48,
+              "falsePositiveRejections": 0,
+              "oom": 0,
+              "exactDedup": true,
+              "lowOverhead": true,
+              "durableBounded": false,
+              "fault": "burst",
+              "loadFactor": null,
+              "fpr": 0
+            },
+            {
+              "id": "falsePositiveBurst",
+              "messages": 192,
+              "exact": 192,
+              "rejected": 0,
+              "falsePositiveRejections": 0,
+              "oom": 0,
+              "exactDedup": true,
+              "lowOverhead": true,
+              "durableBounded": false,
+              "fault": "bloom-fp",
+              "loadFactor": null,
+              "fpr": 0
+            },
+            {
+              "id": "coldRestart",
+              "messages": 96,
+              "exact": 96,
+              "rejected": 0,
+              "falsePositiveRejections": 0,
+              "oom": 0,
+              "exactDedup": true,
+              "lowOverhead": true,
+              "durableBounded": false,
+              "fault": "cold-restart",
+              "loadFactor": null,
+              "fpr": 0
+            },
+            {
+              "id": "cleanRerun",
+              "messages": 96,
+              "exact": 96,
+              "rejected": 0,
+              "falsePositiveRejections": 0,
+              "oom": 0,
+              "exactDedup": true,
+              "lowOverhead": true,
+              "durableBounded": false,
+              "fault": "rerun-idempotent",
+              "loadFactor": null,
+              "fpr": 0
+            }
+          ],
+          "trilemma": {
+            "exactDedup": true,
+            "lowOverhead": true,
+            "durableBounded": false
+          },
+          "metrics": {
+            "totalExact": 672,
+            "totalRejected": 144,
+            "falsePositiveRejections": 0,
+            "totalOom": 0
+          }
+        },
+        {
+          "protocol": "RedisSetNx",
+          "scenarios": [
+            {
+              "id": "consistentStream",
+              "messages": 96,
+              "exact": 96,
+              "rejected": 0,
+              "falsePositiveRejections": 0,
+              "oom": 0,
+              "exactDedup": true,
+              "lowOverhead": false,
+              "durableBounded": true,
+              "fault": "happy-path",
+              "loadFactor": null,
+              "fpr": 0
+            },
+            {
+              "id": "atLeastOnceRedelivery",
+              "messages": 192,
+              "exact": 96,
+              "rejected": 96,
+              "falsePositiveRejections": 0,
+              "oom": 0,
+              "exactDedup": true,
+              "lowOverhead": false,
+              "durableBounded": true,
+              "fault": "at-least-once",
+              "loadFactor": null,
+              "fpr": 0
+            },
+            {
+              "id": "burstRedelivery",
+              "messages": 144,
+              "exact": 96,
+              "rejected": 48,
+              "falsePositiveRejections": 0,
+              "oom": 0,
+              "exactDedup": true,
+              "lowOverhead": false,
+              "durableBounded": true,
+              "fault": "burst",
+              "loadFactor": null,
+              "fpr": 0
+            },
+            {
+              "id": "falsePositiveBurst",
+              "messages": 192,
+              "exact": 192,
+              "rejected": 0,
+              "falsePositiveRejections": 0,
+              "oom": 0,
+              "exactDedup": true,
+              "lowOverhead": false,
+              "durableBounded": true,
+              "fault": "bloom-fp",
+              "loadFactor": null,
+              "fpr": 0
+            },
+            {
+              "id": "coldRestart",
+              "messages": 96,
+              "exact": 96,
+              "rejected": 0,
+              "falsePositiveRejections": 0,
+              "oom": 0,
+              "exactDedup": true,
+              "lowOverhead": false,
+              "durableBounded": true,
+              "fault": "cold-restart",
+              "loadFactor": null,
+              "fpr": 0
+            },
+            {
+              "id": "cleanRerun",
+              "messages": 96,
+              "exact": 96,
+              "rejected": 0,
+              "falsePositiveRejections": 0,
+              "oom": 0,
+              "exactDedup": true,
+              "lowOverhead": false,
+              "durableBounded": true,
+              "fault": "rerun-idempotent",
+              "loadFactor": null,
+              "fpr": 0
+            }
+          ],
+          "trilemma": {
+            "exactDedup": true,
+            "lowOverhead": false,
+            "durableBounded": true
+          },
+          "metrics": {
+            "totalExact": 672,
+            "totalRejected": 144,
+            "falsePositiveRejections": 0,
+            "totalOom": 0
+          }
+        },
+        {
+          "protocol": "BloomGuard",
+          "scenarios": [
+            {
+              "id": "consistentStream",
+              "messages": 96,
+              "exact": 94,
+              "rejected": 2,
+              "falsePositiveRejections": 0,
+              "oom": 0,
+              "exactDedup": false,
+              "lowOverhead": true,
+              "durableBounded": true,
+              "fault": "happy-path",
+              "loadFactor": 0.4336,
+              "fpr": 0.0815
+            },
+            {
+              "id": "atLeastOnceRedelivery",
+              "messages": 192,
+              "exact": 94,
+              "rejected": 98,
+              "falsePositiveRejections": 0,
+              "oom": 0,
+              "exactDedup": false,
+              "lowOverhead": true,
+              "durableBounded": true,
+              "fault": "at-least-once",
+              "loadFactor": 0.4336,
+              "fpr": 0.0815
+            },
+            {
+              "id": "burstRedelivery",
+              "messages": 144,
+              "exact": 94,
+              "rejected": 50,
+              "falsePositiveRejections": 0,
+              "oom": 0,
+              "exactDedup": false,
+              "lowOverhead": true,
+              "durableBounded": true,
+              "fault": "burst",
+              "loadFactor": 0.4336,
+              "fpr": 0.0815
+            },
+            {
+              "id": "falsePositiveBurst",
+              "messages": 192,
+              "exact": 171,
+              "rejected": 21,
+              "falsePositiveRejections": 18,
+              "oom": 0,
+              "exactDedup": false,
+              "lowOverhead": true,
+              "durableBounded": true,
+              "fault": "bloom-fp",
+              "loadFactor": 0.7031,
+              "fpr": 0.3476
+            },
+            {
+              "id": "coldRestart",
+              "messages": 96,
+              "exact": 94,
+              "rejected": 2,
+              "falsePositiveRejections": 0,
+              "oom": 0,
+              "exactDedup": false,
+              "lowOverhead": true,
+              "durableBounded": true,
+              "fault": "cold-restart",
+              "loadFactor": 0.4336,
+              "fpr": 0.0815
+            },
+            {
+              "id": "cleanRerun",
+              "messages": 96,
+              "exact": 94,
+              "rejected": 2,
+              "falsePositiveRejections": 0,
+              "oom": 0,
+              "exactDedup": false,
+              "lowOverhead": true,
+              "durableBounded": true,
+              "fault": "rerun-idempotent",
+              "loadFactor": 0.4336,
+              "fpr": 0.0815
+            }
+          ],
+          "trilemma": {
+            "exactDedup": false,
+            "lowOverhead": true,
+            "durableBounded": true
+          },
+          "metrics": {
+            "totalExact": 641,
+            "totalRejected": 175,
+            "falsePositiveRejections": 18,
+            "totalOom": 0
+          }
+        }
+      ],
+      "vectors": {
+        "InMemoryDedupSet": "110",
+        "RedisSetNx": "101",
+        "BloomGuard": "011"
+      },
+      "verdict": {
+        "vectors": {
+          "InMemoryDedupSet": "110",
+          "RedisSetNx": "101",
+          "BloomGuard": "011"
+        },
+        "noUniversalWinner": true,
+        "trilemmaDistinguishes": true,
+        "noStrategyWinsAll": true,
+        "vectorFromTrilemma": true,
+        "memPureCrash": true,
+        "redisStillExact": true,
+        "bloomOverheads": true,
+        "rigged_pkg": false,
+        "rigged_pkg_flags": {
+          "rigged": false,
+          "unboundedRam": false,
+          "zeroRttNetwork": false,
+          "collisionFreeBloom": false
+        },
+        "riggedConvergenceCollapsed": false,
+        "unboundedRamErasesInMemoryOom": true,
+        "zeroRttErasesRedisLowOverheadBit": true,
+        "collisionFreeBloomErasesBloomFp": true
+      },
+      "noUniversalWinner": true,
+      "trilemmaDistinguishes": true,
+      "causalLocks": {
+        "bloomFalsePositiveCausallyUnerasable": true,
+        "redisRttCausallyUnerasable": true,
+        "inMemoryVolatilityCausallyUnerasable": true,
+        "causalLocksAllHold": true,
+        "probes": {
+          "bloomSmallFpr": 0.3476,
+          "bloomLargeFpr": 0.0026,
+          "redisRttCount": 96,
+          "inMemoryBeforeClear": 96,
+          "inMemoryAfterClear": 0
+        }
+      },
+      "crosscheck": {
+        "evidence": {
+          "routerMoved": 20,
+          "routerTracked": 80,
+          "ringNodes": 4,
+          "ringShardsUsed": 4,
+          "walLines": 80,
+          "walReplayed": 80,
+          "notices": 12,
+          "busListeners": 1,
+          "redisBitmapHits": 96,
+          "redisSlots": 96,
+          "poolCreated": 2,
+          "poolReused": 1,
+          "bucketAllowed": 3,
+          "bucketRejected": 4,
+          "heapFired": 3,
+          "heapPending": 0,
+          "counterSum": 2080,
+          "counterFalseSharing": 56,
+          "jitterSpread": 2.0188,
+          "remapConsistentRate": 0.275,
+          "remapModuloRate": 0.54
+        },
+        "soundness": {
+          "laneA": {
+            "consistentAcceptedInMemory": 96,
+            "consistentAcceptedRedis": 96,
+            "unique": 96
+          },
+          "laneB": {
+            "atLeastOnceAcceptedInMemory": 96,
+            "atLeastOnceAcceptedRedis": 96,
+            "atLeastOnceAcceptedBloom": 94,
+            "unique": 96
+          },
+          "holds": true,
+          "nontrivial": true,
+          "falsifiable": true,
+          "tamper": {
+            "duplicateInvisible": {
+              "holds": false,
+              "reason": "duplicateInvisible：重投当新消息喂回 ⇒ 真二次消费 ⇒ holds 真翻 false"
+            },
+            "forgedDedupHit": {
+              "holds": false,
+              "reason": "forgedDedupHit：全新唯一消息被伪造 redelivered 记录 ⇒ 吞合法新消息 ⇒ holds 真翻 false"
+            },
+            "emptyStream": {
+              "holds": false,
+              "reason": "空消息流 ⇒ nontrivial=false，绝不 0=0 假绿"
+            }
+          },
+          "events": 192
+        }
+      },
+      "rigged": false
+    },
+    "builtAt": 1794489559394
   }
 }

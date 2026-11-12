@@ -2487,4 +2487,84 @@ describe('caesura-game-cloud', () => {
     })).status()).gatewayRouting
     expect(injected.builtAt).toBe(555)
   })
+
+  // ============ KI-540 消费端幂等去重 opt-in 装配（2 腿）============
+  it('idempotentConsumer:true 装配真矩阵：110/101/011 互异不封赢家 + 三因果锁 + verifyIdempotencySoundness 双路 + 21 键 + 惰性同引用（KI-540）', async () => {
+    const gc = await createGameCloud({
+      gameId: 'gid-idc1', gamePort: 7920, sources, cloud: fakeCloud(),
+      idempotentConsumer: true, idcNow: () => 540000,
+    })
+    const st = (await gc.status()).idempotentConsumer
+    expect(st).not.toBe(null)
+    expect(st!.builtAt).toBe(540000)
+    expect(st!.config.scenarios.length).toBe(6)
+    expect(st!.config.messages).toBe(96)
+    expect(st!.rows.length).toBe(3)
+    expect(st!.vectors).toEqual({ InMemoryDedupSet: '110', RedisSetNx: '101', BloomGuard: '011' })
+    expect(st!.rigged).toBe(false)
+    expect(st!.noUniversalWinner).toBe(true)
+    expect(st!.trilemmaDistinguishes).toBe(true)
+    expect(st!.verdict.noStrategyWinsAll).toBe(true)
+    expect(st!.verdict.vectorFromTrilemma).toBe(true)
+    // 三因果结构锁
+    expect(st!.causalLocks.causalLocksAllHold).toBe(true)
+    expect(st!.causalLocks.bloomFalsePositiveCausallyUnerasable).toBe(true)
+    expect(st!.causalLocks.redisRttCausallyUnerasable).toBe(true)
+    expect(st!.causalLocks.inMemoryVolatilityCausallyUnerasable).toBe(true)
+    // verifyIdempotencySoundness 双路 + 两 lane
+    const cp = st!.crosscheck.soundness
+    expect(cp.holds).toBe(true)
+    expect(cp.nontrivial).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.laneA.consistentAcceptedInMemory).toBe(96)
+    expect(cp.laneA.consistentAcceptedRedis).toBe(96)
+    expect(cp.tamper.duplicateInvisible.holds).toBe(false)
+    expect(cp.tamper.forgedDedupHit.holds).toBe(false)
+    expect(cp.tamper.emptyStream.holds).toBe(false)
+    expect(Object.keys(st!.crosscheck.evidence).length).toBe(21)
+    // 主教义
+    expect(st!.verdict.memPureCrash).toBe(true)
+    expect(st!.verdict.redisStillExact).toBe(true)
+    expect(st!.verdict.bloomOverheads).toBe(true)
+    // 惰性缓存
+    expect((await gc.status()).idempotentConsumer).toBe(st)
+    expect(await gc.runIdempotentConsumerStudy!()).toMatchObject({ vectors: st!.vectors })
+    // 不连坐其它维
+    const bare = await createGameCloud({ gameId: 'gid-idc0', gamePort: 7921, sources, cloud: fakeCloud() }).status()
+    expect(bare.idempotentConsumer).toBe(null)
+    expect(bare.llmGateway).toBe(null)
+  })
+
+  it('idempotentConsumer 默认 null 非破坏；unboundedRam/zeroRttNetwork/ collisionFreeBloom 探针 + 可注入现成 study（KI-540）', async () => {
+    const idle = await createGameCloud({ gameId: 'gid-idc2', gamePort: 7922, sources, cloud: fakeCloud() }).status()
+    expect(idle.idempotentConsumer).toBe(null)
+    // 单开 zeroRttNetwork：RedisSetNx=111（完美 Redis：无 RTT + 精确 + 有界）
+    const zr = (await (await createGameCloud({
+      gameId: 'gid-idc3', gamePort: 7923, sources, cloud: fakeCloud(),
+      idempotentConsumer: { zeroRttNetwork: true }, idcNow: () => 540000,
+    })).status()).idempotentConsumer
+    expect(zr!.vectors.RedisSetNx).toBe('111')
+    expect(zr!.verdict.zeroRttErasesRedisLowOverheadBit).toBe(true)
+    // 单开 collisionFreeBloom：布隆假阳 → 0，但 exactDedup 恒 false（结构）
+    const cf = (await (await createGameCloud({
+      gameId: 'gid-idc4', gamePort: 7924, sources, cloud: fakeCloud(),
+      idempotentConsumer: { collisionFreeBloom: true }, idcNow: () => 540000,
+    })).status()).idempotentConsumer
+    expect(cf!.vectors.BloomGuard).toBe('011')
+    expect(cf!.verdict.collisionFreeBloomErasesBloomFp).toBe(true)
+    // rigged 三开齐：RedisSetNx=111、causalLocks 仍真、distinguishable 仍真（InMemory/Bloom 不动）
+    const rig = (await (await createGameCloud({
+      gameId: 'gid-idc5', gamePort: 7925, sources, cloud: fakeCloud(),
+      idempotentConsumer: { rigged: true }, idcNow: () => 540000,
+    })).status()).idempotentConsumer
+    expect(rig!.vectors.RedisSetNx).toBe('111')
+    expect(rig!.causalLocks.causalLocksAllHold).toBe(true)
+    // 可注入现成 study
+    const { idempotentConsumerStudy } = await import('../../scripts/caesura-idempotent-consumer.mjs')
+    const injected = (await (await createGameCloud({
+      gameId: 'gid-idc6', gamePort: 7926, sources, cloud: fakeCloud(),
+      idempotentConsumer: idempotentConsumerStudy({ seed: 99, now: () => 555 }),
+    })).status()).idempotentConsumer
+    expect(injected.builtAt).toBe(555)
+  })
 })

@@ -70,6 +70,7 @@
       renderCircuitBreaker(snap.systems ? snap.systems.circuitBreaker : null)
       renderLlmGateway(snap.systems ? snap.systems.llmGateway : null)
       renderGatewayRouting(snap.systems ? snap.systems.gatewayRouting : null)
+      renderIdempotentConsumer(snap.systems ? snap.systems.idempotentConsumer : null)
       renderTraceSampling(snap.systems ? snap.systems.traceSampling : null)
       setLive(true, result.source)
     }).catch(function (e) {
@@ -3312,6 +3313,136 @@
       'verifyCheckpoint 双路自证：路 A clean 全量全 commit 求基准，路 B 真跑 restart(0) 用「poison chunk 隔离 / 已 commit 无重复 / 非毒零丢失 / 真检测到毒」四观测量判定；三路篡改真喂回同一内核现算翻 false，带 baselineHolds 先真绿。' +
       '三条因果结构锁在同一含毒 raw 流真跑钉死：Bulk 无 chk 整批死、chk 权衡不可兼得、Skip 跳毒永久丢。' +
       'rigged 双开关 perfectOracle（毒项 100% 判定、预防性从输入剔除）+ unlimitedSkip 喂的是已剔除毒项的干净流（换了作业输入、诚实标注，不是同一作业被抹软肋）⇒ 三者 faultIsolation 全真、Bulk≡Skip=101 区分度诚实收敛（riggedConvergenceCollapsed=true，教学结论：完美预言机抹平了「预防剔除」与「跳过」的差别，二者结构等价），noStrategyWinsAll 仍真绝不硬造 111，三因果锁仍 allHold。'
+  }
+
+  /* ================= KI-540 InMemoryDedupSet/RedisSetNx/BloomGuard 消费端幂等去重 · 第三十四维（idc 族） ================= */
+
+  function renderIdempotentConsumer(idc) {
+    renderIdcMatrix(idc && idc.rows, idc && idc.config)
+    renderIdcLadder(idc && idc.rows)
+    renderIdcTrilemma(idc && idc.rows, idc && idc.verdict, idc && idc.crosscheck)
+  }
+
+  function idcMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 暂缺</div>'
+    if (note) note.textContent = 'systems.idempotentConsumer 缺失 — 跑一次 npm run console:data 即可补齐'
+  }
+
+  function idcCell(c, protocol) {
+    if (!c) return { cls: '', ch: '·' }
+    if (protocol === 'InMemoryDedupSet') return { cls: 'exact', ch: '精' }
+    if (protocol === 'RedisSetNx') return { cls: 'rtt', ch: '约' }
+    if (protocol === 'BloomGuard') return { cls: 'fp', ch: '虚' }
+    return { cls: 'ok', ch: '✓' }
+  }
+
+  function renderIdcMatrix(rows, config) {
+    var box = $('#idc-matrix'), note = $('#idc-matrix-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      idcMissing(box, note, 'idc 矩阵'); return
+    }
+    var scenarios = ['consistentStream', 'atLeastOnceRedelivery', 'burstRedelivery', 'falsePositiveBurst', 'coldRestart', 'cleanRerun']
+    var head = '<div class="idc-mat-row idc-mat-head"><span class="idc-mat-proto">策略</span>' +
+      scenarios.map(function (sc) { return '<span class="idc-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="idc-mat-cost">精确/拒重</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = idcCell(cell, row.protocol)
+        return '<span class="idc-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="idc-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="idc-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="idc-mat-cost"><b>' + esc(fmt(m.totalExact)) + '</b>/' + esc(String(m.totalRejected || 0)) + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'InMemoryDedupSet / RedisSetNx / BloomGuard × 六场景：consistentStream（干净唯一流 96 条）/ atLeastOnceRedelivery（at-least-once 重投 192 条）/ burstRedelivery（突发重投 1.5x）/ falsePositiveBurst（512 位布隆高负载真 FP 真暴露）/ coldRestart（InMemory 重启即丢）/ cleanRerun（同轨迹重跑幂等）。每格只认三布尔（exactDedup ∧ lowOverhead ∧ durableBounded）——绝不由阈值重算。InMemory: HashMap 精确/零 RTT 但无界丢失·restart 即丢；RedisSetNx: SETNX+EX TTL 精确共享但每条必付 RTT；BloomGuard: 位图 m 位有界/O(k) 零 RTT 但概率假阳吞掉合法新消息。'
+  }
+
+  function renderIdcLadder(rows) {
+    var box = $('#idc-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.totalExact) ? r.metrics.totalExact : 1 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.totalExact) ? Math.round(m.totalExact / max * 100) : 0
+      return '<div class="idc-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="idc-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">精确 ' + esc(fmt(m.totalExact)) + ' · 误判FP ' + esc(String(m.falsePositiveRejections || 0)) + ' · OOM ' + esc(String(m.totalOom || 0)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderIdcTrilemma(rows, verdict, crosscheck) {
+    var box = $('#idc-trilemma'), veBox = $('#idc-verif'), cxBox = $('#idc-crosscheck'), note = $('#idc-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      idcMissing(box, note, 'idc 判词'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''; return
+    }
+    var flags = [['exactDedup', '精确'], ['lowOverhead', '低耗'], ['durableBounded', '有界持久']]
+    var head = '<div class="idc-vec idc-vec-head"><span class="proto">策略</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="idc-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="idc-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    if (veBox) {
+      var mem = rows.find(function (r) { return r.protocol === 'InMemoryDedupSet' })
+      var red = rows.find(function (r) { return r.protocol === 'RedisSetNx' })
+      var bloom = rows.find(function (r) { return r.protocol === 'BloomGuard' })
+      var cp = crosscheck && crosscheck.soundness
+      veBox.innerHTML = [
+        '<div class="idc-rb-row"><b>InMemoryDedupSet</b> 精确=' + esc(String(mem?.trilemma?.exactDedup)) + '（HashMap 100% 无误判）· 低耗=' + esc(String(mem?.trilemma?.lowOverhead)) + '（本地 O(1) 零 RTT）· 有界=' + esc(String(mem?.trilemma?.durableBounded)) + '（重启即丢/无界）</div>',
+        '<div class="idc-rb-row"><b>RedisSetNx</b> 精确=' + esc(String(red?.trilemma?.exactDedup)) + '（SETNX+EX 真 TTL 语义）· 低耗=' + esc(String(red?.trilemma?.lowOverhead)) + '（每条必付 1 RTT）· 有界=' + esc(String(red?.trilemma?.durableBounded)) + '（TTL 有界 + 跨实例共享）</div>',
+        '<div class="idc-rb-row"><b>BloomGuard</b> 精确=' + esc(String(bloom?.trilemma?.exactDedup)) + '（k 哈希概率假阳）· 低耗=' + esc(String(bloom?.trilemma?.lowOverhead)) + '（本地 O(k) 零 RTT）· 有界=' + esc(String(bloom?.trilemma?.durableBounded)) + '（位图 m 位固定）</div>',
+        cp ? '<div class="idc-rb-row"><b>verifyIdempotencySoundness</b> holds=' + (cp.holds ? 'true' : 'false') + ' nontrivial=' + (cp.nontrivial ? 'true' : 'false') + ' falsifiable=' + (cp.falsifiable ? 'true' : 'false') + ' · laneA{mem=' + esc(String(cp.laneA && cp.laneA.consistentAcceptedInMemory)) + ' redis=' + esc(String(cp.laneA && cp.laneA.consistentAcceptedRedis)) + '} laneB{mem=' + esc(String(cp.laneB && cp.laneB.atLeastOnceAcceptedInMemory)) + ' redis=' + esc(String(cp.laneB && cp.laneB.atLeastOnceAcceptedRedis)) + ' bloom=' + esc(String(cp.laneB && cp.laneB.atLeastOnceAcceptedBloom)) + '}</div>' : '',
+      ].join('')
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>真 <b>compareRemapping</b> 迁移率 一致性 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>' +
+          '<div>真 <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 片</div>' +
+          '<div>真 <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 命中 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
+          '<div>真 <b>createWal</b> lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>真 <b>createBus</b> idc.deduped 通知 ' + esc(fmt(ev.notices)) + ' 条 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>真 <b>createRedisCache</b> dedup 命中 ' + esc(fmt(ev.redisBitmapHits)) + ' · entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+          '<div>真 <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+          '<div>真 <b>createTokenBucket</b> 回放允许 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>真 <b>createMinHeapDelayQueue</b> 出队 ' + esc(fmt(ev.heapFired)) + ' 条 · pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+          '<div>真 <b>createFullJitterBackoff</b> jitterSpread <b>' + esc(String((ev.jitterSpread ?? 0).toFixed(4))) + '</b>（64 采样 delayFor 真采样）</div>' +
+          '<div>真 <b>createPackedCounters</b> Σ=' + esc(fmt(ev.counterSum)) + ' · falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">真件交叉印证缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var chips = [
+      '<span class="chip" data-verdict="memPureCrash"><b>InMemoryDedupSet</b> 精确无误判 ' + (v.memPureCrash ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="redisStillExact"><b>RedisSetNx</b> exact+有界 ' + (v.redisStillExact ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="bloomOverheads"><b>BloomGuard</b> 低耗常数有界 ' + (v.bloomOverheads ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="noStrategyWinsAll"><b>noStrategyWinsAll</b> ' + (v.noStrategyWinsAll ? '✓（无一 111）' : '✗') + '</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' + (noWin ? '✓ 三向量互异（110/101/011），无全局赢家' : '判词塌陷') + '</span>',
+      '<span class="chip ' + (v.riggedConvergenceCollapsed ? 'jade-t' : 'muted-t') + '" data-verdict="riggedConvergenceCollapsed">' + (v.riggedConvergenceCollapsed ? '✓ rigged 塌缩' : '未 rigged 或未塌缩') + '</span>',
+    ]
+    var probes = $('#idc-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维序固定 [exactDedup / lowOverhead / durableBounded]。默认向量 InMemoryDedupSet=110（精确+低耗·不持久） / RedisSetNx=101（精确+有界·RTT） / BloomGuard=011（低耗+有界·假阳-exactDedup=false）——恰好各缺一维、向量互异、无一 111。' +
+      'rigged 三开关：unboundedRam 给 InMemory 无限内存（OOM 探针归零） · zeroRttNetwork 给 RedisSetNx 免费 RTT（110→111） · collisionFreeBloom 删布隆假阳（BloomGuard 假阳归零·exactDedup 仍 false—结构如此）。' +
+      '三因果锁：bloomFalsePositiveCausallyUnerasable（装载因子上升⇒FP 率结构性上涨，size 任何设置只能控速不能到 0） · redisRttCausallyUnerasable（精确+有界⇒状态必须外置共享⇒每条必付 RTT，本地化即失去共享有界） · inMemoryVolatilityCausallyUnerasable（精确+本地⇒驻进程⇒重启丢/跨实例漏判）——causalLocksAllHold=true。'
   }
 
   /* ================= KI-539 PathPrefixRouting/RegexCaptureRouting/HeaderGroupRouting Spring Cloud Gateway 路由 · 第三十三维（gr 族） ================= */

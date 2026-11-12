@@ -2495,3 +2495,72 @@ describe('KI-539 第三十三维 · pathprefix/regexcapture/headergroup（gr 族
     })
   })
 })
+
+
+// ============ KI-540 第三十四维 · 消费端幂等去重（idc 族 · 4 腿） ============
+describe('KI-540 第三十四维 · inmemory/redissetnx/bloomguard（idc 族）', () => {
+  const realIdc = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+  it('第三十四维真渲染：idc 矩阵 18 cell + 三策略向量 110/101/011 + 状态类 + ladder 条', async () => {
+    const dom = await runApp(realIdc)
+    const matrix = dom.els['idc-matrix'].innerHTML
+    expect(matrix).toContain('idc-mat-head')
+    for (const p of ['InMemoryDedupSet', 'RedisSetNx', 'BloomGuard']) {
+      expect(matrix).toContain('data-strategy="' + p + '"')
+    }
+    for (const sc of ['consistentStream', 'atLeastOnceRedelivery', 'burstRedelivery', 'falsePositiveBurst', 'coldRestart', 'cleanRerun']) {
+      expect(matrix).toContain('data-s="' + sc + '"')
+    }
+    expect((matrix.match(/class="idc-cell /g) || []).length).toBe(18)
+    const tri = dom.els['idc-trilemma'].innerHTML
+    expect(tri).toContain('data-vec="110"')
+    expect(tri).toContain('data-vec="101"')
+    expect(tri).toContain('data-vec="011"')
+    const states = [...matrix.matchAll(/data-state="([^"]+)"/g)].map((m) => m[1])
+    expect(states.length).toBeGreaterThanOrEqual(18)
+    expect(dom.els['idc-ladder'].innerHTML).toContain('idc-bar')
+  })
+
+  it('第三十四维画中件 DOM：verifyIdempotencySoundness 双路 + 十一真件 chip + 无 111', async () => {
+    const dom = await runApp(realIdc)
+    const probes = dom.els['idc-probes'].innerHTML
+    for (const key of ['memPureCrash', 'redisStillExact', 'bloomOverheads',
+      'noStrategyWinsAll', 'noUniversalWinner', 'riggedConvergenceCollapsed']) {
+      expect(probes, 'probe chip ' + key).toContain('data-verdict="' + key + '"')
+    }
+    const verif = dom.els['idc-verif'].innerHTML
+    for (const key of ['holds', 'nontrivial', 'falsifiable']) {
+      expect(verif, 'verify row ' + key).toContain(key)
+    }
+    const cx = dom.els['idc-crosscheck'].innerHTML
+    for (const api of ['compareRemapping', 'createShardRouter', 'createHashRing', 'createWal', 'createBus',
+      'createRedisCache', 'createObjectPool', 'createTokenBucket', 'createMinHeapDelayQueue',
+      'createFullJitterBackoff', 'createPackedCounters']) {
+      expect(cx, '真件 ' + api + ' 必须 DOM 可见').toContain(api)
+    }
+    expect(cx).toContain('jitterSpread')
+  })
+
+  it('第三十四维 markup/CSS 自同 + systems.idempotentConsumer 缺失时真显式降级', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-idc')
+    expect(html).toContain('id="idc-matrix"')
+    expect(html).toContain('id="idc-verif"')
+    expect(html).toContain('InMemoryDedupSet=110 / RedisSetNx=101 / BloomGuard=011')
+    expect(css).toContain('.idc-cell.exact')
+    expect(css).toContain('.idc-cell.rtt')
+    expect(css).toContain('.idc-cell.fp')
+    expect(css).toContain('.idc-cell.ok')
+    expect(css).toContain('.idc-flag.yes')
+    expect(css).toContain('.idc-bar > i')
+    expect(css).toContain('.idc-verif')
+    expect(css).toContain('@media')
+    const noIdc = JSON.parse(JSON.stringify(realIdc as any))
+    noIdc.systems.idempotentConsumer = null
+    return runApp(noIdc).then((dom2: any) => {
+      expect(dom2.els['idc-matrix'].innerHTML).toContain('暂缺')
+      expect(dom2.els['idc-trilemma'].innerHTML).toContain('暂缺')
+      expect(dom2.els['idc-matrix-note'].textContent).toContain('systems.idempotentConsumer 缺失')
+    })
+  })
+})

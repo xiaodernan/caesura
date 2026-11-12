@@ -1181,10 +1181,48 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(off.llmGateway).toBe(null)
     expect(off.cacheReplacement).not.toBe(null)
     const full = await buildSystems({ now })
+
     const twenty = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt, full.bloomFilter?.builtAt, full.cacheReplacement?.builtAt, full.streamWindow?.builtAt, full.hyperLogLog?.builtAt, full.crdt?.builtAt, full.springBatch?.builtAt, full.traceSampling?.builtAt, full.distributedSession?.builtAt, full.transactionalOutbox?.builtAt, full.loadBalance?.builtAt, full.circuitBreaker?.builtAt, full.llmGateway?.builtAt, full.gatewayRouting?.builtAt]
     expect(twenty.every((x) => x === 539500)).toBe(true)
   })
 
+  it('㉒j-idempotent-consumer buildIdempotentConsumerReading 真跑：idc* 注入生效 / idempotentConsumer:false 关闭 / rigged 不硬造 111 / 双路自证 + 十一真件 / 二十一时钟同源（KI-540）', async () => {
+    const { buildIdempotentConsumerReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 540500
+    const g = (await buildIdempotentConsumerReading({}, now))!
+    expect(g).not.toBe(null)
+    expect(g.builtAt).toBe(540500)
+    expect(g.rows.length).toBe(3)
+    expect(g.config.messages).toBe(96)
+    expect(g.vectors).toEqual({ InMemoryDedupSet: '110', RedisSetNx: '101', BloomGuard: '011' })
+    expect(g.rigged).toBe(false)
+    expect(g.causalLocks.causalLocksAllHold).toBe(true)
+    expect(g.causalLocks.bloomFalsePositiveCausallyUnerasable).toBe(true)
+    expect(g.causalLocks.redisRttCausallyUnerasable).toBe(true)
+    expect(g.causalLocks.inMemoryVolatilityCausallyUnerasable).toBe(true)
+    const tuned = (await buildIdempotentConsumerReading({ idcSeed: 12, idcMessages: 32 }, now))!
+    expect(tuned.config.seed).toBe(12)
+    expect(tuned.config.messages).toBe(32)
+    const rig = (await buildIdempotentConsumerReading({ idcRigged: true }, now))!
+    expect(rig.vectors.RedisSetNx).toBe('111')
+    expect(rig.rigged).toBe(true)
+    expect(rig.verdict.noStrategyWinsAll).toBe(false)
+    expect(rig.causalLocks.causalLocksAllHold).toBe(true)
+    const cp = g.crosscheck.soundness
+    expect(cp.holds).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.tamper.duplicateInvisible.holds).toBe(false)
+    expect(cp.tamper.forgedDedupHit.holds).toBe(false)
+    expect(cp.tamper.emptyStream.holds).toBe(false)
+    expect(Object.keys(g.crosscheck.evidence).length).toBe(21)
+    const off = await buildSystems({ now, idempotentConsumer: false, gatewayRouting: false })
+    expect(off.idempotentConsumer).toBe(null)
+    expect(off.gatewayRouting).toBe(null)
+    expect(off.cacheReplacement).not.toBe(null)
+    const full = await buildSystems({ now })
+    const twentyone = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt, full.bloomFilter?.builtAt, full.cacheReplacement?.builtAt, full.streamWindow?.builtAt, full.hyperLogLog?.builtAt, full.crdt?.builtAt, full.springBatch?.builtAt, full.traceSampling?.builtAt, full.distributedSession?.builtAt, full.transactionalOutbox?.builtAt, full.loadBalance?.builtAt, full.circuitBreaker?.builtAt, full.llmGateway?.builtAt, full.gatewayRouting?.builtAt, full.idempotentConsumer?.builtAt]
+    expect(twentyone.every((x) => x === 540500)).toBe(true)
+  })
   it('㉒c-trace-sampling buildTraceSamplingReading 真跑：ts* 注入生效 / traceSampling:false 关闭 / rigged Head≡Tail=110 诚实塌缩不硬造 111 / 双路自证 + 三路篡改真喂回 + 三因果锁 + 十一真件 / 十四时钟同源（KI-533）', async () => {
     const { buildTraceSamplingReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
     const now = () => 533000

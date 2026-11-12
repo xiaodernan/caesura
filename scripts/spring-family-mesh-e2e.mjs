@@ -184,6 +184,10 @@ export function runMeshE2E(opts = {}) {
     // 注入时钟用 grNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/rdq/dld 已占用前缀）。
     gatewayRouting: opts.gatewayRouting,
     grNow: opts.grNow,
+    // KI-540：Spring Cloud 幂等去重教学件（idempotentConsumer=true 装配；InMemoryDedupSet/RedisSetNx/BloomGuard × 六场景矩阵 + 三难向量（默认 110/101/011 互异）+ verifyIdempotencySoundness 双路自证 + 十一真件 21 键交叉印证，不改调用路径）。
+    // 注入时钟用 idcNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/rdq/dld 已占用前缀）。
+    idempotentConsumer: opts.idempotentConsumer,
+    idcNow: opts.idcNow,
     // KI-533：可观测性分布式追踪采样三策略（traceSampling=true 装配；只读 HeadBased/TailBased/Adaptive ×
     // 六场景矩阵 + 三难向量维序 [lowOverhead/anomalyCapture/loadAdaptive]（默认 100/010/101 互异不封赢家；
     // anomalyCapture⇔缓冲整条⇔非 lowOverhead 与 chk 锁同构；rigged 三开关 oracleHead/infiniteBuffer/perfectFeedback
@@ -344,6 +348,7 @@ export function runMeshE2E(opts = {}) {
         circuitBreakerSnapshot: status.circuitBreaker ?? null,
         llmGatewaySnapshot: status.llmGateway ?? null,
         gatewayRoutingSnapshot: status.gatewayRouting ?? null,
+        idempotentConsumerSnapshot: status.idempotentConsumer ?? null,
         traceSamplingSnapshot: status.traceSampling ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
@@ -755,6 +760,19 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         crosscheck: r.gatewayRoutingSnapshot.crosscheck,
         causalLocks: r.gatewayRoutingSnapshot.causalLocks,
         verdict: r.gatewayRoutingSnapshot.verdict,
+      } : null,
+      idempotentConsumer: r.idempotentConsumerSnapshot ? {
+        strategies: r.idempotentConsumerSnapshot.rows.map((row) => ({
+          strategy: row.protocol,
+          ladder: row.scenarios.map((sc) => sc.id + ':' + (sc.exactDedup === true ? '精' : '虚')).join(' → '),
+          metrics: row.metrics, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.idempotentConsumerSnapshot.rows.map((row) => [row.protocol,
+          String(Number(row.trilemma.exactDedup)) + String(Number(row.trilemma.lowOverhead)) + String(Number(row.trilemma.durableBounded))])),
+        noUniversalWinner: r.idempotentConsumerSnapshot.verdict.noUniversalWinner,
+        crosscheck: r.idempotentConsumerSnapshot.crosscheck,
+        causalLocks: r.idempotentConsumerSnapshot.causalLocks,
+        verdict: r.idempotentConsumerSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

@@ -49,6 +49,7 @@ import { springLoadBalanceStudy, springLoadBalanceSnapshot } from './caesura-spr
 import { circuitBreakerStudy, circuitBreakerSnapshot } from './caesura-circuit-breaker.mjs'
 import { llmGatewayStudy, llmGatewaySnapshot } from './caesura-llm-gateway.mjs'
 import { gatewayRoutingStudy, gatewayRoutingSnapshot } from './caesura-gateway-routing.mjs'
+import { idempotentConsumerStudy, idempotentConsumerSnapshot } from './caesura-idempotent-consumer.mjs'
 import { traceSamplingStudy, traceSamplingSnapshot } from './caesura-trace-sampling.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
@@ -376,7 +377,9 @@ export async function buildSystems(opts = {}) {
   const llmGateway = opts.llmGateway === false ? null : await buildLlmGatewayReading(opts, now)
   // KI-539：第三十三维装配 Spring Cloud Gateway 路由教学件（PathPrefixRouting/RegexCaptureRouting/HeaderGroupRouting）
   const gatewayRouting = opts.gatewayRouting === false ? null : await buildGatewayRoutingReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, builtAt: now() }
+  // KI-540：第三十四维装配 Spring Cloud 幂等去重教学件（InMemoryDedupSet/RedisSetNx/BloomGuard）
+  const idempotentConsumer = opts.idempotentConsumer === false ? null : await buildIdempotentConsumerReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, builtAt: now() }
 }
 
 /**
@@ -458,6 +461,29 @@ export async function buildTraceSamplingReading(opts, now) {
       ...(opts.tsRigged === true ? { rigged: true } : {}),
     })
     return traceSamplingSnapshot(s)
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
+ * KI-540：消费端幂等去重三策略真跑教学件（InMemoryDedupSet/RedisSetNx/BloomGuard × 六场景 + 三难向量 + verifyIdempotencySoundness 双路自证 + 十一枚真件交叉印证）。
+ * 失败落 null；读数全真、CLI 双跑字节一致、rigged 不硬造 111（结构如此）。
+ * @param {object} opts { idempotentConsumer?:false, idcSeed?, idcMessages?, idcUnboundedRam?, idcZeroRttNetwork?, idcCollisionFreeBloom?, idcRigged? }
+ * @param {()=>number} now 时钟（builtAt 注入真值）
+ */
+export async function buildIdempotentConsumerReading(opts, now) {
+  try {
+    const s = await idempotentConsumerStudy({
+      now,
+      ...(opts.idcSeed ? { seed: Math.max(0, Math.floor(Number(opts.idcSeed))) } : {}),
+      ...(opts.idcMessages ? { messages: Math.max(16, Math.floor(Number(opts.idcMessages))) } : {}),
+      ...(opts.idcUnboundedRam === true ? { unboundedRam: true } : {}),
+      ...(opts.idcZeroRttNetwork === true ? { zeroRttNetwork: true } : {}),
+      ...(opts.idcCollisionFreeBloom === true ? { collisionFreeBloom: true } : {}),
+      ...(opts.idcRigged === true ? { rigged: true } : {}),
+    })
+    return idempotentConsumerSnapshot(s)
   } catch (e) {
     return null // 缺哪块就落 null，前端据实降级；不编造假数
   }

@@ -652,6 +652,23 @@
       <p class="note" id="gr-trilemma-note">…</p>
     </article>
   </section>
+  <!-- 第三十四维 · InMemoryDedupSet / RedisSetNx / BloomGuard 消费端幂等去重（KI-540） -->
+  <section class="row row-idc">
+    <article class="panel panel-idc">
+      <div class="panel-head"><h2>第三十四维 · InMemoryDedupSet/RedisSetNx/BloomGuard · 三策略 × 六场景</h2><span class="hint">精=InMemoryDedupSet（进程内 HashMap·精确无误判·本地 O(1) 零 RTT·但进程内无界增长且重启即丢·跨实例看不见）/ 约=RedisSetNx（真 fakeRedis SETNX+EX TTL·精确共享有界可跨实例·但每条必付一次网络 RTT）/ 虚=BloomGuard（k 哈希布隆位图·m 位固定常数有界·本地 O(k) 零 RTT·但概率假阳性会把合法新消息当重复吞掉）** · 默认向量 110/101/011 互异不封赢家</span></div>
+      <div class="idc-matrix" id="idc-matrix"></div>
+      <div class="idc-ladder" id="idc-ladder"></div>
+      <p class="note" id="idc-matrix-note">…</p>
+    </article>
+    <article class="panel panel-idc">
+      <div class="panel-head"><h2>三难向量（exactDedup ∧ lowOverhead ∧ durableBounded）· 双路自证</h2><span class="hint">InMemoryDedupSet=110 / RedisSetNx=101 / BloomGuard=011 · 三向量互异无一 111 恰好各缺一维 · verifyIdempotencySoundness 双路自证（路 A 干净唯一流全接受 vs 路 B at-least-once 重投流精确策略真拒重复、Bloom 暴露真误判 · 三路篡改 duplicateInvisible/forgedDedupHit/emptyStream 真喂回现算翻 false）· 三因果锁（bloomFP 结构性长程 / Redis 必付 RTT / InMemory 易失）· 十一真件 21 键交叉印证 · rigged 三开关（unboundedRam / zeroRttNetwork / collisionFreeBloom）</span></div>
+      <div class="idc-trilemma" id="idc-trilemma"></div>
+      <div class="idc-verif" id="idc-verif"></div>
+      <div class="idc-crosscheck" id="idc-crosscheck"></div>
+      <div class="idc-probes" id="idc-probes"></div>
+      <p class="note" id="idc-trilemma-note">…</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">
