@@ -2651,4 +2651,68 @@ describe('caesura-game-cloud', () => {
     })).status()).consumerRebalance
     expect(injected.builtAt).toBe(555)
   })
+
+  // ============ KI-542 有界优先级队列 opt-in 装配（2 腿）============
+  it('priorityQueue:true 装配真矩阵：100/010/101 互异不封赢家 + 三因果锁 + verifyPriorityScheduleSoundness 双路 + 21 键 + 惰性同引用（KI-542）', async () => {
+    const gc = await createGameCloud({
+      gameId: 'gid-pq1', gamePort: 7940, sources, cloud: fakeCloud(),
+      priorityQueue: true, pqNow: () => 542000,
+    })
+    const st = (await gc.status()).priorityQueue
+    expect(st).not.toBe(null)
+    expect(st!.builtAt).toBe(542000)
+    expect(st!.config.scenarios.length).toBe(4)
+    expect(st!.config.capacity).toBe(64)
+    expect(st!.rows.length).toBe(3)
+    expect(st!.vectors).toEqual({ BoundedStrict: '100', MotionWeightedFair: '010', DeadlineScheduler: '101' })
+    expect(st!.rigged).toBe(false)
+    expect(st!.noUniversalWinner).toBe(true)
+    expect(st!.trilemmaDistinguishes).toBe(true)
+    expect(st!.verdict.noStrategyWinsAll).toBe(true)
+    expect(st!.verdict.vectorFromTrilemma).toBe(true)
+    expect(st!.causalLocks.causalLocksAllHold).toBe(true)
+    expect(st!.causalLocks.strictStarvationCausallyUnerasable).toBe(true)
+    expect(st!.causalLocks.fairVtimeAccountingCausallyUnerasable).toBe(true)
+    expect(st!.causalLocks.deadlineBlindnessCausallyUnerasable).toBe(true)
+    // verifyPriorityScheduleSoundness 双路
+    const cp = st!.crosscheck.soundness
+    expect(cp.holds).toBe(true)
+    expect(cp.nontrivial).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.tamper.starvationAnchor.holds).toBe(false)
+    expect(cp.tamper.vtimeDrift.holds).toBe(false)
+    expect(cp.tamper.deadlineBlind.holds).toBe(false)
+    expect(Object.keys(st!.crosscheck.evidence).length).toBe(21)
+    // 惰性缓存
+    expect((await gc.status()).priorityQueue).toBe(st)
+    expect(await gc.runPriorityQueueStudy!()).toMatchObject({ vectors: st!.vectors })
+    // 不连坐其它维
+    const bare = await createGameCloud({ gameId: 'gid-pq0', gamePort: 7941, sources, cloud: fakeCloud() }).status()
+    expect(bare.priorityQueue).toBe(null)
+    expect(bare.llmGateway).toBe(null)
+  })
+
+  it('priorityQueue 默认 null；zeroVtimeAccounting ⇒ Fair=110；infiniteCapacity ⇒ Strict 仍 100；可注入现成 study（KI-542）', async () => {
+    const idle = await createGameCloud({ gameId: 'gid-pq2', gamePort: 7942, sources, cloud: fakeCloud() }).status()
+    expect(idle.priorityQueue).toBe(null)
+    // 单开 zeroVtimeAccounting：MotionWeightedFair=110
+    const zv = (await (await createGameCloud({
+      gameId: 'gid-pq3', gamePort: 7943, sources, cloud: fakeCloud(),
+      priorityQueue: { zeroVtimeAccounting: true }, pqNow: () => 542000,
+    })).status()).priorityQueue
+    expect(zv!.vectors.MotionWeightedFair).toBe('110')
+    // 单开 infiniteCapacity：BoundedStrict 仍 100（容量不是它缺的维）
+    const ic = (await (await createGameCloud({
+      gameId: 'gid-pq4', gamePort: 7944, sources, cloud: fakeCloud(),
+      priorityQueue: { infiniteCapacity: true }, pqNow: () => 542000,
+    })).status()).priorityQueue
+    expect(ic!.vectors.BoundedStrict).toBe('100')
+    // 可注入现成 study
+    const { priorityQueueStudy } = await import('../../scripts/caesura-priority-queue.mjs')
+    const injected = (await (await createGameCloud({
+      gameId: 'gid-pq5', gamePort: 7945, sources, cloud: fakeCloud(),
+      priorityQueue: priorityQueueStudy({ seed: 99, now: () => 555 }),
+    })).status()).priorityQueue
+    expect(injected.builtAt).toBe(555)
+  })
 })

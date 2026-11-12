@@ -51,6 +51,7 @@ import { llmGatewayStudy, llmGatewaySnapshot } from './caesura-llm-gateway.mjs'
 import { gatewayRoutingStudy, gatewayRoutingSnapshot } from './caesura-gateway-routing.mjs'
 import { idempotentConsumerStudy, idempotentConsumerSnapshot } from './caesura-idempotent-consumer.mjs'
 import { consumerRebalanceStudy, consumerRebalanceSnapshot } from './caesura-consumer-rebalance.mjs'
+import { priorityQueueStudy, priorityQueueSnapshot } from './caesura-priority-queue.mjs'
 import { traceSamplingStudy, traceSamplingSnapshot } from './caesura-trace-sampling.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
@@ -382,7 +383,9 @@ export async function buildSystems(opts = {}) {
   const idempotentConsumer = opts.idempotentConsumer === false ? null : await buildIdempotentConsumerReading(opts, now)
   // KI-541：第三十五维装配 Kafka 消费组再平衡教学件（Eager/CooperativeSticky/StaticMembership）
   const consumerRebalance = opts.consumerRebalance === false ? null : await buildConsumerRebalanceReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, builtAt: now() }
+  // KI-542：第三十六维装配有界优先级队列教学件（BoundedStrict/MotionWeightedFair/DeadlineScheduler）
+  const priorityQueue = opts.priorityQueue === false ? null : await buildPriorityQueueReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, priorityQueue, builtAt: now() }
 }
 
 /**
@@ -464,6 +467,30 @@ export async function buildTraceSamplingReading(opts, now) {
       ...(opts.tsRigged === true ? { rigged: true } : {}),
     })
     return traceSamplingSnapshot(s)
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
+ * KI-542：有界优先级队列三策略真跑教学件（BoundedStrict/MotionWeightedFair/DeadlineScheduler × 四场景 + 三难向量 + verifyPriorityScheduleSoundness 双路自证 + 十一枚真件交叉印证）。
+ * 失败落 null；读数全真、CLI 双跑字节一致、rigged 不硬造 111（结构如此）。
+ * @param {object} opts { priorityQueue?:false, pqSeed?, pqMessages?, pqCapacity?, pqInfiniteCapacity?, pqZeroVtimeAccounting?, pqInfinitePriorityStarvation?, pqRigged? }
+ * @param {()=>number} now 时钟（builtAt 注入真值）
+ */
+export async function buildPriorityQueueReading(opts, now) {
+  try {
+    const s = await priorityQueueStudy({
+      now,
+      ...(opts.pqSeed ? { seed: Math.max(0, Math.floor(Number(opts.pqSeed))) } : {}),
+      ...(opts.pqMessages ? { messages: Math.max(16, Math.floor(Number(opts.pqMessages))) } : {}),
+      ...(opts.pqCapacity ? { capacity: Math.max(8, Math.floor(Number(opts.pqCapacity))) } : {}),
+      ...(opts.pqInfiniteCapacity === true ? { infiniteCapacity: true } : {}),
+      ...(opts.pqZeroVtimeAccounting === true ? { zeroVtimeAccounting: true } : {}),
+      ...(opts.pqInfinitePriorityStarvation === true ? { infinitePriorityStarvation: true } : {}),
+      ...(opts.pqRigged === true ? { rigged: true } : {}),
+    })
+    return priorityQueueSnapshot(s)
   } catch (e) {
     return null // 缺哪块就落 null，前端据实降级；不编造假数
   }

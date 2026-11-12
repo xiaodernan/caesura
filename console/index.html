@@ -686,6 +686,23 @@
       <p class="note" id="reb-trilemma-note">…</p>
     </article>
   </section>
+  <!-- 第三十六维 · BoundedStrict / MotionWeightedFair / DeadlineScheduler 有界优先级队列（KI-542） -->
+  <section class="row row-pq">
+    <article class="panel panel-pq">
+      <div class="panel-head"><h2>第三十六维 · BoundedStrict/MotionWeightedFair/DeadlineScheduler · 三策略 × 四场景</h2><span class="hint">低耗=BoundedStrict（最小堆·strict priority·容量满真拒·高优无限期压住低优·starvation 结构性）/ 公平=MotionWeightedFair（min-vtime 轮转出队·低优先级也能成·overhead 结构性·需每条记账 vtime）/ 认限=DeadlineScheduler（EDF 真认 deadline·先处理 deadline 最小的·最小堆 O(log n)·严格队列认不出 deadline）** · 默认向量 100/010/101 互异不封赢家</span></div>
+      <div class="pq-matrix" id="pq-matrix"></div>
+      <div class="pq-ladder" id="pq-ladder"></div>
+      <p class="note" id="pq-matrix-note">…</p>
+    </article>
+    <article class="panel panel-pq">
+      <div class="panel-head"><h2>三难向量（lowOverhead ∧ boundedUnfairness ∧ deadlineAwareness）· 双路自证</h2><span class="hint">BoundedStrict=100 / MotionWeightedFair=010 / DeadlineScheduler=101 · 三向量互异无一 111 恰好各缺一维 · verifyPriorityScheduleSoundness 双路自证（lane A 最小堆顶验序 vs lane B Fair 真出队 + 三路篡改 starvationAnchor/vtimeDrift/deadlineBlind 真喂回现算翻 false）· 三因果锁（Strict 饥饿 / Fair vtime 记账 / Strict deadline-blind）· 十一真件 21 键交叉印证 · rigged 三开关（infiniteCapacity / zeroVtimeAccounting / infinitePriorityStarvation）</span></div>
+      <div class="pq-trilemma" id="pq-trilemma"></div>
+      <div class="pq-verif" id="pq-verif"></div>
+      <div class="pq-crosscheck" id="pq-crosscheck"></div>
+      <div class="pq-probes" id="pq-probes"></div>
+      <p class="note" id="pq-trilemma-note">…</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">

@@ -1841,4 +1841,40 @@ describe('caesura-console-gen (KI-495)', () => {
     const twentytwo = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt, full.bloomFilter?.builtAt, full.cacheReplacement?.builtAt, full.streamWindow?.builtAt, full.hyperLogLog?.builtAt, full.crdt?.builtAt, full.springBatch?.builtAt, full.traceSampling?.builtAt, full.distributedSession?.builtAt, full.transactionalOutbox?.builtAt, full.loadBalance?.builtAt, full.circuitBreaker?.builtAt, full.llmGateway?.builtAt, full.gatewayRouting?.builtAt, full.idempotentConsumer?.builtAt, full.consumerRebalance?.builtAt]
     expect(twentytwo.every((x) => x === 541500)).toBe(true)
   })
+
+  it('㉒l-priority-queue buildPriorityQueueReading 真跑：pq* 注入生效 / priorityQueue:false 关闭 / rigged 不硬造 111 / 双路自证 + 十一真件 / 二十三时钟同源（KI-542）', async () => {
+    const { buildPriorityQueueReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 542500
+    const g = (await buildPriorityQueueReading({}, now))!
+    expect(g).not.toBe(null)
+    expect(g.builtAt).toBe(542500)
+    expect(g.rows.length).toBe(3)
+    expect(g.config.capacity).toBe(64)
+    expect(g.vectors).toEqual({ BoundedStrict: '100', MotionWeightedFair: '010', DeadlineScheduler: '101' })
+    expect(g.rigged).toBe(false)
+    expect(g.causalLocks.causalLocksAllHold).toBe(true)
+    expect(g.causalLocks.strictStarvationCausallyUnerasable).toBe(true)
+    expect(g.causalLocks.fairVtimeAccountingCausallyUnerasable).toBe(true)
+    expect(g.causalLocks.deadlineBlindnessCausallyUnerasable).toBe(true)
+    const tuned = (await buildPriorityQueueReading({ pqSeed: 12, pqMessages: 32 }, now))!
+    expect(tuned.config.seed).toBe(12)
+    expect(tuned.config.messages).toBe(32)
+    const rig = (await buildPriorityQueueReading({ pqRigged: true }, now))!
+    expect(rig.rigged).toBe(true)
+    expect(rig.causalLocks.causalLocksAllHold).toBe(true)
+    const cp = g.crosscheck.soundness
+    expect(cp.holds).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.tamper.starvationAnchor.holds).toBe(false)
+    expect(cp.tamper.vtimeDrift.holds).toBe(false)
+    expect(cp.tamper.deadlineBlind.holds).toBe(false)
+    expect(Object.keys(g.crosscheck.evidence).length).toBe(21)
+    const off = await buildSystems({ now, priorityQueue: false, consumerRebalance: false })
+    expect(off.priorityQueue).toBe(null)
+    expect(off.consumerRebalance).toBe(null)
+    expect(off.cacheReplacement).not.toBe(null)
+    const full = await buildSystems({ now })
+    const twentythree = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt, full.bloomFilter?.builtAt, full.cacheReplacement?.builtAt, full.streamWindow?.builtAt, full.hyperLogLog?.builtAt, full.crdt?.builtAt, full.springBatch?.builtAt, full.traceSampling?.builtAt, full.distributedSession?.builtAt, full.transactionalOutbox?.builtAt, full.loadBalance?.builtAt, full.circuitBreaker?.builtAt, full.llmGateway?.builtAt, full.gatewayRouting?.builtAt, full.idempotentConsumer?.builtAt, full.consumerRebalance?.builtAt, full.priorityQueue?.builtAt]
+    expect(twentythree.every((x) => x === 542500)).toBe(true)
+  })
 })

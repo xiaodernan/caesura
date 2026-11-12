@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794491520222,
+  "generatedAt": 1794506991331,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1365,12 +1365,12 @@
           "keys": 1,
           "versions": 2,
           "commitLogSize": 1,
-          "now": 1794491520224
+          "now": 1794506991333
         },
         "final": {
           "A": {
             "value": 101,
-            "commitTs": 1794491520224,
+            "commitTs": 1794506991333,
             "tombstone": false
           }
         }
@@ -3646,7 +3646,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794491520222,
+                "lastTimestamp": 1794506991331,
                 "workerId": 1
               },
               "fault": {
@@ -3742,7 +3742,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794491520222,
+                "lastTimestamp": 1794506991331,
                 "workerId": 1
               },
               "fault": {
@@ -3774,7 +3774,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794491520223,
+                "lastTimestamp": 1794506991332,
                 "workerId": 1
               },
               "fault": {
@@ -3806,7 +3806,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794491520222,
+                "lastTimestamp": 1794506991331,
                 "workerId": 1
               },
               "fault": {
@@ -4522,7 +4522,7 @@
         "capacity": 8,
         "perShardCap": 2
       },
-      "builtAt": 1794491520222
+      "builtAt": 1794506991331
     },
     "configConsistency": {
       "config": {
@@ -5020,7 +5020,7 @@
         "burstCount": 12,
         "windowMs": 10000
       },
-      "builtAt": 1794491520222
+      "builtAt": 1794506991331
     },
     "cacheCoherency": {
       "config": {
@@ -5549,7 +5549,7 @@
         "crashAtWrite": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794491520222
+      "builtAt": 1794506991331
     },
     "messageDelivery": {
       "config": {
@@ -6038,10 +6038,10 @@
         "crashAfterSendAt": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794491520222
+      "builtAt": 1794506991331
     },
     "delayQueue": {
-      "builtAt": 1794491520222,
+      "builtAt": 1794506991331,
       "config": {
         "seed": 518,
         "tasks": 12,
@@ -6375,7 +6375,7 @@
       }
     },
     "retryDlq": {
-      "builtAt": 1794491520222,
+      "builtAt": 1794506991331,
       "config": {
         "seed": 520,
         "messages": 16,
@@ -6793,7 +6793,7 @@
       }
     },
     "consumerGroup": {
-      "builtAt": 1794491520222,
+      "builtAt": 1794506991331,
       "config": {
         "seed": 523,
         "consumers": 3,
@@ -7299,7 +7299,7 @@
       }
     },
     "backpressure": {
-      "builtAt": 1794491520222,
+      "builtAt": 1794506991331,
       "config": {
         "steps": 48,
         "mu": 2,
@@ -8344,7 +8344,7 @@
       }
     },
     "logCompaction": {
-      "builtAt": 1794491520222,
+      "builtAt": 1794506991331,
       "config": {
         "seed": 526,
         "ops": 24,
@@ -9405,7 +9405,7 @@
       }
     },
     "bloomFilter": {
-      "builtAt": 1794491520222,
+      "builtAt": 1794506991331,
       "config": {
         "seed": 527,
         "capacity": 1024,
@@ -10104,7 +10104,7 @@
       }
     },
     "cacheReplacement": {
-      "builtAt": 1794491520222,
+      "builtAt": 1794506991331,
       "config": {
         "seed": 528,
         "capacity": 16,
@@ -10747,7 +10747,7 @@
       }
     },
     "streamWindow": {
-      "builtAt": 1794491520222,
+      "builtAt": 1794506991331,
       "config": {
         "seed": 529,
         "windowSize": 100,
@@ -12806,7 +12806,7 @@
       }
     },
     "hyperLogLog": {
-      "builtAt": 1794491520222,
+      "builtAt": 1794506991331,
       "config": {
         "seed": 530,
         "cardinality": 4096,
@@ -29726,7 +29726,7 @@
       }
     },
     "crdt": {
-      "builtAt": 1794491520222,
+      "builtAt": 1794506991331,
       "config": {
         "seed": 531,
         "replicaCount": 3,
@@ -30182,7 +30182,7 @@
       }
     },
     "springBatch": {
-      "builtAt": 1794491520222,
+      "builtAt": 1794506991331,
       "config": {
         "seed": 532,
         "items": 96,
@@ -30621,7 +30621,7 @@
       "rigged": false
     },
     "traceSampling": {
-      "builtAt": 1794491520222,
+      "builtAt": 1794506991331,
       "config": {
         "seed": 533,
         "items": 64,
@@ -31323,7 +31323,7 @@
       "rigged": false
     },
     "distributedSession": {
-      "builtAt": 1794491520222,
+      "builtAt": 1794506991331,
       "config": {
         "seed": 535,
         "sessions": 96,
@@ -31679,7 +31679,7 @@
       "rigged": false
     },
     "transactionalOutbox": {
-      "builtAt": 1794491520222,
+      "builtAt": 1794506991331,
       "config": {
         "seed": 534,
         "items": 96,
@@ -32130,7 +32130,7 @@
       "rigged": false
     },
     "loadBalance": {
-      "builtAt": 1794491520222,
+      "builtAt": 1794506991331,
       "config": {
         "seed": 536,
         "requests": 96,
@@ -32550,7 +32550,7 @@
       "rigged": false
     },
     "circuitBreaker": {
-      "builtAt": 1794491520222,
+      "builtAt": 1794506991331,
       "config": {
         "seed": 537,
         "calls": 96,
@@ -33080,7 +33080,7 @@
       "rigged": false
     },
     "llmGateway": {
-      "builtAt": 1794491520222,
+      "builtAt": 1794506991331,
       "config": {
         "seed": 538,
         "mode": "offline",
@@ -33475,7 +33475,7 @@
       "rigged": false
     },
     "gatewayRouting": {
-      "builtAt": 1794491520222,
+      "builtAt": 1794506991331,
       "config": {
         "seed": 539,
         "requests": 96,
@@ -33813,7 +33813,7 @@
       "rigged": false
     },
     "idempotentConsumer": {
-      "builtAt": 1794491520222,
+      "builtAt": 1794506991331,
       "config": {
         "seed": 540,
         "messages": 96,
@@ -34239,7 +34239,7 @@
       "rigged": false
     },
     "consumerRebalance": {
-      "builtAt": 1794491520222,
+      "builtAt": 1794506991331,
       "config": {
         "seed": 541,
         "partitions": 6,
@@ -34648,6 +34648,298 @@
       },
       "rigged": false
     },
-    "builtAt": 1794491520222
+    "priorityQueue": {
+      "builtAt": 1794506991331,
+      "config": {
+        "seed": 542,
+        "messages": 96,
+        "capacity": 64,
+        "scenarios": [
+          "cleanSteadyState",
+          "burstMixedPriority",
+          "overloadPressure",
+          "cleanRerun"
+        ],
+        "rigged": false,
+        "infiniteCapacity": false,
+        "zeroVtimeAccounting": false,
+        "infinitePriorityStarvation": false
+      },
+      "rows": [
+        {
+          "protocol": "BoundedStrict",
+          "scenarios": [
+            {
+              "id": "cleanSteadyState",
+              "messages": 48,
+              "pushed": 48,
+              "rejected": 0,
+              "heapOps": 96,
+              "lowOverhead": true,
+              "boundedUnfairness": false,
+              "deadlineAwareness": false,
+              "fault": "happy-path"
+            },
+            {
+              "id": "burstMixedPriority",
+              "messages": 192,
+              "pushed": 64,
+              "rejected": 128,
+              "heapOps": 384,
+              "lowOverhead": true,
+              "boundedUnfairness": false,
+              "deadlineAwareness": false,
+              "fault": "burst"
+            },
+            {
+              "id": "overloadPressure",
+              "messages": 288,
+              "pushed": 64,
+              "rejected": 224,
+              "heapOps": 576,
+              "lowOverhead": true,
+              "boundedUnfairness": false,
+              "deadlineAwareness": false,
+              "fault": "overload"
+            },
+            {
+              "id": "cleanRerun",
+              "messages": 96,
+              "pushed": 64,
+              "rejected": 32,
+              "heapOps": 192,
+              "lowOverhead": true,
+              "boundedUnfairness": false,
+              "deadlineAwareness": false,
+              "fault": "rerun-idempotent"
+            }
+          ],
+          "trilemma": {
+            "lowOverhead": true,
+            "boundedUnfairness": false,
+            "deadlineAwareness": false
+          },
+          "metrics": {
+            "totalPush": 240,
+            "totalRejected": 384,
+            "totalHeapOps": 1248
+          }
+        },
+        {
+          "protocol": "MotionWeightedFair",
+          "scenarios": [
+            {
+              "id": "cleanSteadyState",
+              "messages": 48,
+              "pushed": 48,
+              "rejected": 0,
+              "heapOps": 96,
+              "lowOverhead": false,
+              "boundedUnfairness": true,
+              "deadlineAwareness": false,
+              "fault": "happy-path"
+            },
+            {
+              "id": "burstMixedPriority",
+              "messages": 192,
+              "pushed": 64,
+              "rejected": 128,
+              "heapOps": 384,
+              "lowOverhead": false,
+              "boundedUnfairness": true,
+              "deadlineAwareness": false,
+              "fault": "burst"
+            },
+            {
+              "id": "overloadPressure",
+              "messages": 288,
+              "pushed": 64,
+              "rejected": 224,
+              "heapOps": 576,
+              "lowOverhead": false,
+              "boundedUnfairness": true,
+              "deadlineAwareness": false,
+              "fault": "overload"
+            },
+            {
+              "id": "cleanRerun",
+              "messages": 96,
+              "pushed": 64,
+              "rejected": 32,
+              "heapOps": 192,
+              "lowOverhead": false,
+              "boundedUnfairness": true,
+              "deadlineAwareness": false,
+              "fault": "rerun-idempotent"
+            }
+          ],
+          "trilemma": {
+            "lowOverhead": false,
+            "boundedUnfairness": true,
+            "deadlineAwareness": false
+          },
+          "metrics": {
+            "totalPush": 240,
+            "totalRejected": 384,
+            "totalHeapOps": 1248
+          }
+        },
+        {
+          "protocol": "DeadlineScheduler",
+          "scenarios": [
+            {
+              "id": "cleanSteadyState",
+              "messages": 48,
+              "pushed": 48,
+              "rejected": 0,
+              "heapOps": 96,
+              "lowOverhead": true,
+              "boundedUnfairness": false,
+              "deadlineAwareness": true,
+              "fault": "happy-path"
+            },
+            {
+              "id": "burstMixedPriority",
+              "messages": 192,
+              "pushed": 64,
+              "rejected": 128,
+              "heapOps": 384,
+              "lowOverhead": true,
+              "boundedUnfairness": false,
+              "deadlineAwareness": true,
+              "fault": "burst"
+            },
+            {
+              "id": "overloadPressure",
+              "messages": 288,
+              "pushed": 64,
+              "rejected": 224,
+              "heapOps": 576,
+              "lowOverhead": true,
+              "boundedUnfairness": false,
+              "deadlineAwareness": true,
+              "fault": "overload"
+            },
+            {
+              "id": "cleanRerun",
+              "messages": 96,
+              "pushed": 64,
+              "rejected": 32,
+              "heapOps": 192,
+              "lowOverhead": true,
+              "boundedUnfairness": false,
+              "deadlineAwareness": true,
+              "fault": "rerun-idempotent"
+            }
+          ],
+          "trilemma": {
+            "lowOverhead": true,
+            "boundedUnfairness": false,
+            "deadlineAwareness": true
+          },
+          "metrics": {
+            "totalPush": 240,
+            "totalRejected": 384,
+            "totalHeapOps": 1248
+          }
+        }
+      ],
+      "vectors": {
+        "BoundedStrict": "100",
+        "MotionWeightedFair": "010",
+        "DeadlineScheduler": "101"
+      },
+      "verdict": {
+        "vectors": {
+          "BoundedStrict": "100",
+          "MotionWeightedFair": "010",
+          "DeadlineScheduler": "101"
+        },
+        "noUniversalWinner": true,
+        "trilemmaDistinguishes": true,
+        "noStrategyWinsAll": true,
+        "vectorFromTrilemma": true,
+        "rigged_pkg": false,
+        "rigged_pkg_flags": {
+          "rigged": false,
+          "infiniteCapacity": false,
+          "zeroVtimeAccounting": false,
+          "infinitePriorityStarvation": false
+        },
+        "riggedConvergenceCollapsed": false
+      },
+      "noUniversalWinner": true,
+      "trilemmaDistinguishes": true,
+      "causalLocks": {
+        "strictStarvationCausallyUnerasable": true,
+        "fairVtimeAccountingCausallyUnerasable": true,
+        "deadlineBlindnessCausallyUnerasable": true,
+        "causalLocksAllHold": true,
+        "probes": {
+          "lowFromStrict": 0,
+          "lowFromFair": 6,
+          "afterPush": 16
+        }
+      },
+      "crosscheck": {
+        "evidence": {
+          "routerMoved": 15,
+          "routerTracked": 80,
+          "ringNodes": 4,
+          "ringShardsUsed": 4,
+          "walLines": 80,
+          "walReplayed": 80,
+          "notices": 12,
+          "busListeners": 1,
+          "redisBitmapHits": 96,
+          "redisSlots": 96,
+          "poolCreated": 2,
+          "poolReused": 1,
+          "bucketAllowed": 3,
+          "bucketRejected": 4,
+          "heapFired": 3,
+          "heapPending": 0,
+          "counterSum": 2080,
+          "counterFalseSharing": 56,
+          "jitterSpread": 2.0796,
+          "remapConsistentRate": 0.225,
+          "remapModuloRate": 0.44
+        },
+        "soundness": {
+          "laneA": {
+            "topPopPriority": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "laneB": {
+            "drainedViaVtime": true,
+            "fairInterleave": true
+          },
+          "holds": true,
+          "nontrivial": true,
+          "falsifiable": true,
+          "tamper": {
+            "starvationAnchor": {
+              "holds": false,
+              "reason": "starvationAnchor：Strict 在全高优先级流里压低优先级 ⇒ laneA 真翻 false"
+            },
+            "vtimeDrift": {
+              "holds": false,
+              "reason": "vtimeDrift：Fair 的 vtime 停住 ⇒ churn 混入 laneB 被判 false"
+            },
+            "deadlineBlind": {
+              "holds": false,
+              "reason": "deadlineBlind：DeadlineScheduler 对 deadline=0 漏掉 ⇒ holds 真翻 false"
+            }
+          },
+          "events": 192
+        }
+      },
+      "rigged": false
+    },
+    "builtAt": 1794506991331
   }
 }

@@ -72,6 +72,7 @@
       renderGatewayRouting(snap.systems ? snap.systems.gatewayRouting : null)
       renderIdempotentConsumer(snap.systems ? snap.systems.idempotentConsumer : null)
       renderConsumerRebalance(snap.systems ? snap.systems.consumerRebalance : null)
+      renderPriorityQueue(snap.systems ? snap.systems.priorityQueue : null)
       renderTraceSampling(snap.systems ? snap.systems.traceSampling : null)
       setLive(true, result.source)
     }).catch(function (e) {
@@ -3314,6 +3315,135 @@
       'verifyCheckpoint 双路自证：路 A clean 全量全 commit 求基准，路 B 真跑 restart(0) 用「poison chunk 隔离 / 已 commit 无重复 / 非毒零丢失 / 真检测到毒」四观测量判定；三路篡改真喂回同一内核现算翻 false，带 baselineHolds 先真绿。' +
       '三条因果结构锁在同一含毒 raw 流真跑钉死：Bulk 无 chk 整批死、chk 权衡不可兼得、Skip 跳毒永久丢。' +
       'rigged 双开关 perfectOracle（毒项 100% 判定、预防性从输入剔除）+ unlimitedSkip 喂的是已剔除毒项的干净流（换了作业输入、诚实标注，不是同一作业被抹软肋）⇒ 三者 faultIsolation 全真、Bulk≡Skip=101 区分度诚实收敛（riggedConvergenceCollapsed=true，教学结论：完美预言机抹平了「预防剔除」与「跳过」的差别，二者结构等价），noStrategyWinsAll 仍真绝不硬造 111，三因果锁仍 allHold。'
+  }
+
+  /* ================= KI-542 BoundedStrict/MotionWeightedFair/DeadlineScheduler 有界优先级队列 · 第三十六维（pq 族） ================= */
+
+  function renderPriorityQueue(pq) {
+    renderPqMatrix(pq && pq.rows, pq && pq.config)
+    renderPqLadder(pq && pq.rows)
+    renderPqTrilemma(pq && pq.rows, pq && pq.verdict, pq && pq.crosscheck)
+  }
+
+  function pqMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 暂缺</div>'
+    if (note) note.textContent = 'systems.priorityQueue 缺失 — 跑一次 npm run console:data 即可补齐'
+  }
+
+  function pqCell(c, protocol) {
+    if (!c) return { cls: '', ch: '·' }
+    if (protocol === 'BoundedStrict') return { cls: 'low', ch: '低耗' }
+    if (protocol === 'MotionWeightedFair') return { cls: 'fair', ch: '公平' }
+    if (protocol === 'DeadlineScheduler') return { cls: 'deadline', ch: '认限' }
+    return { cls: 'ok', ch: '✓' }
+  }
+
+  function renderPqMatrix(rows, config) {
+    var box = $('#pq-matrix'), note = $('#pq-matrix-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      pqMissing(box, note, 'pq 矩阵'); return
+    }
+    var scenarios = ['cleanSteadyState', 'burstMixedPriority', 'overloadPressure', 'cleanRerun']
+    var head = '<div class="pq-mat-row pq-mat-head"><span class="pq-mat-proto">策略</span>' +
+      scenarios.map(function (sc) { return '<span class="pq-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="pq-mat-cost">push/rejected</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = pqCell(cell, row.protocol)
+        return '<span class="pq-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="pq-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="pq-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="pq-mat-cost"><b>' + esc(fmt(m.totalPush)) + '</b>/' + esc(String(m.totalRejected || 0)) + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'BoundedStrict / MotionWeightedFair / DeadlineScheduler × 四场景：cleanSteadyState（均衡负载 · 4/4 真走访）/ burstMixedPriority（1/3 高/中/低优先级混合） / overloadPressure（少高优多低优——Strict 饥饿 vs Fair 公平） / cleanRerun（同轨迹重跑幂等）。每格只认三布尔（lowOverhead ∧ boundedUnfairness ∧ deadlineAwareness）——绝不由阈值重算。Strict: min-heap·低 overhead·高优可无限期压低优（starvation 结构）；Fair: vtime min-heap + 每条计数记账（overhead 结构、消 starvation）；Deadline: EDF 最小堆·DeadlineScheduler 真认 deadline。strict redo 不认 deadline（deadline=11 vs 9，Deadline 先抛 9）。'
+  }
+
+  function renderPqLadder(rows) {
+    var box = $('#pq-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.totalPush) ? r.metrics.totalPush : 1 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.totalPush) ? Math.round(m.totalPush / max * 100) : 0
+      return '<div class="pq-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="pq-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">push ' + esc(fmt(m.totalPush)) + ' · rejected ' + esc(String(m.totalRejected)) + ' · heapOps ' + esc(fmt(m.totalHeapOps)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderPqTrilemma(rows, verdict, crosscheck) {
+    var box = $('#pq-trilemma'), veBox = $('#pq-verif'), cxBox = $('#pq-crosscheck'), note = $('#pq-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      pqMissing(box, note, 'pq 判词'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''; return
+    }
+    var flags = [['lowOverhead', '低耗'], ['boundedUnfairness', '公平'], ['deadlineAwareness', '认限']]
+    var head = '<div class="pq-vec pq-vec-head"><span class="proto">策略</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="pq-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="pq-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    if (veBox) {
+      var s = rows.find(function (r) { return r.protocol === 'BoundedStrict' })
+      var f = rows.find(function (r) { return r.protocol === 'MotionWeightedFair' })
+      var d = rows.find(function (r) { return r.protocol === 'DeadlineScheduler' })
+      var cp = crosscheck && crosscheck.soundness
+      veBox.innerHTML = [
+        '<div class="pq-rb-row"><b>BoundedStrict</b> 低耗=' + esc(String(s?.trilemma?.lowOverhead)) + '（最小堆）· 公平=' + esc(String(s?.trilemma?.boundedUnfairness)) + '（starve 高优先级）· 认限=' + esc(String(s?.trilemma?.deadlineAwareness)) + '（不认 deadline）</div>',
+        '<div class="pq-rb-row"><b>MotionWeightedFair</b> 低耗=' + esc(String(f?.trilemma?.lowOverhead)) + '（vtime 记账结构）· 公平=' + esc(String(f?.trilemma?.boundedUnfairness)) + '（min-vtime 消 starvation）· 认限=' + esc(String(f?.trilemma?.deadlineAwareness)) + '（只认 vtime）</div>',
+        '<div class="pq-rb-row"><b>DeadlineScheduler</b> 低耗=' + esc(String(d?.trilemma?.lowOverhead)) + '（最小堆）· 公平=' + esc(String(d?.trilemma?.boundedUnfairness)) + '（starvation 无解）· 认限=' + esc(String(d?.trilemma?.deadlineAwareness)) + '（EDF 真认 deadline ASC）</div>',
+        cp ? '<div class="pq-rb-row"><b>verifyPriorityScheduleSoundness</b> holds=' + (cp.holds ? 'true' : 'false') + ' nontrivial=' + (cp.nontrivial ? 'true' : 'false') + ' falsifiable=' + (cp.falsifiable ? 'true' : 'false') + ' · laneA{top=' + esc(JSON.stringify(cp.laneA?.topPopPriority ?? [])) + '} laneB{fairInterleave=' + esc(String(cp.laneB?.fairInterleave)) + '}</div>' : '',
+      ].join('')
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>真 <b>compareRemapping</b> 迁移率 一致性 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>' +
+          '<div>真 <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 片</div>' +
+          '<div>真 <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 命中 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
+          '<div>真 <b>createWal</b> lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>真 <b>createBus</b> pq.dispatched 通知 ' + esc(fmt(ev.notices)) + ' 条 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>真 <b>createRedisCache</b> priority 命中 ' + esc(fmt(ev.redisBitmapHits)) + ' · entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+          '<div>真 <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+          '<div>真 <b>createTokenBucket</b> 回放允许 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>真 <b>createMinHeapDelayQueue</b> 出队 ' + esc(fmt(ev.heapFired)) + ' 条 · pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+          '<div>真 <b>createFullJitterBackoff</b> jitterSpread <b>' + esc(String((ev.jitterSpread ?? 0).toFixed(4))) + '</b>（64 采样 delayFor 真采样）</div>' +
+          '<div>真 <b>createPackedCounters</b> Σ=' + esc(fmt(ev.counterSum)) + ' · falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">真件交叉印证缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var chips = [
+      '<span class="chip" data-verdict="noUniversalWinner"><b>noUniversalWinner</b> ' + (noWin ? '✓（3 向量互异·无全局赢家）' : '✗') + '</span>',
+      '<span class="chip" data-verdict="noStrategyWinsAll"><b>noStrategyWinsAll</b> ' + (v.noStrategyWinsAll ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="vectorFromTrilemma"><b>vectorFromTrilemma</b> 现算同源</span>',
+      '<span class="chip ' + (v.riggedConvergenceCollapsed ? 'jade-t' : 'muted-t') + '" data-verdict="riggedConvergenceCollapsed">' + (v.riggedConvergenceCollapsed ? '✓ rigged 塌缩' : '未 rigged') + '</span>',
+      '<span class="chip jade-t" data-verdict="noUniversalWinner2">默认向量互异不封赢家</span>',
+    ]
+    var probes = $('#pq-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维序固定 [lowOverhead / boundedUnfairness / deadlineAwareness]。默认向量 BoundedStrict=100（堆最省但 starvation 结构） / MotionWeightedFair=010（记账消饥、overhead 必付） / DeadlineScheduler=101（EDF 真 deadline 认但无公平无记账）——恰好各缺一维、向量互异、无一 111。' +
+      'rigged 三开关：infiniteCapacity（无界 ⇒ 不报满）· zeroVtimeAccounting（Fair overhead 归零 ⇒ Fair=110）· infinitePriorityStarvation（priority 不影响调度 ⇒ Deadline=101 仍同态）。' +
+      '三因果锁：strictStarvationCausallyUnerasable（OVERLOAD 流下低 pri 先手被高 pri 压住）· fairVtimeAccountingCausallyUnerasable（每条 read+write 必记账）· deadlineBlindnessCausallyUnerasable（Strict 不认 deadline — deterministic）——causalLocksAllHold=true。'
   }
 
   /* ================= KI-541 Eager/CooperativeSticky/StaticMembership Kafka 消费组再平衡 · 第三十五维（reb 族） ================= */

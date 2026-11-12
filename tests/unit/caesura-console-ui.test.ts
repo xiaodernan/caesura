@@ -2633,3 +2633,66 @@ describe('KI-541 第三十五维 · eager/cooperativesticky/staticmembership（r
     })
   })
 })
+
+
+// ============ KI-542 第三十六维 · BoundedStrict/MotionWeightedFair/DeadlineScheduler（pq 族 · 4 腿） ============
+describe('KI-542 第三十六维 · boundedstrict/motionweightedfair/deadlinescheduler（pq 族）', () => {
+  const realPq = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+  it('第三十六维真渲染：pq 矩阵 12 cell + 三策略向量 100/010/101 + 状态类 + ladder 条', async () => {
+    const dom = await runApp(realPq)
+    const matrix = dom.els['pq-matrix'].innerHTML
+    expect(matrix).toContain('pq-mat-head')
+    for (const p of ['BoundedStrict', 'MotionWeightedFair', 'DeadlineScheduler']) {
+      expect(matrix).toContain('data-strategy="' + p + '"')
+    }
+    for (const sc of ['cleanSteadyState', 'burstMixedPriority', 'overloadPressure', 'cleanRerun']) {
+      expect(matrix).toContain('data-s="' + sc + '"')
+    }
+    expect((matrix.match(/class="pq-cell /g) || []).length).toBe(12)
+    const tri = dom.els['pq-trilemma'].innerHTML
+    expect(tri).toContain('data-vec="100"')
+    expect(tri).toContain('data-vec="010"')
+    expect(tri).toContain('data-vec="101"')
+    const states = [...matrix.matchAll(/data-state="([^"]+)"/g)].map((m) => m[1])
+    expect(states.length).toBeGreaterThanOrEqual(12)
+    expect(dom.els['pq-ladder'].innerHTML).toContain('pq-bar')
+  })
+
+  it('第三十六维画中件 DOM：verifyPriorityScheduleSoundness 双路 + 十一真件 chip + 无 111', async () => {
+    const dom = await runApp(realPq)
+    const verif = dom.els['pq-verif'].innerHTML
+    for (const key of ['holds', 'nontrivial', 'falsifiable']) {
+      expect(verif).toContain(key)
+    }
+    const cx = dom.els['pq-crosscheck'].innerHTML
+    for (const api of ['compareRemapping', 'createShardRouter', 'createHashRing', 'createWal', 'createBus',
+      'createRedisCache', 'createObjectPool', 'createTokenBucket', 'createMinHeapDelayQueue',
+      'createFullJitterBackoff', 'createPackedCounters']) {
+      expect(cx, '真件 ' + api + ' 必须 DOM 可见').toContain(api)
+    }
+    expect(cx).toContain('jitterSpread')
+  })
+
+  it('第三十六维 markup/CSS 自同 + systems.priorityQueue 缺失时真显式降级', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-pq')
+    expect(html).toContain('id="pq-matrix"')
+    expect(html).toContain('id="pq-verif"')
+    expect(html).toContain('BoundedStrict=100 / MotionWeightedFair=010 / DeadlineScheduler=101')
+    expect(css).toContain('.pq-cell.low')
+    expect(css).toContain('.pq-cell.fair')
+    expect(css).toContain('.pq-cell.deadline')
+    expect(css).toContain('.pq-cell.ok')
+    expect(css).toContain('.pq-flag.yes')
+    expect(css).toContain('.pq-bar > i')
+    expect(css).toContain('.pq-verif')
+    const noPq = JSON.parse(JSON.stringify(realPq as any))
+    noPq.systems.priorityQueue = null
+    return runApp(noPq).then((dom2: any) => {
+      expect(dom2.els['pq-matrix'].innerHTML).toContain('暂缺')
+      expect(dom2.els['pq-trilemma'].innerHTML).toContain('暂缺')
+      expect(dom2.els['pq-matrix-note'].textContent).toContain('systems.priorityQueue 缺失')
+    })
+  })
+})
