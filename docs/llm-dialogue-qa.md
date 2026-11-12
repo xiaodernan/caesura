@@ -51,3 +51,20 @@ node scripts/llm-dialogue-qa.mjs --json          # JSONL（默认就是）
 
 退出码：`0` 审稿完成（含 pass/skip/flag 混合，不因 flag 率"高"退出非零）；
 `2` 密钥缺失 / 端点不可用 / 401/429/500 / 网络错误 —— 此时没有任何审稿结果可信。
+
+## 2026-11-12 `llm:diff` 机读对账落档
+
+`npm run llm:diff`（新 `scripts/llm-dialogue-diff.mjs`）对 `dialogue.json` 与 `src/data/authoring/llm-voice-candidates.json` 做**结构化对账**：
+
+- dialogue.json 节点数 **81**（数组根 · 映射 node.nodes[].text/all）；
+- candidates 条目 **6**（DLG_MEG ×2 / DLG_BELLTONGUE ×2 / DLG_CORVIN ×2），
+- **逐字泄漏 0**；`root.runtime=false` ✓ · `root.authorOnly=true` ✓ · **全部候选 `requiresHumanReview=true`** ✓；
+- exit 0；`--json` 输出可机读；配套 `tests/unit/llm-dialogue-diff.test.ts` 六腿全绿（含 null-safe dialogue 容错）。
+
+结论（核验"零 LLM 内容入数据"承诺）**REAL**：2026-11-12 时点的全部 LLM 产出
+仅存在于 `llm-voice-candidates.json` 本体（标注齐全），
+`dialogue.json` 的 81 个节点与它们**逐字无重**。
+
+诚实边界：本门只验"逐字无重"——风格相似度/翻译腔/节奏重叠
+仍属作者判断（`llm:qa` flag 3 条需人读人裁）。
+
