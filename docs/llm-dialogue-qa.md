@@ -80,3 +80,29 @@ node scripts/llm-dialogue-qa.mjs --json          # JSONL（默认就是）
 - 诚实声明：LLM 便签不下定论；事实裁决权在作者；本脚本零写入；候选仍待作者最终择优后方落 dialogue.json。
 - 不声称 LLM 评分卡的可靠性；LLM 倾向于 keep 自己写的句子是已知偏差——本便签只能指导"先读哪一句"。
 
+## 2026-11-13 作者裁决队列（`llm:cand-qa` 便签 + 审阅清单）
+
+真跑模型：base `https://wkapi.pro/v1` · model `gpt-6-sol` · HTTP 200 · totalTokens=3219 · 零写入。
+对 6 条候选逐行评分（14 行）：`keep 3 · pending 7 · flag 2`。
+
+### 作者在审阅格子之前请先跑
+
+```powershell
+$env:CAESURA_LLM_API_KEY = 'sk-...'
+npm run llm:cand-qa     # 6 条 × lines 的便签全集；零写入、只输出 stdout
+npm run llm:diff        # 机读再认谁泄漏进 dialogue.json（应永远 0）
+```
+
+### 硬性纪律（写之前请再读）
+
+- 每一条 BELLTONGUE flag 意象（「邀人靠近」与戒备感相冲；「复用开场整句」）在落进 dialogue.json **前**
+  必须人工对声线总纲再看一遍；LLM 便签已记录此路径。
+- 每一条 keep 是**推荐**，不是**允许**；作者仍按 §5.4 的「敲钟判决」自主落盘。
+- 候选池 `llm-voice-candidates.json` 全部 `requiresHumanReview=true`；`llm:diff` 每趟 replay 0 泄漏。
+- 不声称 llm:cand-qa 的 verdict 有可靠评估涵义；作者才是真裁决。
+- dialogue.json 与 LLM 产出**没有自动同步通道**；任何进入 dialogue.json 的行都是作者手写/手抄入。
+
+### 落点
+
+若作者择优决定采纳某条 LLM 候选为对白草稿，请**手抄**进 `dialogue.json`，并在对应候选 entry 上追加
+`decision: 'accepted' | 'rejected' | 'reworked'` 字段（仅供追溯，不参与校验）。本批尚无 accepted 行。
