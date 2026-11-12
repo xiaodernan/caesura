@@ -52,6 +52,7 @@ import { distributedSessionStudy, distributedSessionSnapshot } from './caesura-d
 import { transactionalOutboxStudy, transactionalOutboxSnapshot } from './caesura-transactional-outbox.mjs'
 import { springLoadBalanceStudy, springLoadBalanceSnapshot } from './caesura-spring-load-balance.mjs'
 import { circuitBreakerStudy, circuitBreakerSnapshot } from './caesura-circuit-breaker.mjs'
+import { llmGatewayStudy, llmGatewaySnapshot } from './caesura-llm-gateway.mjs'
 import {
   createAimdCongestion,
   createCubicCongestion,
@@ -821,6 +822,25 @@ export function createGameCloud(opts = {}) {
     cbCached = circuitBreakerSnapshot(study)
     return cbCached
   }
+  // KI-538：LLM 网关三策略教学件（OfflineDouble/LiveGrounded/CachedLive；opt-in、status/ lg*）。
+  // opts.llmGateway===true 走钳制默认参数（optional LLM；默认 mode='offline'，绝不暗调 OpenAI）。
+  // 对象逐项注入（now/seed/model/baseUrl/timeoutMs/persistentCache/zeroTemp/localDouble/rigged 等）；
+  // 默认 llmGateway:false 不装配；不声称玩家运行时携带任何 LLM。
+  const lgCfg = opts.llmGateway === true ? {} : (opts.llmGateway && typeof opts.llmGateway === 'object' ? opts.llmGateway : null)
+  const lgInjected = lgCfg !== null && opts.llmGateway &&
+    typeof opts.llmGateway === 'object' && Array.isArray(opts.llmGateway.rows) &&
+    opts.llmGateway.vectors && opts.llmGateway.verdict
+  let lgCached = null
+  async function lgSnapshotForStatus() {
+    if (lgCfg === null) return null
+    if (lgCached) return lgCached
+    const study = lgInjected
+      ? opts.llmGateway
+      : await llmGatewayStudy({ mode: 'offline', now: opts.lgNow ?? lgCfg.now })
+    lgCached = llmGatewaySnapshot(study)
+    return lgCached
+  }
+
 
   // KI-513：分布式消息投递语义三协议诚实权衡（At-Most-Once / At-Least-Once / Exactly-Once，opt-in）。
   // opts.messageDelivery===true 用缺省规模；传对象逐项注入（now/seed/messages/manyKeys/retryLimit/...
@@ -940,6 +960,8 @@ export function createGameCloud(opts = {}) {
     runLoadBalanceStudy: lbCfg === null ? null : () => springLoadBalanceStudy({ ...lbCfg, now: opts.lbNow ?? lbCfg.now }),
     /** KI-537：Spring Cloud CircuitBreaker 三策略教学件；缺 opts.circuitBreaker 时为 null；CountBasedBreaker/RateBasedBreaker/SlowCallBreaker × 六场景矩阵 + 三难向量（默认 100/101/011 互异不封赢家）+ verifyCircuitSoundness 双路自证 + 十一枚真件交叉印证。 */
     runCircuitBreakerStudy: cbCfg === null ? null : () => circuitBreakerStudy({ ...cbCfg, now: opts.cbNow ?? cbCfg.now }),
+    /** KI-538：LLM 网关三策略教学件；缺 opts.llmGateway 时为 null。 */
+    runLlmGatewayStudy: lgCfg === null ? null : () => llmGatewayStudy({ mode: 'offline', now: opts.lgNow ?? lgCfg.now }),
     /** KI-533：可观测性分布式追踪采样三策略教学件；缺 opts.traceSampling 时为 null；HeadBased/TailBased/Adaptive × 六场景矩阵 + 三难向量维序 [lowOverhead/anomalyCapture/loadAdaptive]（默认 100/010/101 互异不封赢家；anomalyCapture⇔缓冲整条⇔非 lowOverhead 与 chk 锁同构、零查表现算；rigged 三开关 oracleHead/infiniteBuffer/perfectFeedback 分策略正交反事实：oracleHead 只翻 Head→110、infiniteBuffer 只翻 Tail→110、perfectFeedback 只降 Adaptive errorBurst 丢失质量但 maxRate=0.75 封顶仍补不上 anomaly 维 ⇒ 恒 101，全开收敛 Head≡Tail=110 区分度诚实塌缩 riggedConvergenceCollapsed=true、noStrategyWinsAll 仍真绝不硬造 111，三条因果结构锁——异常需缓冲/头部盲结构/自适应滞后——在同一含 error raw 流真跑现算钉死 causalLocksAllHold=true，主教义 headBlindLossOnErrorBurst 恒以纯净基线标定不翻）+ verifySamplingSoundness 双路自证（干净流 buffer 守恒 + 含 error 流 error 全留/span 无重复/span 完整/正常按率四观测量 + 三路篡改真喂回同一内核现算翻 false 带 baselineHolds）+ 十一枚真件 21 键交叉印证。 */
     runTraceSamplingStudy: tsCfg === null ? null : () => traceSamplingStudy({ ...tsCfg, now: opts.tsNow ?? tsCfg.now }),
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
@@ -1002,6 +1024,7 @@ export function createGameCloud(opts = {}) {
         transactionalOutbox: await toSnapshotForStatus(),
         loadBalance: await lbSnapshotForStatus(),
         circuitBreaker: await cbSnapshotForStatus(),
+        llmGateway: await lgSnapshotForStatus(),
         traceSampling: await tsSnapshotForStatus(),
       }
     },

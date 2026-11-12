@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794477908976,
+  "generatedAt": 1794483265114,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1365,12 +1365,12 @@
           "keys": 1,
           "versions": 2,
           "commitLogSize": 1,
-          "now": 1794477908978
+          "now": 1794483265116
         },
         "final": {
           "A": {
             "value": 101,
-            "commitTs": 1794477908978,
+            "commitTs": 1794483265116,
             "tombstone": false
           }
         }
@@ -3646,7 +3646,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794477908976,
+                "lastTimestamp": 1794483265114,
                 "workerId": 1
               },
               "fault": {
@@ -3742,7 +3742,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794477908976,
+                "lastTimestamp": 1794483265114,
                 "workerId": 1
               },
               "fault": {
@@ -3774,7 +3774,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794477908977,
+                "lastTimestamp": 1794483265115,
                 "workerId": 1
               },
               "fault": {
@@ -3806,7 +3806,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794477908976,
+                "lastTimestamp": 1794483265114,
                 "workerId": 1
               },
               "fault": {
@@ -4522,7 +4522,7 @@
         "capacity": 8,
         "perShardCap": 2
       },
-      "builtAt": 1794477908976
+      "builtAt": 1794483265114
     },
     "configConsistency": {
       "config": {
@@ -5020,7 +5020,7 @@
         "burstCount": 12,
         "windowMs": 10000
       },
-      "builtAt": 1794477908976
+      "builtAt": 1794483265114
     },
     "cacheCoherency": {
       "config": {
@@ -5549,7 +5549,7 @@
         "crashAtWrite": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794477908976
+      "builtAt": 1794483265114
     },
     "messageDelivery": {
       "config": {
@@ -6038,10 +6038,10 @@
         "crashAfterSendAt": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794477908976
+      "builtAt": 1794483265114
     },
     "delayQueue": {
-      "builtAt": 1794477908976,
+      "builtAt": 1794483265114,
       "config": {
         "seed": 518,
         "tasks": 12,
@@ -6068,7 +6068,7 @@
               "id": "allOk",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 5804,
+              "lateMs": 68804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6080,7 +6080,7 @@
               "id": "tickSkew",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 5804,
+              "lateMs": 68804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6092,7 +6092,7 @@
               "id": "farFuture",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 13136,
+              "lateMs": 76136,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6104,7 +6104,7 @@
               "id": "manyCancels",
               "protocol": "TimingWheel",
               "fired": 6,
-              "lateMs": 2858,
+              "lateMs": 30858,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6128,7 +6128,7 @@
               "id": "concurrentWorkers",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 5804,
+              "lateMs": 68804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6139,7 +6139,7 @@
           ],
           "totals": {
             "fired": 54,
-            "lateMs": 33406,
+            "lateMs": 313406,
             "duplicatePickups": 0,
             "lostOnRestart": 6,
             "opUnits": 72
@@ -6375,7 +6375,7 @@
       }
     },
     "retryDlq": {
-      "builtAt": 1794477908976,
+      "builtAt": 1794483265114,
       "config": {
         "seed": 520,
         "messages": 16,
@@ -6793,7 +6793,7 @@
       }
     },
     "consumerGroup": {
-      "builtAt": 1794477908976,
+      "builtAt": 1794483265114,
       "config": {
         "seed": 523,
         "consumers": 3,
@@ -7299,7 +7299,7 @@
       }
     },
     "backpressure": {
-      "builtAt": 1794477908976,
+      "builtAt": 1794483265114,
       "config": {
         "steps": 48,
         "mu": 2,
@@ -8344,7 +8344,7 @@
       }
     },
     "logCompaction": {
-      "builtAt": 1794477908976,
+      "builtAt": 1794483265114,
       "config": {
         "seed": 526,
         "ops": 24,
@@ -9405,7 +9405,7 @@
       }
     },
     "bloomFilter": {
-      "builtAt": 1794477908976,
+      "builtAt": 1794483265114,
       "config": {
         "seed": 527,
         "capacity": 1024,
@@ -10104,7 +10104,7 @@
       }
     },
     "cacheReplacement": {
-      "builtAt": 1794477908976,
+      "builtAt": 1794483265114,
       "config": {
         "seed": 528,
         "capacity": 16,
@@ -10747,7 +10747,7 @@
       }
     },
     "streamWindow": {
-      "builtAt": 1794477908976,
+      "builtAt": 1794483265114,
       "config": {
         "seed": 529,
         "windowSize": 100,
@@ -12806,7 +12806,7 @@
       }
     },
     "hyperLogLog": {
-      "builtAt": 1794477908976,
+      "builtAt": 1794483265114,
       "config": {
         "seed": 530,
         "cardinality": 4096,
@@ -29726,7 +29726,7 @@
       }
     },
     "crdt": {
-      "builtAt": 1794477908976,
+      "builtAt": 1794483265114,
       "config": {
         "seed": 531,
         "replicaCount": 3,
@@ -30182,7 +30182,7 @@
       }
     },
     "springBatch": {
-      "builtAt": 1794477908976,
+      "builtAt": 1794483265114,
       "config": {
         "seed": 532,
         "items": 96,
@@ -30621,7 +30621,7 @@
       "rigged": false
     },
     "traceSampling": {
-      "builtAt": 1794477908976,
+      "builtAt": 1794483265114,
       "config": {
         "seed": 533,
         "items": 64,
@@ -31323,7 +31323,7 @@
       "rigged": false
     },
     "distributedSession": {
-      "builtAt": 1794477908976,
+      "builtAt": 1794483265114,
       "config": {
         "seed": 535,
         "sessions": 96,
@@ -31679,7 +31679,7 @@
       "rigged": false
     },
     "transactionalOutbox": {
-      "builtAt": 1794477908976,
+      "builtAt": 1794483265114,
       "config": {
         "seed": 534,
         "items": 96,
@@ -32130,7 +32130,7 @@
       "rigged": false
     },
     "loadBalance": {
-      "builtAt": 1794477908976,
+      "builtAt": 1794483265114,
       "config": {
         "seed": 536,
         "requests": 96,
@@ -32550,7 +32550,7 @@
       "rigged": false
     },
     "circuitBreaker": {
-      "builtAt": 1794477908976,
+      "builtAt": 1794483265114,
       "config": {
         "seed": 537,
         "calls": 96,
@@ -33079,6 +33079,401 @@
       },
       "rigged": false
     },
-    "builtAt": 1794477908976
+    "llmGateway": {
+      "builtAt": 1794483265114,
+      "config": {
+        "seed": 538,
+        "mode": "offline",
+        "model": "gpt-6-sol",
+        "baseUrl": "https://wkapi.pro/v1",
+        "keyPresent": false
+      },
+      "rows": [
+        {
+          "protocol": "OfflineDouble",
+          "scenarios": [
+            {
+              "id": "singlePrompt",
+              "status": "offline",
+              "mode": "offline",
+              "ok": true,
+              "statusCode": 200,
+              "tokens": 0,
+              "cachedHit": false,
+              "liveGrounded": false,
+              "reproducible": true,
+              "zeroCost": true,
+              "fault": "exam-derived"
+            },
+            {
+              "id": "batchThreeNpc",
+              "status": "offline",
+              "mode": "offline",
+              "ok": true,
+              "statusCode": 200,
+              "tokens": 0,
+              "cachedHit": false,
+              "liveGrounded": false,
+              "reproducible": true,
+              "zeroCost": true,
+              "fault": "exam-derived"
+            },
+            {
+              "id": "missingKey",
+              "status": "offline",
+              "mode": "offline",
+              "ok": true,
+              "statusCode": 200,
+              "tokens": 0,
+              "cachedHit": false,
+              "liveGrounded": false,
+              "reproducible": true,
+              "zeroCost": true,
+              "fault": "exam-derived"
+            },
+            {
+              "id": "badEndpoint",
+              "status": "offline",
+              "mode": "offline",
+              "ok": true,
+              "statusCode": 200,
+              "tokens": 0,
+              "cachedHit": false,
+              "liveGrounded": false,
+              "reproducible": true,
+              "zeroCost": true,
+              "fault": "exam-derived"
+            },
+            {
+              "id": "badJson",
+              "status": "offline",
+              "mode": "offline",
+              "ok": true,
+              "statusCode": 200,
+              "tokens": 0,
+              "cachedHit": false,
+              "liveGrounded": false,
+              "reproducible": true,
+              "zeroCost": true,
+              "fault": "exam-derived"
+            },
+            {
+              "id": "cleanRerun",
+              "status": "offline",
+              "mode": "offline",
+              "ok": true,
+              "statusCode": 200,
+              "tokens": 0,
+              "cachedHit": false,
+              "liveGrounded": false,
+              "reproducible": true,
+              "zeroCost": true,
+              "fault": "exam-derived"
+            }
+          ],
+          "trilemma": {
+            "liveGrounded": false,
+            "reproducible": true,
+            "zeroCost": true
+          },
+          "metrics": {
+            "callCount": 3,
+            "totalTokens": 0,
+            "cacheHits": 0
+          }
+        },
+        {
+          "protocol": "LiveGrounded",
+          "scenarios": [
+            {
+              "id": "singlePrompt",
+              "status": "live",
+              "mode": "live",
+              "ok": false,
+              "statusCode": 200,
+              "tokens": 0,
+              "cachedHit": false,
+              "liveGrounded": false,
+              "reproducible": false,
+              "zeroCost": false,
+              "fault": "exam-derived"
+            },
+            {
+              "id": "batchThreeNpc",
+              "status": "live",
+              "mode": "live",
+              "ok": false,
+              "statusCode": 200,
+              "tokens": 0,
+              "cachedHit": false,
+              "liveGrounded": false,
+              "reproducible": false,
+              "zeroCost": false,
+              "fault": "exam-derived"
+            },
+            {
+              "id": "missingKey",
+              "status": "live",
+              "mode": "live",
+              "ok": false,
+              "statusCode": 200,
+              "tokens": 0,
+              "cachedHit": false,
+              "liveGrounded": false,
+              "reproducible": false,
+              "zeroCost": false,
+              "fault": "exam-derived"
+            },
+            {
+              "id": "badEndpoint",
+              "status": "live",
+              "mode": "live",
+              "ok": false,
+              "statusCode": 200,
+              "tokens": 0,
+              "cachedHit": false,
+              "liveGrounded": false,
+              "reproducible": false,
+              "zeroCost": false,
+              "fault": "exam-derived"
+            },
+            {
+              "id": "badJson",
+              "status": "live",
+              "mode": "live",
+              "ok": false,
+              "statusCode": 200,
+              "tokens": 0,
+              "cachedHit": false,
+              "liveGrounded": false,
+              "reproducible": false,
+              "zeroCost": false,
+              "fault": "exam-derived"
+            },
+            {
+              "id": "cleanRerun",
+              "status": "live",
+              "mode": "live",
+              "ok": false,
+              "statusCode": 200,
+              "tokens": 0,
+              "cachedHit": false,
+              "liveGrounded": false,
+              "reproducible": false,
+              "zeroCost": false,
+              "fault": "exam-derived"
+            }
+          ],
+          "trilemma": {
+            "liveGrounded": false,
+            "reproducible": false,
+            "zeroCost": false
+          },
+          "metrics": {
+            "callCount": 3,
+            "totalTokens": 0,
+            "cacheHits": 0
+          }
+        },
+        {
+          "protocol": "CachedLive",
+          "scenarios": [
+            {
+              "id": "singlePrompt",
+              "status": "live",
+              "mode": "live",
+              "ok": false,
+              "statusCode": 200,
+              "tokens": 0,
+              "cachedHit": true,
+              "liveGrounded": false,
+              "reproducible": false,
+              "zeroCost": false,
+              "fault": "exam-derived"
+            },
+            {
+              "id": "batchThreeNpc",
+              "status": "live",
+              "mode": "live",
+              "ok": false,
+              "statusCode": 200,
+              "tokens": 0,
+              "cachedHit": true,
+              "liveGrounded": false,
+              "reproducible": false,
+              "zeroCost": false,
+              "fault": "exam-derived"
+            },
+            {
+              "id": "missingKey",
+              "status": "live",
+              "mode": "live",
+              "ok": false,
+              "statusCode": 200,
+              "tokens": 0,
+              "cachedHit": true,
+              "liveGrounded": false,
+              "reproducible": false,
+              "zeroCost": false,
+              "fault": "exam-derived"
+            },
+            {
+              "id": "badEndpoint",
+              "status": "live",
+              "mode": "live",
+              "ok": false,
+              "statusCode": 200,
+              "tokens": 0,
+              "cachedHit": true,
+              "liveGrounded": false,
+              "reproducible": false,
+              "zeroCost": false,
+              "fault": "exam-derived"
+            },
+            {
+              "id": "badJson",
+              "status": "live",
+              "mode": "live",
+              "ok": false,
+              "statusCode": 200,
+              "tokens": 0,
+              "cachedHit": true,
+              "liveGrounded": false,
+              "reproducible": false,
+              "zeroCost": false,
+              "fault": "exam-derived"
+            },
+            {
+              "id": "cleanRerun",
+              "status": "live",
+              "mode": "live",
+              "ok": false,
+              "statusCode": 200,
+              "tokens": 0,
+              "cachedHit": true,
+              "liveGrounded": false,
+              "reproducible": false,
+              "zeroCost": false,
+              "fault": "exam-derived"
+            }
+          ],
+          "trilemma": {
+            "liveGrounded": false,
+            "reproducible": false,
+            "zeroCost": false
+          },
+          "metrics": {
+            "callCount": 3,
+            "totalTokens": 0,
+            "cacheHits": 1
+          }
+        }
+      ],
+      "vectors": {
+        "OfflineDouble": "011",
+        "LiveGrounded": "000",
+        "CachedLive": "000"
+      },
+      "trilemma": {
+        "liveGrounded": false,
+        "reproducible": true,
+        "zeroCost": true
+      },
+      "verdict": {
+        "vectors": {
+          "OfflineDouble": "011",
+          "LiveGrounded": "000",
+          "CachedLive": "000"
+        },
+        "noUniversalWinner": false,
+        "trilemmaDistinguishes": false,
+        "noStrategyWinsAll": true,
+        "vectorFromExam": true,
+        "mode": "offline",
+        "keyPresent": false,
+        "trilemmaCrosscheck": {
+          "liveGrounded": false,
+          "reproducible": true,
+          "zeroCost": true,
+          "noStrategyWinsAll": true,
+          "note": "三策略各由一座独立考场真跑现算：OfflineDouble 恒 011（double 双跑逐字节 + token 恒 0）/ LiveGrounded 真连 100（真 content + total_tokens>0，温度抖动不复现且计费）/ CachedLive 真连 110（首调真连落地 + 缓存命中逐字节复现，但首调真实计费抹不掉 ⇒ 非零耗）。无 key 时两条真连策略诚实 000、区分度如实塌缩。互异、无一 111、不硬造全能赢家。"
+        }
+      },
+      "noUniversalWinner": false,
+      "trilemmaDistinguishes": false,
+      "causalLocks": {
+        "offlineZeroCostCausallyUnerasable": true,
+        "offlineReproducibleCausallyUnerasable": true,
+        "badJsonNeverGroundedCausallyUnerasable": true,
+        "cachedHitReproducibleCausallyUnerasable": true,
+        "firstCallCostCausallyUnerasable": true,
+        "causalLocksAllHold": true,
+        "probes": {
+          "aContent": "[offline-double seed=538 h=fd0c5087] 这是确定性占位回复，非真模型输出。",
+          "bContent": "[offline-double seed=538 h=fd0c5087] 这是确定性占位回复，非真模型输出。",
+          "aTokens": 0,
+          "bTokens": 0,
+          "badJsonOk": false,
+          "firstCallTokens": 137,
+          "costsAfterHits": [
+            137,
+            137,
+            137,
+            137
+          ],
+          "cachedContent": "真连首调的不可预测内容"
+        }
+      },
+      "crosscheck": {
+        "evidence": {
+          "routerMoved": 20,
+          "routerTracked": 80,
+          "ringNodes": 4,
+          "ringShardsUsed": 4,
+          "walLines": 80,
+          "walReplayed": 80,
+          "notices": 12,
+          "busListeners": 1,
+          "redisBitmapHits": 96,
+          "redisSlots": 96,
+          "poolCreated": 2,
+          "poolReused": 1,
+          "bucketAllowed": 3,
+          "bucketRejected": 4,
+          "heapFired": 3,
+          "heapPending": 0,
+          "counterSum": 2080,
+          "counterFalseSharing": 56,
+          "jitterSpread": 1.9647,
+          "remapConsistentRate": 0.245,
+          "remapModuloRate": 0.46
+        },
+        "soundness": {
+          "baselineHolds": true,
+          "holds": true,
+          "falsifiable": true,
+          "tamper": {
+            "missingKey": {
+              "holds": false,
+              "error": "missing_key",
+              "reason": "抽掉 key ⇒ live 真失败 missing_key，绝不假造回复"
+            },
+            "badEndpoint": {
+              "holds": false,
+              "error": "non_200",
+              "reason": "错端点 502 ⇒ normalizeReply 真判 non_200"
+            },
+            "badJson": {
+              "holds": false,
+              "error": "bad_json",
+              "reason": "坏响应 HTML ⇒ 解析失败 bad_json，绝不把原文当模型回复"
+            }
+          },
+          "note": "三路 tamper 真改变内核输入（key/端点/响应体）再喂回同一 holds 公式现算；baselineHolds 先真绿，falsifiable 真推导。"
+        }
+      },
+      "rigged": false
+    },
+    "builtAt": 1794483265114
   }
 }

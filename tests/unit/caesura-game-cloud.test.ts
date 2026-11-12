@@ -2351,4 +2351,60 @@ describe('caesura-game-cloud', () => {
     expect(injected.builtAt).toBe(555)
     expect(injected.config.seed).toBe(99)
   })
+
+  // ============ KI-538 LLM 网关 opt-in 装配（2 腿）============
+  it('llmGateway:true 装配真矩阵：OfflineDouble=011 LiveGrounded/CachedLive=000（无 key）+ 三因果锁 + verifyGatewaySoundness 双路 + 21 键 + 惰性同引用（KI-538）', async () => {
+    const gc = await createGameCloud({
+      gameId: 'gid-lg1', gamePort: 7903, sources, cloud: fakeCloud(),
+      llmGateway: true, lgNow: () => 538000,
+    })
+    const st = (await gc.status()).llmGateway
+    expect(st).not.toBe(null)
+    expect(st!.builtAt).toBe(538000)
+    expect(st!.rows.length).toBe(3)
+    expect(st!.vectors.OfflineDouble).toBe('011')
+    expect(st!.vectors.LiveGrounded).toBe('000')
+    expect(st!.vectors.CachedLive).toBe('000')
+    expect(st!.rigged).toBe(false)
+    expect(st!.noUniversalWinner).toBe(false)
+    expect(st!.trilemmaDistinguishes).toBe(false)
+    expect(st!.causalLocks.causalLocksAllHold).toBe(true)
+    // verifyGatewaySoundness 双路 + SUT
+    const cp = st!.crosscheck.soundness
+    expect(cp.holds).toBe(true)
+    expect(cp.baselineHolds).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.tamper.missingKey.holds).toBe(false)
+    expect(cp.tamper.badEndpoint.holds).toBe(false)
+    expect(cp.tamper.badJson.holds).toBe(false)
+    expect(Object.keys(st!.crosscheck.evidence).length).toBe(21)
+    // 惰性缓存
+    expect((await gc.status()).llmGateway).toBe(st)
+    // 不连坐其它维
+    const bare = await createGameCloud({ gameId: 'gid-lg0', gamePort: 7904, sources, cloud: fakeCloud() }).status()
+    expect(bare.llmGateway).toBe(null)
+    expect(bare.circuitBreaker).toBe(null)
+  })
+
+  it('llmGateway 默认 null 非破坏；live 默认仍 offline——绝不暗调 OpenAI；可注入现成 study（KI-538）', async () => {
+    const idle = await createGameCloud({ gameId: 'gid-lg2', gamePort: 7905, sources, cloud: fakeCloud() }).status()
+    expect(idle.llmGateway).toBe(null)
+    // live 明确由 caller opt-in（本例不指明 live → llmGateway 走 offline）
+    const of = (await (await createGameCloud({
+      gameId: 'gid-lg3', gamePort: 7906, sources, cloud: fakeCloud(),
+      llmGateway: { seed: 538 }, lgNow: () => 538000,
+    })).status()).llmGateway
+    expect(of!.config.mode).toBe('offline')
+    expect(of!.vectors.OfflineDouble).toBe('011')
+    // 可注入现成 study
+    const { llmGatewayStudy, llmGatewaySnapshot } = await import('../../scripts/caesura-llm-gateway.mjs')
+    // 注入的是「已 flatten 的 snapshot」（与其余维鸭子类型判据 Array.isArray(rows) 一致）；
+    // KI-538 两段式 API：study（无 rows）→ llmGatewaySnapshot(study)（带 rows + builtAt 透传）。
+    const study = llmGatewaySnapshot(await llmGatewayStudy({ mode: 'offline', seed: 99, now: () => 555 }))!
+    const injected = (await (await createGameCloud({
+      gameId: 'gid-lg4', gamePort: 7907, sources, cloud: fakeCloud(),
+      llmGateway: study,
+    })).status()).llmGateway
+    expect(injected.builtAt).toBe(555)
+  })
 })

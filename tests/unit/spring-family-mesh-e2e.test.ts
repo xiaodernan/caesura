@@ -1228,4 +1228,29 @@ describe('spring-family-mesh-e2e', () => {
     expect(bare5.circuitBreakerSnapshot).toBe(null)
     expect(bare5.loadBalanceSnapshot).toBe(null)
   })
+
+  it("e2e KI-538：llmGateway=true ⇒ 主链透传、llmGatewaySnapshot 真跑，默认向量 011/000/000 / 双路自证 + 三路篡改 + 三因果锁", async () => {
+    const e = runMeshE2E({ llmGateway: true, lgNow: () => 5380 })
+    const r = await e.run()
+    expect(r.started?.registered).toBe(true)
+    expect(r.callRes?.ok).toBe(true)
+    const d = r.llmGatewaySnapshot
+    expect(d).not.toBe(null)
+    expect(d!.builtAt).toBe(5380)
+    expect(d!.rows.length).toBe(3)
+    expect(d!.vectors.OfflineDouble).toBe('011')
+    expect(d!.vectors.LiveGrounded).toBe('000')
+    expect(d!.vectors.CachedLive).toBe('000')
+    expect(d!.trilemmaDistinguishes).toBe(false)
+    expect(d!.causalLocks.causalLocksAllHold).toBe(true)
+    // 双路自证
+    expect(d!.crosscheck.soundness.holds).toBe(true)
+    expect(d!.crosscheck.soundness.falsifiable).toBe(true)
+    expect(d!.crosscheck.soundness.tamper.badJson.holds).toBe(false)
+    expect(Object.keys(d!.crosscheck.evidence).length).toBe(21)
+    // 未配时 null、不连坐
+    const bare6 = await runMeshE2E().run()
+    expect(bare6.llmGatewaySnapshot).toBe(null)
+    expect(bare6.circuitBreakerSnapshot).toBe(null)
+  })
 })

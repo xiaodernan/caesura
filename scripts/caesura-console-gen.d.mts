@@ -780,6 +780,29 @@ export interface CircuitBreakerReading {
   builtAt: number
 }
 
+/** KI-538：OfflineDouble/LiveGrounded/CachedLive Spring Cloud LLM 网关教学件真跑读数（三策略 × 六场景 + 三难向量 + verifyGatewaySoundness 双路交叉印证 + 十一枚真件交叉印证）。 */
+export interface LlmGatewayReading {
+  config: Record<string, any>
+  rows: Array<{
+    protocol: string
+    scenarios: Array<{
+      id: string; status?: string; mode?: string; ok?: boolean; statusCode?: number; tokens?: number; cachedHit?: boolean
+      liveGrounded: boolean; reproducible: boolean; zeroCost: boolean; fault?: string
+    }>
+    trilemma: { liveGrounded: boolean; reproducible: boolean; zeroCost: boolean }
+    metrics: Record<string, any>
+  }>
+  vectors: Record<string, string>
+  verdict: Record<string, any>
+  rigged: boolean
+  noUniversalWinner: boolean
+  trilemmaDistinguishes: boolean
+  causalLocks: { offlineZeroCostCausallyUnerasable: boolean; offlineReproducibleCausallyUnerasable: boolean; badJsonNeverGroundedCausallyUnerasable: boolean; cachedHitReproducibleCausallyUnerasable: boolean; firstCallCostCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: any }
+  crosscheck: { evidence: Record<string, any>; gateway?: any; soundness?: any } & Record<string, any>
+  builtAt: number
+}
+
+
 
 
 
@@ -856,6 +879,7 @@ export interface SystemsBlock {
   transactionalOutbox: TransactionalOutboxReading | null
   loadBalance: LoadBalanceReading | null
   circuitBreaker: CircuitBreakerReading | null
+  llmGateway: LlmGatewayReading | null
   builtAt: number
 }
 
@@ -1107,6 +1131,14 @@ export function buildSnapshot(opts?: {
   cbUnlimitedWindow?: boolean
   cbInstantRecovery?: boolean
   cbRigged?: boolean
+  /** KI-538：false 关掉 LlmGateway 维（兼容旧快照）；lg* 注入规模/模式；**仅离线**——opts.mode 恒强制 'offline' */
+  llmGateway?: boolean
+  lgSeed?: number
+  lgTimeoutMs?: number
+  lgPersistentCache?: boolean
+  lgZeroTemp?: boolean
+  lgLocalDouble?: boolean
+  lgRigged?: boolean
   traceSampling?: boolean
   tsSeed?: number
   tsItems?: number
@@ -1346,6 +1378,14 @@ export function buildSystems(opts?: {
   cbUnlimitedWindow?: boolean
   cbInstantRecovery?: boolean
   cbRigged?: boolean
+  /** KI-538：false 关掉 LlmGateway 维（兼容旧快照）；lg* 注入规模/模式；**仅离线**——opts.mode 恒强制 'offline' */
+  llmGateway?: boolean
+  lgSeed?: number
+  lgTimeoutMs?: number
+  lgPersistentCache?: boolean
+  lgZeroTemp?: boolean
+  lgLocalDouble?: boolean
+  lgRigged?: boolean
   traceSampling?: boolean
   tsSeed?: number
   tsItems?: number
@@ -1673,6 +1713,14 @@ export function buildCrdtReading(opts: {
   cbUnlimitedWindow?: boolean
   cbInstantRecovery?: boolean
   cbRigged?: boolean
+  /** KI-538：false 关掉 LlmGateway 维（兼容旧快照）；lg* 注入规模/模式；**仅离线**——opts.mode 恒强制 'offline' */
+  llmGateway?: boolean
+  lgSeed?: number
+  lgTimeoutMs?: number
+  lgPersistentCache?: boolean
+  lgZeroTemp?: boolean
+  lgLocalDouble?: boolean
+  lgRigged?: boolean
 }, now: () => number): Promise<CrdtReading | null>
 
 /** KI-532：真跑 Spring Batch chunk-oriented R-P-W（BulkWriter/ChunkedWriter/SkipRetryWriter × 六场景 + 三难向量 + verifyCheckpoint 双路自证 + 十一枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
@@ -1730,6 +1778,14 @@ export function buildSpringBatchReading(opts: {
   cbUnlimitedWindow?: boolean
   cbInstantRecovery?: boolean
   cbRigged?: boolean
+  /** KI-538：false 关掉 LlmGateway 维（兼容旧快照）；lg* 注入规模/模式；**仅离线**——opts.mode 恒强制 'offline' */
+  llmGateway?: boolean
+  lgSeed?: number
+  lgTimeoutMs?: number
+  lgPersistentCache?: boolean
+  lgZeroTemp?: boolean
+  lgLocalDouble?: boolean
+  lgRigged?: boolean
 }, now: () => number): Promise<SpringBatchReading | null>
 
 /** KI-535：真跑 Spring Cloud 分布式会话三策略（StickySession/JwtStateless/RedisSessionStore × 六场景 + 三难向量 + verifySessionCoherence 双路自证 + 十一枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
@@ -1778,6 +1834,14 @@ export function buildDistributedSessionReading(opts: {
   cbUnlimitedWindow?: boolean
   cbInstantRecovery?: boolean
   cbRigged?: boolean
+  /** KI-538：false 关掉 LlmGateway 维（兼容旧快照）；lg* 注入规模/模式；**仅离线**——opts.mode 恒强制 'offline' */
+  llmGateway?: boolean
+  lgSeed?: number
+  lgTimeoutMs?: number
+  lgPersistentCache?: boolean
+  lgZeroTemp?: boolean
+  lgLocalDouble?: boolean
+  lgRigged?: boolean
 }, now: () => number): Promise<DistributedSessionReading | null>
 
 /** KI-534：真跑 Spring Cloud 事务性发件箱与消费幂等教学件（DualWrite/PollingOutbox/CdcOutbox × 六场景 + 三难向量 + verifyOutboxSoundness 双路自证 + 十一枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
@@ -1817,6 +1881,14 @@ export function buildTransactionalOutboxReading(opts: {
   cbUnlimitedWindow?: boolean
   cbInstantRecovery?: boolean
   cbRigged?: boolean
+  /** KI-538：false 关掉 LlmGateway 维（兼容旧快照）；lg* 注入规模/模式；**仅离线**——opts.mode 恒强制 'offline' */
+  llmGateway?: boolean
+  lgSeed?: number
+  lgTimeoutMs?: number
+  lgPersistentCache?: boolean
+  lgZeroTemp?: boolean
+  lgLocalDouble?: boolean
+  lgRigged?: boolean
 }, now: () => number): Promise<TransactionalOutboxReading | null>
 
 /** KI-536：真跑 Spring Cloud 负载均衡三策略（WeightedRoundRobin/LeastConnections/ConsistentHash × 六场景 + 三难向量 + verifyRoutingSoundness 双路自证 + 十一枚真件交叉印证）收敛成前端第三十维两面板紧凑读数；失败落 null。 */
@@ -1844,6 +1916,14 @@ export function buildLoadBalanceReading(opts: {
   cbUnlimitedWindow?: boolean
   cbInstantRecovery?: boolean
   cbRigged?: boolean
+  /** KI-538：false 关掉 LlmGateway 维（兼容旧快照）；lg* 注入规模/模式；**仅离线**——opts.mode 恒强制 'offline' */
+  llmGateway?: boolean
+  lgSeed?: number
+  lgTimeoutMs?: number
+  lgPersistentCache?: boolean
+  lgZeroTemp?: boolean
+  lgLocalDouble?: boolean
+  lgRigged?: boolean
 }, now: () => number): Promise<LoadBalanceReading | null>
 
 /** KI-537：真跑 Spring Cloud CircuitBreaker 三策略（CountBasedBreaker/RateBasedBreaker/SlowCallBreaker × 六场景 + 三难向量 + verifyCircuitSoundness 双路自证 + 十一枚真件交叉印证）收敛成前端第三十一维两面板紧凑读数；失败落 null。 */
@@ -1861,7 +1941,27 @@ export function buildCircuitBreakerReading(opts: {
   cbUnlimitedWindow?: boolean
   cbInstantRecovery?: boolean
   cbRigged?: boolean
+  /** KI-538：false 关掉 LlmGateway 维（兼容旧快照）；lg* 注入规模/模式；**仅离线**——opts.mode 恒强制 'offline' */
+  llmGateway?: boolean
+  lgSeed?: number
+  lgTimeoutMs?: number
+  lgPersistentCache?: boolean
+  lgZeroTemp?: boolean
+  lgLocalDouble?: boolean
+  lgRigged?: boolean
 }, now: () => number): Promise<CircuitBreakerReading | null>
+
+/** KI-538：真跑 LLM 网关三策略（OfflineDouble/LiveGrounded/CachedLive × 六场景 + 三难向量 + verifyGatewaySoundness 双路自证 + 十一枚真件交叉印证）收敛成前端第三十二维两面板紧凑读数；失败落 null；**仅离线**（绝不在 console:data 中暗调 OpenAI）。 */
+export function buildLlmGatewayReading(opts: {
+  now?: () => number
+  llmGateway?: boolean
+  lgSeed?: number
+  lgTimeoutMs?: number
+  lgPersistentCache?: boolean
+  lgZeroTemp?: boolean
+  lgLocalDouble?: boolean
+  lgRigged?: boolean
+}, now: () => number): Promise<LlmGatewayReading | null>
 
 /** KI-533：真跑可观测性分布式追踪采样三策略（HeadBased/TailBased/Adaptive × 六场景 + 三难向量 + verifySamplingSoundness 双路自证 + 十一枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
 export function buildTraceSamplingReading(opts: {

@@ -49,6 +49,8 @@
     "distributed-session:bench": "node scripts/caesura-distributed-session.mjs",
     "load-balance:bench": "node scripts/caesura-spring-load-balance.mjs",
     "llm:proof": "node scripts/llm-npc-voice-proof.mjs",
+    "llm:qa": "node scripts/llm-dialogue-qa.mjs",
+    "llm-gateway:bench": "node scripts/caesura-llm-gateway.mjs",
     "circuit-breaker:bench": "node scripts/caesura-circuit-breaker.mjs",
     "trace-sampling:bench": "node scripts/caesura-trace-sampling.mjs",
     "outbox:bench": "node scripts/caesura-transactional-outbox.mjs",

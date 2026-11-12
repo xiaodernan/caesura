@@ -47,6 +47,7 @@ import { distributedSessionStudy, distributedSessionSnapshot } from './caesura-d
 import { transactionalOutboxStudy, transactionalOutboxSnapshot } from './caesura-transactional-outbox.mjs'
 import { springLoadBalanceStudy, springLoadBalanceSnapshot } from './caesura-spring-load-balance.mjs'
 import { circuitBreakerStudy, circuitBreakerSnapshot } from './caesura-circuit-breaker.mjs'
+import { llmGatewayStudy, llmGatewaySnapshot } from './caesura-llm-gateway.mjs'
 import { traceSamplingStudy, traceSamplingSnapshot } from './caesura-trace-sampling.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
@@ -370,7 +371,9 @@ export async function buildSystems(opts = {}) {
   const loadBalance = opts.loadBalance === false ? null : await buildLoadBalanceReading(opts, now)
   // KI-537：第三十一维装配 Spring Cloud CircuitBreaker 教学件（CountBasedBreaker/RateBasedBreaker/SlowCallBreaker）
   const circuitBreaker = opts.circuitBreaker === false ? null : await buildCircuitBreakerReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, builtAt: now() }
+  // KI-538：第三十二维装配 LLM 网关教学件（OfflineDouble/LiveGrounded/CachedLive）——仅 offline 模式，绝不暗调 OpenAI
+  const llmGateway = opts.llmGateway === false ? null : await buildLlmGatewayReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, builtAt: now() }
 }
 
 /**
@@ -452,6 +455,31 @@ export async function buildTraceSamplingReading(opts, now) {
       ...(opts.tsRigged === true ? { rigged: true } : {}),
     })
     return traceSamplingSnapshot(s)
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
+ * KI-538：LLM 网关教学件真跑（OfflineDouble/LiveGrounded/CachedLive × 六场景 + 三难向量 + verifyGatewaySoundness 双路自证 + 十一枚真件交叉印证）。
+ * **仅离线模式**——绝不暗调 OpenAI/任何外部端点：buildSystems（console:data 生产路径）始终 mode=offline。
+ * 如需真调用：`npm run llm-gateway:bench -- --live`（仅作者工作机用，CIR 由环境变量临时引用）。
+ * @param {object} opts { llmGateway?:false, lgSeed?, lgTimeoutMs?, lgPersistentCache?, lgZeroTemp?, lgLocalDouble?, lgRigged? }
+ * @param {()=>number} now 时钟（builtAt 注入真值）
+ */
+export async function buildLlmGatewayReading(opts, now) {
+  try {
+    const s = await llmGatewayStudy({
+      mode: 'offline',
+      now,
+      ...(opts.lgSeed ? { seed: Math.max(0, Math.floor(Number(opts.lgSeed))) } : {}),
+      ...(opts.lgTimeoutMs ? { timeoutMs: Math.max(1000, Math.floor(Number(opts.lgTimeoutMs))) } : {}),
+      ...(opts.lgPersistentCache === true ? { persistentCache: true } : {}),
+      ...(opts.lgZeroTemp === true ? { zeroTemp: true } : {}),
+      ...(opts.lgLocalDouble === true ? { localDouble: true } : {}),
+      ...(opts.lgRigged === true ? { rigged: true } : {}),
+    })
+    return llmGatewaySnapshot(s)
   } catch (e) {
     return null // 缺哪块就落 null，前端据实降级；不编造假数
   }

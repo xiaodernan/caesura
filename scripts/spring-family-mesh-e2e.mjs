@@ -176,6 +176,10 @@ export function runMeshE2E(opts = {}) {
     // 注入时钟用 cbNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/rdq/dld 已占用前缀）。
     circuitBreaker: opts.circuitBreaker,
     cbNow: opts.cbNow,
+    // KI-538：LLM 网关教学件（llmGateway=true 装配；默认 mode=offline，绝不暗调 OpenAI）。
+    // 注入时钟用 lgNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/rdq/dld 已占用前缀）。
+    llmGateway: opts.llmGateway,
+    lgNow: opts.lgNow,
     // KI-533：可观测性分布式追踪采样三策略（traceSampling=true 装配；只读 HeadBased/TailBased/Adaptive ×
     // 六场景矩阵 + 三难向量维序 [lowOverhead/anomalyCapture/loadAdaptive]（默认 100/010/101 互异不封赢家；
     // anomalyCapture⇔缓冲整条⇔非 lowOverhead 与 chk 锁同构；rigged 三开关 oracleHead/infiniteBuffer/perfectFeedback
@@ -334,6 +338,7 @@ export function runMeshE2E(opts = {}) {
         transactionalOutboxSnapshot: status.transactionalOutbox ?? null,
         loadBalanceSnapshot: status.loadBalance ?? null,
         circuitBreakerSnapshot: status.circuitBreaker ?? null,
+        llmGatewaySnapshot: status.llmGateway ?? null,
         traceSamplingSnapshot: status.traceSampling ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
@@ -721,6 +726,17 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         crosscheck: r.circuitBreakerSnapshot.crosscheck,
         causalLocks: r.circuitBreakerSnapshot.causalLocks,
         verdict: r.circuitBreakerSnapshot.verdict,
+      } : null,
+      llmGateway: r.llmGatewaySnapshot ? {
+        strategies: r.llmGatewaySnapshot.rows.map((row) => ({
+          strategy: row.protocol, metrics: row.metrics, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.llmGatewaySnapshot.rows.map((row) => [row.protocol,
+          String(Number(row.trilemma.liveGrounded)) + String(Number(row.trilemma.reproducible)) + String(Number(row.trilemma.zeroCost))])),
+        noUniversalWinner: r.llmGatewaySnapshot.verdict.noUniversalWinner,
+        crosscheck: r.llmGatewaySnapshot.crosscheck,
+        causalLocks: r.llmGatewaySnapshot.causalLocks,
+        verdict: r.llmGatewaySnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

@@ -68,6 +68,7 @@
       renderTransactionalOutbox(snap.systems ? snap.systems.transactionalOutbox : null)
       renderLoadBalance(snap.systems ? snap.systems.loadBalance : null)
       renderCircuitBreaker(snap.systems ? snap.systems.circuitBreaker : null)
+      renderLlmGateway(snap.systems ? snap.systems.llmGateway : null)
       renderTraceSampling(snap.systems ? snap.systems.traceSampling : null)
       setLive(true, result.source)
     }).catch(function (e) {
@@ -3310,6 +3311,151 @@
       'verifyCheckpoint 双路自证：路 A clean 全量全 commit 求基准，路 B 真跑 restart(0) 用「poison chunk 隔离 / 已 commit 无重复 / 非毒零丢失 / 真检测到毒」四观测量判定；三路篡改真喂回同一内核现算翻 false，带 baselineHolds 先真绿。' +
       '三条因果结构锁在同一含毒 raw 流真跑钉死：Bulk 无 chk 整批死、chk 权衡不可兼得、Skip 跳毒永久丢。' +
       'rigged 双开关 perfectOracle（毒项 100% 判定、预防性从输入剔除）+ unlimitedSkip 喂的是已剔除毒项的干净流（换了作业输入、诚实标注，不是同一作业被抹软肋）⇒ 三者 faultIsolation 全真、Bulk≡Skip=101 区分度诚实收敛（riggedConvergenceCollapsed=true，教学结论：完美预言机抹平了「预防剔除」与「跳过」的差别，二者结构等价），noStrategyWinsAll 仍真绝不硬造 111，三因果锁仍 allHold。'
+  }
+
+  /* ================= KI-538 OfflineDouble/LiveGrounded/CachedLive LLM 网关 · 第三十二维（lg 族，仅离线） ================= */
+
+  function renderLlmGateway(lg) {
+    renderLgMatrix(lg && lg.rows, lg && lg.config)
+    renderLgLadder(lg && lg.rows)
+    renderLgTrilemma(lg && lg.rows, lg && lg.verdict, lg && lg.crosscheck, lg && lg.causalLocks)
+  }
+
+  function lgMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 暂缺</div>'
+    if (note) note.textContent = 'systems.llmGateway 缺失 — 跑一次 npm run console:data 即可补齐（仅离线模式）'
+  }
+
+  function lgCell(c, protocol) {
+    if (!c) return { cls: '', ch: '·' }
+    if (c.ok === true || c.status === 'pass') {
+      if (protocol === 'CachedLive') return { cls: 'cached', ch: '缓' }
+      if (protocol === 'LiveGrounded') return { cls: 'live', ch: '实' }
+      return { cls: 'offline', ch: '离' }
+    }
+    return { cls: '', ch: '×' }
+  }
+
+  function renderLgMatrix(rows, config) {
+    var box = $('#lg-matrix'), note = $('#lg-matrix-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      lgMissing(box, note, 'lg 矩阵'); return
+    }
+    var scenarios = (config && Array.isArray(config.scenarios) && config.scenarios.length)
+      ? config.scenarios.map(function (sc) { return sc.id || sc })
+      : ['singlePrompt', 'batchThreeNpc', 'missingKey', 'badEndpoint', 'badJson', 'cleanRerun']
+    var head = '<div class="lg-mat-row lg-mat-head"><span class="lg-mat-proto">策略</span>' +
+      scenarios.map(function (sc) { return '<span class="lg-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="lg-mat-cost">tokens / 缓存</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = lgCell(cell, row.protocol)
+        return '<span class="lg-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="lg-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="lg-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="lg-mat-cost"><b>' + esc(fmt(m.callCount || m.totalTokens || 0)) + '</b>/' + esc(fmt(m.cacheHits || m.cachedTokens || 0)) + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'OfflineDouble（本地 double、零网络、零 token 防纯辩思栏）/ LiveGrounded（真调用，但 console:data 恒 offline、教学不暗调）/ CachedLive（首呼真调、次呼缓存、同 prompt 二呼 0 成本）。' +
+      'Note: 默认 npm run console:data 始终 mode=offline——不调任何外部 API；不影响玩家运行时；作者若需查真，npm run llm-gateway:bench -- --live（仅工作机、key 由环境变量临时引用）。'
+  }
+
+  function renderLgLadder(rows) {
+    var box = $('#lg-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.totalTokens) ? r.metrics.totalTokens : 1 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.totalTokens) ? Math.round(m.totalTokens / max * 100) : 0
+      return '<div class="lg-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="lg-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">tokens ' + esc(fmt(m.totalTokens || 0)) + ' · 缓存命中 ' + esc(fmt(m.cacheHits || 0)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderLgTrilemma(rows, verdict, crosscheck, locks) {
+    var box = $('#lg-trilemma'), veBox = $('#lg-verif'), cxBox = $('#lg-crosscheck'), note = $('#lg-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      lgMissing(box, note, 'lg 判词'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''; return
+    }
+    var flags = [['liveGrounded', '真落地'], ['reproducible', '可复查'], ['zeroCost', '零成本']]
+    var head = '<div class="lg-vec lg-vec-head"><span class="proto">策略</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="lg-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="lg-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    if (veBox) {
+      var offline = rows.find(function (r) { return r.protocol === 'OfflineDouble' })
+      var live = rows.find(function (r) { return r.protocol === 'LiveGrounded' })
+      var cached = rows.find(function (r) { return r.protocol === 'CachedLive' })
+      var cp = crosscheck && (crosscheck.gateway || crosscheck.soundness || crosscheck)
+      veBox.innerHTML = [
+        '<div class="lg-rb-row"><b>OfflineDouble</b> 离线=' + esc(String(offline?.trilemma?.zeroCost)) + ' · 可复查=' + esc(String(offline?.trilemma?.reproducible)) + '（不动外网、不花 token）</div>',
+        '<div class="lg-rb-row"><b>LiveGrounded</b> 真落地=' + esc(String(live?.trilemma?.liveGrounded)) + ' · 零成本=' + esc(String(live?.trilemma?.zeroCost)) + '（console:data 恒 offline、此项仅教学展示）</div>',
+        '<div class="lg-rb-row"><b>CachedLive</b> 实落地=' + esc(String(cached?.trilemma?.liveGrounded)) + ' · 缓存=' + esc(String(cached?.trilemma?.zeroCost)) + ' · 可复查=' + esc(String(cached?.trilemma?.reproducible)) + '（二呼缓存、二呼 0 token）</div>',
+        cp ? '<div class="lg-rb-row"><b>verifyGatewaySoundness</b> holds=' + (cp.holds ? 'true' : 'false') + ' nontrivial=' + (cp.nontrivial ? 'true' : 'false') + ' · baselineHolds=' + (cp.baselineHolds ? 'true' : 'false') + ' falsifiable=' + (cp.falsifiable ? 'true' : 'false') + '</div>' : '',
+      ].join('')
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>真 <b>compareRemapping</b> 迁移率 一致性 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>' +
+          '<div>真 <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 片</div>' +
+          '<div>真 <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 命中 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
+          '<div>真 <b>createWal</b> lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>真 <b>createBus</b> lg.invoke 通知 ' + esc(fmt(ev.notices)) + ' 条 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>真 <b>createRedisCache</b> lg-prompt-cache set+get 命中 ' + esc(fmt(ev.redisBitmapHits)) + ' · entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+          '<div>真 <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+          '<div>真 <b>createTokenBucket</b> 回放允许 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>真 <b>createMinHeapDelayQueue</b> 出队 ' + esc(fmt(ev.heapFired)) + ' 条 · pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+          '<div>真 <b>createFullJitterBackoff</b> jitterSpread <b>' + esc(String((ev.jitterSpread ?? 0).toFixed(4))) + '</b>（64 采样 delayFor 真采样）</div>' +
+          '<div>真 <b>createPackedCounters</b> Σ=' + esc(fmt(ev.counterSum)) + ' · falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">真件交叉印证缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var lk = locks || {}
+    var noWin = v.noUniversalWinner === true
+    // 五因果锁逐字读核心件 lg.causalLocks 真值（与 caesura-llm-gateway.mjs / .d.mts 同名同源），
+    // 每枚 data-verdict 都对应一枚可证伪真锁；绝不渲染无真值来源的装饰 chip（那会是假绿）。
+    var lockDefs = [
+      ['offlineZeroCostCausallyUnerasable', '离线零成本抹不掉'],
+      ['offlineReproducibleCausallyUnerasable', '离线可复现抹不掉'],
+      ['badJsonNeverGroundedCausallyUnerasable', '坏 JSON 绝不 grounded'],
+      ['cachedHitReproducibleCausallyUnerasable', '缓存命中可复现抹不掉'],
+      ['firstCallCostCausallyUnerasable', '首调成本抹不掉（买得到复现、买不到免费）'],
+    ]
+    var lockChips = lockDefs.map(function (d) {
+      var yes = lk[d[0]] === true
+      return '<span class="chip ' + (yes ? 'jade-t' : 'muted-t') + '" data-verdict="' + d[0] + '">' +
+        (yes ? '✓ ' : '✗ ') + d[1] + '</span>'
+    })
+    var chips = lockChips.concat([
+      '<span class="chip" data-verdict="noStrategyWinsAll"><b>noStrategyWinsAll</b> ' + (v.noStrategyWinsAll ? '✓' : '✗') + '</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' + (noWin ? '✓ 三向量互异（011/100/110），不封赢家' : '判词塌陷') + '</span>',
+      '<span class="chip ' + (v.vectorFromExam ? 'jade-t' : 'muted-t') + '" data-verdict="vectorFromExam">' + (v.vectorFromExam ? '✓ 向量由考场真算' : '向量未真算') + '</span>',
+    ])
+    var probes = $('#lg-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维序固定 [liveGrounded / reproducible / zeroCost]。默认向量（离线 mode，KEY 缺省）OfflineDouble=011（真离线、可复查、零成本）/ LiveGrounded=000（未联网、非复查、付费）/ CachedLive=000（未联网、非复查、付费）；带 key 跑 live：LiveGrounded=100、CachedLive=110 —— **console:data 恒离线**。'
   }
 
   /* ================= KI-537 CountBasedBreaker/RateBasedBreaker/SlowCallBreaker Spring Cloud CircuitBreaker · 第三十一维（cb 族） ================= */

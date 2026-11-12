@@ -618,6 +618,23 @@
       <p class="note" id="cb-trilemma-note">…</p>
     </article>
   </section>
+  <!-- 第三十二维 · OfflineDouble / LiveGrounded / CachedLive Spring Cloud LLM 可选网关（KI-538) · 仅离线展示，绝不暗调 -->
+  <section class="row row-lg">
+    <article class="panel panel-lg">
+      <div class="panel-head"><h2>第三十二维 · OfflineDouble/LiveGrounded/CachedLive · 三策略 × 六场景</h2><span class="hint">离=OfflineDouble（仅本地 double、离线确定性、zeroCost=0 K、 reproducible 确定性回复）/ 实=LiveGrounded（真实 OpenAI 兼容端点、key 仅环境变量临时引用、liveGrounded=real、结构不能在玩家进程里出现）/ 缓=CachedLive（首呼真实、内容缓存、同 prompt 二呼 0 成本真 reproducible）</span></div>
+      <div class="lg-matrix" id="lg-matrix"></div>
+      <div class="lg-ladder" id="lg-ladder"></div>
+      <p class="note" id="lg-matrix-note">…</p>
+    </article>
+    <article class="panel panel-lg">
+      <div class="panel-head"><h2>三难向量（liveGrounded ∧ reproducible ∧ zeroCost）· 双路自证</h2><span class="hint">OfflineDouble=011 / LiveGrounded=000 / CachedLive=000 · 三向量互异、无一 111、不封赢家 · verifyGatewaySoundness 双路自证（missingKey/badEndpoint/badJson 真喂回现算翻 false · baselineHolds 先真绿）+ 三路篡改（missing_key/bad_endpoint/bad_json）+ 三因果锁（首呼成本/缓存命中/live 无 key 仍幻觉）· **默认 console:data 始终 mode='offline'** —— 不给浏览器最终用户惊入 OpenAI，教学组织走默认离线。</span></div>
+      <div class="lg-trilemma" id="lg-trilemma"></div>
+      <div class="lg-verif" id="lg-verif"></div>
+      <div class="lg-crosscheck" id="lg-crosscheck"></div>
+      <div class="lg-probes" id="lg-probes"></div>
+      <p class="note" id="lg-trilemma-note">…</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">

@@ -1109,6 +1109,44 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(eighteen.every((x) => x === 537500)).toBe(true)
   })
 
+  it('㉒h-llm-gateway buildLlmGatewayReading 真跑：**默认 offline、绝不暗调** / llmGateway:false 关闭 / 注入规模恒 offline / 双路自证 + 十一真件 / 十九时钟同源（KI-538）', async () => {
+    const { buildLlmGatewayReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 538500
+    const g = (await buildLlmGatewayReading({}, now))!
+    expect(g).not.toBe(null)
+    expect(g.builtAt).toBe(538500)
+    expect(g.config.mode).toBe('offline')
+    expect(g.rows.length).toBe(3)
+    expect(g.vectors).toEqual({ OfflineDouble: '011', LiveGrounded: '000', CachedLive: '000' })
+    expect(g.rigged).toBe(false)
+    expect(g.causalLocks.causalLocksAllHold).toBe(true)
+    // 五因果锁与核心件 caesura-llm-gateway.mjs / .d.mts 逐字同名同源（不得臆造锁名、不得只挑三枚漏测）
+    for (const lock of ['offlineZeroCostCausallyUnerasable', 'offlineReproducibleCausallyUnerasable',
+      'badJsonNeverGroundedCausallyUnerasable', 'cachedHitReproducibleCausallyUnerasable',
+      'firstCallCostCausallyUnerasable'] as const) {
+      expect(g.causalLocks[lock], '因果锁 ' + lock).toBe(true)
+    }
+    // 注入 seed 真生效（依然 offline）
+    const tuned = (await buildLlmGatewayReading({ lgSeed: 12 }, now))!
+    expect(tuned.config.seed).toBe(12)
+    expect(tuned.config.mode).toBe('offline')
+    // 双路自证 + 三路篡改
+    const cp = g.crosscheck.soundness
+    expect(cp.holds).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.tamper.missingKey.holds).toBe(false)
+    expect(cp.tamper.badEndpoint.holds).toBe(false)
+    expect(cp.tamper.badJson.holds).toBe(false)
+    expect(Object.keys(g.crosscheck.evidence).length).toBe(21)
+    const off = await buildSystems({ now, llmGateway: false, circuitBreaker: false })
+    expect(off.llmGateway).toBe(null)
+    expect(off.circuitBreaker).toBe(null)
+    expect(off.cacheReplacement).not.toBe(null)
+    const full = await buildSystems({ now })
+    const nineteen = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt, full.bloomFilter?.builtAt, full.cacheReplacement?.builtAt, full.streamWindow?.builtAt, full.hyperLogLog?.builtAt, full.crdt?.builtAt, full.springBatch?.builtAt, full.traceSampling?.builtAt, full.distributedSession?.builtAt, full.transactionalOutbox?.builtAt, full.loadBalance?.builtAt, full.circuitBreaker?.builtAt, full.llmGateway?.builtAt]
+    expect(nineteen.every((x) => x === 538500)).toBe(true)
+  })
+
   it('㉒c-trace-sampling buildTraceSamplingReading 真跑：ts* 注入生效 / traceSampling:false 关闭 / rigged Head≡Tail=110 诚实塌缩不硬造 111 / 双路自证 + 三路篡改真喂回 + 三因果锁 + 十一真件 / 十四时钟同源（KI-533）', async () => {
     const { buildTraceSamplingReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
     const now = () => 533000

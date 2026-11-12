@@ -2350,3 +2350,79 @@ describe('KI-537 第三十一维 · spring-cloud-circuit-breaker · burst/rate/s
     })
   })
 })
+
+
+// ============ KI-538 第三十二维 · Spring Cloud LLM 网关（lg 族 · 4 腿） · 仅离线 ============
+describe('KI-538 第三十二维 · offline-double/live-grounded/cached-live（lg 族，仅离线）', () => {
+  const realLg = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+  it('第三十二维真渲染：lg 矩阵 18 cell + 三策略向量 011/000/000 + 状态类 + ladder 条', async () => {
+    const dom = await runApp(realLg)
+    const matrix = dom.els['lg-matrix'].innerHTML
+    expect(matrix).toContain('lg-mat-head')
+    for (const p of ['OfflineDouble', 'LiveGrounded', 'CachedLive']) {
+      expect(matrix).toContain('data-strategy="' + p + '"')
+    }
+    for (const sc of ['singlePrompt', 'batchThreeNpc', 'missingKey', 'badEndpoint', 'badJson', 'cleanRerun']) {
+      expect(matrix).toContain('data-s="' + sc + '"')
+    }
+    expect((matrix.match(/class="lg-cell /g) || []).length).toBe(18)
+    const tri = dom.els['lg-trilemma'].innerHTML
+    expect(tri).toContain('data-vec="011"')
+    expect(tri).toContain('data-vec="000"')
+    const states = [...matrix.matchAll(/data-state="([^"]+)"/g)].map((m) => m[1])
+    expect(states.length).toBeGreaterThanOrEqual(18)
+    expect(dom.els['lg-ladder'].innerHTML).toContain('lg-bar')
+  })
+
+  it('第三十二维画中件 DOM：verifyGatewaySoundness 双路 + 三路篡改 + 九 chips + 无 111', async () => {
+    const dom = await runApp(realLg)
+    const probes = dom.els['lg-probes'].innerHTML
+    // 五因果锁 chip 必须与核心件逐字同名，且每枚都带 ✓ 真值状态字 —— 杜绝「无真值来源的装饰 chip 假绿」。
+    for (const key of ['offlineZeroCostCausallyUnerasable', 'offlineReproducibleCausallyUnerasable',
+      'badJsonNeverGroundedCausallyUnerasable', 'cachedHitReproducibleCausallyUnerasable',
+      'firstCallCostCausallyUnerasable'] as const) {
+      expect(probes, '真锁 chip ' + key).toContain('data-verdict="' + key + '">✓')
+    }
+    // 绝不许臆造锁名漏进 DOM（此前 cachedHitRate/liveHallucinatesWithoutKey 是无值装饰假绿）。
+    expect(probes).not.toContain('cachedHitRateCausallyUnerasable')
+    expect(probes).not.toContain('liveHallucinatesWithoutKeyCausallyUnerasable')
+    for (const key of ['noStrategyWinsAll', 'noUniversalWinner', 'vectorFromExam']) {
+      expect(probes, 'probe chip ' + key).toContain('data-verdict="' + key + '"')
+    }
+    const verif = dom.els['lg-verif'].innerHTML
+    for (const key of ['holds', 'falsifiable', 'baselineHolds']) {
+      expect(verif, 'verify row ' + key).toContain(key)
+    }
+    const cx = dom.els['lg-crosscheck'].innerHTML
+    for (const api of ['compareRemapping', 'createShardRouter', 'createHashRing', 'createWal', 'createBus',
+      'createRedisCache', 'createObjectPool', 'createTokenBucket', 'createMinHeapDelayQueue',
+      'createFullJitterBackoff', 'createPackedCounters']) {
+      expect(cx, '真件 ' + api + ' 必须 DOM 可见').toContain(api)
+    }
+    expect(cx).toContain('jitterSpread')
+  })
+
+  it('第三十二维 markup/CSS 自同 + systems.llmGateway 缺失时真显式降级', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-lg')
+    expect(html).toContain('id="lg-matrix"')
+    expect(html).toContain('id="lg-verif"')
+    expect(html).toContain('OfflineDouble=011 / LiveGrounded=000 / CachedLive=000')
+    expect(css).toContain('.lg-cell.offline')
+    expect(css).toContain('.lg-cell.live')
+    expect(css).toContain('.lg-cell.cached')
+    expect(css).toContain('.lg-cell.ok')
+    expect(css).toContain('.lg-flag.yes')
+    expect(css).toContain('.lg-bar > i')
+    expect(css).toContain('.lg-verif')
+    expect(css).toContain('@media')
+    const noLg = JSON.parse(JSON.stringify(realLg as any))
+    noLg.systems.llmGateway = null
+    return runApp(noLg).then((dom2: any) => {
+      expect(dom2.els['lg-matrix'].innerHTML).toContain('暂缺')
+      expect(dom2.els['lg-trilemma'].innerHTML).toContain('暂缺')
+      expect(dom2.els['lg-matrix-note'].textContent).toContain('systems.llmGateway 缺失')
+    })
+  })
+})

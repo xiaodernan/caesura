@@ -493,7 +493,7 @@
         "id": "n2",
         "speaker": "npc_corvin",
         "emotion": "cold",
-        "text": "……不勉强。但我建议你别把背对着我说话，聋者。我记性好。",
+        "text": "……不勉强。但我劝你别背对着我说话，聋者。我记性好。",
         "effects": {
           "setFlags": [
             "flag.corvin_met"
