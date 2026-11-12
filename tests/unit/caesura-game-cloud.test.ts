@@ -2407,4 +2407,84 @@ describe('caesura-game-cloud', () => {
     })).status()).llmGateway
     expect(injected.builtAt).toBe(555)
   })
+
+  // ============ KI-539 Spring Cloud Gateway 路由 opt-in 装配（2 腿）============
+  it('gatewayRouting:true 装配真矩阵：001/110/101 互异不封赢家 + 三因果锁 + verifyGatewayRoutingSoundness 双路 + 21 键 + 惰性同引用（KI-539）', async () => {
+    const gc = await createGameCloud({
+      gameId: 'gid-gr1', gamePort: 7912, sources, cloud: fakeCloud(),
+      gatewayRouting: true, grNow: () => 539000,
+    })
+    const st = (await gc.status()).gatewayRouting
+    expect(st).not.toBe(null)
+    expect(st!.builtAt).toBe(539000)
+    expect(st!.config.scenarios.length).toBe(6)
+    expect(st!.config.requests).toBe(96)
+    expect(st!.rows.length).toBe(3)
+    expect(st!.vectors).toEqual({ PathPrefixRouting: '001', RegexCaptureRouting: '110', HeaderGroupRouting: '101' })
+    expect(st!.rigged).toBe(false)
+    expect(st!.noUniversalWinner).toBe(true)
+    expect(st!.trilemmaDistinguishes).toBe(true)
+    expect(st!.verdict.noStrategyWinsAll).toBe(true)
+    expect(st!.verdict.vectorFromTrilemma).toBe(true)
+    // 三因果结构锁
+    expect(st!.causalLocks.causalLocksAllHold).toBe(true)
+    expect(st!.causalLocks.pathPrefixMatchingConflictsCausallyUnerasable).toBe(true)
+    expect(st!.causalLocks.regexCaptureExtraCostCausallyUnerasable).toBe(true)
+    expect(st!.causalLocks.headerGroupHeaderDependencyCausallyUnerasable).toBe(true)
+    // verifyGatewayRoutingSoundness 双路 + 两 lane
+    const cp = st!.crosscheck.routing
+    expect(cp.holds).toBe(true)
+    expect(cp.nontrivial).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.laneA.pathPrefixHits).toBe(96)
+    expect(cp.laneB.capturedUnique).toBeGreaterThan(0)
+    expect(cp.tamper.missingRoutes.holds).toBe(false)
+    expect(cp.tamper.tryStrTruncation.holds).toBe(false)
+    expect(cp.tamper.emptyStream.holds).toBe(false)
+    expect(Object.keys(st!.crosscheck.evidence).length).toBe(21)
+    // 主教义
+    expect(st!.verdict.pathFindsHashMiss).toBe(true)
+    expect(st!.verdict.regexDistinguishesLabs).toBe(true)
+    expect(st!.verdict.headerGroupNotPowered).toBe(true)
+    // 惰性缓存
+    expect((await gc.status()).gatewayRouting).toBe(st)
+    expect(await gc.runGatewayRoutingStudy!()).toMatchObject({ vectors: st!.vectors })
+    // 不连坐其它维
+    const bare = await createGameCloud({ gameId: 'gid-gr0', gamePort: 7913, sources, cloud: fakeCloud() }).status()
+    expect(bare.gatewayRouting).toBe(null)
+    expect(bare.llmGateway).toBe(null)
+  })
+
+  it('gatewayRouting 默认 null 非破坏；perfectGlobMatcher ⇒ PathPrefix=111、headerFallbackOnMiss ⇒ HeaderGroup 仍 101、regexProfiling ⇒ RegexCapture debug 翻 true；可注入现成 study（KI-539）', async () => {
+    const idle = await createGameCloud({ gameId: 'gid-gr2', gamePort: 7914, sources, cloud: fakeCloud() }).status()
+    expect(idle.gatewayRouting).toBe(null)
+    // 单开 perfectGlobMatcher：PathPrefix=111（真把 strict/capture/debug 全翻 true）
+    const pg = (await (await createGameCloud({
+      gameId: 'gid-gr3', gamePort: 7915, sources, cloud: fakeCloud(),
+      gatewayRouting: { perfectGlobMatcher: true }, grNow: () => 539000,
+    })).status()).gatewayRouting
+    expect(pg!.vectors.PathPrefixRouting).toBe('111')
+    expect(pg!.verdict.perfectGlobMatchErasesPrefixBurden).toBe(true)
+    // 单开 headerFallbackOnMiss：向量不动
+    const hf = (await (await createGameCloud({
+      gameId: 'gid-gr4', gamePort: 7916, sources, cloud: fakeCloud(),
+      gatewayRouting: { headerFallbackOnMiss: true }, grNow: () => 539000,
+    })).status()).gatewayRouting
+    expect(hf!.vectors.HeaderGroupRouting).toBe('101')
+    // rigged 三开齐：PathPrefix=111（诚实 truth，其它仍互异）
+    const rig = (await (await createGameCloud({
+      gameId: 'gid-gr5', gamePort: 7917, sources, cloud: fakeCloud(),
+      gatewayRouting: { rigged: true }, grNow: () => 539000,
+    })).status()).gatewayRouting
+    expect(rig!.vectors.PathPrefixRouting).toBe('111')
+    expect(rig!.verdict.noStrategyWinsAll).toBe(false)
+    expect(rig!.causalLocks.causalLocksAllHold).toBe(true)
+    // 可注入现成 study
+    const { gatewayRoutingStudy } = await import('../../scripts/caesura-gateway-routing.mjs')
+    const injected = (await (await createGameCloud({
+      gameId: 'gid-gr6', gamePort: 7918, sources, cloud: fakeCloud(),
+      gatewayRouting: gatewayRoutingStudy({ seed: 99, now: () => 555 }),
+    })).status()).gatewayRouting
+    expect(injected.builtAt).toBe(555)
+  })
 })

@@ -69,6 +69,7 @@
       renderLoadBalance(snap.systems ? snap.systems.loadBalance : null)
       renderCircuitBreaker(snap.systems ? snap.systems.circuitBreaker : null)
       renderLlmGateway(snap.systems ? snap.systems.llmGateway : null)
+      renderGatewayRouting(snap.systems ? snap.systems.gatewayRouting : null)
       renderTraceSampling(snap.systems ? snap.systems.traceSampling : null)
       setLive(true, result.source)
     }).catch(function (e) {
@@ -3311,6 +3312,137 @@
       'verifyCheckpoint 双路自证：路 A clean 全量全 commit 求基准，路 B 真跑 restart(0) 用「poison chunk 隔离 / 已 commit 无重复 / 非毒零丢失 / 真检测到毒」四观测量判定；三路篡改真喂回同一内核现算翻 false，带 baselineHolds 先真绿。' +
       '三条因果结构锁在同一含毒 raw 流真跑钉死：Bulk 无 chk 整批死、chk 权衡不可兼得、Skip 跳毒永久丢。' +
       'rigged 双开关 perfectOracle（毒项 100% 判定、预防性从输入剔除）+ unlimitedSkip 喂的是已剔除毒项的干净流（换了作业输入、诚实标注，不是同一作业被抹软肋）⇒ 三者 faultIsolation 全真、Bulk≡Skip=101 区分度诚实收敛（riggedConvergenceCollapsed=true，教学结论：完美预言机抹平了「预防剔除」与「跳过」的差别，二者结构等价），noStrategyWinsAll 仍真绝不硬造 111，三因果锁仍 allHold。'
+  }
+
+  /* ================= KI-539 PathPrefixRouting/RegexCaptureRouting/HeaderGroupRouting Spring Cloud Gateway 路由 · 第三十三维（gr 族） ================= */
+
+  function renderGatewayRouting(gr) {
+    renderGrMatrix(gr && gr.rows, gr && gr.config)
+    renderGrLadder(gr && gr.rows)
+    renderGrTrilemma(gr && gr.rows, gr && gr.verdict, gr && gr.crosscheck)
+  }
+
+  function grMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 暂缺</div>'
+    if (note) note.textContent = 'systems.gatewayRouting 缺失 — 跑一次 npm run console:data 即可补齐'
+  }
+
+  function grCell(c, protocol) {
+    if (!c) return { cls: '', ch: '·' }
+    if (protocol === 'PathPrefixRouting') return { cls: 'loose', ch: '松' }
+    if (protocol === 'RegexCaptureRouting') return { cls: 'capture', ch: '系' }
+    if (protocol === 'HeaderGroupRouting') return { cls: 'tight', ch: '严' }
+    return { cls: 'ok', ch: '✓' }
+  }
+
+  function renderGrMatrix(rows, config) {
+    var box = $('#gr-matrix'), note = $('#gr-matrix-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      grMissing(box, note, 'gr 矩阵'); return
+    }
+    var scenarios = ['prefixMatch', 'regexCapture', 'headerGroup', 'bigRouteTable', 'conflictingRoutes', 'cleanRerun']
+    var head = '<div class="gr-mat-row gr-mat-head"><span class="gr-mat-proto">策略</span>' +
+      scenarios.map(function (sc) { return '<span class="gr-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="gr-mat-cost">hits/ 错失</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = grCell(cell, row.protocol)
+        return '<span class="gr-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="gr-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="gr-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="gr-mat-cost"><b>' + esc(fmt(m.totalHits)) + '</b>/' + esc(String(m.powerCells || 0)) + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'PathPrefixRouting / RegexCaptureRouting / HeaderGroupRouting × 六场景：prefixMatch（/api/ 路由前缀）/ regexCapture（/labs/sol/answers/{id} with regex hint）/ headerGroup（x-user-group 头-groupA canary）/ bigRouteTable（200 条 route to order-prefix）/ conflictingRoutes（route:api 后配 route:api-conflict 永不走到）/ cleanRerun（同轨迹重跑幂等性）。' +
+      '每格只认三布尔（strictMatch ∧ capturePower ∧ debugFriendly）——绝不由阈值重算。' +
+      'PathPrefix: 先配先中/后配永不走到（Spring Cloud Gateway order-偏心律，routeCount 10x1=10）；RegexCapture: 正则捕获组（/labs/sol/answers/d+ 真抽 flavor&id 对真值流真带出 96 个）；HeaderGroup: x-user-group 头/canary，无 header 全 miss ⇒ 必须 upstream 注入器。'
+  }
+
+  function renderGrLadder(rows) {
+    var box = $('#gr-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.totalHits) ? r.metrics.totalHits : 1 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.totalHits) ? Math.round(m.totalHits / max * 100) : 0
+      return '<div class="gr-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="gr-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">命中 ' + esc(fmt(m.totalHits)) + ' · 严格格数 ' + esc(String(m.strictCells)) + ' · 捕获格数 ' + esc(String(m.powerCells)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderGrTrilemma(rows, verdict, crosscheck) {
+    var box = $('#gr-trilemma'), veBox = $('#gr-verif'), cxBox = $('#gr-crosscheck'), note = $('#gr-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      grMissing(box, note, 'gr 判词'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''; return
+    }
+    var flags = [['strictMatch', '严格'], ['capturePower', '抓捕'], ['debugFriendly', '可调']]
+    var head = '<div class="gr-vec gr-vec-head"><span class="proto">策略</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="gr-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="gr-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    if (veBox) {
+      var path = rows.find(function (r) { return r.protocol === 'PathPrefixRouting' })
+      var regex = rows.find(function (r) { return r.protocol === 'RegexCaptureRouting' })
+      var header = rows.find(function (r) { return r.protocol === 'HeaderGroupRouting' })
+      var cp = crosscheck && crosscheck.routing
+      veBox.innerHTML = [
+        '<div class="gr-rb-row"><b>PathPrefixRouting</b> 严格=' + esc(String(path?.trilemma?.strictMatch)) + '（first-match-wins 永吃 route:api）· 抓捕=' + esc(String(path?.trilemma?.capturePower)) + ' · 可调=' + esc(String(path?.trilemma?.debugFriendly)) + '</div>',
+        '<div class="gr-rb-row"><b>RegexCaptureRouting</b> 严格=' + esc(String(regex?.trilemma?.strictMatch)) + '（/labs/sol/answers/\d+ 逐格 match）· 抓捕=' + esc(String(regex?.trilemma?.capturePower)) + '（flavor+id 真抽 32 个）</div>',
+        '<div class="gr-rb-row"><b>HeaderGroupRouting</b> 严格=' + esc(String(header?.trilemma?.strictMatch)) + '（全 miss 无 x-user-group 头）· 抓捕=' + esc(String(header?.trilemma?.capturePower)) + '（无 back-ref）· 可调=' + esc(String(header?.trilemma?.debugFriendly)) + '</div>',
+        cp ? '<div class="gr-rb-row"><b>verifyGatewayRoutingSoundness</b> holds=' + (cp.holds ? 'true' : 'false') + ' nontrivial=' + (cp.nontrivial ? 'true' : 'false') + ' falsifiable=' + (cp.falsifiable ? 'true' : 'false') + ' · laneA{pathPrefixHits=' + esc(String(cp.laneA && cp.laneA.pathPrefixHits)) + '/' + esc(String(cp.laneA && cp.laneA.total)) + '} laneB{flavors=' + esc(String(cp.laneB && cp.laneB.capturedUnique)) + ' / ' + esc(String(cp.laneB && cp.laneB.total)) + '}</div>' : '',
+      ].join('')
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>真 <b>compareRemapping</b> 迁移率 一致性 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>' +
+          '<div>真 <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 片</div>' +
+          '<div>真 <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 命中 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
+          '<div>真 <b>createWal</b> lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>真 <b>createBus</b> gateway.routeRefresh 通知 ' + esc(fmt(ev.notices)) + ' 条 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>真 <b>createRedisCache</b> route: delegate set+get 命中 ' + esc(fmt(ev.redisBitmapHits)) + ' · entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+          '<div>真 <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+          '<div>真 <b>createTokenBucket</b> 回放允许 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>真 <b>createMinHeapDelayQueue</b> 出队 ' + esc(fmt(ev.heapFired)) + ' 条 · pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+          '<div>真 <b>createFullJitterBackoff</b> jitterSpread <b>' + esc(String((ev.jitterSpread ?? 0).toFixed(4))) + '</b>（64 采样 delayFor 真采样）</div>' +
+          '<div>真 <b>createPackedCounters</b> Σ=' + esc(fmt(ev.counterSum)) + ' · falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">真件交叉印证缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var chips = [
+      '<span class="chip" data-verdict="pathFindsHashMiss"><b>PathPrefixRouting</b> 永吃 route:api ' + (v.pathFindsHashMiss ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="regexDistinguishesLabs"><b>RegexCaptureRouting</b> 真抓捕 ' + (v.regexDistinguishesLabs ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="headerGroupNotPowered"><b>HeaderGroupRouting</b> 无 header ⇒ 缺 ' + (v.headerGroupNotPowered ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="noStrategyWinsAll"><b>noStrategyWinsAll</b> ' + (v.noStrategyWinsAll ? '✓（无一 111）' : '✗') + '</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' + (noWin ? '✓ 三向量互异（001/110/101），无全局赢家' : '判词塌陷') + '</span>',
+      '<span class="chip ' + (v.riggedConvergenceCollapsed ? 'jade-t' : 'muted-t') + '" data-verdict="riggedConvergenceCollapsed">' + (v.riggedConvergenceCollapsed ? '✓ rigged 塌缩' : '未 rigged 或未塌缩') + '</span>',
+    ]
+    var probes = $('#gr-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维序固定 [strictMatch / capturePower / debugFriendly]。默认向量 PathPrefixRouting=001（松配先中·debug 友好） / RegexCaptureRouting=110（严/抓/Debug-hostile） / HeaderGroupRouting=101（严/无捕/友好）——恰好各缺一维、向量互异、无一 111。' +
+      'rigged 三开关：perfectGlobMatcher 提升 PathPrefix=111（完美全局匹配+捕获+严格+debug）·regexProfiling 提升 RegexCapture 至 debugFriendly=true（调试可见）·headerFallbackOnMiss 提升 HeaderGroup 兜底 path 模式（Miss 时不返回 Miss）。'
   }
 
   /* ================= KI-538 OfflineDouble/LiveGrounded/CachedLive LLM 网关 · 第三十二维（lg 族，仅离线） ================= */

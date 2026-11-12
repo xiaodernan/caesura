@@ -180,6 +180,10 @@ export function runMeshE2E(opts = {}) {
     // 注入时钟用 lgNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/rdq/dld 已占用前缀）。
     llmGateway: opts.llmGateway,
     lgNow: opts.lgNow,
+    // KI-539：Spring Cloud Gateway 路由教学件（gatewayRouting=true 装配；PathPrefixRouting/RegexCaptureRouting/HeaderGroupRouting × 六场景矩阵 + 三难向量（默认 001/110/101 互异）+ verifyGatewayRoutingSoundness 双路自证 + 十一真件 21 键交叉印证，不改调用路径）。
+    // 注入时钟用 grNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/rdq/dld 已占用前缀）。
+    gatewayRouting: opts.gatewayRouting,
+    grNow: opts.grNow,
     // KI-533：可观测性分布式追踪采样三策略（traceSampling=true 装配；只读 HeadBased/TailBased/Adaptive ×
     // 六场景矩阵 + 三难向量维序 [lowOverhead/anomalyCapture/loadAdaptive]（默认 100/010/101 互异不封赢家；
     // anomalyCapture⇔缓冲整条⇔非 lowOverhead 与 chk 锁同构；rigged 三开关 oracleHead/infiniteBuffer/perfectFeedback
@@ -339,6 +343,7 @@ export function runMeshE2E(opts = {}) {
         loadBalanceSnapshot: status.loadBalance ?? null,
         circuitBreakerSnapshot: status.circuitBreaker ?? null,
         llmGatewaySnapshot: status.llmGateway ?? null,
+        gatewayRoutingSnapshot: status.gatewayRouting ?? null,
         traceSamplingSnapshot: status.traceSampling ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
@@ -737,6 +742,19 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         crosscheck: r.llmGatewaySnapshot.crosscheck,
         causalLocks: r.llmGatewaySnapshot.causalLocks,
         verdict: r.llmGatewaySnapshot.verdict,
+      } : null,
+      gatewayRouting: r.gatewayRoutingSnapshot ? {
+        strategies: r.gatewayRoutingSnapshot.rows.map((row) => ({
+          strategy: row.protocol,
+          ladder: row.scenarios.map((sc) => sc.id + ':' + (sc.strictMatch === false ? '松' : sc.capturePower === true ? '系' : '严')).join(' → '),
+          metrics: row.metrics, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.gatewayRoutingSnapshot.rows.map((row) => [row.protocol,
+          String(Number(row.trilemma.strictMatch)) + String(Number(row.trilemma.capturePower)) + String(Number(row.trilemma.debugFriendly))])),
+        noUniversalWinner: r.gatewayRoutingSnapshot.verdict.noUniversalWinner,
+        crosscheck: r.gatewayRoutingSnapshot.crosscheck,
+        causalLocks: r.gatewayRoutingSnapshot.causalLocks,
+        verdict: r.gatewayRoutingSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

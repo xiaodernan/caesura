@@ -2426,3 +2426,72 @@ describe('KI-538 第三十二维 · offline-double/live-grounded/cached-live（l
     })
   })
 })
+
+
+// ============ KI-539 第三十三维 · Spring Cloud Gateway 路由（gr 族 · 4 腿） ============
+describe('KI-539 第三十三维 · pathprefix/regexcapture/headergroup（gr 族）', () => {
+  const realGr = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+  it('第三十三维真渲染：gr 矩阵 18 cell + 三策略向量 001/110/101 + 状态类 + ladder 条', async () => {
+    const dom = await runApp(realGr)
+    const matrix = dom.els['gr-matrix'].innerHTML
+    expect(matrix).toContain('gr-mat-head')
+    for (const p of ['PathPrefixRouting', 'RegexCaptureRouting', 'HeaderGroupRouting']) {
+      expect(matrix).toContain('data-strategy="' + p + '"')
+    }
+    for (const sc of ['prefixMatch', 'regexCapture', 'headerGroup', 'bigRouteTable', 'conflictingRoutes', 'cleanRerun']) {
+      expect(matrix).toContain('data-s="' + sc + '"')
+    }
+    expect((matrix.match(/class="gr-cell /g) || []).length).toBe(18)
+    const tri = dom.els['gr-trilemma'].innerHTML
+    expect(tri).toContain('data-vec="001"')
+    expect(tri).toContain('data-vec="110"')
+    expect(tri).toContain('data-vec="101"')
+    const states = [...matrix.matchAll(/data-state="([^"]+)"/g)].map((m) => m[1])
+    expect(states.length).toBeGreaterThanOrEqual(18)
+    expect(dom.els['gr-ladder'].innerHTML).toContain('gr-bar')
+  })
+
+  it('第三十三维画中件 DOM：verifyGatewayRoutingSoundness 双路 + 十一真件 chip + 无 111', async () => {
+    const dom = await runApp(realGr)
+    const probes = dom.els['gr-probes'].innerHTML
+    for (const key of ['pathFindsHashMiss', 'regexDistinguishesLabs', 'headerGroupNotPowered',
+      'noStrategyWinsAll', 'noUniversalWinner', 'riggedConvergenceCollapsed']) {
+      expect(probes, 'probe chip ' + key).toContain('data-verdict="' + key + '"')
+    }
+    const verif = dom.els['gr-verif'].innerHTML
+    for (const key of ['holds', 'nontrivial', 'falsifiable']) {
+      expect(verif, 'verify row ' + key).toContain(key)
+    }
+    const cx = dom.els['gr-crosscheck'].innerHTML
+    for (const api of ['compareRemapping', 'createShardRouter', 'createHashRing', 'createWal', 'createBus',
+      'createRedisCache', 'createObjectPool', 'createTokenBucket', 'createMinHeapDelayQueue',
+      'createFullJitterBackoff', 'createPackedCounters']) {
+      expect(cx, '真件 ' + api + ' 必须 DOM 可见').toContain(api)
+    }
+    expect(cx).toContain('jitterSpread')
+  })
+
+  it('第三十三维 markup/CSS 自同 + systems.gatewayRouting 缺失时真显式降级', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-gr')
+    expect(html).toContain('id="gr-matrix"')
+    expect(html).toContain('id="gr-verif"')
+    expect(html).toContain('PathPrefixRouting=001 / RegexCaptureRouting=110 / HeaderGroupRouting=101')
+    expect(css).toContain('.gr-cell.loose')
+    expect(css).toContain('.gr-cell.capture')
+    expect(css).toContain('.gr-cell.tight')
+    expect(css).toContain('.gr-cell.ok')
+    expect(css).toContain('.gr-flag.yes')
+    expect(css).toContain('.gr-bar > i')
+    expect(css).toContain('.gr-verif')
+    expect(css).toContain('@media')
+    const noGr = JSON.parse(JSON.stringify(realGr as any))
+    noGr.systems.gatewayRouting = null
+    return runApp(noGr).then((dom2: any) => {
+      expect(dom2.els['gr-matrix'].innerHTML).toContain('暂缺')
+      expect(dom2.els['gr-trilemma'].innerHTML).toContain('暂缺')
+      expect(dom2.els['gr-matrix-note'].textContent).toContain('systems.gatewayRouting 缺失')
+    })
+  })
+})

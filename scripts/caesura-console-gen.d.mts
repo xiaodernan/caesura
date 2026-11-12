@@ -802,6 +802,29 @@ export interface LlmGatewayReading {
   builtAt: number
 }
 
+/** KI-539：PathPrefixRouting/RegexCaptureRouting/HeaderGroupRouting Spring Cloud Gateway 三策略真跑读数（三策略 × 六场景 + 三难向量 + verifyGatewayRoutingSoundness 双路交叉印证 + 十一枚真件交叉印证）。 */
+export interface GatewayRoutingReading {
+  config: Record<string, any>
+  rows: Array<{
+    protocol: string
+    scenarios: Array<{
+      id: string; requests: number; hits: number; miss: number
+      strictMatch: boolean; capturePower: boolean; debugFriendly: boolean; fault: string
+    }>
+    trilemma: { strictMatch: boolean; capturePower: boolean; debugFriendly: boolean }
+    metrics: { totalHits: number; strictCells: number; powerCells: number }
+  }>
+  vectors: Record<string, string>
+  verdict: Record<string, any>
+  rigged: boolean
+  noUniversalWinner: boolean
+  trilemmaDistinguishes: boolean
+  causalLocks: { pathPrefixMatchingConflictsCausallyUnerasable: boolean; regexCaptureExtraCostCausallyUnerasable: boolean; headerGroupHeaderDependencyCausallyUnerasable: boolean; causalLocksAllHold: boolean }
+  crosscheck: { evidence: Record<string, any>; routing: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+  builtAt: number
+}
+
+
 
 
 
@@ -880,6 +903,7 @@ export interface SystemsBlock {
   loadBalance: LoadBalanceReading | null
   circuitBreaker: CircuitBreakerReading | null
   llmGateway: LlmGatewayReading | null
+  gatewayRouting: GatewayRoutingReading | null
   builtAt: number
 }
 
@@ -1139,6 +1163,14 @@ export function buildSnapshot(opts?: {
   lgZeroTemp?: boolean
   lgLocalDouble?: boolean
   lgRigged?: boolean
+  /** KI-539：false 关掉 GatewayRouting 维（兼容旧快照）；gr* 注入规模/探针/rigged */
+  gatewayRouting?: boolean
+  grSeed?: number
+  grRequests?: number
+  grPerfectGlobMatcher?: boolean
+  grRegexProfiling?: boolean
+  grHeaderFallbackOnMiss?: boolean
+  grRigged?: boolean
   traceSampling?: boolean
   tsSeed?: number
   tsItems?: number
@@ -1386,6 +1418,14 @@ export function buildSystems(opts?: {
   lgZeroTemp?: boolean
   lgLocalDouble?: boolean
   lgRigged?: boolean
+  /** KI-539：false 关掉 GatewayRouting 维（兼容旧快照）；gr* 注入规模/探针/rigged */
+  gatewayRouting?: boolean
+  grSeed?: number
+  grRequests?: number
+  grPerfectGlobMatcher?: boolean
+  grRegexProfiling?: boolean
+  grHeaderFallbackOnMiss?: boolean
+  grRigged?: boolean
   traceSampling?: boolean
   tsSeed?: number
   tsItems?: number
@@ -1721,6 +1761,14 @@ export function buildCrdtReading(opts: {
   lgZeroTemp?: boolean
   lgLocalDouble?: boolean
   lgRigged?: boolean
+  /** KI-539：false 关掉 GatewayRouting 维（兼容旧快照）；gr* 注入规模/探针/rigged */
+  gatewayRouting?: boolean
+  grSeed?: number
+  grRequests?: number
+  grPerfectGlobMatcher?: boolean
+  grRegexProfiling?: boolean
+  grHeaderFallbackOnMiss?: boolean
+  grRigged?: boolean
 }, now: () => number): Promise<CrdtReading | null>
 
 /** KI-532：真跑 Spring Batch chunk-oriented R-P-W（BulkWriter/ChunkedWriter/SkipRetryWriter × 六场景 + 三难向量 + verifyCheckpoint 双路自证 + 十一枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
@@ -1786,6 +1834,14 @@ export function buildSpringBatchReading(opts: {
   lgZeroTemp?: boolean
   lgLocalDouble?: boolean
   lgRigged?: boolean
+  /** KI-539：false 关掉 GatewayRouting 维（兼容旧快照）；gr* 注入规模/探针/rigged */
+  gatewayRouting?: boolean
+  grSeed?: number
+  grRequests?: number
+  grPerfectGlobMatcher?: boolean
+  grRegexProfiling?: boolean
+  grHeaderFallbackOnMiss?: boolean
+  grRigged?: boolean
 }, now: () => number): Promise<SpringBatchReading | null>
 
 /** KI-535：真跑 Spring Cloud 分布式会话三策略（StickySession/JwtStateless/RedisSessionStore × 六场景 + 三难向量 + verifySessionCoherence 双路自证 + 十一枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
@@ -1842,6 +1898,14 @@ export function buildDistributedSessionReading(opts: {
   lgZeroTemp?: boolean
   lgLocalDouble?: boolean
   lgRigged?: boolean
+  /** KI-539：false 关掉 GatewayRouting 维（兼容旧快照）；gr* 注入规模/探针/rigged */
+  gatewayRouting?: boolean
+  grSeed?: number
+  grRequests?: number
+  grPerfectGlobMatcher?: boolean
+  grRegexProfiling?: boolean
+  grHeaderFallbackOnMiss?: boolean
+  grRigged?: boolean
 }, now: () => number): Promise<DistributedSessionReading | null>
 
 /** KI-534：真跑 Spring Cloud 事务性发件箱与消费幂等教学件（DualWrite/PollingOutbox/CdcOutbox × 六场景 + 三难向量 + verifyOutboxSoundness 双路自证 + 十一枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
@@ -1889,6 +1953,14 @@ export function buildTransactionalOutboxReading(opts: {
   lgZeroTemp?: boolean
   lgLocalDouble?: boolean
   lgRigged?: boolean
+  /** KI-539：false 关掉 GatewayRouting 维（兼容旧快照）；gr* 注入规模/探针/rigged */
+  gatewayRouting?: boolean
+  grSeed?: number
+  grRequests?: number
+  grPerfectGlobMatcher?: boolean
+  grRegexProfiling?: boolean
+  grHeaderFallbackOnMiss?: boolean
+  grRigged?: boolean
 }, now: () => number): Promise<TransactionalOutboxReading | null>
 
 /** KI-536：真跑 Spring Cloud 负载均衡三策略（WeightedRoundRobin/LeastConnections/ConsistentHash × 六场景 + 三难向量 + verifyRoutingSoundness 双路自证 + 十一枚真件交叉印证）收敛成前端第三十维两面板紧凑读数；失败落 null。 */
@@ -1924,6 +1996,14 @@ export function buildLoadBalanceReading(opts: {
   lgZeroTemp?: boolean
   lgLocalDouble?: boolean
   lgRigged?: boolean
+  /** KI-539：false 关掉 GatewayRouting 维（兼容旧快照）；gr* 注入规模/探针/rigged */
+  gatewayRouting?: boolean
+  grSeed?: number
+  grRequests?: number
+  grPerfectGlobMatcher?: boolean
+  grRegexProfiling?: boolean
+  grHeaderFallbackOnMiss?: boolean
+  grRigged?: boolean
 }, now: () => number): Promise<LoadBalanceReading | null>
 
 /** KI-537：真跑 Spring Cloud CircuitBreaker 三策略（CountBasedBreaker/RateBasedBreaker/SlowCallBreaker × 六场景 + 三难向量 + verifyCircuitSoundness 双路自证 + 十一枚真件交叉印证）收敛成前端第三十一维两面板紧凑读数；失败落 null。 */
@@ -1949,6 +2029,14 @@ export function buildCircuitBreakerReading(opts: {
   lgZeroTemp?: boolean
   lgLocalDouble?: boolean
   lgRigged?: boolean
+  /** KI-539：false 关掉 GatewayRouting 维（兼容旧快照）；gr* 注入规模/探针/rigged */
+  gatewayRouting?: boolean
+  grSeed?: number
+  grRequests?: number
+  grPerfectGlobMatcher?: boolean
+  grRegexProfiling?: boolean
+  grHeaderFallbackOnMiss?: boolean
+  grRigged?: boolean
 }, now: () => number): Promise<CircuitBreakerReading | null>
 
 /** KI-538：真跑 LLM 网关三策略（OfflineDouble/LiveGrounded/CachedLive × 六场景 + 三难向量 + verifyGatewaySoundness 双路自证 + 十一枚真件交叉印证）收敛成前端第三十二维两面板紧凑读数；失败落 null；**仅离线**（绝不在 console:data 中暗调 OpenAI）。 */
@@ -1961,7 +2049,27 @@ export function buildLlmGatewayReading(opts: {
   lgZeroTemp?: boolean
   lgLocalDouble?: boolean
   lgRigged?: boolean
+  /** KI-539：false 关掉 GatewayRouting 维（兼容旧快照）；gr* 注入规模/探针/rigged */
+  gatewayRouting?: boolean
+  grSeed?: number
+  grRequests?: number
+  grPerfectGlobMatcher?: boolean
+  grRegexProfiling?: boolean
+  grHeaderFallbackOnMiss?: boolean
+  grRigged?: boolean
 }, now: () => number): Promise<LlmGatewayReading | null>
+
+/** KI-539：真跑 Spring Cloud Gateway 路由教学件（PathPrefixRouting/RegexCaptureRouting/HeaderGroupRouting × 六场景 + 三难向量 + verifyGatewayRoutingSoundness 双路自证 + 十一枚真件交叉印证）收敛成前端第三十三维两面板紧凑读数；失败落 null。 */
+export function buildGatewayRoutingReading(opts: {
+  now?: () => number
+  gatewayRouting?: boolean
+  grSeed?: number
+  grRequests?: number
+  grPerfectGlobMatcher?: boolean
+  grRegexProfiling?: boolean
+  grHeaderFallbackOnMiss?: boolean
+  grRigged?: boolean
+}, now: () => number): Promise<GatewayRoutingReading | null>
 
 /** KI-533：真跑可观测性分布式追踪采样三策略（HeadBased/TailBased/Adaptive × 六场景 + 三难向量 + verifySamplingSoundness 双路自证 + 十一枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
 export function buildTraceSamplingReading(opts: {

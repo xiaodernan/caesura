@@ -48,6 +48,7 @@ import { transactionalOutboxStudy, transactionalOutboxSnapshot } from './caesura
 import { springLoadBalanceStudy, springLoadBalanceSnapshot } from './caesura-spring-load-balance.mjs'
 import { circuitBreakerStudy, circuitBreakerSnapshot } from './caesura-circuit-breaker.mjs'
 import { llmGatewayStudy, llmGatewaySnapshot } from './caesura-llm-gateway.mjs'
+import { gatewayRoutingStudy, gatewayRoutingSnapshot } from './caesura-gateway-routing.mjs'
 import { traceSamplingStudy, traceSamplingSnapshot } from './caesura-trace-sampling.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
@@ -373,7 +374,9 @@ export async function buildSystems(opts = {}) {
   const circuitBreaker = opts.circuitBreaker === false ? null : await buildCircuitBreakerReading(opts, now)
   // KI-538：第三十二维装配 LLM 网关教学件（OfflineDouble/LiveGrounded/CachedLive）——仅 offline 模式，绝不暗调 OpenAI
   const llmGateway = opts.llmGateway === false ? null : await buildLlmGatewayReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, builtAt: now() }
+  // KI-539：第三十三维装配 Spring Cloud Gateway 路由教学件（PathPrefixRouting/RegexCaptureRouting/HeaderGroupRouting）
+  const gatewayRouting = opts.gatewayRouting === false ? null : await buildGatewayRoutingReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, builtAt: now() }
 }
 
 /**
@@ -455,6 +458,29 @@ export async function buildTraceSamplingReading(opts, now) {
       ...(opts.tsRigged === true ? { rigged: true } : {}),
     })
     return traceSamplingSnapshot(s)
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
+ * KI-539：Spring Cloud Gateway 路由三策略真跑教学件（PathPrefixRouting/RegexCaptureRouting/HeaderGroupRouting × 六场景 + 三难向量 + verifyGatewayRoutingSoundness 双路自证 + 十一枚真件交叉印证）。
+ * 失败落 null；读数全真、CLI 双跑字节一致、rigged 不硬封赢家。
+ * @param {object} opts { gatewayRouting?:false, grSeed?, grRequests?, grPerfectGlobMatcher?, grRegexProfiling?, grHeaderFallbackOnMiss?, grRigged? }
+ * @param {()=>number} now 时钟（builtAt 注入真值）
+ */
+export async function buildGatewayRoutingReading(opts, now) {
+  try {
+    const s = await gatewayRoutingStudy({
+      now,
+      ...(opts.grSeed ? { seed: Math.max(0, Math.floor(Number(opts.grSeed))) } : {}),
+      ...(opts.grRequests ? { requests: Math.max(16, Math.floor(Number(opts.grRequests))) } : {}),
+      ...(opts.grPerfectGlobMatcher === true ? { perfectGlobMatcher: true } : {}),
+      ...(opts.grRegexProfiling === true ? { regexProfiling: true } : {}),
+      ...(opts.grHeaderFallbackOnMiss === true ? { headerFallbackOnMiss: true } : {}),
+      ...(opts.grRigged === true ? { rigged: true } : {}),
+    })
+    return gatewayRoutingSnapshot(s)
   } catch (e) {
     return null // 缺哪块就落 null，前端据实降级；不编造假数
   }

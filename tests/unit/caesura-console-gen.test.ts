@@ -1147,6 +1147,44 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(nineteen.every((x) => x === 538500)).toBe(true)
   })
 
+  it('㉒i-gateway-routing buildGatewayRoutingReading 真跑：gr* 注入生效 / gatewayRouting:false 关闭 / rigged 不硬造 111 / 双路自证 + 十一真件 / 二十时钟同源（KI-539）', async () => {
+    const { buildGatewayRoutingReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 539500
+    const g = (await buildGatewayRoutingReading({}, now))!
+    expect(g).not.toBe(null)
+    expect(g.builtAt).toBe(539500)
+    expect(g.rows.length).toBe(3)
+    expect(g.config.requests).toBe(96)
+    expect(g.vectors).toEqual({ PathPrefixRouting: '001', RegexCaptureRouting: '110', HeaderGroupRouting: '101' })
+    expect(g.rigged).toBe(false)
+    expect(g.causalLocks.causalLocksAllHold).toBe(true)
+    expect(g.causalLocks.pathPrefixMatchingConflictsCausallyUnerasable).toBe(true)
+    expect(g.causalLocks.regexCaptureExtraCostCausallyUnerasable).toBe(true)
+    expect(g.causalLocks.headerGroupHeaderDependencyCausallyUnerasable).toBe(true)
+    const tuned = (await buildGatewayRoutingReading({ grSeed: 12, grRequests: 32 }, now))!
+    expect(tuned.config.seed).toBe(12)
+    expect(tuned.config.requests).toBe(32)
+    const rig = (await buildGatewayRoutingReading({ grRigged: true }, now))!
+    expect(rig.vectors.PathPrefixRouting).toBe('111')
+    expect(rig.rigged).toBe(true)
+    expect(rig.verdict.noStrategyWinsAll).toBe(false)
+    expect(rig.causalLocks.causalLocksAllHold).toBe(true)
+    const cp = g.crosscheck.routing
+    expect(cp.holds).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.tamper.missingRoutes.holds).toBe(false)
+    expect(cp.tamper.tryStrTruncation.holds).toBe(false)
+    expect(cp.tamper.emptyStream.holds).toBe(false)
+    expect(Object.keys(g.crosscheck.evidence).length).toBe(21)
+    const off = await buildSystems({ now, gatewayRouting: false, llmGateway: false })
+    expect(off.gatewayRouting).toBe(null)
+    expect(off.llmGateway).toBe(null)
+    expect(off.cacheReplacement).not.toBe(null)
+    const full = await buildSystems({ now })
+    const twenty = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt, full.bloomFilter?.builtAt, full.cacheReplacement?.builtAt, full.streamWindow?.builtAt, full.hyperLogLog?.builtAt, full.crdt?.builtAt, full.springBatch?.builtAt, full.traceSampling?.builtAt, full.distributedSession?.builtAt, full.transactionalOutbox?.builtAt, full.loadBalance?.builtAt, full.circuitBreaker?.builtAt, full.llmGateway?.builtAt, full.gatewayRouting?.builtAt]
+    expect(twenty.every((x) => x === 539500)).toBe(true)
+  })
+
   it('㉒c-trace-sampling buildTraceSamplingReading 真跑：ts* 注入生效 / traceSampling:false 关闭 / rigged Head≡Tail=110 诚实塌缩不硬造 111 / 双路自证 + 三路篡改真喂回 + 三因果锁 + 十一真件 / 十四时钟同源（KI-533）', async () => {
     const { buildTraceSamplingReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
     const now = () => 533000

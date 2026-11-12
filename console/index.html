@@ -635,6 +635,23 @@
       <p class="note" id="lg-trilemma-note">…</p>
     </article>
   </section>
+  <!-- 第三十三维 · PathPrefixRouting / RegexCaptureRouting / HeaderGroupRouting Spring Cloud Gateway 路由（KI-539） -->
+  <section class="row row-gr">
+    <article class="panel panel-gr">
+      <div class="panel-head"><h2>第三十三维 · PathPrefixRouting/RegexCaptureRouting/HeaderGroupRouting · 三策略 × 六场景</h2><span class="hint">松=PathPrefixRouting（前缀匹配·先配先中永吃 route：api·后路由永不命中——Spring Cloud Gateway order 偏心律有真&#39;First-Match-Wins&#39;推理，无 back-ref 零成本但不能抓捕 col-b）/ 系=RegexCaptureRouting（/labs/(?&lt;flavor&gt;[a-z]+)/answers/(?&lt;id&gt;\d+) 正则捕获组·组名隐蔽·对调试人来说是暗门）/ 严=HeaderGroupRouting（x-user-group 头注入·必须上游注入器·严 strict=true·路由不到别名⇒全miss）** · 默认向量 001/110/101 互异不封赢家</span></div>
+      <div class="gr-matrix" id="gr-matrix"></div>
+      <div class="gr-ladder" id="gr-ladder"></div>
+      <p class="note" id="gr-matrix-note">…</p>
+    </article>
+    <article class="panel panel-gr">
+      <div class="panel-head"><h2>三难向量（strictMatch ∧ capturePower ∧ debugFriendly）· 双路自证</h2><span class="hint">PathPrefixRouting=001 / RegexCaptureRouting=110 / HeaderGroupRouting=101 · 三向量互异无一 111 不封赢家 · verifyGatewayRoutingSoundness 双路自证（PathPrefix 真命中 / Regex 真抽 flavor=100% + 96 个不同 flavor+id 命中 · 三路篡改真喂回同一内核现算翻 false）· 三因果锁（路由冲突偏心律 · regex 额外成本 · header 注入依赖）· rigged 三开关（perfectGlobMatcher ⇒ PathPrefix=111、full global capture；regexProfiling ⇒ RegexCapture debug 真翻 true；headerFallbackOnMiss ⇒ HeaderGroup fallback=true 兜底 path 模式）</span></div>
+      <div class="gr-trilemma" id="gr-trilemma"></div>
+      <div class="gr-verif" id="gr-verif"></div>
+      <div class="gr-crosscheck" id="gr-crosscheck"></div>
+      <div class="gr-probes" id="gr-probes"></div>
+      <p class="note" id="gr-trilemma-note">…</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">

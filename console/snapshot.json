@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794483265114,
+  "generatedAt": 1794485037419,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1365,12 +1365,12 @@
           "keys": 1,
           "versions": 2,
           "commitLogSize": 1,
-          "now": 1794483265116
+          "now": 1794485037421
         },
         "final": {
           "A": {
             "value": 101,
-            "commitTs": 1794483265116,
+            "commitTs": 1794485037421,
             "tombstone": false
           }
         }
@@ -3646,7 +3646,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794483265114,
+                "lastTimestamp": 1794485037419,
                 "workerId": 1
               },
               "fault": {
@@ -3742,7 +3742,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794483265114,
+                "lastTimestamp": 1794485037419,
                 "workerId": 1
               },
               "fault": {
@@ -3774,7 +3774,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794483265115,
+                "lastTimestamp": 1794485037420,
                 "workerId": 1
               },
               "fault": {
@@ -3806,7 +3806,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794483265114,
+                "lastTimestamp": 1794485037419,
                 "workerId": 1
               },
               "fault": {
@@ -4522,7 +4522,7 @@
         "capacity": 8,
         "perShardCap": 2
       },
-      "builtAt": 1794483265114
+      "builtAt": 1794485037419
     },
     "configConsistency": {
       "config": {
@@ -5020,7 +5020,7 @@
         "burstCount": 12,
         "windowMs": 10000
       },
-      "builtAt": 1794483265114
+      "builtAt": 1794485037419
     },
     "cacheCoherency": {
       "config": {
@@ -5549,7 +5549,7 @@
         "crashAtWrite": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794483265114
+      "builtAt": 1794485037419
     },
     "messageDelivery": {
       "config": {
@@ -6038,10 +6038,10 @@
         "crashAfterSendAt": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794483265114
+      "builtAt": 1794485037419
     },
     "delayQueue": {
-      "builtAt": 1794483265114,
+      "builtAt": 1794485037419,
       "config": {
         "seed": 518,
         "tasks": 12,
@@ -6068,7 +6068,7 @@
               "id": "allOk",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 68804,
+              "lateMs": 54804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6080,7 +6080,7 @@
               "id": "tickSkew",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 68804,
+              "lateMs": 54804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6092,7 +6092,7 @@
               "id": "farFuture",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 76136,
+              "lateMs": 55136,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6104,7 +6104,7 @@
               "id": "manyCancels",
               "protocol": "TimingWheel",
               "fired": 6,
-              "lateMs": 30858,
+              "lateMs": 23858,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6128,7 +6128,7 @@
               "id": "concurrentWorkers",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 68804,
+              "lateMs": 54804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6139,7 +6139,7 @@
           ],
           "totals": {
             "fired": 54,
-            "lateMs": 313406,
+            "lateMs": 243406,
             "duplicatePickups": 0,
             "lostOnRestart": 6,
             "opUnits": 72
@@ -6375,7 +6375,7 @@
       }
     },
     "retryDlq": {
-      "builtAt": 1794483265114,
+      "builtAt": 1794485037419,
       "config": {
         "seed": 520,
         "messages": 16,
@@ -6793,7 +6793,7 @@
       }
     },
     "consumerGroup": {
-      "builtAt": 1794483265114,
+      "builtAt": 1794485037419,
       "config": {
         "seed": 523,
         "consumers": 3,
@@ -7299,7 +7299,7 @@
       }
     },
     "backpressure": {
-      "builtAt": 1794483265114,
+      "builtAt": 1794485037419,
       "config": {
         "steps": 48,
         "mu": 2,
@@ -8344,7 +8344,7 @@
       }
     },
     "logCompaction": {
-      "builtAt": 1794483265114,
+      "builtAt": 1794485037419,
       "config": {
         "seed": 526,
         "ops": 24,
@@ -9405,7 +9405,7 @@
       }
     },
     "bloomFilter": {
-      "builtAt": 1794483265114,
+      "builtAt": 1794485037419,
       "config": {
         "seed": 527,
         "capacity": 1024,
@@ -10104,7 +10104,7 @@
       }
     },
     "cacheReplacement": {
-      "builtAt": 1794483265114,
+      "builtAt": 1794485037419,
       "config": {
         "seed": 528,
         "capacity": 16,
@@ -10747,7 +10747,7 @@
       }
     },
     "streamWindow": {
-      "builtAt": 1794483265114,
+      "builtAt": 1794485037419,
       "config": {
         "seed": 529,
         "windowSize": 100,
@@ -12806,7 +12806,7 @@
       }
     },
     "hyperLogLog": {
-      "builtAt": 1794483265114,
+      "builtAt": 1794485037419,
       "config": {
         "seed": 530,
         "cardinality": 4096,
@@ -29726,7 +29726,7 @@
       }
     },
     "crdt": {
-      "builtAt": 1794483265114,
+      "builtAt": 1794485037419,
       "config": {
         "seed": 531,
         "replicaCount": 3,
@@ -30182,7 +30182,7 @@
       }
     },
     "springBatch": {
-      "builtAt": 1794483265114,
+      "builtAt": 1794485037419,
       "config": {
         "seed": 532,
         "items": 96,
@@ -30621,7 +30621,7 @@
       "rigged": false
     },
     "traceSampling": {
-      "builtAt": 1794483265114,
+      "builtAt": 1794485037419,
       "config": {
         "seed": 533,
         "items": 64,
@@ -31323,7 +31323,7 @@
       "rigged": false
     },
     "distributedSession": {
-      "builtAt": 1794483265114,
+      "builtAt": 1794485037419,
       "config": {
         "seed": 535,
         "sessions": 96,
@@ -31679,7 +31679,7 @@
       "rigged": false
     },
     "transactionalOutbox": {
-      "builtAt": 1794483265114,
+      "builtAt": 1794485037419,
       "config": {
         "seed": 534,
         "items": 96,
@@ -32130,7 +32130,7 @@
       "rigged": false
     },
     "loadBalance": {
-      "builtAt": 1794483265114,
+      "builtAt": 1794485037419,
       "config": {
         "seed": 536,
         "requests": 96,
@@ -32550,7 +32550,7 @@
       "rigged": false
     },
     "circuitBreaker": {
-      "builtAt": 1794483265114,
+      "builtAt": 1794485037419,
       "config": {
         "seed": 537,
         "calls": 96,
@@ -33080,7 +33080,7 @@
       "rigged": false
     },
     "llmGateway": {
-      "builtAt": 1794483265114,
+      "builtAt": 1794485037419,
       "config": {
         "seed": 538,
         "mode": "offline",
@@ -33474,6 +33474,344 @@
       },
       "rigged": false
     },
-    "builtAt": 1794483265114
+    "gatewayRouting": {
+      "builtAt": 1794485037419,
+      "config": {
+        "seed": 539,
+        "requests": 96,
+        "scenarios": [
+          "prefixMatch",
+          "regexCapture",
+          "headerGroup",
+          "bigRouteTable",
+          "conflictingRoutes",
+          "cleanRerun"
+        ],
+        "rigged": false,
+        "perfectGlobMatcher": false,
+        "regexProfiling": false,
+        "headerFallbackOnMiss": false
+      },
+      "rows": [
+        {
+          "protocol": "PathPrefixRouting",
+          "scenarios": [
+            {
+              "id": "prefixMatch",
+              "requests": 96,
+              "hits": 96,
+              "miss": 0,
+              "strictMatch": false,
+              "capturePower": false,
+              "debugFriendly": true,
+              "fault": "happy-path"
+            },
+            {
+              "id": "regexCapture",
+              "requests": 96,
+              "hits": 96,
+              "miss": 0,
+              "strictMatch": false,
+              "capturePower": false,
+              "debugFriendly": true,
+              "fault": "regex-capture"
+            },
+            {
+              "id": "headerGroup",
+              "requests": 96,
+              "hits": 96,
+              "miss": 0,
+              "strictMatch": false,
+              "capturePower": false,
+              "debugFriendly": true,
+              "fault": "header-group"
+            },
+            {
+              "id": "bigRouteTable",
+              "requests": 384,
+              "hits": 384,
+              "miss": 0,
+              "strictMatch": false,
+              "capturePower": false,
+              "debugFriendly": true,
+              "fault": "big-route-table"
+            },
+            {
+              "id": "conflictingRoutes",
+              "requests": 96,
+              "hits": 96,
+              "miss": 0,
+              "strictMatch": false,
+              "capturePower": false,
+              "debugFriendly": true,
+              "fault": "route-order-conflict"
+            },
+            {
+              "id": "cleanRerun",
+              "requests": 96,
+              "hits": 96,
+              "miss": 0,
+              "strictMatch": false,
+              "capturePower": false,
+              "debugFriendly": true,
+              "fault": "rerun-idempotent"
+            }
+          ],
+          "trilemma": {
+            "strictMatch": false,
+            "capturePower": false,
+            "debugFriendly": true
+          },
+          "metrics": {
+            "totalHits": 864,
+            "strictCells": 0,
+            "powerCells": 0
+          }
+        },
+        {
+          "protocol": "RegexCaptureRouting",
+          "scenarios": [
+            {
+              "id": "prefixMatch",
+              "requests": 96,
+              "hits": 0,
+              "miss": 96,
+              "strictMatch": true,
+              "capturePower": true,
+              "debugFriendly": false,
+              "fault": "happy-path"
+            },
+            {
+              "id": "regexCapture",
+              "requests": 96,
+              "hits": 96,
+              "miss": 0,
+              "strictMatch": true,
+              "capturePower": true,
+              "debugFriendly": false,
+              "fault": "regex-capture"
+            },
+            {
+              "id": "headerGroup",
+              "requests": 96,
+              "hits": 24,
+              "miss": 72,
+              "strictMatch": true,
+              "capturePower": true,
+              "debugFriendly": false,
+              "fault": "header-group"
+            },
+            {
+              "id": "bigRouteTable",
+              "requests": 384,
+              "hits": 96,
+              "miss": 288,
+              "strictMatch": true,
+              "capturePower": true,
+              "debugFriendly": false,
+              "fault": "big-route-table"
+            },
+            {
+              "id": "conflictingRoutes",
+              "requests": 96,
+              "hits": 0,
+              "miss": 96,
+              "strictMatch": true,
+              "capturePower": true,
+              "debugFriendly": false,
+              "fault": "route-order-conflict"
+            },
+            {
+              "id": "cleanRerun",
+              "requests": 96,
+              "hits": 24,
+              "miss": 72,
+              "strictMatch": true,
+              "capturePower": true,
+              "debugFriendly": false,
+              "fault": "rerun-idempotent"
+            }
+          ],
+          "trilemma": {
+            "strictMatch": true,
+            "capturePower": true,
+            "debugFriendly": false
+          },
+          "metrics": {
+            "totalHits": 240,
+            "strictCells": 6,
+            "powerCells": 6
+          }
+        },
+        {
+          "protocol": "HeaderGroupRouting",
+          "scenarios": [
+            {
+              "id": "prefixMatch",
+              "requests": 96,
+              "hits": 32,
+              "miss": 64,
+              "strictMatch": true,
+              "capturePower": false,
+              "debugFriendly": true,
+              "fault": "happy-path"
+            },
+            {
+              "id": "regexCapture",
+              "requests": 96,
+              "hits": 32,
+              "miss": 64,
+              "strictMatch": true,
+              "capturePower": false,
+              "debugFriendly": true,
+              "fault": "regex-capture"
+            },
+            {
+              "id": "headerGroup",
+              "requests": 96,
+              "hits": 96,
+              "miss": 0,
+              "strictMatch": true,
+              "capturePower": false,
+              "debugFriendly": true,
+              "fault": "header-group"
+            },
+            {
+              "id": "bigRouteTable",
+              "requests": 384,
+              "hits": 128,
+              "miss": 256,
+              "strictMatch": true,
+              "capturePower": false,
+              "debugFriendly": true,
+              "fault": "big-route-table"
+            },
+            {
+              "id": "conflictingRoutes",
+              "requests": 96,
+              "hits": 32,
+              "miss": 64,
+              "strictMatch": true,
+              "capturePower": false,
+              "debugFriendly": true,
+              "fault": "route-order-conflict"
+            },
+            {
+              "id": "cleanRerun",
+              "requests": 96,
+              "hits": 32,
+              "miss": 64,
+              "strictMatch": true,
+              "capturePower": false,
+              "debugFriendly": true,
+              "fault": "rerun-idempotent"
+            }
+          ],
+          "trilemma": {
+            "strictMatch": true,
+            "capturePower": false,
+            "debugFriendly": true
+          },
+          "metrics": {
+            "totalHits": 352,
+            "strictCells": 6,
+            "powerCells": 0
+          }
+        }
+      ],
+      "vectors": {
+        "PathPrefixRouting": "001",
+        "RegexCaptureRouting": "110",
+        "HeaderGroupRouting": "101"
+      },
+      "verdict": {
+        "vectors": {
+          "PathPrefixRouting": "001",
+          "RegexCaptureRouting": "110",
+          "HeaderGroupRouting": "101"
+        },
+        "noUniversalWinner": true,
+        "trilemmaDistinguishes": true,
+        "noStrategyWinsAll": true,
+        "vectorFromTrilemma": true,
+        "pathFindsHashMiss": true,
+        "regexDistinguishesLabs": true,
+        "headerGroupNotPowered": true,
+        "rigged_pkg": false,
+        "rigged_pkg_flags": {
+          "rigged": false,
+          "perfectGlobMatcher": false,
+          "regexProfiling": false,
+          "headerFallbackOnMiss": false
+        },
+        "riggedConvergenceCollapsed": false,
+        "perfectGlobMatchErasesPrefixBurden": true,
+        "regexProfilingErasesDebugBurden": false,
+        "headerFallbackForcesDebuggability": true
+      },
+      "noUniversalWinner": true,
+      "trilemmaDistinguishes": true,
+      "causalLocks": {
+        "pathPrefixMatchingConflictsCausallyUnerasable": true,
+        "regexCaptureExtraCostCausallyUnerasable": true,
+        "headerGroupHeaderDependencyCausallyUnerasable": true,
+        "causalLocksAllHold": true
+      },
+      "crosscheck": {
+        "evidence": {
+          "routerMoved": 14,
+          "routerTracked": 80,
+          "ringNodes": 4,
+          "ringShardsUsed": 4,
+          "walLines": 80,
+          "walReplayed": 80,
+          "notices": 12,
+          "busListeners": 1,
+          "redisBitmapHits": 96,
+          "redisSlots": 96,
+          "poolCreated": 2,
+          "poolReused": 1,
+          "bucketAllowed": 3,
+          "bucketRejected": 4,
+          "heapFired": 3,
+          "heapPending": 0,
+          "counterSum": 2080,
+          "counterFalseSharing": 56,
+          "jitterSpread": 1.9855,
+          "remapConsistentRate": 0.235,
+          "remapModuloRate": 0.505
+        },
+        "routing": {
+          "laneA": {
+            "pathPrefixHits": 96,
+            "total": 96
+          },
+          "laneB": {
+            "capturedUnique": 96,
+            "total": 96
+          },
+          "holds": true,
+          "nontrivial": true,
+          "falsifiable": true,
+          "tamper": {
+            "missingRoutes": {
+              "holds": false,
+              "reason": "routes=[] ⇒ pick 全 miss ⇒ holds 真翻 false"
+            },
+            "tryStrTruncation": {
+              "holds": false,
+              "reason": "flavor 篡改 ⇒ laneB 真翻 false"
+            },
+            "emptyStream": {
+              "holds": false,
+              "reason": "空事件集 ⇒ nontrivial=false，绝不 0=0 假绿"
+            }
+          },
+          "events": 96
+        }
+      },
+      "rigged": false
+    },
+    "builtAt": 1794485037419
   }
 }
