@@ -68,3 +68,15 @@ node scripts/llm-dialogue-qa.mjs --json          # JSONL（默认就是）
 诚实边界：本门只验"逐字无重"——风格相似度/翻译腔/节奏重叠
 仍属作者判断（`llm:qa` flag 3 条需人读人裁）。
 
+## 2026-11-13 `llm:cand-qa` 真机便签落档（第二波工具链改善）
+
+新 `npm run llm:cand-qa` / `scripts/llm-candidate-qa.mjs`（作者侧），真机实跑：
+
+- base `https://wkapi.pro/v1` · model `gpt-6-sol` · HTTP **200** · 43.5s · totalTokens=3219；
+- 结论（未改写）：`keep 3 · pending 7 · flag 2`——逐候选待作者逐字审（FLAG 的两条均属 BELLTONGUE 线）。具体分布：
+  - DLG_MEG：keep ×2（摊贩直、影子压货画面），pending ×1（"风都比你爽快" 尾句俏皮过头）
+  - DLG_BELLTONGUE：keep ×1（伤口切入），pending ×2，flag ×2（"邀人靠近" 与戒备感相冲；"复用开场整句" 重复）
+  - DLG_CORVIN：keep ×1（纸与回声），pending ×2，keep ×1（书页意象合身）
+- 诚实声明：LLM 便签不下定论；事实裁决权在作者；本脚本零写入；候选仍待作者最终择优后方落 dialogue.json。
+- 不声称 LLM 评分卡的可靠性；LLM 倾向于 keep 自己写的句子是已知偏差——本便签只能指导"先读哪一句"。
+
