@@ -64,6 +64,7 @@
 | `npm run llm:qa` | 对现有 dialogue 节点批判式审稿（prompt 线束照顾文风总纲），2026-11-12 结论 pass 45/skip 33/flag 3 | 需人裁决 |
 | `npm run llm:diff` | 机读证明「LLM 候选零泄漏进 dialogue.json」——81 节点 vs 6 条候选，0 逐字泄漏 | 作者侧 gate |
 | `npm run llm:cand-qa` | 候选声线便签：LLM 对每条 DLG_* 候选给 keep/pending/flag 便签 ≤30 字（2026-11-13 真跑：keep 3 / pending 7 / flag 2） | 作者侧；不下定论（LLM 倾向 keep 自己写的句子） |
+| `node scripts/llm-dialogue-spotcheck.mjs` | 单点声线评估：对单个已 flag 行重请求一次第三方视角（2026-11-13 真跑 DLG_MEG:n8 · pending · "末句身份信息过满"） | 作者侧；零写入；作者终裁 |
 | `npm run llm-gateway:bench` | 伪 Gateway 教学件（默认 offline）；`--live` 真联机对照 CachedLive/LiveGrounded 行为 | 仅 shell env key；不写文件 |
 | `llm-voice-candidates.json` | `runtime:false · authorOnly · requiresHumanReview=true` | 候选池，作者逐字审后方可落 |
 | `docs/llm-gateway-evidence.md` / `docs/llm-voice-probe.md` | **唯一**的密钥说明纪律：密钥仅环境变量；不入 git/不入 .env/不回搜 | 诚实边界 |
