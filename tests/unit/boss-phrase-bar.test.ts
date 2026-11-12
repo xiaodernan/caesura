@@ -28,8 +28,11 @@ function makeCanvas(): HTMLCanvasElement {
     strokeRect: () => {},
     fillText: () => {},
     beginPath: () => {},
+    moveTo: () => {},
+    quadraticCurveTo: () => {},
     arc: () => {},
     fill: () => {},
+    stroke: () => {},
     setTransform: () => {},
   } as unknown as CanvasRenderingContext2D
   return {
@@ -84,7 +87,7 @@ describe('BossPhraseBar 单元测试', () => {
   })
 
   it('Phase F-41 朱砂乐谱：真 canvas 样件统计 —— 面板分层/金丝/朱引线/朱「命」印/staff 连珠钉', () => {
-    const counts = { fillRect: 0, arc: 0 }
+    const counts = { fillRect: 0, arc: 0, stroke: 0, quad: 0 }
     const strokes: string[] = []
     const ctx = {
       save: () => {}, restore: () => {},
@@ -96,6 +99,9 @@ describe('BossPhraseBar 单元测试', () => {
       beginPath: () => {},
       arc: () => { counts.arc++ },
       fill: () => {},
+      quadraticCurveTo: () => { counts.quad++ },
+      moveTo: () => {},
+      stroke: () => { counts.stroke++ },
       setTransform: () => {},
     } as unknown as CanvasRenderingContext2D
     const canvas = {
@@ -108,7 +114,9 @@ describe('BossPhraseBar 单元测试', () => {
     bar.dispose()
     // 面板+双金丝+朱引线+朱印+staff+4 拍钉 ≥ 10 块填充；当前拍（默认 beatInBar=1）有朱连珠弧
     expect(counts.fillRect).toBeGreaterThanOrEqual(10)
-    expect(counts.arc, '当前拍连珠应画一枚朱弧').toBe(1)
+    expect(counts.arc, '当前拍连珠应画一枚朱弧').toBe(3)
+    expect(counts.quad, 'Phase F-70 金丝闪弧应画 1 条二次曲线').toBe(1)
+    expect(counts.stroke, 'Flash>0 时金丝闪弧应 stroke 1 次').toBe(1)
     expect(strokes, '朱「命」印在场').toContain('命')
     expect(strokes, 'nameKey 原样画出').toContain('dlg.hersil_phase2')
     expect(strokes, '段次小字').toContain('第2 / 3 段')

@@ -128,6 +128,27 @@ export class BossPhraseBar {
       }
     }
 
+    // Phase F-70「乐相舞动」：flash>0 时画一道金丝闪弧（Boss 换段瞬间的余响·金丝擦过，无动画循环）
+    if (this.flash > 0.01) {
+      ctx.save()
+      ctx.globalAlpha = Math.min(1, this.flash) * this.alpha
+      ctx.strokeStyle = `rgba(232, 190, 120, ${0.72 * this.flash})`
+      ctx.lineWidth = 1.4
+      ctx.beginPath()
+      ctx.moveTo(x + 20, y + 12)
+      ctx.quadraticCurveTo(x + barW / 2, y - 8, x + barW - 20, y + 12)
+      ctx.stroke()
+      // 两枚微朱点位缀（左 1/3 与右 1/3，flash 越亮越醒）
+      ctx.fillStyle = `rgba(201, 116, 88, ${0.9 * this.flash})`
+      ctx.beginPath()
+      ctx.arc(x + barW * 0.33, y + 6, 1.6, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.beginPath()
+      ctx.arc(x + barW * 0.67, y + 6, 1.6, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.restore()
+    }
+
     ctx.restore()
   }
 
