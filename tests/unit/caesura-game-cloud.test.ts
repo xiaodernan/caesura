@@ -1999,4 +1999,96 @@ describe('caesura-game-cloud', () => {
     expect(injected.traceSampling.builtAt).toBe(555)
     expect(injected.traceSampling.config.seed).toBe(99)
   })
+
+  // ============ KI-535 Spring Cloud 分布式会话 opt-in 装配（2 腿）============
+  it('distributedSession:true 装配真矩阵：011/101/110 互异不封赢家 + 三因果锁 + verifySessionCoherence 双路 + 三路篡改真喂回 + 21 键 + 惰性同引用（KI-535）', async () => {
+    const gc = await createGameCloud({
+      gameId: 'gid-ds1', gamePort: 7872, sources, cloud: fakeCloud(),
+      distributedSession: true, dsNow: () => 535000,
+    })
+    const st = (await gc.status()).distributedSession
+    expect(st).not.toBe(null)
+    expect(st!.builtAt).toBe(535000)
+    expect(st!.config.scenarios.length).toBe(6)
+    expect(st!.config.sessions).toBe(96)
+    expect(st!.rows.length).toBe(3)
+    expect(st!.vectors).toEqual({ StickySession: '011', JwtStateless: '101', RedisSessionStore: '110' })
+    expect(st!.rigged).toBe(false)
+    expect(st!.noUniversalWinner).toBe(true)
+    expect(st!.trilemmaDistinguishes).toBe(true)
+    expect(st!.verdict.noStrategyWinsAll).toBe(true)
+    expect(st!.verdict.vectorFromTrilemma).toBe(true)
+    // 三因果结构锁
+    expect(st!.causalLocks.causalLocksAllHold).toBe(true)
+    expect(st!.causalLocks.stickySingleNodeCausallyUnerasable).toBe(true)
+    expect(st!.causalLocks.jwtNoInstantRevokeCausallyUnerasable).toBe(true)
+    expect(st!.causalLocks.redisColdStartCausallyUnerasable).toBe(true)
+    // verifySessionCoherence 双路 + 三路篡改真喂回
+    const cp = st!.crosscheck.coherence
+    expect(cp.holds).toBe(true)
+    expect(cp.nontrivial).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.tamper.corruptedSession.holds).toBe(false)
+    expect(cp.tamper.silentRevoke.holds).toBe(false)
+    expect(cp.tamper.emptyStream.holds).toBe(false)
+    expect(Object.keys(st!.crosscheck.evidence).length).toBe(21)
+    // 主教义
+    expect(st!.verdict.stickyFailsOverLoss).toBe(true)
+    expect(st!.verdict.jwtNoInstantRevoke).toBe(true)
+    expect(st!.verdict.redisPaysInfra).toBe(true)
+    // 惰性缓存 + 同引用 + 重跑同向量
+    expect((await gc.status()).distributedSession).toBe(st)
+    expect(await gc.runDistributedSessionStudy!()).toMatchObject({ vectors: st!.vectors })
+    // 不连坐其它维
+    const bare = await createGameCloud({ gameId: 'gid-ds0', gamePort: 7873, sources, cloud: fakeCloud() }).status()
+    expect(bare.distributedSession).toBe(null)
+    expect(bare.traceSampling).toBe(null)
+    expect(bare.springBatch).toBe(null)
+  })
+
+  it('distributedSession 默认 null 非破坏；三开关分策略正交反噬、rigged Sticky≡JWT=111 诚实塌缩但不硬造默认 111；可注入现成 study（KI-535）', async () => {
+    // 默认 null
+    const idle = await createGameCloud({ gameId: 'gid-ds2', gamePort: 7874, sources, cloud: fakeCloud() }).status()
+    expect(idle.distributedSession).toBe(null)
+    // 单开 perfectMirror：StickySession coherence 翻 true（110 不再缺 coherence），Redis 仍 110
+    const pm = (await (await createGameCloud({
+      gameId: 'gid-ds3', gamePort: 7875, sources, cloud: fakeCloud(),
+      distributedSession: { perfectMirror: true }, dsNow: () => 535000,
+    })).status()).distributedSession
+    expect(pm!.vectors.StickySession).toBe('111')
+    expect(pm!.vectors.JwtStateless).toBe('101')
+    expect(pm!.vectors.RedisSessionStore).toBe('110')
+    // 单开 skipRevocationCheck：JWT 翻 true 不硬改其余
+    const sr = (await (await createGameCloud({
+      gameId: 'gid-ds4', gamePort: 7876, sources, cloud: fakeCloud(),
+      distributedSession: { skipRevocationCheck: true }, dsNow: () => 535000,
+    })).status()).distributedSession
+    expect(sr!.vectors.JwtStateless).toBe('111')
+    expect(sr!.vectors.StickySession).toBe('011')
+    // unlimitedTtl 不创撤销可见性
+    const lt = (await (await createGameCloud({
+      gameId: 'gid-ds5', gamePort: 7877, sources, cloud: fakeCloud(),
+      distributedSession: { unlimitedTtl: true }, dsNow: () => 535000,
+    })).status()).distributedSession
+    expect(lt!.vectors.JwtStateless).toBe('101')
+    // rigged 三开齐：Sticky≡JWT=111，Redis 仍 110，区分度塌缩（诚实）
+    const rig = (await (await createGameCloud({
+      gameId: 'gid-ds6', gamePort: 7878, sources, cloud: fakeCloud(),
+      distributedSession: { rigged: true }, dsNow: () => 535000,
+    })).status()).distributedSession
+    expect(rig!.verdict.riggedConvergenceCollapsed).toBe(true)
+    expect(rig!.verdict.noUniversalWinner).toBe(false)
+    expect(rig!.vectors.StickySession).toBe('111')
+    expect(rig!.vectors.JwtStateless).toBe('111')
+    expect(rig!.vectors.RedisSessionStore).toBe('110')
+    expect(rig!.causalLocks.causalLocksAllHold).toBe(true)
+    // 可注入现成 study（鸭子类型：带 rows/vectors/verdict/crosscheck 四块）
+    const { distributedSessionStudy } = await import('./../../scripts/caesura-distributed-session.mjs')
+    const injected = (await (await createGameCloud({
+      gameId: 'gid-ds7', gamePort: 7879, sources, cloud: fakeCloud(),
+      distributedSession: distributedSessionStudy({ seed: 99, now: () => 555 }),
+    })).status()).distributedSession
+    expect(injected.builtAt).toBe(555)
+    expect(injected.config.seed).toBe(99)
+  })
 })

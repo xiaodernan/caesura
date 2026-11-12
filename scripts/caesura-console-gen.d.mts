@@ -691,6 +691,29 @@ export interface SpringBatchReading {
   rigged: boolean
 }
 
+/** KI-535：StickySession/JwtStateless/RedisSessionStore Spring Cloud 分布式会话三策略真跑读数（三策略 × 六场景 + 三难向量 + verifySessionCoherence 双路交叉印证 + 十一枚真件交叉印证）。 */
+export interface DistributedSessionReading {
+  config: Record<string, any>
+  rows: Array<{
+    protocol: string
+    scenarios: Array<{
+      id: string; sessions: number; writes: number; reads: number; revokedCount: number
+      sharedCoherence: boolean; instantRevocation: boolean; zeroInfra: boolean; fault: string
+    }>
+    trilemma: { sharedCoherence: boolean; instantRevocation: boolean; zeroInfra: boolean }
+    metrics: { sessionWrites: number; readableSessions: number; revokedCells: number }
+  }>
+  vectors: Record<string, string>
+  verdict: Record<string, any>
+  rigged: boolean
+  noUniversalWinner: boolean
+  trilemmaDistinguishes: boolean
+  causalLocks: { stickySingleNodeCausallyUnerasable: boolean; jwtNoInstantRevokeCausallyUnerasable: boolean; redisColdStartCausallyUnerasable: boolean; causalLocksAllHold: boolean; revocationProbe: number }
+  crosscheck: { evidence: Record<string, any>; coherence: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+  builtAt: number
+}
+
+
 
 
 
@@ -759,6 +782,7 @@ export interface SystemsBlock {
   crdt: CrdtReading | null
   springBatch: SpringBatchReading | null
   traceSampling: TraceSamplingReading | null
+  distributedSession: DistributedSessionReading | null
   builtAt: number
 }
 
@@ -966,6 +990,15 @@ export function buildSnapshot(opts?: {
   sbPerfectOracle?: boolean
   sbUnlimitedSkip?: boolean
   sbRigged?: boolean
+  /** KI-535：false 关掉 DistributedSession 维（兼容旧快照）；ds* 注入规模/阈值/rigged */
+  distributedSession?: boolean
+  dsSeed?: number
+  dsSessions?: number
+  dsTtlMs?: number
+  dsPerfectMirror?: boolean
+  dsUnlimitedTtl?: boolean
+  dsSkipRevocationCheck?: boolean
+  dsRigged?: boolean
   traceSampling?: boolean
   tsSeed?: number
   tsItems?: number
@@ -1161,6 +1194,15 @@ export function buildSystems(opts?: {
   sbPerfectOracle?: boolean
   sbUnlimitedSkip?: boolean
   sbRigged?: boolean
+  /** KI-535：false 关掉 DistributedSession 维（兼容旧快照）；ds* 注入规模/阈值/rigged */
+  distributedSession?: boolean
+  dsSeed?: number
+  dsSessions?: number
+  dsTtlMs?: number
+  dsPerfectMirror?: boolean
+  dsUnlimitedTtl?: boolean
+  dsSkipRevocationCheck?: boolean
+  dsRigged?: boolean
   traceSampling?: boolean
   tsSeed?: number
   tsItems?: number
@@ -1444,6 +1486,15 @@ export function buildCrdtReading(opts: {
   sbPerfectOracle?: boolean
   sbUnlimitedSkip?: boolean
   sbRigged?: boolean
+  /** KI-535：false 关掉 DistributedSession 维（兼容旧快照）；ds* 注入规模/阈值/rigged */
+  distributedSession?: boolean
+  dsSeed?: number
+  dsSessions?: number
+  dsTtlMs?: number
+  dsPerfectMirror?: boolean
+  dsUnlimitedTtl?: boolean
+  dsSkipRevocationCheck?: boolean
+  dsRigged?: boolean
 }, now: () => number): Promise<CrdtReading | null>
 
 /** KI-532：真跑 Spring Batch chunk-oriented R-P-W（BulkWriter/ChunkedWriter/SkipRetryWriter × 六场景 + 三难向量 + verifyCheckpoint 双路自证 + 十一枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
@@ -1457,7 +1508,29 @@ export function buildSpringBatchReading(opts: {
   sbPerfectOracle?: boolean
   sbUnlimitedSkip?: boolean
   sbRigged?: boolean
+  /** KI-535：false 关掉 DistributedSession 维（兼容旧快照）；ds* 注入规模/阈值/rigged */
+  distributedSession?: boolean
+  dsSeed?: number
+  dsSessions?: number
+  dsTtlMs?: number
+  dsPerfectMirror?: boolean
+  dsUnlimitedTtl?: boolean
+  dsSkipRevocationCheck?: boolean
+  dsRigged?: boolean
 }, now: () => number): Promise<SpringBatchReading | null>
+
+/** KI-535：真跑 Spring Cloud 分布式会话三策略（StickySession/JwtStateless/RedisSessionStore × 六场景 + 三难向量 + verifySessionCoherence 双路自证 + 十一枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
+export function buildDistributedSessionReading(opts: {
+  now?: () => number
+  distributedSession?: boolean
+  dsSeed?: number
+  dsSessions?: number
+  dsTtlMs?: number
+  dsPerfectMirror?: boolean
+  dsUnlimitedTtl?: boolean
+  dsSkipRevocationCheck?: boolean
+  dsRigged?: boolean
+}, now: () => number): Promise<DistributedSessionReading | null>
 
 /** KI-533：真跑可观测性分布式追踪采样三策略（HeadBased/TailBased/Adaptive × 六场景 + 三难向量 + verifySamplingSoundness 双路自证 + 十一枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
 export function buildTraceSamplingReading(opts: {

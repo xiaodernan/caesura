@@ -515,6 +515,26 @@ export function runMeshE2E(opts?: any): {
       builtAt: number
       rigged: boolean
     } | null
+    /** KI-535：Spring Cloud 分布式会话三策略快照（StickySession/JwtStateless/RedisSessionStore × 六场景 + 三难向量 011/101/110 + verifySessionCoherence 双路交叉印证 + 十一真件 21 键交叉印证），未配 distributedSession 为 null；Sticky 节点死丢/JWT 撤销不即时/Redis 依赖基建各自诚实标注 */
+    distributedSessionSnapshot: {
+      config: Record<string, any>
+      rows: Array<{
+        protocol: string
+        scenarios: Array<{
+          id: string; sessions: number; writes: number; reads: number; revokedCount: number
+          sharedCoherence: boolean; instantRevocation: boolean; zeroInfra: boolean; fault: string
+        }>
+        trilemma: { sharedCoherence: boolean; instantRevocation: boolean; zeroInfra: boolean }
+        metrics: { sessionWrites: number; readableSessions: number; revokedCells: number }
+      }>
+      vectors: Record<string, string>
+      noUniversalWinner: boolean
+      trilemmaDistinguishes: boolean
+      causalLocks: { stickySingleNodeCausallyUnerasable: boolean; jwtNoInstantRevokeCausallyUnerasable: boolean; redisColdStartCausallyUnerasable: boolean; causalLocksAllHold: boolean; revocationProbe: number }
+      crosscheck: { evidence: Record<string, any>; coherence: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+      verdict: Record<string, any>
+      builtAt: number
+    } | null
     /** KI-533：可观测性分布式追踪采样三策略快照（HeadBased/TailBased/Adaptive × 六场景 + 三难向量维序 [lowOverhead/anomalyCapture/loadAdaptive] 默认 100/010/101 + verifySamplingSoundness 双路自证（干净流 buffer 守恒 + 含 error 流 error 全留/span 无重复/span 完整/正常按率四观测量 + 三路篡改真喂回同一内核现算翻 false）+ 十一真件 21 键交叉印证），未配 traceSampling 为 null；rigged 三开关 oracleHead/infiniteBuffer/perfectFeedback 分策略正交反事实：全开收敛 Head≡Tail=110 区分度诚实塌缩（riggedConvergenceCollapsed=true）、noStrategyWinsAll 仍真绝不硬造 111；三条因果结构锁（异常需缓冲/头部盲结构/自适应滞后）在同一含 error raw 流真跑现算钉死、causalLocksAllHold=true、decisionInvariant 翻转标签逐 id 决策恒同 */
     traceSamplingSnapshot: {
       config: Record<string, any>

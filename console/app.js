@@ -64,6 +64,7 @@
       renderCardinality(snap.systems ? snap.systems.hyperLogLog : null)
       renderCrdt(snap.systems ? snap.systems.crdt : null)
       renderSpringBatch(snap.systems ? snap.systems.springBatch : null)
+      renderDistributedSession(snap.systems ? snap.systems.distributedSession : null)
       renderTraceSampling(snap.systems ? snap.systems.traceSampling : null)
       setLive(true, result.source)
     }).catch(function (e) {
@@ -3306,6 +3307,139 @@
       'verifyCheckpoint 双路自证：路 A clean 全量全 commit 求基准，路 B 真跑 restart(0) 用「poison chunk 隔离 / 已 commit 无重复 / 非毒零丢失 / 真检测到毒」四观测量判定；三路篡改真喂回同一内核现算翻 false，带 baselineHolds 先真绿。' +
       '三条因果结构锁在同一含毒 raw 流真跑钉死：Bulk 无 chk 整批死、chk 权衡不可兼得、Skip 跳毒永久丢。' +
       'rigged 双开关 perfectOracle（毒项 100% 判定、预防性从输入剔除）+ unlimitedSkip 喂的是已剔除毒项的干净流（换了作业输入、诚实标注，不是同一作业被抹软肋）⇒ 三者 faultIsolation 全真、Bulk≡Skip=101 区分度诚实收敛（riggedConvergenceCollapsed=true，教学结论：完美预言机抹平了「预防剔除」与「跳过」的差别，二者结构等价），noStrategyWinsAll 仍真绝不硬造 111，三因果锁仍 allHold。'
+  }
+
+  /* ================= KI-535 StickySession/JwtStateless/RedisSessionStore 分布式会话 · 第二十九维（ds 族） ================= */
+
+  function renderDistributedSession(ds) {
+    renderDsMatrix(ds && ds.rows, ds && ds.config)
+    renderDsLadder(ds && ds.rows)
+    renderDsTrilemma(ds && ds.rows, ds && ds.verdict, ds && ds.crosscheck)
+  }
+
+  function dsMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 暂缺</div>'
+    if (note) note.textContent = 'systems.distributedSession 缺失 — 跑一次 npm run console:data 即可补齐'
+  }
+
+  function dsCell(c) {
+    if (!c) return { cls: '', ch: '·' }
+    if (c.sharedCoherence === false) return { cls: 'pinned', ch: '钉' }
+    if (c.instantRevocation === false) return { cls: 'durable', ch: '持' }
+    if (c.zeroInfra === false) return { cls: 'dependency', ch: '依' }
+    return { cls: 'ok', ch: '✓' }
+  }
+
+  function renderDsMatrix(rows, config) {
+    var box = $('#ds-matrix'), note = $('#ds-matrix-note')
+    if (!Array.isArray(rows) || !rows.length || !config || !Array.isArray(config.scenarios)) {
+      dsMissing(box, note, 'ds 矩阵'); return
+    }
+    var scenarios = config.scenarios
+    var head = '<div class="ds-mat-row ds-mat-head"><span class="ds-mat-proto">策略</span>' +
+      scenarios.map(function (sc) { return '<span class="ds-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="ds-mat-cost">跨节点/撤销/基建</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = dsCell(cell)
+        return '<span class="ds-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="ds-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="ds-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="ds-mat-cost"><b>' + esc(fmt(m.sessionWrites)) + '</b>/' + esc(fmt(m.readableSessions)) + '/' + esc(String(m.revokedCells)) + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'StickySession / JwtStateless / RedisSessionStore × 六场景：cleanServe（正常服务）/ instanceFailover（实例挂掉）/ revokeLive（踢出重登）/ burstScaleOut（横向扩容）/ idleExpiry（ttl 过期）/ mixedLoad（混合负载）。' +
+      '每格只认真件算好的三布尔（sharedCoherence / instantRevocation / zeroInfra）——绝不拿阈值重算。' +
+      'Sticky: 零基建/本地即时/跨实例不可见；JWT: 验签即认/无状态/撤销不即时；Redis: 全认/DEL 即撤销/依赖 Redis 基建。'
+  }
+
+  function renderDsLadder(rows) {
+    var box = $('#ds-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.sessionWrites) ? r.metrics.sessionWrites : 1 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.sessionWrites) ? Math.round(m.sessionWrites / max * 100) : 0
+      return '<div class="ds-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="ds-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">写入 ' + esc(fmt(m.sessionWrites)) + ' · 可读 ' + esc(fmt(m.readableSessions)) + ' · 撤销格 ' + esc(String(m.revokedCells)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderDsTrilemma(rows, verdict, crosscheck) {
+    var box = $('#ds-trilemma'), veBox = $('#ds-verif'), cxBox = $('#ds-crosscheck'), note = $('#ds-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      dsMissing(box, note, 'ds 判词'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''; return
+    }
+    var flags = [['sharedCoherence', '跨实例一致'], ['instantRevocation', '撤销即时'], ['zeroInfra', '零基建']]
+    var head = '<div class="ds-vec ds-vec-head"><span class="proto">策略</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="ds-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="ds-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    if (veBox) {
+      var sticky = rows.find(function (r) { return r.protocol === 'StickySession' })
+      var jwt = rows.find(function (r) { return r.protocol === 'JwtStateless' })
+      var redis = rows.find(function (r) { return r.protocol === 'RedisSessionStore' })
+      var cp = crosscheck && crosscheck.coherence
+      veBox.innerHTML = [
+        '<div class="ds-rb-row"><b>StickySession</b> 跨实例可见=' + esc(String(sticky?.trilemma?.sharedCoherence)) + '（ip_hash 粘性⇒实例间不通；crashNode 后实例上 session 全丢；本地撤销即删）</div>',
+        '<div class="ds-rb-row"><b>JwtStateless</b> 验签即认=' + esc(String(jwt?.trilemma?.sharedCoherence)) + '（coherence 真 true）· 撤销即时=' + esc(String(jwt?.trilemma?.instantRevocation)) + '（签名-valid-until-exp）</div>',
+        '<div class="ds-rb-row"><b>RedisSessionStore</b> 跨实例=' + esc(String(redis?.trilemma?.sharedCoherence)) + ' · 撤销即时=' + esc(String(redis?.trilemma?.instantRevocation)) + '(DEL 即生效) · 零基建=' + esc(String(redis?.trilemma?.zeroInfra)) + '（需 Redis）</div>',
+        cp ? '<div class="ds-rb-row"><b>verifySessionCoherence</b> holds=' + (cp.holds ? 'true' : 'false') + ' nontrivial=' + (cp.nontrivial ? 'true' : 'false') + ' falsifiable=' + (cp.falsifiable ? 'true' : 'false') + ' · laneA{clean=' + esc(String(cp.laneA && cp.laneA.clean)) + ' redisReadable=' + esc(String(cp.laneA && cp.laneA.redisReadable)) + ' jwtVerified=' + esc(String(cp.laneA && cp.laneA.jwtVerified)) + '} laneB{revoked=' + esc(String(cp.laneB && cp.laneB.revoked)) + ' jwtStillValid=' + (cp.laneB && cp.laneB.jwtStillValid ? 'true' : 'false') + '}</div>' : '',
+      ].join('')
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      var cp = crosscheck && crosscheck.coherence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>真 <b>compareRemapping</b> 迁移率 一致性 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>' +
+          '<div>真 <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 片</div>' +
+          '<div>真 <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 命中 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
+          '<div>真 <b>createWal</b> lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>真 <b>createBus</b> user.loggedIn 通知 ' + esc(fmt(ev.notices)) + ' 条 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>真 <b>createRedisCache</b> sess slot set+get 命中 ' + esc(fmt(ev.redisBitmapHits)) + ' · entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+          '<div>真 <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+          '<div>真 <b>createTokenBucket</b> 回放允许 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>真 <b>createMinHeapDelayQueue</b> 出队 ' + esc(fmt(ev.heapFired)) + ' 条 · pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+          '<div>真 <b>createFullJitterBackoff</b> jitterSpread <b>' + esc(String((ev.jitterSpread ?? 0).toFixed(4))) + '</b>（64 采样 delayFor 真采样）</div>' +
+          '<div>真 <b>createPackedCounters</b> Σ=' + esc(fmt(ev.counterSum)) + ' · falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>' +
+          (cp ? '<div>真 <b>verifySessionCoherence</b> holds=<b>' + (cp.holds ? 'true' : 'false') + '</b> nontrivial=<b>' + (cp.nontrivial ? 'true' : 'false') + '</b> · laneA{clean=' + esc(String(cp.laneA && cp.laneA.clean)) + ' redis=' + esc(String(cp.laneA && cp.laneA.redisReadable)) + ' jwt=' + esc(String(cp.laneA && cp.laneA.jwtVerified)) + '} laneB{revoked=' + esc(String(cp.laneB && cp.laneB.revoked)) + ' jwtStillValid=' + (cp.laneB && cp.laneB.jwtStillValid ? 'true' : 'false') + '} · 3 篡改真喂回翻 false</div>' : '')
+      } else {
+        cxBox.innerHTML = '<div class="nodata">真件交叉印证缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var chips = [
+      '<span class="chip" data-verdict="stickyFailsOverLoss"><b>StickySession</b> 节点丢失即丢 session ' + (v.stickyFailsOverLoss ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="jwtNoInstantRevoke"><b>JwtStateless</b> 撤销不即时 ' + (v.jwtNoInstantRevoke ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="redisPaysInfra"><b>RedisSessionStore</b> 基建代价 ' + (v.redisPaysInfra ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="redisInstantRevoke"><b>RedisSessionStore</b> DEL 即撤销 ' + (v.redisInstantRevoke ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="redisCoherent"><b>RedisSessionStore</b> 全认 ' + (v.redisCoherent ? '✓' : '✗') + '</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' + (noWin ? '✓ 三向量互异（011/101/110），无全局赢家、恰好各缺一维' : '判词塌陷') + '</span>',
+    ]
+    var probes = $('#ds-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维序固定 [sharedCoherence / instantRevocation / zeroInfra]。默认向量 StickySession=011（零基建+本地撤销即时，但跨实例不通） / JwtStateless=101（coherence 验签即认、撤销凭过期）/ RedisSessionStore=110（全认+DEL 即撤销但依赖 Redis）——恰好各缺一维、向量互异、无一 111。' +
+      'rigged 单开 perfectMirror ⇒ Sticky 也读得到（sharedCoherence=true）；unlimitedTtl 不创撤销可见性（JWT stay false）；skipRevocationCheck 只抬 JWT revoke（coherence 成本分歧不解）；三开齐 ⇒ Sticky≡JWT=111 区分度诚实塌缩、noUniversalWinner=false。'
   }
 
   /* ================= KI-533 可观测性分布式追踪采样三策略 · 第二十七维（ts 族） ================= */

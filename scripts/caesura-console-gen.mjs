@@ -43,6 +43,7 @@ import { streamWindowStudy, streamWindowSnapshot } from './caesura-stream-window
 import { streamCardinalityStudy, cardinalitySnapshot } from './caesura-hyperloglog.mjs'
 import { crdtStudy, crdtSnapshot } from './caesura-crdt.mjs'
 import { springBatchStudy, springBatchSnapshot } from './caesura-spring-batch.mjs'
+import { distributedSessionStudy, distributedSessionSnapshot } from './caesura-distributed-session.mjs'
 import { traceSamplingStudy, traceSamplingSnapshot } from './caesura-trace-sampling.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
@@ -358,7 +359,9 @@ export async function buildSystems(opts = {}) {
   const springBatch = opts.springBatch === false ? null : await buildSpringBatchReading(opts, now)
   // KI-533：第二十七维装配可观测性分布式追踪采样三策略
   const traceSampling = opts.traceSampling === false ? null : await buildTraceSamplingReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, builtAt: now() }
+  // KI-535：第二十九维装配 distributed session（Spring Cloud 会话持久化一线）
+  const distributedSession = opts.distributedSession === false ? null : await buildDistributedSessionReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, builtAt: now() }
 }
 
 /**
@@ -440,6 +443,30 @@ export async function buildTraceSamplingReading(opts, now) {
       ...(opts.tsRigged === true ? { rigged: true } : {}),
     })
     return traceSamplingSnapshot(s)
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
+ * KI-535：Spring Cloud 分布式会话三策略真跑教学件（StickySession/JwtStateless/RedisSessionStore × 六场景 + 三难向量 + verifySessionCoherence 双路自证 + 十一枚真件交叉印证）。
+ * 失败落 null；读数全真、CLI 双跑字节一致、rigged 不硬封胜者。
+ * @param {object} opts { distributedSession?:false, dsSeed?, dsSessions?, dsTtlMs?, dsPerfectMirror?, dsUnlimitedTtl?, dsSkipRevocationCheck?, dsRigged? }
+ * @param {()=>number} now 时钟（builtAt 注入真值）
+ */
+export async function buildDistributedSessionReading(opts, now) {
+  try {
+    const s = await distributedSessionStudy({
+      now,
+      ...(opts.dsSeed ? { seed: Math.max(0, Math.floor(Number(opts.dsSeed))) } : {}),
+      ...(opts.dsSessions ? { sessions: Math.max(16, Math.floor(Number(opts.dsSessions))) } : {}),
+      ...(opts.dsTtlMs ? { ttlMs: Math.max(1000, Math.floor(Number(opts.dsTtlMs))) } : {}),
+      ...(opts.dsPerfectMirror === true ? { perfectMirror: true } : {}),
+      ...(opts.dsUnlimitedTtl === true ? { unlimitedTtl: true } : {}),
+      ...(opts.dsSkipRevocationCheck === true ? { skipRevocationCheck: true } : {}),
+      ...(opts.dsRigged === true ? { rigged: true } : {}),
+    })
+    return distributedSessionSnapshot(s)
   } catch (e) {
     return null // 缺哪块就落 null，前端据实降级；不编造假数
   }

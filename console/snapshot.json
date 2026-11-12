@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794444879295,
+  "generatedAt": 1794457856987,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1365,12 +1365,12 @@
           "keys": 1,
           "versions": 2,
           "commitLogSize": 1,
-          "now": 1794444879297
+          "now": 1794457856989
         },
         "final": {
           "A": {
             "value": 101,
-            "commitTs": 1794444879297,
+            "commitTs": 1794457856989,
             "tombstone": false
           }
         }
@@ -3646,7 +3646,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794444879295,
+                "lastTimestamp": 1794457856987,
                 "workerId": 1
               },
               "fault": {
@@ -3742,7 +3742,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794444879295,
+                "lastTimestamp": 1794457856987,
                 "workerId": 1
               },
               "fault": {
@@ -3774,7 +3774,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794444879296,
+                "lastTimestamp": 1794457856988,
                 "workerId": 1
               },
               "fault": {
@@ -3806,7 +3806,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794444879295,
+                "lastTimestamp": 1794457856987,
                 "workerId": 1
               },
               "fault": {
@@ -4522,7 +4522,7 @@
         "capacity": 8,
         "perShardCap": 2
       },
-      "builtAt": 1794444879295
+      "builtAt": 1794457856987
     },
     "configConsistency": {
       "config": {
@@ -5020,7 +5020,7 @@
         "burstCount": 12,
         "windowMs": 10000
       },
-      "builtAt": 1794444879295
+      "builtAt": 1794457856987
     },
     "cacheCoherency": {
       "config": {
@@ -5549,7 +5549,7 @@
         "crashAtWrite": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794444879295
+      "builtAt": 1794457856987
     },
     "messageDelivery": {
       "config": {
@@ -6038,10 +6038,10 @@
         "crashAfterSendAt": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794444879295
+      "builtAt": 1794457856987
     },
     "delayQueue": {
-      "builtAt": 1794444879295,
+      "builtAt": 1794457856987,
       "config": {
         "seed": 518,
         "tasks": 12,
@@ -6068,7 +6068,7 @@
               "id": "allOk",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 68804,
+              "lateMs": 5804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6080,7 +6080,7 @@
               "id": "tickSkew",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 68804,
+              "lateMs": 5804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6092,7 +6092,7 @@
               "id": "farFuture",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 69136,
+              "lateMs": 13136,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6104,7 +6104,7 @@
               "id": "manyCancels",
               "protocol": "TimingWheel",
               "fired": 6,
-              "lateMs": 30858,
+              "lateMs": 2858,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6128,7 +6128,7 @@
               "id": "concurrentWorkers",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 68804,
+              "lateMs": 5804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6139,7 +6139,7 @@
           ],
           "totals": {
             "fired": 54,
-            "lateMs": 306406,
+            "lateMs": 33406,
             "duplicatePickups": 0,
             "lostOnRestart": 6,
             "opUnits": 72
@@ -6375,7 +6375,7 @@
       }
     },
     "retryDlq": {
-      "builtAt": 1794444879295,
+      "builtAt": 1794457856987,
       "config": {
         "seed": 520,
         "messages": 16,
@@ -6793,7 +6793,7 @@
       }
     },
     "consumerGroup": {
-      "builtAt": 1794444879295,
+      "builtAt": 1794457856987,
       "config": {
         "seed": 523,
         "consumers": 3,
@@ -7299,7 +7299,7 @@
       }
     },
     "backpressure": {
-      "builtAt": 1794444879295,
+      "builtAt": 1794457856987,
       "config": {
         "steps": 48,
         "mu": 2,
@@ -8344,7 +8344,7 @@
       }
     },
     "logCompaction": {
-      "builtAt": 1794444879295,
+      "builtAt": 1794457856987,
       "config": {
         "seed": 526,
         "ops": 24,
@@ -9405,7 +9405,7 @@
       }
     },
     "bloomFilter": {
-      "builtAt": 1794444879295,
+      "builtAt": 1794457856987,
       "config": {
         "seed": 527,
         "capacity": 1024,
@@ -10104,7 +10104,7 @@
       }
     },
     "cacheReplacement": {
-      "builtAt": 1794444879295,
+      "builtAt": 1794457856987,
       "config": {
         "seed": 528,
         "capacity": 16,
@@ -10747,7 +10747,7 @@
       }
     },
     "streamWindow": {
-      "builtAt": 1794444879295,
+      "builtAt": 1794457856987,
       "config": {
         "seed": 529,
         "windowSize": 100,
@@ -12806,7 +12806,7 @@
       }
     },
     "hyperLogLog": {
-      "builtAt": 1794444879295,
+      "builtAt": 1794457856987,
       "config": {
         "seed": 530,
         "cardinality": 4096,
@@ -29726,7 +29726,7 @@
       }
     },
     "crdt": {
-      "builtAt": 1794444879295,
+      "builtAt": 1794457856987,
       "config": {
         "seed": 531,
         "replicaCount": 3,
@@ -30182,7 +30182,7 @@
       }
     },
     "springBatch": {
-      "builtAt": 1794444879295,
+      "builtAt": 1794457856987,
       "config": {
         "seed": 532,
         "items": 96,
@@ -30621,7 +30621,7 @@
       "rigged": false
     },
     "traceSampling": {
-      "builtAt": 1794444879295,
+      "builtAt": 1794457856987,
       "config": {
         "seed": 533,
         "items": 64,
@@ -31322,6 +31322,362 @@
       },
       "rigged": false
     },
-    "builtAt": 1794444879295
+    "distributedSession": {
+      "builtAt": 1794457856987,
+      "config": {
+        "seed": 535,
+        "sessions": 96,
+        "ttlMs": 30000,
+        "scenarios": [
+          "cleanServe",
+          "instanceFailover",
+          "revokeLive",
+          "burstScaleOut",
+          "idleExpiry",
+          "mixedLoad"
+        ],
+        "rigged": false,
+        "perfectMirror": false,
+        "unlimitedTtl": false,
+        "skipRevocationCheck": false
+      },
+      "rows": [
+        {
+          "protocol": "StickySession",
+          "scenarios": [
+            {
+              "id": "cleanServe",
+              "sessions": 96,
+              "writes": 96,
+              "reads": 96,
+              "revokedCount": 0,
+              "sharedCoherence": false,
+              "instantRevocation": true,
+              "zeroInfra": true,
+              "fault": "happy-path"
+            },
+            {
+              "id": "instanceFailover",
+              "sessions": 96,
+              "writes": 96,
+              "reads": 96,
+              "revokedCount": 0,
+              "sharedCoherence": false,
+              "instantRevocation": true,
+              "zeroInfra": true,
+              "fault": "instance-loss"
+            },
+            {
+              "id": "revokeLive",
+              "sessions": 96,
+              "writes": 96,
+              "reads": 96,
+              "revokedCount": 6,
+              "sharedCoherence": false,
+              "instantRevocation": true,
+              "zeroInfra": true,
+              "fault": "revoke-live"
+            },
+            {
+              "id": "burstScaleOut",
+              "sessions": 144,
+              "writes": 144,
+              "reads": 144,
+              "revokedCount": 0,
+              "sharedCoherence": false,
+              "instantRevocation": true,
+              "zeroInfra": true,
+              "fault": "scale-out"
+            },
+            {
+              "id": "idleExpiry",
+              "sessions": 96,
+              "writes": 96,
+              "reads": 96,
+              "revokedCount": 0,
+              "sharedCoherence": false,
+              "instantRevocation": true,
+              "zeroInfra": true,
+              "fault": "ttl-expiry"
+            },
+            {
+              "id": "mixedLoad",
+              "sessions": 96,
+              "writes": 96,
+              "reads": 96,
+              "revokedCount": 3,
+              "sharedCoherence": false,
+              "instantRevocation": true,
+              "zeroInfra": true,
+              "fault": "mixed-load"
+            }
+          ],
+          "trilemma": {
+            "sharedCoherence": false,
+            "instantRevocation": true,
+            "zeroInfra": true
+          },
+          "metrics": {
+            "sessionWrites": 624,
+            "readableSessions": 624,
+            "revokedCells": 9
+          }
+        },
+        {
+          "protocol": "JwtStateless",
+          "scenarios": [
+            {
+              "id": "cleanServe",
+              "sessions": 96,
+              "writes": 96,
+              "reads": 96,
+              "revokedCount": 0,
+              "sharedCoherence": true,
+              "instantRevocation": false,
+              "zeroInfra": true,
+              "fault": "happy-path"
+            },
+            {
+              "id": "instanceFailover",
+              "sessions": 96,
+              "writes": 96,
+              "reads": 96,
+              "revokedCount": 0,
+              "sharedCoherence": true,
+              "instantRevocation": false,
+              "zeroInfra": true,
+              "fault": "instance-loss"
+            },
+            {
+              "id": "revokeLive",
+              "sessions": 96,
+              "writes": 96,
+              "reads": 96,
+              "revokedCount": 6,
+              "sharedCoherence": true,
+              "instantRevocation": false,
+              "zeroInfra": true,
+              "fault": "revoke-live"
+            },
+            {
+              "id": "burstScaleOut",
+              "sessions": 144,
+              "writes": 144,
+              "reads": 144,
+              "revokedCount": 0,
+              "sharedCoherence": true,
+              "instantRevocation": false,
+              "zeroInfra": true,
+              "fault": "scale-out"
+            },
+            {
+              "id": "idleExpiry",
+              "sessions": 96,
+              "writes": 96,
+              "reads": 96,
+              "revokedCount": 0,
+              "sharedCoherence": true,
+              "instantRevocation": false,
+              "zeroInfra": true,
+              "fault": "ttl-expiry"
+            },
+            {
+              "id": "mixedLoad",
+              "sessions": 96,
+              "writes": 96,
+              "reads": 96,
+              "revokedCount": 3,
+              "sharedCoherence": true,
+              "instantRevocation": false,
+              "zeroInfra": true,
+              "fault": "mixed-load"
+            }
+          ],
+          "trilemma": {
+            "sharedCoherence": true,
+            "instantRevocation": false,
+            "zeroInfra": true
+          },
+          "metrics": {
+            "sessionWrites": 624,
+            "readableSessions": 624,
+            "revokedCells": 9
+          }
+        },
+        {
+          "protocol": "RedisSessionStore",
+          "scenarios": [
+            {
+              "id": "cleanServe",
+              "sessions": 96,
+              "writes": 96,
+              "reads": 96,
+              "revokedCount": 0,
+              "sharedCoherence": true,
+              "instantRevocation": true,
+              "zeroInfra": false,
+              "fault": "happy-path"
+            },
+            {
+              "id": "instanceFailover",
+              "sessions": 96,
+              "writes": 96,
+              "reads": 96,
+              "revokedCount": 0,
+              "sharedCoherence": true,
+              "instantRevocation": true,
+              "zeroInfra": false,
+              "fault": "instance-loss"
+            },
+            {
+              "id": "revokeLive",
+              "sessions": 96,
+              "writes": 96,
+              "reads": 96,
+              "revokedCount": 6,
+              "sharedCoherence": true,
+              "instantRevocation": true,
+              "zeroInfra": false,
+              "fault": "revoke-live"
+            },
+            {
+              "id": "burstScaleOut",
+              "sessions": 144,
+              "writes": 144,
+              "reads": 144,
+              "revokedCount": 0,
+              "sharedCoherence": true,
+              "instantRevocation": true,
+              "zeroInfra": false,
+              "fault": "scale-out"
+            },
+            {
+              "id": "idleExpiry",
+              "sessions": 96,
+              "writes": 96,
+              "reads": 96,
+              "revokedCount": 0,
+              "sharedCoherence": true,
+              "instantRevocation": true,
+              "zeroInfra": false,
+              "fault": "ttl-expiry"
+            },
+            {
+              "id": "mixedLoad",
+              "sessions": 96,
+              "writes": 96,
+              "reads": 96,
+              "revokedCount": 3,
+              "sharedCoherence": true,
+              "instantRevocation": true,
+              "zeroInfra": false,
+              "fault": "mixed-load"
+            }
+          ],
+          "trilemma": {
+            "sharedCoherence": true,
+            "instantRevocation": true,
+            "zeroInfra": false
+          },
+          "metrics": {
+            "sessionWrites": 624,
+            "readableSessions": 624,
+            "revokedCells": 9
+          }
+        }
+      ],
+      "vectors": {
+        "StickySession": "011",
+        "JwtStateless": "101",
+        "RedisSessionStore": "110"
+      },
+      "verdict": {
+        "vectors": {
+          "StickySession": "011",
+          "JwtStateless": "101",
+          "RedisSessionStore": "110"
+        },
+        "noUniversalWinner": true,
+        "trilemmaDistinguishes": true,
+        "noStrategyWinsAll": true,
+        "vectorFromTrilemma": true,
+        "stickyFailsOverLoss": true,
+        "jwtNoInstantRevoke": true,
+        "redisPaysInfra": true,
+        "redisCoherent": true,
+        "redisInstantRevoke": true,
+        "rigged_pkg": false,
+        "perfectMirrorErasesStickyIsolation": true,
+        "unlimitedTtlKeepsJwtTokenForever": true,
+        "skipRevocationRevokesJwt": true,
+        "riggedConvergenceCollapsed": false
+      },
+      "noUniversalWinner": true,
+      "trilemmaDistinguishes": true,
+      "causalLocks": {
+        "stickySingleNodeCausallyUnerasable": true,
+        "jwtNoInstantRevokeCausallyUnerasable": true,
+        "redisColdStartCausallyUnerasable": true,
+        "causalLocksAllHold": true,
+        "revocationProbe": 3
+      },
+      "crosscheck": {
+        "evidence": {
+          "routerMoved": 11,
+          "routerTracked": 80,
+          "ringNodes": 4,
+          "ringShardsUsed": 4,
+          "walLines": 80,
+          "walReplayed": 80,
+          "notices": 12,
+          "busListeners": 1,
+          "redisBitmapHits": 96,
+          "redisSlots": 96,
+          "poolCreated": 2,
+          "poolReused": 1,
+          "bucketAllowed": 3,
+          "bucketRejected": 4,
+          "heapFired": 3,
+          "heapPending": 0,
+          "counterSum": 2080,
+          "counterFalseSharing": 56,
+          "jitterSpread": 1.9827,
+          "remapConsistentRate": 0.185,
+          "remapModuloRate": 0.435
+        },
+        "coherence": {
+          "laneA": {
+            "clean": 93,
+            "redisReadable": 93,
+            "jwtVerified": 93,
+            "stickyOwnerReadable": 93
+          },
+          "laneB": {
+            "revoked": 3,
+            "jwtStillValid": true
+          },
+          "holds": true,
+          "nontrivial": true,
+          "falsifiable": true,
+          "tamper": {
+            "corruptedSession": {
+              "holds": false,
+              "reason": "Redis 内容 corrupt ⇒ holds 真翻 false"
+            },
+            "silentRevoke": {
+              "holds": false,
+              "reason": "revoke 不落盘 ⇒ holds 真翻 false"
+            },
+            "emptyStream": {
+              "holds": false,
+              "reason": "空会话流 ⇒ nontrivial=false，绝不 0=0 假绿"
+            }
+          },
+          "events": 96
+        }
+      },
+      "rigged": false
+    },
+    "builtAt": 1794457856987
   }
 }

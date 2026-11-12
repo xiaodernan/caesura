@@ -931,6 +931,54 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(thirteen.every((x) => x === 532000)).toBe(true)
   })
 
+  it('㉒e-distributed-session buildDistributedSessionReading 真跑：ds* 注入生效 / distributedSession:false 关闭 / rigged 收敛明示粘性短板 / 双路自证 + 三路篡改真喂回 + 三因果锁 + 十一真件 / 十五时钟同源（KI-535）', async () => {
+    const { buildDistributedSessionReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 535000
+    const ds = (await buildDistributedSessionReading({}, now))!
+    expect(ds).not.toBe(null)
+    expect(ds.builtAt).toBe(535000)
+    expect(ds.rows.length).toBe(3)
+    expect(ds.config.scenarios.length).toBe(6)
+    expect(ds.vectors).toEqual({ StickySession: '011', JwtStateless: '101', RedisSessionStore: '110' })
+    expect(ds.rigged).toBe(false)
+    expect(ds.noUniversalWinner).toBe(true)
+    expect(ds.trilemmaDistinguishes).toBe(true)
+    expect(ds.causalLocks.causalLocksAllHold).toBe(true)
+    // 注入 sessions/sessions/ttlMs/seed 真生效（不是只改 config 显示）
+    const tuned = (await buildDistributedSessionReading({ dsSeed: 12, dsSessions: 32, dsTtlMs: 1234 }, now))!
+    expect(tuned.config.seed).toBe(12)
+    expect(tuned.config.sessions).toBe(32)
+    expect(tuned.config.ttlMs).toBe(1234)
+    // rigged 三开齐：Sticky≡JWT=111 区分度诚实塌缩、Redis 仍 110、noUniversalWinner=false（绝不硬造默认 111）
+    const rig = (await buildDistributedSessionReading({ dsRigged: true }, now))!
+    expect(rig.vectors).toEqual({ StickySession: '111', JwtStateless: '111', RedisSessionStore: '110' })
+    expect(rig.rigged).toBe(true)
+    expect(rig.verdict.noUniversalWinner).toBe(false)
+    expect(rig.verdict.riggedConvergenceCollapsed).toBe(true)
+    expect(rig.verdict.noStrategyWinsAll).toBe(false)
+    expect(rig.causalLocks.causalLocksAllHold).toBe(true)
+    // verifySessionCoherence 双路自证 + 三路篡改真翻 false
+    const cp = ds.crosscheck.coherence
+    expect(cp.holds).toBe(true)
+    expect(cp.nontrivial).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.tamper.corruptedSession.holds).toBe(false)
+    expect(cp.tamper.silentRevoke.holds).toBe(false)
+    expect(cp.tamper.emptyStream.holds).toBe(false)
+    expect(Object.keys(ds.crosscheck.evidence).length).toBe(21)
+    // 关闭不连坐
+    const off = await buildSystems({ now, distributedSession: false, springBatch: false, traceSampling: false, crdt: false })
+    expect(off.distributedSession).toBe(null)
+    expect(off.springBatch).toBe(null)
+    expect(off.traceSampling).toBe(null)
+    expect(off.crdt).toBe(null)
+    expect(off.cacheReplacement).not.toBe(null)
+    // 十五时钟同源
+    const full = await buildSystems({ now })
+    const fifteen = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt, full.bloomFilter?.builtAt, full.cacheReplacement?.builtAt, full.streamWindow?.builtAt, full.hyperLogLog?.builtAt, full.crdt?.builtAt, full.springBatch?.builtAt, full.traceSampling?.builtAt, full.distributedSession?.builtAt]
+    expect(fifteen.every((x) => x === 535000)).toBe(true)
+  })
+
   it('㉒c-trace-sampling buildTraceSamplingReading 真跑：ts* 注入生效 / traceSampling:false 关闭 / rigged Head≡Tail=110 诚实塌缩不硬造 111 / 双路自证 + 三路篡改真喂回 + 三因果锁 + 十一真件 / 十四时钟同源（KI-533）', async () => {
     const { buildTraceSamplingReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
     const now = () => 533000

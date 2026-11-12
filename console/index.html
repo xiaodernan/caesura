@@ -550,6 +550,23 @@
       <p class="note" id="ts-trilemma-note">…</p>
     </article>
   </section>
+  <!-- 第二十八维 · StickySession / JwtStateless / RedisSessionStore Spring Cloud 分布式会话（KI-535） -->
+  <section class="row row-ds">
+    <article class="panel panel-ds">
+      <div class="panel-head"><h2>第二十八维 · StickySession/JwtStateless/RedisSessionStore · 三策略 × 六场景</h2><span class="hint">钉=StickySession（负载均衡把同客户端钉到同实例·ip_hash 粘性·session 放实例本地内存·多实例互相看不见·实例死则 session 真丢·本地 revoke 真即时·零基建是真的）/ 持=JwtStateless（验签即认·任一实例都认同一 token·横向扩容零成本·无状态真无状态·但撤销不即时——未过期签名必须放行·除非黑名单·那就不再是 zeroInfra 了）/ 依=RedisSessionStore（session 落 Redis·spring.session.redis 真模式·任意实例读同一份·DEL 即撤销生效·但基建代价值真实存在·可用性挂钩 Redis·序列化/容量/TTL 都要算账）</span></div>
+      <div class="ds-matrix" id="ds-matrix"></div>
+      <div class="ds-ladder" id="ds-ladder"></div>
+      <p class="note" id="ds-matrix-note">…</p>
+    </article>
+    <article class="panel panel-ds">
+      <div class="panel-head"><h2>三难向量（sharedCoherence ∧ instantRevocation ∧ zeroInfra）· 双路自证</h2><span class="hint">StickySession=011 / JwtStateless=101 / RedisSessionStore=110 · 三向量互异无一 111 不封赢家 · verifySessionCoherence 双路自证（clean 流跨实例三读全一致 redisReadable==jwtVerified==clean + revokeLive 后立即不可见（JWT 例外：签名未过期仍合法））+ 三路篡改真喂回同一内核现算翻 false（corrupt session⇒不一致 / 静默 revoke⇒仍可见 / 空会话流⇒非平凡破）· 三因果锁 Sticky 单节点可丢/JWT 撤销不即时/Redis 冷启动读 null 在同一含 revoke raw 流钉死 · rigged 三开关 perfectMirror/unlimitedTtl/skipRevocationCheck 齐开 ⇒ Sticky≡JWT=111 区分度诚实塌缩、noUniversalWinner=false 绝不硬造默认 111</span></div>
+      <div class="ds-trilemma" id="ds-trilemma"></div>
+      <div class="ds-verif" id="ds-verif"></div>
+      <div class="ds-crosscheck" id="ds-crosscheck"></div>
+      <div class="ds-probes" id="ds-probes"></div>
+      <p class="note" id="ds-trilemma-note">…</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">

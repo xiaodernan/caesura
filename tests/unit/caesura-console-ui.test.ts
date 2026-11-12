@@ -2072,3 +2072,74 @@ describe('KI-529 · streamWindow 流式窗口面板：三策略 × 六场景 + �
     expect(dom.els['ts-matrix-note'].textContent).toContain('systems.traceSampling 缺失')
   })
 })
+
+
+// ============ KI-535 第二十九维 · spring cloud 分布式会话（ds 族 · 5 腿） ============
+describe('KI-535 第二十九维 · sticky-session/jwt-stateless/redis-distributed-session（ds 族）', () => {
+  const realSw = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+  it('第二十九维真渲染：ds 矩阵 18 cell + 三策略向量 011/101/110 + 状态类前缀 + ladder 条', async () => {
+    const dom = await runApp(realSw)
+    const matrix = dom.els['ds-matrix'].innerHTML
+    expect(matrix).toContain('ds-mat-head')
+    for (const p of ['StickySession', 'JwtStateless', 'RedisSessionStore']) {
+      expect(matrix).toContain('data-strategy="' + p + '"')
+    }
+    for (const sc of ['cleanServe', 'instanceFailover', 'revokeLive', 'burstScaleOut', 'idleExpiry', 'mixedLoad']) {
+      expect(matrix).toContain('data-s="' + sc + '"')
+    }
+    expect((matrix.match(/class="ds-cell /g) || []).length).toBe(18)
+    const tri = dom.els['ds-trilemma'].innerHTML
+    expect(tri).toContain('data-vec="011"')
+    expect(tri).toContain('data-vec="101"')
+    expect(tri).toContain('data-vec="110"')
+    const states = [...matrix.matchAll(/data-state="([^"]+)"/g)].map((m) => m[1])
+    expect(states.length).toBeGreaterThanOrEqual(18)
+    expect(dom.els['ds-ladder'].innerHTML).toContain('ds-bar')
+  })
+
+  it('第二十九维画中件 DOM：verifySessionCoherence 双路 + 十一真件 chip/verify 件 + 三因果锁在 DOM', async () => {
+    const dom = await runApp(realSw)
+    const probes = dom.els['ds-probes'].innerHTML
+    for (const key of ['stickyFailsOverLoss', 'jwtNoInstantRevoke', 'redisPaysInfra', 'redisCoherent',
+      'redisInstantRevoke', 'noUniversalWinner']) {
+      expect(probes, 'probe chip ' + key).toContain('data-verdict="' + key + '"')
+    }
+    const verif = dom.els['ds-verif'].innerHTML
+    for (const key of ['holds', 'nontrivial', 'falsifiable']) {
+      expect(verif, 'verify row ' + key).toContain(key)
+    }
+    const cx = dom.els['ds-crosscheck'].innerHTML
+    for (const api of ['compareRemapping', 'createShardRouter', 'createHashRing', 'createWal', 'createBus',
+      'createRedisCache', 'createObjectPool', 'createTokenBucket', 'createMinHeapDelayQueue',
+      'createPackedCounters', 'verifySessionCoherence']) {
+      expect(cx, '真件 ' + api + ' 必须 DOM 可见').toContain(api)
+    }
+    expect(cx).toContain('jitterSpread')
+  })
+
+  it('第二十九维 markup/CSS 自同 + systems.distributedSession 缺失时真显式降级（微一致记）', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-ds')
+    expect(html).toContain('id="ds-matrix"')
+    expect(html).toContain('id="ds-verif"')
+    expect(html).toContain('StickySession=011 / JwtStateless=101 / RedisSessionStore=110')
+    expect(css).toContain('.ds-cell.pinned')      // 钉（ wine ）
+    expect(css).toContain('.ds-cell.durable')     // 持（ gold-dim ）
+    expect(css).toContain('.ds-cell.dependency')  // 依（ gold ）
+    expect(css).toContain('.ds-cell.ok')          // ✓ jade
+    expect(css).toContain('.ds-flag.yes')
+    expect(css).toContain('.ds-bar > i')
+    expect(css).toContain('.ds-verif')
+    expect(css).toContain('@media')
+  })
+
+  it('systems.distributedSession 缺失 ⇒ ds 矩阵/trilemma 显式降级到真件兜底句（不静默消失）', async () => {
+    const noDs = JSON.parse(JSON.stringify(realSw as any))
+    noDs.systems.distributedSession = null
+    const dom = await runApp(noDs)
+    expect(dom.els['ds-matrix'].innerHTML).toContain('暂缺')
+    expect(dom.els['ds-trilemma'].innerHTML).toContain('暂缺')
+    expect(dom.els['ds-matrix-note'].textContent).toContain('systems.distributedSession 缺失')
+  })
+})
