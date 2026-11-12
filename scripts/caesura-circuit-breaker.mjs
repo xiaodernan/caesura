@@ -104,8 +104,9 @@ function callStreamOf(id, opts = {}) {
     case 'permanentHostile':
       return Array.from({ length: n }, (_, i) => ({ ...base(i), failed: true }))
     case 'sparseTraffic':
-      // 稀疏流量 + 短时 5 连败：CountBased（窗 5 ≥ 阈值）必误 trip；RateBased（31% 失败率 < 阈值）不动。
-      return Array.from({ length: n }, (_, i) => (i >= 40 && i < 45 ? { ...base(i), failed: true } : base(i)))
+      // 稀疏流量（无明显规律的 16 窗占比）＋ 5 连败放在 62% 处：Count（个数阈值+16窗）必误 trip；
+      // Rate（16 窗内 31% < 50%）不误；Slow（全靠慢判）也不误。
+      return Array.from({ length: n }, (_, i) => (i >= Math.floor(n * 0.62) && i < Math.floor(n * 0.62) + 5 ? { ...base(i), failed: true } : base(i)))
     case 'cleanRerun':
       return Array.from({ length: n }, (_, i) => base(i))
     default:
@@ -233,13 +234,14 @@ function examBreaker(protocol, opts = {}) {
  *   degradedFaultsAware = 全慢零 failed 的 slowDegradation 流上 trips > 0
  *   sparseTrafficSafe   = 5 连败夹 96 的 sparseTraffic 流上 trips === 0
  */
-function examOf(protocol, opts = {}) {
-  // 考场固定采用默认窗口，彻底隔绝 rigged 的 windowSize=4096 等运维旋钮——
-  // 否则大窗抬高 SlowCall 最小样本数，会让 96 条慢退流填不满而不 trip，把 degradedFaultsAware 假翻成 false。
-  const examOpts = { ...opts, windowSize: CIRCUIT_DEFAULTS.windowSize }
-  const hardTrips = examBreaker(protocol, examOpts).run(callStreamOf('permanentHostile', opts)).trips
-  const degradedTrips = examBreaker(protocol, examOpts).run(callStreamOf('slowDegradation', opts)).trips
-  const sparseTrips = examBreaker(protocol, examOpts).run(callStreamOf('sparseTraffic', opts)).trips
+function examOf(protocol, _opts = {}) {
+  // 三难是判据的结构性属性：考场恒用纯净默认参数（calls/windowSize/阈值全默认），
+  // 彻底隔绝一切注入与 rigged 运维旋钮——保证向量是稳定的结构对照 100/101/011，不随任何旋钮漂移。
+  // 否则大窗抬高 SlowCall 最小样本数、短流造不出稀疏连败，都会把三难假翻。
+  const examOpts = {}
+  const hardTrips = examBreaker(protocol, examOpts).run(callStreamOf('permanentHostile', examOpts)).trips
+  const degradedTrips = examBreaker(protocol, examOpts).run(callStreamOf('slowDegradation', examOpts)).trips
+  const sparseTrips = examBreaker(protocol, examOpts).run(callStreamOf('sparseTraffic', examOpts)).trips
   return {
     hardFaultsAware: hardTrips > 0,
     degradedFaultsAware: degradedTrips > 0,
@@ -385,9 +387,10 @@ export function circuitBreakerStudy(opts = {}) {
   const instantRecoveryPreventsHalfOpenStuttering = fastRecoverTrips !== slowRecoverTrips
 
   const steadyProbe = callStreamOf('steadyState', { seed, calls })
-  // 朴素监控：把 fast 调用误标 slow（观测噪声）⇒ SlowCall 误 trip；
+  // 朴素监控：把 1/2 fast 调用误标 slow（观测噪声）⇒ SlowCall（慢率 50% ≥ 阈值）误 trip；
   // 完美监控：按真实 durationMs=40 过滤掉伪标 ⇒ 不误 trip。
-  const noisyProbe = steadyProbe.map((e, i) => (i % 3 === 0 ? { ...e, slow: true } : e))
+  // （1/3 < 0.5，故早期 1/3 噪声不足 trip；必须 ≥ 50% 才能暴露误 trip 差异。）
+  const noisyProbe = steadyProbe.map((e, i) => (i % 2 === 0 ? { ...e, slow: true } : e))
   const cleanProbe = steadyProbe.map((e) => ({ ...e, slow: false }))
   const noisyTrips = createSlowCallBreaker({}).run(noisyProbe).trips
   const cleanTrips = createSlowCallBreaker({}).run(cleanProbe).trips

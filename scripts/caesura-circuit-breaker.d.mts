@@ -173,6 +173,7 @@ export function circuitBreakerSnapshot(study: CircuitStudy | null | Record<strin
 export function verifyCircuitSoundness(input: {
   events?: Array<Record<string, any>>
   seed?: number
+  calls?: number
   now?: number | (() => number)
 }, opts?: { seed?: number; calls?: number }): CircuitStudy['crosscheck']['soundness']
 
