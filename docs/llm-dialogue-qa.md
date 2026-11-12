@@ -106,3 +106,19 @@ npm run llm:diff        # 机读再认谁泄漏进 dialogue.json（应永远 0�
 
 若作者择优决定采纳某条 LLM 候选为对白草稿，请**手抄**进 `dialogue.json`，并在对应候选 entry 上追加
 `decision: 'accepted' | 'rejected' | 'reworked'` 字段（仅供追溯，不参与校验）。本批尚无 accepted 行。
+
+## 2026-11-13 `llm:spotcheck` 单点声线评估（作者侧）
+
+`scripts/llm-dialogue-spotcheck.mjs`（新机件 · 同一真机路 · key 仅 env · 零写入）真跑 gpt-6-sol：
+
+- 对象：`DLG_MEG:n8`（`"声卷全了。她该唱的、不该唱的，都在这儿了。以后休垒如果还有人唱这首歌，就知道是谁留下来的了。"`）
+- HTTP 200 · totalTokens=4667；
+- 输出原文：
+  > ① 过白：否；“声卷全了”有真白式的冷静收束，后半略显解释性。
+  > ② 保留理由：从“该唱的、不该唱的”写出她克制里带着审判与留痕意识的声线。
+  > ③ 最大弊病在末句，身份信息说得过满；裁决：`pending`。
+- 作者当时动议（do not take: flag n8 := preserve）——本评估未改写任何数据；**裁决仍在作者手里**。
+- 若作者最终择优采纳「删末句保留前两句」这一替代形式，请手抄进 dialogue.json 并注明 `decision: 'trimmed'`，
+  候选池仍全部 `requiresHumanReview=true`。
+
+诚实边界：单点一次即重；LLM 便签不作任何终裁依据；本脚本零写入；玩家运行时零 LLM。
