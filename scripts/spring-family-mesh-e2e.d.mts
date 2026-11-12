@@ -492,5 +492,28 @@ export function runMeshE2E(opts?: any): {
       verdict: Record<string, any>
       builtAt: number
     } | null
+    /** KI-532：Spring Batch chunk-oriented R-P-W 教学件快照（BulkWriter/ChunkedWriter/SkipRetryWriter × 六场景 + 三难向量维序 [faultIsolation/restartability/throughput] 默认 001/110/101 + verifyCheckpoint 双路自证（clean 全量基准 + poison chunk 隔离/已 commit 零重复/非毒零丢失/真检测毒 四观测量 + 三路篡改真喂回同一内核现算翻 false）+ 十一真件 21 键交叉印证），未配 springBatch 为 null；rigged 双开关 perfectOracle/unlimitedSkip 令 Bulk≡Skip=101 区分度诚实收敛（riggedConvergenceCollapsed=true）、noStrategyWinsAll 仍真绝不硬造 111；三条因果结构锁（chk 权衡/skip 永久丢/bulk 整批死）在同一含毒 raw 流真跑现算钉死、causalLocksAllHold=true */
+    springBatchSnapshot: {
+      config: Record<string, any>
+      rows: Array<{
+        protocol: string
+        scenarios: Array<{
+          id: string; processed: number; faults: number; poisonCount: number; size: number
+          checkpoints: number; dropped: number; wholeBatchDied: boolean
+          faultIsolation: boolean; restartability: boolean; throughput: boolean; fault: string
+          inFaultExam: boolean; inRestartExam: boolean; inThroughputExam: boolean
+        }>
+        trilemma: { faultIsolation: boolean; restartability: boolean; throughput: boolean }
+        metrics: { chunkedCheckpoints: number; poisonDeaths: number; itemsProcessed: number; itemsDropped: number }
+      }>
+      vectors: Record<string, string>
+      noUniversalWinner: boolean
+      trilemmaDistinguishes: boolean
+      causalLocks: { checkpointTradeoffCausallyUnerasable: boolean; skipSilentLossCausallyUnerasable: boolean; bulkAllOrNothingCausallyUnerasable: boolean; causalLocksAllHold: boolean }
+      crosscheck: { evidence: Record<string, any>; checkpoint: { holds: boolean; baselineHolds: boolean; nontrivial: boolean; falsifiable: boolean; invariants: Record<string, boolean>; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+      verdict: Record<string, any>
+      builtAt: number
+      rigged: boolean
+    } | null
   }>
 }

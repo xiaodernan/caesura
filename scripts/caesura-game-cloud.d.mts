@@ -180,6 +180,12 @@ export interface GameCloudOptions {
   crdt?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck?: any; topology?: any; [k: string]: any }
   /** KI-531 CRDT 的注入时钟（crdt=Conflict-free Replicated Data Type，避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/rdq/dld 已占用前缀）。 */
   crdtNow?: () => number
+  /** KI-532：Spring Batch chunk-oriented R-P-W 教学件。true 用缺省规模；
+   * 对象逐项注入（now/seed/items/chunkSize/skipLimit/perfectOracle/unlimitedSkip/rigged 等），
+   * 或直接塞一只现成 study（带 rows/vectors/verdict/crosscheck 四块）。默认 false 不装配。 */
+  springBatch?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck?: any; [k: string]: any }
+  /** KI-532 Spring Batch 的注入时钟（springBatch=Spring Batch chunk R-P-W，避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/rdq/dld/crdt 已占用前缀）。 */
+  sbNow?: () => number
 }
 
 /** 创建一只游戏侧开箱即用云。 */
@@ -248,6 +254,8 @@ export function createGameCloud(opts?: GameCloudOptions): {
   runStreamCardinalityStudy: (() => Promise<any>) | null
   /** KI-531：CRDT 最终一致冲突消解三策略诚实权衡研究件；缺 opts.crdt 时为 null；LWWRegister/GCounter/OrSet(add-wins) × 六场景矩阵 + 三难向量维序 [strongEventualConvergence/expressiveness/compactMetadata]（默认 011/100/110 互异不封赢家；rigged 三开关 uniformClock/infiniteMetadata/coordinatedDelete 齐开后唯一翻 GCounter compact⇒101，LWW 并发丢/OrSet tag 不可压/decrement 不可减三条因果结构锁钉死、noUniversalWinner 仍真、绝不硬造 111；三者严格 SEC 全收敛、LWW 破在并发意图、OrSet add-wins）+ verifyConvergence 双路自证（三副本乱序+重复 anti-entropy 后 value 逐字相等 + 真值不变量 + 三路篡改真喂回现算翻 false）+ 十一枚真件 21 键交叉印证。 */
   runCrdtStudy: (() => Promise<any>) | null
+  /** KI-532：Spring Batch chunk-oriented R-P-W 教学件；缺 opts.springBatch 时为 null；BulkWriter/ChunkedWriter/SkipRetryWriter × 六场景矩阵 + 三难向量维序 [faultIsolation/restartability/throughput]（默认 001/110/101 互异不封赢家；restartability 与 throughput 共用 stats().checkpoints 观测量天然互斥，零查表现算；rigged 双开关 perfectOracle/unlimitedSkip 喂已预防剔除毒项的干净流 ⇒ Bulk≡Skip=101 区分度诚实收敛 riggedConvergenceCollapsed=true、noStrategyWinsAll 仍真绝不硬造 111，三条因果结构锁——chk 权衡/skip 永久丢/bulk 整批死——在同一含毒 raw 流真跑现算钉死 causalLocksAllHold=true，主教义 bulkExplodesOnPoison 恒以纯净基线标定不翻）+ verifyCheckpoint 双路自证（clean 全量基准 + poison chunk 隔离/已 commit 零重复/非毒零丢失/真检测毒 四观测量 + 三路篡改真喂回同一内核现算翻 false 带 baselineHolds）+ 十一枚真件 21 键交叉印证。 */
+  runSpringBatchStudy: (() => Promise<any>) | null
   /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）。 */
   gray: any
   /** KI-489：把游戏真 EventBus（duck-typed {on,emit}）按白名单接进云事件总线。 */

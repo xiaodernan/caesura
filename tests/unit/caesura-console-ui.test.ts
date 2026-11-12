@@ -1916,4 +1916,81 @@ describe('KI-529 · streamWindow 流式窗口面板：三策略 × 六场景 + �
     expect(dom.els['crdt-trilemma'].innerHTML).toContain('暂缺')
     expect(dom.els['crdt-matrix-note'].textContent).toContain('systems.crdt 缺失')
   })
+
+  // ============ KI-532 前端第二十六维 · SB 族（4 腿）============
+  it('第二十六维真快照渲染：sb 矩阵 18 cell + 三难向量 001/110/101 + 三策略状态字（前端第二十六维）', async () => {
+    const dom = await runApp(realSw)
+    const matrix = dom.els['sb-matrix'].innerHTML
+    expect(matrix).toContain('sb-mat-head')
+    for (const p of ['BulkWriter', 'ChunkedWriter', 'SkipRetryWriter']) {
+      expect(matrix).toContain('data-strategy="' + p + '"')
+    }
+    for (const sc of ['cleanRun', 'poisonOne', 'restartMidway', 'burstLoad', 'skipSaturation', 'cleanRerun']) {
+      expect(matrix).toContain('data-s="' + sc + '"')
+    }
+    // 18 cell 真落（3 策略 × 6 场景）
+    expect((matrix.match(/class="sb-cell /g) || []).length).toBe(18)
+    const tri = dom.els['sb-trilemma'].innerHTML
+    expect(tri).toContain('data-vec="001"')
+    expect(tri).toContain('data-vec="110"')
+    expect(tri).toContain('data-vec="101"')
+    // 状态字按新口径：崩/锁/滞/✓
+    const states = [...matrix.matchAll(/data-state="([^"]+)"/g)].map((m) => m[1])
+    expect(states.length).toBeGreaterThanOrEqual(18)
+    expect(dom.els['sb-ladder'].innerHTML).toContain('sb-bar')
+  })
+
+  it('第二十六维可证伪 DOM：verifyCheckpoint 双路 + 三路篡改 data-rb-tamper + 三因果锁 chips + 11 真件落 DOM', async () => {
+    const dom = await runApp(realSw)
+    const probes = dom.els['sb-probes'].innerHTML
+    for (const lock of ['bulkAllOrNothingCausallyUnerasable', 'checkpointTradeoffCausallyUnerasable',
+      'skipSilentLossCausallyUnerasable', 'causalLocksAllHold', 'riggedConvergenceCollapsed', 'noUniversalWinner']) {
+      expect(probes, '因果锁/判词 chip ' + lock).toContain('data-verdict="' + lock + '"')
+    }
+    const verif = dom.els['sb-verif'].innerHTML
+    for (const rb of ['bulkAllOrNothingCausallyUnerasable', 'checkpointTradeoffCausallyUnerasable',
+      'skipSilentLossCausallyUnerasable', 'holds', 'nontrivial', 'falsifiable']) {
+      expect(verif, '可证伪栏 ' + rb).toContain('data-rb="' + rb + '"')
+    }
+    for (const t of ['corruptCheckpoint', 'silentPoison', 'emptyJob']) {
+      expect(verif, '篡改 DOM ' + t).toContain('data-rb-tamper="' + t + '"')
+    }
+    const cx = dom.els['sb-crosscheck'].innerHTML
+    for (const api of ['compareRemapping', 'createShardRouter', 'createHashRing', 'createWal', 'createBus',
+      'createRedisCache', 'createObjectPool', 'createTokenBucket', 'createMinHeapDelayQueue',
+      'createPackedCounters', 'createFullJitterBackoff', 'verifyCheckpoint']) {
+      expect(cx, '真件 ' + api + ' 必须落 DOM').toContain(api)
+    }
+    expect(cx).toContain('jitterSpread')
+    // 诚实口径：不出现旧乱码开关名 / 旧 chk 续跑续跑字样
+    expect(dom.els['sb-trilemma-note'].textContent).not.toContain('autoRecoveryMemory')
+    expect(dom.els['sb-trilemma-note'].textContent).not.toContain('续跑续跑')
+    expect(dom.els['sb-trilemma-note'].textContent).toContain('riggedConvergenceCollapsed')
+  })
+
+  it('第二十六维 markup/CSS 契约 + systems.springBatch 缺失真实降级（前端第二十六维）', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-sb')
+    expect(html).toContain('id="sb-matrix"')
+    expect(html).toContain('id="sb-verif"')
+    expect(html).toContain('BulkWriter=001 / ChunkedWriter=110 / SkipRetryWriter=101')
+    expect(css).toContain('.sb-cell.dead')       // 崩 wine
+    expect(css).toContain('.sb-cell.fast')       // 锁 gold
+    expect(css).toContain('.sb-cell.heavy')      // 滞 gold-dim
+    expect(css).toContain('.sb-cell.ok')         // ✓ jade
+    expect(css).toContain('.sb-flag.yes')
+    expect(css).toContain('.sb-bar > i')
+    expect(css).toContain('.sb-verif')
+    expect(css).toContain('@media')
+  })
+
+  it('systems.springBatch 缺失：sb-matrix/trilemma 真实降级、绝不伪造第二套数', async () => {
+    const noSb = JSON.parse(JSON.stringify(realSw as any))
+    noSb.systems.springBatch = null
+    const dom = await runApp(noSb)
+    expect(dom.els['sb-matrix'].innerHTML).toContain('暂缺')
+    expect(dom.els['sb-trilemma'].innerHTML).toContain('暂缺')
+    expect(dom.els['sb-matrix-note'].textContent).toContain('systems.springBatch 缺失')
+  })
 })

@@ -46,6 +46,7 @@ import { cacheReplacementStudy, cacheReplacementSnapshot } from './caesura-cache
 import { streamWindowStudy, streamWindowSnapshot } from './caesura-stream-window.mjs'
 import { streamCardinalityStudy, cardinalitySnapshot } from './caesura-hyperloglog.mjs'
 import { crdtStudy, crdtSnapshot } from './caesura-crdt.mjs'
+import { springBatchStudy, springBatchSnapshot } from './caesura-spring-batch.mjs'
 import {
   createAimdCongestion,
   createCubicCongestion,
@@ -701,6 +702,25 @@ export function createGameCloud(opts = {}) {
     return crdtCached
   }
 
+  // KI-532：Spring Batch chunk-oriented R-P-W 教学件（BulkWriter/ChunkedWriter/SkipRetryWriter；opt-in、status/ sb*）。
+  // opts.springBatch===true 走钳制默认参数（可覆盖 now/seed/items/skipLimit/chunkSize/perfectOracle/unlimitedSkip/rigged 等）；
+  // 传对象且 rows/vectors/verdict 齐全时当现成 study 注入；默认 springBatch:false 非破坏（同 KI-513/.../531 法），
+  // 显式开才接；不声称真 Spring Batch 字节级移植（无 spring.batch.js / 真 CRCHK/CAP 真恢复 / 真墙钟批量吞吐）。
+  const sbCfg = opts.springBatch === true ? {} : (opts.springBatch && typeof opts.springBatch === 'object' ? opts.springBatch : null)
+  const sbInjected = sbCfg !== null && opts.springBatch &&
+    typeof opts.springBatch === 'object' && Array.isArray(opts.springBatch.rows) &&
+    opts.springBatch.vectors && opts.springBatch.verdict
+  let sbCached = null
+  async function sbSnapshotForStatus() {
+    if (sbCfg === null) return null
+    if (sbCached) return sbCached
+    const study = sbInjected
+      ? opts.springBatch
+      : await springBatchStudy({ ...sbCfg, now: opts.sbNow ?? sbCfg.now })
+    sbCached = springBatchSnapshot(study)
+    return sbCached
+  }
+
   // KI-513：分布式消息投递语义三协议诚实权衡（At-Most-Once / At-Least-Once / Exactly-Once，opt-in）。
   // opts.messageDelivery===true 用缺省规模；传对象逐项注入（now/seed/messages/manyKeys/retryLimit/...
   // 或 noCrash/ackReliable/freeIdempotency 单开关探针），或直接塞一只现成 study（duck-typed：带 rows/vectors/verdict/crosscheck/topology）。
@@ -809,6 +829,8 @@ export function createGameCloud(opts = {}) {
     runStreamCardinalityStudy: hllCfg === null ? null : () => streamCardinalityStudy({ ...hllCfg, now: opts.hllNow ?? hllCfg.now }),
     /** KI-531：CRDT 最终一致冲突消解三策略诚实权衡研究件；缺 opts.crdt 时为 null；LWWRegister/GCounter/OrSet(add-wins) × 六场景矩阵 + 三难向量维序 [strongEventualConvergence/expressiveness/compactMetadata]（默认 011/100/110 互异不封赢家；rigged 三开关 uniformClock/infiniteMetadata/coordinatedDelete 齐开后唯一翻 GCounter compact⇒101，LWW 并发丢/OrSet tag 历史不可压/decrement 不可减三条因果结构锁钉死，noUniversalWinner 仍真、绝不硬造 111；诚实口径：三者严格 SEC 全收敛、LWW 破在并发意图、OrSet add-wins）+ verifyConvergence 双路自证（三副本乱序+重复 anti-entropy 后 value 逐字相等 + 真值不变量 + 三路篡改真喂回现算翻 false）+ 十一枚真件 21 键交叉印证。 */
     runCrdtStudy: crdtCfg === null ? null : () => crdtStudy({ ...crdtCfg, now: opts.crdtNow ?? crdtCfg.now }),
+    /** KI-532：Spring Batch chunk-oriented R-P-W 教学件；缺 opts.springBatch 时为 null；BulkWriter/ChunkedWriter/SkipRetryWriter × 六场景矩阵 + 三难向量维序 [faultIsolation/restartability/throughput]（默认 001/110/101 互异不封赢家；restartability 与 throughput 共用 stats().checkpoints 观测量天然互斥、零查表现算；rigged 双开关 perfectOracle/unlimitedSkip 喂已预防剔除毒项的干净流 ⇒ Bulk≡Skip=101 区分度诚实收敛 riggedConvergenceCollapsed=true、noStrategyWinsAll 仍真绝不硬造 111，三条因果结构锁——chk 权衡/skip 永久丢/bulk 整批死——在同一含毒 raw 流真跑现算钉死 causalLocksAllHold=true，主教义 bulkExplodesOnPoison 恒以纯净基线标定不翻）+ verifyCheckpoint 双路自证（clean 全量基准 + poison chunk 隔离/已 commit 零重复/非毒零丢失/真检测毒 四观测量 + 三路篡改真喂回同一内核现算翻 false 带 baselineHolds）+ 十一枚真件 21 键交叉印证。 */
+    runSpringBatchStudy: sbCfg === null ? null : () => springBatchStudy({ ...sbCfg, now: opts.sbNow ?? sbCfg.now }),
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
     gray: runtime.gray,
     /** 把游戏真 EventBus 按白名单routes 接进云事件总线（游戏侧一行：gc.connectGameBus(bus, routes)）。 */
@@ -864,6 +886,7 @@ export function createGameCloud(opts = {}) {
         streamWindow: await swSnapshotForStatus(),
         hyperLogLog: await hllSnapshotForStatus(),
         crdt: await crdtSnapshotForStatus(),
+        springBatch: await sbSnapshotForStatus(),
       }
     },
   }

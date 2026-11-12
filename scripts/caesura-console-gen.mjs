@@ -42,6 +42,7 @@ import { cacheReplacementStudy, cacheReplacementSnapshot } from './caesura-cache
 import { streamWindowStudy, streamWindowSnapshot } from './caesura-stream-window.mjs'
 import { streamCardinalityStudy, cardinalitySnapshot } from './caesura-hyperloglog.mjs'
 import { crdtStudy, crdtSnapshot } from './caesura-crdt.mjs'
+import { springBatchStudy, springBatchSnapshot } from './caesura-spring-batch.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
 export const SCENARIO_IDS = ['main', 'gray', 'resilience', 'cache', 'net']
@@ -350,8 +351,11 @@ export async function buildSystems(opts = {}) {
   // KI-530：第二十四维「ExactSet/HyperLogLog/LinearCounting 基数估计算法族」真跑六场景 + 三难判词（101/110/010） + verifySparseEstimate 双路交叉印证（真 Set vs HLL 3σ_band + 三路篡改现算翻 false） + 十一枚真件交叉印证，与其它维平级。
   const hyperLogLog = opts.hyperLogLog === false ? null : await buildCardinalityReading(opts, now)
   // KI-531：第二十五维「LWWRegister/GCounter/OrSet(add-wins) CRDT 冲突消解」真跑六场景 + 三难判词维序 [SEC/expressiveness/compact]（011/100/110，rigged 唯一翻 GCounter compact⇒101、三因果锁钉死） + verifyConvergence 双路自证（三副本乱序+重复 anti-entropy 后 value 逐字相等 + 真值不变量 + 三路篡改现算翻 false） + 十一枚真件交叉印证，与其它维平级。
+  // KI-531：第二十五维装配 CRDT 冲突消解
   const crdt = opts.crdt === false ? null : await buildCrdtReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, builtAt: now() }
+  // KI-532：第二十六维装配 Spring Batch chunk-oriented R-P-W
+  const springBatch = opts.springBatch === false ? null : await buildSpringBatchReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, builtAt: now() }
 }
 
 /**
@@ -406,6 +410,30 @@ export async function buildCacheReplacementReading(opts, now) {
       ...(opts.crRigged === true ? { rigged: true } : {}),
     })
     return cacheReplacementSnapshot(s)
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
+ * KI-532：Spring Batch chunk-oriented R-P-W 真跑三策略（BulkWriter/ChunkedWriter/SkipRetryWriter × 六场景 + 三难向量 + verifyCheckpoint 双路自证 + 十一枚真件交叉印证）。
+ * 失败落 null；读数全真、CLI 双跑字节一致、rigged 不硬封胜者。
+ * @param {object} opts { springBatch?:false, sbSeed?, sbItems?, sbChunkSize?, sbSkipLimit?, sbPerfectOracle?, sbUnlimitedSkip?, sbRigged? }
+ * @param {()=>number} now 时钟（builtAt 注入真值）
+ */
+export async function buildSpringBatchReading(opts, now) {
+  try {
+    const s = await springBatchStudy({
+      now,
+      ...(opts.sbSeed ? { seed: Math.max(0, Math.floor(Number(opts.sbSeed))) } : {}),
+      ...(opts.sbItems ? { items: Math.max(32, Math.floor(Number(opts.sbItems))) } : {}),
+      ...(opts.sbChunkSize ? { chunkSize: Math.max(1, Math.floor(Number(opts.sbChunkSize))) } : {}),
+      ...(opts.sbSkipLimit !== undefined ? { skipLimit: Math.max(0, Math.floor(Number(opts.sbSkipLimit))) } : {}),
+      ...(opts.sbPerfectOracle === true ? { perfectOracle: true } : {}),
+      ...(opts.sbUnlimitedSkip === true ? { unlimitedSkip: true } : {}),
+      ...(opts.sbRigged === true ? { rigged: true } : {}),
+    })
+    return springBatchSnapshot(s)
   } catch (e) {
     return null // 缺哪块就落 null，前端据实降级；不编造假数
   }

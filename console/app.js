@@ -63,6 +63,7 @@
       renderStreamWindow(snap.systems ? snap.systems.streamWindow : null)
       renderCardinality(snap.systems ? snap.systems.hyperLogLog : null)
       renderCrdt(snap.systems ? snap.systems.crdt : null)
+      renderSpringBatch(snap.systems ? snap.systems.springBatch : null)
       setLive(true, result.source)
     }).catch(function (e) {
       setLive(false, 'error')
@@ -3141,6 +3142,169 @@
       '诚实标定：三者严格 SEC 全为真（都是合格 CRDT，副本逐字收敛），LWW 的 SEC 教学位✗ 破在「并发意图被吞」而非副本分歧，绝不谎称 LWW 副本不收敛；OrSet 采用 add-wins（observed-remove），并发 add 存活是已知代价。' +
       'rigged 三开关 uniformClock / infiniteMetadata / coordinatedDelete 齐开：唯一抹掉 GCounter 的 compact 外部成本（100→101，与 KI-530 ExactSet 101→111 同构），' +
       '但三条因果结构锁真跑钉死——LWW 并发丢（完美时钟也救不了）/ GCounter decrement 不可减（三开关全给仍 false）/ OrSet tag 历史不可压（压成计数则并发 race 收敛出错）⇒ noUniversalWinner 仍真、绝不硬造 111。'
+  }
+
+  /* ================= KI-532 BulkWriter/ChunkedWriter/SkipRetryWriter Spring Batch R-P-W · 第二十六维（sb 族） ================= */
+
+  function renderSpringBatch(sb) {
+    renderSbMatrix(sb && sb.rows, sb && sb.config)
+    renderSbLadder(sb && sb.rows)
+    renderSbTrilemma(sb && sb.rows, sb && sb.verdict, sb && sb.crosscheck)
+  }
+
+  function sbMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 暂缺</div>'
+    if (note) note.textContent = 'systems.springBatch 缺失 — 跑一次 npm run console:data 即可补齐'
+  }
+
+  // 状态字只认真件现算好的三布尔，按三难维序 [faultIsolation / restartability / throughput] 取第一个破位，
+  // 与后端 vectorOf 及 mesh-e2e ladder 同源：崩=整批死(faultIsolation破) / 锁=无 chk 不可续跑(restartability破) /
+  // 滞=chunk commit 拖吞吐(throughput破)。注意 cell 的 restartability/throughput 是「协议在该场景的可达能力」，
+  // 只有含毒考场才暴露 faultIsolation 软肋；无毒 cell 三布尔全真空真不连坐。
+  function sbCell(c) {
+    if (!c) return { cls: '', ch: '·' }
+    if (c.faultIsolation === false) return { cls: 'dead', ch: '崩' }
+    if (c.restartability === false) return { cls: 'fast', ch: '锁' }
+    if (c.throughput === false) return { cls: 'heavy', ch: '滞' }
+    return { cls: 'ok', ch: '✓' }
+  }
+
+  function renderSbMatrix(rows, config) {
+    var box = $('#sb-matrix'), note = $('#sb-matrix-note')
+    if (!Array.isArray(rows) || !rows.length || !config || !Array.isArray(config.scenarios)) {
+      sbMissing(box, note, 'sb 矩阵'); return
+    }
+    var scenarios = config.scenarios
+    var head = '<div class="sb-mat-row sb-mat-head"><span class="sb-mat-proto">策略</span>' +
+      scenarios.map(function (sc) { return '<span class="sb-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="sb-mat-cost">毒/ chk / tp</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = sbCell(cell)
+        return '<span class="sb-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="sb-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="sb-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="sb-mat-cost"><b>' + esc(String(m.poisonDeaths)) + '</b>/' + esc(fmt(m.chunkedCheckpoints)) + '/' + esc(String(m.itemsProcessed)) + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'BulkWriter / ChunkedWriter / SkipRetryWriter × 六场景：cleanRun（无 poison 全量跑）/ poisonOne（流中点单个毒）/ restartMidway（单个毒落中点、验 chk 续跑）/ burstLoad（items×2 吞吐压测）/ skipSaturation（每 32 项一个毒、超 skipLimit=2）/ cleanRerun（确定性重跑、单个毒验幂等）。' +
+      '每格只认真件现算好的三布尔（faultIsolation/restartability/throughput）——绝不拿阈值重算，与三难向量/vectors 同源。' +
+      '状态字：崩=poison 整批死 / 锁=无 chk 不可续跑 / 滞=chunk commit 拖吞吐 / ✓=该场景无软肋。' +
+      'BulkWriter：一次 flush 吞吐最快、checkpoints=0、poison 即整批死；ChunkedWriter：chunkSize=8 分块独立事务、poison 只杀当前 chunk、restart(fromChk) 真续跑且已 commit 零重复写；SkipRetryWriter：skipLimit=2 毒行跳过后永久丢、无 chk 不可恢复（skipPolicy 真语义）。'
+  }
+
+  function renderSbLadder(rows) {
+    var box = $('#sb-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.itemsProcessed) ? r.metrics.itemsProcessed : 1 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.itemsProcessed) ? Math.round(m.itemsProcessed / max * 100) : 0
+      return '<div class="sb-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="sb-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">吞吐量 ' + esc(String(m.itemsProcessed)) + ' · 毒物死 ' + esc(String(m.poisonDeaths)) + ' 次' + (r.protocol === 'ChunkedWriter' ? ' · chk ' + esc(String(m.chunkedCheckpoints)) + ' 真 chk' : '') + '</span></div>'
+    }).join('')
+  }
+
+  function renderSbTrilemma(rows, verdict, crosscheck) {
+    var box = $('#sb-trilemma'), veBox = $('#sb-verif'), cxBox = $('#sb-crosscheck'), note = $('#sb-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      sbMissing(box, note, 'sb 判词'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''; return
+    }
+    // 顺序必须与后端 vectorOf 维序 [faultIsolation / restartability / throughput] 逐字一致，
+    // 否则前端拼出的向量与 snapshot.vectors 对不上。
+    var flags = [['faultIsolation', '容错隔离'], ['restartability', 'chk 续跑'], ['throughput', '吞吐']]
+    var head = '<div class="sb-vec sb-vec-head"><span class="proto">策略</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="sb-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="sb-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    if (veBox) {
+      var bulk = rows.find(function (r) { return r.protocol === 'BulkWriter' })
+      var chunk = rows.find(function (r) { return r.protocol === 'ChunkedWriter' })
+      var skip = rows.find(function (r) { return r.protocol === 'SkipRetryWriter' })
+      var cp = crosscheck && crosscheck.checkpoint
+      veBox.innerHTML = [
+        '<div class="sb-rb-row" data-rb="bulkAllOrNothingCausallyUnerasable"><b>BulkWriter</b> 真跑 poisonOne → wholeBatchDied=' +
+          (bulk && bulk.scenarios && bulk.scenarios.find(function (sc) { return sc.id === 'poisonOne' })?.wholeBatchDied ? 'true' : 'false') +
+          '（一次 flush 吞吐最快，但真毒必整批死、checkpoints=0；完美预言机须换输入流才救，同一 raw 流抹不掉）</div>',
+        '<div class="sb-rb-row" data-rb="checkpointTradeoffCausallyUnerasable"><b>ChunkedWriter</b> 真跑 restartMidway → chk=' +
+          esc(String(chunk ? chunk.metrics.chunkedCheckpoints : 0)) +
+          '（poison 只杀当前 chunk、其余照 commit、已 commit 零重复写；chk 是 restartability 与 throughput 的唯一分界，给 Skip 无限 skip 也造不出既有 chk 又不停顿）</div>',
+        '<div class="sb-rb-row" data-rb="skipSilentLossCausallyUnerasable"><b>SkipRetryWriter</b> 真跑 skipSaturation → dropped=' +
+          esc(String(skip ? skip.metrics.itemsDropped : 0)) +
+          '（pipeline 不卡，但毒行永久丢、无 chk 不可恢复；unlimitedSkip 只免 fatal 不免丢 = skipPolicy 真语义）</div>',
+      ].join('') +
+        (cp ? '<div class="sb-rb-row" data-rb="holds">verifyCheckpoint holds=' + (cp.holds ? 'true' : 'false') +
+          ' · baselineHolds=' + (cp.baselineHolds ? 'true' : 'false') +
+          ' · <span data-rb="nontrivial">nontrivial=' + (cp.nontrivial ? 'true' : 'false') + '</span>' +
+          ' · <span data-rb="falsifiable">falsifiable=' + (cp.falsifiable ? 'true' : 'false') + '</span>' +
+          ' · laneA{baseline=' + esc(String(cp.laneA && cp.laneA.baselineProcessed)) + '} laneB{completed=' + esc(String(cp.laneB && cp.laneB.completedProcessed)) + ' unique=' + esc(String(cp.laneB && cp.laneB.uniqueCommitted)) + '}</div>' +
+          '<div class="sb-rb-row" data-rb-tamper="corruptCheckpoint">篡改① chk 指针 corrupt ⇒ 真制造重复写 ⇒ noDuplicate 现算翻 false</div>' +
+          '<div class="sb-rb-row" data-rb-tamper="silentPoison">篡改② 静默吞毒当正常项 commit ⇒ poisonIsolated 现算翻 false</div>' +
+          '<div class="sb-rb-row" data-rb-tamper="emptyJob">篡改③ 空 jobs ⇒ nontrivial 现算翻 false（绝不 0=0 假绿）</div>' : '')
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      var cp = crosscheck && crosscheck.checkpoint
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>真 <b>compareRemapping</b> 迁移率 一致性 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>' +
+          '<div>真 <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 片</div>' +
+          '<div>真 <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 命中 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
+          '<div>真 <b>createWal</b> lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>真 <b>createBus</b> batch.done 通知 ' + esc(fmt(ev.notices)) + ' 条 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>真 <b>createRedisCache</b> 聚合槽 set+get 命中 ' + esc(fmt(ev.redisBitmapHits)) + ' · entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+          '<div>真 <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+          '<div>真 <b>createTokenBucket</b> 回放允许 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>真 <b>createMinHeapDelayQueue</b> 出队 ' + esc(fmt(ev.heapFired)) + ' 条 · pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+          '<div>真 <b>createPackedCounters</b> Σ=' + esc(fmt(ev.counterSum)) + ' · falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>' +
+          '<div>真 <b>createFullJitterBackoff</b> jitterSpread=' + esc(fmt(ev.jitterSpread)) + '（64 样本全抖动）</div>' +
+          (cp ? '<div>真 <b>verifyCheckpoint</b> holds=<b>' + (cp.holds ? 'true' : 'false') + '</b> baselineHolds=<b>' + (cp.baselineHolds ? 'true' : 'false') + '</b> nontrivial=<b>' + (cp.nontrivial ? 'true' : 'false') + '</b> · laneA{baseline=' + esc(String(cp.laneA && cp.laneA.baselineProcessed)) + '} laneB{completed=' + esc(String(cp.laneB && cp.laneB.completedProcessed)) + ' unique=' + esc(String(cp.laneB && cp.laneB.uniqueCommitted)) + '} · 3 篡改真喂回同一内核现算翻 false</div>' : '')
+      } else {
+        cxBox.innerHTML = '<div class="nodata">真件交叉印证缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var allHold = v.causalLocksAllHold === true
+    var collapsed = v.riggedConvergenceCollapsed === true
+    var chips = [
+      '<span class="chip" data-verdict="bulkAllOrNothingCausallyUnerasable"><b>锁①</b> Bulk 真 poison 必整批死（同一 raw 流抹不掉） ' + (v.bulkAllOrNothingCausallyUnerasable ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="checkpointTradeoffCausallyUnerasable"><b>锁②</b> chk 权衡：有 chk 必拖吞吐、无 chk 必不可续跑 ' + (v.checkpointTradeoffCausallyUnerasable ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="skipSilentLossCausallyUnerasable"><b>锁③</b> Skip 毒行永久丢、unlimitedSkip 只免 fatal ' + (v.skipSilentLossCausallyUnerasable ? '✓' : '✗') + '</span>',
+      '<span class="chip ' + (allHold ? 'jade-t' : 'muted-t') + '" data-verdict="causalLocksAllHold">' + (allHold ? '✓ 三因果锁全钉死（同一含毒 raw 流真跑现算、任何 rigged 开关都救不了）' : '因果锁未全Hold') + '</span>',
+      '<span class="chip" data-verdict="chunkedChkAvailable"><b>Chunked</b> 真 chk 续跑 ' + (v.chunkedChkAvailable ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="skipSilentLoss"><b>Skip</b> 毒行永久丢 ' + (v.skipSilentLoss ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="riggedConvergenceCollapsed"><b>诚实标定</b> rigged ⇒ Bulk≡Skip=101 区分度收敛 ' + (collapsed ? '✓' : '·') + '</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' + (noWin ? '✓ 三向量互异（001/110/101）、无一 111、不封赢家' : '默认态塌陷') + '</span>',
+    ]
+    var probes = $('#sb-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维序固定 [faultIsolation / restartability / throughput]，三位全部真跑现算、不查协议名表：' +
+      'BulkWriter=001（一次 flush 吞吐最快、checkpoints=0 ⇒ restartability✗/throughput✓；poison 一现整批死 ⇒ faultIsolation✗）；' +
+      'ChunkedWriter=110（chunkSize=8 分块独立事务、poison 只杀当前 chunk、restart(fromChk) 真续跑且已 commit 零重复写 ⇒ faultIsolation✓/restartability✓；checkpoints>0 故 commit 占 pipeline ⇒ throughput✗）；' +
+      'SkipRetryWriter=101（skipLimit=2 毒行跳过后永久丢、无 chk ⇒ restartability✗；pipeline 不卡 ⇒ throughput✓；毒项被隔离不整批死 ⇒ faultIsolation✓）。' +
+      '硬结构：restartability 与 throughput 共用 stats().checkpoints 真观测量而天然互斥——这正是三难，零写死。' +
+      'verifyCheckpoint 双路自证：路 A clean 全量全 commit 求基准，路 B 真跑 restart(0) 用「poison chunk 隔离 / 已 commit 无重复 / 非毒零丢失 / 真检测到毒」四观测量判定；三路篡改真喂回同一内核现算翻 false，带 baselineHolds 先真绿。' +
+      '三条因果结构锁在同一含毒 raw 流真跑钉死：Bulk 无 chk 整批死、chk 权衡不可兼得、Skip 跳毒永久丢。' +
+      'rigged 双开关 perfectOracle（毒项 100% 判定、预防性从输入剔除）+ unlimitedSkip 喂的是已剔除毒项的干净流（换了作业输入、诚实标注，不是同一作业被抹软肋）⇒ 三者 faultIsolation 全真、Bulk≡Skip=101 区分度诚实收敛（riggedConvergenceCollapsed=true，教学结论：完美预言机抹平了「预防剔除」与「跳过」的差别，二者结构等价），noStrategyWinsAll 仍真绝不硬造 111，三因果锁仍 allHold。'
   }
 
   /* ================= KI-527 布隆/布谷鸟/计数布隆三过滤器 · 第二十一维（blf 族） ================= */

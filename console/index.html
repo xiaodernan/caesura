@@ -516,6 +516,23 @@
       <p class="note" id="crdt-trilemma-note">…</p>
     </article>
   </section>
+  <!-- 第二十六维 · BulkWriter / ChunkedWriter / SkipRetryWriter Spring Batch R-P-W（KI-532） -->
+  <section class="row row-sb">
+    <article class="panel panel-sb">
+      <div class="panel-head"><h2>第二十六维 · BulkWriter/ChunkedWriter/SkipRetryWriter · 三策略 × 六场景</h2><span class="hint">吞=BulkWriter（全流缓冲一次 flush·吞吐真 tp·poison 一现整批死·checkpoints=0）/ 缓=ChunkedWriter（chunkSize=8 独立事务·poison 只杀当前 chunk、其余 chunk 照 commit、已 commit 零重复写·restart(fromChk) 真续跑 = chk 真语义·checkpoints&gt;0 故 commit 占 pipeline）/ 速=SkipRetryWriter（遇毒记 skip 寄存器继续·skipLimit=2 超限真败·unlimitedSkip 免 fatal 不免丢·毒行永久丢无 chk 不可恢复 = skipPolicy 真语义）。restartability ⇔ checkpoints&gt;0 ⇔ 非 throughput，共用真观测量天然互斥，零查表现算</span></div>
+      <div class="sb-matrix" id="sb-matrix"></div>
+      <div class="sb-ladder" id="sb-ladder"></div>
+      <p class="note" id="sb-matrix-note">…</p>
+    </article>
+    <article class="panel panel-sb">
+      <div class="panel-head"><h2>三难向量（faultIsolation ∧ restartability ∧ throughput）· 双路自证</h2><span class="hint">BulkWriter=001 / ChunkedWriter=110 / SkipRetryWriter=101 · 三向量互异无一 111 不封赢家 · verifyCheckpoint 双路自证（clean 全量基准 + poison chunk 隔离/已 commit 零重复/非毒零丢失/真检测毒 四观测量）+ 三路篡改真喂回同一内核现算翻 false（chk corrupt⇒重复 / 静默吞毒⇒不隔离 / 空 jobs⇒非平凡破）· 三因果锁 chk 权衡/skip 永久丢/bulk 整批死在同一含毒 raw 流钉死 · rigged 双开关喂已预防剔除毒项干净流 ⇒ Bulk≡Skip=101 区分度诚实收敛、noStrategyWinsAll 仍真绝不硬造 111</span></div>
+      <div class="sb-trilemma" id="sb-trilemma"></div>
+      <div class="sb-verif" id="sb-verif"></div>
+      <div class="sb-crosscheck" id="sb-crosscheck"></div>
+      <div class="sb-probes" id="sb-probes"></div>
+      <p class="note" id="sb-trilemma-note">…</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">

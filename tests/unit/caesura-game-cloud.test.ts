@@ -1798,4 +1798,101 @@ describe('caesura-game-cloud', () => {
     expect(injected.crdt.builtAt).toBe(555)
     expect(injected.crdt.config.seed).toBe(99)
   })
+
+  // ============ KI-532 Spring Batch chunk-oriented R-P-W opt-in 装配（2 腿）============
+  it('springBatch:true 装配真矩阵：001/110/101 互异不封赢家 + 三因果锁 + verifyCheckpoint 双路 + 三路篡改真喂回 + 21 键 + 惰性同引用（KI-532）', async () => {
+    const gc = await createGameCloud({
+      gameId: 'gid-sb1', gamePort: 7860, sources, cloud: fakeCloud(),
+      springBatch: true, sbNow: () => 532000,
+    })
+    const st = (await gc.status()).springBatch
+    expect(st).not.toBe(null)
+    expect(st!.builtAt).toBe(532000)
+    expect(st!.config.scenarios.length).toBe(6)
+    expect(st!.config.items).toBe(96)
+    expect(st!.rows.length).toBe(3)
+    expect(st!.vectors).toEqual({ BulkWriter: '001', ChunkedWriter: '110', SkipRetryWriter: '101' })
+    expect(st!.rigged).toBe(false)
+    expect(st!.noUniversalWinner).toBe(true)
+    expect(st!.trilemmaDistinguishes).toBe(true)
+    expect(st!.verdict.noStrategyWinsAll).toBe(true)
+    expect(st!.verdict.vectorFromTrilemma).toBe(true)
+    // 三因果结构锁
+    expect(st!.causalLocks.causalLocksAllHold).toBe(true)
+    expect(st!.causalLocks.checkpointTradeoffCausallyUnerasable).toBe(true)
+    expect(st!.causalLocks.skipSilentLossCausallyUnerasable).toBe(true)
+    expect(st!.causalLocks.bulkAllOrNothingCausallyUnerasable).toBe(true)
+    // verifyCheckpoint 双路 + 三路篡改真喂回（带 baselineHolds）
+    const cp = st!.crosscheck.checkpoint
+    expect(cp.holds).toBe(true)
+    expect(cp.baselineHolds).toBe(true)
+    expect(cp.nontrivial).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.tamper.corruptedCheckpoint.holds).toBe(false)
+    expect(cp.tamper.silentPoison.holds).toBe(false)
+    expect(cp.tamper.emptyJob.holds).toBe(false)
+    expect(Object.keys(st!.crosscheck.evidence).length).toBe(21)
+    // 主教义恒以纯净基线标定
+    expect(st!.verdict.bulkExplodesOnPoison).toBe(true)
+    expect(st!.verdict.chunkedChkAvailable).toBe(true)
+    expect(st!.verdict.skipSilentLoss).toBe(true)
+    // 惰性缓存 + 可重跑同向量
+    expect((await gc.status()).springBatch).toBe(st)
+    expect(await gc.runSpringBatchStudy!()).toMatchObject({ vectors: st!.vectors })
+    // 不连坐其它维
+    expect(st!.rigged).toBe(false)
+    const bare = await createGameCloud({ gameId: 'gid-sb0', gamePort: 7861, sources, cloud: fakeCloud() }).status()
+    expect(bare.springBatch).toBe(null)
+    expect(bare.crdt).toBe(null)
+  })
+
+  it('springBatch 默认 null 非破坏；单开开关主教义不破、rigged 区分度诚实收敛但不硬造 111；可注入现成 study（KI-532）', async () => {
+    // 单开 perfectOracle：预防剔除毒项 ⇒ Bulk faultIsolation 真翻 101（oracle 抹掉整批死），但主教义恒以纯净基线标定不翻；
+    // 单开 unlimitedSkip：不抹 faultIsolation、不创 chk ⇒ 默认向量仍 001/110/101。两者 rigged 都未齐开。
+    const oracle = await (await createGameCloud({
+      gameId: 'gid-sb-oracle', gamePort: 7862, sources, cloud: fakeCloud(),
+      springBatch: { perfectOracle: true, now: 0 },
+    })).status()
+    expect(oracle.springBatch.vectors).toEqual({ BulkWriter: '101', ChunkedWriter: '110', SkipRetryWriter: '101' })
+    expect(oracle.springBatch.rigged).toBe(false)
+    expect(oracle.springBatch.verdict.bulkExplodesOnPoison).toBe(true)
+    expect(oracle.springBatch.verdict.perfectOracleErasesPoison).toBe(true)
+    const skipOnly = await (await createGameCloud({
+      gameId: 'gid-sb-skip', gamePort: 7863, sources, cloud: fakeCloud(),
+      springBatch: { unlimitedSkip: true, now: 0 },
+    })).status()
+    expect(skipOnly.springBatch.vectors).toEqual({ BulkWriter: '001', ChunkedWriter: '110', SkipRetryWriter: '101' })
+    expect(skipOnly.springBatch.rigged).toBe(false)
+    expect(skipOnly.springBatch.verdict.bulkExplodesOnPoison).toBe(true)
+    expect(skipOnly.springBatch.verdict.unlimitedSkipNoRestart).toBe(true)
+    // rigged：预防剔除毒项干净流 ⇒ Bulk≡Skip=101 区分度诚实收敛、noStrategyWinsAll 仍真、三锁钉死
+    const rig = await (await createGameCloud({
+      gameId: 'gid-sb-rig', gamePort: 7864, sources, cloud: fakeCloud(),
+      springBatch: { rigged: true, now: 0 },
+    })).status()
+    expect(rig.springBatch.vectors).toEqual({ BulkWriter: '101', ChunkedWriter: '110', SkipRetryWriter: '101' })
+    expect(rig.springBatch.rigged).toBe(true)
+    expect(rig.springBatch.trilemmaDistinguishes).toBe(false)
+    expect(rig.springBatch.verdict.riggedConvergenceCollapsed).toBe(true)
+    expect(rig.springBatch.verdict.noStrategyWinsAll).toBe(true)
+    expect(rig.springBatch.verdict.bulkExplodesOnPoison).toBe(true)
+    expect(rig.springBatch.causalLocks.causalLocksAllHold).toBe(true)
+    // 注入 items/chunkSize/skipLimit 真生效
+    const tuned = await (await createGameCloud({
+      gameId: 'gid-sb-tuned', gamePort: 7865, sources, cloud: fakeCloud(),
+      springBatch: { items: 128, chunkSize: 16, skipLimit: 5, seed: 7, now: 77 },
+    })).status()
+    expect(tuned.springBatch.config.items).toBe(128)
+    expect(tuned.springBatch.config.chunkSize).toBe(16)
+    expect(tuned.springBatch.rows[0].scenarios[0].size).toBe(128)
+    expect(tuned.springBatch.builtAt).toBe(77)
+    // 注入现成 study（duck-typed）
+    const { springBatchStudy } = await import('../../scripts/caesura-spring-batch.mjs')
+    const injected = await (await createGameCloud({
+      gameId: 'gid-sb-inj', gamePort: 7866, sources, cloud: fakeCloud(),
+      springBatch: springBatchStudy({ seed: 99, now: 555 }),
+    })).status()
+    expect(injected.springBatch.builtAt).toBe(555)
+    expect(injected.springBatch.config.seed).toBe(99)
+  })
 })

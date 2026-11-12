@@ -880,6 +880,57 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(twelve.every((x) => x === 531000)).toBe(true)
   })
 
+  it('㉒b-spring-batch buildSpringBatchReading 真跑：sb* 注入生效 / springBatch:false 关闭 / rigged 诚实收敛不硬造 111 / 双路自证 + 三路篡改真喂回 + 三因果锁 + 十一真件 / 十三时钟同源（KI-532）', async () => {
+    const { buildSpringBatchReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 532000
+    const sb = (await buildSpringBatchReading({}, now))!
+    expect(sb).not.toBe(null)
+    expect(sb.builtAt).toBe(532000)
+    expect(sb.rows.length).toBe(3)
+    expect(sb.config.scenarios.length).toBe(6)
+    expect(sb.vectors).toEqual({ BulkWriter: '001', ChunkedWriter: '110', SkipRetryWriter: '101' })
+    expect(sb.rigged).toBe(false)
+    expect(sb.noUniversalWinner).toBe(true)
+    expect(sb.trilemmaDistinguishes).toBe(true)
+    expect(sb.causalLocks.causalLocksAllHold).toBe(true)
+    // 注入 items/chunkSize/skipLimit/seed 真生效（不是只改 config 显示）
+    const tuned = (await buildSpringBatchReading({ sbSeed: 12, sbItems: 64, sbChunkSize: 16, sbSkipLimit: 5 }, now))!
+    expect(tuned.config.seed).toBe(12)
+    expect(tuned.config.items).toBe(64)
+    expect(tuned.config.chunkSize).toBe(16)
+    expect(tuned.config.skipLimit).toBe(5)
+    expect(tuned.rows[0].scenarios[0].size).toBe(64)
+    // rigged：预防剔除毒项干净流 ⇒ Bulk≡Skip=101 区分度诚实收敛、noStrategyWinsAll 仍真绝不硬造 111、三锁仍钉死
+    const rig = (await buildSpringBatchReading({ sbRigged: true }, now))!
+    expect(rig.vectors).toEqual({ BulkWriter: '101', ChunkedWriter: '110', SkipRetryWriter: '101' })
+    expect(rig.rigged).toBe(true)
+    expect(rig.verdict.noUniversalWinner).toBe(false)        // 区分度坍塌（诚实标注）
+    expect(rig.trilemmaDistinguishes).toBe(false)
+    expect(rig.verdict.riggedConvergenceCollapsed).toBe(true)
+    expect(rig.verdict.noStrategyWinsAll).toBe(true)         // 仍无一 111
+    expect(rig.causalLocks.causalLocksAllHold).toBe(true)    // 三锁与 rigged 输入无关
+    // verifyCheckpoint 双路自证 + 三路篡改真喂回现算翻 false（带 baselineHolds）
+    const cp = sb.crosscheck.checkpoint
+    expect(cp.holds).toBe(true)
+    expect(cp.baselineHolds).toBe(true)
+    expect(cp.nontrivial).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.tamper.corruptedCheckpoint.holds).toBe(false)
+    expect(cp.tamper.silentPoison.holds).toBe(false)
+    expect(cp.tamper.emptyJob.holds).toBe(false)
+    expect(Object.keys(sb.crosscheck.evidence).length).toBe(21)
+    expect((sb.crosscheck.evidence as any).jitterSpread).toBeGreaterThan(0)
+    // 关闭不连坐
+    const off = await buildSystems({ now, springBatch: false, crdt: false })
+    expect(off.springBatch).toBe(null)
+    expect(off.crdt).toBe(null)
+    expect(off.cacheReplacement).not.toBe(null)
+    // 十三时钟同源
+    const full = await buildSystems({ now })
+    const thirteen = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt, full.bloomFilter?.builtAt, full.cacheReplacement?.builtAt, full.streamWindow?.builtAt, full.hyperLogLog?.builtAt, full.crdt?.builtAt, full.springBatch?.builtAt]
+    expect(thirteen.every((x) => x === 532000)).toBe(true)
+  })
+
   it('⑭ buildMvccTxnReading 真跑五档矩阵形状齐、读数是真判词、单维关闭不连坐（KI-505）', async () => {
     const { buildMvccTxnReading } = await import('../../scripts/caesura-console-gen.mjs')
     const now = () => 4242

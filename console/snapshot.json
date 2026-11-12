@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794438148538,
+  "generatedAt": 1794441927354,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1365,12 +1365,12 @@
           "keys": 1,
           "versions": 2,
           "commitLogSize": 1,
-          "now": 1794438148540
+          "now": 1794441927356
         },
         "final": {
           "A": {
             "value": 101,
-            "commitTs": 1794438148540,
+            "commitTs": 1794441927356,
             "tombstone": false
           }
         }
@@ -3646,7 +3646,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794438148538,
+                "lastTimestamp": 1794441927354,
                 "workerId": 1
               },
               "fault": {
@@ -3742,7 +3742,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794438148538,
+                "lastTimestamp": 1794441927354,
                 "workerId": 1
               },
               "fault": {
@@ -3774,7 +3774,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794438148539,
+                "lastTimestamp": 1794441927355,
                 "workerId": 1
               },
               "fault": {
@@ -3806,7 +3806,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794438148538,
+                "lastTimestamp": 1794441927354,
                 "workerId": 1
               },
               "fault": {
@@ -4522,7 +4522,7 @@
         "capacity": 8,
         "perShardCap": 2
       },
-      "builtAt": 1794438148538
+      "builtAt": 1794441927354
     },
     "configConsistency": {
       "config": {
@@ -5020,7 +5020,7 @@
         "burstCount": 12,
         "windowMs": 10000
       },
-      "builtAt": 1794438148538
+      "builtAt": 1794441927354
     },
     "cacheCoherency": {
       "config": {
@@ -5549,7 +5549,7 @@
         "crashAtWrite": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794438148538
+      "builtAt": 1794441927354
     },
     "messageDelivery": {
       "config": {
@@ -6038,10 +6038,10 @@
         "crashAfterSendAt": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794438148538
+      "builtAt": 1794441927354
     },
     "delayQueue": {
-      "builtAt": 1794438148538,
+      "builtAt": 1794441927354,
       "config": {
         "seed": 518,
         "tasks": 12,
@@ -6068,7 +6068,7 @@
               "id": "allOk",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 47804,
+              "lateMs": 68804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6080,7 +6080,7 @@
               "id": "tickSkew",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 47804,
+              "lateMs": 68804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6092,7 +6092,7 @@
               "id": "farFuture",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 48136,
+              "lateMs": 69136,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6104,7 +6104,7 @@
               "id": "manyCancels",
               "protocol": "TimingWheel",
               "fired": 6,
-              "lateMs": 23858,
+              "lateMs": 30858,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6128,7 +6128,7 @@
               "id": "concurrentWorkers",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 47804,
+              "lateMs": 68804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6139,7 +6139,7 @@
           ],
           "totals": {
             "fired": 54,
-            "lateMs": 215406,
+            "lateMs": 306406,
             "duplicatePickups": 0,
             "lostOnRestart": 6,
             "opUnits": 72
@@ -6375,7 +6375,7 @@
       }
     },
     "retryDlq": {
-      "builtAt": 1794438148538,
+      "builtAt": 1794441927354,
       "config": {
         "seed": 520,
         "messages": 16,
@@ -6793,7 +6793,7 @@
       }
     },
     "consumerGroup": {
-      "builtAt": 1794438148538,
+      "builtAt": 1794441927354,
       "config": {
         "seed": 523,
         "consumers": 3,
@@ -7299,7 +7299,7 @@
       }
     },
     "backpressure": {
-      "builtAt": 1794438148538,
+      "builtAt": 1794441927354,
       "config": {
         "steps": 48,
         "mu": 2,
@@ -8344,7 +8344,7 @@
       }
     },
     "logCompaction": {
-      "builtAt": 1794438148538,
+      "builtAt": 1794441927354,
       "config": {
         "seed": 526,
         "ops": 24,
@@ -9405,7 +9405,7 @@
       }
     },
     "bloomFilter": {
-      "builtAt": 1794438148538,
+      "builtAt": 1794441927354,
       "config": {
         "seed": 527,
         "capacity": 1024,
@@ -10104,7 +10104,7 @@
       }
     },
     "cacheReplacement": {
-      "builtAt": 1794438148538,
+      "builtAt": 1794441927354,
       "config": {
         "seed": 528,
         "capacity": 16,
@@ -10747,7 +10747,7 @@
       }
     },
     "streamWindow": {
-      "builtAt": 1794438148538,
+      "builtAt": 1794441927354,
       "config": {
         "seed": 529,
         "windowSize": 100,
@@ -12806,7 +12806,7 @@
       }
     },
     "hyperLogLog": {
-      "builtAt": 1794438148538,
+      "builtAt": 1794441927354,
       "config": {
         "seed": 530,
         "cardinality": 4096,
@@ -29726,7 +29726,7 @@
       }
     },
     "crdt": {
-      "builtAt": 1794438148538,
+      "builtAt": 1794441927354,
       "config": {
         "seed": 531,
         "replicaCount": 3,
@@ -30101,6 +30101,7 @@
         "riggedApplied": false,
         "rigged_pkg": false
       },
+      "rigged": false,
       "crosscheck": {
         "evidence": {
           "remapConsistentRate": 0.28,
@@ -30180,6 +30181,445 @@
         }
       }
     },
-    "builtAt": 1794438148538
+    "springBatch": {
+      "builtAt": 1794441927354,
+      "config": {
+        "seed": 532,
+        "items": 96,
+        "chunkSize": 8,
+        "skipLimit": 2,
+        "scenarios": [
+          "cleanRun",
+          "poisonOne",
+          "restartMidway",
+          "burstLoad",
+          "skipSaturation",
+          "cleanRerun"
+        ],
+        "rigged": false,
+        "perfectOracle": false,
+        "unlimitedSkip": false
+      },
+      "rows": [
+        {
+          "protocol": "BulkWriter",
+          "scenarios": [
+            {
+              "id": "cleanRun",
+              "processed": 96,
+              "faults": 0,
+              "poisonCount": 0,
+              "size": 96,
+              "checkpoints": 0,
+              "dropped": 0,
+              "wholeBatchDied": false,
+              "fault": "happy-path",
+              "inFaultExam": false,
+              "inRestartExam": false,
+              "inThroughputExam": true
+            },
+            {
+              "id": "poisonOne",
+              "processed": 0,
+              "faults": 0,
+              "poisonCount": 1,
+              "size": 96,
+              "checkpoints": 0,
+              "dropped": 96,
+              "wholeBatchDied": true,
+              "fault": "poison-single",
+              "inFaultExam": true,
+              "inRestartExam": false,
+              "inThroughputExam": false
+            },
+            {
+              "id": "restartMidway",
+              "processed": 0,
+              "faults": 0,
+              "poisonCount": 1,
+              "size": 96,
+              "checkpoints": 0,
+              "dropped": 96,
+              "wholeBatchDied": true,
+              "fault": "mid-recovery",
+              "inFaultExam": true,
+              "inRestartExam": true,
+              "inThroughputExam": false
+            },
+            {
+              "id": "burstLoad",
+              "processed": 192,
+              "faults": 0,
+              "poisonCount": 0,
+              "size": 192,
+              "checkpoints": 0,
+              "dropped": 0,
+              "wholeBatchDied": false,
+              "fault": "burst-throughput",
+              "inFaultExam": false,
+              "inRestartExam": false,
+              "inThroughputExam": true
+            },
+            {
+              "id": "skipSaturation",
+              "processed": 0,
+              "faults": 0,
+              "poisonCount": 3,
+              "size": 96,
+              "checkpoints": 0,
+              "dropped": 96,
+              "wholeBatchDied": true,
+              "fault": "skip-over-limit",
+              "inFaultExam": true,
+              "inRestartExam": false,
+              "inThroughputExam": true
+            },
+            {
+              "id": "cleanRerun",
+              "processed": 0,
+              "faults": 0,
+              "poisonCount": 1,
+              "size": 96,
+              "checkpoints": 0,
+              "dropped": 96,
+              "wholeBatchDied": true,
+              "fault": "rerun-idempotent",
+              "inFaultExam": true,
+              "inRestartExam": true,
+              "inThroughputExam": false
+            }
+          ],
+          "trilemma": {
+            "faultIsolation": false,
+            "restartability": false,
+            "throughput": true
+          },
+          "metrics": {
+            "chunkedCheckpoints": 0,
+            "poisonDeaths": 0,
+            "itemsProcessed": 288,
+            "itemsDropped": 384
+          }
+        },
+        {
+          "protocol": "ChunkedWriter",
+          "scenarios": [
+            {
+              "id": "cleanRun",
+              "processed": 96,
+              "faults": 0,
+              "poisonCount": 0,
+              "size": 96,
+              "checkpoints": 12,
+              "dropped": 0,
+              "wholeBatchDied": false,
+              "fault": "happy-path",
+              "inFaultExam": false,
+              "inRestartExam": false,
+              "inThroughputExam": true
+            },
+            {
+              "id": "poisonOne",
+              "processed": 48,
+              "faults": 1,
+              "poisonCount": 1,
+              "size": 96,
+              "checkpoints": 6,
+              "dropped": 8,
+              "wholeBatchDied": false,
+              "fault": "poison-single",
+              "inFaultExam": true,
+              "inRestartExam": false,
+              "inThroughputExam": false
+            },
+            {
+              "id": "restartMidway",
+              "processed": 48,
+              "faults": 1,
+              "poisonCount": 1,
+              "size": 96,
+              "checkpoints": 6,
+              "dropped": 8,
+              "wholeBatchDied": false,
+              "fault": "mid-recovery",
+              "inFaultExam": true,
+              "inRestartExam": true,
+              "inThroughputExam": false
+            },
+            {
+              "id": "burstLoad",
+              "processed": 192,
+              "faults": 0,
+              "poisonCount": 0,
+              "size": 192,
+              "checkpoints": 24,
+              "dropped": 0,
+              "wholeBatchDied": false,
+              "fault": "burst-throughput",
+              "inFaultExam": false,
+              "inRestartExam": false,
+              "inThroughputExam": true
+            },
+            {
+              "id": "skipSaturation",
+              "processed": 8,
+              "faults": 1,
+              "poisonCount": 3,
+              "size": 96,
+              "checkpoints": 1,
+              "dropped": 8,
+              "wholeBatchDied": false,
+              "fault": "skip-over-limit",
+              "inFaultExam": true,
+              "inRestartExam": false,
+              "inThroughputExam": true
+            },
+            {
+              "id": "cleanRerun",
+              "processed": 48,
+              "faults": 1,
+              "poisonCount": 1,
+              "size": 96,
+              "checkpoints": 6,
+              "dropped": 8,
+              "wholeBatchDied": false,
+              "fault": "rerun-idempotent",
+              "inFaultExam": true,
+              "inRestartExam": true,
+              "inThroughputExam": false
+            }
+          ],
+          "trilemma": {
+            "faultIsolation": true,
+            "restartability": true,
+            "throughput": false
+          },
+          "metrics": {
+            "chunkedCheckpoints": 55,
+            "poisonDeaths": 4,
+            "itemsProcessed": 440,
+            "itemsDropped": 32
+          }
+        },
+        {
+          "protocol": "SkipRetryWriter",
+          "scenarios": [
+            {
+              "id": "cleanRun",
+              "processed": 96,
+              "faults": 0,
+              "poisonCount": 0,
+              "size": 96,
+              "checkpoints": 0,
+              "dropped": 0,
+              "wholeBatchDied": false,
+              "fault": "happy-path",
+              "inFaultExam": false,
+              "inRestartExam": false,
+              "inThroughputExam": true
+            },
+            {
+              "id": "poisonOne",
+              "processed": 95,
+              "faults": 0,
+              "poisonCount": 1,
+              "size": 96,
+              "checkpoints": 0,
+              "dropped": 1,
+              "wholeBatchDied": false,
+              "fault": "poison-single",
+              "inFaultExam": true,
+              "inRestartExam": false,
+              "inThroughputExam": false
+            },
+            {
+              "id": "restartMidway",
+              "processed": 95,
+              "faults": 0,
+              "poisonCount": 1,
+              "size": 96,
+              "checkpoints": 0,
+              "dropped": 1,
+              "wholeBatchDied": false,
+              "fault": "mid-recovery",
+              "inFaultExam": true,
+              "inRestartExam": true,
+              "inThroughputExam": false
+            },
+            {
+              "id": "burstLoad",
+              "processed": 192,
+              "faults": 0,
+              "poisonCount": 0,
+              "size": 192,
+              "checkpoints": 0,
+              "dropped": 0,
+              "wholeBatchDied": false,
+              "fault": "burst-throughput",
+              "inFaultExam": false,
+              "inRestartExam": false,
+              "inThroughputExam": true
+            },
+            {
+              "id": "skipSaturation",
+              "processed": 72,
+              "faults": 1,
+              "poisonCount": 3,
+              "size": 96,
+              "checkpoints": 0,
+              "dropped": 3,
+              "wholeBatchDied": false,
+              "fault": "skip-over-limit",
+              "inFaultExam": true,
+              "inRestartExam": false,
+              "inThroughputExam": true
+            },
+            {
+              "id": "cleanRerun",
+              "processed": 95,
+              "faults": 0,
+              "poisonCount": 1,
+              "size": 96,
+              "checkpoints": 0,
+              "dropped": 1,
+              "wholeBatchDied": false,
+              "fault": "rerun-idempotent",
+              "inFaultExam": true,
+              "inRestartExam": true,
+              "inThroughputExam": false
+            }
+          ],
+          "trilemma": {
+            "faultIsolation": true,
+            "restartability": false,
+            "throughput": true
+          },
+          "metrics": {
+            "chunkedCheckpoints": 0,
+            "poisonDeaths": 1,
+            "itemsProcessed": 645,
+            "itemsDropped": 6
+          }
+        }
+      ],
+      "vectors": {
+        "BulkWriter": "001",
+        "ChunkedWriter": "110",
+        "SkipRetryWriter": "101"
+      },
+      "verdict": {
+        "vectors": {
+          "BulkWriter": "001",
+          "ChunkedWriter": "110",
+          "SkipRetryWriter": "101"
+        },
+        "noUniversalWinner": true,
+        "trilemmaDistinguishes": true,
+        "noStrategyWinsAll": true,
+        "vectorFromTrilemma": true,
+        "bulkExplodesOnPoison": true,
+        "chunkedSurvivesPoison": true,
+        "chunkedChkAvailable": true,
+        "skipFastest": true,
+        "skipSilentLoss": true,
+        "rigged_pkg": false,
+        "riggedConvergenceCollapsed": false,
+        "perfectOracleErasesPoison": true,
+        "unlimitedSkipNoRestart": true,
+        "checkpointTradeoffCausallyUnerasable": true,
+        "skipSilentLossCausallyUnerasable": true,
+        "bulkAllOrNothingCausallyUnerasable": true,
+        "causalLocksAllHold": true
+      },
+      "noUniversalWinner": true,
+      "trilemmaDistinguishes": true,
+      "causalLocks": {
+        "checkpointTradeoffCausallyUnerasable": true,
+        "skipSilentLossCausallyUnerasable": true,
+        "bulkAllOrNothingCausallyUnerasable": true,
+        "causalLocksAllHold": true
+      },
+      "crosscheck": {
+        "evidence": {
+          "routerMoved": 23,
+          "routerTracked": 80,
+          "ringNodes": 4,
+          "ringShardsUsed": 4,
+          "walLines": 80,
+          "walReplayed": 80,
+          "notices": 12,
+          "busListeners": 1,
+          "redisBitmapHits": 96,
+          "redisSlots": 96,
+          "poolCreated": 2,
+          "poolReused": 1,
+          "bucketAllowed": 3,
+          "bucketRejected": 4,
+          "heapFired": 3,
+          "heapPending": 0,
+          "counterSum": 2080,
+          "counterFalseSharing": 56,
+          "jitterSpread": 1.8285,
+          "remapConsistentRate": 0.2,
+          "remapModuloRate": 0.495
+        },
+        "checkpoint": {
+          "laneA": {
+            "baselineProcessed": 96,
+            "baselineFaults": 0,
+            "baselineItemsSnapshot": 96
+          },
+          "laneB": {
+            "completedProcessed": 88,
+            "completedFaults": 1,
+            "committedChunks": 88,
+            "uniqueCommitted": 88
+          },
+          "invariants": {
+            "laneAOk": true,
+            "poisonIsolated": true,
+            "noDuplicate": true,
+            "noLoss": true,
+            "poisonChunkDetected": true
+          },
+          "baselineHolds": true,
+          "holds": true,
+          "nontrivial": true,
+          "falsifiable": true,
+          "tamper": {
+            "corruptedCheckpoint": {
+              "holds": false,
+              "invariants": {
+                "laneAOk": true,
+                "poisonIsolated": true,
+                "noDuplicate": false,
+                "noLoss": true,
+                "poisonChunkDetected": false
+              },
+              "reason": "chk 指针 corrupt ⇒ 重复写 ⇒ noDuplicate 真翻 false"
+            },
+            "silentPoison": {
+              "holds": false,
+              "invariants": {
+                "laneAOk": true,
+                "poisonIsolated": false,
+                "noDuplicate": true,
+                "noLoss": true,
+                "poisonChunkDetected": false
+              },
+              "reason": "静默吞毒不隔离 ⇒ poisonIsolated 真翻 false"
+            },
+            "emptyJob": {
+              "holds": false,
+              "nontrivial": false,
+              "reason": "空 jobs ⇒ nontrivial 真翻 false，绝不 0=0 假绿"
+            }
+          },
+          "events": 96
+        }
+      },
+      "rigged": false
+    },
+    "builtAt": 1794441927354
   }
 }

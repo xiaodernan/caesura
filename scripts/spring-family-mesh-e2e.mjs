@@ -153,6 +153,15 @@ export function runMeshE2E(opts = {}) {
     // 注入时钟用 crdtNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/rdq/dld 已占用前缀）。
     crdt: opts.crdt,
     crdtNow: opts.crdtNow,
+    // KI-532：Spring Batch chunk-oriented R-P-W 教学件（springBatch=true 装配；只读 BulkWriter/ChunkedWriter/SkipRetryWriter ×
+    // 六场景矩阵 + 三难向量维序 [faultIsolation/restartability/throughput]（默认 001/110/101 互异不封赢家；
+    // rigged 双开关 perfectOracle/unlimitedSkip 齐开 ⇒ 预防剔除毒项的干净流令 Bulk≡Skip=101 区分度诚实收敛、
+    // noStrategyWinsAll 仍真绝不硬造 111，三条因果结构锁——chk 权衡/skip 永久丢/bulk 整批死——在同一含毒 raw 流现算钉死）+
+    // verifyCheckpoint 双路自证（clean 全量基准 + poison chunk 隔离/已 commit 零重复/非毒零丢失/真检测毒 四观测量 +
+    // 三路篡改真喂回同一内核现算翻 false）+ 十一真件 21 键交叉印证，不改调用路径）。
+    // 注入时钟用 sbNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/rdq/dld/crdt 已占用前缀）。
+    springBatch: opts.springBatch,
+    sbNow: opts.sbNow,
     sources: {
       eureka: () => (opts.svcA ?? [{ id: 'svc-a:1', name: 'svc-a', address: '10.0.0.1', port: 8080, healthy: true }]),
       k8s: () => k8s.discover('caesura-gate'),
@@ -298,6 +307,7 @@ export function runMeshE2E(opts = {}) {
         streamWindowSnapshot: status.streamWindow ?? null,
         hyperLogLogSnapshot: status.hyperLogLog ?? null,
         crdtSnapshot: status.crdt ?? null,
+        springBatchSnapshot: status.springBatch ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
       }
@@ -600,6 +610,22 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         noUniversalWinner: r.crdtSnapshot.verdict.noUniversalWinner,
         crosscheck: r.crdtSnapshot.crosscheck,
         verdict: r.crdtSnapshot.verdict,
+      } : null,
+      springBatch: r.springBatchSnapshot ? {
+        strategies: r.springBatchSnapshot.rows.map((row) => ({
+          strategy: row.protocol,
+          // 每格状态只认真件现算好的三布尔（faultIsolation/restartability/throughput）—绝不拿阈值重算，与 trilemma/vectors 同源。
+          // '崩'=poison 整批死(faultIsolation破) / '锁'=无 chk 不可续跑(restartability破) / '滞'=chunk commit 拖吞吐(throughput破)。
+          ladder: row.scenarios.map((s) => s.id + ':' + (s.faultIsolation === false ? '崩' : s.restartability === false ? '锁' : s.throughput === false ? '滞' : '✓')).join(' → '),
+          metrics: row.metrics, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.springBatchSnapshot.rows.map((row) => [row.protocol,
+          `${Number(row.trilemma.faultIsolation)}${Number(row.trilemma.restartability)}${Number(row.trilemma.throughput)}`])),
+        vectors: r.springBatchSnapshot.vectors,
+        noUniversalWinner: r.springBatchSnapshot.noUniversalWinner,
+        causalLocks: r.springBatchSnapshot.causalLocks,
+        crosscheck: r.springBatchSnapshot.crosscheck,
+        verdict: r.springBatchSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

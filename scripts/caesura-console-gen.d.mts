@@ -667,11 +667,36 @@ export interface CrdtReading {
   builtAt: number
 }
 
+/** KI-532：BulkWriter/ChunkedWriter/SkipRetryWriter Spring Batch 教学件真跑读数（三策略 × 六场景 + 三难向量 + verifyCheckpoint 双路交叉印证 + 十一枚真件交叉印证）。 */
+export interface SpringBatchReading {
+  config: Record<string, any>
+  rows: Array<{
+    protocol: string
+    scenarios: Array<{
+      id: string; processed: number; faults: number; poisonCount: number; size: number
+      checkpoints: number; dropped: number; wholeBatchDied: boolean
+      faultIsolation: boolean; restartability: boolean; throughput: boolean; fault: string
+      inFaultExam: boolean; inRestartExam: boolean; inThroughputExam: boolean
+    }>
+    trilemma: { faultIsolation: boolean; restartability: boolean; throughput: boolean }
+    metrics: { chunkedCheckpoints: number; poisonDeaths: number; itemsProcessed: number; itemsDropped: number }
+  }>
+  vectors: Record<string, string>
+  noUniversalWinner: boolean
+  trilemmaDistinguishes: boolean
+  causalLocks: { checkpointTradeoffCausallyUnerasable: boolean; skipSilentLossCausallyUnerasable: boolean; bulkAllOrNothingCausallyUnerasable: boolean; causalLocksAllHold: boolean }
+  verdict: Record<string, any>
+  crosscheck: { evidence: Record<string, any>; checkpoint: { holds: boolean; baselineHolds: boolean; nontrivial: boolean; falsifiable: boolean; invariants: Record<string, boolean>; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+  builtAt: number
+  rigged: boolean
+}
 
 
 
 
-/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511 + KI-512 + KI-513 + KI-518 + KI-520 + KI-523 + KI-525 + KI-526：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 + 缓存读写一致性 + 消息投递语义 + 延迟消息队列调度 + 消息重试退避与死信 + 消费者组 rebalance + 消费者组积压背压 + append-only 日志压缩与回放边界）。 */
+
+
+/** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511 + KI-512 + KI-513 + KI-518 + KI-520 + KI-523 + KI-525 + KI-526 + KI-527..532：与五场景并列的独立「系统读数」数据块（LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 + 缓存读写一致性 + 消息投递语义 + 延迟消息队列调度 + 消息重试退避与死信 + 消费者组 rebalance + 消费者组积压背压 + append-only 日志压缩与回放边界 + 三过滤器 + 三替换策略 + 流式窗口 + 基数估计 + CRDT + Spring Batch 批处理）。 */
 export interface SystemsBlock {
   lsm: LsmReading | null
   hw: HwReading | null
@@ -698,6 +723,7 @@ export interface SystemsBlock {
   streamWindow: StreamWindowReading | null
   hyperLogLog: CardinalityReading | null
   crdt: CrdtReading | null
+  springBatch: SpringBatchReading | null
   builtAt: number
 }
 
@@ -896,6 +922,15 @@ export function buildSnapshot(opts?: {
   crdtInfiniteMetadata?: boolean
   crdtCoordinatedDelete?: boolean
   crdtRigged?: boolean
+  /** KI-532：false 关掉 SpringBatch 维（兼容旧快照）；sb* 注入规模/阈值/rigged */
+  springBatch?: boolean
+  sbSeed?: number
+  sbItems?: number
+  sbChunkSize?: number
+  sbSkipLimit?: number
+  sbPerfectOracle?: boolean
+  sbUnlimitedSkip?: boolean
+  sbRigged?: boolean
 }): Promise<ConsoleSnapshot>
 
 /** KI-498 + KI-501 + KI-502 + KI-503 + KI-504 + KI-505 + KI-506 + KI-507 + KI-508 + KI-509 + KI-510 + KI-511 + KI-512 + KI-513：真跑 LSM + OS/硬件 + 缓存防护 + 网关限流 + 故障检测 + B+ 树索引 + 事务并发控制 + 分布式事务 + Raft 共识 + 分布式锁 + 分布式 ID + 分布式限流 + 配置一致性 + 缓存读写一致性 + 消息投递语义 十五维系统读数；击穿并发 ⇒ async。 */
@@ -1071,6 +1106,15 @@ export function buildSystems(opts?: {
   crdtInfiniteMetadata?: boolean
   crdtCoordinatedDelete?: boolean
   crdtRigged?: boolean
+  /** KI-532：false 关掉 SpringBatch 维（兼容旧快照）；sb* 注入规模/阈值/rigged */
+  springBatch?: boolean
+  sbSeed?: number
+  sbItems?: number
+  sbChunkSize?: number
+  sbSkipLimit?: number
+  sbPerfectOracle?: boolean
+  sbUnlimitedSkip?: boolean
+  sbRigged?: boolean
 }): Promise<SystemsBlock>
 
 /** KI-501：真跑缓存防护三件套（击穿/穿透/雪崩）收敛成前端三面板紧凑读数；单维失败落 null。 */
@@ -1334,7 +1378,29 @@ export function buildCrdtReading(opts: {
   crdtInfiniteMetadata?: boolean
   crdtCoordinatedDelete?: boolean
   crdtRigged?: boolean
+  /** KI-532：false 关掉 SpringBatch 维（兼容旧快照）；sb* 注入规模/阈值/rigged */
+  springBatch?: boolean
+  sbSeed?: number
+  sbItems?: number
+  sbChunkSize?: number
+  sbSkipLimit?: number
+  sbPerfectOracle?: boolean
+  sbUnlimitedSkip?: boolean
+  sbRigged?: boolean
 }, now: () => number): Promise<CrdtReading | null>
+
+/** KI-532：真跑 Spring Batch chunk-oriented R-P-W（BulkWriter/ChunkedWriter/SkipRetryWriter × 六场景 + 三难向量 + verifyCheckpoint 双路自证 + 十一枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
+export function buildSpringBatchReading(opts: {
+  now?: () => number
+  springBatch?: boolean
+  sbSeed?: number
+  sbItems?: number
+  sbChunkSize?: number
+  sbSkipLimit?: number
+  sbPerfectOracle?: boolean
+  sbUnlimitedSkip?: boolean
+  sbRigged?: boolean
+}, now: () => number): Promise<SpringBatchReading | null>
 
 export function realScenarioOpts(id: string): Record<string, any>
 
