@@ -255,6 +255,13 @@ export interface GameCloudOptions {
   priorityQueue?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck?: any; causalLocks?: any; [k: string]: any }
   /** KI-542 priorityQueue 的注入时钟（pq=Priority Queue，避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/reb/pq/rdq/dld 已占用前缀）。 */
   pqNow?: () => number
+  /**
+   * KI-543：true 装配批流 join 教学件（MicroBatchJoin/StreamWindowJoin/CdcOutboxJoin + verifyBatchStreamJoinSoundness 双路自证 + 十一枚真件交叉印证）。
+   * 对象逐项注入（now/seed/messages/batchSize/infiniteBatchRssi/magicExactlyOnceDedup/perfectBinlogReplay/scenarios/rigged 等），
+   * 或直接塞一只现成 study。默认 false 不装配。 */
+  batchStreamJoin?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck?: any; causalLocks?: any; [k: string]: any }
+  /** KI-543 batchStreamJoin 的注入时钟（bsj=Batch Stream Join，避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/reb/pq/bsj/rdq/dld 已占用前缀）。 */
+  bsjNow?: () => number
 }
 
 /** 创建一只游戏侧开箱即用云。 */
@@ -343,6 +350,8 @@ export function createGameCloud(opts?: GameCloudOptions): {
   runConsumerRebalanceStudy: (() => Promise<any>) | null
   /** KI-542：有界优先级队列教学件；缺 opts.priorityQueue 时为 null。 */
   runPriorityQueueStudy: (() => Promise<any>) | null
+  /** KI-543：批流 join 教学件；缺 opts.batchStreamJoin 时为 null。 */
+  runBatchStreamJoinStudy: (() => Promise<any>) | null
   /** KI-533：可观测性分布式追踪采样三策略教学件；缺 opts.traceSampling 时为 null；HeadBased/TailBased/Adaptive × 六场景矩阵 + 三难向量维序 [lowOverhead/anomalyCapture/loadAdaptive]（默认 100/010/101 互异不封赢家；anomalyCapture⇔缓冲整条⇔非 lowOverhead 与 chk 锁同构、零查表现算；rigged 三开关 oracleHead/infiniteBuffer/perfectFeedback 分策略正交反事实：全开收敛 Head≡Tail=110 区分度诚实塌缩、noStrategyWinsAll 仍真绝不硬造 111，三条因果结构锁——异常需缓冲/头部盲结构/自适应滞后——在同一含 error raw 流真跑现算钉死 causalLocksAllHold=true，主教义 headBlindLossOnErrorBurst 恒以纯净基线标定不翻）+ verifySamplingSoundness 双路自证（干净流 buffer 守恒 + 含 error 流四观测量 + 三路篡改真喂回现算翻 false 带 baselineHolds）+ 十一枚真件 21 键交叉印证。 */
   runTraceSamplingStudy: (() => Promise<any>) | null
   /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）。 */

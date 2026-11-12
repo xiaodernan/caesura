@@ -703,6 +703,23 @@
       <p class="note" id="pq-trilemma-note">…</p>
     </article>
   </section>
+  <!-- 第三十七维 · MicroBatchJoin / StreamWindowJoin / CdcOutboxJoin 批流 join（KI-543） -->
+  <section class="row row-bsj">
+    <article class="panel panel-bsj">
+      <div class="panel-head"><h2>第三十七维 · MicroBatchJoin/StreamWindowJoin/CdcOutboxJoin · 三策略 × 四场景</h2><span class="hint">批=MicroBatchJoin（微批桶聚合·bulkThroughput·exactlyOnce·桶满才 flush）/ 流=StreamWindowJoin（event-time 滑动窗口 interval join·real-time·但无 dedup·under overload burst 逐条超发）/ CDC=CdcOutboxJoin（binlog tail join·真低延迟 + 但回放必重复·无内置 dedup）** · 默认向量 101/010/110 互异不封赢家</span></div>
+      <div class="bsj-matrix" id="bsj-matrix"></div>
+      <div class="bsj-ladder" id="bsj-ladder"></div>
+      <p class="note" id="bsj-matrix-note">…</p>
+    </article>
+    <article class="panel panel-bsj">
+      <div class="panel-head"><h2>三难向量（bulkThroughput ∧ lowLatency ∧ exactlyOnce）· 双路自证</h2><span class="hint">MicroBatchJoin=101 / StreamWindowJoin=010 / CdcOutboxJoin=110 · 三向量互异无一 111 恰好各缺一维 · verifyBatchStreamJoinSoundness 双路自证（lane A 桶式真 join vs lane B Stream 真触发 + CDC tail 真推进）· 三路篡改（batchBucketDrift / windowMiss / cdcDupe）× 三因果锁（桶窗口结构 / Stream 无内置 dedup / CDC 原生重复回放必然）× 十一真件 21 键 · rigged 三开关（infiniteBatchRssi / magicExactlyOnceDedup / perfectBinlogReplay）</span></div>
+      <div class="bsj-trilemma" id="bsj-trilemma"></div>
+      <div class="bsj-verif" id="bsj-verif"></div>
+      <div class="bsj-crosscheck" id="bsj-crosscheck"></div>
+      <div class="bsj-probes" id="bsj-probes"></div>
+      <p class="note" id="bsj-trilemma-note">…</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">

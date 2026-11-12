@@ -1877,4 +1877,37 @@ describe('caesura-console-gen (KI-495)', () => {
     const twentythree = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt, full.bloomFilter?.builtAt, full.cacheReplacement?.builtAt, full.streamWindow?.builtAt, full.hyperLogLog?.builtAt, full.crdt?.builtAt, full.springBatch?.builtAt, full.traceSampling?.builtAt, full.distributedSession?.builtAt, full.transactionalOutbox?.builtAt, full.loadBalance?.builtAt, full.circuitBreaker?.builtAt, full.llmGateway?.builtAt, full.gatewayRouting?.builtAt, full.idempotentConsumer?.builtAt, full.consumerRebalance?.builtAt, full.priorityQueue?.builtAt]
     expect(twentythree.every((x) => x === 542500)).toBe(true)
   })
+
+  it('㉒m-batch-stream-join buildBatchStreamJoinReading 真跑：bsj* 注入生效 / batchStreamJoin:false 关闭 / rigged 不硬造 111 / 双路自证 + 十一真件 / 二十四时钟同源（KI-543）', async () => {
+    const { buildBatchStreamJoinReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 543500
+    const g = (await buildBatchStreamJoinReading({}, now))!
+    expect(g).not.toBe(null)
+    expect(g.builtAt).toBe(543500)
+    expect(g.rows.length).toBe(3)
+    expect(g.config.batchSize).toBe(8)
+    expect(g.vectors).toEqual({ MicroBatchJoin: '101', StreamWindowJoin: '010', CdcOutboxJoin: '110' })
+    expect(g.rigged).toBe(false)
+    expect(g.causalLocks.causalLocksAllHold).toBe(true)
+    expect(g.causalLocks.batchWindowCausallyUnerasable).toBe(true)
+    expect(g.causalLocks.streamExactlyOnceCausallyUnerasable).toBe(true)
+    expect(g.causalLocks.cdcReplayCausallyUnerasable).toBe(true)
+    const tuned = (await buildBatchStreamJoinReading({ bsjSeed: 12, bsjMessages: 32 }, now))!
+    expect(tuned.config.seed).toBe(12)
+    expect(tuned.config.messages).toBe(32)
+    const cp = g.crosscheck.soundness
+    expect(cp.holds).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.tamper.batchBucketDrift.holds).toBe(false)
+    expect(cp.tamper.windowMiss.holds).toBe(false)
+    expect(cp.tamper.cdcDupe.holds).toBe(false)
+    expect(Object.keys(g.crosscheck.evidence).length).toBe(21)
+    const off = await buildSystems({ now, batchStreamJoin: false, priorityQueue: false })
+    expect(off.batchStreamJoin).toBe(null)
+    expect(off.priorityQueue).toBe(null)
+    expect(off.cacheReplacement).not.toBe(null)
+    const full = await buildSystems({ now })
+    const twentyfour = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt, full.bloomFilter?.builtAt, full.cacheReplacement?.builtAt, full.streamWindow?.builtAt, full.hyperLogLog?.builtAt, full.crdt?.builtAt, full.springBatch?.builtAt, full.traceSampling?.builtAt, full.distributedSession?.builtAt, full.transactionalOutbox?.builtAt, full.loadBalance?.builtAt, full.circuitBreaker?.builtAt, full.llmGateway?.builtAt, full.gatewayRouting?.builtAt, full.idempotentConsumer?.builtAt, full.consumerRebalance?.builtAt, full.priorityQueue?.builtAt, full.batchStreamJoin?.builtAt]
+    expect(twentyfour.every((x) => x === 543500)).toBe(true)
+  })
 })

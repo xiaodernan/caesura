@@ -196,6 +196,10 @@ export function runMeshE2E(opts = {}) {
     // 注入时钟用 pqNow（避开 lsm/bp/pc/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/reb/pq/rdq/dld 已占用前缀）。
     priorityQueue: opts.priorityQueue,
     pqNow: opts.pqNow,
+    // KI-543：批流 join 教学件（batchStreamJoin=true 装配；MicroBatchJoin/StreamWindowJoin/CdcOutboxJoin × 四场景矩阵 + 三难向量（默认 101/010/110 互异）+ verifyBatchStreamJoinSoundness 双路自证 + 十一真件 21 键交叉印证）。
+    // 注入时钟用 bsjNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/reb/pq/bsj/rdq/dld 已占用前缀）。
+    batchStreamJoin: opts.batchStreamJoin,
+    bsjNow: opts.bsjNow,
     // KI-533：可观测性分布式追踪采样三策略（traceSampling=true 装配；只读 HeadBased/TailBased/Adaptive ×
     // 六场景矩阵 + 三难向量维序 [lowOverhead/anomalyCapture/loadAdaptive]（默认 100/010/101 互异不封赢家；
     // anomalyCapture⇔缓冲整条⇔非 lowOverhead 与 chk 锁同构；rigged 三开关 oracleHead/infiniteBuffer/perfectFeedback
@@ -359,6 +363,7 @@ export function runMeshE2E(opts = {}) {
         idempotentConsumerSnapshot: status.idempotentConsumer ?? null,
         consumerRebalanceSnapshot: status.consumerRebalance ?? null,
         priorityQueueSnapshot: status.priorityQueue ?? null,
+        batchStreamJoinSnapshot: status.batchStreamJoin ?? null,
         traceSamplingSnapshot: status.traceSampling ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
@@ -809,6 +814,19 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         crosscheck: r.priorityQueueSnapshot.crosscheck,
         causalLocks: r.priorityQueueSnapshot.causalLocks,
         verdict: r.priorityQueueSnapshot.verdict,
+      } : null,
+      batchStreamJoin: r.batchStreamJoinSnapshot ? {
+        strategies: r.batchStreamJoinSnapshot.rows.map((row) => ({
+          strategy: row.protocol,
+          ladder: row.scenarios.map((sc) => sc.id + ':' + (sc.bulkThroughput === true ? '批' : '流')).join(' → '),
+          metrics: row.metrics, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.batchStreamJoinSnapshot.rows.map((row) => [row.protocol,
+          String(Number(row.trilemma.bulkThroughput)) + String(Number(row.trilemma.lowLatency)) + String(Number(row.trilemma.exactlyOnce))])),
+        noUniversalWinner: r.batchStreamJoinSnapshot.verdict.noUniversalWinner,
+        crosscheck: r.batchStreamJoinSnapshot.crosscheck,
+        causalLocks: r.batchStreamJoinSnapshot.causalLocks,
+        verdict: r.batchStreamJoinSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

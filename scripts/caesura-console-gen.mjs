@@ -52,6 +52,7 @@ import { gatewayRoutingStudy, gatewayRoutingSnapshot } from './caesura-gateway-r
 import { idempotentConsumerStudy, idempotentConsumerSnapshot } from './caesura-idempotent-consumer.mjs'
 import { consumerRebalanceStudy, consumerRebalanceSnapshot } from './caesura-consumer-rebalance.mjs'
 import { priorityQueueStudy, priorityQueueSnapshot } from './caesura-priority-queue.mjs'
+import { batchStreamJoinStudy, batchStreamJoinSnapshot } from './caesura-batch-stream-join.mjs'
 import { traceSamplingStudy, traceSamplingSnapshot } from './caesura-trace-sampling.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
@@ -385,7 +386,9 @@ export async function buildSystems(opts = {}) {
   const consumerRebalance = opts.consumerRebalance === false ? null : await buildConsumerRebalanceReading(opts, now)
   // KI-542：第三十六维装配有界优先级队列教学件（BoundedStrict/MotionWeightedFair/DeadlineScheduler）
   const priorityQueue = opts.priorityQueue === false ? null : await buildPriorityQueueReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, priorityQueue, builtAt: now() }
+  // KI-543：第三十七维装配批流 join 教学件（MicroBatchJoin/StreamWindowJoin/CdcOutboxJoin）
+  const batchStreamJoin = opts.batchStreamJoin === false ? null : await buildBatchStreamJoinReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, priorityQueue, batchStreamJoin, builtAt: now() }
 }
 
 /**
@@ -467,6 +470,30 @@ export async function buildTraceSamplingReading(opts, now) {
       ...(opts.tsRigged === true ? { rigged: true } : {}),
     })
     return traceSamplingSnapshot(s)
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
+ * KI-543：批流 join 三策略真跑教学件（MicroBatchJoin/StreamWindowJoin/CdcOutboxJoin × 四场景 + 三难向量 + verifyBatchStreamJoinSoundness 双路自证 + 十一枚真件交叉印证）。
+ * 失败落 null；读数全真、CLI 双跑字节一致、rigged 不硬造 111（结构如此）。
+ * @param {object} opts { batchStreamJoin?:false, bsjSeed?, bsjMessages?, bsjBatchSize?, bsjInfiniteBatchRssi?, bsjMagicExactlyOnceDedup?, bsjPerfectBinlogReplay?, bsjRigged? }
+ * @param {()=>number} now 时钟（builtAt 注入真值）
+ */
+export async function buildBatchStreamJoinReading(opts, now) {
+  try {
+    const s = await batchStreamJoinStudy({
+      now,
+      ...(opts.bsjSeed ? { seed: Math.max(0, Math.floor(Number(opts.bsjSeed))) } : {}),
+      ...(opts.bsjMessages ? { messages: Math.max(16, Math.floor(Number(opts.bsjMessages))) } : {}),
+      ...(opts.bsjBatchSize ? { batchSize: Math.max(1, Math.floor(Number(opts.bsjBatchSize))) } : {}),
+      ...(opts.bsjInfiniteBatchRssi === true ? { infiniteBatchRssi: true } : {}),
+      ...(opts.bsjMagicExactlyOnceDedup === true ? { magicExactlyOnceDedup: true } : {}),
+      ...(opts.bsjPerfectBinlogReplay === true ? { perfectBinlogReplay: true } : {}),
+      ...(opts.bsjRigged === true ? { rigged: true } : {}),
+    })
+    return batchStreamJoinSnapshot(s)
   } catch (e) {
     return null // 缺哪块就落 null，前端据实降级；不编造假数
   }

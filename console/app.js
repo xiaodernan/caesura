@@ -73,6 +73,7 @@
       renderIdempotentConsumer(snap.systems ? snap.systems.idempotentConsumer : null)
       renderConsumerRebalance(snap.systems ? snap.systems.consumerRebalance : null)
       renderPriorityQueue(snap.systems ? snap.systems.priorityQueue : null)
+      renderBatchStreamJoin(snap.systems ? snap.systems.batchStreamJoin : null)
       renderTraceSampling(snap.systems ? snap.systems.traceSampling : null)
       setLive(true, result.source)
     }).catch(function (e) {
@@ -3315,6 +3316,134 @@
       'verifyCheckpoint 双路自证：路 A clean 全量全 commit 求基准，路 B 真跑 restart(0) 用「poison chunk 隔离 / 已 commit 无重复 / 非毒零丢失 / 真检测到毒」四观测量判定；三路篡改真喂回同一内核现算翻 false，带 baselineHolds 先真绿。' +
       '三条因果结构锁在同一含毒 raw 流真跑钉死：Bulk 无 chk 整批死、chk 权衡不可兼得、Skip 跳毒永久丢。' +
       'rigged 双开关 perfectOracle（毒项 100% 判定、预防性从输入剔除）+ unlimitedSkip 喂的是已剔除毒项的干净流（换了作业输入、诚实标注，不是同一作业被抹软肋）⇒ 三者 faultIsolation 全真、Bulk≡Skip=101 区分度诚实收敛（riggedConvergenceCollapsed=true，教学结论：完美预言机抹平了「预防剔除」与「跳过」的差别，二者结构等价），noStrategyWinsAll 仍真绝不硬造 111，三因果锁仍 allHold。'
+  }
+
+  /* ================= KI-543 MicroBatchJoin/StreamWindowJoin/CdcOutboxJoin 批流 join · 第三十七维（bsj 族） ================= */
+
+  function renderBatchStreamJoin(bsj) {
+    renderBsjMatrix(bsj && bsj.rows, bsj && bsj.config)
+    renderBsjLadder(bsj && bsj.rows)
+    renderBsjTrilemma(bsj && bsj.rows, bsj && bsj.verdict, bsj && bsj.crosscheck)
+  }
+
+  function bsjMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 暂缺</div>'
+    if (note) note.textContent = 'systems.batchStreamJoin 缺失 — 跑一次 npm run console:data 即可补齐'
+  }
+
+  function bsjCell(c, protocol) {
+    if (!c) return { cls: '', ch: '·' }
+    if (protocol === 'MicroBatchJoin') return { cls: 'bulk', ch: '批' }
+    if (protocol === 'StreamWindowJoin') return { cls: 'stream', ch: '流' }
+    if (protocol === 'CdcOutboxJoin') return { cls: 'cdc', ch: 'C' }
+    return { cls: 'ok', ch: '✓' }
+  }
+
+  function renderBsjMatrix(rows, config) {
+    var box = $('#bsj-matrix'), note = $('#bsj-matrix-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      bsjMissing(box, note, 'bsj 矩阵'); return
+    }
+    var scenarios = ['cleanSteadyState', 'burstOverload', 'lateArrival', 'cleanRerun']
+    var head = '<div class="bsj-mat-row bsj-mat-head"><span class="bsj-mat-proto">策略</span>' +
+      scenarios.map(function (sc) { return '<span class="bsj-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="bsj-mat-cost">joins/dup</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = bsjCell(cell, row.protocol)
+        return '<span class="bsj-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="bsj-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="bsj-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="bsj-mat-cost"><b>' + esc(fmt(m.totalJoins)) + '</b>/' + esc(String(m.totalDuplicates || 0)) + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'MicroBatchJoin / StreamWindowJoin / CdcOutboxJoin × 四场景：cleanSteadyState（稳态） / burstOverload（burst 超载） / lateArrival（late 迟到真漏 true） / cleanRerun（重跑幂等）。每格只认三布尔（bulkThroughput ∧ lowLatency ∧ exactlyOnce）——绝不由阈值重算。MicroBatch: 批桶聚合 exactlyOnce；StreamWindow: event-time interval join low-latency 但无内置 dedup；CdcOutbox: binlog tail join 真低延迟但 CDC 重复回放必然。'
+  }
+
+  function renderBsjLadder(rows) {
+    var box = $('#bsj-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.totalJoins) ? r.metrics.totalJoins : 1 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.totalJoins) ? Math.round(m.totalJoins / max * 100) : 0
+      return '<div class="bsj-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="bsj-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">joins ' + esc(fmt(m.totalJoins)) + ' · dup ' + esc(String(m.totalDuplicates)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderBsjTrilemma(rows, verdict, crosscheck) {
+    var box = $('#bsj-trilemma'), veBox = $('#bsj-verif'), cxBox = $('#bsj-crosscheck'), note = $('#bsj-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      bsjMissing(box, note, 'bsj 判词'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''; return
+    }
+    var flags = [['bulkThroughput', '批量'], ['lowLatency', '低延'], ['exactlyOnce', '一次']]
+    var head = '<div class="bsj-vec bsj-vec-head"><span class="proto">策略</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="bsj-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="bsj-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    if (veBox) {
+      var mb = rows.find(function (r) { return r.protocol === 'MicroBatchJoin' })
+      var sw = rows.find(function (r) { return r.protocol === 'StreamWindowJoin' })
+      var cdc = rows.find(function (r) { return r.protocol === 'CdcOutboxJoin' })
+      var cp = crosscheck && crosscheck.soundness
+      veBox.innerHTML = [
+        '<div class="bsj-rb-row"><b>MicroBatchJoin</b> 批=' + esc(String(mb?.trilemma?.bulkThroughput)) + '（桶聚合真吞吐）· 低延=' + esc(String(mb?.trilemma?.lowLatency)) + '（桶满才 flush）· 一次=' + esc(String(mb?.trilemma?.exactlyOnce)) + '（桶事务强）</div>',
+        '<div class="bsj-rb-row"><b>StreamWindowJoin</b> 批=' + esc(String(sw?.trilemma?.bulkThroughput)) + '（逐条CPU税）· 低延=' + esc(String(sw?.trilemma?.lowLatency)) + '（事件时间实时）· 一次=' + esc(String(sw?.trilemma?.exactlyOnce)) + '（无内置 dedup）</div>',
+        '<div class="bsj-rb-row"><b>CdcOutboxJoin</b> 批=' + esc(String(cdc?.trilemma?.bulkThroughput)) + '（binlog 流式 tail）· 低延=' + esc(String(cdc?.trilemma?.lowLatency)) + '（tail lag≈1 tick）· 一次=' + esc(String(cdc?.trilemma?.exactlyOnce)) + '（原生重复回放）</div>',
+        cp ? '<div class="bsj-rb-row"><b>verifyBatchStreamJoinSoundness</b> holds=' + (cp.holds ? 'true' : 'false') + ' nontrivial=' + (cp.nontrivial ? 'true' : 'false') + ' falsifiable=' + (cp.falsifiable ? 'true' : 'false') + ' · laneA{microJoins=' + esc(String(cp.laneA?.microJoins)) + ' txn=' + esc(String(cp.laneA?.microTxnCount)) + '} laneB{streamJoins=' + esc(String(cp.laneB?.streamJoins)) + ' interleave=' + esc(String(cp.laneB?.streamInterleave)) + '}</div>' : '',
+      ].join('')
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>真 <b>compareRemapping</b> 迁移率 一致性 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>' +
+          '<div>真 <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 片</div>' +
+          '<div>真 <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 命中 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
+          '<div>真 <b>createWal</b> lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>真 <b>createBus</b> batch.shipped 通知 ' + esc(fmt(ev.notices)) + ' 条 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>真 <b>createRedisCache</b> join 命中 ' + esc(fmt(ev.redisBitmapHits)) + ' · entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+          '<div>真 <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+          '<div>真 <b>createTokenBucket</b> 回放允许 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>真 <b>createMinHeapDelayQueue</b> 出队 ' + esc(fmt(ev.heapFired)) + ' 条 · pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+          '<div>真 <b>createFullJitterBackoff</b> jitterSpread <b>' + esc(String((ev.jitterSpread ?? 0).toFixed(4))) + '</b>（64 采样 delayFor 真采样）</div>' +
+          '<div>真 <b>createPackedCounters</b> Σ=' + esc(fmt(ev.counterSum)) + ' · falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">真件交叉印证缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var chips = [
+      '<span class="chip" data-verdict="noUniversalWinner"><b>noUniversalWinner</b> ' + (noWin ? '✓（向量互异·无全局赢家）' : '✗') + '</span>',
+      '<span class="chip" data-verdict="noStrategyWinsAll"><b>noStrategyWinsAll</b> ' + (v.noStrategyWinsAll ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="vectorFromTrilemma"><b>vectorFromTrilemma</b> 现算同源</span>',
+      '<span class="chip jade-t" data-verdict="noUniversalWinner2">默认向量互异不封赢家</span>',
+    ]
+    var probes = $('#bsj-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维序固定 [bulkThroughput / lowLatency / exactlyOnce]。默认向量 MicroBatchJoin=101（批·exactlyOnce·但桶满才 flush） / StreamWindowJoin=010（流·lowLatency·无 exactlyOnce） / CdcOutboxJoin=110（批·lowLatency·CDC 原生重复）——恰好各缺一维、向量互异、无一 111。' +
+      'rigged 三开关：infiniteBatchRssi（桶永滚 ⇒ MicroBatch 永远在桶启 ⇒ lowLatency 翻 true 但批不成立）· magicExactlyOnceDedup（Stream 免费 dedup ⇒ Stream=110）· perfectBinlogReplay（CDC replay exactly once ⇒ CDC=111）。' +
+      '三因果锁：batchWindowCausallyUnerasable（桶满才能 flush — latency 结构下限）· streamExactlyOnceCausallyUnerasable（Stream 无内置 dedup 结构性）· cdcReplayCausallyUnerasable（CDC replay 必然重复）——causalLocksAllHold=true。'
   }
 
   /* ================= KI-542 BoundedStrict/MotionWeightedFair/DeadlineScheduler 有界优先级队列 · 第三十六维（pq 族） ================= */

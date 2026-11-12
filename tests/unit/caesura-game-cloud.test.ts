@@ -2715,4 +2715,59 @@ describe('caesura-game-cloud', () => {
     })).status()).priorityQueue
     expect(injected.builtAt).toBe(555)
   })
+
+  // ============ KI-543 批流 join opt-in 装配（2 腿）============
+  it('batchStreamJoin:true 装配真矩阵：101/010/110 互异不封赢家 + 三因果锁 + verifyBatchStreamJoinSoundness 双路 + 21 键 + 惰性同引用（KI-543）', async () => {
+    const gc = await createGameCloud({
+      gameId: 'gid-bsj1', gamePort: 7950, sources, cloud: fakeCloud(),
+      batchStreamJoin: true, bsjNow: () => 543000,
+    })
+    const st = (await gc.status()).batchStreamJoin
+    expect(st).not.toBe(null)
+    expect(st!.builtAt).toBe(543000)
+    expect(st!.config.scenarios.length).toBe(4)
+    expect(st!.config.batchSize).toBe(8)
+    expect(st!.rows.length).toBe(3)
+    expect(st!.vectors).toEqual({ MicroBatchJoin: '101', StreamWindowJoin: '010', CdcOutboxJoin: '110' })
+    expect(st!.rigged).toBe(false)
+    expect(st!.noUniversalWinner).toBe(true)
+    expect(st!.trilemmaDistinguishes).toBe(true)
+    expect(st!.verdict.vectorFromTrilemma).toBe(true)
+    expect(st!.causalLocks.causalLocksAllHold).toBe(true)
+    expect(st!.causalLocks.batchWindowCausallyUnerasable).toBe(true)
+    expect(st!.causalLocks.streamExactlyOnceCausallyUnerasable).toBe(true)
+    expect(st!.causalLocks.cdcReplayCausallyUnerasable).toBe(true)
+    // verifyBatchStreamJoinSoundness 双路
+    const cp = st!.crosscheck.soundness
+    expect(cp.holds).toBe(true)
+    expect(cp.nontrivial).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.laneA.microJoins).toBeGreaterThan(0)
+    expect(cp.laneB.cdcTailIncrement).toBeGreaterThanOrEqual(1)
+    expect(cp.tamper.batchBucketDrift.holds).toBe(false)
+    expect(cp.tamper.windowMiss.holds).toBe(false)
+    expect(cp.tamper.cdcDupe.holds).toBe(false)
+    expect(Object.keys(st!.crosscheck.evidence).length).toBe(21)
+    expect((await gc.status()).batchStreamJoin).toBe(st)
+    expect(await gc.runBatchStreamJoinStudy!()).toMatchObject({ vectors: st!.vectors })
+    const bare = await createGameCloud({ gameId: 'gid-bsj0', gamePort: 7951, sources, cloud: fakeCloud() }).status()
+    expect(bare.batchStreamJoin).toBe(null)
+    expect(bare.priorityQueue).toBe(null)
+  })
+
+  it('batchStreamJoin 默认 null；perfectBinlogReplay ⇒ CDC=111；可注入现成 study（KI-543）', async () => {
+    const idle = await createGameCloud({ gameId: 'gid-bsj2', gamePort: 7952, sources, cloud: fakeCloud() }).status()
+    expect(idle.batchStreamJoin).toBe(null)
+    const pb = (await (await createGameCloud({
+      gameId: 'gid-bsj3', gamePort: 7953, sources, cloud: fakeCloud(),
+      batchStreamJoin: { perfectBinlogReplay: true }, bsjNow: () => 543000,
+    })).status()).batchStreamJoin
+    expect(pb!.vectors.CdcOutboxJoin).toBe('111')
+    const { batchStreamJoinStudy } = await import('../../scripts/caesura-batch-stream-join.mjs')
+    const injected = (await (await createGameCloud({
+      gameId: 'gid-bsj4', gamePort: 7954, sources, cloud: fakeCloud(),
+      batchStreamJoin: batchStreamJoinStudy({ seed: 99, now: () => 555 }),
+    })).status()).batchStreamJoin
+    expect(injected.builtAt).toBe(555)
+  })
 })
