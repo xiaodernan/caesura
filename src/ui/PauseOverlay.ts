@@ -23,12 +23,24 @@ const CSS = `
 .pause-overlay.on { display: flex; pointer-events: none; }
 .pause-overlay .panel { position: relative; margin: auto; max-width: 520px; padding: 48px 72px 40px;
   background: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(9,10,15,.85), rgba(9,10,15,.35) 70%, transparent 90%); }
+.pause-overlay .panel::before { content: ""; position: absolute; inset: 12px; border: 1px solid rgba(201,180,88,.32);
+  border-radius: 2px; pointer-events: none; box-shadow: inset 0 0 0 1px rgba(201,180,88,.08); }
+.pause-overlay .seal { position: absolute; right: 22px; top: 22px; width: 34px; height: 34px; border-radius: 50%;
+  border: 1px solid rgba(201,180,88,.72); box-shadow: inset 0 0 0 1px rgba(201,180,88,.2), inset 0 0 8px rgba(201,180,88,.22);
+  display: grid; place-items: center; font-size: 15px; color: #e0c777; letter-spacing: .02em; transform: rotate(-8deg);
+  text-shadow: 0 0 6px rgba(201,180,88,.4); opacity: .92; }
+.pause-overlay .seal.seal-b { right: 26px; top: 26px; width: 34px; height: 34px; border-color: rgba(165,68,82,.42);
+  box-shadow: none; border-width: 1px; transform: rotate(-8.5deg); opacity: .5; }
 .pause-overlay .ring { position: absolute; left: 50%; top: 50%; width: 220px; height: 220px; border-radius: 50%;
   background: radial-gradient(circle, transparent 38%, rgba(201,180,88,.28) 39%, transparent 41%, rgba(201,180,88,.14) 46%, transparent 49%);
   transform: translate(-50%, -50%); animation: pause-breathe 3.6s ease-in-out infinite alternate; }
 .pause-overlay .ring.ring-b { width: 296px; height: 296px;
   background: radial-gradient(circle, transparent 43%, rgba(201,180,88,.16) 44%, transparent 46%);
   animation: pause-breathe-b 4.4s ease-in-out infinite alternate; }
+.pause-overlay .hint { background: linear-gradient(100deg, rgba(232,223,203,.25) 0%, rgba(249,247,222,.9) 45%, rgba(232,223,203,.25) 90%);
+  background-size: 320% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  animation: pause-hint-shimmer 2.4s linear infinite; }
+@keyframes pause-hint-shimmer { 0% { background-position: 120% 50%; } 100% { background-position: -120% 50%; } }
 @keyframes pause-breathe { 0% { opacity: .25; transform: translate(-50%, -50%) scale(.96); } 100% { opacity: 1; transform: translate(-50%, -50%) scale(1.04); } }
 @keyframes pause-breathe-b { 0% { opacity: .15; transform: translate(-50%, -50%) scale(1.02); } 100% { opacity: .55; transform: translate(-50%, -50%) scale(1.0); } }
 .pause-overlay h1 { position: relative; font-size: 68px; letter-spacing: .1em; margin: 0; color: #c9b458;
@@ -41,6 +53,7 @@ const CSS = `
 .pause-overlay .rule { position: relative; width: 64px; height: 1px; margin: 20px auto 0; background: linear-gradient(90deg, transparent, rgba(201,180,88,.7), transparent); }
 @media (prefers-reduced-motion: reduce) {
   .pause-overlay .ring, .pause-overlay .ring.ring-b, .pause-overlay h1 { animation: none; opacity: 1; transform: translate(-50%, -50%); }
+  .pause-overlay .hint { animation: none; -webkit-text-fill-color: rgba(232,223,203,.6); color: rgba(232,223,203,.62); background: none; }
 }
 `
 
@@ -64,7 +77,7 @@ export class PauseOverlay {
     this.root.className = 'pause-overlay'
     this.root.setAttribute('aria-hidden', 'true')
     this.root.setAttribute('aria-role', 'presentation')
-    this.root.innerHTML = `<div class="panel"><div class="ring"></div><div class="ring ring-b"></div><h1 class="glyph">止</h1><div class="sub">PAUSED</div><div class="rule"></div><div class="hint">Esc · 再一次 · 继续</div></div>`
+    this.root.innerHTML = `<div class="panel"><div class="ring"></div><div class="ring ring-b"></div><div class="seal" aria-hidden="true">止</div><div class="seal seal-b" aria-hidden="true">音</div><h1 class="glyph">止</h1><div class="sub">PAUSED</div><div class="rule"></div><div class="hint">Esc · 再一次 · 继续</div></div>`
     document.body.appendChild(this.root)
   }
 

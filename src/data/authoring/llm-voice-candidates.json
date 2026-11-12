@@ -46,11 +46,65 @@
         "末代档案官不信巧合。遗响为何跟着你？"
       ],
       "canonOpening": "站住。你身上有遗响的余味，而且很新。……律政院末代档案官，科温。我在写一本书，书里缺一节：会唱歌的核。"
+    },
+    {
+      "npc": "npc_meg",
+      "dlgId": "DLG_MEG",
+      "emotion": "bored",
+      "status": 200,
+      "totalTokens": 2854,
+      "finishReason": "stop",
+      "lines": [
+        "别碰。看可以，手别落下来。",
+        "站远点……你影子压着我货了。",
+        "买不买？不买就让开，风都比你爽快。"
+      ],
+      "canonOpening": "别站那么近，你踩到我摊子了。……等等。你胸口那颗音色石，灭的。莉安给你的吧？",
+      "capturedAt": "2026-11-12",
+      "capturedBy": "llm-npc-voice-proof",
+      "requiresHumanReview": true,
+      "note": "2026-11-12 真机实跑（CAESURA_LLM_API_KEY env 注入，HTTP 200，12.0s，model=gpt-6-sol via wkapi.pro/v1）；原样落录，口味上全符合 CAESURA 文风总纲宣武礼；作者必须逐字审核再择优；运行时数据不改写。"
+    },
+    {
+      "npc": "npc_belltongue",
+      "dlgId": "DLG_BELLTONGUE",
+      "emotion": "guarded",
+      "status": 200,
+      "totalTokens": 2854,
+      "finishReason": "stop",
+      "lines": [
+        "你手背那道口子，断口很齐。谁剪的。",
+        "站住。……你耳后那道旧伤，剪的时候，你醒着吗？",
+        "别动。你身上有断口，还没长好。……剪它的人，手抖了吗。"
+      ],
+      "canonOpening": "站住。你耳后那道旧伤，是不是莉安剪的？",
+      "capturedAt": "2026-11-12",
+      "capturedBy": "llm-npc-voice-proof",
+      "requiresHumanReview": true,
+      "note": "2026-11-12 真机实跑（HTTP 200，12.0s，model=gpt-6-sol）；声线高度符合「guarded-visceral 剪刀师」正典（cuts/wounds vocabulary 贯穿）。作者必须逐字审核再择优；运行时数据不改写。"
+    },
+    {
+      "npc": "npc_corvin",
+      "dlgId": "DLG_CORVIN",
+      "emotion": "curious",
+      "status": 200,
+      "totalTokens": 2854,
+      "finishReason": "stop",
+      "lines": [
+        "你脚步里有旧纸的回声。……别否认，档案馆从不收错味道。",
+        "我书里有一页空白，专等会唱歌的核。……你站的位置，正好是那条注脚。"
+      ],
+      "canonOpening": "站住。你身上有遗响的余味，而且很新。……律政院末代档案官，科温。我在写一本书，书里缺一节：会唱歌的核。",
+      "capturedAt": "2026-11-12",
+      "capturedBy": "llm-npc-voice-proof",
+      "requiresHumanReview": true,
+      "note": "2026-11-12 真机实跑（HTTP 200，12.0s，model=gpt-6-sol）；书籍/纸屑/注脚三联递归意象一贯正确，不灌别经；作者必须逐字审核再择优；运行时数据不改写。"
     }
   ],
   "runtimeDataUnchanged": {
     "file": "src/data/json/dialogue.json",
     "diffLines": 0,
     "note": "玩家可见对白严格走 dialogue.json → DialogueEngine → src/quest；本候选池与之正交，零改动。"
-  }
+  },
+  "schemaNote": "2026-11-12 新增 3 条 DLG_* 2026-11-12 真机实跑候选（model=gpt-6-sol · wkapi.pro/v1 · HTTP 200），全部 requiresHumanReview=true；旧 3 条保留不改。"
 }

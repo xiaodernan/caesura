@@ -103,3 +103,20 @@ npx vitest run tests/unit/caesura-llm-gateway.test.ts --no-cache   # 16 腿离�
 > 注：仓库内 `.env`（gitignore 保护）用的键名是 `LLM_API_KEY` / `LLM_BASE_URL` / `LLM_MODEL`；
 > 网关只认 `CAESURA_LLM_API_KEY` / `WKAPI_KEY`。开发者本机真连时按上面显式导出，或在 shell 里把
 > `.env` 的值映射到 `CAESURA_LLM_API_KEY`——**绝不改代码去读 `.env` 文件**（那会把凭证读取路径固化进源码）。
+
+## 7. 2026-11-12 真机实跑证据（key 仅 env 注入 · 密钥未落盘/未进 git）
+
+以下均为本机在 `$env:CAESURA_LLM_API_KEY` 临时注入下真跑（密钥不写任何 `.env`/git/文档）：
+
+- `node scripts/caesura-llm-gateway.mjs --live`（mode=live，model=gpt-6-sol，base=https://wkapi.pro/v1，HTTP 200）：
+  - `verifyGatewaySoundness` holds=true，falsifiable=true；三路 tamper 真喂回翻 false（missingKey/badEndpoint/badJson）。
+  - 三向量保持默认互异互斥：`OfflineDouble=011 / LiveGrounded=100 / CachedLive=110`，`noUniversalWinner=true`，`causalLocksAllHold=true`。
+  - CachedLive：`liveGrounded=true, reproducible=true, zeroCost=false, cacheHit=true, firstCallCostUnerasable=true`。
+  - `trueReply`：`ok=true status=200 contentLen=15 totalTokens=18565 finishReason=stop latencyMs=4398`。
+  - 全程未写入任何数据文件；仅 stdout。
+- `node scripts/llm-npc-voice-proof.mjs`（完整三系，无筛选）：**HTTP 200**（12.0s，total_tokens=2854，cached_tokens=32）——DLG_MEG / DLG_BELLTONGUE / DLG_CORVIN 各产出 3/3/2 条原样候选；DLG_CORVIN 另见 §3.2 真跑保底。读数原样落录 `src/data/authoring/llm-voice-candidates.json`（runtime:false · authorOnly · requiresHumanReview=true，dialogue.json **零改动**）。
+- 单挑 DLG_CORVIN 6.8s HTTP 200 对比批量运行一致：同 context 同条 “别翻那一册。你身上的遗响还没沉静……” 与 “等一等。让我听听这阵余响……” 二句纯属模型输出，不在代码里。
+- 审稿 `npm run llm:qa` 仍维持 2026-11-12 结论：pass 45 / skip 33 / flag 3（2 保留、1 已落 `DLG_CORVIN:n2`）。
+
+诚实边界（刷新）：以上「真机实跑」证明的是 **2026-11-12 这一次会话里 endpoint 可达、模型输出在 vocally 合理的体与形**；
+**并不构成任何长期可用性保证；也不构成玩家运行时的 LLM 接入点（玩家进程零 LLM）**。`.env` 约定见上。

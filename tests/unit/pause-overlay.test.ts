@@ -142,7 +142,19 @@ describe('PauseOverlay：阶段 F-45 玩家手动暂停的「止音仪典」', (
     expect(css, '呼吸 keyframes 已注入').toContain('@keyframes pause-breathe')
     expect(css, '止 glyph breathing keyframes 已注入').toContain('@keyframes pause-glyph-breathe')
     expect(css, 'reduced-motion 兜底').toContain('prefers-reduced-motion')
-    // 注意：本测试用 head.children 量，不能直接读一个文件——两个 dirty 测试不应有依赖文件的绝对路径
+    // F-67「止音仪典 · 朱砂印改」：panel 内缘金边 + 金/朱两枚印 + hint shimmer 金字 + reduced-motion shimmer 停
+    expect(css, 'panel 内缘金细边已注入').toContain('.pause-overlay .panel::before')
+    expect(css, '金印（主兜）已注入').toContain('.pause-overlay .seal {')
+    expect(css, '朱印（回声副本）已注入').toContain('.pause-overlay .seal.seal-b')
+    expect(css, 'hint shimmer 金色洗白 keyframes 已注入').toContain('@keyframes pause-hint-shimmer')
+    expect(css, 'reduced-motion 下 hint shimmer 已停').toContain('.pause-overlay .hint { animation: none;')
+    // DOM：两枚印已挂（伪 DOM 的 innerHTML 仅是字符串字段、没有 querySelectorAll——直接验字节）
+    const root = body.children.find((el) => el.id === 'pause-overlay')!
+    const html = (root as unknown as { innerHTML: string }).innerHTML
+    expect(html, '金印已在内层').toContain('class="seal"')
+    expect(html, '朱印已在内层').toContain('class="seal seal-b"')
+    expect(html, '金印字符止').toContain('>止</div>')
+    expect(html, '朱印字符音').toContain('>音</div>')
   })
 
   it('dispose() 释放 DOM——body 上不再有 #pause-overlay', () => {
