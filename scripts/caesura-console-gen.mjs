@@ -50,6 +50,7 @@ import { circuitBreakerStudy, circuitBreakerSnapshot } from './caesura-circuit-b
 import { llmGatewayStudy, llmGatewaySnapshot } from './caesura-llm-gateway.mjs'
 import { gatewayRoutingStudy, gatewayRoutingSnapshot } from './caesura-gateway-routing.mjs'
 import { idempotentConsumerStudy, idempotentConsumerSnapshot } from './caesura-idempotent-consumer.mjs'
+import { consumerRebalanceStudy, consumerRebalanceSnapshot } from './caesura-consumer-rebalance.mjs'
 import { traceSamplingStudy, traceSamplingSnapshot } from './caesura-trace-sampling.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
@@ -379,7 +380,9 @@ export async function buildSystems(opts = {}) {
   const gatewayRouting = opts.gatewayRouting === false ? null : await buildGatewayRoutingReading(opts, now)
   // KI-540：第三十四维装配 Spring Cloud 幂等去重教学件（InMemoryDedupSet/RedisSetNx/BloomGuard）
   const idempotentConsumer = opts.idempotentConsumer === false ? null : await buildIdempotentConsumerReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, builtAt: now() }
+  // KI-541：第三十五维装配 Kafka 消费组再平衡教学件（Eager/CooperativeSticky/StaticMembership）
+  const consumerRebalance = opts.consumerRebalance === false ? null : await buildConsumerRebalanceReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, builtAt: now() }
 }
 
 /**
@@ -461,6 +464,30 @@ export async function buildTraceSamplingReading(opts, now) {
       ...(opts.tsRigged === true ? { rigged: true } : {}),
     })
     return traceSamplingSnapshot(s)
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
+ * KI-541：Kafka 消费组再平衡三策略真跑教学件（Eager/CooperativeSticky/StaticMembership × 六场景 + 三难向量 + verifyRebalanceSoundness 双路自证 + 十一枚真件交叉印证）。
+ * 失败落 null；读数全真、CLI 双跑字节一致、rigged 不硬造 111（结构如此）。
+ * @param {object} opts { consumerRebalance?:false, rebSeed?, rebPartitions?, rebMembers?, rebPerfectMemberSingleInstance?, rebZeroIncrementalConflict?, rebZeroSessionTimeout?, rebRigged? }
+ * @param {()=>number} now 时钟（builtAt 注入真值）
+ */
+export async function buildConsumerRebalanceReading(opts, now) {
+  try {
+    const s = await consumerRebalanceStudy({
+      now,
+      ...(opts.rebSeed ? { seed: Math.max(0, Math.floor(Number(opts.rebSeed))) } : {}),
+      ...(opts.rebPartitions ? { partitions: Math.max(1, Math.floor(Number(opts.rebPartitions))) } : {}),
+      ...(opts.rebMembers ? { members: Math.max(1, Math.floor(Number(opts.rebMembers))) } : {}),
+      ...(opts.rebPerfectMemberSingleInstance === true ? { perfectMemberSingleInstance: true } : {}),
+      ...(opts.rebZeroIncrementalConflict === true ? { zeroIncrementalConflict: true } : {}),
+      ...(opts.rebZeroSessionTimeout === true ? { zeroSessionTimeout: true } : {}),
+      ...(opts.rebRigged === true ? { rigged: true } : {}),
+    })
+    return consumerRebalanceSnapshot(s)
   } catch (e) {
     return null // 缺哪块就落 null，前端据实降级；不编造假数
   }

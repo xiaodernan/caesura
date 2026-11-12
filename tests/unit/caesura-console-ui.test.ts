@@ -2564,3 +2564,72 @@ describe('KI-540 第三十四维 · inmemory/redissetnx/bloomguard（idc 族）'
     })
   })
 })
+
+
+// ============ KI-541 第三十五维 · Eager/CooperativeSticky/StaticMembership（reb 族 · 4 腿） ============
+describe('KI-541 第三十五维 · eager/cooperativesticky/staticmembership（reb 族）', () => {
+  const realReb = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+  it('第三十五维真渲染：reb 矩阵 18 cell + 三策略向量 011/101/110 + 状态类 + ladder 条', async () => {
+    const dom = await runApp(realReb)
+    const matrix = dom.els['reb-matrix'].innerHTML
+    expect(matrix).toContain('reb-mat-head')
+    for (const p of ['Eager', 'CooperativeSticky', 'StaticMembership']) {
+      expect(matrix).toContain('data-strategy="' + p + '"')
+    }
+    for (const sc of ['cleanSteadyState', 'memberJoin', 'memberLeave', 'memberFlap', 'coldStart', 'cleanRerun']) {
+      expect(matrix).toContain('data-s="' + sc + '"')
+    }
+    expect((matrix.match(/class="reb-cell /g) || []).length).toBe(18)
+    const tri = dom.els['reb-trilemma'].innerHTML
+    expect(tri).toContain('data-vec="011"')
+    expect(tri).toContain('data-vec="101"')
+    expect(tri).toContain('data-vec="110"')
+    const states = [...matrix.matchAll(/data-state="([^"]+)"/g)].map((m) => m[1])
+    expect(states.length).toBeGreaterThanOrEqual(18)
+    expect(dom.els['reb-ladder'].innerHTML).toContain('reb-bar')
+  })
+
+  it('第三十五维画中件 DOM：verifyRebalanceSoundness 双路 + 十一真件 chip + 无 111', async () => {
+    const dom = await runApp(realReb)
+    const probes = dom.els['reb-probes'].innerHTML
+    for (const key of ['eagerFullStop', 'coopIncremental', 'staticStaleFree',
+      'noStrategyWinsAll', 'noUniversalWinner', 'riggedConvergenceCollapsed']) {
+      expect(probes, 'probe chip ' + key).toContain('data-verdict="' + key + '"')
+    }
+    const verif = dom.els['reb-verif'].innerHTML
+    for (const key of ['holds', 'nontrivial', 'falsifiable']) {
+      expect(verif, 'verify row ' + key).toContain(key)
+    }
+    const cx = dom.els['reb-crosscheck'].innerHTML
+    for (const api of ['compareRemapping', 'createShardRouter', 'createHashRing', 'createWal', 'createBus',
+      'createRedisCache', 'createObjectPool', 'createTokenBucket', 'createMinHeapDelayQueue',
+      'createFullJitterBackoff', 'createPackedCounters']) {
+      expect(cx, '真件 ' + api + ' 必须 DOM 可见').toContain(api)
+    }
+    expect(cx).toContain('jitterSpread')
+  })
+
+  it('第三十五维 markup/CSS 自同 + systems.consumerRebalance 缺失时真显式降级', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-reb')
+    expect(html).toContain('id="reb-matrix"')
+    expect(html).toContain('id="reb-verif"')
+    expect(html).toContain('Eager=011 / CooperativeSticky=101 / StaticMembership=110')
+    expect(css).toContain('.reb-cell.stop')
+    expect(css).toContain('.reb-cell.incr')
+    expect(css).toContain('.reb-cell.static')
+    expect(css).toContain('.reb-cell.ok')
+    expect(css).toContain('.reb-flag.yes')
+    expect(css).toContain('.reb-bar > i')
+    expect(css).toContain('.reb-verif')
+    expect(css).toContain('@media')
+    const noReb = JSON.parse(JSON.stringify(realReb as any))
+    noReb.systems.consumerRebalance = null
+    return runApp(noReb).then((dom2: any) => {
+      expect(dom2.els['reb-matrix'].innerHTML).toContain('暂缺')
+      expect(dom2.els['reb-trilemma'].innerHTML).toContain('暂缺')
+      expect(dom2.els['reb-matrix-note'].textContent).toContain('systems.consumerRebalance 缺失')
+    })
+  })
+})

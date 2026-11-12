@@ -2567,4 +2567,88 @@ describe('caesura-game-cloud', () => {
     })).status()).idempotentConsumer
     expect(injected.builtAt).toBe(555)
   })
+
+  // ============ KI-541 Kafka 消费组再平衡 opt-in 装配（2 腿）============
+  it('consumerRebalance:true 装配真矩阵：011/101/110 互异不封赢家 + 三因果锁 + verifyRebalanceSoundness 双路 + 21 键 + 惰性同引用（KI-541）', async () => {
+    const gc = await createGameCloud({
+      gameId: 'gid-reb1', gamePort: 7930, sources, cloud: fakeCloud(),
+      consumerRebalance: true, rebNow: () => 541000,
+    })
+    const st = (await gc.status()).consumerRebalance
+    expect(st).not.toBe(null)
+    expect(st!.builtAt).toBe(541000)
+    expect(st!.config.scenarios.length).toBe(6)
+    expect(st!.config.partitions).toBe(6)
+    expect(st!.config.members).toBe(3)
+    expect(st!.rows.length).toBe(3)
+    expect(st!.vectors).toEqual({ Eager: '011', CooperativeSticky: '101', StaticMembership: '110' })
+    expect(st!.rigged).toBe(false)
+    expect(st!.noUniversalWinner).toBe(true)
+    expect(st!.trilemmaDistinguishes).toBe(true)
+    expect(st!.verdict.noStrategyWinsAll).toBe(true)
+    expect(st!.verdict.vectorFromTrilemma).toBe(true)
+    // 三因果结构锁
+    expect(st!.causalLocks.causalLocksAllHold).toBe(true)
+    expect(st!.causalLocks.eagerPauseCausallyUnerasable).toBe(true)
+    expect(st!.causalLocks.cooperativeIncrementalComplexityCausallyUnerasable).toBe(true)
+    expect(st!.causalLocks.staticSessionTimeoutCausallyUnerasable).toBe(true)
+    // verifyRebalanceSoundness 双路 + 两 lane
+    const cp = st!.crosscheck.soundness
+    expect(cp.holds).toBe(true)
+    expect(cp.nontrivial).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.laneA.eagerCovered).toBe(true)
+    expect(cp.laneA.cooperativeCovered).toBe(true)
+    expect(cp.laneA.staticCovered).toBe(true)
+    expect(cp.tamper.memberLeak.holds).toBe(false)
+    expect(cp.tamper.staleAssignment.holds).toBe(false)
+    expect(cp.tamper.emptyMembership.holds).toBe(false)
+    expect(Object.keys(st!.crosscheck.evidence).length).toBe(21)
+    // 主教义
+    expect(st!.verdict.eagerFullStop).toBe(true)
+    expect(st!.verdict.coopIncremental).toBe(true)
+    expect(st!.verdict.staticStaleFree).toBe(true)
+    // 惰性缓存
+    expect((await gc.status()).consumerRebalance).toBe(st)
+    expect(await gc.runConsumerRebalanceStudy!()).toMatchObject({ vectors: st!.vectors })
+    // 不连坐其它维
+    const bare = await createGameCloud({ gameId: 'gid-reb0', gamePort: 7931, sources, cloud: fakeCloud() }).status()
+    expect(bare.consumerRebalance).toBe(null)
+    expect(bare.llmGateway).toBe(null)
+  })
+
+  it('consumerRebalance 默认 null 非破坏；zeroIncrementalConflict / zeroSessionTimeout / 可注入现成 study（KI-541）', async () => {
+    const idle = await createGameCloud({ gameId: 'gid-reb2', gamePort: 7932, sources, cloud: fakeCloud() }).status()
+    expect(idle.consumerRebalance).toBe(null)
+    // 单开 zeroIncrementalConflict：Cooperative=111（冲突窗归零）
+    const zc = (await (await createGameCloud({
+      gameId: 'gid-reb3', gamePort: 7933, sources, cloud: fakeCloud(),
+      consumerRebalance: { zeroIncrementalConflict: true }, rebNow: () => 541000,
+    })).status()).consumerRebalance
+    expect(zc!.vectors.CooperativeSticky).toBe('111')
+    expect(zc!.verdict.zeroConflictMakesCoopSimple).toBe(true)
+    // 单开 zeroSessionTimeout：Static=111（退化成 Eager）
+    const zs = (await (await createGameCloud({
+      gameId: 'gid-reb4', gamePort: 7934, sources, cloud: fakeCloud(),
+      consumerRebalance: { zeroSessionTimeout: true }, rebNow: () => 541000,
+    })).status()).consumerRebalance
+    expect(zs!.vectors.StaticMembership).toBe('111')
+    expect(zs!.verdict.zeroSessionTimeoutMakesStaticStaleFree).toBe(true)
+    // rigged 三开齐：Cooperative≡Static=111，distinguishable=false，但 Eager=011 不动
+    const rig = (await (await createGameCloud({
+      gameId: 'gid-reb5', gamePort: 7935, sources, cloud: fakeCloud(),
+      consumerRebalance: { rigged: true }, rebNow: () => 541000,
+    })).status()).consumerRebalance
+    expect(rig!.vectors.CooperativeSticky).toBe('111')
+    expect(rig!.vectors.StaticMembership).toBe('111')
+    expect(rig!.vectors.Eager).toBe('011')
+    expect(rig!.causalLocks.causalLocksAllHold).toBe(true)
+    // 可注入现成 study
+    const { consumerRebalanceStudy } = await import('../../scripts/caesura-consumer-rebalance.mjs')
+    const injected = (await (await createGameCloud({
+      gameId: 'gid-reb6', gamePort: 7936, sources, cloud: fakeCloud(),
+      consumerRebalance: consumerRebalanceStudy({ seed: 99, now: () => 555 }),
+    })).status()).consumerRebalance
+    expect(injected.builtAt).toBe(555)
+  })
 })

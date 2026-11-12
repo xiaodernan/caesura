@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794489559394,
+  "generatedAt": 1794491520222,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1365,12 +1365,12 @@
           "keys": 1,
           "versions": 2,
           "commitLogSize": 1,
-          "now": 1794489559396
+          "now": 1794491520224
         },
         "final": {
           "A": {
             "value": 101,
-            "commitTs": 1794489559396,
+            "commitTs": 1794491520224,
             "tombstone": false
           }
         }
@@ -3646,7 +3646,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794489559394,
+                "lastTimestamp": 1794491520222,
                 "workerId": 1
               },
               "fault": {
@@ -3742,7 +3742,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794489559394,
+                "lastTimestamp": 1794491520222,
                 "workerId": 1
               },
               "fault": {
@@ -3774,7 +3774,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794489559395,
+                "lastTimestamp": 1794491520223,
                 "workerId": 1
               },
               "fault": {
@@ -3806,7 +3806,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794489559394,
+                "lastTimestamp": 1794491520222,
                 "workerId": 1
               },
               "fault": {
@@ -4522,7 +4522,7 @@
         "capacity": 8,
         "perShardCap": 2
       },
-      "builtAt": 1794489559394
+      "builtAt": 1794491520222
     },
     "configConsistency": {
       "config": {
@@ -5020,7 +5020,7 @@
         "burstCount": 12,
         "windowMs": 10000
       },
-      "builtAt": 1794489559394
+      "builtAt": 1794491520222
     },
     "cacheCoherency": {
       "config": {
@@ -5549,7 +5549,7 @@
         "crashAtWrite": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794489559394
+      "builtAt": 1794491520222
     },
     "messageDelivery": {
       "config": {
@@ -6038,10 +6038,10 @@
         "crashAfterSendAt": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794489559394
+      "builtAt": 1794491520222
     },
     "delayQueue": {
-      "builtAt": 1794489559394,
+      "builtAt": 1794491520222,
       "config": {
         "seed": 518,
         "tasks": 12,
@@ -6068,7 +6068,7 @@
               "id": "allOk",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 54804,
+              "lateMs": 68804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6080,7 +6080,7 @@
               "id": "tickSkew",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 54804,
+              "lateMs": 68804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6092,7 +6092,7 @@
               "id": "farFuture",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 62136,
+              "lateMs": 69136,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6104,7 +6104,7 @@
               "id": "manyCancels",
               "protocol": "TimingWheel",
               "fired": 6,
-              "lateMs": 23858,
+              "lateMs": 30858,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6128,7 +6128,7 @@
               "id": "concurrentWorkers",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 54804,
+              "lateMs": 68804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6139,7 +6139,7 @@
           ],
           "totals": {
             "fired": 54,
-            "lateMs": 250406,
+            "lateMs": 306406,
             "duplicatePickups": 0,
             "lostOnRestart": 6,
             "opUnits": 72
@@ -6375,7 +6375,7 @@
       }
     },
     "retryDlq": {
-      "builtAt": 1794489559394,
+      "builtAt": 1794491520222,
       "config": {
         "seed": 520,
         "messages": 16,
@@ -6793,7 +6793,7 @@
       }
     },
     "consumerGroup": {
-      "builtAt": 1794489559394,
+      "builtAt": 1794491520222,
       "config": {
         "seed": 523,
         "consumers": 3,
@@ -7299,7 +7299,7 @@
       }
     },
     "backpressure": {
-      "builtAt": 1794489559394,
+      "builtAt": 1794491520222,
       "config": {
         "steps": 48,
         "mu": 2,
@@ -8344,7 +8344,7 @@
       }
     },
     "logCompaction": {
-      "builtAt": 1794489559394,
+      "builtAt": 1794491520222,
       "config": {
         "seed": 526,
         "ops": 24,
@@ -9405,7 +9405,7 @@
       }
     },
     "bloomFilter": {
-      "builtAt": 1794489559394,
+      "builtAt": 1794491520222,
       "config": {
         "seed": 527,
         "capacity": 1024,
@@ -10104,7 +10104,7 @@
       }
     },
     "cacheReplacement": {
-      "builtAt": 1794489559394,
+      "builtAt": 1794491520222,
       "config": {
         "seed": 528,
         "capacity": 16,
@@ -10747,7 +10747,7 @@
       }
     },
     "streamWindow": {
-      "builtAt": 1794489559394,
+      "builtAt": 1794491520222,
       "config": {
         "seed": 529,
         "windowSize": 100,
@@ -12806,7 +12806,7 @@
       }
     },
     "hyperLogLog": {
-      "builtAt": 1794489559394,
+      "builtAt": 1794491520222,
       "config": {
         "seed": 530,
         "cardinality": 4096,
@@ -29726,7 +29726,7 @@
       }
     },
     "crdt": {
-      "builtAt": 1794489559394,
+      "builtAt": 1794491520222,
       "config": {
         "seed": 531,
         "replicaCount": 3,
@@ -30182,7 +30182,7 @@
       }
     },
     "springBatch": {
-      "builtAt": 1794489559394,
+      "builtAt": 1794491520222,
       "config": {
         "seed": 532,
         "items": 96,
@@ -30621,7 +30621,7 @@
       "rigged": false
     },
     "traceSampling": {
-      "builtAt": 1794489559394,
+      "builtAt": 1794491520222,
       "config": {
         "seed": 533,
         "items": 64,
@@ -31323,7 +31323,7 @@
       "rigged": false
     },
     "distributedSession": {
-      "builtAt": 1794489559394,
+      "builtAt": 1794491520222,
       "config": {
         "seed": 535,
         "sessions": 96,
@@ -31679,7 +31679,7 @@
       "rigged": false
     },
     "transactionalOutbox": {
-      "builtAt": 1794489559394,
+      "builtAt": 1794491520222,
       "config": {
         "seed": 534,
         "items": 96,
@@ -32130,7 +32130,7 @@
       "rigged": false
     },
     "loadBalance": {
-      "builtAt": 1794489559394,
+      "builtAt": 1794491520222,
       "config": {
         "seed": 536,
         "requests": 96,
@@ -32550,7 +32550,7 @@
       "rigged": false
     },
     "circuitBreaker": {
-      "builtAt": 1794489559394,
+      "builtAt": 1794491520222,
       "config": {
         "seed": 537,
         "calls": 96,
@@ -33080,7 +33080,7 @@
       "rigged": false
     },
     "llmGateway": {
-      "builtAt": 1794489559394,
+      "builtAt": 1794491520222,
       "config": {
         "seed": 538,
         "mode": "offline",
@@ -33475,7 +33475,7 @@
       "rigged": false
     },
     "gatewayRouting": {
-      "builtAt": 1794489559394,
+      "builtAt": 1794491520222,
       "config": {
         "seed": 539,
         "requests": 96,
@@ -33813,7 +33813,7 @@
       "rigged": false
     },
     "idempotentConsumer": {
-      "builtAt": 1794489559394,
+      "builtAt": 1794491520222,
       "config": {
         "seed": 540,
         "messages": 96,
@@ -34238,6 +34238,416 @@
       },
       "rigged": false
     },
-    "builtAt": 1794489559394
+    "consumerRebalance": {
+      "builtAt": 1794491520222,
+      "config": {
+        "seed": 541,
+        "partitions": 6,
+        "members": 3,
+        "sessionTimeoutMs": 45000,
+        "scenarios": [
+          "cleanSteadyState",
+          "memberJoin",
+          "memberLeave",
+          "memberFlap",
+          "coldStart",
+          "cleanRerun"
+        ],
+        "rigged": false,
+        "perfectMemberSingleInstance": false,
+        "zeroIncrementalConflict": false,
+        "zeroSessionTimeout": false
+      },
+      "rows": [
+        {
+          "protocol": "Eager",
+          "scenarios": [
+            {
+              "id": "cleanSteadyState",
+              "members": 3,
+              "partitionsAssigned": 6,
+              "fullStops": 1,
+              "revokedPartitions": 0,
+              "conflictWindow": 0,
+              "staleMembers": 0,
+              "zeroStopPause": false,
+              "simpleProtocol": true,
+              "staleFreeAssignment": true,
+              "fault": "happy-path"
+            },
+            {
+              "id": "memberJoin",
+              "members": 4,
+              "partitionsAssigned": 6,
+              "fullStops": 1,
+              "revokedPartitions": 0,
+              "conflictWindow": 0,
+              "staleMembers": 0,
+              "zeroStopPause": false,
+              "simpleProtocol": true,
+              "staleFreeAssignment": true,
+              "fault": "member-join"
+            },
+            {
+              "id": "memberLeave",
+              "members": 2,
+              "partitionsAssigned": 6,
+              "fullStops": 1,
+              "revokedPartitions": 0,
+              "conflictWindow": 0,
+              "staleMembers": 0,
+              "zeroStopPause": false,
+              "simpleProtocol": true,
+              "staleFreeAssignment": true,
+              "fault": "member-leave"
+            },
+            {
+              "id": "memberFlap",
+              "members": 4,
+              "partitionsAssigned": 6,
+              "fullStops": 1,
+              "revokedPartitions": 0,
+              "conflictWindow": 0,
+              "staleMembers": 0,
+              "zeroStopPause": false,
+              "simpleProtocol": true,
+              "staleFreeAssignment": true,
+              "fault": "member-flap"
+            },
+            {
+              "id": "coldStart",
+              "members": 3,
+              "partitionsAssigned": 6,
+              "fullStops": 1,
+              "revokedPartitions": 0,
+              "conflictWindow": 0,
+              "staleMembers": 0,
+              "zeroStopPause": false,
+              "simpleProtocol": true,
+              "staleFreeAssignment": true,
+              "fault": "cold-start"
+            },
+            {
+              "id": "cleanRerun",
+              "members": 3,
+              "partitionsAssigned": 6,
+              "fullStops": 1,
+              "revokedPartitions": 0,
+              "conflictWindow": 0,
+              "staleMembers": 0,
+              "zeroStopPause": false,
+              "simpleProtocol": true,
+              "staleFreeAssignment": true,
+              "fault": "rerun-idempotent"
+            }
+          ],
+          "trilemma": {
+            "zeroStopPause": false,
+            "simpleProtocol": true,
+            "staleFreeAssignment": true
+          },
+          "metrics": {
+            "totalMembers": 19,
+            "totalFullStops": 6,
+            "totalRevoked": 0,
+            "totalConflictWindows": 0,
+            "totalStale": 0
+          }
+        },
+        {
+          "protocol": "CooperativeSticky",
+          "scenarios": [
+            {
+              "id": "cleanSteadyState",
+              "members": 3,
+              "partitionsAssigned": 6,
+              "fullStops": 0,
+              "revokedPartitions": 0,
+              "conflictWindow": 0,
+              "staleMembers": 0,
+              "zeroStopPause": true,
+              "simpleProtocol": false,
+              "staleFreeAssignment": true,
+              "fault": "happy-path"
+            },
+            {
+              "id": "memberJoin",
+              "members": 4,
+              "partitionsAssigned": 6,
+              "fullStops": 0,
+              "revokedPartitions": 1,
+              "conflictWindow": 1,
+              "staleMembers": 0,
+              "zeroStopPause": true,
+              "simpleProtocol": false,
+              "staleFreeAssignment": true,
+              "fault": "member-join"
+            },
+            {
+              "id": "memberLeave",
+              "members": 2,
+              "partitionsAssigned": 6,
+              "fullStops": 0,
+              "revokedPartitions": 2,
+              "conflictWindow": 1,
+              "staleMembers": 0,
+              "zeroStopPause": true,
+              "simpleProtocol": false,
+              "staleFreeAssignment": true,
+              "fault": "member-leave"
+            },
+            {
+              "id": "memberFlap",
+              "members": 4,
+              "partitionsAssigned": 6,
+              "fullStops": 0,
+              "revokedPartitions": 1,
+              "conflictWindow": 1,
+              "staleMembers": 0,
+              "zeroStopPause": true,
+              "simpleProtocol": false,
+              "staleFreeAssignment": true,
+              "fault": "member-flap"
+            },
+            {
+              "id": "coldStart",
+              "members": 3,
+              "partitionsAssigned": 6,
+              "fullStops": 0,
+              "revokedPartitions": 0,
+              "conflictWindow": 0,
+              "staleMembers": 0,
+              "zeroStopPause": true,
+              "simpleProtocol": false,
+              "staleFreeAssignment": true,
+              "fault": "cold-start"
+            },
+            {
+              "id": "cleanRerun",
+              "members": 3,
+              "partitionsAssigned": 6,
+              "fullStops": 0,
+              "revokedPartitions": 0,
+              "conflictWindow": 0,
+              "staleMembers": 0,
+              "zeroStopPause": true,
+              "simpleProtocol": false,
+              "staleFreeAssignment": true,
+              "fault": "rerun-idempotent"
+            }
+          ],
+          "trilemma": {
+            "zeroStopPause": true,
+            "simpleProtocol": false,
+            "staleFreeAssignment": true
+          },
+          "metrics": {
+            "totalMembers": 19,
+            "totalFullStops": 0,
+            "totalRevoked": 4,
+            "totalConflictWindows": 3,
+            "totalStale": 0
+          }
+        },
+        {
+          "protocol": "StaticMembership",
+          "scenarios": [
+            {
+              "id": "cleanSteadyState",
+              "members": 3,
+              "partitionsAssigned": 6,
+              "fullStops": 0,
+              "revokedPartitions": 0,
+              "conflictWindow": 0,
+              "staleMembers": 0,
+              "zeroStopPause": true,
+              "simpleProtocol": true,
+              "staleFreeAssignment": false,
+              "fault": "happy-path"
+            },
+            {
+              "id": "memberJoin",
+              "members": 4,
+              "partitionsAssigned": 6,
+              "fullStops": 0,
+              "revokedPartitions": 0,
+              "conflictWindow": 0,
+              "staleMembers": 0,
+              "zeroStopPause": true,
+              "simpleProtocol": true,
+              "staleFreeAssignment": false,
+              "fault": "member-join"
+            },
+            {
+              "id": "memberLeave",
+              "members": 2,
+              "partitionsAssigned": 6,
+              "fullStops": 0,
+              "revokedPartitions": 0,
+              "conflictWindow": 0,
+              "staleMembers": 1,
+              "zeroStopPause": true,
+              "simpleProtocol": true,
+              "staleFreeAssignment": false,
+              "fault": "member-leave"
+            },
+            {
+              "id": "memberFlap",
+              "members": 4,
+              "partitionsAssigned": 6,
+              "fullStops": 0,
+              "revokedPartitions": 0,
+              "conflictWindow": 0,
+              "staleMembers": 1,
+              "zeroStopPause": true,
+              "simpleProtocol": true,
+              "staleFreeAssignment": false,
+              "fault": "member-flap"
+            },
+            {
+              "id": "coldStart",
+              "members": 3,
+              "partitionsAssigned": 6,
+              "fullStops": 0,
+              "revokedPartitions": 0,
+              "conflictWindow": 0,
+              "staleMembers": 0,
+              "zeroStopPause": true,
+              "simpleProtocol": true,
+              "staleFreeAssignment": false,
+              "fault": "cold-start"
+            },
+            {
+              "id": "cleanRerun",
+              "members": 3,
+              "partitionsAssigned": 6,
+              "fullStops": 0,
+              "revokedPartitions": 0,
+              "conflictWindow": 0,
+              "staleMembers": 0,
+              "zeroStopPause": true,
+              "simpleProtocol": true,
+              "staleFreeAssignment": false,
+              "fault": "rerun-idempotent"
+            }
+          ],
+          "trilemma": {
+            "zeroStopPause": true,
+            "simpleProtocol": true,
+            "staleFreeAssignment": false
+          },
+          "metrics": {
+            "totalMembers": 19,
+            "totalFullStops": 0,
+            "totalRevoked": 0,
+            "totalConflictWindows": 0,
+            "totalStale": 2
+          }
+        }
+      ],
+      "vectors": {
+        "Eager": "011",
+        "CooperativeSticky": "101",
+        "StaticMembership": "110"
+      },
+      "verdict": {
+        "vectors": {
+          "Eager": "011",
+          "CooperativeSticky": "101",
+          "StaticMembership": "110"
+        },
+        "noUniversalWinner": true,
+        "trilemmaDistinguishes": true,
+        "noStrategyWinsAll": true,
+        "vectorFromTrilemma": true,
+        "eagerFullStop": true,
+        "coopIncremental": true,
+        "staticStaleFree": true,
+        "rigged_pkg": false,
+        "rigged_pkg_flags": {
+          "rigged": false,
+          "perfectMemberSingleInstance": false,
+          "zeroIncrementalConflict": false,
+          "zeroSessionTimeout": false
+        },
+        "riggedConvergenceCollapsed": false,
+        "perfectMemberMakesStaticComplete": true,
+        "zeroConflictMakesCoopSimple": true,
+        "zeroSessionTimeoutMakesStaticStaleFree": true
+      },
+      "noUniversalWinner": true,
+      "trilemmaDistinguishes": true,
+      "causalLocks": {
+        "eagerPauseCausallyUnerasable": true,
+        "cooperativeIncrementalComplexityCausallyUnerasable": true,
+        "staticSessionTimeoutCausallyUnerasable": true,
+        "causalLocksAllHold": true,
+        "probes": {
+          "eagerFullStopJoin": 1,
+          "coopRevokedJoin": 1,
+          "coopConflictJoin": 1,
+          "staticStaleDefault": 1,
+          "staticStaleZeroTimeout": 0
+        }
+      },
+      "crosscheck": {
+        "evidence": {
+          "routerMoved": 21,
+          "routerTracked": 80,
+          "ringNodes": 4,
+          "ringShardsUsed": 4,
+          "walLines": 80,
+          "walReplayed": 80,
+          "notices": 12,
+          "busListeners": 1,
+          "redisBitmapHits": 96,
+          "redisSlots": 96,
+          "poolCreated": 2,
+          "poolReused": 1,
+          "bucketAllowed": 3,
+          "bucketRejected": 4,
+          "heapFired": 3,
+          "heapPending": 0,
+          "counterSum": 2080,
+          "counterFalseSharing": 56,
+          "jitterSpread": 1.9093,
+          "remapConsistentRate": 0.265,
+          "remapModuloRate": 0.53
+        },
+        "soundness": {
+          "laneA": {
+            "eagerCovered": true,
+            "cooperativeCovered": true,
+            "staticCovered": true
+          },
+          "laneB": {
+            "eagerFullStops": 1,
+            "cooperativeRevoked": 1,
+            "staticStaleMembers": 1,
+            "joinMembers": 4
+          },
+          "holds": true,
+          "nontrivial": true,
+          "falsifiable": true,
+          "tamper": {
+            "memberLeak": {
+              "holds": false,
+              "reason": "memberLeak：同一 partition 分给两个成员 ⇒ 重复消费 ⇒ holds 真翻 false"
+            },
+            "staleAssignment": {
+              "holds": false,
+              "reason": "staleAssignment：static phantom 永占分区（session timeout 内不交还）⇒ 新成员真拿不到 ⇒ holds 真翻 false"
+            },
+            "emptyMembership": {
+              "holds": false,
+              "reason": "空成员集 ⇒ nontrivial 归零 ⇒ holds 绝不 0=0 假绿"
+            }
+          },
+          "events": 4
+        }
+      },
+      "rigged": false
+    },
+    "builtAt": 1794491520222
   }
 }

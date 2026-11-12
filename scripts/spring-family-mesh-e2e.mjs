@@ -188,6 +188,10 @@ export function runMeshE2E(opts = {}) {
     // 注入时钟用 idcNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/rdq/dld 已占用前缀）。
     idempotentConsumer: opts.idempotentConsumer,
     idcNow: opts.idcNow,
+    // KI-541：Kafka 消费组再平衡教学件（consumerRebalance=true 装配；Eager/CooperativeSticky/StaticMembership × 六场景矩阵 + 三难向量（默认 011/101/110 互异）+ verifyRebalanceSoundness 双路自证 + 十一真件 21 键交叉印证，不改调用路径）。
+    // 注入时钟用 rebNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/reb/rdq/dld 已占用前缀）。
+    consumerRebalance: opts.consumerRebalance,
+    rebNow: opts.rebNow,
     // KI-533：可观测性分布式追踪采样三策略（traceSampling=true 装配；只读 HeadBased/TailBased/Adaptive ×
     // 六场景矩阵 + 三难向量维序 [lowOverhead/anomalyCapture/loadAdaptive]（默认 100/010/101 互异不封赢家；
     // anomalyCapture⇔缓冲整条⇔非 lowOverhead 与 chk 锁同构；rigged 三开关 oracleHead/infiniteBuffer/perfectFeedback
@@ -349,6 +353,7 @@ export function runMeshE2E(opts = {}) {
         llmGatewaySnapshot: status.llmGateway ?? null,
         gatewayRoutingSnapshot: status.gatewayRouting ?? null,
         idempotentConsumerSnapshot: status.idempotentConsumer ?? null,
+        consumerRebalanceSnapshot: status.consumerRebalance ?? null,
         traceSamplingSnapshot: status.traceSampling ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
@@ -773,6 +778,19 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         crosscheck: r.idempotentConsumerSnapshot.crosscheck,
         causalLocks: r.idempotentConsumerSnapshot.causalLocks,
         verdict: r.idempotentConsumerSnapshot.verdict,
+      } : null,
+      consumerRebalance: r.consumerRebalanceSnapshot ? {
+        strategies: r.consumerRebalanceSnapshot.rows.map((row) => ({
+          strategy: row.protocol,
+          ladder: row.scenarios.map((sc) => sc.id + ':' + (sc.zeroStopPause === true ? '零停' : '全停')).join(' → '),
+          metrics: row.metrics, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.consumerRebalanceSnapshot.rows.map((row) => [row.protocol,
+          String(Number(row.trilemma.zeroStopPause)) + String(Number(row.trilemma.simpleProtocol)) + String(Number(row.trilemma.staleFreeAssignment))])),
+        noUniversalWinner: r.consumerRebalanceSnapshot.verdict.noUniversalWinner,
+        crosscheck: r.consumerRebalanceSnapshot.crosscheck,
+        causalLocks: r.consumerRebalanceSnapshot.causalLocks,
+        verdict: r.consumerRebalanceSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

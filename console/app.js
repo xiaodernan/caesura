@@ -71,6 +71,7 @@
       renderLlmGateway(snap.systems ? snap.systems.llmGateway : null)
       renderGatewayRouting(snap.systems ? snap.systems.gatewayRouting : null)
       renderIdempotentConsumer(snap.systems ? snap.systems.idempotentConsumer : null)
+      renderConsumerRebalance(snap.systems ? snap.systems.consumerRebalance : null)
       renderTraceSampling(snap.systems ? snap.systems.traceSampling : null)
       setLive(true, result.source)
     }).catch(function (e) {
@@ -3313,6 +3314,137 @@
       'verifyCheckpoint 双路自证：路 A clean 全量全 commit 求基准，路 B 真跑 restart(0) 用「poison chunk 隔离 / 已 commit 无重复 / 非毒零丢失 / 真检测到毒」四观测量判定；三路篡改真喂回同一内核现算翻 false，带 baselineHolds 先真绿。' +
       '三条因果结构锁在同一含毒 raw 流真跑钉死：Bulk 无 chk 整批死、chk 权衡不可兼得、Skip 跳毒永久丢。' +
       'rigged 双开关 perfectOracle（毒项 100% 判定、预防性从输入剔除）+ unlimitedSkip 喂的是已剔除毒项的干净流（换了作业输入、诚实标注，不是同一作业被抹软肋）⇒ 三者 faultIsolation 全真、Bulk≡Skip=101 区分度诚实收敛（riggedConvergenceCollapsed=true，教学结论：完美预言机抹平了「预防剔除」与「跳过」的差别，二者结构等价），noStrategyWinsAll 仍真绝不硬造 111，三因果锁仍 allHold。'
+  }
+
+  /* ================= KI-541 Eager/CooperativeSticky/StaticMembership Kafka 消费组再平衡 · 第三十五维（reb 族） ================= */
+
+  function renderConsumerRebalance(reb) {
+    renderRebMatrix(reb && reb.rows, reb && reb.config)
+    renderRebLadder(reb && reb.rows)
+    renderRebTrilemma(reb && reb.rows, reb && reb.verdict, reb && reb.crosscheck)
+  }
+
+  function rebMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 暂缺</div>'
+    if (note) note.textContent = 'systems.consumerRebalance 缺失 — 跑一次 npm run console:data 即可补齐'
+  }
+
+  function rebCell(c, protocol) {
+    if (!c) return { cls: '', ch: '·' }
+    if (protocol === 'Eager') return { cls: 'stop', ch: '全停' }
+    if (protocol === 'CooperativeSticky') return { cls: 'incr', ch: '增量' }
+    if (protocol === 'StaticMembership') return { cls: 'static', ch: '静态' }
+    return { cls: 'ok', ch: '✓' }
+  }
+
+  function renderRebMatrix(rows, config) {
+    var box = $('#reb-matrix'), note = $('#reb-matrix-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      rebMissing(box, note, 'reb 矩阵'); return
+    }
+    var scenarios = ['cleanSteadyState', 'memberJoin', 'memberLeave', 'memberFlap', 'coldStart', 'cleanRerun']
+    var head = '<div class="reb-mat-row reb-mat-head"><span class="reb-mat-proto">策略</span>' +
+      scenarios.map(function (sc) { return '<span class="reb-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="reb-mat-cost">fullStop/revoked/stale</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = rebCell(cell, row.protocol)
+        return '<span class="reb-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="reb-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="reb-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="reb-mat-cost"><b>' + esc(fmt(m.totalFullStops)) + '</b>/' + esc(String(m.totalRevoked || 0)) + '/' + esc(String(m.totalStale || 0)) + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'Eager / CooperativeSticky / StaticMembership × 六场景：cleanSteadyState（稳态 3 成/6 分区）/ memberJoin（扩员）/ memberLeave（缩员）/ memberFlap（抖动 phantom）/ coldStart（冷启动）/ cleanRerun（同轨迹重跑幂等）。每格只认三布尔（zeroStopPause ∧ simpleProtocol ∧ staleFreeAssignment）。Eager: assign-on-revoke 成员变更全量停摆（简单·唯一分配·但消费严重停摆）；CooperativeSticky: 两阶段 revoke→assign（只迁移公平性逼迫的分区·消费连续·增量协议复杂度结构性不可抹除）；StaticMembership: group.instance.id 再入不触发会话窗内的再平衡（零停·简单·但 phantom 永占直到 session.timeout.ms 到期）。' +
+      ' 向量维序固定 [zeroStopPause / simpleProtocol / staleFreeAssignment]，默认 011/101/110 互异不封赢家。'
+  }
+
+  function renderRebLadder(rows) {
+    var box = $('#reb-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.totalMembers) ? r.metrics.totalMembers : 1 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.totalMembers) ? Math.round(m.totalMembers / max * 100) : 0
+      return '<div class="reb-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="reb-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">名册合计 ' + esc(fmt(m.totalMembers)) + ' · 全停 ' + esc(String(m.totalFullStops)) + ' · 撤销 ' + esc(String(m.totalRevoked)) + ' · 冲突窗 ' + esc(String(m.totalConflictWindows)) + ' · stale ' + esc(String(m.totalStale)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderRebTrilemma(rows, verdict, crosscheck) {
+    var box = $('#reb-trilemma'), veBox = $('#reb-verif'), cxBox = $('#reb-crosscheck'), note = $('#reb-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      rebMissing(box, note, 'reb 判词'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''; return
+    }
+    var flags = [['zeroStopPause', '零停'], ['simpleProtocol', '简协'], ['staleFreeAssignment', '无僵尸']]
+    var head = '<div class="reb-vec reb-vec-head"><span class="proto">策略</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="reb-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="reb-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    if (veBox) {
+      var eager = rows.find(function (r) { return r.protocol === 'Eager' })
+      var coop = rows.find(function (r) { return r.protocol === 'CooperativeSticky' })
+      var stat = rows.find(function (r) { return r.protocol === 'StaticMembership' })
+      var cp = crosscheck && crosscheck.soundness
+      veBox.innerHTML = [
+        '<div class="reb-rb-row"><b>Eager</b> 零停=' + esc(String(eager?.trilemma?.zeroStopPause)) + '（全停 stop-the-world·stale 0·最简契约）</div>',
+        '<div class="reb-rb-row"><b>CooperativeSticky</b> 零停=' + esc(String(coop?.trilemma?.zeroStopPause)) + '（增量两阶段·revoked 仅迁移必要）· 简协=' + esc(String(coop?.trilemma?.simpleProtocol)) + '（不可抹除）</div>',
+        '<div class="reb-rb-row"><b>StaticMembership</b> 零停=' + esc(String(stat?.trilemma?.zeroStopPause)) + '（session timeout 内再入不触发）· 无僵尸=' + esc(String(stat?.trilemma?.staleFreeAssignment)) + '（phantom 占位 stale=1）</div>',
+        cp ? '<div class="reb-rb-row"><b>verifyRebalanceSoundness</b> holds=' + (cp.holds ? 'true' : 'false') + ' nontrivial=' + (cp.nontrivial ? 'true' : 'false') + ' falsifiable=' + (cp.falsifiable ? 'true' : 'false') + ' · laneA{eagerCovered=' + esc(String(cp.laneA?.eagerCovered)) + ', coopCovered=' + esc(String(cp.laneA?.cooperativeCovered)) + ', staticCovered=' + esc(String(cp.laneA?.staticCovered)) + '} laneB{eagerFullStops=' + esc(String(cp.laneB?.eagerFullStops)) + ' coopRevoked=' + esc(String(cp.laneB?.cooperativeRevoked)) + ' staticStale=' + esc(String(cp.laneB?.staticStaleMembers)) + '}</div>' : '',
+      ].join('')
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>真 <b>compareRemapping</b> 迁移率 一致性 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>' +
+          '<div>真 <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 片</div>' +
+          '<div>真 <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 命中 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
+          '<div>真 <b>createWal</b> lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>真 <b>createBus</b> rebalance.triggered 通知 ' + esc(fmt(ev.notices)) + ' 条 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>真 <b>createRedisCache</b> assign 命中 ' + esc(fmt(ev.redisBitmapHits)) + ' · entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+          '<div>真 <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+          '<div>真 <b>createTokenBucket</b> 回放允许 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>真 <b>createMinHeapDelayQueue</b> 出队 ' + esc(fmt(ev.heapFired)) + ' 条 · pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+          '<div>真 <b>createFullJitterBackoff</b> jitterSpread <b>' + esc(String((ev.jitterSpread ?? 0).toFixed(4))) + '</b>（64 采样 delayFor 真采样）</div>' +
+          '<div>真 <b>createPackedCounters</b> Σ=' + esc(fmt(ev.counterSum)) + ' · falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">真件交叉印证缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var chips = [
+      '<span class="chip" data-verdict="eagerFullStop"><b>Eager</b> 真全停 ' + (v.eagerFullStop ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="coopIncremental"><b>CooperativeSticky</b> 真增量 ' + (v.coopIncremental ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="staticStaleFree"><b>StaticMembership</b> staleFree=false ' + (v.staticStaleFree ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="noStrategyWinsAll"><b>noStrategyWinsAll</b> ' + (v.noStrategyWinsAll ? '✓（无一 111）' : '✗') + '</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' + (noWin ? '✓ 三向量互异（011/101/110），无全局赢家' : '判词塌陷') + '</span>',
+      '<span class="chip ' + (v.riggedConvergenceCollapsed ? 'jade-t' : 'muted-t') + '" data-verdict="riggedConvergenceCollapsed">' + (v.riggedConvergenceCollapsed ? '✓ rigged 塌缩' : '未 rigged 或未塌缩') + '</span>',
+    ]
+    var probes = $('#reb-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维序固定 [zeroStopPause / simpleProtocol / staleFreeAssignment]。默认向量 Eager=011（全停/唯一/协议最简） / CooperativeSticky=101（增量/两阶段复杂/分配唯一） / StaticMembership=110（零停/静态简单/phantom 僵尸）——恰好各缺一维、向量互异、无一 111。' +
+      'rigged 三开关：perfectMemberSingleInstance 让 StaticMembership 单成员世界完美（stale=0→110 变 111） · zeroIncrementalConflict 让 Cooperative 两阶段冲突窗归零（101 变 111） · zeroSessionTimeout 让 Static 窗口归零退化成 Eager（110 变 111）——三者全开 ⇒ CooperativeSticky≡StaticMembership=111 塌缩（riggedConvergenceCollapsed=true、distinguishable=false）。' +
+      '三因果锁：eagerPauseCausallyUnerasable（memberJoin 场景 Eager fullStop=1 结构性） · cooperativeIncrementalComplexityCausallyUnerasable（撤销两阶段 + 冲突窗口结构不可消除） · staticSessionTimeoutCausallyUnerasable（default phantom=1 vs zeroSessionTimeout phantom=0：依赖 session.timeout.ms 是静态会员的结构代价）——causalLocksAllHold=true。'
   }
 
   /* ================= KI-540 InMemoryDedupSet/RedisSetNx/BloomGuard 消费端幂等去重 · 第三十四维（idc 族） ================= */

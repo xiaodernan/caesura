@@ -55,6 +55,7 @@ import { circuitBreakerStudy, circuitBreakerSnapshot } from './caesura-circuit-b
 import { llmGatewayStudy, llmGatewaySnapshot } from './caesura-llm-gateway.mjs'
 import { gatewayRoutingStudy, gatewayRoutingSnapshot } from './caesura-gateway-routing.mjs'
 import { idempotentConsumerStudy, idempotentConsumerSnapshot } from './caesura-idempotent-consumer.mjs'
+import { consumerRebalanceStudy, consumerRebalanceSnapshot } from './caesura-consumer-rebalance.mjs'
 import {
   createAimdCongestion,
   createCubicCongestion,
@@ -842,6 +843,25 @@ export function createGameCloud(opts = {}) {
     idcCached = idempotentConsumerSnapshot(study)
     return idcCached
   }
+  // KI-541：Kafka 消费组再平衡教学件（Eager/CooperativeSticky/StaticMembership；opt-in、status/ reb*）。
+  // opts.consumerRebalance===true 走钳制默认参数（可覆盖 now/seed/partitions/members/sessionTimeoutMs/perfectMemberSingleInstance/zeroIncrementalConflict/zeroSessionTimeout/rigged 等）；
+  // 传对象且 rows/vectors/verdict 齐全时当现成 study 注入；默认 consumerRebalance:false 非破坏（同 KI-513/.../540 法）。
+  // 不声称真 Kafka 协调器 / 真协议编码 / 真 dubbony partition assignment（Range/Cooperative Sticky assignor）/ 真 session timeout；全程结构计数。
+  const rebCfg = opts.consumerRebalance === true ? {} : (opts.consumerRebalance && typeof opts.consumerRebalance === 'object' ? opts.consumerRebalance : null)
+  const rebInjected = rebCfg !== null && opts.consumerRebalance &&
+    typeof opts.consumerRebalance === 'object' && Array.isArray(opts.consumerRebalance.rows) &&
+    opts.consumerRebalance.vectors && opts.consumerRebalance.verdict
+  let rebCached = null
+  async function rebSnapshotForStatus() {
+    if (rebCfg === null) return null
+    if (rebCached) return rebCached
+    const study = rebInjected
+      ? opts.consumerRebalance
+      : await consumerRebalanceStudy({ ...rebCfg, now: opts.rebNow ?? rebCfg.now })
+    rebCached = consumerRebalanceSnapshot(study)
+    return rebCached
+  }
+
 
   // KI-539：Spring Cloud Gateway 路由教学件（PathPrefix/RegexCapture/HeaderGroup；opt-in、status/ gr*）。
   // opts.gatewayRouting===true 走钳制默认参数（可覆盖 now/seed/requests/perfectGlobMatcher/regexProfiling/headerFallbackOnMiss/rigged 等）；
@@ -1006,6 +1026,8 @@ export function createGameCloud(opts = {}) {
     runGatewayRoutingStudy: grCfg === null ? null : () => gatewayRoutingStudy({ ...grCfg, now: opts.grNow ?? grCfg.now }),
     /** KI-540：消费端幂等去重教学件；缺 opts.idempotentConsumer 时为 null；InMemoryDedupSet/RedisSetNx/BloomGuard × 六场景矩阵 + 三难向量（默认 110/101/011 互异不封赢家）+ verifyIdempotencySoundness 双路自证 + 十一枚真件交叉印证。 */
     runIdempotentConsumerStudy: idcCfg === null ? null : () => idempotentConsumerStudy({ ...idcCfg, now: opts.idcNow ?? idcCfg.now }),
+    /** KI-541：Kafka 消费组再平衡教学件；缺 opts.consumerRebalance 时为 null；Eager/CooperativeSticky/StaticMembership × 六场景矩阵 + 三难向量（默认 011/101/110 互异不封赢家）+ verifyRebalanceSoundness 双路自证 + 十一枚真件交叉印证。 */
+    runConsumerRebalanceStudy: rebCfg === null ? null : () => consumerRebalanceStudy({ ...rebCfg, now: opts.rebNow ?? rebCfg.now }),
     /** KI-533：可观测性分布式追踪采样三策略教学件；缺 opts.traceSampling 时为 null；HeadBased/TailBased/Adaptive × 六场景矩阵 + 三难向量维序 [lowOverhead/anomalyCapture/loadAdaptive]（默认 100/010/101 互异不封赢家；anomalyCapture⇔缓冲整条⇔非 lowOverhead 与 chk 锁同构、零查表现算；rigged 三开关 oracleHead/infiniteBuffer/perfectFeedback 分策略正交反事实：oracleHead 只翻 Head→110、infiniteBuffer 只翻 Tail→110、perfectFeedback 只降 Adaptive errorBurst 丢失质量但 maxRate=0.75 封顶仍补不上 anomaly 维 ⇒ 恒 101，全开收敛 Head≡Tail=110 区分度诚实塌缩 riggedConvergenceCollapsed=true、noStrategyWinsAll 仍真绝不硬造 111，三条因果结构锁——异常需缓冲/头部盲结构/自适应滞后——在同一含 error raw 流真跑现算钉死 causalLocksAllHold=true，主教义 headBlindLossOnErrorBurst 恒以纯净基线标定不翻）+ verifySamplingSoundness 双路自证（干净流 buffer 守恒 + 含 error 流 error 全留/span 无重复/span 完整/正常按率四观测量 + 三路篡改真喂回同一内核现算翻 false 带 baselineHolds）+ 十一枚真件 21 键交叉印证。 */
     runTraceSamplingStudy: tsCfg === null ? null : () => traceSamplingStudy({ ...tsCfg, now: opts.tsNow ?? tsCfg.now }),
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
@@ -1071,6 +1093,7 @@ export function createGameCloud(opts = {}) {
         llmGateway: await lgSnapshotForStatus(),
         gatewayRouting: await grSnapshotForStatus(),
         idempotentConsumer: await idcSnapshotForStatus(),
+        consumerRebalance: await rebSnapshotForStatus(),
         traceSampling: await tsSnapshotForStatus(),
       }
     },

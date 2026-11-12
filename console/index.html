@@ -669,6 +669,23 @@
       <p class="note" id="idc-trilemma-note">…</p>
     </article>
   </section>
+  <!-- 第三十五维 · Eager / CooperativeSticky / StaticMembership Kafka 消费组再平衡（KI-541） -->
+  <section class="row row-reb">
+    <article class="panel panel-reb">
+      <div class="panel-head"><h2>第三十五维 · Eager/CooperativeSticky/StaticMembership · 三策略 × 六场景</h2><span class="hint">全停=Eager（assign-on-revoke·成员变更全量停摆·全部重分配·最简·唯一分配不重叠）/ 增量=CooperativeSticky（两阶段 revoke→assign·只动迁移必要的分区·其余继续消费·sticky 粘性+公平性·协议复杂度结构性不可抹除）/ 静态=StaticMembership（group.instance.id 稳定·group.session.timeout.ms 内再入不触发·必须靠会话窗）·/** · 默认向量 011/101/110 互异不封赢家</span></div>
+      <div class="reb-matrix" id="reb-matrix"></div>
+      <div class="reb-ladder" id="reb-ladder"></div>
+      <p class="note" id="reb-matrix-note">…</p>
+    </article>
+    <article class="panel panel-reb">
+      <div class="panel-head"><h2>三难向量（zeroStopPause ∧ simpleProtocol ∧ staleFreeAssignment）· 双路自证</h2><span class="hint">Eager=011 / CooperativeSticky=101 / StaticMembership=110 · 三向量互异无一 111 恰好各缺一维 · verifyRebalanceSoundness 双路自证（路 A 唯一流三策略 cover disjoint+complete vs 路 B memberJoin churn 流：Eager 全停·Cooperative 真 revoked=1·Static stale=1 · 三路篡改 memberLeak/staleAssignment/emptyMembership 真喂回现算翻 false）· 三因果锁（eager 全停 / coop 两阶段冲突窗 / static phantom）· 十一真件 21 键交叉印证 · rigged 三开关（perfectMemberSingleInstance / zeroIncrementalConflict / zeroSessionTimeout）</span></div>
+      <div class="reb-trilemma" id="reb-trilemma"></div>
+      <div class="reb-verif" id="reb-verif"></div>
+      <div class="reb-crosscheck" id="reb-crosscheck"></div>
+      <div class="reb-probes" id="reb-probes"></div>
+      <p class="note" id="reb-trilemma-note">…</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">

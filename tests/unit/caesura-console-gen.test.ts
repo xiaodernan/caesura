@@ -1801,4 +1801,44 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(JSON.stringify(bootObj.systems)).toBe(JSON.stringify(live.snap.systems))
     expect(JSON.stringify(bootObj.highlights)).toBe(JSON.stringify(live.snap.highlights))
   })
+
+  it('㉒k-consumer-rebalance buildConsumerRebalanceReading 真跑：reb* 注入生效 / consumerRebalance:false 关闭 / rigged 不硬造 111 / 双路自证 + 十一真件 / 二十二时钟同源（KI-541）', async () => {
+    const { buildConsumerRebalanceReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 541500
+    const g = (await buildConsumerRebalanceReading({}, now))!
+    expect(g).not.toBe(null)
+    expect(g.builtAt).toBe(541500)
+    expect(g.rows.length).toBe(3)
+    expect(g.config.partitions).toBe(6)
+    expect(g.config.members).toBe(3)
+    expect(g.vectors).toEqual({ Eager: '011', CooperativeSticky: '101', StaticMembership: '110' })
+    expect(g.rigged).toBe(false)
+    expect(g.causalLocks.causalLocksAllHold).toBe(true)
+    expect(g.causalLocks.eagerPauseCausallyUnerasable).toBe(true)
+    expect(g.causalLocks.cooperativeIncrementalComplexityCausallyUnerasable).toBe(true)
+    expect(g.causalLocks.staticSessionTimeoutCausallyUnerasable).toBe(true)
+    const tuned = (await buildConsumerRebalanceReading({ rebSeed: 12, rebMembers: 2 }, now))!
+    expect(tuned.config.seed).toBe(12)
+    expect(tuned.config.members).toBe(2)
+    const rig = (await buildConsumerRebalanceReading({ rebRigged: true }, now))!
+    expect(rig.vectors.CooperativeSticky).toBe('111')
+    expect(rig.vectors.StaticMembership).toBe('111')
+    expect(rig.rigged).toBe(true)
+    expect(rig.verdict.noStrategyWinsAll).toBe(false)
+    expect(rig.causalLocks.causalLocksAllHold).toBe(true)
+    const cp = g.crosscheck.soundness
+    expect(cp.holds).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.tamper.memberLeak.holds).toBe(false)
+    expect(cp.tamper.staleAssignment.holds).toBe(false)
+    expect(cp.tamper.emptyMembership.holds).toBe(false)
+    expect(Object.keys(g.crosscheck.evidence).length).toBe(21)
+    const off = await buildSystems({ now, consumerRebalance: false, idempotentConsumer: false })
+    expect(off.consumerRebalance).toBe(null)
+    expect(off.idempotentConsumer).toBe(null)
+    expect(off.cacheReplacement).not.toBe(null)
+    const full = await buildSystems({ now })
+    const twentytwo = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt, full.bloomFilter?.builtAt, full.cacheReplacement?.builtAt, full.streamWindow?.builtAt, full.hyperLogLog?.builtAt, full.crdt?.builtAt, full.springBatch?.builtAt, full.traceSampling?.builtAt, full.distributedSession?.builtAt, full.transactionalOutbox?.builtAt, full.loadBalance?.builtAt, full.circuitBreaker?.builtAt, full.llmGateway?.builtAt, full.gatewayRouting?.builtAt, full.idempotentConsumer?.builtAt, full.consumerRebalance?.builtAt]
+    expect(twentytwo.every((x) => x === 541500)).toBe(true)
+  })
 })
