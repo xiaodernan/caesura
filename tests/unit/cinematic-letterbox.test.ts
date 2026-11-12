@@ -163,6 +163,12 @@ describe('CinematicLetterbox：阶段 F-50 电影黑边仪典', () => {
     expect(css).toContain('.cine-bar.cine-top')
     expect(css).toContain('.cine-bar.cine-bottom')
     expect(css).toContain('.cine-caption')
+    // F-68「黑幕仪典 · 琴弦金丝」：双侧琴弦金丝 ::before + 单侧左 ::after + skip 芯片化
+    expect(css, '左侧琴弦金丝 ::after 已注入').toContain('.cine-letterbox .cine-bar::after')
+    expect(css, '右上琴弦金丝 ::before（top）已注入').toContain('.cine-letterbox .cine-bar.cine-top::before')
+    expect(css, '右下琴弦金丝 ::before（bottom）已注入').toContain('.cine-letterbox .cine-bar.cine-bottom::before')
+    expect(css, 'ESC 跳过按钮已芯片化（border/radius/box-shadow）').toContain('border: 1px solid rgba(201,180,88,.34)')
+    expect(css, 'ESC 跳过 chip 背景衬底已注入').toContain('background: rgba(10,10,16,.35)')
   })
 
   it('constructor 接受自定义 skipHint（"停止 · 跳过"）并写进 .cine-skip 子节点', () => {

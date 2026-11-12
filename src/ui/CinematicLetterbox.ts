@@ -20,6 +20,12 @@ const CSS = `
 .cine-letterbox.on { display: block; }
 .cine-letterbox .cine-bar { position: absolute; left: 0; right: 0; height: 15vh; background: #000;
   transition: transform .9s cubic-bezier(.22,.8,.3,1); will-change: transform; }
+.cine-letterbox .cine-bar::after { content: ""; position: absolute; top: 26%; bottom: 26%; left: 37px; width: 1px;
+  background: linear-gradient(180deg, transparent, rgba(201,180,88,.5), transparent); opacity: .8; }
+.cine-letterbox .cine-bar.cine-top::before { content: ""; position: absolute; right: 37px; top: 26%; bottom: 26%; width: 1px;
+  background: linear-gradient(180deg, transparent, rgba(201,180,88,.5), transparent); opacity: .8; }
+.cine-letterbox .cine-bar.cine-bottom::before { content: ""; position: absolute; right: 37px; top: 26%; bottom: 26%; width: 1px;
+  background: linear-gradient(180deg, transparent, rgba(201,180,88,.5), transparent); opacity: .8; }
 .cine-letterbox .cine-bar.cine-top { top: 0; transform: translateY(-100%); border-bottom: 1px solid rgba(201,180,88,.28); }
 .cine-letterbox .cine-bar.cine-bottom { bottom: 0; transform: translateY(100%); border-top: 1px solid rgba(201,180,88,.28); }
 .cine-letterbox.on .cine-bar.cine-top { transform: translateY(0); }
@@ -35,7 +41,9 @@ const CSS = `
 .cine-letterbox[data-kind='ending'] .cine-caption { color: rgba(232,236,244,.88); }
 .cine-letterbox[data-kind='montage'] .cine-caption { opacity: .72; font-size: 12px; }
 .cine-letterbox .cine-skip { position: absolute; right: 3.2vw; bottom: 8.5vh; font-size: 10px; letter-spacing: .4em; text-indent: .4em;
-  color: rgba(201,180,88,.55); transition: opacity .7s ease .35s; opacity: 0; }
+  color: rgba(201,180,88,.62); transition: opacity .7s ease .35s; opacity: 0;
+  border: 1px solid rgba(201,180,88,.34); padding: 3px 8px 3px 12px; border-radius: 1px;
+  box-shadow: inset 0 0 0 1px rgba(201,180,88,.1); background: rgba(10,10,16,.35); }
 .cine-letterbox.on .cine-skip { opacity: 1; animation: cine-skip-breathe 2.8s ease-in-out infinite; }
 @keyframes cine-skip-breathe { 0%, 100% { opacity: .35 } 50% { opacity: .8 } }
 .cine-letterbox .cine-mark { position: absolute; left: 3.2vw; bottom: 8.5vh; font-size: 10px; letter-spacing: .5em; text-indent: .5em; color: rgba(201,180,88,.42); }
