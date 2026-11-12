@@ -120,3 +120,9 @@ npx vitest run tests/unit/caesura-llm-gateway.test.ts --no-cache   # 16 腿离�
 
 诚实边界（刷新）：以上「真机实跑」证明的是 **2026-11-12 这一次会话里 endpoint 可达、模型输出在 vocally 合理的体与形**；
 **并不构成任何长期可用性保证；也不构成玩家运行时的 LLM 接入点（玩家进程零 LLM）**。`.env` 约定见上。
+
+### §7 附（2026-11-12）/v1/models 端点实测
+
+`GET https://wkapi.pro/v1/models`（Authorization: Bearer env key）→ HTTP 200：
+`gpt-5.6-sol, gpt-5.6-terra, gpt-6-astra, gpt-6-sol`。
+模型名与 `CAESURA_LLM_MODEL` 默认值 `gpt-6-sol` 一致；密钥仅 env 注入，未落盘/未进 git。
