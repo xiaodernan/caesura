@@ -57,6 +57,7 @@
     "idempotent-consumer:bench": "node scripts/caesura-idempotent-consumer.mjs",
     "consumer-rebalance:bench": "node scripts/caesura-consumer-rebalance.mjs",
     "priority-queue:bench": "node scripts/caesura-priority-queue.mjs",
+    "batch-stream-join:bench": "node scripts/caesura-batch-stream-join.mjs",
     "gateway-routing:bench": "node scripts/caesura-gateway-routing.mjs",
     "trace-sampling:bench": "node scripts/caesura-trace-sampling.mjs",
     "outbox:bench": "node scripts/caesura-transactional-outbox.mjs",
