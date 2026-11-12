@@ -211,8 +211,15 @@ export interface GameCloudOptions {
    * 对象逐项注入（now/seed/requests/virtualNodes/capacity/uniformLoad/perfectRing/unlimitedBudget/scenarios/rigged 等），
    * 或直接塞一只现成 study。默认 false 不装配。 */
   loadBalance?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck?: any; causalLocks?: any; [k: string]: any }
-  /** KI-536 loadBalance 的注入时钟（lb=load balance，避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/rdq/dld 已占用前缀）。 */
+  /** KI-536 loadBalance 的注入时钟（lb=load balance，避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/lb2/rdq/dld 已占用前缀）。 */
   lbNow?: () => number
+  /**
+   * KI-537：true 装配 Spring Cloud CircuitBreaker 教学件（CountBasedBreaker/RateBasedBreaker/SlowCallBreaker + verifyCircuitSoundness 双路自证 + 十一枚真件交叉印证）。
+   * 对象逐项注入（now/seed/calls/windowSize/failureThreshold/failureRateThreshold/slowCallRateThreshold/slowThresholdMs/perfectMonitoring/unlimitedWindow/instantRecovery/scenarios/rigged 等），
+   * 或直接塞一只现成 study。默认 false 不装配。 */
+  circuitBreaker?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck?: any; causalLocks?: any; [k: string]: any }
+  /** KI-537 circuitBreaker 的注入时钟（cb=circuit breaker，避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/rdq/dld 已占用前缀）。 */
+  cbNow?: () => number
 }
 
 /** 创建一只游戏侧开箱即用云。 */
@@ -289,6 +296,8 @@ export function createGameCloud(opts?: GameCloudOptions): {
   runTransactionalOutboxStudy: (() => Promise<any>) | null
   /** KI-536：Spring Cloud 负载均衡三策略教学件；缺 opts.loadBalance 时为 null；WeightedRoundRobin/LeastConnections/ConsistentHash × 六场景矩阵 + 三难向量（默认 101/100/011 互异不封赢家）+ verifyRoutingSoundness 双路自证 + 十一枚真件交叉印证。 */
   runLoadBalanceStudy: (() => Promise<any>) | null
+  /** KI-537：Spring Cloud CircuitBreaker 三策略教学件；缺 opts.circuitBreaker 时为 null；CountBasedBreaker/RateBasedBreaker/SlowCallBreaker × 六场景矩阵 + 三难向量（默认 100/101/011 互异不封赢家）+ verifyCircuitSoundness 双路自证 + 十一枚真件交叉印证。 */
+  runCircuitBreakerStudy: (() => Promise<any>) | null
   /** KI-533：可观测性分布式追踪采样三策略教学件；缺 opts.traceSampling 时为 null；HeadBased/TailBased/Adaptive × 六场景矩阵 + 三难向量维序 [lowOverhead/anomalyCapture/loadAdaptive]（默认 100/010/101 互异不封赢家；anomalyCapture⇔缓冲整条⇔非 lowOverhead 与 chk 锁同构、零查表现算；rigged 三开关 oracleHead/infiniteBuffer/perfectFeedback 分策略正交反事实：全开收敛 Head≡Tail=110 区分度诚实塌缩、noStrategyWinsAll 仍真绝不硬造 111，三条因果结构锁——异常需缓冲/头部盲结构/自适应滞后——在同一含 error raw 流真跑现算钉死 causalLocksAllHold=true，主教义 headBlindLossOnErrorBurst 恒以纯净基线标定不翻）+ verifySamplingSoundness 双路自证（干净流 buffer 守恒 + 含 error 流四观测量 + 三路篡改真喂回现算翻 false 带 baselineHolds）+ 十一枚真件 21 键交叉印证。 */
   runTraceSamplingStudy: (() => Promise<any>) | null
   /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）。 */

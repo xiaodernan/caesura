@@ -172,6 +172,10 @@ export function runMeshE2E(opts = {}) {
     // 注入时钟用 lbNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/ds/ts/to/rdq/dld 已占用前缀）。
     loadBalance: opts.loadBalance,
     lbNow: opts.lbNow,
+    // KI-537：Spring Cloud CircuitBreaker 教学件（circuitBreaker=true 装配；CountBasedBreaker/RateBasedBreaker/SlowCallBreaker × 六场景矩阵 + 三难向量（默认 100/101/011 互异不封赢家）+ verifyCircuitSoundness 双路自证 + 十一真件 21 键交叉印证，不改调用路径）。
+    // 注入时钟用 cbNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/rdq/dld 已占用前缀）。
+    circuitBreaker: opts.circuitBreaker,
+    cbNow: opts.cbNow,
     // KI-533：可观测性分布式追踪采样三策略（traceSampling=true 装配；只读 HeadBased/TailBased/Adaptive ×
     // 六场景矩阵 + 三难向量维序 [lowOverhead/anomalyCapture/loadAdaptive]（默认 100/010/101 互异不封赢家；
     // anomalyCapture⇔缓冲整条⇔非 lowOverhead 与 chk 锁同构；rigged 三开关 oracleHead/infiniteBuffer/perfectFeedback
@@ -329,6 +333,7 @@ export function runMeshE2E(opts = {}) {
         distributedSessionSnapshot: status.distributedSession ?? null,
         transactionalOutboxSnapshot: status.transactionalOutbox ?? null,
         loadBalanceSnapshot: status.loadBalance ?? null,
+        circuitBreakerSnapshot: status.circuitBreaker ?? null,
         traceSamplingSnapshot: status.traceSampling ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
@@ -703,6 +708,19 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         crosscheck: r.loadBalanceSnapshot.crosscheck,
         causalLocks: r.loadBalanceSnapshot.causalLocks,
         verdict: r.loadBalanceSnapshot.verdict,
+      } : null,
+      circuitBreaker: r.circuitBreakerSnapshot ? {
+        strategies: r.circuitBreakerSnapshot.rows.map((row) => ({
+          strategy: row.protocol,
+          ladder: row.scenarios.map((sc) => sc.id + ':' + (sc.trips > 0 ? '爆' : sc.finalState === 'CLOSED' ? '✓' : '·')).join(' → '),
+          metrics: row.metrics, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.circuitBreakerSnapshot.rows.map((row) => [row.protocol,
+          `${Number(row.trilemma.hardFaultsAware)}${Number(row.trilemma.degradedFaultsAware)}${Number(row.trilemma.sparseTrafficSafe)}`])),
+        noUniversalWinner: r.circuitBreakerSnapshot.verdict.noUniversalWinner,
+        crosscheck: r.circuitBreakerSnapshot.crosscheck,
+        causalLocks: r.circuitBreakerSnapshot.causalLocks,
+        verdict: r.circuitBreakerSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

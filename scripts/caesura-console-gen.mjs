@@ -46,6 +46,7 @@ import { springBatchStudy, springBatchSnapshot } from './caesura-spring-batch.mj
 import { distributedSessionStudy, distributedSessionSnapshot } from './caesura-distributed-session.mjs'
 import { transactionalOutboxStudy, transactionalOutboxSnapshot } from './caesura-transactional-outbox.mjs'
 import { springLoadBalanceStudy, springLoadBalanceSnapshot } from './caesura-spring-load-balance.mjs'
+import { circuitBreakerStudy, circuitBreakerSnapshot } from './caesura-circuit-breaker.mjs'
 import { traceSamplingStudy, traceSamplingSnapshot } from './caesura-trace-sampling.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
@@ -367,7 +368,9 @@ export async function buildSystems(opts = {}) {
   const transactionalOutbox = opts.transactionalOutbox === false ? null : await buildTransactionalOutboxReading(opts, now)
   // KI-536：第三十维装配 Spring Cloud 负载均衡教学件（WeightedRoundRobin/LeastConnections/ConsistentHash）
   const loadBalance = opts.loadBalance === false ? null : await buildLoadBalanceReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, builtAt: now() }
+  // KI-537：第三十一维装配 Spring Cloud CircuitBreaker 教学件（CountBasedBreaker/RateBasedBreaker/SlowCallBreaker）
+  const circuitBreaker = opts.circuitBreaker === false ? null : await buildCircuitBreakerReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, builtAt: now() }
 }
 
 /**
@@ -449,6 +452,34 @@ export async function buildTraceSamplingReading(opts, now) {
       ...(opts.tsRigged === true ? { rigged: true } : {}),
     })
     return traceSamplingSnapshot(s)
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
+ * KI-537：Spring Cloud CircuitBreaker 三策略真跑教学件（CountBasedBreaker/RateBasedBreaker/SlowCallBreaker × 六场景 + 三难向量 + verifyCircuitSoundness 双路自证 + 十一枚真件交叉印证）。
+ * 失败落 null；读数全真、CLI 双跑字节一致、rigged 不硬封胜者。
+ * @param {object} opts { circuitBreaker?:false, cbSeed?, cbCalls?, cbWindowSize?, cbFailureThreshold?, cbFailureRateThreshold?, cbSlowCallRateThreshold?, cbSlowThresholdMs?, cbPerfectMonitoring?, cbUnlimitedWindow?, cbInstantRecovery?, cbRigged? }
+ * @param {()=>number} now 时钟（builtAt 注入真值）
+ */
+export async function buildCircuitBreakerReading(opts, now) {
+  try {
+    const s = await circuitBreakerStudy({
+      now,
+      ...(opts.cbSeed ? { seed: Math.max(0, Math.floor(Number(opts.cbSeed))) } : {}),
+      ...(opts.cbCalls ? { calls: Math.max(16, Math.floor(Number(opts.cbCalls))) } : {}),
+      ...(opts.cbWindowSize ? { windowSize: Math.max(2, Math.floor(Number(opts.cbWindowSize))) } : {}),
+      ...(opts.cbFailureThreshold !== undefined ? { failureThreshold: Math.max(1, Math.floor(Number(opts.cbFailureThreshold))) } : {}),
+      ...(opts.cbFailureRateThreshold !== undefined ? { failureRateThreshold: Number(opts.cbFailureRateThreshold) } : {}),
+      ...(opts.cbSlowCallRateThreshold !== undefined ? { slowCallRateThreshold: Number(opts.cbSlowCallRateThreshold) } : {}),
+      ...(opts.cbSlowThresholdMs ? { slowThresholdMs: Math.max(0, Math.floor(Number(opts.cbSlowThresholdMs))) } : {}),
+      ...(opts.cbPerfectMonitoring === true ? { perfectMonitoring: true } : {}),
+      ...(opts.cbUnlimitedWindow === true ? { unlimitedWindow: true } : {}),
+      ...(opts.cbInstantRecovery === true ? { instantRecovery: true } : {}),
+      ...(opts.cbRigged === true ? { rigged: true } : {}),
+    })
+    return circuitBreakerSnapshot(s)
   } catch (e) {
     return null // 缺哪块就落 null，前端据实降级；不编造假数
   }

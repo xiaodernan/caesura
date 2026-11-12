@@ -2272,4 +2272,83 @@ describe('caesura-game-cloud', () => {
     expect(injected.builtAt).toBe(555)
     expect(injected.config.seed).toBe(99)
   })
+
+  // ============ KI-537 Spring Cloud CircuitBreaker opt-in 装配（2 腿）============
+  it('circuitBreaker:true 装配真矩阵：100/101/011 互异不封赢家 + 三因果锁 + verifyCircuitSoundness 双路 + laneB 真 trip + 21 键 + 惰性同引用（KI-537）', async () => {
+    const gc = await createGameCloud({
+      gameId: 'gid-cb1', gamePort: 7896, sources, cloud: fakeCloud(),
+      circuitBreaker: true, cbNow: () => 537000,
+    })
+    const st = (await gc.status()).circuitBreaker
+    expect(st).not.toBe(null)
+    expect(st!.builtAt).toBe(537000)
+    expect(st!.config.scenarios.length).toBe(6)
+    expect(st!.config.calls).toBe(96)
+    expect(st!.rows.length).toBe(3)
+    expect(st!.vectors).toEqual({ CountBasedBreaker: '100', RateBasedBreaker: '101', SlowCallBreaker: '011' })
+    expect(st!.rigged).toBe(false)
+    expect(st!.noUniversalWinner).toBe(true)
+    expect(st!.trilemmaDistinguishes).toBe(true)
+    expect(st!.verdict.noStrategyWinsAll).toBe(true)
+    expect(st!.verdict.vectorFromTrilemma).toBe(true)
+    // 三因果结构锁
+    expect(st!.causalLocks.causalLocksAllHold).toBe(true)
+    expect(st!.causalLocks.countThresholdIgnoresSlowCausallyUnerasable).toBe(true)
+    expect(st!.causalLocks.rateThresholdRequiresSampleCausallyUnerasable).toBe(true)
+    expect(st!.causalLocks.slowCallIgnoresHardFaultsCausallyUnerasable).toBe(true)
+    // verifyCircuitSoundness 双路 + 两 lane
+    const cp = st!.crosscheck.soundness
+    expect(cp.holds).toBe(true)
+    expect(cp.nontrivial).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.laneA.steadyTrips).toBe(0)
+    expect(cp.laneB.burstyCountTrips).toBeGreaterThan(0)
+    expect(cp.laneB.burstySlowTrips).toBe(0)
+    expect(cp.tamper.forgedLatency.holds).toBe(false)
+    expect(cp.tamper.silentFailuresIgnored.holds).toBe(false)
+    expect(cp.tamper.emptyStream.holds).toBe(false)
+    expect(Object.keys(st!.crosscheck.evidence).length).toBe(21)
+    // 主教义
+    expect(st!.verdict.slowCallBlindToFailures).toBe(true)
+    expect(st!.verdict.countBlindToSlow).toBe(true)
+    expect(st!.verdict.rateSafeOnSparse).toBe(true)
+    // 惰性缓存 + 同引用
+    expect((await gc.status()).circuitBreaker).toBe(st)
+    expect(await gc.runCircuitBreakerStudy!()).toMatchObject({ vectors: st!.vectors })
+    // 不连坐其它维
+    const bare = await createGameCloud({ gameId: 'gid-cb0', gamePort: 7897, sources, cloud: fakeCloud() }).status()
+    expect(bare.circuitBreaker).toBe(null)
+    expect(bare.loadBalance).toBe(null)
+  })
+
+  it('circuitBreaker 默认 null 非破坏；perfectMonitoring 不动向量、unlimitedWindow 扩窗、instantRecovery 短路恢复；可注入现成 study（KI-537）', async () => {
+    const idle = await createGameCloud({ gameId: 'gid-cb2', gamePort: 7898, sources, cloud: fakeCloud() }).status()
+    expect(idle.circuitBreaker).toBe(null)
+    const pm = (await (await createGameCloud({
+      gameId: 'gid-cb3', gamePort: 7899, sources, cloud: fakeCloud(),
+      circuitBreaker: { perfectMonitoring: true }, cbNow: () => 537000,
+    })).status()).circuitBreaker
+    expect(pm!.vectors.SlowCallBreaker).toBe('011')
+    const uw = (await (await createGameCloud({
+      gameId: 'gid-cb4', gamePort: 7900, sources, cloud: fakeCloud(),
+      circuitBreaker: { unlimitedWindow: true }, cbNow: () => 537000,
+    })).status()).circuitBreaker
+    expect(uw!.config.windowSize).toBe(4096)
+    expect(uw!.vectors.RateBasedBreaker).toBe('101')
+    const rig = (await (await createGameCloud({
+      gameId: 'gid-cb5', gamePort: 7901, sources, cloud: fakeCloud(),
+      circuitBreaker: { rigged: true }, cbNow: () => 537000,
+    })).status()).circuitBreaker
+    expect(rig!.verdict.noStrategyWinsAll).toBe(true)
+    expect(rig!.verdict.riggedConvergenceCollapsed).toBe(false)
+    expect(rig!.causalLocks.causalLocksAllHold).toBe(true)
+    // 可注入现成 study（鸭子类型）
+    const { circuitBreakerStudy } = await import('../../scripts/caesura-circuit-breaker.mjs')
+    const injected = (await (await createGameCloud({
+      gameId: 'gid-cb6', gamePort: 7902, sources, cloud: fakeCloud(),
+      circuitBreaker: circuitBreakerStudy({ seed: 99, now: () => 555 }),
+    })).status()).circuitBreaker
+    expect(injected.builtAt).toBe(555)
+    expect(injected.config.seed).toBe(99)
+  })
 })

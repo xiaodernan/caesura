@@ -2281,3 +2281,72 @@ describe('KI-536 第三十维 · weightedroundrobin/leastconnections/consistenth
     })
   })
 })
+
+
+// ============ KI-537 第三十一维 · Spring Cloud CircuitBreaker（cb 族 · 4 腿） ============
+describe('KI-537 第三十一维 · spring-cloud-circuit-breaker · burst/rate/slow（cb 族）', () => {
+  const realCb = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+  it('第三十一维真渲染：cb 矩阵 18 cell + 三策略向量 100/101/011 + 状态类 + ladder 条', async () => {
+    const dom = await runApp(realCb)
+    const matrix = dom.els['cb-matrix'].innerHTML
+    expect(matrix).toContain('cb-mat-head')
+    for (const p of ['CountBasedBreaker', 'RateBasedBreaker', 'SlowCallBreaker']) {
+      expect(matrix).toContain('data-strategy="' + p + '"')
+    }
+    for (const sc of ['steadyState', 'burstySpikeFailures', 'slowDegradation', 'permanentHostile', 'sparseTraffic', 'cleanRerun']) {
+      expect(matrix).toContain('data-s="' + sc + '"')
+    }
+    expect((matrix.match(/class="cb-cell /g) || []).length).toBe(18)
+    const tri = dom.els['cb-trilemma'].innerHTML
+    expect(tri).toContain('data-vec="100"')
+    expect(tri).toContain('data-vec="101"')
+    expect(tri).toContain('data-vec="011"')
+    const states = [...matrix.matchAll(/data-state="([^"]+)"/g)].map((m) => m[1])
+    expect(states.length).toBeGreaterThanOrEqual(18)
+    expect(dom.els['cb-ladder'].innerHTML).toContain('cb-bar')
+  })
+
+  it('第三十一维画中件 DOM：verifyCircuitSoundness 双路 + 十一真件 chip + 无 111', async () => {
+    const dom = await runApp(realCb)
+    const probes = dom.els['cb-probes'].innerHTML
+    for (const key of ['slowCallBlindToFailures', 'countBlindToSlow', 'rateSafeOnSparse',
+      'noStrategyWinsAll', 'noUniversalWinner', 'riggedConvergenceCollapsed']) {
+      expect(probes, 'probe chip ' + key).toContain('data-verdict="' + key + '"')
+    }
+    const verif = dom.els['cb-verif'].innerHTML
+    for (const key of ['holds', 'nontrivial', 'falsifiable']) {
+      expect(verif, 'verify row ' + key).toContain(key)
+    }
+    const cx = dom.els['cb-crosscheck'].innerHTML
+    for (const api of ['compareRemapping', 'createShardRouter', 'createHashRing', 'createWal', 'createBus',
+      'createRedisCache', 'createObjectPool', 'createTokenBucket', 'createMinHeapDelayQueue',
+      'createFullJitterBackoff', 'createPackedCounters']) {
+      expect(cx, '真件 ' + api + ' 必须 DOM 可见').toContain(api)
+    }
+    expect(cx).toContain('jitterSpread')
+  })
+
+  it('第三十一维 markup/CSS 自同 + systems.circuitBreaker 缺失时真显式降级', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-cb')
+    expect(html).toContain('id="cb-matrix"')
+    expect(html).toContain('id="cb-verif"')
+    expect(html).toContain('CountBasedBreaker=100 / RateBasedBreaker=101 / SlowCallBreaker=011')
+    expect(css).toContain('.cb-cell.burst')
+    expect(css).toContain('.cb-cell.rate')
+    expect(css).toContain('.cb-cell.slow')
+    expect(css).toContain('.cb-cell.ok')
+    expect(css).toContain('.cb-flag.yes')
+    expect(css).toContain('.cb-bar > i')
+    expect(css).toContain('.cb-verif')
+    expect(css).toContain('@media')
+    const noCb = JSON.parse(JSON.stringify(realCb as any))
+    noCb.systems.circuitBreaker = null
+    return runApp(noCb).then((dom2: any) => {
+      expect(dom2.els['cb-matrix'].innerHTML).toContain('暂缺')
+      expect(dom2.els['cb-trilemma'].innerHTML).toContain('暂缺')
+      expect(dom2.els['cb-matrix-note'].textContent).toContain('systems.circuitBreaker 缺失')
+    })
+  })
+})

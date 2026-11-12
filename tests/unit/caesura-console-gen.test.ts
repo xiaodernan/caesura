@@ -1064,6 +1064,51 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(seventeen.every((x) => x === 537000)).toBe(true)
   })
 
+  it('㉒g-circuit-breaker buildCircuitBreakerReading 真跑：cb* 注入生效 / circuitBreaker:false 关闭 / rigged 不动向量 / 双路自证 + 十一真件 / 十八时钟同源（KI-537）', async () => {
+    const { buildCircuitBreakerReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 537500
+    const c = (await buildCircuitBreakerReading({}, now))!
+    expect(c).not.toBe(null)
+    expect(c.builtAt).toBe(537500)
+    expect(c.rows.length).toBe(3)
+    expect(c.config.scenarios.length).toBe(6)
+    expect(c.config.windowSize).toBe(16)
+    expect(c.vectors).toEqual({ CountBasedBreaker: '100', RateBasedBreaker: '101', SlowCallBreaker: '011' })
+    expect(c.rigged).toBe(false)
+    expect(c.noUniversalWinner).toBe(true)
+    expect(c.trilemmaDistinguishes).toBe(true)
+    expect(c.causalLocks.causalLocksAllHold).toBe(true)
+    expect(c.causalLocks.countThresholdIgnoresSlowCausallyUnerasable).toBe(true)
+    expect(c.causalLocks.rateThresholdRequiresSampleCausallyUnerasable).toBe(true)
+    expect(c.causalLocks.slowCallIgnoresHardFaultsCausallyUnerasable).toBe(true)
+    const tuned = (await buildCircuitBreakerReading({ cbSeed: 12, cbCalls: 32, cbWindowSize: 8, cbSlowThresholdMs: 500 }, now))!
+    expect(tuned.config.seed).toBe(12)
+    expect(tuned.config.calls).toBe(32)
+    expect(tuned.config.windowSize).toBe(8)
+    expect(tuned.config.slowThresholdMs).toBe(500)
+    const rig = (await buildCircuitBreakerReading({ cbRigged: true }, now))!
+    expect(rig.vectors).toEqual({ CountBasedBreaker: '100', RateBasedBreaker: '101', SlowCallBreaker: '011' })
+    expect(rig.rigged).toBe(true)
+    expect(rig.verdict.noStrategyWinsAll).toBe(true)
+    expect(rig.verdict.riggedConvergenceCollapsed).toBe(false)
+    expect(rig.causalLocks.causalLocksAllHold).toBe(true)
+    const cp = c.crosscheck.soundness
+    expect(cp.holds).toBe(true)
+    expect(cp.nontrivial).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.tamper.forgedLatency.holds).toBe(false)
+    expect(cp.tamper.silentFailuresIgnored.holds).toBe(false)
+    expect(cp.tamper.emptyStream.holds).toBe(false)
+    expect(Object.keys(c.crosscheck.evidence).length).toBe(21)
+    const off = await buildSystems({ now, circuitBreaker: false, loadBalance: false })
+    expect(off.circuitBreaker).toBe(null)
+    expect(off.loadBalance).toBe(null)
+    expect(off.cacheReplacement).not.toBe(null)
+    const full = await buildSystems({ now })
+    const eighteen = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt, full.bloomFilter?.builtAt, full.cacheReplacement?.builtAt, full.streamWindow?.builtAt, full.hyperLogLog?.builtAt, full.crdt?.builtAt, full.springBatch?.builtAt, full.traceSampling?.builtAt, full.distributedSession?.builtAt, full.transactionalOutbox?.builtAt, full.loadBalance?.builtAt, full.circuitBreaker?.builtAt]
+    expect(eighteen.every((x) => x === 537500)).toBe(true)
+  })
+
   it('㉒c-trace-sampling buildTraceSamplingReading 真跑：ts* 注入生效 / traceSampling:false 关闭 / rigged Head≡Tail=110 诚实塌缩不硬造 111 / 双路自证 + 三路篡改真喂回 + 三因果锁 + 十一真件 / 十四时钟同源（KI-533）', async () => {
     const { buildTraceSamplingReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
     const now = () => 533000

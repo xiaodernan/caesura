@@ -601,6 +601,23 @@
       <p class="note" id="lb-trilemma-note">…</p>
     </article>
   </section>
+  <!-- 第三十一维 · CountBasedBreaker / RateBasedBreaker / SlowCallBreaker Spring Cloud CircuitBreaker（KI-537） -->
+  <section class="row row-cb">
+    <article class="panel panel-cb">
+      <div class="panel-head"><h2>第三十一维 · CountBasedBreaker/RateBasedBreaker/SlowCallBreaker · 三策略 × 六场景</h2><span class="hint">爆=CountBasedBreaker（滑动窗口 16 个调用内失败 ≥ 5 就 trip——硬故障真灵敏但对慢无感、稀疏流可能误判·hardFaultsAware=true sparseTrafficSafe=false）/ 率=RateBasedBreaker（窗口内失败率 ≥ 50% 才 trip，窗口填不满不 trip——真给稀疏归一化但仍是硬故障专用·sparseTrafficSafe=true）/ 慢=SlowCallBreaker（窗口内慢调用率 ≥ 50% 才 trip——真为慢退但硬故障眼不见·hardFaultsAware=false）</span></div>
+      <div class="cb-matrix" id="cb-matrix"></div>
+      <div class="cb-ladder" id="cb-ladder"></div>
+      <p class="note" id="cb-matrix-note">…</p>
+    </article>
+    <article class="panel panel-cb">
+      <div class="panel-head"><h2>三难向量（hardFaultsAware ∧ degradedFaultsAware ∧ sparseTrafficSafe）· 双路自证</h2><span class="hint">CountBasedBreaker=100 / RateBasedBreaker=101 / SlowCallBreaker=011 · 三向量互异无一 111 不封赢家 · verifyCircuitSoundness 双路自证（healthy flow 不 trip + burstySpikeFailures 流中 RateBased/CountBased 真 trip、SlowCall 看不见）+ 三路篡改真喂回同一内核现算翻 false（forgedLatency/silentFailuresIgnored/emptyStream）· 三因果锁（Count 对慢盲/Slow 对失败盲/Rate 需最小样本 4）· rigged 三开关（perfectMonitoring/unlimitedWindow/instantRecovery）全开后向量不变——三大件各缺一维的宿命是结构性的、不是阈值 can 扳回</span></div>
+      <div class="cb-trilemma" id="cb-trilemma"></div>
+      <div class="cb-verif" id="cb-verif"></div>
+      <div class="cb-crosscheck" id="cb-crosscheck"></div>
+      <div class="cb-probes" id="cb-probes"></div>
+      <p class="note" id="cb-trilemma-note">…</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">

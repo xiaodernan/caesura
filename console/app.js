@@ -67,6 +67,7 @@
       renderDistributedSession(snap.systems ? snap.systems.distributedSession : null)
       renderTransactionalOutbox(snap.systems ? snap.systems.transactionalOutbox : null)
       renderLoadBalance(snap.systems ? snap.systems.loadBalance : null)
+      renderCircuitBreaker(snap.systems ? snap.systems.circuitBreaker : null)
       renderTraceSampling(snap.systems ? snap.systems.traceSampling : null)
       setLive(true, result.source)
     }).catch(function (e) {
@@ -3309,6 +3310,135 @@
       'verifyCheckpoint 双路自证：路 A clean 全量全 commit 求基准，路 B 真跑 restart(0) 用「poison chunk 隔离 / 已 commit 无重复 / 非毒零丢失 / 真检测到毒」四观测量判定；三路篡改真喂回同一内核现算翻 false，带 baselineHolds 先真绿。' +
       '三条因果结构锁在同一含毒 raw 流真跑钉死：Bulk 无 chk 整批死、chk 权衡不可兼得、Skip 跳毒永久丢。' +
       'rigged 双开关 perfectOracle（毒项 100% 判定、预防性从输入剔除）+ unlimitedSkip 喂的是已剔除毒项的干净流（换了作业输入、诚实标注，不是同一作业被抹软肋）⇒ 三者 faultIsolation 全真、Bulk≡Skip=101 区分度诚实收敛（riggedConvergenceCollapsed=true，教学结论：完美预言机抹平了「预防剔除」与「跳过」的差别，二者结构等价），noStrategyWinsAll 仍真绝不硬造 111，三因果锁仍 allHold。'
+  }
+
+  /* ================= KI-537 CountBasedBreaker/RateBasedBreaker/SlowCallBreaker Spring Cloud CircuitBreaker · 第三十一维（cb 族） ================= */
+
+  function renderCircuitBreaker(cb) {
+    renderCbMatrix(cb && cb.rows, cb && cb.config)
+    renderCbLadder(cb && cb.rows)
+    renderCbTrilemma(cb && cb.rows, cb && cb.verdict, cb && cb.crosscheck)
+  }
+
+  function cbMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 暂缺</div>'
+    if (note) note.textContent = 'systems.circuitBreaker 缺失 — 跑一次 npm run console:data 即可补齐'
+  }
+
+  function cbCell(c, protocol) {
+    if (!c) return { cls: '', ch: '·' }
+    if (c.trips > 0) return { cls: (protocol === 'SlowCallBreaker' ? 'slow' : protocol === 'RateBasedBreaker' ? 'rate' : 'burst'), ch: protocol === 'SlowCallBreaker' ? '慢' : (protocol === 'RateBasedBreaker' ? '率' : '爆') }
+    return { cls: 'ok', ch: '✓' }
+  }
+
+  function renderCbMatrix(rows, config) {
+    var box = $('#cb-matrix'), note = $('#cb-matrix-note')
+    if (!Array.isArray(rows) || !rows.length || !config || !Array.isArray(config.scenarios)) {
+      cbMissing(box, note, 'cb 矩阵'); return
+    }
+    var scenarios = config.scenarios
+    var head = '<div class="cb-mat-row cb-mat-head"><span class="cb-mat-proto">策略</span>' +
+      scenarios.map(function (sc) { return '<span class="cb-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="cb-mat-cost">trip/ 最终</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = cbCell(cell, row.protocol)
+        return '<span class="cb-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="cb-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="cb-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="cb-mat-cost"><b>' + esc(fmt(m.totalTrips)) + '</b>/' + esc(String(m.finalOpenCount)) + '/</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'CountBasedBreaker / RateBasedBreaker / SlowCallBreaker × 六场景：steadyState（健康流）/ burstySpikeFailures（突尖失败）/ slowDegradation（慢退）/ permanentHostile（永不下线）/ sparseTraffic（稀疏流 5 连败）/ cleanRerun（重跑同结果）。' +
+      '每格只认 cell 三布尔（hardFaultsAware ∧ degradedFaultsAware ∧ sparseTrafficSafe）——绝不由阈值重算。' +
+      'Count: 纯计数（硬故障灵敏但慢盲·稀疏流误判）；Rate: 失败率 normalize（窗口够 ≥4 才判）；SlowCall: 只看慢（硬故障视而不见·稀疏也防）。'
+  }
+
+  function renderCbLadder(rows) {
+    var box = $('#cb-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.totalTrips) ? r.metrics.totalTrips : 1 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.totalTrips) ? Math.round(m.totalTrips / max * 100) : 0
+      return '<div class="cb-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="cb-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">trip 总次 ' + esc(fmt(m.totalTrips)) + ' · 最终 OPEN 场数 ' + esc(String(m.finalOpenCount)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderCbTrilemma(rows, verdict, crosscheck) {
+    var box = $('#cb-trilemma'), veBox = $('#cb-verif'), cxBox = $('#cb-crosscheck'), note = $('#cb-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      cbMissing(box, note, 'cb 判词'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''; return
+    }
+    var flags = [['hardFaultsAware', '硬故障'], ['degradedFaultsAware', '慢退'], ['sparseTrafficSafe', '稀疏安全']]
+    var head = '<div class="cb-vec cb-vec-head"><span class="proto">策略</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="cb-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="cb-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    if (veBox) {
+      var count = rows.find(function (r) { return r.protocol === 'CountBasedBreaker' })
+      var rate = rows.find(function (r) { return r.protocol === 'RateBasedBreaker' })
+      var slow = rows.find(function (r) { return r.protocol === 'SlowCallBreaker' })
+      var cp = crosscheck && crosscheck.soundness
+      veBox.innerHTML = [
+        '<div class="cb-rb-row"><b>CountBasedBreaker</b> 硬故障=' + esc(String(count?.trilemma?.hardFaultsAware)) + ' · 慢退=' + esc(String(count?.trilemma?.degradedFaultsAware)) + '（慢流零 trip·sparseTraffic 误判）</div>',
+        '<div class="cb-rb-row"><b>RateBasedBreaker</b> 硬故障=' + esc(String(rate?.trilemma?.hardFaultsAware)) + ' · 稀疏安全=' + esc(String(rate?.trilemma?.sparseTrafficSafe)) + '（窗口 minimumNumberOfCalls=4，稀疏率 normalize）</div>',
+        '<div class="cb-rb-row"><b>SlowCallBreaker</b> 慢退=' + esc(String(slow?.trilemma?.degradedFaultsAware)) + ' · 硬故障=' + esc(String(slow?.trilemma?.hardFaultsAware)) + '（100% 失败永不 trip）</div>',
+        cp ? '<div class="cb-rb-row"><b>verifyCircuitSoundness</b> holds=' + (cp.holds ? 'true' : 'false') + ' nontrivial=' + (cp.nontrivial ? 'true' : 'false') + ' falsifiable=' + (cp.falsifiable ? 'true' : 'false') + ' · laneA{steadyTrips=' + esc(String(cp.laneA && cp.laneA.steadyTrips)) + '} laneB{countTrips=' + esc(String(cp.laneB && cp.laneB.burstyCountTrips)) + ' rateTrips=' + esc(String(cp.laneB && cp.laneB.burstyRateTrips)) + ' slowTrips=' + esc(String(cp.laneB && cp.laneB.burstySlowTrips)) + '}</div>' : '',
+      ].join('')
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>真 <b>compareRemapping</b> 迁移率 一致性 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>' +
+          '<div>真 <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 片</div>' +
+          '<div>真 <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 命中 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
+          '<div>真 <b>createWal</b> lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>真 <b>createBus</b> cb.tripped 通知 ' + esc(fmt(ev.notices)) + ' 条 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>真 <b>createRedisCache</b> cb:fail set+get 命中 ' + esc(fmt(ev.redisBitmapHits)) + ' · entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+          '<div>真 <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+          '<div>真 <b>createTokenBucket</b> 回放允许 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>真 <b>createMinHeapDelayQueue</b> 出队 ' + esc(fmt(ev.heapFired)) + ' 条 · pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+          '<div>真 <b>createFullJitterBackoff</b> jitterSpread <b>' + esc(String((ev.jitterSpread ?? 0).toFixed(4))) + '</b>（64 采样 delayFor 真采样）</div>' +
+          '<div>真 <b>createPackedCounters</b> Σ=' + esc(fmt(ev.counterSum)) + ' · falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">真件交叉印证缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var chips = [
+      '<span class="chip" data-verdict="slowCallBlindToFailures"><b>SlowCallBreaker</b> 对硬故障盲 ' + (v.slowCallBlindToFailures ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="countBlindToSlow"><b>CountBasedBreaker</b> 对慢盲 ' + (v.countBlindToSlow ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="rateSafeOnSparse"><b>RateBasedBreaker</b> 稀疏安全 ' + (v.rateSafeOnSparse ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="noStrategyWinsAll"><b>noStrategyWinsAll</b> ' + (v.noStrategyWinsAll ? '✓（无一 111）' : '✗') + '</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' + (noWin ? '✓ 三向量互异（100/101/011），无全局赢家、恰好各缺一维' : '判词塌陷') + '</span>',
+      '<span class="chip ' + (v.riggedConvergenceCollapsed ? 'jade-t' : 'muted-t') + '" data-verdict="riggedConvergenceCollapsed">' + (v.riggedConvergenceCollapsed ? '✓ rigged 塌缩' : '未 rigged（三大件宿命）') + '</span>',
+    ]
+    var probes = $('#cb-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维序固定 [hardFaultsAware / degradedFaultsAware / sparseTrafficSafe]。默认向量 CountBasedBreaker=100（硬故障真灵敏但稀疏流误判 + 慢盲） / RateBasedBreaker=101（失败率 normalize 稀疏安全但慢盲） / SlowCallBreaker=011（真为慢退但硬故障视而不见）——恰好各缺一维、向量互异、无一 111。' +
+      'rigged 三开关（perfectMonitoring/unlimitedWindow/instantRecovery）全开后向量不变——三大件各缺一维的宿命是结构性的、不是阈值可以扳回。'
   }
 
   /* ================= KI-536 WeightedRoundRobin/LeastConnections/ConsistentHash Spring Cloud 负载均衡 · 第三十维（lb 族） ================= */
