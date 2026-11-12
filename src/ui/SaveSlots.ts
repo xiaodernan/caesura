@@ -154,6 +154,31 @@ export const SAVE_CARD_CSS = `
 .scard .btn:hover{border-color:#ffb86b;color:#ffcf8a;box-shadow:0 0 1.2vh rgba(255,184,107,.3)}
 .scard .btn:active{transform:translateY(1px)}
 .scard .btn:focus-visible{outline:2px solid #ffd98a;outline-offset:2px}
+/* == 古籍朱印角印 + 左装订线（追加 cascade；纯 CSS、无图片、reduced-motion 兜底） == */
+.scard{background-image:
+  radial-gradient(120% 90% at 32% -10%, rgba(255,222,150,.055) 0%, transparent 52%),
+  linear-gradient(180deg, rgba(31,28,26,.8) 0%, rgba(23,20,19,.72) 55%, rgba(16,14,13,.8) 100%)}
+/* ::before 保留原「上缘金发丝线」，装订线改挂在 .lns 左缘（.scard .lns 边框） */
+.scard::after{content:'';position:absolute;right:.42em;top:.42em;width:1.2em;height:1.2em;pointer-events:none;opacity:.5;
+  background:
+    radial-gradient(circle at 50% 50%, transparent 30%, rgba(255,222,150,.34) 32%, rgba(255,222,150,.34) 40%, transparent 42%),
+    radial-gradient(circle at 50% 50%, transparent 58%, rgba(255,222,150,.14) 60%, rgba(255,222,150,.14) 68%, transparent 70%),
+    radial-gradient(circle at 50% 50%, rgba(255,184,107,.5) 0 14%, transparent 16%);
+  animation:scard-sigil 7s ease-in-out infinite}
+@keyframes scard-sigil{0%,100%{opacity:.38}50%{opacity:.68}}
+.scard .hd{position:relative;padding-right:1.5em}
+.scard .lns{position:relative;padding-left:.5em;border-left:1px dashed rgba(201,180,88,.22)}
+.scard .lns>div:first-child{color:#d8cbae}
+.scard.restored::after{
+  background:
+    radial-gradient(circle at 50% 50%, transparent 30%, rgba(217,138,138,.42) 32%, rgba(217,138,138,.42) 40%, transparent 42%),
+    radial-gradient(circle at 50% 50%, transparent 58%, rgba(217,138,138,.2) 60%, rgba(217,138,138,.2) 68%, transparent 70%),
+    radial-gradient(circle at 50% 50%, rgba(240,168,175,.55) 0 14%, transparent 16%)}
+.scard.restored .badge{background:linear-gradient(180deg,#e0918a,#b0504f);color:#f6ded4;box-shadow:inset 0 0 0 1px rgba(255,235,225,.35),0 0 1.1vh rgba(217,120,120,.45);letter-spacing:.08em}
+.scard.ok .badge{background:linear-gradient(180deg,#dcd08a,#b3a04f);color:#231f0e}
+.scard .acts{border-top:1px solid rgba(201,180,88,.12);padding-top:.5em}
+.scard .src{border-left:2px solid rgba(201,180,88,.28);padding-left:.5em}
+@media (prefers-reduced-motion: reduce){.scard::after{animation:none}}
 `
 
 /**

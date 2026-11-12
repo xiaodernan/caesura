@@ -81,7 +81,7 @@ const CSS = `
 #title .sub::after{content:'';position:absolute;top:50%;right:0;width:8vw;height:1px;background:linear-gradient(270deg,transparent,rgba(201,180,88,.75) 70%,rgba(255,205,120,.9))}
 #title .cards{display:flex;gap:1.4vw;position:relative;z-index:1}
 /* == origin cards: hover lift + top gold sweep + selected gold-ring pulse == */
-#title .card{width:15vw;padding:1.6vh 1vw;border:1px solid #3d372e;background:linear-gradient(180deg,rgba(31,28,26,.78) 0%,rgba(23,20,19,.72) 55%,rgba(16,14,13,.78) 100%);cursor:pointer;text-align:center;position:relative;overflow:hidden;transition:transform .3s cubic-bezier(.2,.9,.3,1.15),border-color .3s,box-shadow .3s}
+#title .card{width:15vw;padding:1.6vh 1vw;border:1px solid #3d372e;background:linear-gradient(180deg,rgba(31,28,26,.78) 0%,rgba(23,20,19,.72) 55%,rgba(16,14,13,.78) 100%);cursor:pointer;text-align:center;position:relative;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(201,180,88,.1),0 .8vh 2vh rgba(0,0,0,.35);transition:transform .3s cubic-bezier(.2,.9,.3,1.15),border-color .3s,box-shadow .3s}
 #title .card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,217,138,0),transparent);transition:background .3s}
 #title .card:hover{transform:translateY(-.75vh);border-color:#6b5f3f;box-shadow:0 1.6vh 3.4vh rgba(0,0,0,.5),0 0 2.2vh rgba(201,180,88,.14)}
 #title .card:hover::after{background:linear-gradient(90deg,transparent,rgba(255,217,138,.85),transparent)}
@@ -105,6 +105,13 @@ const CSS = `
 #title .scards{font-size:1.7vh}
 /* == accessibility: visible keyboard focus ring + reduced-motion kill switch == */
 #title .card:focus-visible,#title .act:focus-visible{outline:2px solid #ffd98a;outline-offset:3px}
+/* == 天象仪双环（一道虚、一道实）+ 画面压暗 vignette（pure CSS，无图片，仪典级 ambient rite） == */
+#title .astro{position:absolute;left:50%;top:34%;width:106vh;height:106vh;transform:translate(-50%,-50%);border:1px dashed rgba(201,180,88,.13);border-radius:50%;pointer-events:none;animation:tg-astro 260s linear infinite;box-shadow:inset 0 0 8vh rgba(201,180,88,.03)}
+#title .astro::after{content:'';position:absolute;inset:8vh;border:1px solid rgba(255,222,150,.07);border-radius:50%}
+#title .astro::before{content:'';position:absolute;left:50%;top:-.32vh;width:.64vh;height:.64vh;transform:translate(-50%,0);background:radial-gradient(circle,rgba(255,217,138,.9) 0 30%,transparent 62%);border-radius:50%}
+@keyframes tg-astro{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(-360deg)}}
+#title .vignette{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 128% 106% at 50% 46%,transparent 52%,rgba(4,4,7,.36) 79%,rgba(3,3,6,.78) 100%)}
+#title .astro{opacity:.9}
 #title ::-webkit-scrollbar{width:.6vh}
 #title ::-webkit-scrollbar-thumb{background:#3d372e;border-radius:1vh}
 @media (prefers-reduced-motion: reduce){#title *,#title *::before,#title *::after{animation:none !important;transition:none !important}}
@@ -325,6 +332,8 @@ export class TitleScreen {
         // 下一次休息就把那一格覆盖了。原因的原话在卡上（挑档屏/存档页都看得到）。
         : this.hasBlocked ? '本机有存档，但读不出来 · ↓ 看是哪一格' : '本机没有可续的存档'
     return `
+      <div class="astro" aria-hidden="true"></div>
+      <div class="vignette" aria-hidden="true"></div>
       <div class="embers" aria-hidden="true">${EMBERS}</div>
       <h1>止音纪元</h1>
       <div class="sub">CAESURA · 为她定一根弦</div>
@@ -344,6 +353,8 @@ export class TitleScreen {
         return `<div class="slot${i >= 0 && i === this.focus.index ? ' sel' : ''}">${saveCardHtml(v, ['load'])}</div>`
       }).join('')
     return `
+      <div class="astro" aria-hidden="true"></div>
+      <div class="vignette" aria-hidden="true"></div>
       <div class="embers" aria-hidden="true">${EMBERS}</div>
       <h1>止音纪元</h1>
       <div class="sub">${fault ? '问不出来 · ← 返回定弦' : '挑一格 · Enter 读取 · ← 返回定弦'}</div>
@@ -360,6 +371,8 @@ export class TitleScreen {
       ? '本机已有可读的存档。开新弦不会立刻动它，但下一次休息会把自动槽写掉。'
       : `本机存档问不出来（${this.rosterFault}）。开新弦不会立刻动它，但下一次休息可能覆盖一份看不见的存档。`
     return `
+      <div class="astro" aria-hidden="true"></div>
+      <div class="vignette" aria-hidden="true"></div>
       <div class="embers" aria-hidden="true">${EMBERS}</div>
       <h1>开一根新弦</h1>
       <div class="sub">${warn}</div>

@@ -663,5 +663,26 @@ describe('余烬仪典（ember rite）视觉装饰：纯 CSS、无障碍安全',
     expect(htmlB).toContain('class="embers" aria-hidden="true"')
     a.t.dispose()
   })
+
+  it('天象仪双环（astro）+ 画面压暗 vignette：CSS 有规则、三屏渲染都注入层（aria-hidden、reduced-motion 兜底）', async () => {
+    const { t } = await screen(() => roster())
+    const head = (globalThis as unknown as { document: { head: FakeEl } }).document.head
+    const css = head.children.map((c) => (c as unknown as { textContent: string }).textContent).join('\n')
+    expect(css).toContain('#title .astro')
+    expect(css).toContain('tg-astro')
+    expect(css).toContain('@keyframes tg-astro')
+    expect(css).toContain('#title .vignette')
+    expect(css).toContain('#title .card{width:15vw')
+    expect(css).toContain('inset 0 0 0 1px rgba(201,180,88,.1)')
+    expect(view(t)).toContain('class="astro" aria-hidden="true"')
+    expect(view(t)).toContain('class="vignette" aria-hidden="true"')
+    await t.goto('slots')
+    expect(view(t)).toContain('class="astro" aria-hidden="true"')
+    expect(view(t)).toContain('class="vignette" aria-hidden="true"')
+    await t.goto('confirm')
+    expect(view(t)).toContain('class="astro" aria-hidden="true"')
+    expect(view(t)).toContain('class="vignette" aria-hidden="true"')
+    t.dispose()
+  })
 })
 

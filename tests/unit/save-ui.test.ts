@@ -299,4 +299,14 @@ describe('SAVE_CARD_CSS · 余烬仪典摘要卡皮肤（ember rite · 追加 ca
     expect(SAVE_CARD_CSS).toContain('.scard.restored')
     expect(SAVE_CARD_CSS).toContain('.scard .btn:focus-visible')
   })
+
+  it('古籍朱印角印（::after double-ring）+ restored 朱砂印 + 左装订线 + reduced-motion 兜底', async () => {
+    const { SAVE_CARD_CSS } = await import('@/ui/SaveSlots')
+    expect(SAVE_CARD_CSS).toContain('古籍朱印角印')
+    expect(SAVE_CARD_CSS).toContain('.scard::after')
+    expect(SAVE_CARD_CSS).toContain('@keyframes scard-sigil')
+    expect(SAVE_CARD_CSS).toContain('radial-gradient(circle at 50% 50%, transparent 30%, rgba(217,138,138,.42)')
+    expect(SAVE_CARD_CSS).toContain('border-left:1px dashed rgba(201,180,88,.22)')
+    expect(SAVE_CARD_CSS).toContain('@media (prefers-reduced-motion: reduce){.scard::after{animation:none}}')
+  })
 })
