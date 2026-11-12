@@ -47,6 +47,7 @@
     "crdt:bench": "node scripts/caesura-crdt.mjs",
     "spring-batch:bench": "node scripts/caesura-spring-batch.mjs",
     "distributed-session:bench": "node scripts/caesura-distributed-session.mjs",
+    "load-balance:bench": "node scripts/caesura-spring-load-balance.mjs",
     "trace-sampling:bench": "node scripts/caesura-trace-sampling.mjs",
     "outbox:bench": "node scripts/caesura-transactional-outbox.mjs",
     "redis:spring:bench": "node scripts/spring-redis-cache.mjs selfcheck",

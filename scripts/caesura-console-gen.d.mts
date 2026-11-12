@@ -736,6 +736,29 @@ export interface TransactionalOutboxReading {
   builtAt: number
 }
 
+/** KI-536：WeightedRoundRobin/LeastConnections/ConsistentHash Spring Cloud 负载均衡三策略真跑读数（三策略 × 六场景 + 三难向量 + verifyRoutingSoundness 双路交叉印证 + 十一枚真件交叉印证）。 */
+export interface LoadBalanceReading {
+  config: Record<string, any>
+  rows: Array<{
+    protocol: string
+    scenarios: Array<{
+      id: string; requests: number; maxLoad: number; minLoad: number; skew: number; stickyHits: number
+      evenDistribution: boolean; stickyAffinity: boolean; stateFree: boolean; fault: string
+    }>
+    trilemma: { evenDistribution: boolean; stickyAffinity: boolean; stateFree: boolean }
+    metrics: { totalRequests: number; worstSkew: number; stickyHits: number }
+  }>
+  vectors: Record<string, string>
+  verdict: Record<string, any>
+  rigged: boolean
+  noUniversalWinner: boolean
+  trilemmaDistinguishes: boolean
+  causalLocks: { roundRobinBlindToLoadCausallyUnerasable: boolean; leastConnRequiresSharedCountersCausallyUnerasable: boolean; consistentHashSkewCausallyUnerasable: boolean; causalLocksAllHold: boolean; probeSkew: any }
+  crosscheck: { evidence: Record<string, any>; routing: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+  builtAt: number
+}
+
+
 
 
 
@@ -808,6 +831,7 @@ export interface SystemsBlock {
   traceSampling: TraceSamplingReading | null
   distributedSession: DistributedSessionReading | null
   transactionalOutbox: TransactionalOutboxReading | null
+  loadBalance: LoadBalanceReading | null
   builtAt: number
 }
 
@@ -1036,6 +1060,16 @@ export function buildSnapshot(opts?: {
   toZeroPollInterval?: boolean
   toPerfectDedup?: boolean
   toRigged?: boolean
+  /** KI-536：false 关掉 LoadBalance 维（兼容旧快照）；lb* 注入规模/探针/rigged */
+  loadBalance?: boolean
+  lbSeed?: number
+  lbRequests?: number
+  lbVirtualNodes?: number
+  lbCapacity?: number[]
+  lbUniformLoad?: boolean
+  lbPerfectRing?: boolean
+  lbUnlimitedBudget?: boolean
+  lbRigged?: boolean
   traceSampling?: boolean
   tsSeed?: number
   tsItems?: number
@@ -1252,6 +1286,16 @@ export function buildSystems(opts?: {
   toZeroPollInterval?: boolean
   toPerfectDedup?: boolean
   toRigged?: boolean
+  /** KI-536：false 关掉 LoadBalance 维（兼容旧快照）；lb* 注入规模/探针/rigged */
+  loadBalance?: boolean
+  lbSeed?: number
+  lbRequests?: number
+  lbVirtualNodes?: number
+  lbCapacity?: number[]
+  lbUniformLoad?: boolean
+  lbPerfectRing?: boolean
+  lbUnlimitedBudget?: boolean
+  lbRigged?: boolean
   traceSampling?: boolean
   tsSeed?: number
   tsItems?: number
@@ -1556,6 +1600,16 @@ export function buildCrdtReading(opts: {
   toZeroPollInterval?: boolean
   toPerfectDedup?: boolean
   toRigged?: boolean
+  /** KI-536：false 关掉 LoadBalance 维（兼容旧快照）；lb* 注入规模/探针/rigged */
+  loadBalance?: boolean
+  lbSeed?: number
+  lbRequests?: number
+  lbVirtualNodes?: number
+  lbCapacity?: number[]
+  lbUniformLoad?: boolean
+  lbPerfectRing?: boolean
+  lbUnlimitedBudget?: boolean
+  lbRigged?: boolean
 }, now: () => number): Promise<CrdtReading | null>
 
 /** KI-532：真跑 Spring Batch chunk-oriented R-P-W（BulkWriter/ChunkedWriter/SkipRetryWriter × 六场景 + 三难向量 + verifyCheckpoint 双路自证 + 十一枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
@@ -1590,6 +1644,16 @@ export function buildSpringBatchReading(opts: {
   toZeroPollInterval?: boolean
   toPerfectDedup?: boolean
   toRigged?: boolean
+  /** KI-536：false 关掉 LoadBalance 维（兼容旧快照）；lb* 注入规模/探针/rigged */
+  loadBalance?: boolean
+  lbSeed?: number
+  lbRequests?: number
+  lbVirtualNodes?: number
+  lbCapacity?: number[]
+  lbUniformLoad?: boolean
+  lbPerfectRing?: boolean
+  lbUnlimitedBudget?: boolean
+  lbRigged?: boolean
 }, now: () => number): Promise<SpringBatchReading | null>
 
 /** KI-535：真跑 Spring Cloud 分布式会话三策略（StickySession/JwtStateless/RedisSessionStore × 六场景 + 三难向量 + verifySessionCoherence 双路自证 + 十一枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
@@ -1615,6 +1679,16 @@ export function buildDistributedSessionReading(opts: {
   toZeroPollInterval?: boolean
   toPerfectDedup?: boolean
   toRigged?: boolean
+  /** KI-536：false 关掉 LoadBalance 维（兼容旧快照）；lb* 注入规模/探针/rigged */
+  loadBalance?: boolean
+  lbSeed?: number
+  lbRequests?: number
+  lbVirtualNodes?: number
+  lbCapacity?: number[]
+  lbUniformLoad?: boolean
+  lbPerfectRing?: boolean
+  lbUnlimitedBudget?: boolean
+  lbRigged?: boolean
 }, now: () => number): Promise<DistributedSessionReading | null>
 
 /** KI-534：真跑 Spring Cloud 事务性发件箱与消费幂等教学件（DualWrite/PollingOutbox/CdcOutbox × 六场景 + 三难向量 + verifyOutboxSoundness 双路自证 + 十一枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
@@ -1631,7 +1705,31 @@ export function buildTransactionalOutboxReading(opts: {
   toZeroPollInterval?: boolean
   toPerfectDedup?: boolean
   toRigged?: boolean
+  /** KI-536：false 关掉 LoadBalance 维（兼容旧快照）；lb* 注入规模/探针/rigged */
+  loadBalance?: boolean
+  lbSeed?: number
+  lbRequests?: number
+  lbVirtualNodes?: number
+  lbCapacity?: number[]
+  lbUniformLoad?: boolean
+  lbPerfectRing?: boolean
+  lbUnlimitedBudget?: boolean
+  lbRigged?: boolean
 }, now: () => number): Promise<TransactionalOutboxReading | null>
+
+/** KI-536：真跑 Spring Cloud 负载均衡三策略（WeightedRoundRobin/LeastConnections/ConsistentHash × 六场景 + 三难向量 + verifyRoutingSoundness 双路自证 + 十一枚真件交叉印证）收敛成前端第三十维两面板紧凑读数；失败落 null。 */
+export function buildLoadBalanceReading(opts: {
+  now?: () => number
+  loadBalance?: boolean
+  lbSeed?: number
+  lbRequests?: number
+  lbVirtualNodes?: number
+  lbCapacity?: number[]
+  lbUniformLoad?: boolean
+  lbPerfectRing?: boolean
+  lbUnlimitedBudget?: boolean
+  lbRigged?: boolean
+}, now: () => number): Promise<LoadBalanceReading | null>
 
 /** KI-533：真跑可观测性分布式追踪采样三策略（HeadBased/TailBased/Adaptive × 六场景 + 三难向量 + verifySamplingSoundness 双路自证 + 十一枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
 export function buildTraceSamplingReading(opts: {

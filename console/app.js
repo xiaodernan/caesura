@@ -66,6 +66,7 @@
       renderSpringBatch(snap.systems ? snap.systems.springBatch : null)
       renderDistributedSession(snap.systems ? snap.systems.distributedSession : null)
       renderTransactionalOutbox(snap.systems ? snap.systems.transactionalOutbox : null)
+      renderLoadBalance(snap.systems ? snap.systems.loadBalance : null)
       renderTraceSampling(snap.systems ? snap.systems.traceSampling : null)
       setLive(true, result.source)
     }).catch(function (e) {
@@ -3308,6 +3309,137 @@
       'verifyCheckpoint 双路自证：路 A clean 全量全 commit 求基准，路 B 真跑 restart(0) 用「poison chunk 隔离 / 已 commit 无重复 / 非毒零丢失 / 真检测到毒」四观测量判定；三路篡改真喂回同一内核现算翻 false，带 baselineHolds 先真绿。' +
       '三条因果结构锁在同一含毒 raw 流真跑钉死：Bulk 无 chk 整批死、chk 权衡不可兼得、Skip 跳毒永久丢。' +
       'rigged 双开关 perfectOracle（毒项 100% 判定、预防性从输入剔除）+ unlimitedSkip 喂的是已剔除毒项的干净流（换了作业输入、诚实标注，不是同一作业被抹软肋）⇒ 三者 faultIsolation 全真、Bulk≡Skip=101 区分度诚实收敛（riggedConvergenceCollapsed=true，教学结论：完美预言机抹平了「预防剔除」与「跳过」的差别，二者结构等价），noStrategyWinsAll 仍真绝不硬造 111，三因果锁仍 allHold。'
+  }
+
+  /* ================= KI-536 WeightedRoundRobin/LeastConnections/ConsistentHash Spring Cloud 负载均衡 · 第三十维（lb 族） ================= */
+
+  function renderLoadBalance(lb) {
+    renderLbMatrix(lb && lb.rows, lb && lb.config)
+    renderLbLadder(lb && lb.rows)
+    renderLbTrilemma(lb && lb.rows, lb && lb.verdict, lb && lb.crosscheck)
+  }
+
+  function lbMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 暂缺</div>'
+    if (note) note.textContent = 'systems.loadBalance 缺失 — 跑一次 npm run console:data 即可补齐'
+  }
+
+  function lbCell(c) {
+    if (!c) return { cls: '', ch: '·' }
+    if ((c.skew ?? 1) > 3) return { cls: 'ch', ch: '粘' }
+    if (c.stickyAffinity === true && (c.skew ?? 1) <= 3) return { cls: 'ch', ch: '粘' }
+    if (c.stateFree === false) return { cls: 'lc', ch: '轻' }
+    return { cls: 'rr', ch: '轮' }
+  }
+
+  function renderLbMatrix(rows, config) {
+    var box = $('#lb-matrix'), note = $('#lb-matrix-note')
+    if (!Array.isArray(rows) || !rows.length || !config || !Array.isArray(config.scenarios)) {
+      lbMissing(box, note, 'lb 矩阵'); return
+    }
+    var scenarios = config.scenarios
+    var head = '<div class="lb-mat-row lb-mat-head"><span class="lb-mat-proto">策略</span>' +
+      scenarios.map(function (sc) { return '<span class="lb-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="lb-mat-cost">req/ skew / hit</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = lbCell(cell)
+        return '<span class="lb-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="lb-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="lb-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="lb-mat-cost"><b>' + esc(fmt(m.totalRequests)) + '</b>/' + esc(String(m.worstSkew)) + '/' + esc(String(m.stickyHits)) + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'WeightedRoundRobin / LeastConnections / ConsistentHash × 六场景：steadyLoad（匀速流）/ hotspotNode（实例容量不同构）/ burstParallel（并发翻倍）/ scaleOut（实例横向扩容）/ connectionLeak（某实例连接泄漏）/ cleanRerun（同轨迹重跑）。' +
+      '每格只认 cell 三布尔（evenDistribution ∧ stickyAffinity ∧ stateFree）——绝不由阈值重算。' +
+      'WRR: 平滑权轮（stateFree 指针 O(1)、均衡权 ≠ 运行时负载）；LC: 真选最少入站连接（需共享计数器）；CH: 环粘性分发（同 client 恒同实例·skew 恒 > 0）。'
+  }
+
+  function renderLbLadder(rows) {
+    var box = $('#lb-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.totalRequests) ? r.metrics.totalRequests : 1 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.totalRequests) ? Math.round(m.totalRequests / max * 100) : 0
+      return '<div class="lb-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="lb-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">请求 ' + esc(fmt(m.totalRequests)) + ' · worstSkew ' + esc(String(m.worstSkew)) + ' · stickyHits ' + esc(String(m.stickyHits)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderLbTrilemma(rows, verdict, crosscheck) {
+    var box = $('#lb-trilemma'), veBox = $('#lb-verif'), cxBox = $('#lb-crosscheck'), note = $('#lb-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      lbMissing(box, note, 'lb 判词'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''; return
+    }
+    var flags = [['evenDistribution', '均布'], ['stickyAffinity', '粘性'], ['stateFree', '零状态']]
+    var head = '<div class="lb-vec lb-vec-head"><span class="proto">策略</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="lb-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="lb-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    if (veBox) {
+      var wrr = rows.find(function (r) { return r.protocol === 'WeightedRoundRobin' })
+      var lc = rows.find(function (r) { return r.protocol === 'LeastConnections' })
+      var ch = rows.find(function (r) { return r.protocol === 'ConsistentHash' })
+      var cp = crosscheck && crosscheck.routing
+      veBox.innerHTML = [
+        '<div class="lb-rb-row"><b>WeightedRoundRobin</b> 均布=' + esc(String(wrr?.trilemma?.evenDistribution)) + ' · 粘性=' + esc(String(wrr?.trilemma?.stickyAffinity)) + ' · 零状态=' + esc(String(wrr?.trilemma?.stateFree)) + '（指针 WRR、worstSkew=' + esc(String(wrr?.metrics?.worstSkew)) + '）</div>',
+        '<div class="lb-rb-row"><b>LeastConnections</b> 均布=' + esc(String(lc?.trilemma?.evenDistribution)) + ' · 粘性=' + esc(String(lc?.trilemma?.stickyAffinity)) + ' · 零状态=' + esc(String(lc?.trilemma?.stateFree)) + '（需共享在飞连接计数）</div>',
+        '<div class="lb-rb-row"><b>ConsistentHash</b> 粘性=' + esc(String(ch?.trilemma?.stickyAffinity)) + ' · 均布=' + esc(String(ch?.trilemma?.evenDistribution)) + '（环 skew=' + esc(String(ch?.metrics?.worstSkew)) + '，stickyHits=' + esc(String(ch?.metrics?.stickyHits)) + '）</div>',
+        cp ? '<div class="lb-rb-row"><b>verifyRoutingSoundness</b> holds=' + (cp.holds ? 'true' : 'false') + ' nontrivial=' + (cp.nontrivial ? 'true' : 'false') + ' falsifiable=' + (cp.falsifiable ? 'true' : 'false') + ' · laneA{stableClients=' + esc(String(cp.laneA && cp.laneA.stableClients)) + '/' + esc(String(cp.laneA && cp.laneA.clients)) + '} laneB{ringHits=' + esc(String(cp.laneB && cp.laneB.ringHits)) + '/' + esc(String(cp.laneB && cp.laneB.probes)) + '}</div>' : '',
+      ].join('')
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>真 <b>compareRemapping</b> 迁移率 一致性 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>' +
+          '<div>真 <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 片</div>' +
+          '<div>真 <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 命中 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
+          '<div>真 <b>createWal</b> lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>真 <b>createBus</b> lb.routed 通知 ' + esc(fmt(ev.notices)) + ' 条 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>真 <b>createRedisCache</b> lb slot set+get 命中 ' + esc(fmt(ev.redisBitmapHits)) + ' · entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+          '<div>真 <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+          '<div>真 <b>createTokenBucket</b> 回放允许 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>真 <b>createMinHeapDelayQueue</b> 出队 ' + esc(fmt(ev.heapFired)) + ' 条 · pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+          '<div>真 <b>createFullJitterBackoff</b> jitterSpread <b>' + esc(String((ev.jitterSpread ?? 0).toFixed(4))) + '</b>（64 采样 delayFor 真采样）</div>' +
+          '<div>真 <b>createPackedCounters</b> Σ=' + esc(fmt(ev.counterSum)) + ' · falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">真件交叉印证缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var chips = [
+      '<span class="chip" data-verdict="chStickyOutperformsRR"><b>ConsistentHash</b> 粘性真 ' + (v.chStickyOutperformsRR ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="stateFreeDegradesLC"><b>LeastConnections</b> 需共享计数器 ' + (v.stateFreeDegradesLC ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="hashSkewPersists"><b>ConsistentHash</b> skew 恒在 ' + (v.hashSkewPersists ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="noStrategyWinsAll"><b>noStrategyWinsAll</b> ' + (v.noStrategyWinsAll ? '✓（无一 111）' : '✗') + '</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' + (noWin ? '✓ 三向量互异（101/100/011），无全局赢家、恰好各缺一维' : '判词塌陷') + '</span>',
+      '<span class="chip ' + (v.riggedConvergenceCollapsed ? 'jade-t' : 'muted-t') + '" data-verdict="riggedConvergenceCollapsed">' + (v.riggedConvergenceCollapsed ? '✓ rigged 塌缩 LC≡WRR=101、CH=111' : '未 rigged 或未塌缩') + '</span>',
+    ]
+    var probes = $('#lb-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维序固定 [evenDistribution / stickyAffinity / stateFree]。默认向量 WeightedRoundRobin=101（stateFree 指针+均布权重≠运行时负载） / LeastConnections=100（真看在飞连接但计数器是真状态） / ConsistentHash=011（粘性真但 skew 恒 > 0）——恰好各缺一维、向量互异、无一 111。' +
+      'rigged 三探针：uniformLoad 不动向量（负载均勺化不能根除 skew）/ perfectRing ⇒ CH 翻 111（rigged 专用）/ unlimitedBudget ⇒ LC=stateFree=true≡WRR=101（LC≡WRR 塌缩 distinguishable=false）。'
   }
 
   /* ================= KI-534 DualWrite/PollingOutbox/CdcOutbox Spring Cloud 事务性发件箱 · 第二十八维（ob 族） ================= */

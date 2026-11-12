@@ -584,6 +584,23 @@
       <p class="note" id="ob-trilemma-note">…</p>
     </article>
   </section>
+  <!-- 第三十维 · WeightedRoundRobin / LeastConnections / ConsistentHash Spring Cloud 负载均衡（KI-536） -->
+  <section class="row row-lb">
+    <article class="panel panel-lb">
+      <div class="panel-head"><h2>第三十维 · WeightedRoundRobin/LeastConnections/ConsistentHash · 三策略 × 六场景</h2><span class="hint">轮=WeightedRoundRobin（smooth WRR 指针法·按权比例下发、负载免疫假象·stateFree 秒记）/ 轻=LeastConnections（真选当前入站连接数最少的实例·运行时随真在飞连接漂移·但计数器是真状态、真要共享、真要归零）/ 粘=ConsistentHash（一致性哈希环 hash 分发·同一 clientId 永远同一实例·购物车/会话亲和·但环 skew 永远 > 0）</span></div>
+      <div class="lb-matrix" id="lb-matrix"></div>
+      <div class="lb-ladder" id="lb-ladder"></div>
+      <p class="note" id="lb-matrix-note">…</p>
+    </article>
+    <article class="panel panel-lb">
+      <div class="panel-head"><h2>三难向量（evenDistribution ∧ stickyAffinity ∧ stateFree）· 双路自证</h2><span class="hint">WeightedRoundRobin=101 / LeastConnections=100 / ConsistentHash=011 · 三向量互异无一 111 不封赢家 · verifyRoutingSoundness 双路自证（同一 client 连续 10 次请求落同一实例（CH 必为唯一实例）+ ring 命中率 ≥ 50%）+ 三路篡改真喂回同一内核现算翻 false（环空/静默切 affinity/空 events）· 三因果锁（轮询对负载盲/最小连接需共享计数器/环 skew 恒在）· rigged 三探针（uniformLoad 不动向量 / perfectRing ⇒ CH 翻 111 / unlimitedBudget ⇒ LC=stateFree=true ≡ WRR 塌缩）全开 ⇒ WRR≡LC=101 · CH=111 区分度诚实塌缩</span></div>
+      <div class="lb-trilemma" id="lb-trilemma"></div>
+      <div class="lb-verif" id="lb-verif"></div>
+      <div class="lb-crosscheck" id="lb-crosscheck"></div>
+      <div class="lb-probes" id="lb-probes"></div>
+      <p class="note" id="lb-trilemma-note">…</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">

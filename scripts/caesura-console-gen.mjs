@@ -45,6 +45,7 @@ import { crdtStudy, crdtSnapshot } from './caesura-crdt.mjs'
 import { springBatchStudy, springBatchSnapshot } from './caesura-spring-batch.mjs'
 import { distributedSessionStudy, distributedSessionSnapshot } from './caesura-distributed-session.mjs'
 import { transactionalOutboxStudy, transactionalOutboxSnapshot } from './caesura-transactional-outbox.mjs'
+import { springLoadBalanceStudy, springLoadBalanceSnapshot } from './caesura-spring-load-balance.mjs'
 import { traceSamplingStudy, traceSamplingSnapshot } from './caesura-trace-sampling.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
@@ -364,7 +365,9 @@ export async function buildSystems(opts = {}) {
   const distributedSession = opts.distributedSession === false ? null : await buildDistributedSessionReading(opts, now)
   // KI-534：第二十八维装配事务性发件箱（DualWrite/PollingOutbox/CdcOutbox · Spring Cloud Outbox 模式一线）
   const transactionalOutbox = opts.transactionalOutbox === false ? null : await buildTransactionalOutboxReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, builtAt: now() }
+  // KI-536：第三十维装配 Spring Cloud 负载均衡教学件（WeightedRoundRobin/LeastConnections/ConsistentHash）
+  const loadBalance = opts.loadBalance === false ? null : await buildLoadBalanceReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, builtAt: now() }
 }
 
 /**
@@ -446,6 +449,31 @@ export async function buildTraceSamplingReading(opts, now) {
       ...(opts.tsRigged === true ? { rigged: true } : {}),
     })
     return traceSamplingSnapshot(s)
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
+ * KI-536：Spring Cloud LoadBalancer 三策略真跑教学件（WeightedRoundRobin/LeastConnections/ConsistentHash × 六场景 + 三难向量 + verifyRoutingSoundness 双路自证 + 十一枚真件交叉印证）。
+ * 失败落 null；读数全真、CLI 双跑字节一致、rigged 不硬封胜者。
+ * @param {object} opts { loadBalance?:false, lbSeed?, lbRequests?, lbVirtualNodes?, lbCapacity?, lbUniformLoad?, lbPerfectRing?, lbUnlimitedBudget?, lbRigged? }
+ * @param {()=>number} now 时钟（builtAt 注入真值）
+ */
+export async function buildLoadBalanceReading(opts, now) {
+  try {
+    const s = await springLoadBalanceStudy({
+      now,
+      ...(opts.lbSeed ? { seed: Math.max(0, Math.floor(Number(opts.lbSeed))) } : {}),
+      ...(opts.lbRequests ? { requests: Math.max(16, Math.floor(Number(opts.lbRequests))) } : {}),
+      ...(opts.lbVirtualNodes ? { virtualNodes: Math.max(1, Math.floor(Number(opts.lbVirtualNodes))) } : {}),
+      ...(Array.isArray(opts.lbCapacity) && opts.lbCapacity.length ? { capacity: opts.lbCapacity.map((x) => Math.max(1, Math.floor(Number(x)))) } : {}),
+      ...(opts.lbUniformLoad === true ? { uniformLoad: true } : {}),
+      ...(opts.lbPerfectRing === true ? { perfectRing: true } : {}),
+      ...(opts.lbUnlimitedBudget === true ? { unlimitedBudget: true } : {}),
+      ...(opts.lbRigged === true ? { rigged: true } : {}),
+    })
+    return springLoadBalanceSnapshot(s)
   } catch (e) {
     return null // 缺哪块就落 null，前端据实降级；不编造假数
   }

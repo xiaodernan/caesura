@@ -54,7 +54,15 @@ const CSS = `
 #dialogue .ch .t { flex:1; font-size:15px; line-height:1.6; }
 #dialogue .ch .s { font-size:11px; opacity:.4; letter-spacing:.1em; align-self:center; }
 #dialogue .hint { margin-top:10px; font-size:12px; opacity:.45; letter-spacing:.08em; }
+/* == ember rite ambient ：木盒呼吸辉光 + 说话字铺金慢脉动（纯 CSS、零 JS、reduced-motion 兜底） == */
+#dialogue .box::before { animation:dlg-warm 7.5s ease-in-out infinite; will-change:opacity }
+@keyframes dlg-warm{ 0%,100%{ opacity:.58; box-shadow:0 0 1.4vh rgba(201,180,88,.28), inset 0 0 1vh rgba(201,180,88,.18) } 50%{ opacity:.96; box-shadow:0 0 2.6vh rgba(201,180,88,.5), inset 0 0 1.6vh rgba(201,180,88,.34) } }
+#dialogue .who { animation:dlg-who 5s ease-in-out infinite alternate; will-change:letter-spacing }
+@keyframes dlg-who{ from{ letter-spacing:.21em } to{ letter-spacing:.25em } }
+#dialogue .choices .ch { transition:background .18s ease, border-left-color .18s ease, box-shadow .18s ease }
+#dialogue .ch:focus-visible { background:rgba(255,184,107,.14); border-left-color:#ffb86b; box-shadow:0 0 1.3vh rgba(255,184,107,.2); outline:2px solid #ffd98a; outline-offset:2px }
 @media (prefers-reduced-motion: reduce) {
+  #dialogue .box::before, #dialogue .who { animation:none; }
   #dialogue .ch, #dialogue .ch::after { transition:none; }
 }
 `

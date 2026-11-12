@@ -1020,6 +1020,50 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(sixteen.every((x) => x === 536000)).toBe(true)
   })
 
+  it('㉒f-load-balance buildLoadBalanceReading 真跑：lb* 注入生效 / loadBalance:false 关闭 / rigged 收敛明示 / 双路自证 + 十一真件 / 十七时钟同源（KI-536）', async () => {
+    const { buildLoadBalanceReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 537000
+    const lb = (await buildLoadBalanceReading({}, now))!
+    expect(lb).not.toBe(null)
+    expect(lb.builtAt).toBe(537000)
+    expect(lb.rows.length).toBe(3)
+    expect(lb.config.scenarios.length).toBe(6)
+    expect(lb.config.virtualNodes).toBe(16)
+    expect(lb.vectors).toEqual({ WeightedRoundRobin: '101', LeastConnections: '100', ConsistentHash: '011' })
+    expect(lb.rigged).toBe(false)
+    expect(lb.noUniversalWinner).toBe(true)
+    expect(lb.trilemmaDistinguishes).toBe(true)
+    expect(lb.causalLocks.causalLocksAllHold).toBe(true)
+    const tuned = (await buildLoadBalanceReading({ lbSeed: 12, lbRequests: 32, lbVirtualNodes: 4, lbCapacity: [2, 1] }, now))!
+    expect(tuned.config.seed).toBe(12)
+    expect(tuned.config.requests).toBe(32)
+    expect(tuned.config.virtualNodes).toBe(4)
+    expect(tuned.config.capacity).toEqual([2, 1])
+    const rig = (await buildLoadBalanceReading({ lbRigged: true }, now))!
+    expect(rig.vectors).toEqual({ WeightedRoundRobin: '101', LeastConnections: '101', ConsistentHash: '111' })
+    expect(rig.rigged).toBe(true)
+    expect(rig.verdict.noUniversalWinner).toBe(false)
+    expect(rig.verdict.riggedConvergenceCollapsed).toBe(true)
+    expect(rig.verdict.noStrategyWinsAll).toBe(false)
+    expect(rig.causalLocks.causalLocksAllHold).toBe(true)
+    const cp = lb.crosscheck.routing
+    expect(cp.holds).toBe(true)
+    expect(cp.nontrivial).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.tamper.emptyRing.holds).toBe(false)
+    expect(cp.tamper.silentAffinityDrop.holds).toBe(false)
+    expect(cp.tamper.emptyEvents.holds).toBe(false)
+    expect(Object.keys(lb.crosscheck.evidence).length).toBe(21)
+    const off = await buildSystems({ now, loadBalance: false, transactionalOutbox: false, distributedSession: false })
+    expect(off.loadBalance).toBe(null)
+    expect(off.transactionalOutbox).toBe(null)
+    expect(off.distributedSession).toBe(null)
+    expect(off.cacheReplacement).not.toBe(null)
+    const full = await buildSystems({ now })
+    const seventeen = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt, full.bloomFilter?.builtAt, full.cacheReplacement?.builtAt, full.streamWindow?.builtAt, full.hyperLogLog?.builtAt, full.crdt?.builtAt, full.springBatch?.builtAt, full.traceSampling?.builtAt, full.distributedSession?.builtAt, full.transactionalOutbox?.builtAt, full.loadBalance?.builtAt]
+    expect(seventeen.every((x) => x === 537000)).toBe(true)
+  })
+
   it('㉒c-trace-sampling buildTraceSamplingReading 真跑：ts* 注入生效 / traceSampling:false 关闭 / rigged Head≡Tail=110 诚实塌缩不硬造 111 / 双路自证 + 三路篡改真喂回 + 三因果锁 + 十一真件 / 十四时钟同源（KI-533）', async () => {
     const { buildTraceSamplingReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
     const now = () => 533000

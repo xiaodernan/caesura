@@ -2181,4 +2181,95 @@ describe('caesura-game-cloud', () => {
     expect(injected.builtAt).toBe(555)
     expect(injected.config.seed).toBe(99)
   })
+
+  // ============ KI-536 Spring Cloud LoadBalancer opt-in 装配（2 腿）============
+  it('loadBalance:true 装配真矩阵：101/100/011 互异不封赢家 + 三因果锁 + verifyRoutingSoundness 双路 + ring 100/100 + 21 键 + 惰性同引用（KI-536）', async () => {
+    const gc = await createGameCloud({
+      gameId: 'gid-lb1', gamePort: 7888, sources, cloud: fakeCloud(),
+      loadBalance: true, lbNow: () => 536000,
+    })
+    const st = (await gc.status()).loadBalance
+    expect(st).not.toBe(null)
+    expect(st!.builtAt).toBe(536000)
+    expect(st!.config.scenarios.length).toBe(6)
+    expect(st!.config.requests).toBe(96)
+    expect(st!.rows.length).toBe(3)
+    expect(st!.vectors).toEqual({ WeightedRoundRobin: '101', LeastConnections: '100', ConsistentHash: '011' })
+    expect(st!.rigged).toBe(false)
+    expect(st!.noUniversalWinner).toBe(true)
+    expect(st!.trilemmaDistinguishes).toBe(true)
+    expect(st!.verdict.noStrategyWinsAll).toBe(true)
+    expect(st!.verdict.vectorFromTrilemma).toBe(true)
+    // 三因果结构锁
+    expect(st!.causalLocks.causalLocksAllHold).toBe(true)
+    expect(st!.causalLocks.roundRobinBlindToLoadCausallyUnerasable).toBe(true)
+    expect(st!.causalLocks.leastConnRequiresSharedCountersCausallyUnerasable).toBe(true)
+    expect(st!.causalLocks.consistentHashSkewCausallyUnerasable).toBe(true)
+    // verifyRoutingSoundness 双路真跑现算 + 三路 tamper 真红（深修后 laneB 真吃 96 events）
+    const cp = st!.crosscheck.routing
+    expect(cp.holds).toBe(true)
+    expect(cp.baselineHolds).toBe(true)
+    expect(cp.nontrivial).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.laneA.stableClients).toBe(cp.laneA.clients) // 7 个不同 clientId 全 sticky
+    expect(cp.laneB.ringHits).toBe(cp.laneB.probes)       // 96/96 全命中
+    expect(cp.tamper.emptyRing.holds).toBe(false)
+    expect(cp.tamper.silentAffinityDrop.holds).toBe(false)
+    expect(cp.tamper.emptyEvents.holds).toBe(false)
+    expect(Object.keys(st!.crosscheck.evidence).length).toBe(21)
+    // 主教义
+    expect(st!.verdict.chStickyOutperformsRR).toBe(true)
+    expect(st!.verdict.stateFreeDegradesLC).toBe(true)
+    expect(st!.verdict.hashSkewPersists).toBe(true)
+    // 惰性缓存 + 同引用
+    expect((await gc.status()).loadBalance).toBe(st)
+    expect(await gc.runLoadBalanceStudy!()).toMatchObject({ vectors: st!.vectors })
+    // 不连坐其它维
+    const bare = await createGameCloud({ gameId: 'gid-lb0', gamePort: 7889, sources, cloud: fakeCloud() }).status()
+    expect(bare.loadBalance).toBe(null)
+    expect(bare.transactionalOutbox).toBe(null)
+  })
+
+  it('loadBalance 默认 null 非破坏；perfectRing⇒CH=111、unlimitedBudget⇒LC=101≡WRR 塌缩、uniformLoad 不动向量；可注入现成 study（KI-536）', async () => {
+    const idle = await createGameCloud({ gameId: 'gid-lb2', gamePort: 7890, sources, cloud: fakeCloud() }).status()
+    expect(idle.loadBalance).toBe(null)
+    // 单开 perfectRing：CH=111（honest collapse 探针）
+    const pr = (await (await createGameCloud({
+      gameId: 'gid-lb3', gamePort: 7891, sources, cloud: fakeCloud(),
+      loadBalance: { perfectRing: true }, lbNow: () => 536000,
+    })).status()).loadBalance
+    expect(pr!.vectors.ConsistentHash).toBe('111')
+    expect(pr!.verdict.perfectRingErasesSkew).toBe(true)
+    // 单开 unlimitedBudget：LC=stateFree=true（≡WRR，区分度诚实塌缩）
+    const ub = (await (await createGameCloud({
+      gameId: 'gid-lb4', gamePort: 7892, sources, cloud: fakeCloud(),
+      loadBalance: { unlimitedBudget: true }, lbNow: () => 536000,
+    })).status()).loadBalance
+    expect(ub!.vectors.LeastConnections).toBe('101')
+    expect(ub!.verdict.unlimitedBudgetErasesLCNeed).toBe(true)
+    // 单开 uniformLoad：向量不动
+    const ul = (await (await createGameCloud({
+      gameId: 'gid-lb5', gamePort: 7893, sources, cloud: fakeCloud(),
+      loadBalance: { uniformLoad: true }, lbNow: () => 536000,
+    })).status()).loadBalance
+    expect(ul!.vectors.ConsistentHash).toBe('011')
+    // rigged 三开齐：WRR≡LC=101，CH=111（honest collapse）
+    const rig = (await (await createGameCloud({
+      gameId: 'gid-lb6', gamePort: 7894, sources, cloud: fakeCloud(),
+      loadBalance: { rigged: true }, lbNow: () => 536000,
+    })).status()).loadBalance
+    expect(rig!.vectors).toEqual({ WeightedRoundRobin: '101', LeastConnections: '101', ConsistentHash: '111' })
+    expect(rig!.verdict.riggedConvergenceCollapsed).toBe(true)
+    expect(rig!.verdict.noUniversalWinner).toBe(false)
+    expect(rig!.verdict.noStrategyWinsAll).toBe(false)
+    expect(rig!.causalLocks.causalLocksAllHold).toBe(true)
+    // 可注入现成 study（鸭子类型）
+    const { springLoadBalanceStudy } = await import('../../scripts/caesura-spring-load-balance.mjs')
+    const injected = (await (await createGameCloud({
+      gameId: 'gid-lb7', gamePort: 7895, sources, cloud: fakeCloud(),
+      loadBalance: springLoadBalanceStudy({ seed: 99, now: () => 555 }),
+    })).status()).loadBalance
+    expect(injected.builtAt).toBe(555)
+    expect(injected.config.seed).toBe(99)
+  })
 })

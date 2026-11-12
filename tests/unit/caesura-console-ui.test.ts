@@ -2212,3 +2212,72 @@ describe('KI-534 第二十八维 · transactional outbox / dual-write / polling 
     })
   })
 })
+
+
+// ============ KI-536 第三十维 · Spring Cloud LoadBalancer（lb 族 · 4 腿） ============
+describe('KI-536 第三十维 · weightedroundrobin/leastconnections/consistenthash（lb 族）', () => {
+  const realLb = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+  it('第三十维真渲染：lb 矩阵 18 cell + 三策略向量 101/100/011 + 状态类 + ladder 条', async () => {
+    const dom = await runApp(realLb)
+    const matrix = dom.els['lb-matrix'].innerHTML
+    expect(matrix).toContain('lb-mat-head')
+    for (const p of ['WeightedRoundRobin', 'LeastConnections', 'ConsistentHash']) {
+      expect(matrix).toContain('data-strategy="' + p + '"')
+    }
+    for (const sc of ['steadyLoad', 'hotspotNode', 'burstParallel', 'scaleOut', 'connectionLeak', 'cleanRerun']) {
+      expect(matrix).toContain('data-s="' + sc + '"')
+    }
+    expect((matrix.match(/class="lb-cell /g) || []).length).toBe(18)
+    const tri = dom.els['lb-trilemma'].innerHTML
+    expect(tri).toContain('data-vec="101"')
+    expect(tri).toContain('data-vec="100"')
+    expect(tri).toContain('data-vec="011"')
+    const states = [...matrix.matchAll(/data-state="([^"]+)"/g)].map((m) => m[1])
+    expect(states.length).toBeGreaterThanOrEqual(18)
+    expect(dom.els['lb-ladder'].innerHTML).toContain('lb-bar')
+  })
+
+  it('第三十维画中件 DOM：verifyRoutingSoundness 双路 + 十一真件 chip + 无 111', async () => {
+    const dom = await runApp(realLb)
+    const probes = dom.els['lb-probes'].innerHTML
+    for (const key of ['chStickyOutperformsRR', 'stateFreeDegradesLC', 'hashSkewPersists',
+      'noStrategyWinsAll', 'noUniversalWinner', 'riggedConvergenceCollapsed']) {
+      expect(probes, 'probe chip ' + key).toContain('data-verdict="' + key + '"')
+    }
+    const verif = dom.els['lb-verif'].innerHTML
+    for (const key of ['holds', 'nontrivial', 'falsifiable']) {
+      expect(verif, 'verify row ' + key).toContain(key)
+    }
+    const cx = dom.els['lb-crosscheck'].innerHTML
+    for (const api of ['compareRemapping', 'createShardRouter', 'createHashRing', 'createWal', 'createBus',
+      'createRedisCache', 'createObjectPool', 'createTokenBucket', 'createMinHeapDelayQueue',
+      'createFullJitterBackoff', 'createPackedCounters']) {
+      expect(cx, '真件 ' + api + ' 必须 DOM 可见').toContain(api)
+    }
+    expect(cx).toContain('jitterSpread')
+  })
+
+  it('第三十维 markup/CSS 自同 + systems.loadBalance 缺失时真显式降级', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-lb')
+    expect(html).toContain('id="lb-matrix"')
+    expect(html).toContain('id="lb-verif"')
+    expect(html).toContain('WeightedRoundRobin=101 / LeastConnections=100 / ConsistentHash=011')
+    expect(css).toContain('.lb-cell.rr')
+    expect(css).toContain('.lb-cell.lc')
+    expect(css).toContain('.lb-cell.ch')
+    expect(css).toContain('.lb-cell.ok')
+    expect(css).toContain('.lb-flag.yes')
+    expect(css).toContain('.lb-bar > i')
+    expect(css).toContain('.lb-verif')
+    expect(css).toContain('@media')
+    const noLb = JSON.parse(JSON.stringify(realLb as any))
+    noLb.systems.loadBalance = null
+    return runApp(noLb).then((dom2: any) => {
+      expect(dom2.els['lb-matrix'].innerHTML).toContain('暂缺')
+      expect(dom2.els['lb-trilemma'].innerHTML).toContain('暂缺')
+      expect(dom2.els['lb-matrix-note'].textContent).toContain('systems.loadBalance 缺失')
+    })
+  })
+})
