@@ -162,6 +162,14 @@ export function runMeshE2E(opts = {}) {
     // 注入时钟用 sbNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/rdq/dld/crdt 已占用前缀）。
     springBatch: opts.springBatch,
     sbNow: opts.sbNow,
+    // KI-533：可观测性分布式追踪采样三策略（traceSampling=true 装配；只读 HeadBased/TailBased/Adaptive ×
+    // 六场景矩阵 + 三难向量维序 [lowOverhead/anomalyCapture/loadAdaptive]（默认 100/010/101 互异不封赢家；
+    // anomalyCapture⇔缓冲整条⇔非 lowOverhead 与 chk 锁同构；rigged 三开关 oracleHead/infiniteBuffer/perfectFeedback
+    // 全开收敛 Head≡Tail=110 区分度诚实塌缩、noStrategyWinsAll 仍真绝不硬造 111，三条因果结构锁在同一含 error
+    // raw 流现算钉死）+ verifySamplingSoundness 双路自证 + 三路篡改真喂回现算翻 false + 十一真件 21 键交叉印证，
+    // 不改调用路径）。注入时钟用 tsNow（避开 sbNow/crdtNow 等已占用前缀）。
+    traceSampling: opts.traceSampling,
+    tsNow: opts.tsNow,
     sources: {
       eureka: () => (opts.svcA ?? [{ id: 'svc-a:1', name: 'svc-a', address: '10.0.0.1', port: 8080, healthy: true }]),
       k8s: () => k8s.discover('caesura-gate'),
@@ -308,6 +316,7 @@ export function runMeshE2E(opts = {}) {
         hyperLogLogSnapshot: status.hyperLogLog ?? null,
         crdtSnapshot: status.crdt ?? null,
         springBatchSnapshot: status.springBatch ?? null,
+        traceSamplingSnapshot: status.traceSampling ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
       }
@@ -626,6 +635,22 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         causalLocks: r.springBatchSnapshot.causalLocks,
         crosscheck: r.springBatchSnapshot.crosscheck,
         verdict: r.springBatchSnapshot.verdict,
+      } : null,
+      traceSampling: r.traceSamplingSnapshot ? {
+        strategies: r.traceSamplingSnapshot.rows.map((row) => ({
+          strategy: row.protocol,
+          // 每格状态只认真件现算好的三布尔（lowOverhead/anomalyCapture/loadAdaptive）—绝不拿阈值重算，与 trilemma/vectors 同源。
+          // '盲'=头部决策盲丢 error(anomalyCapture破) / '胀'=缓冲整条吃开销(lowOverhead破) / '滞'=不随负载反馈调率(loadAdaptive破)。
+          ladder: row.scenarios.map((s) => s.id + ':' + (s.anomalyCapture === false ? '盲' : s.lowOverhead === false ? '胀' : s.loadAdaptive === false ? '滞' : '✓')).join(' → '),
+          metrics: row.metrics, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.traceSamplingSnapshot.rows.map((row) => [row.protocol,
+          `${Number(row.trilemma.lowOverhead)}${Number(row.trilemma.anomalyCapture)}${Number(row.trilemma.loadAdaptive)}`])),
+        vectors: r.traceSamplingSnapshot.vectors,
+        noUniversalWinner: r.traceSamplingSnapshot.noUniversalWinner,
+        causalLocks: r.traceSamplingSnapshot.causalLocks,
+        crosscheck: r.traceSamplingSnapshot.crosscheck,
+        verdict: r.traceSamplingSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

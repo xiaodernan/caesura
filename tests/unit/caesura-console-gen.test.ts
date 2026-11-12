@@ -931,6 +931,57 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(thirteen.every((x) => x === 532000)).toBe(true)
   })
 
+  it('㉒c-trace-sampling buildTraceSamplingReading 真跑：ts* 注入生效 / traceSampling:false 关闭 / rigged Head≡Tail=110 诚实塌缩不硬造 111 / 双路自证 + 三路篡改真喂回 + 三因果锁 + 十一真件 / 十四时钟同源（KI-533）', async () => {
+    const { buildTraceSamplingReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 533000
+    const ts = (await buildTraceSamplingReading({}, now))!
+    expect(ts).not.toBe(null)
+    expect(ts.builtAt).toBe(533000)
+    expect(ts.rows.length).toBe(3)
+    expect(ts.config.scenarios.length).toBe(6)
+    expect(ts.vectors).toEqual({ HeadBasedSampler: '100', TailBasedSampler: '010', AdaptiveSampler: '101' })
+    expect(ts.rigged).toBe(false)
+    expect(ts.noUniversalWinner).toBe(true)
+    expect(ts.trilemmaDistinguishes).toBe(true)
+    expect(ts.causalLocks.causalLocksAllHold).toBe(true)
+    expect(ts.causalLocks.decisionInvariant).toBe(true)
+    // 注入 items/rate/windowSize/seed 真生效（不是只改 config 显示）
+    const tuned = (await buildTraceSamplingReading({ tsSeed: 12, tsItems: 64, tsRate: 0.3, tsWindowSize: 8 }, now))!
+    expect(tuned.config.seed).toBe(12)
+    expect(tuned.config.items).toBe(64)
+    expect(tuned.config.rate).toBe(0.3)
+    expect(tuned.config.windowSize).toBe(8)
+    // rigged：三开关分策略正交反事实 ⇒ Head≡Tail=110 区分度诚实塌缩、noStrategyWinsAll 仍真绝不硬造 111、三锁仍钉死
+    const rig = (await buildTraceSamplingReading({ tsRigged: true }, now))!
+    expect(rig.vectors).toEqual({ HeadBasedSampler: '110', TailBasedSampler: '110', AdaptiveSampler: '101' })
+    expect(rig.rigged).toBe(true)
+    expect(rig.noUniversalWinner).toBe(false)              // 区分度坍塌（诚实标注）
+    expect(rig.trilemmaDistinguishes).toBe(false)
+    expect(rig.verdict.riggedConvergenceCollapsed).toBe(true)
+    expect(rig.verdict.noStrategyWinsAll).toBe(true)       // 仍无一 111
+    expect(rig.causalLocks.causalLocksAllHold).toBe(true)  // 三锁与 rigged 输入无关
+    // verifySamplingSoundness 双路自证 + 三路篡改真喂回现算翻 false（带 baselineHolds）
+    const sm = ts.crosscheck.soundness
+    expect(sm.holds).toBe(true)
+    expect(sm.baselineHolds).toBe(true)
+    expect(sm.nontrivial).toBe(true)
+    expect(sm.falsifiable).toBe(true)
+    expect(sm.tamper.forgedErrorSpan.holds).toBe(false)
+    expect(sm.tamper.duplicateRelease.holds).toBe(false)
+    expect(sm.tamper.emptyTraceSet.holds).toBe(false)
+    expect(Object.keys(ts.crosscheck.evidence).length).toBe(21)
+    expect((ts.crosscheck.evidence as any).jitterSpread).toBeGreaterThan(0)
+    // 关闭不连坐
+    const off = await buildSystems({ now, traceSampling: false, springBatch: false })
+    expect(off.traceSampling).toBe(null)
+    expect(off.springBatch).toBe(null)
+    expect(off.cacheReplacement).not.toBe(null)
+    // 十四时钟同源
+    const full = await buildSystems({ now })
+    const fourteen = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt, full.bloomFilter?.builtAt, full.cacheReplacement?.builtAt, full.streamWindow?.builtAt, full.hyperLogLog?.builtAt, full.crdt?.builtAt, full.springBatch?.builtAt, full.traceSampling?.builtAt]
+    expect(fourteen.every((x) => x === 533000)).toBe(true)
+  })
+
   it('⑭ buildMvccTxnReading 真跑五档矩阵形状齐、读数是真判词、单维关闭不连坐（KI-505）', async () => {
     const { buildMvccTxnReading } = await import('../../scripts/caesura-console-gen.mjs')
     const now = () => 4242

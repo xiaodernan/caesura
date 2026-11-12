@@ -64,6 +64,7 @@
       renderCardinality(snap.systems ? snap.systems.hyperLogLog : null)
       renderCrdt(snap.systems ? snap.systems.crdt : null)
       renderSpringBatch(snap.systems ? snap.systems.springBatch : null)
+      renderTraceSampling(snap.systems ? snap.systems.traceSampling : null)
       setLive(true, result.source)
     }).catch(function (e) {
       setLive(false, 'error')
@@ -3305,6 +3306,168 @@
       'verifyCheckpoint 双路自证：路 A clean 全量全 commit 求基准，路 B 真跑 restart(0) 用「poison chunk 隔离 / 已 commit 无重复 / 非毒零丢失 / 真检测到毒」四观测量判定；三路篡改真喂回同一内核现算翻 false，带 baselineHolds 先真绿。' +
       '三条因果结构锁在同一含毒 raw 流真跑钉死：Bulk 无 chk 整批死、chk 权衡不可兼得、Skip 跳毒永久丢。' +
       'rigged 双开关 perfectOracle（毒项 100% 判定、预防性从输入剔除）+ unlimitedSkip 喂的是已剔除毒项的干净流（换了作业输入、诚实标注，不是同一作业被抹软肋）⇒ 三者 faultIsolation 全真、Bulk≡Skip=101 区分度诚实收敛（riggedConvergenceCollapsed=true，教学结论：完美预言机抹平了「预防剔除」与「跳过」的差别，二者结构等价），noStrategyWinsAll 仍真绝不硬造 111，三因果锁仍 allHold。'
+  }
+
+  /* ================= KI-533 可观测性分布式追踪采样三策略 · 第二十七维（ts 族） ================= */
+
+  function renderTraceSampling(ts) {
+    renderTsMatrix(ts && ts.rows, ts && ts.config)
+    renderTsLadder(ts && ts.rows)
+    renderTsTrilemma(ts && ts.rows, ts && ts.verdict, ts && ts.crosscheck)
+  }
+
+  function tsMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 暂缺</div>'
+    if (note) note.textContent = 'systems.traceSampling 缺失 — 跑一次 npm run console:data 即可补齐'
+  }
+
+  // 状态字只认真件现算好的三布尔，按三难维序 [lowOverhead / anomalyCapture / loadAdaptive] 取第一个破位，
+  // 与后端 vectorOf 及 mesh-e2e ladder 同源：盲=头部盲丢 error(anomalyCapture破) / 胀=缓冲整条吃开销(lowOverhead破) /
+  // 滞=不随负载反馈调率(loadAdaptive破)。cell 三布尔由本格真观测量现算，非查表/写死。
+  function tsCell(c) {
+    if (!c) return { cls: '', ch: '·' }
+    if (c.anomalyCapture === false) return { cls: 'dead', ch: '盲' }
+    if (c.lowOverhead === false) return { cls: 'heavy', ch: '胀' }
+    if (c.loadAdaptive === false) return { cls: 'fast', ch: '滞' }
+    return { cls: 'ok', ch: '✓' }
+  }
+
+  function renderTsMatrix(rows, config) {
+    var box = $('#ts-matrix'), note = $('#ts-matrix-note')
+    if (!Array.isArray(rows) || !rows.length || !config || !Array.isArray(config.scenarios)) {
+      tsMissing(box, note, 'ts 矩阵'); return
+    }
+    var scenarios = config.scenarios
+    var head = '<div class="ts-mat-row ts-mat-head"><span class="ts-mat-proto">策略</span>' +
+      scenarios.map(function (sc) { return '<span class="ts-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="ts-mat-cost">丢错 / 缓冲 / 调率</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = tsCell(cell)
+        return '<span class="ts-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="ts-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="ts-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="ts-mat-cost"><b>' + esc(fmt(m.errorTracesLost)) + '</b>/' + esc(fmt(m.peakBufferedSpans)) + '/' + esc(fmt(m.rateChanges)) + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'HeadBased / TailBased / Adaptive × 六场景：steadyLoad（稳定低错误）/ errorBurst（中段连续 error 突发）/ spikeLoad（trace 数×3 负载突增）/ bufferPressure（大 trace 多 span 压缓冲）/ coldStart（前段 error 密集验反馈冷启动）/ cleanRerun（确定性重跑验幂等）。' +
+      '每格只认真件现算好的三布尔（lowOverhead/anomalyCapture/loadAdaptive）——绝不拿阈值重算，与三难向量/vectors 同源。' +
+      '状态字：盲=头部决策盲丢 error / 胀=缓冲整条吃开销 / 滞=不随负载反馈调率 / ✓=该场景无软肋。' +
+      'HeadBased：root 即 O(1) 哈希决策、零 span 缓冲、率固定不反馈、决策早于 error 发生故盲丢异常；TailBased：缓冲整条 trace 至结束、按 error/延迟整体决策、确定性 100% 留 error 但缓冲吃开销；Adaptive：仍头部 O(1) 按窗口反馈环动态调率、零缓冲、maxRate 封顶仍补不上单条 anomaly 维。'
+  }
+
+  function renderTsLadder(rows) {
+    var box = $('#ts-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.spansIn) ? r.metrics.spansIn : 1 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.spansIn) ? Math.round(m.spansIn / max * 100) : 0
+      return '<div class="ts-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="ts-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">入口 span ' + esc(fmt(m.spansIn)) + ' · 留 ' + esc(fmt(m.spansKept)) + ' · 丢错 trace ' + esc(fmt(m.errorTracesLost)) + (r.protocol === 'TailBasedSampler' ? ' · 缓冲峰值 ' + esc(fmt(m.peakBufferedSpans)) : '') + (r.protocol === 'AdaptiveSampler' ? ' · 调率 ' + esc(fmt(m.rateChanges)) + ' 次' : '') + '</span></div>'
+    }).join('')
+  }
+
+  function renderTsTrilemma(rows, verdict, crosscheck) {
+    var box = $('#ts-trilemma'), veBox = $('#ts-verif'), cxBox = $('#ts-crosscheck'), note = $('#ts-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      tsMissing(box, note, 'ts 判词'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''; return
+    }
+    // 顺序必须与后端 vectorOf 维序 [lowOverhead / anomalyCapture / loadAdaptive] 逐字一致
+    var flags = [['lowOverhead', '低开销'], ['anomalyCapture', '异常保真'], ['loadAdaptive', '负载自适应']]
+    var head = '<div class="ts-vec ts-vec-head"><span class="proto">策略</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="ts-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="ts-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    if (veBox) {
+      var head = rows.find(function (r) { return r.protocol === 'HeadBasedSampler' })
+      var tail = rows.find(function (r) { return r.protocol === 'TailBasedSampler' })
+      var adaptive = rows.find(function (r) { return r.protocol === 'AdaptiveSampler' })
+      var sm = crosscheck && crosscheck.soundness
+      veBox.innerHTML = [
+        '<div class="ts-rb-row" data-rb="anomalyRequiresBufferingCausallyUnerasable"><b>HeadBasedSampler</b> 真跑 errorBurst → errorLost=' +
+          esc(String(head ? head.metrics.errorTracesLost : 0)) + ' · peakBuf=0（零缓冲头部决策必盲丢 error；唯一 rate=1.0 全留是「放弃采样」退化态，正常 trace 也全留，不构成选择性保异常）</div>',
+        '<div class="ts-rb-row" data-rb="headBlindnessCausallyUnerasable"><b>结构判据</b> decisionInvariant=' +
+          (verdict && verdict.decisionInvariant ? 'true' : 'false') +
+          '（翻转 hasError 标签的平行流真跑两遍、逐 id 决策恒同 ⇒ 决策只吃哈希不读 error，零统计噪声、与样本量无关；maxBlindnessGap 仅抽样偏差展示不当锁判据）</div>',
+        '<div class="ts-rb-row" data-rb="adaptiveLagCannotGuaranteeAnomalyCausallyUnerasable"><b>AdaptiveSampler</b> 真跑 errorBurst → rateChanges=' +
+          esc(String(adaptive ? adaptive.metrics.rateChanges : 0)) + ' · errorLost=' + esc(String(adaptive ? adaptive.metrics.errorTracesLost : 0)) +
+          '（完美反馈也只降丢失质量、maxRate 封顶救不到零；反馈基于已过窗口，突发当前窗口必丢 error trace）</div>',
+      ].join('') +
+        (sm ? '<div class="ts-rb-row" data-rb="holds">verifySamplingSoundness holds=' + (sm.holds ? 'true' : 'false') +
+          ' · baselineHolds=' + (sm.baselineHolds ? 'true' : 'false') +
+          ' · <span data-rb="nontrivial">nontrivial=' + (sm.nontrivial ? 'true' : 'false') + '</span>' +
+          ' · <span data-rb="falsifiable">falsifiable=' + (sm.falsifiable ? 'true' : 'false') + '</span>' +
+          ' · laneA{in=' + esc(String(sm.laneA && sm.laneA.baselineSpansIn)) + ' kept=' + esc(String(sm.laneA && sm.laneA.baselineSpansKept)) + '} laneB{errRet=' + esc(String(sm.laneB && sm.laneB.errorTracesRetained)) + '/' + esc(String(sm.laneB && sm.laneB.errorTracesTotal)) + '}</div>' +
+          '<div class="ts-rb-row" data-rb-tamper="forgedErrorSpan">篡改① 漏判哈希最大 error span ⇒ 该 trace 被哈希丢 ⇒ errorAllRetained 现算翻 false</div>' +
+          '<div class="ts-rb-row" data-rb-tamper="duplicateRelease">篡改② 真重复释放一条 kept trace ⇒ noDuplicateSpans 现算翻 false</div>' +
+          '<div class="ts-rb-row" data-rb-tamper="emptyTraceSet">篡改③ 空 traces ⇒ nontrivial 与 normalByRate 现算翻 false（绝不 0=0 假绿）</div>' : '')
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      var sm = crosscheck && crosscheck.soundness
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>真 <b>compareRemapping</b> 迁移率 一致性 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>' +
+          '<div>真 <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 片</div>' +
+          '<div>真 <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 命中 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
+          '<div>真 <b>createWal</b> lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>真 <b>createBus</b> trace.done 通知 ' + esc(fmt(ev.notices)) + ' 条 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>真 <b>createRedisCache</b> 聚合槽 set+get 命中 ' + esc(fmt(ev.redisBitmapHits)) + ' · entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+          '<div>真 <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+          '<div>真 <b>createTokenBucket</b> 回放允许 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>真 <b>createMinHeapDelayQueue</b> 出队 ' + esc(fmt(ev.heapFired)) + ' 条 · pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+          '<div>真 <b>createPackedCounters</b> Σ=' + esc(fmt(ev.counterSum)) + ' · falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>' +
+          '<div>真 <b>createFullJitterBackoff</b> jitterSpread=' + esc(fmt(ev.jitterSpread)) + '（64 样本全抖动）</div>' +
+          (sm ? '<div>真 <b>verifySamplingSoundness</b> holds=<b>' + (sm.holds ? 'true' : 'false') + '</b> baselineHolds=<b>' + (sm.baselineHolds ? 'true' : 'false') + '</b> nontrivial=<b>' + (sm.nontrivial ? 'true' : 'false') + '</b> · laneA{in=' + esc(String(sm.laneA && sm.laneA.baselineSpansIn)) + '} laneB{errRet=' + esc(String(sm.laneB && sm.laneB.errorTracesRetained)) + '/' + esc(String(sm.laneB && sm.laneB.errorTracesTotal)) + '} · 3 篡改真喂回同一内核现算翻 false</div>' : '')
+      } else {
+        cxBox.innerHTML = '<div class="nodata">真件交叉印证缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var allHold = v.causalLocksAllHold === true
+    var collapsed = v.riggedConvergenceCollapsed === true
+    var chips = [
+      '<span class="chip" data-verdict="anomalyRequiresBufferingCausallyUnerasable"><b>锁①</b> 保异常必缓冲整条 ⇔ 非低开销 ' + (v.anomalyRequiresBufferingCausallyUnerasable ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="headBlindnessCausallyUnerasable"><b>锁②</b> 头部盲：翻转 error 标签逐 id 决策恒同 ' + (v.headBlindnessCausallyUnerasable ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="adaptiveLagCannotGuaranteeAnomalyCausallyUnerasable"><b>锁③</b> 自适应滞后：完美反馈救不到零丢失 ' + (v.adaptiveLagCannotGuaranteeAnomalyCausallyUnerasable ? '✓' : '✗') + '</span>',
+      '<span class="chip ' + (allHold ? 'jade-t' : 'muted-t') + '" data-verdict="causalLocksAllHold">' + (allHold ? '✓ 三因果锁全钉死（同一含 error raw 流真跑现算、任何 rigged 开关都救不了）' : '因果锁未全Hold') + '</span>',
+      '<span class="chip" data-verdict="decisionInvariant"><b>结构判据</b> 翻转标签逐 id 决策恒同 ' + (v.decisionInvariant ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="tailGuaranteesAnomaly"><b>Tail</b> 确定性 100% 留 error ' + (v.tailGuaranteesAnomaly ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="adaptiveTracksLoad"><b>Adaptive</b> 突发真调率 ' + (v.adaptiveTracksLoad ? '✓' : '✗') + '</span>',
+      '<span class="chip ' + (collapsed ? 'jade-t' : 'muted-t') + '" data-verdict="riggedConvergenceCollapsed"><b>诚实标定</b> rigged ⇒ Head≡Tail=110 区分度塌缩 ' + (collapsed ? '✓' : '·') + '</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' + (noWin ? '✓ 三向量互异（100/010/101）、无一 111、不封赢家' : '默认态塌陷') + '</span>',
+    ]
+    var probes = $('#ts-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维序固定 [lowOverhead / anomalyCapture / loadAdaptive]，三位全部真跑现算、不查协议名表：' +
+      'HeadBased=100（root 即 O(1) 哈希决策、零 span 缓冲 ⇒ lowOverhead✓；率固定不反馈 ⇒ loadAdaptive✗；决策早于 error 发生故盲丢异常 trace ⇒ anomalyCapture✗）；' +
+      'TailBased=010（缓冲整条 trace 至结束、按 error/延迟整体决策、确定性 100% 留 error ⇒ anomalyCapture✓；缓冲吃开销 ⇒ lowOverhead✗；率固定 ⇒ loadAdaptive✗）；' +
+      'Adaptive=101（仍头部 O(1) 决策、零缓冲 ⇒ lowOverhead✓；滑动窗口反馈环动态调率 ⇒ loadAdaptive✓；maxRate=0.75 封顶仍补不上单条 anomaly 维 ⇒ anomalyCapture✗）。' +
+      '硬结构：anomalyCapture ⇔ 缓冲整条 ⇔ 非 lowOverhead——要确定性留异常必须看完 trace，必牺牲低开销，与 Spring Batch 的 chk 权衡同构，零写死。' +
+      '为什么不用 traceCompleteness 维：trace-level 采样三策略在「被保留 trace 的 span 完整性」上天然全真（都是整条决策、无半采断链），该维恒真会退化无区分度，故按可真跑现算的区分度改本维序（同 KI-531 改维序的诚实修正）。' +
+      'verifySamplingSoundness 双路自证：路 A 干净流真跑验缓冲守恒（spansIn=spansKept+spansDropped）+ span 无重复，路 B 含 error 流用「ground-truth error 全留 / span 无重复 / span 完整无断链 / 正常 trace 按率筛」四观测量判定；三路篡改真喂回同一内核现算翻 false，带 baselineHolds 先真绿。' +
+      '三条因果结构锁在同一含 error raw 流真跑钉死：异常需缓冲 / 头部盲（翻转标签逐 id 决策恒同，零统计噪声）/ 自适应滞后。' +
+      'rigged 三开关 oracleHead（头部预知，只给 HeadBased 补 anomaly）/ infiniteBuffer（缓冲免费，只给 TailBased 补 lowOverhead）/ perfectFeedback（负载预测完美，只降 Adaptive errorBurst 丢失质量、maxRate 封顶仍补不上 anomaly）是分策略反事实探针，全开 ⇒ Head≡Tail=110 区分度诚实塌缩（riggedConvergenceCollapsed=true，教学结论：给头部采样单条预知 ⇔ 给尾部采样免费缓冲，二者殊途同归到「既省又全」却仍拿不到负载自适应），noStrategyWinsAll 仍真绝不硬造 111，三因果锁仍 allHold。'
   }
 
   /* ================= KI-527 布隆/布谷鸟/计数布隆三过滤器 · 第二十一维（blf 族） ================= */

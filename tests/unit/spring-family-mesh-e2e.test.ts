@@ -1042,4 +1042,57 @@ describe('spring-family-mesh-e2e', () => {
     expect(bare.crdtSnapshot).toBe(null)
     expect(bare.hyperLogLogSnapshot).toBe(null)
   })
+
+  it("e2e KI-533：traceSampling=true ⇒ 主链透传、traceSamplingSnapshot 真跑，向量 100/010/101 / 双路自证 / 三路篡改真喂回 / 三因果锁 / rigged 诚实塌缩", async () => {
+    const e = runMeshE2E({ traceSampling: true, tsNow: () => 5330 })
+    const r = await e.run()
+    expect(r.started?.registered).toBe(true)
+    expect(r.callRes?.ok).toBe(true)
+    const d = r.traceSamplingSnapshot
+    expect(d).not.toBe(null)
+    expect(d!.builtAt).toBe(5330)
+    expect(d!.config.scenarios.length).toBe(6)
+    expect(d!.rows.length).toBe(3)
+    expect(d!.vectors).toEqual({ HeadBasedSampler: '100', TailBasedSampler: '010', AdaptiveSampler: '101' })
+    expect(d!.rigged).toBe(false)
+    expect(d!.noUniversalWinner).toBe(true)
+    expect(d!.trilemmaDistinguishes).toBe(true)
+    expect(d!.verdict.noStrategyWinsAll).toBe(true)
+    expect(d!.verdict.vectorFromTrilemma).toBe(true)
+    // 三因果结构锁（含翻转标签逐 id 决策恒同结构判据）
+    expect(d!.causalLocks.causalLocksAllHold).toBe(true)
+    expect(d!.causalLocks.anomalyRequiresBufferingCausallyUnerasable).toBe(true)
+    expect(d!.causalLocks.headBlindnessCausallyUnerasable).toBe(true)
+    expect(d!.causalLocks.adaptiveLagCannotGuaranteeAnomalyCausallyUnerasable).toBe(true)
+    expect(d!.causalLocks.decisionInvariant).toBe(true)
+    // 逐格三布尔由观测量现算（供前端矩阵状态字与 mesh ladder）
+    for (const row of d!.rows) {
+      expect(d!.vectors[row.protocol]).toBe(`${Number(row.trilemma.lowOverhead)}${Number(row.trilemma.anomalyCapture)}${Number(row.trilemma.loadAdaptive)}`)
+      for (const c of row.scenarios) {
+        expect(c.lowOverhead).toBe(c.peakBufferedSpans === 0)
+        expect(c.loadAdaptive).toBe(c.rateChanges > 0)
+      }
+    }
+    // verifySamplingSoundness 双路自证 + 三路篡改现算翻 false（带 baselineHolds）
+    expect(d!.crosscheck.soundness.holds).toBe(true)
+    expect(d!.crosscheck.soundness.baselineHolds).toBe(true)
+    expect(d!.crosscheck.soundness.falsifiable).toBe(true)
+    expect(d!.crosscheck.soundness.tamper.forgedErrorSpan.holds).toBe(false)
+    expect(d!.crosscheck.soundness.tamper.duplicateRelease.holds).toBe(false)
+    expect(d!.crosscheck.soundness.tamper.emptyTraceSet.holds).toBe(false)
+    expect(Object.keys(d!.crosscheck.evidence).length).toBe(21)
+    // rigged：三开关分策略正交反事实 ⇒ Head≡Tail=110 区分度诚实塌缩、noStrategyWinsAll 仍真、三锁钉死、主教义不破
+    const rig = await runMeshE2E({ traceSampling: { rigged: true } }).run()
+    expect(rig.traceSamplingSnapshot!.vectors).toEqual({ HeadBasedSampler: '110', TailBasedSampler: '110', AdaptiveSampler: '101' })
+    expect(rig.traceSamplingSnapshot!.trilemmaDistinguishes).toBe(false)
+    expect(rig.traceSamplingSnapshot!.verdict.riggedConvergenceCollapsed).toBe(true)
+    expect(rig.traceSamplingSnapshot!.verdict.noStrategyWinsAll).toBe(true)
+    expect(rig.traceSamplingSnapshot!.verdict.headBlindLossOnErrorBurst).toBe(true)
+    expect(rig.traceSamplingSnapshot!.causalLocks.causalLocksAllHold).toBe(true)
+    // 主链非破坏：未配 traceSampling 时为 null、不连坐 springBatch/crdt 两维
+    const bare = await runMeshE2E().run()
+    expect(bare.traceSamplingSnapshot).toBe(null)
+    expect(bare.springBatchSnapshot).toBe(null)
+    expect(bare.crdtSnapshot).toBe(null)
+  })
 })

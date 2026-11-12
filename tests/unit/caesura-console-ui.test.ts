@@ -1993,4 +1993,82 @@ describe('KI-529 · streamWindow 流式窗口面板：三策略 × 六场景 + �
     expect(dom.els['sb-trilemma'].innerHTML).toContain('暂缺')
     expect(dom.els['sb-matrix-note'].textContent).toContain('systems.springBatch 缺失')
   })
+
+  // ============ KI-533 前端第二十七维 · TS 族（4 腿）============
+  it('第二十七维真快照渲染：ts 矩阵 18 cell + 三难向量 100/010/101 + 三策略状态字（前端第二十七维）', async () => {
+    const dom = await runApp(realSw)
+    const matrix = dom.els['ts-matrix'].innerHTML
+    expect(matrix).toContain('ts-mat-head')
+    for (const p of ['HeadBasedSampler', 'TailBasedSampler', 'AdaptiveSampler']) {
+      expect(matrix).toContain('data-strategy="' + p + '"')
+    }
+    for (const sc of ['steadyLoad', 'errorBurst', 'spikeLoad', 'bufferPressure', 'coldStart', 'cleanRerun']) {
+      expect(matrix).toContain('data-s="' + sc + '"')
+    }
+    // 18 cell 真落（3 策略 × 6 场景）
+    expect((matrix.match(/class="ts-cell /g) || []).length).toBe(18)
+    const tri = dom.els['ts-trilemma'].innerHTML
+    expect(tri).toContain('data-vec="100"')
+    expect(tri).toContain('data-vec="010"')
+    expect(tri).toContain('data-vec="101"')
+    // 状态字：盲/胀/滞/✓
+    const states = [...matrix.matchAll(/data-state="([^"]+)"/g)].map((m) => m[1])
+    expect(states.length).toBeGreaterThanOrEqual(18)
+    expect(dom.els['ts-ladder'].innerHTML).toContain('ts-bar')
+  })
+
+  it('第二十七维可证伪 DOM：verifySamplingSoundness 双路 + 三路篡改 data-rb-tamper + 三因果锁 chips + 11 真件落 DOM', async () => {
+    const dom = await runApp(realSw)
+    const probes = dom.els['ts-probes'].innerHTML
+    for (const lock of ['anomalyRequiresBufferingCausallyUnerasable', 'headBlindnessCausallyUnerasable',
+      'adaptiveLagCannotGuaranteeAnomalyCausallyUnerasable', 'causalLocksAllHold', 'decisionInvariant',
+      'riggedConvergenceCollapsed', 'noUniversalWinner']) {
+      expect(probes, '因果锁/判词 chip ' + lock).toContain('data-verdict="' + lock + '"')
+    }
+    const verif = dom.els['ts-verif'].innerHTML
+    for (const rb of ['anomalyRequiresBufferingCausallyUnerasable', 'headBlindnessCausallyUnerasable',
+      'adaptiveLagCannotGuaranteeAnomalyCausallyUnerasable', 'holds', 'nontrivial', 'falsifiable']) {
+      expect(verif, '可证伪栏 ' + rb).toContain('data-rb="' + rb + '"')
+    }
+    for (const t of ['forgedErrorSpan', 'duplicateRelease', 'emptyTraceSet']) {
+      expect(verif, '篡改 DOM ' + t).toContain('data-rb-tamper="' + t + '"')
+    }
+    const cx = dom.els['ts-crosscheck'].innerHTML
+    for (const api of ['compareRemapping', 'createShardRouter', 'createHashRing', 'createWal', 'createBus',
+      'createRedisCache', 'createObjectPool', 'createTokenBucket', 'createMinHeapDelayQueue',
+      'createPackedCounters', 'createFullJitterBackoff', 'verifySamplingSoundness']) {
+      expect(cx, '真件 ' + api + ' 必须落 DOM').toContain(api)
+    }
+    expect(cx).toContain('jitterSpread')
+    // 诚实口径：写明 rigged 诚实塌缩与 traceCompleteness 维退化说明
+    expect(dom.els['ts-trilemma-note'].textContent).toContain('riggedConvergenceCollapsed')
+    expect(dom.els['ts-trilemma-note'].textContent).toContain('traceCompleteness')
+  })
+
+  it('第二十七维 markup/CSS 契约 + systems.traceSampling 缺失真实降级（前端第二十七维）', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-ts')
+    expect(html).toContain('id="ts-matrix"')
+    expect(html).toContain('id="ts-verif"')
+    expect(html).toContain('HeadBased=100 / TailBased=010 / Adaptive=101')
+    expect(css).toContain('.ts-cell.dead')       // 盲 wine
+    expect(css).toContain('.ts-cell.fast')       // 滞 gold
+    expect(css).toContain('.ts-cell.heavy')      // 胀 gold-dim
+    expect(css).toContain('.ts-cell.ok')         // ✓ jade
+    expect(css).toContain('.ts-flag.yes')
+    expect(css).toContain('.ts-bar > i')
+    expect(css).toContain('.ts-verif')
+    expect(css).toContain('.row-ts')
+    expect(css).toContain('@media')
+  })
+
+  it('systems.traceSampling 缺失：ts-matrix/trilemma 真实降级、绝不伪造第二套数', async () => {
+    const noTs = JSON.parse(JSON.stringify(realSw as any))
+    noTs.systems.traceSampling = null
+    const dom = await runApp(noTs)
+    expect(dom.els['ts-matrix'].innerHTML).toContain('暂缺')
+    expect(dom.els['ts-trilemma'].innerHTML).toContain('暂缺')
+    expect(dom.els['ts-matrix-note'].textContent).toContain('systems.traceSampling 缺失')
+  })
 })

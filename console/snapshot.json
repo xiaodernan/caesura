@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794441927354,
+  "generatedAt": 1794444879295,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1365,12 +1365,12 @@
           "keys": 1,
           "versions": 2,
           "commitLogSize": 1,
-          "now": 1794441927356
+          "now": 1794444879297
         },
         "final": {
           "A": {
             "value": 101,
-            "commitTs": 1794441927356,
+            "commitTs": 1794444879297,
             "tombstone": false
           }
         }
@@ -3646,7 +3646,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794441927354,
+                "lastTimestamp": 1794444879295,
                 "workerId": 1
               },
               "fault": {
@@ -3742,7 +3742,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794441927354,
+                "lastTimestamp": 1794444879295,
                 "workerId": 1
               },
               "fault": {
@@ -3774,7 +3774,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794441927355,
+                "lastTimestamp": 1794444879296,
                 "workerId": 1
               },
               "fault": {
@@ -3806,7 +3806,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794441927354,
+                "lastTimestamp": 1794444879295,
                 "workerId": 1
               },
               "fault": {
@@ -4522,7 +4522,7 @@
         "capacity": 8,
         "perShardCap": 2
       },
-      "builtAt": 1794441927354
+      "builtAt": 1794444879295
     },
     "configConsistency": {
       "config": {
@@ -5020,7 +5020,7 @@
         "burstCount": 12,
         "windowMs": 10000
       },
-      "builtAt": 1794441927354
+      "builtAt": 1794444879295
     },
     "cacheCoherency": {
       "config": {
@@ -5549,7 +5549,7 @@
         "crashAtWrite": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794441927354
+      "builtAt": 1794444879295
     },
     "messageDelivery": {
       "config": {
@@ -6038,10 +6038,10 @@
         "crashAfterSendAt": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794441927354
+      "builtAt": 1794444879295
     },
     "delayQueue": {
-      "builtAt": 1794441927354,
+      "builtAt": 1794444879295,
       "config": {
         "seed": 518,
         "tasks": 12,
@@ -6375,7 +6375,7 @@
       }
     },
     "retryDlq": {
-      "builtAt": 1794441927354,
+      "builtAt": 1794444879295,
       "config": {
         "seed": 520,
         "messages": 16,
@@ -6793,7 +6793,7 @@
       }
     },
     "consumerGroup": {
-      "builtAt": 1794441927354,
+      "builtAt": 1794444879295,
       "config": {
         "seed": 523,
         "consumers": 3,
@@ -7299,7 +7299,7 @@
       }
     },
     "backpressure": {
-      "builtAt": 1794441927354,
+      "builtAt": 1794444879295,
       "config": {
         "steps": 48,
         "mu": 2,
@@ -8344,7 +8344,7 @@
       }
     },
     "logCompaction": {
-      "builtAt": 1794441927354,
+      "builtAt": 1794444879295,
       "config": {
         "seed": 526,
         "ops": 24,
@@ -9405,7 +9405,7 @@
       }
     },
     "bloomFilter": {
-      "builtAt": 1794441927354,
+      "builtAt": 1794444879295,
       "config": {
         "seed": 527,
         "capacity": 1024,
@@ -10104,7 +10104,7 @@
       }
     },
     "cacheReplacement": {
-      "builtAt": 1794441927354,
+      "builtAt": 1794444879295,
       "config": {
         "seed": 528,
         "capacity": 16,
@@ -10747,7 +10747,7 @@
       }
     },
     "streamWindow": {
-      "builtAt": 1794441927354,
+      "builtAt": 1794444879295,
       "config": {
         "seed": 529,
         "windowSize": 100,
@@ -12806,7 +12806,7 @@
       }
     },
     "hyperLogLog": {
-      "builtAt": 1794441927354,
+      "builtAt": 1794444879295,
       "config": {
         "seed": 530,
         "cardinality": 4096,
@@ -29726,7 +29726,7 @@
       }
     },
     "crdt": {
-      "builtAt": 1794441927354,
+      "builtAt": 1794444879295,
       "config": {
         "seed": 531,
         "replicaCount": 3,
@@ -30182,7 +30182,7 @@
       }
     },
     "springBatch": {
-      "builtAt": 1794441927354,
+      "builtAt": 1794444879295,
       "config": {
         "seed": 532,
         "items": 96,
@@ -30620,6 +30620,708 @@
       },
       "rigged": false
     },
-    "builtAt": 1794441927354
+    "traceSampling": {
+      "builtAt": 1794444879295,
+      "config": {
+        "seed": 533,
+        "items": 64,
+        "rate": 0.5,
+        "minRate": 0.25,
+        "maxRate": 0.75,
+        "windowSize": 16,
+        "scenarios": [
+          "steadyLoad",
+          "errorBurst",
+          "spikeLoad",
+          "bufferPressure",
+          "coldStart",
+          "cleanRerun"
+        ],
+        "rigged": false,
+        "oracleHead": false,
+        "infiniteBuffer": false,
+        "perfectFeedback": false
+      },
+      "rows": [
+        {
+          "protocol": "HeadBasedSampler",
+          "scenarios": [
+            {
+              "id": "steadyLoad",
+              "rate": 0.5,
+              "rateChanges": 0,
+              "peakBufferedSpans": 0,
+              "errorTracesTotal": 4,
+              "errorTracesRetained": 4,
+              "normalTracesTotal": 60,
+              "normalTracesRetained": 34,
+              "spansIn": 288,
+              "spansKept": 169,
+              "spansDropped": 119,
+              "tracesTotal": 64,
+              "tracesKept": 38,
+              "lowOverhead": true,
+              "anomalyCapture": true,
+              "loadAdaptive": false,
+              "errorRetainedRate": 1,
+              "normalRetainedRate": 0.5667,
+              "fault": "happy-path",
+              "inAnomalyExam": true,
+              "inOverheadExam": false,
+              "inAdaptiveExam": false
+            },
+            {
+              "id": "errorBurst",
+              "rate": 0.5,
+              "rateChanges": 0,
+              "peakBufferedSpans": 0,
+              "errorTracesTotal": 19,
+              "errorTracesRetained": 10,
+              "normalTracesTotal": 45,
+              "normalTracesRetained": 28,
+              "spansIn": 288,
+              "spansKept": 169,
+              "spansDropped": 119,
+              "tracesTotal": 64,
+              "tracesKept": 38,
+              "lowOverhead": true,
+              "anomalyCapture": false,
+              "loadAdaptive": false,
+              "errorRetainedRate": 0.5263,
+              "normalRetainedRate": 0.6222,
+              "fault": "error-burst",
+              "inAnomalyExam": true,
+              "inOverheadExam": false,
+              "inAdaptiveExam": true
+            },
+            {
+              "id": "spikeLoad",
+              "rate": 0.5,
+              "rateChanges": 0,
+              "peakBufferedSpans": 0,
+              "errorTracesTotal": 8,
+              "errorTracesRetained": 4,
+              "normalTracesTotal": 184,
+              "normalTracesRetained": 93,
+              "spansIn": 864,
+              "spansKept": 437,
+              "spansDropped": 427,
+              "tracesTotal": 192,
+              "tracesKept": 97,
+              "lowOverhead": true,
+              "anomalyCapture": false,
+              "loadAdaptive": false,
+              "errorRetainedRate": 0.5,
+              "normalRetainedRate": 0.5054,
+              "fault": "load-spike",
+              "inAnomalyExam": false,
+              "inOverheadExam": true,
+              "inAdaptiveExam": true
+            },
+            {
+              "id": "bufferPressure",
+              "rate": 0.5,
+              "rateChanges": 0,
+              "peakBufferedSpans": 0,
+              "errorTracesTotal": 3,
+              "errorTracesRetained": 3,
+              "normalTracesTotal": 61,
+              "normalTracesRetained": 35,
+              "spansIn": 1148,
+              "spansKept": 692,
+              "spansDropped": 456,
+              "tracesTotal": 64,
+              "tracesKept": 38,
+              "lowOverhead": true,
+              "anomalyCapture": true,
+              "loadAdaptive": false,
+              "errorRetainedRate": 1,
+              "normalRetainedRate": 0.5738,
+              "fault": "buffer-pressure",
+              "inAnomalyExam": true,
+              "inOverheadExam": true,
+              "inAdaptiveExam": true
+            },
+            {
+              "id": "coldStart",
+              "rate": 0.5,
+              "rateChanges": 0,
+              "peakBufferedSpans": 0,
+              "errorTracesTotal": 19,
+              "errorTracesRetained": 13,
+              "normalTracesTotal": 45,
+              "normalTracesRetained": 25,
+              "spansIn": 288,
+              "spansKept": 169,
+              "spansDropped": 119,
+              "tracesTotal": 64,
+              "tracesKept": 38,
+              "lowOverhead": true,
+              "anomalyCapture": false,
+              "loadAdaptive": false,
+              "errorRetainedRate": 0.6842,
+              "normalRetainedRate": 0.5556,
+              "fault": "cold-start",
+              "inAnomalyExam": true,
+              "inOverheadExam": false,
+              "inAdaptiveExam": true
+            },
+            {
+              "id": "cleanRerun",
+              "rate": 0.5,
+              "rateChanges": 0,
+              "peakBufferedSpans": 0,
+              "errorTracesTotal": 4,
+              "errorTracesRetained": 4,
+              "normalTracesTotal": 60,
+              "normalTracesRetained": 34,
+              "spansIn": 288,
+              "spansKept": 169,
+              "spansDropped": 119,
+              "tracesTotal": 64,
+              "tracesKept": 38,
+              "lowOverhead": true,
+              "anomalyCapture": true,
+              "loadAdaptive": false,
+              "errorRetainedRate": 1,
+              "normalRetainedRate": 0.5667,
+              "fault": "rerun-idempotent",
+              "inAnomalyExam": false,
+              "inOverheadExam": false,
+              "inAdaptiveExam": false
+            }
+          ],
+          "trilemma": {
+            "lowOverhead": true,
+            "anomalyCapture": false,
+            "loadAdaptive": false
+          },
+          "metrics": {
+            "peakBufferedSpans": 0,
+            "errorTracesTotal": 57,
+            "errorTracesRetained": 38,
+            "errorTracesLost": 19,
+            "spansIn": 3164,
+            "spansKept": 1805,
+            "rateChanges": 0
+          }
+        },
+        {
+          "protocol": "TailBasedSampler",
+          "scenarios": [
+            {
+              "id": "steadyLoad",
+              "rate": 0.5,
+              "rateChanges": 0,
+              "peakBufferedSpans": 6,
+              "errorTracesTotal": 4,
+              "errorTracesRetained": 4,
+              "normalTracesTotal": 60,
+              "normalTracesRetained": 34,
+              "spansIn": 288,
+              "spansKept": 169,
+              "spansDropped": 119,
+              "tracesTotal": 64,
+              "tracesKept": 38,
+              "lowOverhead": false,
+              "anomalyCapture": true,
+              "loadAdaptive": false,
+              "errorRetainedRate": 1,
+              "normalRetainedRate": 0.5667,
+              "fault": "happy-path",
+              "inAnomalyExam": true,
+              "inOverheadExam": false,
+              "inAdaptiveExam": false
+            },
+            {
+              "id": "errorBurst",
+              "rate": 0.5,
+              "rateChanges": 0,
+              "peakBufferedSpans": 6,
+              "errorTracesTotal": 19,
+              "errorTracesRetained": 19,
+              "normalTracesTotal": 45,
+              "normalTracesRetained": 28,
+              "spansIn": 288,
+              "spansKept": 208,
+              "spansDropped": 80,
+              "tracesTotal": 64,
+              "tracesKept": 47,
+              "lowOverhead": false,
+              "anomalyCapture": true,
+              "loadAdaptive": false,
+              "errorRetainedRate": 1,
+              "normalRetainedRate": 0.6222,
+              "fault": "error-burst",
+              "inAnomalyExam": true,
+              "inOverheadExam": false,
+              "inAdaptiveExam": true
+            },
+            {
+              "id": "spikeLoad",
+              "rate": 0.5,
+              "rateChanges": 0,
+              "peakBufferedSpans": 6,
+              "errorTracesTotal": 8,
+              "errorTracesRetained": 8,
+              "normalTracesTotal": 184,
+              "normalTracesRetained": 93,
+              "spansIn": 864,
+              "spansKept": 455,
+              "spansDropped": 409,
+              "tracesTotal": 192,
+              "tracesKept": 101,
+              "lowOverhead": false,
+              "anomalyCapture": true,
+              "loadAdaptive": false,
+              "errorRetainedRate": 1,
+              "normalRetainedRate": 0.5054,
+              "fault": "load-spike",
+              "inAnomalyExam": false,
+              "inOverheadExam": true,
+              "inAdaptiveExam": true
+            },
+            {
+              "id": "bufferPressure",
+              "rate": 0.5,
+              "rateChanges": 0,
+              "peakBufferedSpans": 24,
+              "errorTracesTotal": 3,
+              "errorTracesRetained": 3,
+              "normalTracesTotal": 61,
+              "normalTracesRetained": 35,
+              "spansIn": 1148,
+              "spansKept": 692,
+              "spansDropped": 456,
+              "tracesTotal": 64,
+              "tracesKept": 38,
+              "lowOverhead": false,
+              "anomalyCapture": true,
+              "loadAdaptive": false,
+              "errorRetainedRate": 1,
+              "normalRetainedRate": 0.5738,
+              "fault": "buffer-pressure",
+              "inAnomalyExam": true,
+              "inOverheadExam": true,
+              "inAdaptiveExam": true
+            },
+            {
+              "id": "coldStart",
+              "rate": 0.5,
+              "rateChanges": 0,
+              "peakBufferedSpans": 6,
+              "errorTracesTotal": 19,
+              "errorTracesRetained": 19,
+              "normalTracesTotal": 45,
+              "normalTracesRetained": 25,
+              "spansIn": 288,
+              "spansKept": 196,
+              "spansDropped": 92,
+              "tracesTotal": 64,
+              "tracesKept": 44,
+              "lowOverhead": false,
+              "anomalyCapture": true,
+              "loadAdaptive": false,
+              "errorRetainedRate": 1,
+              "normalRetainedRate": 0.5556,
+              "fault": "cold-start",
+              "inAnomalyExam": true,
+              "inOverheadExam": false,
+              "inAdaptiveExam": true
+            },
+            {
+              "id": "cleanRerun",
+              "rate": 0.5,
+              "rateChanges": 0,
+              "peakBufferedSpans": 6,
+              "errorTracesTotal": 4,
+              "errorTracesRetained": 4,
+              "normalTracesTotal": 60,
+              "normalTracesRetained": 34,
+              "spansIn": 288,
+              "spansKept": 169,
+              "spansDropped": 119,
+              "tracesTotal": 64,
+              "tracesKept": 38,
+              "lowOverhead": false,
+              "anomalyCapture": true,
+              "loadAdaptive": false,
+              "errorRetainedRate": 1,
+              "normalRetainedRate": 0.5667,
+              "fault": "rerun-idempotent",
+              "inAnomalyExam": false,
+              "inOverheadExam": false,
+              "inAdaptiveExam": false
+            }
+          ],
+          "trilemma": {
+            "lowOverhead": false,
+            "anomalyCapture": true,
+            "loadAdaptive": false
+          },
+          "metrics": {
+            "peakBufferedSpans": 24,
+            "errorTracesTotal": 57,
+            "errorTracesRetained": 57,
+            "errorTracesLost": 0,
+            "spansIn": 3164,
+            "spansKept": 1889,
+            "rateChanges": 0
+          }
+        },
+        {
+          "protocol": "AdaptiveSampler",
+          "scenarios": [
+            {
+              "id": "steadyLoad",
+              "rate": 0.5,
+              "rateChanges": 0,
+              "peakBufferedSpans": 0,
+              "errorTracesTotal": 4,
+              "errorTracesRetained": 4,
+              "normalTracesTotal": 60,
+              "normalTracesRetained": 34,
+              "spansIn": 288,
+              "spansKept": 169,
+              "spansDropped": 119,
+              "tracesTotal": 64,
+              "tracesKept": 38,
+              "lowOverhead": true,
+              "anomalyCapture": true,
+              "loadAdaptive": false,
+              "errorRetainedRate": 1,
+              "normalRetainedRate": 0.5667,
+              "fault": "happy-path",
+              "inAnomalyExam": true,
+              "inOverheadExam": false,
+              "inAdaptiveExam": false
+            },
+            {
+              "id": "errorBurst",
+              "rate": 0.5,
+              "rateChanges": 2,
+              "peakBufferedSpans": 0,
+              "errorTracesTotal": 19,
+              "errorTracesRetained": 10,
+              "normalTracesTotal": 45,
+              "normalTracesRetained": 28,
+              "spansIn": 288,
+              "spansKept": 169,
+              "spansDropped": 119,
+              "tracesTotal": 64,
+              "tracesKept": 38,
+              "lowOverhead": true,
+              "anomalyCapture": false,
+              "loadAdaptive": true,
+              "errorRetainedRate": 0.5263,
+              "normalRetainedRate": 0.6222,
+              "fault": "error-burst",
+              "inAnomalyExam": true,
+              "inOverheadExam": false,
+              "inAdaptiveExam": true
+            },
+            {
+              "id": "spikeLoad",
+              "rate": 0.5,
+              "rateChanges": 11,
+              "peakBufferedSpans": 0,
+              "errorTracesTotal": 8,
+              "errorTracesRetained": 4,
+              "normalTracesTotal": 184,
+              "normalTracesRetained": 93,
+              "spansIn": 864,
+              "spansKept": 437,
+              "spansDropped": 427,
+              "tracesTotal": 192,
+              "tracesKept": 97,
+              "lowOverhead": true,
+              "anomalyCapture": false,
+              "loadAdaptive": true,
+              "errorRetainedRate": 0.5,
+              "normalRetainedRate": 0.5054,
+              "fault": "load-spike",
+              "inAnomalyExam": false,
+              "inOverheadExam": true,
+              "inAdaptiveExam": true
+            },
+            {
+              "id": "bufferPressure",
+              "rate": 0.5,
+              "rateChanges": 3,
+              "peakBufferedSpans": 0,
+              "errorTracesTotal": 3,
+              "errorTracesRetained": 3,
+              "normalTracesTotal": 61,
+              "normalTracesRetained": 35,
+              "spansIn": 1148,
+              "spansKept": 692,
+              "spansDropped": 456,
+              "tracesTotal": 64,
+              "tracesKept": 38,
+              "lowOverhead": true,
+              "anomalyCapture": true,
+              "loadAdaptive": true,
+              "errorRetainedRate": 1,
+              "normalRetainedRate": 0.5738,
+              "fault": "buffer-pressure",
+              "inAnomalyExam": true,
+              "inOverheadExam": true,
+              "inAdaptiveExam": true
+            },
+            {
+              "id": "coldStart",
+              "rate": 0.5,
+              "rateChanges": 1,
+              "peakBufferedSpans": 0,
+              "errorTracesTotal": 19,
+              "errorTracesRetained": 13,
+              "normalTracesTotal": 45,
+              "normalTracesRetained": 25,
+              "spansIn": 288,
+              "spansKept": 169,
+              "spansDropped": 119,
+              "tracesTotal": 64,
+              "tracesKept": 38,
+              "lowOverhead": true,
+              "anomalyCapture": false,
+              "loadAdaptive": true,
+              "errorRetainedRate": 0.6842,
+              "normalRetainedRate": 0.5556,
+              "fault": "cold-start",
+              "inAnomalyExam": true,
+              "inOverheadExam": false,
+              "inAdaptiveExam": true
+            },
+            {
+              "id": "cleanRerun",
+              "rate": 0.5,
+              "rateChanges": 0,
+              "peakBufferedSpans": 0,
+              "errorTracesTotal": 4,
+              "errorTracesRetained": 4,
+              "normalTracesTotal": 60,
+              "normalTracesRetained": 34,
+              "spansIn": 288,
+              "spansKept": 169,
+              "spansDropped": 119,
+              "tracesTotal": 64,
+              "tracesKept": 38,
+              "lowOverhead": true,
+              "anomalyCapture": true,
+              "loadAdaptive": false,
+              "errorRetainedRate": 1,
+              "normalRetainedRate": 0.5667,
+              "fault": "rerun-idempotent",
+              "inAnomalyExam": false,
+              "inOverheadExam": false,
+              "inAdaptiveExam": false
+            }
+          ],
+          "trilemma": {
+            "lowOverhead": true,
+            "anomalyCapture": false,
+            "loadAdaptive": true
+          },
+          "metrics": {
+            "peakBufferedSpans": 0,
+            "errorTracesTotal": 57,
+            "errorTracesRetained": 38,
+            "errorTracesLost": 19,
+            "spansIn": 3164,
+            "spansKept": 1805,
+            "rateChanges": 17
+          }
+        }
+      ],
+      "vectors": {
+        "HeadBasedSampler": "100",
+        "TailBasedSampler": "010",
+        "AdaptiveSampler": "101"
+      },
+      "verdict": {
+        "vectors": {
+          "HeadBasedSampler": "100",
+          "TailBasedSampler": "010",
+          "AdaptiveSampler": "101"
+        },
+        "noUniversalWinner": true,
+        "trilemmaDistinguishes": true,
+        "noStrategyWinsAll": true,
+        "vectorFromTrilemma": true,
+        "headBlindLossOnErrorBurst": true,
+        "tailGuaranteesAnomaly": true,
+        "adaptiveTracksLoad": true,
+        "rigged_pkg": false,
+        "riggedConvergenceCollapsed": false,
+        "oracleHeadErasesHeadBlindness": true,
+        "infiniteBufferErasesOverhead": true,
+        "perfectFeedbackImprovesBurstOnly": true,
+        "anomalyRequiresBufferingCausallyUnerasable": true,
+        "headBlindnessCausallyUnerasable": true,
+        "adaptiveLagCannotGuaranteeAnomalyCausallyUnerasable": true,
+        "causalLocksAllHold": true,
+        "decisionInvariant": true,
+        "maxBlindnessGap": 0.1909,
+        "rateSweep": [
+          {
+            "rate": 0.1,
+            "errorRate": 0.1379,
+            "normalRate": 0.0597
+          },
+          {
+            "rate": 0.25,
+            "errorRate": 0.3103,
+            "normalRate": 0.1194
+          },
+          {
+            "rate": 0.5,
+            "errorRate": 0.5862,
+            "normalRate": 0.4925
+          },
+          {
+            "rate": 0.75,
+            "errorRate": 0.7586,
+            "normalRate": 0.7463
+          },
+          {
+            "rate": 0.9,
+            "errorRate": 0.9655,
+            "normalRate": 0.8358
+          }
+        ],
+        "adaptivePerfectLost": 7,
+        "adaptiveBaseLost": 19
+      },
+      "noUniversalWinner": true,
+      "trilemmaDistinguishes": true,
+      "causalLocks": {
+        "anomalyRequiresBufferingCausallyUnerasable": true,
+        "headBlindnessCausallyUnerasable": true,
+        "adaptiveLagCannotGuaranteeAnomalyCausallyUnerasable": true,
+        "causalLocksAllHold": true,
+        "decisionInvariant": true,
+        "maxBlindnessGap": 0.1909,
+        "rateSweep": [
+          {
+            "rate": 0.1,
+            "errorRate": 0.1379,
+            "normalRate": 0.0597
+          },
+          {
+            "rate": 0.25,
+            "errorRate": 0.3103,
+            "normalRate": 0.1194
+          },
+          {
+            "rate": 0.5,
+            "errorRate": 0.5862,
+            "normalRate": 0.4925
+          },
+          {
+            "rate": 0.75,
+            "errorRate": 0.7586,
+            "normalRate": 0.7463
+          },
+          {
+            "rate": 0.9,
+            "errorRate": 0.9655,
+            "normalRate": 0.8358
+          }
+        ],
+        "adaptivePerfectLost": 7,
+        "adaptiveBaseLost": 19
+      },
+      "crosscheck": {
+        "evidence": {
+          "routerMoved": 25,
+          "routerTracked": 80,
+          "ringNodes": 4,
+          "ringShardsUsed": 4,
+          "walLines": 80,
+          "walReplayed": 80,
+          "notices": 12,
+          "busListeners": 1,
+          "redisBitmapHits": 96,
+          "redisSlots": 96,
+          "poolCreated": 2,
+          "poolReused": 1,
+          "bucketAllowed": 3,
+          "bucketRejected": 4,
+          "heapFired": 3,
+          "heapPending": 0,
+          "counterSum": 2080,
+          "counterFalseSharing": 56,
+          "jitterSpread": 1.8604,
+          "remapConsistentRate": 0.24,
+          "remapModuloRate": 0.49
+        },
+        "soundness": {
+          "laneA": {
+            "baselineSpansIn": 288,
+            "baselineSpansKept": 169,
+            "baselineSpansDropped": 119,
+            "baselineUnique": true
+          },
+          "laneB": {
+            "completedTraces": 47,
+            "uniqueTraces": 47,
+            "errorTracesTotal": 19,
+            "errorTracesRetained": 19,
+            "normalByRate": true
+          },
+          "invariants": {
+            "laneAOk": true,
+            "errorAllRetained": true,
+            "noDuplicateSpans": true,
+            "spansIntact": true,
+            "normalByRate": true
+          },
+          "baselineHolds": true,
+          "holds": true,
+          "nontrivial": true,
+          "falsifiable": true,
+          "tamper": {
+            "forgedErrorSpan": {
+              "holds": false,
+              "invariants": {
+                "laneAOk": true,
+                "errorAllRetained": false,
+                "noDuplicateSpans": true,
+                "spansIntact": true,
+                "normalByRate": true
+              },
+              "reason": "漏判哈希最大的 error span ⇒ 该 trace 被哈希丢 ⇒ errorAllRetained 真翻 false"
+            },
+            "duplicateRelease": {
+              "holds": false,
+              "invariants": {
+                "laneAOk": false,
+                "errorAllRetained": true,
+                "noDuplicateSpans": false,
+                "spansIntact": true,
+                "normalByRate": true
+              },
+              "reason": "真重复释放一条 kept trace ⇒ noDuplicateSpans 真翻 false"
+            },
+            "emptyTraceSet": {
+              "holds": false,
+              "nontrivial": false,
+              "invariants": {
+                "laneAOk": true,
+                "errorAllRetained": false,
+                "noDuplicateSpans": true,
+                "spansIntact": true,
+                "normalByRate": false
+              },
+              "reason": "空 traces ⇒ nontrivial 与 normalByRate 真翻 false，绝不 0=0 假绿"
+            }
+          },
+          "truthErrors": 19,
+          "events": 64
+        }
+      },
+      "rigged": false
+    },
+    "builtAt": 1794444879295
   }
 }

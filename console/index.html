@@ -533,6 +533,23 @@
       <p class="note" id="sb-trilemma-note">…</p>
     </article>
   </section>
+  <!-- 第二十七维 · HeadBased / TailBased / Adaptive 可观测性分布式追踪采样（KI-533） -->
+  <section class="row row-ts">
+    <article class="panel panel-ts">
+      <div class="panel-head"><h2>第二十七维 · HeadBased/TailBased/Adaptive · 三策略 × 六场景</h2><span class="hint">盲=HeadBasedSampler（root 即 O(1) 哈希决策·整条 trace 全采或全丢·零 span 缓冲·率固定不反馈·决策早于 error 发生故盲丢异常 trace）/ 胀=TailBasedSampler（缓冲整条 trace 全部 span 至结束·按 error/延迟整体决策·确定性 100% 留 error 但缓冲吃开销）/ 滞=AdaptiveSampler（仍头部 O(1) 决策·滑动窗口负载/错误率反馈环动态调率·零缓冲·maxRate 封顶仍补不上单条 anomaly）。anomalyCapture ⇔ 缓冲整条 ⇔ 非 lowOverhead，与 Spring Batch 的 chk 权衡同构、真跑现算零查表</span></div>
+      <div class="ts-matrix" id="ts-matrix"></div>
+      <div class="ts-ladder" id="ts-ladder"></div>
+      <p class="note" id="ts-matrix-note">…</p>
+    </article>
+    <article class="panel panel-ts">
+      <div class="panel-head"><h2>三难向量（lowOverhead ∧ anomalyCapture ∧ loadAdaptive）· 双路自证</h2><span class="hint">HeadBased=100 / TailBased=010 / Adaptive=101 · 三向量互异无一 111 不封赢家 · verifySamplingSoundness 双路自证（干净流 buffer 守恒 + 含 error 流 error 全留/span 无重复/span 完整/正常按率 四观测量）+ 三路篡改真喂回同一内核现算翻 false（漏判 error⇒不保异常 / 重复释放⇒不去重 / 空集⇒非平凡破）· 三因果锁 异常需缓冲/头部盲结构/自适应滞后 在同一含 error raw 流钉死 · rigged 三开关 oracleHead/infiniteBuffer/perfectFeedback 分策略正交反事实 ⇒ Head≡Tail=110 区分度诚实塌缩、noStrategyWinsAll 仍真绝不硬造 111</span></div>
+      <div class="ts-trilemma" id="ts-trilemma"></div>
+      <div class="ts-verif" id="ts-verif"></div>
+      <div class="ts-crosscheck" id="ts-crosscheck"></div>
+      <div class="ts-probes" id="ts-probes"></div>
+      <p class="note" id="ts-trilemma-note">…</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">

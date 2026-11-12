@@ -1895,4 +1895,108 @@ describe('caesura-game-cloud', () => {
     expect(injected.springBatch.builtAt).toBe(555)
     expect(injected.springBatch.config.seed).toBe(99)
   })
+
+  // ============ KI-533 可观测性追踪采样 opt-in 装配（2 腿）============
+  it('traceSampling:true 装配真矩阵：100/010/101 互异不封赢家 + 三因果锁 + verifySamplingSoundness 双路 + 三路篡改真喂回 + 21 键 + 惰性同引用（KI-533）', async () => {
+    const gc = await createGameCloud({
+      gameId: 'gid-ts1', gamePort: 7870, sources, cloud: fakeCloud(),
+      traceSampling: true, tsNow: () => 533000,
+    })
+    const st = (await gc.status()).traceSampling
+    expect(st).not.toBe(null)
+    expect(st!.builtAt).toBe(533000)
+    expect(st!.config.scenarios.length).toBe(6)
+    expect(st!.config.items).toBe(64)
+    expect(st!.rows.length).toBe(3)
+    expect(st!.vectors).toEqual({ HeadBasedSampler: '100', TailBasedSampler: '010', AdaptiveSampler: '101' })
+    expect(st!.rigged).toBe(false)
+    expect(st!.noUniversalWinner).toBe(true)
+    expect(st!.trilemmaDistinguishes).toBe(true)
+    expect(st!.verdict.noStrategyWinsAll).toBe(true)
+    expect(st!.verdict.vectorFromTrilemma).toBe(true)
+    // 三因果结构锁（含翻转标签逐 id 决策恒同的结构判据）
+    expect(st!.causalLocks.causalLocksAllHold).toBe(true)
+    expect(st!.causalLocks.anomalyRequiresBufferingCausallyUnerasable).toBe(true)
+    expect(st!.causalLocks.headBlindnessCausallyUnerasable).toBe(true)
+    expect(st!.causalLocks.adaptiveLagCannotGuaranteeAnomalyCausallyUnerasable).toBe(true)
+    expect(st!.causalLocks.decisionInvariant).toBe(true)
+    // verifySamplingSoundness 双路 + 三路篡改真喂回（带 baselineHolds）
+    const sm = st!.crosscheck.soundness
+    expect(sm.holds).toBe(true)
+    expect(sm.baselineHolds).toBe(true)
+    expect(sm.nontrivial).toBe(true)
+    expect(sm.falsifiable).toBe(true)
+    expect(sm.tamper.forgedErrorSpan.holds).toBe(false)
+    expect(sm.tamper.duplicateRelease.holds).toBe(false)
+    expect(sm.tamper.emptyTraceSet.holds).toBe(false)
+    expect(Object.keys(st!.crosscheck.evidence).length).toBe(21)
+    // 主教义恒以纯净基线标定
+    expect(st!.verdict.headBlindLossOnErrorBurst).toBe(true)
+    expect(st!.verdict.tailGuaranteesAnomaly).toBe(true)
+    expect(st!.verdict.adaptiveTracksLoad).toBe(true)
+    // 惰性缓存 + 可重跑同向量
+    expect((await gc.status()).traceSampling).toBe(st)
+    expect(await gc.runTraceSamplingStudy!()).toMatchObject({ vectors: st!.vectors })
+    // 不连坐其它维
+    const bare = await createGameCloud({ gameId: 'gid-ts0', gamePort: 7871, sources, cloud: fakeCloud() }).status()
+    expect(bare.traceSampling).toBe(null)
+    expect(bare.springBatch).toBe(null)
+  })
+
+  it('traceSampling 默认 null 非破坏；三开关分策略正交反噬、rigged Head≡Tail=110 诚实塌缩但不硬造 111；可注入现成 study（KI-533）', async () => {
+    // 单开 oracleHead：只翻 Head 补 anomaly 维 100→110，主教义恒以纯净基线标定不翻；
+    // 单开 infiniteBuffer：只翻 Tail 补 lowOverhead 维 010→110；
+    // 单开 perfectFeedback：Adaptive 向量不变 101、只改善 errorBurst 质量。
+    const oracle = await (await createGameCloud({
+      gameId: 'gid-ts-oracle', gamePort: 7872, sources, cloud: fakeCloud(),
+      traceSampling: { oracleHead: true, now: 0 },
+    })).status()
+    expect(oracle.traceSampling.vectors).toEqual({ HeadBasedSampler: '110', TailBasedSampler: '010', AdaptiveSampler: '101' })
+    expect(oracle.traceSampling.rigged).toBe(false)
+    expect(oracle.traceSampling.verdict.oracleHeadErasesHeadBlindness).toBe(true)
+    expect(oracle.traceSampling.verdict.headBlindLossOnErrorBurst).toBe(true)
+    const buf = await (await createGameCloud({
+      gameId: 'gid-ts-buf', gamePort: 7873, sources, cloud: fakeCloud(),
+      traceSampling: { infiniteBuffer: true, now: 0 },
+    })).status()
+    expect(buf.traceSampling.vectors).toEqual({ HeadBasedSampler: '100', TailBasedSampler: '110', AdaptiveSampler: '101' })
+    expect(buf.traceSampling.verdict.infiniteBufferErasesOverhead).toBe(true)
+    expect(buf.traceSampling.verdict.tailGuaranteesAnomaly).toBe(true)
+    const feed = await (await createGameCloud({
+      gameId: 'gid-ts-feed', gamePort: 7874, sources, cloud: fakeCloud(),
+      traceSampling: { perfectFeedback: true, now: 0 },
+    })).status()
+    expect(feed.traceSampling.vectors.AdaptiveSampler).toBe('101')
+    expect(feed.traceSampling.verdict.perfectFeedbackImprovesBurstOnly).toBe(true)
+    // rigged：三开关分策略正交反事实，Head≡Tail=110 区分度诚实塌缩、noStrategyWinsAll 仍真、三锁钉死
+    const rig = await (await createGameCloud({
+      gameId: 'gid-ts-rig', gamePort: 7875, sources, cloud: fakeCloud(),
+      traceSampling: { rigged: true, now: 0 },
+    })).status()
+    expect(rig.traceSampling.vectors).toEqual({ HeadBasedSampler: '110', TailBasedSampler: '110', AdaptiveSampler: '101' })
+    expect(rig.traceSampling.rigged).toBe(true)
+    expect(rig.traceSampling.trilemmaDistinguishes).toBe(false)
+    expect(rig.traceSampling.verdict.riggedConvergenceCollapsed).toBe(true)
+    expect(rig.traceSampling.verdict.noStrategyWinsAll).toBe(true)
+    expect(rig.traceSampling.verdict.headBlindLossOnErrorBurst).toBe(true)
+    expect(rig.traceSampling.causalLocks.causalLocksAllHold).toBe(true)
+    // 注入 items/rate/windowSize 真生效
+    const tuned = await (await createGameCloud({
+      gameId: 'gid-ts-tuned', gamePort: 7876, sources, cloud: fakeCloud(),
+      traceSampling: { items: 128, rate: 0.3, windowSize: 8, seed: 7, now: 77 },
+    })).status()
+    expect(tuned.traceSampling.config.items).toBe(128)
+    expect(tuned.traceSampling.config.rate).toBe(0.3)
+    expect(tuned.traceSampling.config.windowSize).toBe(8)
+    expect(tuned.traceSampling.rows[0].scenarios[0].spansIn).toBeGreaterThan(0)
+    expect(tuned.traceSampling.builtAt).toBe(77)
+    // 注入现成 study（duck-typed）
+    const { traceSamplingStudy } = await import('../../scripts/caesura-trace-sampling.mjs')
+    const injected = await (await createGameCloud({
+      gameId: 'gid-ts-inj', gamePort: 7877, sources, cloud: fakeCloud(),
+      traceSampling: traceSamplingStudy({ seed: 99, now: 555 }),
+    })).status()
+    expect(injected.traceSampling.builtAt).toBe(555)
+    expect(injected.traceSampling.config.seed).toBe(99)
+  })
 })

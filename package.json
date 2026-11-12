@@ -46,6 +46,7 @@
     "hyperloglog:bench": "node scripts/caesura-hyperloglog.mjs",
     "crdt:bench": "node scripts/caesura-crdt.mjs",
     "spring-batch:bench": "node scripts/caesura-spring-batch.mjs",
+    "trace-sampling:bench": "node scripts/caesura-trace-sampling.mjs",
     "redis:spring:bench": "node scripts/spring-redis-cache.mjs selfcheck",
     "status": "node scripts/phase-status.mjs",
     "status:embed": "node scripts/phase-status-embed.mjs",

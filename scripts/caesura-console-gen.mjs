@@ -43,6 +43,7 @@ import { streamWindowStudy, streamWindowSnapshot } from './caesura-stream-window
 import { streamCardinalityStudy, cardinalitySnapshot } from './caesura-hyperloglog.mjs'
 import { crdtStudy, crdtSnapshot } from './caesura-crdt.mjs'
 import { springBatchStudy, springBatchSnapshot } from './caesura-spring-batch.mjs'
+import { traceSamplingStudy, traceSamplingSnapshot } from './caesura-trace-sampling.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
 export const SCENARIO_IDS = ['main', 'gray', 'resilience', 'cache', 'net']
@@ -355,7 +356,9 @@ export async function buildSystems(opts = {}) {
   const crdt = opts.crdt === false ? null : await buildCrdtReading(opts, now)
   // KI-532：第二十六维装配 Spring Batch chunk-oriented R-P-W
   const springBatch = opts.springBatch === false ? null : await buildSpringBatchReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, builtAt: now() }
+  // KI-533：第二十七维装配可观测性分布式追踪采样三策略
+  const traceSampling = opts.traceSampling === false ? null : await buildTraceSamplingReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, builtAt: now() }
 }
 
 /**
@@ -410,6 +413,33 @@ export async function buildCacheReplacementReading(opts, now) {
       ...(opts.crRigged === true ? { rigged: true } : {}),
     })
     return cacheReplacementSnapshot(s)
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
+ * KI-533：可观测性分布式追踪采样真跑三策略（HeadBased/TailBased/Adaptive × 六场景 + 三难向量 + verifySamplingSoundness 双路自证 + 十一枚真件交叉印证）。
+ * 维序 [lowOverhead/anomalyCapture/loadAdaptive]（默认 100/010/101）。失败落 null；读数全真、CLI 双跑字节一致、rigged 不硬封胜者。
+ * @param {object} opts { traceSampling?:false, tsSeed?, tsItems?, tsRate?, tsMinRate?, tsMaxRate?, tsWindowSize?, tsOracleHead?, tsInfiniteBuffer?, tsPerfectFeedback?, tsRigged? }
+ * @param {()=>number} now 时钟（builtAt 注入真值）
+ */
+export async function buildTraceSamplingReading(opts, now) {
+  try {
+    const s = await traceSamplingStudy({
+      now,
+      ...(opts.tsSeed ? { seed: Math.max(0, Math.floor(Number(opts.tsSeed))) } : {}),
+      ...(opts.tsItems ? { items: Math.max(32, Math.floor(Number(opts.tsItems))) } : {}),
+      ...(opts.tsRate !== undefined ? { rate: Math.max(0, Math.min(1, Number(opts.tsRate))) } : {}),
+      ...(opts.tsMinRate !== undefined ? { minRate: Math.max(0, Math.min(1, Number(opts.tsMinRate))) } : {}),
+      ...(opts.tsMaxRate !== undefined ? { maxRate: Math.max(0, Math.min(1, Number(opts.tsMaxRate))) } : {}),
+      ...(opts.tsWindowSize ? { windowSize: Math.max(4, Math.floor(Number(opts.tsWindowSize))) } : {}),
+      ...(opts.tsOracleHead === true ? { oracleHead: true } : {}),
+      ...(opts.tsInfiniteBuffer === true ? { infiniteBuffer: true } : {}),
+      ...(opts.tsPerfectFeedback === true ? { perfectFeedback: true } : {}),
+      ...(opts.tsRigged === true ? { rigged: true } : {}),
+    })
+    return traceSamplingSnapshot(s)
   } catch (e) {
     return null // 缺哪块就落 null，前端据实降级；不编造假数
   }
