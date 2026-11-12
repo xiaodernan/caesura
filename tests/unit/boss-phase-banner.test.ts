@@ -134,6 +134,11 @@ describe('BossPhaseBanner：阶段 F-47', () => {
     expect(css).toContain('prefers-reduced-motion')
     expect(css).toContain('.corner-left')
     expect(css).toContain('.corner-right')
+    // F-69「换段誓约 · 革」：左右朱砂回声脚角 + 底部琴弦残金丝 + bpb-rule 展开
+    expect(css, '底左朱砂脚角 corner-foot-left 已注入').toContain('.corner-foot-left')
+    expect(css, '底右朱砂脚角 corner-foot-right 已注入').toContain('.corner-foot-right')
+    expect(css, '底部残金丝 ::after 已注入').toContain('.boss-phase-banner .wrap::after')
+    expect(css, 'bpb-rule 展开 keyframes 已注入').toContain('@keyframes bpb-rule')
     banner.dispose()
   })
 })

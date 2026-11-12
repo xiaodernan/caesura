@@ -20,11 +20,19 @@ const CSS = `
   text-shadow: 0 0 28px rgba(201,180,88,.35); }
 .boss-phase-banner .sub { margin-top: 6px; font-size: 12px; letter-spacing: .52em; color: rgba(201,180,88,.66); text-indent: .52em; }
 .boss-phase-banner .rule { position: relative; width: 76px; height: 1px; margin: 16px auto;
-  background: linear-gradient(90deg, transparent, rgba(201,180,88,.85), transparent); }
+  background: linear-gradient(90deg, transparent, rgba(201,180,88,.85), transparent);
+  animation: bpb-rule 1.1s cubic-bezier(.2,.7,.3,1) .12s both; }
+@keyframes bpb-rule { 0% { transform: scaleX(0); opacity: 0; } 100% { transform: scaleX(1); opacity: 1; } }
 .boss-phase-banner .corner-left { position: absolute; top: 14px; left: 14px; width: 28px; height: 28px;
   border-left: 1px solid rgba(201,180,88,.55); border-top: 1px solid rgba(201,180,88,.55); }
 .boss-phase-banner .corner-right { position: absolute; top: 14px; right: 14px; width: 28px; height: 28px;
   border-right: 1px solid rgba(201,180,88,.55); border-top: 1px solid rgba(201,180,88,.55); }
+.boss-phase-banner .corner-foot-left { position: absolute; bottom: 14px; left: 14px; width: 18px; height: 18px;
+  border-left: 1px solid rgba(165,68,82,.32); border-bottom: 1px solid rgba(165,68,82,.32); }
+.boss-phase-banner .corner-foot-right { position: absolute; bottom: 14px; right: 14px; width: 18px; height: 18px;
+  border-right: 1px solid rgba(165,68,82,.32); border-bottom: 1px solid rgba(165,68,82,.32); }
+.boss-phase-banner .wrap::after { content: ""; position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%);
+  width: min(62%, 440px); height: 1px; background: linear-gradient(90deg, transparent, rgba(201,180,88,.4), transparent); opacity: .7; }
 @keyframes bpb-enter {
   0%   { opacity: 0; }
   12%  { opacity: 1; }
@@ -87,6 +95,8 @@ export class BossPhaseBanner {
     return `<div class="wrap">
       <span class="corner-left" aria-hidden="true"></span>
       <span class="corner-right" aria-hidden="true"></span>
+      <span class="corner-foot-left" aria-hidden="true"></span>
+      <span class="corner-foot-right" aria-hidden="true"></span>
       <h2>${name}</h2>
       <div class="sub">第 ${p.phase} · 共 ${p.phases} 阶</div>
       <div class="rule"></div>

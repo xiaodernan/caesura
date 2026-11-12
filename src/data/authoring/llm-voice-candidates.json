@@ -19,7 +19,9 @@
         "挑就快点，别把灰扬得到处都是。",
         "别碰那些旧玩意儿，坏了我可不赔。"
       ],
-      "canonOpening": "别站那么近，你踩到我摊子了。……等等。你胸口那颗音色石，灭的。莉安给你的吧？"
+      "canonOpening": "别站那么近，你踩到我摊子了。……等等。你胸口那颗音色石，灭的。莉安给你的吧？",
+      "requiresHumanReview": true,
+      "note": "2026-11-12 补 entry-level requiresHumanReview=true（llm:diff 机读门强制）。"
     },
     {
       "npc": "npc_belltongue",
@@ -32,7 +34,9 @@
         "别动。……你也听见它最后一声了吗？",
         "站近些。让我看看——是谁把它剪断的？"
       ],
-      "canonOpening": "站住。……左耳那串断铃，剪的时候疼吗？"
+      "canonOpening": "站住。……左耳那串断铃，剪的时候疼吗？",
+      "requiresHumanReview": true,
+      "note": "2026-11-12 补 entry-level requiresHumanReview=true（llm:diff 机读门强制）。"
     },
     {
       "npc": "npc_corvin",
@@ -45,7 +49,9 @@
         "别动。让我听听，你把什么声音带来了。",
         "末代档案官不信巧合。遗响为何跟着你？"
       ],
-      "canonOpening": "站住。你身上有遗响的余味，而且很新。……律政院末代档案官，科温。我在写一本书，书里缺一节：会唱歌的核。"
+      "canonOpening": "站住。你身上有遗响的余味，而且很新。……律政院末代档案官，科温。我在写一本书，书里缺一节：会唱歌的核。",
+      "requiresHumanReview": true,
+      "note": "2026-11-12 补 entry-level requiresHumanReview=true（llm:diff 机读门强制）。"
     },
     {
       "npc": "npc_meg",

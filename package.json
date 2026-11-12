@@ -50,6 +50,7 @@
     "load-balance:bench": "node scripts/caesura-spring-load-balance.mjs",
     "llm:proof": "node scripts/llm-npc-voice-proof.mjs",
     "llm:qa": "node scripts/llm-dialogue-qa.mjs",
+    "llm:diff": "node scripts/llm-dialogue-diff.mjs",
     "llm-gateway:bench": "node scripts/caesura-llm-gateway.mjs",
     "circuit-breaker:bench": "node scripts/caesura-circuit-breaker.mjs",
     "idempotent-consumer:bench": "node scripts/caesura-idempotent-consumer.mjs",
