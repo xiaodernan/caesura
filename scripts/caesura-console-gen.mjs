@@ -44,6 +44,7 @@ import { streamCardinalityStudy, cardinalitySnapshot } from './caesura-hyperlogl
 import { crdtStudy, crdtSnapshot } from './caesura-crdt.mjs'
 import { springBatchStudy, springBatchSnapshot } from './caesura-spring-batch.mjs'
 import { distributedSessionStudy, distributedSessionSnapshot } from './caesura-distributed-session.mjs'
+import { transactionalOutboxStudy, transactionalOutboxSnapshot } from './caesura-transactional-outbox.mjs'
 import { traceSamplingStudy, traceSamplingSnapshot } from './caesura-trace-sampling.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
@@ -361,7 +362,9 @@ export async function buildSystems(opts = {}) {
   const traceSampling = opts.traceSampling === false ? null : await buildTraceSamplingReading(opts, now)
   // KI-535：第二十九维装配 distributed session（Spring Cloud 会话持久化一线）
   const distributedSession = opts.distributedSession === false ? null : await buildDistributedSessionReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, builtAt: now() }
+  // KI-534：第二十八维装配事务性发件箱（DualWrite/PollingOutbox/CdcOutbox · Spring Cloud Outbox 模式一线）
+  const transactionalOutbox = opts.transactionalOutbox === false ? null : await buildTransactionalOutboxReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, builtAt: now() }
 }
 
 /**
@@ -443,6 +446,33 @@ export async function buildTraceSamplingReading(opts, now) {
       ...(opts.tsRigged === true ? { rigged: true } : {}),
     })
     return traceSamplingSnapshot(s)
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
+ * KI-534：事务性发件箱与消费幂等教学件真跑（DualWrite/PollingOutbox/CdcOutbox × 六场景 + 三难向量 + verifyOutboxSoundness 双路自证 + 十一枚真件交叉印证）。
+ * 失败落 null；读数全真、CLI 双跑字节一致、rigged 不硬封胜者。
+ * @param {object} opts { transactionalOutbox?:false, toSeed?, toItems?, toPollInterval?, toCdcLag?, toRetryLimit?, toLatencyBudget?, toAtomicMagic?, toZeroPollInterval?, toPerfectDedup?, toRigged? }
+ * @param {()=>number} now 时钟（builtAt 注入真值）
+ */
+export async function buildTransactionalOutboxReading(opts, now) {
+  try {
+    const s = await transactionalOutboxStudy({
+      now,
+      ...(opts.toSeed ? { seed: Math.max(0, Math.floor(Number(opts.toSeed))) } : {}),
+      ...(opts.toItems ? { items: Math.max(16, Math.floor(Number(opts.toItems))) } : {}),
+      ...(opts.toPollInterval ? { pollInterval: Math.max(0, Math.floor(Number(opts.toPollInterval))) } : {}),
+      ...(opts.toCdcLag ? { cdcLag: Math.max(0, Math.floor(Number(opts.toCdcLag))) } : {}),
+      ...(opts.toRetryLimit !== undefined ? { retryLimit: Math.max(0, Math.floor(Number(opts.toRetryLimit))) } : {}),
+      ...(opts.toLatencyBudget !== undefined ? { latencyBudget: Math.max(0, Math.floor(Number(opts.toLatencyBudget))) } : {}),
+      ...(opts.toAtomicMagic === true ? { atomicMagic: true } : {}),
+      ...(opts.toZeroPollInterval === true ? { zeroPollInterval: true } : {}),
+      ...(opts.toPerfectDedup === true ? { perfectDedup: true } : {}),
+      ...(opts.toRigged === true ? { rigged: true } : {}),
+    })
+    return transactionalOutboxSnapshot(s)
   } catch (e) {
     return null // 缺哪块就落 null，前端据实降级；不编造假数
   }

@@ -713,6 +713,30 @@ export interface DistributedSessionReading {
   builtAt: number
 }
 
+/** KI-534：DualWrite/PollingOutbox/CdcOutbox Spring Cloud 事务性发件箱教学件真跑读数（三策略 × 六场景 + 三难向量 + verifyOutboxSoundness 双路交叉印证 + 十一枚真件交叉印证）。 */
+export interface TransactionalOutboxReading {
+  config: Record<string, any>
+  rows: Array<{
+    protocol: string
+    scenarios: Array<{
+      id: string; committed: number; delivered: number; lost: number; ghost: number; duplicates: number
+      maxDeliveryLag: number
+      atomicDelivery: boolean; lowLatency: boolean; noDuplicate: boolean; fault: string
+    }>
+    trilemma: { atomicDelivery: boolean; lowLatency: boolean; noDuplicate: boolean }
+    metrics: { committed: number; delivered: number; lost: number; duplicates: number; maxDeliveryLag: number }
+  }>
+  vectors: Record<string, string>
+  verdict: Record<string, any>
+  rigged: boolean
+  noUniversalWinner: boolean
+  trilemmaDistinguishes: boolean
+  causalLocks: { atomicDeliveryRequiresOutboxCausallyUnerasable: boolean; atLeastOnceRequiresDedupCausallyUnerasable: boolean; zeroLatencyNeedsCdcReplayCausallyUnerasable: boolean; causalLocksAllHold: boolean; retrySweep: any[]; pollSweep: any[] }
+  crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneAOk: boolean; laneB: Record<string, any>; laneBOk: boolean; tamper: Record<string, any> } & Record<string, any> }
+  builtAt: number
+}
+
+
 
 
 
@@ -783,6 +807,7 @@ export interface SystemsBlock {
   springBatch: SpringBatchReading | null
   traceSampling: TraceSamplingReading | null
   distributedSession: DistributedSessionReading | null
+  transactionalOutbox: TransactionalOutboxReading | null
   builtAt: number
 }
 
@@ -999,6 +1024,18 @@ export function buildSnapshot(opts?: {
   dsUnlimitedTtl?: boolean
   dsSkipRevocationCheck?: boolean
   dsRigged?: boolean
+  /** KI-534：false 关掉 TransactionalOutbox 维（兼容旧快照）；to* 注入规模/阈值/rigged */
+  transactionalOutbox?: boolean
+  toSeed?: number
+  toItems?: number
+  toPollInterval?: number
+  toCdcLag?: number
+  toRetryLimit?: number
+  toLatencyBudget?: number
+  toAtomicMagic?: boolean
+  toZeroPollInterval?: boolean
+  toPerfectDedup?: boolean
+  toRigged?: boolean
   traceSampling?: boolean
   tsSeed?: number
   tsItems?: number
@@ -1203,6 +1240,18 @@ export function buildSystems(opts?: {
   dsUnlimitedTtl?: boolean
   dsSkipRevocationCheck?: boolean
   dsRigged?: boolean
+  /** KI-534：false 关掉 TransactionalOutbox 维（兼容旧快照）；to* 注入规模/阈值/rigged */
+  transactionalOutbox?: boolean
+  toSeed?: number
+  toItems?: number
+  toPollInterval?: number
+  toCdcLag?: number
+  toRetryLimit?: number
+  toLatencyBudget?: number
+  toAtomicMagic?: boolean
+  toZeroPollInterval?: boolean
+  toPerfectDedup?: boolean
+  toRigged?: boolean
   traceSampling?: boolean
   tsSeed?: number
   tsItems?: number
@@ -1495,6 +1544,18 @@ export function buildCrdtReading(opts: {
   dsUnlimitedTtl?: boolean
   dsSkipRevocationCheck?: boolean
   dsRigged?: boolean
+  /** KI-534：false 关掉 TransactionalOutbox 维（兼容旧快照）；to* 注入规模/阈值/rigged */
+  transactionalOutbox?: boolean
+  toSeed?: number
+  toItems?: number
+  toPollInterval?: number
+  toCdcLag?: number
+  toRetryLimit?: number
+  toLatencyBudget?: number
+  toAtomicMagic?: boolean
+  toZeroPollInterval?: boolean
+  toPerfectDedup?: boolean
+  toRigged?: boolean
 }, now: () => number): Promise<CrdtReading | null>
 
 /** KI-532：真跑 Spring Batch chunk-oriented R-P-W（BulkWriter/ChunkedWriter/SkipRetryWriter × 六场景 + 三难向量 + verifyCheckpoint 双路自证 + 十一枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
@@ -1517,6 +1578,18 @@ export function buildSpringBatchReading(opts: {
   dsUnlimitedTtl?: boolean
   dsSkipRevocationCheck?: boolean
   dsRigged?: boolean
+  /** KI-534：false 关掉 TransactionalOutbox 维（兼容旧快照）；to* 注入规模/阈值/rigged */
+  transactionalOutbox?: boolean
+  toSeed?: number
+  toItems?: number
+  toPollInterval?: number
+  toCdcLag?: number
+  toRetryLimit?: number
+  toLatencyBudget?: number
+  toAtomicMagic?: boolean
+  toZeroPollInterval?: boolean
+  toPerfectDedup?: boolean
+  toRigged?: boolean
 }, now: () => number): Promise<SpringBatchReading | null>
 
 /** KI-535：真跑 Spring Cloud 分布式会话三策略（StickySession/JwtStateless/RedisSessionStore × 六场景 + 三难向量 + verifySessionCoherence 双路自证 + 十一枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
@@ -1530,7 +1603,35 @@ export function buildDistributedSessionReading(opts: {
   dsUnlimitedTtl?: boolean
   dsSkipRevocationCheck?: boolean
   dsRigged?: boolean
+  /** KI-534：false 关掉 TransactionalOutbox 维（兼容旧快照）；to* 注入规模/阈值/rigged */
+  transactionalOutbox?: boolean
+  toSeed?: number
+  toItems?: number
+  toPollInterval?: number
+  toCdcLag?: number
+  toRetryLimit?: number
+  toLatencyBudget?: number
+  toAtomicMagic?: boolean
+  toZeroPollInterval?: boolean
+  toPerfectDedup?: boolean
+  toRigged?: boolean
 }, now: () => number): Promise<DistributedSessionReading | null>
+
+/** KI-534：真跑 Spring Cloud 事务性发件箱与消费幂等教学件（DualWrite/PollingOutbox/CdcOutbox × 六场景 + 三难向量 + verifyOutboxSoundness 双路自证 + 十一枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
+export function buildTransactionalOutboxReading(opts: {
+  now?: () => number
+  transactionalOutbox?: boolean
+  toSeed?: number
+  toItems?: number
+  toPollInterval?: number
+  toCdcLag?: number
+  toRetryLimit?: number
+  toLatencyBudget?: number
+  toAtomicMagic?: boolean
+  toZeroPollInterval?: boolean
+  toPerfectDedup?: boolean
+  toRigged?: boolean
+}, now: () => number): Promise<TransactionalOutboxReading | null>
 
 /** KI-533：真跑可观测性分布式追踪采样三策略（HeadBased/TailBased/Adaptive × 六场景 + 三难向量 + verifySamplingSoundness 双路自证 + 十一枚真件交叉印证）收敛成前端两面板紧凑读数；失败落 null。 */
 export function buildTraceSamplingReading(opts: {

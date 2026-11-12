@@ -2091,4 +2091,94 @@ describe('caesura-game-cloud', () => {
     expect(injected.builtAt).toBe(555)
     expect(injected.config.seed).toBe(99)
   })
+
+  // ============ KI-534 Spring Cloud 事务性发件箱 opt-in 装配（2 腿）============
+  it('transactionalOutbox:true 装配真矩阵：011/101/110 互异不封赢家 + 三因果锁 + verifyOutboxSoundness 双路 + 三路篡改真喂回 + 21 键 + 惰性同引用（KI-534）', async () => {
+    const gc = await createGameCloud({
+      gameId: 'gid-ob1', gamePort: 7880, sources, cloud: fakeCloud(),
+      transactionalOutbox: true, toNow: () => 534000,
+    })
+    const st = (await gc.status()).transactionalOutbox
+    expect(st).not.toBe(null)
+    expect(st!.builtAt).toBe(534000)
+    expect(st!.config.scenarios.length).toBe(6)
+    expect(st!.config.items).toBe(96)
+    expect(st!.rows.length).toBe(3)
+    expect(st!.vectors).toEqual({ DualWrite: '011', PollingOutbox: '101', CdcOutbox: '110' })
+    expect(st!.rigged).toBe(false)
+    expect(st!.noUniversalWinner).toBe(true)
+    expect(st!.trilemmaDistinguishes).toBe(true)
+    expect(st!.verdict.noStrategyWinsAll).toBe(true)
+    expect(st!.verdict.vectorFromTrilemma).toBe(true)
+    // 三因果结构锁
+    expect(st!.causalLocks.causalLocksAllHold).toBe(true)
+    expect(st!.causalLocks.atomicDeliveryRequiresOutboxCausallyUnerasable).toBe(true)
+    expect(st!.causalLocks.atLeastOnceRequiresDedupCausallyUnerasable).toBe(true)
+    expect(st!.causalLocks.zeroLatencyNeedsCdcReplayCausallyUnerasable).toBe(true)
+    // verifyOutboxSoundness 双路 + 三路篡改
+    const cp = st!.crosscheck.soundness
+    expect(cp.holds).toBe(true)
+    expect(cp.nontrivial).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.tamper.forgedCommit.holds).toBe(false)
+    expect(cp.tamper.silentDrop.holds).toBe(false)
+    expect(cp.tamper.duplicateRelease.holds).toBe(false)
+    expect(Object.keys(st!.crosscheck.evidence).length).toBe(21)
+    // 主教义
+    expect(st!.verdict.dualWriteLosesOnCrash).toBe(true)
+    expect(st!.verdict.pollingNoDup).toBe(true)
+    expect(st!.verdict.cdcDuplicatesOnHalfCrash).toBe(true)
+    // 惰性缓存 + 同引用 + 重跑同向量
+    expect((await gc.status()).transactionalOutbox).toBe(st)
+    expect(await gc.runTransactionalOutboxStudy!()).toMatchObject({ vectors: st!.vectors })
+    // 不连坐其它维
+    const bare = await createGameCloud({ gameId: 'gid-ob0', gamePort: 7881, sources, cloud: fakeCloud() }).status()
+    expect(bare.transactionalOutbox).toBe(null)
+    expect(bare.distributedSession).toBe(null)
+    expect(bare.traceSampling).toBe(null)
+  })
+
+  it('transactionalOutbox 默认 null 非破坏；三探针分策略正交反噬、rigged 全开 ⇒ Polling≡Cdc=110 诚实塌缩但不硬造 111；可注入现成 study（KI-534）', async () => {
+    const idle = await createGameCloud({ gameId: 'gid-ob2', gamePort: 7882, sources, cloud: fakeCloud() }).status()
+    expect(idle.transactionalOutbox).toBe(null)
+    // 单开 atomicMagic：DualWrite 崩溃仍丢（011 不变）
+    const am = (await (await createGameCloud({
+      gameId: 'gid-ob3', gamePort: 7883, sources, cloud: fakeCloud(),
+      transactionalOutbox: { atomicMagic: true }, toNow: () => 534000,
+    })).status()).transactionalOutbox
+    expect(am!.vectors.DualWrite).toBe('011')
+    expect(am!.verdict.atomicMagicKeepsDualWriteFragile).toBe(true)
+    // 单开 zeroPollInterval：Polling 翻 110
+    const zp = (await (await createGameCloud({
+      gameId: 'gid-ob4', gamePort: 7884, sources, cloud: fakeCloud(),
+      transactionalOutbox: { zeroPollInterval: true }, toNow: () => 534000,
+    })).status()).transactionalOutbox
+    expect(zp!.vectors.PollingOutbox).toBe('110')
+    expect(zp!.verdict.zeroPollIntervalErasesPollingDupRule).toBe(true)
+    // 单开 perfectDedup：Cdc 仍 110（consumerHalfCrash 窗口）
+    const pd = (await (await createGameCloud({
+      gameId: 'gid-ob5', gamePort: 7885, sources, cloud: fakeCloud(),
+      transactionalOutbox: { perfectDedup: true }, toNow: () => 534000,
+    })).status()).transactionalOutbox
+    expect(pd!.vectors.CdcOutbox).toBe('110')
+    expect(pd!.verdict.perfectDedupKeepsCdcFragilitySignals).toBe(true)
+    // rigged 三开齐：DualWrite 011、Polling≡Cdc=110、noStrategyWinsAll 仍真
+    const rig = (await (await createGameCloud({
+      gameId: 'gid-ob6', gamePort: 7886, sources, cloud: fakeCloud(),
+      transactionalOutbox: { rigged: true }, toNow: () => 534000,
+    })).status()).transactionalOutbox
+    expect(rig!.vectors).toEqual({ DualWrite: '011', PollingOutbox: '110', CdcOutbox: '110' })
+    expect(rig!.verdict.noUniversalWinner).toBe(false)
+    expect(rig!.verdict.noStrategyWinsAll).toBe(true)
+    expect(rig!.verdict.riggedConvergenceCollapsed).toBe(true)
+    expect(rig!.causalLocks.causalLocksAllHold).toBe(true)
+    // 可注入现成 study
+    const { transactionalOutboxStudy } = await import('../../scripts/caesura-transactional-outbox.mjs')
+    const injected = (await (await createGameCloud({
+      gameId: 'gid-ob7', gamePort: 7887, sources, cloud: fakeCloud(),
+      transactionalOutbox: transactionalOutboxStudy({ seed: 99, now: () => 555 }),
+    })).status()).transactionalOutbox
+    expect(injected.builtAt).toBe(555)
+    expect(injected.config.seed).toBe(99)
+  })
 })

@@ -49,6 +49,7 @@ import { crdtStudy, crdtSnapshot } from './caesura-crdt.mjs'
 import { springBatchStudy, springBatchSnapshot } from './caesura-spring-batch.mjs'
 import { traceSamplingStudy, traceSamplingSnapshot } from './caesura-trace-sampling.mjs'
 import { distributedSessionStudy, distributedSessionSnapshot } from './caesura-distributed-session.mjs'
+import { transactionalOutboxStudy, transactionalOutboxSnapshot } from './caesura-transactional-outbox.mjs'
 import {
   createAimdCongestion,
   createCubicCongestion,
@@ -743,6 +744,25 @@ export function createGameCloud(opts = {}) {
     return tsCached
   }
 
+  // KI-534：事务性发件箱与消费幂等教学件（DualWrite/PollingOutbox/CdcOutbox；opt-in、status/ to*）。
+  // opts.transactionalOutbox===true 走钳制默认参数（可覆盖 now/seed/items/pollInterval/cdcLag/retryLimit/latencyBudget/atomicMagic/zeroPollInterval/perfectDedup/rigged 等）；
+  // 传对象且 rows/vectors/verdict 齐全时当现成 study 注入；默认 transactionalOutbox:false 非破坏（同 KI-513/.../535 法）。
+  // 不声称真 Kafka/RabbitMQ/Debezium CDC/真 Spring @Transactional；全程结构计数。
+  const toCfg = opts.transactionalOutbox === true ? {} : (opts.transactionalOutbox && typeof opts.transactionalOutbox === 'object' ? opts.transactionalOutbox : null)
+  const toInjected = toCfg !== null && opts.transactionalOutbox &&
+    typeof opts.transactionalOutbox === 'object' && Array.isArray(opts.transactionalOutbox.rows) &&
+    opts.transactionalOutbox.vectors && opts.transactionalOutbox.verdict
+  let toCached = null
+  async function toSnapshotForStatus() {
+    if (toCfg === null) return null
+    if (toCached) return toCached
+    const study = toInjected
+      ? opts.transactionalOutbox
+      : await transactionalOutboxStudy({ ...toCfg, now: opts.toNow ?? toCfg.now })
+    toCached = transactionalOutboxSnapshot(study)
+    return toCached
+  }
+
   // KI-535：Spring Cloud 分布式会话三策略（StickySession/JwtStateless/RedisSessionStore；opt-in、status/ ds*）。
   // opts.distributedSession===true 走钳制默认参数（可覆盖 now/seed/sessions/ttlMs/perfectMirror/unlimitedTtl/skipRevocationCheck/rigged 等）；
   // 传对象且 rows/vectors/verdict 齐全时当现成 study 注入；默认 distributedSession:false 非破坏（同 KI-513/.../533 法）。
@@ -874,6 +894,8 @@ export function createGameCloud(opts = {}) {
     runSpringBatchStudy: sbCfg === null ? null : () => springBatchStudy({ ...sbCfg, now: opts.sbNow ?? sbCfg.now }),
     /** KI-535：Spring Cloud 分布式会话三策略诚实权衡教学件；缺 opts.distributedSession 时为 null；StickySession/JwtStateless/RedisSessionStore × 六场景矩阵 + 三难向量（默认 011/101/110 互异不封赢家）+ verifySessionCoherence 双路自证 + 十一枚真件交叉印证。 */
     runDistributedSessionStudy: dsCfg === null ? null : () => distributedSessionStudy({ ...dsCfg, now: opts.dsNow ?? dsCfg.now }),
+    /** KI-534：事务性发件箱与消费幂等教学件；缺 opts.transactionalOutbox 时为 null；DualWrite/PollingOutbox/CdcOutbox × 六场景矩阵 + 三难向量（默认 011/101/110 互异不封赢家）+ verifyOutboxSoundness 双路自证 + 十一枚真件交叉印证。 */
+    runTransactionalOutboxStudy: toCfg === null ? null : () => transactionalOutboxStudy({ ...toCfg, now: opts.toNow ?? toCfg.now }),
     /** KI-533：可观测性分布式追踪采样三策略教学件；缺 opts.traceSampling 时为 null；HeadBased/TailBased/Adaptive × 六场景矩阵 + 三难向量维序 [lowOverhead/anomalyCapture/loadAdaptive]（默认 100/010/101 互异不封赢家；anomalyCapture⇔缓冲整条⇔非 lowOverhead 与 chk 锁同构、零查表现算；rigged 三开关 oracleHead/infiniteBuffer/perfectFeedback 分策略正交反事实：oracleHead 只翻 Head→110、infiniteBuffer 只翻 Tail→110、perfectFeedback 只降 Adaptive errorBurst 丢失质量但 maxRate=0.75 封顶仍补不上 anomaly 维 ⇒ 恒 101，全开收敛 Head≡Tail=110 区分度诚实塌缩 riggedConvergenceCollapsed=true、noStrategyWinsAll 仍真绝不硬造 111，三条因果结构锁——异常需缓冲/头部盲结构/自适应滞后——在同一含 error raw 流真跑现算钉死 causalLocksAllHold=true，主教义 headBlindLossOnErrorBurst 恒以纯净基线标定不翻）+ verifySamplingSoundness 双路自证（干净流 buffer 守恒 + 含 error 流 error 全留/span 无重复/span 完整/正常按率四观测量 + 三路篡改真喂回同一内核现算翻 false 带 baselineHolds）+ 十一枚真件 21 键交叉印证。 */
     runTraceSamplingStudy: tsCfg === null ? null : () => traceSamplingStudy({ ...tsCfg, now: opts.tsNow ?? tsCfg.now }),
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
@@ -933,6 +955,7 @@ export function createGameCloud(opts = {}) {
         crdt: await crdtSnapshotForStatus(),
         springBatch: await sbSnapshotForStatus(),
         distributedSession: await dsSnapshotForStatus(),
+        transactionalOutbox: await toSnapshotForStatus(),
         traceSampling: await tsSnapshotForStatus(),
       }
     },

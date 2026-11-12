@@ -65,6 +65,7 @@
       renderCrdt(snap.systems ? snap.systems.crdt : null)
       renderSpringBatch(snap.systems ? snap.systems.springBatch : null)
       renderDistributedSession(snap.systems ? snap.systems.distributedSession : null)
+      renderTransactionalOutbox(snap.systems ? snap.systems.transactionalOutbox : null)
       renderTraceSampling(snap.systems ? snap.systems.traceSampling : null)
       setLive(true, result.source)
     }).catch(function (e) {
@@ -3307,6 +3308,137 @@
       'verifyCheckpoint 双路自证：路 A clean 全量全 commit 求基准，路 B 真跑 restart(0) 用「poison chunk 隔离 / 已 commit 无重复 / 非毒零丢失 / 真检测到毒」四观测量判定；三路篡改真喂回同一内核现算翻 false，带 baselineHolds 先真绿。' +
       '三条因果结构锁在同一含毒 raw 流真跑钉死：Bulk 无 chk 整批死、chk 权衡不可兼得、Skip 跳毒永久丢。' +
       'rigged 双开关 perfectOracle（毒项 100% 判定、预防性从输入剔除）+ unlimitedSkip 喂的是已剔除毒项的干净流（换了作业输入、诚实标注，不是同一作业被抹软肋）⇒ 三者 faultIsolation 全真、Bulk≡Skip=101 区分度诚实收敛（riggedConvergenceCollapsed=true，教学结论：完美预言机抹平了「预防剔除」与「跳过」的差别，二者结构等价），noStrategyWinsAll 仍真绝不硬造 111，三因果锁仍 allHold。'
+  }
+
+  /* ================= KI-534 DualWrite/PollingOutbox/CdcOutbox Spring Cloud 事务性发件箱 · 第二十八维（ob 族） ================= */
+
+  function renderTransactionalOutbox(ob) {
+    renderObMatrix(ob && ob.rows, ob && ob.config)
+    renderObLadder(ob && ob.rows)
+    renderObTrilemma(ob && ob.rows, ob && ob.verdict, ob && ob.crosscheck)
+  }
+
+  function obMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 暂缺</div>'
+    if (note) note.textContent = 'systems.transactionalOutbox 缺失 — 跑一次 npm run console:data 即可补齐'
+  }
+
+  function obCell(c) {
+    if (!c) return { cls: '', ch: '·' }
+    if (c.lost > 0) return { cls: 'lost', ch: '丢' }
+    if (c.duplicates > 0) return { cls: 'dup', ch: '重' }
+    if (c.maxDeliveryLag > 2) return { cls: 'delayed', ch: '缓' }
+    return { cls: 'ok', ch: '✓' }
+  }
+
+  function renderObMatrix(rows, config) {
+    var box = $('#ob-matrix'), note = $('#ob-matrix-note')
+    if (!Array.isArray(rows) || !rows.length || !config || !Array.isArray(config.scenarios)) {
+      obMissing(box, note, 'ob 矩阵'); return
+    }
+    var scenarios = config.scenarios
+    var head = '<div class="ob-mat-row ob-mat-head"><span class="ob-mat-proto">策略</span>' +
+      scenarios.map(function (sc) { return '<span class="ob-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="ob-mat-cost">丢/重/ lag</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = obCell(cell)
+        return '<span class="ob-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="ob-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="ob-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="ob-mat-cost"><b>' + esc(fmt(m.lost)) + '</b>/' + esc(fmt(m.duplicates)) + '/' + esc(fmt(m.maxDeliveryLag)) + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'DualWrite / PollingOutbox / CdcOutbox × 六场景：steadyFlow（稳态）/ crashAfterCommit（崩溃注入 commit→publish 之间）/ retryStorm（消费端确认丢·at-least-once 重投）/ consumerHalfCrash（消费端副作用已走·去重标记丢）/ pollLag（pollInterval=4 tick 轮询 lag）/ cleanRerun（重跑同结果）。' +
+      '每格只认真件算好的三布尔（atomicDelivery ∧ lowLatency ∧ noDuplicate）——绝不由阈值重算。' +
+      'DualWrite: 崩溃后永久丢一条（原子性缺）；Polling: 同事务+轮询扫（poll lag 真实存在·消费端事务性 dedup）；Cdc: 同事务+tail 近实时（无 dedup · at-least-once 重复暴露）。'
+  }
+
+  function renderObLadder(rows) {
+    var box = $('#ob-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.committed) ? r.metrics.committed : 1 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.delivered) ? Math.round(m.delivered / max * 100) : 0
+      return '<div class="ob-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="ob-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">提交 ' + esc(fmt(m.committed)) + ' · 投递 ' + esc(fmt(m.delivered)) + ' · 丢 ' + esc(String(m.lost)) + ' · 重 ' + esc(String(m.duplicates)) + ' · lag ' + esc(String(m.maxDeliveryLag)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderObTrilemma(rows, verdict, crosscheck) {
+    var box = $('#ob-trilemma'), veBox = $('#ob-verif'), cxBox = $('#ob-crosscheck'), note = $('#ob-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      obMissing(box, note, 'ob 判词'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''; return
+    }
+    var flags = [['atomicDelivery', '原子不丢'], ['lowLatency', '近实时'], ['noDuplicate', '消费幂等']]
+    var head = '<div class="ob-vec ob-vec-head"><span class="proto">策略</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="ob-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="ob-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    if (veBox) {
+      var dual = rows.find(function (r) { return r.protocol === 'DualWrite' })
+      var poll = rows.find(function (r) { return r.protocol === 'PollingOutbox' })
+      var cdc = rows.find(function (r) { return r.protocol === 'CdcOutbox' })
+      var cp = crosscheck && crosscheck.soundness
+      veBox.innerHTML = [
+        '<div class="ob-rb-row"><b>DualWrite</b> atomic=' + esc(String(dual?.trilemma?.atomicDelivery)) + '（提交后直发·crashAfterCommit 注入点真丢一条·原子性来自持久状态而不是开关）</div>',
+        '<div class="ob-rb-row"><b>PollingOutbox</b> 原子=' + esc(String(poll?.trilemma?.atomicDelivery)) + ' · 近实时=' + esc(String(poll?.trilemma?.lowLatency)) + '（poll 4 tick lag）· 消费幂等=' + esc(String(poll?.trilemma?.noDuplicate)) + '（同事务+事务性 dedup）</div>',
+        '<div class="ob-rb-row"><b>CdcOutbox</b> 原子=' + esc(String(cdc?.trilemma?.atomicDelivery)) + ' · 近实时=' + esc(String(cdc?.trilemma?.lowLatency)) + '（tail 近实时）· 消费幂等=' + esc(String(cdc?.trilemma?.noDuplicate)) + '（无消费端 dedup · consumerHalfCrash/retryStorm 下真重复）</div>',
+        cp ? '<div class="ob-rb-row"><b>verifyOutboxSoundness</b> holds=' + (cp.holds ? 'true' : 'false') + ' nontrivial=' + (cp.nontrivial ? 'true' : 'false') + ' falsifiable=' + (cp.falsifiable ? 'true' : 'false') + ' · laneA{committed=' + esc(String(cp.laneA && cp.laneA.businessTransactions)) + ' delivered=' + esc(String(cp.laneA && cp.laneA.messagesDelivered)) + '} laneB{committed=' + esc(String(cp.laneB && cp.laneB.committed)) + ' deliveries=' + esc(String(cp.laneB && cp.laneB.deliveries)) + ' unique=' + esc(String(cp.laneB && cp.laneB.uniqueProcessed)) + '}</div>' : '',
+      ].join('')
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>真 <b>compareRemapping</b> 迁移率 一致性 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>' +
+          '<div>真 <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 片</div>' +
+          '<div>真 <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 命中 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
+          '<div>真 <b>createWal</b> lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>真 <b>createBus</b> outbox.published 通知 ' + esc(fmt(ev.notices)) + ' 条 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>真 <b>createRedisCache</b> dedup set+get 命中 ' + esc(fmt(ev.redisBitmapHits)) + ' · entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+          '<div>真 <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+          '<div>真 <b>createTokenBucket</b> 回放允许 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>真 <b>createMinHeapDelayQueue</b> 出队 ' + esc(fmt(ev.heapFired)) + ' 条 · pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+          '<div>真 <b>createFullJitterBackoff</b> jitterSpread <b>' + esc(String((ev.jitterSpread ?? 0).toFixed(4))) + '</b>（64 采样 delayFor 真采样）</div>' +
+          '<div>真 <b>createPackedCounters</b> Σ=' + esc(fmt(ev.counterSum)) + ' · falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">真件交叉印证缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var chips = [
+      '<span class="chip" data-verdict="dualWriteLosesOnCrash"><b>DualWrite</b> 崩溃真丢 ' + (v.dualWriteLosesOnCrash ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="pollingNoDup"><b>PollingOutbox</b> 零 dup ' + (v.pollingNoDup ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="cdcDuplicatesOnHalfCrash"><b>CdcOutbox</b> 半崩溃 dup ' + (v.cdcDuplicatesOnHalfCrash ? '✓' : '✗') + '</span>',
+      '<span class="chip" data-verdict="noStrategyWinsAll"><b>noStrategyWinsAll</b> ' + (v.noStrategyWinsAll ? '✓（无一 111）' : '✗') + '</span>',
+      '<span class="chip ' + (noWin ? 'jade-t' : 'muted-t') + '" data-verdict="noUniversalWinner">' + (noWin ? '✓ 三向量互异（011/101/110），无全局赢家、恰好各缺一维' : '判词塌陷') + '</span>',
+      '<span class="chip ' + (v.riggedConvergenceCollapsed ? 'jade-t' : 'muted-t') + '" data-verdict="riggedConvergenceCollapsed">' + (v.riggedConvergenceCollapsed ? '✓ rigged collapsed Polling≡Cdc=110' : '未 rigged 或未塌缩') + '</span>',
+    ]
+    var probes = $('#ob-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维序固定 [atomicDelivery / lowLatency / noDuplicate]。默认向量 DualWrite=011（崩溃真丢、零延迟零重） / PollingOutbox=101（不丢不重·轮询 lag 真实存在） / CdcOutbox=110（近实时·but 消费端无 dedup）——恰好各缺一维、向量互异、无一 111。' +
+      'rigged 三探针：atomicMagic 只给 DualWrite ⇒ 崩溃仍丢（011 不变）；zeroPollInterval 只给 Polling ⇒ 撤掉批次合并保护 lag=0 且重复暴露（110）；perfectDedup 只给 Cdc ⇒ 滤掉 retryStorm 重投但 consumerHalfCrash 窗口仍在（110）；三开齐 ⇒ Polling≡Cdc=110 区分度诚实塌缩。'
   }
 
   /* ================= KI-535 StickySession/JwtStateless/RedisSessionStore 分布式会话 · 第二十九维（ds 族） ================= */

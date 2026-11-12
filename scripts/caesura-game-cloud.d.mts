@@ -197,8 +197,15 @@ export interface GameCloudOptions {
    * 对象逐项注入（now/seed/sessions/ttlMs/perfectMirror/unlimitedTtl/skipRevocationCheck/scenarios/rigged 等），
    * 或直接塞一只现成 study（带 rows/vectors/verdict/crosscheck/causalLocks 五块）。默认 false 不装配。 */
   distributedSession?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck?: any; causalLocks?: any; [k: string]: any }
-  /** KI-535 distributedSession 的注入时钟（ds=Distributed Session，避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/ts/rdq/dld 已占用前缀）。 */
+  /** KI-535 distributedSession 的注入时钟（ds=Distributed Session，避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/ts/ds/rdq/dld 已占用前缀）。 */
   dsNow?: () => number
+  /**
+   * KI-534：true 装配 transactional outbox 教学件（DualWrite/PollingOutbox/CdcOutbox + verifyOutboxSoundness 双路交叉印证 + 十一枚真件交叉印证）。
+   * 对象逐项注入（now/seed/items/pollInterval/cdcLag/retryLimit/latencyBudget/atomicMagic/zeroPollInterval/perfectDedup/rigged 等），
+   * 或直接塞一只现成 study。默认 false 不装配。 */
+  transactionalOutbox?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck?: any; causalLocks?: any; [k: string]: any }
+  /** KI-534 transactionalOutbox 的注入时钟（to=transactional Outbox，避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/ds/ts/rdq/dld 已占用前缀）。 */
+  toNow?: () => number
 }
 
 /** 创建一只游戏侧开箱即用云。 */
@@ -271,6 +278,8 @@ export function createGameCloud(opts?: GameCloudOptions): {
   runSpringBatchStudy: (() => Promise<any>) | null
   /** KI-535：Spring Cloud 分布式会话三策略诚实权衡教学件；缺 opts.distributedSession 时为 null；StickySession/JwtStateless/RedisSessionStore × 六场景矩阵 + 三难向量（默认 011/101/110 互异不封赢家）+ verifySessionCoherence 双路自证 + 十一枚真件交叉印证。 */
   runDistributedSessionStudy: (() => Promise<any>) | null
+  /** KI-534：事务性发件箱与消费幂等教学件；缺 opts.transactionalOutbox 时为 null；DualWrite/PollingOutbox/CdcOutbox × 六场景矩阵 + 三难向量（默认 011/101/110 互异不封赢家）+ verifyOutboxSoundness 双路自证 + 十一枚真件交叉印证。 */
+  runTransactionalOutboxStudy: (() => Promise<any>) | null
   /** KI-533：可观测性分布式追踪采样三策略教学件；缺 opts.traceSampling 时为 null；HeadBased/TailBased/Adaptive × 六场景矩阵 + 三难向量维序 [lowOverhead/anomalyCapture/loadAdaptive]（默认 100/010/101 互异不封赢家；anomalyCapture⇔缓冲整条⇔非 lowOverhead 与 chk 锁同构、零查表现算；rigged 三开关 oracleHead/infiniteBuffer/perfectFeedback 分策略正交反事实：全开收敛 Head≡Tail=110 区分度诚实塌缩、noStrategyWinsAll 仍真绝不硬造 111，三条因果结构锁——异常需缓冲/头部盲结构/自适应滞后——在同一含 error raw 流真跑现算钉死 causalLocksAllHold=true，主教义 headBlindLossOnErrorBurst 恒以纯净基线标定不翻）+ verifySamplingSoundness 双路自证（干净流 buffer 守恒 + 含 error 流四观测量 + 三路篡改真喂回现算翻 false 带 baselineHolds）+ 十一枚真件 21 键交叉印证。 */
   runTraceSamplingStudy: (() => Promise<any>) | null
   /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）。 */

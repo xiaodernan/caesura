@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794457856987,
+  "generatedAt": 1794459551444,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1365,12 +1365,12 @@
           "keys": 1,
           "versions": 2,
           "commitLogSize": 1,
-          "now": 1794457856989
+          "now": 1794459551446
         },
         "final": {
           "A": {
             "value": 101,
-            "commitTs": 1794457856989,
+            "commitTs": 1794459551446,
             "tombstone": false
           }
         }
@@ -3646,7 +3646,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794457856987,
+                "lastTimestamp": 1794459551444,
                 "workerId": 1
               },
               "fault": {
@@ -3742,7 +3742,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794457856987,
+                "lastTimestamp": 1794459551444,
                 "workerId": 1
               },
               "fault": {
@@ -3774,7 +3774,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794457856988,
+                "lastTimestamp": 1794459551445,
                 "workerId": 1
               },
               "fault": {
@@ -3806,7 +3806,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794457856987,
+                "lastTimestamp": 1794459551444,
                 "workerId": 1
               },
               "fault": {
@@ -4522,7 +4522,7 @@
         "capacity": 8,
         "perShardCap": 2
       },
-      "builtAt": 1794457856987
+      "builtAt": 1794459551444
     },
     "configConsistency": {
       "config": {
@@ -5020,7 +5020,7 @@
         "burstCount": 12,
         "windowMs": 10000
       },
-      "builtAt": 1794457856987
+      "builtAt": 1794459551444
     },
     "cacheCoherency": {
       "config": {
@@ -5549,7 +5549,7 @@
         "crashAtWrite": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794457856987
+      "builtAt": 1794459551444
     },
     "messageDelivery": {
       "config": {
@@ -6038,10 +6038,10 @@
         "crashAfterSendAt": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794457856987
+      "builtAt": 1794459551444
     },
     "delayQueue": {
-      "builtAt": 1794457856987,
+      "builtAt": 1794459551444,
       "config": {
         "seed": 518,
         "tasks": 12,
@@ -6068,7 +6068,7 @@
               "id": "allOk",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 5804,
+              "lateMs": 47804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6080,7 +6080,7 @@
               "id": "tickSkew",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 5804,
+              "lateMs": 47804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6092,7 +6092,7 @@
               "id": "farFuture",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 13136,
+              "lateMs": 48136,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6104,7 +6104,7 @@
               "id": "manyCancels",
               "protocol": "TimingWheel",
               "fired": 6,
-              "lateMs": 2858,
+              "lateMs": 23858,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6128,7 +6128,7 @@
               "id": "concurrentWorkers",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 5804,
+              "lateMs": 47804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6139,7 +6139,7 @@
           ],
           "totals": {
             "fired": 54,
-            "lateMs": 33406,
+            "lateMs": 215406,
             "duplicatePickups": 0,
             "lostOnRestart": 6,
             "opUnits": 72
@@ -6375,7 +6375,7 @@
       }
     },
     "retryDlq": {
-      "builtAt": 1794457856987,
+      "builtAt": 1794459551444,
       "config": {
         "seed": 520,
         "messages": 16,
@@ -6793,7 +6793,7 @@
       }
     },
     "consumerGroup": {
-      "builtAt": 1794457856987,
+      "builtAt": 1794459551444,
       "config": {
         "seed": 523,
         "consumers": 3,
@@ -7299,7 +7299,7 @@
       }
     },
     "backpressure": {
-      "builtAt": 1794457856987,
+      "builtAt": 1794459551444,
       "config": {
         "steps": 48,
         "mu": 2,
@@ -8344,7 +8344,7 @@
       }
     },
     "logCompaction": {
-      "builtAt": 1794457856987,
+      "builtAt": 1794459551444,
       "config": {
         "seed": 526,
         "ops": 24,
@@ -9405,7 +9405,7 @@
       }
     },
     "bloomFilter": {
-      "builtAt": 1794457856987,
+      "builtAt": 1794459551444,
       "config": {
         "seed": 527,
         "capacity": 1024,
@@ -10104,7 +10104,7 @@
       }
     },
     "cacheReplacement": {
-      "builtAt": 1794457856987,
+      "builtAt": 1794459551444,
       "config": {
         "seed": 528,
         "capacity": 16,
@@ -10747,7 +10747,7 @@
       }
     },
     "streamWindow": {
-      "builtAt": 1794457856987,
+      "builtAt": 1794459551444,
       "config": {
         "seed": 529,
         "windowSize": 100,
@@ -12806,7 +12806,7 @@
       }
     },
     "hyperLogLog": {
-      "builtAt": 1794457856987,
+      "builtAt": 1794459551444,
       "config": {
         "seed": 530,
         "cardinality": 4096,
@@ -29726,7 +29726,7 @@
       }
     },
     "crdt": {
-      "builtAt": 1794457856987,
+      "builtAt": 1794459551444,
       "config": {
         "seed": 531,
         "replicaCount": 3,
@@ -30182,7 +30182,7 @@
       }
     },
     "springBatch": {
-      "builtAt": 1794457856987,
+      "builtAt": 1794459551444,
       "config": {
         "seed": 532,
         "items": 96,
@@ -30621,7 +30621,7 @@
       "rigged": false
     },
     "traceSampling": {
-      "builtAt": 1794457856987,
+      "builtAt": 1794459551444,
       "config": {
         "seed": 533,
         "items": 64,
@@ -31323,7 +31323,7 @@
       "rigged": false
     },
     "distributedSession": {
-      "builtAt": 1794457856987,
+      "builtAt": 1794459551444,
       "config": {
         "seed": 535,
         "sessions": 96,
@@ -31678,6 +31678,457 @@
       },
       "rigged": false
     },
-    "builtAt": 1794457856987
+    "transactionalOutbox": {
+      "builtAt": 1794459551444,
+      "config": {
+        "seed": 534,
+        "items": 96,
+        "pollInterval": 4,
+        "cdcLag": 1,
+        "retryLimit": 2,
+        "latencyBudget": 2,
+        "scenarios": [
+          "steadyFlow",
+          "crashAfterCommit",
+          "retryStorm",
+          "consumerHalfCrash",
+          "pollLag",
+          "cleanRerun"
+        ],
+        "rigged": false,
+        "atomicMagic": false,
+        "zeroPollInterval": false,
+        "perfectDedup": false
+      },
+      "rows": [
+        {
+          "protocol": "DualWrite",
+          "scenarios": [
+            {
+              "id": "steadyFlow",
+              "committed": 96,
+              "delivered": 96,
+              "lost": 0,
+              "ghost": 0,
+              "duplicates": 0,
+              "maxDeliveryLag": 0,
+              "atomicDelivery": true,
+              "lowLatency": true,
+              "noDuplicate": true,
+              "fault": "happy-path"
+            },
+            {
+              "id": "crashAfterCommit",
+              "committed": 96,
+              "delivered": 95,
+              "lost": 1,
+              "ghost": 0,
+              "duplicates": 0,
+              "maxDeliveryLag": 0,
+              "atomicDelivery": false,
+              "lowLatency": true,
+              "noDuplicate": true,
+              "fault": "crash-after-commit"
+            },
+            {
+              "id": "retryStorm",
+              "committed": 96,
+              "delivered": 96,
+              "lost": 0,
+              "ghost": 0,
+              "duplicates": 0,
+              "maxDeliveryLag": 0,
+              "atomicDelivery": true,
+              "lowLatency": true,
+              "noDuplicate": true,
+              "fault": "retry-storm"
+            },
+            {
+              "id": "consumerHalfCrash",
+              "committed": 96,
+              "delivered": 96,
+              "lost": 0,
+              "ghost": 0,
+              "duplicates": 0,
+              "maxDeliveryLag": 0,
+              "atomicDelivery": true,
+              "lowLatency": true,
+              "noDuplicate": true,
+              "fault": "consumer-half-crash"
+            },
+            {
+              "id": "pollLag",
+              "committed": 96,
+              "delivered": 96,
+              "lost": 0,
+              "ghost": 0,
+              "duplicates": 0,
+              "maxDeliveryLag": 0,
+              "atomicDelivery": true,
+              "lowLatency": true,
+              "noDuplicate": true,
+              "fault": "poll-lag"
+            },
+            {
+              "id": "cleanRerun",
+              "committed": 96,
+              "delivered": 96,
+              "lost": 0,
+              "ghost": 0,
+              "duplicates": 0,
+              "maxDeliveryLag": 0,
+              "atomicDelivery": true,
+              "lowLatency": true,
+              "noDuplicate": true,
+              "fault": "rerun-idempotent"
+            }
+          ],
+          "trilemma": {
+            "atomicDelivery": false,
+            "lowLatency": true,
+            "noDuplicate": true
+          },
+          "metrics": {
+            "committed": 576,
+            "delivered": 575,
+            "lost": 1,
+            "duplicates": 0,
+            "maxDeliveryLag": 0
+          }
+        },
+        {
+          "protocol": "PollingOutbox",
+          "scenarios": [
+            {
+              "id": "steadyFlow",
+              "committed": 96,
+              "delivered": 96,
+              "lost": 0,
+              "ghost": 0,
+              "duplicates": 0,
+              "maxDeliveryLag": 4,
+              "atomicDelivery": true,
+              "lowLatency": false,
+              "noDuplicate": true,
+              "fault": "happy-path"
+            },
+            {
+              "id": "crashAfterCommit",
+              "committed": 96,
+              "delivered": 96,
+              "lost": 0,
+              "ghost": 0,
+              "duplicates": 0,
+              "maxDeliveryLag": 4,
+              "atomicDelivery": true,
+              "lowLatency": false,
+              "noDuplicate": true,
+              "fault": "crash-after-commit"
+            },
+            {
+              "id": "retryStorm",
+              "committed": 96,
+              "delivered": 102,
+              "lost": 0,
+              "ghost": 0,
+              "duplicates": 0,
+              "maxDeliveryLag": 4,
+              "atomicDelivery": true,
+              "lowLatency": false,
+              "noDuplicate": true,
+              "fault": "retry-storm"
+            },
+            {
+              "id": "consumerHalfCrash",
+              "committed": 96,
+              "delivered": 99,
+              "lost": 0,
+              "ghost": 0,
+              "duplicates": 0,
+              "maxDeliveryLag": 4,
+              "atomicDelivery": true,
+              "lowLatency": false,
+              "noDuplicate": true,
+              "fault": "consumer-half-crash"
+            },
+            {
+              "id": "pollLag",
+              "committed": 96,
+              "delivered": 96,
+              "lost": 0,
+              "ghost": 0,
+              "duplicates": 0,
+              "maxDeliveryLag": 8,
+              "atomicDelivery": true,
+              "lowLatency": false,
+              "noDuplicate": true,
+              "fault": "poll-lag"
+            },
+            {
+              "id": "cleanRerun",
+              "committed": 96,
+              "delivered": 96,
+              "lost": 0,
+              "ghost": 0,
+              "duplicates": 0,
+              "maxDeliveryLag": 4,
+              "atomicDelivery": true,
+              "lowLatency": false,
+              "noDuplicate": true,
+              "fault": "rerun-idempotent"
+            }
+          ],
+          "trilemma": {
+            "atomicDelivery": true,
+            "lowLatency": false,
+            "noDuplicate": true
+          },
+          "metrics": {
+            "committed": 576,
+            "delivered": 585,
+            "lost": 0,
+            "duplicates": 0,
+            "maxDeliveryLag": 8
+          }
+        },
+        {
+          "protocol": "CdcOutbox",
+          "scenarios": [
+            {
+              "id": "steadyFlow",
+              "committed": 96,
+              "delivered": 96,
+              "lost": 0,
+              "ghost": 0,
+              "duplicates": 0,
+              "maxDeliveryLag": 1,
+              "atomicDelivery": true,
+              "lowLatency": true,
+              "noDuplicate": false,
+              "fault": "happy-path"
+            },
+            {
+              "id": "crashAfterCommit",
+              "committed": 96,
+              "delivered": 96,
+              "lost": 0,
+              "ghost": 0,
+              "duplicates": 0,
+              "maxDeliveryLag": 1,
+              "atomicDelivery": true,
+              "lowLatency": true,
+              "noDuplicate": false,
+              "fault": "crash-after-commit"
+            },
+            {
+              "id": "retryStorm",
+              "committed": 96,
+              "delivered": 102,
+              "lost": 0,
+              "ghost": 0,
+              "duplicates": 6,
+              "maxDeliveryLag": 1,
+              "atomicDelivery": true,
+              "lowLatency": true,
+              "noDuplicate": false,
+              "fault": "retry-storm"
+            },
+            {
+              "id": "consumerHalfCrash",
+              "committed": 96,
+              "delivered": 99,
+              "lost": 0,
+              "ghost": 0,
+              "duplicates": 3,
+              "maxDeliveryLag": 1,
+              "atomicDelivery": true,
+              "lowLatency": true,
+              "noDuplicate": false,
+              "fault": "consumer-half-crash"
+            },
+            {
+              "id": "pollLag",
+              "committed": 96,
+              "delivered": 96,
+              "lost": 0,
+              "ghost": 0,
+              "duplicates": 0,
+              "maxDeliveryLag": 1,
+              "atomicDelivery": true,
+              "lowLatency": true,
+              "noDuplicate": false,
+              "fault": "poll-lag"
+            },
+            {
+              "id": "cleanRerun",
+              "committed": 96,
+              "delivered": 96,
+              "lost": 0,
+              "ghost": 0,
+              "duplicates": 0,
+              "maxDeliveryLag": 1,
+              "atomicDelivery": true,
+              "lowLatency": true,
+              "noDuplicate": false,
+              "fault": "rerun-idempotent"
+            }
+          ],
+          "trilemma": {
+            "atomicDelivery": true,
+            "lowLatency": true,
+            "noDuplicate": false
+          },
+          "metrics": {
+            "committed": 576,
+            "delivered": 585,
+            "lost": 0,
+            "duplicates": 9,
+            "maxDeliveryLag": 1
+          }
+        }
+      ],
+      "vectors": {
+        "DualWrite": "011",
+        "PollingOutbox": "101",
+        "CdcOutbox": "110"
+      },
+      "verdict": {
+        "vectors": {
+          "DualWrite": "011",
+          "PollingOutbox": "101",
+          "CdcOutbox": "110"
+        },
+        "noUniversalWinner": true,
+        "trilemmaDistinguishes": true,
+        "noStrategyWinsAll": true,
+        "vectorFromTrilemma": true,
+        "dualWriteLosesOnCrash": true,
+        "pollingNoDup": true,
+        "cdcDuplicatesOnHalfCrash": true,
+        "rigged_pkg": false,
+        "riggedConvergenceCollapsed": false,
+        "atomicMagicKeepsDualWriteFragile": true,
+        "zeroPollIntervalErasesPollingDupRule": true,
+        "perfectDedupKeepsCdcFragilitySignals": true
+      },
+      "noUniversalWinner": true,
+      "trilemmaDistinguishes": true,
+      "causalLocks": {
+        "atomicDeliveryRequiresOutboxCausallyUnerasable": true,
+        "atLeastOnceRequiresDedupCausallyUnerasable": true,
+        "zeroLatencyNeedsCdcReplayCausallyUnerasable": true,
+        "causalLocksAllHold": true,
+        "retrySweep": [
+          {
+            "retryLimit": 0,
+            "duplicates": 0
+          },
+          {
+            "retryLimit": 1,
+            "duplicates": 3
+          },
+          {
+            "retryLimit": 2,
+            "duplicates": 6
+          },
+          {
+            "retryLimit": 3,
+            "duplicates": 9
+          }
+        ],
+        "pollSweep": [
+          {
+            "pollInterval": 0,
+            "maxDeliveryLag": 0,
+            "duplicates": 3
+          },
+          {
+            "pollInterval": 1,
+            "maxDeliveryLag": 1,
+            "duplicates": 0
+          },
+          {
+            "pollInterval": 2,
+            "maxDeliveryLag": 2,
+            "duplicates": 0
+          },
+          {
+            "pollInterval": 4,
+            "maxDeliveryLag": 4,
+            "duplicates": 0
+          },
+          {
+            "pollInterval": 8,
+            "maxDeliveryLag": 8,
+            "duplicates": 0
+          },
+          {
+            "pollInterval": 16,
+            "maxDeliveryLag": 16,
+            "duplicates": 0
+          }
+        ]
+      },
+      "crosscheck": {
+        "evidence": {
+          "routerMoved": 12,
+          "routerTracked": 80,
+          "ringNodes": 4,
+          "ringShardsUsed": 4,
+          "walLines": 80,
+          "walReplayed": 80,
+          "notices": 12,
+          "busListeners": 1,
+          "redisBitmapHits": 96,
+          "redisSlots": 96,
+          "poolCreated": 2,
+          "poolReused": 1,
+          "bucketAllowed": 3,
+          "bucketRejected": 4,
+          "heapFired": 3,
+          "heapPending": 0,
+          "counterSum": 2080,
+          "counterFalseSharing": 56,
+          "jitterSpread": 2.3221,
+          "remapConsistentRate": 0.25,
+          "remapModuloRate": 0.555
+        },
+        "soundness": {
+          "laneA": {
+            "businessTransactions": 96,
+            "messagesDelivered": 96,
+            "ghostDeliveries": 0
+          },
+          "laneAOk": true,
+          "laneB": {
+            "committed": 96,
+            "deliveries": 102,
+            "uniqueProcessed": 96,
+            "duplicatesFilteredByDedup": 6
+          },
+          "laneBOk": true,
+          "holds": true,
+          "nontrivial": true,
+          "falsifiable": true,
+          "tamper": {
+            "forgedCommit": {
+              "holds": false,
+              "reason": "forgedCommit：伪造已投未提交 ⇒ noGhost 真翻 false"
+            },
+            "silentDrop": {
+              "holds": false,
+              "reason": "silentDrop：静默丢未记 ⇒ atLeastOnce 真翻 false"
+            },
+            "duplicateRelease": {
+              "holds": false,
+              "reason": "duplicateRelease：去重下重复放行 ⇒ dedupEffective 真翻 false"
+            }
+          },
+          "events": 96
+        }
+      },
+      "rigged": false
+    },
+    "builtAt": 1794459551444
   }
 }

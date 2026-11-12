@@ -2143,3 +2143,72 @@ describe('KI-535 第二十九维 · sticky-session/jwt-stateless/redis-distribut
     expect(dom.els['ds-matrix-note'].textContent).toContain('systems.distributedSession 缺失')
   })
 })
+
+
+// ============ KI-534 第二十八维 · Spring Cloud 事务性发件箱（ob 族 · 5 腿） ============
+describe('KI-534 第二十八维 · transactional outbox / dual-write / polling / cdc（ob 族）', () => {
+  const realOb = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+  it('第二十八维真渲染：ob 矩阵 18 cell + 三策略向量 011/101/110 + 状态类 + ladder 条', async () => {
+    const dom = await runApp(realOb)
+    const matrix = dom.els['ob-matrix'].innerHTML
+    expect(matrix).toContain('ob-mat-head')
+    for (const p of ['DualWrite', 'PollingOutbox', 'CdcOutbox']) {
+      expect(matrix).toContain('data-strategy="' + p + '"')
+    }
+    for (const sc of ['steadyFlow', 'crashAfterCommit', 'retryStorm', 'consumerHalfCrash', 'pollLag', 'cleanRerun']) {
+      expect(matrix).toContain('data-s="' + sc + '"')
+    }
+    expect((matrix.match(/class="ob-cell /g) || []).length).toBe(18)
+    const tri = dom.els['ob-trilemma'].innerHTML
+    expect(tri).toContain('data-vec="011"')
+    expect(tri).toContain('data-vec="101"')
+    expect(tri).toContain('data-vec="110"')
+    const states = [...matrix.matchAll(/data-state="([^"]+)"/g)].map((m) => m[1])
+    expect(states.length).toBeGreaterThanOrEqual(18)
+    expect(dom.els['ob-ladder'].innerHTML).toContain('ob-bar')
+  })
+
+  it('第二十八维画中件 DOM：verifyOutboxSoundness 双路 + 十一真件 chip + 无 111', async () => {
+    const dom = await runApp(realOb)
+    const probes = dom.els['ob-probes'].innerHTML
+    for (const key of ['dualWriteLosesOnCrash', 'pollingNoDup', 'cdcDuplicatesOnHalfCrash',
+      'noStrategyWinsAll', 'noUniversalWinner', 'riggedConvergenceCollapsed']) {
+      expect(probes, 'probe chip ' + key).toContain('data-verdict="' + key + '"')
+    }
+    const verif = dom.els['ob-verif'].innerHTML
+    for (const key of ['holds', 'nontrivial', 'falsifiable']) {
+      expect(verif, 'verify row ' + key).toContain(key)
+    }
+    const cx = dom.els['ob-crosscheck'].innerHTML
+    for (const api of ['compareRemapping', 'createShardRouter', 'createHashRing', 'createWal', 'createBus',
+      'createRedisCache', 'createObjectPool', 'createTokenBucket', 'createMinHeapDelayQueue',
+      'createFullJitterBackoff', 'createPackedCounters']) {
+      expect(cx, '真件 ' + api + ' 必须 DOM 可见').toContain(api)
+    }
+    expect(cx).toContain('jitterSpread')
+  })
+
+  it('第二十八维 markup/CSS 自同 + systems.transactionalOutbox 缺失时真显式降级（不静默消失）', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-ob')
+    expect(html).toContain('id="ob-matrix"')
+    expect(html).toContain('id="ob-verif"')
+    expect(html).toContain('DualWrite=011 / PollingOutbox=101 / CdcOutbox=110')
+    expect(css).toContain('.ob-cell.lost')
+    expect(css).toContain('.ob-cell.delayed')
+    expect(css).toContain('.ob-cell.dup')
+    expect(css).toContain('.ob-cell.ok')
+    expect(css).toContain('.ob-flag.yes')
+    expect(css).toContain('.ob-bar > i')
+    expect(css).toContain('.ob-verif')
+    expect(css).toContain('@media')
+    const noOb = JSON.parse(JSON.stringify(realOb as any))
+    noOb.systems.transactionalOutbox = null
+    return runApp(noOb).then((dom2: any) => {
+      expect(dom2.els['ob-matrix'].innerHTML).toContain('暂缺')
+      expect(dom2.els['ob-trilemma'].innerHTML).toContain('暂缺')
+      expect(dom2.els['ob-matrix-note'].textContent).toContain('systems.transactionalOutbox 缺失')
+    })
+  })
+})

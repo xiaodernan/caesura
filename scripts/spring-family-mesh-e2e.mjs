@@ -164,6 +164,10 @@ export function runMeshE2E(opts = {}) {
     sbNow: opts.sbNow,
     distributedSession: opts.distributedSession,
     dsNow: opts.dsNow,
+    // KI-534：事务性发件箱教学件（transactionalOutbox=true 装配；DualWrite/PollingOutbox/CdcOutbox × 六场景矩阵 + 三难向量（默认 011/101/110 互异不封赢家）+ verifyOutboxSoundness 双路自证 + 十一真件 21 键交叉印证，不改调用路径）。
+    // 注入时钟用 toNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/ds/ts/rdq/dld 已占用前缀）。
+    transactionalOutbox: opts.transactionalOutbox,
+    toNow: opts.toNow,
     // KI-533：可观测性分布式追踪采样三策略（traceSampling=true 装配；只读 HeadBased/TailBased/Adaptive ×
     // 六场景矩阵 + 三难向量维序 [lowOverhead/anomalyCapture/loadAdaptive]（默认 100/010/101 互异不封赢家；
     // anomalyCapture⇔缓冲整条⇔非 lowOverhead 与 chk 锁同构；rigged 三开关 oracleHead/infiniteBuffer/perfectFeedback
@@ -319,6 +323,7 @@ export function runMeshE2E(opts = {}) {
         crdtSnapshot: status.crdt ?? null,
         springBatchSnapshot: status.springBatch ?? null,
         distributedSessionSnapshot: status.distributedSession ?? null,
+        transactionalOutboxSnapshot: status.transactionalOutbox ?? null,
         traceSamplingSnapshot: status.traceSampling ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
@@ -667,6 +672,19 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         crosscheck: r.distributedSessionSnapshot.crosscheck,
         causalLocks: r.distributedSessionSnapshot.causalLocks,
         verdict: r.distributedSessionSnapshot.verdict,
+      } : null,
+      transactionalOutbox: r.transactionalOutboxSnapshot ? {
+        strategies: r.transactionalOutboxSnapshot.rows.map((row) => ({
+          strategy: row.protocol,
+          ladder: row.scenarios.map((sc) => sc.id + ':' + (sc.lost > 0 ? '丢' : sc.duplicates > 0 ? '重' : sc.maxDeliveryLag > 2 ? '缓' : '✓')).join(' → '),
+          metrics: row.metrics, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.transactionalOutboxSnapshot.rows.map((row) => [row.protocol,
+          `${Number(row.trilemma.atomicDelivery)}${Number(row.trilemma.lowLatency)}${Number(row.trilemma.noDuplicate)}`])),
+        noUniversalWinner: r.transactionalOutboxSnapshot.verdict.noUniversalWinner,
+        crosscheck: r.transactionalOutboxSnapshot.crosscheck,
+        causalLocks: r.transactionalOutboxSnapshot.causalLocks,
+        verdict: r.transactionalOutboxSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

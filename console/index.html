@@ -567,6 +567,23 @@
       <p class="note" id="ds-trilemma-note">…</p>
     </article>
   </section>
+  <!-- 第二十八维 · DualWrite / PollingOutbox / CdcOutbox Spring Cloud 事务性发件箱（KI-534） -->
+  <section class="row row-ob">
+    <article class="panel panel-ob">
+      <div class="panel-head"><h2>第二十八维 · DualWrite/PollingOutbox/CdcOutbox · 三策略 × 六场景</h2><span class="hint">丢=DualWrite（业务先提交→直发消息·无 outbox·零延迟零重·但 commit 与 publish 之间的崩溃窗口永久丢消息·atomicDelivery=false）/ 缓=PollingOutbox（业务与 outbox 同事务落盘·常驻轮询按 pollInterval=4 tick 扫未发布行 publish·消费端事务性 dedup·不丢不重但 lowLatency=false、轮询 lag 真实存在）/ 重=CdcOutbox（业务与 outbox 同事务·tail 近实时投递 cdcLag=1 tick·lowLatency=true·但消费端无 dedup·retryStorm/consumerHalfCrash 下真重复·noDuplicate=false）</span></div>
+      <div class="ob-matrix" id="ob-matrix"></div>
+      <div class="ob-ladder" id="ob-ladder"></div>
+      <p class="note" id="ob-matrix-note">…</p>
+    </article>
+    <article class="panel panel-ob">
+      <div class="panel-head"><h2>三难向量（atomicDelivery ∧ lowLatency ∧ noDuplicate）· 双路自证</h2><span class="hint">DualWrite=011 / PollingOutbox=101 / CdcOutbox=110 · 三向量互异无一 111 不封赢家 · verifyOutboxSoundness 双路自证（clean 流提交守恒 messagesCommitted===messagesDelivered ∧ 无 ghost + retryStorm 流 Polling 全投递且唯一处理数==提交数）+ 三路篡改真喂回同一内核现算翻 false（forgedCommit/silentDrop/duplicateRelease）· 三因果锁（原子需 outbox 平行流 recoveryInvariant / 穷举 retryLimit 证 at-least-once 需 dedup / 扫 pollInterval 单调证零延迟需 CDC 回放）· rigged 三探针 atomicMagic/zeroPollInterval/perfectDedup 齐开 ⇒ Polling≡Cdc=110 区分度诚实塌缩、noUniversalWinner=false 绝不硬造 111</span></div>
+      <div class="ob-trilemma" id="ob-trilemma"></div>
+      <div class="ob-verif" id="ob-verif"></div>
+      <div class="ob-crosscheck" id="ob-crosscheck"></div>
+      <div class="ob-probes" id="ob-probes"></div>
+      <p class="note" id="ob-trilemma-note">…</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">

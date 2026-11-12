@@ -979,6 +979,47 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(fifteen.every((x) => x === 535000)).toBe(true)
   })
 
+  it('㉒e-transactional-outbox buildTransactionalOutboxReading 真跑：to* 注入生效 / transactionalOutbox:false 关闭 / rigged 收敛明示 / 双路自证 + 十一真件 / 十六时钟同源（KI-534）', async () => {
+    const { buildTransactionalOutboxReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 536000
+    const ob = (await buildTransactionalOutboxReading({}, now))!
+    expect(ob).not.toBe(null)
+    expect(ob.builtAt).toBe(536000)
+    expect(ob.rows.length).toBe(3)
+    expect(ob.config.scenarios.length).toBe(6)
+    expect(ob.vectors).toEqual({ DualWrite: '011', PollingOutbox: '101', CdcOutbox: '110' })
+    expect(ob.rigged).toBe(false)
+    expect(ob.noUniversalWinner).toBe(true)
+    expect(ob.trilemmaDistinguishes).toBe(true)
+    expect(ob.causalLocks.causalLocksAllHold).toBe(true)
+    const tuned = (await buildTransactionalOutboxReading({ toSeed: 12, toItems: 32, toPollInterval: 8 }, now))!
+    expect(tuned.config.seed).toBe(12)
+    expect(tuned.config.items).toBe(32)
+    expect(tuned.config.pollInterval).toBe(8)
+    const rig = (await buildTransactionalOutboxReading({ toRigged: true }, now))!
+    expect(rig.vectors).toEqual({ DualWrite: '011', PollingOutbox: '110', CdcOutbox: '110' })
+    expect(rig.rigged).toBe(true)
+    expect(rig.verdict.noUniversalWinner).toBe(false)
+    expect(rig.verdict.riggedConvergenceCollapsed).toBe(true)
+    expect(rig.verdict.noStrategyWinsAll).toBe(true)
+    expect(rig.causalLocks.causalLocksAllHold).toBe(true)
+    const cp = ob.crosscheck.soundness
+    expect(cp.holds).toBe(true)
+    expect(cp.nontrivial).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.tamper.forgedCommit.holds).toBe(false)
+    expect(cp.tamper.silentDrop.holds).toBe(false)
+    expect(cp.tamper.duplicateRelease.holds).toBe(false)
+    expect(Object.keys(ob.crosscheck.evidence).length).toBe(21)
+    const off = await buildSystems({ now, transactionalOutbox: false, distributedSession: false })
+    expect(off.transactionalOutbox).toBe(null)
+    expect(off.distributedSession).toBe(null)
+    expect(off.cacheReplacement).not.toBe(null)
+    const full = await buildSystems({ now })
+    const sixteen = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt, full.bloomFilter?.builtAt, full.cacheReplacement?.builtAt, full.streamWindow?.builtAt, full.hyperLogLog?.builtAt, full.crdt?.builtAt, full.springBatch?.builtAt, full.traceSampling?.builtAt, full.distributedSession?.builtAt, full.transactionalOutbox?.builtAt]
+    expect(sixteen.every((x) => x === 536000)).toBe(true)
+  })
+
   it('㉒c-trace-sampling buildTraceSamplingReading 真跑：ts* 注入生效 / traceSampling:false 关闭 / rigged Head≡Tail=110 诚实塌缩不硬造 111 / 双路自证 + 三路篡改真喂回 + 三因果锁 + 十一真件 / 十四时钟同源（KI-533）', async () => {
     const { buildTraceSamplingReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
     const now = () => 533000
