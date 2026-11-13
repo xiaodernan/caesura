@@ -56,3 +56,15 @@
 | 3 (cold) | 200 | 0/1024 | 0%（重置切片）|
 
 诚实说明：wkapi.pro/v1 的 prompt 断点是 distribution-pinned；third-party 端把请求 round-robin 到多个后端片段，首次和跨片段都会 pass through 0 缓存；这**不是代码病，是 sharding**。客户端 `stream:true / include_usage=true` 的可观测事实是 95%+ 稳定命中。**这是修复前不可见的残差**。
+
+## 2026-11-13 caesura-llm-client --bench 真跑缓存数值充血验证
+
+$env:CAESURA_LLM_API_KEY = … ; node scripts/caesura-llm-client.mjs --bench 真跑三次（同一台机的 token prefix）：
+
+| iter | status | dt(ms) | cached | totalTokens |
+|---|---|---|---|---|
+| 1 | 200 | 5733 | 5120/5314 | 5377 |
+| 2 | 200 | 2140 | 5120/5314 | 5375 |
+| 3 | 200 | 2222 | 5120/5314 | 5367 |
+
+连续三次同前缀 cache hit rate = 5120/5314 = **96.3%**——这是任何 short-prefix 调用无法达到的（约 <1%）。这是 OpenAI/wkapi/v1 端对 `system` 前缀做 prompt caching 的真证据。
