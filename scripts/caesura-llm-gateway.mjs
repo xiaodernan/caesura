@@ -139,7 +139,34 @@ export async function callLlm(messages, opts = {}, deps = {}) {
   const base = normalizeBaseUrl(opts.baseUrl || cfg.baseUrl)
   const t0 = startClock(deps.clock || (() => Date.now()), Date.now())
   try {
-    const res = await fetchImpl(`${base}/chat/completions`, {
+    if (opts.stream === true) {
+    // 真流通道：opt-in，走 caesura-llm-client 的 SSE 解析，缓存 token 真值直达。
+    const { callLlm: unifiedLlm } = await import('./caesura-llm-client.mjs')
+    const unified = await unifiedLlm({
+      model: cfg.model,
+      stream: true,
+      stream_options: { include_usage: true },
+      temperature: cfg.temperature,
+      max_tokens: cfg.maxTokens,
+      messages,
+    })
+    const t1 = startClock(deps.clock || (() => Date.now()), Date.now())
+    return {
+      ok: unified.ok,
+      mode: 'live',
+      status: unified.status,
+      model: cfg.model,
+      content: unified.text || '',
+      finishReason: 'stop',
+      usage: unified.usage || null,
+      latencyMs: Math.max(0, t1 - t0),
+      via: 'live-stream',
+      rawText: null,
+      cached: (unified.cachedTokens ?? 0) > 0,
+      cachedTokens: unified.cachedTokens ?? 0,
+    }
+  }
+  const res = await fetchImpl(`${base}/chat/completions`, {
       method: 'POST',
       headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
       body: JSON.stringify(buildChatBody(messages, cfg)),
