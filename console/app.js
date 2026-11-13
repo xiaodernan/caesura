@@ -79,6 +79,7 @@
       renderSpringFeign(snap.systems ? snap.systems.springFeign : null)
       renderSpringConfig(snap.systems ? snap.systems.springConfig : null)
       renderSpringBus(snap.systems ? snap.systems.springBus : null)
+      renderRedisPipeline(snap.systems ? snap.systems.redisPipeline : null)
       renderTraceSampling(snap.systems ? snap.systems.traceSampling : null)
       setLive(true, result.source)
     }).catch(function (e) {
@@ -3573,6 +3574,132 @@
     var probes = $('#sc-probes')
     if (probes) probes.innerHTML = chips.join('')
     if (note) note.textContent = '维轴 [hotReload / scaleFriendly / consistency]；默认向量 GitBackend=110 / NativeBackend=101 / RedisBackend=011。rigged：freeConsistency=Git 副本零 lag→111、freeHotReload=Redis 真推送→111、freeScale=Native 零成本共享盘→111。因果锁：gitCommitLag / nativeHostAffinity / redisHotRtt · causalLocksAllHold=true。'
+  }
+
+  /* ================= KI-549 PipelineBatch/LuaScripting/WatchCas Redis 三策略事务 —— 第四十四维 · rp 霸 ================= */
+
+  function renderRedisPipeline(rp) {
+    renderRpMatrix(rp && rp.rows, rp && rp.config)
+    renderRpLadder(rp && rp.rows)
+    renderRpTrilemma(rp && rp.rows, rp && rp.verdict, rp && rp.crosscheck)
+  }
+
+  function rpMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 缺失</div>'
+    if (note) note.textContent = 'systems.redisPipeline 缺失 → 请先 npm run console:data 再生成'
+  }
+
+  function rpCell(c, protocol) {
+    if (!c) return { cls: '', ch: '·' }
+    if (protocol === 'PipelineBatch') return { cls: 'pipe', ch: '背板' }
+    if (protocol === 'LuaScripting') return { cls: 'lua', ch: 'EVAL' }
+    if (protocol === 'WatchCas') return { cls: 'cas', ch: 'WATCH' }
+    return { cls: 'ok', ch: '✓' }
+  }
+
+  function renderRpMatrix(rows, config) {
+    var box = $('#rp-matrix'), note = $('#rp-matrix-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      rpMissing(box, note, 'rp 矩阵'); return
+    }
+    var scenarios = ['cleanSteadyState', 'burstOverload', 'hotContention', 'cleanRerun']
+    var head = '<div class="rp-mat-row rp-mat-head"><span class="rp-mat-proto">策略</span>' +
+      scenarios.map(function (sc) { return '<span class="rp-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="rp-mat-cost">processed/op</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = rpCell(cell, row.protocol)
+        return '<span class="rp-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="rp-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="rp-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="rp-mat-cost"><b>' + esc(fmt(m.totalProcessed)) + '</b></span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'PipelineBatch / LuaScripting / WatchCas 三策略，cleanSteadyState / burstOverload / hotContention（app:seq:deal 单热 key 串联）/ cleanRerun（幂等重放）；每格只展示 三维向量：atomicPerPipe × roundTripCount × contendedLockFree。背板传输不是事务；EVAL 原子但阻塞全局；CAS 在热 key 上活用。'
+  }
+
+  function renderRpLadder(rows) {
+    var box = $('#rp-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.totalProcessed) ? r.metrics.totalProcessed : 1 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.totalProcessed) ? Math.round(m.totalProcessed / max * 100) : 0
+      return '<div class="rp-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="rp-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">processed ' + esc(fmt(m.totalProcessed)) + ' · msgs ' + esc(fmt(m.totalMessages)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderRpTrilemma(rows, verdict, crosscheck) {
+    var box = $('#rp-trilemma'), veBox = $('#rp-verif'), cxBox = $('#rp-crosscheck'), note = $('#rp-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      rpMissing(box, note, 'rp 向量'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''; return
+    }
+    var flags = [['atomicPerPipe', '事务原子'], ['roundTripCount', '一次 RTT'], ['contendedLockFree', '零锁']]
+    var head = '<div class="rp-vec rp-vec-head"><span class="proto">策略</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="rp-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '×') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="rp-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    if (veBox) {
+      var p1 = rows.find(function (r) { return r.protocol === 'PipelineBatch' })
+      var l1 = rows.find(function (r) { return r.protocol === 'LuaScripting' })
+      var r1 = rows.find(function (r) { return r.protocol === 'WatchCas' })
+      var cp = crosscheck && crosscheck.soundness
+      veBox.innerHTML = [
+        '<div class="rp-rb-row"><b>PipelineBatch</b> 原子=' + esc(String(p1?.trilemma?.atomicPerPipe)) + '（pipeline ≠ transaction · client 之间穿插） 一次RTT=' + esc(String(p1?.trilemma?.roundTripCount)) + '（一批一次 RTT） 零锁=' + esc(String(p1?.trilemma?.contendedLockFree)) + '（不加锁）</div>',
+        '<div class="rp-rb-row"><b>LuaScripting</b> 原子=' + esc(String(l1?.trilemma?.atomicPerPipe)) + '（EVAL 全程单线程 atomic） 一次RTT=' + esc(String(l1?.trilemma?.roundTripCount)) + ' 零锁=' + esc(String(l1?.trilemma?.contendedLockFree)) + '（脚本阻塞全局事件循环）</div>',
+        '<div class="rp-rb-row"><b>WatchCas</b> 原子=' + esc(String(r1?.trilemma?.atomicPerPipe)) + '（WATCH → MULTI → EXEC · 高频键 abort 重试） 一次RTT=' + esc(String(r1?.trilemma?.roundTripCount)) + '（abort 后要再来一次 watch → retry） 零锁=' + esc(String(r1?.trilemma?.contendedLockFree)) + '</div>',
+        cp ? '<div class="rp-rb-row"><b>verifyRedisPipelineSoundness</b> holds=' + (cp.holds ? 'true' : 'false') + ' nontrivial=' + (cp.nontrivial ? 'true' : 'false') + ' falsifiable=' + (cp.falsifiable ? 'true' : 'false') + ' · laneA{pipelineAccepted=' + esc(String(cp.laneA?.pipelineAccepted)) + '/' + esc(String(cp.laneA?.expected)) + '} laneB{luaExecuted=' + esc(String(cp.laneB?.luaExecuted)) + ' / scriptMs=' + esc(String(cp.laneB?.scriptMs)) + '}</div>' : '',
+      ].join('')
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>→ <b>compareRemapping</b> 一致哈希命中 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>' +
+          '<div>→ <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 台</div>' +
+          '<div>→ <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 计费 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
+          '<div>→ <b>createWal</b> lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>→ <b>createBus</b> rp.bound 通知 ' + esc(fmt(ev.notices)) + ' 次 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>→ <b>createRedisCache</b> pipe 键 ' + esc(fmt(ev.redisBitmapHits)) + ' 次 · entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+          '<div>→ <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+          '<div>→ <b>createTokenBucket</b> 放行 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>→ <b>createMinHeapDelayQueue</b> 弹出 ' + esc(fmt(ev.heapFired)) + ' 次 · pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+          '<div>→ <b>createFullJitterBackoff</b> jitterSpread <b>' + esc(String((ev.jitterSpread ?? 0).toFixed(4))) + '</b>（64 次 delayFor 波动）</div>' +
+          '<div>→ <b>createPackedCounters</b> 和=' + esc(fmt(ev.counterSum)) + ' · falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">跨证据缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var chips = [
+      '<span class="chip" data-verdict="noUniversalWinner"><b>noUniversalWinner</b> ' + (noWin ? '✓（三难不可兼得）' : '×') + '</span>',
+      '<span class="chip" data-verdict="noStrategyWinsAll"><b>noStrategyWinsAll</b> ' + (v.noStrategyWinsAll ? '✓ 没有 111' : '×') + '</span>',
+      '<span class="chip" data-verdict="vectorFromTrilemma"><b>vectorFromTrilemma</b> 向量同源 ✓</span>',
+      '<span class="chip jade-t" data-verdict="noUniversalWinner2">默认三策略互补，绝不成品 111</span>',
+    ]
+    var probes = $('#rp-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维轴 [atomicPerPipe / roundTripCount / contendedLockFree]；默认向量 PipelineBatch=011（pipeline ≠ transaction·一次 RTT 不persist）/ LuaScripting=110（EVAL 原子但阻塞全局）/ WatchCas=101（WATCH 乐观 CAS 一次 RTT 即 false）。rigged：freeAtomicity（假装 pipeline 可 atomic）/ freeLua（脚本不阻塞·违背事件循环）/ freeCas（WATCH 零成本 CAS）全员 collapse。因果锁：pipelineNotAtomic / luaSingleThread / watchLiveLock · causalLocksAllHold=true。'
   }
 
   /* ================= KI-548 InMemoryLocalBus/RedisPubSubBus/KafkaBrokerBus Spring Cloud Bus 事件分发 —— 第四十三维 · bus 霸 ================= */

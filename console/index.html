@@ -807,6 +807,24 @@
     </article>
   </section>
 
+  <!-- 第四十四维 · Redis Pipeline/Lua/WATCH-CAS 三策略（KI-549） -->
+  <section class="row row-rp">
+    <article class="panel panel-rp">
+      <div class="panel-head"><h2>第四十四维 · PipelineBatch / LuaScripting / WatchCas —— Redis 三策略事务</h2><span class="hint">PipelineBatch=011（纯背板批量传输·无事务边界·caller 之间可穿插 / 一次 RTT / 零锁、不 persist）；LuaScripting=110（EVAL 原子但单线程阻塞全局事件循环）；WatchCas=101（WATCH+MULTI 乐观 CAS·arx starvation-prone，一次 Watch-then-Exec-再试路径不可能 = 1 RTT / 零锁但高热 key 必活锁）——默认向量 011/110/101，无一赢得 111</span></div>
+      <div class="rp-matrix" id="rp-matrix"></div>
+      <div class="rp-ladder" id="rp-ladder"></div>
+      <p class="note" id="rp-matrix-note">…</p>
+    </article>
+    <article class="panel panel-rp">
+      <div class="panel-head"><h2>Redis 三维向量（atomicPerPipe · roundTripCount · contendedLockFree）· 双路自证 + 三路篡改 + 因果锁</h2><span class="hint">PipelineBatch=011 / LuaScripting=110 / WatchCas=101 · 互补三路 · verifyRedisPipelineSoundness 双路自证（lane A pipeline batched RTT vs lane B Lua EVAL 原子；tamper 三通：pipelineNotAtomic / luaLongBlock / watchLiveLock 真喂回 hold=false；十一件 21 物证 compareRemapping/ShardRouter/HashRing/WAL/Bus/Redis/Pool/Bucket/MinHeap/PackedCounters/FullJitter Backoff）</span></div>
+      <div class="rp-trilemma" id="rp-trilemma"></div>
+      <div class="rp-verif" id="rp-verif"></div>
+      <div class="rp-crosscheck" id="rp-crosscheck"></div>
+      <div class="rp-probes" id="rp-probes"></div>
+      <p class="note" id="rp-trilemma-note">…</p>
+    </article>
+  </section>
+
 </main>
 
 <footer class="footer">

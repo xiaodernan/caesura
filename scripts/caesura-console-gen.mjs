@@ -58,6 +58,7 @@ import { springStreamBindingStudy, springStreamBindingSnapshot } from './caesura
 import { springFeignStudy, springFeignSnapshot } from './caesura-spring-feign.mjs'
 import { springConfigStudy, springConfigSnapshot } from './caesura-spring-config.mjs'
 import { springBusStudy, springBusSnapshot } from './caesura-spring-bus.mjs'
+import { redisPipelineStudy, redisPipelineSnapshot } from './caesura-redis-pipeline.mjs'
 import { traceSamplingStudy, traceSamplingSnapshot } from './caesura-trace-sampling.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
@@ -402,7 +403,9 @@ export async function buildSystems(opts = {}) {
   const springConfig = opts.springConfig === false ? null : await buildSpringConfigReading(opts, now)
   // KI-548：Spring Cloud Bus 事件分发教学件（InMemoryLocalBus/RedisPubSubBus/KafkaBrokerBus 三后端 + verifySpringBusSoundness 双路自证 + 十一件 21 物证）
   const springBus = opts.springBus === false ? null : await buildSpringBusReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, priorityQueue, batchStreamJoin, cdcOutboxJoin, springStreamBinding, springFeign, springConfig, springBus, builtAt: now() }
+  // KI-549：Redis 三策略事务教学件（PipelineBatch/LuaScripting/WatchCas + verifyRedisPipelineSoundness 双路自证 + 十一件 21 物证）
+  const redisPipeline = opts.redisPipeline === false ? null : await buildRedisPipelineReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, priorityQueue, batchStreamJoin, cdcOutboxJoin, springStreamBinding, springFeign, springConfig, springBus, redisPipeline, builtAt: now() }
 }
 
 /**
@@ -532,6 +535,29 @@ export async function buildSpringFeignReading(opts, now) {
     return springFeignSnapshot(s)
   } catch (e) {
     return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
+ * KI-549：Redis 三策略事务教学件（PipelineBatch / LuaScripting / WatchCas + verifyRedisPipelineSoundness 双路自证 + 十一件 21 物证）。
+ * 失败返回 null；CLI 双点一律。rigged 组合 collapse 三旗。
+ * @param {object} opts { redisPipeline?:false, rpSeed?, rpMessages?, rpFreeAtomicity?, rpFreeLua?, rpFreeCas?, rpRigged? }
+ * @param {()=>number} now 时间母版，builtAt 盖记值。
+ */
+export async function buildRedisPipelineReading(opts, now) {
+  try {
+    const s = await redisPipelineStudy({
+      now,
+      ...(opts.rpSeed ? { seed: Math.max(0, Math.floor(Number(opts.rpSeed))) } : {}),
+      ...(opts.rpMessages ? { messages: Math.max(16, Math.floor(Number(opts.rpMessages))) } : {}),
+      ...(opts.rpFreeAtomicity === true ? { freeAtomicity: true } : {}),
+      ...(opts.rpFreeLua === true ? { freeLua: true } : {}),
+      ...(opts.rpFreeCas === true ? { freeCas: true } : {}),
+      ...(opts.rpRigged === true ? { rigged: true } : {}),
+    })
+    return redisPipelineSnapshot(s)
+  } catch (e) {
+    return null // 静态降级：null → 前端 rp-missing 分支。与 Bus/Config/Feign/StreamBinding 同。
   }
 }
 

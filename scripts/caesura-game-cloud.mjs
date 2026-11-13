@@ -61,6 +61,7 @@ import { batchStreamJoinStudy, batchStreamJoinSnapshot } from './caesura-batch-s
 import { springFeignStudy, springFeignSnapshot } from './caesura-spring-feign.mjs'
 import { springConfigStudy, springConfigSnapshot } from './caesura-spring-config.mjs'
 import { springBusStudy, springBusSnapshot } from './caesura-spring-bus.mjs'
+import { redisPipelineStudy, redisPipelineSnapshot } from './caesura-redis-pipeline.mjs'
 import { springStreamBindingStudy, springStreamBindingSnapshot } from './caesura-spring-stream-binding.mjs'
 import { cdcOutboxJoinStudy, cdcOutboxJoinSnapshot } from './caesura-cdc-outbox-join.mjs'
 import {
@@ -958,6 +959,24 @@ export function createGameCloud(opts = {}) {
     sbuCached = springBusSnapshot(study)
     return sbuCached
   }
+  // KI-549：Redis Pipeline/Lua/WatchCas 三策略事务教学件（PipelineBatch/LuaScripting/WatchCas=PipelineBatch(0,1,1)/LuaScripting(1,1,0)/WatchCas(1,0,1)）——opt-in（status/ rp*）。
+  // opts.redisPipeline===true 单纯启用默认；对象则带 seed/messages/freeAtomicity/freeLua/freeCas/rigged 等。
+  // 注入 rows/vectors/verdict 完整时以注入 study 为准；默认 redisPipeline:false 等同其它 KI 的零开销策略。
+  // 讲点：Pipeline≠事务 / EVAL 单线程原子但阻塞全局 / WATCH+MULTI 乐观 CAS 高热 key 活锁。
+  const rpCfg = opts.redisPipeline === true ? {} : (opts.redisPipeline && typeof opts.redisPipeline === 'object' ? opts.redisPipeline : null)
+  const rpInjected = rpCfg !== null && opts.redisPipeline &&
+    typeof opts.redisPipeline === 'object' && Array.isArray(opts.redisPipeline.rows) &&
+    opts.redisPipeline.vectors && opts.redisPipeline.verdict
+  let rpCached = null
+  async function rpSnapshotForStatus() {
+    if (rpCfg === null) return null
+    if (rpCached) return rpCached
+    const study = rpInjected
+      ? opts.redisPipeline
+      : await redisPipelineStudy({ ...rpCfg, now: opts.rpNow ?? rpCfg.now })
+    rpCached = redisPipelineSnapshot(study)
+    return rpCached
+  }
 
   // KI-545：CDC outbox join 教学件（LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin；opt-in、status/ coj*）。
   // opts.springStreamBinding===true 走钳制默认参数（可覆盖 now/seed/messages/interval/nailedSnapshot/freeBinlog/noLatch/rigged 等）；
@@ -1176,6 +1195,8 @@ export function createGameCloud(opts = {}) {
     runSpringConfigStudy: scCfg === null ? null : () => springConfigStudy({ ...scCfg, now: opts.scNow ?? scCfg.now }),
     /** KI-548：Spring Cloud Bus 事件分发教学件 —— 缺省 opts.springBus 时为 null；InMemoryLocalBus/RedisPubSubBus/KafkaBrokerBus 三后端互补三难 + verifySpringBusSoundness 双路自证 + 十一件 21 物证。 */
     runSpringBusStudy: sbuCfg === null ? null : () => springBusStudy({ ...sbuCfg, now: opts.sbuNow ?? sbuCfg.now }),
+    /** KI-549：Redis 三策略事务教学件 —— 缺省 opts.redisPipeline 时为 null；PipelineBatch/LuaScripting/WatchCas 互补三难 + verifyRedisPipelineSoundness 双路自证 + 十一件 21 物证。 */
+    runRedisPipelineStudy: rpCfg === null ? null : () => redisPipelineStudy({ ...rpCfg, now: opts.rpNow ?? rpCfg.now }),
     /** KI-545：CDC outbox join 教学件；缺 opts.springStreamBinding 时为 null；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异不封赢家）+ verifySpringStreamBindingSoundness 双路自证 + 十一枚真件交叉印证。 */
     runSpringStreamBindingStudy: ssbCfg === null ? null : () => springStreamBindingStudy({ ...ssbCfg, now: opts.ssbNow ?? ssbCfg.now }),
     /** KI-544：CDC outbox join 教学件；缺 opts.cdcOutboxJoin 时为 null；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异不封赢家）+ verifyCdcOutboxJoinSoundness 双路自证 + 十一枚真件交叉印证。 */
@@ -1251,6 +1272,7 @@ export function createGameCloud(opts = {}) {
         springFeign: await sfSnapshotForStatus(),
         springConfig: await scSnapshotForStatus(),
         springBus: await sbuSnapshotForStatus(),
+        redisPipeline: await rpSnapshotForStatus(),
         springStreamBinding: await ssbSnapshotForStatus(),
         cdcOutboxJoin: await cojSnapshotForStatus(),
         traceSampling: await tsSnapshotForStatus(),

@@ -2873,3 +2873,47 @@ describe('KI-548 Spring Cloud Bus 事件分发 · InMemoryLocalBus/RedisPubSubBu
     })
   })
 })
+
+// ============ KI-549 Redis Pipeline/Lua/WatchCas 三策略 Redis 三维 "rp 霸" ============
+describe('KI-549 Redis 三策略事务 · PipelineBatch / LuaScripting / WatchCas（rp 霸）', () => {
+  const realRp = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+  it('第四十四维 markup/CSS 面板渲染：rp 矩阵 12 cell + 向量 011/110/101 + 状态角标 + ladder 条', async () => {
+    const dom = await runApp(realRp)
+    const matrix = dom.els['rp-matrix'].innerHTML
+    expect(matrix).toContain('rp-mat-head')
+    for (const p of ['PipelineBatch', 'LuaScripting', 'WatchCas']) {
+      expect(matrix).toContain('data-strategy="' + p + '"')
+    }
+    for (const sc of ['cleanSteadyState', 'burstOverload', 'hotContention', 'cleanRerun']) {
+      expect(matrix).toContain('data-s="' + sc + '"')
+    }
+    expect((matrix.match(/class="rp-cell /g) || []).length).toBe(12)
+    const tri = dom.els['rp-trilemma'].innerHTML
+    expect(tri).toContain('data-vec="011"')
+    expect(tri).toContain('data-vec="110"')
+    expect(tri).toContain('data-vec="101"')
+    expect(dom.els['rp-ladder'].innerHTML).toContain('rp-bar')
+  })
+
+  it('rp markup/CSS 同源 + systems.redisPipeline 缺失时降级分支可见', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-rp')
+    expect(html).toContain('id="rp-matrix"')
+    expect(html).toContain('id="rp-verif"')
+    expect(html).toContain('PipelineBatch=011 / LuaScripting=110 / WatchCas=101')
+    expect(css).toContain('.rp-cell.pipe')
+    expect(css).toContain('.rp-cell.lua')
+    expect(css).toContain('.rp-cell.cas')
+    expect(css).toContain('.rp-flag.yes')
+    expect(css).toContain('.rp-bar > i')
+    expect(css).toContain('.rp-verif')
+    const noRp = JSON.parse(JSON.stringify(realRp as any))
+    noRp.systems.redisPipeline = null
+    return runApp(noRp).then((dom2: any) => {
+      expect(dom2.els['rp-matrix'].innerHTML).toContain('缺失')
+      expect(dom2.els['rp-trilemma'].innerHTML).toContain('缺失')
+      expect(dom2.els['rp-matrix-note'].textContent).toContain('systems.redisPipeline 缺失')
+    })
+  })
+})
