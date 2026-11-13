@@ -59,6 +59,7 @@
     "priority-queue:bench": "node scripts/caesura-priority-queue.mjs",
     "batch-stream-join:bench": "node scripts/caesura-batch-stream-join.mjs",
     "cdc-outbox-join:bench": "node scripts/caesura-cdc-outbox-join.mjs",
+    "spring-stream-binding:bench": "node scripts/caesura-spring-stream-binding.mjs",
     "gateway-routing:bench": "node scripts/caesura-gateway-routing.mjs",
     "trace-sampling:bench": "node scripts/caesura-trace-sampling.mjs",
     "outbox:bench": "node scripts/caesura-transactional-outbox.mjs",
