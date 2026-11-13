@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794579312511,
+  "generatedAt": 1794580802384,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1365,12 +1365,12 @@
           "keys": 1,
           "versions": 2,
           "commitLogSize": 1,
-          "now": 1794579312513
+          "now": 1794580802386
         },
         "final": {
           "A": {
             "value": 101,
-            "commitTs": 1794579312513,
+            "commitTs": 1794580802386,
             "tombstone": false
           }
         }
@@ -3646,7 +3646,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794579312511,
+                "lastTimestamp": 1794580802384,
                 "workerId": 1
               },
               "fault": {
@@ -3742,7 +3742,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794579312511,
+                "lastTimestamp": 1794580802384,
                 "workerId": 1
               },
               "fault": {
@@ -3774,7 +3774,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794579312512,
+                "lastTimestamp": 1794580802385,
                 "workerId": 1
               },
               "fault": {
@@ -3806,7 +3806,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794579312511,
+                "lastTimestamp": 1794580802384,
                 "workerId": 1
               },
               "fault": {
@@ -4522,7 +4522,7 @@
         "capacity": 8,
         "perShardCap": 2
       },
-      "builtAt": 1794579312511
+      "builtAt": 1794580802384
     },
     "configConsistency": {
       "config": {
@@ -5020,7 +5020,7 @@
         "burstCount": 12,
         "windowMs": 10000
       },
-      "builtAt": 1794579312511
+      "builtAt": 1794580802384
     },
     "cacheCoherency": {
       "config": {
@@ -5549,7 +5549,7 @@
         "crashAtWrite": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794579312511
+      "builtAt": 1794580802384
     },
     "messageDelivery": {
       "config": {
@@ -6038,10 +6038,10 @@
         "crashAfterSendAt": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794579312511
+      "builtAt": 1794580802384
     },
     "delayQueue": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 518,
         "tasks": 12,
@@ -6068,7 +6068,7 @@
               "id": "allOk",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 47804,
+              "lateMs": 54804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6080,7 +6080,7 @@
               "id": "tickSkew",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 47804,
+              "lateMs": 54804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6092,7 +6092,7 @@
               "id": "farFuture",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 48136,
+              "lateMs": 62136,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6128,7 +6128,7 @@
               "id": "concurrentWorkers",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 47804,
+              "lateMs": 54804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6139,7 +6139,7 @@
           ],
           "totals": {
             "fired": 54,
-            "lateMs": 215406,
+            "lateMs": 250406,
             "duplicatePickups": 0,
             "lostOnRestart": 6,
             "opUnits": 72
@@ -6375,7 +6375,7 @@
       }
     },
     "retryDlq": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 520,
         "messages": 16,
@@ -6793,7 +6793,7 @@
       }
     },
     "consumerGroup": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 523,
         "consumers": 3,
@@ -7299,7 +7299,7 @@
       }
     },
     "backpressure": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "steps": 48,
         "mu": 2,
@@ -8344,7 +8344,7 @@
       }
     },
     "logCompaction": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 526,
         "ops": 24,
@@ -9405,7 +9405,7 @@
       }
     },
     "bloomFilter": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 527,
         "capacity": 1024,
@@ -10104,7 +10104,7 @@
       }
     },
     "cacheReplacement": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 528,
         "capacity": 16,
@@ -10747,7 +10747,7 @@
       }
     },
     "streamWindow": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 529,
         "windowSize": 100,
@@ -12806,7 +12806,7 @@
       }
     },
     "hyperLogLog": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 530,
         "cardinality": 4096,
@@ -29726,7 +29726,7 @@
       }
     },
     "crdt": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 531,
         "replicaCount": 3,
@@ -30182,7 +30182,7 @@
       }
     },
     "springBatch": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 532,
         "items": 96,
@@ -30621,7 +30621,7 @@
       "rigged": false
     },
     "traceSampling": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 533,
         "items": 64,
@@ -31323,7 +31323,7 @@
       "rigged": false
     },
     "distributedSession": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 535,
         "sessions": 96,
@@ -31679,7 +31679,7 @@
       "rigged": false
     },
     "transactionalOutbox": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 534,
         "items": 96,
@@ -32130,7 +32130,7 @@
       "rigged": false
     },
     "loadBalance": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 536,
         "requests": 96,
@@ -32550,7 +32550,7 @@
       "rigged": false
     },
     "circuitBreaker": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 537,
         "calls": 96,
@@ -33080,7 +33080,7 @@
       "rigged": false
     },
     "llmGateway": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 538,
         "mode": "offline",
@@ -33475,7 +33475,7 @@
       "rigged": false
     },
     "gatewayRouting": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 539,
         "requests": 96,
@@ -33813,7 +33813,7 @@
       "rigged": false
     },
     "idempotentConsumer": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 540,
         "messages": 96,
@@ -34239,7 +34239,7 @@
       "rigged": false
     },
     "consumerRebalance": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 541,
         "partitions": 6,
@@ -34649,7 +34649,7 @@
       "rigged": false
     },
     "priorityQueue": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 542,
         "messages": 96,
@@ -34941,7 +34941,7 @@
       "rigged": false
     },
     "batchStreamJoin": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 543,
         "messages": 96,
@@ -35218,7 +35218,7 @@
       "rigged": false
     },
     "cdcOutboxJoin": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 544,
         "messages": 96,
@@ -35481,7 +35481,7 @@
       "rigged": false
     },
     "springStreamBinding": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 545,
         "messages": 96,
@@ -35742,7 +35742,7 @@
       "rigged": false
     },
     "springFeign": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 546,
         "messages": 96,
@@ -35997,7 +35997,7 @@
       "rigged": false
     },
     "springConfig": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 547,
         "messages": 96,
@@ -36253,7 +36253,7 @@
       "rigged": false
     },
     "springBus": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 548,
         "messages": 96,
@@ -36509,7 +36509,7 @@
       "rigged": false
     },
     "redisPipeline": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 549,
         "messages": 96,
@@ -36765,7 +36765,7 @@
       "rigged": false
     },
     "gatewayRetry": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 550,
         "messages": 96,
@@ -37021,7 +37021,7 @@
       "rigged": false
     },
     "springConsul": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 551,
         "messages": 96,
@@ -37278,7 +37278,7 @@
       "rigged": false
     },
     "redisHa": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 552,
         "messages": 96,
@@ -37535,7 +37535,7 @@
       "rigged": false
     },
     "redisStream": {
-      "builtAt": 1794579312511,
+      "builtAt": 1794580802384,
       "config": {
         "seed": 553,
         "messages": 96,
@@ -37790,6 +37790,262 @@
       },
       "rigged": false
     },
-    "builtAt": 1794579312511
+    "springVault": {
+      "builtAt": 1794580802384,
+      "config": {
+        "seed": 554,
+        "messages": 96,
+        "scenarios": [
+          "cleanSteadyState",
+          "burstOverload",
+          "leaseExhaustion",
+          "cleanRerun"
+        ],
+        "rigged": false,
+        "freeStaticLease": false,
+        "freeLeaseRefresh": false,
+        "freeRotation": false
+      },
+      "rows": [
+        {
+          "protocol": "K8sStatic",
+          "scenarios": [
+            {
+              "id": "cleanSteadyState",
+              "messages": 96,
+              "processed": 96,
+              "staticLease": true,
+              "leaseRefresh": false,
+              "rotation": false,
+              "fault": "happy-path"
+            },
+            {
+              "id": "burstOverload",
+              "messages": 192,
+              "processed": 192,
+              "staticLease": true,
+              "leaseRefresh": false,
+              "rotation": false,
+              "fault": "burst"
+            },
+            {
+              "id": "leaseExhaustion",
+              "messages": 96,
+              "processed": 96,
+              "staticLease": true,
+              "leaseRefresh": false,
+              "rotation": false,
+              "fault": "ttl-expiry-cascade"
+            },
+            {
+              "id": "cleanRerun",
+              "messages": 96,
+              "processed": 96,
+              "staticLease": true,
+              "leaseRefresh": false,
+              "rotation": false,
+              "fault": "rerun-idempotent"
+            }
+          ],
+          "trilemma": {
+            "staticLease": true,
+            "leaseRefresh": false,
+            "rotation": false
+          },
+          "metrics": {
+            "totalProcessed": 480,
+            "totalMessages": 480
+          }
+        },
+        {
+          "protocol": "AppRoleLease",
+          "scenarios": [
+            {
+              "id": "cleanSteadyState",
+              "messages": 96,
+              "processed": 96,
+              "staticLease": false,
+              "leaseRefresh": true,
+              "rotation": false,
+              "fault": "happy-path"
+            },
+            {
+              "id": "burstOverload",
+              "messages": 192,
+              "processed": 192,
+              "staticLease": false,
+              "leaseRefresh": true,
+              "rotation": false,
+              "fault": "burst"
+            },
+            {
+              "id": "leaseExhaustion",
+              "messages": 96,
+              "processed": 96,
+              "staticLease": false,
+              "leaseRefresh": true,
+              "rotation": false,
+              "fault": "ttl-expiry-cascade"
+            },
+            {
+              "id": "cleanRerun",
+              "messages": 96,
+              "processed": 96,
+              "staticLease": false,
+              "leaseRefresh": true,
+              "rotation": false,
+              "fault": "rerun-idempotent"
+            }
+          ],
+          "trilemma": {
+            "staticLease": false,
+            "leaseRefresh": true,
+            "rotation": false
+          },
+          "metrics": {
+            "totalProcessed": 480,
+            "totalMessages": 480
+          }
+        },
+        {
+          "protocol": "DynamicRotation",
+          "scenarios": [
+            {
+              "id": "cleanSteadyState",
+              "messages": 96,
+              "processed": 96,
+              "staticLease": false,
+              "leaseRefresh": false,
+              "rotation": true,
+              "fault": "happy-path"
+            },
+            {
+              "id": "burstOverload",
+              "messages": 192,
+              "processed": 192,
+              "staticLease": false,
+              "leaseRefresh": false,
+              "rotation": true,
+              "fault": "burst"
+            },
+            {
+              "id": "leaseExhaustion",
+              "messages": 96,
+              "processed": 96,
+              "staticLease": false,
+              "leaseRefresh": false,
+              "rotation": true,
+              "fault": "ttl-expiry-cascade"
+            },
+            {
+              "id": "cleanRerun",
+              "messages": 96,
+              "processed": 96,
+              "staticLease": false,
+              "leaseRefresh": false,
+              "rotation": true,
+              "fault": "rerun-idempotent"
+            }
+          ],
+          "trilemma": {
+            "staticLease": false,
+            "leaseRefresh": false,
+            "rotation": true
+          },
+          "metrics": {
+            "totalProcessed": 480,
+            "totalMessages": 480
+          }
+        }
+      ],
+      "vectors": {
+        "K8sStatic": "100",
+        "AppRoleLease": "010",
+        "DynamicRotation": "001"
+      },
+      "verdict": {
+        "vectors": {
+          "K8sStatic": "100",
+          "AppRoleLease": "010",
+          "DynamicRotation": "001"
+        },
+        "noUniversalWinner": true,
+        "trilemmaDistinguishes": true,
+        "noStrategyWinsAll": true,
+        "vectorFromTrilemma": true,
+        "rigged_pkg": false,
+        "rigged_pkg_flags": {
+          "rigged": false,
+          "freeStaticLease": false,
+          "freeLeaseRefresh": false,
+          "freeRotation": false
+        },
+        "riggedConvergenceCollapsed": false
+      },
+      "noUniversalWinner": true,
+      "trilemmaDistinguishes": true,
+      "causalLocks": {
+        "vaultSealCausallyUnerasable": true,
+        "leaseExpiryCausallyUnerasable": true,
+        "dynamicSecretCausallyUnerasable": true,
+        "causalLocksAllHold": true
+      },
+      "crosscheck": {
+        "evidence": {
+          "routerMoved": 10,
+          "routerTracked": 80,
+          "ringNodes": 4,
+          "ringShardsUsed": 4,
+          "walLines": 80,
+          "walReplayed": 80,
+          "notices": 12,
+          "busListeners": 1,
+          "redisBitmapHits": 96,
+          "redisSlots": 96,
+          "poolCreated": 2,
+          "poolReused": 1,
+          "bucketAllowed": 3,
+          "bucketRejected": 4,
+          "heapFired": 3,
+          "heapPending": 0,
+          "counterSum": 2080,
+          "counterFalseSharing": 56,
+          "jitterSpread": 1.8969,
+          "remapConsistentRate": 0.205,
+          "remapModuloRate": 0.545
+        },
+        "soundness": {
+          "laneA": {
+            "k8sStaticProcessed": 192,
+            "expected": 192
+          },
+          "laneB": {
+            "appRoleLeaseProcessed": 192,
+            "leaseTtlSeconds": 7200,
+            "expected": 192
+          },
+          "holds": true,
+          "nontrivial": true,
+          "falsifiable": true,
+          "tamper": {
+            "k8sNoUnseal": {
+              "holds": false,
+              "reason": "k8sNoUnseal：Vault 重启/Seal —— 双阶版本 + Raft-election 需手动 Unseal，加机制层"
+            },
+            "leaseExpiryCascade": {
+              "holds": false,
+              "reason": "leaseExpiryCascade：lease 同时过期 → DynamicRotation 的\"全账户瞬间过期\"现象"
+            },
+            "dynamicRpsLost": {
+              "holds": false,
+              "reason": "dynamicRpsLost：dynamic rotation 每秒每次都新建凭证 → 数据库/Consul lease 背着全量轮换压力"
+            }
+          },
+          "events": 192
+        }
+      },
+      "rigged": false
+    },
+    "builtAt": 1794580802384
   }
 }

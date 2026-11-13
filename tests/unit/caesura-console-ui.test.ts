@@ -3093,3 +3093,47 @@ describe('KI-553 Redis Stream 三策略 · PubSub / PersistentQueue / StreamLog�
     })
   })
 })
+
+// ============ KI-554 Spring Cloud Vault 三策略 · svt 霸 ============
+describe('KI-554 Spring Cloud Vault · K8sStatic / AppRoleLease / DynamicRotation（svt 霸）', () => {
+  const realSvt = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+  it('第四十九维 markup/CSS 面板渲染：svt 矩阵 12 cell + 向量 100/010/001 + 状态角标 + ladder 条', async () => {
+    const dom = await runApp(realSvt)
+    const matrix = dom.els['svt-matrix'].innerHTML
+    expect(matrix).toContain('svt-mat-head')
+    for (const p of ['K8sStatic', 'AppRoleLease', 'DynamicRotation']) {
+      expect(matrix).toContain('data-strategy="' + p + '"')
+    }
+    for (const sc of ['cleanSteadyState', 'burstOverload', 'leaseExhaustion', 'cleanRerun']) {
+      expect(matrix).toContain('data-s="' + sc + '"')
+    }
+    expect((matrix.match(/class="svt-cell /g) || []).length).toBe(12)
+    const tri = dom.els['svt-trilemma'].innerHTML
+    expect(tri).toContain('data-vec="100"')
+    expect(tri).toContain('data-vec="010"')
+    expect(tri).toContain('data-vec="001"')
+    expect(dom.els['svt-ladder'].innerHTML).toContain('svt-bar')
+  })
+
+  it('svt markup/CSS 同源 + systems.springVault 缺失时降级分支可见', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-svt')
+    expect(html).toContain('id="svt-matrix"')
+    expect(html).toContain('id="svt-verif"')
+    expect(html).toContain('K8sStatic=100 / AppRoleLease=010 / DynamicRotation=001')
+    expect(css).toContain('.svt-cell.k8s')
+    expect(css).toContain('.svt-cell.role')
+    expect(css).toContain('.svt-cell.dyn')
+    expect(css).toContain('.svt-flag.yes')
+    expect(css).toContain('.svt-bar > i')
+    expect(css).toContain('.svt-verif')
+    const noSvt = JSON.parse(JSON.stringify(realSvt as any))
+    noSvt.systems.springVault = null
+    return runApp(noSvt).then((dom2: any) => {
+      expect(dom2.els['svt-matrix'].innerHTML).toContain('缺失')
+      expect(dom2.els['svt-trilemma'].innerHTML).toContain('缺失')
+      expect(dom2.els['svt-matrix-note'].textContent).toContain('systems.springVault 缺失')
+    })
+  })
+})

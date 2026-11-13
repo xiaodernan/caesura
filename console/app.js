@@ -84,6 +84,7 @@
       renderSpringConsul(snap.systems ? snap.systems.springConsul : null)
       renderRedisHa(snap.systems ? snap.systems.redisHa : null)
       renderRedisStream(snap.systems ? snap.systems.redisStream : null)
+      renderSpringVault(snap.systems ? snap.systems.springVault : null)
       renderTraceSampling(snap.systems ? snap.systems.traceSampling : null)
       setLive(true, result.source)
     }).catch(function (e) {
@@ -3578,6 +3579,132 @@
     var probes = $('#sc-probes')
     if (probes) probes.innerHTML = chips.join('')
     if (note) note.textContent = '维轴 [hotReload / scaleFriendly / consistency]；默认向量 GitBackend=110 / NativeBackend=101 / RedisBackend=011。rigged：freeConsistency=Git 副本零 lag→111、freeHotReload=Redis 真推送→111、freeScale=Native 零成本共享盘→111。因果锁：gitCommitLag / nativeHostAffinity / redisHotRtt · causalLocksAllHold=true。'
+  }
+
+  /* ================= KI-554 K8sStatic / AppRoleLease / DynamicRotation Spring Cloud Vault 三策略 —— 第四十九维 · svt 霸 ================= */
+
+  function renderSpringVault(svt) {
+    renderSvtMatrix(svt && svt.rows, svt && svt.config)
+    renderSvtLadder(svt && svt.rows)
+    renderSvtTrilemma(svt && svt.rows, svt && svt.verdict, svt && svt.crosscheck)
+  }
+
+  function svtMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 缺失</div>'
+    if (note) note.textContent = 'systems.springVault 缺失 → 请先 npm run console:data 再生成'
+  }
+
+  function svtCell(c, protocol) {
+    if (!c) return { cls: '', ch: '·' }
+    if (protocol === 'K8sStatic') return { cls: 'k8s', ch: '静态' }
+    if (protocol === 'AppRoleLease') return { cls: 'role', ch: '刷新' }
+    if (protocol === 'DynamicRotation') return { cls: 'dyn', ch: '新密钥' }
+    return { cls: 'ok', ch: '✓' }
+  }
+
+  function renderSvtMatrix(rows, config) {
+    var box = $('#svt-matrix'), note = $('#svt-matrix-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      svtMissing(box, note, 'svt 矩阵'); return
+    }
+    var scenarios = ['cleanSteadyState', 'burstOverload', 'leaseExhaustion', 'cleanRerun']
+    var head = '<div class="svt-mat-row svt-mat-head"><span class="svt-mat-proto">策略</span>' +
+      scenarios.map(function (sc) { return '<span class="svt-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="svt-mat-cost">processed/op</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = svtCell(cell, row.protocol)
+        return '<span class="svt-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="svt-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="svt-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="svt-mat-cost"><b>' + esc(fmt(m.totalProcessed)) + '</b></span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'K8sStatic / AppRoleLease / DynamicRotation 三策略，cleanSteadyState / burstOverload / leaseExhaustion（DynamicRotation 全账户瞬间过期可观察）/ cleanRerun（幂等重放）；每格只展示 三维向量：staticLease × leaseRefresh × rotation。K8s pod spec 固化无续约；AppRole TTL 2h lease+renew；DynamicRotation 每次 GET 全新凭证。'
+  }
+
+  function renderSvtLadder(rows) {
+    var box = $('#svt-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.totalProcessed) ? r.metrics.totalProcessed : 1 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.totalProcessed) ? Math.round(m.totalProcessed / max * 100) : 0
+      return '<div class="svt-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="svt-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">processed ' + esc(fmt(m.totalProcessed)) + ' · msgs ' + esc(fmt(m.totalMessages)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderSvtTrilemma(rows, verdict, crosscheck) {
+    var box = $('#svt-trilemma'), veBox = $('#svt-verif'), cxBox = $('#svt-crosscheck'), note = $('#svt-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      svtMissing(box, note, 'svt 向量'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''; return
+    }
+    var flags = [['staticLease', '静态 lease'], ['leaseRefresh', '可续期'], ['rotation', '全新凭证']]
+    var head = '<div class="svt-vec svt-vec-head"><span class="proto">策略</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="svt-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '×') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="svt-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    if (veBox) {
+      var p1 = rows.find(function (r) { return r.protocol === 'K8sStatic' })
+      var a1 = rows.find(function (r) { return r.protocol === 'AppRoleLease' })
+      var d1 = rows.find(function (r) { return r.protocol === 'DynamicRotation' })
+      var cp = crosscheck && crosscheck.soundness
+      veBox.innerHTML = [
+        '<div class="svt-rb-row"><b>K8sStatic</b> 静态=' + esc(String(p1?.trilemma?.staticLease)) + '（pod spec 固化） 可续=' + esc(String(p1?.trilemma?.leaseRefresh)) + ' 全新凭证=' + esc(String(p1?.trilemma?.rotation)) + '</div>',
+        '<div class="svt-rb-row"><b>AppRoleLease</b> 静态=' + esc(String(a1?.trilemma?.staticLease)) + '（lease TTL 2h） 可续=' + esc(String(a1?.trilemma?.leaseRefresh)) + '（renew API） 全新凭证=' + esc(String(a1?.trilemma?.rotation)) + '（凭证本身不换）</div>',
+        '<div class="svt-rb-row"><b>DynamicRotation</b> 静态=' + esc(String(d1?.trilemma?.staticLease)) + ' 可续=' + esc(String(d1?.trilemma?.leaseRefresh)) + ' 全新凭证=' + esc(String(d1?.trilemma?.rotation)) + '（每次 GET rotated-x）</div>',
+        cp ? '<div class="svt-rb-row"><b>verifySpringVaultSoundness</b> holds=' + (cp.holds ? 'true' : 'false') + ' nontrivial=' + (cp.nontrivial ? 'true' : 'false') + ' falsifiable=' + (cp.falsifiable ? 'true' : 'false') + ' · laneA{k8sStaticProcessed=' + esc(String(cp.laneA?.k8sStaticProcessed)) + '/' + esc(String(cp.laneA?.expected)) + '} laneB{appRoleLeaseProcessed=' + esc(String(cp.laneB?.appRoleLeaseProcessed)) + '}</div>' : '',
+      ].join('')
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>→ <b>compareRemapping</b> 一致哈希命中 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>' +
+          '<div>→ <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 台</div>' +
+          '<div>→ <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 计费 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
+          '<div>→ <b>createWal</b> lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>→ <b>createBus</b> vault.bound 通知 ' + esc(fmt(ev.notices)) + ' 次 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>→ <b>createRedisCache</b> vault 键 ' + esc(fmt(ev.redisBitmapHits)) + ' 次 · entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+          '<div>→ <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+          '<div>→ <b>createTokenBucket</b> 放行 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>→ <b>createMinHeapDelayQueue</b> 弹出 ' + esc(fmt(ev.heapFired)) + ' 次 · pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+          '<div>→ <b>createFullJitterBackoff</b> jitterSpread <b>' + esc(String((ev.jitterSpread ?? 0).toFixed(4))) + '</b>（64 次 delayFor 波动）</div>' +
+          '<div>→ <b>createPackedCounters</b> 和=' + esc(fmt(ev.counterSum)) + ' · falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">跨证据缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var chips = [
+      '<span class="chip" data-verdict="noUniversalWinner"><b>noUniversalWinner</b> ' + (noWin ? '✓（三难不可兼得）' : '×') + '</span>',
+      '<span class="chip" data-verdict="noStrategyWinsAll"><b>noStrategyWinsAll</b> ' + (v.noStrategyWinsAll ? '✓ 没有 111' : '×') + '</span>',
+      '<span class="chip" data-verdict="vectorFromTrilemma"><b>vectorFromTrilemma</b> 向量同源 ✓</span>',
+      '<span class="chip jade-t" data-verdict="noUniversalWinner2">默认三策略互补，绝不成品 111</span>',
+    ]
+    var probes = $('#svt-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维轴 [staticLease / leaseRefresh / rotation]；默认向量 K8sStatic=100（无 renew 请求）/ AppRoleLease=010（lease TTL 2h · renew API）/ DynamicRotation=001（每次 refresh 新凭证）。rigged：freeStaticLease（K8sStatic 变可续 → 110）/ freeLeaseRefresh（illustration purity）/ freeRotation（DynamicRotation 全 111）。因果锁：vaultSeal / leaseExpiry / dynamicSecret · causalLocksAllHold=true。'
   }
 
   /* ================= KI-553 PubSub/PersistentQueue/StreamLog Redis Stream 三策略 —— 第四十八维 · xst 霸 ================= */

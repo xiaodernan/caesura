@@ -63,6 +63,7 @@ import { gatewayRetryStudy, gatewayRetrySnapshot } from './caesura-gateway-retry
 import { springConsulStudy, springConsulSnapshot } from './caesura-spring-consul-kv.mjs'
 import { redisHaStudy, redisHaSnapshot } from './caesura-redis-ha.mjs'
 import { redisStreamStudy, redisStreamSnapshot } from './caesura-redis-stream.mjs'
+import { springVaultStudy, springVaultSnapshot } from './caesura-spring-vault.mjs'
 import { traceSamplingStudy, traceSamplingSnapshot } from './caesura-trace-sampling.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
@@ -417,7 +418,9 @@ export async function buildSystems(opts = {}) {
   const redisHa = opts.redisHa === false ? null : await buildRedisHaReading(opts, now)
   // KI-553：Redis Stream 三策略教学件（PubSub/PersistentQueue/StreamLog + verifyRedisStreamSoundness 双路自证 + 十一件 21 物证）
   const redisStream = opts.redisStream === false ? null : await buildRedisStreamReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, priorityQueue, batchStreamJoin, cdcOutboxJoin, springStreamBinding, springFeign, springConfig, springBus, redisPipeline, gatewayRetry, springConsul, redisHa, redisStream, builtAt: now() }
+  // KI-554：Spring Cloud Vault 三策略教学件（K8sStatic/AppRoleLease/DynamicRotation + verifySpringVaultSoundness 双路自证 + 十一件 21 物证）
+  const springVault = opts.springVault === false ? null : await buildSpringVaultReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, priorityQueue, batchStreamJoin, cdcOutboxJoin, springStreamBinding, springFeign, springConfig, springBus, redisPipeline, gatewayRetry, springConsul, redisHa, redisStream, springVault, builtAt: now() }
 }
 
 /**
@@ -547,6 +550,29 @@ export async function buildSpringFeignReading(opts, now) {
     return springFeignSnapshot(s)
   } catch (e) {
     return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
+ * KI-554：Spring Cloud Vault 三策略教学件（K8sStatic / AppRoleLease / DynamicRotation + verifySpringVaultSoundness 双路自证 + 十一件 21 物证）。
+ * 失败返回 null；CLI 双点一律。rigged 组合 collapse 三旗。
+ * @param {object} opts { springVault?:false, svtSeed?, svtMessages?, svtFreeStaticLease?, svtFreeLeaseRefresh?, svtFreeRotation?, svtRigged? }
+ * @param {()=>number} now 时间母版，builtAt 盖记值。
+ */
+export async function buildSpringVaultReading(opts, now) {
+  try {
+    const s = await springVaultStudy({
+      now,
+      ...(opts.svtSeed ? { seed: Math.max(0, Math.floor(Number(opts.svtSeed))) } : {}),
+      ...(opts.svtMessages ? { messages: Math.max(16, Math.floor(Number(opts.svtMessages))) } : {}),
+      ...(opts.svtFreeStaticLease === true ? { freeStaticLease: true } : {}),
+      ...(opts.svtFreeLeaseRefresh === true ? { freeLeaseRefresh: true } : {}),
+      ...(opts.svtFreeRotation === true ? { freeRotation: true } : {}),
+      ...(opts.svtRigged === true ? { rigged: true } : {}),
+    })
+    return springVaultSnapshot(s)
+  } catch (e) {
+    return null
   }
 }
 

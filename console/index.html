@@ -897,6 +897,24 @@
     </article>
   </section>
 
+  <!-- 第四十九维 · Spring Cloud Vault 三策略（KI-554） -->
+  <section class="row row-svt">
+    <article class="panel panel-svt">
+      <div class="panel-head"><h2>第四十九维 · K8sStatic / AppRoleLease / DynamicRotation —— Spring Cloud Vault 三策略</h2><span class="hint">K8sStatic=100（pod spec 固化 · 无 lease renew · 无 rotation）/ AppRoleLease=010（lease TTL 2h · 调用 renew · 凭证本身不换）/ DynamicRotation=001（每次 GET 都生成全新凭证）——默认向量 100/010/001，无一赢得 111</span></div>
+      <div class="svt-matrix" id="svt-matrix"></div>
+      <div class="svt-ladder" id="svt-ladder"></div>
+      <p class="note" id="svt-matrix-note">…</p>
+    </article>
+    <article class="panel panel-svt">
+      <div class="panel-head"><h2>Vault 三维向量（staticLease · leaseRefresh · rotation）· 双路自证 + 三路篡改 + 因果锁</h2><span class="hint">K8sStatic=100 / AppRoleLease=010 / DynamicRotation=001 · 互补三路 · verifySpringVaultSoundness 双路自证（lane A K8sStatic vs lane B AppRoleLease；tamper 三通：k8sNoUnseal / leaseExpiryCascade / dynamicRpsLost 真喂回 hold=false；十一件 21 物证 compareRemapping/ShardRouter/HashRing/WAL/Bus/Redis/Pool/Bucket/MinHeap/PackedCounters/FullJitter Backoff）</span></div>
+      <div class="svt-trilemma" id="svt-trilemma"></div>
+      <div class="svt-verif" id="svt-verif"></div>
+      <div class="svt-crosscheck" id="svt-crosscheck"></div>
+      <div class="svt-probes" id="svt-probes"></div>
+      <p class="note" id="svt-trilemma-note">…</p>
+    </article>
+  </section>
+
 </main>
 
 <footer class="footer">
