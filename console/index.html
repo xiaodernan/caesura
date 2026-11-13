@@ -861,6 +861,24 @@
     </article>
   </section>
 
+  <!-- 第四十七维 · Redis HA Sentinel/SyncPair/Cluster（KI-552） -->
+  <section class="row row-rea">
+    <article class="panel panel-rea">
+      <div class="panel-head"><h2>第四十七维 · Sentinel / SyncPair / Cluster —— Redis 高可用三策略</h2><span class="hint">Sentinel=100（Raft election·自动 failover·异步复制 RPO>0·单 master）；SyncPair=010（WAIT 命令阻塞 writer·ack 后 RPO=0·无 failover·需手动 promote）；Cluster=101（16384 slot 算法分片·auto failover·replication 跨 slot·cross-slot 命令被 CROSSSLOT 拒绝）——默认向量 100/010/101，无一赢得 111</span></div>
+      <div class="rea-matrix" id="rea-matrix"></div>
+      <div class="rea-ladder" id="rea-ladder"></div>
+      <p class="note" id="rea-matrix-note">…</p>
+    </article>
+    <article class="panel panel-rea">
+      <div class="panel-head"><h2>Redis HA 三维向量（autoFailover · zeroRpo · dataSharding）· 双路自证 + 三路篡改 + 因果锁</h2><span class="hint">Sentinel=100 / SyncPair=010 / Cluster=101 · 互补三路 · verifyRedisHaSoundness 双路自证（lane A Sentinel auto failover vs lane B SyncPair WAIT ack）；tamper 三通：sentinelQuorumFlaky（election 模糊判决）/ syncWriteStall（WAIT 阻塞 writer）/ clusterCrossSlotRegress（cross-slot 命令被 CROSSSLOT 拒绝）真喂回 hold=false；十一件 21 物证 compareRemapping/ShardRouter/HashRing/WAL/Bus/Redis/Pool/Bucket/MinHeap/PackedCounters/FullJitter Backoff）</span></div>
+      <div class="rea-trilemma" id="rea-trilemma"></div>
+      <div class="rea-verif" id="rea-verif"></div>
+      <div class="rea-crosscheck" id="rea-crosscheck"></div>
+      <div class="rea-probes" id="rea-probes"></div>
+      <p class="note" id="rea-trilemma-note">…</p>
+    </article>
+  </section>
+
 </main>
 
 <footer class="footer">

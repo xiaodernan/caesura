@@ -82,6 +82,7 @@
       renderRedisPipeline(snap.systems ? snap.systems.redisPipeline : null)
       renderGatewayRetry(snap.systems ? snap.systems.gatewayRetry : null)
       renderSpringConsul(snap.systems ? snap.systems.springConsul : null)
+      renderRedisHa(snap.systems ? snap.systems.redisHa : null)
       renderTraceSampling(snap.systems ? snap.systems.traceSampling : null)
       setLive(true, result.source)
     }).catch(function (e) {
@@ -3576,6 +3577,132 @@
     var probes = $('#sc-probes')
     if (probes) probes.innerHTML = chips.join('')
     if (note) note.textContent = '维轴 [hotReload / scaleFriendly / consistency]；默认向量 GitBackend=110 / NativeBackend=101 / RedisBackend=011。rigged：freeConsistency=Git 副本零 lag→111、freeHotReload=Redis 真推送→111、freeScale=Native 零成本共享盘→111。因果锁：gitCommitLag / nativeHostAffinity / redisHotRtt · causalLocksAllHold=true。'
+  }
+
+  /* ================= KI-552 Sentinel/SyncPair/Cluster Redis HA 三策略 —— 第四十七维 · rea 霸 ================= */
+
+  function renderRedisHa(rea) {
+    renderReaMatrix(rea && rea.rows, rea && rea.config)
+    renderReaLadder(rea && rea.rows)
+    renderReaTrilemma(rea && rea.rows, rea && rea.verdict, rea && rea.crosscheck)
+  }
+
+  function reaMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 缺失</div>'
+    if (note) note.textContent = 'systems.redisHa 缺失 → 请先 npm run console:data 再生成'
+  }
+
+  function reaCell(c, protocol) {
+    if (!c) return { cls: '', ch: '·' }
+    if (protocol === 'Sentinel') return { cls: 'sentinel', ch: '哨兵' }
+    if (protocol === 'SyncPair') return { cls: 'sync', ch: '同步' }
+    if (protocol === 'Cluster') return { cls: 'cluster', ch: '分片' }
+    return { cls: 'ok', ch: '✓' }
+  }
+
+  function renderReaMatrix(rows, config) {
+    var box = $('#rea-matrix'), note = $('#rea-matrix-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      reaMissing(box, note, 'rea 矩阵'); return
+    }
+    var scenarios = ['cleanSteadyState', 'burstOverload', 'leaderChange', 'cleanRerun']
+    var head = '<div class="rea-mat-row rea-mat-head"><span class="rea-mat-proto">策略</span>' +
+      scenarios.map(function (sc) { return '<span class="rea-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="rea-mat-cost">processed/op</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = reaCell(cell, row.protocol)
+        return '<span class="rea-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="rea-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="rea-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="rea-mat-cost"><b>' + esc(fmt(m.totalProcessed)) + '</b></span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'Sentinel / SyncPair / Cluster 三策略，cleanSteadyState / burstOverload / leaderChange（Raft 4 变更·quorum 重新判决可观察）/ cleanRerun（幂等重放）；每格只展示 三维向量：autoFailover × zeroRpo × dataSharding。Sentinel 自动 failover 但异步复制；SyncPair WAIT 阻塞 writer 换 RPO=0；Cluster 16384 slot 分片 dataSharding=true。'
+  }
+
+  function renderReaLadder(rows) {
+    var box = $('#rea-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.totalProcessed) ? r.metrics.totalProcessed : 1 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.totalProcessed) ? Math.round(m.totalProcessed / max * 100) : 0
+      return '<div class="rea-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="rea-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">processed ' + esc(fmt(m.totalProcessed)) + ' · msgs ' + esc(fmt(m.totalMessages)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderReaTrilemma(rows, verdict, crosscheck) {
+    var box = $('#rea-trilemma'), veBox = $('#rea-verif'), cxBox = $('#rea-crosscheck'), note = $('#rea-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      reaMissing(box, note, 'rea 向量'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''; return
+    }
+    var flags = [['autoFailover', '自动切换'], ['zeroRpo', 'RPO=0'], ['dataSharding', '数据分片']]
+    var head = '<div class="rea-vec rea-vec-head"><span class="proto">策略</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="rea-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '×') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="rea-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    if (veBox) {
+      var p1 = rows.find(function (r) { return r.protocol === 'Sentinel' })
+      var sp = rows.find(function (r) { return r.protocol === 'SyncPair' })
+      var cl = rows.find(function (r) { return r.protocol === 'Cluster' })
+      var cp = crosscheck && crosscheck.soundness
+      veBox.innerHTML = [
+        '<div class="rea-rb-row"><b>Sentinel</b> 自动=' + esc(String(p1?.trilemma?.autoFailover)) + '（Raft election·quorum vote） RPO=0=' + esc(String(p1?.trilemma?.zeroRpo)) + '（异步复制→PRO>0） 分片=' + esc(String(p1?.trilemma?.dataSharding)) + '（单 master）</div>',
+        '<div class="rea-rb-row"><b>SyncPair</b> 自动=' + esc(String(sp?.trilemma?.autoFailover)) + '（手动 promote） RPO=0=' + esc(String(sp?.trilemma?.zeroRpo)) + '（WAIT 1 阻塞 writer） 分片=' + esc(String(sp?.trilemma?.dataSharding)) + '</div>',
+        '<div class="rea-rb-row"><b>Cluster</b> 自动=' + esc(String(cl?.trilemma?.autoFailover)) + '（slot migration·master replica 提升） RPO=0=' + esc(String(cl?.trilemma?.zeroRpo)) + ' 分片=' + esc(String(cl?.trilemma?.dataSharding)) + '（16384 slot slot）</div>',
+        cp ? '<div class="rea-rb-row"><b>verifyRedisHaSoundness</b> holds=' + (cp.holds ? 'true' : 'false') + ' nontrivial=' + (cp.nontrivial ? 'true' : 'false') + ' falsifiable=' + (cp.falsifiable ? 'true' : 'false') + ' · laneA{sentinelProcessed=' + esc(String(cp.laneA?.sentinelProcessed)) + '/' + esc(String(cp.laneA?.expected)) + '} laneB{syncPairProcessed=' + esc(String(cp.laneB?.syncPairProcessed)) + '}</div>' : '',
+      ].join('')
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>→ <b>compareRemapping</b> 一致哈希命中 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>' +
+          '<div>→ <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 台</div>' +
+          '<div>→ <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 计费 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
+          '<div>→ <b>createWal</b> lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>→ <b>createBus</b> ha.bound 通知 ' + esc(fmt(ev.notices)) + ' 次 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>→ <b>createRedisCache</b> slot 键 ' + esc(fmt(ev.redisBitmapHits)) + ' 次 · entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+          '<div>→ <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+          '<div>→ <b>createTokenBucket</b> 放行 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>→ <b>createMinHeapDelayQueue</b> 弹出 ' + esc(fmt(ev.heapFired)) + ' 次 · pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+          '<div>→ <b>createFullJitterBackoff</b> jitterSpread <b>' + esc(String((ev.jitterSpread ?? 0).toFixed(4))) + '</b>（64 次 delayFor 波动）</div>' +
+          '<div>→ <b>createPackedCounters</b> 和=' + esc(fmt(ev.counterSum)) + ' · falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">跨证据缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var chips = [
+      '<span class="chip" data-verdict="noUniversalWinner"><b>noUniversalWinner</b> ' + (noWin ? '✓（三难不可兼得）' : '×') + '</span>',
+      '<span class="chip" data-verdict="noStrategyWinsAll"><b>noStrategyWinsAll</b> ' + (v.noStrategyWinsAll ? '✓ 没有 111' : '×') + '</span>',
+      '<span class="chip" data-verdict="vectorFromTrilemma"><b>vectorFromTrilemma</b> 向量同源 ✓</span>',
+      '<span class="chip jade-t" data-verdict="noUniversalWinner2">默认三策略互补，绝不成品 111</span>',
+    ]
+    var probes = $('#rea-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维轴 [autoFailover / zeroRpo / dataSharding]；默认向量 Sentinel=100（异步复制·0 RPO 不承诺）/ SyncPair=010（WAIT ack·RPO=0 代价 writer 阻塞）/ Cluster=101（16384 slot sharding·auto failover 但 slot-reshard 期间 cross-slot 被 CROSSSLOT 拒绝）。rigged：freeFailover（Sentinel fakes zero RPO→110）/ freeRpo（伤 SyncPair）/ freeSharding（Cluster 三栅=111）。因果锁：sentinelRpo / syncWrite / clusterCrossSlot · causalLocksAllHold=true。'
   }
 
   /* ================= KI-551 PollingRead/BlockingQuery/SessionLockKV Consul KV 三策略 —— 第四十六维 · ckv 霸 ================= */

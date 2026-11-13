@@ -956,6 +956,28 @@ export interface SpringFeignReading {
   builtAt: number
 }
 
+/** KI-552：Sentinel/SyncPair/Cluster Redis 高可用三策略教学件——verifyRedisHaSoundness 双路自证 + 十一件 21 物证。 */
+export interface RedisHaReading {
+  config: Record<string, any>
+  rows: Array<{
+    protocol: string
+    scenarios: Array<{
+      id: string; messages: number; processed: number
+      autoFailover: boolean; zeroRpo: boolean; dataSharding: boolean; fault: string
+    }>
+    trilemma: { autoFailover: boolean; zeroRpo: boolean; dataSharding: boolean }
+    metrics: { totalProcessed: number; totalMessages: number }
+  }>
+  vectors: Record<string, string>
+  verdict: Record<string, any>
+  rigged: boolean
+  noUniversalWinner: boolean
+  trilemmaDistinguishes: boolean
+  causalLocks: { sentinelRpoCausallyUnerasable: boolean; syncWriteCausallyUnerasable: boolean; clusterCrossSlotCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
+  crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+  builtAt: number
+}
+
 /** KI-551：PollingRead/BlockingQuery/SessionLockKV Spring Cloud Consul KV 三策略教学件——verifySpringConsulSoundness 双路自证 + 十一件 21 物证。 */
 export interface SpringConsulReading {
   config: Record<string, any>
@@ -1186,6 +1208,7 @@ export interface SystemsBlock {
   redisPipeline: RedisPipelineReading | null
   gatewayRetry: GatewayRetryReading | null
   springConsul: SpringConsulReading | null
+  redisHa: RedisHaReading | null
   builtAt: number
 }
 
@@ -3146,6 +3169,18 @@ export function buildSpringConsulReading(opts: {
   ckvFreeSession?: boolean
   ckvRigged?: boolean
 }, now: () => number): Promise<SpringConsulReading | null>
+
+/** KI-552：Redis 高可用三策略教学件（Sentinel/SyncPair/Cluster + verifyRedisHaSoundness 双路自证 + 十一件 21 物证）——无 redisHa 时传 false → 前端即降级；失败返回 null。 */
+export function buildRedisHaReading(opts: {
+  now?: () => number
+  redisHa?: boolean
+  reaSeed?: number
+  reaMessages?: number
+  reaFreeFailover?: boolean
+  reaFreeRpo?: boolean
+  reaFreeSharding?: boolean
+  reaRigged?: boolean
+}, now: () => number): Promise<RedisHaReading | null>
 
 /** KI-545：真跑 Spring Cloud Stream 绑定三策略教学件（ExclusiveConsumer/SharedConsumer/ClusteredConsumer × 四场景 + 三难向量 + verifySpringStreamBindingSoundness 双路自证 + 十一枚真件交叉印证）收敛成前端第三十九维两面板紧凑读数；失败落 null。 */
 export function buildSpringStreamBindingReading(opts: {

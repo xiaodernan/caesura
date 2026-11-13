@@ -225,6 +225,9 @@ export function runMeshE2E(opts = {}) {
     // KI-551：Spring Cloud Consul KV 三策略教学件（springConsul=true 挂载——PollingRead/BlockingQuery/SessionLockKV 三难 + verifySpringConsulSoundness 双路自证 + 十一件 21 物证）。
     springConsul: opts.springConsul,
     ckvNow: opts.ckvNow,
+    // KI-552：Redis 高可用三策略教学件（redisHa=true 挂载——Sentinel/SyncPair/Cluster 三难 + verifyRedisHaSoundness 双路自证 + 十一件 21 物证）。
+    redisHa: opts.redisHa,
+    reaNow: opts.reaNow,
     // KI-544：CDC outbox join 教学件（cdcOutboxJoin=true 装配；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异）+ verifyCdcOutboxJoinSoundness 双路自证 + 十一真件 21 键交叉印证，不改调用路径）。
     // 注入时钟用 cojNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/reb/pq/bsj/coj/rdq/dld 已占用前缀）。
     cdcOutboxJoin: opts.cdcOutboxJoin,
@@ -399,6 +402,7 @@ export function runMeshE2E(opts = {}) {
         redisPipelineSnapshot: status.redisPipeline ?? null,
         gatewayRetrySnapshot: status.gatewayRetry ?? null,
         springConsulSnapshot: status.springConsul ?? null,
+        redisHaSnapshot: status.redisHa ?? null,
         springStreamBindingSnapshot: status.springStreamBinding ?? null,
         cdcOutboxJoinSnapshot: status.cdcOutboxJoin ?? null,
         traceSamplingSnapshot: status.traceSampling ?? null,
@@ -968,6 +972,19 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         crosscheck: r.springConsulSnapshot.crosscheck,
         causalLocks: r.springConsulSnapshot.causalLocks,
         verdict: r.springConsulSnapshot.verdict,
+      } : null,
+      redisHa: r.redisHaSnapshot ? {
+        strategies: r.redisHaSnapshot.rows.map((row) => ({
+          strategy: row.protocol,
+          ladder: row.scenarios.map((sc) => sc.id + ':' + (sc.autoFailover === true ? 'A' : 'M')).join(' | '),
+          metrics: row.metrics, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.redisHaSnapshot.rows.map((row) => [row.protocol,
+          String(Number(row.trilemma.autoFailover)) + String(Number(row.trilemma.zeroRpo)) + String(Number(row.trilemma.dataSharding))])),
+        noUniversalWinner: r.redisHaSnapshot.verdict.noUniversalWinner,
+        crosscheck: r.redisHaSnapshot.crosscheck,
+        causalLocks: r.redisHaSnapshot.causalLocks,
+        verdict: r.redisHaSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

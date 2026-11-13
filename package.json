@@ -66,6 +66,7 @@
     "spring-pipeline:bench": "node scripts/caesura-redis-pipeline.mjs",
     "spring-retry:bench": "node scripts/caesura-gateway-retry.mjs",
     "spring-consul:bench": "node scripts/caesura-spring-consul-kv.mjs",
+    "spring-ha:bench": "node scripts/caesura-redis-ha.mjs",
     "gateway-routing:bench": "node scripts/caesura-gateway-routing.mjs",
     "trace-sampling:bench": "node scripts/caesura-trace-sampling.mjs",
     "outbox:bench": "node scripts/caesura-transactional-outbox.mjs",

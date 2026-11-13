@@ -61,6 +61,7 @@ import { springBusStudy, springBusSnapshot } from './caesura-spring-bus.mjs'
 import { redisPipelineStudy, redisPipelineSnapshot } from './caesura-redis-pipeline.mjs'
 import { gatewayRetryStudy, gatewayRetrySnapshot } from './caesura-gateway-retry.mjs'
 import { springConsulStudy, springConsulSnapshot } from './caesura-spring-consul-kv.mjs'
+import { redisHaStudy, redisHaSnapshot } from './caesura-redis-ha.mjs'
 import { traceSamplingStudy, traceSamplingSnapshot } from './caesura-trace-sampling.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
@@ -411,7 +412,9 @@ export async function buildSystems(opts = {}) {
   const gatewayRetry = opts.gatewayRetry === false ? null : await buildGatewayRetryReading(opts, now)
   // KI-551：Spring Cloud Consul KV 三策略教学件（PollingRead/BlockingQuery/SessionLockKV + verifySpringConsulSoundness 双路自证 + 十一件 21 物证）
   const springConsul = opts.springConsul === false ? null : await buildSpringConsulReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, priorityQueue, batchStreamJoin, cdcOutboxJoin, springStreamBinding, springFeign, springConfig, springBus, redisPipeline, gatewayRetry, springConsul, builtAt: now() }
+  // KI-552：Redis 高可用三策略教学件（Sentinel/SyncPair/Cluster + verifyRedisHaSoundness 双路自证 + 十一件 21 物证）
+  const redisHa = opts.redisHa === false ? null : await buildRedisHaReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, priorityQueue, batchStreamJoin, cdcOutboxJoin, springStreamBinding, springFeign, springConfig, springBus, redisPipeline, gatewayRetry, springConsul, redisHa, builtAt: now() }
 }
 
 /**
@@ -541,6 +544,29 @@ export async function buildSpringFeignReading(opts, now) {
     return springFeignSnapshot(s)
   } catch (e) {
     return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
+ * KI-552：Redis 高可用三策略教学件（Sentinel / SyncPair / Cluster + verifyRedisHaSoundness 双路自证 + 十一件 21 物证）。
+ * 失败返回 null；CLI 双点一律。rigged 组合 collapse 三旗。
+ * @param {object} opts { redisHa?:false, reaSeed?, reaMessages?, reaFreeFailover?, reaFreeRpo?, reaFreeSharding?, reaRigged? }
+ * @param {()=>number} now 时间母版，builtAt 盖记值。
+ */
+export async function buildRedisHaReading(opts, now) {
+  try {
+    const s = await redisHaStudy({
+      now,
+      ...(opts.reaSeed ? { seed: Math.max(0, Math.floor(Number(opts.reaSeed))) } : {}),
+      ...(opts.reaMessages ? { messages: Math.max(16, Math.floor(Number(opts.reaMessages))) } : {}),
+      ...(opts.reaFreeFailover === true ? { freeFailover: true } : {}),
+      ...(opts.reaFreeRpo === true ? { freeRpo: true } : {}),
+      ...(opts.reaFreeSharding === true ? { freeSharding: true } : {}),
+      ...(opts.reaRigged === true ? { rigged: true } : {}),
+    })
+    return redisHaSnapshot(s)
+  } catch (e) {
+    return null
   }
 }
 

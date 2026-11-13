@@ -746,6 +746,27 @@ export function runMeshE2E(opts?: any): {
       causalLocks: { pipelineWriteFriendlyCausallyUnerasable: boolean; stubNoNetworkCausallyUnerasable: boolean; blockingPipelineAtomicityCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
       crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
     } | null
+    /** KI-552：Redis 高可用三策略教学件（Sentinel=100 / SyncPair=010 / Cluster=101）——缺省 redisHa 为 null */
+    redisHaSnapshot: {
+      config: Record<string, any>
+      rows: Array<{
+        protocol: string
+        scenarios: Array<{
+          id: string; messages: number; processed: number
+          autoFailover: boolean; zeroRpo: boolean; dataSharding: boolean; fault: string
+        }>
+        trilemma: { autoFailover: boolean; zeroRpo: boolean; dataSharding: boolean }
+        metrics: { totalProcessed: number; totalMessages: number }
+      }>
+      vectors: Record<string, string>
+      noUniversalWinner: boolean
+      trilemmaDistinguishes: boolean
+      builtAt: number
+      rigged: boolean
+      verdict: Record<string, any>
+      causalLocks: { sentinelRpoCausallyUnerasable: boolean; syncWriteCausallyUnerasable: boolean; clusterCrossSlotCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
+      crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+    } | null
     /** KI-551：Spring Cloud Consul KV 三策略教学件（PollingRead=001 / BlockingQuery=110 / SessionLockKV=101）——缺省 springConsul 为 null */
     springConsulSnapshot: {
       config: Record<string, any>

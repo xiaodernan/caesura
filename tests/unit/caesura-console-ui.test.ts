@@ -3005,3 +3005,47 @@ describe('KI-551 Spring Cloud Consul KV · PollingRead / BlockingQuery / Session
     })
   })
 })
+
+// ============ KI-552 Redis Sentinel / SyncPair / Cluster · rea 霸 ============
+describe('KI-552 Redis 高可用 · Sentinel / SyncPair / Cluster（rea 霸）', () => {
+  const realRe = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+  it('第四十七维 markup/CSS 面板渲染：rea 矩阵 12 cell + 向量 100/010/101 + 状态角标 + ladder 条', async () => {
+    const dom = await runApp(realRe)
+    const matrix = dom.els['rea-matrix'].innerHTML
+    expect(matrix).toContain('rea-mat-head')
+    for (const p of ['Sentinel', 'SyncPair', 'Cluster']) {
+      expect(matrix).toContain('data-strategy="' + p + '"')
+    }
+    for (const sc of ['cleanSteadyState', 'burstOverload', 'leaderChange', 'cleanRerun']) {
+      expect(matrix).toContain('data-s="' + sc + '"')
+    }
+    expect((matrix.match(/class="rea-cell /g) || []).length).toBe(12)
+    const tri = dom.els['rea-trilemma'].innerHTML
+    expect(tri).toContain('data-vec="100"')
+    expect(tri).toContain('data-vec="010"')
+    expect(tri).toContain('data-vec="101"')
+    expect(dom.els['rea-ladder'].innerHTML).toContain('rea-bar')
+  })
+
+  it('rea markup/CSS 同源 + systems.redisHa 缺失时降级分支可见', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-rea')
+    expect(html).toContain('id="rea-matrix"')
+    expect(html).toContain('id="rea-verif"')
+    expect(html).toContain('Sentinel=100 / SyncPair=010 / Cluster=101')
+    expect(css).toContain('.rea-cell.sentinel')
+    expect(css).toContain('.rea-cell.sync')
+    expect(css).toContain('.rea-cell.cluster')
+    expect(css).toContain('.rea-flag.yes')
+    expect(css).toContain('.rea-bar > i')
+    expect(css).toContain('.rea-verif')
+    const noRe = JSON.parse(JSON.stringify(realRe as any))
+    noRe.systems.redisHa = null
+    return runApp(noRe).then((dom2: any) => {
+      expect(dom2.els['rea-matrix'].innerHTML).toContain('缺失')
+      expect(dom2.els['rea-trilemma'].innerHTML).toContain('缺失')
+      expect(dom2.els['rea-matrix-note'].textContent).toContain('systems.redisHa 缺失')
+    })
+  })
+})
