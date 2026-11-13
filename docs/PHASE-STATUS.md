@@ -35,7 +35,7 @@ ARCH.sections=202
 ARCH.maxSection=202
 ARCH.duplicates=0
 ARCH.holes=none
-PKG.scripts=62
+PKG.scripts=63
 PKG.deps=1
 PKG.devDeps=6
 ```
