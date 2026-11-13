@@ -80,7 +80,9 @@
     "check": "npm run lint && npm run validate:data && npm run test",
     "test:raw": "node scripts/test-raw.mjs",
     "red:rate": "node scripts/red-rate.mjs",
-    "prompt-cache:bench": "node scripts/caesura-prompt-cache.mjs --bench"
+    "prompt-cache:bench": "node scripts/caesura-prompt-cache.mjs --bench",
+    "prompt-cache:live": "node scripts/caesura-prompt-cache.mjs --live",
+    "llm:warmup": "node scripts/caesura-llm-client.mjs --warmup"
   },
   "dependencies": {
     "three": "^0.186.0"
