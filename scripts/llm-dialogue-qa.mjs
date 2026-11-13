@@ -23,9 +23,12 @@
  */
 import { readFileSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
+import { resolve, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { callLlm, buildBibleMessages } from './caesura-llm-client.mjs'
 
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const BASE = process.env.CAESURA_LLM_BASE_URL ?? 'https://wkapi.pro/v1'
-const API_KEY = process.env.CAESURA_LLM_API_KEY ?? ''
 const MODEL = process.env.CAESURA_LLM_MODEL ?? 'gpt-6-sol'
 const SELECTED = (() => {
   const a = process.argv.slice(2)
@@ -64,32 +67,25 @@ for (const conv of CONVS) {
 }
 
 async function callSingle(it) {
-  const body = {
+  // 保留 llm-dialogue-qa 自身的「审稿人 / 严格 JSONL」系统提示；bible 不是审稿文风 = 不能罩这 81 条节点。
+  // 直接 callLlm + 同 temperature=0 + 流协议 + 护存（等同旧提示，但现在可读 cache 数字）。
+  const out = await callLlm({
     model: MODEL,
-    messages: [
-      { role: 'system', content: SYSTEM },
-      {
-        role: 'user',
-        content: `dialogue.id=${it.id}\ndialogue.speaker=${it.speaker}\ndialogue.emotion=${it.emotion ?? 'n/a'}\n\n${it.text}`,
-      },
-    ],
+    stream: true,
+    stream_options: { include_usage: true },
     temperature: 0,
     max_tokens: 500,
-  }
-  const t0 = Date.now()
-  const res = await fetch(`${BASE}/chat/completions`, {
-    method: 'POST',
-    headers: { authorization: `Bearer ${API_KEY}`, 'content-type': 'application/json' },
-    body: JSON.stringify(body),
+    messages: [
+      { role: 'system', content: SYSTEM },
+      { role: 'user', content: `dialogue.id=${it.id}\ndialogue.speaker=${it.speaker}\ndialogue.emotion=${it.emotion ?? 'n/a'}\n\n${it.text}` },
+    ],
   })
-  const text = await res.text()
-  let json = null
-  try { json = JSON.parse(text) } catch { /* keep raw */ }
-  return { status: res.status, text, json, ms: Date.now() - t0 }
+  const content = out.text || ''
+  return { status: out.status, text: content, json: out.usage ? { choices: [{ message: { content } }], usage: out.usage } : null, ms: out.dt, cachedTokens: out.cachedTokens }
 }
 
 if (isCliInvocation) {
-  if (!API_KEY) {
+  if (!process.env.CAESURA_LLM_API_KEY) {
     console.error('[llm-dialogue-qa] 缺少 CAESURA_LLM_API_KEY——设环境变量后再跑，key 不落库。')
     process.exit(2)
   }
