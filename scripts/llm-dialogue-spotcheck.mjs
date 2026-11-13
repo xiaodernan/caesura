@@ -4,12 +4,8 @@
  * 用于「已 flag 但作者暂保留」的一行，再请一次第三方视角。不改写、零写入。
  * 用法：node scripts/llm-dialogue-spotcheck.mjs
  */
-import { readFileSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
-
-const BASE = process.env.CAESURA_LLM_BASE_URL ?? 'https://wkapi.pro/v1'
-const API_KEY = process.env.CAESURA_LLM_API_KEY ?? ''
-const MODEL = process.env.CAESURA_LLM_MODEL ?? 'gpt-6-sol'
+import { callLlm, buildBibleMessages } from './caesura-llm-client.mjs'
 const isCliInvocation = !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href
 
 const LINE = '声卷全了。她该唱的、不该唱的，都在这儿了。以后休垒如果还有人唱这首歌，就知道是谁留下来的了。'
@@ -27,28 +23,17 @@ export function buildSpotcheckUserContent(line = LINE) {
 }
 
 if (isCliInvocation) {
-  if (!API_KEY) {
+  if (!process.env.CAESURA_LLM_API_KEY) {
     console.error('[llm:spotcheck] missing CAESURA_LLM_API_KEY（env 注入，绝不落盘）—— exit 2')
     process.exit(2)
   }
-  const res = await fetch(`${BASE}/chat/completions`, {
-    method: 'POST',
-    headers: { 'authorization': `Bearer ${API_KEY}`, 'content-type': 'application/json' },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [
-        { role: 'system', content: '你是 CAESURA《止音纪元》的声线总监。' },
-        { role: 'user', content: buildSpotcheckUserContent(LINE) },
-      ],
-      temperature: 0.2,
-      max_tokens: 400,
-    }),
-  })
-  const t = await res.text()
-  let j = null
-  try { j = JSON.parse(t) } catch { /* raw */ }
-  const reply = j?.choices?.[0]?.message?.content ?? t ?? ''
-  console.log('[llm:spotcheck] status=' + res.status + ' tokens=' + (j?.usage?.total_tokens ?? '?'))
-  console.log(reply)
+  const out = await callLlm(buildBibleMessages({
+    npcMode: 'canon',
+    user: buildSpotcheckUserContent(LINE),
+    maxTokens: 400,
+    temperature: 0.2,
+  }))
+  console.log('[llm:spotcheck] status=' + out.status + ' tokens=' + (out.usage?.total_tokens ?? '?') + ' cached=' + out.cachedTokens + '/' + (out.usage?.prompt_tokens ?? '?'))
+  console.log(out.text)
   console.log('--- 作者侧 · 零写入 · 作者仍保有终裁权 ---')
 }

@@ -23,6 +23,7 @@
 import { readFileSync } from 'node:fs'
 import { pathToFileURL, fileURLToPath } from 'node:url'
 import { resolve, dirname } from 'node:path'
+import { callLlm, buildBibleMessages } from './caesura-llm-client.mjs'
 
 const BASE = process.env.CAESURA_LLM_BASE_URL ?? 'https://wkapi.pro/v1'
 const API_KEY = process.env.CAESURA_LLM_API_KEY ?? ''
@@ -57,32 +58,18 @@ export function buildCandQaUserContent(candidates) {
   ].join('\n')
 }
 
-async function callLlm(userContent) {
-  const sys = [
-    '你是 CAESURA《止音纪元》的声线总监助手。',
-    '任务：逐条候选打便签 verdict，绝不替作者下结论。',
-    '总纲：克制的、声学隐喻的诗意；台词禁止翻译腔（比如“哦，朋友”“听着，伙计”）。人物说话像敲钟——余音比敲击重要。',
-    '人物：NPC 只说它该知道的、只说它愿意承认的。vocatives 出现则 flag。',
-  ].join('')
-  const res = await fetch(`${BASE}/chat/completions`, {
-    method: 'POST',
-    headers: { 'authorization': `Bearer ${API_KEY}`, 'content-type': 'application/json' },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [{ role: 'system', content: sys }, { role: 'user', content: userContent }],
-      temperature: 0.1,
-      max_tokens: 1200,
-    }),
-  })
-  const text = await res.text()
-  let json = null
-  try { json = JSON.parse(text) } catch { /* keep raw */ }
-  return { status: res.status, text, json }
+async function callLlmPack(userContent) {
+  return callLlm(buildBibleMessages({
+    npcMode: 'canon',
+    user: userContent,
+    maxTokens: 1200,
+    temperature: 0.1,
+  }))
 }
 
 const isCliInvocation = !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href
 if (isCliInvocation) {
-  if (!API_KEY) {
+  if (!process.env.CAESURA_LLM_API_KEY) {
     console.error('[llm:cand-qa] missing CAESURA_LLM_API_KEY（env 注入，密钥绝不落盘/进 git）—— exit 2')
     process.exit(2)
   }
@@ -90,15 +77,11 @@ if (isCliInvocation) {
   const candidatesFile = JSON.parse(raw)
   const candidates = candidatesFile.candidates ?? []
   if (!candidates.length) { console.error('[llm:cand-qa] 候选池为空，退出'); process.exit(2) }
-  console.log('[llm:cand-qa] base=' + BASE + ' model=' + MODEL + ' candidates=' + candidates.length)
+  console.log('[llm:cand-qa] base=' + BASE + ' model=gpt-6-sol candidates=' + candidates.length)
   const userContent = buildCandQaUserContent(candidates)
-  const t0 = Date.now()
-  const out = await callLlm(userContent)
-  const dt = Date.now() - t0
-  const reply = out?.json?.choices?.[0]?.message?.content ?? out?.text ?? ''
-  const usage = out?.json?.usage ?? null
-  console.log('status=' + out.status + ' · ' + dt + 'ms · totalTokens=' + (usage?.total_tokens ?? '?'))
+  const out = await callLlmPack(userContent)
+  console.log('status=' + out.status + ' · ' + out.dt + 'ms · totalTokens=' + (out.usage?.total_tokens ?? '?') + ' cached=' + out.cachedTokens + '/' + (out.usage?.prompt_tokens ?? '?'))
   console.log('--- 便签原文（作者裁决后请自行誊到 QA 文档） ---')
-  console.log(reply)
+  console.log(out.text)
   console.log('--- 诚实声明：LLM 便签不下定论；事实裁决权在作者；本脚本零写入 ---')
 }
