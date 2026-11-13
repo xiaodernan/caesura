@@ -81,6 +81,7 @@
       renderSpringBus(snap.systems ? snap.systems.springBus : null)
       renderRedisPipeline(snap.systems ? snap.systems.redisPipeline : null)
       renderGatewayRetry(snap.systems ? snap.systems.gatewayRetry : null)
+      renderSpringConsul(snap.systems ? snap.systems.springConsul : null)
       renderTraceSampling(snap.systems ? snap.systems.traceSampling : null)
       setLive(true, result.source)
     }).catch(function (e) {
@@ -3575,6 +3576,132 @@
     var probes = $('#sc-probes')
     if (probes) probes.innerHTML = chips.join('')
     if (note) note.textContent = '维轴 [hotReload / scaleFriendly / consistency]；默认向量 GitBackend=110 / NativeBackend=101 / RedisBackend=011。rigged：freeConsistency=Git 副本零 lag→111、freeHotReload=Redis 真推送→111、freeScale=Native 零成本共享盘→111。因果锁：gitCommitLag / nativeHostAffinity / redisHotRtt · causalLocksAllHold=true。'
+  }
+
+  /* ================= KI-551 PollingRead/BlockingQuery/SessionLockKV Consul KV 三策略 —— 第四十六维 · ckv 霸 ================= */
+
+  function renderSpringConsul(ckv) {
+    renderCkvMatrix(ckv && ckv.rows, ckv && ckv.config)
+    renderCkvLadder(ckv && ckv.rows)
+    renderCkvTrilemma(ckv && ckv.rows, ckv && ckv.verdict, ckv && ckv.crosscheck)
+  }
+
+  function ckvMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 缺失</div>'
+    if (note) note.textContent = 'systems.springConsul 缺失 → 请先 npm run console:data 再生成'
+  }
+
+  function ckvCell(c, protocol) {
+    if (!c) return { cls: '', ch: '·' }
+    if (protocol === 'PollingRead') return { cls: 'poll', ch: '周期' }
+    if (protocol === 'BlockingQuery') return { cls: 'bq', ch: '阻塞' }
+    if (protocol === 'SessionLockKV') return { cls: 'lock', ch: '锁' }
+    return { cls: 'ok', ch: '✓' }
+  }
+
+  function renderCkvMatrix(rows, config) {
+    var box = $('#ckv-matrix'), note = $('#ckv-matrix-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      ckvMissing(box, note, 'ckv 矩阵'); return
+    }
+    var scenarios = ['cleanSteadyState', 'burstOverload', 'leaderChange', 'cleanRerun']
+    var head = '<div class="ckv-mat-row ckv-mat-head"><span class="ckv-mat-proto">策略</span>' +
+      scenarios.map(function (sc) { return '<span class="ckv-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="ckv-mat-cost">processed/op</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = ckvCell(cell, row.protocol)
+        return '<span class="ckv-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="ckv-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="ckv-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="ckv-mat-cost"><b>' + esc(fmt(m.totalProcessed)) + '</b></span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'PollingRead / BlockingQuery / SessionLockKV 三策略，cleanSteadyState / burstOverload / leaderChange（Raft leader 变更·index 短暂倒退可观察）/ cleanRerun（幂等重放）；每格只展示 三维向量：strongConsistency × hotReloadEvents × sessionState。PollingRead stale window、BlockingQuery 无 session 事件驱动 resume、SessionLockKV 真 Raft KV+session 锁。'
+  }
+
+  function renderCkvLadder(rows) {
+    var box = $('#ckv-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.totalProcessed) ? r.metrics.totalProcessed : 1 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.totalProcessed) ? Math.round(m.totalProcessed / max * 100) : 0
+      return '<div class="ckv-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="ckv-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">processed ' + esc(fmt(m.totalProcessed)) + ' · msgs ' + esc(fmt(m.totalMessages)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderCkvTrilemma(rows, verdict, crosscheck) {
+    var box = $('#ckv-trilemma'), veBox = $('#ckv-verif'), cxBox = $('#ckv-crosscheck'), note = $('#ckv-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      ckvMissing(box, note, 'ckv 向量'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''; return
+    }
+    var flags = [['strongConsistency', '强一致'], ['hotReloadEvents', '事件驱动'], ['sessionState', 'session 状态']]
+    var head = '<div class="ckv-vec ckv-vec-head"><span class="proto">策略</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="ckv-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '×') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="ckv-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    if (veBox) {
+      var p1 = rows.find(function (r) { return r.protocol === 'PollingRead' })
+      var b1 = rows.find(function (r) { return r.protocol === 'BlockingQuery' })
+      var l1 = rows.find(function (r) { return r.protocol === 'SessionLockKV' })
+      var cp = crosscheck && crosscheck.soundness
+      veBox.innerHTML = [
+        '<div class="ckv-rb-row"><b>PollingRead</b> 强一致=' + esc(String(p1?.trilemma?.strongConsistency)) + '（poll 周期 stale） 事件驱动=' + esc(String(p1?.trilemma?.hotReloadEvents)) + ' 有状态=' + esc(String(p1?.trilemma?.sessionState)) + '（服务端无 session）</div>',
+        '<div class="ckv-rb-row"><b>BlockingQuery</b> 强一致=' + esc(String(b1?.trilemma?.strongConsistency)) + '（leader sequence blocking `?index=`） 事件驱动=' + esc(String(b1?.trilemma?.hotReloadEvents)) + '（事件 resume 不等 poll） 有状态=' + esc(String(b1?.trilemma?.sessionState)) + '（纯读 KV 无 session）</div>',
+        '<div class="ckv-rb-row"><b>SessionLockKV</b> 强一致=' + esc(String(l1?.trilemma?.strongConsistency)) + '（Raft KV + session） 事件驱动=' + esc(String(l1?.trilemma?.hotReloadEvents)) + ' 有状态=' + esc(String(l1?.trilemma?.sessionState)) + '（真 session 锁/orphan lock 风险）</div>',
+        cp ? '<div class="ckv-rb-row"><b>verifySpringConsulSoundness</b> holds=' + (cp.holds ? 'true' : 'false') + ' nontrivial=' + (cp.nontrivial ? 'true' : 'false') + ' falsifiable=' + (cp.falsifiable ? 'true' : 'false') + ' · laneA{pollingProcessed=' + esc(String(cp.laneA?.pollingProcessed)) + '/' + esc(String(cp.laneA?.expected)) + '} laneB{sessionProcessed=' + esc(String(cp.laneB?.sessionProcessed)) + '}</div>' : '',
+      ].join('')
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>→ <b>compareRemapping</b> 一致哈希命中 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>' +
+          '<div>→ <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 台</div>' +
+          '<div>→ <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 计费 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
+          '<div>→ <b>createWal</b> lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>→ <b>createBus</b> ckv.bound 通知 ' + esc(fmt(ev.notices)) + ' 次 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>→ <b>createRedisCache</b> kv 键 ' + esc(fmt(ev.redisBitmapHits)) + ' 次 · entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+          '<div>→ <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+          '<div>→ <b>createTokenBucket</b> 放行 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>→ <b>createMinHeapDelayQueue</b> 弹出 ' + esc(fmt(ev.heapFired)) + ' 次 · pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+          '<div>→ <b>createFullJitterBackoff</b> jitterSpread <b>' + esc(String((ev.jitterSpread ?? 0).toFixed(4))) + '</b>（64 次 delayFor 波动）</div>' +
+          '<div>→ <b>createPackedCounters</b> 和=' + esc(fmt(ev.counterSum)) + ' · falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">跨证据缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var chips = [
+      '<span class="chip" data-verdict="noUniversalWinner"><b>noUniversalWinner</b> ' + (noWin ? '✓（三难不可兼得）' : '×') + '</span>',
+      '<span class="chip" data-verdict="noStrategyWinsAll"><b>noStrategyWinsAll</b> ' + (v.noStrategyWinsAll ? '✓ 没有 111' : '×') + '</span>',
+      '<span class="chip" data-verdict="vectorFromTrilemma"><b>vectorFromTrilemma</b> 向量同源 ✓</span>',
+      '<span class="chip jade-t" data-verdict="noUniversalWinner2">默认三策略互补，绝不成品 111</span>',
+    ]
+    var probes = $('#ckv-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维轴 [strongConsistency / hotReloadEvents / sessionState]；默认向量 PollingRead=001（周期 poll · session 无 Raft 内）/ BlockingQuery=110（leader blocking ≈ Raft 序）/ SessionLockKV=101（Raft KV + session 锁）。rigged：freeStrong（polling 也强一致←故意造假）/ freeReload（SessionLockKV 也事件化——违背 session 语义）/ freeSession（SessionLockKV 失去 session 状态）全 111。因果锁：consulPolling / consulSession / consulRaft · causalLocksAllHold=true。'
   }
 
   /* ================= KI-550 ImmediateRetry / FixedBackoff / ExponentialFullJitter Spring Cloud Gateway Retry 三策略 —— 第四十五维 · gw 霸 ================= */

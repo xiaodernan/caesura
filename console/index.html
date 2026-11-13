@@ -843,6 +843,24 @@
     </article>
   </section>
 
+  <!-- 第四十六维 · Consul KV 三策略（KI-551） -->
+  <section class="row row-ckv">
+    <article class="panel panel-ckv">
+      <div class="panel-head"><h2>第四十六维 · PollingRead / BlockingQuery / SessionLockKV —— Consul KV 三策略</h2><span class="hint">PollingRead=001（periodic poll·stale window 不可消弭 / 无设计事件））；BlockingQuery=110（?index= blocking query·Raft 序·事件驱动 resume，无 session））；SessionLockKV=101（Raft KV + session 锁·冲突续约风险）——默认向量 001/110/101，无一赢得 111</span></div>
+      <div class="ckv-matrix" id="ckv-matrix"></div>
+      <div class="ckv-ladder" id="ckv-ladder"></div>
+      <p class="note" id="ckv-matrix-note">…</p>
+    </article>
+    <article class="panel panel-ckv">
+      <div class="panel-head"><h2>Consul KV 三维向量（strongConsistency · hotReloadEvents · sessionState）· 双路自证 + 三路篡改 + 因果锁</h2><span class="hint">PollingRead=001 / BlockingQuery=110 / SessionLockKV=101 · 互补三路 · verifySpringConsulSoundness 双路自证（lane A PollingRead vs lane B SessionLockKV；tamper 三通：staleIndex（poll 周期 stale window）/ sessionExpired（TTL 到期 orphan lock）/ raftPartition（leader resettle index 倒退）真喂回 hold=false；十一件 21 物证 compareRemapping/ShardRouter/HashRing/WAL/Bus/Redis/Pool/Bucket/MinHeap/PackedCounters/FullJitter Backoff）</span></div>
+      <div class="ckv-trilemma" id="ckv-trilemma"></div>
+      <div class="ckv-verif" id="ckv-verif"></div>
+      <div class="ckv-crosscheck" id="ckv-crosscheck"></div>
+      <div class="ckv-probes" id="ckv-probes"></div>
+      <p class="note" id="ckv-trilemma-note">…</p>
+    </article>
+  </section>
+
 </main>
 
 <footer class="footer">

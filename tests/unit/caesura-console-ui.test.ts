@@ -2961,3 +2961,47 @@ describe('KI-550 Spring Cloud Gateway Retry · ImmediateRetry / FixedBackoff / E
     })
   })
 })
+
+// ============ KI-551 Consul KV 三策略 · ckv 霸 ============
+describe('KI-551 Spring Cloud Consul KV · PollingRead / BlockingQuery / SessionLockKV（ckv 霸）', () => {
+  const realCk = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+  it('第四十六维 markup/CSS 面板渲染：ckv 矩阵 12 cell + 向量 001/110/101 + 状态角标 + ladder 条', async () => {
+    const dom = await runApp(realCk)
+    const matrix = dom.els['ckv-matrix'].innerHTML
+    expect(matrix).toContain('ckv-mat-head')
+    for (const p of ['PollingRead', 'BlockingQuery', 'SessionLockKV']) {
+      expect(matrix).toContain('data-strategy="' + p + '"')
+    }
+    for (const sc of ['cleanSteadyState', 'burstOverload', 'leaderChange', 'cleanRerun']) {
+      expect(matrix).toContain('data-s="' + sc + '"')
+    }
+    expect((matrix.match(/class="ckv-cell /g) || []).length).toBe(12)
+    const tri = dom.els['ckv-trilemma'].innerHTML
+    expect(tri).toContain('data-vec="001"')
+    expect(tri).toContain('data-vec="110"')
+    expect(tri).toContain('data-vec="101"')
+    expect(dom.els['ckv-ladder'].innerHTML).toContain('ckv-bar')
+  })
+
+  it('ckv markup/CSS 同源 + systems.springConsul 缺失时降级分支可见', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-ckv')
+    expect(html).toContain('id="ckv-matrix"')
+    expect(html).toContain('id="ckv-verif"')
+    expect(html).toContain('PollingRead=001 / BlockingQuery=110 / SessionLockKV=101')
+    expect(css).toContain('.ckv-cell.poll')
+    expect(css).toContain('.ckv-cell.bq')
+    expect(css).toContain('.ckv-cell.lock')
+    expect(css).toContain('.ckv-flag.yes')
+    expect(css).toContain('.ckv-bar > i')
+    expect(css).toContain('.ckv-verif')
+    const noCk = JSON.parse(JSON.stringify(realCk as any))
+    noCk.systems.springConsul = null
+    return runApp(noCk).then((dom2: any) => {
+      expect(dom2.els['ckv-matrix'].innerHTML).toContain('缺失')
+      expect(dom2.els['ckv-trilemma'].innerHTML).toContain('缺失')
+      expect(dom2.els['ckv-matrix-note'].textContent).toContain('systems.springConsul 缺失')
+    })
+  })
+})

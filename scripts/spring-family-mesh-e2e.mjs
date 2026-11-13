@@ -222,6 +222,9 @@ export function runMeshE2E(opts = {}) {
     /** KI-550：Spring Cloud Gateway Retry 三策略教学件（gatewayRetry=true 挂载——ImmediateRetry/FixedBackoff/ExponentialFullJitter 三难 + verifyGatewayRetrySoundness 双路自证 + 十一件 21 物证）。 */
     gatewayRetry: opts.gatewayRetry,
     gwNow: opts.gwNow,
+    // KI-551：Spring Cloud Consul KV 三策略教学件（springConsul=true 挂载——PollingRead/BlockingQuery/SessionLockKV 三难 + verifySpringConsulSoundness 双路自证 + 十一件 21 物证）。
+    springConsul: opts.springConsul,
+    ckvNow: opts.ckvNow,
     // KI-544：CDC outbox join 教学件（cdcOutboxJoin=true 装配；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异）+ verifyCdcOutboxJoinSoundness 双路自证 + 十一真件 21 键交叉印证，不改调用路径）。
     // 注入时钟用 cojNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/reb/pq/bsj/coj/rdq/dld 已占用前缀）。
     cdcOutboxJoin: opts.cdcOutboxJoin,
@@ -395,6 +398,7 @@ export function runMeshE2E(opts = {}) {
         springBusSnapshot: status.springBus ?? null,
         redisPipelineSnapshot: status.redisPipeline ?? null,
         gatewayRetrySnapshot: status.gatewayRetry ?? null,
+        springConsulSnapshot: status.springConsul ?? null,
         springStreamBindingSnapshot: status.springStreamBinding ?? null,
         cdcOutboxJoinSnapshot: status.cdcOutboxJoin ?? null,
         traceSamplingSnapshot: status.traceSampling ?? null,
@@ -951,6 +955,19 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         crosscheck: r.gatewayRetrySnapshot.crosscheck,
         causalLocks: r.gatewayRetrySnapshot.causalLocks,
         verdict: r.gatewayRetrySnapshot.verdict,
+      } : null,
+      springConsul: r.springConsulSnapshot ? {
+        strategies: r.springConsulSnapshot.rows.map((row) => ({
+          strategy: row.protocol,
+          ladder: row.scenarios.map((sc) => sc.id + ':' + (sc.strongConsistency === true ? 'S' : 'W')).join(' | '),
+          metrics: row.metrics, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.springConsulSnapshot.rows.map((row) => [row.protocol,
+          String(Number(row.trilemma.strongConsistency)) + String(Number(row.trilemma.hotReloadEvents)) + String(Number(row.trilemma.sessionState))])),
+        noUniversalWinner: r.springConsulSnapshot.verdict.noUniversalWinner,
+        crosscheck: r.springConsulSnapshot.crosscheck,
+        causalLocks: r.springConsulSnapshot.causalLocks,
+        verdict: r.springConsulSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

@@ -746,6 +746,27 @@ export function runMeshE2E(opts?: any): {
       causalLocks: { pipelineWriteFriendlyCausallyUnerasable: boolean; stubNoNetworkCausallyUnerasable: boolean; blockingPipelineAtomicityCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
       crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
     } | null
+    /** KI-551：Spring Cloud Consul KV 三策略教学件（PollingRead=001 / BlockingQuery=110 / SessionLockKV=101）——缺省 springConsul 为 null */
+    springConsulSnapshot: {
+      config: Record<string, any>
+      rows: Array<{
+        protocol: string
+        scenarios: Array<{
+          id: string; messages: number; processed: number
+          strongConsistency: boolean; hotReloadEvents: boolean; sessionState: boolean; fault: string
+        }>
+        trilemma: { strongConsistency: boolean; hotReloadEvents: boolean; sessionState: boolean }
+        metrics: { totalProcessed: number; totalMessages: number }
+      }>
+      vectors: Record<string, string>
+      noUniversalWinner: boolean
+      trilemmaDistinguishes: boolean
+      builtAt: number
+      rigged: boolean
+      verdict: Record<string, any>
+      causalLocks: { consulPollingCausallyUnerasable: boolean; consulSessionCausallyUnerasable: boolean; consulRaftCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
+      crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+    } | null
     /** KI-550：Spring Cloud Gateway Retry 三策略教学件（ImmediateRetry=100 / FixedBackoff=010 / ExponentialFullJitter=011）——缺省 gatewayRetry 为 null */
     gatewayRetrySnapshot: {
       config: Record<string, any>

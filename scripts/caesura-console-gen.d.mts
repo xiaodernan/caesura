@@ -956,6 +956,28 @@ export interface SpringFeignReading {
   builtAt: number
 }
 
+/** KI-551：PollingRead/BlockingQuery/SessionLockKV Spring Cloud Consul KV 三策略教学件——verifySpringConsulSoundness 双路自证 + 十一件 21 物证。 */
+export interface SpringConsulReading {
+  config: Record<string, any>
+  rows: Array<{
+    protocol: string
+    scenarios: Array<{
+      id: string; messages: number; processed: number
+      strongConsistency: boolean; hotReloadEvents: boolean; sessionState: boolean; fault: string
+    }>
+    trilemma: { strongConsistency: boolean; hotReloadEvents: boolean; sessionState: boolean }
+    metrics: { totalProcessed: number; totalMessages: number }
+  }>
+  vectors: Record<string, string>
+  verdict: Record<string, any>
+  rigged: boolean
+  noUniversalWinner: boolean
+  trilemmaDistinguishes: boolean
+  causalLocks: { consulPollingCausallyUnerasable: boolean; consulSessionCausallyUnerasable: boolean; consulRaftCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
+  crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+  builtAt: number
+}
+
 /** KI-550：ImmediateRetry/FixedBackoff/ExponentialFullJitter Spring Cloud Gateway Retry 三策略教学件——verifyGatewayRetrySoundness 双路自证 + 十一件 21 物证。 */
 export interface GatewayRetryReading {
   config: Record<string, any>
@@ -1163,6 +1185,7 @@ export interface SystemsBlock {
   springBus: SpringBusReading | null
   redisPipeline: RedisPipelineReading | null
   gatewayRetry: GatewayRetryReading | null
+  springConsul: SpringConsulReading | null
   builtAt: number
 }
 
@@ -3111,6 +3134,18 @@ export function buildGatewayRetryReading(opts: {
   gwFreeTail?: boolean
   gwRigged?: boolean
 }, now: () => number): Promise<GatewayRetryReading | null>
+
+/** KI-551：Spring Cloud Consul KV 三策略教学件（PollingRead/BlockingQuery/SessionLockKV + verifySpringConsulSoundness 双路自证 + 十一件 21 物证）——无 springConsul 时传 false → 前端即降级；失败返回 null。 */
+export function buildSpringConsulReading(opts: {
+  now?: () => number
+  springConsul?: boolean
+  ckvSeed?: number
+  ckvMessages?: number
+  ckvFreeStrong?: boolean
+  ckvFreeReload?: boolean
+  ckvFreeSession?: boolean
+  ckvRigged?: boolean
+}, now: () => number): Promise<SpringConsulReading | null>
 
 /** KI-545：真跑 Spring Cloud Stream 绑定三策略教学件（ExclusiveConsumer/SharedConsumer/ClusteredConsumer × 四场景 + 三难向量 + verifySpringStreamBindingSoundness 双路自证 + 十一枚真件交叉印证）收敛成前端第三十九维两面板紧凑读数；失败落 null。 */
 export function buildSpringStreamBindingReading(opts: {
