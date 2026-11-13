@@ -83,7 +83,13 @@ export function buildChatBody(messages, opts = {}) {
   const model = String(opts.model || LLM_DEFAULTS.model)
   const temperature = numOr(opts.temperature, LLM_DEFAULTS.temperature)
   const maxTokens = intOr(opts.maxTokens, LLM_DEFAULTS.maxTokens)
-  return { model, messages: Array.isArray(messages) ? messages : [], temperature, max_tokens: maxTokens }
+  const body = { model, messages: Array.isArray(messages) ? messages : [], temperature, max_tokens: maxTokens }
+  // 可选 stream（real-call opt-in；默认 false 兼容既有 mock 测试）
+  if (opts.stream === true) {
+    body.stream = true
+    body.stream_options = { include_usage: true }
+  }
+  return body
 }
 
 /**
