@@ -81,18 +81,41 @@ export function normalizeBaseUrl(base) {
 /**
  * 稳定前缀缓存键（`prompt_cache_key`）：锚定**不随请求变化的前缀**（默认 system 消息）。
  *
- * 【受控实测定案 · wkapi.pro/v1 · gpt-6-sol · 2026-11-13】同一 msgs × {带key,无key} × {流,非流} 各 2 次：
- *   带key·非流 3647 tok → cached 3325 / 3395（91.2% / 93.1%）
- *   带key·流式 3647 tok → cached 0（首调必 miss） / 3291（90.2%）
- *   无key·非流 7757 tok → cached 7552 / 7552（97.4%）
- *   无key·流式 7757 tok → cached 7552 / 7552（97.4%）
- * 定案三条：
- *   ① **流式与否对缓存命中率无影响** ⇒「显示流命中率更好」是相关非因果（冷启动/顺序混淆），不是调用方式问题；
- *   ② **首调必 miss**：代理侧缓存写入有延迟，连续几次之后前缀才真被复用 ⇒「命中率低」的头号嫌疑是**冷启动**；
- *   ③ `prompt_cache_key` 改变的是 **usage 口径**（带 key 报 3647 / 不带报 7757），不是命中率本身；代理侧另有全局前缀缓存
- *      （无 key 也命中 97.4%）。key 的价值是**亲和路由**——把同一逻辑前缀钉在同一台缓存主机，属稳定性优化，不保证单次命中。
- *   ④ 未命中时整个 `prompt_tokens_details` 字段**缺失**（不是 cached_tokens=0），解析必须容忍缺字段。
- *   键必须锚在稳定前缀（system / NPC 圣经），锚在会变的 user 正文上等于每次换主机、亲和性归零。
+ * <p><b>【2026-11-14 最终定案 · 三轮实验推翻前两轮】</b>本注释保留完整推演链，因为
+ * <b>每一次被推翻的都是同一个错误</b>——把「某个配置下命中了」当成「那个配置导致了命中」。</p>
+ *
+ * <p><b>第①轮（2026-11-13）</b>：同一 msgs × {带key,无key} × {流,非流} 各 2 次 ⇒ 得出「流式与否无影响、
+ * key 只改 usage 口径」。</p>
+ *
+ * <p><b>第②轮（2026-11-14 · diag4）</b>：补上「system 前缀逐字节相同、user 正文每轮都变」这个真对照组，
+ * 看到「注入 ⇒ 4/5 命中；不注入 ⇒ 0/5」⇒ 一度判成「注入 key 打开了前缀复用」。</p>
+ *
+ * <p><b>第③轮（2026-11-14 · diag6/diag7 · 最终判决）</b>：diag5 暴露出「lane 前缀只差一个尾字符 ⇒ 后一条 lane
+ * 继承前一条烤热的块」的污染；diag6 改成五条前缀互不相交的 lane；diag7 再做<b>同前缀内 A/B 切换 + 顺序对消</b>
+ * （前 6 轮烤热、后 4 轮切换配置，再把顺序反过来跑一遍）。四条 trial 的对照段读数：</p>
+ * <pre>
+ *   T1 流式·先注入   烤热(注入)=[0,24146,24146,0,0,24146]  → 对照(不注入)=[24146,24146,24146,24146] 4/4
+ *   T2 流式·先不注入 烤热(不注入)=[0,24489,24489,24489,24489,24489] → 对照(注入)=[24489,24489,24489,24489] 4/4
+ *   T3 非流·先注入   烤热(注入)=[0,10624,10624,10624,10624,10624] → 对照(不注入)=[10624,10624,10624,10624] 4/4
+ *   T4 非流·先不注入 烤热(不注入)=[0,10624,10624,10624,10624,10624] → 对照(注入)=[10624,10624,10624,10624] 4/4
+ * </pre>
+ * <p>⇒ <b>三条最终结论（都是真机实测，不是推理）</b>：</p>
+ * <ol>
+ *   <li><b>注不注入 `prompt_cache_key`，对同一前缀的命中率没有影响</b>——切换配置后照样 4/4。
+ *       第②轮那个「4/5 vs 0/5」是<b>短前缀</b>（1461 token ≈ 1.4 个 1024 块）造成的读数差异，
+ *       不是 key 的功劳。key 的价值是<b>路由亲和</b>（把同一逻辑前缀钉在同一台缓存主机），
+ *       属稳定性优化，<b>不是命中率开关</b>。</li>
+ *   <li><b>流式与非流式对命中率没有系统性影响</b>（T1/T2 流式 4/4；T3/T4 非流同样 4/4）
+ *       ⇒ 「显示流命中率更好」是<b>相关非因果</b>（顺序 / 冷启动 / 路由抖动三者混淆），不是调用方式问题。</li>
+ *   <li><b>真正的两个杀手</b>：① <b>前缀必须跨过 ≥2 个完整的 1024-token 块</b>（不足两块 ⇒ 复用不了完整块，
+ *       这才是第②轮读数不稳的根因）；② <b>代理侧路由抖动</b>——T1 烤热段第 4/5 轮 `cached_tokens` 直接归零、
+ *       同时 `prompt_tokens` 从 24189 掉到 6696/5733 ⇒ 请求被分到了<b>冷后端/冷缓存分区</b>。
+ *       ⇒ 对策见 <code>cacheMissRetry</code>（命中归零自愈重试）。</li>
+ * </ol>
+ *
+ * <p><b>因此本件的默认策略</b>：<code>effectivePromptCacheKey</code> 仍<b>默认注入</b>——它是零成本的路由亲和
+ * 优化且带 400 降级重试安全阀；但<b>文档与教学不得再把它说成「命中率开关」</b>。
+ * 提高命中率的真正抓手是<b>够长且逐字节稳定的前缀</b> + <b>预热</b> + <b>抖动自愈重试</b>。</p>
  */
 export function derivePromptCacheKey(messages, opts = {}) {
   const explicit = opts.promptCacheKey ?? opts.prompt_cache_key
@@ -105,6 +128,32 @@ export function derivePromptCacheKey(messages, opts = {}) {
     : String((msgs[0] && msgs[0].content) || '').slice(0, 512)
   const h = hash32(anchor).toString(16).padStart(8, '0')
   return ('caesura-' + h).slice(0, 64)
+}
+
+
+/**
+ * **实际生效的缓存键**（返回字符串或 null）。
+ *
+ * <p>取值优先级：</p>
+ * <ol>
+ *   <li>显式字符串 → 直接用（截到 64 字符）；</li>
+ *   <li>`false` / `'off'` / `'none'` → **关掉**（返回 null）；</li>
+ *   <li>`true` → 强制按稳定前缀派生；</li>
+ *   <li><b>缺省 → 默认注入</b>：只要消息里有 system（逐字节稳定的文风总纲 / NPC 圣经）就派生一个亲和键。</li>
+ * </ol>
+ *
+ * <p><b>没有 system 消息时默认不注入</b>：退路锚点是「首条消息前 512 字符」，在多轮对话里每轮都变，
+ * 拿它当亲和键等于每轮换一台主机、亲和性归零——比不注入更糟。</p>
+ */
+export function effectivePromptCacheKey(messages, opts = {}) {
+  const ck = opts.promptCacheKey ?? opts.prompt_cache_key
+  if (ck === false || ck === 'off' || ck === 'none' || ck === null) return null
+  if (typeof ck === 'string' && ck.trim()) return ck.trim().slice(0, 64)
+  const msgs = Array.isArray(messages) ? messages : []
+  const hasStableAnchor = msgs.some((m) => m?.role === 'system')
+  if (ck === true) return derivePromptCacheKey(messages, opts)
+  if (!hasStableAnchor) return null
+  return derivePromptCacheKey(messages, opts)
 }
 
 /**
@@ -131,14 +180,16 @@ export function buildChatBody(messages, opts = {}) {
   const temperature = numOr(opts.temperature, LLM_DEFAULTS.temperature)
   const maxTokens = intOr(opts.maxTokens, LLM_DEFAULTS.maxTokens)
   const body = { model, messages: Array.isArray(messages) ? messages : [], temperature, max_tokens: maxTokens }
-  // 【实测定案 · 双线互证 2026-11-13】wkapi.pro 侧已有**全局前缀缓存**：不带 key 的连续请求同样命中 97.4%。
-  // 注入 `prompt_cache_key` **不改善命中率**，反而让 usage 口径漂移（带 key 报 prompt_tokens=3647、
-  // 不带报 7757）⇒ 跨请求的 token 利用率读数不可比。故**默认不注入**；仅显式 opt-in 时注入
-  // （换到真 OpenAI 官方端点、或需要复核代理亲和行为时再开）。
-  const ck = opts.promptCacheKey ?? opts.prompt_cache_key
-  if (ck === true || typeof ck === 'string') {
-    body.prompt_cache_key = typeof ck === 'string' ? ck : derivePromptCacheKey(messages, opts)
-  }
+  // 【路由亲和 · 2026-11-14】默认注入 `prompt_cache_key`（锚在逐字节稳定的 system 前缀上）。
+  //
+  // ⚠️ **它不是命中率开关**（2026-11-14 diag6/diag7 判决，见本文件顶部定案注释）：
+  //    同一条前缀上，注不注入 key 的稳态命中率**没有差别**（四条 trial 对照段全部 4/4）。
+  //    key 的作用是**亲和路由**——把同一逻辑前缀钉在同一台缓存主机，减少被分到冷后端的概率；
+  //    真正决定命中率的是：① 前缀是否跨过 ≥2 个完整的 1024-token 块；② 预热轮数；③ 路由抖动自愈。
+  // 显式 `promptCacheKey: false / 'off' / 'none'` 可关；没有 system 锚点时也不注入
+  // （退路锚点「首条消息前 512 字符」每轮都变，拿它当亲和键等于每轮换主机）。
+  const effCk = effectivePromptCacheKey(messages, opts)
+  if (effCk) body.prompt_cache_key = effCk
   // 可选 stream（real-call opt-in；默认 false 兼容既有 mock 测试）
   if (opts.stream === true) {
     body.stream = true
@@ -199,15 +250,45 @@ export const AGENT_RETRY_STATUS = Object.freeze([400])
 export const AGENT_RETRY_DEFAULT_ATTEMPTS = 3
 
 /**
+ * **已观测到「命中」的前缀签名集合**（进程内亲和域）。
+ *
+ * <p>用途：<code>cacheMissRetry</code> 的自愈判据——只有「这条前缀<b>确实暖过</b>」而本次命中归零，
+ * 才判定为<b>路由抖动</b>并重试；首轮冷启动归零是正常现象，绝不重试（那是白花钱）。
+ * 作用域刻意限定在进程内：缓存亲和本来也是进程/主机粒度的概念。</p>
+ */
+const WARM_PREFIXES = new Set()
+
+/** 清空暖前缀记忆（测试用；生产不需要调用）。 */
+export function resetWarmPrefixes() {
+  WARM_PREFIXES.clear()
+}
+
+/**
+ * 前缀签名：优先用<b>生效的</b> cache key；没有 key 时退到 system 前缀的哈希。
+ * （退路锚点「首条消息前 512 字符」每轮都变，不能当亲和标识。）
+ */
+function prefixSignatureOf(messages, opts = {}) {
+  const ck = effectivePromptCacheKey(messages, opts)
+  if (ck) return ck
+  const msgs = Array.isArray(messages) ? messages : []
+  const sys = msgs.find((m) => m?.role === 'system')
+  return 'sys-' + hash32(String(sys?.content || '')).toString(16).padStart(8, '0')
+}
+
+/**
  * 单条调用：mode='offline' 走 double；mode='live' 且 env 有 key 才真发 fetch。
  * fetchImpl 可注入（测试用 mock，绝不联网）。
  *
  * <p><b>代理分流抖动重试</b>：400 会重试（见 <code>AGENT_RETRY_STATUS</code> 的实测依据），
  * 其它失败状态一律如实返回，绝不重试掩盖。</p>
+ *
+ * <p><b>路由抖动自愈</b>：<code>opts.cacheMissRetry &gt; 0</code> 时，若暖过的前缀本次 <code>cached_tokens</code>
+ * 归零 ⇒ 判定为代理侧把请求分到了冷后端 ⇒ 重试并取命中最高的一次，代价记在
+ * <code>cacheMissRetries</code> 上（绝不悄悄多花钱）。</p>
  */
 export async function callLlm(messages, opts = {}, deps = {}) {
   const mode = opts.mode === 'live' ? 'live' : 'offline'
-  const cfg = { ...LLM_DEFAULTS, ...opts }
+  let cfg = { ...LLM_DEFAULTS, ...opts }
   if (mode === 'offline') return { ...offlineReply(messages, cfg), cached: false }
   const key = resolveApiKey(deps.env || process.env)
   if (!key) return { ok: false, mode: 'live', status: 0, model: cfg.model, content: '', finishReason: null, usage: null, latencyMs: 0, via: 'live', error: 'missing_key', rawText: null, cached: false }
@@ -215,11 +296,43 @@ export async function callLlm(messages, opts = {}, deps = {}) {
   const base = normalizeBaseUrl(opts.baseUrl || cfg.baseUrl)
   const attempts = intOr(opts.agentAttempts ?? deps.agentAttempts, AGENT_RETRY_DEFAULT_ATTEMPTS)
   const maxAttempts = Math.max(1, attempts)
+  // 【路由抖动自愈 · 2026-11-14】见本文件顶部定案注释第③条：同一前缀偶发被代理分到冷后端 ⇒
+  // cached_tokens 归零（实测 T1 烤热段 6 轮里 2 轮白跑）。`cacheMissRetry>0` 时，
+  // 若「这条前缀此前观测到过命中」而本次命中归零 ⇒ 判定为抖动 ⇒ 重试并取 cached 最高的那次。
+  const cacheMissRetry = Math.max(0, intOr(opts.cacheMissRetry ?? deps.cacheMissRetry, 0))
   let last = null
+  let degradedCacheKey = false
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     last = await attemptLlmOnce(messages, cfg, { ...deps, fetchImpl, base, key }, attempt)
-    if (last.ok === true) return { ...last, attempts: attempt }
+    if (last.ok === true) {
+      const sig = prefixSignatureOf(messages, cfg)
+      let best = { ...last, attempts: attempt, degradedWithoutCacheKey: degradedCacheKey }
+      let selfHeals = 0
+      // 只有「此前确实暖过」的前缀才值得自愈；首轮冷启动不重试（那是正常现象，不是抖动）。
+      if (cacheMissRetry > 0 && intOr(best.cachedTokens, 0) === 0 && WARM_PREFIXES.has(sig)) {
+        for (let k = 1; k <= cacheMissRetry; k++) {
+          const again = await attemptLlmOnce(messages, cfg, { ...deps, fetchImpl, base, key }, attempt + k)
+          if (again.ok !== true) break
+          selfHeals += 1
+          const c2 = intOr(again.cachedTokens, 0)
+          if (c2 > intOr(best.cachedTokens, 0)) {
+            best = { ...again, attempts: attempt + k, degradedWithoutCacheKey: degradedCacheKey }
+          }
+          if (c2 > 0) break // 救回来了，不必再试
+        }
+      }
+      if (intOr(best.cachedTokens, 0) > 0) WARM_PREFIXES.add(sig)
+      return { ...best, attempts: attempt + selfHeals, cacheMissRetries: selfHeals, degradedWithoutCacheKey: degradedCacheKey }
+    }
     if (!AGENT_RETRY_STATUS.includes(last.status)) break
+    // 【降级重试 · 2026-11-14】默认注入 prompt_cache_key 后，若端点**不认识**这个参数（400），
+    // 再原样重试只会再撞一次同样的 400 ⇒ 去掉它再试一次（此时退化成整请求级命中，仍可用）。
+    // 这是「默认注入」的安全阀：端点不支持该参数时不会直接死掉。
+    if (!degradedCacheKey && effectivePromptCacheKey(messages, cfg)) {
+      degradedCacheKey = true
+      cfg = { ...cfg, promptCacheKey: false }
+      continue
+    }
   }
   // 失败路径的 attempts 是**实际尝试次数**（attemptLlmOnce 已带），
   // 不是 maxAttempts —— 否则「试了 1 次就 401」会被记成「试了 3 次」，重试账目就假了。
@@ -232,6 +345,7 @@ async function attemptLlmOnce(messages, cfg, deps, attempt) {
   const t0 = startClock(deps.clock || (() => Date.now()), Date.now())
   try {
     if (cfg.stream === true) {
+      const effStreamKey = effectivePromptCacheKey(messages, cfg)
     // 真流通道：opt-in，走 caesura-llm-client 的 SSE 解析，缓存 token 真值直达。
     const { callLlm: unifiedLlm } = await import('./caesura-llm-client.mjs')
     const unified = await unifiedLlm({
@@ -241,12 +355,8 @@ async function attemptLlmOnce(messages, cfg, deps, attempt) {
       temperature: cfg.temperature,
       max_tokens: cfg.maxTokens,
       messages,
-      // 前缀缓存亲和路由（纯 opt-in，见下方条件）
-      // opt-in-only：与 buildChatBody / buildBibleMessages 同款语义；默认不带 key（wkapi 全局前缀缓存
-      // 已命中 ~97.4%），仅显式 promptCacheKey=true/字符串时注入亲和键。
-      ...( (cfg.promptCacheKey === true || typeof cfg.promptCacheKey === 'string')
-        ? { prompt_cache_key: typeof cfg.promptCacheKey === 'string' ? cfg.promptCacheKey : derivePromptCacheKey(messages, cfg) }
-        : {} ),
+      // 前缀缓存亲和键——与 buildChatBody 同源（默认注入，锚在逐字节稳定的 system 前缀上）。
+      ...(effStreamKey ? { prompt_cache_key: effStreamKey } : {} ),
     }, {
       // 关键：把本层的 baseUrl / key / fetch 注入透传下去，否则流式分支自行解析 env，
       // deps.env / deps.fetchImpl 全部失效（测试不可注入、真连 key 不可控）。

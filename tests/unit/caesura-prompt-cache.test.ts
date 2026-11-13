@@ -275,16 +275,6 @@ describe('caesura-prompt-cache（KI-555）', () => {
     expect(s.config.seed).toBe(555)
   })
 
-  it('live 通道无 key ⇒ 诚实降级、零网络请求、绝不拿结构量冒充真读数', async () => {
-    const r = await runPromptCacheLive({ rounds: 2 }, { env: {} })
-    expect(r.live).toBe(false)
-    expect(r.skipped).toBe(true)
-    expect(r.reason).toBe('missing_key')
-    expect(r.hitSource).toBe('none')
-    expect(r.cachedTokens).toBe(0)
-    expect(r.note).toContain('未发起任何网络调用')
-  })
-
   it('live 通道只认 cached_tokens；代理记账值单列且标注不可比；400 分流抖动自动重试并记账 attempts', async () => {
     let calls = 0
     const fetchImpl = (async () => {
@@ -299,7 +289,7 @@ describe('caesura-prompt-cache（KI-555）', () => {
         }),
       }
     }) as unknown as typeof fetch
-    const r = await runPromptCacheLive({ rounds: 1, driftLane: false }, { env: { CAESURA_LLM_API_KEY: 'sk-test-not-a-real-key' }, fetchImpl })
+    const r = await runPromptCacheLive({ rounds: 1, lanes: ['stablePrefix'] }, { env: { CAESURA_LLM_API_KEY: 'sk-test-not-a-real-key' }, fetchImpl })
     expect(r.live).toBe(true)
     expect(r.skipped).toBe(false)
     expect(r.hitSource).toBe('api-usage-prompt-tokens-details-cached-tokens')
@@ -309,5 +299,61 @@ describe('caesura-prompt-cache（KI-555）', () => {
     expect(r.stable!.promptTokensReported).toEqual([18507])
     expect(r.stable!.attempts).toBe(2)
     expect(calls).toBe(2)
+    // 流式开关默认关闭（实测流/非流对命中率无系统性影响，别把它当命中率开关）。
+    expect(r.streamMode).toBe('non-stream')
+  })
+
+  /**
+   * 【2026-11-14 真机实测修订】live 通道改成**三条 lane 前缀互不相交**：
+   *   identical（整请求重复）/ stablePrefix（前缀同 body 变）/ driftingPrefix（前缀逐轮改写）。
+   * 旧版只留 stable + drift 两条且共用同一段前缀 ⇒ 后一条 lane 会继承前一条烤热的块（实测踩过）。
+   */
+  it('live 通道三 lane（identical/stablePrefix/driftingPrefix）前缀互不相交 + 暖机轮数现算', async () => {
+    const seenSystems: string[] = []
+    const perLane = new Map<string, number>()
+    const fetchImpl = (async (_url: string, init: any) => {
+      const body = JSON.parse(init.body)
+      const sys = body.messages[0].content
+      seenSystems.push(sys)
+      const k = (perLane.get(sys) || 0) + 1
+      perLane.set(sys, k)
+      // 每条 lane 的第 2 轮起命中；drifting lane 因为前缀每轮都变 ⇒ 永远不命中。
+      const isDrift = /·+$/.test(sys)
+      const cached = isDrift ? 0 : (k >= 2 ? 2100 : 0)
+      return {
+        status: 200,
+        text: async () => JSON.stringify({
+          model: 'gpt-6-sol',
+          choices: [{ message: { content: 'x' }, finish_reason: 'stop' }],
+          usage: { prompt_tokens: 2200, total_tokens: 2201, prompt_tokens_details: { cached_tokens: cached } },
+        }),
+      }
+    }) as unknown as typeof fetch
+    const r = await runPromptCacheLive({ rounds: 2 }, { env: { CAESURA_LLM_API_KEY: 'sk-test-not-a-real-key' }, fetchImpl })
+    expect(r.live).toBe(true)
+    expect(Object.keys(r.lanes).sort()).toEqual(['driftingPrefix', 'identical', 'stablePrefix'])
+    // 三条 lane 的 system 前缀两两不同（命名空间材料互不相交）⇒ lane 间零烤热污染。
+    const uniq = new Set(seenSystems.map((s) => s.replace(/·+$/, '')))
+    expect(uniq.size).toBe(3)
+    // 暖机轮数：stablePrefix 第 2 轮才命中 ⇒ warmupRounds=2；drifting 永不命中 ⇒ rounds+1=3。
+    expect(r.lanes.stablePrefix!.warmupRounds).toBe(2)
+    expect(r.lanes.driftingPrefix!.warmupRounds).toBe(3)
+    // 因果判据：字节稳定的前缀 lane 必须优于漂移 lane。
+    expect(r.contrast!.stableBeatsDrift).toBe(true)
+    expect(r.contrast!.stableHitRate).toBe(0.5)
+    expect(r.contrast!.driftHitRate).toBe(0)
+  })
+
+  it('live 通道无 key ⇒ 零网络请求 + 形状与有 key 时同源（诚实降级）', async () => {
+    const r = await runPromptCacheLive({ rounds: 2 }, { env: {} })
+    expect(r.live).toBe(false)
+    expect(r.skipped).toBe(true)
+    expect(r.reason).toBe('missing_key')
+    expect(r.hitSource).toBe('none')
+    expect(r.cachedTokens).toBe(0)
+    expect(r.stable).toBe(null)
+    expect(r.drift).toBe(null)
+    expect(r.contrast).toBe(null)
+    expect(r.note).toContain('未发起任何网络调用')
   })
 })

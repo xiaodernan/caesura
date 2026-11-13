@@ -6,6 +6,8 @@ import {
   resolveApiKey,
   normalizeBaseUrl,
   derivePromptCacheKey,
+  effectivePromptCacheKey,
+  resetWarmPrefixes,
   normalizeUsage,
   buildChatBody,
   offlineReply,
@@ -283,15 +285,127 @@ describe('caesura-llm-gateway（KI-538）', () => {
     expect(derivePromptCacheKey([{ role: 'user', content: 'x' }], { promptCacheKey: 'my-fixed-key' })).toBe('my-fixed-key')
   })
 
-  it('buildChatBody **默认不注入** prompt_cache_key（实测定案）；仅显式 opt-in 才注入', () => {
+  it('buildChatBody **默认注入** prompt_cache_key（2026-11-14 最终定案）；显式可关', () => {
     const msgs = [{ role: 'system', content: 'S' }, { role: 'user', content: 'u' }]
-    // 实测（wkapi.pro · gpt-6-sol · 受控四象限）：无 key 连续请求命中率 97.4% > 带 key 91~94%，
-    // 且带 key 让 usage 口径漂移（prompt_tokens 3647 vs 7757）⇒ 跨请求读数不可比 ⇒ 默认不带。
-    expect(buildChatBody(msgs, {}).prompt_cache_key).toBeUndefined()
+    // 【最终定案 2026-11-14 · 三轮实验】默认注入的理由**不是**「它能提高命中率」——
+    // 实测（同一条前缀、注不注入、顺序对消）稳态命中率**两侧都是 4/4**，key 对命中率没有影响。
+    // 它是**路由亲和**优化：把逐字节稳定的前缀钉在同一台缓存主机，减少被分到冷后端的概率。
+    // 真正决定命中率的三个抓手是：① 前缀跨过 ≥2 个完整 1024 块；② 预热（首调必 miss）；③ 抖动自愈重试。
+    expect(buildChatBody(msgs, {}).prompt_cache_key).toBe(derivePromptCacheKey(msgs))
+    // 显式关闭的三种写法。
     expect(buildChatBody(msgs, { promptCacheKey: false }).prompt_cache_key).toBeUndefined()
-    // 显式 opt-in（换真 OpenAI 端点、或需要复核代理亲和行为时）才注入。
+    expect(buildChatBody(msgs, { promptCacheKey: 'off' }).prompt_cache_key).toBeUndefined()
+    expect(buildChatBody(msgs, { promptCacheKey: 'none' }).prompt_cache_key).toBeUndefined()
+    // 没有 system 锚点时**不注入**：退路锚点（首条消息前 512 字符）每轮都变，拿它当亲和键等于每轮换主机。
+    expect(buildChatBody([{ role: 'user', content: 'u' }], {}).prompt_cache_key).toBeUndefined()
+    // 显式指定仍然优先。
     expect(buildChatBody(msgs, { promptCacheKey: true }).prompt_cache_key).toBe(derivePromptCacheKey(msgs))
     expect(buildChatBody(msgs, { promptCacheKey: 'fixed-key' }).prompt_cache_key).toBe('fixed-key')
+  })
+
+  it('effectivePromptCacheKey：默认注入 / 显式关 / 无稳定锚点不注入 / 显式串优先', () => {
+    const msgs = [{ role: 'system', content: 'S' }, { role: 'user', content: 'u' }]
+    expect(effectivePromptCacheKey(msgs, {})).toBe(derivePromptCacheKey(msgs))
+    expect(effectivePromptCacheKey(msgs, { promptCacheKey: false })).toBe(null)
+    expect(effectivePromptCacheKey(msgs, { promptCacheKey: 'off' })).toBe(null)
+    expect(effectivePromptCacheKey([{ role: 'user', content: 'u' }], {})).toBe(null)
+    expect(effectivePromptCacheKey(msgs, { promptCacheKey: 'abc' })).toBe('abc')
+  })
+
+  it('降级重试：端点不认 prompt_cache_key（400）⇒ 自动去掉它再试一次并如实标记', async () => {
+    const calls = { n: 0, bodies: [] as any[] }
+    const fetchImpl = async (_url: string, init: any) => {
+      calls.n += 1
+      const body = JSON.parse(init.body)
+      calls.bodies.push(body)
+      if (body.prompt_cache_key) {
+        // 端点不认识这个参数 ⇒ 400（这是「默认注入」必须带的安全阀）
+        return { status: 400, text: async () => 'unsupported parameter: prompt_cache_key' }
+      }
+      return {
+        status: 200,
+        text: async () => JSON.stringify({ model: 'gpt-6-sol', choices: [{ message: { content: '降级后成功' }, finish_reason: 'stop' }], usage: { total_tokens: 9, prompt_tokens_details: { cached_tokens: 0 } } }),
+      }
+    }
+    const msgs = [{ role: 'system', content: 'S' }, { role: 'user', content: 'u' }]
+    const r = await callLlm(msgs, { mode: 'live', baseUrl: 'https://wkapi.pro' }, { env: { CAESURA_LLM_API_KEY: 'sk-test' }, fetchImpl, clock: () => 0 })
+    expect(r.ok).toBe(true)
+    expect(r.content).toBe('降级后成功')
+    expect(calls.n).toBe(2)
+    expect(calls.bodies[0].prompt_cache_key).toBe(derivePromptCacheKey(msgs))
+    expect(calls.bodies[1].prompt_cache_key).toBeUndefined()
+    expect((r as any).degradedWithoutCacheKey).toBe(true)
+    expect(r.attempts).toBe(2)
+  })
+
+  /**
+   * 【路由抖动自愈 · 2026-11-14】真机实测 T1 烤热段 `[0,24146,24146,0,0,24146]`：
+   * 同一条前缀偶发被代理分到冷后端 ⇒ `cached_tokens` 直接归零（同时 `prompt_tokens` 从 24189 掉到 6696）。
+   * ⇒ 暖过的前缀命中归零时重试并取命中最高的一次；**首轮冷启动不重试**（那是正常现象，重试是白花钱）。
+   */
+  it('cacheMissRetry：暖过的前缀命中归零 ⇒ 重试取命中最高的一次；首轮冷启动绝不重试', async () => {
+    resetWarmPrefixes()
+    const calls = { n: 0 }
+    const fetchImpl = async () => {
+      calls.n += 1
+      // 第 1 次：冷启动（命中 0）；第 2 次：命中（暖）；第 3 次：被分到冷后端（命中 0）；第 4 次：命中
+      const cached = calls.n === 1 || calls.n === 3 ? 0 : 4096
+      return {
+        status: 200,
+        text: async () => JSON.stringify({
+          model: 'gpt-6-sol',
+          choices: [{ message: { content: `r${calls.n}` }, finish_reason: 'stop' }],
+          usage: { prompt_tokens: 4200, total_tokens: 4201, prompt_tokens_details: { cached_tokens: cached } },
+        }),
+      }
+    }
+    const msgs = [{ role: 'system', content: 'S' }, { role: 'user', content: 'u' }]
+    const opts = { mode: 'live', baseUrl: 'https://wkapi.pro', cacheMissRetry: 2 }
+    const deps = { env: { CAESURA_LLM_API_KEY: 'sk-test' }, fetchImpl, clock: () => 0 }
+
+    // 首轮：冷启动 ⇒ 命中 0 是正常的，**不重试**（只发 1 次）
+    const cold = await callLlm(msgs, opts, deps)
+    expect(calls.n).toBe(1)
+    expect(cold.cachedTokens).toBe(0)
+    expect((cold as any).cacheMissRetries).toBe(0)
+
+    // 第二轮：命中 ⇒ 记为「这条前缀暖过」
+    const warm = await callLlm(msgs, opts, deps)
+    expect(calls.n).toBe(2)
+    expect(warm.cachedTokens).toBe(4096)
+
+    // 第三轮：被分到冷后端（命中 0）⇒ 触发自愈重试，第 4 次命中 ⇒ 取命中最高的那次
+    const healed = await callLlm(msgs, opts, deps)
+    expect(calls.n).toBe(4)
+    expect(healed.cachedTokens).toBe(4096)
+    expect((healed as any).cacheMissRetries).toBe(1)
+    expect(healed.attempts).toBe(2)
+    resetWarmPrefixes()
+  })
+
+  it('cacheMissRetry 关闭（默认）时绝不自己多发请求——代价必须由调用方显式开启', async () => {
+    resetWarmPrefixes()
+    const calls = { n: 0 }
+    const fetchImpl = async () => {
+      calls.n += 1
+      const cached = calls.n === 1 ? 0 : 4096
+      return {
+        status: 200,
+        text: async () => JSON.stringify({
+          model: 'gpt-6-sol', choices: [{ message: { content: 'x' }, finish_reason: 'stop' }],
+          usage: { prompt_tokens: 4200, total_tokens: 4201, prompt_tokens_details: { cached_tokens: cached } },
+        }),
+      }
+    }
+    const msgs = [{ role: 'system', content: 'S2' }, { role: 'user', content: 'u' }]
+    const deps = { env: { CAESURA_LLM_API_KEY: 'sk-test' }, fetchImpl, clock: () => 0 }
+    await callLlm(msgs, { mode: 'live', baseUrl: 'https://wkapi.pro' }, deps)
+    await callLlm(msgs, { mode: 'live', baseUrl: 'https://wkapi.pro' }, deps)
+    // 第二次本应命中；即使命中归零，默认也不自愈
+    const third = await callLlm(msgs, { mode: 'live', baseUrl: 'https://wkapi.pro' }, deps)
+    expect(calls.n).toBe(3)
+    expect((third as any).cacheMissRetries).toBe(0)
+    resetWarmPrefixes()
   })
 
   it('normalizeUsage：容忍 prompt_tokens_details 整体缺失；cache_hit_rate 现算，绝不写死', () => {

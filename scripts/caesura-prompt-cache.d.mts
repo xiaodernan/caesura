@@ -248,12 +248,30 @@ export function verifyCausalLocks(flags?: { freeStablePrefix?: boolean; zeroTrim
 export function createPromptCacheEvidence(opts?: { seed?: number; now?: number | (() => number) }): PromptCacheEvidence
 
 export interface PromptCacheLiveLane {
+  /** lane 名：identical / stablePrefix / driftingPrefix */
+  lane: 'identical' | 'stablePrefix' | 'driftingPrefix'
   cachedTokens: number[]
   promptTokensReported: number[]
   statuses: number[]
   attempts: number
   hits: number
   misses: number
+  /** 400 降级重试（端点不认 prompt_cache_key）的次数。 */
+  degradedWithoutCacheKey: number
+  /** 第几轮开始命中（1-based）；从未命中 ⇒ rounds+1。 */
+  warmupRounds: number
+  /** 命中率现算真值（cachedTokens>0 的轮数 ÷ 总轮数）。 */
+  hitRate: number
+}
+export interface PromptCacheLiveContrast {
+  identicalHitRate: number | null
+  stableHitRate: number
+  driftHitRate: number
+  /** 因果判据：字节稳定的前缀 lane 必须优于漂移 lane。 */
+  stableBeatsDrift: boolean
+  identicalBeatsStable: boolean | null
+  distinct: boolean
+  warmupRounds: { identical: number | null; stablePrefix: number; driftingPrefix: number }
 }
 export interface PromptCacheLiveResult {
   live: boolean
@@ -262,17 +280,25 @@ export interface PromptCacheLiveResult {
   baseUrl: string
   model: string
   rounds: number
+  /** 本次 live 通道走的是流式还是非流式（实测对命中率无系统性影响）。 */
+  streamMode: 'stream' | 'non-stream'
+  /** 是否注入了亲和路由键（默认注入；它是路由亲和，不是命中率开关）。 */
+  injectKey: boolean
   attempts: number
   hitSource: 'none' | 'api-usage-prompt-tokens-details-cached-tokens'
   tokenSource: 'none' | 'proxy-accounting-not-comparable'
   cachedTokens: number
   hitRate: number
+  /** 三条 lane（各自前缀互不相交 ⇒ lane 间零烤热污染）。 */
+  lanes: Partial<Record<'identical' | 'stablePrefix' | 'driftingPrefix', PromptCacheLiveLane>>
   stable: PromptCacheLiveLane | null
   drift: PromptCacheLiveLane | null
+  identical: PromptCacheLiveLane | null
+  contrast: PromptCacheLiveContrast | null
   prefixBytes: number
   prefixTokens: number
   prefixSignature: string | null
   note: string
 }
 /** live 通道：只认 usage.prompt_tokens_details.cached_tokens；无 key ⇒ 诚实降级、零网络请求 */
-export function runPromptCacheLive(opts?: { rounds?: number; driftLane?: boolean }, deps?: { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch }): Promise<PromptCacheLiveResult>
+export function runPromptCacheLive(opts?: { rounds?: number; driftLane?: boolean; stream?: boolean; injectKey?: boolean; lanes?: Array<'identical' | 'stablePrefix' | 'driftingPrefix'> }, deps?: { env?: Record<string, string | undefined>; fetchImpl?: typeof fetch }): Promise<PromptCacheLiveResult>

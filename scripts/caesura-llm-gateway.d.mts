@@ -28,6 +28,16 @@ export const AGENT_RETRY_DEFAULT_ATTEMPTS: number
 export interface LlmReply {
   /** 真机重试计数（agent attempts；1 = 首次即成/不重试） */
   attempts?: number
+  /**
+   * **降级重试标记**：默认注入了 `prompt_cache_key`，但端点不认这个参数（400）⇒
+   * 自动去掉它重试并成功。`true` 表示本次成功**没有**用上前缀亲和键（退化成整请求级命中）。
+   */
+  degradedWithoutCacheKey?: boolean
+  /**
+   * **路由抖动自愈次数**：暖过的前缀本次命中归零 ⇒ 判定为被分到冷后端 ⇒ 重试的次数。
+   * 0 = 没发生过自愈。绝不悄悄多花钱，代价必须记账。
+   */
+  cacheMissRetries?: number
   ok: boolean
   mode: 'offline' | 'live'
   status: number
@@ -116,6 +126,15 @@ export function resolveApiKey(env?: Record<string, string | undefined>): string
 export function normalizeBaseUrl(base?: string): string
 /** 稳定前缀缓存键：锚在 system（逐字节稳定的文风总纲/NPC 圣经），不锚在每次都变的 user 正文上。 */
 export function derivePromptCacheKey(messages: Array<{ role?: string; content?: string }>, opts?: { promptCacheKey?: string | boolean }): string
+/**
+ * **实际生效的缓存键**（字符串或 null）。
+ *
+ * <p>优先级：显式字符串 → 直接用（截到 64 字符）；`false`/`'off'`/`'none'` → 关闭（null）；
+ * `true` → 强制按稳定前缀派生；**缺省 → 默认注入**（仅当消息里有 system 锚点）。
+ * 没有 system 锚点时返回 null——退路锚点「首条消息前 512 字符」在多轮对话里每轮都变，
+ * 拿它当亲和键等于每轮换主机、亲和性归零，比不注入更糟。</p>
+ */
+export function effectivePromptCacheKey(messages: Array<{ role?: string; content?: string }>, opts?: { promptCacheKey?: string | boolean | null; prompt_cache_key?: string | boolean | null }): string | null
 /** 统一 usage 形状：cached_tokens + cache_hit_rate 现算真值；未命中时容忍 prompt_tokens_details 整体缺失。 */
 export function normalizeUsage(u: unknown): {
   prompt_tokens: number
@@ -130,9 +149,11 @@ export function offlineReply(messages: Array<{ role: string; content: string }>,
 export function normalizeReply(status: number, json: unknown, rawText: string, opts?: { model?: string; latencyMs?: number }): LlmReply
 export function callLlm(
   messages: Array<{ role: string; content: string }>,
-  opts?: { mode?: string; model?: string; baseUrl?: string; temperature?: number; maxTokens?: number; seed?: number; stream?: boolean; promptCacheKey?: string | boolean },
-  deps?: { env?: Record<string, string | undefined>; fetchImpl?: (...args: any[]) => Promise<any>; signal?: unknown; clock?: () => number },
+  opts?: { mode?: string; model?: string; baseUrl?: string; temperature?: number; maxTokens?: number; seed?: number; stream?: boolean; promptCacheKey?: string | boolean | null; agentAttempts?: number; cacheMissRetry?: number },
+  deps?: { env?: Record<string, string | undefined>; fetchImpl?: (...args: any[]) => Promise<any>; signal?: unknown; clock?: () => number; agentAttempts?: number; cacheMissRetry?: number },
 ): Promise<LlmReply>
+/** 清空「已暖前缀」记忆（测试用；生产不需要调用）。 */
+export function resetWarmPrefixes(): void
 export function invokeBatch(
   prompts: Array<{ id?: string; content: string } | string>,
   opts?: { system?: string; mode?: string; model?: string; baseUrl?: string },

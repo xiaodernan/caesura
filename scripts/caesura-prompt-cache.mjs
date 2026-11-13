@@ -90,7 +90,7 @@ import { createObjectPool, createPackedCounters } from './caesura-hw-perf.mjs'
 import { createTokenBucket } from './caesura-rate-limiter.mjs'
 import { createMinHeapDelayQueue } from './caesura-delay-queue.mjs'
 import { createFullJitterBackoff } from './caesura-retry-dlq.mjs'
-import { callLlm } from './caesura-llm-gateway.mjs'
+import { callLlm, derivePromptCacheKey } from './caesura-llm-gateway.mjs'
 
 export const PROMPT_CACHE_DEFAULTS = Object.freeze({
   seed: 555,
@@ -139,6 +139,23 @@ function hash32(s) {
   const str = String(s ?? '')
   for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0 }
   return h >>> 0
+}
+
+/**
+ * 确定性伪随机（LCG）—— live 通道用来给每条 lane 生成**专属**的命名空间材料。
+ *
+ * <p><b>为什么必须每条 lane 各自独立</b>：代理侧前缀缓存是<b>全局</b>的。若几条 lane 共用同一段前缀，
+ * 先跑的那条会把前缀烤热，后跑的 lane 直接继承 ⇒ 读数被污染（实测踩过：四条 lane 前缀只差一个尾字符时，
+ * 后两条 lane 白捡了前一条的缓存块）。用<b>逐 lane 独立材料 + 长度互不对齐</b>把污染降到零。</p>
+ */
+function lcg(seed) {
+  let s = (seed >>> 0) || 1
+  return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296 }
+}
+
+/** lane 序号（决定命名空间材料的 seed 与长度错开量）。 */
+function laneIndex(laneName) {
+  return laneName === 'identical' ? 0 : laneName === 'stablePrefix' ? 1 : 2
 }
 
 /**
@@ -197,6 +214,41 @@ export const PROMPT_CACHE_BIBLE = [
   '【样例三】合格——“风在变。你带的那页纸，没跟上。” 不合格——“你有没有发现，最近的风好像跟以前不太一样了呢？”',
   '【样例四】合格——“钟坠下去以后，院里还留着它的回声。” 不合格——“钟掉下去之后，院子里还是能听到回声呢。”',
   '【样例五】合格——“账本比人记得久。” 不合格——“你知道吗，这本账本其实已经记了很多很多年了呢。”',
+  '【句长】单句台词八到二十八字；超过两句话必须至少一次省略号或一次被打断。',
+  '【三短句】三个短句连用比一个长句更像人在说话。',
+  '【落点】结尾落在名词或动词上，不落在语气词上。',
+  '【词表·敷衍】禁用「好吧」「还行」「有点」「我觉得吧」「总之」「反正」「说白了」。',
+  '【词表·客套】禁用「加油」「麻烦你了」「亲爱的」「兄弟」。',
+  '【词表·现代】禁用「效率」「流程」「系统」「百分比」「数据」。',
+  '【词表·追问】禁用「你知道吗」「你还好吗」「这是怎么回事」。',
+  '【反问】不得用反问收尾；不得连发问号；一问只许一问。',
+  '【程度副词】禁用「非常十分特别」；强度靠句长与停顿表达。',
+  '【舞台提示】只写可听可见的动作，不写情绪标签；禁「（紧张地）」这类写法。',
+  '【动作·手】动作提示优先写手：翻页、捻线、按住、收回、推近。',
+  '【动作·听】与听有关的动作优先写耳朵的朝向，不写心的活动。',
+  '【称量】不得凭空虚构物件的重量与数目；只写掂得出来的分量。',
+  '【比喻·落点】比喻要落在器物或声音上，不落在风景上。',
+  '【比喻·开头】不用「仿佛」「宛如」「像是」开头。',
+  '【事实】不得为了让台词好听而改动正典里的事实、关系与物件归属。',
+  '【关系】NPC 之间已有的称呼与旧账不得在台词里被改写。',
+  '【知识·分层】设定分三层：律政院的记录、休垒的传闻、殿内的账目；每层的人只说得到自己那层。',
+  '【越权·祈使】不得对玩家说「你必须」「你应该」「记得吗」。',
+  '【威胁·低频】威胁不靠形容词，靠距离与许可；「你可以走了」比「你必须滚」更冷。',
+  '【情绪·不写】情绪不写进台词；情绪写在节奏、断句与用词里。',
+  '【自检·两遍】输出前自检两遍：先过词表，再看能不能被念出来。',
+  '【开场】开场句不得解释处境；先给一个声音或一个动作。',
+  '【落幕】一段对话的最后一句应当留一个可以接上的口，不封死。',
+  '【称谓】三人的称呼习惯各不相同，且不随情绪改变。',
+  '【重复】同一段里同一个词不得出现三次以上，除非是刻意的回声。',
+  '【数字】台词里不写精确价格与人数；写价签的颜色、声响、缺角。',
+  '【时态】台词是当下的；不回忆往事，只让往事从物件上漏出来。',
+  '【语速】同一句话里不超过三个逗号。',
+  '【轻重】重要的话放在句尾，不放开头；开头留给铺垫。',
+  '【留白】一段里最多留一处省略号；两处以上会变成犹豫。',
+  '【单层】台词只演一层情绪，不同时演三层。',
+  '【回声】最后一句可以重复前一句的词，但要换掉标点。',
+  '【时间】台词不报时间；时间靠光、声音与器物的变化暗示。',
+  '【数量】一次最多给出一个数字；第二个数字会让人开始计算。',
 ].join('\n')
 
 /**
@@ -837,12 +889,22 @@ export function createPromptCacheEvidence(opts = {}) {
  * （240 / 400 / 600 / 900 字符全部报 18507）⇒ 拿它算「token 利用率」是拿记账口径当物理量，
  * 跨请求根本不可比。唯一可信的命中读数是 <code>cached_tokens</code>。</p>
  *
- * <p><b>两条 lane 的对照</b>：stable lane 逐字节复用同一段圣经前缀；drift lane 每轮改写前缀。
- * 两者的 <code>cached_tokens</code> 差值，就是「前缀字节稳定」这件事的因果证据。</p>
+ * <p><b>三条 lane 的对照</b>（每条 lane 用**互不相交**的随机命名空间前缀 ⇒ lane 之间零烤热污染，
+ * 读数只反映 lane 自身的字节稳定性）：</p>
+ * <ul>
+ *   <li><code>identical</code>：system 与 user 都逐字节不变（= 旧实验口径「整请求重复」）；</li>
+ *   <li><code>stablePrefix</code>：system 逐字节不变、user 每轮都变（= 多轮 NPC 对白的真实形态）；</li>
+ *   <li><code>driftingPrefix</code>：system 每轮都改写（= 手滑改了一个标点的最小破坏量）。</li>
+ * </ul>
+ * <p>三者稳态命中率之差，就是「前缀字节稳定」这件事的因果证据。</p>
  *
  * <p><b>诚实降级</b>：没有 key ⇒ <b>不发任何网络请求</b>，返回 <code>skipped:true / reason:'missing_key'</code>，
  * 绝不拿离线结构量冒充真读数；401 / 429 / 5xx 如实失败不重试（只有 400 代理分流抖动才重试，
  * 与 `caesura-llm-gateway` 同一套判定）。</p>
+ *
+ * <p><b>流式开关</b>：<code>opts.stream===true</code> 走真 SSE 通道（尾 chunk 才有 usage）；
+ * 默认非流。<b>实测（2026-11-14 · 十一节/十二节）流式与否对 cached_tokens 无系统性影响</b>，
+ * 真正的变量是「前缀是否逐字节稳定」与「缓存写回需要几轮才可见」。</p>
  */
 export async function runPromptCacheLive(opts = {}, deps = {}) {
   const env = deps.env || process.env
@@ -850,67 +912,122 @@ export async function runPromptCacheLive(opts = {}, deps = {}) {
   const baseUrl = String(env.PROMPT_CACHE_LIVE_BASE || 'https://wkapi.pro/v1').trim()
   const model = String(env.PROMPT_CACHE_LIVE_MODEL || 'gpt-6-sol').trim()
   const rounds = Math.max(1, intOr(opts.rounds ?? deps.rounds, 3))
+  const stream = opts.stream === true
+  const injectKey = opts.injectKey !== false
   const driftLane = opts.driftLane !== false
+  const wanted = Array.isArray(opts.lanes) && opts.lanes.length
+    ? opts.lanes.filter((l) => l === 'identical' || l === 'stablePrefix' || l === 'driftingPrefix')
+    : ['identical', 'stablePrefix', ...(driftLane ? ['driftingPrefix'] : [])]
 
   if (!key) {
     return {
       live: false, skipped: true, reason: 'missing_key',
       baseUrl, model, rounds: 0, attempts: 0,
+      streamMode: stream ? 'stream' : 'non-stream',
       hitSource: 'none', tokenSource: 'none',
       cachedTokens: 0, hitRate: 0,
+      lanes: {}, stable: null, drift: null,
+      contrast: null,
       note: '未注入 key ⇒ 未发起任何网络调用（诚实降级，绝不拿离线结构量冒充真读数）',
     }
   }
 
   const callEnv = { ...env, CAESURA_LLM_API_KEY: key }
-  const stableMessages = (i) => ([
-    { role: 'system', content: PROMPT_CACHE_BIBLE },
-    { role: 'user', content: `回合${i}：集市第${(i % 7) + 1}摊的报价与音色石状态如何？请只回一句台词。` },
-  ])
-  const driftMessages = (i) => ([
-    // 每次只改一个字符——这正是「手滑改了一个标点」的最小破坏量。
-    { role: 'system', content: `${PROMPT_CACHE_BIBLE}${'·'.repeat(i + 1)}` },
-    { role: 'user', content: `回合${i}：集市第${(i % 7) + 1}摊的报价与音色石状态如何？请只回一句台词。` },
-  ])
+  const userAt = (i) => `回合${i}：集市第${(i % 7) + 1}摊的报价与音色石状态如何？请只回一句台词。`
 
-  async function lane(messagesAt) {
+  /**
+   * lane 专属的命名空间材料：放在 system **最前面**，保证第 1 个缓存块就与其它 lane 不同；
+   * 各 lane 长度差 311 字符（≠1024 的整数倍）⇒ 后续块偏移永不对齐 ⇒ 不存在「块内容相同 ⇒ 跨 lane 命中」。
+   */
+  const namespaceFor = (lane) => {
+    const rnd = lcg(0x9e3779b9 ^ Math.imul(laneIndex(lane) + 1, 2654435761))
+    const chars = ['锈', '钟', '哑', '弦', '灰', '烬', '汐', '骸', '铃', '砚', '砂', '苔', '隙', '晦']
+    const target = 3000 + laneIndex(lane) * 311
+    let out = ''
+    while (out.length < target) out += chars[Math.floor(rnd() * chars.length)] + '话'.repeat(Math.floor(rnd() * 6) + 1) + '。'
+    return out.slice(0, target)
+  }
+  const messagesFor = (lane, i, ns) => {
+    const head = `${ns}\n${PROMPT_CACHE_BIBLE}`
+    if (lane === 'identical') return [{ role: 'system', content: head }, { role: 'user', content: userAt(0) }]
+    if (lane === 'driftingPrefix') {
+      // 每次只改一个字符——这正是「手滑改了一个标点」的最小破坏量。
+      return [{ role: 'system', content: head + '·'.repeat(i + 1) }, { role: 'user', content: userAt(i) }]
+    }
+    return [{ role: 'system', content: head }, { role: 'user', content: userAt(i) }]
+  }
+
+  async function lane(laneName) {
+    const ns = namespaceFor(laneName)
     const cachedTokens = []
     const promptTokensReported = []
     const statuses = []
     let attempts = 0
     let hits = 0
+    let degraded = 0
     for (let i = 0; i < rounds; i++) {
-      const r = await callLlm(messagesAt(i), { mode: 'live', baseUrl, model, stream: false }, { env: callEnv, fetchImpl: deps.fetchImpl })
+      const messages = messagesFor(laneName, i, ns)
+      const opts = { mode: 'live', baseUrl, model, stream }
+      if (injectKey) opts.promptCacheKey = derivePromptCacheKey(messages, {})
+      const r = await callLlm(messages, opts, { env: callEnv, fetchImpl: deps.fetchImpl })
       attempts += intOr(r?.attempts, 1)
       statuses.push(intOr(r?.status, 0))
+      if (r?.degradedWithoutCacheKey === true) degraded += 1
       const ct = intOr(r?.cachedTokens, 0)
       cachedTokens.push(ct)
       // 代理侧记账值：如实记录但**标注不可跨请求比较**，绝不拿它当物理量。
       promptTokensReported.push(intOr(r?.usage?.prompt_tokens, 0))
       if (r?.ok === true && ct > 0) hits += 1
     }
-    return { cachedTokens, promptTokensReported, statuses, attempts, hits, misses: rounds - hits }
+    // 暖机轮数 = 第一次出现命中的轮次（1-based）；从未命中 ⇒ rounds+1（诚实记「本轮次内没暖起来」）。
+    const firstHit = cachedTokens.findIndex((c) => c > 0)
+    return {
+      lane: laneName, cachedTokens, promptTokensReported, statuses, attempts, hits, misses: rounds - hits,
+      degradedWithoutCacheKey: degraded,
+      warmupRounds: firstHit >= 0 ? firstHit + 1 : rounds + 1,
+      hitRate: round4(hits / rounds),
+    }
   }
 
-  const stable = await lane(stableMessages)
-  const drift = driftLane ? await lane(driftMessages) : null
-  const hitRate = stable.cachedTokens.length > 0
+  const lanes = {}
+  for (const name of wanted) lanes[name] = await lane(name)
+  const stable = lanes.stablePrefix || null
+  const drift = lanes.driftingPrefix || null
+  const identical = lanes.identical || null
+  const hitRate = stable && stable.cachedTokens.length > 0
     ? round4(stable.cachedTokens.filter((c) => c > 0).length / stable.cachedTokens.length)
     : 0
+  // 判据：字节稳定的前缀 lane 必须优于漂移 lane（这才是本件的因果主张）。
+  const contrast = stable && drift
+    ? {
+      identicalHitRate: identical ? identical.hitRate : null,
+      stableHitRate: stable.hitRate,
+      driftHitRate: drift.hitRate,
+      stableBeatsDrift: stable.hitRate > drift.hitRate,
+      identicalBeatsStable: identical ? identical.hitRate >= stable.hitRate : null,
+      distinct: stable.hitRate !== drift.hitRate,
+      warmupRounds: { identical: identical ? identical.warmupRounds : null, stablePrefix: stable.warmupRounds, driftingPrefix: drift.warmupRounds },
+    }
+    : null
   return {
     live: true, skipped: false, reason: null,
     baseUrl, model, rounds,
-    attempts: stable.attempts + (drift ? drift.attempts : 0),
+    streamMode: stream ? 'stream' : 'non-stream',
+    injectKey,
+    attempts: Object.values(lanes).reduce((a, l) => a + l.attempts, 0),
     hitSource: 'api-usage-prompt-tokens-details-cached-tokens',
     tokenSource: 'proxy-accounting-not-comparable',
-    cachedTokens: stable.cachedTokens.reduce((a, b) => a + b, 0),
+    cachedTokens: stable ? stable.cachedTokens.reduce((a, b) => a + b, 0) : 0,
     hitRate,
+    lanes,
     stable,
     drift,
+    identical,
+    contrast,
     prefixBytes: PROMPT_CACHE_BIBLE.length,
     prefixTokens: estimateTokens(PROMPT_CACHE_BIBLE),
     prefixSignature: hash32(PROMPT_CACHE_BIBLE).toString(16),
-    note: 'cached_tokens 是唯一可信命中读数；prompt_tokens 是代理侧记账值，跨请求不可比；未命中时 prompt_tokens_details 字段可能整体缺失',
+    note: 'cached_tokens 是唯一可信命中读数；prompt_tokens 是代理侧记账值，跨请求不可比；未命中时 prompt_tokens_details 字段可能整体缺失；三条 lane 用互不相交的命名空间前缀，防跨 lane 烤热污染',
   }
 }
 
@@ -923,14 +1040,27 @@ if (isCliInvocation) {
   const rigged = args.includes('--rigged')
   const live = args.includes('--live')
   if (live) {
-    const res = await runPromptCacheLive({ rounds: 3 })
+    const roundsArg = args.find((a) => a.startsWith('--rounds='))
+    const res = await runPromptCacheLive({
+      rounds: roundsArg ? Number(roundsArg.slice('--rounds='.length)) : 3,
+      stream: args.includes('--stream'),
+      injectKey: !args.includes('--no-key'),
+    })
     if (res.skipped) {
       console.log('[prompt-cache:live] skipped=' + res.reason + ' —— ' + res.note)
     } else {
-      console.log('[prompt-cache:live] base=' + res.baseUrl + ' model=' + res.model + ' rounds=' + res.rounds + ' attempts=' + res.attempts)
-      console.log('  stable lane cached_tokens=' + JSON.stringify(res.stable.cachedTokens) + ' hitRate=' + res.hitRate)
-      if (res.drift) console.log('  drift  lane cached_tokens=' + JSON.stringify(res.drift.cachedTokens) + ' （前缀逐轮改写）')
+      console.log('[prompt-cache:live] base=' + res.baseUrl + ' model=' + res.model + ' rounds=' + res.rounds + ' attempts=' + res.attempts
+        + ' streamMode=' + res.streamMode + ' injectKey=' + res.injectKey)
+      for (const [name, l] of Object.entries(res.lanes)) {
+        console.log(`  ${name.padEnd(15)} cached_tokens=${JSON.stringify(l.cachedTokens)} hits=${l.hits}/${res.rounds} hitRate=${l.hitRate} warmupRounds=${l.warmupRounds}`
+          + (l.degradedWithoutCacheKey ? ` degraded=${l.degradedWithoutCacheKey}` : ''))
+      }
+      if (res.contrast) {
+        console.log('  contrast: identical=' + res.contrast.identicalHitRate + ' stable=' + res.contrast.stableHitRate
+          + ' drift=' + res.contrast.driftHitRate + ' stableBeatsDrift=' + res.contrast.stableBeatsDrift + ' distinct=' + res.contrast.distinct)
+      }
       console.log('  hitSource=' + res.hitSource + ' / tokenSource=' + res.tokenSource)
+      console.log('  note: ' + res.note)
     }
     process.exit(0)
   }
