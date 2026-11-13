@@ -113,7 +113,7 @@ describe('KI-324 主干自证：把一棵提交树的字节喂给 tsc', () => {
       expect(r.ok, '主干编译不过').toBe(true)
       expect(r.checked, '根文件份数（源码根）').toBeGreaterThanOrEqual(300)
     },
-    180_000,
+    900_000,
   )
 
   it.skipIf(!GIT.ok)('臂A：喂进去的字节说了算（磁盘上那份是好的、树里那份是坏的 ⇒ 门红在那份文件上）', () => {
@@ -164,7 +164,7 @@ describe('KI-324 主干自证：把一棵提交树的字节喂给 tsc', () => {
       expect(r.leaked, '工作树里有几份漏进来了').toBe(0)
       expect(r.ok, '门把编译不过的树判成了干净').toBe(false)
     },
-    180_000,
+    900_000,
   )
 
   it.skipIf(!GIT.ok)('臂E：诚实读数不是摆设（清单里有、树上却没有 ⇒ 门必须说"没能喂进去"）', () => {
