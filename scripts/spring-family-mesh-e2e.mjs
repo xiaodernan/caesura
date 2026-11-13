@@ -212,6 +212,10 @@ export function runMeshE2E(opts = {}) {
     // Independent point: scNow; can run same frame with lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/reb/pq/bsj/coj/ssb/sf.
     springConfig: opts.springConfig,
     scNow: opts.scNow,
+    // KI-548：Spring Cloud Bus 事件分发教学件（springBus=true 挂载——InMemoryLocalBus/RedisPubSubBus/KafkaBrokerBus 互补三难 + verifySpringBusSoundness 双路自证 + 十一件 21 物证）。
+    // 独立点：sbuNow；与 sf/ssb/sc 同帧跑。
+    springBus: opts.springBus,
+    sbuNow: opts.sbuNow,
     // KI-544：CDC outbox join 教学件（cdcOutboxJoin=true 装配；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异）+ verifyCdcOutboxJoinSoundness 双路自证 + 十一真件 21 键交叉印证，不改调用路径）。
     // 注入时钟用 cojNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/reb/pq/bsj/coj/rdq/dld 已占用前缀）。
     cdcOutboxJoin: opts.cdcOutboxJoin,
@@ -382,6 +386,7 @@ export function runMeshE2E(opts = {}) {
         batchStreamJoinSnapshot: status.batchStreamJoin ?? null,
         springFeignSnapshot: status.springFeign ?? null,
         springConfigSnapshot: status.springConfig ?? null,
+        springBusSnapshot: status.springBus ?? null,
         springStreamBindingSnapshot: status.springStreamBinding ?? null,
         cdcOutboxJoinSnapshot: status.cdcOutboxJoin ?? null,
         traceSamplingSnapshot: status.traceSampling ?? null,
@@ -899,6 +904,19 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         crosscheck: r.springConfigSnapshot.crosscheck,
         causalLocks: r.springConfigSnapshot.causalLocks,
         verdict: r.springConfigSnapshot.verdict,
+      } : null,
+      springBus: r.springBusSnapshot ? {
+        strategies: r.springBusSnapshot.rows.map((row) => ({
+          strategy: row.protocol,
+          ladder: row.scenarios.map((sc) => sc.id + ':' + (sc.persistent === true ? 'P' : 'O')).join(' | '),
+          metrics: row.metrics, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.springBusSnapshot.rows.map((row) => [row.protocol,
+          String(Number(row.trilemma.persistent)) + String(Number(row.trilemma.orderedPerTopic)) + String(Number(row.trilemma.lowOverhead))])),
+        noUniversalWinner: r.springBusSnapshot.verdict.noUniversalWinner,
+        crosscheck: r.springBusSnapshot.crosscheck,
+        causalLocks: r.springBusSnapshot.causalLocks,
+        verdict: r.springBusSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

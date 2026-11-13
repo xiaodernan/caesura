@@ -78,6 +78,7 @@
       renderSpringStreamBinding(snap.systems ? snap.systems.springStreamBinding : null)
       renderSpringFeign(snap.systems ? snap.systems.springFeign : null)
       renderSpringConfig(snap.systems ? snap.systems.springConfig : null)
+      renderSpringBus(snap.systems ? snap.systems.springBus : null)
       renderTraceSampling(snap.systems ? snap.systems.traceSampling : null)
       setLive(true, result.source)
     }).catch(function (e) {
@@ -3572,6 +3573,132 @@
     var probes = $('#sc-probes')
     if (probes) probes.innerHTML = chips.join('')
     if (note) note.textContent = '维轴 [hotReload / scaleFriendly / consistency]；默认向量 GitBackend=110 / NativeBackend=101 / RedisBackend=011。rigged：freeConsistency=Git 副本零 lag→111、freeHotReload=Redis 真推送→111、freeScale=Native 零成本共享盘→111。因果锁：gitCommitLag / nativeHostAffinity / redisHotRtt · causalLocksAllHold=true。'
+  }
+
+  /* ================= KI-548 InMemoryLocalBus/RedisPubSubBus/KafkaBrokerBus Spring Cloud Bus 事件分发 —— 第四十三维 · bus 霸 ================= */
+
+  function renderSpringBus(bus) {
+    renderBusMatrix(bus && bus.rows, bus && bus.config)
+    renderBusLadder(bus && bus.rows)
+    renderBusTrilemma(bus && bus.rows, bus && bus.verdict, bus && bus.crosscheck)
+  }
+
+  function busMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 缺失</div>'
+    if (note) note.textContent = 'systems.springBus 缺失 → 请先 npm run console:data 再生成'
+  }
+
+  function busCell(c, protocol) {
+    if (!c) return { cls: '', ch: '·' }
+    if (protocol === 'InMemoryLocalBus') return { cls: 'inmem', ch: '同步' }
+    if (protocol === 'RedisPubSubBus') return { cls: 'redisp', ch: 'Pub/Sub' }
+    if (protocol === 'KafkaBrokerBus') return { cls: 'kafka', ch: 'partition' }
+    return { cls: 'ok', ch: '✓' }
+  }
+
+  function renderBusMatrix(rows, config) {
+    var box = $('#bus-matrix'), note = $('#bus-matrix-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      busMissing(box, note, 'bus 矩阵'); return
+    }
+    var scenarios = ['cleanSteadyState', 'burstOverload', 'busRefresh', 'cleanRerun']
+    var head = '<div class="bus-mat-row bus-mat-head"><span class="bus-mat-proto">策略</span>' +
+      scenarios.map(function (sc) { return '<span class="bus-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="bus-mat-cost">processed/op</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = busCell(cell, row.protocol)
+        return '<span class="bus-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="bus-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="bus-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="bus-mat-cost"><b>' + esc(fmt(m.totalProcessed)) + '</b></span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'InMemoryLocalBus / RedisPubSubBus / KafkaBrokerBus 三策略，cleanSteadyState / burstOverload（refresh 风暴）/ busRefresh（掉队断线 — Pub/Sub 永远漏）/ cleanRerun（幂等重放）；每格只展示 三维向量：persistent × orderedPerTopic × lowOverhead。进程内同步零成本但不落盘；Pub/Sub 共享但断线即漏；Kafka 持久化但需真 Broker。'
+  }
+
+  function renderBusLadder(rows) {
+    var box = $('#bus-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.totalProcessed) ? r.metrics.totalProcessed : 1 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.totalProcessed) ? Math.round(m.totalProcessed / max * 100) : 0
+      return '<div class="bus-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="bus-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">processed ' + esc(fmt(m.totalProcessed)) + ' · msgs ' + esc(fmt(m.totalMessages)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderBusTrilemma(rows, verdict, crosscheck) {
+    var box = $('#bus-trilemma'), veBox = $('#bus-verif'), cxBox = $('#bus-crosscheck'), note = $('#bus-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      busMissing(box, note, 'bus 向量'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''; return
+    }
+    var flags = [['persistent', '持久化'], ['orderedPerTopic', 'topic 内有序'], ['lowOverhead', '零 Broker']]
+    var head = '<div class="bus-vec bus-vec-head"><span class="proto">策略</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="bus-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '×') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="bus-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    if (veBox) {
+      var local = rows.find(function (r) { return r.protocol === 'InMemoryLocalBus' })
+      var redis = rows.find(function (r) { return r.protocol === 'RedisPubSubBus' })
+      var kafka = rows.find(function (r) { return r.protocol === 'KafkaBrokerBus' })
+      var cp = crosscheck && crosscheck.soundness
+      veBox.innerHTML = [
+        '<div class="bus-rb-row"><b>InMemoryLocalBus</b> 持久=' + esc(String(local?.trilemma?.persistent)) + '（进程内存易失·重启即丢） 有序=' + esc(String(local?.trilemma?.orderedPerTopic)) + '（同步调用者线程内 FIFO） 零Broker=' + esc(String(local?.trilemma?.lowOverhead)) + '（JVM 内调用）</div>',
+        '<div class="bus-rb-row"><b>RedisPubSubBus</b> 持久=' + esc(String(redis?.trilemma?.persistent)) + '（Pub/Sub 无 ack·断连必漏） 有序=' + esc(String(redis?.trilemma?.orderedPerTopic)) + '（跨 producer 无全局序） 零Broker=' + esc(String(redis?.trilemma?.lowOverhead)) + '（共享 Redis）</div>',
+        '<div class="bus-rb-row"><b>KafkaBrokerBus</b> 持久=' + esc(String(kafka?.trilemma?.persistent)) + '（log segment 落盘 replay 还读得到） 有序=' + esc(String(kafka?.trilemma?.orderedPerTopic)) + '（同 partition key FIFO） 零Broker=' + esc(String(kafka?.trilemma?.lowOverhead)) + '（真 Kafka 集群）</div>',
+        cp ? '<div class="bus-rb-row"><b>verifySpringBusSoundness</b> holds=' + (cp.holds ? 'true' : 'false') + ' nontrivial=' + (cp.nontrivial ? 'true' : 'false') + ' falsifiable=' + (cp.falsifiable ? 'true' : 'false') + ' · laneA{localDelivered=' + esc(String(cp.laneA?.localDelivered)) + '/' + esc(String(cp.laneA?.expected)) + '} laneB{redisDelivered=' + esc(String(cp.laneB?.redisDelivered)) + ' / subscribers=' + esc(String(cp.laneB?.subscribers)) + '}</div>' : '',
+      ].join('')
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>→ <b>compareRemapping</b> 一致哈希命中 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>' +
+          '<div>→ <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 台</div>' +
+          '<div>→ <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 计费 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
+          '<div>→ <b>createWal</b> lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>→ <b>createBus</b> spring-bus.bound 通知 ' + esc(fmt(ev.notices)) + ' 次 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>→ <b>createRedisCache</b> bus cache 键 ' + esc(fmt(ev.redisBitmapHits)) + ' 次 · entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+          '<div>→ <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+          '<div>→ <b>createTokenBucket</b> 放行 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>→ <b>createMinHeapDelayQueue</b> 弹出 ' + esc(fmt(ev.heapFired)) + ' 次 · pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+          '<div>→ <b>createFullJitterBackoff</b> jitterSpread <b>' + esc(String((ev.jitterSpread ?? 0).toFixed(4))) + '</b>（64 次 delayFor 波动）</div>' +
+          '<div>→ <b>createPackedCounters</b> 和=' + esc(fmt(ev.counterSum)) + ' · falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">跨证据缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var chips = [
+      '<span class="chip" data-verdict="noUniversalWinner"><b>noUniversalWinner</b> ' + (noWin ? '✓（三难不可兼得）' : '×') + '</span>',
+      '<span class="chip" data-verdict="noStrategyWinsAll"><b>noStrategyWinsAll</b> ' + (v.noStrategyWinsAll ? '✓ 没有 111' : '×') + '</span>',
+      '<span class="chip" data-verdict="vectorFromTrilemma"><b>vectorFromTrilemma</b> 向量同源 ✓</span>',
+      '<span class="chip jade-t" data-verdict="noUniversalWinner2">默认三策略互补，绝不成品 111</span>',
+    ]
+    var probes = $('#bus-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维轴 [persistent / orderedPerTopic / lowOverhead]；默认向量 InMemoryLocalBus=011（进程内同步）/ RedisPubSubBus=001（共享 Redis · 断连必漏）/ KafkaBrokerBus=110（持久化 partition 内 FIFO）。rigged：freePersistent（假装进程时序）/ freeOrder（Redis 跨 produce 全序·违背 Pub/Sub 语义）/ freeOverhead（Kafka 零成本）InMemory/Kafka 111 · RedisPubSub 011——没有一套全能解。因果锁：inMemoryVolatility / redisPubSubNotExactly / kafkaPartitionHotKey · causalLocksAllHold=true。'
   }
 
   /* ================= KI-545 ExclusiveConsumer/SharedConsumer/ClusteredConsumer Spring Cloud Stream 绑定 · 第三十九维（ssb 族） ================= */

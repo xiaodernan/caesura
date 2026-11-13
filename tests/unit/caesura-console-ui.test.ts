@@ -2829,3 +2829,47 @@ describe('KI-547 Spring Cloud Config 分布式配置中心 · GitBackend/NativeB
     })
   })
 })
+
+// ============ KI-548 Spring Cloud Bus 事件分发三策略（bus 霸 · 双面板复刻 KI-545 结构）============
+describe('KI-548 Spring Cloud Bus 事件分发 · InMemoryLocalBus/RedisPubSubBus/KafkaBrokerBus（bus 霸）', () => {
+  const realBus = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+  it('第四十三维 markup/CSS 面板渲染：bus 矩阵 12 cell + 向量 011/001/110 + 状态角标 + ladder 条', async () => {
+    const dom = await runApp(realBus)
+    const matrix = dom.els['bus-matrix'].innerHTML
+    expect(matrix).toContain('bus-mat-head')
+    for (const p of ['InMemoryLocalBus', 'RedisPubSubBus', 'KafkaBrokerBus']) {
+      expect(matrix).toContain('data-strategy="' + p + '"')
+    }
+    for (const sc of ['cleanSteadyState', 'burstOverload', 'busRefresh', 'cleanRerun']) {
+      expect(matrix).toContain('data-s="' + sc + '"')
+    }
+    expect((matrix.match(/class="bus-cell /g) || []).length).toBe(12)
+    const tri = dom.els['bus-trilemma'].innerHTML
+    expect(tri).toContain('data-vec="011"')
+    expect(tri).toContain('data-vec="001"')
+    expect(tri).toContain('data-vec="110"')
+    expect(dom.els['bus-ladder'].innerHTML).toContain('bus-bar')
+  })
+
+  it('bus markup/CSS 同源 + systems.springBus 缺失时降级分支可见', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-bus')
+    expect(html).toContain('id="bus-matrix"')
+    expect(html).toContain('id="bus-verif"')
+    expect(html).toContain('InMemoryLocalBus=011 / RedisPubSubBus=001 / KafkaBrokerBus=110')
+    expect(css).toContain('.bus-cell.inmem')
+    expect(css).toContain('.bus-cell.redisp')
+    expect(css).toContain('.bus-cell.kafka')
+    expect(css).toContain('.bus-flag.yes')
+    expect(css).toContain('.bus-bar > i')
+    expect(css).toContain('.bus-verif')
+    const noBus = JSON.parse(JSON.stringify(realBus as any))
+    noBus.systems.springBus = null
+    return runApp(noBus).then((dom2: any) => {
+      expect(dom2.els['bus-matrix'].innerHTML).toContain('缺失')
+      expect(dom2.els['bus-trilemma'].innerHTML).toContain('缺失')
+      expect(dom2.els['bus-matrix-note'].textContent).toContain('systems.springBus 缺失')
+    })
+  })
+})

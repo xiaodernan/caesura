@@ -62,6 +62,7 @@
     "spring-stream-binding:bench": "node scripts/caesura-spring-stream-binding.mjs",
     "spring-feign:bench": "node scripts/caesura-spring-feign.mjs",
     "spring-config:bench": "node scripts/caesura-spring-config.mjs",
+    "spring-bus:bench": "node scripts/caesura-spring-bus.mjs",
     "gateway-routing:bench": "node scripts/caesura-gateway-routing.mjs",
     "trace-sampling:bench": "node scripts/caesura-trace-sampling.mjs",
     "outbox:bench": "node scripts/caesura-transactional-outbox.mjs",

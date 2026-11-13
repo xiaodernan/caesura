@@ -60,6 +60,7 @@ import { priorityQueueStudy, priorityQueueSnapshot } from './caesura-priority-qu
 import { batchStreamJoinStudy, batchStreamJoinSnapshot } from './caesura-batch-stream-join.mjs'
 import { springFeignStudy, springFeignSnapshot } from './caesura-spring-feign.mjs'
 import { springConfigStudy, springConfigSnapshot } from './caesura-spring-config.mjs'
+import { springBusStudy, springBusSnapshot } from './caesura-spring-bus.mjs'
 import { springStreamBindingStudy, springStreamBindingSnapshot } from './caesura-spring-stream-binding.mjs'
 import { cdcOutboxJoinStudy, cdcOutboxJoinSnapshot } from './caesura-cdc-outbox-join.mjs'
 import {
@@ -939,6 +940,24 @@ export function createGameCloud(opts = {}) {
     scCached = springConfigSnapshot(study)
     return scCached
   }
+  // KI-548：Spring Cloud Bus 事件分发教学件（InMemoryLocalBus/RedisPubSubBus/KafkaBrokerBus）——opt-in（status/ sbu*）。
+  // opts.springBus===true 单纯启用默认；对象则带 seed/messages/freePersistent/freeOrder/freeOverhead/rigged 等。
+  // 注入 rows/vectors/verdict 完整时以注入 study 为准；默认 springBus:false 等同其它 KI 的零开销策略。
+  // 讲点：进程内同步广播 / Redis Pub/Sub 全量 fanout（fire-and-forget）/ Kafka Broker 持久化分区（partition-level FIFO）。
+  const sbuCfg = opts.springBus === true ? {} : (opts.springBus && typeof opts.springBus === 'object' ? opts.springBus : null)
+  const sbuInjected = sbuCfg !== null && opts.springBus &&
+    typeof opts.springBus === 'object' && Array.isArray(opts.springBus.rows) &&
+    opts.springBus.vectors && opts.springBus.verdict
+  let sbuCached = null
+  async function sbuSnapshotForStatus() {
+    if (sbuCfg === null) return null
+    if (sbuCached) return sbuCached
+    const study = sbuInjected
+      ? opts.springBus
+      : await springBusStudy({ ...sbuCfg, now: opts.sbuNow ?? sbuCfg.now })
+    sbuCached = springBusSnapshot(study)
+    return sbuCached
+  }
 
   // KI-545：CDC outbox join 教学件（LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin；opt-in、status/ coj*）。
   // opts.springStreamBinding===true 走钳制默认参数（可覆盖 now/seed/messages/interval/nailedSnapshot/freeBinlog/noLatch/rigged 等）；
@@ -1155,6 +1174,8 @@ export function createGameCloud(opts = {}) {
     runSpringFeignStudy: sfCfg === null ? null : () => springFeignStudy({ ...sfCfg, now: opts.sfNow ?? sfCfg.now }),
     /** KI-547：Spring Cloud Config 分布式配置中心教学件 —— 缺省 opts.springConfig 时为 null；GitBackend/NativeBackend/RedisBackend 三后端互补三难 + verifySpringConfigSoundness 双路自证 + 十一件 21 物证。 */
     runSpringConfigStudy: scCfg === null ? null : () => springConfigStudy({ ...scCfg, now: opts.scNow ?? scCfg.now }),
+    /** KI-548：Spring Cloud Bus 事件分发教学件 —— 缺省 opts.springBus 时为 null；InMemoryLocalBus/RedisPubSubBus/KafkaBrokerBus 三后端互补三难 + verifySpringBusSoundness 双路自证 + 十一件 21 物证。 */
+    runSpringBusStudy: sbuCfg === null ? null : () => springBusStudy({ ...sbuCfg, now: opts.sbuNow ?? sbuCfg.now }),
     /** KI-545：CDC outbox join 教学件；缺 opts.springStreamBinding 时为 null；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异不封赢家）+ verifySpringStreamBindingSoundness 双路自证 + 十一枚真件交叉印证。 */
     runSpringStreamBindingStudy: ssbCfg === null ? null : () => springStreamBindingStudy({ ...ssbCfg, now: opts.ssbNow ?? ssbCfg.now }),
     /** KI-544：CDC outbox join 教学件；缺 opts.cdcOutboxJoin 时为 null；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异不封赢家）+ verifyCdcOutboxJoinSoundness 双路自证 + 十一枚真件交叉印证。 */
@@ -1229,6 +1250,7 @@ export function createGameCloud(opts = {}) {
         batchStreamJoin: await bsjSnapshotForStatus(),
         springFeign: await sfSnapshotForStatus(),
         springConfig: await scSnapshotForStatus(),
+        springBus: await sbuSnapshotForStatus(),
         springStreamBinding: await ssbSnapshotForStatus(),
         cdcOutboxJoin: await cojSnapshotForStatus(),
         traceSampling: await tsSnapshotForStatus(),

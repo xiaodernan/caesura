@@ -789,6 +789,24 @@
     </article>
   </section>
 
+  <!-- 第四十三维 · Spring Cloud Bus 事件分发三策略（KI-548） -->
+  <section class="row row-bus">
+    <article class="panel panel-bus">
+      <div class="panel-head"><h2>第四十三维 · InMemoryLocalBus / RedisPubSubBus / KafkaBrokerBus —— Spring Cloud Bus 事件分发</h2><span class="hint">进程内同步广播=InMemoryLocalBus（persistent=0 · orderedPerTopic=1 · lowOverhead=1）；Redis Pub/Sub fire-and-forget，掉队订阅者永远漏=RedisPubSubBus（0 · 0 · 1）；Kafka Broker partition-level FIFO=KafkaBrokerBus（1 · 1 · 0 · 真 Broker 高成本）——默认向量 011/001/110，三难不可兼得 —— 绝不成品 111</span></div>
+      <div class="bus-matrix" id="bus-matrix"></div>
+      <div class="bus-ladder" id="bus-ladder"></div>
+      <p class="note" id="bus-matrix-note">…</p>
+    </article>
+    <article class="panel panel-bus">
+      <div class="panel-head"><h2>Bus 三维向量（persistent · orderedPerTopic · lowOverhead）· 双路自证 + 三路篡改 + 因果锁</h2><span class="hint">InMemoryLocalBus=011 / RedisPubSubBus=001 / KafkaBrokerBus=110 · 互补三路 · verifySpringBusSoundness 双路自证（lane A 同步广播 vs lane B Redis fanout subscribers=3 全收；tamper 三通：subscriberStuck / pubSubLagging（Pub/Sub 无 ack 断线掉队）/ topicSplit 真喂回 hold=false；十一件 21 物证 compareRemapping/ShardRouter/HashRing/WAL/Bus/Redis/Pool/Bucket/MinHeap/PackedCounters/FullJitter Backoff）</span></div>
+      <div class="bus-trilemma" id="bus-trilemma"></div>
+      <div class="bus-verif" id="bus-verif"></div>
+      <div class="bus-crosscheck" id="bus-crosscheck"></div>
+      <div class="bus-probes" id="bus-probes"></div>
+      <p class="note" id="bus-trilemma-note">…</p>
+    </article>
+  </section>
+
 </main>
 
 <footer class="footer">

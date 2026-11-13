@@ -746,6 +746,27 @@ export function runMeshE2E(opts?: any): {
       causalLocks: { pipelineWriteFriendlyCausallyUnerasable: boolean; stubNoNetworkCausallyUnerasable: boolean; blockingPipelineAtomicityCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
       crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
     } | null
+    /** KI-548：Spring Cloud Bus 事件分发教学件（InMemoryLocalBus=011 / RedisPubSubBus=001 / KafkaBrokerBus=110）——缺省 springBus 为 null */
+    springBusSnapshot: {
+      config: Record<string, any>
+      rows: Array<{
+        protocol: string
+        scenarios: Array<{
+          id: string; messages: number; processed: number
+          persistent: boolean; orderedPerTopic: boolean; lowOverhead: boolean; fault: string
+        }>
+        trilemma: { persistent: boolean; orderedPerTopic: boolean; lowOverhead: boolean }
+        metrics: { totalProcessed: number; totalMessages: number }
+      }>
+      vectors: Record<string, string>
+      noUniversalWinner: boolean
+      trilemmaDistinguishes: boolean
+      builtAt: number
+      rigged: boolean
+      verdict: Record<string, any>
+      causalLocks: { inMemoryVolatilityCausallyUnerasable: boolean; redisPubSubNotExactlyCausallyUnerasable: boolean; kafkaPartitionHotKeyCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
+      crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+    } | null
     /** KI-547：Spring Cloud Config 分布式配置中心三策略后端教学件（GitBackend=110 / NativeBackend=101 / RedisBackend=011）——缺省 springConfig 为 null */
     springConfigSnapshot: {
       config: Record<string, any>

@@ -956,6 +956,28 @@ export interface SpringFeignReading {
   builtAt: number
 }
 
+/** KI-548：InMemoryLocalBus/RedisPubSubBus/KafkaBrokerBus Spring Cloud Bus 事件分发教学件——verifySpringBusSoundness 双路自证 + 十一件 21 物证。 */
+export interface SpringBusReading {
+  config: Record<string, any>
+  rows: Array<{
+    protocol: string
+    scenarios: Array<{
+      id: string; messages: number; processed: number
+      persistent: boolean; orderedPerTopic: boolean; lowOverhead: boolean; fault: string
+    }>
+    trilemma: { persistent: boolean; orderedPerTopic: boolean; lowOverhead: boolean }
+    metrics: { totalProcessed: number; totalMessages: number }
+  }>
+  vectors: Record<string, string>
+  verdict: Record<string, any>
+  rigged: boolean
+  noUniversalWinner: boolean
+  trilemmaDistinguishes: boolean
+  causalLocks: { inMemoryVolatilityCausallyUnerasable: boolean; redisPubSubNotExactlyCausallyUnerasable: boolean; kafkaPartitionHotKeyCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
+  crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+  builtAt: number
+}
+
 /** KI-547：GitBackend/NativeBackend/RedisBackend Spring Cloud Config 分布式配置中心三策略后端教学件——verifySpringConfigSoundness 双路自证 + 十一件 21 物证。 */
 export interface SpringConfigReading {
   config: Record<string, any>
@@ -1094,6 +1116,7 @@ export interface SystemsBlock {
   springStreamBinding: SpringStreamBindingReading | null
   springFeign: SpringFeignReading | null
   springConfig: SpringConfigReading | null
+  springBus: SpringBusReading | null
   builtAt: number
 }
 
@@ -3006,6 +3029,18 @@ export function buildSpringConfigReading(opts: {
   scFreeConsistency?: boolean
   scRigged?: boolean
 }, now: () => number): Promise<SpringConfigReading | null>
+
+/** KI-548：Spring Cloud Bus 事件分发教学件（InMemoryLocalBus/RedisPubSubBus/KafkaBrokerBus + verifySpringBusSoundness 双路自证 + 十一件 21 物证）——无 springBus 时传 false → 前端即降级；失败返回 null。 */
+export function buildSpringBusReading(opts: {
+  now?: () => number
+  springBus?: boolean
+  sbuSeed?: number
+  sbuMessages?: number
+  sbuFreePersistent?: boolean
+  sbuFreeOrder?: boolean
+  sbuFreeOverhead?: boolean
+  sbuRigged?: boolean
+}, now: () => number): Promise<SpringBusReading | null>
 
 /** KI-545：真跑 Spring Cloud Stream 绑定三策略教学件（ExclusiveConsumer/SharedConsumer/ClusteredConsumer × 四场景 + 三难向量 + verifySpringStreamBindingSoundness 双路自证 + 十一枚真件交叉印证）收敛成前端第三十九维两面板紧凑读数；失败落 null。 */
 export function buildSpringStreamBindingReading(opts: {
