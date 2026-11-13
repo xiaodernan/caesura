@@ -62,6 +62,7 @@ import { springFeignStudy, springFeignSnapshot } from './caesura-spring-feign.mj
 import { springConfigStudy, springConfigSnapshot } from './caesura-spring-config.mjs'
 import { springBusStudy, springBusSnapshot } from './caesura-spring-bus.mjs'
 import { redisPipelineStudy, redisPipelineSnapshot } from './caesura-redis-pipeline.mjs'
+import { gatewayRetryStudy, gatewayRetrySnapshot } from './caesura-gateway-retry.mjs'
 import { springStreamBindingStudy, springStreamBindingSnapshot } from './caesura-spring-stream-binding.mjs'
 import { cdcOutboxJoinStudy, cdcOutboxJoinSnapshot } from './caesura-cdc-outbox-join.mjs'
 import {
@@ -977,6 +978,22 @@ export function createGameCloud(opts = {}) {
     rpCached = redisPipelineSnapshot(study)
     return rpCached
   }
+  // KI-550：Spring Cloud Gateway Retry 三策略教学件（ImmediateRetry/FixedBackoff/ExponentialFullJitter）——opt-in（status/ gw*）。
+  // opts.gatewayRetry===true 单纯启用默认；对象则带 seed/messages/freeBudget/freeConvoy/freeTail/rigged 等。
+  const gwCfg = opts.gatewayRetry === true ? {} : (opts.gatewayRetry && typeof opts.gatewayRetry === 'object' ? opts.gatewayRetry : null)
+  const gwInjected = gwCfg !== null && opts.gatewayRetry &&
+    typeof opts.gatewayRetry === 'object' && Array.isArray(opts.gatewayRetry.rows) &&
+    opts.gatewayRetry.vectors && opts.gatewayRetry.verdict
+  let gwCached = null
+  async function gwSnapshotForStatus() {
+    if (gwCfg === null) return null
+    if (gwCached) return gwCached
+    const study = gwInjected
+      ? opts.gatewayRetry
+      : await gatewayRetryStudy({ ...gwCfg, now: opts.gwNow ?? gwCfg.now })
+    gwCached = gatewayRetrySnapshot(study)
+    return gwCached
+  }
 
   // KI-545：CDC outbox join 教学件（LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin；opt-in、status/ coj*）。
   // opts.springStreamBinding===true 走钳制默认参数（可覆盖 now/seed/messages/interval/nailedSnapshot/freeBinlog/noLatch/rigged 等）；
@@ -1197,6 +1214,8 @@ export function createGameCloud(opts = {}) {
     runSpringBusStudy: sbuCfg === null ? null : () => springBusStudy({ ...sbuCfg, now: opts.sbuNow ?? sbuCfg.now }),
     /** KI-549：Redis 三策略事务教学件 —— 缺省 opts.redisPipeline 时为 null；PipelineBatch/LuaScripting/WatchCas 互补三难 + verifyRedisPipelineSoundness 双路自证 + 十一件 21 物证。 */
     runRedisPipelineStudy: rpCfg === null ? null : () => redisPipelineStudy({ ...rpCfg, now: opts.rpNow ?? rpCfg.now }),
+    /** KI-550：Spring Cloud Gateway Retry 三策略教学件 —— 缺省 opts.gatewayRetry 时为 null；ImmediateRetry/FixedBackoff/ExponentialFullJitter 三难 + verifyGatewayRetrySoundness 双路自证 + 十一件 21 物证。 */
+    runGatewayRetryStudy: gwCfg === null ? null : () => gatewayRetryStudy({ ...gwCfg, now: opts.gwNow ?? gwCfg.now }),
     /** KI-545：CDC outbox join 教学件；缺 opts.springStreamBinding 时为 null；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异不封赢家）+ verifySpringStreamBindingSoundness 双路自证 + 十一枚真件交叉印证。 */
     runSpringStreamBindingStudy: ssbCfg === null ? null : () => springStreamBindingStudy({ ...ssbCfg, now: opts.ssbNow ?? ssbCfg.now }),
     /** KI-544：CDC outbox join 教学件；缺 opts.cdcOutboxJoin 时为 null；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异不封赢家）+ verifyCdcOutboxJoinSoundness 双路自证 + 十一枚真件交叉印证。 */
@@ -1273,6 +1292,7 @@ export function createGameCloud(opts = {}) {
         springConfig: await scSnapshotForStatus(),
         springBus: await sbuSnapshotForStatus(),
         redisPipeline: await rpSnapshotForStatus(),
+        gatewayRetry: await gwSnapshotForStatus(),
         springStreamBinding: await ssbSnapshotForStatus(),
         cdcOutboxJoin: await cojSnapshotForStatus(),
         traceSampling: await tsSnapshotForStatus(),

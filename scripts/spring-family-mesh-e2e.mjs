@@ -219,6 +219,9 @@ export function runMeshE2E(opts = {}) {
     // KI-549：Redis 三策略事务教学件（redisPipeline=true 挂载——PipelineBatch/LuaScripting/WatchCas 互补三难 + verifyRedisPipelineSoundness 双路自证 + 十一件 21 物证）。
     redisPipeline: opts.redisPipeline,
     rpNow: opts.rpNow,
+    /** KI-550：Spring Cloud Gateway Retry 三策略教学件（gatewayRetry=true 挂载——ImmediateRetry/FixedBackoff/ExponentialFullJitter 三难 + verifyGatewayRetrySoundness 双路自证 + 十一件 21 物证）。 */
+    gatewayRetry: opts.gatewayRetry,
+    gwNow: opts.gwNow,
     // KI-544：CDC outbox join 教学件（cdcOutboxJoin=true 装配；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异）+ verifyCdcOutboxJoinSoundness 双路自证 + 十一真件 21 键交叉印证，不改调用路径）。
     // 注入时钟用 cojNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/reb/pq/bsj/coj/rdq/dld 已占用前缀）。
     cdcOutboxJoin: opts.cdcOutboxJoin,
@@ -391,6 +394,7 @@ export function runMeshE2E(opts = {}) {
         springConfigSnapshot: status.springConfig ?? null,
         springBusSnapshot: status.springBus ?? null,
         redisPipelineSnapshot: status.redisPipeline ?? null,
+        gatewayRetrySnapshot: status.gatewayRetry ?? null,
         springStreamBindingSnapshot: status.springStreamBinding ?? null,
         cdcOutboxJoinSnapshot: status.cdcOutboxJoin ?? null,
         traceSamplingSnapshot: status.traceSampling ?? null,
@@ -934,6 +938,19 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         crosscheck: r.redisPipelineSnapshot.crosscheck,
         causalLocks: r.redisPipelineSnapshot.causalLocks,
         verdict: r.redisPipelineSnapshot.verdict,
+      } : null,
+      gatewayRetry: r.gatewayRetrySnapshot ? {
+        strategies: r.gatewayRetrySnapshot.rows.map((row) => ({
+          strategy: row.protocol,
+          ladder: row.scenarios.map((sc) => sc.id + ':' + (sc.amplification === true ? 'A/RT' : 'OK')).join(' | '),
+          metrics: row.metrics, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.gatewayRetrySnapshot.rows.map((row) => [row.protocol,
+          String(Number(row.trilemma.amplification)) + String(Number(row.trilemma.budgetBoundedness)) + String(Number(row.trilemma.tailAvoidance))])),
+        noUniversalWinner: r.gatewayRetrySnapshot.verdict.noUniversalWinner,
+        crosscheck: r.gatewayRetrySnapshot.crosscheck,
+        causalLocks: r.gatewayRetrySnapshot.causalLocks,
+        verdict: r.gatewayRetrySnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

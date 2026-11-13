@@ -956,6 +956,28 @@ export interface SpringFeignReading {
   builtAt: number
 }
 
+/** KI-550：ImmediateRetry/FixedBackoff/ExponentialFullJitter Spring Cloud Gateway Retry 三策略教学件——verifyGatewayRetrySoundness 双路自证 + 十一件 21 物证。 */
+export interface GatewayRetryReading {
+  config: Record<string, any>
+  rows: Array<{
+    protocol: string
+    scenarios: Array<{
+      id: string; messages: number; processed: number
+      amplification: boolean; budgetBoundedness: boolean; tailAvoidance: boolean; fault: string
+    }>
+    trilemma: { amplification: boolean; budgetBoundedness: boolean; tailAvoidance: boolean }
+    metrics: { totalProcessed: number; totalMessages: number }
+  }>
+  vectors: Record<string, string>
+  verdict: Record<string, any>
+  rigged: boolean
+  noUniversalWinner: boolean
+  trilemmaDistinguishes: boolean
+  causalLocks: { immediateSaturationCausallyUnerasable: boolean; fixedBackoffConvoyCausallyUnerasable: boolean; exponentialJitterTailCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
+  crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+  builtAt: number
+}
+
 /** KI-549：PipelineBatch/LuaScripting/WatchCas Redis 三策略事务教学件——verifyRedisPipelineSoundness 双路自证 + 十一件 21 物证。 */
 export interface RedisPipelineReading {
   config: Record<string, any>
@@ -1140,6 +1162,7 @@ export interface SystemsBlock {
   springConfig: SpringConfigReading | null
   springBus: SpringBusReading | null
   redisPipeline: RedisPipelineReading | null
+  gatewayRetry: GatewayRetryReading | null
   builtAt: number
 }
 
@@ -3076,6 +3099,18 @@ export function buildRedisPipelineReading(opts: {
   rpFreeCas?: boolean
   rpRigged?: boolean
 }, now: () => number): Promise<RedisPipelineReading | null>
+
+/** KI-550：Spring Cloud Gateway Retry 三策略教学件（ImmediateRetry/FixedBackoff/ExponentialFullJitter + verifyGatewayRetrySoundness 双路自证 + 十一件 21 物证）——无 gatewayRetry 时传 false → 前端即降级；失败返回 null。 */
+export function buildGatewayRetryReading(opts: {
+  now?: () => number
+  gatewayRetry?: boolean
+  gwSeed?: number
+  gwMessages?: number
+  gwFreeBudget?: boolean
+  gwFreeConvoy?: boolean
+  gwFreeTail?: boolean
+  gwRigged?: boolean
+}, now: () => number): Promise<GatewayRetryReading | null>
 
 /** KI-545：真跑 Spring Cloud Stream 绑定三策略教学件（ExclusiveConsumer/SharedConsumer/ClusteredConsumer × 四场景 + 三难向量 + verifySpringStreamBindingSoundness 双路自证 + 十一枚真件交叉印证）收敛成前端第三十九维两面板紧凑读数；失败落 null。 */
 export function buildSpringStreamBindingReading(opts: {

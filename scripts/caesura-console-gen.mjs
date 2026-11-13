@@ -59,6 +59,7 @@ import { springFeignStudy, springFeignSnapshot } from './caesura-spring-feign.mj
 import { springConfigStudy, springConfigSnapshot } from './caesura-spring-config.mjs'
 import { springBusStudy, springBusSnapshot } from './caesura-spring-bus.mjs'
 import { redisPipelineStudy, redisPipelineSnapshot } from './caesura-redis-pipeline.mjs'
+import { gatewayRetryStudy, gatewayRetrySnapshot } from './caesura-gateway-retry.mjs'
 import { traceSamplingStudy, traceSamplingSnapshot } from './caesura-trace-sampling.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
@@ -405,7 +406,9 @@ export async function buildSystems(opts = {}) {
   const springBus = opts.springBus === false ? null : await buildSpringBusReading(opts, now)
   // KI-549：Redis 三策略事务教学件（PipelineBatch/LuaScripting/WatchCas + verifyRedisPipelineSoundness 双路自证 + 十一件 21 物证）
   const redisPipeline = opts.redisPipeline === false ? null : await buildRedisPipelineReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, priorityQueue, batchStreamJoin, cdcOutboxJoin, springStreamBinding, springFeign, springConfig, springBus, redisPipeline, builtAt: now() }
+  // KI-550：Spring Cloud Gateway Retry 三策略教学件（ImmediateRetry/FixedBackoff/ExponentialFullJitter + verifyGatewayRetrySoundness 双路自证 + 十一件 21 物证）
+  const gatewayRetry = opts.gatewayRetry === false ? null : await buildGatewayRetryReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, priorityQueue, batchStreamJoin, cdcOutboxJoin, springStreamBinding, springFeign, springConfig, springBus, redisPipeline, gatewayRetry, builtAt: now() }
 }
 
 /**
@@ -535,6 +538,29 @@ export async function buildSpringFeignReading(opts, now) {
     return springFeignSnapshot(s)
   } catch (e) {
     return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
+ * KI-550：Spring Cloud Gateway Retry 三策略教学件（ImmediateRetry / FixedBackoff / ExponentialFullJitter + verifyGatewayRetrySoundness 双路自证 + 十一件 21 物证）。
+ * 失败返回 null；CLI 双点一律。rigged 组合 collapse 三旗。
+ * @param {object} opts { gatewayRetry?:false, gwSeed?, gwMessages?, gwFreeBudget?, gwFreeConvoy?, gwFreeTail?, gwRigged? }
+ * @param {()=>number} now 时间母版，builtAt 盖记值。
+ */
+export async function buildGatewayRetryReading(opts, now) {
+  try {
+    const s = await gatewayRetryStudy({
+      now,
+      ...(opts.gwSeed ? { seed: Math.max(0, Math.floor(Number(opts.gwSeed))) } : {}),
+      ...(opts.gwMessages ? { messages: Math.max(16, Math.floor(Number(opts.gwMessages))) } : {}),
+      ...(opts.gwFreeBudget === true ? { freeBudget: true } : {}),
+      ...(opts.gwFreeConvoy === true ? { freeConvoy: true } : {}),
+      ...(opts.gwFreeTail === true ? { freeTail: true } : {}),
+      ...(opts.gwRigged === true ? { rigged: true } : {}),
+    })
+    return gatewayRetrySnapshot(s)
+  } catch (e) {
+    return null
   }
 }
 

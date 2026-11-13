@@ -80,6 +80,7 @@
       renderSpringConfig(snap.systems ? snap.systems.springConfig : null)
       renderSpringBus(snap.systems ? snap.systems.springBus : null)
       renderRedisPipeline(snap.systems ? snap.systems.redisPipeline : null)
+      renderGatewayRetry(snap.systems ? snap.systems.gatewayRetry : null)
       renderTraceSampling(snap.systems ? snap.systems.traceSampling : null)
       setLive(true, result.source)
     }).catch(function (e) {
@@ -3574,6 +3575,132 @@
     var probes = $('#sc-probes')
     if (probes) probes.innerHTML = chips.join('')
     if (note) note.textContent = '维轴 [hotReload / scaleFriendly / consistency]；默认向量 GitBackend=110 / NativeBackend=101 / RedisBackend=011。rigged：freeConsistency=Git 副本零 lag→111、freeHotReload=Redis 真推送→111、freeScale=Native 零成本共享盘→111。因果锁：gitCommitLag / nativeHostAffinity / redisHotRtt · causalLocksAllHold=true。'
+  }
+
+  /* ================= KI-550 ImmediateRetry / FixedBackoff / ExponentialFullJitter Spring Cloud Gateway Retry 三策略 —— 第四十五维 · gw 霸 ================= */
+
+  function renderGatewayRetry(gw) {
+    renderGwMatrix(gw && gw.rows, gw && gw.config)
+    renderGwLadder(gw && gw.rows)
+    renderGwTrilemma(gw && gw.rows, gw && gw.verdict, gw && gw.crosscheck)
+  }
+
+  function gwMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 缺失</div>'
+    if (note) note.textContent = 'systems.gatewayRetry 缺失 → 请先 npm run console:data 再生成'
+  }
+
+  function gwCell(c, protocol) {
+    if (!c) return { cls: '', ch: '·' }
+    if (protocol === 'ImmediateRetry') return { cls: 'imm', ch: '立即' }
+    if (protocol === 'FixedBackoff') return { cls: 'fix', ch: '固定' }
+    if (protocol === 'ExponentialFullJitter') return { cls: 'jit', ch: 'jitter' }
+    return { cls: 'ok', ch: '✓' }
+  }
+
+  function renderGwMatrix(rows, config) {
+    var box = $('#gw-matrix'), note = $('#gw-matrix-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      gwMissing(box, note, 'gw 矩阵'); return
+    }
+    var scenarios = ['cleanSteadyState', 'burstOverload', 'backoffStorm', 'cleanRerun']
+    var head = '<div class="gw-mat-row gw-mat-head"><span class="gw-mat-proto">策略</span>' +
+      scenarios.map(function (sc) { return '<span class="gw-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="gw-mat-cost">processed/op</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = gwCell(cell, row.protocol)
+        return '<span class="gw-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="gw-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="gw-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="gw-mat-cost"><b>' + esc(fmt(m.totalProcessed)) + '</b></span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'ImmediateRetry / FixedBackoff / ExponentialFullJitter 三策略，cleanSteadyState / burstOverload / backoffStorm（下游彻底 down 的雪崩暴露）/ cleanRerun（幂等重放）；每格只展示 三维向量：amplification × budgetBoundedness × tailAvoidance。零 backoff 立即重发 → snowball；固定退避 convoy 同步重试；指数退避 × full jitter 打散同时刻尾。'
+  }
+
+  function renderGwLadder(rows) {
+    var box = $('#gw-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.totalProcessed) ? r.metrics.totalProcessed : 1 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.totalProcessed) ? Math.round(m.totalProcessed / max * 100) : 0
+      return '<div class="gw-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="gw-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">processed ' + esc(fmt(m.totalProcessed)) + ' · msgs ' + esc(fmt(m.totalMessages)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderGwTrilemma(rows, verdict, crosscheck) {
+    var box = $('#gw-trilemma'), veBox = $('#gw-verif'), cxBox = $('#gw-crosscheck'), note = $('#gw-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      gwMissing(box, note, 'gw 向量'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''; return
+    }
+    var flags = [['amplification', '雪崩放大'], ['budgetBoundedness', '时延硬上限'], ['tailAvoidance', '尾部躲避']]
+    var head = '<div class="gw-vec gw-vec-head"><span class="proto">策略</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="gw-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '×') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="gw-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    if (veBox) {
+      var im = rows.find(function (r) { return r.protocol === 'ImmediateRetry' })
+      var fb = rows.find(function (r) { return r.protocol === 'FixedBackoff' })
+      var ef = rows.find(function (r) { return r.protocol === 'ExponentialFullJitter' })
+      var cp = crosscheck && crosscheck.soundness
+      veBox.innerHTML = [
+        '<div class="gw-rb-row"><b>ImmediateRetry</b> 雪崩=' + esc(String(im?.trilemma?.amplification)) + '（caller 零 backoff→queue 雪崩） 时延硬上限=' + esc(String(im?.trilemma?.budgetBoundedness)) + '（退避无界，caller 全等下游） 尾部躲避=' + esc(String(im?.trilemma?.tailAvoidance)) + '</div>',
+        '<div class="gw-rb-row"><b>FixedBackoff</b> 雪崩=' + esc(String(fb?.trilemma?.amplification)) + '（间隔固定→后端可消化） 时延硬上限=' + esc(String(fb?.trilemma?.budgetBoundedness)) + '（retry budget 硬上限） 尾部躲避=' + esc(String(fb?.trilemma?.tailAvoidance)) + '（同时刻同步重试 → convoy）</div>',
+        '<div class="gw-rb-row"><b>ExponentialFullJitter</b> 雪崩=' + esc(String(ef?.trilemma?.amplification)) + '（指数退避+cap 1024 base tick-放慢） 时延硬上限=' + esc(String(ef?.trilemma?.budgetBoundedness)) + ' 尾部躲避=' + esc(String(ef?.trilemma?.tailAvoidance)) + '（full jitter 打散 simultaneous tail）</div>',
+        cp ? '<div class="gw-rb-row"><b>verifyGatewayRetrySoundness</b> holds=' + (cp.holds ? 'true' : 'false') + ' nontrivial=' + (cp.nontrivial ? 'true' : 'false') + ' falsifiable=' + (cp.falsifiable ? 'true' : 'false') + ' · laneA{immediateProcessed=' + esc(String(cp.laneA?.immediateProcessed)) + '/' + esc(String(cp.laneA?.expected)) + '} laneB{jitterProcessed=' + esc(String(cp.laneB?.jitterProcessed)) + '}</div>' : '',
+      ].join('')
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>→ <b>compareRemapping</b> 一致哈希命中 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>' +
+          '<div>→ <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 台</div>' +
+          '<div>→ <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 计费 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
+          '<div>→ <b>createWal</b> lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>→ <b>createBus</b> gw.bound 通知 ' + esc(fmt(ev.notices)) + ' 次 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>→ <b>createRedisCache</b> retry 键 ' + esc(fmt(ev.redisBitmapHits)) + ' 次 · entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+          '<div>→ <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+          '<div>→ <b>createTokenBucket</b> 放行 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>→ <b>createMinHeapDelayQueue</b> 弹出 ' + esc(fmt(ev.heapFired)) + ' 次 · pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+          '<div>→ <b>createFullJitterBackoff</b> jitterSpread <b>' + esc(String((ev.jitterSpread ?? 0).toFixed(4))) + '</b>（64 次 delayFor 波动）</div>' +
+          '<div>→ <b>createPackedCounters</b> 和=' + esc(fmt(ev.counterSum)) + ' · falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">跨证据缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var chips = [
+      '<span class="chip" data-verdict="noUniversalWinner"><b>noUniversalWinner</b> ' + (noWin ? '✓（三难不可兼得）' : '×') + '</span>',
+      '<span class="chip" data-verdict="noStrategyWinsAll"><b>noStrategyWinsAll</b> ' + (v.noStrategyWinsAll ? '✓ 没有 111' : '×') + '</span>',
+      '<span class="chip" data-verdict="vectorFromTrilemma"><b>vectorFromTrilemma</b> 向量同源 ✓</span>',
+      '<span class="chip jade-t" data-verdict="noUniversalWinner2">默认三策略互补，绝不成品 111</span>',
+    ]
+    var probes = $('#gw-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维轴 [amplification / budgetBoundedness / tailAvoidance]；默认向量 ImmediateRetry=100 / FixedBackoff=010 / ExponentialFullJitter=011。rigged：freeBudget（caller retry-budget 解开，无 limit→放大）/ freeConvoy（固定退避 convoy 共振，三路全部坍缩！) / freeTail（ExponentialFullJitter 失掉尾部色）。因果锁：immediateSaturation / fixedBackoffConvoy / exponentialJitterTail · causalLocksAllHold=true。'
   }
 
   /* ================= KI-549 PipelineBatch/LuaScripting/WatchCas Redis 三策略事务 —— 第四十四维 · rp 霸 ================= */

@@ -825,6 +825,24 @@
     </article>
   </section>
 
+  <!-- 第四十五维 · Spring Cloud Gateway Retry 三策略（KI-550） -->
+  <section class="row row-gw">
+    <article class="panel panel-gw">
+      <div class="panel-head"><h2>第四十五维 · ImmediateRetry / FixedBackoff / ExponentialFullJitter —— Gateway Retry 三策略</h2><span class="hint">ImmediateRetry=100（caller 零 backoff 立即重发 · snowball·amplification=true·budgetBoundedness=false·tailAvoidance=false）；FixedBackoff=010（固定退避·可预测累计·amplification=false·budgetBoundedness=true·tailAvoidance=false·同时刻同步 convoy）；ExponentialFullJitter=011（指数退避×full jitter·amplification=false·budgetBoundedness=true·tailAvoidance=true）——默认向量 100/010/011，无一赢得 111</span></div>
+      <div class="gw-matrix" id="gw-matrix"></div>
+      <div class="gw-ladder" id="gw-ladder"></div>
+      <p class="note" id="gw-matrix-note">…</p>
+    </article>
+    <article class="panel panel-gw">
+      <div class="panel-head"><h2>Gateway Retry 三维向量（amplification · budgetBoundedness · tailAvoidance）· 双路自证 + 三路篡改 + 因果锁</h2><span class="hint">ImmediateRetry=100 / FixedBackoff=010 / ExponentialFullJitter=011 · 互补三路 · verifyGatewayRetrySoundness 双路自证（lane A ImmediateRetry 立即重试吃掉 retry budget vs lane B ExponentialFullJitter 相同 timeout——天花板最准；tamper 三通：immediateSaturates（caller 雪崩）/ fixedBackoffSync（同步 convoy）/ exponentialTailRate（同时刻尾尖）真喂回 hold=false；十一件 21 物证 compareRemapping/ShardRouter/HashRing/WAL/Bus/Redis/Pool/Bucket/MinHeap/PackedCounters/FullJitter Backoff）</span></div>
+      <div class="gw-trilemma" id="gw-trilemma"></div>
+      <div class="gw-verif" id="gw-verif"></div>
+      <div class="gw-crosscheck" id="gw-crosscheck"></div>
+      <div class="gw-probes" id="gw-probes"></div>
+      <p class="note" id="gw-trilemma-note">…</p>
+    </article>
+  </section>
+
 </main>
 
 <footer class="footer">

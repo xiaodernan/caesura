@@ -746,6 +746,27 @@ export function runMeshE2E(opts?: any): {
       causalLocks: { pipelineWriteFriendlyCausallyUnerasable: boolean; stubNoNetworkCausallyUnerasable: boolean; blockingPipelineAtomicityCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
       crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
     } | null
+    /** KI-550：Spring Cloud Gateway Retry 三策略教学件（ImmediateRetry=100 / FixedBackoff=010 / ExponentialFullJitter=011）——缺省 gatewayRetry 为 null */
+    gatewayRetrySnapshot: {
+      config: Record<string, any>
+      rows: Array<{
+        protocol: string
+        scenarios: Array<{
+          id: string; messages: number; processed: number
+          amplification: boolean; budgetBoundedness: boolean; tailAvoidance: boolean; fault: string
+        }>
+        trilemma: { amplification: boolean; budgetBoundedness: boolean; tailAvoidance: boolean }
+        metrics: { totalProcessed: number; totalMessages: number }
+      }>
+      vectors: Record<string, string>
+      noUniversalWinner: boolean
+      trilemmaDistinguishes: boolean
+      builtAt: number
+      rigged: boolean
+      verdict: Record<string, any>
+      causalLocks: { immediateSaturationCausallyUnerasable: boolean; fixedBackoffConvoyCausallyUnerasable: boolean; exponentialJitterTailCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
+      crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+    } | null
     /** KI-549：Redis 三策略事务教学件（PipelineBatch=011 / LuaScripting=110 / WatchCas=101）——缺省 redisPipeline 为 null */
     redisPipelineSnapshot: {
       config: Record<string, any>

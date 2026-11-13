@@ -2917,3 +2917,47 @@ describe('KI-549 Redis 三策略事务 · PipelineBatch / LuaScripting / WatchCa
     })
   })
 })
+
+// ============ KI-550 Spring Cloud Gateway Retry 三策略 · gw 霸 ============
+describe('KI-550 Spring Cloud Gateway Retry · ImmediateRetry / FixedBackoff / ExponentialFullJitter（gw 霸）', () => {
+  const realGw = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+  it('第四十五维 markup/CSS 面板渲染：gw 矩阵 12 cell + 向量 100/010/011 + 状态角标 + ladder 条', async () => {
+    const dom = await runApp(realGw)
+    const matrix = dom.els['gw-matrix'].innerHTML
+    expect(matrix).toContain('gw-mat-head')
+    for (const p of ['ImmediateRetry', 'FixedBackoff', 'ExponentialFullJitter']) {
+      expect(matrix).toContain('data-strategy="' + p + '"')
+    }
+    for (const sc of ['cleanSteadyState', 'burstOverload', 'backoffStorm', 'cleanRerun']) {
+      expect(matrix).toContain('data-s="' + sc + '"')
+    }
+    expect((matrix.match(/class="gw-cell /g) || []).length).toBe(12)
+    const tri = dom.els['gw-trilemma'].innerHTML
+    expect(tri).toContain('data-vec="100"')
+    expect(tri).toContain('data-vec="010"')
+    expect(tri).toContain('data-vec="011"')
+    expect(dom.els['gw-ladder'].innerHTML).toContain('gw-bar')
+  })
+
+  it('gw markup/CSS 同源 + systems.gatewayRetry 缺失时降级分支可见', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-gw')
+    expect(html).toContain('id="gw-matrix"')
+    expect(html).toContain('id="gw-verif"')
+    expect(html).toContain('ImmediateRetry=100 / FixedBackoff=010 / ExponentialFullJitter=011')
+    expect(css).toContain('.gw-cell.imm')
+    expect(css).toContain('.gw-cell.fix')
+    expect(css).toContain('.gw-cell.jit')
+    expect(css).toContain('.gw-flag.yes')
+    expect(css).toContain('.gw-bar > i')
+    expect(css).toContain('.gw-verif')
+    const noGw = JSON.parse(JSON.stringify(realGw as any))
+    noGw.systems.gatewayRetry = null
+    return runApp(noGw).then((dom2: any) => {
+      expect(dom2.els['gw-matrix'].innerHTML).toContain('缺失')
+      expect(dom2.els['gw-trilemma'].innerHTML).toContain('缺失')
+      expect(dom2.els['gw-matrix-note'].textContent).toContain('systems.gatewayRetry 缺失')
+    })
+  })
+})
