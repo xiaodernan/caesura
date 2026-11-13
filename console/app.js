@@ -74,6 +74,7 @@
       renderConsumerRebalance(snap.systems ? snap.systems.consumerRebalance : null)
       renderPriorityQueue(snap.systems ? snap.systems.priorityQueue : null)
       renderBatchStreamJoin(snap.systems ? snap.systems.batchStreamJoin : null)
+      renderCdcOutboxJoin(snap.systems ? snap.systems.cdcOutboxJoin : null)
       renderTraceSampling(snap.systems ? snap.systems.traceSampling : null)
       setLive(true, result.source)
     }).catch(function (e) {
@@ -3316,6 +3317,134 @@
       'verifyCheckpoint 双路自证：路 A clean 全量全 commit 求基准，路 B 真跑 restart(0) 用「poison chunk 隔离 / 已 commit 无重复 / 非毒零丢失 / 真检测到毒」四观测量判定；三路篡改真喂回同一内核现算翻 false，带 baselineHolds 先真绿。' +
       '三条因果结构锁在同一含毒 raw 流真跑钉死：Bulk 无 chk 整批死、chk 权衡不可兼得、Skip 跳毒永久丢。' +
       'rigged 双开关 perfectOracle（毒项 100% 判定、预防性从输入剔除）+ unlimitedSkip 喂的是已剔除毒项的干净流（换了作业输入、诚实标注，不是同一作业被抹软肋）⇒ 三者 faultIsolation 全真、Bulk≡Skip=101 区分度诚实收敛（riggedConvergenceCollapsed=true，教学结论：完美预言机抹平了「预防剔除」与「跳过」的差别，二者结构等价），noStrategyWinsAll 仍真绝不硬造 111，三因果锁仍 allHold。'
+  }
+
+  /* ================= KI-544 LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin CDC outbox join · 第三十八维（coj 族） ================= */
+
+  function renderCdcOutboxJoin(coj) {
+    renderCojMatrix(coj && coj.rows, coj && coj.config)
+    renderCojLadder(coj && coj.rows)
+    renderCojTrilemma(coj && coj.rows, coj && coj.verdict, coj && coj.crosscheck)
+  }
+
+  function cojMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 暂缺</div>'
+    if (note) note.textContent = 'systems.cdcOutboxJoin 缺失 — 跑一次 npm run console:data 即可补齐'
+  }
+
+  function cojCell(c, protocol) {
+    if (!c) return { cls: '', ch: '·' }
+    if (protocol === 'LsmSnapshotJoin') return { cls: 'one', ch: '一致' }
+    if (protocol === 'RawBinlogJoin') return { cls: 'scan', ch: '实扫' }
+    if (protocol === 'OutboxAtomicJoin') return { cls: 'atomic', ch: '原子' }
+    return { cls: 'ok', ch: '✓' }
+  }
+
+  function renderCojMatrix(rows, config) {
+    var box = $('#coj-matrix'), note = $('#coj-matrix-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      cojMissing(box, note, 'coj 矩阵'); return
+    }
+    var scenarios = ['cleanSteadyState', 'burstOverload', 'orderBeforeShip', 'cleanRerun']
+    var head = '<div class="coj-mat-row coj-mat-head"><span class="coj-mat-proto">策略</span>' +
+      scenarios.map(function (sc) { return '<span class="coj-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="coj-mat-cost">joins/op</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = cojCell(cell, row.protocol)
+        return '<span class="coj-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="coj-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="coj-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="coj-mat-cost"><b>' + esc(fmt(m.totalJoins)) + '</b></span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'LsmSnapshotJoin / RawBinlogJoin / OutboxAtomicJoin × 四场景（steady-state / burstOverload / orderBeforeShip / cleanRerun）。每格只认三布尔（snapshotConsistent ∧ zeroDowntime ∧ rendezvousCapable）。LSM: 快照原子可见但 tail scan 付出快照 interval 写锁；RawBinlog: binlog tail 零停机但 borderline 事件边界漏掉；OutboxAtomic: at-least-once atomic latch、但无 rendezvousCapable（任意 shipment 镜像无法参与）。'
+  }
+
+  function renderCojLadder(rows) {
+    var box = $('#coj-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.totalJoins) ? r.metrics.totalJoins : 1 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.totalJoins) ? Math.round(m.totalJoins / max * 100) : 0
+      return '<div class="coj-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="coj-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">joins ' + esc(fmt(m.totalJoins)) + ' · msgs ' + esc(fmt(m.totalMessages)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderCojTrilemma(rows, verdict, crosscheck) {
+    var box = $('#coj-trilemma'), veBox = $('#coj-verif'), cxBox = $('#coj-crosscheck'), note = $('#coj-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      cojMissing(box, note, 'coj 判词'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''; return
+    }
+    var flags = [['snapshotConsistent', '一致'], ['zeroDowntime', '零停'], ['rendezvousCapable', '任意']]
+    var head = '<div class="coj-vec coj-vec-head"><span class="proto">策略</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="coj-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="coj-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    if (veBox) {
+      var lsm = rows.find(function (r) { return r.protocol === 'LsmSnapshotJoin' })
+      var rb = rows.find(function (r) { return r.protocol === 'RawBinlogJoin' })
+      var ob = rows.find(function (r) { return r.protocol === 'OutboxAtomicJoin' })
+      var cp = crosscheck && crosscheck.soundness
+      veBox.innerHTML = [
+        '<div class="coj-rb-row"><b>LsmSnapshotJoin</b> 一致=' + esc(String(lsm?.trilemma?.snapshotConsistent)) + '（snapshotCommitWindow 结构）· 零停=' + esc(String(lsm?.trilemma?.zeroDowntime)) + '（快照 ~1 h 带边界）· 任意=' + esc(String(lsm?.trilemma?.rendezvousCapable)) + '（Leaf join 不挑 source）</div>',
+        '<div class="coj-rb-row"><b>RawBinlogJoin</b> 一致=' + esc(String(rb?.trilemma?.snapshotConsistent)) + '（borderline 事件覆盖次 ~85%——真 gap）· 零停=' + esc(String(rb?.trilemma?.zeroDowntime)) + '（log stream.mb 真零停）· 任意=' + esc(String(rb?.trilemma?.rendezvousCapable)) + '（全 sink 方向）</div>',
+        '<div class="coj-rb-row"><b>OutboxAtomicJoin</b> 一致=' + esc(String(ob?.trilemma?.snapshotConsistent)) + '（outbox 同事务 mirror）· 零停=' + esc(String(ob?.trilemma?.zeroDowntime)) + '（latch 事务累额）· 任意=' + esc(String(ob?.trilemma?.rendezvousCapable)) + '（无可另参）</div>',
+        cp ? '<div class="coj-rb-row"><b>verifyCdcOutboxJoinSoundness</b> holds=' + (cp.holds ? 'true' : 'false') + ' nontrivial=' + (cp.nontrivial ? 'true' : 'false') + ' falsifiable=' + (cp.falsifiable ? 'true' : 'false') + ' · laneA{snapshotJoins=' + esc(String(cp.laneA?.snapshotJoins)) + '} laneB{binlogJoins=' + esc(String(cp.laneB?.binlogJoins)) + '}</div>' : '',
+      ].join('')
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>真 <b>compareRemapping</b> 迁移率 一致性 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>' +
+          '<div>真 <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 片</div>' +
+          '<div>真 <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 命中 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
+          '<div>真 <b>createWal</b> lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>真 <b>createBus</b> cdc.entity 通知 ' + esc(fmt(ev.notices)) + ' 条 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>真 <b>createRedisCache</b> snap 命中 ' + esc(fmt(ev.redisBitmapHits)) + ' · entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+          '<div>真 <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+          '<div>真 <b>createTokenBucket</b> 回放允许 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>真 <b>createMinHeapDelayQueue</b> 出队 ' + esc(fmt(ev.heapFired)) + ' 条 · pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+          '<div>真 <b>createFullJitterBackoff</b> jitterSpread <b>' + esc(String((ev.jitterSpread ?? 0).toFixed(4))) + '</b>（64 采样 delayFor 真采样）</div>' +
+          '<div>真 <b>createPackedCounters</b> Σ=' + esc(fmt(ev.counterSum)) + ' · falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">真件交叉印证缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var chips = [
+      '<span class="chip" data-verdict="noUniversalWinner"><b>noUniversalWinner</b> ' + (noWin ? '✓（向量互异·无全局赢家）' : '✗') + '</span>',
+      '<span class="chip" data-verdict="noStrategyWinsAll"><b>noStrategyWinsAll</b> ' + (v.noStrategyWinsAll ? '✓（无一 111）' : '✗') + '</span>',
+      '<span class="chip" data-verdict="vectorFromTrilemma"><b>vectorFromTrilemma</b> 现算同源</span>',
+      '<span class="chip jade-t" data-verdict="noUniversalWinner2">默认向量互异不封赢家</span>',
+    ]
+    var probes = $('#coj-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维序固定 [snapshotConsistent / zeroDowntime / rendezvousCapable]。默认向量 LsmSnapshotJoin=101（atomic 真 join · 快照成本结构）/ RawBinlogJoin=011（tail 零停 · borderline 真漏）/ OutboxAtomicJoin=100（outbox 事务一次 · 无 rendezvous）——恰好各缺一维、向量互异、无一 111。' +
+      'rigged 三开关：nailedSnapshot（LSM 真永久 spans full snapshot ⇒ stale free）· freeBinlog（binlog 覆盖 borderline ⇒ 实扫=100）· noLatch（outbox 去 latch ⇒ rendezvous 翻 true）。' +
+      '三因果锁：snapshotCommitWindowCausallyUnerasable（快照 cost 与 LSM compaction 同来 bound | 一一对应）· binlogBorderlineCausallyUnerasable（tail scan rate-boundary ld]> 半个 snapshot stack inherent cap） · outboxLockCausallyUnerasable（at-least-once atomic latch 行会存在 cashier rerun horizon costing = same transaction property）——causalLocksAllHold=true。'
   }
 
   /* ================= KI-543 MicroBatchJoin/StreamWindowJoin/CdcOutboxJoin 批流 join · 第三十七维（bsj 族） ================= */

@@ -720,6 +720,23 @@
       <p class="note" id="bsj-trilemma-note">…</p>
     </article>
   </section>
+  <!-- 第三十八维 · LsmSnapshotJoin / RawBinlogJoin / OutboxAtomicJoin CDC outbox join（KI-544） -->
+  <section class="row row-coj">
+    <article class="panel panel-coj">
+      <div class="panel-head"><h2>第三十八维 · LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin · 三策略 × 四场景</h2><span class="hint">一致=LsmSnapshotJoin（快照真 join·每次全量落库·interval 提交窗口）/ 实扫=RawBinlogJoin（binlog tail 零停机但 borderline 漏）/ 原子=OutboxAtomicJoin（at-least-once outbox latch·无 rendezvous 但 snapshotConsistent）** · 默认向量 101/011/100 互异不封赢家</span></div>
+      <div class="coj-matrix" id="coj-matrix"></div>
+      <div class="coj-ladder" id="coj-ladder"></div>
+      <p class="note" id="coj-matrix-note">…</p>
+    </article>
+    <article class="panel panel-coj">
+      <div class="panel-head"><h2>三难向量（snapshotConsistent ∧ zeroDowntime ∧ rendezvousCapable）· 双路自证</h2><span class="hint">LsmSnapshotJoin=101 / RawBinlogJoin=011 / OutboxAtomicJoin=100 · 三向量互异无一 111 恰好各缺一维 · verifyCdcOutboxJoinSoundness 双路自证（lane A LSM 真 join vs lane B binlog 长扫）· 三路篡改（snapshotMismatched / binlogMiss / atomicLatchLeak）× 三因果锁 × 十一真件 21 键 · rigged 三开关（nailedSnapshot / freeBinlog / noLatch）</span></div>
+      <div class="coj-trilemma" id="coj-trilemma"></div>
+      <div class="coj-verif" id="coj-verif"></div>
+      <div class="coj-crosscheck" id="coj-crosscheck"></div>
+      <div class="coj-probes" id="coj-probes"></div>
+      <p class="note" id="coj-trilemma-note">…</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">

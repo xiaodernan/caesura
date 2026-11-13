@@ -200,6 +200,10 @@ export function runMeshE2E(opts = {}) {
     // 注入时钟用 bsjNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/reb/pq/bsj/rdq/dld 已占用前缀）。
     batchStreamJoin: opts.batchStreamJoin,
     bsjNow: opts.bsjNow,
+    // KI-544：CDC outbox join 教学件（cdcOutboxJoin=true 装配；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异）+ verifyCdcOutboxJoinSoundness 双路自证 + 十一真件 21 键交叉印证，不改调用路径）。
+    // 注入时钟用 cojNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/reb/pq/bsj/coj/rdq/dld 已占用前缀）。
+    cdcOutboxJoin: opts.cdcOutboxJoin,
+    cojNow: opts.cojNow,
     // KI-533：可观测性分布式追踪采样三策略（traceSampling=true 装配；只读 HeadBased/TailBased/Adaptive ×
     // 六场景矩阵 + 三难向量维序 [lowOverhead/anomalyCapture/loadAdaptive]（默认 100/010/101 互异不封赢家；
     // anomalyCapture⇔缓冲整条⇔非 lowOverhead 与 chk 锁同构；rigged 三开关 oracleHead/infiniteBuffer/perfectFeedback
@@ -364,6 +368,7 @@ export function runMeshE2E(opts = {}) {
         consumerRebalanceSnapshot: status.consumerRebalance ?? null,
         priorityQueueSnapshot: status.priorityQueue ?? null,
         batchStreamJoinSnapshot: status.batchStreamJoin ?? null,
+        cdcOutboxJoinSnapshot: status.cdcOutboxJoin ?? null,
         traceSamplingSnapshot: status.traceSampling ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
         bridgeOff: shut.bridgeOff ?? null,
@@ -827,6 +832,19 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         crosscheck: r.batchStreamJoinSnapshot.crosscheck,
         causalLocks: r.batchStreamJoinSnapshot.causalLocks,
         verdict: r.batchStreamJoinSnapshot.verdict,
+      } : null,
+      cdcOutboxJoin: r.cdcOutboxJoinSnapshot ? {
+        strategies: r.cdcOutboxJoinSnapshot.rows.map((row) => ({
+          strategy: row.protocol,
+          ladder: row.scenarios.map((sc) => sc.id + ':' + (sc.snapshotConsistent === true ? '一致' : '实扫')).join(' → '),
+          metrics: row.metrics, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.cdcOutboxJoinSnapshot.rows.map((row) => [row.protocol,
+          String(Number(row.trilemma.snapshotConsistent)) + String(Number(row.trilemma.zeroDowntime)) + String(Number(row.trilemma.rendezvousCapable))])),
+        noUniversalWinner: r.cdcOutboxJoinSnapshot.verdict.noUniversalWinner,
+        crosscheck: r.cdcOutboxJoinSnapshot.crosscheck,
+        causalLocks: r.cdcOutboxJoinSnapshot.causalLocks,
+        verdict: r.cdcOutboxJoinSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

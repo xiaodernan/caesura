@@ -53,6 +53,7 @@ import { idempotentConsumerStudy, idempotentConsumerSnapshot } from './caesura-i
 import { consumerRebalanceStudy, consumerRebalanceSnapshot } from './caesura-consumer-rebalance.mjs'
 import { priorityQueueStudy, priorityQueueSnapshot } from './caesura-priority-queue.mjs'
 import { batchStreamJoinStudy, batchStreamJoinSnapshot } from './caesura-batch-stream-join.mjs'
+import { cdcOutboxJoinStudy, cdcOutboxJoinSnapshot } from './caesura-cdc-outbox-join.mjs'
 import { traceSamplingStudy, traceSamplingSnapshot } from './caesura-trace-sampling.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
@@ -388,7 +389,9 @@ export async function buildSystems(opts = {}) {
   const priorityQueue = opts.priorityQueue === false ? null : await buildPriorityQueueReading(opts, now)
   // KI-543：第三十七维装配批流 join 教学件（MicroBatchJoin/StreamWindowJoin/CdcOutboxJoin）
   const batchStreamJoin = opts.batchStreamJoin === false ? null : await buildBatchStreamJoinReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, priorityQueue, batchStreamJoin, builtAt: now() }
+  // KI-544：第三十八维装配 CDC outbox join 教学件（LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin）
+  const cdcOutboxJoin = opts.cdcOutboxJoin === false ? null : await buildCdcOutboxJoinReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, priorityQueue, batchStreamJoin, cdcOutboxJoin, builtAt: now() }
 }
 
 /**
@@ -470,6 +473,30 @@ export async function buildTraceSamplingReading(opts, now) {
       ...(opts.tsRigged === true ? { rigged: true } : {}),
     })
     return traceSamplingSnapshot(s)
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
+ * KI-544：CDC outbox join 三策略真跑教学件（LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景 + 三难向量 + verifyCdcOutboxJoinSoundness 双路自证 + 十一枚真件交叉印证）。
+ * 失败落 null；读数全真、CLI 双跑字节一致、rigged 不硬造 111（结构如此）。
+ * @param {object} opts { cdcOutboxJoin?:false, cojSeed?, cojMessages?, cojInterval?, cojNailedSnapshot?, cojFreeBinlog?, cojNoLatch?, cojRigged? }
+ * @param {()=>number} now 时钟（builtAt 注入真值）
+ */
+export async function buildCdcOutboxJoinReading(opts, now) {
+  try {
+    const s = await cdcOutboxJoinStudy({
+      now,
+      ...(opts.cojSeed ? { seed: Math.max(0, Math.floor(Number(opts.cojSeed))) } : {}),
+      ...(opts.cojMessages ? { messages: Math.max(16, Math.floor(Number(opts.cojMessages))) } : {}),
+      ...(opts.cojInterval ? { interval: Math.max(1, Math.floor(Number(opts.cojInterval))) } : {}),
+      ...(opts.cojNailedSnapshot === true ? { nailedSnapshot: true } : {}),
+      ...(opts.cojFreeBinlog === true ? { freeBinlog: true } : {}),
+      ...(opts.cojNoLatch === true ? { noLatch: true } : {}),
+      ...(opts.cojRigged === true ? { rigged: true } : {}),
+    })
+    return cdcOutboxJoinSnapshot(s)
   } catch (e) {
     return null // 缺哪块就落 null，前端据实降级；不编造假数
   }

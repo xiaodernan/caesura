@@ -2770,4 +2770,58 @@ describe('caesura-game-cloud', () => {
     })).status()).batchStreamJoin
     expect(injected.builtAt).toBe(555)
   })
+
+  // ============ KI-544 CDC outbox join opt-in 装配（2 腿）============
+  it('cdcOutboxJoin:true 装配真矩阵：101/011/100 互异不封赢家 + 三因果锁 + verifyCdcOutboxJoinSoundness 双路 + 21 键 + 惰性同引用（KI-544）', async () => {
+    const gc = await createGameCloud({
+      gameId: 'gid-coj1', gamePort: 7960, sources, cloud: fakeCloud(),
+      cdcOutboxJoin: true, cojNow: () => 544000,
+    })
+    const st = (await gc.status()).cdcOutboxJoin
+    expect(st).not.toBe(null)
+    expect(st!.builtAt).toBe(544000)
+    expect(st!.config.scenarios.length).toBe(4)
+    expect(st!.config.interval).toBe(4)
+    expect(st!.rows.length).toBe(3)
+    expect(st!.vectors).toEqual({ LsmSnapshotJoin: '101', RawBinlogJoin: '011', OutboxAtomicJoin: '100' })
+    expect(st!.rigged).toBe(false)
+    expect(st!.noUniversalWinner).toBe(true)
+    expect(st!.trilemmaDistinguishes).toBe(true)
+    expect(st!.verdict.vectorFromTrilemma).toBe(true)
+    expect(st!.causalLocks.causalLocksAllHold).toBe(true)
+    expect(st!.causalLocks.snapshotCommitWindowCausallyUnerasable).toBe(true)
+    expect(st!.causalLocks.binlogBorderlineCausallyUnerasable).toBe(true)
+    expect(st!.causalLocks.outboxLockCausallyUnerasable).toBe(true)
+    const cp = st!.crosscheck.soundness
+    expect(cp.holds).toBe(true)
+    expect(cp.nontrivial).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.laneA.snapshotJoins).toBeGreaterThan(0)
+    expect(cp.laneB.binlogJoins).toBeGreaterThan(0)
+    expect(cp.tamper.snapshotMismatched.holds).toBe(false)
+    expect(cp.tamper.binlogMiss.holds).toBe(false)
+    expect(cp.tamper.atomicLatchLeak.holds).toBe(false)
+    expect(Object.keys(st!.crosscheck.evidence).length).toBe(21)
+    expect((await gc.status()).cdcOutboxJoin).toBe(st)
+    expect(await gc.runCdcOutboxJoinStudy!()).toMatchObject({ vectors: st!.vectors })
+    const bare = await createGameCloud({ gameId: 'gid-coj0', gamePort: 7961, sources, cloud: fakeCloud() }).status()
+    expect(bare.cdcOutboxJoin).toBe(null)
+    expect(bare.batchStreamJoin).toBe(null)
+  })
+
+  it('cdcOutboxJoin 默认 null；noLatch ⇒ rendezvous 翻 true；可注入现成 study（KI-544）', async () => {
+    const idle = await createGameCloud({ gameId: 'gid-coj2', gamePort: 7962, sources, cloud: fakeCloud() }).status()
+    expect(idle.cdcOutboxJoin).toBe(null)
+    const nl = (await (await createGameCloud({
+      gameId: 'gid-coj3', gamePort: 7963, sources, cloud: fakeCloud(),
+      cdcOutboxJoin: { noLatch: true }, cojNow: () => 544000,
+    })).status()).cdcOutboxJoin
+    expect(nl!.vectors.OutboxAtomicJoin).toBe('101')
+    const { cdcOutboxJoinStudy } = await import('../../scripts/caesura-cdc-outbox-join.mjs')
+    const injected = (await (await createGameCloud({
+      gameId: 'gid-coj4', gamePort: 7964, sources, cloud: fakeCloud(),
+      cdcOutboxJoin: cdcOutboxJoinStudy({ seed: 99, now: () => 555 }),
+    })).status()).cdcOutboxJoin
+    expect(injected.builtAt).toBe(555)
+  })
 })

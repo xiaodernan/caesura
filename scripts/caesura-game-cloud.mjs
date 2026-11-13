@@ -58,6 +58,7 @@ import { idempotentConsumerStudy, idempotentConsumerSnapshot } from './caesura-i
 import { consumerRebalanceStudy, consumerRebalanceSnapshot } from './caesura-consumer-rebalance.mjs'
 import { priorityQueueStudy, priorityQueueSnapshot } from './caesura-priority-queue.mjs'
 import { batchStreamJoinStudy, batchStreamJoinSnapshot } from './caesura-batch-stream-join.mjs'
+import { cdcOutboxJoinStudy, cdcOutboxJoinSnapshot } from './caesura-cdc-outbox-join.mjs'
 import {
   createAimdCongestion,
   createCubicCongestion,
@@ -899,6 +900,25 @@ export function createGameCloud(opts = {}) {
     bsjCached = batchStreamJoinSnapshot(study)
     return bsjCached
   }
+  // KI-544：CDC outbox join 教学件（LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin；opt-in、status/ coj*）。
+  // opts.cdcOutboxJoin===true 走钳制默认参数（可覆盖 now/seed/messages/interval/nailedSnapshot/freeBinlog/noLatch/rigged 等）；
+  // 传对象且 rows/vectors/verdict 齐全时当现成 study 注入；默认 cdcOutboxJoin:false 非破坏（同 KI-513/.../543 法）。
+  // 不声称真 Debezium-class CDC / 真 entity join / 真 snapshot atomic commit—全程结构计数。
+  const cojCfg = opts.cdcOutboxJoin === true ? {} : (opts.cdcOutboxJoin && typeof opts.cdcOutboxJoin === 'object' ? opts.cdcOutboxJoin : null)
+  const cojInjected = cojCfg !== null && opts.cdcOutboxJoin &&
+    typeof opts.cdcOutboxJoin === 'object' && Array.isArray(opts.cdcOutboxJoin.rows) &&
+    opts.cdcOutboxJoin.vectors && opts.cdcOutboxJoin.verdict
+  let cojCached = null
+  async function cojSnapshotForStatus() {
+    if (cojCfg === null) return null
+    if (cojCached) return cojCached
+    const study = cojInjected
+      ? opts.cdcOutboxJoin
+      : await cdcOutboxJoinStudy({ ...cojCfg, now: opts.cojNow ?? cojCfg.now })
+    cojCached = cdcOutboxJoinSnapshot(study)
+    return cojCached
+  }
+
 
 
 
@@ -1072,6 +1092,8 @@ export function createGameCloud(opts = {}) {
     runPriorityQueueStudy: pqCfg === null ? null : () => priorityQueueStudy({ ...pqCfg, now: opts.pqNow ?? pqCfg.now }),
     /** KI-543：批流 join 教学件；缺 opts.batchStreamJoin 时为 null；MicroBatchJoin/StreamWindowJoin/CdcOutboxJoin × 四场景矩阵 + 三难向量（默认 101/010/110 互异不封赢家）+ verifyBatchStreamJoinSoundness 双路自证 + 十一枚真件交叉印证。 */
     runBatchStreamJoinStudy: bsjCfg === null ? null : () => batchStreamJoinStudy({ ...bsjCfg, now: opts.bsjNow ?? bsjCfg.now }),
+    /** KI-544：CDC outbox join 教学件；缺 opts.cdcOutboxJoin 时为 null；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异不封赢家）+ verifyCdcOutboxJoinSoundness 双路自证 + 十一枚真件交叉印证。 */
+    runCdcOutboxJoinStudy: cojCfg === null ? null : () => cdcOutboxJoinStudy({ ...cojCfg, now: opts.cojNow ?? cojCfg.now }),
     /** KI-533：可观测性分布式追踪采样三策略教学件；缺 opts.traceSampling 时为 null；HeadBased/TailBased/Adaptive × 六场景矩阵 + 三难向量维序 [lowOverhead/anomalyCapture/loadAdaptive]（默认 100/010/101 互异不封赢家；anomalyCapture⇔缓冲整条⇔非 lowOverhead 与 chk 锁同构、零查表现算；rigged 三开关 oracleHead/infiniteBuffer/perfectFeedback 分策略正交反事实：oracleHead 只翻 Head→110、infiniteBuffer 只翻 Tail→110、perfectFeedback 只降 Adaptive errorBurst 丢失质量但 maxRate=0.75 封顶仍补不上 anomaly 维 ⇒ 恒 101，全开收敛 Head≡Tail=110 区分度诚实塌缩 riggedConvergenceCollapsed=true、noStrategyWinsAll 仍真绝不硬造 111，三条因果结构锁——异常需缓冲/头部盲结构/自适应滞后——在同一含 error raw 流真跑现算钉死 causalLocksAllHold=true，主教义 headBlindLossOnErrorBurst 恒以纯净基线标定不翻）+ verifySamplingSoundness 双路自证（干净流 buffer 守恒 + 含 error 流 error 全留/span 无重复/span 完整/正常按率四观测量 + 三路篡改真喂回同一内核现算翻 false 带 baselineHolds）+ 十一枚真件 21 键交叉印证。 */
     runTraceSamplingStudy: tsCfg === null ? null : () => traceSamplingStudy({ ...tsCfg, now: opts.tsNow ?? tsCfg.now }),
     /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）；可直接 decide/select/stats。 */
@@ -1140,6 +1162,7 @@ export function createGameCloud(opts = {}) {
         consumerRebalance: await rebSnapshotForStatus(),
         priorityQueue: await pqSnapshotForStatus(),
         batchStreamJoin: await bsjSnapshotForStatus(),
+        cdcOutboxJoin: await cojSnapshotForStatus(),
         traceSampling: await tsSnapshotForStatus(),
       }
     },

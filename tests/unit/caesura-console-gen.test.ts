@@ -1910,4 +1910,37 @@ describe('caesura-console-gen (KI-495)', () => {
     const twentyfour = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt, full.bloomFilter?.builtAt, full.cacheReplacement?.builtAt, full.streamWindow?.builtAt, full.hyperLogLog?.builtAt, full.crdt?.builtAt, full.springBatch?.builtAt, full.traceSampling?.builtAt, full.distributedSession?.builtAt, full.transactionalOutbox?.builtAt, full.loadBalance?.builtAt, full.circuitBreaker?.builtAt, full.llmGateway?.builtAt, full.gatewayRouting?.builtAt, full.idempotentConsumer?.builtAt, full.consumerRebalance?.builtAt, full.priorityQueue?.builtAt, full.batchStreamJoin?.builtAt]
     expect(twentyfour.every((x) => x === 543500)).toBe(true)
   })
+
+  it('㉒n-cdc-outbox-join buildCdcOutboxJoinReading 真跑：coj* 注入生效 / cdcOutboxJoin:false 关闭 / rigged 不硬造 111 / 双路自证 + 十一真件 / 二十五时钟同源（KI-544）', async () => {
+    const { buildCdcOutboxJoinReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 544500
+    const g = (await buildCdcOutboxJoinReading({}, now))!
+    expect(g).not.toBe(null)
+    expect(g.builtAt).toBe(544500)
+    expect(g.rows.length).toBe(3)
+    expect(g.config.interval).toBe(4)
+    expect(g.vectors).toEqual({ LsmSnapshotJoin: '101', RawBinlogJoin: '011', OutboxAtomicJoin: '100' })
+    expect(g.rigged).toBe(false)
+    expect(g.causalLocks.causalLocksAllHold).toBe(true)
+    expect(g.causalLocks.snapshotCommitWindowCausallyUnerasable).toBe(true)
+    expect(g.causalLocks.binlogBorderlineCausallyUnerasable).toBe(true)
+    expect(g.causalLocks.outboxLockCausallyUnerasable).toBe(true)
+    const tuned = (await buildCdcOutboxJoinReading({ cojSeed: 12, cojMessages: 32 }, now))!
+    expect(tuned.config.seed).toBe(12)
+    expect(tuned.config.messages).toBe(32)
+    const cp = g.crosscheck.soundness
+    expect(cp.holds).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.tamper.snapshotMismatched.holds).toBe(false)
+    expect(cp.tamper.binlogMiss.holds).toBe(false)
+    expect(cp.tamper.atomicLatchLeak.holds).toBe(false)
+    expect(Object.keys(g.crosscheck.evidence).length).toBe(21)
+    const off = await buildSystems({ now, cdcOutboxJoin: false, batchStreamJoin: false })
+    expect(off.cdcOutboxJoin).toBe(null)
+    expect(off.batchStreamJoin).toBe(null)
+    expect(off.cacheReplacement).not.toBe(null)
+    const full = await buildSystems({ now })
+    const twentyfive = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt, full.bloomFilter?.builtAt, full.cacheReplacement?.builtAt, full.streamWindow?.builtAt, full.hyperLogLog?.builtAt, full.crdt?.builtAt, full.springBatch?.builtAt, full.traceSampling?.builtAt, full.distributedSession?.builtAt, full.transactionalOutbox?.builtAt, full.loadBalance?.builtAt, full.circuitBreaker?.builtAt, full.llmGateway?.builtAt, full.gatewayRouting?.builtAt, full.idempotentConsumer?.builtAt, full.consumerRebalance?.builtAt, full.priorityQueue?.builtAt, full.batchStreamJoin?.builtAt, full.cdcOutboxJoin?.builtAt]
+    expect(twentyfive.every((x) => x === 544500)).toBe(true)
+  })
 })
