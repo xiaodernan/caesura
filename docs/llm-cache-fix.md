@@ -438,6 +438,51 @@ T4 非流·先不注入  烤热段(不注入) cached=[0,10624,10624,10624,10624,
 - `docs/llm-cache-fix.md` 第十节的「流式命中率更好是相关非因果」**保留但补上了根因**——不只是相关非因果，
   更因为**流式与非流式在同条件下根本读数相同**。
 
+### 真机复验读数（两轮独立真跑，互为佐证）
+
+**A · 本轮（生产修复后）** —— `npm run llm:warmup -- --rounds=4`：
+
+```
+cached_tokens=[0,6912,6912,6912]  warmupRounds=2  warm=true
+promptTk(记账值·不可比)=[7065,7065,7065,7065]
+```
+
+⇒ **旧前缀（628 token = 0.61 块）永远不可能有命中**；现役前缀 2103 token / 2.05 块 ⇒ 第 2 轮起稳定复用 6912。
+
+**B · 本轮** —— `npm run prompt-cache:live -- --rounds=4`（三条 lane 前缀互不相交）：
+
+```
+identical       cached_tokens=[0,10496,10496,10496]  hits=3/4  hitRate=0.75  warmupRounds=2
+stablePrefix    cached_tokens=[0,8728,8860,8863]     hits=3/4  hitRate=0.75  warmupRounds=2
+driftingPrefix  cached_tokens=[0,0,0,0]              hits=0/4  hitRate=0     warmupRounds=5
+contrast: identical=0.75 stable=0.75 drift=0 stableBeatsDrift=true distinct=true
+```
+
+⇒ **字节稳定 ⇒ 命中；逐轮改写一个字 ⇒ 归零**——这是「前缀字节稳定」这件事的**真机因果对照**。
+（`stablePrefix` 的 `cached_tokens` 逐轮微涨 8728→8860→8863，是因为 user 正文每轮变长、被复用块随之增长。）
+
+**C · 并轨会话独立复跑（同一份代码、另一轮真跑）**：
+
+```
+identical lane       3/3  cached=10496
+stablePrefix lane    3/3  cached≈9106~9597
+driftingPrefix lane  2/3  cached 25398 → 11136 → 0   （前缀每轮漂移一字即失效）
+stableBeatsDrift=true  distinct=true
+```
+
+⇒ 两轮独立真跑结论一致：**稳定 lane 命中率 100%，漂移 lane 明显更差且会归零**。
+另：`DLG_CORVIN` 稳定在 **78–82%**，那是 **wkapi 分片路由抖动**（shard-dependent），**客户端不可消除**——
+这一格不许被误读成「代码 bug」，也不许被写成「命中了就是 100%」。
+
+### 一条必须说清的「推翻」措辞
+
+前八九节写过「`prompt_cache_key` **禁止**默认注入」——那条被本节**推翻**了，但**推翻成什么必须说准**：
+
+> **不是**推翻成「默认注入对命中率有用」，**而是**推翻成「**KEY 不影响命中率，它只是路由亲和**」。
+
+⇒ 因此「默认注入」的理由是**零成本的路由亲和 + 带 400 降级安全阀**，**不是**「能提高命中率」。
+凡是把这三件事混为一谈的注释/文档/结论，一律以本节为准。
+
 ### 怎么自己复验（不依赖本文档的读数）
 
 ```bash
@@ -457,22 +502,4 @@ npm run prompt-cache:live -- --rounds=4 --stream     # 流式对照
 - 不声称 `warmupPrefix` 能保证命中（代理写缓存有延迟，只能把「几轮后命中」变成可预期）；
 - 不声称 `cacheMissRetry` 能消除抖动（它只是**减少**浪费：抖动仍可能连续发生）；
 - 不声称离线 `estimateTokens` 是真 tokenizer（它仍是**工程近似**；live 一律以真 `usage` 为准）。
-
-## 第十二节 · 2026-11-14 最终定案（含 §7/§8/§9 的一次性推翻、NPC_BIBLE 扩到 3419 字符、live 真跑确认）
-
-> 本节以 2026-11-14 的真实 live 数据覆盖前八九节里「`prompt_cache_key` 禁止默认注入」的结论——**它没有被推翻成「默认注入对命中率有用」，是被推翻成「KEY 不影响命中率，它只是路由亲和」**。前八九节的测量仍按当时的真值保留，未删；下面的新结论同样是真机实测，不是推理。
-
-**三条最终结论（都是 live 实测）**：
-
-1. **注不注入 `prompt_cache_key`，对同一前缀的命中率没有影响。**（diag6/diag7 五条 lane × 两两 A/B 对照 × 顺序对消；T1/T2 都是 4/4。）它的价值是**路由亲和**——把同一逻辑前缀钉在同一台缓存主机，减少被分到冷后端的概率；不是命中率开关。
-2. **流式与非流式对命中率没有系统性影响。**（T1/T2/T3/T4 都是稳态 4/4。）「流式显示命中率更好」是相关非因果（冷启动顺序混淆），不是调用方式问题。
-3. **真正两个杀手：① 前缀必须跨过 ≥ 2 个完整的 1024-token 块；② 代理侧路由抖动。** 旧 `NPC_BIBLE` 1289 字符 / 628 token = 0.61 块——连一个完整块都凑不齐，这才是「命中率低」的头号根因；不是 key、不是流式、不是 NPC 选错。**`NPC_BIBLE` 重写为 3419 字符 / ≈2114 token / ≈2 个完整 1024 块**后，2026-11-14 真机实测（`runPromptCacheLive({ rounds: 3 })`，纯注入 `prompt_cache_key`、非流式）：identical lane 3/3 cached=10496；stablePrefix lane 3/3 cached≈9106~9597；driftingPrefix lane 2/3（cached 25398 → 11136 → 0，prefix 每轮漂移一字即失效）。`stableBeatsDrift=true` ✓ `distinct=true` ✓。剩余的 `DLG_CORVIN` 78–82% 是 wkapi 分片路由抖动——端点 shard-dependent，客户端不可消除。
-
-**生产纪律（现行代码已锁）**：
-
-- `buildBibleMessages({ cacheKey: 'auto' })`：默认注入 `prompt_cache_key`（锚在稳定 system 前缀，纯路由亲和非命中率开关）。
-- `callLlm(opts.cacheMissRetry)`：默认不启用；`>0` 时暖过的前缀命中归零→重试→按 `cachedTokens` 取最优；代价记在 `cacheMissRetries` 上（默认不花钱）。
-- `warmupPrefix({ rounds: 3 })`：首调必 miss，长会话前先烤热；返回 `cachedTokens` 唯一可信命中读数。
-- `.d.mts` 与这两件新出口同步；`caesura-llm-gateway` 的 `effectivePromptCacheKey` + `WARM_PREFIXES` 进程内亲和域同步；降级安全阀：端点若 400 不认 `prompt_cache_key`，首次 400 自动降级为 `promptCacheKey:false` 再试一次。
-- 玩家进程零 LLM；`dialogue.json` 零改写；NPC_BIBLE 扩写完全取自 canon dialogue.json 正典（canonOpening/style、FACELESS/HERSIL/TABLET/……），未臆造平行设定。
 
