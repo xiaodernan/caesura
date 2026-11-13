@@ -7,7 +7,7 @@ import { resolve } from 'node:path'
  * 面板在 console 里同时落位到了 (1) HTML (2) CSS (3) JS render 链路 (4) snapshot 的 systems 键。
  *
  * 这不是功能正确性测试，而是「一个集大成 dashboard 不会悄悄退化成半成品」的闸门。
- * 它把我们这 10 件教学件的产出合进了同一个不变量，任何一环回归就会红。
+ * 它把我们这 11 件教学件的产出合进了同一个不变量，任何一环回归就会红。
  */
 
 const ROOT = resolve(process.cwd(), 'console')
@@ -16,7 +16,7 @@ const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
 const app = readFileSync(resolve(ROOT, 'app.js'), 'utf8')
 const snap = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
 
-/** 这 10 件教学件在本会话里全部登记到 Master */
+/** 这 11 件教学件在本会话里全部登记到 Master */
 const TEACHING_ROWS: Array<{ feature: string; rowClass: string; ids: string[]; cssPrefix: string; render: string }> = [
   { feature: 'KI-548 Spring Cloud Stream binding',        rowClass: 'row-ssb', ids: ['ssb-matrix', 'ssb-ladder', 'ssb-verif'],          cssPrefix: '.ssb', render: 'renderSpringStreamBinding' },
   { feature: 'KI-546 Spring Cloud OpenFeign client',      rowClass: 'row-sf',  ids: ['sf-matrix', 'sf-ladder', 'sf-verif'],              cssPrefix: '.sf',   render: 'renderSpringFeign' },
@@ -29,6 +29,7 @@ const TEACHING_ROWS: Array<{ feature: string; rowClass: string; ids: string[]; c
   { feature: 'KI-551 Consul KV 三策略',                   rowClass: 'row-ckv', ids: ['ckv-matrix', 'ckv-ladder', 'ckv-verif'],           cssPrefix: '.ckv',  render: 'renderSpringConsul' },
   { feature: 'KI-552 Redis HA 三策略',                    rowClass: 'row-rea', ids: ['rea-matrix', 'rea-ladder', 'rea-verif'],           cssPrefix: '.rea',  render: 'renderRedisHa' },
   { feature: 'KI-554 Spring Cloud Vault 三策略',           rowClass: 'row-svt', ids: ['svt-matrix', 'svt-ladder', 'svt-verif'],           cssPrefix: '.svt',  render: 'renderSpringVault' },
+  { feature: 'KI-555 前缀亲和 prompt-cache 三策略',      rowClass: 'row-pc',  ids: ['pc-matrix', 'pc-ladder', 'pc-verif'],               cssPrefix: '.pc',   render: 'renderPromptCache' },
 ]
 
 const SYSTEMS_FOR: Record<string, keyof typeof snap.systems> = {
@@ -42,9 +43,10 @@ const SYSTEMS_FOR: Record<string, keyof typeof snap.systems> = {
   'row-ckv': 'springConsul',
   'row-rea': 'redisHa',
   'row-svt': 'springVault',
+  'row-pc': 'promptCache',
 }
 
-describe('集大成 dashboard · 10 件微服务教学件产物静态完整性闸门', () => {
+describe('集大成 dashboard · 11 件微服务教学件产物静态完整性闸门', () => {
   for (const { feature, rowClass, ids, cssPrefix, render } of TEACHING_ROWS) {
     if (!ids.length) continue
     describe(feature, () => {
@@ -78,7 +80,7 @@ describe('集大成 dashboard · 10 件微服务教学件产物静态完整性�
 
   it('snapshot.systems contains the expected 47+ keys and 9 teaching entries simultaneously', () => {
     const systems = snap.systems ?? {}
-    for (const key of ['springFeign', 'springConfig', 'springBus', 'redisPipeline', 'gatewayRetry', 'springStreamBinding', 'redisStream', 'springConsul', 'redisHa', 'springVault']) {
+    for (const key of ['springFeign', 'springConfig', 'springBus', 'redisPipeline', 'gatewayRetry', 'springStreamBinding', 'redisStream', 'springConsul', 'redisHa', 'springVault', 'promptCache']) {
       expect(systems[key], `missing systems.${key}`).toBeDefined()
     }
   })
@@ -96,5 +98,6 @@ describe('集大成 dashboard · 10 件微服务教学件产物静态完整性�
     expect(boot).toContain('springConsul')
     expect(boot).toContain('redisHa')
     expect(boot).toContain('springVault')
+    expect(boot).toContain('promptCache')
   })
 })

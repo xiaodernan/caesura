@@ -234,6 +234,9 @@ export function runMeshE2E(opts = {}) {
     // KI-554：Spring Cloud Vault 三策略教学件（springVault=true 挂载——K8sStatic/AppRoleLease/DynamicRotation 三难 + verifySpringVaultSoundness 双路自证 + 十一件 21 物证）。
     springVault: opts.springVault,
     svtNow: opts.svtNow,
+    // KI-555：前缀亲和 prompt-cache 教学件（promptCache=true 挂载——VolatilePrefix/StablePrefix/BudgetedPrefix 三难 [cacheHitRate/infoFidelity/tokenEfficiency] + verifyPromptCacheSoundness 双路自证 + 十一件 21 物证）。
+    promptCache: opts.promptCache,
+    pcNow: opts.pcNow,
     // KI-544：CDC outbox join 教学件（cdcOutboxJoin=true 装配；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异）+ verifyCdcOutboxJoinSoundness 双路自证 + 十一真件 21 键交叉印证，不改调用路径）。
     // 注入时钟用 cojNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/reb/pq/bsj/coj/rdq/dld 已占用前缀）。
     cdcOutboxJoin: opts.cdcOutboxJoin,
@@ -411,6 +414,7 @@ export function runMeshE2E(opts = {}) {
         redisHaSnapshot: status.redisHa ?? null,
         redisStreamSnapshot: status.redisStream ?? null,
         springVaultSnapshot: status.springVault ?? null,
+        promptCacheSnapshot: status.promptCache ?? null,
         springStreamBindingSnapshot: status.springStreamBinding ?? null,
         cdcOutboxJoinSnapshot: status.cdcOutboxJoin ?? null,
         traceSamplingSnapshot: status.traceSampling ?? null,
@@ -1019,6 +1023,19 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         crosscheck: r.springVaultSnapshot.crosscheck,
         causalLocks: r.springVaultSnapshot.causalLocks,
         verdict: r.springVaultSnapshot.verdict,
+      } : null,
+      promptCache: r.promptCacheSnapshot ? {
+        strategies: r.promptCacheSnapshot.rows.map((row) => ({
+          strategy: row.protocol,
+          ladder: row.scenarios.map((sc) => sc.id + ':' + (sc.hits > 0 ? 'H' : 'M')).join(' | '),
+          metrics: row.metrics, trilemma: row.trilemma, axes: row.axes,
+        })),
+        trilemmaVectors: Object.fromEntries(r.promptCacheSnapshot.rows.map((row) => [row.protocol,
+          String(Number(row.trilemma.cacheHitRate)) + String(Number(row.trilemma.infoFidelity)) + String(Number(row.trilemma.tokenEfficiency))])),
+        noUniversalWinner: r.promptCacheSnapshot.verdict.noUniversalWinner,
+        crosscheck: r.promptCacheSnapshot.crosscheck,
+        causalLocks: r.promptCacheSnapshot.causalLocks,
+        verdict: r.promptCacheSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

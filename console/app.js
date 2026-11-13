@@ -85,6 +85,7 @@
       renderRedisHa(snap.systems ? snap.systems.redisHa : null)
       renderRedisStream(snap.systems ? snap.systems.redisStream : null)
       renderSpringVault(snap.systems ? snap.systems.springVault : null)
+      renderPromptCache(snap.systems ? snap.systems.promptCache : null)
       renderTraceSampling(snap.systems ? snap.systems.traceSampling : null)
       setLive(true, result.source)
     }).catch(function (e) {
@@ -3705,6 +3706,149 @@
     var probes = $('#svt-probes')
     if (probes) probes.innerHTML = chips.join('')
     if (note) note.textContent = '维轴 [staticLease / leaseRefresh / rotation]；默认向量 K8sStatic=100（无 renew 请求）/ AppRoleLease=010（lease TTL 2h · renew API）/ DynamicRotation=001（每次 refresh 新凭证）。rigged：freeStaticLease（K8sStatic 变可续 → 110）/ freeLeaseRefresh（illustration purity）/ freeRotation（DynamicRotation 全 111）。因果锁：vaultSeal / leaseExpiry / dynamicSecret · causalLocksAllHold=true。'
+  }
+
+  /* ================= KI-555 VolatilePrefix/StablePrefix/BudgetedPrefix 前缀亲和 prompt-cache —— 第五十维 · pc 霸 ================= */
+
+  function renderPromptCache(pc) {
+    renderPcMatrix(pc && pc.rows, pc && pc.config)
+    renderPcLadder(pc && pc.rows)
+    renderPcTrilemma(pc && pc.rows, pc && pc.verdict, pc && pc.crosscheck, pc && pc.causalLocks)
+  }
+
+  function pcMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 缺失</div>'
+    if (note) note.textContent = 'systems.promptCache 缺失 → 请先 npm run console:data 再生成'
+  }
+
+  /**
+   * 单元格只展示**真命中数**（hits/messages）与**真丢弃事实数**（droppedFacts）。
+   * 绝不把结构量包装成 API 命中率——offline 的 hitSource 是 local-prefix-fingerprint。
+   */
+  function pcCell(c) {
+    if (!c) return { cls: '', ch: '·', tip: '' }
+    var cls = 'miss'
+    if (c.hits > 0) cls = (c.messages > 0 && c.hits >= c.messages - 1) ? 'hit' : 'warm'
+    var ch = c.hits + '/' + c.messages
+    var tip = 'hits=' + c.hits + ' · droppedFacts=' + c.droppedFacts + ' · perTurn=' + c.perTurnTokens + ' · fault=' + c.fault
+    return { cls: cls, ch: ch, tip: tip }
+  }
+
+  function renderPcMatrix(rows, config) {
+    var box = $('#pc-matrix'), note = $('#pc-matrix-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      pcMissing(box, note, 'pc 矩阵'); return
+    }
+    var scenarios = ['coldStart', 'steadyReuse', 'overBudget', 'cleanRerun']
+    var head = '<div class="pc-mat-row pc-mat-head"><span class="pc-mat-proto">策略</span>' +
+      scenarios.map(function (sc) { return '<span class="pc-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="pc-mat-cost">每轮 token</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = pcCell(cell)
+        return '<span class="pc-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '" title="' + esc(st.tip) + '">' + esc(st.ch) + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      var ax = row.axes || {}
+      return '<div class="pc-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="pc-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="pc-mat-cost"><b>' + esc(fmt(ax.perTurnTokens)) + '</b><br/>基线 ' + esc(fmt(ax.baselinePerTurnTokens)) + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'VolatilePrefix / StablePrefix / BudgetedPrefix 三策略 × coldStart（代理写缓存有延迟 · 前几轮拿不到复用）/ steadyReuse（暖池 · 首轮 miss 其余命中）/ overBudget（后缀堆 48 条扩展档案 · 预算裁剪真发生）/ cleanRerun（连跑两次逐字一致）。每格读数 = 真命中数 hits/messages；右侧 = 每轮计费 token 与「不裁剪基线」对照。offline 的命中来源是 local-prefix-fingerprint（结构量），不是 API 命中率。'
+  }
+
+  function renderPcLadder(rows) {
+    var box = $('#pc-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var vals = rows.map(function (r) { return r.axes && isNum(r.axes.baselinePerTurnTokens) ? r.axes.baselinePerTurnTokens : 1 })
+    var max = Math.max.apply(null, vals.concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var ax = r.axes || {}
+      var m = r.metrics || {}
+      var w = isNum(ax.perTurnTokens) ? Math.round(ax.perTurnTokens / max * 100) : 0
+      var hits = isNum(ax.steadyHits) ? ax.steadyHits : 0
+      var exp = isNum(ax.expectedHits) ? ax.expectedHits : 0
+      return '<div class="pc-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="pc-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">每轮 ' + esc(fmt(ax.perTurnTokens)) + ' tok · 命中 ' + esc(String(hits)) + '/' + esc(String(exp)) +
+        ' · 丢事实 ' + esc(fmt(m.totalDroppedFacts)) + ' · 核心保留率 ' + esc(String(ax.coreKeepRate)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderPcTrilemma(rows, verdict, crosscheck, causalLocks) {
+    var box = $('#pc-trilemma'), veBox = $('#pc-verif'), cxBox = $('#pc-crosscheck'), note = $('#pc-trilemma-note')
+    var probes = $('#pc-probes')
+    if (!Array.isArray(rows) || !rows.length) {
+      pcMissing(box, note, 'pc 向量'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''
+      if (probes) probes.innerHTML = ''; return
+    }
+    var flags = [['cacheHitRate', '前缀可复用'], ['infoFidelity', '世界未变'], ['tokenEfficiency', '更省 token']]
+    var head = '<div class="pc-vec pc-vec-head"><span class="proto">策略</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="pc-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '×') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="pc-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    if (veBox) {
+      var v0 = rows.find(function (r) { return r.protocol === 'VolatilePrefix' })
+      var v1 = rows.find(function (r) { return r.protocol === 'StablePrefix' })
+      var v2 = rows.find(function (r) { return r.protocol === 'BudgetedPrefix' })
+      var cp = crosscheck && crosscheck.soundness
+      veBox.innerHTML = [
+        '<div class="pc-rb-row"><b>VolatilePrefix</b> 可复用=' + esc(String(v0?.trilemma?.cacheHitRate)) + '（前缀逐请求全变） 世界未变=' + esc(String(v0?.trilemma?.infoFidelity)) + ' 更省=' + esc(String(v0?.trilemma?.tokenEfficiency)) + '</div>',
+        '<div class="pc-rb-row"><b>StablePrefix</b> 可复用=' + esc(String(v1?.trilemma?.cacheHitRate)) + '（圣经逐字节置首） 世界未变=' + esc(String(v1?.trilemma?.infoFidelity)) + ' 更省=' + esc(String(v1?.trilemma?.tokenEfficiency)) + '（prefix 占位仍要全量随行）</div>',
+        '<div class="pc-rb-row"><b>BudgetedPrefix</b> 可复用=' + esc(String(v2?.trilemma?.cacheHitRate)) + ' 世界未变=' + esc(String(v2?.trilemma?.infoFidelity)) + '（被裁部分对模型彻底不可见） 更省=' + esc(String(v2?.trilemma?.tokenEfficiency)) + '</div>',
+        cp ? '<div class="pc-rb-row"><b>verifyPromptCacheSoundness</b> holds=' + (cp.holds ? 'true' : 'false') + ' nontrivial=' + (cp.nontrivial ? 'true' : 'false') + ' falsifiable=' + (cp.falsifiable ? 'true' : 'false') + ' · laneA{hits=' + esc(String(cp.laneA?.hits)) + ' 漂移点=' + esc(String(cp.laneA?.driftAt)) + ' prefix 只付一次=' + (cp.laneA?.stablePrefixPaidOnce ? 'true' : 'false') + '} laneB{保留=' + esc(String(cp.laneB?.retainedFacts)) + ' 裁掉=' + esc(String(cp.laneB?.droppedFacts)) + ' 核心保留率=' + esc(String(cp.laneB?.coreKeepRate)) + '}</div>' : '',
+        cp ? '<div class="pc-rb-row"><b>三路篡改</b> prefixDrift=' + (cp.tamper?.prefixDrift?.holds ? 'holds' : '✗ 已翻假') +
+          ' · trimDisabled=' + (cp.tamper?.trimDisabled?.holds ? 'holds' : '✗ 已翻假') +
+          ' · factsDropped=' + (cp.tamper?.factsDropped?.holds ? 'holds' : '✗ 已翻假') + '</div>' : '',
+      ].join('')
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>→ <b>compareRemapping</b> 一致哈希命中 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>' +
+          '<div>→ <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 台</div>' +
+          '<div>→ <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 计费 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
+          '<div>→ <b>createWal</b> lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>→ <b>createBus</b> prompt-cache.bound 通知 ' + esc(fmt(ev.notices)) + ' 次 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>→ <b>createRedisCache</b> prompt 键 ' + esc(fmt(ev.redisBitmapHits)) + ' 次 · entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+          '<div>→ <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+          '<div>→ <b>createTokenBucket</b> 放行 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>→ <b>createMinHeapDelayQueue</b> 弹出 ' + esc(fmt(ev.heapFired)) + ' 次 · pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+          '<div>→ <b>createFullJitterBackoff</b> jitterSpread <b>' + esc(String((ev.jitterSpread ?? 0).toFixed(4))) + '</b>（64 次 delayFor 波动）</div>' +
+          '<div>→ <b>createPackedCounters</b> 和=' + esc(fmt(ev.counterSum)) + ' · falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">跨证据缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var locks = causalLocks || {}
+    var chips = [
+      '<span class="chip" data-verdict="noUniversalWinner"><b>noUniversalWinner</b> ' + (v.noUniversalWinner === true ? '✓（三难不可兼得）' : '×') + '</span>',
+      '<span class="chip" data-verdict="noStrategyWinsAll"><b>noStrategyWinsAll</b> ' + (v.noStrategyWinsAll === true ? '✓ 没有 111' : '×') + '</span>',
+      '<span class="chip" data-verdict="vectorFromTrilemma"><b>vectorFromTrilemma</b> ' + (v.vectorFromTrilemma === true ? '✓ 向量同源' : '×') + '</span>',
+      '<span class="chip" data-verdict="scenarioDistinguishes"><b>scenarioDistinguishes</b> ' + (v.scenarioDistinguishes === true ? '✓ 四场景真不同' : '×') + '</span>',
+      '<span class="chip" data-verdict="causalLocksAllHold"><b>causalLocksAllHold</b> ' + (locks.causalLocksAllHold === true ? '✓' : '×') + '</span>',
+      '<span class="chip jade-t" data-verdict="honestReading">offline 读数 = 本地前缀指纹 · 非 API 命中率</span>',
+    ]
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维轴 [cacheHitRate / infoFidelity / tokenEfficiency]；默认向量 VolatilePrefix=010（每轮整条 prompt 重新分词）/ StablePrefix=110（圣经逐字节置首 · warm 后前缀进 KV）/ BudgetedPrefix=101（预算裁剪真省 token · 但被裁部分对模型不可见）。fidelity 的口径是「模型看到的世界有没有变」——不是「核心事实还在」：密度排序确实保住了核心事实，可 70% 上下文仍然没了。因果锁：prefixAffinity / tokenBudget / factRank · causalLocksAllHold=' + (locks.causalLocksAllHold === true ? 'true' : 'false') + '。真命中只认 usage.prompt_tokens_details.cached_tokens。'
   }
 
   /* ================= KI-553 PubSub/PersistentQueue/StreamLog Redis Stream 三策略 —— 第四十八维 · xst 霸 ================= */

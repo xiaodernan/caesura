@@ -79,7 +79,8 @@
     "check-links": "node scripts/check-links.mjs",
     "check": "npm run lint && npm run validate:data && npm run test",
     "test:raw": "node scripts/test-raw.mjs",
-    "red:rate": "node scripts/red-rate.mjs"
+    "red:rate": "node scripts/red-rate.mjs",
+    "prompt-cache:bench": "node scripts/caesura-prompt-cache.mjs --bench"
   },
   "dependencies": {
     "three": "^0.186.0"

@@ -67,6 +67,7 @@ import { springConsulStudy, springConsulSnapshot } from './caesura-spring-consul
 import { redisHaStudy, redisHaSnapshot } from './caesura-redis-ha.mjs'
 import { redisStreamStudy, redisStreamSnapshot } from './caesura-redis-stream.mjs'
 import { springVaultStudy, springVaultSnapshot } from './caesura-spring-vault.mjs'
+import { promptCacheStudy, promptCacheSnapshot } from './caesura-prompt-cache.mjs'
 import { springStreamBindingStudy, springStreamBindingSnapshot } from './caesura-spring-stream-binding.mjs'
 import { cdcOutboxJoinStudy, cdcOutboxJoinSnapshot } from './caesura-cdc-outbox-join.mjs'
 import {
@@ -1063,6 +1064,23 @@ export function createGameCloud(opts = {}) {
     return svtCached
   }
 
+  // KI-555 前缀亲和 prompt-cache 教学件（VolatilePrefix/StablePrefix/BudgetedPrefix + verifyPromptCacheSoundness 双路自证 + 三路篡改 prefixDrift/trimDisabled/factsDropped + 三因果锁 + 十一真件 21 键）
+  // opts.promptCache===true 默认开（注入 {}）；显式 promptCache=false 关闭（教学对比用）。
+  const pcCfg = opts.promptCache === true ? {} : (opts.promptCache && typeof opts.promptCache === 'object' ? opts.promptCache : null)
+  const pcInjected = pcCfg !== null && opts.promptCache &&
+    typeof opts.promptCache === 'object' && Array.isArray(opts.promptCache.rows) &&
+    opts.promptCache.vectors && opts.promptCache.verdict
+  let pcCached = null
+  async function pcSnapshotForStatus() {
+    if (pcCfg === null) return null
+    if (pcCached) return pcCached
+    const study = pcInjected
+      ? opts.promptCache
+      : await promptCacheStudy({ ...pcCfg, now: opts.pcNow ?? pcCfg.now })
+    pcCached = promptCacheSnapshot(study)
+    return pcCached
+  }
+
   // KI-545：CDC outbox join 教学件（LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin；opt-in、status/ coj*）。
   // opts.springStreamBinding===true 走钳制默认参数（可覆盖 now/seed/messages/interval/nailedSnapshot/freeBinlog/noLatch/rigged 等）；
   // 传对象且 rows/vectors/verdict 齐全时当现成 study 注入；默认 springStreamBinding:false 非破坏（同 KI-513/.../543 法）。
@@ -1292,6 +1310,8 @@ export function createGameCloud(opts = {}) {
     runRedisStreamStudy: xstCfg === null ? null : () => redisStreamStudy({ ...xstCfg, now: opts.xstNow ?? xstCfg.now }),
     /** KI-554：Spring Cloud Vault 三策略教学件 —— 缺省 opts.springVault 时为 null；K8sStatic/AppRoleLease/DynamicRotation 三难 + verifySpringVaultSoundness 双路自证 + 十一件 21 物证。 */
     runSpringVaultStudy: svtCfg === null ? null : () => springVaultStudy({ ...svtCfg, now: opts.svtNow ?? svtCfg.now }),
+    /** KI-555 前缀亲和 prompt-cache 教学件（VolatilePrefix/StablePrefix/BudgetedPrefix 三策略；opt-in） */
+    runPromptCacheStudy: pcCfg === null ? null : () => promptCacheStudy({ ...pcCfg, now: opts.pcNow ?? pcCfg.now }),
     /** KI-545：CDC outbox join 教学件；缺 opts.springStreamBinding 时为 null；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异不封赢家）+ verifySpringStreamBindingSoundness 双路自证 + 十一枚真件交叉印证。 */
     runSpringStreamBindingStudy: ssbCfg === null ? null : () => springStreamBindingStudy({ ...ssbCfg, now: opts.ssbNow ?? ssbCfg.now }),
     /** KI-544：CDC outbox join 教学件；缺 opts.cdcOutboxJoin 时为 null；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异不封赢家）+ verifyCdcOutboxJoinSoundness 双路自证 + 十一枚真件交叉印证。 */
@@ -1373,6 +1393,7 @@ export function createGameCloud(opts = {}) {
         redisHa: await reaSnapshotForStatus(),
         redisStream: await xstSnapshotForStatus(),
         springVault: await svtSnapshotForStatus(),
+        promptCache: await pcSnapshotForStatus(),
         springStreamBinding: await ssbSnapshotForStatus(),
         cdcOutboxJoin: await cojSnapshotForStatus(),
         traceSampling: await tsSnapshotForStatus(),

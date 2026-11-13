@@ -6,10 +6,10 @@
 
 ## 0. 当前时间轴（2026-11-13 快照 · 可再生）
 
-- KI.rows=475 / Implemented=298 / Partial=167 / Placeholder=0 / Blocked=10
-- PKG.scripts=71 / PKG.deps=1 / PKG.devDeps=6 · KV 现读 `npm run status`
-- 49 个控制台维度（`console/index.html` `#row-*`）· `npm run console:data` 重生（snapshot.json ↔ bootstrap.js 双源同代）
-- 新增：`spring-vault:bench` —— KI-554 `caesura-spring-vault` 双源一致；`spring-stream:bench` KI-553；`spring-ha:bench` KI-552；`spring-consul:bench` KI-551；`spring-retry:bench` KI-550；`spring-pipeline:bench` KI-549；`spring-bus:bench` KI-548；`spring-config:bench` KI-547；`spring-feign:bench` KI-546
+- KI.rows=476 / Implemented=299 / Partial=167 / Placeholder=0 / Blocked=10
+- PKG.scripts=72 / PKG.deps=1 / PKG.devDeps=6 · KV 现读 `npm run status`
+- 50 个控制台维度（`console/index.html` `#row-*`）· `npm run console:data` 重生（snapshot.json ↔ bootstrap.js 双源同代）
+- 新增：`spring-vault:bench` —— KI-554 `caesura-spring-vault` 双源一致；`spring-stream:bench` KI-553；`spring-ha:bench` KI-552；`spring-consul:bench` KI-551；`spring-retry:bench` KI-550；`spring-pipeline:bench` KI-549；`spring-bus:bench` KI-548；`spring-config:bench` KI-547；`spring-feign:bench` KI-546、`prompt-cache:bench` KI-555
 - 前端范式：headless 腿证据 + `console:data` 双载体同源（snapshot.json ↔ bootstrap.js）
 
 ## 1. 维护门（所有更动必须先过这两个）
@@ -55,6 +55,7 @@
 | Redis HA | `spring-ha:bench` | Sentinel=100 / SyncPair=010 / Cluster=101 |
 | Redis Stream | `spring-stream:bench` | PubSub=010 / PersistentQueue=100 / StreamLog=110 |
 | Vault | `spring-vault:bench` | K8sStatic=100 / AppRoleLease=010 / DynamicRotation=001 |
+| LLM / token 经济学 | `prompt-cache:bench` | VolatilePrefix=010 / StablePrefix=110 / BudgetedPrefix=101；双路自证 + 三路篡改前缀漂移/预算关停/事实全撤 |
 | 分布式 ID | `idgen:bench` | Snowflake / UUID / 号段双 buffer |
 | 消息/日志 | `log-compaction:bench` / `backpressure:bench` | LSM 紧凑 + size/time 固定阈值回末 |
 | 结构索引 | `bplus:bench` / `hash:bench` | B+ 树阶 vs LSM 笔账 + 一致性哈希偏斜 |

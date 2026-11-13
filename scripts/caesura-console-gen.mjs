@@ -64,6 +64,7 @@ import { springConsulStudy, springConsulSnapshot } from './caesura-spring-consul
 import { redisHaStudy, redisHaSnapshot } from './caesura-redis-ha.mjs'
 import { redisStreamStudy, redisStreamSnapshot } from './caesura-redis-stream.mjs'
 import { springVaultStudy, springVaultSnapshot } from './caesura-spring-vault.mjs'
+import { promptCacheStudy, promptCacheSnapshot } from './caesura-prompt-cache.mjs'
 import { traceSamplingStudy, traceSamplingSnapshot } from './caesura-trace-sampling.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
@@ -420,7 +421,9 @@ export async function buildSystems(opts = {}) {
   const redisStream = opts.redisStream === false ? null : await buildRedisStreamReading(opts, now)
   // KI-554：Spring Cloud Vault 三策略教学件（K8sStatic/AppRoleLease/DynamicRotation + verifySpringVaultSoundness 双路自证 + 十一件 21 物证）
   const springVault = opts.springVault === false ? null : await buildSpringVaultReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, priorityQueue, batchStreamJoin, cdcOutboxJoin, springStreamBinding, springFeign, springConfig, springBus, redisPipeline, gatewayRetry, springConsul, redisHa, redisStream, springVault, builtAt: now() }
+  // KI-555 前缀亲和 prompt-cache 教学件（VolatilePrefix/StablePrefix/BudgetedPrefix + 双路自证 + 三路篡改前缀漂移/预算关停/事实全撤 + 三因果锁）
+  const promptCache = opts.promptCache === false ? null : await buildPromptCacheReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, priorityQueue, batchStreamJoin, cdcOutboxJoin, springStreamBinding, springFeign, springConfig, springBus, redisPipeline, gatewayRetry, springConsul, redisHa, redisStream, springVault, promptCache, builtAt: now() }
 }
 
 /**
@@ -571,6 +574,31 @@ export async function buildSpringVaultReading(opts, now) {
       ...(opts.svtRigged === true ? { rigged: true } : {}),
     })
     return springVaultSnapshot(s)
+  } catch (e) {
+    return null
+  }
+}
+
+/**
+ * KI-555 前缀亲和 prompt-cache 教学件（VolatilePrefix/StablePrefix/BudgetedPrefix + verifyPromptCacheSoundness 双路自证 + 三路篡改前缀漂移/预算关停/事实全撤）
+ * 失败返回 null；CLI 双源一致；rigged 三路塌缩参数只动所属策略。
+ * @param {object} opts { promptCache?:false, pcSeed?, pcMessages?, pcBudgetTokens?, pcFreeStablePrefix?, pcLosslessSummaryTrim?, pcZeroTrimPenalty?, pcUnlimitedBudget?, pcRigged? }
+ * @param {()=>number} now 时钟函数（builtAt 用）
+ */
+export async function buildPromptCacheReading(opts, now) {
+  try {
+    const s = await promptCacheStudy({
+      now,
+      ...(opts.pcSeed ? { seed: Math.max(0, Math.floor(Number(opts.pcSeed))) } : {}),
+      ...(opts.pcMessages ? { messages: Math.max(16, Math.floor(Number(opts.pcMessages))) } : {}),
+      ...(opts.pcBudgetTokens ? { budgetTokens: Math.max(0, Math.floor(Number(opts.pcBudgetTokens))) } : {}),
+      ...(opts.pcFreeStablePrefix === true ? { freeStablePrefix: true } : {}),
+      ...(opts.pcLosslessSummaryTrim === true ? { losslessSummaryTrim: true } : {}),
+      ...(opts.pcZeroTrimPenalty === true ? { zeroTrimPenalty: true } : {}),
+      ...(opts.pcUnlimitedBudget === true ? { unlimitedBudget: true } : {}),
+      ...(opts.pcRigged === true ? { rigged: true } : {}),
+    })
+    return promptCacheSnapshot(s)
   } catch (e) {
     return null
   }

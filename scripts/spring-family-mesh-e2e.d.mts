@@ -767,6 +767,30 @@ export function runMeshE2E(opts?: any): {
       causalLocks: { vaultSealCausallyUnerasable: boolean; leaseExpiryCausallyUnerasable: boolean; dynamicSecretCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
       crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
     } | null
+    /** KI-555 前缀亲和 prompt-cache 教学件（VolatilePrefix=010 / StablePrefix=110 / BudgetedPrefix=101）——缺 opt-in promptCache 为 null */
+    promptCacheSnapshot: {
+      config: Record<string, any>
+      rows: Array<{
+        protocol: string
+        scenarios: Array<{
+          id: string; messages: number
+          freshPrefixTokens: number; suffixTokens: number
+          retainedFacts: number; droppedFacts: number
+          hits: number; misses: number; tokensShipped: number; trimmedTokens: number
+          bibleTokens: number; fault: string
+        }>
+        trilemma: { cacheHitRate: boolean; infoFidelity: boolean; tokenEfficiency: boolean }
+        metrics: { totalShippedTokens: number; totalRetainedFacts: number; totalDroppedFacts: number; totalTrimmedTokens: number; coreKeepRate?: number; steadyHits?: number; expectedHits?: number; perTurnTokens?: number }
+      }>
+      vectors: Record<string, string>
+      noUniversalWinner: boolean
+      trilemmaDistinguishes: boolean
+      builtAt: number
+      rigged: boolean
+      verdict: Record<string, any>
+      causalLocks: { prefixAffinityCausallyUnerasable: boolean; tokenBudgetCausallyUnerasable: boolean; factRankCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
+      crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+    } | null
     /** KI-553：Redis Stream 三策略教学件（PubSub=010 / PersistentQueue=100 / StreamLog=110）——缺省 redisStream 为 null */
     redisStreamSnapshot: {
       config: Record<string, any>

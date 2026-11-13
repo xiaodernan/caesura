@@ -3137,3 +3137,74 @@ describe('KI-554 Spring Cloud Vault · K8sStatic / AppRoleLease / DynamicRotatio
     })
   })
 })
+
+// ============ KI-555 前缀亲和 prompt-cache 面板 — pc 赛道 ============
+describe('KI-555 前缀亲和 prompt-cache · VolatilePrefix / StablePrefix / BudgetedPrefix（pc 赛道）', () => {
+  const realPc = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+  it('第五十维 markup/CSS 直接渲染：pc 矩阵 12 cell + 010/110/101 + ladder 条', async () => {
+    const dom = await runApp(realPc)
+    const matrix = dom.els['pc-matrix'].innerHTML
+    expect(matrix).toContain('pc-mat-head')
+    for (const p of ['VolatilePrefix', 'StablePrefix', 'BudgetedPrefix']) {
+      expect(matrix).toContain('data-strategy="' + p + '"')
+    }
+    for (const sc of ['coldStart', 'steadyReuse', 'overBudget', 'cleanRerun']) {
+      expect(matrix).toContain('data-s="' + sc + '"')
+    }
+    expect((matrix.match(/class="pc-cell /g) || []).length).toBe(12)
+    // Volatile 全 miss；Stable/Budgeted warm 稳态暖池命中
+    expect(matrix).toContain('data-strategy="VolatilePrefix" data-s="steadyReuse" data-state="miss"')
+    expect(matrix).toContain('data-strategy="StablePrefix" data-s="steadyReuse" data-state="hit"')
+    const tri = dom.els['pc-trilemma'].innerHTML
+    expect(tri).toContain('data-vec="010"')
+    expect(tri).toContain('data-vec="110"')
+    expect(tri).toContain('data-vec="101"')
+    expect(dom.els['pc-ladder'].innerHTML).toContain('pc-bar')
+  })
+
+  it('pc markup/CSS 同代 + systems.promptCache 缺失时优雅降级', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-pc')
+    expect(html).toContain('id="pc-matrix"')
+    expect(html).toContain('id="pc-verif"')
+    expect(html).toContain('VolatilePrefix=010')
+    expect(html).toContain('StablePrefix=110')
+    expect(html).toContain('BudgetedPrefix=101')
+    expect(css).toContain('.pc-cell')
+    expect(css).toContain('.pc-flag.yes')
+    expect(css).toContain('.pc-bar > i')
+    expect(css).toContain('.pc-verif')
+    expect(css).toContain('.pc-cell { transition: none;')
+    const noPc = JSON.parse(JSON.stringify(realPc as any))
+    noPc.systems.promptCache = null
+    return runApp(noPc).then((dom2: any) => {
+      expect(dom2.els['pc-matrix'].innerHTML).toContain('缺失')
+      expect(dom2.els['pc-trilemma'].innerHTML).toContain('缺失')
+      expect(dom2.els['pc-matrix-note'].textContent).toContain('systems.promptCache 缺失')
+    })
+  })
+
+  it('pc chips 与三轴旗标必须读**真值**（禁止无真值来源的装饰 data-verdict）', async () => {
+    const dom = await runApp(realPc)
+    const chips = dom.els['pc-probes'].innerHTML
+    const snap = (realPc as any).systems.promptCache
+    const chipOf = (key: string) => {
+      const m = chips.match(new RegExp('data-verdict="' + key + '"[^>]*>([\\s\\S]*?)</span>'))
+      return m ? m[1] : ''
+    }
+    expect(chipOf('noUniversalWinner')).toContain(snap.verdict.noUniversalWinner ? '✓' : '×')
+    expect(chipOf('noStrategyWinsAll')).toContain(snap.verdict.noStrategyWinsAll ? '✓' : '×')
+    expect(chipOf('vectorFromTrilemma')).toContain(snap.verdict.vectorFromTrilemma ? '✓' : '×')
+    expect(chipOf('scenarioDistinguishes')).toContain(snap.verdict.scenarioDistinguishes ? '✓' : '×')
+    expect(chipOf('causalLocksAllHold')).toContain(snap.causalLocks.causalLocksAllHold ? '✓' : '×')
+    // 三轴旗标逐格必须与 snapshot 的 trilemma 真值一致
+    const tri = dom.els['pc-trilemma'].innerHTML
+    for (const row of snap.rows) {
+      for (const k of ['cacheHitRate', 'infoFidelity', 'tokenEfficiency']) {
+        const want = row.trilemma[k] === true ? '1' : '0'
+        expect(tri).toContain('data-k="' + k + '" data-v="' + want + '"')
+      }
+    }
+  })
+})

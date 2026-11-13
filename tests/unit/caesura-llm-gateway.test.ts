@@ -350,4 +350,48 @@ describe('caesura-llm-gateway（KI-538）', () => {
     expect(calls.n).toBe(1)
     expect(r.ok).toBe(true)
   })
+
+  // ── 代理分流抖动重试（KI-555 受控实测 2026-11-14 的直接代码根因）────────────────
+  // 实测：wkapi.pro 在 Chat Completions 与 Responses 两种后端间分流，落到只认 input/prompt 的
+  // Responses 后端时**稳定**返回 400，且与请求长度/内容语言**都无关** ⇒ 400 是分流抖动，不是格式错。
+  // 于是「一次 400 就判失败」会把本可成功的调用记成失败 ⇒ 真连通道必须对 400 重试并记账。
+  it('400（代理分流抖动）必须重试且记账 attempts：实测同一请求体第一次 400、第二次 200 且命中真值被读出', async () => {
+    const calls = { n: 0 }
+    const fetchImpl = async () => {
+      calls.n += 1
+      if (calls.n === 1) {
+        return { status: 400, text: async () => JSON.stringify({ error: { message: 'One of "input" or "previous_response_id" or \'prompt\' or \'conversation\' must be provided.' } }) }
+      }
+      return {
+        status: 200,
+        text: async () => JSON.stringify({
+          model: 'gpt-6-sol',
+          choices: [{ message: { content: 'ok' }, finish_reason: 'stop' }],
+          usage: { prompt_tokens: 1000, completion_tokens: 5, total_tokens: 1005, prompt_tokens_details: { cached_tokens: 900 } },
+        }),
+      }
+    }
+    const r = await callLlm([{ role: 'user', content: 'q' }], { mode: 'live' }, { env: { CAESURA_LLM_API_KEY: 'sk-test' }, fetchImpl })
+    expect(calls.n).toBe(2)
+    expect(r.ok).toBe(true)
+    expect(r.attempts).toBe(2)
+    // 重试成功后命中真值照样被读出（不能因为重试就丢掉 cached 读数）。
+    expect(r.cached).toBe(true)
+    expect(r.cachedTokens).toBe(900)
+    expect(r.usage!.cache_hit_rate).toBe(0.9)
+  })
+
+  it('401/5xx 不重试：如实失败、attempts=1（免得把配额压力放大成重试风暴）', async () => {
+    const calls = { n: 0 }
+    const fetchImpl = async () => {
+      calls.n += 1
+      return { status: 401, text: async () => '{"error":"unauthorized"}' }
+    }
+    const r = await callLlm([{ role: 'user', content: 'q' }], { mode: 'live' }, { env: { CAESURA_LLM_API_KEY: 'sk-test' }, fetchImpl })
+    expect(calls.n).toBe(1)
+    expect(r.ok).toBe(false)
+    expect(r.status).toBe(401)
+    expect(r.error).toBe('non_200')
+    expect(r.attempts).toBe(1)
+  })
 })

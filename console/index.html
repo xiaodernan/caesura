@@ -915,6 +915,24 @@
     </article>
   </section>
 
+  <!-- 第五十维 · 前缀亲和 prompt-cache 三策略（KI-555） -->
+  <section class="row row-pc">
+    <article class="panel panel-pc">
+      <div class="panel-head"><h2>第五十维 · VolatilePrefix / StablePrefix / BudgetedPrefix —— 前缀亲和与 token 经济学三策略</h2><span class="hint">VolatilePrefix=010（每轮整条 prompt 重新分词 · 前缀逐请求全变 · 可复用趋近 0）/ StablePrefix=110（世界观总纲 + NPC 圣经逐字节置首 · warm 后前缀进 KV）/ BudgetedPrefix=101（稳定前缀 + token 预算裁剪 · 真省 token 但被裁部分对模型不可见）——默认向量 010/110/101，无一赢得 111</span></div>
+      <div class="pc-matrix" id="pc-matrix"></div>
+      <div class="pc-ladder" id="pc-ladder"></div>
+      <p class="note" id="pc-matrix-note">…</p>
+    </article>
+    <article class="panel panel-pc">
+      <div class="panel-head"><h2>前缀缓存三维向量（cacheHitRate · infoFidelity · tokenEfficiency）· 双路自证 + 三路篡改 + 因果锁</h2><span class="hint">三轴位序 [cacheHitRate / infoFidelity / tokenEfficiency] · verifyPromptCacheSoundness 双路自证（lane A 稳定前缀 warm 池 vs lane B 预算裁剪；tamper 三通：prefixDrift 注入持续改写的圣经 / trimDisabled 预算卡零 / factsDropped 排序器反向 —— 真喂回 hold=false；十一件 21 物证）—— offline 读数是**本地前缀指纹可复用占比**（结构量），绝不冒充 API 命中率；真命中只认 usage.prompt_tokens_details.cached_tokens</span></div>
+      <div class="pc-trilemma" id="pc-trilemma"></div>
+      <div class="pc-verif" id="pc-verif"></div>
+      <div class="pc-crosscheck" id="pc-crosscheck"></div>
+      <div class="pc-probes" id="pc-probes"></div>
+      <p class="note" id="pc-trilemma-note">…</p>
+    </article>
+  </section>
+
 </main>
 
 <footer class="footer">

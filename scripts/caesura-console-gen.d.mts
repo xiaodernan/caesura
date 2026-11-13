@@ -956,6 +956,33 @@ export interface SpringFeignReading {
   builtAt: number
 }
 
+/** KI-555·VolatilePrefix/StablePrefix/BudgetedPrefix 前缀亲和 prompt-cache 教学件——verifyPromptCacheSoundness 双路自证 + 三路篡改 prefixDrift/trimDisabled/factsDropped + 三因果锁 */
+export interface PromptCacheReading {
+  config: Record<string, any>
+  rows: Array<{
+    protocol: string
+    scenarios: Array<{
+      id: string; messages: number
+      freshPrefixTokens: number; suffixTokens: number
+      retainedFacts: number; droppedFacts: number
+      hits: number; misses: number; tokensShipped: number; trimmedTokens: number
+      bibleTokens: number; fault: string
+    }>
+    trilemma: { cacheHitRate: boolean; infoFidelity: boolean; tokenEfficiency: boolean }
+    axes?: Record<string, any>
+    metrics: {
+      totalShippedTokens: number; totalRetainedFacts: number; totalDroppedFacts: number; totalTrimmedTokens: number
+      coreKeepRate?: number; steadyHits?: number; expectedHits?: number; perTurnTokens?: number
+    }
+  }>
+  vectors: Record<string, string>
+  verdict: Record<string, any>
+  rigged: boolean
+  causalLocks: { prefixAffinityCausallyUnerasable: boolean; tokenBudgetCausallyUnerasable: boolean; factRankCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
+  crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; baselineHolds?: boolean; falsifiable?: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+  builtAt: number
+}
+
 /** KI-554：K8sStatic/AppRoleLease/DynamicRotation Spring Cloud Vault 三策略教学件——verifySpringVaultSoundness 双路自证 + 十一件 21 物证。 */
 export interface SpringVaultReading {
   config: Record<string, any>
@@ -1132,6 +1159,19 @@ export interface SpringConfigReading {
   builtAt: number
 }
 
+/** KI-555·VolatilePrefix/StablePrefix/BudgetedPrefix 前缀亲和 prompt-cache 教学件——失败时返回 null */
+export function buildPromptCacheReading(opts: {
+  now?: () => number
+  promptCache?: boolean
+  pcSeed?: number
+  pcMessages?: number
+  pcBudgetTokens?: number
+  pcFreeStablePrefix?: boolean
+  pcZeroTrimPenalty?: boolean
+  pcUnlimitedBudget?: boolean
+  pcRigged?: boolean
+}, now: () => number): Promise<PromptCacheReading | null>
+
 /** KI-545：ExclusiveConsumer/SharedConsumer/ClusteredConsumer Spring Cloud Stream 绑定三策略真跑读数（三策略 × 四场景 + 三难向量 + verifySpringStreamBindingSoundness 双路交叉印证 + 十一枚真件交叉印证）。 */
 export interface SpringStreamBindingReading {
   config: Record<string, any>
@@ -1255,6 +1295,8 @@ export interface SystemsBlock {
   redisHa: RedisHaReading | null
   redisStream: RedisStreamReading | null
   springVault: SpringVaultReading | null
+  /** KI-555·VolatilePrefix/StablePrefix/BudgetedPrefix 三策略（opt-in）—— 前端 .row-pc */
+  promptCache: PromptCacheReading | null
   builtAt: number
 }
 

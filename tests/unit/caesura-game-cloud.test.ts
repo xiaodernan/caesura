@@ -2878,4 +2878,42 @@ describe('caesura-game-cloud', () => {
     })).status()).springStreamBinding
     expect(injected.builtAt).toBe(555)
   })
+
+  it('promptCache opt-in：status().promptCache 自洽（010/110/101 + 双路自证 + 三路篡改 + 三因果锁 + 21 物证）；缺省 null（KI-555）', async () => {
+    const idle = await createGameCloud({ gameId: 'gid-pc0', gamePort: 7980, sources, cloud: fakeCloud() }).status()
+    expect(idle.promptCache).toBe(null)
+    const gc = await createGameCloud({
+      gameId: 'gid-pc1', gamePort: 7981, sources, cloud: fakeCloud(),
+      promptCache: true, pcNow: () => 5550,
+    })
+    const st = (await gc.status()).promptCache
+    expect(st).not.toBe(null)
+    expect(st!.builtAt).toBe(5550)
+    expect(st!.config.messages).toBe(96)
+    expect(st!.rows.length).toBe(3)
+    expect(st!.vectors).toEqual({ VolatilePrefix: '010', StablePrefix: '110', BudgetedPrefix: '101' })
+    expect(st!.noUniversalWinner).toBe(true)
+    expect(st!.trilemmaDistinguishes).toBe(true)
+    expect(st!.verdict.vectorFromTrilemma).toBe(true)
+    expect(st!.verdict.scenarioDistinguishes).toBe(true)
+    const cp = st!.crosscheck.soundness
+    expect(cp.holds).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.tamper.prefixDrift.holds).toBe(false)
+    expect(cp.tamper.trimDisabled.holds).toBe(false)
+    expect(cp.tamper.factsDropped.holds).toBe(false)
+    expect(Object.keys(st!.crosscheck.evidence).length).toBe(21)
+    expect(st!.causalLocks.causalLocksAllHold).toBe(true)
+    // 漂移命中数是真跑出来的 0，不是常量
+    expect(st!.causalLocks.probes.driftHits).toBe(0)
+    expect(await gc.runPromptCacheStudy!()).toMatchObject({ vectors: st!.vectors })
+    // rigged 开挂：Stable 前缀免费 ⇒ 三轴全满 111（其余策略不动）
+    const rigged = (await (await createGameCloud({
+      gameId: 'gid-pc2', gamePort: 7982, sources, cloud: fakeCloud(),
+      promptCache: { freeStablePrefix: true, rigged: true }, pcNow: () => 5551,
+    })).status()).promptCache
+    expect(rigged!.vectors.StablePrefix).toBe('111')
+    expect(rigged!.vectors.VolatilePrefix).toBe('010')
+    expect(rigged!.vectors.BudgetedPrefix).toBe('101')
+  })
 })

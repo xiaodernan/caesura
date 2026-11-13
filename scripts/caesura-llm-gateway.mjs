@@ -181,8 +181,29 @@ export function normalizeReply(status, json, rawText, opts = {}) {
 }
 
 /**
+ * 代理分流抖动可重试的状态码。
+ *
+ * <p><b>受控实测定案（2026-11-14 · wkapi.pro/v1 · gpt-6-sol）</b>：同一段内容、同一请求体，
+ * 落到 Chat Completions 后端时 200，落到只认 <code>input</code>/<code>prompt</code> 的 Responses 后端时
+ * 稳定返回 <code>400</code>（<code>One of "input" or "previous_response_id" or 'prompt' or 'conversation'
+ * must be provided</code>）。实测矩阵显示该 400 <b>与请求长度、与内容语言都无关</b>（240 字符与 900 字符
+ * 都可能 200 或 400；拆成两条 system 也一样 400）⇒ 它是<b>代理在两种 API 形态之间的分流抖动</b>，
+ * 不是请求格式错、也不是内容被拒。
+ *
+ * <p>⇒ 结论一：真连通道<b>必须对 400 重试</b>（换一台后端通常就成了），否则会把一次可成功的调用
+ * 记成失败；结论二：401/429/5xx <b>不重试</b>（如实失败，避免放大配额与限流压力）；
+ * 结论三：重试次数必须<b>记账</b>（<code>attempts</code>），否则读者分不清「一次就成了」与「试了三次才成」。</p>
+ */
+export const AGENT_RETRY_STATUS = Object.freeze([400])
+/** 默认重试次数（首次 + 2 次重试）。 */
+export const AGENT_RETRY_DEFAULT_ATTEMPTS = 3
+
+/**
  * 单条调用：mode='offline' 走 double；mode='live' 且 env 有 key 才真发 fetch。
  * fetchImpl 可注入（测试用 mock，绝不联网）。
+ *
+ * <p><b>代理分流抖动重试</b>：400 会重试（见 <code>AGENT_RETRY_STATUS</code> 的实测依据），
+ * 其它失败状态一律如实返回，绝不重试掩盖。</p>
  */
 export async function callLlm(messages, opts = {}, deps = {}) {
   const mode = opts.mode === 'live' ? 'live' : 'offline'
@@ -192,9 +213,25 @@ export async function callLlm(messages, opts = {}, deps = {}) {
   if (!key) return { ok: false, mode: 'live', status: 0, model: cfg.model, content: '', finishReason: null, usage: null, latencyMs: 0, via: 'live', error: 'missing_key', rawText: null, cached: false }
   const fetchImpl = deps.fetchImpl || globalThis.fetch
   const base = normalizeBaseUrl(opts.baseUrl || cfg.baseUrl)
+  const attempts = intOr(opts.agentAttempts ?? deps.agentAttempts, AGENT_RETRY_DEFAULT_ATTEMPTS)
+  const maxAttempts = Math.max(1, attempts)
+  let last = null
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    last = await attemptLlmOnce(messages, cfg, { ...deps, fetchImpl, base, key }, attempt)
+    if (last.ok === true) return { ...last, attempts: attempt }
+    if (!AGENT_RETRY_STATUS.includes(last.status)) break
+  }
+  // 失败路径的 attempts 是**实际尝试次数**（attemptLlmOnce 已带），
+  // 不是 maxAttempts —— 否则「试了 1 次就 401」会被记成「试了 3 次」，重试账目就假了。
+  return last
+}
+
+/** 单次尝试：真发一次（流式或非流式），返回统一形状的回复。绝不自己重试。 */
+async function attemptLlmOnce(messages, cfg, deps, attempt) {
+  const { fetchImpl, base, key } = deps
   const t0 = startClock(deps.clock || (() => Date.now()), Date.now())
   try {
-    if (opts.stream === true) {
+    if (cfg.stream === true) {
     // 真流通道：opt-in，走 caesura-llm-client 的 SSE 解析，缓存 token 真值直达。
     const { callLlm: unifiedLlm } = await import('./caesura-llm-client.mjs')
     const unified = await unifiedLlm({
@@ -207,8 +244,8 @@ export async function callLlm(messages, opts = {}, deps = {}) {
       // 前缀缓存亲和路由（纯 opt-in，见下方条件）
       // opt-in-only：与 buildChatBody / buildBibleMessages 同款语义；默认不带 key（wkapi 全局前缀缓存
       // 已命中 ~97.4%），仅显式 promptCacheKey=true/字符串时注入亲和键。
-      ...( (opts.promptCacheKey === true || typeof opts.promptCacheKey === 'string')
-        ? { prompt_cache_key: typeof opts.promptCacheKey === 'string' ? opts.promptCacheKey : derivePromptCacheKey(messages, cfg) }
+      ...( (cfg.promptCacheKey === true || typeof cfg.promptCacheKey === 'string')
+        ? { prompt_cache_key: typeof cfg.promptCacheKey === 'string' ? cfg.promptCacheKey : derivePromptCacheKey(messages, cfg) }
         : {} ),
     }, {
       // 关键：把本层的 baseUrl / key / fetch 注入透传下去，否则流式分支自行解析 env，
@@ -230,9 +267,10 @@ export async function callLlm(messages, opts = {}, deps = {}) {
       usage: uUsage,
       latencyMs: Math.max(0, t1 - t0),
       via: 'live-stream',
-      rawText: null,
+      rawText: unified.rawText ?? null,
       cached: uCached > 0,
       cachedTokens: uCached,
+      attempts: attempt,
     }
   }
   const res = await fetchImpl(`${base}/chat/completions`, {
@@ -250,9 +288,9 @@ export async function callLlm(messages, opts = {}, deps = {}) {
     // 实测明明拿到 cached_tokens=20492（99.99% 命中），项目却报「未命中」。
     // 这就是「缓存命中率显示很低」的直接代码根因：不是没命中，是命中了被自己盖掉。
     const norm = normalizeReply(res.status, json, text, { ...cfg, latencyMs: Math.max(0, t1 - t0) })
-    return { ...norm, cached: (norm.cachedTokens ?? 0) > 0 }
+    return { ...norm, cached: (norm.cachedTokens ?? 0) > 0, attempts: attempt }
   } catch (e) {
-    return { ok: false, mode: 'live', status: 0, model: cfg.model, content: '', finishReason: null, usage: null, latencyMs: 0, via: 'live', error: 'network', rawText: String(e?.message || e).slice(0, 600), cached: false }
+    return { ok: false, mode: 'live', status: 0, model: cfg.model, content: '', finishReason: null, usage: null, latencyMs: 0, via: 'live', error: 'network', rawText: String(e?.message || e).slice(0, 600), cached: false, attempts: attempt }
   }
 }
 
