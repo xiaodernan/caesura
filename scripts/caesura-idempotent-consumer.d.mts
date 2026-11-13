@@ -116,11 +116,13 @@ export interface IdempotentConsumerStudy {
   crosscheck: {
     evidence: Record<string, number>
     soundness: {
-      laneA: { consistentAcceptedInMemory: number; consistentAcceptedRedis: number; unique: number }
+      laneA: { consistentAcceptedInMemory: number; consistentAcceptedRedis: number; consistentAcceptedBloom: number; bloomFalsePositivesOnUniqueFlow: number; unique: number }
       laneB: { atLeastOnceAcceptedInMemory: number; atLeastOnceAcceptedRedis: number; atLeastOnceAcceptedBloom: number; unique: number }
+      baselineHolds: boolean
       holds: boolean
       nontrivial: boolean
-      falsifiable: true
+      /** 真推导：baselineHolds && 三路 tamper.holds 全 false（绝不写死 true）。 */
+      falsifiable: boolean
       tamper: {
         duplicateInvisible: { holds: boolean; reason: string }
         forgedDedupHit: { holds: boolean; reason: string }

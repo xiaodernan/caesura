@@ -1,0 +1,71 @@
+feat+fix+test+docs: LLM 网关缓存与流式双通道真修订 + KI-540 可证伪假绿根治 + phase-status 门行尾无关修复
+
+一、真实大模型 API 缓存命中率：受控四象限定案（wkapi.pro/v1 · gpt-6-sol · 走项目自己的 callLlm）
+
+  组  stream  cache_key  prompt_tokens  cached_tokens  命中率    耗时
+  A   否     有         3647           3325/3395     91.2/93.1% 5919/3550ms
+  B   是     有         3647           0(首调)/3291  0/90.2%    3524/3820ms
+  C   否     无         7757           7552/7552     97.4%       1601/1788ms
+  D   是     无         7757           7552/7552     97.4%       1549/3040ms
+  E   否     有(回跑)   3647           3429/3429     94.0%       3387/3358ms
+
+  定案三条：
+  ① 流式与否对缓存命中率无影响 ⇒「显示流命中率更好」是相关非因果（被冷启动与调用顺序混淆）。
+  ② 首调必 miss 是头号嫌疑（代理侧缓存写入有延迟）⇒「命中率低」多数是冷启动，不是调用方式错。
+  ③ prompt_cache_key 改变的是 usage 口径（带 key 3647 / 不带 7757），不改善命中率（无 key 97.4% 反而更高）
+     ⇒ 与并轨线 docs/llm-cache-fix.md 第九节「注入 key 不建议」独立互证 ⇒ 默认不注入，仅保留显式 opt-in。
+
+二、三个真 bug + 两处同源脆性
+
+  ① caesura-llm-gateway.mjs 非流路径 `cached: false` 硬覆写
+     —— 真拿到 cached_tokens=20492 也报「未命中」：这就是「缓存命中率显示很低」的直接代码根因。
+     修法：用 normalizeReply 已读出的 cachedTokens 现算，不再盖掉。
+  ② 全项目从不发 prompt_cache_key（能力缺失）
+     修法：新增 derivePromptCacheKey + promptCacheKey 选项；默认不带（实测口径），显式 opt-in 才带。
+  ③ 流/非流 usage 形状分叉（判定层无法交叉印证）
+     修法：两侧统一 normalizeUsage；cache_hit_rate = cached_tokens / prompt_tokens 现算，绝不估算、绝不写死。
+  ④ 流式分支自行解析 env ⇒ 上层 deps.env / deps.fetchImpl 在流式通道完全失效
+     修法：baseUrl / apiKey / fetchImpl 全部透传给 caesura-llm-client。
+  ⑤ SSE 回退路径整块解析 ⇒ 只读到第一个 data:，尾 chunk usage（含 cached_tokens）被整段丢弃 ⇒ 命中率恒读 0
+     修法：按 \n\n 拆成多个事件块。
+
+三、KI-540 消费端幂等去重件：可证伪假绿根治（20 腿全绿）
+
+  · verifyIdempotencySoundness 原先把 falsifiable:true 与三路 tamper.*.holds 全部写死，
+    而头部注释却声称「真喂回现算」⇒ 同款假绿。
+  · 按 KI-538 gatewayCore 标准根治：抽出 idempotencyCore(input, opts, tamper) 唯一 holds 公式，
+    baseline + 三路 tamper 只改「去重状态如何被喂」，其余判定公式逐字共用 ⇒ tamper 真翻 false，
+    falsifiable = baselineHolds && 三路 tamper 全 false 真推导。
+      ① duplicateInvisible：每条消息前清空去重状态 ⇒ 接受 192 > 唯一 96；
+      ② forgedDedupHit：一半唯一 id 被伪造 redelivered 记录 ⇒ 接受 48 < 唯一 96；
+      ③ emptyStream：nontrivial=false。
+  · 真推导当场揭穿另一处结构性错误：路 A 一度把 Bloom 也纳入「全接受」硬性条件 ⇒ baseline 红。
+    真相是布隆在干净唯一流上就假阳 2/96（94/96）⇒ 概率结构不能当精确集合用。
+    修正为：路 A 只对精确策略（InMemory/Redis）断言零误杀，Bloom 损耗如实读出（bloomFalsePositivesOnUniqueFlow）。
+  · rigged 注释订正：原文称全开收敛 111/111/111 且 riggedConvergenceCollapsed=true，
+    运行时真值是 110/111/011（只有 RedisSetNx 因免费 RTT 单点通吃）、riggedConvergenceCollapsed=false
+    （单点通吃 ≠ 收敛塌缩）。加测试钉死防回归。
+
+四、phase-status 门：行尾漂移让「判据的判据」静默失效
+
+  · 现象：门 F 两条自检测试红，报「植入没生效（END 锚的写法变了）」。
+  · 根因：core.autocrlf=true ⇒ 仓库存 LF、工作区必为 CRLF；并轨线一次 checkout 让 docs/*.md 全部 CRLF，
+    而测试三处硬编码 ${END}\n 硬套 LF ⇒ 植入失败 ⇒ 检测器的自检形同虚设（假绿风险）。
+  · 修法：项目自己已提供 eolOf(text)（scripts/phase-status-embed.mjs，测试第 19 行已导入却没用），
+    三处植入改为 ${END}${eol} 行尾无关。phase-status 14/14 全绿。
+
+五、门禁
+
+  四门 64/64 全绿（import-targets 15 / doc-audit 15 / decl-parity 20 / phase-status 14）
+  tsc --noEmit 0 错 · vite build ✓ 8.47s / 0 findings · validate:data 0 ERROR
+  status:embed --check 机读区 27 枚 KEY 与现读逐字一致
+  双载体 console/snapshot.json ↔ console/bootstrap.js 逐字同源 = true（49 维）
+  LLM 网关 22 腿 + llm-client 5 腿 + KI-540 20 腿 全绿
+
+六、证据沉淀
+
+  docs/llm-cache-fix.md 第十节：受控四象限定案 + 三 bug 表 + 不做的事（不注入 key / 不跨请求聚合命中率 /
+  不声称流式提高命中率 / 不声称代理侧缓存可控）。
+
+不声称：真 OpenAI 官方端点上的 prompt_cache_key 亲和行为 / 可控的代理缓存 / 跨请求可比的命中率口径 /
+「流式提高缓存命中率」（实测证伪）/ 真 Redis 集群 / 真布隆生产库 / 真网络 RTT / 零误判银弹。

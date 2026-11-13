@@ -5,6 +5,8 @@ import {
   LLM_SCENARIOS,
   resolveApiKey,
   normalizeBaseUrl,
+  derivePromptCacheKey,
+  normalizeUsage,
   buildChatBody,
   offlineReply,
   normalizeReply,
@@ -265,5 +267,87 @@ describe('caesura-llm-gateway（KI-538）', () => {
     const a = await llmGatewayStudy({ now: () => 538000 })
     const b = await llmGatewayStudy({ now: () => 538000 })
     expect(JSON.stringify(a)).toBe(JSON.stringify(b))
+  })
+
+  /* ================= KI-538 修订 · 前缀缓存与流式双通道真值护栏（2026-11-13） ================= */
+
+  it('derivePromptCacheKey：锚在稳定 system ⇒ 同前缀同 key；system 变则换 key；≤64 字符', () => {
+    const a = derivePromptCacheKey([{ role: 'system', content: 'S1' }, { role: 'user', content: 'u1' }])
+    const b = derivePromptCacheKey([{ role: 'system', content: 'S1' }, { role: 'user', content: 'u2' }])
+    const c = derivePromptCacheKey([{ role: 'system', content: 'S2' }, { role: 'user', content: 'u1' }])
+    // 关键：user 正文每次都变，key 必须**不变**（亲和路由靠 system 锚定；锚在 user 上等于每次换主机、缓存归零）。
+    expect(a).toBe(b)
+    expect(a).not.toBe(c)
+    expect(a.length).toBeLessThanOrEqual(64)
+    // 显式覆盖优先。
+    expect(derivePromptCacheKey([{ role: 'user', content: 'x' }], { promptCacheKey: 'my-fixed-key' })).toBe('my-fixed-key')
+  })
+
+  it('buildChatBody **默认不注入** prompt_cache_key（实测定案）；仅显式 opt-in 才注入', () => {
+    const msgs = [{ role: 'system', content: 'S' }, { role: 'user', content: 'u' }]
+    // 实测（wkapi.pro · gpt-6-sol · 受控四象限）：无 key 连续请求命中率 97.4% > 带 key 91~94%，
+    // 且带 key 让 usage 口径漂移（prompt_tokens 3647 vs 7757）⇒ 跨请求读数不可比 ⇒ 默认不带。
+    expect(buildChatBody(msgs, {}).prompt_cache_key).toBeUndefined()
+    expect(buildChatBody(msgs, { promptCacheKey: false }).prompt_cache_key).toBeUndefined()
+    // 显式 opt-in（换真 OpenAI 端点、或需要复核代理亲和行为时）才注入。
+    expect(buildChatBody(msgs, { promptCacheKey: true }).prompt_cache_key).toBe(derivePromptCacheKey(msgs))
+    expect(buildChatBody(msgs, { promptCacheKey: 'fixed-key' }).prompt_cache_key).toBe('fixed-key')
+  })
+
+  it('normalizeUsage：容忍 prompt_tokens_details 整体缺失；cache_hit_rate 现算，绝不写死', () => {
+    expect(normalizeUsage(null)).toBe(null)
+    const hit = normalizeUsage({ prompt_tokens: 1000, completion_tokens: 10, total_tokens: 1010, prompt_tokens_details: { cached_tokens: 250 } })
+    expect(hit!.cached_tokens).toBe(250)
+    expect(hit!.cache_hit_rate).toBe(0.25)
+    // 未命中时整个 prompt_tokens_details 缺失（实测真现象）⇒ 0，且绝不 NaN。
+    const miss = normalizeUsage({ prompt_tokens: 1000, completion_tokens: 10, total_tokens: 1010 })
+    expect(miss!.cached_tokens).toBe(0)
+    expect(miss!.cache_hit_rate).toBe(0)
+    // prompt_tokens=0 ⇒ 绝不能除零。
+    expect(normalizeUsage({ total_tokens: 0 })!.cache_hit_rate).toBe(0)
+  })
+
+  it('【BUG 回归护栏】非流式真拿到 cached_tokens ⇒ cached 必须为 true（历史被硬覆写成 false）', async () => {
+    const fetchImpl = async () => ({
+      status: 200,
+      text: async () => JSON.stringify({
+        model: 'gpt-6-sol',
+        choices: [{ message: { content: 'hit' }, finish_reason: 'stop' }],
+        usage: { prompt_tokens: 1000, completion_tokens: 5, total_tokens: 1005, prompt_tokens_details: { cached_tokens: 900 } },
+      }),
+    })
+    const r = await callLlm([{ role: 'user', content: 'q' }], { mode: 'live' }, { env: { CAESURA_LLM_API_KEY: 'sk-test' }, fetchImpl })
+    expect(r.ok).toBe(true)
+    // 这条正是「命中了却被自己盖掉」那个 bug 的专属护栏：历史上此处恒 false。
+    expect(r.cached).toBe(true)
+    expect(r.cachedTokens).toBe(900)
+    expect(r.usage!.cache_hit_rate).toBe(0.9)
+  })
+
+  it('流式与非流式 usage 同源可比：流式 cachedTokens/命中率先读真值（deps.fetchImpl 在流式通道生效）', async () => {
+    const sse =
+      'data: ' + JSON.stringify({ choices: [{ delta: { content: '流' } }] }) + '\n\n' +
+      'data: ' + JSON.stringify({ usage: { prompt_tokens: 1000, completion_tokens: 5, total_tokens: 1005, prompt_tokens_details: { cached_tokens: 700 } } }) + '\n\n' +
+      'data: [DONE]\n\n'
+    const fetchImpl = async () => ({ status: 200, text: async () => sse })
+    const r = await callLlm([{ role: 'user', content: 'q' }], { mode: 'live', stream: true }, { env: { CAESURA_LLM_API_KEY: 'sk-test' }, fetchImpl })
+    expect(r.via).toBe('live-stream')
+    expect(r.content).toBe('流')
+    expect(r.cached).toBe(true)
+    expect(r.cachedTokens).toBe(700)
+    // 与非流式同一套字段 ⇒ 判定层可交叉印证。
+    expect(r.usage!.cache_hit_rate).toBe(0.7)
+    expect(Object.keys(r.usage!).sort()).toEqual(['cache_hit_rate', 'cached_tokens', 'completion_tokens', 'prompt_tokens', 'prompt_tokens_details', 'total_tokens'])
+  })
+
+  it('流式分支必须透传 deps.fetchImpl（此前自行解析 env ⇒ 注入完全失效、测试不可控）', async () => {
+    const calls = { n: 0 }
+    const fetchImpl = async () => {
+      calls.n += 1
+      return { status: 200, text: async () => 'data: ' + JSON.stringify({ choices: [{ delta: { content: 'x' } }] }) + '\n\ndata: [DONE]\n\n' }
+    }
+    const r = await callLlm([{ role: 'user', content: 'q' }], { mode: 'live', stream: true }, { env: { CAESURA_LLM_API_KEY: 'sk-test' }, fetchImpl })
+    expect(calls.n).toBe(1)
+    expect(r.ok).toBe(true)
   })
 })

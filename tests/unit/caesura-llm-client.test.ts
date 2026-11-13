@@ -64,8 +64,17 @@ describe('caesura-llm-client caesura-llm-cacheFix', () => {
       expect(out.ok).toBe(true)
       expect(out.status).toBe(200)
       expect(out.text).toBe('测')
-      expect(out.usage).toEqual({ prompt_tokens: 500, completion_tokens: 80, total_tokens: 580, prompt_tokens_details: { cached_tokens: 400 } })
+      // usage 契约扩展：新增 cached_tokens / cache_hit_rate 为**现算真值**（非命中时 prompt_tokens_details 整个缺失也必须容忍）。
+      expect(out.usage).toEqual({
+        prompt_tokens: 500,
+        completion_tokens: 80,
+        total_tokens: 580,
+        prompt_tokens_details: { cached_tokens: 400 },
+        cached_tokens: 400,
+        cache_hit_rate: 0.8,
+      })
       expect(out.cachedTokens).toBe(400)
+      expect(out.cacheHitRate).toBe(0.8)
     } finally {
       (globalThis as any).fetch = origFetch
     }

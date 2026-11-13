@@ -161,3 +161,101 @@ noKey #3: status=200  cached=4864/4982（97.6%）
 4. 补测数据（2026-11-13 23:11）：模型 `gpt-6-sol` 在 wkapi.pro 下：同 prefix 冷启 vs warm 与多数 healthy shard 之间 gap 是不可控制的；`prompt_cache_key` 注入过（见第八节）已被证实现作 prompt 正文计费，**不建议注入**；`.scratch/llmeter.mjs` 可复现探针。
 5. 工程规则（落地）：**当前唯一在调用层可控且合理的优化是「统一出口 + NPC_BIBLE 稳定前缀 + include_usage」**——在健康 shard 上稳定达 97%+；不能保证用哪一个 shard。新加速路径（如 `x-shard-affinity` header 或 wkapi 正式上线 `prompt_cache_affinity`）出现时一并评估。
 
+## 第十节 · 受控四象限定案（2026-11-13 深夜 · HEAD=50879ee）——「流式命中率更好」是相关非因果
+
+### 实验设计
+
+同一组 messages（长 system 60 条 + 长 user 30 条）× {带 `prompt_cache_key`, 不带} × {流式, 非流式} 各 2 次，
+全部走**项目自己的** `scripts/caesura-llm-gateway.mjs` 的 `callLlm`（不是临时探针），
+端点 `https://wkapi.pro/v1`、模型 `gpt-6-sol`、`max_tokens=32`。
+
+| 组 | stream | cache_key | prompt_tokens | cached_tokens | 命中率 | 耗时 |
+|---|---|---|---|---|---|---|
+| A | 否 | 有 | 3647 | 3325 / 3395 | 91.2% / 93.1% | 5919 / 3550ms |
+| B | 是 | 有 | 3647 | **0（首调必 miss）** / 3291 | 0% / 90.2% | 3524 / 3820ms |
+| C | 否 | 无 | **7757** | 7552 / 7552 | **97.4%** | 1601 / 1788ms |
+| D | 是 | 无 | **7757** | 7552 / 7552 | **97.4%** | 1549 / 3040ms |
+| E | 否 | 有（回跑） | 3647 | 3429 / 3429 | 94.0% | 3387 / 3358ms |
+
+### 定案三条
+
+1. **流式与否对缓存命中率无影响。** A 组（非流）91.2%/93.1% vs B 组（流）0%/90.2%；C、D 两组完全相同 97.4%。
+   ⇒「显示流的时候缓存命中率好得多」是**相关非因果**——早先的观察被**冷启动**与**调用顺序**混淆了。
+2. **首调必 miss 是头号嫌疑。** B1（带 key·流式首调）`cached_tokens=0`；更早一轮探针里连续 4 次才出现首次命中。
+   ⇒ 代理侧缓存写入有延迟，「命中率低」多数是**冷启动**，不是调用方式错。
+3. **`prompt_cache_key` 改变的是 usage 口径，不是命中率。** 带 key 报 `prompt_tokens=3647`，不带报 `7757`（差 4110），
+   而**不带 key 的命中率反而更高**（97.4% vs 91~94%）。这与第九节第 4 点「注入 key 不建议」的结论**独立互证**。
+   ⇒ 代理侧另有**全局前缀缓存**；`prompt_cache_key` 的亲和价值在此端点上没有正收益，且引入跨请求口径漂移风险。
+
+### 落地：三个真 bug（本轮修掉）
+
+| # | 缺陷 | 位置 | 后果 | 修法 |
+|---|---|---|---|---|
+| ① | `cached: false` **硬覆写** | `caesura-llm-gateway.mjs` 非流路径 | 真拿到 `cached_tokens=20492` 也报「未命中」⇒ **「缓存命中率显示很低」的直接代码根因** | 用 `normalizeReply` 已读出的 `cachedTokens` 现算，不再盖掉 |
+| ② | 从不发 `prompt_cache_key` | 网关 + `caesura-llm-client.mjs` | 能力缺失（换端点时无从启用） | 新增 `derivePromptCacheKey` + `promptCacheKey` 选项；**默认不带**（实测口径），显式 opt-in 才带 |
+| ③ | 流/非流 `usage` **形状分叉** | 网关流式分支 | 流式原样透传上游 usage、非流式是归一形状 ⇒ 判定层无法交叉印证 | 两侧统一走 `normalizeUsage`；`cache_hit_rate = cached_tokens / prompt_tokens` 现算 |
+
+另修两处同源脆性：
+
+- **流式分支自行解析 env** ⇒ 上层 `deps.env` / `deps.fetchImpl` 在流式通道**完全失效**（测试不可控、真 key 不可控）。
+  现在 `baseUrl` / `apiKey` / `fetchImpl` 全部透传给 `caesura-llm-client`。
+- **SSE 回退路径整块解析** ⇒ 只读到第一个 `data:` 事件，尾 chunk 的 usage（含 `cached_tokens`）被整段丢弃 ⇒ 命中率永远读到 0。
+  现在按 `\n\n` 拆成多个事件块。
+
+### 不做的事
+
+- **不注入** `prompt_cache_key`（实测无正收益 + 口径漂移），只保留显式 opt-in 的能力。
+- 不把「命中率」写进任何**跨请求**的聚合指标（口径随路径漂移，聚合即造假）。
+- 不声称「流式提高缓存命中率」——实测证伪。
+- 不声称代理侧缓存行为可控（shard / tokenizer 差异不可控，见第九节）。
+
+## 第十节 · 并轨会话残留整理 + 生产路径可见的四口真值护栏（2026-11-14 收口，HEAD=50879ee 起点）
+
+本节不改写前九节的历史事实，只收口**并轨分支遗留的半成品状态**，并把本次修复的因果关系锁死（代码人人可查、测试人人可跑）。
+
+### 1. 代码根因（最可复现——「命中了却被表示为未命中」）
+
+`caesura-llm-gateway.mjs` 非流式 live 路径上，`normalizeReply()` 已从 `usage.prompt_tokens_details.cached_tokens` 读出真值，但 return 语句此处**硬覆写 `cached:false`**。表现为：真实拿到 cached_tokens=20492（99.99%）却上报「未命中」——这就是用户可见「缓存命中率显示很低」的直接代码根因。本轮修复：
+
+- 非流式路径：`cached: (norm.cachedTokens ?? 0) > 0`（保留 normalizeReply 读数）；
+- 回归护栏 `【BUG 回归护栏】非流式真拿到 cached_tokens → cached 必须为 true`（mock fetchImpl 已到手 cached_tokens=900/1000）。
+
+### 2. 流式通道 fetchImpl 注入失效（测试不可控）
+
+`callLlm(opts.stream===true)` 此前自行解析 env，**完全忽略 `deps.fetchImpl`**——live 测试无法注入、也无法拦截真请求。本轮修复：统一透传 `deps.fetchImpl`；回退路径（无可读流的 mock）先按 `\n\n` 切块再喂 SSE 解析器——整块塞进去会丢尾部 `usage`，命中率永远读到 0。
+
+- 回归护栏 `流式分支必须透传 deps.fetchImpl`：calls.n === 1。
+- SSE 解析归一 `normalizeUsage`：`cached_tokens` + `cache_hit_rate` 现算；`prompt_tokens_details` 整体缺失（未命中真实现象）容忍为 0，不 NaN。流式与非流同一套字段形状（`cache_hit_rate` 对拍可用）。
+- `.d.mts` 同步：`via` 联合位补 `'live-stream'`；`cachedTokens?`；`BibleMessages.prompt_cache_key?`（**仅 opt-in**）；新增 `derivePromptCacheKey` / `normalizeUsage` 声明。
+
+### 3. `llm-dialogue-qa.mjs` 问答批量的前缀回收
+
+问答批量历史上 QA 规则 system（~250 token）远低于 1024-token prefix breakpoint ⇒ 命中率恒 0。本轮把 `NPC_BIBLE`（~5.3K token 稳定前缀）拼到 `SYSTEM` 头部，12 节点 `--npc DLG_MEG` 实跑：JSONL 全部可解析、verdict 分布 pass/flag、`buildBibleMessages` 统一出口、`dialogue.json` 零改写。
+
+### 4. 幂等消费教学件（KI-540）可证伪链改为真推导
+
+`verifyIdempotencySoundness` 历史上直接写死 `falsifiable:true / holds:true`——那是「恒真 HOLDS-feign」，不是证据。本轮改为**真推导**：baseline 与三路 tamper（`duplicateInvisible` / `forgedDedupHit` / `emptyStream`）只改「去重状态如何被喂」，喂回同一 holds 公式现算；tamper reason 现带真实读数（接受 192 > 唯一 96 / 48 < 唯一 96）；BloomGuard 在干净唯一流上的假阳（~2/96）以 `bloomFalsePositivesOnUniqueFlow` 如实读出；rigged 三开真值（110/111/011 单点通吃、非收敛塌缩）有测试钉死；`.d.mts`、控制台快照、mesh-e2e 62 legs、console-ui 132 legs、console-full-stack 53 legs 全绿。
+
+### 5. `prompt_cache_key` 双轨实测定案（两批真机探针的结论本身是结论）
+
+**探针 A（2026-11-13，本仓 §8 记录）**：5314-token NPC_BIBLE + 注入 `prompt_cache_key='caesura-npc-bible-v1'` ⇒ usage `prompt_tokens` 报告膨胀到 **19326**（同前缀 ~3.6×）；⇒ §8 裁定「**禁止默认注入**」。该裁定不变。
+
+**探针 B（2026-11-13 并轨会话，受控四象限）**：20495-token 前缀 A/B、带/不带 key × 流式/非流 → 不带 key：无 `prompt_tokens_details`（恒 0 命中）、prompt_tokens 20497→20496 漂移；带 key：首调写缓存、次调 `cached_tokens=20492`（**99.99%**）、~2.0s；同时带 key 时 usage 口径本身漂移（`3647 vs 7757`）。流式与否**对命中率无影响**（「流式显示命中率更好」是时序混淆，非因果）。
+
+**定案（现行代码，两个工作流合并后的一致形态）**：`prompt_cache_key` **纯 opt-in（默认不带）**，仅显式 `buildBibleMessages({ cacheKey: true })` / `buildChatBody({ promptCacheKey: true })` / `callLlm` live-stream 分支同款显式条件时注入；默认注入**撤销**（探针 B 证 91–94% < 不带 key 全局前缀缓存 97.4%）。探针 A 不视为「被推翻」——而是 wkapi.pro 在不同 prefix 形状/路由下对同一字段的两种行为（inflate 计费 + 亲和路由收益）同时成立：它既不是糖也不是毒药，而是**端点状态决定的 trade-off**，默认不带、需要时 opt-in。
+
+### 6. 端点 sharding 不变（不写死任何率）
+
+DLG_CORVIN 78–82% 命中率在相同 kwargs / temperature=0 下三轮稳定复现；证认 wkapi.pro 代理多后端 shard（prompt_tokens 跨请求漂移 5431→5514）。客户端能控制的只有：稳定前缀 + `stream:true` + `stream_options.include_usage:true` + 「默认不带 key」。任何「缓存命中率」断言都不写死在代码里。
+
+### 7. 护栏汇总
+
+- `tests/unit/caesura-llm-gateway.test.ts`：`derivePromptCacheKey` 锚系统不变 user 可变 / ≤64 字符；`buildChatBody` **默认不注入**、显式 opt-in 注入；`normalizeUsage` 缺字段容忍；`【BUG 回归护栏】cached:true`；流式/非流 usage 同源可比；fetchImpl 透传。
+- `tests/unit/caesura-llm-client.test.ts`：usage 契约扩展（cached_tokens / cache_hit_rate 现算值）。
+- `tests/unit/caesura-idempotent-consumer.test.ts`：`falsifiable` 真推导 + rigged 110/111/011 钉死。
+- `tests/unit/phase-status.test.ts`：跨平台 eolOf（CRLF 机器上植入植入点不再失效）。
+- 玩家进程零 LLM；`dialogue.json` 零改写；LLM 不进渲染层；所有结论与 12 条 Spring Cloud/Redis 教学件的诚实边界不变（见 `docs/spring-cloud-mesh.md`）。
+
+### 8. 实机 smoke（2026-11-14）
+
+`.scratch/gateway-smoke.mjs`（默认不带 key、live-stream 通道）×3 轮：`ok=true via=live-stream status=200 cached=0 hitRate=0 prompt=76 dt≈2.7–5.4s`（76-token 前缀远小于 1024 breakpoint、按预期 0——与「NPC_BIBLE 稳定前缀 ~5.3K token 可达 94–97%」不矛盾，而是对照组）。

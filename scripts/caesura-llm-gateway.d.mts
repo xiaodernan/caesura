@@ -22,12 +22,13 @@ export interface LlmReply {
   model: string
   content: string
   finishReason: string | null
-  usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number; cached_tokens?: number } | null
+  usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number; cached_tokens?: number; cache_hit_rate?: number; prompt_tokens_details?: { cached_tokens?: number } } | null
   latencyMs: number
-  via: 'offline-double' | 'live' | 'prompt-cache'
+  via: 'offline-double' | 'live' | 'live-stream' | 'prompt-cache'
   error?: string | null
   rawText?: string | null
   cached?: boolean
+  cachedTokens?: number
 }
 
 export interface PromptCache {
@@ -101,12 +102,23 @@ export interface GatewayCausalLocks {
 export function createPromptCache(opts?: { sizeCap?: number }): PromptCache
 export function resolveApiKey(env?: Record<string, string | undefined>): string
 export function normalizeBaseUrl(base?: string): string
-export function buildChatBody(messages: Array<{ role: string; content: string }>, opts?: { model?: string; temperature?: number; maxTokens?: number }): Record<string, unknown>
+/** 稳定前缀缓存键：锚在 system（逐字节稳定的文风总纲/NPC 圣经），不锚在每次都变的 user 正文上。 */
+export function derivePromptCacheKey(messages: Array<{ role?: string; content?: string }>, opts?: { promptCacheKey?: string | boolean }): string
+/** 统一 usage 形状：cached_tokens + cache_hit_rate 现算真值；未命中时容忍 prompt_tokens_details 整体缺失。 */
+export function normalizeUsage(u: unknown): {
+  prompt_tokens: number
+  completion_tokens: number
+  total_tokens: number
+  cached_tokens: number
+  cache_hit_rate: number
+  [k: string]: unknown
+} | null
+export function buildChatBody(messages: Array<{ role: string; content: string }>, opts?: { model?: string; temperature?: number; maxTokens?: number; promptCacheKey?: string | boolean; stream?: boolean }): Record<string, unknown>
 export function offlineReply(messages: Array<{ role: string; content: string }>, opts?: { seed?: number; model?: string }): LlmReply
 export function normalizeReply(status: number, json: unknown, rawText: string, opts?: { model?: string; latencyMs?: number }): LlmReply
 export function callLlm(
   messages: Array<{ role: string; content: string }>,
-  opts?: { mode?: string; model?: string; baseUrl?: string; temperature?: number; maxTokens?: number; seed?: number },
+  opts?: { mode?: string; model?: string; baseUrl?: string; temperature?: number; maxTokens?: number; seed?: number; stream?: boolean; promptCacheKey?: string | boolean },
   deps?: { env?: Record<string, string | undefined>; fetchImpl?: (...args: any[]) => Promise<any>; signal?: unknown; clock?: () => number },
 ): Promise<LlmReply>
 export function invokeBatch(

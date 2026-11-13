@@ -25,10 +25,14 @@
  * （精确+有界 ⇒ 状态必须外置共享 ⇒ 每条必付 RTT，本地化即失共享有界）；③ <code>inMemoryVolatilityCausallyUnerasable</code>
  * （精确+本地零 RTT ⇒ 状态驻进程 ⇒ 重启即丢·跨实例漏判）—— <code>causalLocksAllHold=true</code>。</p>
  *
- * <p><b>rigged 三开关</b>（诚实 collapse 探针，非有益参数）：`unboundedRam`（给 InMemory 无限内存→InMemory 看起来 edge 全赢）、
- * `zeroRttNetwork`（精 Redis 免费 RTT→只要 `RedisSetNx` 的成本被拉平）、 `collisionFreeBloom`（完美布隆哈希→BloomGuard 也精确），
- * 全开 ⇒ 向量收敛 <code>111/111/111</code> 之前存在区分度塌缩（<code>riggedConvergenceCollapsed=true</code>、<code>noStrategyWinsAll=false</code>），
- * 绝不硬造默认 111；单开只动所属策略。</p>
+ * <p><b>rigged 三开关</b>（诚实 collapse 探针，非有益参数）：`unboundedRam`（给 InMemory 无限内存→OOM 归零）、
+ * `zeroRttNetwork`（精 Redis 免费 RTT→RedisSetNx 的 lowOverhead 位被补上）、`collisionFreeBloom`（完美布隆哈希→BloomGuard 假阳归零）。
+ * <b>全开真值（运行时现算，勿凭注释猜）</b>：向量 <code>110/111/011</code> —— 只有 <code>RedisSetNx</code> 因免费 RTT **单点通吃**升到 111；
+ * <code>InMemoryDedupSet</code> 仍 110（无限内存救不了「重启即丢」——durableBounded 是结构缺失，不是资源不足）；
+ * <code>BloomGuard</code> 仍 011（无碰撞布隆只删假阳，补不了 exactDedup 的结构缺失——布隆按设计就不是精确集合）。
+ * 于是 <code>noStrategyWinsAll=false</code>（确有单点通吃）、<code>trilemmaDistinguishes=true</code>（三向量仍互异）、
+ * <code>riggedConvergenceCollapsed=false</code>（<b>不是</b>多策略收敛到同一向量，而是单策略独自升 111 ⇒ 不构成区分度塌缩）。
+ * 单开只动所属策略；默认向量恒为 <code>110/101/011</code>，绝不硬造 111。</p>
  *
  * <p><b>命中「消息队列合理运用 / Redis 运用 / 缓存合理运用 / 数据结构与算法（哈希·布隆·TTL·误判率 ε · 位图）/ 计网（RTT× 网络代价）/ 数据库性能（唯一键对照）/ 前端美观 / 前后端协同」多维</b></p>
  *
@@ -411,57 +415,117 @@ export function idempotentConsumerSnapshot(study) {
  * 路 A 路子 唯一流三策略全接受（dedup-set size == 唯一消息数）；
  * 路 B atLeastOnce 真实手动验证：精确策略必拒重复、Bloom 暴露真误判。
  */
-export function verifyIdempotencySoundness(input = {}, opts = {}) {
+/**
+ * 幂等内核（**唯一 holds 公式**）：baseline 与三路 tamper **只改「去重状态如何被喂」**，
+ * 其余判定公式逐字共用 ⇒ tamper 真改变内核行为、喂回同一 holds 现算，绝不写死。
+ *
+ * tamper 三路（真实内核注入，不是纸面声明）：
+ *   ① duplicateInvisible：每条消息前把去重状态清空 ⇒ 重投被当新消息二次消费（接受数 > 唯一数）。
+ *   ② forgedDedupHit：先把**从未作为新消息出现过的**唯一 id 伪造进去重表 ⇒ 合法新消息被吞（接受数 < 唯一数）。
+ *   ③ emptyStream：空事件流 ⇒ nontrivial=false（绝不 0=0 假绿）。
+ */
+function idempotencyCore(input = {}, opts = {}, tamper = 'normal') {
   const events = Array.isArray(input?.events) ? input.events : []
   const seed = intOr(input?.seed ?? opts?.seed, IDEMPOTENT_DEFAULTS.seed)
   const messages = intOr(opts?.messages, IDEMPOTENT_DEFAULTS.messages)
   const nontrivial = events.length >= 16
 
-  // 路 A：unique stream — all accept
+  // 路 A：唯一流三策略全接受（Bloom 在干净唯一流上同样全接受——空位图无假阳）。
   const consistent = msgStreamOf('consistentStream', { seed, messages })
-  const m1 = createInMemoryDedupSet({})
   const r1 = flushStream('InMemoryDedupSet', { seed, messages }, 'consistentStream')
-  const m2 = createRedisSetNx({})
   const r2 = flushStream('RedisSetNx', { seed, messages }, 'consistentStream')
-  const m3 = createBloomGuard({})
   const r3 = flushStream('BloomGuard', { seed, messages }, 'consistentStream')
+  // 路 A 只对**精确策略**断言「唯一流零误杀」（InMemory / Redis）；
+  // Bloom 是概率结构，在**干净唯一流**上就可能假阳（实测 96 条唯一消息吃掉 2 条 ⇒ 94/96）——
+  // 把它当硬性条件等于要求布隆变成精确集合，属结构性错误。损耗如实读出，供判词与前端诚实展示。
   const laneAOk = r1.exact === consistent.length && r2.exact === consistent.length
+  const bloomFalsePositivesOnUniqueFlow = consistent.length - r3.exact
 
-  // 路 B：at-least-once 重投流 — exact 真拒（InMemory/Redis），Bloom 暴露真假
+  // 路 B：at-least-once 重投流——精确策略真拒重复，Bloom 暴露真误判。
   const alredelivery = events.length ? events : msgStreamOf('atLeastOnceRedelivery', { seed, messages })
-  const laneIn = createInMemoryDedupSet({})
-  let seenBytes = 0
-  for (const e of alredelivery) {
-    const r = laneIn.add(e.id)
-    if (r.added) seenBytes += 1
+  const mem = createInMemoryDedupSet({})
+  const redis = createRedisSetNx({})
+  const bloom = createBloomGuard({})
+  // ② 伪造 redelivered 记录：把一半**唯一** id 提前标记为「已消费」⇒ 它们被真吞掉。
+  if (tamper === 'forgedDedupHit') {
+    const uniq = [...new Set(alredelivery.map((e) => e.id))]
+    for (const id of uniq.filter((_, i) => i % 2 === 0)) {
+      mem.add(id); redis.add(id); bloom.add(id)
+    }
   }
-  const laneRedis = createRedisSetNx({})
-  let rid = 0
+  let memAccepted = 0, redisAccepted = 0, bloomAccepted = 0
   for (const e of alredelivery) {
-    const r = laneRedis.add(e.id)
-    if (r.ok) rid += 1
-  }
-  const laneBloom = createBloomGuard({})
-  let blm = 0
-  for (const e of alredelivery) {
-    if (!laneBloom.has(e.id)) { laneBloom.add(e.id); blm += 1 }
+    // ① 去重状态每条消息重置 ⇒ 重投被当新消息二次消费。
+    if (tamper === 'duplicateInvisible') { mem.clear(); redis.clear(); bloom.clear() }
+    const rm = mem.add(e.id)
+    if (rm.added) memAccepted += 1
+    const rr = redis.add(e.id)
+    if (rr.ok) redisAccepted += 1
+    if (!bloom.has(e.id)) { bloom.add(e.id); bloomAccepted += 1 }
   }
   const uniqueCount = new Set(alredelivery.map((e) => e.id)).size
-  const laneBOk = seenBytes === uniqueCount && rid === uniqueCount && blm <= uniqueCount
-
+  const laneBOk = memAccepted === uniqueCount && redisAccepted === uniqueCount && bloomAccepted <= uniqueCount
   const holds = nontrivial && laneAOk && laneBOk
   return {
-    laneA: { consistentAcceptedInMemory: r1.exact, consistentAcceptedRedis: r2.exact, unique: consistent.length },
-    laneB: { atLeastOnceAcceptedInMemory: seenBytes, atLeastOnceAcceptedRedis: rid, atLeastOnceAcceptedBloom: blm, unique: uniqueCount },
+    laneA: {
+      consistentAcceptedInMemory: r1.exact,
+      consistentAcceptedRedis: r2.exact,
+      consistentAcceptedBloom: r3.exact,
+      /** 布隆在干净唯一流上的假阳损耗（实测 2/96）——概率结构的诚实读数，不是事故。 */
+      bloomFalsePositivesOnUniqueFlow,
+      unique: consistent.length,
+    },
+    laneB: {
+      atLeastOnceAcceptedInMemory: memAccepted,
+      atLeastOnceAcceptedRedis: redisAccepted,
+      atLeastOnceAcceptedBloom: bloomAccepted,
+      unique: uniqueCount,
+    },
     holds,
     nontrivial,
-    falsifiable: true,
-    tamper: {
-      duplicateInvisible: { holds: false, reason: 'duplicateInvisible：重投当新消息喂回 ⇒ 真二次消费 ⇒ holds 真翻 false' },
-      forgedDedupHit: { holds: false, reason: 'forgedDedupHit：全新唯一消息被伪造 redelivered 记录 ⇒ 吞合法新消息 ⇒ holds 真翻 false' },
-      emptyStream: { holds: false, reason: '空消息流 ⇒ nontrivial=false，绝不 0=0 假绿' },
-    },
     events: events.length,
+  }
+}
+
+/**
+ * verifyIdempotencySoundness：双路自证 + 三路可证伪。
+ * baseline 先真绿；三路 tamper 真改变内核输入（去重状态如何被喂）后**喂回同一 holds 公式现算**，
+ * 于是 falsifiable = baselineHolds && 三路 tamper.holds 全 false —— **真推导，绝不写死**。
+ */
+export function verifyIdempotencySoundness(input = {}, opts = {}) {
+  const baseline = idempotencyCore(input, opts, 'normal')
+  const duplicateInvisible = idempotencyCore(input, opts, 'duplicateInvisible')
+  const forgedDedupHit = idempotencyCore(input, opts, 'forgedDedupHit')
+  const emptyStream = idempotencyCore({ ...input, events: [] }, opts, 'normal')
+  const baselineHolds = baseline.holds
+  const falsifiable = baselineHolds && !duplicateInvisible.holds && !forgedDedupHit.holds && !emptyStream.holds
+  const holds = baselineHolds && falsifiable
+  return {
+    laneA: baseline.laneA,
+    laneB: baseline.laneB,
+    baselineHolds,
+    holds,
+    nontrivial: baseline.nontrivial,
+    falsifiable,
+    tamper: {
+      duplicateInvisible: {
+        holds: duplicateInvisible.holds,
+        reason: 'duplicateInvisible：去重状态每条消息重置 ⇒ 重投当新消息二次消费（接受 ' +
+          duplicateInvisible.laneB.atLeastOnceAcceptedInMemory + ' > 唯一 ' + duplicateInvisible.laneB.unique +
+          '）⇒ holds 真翻 false',
+      },
+      forgedDedupHit: {
+        holds: forgedDedupHit.holds,
+        reason: 'forgedDedupHit：全新唯一消息被伪造 redelivered 记录 ⇒ 合法新消息被吞（接受 ' +
+          forgedDedupHit.laneB.atLeastOnceAcceptedInMemory + ' < 唯一 ' + forgedDedupHit.laneB.unique +
+          '）⇒ holds 真翻 false',
+      },
+      emptyStream: {
+        holds: emptyStream.holds,
+        reason: '空消息流 ⇒ nontrivial=false，绝不 0=0 假绿',
+      },
+    },
+    events: baseline.events,
   }
 }
 

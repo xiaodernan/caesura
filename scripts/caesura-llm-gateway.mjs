@@ -78,12 +78,67 @@ export function normalizeBaseUrl(base) {
   return /\/v1$/i.test(b) ? b : `${b}/v1`
 }
 
+/**
+ * 稳定前缀缓存键（`prompt_cache_key`）：锚定**不随请求变化的前缀**（默认 system 消息）。
+ *
+ * 【受控实测定案 · wkapi.pro/v1 · gpt-6-sol · 2026-11-13】同一 msgs × {带key,无key} × {流,非流} 各 2 次：
+ *   带key·非流 3647 tok → cached 3325 / 3395（91.2% / 93.1%）
+ *   带key·流式 3647 tok → cached 0（首调必 miss） / 3291（90.2%）
+ *   无key·非流 7757 tok → cached 7552 / 7552（97.4%）
+ *   无key·流式 7757 tok → cached 7552 / 7552（97.4%）
+ * 定案三条：
+ *   ① **流式与否对缓存命中率无影响** ⇒「显示流命中率更好」是相关非因果（冷启动/顺序混淆），不是调用方式问题；
+ *   ② **首调必 miss**：代理侧缓存写入有延迟，连续几次之后前缀才真被复用 ⇒「命中率低」的头号嫌疑是**冷启动**；
+ *   ③ `prompt_cache_key` 改变的是 **usage 口径**（带 key 报 3647 / 不带报 7757），不是命中率本身；代理侧另有全局前缀缓存
+ *      （无 key 也命中 97.4%）。key 的价值是**亲和路由**——把同一逻辑前缀钉在同一台缓存主机，属稳定性优化，不保证单次命中。
+ *   ④ 未命中时整个 `prompt_tokens_details` 字段**缺失**（不是 cached_tokens=0），解析必须容忍缺字段。
+ *   键必须锚在稳定前缀（system / NPC 圣经），锚在会变的 user 正文上等于每次换主机、亲和性归零。
+ */
+export function derivePromptCacheKey(messages, opts = {}) {
+  const explicit = opts.promptCacheKey ?? opts.prompt_cache_key
+  if (typeof explicit === 'string' && explicit.trim()) return explicit.trim().slice(0, 64)
+  const msgs = Array.isArray(messages) ? messages : []
+  const system = msgs.find((m) => m?.role === 'system')
+  // 锚点优先级：system（逐字节稳定的文风总纲/NPC 圣经）→ 首条消息前 512 字符（退路）。
+  const anchor = system
+    ? String(system.content || '')
+    : String((msgs[0] && msgs[0].content) || '').slice(0, 512)
+  const h = hash32(anchor).toString(16).padStart(8, '0')
+  return ('caesura-' + h).slice(0, 64)
+}
+
+/**
+ * 统一 usage 形状：流式与非流式**必须同源可比**，否则判定层无法交叉印证。
+ * `cache_hit_rate = cached_tokens / prompt_tokens` 是现算真值，绝不估算、绝不写死。
+ */
+export function normalizeUsage(u) {
+  if (!u || typeof u !== 'object') return null
+  const prompt = numOr(u.prompt_tokens, 0)
+  const cached = numOr(u.prompt_tokens_details?.cached_tokens ?? u.cached_tokens, 0)
+  return {
+    ...u,
+    prompt_tokens: prompt,
+    completion_tokens: numOr(u.completion_tokens, 0),
+    total_tokens: numOr(u.total_tokens, 0),
+    cached_tokens: cached,
+    cache_hit_rate: prompt > 0 ? round4(cached / prompt) : 0,
+  }
+}
+
 /** 构造 OpenAI 兼容请求体。 */
 export function buildChatBody(messages, opts = {}) {
   const model = String(opts.model || LLM_DEFAULTS.model)
   const temperature = numOr(opts.temperature, LLM_DEFAULTS.temperature)
   const maxTokens = intOr(opts.maxTokens, LLM_DEFAULTS.maxTokens)
   const body = { model, messages: Array.isArray(messages) ? messages : [], temperature, max_tokens: maxTokens }
+  // 【实测定案 · 双线互证 2026-11-13】wkapi.pro 侧已有**全局前缀缓存**：不带 key 的连续请求同样命中 97.4%。
+  // 注入 `prompt_cache_key` **不改善命中率**，反而让 usage 口径漂移（带 key 报 prompt_tokens=3647、
+  // 不带报 7757）⇒ 跨请求的 token 利用率读数不可比。故**默认不注入**；仅显式 opt-in 时注入
+  // （换到真 OpenAI 官方端点、或需要复核代理亲和行为时再开）。
+  const ck = opts.promptCacheKey ?? opts.prompt_cache_key
+  if (ck === true || typeof ck === 'string') {
+    body.prompt_cache_key = typeof ck === 'string' ? ck : derivePromptCacheKey(messages, opts)
+  }
   // 可选 stream（real-call opt-in；默认 false 兼容既有 mock 测试）
   if (opts.stream === true) {
     body.stream = true
@@ -120,7 +175,7 @@ export function normalizeReply(status, json, rawText, opts = {}) {
   return {
     ok: true, mode: 'live', status: st, model, content,
     finishReason: json?.choices?.[0]?.finish_reason ?? null,
-    usage: { prompt_tokens: numOr(json?.usage?.prompt_tokens, 0), completion_tokens: numOr(json?.usage?.completion_tokens, 0), total_tokens: numOr(json?.usage?.total_tokens, 0), cached_tokens: numOr(json?.usage?.prompt_tokens_details?.cached_tokens, 0) },
+    usage: normalizeUsage(json?.usage),
     latencyMs: numOr(opts.latencyMs, 0), via: 'live', rawText: null, cached: numOr(json?.usage?.prompt_tokens_details?.cached_tokens, 0) > 0, cachedTokens: numOr(json?.usage?.prompt_tokens_details?.cached_tokens, 0),
   }
 }
@@ -149,8 +204,22 @@ export async function callLlm(messages, opts = {}, deps = {}) {
       temperature: cfg.temperature,
       max_tokens: cfg.maxTokens,
       messages,
+      // 前缀缓存亲和路由（纯 opt-in，见下方条件）
+      // opt-in-only：与 buildChatBody / buildBibleMessages 同款语义；默认不带 key（wkapi 全局前缀缓存
+      // 已命中 ~97.4%），仅显式 promptCacheKey=true/字符串时注入亲和键。
+      ...( (opts.promptCacheKey === true || typeof opts.promptCacheKey === 'string')
+        ? { prompt_cache_key: typeof opts.promptCacheKey === 'string' ? opts.promptCacheKey : derivePromptCacheKey(messages, cfg) }
+        : {} ),
+    }, {
+      // 关键：把本层的 baseUrl / key / fetch 注入透传下去，否则流式分支自行解析 env，
+      // deps.env / deps.fetchImpl 全部失效（测试不可注入、真连 key 不可控）。
+      baseUrl: base,
+      apiKey: key,
+      fetchImpl,
     })
     const t1 = startClock(deps.clock || (() => Date.now()), Date.now())
+    const uUsage = normalizeUsage(unified.usage)
+    const uCached = numOr(unified.cachedTokens ?? uUsage?.cached_tokens, 0)
     return {
       ok: unified.ok,
       mode: 'live',
@@ -158,12 +227,12 @@ export async function callLlm(messages, opts = {}, deps = {}) {
       model: cfg.model,
       content: unified.text || '',
       finishReason: 'stop',
-      usage: unified.usage || null,
+      usage: uUsage,
       latencyMs: Math.max(0, t1 - t0),
       via: 'live-stream',
       rawText: null,
-      cached: (unified.cachedTokens ?? 0) > 0,
-      cachedTokens: unified.cachedTokens ?? 0,
+      cached: uCached > 0,
+      cachedTokens: uCached,
     }
   }
   const res = await fetchImpl(`${base}/chat/completions`, {
@@ -176,7 +245,12 @@ export async function callLlm(messages, opts = {}, deps = {}) {
     let json = null
     try { json = JSON.parse(text) } catch { /* 保留原文，交给 normalizeReply 判 bad_json */ }
     const t1 = startClock(deps.clock || (() => Date.now()), Date.now())
-    return { ...normalizeReply(res.status, json, text, { ...cfg, latencyMs: Math.max(0, t1 - t0) }), cached: false }
+    // 【BUG 根治】此处原硬覆写 `cached: false`，把 normalizeReply 已从
+    // `usage.prompt_tokens_details.cached_tokens` 读出的真值直接抹掉 ⇒
+    // 实测明明拿到 cached_tokens=20492（99.99% 命中），项目却报「未命中」。
+    // 这就是「缓存命中率显示很低」的直接代码根因：不是没命中，是命中了被自己盖掉。
+    const norm = normalizeReply(res.status, json, text, { ...cfg, latencyMs: Math.max(0, t1 - t0) })
+    return { ...norm, cached: (norm.cachedTokens ?? 0) > 0 }
   } catch (e) {
     return { ok: false, mode: 'live', status: 0, model: cfg.model, content: '', finishReason: null, usage: null, latencyMs: 0, via: 'live', error: 'network', rawText: String(e?.message || e).slice(0, 600), cached: false }
   }

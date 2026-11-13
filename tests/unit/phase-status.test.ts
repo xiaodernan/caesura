@@ -158,7 +158,8 @@ describe('PHASE-STATUS：机读区之外不许有第二份计数（KI-438）', (
     expect(keys.length, `现读名册只 ${keys.length} 枚 KEY = 取数工具读空了`).toBeGreaterThan(15)
     const doc = readDoc()
     // 插在 END 锚**之后**：插进两根锚之间就落回机器块，那一块本来就不属于这一族的总体
-    const planted = doc.replace(`${END}\n`, `${END}\n| KI.rows | 343 | 手抄快照 |\n`)
+    const eol = eolOf(doc)
+    const planted = doc.replace(`${END}${eol}`, `${END}${eol}| KI.rows | 343 | 手抄快照 |${eol}`)
     expect(planted, '植入没生效（END 锚的写法变了）').not.toBe(doc)
     const hits = keyNumberHits(proseLines(planted), keys)
     expect(hits.length, '植入一行快照表却一个都没抓到 ⇒ 这一族在空转').toBeGreaterThan(0)
@@ -192,8 +193,9 @@ describe('PHASE-STATUS：机读区之外不许有第二份计数（KI-438）', (
     const noOwner = (text: string) =>
       proseLines(text).filter((r) => COUNT_SHAPE.test(r.line) && !citedId(r.line).some((id) => ledgerIds.has(id))).length
     const doc = readDoc()
-    const orphan = doc.replace(`${END}\n`, `${END}\n正文里顺手写了 999 条读数。\n`)
-    const owned = doc.replace(`${END}\n`, `${END}\nKI-408 那批升级共 999 条。\n`)
+    const eol = eolOf(doc)
+    const orphan = doc.replace(`${END}${eol}`, `${END}${eol}正文里顺手写了 999 条读数。${eol}`)
+    const owned = doc.replace(`${END}${eol}`, `${END}${eol}KI-408 那批升级共 999 条。${eol}`)
     expect(orphan, '植入没生效（END 锚的写法变了）').not.toBe(doc)
     expect(owned, '植入没生效（END 锚的写法变了）').not.toBe(doc)
     expect(noOwner(orphan), '植入的无主计数句没被抓到').toBe(unattributed.length + 1)

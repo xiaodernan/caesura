@@ -172,4 +172,40 @@ describe('caesura-idempotent-consumer（KI-540）', () => {
     expect(s.crosscheck.soundness.holds).toBe(true)
     expect(s.causalLocks.causalLocksAllHold).toBe(true)
   })
+  it('【可证伪护栏】falsifiable 必须真推导：baselineHolds=true 且三路 tamper 全 false（绝不写死）', () => {
+    const events = [
+      ...Array.from({ length: 96 }, (_, i) => ({ id: `m:540:${i}`, payload: 'p' })),
+      ...Array.from({ length: 96 }, (_, i) => ({ id: `m:540:${i}`, payload: 'p' })),
+    ]
+    const r = verifyIdempotencySoundness({ events, seed: 540 }, { seed: 540 })
+    expect(r.baselineHolds).toBe(true)
+    expect(r.falsifiable).toBe(true)
+    expect(r.holds).toBe(true)
+    expect(r.tamper.duplicateInvisible.holds).toBe(false)
+    expect(r.tamper.forgedDedupHit.holds).toBe(false)
+    expect(r.tamper.emptyStream.holds).toBe(false)
+    // tamper 的 false 必须是**现算**出来的（读数自证），不能是写死常量：
+    expect(r.tamper.duplicateInvisible.reason).toContain('192')
+    expect(r.tamper.forgedDedupHit.reason).toContain('48')
+  })
+
+  it('布隆在干净唯一流上就真假阳（概率结构的诚实读数，不是事故）', () => {
+    const events = Array.from({ length: 96 }, (_, i) => ({ id: `m:540:${i}`, payload: 'p' }))
+    const r = verifyIdempotencySoundness({ events, seed: 540 }, { seed: 540 })
+    // 精确策略在唯一流上零误杀。
+    expect(r.laneA.consistentAcceptedInMemory).toBe(r.laneA.unique)
+    expect(r.laneA.consistentAcceptedRedis).toBe(r.laneA.unique)
+    // 布隆按设计就不是精确集合 ⇒ 唯一流上也有假阳损耗（实测 2/96），如实读出而非藏起来。
+    expect(r.laneA.bloomFalsePositivesOnUniqueFlow).toBeGreaterThan(0)
+    expect(r.laneA.consistentAcceptedBloom).toBeLessThan(r.laneA.unique)
+  })
+
+  it('rigged 全开真值钉死：110/111/011 单点通吃，**不是**收敛塌缩', () => {
+    const s = idempotentConsumerStudy({ rigged: true })
+    expect(s.vectors).toEqual({ InMemoryDedupSet: '110', RedisSetNx: '111', BloomGuard: '011' })
+    expect(s.verdict.noStrategyWinsAll).toBe(false)
+    expect(s.verdict.trilemmaDistinguishes).toBe(true)
+    // 关键护栏：单点通吃 ≠ 区分度塌缩（KI-539 同款「注释与真值相反」陷阱的同族防线）。
+    expect(s.verdict.riggedConvergenceCollapsed).toBe(false)
+  })
 })

@@ -26,7 +26,7 @@ import { pathToFileURL } from 'node:url'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { authorLlmEnv } from './caesura-author-env.mjs'
-import { callLlm, buildBibleMessages } from './caesura-llm-client.mjs'
+import { callLlm, buildBibleMessages, NPC_BIBLE } from './caesura-llm-client.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const AUTHOR = authorLlmEnv()
@@ -46,7 +46,7 @@ const isCliInvocation = !!process.argv[1] && import.meta.url === pathToFileURL(p
 const RAW = JSON.parse(readFileSync(new URL('../src/data/json/dialogue.json', import.meta.url), 'utf8'))
 const CONVS = Array.isArray(RAW) ? RAW : Object.values(RAW)
 
-const SYSTEM = `你是 CAESURA《止音纪元》的文风审稿人。判断每段对白是否符合：
+const SYSTEM = `${NPC_BIBLE}\n\n你是 CAESURA《止音纪元》的文风审稿人。判断每段对白是否符合：
 
 - 文风总纲：克制的、声学隐喻的诗意。人物说话像敲钟——余音比敲击重要。
 - 禁止翻译腔（“哦，朋友”“我以……起誓”“听着，伙计”之类一律不合格）。
