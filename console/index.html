@@ -879,6 +879,24 @@
     </article>
   </section>
 
+  <!-- 第四十八维 · Redis Stream/PubSub/PersistentQueue 三策略（KI-553） -->
+  <section class="row row-xst">
+    <article class="panel panel-xst">
+      <div class="panel-head"><h2>第四十八维 · PubSub / PersistentQueue / StreamLog —— Redis Stream 三策略</h2><span class="hint">PubSub=010（fire-and-forget·订阅广播·无持久化无 replay）；PersistentQueue=100（RPUSH+BLPOP·可幂等重放 flag=on·无 fanout）；StreamLog=110（XADD+XREADGROUP+XACK 持久化·consumerDisaster 期间 XACK 未完成→ XPENDING 立刻可见）——默认向量 010/100/110，无一赢得 111</span></div>
+      <div class="xst-matrix" id="xst-matrix"></div>
+      <div class="xst-ladder" id="xst-ladder"></div>
+      <p class="note" id="xst-matrix-note">…</p>
+    </article>
+    <article class="panel panel-xst">
+      <div class="panel-head"><h2>Redis Stream 三维向量（durable · fanout · replayable）· 双路自证 + 三路篡改 + 因果锁</h2><span class="hint">PubSub=010 / PersistentQueue=100 / StreamLog=110 · 互补三路 · verifyRedisStreamSoundness 双路自证（lane A PersistentQueue vs lane B StreamLog）；tamper 三通：pubSubNotDurable（fire-and-forget 断线必漏）/ listNoXackFlow（RPUSH+BLPOP 不记 ack·断线静默丢失）/ streamCapDiscard（XADD MAXLEN 触发 trim·XPENDING 也救不回来）真喂回 hold=false；十一件 21 物证 compareRemapping/ShardRouter/HashRing/WAL/Bus/Redis/Pool/Bucket/MinHeap/PackedCounters/FullJitter Backoff）</span></div>
+      <div class="xst-trilemma" id="xst-trilemma"></div>
+      <div class="xst-verif" id="xst-verif"></div>
+      <div class="xst-crosscheck" id="xst-crosscheck"></div>
+      <div class="xst-probes" id="xst-probes"></div>
+      <p class="note" id="xst-trilemma-note">…</p>
+    </article>
+  </section>
+
 </main>
 
 <footer class="footer">

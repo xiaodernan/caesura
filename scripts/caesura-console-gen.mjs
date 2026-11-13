@@ -62,6 +62,7 @@ import { redisPipelineStudy, redisPipelineSnapshot } from './caesura-redis-pipel
 import { gatewayRetryStudy, gatewayRetrySnapshot } from './caesura-gateway-retry.mjs'
 import { springConsulStudy, springConsulSnapshot } from './caesura-spring-consul-kv.mjs'
 import { redisHaStudy, redisHaSnapshot } from './caesura-redis-ha.mjs'
+import { redisStreamStudy, redisStreamSnapshot } from './caesura-redis-stream.mjs'
 import { traceSamplingStudy, traceSamplingSnapshot } from './caesura-trace-sampling.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
@@ -414,7 +415,9 @@ export async function buildSystems(opts = {}) {
   const springConsul = opts.springConsul === false ? null : await buildSpringConsulReading(opts, now)
   // KI-552：Redis 高可用三策略教学件（Sentinel/SyncPair/Cluster + verifyRedisHaSoundness 双路自证 + 十一件 21 物证）
   const redisHa = opts.redisHa === false ? null : await buildRedisHaReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, priorityQueue, batchStreamJoin, cdcOutboxJoin, springStreamBinding, springFeign, springConfig, springBus, redisPipeline, gatewayRetry, springConsul, redisHa, builtAt: now() }
+  // KI-553：Redis Stream 三策略教学件（PubSub/PersistentQueue/StreamLog + verifyRedisStreamSoundness 双路自证 + 十一件 21 物证）
+  const redisStream = opts.redisStream === false ? null : await buildRedisStreamReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, priorityQueue, batchStreamJoin, cdcOutboxJoin, springStreamBinding, springFeign, springConfig, springBus, redisPipeline, gatewayRetry, springConsul, redisHa, redisStream, builtAt: now() }
 }
 
 /**
@@ -544,6 +547,29 @@ export async function buildSpringFeignReading(opts, now) {
     return springFeignSnapshot(s)
   } catch (e) {
     return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
+ * KI-553：Redis Stream 三策略教学件（PubSub / PersistentQueue / StreamLog + verifyRedisStreamSoundness 双路自证 + 十一件 21 物证）。
+ * 失败返回 null；CLI 双点一律。rigged 组合 collapse 三旗。
+ * @param {object} opts { redisStream?:false, xstSeed?, xstMessages?, xstFreeDurability?, xstFreeReplay?, xstFreeCap?, xstRigged? }
+ * @param {()=>number} now 时间母版，builtAt 盖记值。
+ */
+export async function buildRedisStreamReading(opts, now) {
+  try {
+    const s = await redisStreamStudy({
+      now,
+      ...(opts.xstSeed ? { seed: Math.max(0, Math.floor(Number(opts.xstSeed))) } : {}),
+      ...(opts.xstMessages ? { messages: Math.max(16, Math.floor(Number(opts.xstMessages))) } : {}),
+      ...(opts.xstFreeDurability === true ? { freeDurability: true } : {}),
+      ...(opts.xstFreeReplay === true ? { freeReplay: true } : {}),
+      ...(opts.xstFreeCap === true ? { freeCap: true } : {}),
+      ...(opts.xstRigged === true ? { rigged: true } : {}),
+    })
+    return redisStreamSnapshot(s)
+  } catch (e) {
+    return null
   }
 }
 

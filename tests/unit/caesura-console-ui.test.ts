@@ -3049,3 +3049,47 @@ describe('KI-552 Redis 高可用 · Sentinel / SyncPair / Cluster（rea 霸）',
     })
   })
 })
+
+// ============ KI-553 Redis Stream/PubSub/PersistentQueue 三策略 · xst 霸 ============
+describe('KI-553 Redis Stream 三策略 · PubSub / PersistentQueue / StreamLog（xst 霸）', () => {
+  const realXst = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+  it('第四十八维 markup/CSS 面板渲染：xst 矩阵 12 cell + 向量 010/100/110 + 状态角标 + ladder 条', async () => {
+    const dom = await runApp(realXst)
+    const matrix = dom.els['xst-matrix'].innerHTML
+    expect(matrix).toContain('xst-mat-head')
+    for (const p of ['PubSub', 'PersistentQueue', 'StreamLog']) {
+      expect(matrix).toContain('data-strategy="' + p + '"')
+    }
+    for (const sc of ['cleanSteadyState', 'burstOverload', 'consumerDisaster', 'cleanRerun']) {
+      expect(matrix).toContain('data-s="' + sc + '"')
+    }
+    expect((matrix.match(/class="xst-cell /g) || []).length).toBe(12)
+    const tri = dom.els['xst-trilemma'].innerHTML
+    expect(tri).toContain('data-vec="010"')
+    expect(tri).toContain('data-vec="100"')
+    expect(tri).toContain('data-vec="110"')
+    expect(dom.els['xst-ladder'].innerHTML).toContain('xst-bar')
+  })
+
+  it('xst markup/CSS 同源 + systems.redisStream 缺失时降级分支可见', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-xst')
+    expect(html).toContain('id="xst-matrix"')
+    expect(html).toContain('id="xst-verif"')
+    expect(html).toContain('PubSub=010 / PersistentQueue=100 / StreamLog=110')
+    expect(css).toContain('.xst-cell.pubsub')
+    expect(css).toContain('.xst-cell.queue')
+    expect(css).toContain('.xst-cell.stream')
+    expect(css).toContain('.xst-flag.yes')
+    expect(css).toContain('.xst-bar > i')
+    expect(css).toContain('.xst-verif')
+    const noXst = JSON.parse(JSON.stringify(realXst as any))
+    noXst.systems.redisStream = null
+    return runApp(noXst).then((dom2: any) => {
+      expect(dom2.els['xst-matrix'].innerHTML).toContain('缺失')
+      expect(dom2.els['xst-trilemma'].innerHTML).toContain('缺失')
+      expect(dom2.els['xst-matrix-note'].textContent).toContain('systems.redisStream 缺失')
+    })
+  })
+})

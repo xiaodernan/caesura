@@ -746,6 +746,27 @@ export function runMeshE2E(opts?: any): {
       causalLocks: { pipelineWriteFriendlyCausallyUnerasable: boolean; stubNoNetworkCausallyUnerasable: boolean; blockingPipelineAtomicityCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
       crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
     } | null
+    /** KI-553：Redis Stream 三策略教学件（PubSub=010 / PersistentQueue=100 / StreamLog=110）——缺省 redisStream 为 null */
+    redisStreamSnapshot: {
+      config: Record<string, any>
+      rows: Array<{
+        protocol: string
+        scenarios: Array<{
+          id: string; messages: number; processed: number
+          durable: boolean; fanout: boolean; replayable: boolean; fault: string
+        }>
+        trilemma: { durable: boolean; fanout: boolean; replayable: boolean }
+        metrics: { totalProcessed: number; totalMessages: number }
+      }>
+      vectors: Record<string, string>
+      noUniversalWinner: boolean
+      trilemmaDistinguishes: boolean
+      builtAt: number
+      rigged: boolean
+      verdict: Record<string, any>
+      causalLocks: { pubSubEphemeralCausallyUnerasable: boolean; listNoAckCausallyUnerasable: boolean; streamEntryCapCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
+      crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+    } | null
     /** KI-552：Redis 高可用三策略教学件（Sentinel=100 / SyncPair=010 / Cluster=101）——缺省 redisHa 为 null */
     redisHaSnapshot: {
       config: Record<string, any>

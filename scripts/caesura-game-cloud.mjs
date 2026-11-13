@@ -65,6 +65,7 @@ import { redisPipelineStudy, redisPipelineSnapshot } from './caesura-redis-pipel
 import { gatewayRetryStudy, gatewayRetrySnapshot } from './caesura-gateway-retry.mjs'
 import { springConsulStudy, springConsulSnapshot } from './caesura-spring-consul-kv.mjs'
 import { redisHaStudy, redisHaSnapshot } from './caesura-redis-ha.mjs'
+import { redisStreamStudy, redisStreamSnapshot } from './caesura-redis-stream.mjs'
 import { springStreamBindingStudy, springStreamBindingSnapshot } from './caesura-spring-stream-binding.mjs'
 import { cdcOutboxJoinStudy, cdcOutboxJoinSnapshot } from './caesura-cdc-outbox-join.mjs'
 import {
@@ -1028,6 +1029,22 @@ export function createGameCloud(opts = {}) {
     reaCached = redisHaSnapshot(study)
     return reaCached
   }
+  // KI-553：Redis Stream 三策略教学件（PubSub/PersistentQueue/StreamLog）——opt-in（status/ xst*）。
+  // opts.redisStream===true 单纯启用默认；对象则带 seed/messages/freeDurability/freeReplay/freeCap/rigged 等。
+  const xstCfg = opts.redisStream === true ? {} : (opts.redisStream && typeof opts.redisStream === 'object' ? opts.redisStream : null)
+  const xstInjected = xstCfg !== null && opts.redisStream &&
+    typeof opts.redisStream === 'object' && Array.isArray(opts.redisStream.rows) &&
+    opts.redisStream.vectors && opts.redisStream.verdict
+  let xstCached = null
+  async function xstSnapshotForStatus() {
+    if (xstCfg === null) return null
+    if (xstCached) return xstCached
+    const study = xstInjected
+      ? opts.redisStream
+      : await redisStreamStudy({ ...xstCfg, now: opts.xstNow ?? xstCfg.now })
+    xstCached = redisStreamSnapshot(study)
+    return xstCached
+  }
 
   // KI-545：CDC outbox join 教学件（LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin；opt-in、status/ coj*）。
   // opts.springStreamBinding===true 走钳制默认参数（可覆盖 now/seed/messages/interval/nailedSnapshot/freeBinlog/noLatch/rigged 等）；
@@ -1254,6 +1271,8 @@ export function createGameCloud(opts = {}) {
     runSpringConsulStudy: ckvCfg === null ? null : () => springConsulStudy({ ...ckvCfg, now: opts.ckvNow ?? ckvCfg.now }),
     /** KI-552：Redis 高可用三策略教学件 —— 缺省 opts.redisHa 时为 null；Sentinel/SyncPair/Cluster 三难 + verifyRedisHaSoundness 双路自证 + 十一件 21 物证。 */
     runRedisHaStudy: reaCfg === null ? null : () => redisHaStudy({ ...reaCfg, now: opts.reaNow ?? reaCfg.now }),
+    /** KI-553：Redis Stream 三策略教学件 —— 缺省 opts.redisStream 时为 null；PubSub/PersistentQueue/StreamLog 三难 + verifyRedisStreamSoundness 双路自证 + 十一件 21 物证。 */
+    runRedisStreamStudy: xstCfg === null ? null : () => redisStreamStudy({ ...xstCfg, now: opts.xstNow ?? xstCfg.now }),
     /** KI-545：CDC outbox join 教学件；缺 opts.springStreamBinding 时为 null；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异不封赢家）+ verifySpringStreamBindingSoundness 双路自证 + 十一枚真件交叉印证。 */
     runSpringStreamBindingStudy: ssbCfg === null ? null : () => springStreamBindingStudy({ ...ssbCfg, now: opts.ssbNow ?? ssbCfg.now }),
     /** KI-544：CDC outbox join 教学件；缺 opts.cdcOutboxJoin 时为 null；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异不封赢家）+ verifyCdcOutboxJoinSoundness 双路自证 + 十一枚真件交叉印证。 */
@@ -1333,6 +1352,7 @@ export function createGameCloud(opts = {}) {
         gatewayRetry: await gwSnapshotForStatus(),
         springConsul: await ckvSnapshotForStatus(),
         redisHa: await reaSnapshotForStatus(),
+        redisStream: await xstSnapshotForStatus(),
         springStreamBinding: await ssbSnapshotForStatus(),
         cdcOutboxJoin: await cojSnapshotForStatus(),
         traceSampling: await tsSnapshotForStatus(),

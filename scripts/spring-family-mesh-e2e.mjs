@@ -228,6 +228,9 @@ export function runMeshE2E(opts = {}) {
     // KI-552：Redis 高可用三策略教学件（redisHa=true 挂载——Sentinel/SyncPair/Cluster 三难 + verifyRedisHaSoundness 双路自证 + 十一件 21 物证）。
     redisHa: opts.redisHa,
     reaNow: opts.reaNow,
+    // KI-553：Redis Stream 三策略教学件（redisStream=true 挂载——PubSub/PersistentQueue/StreamLog 三难 + verifyRedisStreamSoundness 双路自证 + 十一件 21 物证）。
+    redisStream: opts.redisStream,
+    xstNow: opts.xstNow,
     // KI-544：CDC outbox join 教学件（cdcOutboxJoin=true 装配；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异）+ verifyCdcOutboxJoinSoundness 双路自证 + 十一真件 21 键交叉印证，不改调用路径）。
     // 注入时钟用 cojNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/reb/pq/bsj/coj/rdq/dld 已占用前缀）。
     cdcOutboxJoin: opts.cdcOutboxJoin,
@@ -403,6 +406,7 @@ export function runMeshE2E(opts = {}) {
         gatewayRetrySnapshot: status.gatewayRetry ?? null,
         springConsulSnapshot: status.springConsul ?? null,
         redisHaSnapshot: status.redisHa ?? null,
+        redisStreamSnapshot: status.redisStream ?? null,
         springStreamBindingSnapshot: status.springStreamBinding ?? null,
         cdcOutboxJoinSnapshot: status.cdcOutboxJoin ?? null,
         traceSamplingSnapshot: status.traceSampling ?? null,
@@ -985,6 +989,19 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         crosscheck: r.redisHaSnapshot.crosscheck,
         causalLocks: r.redisHaSnapshot.causalLocks,
         verdict: r.redisHaSnapshot.verdict,
+      } : null,
+      redisStream: r.redisStreamSnapshot ? {
+        strategies: r.redisStreamSnapshot.rows.map((row) => ({
+          strategy: row.protocol,
+          ladder: row.scenarios.map((sc) => sc.id + ':' + (sc.durable === true ? 'D' : 'E')).join(' | '),
+          metrics: row.metrics, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.redisStreamSnapshot.rows.map((row) => [row.protocol,
+          String(Number(row.trilemma.durable)) + String(Number(row.trilemma.fanout)) + String(Number(row.trilemma.replayable))])),
+        noUniversalWinner: r.redisStreamSnapshot.verdict.noUniversalWinner,
+        crosscheck: r.redisStreamSnapshot.crosscheck,
+        causalLocks: r.redisStreamSnapshot.causalLocks,
+        verdict: r.redisStreamSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))
