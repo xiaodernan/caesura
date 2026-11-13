@@ -29,6 +29,9 @@ function makeCanvas(): HTMLCanvasElement {
     beginPath: () => {},
     arc: () => {},
     fill: () => {},
+    moveTo: () => {},
+    quadraticCurveTo: () => {},
+    stroke: () => {},
     setTransform: () => {},
   } as unknown as CanvasRenderingContext2D
   return {

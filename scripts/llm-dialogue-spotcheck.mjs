@@ -5,6 +5,8 @@
  * 用法：node scripts/llm-dialogue-spotcheck.mjs
  */
 import { pathToFileURL } from 'node:url'
+import { authorLlmEnv } from './caesura-author-env.mjs'
+import { authorLlmEnv } from './caesura-author-env.mjs'
 import { callLlm, buildBibleMessages } from './caesura-llm-client.mjs'
 const isCliInvocation = !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href
 
@@ -23,8 +25,8 @@ export function buildSpotcheckUserContent(line = LINE) {
 }
 
 if (isCliInvocation) {
-  if (!process.env.CAESURA_LLM_API_KEY) {
-    console.error('[llm:spotcheck] missing CAESURA_LLM_API_KEY（env 注入，绝不落盘）—— exit 2')
+  if (!authorLlmEnv().apiKey) {
+    console.error('[llm:spotcheck] missing CAESURA_LLM_API_KEY（env 注入；绝不落 git）：exit 2')
     process.exit(2)
   }
   const out = await callLlm(buildBibleMessages({
@@ -36,4 +38,7 @@ if (isCliInvocation) {
   console.log('[llm:spotcheck] status=' + out.status + ' tokens=' + (out.usage?.total_tokens ?? '?') + ' cached=' + out.cachedTokens + '/' + (out.usage?.prompt_tokens ?? '?'))
   console.log(out.text)
   console.log('--- 作者侧 · 零写入 · 作者仍保有终裁权 ---')
-}
+}if (!authorLlmEnv().apiKey) {
+    console.error('[llm:spotcheck] missing CAESURA_LLM_API_KEY（env 注入；绝不落 git）：exit 2')
+    process.exit(2)
+  }

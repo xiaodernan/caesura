@@ -23,11 +23,13 @@
 import { readFileSync } from 'node:fs'
 import { pathToFileURL, fileURLToPath } from 'node:url'
 import { resolve, dirname } from 'node:path'
+import { authorLlmEnv } from './caesura-author-env.mjs'
 import { callLlm, buildBibleMessages } from './caesura-llm-client.mjs'
 
-const BASE = process.env.CAESURA_LLM_BASE_URL ?? 'https://wkapi.pro/v1'
-const API_KEY = process.env.CAESURA_LLM_API_KEY ?? ''
-const MODEL = process.env.CAESURA_LLM_MODEL ?? 'gpt-6-sol'
+const AUTHOR = authorLlmEnv()
+const BASE = AUTHOR.baseUrl
+const API_KEY = AUTHOR.apiKey
+const MODEL = AUTHOR.model
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
 const REGISTRY = [
@@ -69,8 +71,8 @@ async function callLlmPack(userContent) {
 
 const isCliInvocation = !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href
 if (isCliInvocation) {
-  if (!process.env.CAESURA_LLM_API_KEY) {
-    console.error('[llm:cand-qa] missing CAESURA_LLM_API_KEY（env 注入，密钥绝不落盘/进 git）—— exit 2')
+  if (!AUTHOR.apiKey) {
+    console.error('[llm:cand-qa] missing CAESURA_LLM_API_KEY（env 注入；绝不落 git）：exit 2')
     process.exit(2)
   }
   const raw = readFileSync(resolve(ROOT, 'src/data/authoring/llm-voice-candidates.json'), 'utf8')

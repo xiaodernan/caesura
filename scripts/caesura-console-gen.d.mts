@@ -956,6 +956,28 @@ export interface SpringFeignReading {
   builtAt: number
 }
 
+/** KI-547：GitBackend/NativeBackend/RedisBackend Spring Cloud Config 分布式配置中心三策略后端教学件——verifySpringConfigSoundness 双路自证 + 十一件 21 物证。 */
+export interface SpringConfigReading {
+  config: Record<string, any>
+  rows: Array<{
+    protocol: string
+    scenarios: Array<{
+      id: string; messages: number; processed: number
+      hotReload: boolean; scaleFriendly: boolean; consistency: boolean; fault: string
+    }>
+    trilemma: { hotReload: boolean; scaleFriendly: boolean; consistency: boolean }
+    metrics: { totalProcessed: number; totalMessages: number }
+  }>
+  vectors: Record<string, string>
+  verdict: Record<string, any>
+  rigged: boolean
+  noUniversalWinner: boolean
+  trilemmaDistinguishes: boolean
+  causalLocks: { gitCommitLagCausallyUnerasable: boolean; nativeHostAffinityCausallyUnerasable: boolean; redisHotRttCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
+  crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+  builtAt: number
+}
+
 /** KI-545：ExclusiveConsumer/SharedConsumer/ClusteredConsumer Spring Cloud Stream 绑定三策略真跑读数（三策略 × 四场景 + 三难向量 + verifySpringStreamBindingSoundness 双路交叉印证 + 十一枚真件交叉印证）。 */
 export interface SpringStreamBindingReading {
   config: Record<string, any>
@@ -1071,6 +1093,7 @@ export interface SystemsBlock {
   cdcOutboxJoin: CdcOutboxJoinReading | null
   springStreamBinding: SpringStreamBindingReading | null
   springFeign: SpringFeignReading | null
+  springConfig: SpringConfigReading | null
   builtAt: number
 }
 
@@ -2971,6 +2994,18 @@ export function buildSpringFeignReading(opts: {
   sfFreeBatch?: boolean
   sfRigged?: boolean
 }, now: () => number): Promise<SpringFeignReading | null>
+
+/** KI-547：Spring Cloud Config 分布式配置中心三策略后端教学件（GitBackend/NativeBackend/RedisBackend + verifySpringConfigSoundness 双路自证 + 十一件 21 物证）——无 springConfig 时传 false → 前端即降级；失败返回 null。 */
+export function buildSpringConfigReading(opts: {
+  now?: () => number
+  springConfig?: boolean
+  scSeed?: number
+  scMessages?: number
+  scFreeHotReload?: boolean
+  scFreeScale?: boolean
+  scFreeConsistency?: boolean
+  scRigged?: boolean
+}, now: () => number): Promise<SpringConfigReading | null>
 
 /** KI-545：真跑 Spring Cloud Stream 绑定三策略教学件（ExclusiveConsumer/SharedConsumer/ClusteredConsumer × 四场景 + 三难向量 + verifySpringStreamBindingSoundness 双路自证 + 十一枚真件交叉印证）收敛成前端第三十九维两面板紧凑读数；失败落 null。 */
 export function buildSpringStreamBindingReading(opts: {

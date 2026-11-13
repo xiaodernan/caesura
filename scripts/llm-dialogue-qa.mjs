@@ -28,8 +28,9 @@ import { fileURLToPath } from 'node:url'
 import { callLlm, buildBibleMessages } from './caesura-llm-client.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const BASE = process.env.CAESURA_LLM_BASE_URL ?? 'https://wkapi.pro/v1'
-const MODEL = process.env.CAESURA_LLM_MODEL ?? 'gpt-6-sol'
+const AUTHOR = authorLlmEnv()
+const BASE = AUTHOR.baseUrl
+const MODEL = AUTHOR.model
 const SELECTED = (() => {
   const a = process.argv.slice(2)
   const i = a.indexOf('--npc')
@@ -85,8 +86,8 @@ async function callSingle(it) {
 }
 
 if (isCliInvocation) {
-  if (!process.env.CAESURA_LLM_API_KEY) {
-    console.error('[llm-dialogue-qa] 缺少 CAESURA_LLM_API_KEY——设环境变量后再跑，key 不落库。')
+  if (!AUTHOR.apiKey) {
+    console.error('[llm-dialogue-qa] 缺少 CAESURA_LLM_API_KEY，只作为使用则表示；在环境变量中注入，不入仓库')
     process.exit(2)
   }
   console.error(`[llm-dialogue-qa] ${NODES.length} dialogue nodes @ ${BASE} (${MODEL})`)

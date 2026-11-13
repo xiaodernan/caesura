@@ -13,15 +13,17 @@
  */
 import { readFileSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
+import { authorLlmEnv } from './caesura-author-env.mjs'
 import { callLlm, buildBibleMessages } from './caesura-llm-client.mjs'
 
-const BASE = process.env.CAESURA_LLM_BASE_URL ?? 'https://wkapi.pro/v1'
-const API_KEY = process.env.CAESURA_LLM_API_KEY ?? ''
+const AUTHOR = authorLlmEnv()
+const BASE = AUTHOR.baseUrl
+const API_KEY = AUTHOR.apiKey
 const MODEL = (() => {
   const a = process.argv.slice(2)
   const i = a.indexOf('--model')
   if (i >= 0 && a[i + 1]) return a[i + 1]
-  return process.env.CAESURA_LLM_MODEL ?? 'gpt-6-sol'
+  return AUTHOR.model
 })()
 const SELECTED_NPC = (() => {
   const a = process.argv.slice(2)

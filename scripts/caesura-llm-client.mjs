@@ -26,6 +26,7 @@
  * @module caesura-llm-client
  */
 import { pathToFileURL } from 'node:url'
+import { authorLlmEnv } from './caesura-author-env.mjs'
 import { readFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -89,7 +90,11 @@ export function buildBibleMessages({ npcMode = 'canon', user, model = 'gpt-6-sol
   }
 }
 
-export async function callLlm(body, { baseUrl = process.env.CAESURA_LLM_BASE_URL ?? 'https://wkapi.pro/v1', apiKey = process.env.CAESURA_LLM_API_KEY ?? '' } = {}) {
+export async function callLlm(body, { baseUrl, apiKey } = {}) {
+  const author = authorLlmEnv()
+  if (baseUrl === undefined) baseUrl = author.baseUrl
+  if (apiKey === undefined) apiKey = author.apiKey
+
   if (!apiKey) {
     const err = new Error('missing CAESURA_LLM_API_KEY（env 注入；绝不落盘/进 git）')
     err.code = 'missing_key'
