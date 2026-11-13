@@ -3282,3 +3282,54 @@ main { padding: clamp(18px, 3vw, 40px) clamp(18px, 4vw, 56px) 48px; max-width: 1
 @media (prefers-reduced-motion: reduce) {
   .svt-cell { transition: none; }
 }
+
+
+/* ================= Phase F-84 风貌跃升 · Spring Cloud 教学件族 · 金边细线 + 微微动效 ================= */
+/* 不动任何 test 强依赖过的 selectors；只做装饰性补充 */
+/* 限定在 6 个最近扩展的教学件行（row-xst / row-gw / row-rp / row-rea / row-svt / row-bus） */
+.row-xst .panel::after,
+.row-gw .panel::after,
+.row-rp .panel::after,
+.row-rea .panel::after,
+.row-svt .panel::after,
+.row-bus .panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  border: 1px solid rgba(201, 162, 58, 0.18);
+  background: radial-gradient(ellipse at top right, rgba(79, 155, 134, 0.05) 0%, transparent 45%),
+              radial-gradient(ellipse at bottom left, rgba(201, 162, 58, 0.04) 0%, transparent 40%);
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+.row-xst .panel,
+.row-gw .panel,
+.row-rp .panel,
+.row-rea .panel,
+.row-svt .panel,
+.row-bus .panel {
+  position: relative;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.42),
+              inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition: box-shadow .24s ease, transform .24s ease;
+}
+.row-xst .panel:hover,
+.row-gw .panel:hover,
+.row-rp .panel:hover,
+.row-rea .panel:hover,
+.row-svt .panel:hover,
+.row-bus .panel:hover {
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.48),
+              inset 0 1px 0 rgba(79, 155, 134, 0.18),
+              0 0 32px rgba(79, 155, 134, 0.10);
+  transform: translateY(-2px);
+}
+/* 只在高对比度偏好场景运动（平台 prefers-reduced-motion / 已由 app 处理）保持动效最小 */
+@media (prefers-reduced-motion: reduce) {
+  .row-xst .panel, .row-gw .panel, .row-rp .panel,
+  .row-rea .panel, .row-svt .panel, .row-bus .panel {
+    transition: none !important;
+    transform: none !important;
+  }
+}
