@@ -122,3 +122,19 @@ npm run llm:diff        # 机读再认谁泄漏进 dialogue.json（应永远 0�
   候选池仍全部 `requiresHumanReview=true`。
 
 诚实边界：单点一次即重；LLM 便签不作任何终裁依据；本脚本零写入；玩家运行时零 LLM。
+
+## 2026-11-13 `llm:spotcheck` #2 — DLG_BELLTONGUE flag 候选单点（gpt-6-sol 真跑）
+
+对 `llm:cand-qa` 标 flag 的 BELLTONGUE 线之一（原候选 3 联第二对白）：
+
+> 「别动。你身上有断口，还没长好。……剪它的人，手抖了吗。」
+
+真机 HTTP 200 · totalTokens=4718 · 原文：
+
+> ① 过白：台词几乎全靠字面交代伤口与剪伤者，留白偏少。
+> ② 剪刀师 voice 匹配程度：高；“别动”是控制，“手抖了吗”把锋利的职业判断落到施害者身上。
+> ③ 与董娘「听」vs「剪」意象相符：相符；董娘听出异样，剪刀师追问是谁下的剪，意象有区分。
+> ④ 最强弊病：「你身上有断口，还没长好」解释过满，削弱后句的寒意。
+> ⑤ 总裁决：**keep**。
+
+诚实边界（不变）：LLM 便签不下定论；候选仍 `requiresHumanReview=true`；**dialogue.json 零改动**；裁决仍在作者。若采纳，请手抄并注 `decision: 'kept' | 'trimmed' | 'rejected'`（仅供追溯，不参与 schema 校验）。据此建议（非强制）保留本线作为董娘剪刀师侧的声。
