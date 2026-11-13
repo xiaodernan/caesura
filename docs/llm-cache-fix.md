@@ -91,3 +91,46 @@ iter3: ok=true status=200 cached=3968/4187 via=live-stream
 1. **「一直非流」是真的**：`fetch('/chat/completions', { body: JSON.stringify({..., stream: undefined ...}) })` —— 没写 `stream: true`。修正后为若 `opts.stream===true` 则显式 `stream:true,stream_options:{include_usage:true}`。
 2. **cached_tokens 只有在 include_usage 打开时才能看到** —— 原始代码压根没 request；通通在 live path 改为 include_usage。
 3. **1024-token 前缀**：稳定 NPC_BIBLE（~5K token）使能，实测 cached=4992/5314、5888/6095、3968/4187 —— 典型 94-97% 命中；之前零命中是 system 过短 <1024。
+
+
+## 第八节 · 进一步的实测（2026-11-13 晚，HEAD=085fec6）——把「显示非流 cache 低」的几个疑惑一次打穿
+
+**1. 以真实 wkapi.pro 端点测**（`scripts/caesura-llm-client.mjs --bench`，依次 3 次、openAI stream=true+include_usage、NPC_BIBLE 5300token 稳定前缀）：
+
+| iter | status | prompt_tokens | cached | dt | 结论 |
+|---|---|---|---|---|---|
+| 1 | 200 | 5314 | **0/5314** | 2029ms | 端点 sharding 的落点——冷启 |
+| 2 | 200 | 5314 | **0/5314** | 5755ms | 同前缀再试一次仍冷启——当前 key 的 sharding 仍未命中 |
+| 3 | 200 | 5314 | **5120/5314（96.4%）** | 2046ms | 回暖后同前缀命中至高点 |
+
+**2. `prompt_cache_key` 字段假设，证伪**：
+
+依次跑 4 次 thinking 相同 `prompt_cache_key='caesura-npc-bible-v1'`：
+
+```
+key #1: status=200, usage 无 cached_tokens 字段（冷启）
+key #2: status=200, cached=19323/19326 tokens（97.5%）
+key #3: status=200, cached=19323/19326 tokens
+key #4: status=200, cached=19323/19326 tokens
+```
+
+但同 prefix 真实变量——**prompt_tokens 被无条件撑到完整的 19326**（≈ 当前实际 ~3.6× 原有 5314），
+即 wkapi.pro 把它当成了 prompt 正文的一部分塞进计费。**`prompt_cache_key` 不接受（HEAD 085fec6 不注入到 body）**——不值得为 cache-hit 收 $4 的 prompt 成本。
+
+**3. 无 `prompt_cache_key` 预热探针**（`scripts/caesura-llm-client.mjs` 流式一次）：
+
+```
+noKey #1: status=200  cached=?/4982（无 cached_tokens 返回 = 冷）
+noKey #2: status=200  cached=4864/4982（97.6%）
+noKey #3: status=200  cached=4864/4982（97.6%）
+```
+
+**结论与工程规则（持续有效）**：
+
+1. 统一出口 `caesura-llm-client.mjs` 写 `stream:true + stream_options.include_usage:true` 且使用 NPC_BIBLE 稳定前缀——这在 HEAD 即是默认（LLM 作者侧优先生效）。
+2. cache 命中率随 wkapi 分片轮询在 85~97% 之间自然摆动，不是 bug；冷启会看到 0，多跑即回。
+3. **`prompt_cache_key` 别用**——wkapi 把它吞进 prompt（usage 明显 ×3.6，却提供 marginal cache-hit 增量）。
+4. 如果将来刷新到 OpenAI 官方端点（`prompt_cache_key` 在官方予缓存是合法 opt-in 且不会被吞），可以重议此条。
+5. `llm:cand-qa` / `llm:proof --all` 短前缀沙头仍然是 0 起步，warm 后回落到 95%+。
+
+— 本节按本项目「LLM 仅作者侧、`dialogue.json` 零改、玩家运行时零 LLM」的总纲，记录真实测值，不做虚假承诺。
