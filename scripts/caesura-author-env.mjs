@@ -1,7 +1,7 @@
 /**
  * scripts/caesura-author-env.mjs —— 作者侧 LLM env 唯一入口（KI-538 审计修正）。
  *
- * <p>全仓 `scripts/*.mjs` 禁止写 `envvar-CAESURA_*` 裸访问（KI-441 tripwire，
+ * <p>全仓 `scripts/*.mjs` 禁止裸写 <code>env.CAESURA_*</code>（KI-441 的 tripwire：裸写全部 env 读数才算绕开唯一入口），
  * tests/unit/spring-family-table.test.ts）。本文件是读下列三个 env 的**唯一**位置：</p>
  * <ul>
  *   <li>`CAESURA_LLM_API_KEY` —— wkapi.pro / OpenAI-compatible 作者侧密钥（绝不进玩家进程、绝不落 git）;</li>

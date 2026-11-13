@@ -25,6 +25,7 @@ import { readFileSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { authorLlmEnv } from './caesura-author-env.mjs'
 import { callLlm, buildBibleMessages } from './caesura-llm-client.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
