@@ -2696,3 +2696,48 @@ describe('KI-542 第三十六维 · boundedstrict/motionweightedfair/deadlinesch
     })
   })
 })
+
+
+// ============ KI-545 第三十九维 · ExclusiveConsumer/SharedConsumer/ClusteredConsumer（ssb 族 · 2 腿） ============
+describe('KI-545 第三十九维 · exclusive/shared/clustered（ssb 族）', () => {
+  const realSsb = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+  it('第三十九维真渲染：ssb 矩阵 12 cell + 三策略向量 101/010/011 + 状态类 + ladder 条', async () => {
+    const dom = await runApp(realSsb)
+    const matrix = dom.els['ssb-matrix'].innerHTML
+    expect(matrix).toContain('ssb-mat-head')
+    for (const p of ['ExclusiveConsumer', 'SharedConsumer', 'ClusteredConsumer']) {
+      expect(matrix).toContain('data-strategy="' + p + '"')
+    }
+    for (const sc of ['cleanSteadyState', 'burstOverload', 'exclusiveRebalance', 'cleanRerun']) {
+      expect(matrix).toContain('data-s="' + sc + '"')
+    }
+    expect((matrix.match(/class="ssb-cell /g) || []).length).toBe(12)
+    const tri = dom.els['ssb-trilemma'].innerHTML
+    expect(tri).toContain('data-vec="101"')
+    expect(tri).toContain('data-vec="010"')
+    expect(tri).toContain('data-vec="011"')
+    expect(dom.els['ssb-ladder'].innerHTML).toContain('ssb-bar')
+  })
+
+  it('第三十九维 markup/CSS 自同 + systems.springStreamBinding 缺失时真显式降级', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-ssb')
+    expect(html).toContain('id="ssb-matrix"')
+    expect(html).toContain('id="ssb-verif"')
+    expect(html).toContain('ExclusiveConsumer=101 / SharedConsumer=010 / ClusteredConsumer=011')
+    expect(css).toContain('.ssb-cell.exclusive')
+    expect(css).toContain('.ssb-cell.shared')
+    expect(css).toContain('.ssb-cell.clustered')
+    expect(css).toContain('.ssb-flag.yes')
+    expect(css).toContain('.ssb-bar > i')
+    expect(css).toContain('.ssb-verif')
+    const noSsb = JSON.parse(JSON.stringify(realSsb as any))
+    noSsb.systems.springStreamBinding = null
+    return runApp(noSsb).then((dom2: any) => {
+      expect(dom2.els['ssb-matrix'].innerHTML).toContain('暂缺')
+      expect(dom2.els['ssb-trilemma'].innerHTML).toContain('暂缺')
+      expect(dom2.els['ssb-matrix-note'].textContent).toContain('systems.springStreamBinding 缺失')
+    })
+  })
+})

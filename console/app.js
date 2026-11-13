@@ -75,6 +75,7 @@
       renderPriorityQueue(snap.systems ? snap.systems.priorityQueue : null)
       renderBatchStreamJoin(snap.systems ? snap.systems.batchStreamJoin : null)
       renderCdcOutboxJoin(snap.systems ? snap.systems.cdcOutboxJoin : null)
+      renderSpringStreamBinding(snap.systems ? snap.systems.springStreamBinding : null)
       renderTraceSampling(snap.systems ? snap.systems.traceSampling : null)
       setLive(true, result.source)
     }).catch(function (e) {
@@ -3317,6 +3318,134 @@
       'verifyCheckpoint 双路自证：路 A clean 全量全 commit 求基准，路 B 真跑 restart(0) 用「poison chunk 隔离 / 已 commit 无重复 / 非毒零丢失 / 真检测到毒」四观测量判定；三路篡改真喂回同一内核现算翻 false，带 baselineHolds 先真绿。' +
       '三条因果结构锁在同一含毒 raw 流真跑钉死：Bulk 无 chk 整批死、chk 权衡不可兼得、Skip 跳毒永久丢。' +
       'rigged 双开关 perfectOracle（毒项 100% 判定、预防性从输入剔除）+ unlimitedSkip 喂的是已剔除毒项的干净流（换了作业输入、诚实标注，不是同一作业被抹软肋）⇒ 三者 faultIsolation 全真、Bulk≡Skip=101 区分度诚实收敛（riggedConvergenceCollapsed=true，教学结论：完美预言机抹平了「预防剔除」与「跳过」的差别，二者结构等价），noStrategyWinsAll 仍真绝不硬造 111，三因果锁仍 allHold。'
+  }
+
+  /* ================= KI-545 ExclusiveConsumer/SharedConsumer/ClusteredConsumer Spring Cloud Stream 绑定 · 第三十九维（ssb 族） ================= */
+
+  function renderSpringStreamBinding(sb) {
+    renderSsbMatrix(sb && sb.rows, sb && sb.config)
+    renderSsbLadder(sb && sb.rows)
+    renderSsbTrilemma(sb && sb.rows, sb && sb.verdict, sb && sb.crosscheck)
+  }
+
+  function ssbMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 暂缺</div>'
+    if (note) note.textContent = 'systems.springStreamBinding 缺失 — 跑一次 npm run console:data 即可补齐'
+  }
+
+  function ssbCell(c, protocol) {
+    if (!c) return { cls: '', ch: '·' }
+    if (protocol === 'ExclusiveConsumer') return { cls: 'exclusive', ch: '独占' }
+    if (protocol === 'SharedConsumer') return { cls: 'shared', ch: '竞租' }
+    if (protocol === 'ClusteredConsumer') return { cls: 'clustered', ch: '协从' }
+    return { cls: 'ok', ch: '✓' }
+  }
+
+  function renderSsbMatrix(rows, config) {
+    var box = $('#ssb-matrix'), note = $('#ssb-matrix-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      ssbMissing(box, note, 'ssb 矩阵'); return
+    }
+    var scenarios = ['cleanSteadyState', 'burstOverload', 'exclusiveRebalance', 'cleanRerun']
+    var head = '<div class="ssb-mat-row ssb-mat-head"><span class="ssb-mat-proto">策略</span>' +
+      scenarios.map(function (sc) { return '<span class="ssb-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="ssb-mat-cost">processed/min</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = ssbCell(cell, row.protocol)
+        return '<span class="ssb-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="ssb-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="ssb-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="ssb-mat-cost"><b>' + esc(fmt(m.totalProcessed)) + '</b></span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'ExclusiveConsumer / SharedConsumer / ClusteredConsumer × 四场景：cleanSteadyState / burstOverload（burst 超载·Shared 真出重复）/ exclusiveRebalance（rebalance 事件回放）/ cleanRerun（重跑幂等）。每格只认三布尔（lowLatency ∧ burstFriendly ∧ exactlyOnce）。Exclusive 独占消费·exactlyOnce 但不耐超载；Shared 任意 consumers 竞租·burst Friendly 但duplicates真翻倍；Clustered：partition-aware + Coordinator 串行 ACK exactlyOnce 但 RPC 代价。'
+  }
+
+  function renderSsbLadder(rows) {
+    var box = $('#ssb-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.totalProcessed) ? r.metrics.totalProcessed : 1 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.totalProcessed) ? Math.round(m.totalProcessed / max * 100) : 0
+      return '<div class="ssb-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="ssb-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">processed ' + esc(fmt(m.totalProcessed)) + ' · 总 msgs ' + esc(fmt(m.totalMessages)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderSsbTrilemma(rows, verdict, crosscheck) {
+    var box = $('#ssb-trilemma'), veBox = $('#ssb-verif'), cxBox = $('#ssb-crosscheck'), note = $('#ssb-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      ssbMissing(box, note, 'ssb 判词'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''; return
+    }
+    var flags = [['lowLatency', '低延'], ['burstFriendly', '超载友好'], ['exactlyOnce', '一次']]
+    var head = '<div class="ssb-vec ssb-vec-head"><span class="proto">策略</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="ssb-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="ssb-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    if (veBox) {
+      var ex = rows.find(function (r) { return r.protocol === 'ExclusiveConsumer' })
+      var sh = rows.find(function (r) { return r.protocol === 'SharedConsumer' })
+      var cc = rows.find(function (r) { return r.protocol === 'ClusteredConsumer' })
+      var cp = crosscheck && crosscheck.soundness
+      veBox.innerHTML = [
+        '<div class="ssb-rb-row"><b>ExclusiveConsumer</b> 低延=' + esc(String(ex?.trilemma?.lowLatency)) + '（柳plan即产：plan-to-fire）· 超载=' + esc(String(ex?.trilemma?.burstFriendly)) + '（exclusive 锁只认一个 owner）· 一次=' + esc(String(ex?.trilemma?.exactlyOnce)) + '（at-least-once 但 exclusive/topic-1 owner）</div>',
+        '<div class="ssb-rb-row"><b>SharedConsumer</b> 低延=' + esc(String(sh?.trilemma?.lowLatency)) + '（需 coordinator 确认时延）· 超载=' + esc(String(sh?.trilemma?.burstFriendly)) + '（at-least-once 真容忍 Burst）· 一次=' + esc(String(sh?.trilemma?.exactlyOnce)) + '（无 dedup 真 duplicates）</div>',
+        '<div class="ssb-rb-row"><b>ClusteredConsumer</b> 低延=' + esc(String(cc?.trilemma?.lowLatency)) + '（ack 走 coordinator 双 RPC）· 超载=' + esc(String(cc?.trilemma?.burstFriendly)) + '（partition-aware 横向）· 一次=' + esc(String(cc?.trilemma?.exactlyOnce)) + '（Coordinator 串行确认）</div>',
+        cp ? '<div class="ssb-rb-row"><b>verifySpringStreamBindingSoundness</b> holds=' + (cp.holds ? 'true' : 'false') + ' nontrivial=' + (cp.nontrivial ? 'true' : 'false') + ' falsifiable=' + (cp.falsifiable ? 'true' : 'false') + ' · laneA{exclusiveProcessed=' + esc(String(cp.laneA?.exclusiveProcessed)) + '/' + esc(String(cp.laneA?.expected)) + '} laneB{sharedAccepted=' + esc(String(cp.laneB?.sharedAccepted)) + ' duplicates=' + esc(String(cp.laneB?.duplicates)) + '}</div>' : '',
+      ].join('')
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>真 <b>compareRemapping</b> 迁移率 一致性 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>' +
+          '<div>真 <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 片</div>' +
+          '<div>真 <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 命中 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
+          '<div>真 <b>createWal</b> lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>真 <b>createBus</b> ssb.bound 通知 ' + esc(fmt(ev.notices)) + ' 条 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>真 <b>createRedisCache</b> binding 命中 ' + esc(fmt(ev.redisBitmapHits)) + ' · entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+          '<div>真 <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+          '<div>真 <b>createTokenBucket</b> 回放允许 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>真 <b>createMinHeapDelayQueue</b> 出队 ' + esc(fmt(ev.heapFired)) + ' 条 · pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+          '<div>真 <b>createFullJitterBackoff</b> jitterSpread <b>' + esc(String((ev.jitterSpread ?? 0).toFixed(4))) + '</b>（64 采样 delayFor 真采样）</div>' +
+          '<div>真 <b>createPackedCounters</b> Σ=' + esc(fmt(ev.counterSum)) + ' · falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">真件交叉印证缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var chips = [
+      '<span class="chip" data-verdict="noUniversalWinner"><b>noUniversalWinner</b> ' + (noWin ? '✓（向量互异·无全局赢家）' : '✗') + '</span>',
+      '<span class="chip" data-verdict="noStrategyWinsAll"><b>noStrategyWinsAll</b> ' + (v.noStrategyWinsAll ? '✓（无一 111）' : '✗') + '</span>',
+      '<span class="chip" data-verdict="vectorFromTrilemma"><b>vectorFromTrilemma</b> 现算同源</span>',
+      '<span class="chip jade-t" data-verdict="noUniversalWinner2">默认向量互异不封赢家</span>',
+    ]
+    var probes = $('#ssb-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维序固定 [lowLatency / burstFriendly / exactlyOnce]。默认向量 ExclusiveConsumer=101（独占·exactlyOnce·1 topic 1 owner） / SharedConsumer=010（竞租·burstFriendly·duplicates=N） / ClusteredConsumer=011（Coordinator partition-aware ACK · exactlyOnce · 仍需 RPC）——恰好各缺一维、向量互异、无一 111。' +
+      'rigged 三开关：unboundedCapacity（exclusive 真无界 ⇒ burstFriendly 翻 true 但饥饿可见）· magicAckCoordinator（Coordinator 无 RPC）· freeExactlyOnceDedup（free dedup ⇒ Shared=110）。' +
+      '三因果锁：exclusiveLockCausallyUnerasable（exclusive 锁结构）· sharedThroughputCausallyUnerasable（shared 真重复）· clusterAckCausallyUnerasable（cluster 真 RPC 成本）——causalLocksAllHold=true。'
   }
 
   /* ================= KI-544 LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin CDC outbox join · 第三十八维（coj 族） ================= */

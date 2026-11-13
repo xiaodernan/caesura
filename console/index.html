@@ -737,6 +737,23 @@
       <p class="note" id="coj-trilemma-note">…</p>
     </article>
   </section>
+  <!-- 第三十九维 · ExclusiveConsumer / SharedConsumer / ClusteredConsumer Spring Cloud Stream 绑定（KI-545） -->
+  <section class="row row-ssb">
+    <article class="panel panel-ssb">
+      <div class="panel-head"><h2>第三十九维 · ExclusiveConsumer/SharedConsumer/ClusteredConsumer · 三策略 × 四场景</h2><span class="hint">独占=ExclusiveConsumer（独占锁 · 一次 1 个 topic 1 个 owner · exactlyOnce · burstFriendly=false）/ 竞租=SharedConsumer（无锁竞租 · burstFriendly · 但 duplicates 真翻倍）/ 协从=ClusteredConsumer（Coordinator 串行 ACK partition-aware · exactlyOnce · Costly）** · 默认向量 101/010/011 互异不封赢家</span></div>
+      <div class="ssb-matrix" id="ssb-matrix"></div>
+      <div class="ssb-ladder" id="ssb-ladder"></div>
+      <p class="note" id="ssb-matrix-note">…</p>
+    </article>
+    <article class="panel panel-ssb">
+      <div class="panel-head"><h2>三难向量（lowLatency ∧ burstFriendly ∧ exactlyOnce）· 双路自证</h2><span class="hint">ExclusiveConsumer=101 / SharedConsumer=010 / ClusteredConsumer=011 · 三向量互异无一 111 恰好各缺一维 · verifySpringStreamBindingSoundness 双路自证（路 A 干净稳态 Exclusive 真独占 vs 路 B burst duplicates · 三路篡改）· 三因果锁（exclusiveLock / sharedThroughput / clusterAck）× 十一真件 21 键 · rigged 三开关（unboundedCapacity / magicAckCoordinator / freeExactlyOnceDedup）</span></div>
+      <div class="ssb-trilemma" id="ssb-trilemma"></div>
+      <div class="ssb-verif" id="ssb-verif"></div>
+      <div class="ssb-crosscheck" id="ssb-crosscheck"></div>
+      <div class="ssb-probes" id="ssb-probes"></div>
+      <p class="note" id="ssb-trilemma-note">…</p>
+    </article>
+  </section>
 </main>
 
 <footer class="footer">
