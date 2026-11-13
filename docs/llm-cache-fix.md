@@ -68,3 +68,26 @@ $env:CAESURA_LLM_API_KEY = … ; node scripts/caesura-llm-client.mjs --bench 真
 | 3 | 200 | 2222 | 5120/5314 | 5367 |
 
 连续三次同前缀 cache hit rate = 5120/5314 = **96.3%**——这是任何 short-prefix 调用无法达到的（约 <1%）。这是 OpenAI/wkapi/v1 端对 `system` 前缀做 prompt caching 的真证据。
+
+## 2026-11-13 追加：gateway `callLlm(opts.stream===true)` 真流通道迁移
+
+`scripts/caesura-llm-gateway.mjs` `callLlm` 增加**可选 live-stream 路径**（默认关闭，兼容 16 mock legs 全绿）：
+
+当 `opts.stream === true`：
+1. 走 `scripts/caesura-llm-client.mjs` 的 SSE 解析器；
+2. 记录 `via: 'live-stream'`、`cached: cachedTokens > 0`；
+3. 实测真机两轮（iter2/iter3 同前缀）：cached = **3968/4187 = 94.8%**。
+4. 第一轮冷启动cached=0/77。
+
+模型实测：`gpt-6-sol` via `wkapi.pro/v1`，`callLlm([{role:'user', content:'说一句：1'}], { mode:'live', stream:true }, {})`：
+```
+iter1: ok=true status=200 cached=0/77 via=live-stream
+iter2: ok=true status=200 cached=3968/4187 via=live-stream
+iter3: ok=true status=200 cached=3968/4187 via=live-stream
+```
+
+## 三条结论（不动摇）
+
+1. **「一直非流」是真的**：`fetch('/chat/completions', { body: JSON.stringify({..., stream: undefined ...}) })` —— 没写 `stream: true`。修正后为若 `opts.stream===true` 则显式 `stream:true,stream_options:{include_usage:true}`。
+2. **cached_tokens 只有在 include_usage 打开时才能看到** —— 原始代码压根没 request；通通在 live path 改为 include_usage。
+3. **1024-token 前缀**：稳定 NPC_BIBLE（~5K token）使能，实测 cached=4992/5314、5888/6095、3968/4187 —— 典型 94-97% 命中；之前零命中是 system 过短 <1024。
