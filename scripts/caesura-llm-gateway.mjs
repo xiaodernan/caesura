@@ -328,7 +328,7 @@ export async function llmGatewayStudy(opts = {}) {
     },
   }
   const soundness = await verifyGatewaySoundness({ mode, baseUrl: opts.baseUrl }, deps)
-  const examView = (e) => ({ liveGrounded: e.liveGrounded, reproducible: e.reproducible, zeroCost: e.zeroCost, trueReply: e.trueReply ? { ok: e.trueReply.ok, status: e.trueReply.status, error: e.trueReply.error ?? null, model: e.trueReply.model, contentLen: (e.trueReply.content || '').length, totalTokens: e.trueReply.usage?.total_tokens ?? 0, finishReason: e.trueReply.finishReason, latencyMs: e.trueReply.latencyMs } : null, ...(e.cacheHit !== undefined ? { cacheHit: e.cacheHit } : {}) })
+  const examView = (e) => ({ liveGrounded: e.liveGrounded, reproducible: e.reproducible, zeroCost: e.zeroCost, trueReply: e.trueReply ? { ok: e.trueReply.ok, status: e.trueReply.status, error: e.trueReply.error ?? null, model: e.trueReply.model, contentLen: (e.trueReply.content || '').length, totalTokens: e.trueReply.usage?.total_tokens ?? 0, finishReason: e.trueReply.finishReason, latencyMs: e.trueReply.latencyMs, cachedTokens: e.trueReply.cachedTokens ?? 0 } : null, ...(e.cacheHit !== undefined ? { cacheHit: e.cacheHit } : {}) })
   return {
     builtAt: startClock(opts.now, 0),
     config: { seed, mode, model: cfg.model, baseUrl: normalizeBaseUrl(cfg.baseUrl), keyPresent: verdict.keyPresent },
@@ -583,7 +583,7 @@ if (isCliInvocation) {
     ' firstCallCostUnerasable=' + study.causalLocks.firstCallCostCausallyUnerasable)
   if (study.exam.trueReply) {
     const t = study.exam.trueReply
-    console.log('  trueReply: ok=' + t.ok + ' status=' + t.status + ' model=' + t.model + ' contentLen=' + t.contentLen + ' totalTokens=' + t.totalTokens + ' finishReason=' + t.finishReason + ' latencyMs=' + t.latencyMs)
+    console.log('  trueReply: ok=' + t.ok + ' status=' + t.status + ' model=' + t.model + ' contentLen=' + t.contentLen + ' totalTokens=' + t.totalTokens + ' finishReason=' + t.finishReason + ' latencyMs=' + t.latencyMs + (t.cachedTokens !== undefined ? ' cachedTokens=' + t.cachedTokens : ''))
     console.log('--- 真模型输出（未改写，仅作者侧）---')
     console.log(t.contentPreview ?? '(见 --live 逐条输出)')
   }
