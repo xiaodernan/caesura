@@ -134,4 +134,4 @@ describe('真总体（HEAD 的提交面）：每一份 scripts/*.mjs 都要被 n
     expect(rows.length, '账本里没有 KI-248 那一行 = 这个洞没登记在册（这一格读工作副本，与 KI-114 同一取舍）').toBe(1)
     expect(rows[0], '那一行必须点名"没有门解析过 scripts/"这件事，不能只是引用了编号').toMatch(/解析/)
   })
-})
+  }, 900000) // 每个 scripts/*.mjs 都要 spawn 一 node；并发负载实测 44s~>120s，CI 慢 VM 上 300s 余量不足，900s 足够

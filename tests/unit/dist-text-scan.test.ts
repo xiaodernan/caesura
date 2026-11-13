@@ -18,7 +18,7 @@ import { DIST_DIR, distScanFindings, scanDist, walkDist } from '../../scripts/di
  */
 
 const ROOT = fileURLToPath(new URL('../..', import.meta.url))
-const f = (rel: string) => join(ROOT, rel).replace(/\//g, '\\')
+const f = (rel: string) => join(ROOT, rel)
 
 /** 建一个带 `dist/` 的临时仓库根；返回根路径，统一在 afterEach 清 */
 const made: string[] = []
