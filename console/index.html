@@ -754,6 +754,41 @@
       <p class="note" id="ssb-trilemma-note">…</p>
     </article>
   </section>
+  <!-- 第四十六维 · Spring Cloud OpenFeign 三策略 Client（KI-546 后注 · 双面板复刻 row-ssb 结构） -->
+  <section class="row row-sf">
+    <article class="panel panel-sf">
+      <div class="panel-head"><h2>第四十一维 · StubDecoder / ReactiveClient / BlockingClient —— Spring Cloud OpenFeign 三策略 Client</h2><span class="hint">Stub=进程内 stub·零 RTT·lowLatency=1·batchFriendly=1·pipelineable=0；Reactive=concatMap 流式·lowLatency=0·batchFriendly=1·pipelineable=1；Blocking=阻塞占位+@FeignClient retry/CB·lowLatency=0·batchFriendly=0·pipelineable=1 —— 默认向量 110/011/001，三难不可兼得 —— 绝不成品 111</span></div>
+      <div class="sf-matrix" id="sf-matrix"></div>
+      <div class="sf-ladder" id="sf-ladder"></div>
+      <p class="note" id="sf-matrix-note">…</p>
+    </article>
+    <article class="panel panel-sf">
+      <div class="panel-head"><h2>Feign Client 三维向量（lowLatency · batchFriendly · pipelineable）· 双路自证 + 三路篡改 + 因果锁</h2><span class="hint">StubDecoder=110 / ReactiveClient=011 / BlockingClient=001 · 三路串 · verifySpringFeignSoundness 双路自证（lane A Stub 逐条 vs lane B Reactive 流式 consume；tamper 真喂回 hold=false；laneC blocking 缓冲溢出 padding；十一件 21 物证 compareRemapping/ShardRouter/HashRing/WAL/Bus/Redis/Pool/Bucket/MinHeap/PackedCounters/FullJitter Backoff）</span></div>
+      <div class="sf-trilemma" id="sf-trilemma"></div>
+      <div class="sf-verif" id="sf-verif"></div>
+      <div class="sf-crosscheck" id="sf-crosscheck"></div>
+      <div class="sf-probes" id="sf-probes"></div>
+      <p class="note" id="sf-trilemma-note">…</p>
+    </article>
+  </section>
+  <!-- 第四十七维 · Spring Cloud Config 分布式配置中心三策略后端（KI-547） -->
+  <section class="row row-sc">
+    <article class="panel panel-sc">
+      <div class="panel-head"><h2>第四十二维 · GitBackend / NativeBackend / RedisBackend —— Spring Cloud Config 分布式配置中心</h2><span class="hint">Git=pull+webhook·副本 lag 窗口必然·hotReload=1·scaleFriendly=1·consistency=0；Native=FS watch·单主机本地盘·hotReload=1·scaleFriendly=0·consistency=1；Redis=pub/sub 失效需 poll 才热·hotReload=0·scaleFriendly=1·consistency=1 —— 默认向量 110/101/011，三难不可兼得 —— 绝不成品 111</span></div>
+      <div class="sc-matrix" id="sc-matrix"></div>
+      <div class="sc-ladder" id="sc-ladder"></div>
+      <p class="note" id="sc-matrix-note">…</p>
+    </article>
+    <article class="panel panel-sc">
+      <div class="panel-head"><h2>Config 后端三维向量（hotReload · scaleFriendly · consistency）· 双路自证 + 三路篡改 + 因果锁</h2><span class="hint">GitBackend=110 / NativeBackend=101 / RedisBackend=011 · 互补三路 · verifySpringConfigSoundness 双路自证（lane A git poll 单调版本 vs lane B redis pub/sub 全量失效；tamper 三通：gitStaleCache / redisNotifyLoss / busEventStorm 真喂回 hold=false；十一件 21 物证 compareRemapping/ShardRouter/HashRing/WAL/Bus/Redis/Pool/Bucket/MinHeap/PackedCounters/FullJitter Backoff）</span></div>
+      <div class="sc-trilemma" id="sc-trilemma"></div>
+      <div class="sc-verif" id="sc-verif"></div>
+      <div class="sc-crosscheck" id="sc-crosscheck"></div>
+      <div class="sc-probes" id="sc-probes"></div>
+      <p class="note" id="sc-trilemma-note">…</p>
+    </article>
+  </section>
+
 </main>
 
 <footer class="footer">

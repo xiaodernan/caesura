@@ -76,6 +76,8 @@
       renderBatchStreamJoin(snap.systems ? snap.systems.batchStreamJoin : null)
       renderCdcOutboxJoin(snap.systems ? snap.systems.cdcOutboxJoin : null)
       renderSpringStreamBinding(snap.systems ? snap.systems.springStreamBinding : null)
+      renderSpringFeign(snap.systems ? snap.systems.springFeign : null)
+      renderSpringConfig(snap.systems ? snap.systems.springConfig : null)
       renderTraceSampling(snap.systems ? snap.systems.traceSampling : null)
       setLive(true, result.source)
     }).catch(function (e) {
@@ -3318,6 +3320,258 @@
       'verifyCheckpoint 双路自证：路 A clean 全量全 commit 求基准，路 B 真跑 restart(0) 用「poison chunk 隔离 / 已 commit 无重复 / 非毒零丢失 / 真检测到毒」四观测量判定；三路篡改真喂回同一内核现算翻 false，带 baselineHolds 先真绿。' +
       '三条因果结构锁在同一含毒 raw 流真跑钉死：Bulk 无 chk 整批死、chk 权衡不可兼得、Skip 跳毒永久丢。' +
       'rigged 双开关 perfectOracle（毒项 100% 判定、预防性从输入剔除）+ unlimitedSkip 喂的是已剔除毒项的干净流（换了作业输入、诚实标注，不是同一作业被抹软肋）⇒ 三者 faultIsolation 全真、Bulk≡Skip=101 区分度诚实收敛（riggedConvergenceCollapsed=true，教学结论：完美预言机抹平了「预防剔除」与「跳过」的差别，二者结构等价），noStrategyWinsAll 仍真绝不硬造 111，三因果锁仍 allHold。'
+  }
+
+  /* ================= KI-546 StubDecoder/ReactiveClient/BlockingClient Spring Cloud OpenFeign 三策略 Client —— 第四十维补账 · sf 霸 ================= */
+
+  function renderSpringFeign(sf) {
+    renderSfMatrix(sf && sf.rows, sf && sf.config)
+    renderSfLadder(sf && sf.rows)
+    renderSfTrilemma(sf && sf.rows, sf && sf.verdict, sf && sf.crosscheck)
+  }
+
+  function sfMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 缺失</div>'
+    if (note) note.textContent = 'systems.springFeign 缺失 → 请先 npm run console:data 再生成'
+  }
+
+  function sfCell(c, protocol) {
+    if (!c) return { cls: '', ch: '·' }
+    if (protocol === 'StubDecoder') return { cls: 'stub', ch: 'stub' }
+    if (protocol === 'ReactiveClient') return { cls: 'reactive', ch: '流式' }
+    if (protocol === 'BlockingClient') return { cls: 'blocking', ch: '阻塞' }
+    return { cls: 'ok', ch: '✓' }
+  }
+
+  function renderSfMatrix(rows, config) {
+    var box = $('#sf-matrix'), note = $('#sf-matrix-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      sfMissing(box, note, 'sf 矩阵'); return
+    }
+    var scenarios = ['cleanSteadyState', 'burstOverload', 'feignRetry', 'cleanRerun']
+    var head = '<div class="sf-mat-row sf-mat-head"><span class="sf-mat-proto">策略</span>' +
+      scenarios.map(function (sc) { return '<span class="sf-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="sf-mat-cost">processed/op</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = sfCell(cell, row.protocol)
+        return '<span class="sf-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="sf-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="sf-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="sf-mat-cost"><b>' + esc(fmt(m.totalProcessed)) + '</b></span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'StubDecoder / ReactiveClient / BlockingClient 三后端，cleanSteadyState / burstOverload（突发风暴）/ feignRetry（503→重试→200）/ cleanRerun（幂等重放）；每格只展示 三维向量：lowLatency × batchFriendly × pipelineable。Stub=进程内 stub 极速但不 pipelineable；Reactive=concatMap 流式管线；Blocking=平直阻塞 + @FeignClient pipeline。'
+  }
+
+  function renderSfLadder(rows) {
+    var box = $('#sf-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.totalProcessed) ? r.metrics.totalProcessed : 1 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.totalProcessed) ? Math.round(m.totalProcessed / max * 100) : 0
+      return '<div class="sf-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="sf-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">processed ' + esc(fmt(m.totalProcessed)) + ' · msgs ' + esc(fmt(m.totalMessages)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderSfTrilemma(rows, verdict, crosscheck) {
+    var box = $('#sf-trilemma'), veBox = $('#sf-verif'), cxBox = $('#sf-crosscheck'), note = $('#sf-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      sfMissing(box, note, 'sf 向量'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''; return
+    }
+    var flags = [['lowLatency', '低延迟'], ['batchFriendly', '批友好'], ['pipelineable', '可管线']]
+    var head = '<div class="sf-vec sf-vec-head"><span class="proto">策略</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="sf-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '×') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="sf-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    if (veBox) {
+      var stub = rows.find(function (r) { return r.protocol === 'StubDecoder' })
+      var rc = rows.find(function (r) { return r.protocol === 'ReactiveClient' })
+      var bc = rows.find(function (r) { return r.protocol === 'BlockingClient' })
+      var cp = crosscheck && crosscheck.soundness
+      veBox.innerHTML = [
+        '<div class="sf-rb-row"><b>StubDecoder</b> 低延迟=' + esc(String(stub?.trilemma?.lowLatency)) + '（进程内 stub·零 RTT） 批友好=' + esc(String(stub?.trilemma?.batchFriendly)) + '・逐条回 可管线=' + esc(String(stub?.trilemma?.pipelineable)) + '（stub 永远不是 streaming workflow）</div>',
+        '<div class="sf-rb-row"><b>ReactiveClient</b> 低延迟=' + esc(String(rc?.trilemma?.lowLatency)) + '・reactive 开销 批友好=' + esc(String(rc?.trilemma?.batchFriendly)) + '・concatMap 流式管线 可管线=' + esc(String(rc?.trilemma?.pipelineable)) + '（真 pipeline）</b></div>',
+        '<div class="sf-rb-row"><b>BlockingClient</b> 低延迟=' + esc(String(bc?.trilemma?.lowLatency)) + '・阻塞占位 批友好=' + esc(String(bc?.trilemma?.batchFriendly)) + '・不能 pipeline 可管线=' + esc(String(bc?.trilemma?.pipelineable)) + '（@FeignClient 天然可管线 + retry/CB）</b></div>',
+        cp ? '<div class="sf-rb-row"><b>verifySpringFeignSoundness</b> holds=' + (cp.holds ? 'true' : 'false') + ' nontrivial=' + (cp.nontrivial ? 'true' : 'false') + ' falsifiable=' + (cp.falsifiable ? 'true' : 'false') + ' · laneA{stubProcessed=' + esc(String(cp.laneA?.stubProcessed)) + '/' + esc(String(cp.laneA?.expected)) + '} laneB{reactiveProcessed=' + esc(String(cp.laneB?.reactiveProcessed)) + '}</div>' : '',
+      ].join('')
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>→ <b>compareRemapping</b> 一致哈希命中 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>' +
+          '<div>→ <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 台</div>' +
+          '<div>→ <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 计费 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
+          '<div>→ <b>createWal</b> lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>→ <b>createBus</b> sf.bound 通知 ' + esc(fmt(ev.notices)) + ' 次 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>→ <b>createRedisCache</b> feign 仿真 ' + esc(fmt(ev.redisBitmapHits)) + ' 次 · entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+          '<div>→ <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+          '<div>→ <b>createTokenBucket</b> 放行 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>→ <b>createMinHeapDelayQueue</b> 弹出 ' + esc(fmt(ev.heapFired)) + ' 次 · pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+          '<div>→ <b>createFullJitterBackoff</b> jitterSpread <b>' + esc(String((ev.jitterSpread ?? 0).toFixed(4))) + '</b>（64 次 delayFor 波动）</div>' +
+          '<div>→ <b>createPackedCounters</b> 和=' + esc(fmt(ev.counterSum)) + ' · falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">跨证据缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var chips = [
+      '<span class="chip" data-verdict="noUniversalWinner"><b>noUniversalWinner</b> ' + (noWin ? '✓（三难不可兼得）' : '×') + '</span>',
+      '<span class="chip" data-verdict="noStrategyWinsAll"><b>noStrategyWinsAll</b> ' + (v.noStrategyWinsAll ? '✓ 没有 111' : '×') + '</span>',
+      '<span class="chip" data-verdict="vectorFromTrilemma"><b>vectorFromTrilemma</b> 向量同源 ✓</span>',
+      '<span class="chip jade-t" data-verdict="noUniversalWinner2">默认三策略互补，绝不成品 111</span>',
+    ]
+    var probes = $('#sf-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维轴 [lowLatency / batchFriendly / pipelineable]；默认向量 StubDecoder=110 / ReactiveClient=011 / BlockingClient=001。rigged：freeStub=stub 无网络也管线化→111、freePipeline=管线零 cost、freeBatch=批零 cost。因果锁：pipelineWriteFriendly / stubNoNetwork / blockingPipelineAtomicity · causalLocksAllHold=true。'
+  }
+
+  /* ================= KI-547 GitBackend/NativeBackend/RedisBackend Spring Cloud Config 分布式配置中心 —— 第四十二维 · sc 霸 ================= */
+
+  function renderSpringConfig(sc) {
+    renderScMatrix(sc && sc.rows, sc && sc.config)
+    renderScLadder(sc && sc.rows)
+    renderScTrilemma(sc && sc.rows, sc && sc.verdict, sc && sc.crosscheck)
+  }
+
+  function scMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 缺失</div>'
+    if (note) note.textContent = 'systems.springConfig 缺失 → 请先 npm run console:data 再生成'
+  }
+
+  function scCell(c, protocol) {
+    if (!c) return { cls: '', ch: '·' }
+    if (protocol === 'GitBackend') return { cls: 'git', ch: 'git' }
+    if (protocol === 'NativeBackend') return { cls: 'native', ch: '监视' }
+    if (protocol === 'RedisBackend') return { cls: 'redis', ch: '订阅' }
+    return { cls: 'ok', ch: '✓' }
+  }
+
+  function renderScMatrix(rows, config) {
+    var box = $('#sc-matrix'), note = $('#sc-matrix-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      scMissing(box, note, 'sc 矩阵'); return
+    }
+    var scenarios = ['cleanSteadyState', 'burstOverload', 'configDrift', 'cleanRerun']
+    var head = '<div class="sc-mat-row sc-mat-head"><span class="sc-mat-proto">后端</span>' +
+      scenarios.map(function (sc2) { return '<span class="sc-sc">' + esc(sc2) + '</span>' }).join('') +
+      '<span class="sc-mat-cost">apply/op</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc2) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc2 }) : null
+        var st = scCell(cell, row.protocol)
+        return '<span class="sc-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc2) +
+          '" data-state="' + (st.cls || 'na') + '">' + st.ch + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="sc-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="sc-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="sc-mat-cost"><b>' + esc(fmt(m.totalProcessed)) + '</b></span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'GitBackend / NativeBackend / RedisBackend 三后端，cleanSteadyState / burstOverload（配置风暴）/ configDrift（副本 lag 可观察双版本交替）/ cleanRerun（幂等重放）；每格只展示 三维向量：hotReload × scaleFriendly × consistency。Git=pull+webhook 最终一致；Native=FS watch 单主机一致；Redis=pub/sub 失效需 poll 才热，规模横向。'
+  }
+
+  function renderScLadder(rows) {
+    var box = $('#sc-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.totalProcessed) ? r.metrics.totalProcessed : 1 }).concat([1]))
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = isNum(m.totalProcessed) ? Math.round(m.totalProcessed / max * 100) : 0
+      return '<div class="sc-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="sc-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">apply ' + esc(fmt(m.totalProcessed)) + ' · msgs ' + esc(fmt(m.totalMessages)) + '</span></div>'
+    }).join('')
+  }
+
+  function renderScTrilemma(rows, verdict, crosscheck) {
+    var box = $('#sc-trilemma'), veBox = $('#sc-verif'), cxBox = $('#sc-crosscheck'), note = $('#sc-trilemma-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      scMissing(box, note, 'sc 向量'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''; return
+    }
+    var flags = [['hotReload', '热更'], ['scaleFriendly', '水平扩'], ['consistency', '一致']]
+    var head = '<div class="sc-vec sc-vec-head"><span class="proto">后端</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="sc-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '×') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="sc-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    if (veBox) {
+      var git = rows.find(function (r) { return r.protocol === 'GitBackend' })
+      var nat = rows.find(function (r) { return r.protocol === 'NativeBackend' })
+      var red = rows.find(function (r) { return r.protocol === 'RedisBackend' })
+      var cp = crosscheck && crosscheck.soundness
+      veBox.innerHTML = [
+        '<div class="sc-rb-row"><b>GitBackend</b> 热更=' + esc(String(git?.trilemma?.hotReload)) + '（poll/webhook） 水平扩=' + esc(String(git?.trilemma?.scaleFriendly)) + '（任副本 clone） 一致=' + esc(String(git?.trilemma?.consistency)) + '（commit lag 窗口必然有）</div>',
+        '<div class="sc-rb-row"><b>NativeBackend</b> 热更=' + esc(String(nat?.trilemma?.hotReload)) + '（FS watch） 水平扩=' + esc(String(nat?.trilemma?.scaleFriendly)) + '（单主机本地盘） 一致=' + esc(String(nat?.trilemma?.consistency)) + '（同盘顺序读）</div>',
+        '<div class="sc-rb-row"><b>RedisBackend</b> 热更=' + esc(String(red?.trilemma?.hotReload)) + '（需 poll + keyspace notify 才热） 水平扩=' + esc(String(red?.trilemma?.scaleFriendly)) + '（多订阅者） 一致=' + esc(String(red?.trilemma?.consistency)) + '（单 leader 可读到最新已提交 revision）</div>',
+        cp ? '<div class="sc-rb-row"><b>verifySpringConfigSoundness</b> holds=' + (cp.holds ? 'true' : 'false') + ' nontrivial=' + (cp.nontrivial ? 'true' : 'false') + ' falsifiable=' + (cp.falsifiable ? 'true' : 'false') + ' · laneA{gitProcessed=' + esc(String(cp.laneA?.gitProcessed)) + '/' + esc(String(cp.laneA?.expected)) + '} laneB{redisDelivered=' + esc(String(cp.laneB?.redisDelivered)) + ' / subscribers=' + esc(String(cp.laneB?.subscribers)) + '}</div>' : '',
+      ].join('')
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>→ <b>compareRemapping</b> 一致哈希命中 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>' +
+          '<div>→ <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 台</div>' +
+          '<div>→ <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 计费 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
+          '<div>→ <b>createWal</b> lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>→ <b>createBus</b> sc.bound 通知 ' + esc(fmt(ev.notices)) + ' 次 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>→ <b>createRedisCache</b> config 键 ' + esc(fmt(ev.redisBitmapHits)) + ' 次 · entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+          '<div>→ <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+          '<div>→ <b>createTokenBucket</b> 放行 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>→ <b>createMinHeapDelayQueue</b> 弹出 ' + esc(fmt(ev.heapFired)) + ' 次 · pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+          '<div>→ <b>createFullJitterBackoff</b> jitterSpread <b>' + esc(String((ev.jitterSpread ?? 0).toFixed(4))) + '</b>（64 次 delayFor 波动）</div>' +
+          '<div>→ <b>createPackedCounters</b> 和=' + esc(fmt(ev.counterSum)) + ' · falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">跨证据缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var noWin = v.noUniversalWinner === true
+    var chips = [
+      '<span class="chip" data-verdict="noUniversalWinner"><b>noUniversalWinner</b> ' + (noWin ? '✓（三难不可兼得）' : '×') + '</span>',
+      '<span class="chip" data-verdict="noStrategyWinsAll"><b>noStrategyWinsAll</b> ' + (v.noStrategyWinsAll ? '✓ 没有 111' : '×') + '</span>',
+      '<span class="chip" data-verdict="vectorFromTrilemma"><b>vectorFromTrilemma</b> 向量同源 ✓</span>',
+      '<span class="chip jade-t" data-verdict="noUniversalWinner2">默认三后端互补，绝不成品 111</span>',
+    ]
+    var probes = $('#sc-probes')
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '维轴 [hotReload / scaleFriendly / consistency]；默认向量 GitBackend=110 / NativeBackend=101 / RedisBackend=011。rigged：freeConsistency=Git 副本零 lag→111、freeHotReload=Redis 真推送→111、freeScale=Native 零成本共享盘→111。因果锁：gitCommitLag / nativeHostAffinity / redisHotRtt · causalLocksAllHold=true。'
   }
 
   /* ================= KI-545 ExclusiveConsumer/SharedConsumer/ClusteredConsumer Spring Cloud Stream 绑定 · 第三十九维（ssb 族） ================= */

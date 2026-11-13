@@ -4,11 +4,12 @@
 > 它不写玩家内容、不冒充真内核、不声称「接入 LLM 就意味着对白更好」——只替你标好每件仪器的读数与归宿。
 > 玩家运行时零 LLM、零网络、零密钥；作者工具只在你自己的终端里跑。
 
-## 0. 当前时间轴（2026-11-12 快照 · 可再生）
+## 0. 当前时间轴（2026-11-13 快照 · 可再生）
 
-- KI.rows=462 / Implemented=285 / Partial=167 / Placeholder=0 / Blocked=10
-- PKG.scripts=58 / PKG.deps=1 / PKG.devDeps=6 · KV 现读 `npm run status`
-- 36 个控制台维度（`console/index.html` `#row-*`）· `npm run console:data` 重生
+- KI.rows=468 / Implemented=291 / Partial=167 / Placeholder=0 / Blocked=10
+- PKG.scripts=64 / PKG.deps=1 / PKG.devDeps=6 · KV 现读 `npm run status`
+- 42 个控制台维度（`console/index.html` `#row-*`）· `npm run console:data` 重生（snapshot.json ↔ bootstrap.js 双源同代）
+- 新增：`spring-config:bench` —— KI-547 `caesura-spring-config` 双源一致；`spring-feign:bench` KI-546 的补账配套
 - 前端范式：headless 腿证据 + `console:data` 双载体同源（snapshot.json ↔ bootstrap.js）
 
 ## 1. 维护门（所有更动必须先过这两个）
@@ -46,6 +47,7 @@
 | 订阅层 | `stream-window:bench` / `group:bench` | 窗口聚合/滑动窗口/水位线 |
 | 并发控制 | `txn:bench` | MVCC 多版本/2PL 死锁检测/五档隔离异常矩阵 |
 | 分布式配置 | `config:consistency:bench` | 轮询/长轮询/watch 三难不封赢家 |
+| 配置中心 | `spring-config:bench` / `spring-feign:bench` | GitBackend=110 / NativeBackend=101 / RedisBackend=011 · Feign 110/011/001 |
 | 分布式 ID | `idgen:bench` | Snowflake / UUID / 号段双 buffer |
 | 消息/日志 | `log-compaction:bench` / `backpressure:bench` | LSM 紧凑 + size/time 固定阈值回末 |
 | 结构索引 | `bplus:bench` / `hash:bench` | B+ 树阶 vs LSM 笔账 + 一致性哈希偏斜 |

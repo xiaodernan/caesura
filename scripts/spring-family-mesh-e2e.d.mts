@@ -725,26 +725,47 @@ export function runMeshE2E(opts?: any): {
       builtAt: number
       rigged: boolean
     } | null
-    /** KI-546：CDC outbox join 三策略快照（LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景 + 三难向量 101/011/100 + verifySpringFeignSoundness 双路交叉印证 + 十一真件 21 键交叉印证），未配 springFeign 为 null */
+    /** KI-546：Spring Cloud OpenFeign 声明式 HTTP Client 教学件（StubDecoder=110 / ReactiveClient=011 / BlockingClient=001）——缺省 springFeign 为 null */
     springFeignSnapshot: {
       config: Record<string, any>
       rows: Array<{
         protocol: string
         scenarios: Array<{
-          id: string; messages: number; joins: number
-          snapshotConsistent: boolean; zeroDowntime: boolean; rendezvousCapable: boolean; fault: string
+          id: string; messages: number; processed: number
+          lowLatency: boolean; batchFriendly: boolean; pipelineable: boolean; fault: string
         }>
-        trilemma: { snapshotConsistent: boolean; zeroDowntime: boolean; rendezvousCapable: boolean }
-        metrics: { totalJoins: number; totalMessages: number }
+        trilemma: { lowLatency: boolean; batchFriendly: boolean; pipelineable: boolean }
+        metrics: { totalProcessed: number; totalMessages: number }
       }>
       vectors: Record<string, string>
       noUniversalWinner: boolean
       trilemmaDistinguishes: boolean
-      causalLocks: { snapshotCommitWindowCausallyUnerasable: boolean; binlogBorderlineCausallyUnerasable: boolean; outboxLockCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
-      crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
-      verdict: Record<string, any>
       builtAt: number
       rigged: boolean
+      verdict: Record<string, any>
+      causalLocks: { pipelineWriteFriendlyCausallyUnerasable: boolean; stubNoNetworkCausallyUnerasable: boolean; blockingPipelineAtomicityCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
+      crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+    } | null
+    /** KI-547：Spring Cloud Config 分布式配置中心三策略后端教学件（GitBackend=110 / NativeBackend=101 / RedisBackend=011）——缺省 springConfig 为 null */
+    springConfigSnapshot: {
+      config: Record<string, any>
+      rows: Array<{
+        protocol: string
+        scenarios: Array<{
+          id: string; messages: number; processed: number
+          hotReload: boolean; scaleFriendly: boolean; consistency: boolean; fault: string
+        }>
+        trilemma: { hotReload: boolean; scaleFriendly: boolean; consistency: boolean }
+        metrics: { totalProcessed: number; totalMessages: number }
+      }>
+      vectors: Record<string, string>
+      noUniversalWinner: boolean
+      trilemmaDistinguishes: boolean
+      builtAt: number
+      rigged: boolean
+      verdict: Record<string, any>
+      causalLocks: { gitCommitLagCausallyUnerasable: boolean; nativeHostAffinityCausallyUnerasable: boolean; redisHotRttCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
+      crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
     } | null
     /** KI-545：CDC outbox join 三策略快照（LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景 + 三难向量 101/011/100 + verifySpringStreamBindingSoundness 双路交叉印证 + 十一真件 21 键交叉印证），未配 springStreamBinding 为 null */
     springStreamBindingSnapshot: {

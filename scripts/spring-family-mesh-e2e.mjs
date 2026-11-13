@@ -208,6 +208,10 @@ export function runMeshE2E(opts = {}) {
     // 注入时钟用 ssbNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/reb/pq/bsj/coj/rdq/dld 已占用前缀）。
     springStreamBinding: opts.springStreamBinding,
     ssbNow: opts.ssbNow,
+    // KI-547: Spring Cloud Config Config-center three-strategy teaching件 (springConfig=true mounts GitBackend/NativeBackend/RedisBackend complement trilemma + verifySpringConfigSoundness dual-way self-proof + 11-piece 21-evidence crosscheck).
+    // Independent point: scNow; can run same frame with lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/reb/pq/bsj/coj/ssb/sf.
+    springConfig: opts.springConfig,
+    scNow: opts.scNow,
     // KI-544：CDC outbox join 教学件（cdcOutboxJoin=true 装配；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异）+ verifyCdcOutboxJoinSoundness 双路自证 + 十一真件 21 键交叉印证，不改调用路径）。
     // 注入时钟用 cojNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/reb/pq/bsj/coj/rdq/dld 已占用前缀）。
     cdcOutboxJoin: opts.cdcOutboxJoin,
@@ -377,6 +381,7 @@ export function runMeshE2E(opts = {}) {
         priorityQueueSnapshot: status.priorityQueue ?? null,
         batchStreamJoinSnapshot: status.batchStreamJoin ?? null,
         springFeignSnapshot: status.springFeign ?? null,
+        springConfigSnapshot: status.springConfig ?? null,
         springStreamBindingSnapshot: status.springStreamBinding ?? null,
         cdcOutboxJoinSnapshot: status.cdcOutboxJoin ?? null,
         traceSamplingSnapshot: status.traceSampling ?? null,
@@ -881,6 +886,19 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         crosscheck: r.springFeignSnapshot.crosscheck,
         causalLocks: r.springFeignSnapshot.causalLocks,
         verdict: r.springFeignSnapshot.verdict,
+      } : null,
+      springConfig: r.springConfigSnapshot ? {
+        strategies: r.springConfigSnapshot.rows.map((row) => ({
+          strategy: row.protocol,
+          ladder: row.scenarios.map((sc) => sc.id + ':' + (sc.hotReload === true ? 'HOT' : 'COLD')).join(' | '),
+          metrics: row.metrics, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.springConfigSnapshot.rows.map((row) => [row.protocol,
+          String(Number(row.trilemma.hotReload)) + String(Number(row.trilemma.scaleFriendly)) + String(Number(row.trilemma.consistency))])),
+        noUniversalWinner: r.springConfigSnapshot.verdict.noUniversalWinner,
+        crosscheck: r.springConfigSnapshot.crosscheck,
+        causalLocks: r.springConfigSnapshot.causalLocks,
+        verdict: r.springConfigSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

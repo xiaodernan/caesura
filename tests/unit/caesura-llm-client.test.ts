@@ -3,18 +3,6 @@ import { callLlm, buildBibleMessages, NPC_BIBLE, SHORT_BIBLE } from '../../scrip
 
 /** LLM 统一 client 缓存上下文（KI-538 增补）： stream + stream_options.include_usage + 稳定 NPC_BIBLE system prefix。 */
 
-function makeSseStream(bytes: string[]) {
-  const enc = new TextEncoder()
-  const body = bytes.map((b) => (typeof b === 'string' ? enc.encode(b + '\n\n') : b))
-  const stream = new ReadableStream({
-    start(controller) {
-      for (const b of body) controller.enqueue(b)
-      controller.close()
-    },
-  })
-  return body[0] as Uint8Array & ReadableStream | null as any
-}
-
 describe('caesura-llm-client caesura-llm-cacheFix', () => {
   it('NPC_BIBLE / SHORT_BIBLE 结构性断言（NPC-BIBLE 是稳定 system 前缀，需 >1024 tokens 以满足 OpenAI prompt caching 断点）', () => {
     expect(NPC_BIBLE.length).toBeGreaterThan(1000)

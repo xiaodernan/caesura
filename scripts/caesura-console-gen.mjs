@@ -56,6 +56,7 @@ import { batchStreamJoinStudy, batchStreamJoinSnapshot } from './caesura-batch-s
 import { cdcOutboxJoinStudy, cdcOutboxJoinSnapshot } from './caesura-cdc-outbox-join.mjs'
 import { springStreamBindingStudy, springStreamBindingSnapshot } from './caesura-spring-stream-binding.mjs'
 import { springFeignStudy, springFeignSnapshot } from './caesura-spring-feign.mjs'
+import { springConfigStudy, springConfigSnapshot } from './caesura-spring-config.mjs'
 import { traceSamplingStudy, traceSamplingSnapshot } from './caesura-trace-sampling.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
@@ -396,7 +397,9 @@ export async function buildSystems(opts = {}) {
   // KI-545：第三十八维✦ Spring Cloud Stream 绑定三策略教学件（ExclusiveConsumer/SharedConsumer/ClusteredConsumer）
   const springStreamBinding = opts.springStreamBinding === false ? null : await buildSpringStreamBindingReading(opts, now)
   const springFeign = opts.springFeign === false ? null : await buildSpringFeignReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, priorityQueue, batchStreamJoin, cdcOutboxJoin, springStreamBinding, springFeign, builtAt: now() }
+  // KI-547：Spring Cloud Config 分布式配置中心教学件（GitBackend/NativeBackend/RedisBackend 三后端 + verifySpringConfigSoundness 双路自证 + 十一件 21 物证）
+  const springConfig = opts.springConfig === false ? null : await buildSpringConfigReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, priorityQueue, batchStreamJoin, cdcOutboxJoin, springStreamBinding, springFeign, springConfig, builtAt: now() }
 }
 
 /**
@@ -526,6 +529,29 @@ export async function buildSpringFeignReading(opts, now) {
     return springFeignSnapshot(s)
   } catch (e) {
     return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
+ * KI-547：Spring Cloud Config 分布式配置中心教学件（GitBackend/NativeBackend/RedisBackend 三后端 + verifySpringConfigSoundness 双路自证 + 十一件 21 物证）。
+ * 失败返回 null；CLI 双点一律。rigged 组合 collapse 三旗。
+ * @param {object} opts { springConfig?:false, scSeed?, scMessages?, scFreeHotReload?, scFreeScale?, scFreeConsistency?, scRigged? }
+ * @param {()=>number} now 时间母版，builtAt 盖记值。
+ */
+export async function buildSpringConfigReading(opts, now) {
+  try {
+    const s = await springConfigStudy({
+      now,
+      ...(opts.scSeed ? { seed: Math.max(0, Math.floor(Number(opts.scSeed))) } : {}),
+      ...(opts.scMessages ? { messages: Math.max(16, Math.floor(Number(opts.scMessages))) } : {}),
+      ...(opts.scFreeHotReload === true ? { freeHotReload: true } : {}),
+      ...(opts.scFreeScale === true ? { freeScale: true } : {}),
+      ...(opts.scFreeConsistency === true ? { freeConsistency: true } : {}),
+      ...(opts.scRigged === true ? { rigged: true } : {}),
+    })
+    return springConfigSnapshot(s)
+  } catch (e) {
+    return null // 静态降级：null → 前端 scent-missing 分支，不炸 console。与 Feign/StreamBinding 同。
   }
 }
 

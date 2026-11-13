@@ -2741,3 +2741,91 @@ describe('KI-545 第三十九维 · exclusive/shared/clustered（ssb 族）', ()
     })
   })
 })
+
+// ============ KI-546 Spring Cloud OpenFeign 三策略 Client（sf 霸 · 双面板复刻 KI-545 结构）============
+describe('KI-546 OpenFeign Client · StubDecoder/ReactiveClient/BlockingClient（sf 霸）', () => {
+  const realSf = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+  it('第四十维 markup/CSS 面板渲染：sf 矩阵 12 cell + 向量 110/011/001 + 状态角标 + ladder 条', async () => {
+    const dom = await runApp(realSf)
+    const matrix = dom.els['sf-matrix'].innerHTML
+    expect(matrix).toContain('sf-mat-head')
+    for (const p of ['StubDecoder', 'ReactiveClient', 'BlockingClient']) {
+      expect(matrix).toContain('data-strategy="' + p + '"')
+    }
+    for (const sc of ['cleanSteadyState', 'burstOverload', 'feignRetry', 'cleanRerun']) {
+      expect(matrix).toContain('data-s="' + sc + '"')
+    }
+    expect((matrix.match(/class="sf-cell /g) || []).length).toBe(12)
+    const tri = dom.els['sf-trilemma'].innerHTML
+    expect(tri).toContain('data-vec="110"')
+    expect(tri).toContain('data-vec="011"')
+    expect(tri).toContain('data-vec="001"')
+    expect(dom.els['sf-ladder'].innerHTML).toContain('sf-bar')
+  })
+
+  it('sf markup/CSS 同源 + systems.springFeign 缺失时降级分支可见', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-sf')
+    expect(html).toContain('id="sf-matrix"')
+    expect(html).toContain('id="sf-verif"')
+    expect(html).toContain('StubDecoder=110 / ReactiveClient=011 / BlockingClient=001')
+    expect(css).toContain('.sf-cell.stub')
+    expect(css).toContain('.sf-cell.reactive')
+    expect(css).toContain('.sf-cell.blocking')
+    expect(css).toContain('.sf-flag.yes')
+    expect(css).toContain('.sf-bar > i')
+    expect(css).toContain('.sf-verif')
+    const noSf = JSON.parse(JSON.stringify(realSf as any))
+    noSf.systems.springFeign = null
+    return runApp(noSf).then((dom2: any) => {
+      expect(dom2.els['sf-matrix'].innerHTML).toContain('缺失')
+      expect(dom2.els['sf-trilemma'].innerHTML).toContain('缺失')
+      expect(dom2.els['sf-matrix-note'].textContent).toContain('systems.springFeign 缺失')
+    })
+  })
+})
+
+// ============ KI-547 Spring Cloud Config 分布式配置中心三策略后端（sc 霸）============
+describe('KI-547 Spring Cloud Config 分布式配置中心 · GitBackend/NativeBackend/RedisBackend（sc 霸）', () => {
+  const realSc = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+  it('第四十二维 markup/CSS 面板渲染：sc 矩阵 12 cell + 向量 110/101/011 + 状态角标 + ladder 条', async () => {
+    const dom = await runApp(realSc)
+    const matrix = dom.els['sc-matrix'].innerHTML
+    expect(matrix).toContain('sc-mat-head')
+    for (const p of ['GitBackend', 'NativeBackend', 'RedisBackend']) {
+      expect(matrix).toContain('data-strategy="' + p + '"')
+    }
+    for (const sc of ['cleanSteadyState', 'burstOverload', 'configDrift', 'cleanRerun']) {
+      expect(matrix).toContain('data-s="' + sc + '"')
+    }
+    expect((matrix.match(/class="sc-cell /g) || []).length).toBe(12)
+    const tri = dom.els['sc-trilemma'].innerHTML
+    expect(tri).toContain('data-vec="110"')
+    expect(tri).toContain('data-vec="101"')
+    expect(tri).toContain('data-vec="011"')
+    expect(dom.els['sc-ladder'].innerHTML).toContain('sc-bar')
+  })
+
+  it('sc markup/CSS 同源 + systems.springConfig 缺失时降级分支可见', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-sc')
+    expect(html).toContain('id="sc-matrix"')
+    expect(html).toContain('id="sc-verif"')
+    expect(html).toContain('GitBackend=110 / NativeBackend=101 / RedisBackend=011')
+    expect(css).toContain('.sc-cell.git')
+    expect(css).toContain('.sc-cell.native')
+    expect(css).toContain('.sc-cell.redis')
+    expect(css).toContain('.sc-flag.yes')
+    expect(css).toContain('.sc-bar > i')
+    expect(css).toContain('.sc-verif')
+    const noSc = JSON.parse(JSON.stringify(realSc as any))
+    noSc.systems.springConfig = null
+    return runApp(noSc).then((dom2: any) => {
+      expect(dom2.els['sc-matrix'].innerHTML).toContain('缺失')
+      expect(dom2.els['sc-trilemma'].innerHTML).toContain('缺失')
+      expect(dom2.els['sc-matrix-note'].textContent).toContain('systems.springConfig 缺失')
+    })
+  })
+})
