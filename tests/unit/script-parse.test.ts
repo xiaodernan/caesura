@@ -114,7 +114,7 @@ describe('真总体（HEAD 的提交面）：每一份 scripts/*.mjs 都要被 n
     expect(checked.length, `实际 spawn 检查了 ${checked.length} 份，名册给了 ${files.length} 份 = 中间有份没被读过`).toBe(files.length)
     expect(shebanged.length, `总体里带 shebang 的 0 份 = 这里读的不是那批"只被命令行跑"的脚本，KI-118 管不着的那一格没人守`).toBeGreaterThanOrEqual(1)
     expect(bad, '这些脚本在 HEAD 上就解析不过：它们不会被任何测试 import，所以今天是第一次有人拿解析器读它们').toEqual([])
-  }, 300000) // 每个 scripts/*.mjs 各 spawn 一次 node；并发负载下实测 44s→>120s，故给 5 分钟
+  }, 900000) // 每个 scripts/*.mjs 都要 spawn 一 node；并发负载实测 44s~>120s，CI 慢 VM 上 300s 余量不足，900s 足够
 
   it('反面见证写进门里：那一份今天真炸过的字节形状，探针必须判红', () => {
     const src = headBlob('scripts/red-rate.mjs')
