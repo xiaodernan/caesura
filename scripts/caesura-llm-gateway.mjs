@@ -105,7 +105,7 @@ export function offlineReply(messages, opts = {}) {
     ok: true, mode: 'offline', status: 200, model,
     content, finishReason: 'stop',
     usage: { prompt_tokens: String(last.content || '').length, completion_tokens: content.length, total_tokens: 0 },
-    latencyMs: 0, via: 'offline-double', rawText: null,
+    latencyMs: 0, via: 'offline-double', rawText: null, cached: false, cachedTokens: 0,
   }
 }
 
@@ -121,7 +121,7 @@ export function normalizeReply(status, json, rawText, opts = {}) {
     ok: true, mode: 'live', status: st, model, content,
     finishReason: json?.choices?.[0]?.finish_reason ?? null,
     usage: { prompt_tokens: numOr(json?.usage?.prompt_tokens, 0), completion_tokens: numOr(json?.usage?.completion_tokens, 0), total_tokens: numOr(json?.usage?.total_tokens, 0), cached_tokens: numOr(json?.usage?.prompt_tokens_details?.cached_tokens, 0) },
-    latencyMs: numOr(opts.latencyMs, 0), via: 'live', rawText: null,
+    latencyMs: numOr(opts.latencyMs, 0), via: 'live', rawText: null, cached: numOr(json?.usage?.prompt_tokens_details?.cached_tokens, 0) > 0, cachedTokens: numOr(json?.usage?.prompt_tokens_details?.cached_tokens, 0),
   }
 }
 
