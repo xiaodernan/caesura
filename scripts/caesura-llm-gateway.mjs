@@ -291,7 +291,7 @@ async function examOf(strategy, opts = {}, deps = {}) {
 export async function llmGatewayStudy(opts = {}) {
   const seed = intOr(opts.seed, LLM_DEFAULTS.seed)
   const mode = opts.mode === 'live' ? 'live' : 'offline'
-  const cfg = { seed, mode, model: String(opts.model || LLM_DEFAULTS.model), system: opts.system, baseUrl: opts.baseUrl }
+  const cfg = { seed, mode, model: String(opts.model || LLM_DEFAULTS.model), system: opts.system, baseUrl: opts.baseUrl, stream: opts.stream === true }
   const deps = { env: opts.env, fetchImpl: opts.fetchImpl, clock: opts.clock }
 
   // 三策略各自真跑三难考场现算向量，零查表、零硬造：
@@ -569,7 +569,8 @@ if (isCliInvocation) {
   const nowMs = nowArg ? numOr(nowArg.slice(6), 0) : 0
   const key = resolveApiKey(process.env)
   const mode = live ? 'live' : 'offline'
-  const study = await llmGatewayStudy({ mode, model, now: () => nowMs })
+  const stream = live || args.includes('--stream')
+  const study = await llmGatewayStudy({ mode, model, now: () => nowMs, stream })
   console.log(`[llm-gateway] base=${study.config.baseUrl} model=${model} mode=${mode} keyPresent=${study.config.keyPresent} builtAt=${study.builtAt}`)
   console.log('  vectors: ' + JSON.stringify(study.vectors) + ' noUniversalWinner=' + study.noUniversalWinner + ' vectorFromExam=' + study.verdict.vectorFromExam)
   console.log('  trilemmaCrosscheck: liveGrounded=' + study.trilemma.liveGrounded + ' reproducible=' + study.trilemma.reproducible + ' zeroCost=' + study.trilemma.zeroCost)
