@@ -13,6 +13,7 @@
  */
 import { readFileSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
+import { callLlm, buildBibleMessages } from './caesura-llm-client.mjs'
 
 const BASE = process.env.CAESURA_LLM_BASE_URL ?? 'https://wkapi.pro/v1'
 const API_KEY = process.env.CAESURA_LLM_API_KEY ?? ''
@@ -63,40 +64,22 @@ const POINTS = [
 
 const isCliInvocation = !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href
 
-async function callLlm() {
-  const sys = '你是一位为《止音纪元》写中文对白的资深编剧。规则：'
-    + '① NPC 开口必须像“此刻正说话”而不像“NPC 介绍自己”；'
-    + '② 词句短、节奏不匀、允许单个省略号断句；'
-    + '③ 绝不用现代口语里“OK / 好吧”这类词；'
-    + '④ 绝不把 NPC 的名字和标签印进说话里；'
-    + '⑤ 情绪标注只告知你心里的把握，不用上屏。'
-  const body = {
-    model: MODEL,
-    messages: [
-      { role: 'system', content: sys },
-      ...POINTS.filter((p) => !SELECTED_NPC || p.id === SELECTED_NPC).map((p) => ({
-        role: 'user',
-        content:
-          `NPC id: ${p.id}（emotion: ${p.emotion}）\n`
-          + `Where: ${p.where}\n`
-          + `Who: ${p.who}\n`
-          + `Canon opening: ${p.canonOpening}\n`
-          + `Style: ${p.style.join(' / ')}\n`
-          + p.ask,
-      })),
-    ],
+async function callLlmWithPrompt({ bibleKey = 'canon' } = {}) {
+  const sys = bibleKey === 'short' ? '你是《止音纪元》的中文 NPC 对白编剧。短句、克制、不翻译腔。' : undefined // unused — kept for symmetry
+  const body = buildBibleMessages({
+    npcMode: 'canon',
+    user: POINTS.filter((p) => !SELECTED_NPC || p.id === SELECTED_NPC)
+      .map((p) => `NPC id: ${p.id}（emotion: ${p.emotion}）\n`
+        + `Where: ${p.where}\n`
+        + `Who: ${p.who}\n`
+        + `Canon opening: ${p.canonOpening}\n`
+        + `Style: ${p.style.join(' / ')}\n`
+        + p.ask)
+      .join('\n\n'),
+    maxTokens: 900,
     temperature: 0.72,
-    max_tokens: 900,
-  }
-  const res = await fetch(`${BASE}/chat/completions`, {
-    method: 'POST',
-    headers: { 'authorization': `Bearer ${API_KEY}`, 'content-type': 'application/json' },
-    body: JSON.stringify(body),
   })
-  const text = await res.text()
-  let json = null
-  try { json = JSON.parse(text) } catch { /* keep raw */ }
-  return { status: res.status, text, json }
+  return callLlm(body)
 }
 
 if (isCliInvocation) {
@@ -106,16 +89,17 @@ if (isCliInvocation) {
     process.exit(2)
   }
   console.log(`[llm-npc-voice-proof] base=${BASE} model=${MODEL}`)
-  const out = await callLlm()
+  const out = await callLlmWithPrompt({})
   const dt = Date.now() - t0
-  console.log(`[llm-npc-voice-proof] HTTP ${out.status}  (${dt} ms)`)
-  if (out.status !== 200) {
-    console.error('[llm-npc-voice-proof] 端点未正常：', out.text.slice(0, 600))
+  console.log(`[llm-npc-voice-proof] HTTP ${out.status}  (${out.dt} ms)`)
+  if (!out.ok) {
+    console.error('[llm-npc-voice-proof] 端点未正常：', out.text?.slice(0, 600) ?? out.raw?.slice(0, 600) ?? out)
     process.exit(2)
   }
-  const choice = out.json?.choices?.[0]?.message?.content ?? '(空回)'
+  const choice = out.text ?? '(空回)'
   console.log('=== 模型返回（真 LLM · 未改写） ===')
   console.log(choice)
-  console.log('usage:', JSON.stringify(out.json?.usage ?? null))
+  console.log('usage:', JSON.stringify(out.usage ?? null))
+  console.log(`每次缓存命中 cached=${out.cachedTokens}/${out.usage?.prompt_tokens ?? '?'} tokens`)
   console.log('--- 本脚本只向作者输出内容，不把任何 LLM 输出写进数据/玩家侧。 ---')
 }
