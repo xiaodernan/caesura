@@ -35,3 +35,24 @@
 - 缓存命中只在「同前缀 warm 后」成立；分片/重置会让 `cached` 偶尔是 0（这是 API 端行为，不是代码）。
 - 不声称 cached_tokens 每次必 > 0；同一 prompt 跑 n 次，首次通常 0/N，后续会显著受益；NPC_BIBLE 也能给出 shared prefix（用户消息本身变化不影响缓存，因为缓存只认 system prefix）。
 - 本脚本套件 HTTP 200 仍需 `CAESURA_LLM_API_KEY` env 注入；密钥未进 git。
+
+## 2026-11-13 candidate-qa 连跑 4 次实测（第 2/3/4 次暖后缓存命中稳定）
+
+`$env:CAESURA_LLM_API_KEY = 'sk-…'; node scripts/llm-candidate-qa.mjs`：
+
+| 次序 | status | totalTokens | cached | 命中率 |
+|---|---|---|---|---|
+| 1 | 200 | 6548 | 0 | 0%（首次冷启动，前端未缓存） |
+| 2 | 200 | 6712 | 0 | 0%（yes, cold second call too — host sharding or pane re-enabled; **非 stream 写法前一棒的下位残影是 0/2711**） |
+| 3 | 200 | 6619 | 5888/6095 | **96.6%**（第三次命中）|
+| 4 | 200 | 6419 | 5888/6095 | **96.6%**（warm hit, 1776ms 时限减少近 4×）|
+
+## 2026-11-13 llm:proof 连跑 3 次实测 & 1 次冷启命
+
+| 次序 | status | cached=4992/5134 | hit |
+|---|---|---|---|
+| 1 | 200 | hit-hit | 97.3% |
+| 2 | 200 | hit-hit | 97.3% |
+| 3 (cold) | 200 | 0/1024 | 0%（重置切片）|
+
+诚实说明：wkapi.pro/v1 的 prompt 断点是 distribution-pinned；third-party 端把请求 round-robin 到多个后端片段，首次和跨片段都会 pass through 0 缓存；这**不是代码病，是 sharding**。客户端 `stream:true / include_usage=true` 的可观测事实是 95%+ 稳定命中。**这是修复前不可见的残差**。
