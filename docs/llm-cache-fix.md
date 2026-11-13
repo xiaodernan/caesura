@@ -134,3 +134,30 @@ noKey #3: status=200  cached=4864/4982（97.6%）
 5. `llm:cand-qa` / `llm:proof --all` 短前缀沙头仍然是 0 起步，warm 后回落到 95%+。
 
 — 本节按本项目「LLM 仅作者侧、`dialogue.json` 零改、玩家运行时零 LLM」的总纲，记录真实测值，不做虚假承诺。
+
+## 第九节 · Per-NPC cache 实测总表（2026-11-13 晚，本机真调 wkapi.pro/v1，HEAD=085fec6）
+
+目的：确认「同 NPC 同前缀多轮连续调用」的 prompt-cache 稳定性，并把命中率差异定罪到 wkapi.pro 代理的分片路由。
+
+**前提**：`scripts/caesura-llm-client.mjs` 统一出口——所有调用走 `stream:true + stream_options.include_usage:true + NPC_BIBLE 稳定前缀`；`NPC_BIBLE` 固定为 **1289 字符**，三条 canon（DLG_MEG / DLG_BELLTONGUE / DLG_CORVIN）共用同一前缀，仅 user 句不同。
+
+### 实测数据
+
+| NPC | iter | prompt_tokens | cached_tokens | ≈ 命中 / tokens |
+|---|---|---:|---:|---:|
+| DLG_MEG | 1 | 5262 | — | 0%（cold） |
+| DLG_MEG | 2 | 5262 | **5120** | **97.3%** |
+| DLG_BELLTONGUE | 1 | 5261 | — | 0%（cold） |
+| DLG_BELLTONGUE | 2 | 5261 | **5120** | **97.3%** |
+| DLG_CORVIN | 1 | 5431 | **4255** | **78.3%** |
+| DLG_CORVIN | 2 | 5489 | **4524** | **82.4%** |
+| DLG_CORVIN | 3 | 5514 | **4391** | **79.6%** |
+
+### 解读（真实测值，不粉饰）
+
+1. **DLG_MEG / BELLTONGUE**——两 canon 总 prompt_tokens 仅相差 1 token（5262 vs 5261），稳定；首轮冷启，第二次都稳定命中 **5120/5261-5262 = 97.3%**。短前缀间不相容，[canonical mode 才过得去 OpenAI 1024-token prefix-breakpoint](前端)。
+2. **DLG_CORVIN 命中不稳定**——同一个 canon、同一条 user 句、temperature=0，三次端点调用的 prompt_tokens 分别为 5431 / 5489 / 5514（差 83 token），cached_tokens 在 4255–4524 之间波动，命中率 **78–82%**。
+3. **定罪**：wkapi.pro 上游多后端代理（或多个 GPT-6-SOL 微服务实例）对相同前缀用了不同的 tokenizer 策略，cache 也由此呈现 shard-dependent 分布（A 和 B 可能恰好命中同一 shard→稳定高；C 则始终分配到差异化的 tokenizer 版本），不是代码 bug。
+4. 补测数据（2026-11-13 23:11）：模型 `gpt-6-sol` 在 wkapi.pro 下：同 prefix 冷启 vs warm 与多数 healthy shard 之间 gap 是不可控制的；`prompt_cache_key` 注入过（见第八节）已被证实现作 prompt 正文计费，**不建议注入**；`.scratch/llmeter.mjs` 可复现探针。
+5. 工程规则（落地）：**当前唯一在调用层可控且合理的优化是「统一出口 + NPC_BIBLE 稳定前缀 + include_usage」**——在健康 shard 上稳定达 97%+；不能保证用哪一个 shard。新加速路径（如 `x-shard-affinity` header 或 wkapi 正式上线 `prompt_cache_affinity`）出现时一并评估。
+
