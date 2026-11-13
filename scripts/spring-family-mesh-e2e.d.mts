@@ -725,6 +725,27 @@ export function runMeshE2E(opts?: any): {
       builtAt: number
       rigged: boolean
     } | null
+    /** KI-546：CDC outbox join 三策略快照（LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景 + 三难向量 101/011/100 + verifySpringFeignSoundness 双路交叉印证 + 十一真件 21 键交叉印证），未配 springFeign 为 null */
+    springFeignSnapshot: {
+      config: Record<string, any>
+      rows: Array<{
+        protocol: string
+        scenarios: Array<{
+          id: string; messages: number; joins: number
+          snapshotConsistent: boolean; zeroDowntime: boolean; rendezvousCapable: boolean; fault: string
+        }>
+        trilemma: { snapshotConsistent: boolean; zeroDowntime: boolean; rendezvousCapable: boolean }
+        metrics: { totalJoins: number; totalMessages: number }
+      }>
+      vectors: Record<string, string>
+      noUniversalWinner: boolean
+      trilemmaDistinguishes: boolean
+      causalLocks: { snapshotCommitWindowCausallyUnerasable: boolean; binlogBorderlineCausallyUnerasable: boolean; outboxLockCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
+      crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+      verdict: Record<string, any>
+      builtAt: number
+      rigged: boolean
+    } | null
     /** KI-545：CDC outbox join 三策略快照（LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景 + 三难向量 101/011/100 + verifySpringStreamBindingSoundness 双路交叉印证 + 十一真件 21 键交叉印证），未配 springStreamBinding 为 null */
     springStreamBindingSnapshot: {
       config: Record<string, any>

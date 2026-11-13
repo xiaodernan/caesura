@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794550085755,
+  "generatedAt": 1794550520998,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1365,12 +1365,12 @@
           "keys": 1,
           "versions": 2,
           "commitLogSize": 1,
-          "now": 1794550085757
+          "now": 1794550521000
         },
         "final": {
           "A": {
             "value": 101,
-            "commitTs": 1794550085757,
+            "commitTs": 1794550521000,
             "tombstone": false
           }
         }
@@ -3646,7 +3646,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794550085755,
+                "lastTimestamp": 1794550520998,
                 "workerId": 1
               },
               "fault": {
@@ -3742,7 +3742,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794550085755,
+                "lastTimestamp": 1794550520998,
                 "workerId": 1
               },
               "fault": {
@@ -3774,7 +3774,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794550085756,
+                "lastTimestamp": 1794550520999,
                 "workerId": 1
               },
               "fault": {
@@ -3806,7 +3806,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794550085755,
+                "lastTimestamp": 1794550520998,
                 "workerId": 1
               },
               "fault": {
@@ -4522,7 +4522,7 @@
         "capacity": 8,
         "perShardCap": 2
       },
-      "builtAt": 1794550085755
+      "builtAt": 1794550520998
     },
     "configConsistency": {
       "config": {
@@ -5020,7 +5020,7 @@
         "burstCount": 12,
         "windowMs": 10000
       },
-      "builtAt": 1794550085755
+      "builtAt": 1794550520998
     },
     "cacheCoherency": {
       "config": {
@@ -5549,7 +5549,7 @@
         "crashAtWrite": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794550085755
+      "builtAt": 1794550520998
     },
     "messageDelivery": {
       "config": {
@@ -6038,10 +6038,10 @@
         "crashAfterSendAt": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794550085755
+      "builtAt": 1794550520998
     },
     "delayQueue": {
-      "builtAt": 1794550085755,
+      "builtAt": 1794550520998,
       "config": {
         "seed": 518,
         "tasks": 12,
@@ -6068,7 +6068,7 @@
               "id": "allOk",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 33804,
+              "lateMs": 5804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6080,7 +6080,7 @@
               "id": "tickSkew",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 33804,
+              "lateMs": 5804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6092,7 +6092,7 @@
               "id": "farFuture",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 34136,
+              "lateMs": 6136,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6104,7 +6104,7 @@
               "id": "manyCancels",
               "protocol": "TimingWheel",
               "fired": 6,
-              "lateMs": 23858,
+              "lateMs": 2858,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6128,7 +6128,7 @@
               "id": "concurrentWorkers",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 33804,
+              "lateMs": 5804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6139,7 +6139,7 @@
           ],
           "totals": {
             "fired": 54,
-            "lateMs": 159406,
+            "lateMs": 26406,
             "duplicatePickups": 0,
             "lostOnRestart": 6,
             "opUnits": 72
@@ -6375,7 +6375,7 @@
       }
     },
     "retryDlq": {
-      "builtAt": 1794550085755,
+      "builtAt": 1794550520998,
       "config": {
         "seed": 520,
         "messages": 16,
@@ -6793,7 +6793,7 @@
       }
     },
     "consumerGroup": {
-      "builtAt": 1794550085755,
+      "builtAt": 1794550520998,
       "config": {
         "seed": 523,
         "consumers": 3,
@@ -7299,7 +7299,7 @@
       }
     },
     "backpressure": {
-      "builtAt": 1794550085755,
+      "builtAt": 1794550520998,
       "config": {
         "steps": 48,
         "mu": 2,
@@ -8344,7 +8344,7 @@
       }
     },
     "logCompaction": {
-      "builtAt": 1794550085755,
+      "builtAt": 1794550520998,
       "config": {
         "seed": 526,
         "ops": 24,
@@ -9405,7 +9405,7 @@
       }
     },
     "bloomFilter": {
-      "builtAt": 1794550085755,
+      "builtAt": 1794550520998,
       "config": {
         "seed": 527,
         "capacity": 1024,
@@ -10104,7 +10104,7 @@
       }
     },
     "cacheReplacement": {
-      "builtAt": 1794550085755,
+      "builtAt": 1794550520998,
       "config": {
         "seed": 528,
         "capacity": 16,
@@ -10747,7 +10747,7 @@
       }
     },
     "streamWindow": {
-      "builtAt": 1794550085755,
+      "builtAt": 1794550520998,
       "config": {
         "seed": 529,
         "windowSize": 100,
@@ -12806,7 +12806,7 @@
       }
     },
     "hyperLogLog": {
-      "builtAt": 1794550085755,
+      "builtAt": 1794550520998,
       "config": {
         "seed": 530,
         "cardinality": 4096,
@@ -29726,7 +29726,7 @@
       }
     },
     "crdt": {
-      "builtAt": 1794550085755,
+      "builtAt": 1794550520998,
       "config": {
         "seed": 531,
         "replicaCount": 3,
@@ -30182,7 +30182,7 @@
       }
     },
     "springBatch": {
-      "builtAt": 1794550085755,
+      "builtAt": 1794550520998,
       "config": {
         "seed": 532,
         "items": 96,
@@ -30621,7 +30621,7 @@
       "rigged": false
     },
     "traceSampling": {
-      "builtAt": 1794550085755,
+      "builtAt": 1794550520998,
       "config": {
         "seed": 533,
         "items": 64,
@@ -31323,7 +31323,7 @@
       "rigged": false
     },
     "distributedSession": {
-      "builtAt": 1794550085755,
+      "builtAt": 1794550520998,
       "config": {
         "seed": 535,
         "sessions": 96,
@@ -31679,7 +31679,7 @@
       "rigged": false
     },
     "transactionalOutbox": {
-      "builtAt": 1794550085755,
+      "builtAt": 1794550520998,
       "config": {
         "seed": 534,
         "items": 96,
@@ -32130,7 +32130,7 @@
       "rigged": false
     },
     "loadBalance": {
-      "builtAt": 1794550085755,
+      "builtAt": 1794550520998,
       "config": {
         "seed": 536,
         "requests": 96,
@@ -32550,7 +32550,7 @@
       "rigged": false
     },
     "circuitBreaker": {
-      "builtAt": 1794550085755,
+      "builtAt": 1794550520998,
       "config": {
         "seed": 537,
         "calls": 96,
@@ -33080,7 +33080,7 @@
       "rigged": false
     },
     "llmGateway": {
-      "builtAt": 1794550085755,
+      "builtAt": 1794550520998,
       "config": {
         "seed": 538,
         "mode": "offline",
@@ -33475,7 +33475,7 @@
       "rigged": false
     },
     "gatewayRouting": {
-      "builtAt": 1794550085755,
+      "builtAt": 1794550520998,
       "config": {
         "seed": 539,
         "requests": 96,
@@ -33813,7 +33813,7 @@
       "rigged": false
     },
     "idempotentConsumer": {
-      "builtAt": 1794550085755,
+      "builtAt": 1794550520998,
       "config": {
         "seed": 540,
         "messages": 96,
@@ -34239,7 +34239,7 @@
       "rigged": false
     },
     "consumerRebalance": {
-      "builtAt": 1794550085755,
+      "builtAt": 1794550520998,
       "config": {
         "seed": 541,
         "partitions": 6,
@@ -34649,7 +34649,7 @@
       "rigged": false
     },
     "priorityQueue": {
-      "builtAt": 1794550085755,
+      "builtAt": 1794550520998,
       "config": {
         "seed": 542,
         "messages": 96,
@@ -34941,7 +34941,7 @@
       "rigged": false
     },
     "batchStreamJoin": {
-      "builtAt": 1794550085755,
+      "builtAt": 1794550520998,
       "config": {
         "seed": 543,
         "messages": 96,
@@ -35218,7 +35218,7 @@
       "rigged": false
     },
     "cdcOutboxJoin": {
-      "builtAt": 1794550085755,
+      "builtAt": 1794550520998,
       "config": {
         "seed": 544,
         "messages": 96,
@@ -35481,7 +35481,7 @@
       "rigged": false
     },
     "springStreamBinding": {
-      "builtAt": 1794550085755,
+      "builtAt": 1794550520998,
       "config": {
         "seed": 545,
         "messages": 96,
@@ -35741,6 +35741,261 @@
       },
       "rigged": false
     },
-    "builtAt": 1794550085755
+    "springFeign": {
+      "builtAt": 1794550520998,
+      "config": {
+        "seed": 546,
+        "messages": 96,
+        "scenarios": [
+          "cleanSteadyState",
+          "burstOverload",
+          "feignRetry",
+          "cleanRerun"
+        ],
+        "rigged": false,
+        "freeStub": false,
+        "freePipeline": false,
+        "freeBatch": false
+      },
+      "rows": [
+        {
+          "protocol": "StubDecoder",
+          "scenarios": [
+            {
+              "id": "cleanSteadyState",
+              "messages": 96,
+              "processed": 96,
+              "lowLatency": true,
+              "batchFriendly": true,
+              "pipelineable": false,
+              "fault": "happy-path"
+            },
+            {
+              "id": "burstOverload",
+              "messages": 192,
+              "processed": 192,
+              "lowLatency": true,
+              "batchFriendly": true,
+              "pipelineable": false,
+              "fault": "burst"
+            },
+            {
+              "id": "feignRetry",
+              "messages": 96,
+              "processed": 96,
+              "lowLatency": true,
+              "batchFriendly": true,
+              "pipelineable": false,
+              "fault": "retry"
+            },
+            {
+              "id": "cleanRerun",
+              "messages": 96,
+              "processed": 96,
+              "lowLatency": true,
+              "batchFriendly": true,
+              "pipelineable": false,
+              "fault": "rerun-idempotent"
+            }
+          ],
+          "trilemma": {
+            "lowLatency": true,
+            "batchFriendly": true,
+            "pipelineable": false
+          },
+          "metrics": {
+            "totalProcessed": 480,
+            "totalMessages": 480
+          }
+        },
+        {
+          "protocol": "ReactiveClient",
+          "scenarios": [
+            {
+              "id": "cleanSteadyState",
+              "messages": 96,
+              "processed": 96,
+              "lowLatency": false,
+              "batchFriendly": true,
+              "pipelineable": true,
+              "fault": "happy-path"
+            },
+            {
+              "id": "burstOverload",
+              "messages": 192,
+              "processed": 192,
+              "lowLatency": false,
+              "batchFriendly": true,
+              "pipelineable": true,
+              "fault": "burst"
+            },
+            {
+              "id": "feignRetry",
+              "messages": 96,
+              "processed": 96,
+              "lowLatency": false,
+              "batchFriendly": true,
+              "pipelineable": true,
+              "fault": "retry"
+            },
+            {
+              "id": "cleanRerun",
+              "messages": 96,
+              "processed": 96,
+              "lowLatency": false,
+              "batchFriendly": true,
+              "pipelineable": true,
+              "fault": "rerun-idempotent"
+            }
+          ],
+          "trilemma": {
+            "lowLatency": false,
+            "batchFriendly": true,
+            "pipelineable": true
+          },
+          "metrics": {
+            "totalProcessed": 480,
+            "totalMessages": 480
+          }
+        },
+        {
+          "protocol": "BlockingClient",
+          "scenarios": [
+            {
+              "id": "cleanSteadyState",
+              "messages": 96,
+              "processed": 96,
+              "lowLatency": false,
+              "batchFriendly": false,
+              "pipelineable": true,
+              "fault": "happy-path"
+            },
+            {
+              "id": "burstOverload",
+              "messages": 192,
+              "processed": 192,
+              "lowLatency": false,
+              "batchFriendly": false,
+              "pipelineable": true,
+              "fault": "burst"
+            },
+            {
+              "id": "feignRetry",
+              "messages": 96,
+              "processed": 96,
+              "lowLatency": false,
+              "batchFriendly": false,
+              "pipelineable": true,
+              "fault": "retry"
+            },
+            {
+              "id": "cleanRerun",
+              "messages": 96,
+              "processed": 96,
+              "lowLatency": false,
+              "batchFriendly": false,
+              "pipelineable": true,
+              "fault": "rerun-idempotent"
+            }
+          ],
+          "trilemma": {
+            "lowLatency": false,
+            "batchFriendly": false,
+            "pipelineable": true
+          },
+          "metrics": {
+            "totalProcessed": 480,
+            "totalMessages": 480
+          }
+        }
+      ],
+      "vectors": {
+        "StubDecoder": "110",
+        "ReactiveClient": "011",
+        "BlockingClient": "001"
+      },
+      "verdict": {
+        "vectors": {
+          "StubDecoder": "110",
+          "ReactiveClient": "011",
+          "BlockingClient": "001"
+        },
+        "noUniversalWinner": true,
+        "trilemmaDistinguishes": true,
+        "noStrategyWinsAll": true,
+        "vectorFromTrilemma": true,
+        "rigged_pkg": false,
+        "rigged_pkg_flags": {
+          "rigged": false,
+          "freeStub": false,
+          "freePipeline": false,
+          "freeBatch": false
+        },
+        "riggedConvergenceCollapsed": false
+      },
+      "noUniversalWinner": true,
+      "trilemmaDistinguishes": true,
+      "causalLocks": {
+        "pipelineWriteFriendlyCausallyUnerasable": true,
+        "stubNoNetworkCausallyUnerasable": true,
+        "blockingPipelineAtomicityCausallyUnerasable": true,
+        "causalLocksAllHold": true
+      },
+      "crosscheck": {
+        "evidence": {
+          "routerMoved": 12,
+          "routerTracked": 80,
+          "ringNodes": 4,
+          "ringShardsUsed": 4,
+          "walLines": 80,
+          "walReplayed": 80,
+          "notices": 12,
+          "busListeners": 1,
+          "redisBitmapHits": 96,
+          "redisSlots": 96,
+          "poolCreated": 2,
+          "poolReused": 1,
+          "bucketAllowed": 3,
+          "bucketRejected": 4,
+          "heapFired": 3,
+          "heapPending": 0,
+          "counterSum": 2080,
+          "counterFalseSharing": 56,
+          "jitterSpread": 1.9481,
+          "remapConsistentRate": 0.275,
+          "remapModuloRate": 0.52
+        },
+        "soundness": {
+          "laneA": {
+            "stubProcessed": 192,
+            "expected": 192
+          },
+          "laneB": {
+            "reactiveProcessed": 192,
+            "expected": 192
+          },
+          "holds": true,
+          "nontrivial": true,
+          "falsifiable": true,
+          "tamper": {
+            "stubShotgun": {
+              "holds": false,
+              "reason": "stubShotgun：Stub 无 pipeline→ pipelineable 真翻 false"
+            },
+            "reactiveTimeout": {
+              "holds": false,
+              "reason": "reactiveTimeout：timeout ⇒ pipeline timeout chunk milestone"
+            },
+            "blockingOverflow": {
+              "holds": false,
+              "reason": "blockingOverflow：blocking throughput 天花板"
+            }
+          },
+          "events": 192
+        }
+      },
+      "rigged": false
+    },
+    "builtAt": 1794550520998
   }
 }

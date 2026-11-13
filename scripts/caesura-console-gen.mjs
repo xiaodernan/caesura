@@ -55,6 +55,7 @@ import { priorityQueueStudy, priorityQueueSnapshot } from './caesura-priority-qu
 import { batchStreamJoinStudy, batchStreamJoinSnapshot } from './caesura-batch-stream-join.mjs'
 import { cdcOutboxJoinStudy, cdcOutboxJoinSnapshot } from './caesura-cdc-outbox-join.mjs'
 import { springStreamBindingStudy, springStreamBindingSnapshot } from './caesura-spring-stream-binding.mjs'
+import { springFeignStudy, springFeignSnapshot } from './caesura-spring-feign.mjs'
 import { traceSamplingStudy, traceSamplingSnapshot } from './caesura-trace-sampling.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
@@ -394,7 +395,8 @@ export async function buildSystems(opts = {}) {
   const cdcOutboxJoin = opts.cdcOutboxJoin === false ? null : await buildCdcOutboxJoinReading(opts, now)
   // KI-545：第三十八维✦ Spring Cloud Stream 绑定三策略教学件（ExclusiveConsumer/SharedConsumer/ClusteredConsumer）
   const springStreamBinding = opts.springStreamBinding === false ? null : await buildSpringStreamBindingReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, priorityQueue, batchStreamJoin, cdcOutboxJoin, springStreamBinding, builtAt: now() }
+  const springFeign = opts.springFeign === false ? null : await buildSpringFeignReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, priorityQueue, batchStreamJoin, cdcOutboxJoin, springStreamBinding, springFeign, builtAt: now() }
 }
 
 /**
@@ -499,6 +501,29 @@ export async function buildSpringStreamBindingReading(opts, now) {
       ...(opts.ssbRigged === true ? { rigged: true } : {}),
     })
     return springStreamBindingSnapshot(s)
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
+ * KI-546：Spring Cloud OpenFeign Client 三策略真跑教学件（StubDecoder/ReactiveClient/BlockingClient × 四场景 + 三难向量 + verifySpringFeignSoundness 双路自证 + 十一枚真件交叉印证）。
+ * 失败落 null；读数全真、CLI 双跑字节一致、rigged 不硬造 111（结构如此）。
+ * @param {object} opts { springFeign?:false, sfSeed?, sfMessages?, sfFreeStub?, sfFreePipeline?, sfFreeBatch?, sfRigged? }
+ * @param {()=>number} now 时钟（builtAt 注入真值）
+ */
+export async function buildSpringFeignReading(opts, now) {
+  try {
+    const s = await springFeignStudy({
+      now,
+      ...(opts.sfSeed ? { seed: Math.max(0, Math.floor(Number(opts.sfSeed))) } : {}),
+      ...(opts.sfMessages ? { messages: Math.max(16, Math.floor(Number(opts.sfMessages))) } : {}),
+      ...(opts.sfFreeStub === true ? { freeStub: true } : {}),
+      ...(opts.sfFreePipeline === true ? { freePipeline: true } : {}),
+      ...(opts.sfFreeBatch === true ? { freeBatch: true } : {}),
+      ...(opts.sfRigged === true ? { rigged: true } : {}),
+    })
+    return springFeignSnapshot(s)
   } catch (e) {
     return null // 缺哪块就落 null，前端据实降级；不编造假数
   }

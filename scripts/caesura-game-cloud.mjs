@@ -58,6 +58,7 @@ import { idempotentConsumerStudy, idempotentConsumerSnapshot } from './caesura-i
 import { consumerRebalanceStudy, consumerRebalanceSnapshot } from './caesura-consumer-rebalance.mjs'
 import { priorityQueueStudy, priorityQueueSnapshot } from './caesura-priority-queue.mjs'
 import { batchStreamJoinStudy, batchStreamJoinSnapshot } from './caesura-batch-stream-join.mjs'
+import { springFeignStudy, springFeignSnapshot } from './caesura-spring-feign.mjs'
 import { springStreamBindingStudy, springStreamBindingSnapshot } from './caesura-spring-stream-binding.mjs'
 import { cdcOutboxJoinStudy, cdcOutboxJoinSnapshot } from './caesura-cdc-outbox-join.mjs'
 import {
@@ -901,6 +902,25 @@ export function createGameCloud(opts = {}) {
     bsjCached = batchStreamJoinSnapshot(study)
     return bsjCached
   }
+  // KI-546：CDC outbox join 教学件（LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin；opt-in、status/ coj*）。
+  // opts.springFeign===true 走钳制默认参数（可覆盖 now/seed/messages/interval/nailedSnapshot/freeBinlog/noLatch/rigged 等）；
+  // 传对象且 rows/vectors/verdict 齐全时当现成 study 注入；默认 springFeign:false 非破坏（同 KI-513/.../543 法）。
+  // 不声称真 Debezium-class CDC / 真 entity join / 真 snapshot atomic commit—全程结构计数。
+  const sfCfg = opts.springFeign === true ? {} : (opts.springFeign && typeof opts.springFeign === 'object' ? opts.springFeign : null)
+  const sfInjected = sfCfg !== null && opts.springFeign &&
+    typeof opts.springFeign === 'object' && Array.isArray(opts.springFeign.rows) &&
+    opts.springFeign.vectors && opts.springFeign.verdict
+  let sfCached = null
+  async function sfSnapshotForStatus() {
+    if (sfCfg === null) return null
+    if (sfCached) return sfCached
+    const study = sfInjected
+      ? opts.springFeign
+      : await springFeignStudy({ ...sfCfg, now: opts.sfNow ?? sfCfg.now })
+    sfCached = springFeignSnapshot(study)
+    return sfCached
+  }
+
   // KI-545：CDC outbox join 教学件（LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin；opt-in、status/ coj*）。
   // opts.springStreamBinding===true 走钳制默认参数（可覆盖 now/seed/messages/interval/nailedSnapshot/freeBinlog/noLatch/rigged 等）；
   // 传对象且 rows/vectors/verdict 齐全时当现成 study 注入；默认 springStreamBinding:false 非破坏（同 KI-513/.../543 法）。
@@ -1112,6 +1132,8 @@ export function createGameCloud(opts = {}) {
     runPriorityQueueStudy: pqCfg === null ? null : () => priorityQueueStudy({ ...pqCfg, now: opts.pqNow ?? pqCfg.now }),
     /** KI-543：批流 join 教学件；缺 opts.batchStreamJoin 时为 null；MicroBatchJoin/StreamWindowJoin/CdcOutboxJoin × 四场景矩阵 + 三难向量（默认 101/010/110 互异不封赢家）+ verifyBatchStreamJoinSoundness 双路自证 + 十一枚真件交叉印证。 */
     runBatchStreamJoinStudy: bsjCfg === null ? null : () => batchStreamJoinStudy({ ...bsjCfg, now: opts.bsjNow ?? bsjCfg.now }),
+    /** KI-546：CDC outbox join 教学件；缺 opts.springFeign 时为 null；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异不封赢家）+ verifySpringFeignSoundness 双路自证 + 十一枚真件交叉印证。 */
+    runSpringFeignStudy: sfCfg === null ? null : () => springFeignStudy({ ...sfCfg, now: opts.sfNow ?? sfCfg.now }),
     /** KI-545：CDC outbox join 教学件；缺 opts.springStreamBinding 时为 null；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异不封赢家）+ verifySpringStreamBindingSoundness 双路自证 + 十一枚真件交叉印证。 */
     runSpringStreamBindingStudy: ssbCfg === null ? null : () => springStreamBindingStudy({ ...ssbCfg, now: opts.ssbNow ?? ssbCfg.now }),
     /** KI-544：CDC outbox join 教学件；缺 opts.cdcOutboxJoin 时为 null；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异不封赢家）+ verifyCdcOutboxJoinSoundness 双路自证 + 十一枚真件交叉印证。 */
@@ -1184,6 +1206,7 @@ export function createGameCloud(opts = {}) {
         consumerRebalance: await rebSnapshotForStatus(),
         priorityQueue: await pqSnapshotForStatus(),
         batchStreamJoin: await bsjSnapshotForStatus(),
+        springFeign: await sfSnapshotForStatus(),
         springStreamBinding: await ssbSnapshotForStatus(),
         cdcOutboxJoin: await cojSnapshotForStatus(),
         traceSampling: await tsSnapshotForStatus(),

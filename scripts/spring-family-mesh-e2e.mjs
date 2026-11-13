@@ -200,6 +200,10 @@ export function runMeshE2E(opts = {}) {
     // 注入时钟用 bsjNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/reb/pq/bsj/rdq/dld 已占用前缀）。
     batchStreamJoin: opts.batchStreamJoin,
     bsjNow: opts.bsjNow,
+    // KI-546：CDC outbox join 教学件（springFeign=true 装配；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异）+ verifySpringFeignSoundness 双路自证 + 十一真件 21 键交叉印证，不改调用路径）。
+    // 注入时钟用 sfNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/reb/pq/bsj/coj/rdq/dld 已占用前缀）。
+    springFeign: opts.springFeign,
+    sfNow: opts.sfNow,
     // KI-545：CDC outbox join 教学件（springStreamBinding=true 装配；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异）+ verifySpringStreamBindingSoundness 双路自证 + 十一真件 21 键交叉印证，不改调用路径）。
     // 注入时钟用 ssbNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/reb/pq/bsj/coj/rdq/dld 已占用前缀）。
     springStreamBinding: opts.springStreamBinding,
@@ -372,6 +376,7 @@ export function runMeshE2E(opts = {}) {
         consumerRebalanceSnapshot: status.consumerRebalance ?? null,
         priorityQueueSnapshot: status.priorityQueue ?? null,
         batchStreamJoinSnapshot: status.batchStreamJoin ?? null,
+        springFeignSnapshot: status.springFeign ?? null,
         springStreamBindingSnapshot: status.springStreamBinding ?? null,
         cdcOutboxJoinSnapshot: status.cdcOutboxJoin ?? null,
         traceSamplingSnapshot: status.traceSampling ?? null,
@@ -863,6 +868,19 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         crosscheck: r.springStreamBindingSnapshot.crosscheck,
         causalLocks: r.springStreamBindingSnapshot.causalLocks,
         verdict: r.springStreamBindingSnapshot.verdict,
+      } : null,
+      springFeign: r.springFeignSnapshot ? {
+        strategies: r.springFeignSnapshot.rows.map((row) => ({
+          strategy: row.protocol,
+          ladder: row.scenarios.map((sc) => sc.id + ':' + (sc.snapshotConsistent === true ? '一致' : '实扫')).join(' → '),
+          metrics: row.metrics, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.springFeignSnapshot.rows.map((row) => [row.protocol,
+          String(Number(row.trilemma.snapshotConsistent)) + String(Number(row.trilemma.zeroDowntime)) + String(Number(row.trilemma.rendezvousCapable))])),
+        noUniversalWinner: r.springFeignSnapshot.verdict.noUniversalWinner,
+        crosscheck: r.springFeignSnapshot.crosscheck,
+        causalLocks: r.springFeignSnapshot.causalLocks,
+        verdict: r.springFeignSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

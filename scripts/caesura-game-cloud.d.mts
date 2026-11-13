@@ -274,8 +274,15 @@ export interface GameCloudOptions {
    * 对象逐项注入（now/seed/messages/unboundedCapacity/magicAckCoordinator/freeExactlyOnceDedup/scenarios/rigged 等），
    * 或直接塞一只现成 study。默认 false 不装配。 */
   springStreamBinding?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck?: any; causalLocks?: any; [k: string]: any }
-  /** KI-545 springStreamBinding 的注入时钟（ssb=Spring Stream Binding，避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/reb/pq/bsj/coj/ssb/rdq/dld 已占用前缀）。 */
+  /** KI-545 springStreamBinding 的注入时钟（ssb=Spring Stream Binding）。 */
   ssbNow?: () => number
+  /**
+   * KI-546：true 装配 Spring Cloud OpenFeign Client 教学件（StubDecoder/ReactiveClient/BlockingClient + verifySpringFeignSoundness 双路自证 + 十一枚真件交叉印证）。
+   * 对象逐项注入（now/seed/messages/freeStub/freePipeline/freeBatch/scenarios/rigged 等），
+   * 或直接塞一只现成 study。默认 false 不装配。 */
+  springFeign?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck?: any; causalLocks?: any; [k: string]: any }
+  /** KI-546 springFeign 的注入时钟（sf=Spring Feign，避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/reb/pq/bsj/coj/ssb/sf/rdq/dld 已占用前缀）。 */
+  sfNow?: () => number
 }
 
 /** 创建一只游戏侧开箱即用云。 */
@@ -366,6 +373,8 @@ export function createGameCloud(opts?: GameCloudOptions): {
   runPriorityQueueStudy: (() => Promise<any>) | null
   /** KI-543：批流 join 教学件；缺 opts.batchStreamJoin 时为 null。 */
   runBatchStreamJoinStudy: (() => Promise<any>) | null
+  /** KI-546：CDC outbox join 教学件；缺 opts.springFeign 时为 null。 */
+  runSpringFeignStudy: (() => Promise<any>) | null
   /** KI-545：CDC outbox join 教学件；缺 opts.springStreamBinding 时为 null。 */
   runSpringStreamBindingStudy: (() => Promise<any>) | null
   /** KI-544：CDC outbox join 教学件；缺 opts.cdcOutboxJoin 时为 null。 */
