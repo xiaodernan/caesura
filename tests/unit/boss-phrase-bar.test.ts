@@ -114,7 +114,7 @@ describe('BossPhraseBar 单元测试', () => {
     bar.dispose()
     // 面板+双金丝+朱引线+朱印+staff+4 拍钉 ≥ 10 块填充；当前拍（默认 beatInBar=1）有朱连珠弧
     expect(counts.fillRect).toBeGreaterThanOrEqual(10)
-    expect(counts.arc, '当前拍连珠应画一枚朱弧').toBe(3)
+    expect(counts.arc, '当前拍连珠 + 朱点×2 + 余辉朱点×2 = 5 枚朱弧').toBe(5)
     expect(counts.quad, 'Phase F-70 金丝闪弧应画 1 条二次曲线').toBe(1)
     expect(counts.stroke, 'Flash>0 时金丝闪弧应 stroke 1 次').toBe(1)
     expect(strokes, '朱「命」印在场').toContain('命')

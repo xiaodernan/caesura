@@ -146,6 +146,15 @@ export class BossPhraseBar {
       ctx.beginPath()
       ctx.arc(x + barW * 0.67, y + 6, 1.6, 0, Math.PI * 2)
       ctx.fill()
+      // Phase F-74「余辉仪典」：flash 时 panel 右上两枚朱点 breathing 驻留（sine 位移·纯绘制 · 无动画环）
+      const breathe = 0.5 + 0.5 * Math.sin(this.time * 2.1)
+      ctx.fillStyle = `rgba(212, 106, 78, ${0.35 * this.flash * breathe})`
+      ctx.beginPath()
+      ctx.arc(x + barW * 0.5 - 12, y + 31, 1.1 + 1.0 * breathe, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.beginPath()
+      ctx.arc(x + barW * 0.5 + 12, y + 31, 1.1 + 1.0 * breathe, 0, Math.PI * 2)
+      ctx.fill()
       ctx.restore()
     }
 
