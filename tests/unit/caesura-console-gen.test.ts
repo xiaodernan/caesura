@@ -1943,4 +1943,35 @@ describe('caesura-console-gen (KI-495)', () => {
     const twentyfive = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt, full.bloomFilter?.builtAt, full.cacheReplacement?.builtAt, full.streamWindow?.builtAt, full.hyperLogLog?.builtAt, full.crdt?.builtAt, full.springBatch?.builtAt, full.traceSampling?.builtAt, full.distributedSession?.builtAt, full.transactionalOutbox?.builtAt, full.loadBalance?.builtAt, full.circuitBreaker?.builtAt, full.llmGateway?.builtAt, full.gatewayRouting?.builtAt, full.idempotentConsumer?.builtAt, full.consumerRebalance?.builtAt, full.priorityQueue?.builtAt, full.batchStreamJoin?.builtAt, full.cdcOutboxJoin?.builtAt]
     expect(twentyfive.every((x) => x === 544500)).toBe(true)
   })
+
+  it('㉒o-spring-stream-binding buildSpringStreamBindingReading 真跑：ssb* 注入生效 / springStreamBinding:false 关闭 / rigged 不硬造 111 / 双路自证 + 十一真件 / 二十六时钟同源（KI-545）', async () => {
+    const { buildSpringStreamBindingReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 545500
+    const g = (await buildSpringStreamBindingReading({}, now))!
+    expect(g).not.toBe(null)
+    expect(g.builtAt).toBe(545500)
+    expect(g.rows.length).toBe(3)
+    expect(g.config.messages).toBe(96)
+    expect(g.vectors).toEqual({ ExclusiveConsumer: '101', SharedConsumer: '010', ClusteredConsumer: '011' })
+    expect(g.rigged).toBe(false)
+    expect(g.causalLocks.causalLocksAllHold).toBe(true)
+    expect(g.causalLocks.exclusiveLockCausallyUnerasable).toBe(true)
+    expect(g.causalLocks.sharedThroughputCausallyUnerasable).toBe(true)
+    expect(g.causalLocks.clusterAckCausallyUnerasable).toBe(true)
+    const tuned = (await buildSpringStreamBindingReading({ ssbSeed: 12, ssbMessages: 32 }, now))!
+    expect(tuned.config.seed).toBe(12)
+    expect(tuned.config.messages).toBe(32)
+    const cp = g.crosscheck.soundness
+    expect(cp.holds).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.tamper.clusterRpcDrop.holds).toBe(false)
+    expect(Object.keys(g.crosscheck.evidence).length).toBe(21)
+    const off = await buildSystems({ now, springStreamBinding: false, cdcOutboxJoin: false })
+    expect(off.springStreamBinding).toBe(null)
+    expect(off.cdcOutboxJoin).toBe(null)
+    expect(off.cacheReplacement).not.toBe(null)
+    const full = await buildSystems({ now })
+    const twentysix = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt, full.bloomFilter?.builtAt, full.cacheReplacement?.builtAt, full.streamWindow?.builtAt, full.hyperLogLog?.builtAt, full.crdt?.builtAt, full.springBatch?.builtAt, full.traceSampling?.builtAt, full.distributedSession?.builtAt, full.transactionalOutbox?.builtAt, full.loadBalance?.builtAt, full.circuitBreaker?.builtAt, full.llmGateway?.builtAt, full.gatewayRouting?.builtAt, full.idempotentConsumer?.builtAt, full.consumerRebalance?.builtAt, full.priorityQueue?.builtAt, full.batchStreamJoin?.builtAt, full.cdcOutboxJoin?.builtAt, full.springStreamBinding?.builtAt]
+    expect(twentysix.every((x) => x === 545500)).toBe(true)
+  })
 })

@@ -54,6 +54,7 @@ import { consumerRebalanceStudy, consumerRebalanceSnapshot } from './caesura-con
 import { priorityQueueStudy, priorityQueueSnapshot } from './caesura-priority-queue.mjs'
 import { batchStreamJoinStudy, batchStreamJoinSnapshot } from './caesura-batch-stream-join.mjs'
 import { cdcOutboxJoinStudy, cdcOutboxJoinSnapshot } from './caesura-cdc-outbox-join.mjs'
+import { springStreamBindingStudy, springStreamBindingSnapshot } from './caesura-spring-stream-binding.mjs'
 import { traceSamplingStudy, traceSamplingSnapshot } from './caesura-trace-sampling.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
@@ -391,7 +392,9 @@ export async function buildSystems(opts = {}) {
   const batchStreamJoin = opts.batchStreamJoin === false ? null : await buildBatchStreamJoinReading(opts, now)
   // KI-544：第三十八维装配 CDC outbox join 教学件（LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin）
   const cdcOutboxJoin = opts.cdcOutboxJoin === false ? null : await buildCdcOutboxJoinReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, priorityQueue, batchStreamJoin, cdcOutboxJoin, builtAt: now() }
+  // KI-545：第三十八维✦ Spring Cloud Stream 绑定三策略教学件（ExclusiveConsumer/SharedConsumer/ClusteredConsumer）
+  const springStreamBinding = opts.springStreamBinding === false ? null : await buildSpringStreamBindingReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, priorityQueue, batchStreamJoin, cdcOutboxJoin, springStreamBinding, builtAt: now() }
 }
 
 /**
@@ -473,6 +476,29 @@ export async function buildTraceSamplingReading(opts, now) {
       ...(opts.tsRigged === true ? { rigged: true } : {}),
     })
     return traceSamplingSnapshot(s)
+  } catch (e) {
+    return null // 缺哪块就落 null，前端据实降级；不编造假数
+  }
+}
+
+/**
+ * KI-545：Spring Cloud Stream 绑定三策略真跑教学件（ExclusiveConsumer/SharedConsumer/ClusteredConsumer × 四场景 + 三难向量 + verifySpringStreamBindingSoundness 双路自证 + 十一枚真件交叉印证）。
+ * 失败落 null；读数全真、CLI 双跑字节一致、rigged 不硬造 111（结构如此）。
+ * @param {object} opts { springStreamBinding?:false, ssbSeed?, ssbMessages?, ssbUnboundedCapacity?, ssbMagicAckCoordinator?, ssbFreeExactlyOnceDedup?, ssbRigged? }
+ * @param {()=>number} now 时钟（builtAt 注入真值）
+ */
+export async function buildSpringStreamBindingReading(opts, now) {
+  try {
+    const s = await springStreamBindingStudy({
+      now,
+      ...(opts.ssbSeed ? { seed: Math.max(0, Math.floor(Number(opts.ssbSeed))) } : {}),
+      ...(opts.ssbMessages ? { messages: Math.max(16, Math.floor(Number(opts.ssbMessages))) } : {}),
+      ...(opts.ssbUnboundedCapacity === true ? { unboundedCapacity: true } : {}),
+      ...(opts.ssbMagicAckCoordinator === true ? { magicAckCoordinator: true } : {}),
+      ...(opts.ssbFreeExactlyOnceDedup === true ? { freeExactlyOnceDedup: true } : {}),
+      ...(opts.ssbRigged === true ? { rigged: true } : {}),
+    })
+    return springStreamBindingSnapshot(s)
   } catch (e) {
     return null // 缺哪块就落 null，前端据实降级；不编造假数
   }

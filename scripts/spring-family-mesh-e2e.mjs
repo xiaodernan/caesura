@@ -200,6 +200,10 @@ export function runMeshE2E(opts = {}) {
     // 注入时钟用 bsjNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/reb/pq/bsj/rdq/dld 已占用前缀）。
     batchStreamJoin: opts.batchStreamJoin,
     bsjNow: opts.bsjNow,
+    // KI-545：CDC outbox join 教学件（springStreamBinding=true 装配；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异）+ verifySpringStreamBindingSoundness 双路自证 + 十一真件 21 键交叉印证，不改调用路径）。
+    // 注入时钟用 ssbNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/reb/pq/bsj/coj/rdq/dld 已占用前缀）。
+    springStreamBinding: opts.springStreamBinding,
+    ssbNow: opts.ssbNow,
     // KI-544：CDC outbox join 教学件（cdcOutboxJoin=true 装配；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异）+ verifyCdcOutboxJoinSoundness 双路自证 + 十一真件 21 键交叉印证，不改调用路径）。
     // 注入时钟用 cojNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/reb/pq/bsj/coj/rdq/dld 已占用前缀）。
     cdcOutboxJoin: opts.cdcOutboxJoin,
@@ -368,6 +372,7 @@ export function runMeshE2E(opts = {}) {
         consumerRebalanceSnapshot: status.consumerRebalance ?? null,
         priorityQueueSnapshot: status.priorityQueue ?? null,
         batchStreamJoinSnapshot: status.batchStreamJoin ?? null,
+        springStreamBindingSnapshot: status.springStreamBinding ?? null,
         cdcOutboxJoinSnapshot: status.cdcOutboxJoin ?? null,
         traceSamplingSnapshot: status.traceSampling ?? null,
         gameBridge: bridge ? { installed: bridge.installed, stats: gc.bridge()?.stats(), crossed } : null,
@@ -845,6 +850,19 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         crosscheck: r.cdcOutboxJoinSnapshot.crosscheck,
         causalLocks: r.cdcOutboxJoinSnapshot.causalLocks,
         verdict: r.cdcOutboxJoinSnapshot.verdict,
+      } : null,
+      springStreamBinding: r.springStreamBindingSnapshot ? {
+        strategies: r.springStreamBindingSnapshot.rows.map((row) => ({
+          strategy: row.protocol,
+          ladder: row.scenarios.map((sc) => sc.id + ':' + (sc.snapshotConsistent === true ? '一致' : '实扫')).join(' → '),
+          metrics: row.metrics, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.springStreamBindingSnapshot.rows.map((row) => [row.protocol,
+          String(Number(row.trilemma.snapshotConsistent)) + String(Number(row.trilemma.zeroDowntime)) + String(Number(row.trilemma.rendezvousCapable))])),
+        noUniversalWinner: r.springStreamBindingSnapshot.verdict.noUniversalWinner,
+        crosscheck: r.springStreamBindingSnapshot.crosscheck,
+        causalLocks: r.springStreamBindingSnapshot.causalLocks,
+        verdict: r.springStreamBindingSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

@@ -2824,4 +2824,58 @@ describe('caesura-game-cloud', () => {
     })).status()).cdcOutboxJoin
     expect(injected.builtAt).toBe(555)
   })
+
+  // ============ KI-545 springStreamBinding opt-in 装配（2 腿）============
+  it('springStreamBinding:true 装配真矩阵：101/010/011 互异不封赢家 + 三因果锁 + verifySpringStreamBindingSoundness 双路 + 21 键 + 惰性同引用（KI-545）', async () => {
+    const gc = await createGameCloud({
+      gameId: 'gid-ssb1', gamePort: 7970, sources, cloud: fakeCloud(),
+      springStreamBinding: true, ssbNow: () => 545000,
+    })
+    const st = (await gc.status()).springStreamBinding
+    expect(st).not.toBe(null)
+    expect(st!.builtAt).toBe(545000)
+    expect(st!.config.scenarios.length).toBe(4)
+    expect(st!.config.messages).toBe(96)
+    expect(st!.rows.length).toBe(3)
+    expect(st!.vectors).toEqual({ ExclusiveConsumer: '101', SharedConsumer: '010', ClusteredConsumer: '011' })
+    expect(st!.rigged).toBe(false)
+    expect(st!.noUniversalWinner).toBe(true)
+    expect(st!.trilemmaDistinguishes).toBe(true)
+    expect(st!.verdict.vectorFromTrilemma).toBe(true)
+    expect(st!.causalLocks.causalLocksAllHold).toBe(true)
+    expect(st!.causalLocks.exclusiveLockCausallyUnerasable).toBe(true)
+    expect(st!.causalLocks.sharedThroughputCausallyUnerasable).toBe(true)
+    expect(st!.causalLocks.clusterAckCausallyUnerasable).toBe(true)
+    const cp = st!.crosscheck.soundness
+    expect(cp.holds).toBe(true)
+    expect(cp.nontrivial).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.laneA.exclusiveProcessed).toBeGreaterThan(0)
+    expect(cp.laneB.sharedAccepted).toBeGreaterThan(0)
+    expect(cp.tamper.exclusiveLockGrab.holds).toBe(false)
+    expect(cp.tamper.sharedAckLost.holds).toBe(false)
+    expect(cp.tamper.clusterRpcDrop.holds).toBe(false)
+    expect(Object.keys(st!.crosscheck.evidence).length).toBe(21)
+    expect((await gc.status()).springStreamBinding).toBe(st)
+    expect(await gc.runSpringStreamBindingStudy!()).toMatchObject({ vectors: st!.vectors })
+    const bare = await createGameCloud({ gameId: 'gid-ssb0', gamePort: 7971, sources, cloud: fakeCloud() }).status()
+    expect(bare.springStreamBinding).toBe(null)
+    expect(bare.cdcOutboxJoin).toBe(null)
+  })
+
+  it('springStreamBinding 默认 null；freeExactlyOnceDedup ⇒ Shared=110；可注入现成 study（KI-545）', async () => {
+    const idle = await createGameCloud({ gameId: 'gid-ssb2', gamePort: 7972, sources, cloud: fakeCloud() }).status()
+    expect(idle.springStreamBinding).toBe(null)
+    const fx = (await (await createGameCloud({
+      gameId: 'gid-ssb3', gamePort: 7973, sources, cloud: fakeCloud(),
+      springStreamBinding: { freeExactlyOnceDedup: true }, ssbNow: () => 545000,
+    })).status()).springStreamBinding
+    expect(fx!.vectors.SharedConsumer).toBe('011')
+    const { springStreamBindingStudy } = await import('../../scripts/caesura-spring-stream-binding.mjs')
+    const injected = (await (await createGameCloud({
+      gameId: 'gid-ssb4', gamePort: 7974, sources, cloud: fakeCloud(),
+      springStreamBinding: springStreamBindingStudy({ seed: 99, now: () => 555 }),
+    })).status()).springStreamBinding
+    expect(injected.builtAt).toBe(555)
+  })
 })
