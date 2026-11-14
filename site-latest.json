@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "09ec4b9ae92aec9332a84d4e0247a6d155130c05",
+  "head": "4e040f27490bc348f43aa7c4b00e17e454a3b9dc",
   "branch": "master",
-  "subject": "feat(docs): BESTIARY.en.md — 完整敌影英文版怪物志（10 条目 + 弱克表 + NAME_MAP）+ Player-Guide links updated",
-  "date": "2026-11-14T22:45:56+08:00",
+  "subject": "feat(pressure): scripts/pressure-mesh.mjs — 轻量 in-process 压测网关链",
+  "date": "2026-11-14T22:50:41+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/09ec4b9ae92aec9332a84d4e0247a6d155130c05",
+    "url": "https://github.com/xiaodernan/caesura/commit/4e040f27490bc348f43aa7c4b00e17e454a3b9dc",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
