@@ -16,6 +16,20 @@ export type Lang = 'zh' | 'en'
 const STORE_KEY = 'caesura-lang'
 
 const ZH: Record<string, string> = {
+  'stak.tab.tune': '调音',
+  'stak.tab.gear': '装备',
+  'stak.tab.bag': '行囊',
+  'stak.tab.moves': '谱册',
+  'stak.tab.trade': '交易',
+  'stak.tab.save': '存档',
+  'stak.tab.ops': '操作',
+  'stak.tab.tune.hint': '分配音级点 · 洗点',
+  'stak.tab.gear.hint': '七槽 · 强化',
+  'stak.tab.bag.hint': '分类清点',
+  'stak.tab.moves.hint': '乐章战技 · 主动槽',
+  'stak.tab.trade.hint': '卖装半价 · 残骸按堆卖 · 购消耗品',
+  'stak.tab.save.hint': '手动槽 · 写入/删除',
+  'stak.tab.ops.hint': '逐行改键 · 输入缓冲 · 抖动/振动/受击',
   'ui.title.h1': '止音纪元',
   'ui.title.sub': 'CAESURA · 为她定一根弦',
   'ui.title.sub.fault': '问不出来 · ← 返回定弦',
@@ -88,6 +102,20 @@ const ZH: Record<string, string> = {
 }
 
 const EN: Record<string, string> = {
+  'stak.tab.tune': 'Tune',
+  'stak.tab.gear': 'Gear',
+  'stak.tab.bag': 'Satchel',
+  'stak.tab.moves': 'Moves',
+  'stak.tab.trade': 'Trade',
+  'stak.tab.save': 'Save',
+  'stak.tab.ops': 'Ops',
+  'stak.tab.tune.hint': 'Allocate pitch · reallocate',
+  'stak.tab.gear.hint': 'Seven slots · forge',
+  'stak.tab.bag.hint': 'Sort & organize',
+  'stak.tab.moves.hint': 'Song skills · active slots',
+  'stak.tab.trade.hint': 'Sell gear at half · sell debris in bulk · buy consumables',
+  'stak.tab.save.hint': 'Manual slots · write / erase',
+  'stak.tab.ops.hint': 'Rebind keys line by line · input buffer · haptics / rumble / hit-stop',
   'ui.title.h1': 'The Epoch of Hush',
   'ui.title.sub': 'CAESURA · The Epoch of Hush',
   'ui.title.sub.fault': 'Ruin — the roster will not parse',

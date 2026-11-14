@@ -3,6 +3,7 @@ import type { ItemData, MovesetData, SlotKey, WeaponData } from '@/data/schema'
 import { itemOf } from '@/rpg/Inventory'
 import { progressionData } from '@/rpg/Progression'
 import { SLOTS, type EquipMods } from '@/rpg/Equipment'
+import { t } from '@/i18n/Lang'
 import { upgradeStep, maxLevelOf, TIMBITE, DROSS, salvageValue } from '@/rpg/Upgrade'
 import { sellPrice, stackSellPrice, shopData, CURRENCY } from '@/rpg/Shop'
 import { movementName, unlockItemName, SCORE } from '@/rpg/Movements'
@@ -31,12 +32,12 @@ import { SAVE_CARD_CSS, saveCards, saveCardHtml, slotLabel, type SaveCardView } 
 type Tab = 'tune' | 'gear' | 'bag' | 'moves' | 'trade' | 'save' | 'ops'
 
 const TABS: { id: Tab; label: string; hint: string }[] = [
-  { id: 'tune', label: '调音', hint: '分配音级点 · 洗点' },
-  { id: 'gear', label: '装备', hint: '七槽 · 强化' },
-  { id: 'bag', label: '行囊', hint: '分类清点' },
-  { id: 'moves', label: '谱册', hint: '乐章战技 · 主动槽' },
-  { id: 'trade', label: '交易', hint: '卖装半价 · 残骸按堆卖 · 购消耗品' },
-  { id: 'save', label: '存档', hint: '手动槽 · 写入/删除' }
+  { id: 'tune', label: t('stak.tab.tune'), hint: t('stak.tab.tune.hint') },
+  { id: 'gear', label: t('stak.tab.gear'), hint: t('stak.tab.gear.hint') },
+  { id: 'bag', label: t('stak.tab.bag'), hint: t('stak.tab.bag.hint') },
+  { id: 'moves', label: t('stak.tab.moves'), hint: t('stak.tab.moves.hint') },
+  { id: 'trade', label: t('stak.tab.trade'), hint: t('stak.tab.trade.hint') },
+  { id: 'save', label: t('stak.tab.save'), hint: t('stak.tab.save.hint') }
 ]
 
 /**
@@ -44,7 +45,7 @@ const TABS: { id: Tab; label: string; hint: string }[] = [
  * 没接把手的面板不该给玩家一个点了没反应的页签（那是假可达）。
  * 页签的名册因此是**现推**的——`tabsOf()` 数的是"这块面板今天接得到什么"（§55 的那条纪律在这里的形状）。
  */
-const OPS_TAB: { id: Tab; label: string; hint: string } = { id: 'ops', label: '操作', hint: '逐行改键 · 输入缓冲 · 抖动/振动/受击' }
+const OPS_TAB: { id: Tab; label: string; hint: string } = { id: 'ops', label: t('stak.tab.ops'), hint: t('stak.tab.ops.hint') }
 
 /**
  * 玩法设置里那六格数值（两格开关另给行：`frameAssist` 与 KI-384 的 `mashGuard`）；步进量是**界面粒度**，不是规格，所以住在面板这侧。
