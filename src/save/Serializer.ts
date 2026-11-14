@@ -8,6 +8,9 @@ import type { Quests, QuestsSnapshot } from '@/quest/Quests'
 import type { WorldStates } from '@/quest/WorldStates'
 import type { Interactables } from '@/world/Interactables'
 import type { GameplaySettings } from '@/settings/GameplaySettings'
+
+/** 玩法设置落档形状：去掉会话级的 invertMouseY（见 settings.gameplay 的 JSDoc）。读档侧仍按 unknown 夹取，新旧档皆可读 */
+export type PersistedGameplay = Omit<GameplaySettings, 'invertMouseY'>
 import type { Bindings } from '@/core/Input'
 import type { BindingProfile } from '@/settings/Bindings'
 import { migrateTo, registerMigration } from './Migration'
@@ -242,8 +245,11 @@ export interface Snapshot {
    * `clampProfiles` 把门；**一盒都没存 ⇒ 这一格不写**，而不是写一个 `[null,null,null]`——
    * 同一句话有两种写法就是两个主人（§78「留空是如实」）。它与 `bindings` 各归各：这一格是
    * 「玩家留了几套」，那一格是「玩家此刻在用哪一张」，混成一格就变成"存个文件顺手换了键"。
+   *
+   * `gameplay` 落档的是 `PersistedGameplay`（= `Omit<GameplaySettings, 'invertMouseY'>`）：
+   * 鼠标纵轴是会话级的镜头偏好，不跟档走——读档不灌它、写档也不存它，每次启动回落到 FPS norm（默认 false）。
    */
-  settings?: { audio: Record<string, number>; gameplay?: GameplaySettings; bindings?: Bindings; bindingsProfiles?: BindingProfile[]; quality?: number }
+  settings?: { audio: Record<string, number>; gameplay?: PersistedGameplay; bindings?: Bindings; bindingsProfiles?: BindingProfile[]; quality?: number }
   /** 成长/背包/装备/掉落状态（v2 起）。v1 老档为 null ⇒ 保留运行时基线 */
   rpg: RpgSnapshot | null
   /** 叙事进度（v7 起）：任务状态 / NPC 关系 / 对话已读节点。老档为 null ⇒ 一切从头 */
@@ -512,12 +518,11 @@ export class SaveGame {
           for (const b of buses) audio[b] = w.audio.getVolume(b)
         }
         const gameplayOut = w.gameplay ? w.gameplay.get() : undefined
-        const gameplay: Record<string, unknown> | undefined = (() => {
+        // invertMouseY 是会话级的镜头偏好，不跟档走（每次启动回落到 FPS norm）——落档前剔除
+        const gameplay: PersistedGameplay | undefined = (() => {
           if (!gameplayOut) return undefined
-          // invertMouseY is transient player UI state — does NOT round-trip through save (we intentionally reset to FPS norm every launch)
-          const filtered: Record<string, unknown> = { ...gameplayOut }
-          delete filtered.invertMouseY
-          return filtered
+          const { invertMouseY: _drop, ...rest } = gameplayOut
+          return rest
         })()
         return {
           audio,
