@@ -1,9 +1,23 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-lang="zh">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>CAESURA 止音纪元</title>
+<title>CAESURA · 止音纪元 / The Epoch of Hush</title>
+<script>
+  // boot 之前必须知道语言；localStorage 同步取；非 en 默认中文
+  (function () {
+    try {
+      var s = localStorage.getItem('caesura-lang');
+      if (s === 'en') {
+        var r = document.documentElement;
+        r.dataset.lang = 'en';
+        r.lang = 'en-US';
+        document.title = 'CAESURA · The Epoch of Hush';
+      }
+    } catch (e) { /* 默认中文 */ }
+  })();
+</script>
 <style>
   html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#07080c; }
   #app { position:fixed; inset:0; }
@@ -27,12 +41,14 @@
           -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent; }
   #boot small { font-size:11px; letter-spacing:.72em; text-indent:.72em; color: rgba(201,180,88,.45); }
   @media (prefers-reduced-motion: reduce) { #boot::after { animation:none; } }
+  html[data-lang="en"] .zh-i18n { display:none }
+  html[data-lang="zh"] .en-i18n { display:none }
 </style>
 </head>
 <body>
   <div id="app"></div>
   <canvas id="hud"></canvas>
-  <div id="boot"><span class="word">CAESURA</span><small>止音纪元</small></div>
+  <div id="boot"><span class="word">CAESURA</span><small class="zh-i18n">止音纪元</small><small class="en-i18n">The Epoch of Hush</small></div>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
