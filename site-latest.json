@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "01968353e1463d51813df750d2c3254dcf88a1ed",
+  "head": "dd91f1129f04d1ccef7ca8987ae785198c684965",
   "branch": "master",
-  "subject": "feat(content): 第八地域《风钟海岸》落地 + 展示台世界图第八节点（F-103/F-104/F-105）",
-  "date": "2026-11-15T00:43:30+08:00",
+  "subject": "docs(tech-arch): navmesh 8 张网格 / 灯照八区各一行 — 风钟海岸入册补账",
+  "date": "2026-11-15T00:44:36+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/01968353e1463d51813df750d2c3254dcf88a1ed",
+    "url": "https://github.com/xiaodernan/caesura/commit/dd91f1129f04d1ccef7ca8987ae785198c684965",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
