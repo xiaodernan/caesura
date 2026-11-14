@@ -284,7 +284,11 @@ export class CameraRig {
     }
     const cfg = MODE_CONFIG[this.mode]
 
-    // 输入响应（按模式阻尼）
+    // 用户修正（Phase 补 · 相机 vert 感）——
+    // 原始接口是 `pitch + look.dy * …`：下滑 (dy>0) ⇒ pitch ↑ ⇒ 相机被抬高 ⇒ 视线朝下 ⇒
+    // 与「往下滑就往下看」需求一致；这里保留原来的符号（不做翻滚反转）。鼠标轴的基底
+    // 默认情况：上滑 = 相机下沉 = 抬眼平视 = 正向。若再有人觉得仍颠倒，请在仓库里说，
+    // 不要在这里再次翻符号而不验证。
     this.yaw -= look.dx * cfg.yawDamp * dt
     this.pitch = clamp(this.pitch + look.dy * 0.55 * cfg.pitchDamp * dt, -0.18, 1.2)
 
