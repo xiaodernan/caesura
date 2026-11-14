@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "d6e660efc22fdb266f84c4f506d286572b8db8b3",
+  "head": "f99d2a50143d9bb161a3b1edbd31423c1484f554",
   "branch": "master",
-  "subject": "fix(world): 5 处刻痕 y 落回所在区域地板（drowned -40 / fellcarillon 64 / deeps -144 / unfinishedhall 152 / windcoast 0，全落 Surface 认账的地板）+ world-graph 最窄口径以实测改钉未竟厅 4464（resthold 被双锚点抬到 5450）",
-  "date": "2026-11-15T04:03:29+08:00",
+  "subject": "feat(ui): 调音桩新增游记 Atlas 页 双语八区指北针 刻痕指路 边界之外说明",
+  "date": "2026-11-15T04:15:57+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/d6e660efc22fdb266f84c4f506d286572b8db8b3",
+    "url": "https://github.com/xiaodernan/caesura/commit/f99d2a50143d9bb161a3b1edbd31423c1484f554",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
