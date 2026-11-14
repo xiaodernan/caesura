@@ -38,6 +38,13 @@ npm run dev        # 浏览器 → http://localhost:5173/?fresh=1
 
 改键：`src/settings/Bindings.ts` ，`ClampBindings()` 做合法性过滤。手柄默认 Xbox 布局：十字键 12–15 / A=0 / B=1 / LT=6 / RT=7。
 
+### 2.1 · 镜头与「鼠标 Y 轴反转」
+
+- 默认（FPS 标准）：**鼠标上滑 = 抬眼向上看**，**鼠标下滑 = 俯视**。
+- 想要 Unity 口径（上滑 = 俯视）？游戏内按 `Esc` →「操作」页 → **「鼠标 Y 轴反转」**行切换。
+- 这一格是**会话级**偏好：不入存档、不入自动存档——每次启动都回落到 FPS 标准，可再随时翻回。
+- 跟档走的八格：缓冲 / 抖动 / 两把振动 / 受击倍率 / 帧辅助 / 长按时长 / 连打涨价（在「操作」页同一节，跟着存档走、不跟着「配置盒」走）。
+
 ### 3 · 核心机制：声 / silence
 - **你是声源**。每一步、每一击、每一次停蹄都会被敌人听见。
 - **屏气**不是给玩家的天赋技，是给每件武器的「自身噪音乘数 noiseMul」——武器越响越容易远远地被盯上。`weapons.json` 把乘数固化在数据里。「沉默武器」在长深渊区才是正解。
@@ -107,6 +114,13 @@ who opts into the still-unwritten ending.
 | `Esc` | Pause |
 
 Rebind: `src/settings/Bindings.ts`; `ClampBindings()` filters illegal keys. Default controller: Xbox layout, d-pad 12–15, A/B = 0/1, LT/RT = 6/7.
+
+### 2.1 · Camera & mouse Y-invert
+
+- Default (FPS norm): **mouse up = look up**, **mouse down = look down**.
+- Prefer the Unity convention (mouse up = look down)? In-game: `Esc` → Operations page → **"Mouse Y-axis invert"** row.
+- This slot is a **session-scoped** preference: it is NOT persisted and never auto-saves — every launch falls back to the FPS norm; flip it again any time.
+- The eight persisted cells (buffer / shake / both rumbles / damage / frame assist / hold ms / mash inflation) live in the same section of the Operations page and follow the save — not the profile box.
 
 ### 3 · The core mechanic: sound & silence
 - **You are the source of sound.** Every step, strike, and flinch is hearable.
