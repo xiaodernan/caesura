@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "0f7ceaecd4ceae13f09437b6b5a1cfe765bed9cd",
+  "head": "bd669f23595141ec4f0c30ad5a5e5b5310d2065b",
   "branch": "master",
-  "subject": "fix(ci): tutorial/ 纳入交付总体（`text-corpus.mjs` CORPUS_DIRS 增 `tutorial`）— CI KI-329 判据②修复",
-  "date": "2026-11-14T19:54:54+08:00",
+  "subject": "docs(i18n): FAQ.md（玩家常问 · 中英对照 · 仅引真实 canon）——位置：enemies.json / combat.md §5.3/§6.2 / attacks.json / audio.md",
+  "date": "2026-11-14T20:02:17+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/0f7ceaecd4ceae13f09437b6b5a1cfe765bed9cd",
+    "url": "https://github.com/xiaodernan/caesura/commit/bd669f23595141ec4f0c30ad5a5e5b5310d2065b",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
