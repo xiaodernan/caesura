@@ -2682,8 +2682,8 @@ describe('KI-384 连打涨价那一行：一枚开关、三处一起翻、只认
   it('「口径」那一行把这一格也报进「不跟着盒走」那一份：漏一格就是给玩家留一处假读数', () => {
     const r = rig(true)
     const note = html(r.p).split('<div class="row">').find((s) => s.includes('口径')) ?? ''
-    expect(note, '那一行点名的是「这一节上面那几格」，第八格的名字要在里面').toContain('连打')
-    expect(note, '而格数那一句也跟着改口：数还写七，新接的那一格就从读数面上被抹掉了').toContain('那八格数值')
+    expect(note, '那一行点名的是「这一节上面那几格」，第九格的名字要在里面').toContain('Y 反转')
+    expect(note, '而格数那一句也跟着改口：数还写八，新接的那一格就从读数面上被抹掉了').toContain('那九格数值')
     expect(note, '注语住在模板字符串里：反引号会截断它，星号会照原样画给玩家').not.toMatch(/[`*]/)
   })
 })
