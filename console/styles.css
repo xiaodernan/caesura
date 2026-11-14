@@ -3559,3 +3559,34 @@ main { padding: clamp(18px, 3vw, 40px) clamp(18px, 4vw, 56px) 48px; max-width: 1
 @media (prefers-reduced-motion: reduce) {
   .oracle-ring-bg, .oracle-ring-halo { animation: none; }
 }
+
+
+/* ================= 止音仪典 · 仪典涌现（hero metrics entrance ✦ · CSS-only）================= */
+.metric {
+  animation: hero-in .58s cubic-bezier(.2,.9,.25,1.04) backwards;
+}
+.metric:nth-child(1) { animation-delay: .04s; }
+.metric:nth-child(2) { animation-delay: .12s; }
+.metric:nth-child(3) { animation-delay: .2s; }
+.metric:nth-child(4) { animation-delay: .28s; }
+.metric:nth-child(5) { animation-delay: .36s; }
+.metric:nth-child(6) { animation-delay: .44s; }
+@keyframes hero-in {
+  from { opacity: 0; transform: translateY(14px) scale(.96); filter: blur(3px); }
+  to   { opacity: 1; transform: none; filter: none; }
+}
+.metric-value .num {
+  transition: color .3s ease;
+  text-shadow: 0 0 .8em rgba(201,180,88,.25);
+}
+.metric.accent .metric-value .num,
+.metric.danger .metric-value .num {
+  text-shadow: 0 0 .9em rgba(201,162,58,.32);
+}
+.metric:hover .metric-value .num {
+  color: #ffeabf;
+}
+/* 仪典灯柱 .panel::before（head 金线下的流光）—— before: block in panel-head */
+@media (prefers-reduced-motion: reduce) {
+  .metric { animation: none; }
+}
