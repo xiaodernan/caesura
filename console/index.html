@@ -36,7 +36,43 @@
 </header>
 
 <main>
-  <!-- 顶部大数 -->
+  <!-- 止音 · cache Oracle · LLM 前缀缓存生产定案 面板（KI-556；纯 CSS + SVG；无依赖） -->
+  <section class="row row-oracle" aria-label="LLM 前缀缓存生产定案">
+    <article class="panel panel-oracle">
+      <div class="panel-head"><h2>CACHE ORACLE · 前缀缓存生产定案</h2><span class="hint">wkapi.pro/v1 · gpt-6-sol · 真机测量 · cached_tokens 是唯一可信读数（prompt_tokens 为代理侧记账、不可跨请求比）</span></div>
+      <div class="oracle-grid">
+        <div class="oracle-ring-wrap">
+          <svg class="oracle-ring" viewBox="0 0 140 140" role="img" aria-label="stablePrefix lane 真机命中率 75%">
+            <defs>
+              <linearGradient id="graGold" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#c9a23a"/>
+                <stop offset="100%" stop-color="#e3c469"/>
+              </linearGradient>
+              <linearGradient id="graTeal" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#3f8b83"/>
+                <stop offset="100%" stop-color="#4f9b86"/>
+              </linearGradient>
+            </defs>
+            <circle cx="70" cy="70" r="54" fill="none" stroke="#1c1a17" stroke-width="11"/>
+            <circle class="oracle-ring-bg" cx="70" cy="70" r="54" fill="none" stroke="url(#graGold)" stroke-width="11" stroke-linecap="round" stroke-dasharray="339.292" stroke-dashoffset="84.823" transform="rotate(-90 70 70)"/>
+            <circle cx="70" cy="70" r="38" fill="none" stroke="#1c1a17" stroke-width="3"/>
+            <circle class="oracle-ring-halo" cx="70" cy="70" r="54" fill="none" stroke="url(#graTeal)" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="339.292" stroke-dashoffset="60" transform="rotate(20 70 70)" opacity=".45"/>
+            <text x="70" y="71" text-anchor="middle" font-size="22" font-family="var(--serif), serif" fill="#e3c469" font-weight="600">75%</text>
+            <text x="70" y="88" text-anchor="middle" font-size="8" font-family="var(--mono), monospace" fill="#a9a59a" letter-spacing=".18em">STABLE</text>
+          </svg>
+        </div>
+        <div class="oracle-lanes">
+          <div class="oracle-lane oracle-stable"><span class="lane-tag">stablePrefix</span><span class="lane-meter"><i style="width:75%"></i></span><span class="lane-num">3/4<small>warmup=2</small></span></div>
+          <div class="oracle-lane oracle-ident"><span class="lane-tag">identical</span><span class="lane-meter"><i style="width:50%"></i></span><span class="lane-num">2/4<small>every round miss then settle</small></span></div>
+          <div class="oracle-lane oracle-drift"><span class="lane-tag">driftingPrefix</span><span class="lane-meter"><i style="width:0%"></i></span><span class="lane-num">0/4<small>被证明：任一头部字节漂移 → 命中归零</small></span></div>
+          <div class="oracle-footnote">真机复测（node scripts/caesura-prompt-cache.mjs --live --rounds=4）：<b>stableBeatsDrift=true distinct=true</b>。 KI-553~556 已落到 <code>NPC_BIBLE=3419 chars / 2114 tokens</code>，恰好 ≥2 个完整 1024-token 块。非流与流已无系统性差异（T1–T4 对照全 4/4）。玩家进程零 LLM；dialogue.json 零改写。</div>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- 英雄区 -->
+ 顶部大数 -->
   <section class="hero" id="hero" aria-label="核心读数">
     <article class="metric" data-key="services">
       <div class="metric-label">在线服务</div>
