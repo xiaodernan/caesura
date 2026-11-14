@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "c6fd716342b6294ad934900ac4aa1747dd4013dc",
+  "head": "4e045b1a25652a1d5af3ef3aa2eccff33521eb0b",
   "branch": "master",
-  "subject": "fix(camera): invertMouseY default false — mouse up = look UP (FPS convention restored), QA shadow inverted helper invert Y for the 32 saved settings",
-  "date": "2026-11-14T23:30:01+08:00",
+  "subject": "fix(camera): default invertMouseY=true — ship the user-tuned direction (mouse up = look up Unity-style)",
+  "date": "2026-11-14T23:37:57+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/c6fd716342b6294ad934900ac4aa1747dd4013dc",
+    "url": "https://github.com/xiaodernan/caesura/commit/4e045b1a25652a1d5af3ef3aa2eccff33521eb0b",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
