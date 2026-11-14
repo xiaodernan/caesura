@@ -1,5 +1,8 @@
 # CAESURA《止音纪元》
 
+> English? Read **[`README.en.md`](README.en.md)**.
+> First time? **[`docs/PLAYER-GUIDE.md`](docs/PLAYER-GUIDE.md)**.
+
 原始 IP 的第三人称动作 RPG（垂直切片），TypeScript + Three.js 实现。
 世界设定：**止静带**（Hushbelt）—— 所有声音在时间中"停顿"的一整片区域；
 玩家是唯一能让停顿被"回响"的人。详见 [docs/IP_SEED.md](docs/IP_SEED.md)
