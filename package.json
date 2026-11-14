@@ -52,6 +52,7 @@
     "llm:qa": "node scripts/llm-dialogue-qa.mjs",
     "llm:diff": "node scripts/llm-dialogue-diff.mjs",
     "llm:cand-qa": "node scripts/llm-candidate-qa.mjs",
+    "llm:cand-canon": "node scripts/newlands-canon-rag.mjs",
     "llm-gateway:bench": "node scripts/caesura-llm-gateway.mjs",
     "circuit-breaker:bench": "node scripts/caesura-circuit-breaker.mjs",
     "idempotent-consumer:bench": "node scripts/caesura-idempotent-consumer.mjs",
