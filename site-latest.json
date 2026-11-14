@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "d15e878ac4bf8674f2eb1823fffedfee9adde478",
+  "head": "0bdc5d9793b9e3b929fefb6e6193b18ada25c2c4",
   "branch": "master",
-  "subject": "feat(quest): Finale 接戏 — 恩希尔倒下即在组合根启动 q_threewords / q_afterglow",
-  "date": "2026-11-15T00:20:57+08:00",
+  "subject": "chore(status): re-embed site-latest.json",
+  "date": "2026-11-14T16:21:07Z",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/d15e878ac4bf8674f2eb1823fffedfee9adde478",
+    "url": "https://github.com/xiaodernan/caesura/commit/0bdc5d9793b9e3b929fefb6e6193b18ada25c2c4",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
