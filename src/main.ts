@@ -963,6 +963,7 @@ const core = {
       }
 
       shownRegion = here.id
+      bus.emit('ui.region.enter', { regionId: here.id, displayName: here.displayName }) // 进场仪典：RegionBanner 的声源
       bus.emit('ui.notify', { text: here.displayName, kind: 'info' })
       bus.emit('log', { level: 'info', msg: `enter ${here.id} · chunks ${JSON.stringify(streaming.stats())}` })
     }

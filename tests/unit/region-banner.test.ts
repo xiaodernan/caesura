@@ -4,8 +4,8 @@ import { RegionBanner } from '@/ui/RegionBanner'
 import { bus } from '@/core/EventBus'
 
 /**
- * RegionBanner — 区域进场仪典（Phase F? — 本批首落）：
- * world.chunk 带 regionId ⇒ 首次看到 ⇒ 挂出名字牌，同一局内不重复触发。
+ * RegionBanner — 区域进场仪典（region.enter）：
+ * ui.region.enter(...) ⇒ 上屏该区域名；同一局内每个 regionId 只上屏一次；不同 region 过滤器相互独立。
  */
 class FakeEl {
   id = ''
@@ -31,14 +31,7 @@ beforeAll(() => {
   head = new FakeEl()
   body = new FakeEl()
   ;(globalThis as unknown as Record<string, unknown>).document = {
-    createElement: (tag: string) => {
-      const el = new FakeEl()
-      if (tag === 'style') {
-        const s = { textContent: '', id: '' }
-        return s as unknown as FakeEl
-      }
-      return el
-    },
+    createElement: () => new FakeEl(),
     head,
     body,
     getElementById: () => null,
@@ -51,10 +44,13 @@ afterEach(() => {
   setLang('zh')
 })
 
-describe('RegionBanner：踏入新区域的初印象（Phase F）', () => {
-  it('展示：world.chunk(rg_windcoast) ⇒ banner 挂出名称 + on class', () => {
+const mk = (regionId: string, displayName: string) => ({ regionId, displayName })
+const emit = (p: { regionId: string; displayName: string }) => bus.emit('ui.region.enter', p)
+
+describe('RegionBanner：踏入新区域的初印象（region.enter）', () => {
+  it('展示：ui.region.enter(rg_windcoast,风钟海岸) ⇒ banner 挂出名称 + on class', () => {
     const b = new RegionBanner()
-    bus.emit('world.chunk', { key: '0,0,0', regionId: 'rg_windcoast', cx: 0, cy: 0, cz: 0, center: { x: 0, y: 0, z: 0 }, state: 'active', priority: 0, tick: 1 })
+    emit(mk('rg_windcoast', '风钟海岸 Windbell Coast'))
     const root = body.children.find((c) => c.id === 'region-banner')!
     expect(root, 'banner 节点挂到 body 上').toBeDefined()
     expect(root!.classList.contains('on')).toBe(true)
@@ -62,22 +58,22 @@ describe('RegionBanner：踏入新区域的初印象（Phase F）', () => {
     b.dispose()
   })
 
-  it('同一局：已见过的 region 再次出现 → 触发次数不增加、banner 保持原文本', () => {
+  it('同一局：已见过的 regionId 再次出现 → banner 不重播（内层 innerHTML 不变，classList 不重置）', () => {
     const b = new RegionBanner()
-    bus.emit('world.chunk', { key: '0,0,0', regionId: 'rg_resthold', cx: 0, cy: 0, cz: 0, center: { x: 0, y: 0, z: 0 }, state: 'active', priority: 0, tick: 1 })
+    emit(mk('rg_resthold', '休垒 Resthold'))
     const root = body.children.find((c) => c.id === 'region-banner')!
     const before = root!.innerHTML
-    bus.emit('world.chunk', { key: '1,0,0', regionId: 'rg_resthold', cx: 1, cy: 0, cz: 0, center: { x: 48, y: 0, z: 0 }, state: 'active', priority: 0, tick: 2 })
-    bus.emit('world.chunk', { key: '0,0,0', regionId: 'rg_resthold', cx: 0, cy: 0, cz: 0, center: { x: 0, y: 0, z: 0 }, state: 'active', priority: 0, tick: 3 })
+    emit(mk('rg_resthold', '休垒 Resthold'))
+    emit(mk('rg_resthold', '休垒 Resthold'))
     expect(root!.innerHTML).toBe(before)
     b.dispose()
   })
 
-  it('两个不同的 region 各触发一次：后面的那个覆盖前一个显示内容', () => {
+  it('两个不同 region 各触发一次：后面那个覆盖前一个显示内容', () => {
     const b = new RegionBanner()
-    bus.emit('world.chunk', { key: '0,0,0', regionId: 'rg_whisperwode', cx: 0, cy: 0, cz: 0, center: { x: 100, y: 0, z: 0 }, state: 'active', priority: 0, tick: 1 })
+    emit(mk('rg_whisperwode', '雾语林 Whisperwode'))
     const r1 = body.children.find((c) => c.id === 'region-banner')!.innerHTML
-    bus.emit('world.chunk', { key: '0,2,0', regionId: 'rg_windcoast', cx: 0, cy: 2, cz: 0, center: { x: 500, y: 0, z: 0 }, state: 'active', priority: 0, tick: 2 })
+    emit(mk('rg_windcoast', '风钟海岸 Windbell Coast'))
     const r2 = body.children.find((c) => c.id === 'region-banner')!.innerHTML
     expect(r1).toContain('雾语林')
     expect(r2).toContain('风钟海岸')
