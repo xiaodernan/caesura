@@ -511,9 +511,17 @@ export class SaveGame {
           const buses = ['master', 'music', 'sfx', 'ambience', 'ui']
           for (const b of buses) audio[b] = w.audio.getVolume(b)
         }
+        const gameplayOut = w.gameplay ? w.gameplay.get() : undefined
+        const gameplay: Record<string, unknown> | undefined = (() => {
+          if (!gameplayOut) return undefined
+          // invertMouseY is transient player UI state — does NOT round-trip through save (we intentionally reset to FPS norm every launch)
+          const filtered: Record<string, unknown> = { ...gameplayOut }
+          delete filtered.invertMouseY
+          return filtered
+        })()
         return {
           audio,
-          gameplay: w.gameplay ? w.gameplay.get() : undefined,
+          gameplay,
           bindings: w.bindings ? w.bindings.get() : undefined,
           // KI-362：那三盒跟着走，但**只在存过东西的时候**写（undefined 由 store 那一侧回答，不在这里再数一遍）
           bindingsProfiles: w.bindings ? w.bindings.profiles.get() : undefined,

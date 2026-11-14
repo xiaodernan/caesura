@@ -464,7 +464,7 @@ describe('KI-112 v12→v13 迁移', () => {
 })
 
 describe('KI-112 设置持久化：gameplay 跟档走', () => {
-  it('改九格 → save → 档里真的有这块 → 新世界 load ⇒ 九路消费者逐格复原', async () => {
+  it('改九格 → save ⇒ 档里按八格走（invertMouseY 不入档）→ 新世界 load ⇒ 九路消费者复原、第九格回落默认（FPS norm）', async () => {
     const store = new MapStore()
     const w = makeWorld(store)
     // KI-384 把第八格也塞进这一条腿：它写的是 `false`，也就是**非默认**那一边——
@@ -477,7 +477,8 @@ describe('KI-112 设置持久化：gameplay 跟档走', () => {
     // KI-112 那一批写这条腿时它是 13；键位数据化（KI-336）把档升到 14，那条字面量当场红——
     // 这条腿问的是"今天存出去的档带今天的号"，所以号从唯一主人那里读，不再抄第二份。
     expect(stored.payload.snapshot.version, '写档走的版本 = SAVE_VERSION').toBe(SAVE_VERSION)
-    expect(stored.payload.snapshot.settings.gameplay).toEqual({ bufferMs: 240, frameAssist: true, shakeScale: 1.5, rumbleScale: 2, damageScale: 0.7, rumbleWeakScale: 0.4, holdMs: 600, mashGuard: false, invertMouseY: false })
+    // invertMouseY 是会话内的镜头偏好，不入档（FPS norm 是出厂姿势）——档里不该出现这一格
+    expect(stored.payload.snapshot.settings.gameplay, '游戏设置存档剥除 invertMouseY（会话内状态不写进档）').toEqual({ bufferMs: 240, frameAssist: true, shakeScale: 1.5, rumbleScale: 2, damageScale: 0.7, rumbleWeakScale: 0.4, holdMs: 600, mashGuard: false })
 
     const w2 = makeWorld(store)
     expect(w2.input.bufferSec, '新世界从默认起手').toBe(0.2)
