@@ -3505,3 +3505,30 @@ main { padding: clamp(18px, 3vw, 40px) clamp(18px, 4vw, 56px) 48px; max-width: 1
 @media (prefers-reduced-motion: reduce) {
   .cc-cell { transition: none; }
 }
+
+
+/* ================= 集大成 · 终局仪典 · 玉玦铭（ribbon · CSS-only · reduced-motion 全关） ================= */
+.row.row-ribbon { padding: 6px clamp(18px, 4vw, 56px) 26px; }
+.ribbon {
+  position: relative; display: flex; align-items: center; gap: 14px; padding: 14px clamp(14px, 2vw, 32px);
+  border: 1px solid rgba(201,162,58,.22); border-radius: 4px; background:
+    linear-gradient(180deg, rgba(201,162,58,.05), rgba(79,155,134,.04)), var(--ash-2);
+  box-shadow: 0 12px 32px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.06);
+  overflow: hidden;
+}
+.ribbon::after {
+  content: ''; position: absolute; inset: 0 0 auto auto; width: 20%;
+  background: linear-gradient(90deg, transparent, rgba(201,180,88,.25), transparent);
+  animation: ribbon-sweep 5.5s ease-in-out infinite alternate;
+}
+@keyframes ribbon-sweep { from { transform: translateX(-70%); } to { transform: translateX(380%); } }
+.seal { font-family: var(--serif); color: var(--gold-dim); letter-spacing: .22em; font-size: 12px; }
+.seal-lg { font-size: 14px; font-weight: 600; color: rgba(201,162,58,.92); text-shadow: 0 0 18px rgba(201,180,88,.25); }
+.seal-jade { color: rgba(79,155,134,.88); text-shadow: 0 0 16px rgba(79,155,134,.3); }
+.seal-zhu { color: rgba(165,68,82,.92); text-shadow: 0 0 16px rgba(165,68,82,.3); }
+.ribbon-text { flex: 1; text-align: center; font: 11px var(--mono); color: var(--silver); letter-spacing: .32em; text-transform: uppercase; }
+.ribbon-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--jade); box-shadow: 0 0 10px rgba(79,155,134,.8); animation: pulse 1.6s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .ribbon::after { animation: none; transform: none; opacity: .25; }
+  .ribbon-dot { animation: none; }
+}
