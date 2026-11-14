@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "0fe625993635ba2310e68b42bd461f8f5ce1e11e",
+  "head": "f36e75e9c01ecd9ee93765f8549b0401092c2546",
   "branch": "master",
-  "subject": "docs(i18n): technical-architecture 附录 B（i18n 基建正式登记：src/i18n/Lang.ts / TitleScreen|Hud|DialogueBox|CinematicLetterbox|actionLabels / 站点 site-sync / PLAYER-GUIDE / README.en.md / site-latest.json schema-v1）",
-  "date": "2026-11-14T19:07:08+08:00",
+  "subject": "docs(i18n): README.md|README.en.md|PLAYER-GUIDE 双向交叉链接——三入口任一进入都能抵达全部",
+  "date": "2026-11-14T19:18:14+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/0fe625993635ba2310e68b42bd461f8f5ce1e11e",
+    "url": "https://github.com/xiaodernan/caesura/commit/f36e75e9c01ecd9ee93765f8549b0401092c2546",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
