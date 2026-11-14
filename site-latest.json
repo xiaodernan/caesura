@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "f36e75e9c01ecd9ee93765f8549b0401092c2546",
+  "head": "07af757098387fdff195006b7b23ccf2c8ef509d",
   "branch": "master",
-  "subject": "docs(i18n): README.md|README.en.md|PLAYER-GUIDE 双向交叉链接——三入口任一进入都能抵达全部",
-  "date": "2026-11-14T19:18:14+08:00",
+  "subject": "docs(site): SITE-INTEG.md——把 master site-latest.json 接入个人展示页的 drop-in 集成卡（live commit + KV 现读）",
+  "date": "2026-11-14T19:30:23+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/f36e75e9c01ecd9ee93765f8549b0401092c2546",
+    "url": "https://github.com/xiaodernan/caesura/commit/07af757098387fdff195006b7b23ccf2c8ef509d",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
