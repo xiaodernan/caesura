@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "63abb02df94da18b0d802bc633fc590add25a854",
+  "head": "fb2f557518a111dbbad91c45d18b93872b925a52",
   "branch": "master",
-  "subject": "test(catalog): data-side invariant guard — regions/weather/music/ids/unlockFlag uniqueness",
-  "date": "2026-11-15T02:29:27+08:00",
+  "subject": "feat(pages): /caesura/cast/ —— 角色图鉴 Cast Roster（bilingual）",
+  "date": "2026-11-15T02:40:14+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/63abb02df94da18b0d802bc633fc590add25a854",
+    "url": "https://github.com/xiaodernan/caesura/commit/fb2f557518a111dbbad91c45d18b93872b925a52",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
