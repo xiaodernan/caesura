@@ -60,13 +60,13 @@ const OPS_TAB: { id: Tab; label: string; hint: string } = { id: 'ops', label: t(
  */
 type BoolKey = 'frameAssist' | 'mashGuard'
 type NumericKey = Exclude<keyof GameplaySettings, BoolKey>
-const OPS_NUMERIC: { key: NumericKey; label: string; step: number; note: string; fmt: (v: number) => string }[] = [
-  { key: 'bufferMs', label: '输入缓冲', step: 20, note: '§5.1 那一格 · 80–240ms', fmt: (v) => `${Math.round(v)}ms` },
-  { key: 'holdMs', label: '按住多久算长按', step: 50, note: '§6 那一格 · 200–800ms，重键松手快过这条线出一记重击，慢过它就只在蓄满时出手', fmt: (v) => `${Math.round(v)}ms` },
-  { key: 'shakeScale', label: '镜头抖动', step: 0.1, note: 'combat §10 · 0–150%', fmt: (v) => `${Math.round(v * 100)}%` },
-  { key: 'rumbleScale', label: '手柄振动·强马达', step: 0.1, note: '§6 · 0–200%，只乘强马达那一路幅值', fmt: (v) => `${Math.round(v * 100)}%` },
-  { key: 'rumbleWeakScale', label: '手柄振动·弱马达', step: 0.1, note: '§6 · 0–200%，只乘弱马达那一路幅值（与强马达各一把尺）', fmt: (v) => `${Math.round(v * 100)}%` },
-  { key: 'damageScale', label: '受击伤害', step: 0.05, note: 'gameplay · 70–130%，只乘玩家收到的那一份', fmt: (v) => `${Math.round(v * 100)}%` }
+const opsNumeric = (): { key: NumericKey; label: string; step: number; note: string; fmt: (v: number) => string }[] => [
+  { key: 'bufferMs', label: t('stak.num.bufferMs.label'), step: 20, note: t('stak.num.bufferMs.note'), fmt: (v) => `${Math.round(v)}ms` },
+  { key: 'holdMs', label: t('stak.num.holdMs.label'), step: 50, note: t('stak.num.holdMs.note'), fmt: (v) => `${Math.round(v)}ms` },
+  { key: 'shakeScale', label: t('stak.num.shakeScale.label'), step: 0.1, note: t('stak.num.shakeScale.note'), fmt: (v) => `${Math.round(v * 100)}%` },
+  { key: 'rumbleScale', label: t('stak.num.rumbleScale.label'), step: 0.1, note: t('stak.num.rumbleScale.note'), fmt: (v) => `${Math.round(v * 100)}%` },
+  { key: 'rumbleWeakScale', label: t('stak.num.rumbleWeakScale.label'), step: 0.1, note: t('stak.num.rumbleWeakScale.note'), fmt: (v) => `${Math.round(v * 100)}%` },
+  { key: 'damageScale', label: t('stak.num.damageScale.label'), step: 0.05, note: t('stak.num.damageScale.note'), fmt: (v) => `${Math.round(v * 100)}%` }
 ]
 
 /**
@@ -74,12 +74,12 @@ const OPS_NUMERIC: { key: NumericKey; label: string; step: number; note: string;
  * 步进量与那一节的行名是**界面粒度**，所以住在面板这侧；**界不在这里抄第二份**——
  * 读的是 `BIND_BOUNDS.stickThreshold`，夹它的也是同一句 `clampBindings`（口径 ② 说的那件事）。
  */
-const OPS_STICK = {
+const opsStick = () => ({
   key: 'stickThreshold',
-  label: '摇杆推过多少算按下',
+  label: t('stak.stick.label'),
   step: 0.05,
-  note: '§6 那一格 · 25–90%，左摇杆走到菜单行上，过这条线才算按下'
-} as const
+  note: t('stak.stick.note')
+})
 
 /**
  * 玩法那一条通道上唯一的那格数值（KI-364，§6 那一格「扳机死区」）。与上面那一把**同一种形状**：
@@ -87,18 +87,15 @@ const OPS_STICK = {
  * 面板既不抄默认也不夹一次。它画的不是「此刻用的那一张表」的键位，而是那张表上唯一的数值格
  * `gameplay.triggerThreshold`——所以它跟着玩法那一节画，消费者是 `Input.padOn` 那一个判据。
  */
-const OPS_TRIGGER = {
+const opsTrigger = () => ({
   key: 'triggerThreshold',
-  label: '扳机推过多少算按下',
+  label: t('stak.trigger.label'),
   step: 0.05,
-  note: '§6 那一格 · 5–95%，LT/RT 是模拟量，过这条线才算按下；一道线同时管改键、玩法与菜单三个读者'
-} as const
+  note: t('stak.trigger.note')
+})
 
 /** 画质档位一行（F2 第一格 UI）：◀▶ 循环四档，面板只负责换，夹取在边界。 */
-const OPS_QUALITY = {
-  label: '画质档位',
-  note: '低/中/高/极高 · 控制粒子生成预算（GPUParticles budgetMul），中=高=发售原样行为'
-} as const
+const opsQuality = () => ({ label: t('stak.quality.label'), note: t('stak.quality.note') })
 
 /**
  * 面板外壳（**两块 overlay 共用这一份**）：根/遮罩/膜、页头、页签、行、焦点框、页脚……
@@ -444,7 +441,7 @@ export interface OpsPanelDeps {
  * 菜单里叫「后退」的那一行与玩法里叫「后退」的那一行（`moveDown`）在同一屏上同名，
  * 只有节名能把它们分开——而这个名字有第二个书写者的话，页脚就开始指错地方。
  */
-const OPS_SECTIONS = Object.freeze({ gameplay: '玩法键位', ui: '菜单导航' })
+const opsSection = (ch: 'gameplay' | 'ui'): string => t(ch === 'gameplay' ? 'stak.section.gameplay' : 'stak.section.ui')
 
 /**
  * 屏上那枚「存取哪一半」（KI-368）：名册与两种叫法在这里一次写全——`label` 是屏上那一枚的名字，
@@ -457,10 +454,10 @@ const OPS_SECTIONS = Object.freeze({ gameplay: '玩法键位', ui: '菜单导航
  */
 const PROF_CHANS = ['both', 'kb', 'pad'] as const
 type ProfChan = typeof PROF_CHANS[number]
-const PROF_CHAN: Record<ProfChan, { label: string; half: string }> = Object.freeze({
-  both: { label: '两半一起', half: '' },
-  kb: { label: '只键鼠', half: '键鼠那一半' },
-  pad: { label: '只手柄', half: '手柄那一半' }
+const profChanRec = (): Record<ProfChan, { label: string; half: string }> => ({
+  both: { label: t('stak.chan.both'), half: '' },
+  kb: { label: t('stak.chan.kb'), half: t('stak.half.kb') },
+  pad: { label: t('stak.chan.pad'), half: t('stak.half.pad') }
 })
 
 /**
@@ -582,8 +579,8 @@ export class Stakerite {
    * 永远不被读的格子，§55）。屏上若替菜单那一行也说"点鼠标也算"，那是一句边界不认的承诺。
    */
   private awaitSensorLabel(w: AwaitingRow): string {
-    if (w.via === 'pad') return '手柄键'
-    return w.channel === 'gameplay' ? '键（或鼠标）' : '键'
+    if (w.via === 'pad') return t('stak.sensor.pad')
+    return w.channel === 'gameplay' ? t('stak.sensor.keyMouse') : t('stak.sensor.key')
   }
 
   /** 页签名册现推（§55）：接得到把手才有「操作」这一页 */
@@ -672,7 +669,7 @@ export class Stakerite {
       case 'unbindpad': this.unbindPadKey(arg as ActionName); break
       case 'unbindui': { const i = this.uiRow(arg); if (i !== null) this.unbindOneUi(i); break }
       case 'unbinduipad': { const i = this.uiRow(arg); if (i !== null) this.unbindOneUiPad(i); break }
-      case 'resetall': this.ops?.resetAll(); this.swapNote = null; this.hooks.notify('键位整张回到默认'); break
+      case 'resetall': this.ops?.resetAll(); this.swapNote = null; this.hooks.notify(t('stak.notify.resetAll')); break
       case 'profstore': this.storeProfile(arg); break
       case 'profload': this.loadProfile(arg); break
       case 'profclear': this.clearProfileRow(arg); break
@@ -1044,7 +1041,7 @@ export class Stakerite {
         <main>${body}</main>
         <div class="foot">
           <span>${this.awaiting === null ? '← → 换页 · ↑ ↓ 选行 · Enter 执行 · Backspace 后退'
-            : `等待一枚${this.awaitSensorLabel(this.awaiting)} · ${OPS_SECTIONS[this.awaiting.channel]} · ${this.awaiting.channel === 'ui' ? intentLabel(this.awaiting.intent) : actionLabel(this.awaiting.action)}（Escape 取消）`}</span><span>Tab 收起</span>
+            : `${t('stak.await.waiting')}${this.awaitSensorLabel(this.awaiting)} · ${opsSection(this.awaiting.channel)} · ${this.awaiting.channel === 'ui' ? intentLabel(this.awaiting.intent) : actionLabel(this.awaiting.action)}${t('stak.await.esc')}`}</span><span>${t('stak.await.tab')}</span>
           <span>音色石 ${this.rpg.inv.count(TIMBITE)}</span><span>残晶 ${this.rpg.inv.count(DROSS)}</span>
           <span>乐谱残页 ${this.rpg.inv.count(SCORE)}</span>
         </div>
@@ -1403,7 +1400,7 @@ export class Stakerite {
     if (!this.ops) return
     this.standDown()
     this.swapNote = null
-    if (!this.ops.unbind(action)) { this.hooks.notify(`${actionLabel(action)} ${GAMEPLAY_EXIT_ACTIONS.includes(action) ? '这一行两列都关不掉 ⇒ 一格都没动' : '不在名册上 ⇒ 一格都没动'}`); return }
+    if (!this.ops.unbind(action)) { this.hooks.notify(`${actionLabel(action)} ${GAMEPLAY_EXIT_ACTIONS.includes(action) ? t('stak.notify.exitRow') : t('stak.notify.notListed')}`); return }
     this.hooks.notify(`${actionLabel(action)} 在键盘上解绑（手柄那侧不动）`)
   }
 
@@ -1419,7 +1416,7 @@ export class Stakerite {
     if (!this.ops) return
     this.standDown()
     this.swapNote = null
-    if (!this.ops.unbindPad(action)) { this.hooks.notify(`${actionLabel(action)} ${GAMEPLAY_EXIT_ACTIONS.includes(action) ? '这一行两列都关不掉 ⇒ 一格都没动' : '不在名册上 ⇒ 一格都没动'}`); return }
+    if (!this.ops.unbindPad(action)) { this.hooks.notify(`${actionLabel(action)} ${GAMEPLAY_EXIT_ACTIONS.includes(action) ? t('stak.notify.exitRow') : t('stak.notify.notListed')}`); return }
     this.hooks.notify(`${actionLabel(action)} 在手柄上解绑（键盘那侧不动）`)
   }
 
@@ -1475,7 +1472,7 @@ export class Stakerite {
    * 那个数会被原样写进存档，而存档要的是**往返不漂移**（面板给的是界面粒度，不该顺手给出二进制粒度）。
    */
   private stepGameplay(arg: string): void {
-    const spec = OPS_NUMERIC.find((n) => n.key === arg.split(':')[0])
+    const spec = opsNumeric().find((n) => n.key === arg.split(':')[0])
     const dir = Number(arg.split(':')[1])
     if (!this.ops || !spec || !Number.isFinite(dir)) return
     const g = this.ops.gameplay()
@@ -1493,11 +1490,11 @@ export class Stakerite {
    */
   private stepStick(arg: string): void {
     const parts = arg.split(':')
-    if (!this.ops || parts[0] !== OPS_STICK.key) return
+    if (!this.ops || parts[0] !== opsStick().key) return
     const dir = Number(parts[1])
     const cur = this.bindsSource?.uiBinds.stickThreshold
     if (!Number.isFinite(dir) || cur === undefined) return
-    this.ops.setStickThreshold(Math.round((cur + OPS_STICK.step * Math.sign(dir)) * 100) / 100)
+    this.ops.setStickThreshold(Math.round((cur + opsStick().step * Math.sign(dir)) * 100) / 100)
   }
 
   /**
@@ -1507,11 +1504,11 @@ export class Stakerite {
    */
   private stepTrigger(arg: string): void {
     const parts = arg.split(':')
-    if (!this.ops || parts[0] !== OPS_TRIGGER.key) return
+    if (!this.ops || parts[0] !== opsTrigger().key) return
     const dir = Number(parts[1])
     const cur = this.bindsSource?.binds.triggerThreshold
     if (!Number.isFinite(dir) || cur === undefined) return
-    this.ops.setTriggerThreshold(Math.round((cur + OPS_TRIGGER.step * Math.sign(dir)) * 100) / 100)
+    this.ops.setTriggerThreshold(Math.round((cur + opsTrigger().step * Math.sign(dir)) * 100) / 100)
   }
 
   /**
@@ -1562,8 +1559,8 @@ export class Stakerite {
     const i = Number(arg)
     const answer = this.ops?.profiles.store(i, this.profTarget())
     if (answer === undefined || answer === null) return
-    const half = PROF_CHAN[this.profChan].half
-    this.hooks.notify(`${answer === 'new' ? `已存入配置文件 ${i + 1}` : `已覆盖配置文件 ${i + 1}`}${half ? ` · 只抄走${half}` : ''}`)
+    const half = profChanRec()[this.profChan].half
+    this.hooks.notify(`${answer === 'new' ? t('stak.notify.savedProfile', { n: i + 1 }) : t('stak.notify.overwroteProfile', { n: i + 1 })}${half ? t('stak.notify.halfStored', { half }) : ''}`)
   }
 
   /** 载入是唯一会换掉运行时表的那一把：换完了上一行的键名跟着真值走，而那句过期的「刚交换」要收掉 */
@@ -1571,8 +1568,8 @@ export class Stakerite {
     const i = Number(arg)
     if (!this.ops?.profiles.load(i, this.profTarget())) return
     this.swapNote = null
-    const half = PROF_CHAN[this.profChan].half
-    this.hooks.notify(`已载入配置文件 ${i + 1}${half ? ` · 只请回${half}` : ''}`)
+    const half = profChanRec()[this.profChan].half
+    this.hooks.notify(`${t('stak.notify.loadedProfile', { n: i + 1 })}${half ? t('stak.notify.halfLoaded', { half }) : ''}`)
   }
 
   /**
@@ -1587,7 +1584,7 @@ export class Stakerite {
   private clearProfileRow(arg: string): void {
     const i = Number(arg)
     if (!this.ops?.profiles.clear(i)) return
-    this.hooks.notify(`已清空配置文件 ${i + 1}`)
+    this.hooks.notify(t('stak.notify.clearedProfile', { n: i + 1 }))
   }
 
   /**
@@ -1601,9 +1598,9 @@ export class Stakerite {
    */
   private swapNoteText = <V,>(s: RowSwap<V>, name: (v: V) => string, movedWord: string): string =>
     s.displaced === null
-      ? (s.onto === 'pad' ? '这一把原本没有别人' : '这把键原本是空着的')
-      : `${s.onto === 'pad' ? '这一把' : '这把键'}原本归 ${name(s.displaced)} ⇒ `
-        + (s.moved ? movedWord : '它少了这一把，没搬去别处')
+      ? (s.onto === 'pad' ? t('stak.swap.padEmpty') : t('stak.swap.keyEmpty'))
+      : `${t(s.onto === 'pad' ? 'stak.swap.usedToBePad' : 'stak.swap.usedToBeKey', { name: name(s.displaced) })} ⇒ `
+        + (s.moved ? movedWord : t('stak.swap.partLeft'))
 
   /**
    * 「操作」页：`docs/ui-ux.md` §5.1 那句「全动作逐行可改」的玩家入口，外加 KI-112 那五格玩法设置的第一次露面
@@ -1641,7 +1638,7 @@ export class Stakerite {
    *    ——一节两来源就会让"这一格改的是哪份档"有第二种说法。
    */
   private renderOps(): string {
-    if (!this.ops) return '<div class="empty">这一页没有把手就没有内容——页签也就不会出现（见 tabsOf）。</div>'
+    if (!this.ops) return `<div class="empty">${t('stak.empty.page')}</div>`
     const binds = this.bindsSource?.binds
     const uiBinds = this.bindsSource?.uiBinds
     const waiting = this.awaiting
@@ -1658,21 +1655,21 @@ export class Stakerite {
       const locked = GAMEPLAY_EXIT_ACTIONS.includes(a)
       /** 手柄那侧此刻的几把：问的是**同一张运行时表**，不另抄默认手柄表；下标升序，显示名只有一个主人 */
       const padIdx = binds ? Object.keys(binds.padButtons).map(Number).filter((i) => binds.padButtons[i] === a).sort((x, y) => x - y) : []
-      const padShown = padIdx.map(padLabel).join('、')
+      const padShown = padIdx.map(padLabel).join(t('stak.sep'))
       const armed = waiting !== null && waiting.channel === 'gameplay' && waiting.action === a ? waiting.via : null
       const justSwapped = gameSwap !== null && gameSwap.action === a ? gameSwap : null
-      const note = armed ? (armed === 'pad' ? '按手柄上一枚键绑定 · Escape 取消' : '按键或点鼠标绑定 · Escape 取消')
-        : justSwapped ? this.swapNoteText(justSwapped, actionLabel, '已交换')
-          : off && padOff ? '两条都关掉了：这一行此刻键盘与手柄都不发'
+      const note = armed ? (armed === 'pad' ? t('stak.note.waitPad') : t('stak.note.waitKeyMouse'))
+        : justSwapped ? this.swapNoteText(justSwapped, actionLabel, t('stak.swap.swapped'))
+          : off && padOff ? t('stak.note.bothOff')
             : off ? (padIdx.length
-              ? `键盘这一格已关掉 · 手柄上还有 ${padIdx.length} 把`
-              : '键盘这一格已关掉，而手柄那侧也没有这个动词')
-            : padOff ? `手柄这一列已关掉 · 键盘上还有 ${shown}`
-              : locked ? `「${actionLabel(a)}」不许关掉：世界必须停得下来`
-                : binds === undefined ? '没接键位来源 ⇒ 这一列不给键名（键名只有运行时那一个主人）' : ''
-      const arm = `<button class="act" data-act="arm" data-arg="${a}">${armed === 'key' ? '等待中' : '改键'}</button>`
-      const armPad = `<button class="act" data-act="armpad" data-arg="${a}">${armed === 'pad' ? '等待中' : '手柄'}</button>`
-      const cancel = `<button class="act" data-act="unarm">取消</button>`
+              ? t('stak.note.gpKbOffPadLeft', { n: padIdx.length })
+              : t('stak.note.gpKbOnlyOff'))
+            : padOff ? t('stak.note.gpPadOffKbLeft', { n: shown ?? '' })
+              : locked ? t('stak.note.gpLocked', { label: actionLabel(a) })
+                : binds === undefined ? t('stak.bind.noSourceCol') : ''
+      const arm = `<button class="act" data-act="arm" data-arg="${a}">${armed === 'key' ? t('stak.btn.waiting') : t('stak.btn.rebind')}</button>`
+      const armPad = `<button class="act" data-act="armpad" data-arg="${a}">${armed === 'pad' ? t('stak.btn.waiting') : t('stak.btn.pad')}</button>`
+      const cancel = `<button class="act" data-act="unarm">${t('stak.btn.cancel')}</button>`
       /**
        * 一行四个家 ⇒ 两把「无」各关一列（KI-346），关掉之后各自的出口也各回各的列：
        * 「回默认」只把自己那一列的名单退掉，另一列那句「不要」不许顺路收回（那是玩家另一只手说的话）。
@@ -1680,22 +1677,22 @@ export class Stakerite {
        */
       const acts = armed === null
         ? `${arm}${armPad}${off || locked
-            ? `<button class="act" data-act="resetkey" data-arg="${a}">回默认</button>`
-            : `<button class="act" data-act="unbind" data-arg="${a}">解绑</button>`}${locked ? ''
+            ? `<button class="act" data-act="resetkey" data-arg="${a}">${t('stak.btn.resetDefault')}</button>`
+            : `<button class="act" data-act="unbind" data-arg="${a}">${t('stak.btn.unbind')}</button>`}${locked ? ''
             : padOff
-              ? `<button class="act" data-act="resetpad" data-arg="${a}">手柄回默认</button>`
-              : `<button class="act" data-act="unbindpad" data-arg="${a}">手柄解绑</button>`}`
-        : `${arm}${armPad}<button class="act" data-act="${armed === 'pad' ? 'resetpad' : 'resetkey'}" data-arg="${a}">${armed === 'pad' ? '手柄回默认' : '回默认'}</button>${cancel}`
+              ? `<button class="act" data-act="resetpad" data-arg="${a}">${t('stak.btn.resetPad')}</button>`
+              : `<button class="act" data-act="unbindpad" data-arg="${a}">${t('stak.btn.unbindPad')}</button>`}`
+        : `${arm}${armPad}<button class="act" data-act="${armed === 'pad' ? 'resetpad' : 'resetkey'}" data-arg="${a}">${armed === 'pad' ? t('stak.btn.resetPad') : t('stak.btn.resetDefault')}</button>${cancel}`
       /**
        * 记号挂在**被写进的那一列**（`onto` 由边界给）而且**真搬家才挂**（`moved` 同一条裁决）——两节到这里
        * 用同一个条件（KI-348）。以前这一格按 `via`（我等的是哪种传感器）挂：等键盘、按下却是一枚手柄键
        * 那一次，记号挂到了根本没被写的那一列上，而菜单那一节早就按 `onto` 挂了——同一件事两个主人。
        * 搬进一把空着的格子时也不能挂：那一行同时说「原本没有别人」和「刚交换」就是自己跟自己矛盾。
        */
-      const movedMark = justSwapped?.displaced && justSwapped.moved ? ' <span class="over">刚交换</span>' : ''
+      const movedMark = justSwapped?.displaced && justSwapped.moved ? ` <span class="over">${t('stak.mark.moved')}</span>` : ''
       return `<div class="row"><span class="name">${actionLabel(a)}<span class="note">${note}</span></span>
-        <span class="num">${shown ?? (off ? '无' : '—')}${justSwapped?.onto === 'keyboard' ? movedMark : ''}${binds !== undefined && (off || shown === null) && !padIdx.length ? ' <span class="over">没有键</span>' : ''}</span>
-        <span class="num">${padShown || (padOff ? '无' : '—')}${justSwapped?.onto === 'pad' ? movedMark : ''}</span>
+        <span class="num">${shown ?? (off ? t('stak.value.none') : '—')}${justSwapped?.onto === 'keyboard' ? movedMark : ''}${binds !== undefined && (off || shown === null) && !padIdx.length ? ` <span class="over">${t('stak.mark.noKey')}</span>` : ''}</span>
+        <span class="num">${padShown || (padOff ? t('stak.value.none') : '—')}${justSwapped?.onto === 'pad' ? movedMark : ''}</span>
         <span class="act">${acts}</span></div>`
     }).join('')
     const uiWait = waiting?.channel === 'ui' ? waiting.intent : null
@@ -1706,7 +1703,7 @@ export class Stakerite {
       const codes = uiBinds ? Object.keys(uiBinds.keyboard).filter((c) => uiBinds.keyboard[c] === i).sort() : []
       /** 手柄那一列（KI-345）：问的是**同一张运行时表**，下标升序，显示名只有一个主人（`padLabel`） */
       const padIdx = uiBinds ? Object.keys(uiBinds.padButtons).map(Number).filter((n) => uiBinds.padButtons[n] === i).sort((x, y) => x - y) : []
-      const padShown = padIdx.map(padLabel).join('、')
+      const padShown = padIdx.map(padLabel).join(t('stak.sep'))
       /** 玩家点名「无」的那几格（名单只有一个书写者：`clampBindings`，见 `UiBinds.unbound`） */
       const off = uiBinds !== undefined && uiBinds.unbound.includes(i)
       /** 手柄那一列的「无」（KI-346）：另一份名单、另一张表，与上面那一格各管各的 */
@@ -1715,18 +1712,18 @@ export class Stakerite {
       const locked = UI_EXIT_INTENTS.includes(i)
       const armed = uiWait === i ? uiWaitVia : null
       const justSwapped = uiSwap !== null && uiSwap.intent === i ? uiSwap : null
-      const note = armed ? (armed === 'pad' ? '按手柄上一枚键绑定 · Escape 取消' : '按任意键绑定 · Escape 取消')
-        : justSwapped ? this.swapNoteText(justSwapped, intentLabel, '它整组搬了家')
-          : off && padOff ? '两条都关掉了：这一行此刻键盘与手柄都不发'
+      const note = armed ? (armed === 'pad' ? t('stak.note.waitPad') : t('stak.note.waitKey'))
+        : justSwapped ? this.swapNoteText(justSwapped, intentLabel, t('stak.swap.groupMoved'))
+          : off && padOff ? t('stak.note.bothOff')
             : off ? (padIdx.length
-              ? `键盘这一组已关掉 · 手柄上还有 ${padIdx.length} 把`
-              : '键盘这一组已关掉，而手柄那侧也没有这个意图')
-            : padOff ? `手柄这一组已关掉 · 键盘上还有 ${codes.length} 把`
-              : locked ? `「${intentLabel(i)}」不许关掉：菜单必须走得出去` : ''
-      const arm = `<button class="act" data-act="armui" data-arg="${i}">${armed === 'key' ? '等待中' : '改键'}</button>`
-      const armPad = `<button class="act" data-act="armuipad" data-arg="${i}">${armed === 'pad' ? '等待中' : '手柄'}</button>`
-      const reset = `<button class="act" data-act="resetui" data-arg="${i}">回默认</button>`
-      const cancel = `<button class="act" data-act="unarm">取消</button>`
+              ? t('stak.note.uiKbOffPadLeft', { n: padIdx.length })
+              : t('stak.note.uiKbOnlyOff'))
+            : padOff ? t('stak.note.uiPadOffKbLeft', { n: codes.length })
+              : locked ? t('stak.note.uiLocked', { label: intentLabel(i) }) : ''
+      const arm = `<button class="act" data-act="armui" data-arg="${i}">${armed === 'key' ? t('stak.btn.waiting') : t('stak.btn.rebind')}</button>`
+      const armPad = `<button class="act" data-act="armuipad" data-arg="${i}">${armed === 'pad' ? t('stak.btn.waiting') : t('stak.btn.pad')}</button>`
+      const reset = `<button class="act" data-act="resetui" data-arg="${i}">${t('stak.btn.resetDefault')}</button>`
+      const cancel = `<button class="act" data-act="unarm">${t('stak.btn.cancel')}</button>`
       /**
        * 等键中与「无」那几格露出「回默认」，而关不掉的那几格两把「解绑」都没有（KI-344 立键盘那一半，
        * KI-346 把它扩到两列：「菜单必须走得出去」说的是这条通道走得出，不是"键盘那半走得出"）。
@@ -1734,19 +1731,19 @@ export class Stakerite {
        * 而关掉之后那一列的出口也各回各的列——另一列那句「不要」是玩家另一只手说的话，不许顺路收回。
        */
       const acts = armed === null
-        ? `${arm}${armPad}${off || locked ? reset : `<button class="act" data-act="unbindui" data-arg="${i}">解绑</button>`}${locked ? ''
-            : padOff ? `<button class="act" data-act="resetuipad" data-arg="${i}">手柄回默认</button>`
-              : `<button class="act" data-act="unbinduipad" data-arg="${i}">手柄解绑</button>`}`
-        : `${arm}${armPad}<button class="act" data-act="${armed === 'pad' ? 'resetuipad' : 'resetui'}" data-arg="${i}">${armed === 'pad' ? '手柄回默认' : '回默认'}</button>${cancel}`
+        ? `${arm}${armPad}${off || locked ? reset : `<button class="act" data-act="unbindui" data-arg="${i}">${t('stak.btn.unbind')}</button>`}${locked ? ''
+            : padOff ? `<button class="act" data-act="resetuipad" data-arg="${i}">${t('stak.btn.resetPad')}</button>`
+              : `<button class="act" data-act="unbinduipad" data-arg="${i}">${t('stak.btn.unbindPad')}</button>`}`
+        : `${arm}${armPad}<button class="act" data-act="${armed === 'pad' ? 'resetuipad' : 'resetui'}" data-arg="${i}">${armed === 'pad' ? t('stak.btn.resetPad') : t('stak.btn.resetDefault')}</button>${cancel}`
       /** 记号挂在**被写进的那一列**上（`onto` 由边界给）：两列各有各的格子集合，混挂就是让另一列替这一列作证 */
-      const movedMark = justSwapped?.displaced && justSwapped.moved ? ' <span class="over">整组搬家</span>' : ''
+      const movedMark = justSwapped?.displaced && justSwapped.moved ? ` <span class="over">${t('stak.mark.movedGroup')}</span>` : ''
       return `<div class="row"><span class="name">${intentLabel(i)}<span class="note">${note}</span></span>
-        <span class="num">${codes.map(codeLabel).join('、') || '无'}${justSwapped?.onto === 'keyboard' ? movedMark : ''}</span>
-        <span class="num">${padShown || (padOff ? '无' : '—')}${justSwapped?.onto === 'pad' ? movedMark : ''}</span>
+        <span class="num">${codes.map(codeLabel).join(t('stak.sep')) || t('stak.value.none')}${justSwapped?.onto === 'keyboard' ? movedMark : ''}</span>
+        <span class="num">${padShown || (padOff ? t('stak.value.none') : '—')}${justSwapped?.onto === 'pad' ? movedMark : ''}</span>
         <span class="act">${acts}</span></div>`
     }).join('')
     const g = this.ops.gameplay()
-    const numbers = OPS_NUMERIC.map((n) => {
+    const numbers = opsNumeric().map((n) => {
       const b = GAMEPLAY_BOUNDS[n.key]
       const v = g[n.key]
       const frac = Math.max(0, Math.min(1, (v - b.min) / (b.max - b.min)))
@@ -1760,7 +1757,7 @@ export class Stakerite {
     const qName = QUALITY_NAMES[q as QualityTier] ?? QUALITY_NAMES[DEFAULT_QUALITY]
     const qPrev = QUALITY_NAMES[(q - 1 + 4) % 4 as QualityTier]
     const qNext = QUALITY_NAMES[(q + 1) % 4 as QualityTier]
-    const qualityRow = `<div class="row"><span class="name">${OPS_QUALITY.label}<span class="note">${OPS_QUALITY.note}</span></span>
+    const qualityRow = `<div class="row"><span class="name">${opsQuality().label}<span class="note">${opsQuality().note}</span></span>
       <span class="num">${qName} (${q})</span>
       <span class="act"><button class="act" data-act="qstep" data-arg="-1">◀ ${qPrev}</button>
         <button class="act" data-act="qstep" data-arg="1">${qNext} ▶</button></span></div>`
@@ -1773,10 +1770,10 @@ export class Stakerite {
     const thB = BIND_BOUNDS.stickThreshold
     const th = uiBinds ? uiBinds.stickThreshold : null
     const stickFrac = th === null ? 0 : Math.max(0, Math.min(1, (th - thB.min) / (thB.max - thB.min)))
-    const stick = `<div class="row"><span class="name">${OPS_STICK.label}<span class="note">${OPS_STICK.note}</span></span>
-        <span class="num">${th === null ? '没接键位来源 ⇒ 这一格不给读数，也不给把手（读数只有运行时那一个主人）' : `${Math.round(th * 100)}%`}<span class="meter"><i style="width:${(stickFrac * 100).toFixed(1)}%"></i></span></span>
-        <span class="act"><button class="act" data-act="ustep" data-arg="${OPS_STICK.key}:-1" ${th === null || th <= thB.min ? 'disabled' : ''}>◀</button>
-          <button class="act" data-act="ustep" data-arg="${OPS_STICK.key}:1" ${th === null || th >= thB.max ? 'disabled' : ''}>▶</button></span></div>`
+    const stick = `<div class="row"><span class="name">${opsStick().label}<span class="note">${opsStick().note}</span></span>
+        <span class="num">${th === null ? t('stak.bind.noSource') : `${Math.round(th * 100)}%`}<span class="meter"><i style="width:${(stickFrac * 100).toFixed(1)}%"></i></span></span>
+        <span class="act"><button class="act" data-act="ustep" data-arg="${opsStick().key}:-1" ${th === null || th <= thB.min ? 'disabled' : ''}>◀</button>
+          <button class="act" data-act="ustep" data-arg="${opsStick().key}:1" ${th === null || th >= thB.max ? 'disabled' : ''}>▶</button></span></div>`
     /**
      * 扳机那条线那一行（KI-364）：它属于**玩法那一条通道**（`gameplay` 那张表上唯一的数值格，
      * 消费者是 `Input.padOn` 那一个判据），所以它跟着那一节画，不混进「手感与练习辅助」——
@@ -1786,10 +1783,10 @@ export class Stakerite {
     const tgB = BIND_BOUNDS.triggerThreshold
     const tg = binds ? binds.triggerThreshold : null
     const trigFrac = tg === null ? 0 : Math.max(0, Math.min(1, (tg - tgB.min) / (tgB.max - tgB.min)))
-    const trigger = `<div class="row"><span class="name">${OPS_TRIGGER.label}<span class="note">${OPS_TRIGGER.note}</span></span>
-        <span class="num">${tg === null ? '没接键位来源 ⇒ 这一格不给读数，也不给把手（读数只有运行时那一个主人）' : `${Math.round(tg * 100)}%`}<span class="meter"><i style="width:${(trigFrac * 100).toFixed(1)}%"></i></span></span>
-        <span class="act"><button class="act" data-act="tstep" data-arg="${OPS_TRIGGER.key}:-1" ${tg === null || tg <= tgB.min ? 'disabled' : ''}>◀</button>
-          <button class="act" data-act="tstep" data-arg="${OPS_TRIGGER.key}:1" ${tg === null || tg >= tgB.max ? 'disabled' : ''}>▶</button></span></div>`
+    const trigger = `<div class="row"><span class="name">${opsTrigger().label}<span class="note">${opsTrigger().note}</span></span>
+        <span class="num">${tg === null ? t('stak.bind.noSource') : `${Math.round(tg * 100)}%`}<span class="meter"><i style="width:${(trigFrac * 100).toFixed(1)}%"></i></span></span>
+        <span class="act"><button class="act" data-act="tstep" data-arg="${opsTrigger().key}:-1" ${tg === null || tg <= tgB.min ? 'disabled' : ''}>◀</button>
+          <button class="act" data-act="tstep" data-arg="${opsTrigger().key}:1" ${tg === null || tg >= tgB.max ? 'disabled' : ''}>▶</button></span></div>`
     /**
      * 配置文件那三行（KI-362，KI-363 加第三把）：这一节画的不是「此刻用的那张表」，而是**那三盒**——
      * 所以它的读数只有一个来源 `ops.profiles.list()`（边界的 `profileFlags()`），面板自己不留任何磁带状态。
@@ -1804,36 +1801,34 @@ export class Stakerite {
      * 那三行的注语因此从「抄走此刻那一张」改成「按使用中那一枚抄」：默认那一枚之下两句话等价，
      * 而停在「只键鼠」时旧句子说的不是屏上会发生的事。
      */
-    const chanRow = `<div class="row"><span class="name">存取哪一半<span class="note">这一枚只管「存入」与「载入」两把：使用中哪一枚，按下去就动整张还是那半张（默认「两半一起」，逐字仍是 KI-362 那一次）。「清空」不受它管——请回空的始终是那一整盒，而半盒就是一只满盒。</span></span>
-        <span class="num">${PROF_CHAN[this.profChan].label}</span>
-        <span class="act">${PROF_CHANS.map((c) => `<button class="act${c === this.profChan ? ' sel' : ''}" data-act="profchan" data-arg="${c}">${PROF_CHAN[c].label}</button>`).join('')}</span></div>`
+    const chanRow = `<div class="row"><span class="name">${t('stak.ops.chan.name')}<span class="note">${t('stak.ops.chan.note')}</span></span>
+        <span class="num">${profChanRec()[this.profChan].label}</span>
+        <span class="act">${PROF_CHANS.map((c) => `<button class="act${c === this.profChan ? ' sel' : ''}" data-act="profchan" data-arg="${c}">${profChanRec()[c].label}</button>`).join('')}</span></div>`
     const tapes = this.ops.profiles.list()
     const profiles = tapes.map((filled, i) => {
-      const note = filled
-        ? '这一盒里始终是一张完整的表 · 「载入」按上面那一枚「存取哪一半」请回（整张或那半张），再按「存入」就是覆盖它，按「清空」就把它请回空（手里那张不动）'
-        : '还没有录过 · 「存入」按上面那一枚抄此刻那张（不改任何键），空盒的「载入」与「清空」一起点不动'
-      return `<div class="row"><span class="name">配置文件 ${i + 1}<span class="note">${note}</span></span>
-        <span class="num">${filled ? '已存' : '空'}</span>
-        <span class="act"><button class="act" data-act="profload" data-arg="${i}" ${filled ? '' : 'disabled'}>载入</button>
-          <button class="act" data-act="profstore" data-arg="${i}">存入</button>
-          <button class="act" data-act="profclear" data-arg="${i}" ${filled ? '' : 'disabled'}>清空</button></span></div>`
+      const note = filled ? t('stak.profile.filled.note') : t('stak.profile.empty.note')
+      return `<div class="row"><span class="name">${t('stak.profile.name', { n: i + 1 })}<span class="note">${note}</span></span>
+        <span class="num">${filled ? t('stak.profile.stored') : t('stak.profile.emptyCell')}</span>
+        <span class="act"><button class="act" data-act="profload" data-arg="${i}" ${filled ? '' : 'disabled'}>${t('stak.btn.load')}</button>
+          <button class="act" data-act="profstore" data-arg="${i}">${t('stak.btn.store')}</button>
+          <button class="act" data-act="profclear" data-arg="${i}" ${filled ? '' : 'disabled'}>${t('stak.btn.clear')}</button></span></div>`
     }).join('')
-    return `<h2>${OPS_SECTIONS.gameplay}（每行两列：键盘那一把 · 手柄那几把。逐行可改，两条通道各一把「改键」与一把「解绑」把手）</h2>${keys}${trigger}
-      <div class="row"><span class="name">整张回默认<span class="note">每行那两格「解绑」写的是名单（键盘与手柄各一份，玩法与菜单各一对，共四份），删存档里的一格写的只是"这一行我没动过"⇒ 回默认。两件事各有各的写法，不靠同一个空缺冒充。</span></span>
-        <span class="act"><button class="act" data-act="resetall">全部回默认</button></span></div>
-      <h2>${OPS_SECTIONS.ui}（单元是整组：一行画的是它此刻握着的每一把等价键，改这一行就是只留你按下的那一把。两列、两条通道各一把「改键」与一把「解绑」；关不掉的那一行两把「解绑」都不画）</h2>${menu}${stick}
-      <h2>手感与练习辅助</h2>${numbers}${qualityRow}
-      <div class="row"><span class="name">行覆盖率地板<span class="note">\`npm run coverage -- --bless\` 生成的总地板（KI-407），只读不做判断。面板不修改，只展示。</span></span>
+    return `<h2>${t('stak.ops.gameplay.header')}</h2>${keys}${trigger}
+      <div class="row"><span class="name">${t('stak.ops.resetAll.name')}<span class="note">${t('stak.ops.resetAll.note')}</span></span>
+        <span class="act"><button class="act" data-act="resetall">${t('stak.ops.resetAll.btn')}</button></span></div>
+      <h2>${t('stak.ops.ui.header')}</h2>${menu}${stick}
+      <h2>${t('stak.ops.feel.header')}</h2>${numbers}${qualityRow}
+      <div class="row"><span class="name">${t('stak.ops.floor.name')}<span class="note">${t('stak.ops.floor.note')}</span></span>
         <span class="num">${(this.ops?.coverage?.() ?? 0).toFixed(2)}%</span>
-        <span class="act"><span class="num">地板</span></span></div>
-      <div class="row"><span class="name">帧辅助<span class="note">输入缓冲在 ${Math.round(g.bufferMs)}ms 之外再多保一帧（+1 tick，与逻辑 tick 同一把尺）</span></span>
-        <span class="num">${g.frameAssist ? '开' : '关'}</span>
-        <span class="act"><button class="act" data-act="gtoggle" data-arg="frameAssist">${g.frameAssist ? '关掉' : '打开'}</button></span></div>
-      <div class="row"><span class="name">连打涨价<span class="note">§6 那一格 · 开着：同一式每用一次过载价涨一档（§7.2 休止斩／终止那两行，涨幅住在表里）。关掉：不再涨，而先前涨的那一截从翻到「关」的那一下起也不再收——重新打开从底价重新起算</span></span>
-        <span class="num">${g.mashGuard ? '开' : '关'}</span>
-        <span class="act"><button class="act" data-act="gtoggle" data-arg="mashGuard">${g.mashGuard ? '关掉' : '打开'}</button></span></div>
-      <h2>配置文件（每行三把：「存入」按上面那一枚抄、不改任何键 · 「载入」才把盒里那一张请回运行时 · 「清空」只把那盒请回空，手里那张照样不动）</h2>${chanRow}${profiles}
-      <div class="row"><span class="name">口径<span class="note">改完立刻生效并跟着存档走（v14 的 settings.bindings／settings.gameplay 两格，四份「无」的名单住在 settings.bindings.{gameplay,ui}.{unbound,padUnbound}，扳机那条线住在 settings.bindings.gameplay.triggerThreshold——加格不推版本，老档没这一格就是默认 50%；配置文件那三盒住在 settings.bindingsProfiles，一盒装的是按下「存入」那一刻的整张键位表：键盘与手柄两半、玩法那两份「无」的名单，连扳机与摇杆那两条线一起。而这一节上面那八格数值（缓冲、抖动、两把振动、受击、帧辅助、长按、连打）住在 settings.gameplay，跟着档走、不跟着盒走——切一盒不会把它们一起切走。一盒没写过、或三盒全清空 ⇒ 这一格整个不写，「清空过」没有第二种写法）；键鼠与手柄那两条通道：数据那一侧从 KI-367 起能各自存、各自取（那两把把手的第二枚参数只认 kb／pad 两枚），而屏上那一枚「存取哪一半」从 KI-368 起把它接到了把手上——使用中那一枚决定「存入」与「载入」按下去动的是整张还是那半张（默认「两半一起」，逐字仍是 KI-362 那一次）；「清空」不受它管，请回空的始终是那一整盒。而这一格从档里读回来时若只写了一条通道（手改的、或别人写的档），缺的那半读成默认那一份——不是这份档此刻在用的那一张，按下「载入」就把玩家手里那一半换掉了；挡得住这一刀的只有上面那两枚（这是 KI-369 从世界那侧量到的形状）。按档独立的配置文件还没接，登记在下面那一行的「还欠」。</span></span></div>`
+        <span class="act"><span class="num">${t('stak.ops.floor.cell')}</span></span></div>
+      <div class="row"><span class="name">${t('stak.ops.frameAssist.name')}<span class="note">${t('stak.ops.frameAssist.note', { ms: Math.round(g.bufferMs) })}</span></span>
+        <span class="num">${g.frameAssist ? t('stak.value.on') : t('stak.value.off')}</span>
+        <span class="act"><button class="act" data-act="gtoggle" data-arg="frameAssist">${g.frameAssist ? t('stak.btn.turnOff') : t('stak.btn.turnOn')}</button></span></div>
+      <div class="row"><span class="name">${t('stak.ops.mashGuard.name')}<span class="note">${t('stak.ops.mashGuard.note')}</span></span>
+        <span class="num">${g.mashGuard ? t('stak.value.on') : t('stak.value.off')}</span>
+        <span class="act"><button class="act" data-act="gtoggle" data-arg="mashGuard">${g.mashGuard ? t('stak.btn.turnOff') : t('stak.btn.turnOn')}</button></span></div>
+      <h2>${t('stak.ops.profiles.header')}</h2>${chanRow}${profiles}
+      <div class="row"><span class="name">${t('stak.legend.name')}<span class="note">${t('stak.legend.note')}</span></span></div>`
   }
 
   private pendingText(act: 'write' | 'erase', slot: string, state: SlotCard['state']): string {
