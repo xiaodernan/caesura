@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "155b3946fb3fa63b63c96a6df7f275c7a6630cbb",
+  "head": "b0e8d4f36e2c1e0e31b31660b9713c26e4863494",
   "branch": "master",
-  "subject": "feat(i18n): DialogueBox 人格印英文对照（直→Direct · 诗→Verse · 默→Hush · 激→Edge）",
-  "date": "2026-11-14T21:35:33+08:00",
+  "subject": "fix(ci): site-sync self-heal v3 — detach to remote tip, regenerate, retry inline on push rejection (no local-commit rebase)",
+  "date": "2026-11-14T21:41:46+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/155b3946fb3fa63b63c96a6df7f275c7a6630cbb",
+    "url": "https://github.com/xiaodernan/caesura/commit/b0e8d4f36e2c1e0e31b31660b9713c26e4863494",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
