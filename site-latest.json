@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "91758568f516c9e719f1372166c5988859f63ba2",
+  "head": "25e47a4736d86ad3ea02abc7fe79fe04f0440299",
   "branch": "master",
-  "subject": "chore(status): re-embed site-latest.json",
-  "date": "2026-11-14T16:51:49Z",
+  "subject": "fix(test): 第八地域 → 真表接触从 7→9（6 面 / 3 棱），7→8 名册化",
+  "date": "2026-11-15T01:00:30+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/91758568f516c9e719f1372166c5988859f63ba2",
+    "url": "https://github.com/xiaodernan/caesura/commit/25e47a4736d86ad3ea02abc7fe79fe04f0440299",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
