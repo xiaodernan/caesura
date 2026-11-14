@@ -33,12 +33,14 @@ jobs:
       - name: Build production bundle
         run: npm run build
 
-      - name: Publish 集大成 control panel alongside the game
-        # console/ is a static, zero-dependency showcase (snapshot.json + bootstrap.js + styles.css + app.js):
-        # 27 honestly-labeled dimensions of real benchmarks, so a visitor can see the game AND the systems work.
+      - name: Publish tutorial + console alongside the game
+        # Static, zero-dependency teaching trio served at the same origin as the game:
+        #   /caesura/console/  — 55-dim systems dashboard (真机+offline 双路)
+        #   /caesura/tutorial/ — 新手入门小册子，同源静态页
         run: |
-          mkdir -p dist/console
+          mkdir -p dist/console dist/tutorial
           cp -R console/. dist/console/
+          cp -R tutorial/. dist/tutorial/
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

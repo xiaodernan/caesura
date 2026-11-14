@@ -1,5 +1,5 @@
 # 《止音纪元》玩家指南 / CAESURA Player Guide
-See also: [`README.md`](../README.md) · [`README.en.md`](../README.en.md) · [`ENCYCLOPEDIA.md`](./ENCYCLOPEDIA.md)
+See also: [`README.md`](../README.md) · [`README.en.md`](../README.en.md) · [`ENCYCLOPEDIA.md`](./ENCYCLOPEDIA.md) · **Tutor 页面**：`tutorial/index.html`（终端：["/caesura/tutorial/"](https://xiaodernan.github.io/caesura/tutorial/)）
 （中英·English below）
 
 > 这是一款动作GLYPH探索游戏的《止音纪元》（Althara / Epic of the Silenced）：玩家的目标是**在世界不再被安静压倒之前，为这把沉重的钟找到它该有的音**。
