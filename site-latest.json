@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "68dab3d1838ed565f3c4fb82a981361dc5af7e58",
+  "head": "886b23bd4aad5454d000fc45d527b5d17b88f39d",
   "branch": "master",
-  "subject": "test(boot-screen): update index.html 「启封仪典」pin to bilingual dual-small markup",
-  "date": "2026-11-14T22:14:26+08:00",
+  "subject": "feat(i18n): HUD movement cluster 标签也跟 t()",
+  "date": "2026-11-14T22:16:09+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/68dab3d1838ed565f3c4fb82a981361dc5af7e58",
+    "url": "https://github.com/xiaodernan/caesura/commit/886b23bd4aad5454d000fc45d527b5d17b88f39d",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
