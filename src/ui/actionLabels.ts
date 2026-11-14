@@ -81,10 +81,18 @@ const PAD_BUTTON_LABELS: Record<number, string> = {
   8: 'Back', 9: 'Start', 10: 'L3', 11: 'R3',
   12: '十字上', 13: '十字下', 14: '十字左', 15: '十字右'
 }
+const PAD_BUTTON_LABELS_EN: Record<number, string> = {
+  0: 'A', 1: 'B', 2: 'X', 3: 'Y',
+  4: 'LB', 5: 'RB', 6: 'LT', 7: 'RT',
+  8: 'Back', 9: 'Start', 10: 'L3', 11: 'R3',
+  12: 'D-pad Up', 13: 'D-pad Down', 14: 'D-pad Left', 15: 'D-pad Right'
+}
 
 /** 一枚下标的显示名；非整数与界外都落回 `Pad<n>`（这一串与 `Bindings.ts` 的目标拼写同一门语言） */
 export const padLabel = (index: number): string =>
-  (Number.isInteger(index) ? PAD_BUTTON_LABELS[index] : undefined) ?? `Pad${index}`
+  (Number.isInteger(index)
+    ? (getLang() === 'en' ? PAD_BUTTON_LABELS_EN : PAD_BUTTON_LABELS)[index]
+    : undefined) ?? `Pad${index}`
 
 /**
  * 菜单意图的显示名（KI-344）——同一个文件、同一条理由：**给人看的名字只有一份**。
@@ -101,6 +109,12 @@ export const UI_INTENT_LABELS = {
   pick1: '直接选 1', pick2: '直接选 2', pick3: '直接选 3', pick4: '直接选 4', pick5: '直接选 5',
   pick6: '直接选 6', pick7: '直接选 7', pick8: '直接选 8', pick9: '直接选 9'
 } satisfies Record<UiIntent, string>
+const UI_INTENT_LABELS_EN: Record<UiIntent, string> = {
+  up: 'Up', down: 'Down', left: 'Left', right: 'Right',
+  confirm: 'Confirm', back: 'Back', pagePrev: 'Page Prev', pageNext: 'Page Next',
+  pick1: 'Pick 1', pick2: 'Pick 2', pick3: 'Pick 3', pick4: 'Pick 4', pick5: 'Pick 5',
+  pick6: 'Pick 6', pick7: 'Pick 7', pick8: 'Pick 8', pick9: 'Pick 9'
+}
 
 /** 逐格取字（与 `actionLabel` 同一口径：名册是编译期全盖住的，落到这里的一定是名册上的意图） */
-export const intentLabel = (intent: UiIntent): string => UI_INTENT_LABELS[intent]
+export const intentLabel = (intent: UiIntent): string => (getLang() === 'en' ? UI_INTENT_LABELS_EN : UI_INTENT_LABELS)[intent]
