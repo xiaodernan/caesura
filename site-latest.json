@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "b0e8d4f36e2c1e0e31b31660b9713c26e4863494",
+  "head": "5226cf05f183acede3edbe523a5e4ee92c55f291",
   "branch": "master",
-  "subject": "fix(ci): site-sync self-heal v3 — detach to remote tip, regenerate, retry inline on push rejection (no local-commit rebase)",
-  "date": "2026-11-14T21:41:46+08:00",
+  "subject": "feat(i18n): MapUI 全量双语——区域图标题/缩放/北针/平移措辞/侧边栏/设施六类/三态/地标/刻度/缩略图提示",
+  "date": "2026-11-14T21:51:17+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/b0e8d4f36e2c1e0e31b31660b9713c26e4863494",
+    "url": "https://github.com/xiaodernan/caesura/commit/5226cf05f183acede3edbe523a5e4ee92c55f291",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
