@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "0bdc5d9793b9e3b929fefb6e6193b18ada25c2c4",
+  "head": "6e40870e15dd169f065ce254f832350a05f27b69",
   "branch": "master",
-  "subject": "chore(status): re-embed site-latest.json",
-  "date": "2026-11-14T16:21:07Z",
+  "subject": "feat(i18n): 区域交互 verb 双语闸 — 65 处提示不再漏中文进 EN 模式",
+  "date": "2026-11-15T00:31:07+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/0bdc5d9793b9e3b929fefb6e6193b18ada25c2c4",
+    "url": "https://github.com/xiaodernan/caesura/commit/6e40870e15dd169f065ce254f832350a05f27b69",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
