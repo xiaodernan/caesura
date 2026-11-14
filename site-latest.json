@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "c7304de012aaccfc9fbfc795075c4019b3da6c72",
+  "head": "6532c610c9a5484a89484b15aad3c5e9285ebddb",
   "branch": "master",
-  "subject": "feat(i18n): BossDefeatRit + BossPhaseBanner + BossPhraseBar + PauseOverlay —— CJK 渲染零依赖 runtime",
-  "date": "2026-11-14T21:59:08+08:00",
+  "subject": "feat(i18n): main.ts notify 通道 8 条汉语直译线 → t(`ui.notify.*`)",
+  "date": "2026-11-14T22:02:52+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/c7304de012aaccfc9fbfc795075c4019b3da6c72",
+    "url": "https://github.com/xiaodernan/caesura/commit/6532c610c9a5484a89484b15aad3c5e9285ebddb",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
