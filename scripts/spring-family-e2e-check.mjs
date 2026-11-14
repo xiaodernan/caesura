@@ -98,9 +98,9 @@ export const PROBES = [
     retries: 1,
   },
   {
-    name: 'lore 世界谱（48 条真实文本）',
+    name: 'lore 世界谱（52 条真实文本）',
     url: 'http://127.0.0.1:8084/lore/codex?lang=zh',
-    expect: { jsonPath: ['total'], equals: 48 },
+    expect: { jsonPath: ['total'], equals: 52 },
     retries: 1,
   },
   {
@@ -112,7 +112,7 @@ export const PROBES = [
   {
     name: 'lore 缓存后端自报（memory 默认）+ 命中率',
     url: 'http://127.0.0.1:8084/lore/stats',
-    expect: { jsonPath: ['entries'], equals: 48 },
+    expect: { jsonPath: ['entries'], equals: 52 },
     retries: 1,
   },
 ]

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>止音纪元 · 世界谱 / CAESURA · The World Codex</title>
-<meta name="description" content="《止音纪元》真实世界的双语检索页 — BM25 浏览器内检索：八区、首领、结局、术语、十处刻痕。零网络 · 零 LLM · 零服务端。 / Bilingual BM25 search over the real world of The Epoch of Hush — eight reaches, bosses, endings, terms, ten carved marks. No network, no LLM, no server.">
+<meta name="description" content="《止音纪元》真实世界的双语检索页 — BM25 浏览器内检索：八区、首领、结局、术语、十四处刻痕。零网络 · 零 LLM · 零服务端。 / Bilingual BM25 search over the real world of The Epoch of Hush — eight reaches, bosses, endings, terms, fourteen carved marks. No network, no LLM, no server.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🔕</text></svg>">
 <style>
   :root {
@@ -254,6 +254,14 @@ const CODEX = [
     body:{zh:'「时间在这里是一道钟摆，走来走去——就是走不到头。」银镜映见的钟摆，永远差一拍。', en:'“Time here is a pendulum — it swings back and forth, it never reaches an end.” The pendulum in the mirror is always one beat off.'} },
   { cat:'mark', title:{zh:'刻痕 · 带钟的风（风钟海岸）', en:'Mark · Bell-Bearing Wind (Windbell Coast)'},
     body:{zh:'「海风不会响。它带着一个又一个钟的余温，却从不让你清楚地听到。」', en:'“The wind never sounds. It carries the warmth of one bell after another, but never lets you hear them clearly.”'} },
+  { cat:'mark', title:{zh:'刻痕 · 回音老树（雾语林）', en:'Mark · The Echo-Keeper (Whisperwode)'},
+    body:{zh:'「这棵老树的年轮里收着整片林子的回声——站在它面前，你听得见自己三年前的脚步声。」', en:'“The old tree’s rings keep the whole forest’s echoes — standing before it, you can hear your own footsteps from three years ago.”'} },
+  { cat:'mark', title:{zh:'刻痕 · 没人再数拍的石头（破拍营地）', en:'Mark · The Uncounted Beatstone (Brokenbar)'},
+    body:{zh:'「这块石头还在自己按拍，只是没人再数了——数拍的人走了很久。」', en:'“The beatstone still keeps its own time, but no one counts it anymore — the one who counted is long gone.”'} },
+  { cat:'mark', title:{zh:'刻痕 · 盐结小龛（风钟海岸）', en:'Mark · The Salt Shrine (Windbell Coast)'},
+    body:{zh:'「盐在这座岬角结成一座小龛——海每天抹去它，又每天把它重写回来。」', en:'“Salt has built a little shrine on the headland — the sea erases it daily and rewrites it daily.”'} },
+  { cat:'mark', title:{zh:'刻痕 · 防波堤潮痕（风钟海岸）', en:'Mark · The Tide-Lines (Windbell Coast)'},
+    body:{zh:'「防波堤上一道道潮痕，像一首被海擦了又写的歌。」', en:'“Tide-lines scored into the causeway, a song the sea keeps erasing and rewriting.”'} },
 
   /* ---------- 系统 systems ---------- */
   { cat:'system', title:{zh:'调音桩 The Tuning Peg', en:'The Tuning Peg'},
@@ -263,7 +271,7 @@ const CODEX = [
   { cat:'system', title:{zh:'手册 Manual（游戏内嵌）', en:'Manual (in-game)'},
     body:{zh:'Esc → 调音桩 →「手册」页：上手四键、声音=风险、三场 Boss、结局、卡住怎么办、刻痕说明。玩家不用去看任何项目文档，说明书就是游戏本身的一页。', en:'Esc → peg → the “Manual” tab: four keys, sound-as-risk, three bosses, endings, stuck-remedies, carved marks. The primer is a page of the game itself; nobody reads the repo docs.'} },
   { cat:'system', title:{zh:'游记 Atlas（2026-11-15）', en:'Atlas (2026-11-15)'},
-    body:{zh:'Esc → 调音桩 →「游记」页：八区指北针（层数 + boss）、10 处刻痕指路、怎么不迷路、边界之外还没开门的世界。', en:'Esc → peg → the “Atlas” tab: the eight-reach bearing (level + boss), pointer to all ten marks, wayfinding, and what hasn’t opened beyond the rim.'} },
+    body:{zh:'Esc → 调音桩 →「游记」页：八区指北针（层数 + boss）、14 处刻痕指路、怎么不迷路、边界之外还没开门的世界。', en:'Esc → peg → the “Atlas” tab: the eight-reach bearing (level + boss), pointer to all fourteen marks, wayfinding, and what hasn’t opened beyond the rim.'} },
   { cat:'system', title:{zh:'存档 Save', en:'Save'},
     body:{zh:'调音桩前按 E 休息即保存；Boss 倒下自动存档；手动槽可写/可删。档案室（存档界面）不会因为导航按错就吞你的档。', en:'Resting at a peg saves; boss deaths autosave; manual slots are writable and erasable. The archive never eats your save because you mis-navigated.'} },
   { cat:'system', title:{zh:'音色石 Resonance stones', en:'Resonance stones'},

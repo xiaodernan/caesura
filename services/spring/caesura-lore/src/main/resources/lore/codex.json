@@ -400,6 +400,54 @@
       }
     },
     {
+      "id": "mark-mark-the-echo-keeper-whisperwode",
+      "cat": "mark",
+      "title": {
+        "zh": "刻痕 · 回音老树（雾语林）",
+        "en": "Mark · The Echo-Keeper (Whisperwode)"
+      },
+      "body": {
+        "zh": "「这棵老树的年轮里收着整片林子的回声——站在它面前，你听得见自己三年前的脚步声。」",
+        "en": "“The old tree’s rings keep the whole forest’s echoes — standing before it, you can hear your own footsteps from three years ago.”"
+      }
+    },
+    {
+      "id": "mark-mark-the-uncounted-beatstone-brokenbar",
+      "cat": "mark",
+      "title": {
+        "zh": "刻痕 · 没人再数拍的石头（破拍营地）",
+        "en": "Mark · The Uncounted Beatstone (Brokenbar)"
+      },
+      "body": {
+        "zh": "「这块石头还在自己按拍，只是没人再数了——数拍的人走了很久。」",
+        "en": "“The beatstone still keeps its own time, but no one counts it anymore — the one who counted is long gone.”"
+      }
+    },
+    {
+      "id": "mark-mark-the-salt-shrine-windbell-coast",
+      "cat": "mark",
+      "title": {
+        "zh": "刻痕 · 盐结小龛（风钟海岸）",
+        "en": "Mark · The Salt Shrine (Windbell Coast)"
+      },
+      "body": {
+        "zh": "「盐在这座岬角结成一座小龛——海每天抹去它，又每天把它重写回来。」",
+        "en": "“Salt has built a little shrine on the headland — the sea erases it daily and rewrites it daily.”"
+      }
+    },
+    {
+      "id": "mark-mark-the-tide-lines-windbell-coast",
+      "cat": "mark",
+      "title": {
+        "zh": "刻痕 · 防波堤潮痕（风钟海岸）",
+        "en": "Mark · The Tide-Lines (Windbell Coast)"
+      },
+      "body": {
+        "zh": "「防波堤上一道道潮痕，像一首被海擦了又写的歌。」",
+        "en": "“Tide-lines scored into the causeway, a song the sea keeps erasing and rewriting.”"
+      }
+    },
+    {
       "id": "system-the-tuning-peg",
       "cat": "system",
       "title": {
@@ -443,8 +491,8 @@
         "en": "Atlas (2026-11-15)"
       },
       "body": {
-        "zh": "Esc → 调音桩 →「游记」页：八区指北针（层数 + boss）、10 处刻痕指路、怎么不迷路、边界之外还没开门的世界。",
-        "en": "Esc → peg → the “Atlas” tab: the eight-reach bearing (level + boss), pointer to all ten marks, wayfinding, and what hasn’t opened beyond the rim."
+        "zh": "Esc → 调音桩 →「游记」页：八区指北针（层数 + boss）、14 处刻痕指路、怎么不迷路、边界之外还没开门的世界。",
+        "en": "Esc → peg → the “Atlas” tab: the eight-reach bearing (level + boss), pointer to all fourteen marks, wayfinding, and what hasn’t opened beyond the rim."
       }
     },
     {

@@ -4,9 +4,9 @@
  * `Services/spring/caesura-lore/src/main/resources/lore/codex.json` 快照（2026-11-15）。
  *
  * 为什么需要：`caesura-lore` 是 Java 侧的「世界谱后端」，Java 侧不许读仓库数据表
- * （`javaReadsRepoDataFindings`）；它携带 jar 里打包的快照，把 48 条真实文本在
+ * （`javaReadsRepoDataFindings`）；它携带 jar 里打包的快照，把 52 条真实文本在
  * `/lore/codex` 与 `/lore/search` 上以 BM25 返回。快照是**同源**的——它不是手抄，
- * 而是这段脚本从页面源里真的切出来，生成时校验条目数=48、id 唯一。
+ * 而是这段脚本从页面源里真的切出来，生成时校验条目数=52、id 唯一。
  *
  * 用法：`node scripts/lore-codex-snapshot.mjs`（写入后 git status 会显示该文件）
  * 作者侧脚本：不进 runtime、不进 dialogue.json、不读 env。
@@ -30,8 +30,8 @@ if (!m) {
 // eslint-disable-next-line no-eval
 const CODEX = Function(`"use strict"; return (${m[1]});`)()
 
-if (!Array.isArray(CODEX) || CODEX.length !== 48) {
-  console.error(`CODEX 条目数不是 48（实测 ${CODEX.length}）——要么页面改了，要么提取错位`)
+if (!Array.isArray(CODEX) || CODEX.length !== 52) {
+  console.error(`CODEX 条目数不是 52（实测 ${CODEX.length}）——要么页面改了，要么提取错位`)
   process.exit(3)
 }
 

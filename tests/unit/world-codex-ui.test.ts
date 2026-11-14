@@ -25,9 +25,9 @@ describe('World Codex（codex/index.html）', () => {
     expect(HTML).toContain('id="langToggle"')
   })
 
-  it('CODEX 条目数 ≥ 44，且八个地域、三 Boss、三 Ending、十处刻痕、六片新陆齐全', () => {
+  it('CODEX 条目数 ≥ 52，且八个地域、三 Boss、三 Ending、十四处刻痕、六片新陆齐全', () => {
     const entries = (HTML.match(/cat:'(?:reach|boss|ending|term|mark|system|epic|lands)'/g) ?? []).length
-    expect(entries, 'CODEX entries').toBeGreaterThanOrEqual(44)
+    expect(entries, 'CODEX entries').toBeGreaterThanOrEqual(52)
     for (const marker of [
       'Resthold', 'Whisperwode', 'Drowned Choir', 'Brokenbar',
       'Fellcarillon', 'Earless Deeps', 'Unfinished Hall', 'Windbell Coast',
@@ -41,15 +41,18 @@ describe('World Codex（codex/index.html）', () => {
     }
   })
 
-  it('十处刻痕全文入库（中英平行）', () => {
+  it('十四处刻痕全文入库（中英平行）', () => {
     const marks = (HTML.match(/cat:'mark'/g) ?? []).length
-    expect(marks, 'mark entries').toBe(10)
+    expect(marks, 'mark entries').toBe(14)
     for (const line of [
       'before your first breath',
       'The trees in Whisperwode',
       'At the bottom, a bell never struck',
       'The pendulum',
       'a bell never struck',
+      'your own footsteps from three years ago',
+      'no one counts it anymore',
+      'The tide-lines',
     ]) {
       expect(HTML, `missing mark line: ${line}`).toContain(line)
     }

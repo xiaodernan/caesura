@@ -618,6 +618,18 @@
           "y": 0,
           "z": -20
         }
+      },
+      {
+        "id": "in_whisperwode_echo_keeper",
+        "kind": "inspect",
+        "verb": "看那座小龛",
+        "verbKey": "interact.small_shrine",
+        "notifyKey": "world.flavor.whisperwode.echoKeeper",
+        "pos": {
+          "x": 400,
+          "y": 0,
+          "z": 190
+        }
       }
     ],
     "music": {
@@ -1341,6 +1353,18 @@
           "x": -50,
           "y": 0,
           "z": -200
+        }
+      },
+      {
+        "id": "in_brokenbar_beatstone",
+        "kind": "inspect",
+        "verb": "碰那块没人再数节拍的石头",
+        "verbKey": "interact.touchBeatstone",
+        "notifyKey": "world.flavor.camp.beatstoneNoCount",
+        "pos": {
+          "x": 40,
+          "y": 0,
+          "z": -300
         }
       }
     ],
@@ -2540,6 +2564,30 @@
           "x": 560,
           "y": 0,
           "z": -20
+        }
+      },
+      {
+        "id": "in_windcoast_salt_shrine",
+        "kind": "inspect",
+        "verb": "看那座小龛",
+        "verbKey": "interact.small_shrine",
+        "notifyKey": "world.flavor.windcoast.saltShrine",
+        "pos": {
+          "x": 470,
+          "y": 0,
+          "z": 120
+        }
+      },
+      {
+        "id": "in_windcoast_tide_lines",
+        "kind": "inspect",
+        "verb": "看地上那道反向乐谱",
+        "verbKey": "interact.traceScoreDirectionSo",
+        "notifyKey": "world.flavor.windcoast.tideLines",
+        "pos": {
+          "x": 660,
+          "y": 0,
+          "z": -150
         }
       }
     ],
