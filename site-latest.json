@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "a64079b150c98485a392e553b8797fff142ca71b",
+  "head": "358d2aed4132c971779ff94b3dadbb2aec8da063",
   "branch": "master",
-  "subject": "chore(gates): id-scope 命名洞登记 codex/ 世界谱页（Pages workflow dist/codex 同源发布）",
-  "date": "2026-11-15T05:04:36+08:00",
+  "subject": "feat(spring): 新增 caesura-lore 世界谱后端 族的第八个成员 BM25 双语检索 memory|redis 缓存 命中率自报 e2e并轨",
+  "date": "2026-11-15T05:36:16+08:00",
   "kv": {
-    "KI.rows": 481,
-    "KI.Implemented": 304,
+    "KI.rows": 482,
+    "KI.Implemented": 305,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/a64079b150c98485a392e553b8797fff142ca71b",
+    "url": "https://github.com/xiaodernan/caesura/commit/358d2aed4132c971779ff94b3dadbb2aec8da063",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
