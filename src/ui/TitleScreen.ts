@@ -101,6 +101,7 @@ const CSS = `
 #title .act:hover::after{left:12%;width:76%}
 #title .act.sel{border-color:#ffb86b;color:#ffb86b;box-shadow:0 0 1.8vh rgba(255,184,107,.28),inset 0 0 1.4vh rgba(255,184,107,.12)}
 #title .hint{font-size:1.5vh;color:#6f6759;border-top:1px solid rgba(201,180,88,.14);padding-top:1.1vh;letter-spacing:.18em}
+#title .hint.subtle{font-size:1.05vh;opacity:.62;letter-spacing:.12em;border-top:0;padding-top:.42vh;color:rgba(242,237,228,.42);font-style:italic;text-transform:none}
 #title .slot.sel .scard{border-color:#c9b458;box-shadow:0 0 2.4vh rgba(201,180,88,.35)}
 #title .slot .scard{cursor:default}
 #title .scards{font-size:1.7vh}
@@ -351,7 +352,8 @@ export class TitleScreen {
       <div class="sub">${t('ui.title.sub')}</div>
       <div class="cards">${cards}</div>
       <div class="acts">${cont}</div>
-      <div class="hint">${hint}</div>`
+      <div class="hint">${hint}</div>
+      <div class="hint subtle">${t('ui.title.hint.manual')}</div>`
   }
 
   private renderSlots(): string {
