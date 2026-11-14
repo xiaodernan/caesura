@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "dd91f1129f04d1ccef7ca8987ae785198c684965",
+  "head": "3da0317e3199a353284abd1431cc8e7202c01c42",
   "branch": "master",
-  "subject": "docs(tech-arch): navmesh 8 张网格 / 灯照八区各一行 — 风钟海岸入册补账",
-  "date": "2026-11-15T00:44:36+08:00",
+  "subject": "docs(tutorial): 前端美学下沉一层 —— art-direction 同形状的入门页视觉升级",
+  "date": "2026-11-15T00:46:02+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/dd91f1129f04d1ccef7ca8987ae785198c684965",
+    "url": "https://github.com/xiaodernan/caesura/commit/3da0317e3199a353284abd1431cc8e7202c01c42",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
