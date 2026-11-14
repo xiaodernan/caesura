@@ -1135,7 +1135,14 @@ bus.on('boss.defeated', (p) => {
   // §6 **胜利**：主 Boss（恩希尔）倒下那一刻——镜头语言写的是"管风琴过载熄灭、振源核冰解"，
   // 那是未竟厅那一战，所以按 `dataId` 认人而不是"任何 Boss 倒下都放"。
   // 一局只会死一次 ⇒ 不需要额外的"放过没"台账；`playedCinematics` 清在 `startRun` 里。
-  if (p.dataId === 'en_hersil') startCinematic('CINE_WIN')
+  if (p.dataId === 'en_hersil') {
+    startCinematic('CINE_WIN')
+    // F-92《三句话》与 F-99《余响归位》没有任何 startQuest 落点 ———— 这一局只有终章一次机会把两条线交给玩家。
+    // settle 的顺序补判会把 finale 之前已经落过的旗一次性对账（旗在册的步直接冲过去），
+    // 所以这里不必手动 advance——缺哪格旗就停在哪格，未来世界再广播对的旗自然接上。
+    quests.start('q_threewords')
+    quests.start('q_afterglow')
+  }
 })
 
 /**
