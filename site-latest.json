@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "8f5f9ec4bb4695a11e06da735d6a577bfb9a8047",
+  "head": "899c9848ac1296c3fad7e7f2fdc640aeb68bf647",
   "branch": "master",
-  "subject": "feat(content): 《余响归位》第七条任务线 + 任务步 labelKey 双语闸（F-99 / F-100）",
-  "date": "2026-11-15T00:12:11+08:00",
+  "subject": "docs(lore): 修 doc-section-citations 判红 — NEW-LANDS-VOICES 不再用 `.md §12` 锚点",
+  "date": "2026-11-15T00:14:25+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/8f5f9ec4bb4695a11e06da735d6a577bfb9a8047",
+    "url": "https://github.com/xiaodernan/caesura/commit/899c9848ac1296c3fad7e7f2fdc640aeb68bf647",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
