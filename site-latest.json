@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "6532c610c9a5484a89484b15aad3c5e9285ebddb",
+  "head": "48bd575ef68bcb4c879857697474051d9545bc31",
   "branch": "master",
-  "subject": "feat(i18n): main.ts notify 通道 8 条汉语直译线 → t(`ui.notify.*`)",
-  "date": "2026-11-14T22:02:52+08:00",
+  "subject": "chore(status): re-embed site-latest.json",
+  "date": "2026-11-14T14:05:36Z",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/6532c610c9a5484a89484b15aad3c5e9285ebddb",
+    "url": "https://github.com/xiaodernan/caesura/commit/48bd575ef68bcb4c879857697474051d9545bc31",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
