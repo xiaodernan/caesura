@@ -4,6 +4,9 @@
 > 七地域之外的「余响新大陆」。玩家敲下《未完之殿》最后一记之后，世界并不结束——它只是安静下来，等待被听见。
 > 与 `docs/WORLD-BIBLE.md` / `docs/EPIC-V.md` 同源：所有新 region ID、boss、NPC、钟记、词汇都在这一册落成第一版。
 > **永远不写世界外的物质规律**：没有飞行、没有复活、没有神力。六地域的「不可思议」都只从钟与声学里长出来。
+>
+> **落地登记（2026-11-15）**：首个落库件是 `rg_windcoast 风钟海岸`——数据级首落（regions.json + navmesh + 音乐/ lighting 环境声 + unlockFlag organ_gate_open）；
+> 无新 Boss、无新 NPC、无 dialogue.json 牵扯；本册《六地域 × 六 Boss × 六 NPC》其余仍然是设计稿、不入库、不落 runtime。
 
 ---
 
