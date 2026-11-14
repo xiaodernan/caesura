@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "5a193e981c163db054e918c16914f6e96c687d11",
+  "head": "16e82cfe14a7838cb1afdb0404024f40907b313f",
   "branch": "master",
-  "subject": "fix(camera): invertMouseY default false — mouse-up = look UP. Final restore. Verified live bundle.",
-  "date": "2026-11-14T23:42:31+08:00",
+  "subject": "fix(save): invertMouseY 不入档 — 会话级镜头偏好不污染存档",
+  "date": "2026-11-14T23:50:35+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/5a193e981c163db054e918c16914f6e96c687d11",
+    "url": "https://github.com/xiaodernan/caesura/commit/16e82cfe14a7838cb1afdb0404024f40907b313f",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
