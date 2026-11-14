@@ -27,7 +27,50 @@
   function scenario(id) { return byId[id] || {} }
 
   /* ---------------- 入口 ---------------- */
+  /* ---------------- 主题切换（4 挚墨，CSS-only）---------------- */
+  function bootTheme() {
+    // 测试环境（console-ui.test.ts）的 fake DOM 里 document.documentElement 不存在，
+    // 没有 setAttribute；没有 querySelectorAll('.theme-switch .chip') 的情况。所以这里每一步都不能信底层。
+    var stored = 'zhiyin'
+    try {
+      if (typeof localStorage !== 'undefined' && localStorage && localStorage.getItem) {
+        var fromStore = localStorage.getItem('caesura-console-theme')
+        if (fromStore) stored = fromStore
+      }
+    } catch (_) { stored = 'zhiyin' }
+    var docEl = (typeof document !== 'undefined' && document && (document.documentElement || document.body)) || null
+    if (docEl && typeof docEl.setAttribute === 'function') docEl.setAttribute('data-theme', stored)
+    var all = document.querySelectorAll ? document.querySelectorAll('.theme-switch .chip') : []
+    if (!all || typeof all.forEach !== 'function') {
+      try { all = Array.prototype.slice.call(all || []) } catch (__) { all = [] }
+    }
+    function paint(active) {
+      for (var i = 0; i < all.length; i++) {
+        var b = all[i]
+        if (b && typeof b.setAttribute === 'function') {
+          b.setAttribute('aria-pressed', (b.getAttribute && b.getAttribute('data-theme-set') === active) ? 'true' : 'false')
+        }
+      }
+    }
+    paint(stored)
+    for (var j = 0; j < all.length; j++) {
+      (function (btn) {
+        if (btn && typeof btn.addEventListener === 'function') btn.addEventListener('click', function () {
+          var next = (btn.getAttribute && btn.getAttribute('data-theme-set')) || 'zhiyin'
+          if (docEl && typeof docEl.setAttribute === 'function') docEl.setAttribute('data-theme', next)
+          try {
+            if (typeof localStorage !== 'undefined' && localStorage && localStorage.setItem) {
+              localStorage.setItem('caesura-console-theme', next)
+            }
+          } catch (_) {}
+          paint(next)
+        })
+      })(all[j])
+    }
+  }
+
   function boot() {
+    bootTheme()
     loadSnapshot().then(function (result) {
       var snap = result.data
       index(snap)

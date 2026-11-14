@@ -3590,3 +3590,56 @@ main { padding: clamp(18px, 3vw, 40px) clamp(18px, 4vw, 56px) 48px; max-width: 1
 @media (prefers-reduced-motion: reduce) {
   .metric { animation: none; }
 }
+
+
+/* ================= 止音仪典 · 多套挚墨 · 主题上色（CSS-only · data-theme 切换） ================= */
+:root[data-theme="zhiyin"] { --ash-0:#07080c; --ash-1:#0c0e14; --ash-2:#12151e; --ash-3:#191d28; --gold:#c9b458; --gold-dim:#8f7f43; }
+/* 玄金：更沉的暖黑 + 明金浓 */
+:root[data-theme="xuanjin"] {
+  --ash-0:#0a0800; --ash-1:#151004; --ash-2:#1f1806; --ash-3:#2a2010;
+  --gold:#e6c44a; --gold-dim:#c09a2a; --gold-faint: rgba(230,196,74,.18);
+  --jade:#8fca45; --jade-dim:rgba(143,202,69,.22);
+  --silver:#d6c48a; --muted:#85764a;
+  --line:rgba(230,196,74,.2); --line-soft:rgba(214,196,138,.12);
+  --shadow:0 12px 40px rgba(230,196,74,.06);
+}
+/* 绛纸：深赤主色 + 朱砂红点睛 */
+:root[data-theme="zhihong"] {
+  --ash-0:#100404; --ash-1:#1a0809; --ash-2:#26100f; --ash-3:#331a18;
+  --gold:#c9402d; --gold-dim:#92291b; --gold-faint:rgba(201,64,45,.18);
+  --jade:#d4a85a; --jade-dim:rgba(212,168,90,.24);
+  --silver:#d8c4af; --muted:#78605a;
+  --wine:#a52d2c; --wine-dim:rgba(165,45,44,.4);
+  --line:rgba(201,64,45,.2); --line-soft:rgba(216,196,175,.16);
+  --shadow:0 12px 40px rgba(165,45,44,.12);
+}
+/* 玄武：深碧玉 · 夜渡人 */
+:root[data-theme="bailu"] {
+  --ash-0:#041014; --ash-1:#081a22; --ash-2:#0d2830; --ash-3:#13353f;
+  --gold:#4a8f86; --gold-dim:#1e5f56; --gold-faint:rgba(74,143,134,.2);
+  --jade:#67cfa5; --jade-dim:rgba(103,207,165,.22);
+  --wine:#2c5867; --wine-dim:rgba(44,88,103,.5);
+  --silver:#a8c6ca; --muted:#5a757c;
+  --line:rgba(74,143,134,.22); --line-soft:rgba(103,207,165,.14);
+  --shadow:0 12px 40px rgba(74,143,134,.08);
+}
+/* ================= 集成的主题切换 UI（4 个 chip，独立 OK）================= */
+.theme-switch { display: flex; gap: 6px; align-items: center; padding: 4px 8px; border: 1px solid var(--line); border-radius: 20px; background: rgba(255,255,255,.02); }
+.theme-switch .chip {
+  appearance: none; border: none; background: transparent; cursor: pointer; padding: 4px 8px;
+  border-radius: 12px; color: var(--silver); font: 10px var(--mono); letter-spacing: .06em;
+  display: inline-flex; align-items: center; gap: 5px; transition: background .16s ease, color .16s ease, box-shadow .16s ease;
+}
+.theme-switch .chip:hover { background: rgba(201,180,88,.12); color: #ffeabf; }
+.theme-switch .chip[aria-pressed="true"] {
+  background: var(--gold-faint); color: var(--gold);
+  box-shadow: inset 0 0 0 1px rgba(201,180,88,.36);
+}
+.theme-switch .chip .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.dot-default { background: linear-gradient(135deg, #c9b458, #8f7f43); }
+.dot-xuanjin { background: linear-gradient(135deg, #e6c44a, #2a2010); }
+.dot-zhihong { background: linear-gradient(135deg, #c9402d, #2a0a07); }
+.dot-bailu   { background: linear-gradient(135deg, #67cfa5, #041014); }
+@media (prefers-reduced-motion: reduce) {
+  .theme-switch .chip { transition: none; }
+}
