@@ -33,7 +33,7 @@ import { mojibakeFindings, strayControlFindings } from './text-integrity.mjs'
  * 与 `services/` 同理该被按号那一族门走查；登记进总体而不是登记成洞 ⇒ 「交付总体里只有一套号」这句话
  * 从此也管得到前端，**再也不会有一棵带着按号引用的已入库目录悄悄落在走查面之外**。
  */
-export const CORPUS_DIRS = ['docs', 'src', 'tests', 'scripts', 'services', 'console']
+export const CORPUS_DIRS = ['docs', 'src', 'tests', 'scripts', 'services', 'console', 'tutorial']
 
 /**
  * 跳过的目录名。**每一条都要能回答"仓库里还有谁经过它"**，所以这些名字全是构建产物 / 依赖 / 一次性平面，
