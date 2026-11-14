@@ -266,7 +266,12 @@ export class Interactables {
     }
     if (!REPEATABLE.has(it.kind) || it.oneWay) this.used.add(it.id)
     if (it.setsFlag) this.setFlag(it.setsFlag)
-    const text = it.notify ?? resultText(it)
+    // 通知文本双通道：优先 lookup `notifyKey`（Lang.ts 词典，双语自洽），fallback 旧 raw `notify`（原始中文），
+    // 再 fallback 到按 kind 的默认 resultText —— 三级落何，依次退让，绝不会静默打空。
+    // 「key 自身」若出现就当作「找不到这一条」来处理（Lang.ts 在缺词时回落 key 本身）；
+    // 这样缺键不会把半生不熟的「world.flavor.xxx」当玩家可读文案播出，而是干净回退到 raw/resultText。
+    const lk = it.notifyKey ? t(it.notifyKey) : undefined
+    const text = (it.notifyKey && lk !== it.notifyKey ? lk : it.notify ?? resultText(it))
     bus.emit('ui.notify', { text, kind: it.kind === 'chest' || it.kind === 'gather' ? 'reward' : 'info' })
     bus.emit('audio.sfx', { key: SFX[it.kind], pos: it.pos, gain: 0.5 })
     if (it.setsFlag) bus.emit('log', { level: 'info', msg: `interact ${it.id} -> ${it.setsFlag ?? '-'} used=${this.used.has(it.id)}` })

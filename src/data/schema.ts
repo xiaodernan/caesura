@@ -1332,6 +1332,11 @@ export interface InteractableRef {
    * 新数据必须登记 verbKey：`tests/unit/region-verb-i18n.test.ts` 钉住「每一条 verb 都有中文逐字对账、英文零 CJK」。
    */
   verbKey?: string
+  /**
+   * 触发后播报文案的本地化键（`world.flavor.*`，Lang zh/en 双存储）。给定了它 ⇒ batch 时走 `t(notifyKey)` 上屏；
+   * 旧字段 `notify`（raw 中文）保留兼容——新数据请登记 notifyKey，不要写死仅中文。
+   */
+  notifyKey?: string
   pos: Vec3
   /** one-way shortcut lock: opens once, then stays open from this side only */
   oneWay?: boolean

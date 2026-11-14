@@ -367,6 +367,30 @@
           "key": "state.faceless.identity",
           "value": "CHOSEN"
         }
+      },
+      {
+        "id": "in_resthold_firstbreath_shrine",
+        "kind": "inspect",
+        "verb": "看那块没有字迹的匾",
+        "verbKey": "interact.readSlateNoHair",
+        "notifyKey": "world.flavor.rest.firstbreath",
+        "pos": {
+          "x": -50,
+          "y": 0,
+          "z": 20
+        }
+      },
+      {
+        "id": "in_resthold_nameless_stone",
+        "kind": "inspect",
+        "verb": "看地上那道反向乐谱",
+        "verbKey": "interact.traceScoreDirectionSo",
+        "notifyKey": "world.flavor.rest.namelessstone",
+        "pos": {
+          "x": 50,
+          "y": 0,
+          "z": -20
+        }
       }
     ],
     "music": {
@@ -582,6 +606,18 @@
         "requiresFlag": "flag.bells_repair_open",
         "setsFlag": "flag.bell_second_repaired",
         "lootTable": "loot_bell_repair"
+      },
+      {
+        "id": "in_whisperwode_names_trees",
+        "kind": "inspect",
+        "verb": "碰那根没有鸟落过的枝条",
+        "verbKey": "interact.touchBranchNoBird",
+        "notifyKey": "world.flavor.whisperwode.treesdontspeak",
+        "pos": {
+          "x": 190,
+          "y": 0,
+          "z": -20
+        }
       }
     ],
     "music": {
@@ -885,6 +921,18 @@
           "x": 348,
           "y": -40,
           "z": 16
+        }
+      },
+      {
+        "id": "in_drownedchoir_bell_underwater",
+        "kind": "inspect",
+        "verb": "读破钟壳上的诗句",
+        "verbKey": "interact.readPoemOnCrackedBell",
+        "notifyKey": "world.flavor.drowned.bellbottom",
+        "pos": {
+          "x": 280,
+          "y": -50,
+          "z": 60
         }
       }
     ],
@@ -1270,6 +1318,18 @@
           "key": "state.haltrune.fate",
           "value": "PASSING_STILL"
         }
+      },
+      {
+        "id": "in_brokenbar_beats_no_names",
+        "kind": "inspect",
+        "verb": "看那块划痕密布的雇员名册",
+        "verbKey": "interact.readBossPane",
+        "notifyKey": "world.flavor.camp.beatsunit",
+        "pos": {
+          "x": -50,
+          "y": 0,
+          "z": -200
+        }
       }
     ],
     "music": {
@@ -1568,6 +1628,18 @@
         },
         "requiresFlag": "flag.bell_tongue_taken",
         "setsFlag": "flag.bell_tongue_examined"
+      },
+      {
+        "id": "in_fellcarillon_strike_never",
+        "kind": "inspect",
+        "verb": "看地上那道反向乐谱",
+        "verbKey": "interact.traceScoreDirectionSo",
+        "notifyKey": "world.flavor.fellcarillon.neverringstruck",
+        "pos": {
+          "x": 160,
+          "y": 80,
+          "z": -200
+        }
       }
     ],
     "music": {
@@ -1914,6 +1986,18 @@
         },
         "setsFlag": "flag.organ_gate_open",
         "notify": "抄本的页脚有一行小字：这扇门的另一把钥匙，守在连回声都死了的地方 —— 她没骗你"
+      },
+      {
+        "id": "in_deeps_the_eye_opens",
+        "kind": "inspect",
+        "verb": "轻触知道事的灰",
+        "verbKey": "interact.touchingDustThatKnows",
+        "notifyKey": "world.flavor.deeps.eyeopened",
+        "pos": {
+          "x": -100,
+          "y": -150,
+          "z": 240
+        }
       }
     ],
     "music": {
@@ -2170,6 +2254,18 @@
           "y": 64,
           "z": -140
         }
+      },
+      {
+        "id": "in_unfinishedhall_pendulum_time",
+        "kind": "inspect",
+        "verb": "把手心按上银镜",
+        "verbKey": "interact.pressPalmOnSilverMirror",
+        "notifyKey": "world.flavor.unfinishedhall.pendulum",
+        "pos": {
+          "x": 0,
+          "y": 180,
+          "z": -240
+        }
       }
     ],
     "music": {
@@ -2420,6 +2516,18 @@
           "x": 604,
           "y": 0,
           "z": -54
+        }
+      },
+      {
+        "id": "in_windcoast_wind_not_ring",
+        "kind": "inspect",
+        "verb": "看那层早已停在眼角的泪",
+        "verbKey": "interact.lookThroughTears",
+        "notifyKey": "world.flavor.windcoast.hawhales",
+        "pos": {
+          "x": 560,
+          "y": 20,
+          "z": -20
         }
       }
     ],
