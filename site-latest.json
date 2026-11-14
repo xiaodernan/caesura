@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "4aa50c0c4640c4ed489a3a5e817a4ed59f6790d4",
+  "head": "2ea4e11889520503e64435fc33723a54d145668a",
   "branch": "master",
-  "subject": "docs(tutorial): 双语新增「09 · 手册 / Manual」卡 — 指向「Tab → 手册」",
-  "date": "2026-11-15T03:08:57+08:00",
+  "subject": "feat(title): 标题屏底部加「手册」指示 — 玩家一眼能看到调音桩里有完整说明书",
+  "date": "2026-11-15T03:15:15+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/4aa50c0c4640c4ed489a3a5e817a4ed59f6790d4",
+    "url": "https://github.com/xiaodernan/caesura/commit/2ea4e11889520503e64435fc33723a54d145668a",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
