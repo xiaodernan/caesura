@@ -172,6 +172,9 @@ export class CameraRig {
    */
   private occluders: readonly Occluder[] = []
 
+  /** GameplaySettings.invertMouseY 进线：false= FPS norm (pitch += dy), true= invert */
+  invertMouseY = false
+
   constructor(fov = 50, near = 0.1, far = 400) {
     this.baseFov = fov
     this.cam = new THREE.PerspectiveCamera(fov, innerWidth / innerHeight, near, far)
@@ -291,7 +294,8 @@ export class CameraRig {
     // 因此 **`+look.dy`** 才是我们要的符号（而非 v1/v2 之前的 `-look.dy`，后者把 FPS 变颠倒）。
     // v1/v2 历史：第一版以为 require `-look.dy`，测试钉反；第二次老实翻后才意识到原 `+` 已经正。
     this.yaw -= look.dx * cfg.yawDamp * dt
-    this.pitch = clamp(this.pitch + look.dy * 0.55 * cfg.pitchDamp * dt, -0.18, 1.2)
+    const signdy = this.invertMouseY ? -look.dy : look.dy
+    this.pitch = clamp(this.pitch + signdy * 0.55 * cfg.pitchDamp * dt, -0.18, 1.2)
 
     // 基础目标点（玩家头部上方）
     const target = { x: player.pos.x, y: player.pos.y + cfg.heightOffset, z: player.pos.z }

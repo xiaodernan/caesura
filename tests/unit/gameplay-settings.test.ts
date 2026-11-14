@@ -17,7 +17,7 @@ import {
  */
 
 describe('DEFAULT_GAMEPLAY_SETTINGS：出厂默认与规格一致', () => {
-  it('八格全部有值，boolean 格为布尔，数值格在对应界内', () => {
+  it('九格全部有值，boolean 格为布尔，数值格在对应界内', () => {
     expect(DEFAULT_GAMEPLAY_SETTINGS.bufferMs).toBe(200)
     expect(DEFAULT_GAMEPLAY_SETTINGS.bufferMs).toBeGreaterThanOrEqual(GAMEPLAY_BOUNDS.bufferMs.min)
     expect(DEFAULT_GAMEPLAY_SETTINGS.bufferMs).toBeLessThanOrEqual(GAMEPLAY_BOUNDS.bufferMs.max)

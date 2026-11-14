@@ -47,6 +47,14 @@ export interface GameplaySettings {
    * 验价那一句（`overdriveCostOf`）一个字不认这个开关。
    */
   mashGuard: boolean
+  /**
+   * 鼠标/视角 Y 反转（默认 false：FPS 标准 — mouse down = pitch ↑ = camera raised = view tilts down）。
+   * 翻改 `invertMouseY === true` 后，look.dy 在送入 CameraRig 之前乘以 -1，
+   * 玩家手中的「上滑 = 天空 / 下滑 = 地面」与 FPS 公式 "视野朝上时抬眼」倒转；
+   * 仅 `look.dy`（mouse 纵轴）受此开关影响；水平 `look.dx` 始终照原样灌入。
+   * 老档没有此格 ⇒ 与发售行为一致。
+   */
+  invertMouseY: boolean
 }
 
 export const DEFAULT_GAMEPLAY_SETTINGS: Readonly<GameplaySettings> = Object.freeze({
@@ -57,7 +65,8 @@ export const DEFAULT_GAMEPLAY_SETTINGS: Readonly<GameplaySettings> = Object.free
   rumbleWeakScale: 1,
   damageScale: 1,
   holdMs: 200,
-  mashGuard: true
+  mashGuard: true,
+  invertMouseY: false
 })
 
 /** 数值格的界（与规格出处一一对应；boolean 格不在此表） */
@@ -92,7 +101,8 @@ export function clampGameplaySettings(raw: unknown): GameplaySettings {
     rumbleWeakScale: num('rumbleWeakScale', GAMEPLAY_BOUNDS.rumbleWeakScale),
     damageScale: num('damageScale', GAMEPLAY_BOUNDS.damageScale),
     holdMs: num('holdMs', GAMEPLAY_BOUNDS.holdMs),
-    mashGuard: typeof src.mashGuard === 'boolean' ? src.mashGuard : DEFAULT_GAMEPLAY_SETTINGS.mashGuard
+    mashGuard: typeof src.mashGuard === 'boolean' ? src.mashGuard : DEFAULT_GAMEPLAY_SETTINGS.mashGuard,
+    invertMouseY: typeof src.invertMouseY === 'boolean' ? src.invertMouseY : DEFAULT_GAMEPLAY_SETTINGS.invertMouseY
   }
 }
 
@@ -102,7 +112,7 @@ export function clampGameplaySettings(raw: unknown): GameplaySettings {
  */
 export interface GameplaySettingsTargets {
   input: { bufferSec: number; frameAssist: boolean }
-  rig: { shakeIntensity: number }
+  rig: { shakeIntensity: number; invertMouseY?: boolean }
   /** 两把尺各一个字段（KI-359）：一个数灌两遍就是「独立」那半句没落地的那个形状 */
   haptics: { scale: number; weakScale: number }
   combat: { damageScale: number }
@@ -145,6 +155,7 @@ export class GameplaySettingsStore {
     this.targets.input.bufferSec = this.current.bufferMs / 1000
     this.targets.input.frameAssist = this.current.frameAssist
     this.targets.rig.shakeIntensity = this.current.shakeScale
+    this.targets.rig.invertMouseY = this.current.invertMouseY
     this.targets.haptics.scale = this.current.rumbleScale
     this.targets.haptics.weakScale = this.current.rumbleWeakScale
     this.targets.combat.damageScale = this.current.damageScale

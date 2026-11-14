@@ -58,7 +58,7 @@ const OPS_TAB: { id: Tab; label: string; hint: string } = { id: 'ops', label: t(
  * 那一步现在先看**当前值是不是布尔**再看名字，否则一个 `data-arg="bufferMs"` 就能把 220 写成 `false`、
  * 被边界夹回默认 200——那是替别一格洗格子，不是「这一枚翻不动」。
  */
-type BoolKey = 'frameAssist' | 'mashGuard'
+type BoolKey = 'frameAssist' | 'mashGuard' | 'invertMouseY'
 type NumericKey = Exclude<keyof GameplaySettings, BoolKey>
 const opsNumeric = (): { key: NumericKey; label: string; step: number; note: string; fmt: (v: number) => string }[] => [
   { key: 'bufferMs', label: t('stak.num.bufferMs.label'), step: 20, note: t('stak.num.bufferMs.note'), fmt: (v) => `${Math.round(v)}ms` },
@@ -1833,6 +1833,9 @@ export class Stakerite {
       <div class="row"><span class="name">${t('stak.ops.mashGuard.name')}<span class="note">${t('stak.ops.mashGuard.note')}</span></span>
         <span class="num">${g.mashGuard ? t('stak.value.on') : t('stak.value.off')}</span>
         <span class="act"><button class="act" data-act="gtoggle" data-arg="mashGuard">${g.mashGuard ? t('stak.btn.turnOff') : t('stak.btn.turnOn')}</button></span></div>
+      <div class="row"><span class="name">${t('stak.ops.invertMouseY.name')}<span class="note">${t('stak.ops.invertMouseY.note')}</span></span>
+        <span class="num">${g.invertMouseY ? t('stak.value.on') : t('stak.value.off')}</span>
+        <span class="act"><button class="act" data-act="gtoggle" data-arg="invertMouseY">${g.invertMouseY ? t('stak.btn.turnOff') : t('stak.btn.turnOn')}</button></span></div>
       <h2>${t('stak.ops.profiles.header')}</h2>${chanRow}${profiles}
       <div class="row"><span class="name">${t('stak.legend.name')}<span class="note">${t('stak.legend.note')}</span></span></div>`
   }
