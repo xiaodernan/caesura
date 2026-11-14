@@ -62,6 +62,12 @@ npm run dev        # 浏览器 → http://localhost:5173/?fresh=1
 6. **三句话**（`quest.threewords`）—— 横向 pilgrimage
 7. **余响归位**（`quest.afterglow`）—— 把收尾的四笔账依次交清：档案里的火 / 营地的答复 / 音栓钥匙 / 灰里的归属
 
+### 4.5 · 三场 Boss 提要：步步为营，不贪刀
+
+- **奥斯塔拉**（钟坠院 · 序幕 Boss）三阶段。**P1** 钟壳：只受 10% 伤害。**不磨**：把姿势留给破壳窗；**P2**「金铃」群体加速期：铃鸣到谁，谁就得退；**P3** 钟心裸露 4 秒：她只剩一半肉身，倾泻所有精力——能弹能磨的手段全砸进去，把她打到见红。
+- **万籁**（无耳深窖 · 隐藏 Boss）：你看见她，就已经输了一半。她把你写在她自己手里。绕路：V（屏气/观察）把噪音压到最低；贴她边缘蹭，她被击中后几秒内是聋的——重手。
+- **恩希尔**（未竟厅 · 终章 Boss）：**第三阶段是全场全响**。先敲坏「指挥棒」（scope+看盘面），再用三拍周期配她——她的拍是 3/4；每个 cycle 的边缘她全亮着眼睛→全身躲闪。打到见红，把夜交给那片余响。
+
 什么都不会在没把的时候被推到你脸上——按你节奏点字起、找档、遇敌、回城；三件套（轻/重/石子）的搭配比一把顶级武器更重要。
 
 ### 5 · 副任务 / 探索心得
@@ -137,6 +143,12 @@ Rebind: `src/settings/Bindings.ts`; `ClampBindings()` filters illegal keys. Defa
 5. **The Vessel** (`quest.faceless`) — the unnamed vessel
 6. **The Three Words** (`quest.threewords`) — the pilgrimage backbone
 7. **The Settling of Echoes** (`quest.afterglow`) — the closing tour: the archive fire, the camp's answer, the stop-key, the belonging written in ash
+
+### 4.5 · Boss field notes: step by step, never greedy
+
+- **Ostlara** (Fellcarillon · opener). Three phases. **P1** Shell takes 10% damage — don't grind her, save heavy/specials for the shell-break; **P2** Golden Bell aura — when it sounds, step out; **P3** Core is bare for 4 seconds — commit everything, raw and finishing, until she falls.
+- **The Myriad** (Earless Deeps · hidden). If you see her, you've already lost half. She's got you in her hand. Routing past: hold **V** (Tune) to crush your noise down, graze the edge, unload everything in the window while she's deaf after first hit.
+- **Hersil** (Unfinished Hall · finale). **Phase 3 is the whole hall singing.** Take out the baton first (watch the desk), then match her 3/4 rhythm — every cycle she wakes for you. Flash-step always in the barlines.
 
 Nothing is pushed; each step is granted on screen after the relevant dialogue beat. Three weapons and two tanky-arc hits are a better first build than a max-tier polearm.
 
