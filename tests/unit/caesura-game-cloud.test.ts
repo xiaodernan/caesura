@@ -2916,4 +2916,46 @@ describe('caesura-game-cloud', () => {
     expect(rigged!.vectors.VolatilePrefix).toBe('010')
     expect(rigged!.vectors.BudgetedPrefix).toBe('101')
   })
+
+  it('cacheConsistency opt-in：status().cacheConsistency 自洽（011/101/110 + 双路自证 + 三路篡改 + 三因果锁 + 21 物证）；缺省 null（KI-558）', async () => {
+    const idle = await createGameCloud({ gameId: 'gid-cc0', gamePort: 7983, sources, cloud: fakeCloud() }).status()
+    expect(idle.cacheConsistency).toBe(null)
+    const gc = await createGameCloud({
+      gameId: 'gid-cc1', gamePort: 7984, sources, cloud: fakeCloud(),
+      cacheConsistency: true, ccNow: () => 5570,
+    })
+    const st = (await gc.status()).cacheConsistency
+    expect(st).not.toBe(null)
+    expect(st!.builtAt).toBe(5570)
+    expect(st!.config.writes).toBe(24)
+    expect(st!.rows.length).toBe(3)
+    expect(st!.vectors).toEqual({ DelayedDoubleDelete: '011', SubscribeBinlog: '101', OutboxPolling: '110' })
+    expect(st!.noUniversalWinner).toBe(true)
+    expect(st!.trilemmaDistinguishes).toBe(true)
+    expect(st!.noStrategyWinsAll).toBe(true)
+    expect(st!.verdict.vectorFromTrilemma).toBe(true)
+    const cp = st!.crosscheck.soundness
+    expect(cp.holds).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.tamper.deleteLost.holds).toBe(false)
+    expect(cp.tamper.offsetReset.holds).toBe(false)
+    expect(cp.tamper.outboxNotAtomic.holds).toBe(false)
+    // 每路篡改**只**打穿自己那一家
+    expect(cp.tamper.deleteLost.targeted).toBe(true)
+    expect(cp.tamper.offsetReset.targeted).toBe(true)
+    expect(cp.tamper.outboxNotAtomic.targeted).toBe(true)
+    expect(Object.keys(st!.crosscheck.evidence).length).toBe(21)
+    expect(st!.causalLocks.causalLocksAllHold).toBe(true)
+    // 读己之写的三档是真跑出来的（模拟器现算）
+    expect(st!.rows.find((r: any) => r.protocol === 'DelayedDoubleDelete')!.metrics.readYourWritesRate).toBe(1)
+    expect(await gc.runCacheConsistencyStudy!()).toMatchObject({ vectors: st!.vectors })
+    // 单开关只顶高自己那一家
+    const rigged = (await (await createGameCloud({
+      gameId: 'gid-cc2', gamePort: 7985, sources, cloud: fakeCloud(),
+      cacheConsistency: { freeCdcInfra: true }, ccNow: () => 5571,
+    })).status()).cacheConsistency
+    expect(rigged!.vectors.SubscribeBinlog).toBe('111')
+    expect(rigged!.vectors.DelayedDoubleDelete).toBe('011')
+    expect(rigged!.vectors.OutboxPolling).toBe('110')
+  })
 })

@@ -285,6 +285,12 @@ export interface GameCloudOptions {
   promptCache?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck?: any; causalLocks?: any; [k: string]: any }
   /** pcNow 注入时钟（status().promptCache 的 builtAt 用） */
   pcNow?: () => number
+  /** KI-557 Redis Cluster 哈希槽教学件 opt-in（SlotModulo/HashTagSlot/ConsistentSlot） */
+  redisSlots?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck?: any; causalLocks?: any; [k: string]: any }
+  rsmNow?: () => number
+  /** KI-558 DelayedDoubleDelete/SubscribeBinlog/OutboxPolling 延迟双删对齐教学件 opt-in */
+  cacheConsistency?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck?: any; causalLocks?: any; [k: string]: any }
+  ccNow?: () => number
   /** KI-546 springFeign 的注入时钟（sf=Spring Feign，避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/reb/pq/bsj/coj/ssb/sf/rdq/dld 已占用前缀）。 */
   sfNow?: () => number
 }
@@ -387,6 +393,10 @@ export function createGameCloud(opts?: GameCloudOptions): {
   runTraceSamplingStudy: (() => Promise<any>) | null
   /** KI-555 前缀亲和 prompt-cache 教学件（Speculative VolatilePrefix/StablePrefix/BudgetedPrefix）—— 缺 opt-in promptCache 时为 null */
   runPromptCacheStudy: (() => Promise<any>) | null
+  /** KI-558 DelayedDoubleDelete/SubscribeBinlog/OutboxPolling opt-in（缺省 opts.cacheConsistency 时为 null） */
+  runCacheConsistencyStudy: (() => Promise<any>) | null
+  /** KI-557 Redis Cluster 哈希槽教学件 opt-in（SlotModulo/HashTagSlot/ConsistentSlot；缺省 opts.redisSlots 时为 null） */
+  runRedisSlotsStudy: (() => Promise<any>) | null
   /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）。 */
   gray: any
   /** KI-489：把游戏真 EventBus（duck-typed {on,emit}）按白名单接进云事件总线。 */

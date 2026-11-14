@@ -3208,3 +3208,88 @@ describe('KI-555 前缀亲和 prompt-cache · VolatilePrefix / StablePrefix / Bu
     }
   })
 })
+
+// ============ KI-558 MQ 驱动的缓存一致性三策略 面板 — cc 赛道 ============
+describe('KI-558 MQ 驱动的缓存一致性 · DelayedDoubleDelete / SubscribeBinlog / OutboxPolling（cc 赛道）', () => {
+  const realCc = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+  it('第五十二维 markup/CSS 直接渲染：cc 矩阵 15 cell + 011/101/110 + ladder 条', async () => {
+    const dom = await runApp(realCc)
+    const matrix = dom.els['cc-matrix'].innerHTML
+    expect(matrix).toContain('cc-mat-head')
+    for (const p of ['DelayedDoubleDelete', 'SubscribeBinlog', 'OutboxPolling']) {
+      expect(matrix).toContain('data-strategy="' + p + '"')
+    }
+    for (const sc of ['steadyWrite', 'racingRead', 'crashAfterWrite', 'subscriberLag', 'cleanRerun']) {
+      expect(matrix).toContain('data-s="' + sc + '"')
+    }
+    expect((matrix.match(/class="cc-cell /g) || []).length).toBe(15)
+    // 崩溃后陈旧值是否存活：延迟双删（易失失效意图）存活 ⇒ miss；另两家被清掉 ⇒ hit
+    expect(matrix).toContain('data-strategy="DelayedDoubleDelete" data-s="crashAfterWrite" data-state="miss"')
+    expect(matrix).toContain('data-strategy="SubscribeBinlog" data-s="crashAfterWrite" data-state="hit"')
+    expect(matrix).toContain('data-strategy="OutboxPolling" data-s="crashAfterWrite" data-state="hit"')
+    const tri = dom.els['cc-trilemma'].innerHTML
+    expect(tri).toContain('data-vec="011"')
+    expect(tri).toContain('data-vec="101"')
+    expect(tri).toContain('data-vec="110"')
+    expect(dom.els['cc-ladder'].innerHTML).toContain('cc-bar')
+  })
+
+  it('cc markup/CSS 同代 + systems.cacheConsistency 缺失时优雅降级', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-cc')
+    expect(html).toContain('id="cc-matrix"')
+    expect(html).toContain('id="cc-verif"')
+    expect(html).toContain('DelayedDoubleDelete=011')
+    expect(html).toContain('SubscribeBinlog=101')
+    expect(html).toContain('OutboxPolling=110')
+    expect(css).toContain('.cc-cell')
+    expect(css).toContain('.cc-flag.yes')
+    expect(css).toContain('.cc-bar > i')
+    expect(css).toContain('.cc-verif')
+    expect(css).toContain('.cc-cell { transition: none;')
+    const noCc = JSON.parse(JSON.stringify(realCc as any))
+    noCc.systems.cacheConsistency = null
+    return runApp(noCc).then((dom2: any) => {
+      expect(dom2.els['cc-matrix'].innerHTML).toContain('缺失')
+      expect(dom2.els['cc-trilemma'].innerHTML).toContain('缺失')
+      expect(dom2.els['cc-matrix-note'].textContent).toContain('systems.cacheConsistency 缺失')
+    })
+  })
+
+  it('cc chips 与三轴旗标必须读**真值**（禁止无真值来源的装饰 data-verdict）', async () => {
+    const dom = await runApp(realCc)
+    const chips = dom.els['cc-probes'].innerHTML
+    const snap = (realCc as any).systems.cacheConsistency
+    const chipOf = (key: string) => {
+      const m = chips.match(new RegExp('data-verdict="' + key + '"[^>]*>([\\s\\S]*?)</span>'))
+      return m ? m[1] : ''
+    }
+    expect(chipOf('noUniversalWinner')).toContain(snap.verdict.noUniversalWinner ? '✓' : '×')
+    expect(chipOf('noStrategyWinsAll')).toContain(snap.verdict.noStrategyWinsAll ? '✓' : '×')
+    expect(chipOf('vectorFromTrilemma')).toContain(snap.verdict.vectorFromTrilemma ? '✓' : '×')
+    expect(chipOf('trilemmaDistinguishes')).toContain(snap.verdict.trilemmaDistinguishes ? '✓' : '×')
+    expect(chipOf('causalLocksAllHold')).toContain(snap.causalLocks.causalLocksAllHold ? '✓' : '×')
+    // 三轴旗标逐格必须与 snapshot 的 trilemma 真值一致
+    const tri = dom.els['cc-trilemma'].innerHTML
+    for (const row of snap.rows) {
+      for (const k of ['boundedStaleness', 'infraFree', 'writePathLight']) {
+        const want = row.trilemma[k] === true ? '1' : '0'
+        expect(tri).toContain('data-k="' + k + '" data-v="' + want + '"')
+      }
+    }
+    // 三枚因果锁 chip 必须与真值一致
+    const lockOf = (key: string) => {
+      const m = chips.match(new RegExp('data-lock="' + key + '"[^>]*>([\\s\\S]*?)</span>'))
+      return m ? m[1] : ''
+    }
+    expect(lockOf('volatileInvalidationIntentCausallyUnerasable')).toContain('✓')
+    expect(lockOf('cdcOffsetDependencyCausallyUnerasable')).toContain('✓')
+    expect(lockOf('outboxSameTransactionCausallyUnerasable')).toContain('✓')
+    // 双路自证面板必须把三路篡改的「只打穿自己那一家」写出来
+    const verif = dom.els['cc-verif'].innerHTML
+    expect(verif).toContain('deleteLost=')
+    expect(verif).toContain('offsetReset=')
+    expect(verif).toContain('outboxNotAtomic=')
+  })
+})

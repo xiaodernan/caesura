@@ -86,6 +86,7 @@
       renderRedisStream(snap.systems ? snap.systems.redisStream : null)
       renderSpringVault(snap.systems ? snap.systems.springVault : null)
       renderPromptCache(snap.systems ? snap.systems.promptCache : null)
+      renderCacheConsistency(snap.systems ? snap.systems.cacheConsistency : null)
       renderTraceSampling(snap.systems ? snap.systems.traceSampling : null)
       setLive(true, result.source)
     }).catch(function (e) {
@@ -3849,6 +3850,211 @@
     ]
     if (probes) probes.innerHTML = chips.join('')
     if (note) note.textContent = '维轴 [cacheHitRate / infoFidelity / tokenEfficiency]；默认向量 VolatilePrefix=010（每轮整条 prompt 重新分词）/ StablePrefix=110（圣经逐字节置首 · warm 后前缀进 KV）/ BudgetedPrefix=101（预算裁剪真省 token · 但被裁部分对模型不可见）。fidelity 的口径是「模型看到的世界有没有变」——不是「核心事实还在」：密度排序确实保住了核心事实，可 70% 上下文仍然没了。因果锁：prefixAffinity / tokenBudget / factRank · causalLocksAllHold=' + (locks.causalLocksAllHold === true ? 'true' : 'false') + '。真命中只认 usage.prompt_tokens_details.cached_tokens。'
+  }
+
+  /* ================= KI-557 DelayedDoubleDelete/SubscribeBinlog/OutboxPolling MQ 驱动的缓存一致性三策略 —— 第五十一维 · cc 霸 ================= */
+
+  function renderCacheConsistency(cc) {
+    renderCcMatrix(cc && cc.rows, cc && cc.config)
+    renderCcLadder(cc && cc.rows)
+    renderCcTrilemma(cc && cc.rows, cc && cc.verdict, cc && cc.crosscheck, cc && cc.causalLocks)
+  }
+
+  function ccMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 缺失</div>'
+    if (note) note.textContent = 'systems.cacheConsistency 缺失 → 请先 npm run console:data 再生成'
+  }
+
+  /**
+   * 单元格只展示**真读数**，不做任何装饰性判词：
+   * steadyWrite → 读己之写比例（模拟器现算）；racingRead → 竞态是否真的产生陈旧（nontrivial 的来源）；
+   * crashAfterWrite → 崩溃后陈旧值是否**存活**（wine = 会丢）；subscriberLag → 滞后后是否被清掉；
+   * cleanRerun → 同 seed 连跑两次是否逐字一致（真比较字符串）。
+   */
+  function ccCell(cell, sc) {
+    if (!cell) return { cls: '', ch: '·', tip: '该场景读数缺失' }
+    if (sc === 'steadyWrite') {
+      var r = isNum(cell.readYourWritesRate) ? cell.readYourWritesRate : 0
+      var cls = r >= 0.999 ? 'hit' : (r > 0 ? 'warm' : 'miss')
+      return {
+        cls: cls, ch: r.toFixed(2),
+        tip: '读己之写率=' + r.toFixed(4) + ' · 陈旧读=' + String(cell.staleReads) +
+          ' · 外部调用=' + String(cell.infraCalls) + ' · 额外持久写=' + String(cell.extraDurableWrites),
+      }
+    }
+    if (sc === 'racingRead') {
+      var raced = cell.staleAfterRace === true
+      return {
+        cls: raced ? 'warm' : 'miss', ch: raced ? '竞✓' : '竞✗',
+        tip: '竞态真的产生陈旧=' + String(raced) + ' · 陈旧窗口=' + String(cell.staleWindowMs) +
+          'ms · 机制跑完后清掉=' + String(cell.clearedAfterMechanism) +
+          ' · 失效次数=' + String(cell.invalidations),
+      }
+    }
+    if (sc === 'crashAfterWrite') {
+      var survived = cell.staleSurvivedCrash === true
+      return {
+        cls: survived ? 'miss' : 'hit', ch: survived ? '存✗' : '已清',
+        tip: '崩溃后陈旧存活=' + String(survived) + ' · 失效意图载体=' + String(cell.invalidationIntent) +
+          ' · 失效次数=' + String(cell.invalidations),
+      }
+    }
+    if (sc === 'subscriberLag') {
+      var cleared = cell.clearedAfterMechanism === true
+      return {
+        cls: cleared ? 'hit' : 'miss', ch: cleared ? '清✓' : '未清',
+        tip: '下游滞后=' + String(cell.lagMs) + 'ms · 机制跑完后清掉=' + String(cleared) +
+          ' · 最长陈旧=' + String(cell.maxStaleMs) + 'ms',
+      }
+    }
+    if (sc === 'cleanRerun') {
+      var same = cell.rerunIdentical === true
+      return {
+        cls: same ? 'hit' : 'miss', ch: same ? '幂✓' : '幂✗',
+        tip: '同 seed 连跑两次逐字一致=' + String(same) +
+          ' · 写=' + String(cell.writes) + ' · 读=' + String(cell.reads),
+      }
+    }
+    return { cls: '', ch: '·', tip: '' }
+  }
+
+  function renderCcMatrix(rows, config) {
+    var box = $('#cc-matrix'), note = $('#cc-matrix-note')
+    if (!Array.isArray(rows) || !rows.length) { ccMissing(box, note, 'cc 矩阵'); return }
+    var scenarios = ['steadyWrite', 'racingRead', 'crashAfterWrite', 'subscriberLag', 'cleanRerun']
+    var head = '<div class="cc-mat-row cc-mat-head"><span class="cc-mat-proto">策略</span>' +
+      scenarios.map(function (sc) { return '<span class="cc-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="cc-mat-cost">写路径开销</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = ccCell(cell, sc)
+        return '<span class="cc-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '" title="' + esc(st.tip) + '">' + esc(st.ch) + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="cc-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="cc-mat-proto">' + esc(row.protocol) + '</span>' + cells +
+        '<span class="cc-mat-cost"><b>' + esc(fmt(m.totalExtraDurableWrites)) + '</b> 额外持久写<br/>' +
+        esc(fmt(m.totalInfraCalls)) + ' 外部调用</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'DelayedDoubleDelete / SubscribeBinlog / OutboxPolling 三策略 × 五场景：steadyWrite（写后立刻读 · 读己之写率真跑现算）/ racingRead（cache-aside 竞态：读抓旧快照 → 写提交删缓存 → 读写回旧快照 ⇒ 缓存里躺陈旧）/ crashAfterWrite（陈旧写回后进程崩溃 ⇒ 易失失效意图随进程消失、持久记录不丢）/ subscriberLag（下游滞后 ⇒ 陈旧窗口被拉长，窗口不是免费的）/ cleanRerun（同 seed 连跑两次逐字一致）。右侧 = 业务写之外的额外持久化写与外部设施调用次数（都是真数）。'
+  }
+
+  function renderCcLadder(rows) {
+    var box = $('#cc-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var rate = isNum(m.readYourWritesRate) ? m.readYourWritesRate : 0
+      var w = Math.round(rate * 100)
+      return '<div class="cc-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="cc-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">读己之写 ' + esc(String(rate)) + ' · 陈旧读 ' + esc(fmt(m.totalStaleReads)) +
+        ' · 崩溃后陈旧存活 ' + (m.staleSurvivedCrash === true ? '是' : '否') + '</span></div>'
+    }).join('')
+  }
+
+  function renderCcTrilemma(rows, verdict, crosscheck, causalLocks) {
+    var box = $('#cc-trilemma'), veBox = $('#cc-verif'), cxBox = $('#cc-crosscheck'), note = $('#cc-trilemma-note')
+    var probes = $('#cc-probes')
+    if (!Array.isArray(rows) || !rows.length) {
+      ccMissing(box, note, 'cc 向量'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''
+      if (probes) probes.innerHTML = ''; return
+    }
+    var flags = [['boundedStaleness', '陈旧窗口可界定'], ['infraFree', '零外部设施'], ['writePathLight', '写路径不加重']]
+    var head = '<div class="cc-vec cc-vec-head"><span class="proto">策略</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="cc-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '×') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="cc-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    var byProto = {}
+    rows.forEach(function (r) { byProto[r.protocol] = r })
+
+    if (veBox) {
+      var cp = crosscheck && crosscheck.soundness
+      var laneA = cp && cp.laneA
+      var laneB = cp && cp.laneB
+      var cell = function (tbl, p) { return (tbl && tbl[p]) ? tbl[p] : null }
+      var ddb = cell(laneA, 'DelayedDoubleDelete')
+      var cdc = cell(laneA, 'SubscribeBinlog')
+      var out = cell(laneA, 'OutboxPolling')
+      var holdMark = function (c) {
+        if (!c) return '缺'
+        return c.holds === true ? '✓holds' : '✗holds=' + String(c.holds)
+      }
+      var lanes = [
+        ['延迟双删', ddb], ['订阅binlog', cdc], ['Outbox轮询', out],
+      ].map(function (pair) {
+        var c = pair[1]
+        return '<div class="cc-rb-row"><b>' + esc(pair[0]) + '</b> ' + holdMark(c) +
+          ' · nontrivial=' + esc(String(c && c.nontrivial)) +
+          ' · 机制跑过=' + esc(String(c && c.mechanismRan)) +
+          ' · 机制后清掉=' + esc(String(c && c.invalidatedAfterMechanism)) +
+          ' · 失效次数=' + esc(String(c && c.invalidations)) + '</div>'
+      })
+      var tamperRows = cp ? [
+        '<div class="cc-rb-row"><b>三路篡改</b> deleteLost=' + (cp.tamper && cp.tamper.deleteLost && cp.tamper.deleteLost.targeted === true ? '✓只翻延迟双删' : '✗定位失败') +
+          ' · offsetReset=' + (cp.tamper && cp.tamper.offsetReset && cp.tamper.offsetReset.targeted === true ? '✓只翻订阅binlog' : '✗定位失败') +
+          ' · outboxNotAtomic=' + (cp.tamper && cp.tamper.outboxNotAtomic && cp.tamper.outboxNotAtomic.targeted === true ? '✓只翻Outbox' : '✗定位失败') + '</div>',
+        '<div class="cc-rb-row"><b>篡改后失效次数</b> 双删丢失=' + esc(String(cell(laneB && laneB.deleteLost, 'DelayedDoubleDelete') && laneB.deleteLost.DelayedDoubleDelete.invalidations)) +
+          ' · 位点重置=' + esc(String(laneB && laneB.offsetReset ? laneB.offsetReset.SubscribeBinlog.invalidations : '')) +
+          ' · 非原子=' + esc(String(laneB && laneB.outboxNotAtomic ? laneB.outboxNotAtomic.OutboxPolling.invalidations : '')) + '</div>',
+      ] : []
+      veBox.innerHTML = lanes.concat(tamperRows).join('')
+    }
+
+    if (cxBox) {
+      var ev = crosscheck && crosscheck.evidence
+      if (ev) {
+        cxBox.innerHTML =
+          '<div>→ <b>compareRemapping</b> 一致哈希命中 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>' +
+          '<div>→ <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' 台</div>' +
+          '<div>→ <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 计费 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
+          '<div>→ <b>createWal</b> lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+          '<div>→ <b>createBus</b> cc.invalidated 通知 ' + esc(fmt(ev.notices)) + ' 次 · listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+          '<div>→ <b>createRedisCache</b> cc 键 ' + esc(fmt(ev.redisBitmapHits)) + ' 次 · entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+          '<div>→ <b>createObjectPool</b> 新建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+          '<div>→ <b>createTokenBucket</b> 放行 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+          '<div>→ <b>createMinHeapDelayQueue</b> 弹出 ' + esc(fmt(ev.heapFired)) + ' 次 · pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+          '<div>→ <b>createFullJitterBackoff</b> jitterSpread <b>' + esc(String((ev.jitterSpread ?? 0).toFixed(4))) + '</b>（64 次 delayFor 波动）</div>' +
+          '<div>→ <b>createPackedCounters</b> 和=' + esc(fmt(ev.counterSum)) + ' · falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>'
+      } else {
+        cxBox.innerHTML = '<div class="nodata">跨证据缺失</div>'
+      }
+    }
+
+    var v = verdict || {}
+    var locks = causalLocks || {}
+    var chips = [
+      '<span class="chip" data-verdict="noUniversalWinner"><b>noUniversalWinner</b> ' + (v.noUniversalWinner === true ? '✓ 三难不可兼得' : '×') + '</span>',
+      '<span class="chip" data-verdict="noStrategyWinsAll"><b>noStrategyWinsAll</b> ' + (v.noStrategyWinsAll === true ? '✓ 没有 111' : '×') + '</span>',
+      '<span class="chip" data-verdict="vectorFromTrilemma"><b>vectorFromTrilemma</b> ' + (v.vectorFromTrilemma === true ? '✓ 向量由三难现算' : '×') + '</span>',
+      '<span class="chip" data-verdict="trilemmaDistinguishes"><b>trilemmaDistinguishes</b> ' + (v.trilemmaDistinguishes === true ? '✓ 三家真不同' : '×') + '</span>',
+      '<span class="chip" data-verdict="causalLocksAllHold"><b>causalLocksAllHold</b> ' + (locks.causalLocksAllHold === true ? '✓' : '×') + '</span>',
+    ]
+    var lockChips = [
+      ['volatileInvalidationIntentCausallyUnerasable', '易失失效意图'],
+      ['cdcOffsetDependencyCausallyUnerasable', 'CDC 位点依赖'],
+      ['outboxSameTransactionCausallyUnerasable', 'Outbox 同事务'],
+    ].map(function (pair) {
+      var ok = locks[pair[0]] === true
+      return '<span class="chip ' + (ok ? 'jade-t' : 'wine-t') + '" data-lock="' + esc(pair[0]) + '">' +
+        esc(pair[1]) + ' ' + (ok ? '✓' : '✗') + '</span>'
+    })
+    if (probes) probes.innerHTML = chips.concat(lockChips).join('')
+    if (note) note.textContent = '维轴 [boundedStaleness / infraFree / writePathLight]，三位**全部由模拟器现算**（零查表）：boundedStaleness 看崩溃后陈旧值是否仍被清掉（失效意图是否持久）、infraFree 看外部设施调用累计是否为 0、writePathLight 看业务写之外的额外持久化写是否为 0。holds 公式只有一条：nontrivial ∧ mechanismRan ∧ invalidatedAfterMechanism —— 竞态真发生、机制真跑过、机制跑完陈旧真被清；三路篡改各自只打穿自己那一家。因果锁：volatileIntent / cdcOffset / outboxSameTxn · causalLocksAllHold=' + (locks.causalLocksAllHold === true ? 'true' : 'false') + '。不声称：不接真 MySQL/Redis/Canal；不模拟真 binlog 格式与位点存储。'
   }
 
   /* ================= KI-553 PubSub/PersistentQueue/StreamLog Redis Stream 三策略 —— 第四十八维 · xst 霸 ================= */

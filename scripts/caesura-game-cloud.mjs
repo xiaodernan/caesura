@@ -67,7 +67,9 @@ import { springConsulStudy, springConsulSnapshot } from './caesura-spring-consul
 import { redisHaStudy, redisHaSnapshot } from './caesura-redis-ha.mjs'
 import { redisStreamStudy, redisStreamSnapshot } from './caesura-redis-stream.mjs'
 import { springVaultStudy, springVaultSnapshot } from './caesura-spring-vault.mjs'
+import { slotMapStudy, slotMapSnapshot } from './caesura-redis-slot-map.mjs'
 import { promptCacheStudy, promptCacheSnapshot } from './caesura-prompt-cache.mjs'
+import { cacheConsistencyStudy, cacheConsistencySnapshot } from './caesura-cache-consistency.mjs'
 import { springStreamBindingStudy, springStreamBindingSnapshot } from './caesura-spring-stream-binding.mjs'
 import { cdcOutboxJoinStudy, cdcOutboxJoinSnapshot } from './caesura-cdc-outbox-join.mjs'
 import {
@@ -1081,10 +1083,45 @@ export function createGameCloud(opts = {}) {
     return pcCached
   }
 
+  // KI-558 MQ 驱动的缓存一致性三策略（DelayedDoubleDelete/SubscribeBinlog/OutboxPolling
+  //   + verifyCacheConsistencySoundness 双路自证 + 三路篡改双删丢失/位点重置/非原子 + 三因果锁 + 十一真件 21 键）
+  // opts.cacheConsistency===true 默认开（注入 {}）；显式 cacheConsistency=false 关闭（教学对比用）。
+  const ccCfg = opts.cacheConsistency === true ? {} : (opts.cacheConsistency && typeof opts.cacheConsistency === 'object' ? opts.cacheConsistency : null)
+  const ccInjected = ccCfg !== null && opts.cacheConsistency &&
+    typeof opts.cacheConsistency === 'object' && Array.isArray(opts.cacheConsistency.rows) &&
+    opts.cacheConsistency.vectors && opts.cacheConsistency.verdict
+  let ccCached = null
+  async function ccSnapshotForStatus() {
+    if (ccCfg === null) return null
+    if (ccCached) return ccCached
+    const study = ccInjected
+      ? opts.cacheConsistency
+      : await cacheConsistencyStudy({ ...ccCfg, now: opts.ccNow ?? ccCfg.now })
+    ccCached = cacheConsistencySnapshot(study)
+    return ccCached
+  }
+
   // KI-545：CDC outbox join 教学件（LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin；opt-in、status/ coj*）。
   // opts.springStreamBinding===true 走钳制默认参数（可覆盖 now/seed/messages/interval/nailedSnapshot/freeBinlog/noLatch/rigged 等）；
   // 传对象且 rows/vectors/verdict 齐全时当现成 study 注入；默认 springStreamBinding:false 非破坏（同 KI-513/.../543 法）。
   // 不声称真 Debezium-class CDC / 真 entity join / 真 snapshot atomic commit—全程结构计数。
+  // KI-557 Redis Cluster 哈希槽教学件（SlotModulo=100 / HashTagSlot=110 / ConsistentSlot=001 + verifySlotMapSoundness 双路自证 + 三路篡改 + 三因果锁 + 21 物证）
+  // opts.redisSlots === true 默认开（注入 {}）；显式 false 关闭。
+  const rsmCfg = opts.redisSlots === true ? {} : (opts.redisSlots && typeof opts.redisSlots === 'object' ? opts.redisSlots : null)
+  const rsmInjected = rsmCfg !== null && opts.redisSlots &&
+    typeof opts.redisSlots === 'object' && Array.isArray(opts.redisSlots.rows) &&
+    opts.redisSlots.vectors && opts.redisSlots.verdict
+  let rsmCached = null
+  async function rsmSnapshotForStatus() {
+    if (rsmCfg === null) return null
+    if (rsmCached) return rsmCached
+    const study = rsmInjected
+      ? opts.redisSlots
+      : await slotMapStudy({ ...rsmCfg, now: opts.rsmNow ?? rsmCfg.now })
+    rsmCached = slotMapSnapshot(study)
+    return rsmCached
+  }
+
   const ssbCfg = opts.springStreamBinding === true ? {} : (opts.springStreamBinding && typeof opts.springStreamBinding === 'object' ? opts.springStreamBinding : null)
   const ssbInjected = ssbCfg !== null && opts.springStreamBinding &&
     typeof opts.springStreamBinding === 'object' && Array.isArray(opts.springStreamBinding.rows) &&
@@ -1312,6 +1349,10 @@ export function createGameCloud(opts = {}) {
     runSpringVaultStudy: svtCfg === null ? null : () => springVaultStudy({ ...svtCfg, now: opts.svtNow ?? svtCfg.now }),
     /** KI-555 前缀亲和 prompt-cache 教学件（VolatilePrefix/StablePrefix/BudgetedPrefix 三策略；opt-in） */
     runPromptCacheStudy: pcCfg === null ? null : () => promptCacheStudy({ ...pcCfg, now: opts.pcNow ?? pcCfg.now }),
+    /** KI-557 Redis Cluster 哈希槽教学件（SlotModulo/HashTagSlot/ConsistentSlot 三策略；opt-in） */
+    runRedisSlotsStudy: rsmCfg === null ? null : () => slotMapStudy({ ...rsmCfg, now: opts.rsmNow ?? rsmCfg.now }),
+    /** KI-558 MQ 驱动的缓存一致性三策略（DelayedDoubleDelete/SubscribeBinlog/OutboxPolling 三策略；opt-in） */
+    runCacheConsistencyStudy: ccCfg === null ? null : () => cacheConsistencyStudy({ ...ccCfg, now: opts.ccNow ?? ccCfg.now }),
     /** KI-545：CDC outbox join 教学件；缺 opts.springStreamBinding 时为 null；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异不封赢家）+ verifySpringStreamBindingSoundness 双路自证 + 十一枚真件交叉印证。 */
     runSpringStreamBindingStudy: ssbCfg === null ? null : () => springStreamBindingStudy({ ...ssbCfg, now: opts.ssbNow ?? ssbCfg.now }),
     /** KI-544：CDC outbox join 教学件；缺 opts.cdcOutboxJoin 时为 null；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异不封赢家）+ verifyCdcOutboxJoinSoundness 双路自证 + 十一枚真件交叉印证。 */
@@ -1394,6 +1435,8 @@ export function createGameCloud(opts = {}) {
         redisStream: await xstSnapshotForStatus(),
         springVault: await svtSnapshotForStatus(),
         promptCache: await pcSnapshotForStatus(),
+        redisSlots: await rsmSnapshotForStatus(),
+        cacheConsistency: await ccSnapshotForStatus(),
         springStreamBinding: await ssbSnapshotForStatus(),
         cdcOutboxJoin: await cojSnapshotForStatus(),
         traceSampling: await tsSnapshotForStatus(),

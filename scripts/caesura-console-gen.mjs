@@ -65,6 +65,8 @@ import { redisHaStudy, redisHaSnapshot } from './caesura-redis-ha.mjs'
 import { redisStreamStudy, redisStreamSnapshot } from './caesura-redis-stream.mjs'
 import { springVaultStudy, springVaultSnapshot } from './caesura-spring-vault.mjs'
 import { promptCacheStudy, promptCacheSnapshot } from './caesura-prompt-cache.mjs'
+import { slotMapStudy, slotMapSnapshot } from './caesura-redis-slot-map.mjs'
+import { cacheConsistencyStudy, cacheConsistencySnapshot } from './caesura-cache-consistency.mjs'
 import { traceSamplingStudy, traceSamplingSnapshot } from './caesura-trace-sampling.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
@@ -423,7 +425,11 @@ export async function buildSystems(opts = {}) {
   const springVault = opts.springVault === false ? null : await buildSpringVaultReading(opts, now)
   // KI-555 前缀亲和 prompt-cache 教学件（VolatilePrefix/StablePrefix/BudgetedPrefix + 双路自证 + 三路篡改前缀漂移/预算关停/事实全撤 + 三因果锁）
   const promptCache = opts.promptCache === false ? null : await buildPromptCacheReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, priorityQueue, batchStreamJoin, cdcOutboxJoin, springStreamBinding, springFeign, springConfig, springBus, redisPipeline, gatewayRetry, springConsul, redisHa, redisStream, springVault, promptCache, builtAt: now() }
+  // KI-557 Redis Cluster 哈希槽教学件（双路自证 + 三因果锁；rigged 各自拎旗帜）
+  const redisSlots = opts.redisSlots === false ? null : await buildRedisSlotMapReading(opts, now)
+  // KI-558 MQ 驱动的缓存一致性三策略（DelayedDoubleDelete/SubscribeBinlog/OutboxPolling + 双路自证 + 三路篡改双删丢失/位点重置/非原子 + 三因果锁）
+  const cacheConsistency = opts.cacheConsistency === false ? null : await buildCacheConsistencyReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, priorityQueue, batchStreamJoin, cdcOutboxJoin, springStreamBinding, springFeign, springConfig, springBus, redisPipeline, gatewayRetry, springConsul, redisHa, redisStream, springVault, promptCache, redisSlots, cacheConsistency, builtAt: now() }
 }
 
 /**
@@ -580,6 +586,30 @@ export async function buildSpringVaultReading(opts, now) {
 }
 
 /**
+ * KI-557 Redis Cluster 哈希槽教学件（SlotModulo=100 / HashTagSlot=110 / ConsistentSlot=001）——
+ *   verifySlotMapSoundness 双路自证 + 三路篡改（wrongCrcSeed CRC 表坏 / missingBrace 去括号 / forcedModulo 强制模）
+ *   失败返回 null；KD 双源一致；rigged 各自只上浮所属策略。
+ * @param {object} opts { redisSlots?:false, rsmSeed?, rsmMessages?, rsmFreeEven?, rsmFreeColocation?, rsmFreeMigrationMin?, rsmRigged? }
+ * @param {()=>number} now 时钟函数（builtAt 用）
+ */
+export async function buildRedisSlotMapReading(opts, now) {
+  try {
+    const s = await slotMapStudy({
+      now,
+      ...(opts.rsmSeed ? { seed: Math.max(0, Math.floor(Number(opts.rsmSeed))) } : {}),
+      ...(opts.rsmMessages ? { messages: Math.max(16, Math.floor(Number(opts.rsmMessages))) } : {}),
+      ...(opts.rsmFreeEven === true ? { freeEven: true } : {}),
+      ...(opts.rsmFreeColocation === true ? { freeColocation: true } : {}),
+      ...(opts.rsmFreeMigrationMin === true ? { freeMigrationMin: true } : {}),
+      ...(opts.rsmRigged === true ? { rigged: true } : {}),
+    })
+    return slotMapSnapshot(s)
+  } catch (e) {
+    return null
+  }
+}
+
+/**
  * KI-555 前缀亲和 prompt-cache 教学件（VolatilePrefix/StablePrefix/BudgetedPrefix + verifyPromptCacheSoundness 双路自证 + 三路篡改前缀漂移/预算关停/事实全撤）
  * 失败返回 null；CLI 双源一致；rigged 三路塌缩参数只动所属策略。
  * @param {object} opts { promptCache?:false, pcSeed?, pcMessages?, pcBudgetTokens?, pcFreeStablePrefix?, pcLosslessSummaryTrim?, pcZeroTrimPenalty?, pcUnlimitedBudget?, pcRigged? }
@@ -599,6 +629,30 @@ export async function buildPromptCacheReading(opts, now) {
       ...(opts.pcRigged === true ? { rigged: true } : {}),
     })
     return promptCacheSnapshot(s)
+  } catch (e) {
+    return null
+  }
+}
+
+/**
+ * KI-558 MQ 驱动的缓存一致性三策略（DelayedDoubleDelete/SubscribeBinlog/OutboxPolling
+ *   + verifyCacheConsistencySoundness 双路自证 + 三路篡改双删丢失/位点重置/非原子 + 三因果锁 + 十一真件 21 键）。
+ * 失败返回 null；CLI 双源一致；rigged 三开关各自只动所属策略。
+ * @param {object} opts { cacheConsistency?:false, ccSeed?, ccWrites?, ccFreeStalenessWindow?, ccFreeCdcInfra?, ccFreeOutboxWrite?, ccRigged? }
+ * @param {()=>number} now 时钟函数（builtAt 用）
+ */
+export async function buildCacheConsistencyReading(opts, now) {
+  try {
+    const s = cacheConsistencyStudy({
+      now,
+      ...(opts.ccSeed ? { seed: Math.max(0, Math.floor(Number(opts.ccSeed))) } : {}),
+      ...(opts.ccWrites ? { writes: Math.max(1, Math.floor(Number(opts.ccWrites))) } : {}),
+      ...(opts.ccFreeStalenessWindow === true ? { freeStalenessWindow: true } : {}),
+      ...(opts.ccFreeCdcInfra === true ? { freeCdcInfra: true } : {}),
+      ...(opts.ccFreeOutboxWrite === true ? { freeOutboxWrite: true } : {}),
+      ...(opts.ccRigged === true ? { rigged: true } : {}),
+    })
+    return cacheConsistencySnapshot(s)
   } catch (e) {
     return null
   }

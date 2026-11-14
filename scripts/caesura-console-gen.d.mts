@@ -956,6 +956,95 @@ export interface SpringFeignReading {
   builtAt: number
 }
 
+/** KI-557 Redis Cluster 哈希槽拓扑教学件（SlotModulo/HashTagSlot/ConsistentSlot）；verifySlotMapSoundness 双路自证 + 三路篡改 */
+export interface RedisSlotMapReading {
+  config: Record<string, any>
+  rows: Array<{
+    protocol: string
+    scenarios: Array<{
+      id: string; messages: number; processed: number
+      slotsUsed: number; slotMin: number; slotMax: number; stddev: number; fault: string
+    }>
+    trilemma: { distributesEvenly: boolean; colocationByHashTag: boolean; minMigration: boolean }
+    metrics: { totalSlotsUsed: number; avgStdDev: number }
+  }>
+  vectors: Record<string, string>
+  noUniversalWinner: boolean
+  trilemmaDistinguishes: boolean
+  builtAt: number
+  rigged: boolean
+  verdict: Record<string, any>
+  causalLocks: { crc16DistributionCausallyUnerasable: boolean; hashTagBindingCausallyUnerasable: boolean; slotMigrationFloorCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
+  crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; baselineHolds?: boolean; falsifiable?: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+}
+
+/** KI-558 Cache Consistency MQ 驱动的缓存一致性三策略（DelayedDoubleDelete/SubscribeBinlog/OutboxPolling）；verifyCacheConsistencySoundness 双路自证 + 三路篡改
+ *  —— 字段与锁名**逐字**取自 `scripts/caesura-cache-consistency.d.mts` 的 CCScenario / CCCausalLocks（同源，不臆造）。 */
+export interface CacheConsistencyReading {
+  config: Record<string, any>
+  rows: Array<{
+    protocol: string
+    scenarios: Array<{
+      id: string
+      protocol: string
+      writes?: number
+      reads?: number
+      staleReads?: number
+      /** 写后立刻读能读到自己的写的比例（0~1）。 */
+      readYourWritesRate?: number
+      /** 业务写之外的额外持久化写次数。 */
+      extraDurableWrites?: number
+      /** 外部设施调用次数。 */
+      infraCalls?: number
+      /** 失效（删缓存）次数。 */
+      invalidations?: number
+      /** 竞态是否真的产生了陈旧值（nontrivial 的判据）。 */
+      staleAfterRace?: boolean
+      /** 陈旧窗口（ms）。 */
+      staleWindowMs?: number
+      /** 机制跑完之后陈旧值是否被清掉。 */
+      clearedAfterMechanism?: boolean
+      /** 崩溃之后陈旧值是否**存活**（延迟双删 ⇒ true；另两家 ⇒ false）。 */
+      staleSurvivedCrash?: boolean
+      /** 失效意图的载体（volatile-timer / durable-record）。 */
+      invalidationIntent?: string
+      /** 下游滞后（ms，仅 subscriberLag 场景）。 */
+      lagMs?: number
+      /** 最长陈旧窗口（ms）。 */
+      maxStaleMs?: number
+      /** 同 seed 连跑两次是否逐字一致。 */
+      rerunIdentical?: boolean
+      note: string
+    }>
+    trilemma: { boundedStaleness: boolean; infraFree: boolean; writePathLight: boolean }
+    metrics: {
+      totalWrites: number
+      totalReads: number
+      totalStaleReads: number
+      totalExtraDurableWrites: number
+      totalInfraCalls: number
+      totalInvalidations: number
+      readYourWritesRate: number
+      staleSurvivedCrash: boolean
+    }
+  }>
+  vectors: Record<string, string>
+  noUniversalWinner: boolean
+  trilemmaDistinguishes: boolean
+  noStrategyWinsAll: boolean
+  builtAt: number
+  rigged: boolean
+  verdict: Record<string, any>
+  causalLocks: {
+    volatileInvalidationIntentCausallyUnerasable: boolean
+    cdcOffsetDependencyCausallyUnerasable: boolean
+    outboxSameTransactionCausallyUnerasable: boolean
+    causalLocksAllHold: boolean
+    probes?: Record<string, any>
+  }
+  crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; baselineHolds?: boolean; falsifiable?: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+}
+
 /** KI-555·VolatilePrefix/StablePrefix/BudgetedPrefix 前缀亲和 prompt-cache 教学件——verifyPromptCacheSoundness 双路自证 + 三路篡改 prefixDrift/trimDisabled/factsDropped + 三因果锁 */
 export interface PromptCacheReading {
   config: Record<string, any>
@@ -1171,6 +1260,29 @@ export function buildPromptCacheReading(opts: {
   pcUnlimitedBudget?: boolean
   pcRigged?: boolean
 }, now: () => number): Promise<PromptCacheReading | null>
+/** KI-557：SlotModulo/HashTagSlot/ConsistentSlot 三策略（opt-in 默认）—— 失败时返回 null */
+export function buildRedisSlotMapReading(opts: {
+  now?: () => number
+  redisSlots?: boolean
+  rsmSeed?: number
+  rsmMessages?: number
+  rsmFreeEven?: boolean
+  rsmFreeColocation?: boolean
+  rsmFreeMigrationMin?: boolean
+  rsmRigged?: boolean
+}, now: () => number): Promise<RedisSlotMapReading | null>
+
+/** KI-558：DelayedDoubleDelete/SubscribeBinlog/OutboxPolling 延迟双删（opt-in 默认）—— 失败时返回 null */
+export function buildCacheConsistencyReading(opts: {
+  now?: () => number
+  cacheConsistency?: boolean
+  ccSeed?: number
+  ccWrites?: number
+  ccFreeStalenessWindow?: boolean
+  ccFreeCdcInfra?: boolean
+  ccFreeOutboxWrite?: boolean
+  ccRigged?: boolean
+}, now: () => number): Promise<DelayedDoubleDeleteReading | null>
 
 /** KI-545：ExclusiveConsumer/SharedConsumer/ClusteredConsumer Spring Cloud Stream 绑定三策略真跑读数（三策略 × 四场景 + 三难向量 + verifySpringStreamBindingSoundness 双路交叉印证 + 十一枚真件交叉印证）。 */
 export interface SpringStreamBindingReading {
@@ -1296,6 +1408,10 @@ export interface SystemsBlock {
   redisStream: RedisStreamReading | null
   springVault: SpringVaultReading | null
   /** KI-555·VolatilePrefix/StablePrefix/BudgetedPrefix 三策略（opt-in）—— 前端 .row-pc */
+  /** KI-557：Redis Cluster 哈希槽拓扑（opt-in）—— 前端 .row-rsm */
+  redisSlots: RedisSlotMapReading | null
+  /** KI-558：DelayedDoubleDelete/SubscribeBinlog/OutboxPolling 延迟双删（opt-in）—— 前端 .row-cc */
+  cacheConsistency: DelayedDoubleDeleteReading | null
   promptCache: PromptCacheReading | null
   builtAt: number
 }
@@ -1934,6 +2050,31 @@ export function buildSystems(opts?: {
   tsInfiniteBuffer?: boolean
   tsPerfectFeedback?: boolean
   tsRigged?: boolean
+  /** KI-555：promptCache=false 关闭 PromptCacheReading */
+  promptCache?: boolean
+  pcSeed?: number
+  pcMessages?: number
+  pcBudgetTokens?: number
+  pcFreeStablePrefix?: boolean
+  pcZeroTrimPenalty?: boolean
+  pcUnlimitedBudget?: boolean
+  pcRigged?: boolean
+  /** KI-557：SlotModulo/HashTagSlot/ConsistentSlot 三策略 opt-in */
+  redisSlots?: boolean
+  rsmSeed?: number
+  rsmMessages?: number
+  rsmFreeEven?: boolean
+  rsmFreeColocation?: boolean
+  rsmFreeMigrationMin?: boolean
+  rsmRigged?: boolean
+  /** KI-558：DelayedDoubleDelete/SubscribeBinlog/OutboxPolling 延迟双删对齐 opt-in */
+  cacheConsistency?: boolean
+  ccSeed?: number
+  ccWrites?: number
+  ccFreeStalenessWindow?: boolean
+  ccFreeCdcInfra?: boolean
+  ccFreeOutboxWrite?: boolean
+  ccRigged?: boolean
 }): Promise<SystemsBlock>
 
 /** KI-501：真跑缓存防护三件套（击穿/穿透/雪崩）收敛成前端三面板紧凑读数；单维失败落 null。 */

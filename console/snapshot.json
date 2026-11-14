@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794598608614,
+  "generatedAt": 1794605461773,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1365,12 +1365,12 @@
           "keys": 1,
           "versions": 2,
           "commitLogSize": 1,
-          "now": 1794598608616
+          "now": 1794605461775
         },
         "final": {
           "A": {
             "value": 101,
-            "commitTs": 1794598608616,
+            "commitTs": 1794605461775,
             "tombstone": false
           }
         }
@@ -3646,7 +3646,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794598608614,
+                "lastTimestamp": 1794605461773,
                 "workerId": 1
               },
               "fault": {
@@ -3742,7 +3742,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794598608614,
+                "lastTimestamp": 1794605461773,
                 "workerId": 1
               },
               "fault": {
@@ -3774,7 +3774,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794598608615,
+                "lastTimestamp": 1794605461774,
                 "workerId": 1
               },
               "fault": {
@@ -3806,7 +3806,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794598608614,
+                "lastTimestamp": 1794605461773,
                 "workerId": 1
               },
               "fault": {
@@ -4522,7 +4522,7 @@
         "capacity": 8,
         "perShardCap": 2
       },
-      "builtAt": 1794598608614
+      "builtAt": 1794605461773
     },
     "configConsistency": {
       "config": {
@@ -5020,7 +5020,7 @@
         "burstCount": 12,
         "windowMs": 10000
       },
-      "builtAt": 1794598608614
+      "builtAt": 1794605461773
     },
     "cacheCoherency": {
       "config": {
@@ -5549,7 +5549,7 @@
         "crashAtWrite": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794598608614
+      "builtAt": 1794605461773
     },
     "messageDelivery": {
       "config": {
@@ -6038,10 +6038,10 @@
         "crashAfterSendAt": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794598608614
+      "builtAt": 1794605461773
     },
     "delayQueue": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 518,
         "tasks": 12,
@@ -6068,7 +6068,7 @@
               "id": "allOk",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 47804,
+              "lateMs": 26804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6080,7 +6080,7 @@
               "id": "tickSkew",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 47804,
+              "lateMs": 26804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6092,7 +6092,7 @@
               "id": "farFuture",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 48136,
+              "lateMs": 27136,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6104,7 +6104,7 @@
               "id": "manyCancels",
               "protocol": "TimingWheel",
               "fired": 6,
-              "lateMs": 23858,
+              "lateMs": 16858,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6128,7 +6128,7 @@
               "id": "concurrentWorkers",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 47804,
+              "lateMs": 26804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6139,7 +6139,7 @@
           ],
           "totals": {
             "fired": 54,
-            "lateMs": 215406,
+            "lateMs": 124406,
             "duplicatePickups": 0,
             "lostOnRestart": 6,
             "opUnits": 72
@@ -6375,7 +6375,7 @@
       }
     },
     "retryDlq": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 520,
         "messages": 16,
@@ -6793,7 +6793,7 @@
       }
     },
     "consumerGroup": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 523,
         "consumers": 3,
@@ -7299,7 +7299,7 @@
       }
     },
     "backpressure": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "steps": 48,
         "mu": 2,
@@ -8344,7 +8344,7 @@
       }
     },
     "logCompaction": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 526,
         "ops": 24,
@@ -9405,7 +9405,7 @@
       }
     },
     "bloomFilter": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 527,
         "capacity": 1024,
@@ -10104,7 +10104,7 @@
       }
     },
     "cacheReplacement": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 528,
         "capacity": 16,
@@ -10747,7 +10747,7 @@
       }
     },
     "streamWindow": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 529,
         "windowSize": 100,
@@ -12806,7 +12806,7 @@
       }
     },
     "hyperLogLog": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 530,
         "cardinality": 4096,
@@ -29726,7 +29726,7 @@
       }
     },
     "crdt": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 531,
         "replicaCount": 3,
@@ -30182,7 +30182,7 @@
       }
     },
     "springBatch": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 532,
         "items": 96,
@@ -30621,7 +30621,7 @@
       "rigged": false
     },
     "traceSampling": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 533,
         "items": 64,
@@ -31323,7 +31323,7 @@
       "rigged": false
     },
     "distributedSession": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 535,
         "sessions": 96,
@@ -31679,7 +31679,7 @@
       "rigged": false
     },
     "transactionalOutbox": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 534,
         "items": 96,
@@ -32130,7 +32130,7 @@
       "rigged": false
     },
     "loadBalance": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 536,
         "requests": 96,
@@ -32550,7 +32550,7 @@
       "rigged": false
     },
     "circuitBreaker": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 537,
         "calls": 96,
@@ -33080,7 +33080,7 @@
       "rigged": false
     },
     "llmGateway": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 538,
         "mode": "offline",
@@ -33475,7 +33475,7 @@
       "rigged": false
     },
     "gatewayRouting": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 539,
         "requests": 96,
@@ -33813,7 +33813,7 @@
       "rigged": false
     },
     "idempotentConsumer": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 540,
         "messages": 96,
@@ -34242,7 +34242,7 @@
       "rigged": false
     },
     "consumerRebalance": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 541,
         "partitions": 6,
@@ -34652,7 +34652,7 @@
       "rigged": false
     },
     "priorityQueue": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 542,
         "messages": 96,
@@ -34944,7 +34944,7 @@
       "rigged": false
     },
     "batchStreamJoin": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 543,
         "messages": 96,
@@ -35221,7 +35221,7 @@
       "rigged": false
     },
     "cdcOutboxJoin": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 544,
         "messages": 96,
@@ -35484,7 +35484,7 @@
       "rigged": false
     },
     "springStreamBinding": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 545,
         "messages": 96,
@@ -35745,7 +35745,7 @@
       "rigged": false
     },
     "springFeign": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 546,
         "messages": 96,
@@ -36000,7 +36000,7 @@
       "rigged": false
     },
     "springConfig": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 547,
         "messages": 96,
@@ -36256,7 +36256,7 @@
       "rigged": false
     },
     "springBus": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 548,
         "messages": 96,
@@ -36512,7 +36512,7 @@
       "rigged": false
     },
     "redisPipeline": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 549,
         "messages": 96,
@@ -36768,7 +36768,7 @@
       "rigged": false
     },
     "gatewayRetry": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 550,
         "messages": 96,
@@ -37024,7 +37024,7 @@
       "rigged": false
     },
     "springConsul": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 551,
         "messages": 96,
@@ -37281,7 +37281,7 @@
       "rigged": false
     },
     "redisHa": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 552,
         "messages": 96,
@@ -37538,7 +37538,7 @@
       "rigged": false
     },
     "redisStream": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 553,
         "messages": 96,
@@ -37794,7 +37794,7 @@
       "rigged": false
     },
     "springVault": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 554,
         "messages": 96,
@@ -38050,7 +38050,7 @@
       "rigged": false
     },
     "promptCache": {
-      "builtAt": 1794598608614,
+      "builtAt": 1794605461773,
       "config": {
         "seed": 555,
         "messages": 96,
@@ -38503,6 +38503,779 @@
       },
       "rigged": false
     },
-    "builtAt": 1794598608614
+    "redisSlots": {
+      "builtAt": 1794605461773,
+      "config": {
+        "seed": 557,
+        "messages": 96,
+        "slots": 16384,
+        "nodes": 6,
+        "freeEven": false,
+        "freeColocation": false,
+        "freeMigrationMin": false,
+        "rigged": false
+      },
+      "rows": [
+        {
+          "protocol": "SlotModulo",
+          "scenarios": [
+            {
+              "id": "burstJoins",
+              "messages": 96,
+              "processed": 96,
+              "slotsUsed": 96,
+              "slotMin": 1,
+              "slotMax": 1,
+              "stddev": 0,
+              "fault": "cluster-join"
+            },
+            {
+              "id": "hotTagColocate",
+              "messages": 96,
+              "processed": 96,
+              "slotsUsed": 94,
+              "slotMin": 1,
+              "slotMax": 2,
+              "stddev": 0.1443,
+              "fault": "tag-collision"
+            },
+            {
+              "id": "addShard",
+              "messages": 96,
+              "processed": 96,
+              "slotsUsed": 96,
+              "slotMin": 1,
+              "slotMax": 1,
+              "stddev": 0,
+              "fault": "reshard-migration"
+            },
+            {
+              "id": "cleanRerun",
+              "messages": 96,
+              "processed": 96,
+              "slotsUsed": 96,
+              "slotMin": 1,
+              "slotMax": 1,
+              "stddev": 0,
+              "fault": "rerun-idempotent"
+            }
+          ],
+          "trilemma": {
+            "distributesEvenly": true,
+            "colocationByHashTag": false,
+            "minMigration": false
+          },
+          "metrics": {
+            "totalSlotsUsed": 382,
+            "avgStdDev": 0.0361
+          }
+        },
+        {
+          "protocol": "HashTagSlot",
+          "scenarios": [
+            {
+              "id": "burstJoins",
+              "messages": 96,
+              "processed": 96,
+              "slotsUsed": 24,
+              "slotMin": 4,
+              "slotMax": 4,
+              "stddev": 0,
+              "fault": "cluster-join"
+            },
+            {
+              "id": "hotTagColocate",
+              "messages": 96,
+              "processed": 96,
+              "slotsUsed": 7,
+              "slotMin": 13,
+              "slotMax": 14,
+              "stddev": 0.4518,
+              "fault": "tag-collision"
+            },
+            {
+              "id": "addShard",
+              "messages": 96,
+              "processed": 96,
+              "slotsUsed": 96,
+              "slotMin": 1,
+              "slotMax": 1,
+              "stddev": 0,
+              "fault": "reshard-migration"
+            },
+            {
+              "id": "cleanRerun",
+              "messages": 96,
+              "processed": 96,
+              "slotsUsed": 9,
+              "slotMin": 10,
+              "slotMax": 11,
+              "stddev": 0.4714,
+              "fault": "rerun-idempotent"
+            }
+          ],
+          "trilemma": {
+            "distributesEvenly": true,
+            "colocationByHashTag": true,
+            "minMigration": false
+          },
+          "metrics": {
+            "totalSlotsUsed": 136,
+            "avgStdDev": 0.2308
+          }
+        },
+        {
+          "protocol": "ConsistentSlot",
+          "scenarios": [
+            {
+              "id": "burstJoins",
+              "messages": 96,
+              "processed": 96,
+              "slotsUsed": 96,
+              "slotMin": 1,
+              "slotMax": 1,
+              "stddev": 0,
+              "fault": "cluster-join"
+            },
+            {
+              "id": "hotTagColocate",
+              "messages": 96,
+              "processed": 96,
+              "slotsUsed": 96,
+              "slotMin": 1,
+              "slotMax": 1,
+              "stddev": 0,
+              "fault": "tag-collision"
+            },
+            {
+              "id": "addShard",
+              "messages": 96,
+              "processed": 96,
+              "slotsUsed": 96,
+              "slotMin": 1,
+              "slotMax": 1,
+              "stddev": 0,
+              "fault": "reshard-migration"
+            },
+            {
+              "id": "cleanRerun",
+              "messages": 96,
+              "processed": 96,
+              "slotsUsed": 95,
+              "slotMin": 1,
+              "slotMax": 2,
+              "stddev": 0.1021,
+              "fault": "rerun-idempotent"
+            }
+          ],
+          "trilemma": {
+            "distributesEvenly": false,
+            "colocationByHashTag": false,
+            "minMigration": true
+          },
+          "metrics": {
+            "totalSlotsUsed": 383,
+            "avgStdDev": 0.0255
+          }
+        }
+      ],
+      "vectors": {
+        "SlotModulo": "100",
+        "HashTagSlot": "110",
+        "ConsistentSlot": "001"
+      },
+      "verdict": {
+        "vectors": {
+          "SlotModulo": "100",
+          "HashTagSlot": "110",
+          "ConsistentSlot": "001"
+        },
+        "noUniversalWinner": true,
+        "trilemmaDistinguishes": true,
+        "noStrategyWinsAll": true,
+        "vectorFromTrilemma": true,
+        "rigged": false,
+        "rigged_pkg_flags": {
+          "freeEven": false,
+          "freeColocation": false,
+          "freeMigrationMin": false
+        },
+        "riggedConvergenceCollapsed": false
+      },
+      "noUniversalWinner": true,
+      "trilemmaDistinguishes": true,
+      "causalLocks": {
+        "crc16DistributionCausallyUnerasable": true,
+        "hashTagBindingCausallyUnerasable": true,
+        "slotMigrationFloorCausallyUnerasable": true,
+        "causalLocksAllHold": true,
+        "probes": {
+          "slotsCovered": 1024,
+          "crcSampleCount": 1024,
+          "tagSlots": 1,
+          "forcedMigrationSlots": 8192
+        }
+      },
+      "crosscheck": {
+        "evidence": {
+          "routerMoved": 15,
+          "routerTracked": 80,
+          "ringNodes": 4,
+          "ringShardsUsed": 4,
+          "walLines": 80,
+          "walReplayed": 80,
+          "notices": 12,
+          "busListeners": 1,
+          "redisBitmapHits": 96,
+          "redisSlots": 96,
+          "poolCreated": 2,
+          "poolReused": 1,
+          "bucketAllowed": 3,
+          "bucketRejected": 4,
+          "heapFired": 3,
+          "heapPending": 0,
+          "counterSum": 2080,
+          "counterFalseSharing": 56,
+          "jitterSpread": 2.0114,
+          "remapConsistentRate": 0.22,
+          "remapModuloRate": 0.495
+        },
+        "soundness": {
+          "laneA": {
+            "tagColocationMismatches": 0,
+            "tags": 7
+          },
+          "laneB": {
+            "slotsCovered": 96,
+            "evenlyDistributed": true
+          },
+          "baselineHolds": true,
+          "holds": true,
+          "nontrivial": true,
+          "falsifiable": true,
+          "tamper": {
+            "wrongCrcSeed": {
+              "holds": false,
+              "reason": "wrongCrcSeed：CRC 初值被错位（XOR=0xFFFF）⇒ slot 表彻底漂移，同 tag 键也不再同槽（mismatches=0）⇒ holds 真翻 false"
+            },
+            "missingBrace": {
+              "holds": false,
+              "reason": "missingBrace：所有 `{}` 被剥掉 ⇒ hash tag 退化为整条 key，tagColocationMismatches=0 ⇒ holds 真翻 false"
+            },
+            "forcedModulo": {
+              "holds": false,
+              "reason": "forcedModulo：强制整条 key 取模 ⇒ 没有 `{}` 也用不着提取，tagColocationMismatches=0 ⇒ holds 真翻 false"
+            }
+          },
+          "events": 96
+        }
+      },
+      "rigged": false
+    },
+    "cacheConsistency": {
+      "builtAt": 1794605461773,
+      "config": {
+        "seed": 558,
+        "writes": 24,
+        "ttlMs": 5000,
+        "doubleDeleteDelayMs": 500,
+        "cdcPollMs": 50,
+        "outboxPollMs": 200,
+        "lagMs": 0,
+        "scenarios": [
+          "steadyWrite",
+          "racingRead",
+          "crashAfterWrite",
+          "subscriberLag",
+          "cleanRerun"
+        ],
+        "rigged": false,
+        "freeStalenessWindow": false,
+        "freeCdcInfra": false,
+        "freeOutboxWrite": false
+      },
+      "rows": [
+        {
+          "protocol": "DelayedDoubleDelete",
+          "scenarios": [
+            {
+              "id": "steadyWrite",
+              "protocol": "DelayedDoubleDelete",
+              "writes": 25,
+              "reads": 25,
+              "staleReads": 0,
+              "readYourWritesRate": 1,
+              "extraDurableWrites": 0,
+              "infraCalls": 0,
+              "invalidations": 0,
+              "maxStaleMs": 0,
+              "note": "写后立刻读：读己之写成立与否 + 写路径额外持久化/外部调用开销"
+            },
+            {
+              "id": "racingRead",
+              "protocol": "DelayedDoubleDelete",
+              "staleAfterRace": true,
+              "staleWindowMs": 0,
+              "clearedAfterMechanism": true,
+              "staleReads": 1,
+              "invalidations": 2,
+              "extraDurableWrites": 0,
+              "infraCalls": 0,
+              "maxStaleMs": 0,
+              "note": "cache-aside 竞态：读抓旧快照 → 写提交删缓存 → 读写回旧快照 ⇒ 陈旧；机制跑完后是否被清掉"
+            },
+            {
+              "id": "crashAfterWrite",
+              "protocol": "DelayedDoubleDelete",
+              "staleAfterRace": true,
+              "staleSurvivedCrash": true,
+              "staleWindowMs": 0,
+              "invalidations": 0,
+              "invalidationIntent": "volatile-timer",
+              "extraDurableWrites": 0,
+              "infraCalls": 0,
+              "note": "陈旧写回后崩溃：易失失效意图随进程消失、持久记录不丢 ⇒ 陈旧是否被清掉"
+            },
+            {
+              "id": "subscriberLag",
+              "protocol": "DelayedDoubleDelete",
+              "lagMs": 300,
+              "staleAfterRace": true,
+              "staleWindowMs": 0,
+              "clearedAfterMechanism": true,
+              "maxStaleMs": 0,
+              "invalidations": 2,
+              "extraDurableWrites": 0,
+              "infraCalls": 0,
+              "note": "下游滞后 300ms ⇒ 陈旧窗口被拉长（窗口不是免费的）"
+            },
+            {
+              "id": "cleanRerun",
+              "protocol": "DelayedDoubleDelete",
+              "rerunIdentical": true,
+              "writes": 25,
+              "reads": 25,
+              "staleReads": 0,
+              "readYourWritesRate": 1,
+              "extraDurableWrites": 0,
+              "infraCalls": 0,
+              "invalidations": 0,
+              "note": "同 seed 连跑两次逐字一致 ⇒ 可复现（真比较字符串，不是写死的 true）"
+            }
+          ],
+          "trilemma": {
+            "boundedStaleness": false,
+            "infraFree": true,
+            "writePathLight": true
+          },
+          "metrics": {
+            "totalWrites": 50,
+            "totalReads": 50,
+            "totalStaleReads": 1,
+            "totalExtraDurableWrites": 0,
+            "totalInfraCalls": 0,
+            "totalInvalidations": 4,
+            "readYourWritesRate": 1,
+            "staleSurvivedCrash": true
+          }
+        },
+        {
+          "protocol": "SubscribeBinlog",
+          "scenarios": [
+            {
+              "id": "steadyWrite",
+              "protocol": "SubscribeBinlog",
+              "writes": 25,
+              "reads": 25,
+              "staleReads": 20,
+              "readYourWritesRate": 0.1667,
+              "extraDurableWrites": 0,
+              "infraCalls": 4,
+              "invalidations": 21,
+              "maxStaleMs": 0,
+              "note": "写后立刻读：读己之写成立与否 + 写路径额外持久化/外部调用开销"
+            },
+            {
+              "id": "racingRead",
+              "protocol": "SubscribeBinlog",
+              "staleAfterRace": true,
+              "staleWindowMs": 0,
+              "clearedAfterMechanism": true,
+              "staleReads": 1,
+              "invalidations": 2,
+              "extraDurableWrites": 0,
+              "infraCalls": 1,
+              "maxStaleMs": 0,
+              "note": "cache-aside 竞态：读抓旧快照 → 写提交删缓存 → 读写回旧快照 ⇒ 陈旧；机制跑完后是否被清掉"
+            },
+            {
+              "id": "crashAfterWrite",
+              "protocol": "SubscribeBinlog",
+              "staleAfterRace": true,
+              "staleSurvivedCrash": false,
+              "staleWindowMs": 0,
+              "invalidations": 2,
+              "invalidationIntent": "durable-record",
+              "extraDurableWrites": 0,
+              "infraCalls": 1,
+              "note": "陈旧写回后崩溃：易失失效意图随进程消失、持久记录不丢 ⇒ 陈旧是否被清掉"
+            },
+            {
+              "id": "subscriberLag",
+              "protocol": "SubscribeBinlog",
+              "lagMs": 300,
+              "staleAfterRace": true,
+              "staleWindowMs": 0,
+              "clearedAfterMechanism": true,
+              "maxStaleMs": 0,
+              "invalidations": 2,
+              "extraDurableWrites": 0,
+              "infraCalls": 1,
+              "note": "下游滞后 300ms ⇒ 陈旧窗口被拉长（窗口不是免费的）"
+            },
+            {
+              "id": "cleanRerun",
+              "protocol": "SubscribeBinlog",
+              "rerunIdentical": true,
+              "writes": 25,
+              "reads": 25,
+              "staleReads": 20,
+              "readYourWritesRate": 0.1667,
+              "extraDurableWrites": 0,
+              "infraCalls": 4,
+              "invalidations": 21,
+              "note": "同 seed 连跑两次逐字一致 ⇒ 可复现（真比较字符串，不是写死的 true）"
+            }
+          ],
+          "trilemma": {
+            "boundedStaleness": true,
+            "infraFree": false,
+            "writePathLight": true
+          },
+          "metrics": {
+            "totalWrites": 50,
+            "totalReads": 50,
+            "totalStaleReads": 41,
+            "totalExtraDurableWrites": 0,
+            "totalInfraCalls": 11,
+            "totalInvalidations": 48,
+            "readYourWritesRate": 0.1667,
+            "staleSurvivedCrash": false
+          }
+        },
+        {
+          "protocol": "OutboxPolling",
+          "scenarios": [
+            {
+              "id": "steadyWrite",
+              "protocol": "OutboxPolling",
+              "writes": 25,
+              "reads": 25,
+              "staleReads": 23,
+              "readYourWritesRate": 0.0417,
+              "extraDurableWrites": 25,
+              "infraCalls": 0,
+              "invalidations": 21,
+              "maxStaleMs": 0,
+              "note": "写后立刻读：读己之写成立与否 + 写路径额外持久化/外部调用开销"
+            },
+            {
+              "id": "racingRead",
+              "protocol": "OutboxPolling",
+              "staleAfterRace": true,
+              "staleWindowMs": 0,
+              "clearedAfterMechanism": true,
+              "staleReads": 1,
+              "invalidations": 2,
+              "extraDurableWrites": 2,
+              "infraCalls": 0,
+              "maxStaleMs": 0,
+              "note": "cache-aside 竞态：读抓旧快照 → 写提交删缓存 → 读写回旧快照 ⇒ 陈旧；机制跑完后是否被清掉"
+            },
+            {
+              "id": "crashAfterWrite",
+              "protocol": "OutboxPolling",
+              "staleAfterRace": true,
+              "staleSurvivedCrash": false,
+              "staleWindowMs": 0,
+              "invalidations": 2,
+              "invalidationIntent": "durable-record",
+              "extraDurableWrites": 2,
+              "infraCalls": 0,
+              "note": "陈旧写回后崩溃：易失失效意图随进程消失、持久记录不丢 ⇒ 陈旧是否被清掉"
+            },
+            {
+              "id": "subscriberLag",
+              "protocol": "OutboxPolling",
+              "lagMs": 300,
+              "staleAfterRace": true,
+              "staleWindowMs": 0,
+              "clearedAfterMechanism": true,
+              "maxStaleMs": 0,
+              "invalidations": 2,
+              "extraDurableWrites": 2,
+              "infraCalls": 0,
+              "note": "下游滞后 300ms ⇒ 陈旧窗口被拉长（窗口不是免费的）"
+            },
+            {
+              "id": "cleanRerun",
+              "protocol": "OutboxPolling",
+              "rerunIdentical": true,
+              "writes": 25,
+              "reads": 25,
+              "staleReads": 23,
+              "readYourWritesRate": 0.0417,
+              "extraDurableWrites": 25,
+              "infraCalls": 0,
+              "invalidations": 21,
+              "note": "同 seed 连跑两次逐字一致 ⇒ 可复现（真比较字符串，不是写死的 true）"
+            }
+          ],
+          "trilemma": {
+            "boundedStaleness": true,
+            "infraFree": true,
+            "writePathLight": false
+          },
+          "metrics": {
+            "totalWrites": 50,
+            "totalReads": 50,
+            "totalStaleReads": 47,
+            "totalExtraDurableWrites": 56,
+            "totalInfraCalls": 0,
+            "totalInvalidations": 48,
+            "readYourWritesRate": 0.0417,
+            "staleSurvivedCrash": false
+          }
+        }
+      ],
+      "vectors": {
+        "DelayedDoubleDelete": "011",
+        "SubscribeBinlog": "101",
+        "OutboxPolling": "110"
+      },
+      "verdict": {
+        "vectors": {
+          "DelayedDoubleDelete": "011",
+          "SubscribeBinlog": "101",
+          "OutboxPolling": "110"
+        },
+        "noUniversalWinner": true,
+        "trilemmaDistinguishes": true,
+        "noStrategyWinsAll": true,
+        "vectorFromTrilemma": true,
+        "ddbStillVolatile": true,
+        "cdcStillNeedsInfra": true,
+        "outboxStillWrites": true,
+        "rigged_pkg": false,
+        "rigged_pkg_flags": {
+          "rigged": false,
+          "freeStalenessWindow": false,
+          "freeCdcInfra": false,
+          "freeOutboxWrite": false
+        },
+        "riggedConvergenceCollapsed": false,
+        "freeStalenessWindowHitsOnlyDdb": true,
+        "freeCdcInfraHitsOnlyCdc": true,
+        "freeOutboxWriteHitsOnlyOutbox": true
+      },
+      "noUniversalWinner": true,
+      "trilemmaDistinguishes": true,
+      "noStrategyWinsAll": true,
+      "causalLocks": {
+        "volatileInvalidationIntentCausallyUnerasable": true,
+        "cdcOffsetDependencyCausallyUnerasable": true,
+        "outboxSameTransactionCausallyUnerasable": true,
+        "causalLocksAllHold": true,
+        "probes": {
+          "ddbIntent": "volatile-timer",
+          "ddbStaleSurvivedCrash": true,
+          "cdcStaleSurvivedCrash": false,
+          "outboxStaleSurvivedCrash": false,
+          "offsetResetInvalidations": 0,
+          "outboxExtraDurableWrites": 25,
+          "outboxNotAtomicInvalidations": 0
+        }
+      },
+      "crosscheck": {
+        "evidence": {
+          "routerMoved": 20,
+          "routerTracked": 80,
+          "ringNodes": 4,
+          "ringShardsUsed": 4,
+          "walLines": 80,
+          "walReplayed": 80,
+          "notices": 12,
+          "busListeners": 1,
+          "redisBitmapHits": 96,
+          "redisSlots": 96,
+          "poolCreated": 2,
+          "poolReused": 1,
+          "bucketAllowed": 3,
+          "bucketRejected": 4,
+          "heapFired": 3,
+          "heapPending": 0,
+          "counterSum": 2080,
+          "counterFalseSharing": 56,
+          "jitterSpread": 2.1267,
+          "remapConsistentRate": 0.27,
+          "remapModuloRate": 0.535
+        },
+        "soundness": {
+          "laneA": {
+            "DelayedDoubleDelete": {
+              "holds": true,
+              "nontrivial": true,
+              "mechanismRan": true,
+              "invalidatedAfterMechanism": true,
+              "staleAfterRace": true,
+              "staleWindowMs": 0,
+              "invalidations": 2,
+              "clearedAfterMechanism": true
+            },
+            "SubscribeBinlog": {
+              "holds": true,
+              "nontrivial": true,
+              "mechanismRan": true,
+              "invalidatedAfterMechanism": true,
+              "staleAfterRace": true,
+              "staleWindowMs": 0,
+              "invalidations": 2,
+              "clearedAfterMechanism": true
+            },
+            "OutboxPolling": {
+              "holds": true,
+              "nontrivial": true,
+              "mechanismRan": true,
+              "invalidatedAfterMechanism": true,
+              "staleAfterRace": true,
+              "staleWindowMs": 0,
+              "invalidations": 2,
+              "clearedAfterMechanism": true
+            }
+          },
+          "laneB": {
+            "deleteLost": {
+              "DelayedDoubleDelete": {
+                "holds": false,
+                "nontrivial": true,
+                "mechanismRan": false,
+                "invalidatedAfterMechanism": false,
+                "staleAfterRace": true,
+                "staleWindowMs": 0,
+                "invalidations": 0,
+                "clearedAfterMechanism": false
+              },
+              "SubscribeBinlog": {
+                "holds": true,
+                "nontrivial": true,
+                "mechanismRan": true,
+                "invalidatedAfterMechanism": true,
+                "staleAfterRace": true,
+                "staleWindowMs": 0,
+                "invalidations": 2,
+                "clearedAfterMechanism": true
+              },
+              "OutboxPolling": {
+                "holds": true,
+                "nontrivial": true,
+                "mechanismRan": true,
+                "invalidatedAfterMechanism": true,
+                "staleAfterRace": true,
+                "staleWindowMs": 0,
+                "invalidations": 2,
+                "clearedAfterMechanism": true
+              }
+            },
+            "offsetReset": {
+              "DelayedDoubleDelete": {
+                "holds": true,
+                "nontrivial": true,
+                "mechanismRan": true,
+                "invalidatedAfterMechanism": true,
+                "staleAfterRace": true,
+                "staleWindowMs": 0,
+                "invalidations": 2,
+                "clearedAfterMechanism": true
+              },
+              "SubscribeBinlog": {
+                "holds": false,
+                "nontrivial": true,
+                "mechanismRan": false,
+                "invalidatedAfterMechanism": false,
+                "staleAfterRace": true,
+                "staleWindowMs": 0,
+                "invalidations": 0,
+                "clearedAfterMechanism": false
+              },
+              "OutboxPolling": {
+                "holds": true,
+                "nontrivial": true,
+                "mechanismRan": true,
+                "invalidatedAfterMechanism": true,
+                "staleAfterRace": true,
+                "staleWindowMs": 0,
+                "invalidations": 2,
+                "clearedAfterMechanism": true
+              }
+            },
+            "outboxNotAtomic": {
+              "DelayedDoubleDelete": {
+                "holds": true,
+                "nontrivial": true,
+                "mechanismRan": true,
+                "invalidatedAfterMechanism": true,
+                "staleAfterRace": true,
+                "staleWindowMs": 0,
+                "invalidations": 2,
+                "clearedAfterMechanism": true
+              },
+              "SubscribeBinlog": {
+                "holds": true,
+                "nontrivial": true,
+                "mechanismRan": true,
+                "invalidatedAfterMechanism": true,
+                "staleAfterRace": true,
+                "staleWindowMs": 0,
+                "invalidations": 2,
+                "clearedAfterMechanism": true
+              },
+              "OutboxPolling": {
+                "holds": false,
+                "nontrivial": true,
+                "mechanismRan": false,
+                "invalidatedAfterMechanism": false,
+                "staleAfterRace": true,
+                "staleWindowMs": 0,
+                "invalidations": 0,
+                "clearedAfterMechanism": false
+              }
+            }
+          },
+          "baselineHolds": true,
+          "holds": true,
+          "nontrivial": true,
+          "falsifiable": true,
+          "tamper": {
+            "deleteLost": {
+              "holds": false,
+              "targeted": true,
+              "reason": "deleteLost：延迟双删的第二次删除被抹掉 ⇒ 陈旧值永不被清（invalidations=0）⇒ holds 真翻 false；另两家不受影响"
+            },
+            "offsetReset": {
+              "holds": false,
+              "targeted": true,
+              "reason": "offsetReset：CDC 位点被重置到最新 ⇒ 中间事件永久跳过 ⇒ 订阅的失效意图丢失 ⇒ holds 真翻 false"
+            },
+            "outboxNotAtomic": {
+              "holds": false,
+              "targeted": true,
+              "reason": "outboxNotAtomic：outbox 行不在业务写的同一事务 ⇒ 业务写成功但永不失效 ⇒ holds 真翻 false"
+            }
+          }
+        }
+      },
+      "rigged": false
+    },
+    "builtAt": 1794605461773
   }
 }

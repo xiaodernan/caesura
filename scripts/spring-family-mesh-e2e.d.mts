@@ -791,6 +791,80 @@ export function runMeshE2E(opts?: any): {
       causalLocks: { prefixAffinityCausallyUnerasable: boolean; tokenBudgetCausallyUnerasable: boolean; factRankCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
       crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
     } | null
+    /** KI-557 Redis Cluster 哈希槽拓扑教学件（SlotModulo=100 / HashTagSlot=110 / ConsistentSlot=001）——缺 opt-in redisSlots 为 null */
+    redisSlotsSnapshot: {
+      config: Record<string, any>
+      rows: Array<{
+        protocol: string
+        scenarios: Array<{
+          id: string; messages: number; processed: number
+          slotsUsed: number; slotMin: number; slotMax: number; stddev: number; fault: string
+        }>
+        trilemma: { distributesEvenly: boolean; colocationByHashTag: boolean; minMigration: boolean }
+        metrics: { totalSlotsUsed: number; avgStdDev: number }
+      }>
+      vectors: Record<string, string>
+      noUniversalWinner: boolean
+      trilemmaDistinguishes: boolean
+      builtAt: number
+      rigged: boolean
+      verdict: Record<string, any>
+      causalLocks: { crc16DistributionCausallyUnerasable: boolean; hashTagBindingCausallyUnerasable: boolean; slotMigrationFloorCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
+      crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; baselineHolds?: boolean; falsifiable?: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+    } | null
+    /** KI-558 DelayedDoubleDelete / SubscribeBinlog / OutboxPolling 延迟双删对齐——缺 opt-in cacheConsistency 为 null */
+    cacheConsistencySnapshot: {
+      config: Record<string, any>
+      rows: Array<{
+        protocol: string
+        scenarios: Array<{
+          id: string
+          protocol: string
+          writes?: number
+          reads?: number
+          staleReads?: number
+          readYourWritesRate?: number
+          extraDurableWrites?: number
+          infraCalls?: number
+          invalidations?: number
+          staleAfterRace?: boolean
+          staleWindowMs?: number
+          clearedAfterMechanism?: boolean
+          staleSurvivedCrash?: boolean
+          invalidationIntent?: string
+          lagMs?: number
+          maxStaleMs?: number
+          rerunIdentical?: boolean
+          note: string
+        }>
+        trilemma: { boundedStaleness: boolean; infraFree: boolean; writePathLight: boolean }
+        metrics: {
+          totalWrites: number
+          totalReads: number
+          totalStaleReads: number
+          totalExtraDurableWrites: number
+          totalInfraCalls: number
+          totalInvalidations: number
+          readYourWritesRate: number
+          staleSurvivedCrash: boolean
+        }
+      }>
+      vectors: Record<string, string>
+      noUniversalWinner: boolean
+      trilemmaDistinguishes: boolean
+      noStrategyWinsAll: boolean
+      builtAt: number
+      rigged: boolean
+      verdict: Record<string, any>
+      causalLocks: {
+        volatileInvalidationIntentCausallyUnerasable: boolean
+        cdcOffsetDependencyCausallyUnerasable: boolean
+        outboxSameTransactionCausallyUnerasable: boolean
+        causalLocksAllHold: boolean
+        probes?: Record<string, any>
+      }
+      crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; baselineHolds?: boolean; falsifiable?: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+    } | null
     /** KI-553：Redis Stream 三策略教学件（PubSub=010 / PersistentQueue=100 / StreamLog=110）——缺省 redisStream 为 null */
     redisStreamSnapshot: {
       config: Record<string, any>

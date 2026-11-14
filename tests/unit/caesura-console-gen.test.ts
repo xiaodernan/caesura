@@ -1974,4 +1974,43 @@ describe('caesura-console-gen (KI-495)', () => {
     const twentysix = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt, full.bloomFilter?.builtAt, full.cacheReplacement?.builtAt, full.streamWindow?.builtAt, full.hyperLogLog?.builtAt, full.crdt?.builtAt, full.springBatch?.builtAt, full.traceSampling?.builtAt, full.distributedSession?.builtAt, full.transactionalOutbox?.builtAt, full.loadBalance?.builtAt, full.circuitBreaker?.builtAt, full.llmGateway?.builtAt, full.gatewayRouting?.builtAt, full.idempotentConsumer?.builtAt, full.consumerRebalance?.builtAt, full.priorityQueue?.builtAt, full.batchStreamJoin?.builtAt, full.cdcOutboxJoin?.builtAt, full.springStreamBinding?.builtAt]
     expect(twentysix.every((x) => x === 545500)).toBe(true)
   })
+
+  it('㉒p-cache-consistency buildCacheConsistencyReading 真跑：cc* 注入生效 / cacheConsistency:false 关闭 / rigged 不硬造 111 / 双路自证 + 十一真件 / 时钟同源（KI-558）', async () => {
+    const { buildCacheConsistencyReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
+    const now = () => 557000
+    const g = (await buildCacheConsistencyReading({}, now))!
+    expect(g).not.toBe(null)
+    expect(g.builtAt).toBe(557000)
+    expect(g.rows.length).toBe(3)
+    expect(g.config.writes).toBe(24)
+    expect(g.vectors).toEqual({ DelayedDoubleDelete: '011', SubscribeBinlog: '101', OutboxPolling: '110' })
+    expect(g.rigged).toBe(false)
+    expect(g.noUniversalWinner).toBe(true)
+    expect(g.noStrategyWinsAll).toBe(true)
+    expect(g.verdict.vectorFromTrilemma).toBe(true)
+    expect(g.causalLocks.causalLocksAllHold).toBe(true)
+    expect(g.causalLocks.volatileInvalidationIntentCausallyUnerasable).toBe(true)
+    expect(g.causalLocks.cdcOffsetDependencyCausallyUnerasable).toBe(true)
+    expect(g.causalLocks.outboxSameTransactionCausallyUnerasable).toBe(true)
+    const tuned = (await buildCacheConsistencyReading({ ccSeed: 12, ccWrites: 8 }, now))!
+    expect(tuned.config.seed).toBe(12)
+    expect(tuned.config.writes).toBe(8)
+    const cp = g.crosscheck.soundness
+    expect(cp.holds).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.tamper.deleteLost.holds).toBe(false)
+    expect(cp.tamper.offsetReset.holds).toBe(false)
+    expect(cp.tamper.outboxNotAtomic.holds).toBe(false)
+    expect(Object.keys(g.crosscheck.evidence).length).toBe(21)
+    // 单开关只顶高自己那一家
+    const onlyCdc = (await buildCacheConsistencyReading({ ccFreeCdcInfra: true }, now))!
+    expect(onlyCdc.vectors.SubscribeBinlog).toBe('111')
+    expect(onlyCdc.vectors.DelayedDoubleDelete).toBe('011')
+    expect(onlyCdc.vectors.OutboxPolling).toBe('110')
+    const off = await buildSystems({ now, cacheConsistency: false })
+    expect(off.cacheConsistency).toBe(null)
+    expect(off.promptCache).not.toBe(null)
+    const full = await buildSystems({ now })
+    expect(full.cacheConsistency?.builtAt).toBe(557000)
+  })
 })

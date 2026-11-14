@@ -237,6 +237,12 @@ export function runMeshE2E(opts = {}) {
     // KI-555：前缀亲和 prompt-cache 教学件（promptCache=true 挂载——VolatilePrefix/StablePrefix/BudgetedPrefix 三难 [cacheHitRate/infoFidelity/tokenEfficiency] + verifyPromptCacheSoundness 双路自证 + 十一件 21 物证）。
     promptCache: opts.promptCache,
     pcNow: opts.pcNow,
+    // KI-557 Redis Cluster 哈希槽拓扑教学件（SlotModulo=100 / HashTagSlot=110 / ConsistentSlot=001） + verifySlotMapSoundness 双路自证 + 三路篡改 + 三因果锁 + 21 物证
+    redisSlots: opts.redisSlots,
+    rsmNow: opts.rsmNow,
+    // KI-558：MQ 驱动的缓存一致性三策略（cacheConsistency=true 挂载——DelayedDoubleDelete/SubscribeBinlog/OutboxPolling 三难 [boundedStaleness/infraFree/writePathLight] + verifyCacheConsistencySoundness 双路自证 + 十一真件 21 键）。
+    cacheConsistency: opts.cacheConsistency,
+    ccNow: opts.ccNow,
     // KI-544：CDC outbox join 教学件（cdcOutboxJoin=true 装配；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异）+ verifyCdcOutboxJoinSoundness 双路自证 + 十一真件 21 键交叉印证，不改调用路径）。
     // 注入时钟用 cojNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/reb/pq/bsj/coj/rdq/dld 已占用前缀）。
     cdcOutboxJoin: opts.cdcOutboxJoin,
@@ -415,6 +421,8 @@ export function runMeshE2E(opts = {}) {
         redisStreamSnapshot: status.redisStream ?? null,
         springVaultSnapshot: status.springVault ?? null,
         promptCacheSnapshot: status.promptCache ?? null,
+        redisSlotsSnapshot: status.redisSlots ?? null,
+        cacheConsistencySnapshot: status.cacheConsistency ?? null,
         springStreamBindingSnapshot: status.springStreamBinding ?? null,
         cdcOutboxJoinSnapshot: status.cdcOutboxJoin ?? null,
         traceSamplingSnapshot: status.traceSampling ?? null,
@@ -1023,7 +1031,20 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         crosscheck: r.springVaultSnapshot.crosscheck,
         causalLocks: r.springVaultSnapshot.causalLocks,
         verdict: r.springVaultSnapshot.verdict,
-      } : null,
+      } : null,       redisSlots: r.redisSlotsSnapshot ? {
+         strategies: r.redisSlotsSnapshot.rows.map((row) => ({
+           protocol: row.protocol,
+           scenarios: row.scenarios,
+           trilemma: row.trilemma,
+           metrics: row.metrics,
+         })),
+         trilemmaVectors: r.redisSlotsSnapshot.vectors,
+         noUniversalWinner: r.redisSlotsSnapshot.verdict.noUniversalWinner,
+         crosscheck: r.redisSlotsSnapshot.crosscheck,
+         causalLocks: r.redisSlotsSnapshot.causalLocks,
+         verdict: r.redisSlotsSnapshot.verdict,
+       } : null,
+
       promptCache: r.promptCacheSnapshot ? {
         strategies: r.promptCacheSnapshot.rows.map((row) => ({
           strategy: row.protocol,
@@ -1036,6 +1057,19 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         crosscheck: r.promptCacheSnapshot.crosscheck,
         causalLocks: r.promptCacheSnapshot.causalLocks,
         verdict: r.promptCacheSnapshot.verdict,
+      } : null,
+      cacheConsistency: r.cacheConsistencySnapshot ? {
+        strategies: r.cacheConsistencySnapshot.rows.map((row) => ({
+          strategy: row.protocol,
+          ladder: row.scenarios.map((sc) => sc.id + ':' + (sc.staleSurvivedCrash === true ? 'STALE' : 'CLEAN')).join(' | '),
+          metrics: row.metrics, trilemma: row.trilemma,
+        })),
+        trilemmaVectors: Object.fromEntries(r.cacheConsistencySnapshot.rows.map((row) => [row.protocol,
+          String(Number(row.trilemma.boundedStaleness)) + String(Number(row.trilemma.infraFree)) + String(Number(row.trilemma.writePathLight))])),
+        noUniversalWinner: r.cacheConsistencySnapshot.verdict.noUniversalWinner,
+        crosscheck: r.cacheConsistencySnapshot.crosscheck,
+        causalLocks: r.cacheConsistencySnapshot.causalLocks,
+        verdict: r.cacheConsistencySnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

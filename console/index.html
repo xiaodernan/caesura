@@ -933,6 +933,24 @@
     </article>
   </section>
 
+  <!-- 第五十一维 · MQ 驱动的缓存一致性三策略（KI-557） -->
+  <section class="row row-cc">
+    <article class="panel panel-cc">
+      <div class="panel-head"><h2>第五十一维 · DelayedDoubleDelete / SubscribeBinlog / OutboxPolling —— MQ 驱动的缓存一致性三策略</h2><span class="hint">DelayedDoubleDelete=011（零外部设施 · 写路径不阻塞 · 失效意图是**进程内易失定时器**，崩溃即丢）/ SubscribeBinlog=101（陈旧窗口最小 · 但需一套 CDC 基础设施）/ OutboxPolling=110（零外部设施 · 失效意图持久 · 但写路径必须**多写一张表**）——默认向量 011/101/110，三家各赢两维、输一维，无一 111</span></div>
+      <div class="cc-matrix" id="cc-matrix"></div>
+      <div class="cc-ladder" id="cc-ladder"></div>
+      <p class="note" id="cc-matrix-note">…</p>
+    </article>
+    <article class="panel panel-cc">
+      <div class="panel-head"><h2>缓存一致性三维向量（boundedStaleness · infraFree · writePathLight）· 双路自证 + 三路篡改 + 因果锁</h2><span class="hint">三轴位序 [boundedStaleness / infraFree / writePathLight]，三位**全部由模拟器现算**（零查表）：boundedStaleness 判据 = 崩溃后陈旧值是否**仍被清掉**；infraFree 判据 = 外部设施调用累计是否为 0；writePathLight 判据 = 业务写之外的额外持久化写是否为 0。verifyCacheConsistencySoundness 双路自证（lane A 干净基线 vs lane B 三路篡改：deleteLost 双删丢失 / offsetReset 位点重置 / outboxNotAtomic 非原子事务 —— 真喂回 hold=false）；三因果锁 volatileIntent / cdcOffset / outboxSameTxn</span></div>
+      <div class="cc-trilemma" id="cc-trilemma"></div>
+      <div class="cc-verif" id="cc-verif"></div>
+      <div class="cc-crosscheck" id="cc-crosscheck"></div>
+      <div class="cc-probes" id="cc-probes"></div>
+      <p class="note" id="cc-trilemma-note">…</p>
+    </article>
+  </section>
+
 </main>
 
 <footer class="footer">
