@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "3da0317e3199a353284abd1431cc8e7202c01c42",
+  "head": "d7abe9110e49491b84030f3b5cb868d6c7490ca3",
   "branch": "master",
-  "subject": "docs(tutorial): 前端美学下沉一层 —— art-direction 同形状的入门页视觉升级",
-  "date": "2026-11-15T00:46:02+08:00",
+  "subject": "docs(lore): NEW-LANDS / EPIC-VI 落地登记 — 风钟海岸数据级首落，Boss/NPC/台词仍 deferred",
+  "date": "2026-11-15T00:50:59+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/3da0317e3199a353284abd1431cc8e7202c01c42",
+    "url": "https://github.com/xiaodernan/caesura/commit/d7abe9110e49491b84030f3b5cb868d6c7490ca3",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
