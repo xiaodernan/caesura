@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "23945e519c37ea12ee3b51c369eab06a29d880ab",
+  "head": "8f5f9ec4bb4695a11e06da735d6a577bfb9a8047",
   "branch": "master",
-  "subject": "docs(player-guide): 双语新增「2.1 · 镜头与鼠标 Y 轴反转 / Camera & mouse Y-invert」",
-  "date": "2026-11-14T23:58:46+08:00",
+  "subject": "feat(content): 《余响归位》第七条任务线 + 任务步 labelKey 双语闸（F-99 / F-100）",
+  "date": "2026-11-15T00:12:11+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/23945e519c37ea12ee3b51c369eab06a29d880ab",
+    "url": "https://github.com/xiaodernan/caesura/commit/8f5f9ec4bb4695a11e06da735d6a577bfb9a8047",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
