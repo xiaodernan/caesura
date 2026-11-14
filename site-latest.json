@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "b00f613391598f8cd71f4ec170fb3ff3759fc9ad",
+  "head": "45eb835ac84638d063bc189617a936382b70eba2",
   "branch": "master",
-  "subject": "feat(input): default invertMouseY=true — mouse up = look UP / mouse down = look DOWN (FPS convention)",
-  "date": "2026-11-14T23:18:09+08:00",
+  "subject": "test(settings): settings-persistence pin nine gameplay slots — w2.settings.get() / stored.payload match v14 + invertMouseY:true",
+  "date": "2026-11-14T23:25:50+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/b00f613391598f8cd71f4ec170fb3ff3759fc9ad",
+    "url": "https://github.com/xiaodernan/caesura/commit/45eb835ac84638d063bc189617a936382b70eba2",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
