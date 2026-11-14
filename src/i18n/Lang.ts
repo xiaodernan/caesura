@@ -462,6 +462,7 @@ const ZH: Record<string, string> = {
   'ui.notify.firstQuestHint': '休垒的钟声守在等你 —— 找她领第一件委托（发光的调音桩可以先加点）',
   'ui.notify.rank': '音级 ${rank} · 遗响 ${xp}',
   'ui.notify.unspent': ' · 未分配点 ${n}',
+  'ui.hud.bindsMove': '移动',
 }
 
 const EN: Record<string, string> = {
@@ -911,6 +912,7 @@ const EN: Record<string, string> = {
   'ui.notify.firstQuestHint': 'The Bellkeeper of the Exveil waits — find her for your first contract (you may grow points at the glowing tuning peg)',
   'ui.notify.rank': 'Rank ${rank} · Echo ${xp}',
   'ui.notify.unspent': ' · Unspent ${n}',
+  'ui.hud.bindsMove': 'Move',
 }
 
 const DICTS: Record<Lang, Record<string, string>> = { zh: ZH, en: EN }

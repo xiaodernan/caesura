@@ -345,7 +345,7 @@ export class Hud {
     const rows: Array<[ActionName, string]> = [
       // 第一行是**移动那一簇**（W/A/S/D 四格共用一套语义），所以它不取 `actionLabel` 的逐格文字；
       // 但它也不再写 "WASD"——那是对键位的第二份声明，改过键的屏幕会说谎（KI-336 那句"面板不会说谎"）。
-      ['moveUp', '移动'], ['dodge', actionLabel('dodge')], ['attackLight', actionLabel('attackLight')],
+      ['moveUp', t('ui.hud.bindsMove')], ['dodge', actionLabel('dodge')], ['attackLight', actionLabel('attackLight')],
       ['attackHeavy', actionLabel('attackHeavy')],
       ['parry', actionLabel('parry')], ['interact', actionLabel('interact')], ['weaponSkill', actionLabel('weaponSkill')],
       ['observe', actionLabel('observe')], ['map', actionLabel('map')]
