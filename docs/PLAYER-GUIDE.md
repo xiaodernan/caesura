@@ -9,7 +9,7 @@ See also: [`README.md`](../README.md) · [`README.en.md`](../README.en.md) · [`
 
 ## 中文手册
 
-> 你也可以在游戏内按 `Tab` 打开调音桩 — 翻页到末尾那一页「手册 / Manual」直接看上手概要。
+> 你也可以在游戏内按 `Tab` 打开调音桩 — 翻页到末尾那一页「手册 / Manual」直接看上手概要；再翻一格「游记 / Atlas」是八区指北针和刻痕指路。
 
 ### 1 · 启动 & 新玩家
 ```bash
@@ -93,7 +93,7 @@ npm run gate:smoke      # 云侧路由烟测（需 spring-cloud 本地容器）
 ---
 
 ## English companion
-> You can also open the tuning peg `Tab` in-game — the last tab is "Manual" and walks through the same primer.
+> You can also open the tuning peg `Tab` in-game — the last tab is "Manual" and walks through the same primer; one more flip lands on "Atlas" with the eight-reach bearing and where every carved mark lives.
 
 ### 1 · Getting started
 ```

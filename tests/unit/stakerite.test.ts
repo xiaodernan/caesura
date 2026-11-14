@@ -208,6 +208,8 @@ describe('调音桩面板：状态机与内容', () => {
     key('right')
     expect(html(p), '第七页（本节新增）：手册·操作').toMatch(/第[一两三四五]*手册|手册|manual/i)
     key('right')
+    expect(html(p), '第八页（2026-11-15 新增）：游记 · 八区指北针').toContain('八区 · 指北针')
+    key('right')
     expect(html(p), '再往右绕回头一页').toContain('六音级属性')
   })
 

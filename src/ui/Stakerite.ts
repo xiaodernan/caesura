@@ -119,7 +119,68 @@ const PLAYER_MANUAL: Record<'zh' | 'en', string> = {
 `,
 }
 
-type Tab = 'tune' | 'gear' | 'bag' | 'moves' | 'trade' | 'save' | 'manual' | 'ops'
+const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
+  zh: `
+<h2>八区 · 指北针</h2>
+<div class="row"><span class="name">休垒 <span style="opacity:.55">@0</span></span><span class="note">起点 · 虚礼典礼官 Meg 的主账房 — 你学会「先听，再动」的地方；调音桩歇气存档都在这</span></div>
+<div class="row"><span class="name">雾语林 <span style="opacity:.55">@0</span></span><span class="note">频率罗盘的回声；这里的树只认你的心跳 — 大声走路会把整片林子叫醒，按 V 屏息，悄悄穿过</span></div>
+<div class="row"><span class="name">沉唱堂 <span style="opacity:.55">@−40</span></span><span class="note">水声压过钟声；水下有一口从没被敲响的钟，也有一句被泡烂的碑文 — 先听低频，别急着断水上来</span></div>
+<div class="row"><span class="name">破拍营地 <span style="opacity:.55">@0</span></span><span class="note">残刃的营 — Brute 在这守桥；练「痛之后还能站住」的地方，不是测伤害的地方</span></div>
+<div class="row"><span class="name">钟坠院 <span style="opacity:.55">@+64</span></span><span class="note">序幕：奥斯塔拉（钟壳）。四层钟脸，一根断裂的鸣弦。她的「先敲一下，再说抱歉」只会在你站到最高处之后说</span></div>
+<div class="row"><span class="name">无耳深窖 <span style="opacity:.55">@−144</span></span><span class="note">隐藏：万籁（The Myriad）。她不看、只听 — 这一层连你自己的呼吸都像一把刀，按住 V 让世界静下来</span></div>
+<div class="row"><span class="name">未竟厅 <span style="opacity:.55">@+152</span></span><span class="note">终章：恩希尔（Hersil）。先拆指挥棒，再逐小节闪避；Ending 由你这一句定下来</span></div>
+<div class="row"><span class="name">风钟海岸 <span style="opacity:.55">@0</span></span><span class="note">Encore · EPIC-V。一片 Epilogue 之后的新海 — 风是带钟的风，却从不肯让你听清。她在等你把余音走完</span></div>
+
+<h2>刻痕在哪 <span style="opacity:.6">（E 触碰 · 10 处）</span></h2>
+<div class="row"><span class="name">休垒 · 两处</span><span class="note">崖下那面「初息碑」：世界在你第一次呼吸前就已经停住了；山下那块无名的碑 — 只有一道刮痕</span></div>
+<div class="row"><span class="name">雾语林 · 一处</span><span class="note">那条鸟从没落过的枝条；树不说自己的名字，它们说你的</span></div>
+<div class="row"><span class="name">沉唱堂 · 两处</span><span class="note">没被敲过的水下钟（水没过它时，人也听不见了）；被水泡软的刻痕 — 一句「水漫进了字里很久」</span></div>
+<div class="row"><span class="name">破拍营地 · 一处</span><span class="note">划痕密布的雇员名册；这里所有人都忘了自己叫什么，记得自己的拍子</span></div>
+<div class="row"><span class="name">钟坠院 · 一处</span><span class="note">那段从没被敲过、也从没被摘下的铜 — 唯一一块没学会沉默的铜块</span></div>
+<div class="row"><span class="name">无耳深窖 · 一处</span><span class="note">知道事的灰；井底那只眼睛睁开的那一刻，世界变得比有人在场还安静</span></div>
+<div class="row"><span class="name">未竟厅 · 一处</span><span class="note">银镜后面那道「钟摆」；时间走来走去，就是走不到头</span></div>
+<div class="row"><span class="name">风钟海岸 · 一处</span><span class="note">那阵带着钟的风；它带着一个又一个钟的余温，却从不让你清楚地听到</span></div>
+
+<h2>怎么不迷路</h2>
+<div class="row"><span class="name">Tab = 地图</span><span class="note">总表看你走过哪片，哪里还亮着（亮 = 终章出口还没开）；再按一次收起</span></div>
+<div class="row"><span class="name">看光、听乐</span><span class="note">每一区的主色与它的弦（休垒 ♭E / 雾语林 ♭F / 沉唱堂 ♭A / 破拍 ♭C / 钟坠院 ♭D / 无耳 ♭G / 未竟厅 ♭B）—— 转调就是换了一块钟鸣学习网</span></div>
+<div class="row"><span class="name">找不到路</span><span class="note">调音桩按 E 休息 = 保存；Boss 倒后自动存档；「余响归位」主线会自己走，你只需要去找它</span></div>
+
+<h2>边界之外 · 还没有开门的世界</h2>
+<div class="row"><span class="name">风钟海岸之后</span><span class="note">雨钟谷地 / 低音之城 / 回声庭园 / 霜锤崖 — 这些都在作者的设计稿里（EPIC-V《风钟纪元》/ EPIC-VI）：没有 region、没有 NPC、没有运行时代码。它们在等你敲完第四口钟之后再决定要不要开门</span></div>
+`,
+  en: `
+<h2>The eight reaches · bearing</h2>
+<div class="row"><span class="name">Resthold <span style="opacity:.55">@0</span></span><span class="note">Origin · Meg the Valet-Master-of-the-Ledger — where you learn to listen before you move; every peg rest and every save lives here</span></div>
+<div class="row"><span class="name">Whisperwode <span style="opacity:.55">@0</span></span><span class="note">An echo of the Frequency Compass; the trees only know your heartbeat — sprinting wakes the whole wood, hold V to breathe less and pass unbothered</span></div>
+<div class="row"><span class="name">Drowned Choir <span style="opacity:.55">@−40</span></span><span class="note">Water covers the bell with its own hush; a bell no one struck waits under it, along with an inscription softened to a wash — follow the low frequencies</span></div>
+<div class="row"><span class="name">Brokenbar Camp <span style="opacity:.55">@0</span></span><span class="note">The Brute's ground — hold the bridge, learn "stand back up"; this is where you practice surviving, not where you measure damage</span></div>
+<div class="row"><span class="name">Fellcarillon <span style="opacity:.55">@+64</span></span><span class="note">Overture: Ostlara, the Bell-Shell. Four tiers of bell-faces, one snapped cord — her "struck first, then apologized" only comes after you reach the very top</span></div>
+<div class="row"><span class="name">Earless Deeps <span style="opacity:.55">@−144</span></span><span class="note">Hidden: The Myriad. She does not see, she hears — here even your own breathing is a drawn knife; hold V until the world goes still for her sake</span></div>
+<div class="row"><span class="name">The Unfinished Hall <span style="opacity:.55">@+152</span></span><span class="note">Final: Hersil. Break the baton first, then ride his 3/4 bars — every downbeat is yours; the ending you speak now is the one the world keeps</span></div>
+<div class="row"><span class="name">Windbell Coast <span style="opacity:.55">@0</span></span><span class="note">Encore · EPIC-V. The first new shore after the Epilogue — a wind that carries bells but never lets you hear them; she is waiting for the coda you still owe</span></div>
+
+<h2>Where the marks are <span style="opacity:.6">(E to touch · 10 spots)</span></h2>
+<div class="row"><span class="name">Resthold · two</span><span class="note">The First-Breath slab beneath the cliff: the world stopped before your first breath; the nameless stone below the hill — a single scrape across the face</span></div>
+<div class="row"><span class="name">Whisperwode · one</span><span class="note">The branch no bird ever landed on; the trees don't speak their names — they speak yours</span></div>
+<div class="row"><span class="name">Drowned Choir · two</span><span class="note">The unstruck bell under the water (once water covers it, no one hears it again); the inscription softened past reading — one line, "the water has been inside the characters for years"</span></div>
+<div class="row"><span class="name">Brokenbar Camp · one</span><span class="note">The roster dense with scratches; everyone here forgot their names and kept their beats</span></div>
+<div class="row"><span class="name">Fellcarillon · one</span><span class="note">The copper never struck and never taken down — the only block of metal that never learned silence</span></div>
+<div class="row"><span class="name">Earless Deeps · one</span><span class="note">The dust that already knows; when the eye at the bottom opened, the world went quieter than any stage</span></div>
+<div class="row"><span class="name">The Unfinished Hall · one</span><span class="note">The pendulum behind the silver mirror; time swings back and forth and never reaches an end</span></div>
+<div class="row"><span class="name">Windbell Coast · one</span><span class="note">The wind that carries bells; it brings the warmth of bell after bell, but never lets you hear them clearly</span></div>
+
+<h2>Wayfinding</h2>
+<div class="row"><span class="name">Tab = the map</span><span class="note">The master chart shows where you have walked and what is still lit — lit means the ending is still sealed; press Tab again to fold it away</span></div>
+<div class="row"><span class="name">Read the light, keep the pitch</span><span class="note">Each reach has its own key (Resthold ♭E / Whisperwode ♭F / Drowned Choir ♭A / Brokenbar ♭C / Fellcarillon ♭D / Deeps ♭G / Hall ♭B) — a modulation means the bell network just changed schools</span></div>
+<div class="row"><span class="name">When lost</span><span class="note">Rest at a peg to save (boss deaths save automatically); the Afterglow line walks on its own — your job is only to find it</span></div>
+
+<h2>Beyond the rim · not open yet</h2>
+<div class="row"><span class="name">After Windbell Coast</span><span class="note">Rainbell Hollow / The Bass Citadel / Echo Garden / Frost-Hammer Cliff — these live on the author's desk (EPIC-V "The Age of the Wind-Bells" / EPIC-VI): no region, no NPC, no runtime code yet. They are yours to wake — or not — after the fourth bell</span></div>
+`,
+}
+
+type Tab = 'tune' | 'gear' | 'bag' | 'moves' | 'trade' | 'save' | 'manual' | 'atlas' | 'ops'
 
 const TABS: { id: Tab; label: string; hint: string }[] = [
   { id: 'tune', label: t('stak.tab.tune'), hint: t('stak.tab.tune.hint') },
@@ -136,6 +197,11 @@ const TABS: { id: Tab; label: string; hint: string }[] = [
  * 手册正文住在 PLAYER_MANUAL 里静态双语对照，按 getLang() 解析当前一半 —— 不经 Lang 字典，以免手握这个面板的人被迫翻译第二份 README。
  */
 const MANUAL_TAB: { id: Tab; label: string; hint: string } = { id: 'manual', label: t('stak.tab.manual'), hint: t('stak.tab.manual.hint') }
+/**
+ * 「游记」页签（2026-11-15）：八区小记 + 刻痕指路 + 边界之外（未开门世界）—— 为新来的玩家把整个世界
+ * 摊在一页上。和「手册」同为不抓把手、永远可用的一页；正文住在 PLAYER_ATLAS，zh/en 两份静态对照。
+ */
+const ATLAS_TAB: { id: Tab; label: string; hint: string } = { id: 'atlas', label: t('stak.tab.atlas'), hint: t('stak.tab.atlas.hint') }
 
 /**
  * 「操作」页签**不在上面那张表里**：它要 `OpsPanelDeps` 那组把手才有东西可改，
@@ -682,9 +748,9 @@ export class Stakerite {
     return w.channel === 'gameplay' ? t('stak.sensor.keyMouse') : t('stak.sensor.key')
   }
 
-  /** 页签名册现推（§55）：接得到把手才有「操作」；「手册」永远在，因为它不抓把手 */
+  /** 页签名册现推（§55）：接得到把手才有「操作」；「手册」「游记」永远在，因为它们不抓把手 */
   private tabsOf(): { id: Tab; label: string; hint: string }[] {
-    return this.ops ? [...TABS, MANUAL_TAB, OPS_TAB] : [...TABS, MANUAL_TAB]
+    return this.ops ? [...TABS, MANUAL_TAB, ATLAS_TAB, OPS_TAB] : [...TABS, MANUAL_TAB, ATLAS_TAB]
   }
 
   /** 换页：进存档页就现取名册（离开时把未确认的那一笔撤掉，别把确认条留在别的页里） */
@@ -1128,7 +1194,8 @@ export class Stakerite {
             : this.tab === 'trade' ? this.renderTrade()
               : this.tab === 'save' ? this.renderSave()
                 : this.tab === 'manual' ? this.renderManual()
-                  : this.renderOps()
+                  : this.tab === 'atlas' ? this.renderAtlas()
+                    : this.renderOps()
     this.lastBody = raw
     const body = this.navUsed ? this.markFocus(raw) : raw
     return `
@@ -1203,6 +1270,16 @@ export class Stakerite {
              .manual-page .note { color: rgba(242,237,228,.78); font-size: .85em }
       </style>
       <div class="manual-page">${PLAYER_MANUAL[lang === 'en' ? 'en' : 'zh']}</div>`
+  }
+
+  private renderAtlas(): string {
+    const lang = getLang()
+    return `
+      <style>.atlas-page svg { opacity:.35 } .atlas-page em { color: #ffedc4; font-style: normal; }
+             .atlas-page strong { color: #ffe4a4; font-weight: 600; letter-spacing:.02em }
+             .atlas-page .note { color: rgba(242,237,228,.78); font-size: .85em }
+      </style>
+      <div class="atlas-page">${PLAYER_ATLAS[lang === 'en' ? 'en' : 'zh']}</div>`
   }
 
   private renderGear(): string {
