@@ -56,6 +56,7 @@ npm run build          # tsc + vite build + check-dist（产物：dist/）
 | `docs/architecture-20261109-backfill.md` · `docs/architecture-20261109-squad-arc.md` | 背书式架构附录（非节号；squad 队列弧等） |
 | `docs/perf-baseline.md` | Phase 9 基本盘（KI-335／KI-418）：测了什么、两趟读数、不背书的边界、下一位接手清单 |
 | `docs/spring-family-e2e.md` | 2026-11-10 Spring Cloud 家族本机端到端实证（host 直跑六件 jar 全绿；容器路径 KI-431 Blocked；常见坑 playbook） |
+| `docs/spring-lore-service.md` | 2026-11-15 caesura-lore（族第八员）：世界谱只读后端 · Java BM25 双语检索 · memory\|redis 缓存 · `/lore/stats` 命中率 · e2e 四探针 |
 | `docs/CHANGELOG.md` | 机器生成的主干变更索引（按 committer 月份升序，共 733 笔提交；commit 即准，不做主张） |
 | `docs/phase7-plan.md` | Phase 7 基本盘：交付物逐格对账 + 美术/裁决与代码拆分 + F1-F4 可落任务（先量后动；不代笔美术） |
 
