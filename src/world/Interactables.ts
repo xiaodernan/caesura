@@ -5,6 +5,7 @@
  */
 import { bus } from '@/core/EventBus'
 import { registry } from '@/core/Registry'
+import { t } from '@/i18n/Lang'
 import type { InteractableRef, NpcData, RegionData, Vec3, WorldStateDef } from '@/data/schema'
 
 export interface Interactable extends InteractableRef {
@@ -185,13 +186,19 @@ export class Interactables {
     return f.regionName
   }
 
+  /** 提示文字的 i18n 口径：登记 verbKey ⇒ t() 渲染（语言切换即取另一半）；缺省回退原始 verb；再缺省回退代码侧 kind 表 */
+  private promptText(f: Interactable): string {
+    const verb = f.verbKey ? t(f.verbKey) : (f.verb ?? VERB[f.kind])
+    return `${verb} · ${this.labelOf(f)}`
+  }
+
   /** 每 tick 调用：焦点变化时才发 UI 提示事件 */
   update(pos: Vec3): void {
     const f = this.focus(pos)
     const id = f ? f.id : null
     if (id === this.focused) return
     this.focused = id
-    bus.emit('ui.prompt', { text: f ? `${f.verb ?? VERB[f.kind]} · ${this.labelOf(f)}` : null, id })
+    bus.emit('ui.prompt', { text: f ? this.promptText(f) : null, id })
   }
 
   use(id: string, pos: Vec3): InteractResult {

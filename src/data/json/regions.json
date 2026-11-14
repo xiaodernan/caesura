@@ -152,6 +152,7 @@
         "id": "in_resthold_meg_stall_rolled",
         "kind": "inspect",
         "verb": "看卷起的摊布",
+        "verbKey": "interact.rolled_awning",
         "pos": {
           "x": -28.5,
           "y": 0,
@@ -166,6 +167,7 @@
         "id": "st_plaza_bell",
         "kind": "inspect",
         "verb": "察看第四口钟",
+        "verbKey": "interact.fourth_bell",
         "pos": {
           "x": 34,
           "y": 0,
@@ -180,6 +182,7 @@
         "id": "st_plaza_bell_rung",
         "kind": "inspect",
         "verb": "察看第四口钟",
+        "verbKey": "interact.fourth_bell",
         "pos": {
           "x": 34,
           "y": 0,
@@ -194,6 +197,7 @@
         "id": "st_plaza_bell_melted",
         "kind": "inspect",
         "verb": "察看空钟架",
+        "verbKey": "interact.empty_bell_frame",
         "pos": {
           "x": 34,
           "y": 0,
@@ -208,6 +212,7 @@
         "id": "st_plaza_bell_sealed",
         "kind": "inspect",
         "verb": "察看蒙布的钟",
+        "verbKey": "interact.shrouded_bell",
         "pos": {
           "x": 34,
           "y": 0,
@@ -222,6 +227,7 @@
         "id": "st_plaza_mourners",
         "kind": "inspect",
         "verb": "走近跪地的人影",
+        "verbKey": "interact.kneeling_figure",
         "pos": {
           "x": 30,
           "y": 0,
@@ -236,6 +242,7 @@
         "id": "st_plaza_copper",
         "kind": "inspect",
         "verb": "察看钟铜残块",
+        "verbKey": "interact.copper_shard",
         "pos": {
           "x": 40,
           "y": 0,
@@ -250,6 +257,7 @@
         "id": "it_resthold_archive_room",
         "kind": "inspect",
         "verb": "进入档案室",
+        "verbKey": "interact.archive_enter",
         "pos": {
           "x": 20,
           "y": 0,
@@ -262,6 +270,7 @@
         "id": "st_plaza_schism_exposed",
         "kind": "inspect",
         "verb": "察看广场动乱",
+        "verbKey": "interact.plaza_unrest",
         "pos": {
           "x": -8,
           "y": 0,
@@ -273,6 +282,7 @@
         "id": "in_resthold_forge_chimney",
         "kind": "inspect",
         "verb": "看铁铺的烟囱",
+        "verbKey": "interact.smithy_chimney",
         "pos": {
           "x": 16,
           "y": 0,
@@ -284,6 +294,7 @@
         "id": "in_resthold_gate_hooks",
         "kind": "inspect",
         "verb": "数墙上的挂钩",
+        "verbKey": "interact.count_hooks",
         "pos": {
           "x": 74,
           "y": 0,
@@ -294,6 +305,7 @@
         "id": "in_resthold_noticeboard",
         "kind": "inspect",
         "verb": "看告示板",
+        "verbKey": "interact.notice_board",
         "pos": {
           "x": 42,
           "y": 0,
@@ -304,6 +316,7 @@
         "id": "in_resthold_dome_reflection",
         "kind": "inspect",
         "verb": "看积水里的倒影",
+        "verbKey": "interact.standing_water_reflect",
         "pos": {
           "x": -62,
           "y": 0,
@@ -314,6 +327,7 @@
         "id": "st_plaza_children_scores_vessel",
         "kind": "inspect",
         "verb": "看水缸边孩子画的地上的谱",
+        "verbKey": "interact.child_score",
         "pos": {
           "x": -22,
           "y": 0,
@@ -328,6 +342,7 @@
         "id": "st_plaza_children_scores_child",
         "kind": "inspect",
         "verb": "看水缸边孩子画的地上的谱",
+        "verbKey": "interact.child_score",
         "pos": {
           "x": -22,
           "y": 0,
@@ -342,6 +357,7 @@
         "id": "st_plaza_children_scores_chosen",
         "kind": "inspect",
         "verb": "看水缸边孩子画的地上的谱",
+        "verbKey": "interact.child_score",
         "pos": {
           "x": -22,
           "y": 0,
@@ -513,6 +529,7 @@
         "id": "in_whisperwode_pickcamp",
         "kind": "inspect",
         "verb": "看营地的碗筷",
+        "verbKey": "interact.camp_bowls",
         "pos": {
           "x": 380,
           "y": 0,
@@ -523,6 +540,7 @@
         "id": "in_whisperwode_shrine",
         "kind": "inspect",
         "verb": "看那座小龛",
+        "verbKey": "interact.small_shrine",
         "pos": {
           "x": 120,
           "y": 0,
@@ -533,6 +551,7 @@
         "id": "in_echo_cairn",
         "kind": "inspect",
         "verb": "读石堆",
+        "verbKey": "interact.read_cairn",
         "pos": {
           "x": 240,
           "y": 0,
@@ -554,6 +573,7 @@
         "id": "bl_whisperwode_secondbell",
         "kind": "bell",
         "verb": "修复钟座",
+        "verbKey": "interact.mend_bell_pedestal",
         "pos": {
           "x": 170,
           "y": 0,
@@ -717,6 +737,7 @@
         "id": "in_choir_organ_stop",
         "kind": "inspect",
         "verb": "看管风琴的键子",
+        "verbKey": "interact.organ_keys",
         "pos": {
           "x": 370,
           "y": -40,
@@ -730,6 +751,7 @@
         "id": "in_choir_nameplate_wall",
         "kind": "inspect",
         "verb": "看铜牌墙",
+        "verbKey": "interact.bronze_plaque_wall",
         "pos": {
           "x": 250,
           "y": -40,
@@ -740,6 +762,7 @@
         "id": "in_choir_choir_positions",
         "kind": "inspect",
         "verb": "看地上的声位刻痕",
+        "verbKey": "interact.floor_pitch_scores",
         "pos": {
           "x": 300,
           "y": -40,
@@ -786,6 +809,7 @@
         "id": "tp_choir_soundwall_shortcut",
         "kind": "teleport",
         "verb": "穿过音壁",
+        "verbKey": "interact.soundwall_cross",
         "pos": {
           "x": 330,
           "y": -40,
@@ -802,6 +826,7 @@
         "id": "bl_drownedchoir_thirdbell",
         "kind": "bell",
         "verb": "修复钟座",
+        "verbKey": "interact.mend_bell_pedestal",
         "pos": {
           "x": 280,
           "y": -40,
@@ -815,6 +840,7 @@
         "id": "dc_corvin_cage",
         "kind": "inspect",
         "verb": "查看铁笼",
+        "verbKey": "interact.iron_cage",
         "pos": {
           "x": 372,
           "y": -40,
@@ -830,6 +856,7 @@
         "id": "in_drownedchoir_side_nave",
         "kind": "inspect",
         "verb": "推开侧廊门",
+        "verbKey": "interact.side_corridor_door",
         "pos": {
           "x": 250,
           "y": -40,
@@ -841,6 +868,7 @@
         "id": "ch_drownedchoir_side_nave_cache",
         "kind": "chest",
         "verb": "撬开侧廊的封存点",
+        "verbKey": "interact.seal_point",
         "pos": {
           "x": 258,
           "y": -40,
@@ -852,6 +880,7 @@
         "id": "in_drownedchoir_d5_scratch",
         "kind": "inspect",
         "verb": "读石龛的三连划痕",
+        "verbKey": "interact.niche_scratches",
         "pos": {
           "x": 348,
           "y": -40,
@@ -1064,6 +1093,7 @@
         "id": "in_brokenbar_kitchen",
         "kind": "inspect",
         "verb": "看伙房的锅",
+        "verbKey": "interact.kitchen_pot",
         "pos": {
           "x": -150,
           "y": 0,
@@ -1074,6 +1104,7 @@
         "id": "in_brokenbar_execution_post",
         "kind": "inspect",
         "verb": "看刑柱底下",
+        "verbKey": "interact.execution_post",
         "pos": {
           "x": -120,
           "y": 0,
@@ -1084,6 +1115,7 @@
         "id": "in_brokenbar_sandtable",
         "kind": "inspect",
         "verb": "看帐里的沙盘",
+        "verbKey": "interact.sand_table",
         "pos": {
           "x": -60,
           "y": 0,
@@ -1094,6 +1126,7 @@
         "id": "in_brokenbar_garrison_post",
         "kind": "inspect",
         "verb": "看恩希尔插下的驻防桩",
+        "verbKey": "interact.garrison_stake",
         "pos": {
           "x": -160,
           "y": 0,
@@ -1108,6 +1141,7 @@
         "id": "in_brokenbar_outpost_banner",
         "kind": "inspect",
         "verb": "看哨站上的旗",
+        "verbKey": "interact.outpost_banner",
         "pos": {
           "x": -40,
           "y": 0,
@@ -1169,6 +1203,7 @@
         "id": "shop_camp_stall",
         "kind": "shop",
         "verb": "交易",
+        "verbKey": "interact.trade",
         "pos": {
           "x": -120,
           "y": 0,
@@ -1179,6 +1214,7 @@
         "id": "gt_brokenbar_backdoor",
         "kind": "gate",
         "verb": "打开后门",
+        "verbKey": "interact.back_door",
         "pos": {
           "x": -80,
           "y": 0,
@@ -1196,6 +1232,7 @@
         "id": "ch_brokenbar_ally_store",
         "kind": "chest",
         "verb": "取走盟军的补给",
+        "verbKey": "interact.take_allied_supplies",
         "pos": {
           "x": -130,
           "y": 0,
@@ -1207,6 +1244,7 @@
         "id": "st_brokenbar_nightdrum",
         "kind": "inspect",
         "verb": "听营地深处那面自己打更的鼓",
+        "verbKey": "interact.self_drumming_drum",
         "pos": {
           "x": -100,
           "y": 0,
@@ -1222,6 +1260,7 @@
         "id": "st_brokenbar_stilledarm",
         "kind": "inspect",
         "verb": "看刑柱下安放的那条左臂",
+        "verbKey": "interact.execution_post_arm",
         "pos": {
           "x": -118,
           "y": 0,
@@ -1428,6 +1467,7 @@
         "id": "el_fellcarillon_organlift",
         "kind": "elevator",
         "verb": "乘管风琴吊机",
+        "verbKey": "interact.ride_organ_hoist",
         "pos": {
           "x": 110,
           "y": 64,
@@ -1451,6 +1491,7 @@
           "z": -215
         },
         "verb": "探进钟腔",
+        "verbKey": "interact.bell_chamber",
         "secretId": "sec_fellcarillon_bell_interior",
         "setsFlag": "flag.bell_tongue_taken"
       },
@@ -1458,6 +1499,7 @@
         "id": "bl_fellcarillon_firstbell_rehang",
         "kind": "bell",
         "verb": "重立首钟",
+        "verbKey": "interact.stand_first_bell",
         "pos": {
           "x": 170,
           "y": 64,
@@ -1471,6 +1513,7 @@
         "id": "in_fellcarillon_cliff_platform",
         "kind": "inspect",
         "verb": "看崖壁的观景台",
+        "verbKey": "interact.cliff_overlook",
         "pos": {
           "x": 160,
           "y": 64,
@@ -1481,6 +1524,7 @@
         "id": "in_fellcarillon_chisel_marks",
         "kind": "inspect",
         "verb": "数钟壳上的凿痕",
+        "verbKey": "interact.count_chisel_marks",
         "pos": {
           "x": 230,
           "y": 64,
@@ -1491,6 +1535,7 @@
         "id": "it_fellcarillon_hanged_remains",
         "kind": "inspect",
         "verb": "读取铭牌",
+        "verbKey": "interact.read_nameplate",
         "pos": {
           "x": 206,
           "y": 64,
@@ -1504,6 +1549,7 @@
         "id": "in_fellcarillon_reverse_score",
         "kind": "inspect",
         "verb": "辨读钟舌上的反向谱线",
+        "verbKey": "interact.reversed_staff",
         "pos": {
           "x": 214,
           "y": 64,
@@ -1514,6 +1560,7 @@
         "id": "in_fellcarillon_bellcavity_break",
         "kind": "inspect",
         "verb": "看留在腔底的那道断口",
+        "verbKey": "interact.fracture_floor",
         "pos": {
           "x": 205,
           "y": 64,
@@ -1703,6 +1750,7 @@
         "id": "in_deeps_child_drawings",
         "kind": "inspect",
         "verb": "看栏杆上的蜡笔画",
+        "verbKey": "interact.wax_drawings",
         "pos": {
           "x": -200,
           "y": -144,
@@ -1713,6 +1761,7 @@
         "id": "in_deeps_transcript_room",
         "kind": "inspect",
         "verb": "翻抄本室的残稿",
+        "verbKey": "interact.draft_ruins",
         "pos": {
           "x": -250,
           "y": -144,
@@ -1723,6 +1772,7 @@
         "id": "in_deeps_knock_plates",
         "kind": "inspect",
         "verb": "看门口的响牌",
+        "verbKey": "interact.doorway_soundtags",
         "pos": {
           "x": -120,
           "y": -144,
@@ -1733,6 +1783,7 @@
         "id": "in_deeps_lean_corpses",
         "kind": "inspect",
         "verb": "辨认遗骸倾斜的朝向",
+        "verbKey": "interact.remains_lean",
         "pos": {
           "x": -262,
           "y": -144,
@@ -1743,6 +1794,7 @@
         "id": "ga_deeps_firstphrase_door",
         "kind": "gate",
         "verb": "以休止轻触井底的门",
+        "verbKey": "interact.well_door_rest",
         "pos": {
           "x": -258,
           "y": -144,
@@ -1762,6 +1814,7 @@
         "id": "in_firstphrase_ring_oath",
         "kind": "inspect",
         "verb": "摸大门楣上的刻痕（誓）",
+        "verbKey": "interact.lintel_oath",
         "pos": {
           "x": -242,
           "y": -144,
@@ -1776,6 +1829,7 @@
         "id": "in_firstphrase_ring_echo",
         "kind": "inspect",
         "verb": "贴耳回廊柱（响）",
+        "verbKey": "interact.ear_to_pillar",
         "pos": {
           "x": -272,
           "y": -144,
@@ -1790,6 +1844,7 @@
         "id": "in_firstphrase_ring_dust",
         "kind": "inspect",
         "verb": "抚供桌上的灰（尘）",
+        "verbKey": "interact.offering_ash",
         "pos": {
           "x": -252,
           "y": -144,
@@ -1804,6 +1859,7 @@
         "id": "in_firstphrase_ring_home",
         "kind": "inspect",
         "verb": "把手按上深处祭坛（归）",
+        "verbKey": "interact.deep_altar_touch",
         "pos": {
           "x": -276,
           "y": -144,
@@ -1818,6 +1874,7 @@
         "id": "ch_first_phrase",
         "kind": "chest",
         "verb": "拓下石刻上的初句",
+        "verbKey": "interact.first_phrase_rubbing",
         "pos": {
           "x": -264,
           "y": -144,
@@ -1829,6 +1886,7 @@
         "id": "tp_deeps_drainslide",
         "kind": "teleport",
         "verb": "攀排水斜道",
+        "verbKey": "interact.drain_ramp",
         "pos": {
           "x": -252,
           "y": -144,
@@ -1844,6 +1902,7 @@
         "id": "in_deeps_organ_transcript",
         "kind": "inspect",
         "verb": "展开抄经房里的音栓图摹本",
+        "verbKey": "interact.bolt_chart_copy",
         "pos": {
           "x": -246,
           "y": -144,
@@ -2032,6 +2091,7 @@
         "id": "in_unfinishedhall_old_robe",
         "kind": "inspect",
         "verb": "看那把椅子上的袍子",
+        "verbKey": "interact.chair_robe",
         "pos": {
           "x": -40,
           "y": 152,
@@ -2043,6 +2103,7 @@
         "kind": "npc",
         "npcId": "npc_hersil",
         "verb": "走进无声域",
+        "verbKey": "interact.silent_reach",
         "pos": {
           "x": 0,
           "y": 152,
@@ -2054,6 +2115,7 @@
         "kind": "npc",
         "npcId": "npc_tablet",
         "verb": "读石版",
+        "verbKey": "interact.read_slab",
         "pos": {
           "x": 0,
           "y": 152,
@@ -2065,6 +2127,7 @@
         "id": "in_unfinishedhall_key_208",
         "kind": "inspect",
         "verb": "看那枚没接音管的音栓",
+        "verbKey": "interact.pipeless_stopkey",
         "pos": {
           "x": 0,
           "y": 152,
@@ -2080,6 +2143,7 @@
           "z": -280
         },
         "verb": "剥耳语",
+        "verbKey": "interact.peel_the_whisper",
         "verbDesc": "用共鸣石把回响里被剪掉的耳语剥出来",
         "requiresState": {
           "key": "state.bells.fourth_dumb",
@@ -2095,6 +2159,7 @@
         "id": "tp_unfinishedhall_belfrystair",
         "kind": "teleport",
         "verb": "沿钟楼折返楼梯下行",
+        "verbKey": "interact.fold_stair_descend",
         "pos": {
           "x": -16,
           "y": 152,

@@ -1325,8 +1325,13 @@ export interface Landmark {
 export interface InteractableRef {
   id: string
   kind: 'checkpoint' | 'elevator' | 'bridge' | 'soundwall' | 'gather' | 'chest' | 'npc' | 'teleport' | 'gate' | 'bell' | 'inspect' | 'shop'
-  /** 提示文案里的动词，覆盖按 kind 的默认值（如吊机 ≠ 共鸣井）；Phase 6 换成本地表 key */
+  /** 提示文案里的动词，覆盖按 kind 的默认值（如吊机 ≠ 共鸣井）；**`verbKey`（Phase 6 双语）给定时优先**——EN 模式不许漏中文 */
   verb?: string
+  /**
+   * 动词的本地化键（`interact.*`，Lang zh/en 双存储）。`Interactables.update` 用 `t(verbKey) ?? verb ?? VERB[kind]` 渲染。
+   * 新数据必须登记 verbKey：`tests/unit/region-verb-i18n.test.ts` 钉住「每一条 verb 都有中文逐字对账、英文零 CJK」。
+   */
+  verbKey?: string
   pos: Vec3
   /** one-way shortcut lock: opens once, then stays open from this side only */
   oneWay?: boolean
