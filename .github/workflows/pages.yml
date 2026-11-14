@@ -33,14 +33,16 @@ jobs:
       - name: Build production bundle
         run: npm run build
 
-      - name: Publish tutorial + console alongside the game
-        # Static, zero-dependency teaching trio served at the same origin as the game:
+      - name: Publish tutorial + console + cast alongside the game
+        # Static, zero-dependency pages served at the same origin as the game:
         #   /caesura/console/  — 55-dim systems dashboard (真机+offline 双路)
         #   /caesura/tutorial/ — 新手入门小册子，同源静态页
+        #   /caesura/cast/     — 角色图鉴 Cast Roster，双语 cast page
         run: |
-          mkdir -p dist/console dist/tutorial
+          mkdir -p dist/console dist/tutorial dist/cast
           cp -R console/. dist/console/
           cp -R tutorial/. dist/tutorial/
+          cp -R cast/. dist/cast/
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

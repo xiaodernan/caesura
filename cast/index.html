@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="止音纪元 cast roster · 中英双语 · 8 地域、15 人、放映不能的真谛" />
+<title>止音纪元 · 角色图鉴 / CAESURA · Cast Roster</title>
+<style>
+  :root {
+    --bg: #07080c;
+    --panel: #12121a;
+    --line: #2a2a35;
+    --ink: #f2ede4;
+    --gold: #c9b458;
+    --gold-dim: #8a7735;
+    --gold-faint: rgba(201,180,88,.16);
+    --jade: #4f9b86;
+    --red: #a54452;
+    --serif: Georgia, "Songti SC", "STSong", serif;
+    --mono: "SFMono-Regular", Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0 }
+  body {
+    min-height: 100vh;
+    background: radial-gradient(ellipse 70% 50% at 50% 38%, #13141b 0%, var(--bg) 70%);
+    color: var(--ink); font-family: var(--serif); line-height: 1.65;
+    padding: 42px 18px 64px;
+    position: relative;
+  }
+  body::after {
+    content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: .05; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  }
+  header, main, footer { position: relative; z-index: 1 }
+  header { text-align: center; max-width: 920px; margin: 0 auto 36px; padding: 24px 0 24px; border-bottom: 1px solid rgba(201,180,88,.16) }
+  header .seal {
+    display: inline-block; padding: 6px 16px; border: 1px solid rgba(201,180,88,.5); color: var(--gold);
+    border-radius: 2px; font-size: 11px; letter-spacing: .26em; margin-bottom: 18px; font-family: var(--mono);
+    box-shadow: inset 0 0 0 1px rgba(201,180,88,.12)
+  }
+  h1 { font-size: clamp(26px, 4.5vw, 46px); font-weight: 400; letter-spacing: .08em; line-height: 1.15 }
+  h1 span { color: var(--gold); text-shadow: 0 0 28px rgba(201,180,88,.16) }
+  .sub { color: rgba(242,237,228,.6); font-size: 14px; margin-top: 14px; letter-spacing: .06em; font-family: var(--mono) }
+  .lang { font-family: var(--mono); font-size: 11px; border: 1px solid var(--line); background: #141419; color: #d8cba0; padding: 8px 16px; border-radius: 2px; cursor: pointer; letter-spacing: .14em; margin-top: 18px }
+  .lang:hover { border-color: var(--gold); color: var(--gold) }
+  main { max-width: 920px; margin: 0 auto }
+  .grid { display: grid; grid-template-columns: 1fr; gap: 14px; margin: 14px 0 }
+  @media (min-width: 640px) { .grid { grid-template-columns: 1fr 1fr; } }
+  .card {
+    border: 1px solid var(--line); background: linear-gradient(180deg, rgba(22,22,29,.94) 0%, rgba(18,18,24,.94) 100%);
+    border-radius: 4px; padding: 20px 22px; position: relative; overflow: hidden;
+  }
+  .card::before {
+    content: ""; position: absolute; left: 0; top: 18px; bottom: 18px; width: 2px;
+    background: linear-gradient(180deg, rgba(201,180,88,.36), rgba(201,180,88,.06)); border-radius: 2px; opacity: .6
+  }
+  .card.has-medal::before { background: linear-gradient(180deg, rgba(165,68,82,.4), rgba(165,68,82,.08)) }
+  .tag { font: 10px var(--mono); letter-spacing: .22em; text-transform: uppercase; color: rgba(201,180,88,.8); margin-bottom: 6px }
+  .card.has-medal .tag { color: rgba(217,138,148,.85) }
+  .title-name { font-size: 18px; color: #ffedc4; letter-spacing: .05em }
+  .sub-role { font-size: 12px; color: rgba(242,237,228,.65); margin-top: 2px; font-family: var(--mono) }
+  .descrip { font-size: 13px; color: rgba(242,237,228,.85); margin-top: 10px; line-height: 1.7 }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; font: 10px var(--mono); letter-spacing: .08em }
+  .chips span { border: 1px solid var(--line); border-radius: 2px; padding: 2px 6px; color: rgba(242,237,228,.65) }
+  footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid rgba(201,180,88,.12); font-family: var(--mono); font-size: 11px; color: rgba(242,237,228,.45) }
+  footer a { color: var(--gold-dim) }
+  html[data-lang="zh"] .en-copy, html[data-lang="en"] .zh-copy { display: none }
+  html[data-lang="zh"] .zh-copy, html[data-lang="en"] .en-copy { display: block }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="seal">CAESURA · CAST ROSTER</div>
+  <div class="zh-copy">
+    <h1>止音纪元 · <span>角色图鉴</span></h1>
+    <p class="sub">十五张脸，七场 Boss，一个尚未写完的世界</p>
+  </div>
+  <div class="en-copy">
+    <h1>CAESURA · <span>Cast Roster</span></h1>
+    <p class="sub">Fifteen faces, seven bosses, a world still under construction</p>
+  </div>
+  <button class="lang" id="langToggle" aria-label="Toggle language / 切换语言">EN / 中文</button>
+</header>
+
+<main>
+
+<div class="zh-copy"><p class="sub" style="text-align:center;color:rgba(201,180,88,.7);max-width:720px;margin:0 auto;font-size:13px">每一张脸都与 "钟" 有关：铃姨、科温、万籁——它们都是这一片世界停住的乐谱。这里没有答案，只有尚未唱出的句子。</p></div>
+<div class="en-copy"><p class="sub" style="text-align:center;color:rgba(201,180,88,.7);max-width:720px;margin:0 auto;font-size:13px">Every face here is bound to a bell: Bell-Aunt, Corvin, the Myriad — all of them are notes this world hasn't played yet. No answers, only unfinished sentences.</p></div>
+
+<div class="grid" id="roster"></div>
+
+</main>
+
+<footer>© CAESURA · 止音纪元 · <a href="https://xiaodernan.github.io/caesura/">Play</a> · <a href="https://xiaodernan.github.io/caesura/?fresh=1">Fresh start</a></footer>
+
+<script>
+  const ROSTER = [
+    { tag: 'PROLOGUE · 序', tagEn: 'PROLOGUE', name: '莉安 Li’an', role: '第一声部 / The First Voice', nameEn: 'Li’an', roleEn: 'The First Voice', descript: '她不是 Boss，她是世界真正在等的人——一个在休垒醒来、每一步都在听世界喘息的小女孩。', descriptEn: 'Not a boss — she is who the world waits for: a girl who wakes in Resthold and listens to the world breathe.', chips: ['Playable', 'Opener', 'TUTORIAL'] },
+    { tag: 'NPC · 铃姨', tagEn: 'NPC · Bell-Aunt', name: '铃姨', role: '守钟人 / The Bellkeeper', nameEn: 'Bell-Aunt (铃姨)', roleEn: 'The Bellkeeper', descript: '她修了三口钟，听过世界的半句话，最后看见你手里也有一口看不见的铃。', descriptEn: 'She mended three bells, heard half a sentence from the world, and saw the invisible bell in your hand.', chips: ['Quest', 'Bells'] },
+    { tag: 'NPC · 科温书记', tagEn: 'NPC · Archivist', name: '科温书记', role: '末代档案官 / Last Archivist', nameEn: 'Archivist Corvin', roleEn: 'Last Archivist', descript: '他藏了一半的真相，用半句话换取玩家不去拿那口完整的钟——残缺的人最懂余数。', descriptEn: 'He hid half the truth and traded it for the player not lifting the whole bell — incomplete men understand remainders best.', chips: ['Quest', 'Lore'] },
+    { tag: 'NPC · 盐歌', tagEn: 'NPC · Meg', name: 'Meg · 盐歌', role: '影子 / The Shadow', nameEn: 'Meg the Salt-Voice', roleEn: 'The Shadow', descript: '她跟着你，不告诉你她是谁。她留下的是一笔谁也记不得的账。', descriptEn: 'She follows without saying who she is. What she leaves behind is a ledger no one can name.', chips: ['Quest', 'Afterglow'] },
+    { tag: 'NPC · 无面童', tagEn: 'NPC · Faceless Child', name: '无面童', role: '不存在于族谱的孩子 / The Child Who Isn’t', nameEn: 'The Faceless Child', roleEn: 'The Child Who Isn’t', descript: '打湿灰上被写了的名字。问他是不是孩子，他都不能告诉你答案。', descriptEn: 'Wet this ash and look at your name written. Whether they are a child — they will not say.', chips: ['Quest', 'Design'] },
+    { tag: 'NPC · 断弦', tagEn: 'NPC · Haltrune', name: '断弦', role: '营长 / The Garrison Officer', nameEn: 'Haltrune, the Garrison', roleEn: 'The Garrison', descript: '营地里还有七个活着的兵，他记的是四个——剩下那五个人也一同在巡逻。', descriptEn: 'Seven are still on patrol, he counts four. The other five march with him too.', chips: ['Quest', 'Brokenbar'] },
+    { tag: 'NPC · 石版', tagEn: 'NPC · The Tablet', name: '石版', role: ' inscribed stone / A monument', nameEn: 'The Tablet', roleEn: 'A monument', descript: '它没有嘴。它记所有人说过的话，包括你没说出口的。', descriptEn: "It has no mouth. It remembers everything said — even the words not spoken.", chips: ['4 Pillars', 'Tablet'] },
+    { tag: 'NPC · 恩希尔', tagEn: 'NPC · Hersil', name: '恩希尔', role: '序更大的终局 / The Longest Silence', nameEn: 'Hersil, the End-Stage', roleEn: 'The Longest Silence', descript: '他就是那个一直在等的人——等你带上那一页他从来没读过的判决书。', descriptEn: 'The one who has been waiting — for the verdict you bring that he never read.', chips: ['Final', 'Boss'] },
+    { tag: 'BOSS · 奥斯塔拉', tagEn: 'BOSS · Ostlara', name: '奥斯塔拉', role: '钟坠院守门人 / The Bellkeeper of Fellcarillon', nameEn: 'Ostlara (奥斯塔拉)', roleEn: 'The Bellkeeper of Fellcarillon', descript: '她替所有走进钟坠院的人守一口已经碎了的钟——你的钟也碎了，只是你不知道。', descriptEn: 'She keeps count for every bell swinger who enters Fellcarillon. You carry one too, and you do not know it.', chips: ['Boss', 'Fellcarillon', 'Phase III'] },
+    { tag: 'BOSS · 万籁', tagEn: 'BOSS · The Myriad', name: '万籁', role: '无耳深窖 / The Earless', nameEn: 'The Myriad (万籁)', roleEn: 'The Earless', descript: '她没有视距。你的每一步她都听到了。杀死她的唯一方式，是先让她听不到你。', descriptEn: 'She has no vision. Every step you take she hears. The only way to defeat her: make yourself more silent than she is.', chips: ['Boss', 'Earless Deeps', 'Hidden'] },
+    { tag: 'BOSS · 恩希尔', tagEn: 'BOSS · Hersil', name: '恩希尔', role: '未竟之殿 / The Unfinished Hall', nameEn: 'Hersil (恩希尔)', roleEn: 'The Unfinished Hall', descript: '他不打你。他只是要求你把那些你以为丢掉的声音照原样还给他。', descriptEn: 'He does not strike. He only demands that you return the voices you thought were lost, exactly as they were.', chips: ['Boss', 'Final', 'Charter'] },
+    { tag: 'REGION · 8', tagEn: '8 REGIONS', name: '八地域 / Eight Regions', role: '序→续弦 / Prologue to Windbell Coast', nameEn: 'Eight Regions', roleEn: 'Prologue to Windbell Coast', descript: '休垒 → 雾语林 → 沉唱堂 → 破拍营 → 钟坠院 → 无耳深窖 → 未竟厅 → 风钟海岸。每一块都是一口残钟。', descriptEn: 'Resthold → Whisperwode → Drowned Choir → Brokenbar → Fellcarillon → Earless Deeps → Unfinished Hall → Windbell Coast. Each piece a broken bell.', chips: ['8 Regions', 'Unlock', 'Finale'] },
+    { tag: 'ENDING', tagEn: 'ENDINGS', name: '三条路 / Three Paths', role: ' RUNG / MELTED / SEALED', nameEn: 'Three Paths', roleEn: 'RUNG · MELTED · SEALED', descript: '敲响第四口钟，交给她熔掉，或永远不再触碰它。三个结局本质上是同一个人站不住的一种方式。', descriptEn: 'Sound the fourth bell, let her melt it, or never touch it again. Three endings; the same person learning how to stand still.', chips: ['Epilogue', 'Three', 'finale'] },
+    { tag: 'EXTENT', tagEn: 'EXTENT', name: '风钟海岸 / Windbell Coast', role: '序章之后的世界 / The World After', nameEn: 'Windbell Coast', roleEn: 'The World After', descript: '没有新的 Boss，没有新的入口——只有风，以及一整排不会唱的石头。它只是「停住了」，等下一口钟。', descriptEn: 'No new boss. No new key. Only wind, and a wall of silent stone. It just stopped — waiting for the next bell.', chips: ['8th Region', 'Post-epilogue'] },
+    { tag: 'ARCHITECTURE', tagEn: 'ARCHITECTURE', name: 'spring-family-e2e', role: 'Spring Cloud · Eureka/Gateway/Config', nameEn: 'spring-family-e2e', roleEn: 'Spring Cloud · Eureka+Gateway+Config', descript: '真实微服务系统——Eureka 注册中心 + 配置中心 + Gateway 路由 + 应用内部熔断器全套跑通。', descriptEn: 'A real microservice mesh: Eureka registry, config server, gateway routing, circuit breakers — all wired and verified in CI.', chips: ['Spring', 'Redis', 'Eureka', 'Gateway'] },
+  ];
+
+  const blurbFor = (r) => {
+    const zh = {
+      tag: r.tag, name: r.name, role: r.role, descript: r.descript, chips: r.chips,
+    };
+    const en = {
+      tag: r.tagEn, name: r.nameEn, role: r.roleEn, descript: r.descriptEn, chips: r.chips,
+    };
+    return window.LANG_TOGGLE ? en : zh;
+  };
+
+  function render() {
+    const data = ROSTER.map((r) => {
+      const loc = window.LANG_TOGGLE ? {
+        tag: r.tagEn, name: r.nameEn, role: r.roleEn, descript: r.descriptEn, chips: r.chips,
+      } : {
+        tag: r.tag, name: r.name, role: r.role, descript: r.descript, chips: r.chips,
+      };
+      return `
+        <div class="card">
+          <div class="tag">${loc.tag}</div>
+          <div class="title-name">${loc.name}</div>
+          <div class="sub-role">${loc.role}</div>
+          <div class="descrip">${loc.descript}</div>
+          <div class="chips">${loc.chips.map((c) => `<span>${c}</span>`).join('')}</div>
+        </div>`;
+    }).join('');
+    document.getElementById('roster').innerHTML = data;
+  }
+
+  const toggleEl = document.getElementById('langToggle');
+  toggleEl.addEventListener('click', () => {
+    const html = document.documentElement;
+    const isZh = html.getAttribute('data-lang') === 'zh';
+    if (isZh) { html.setAttribute('data-lang', 'en'); html.lang = 'en-US'; }
+    else { html.setAttribute('data-lang', 'zh'); html.lang = 'zh-CN'; }
+    render();
+  });
+
+  render();
+</script>
+</body>
+</html>
