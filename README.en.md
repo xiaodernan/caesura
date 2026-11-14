@@ -30,6 +30,7 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - Tutorial: <https://xiaodernan.github.io/caesura/tutorial/> (bilingual · 8 steps · lives with the game) ·  
 - Console: <https://xiaodernan.github.io/caesura/console/> (Wave 56 / Eight-Region Worldview panel) ·  
 - Cast Roster: <https://xiaodernan.github.io/caesura/cast/> (Cast roster — 15 roles · regions · NPCs · bosses · bilingual EN/zh)  
+- World Codex: <https://xiaodernan.github.io/caesura/codex/> (48 real project texts · bilingual BM25 in-browser index · no network · no LLM · added 2026-11-15)  
 - Sync truth: `https://raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json`
 
 ## Where to read

@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>止音纪元 · 世界谱 / CAESURA · The World Codex</title>
+<meta name="description" content="《止音纪元》真实世界的双语检索页 — BM25 浏览器内检索：八区、首领、结局、术语、十处刻痕。零网络 · 零 LLM · 零服务端。 / Bilingual BM25 search over the real world of The Epoch of Hush — eight reaches, bosses, endings, terms, ten carved marks. No network, no LLM, no server.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🔕</text></svg>">
+<style>
+  :root {
+    --gold: #d9b46a;
+    --gold-soft: rgba(217,180,106,.32);
+    --ink: #f3ede0;
+    --ink-dim: rgba(243,237,224,.62);
+    --panel: rgba(18,22,38,.72);
+    --panel-hard: rgba(10,12,24,.9);
+    --teal: #7fd7d0;
+    --serif: "Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#05070f; color:var(--ink); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; overflow-x:hidden; }
+  .bg { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .bg.radial {
+    background:
+      radial-gradient(1200px 700px at 50% -12%, rgba(217,180,106,.16), transparent 60%),
+      radial-gradient(900px 600px at 88% 110%, rgba(127,215,208,.10), transparent 60%),
+      radial-gradient(700px 500px at 8% 108%, rgba(122,92,199,.10), transparent 60%),
+      #05070f;
+  }
+  .bg.noise { z-index:-1; opacity:.05; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="en"] .zh-copy { display:none !important; }
+  .wrap { max-width:1180px; margin:0 auto; padding:28px 26px 80px; }
+
+  /* top bar */
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:6px 2px 0; }
+  .brand { font-size:.86rem; letter-spacing:.32em; color:var(--gold); text-transform:uppercase; opacity:.85; }
+  .brand a { color:inherit; text-decoration:none; border-bottom:1px dotted rgba(217,180,106,.5); }
+  .brand a:hover { color:#ffe4a4; }
+  .lang-row { display:flex; gap:10px; align-items:center; }
+  .lang-row a { font-size:.75rem; color:var(--ink-dim); text-decoration:none; border:1px solid rgba(243,237,224,.14); padding:6px 12px; border-radius:999px; transition:all .25s ease; }
+  .lang-row a:hover { color:var(--gold); border-color:var(--gold-soft); }
+  #langToggle { cursor:pointer; font-family:inherit; font-size:.75rem; color:var(--ink); background:rgba(217,180,106,.12); border:1px solid var(--gold-soft); padding:6px 14px; border-radius:999px; letter-spacing:.12em; transition:all .25s ease; }
+  #langToggle:hover { background:rgba(217,180,106,.22); box-shadow:0 0 18px rgba(217,180,106,.25); }
+
+  /* hero */
+  .hero { text-align:center; padding:54px 10px 34px; position:relative; }
+  .hero .glyph { font-size:44px; letter-spacing:.3em; color:var(--gold); opacity:.75; display:block; margin-bottom:14px; }
+  h1 { font-size:clamp(2.1rem, 6vw, 4.2rem); font-weight:600; letter-spacing:.08em; line-height:1.15;
+       background:linear-gradient(180deg,#fff8e7 0%, #e8cfa0 34%, #d9b46a 60%, #8a6b3a 100%);
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+       text-shadow:0 0 80px rgba(217,180,106,.35); }
+  .sub { margin-top:14px; font-size:clamp(.78rem, 1.6vw, .95rem); color:var(--ink-dim); letter-spacing:.22em; text-transform:uppercase; }
+  .sub a { color:var(--teal); text-decoration:none; }
+  .rule { width:180px; height:1px; margin:22px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+
+  /* search */
+  .search-shell { position:relative; max-width:860px; margin:0 auto; }
+  .search-shell::after { content:""; position:absolute; inset:-2px; border-radius:22px; padding:1px;
+    background:linear-gradient(130deg, rgba(217,180,106,.7), transparent 30%, transparent 70%, rgba(127,215,208,.55));
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask-composite:exclude;
+    opacity:.85; pointer-events:none; }
+  #q { width:100%; font-family:inherit; font-size:1.15rem; color:var(--ink); background:var(--panel-hard);
+       border:1px solid rgba(217,180,106,.28); border-radius:22px; padding:20px 26px 20px 58px; outline:none;
+       transition: box-shadow .3s ease, border-color .3s ease; }
+  #q::placeholder { color:rgba(243,237,224,.35); font-style:italic; }
+  #q:focus { border-color:var(--gold); box-shadow:0 0 40px rgba(217,180,106,.18), inset 0 0 24px rgba(217,180,106,.06); }
+  .search-icon { position:absolute; left:22px; top:50%; transform:translateY(-50%); font-size:1.35rem; color:var(--gold); pointer-events:none; }
+  .hint-line { max-width:860px; margin:10px auto 0; display:flex; justify-content:space-between; gap:14px; padding:0 8px; font-size:.72rem; color:rgba(243,237,224,.4); letter-spacing:.08em; }
+  .hint-line .count { color:var(--gold); }
+
+  /* chips */
+  .chips { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:20px auto 8px; max-width:980px; }
+  .chip { cursor:pointer; font-family:inherit; font-size:.78rem; letter-spacing:.1em; color:var(--ink-dim);
+          background:rgba(243,237,224,.05); border:1px solid rgba(243,237,224,.12); border-radius:999px; padding:7px 15px; transition:all .22s ease; }
+  .chip:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .chip.on { color:#0b0d18; background:linear-gradient(180deg,#f5e3b0,#d9b46a); border-color:transparent; box-shadow:0 0 18px rgba(217,180,106,.4); font-weight:700; }
+
+  /* results */
+  #grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(268px, 1fr)); gap:14px; max-width:1180px; margin:26px auto 0; }
+  .card { position:relative; background:var(--panel); border:1px solid rgba(243,237,224,.09); border-radius:16px; padding:16px 17px 14px; overflow:hidden;
+          transition:transform .25s ease, border-color .25s ease, box-shadow .25s ease; }
+  .card::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--gold-soft), transparent); opacity:.7; }
+  .card:hover { transform:translateY(-3px); border-color:rgba(217,180,106,.35); box-shadow:0 14px 44px rgba(0,0,0,.45), 0 0 30px rgba(217,180,106,.07); }
+  .tag { display:inline-block; font-size:.66rem; letter-spacing:.28em; text-transform:uppercase; padding:3px 9px; border-radius:4px; margin-bottom:9px; }
+  .tag-reach  { background:rgba(127,215,208,.12); color:var(--teal); }
+  .tag-boss   { background:rgba(255,120,100,.12); color:#ffb09d; }
+  .tag-ending { background:rgba(196,160,255,.14); color:#cbb1ff; }
+  .tag-term   { background:rgba(217,180,106,.14); color:var(--gold); }
+  .tag-mark   { background:rgba(160,200,140,.12); color:#b8ddad; }
+  .tag-system { background:rgba(140,175,255,.12); color:#a9c1ff; }
+  .tag-epic   { background:rgba(255,215,120,.13); color:#ffe08a; }
+  .tag-lands  { background:rgba(230,230,230,.08); color:#d7d7d7; }
+  .card h3 { font-size:1.06rem; font-weight:600; letter-spacing:.04em; color:#f5ead2; margin-bottom:7px; }
+  .card p { font-size:.86rem; line-height:1.55; color:rgba(243,237,224,.82); }
+  mark { background:rgba(217,180,106,.35); color:#ffe9b3; border-radius:2px; padding:0 1px; }
+  .empty { text-align:center; padding:70px 20px; color:rgba(243,237,224,.45); font-style:italic; }
+  .empty b { color:var(--gold); font-style:normal; }
+
+  /* footer */
+  footer { margin-top:60px; border-top:1px solid rgba(243,237,224,.09); padding-top:22px; display:flex; flex-wrap:wrap; gap:10px 26px; justify-content:space-between; font-size:.72rem; color:rgba(243,237,224,.42); letter-spacing:.06em; }
+  footer b { color:var(--gold); font-weight:600; }
+  footer a { color:var(--teal); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @media (max-width:640px) { .wrap { padding:20px 14px 60px; } #grid { grid-template-columns:1fr; } .hint-line { flex-direction:column; gap:2px; } }
+</style>
+</head>
+<body>
+<div class="bg radial" aria-hidden="true"></div>
+<div class="bg noise" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><a href="/caesura/">《止音纪元》</a> · The Epoch of Hush</div>
+    <div class="lang-row">
+      <a href="/caesura/tutorial/" class="zh-copy">入门教程</a>
+      <a href="/caesura/tutorial/" class="en-copy">Tutorial</a>
+      <a href="/caesura/console/" class="zh-copy">调度台</a>
+      <a href="/caesura/console/" class="en-copy">Console</a>
+      <button id="langToggle" type="button" aria-label="switch language">EN / 中文</button>
+    </div>
+  </div>
+
+  <header class="hero">
+    <span class="glyph zh-copy">🔕</span>
+    <span class="glyph en-copy">🔕</span>
+    <h1 class="zh-copy">止音纪元 · 世界谱</h1>
+    <h1 class="en-copy">The Epoch of Hush · World Codex</h1>
+    <p class="sub zh-copy">BM25 双语检索 · <a href="/caesura/">进入游戏</a> · 零网络 · 零 LLM · 零服务端</p>
+    <p class="sub en-copy">Bilingual BM25 search · <a href="/caesura/">enter the game</a> · No network · No LLM · No server</p>
+    <div class="rule"></div>
+  </header>
+
+  <div class="search-shell" role="search">
+    <span class="search-icon">⌕</span>
+    <input id="q" type="search" autocomplete="off" spellcheck="false"
+           placeholder="搜「万籁」「敲不碎的铃」「第二幕」「频率罗盘」……" />
+  </div>
+  <div class="hint-line">
+    <span class="zh-copy">索引正文为项目真实文本（docs / Lang.ts / regions.json），点击卡片不会跳转到任何外部站点</span>
+    <span class="en-copy">Corpus is real project text (docs / Lang.ts / regions.json); clicking cards never leaves this page</span>
+    <span class="count"><b id="hitCount">0</b> <span class="zh-copy">条</span><span class="en-copy">hits</span></span>
+  </div>
+
+  <div class="chips" id="chips"></div>
+  <main id="grid" aria-live="polite"></main>
+
+  <footer>
+    <span class="zh-copy"><b>实现</b>：BM25（k1=1.5 · b=0.75）· 中文 bigram + 英文词元 · 词频 × IDF · 纯浏览器计算</span>
+    <span class="en-copy"><b>How</b>: BM25 (k1=1.5 · b=0.75) · CJK bigrams + latin tokens · TF × IDF · all in your browser</span>
+    <span class="zh-copy"><b>纪律</b>：不出网 · 不上报 · 不埋点 · 与玩家进程零 LLM 同口径</span>
+    <span class="en-copy"><b>Discipline</b>: no requests · no telemetry · no beacons · same zero-LLM player rule as the game</span>
+  </footer>
+</div>
+
+<script>
+/* ---------------------------------------------------------------
+   CAESURA · World Codex — BM25 双语检索（浏览器内）
+   语料 = 项目真实文本：WORLD-BIBLE / Lang.ts / regions.json / EPIC-V/VI/VII
+   索引结构：tokenize → df → idf；score(k1=1.5,b=0.75)
+   --------------------------------------------------------------- */
+'use strict';
+
+const CATS = [
+  { id: 'all',    zh: '全部',   en: 'All' },
+  { id: 'reach',  zh: '地域',   en: 'Reaches' },
+  { id: 'boss',   zh: 'Boss',   en: 'Bosses' },
+  { id: 'ending', zh: '结局',   en: 'Endings' },
+  { id: 'term',   zh: '术语',   en: 'Terms' },
+  { id: 'mark',   zh: '刻痕',   en: 'Marks' },
+  { id: 'system', zh: '系统',   en: 'Systems' },
+  { id: 'epic',   zh: '史诗',   en: 'Epics' },
+  { id: 'lands',  zh: '新陆',   en: 'New Lands' },
+];
+
+const CODEX = [
+  /* ---------- 地域 reaches ---------- */
+  { cat:'reach', title:{zh:'休垒 Resthold · @0', en:'Resthold · @0'},
+    body:{zh:'起点。虚礼典礼官 Meg 的主账房——你学会「先听，再动」的地方；调音桩歇气存档都在这。地平线很平，钟声是被压下去的，不是没有。', en:'Origin. The Valet-Master-of-the-Ledger Meg’s counting house — where you learn to listen before you move; every peg rest and save lives here. The bell is pressed down, not absent.'} },
+  { cat:'reach', title:{zh:'雾语林 Whisperwode · @0', en:'Whisperwode · @0'},
+    body:{zh:'频率罗盘的回声。树只认你的心跳——大声走会叫醒整片林子；按 V 屏息穿过。音程 ♭F。', en:'An echo of the Frequency Compass. The trees only know your heartbeat — sprint and they all wake; hold V to breathe and pass. Key of ♭F.'} },
+  { cat:'reach', title:{zh:'沉唱堂 Drowned Choir · @−40', en:'Drowned Choir · @−40'},
+    body:{zh:'水声压过钟声。水下有一口从没被敲响的钟，也有一句被泡软的碑文——先听低频，别急着断水上来。音程 ♭A。', en:'Water covers the bell with its own hush. A bell no one ever struck waits below, with an inscription softened to a wash — follow the lows, surface later. Key of ♭A.'} },
+  { cat:'reach', title:{zh:'破拍营地 Brokenbar Camp · @0', en:'Brokenbar Camp · @0'},
+    body:{zh:'残刃的营。Brute 在这守桥；这里不是测伤害的地方，是练「痛之后还能站住」的地方。音程 ♭C。', en:'The Brute’s ground, holding the bridge. Not where damage is measured — where “stand back up” is practiced. Key of ♭C.'} },
+  { cat:'reach', title:{zh:'钟坠院 Fellcarillon · @+64', en:'Fellcarillon · @+64'},
+    body:{zh:'序幕：奥斯塔拉（钟壳，三阶段，P1 只吃 10%）。四层钟脸，一根断裂的鸣弦。她的「先敲一下，再说抱歉」只会在你站到最高处之后说。音程 ♭D。', en:'Overture: Ostlara, the Bell-Shell — three phases, P1 takes only 10%. Four tiers of faces, one snapped cord. Her “struck first, then apologized” comes only after you reach the top. Key of ♭D.'} },
+  { cat:'reach', title:{zh:'无耳深窖 Earless Deeps · @−144', en:'Earless Deeps · @−144'},
+    body:{zh:'隐藏 Boss：万籁 The Myriad。她不看、只听——按 V 把噪音压到地板以下，你就是被风刮走的那张纸。音程 ♭G。', en:'The hidden boss: The Myriad. She does not see, she hears — hold V to press your noise below the floor and drift like a scrap of paper. Key of ♭G.'} },
+  { cat:'reach', title:{zh:'未竟厅 The Unfinished Hall · @+152', en:'The Unfinished Hall · @+152'},
+    body:{zh:'终章：恩希尔 Hersil。先拆指挥棒，再逐小节闪避每一个 3/4； Ending 由你这一记敲出来的话决定。音程 ♭B。', en:'Final: Hersil. Break the baton first, then ride his 3/4 — every downbeat is yours. Which ending you speak now is the one the world keeps. Key of ♭B.'} },
+  { cat:'reach', title:{zh:'风钟海岸 Windbell Coast · @0', en:'Windbell Coast · @0'},
+    body:{zh:'Encore（EPIC-V）。Epilogue 之后第一片新海——风是带钟的风，却从不肯让你听清。无 Boss、无 NPC 登记，只有三段话等你去走。', en:'Encore (EPIC-V). The first new shore after the Epilogue — a wind that carries bells but never lets you hear them. No boss, no NPC registered; three sentences wait for you.'} },
+
+  /* ---------- Boss ---------- */
+  { cat:'boss', title:{zh:'奥斯塔拉 · 钟壳（Fellcarillon）', en:'Ostlara · The Bell-Shell (Fellcarillon)'},
+    body:{zh:'序幕 Boss。三阶段：P1 钟壳只吃 10%——别硬破，保住状态；P2 裂开内衬；P3 直面她本人。她的护甲是「钟壳」，不是物理壳——打脸之前先攒够足够多的余音。', en:'The opener. Three phases: P1 takes 10% — don’t grind, save state; P2 the lining splits; P3 her, directly. The shell is not armor, it’s a thesis — carry enough resonance before you touch her.'} },
+  { cat:'boss', title:{zh:'万籁 The Myriad（Earless Deeps）', en:'The Myriad (Earless Deeps)'},
+    body:{zh:'隐藏 Boss。她不看，只听——你的每一次脚步都是名片。V 键屏息不只是「更安静」，是她唯一的攻击判定里唯一的解。她的安全带，就是你的呼吸线。', en:'The hidden one. She doesn’t see — she hears. Every footstep is your calling card. V is not “quieter”, it is the only defense in her single attack pattern. Your breathing line is your seatbelt.'} },
+  { cat:'boss', title:{zh:'恩希尔 Hersil（The Unfinished Hall）', en:'Hersil (The Unfinished Hall)'},
+    body:{zh:'终章 Boss。她/他把「指挥棒」举得比任何人都高。先破指挥棒（首要目标），再在 3/4 小节边界闪避——每一记 downbeat 落地前那帧都是你的。', en:'The finale. The baton is raised higher than anyone else’s. Break it first (priority target), then dodge on 3/4 bar lines — every frame before the downbeat lands is yours.'} },
+
+  /* ---------- 结局 endings ---------- */
+  { cat:'ending', title:{zh:'结局一 · 敲响第四口钟', en:'Ending I · Sound the fourth bell'},
+    body:{zh:'钟回，世界回响——她终于得到那段缺了大半辈子的话。叙事主线最常见的走向；余响给「正音」。', en:'The bell returns; the world breathes again — she finally gets the missing sentence. The most walked path; the coda grants “True Pitch”.'} },
+  { cat:'ending', title:{zh:'结局二 · 交给她熔掉', en:'Ending II · Give it to her to melt'},
+    body:{zh:'她熔了第四口钟——世界回到「只有敲一下」的工坊安静。钟不响了，但「那一记」仍然被记账。', en:'She melts the fourth bell — the workshop returns to a one-strike quiet. The bell never rings again, yet the ledger still records that single toll.'} },
+  { cat:'ending', title:{zh:'结局三 · 永远不再触摸', en:'Ending III · Never toll again'},
+    body:{zh:'钟永远悬着——你选了沉默，也是有代价的：这个世界会再沉一次。没有人追责你，钟只是悬在那。', en:'The bell hangs forever — you chose silence, and the price is hearing the world hush itself once more. No one holds you accountable; it just hangs there.'} },
+  { cat:'ending', title:{zh:'Epilogue · 余响归位《afterglow》', en:'Epilogue · The Afterglow'},
+    body:{zh:'恩希尔倒下之后，世界没有立刻亮灯——「余响归位」这条七线之后的巡礼线由石版人发起：走过所有见证过的战场，把「最后一句」陆续归位。', en:'After Hersil falls, the world doesn’t flip a switch — the seventh questline, “The Afterglow”, begins at the stone tablet; it walks you back through every witness, returning the last sentence, one by one.'} },
+
+  /* ---------- 术语 terms ---------- */
+  { cat:'term', title:{zh:'止音纪元 The silenced epoch', en:'The silenced epoch'},
+    body:{zh:'钟敲了又开始安静了的纪元。所有钟应当在线但已灭——本作的一切紧张都来自这句：沉默是罪，声音是亏。', en:'The epoch where every bell rang and then the quiet returned. All bells were meant to remain online; they did not. The tension of this work, in one line: silence is the crime, sound is the debt.'} },
+  { cat:'term', title:{zh:'第一钟 The First Bell', en:'The First Bell'},
+    body:{zh:'纪元初始被鸣的那一记——也就是玩家入此世的原因。它的余音从未真正离开；玩家出场时，世界仍然在听它。', en:'The opening toll of the epoch — the reason players arrive in this world at all. Its resonance never truly left; the world is still listening when you enter.'} },
+  { cat:'term', title:{zh:'余音 Echo', en:'Echo'},
+    body:{zh:'杀死 Boss 后的余弦微粒渲染——不是粒子效果，是音程。每一位留一根弦（♭E/♭F/♭A/♭C/♭D/♭G/♭B），谱册里的「乐章」为此而来。', en:'The cosine-residue render left by every defeated boss — not particles, pitch. Each leaves one string (♭E/♭F/♭A/♭C/♭D/♭G/♭B); the “Moves” page exists for this.'} },
+  { cat:'term', title:{zh:'频率罗盘 Frequency Compass', en:'Frequency Compass'},
+    body:{zh:'Whisperwode 在指引方向时所用频率——玩家在雾里找路的那根看不见的线。它不指路，它「共鸣」。', en:'The frequency Whisperwode uses to point. The invisible string that guides you through fog. It doesn’t point; it resonates.'} },
+  { cat:'term', title:{zh:'带耳朵走 Walk with ears', en:'Walk with ears'},
+    body:{zh:'每一个获取的声音（音色石）都被自动录入，结束即退回——玩家永远不需要显式「听」。一切挂载都是默默完成的耳朵。', en:'Every acquired voice (resonance stones) is auto-recorded and returned at the end — you never explicitly “listen”. Every attachment is an ear, diligently doing its work in the dark.'} },
+  { cat:'term', title:{zh:'敲不碎的铃 The unbreakable bell', en:'The unbreakable bell'},
+    body:{zh:'科温怀中之物——未碎之钟（item: it_resonance_core）。它是为「只有一敲是真的」那个人准备的，不是为胜利准备的。', en:'Corvin’s keepsake — the unbroken bell (item: it_resonance_core). It was made for the one who believes only one toll is true — not for victory.'} },
+  { cat:'term', title:{zh:'我等之石 The stone that waits', en:'The stone that waits'},
+    body:{zh:'终章那「唯一不响的石」—— HERSIL 的碑文。它不是威胁；它是「沉默不是空白，是等待」的证明。', en:'The single unringing stone of the finale — HERSIL’s inscription. Not a threat; proof that silence isn’t blank — it’s waiting.'} },
+  { cat:'term', title:{zh:'缄默 Unfinished Hall', en:'The Unfinished Hall'},
+    body:{zh:'终末大殿，所有钟的余响在此收束。每一记敲过的钟都在此有住址——第四口钟悬在梁上的那一刻，你听见的第四个字就是你自己。', en:'The terminal hall where every resonance comes home. Every toll has an address here — when the fourth bell hangs from the beam, the fourth word you hear is your own.'} },
+
+  /* ---------- 刻痕 the carved marks ---------- */
+  { cat:'mark', title:{zh:'刻痕 · 初息碑（休垒）', en:'Mark · First-Breath Slab (Resthold)'},
+    body:{zh:'「世界在你第一次呼吸前就已经停住了——你听得到的，是它无法收回的遗言。」休垒崖下，E 触碰。', en:'“The world had already stopped before your first breath — what you hear is the last word it couldn’t take back.” Beneath the Resthold cliffs. E to touch.'} },
+  { cat:'mark', title:{zh:'刻痕 · 无名碑（休垒）', en:'Mark · Nameless Stone (Resthold)'},
+    body:{zh:'「山下那座墓碑无名无姓，只有一道刮痕，横在那里。」——刻痕本身就是答案。', en:'“Below the hill, a headstone with no name — only a single scrape, laid across the stone.” The mark itself is the answer.'} },
+  { cat:'mark', title:{zh:'刻痕 · 枝条碑（雾语林）', en:'Mark · The Unbird’d Branch (Whisperwode)'},
+    body:{zh:'「雾语林的树不说自己的名字，它们说你的。」鸟从没落过那根枝条——你按 E 的时候，名字先认出的是它。', en:'“The trees in Whisperwode don’t speak their names — they speak yours.” No bird ever landed on it; when you press E, the name recognizes it first.'} },
+  { cat:'mark', title:{zh:'刻痕 · 水下钟（沉唱堂）', en:'Mark · The Submerged Bell (Drowned Choir)'},
+    body:{zh:'「水底有一口钟，它从没被响过——水没过它时，人也听不见了。」听不见的东西，其实一直在。', en:'“At the bottom, a bell never struck. Once water covers it, no one hears it again.” What cannot be heard has never stopped, all along.'} },
+  { cat:'mark', title:{zh:'刻痕 · 水泡软的字（沉唱堂）', en:'Mark · The Water-Soaked Line (Drowned Choir)'},
+    body:{zh:'「这一块刻了一行字，但水漫进了字里很久。」拓片之前，先放一段安静。', en:'“An inscription, one line of characters — but water soaked into the strokes long ago.” Before the rubbing, a season of quiet.'} },
+  { cat:'mark', title:{zh:'刻痕 · 划痕名册（破拍营地）', en:'Mark · The Scratched Roster (Brokenbar)'},
+    body:{zh:'「这里所有人都忘了自己叫什么，记得自己的拍子。」雇员名册上全是划痕——名字不要紧，拍子要紧。', en:'“Everyone here forgot their names. They kept their beats.” A roster of scratches — names didn’t matter; the meter did.'} },
+  { cat:'mark', title:{zh:'刻痕 · 未敲过的铜块（钟坠院）', en:'Mark · The Unstruck Copper (Fellcarillon)'},
+    body:{zh:'「这一口钟从没被敲过，也从没被摘下——它是唯一一块没学会沉默的铜块。」', en:'“This bell was never struck and never taken down — it’s the only piece of copper that never learned to be silent.”'} },
+  { cat:'mark', title:{zh:'刻痕 · 知道事的灰（无耳深窖）', en:'Mark · The Dust That Knows (Earless Deeps)'},
+    body:{zh:'「井底有一只眼睛——它睁开的那一刻，世界变得比有人在场还安静。」', en:'“At the bottom, an eye — the moment it opened, the world went quieter than any stage.”'} },
+  { cat:'mark', title:{zh:'刻痕 · 钟摆银镜（未竟厅）', en:'Mark · The Pendulum’s Mirror (Unfinished Hall)'},
+    body:{zh:'「时间在这里是一道钟摆，走来走去——就是走不到头。」银镜映见的钟摆，永远差一拍。', en:'“Time here is a pendulum — it swings back and forth, it never reaches an end.” The pendulum in the mirror is always one beat off.'} },
+  { cat:'mark', title:{zh:'刻痕 · 带钟的风（风钟海岸）', en:'Mark · Bell-Bearing Wind (Windbell Coast)'},
+    body:{zh:'「海风不会响。它带着一个又一个钟的余温，却从不让你清楚地听到。」', en:'“The wind never sounds. It carries the warmth of one bell after another, but never lets you hear them clearly.”'} },
+
+  /* ---------- 系统 systems ---------- */
+  { cat:'system', title:{zh:'调音桩 The Tuning Peg', en:'The Tuning Peg'},
+    body:{zh:'Tab 开地图；E 休息并保存。调音桩里也住着「手册」和「游记」——这一局的说明书和世界指北针，不挑场合地翻开。', en:'Tab toggles the map; E rests and saves. The peg also houses the “Manual” and the “Atlas” — this run’s primer and bearing, openable anywhere.'} },
+  { cat:'system', title:{zh:'谱册 Moves', en:'Moves'},
+    body:{zh:'乐章战技页：四个乐章（序句 → 休止），每层按序解锁；研读被动不花资源。乐谱研读 = 学习被动，乐章节点 = 装进主动槽。', en:'The skill page: four Movesets (Overture → Caesura), unlocked in order; study passives freely. Scriptio = learn passives; chapter nodes slot into active slots.'} },
+  { cat:'system', title:{zh:'手册 Manual（游戏内嵌）', en:'Manual (in-game)'},
+    body:{zh:'Esc → 调音桩 →「手册」页：上手四键、声音=风险、三场 Boss、结局、卡住怎么办、刻痕说明。玩家不用去看任何项目文档，说明书就是游戏本身的一页。', en:'Esc → peg → the “Manual” tab: four keys, sound-as-risk, three bosses, endings, stuck-remedies, carved marks. The primer is a page of the game itself; nobody reads the repo docs.'} },
+  { cat:'system', title:{zh:'游记 Atlas（2026-11-15）', en:'Atlas (2026-11-15)'},
+    body:{zh:'Esc → 调音桩 →「游记」页：八区指北针（层数 + boss）、10 处刻痕指路、怎么不迷路、边界之外还没开门的世界。', en:'Esc → peg → the “Atlas” tab: the eight-reach bearing (level + boss), pointer to all ten marks, wayfinding, and what hasn’t opened beyond the rim.'} },
+  { cat:'system', title:{zh:'存档 Save', en:'Save'},
+    body:{zh:'调音桩前按 E 休息即保存；Boss 倒下自动存档；手动槽可写/可删。档案室（存档界面）不会因为导航按错就吞你的档。', en:'Resting at a peg saves; boss deaths autosave; manual slots are writable and erasable. The archive never eats your save because you mis-navigated.'} },
+  { cat:'system', title:{zh:'音色石 Resonance stones', en:'Resonance stones'},
+    body:{zh:'教学里捡的「音色石碎料」熔成的石头——每一颗存着一记响过的钟。谱册里的乐章为它们而播，寄存进你体内的每一次共鸣都会自动录入，结束才退回。', en:'Stones smelted from shards picked up along the way — each stores one toll. The Moves page exists for them; every resonance stored in you is recorded automatically and refunded only at the end.'} },
+
+  /* ---------- 史诗 EPIC-V / VI / VII ---------- */
+  { cat:'epic', title:{zh:'EPIC-V《风钟纪元》· DESIGN-ONLY', en:'EPIC-V “The Age of the Wind-Bells” · DESIGN-ONLY'},
+    body:{zh:'「敲完之后呢？」——风钟海岸是那一章的舞台：风替你敲第一记、NO 新 NPC、钟楼挂着没有舌的钟。不是胜利，是见证。', en:'“What happens after you strike?” The stage is Windbell Coast: the wind tolls first, no new NPC, a bell-less bell hangs in the tower. Not victory — witness.'} },
+  { cat:'epic', title:{zh:'EPIC-VI《雨钟纪元》· DESIGN-ONLY', en:'EPIC-VI “The Age of the Rain-Bells” · DESIGN-ONLY'},
+    body:{zh:'「雨落到纸上，判词湿了。」——雨书记递来的「沉钟七条罪责」没有署名。带上判词 = 背起一场审判；放下 = 雨停。永远无人作答是谁下的沉钟令。', en:'“Rain fell on the paper; the indictment stayed wet.” The registrar hands you seven charges with no signature. Carry it = you hold a trial; set it down = the rain stops. No one ever answers who ordered the silencing.'} },
+  { cat:'epic', title:{zh:'EPIC-VII《低音之城》· DESIGN-ONLY', en:'EPIC-VII “The Bass Citadel” · DESIGN-ONLY'},
+    body:{zh:'「沉默被产业化了之后。」三幕：低音之城（负荷↓ · 频率↓ · 服从↑ 的计价城邦）/ 霜锤崖（敲钟的人不回看自己的手）/ 回廊钟（你的 48 记编成镇庙编年）。', en:'“After silence became industry.” Three movements: the Bass Citadel (load↓ · frequency↓ · obedience↑ — a priced metropolis) / Frost-Hammer Cliff (the one who strikes never looks back at their hand) / The Arcade of Bells (your 48 tolls, archived as annals).'} },
+
+  /* ---------- 新陆 NEW-LANDS ---------- */
+  { cat:'lands', title:{zh:'雨钟谷地 Rainbell Hollow', en:'Rainbell Hollow'},
+    body:{zh:'NEW-LANDS 新陆之一：雨替所有字句签名的谷地。设计稿立场，非本版本 runtime——它是六片新地里唯一以「雨」为题眼的。', en:'One of the New Lands: the hollow where rain signs every word. Design-draft only, not this build’s runtime — the only one of the six named for rain.'} },
+  { cat:'lands', title:{zh:'低音之城 The Bass Citadel', en:'The Bass Citadel'},
+    body:{zh:'NEW-LANDS 新陆之一：负荷↓ · 频率↓ · 服从↑。沉默在这里是商品——EPIC-VII 的主舞台。非本版本 runtime。', en:'One of the New Lands: load↓ · frequency↓ · obedience↑. Silence is merchandise here — the stage of EPIC-VII. Design-draft only.'} },
+  { cat:'lands', title:{zh:'霜锤崖 Frost-Hammer Cliff', en:'Frost-Hammer Cliff'},
+    body:{zh:'NEW-LANDS 新陆之一：北境冻钟 + 霜锤工坊；锤面硬度由你自己的每一记决定。敲钟的人不回看自己的手。非本版本 runtime。', en:'One of the New Lands: north-face frozen bells and the frost-hammer works; each strike of yours tunes the head. The one who strikes never looks back at their hand. Design-draft only.'} },
+  { cat:'lands', title:{zh:'回廊钟 The Arcade of Bells', en:'The Arcade of Bells'},
+    body:{zh:'NEW-LANDS 新陆之一：走完回廊，每一记你敲过的钟都有一块石牌——音高 = 该记的实际频率。非本版本 runtime。', en:'One of the New Lands: every toll you’ve ever struck gets a stone plaque in the arcade, pitched to the true frequency of that moment. Design-draft only.'} },
+  { cat:'lands', title:{zh:'回声庭园 The Garden of the Return', en:'The Garden of the Return'},
+    body:{zh:'NEW-LANDS 新陆之一 / EPIC-VI 阶段C：EPIC-VI 的伦理终点——玩家不再拯救，只继续走。旧钟主人只说一句：它替你敲过的每一下，都还在回音壁上。', en:'One of the New Lands / EPIC-VI phase C: the ethical terminus — no more saving, only walking on. The old bell-keeper says one line: everything it tolled for you is still on the echo wall.'} },
+  { cat:'lands', title:{zh:'风钟海岸 Windbell Coast', en:'Windbell Coast'},
+    body:{zh:'NEW-LANDS 新陆之一 / 本版本实装：解锁 = flag.organ_gate_open，八地域最后入驻的一片。风不敲、钟不回——它等你去走完余响。', en:'One of the New Lands / shipped in this build: unlock = flag.organ_gate_open — the last of the eight to open its gates. The wind doesn’t toll, the bell doesn’t answer — it waits for you to walk the coda.'} },
+];
+
+/* ---------- BM25 ---------- */
+const K1 = 1.5, B = 0.75;
+const CJK = /[一-鿿]/;
+
+function tokenize(s) {
+  const text = String(s ?? '');
+  const out = [];
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (CJK.test(ch)) {
+      out.push(ch);
+      if (i + 1 < text.length && CJK.test(text[i + 1])) out.push(text.slice(i, i + 2));
+    }
+  }
+  const latin = text.toLowerCase().match(/[a-z0-9]+/g) || [];
+  for (const w of latin) if (w.length >= 2) out.push(w);
+  return out;
+}
+
+const docTokenList = CODEX.map((e) => {
+  // title tokens ×3 (BM25F lite)
+  return [...tokenize(e.title.zh + ' ' + e.title.en + ' ' + e.title.zh + ' ' + e.title.en),
+          ...tokenize(e.body.zh), ...tokenize(e.body.en)];
+});
+
+const df = new Map();
+for (const toks of docTokenList) {
+  for (const t of new Set(toks)) df.set(t, (df.get(t) || 0) + 1);
+}
+const N = CODEX.length;
+const avgdl = docTokenList.reduce((a, t) => a + t.length, 0) / N;
+const idf = (t) => Math.log(1 + (N - (df.get(t) || 0) + 0.5) / ((df.get(t) || 0) + 0.5));
+
+function scoreDoc(qi, qToks) {
+  const toks = docTokenList[qi];
+  const tf = new Map();
+  for (const t of toks) tf.set(t, (tf.get(t) || 0) + 1);
+  let s = 0;
+  for (const q of qToks) {
+    const f = tf.get(q) || 0;
+    if (!f) continue;
+    s += idf(q) * (f * (K1 + 1)) / (f + K1 * (1 - B + B * (toks.length / avgdl)));
+  }
+  return s;
+}
+
+/* ---------- UI state ---------- */
+const state = { lang: 'zh', cat: 'all', query: '' };
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => [...document.querySelectorAll(sel)];
+
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+function highlight(text, qToks) {
+  let html = esc(text);
+  const latin = qToks.filter((t) => /^[a-z0-9]{2,}$/.test(t));
+  for (const t of latin) {
+    html = html.replace(new RegExp(`(${t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'), '<mark>$1</mark>');
+  }
+  return html;
+}
+
+function renderChips() {
+  $('#chips').innerHTML = CATS.map((c) =>
+    `<button class="chip${c.id === state.cat ? ' on' : ''}" data-cat="${c.id}" type="button">${state.lang === 'zh' ? c.zh : c.en}</button>`
+  ).join('');
+}
+
+function matchesLang(e, qToks) {
+  // 搜索语种无关：zh+en 双语料同池（世界谱对两类读者开门）
+  return scoreDoc(CODEX.indexOf(e), qToks);
+}
+
+function render() {
+  const qToks = tokenize(state.query);
+  const scored = CODEX.map((e, i) => ({ e, s: qToks.length ? scoreDoc(i, qToks) : 1 }))
+    .filter(({ e, s }) => (state.cat === 'all' || e.cat === state.cat) && (qToks.length === 0 || s > 0))
+    .sort((a, b) => b.s - a.s)
+    .slice(0, 60);
+  $('#hitCount').textContent = String(scored.length);
+  const grid = $('#grid');
+  if (!scored.length) {
+    grid.innerHTML = `<div class="empty"><b>∅</b><br>${state.lang === 'zh' ? '没找到 —— 换个词：<b>万籁</b> / <b>频率罗盘</b> / <b>第四口钟</b>？' : 'Nothing found — try <b>The Myriad</b>, <b>Frequency Compass</b>, <b>the fourth bell</b>.'}</div>`;
+    return;
+  }
+  grid.innerHTML = scored.map(({ e }) => {
+    const tagLabel = { reach: state.lang === 'zh' ? '地域' : 'Reach', boss: 'Boss', ending: state.lang === 'zh' ? '结局' : 'Ending',
+      term: state.lang === 'zh' ? '术语' : 'Term', mark: state.lang === 'zh' ? '刻痕' : 'Mark',
+      system: state.lang === 'zh' ? '系统' : 'System', epic: state.lang === 'zh' ? '史诗' : 'Epic', lands: state.lang === 'zh' ? '新陆' : 'New Land' }[e.cat];
+    return `<article class="card">
+      <span class="tag tag-${e.cat}">${tagLabel}</span>
+      <h3>${highlight(e.title[state.lang], qToks)}</h3>
+      <p>${highlight(e.body[state.lang], qToks)}</p>
+    </article>`;
+  }).join('');
+}
+
+function applyLang(lang) {
+  state.lang = lang;
+  document.documentElement.setAttribute('data-lang', lang);
+  document.documentElement.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en');
+  $$('.zh-copy').forEach((el) => { el.style.display = lang === 'zh' ? '' : 'none'; });
+  $$('.en-copy').forEach((el) => { el.style.display = lang === 'en' ? '' : 'none'; });
+  const q = $('#q');
+  q.setAttribute('placeholder', lang === 'zh' ? '搜「万籁」「敲不碎的铃」「频率罗盘」……' : 'Search: “The Myriad”, “unbreakable bell”, “frequency compass”…');
+  renderChips();
+  render();
+}
+
+/* ---------- wire up ---------- */
+$('#q').addEventListener('input', (ev) => { state.query = ev.target.value; render(); });
+$('#chips').addEventListener('click', (ev) => {
+  const b = ev.target.closest('[data-cat]');
+  if (!b) return;
+  state.cat = b.getAttribute('data-cat');
+  renderChips();
+  render();
+});
+$('#langToggle').addEventListener('click', () => applyLang(state.lang === 'zh' ? 'en' : 'zh'));
+
+renderChips();
+applyLang('zh');
+</script>
+</body>
+</html>
