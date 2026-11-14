@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "319134dcce606390ccab375abba5e08c418350b3",
+  "head": "e469b4ca6c1677d0893b0e0e93e1db8e056e69af",
   "branch": "master",
-  "subject": "feat(Stakerite): 新增「手册」Tab — 把 PLAYER-GUIDE / 教程嵌在调音桩面板内",
-  "date": "2026-11-15T03:03:38+08:00",
+  "subject": "docs(guide): PLAYER-GUIDE 双语加「Tab → 手册」入口； Stakerite 第 7/8 个 Tab（手册，PAGE 列表里加「Tab → 手册」帮助）",
+  "date": "2026-11-15T03:04:50+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/319134dcce606390ccab375abba5e08c418350b3",
+    "url": "https://github.com/xiaodernan/caesura/commit/e469b4ca6c1677d0893b0e0e93e1db8e056e69af",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
