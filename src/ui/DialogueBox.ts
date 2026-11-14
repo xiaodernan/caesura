@@ -1,6 +1,6 @@
 import { PICK_INTENTS, type UiIntent } from '@/core/Input'
 import type { DialogueView } from '@/quest/Dialogue'
-import { t } from '@/i18n/Lang'
+import { t, getLang } from '@/i18n/Lang'
 
 /**
  * 对话框（Phase 6-B / narrative §3.2 的 subtitlesRequired）。
@@ -68,7 +68,11 @@ const CSS = `
 }
 `
 
+/** 每一种人格的单字印（中文真值 — 测试钉死）；EN 用罗马词同源对照 */
 const STYLE_LABEL: Record<string, string> = { blunt: '直', poetic: '诗', silent: '默', provoke: '激' }
+const STYLE_LABEL_EN: Record<string, string> = { blunt: 'Direct', poetic: 'Verse', silent: 'Hush', provoke: 'Edge' }
+const styleLabel = (style: string): string =>
+  (getLang() === 'en' ? STYLE_LABEL_EN : STYLE_LABEL)[style] ?? style
 
 export interface DialogueHooks {
   /** 玩家选了第 index 个选项（1 起） */
@@ -144,7 +148,7 @@ export class DialogueBox {
     // **内部词表漏到了玩家面前**，而 `docs/narrative.md` §27 那张表写的是「无 `emotion` 表现」。
     // 情绪是**写给作者看**的（将来做立绘/音色时可以接它），不是给玩家读的标签。
     const choices = v.choices.map((c) =>
-      `<div class="ch" data-ch="${c.id}"><span class="k">${c.index}</span><span class="t">${c.text}</span><span class="s">${STYLE_LABEL[c.style] ?? ''}</span></div>`,
+      `<div class="ch" data-ch="${c.id}"><span class="k">${c.index}</span><span class="t">${c.text}</span><span class="s">${styleLabel(c.style)}</span></div>`,
     ).join('')
     const hint = v.choices.length > 0
       ? t('ui.dialogue.1to9')
