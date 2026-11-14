@@ -69,6 +69,10 @@ export const NAMED_HOLES = [
     area: '(根点文件)',
     why: '根上的点文件（形状名单与理由在 `text-corpus.mjs` 的 `ROOT_DOT_FILES` 里）：机器配置与一次性产物，git 自己读它们；走查对点前缀是瞎的（根循环里那句点前缀判断）⇒ 它们天然落在交付总体之外。',
   },
+  {
+    area: 'cast',
+    why: '角色图鉴页（`cast/index.html`）：玩家专吃一口看完整故事/势力/派系的静态 HTML，**不在 source code 主体里**（无 runtime、无 import、不进 bundle 也不进 dialogue.json）；Pages workflow 把它拷入 dist/cast/ 一同部署到 https://xiaodernan.github.io/caesura/cast/；玩家看到的「止音纪元 Cast Roster」属于 metaLanding 而非 game-internal；id-scope 规则提示这一堆「有一个文件落库却不在交付总体（按号引用规则为 src/scripts 走查面）」——这是合法不入走查的扩大，不属于走查面外遗留。这里登记它作为命名的洞，连门 `id-scope-rules 的 §6 `豁免的证据要现在能打开`` ——它在 Pages deploy workflow 里有 `cp -R cast/. dist/cast/`，本行的载体在 .github/workflows/pages.yml 第 41 行附近。',
+  },
 ]
 
 /**
