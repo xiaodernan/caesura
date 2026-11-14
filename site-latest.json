@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "48bd575ef68bcb4c879857697474051d9545bc31",
+  "head": "68dab3d1838ed565f3c4fb82a981361dc5af7e58",
   "branch": "master",
-  "subject": "chore(status): re-embed site-latest.json",
-  "date": "2026-11-14T14:05:36Z",
+  "subject": "test(boot-screen): update index.html 「启封仪典」pin to bilingual dual-small markup",
+  "date": "2026-11-14T22:14:26+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/48bd575ef68bcb4c879857697474051d9545bc31",
+    "url": "https://github.com/xiaodernan/caesura/commit/68dab3d1838ed565f3c4fb82a981361dc5af7e58",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
