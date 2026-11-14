@@ -353,21 +353,23 @@ describe('④ 两块区域的盒子不许重叠出体积（需求 §9 的 Macro�
     expect(errs[0].msg, '这句话的理由是运行时的归属规则，不是风格偏好').toContain('Streaming.regionAt')
   })
 
-  it('真表 21 对候选里 7 对接触：5 面 / 2 棱 / 0 体；y=48 那条接缝是 KI-102 把钟坠院的盒子抬出来的结果', () => {
+  it('真表 28 对候选里 9 对接触：6 面 / 3 棱 / 0 体；y=48 那条接缝是 KI-102 把钟坠院的盒子抬出来的结果', () => {
     const contacts = boxContacts(regions)
     const ofKind = (k: string) => contacts.filter((c) => c.kind === k)
     const names = (list: { a: string; b: string }[]) => list.map((c) => `${c.a}∩${c.b}`).sort()
-    expect(contacts.length, '接触对总数换了 = 有人在挪盒子，下面三格的名册要一起重量').toBe(7)
+    expect(contacts.length, '接触对总数换了 = 有人在挪盒子，下面三格的名册要一起重量').toBe(9)
     expect(names(ofKind('face')), '共面接缝名册是⑤的路网底子：多一条少一条都要在这里说').toEqual([
       'rg_resthold∩rg_brokenbar_camp',
       'rg_resthold∩rg_whisperwode',
       'rg_whisperwode∩rg_brokenbar_camp',
       'rg_whisperwode∩rg_drowned_choir',
       'rg_whisperwode∩rg_fellcarillon',
+      'rg_whisperwode∩rg_windcoast',
     ].sort())
-    expect(names(ofKind('edge')), '共棱的两对：营地⇄钟坠院、钟坠院⇄未竟厅（挨着，走不过去）').toEqual([
+    expect(names(ofKind('edge')), '共棱的三对：营地⇄钟坠院、钟坠院⇄未竟厅、沉唱堂⇄风钟海岸（挨着，走不过去）').toEqual([
       'rg_brokenbar_camp∩rg_fellcarillon',
       'rg_fellcarillon∩rg_unfinished_hall',
+      'rg_drowned_choir∩rg_windcoast',
     ].sort())
     expect(ofKind('overlap'), '④ 的整句话在真表上就是这一格：一条共体都不许有').toEqual([])
     const bell = contacts.find((c) => c.kind === 'face' && [c.a, c.b].sort().join() === ['rg_fellcarillon', 'rg_whisperwode'].sort().join())
@@ -428,10 +430,10 @@ describe('⑤ 区域之间的关系走得通吗（需求 §9 的 Macro：从起�
     expect(errorsOf([one]), '把"不判"读成"判成通过"是同一句话，但把它写成"整格跳过"就必须在这里有证人').toEqual([])
   })
 
-  it('真表：从休垒走遍 7 区、0 个死胡同，而 KI-100 记下的两条「没做」各有一条实测出路', () => {
+  it('真表：从休垒走遍 8 区、0 个死胡同，而 KI-100 记下的两条「没做」各有一条实测出路', () => {
     const m = macroConnectivity(regions)
     expect(m.start, '起始区换了 = 有人在改 order，⑤ 的主语要重新指认').toBe('rg_resthold')
-    expect(m.regionCount, '区域名册掉了 ⇒ 连通这句话的分母跟着缩').toBe(7)
+    expect(m.regionCount, '区域名册掉了 ⇒ 连通这句话的分母跟着缩').toBe(8)
     expect(m.unreachable, `走不到的区：${m.unreachable.join(' ')}`).toEqual([])
     expect(m.deadEnds, `进去就出不来的区：${m.deadEnds.map((d) => d.id).join(' ')}`).toEqual([])
     expect(m.exits.get('rg_earless_deeps')?.out, '无耳深窖的出路只有 KI-102 补的那条排水斜道：它此前是一条死路').toEqual(['tp_deeps_drainslide→rg_brokenbar_camp'])

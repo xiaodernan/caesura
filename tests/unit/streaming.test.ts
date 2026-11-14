@@ -53,13 +53,13 @@ describe('region data (IP_SEED §3/§10/§14)', () => {
   it('covers the seven slice regions with the registered vocabulary', () => {
     expect(regions.map((r) => r.id)).toEqual([
       'rg_resthold', 'rg_whisperwode', 'rg_drowned_choir', 'rg_brokenbar_camp',
-      'rg_fellcarillon', 'rg_earless_deeps', 'rg_unfinished_hall',
+      'rg_fellcarillon', 'rg_earless_deeps', 'rg_unfinished_hall', 'rg_windcoast',
     ])
     expect(regions.map((r) => r.displayName)).toEqual([
       '休垒 Resthold', '雾语林 Whisperwode', '沉唱堂 Drowned Choir', '破拍营地 Brokenbar Camp',
-      '钟坠院 Fellcarillon', '无耳深窖 Earless Deeps', '未竟厅 The Unfinished Hall',
+      '钟坠院 Fellcarillon', '无耳深窖 Earless Deeps', '未竟厅 The Unfinished Hall', '风钟海岸 Windbell Coast',
     ])
-    expect(regions.map((r) => r.order)).toEqual([0, 1, 2, 3, 4, 5, 6])
+    expect(regions.map((r) => r.order)).toEqual([0, 1, 2, 3, 4, 5, 6, 7])
   })
 
   it('grids cleanly: one chunkSize, bounds aligned to it, every cell claimed by at most one region', () => {

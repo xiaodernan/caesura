@@ -1003,8 +1003,8 @@ describe('战斗档：id→行 的解析与转交（KI-080）', () => {
     const authored = new Set(battleScores.map((b) => b.id))
     expect([...referenced].filter((id) => !authored.has(id)), '有区域指了一张不存在的战斗档').toEqual([])
     expect([...authored].filter((id) => !referenced.has(id)), '表里有一行永远不会被奏出来（§55 死数据）').toEqual([])
-    expect([referenced.size, authored.size, regions.length], '五个 id / 五行 / 七个区——变了就要重看上面两条比的是同一件事')
-      .toEqual([5, 5, 7])
+    expect([referenced.size, authored.size, regions.length], '五个 id / 五行 / 八个区——变了就要重看上面两条比的是同一件事')
+      .toEqual([5, 5, 8])
   })
 })
 

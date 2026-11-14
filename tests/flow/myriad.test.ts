@@ -66,11 +66,11 @@ function myriad(w: W, x = 0, z = -14, seed = 'myriad'): Enemy {
 const d = registry.get<EnemyData>('en_myriad')
 
 describe('§2.1 区域网格表：深窖真的没有网格，只有 60BPM 心跳', () => {
-  it('七个区域全部自己声明网格（没有一处把 84 写死在代码里）', () => {
+  it('八个区域全部自己声明网格（没有一处把 84 写死在代码里）', () => {
     const table: Record<string, [number, number]> = {
       rg_resthold: [84, 4], rg_whisperwode: [84, 4], rg_drowned_choir: [96, 4],
       rg_brokenbar_camp: [84, 4], rg_fellcarillon: [92, 4], rg_earless_deeps: [60, 1],
-      rg_unfinished_hall: [92, 4]
+      rg_unfinished_hall: [92, 4], rg_windcoast: [72, 4]
     }
     for (const r of regions) {
       expect(r.grid, `${r.id} 没声明网格`).toBeTruthy()
