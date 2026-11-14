@@ -1,3 +1,4 @@
+import { t } from '@/i18n/Lang'
 import { bus } from '@/core/EventBus'
 import { Vector3 } from 'three'
 import { GameTime, TICK_DT, TICK_HZ } from '@/core/Time'
@@ -1242,4 +1243,4 @@ if (freshBoot) {
 
 document.getElementById('boot')!.style.display = 'none'
 ;(window as unknown as Record<string, unknown>).__CAESURA_BOOTED__ = true
-console.info('[caesura] online — WASD/Shift/Ctrl-roll/LMB/RMB/F guard/G parry/Q lock/E interact(优先)/execute(处决·背刺)/1·2·3 换装/R·C 乐章战技 I·II/Tab 调音桩面板(需站在调音桩前)/E 与 NPC 交谈/1-9 选对话选项/Esc pause')
+console.info(t('ui.boot.online'))
