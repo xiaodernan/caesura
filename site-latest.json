@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "bd669f23595141ec4f0c30ad5a5e5b5310d2065b",
+  "head": "2b12f8005d9fea504c54fe2671006452f0de2080",
   "branch": "master",
-  "subject": "docs(i18n): FAQ.md（玩家常问 · 中英对照 · 仅引真实 canon）——位置：enemies.json / combat.md §5.3/§6.2 / attacks.json / audio.md",
-  "date": "2026-11-14T20:02:17+08:00",
+  "subject": "feat(i18n): Stakerite「操作」页整页双语（键位两节 + 数值格 + 画质档位 + 配置文件 + 帧辅助/连打/覆盖率地板 + 回声通知）",
+  "date": "2026-11-14T20:37:40+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/bd669f23595141ec4f0c30ad5a5e5b5310d2065b",
+    "url": "https://github.com/xiaodernan/caesura/commit/2b12f8005d9fea504c54fe2671006452f0de2080",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
