@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>止音纪元 · 入门教程</title>
+<title>止音纪元 · 入门教程 / CAESURA · Getting Started</title>
 <style>
   :root {
     --ink: #f2ede4;
@@ -29,40 +29,56 @@
     color: var(--gold); border-radius: 2px; font-size: 12px; letter-spacing: .22em;
     margin-bottom: 16px; font-family: var(--mono);
   }
-  h1 { font-size: clamp(28px, 4.5vw, 48px); font-weight: 400; letter-spacing: .08em }
+  h1 { font-size: clamp(26px, 4.5vw, 48px); font-weight: 400; letter-spacing: .08em }
   h1 span { color: var(--gold) }
   .sub { color: rgba(242,237,228,.55); font-size: 14px; margin-top: 10px; letter-spacing: .05em; font-family: var(--mono) }
-  .cta-row { display: flex; gap: 10px; justify-content: center; margin-top: 18px; flex-wrap: wrap; font-family: var(--mono); font-size: 12px }
+  .cta-row { display: flex; gap: 10px; justify-content: center; margin-top: 18px; flex-wrap: wrap; font-family: var(--mono); font-size: 12px; align-items: center }
   .cta-row a { color: var(--gold); text-decoration: none; border: 1px solid var(--line); padding: 7px 14px; border-radius: 2px; transition: all .2s ease }
   .cta-row a:hover { border-color: var(--gold); background: var(--gold-faint) }
+  .lang { font-family: var(--mono); font-size: 11px; border: 1px solid var(--line); background: #141419; color: #d8cba0; padding: 7px 16px; border-radius: 2px; cursor: pointer; letter-spacing: .12em }
+  .lang:hover { border-color: var(--gold); color: var(--gold) }
   main { max-width: 920px; margin: 0 auto }
   .step {
     border: 1px solid var(--line); background: var(--panel);
     border-radius: 4px; padding: 18px 22px; margin: 14px 0;
-    display: grid; grid-template-columns: 36px 1fr auto; gap: 16px; align-items: center;
+    display: grid; grid-template-columns: 44px 1fr; gap: 18px; align-items: start;
   }
-  .num { font-family: var(--mono); font-size: 20px; color: var(--gold-dim); text-align: center; opacity: .75 }
+  .num { font-family: var(--mono); font-size: 20px; color: var(--gold-dim); text-align: center; opacity: .8; padding-top: 2px }
   .title { font-size: 17px; color: #ffeacc }
-  .body { font-size: 13.5px; color: rgba(242,237,228,.8); margin-top: 4px }
+  .body { font-size: 13.5px; color: rgba(242,237,228,.85); margin-top: 4px }
   .key { display: inline-block; font-family: var(--mono); font-size: 11px; border: 1px solid var(--line);
     background: #1a1a22; color: #ffeabf; padding: 2px 8px; border-radius: 3px; margin: 0 2px; }
   .tip { color: var(--jade); font-size: 12px; font-family: var(--mono); margin-top: 6px }
   .block { border-left: 2px solid rgba(201,180,88,.33); padding: 8px 14px; font-size: 13.5px; color: rgba(242,237,228,.9); border-radius: 0 4px 4px 0 }
-  .warn { color: #d98892; font-family: var(--mono); font-size: 12px }
   footer { text-align: center; margin-top: 40px; font-family: var(--mono); font-size: 11px; color: rgba(242,237,228,.45) }
   footer a { color: var(--gold-dim) }
+  html[data-lang="zh"] .en-copy, html[data-lang="en"] .zh-copy { display: none }
+  html[data-lang="zh"] .zh-copy, html[data-lang="en"] .en-copy { display: block }
+  @media (prefers-reduced-motion: no-preference) {
+    .step { transition: border-color .25s ease }
+    .step:hover { border-color: rgba(201,180,88,.45) }
+  }
 </style>
 </head>
 <body>
 
 <header>
   <div class="seal">CAESURA · TUTORIAL</div>
-  <h1>止音纪元 · <span>入门小册子</span></h1>
-  <p class="sub">把每个按键都敲响一次——只需要刚刚好这几分钟</p>
+
+  <div class="zh-copy">
+    <h1>止音纪元 · <span>入门小册子</span></h1>
+    <p class="sub">把每个按键都敲响一次——只需要刚刚好这几分钟</p>
+  </div>
+  <div class="en-copy">
+    <h1>CAESURA · <span>Player's Primer</span></h1>
+    <p class="sub">Ring every key once — all you need is these few minutes</p>
+  </div>
+
   <div class="cta-row">
     <a href="https://xiaodernan.github.io/caesura/?fresh=1">Start a fresh run</a>
-    <a href="https://xiaodernan.github.io/caesura/console/">Console mesh</a>
-    <a href="../docs/PLAYER-GUIDE.md">Full guide</a>
+    <a href="https://xiaodernan.github.io/caesura/console/">Systems console</a>
+    <a href="https://github.com/xiaodernan/caesura/blob/master/docs/PLAYER-GUIDE.md">Full guide</a>
+    <button class="lang" id="langToggle" aria-label="Toggle language / 切换语言">EN / 中文</button>
   </div>
 </header>
 
@@ -71,84 +87,149 @@
 <div class="step">
   <div class="num">01</div>
   <div>
-    <div class="title">开弦</div>
-    <div class="body">第一次进入游戏，标题会出五张出身卡。挑一个你喜欢的、看一眼它给的武器和被动，按下 <span class="key">← →</span> 选好了按 <span class="key">Enter</span> 确定——你的出身因此被钉死，再也换不了。</div>
-    <div class="tip">IS ELASTIC · 出身不只是数值，是一段人生</div>
+    <div class="zh-copy">
+      <div class="title">开弦</div>
+      <div class="body">第一次进入游戏，标题会出若干出身卡（决定初武器/被动）。按下 <span class="key">← →</span> 挑卡，<span class="key">Enter</span> 确定——出身会钉死，再也换不了。这不是数值选择，是一段人生。</div>
+      <div class="tip">挑你不熟的那张——你已经知道自己怎么打了</div>
+    </div>
+    <div class="en-copy">
+      <div class="title">Struck</div>
+      <div class="body">On your first run the title deals out origin cards (starting weapon / passive). Pick one with <span class="key">← →</span>, confirm with <span class="key">Enter</span> — the pick is final. It is not a stat choice; it is a life.</div>
+      <div class="tip">Pick the card you don't know — you already know how you fight</div>
+    </div>
   </div>
-  <button aria-hidden="true" style="visibility:hidden"></button>
 </div>
 
 <div class="step">
   <div class="num">02</div>
   <div>
-    <div class="title">横拖</div>
-    <div class="body"><span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> 在横拖中移动。左键 <span class="key">鼠标左键</span> 轻击，右键 <span class="key">鼠标右键</span> 重击。<span class="key">Shift</span> 冲刺，<span class="key">Space</span> 跳跃，<span class="key">Ctrl</span> 偏闪——三分攻击，七分缓步。</span></div>
-    <div class="tip">SLOW IS FAST · 慢是常态，急才是风险</div>
+    <div class="zh-copy">
+      <div class="title">横拖</div>
+      <div class="body"><span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> 移动。左键 <span class="key">LMB</span> 轻击，右键 <span class="key">RMB</span> 重击。<span class="key">Shift</span> 冲刺，<span class="key">Space</span> 跳跃，<span class="key">Ctrl</span> 偏闪——三分攻，七分缓。</div>
+      <div class="tip">慢是常态，急是风险</div>
+    </div>
+    <div class="en-copy">
+      <div class="title">Drift-string</div>
+      <div class="body"><span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> to move. <span class="key">LMB</span> light, <span class="key">RMB</span> heavy. <span class="key">Shift</span> to sprint, <span class="key">Space</span> to leap, <span class="key">Ctrl</span> to dodge — three parts strike, seven parts pace.</div>
+      <div class="tip">Slow is the default; haste is the risk</div>
+    </div>
   </div>
-  <button aria-hidden="true" style="visibility:hidden"></button>
 </div>
 
 <div class="step">
   <div class="num">03</div>
   <div>
-    <div class="title">弹反</div>
-    <div class="body"><span class="key">F</span> 格挡，<span class="key">G</span> 弹反。弹反右击一声之后你的节奏不串不抢，对面会踉跄。形形色色的 BOSS 都先做好这件事，再去打它。</div>
-    <div class="tip">无轻不重 · 后发先至</div>
+    <div class="zh-copy">
+      <div class="title">盾锁与反击</div>
+      <div class="body"><span class="key">F</span> 格挡，<span class="key">G</span> 弹反。弹反成功会让对面踉跄进入脆弱窗口——Boss 也一样。<b>先弹反，后挥砍。</b></div>
+      <div class="tip">后发先至 · 无轻不重</div>
+    </div>
+    <div class="en-copy">
+      <div class="title">Guard &amp; Parry</div>
+      <div class="body"><span class="key">F</span> to guard, <span class="key">G</span> to parry. A landed parry staggers the foe into a real vulnerability window — bosses too. <b>Parry first, then strike.</b></div>
+      <div class="tip">Strike after the drum, heavy after light</div>
+    </div>
   </div>
-  <button aria-hidden="true" style="visibility:hidden"></button>
 </div>
 
 <div class="step">
   <div class="num">04</div>
   <div>
-    <div class="title">锁定</div>
-    <div class="body">靠近对手时按 <span class="key">Q</span> 锁定，<span class="key">Q</span> 多按几次切锁。锁头之后你的视角会跟着它跑，打起来稳定得多。打完再切回 <span class="key">Q</span> 放掉，不要一直锁。</div>
-    <div class="tip">锁定半屏，右侧弱点显示：火眼金睛看一眼</div>
+    <div class="zh-copy">
+      <div class="title">锁定</div>
+      <div class="body">靠近对手按 <span class="key">Q</span> 锁定，多按几次切锁；<span class="key">Q</span> 再按一次放掉。锁定后视角跟着它走，打得稳。</div>
+      <div class="tip">锁定半屏，弱点一眼看穿</div>
+    </div>
+    <div class="en-copy">
+      <div class="title">Lock-on</div>
+      <div class="body">Approach a foe, press <span class="key">Q</span> to lock on, press again to switch targets, press once more to release. Your view follows it — your hands stay honest.</div>
+      <div class="tip">Lock for half a screen, see its weak point at a glance</div>
+    </div>
   </div>
-  <button aria-hidden="true" style="visibility:hidden"></button>
 </div>
 
 <div class="step">
   <div class="num">05</div>
   <div>
-    <div class="title">音色相生</div>
-    <div class="body">武器的每一下都在<b>唱</b>（轻微的声音跟着音符走）。Flew<span class="key">V</span> 可以停下来听一听——「声纹观察」——按下去你的女主角会闭眼停 3 秒，世界一静，所有人都暴露调性。「天照」技能就是这么来的。</div>
-    <div class="tip">V · 听世界 · 三秒后再动，很多事会变</div>
+    <div class="zh-copy">
+      <div class="title">音色相生</div>
+      <div class="body">武器的每一击都在<b>唱</b>。按 <span class="key">V</span> 停下来听一听——三秒世界一静，所有人的调性暴露。</div>
+      <div class="tip">V · 听世界 · 三秒后再动</div>
+    </div>
+    <div class="en-copy">
+      <div class="title">Kith of Tone</div>
+      <div class="body">Every swing of your weapon <b>sings</b>. Press <span class="key">V</span> to stop and listen — for three seconds the world goes quiet and every voice shows its pitch.</div>
+      <div class="tip">V · listen · three seconds, then move</div>
+    </div>
   </div>
-  <button aria-hidden="true" style="visibility:hidden"></button>
 </div>
 
 <div class="step">
   <div class="num">06</div>
   <div>
-    <div class="title">耳鸣</div>
-    <div class="body">听到魔物呻吟、铃钟颤振、脚下石屑纷飞？那是<b>它听到你了</b>。声音 = 你在哪，声音 = 敌在哪。在真正的回响 Hall，<em>沉默是唯一安全的语言</em>。</div>
-    <div class="tip">注意多余回响——多一步，多一记耳边光</div>
+    <div class="zh-copy">
+      <div class="title">耳鸣</div>
+      <div class="body">听到脚下石屑、远处铃震、魔物呻吟？那是<b>它听到你了</b>。声音=你在哪，声音=敌在哪。沉默是唯一安全的语言。</div>
+      <div class="tip">多一步回响，多一记耳光</div>
+    </div>
+    <div class="en-copy">
+      <div class="title">Tinnitus</div>
+      <div class="body">Hear gravel? A far bell? A groan from the dark? That is the world knowing <b>you</b>. Sound is where you are; sound is where it is. In halls of echo, silence is the only safe tongue.</div>
+      <div class="tip">One step too many and the bells remember</div>
+    </div>
   </div>
-  <button aria-hidden="true" style="visibility:hidden"></button>
 </div>
 
 <div class="step">
   <div class="num">07</div>
   <div>
-    <div class="title">寄存</div>
-    <div class="body">任何时候都可以按 <span class="key">Esc</span> 暂停。菜单里只有三件事：继续 / 调出锻造 / 存档+退出。新手最好的朋友 <span class="key">Esc</span> 不要藏起来，它是你最安静的朋友。</div>
-    <div class="tip">不需要记住敌方位置——只要你记得 Esc 在哪</div>
+    <div class="zh-copy">
+      <div class="title">寄存</div>
+      <div class="body">随时按 <span class="key">Esc</span> 暂停。菜单里三件事：继续 / 调出锻造 / 存档+退出。新手最好的朋友是 Esc。</div>
+      <div class="tip">不需要记敌人位置——只需记得 Esc 在哪</div>
+    </div>
+    <div class="en-copy">
+      <div class="title">Shelve</div>
+      <div class="body">Press <span class="key">Esc</span> any time to pause. The menu offers three things: resume · the tuning peg · save and quit. Esc is a new player's best friend.</div>
+      <div class="tip">You don't need to remember where it is — just remember Esc</div>
+    </div>
   </div>
-  <button aria-hidden="true" style="visibility:hidden"></button>
 </div>
 
-<div class="block">
+<div class="block zh-copy">
   <span style="color:rgba(242,237,228,.6)">一句给玩家的备忘</span><br>
-  止音纪元不送你一把斩钉截铁的胜利——它送你一口铃，一个耳鸣，和一笔账。好好吹一吹那一口铃，玩家不用去看什么百科。
+  止音纪元不送你一把斩钉截铁的胜利——它送你一口铃、一个耳鸣、和一笔账。好好吹一吹那一口铃，玩家不用去看什么百科。
+</div>
+<div class="block en-copy">
+  <span style="color:rgba(242,237,228,.6)">A reminder from the author</span><br>
+  CAESURA does not hand you a clean victory — it hands you a bell, a ringing in your ears, and a ledger. Go play both hands of that bell; you should not have to read any encyclopedia to finish it.
 </div>
 
 </main>
 
 <footer>
-  CAESURA · v1.7 · 《止音纪元》官方教程 · 关闭本页即回游戏<br />
-  <a href="https://xiaodernan.github.io/caesura/">返回游戏</a>
+  <div class="zh-copy">CAESURA · v1.7 · 《止音纪元》官方教程 · 关闭本页即回游戏<br /><a href="https://xiaodernan.github.io/caesura/">返回游戏</a></div>
+  <div class="en-copy">CAESURA · v1.7 · Official Tutorial · close this page to return · <br /><a href="https://xiaodernan.github.io/caesura/">Back to the game</a></div>
 </footer>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  try {
+    var saved = localStorage.getItem('caesura-lang');
+    if (saved === 'en' || saved === 'zh') root.dataset.lang = saved;
+    root.lang = root.dataset.lang === 'en' ? 'en-US' : 'zh-CN';
+  } catch (e) { /* keep default zh */ }
+  var btn = document.getElementById('langToggle');
+  if (!btn) return;
+  btn.addEventListener('click', function () {
+    var next = root.dataset.lang === 'en' ? 'zh' : 'en';
+    root.dataset.lang = next;
+    root.lang = next === 'en' ? 'en-US' : 'zh-CN';
+    try { localStorage.setItem('caesura-lang', next); } catch (e) { /* noop */ }
+  });
+})();
+</script>
 
 </body>
 </html>
