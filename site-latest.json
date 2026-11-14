@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "6e40870e15dd169f065ce254f832350a05f27b69",
+  "head": "01968353e1463d51813df750d2c3254dcf88a1ed",
   "branch": "master",
-  "subject": "feat(i18n): 区域交互 verb 双语闸 — 65 处提示不再漏中文进 EN 模式",
-  "date": "2026-11-15T00:31:07+08:00",
+  "subject": "feat(content): 第八地域《风钟海岸》落地 + 展示台世界图第八节点（F-103/F-104/F-105）",
+  "date": "2026-11-15T00:43:30+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/6e40870e15dd169f065ce254f832350a05f27b69",
+    "url": "https://github.com/xiaodernan/caesura/commit/01968353e1463d51813df750d2c3254dcf88a1ed",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
