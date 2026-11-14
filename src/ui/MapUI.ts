@@ -1,6 +1,7 @@
 import type { UiIntent } from '@/core/Input'
 import type { RegionData, Vec3 } from '@/data/schema'
 import { PANEL_CSS } from '@/ui/Stakerite'
+import { t } from '@/i18n/Lang'
 
 /**
  * 区域图（需求 §43）——**TD-002 的结案落点**：`map` 这个虚拟按钮从此开的是地图，
@@ -30,9 +31,7 @@ export const MAP_FACILITY_KINDS = ['checkpoint', 'teleport', 'elevator', 'bridge
 export type MapFacilityKind = (typeof MAP_FACILITY_KINDS)[number]
 
 /** 类别 → 地图上的名词。`Record<MapFacilityKind, …>` 让新增类别时这里编译不过，不会悄悄少一行 */
-const FACILITY_LABEL: Record<MapFacilityKind, string> = {
-  checkpoint: '调音桩', teleport: '传送点', elevator: '共鸣井', bridge: '吊桥', soundwall: '音壁', gate: '闸门',
-}
+const facilityLabel = (kind: MapFacilityKind): string => t(`ui.map.face.${kind}`)
 
 /** 组合根喂给地图的一条设施读数（`Interactables` 的投影，不是它的替身） */
 export interface MapFacility {
@@ -46,9 +45,7 @@ export interface MapFacility {
 }
 
 /** 设施状态 → 人话（地图上不许出现 `ready` 这种码） */
-const FACILITY_STATE: Record<MapFacility['state'], string> = {
-  ready: '已开通', locked: '未开通', used: '已通过',
-}
+const facilityState = (state: MapFacility['state']): string => t(`ui.map.fac.${state}`)
 
 export interface MapDeps {
   /** 我在哪个区域（`streaming.regionAt`）。一份「点在哪个矩形里」的规则只许有一个主人 */
@@ -328,8 +325,8 @@ export class MapUI {
       <div class="veil" data-act="close"></div>
       <div class="panel">
         <header>
-          <h1>息声领 · 区域图</h1>
-          <span class="sub">${current ? current.displayName : '界外'} · 已踏足 ${revealed.size}/${this.regions.length} 区 · 缩放 ×${zoom}${thumb ? ' · 缩略图' : ''}</span>
+          <h1>${t('ui.map.title')}</h1>
+          <span class="sub">${current ? current.displayName : t('ui.map.unexplored')} · ${t('ui.map.explored', { n: revealed.size, total: this.regions.length })} · ${t('ui.map.zoomLabel')}${zoom}${thumb ? t('ui.map.thumb') : ''}</span>
         </header>
         <main class="split">
           <div class="atlas-wrap">
@@ -349,14 +346,14 @@ export class MapUI {
               <circle class="dial2" cx="24" cy="24" r="12.8"/>
               <path class="tick" d="M24 4v6.4M24 37.6v6.4M4 24h6.4M37.6 24h6.4"/>
               <path class="north" d="M24 10.8v4.6"/>
-              <text class="n" x="24" y="30" text-anchor="middle">北</text>
+              <text class="n" x="24" y="30" text-anchor="middle">${t('ui.map.north')}</text>
             </svg>
           </div>
           <div class="side">${this.sideHtml(revealed, current)}</div>
         </main>
         <div class="foot">
-          <span>拖拽 / ↑↓←→ 平移 · PgUp·PgDn 缩放 · Enter 回中 · Backspace 收起</span>
-          <span>${thumb ? '缩略图：只画区色块（&lt;0.7×）' : `1 格 = ${this.deps.chunkSize()}m`}</span>
+          <span>${t('ui.map.pan')}</span>
+          <span>${thumb ? t('ui.map.thumbnailNote') : t('ui.map.cell', { n: this.deps.chunkSize() })}</span>
         </div>
       </div>`
   }
@@ -423,7 +420,7 @@ export class MapUI {
     const y = this.cz + v.h / 2 - 16 * k
     return `<g transform="translate(${r2(x)},${r2(y)}) scale(${r2(k)})">
       <line class="scale-line" x1="0" y1="0" x2="${r2(len)}" y2="0" />
-      <text class="rsub" x="0" y="-6">${len}m · 1 格</text>
+      <text class="rsub" x="0" y="-6">${t('ui.map.scale', { len })}</text>
     </g>`
   }
 
@@ -433,10 +430,10 @@ export class MapUI {
     const regions = [...this.regions].filter((r) => revealed.has(r.id)).sort((a, b) => a.order - b.order)
     const regionRows = regions.map((r) => {
       const b = r.bounds
-      return `<div class="row"><span class="name">${r.displayName}${r.id === current?.id ? ' <span class="tag">当前</span>' : ''}
+      return `<div class="row"><span class="name">${r.displayName}${r.id === current?.id ? ` <span class="tag">${t('ui.map.current')}</span>` : ''}
         <span class="note">${r.grid.bpm}BPM/${r.grid.beatsPerBar} · 层 y ${b.minY}~${b.maxY}</span></span>
         <span class="num">x ${b.minX}~${b.maxX} · z ${b.minZ}~${b.maxZ}</span></div>`
-    }).join('') || '<div class="empty">还没有踏足任何区域。</div>'
+    }).join('') || `<div class="empty">${t('ui.map.noneRegions')}</div>`
     const hiddenRegions = this.regions.length - regions.length
 
     const facilities = this.deps.facilities()
@@ -444,27 +441,27 @@ export class MapUI {
       .sort((a, b) => (rank.get(a.regionId) ?? 0) - (rank.get(b.regionId) ?? 0) || a.id.localeCompare(b.id)) //【恒死·批30】两侧 ?? 0 均不可达：revealed 由 exploredRegionIds 只认 this.regions 生成 ⊆ rank 键集，filter 保证 regionId 必在册
     const openCount = facilities.filter((f) => f.state !== 'locked').length //【恒死·批30】下方 FACILITY_LABEL[kind] ?? kind 的兜底不可达：isMapFacility 过滤后 kind 必在 MAP_FACILITY_KINDS 六类内，而 FACILITY_LABEL 是全六类 Record
     const facilityRows = facilities.map((f) => `<div class="row">
-      <span class="name">${FACILITY_LABEL[f.kind as MapFacilityKind] ?? f.kind}
+      <span class="name">${facilityLabel(f.kind as MapFacilityKind)}
         <span class="note">${f.regionName} · x ${Math.round(f.pos.x)} z ${Math.round(f.pos.z)}</span></span>
-      <span class="num">${FACILITY_STATE[f.state]}</span></div>`).join('')
-      || '<div class="empty">这一带还没有可用的机关。</div>'
+      <span class="num">${facilityState(f.state)}</span></div>`).join('')
+      || `<div class="empty">${t('ui.map.noneFacilities')}</div>`
 
     // 地标**只有 nameKey**（表里没有显示名）⇒ 名字先不印在屏幕上，把 key 挂在属性里等一张本地化表
     const landmarkRows = regions.flatMap((r) => r.landmarks.map((l) => ({ r, l }))).map(({ r, l }) => `<div class="row">
-      <span class="name" data-landmark="${l.id}" data-name-key="${l.nameKey}">地标
+      <span class="name" data-landmark="${l.id}" data-name-key="${l.nameKey}">${t('ui.map.landmark')}
         <span class="note">${r.displayName} · x ${Math.round(l.pos.x)} z ${Math.round(l.pos.z)}</span></span>
-      <span class="num">远望 ${l.sightRange}m</span></div>`).join('')
-      || '<div class="empty">还没有看见任何地标。</div>'
+      <span class="num">${t('ui.map.farwatch', { n: l.sightRange })}</span></div>`).join('')
+      || `<div class="empty">${t('ui.map.noneLandmarks')}</div>`
 
     return `
-      <h2>区域 · 已踏足 ${regions.length}/${this.regions.length}</h2>
+      <h2>${t('ui.map.regions', { n: regions.length, total: this.regions.length })}</h2>
       ${regionRows}
-      ${hiddenRegions > 0 ? `<div class="hint">另有 ${hiddenRegions} 区还没有踏足 —— 未踏足的区不显示名字与内容（§4.2）。</div>` : ''}
-      <h2>通行设施 · 已开通 ${openCount}/${facilities.length}</h2>
+      ${hiddenRegions > 0 ? `<div class="hint">${t('ui.map.hiddenHint', { n: hiddenRegions })}</div>` : ''}
+      <h2>${t('ui.map.facilities', { n: openCount, total: facilities.length })}</h2>
       ${facilityRows}
-      <h2>地标</h2>
+      <h2>${t('ui.map.landmarks')}</h2>
       ${landmarkRows}
-      <div class="hint">快旅（选中已激活的调音桩直接传送）还没接：这一批只如实列出它们（见 KI-087）。</div>`
+      <div class="hint">${t('ui.map.fasttravelHint')}</div>`
   }
 }
 
