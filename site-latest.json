@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "9194ffe7edcce542ea8e3dda9381503511776e7b",
+  "head": "319134dcce606390ccab375abba5e08c418350b3",
   "branch": "master",
-  "subject": "fix(id-scope): register /cast/ as a named hole — Pages-published showcase page",
-  "date": "2026-11-15T02:46:58+08:00",
+  "subject": "feat(Stakerite): 新增「手册」Tab — 把 PLAYER-GUIDE / 教程嵌在调音桩面板内",
+  "date": "2026-11-15T03:03:38+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/9194ffe7edcce542ea8e3dda9381503511776e7b",
+    "url": "https://github.com/xiaodernan/caesura/commit/319134dcce606390ccab375abba5e08c418350b3",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
