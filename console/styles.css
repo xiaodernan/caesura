@@ -3643,3 +3643,31 @@ main { padding: clamp(18px, 3vw, 40px) clamp(18px, 4vw, 56px) 48px; max-width: 1
 @media (prefers-reduced-motion: reduce) {
   .theme-switch .chip { transition: none; }
 }
+
+
+/* 沉浸 · 全集展版（Immersion toggle 开关场景剪辑显演示·同步localStorage） */
+.immersive-toggle {
+  appearance: none; border: 1px solid var(--line); background: rgba(255,255,255,.02);
+  color: var(--silver); cursor: pointer; font: 10px var(--mono); padding: 5px 10px; border-radius: 3px;
+  display: inline-flex; gap: 6px; align-items: center;
+  transition: border-color .2s ease, color .2s ease;
+}
+.immersive-toggle:hover { color: #ffeabf; border-color: var(--gold); }
+.immersive-toggle[aria-pressed="true"] { background: var(--gold-faint); border-color: var(--gold); color: var(--gold); box-shadow: inset 0 0 0 1px rgba(201,180,88,.32); }
+.immersive-toggle svg { opacity: .85; }
+body[data-fullscreen="true"] .immersive-toggle { color: var(--gold); border-color: var(--gold); background: var(--gold-faint); }
+body[data-fullscreen="true"] .topbar .topbar-meta > :not(.immersive-toggle) { display: none; }
+body[data-fullscreen="true"] .hero,
+body[data-fullscreen="true"] .row-top,
+body[data-fullscreen="true"] .row-ribbon,
+body[data-fullscreen="true"] .row-oracle,
+body[data-fullscreen="true"] .grain,
+body[data-fullscreen="true"] .aurora,
+body[data-fullscreen="true"] .vignette { display: none !important; }
+body[data-fullscreen="true"] .topbar { border-bottom: none; padding: 10px clamp(18px, 4vw, 56px); }
+body[data-fullscreen="true"] .row { padding-top: 18px; padding-bottom: 18px; }
+/* 如果隐藏了仪式带就让面板仍然完整展示 */
+body[data-fullscreen="true"] .row > .panel { grid-column: span 1; }
+@media (prefers-reduced-motion: reduce) {
+  .immersive-toggle { transition: none; }
+}

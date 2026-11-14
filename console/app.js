@@ -26,6 +26,25 @@
   }
   function scenario(id) { return byId[id] || {} }
 
+  /* ---------------- 沉浸 · 全集展版切换 ---------------- */
+  function bootFullscreen() {
+    var btn = document.getElementById ? document.getElementById('immersive-toggle') : null
+    if (!btn) return
+    var stored = null
+    try { stored = (typeof localStorage !== 'undefined' && localStorage.getItem('caesura-console-fullscreen')) || 'false' } catch (_) { stored = 'false' }
+    document.body.setAttribute('data-fullscreen', stored === 'true' ? 'true' : 'false')
+    btn.setAttribute('aria-pressed', stored === 'true' ? 'true' : 'false')
+    btn.addEventListener('click', function () {
+      var next = document.body.getAttribute('data-fullscreen') === 'true' ? 'false' : 'true'
+      document.body.setAttribute('data-fullscreen', next)
+      btn.setAttribute('aria-pressed', next === 'true' ? 'true' : 'false')
+      try { if (typeof localStorage !== 'undefined') localStorage.setItem('caesura-console-fullscreen', next) } catch (_) {}
+    })
+    document.addEventListener('keydown', function (e) {
+      if (e && e.key === 'F11') { e.preventDefault(); btn.click() }
+    })
+  }
+
   /* ---------------- 入口 ---------------- */
   /* ---------------- 主题切换（4 挚墨，CSS-only）---------------- */
   function bootTheme() {
@@ -71,6 +90,7 @@
 
   function boot() {
     bootTheme()
+    bootFullscreen()
     loadSnapshot().then(function (result) {
       var snap = result.data
       index(snap)
