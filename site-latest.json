@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "44fe7f20c2ef08e96a05c11dd3fc1c82b9b82f1a",
+  "head": "dca8962ba2fb07605ea7ac48c3d6477d4f1de4d4",
   "branch": "master",
-  "subject": "feat(i18n): 双语残留清扫 — PauseOverlay sub + 五条 ZH 字典拉丁散文 + ZH 不留未译英文",
-  "date": "2026-11-15T01:05:01+08:00",
+  "subject": "docs(bench): mesh stress record — 4-iteration curve (2000/100→5000/200), honest scope + how to re-run",
+  "date": "2026-11-15T01:08:19+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -16,7 +16,7 @@
     "SYS.Blocked": 0,
     "ARCH.sections": 202,
     "ARCH.holes": "none",
-    "PKG.scripts": 78
+    "PKG.scripts": 80
   },
   "suites": {
     "consoleUi": 150,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/44fe7f20c2ef08e96a05c11dd3fc1c82b9b82f1a",
+    "url": "https://github.com/xiaodernan/caesura/commit/dca8962ba2fb07605ea7ac48c3d6477d4f1de4d4",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
