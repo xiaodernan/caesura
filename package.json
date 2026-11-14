@@ -64,6 +64,8 @@
     "spring-config:bench": "node scripts/caesura-spring-config.mjs",
     "spring-bus:bench": "node scripts/caesura-spring-bus.mjs",
     "spring-pipeline:bench": "node scripts/caesura-redis-pipeline.mjs",
+    "mesh:stress": "node scripts/pressure-mesh.mjs --iterations=2000 --concurrency=100",
+    "mesh:stress:max": "node scripts/pressure-mesh.mjs --iterations=5000 --concurrency=200",
     "spring-retry:bench": "node scripts/caesura-gateway-retry.mjs",
     "spring-consul:bench": "node scripts/caesura-spring-consul-kv.mjs",
     "spring-ha:bench": "node scripts/caesura-redis-ha.mjs",
