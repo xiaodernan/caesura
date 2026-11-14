@@ -20,6 +20,14 @@ jobs:
         with:
           node-version: 24
 
+      # 连续推送必然让 `site-latest.json` 的基底在两次 job 之间被改写；
+      # 与其 commit 出本地快照再 push（必然 add/add 冲突），
+      # 不如直接在 remote-tip 上重算：checkout 到 origin/master，再生成 + commit/push
+      - name: Refresh against remote tip
+        run: |
+          git fetch origin master --depth=1
+          git reset --hard origin/master
+
       - name: Regenerate site-latest.json
         run: |
           node scripts/build-site-latest.mjs
@@ -33,11 +41,9 @@ jobs:
             git config user.email 'caesura-bot@noreply.local'
             git add site-latest.json
             git commit -m 'chore(status): re-embed site-latest.json'
-            # 连发两次 master 会让先后台两个 refresh job 同时落地 site-latest.json；
-            # 先把自己的重嵌提交 rebase 到最新 master 上，再推——否则后一把 job 必然被非 fast-forward 拒
-            git fetch origin master --depth=1
-            git rebase origin/master
-            git push origin HEAD:master
+            # 同样的「先 rebase 再 push」语义：这里 no-rebase（reset 让 HEAD == tip），
+            # 只 needs 防止在 build 与 push 之间的极小窗口被他人推入；rebase 会 apply 一个我们算好的内容 patch
+            git push origin HEAD:master || (git fetch origin master --depth=1 && git reset --hard origin/master && node scripts/build-site-latest.mjs && git add site-latest.json && git commit -m 'chore(status): re-embed site-latest.json' && git push origin HEAD:master)
           else
             echo 'site-latest.json already fresh'
           fi
