@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "358d2aed4132c971779ff94b3dadbb2aec8da063",
+  "head": "45f41fa3c8f66fb7f3b6dfe76b2aaa0761fbb4a1",
   "branch": "master",
-  "subject": "feat(spring): 新增 caesura-lore 世界谱后端 族的第八个成员 BM25 双语检索 memory|redis 缓存 命中率自报 e2e并轨",
-  "date": "2026-11-15T05:36:16+08:00",
+  "subject": "chore(docs): KI-564 登记并入 WORKPLAN 批格 描述栏裸竖线全部转义 PHASE-STATUS embed 回填 482/305 README 目录补 lore 行",
+  "date": "2026-11-15T05:45:43+08:00",
   "kv": {
     "KI.rows": 482,
     "KI.Implemented": 305,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/358d2aed4132c971779ff94b3dadbb2aec8da063",
+    "url": "https://github.com/xiaodernan/caesura/commit/45f41fa3c8f66fb7f3b6dfe76b2aaa0761fbb4a1",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
