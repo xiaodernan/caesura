@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "f99d2a50143d9bb161a3b1edbd31423c1484f554",
+  "head": "dbe7fd6efe6db37aa868e4b281ab914d0e3cde67",
   "branch": "master",
-  "subject": "feat(ui): 调音桩新增游记 Atlas 页 双语八区指北针 刻痕指路 边界之外说明",
-  "date": "2026-11-15T04:15:57+08:00",
+  "subject": "docs(lore): EPIC-VII 低音之城 后钟纪元 设计稿 DESIGN-ONLY 三幕 与 WORLD-BIBLE 并轨 不动 dialogue.json",
+  "date": "2026-11-15T04:20:35+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/f99d2a50143d9bb161a3b1edbd31423c1484f554",
+    "url": "https://github.com/xiaodernan/caesura/commit/dbe7fd6efe6db37aa868e4b281ab914d0e3cde67",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
