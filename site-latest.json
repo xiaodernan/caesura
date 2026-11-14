@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "d6aa7897699edbae1e01f9596d68ec6ede1e5524",
+  "head": "a0b4986710826c69611b9eec6fb3acc42cf09f26",
   "branch": "master",
-  "subject": "fix(test): PauseOverlay / BossDefeatRit 双语对账 — zh 无英文、en 无中文，两边各自自证",
-  "date": "2026-11-15T01:20:17+08:00",
+  "subject": "feat(llm): scripts/newlands-canon-rag.mjs — Canon 检索增强（BM25-ish 字符二元组 + LLM judge）+ F-106 + git guard",
+  "date": "2026-11-15T01:31:23+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -16,7 +16,7 @@
     "SYS.Blocked": 0,
     "ARCH.sections": 202,
     "ARCH.holes": "none",
-    "PKG.scripts": 80
+    "PKG.scripts": 81
   },
   "suites": {
     "consoleUi": 150,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/d6aa7897699edbae1e01f9596d68ec6ede1e5524",
+    "url": "https://github.com/xiaodernan/caesura/commit/a0b4986710826c69611b9eec6fb3acc42cf09f26",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
