@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "4530fc1fd586d249a89a0ea2b5d4f61297d45d9f",
+  "head": "11a315a2a35c050f5e13c44f1ff8dd9d184fbf40",
   "branch": "master",
-  "subject": "docs(player-guide): 双语新增 4.5 Boss 字段提要——三子（奥斯塔拉/万籁/恩希尔）分阶段+input routing 提示",
-  "date": "2026-11-15T01:34:38+08:00",
+  "subject": "feat(ui): 入口页 visual frame层 —— 氛围暗角 + 电影颗粒（纯 CSS、零 JS、零 Three 调用）",
+  "date": "2026-11-15T01:37:22+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/4530fc1fd586d249a89a0ea2b5d4f61297d45d9f",
+    "url": "https://github.com/xiaodernan/caesura/commit/11a315a2a35c050f5e13c44f1ff8dd9d184fbf40",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
