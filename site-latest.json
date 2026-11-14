@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "e09e2071409d4ccdf8d382b6bc81d7712f0689ad",
+  "head": "35c9952dc4bdea5869dcf5f0b1bc415488a904ff",
   "branch": "master",
-  "subject": "docs(lore): 新六 NPC 台词候选录 NEW-LANDS-VOICES.md（wkapi.pro/v1 gpt-6-sol 真机出 · temp=0.65 · stream + include_usage）",
-  "date": "2026-11-14T17:32:19+08:00",
+  "subject": "fix(ci): site-sync checkout v24 → v4（no such action version）",
+  "date": "2026-11-14T19:01:00+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/e09e2071409d4ccdf8d382b6bc81d7712f0689ad",
+    "url": "https://github.com/xiaodernan/caesura/commit/35c9952dc4bdea5869dcf5f0b1bc415488a904ff",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
