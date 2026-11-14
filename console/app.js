@@ -506,7 +506,7 @@
   '雪崩 · Avalanche': 'Cache avalanche · Avalanche',
   '韧性事件': 'Resilience events',
   '频率树林': 'Frequency Woods',
-  '，恰好 ≥2 个完整 1024-token 块。非流与流已无系统性差异（T1–T4 对照全 4/4）。玩家进程零 LLM；dialogue.json 零改写。': ', exactly ≥2 complete 1024-token blocks. Non-streaming and streaming show no systematic difference (T1–T4: 4/4). Zero LLM calls in the player process; zero rewrites to dialogue.json.',
+  '，恰好 ≥2 个完整 1024-token 块。非流与流已无系统性差异（T1–T4 对照全 4/4；2026-11-15 真机 A/B 复测：非流 {75.7,78.6,78.9}% ≈ 流式 {79.5,77.8,83.6}%）。玩家进程零 LLM；dialogue.json 零改写。': ', exactly ≥2 complete 1024-token blocks. Non-streaming and streaming show no systematic difference (T1–T4: 4/4; 2026-11-15 live A/B re-check: non-stream {75.7,78.6,78.9}% ≈ stream {79.5,77.8,83.6}%). Zero LLM calls in the player process; zero rewrites to dialogue.json.',
   })
   function bootLang() {
     var btn = document.getElementById ? document.getElementById('lang-toggle') : null

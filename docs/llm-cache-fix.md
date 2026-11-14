@@ -517,3 +517,40 @@ npm run prompt-cache:live -- --rounds=4 --stream     # 流式对照
 - 读数来自尾 chunk 的 `usage.prompt_tokens_details.cached_tokens`（经 `normalizeUsage`），零估算。
 - 同批候选已登记进 `docs/lore/NEW-LANDS-VOICES.md` 第二批——**仍不入 dialogue.json**。
 - 结论延续 §12：客户端不可消除 shard miss；可用的杠杆只有 stream+include_usage（含 `prompt_cache_key` 路由亲和）+ ≥2 块字节稳定前缀。
+
+## 第十四节 · 2026-11-15 实测复核（同前缀 A/B ×6 + 6 轮 warmup）
+
+**① `npm run llm:warmup -- --rounds=6`（生产 `NPC_BIBLE` 4000 字符 / 2103 token / 2.05 个完整块）：**
+
+```
+cached_tokens=[0,6136,6094,6040,5991,5915]  warmupRounds=2  warm=true
+promptTk(记账值·不可比)=[7686,7561,7610,7598,7647,7620]
+```
+
+第 2 轮起每次命中 ≈ 5,915–6,136 cached（≈ 78–80% 前缀复用），裂口稳定（shard 抖动带来 ±2–3% 波动）。
+
+**② 同前缀 A/B ×6（第 1→6 发交替，`.scratch/cache-ab-probe.mjs`，`max_tokens=16`）：**
+
+| 发 | 形状 | status | prompt_tokens | cached_tokens | hitRate |
+|---|---|---|---|---|---|
+| A1 | 非流 | 200 | 7665 | 5801 | 75.7% |
+| B1 | 流式 | 200 | 7573 | 6022 | 79.5% |
+| A2 | 非流 | 200 | 7671 | 6032 | 78.6% |
+| B2 | 流式 | 200 | 7624 | 5935 | 77.8% |
+| A3 | 非流 | 200 | 7712 | 6088 | 78.9% |
+| B3 | 流式 | 200 | 7712 | 6449 | 83.6% |
+
+**均值：非流 78.0% ≈ 流式 80.3%（Δ ≈ 2.3 个百分点）；两种形状各自都在 75.7–83.6% 区间内逐轮波动**——
+流式并没有系统性优势；用户看到的「显示流命中率好的多」正是同组三次交替里**先 B 后 A 均值差 2.3 个点**那一眼。
+
+**③ 与 §12/§13 的关系**：三条独立真跑（§12 T1–T4 · §13 7979→7988 · 本节）结论一致——
+① 首调必 miss 是正常现象；② 流式与非流式稳态命中率没有可复现的差别（≤3 个百分点，且由 shard 抖动主导）；
+③ 真抓手只剩「≥2 个完整 1024-token 块且逐字节稳定」+ 预热 + 抖动自愈重试。**不存在"非流导致缓存低"这种代码病**；
+代码里唯一修掉的真 bug 是 `cached:false` 硬覆写（§10 ①），那才是「命中了却显示未命中的直接根因」。
+
+**复验命令**（密钥仅走 env，密钥不落 git）：
+
+```bash
+CAESURA_LLM_API_KEY=sk-… node scripts/caesura-llm-client.mjs --warmup --rounds=6
+CAESURA_LLM_API_KEY=sk-… node .scratch/cache-ab-probe.mjs
+```
