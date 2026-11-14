@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "a9ef97cef534e85ea94456734e8230676964cb8e",
+  "head": "b00f613391598f8cd71f4ec170fb3ff3759fc9ad",
   "branch": "master",
-  "subject": "feat(input): GameplaySettings 新增 invertMouseY 开关（鼠标 Y 轴反转）—— 玩家\"翻转\"视角纵轴",
-  "date": "2026-11-14T23:14:26+08:00",
+  "subject": "feat(input): default invertMouseY=true — mouse up = look UP / mouse down = look DOWN (FPS convention)",
+  "date": "2026-11-14T23:18:09+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/a9ef97cef534e85ea94456734e8230676964cb8e",
+    "url": "https://github.com/xiaodernan/caesura/commit/b00f613391598f8cd71f4ec170fb3ff3759fc9ad",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
