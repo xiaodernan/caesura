@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "1c8e0593af205ea7cd4036dc119f5e8b60a3a99f",
+  "head": "b965acc60a19f0ab4d521f89964ed7bd6cfb1ded",
   "branch": "master",
-  "subject": "fix(save): PersistedGameplay = Omit<GameplaySettings,'invertMouseY'> — 存档类型与捕获一致",
-  "date": "2026-11-14T23:55:43+08:00",
+  "subject": "docs(lore): NEW-LANDS-VOICES 第二批候选录 + 冷/热双轮 cache 实测行",
+  "date": "2026-11-14T23:57:27+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/1c8e0593af205ea7cd4036dc119f5e8b60a3a99f",
+    "url": "https://github.com/xiaodernan/caesura/commit/b965acc60a19f0ab4d521f89964ed7bd6cfb1ded",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
