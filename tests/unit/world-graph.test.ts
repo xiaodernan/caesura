@@ -169,14 +169,14 @@ describe('真表读数：判据吃的必须是一个非空的总体（需求 §9
     expect(rows, '锚点行数掉到 90 以下不是"总体缩小"，是根本没读到东西').toBeGreaterThanOrEqual(90)
   })
 
-  it('七个区域的锚点都不共线，而"最窄的那一区"由实测指认（休垒 21 个点、面积 4256）', () => {
+  it('八块区域的锚点都不共线，而"最窄的那一区"由实测指认（未竟厅 10 个锚点、面积 4464）', () => {
     const rows = regions.map((r) => ({ id: String(r.id), n: anchorPoints(r).length, a: maxTriangleAreaXZ(anchorPoints(r)) }))
     for (const r of rows) {
       expect(r.n, `${r.id} 的锚点不足 3 个，"不是一条直线"这句话在它身上无从谈起`).toBeGreaterThanOrEqual(3)
       expect(r.a, `${r.id} 的 ${r.n} 个锚点共线（面积 0）⇒ 这一区的布局是一条直线`).toBeGreaterThan(0)
     }
     const narrowest = rows.reduce((a, b) => (b.a < a.a ? b : a))
-    expect(narrowest.id, '最窄的一区换了 = 有人在改区域几何，这条判据的余量要重新量（KI-102 给深窖与未竟厅各补了一条出边之后，最窄从"未竟厅 3920"换成了"休垒 4256"）').toBe('rg_resthold')
+    expect(narrowest.id, '最窄的一区换了 = 有人在改区域几何，这条判据的余量要重新量（KI-102 之后最窄是"休垒 4256"；砸入 8849f00 波后给 rest 加了两个锚点、给四条其他区加了纵深锚点，最窄换成"未竟厅 4464"）').toBe('rg_unfinished_hall')
     expect(narrowest.a, '最窄一区的面积掉到 1000 以下就是共线的边缘，不能再当"还有余量"').toBeGreaterThanOrEqual(1000)
   })
 })

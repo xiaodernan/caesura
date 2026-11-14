@@ -931,7 +931,7 @@
         "notifyKey": "world.flavor.drowned.bellbottom",
         "pos": {
           "x": 280,
-          "y": -50,
+          "y": -40,
           "z": 60
         }
       },
@@ -1649,7 +1649,7 @@
         "notifyKey": "world.flavor.fellcarillon.neverringstruck",
         "pos": {
           "x": 160,
-          "y": 80,
+          "y": 64,
           "z": -200
         }
       }
@@ -2007,7 +2007,7 @@
         "notifyKey": "world.flavor.deeps.eyeopened",
         "pos": {
           "x": -100,
-          "y": -150,
+          "y": -144,
           "z": 240
         }
       }
@@ -2275,7 +2275,7 @@
         "notifyKey": "world.flavor.unfinishedhall.pendulum",
         "pos": {
           "x": 0,
-          "y": 180,
+          "y": 152,
           "z": -240
         }
       }
@@ -2538,7 +2538,7 @@
         "notifyKey": "world.flavor.windcoast.hawhales",
         "pos": {
           "x": 560,
-          "y": 20,
+          "y": 0,
           "z": -20
         }
       }
