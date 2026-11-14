@@ -6,6 +6,7 @@ import { PauseControl, readPauseAction } from '@/core/PauseControl'
 import { PauseOverlay } from '@/ui/PauseOverlay'
 import { BossPhaseBanner } from '@/ui/BossPhaseBanner'
 import { BossDefeatRit } from '@/ui/BossDefeatRit'
+import { RegionBanner } from '@/ui/RegionBanner'
 import { CinematicLetterbox } from '@/ui/CinematicLetterbox'
 import { readCinematicExit } from '@/core/CinematicExit'
 import { GameLoop } from '@/core/GameLoop'
@@ -239,6 +240,8 @@ const pauseOverlay = new PauseOverlay({ pause })
 new BossPhaseBanner() // side-effect only: bus.on 注册 + DOM 挂载，引用交给总线，主舞台上不读它
 /** Boss 终局「烬印」（Phase F-49）：boss.defeated 触发时，全屏铺开终印静默告别——金渐变 Boss 名 + 「终」朱砂印，2.8s 奏毕即淡出。 */
 new BossDefeatRit()   // side-effect only: bus.on 注册 + DOM 挂载（与 BossPhaseBanner 同语）
+/** 区域进场仪典（Phase F-47）：玩家第一次踏入某个 regionId 时，屏幕上方横幅褪出该区域的名，约 3.4s 后退场。纯 DOM，不接收输入。 */
+new RegionBanner()   // side-effect only: world.chunk 订阅 + DOM 挂载
 /** 电影黑边仪典（Phase F-50）：cinematics.current 非空期间落幕布 + 谱题题字（cinematics.json `note`）。 */
 const cineLetterbox = new CinematicLetterbox({
   info: () => {

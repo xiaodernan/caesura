@@ -95,6 +95,8 @@ export interface GameEvents {
   }
   'ui.notify': { text: string; kind?: 'info' | 'reward' | 'boss' }
   'ui.prompt': { text: string | null; id: string | null }
+  /** 玩家第一次踏入某个区域时的仪典：一次显示，越界/回到原区不重复（见 RegionBanner） */
+  'ui.region.enter': { regionId: string; displayName: string }
   'world.flag': { key: string; value: boolean | number | string }
   /**
    * 值域型世界状态（Phase 6-B / narrative §7 的 `STATE.*`）：**与旗标同权的第二条世界通道**，
