@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "25e47a4736d86ad3ea02abc7fe79fe04f0440299",
+  "head": "44fe7f20c2ef08e96a05c11dd3fc1c82b9b82f1a",
   "branch": "master",
-  "subject": "fix(test): 第八地域 → 真表接触从 7→9（6 面 / 3 棱），7→8 名册化",
-  "date": "2026-11-15T01:00:30+08:00",
+  "subject": "feat(i18n): 双语残留清扫 — PauseOverlay sub + 五条 ZH 字典拉丁散文 + ZH 不留未译英文",
+  "date": "2026-11-15T01:05:01+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/25e47a4736d86ad3ea02abc7fe79fe04f0440299",
+    "url": "https://github.com/xiaodernan/caesura/commit/44fe7f20c2ef08e96a05c11dd3fc1c82b9b82f1a",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
