@@ -254,6 +254,16 @@ describe('隐藏房可达性：发生了什么 ⇒ 立旗 ⇒ 锁开 ⇒ 东西�
     expect(w.streaming.isRegionUnlocked(choir), 'setFlag 之后区域应立刻参与流送').toBe(true)
   })
 
+  it('第八地域风钟海岸：未敲响长钟前是隐地，organ_gate_open 一落即现身——第八条腿', () => {
+    const w = makeWorld()
+    const coast = regionOf('rg_windcoast')
+    expect(coast, 'rg_windcoast 落进 regions.json（F-103）').toBeTruthy()
+    expect(coast.unlockFlag, '海岸是序章后的世界：开量由终章那口钟开').toBe('flag.organ_gate_open')
+    expect(w.streaming.isRegionUnlocked(coast), 'organ_gate_open 没立——海岸不在流送表上').toBe(false)
+    w.streaming.setFlag('flag.organ_gate_open') // 长钟敲响之后，同一个旗直接开量
+    expect(w.streaming.isRegionUnlocked(coast), '长钟敲过，海岸升上流送表').toBe(true)
+  })
+
   it('沉唱堂侧廊：推开侧廊门是写方（旗立）⇒ 侧廊的封存点解锁 ⇒ 独岚档真能领（KI-087）', () => {
     const w = makeWorld()
     const cache = w.interact.all.find((i) => i.secretId === 'sec_drownedchoir_side_nave')!
