@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "886b23bd4aad5454d000fc45d527b5d17b88f39d",
+  "head": "b402a77920858767efd5dc34407a81b872cac1c1",
   "branch": "master",
-  "subject": "feat(i18n): HUD movement cluster 标签也跟 t()",
-  "date": "2026-11-14T22:16:09+08:00",
+  "subject": "test(camera): pin pitch-axis sign——mouse-down = look-down (user-requested behavior)",
+  "date": "2026-11-14T22:23:33+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/886b23bd4aad5454d000fc45d527b5d17b88f39d",
+    "url": "https://github.com/xiaodernan/caesura/commit/b402a77920858767efd5dc34407a81b872cac1c1",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
