@@ -155,7 +155,7 @@ noKey #3: status=200  cached=4864/4982（97.6%）
 
 ### 解读（真实测值，不粉饰）
 
-1. **DLG_MEG / BELLTONGUE**——两 canon 总 prompt_tokens 仅相差 1 token（5262 vs 5261），稳定；首轮冷启，第二次都稳定命中 **5120/5261-5262 = 97.3%**。短前缀间不相容，[canonical mode 才过得去 OpenAI 1024-token prefix-breakpoint](前端)。
+1. **DLG_MEG / BELLTONGUE**——两 canon 总 prompt_tokens 仅相差 1 token（5262 vs 5261），稳定；首轮冷启，第二次都稳定命中 **5120/5261-5262 = 97.3%**。短前缀间不相容，[canonical mode 才过得去 OpenAI 1024-token prefix-breakpoint）。
 2. **DLG_CORVIN 命中不稳定**——同一个 canon、同一条 user 句、temperature=0，三次端点调用的 prompt_tokens 分别为 5431 / 5489 / 5514（差 83 token），cached_tokens 在 4255–4524 之间波动，命中率 **78–82%**。
 3. **定罪**：wkapi.pro 上游多后端代理（或多个 GPT-6-SOL 微服务实例）对相同前缀用了不同的 tokenizer 策略，cache 也由此呈现 shard-dependent 分布（A 和 B 可能恰好命中同一 shard→稳定高；C 则始终分配到差异化的 tokenizer 版本），不是代码 bug。
 4. 补测数据（2026-11-13 23:11）：模型 `gpt-6-sol` 在 wkapi.pro 下：同 prefix 冷启 vs warm 与多数 healthy shard 之间 gap 是不可控制的；`prompt_cache_key` 注入过（见第八节）已被证实现作 prompt 正文计费，**不建议注入**；`.scratch/llmeter.mjs` 可复现探针。
