@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "f233df8715f46c65dcd066a7c067a41412c44439",
+  "head": "0f7ceaecd4ceae13f09437b6b5a1cfe765bed9cd",
   "branch": "master",
-  "subject": "feat(tutorial): /tutorial/ 终端落地——新玩家七步入门小册子（开弦→横拖→弹反→锁定→音色相生→耳鸣→寄存 · 墨白文排版 · Enter 文案链）+ Pages 部署 tutorial/ 至 /caesura/tutorial/",
-  "date": "2026-11-14T19:49:34+08:00",
+  "subject": "fix(ci): tutorial/ 纳入交付总体（`text-corpus.mjs` CORPUS_DIRS 增 `tutorial`）— CI KI-329 判据②修复",
+  "date": "2026-11-14T19:54:54+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/f233df8715f46c65dcd066a7c067a41412c44439",
+    "url": "https://github.com/xiaodernan/caesura/commit/0f7ceaecd4ceae13f09437b6b5a1cfe765bed9cd",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
