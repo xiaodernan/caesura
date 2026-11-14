@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "e469b4ca6c1677d0893b0e0e93e1db8e056e69af",
+  "head": "4aa50c0c4640c4ed489a3a5e817a4ed59f6790d4",
   "branch": "master",
-  "subject": "docs(guide): PLAYER-GUIDE 双语加「Tab → 手册」入口； Stakerite 第 7/8 个 Tab（手册，PAGE 列表里加「Tab → 手册」帮助）",
-  "date": "2026-11-15T03:04:50+08:00",
+  "subject": "docs(tutorial): 双语新增「09 · 手册 / Manual」卡 — 指向「Tab → 手册」",
+  "date": "2026-11-15T03:08:57+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/e469b4ca6c1677d0893b0e0e93e1db8e056e69af",
+    "url": "https://github.com/xiaodernan/caesura/commit/4aa50c0c4640c4ed489a3a5e817a4ed59f6790d4",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
