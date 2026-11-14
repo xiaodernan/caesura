@@ -45,6 +45,6 @@ node --input-type=module -e "import { callLlm } from './scripts/caesura-llm-clie
 | 第 1 次（冷） | 7979 | 458 | 0 | 0.0% | 3280 ms |
 | 第 2 次（热） | 7988 | 417 | 6670 | **83.5%** | 2253 ms |
 
-- 首调必 miss 与 `docs/llm-cache-fix.md §12` 的"第 2~3 轮起命中"一致；命中率读数只认尾 chunk 的 `usage`（`cached_tokens`），不估算。
+- 首调必 miss 与 `docs/llm-cache-fix.md` 第十二节的"第 2~3 轮起命中"一致；命中率读数只认尾 chunk 的 `usage`（`cached_tokens`），不估算。
 - 三块前缀 + `prompt_cache_key` 自动注入路径实测有效；`shard miss`（第 1 轮 0 命中）不可治，属代理分片问题，见 §12 结论。
 - 本批仍是候选口令——**装进 dialogue.json 必须先过 `npm run llm:qa`（4 passes）+ 作者目检**；本文件不做 canon 认可。
