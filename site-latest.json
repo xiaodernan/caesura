@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "aaa40a5ffc59a6808f78e0a6472c300344af2f23",
+  "head": "fafe65611e50065bea6cc7b60bcf96bef89341d6",
   "branch": "master",
-  "subject": "feat(world): 9 个环境「刻痕」交互点 — 8 区各自一个/两张闪念小碑引文（双语；EN 走 Lang Dict 回退）",
-  "date": "2026-11-15T03:30:46+08:00",
+  "subject": "fix(i18n): world.flavor.inscriptionYearOfNoWater 补 EN 平行 + 落勘到淹没唱诗班新刻痕 (interact.first_phrase_rubbing)；Interactables 通知双通道收紧类型",
+  "date": "2026-11-15T03:37:05+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/aaa40a5ffc59a6808f78e0a6472c300344af2f23",
+    "url": "https://github.com/xiaodernan/caesura/commit/fafe65611e50065bea6cc7b60bcf96bef89341d6",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
