@@ -1,4 +1,5 @@
 import { registry } from '@/core/Registry'
+import { t } from '@/i18n/Lang'
 import { regions } from '@/data'
 import type { ProgressionData } from '@/data/schema'
 import { allGearItems } from '@/rpg/Loot'
@@ -15,13 +16,10 @@ import { AUTOSAVE_SLOT, type SlotCard } from '@/save/Slots'
  */
 
 /** 读档候选里坏档的原话。ui-ux §8 点名要"明示版本过旧而不是静默清空"，那条在这里落地 */
-const PROBLEM_TEXT: Record<string, string> = {
-  parse: '存档文件读不出内容（可能不完整）',
-  magic: '存档不是本游戏写的（文件头不认识）',
-  crc: '存档文件已损坏',
-  version: '不是本游戏能读的版本',
-  migration: '该存档版本过旧（缺少升级步骤）'
-}
+/** 读档候选里坏档的原话表（与旧版 PROBLEM_TEXT 同表同义；原名只给测试现查此表） */
+const KNOWN_PROBLEM_KEYS = new Set(['parse', 'magic', 'crc', 'version', 'migration'])
+const problemText = (problem: string): string =>
+  KNOWN_PROBLEM_KEYS.has(problem) ? t(`ui.save.${problem}`) : t('ui.save.unreadable')
 
 /** 手动槽的序号：`slot1 → 槽 I`。表里没有这一格，因为它不是游戏数据而是界面结构 */
 const ROMAN = ['', 'I', 'II', 'III']
@@ -45,9 +43,9 @@ export interface SaveCardView {
 }
 
 export function slotLabel(slot: string): string {
-  if (slot === AUTOSAVE_SLOT) return '自动'
+  if (slot === AUTOSAVE_SLOT) return t('ui.save.auto')
   const n = Number(slot.replace('slot', ''))
-  return Number.isInteger(n) && n >= 1 && n <= ROMAN.length - 1 ? `槽 ${ROMAN[n]}` : slot
+  return Number.isInteger(n) && n >= 1 && n <= ROMAN.length - 1 ? t('ui.save.slot', { rom: ROMAN[n] }) : slot
 }
 
 /** 秒 → "1小时02分" / "3分40秒" / "40秒"（不超过一小时也保证有分有秒，读数不许出现 "0.6h"） */
@@ -55,22 +53,22 @@ export function playText(sec: number): string {
   const s = Math.max(0, Math.floor(sec))
   const h = Math.floor(s / 3600)
   const m = Math.floor((s % 3600) / 60)
-  if (h > 0) return `${h}小时${String(m).padStart(2, '0')}分`
-  if (m > 0) return `${m}分${String(s % 60).padStart(2, '0')}秒`
-  return `${s}秒`
+  if (h > 0) return t('ui.save.hrs', { h, m: String(m).padStart(2, '0') })
+  if (m > 0) return t('ui.save.minSec', { m, s: String(s % 60).padStart(2, '0') })
+  return t('ui.save.sec', { s })
 }
 
 /** epoch ms → "2026-09-26 01:40"（本地时刻，玩家看的是自己手表上的时间）。null ⇒ 如实说未记录 */
 export function savedAtText(ms: number | null): string {
-  if (ms === null) return '时间未记录'
+  if (ms === null) return t('ui.save.untimed')
   const d = new Date(ms)
   const p = (n: number): string => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
 }
 
 const originText = (id: string | null, prog: ProgressionData | undefined): string => {
-  if (id === null) return '出身 未知'
-  return `出身 ${prog?.origins.find((o) => o.id === id)?.displayName ?? `未知(${id})`}`
+  if (id === null) return t('ui.save.originUnknown')
+  return t('ui.save.originPrefix', { name: prog?.origins.find((o) => o.id === id)?.displayName ?? t('ui.save.unknownId', { id }) })
 }
 
 /**
@@ -93,24 +91,24 @@ export function saveCards(cards: SlotCard[]): SaveCardView[] {
       slot: c.slot, kind: c.kind, label: slotLabel(c.slot), state: c.state,
       lines: [], badge: null, selectable: false, note: null, fromKey: c.fromKey
     }
-    if (c.state === 'empty') { view.lines = ['空的']; return view }
+    if (c.state === 'empty') { view.lines = [t('ui.save.empty')]; return view }
     if (c.state === 'blocked' || !c.data) {
-      view.lines = ['读不出来']
-      view.note = c.problem ? PROBLEM_TEXT[c.problem] ?? '存档不可读' : '存档不可读'
+      view.lines = [t('ui.save.unreadableLine')]
+      view.note = c.problem ? problemText(c.problem) : t('ui.save.unreadable')
       return view
     }
     const d = c.data
     const region = d.regionId === null ? null : regions.find((r) => r.id === d.regionId)?.displayName ?? null
     view.selectable = true
     view.lines = [
-      `${d.rank === null ? '音级 未知' : `音级 ${d.rank}`} · ${originText(d.originId, prog)}`,
-      `武器 ${gearByWeapon.get(d.weaponId) ?? `未知(${d.weaponId})`}`,
-      `区域 ${d.regionId === null ? '未知' : region ?? `未知(${d.regionId})`}`,
-      `游玩 ${playText(d.playSec)}`,
+      `${d.rank === null ? t('ui.save.rankUnknown') : t('ui.save.rank', { n: d.rank })} · ${originText(d.originId, prog)}`,
+      t('ui.save.weapon', { name: gearByWeapon.get(d.weaponId) ?? t('ui.save.unknownId', { id: d.weaponId }) }),
+      t('ui.save.region', { name: d.regionId === null ? t('ui.save.unknown') : region ?? t('ui.save.unknownId', { id: d.regionId }) }),
+      t('ui.save.playtime', { t: playText(d.playSec) }),
       savedAtText(d.savedAt)
     ]
     // 黄标优先：恢复出来的档比"老版本升级"更要紧——玩家得先知道这一格不是干净的当前档
-    view.badge = c.state === 'restored' ? '已恢复备份' : c.migrated ? `由 v${c.schemaVersion} 升级` : null
+    view.badge = c.state === 'restored' ? t('ui.save.restored') : c.migrated ? t('ui.save.migrated', { v: c.schemaVersion ?? '?' }) : null
     return view
   })
 }
@@ -192,14 +190,14 @@ export function saveCardHtml(v: SaveCardView, actions: Array<'load' | 'write' | 
   const canWrite = v.kind === 'manual'
   const canErase = v.kind === 'manual' && v.state !== 'empty'
   const acts = actions.map((a) =>
-    a === 'load' ? btn('load', '读取', v.selectable)
-      : a === 'write' ? btn('write', '写入此处', canWrite)
-        : btn('erase', '删除', canErase)).join('')
+    a === 'load' ? btn('load', t('ui.save.load'), v.selectable)
+      : a === 'write' ? btn('write', t('ui.save.write'), canWrite)
+        : btn('erase', t('ui.save.erase'), canErase)).join('')
   return `<div class="scard ${v.state}" data-slot="${v.slot}">
   <div class="hd">${v.label}${v.badge ? `<span class="badge">${v.badge}</span>` : ''}</div>
   <div class="lns">${v.lines.map((l) => `<div>${l}</div>`).join('')}</div>
   ${v.note ? `<div class="note">${v.note}</div>` : ''}
-  ${v.fromKey ? `<div class="src">来源 ${v.fromKey}</div>` : ''}
+  ${v.fromKey ? `<div class="src">${t('ui.save.from', { key: v.fromKey })}</div>` : ''}
   <div class="acts">${acts}</div>
 </div>`
 }
