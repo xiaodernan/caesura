@@ -29,7 +29,87 @@ import { SAVE_CARD_CSS, saveCards, saveCardHtml, slotLabel, type SaveCardView } 
  * 由 main.ts 统一把派生值灌回玩家——面板自己不写第二份"应用变更"的逻辑。
  */
 
-type Tab = 'tune' | 'gear' | 'bag' | 'moves' | 'trade' | 'save' | 'ops'
+/**
+ * 「手册」页签（始终可用）：玩家从第一帧起就能读到的游戏说明书——不在文档里、不在终端上，
+ * 而是在每一次调音桩面板里。本语言（zh/en）由 getLang() 在渲染时挑一半。
+ *  content 不走 Lang 字典：若每段文字都进 Lang，要的是双重同构门守住它，
+ *  而这一页的行文就是散文本身——双语并不是冷硬的 key-value，是平行的两份散文。
+ *  结构：节 × 段落 × 键（control list）。
+ */
+const PLAYER_MANUAL: Record<'zh' | 'en', string> = {
+  zh: `
+<h2>第一次进这款游戏 · 你只需要会四件事</h2>
+<div class="row"><span class="name">W A S D</span><span class="note">走动、转向——慢的走比快的走更早听到世界告诉你它在哪</span></div>
+<div class="row"><span class="name">Space</span><span class="note">跳</span></div>
+<div class="row"><span class="name">Left Shift / 左 Shift</span><span class="note">冲刺（声音大）</span></div>
+<div class="row"><span class="name">Mouse 左键 / RMB</span><span class="note">轻击 / 重击</span></div>
+
+<h2>核心机制 · 声音 = 风险，沉默 = 通路</h2>
+<div class="row"><span class="name">你是声源</span><span class="note">每一步、每一刀、每一次被击，都是一笔「此刻我在哪」的账</span></div>
+<div class="row"><span class="name">万籁</span><span class="note">看她就已经暴露；她只用耳朵。无耳深窖是她的猎场——V（屏气）降低你的噪音，直到你像被风刮走的纸一样无声</span></div>
+<div class="row"><span class="name">铃姨 · 科温 · 盐歌</span><span class="note">都有要告诉你的事——走近按 E，听</span></div>
+
+<h2>三场 Boss · 提要</h2>
+<div class="row"><span class="name">奥斯塔拉（钟坠院 · 序幕）</span><span class="note">三阶段。P1 钟壳只吃 10% ——这一段不要硬破，保住状态等 P3</span></div>
+<div class="row"><span class="name">万籁（无耳深窖 · 隐藏）</span><span class="note">她不看你，她只听——按 V 把噪音压到最低，她能定位的边界就是你的安全带</span></div>
+<div class="row"><span class="name">恩希尔（未竟厅 · 终章）</span><span class="note">终局 Boss；先拆他的收尾「指挥棒」，然后在每一个小节边界做闪避</span></div>
+
+<h2>开局导航</h2>
+<div class="row"><span class="name">调音桩</span><span class="note">Tab 开地图（看过哪片区）；再按一次收起；档案室 / 终末·叹息</span></div>
+<div class="row"><span class="name">存档</span><span class="note">调音桩前按 E 休息并保存；Boss 倒下会自动存</span></div>
+<div class="row"><span class="name">配方</span><span class="note">Tab → 调音 → 查看派生面板（防御 / 负重上限 / 暴击率 / 暴击倍数 / 过载</span></div>
+
+<h2>Endings · 你的选择</h2>
+<div class="row"><span class="name">敲响第四口钟</span><span class="note">钟回，世界回响——她得到了那段缺了大半辈子的话</span></div>
+<div class="row"><span class="name">交给她熔掉</span><span class="note">她熔了第四口钟，世界回到「只有敲一下」的工坊安静</span></div>
+<div class="row"><span class="name">永远不再触摸</span><span class="note">钟永远悬着 —— 你选了沉默——也是有代价的：这个世界会再沉一次</span></div>
+
+<h2>卡住了？</h2>
+<div class="row"><span class="name">Save 与 Map 互补</span><span class="note">迷路时按 Tab 看地图；目标在哪儿地图会告诉你</span></div>
+<div class="row"><span class="name">卡进战斗</span><span class="note">按 E 和她们说话——每段对话都是一键通关道路</span></div>
+<div class="row"><span class="name">输入不认</span><span class="note">调音 → 操作 → 逐行改键：把任意一行换掉</span></div>
+
+<h2>Encore · 风钟海岸</h2>
+<div class="row"><span class="name">剩下一片海</span><span class="note">Ending 之后，未竟厅被敲响了第一拍——海岸线的那头，还有三段话，等你去走</span></div>
+`,
+  en: `
+<h2>Your first hour · only four moves to learn</h2>
+<div class="row"><span class="name">W A S D</span><span class="note">Walk / turn — slower steps hear the world sooner</span></div>
+<div class="row"><span class="name">Space</span><span class="note">Jump</span></div>
+<div class="row"><span class="name">Left Shift</span><span class="note">Dash — make noise, trade distance for panic</span></div>
+<div class="row"><span class="name">LMB / RMB</span><span class="note">Light / Heavy attack</span></div>
+
+<h2>The law of the world · silence = survival</h2>
+<div class="row"><span class="name">You are the source of sound</span><span class="note">Every step, every swing, every hit is a ledger entry saying "you are here"</span></div>
+<div class="row"><span class="name">The Myriad</span><span class="note">She hears you, always — V (Tune) drops your noise to the floor; you drift past</span></div>
+<div class="row"><span class="name">Bell-Aunt / Corvin / Meg</span><span class="note">They know things. Walk up, press E, listen — every bell keeps one face</span></div>
+
+<h2>Three bosses · field notes</h2>
+<div class="row"><span class="name">Ostlara (Fellcarillon · opener)</span><span class="note">Three phases. P1 shell eats 10% — don't grind, save state for P3</span></div>
+<div class="row"><span class="name">The Myriad (Earless Deeps · hidden)</span><span class="note">She does not see; she hears. Hold V and she cannot hold you</span></div>
+<div class="row"><span class="name">Hersil (Unfinished Hall · finale)</span><span class="note">The finale. Break the baton first, then ride his 3/4 rhythm — every downbeat is yours</span></div>
+
+<h2>Navigation</h2>
+<div class="row"><span class="name">Tuning peg</span><span class="note">Tab toggles map · Map shows visited regions and where to go next</span></div>
+<div class="row"><span class="name">Save</span><span class="note">Rest at a peg (button E); boss death autosaves</span></div>
+<div class="row"><span class="name">Build stats</span><span class="note">Tab → Tune → derived stats: defense / load cap / crit rate / crit mul / overdrive</span></div>
+
+<h2>Endings · the choice is yours</h2>
+<div class="row"><span class="name">Sound the bell</span><span class="note">The bell returns; the world breathes again — she finally gets her missing sentence</span></div>
+<div class="row"><span class="name">Melt the bell</span><span class="note">Hersil seals it, the workshop is quiet except for the one tone you saved</span></div>
+<div class="row"><span class="name">Never toll again</span><span class="note">The bell hangs forever — you chose silence. The world will hush one more time</span></div>
+
+<h2>Stuck?</h2>
+<div class="row"><span class="name">Map & Save are tools</span><span class="note">Map (Tab) shows where you haven't walked; peg (E) writes the save</span></div>
+<div class="row"><span class="name">Stuck in combat</span><span class="note">Walk up to them, press E; every dialogue is a road out</span></div>
+<div class="row"><span class="name">Default key wrong</span><span class="note">Tune → Ops tab → rebind any line you'd rather swap</span></div>
+
+<h2>Encore · Windbell Coast</h2>
+<div class="row"><span class="name">The coast is waiting</span><span class="note">Epilogue done → the Unfinished Hall sounds its first real bell; the shore has more to say when you arrive</span></div>
+`,
+}
+
+type Tab = 'tune' | 'gear' | 'bag' | 'moves' | 'trade' | 'save' | 'manual' | 'ops'
 
 const TABS: { id: Tab; label: string; hint: string }[] = [
   { id: 'tune', label: t('stak.tab.tune'), hint: t('stak.tab.tune.hint') },
@@ -39,6 +119,13 @@ const TABS: { id: Tab; label: string; hint: string }[] = [
   { id: 'trade', label: t('stak.tab.trade'), hint: t('stak.tab.trade.hint') },
   { id: 'save', label: t('stak.tab.save'), hint: t('stak.tab.save.hint') }
 ]
+
+/**
+ * 「手册」页签：玩家上手即能读到的游戏说明书——说明为什么玩家从没见过教程页（因为它不是在「看文档」，而是在「游戏里」）。
+ * 始终可用：不需要其他把手。放在所有工作页之后、伙伴操作页之前（如果 ops 也接入）。
+ * 手册正文住在 PLAYER_MANUAL 里静态双语对照，按 getLang() 解析当前一半 —— 不经 Lang 字典，以免手握这个面板的人被迫翻译第二份 README。
+ */
+const MANUAL_TAB: { id: Tab; label: string; hint: string } = { id: 'manual', label: t('stak.tab.manual'), hint: t('stak.tab.manual.hint') }
 
 /**
  * 「操作」页签**不在上面那张表里**：它要 `OpsPanelDeps` 那组把手才有东西可改，
@@ -585,9 +672,9 @@ export class Stakerite {
     return w.channel === 'gameplay' ? t('stak.sensor.keyMouse') : t('stak.sensor.key')
   }
 
-  /** 页签名册现推（§55）：接得到把手才有「操作」这一页 */
+  /** 页签名册现推（§55）：接得到把手才有「操作」；「手册」永远在，因为它不抓把手 */
   private tabsOf(): { id: Tab; label: string; hint: string }[] {
-    return this.ops ? [...TABS, OPS_TAB] : TABS
+    return this.ops ? [...TABS, MANUAL_TAB, OPS_TAB] : [...TABS, MANUAL_TAB]
   }
 
   /** 换页：进存档页就现取名册（离开时把未确认的那一笔撤掉，别把确认条留在别的页里） */
@@ -1030,7 +1117,8 @@ export class Stakerite {
           : this.tab === 'moves' ? this.renderMoves()
             : this.tab === 'trade' ? this.renderTrade()
               : this.tab === 'save' ? this.renderSave()
-                : this.renderOps()
+                : this.tab === 'manual' ? this.renderManual()
+                  : this.renderOps()
     this.lastBody = raw
     const body = this.navUsed ? this.markFocus(raw) : raw
     return `
@@ -1095,6 +1183,16 @@ export class Stakerite {
       <div class="row"><span class="name">${t('stak.tune.derived3')}</span><span class="num">${(d.critRate * 100).toFixed(1)}% / ${d.critMul.toFixed(2)}× / ${d.overdriveMax}</span></div>
       <h2>${t('stak.tune.milestones')}</h2>
       ${milestones}`
+  }
+
+  private renderManual(): string {
+    const lang = getLang()
+    return `
+      <style>.manual-page svg { opacity:.35 } .manual-page em { color: #ffedc4; font-style: normal; }
+             .manual-page strong { color: #ffe4a4; font-weight: 600; letter-spacing:.02em }
+             .manual-page .note { color: rgba(242,237,228,.78); font-size: .85em }
+      </style>
+      <div class="manual-page">${PLAYER_MANUAL[lang === 'en' ? 'en' : 'zh']}</div>`
   }
 
   private renderGear(): string {
