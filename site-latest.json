@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "13fd0e92e3be51f7c2192526f474429d75d25ddf",
+  "head": "9194ffe7edcce542ea8e3dda9381503511776e7b",
   "branch": "master",
-  "subject": "docs(readme): README 双语加 cast 角色图鉴 live link",
-  "date": "2026-11-15T02:41:06+08:00",
+  "subject": "fix(id-scope): register /cast/ as a named hole — Pages-published showcase page",
+  "date": "2026-11-15T02:46:58+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/13fd0e92e3be51f7c2192526f474429d75d25ddf",
+    "url": "https://github.com/xiaodernan/caesura/commit/9194ffe7edcce542ea8e3dda9381503511776e7b",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
