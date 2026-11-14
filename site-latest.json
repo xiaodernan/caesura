@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "331e2ad97cc2bd92782c6c4ad95923cd463561c5",
+  "head": "8f894fff88b169bdd4ce808665cd4aa258fde393",
   "branch": "master",
-  "subject": "docs(readme): 双语 README 对账最新主线（6885 测试 / Wave 56 / 八地域 / fresh=1 入口 / site-latest.json 同步）",
-  "date": "2026-11-15T01:43:34+08:00",
+  "subject": "feat(ui): RegionBanner — 区域进场仪典（首个落地的\"奖励性\" HUD 模块）",
+  "date": "2026-11-15T01:56:17+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/331e2ad97cc2bd92782c6c4ad95923cd463561c5",
+    "url": "https://github.com/xiaodernan/caesura/commit/8f894fff88b169bdd4ce808665cd4aa258fde393",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
