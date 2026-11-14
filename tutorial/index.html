@@ -19,38 +19,68 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0 }
   body {
-    background: radial-gradient(ellipse 70% 60% at 50% 45%, #13131a 0%, var(--bg) 80%);
-    color: var(--ink); font-family: var(--serif); line-height: 1.7;
-    padding: 34px 20px 64px;
+    background:
+      radial-gradient(ellipse 62% 52% at 50% 40%, rgba(31,29,42,.62) 0%, transparent 70%),
+      radial-gradient(ellipse 74% 62% at 50% 52%, #13131a 0%, var(--bg) 82%);
+    color: var(--ink); font-family: var(--serif); line-height: 1.75;
+    padding: 0 20px 64px;
+    position: relative;
   }
-  header { text-align: center; margin-bottom: 34px }
+  /* 氛围层：轻微的纸张颗粒（纯 CSS/Art direction 一致；reduced-motion 与打印自动免） */
+  body::after {
+    content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: .05; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  }
+  header, main, footer { position: relative; z-index: 1 }
+  header { text-align: center; margin-bottom: 30px; padding: 46px 0 10px; border-bottom: 1px solid rgba(201,180,88,.12) }
   header .seal {
-    display: inline-block; padding: 4px 14px; border: 1px solid rgba(201,180,88,.4);
-    color: var(--gold); border-radius: 2px; font-size: 12px; letter-spacing: .22em;
-    margin-bottom: 16px; font-family: var(--mono);
+    display: inline-block; padding: 6px 16px; border: 1px solid rgba(201,180,88,.45);
+    color: var(--gold); border-radius: 2px; font-size: 11px; letter-spacing: .26em;
+    margin-bottom: 20px; font-family: var(--mono);
+    box-shadow: inset 0 0 0 1px rgba(201,180,88,.14), 0 0 24px rgba(201,180,88,.07);
   }
-  h1 { font-size: clamp(26px, 4.5vw, 48px); font-weight: 400; letter-spacing: .08em }
-  h1 span { color: var(--gold) }
-  .sub { color: rgba(242,237,228,.55); font-size: 14px; margin-top: 10px; letter-spacing: .05em; font-family: var(--mono) }
-  .cta-row { display: flex; gap: 10px; justify-content: center; margin-top: 18px; flex-wrap: wrap; font-family: var(--mono); font-size: 12px; align-items: center }
-  .cta-row a { color: var(--gold); text-decoration: none; border: 1px solid var(--line); padding: 7px 14px; border-radius: 2px; transition: all .2s ease }
-  .cta-row a:hover { border-color: var(--gold); background: var(--gold-faint) }
+  h1 { font-size: clamp(28px, 4.8vw, 52px); font-weight: 400; letter-spacing: .1em; line-height: 1.2 }
+  h1 span {
+    color: var(--gold);
+    text-shadow: 0 0 34px rgba(201,180,88,.28), 0 2px 0 rgba(0,0,0,.55);
+  }
+  .sub { color: rgba(242,237,228,.6); font-size: 14px; margin-top: 12px; letter-spacing: .07em; font-family: var(--mono) }
+  .cta-row { display: flex; gap: 12px; justify-content: center; margin-top: 20px; flex-wrap: wrap; font-family: var(--mono); font-size: 12px; align-items: center }
+  .cta-row a {
+    color: var(--gold); text-decoration: none; border: 1px solid rgba(201,180,88,.35); padding: 8px 18px; border-radius: 2px;
+    transition: all .2s ease; background: linear-gradient(180deg, rgba(201,180,88,.04), transparent)
+  }
+  .cta-row a:hover { border-color: var(--gold); background: var(--gold-faint); box-shadow: 0 0 22px rgba(201,180,88,.12); transform: translateY(-1px) }
   .lang { font-family: var(--mono); font-size: 11px; border: 1px solid var(--line); background: #141419; color: #d8cba0; padding: 7px 16px; border-radius: 2px; cursor: pointer; letter-spacing: .12em }
   .lang:hover { border-color: var(--gold); color: var(--gold) }
   main { max-width: 920px; margin: 0 auto }
-  .step {
-    border: 1px solid var(--line); background: var(--panel);
-    border-radius: 4px; padding: 18px 22px; margin: 14px 0;
-    display: grid; grid-template-columns: 44px 1fr; gap: 18px; align-items: start;
+  header::before {
+    content: "❖"; display: block; color: rgba(201,180,88,.5); font-size: 13px;
+    letter-spacing: .4em; margin-bottom: 14px
   }
-  .num { font-family: var(--mono); font-size: 20px; color: var(--gold-dim); text-align: center; opacity: .8; padding-top: 2px }
-  .title { font-size: 17px; color: #ffeacc }
-  .body { font-size: 13.5px; color: rgba(242,237,228,.85); margin-top: 4px }
+  .step {
+    border: 1px solid var(--line); background: linear-gradient(180deg, rgba(22,22,29,.94) 0%, rgba(18,18,24,.94) 100%);
+    border-radius: 4px; padding: 18px 22px 18px 18px; margin: 14px 0;
+    display: grid; grid-template-columns: 48px 1fr; gap: 16px; align-items: start;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.02);
+    position: relative;
+  }
+  .step::before {
+    content: ""; position: absolute; left: 0; top: 14px; bottom: 14px;
+    width: 2px; background: linear-gradient(180deg, rgba(201,180,88,.36), rgba(201,180,88,.08));
+    border-radius: 2px; opacity: .55
+  }
+  .num {
+    font-family: var(--mono); font-size: 20px; color: var(--gold-dim); text-align: center; opacity: .9; padding-top: 2px;
+    border: 1px solid rgba(201,180,88,.18); border-radius: 3px; padding: 4px 0; line-height: 1.2
+  }
+  .title { font-size: 17px; color: #ffeacc; letter-spacing: .04em }
+  .body { font-size: 13.5px; color: rgba(242,237,228,.85); margin-top: 6px }
   .key { display: inline-block; font-family: var(--mono); font-size: 11px; border: 1px solid var(--line);
-    background: #1a1a22; color: #ffeabf; padding: 2px 8px; border-radius: 3px; margin: 0 2px; }
-  .tip { color: var(--jade); font-size: 12px; font-family: var(--mono); margin-top: 6px }
-  .block { border-left: 2px solid rgba(201,180,88,.33); padding: 8px 14px; font-size: 13.5px; color: rgba(242,237,228,.9); border-radius: 0 4px 4px 0 }
-  footer { text-align: center; margin-top: 40px; font-family: var(--mono); font-size: 11px; color: rgba(242,237,228,.45) }
+    background: linear-gradient(180deg, #1f1f27 0%, #17171d 100%); color: #ffeabf; padding: 2px 8px; border-radius: 3px; margin: 0 2px; box-shadow: 0 1px 0 rgba(0,0,0,.6), inset 0 -1px 0 rgba(255,255,255,.04) }
+  .tip { color: var(--jade); font-size: 11.5px; font-family: var(--mono); margin-top: 8px; letter-spacing: .02em }
+  .block { border-left: 2px solid rgba(201,180,88,.4); padding: 10px 16px; font-size: 13.5px; font-style: italic; color: rgba(242,237,228,.9); border-radius: 0 4px 4px 0; background: linear-gradient(90deg, rgba(201,180,88,.05), transparent 60%) }
+  footer { text-align: center; margin-top: 46px; padding-top: 22px; border-top: 1px solid rgba(201,180,88,.12); font-family: var(--mono); font-size: 11px; color: rgba(242,237,228,.45) }
   footer a { color: var(--gold-dim) }
   html[data-lang="zh"] .en-copy, html[data-lang="en"] .zh-copy { display: none }
   html[data-lang="zh"] .zh-copy, html[data-lang="en"] .en-copy { display: block }
