@@ -71,7 +71,7 @@ const ROWS: Array<{ mark: string; label: string; probe: () => void }> = [
     probe: () => {
       expect(existsSync(rel('src/ai/Navigation.ts')), 'Navigation.ts').toBe(true)
       expect(read('src/ai/Navigation.ts'), 'syncAuthored 的方法定义').toMatch(/^\s*syncAuthored\(/m)
-      expect(readdirSync(rel('src/data/json/navmesh')).filter((f) => f.endsWith('.navmesh.json'))).toHaveLength(7)
+      expect(readdirSync(rel('src/data/json/navmesh')).filter((f) => f.endsWith('.navmesh.json'))).toHaveLength(8)
       expect(regions.filter((r) => !r.navmeshRef), '每一区都该有 navmeshRef').toEqual([])
     },
   },
@@ -119,7 +119,7 @@ const ROWS: Array<{ mark: string; label: string; probe: () => void }> = [
       expect(existsSync(rel('src/world/Weather.ts')), '天气不叫这个名字').toBe(false)
       expect(existsSync(rel('src/vfx/ColorGrade.ts')), '天气落在 ColorGrade').toBe(true)
       expect(existsSync(rel('src/world/Lighting.ts')), '光照预设已落（§5.9.42）').toBe(true)
-      expect(JSON.parse(read('src/data/json/lighting.json')) as unknown[]).toHaveLength(7)
+      expect(JSON.parse(read('src/data/json/lighting.json')) as unknown[]).toHaveLength(8)
     },
   },
   {

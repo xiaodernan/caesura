@@ -32,6 +32,7 @@ import navmeshBrokenbarCamp from './json/navmesh/rg_brokenbar_camp.navmesh.json'
 import navmeshFellcarillon from './json/navmesh/rg_fellcarillon.navmesh.json'
 import navmeshEarlessDeeps from './json/navmesh/rg_earless_deeps.navmesh.json'
 import navmeshUnfinishedHall from './json/navmesh/rg_unfinished_hall.navmesh.json'
+import navmeshWindcoast from './json/navmesh/rg_windcoast.navmesh.json'
 import type { MovesetData, WeaponData, EnemyData, PlayerBaseData, RegionData, ProgressionData, ItemData, LootTableData, NpcData, DialogueData, QuestData, StatusConfig, MovementConfig, WorldStateRule, WorldStateDef, HitReactionTable, ShopData, AmbienceBed, ExploreScore, BattleScore, DuckRow, WeatherRow, CinematicRow, LightingRow, VfxTable, SquadConfigData } from './schema'
 
 export const playerBase = playerRaw as unknown as PlayerBaseData
@@ -142,6 +143,7 @@ export function registerGameData(): void {
   registry.register('navmesh/rg_fellcarillon.navmesh.json', navmeshFellcarillon)
   registry.register('navmesh/rg_earless_deeps.navmesh.json', navmeshEarlessDeeps)
   registry.register('navmesh/rg_unfinished_hall.navmesh.json', navmeshUnfinishedHall)
+  registry.register('navmesh/rg_windcoast.navmesh.json', navmeshWindcoast)
 }
 
 export { weaponsRaw, enemiesRaw, movesetsRaw, regionsRaw, progressionRaw, itemsRaw, lootRaw, worldstateRaw, squadRaw }

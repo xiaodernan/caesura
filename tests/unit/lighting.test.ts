@@ -201,7 +201,7 @@ describe('§37 第二腿：三层光读数（颜色从六列现推，强度从 l
     expect(deeps.pointIntensity).toBeGreaterThan(0)
   })
 
-  it('七行全都有 lights：读者对缺失行的退路是三格全 0，而那种黑没有任何别的东西会响', () => {
+  it('八行全都有 lights：读者对缺失行的退路是三格全 0，而那种黑没有任何别的东西会响', () => {
     for (const row of lightingRows) {
       expect(row.lights, `${row.id} 少了 lights`).toBeTypeOf('object')
       expect(Object.keys(row.lights!).sort()).toEqual(['hemiIntensity', 'keyDir', 'keyIntensity', 'pointIntensity'])
@@ -284,7 +284,7 @@ describe('判据本体可喂（合成夹具）：链断了要会说，不能静�
     expect(why([{ ...noNote, sky: undefined, note: '无天光' }], ['lp_a'])).toEqual([])
   })
 
-  it('裁决账本 ⇄ 真表：七行各有理由，没有一条是假账', () => {
+  it('裁决账本 ⇄ 真表：八行各有理由，没有一条是假账', () => {
     for (const row of lightingRows) {
       expect(LIGHT_RULINGS[row.id], `${row.id} 没有裁决理由`).toBeTypeOf('string')
       expect(LIGHT_RULINGS[row.id].length, `${row.id} 的理由太短`).toBeGreaterThanOrEqual(20)
@@ -294,10 +294,10 @@ describe('判据本体可喂（合成夹具）：链断了要会说，不能静�
     expect(LIGHT_RULINGS.lp_earless_deeps.length).toBeGreaterThan(LIGHT_RULINGS.lp_resthold.length)
   })
 
-  it('真表过判据：七行 ⇄ 七区，一条 finding 都没有', () => {
+  it('真表过判据：八行 ⇄ 八区，一条 finding 都没有', () => {
     const referenced = regions.map((r) => r.lightingPreset)
     expect(lightingFindings('lighting.json', lightingRows, referenced, LIGHT_RULINGS)).toEqual([])
-    expect(new Set(referenced).size, '两个区共用一个预设不犯法，但今天七区各自一个').toBe(7)
+    expect(new Set(referenced).size, '两个区共用一个预设不犯法，但今天八区各自一个').toBe(8)
   })
 })
 

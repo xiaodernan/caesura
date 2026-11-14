@@ -2239,5 +2239,267 @@
         "breakLoudness": 0.9
       }
     ]
+  },
+  {
+    "id": "rg_windcoast",
+    "nameKey": "region.windcoast",
+    "displayName": "风钟海岸 Windbell Coast",
+    "order": 7,
+    "biome": "ruins",
+    "unlockFlag": "flag.organ_gate_open",
+    "bounds": {
+      "minX": 432,
+      "maxX": 720,
+      "minY": -8,
+      "maxY": 56,
+      "minZ": -192,
+      "maxZ": 240
+    },
+    "groundY": 0,
+    "grid": {
+      "bpm": 72,
+      "beatsPerBar": 4,
+      "label": "风鸣"
+    },
+    "chunkSize": 48,
+    "navmeshRef": "navmesh/rg_windcoast.navmesh.json",
+    "weatherPresets": [
+      "clear",
+      "fog"
+    ],
+    "lightingPreset": "lp_windcoast",
+    "palette": {
+      "base": "#26333D",
+      "accent": "#8FC8D3",
+      "glow": "#E8DCAE"
+    },
+    "spawnGroups": [
+      {
+        "enemyId": "en_driftsinger",
+        "count": 3,
+        "center": {
+          "x": 520,
+          "y": 0,
+          "z": 20
+        },
+        "radius": 36
+      },
+      {
+        "enemyId": "en_skewer",
+        "count": 2,
+        "center": {
+          "x": 642,
+          "y": 0,
+          "z": -62
+        },
+        "radius": 25
+      },
+      {
+        "enemyId": "en_murkshell",
+        "count": 4,
+        "center": {
+          "x": 600,
+          "y": 0,
+          "z": 122
+        },
+        "radius": 30
+      },
+      {
+        "enemyId": "en_tympanus",
+        "count": 2,
+        "center": {
+          "x": 472,
+          "y": 0,
+          "z": -138
+        },
+        "radius": 18
+      }
+    ],
+    "landmarks": [
+      {
+        "id": "lm_windcoast_headland",
+        "nameKey": "landmark.windcoast_headland",
+        "pos": {
+          "x": 458,
+          "y": 6,
+          "z": 158
+        },
+        "sightRange": 260
+      },
+      {
+        "id": "lm_windcoast_arch",
+        "nameKey": "landmark.windcoast_arch",
+        "pos": {
+          "x": 668,
+          "y": 4,
+          "z": -28
+        },
+        "sightRange": 140
+      }
+    ],
+    "interactables": [
+      {
+        "id": "st_windcoast",
+        "kind": "checkpoint",
+        "pos": {
+          "x": 636,
+          "y": 0,
+          "z": 96
+        },
+        "setsFlag": "flag.checkpoint_windcoast"
+      },
+      {
+        "id": "ch_windcoast_salt_chest",
+        "kind": "chest",
+        "pos": {
+          "x": 520,
+          "y": 0,
+          "z": -112
+        },
+        "lootTable": "loot_chest_t1"
+      },
+      {
+        "id": "gh_windcoast_windchime",
+        "kind": "gather",
+        "pos": {
+          "x": 480,
+          "y": 0,
+          "z": 122
+        },
+        "lootTable": "loot_gather_timbite"
+      },
+      {
+        "id": "gh_windcoast_salt_effigy",
+        "kind": "gather",
+        "pos": {
+          "x": 692,
+          "y": 0,
+          "z": -148
+        },
+        "lootTable": "loot_gather_timbite"
+      },
+      {
+        "id": "in_windcoast_headland",
+        "kind": "inspect",
+        "verb": "看风岬瞭望台",
+        "verbKey": "interact.windcoast_watchtower",
+        "pos": {
+          "x": 462,
+          "y": 0,
+          "z": 164
+        }
+      },
+      {
+        "id": "in_windcoast_arch",
+        "kind": "inspect",
+        "verb": "看海蚀拱上的旧风谱",
+        "verbKey": "interact.windcoast_arch",
+        "pos": {
+          "x": 664,
+          "y": 0,
+          "z": -28
+        }
+      },
+      {
+        "id": "in_windcoast_cairn",
+        "kind": "inspect",
+        "verb": "读风化冢石上的指法",
+        "verbKey": "interact.windcoast_cairn",
+        "pos": {
+          "x": 600,
+          "y": 0,
+          "z": -58
+        },
+        "setsFlag": "flag.windcoast_cairn_read"
+      },
+      {
+        "id": "ch_windcoast_cairn_claim",
+        "kind": "chest",
+        "secretId": "sec_windcoast_cairn",
+        "pos": {
+          "x": 604,
+          "y": 0,
+          "z": -54
+        }
+      }
+    ],
+    "secrets": [
+      {
+        "id": "sec_windcoast_cairn",
+        "unlockFlag": "flag.windcoast_cairn_read",
+        "rewardTable": "loot_secret_cairn",
+        "pos": {
+          "x": 600,
+          "y": 0,
+          "z": -58
+        }
+      }
+    ],
+    "storyHooks": [
+      "narr.act99_windbell_coast"
+    ],
+    "music": {
+      "explore": "mus_windcoast_explore",
+      "battle": "mus_shared_battle",
+      "ambience": "mus_windcoast_amb"
+    },
+    "streamingPriority": 0,
+    "walls": [
+      {
+        "id": "wc_wind_spire_1",
+        "pos": {
+          "x": 508,
+          "y": 0,
+          "z": 34
+        },
+        "size": {
+          "x": 2.2,
+          "z": 26
+        },
+        "heightM": 7.5
+      },
+      {
+        "id": "wc_wind_spire_2",
+        "pos": {
+          "x": 614,
+          "y": 0,
+          "z": 108
+        },
+        "size": {
+          "x": 22,
+          "z": 2.0
+        },
+        "heightM": 4.8
+      },
+      {
+        "id": "wc_wind_spire_3",
+        "pos": {
+          "x": 662,
+          "y": 0,
+          "z": -88
+        },
+        "size": {
+          "x": 2.0,
+          "z": 30
+        },
+        "heightM": 6.2
+      },
+      {
+        "id": "wc_wind_spire_4",
+        "pos": {
+          "x": 700,
+          "y": 0,
+          "z": 14
+        },
+        "size": {
+          "x": 20,
+          "z": 2.4
+        },
+        "heightM": 5.6
+      }
+    ],
+    "weatherSwitch": {
+      "flag": "flag.windcoast_cairn_read"
+    }
   }
 ]

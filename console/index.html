@@ -1032,11 +1032,11 @@
     </article>
   </section>
 
-  <!-- 第五十五弹 · 止音纪元世界图 v1（WORLD-BIBLE §2/§3 同源 · SVG 节点 + 七声部 Boss + 七 NPC · CSS-only 辉光 · reduced-motion 全关） -->
+  <!-- 第五十六弹 · 止音纪元世界图 v1.1（WORLD-BIBLE §2/§3 同源 · SVG 节点 + 八声钟记 + 七 NPC · CSS-only 辉光 · reduced-motion 全关 · 2026-11-15 风钟海岸入图） -->
   <section class="row row-map" aria-label="止音纪元世界图">
     <article class="panel panel-map">
-      <div class="panel-head"><h2>第五十五弹 · 止音纪元 · 七地域世界图</h2><span class="hint">手工定位 · 与 WORLD-BIBLE.md §2/§3 同源（resthold 玄石集市 → 未完之殿登顶）· 节点可聚焦可键盘切换（Tab / Enter）· 七声钟记 ↑↓→ 对应七 Boss 的根音符（♭E..♭B）</span></div>
-      <svg class="world-map" viewBox="0 0 1040 660" role="group" aria-label="七地域世界图">
+      <div class="panel-head"><h2>第五十六弹 · 止音纪元 · 八地域世界图</h2><span class="hint">手工定位 · 与 WORLD-BIBLE.md §2/§3 同源（resthold 玄石集市 → 未完之殿登顶）· 节点可聚焦可键盘切换（Tab / Enter）· 八声钟记：♭E2 海岸低八度 + 七场 Boss 根音符（♭E..♭B）</span></div>
+      <svg class="world-map" viewBox="0 0 1040 660" role="group" aria-label="八地域世界图">
         <defs>
           <radialGradient id="map-glow-resthold" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#c9b258" stop-opacity=".9"/><stop offset="100%" stop-color="#c9b258" stop-opacity="0"/></radialGradient>
           <radialGradient id="map-glow-whisperwode" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#4f9b86" stop-opacity=".9"/><stop offset="100%" stop-color="#4f9b86" stop-opacity="0"/></radialGradient>
@@ -1045,6 +1045,7 @@
           <radialGradient id="map-glow-fellcarillon" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#7a5a9e" stop-opacity=".9"/><stop offset="100%" stop-color="#7a5a9e" stop-opacity="0"/></radialGradient>
           <radialGradient id="map-glow-deeps" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#6a7683" stop-opacity=".85"/><stop offset="100%" stop-color="#6a7683" stop-opacity="0"/></radialGradient>
           <radialGradient id="map-glow-hall" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#f0e6c2" stop-opacity=".95"/><stop offset="100%" stop-color="#f0e6c2" stop-opacity="0"/></radialGradient>
+          <radialGradient id="map-glow-windcoast" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#6fb6c9" stop-opacity=".95"/><stop offset="100%" stop-color="#6fb6c9" stop-opacity="0"/></radialGradient>
         </defs>
         <path class="map-land" d="M96 470 C 180 380, 300 420, 380 330 C 460 245, 620 260, 700 330 C 800 420, 880 400, 940 470 C 960 520, 780 590, 520 590 C 300 590, 120 560, 96 470 Z" fill="rgba(255,255,255,.03)" stroke="rgba(201,180,88,.14)" stroke-width="1.4"/>
         <path class="map-vein" d="M180 500 C 340 460, 520 480, 780 440" fill="none" stroke="rgba(201,180,88,.16)" stroke-width="1" stroke-dasharray="4 6"/>
@@ -1083,21 +1084,27 @@
           <path class="map-mark deeps" d="M-14 -8 A 12 12 0 1 0 14 -8 M-14 4 A 12 12 0 1 1 14 4" fill="none" stroke="#8b98a6" stroke-width="2" stroke-linecap="round"/>
           <text class="map-label" y="-26" text-anchor="middle">无耳之底</text>
         </g>
+        <g class="map-node map-node-windcoast" tabindex="0" role="button" aria-label="风钟海岸" data-region="rg_windcoast" transform="translate(880 285)">
+          <circle class="map-halo" r="40" fill="url(#map-glow-windcoast)"/>
+          <path class="map-mark windcoast" d="M-10 4 C -10 -6 -6 -12 0 -12 C 6 -12 10 -6 10 4 Z M-12 8 H 12 M0 4 V 10" stroke="#8fd0db" stroke-width="2.1" stroke-linejoin="round" fill="none" stroke-linecap="round"/>
+          <path class="map-mark windcoast-w" d="M-19 -6 Q -14 -2 -19 2 M19 -6 Q 14 -2 19 2" stroke="#8fd0db" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+          <text class="map-label" y="-24" text-anchor="middle">风钟海岸</text>
+        </g>
       </svg>
-      <p class="note">§2 七地域 × 七 Boss × 七 NPC 全图（与 WORLD-BIBLE.md §2/§3 对应表一一同名）</p>
+      <p class="note">八地域 × 七 Boss × 七 NPC 全图（§2 七地域同名对应；海岸是序章之后的世界，未在主线内、不在无声域之前）</p>
     </article>
     <article class="panel panel-map-detail">
-      <div class="panel-head"><h2 id="map-detail-title">未完之殿 · 终末大殿</h2><span class="hint">Tab 聚焦七节点 · Enter 选中 · 与 WORLD-BIBLE.md §3 同源 · 全字段标本注明</span></div>
+      <div class="panel-head"><h2 id="map-detail-title">未完之殿 · 终末大殿</h2><span class="hint">Tab 聚焦八节点 · Enter 选中 · 与 WORLD-BIBLE.md §3 同源 · 全字段标本注明</span></div>
       <div class="map-detail" id="map-detail" aria-live="polite">—</div>
-      <div class="map-bells" aria-hidden="true"><span>♭E</span><span>♭F</span><span>♭A</span><span>♭C</span><span>♭D</span><span>♭G</span><span class="bell-final">♭B</span></div>
-      <p class="note map-bells-note">七声钟记 ♭E..♭B 顺序对应 §2 七场 Boss 的根音符（♭E=集市虚礼 / ♭B=未完之殿真空）</p>
+      <div class="map-bells" aria-hidden="true"><span style="color:#8fd0db">♭E2</span><span>♭E</span><span>♭F</span><span>♭A</span><span>♭C</span><span>♭D</span><span>♭G</span><span class="bell-final">♭B</span></div>
+      <p class="note map-bells-note">♭E2 海岸低八度 + ♭E..♭B 七声钟记（对应七场 Boss 根音符；♭B = 未完之殿真空）</p>
     </article>
   </section>
         <!-- 集大成 · 终局仪典 · 玉玦铭 -->
         <section class="row row-ribbon" aria-hidden="true">
           <div class="ribbon">
             <span class="seal seal-lg seal-jade">CAESURA</span>
-            <span class="ribbon-text">MESH OBSERVATORY · 集大成 · 第五十五弹 · 2026-11-14 · master · CI 全绿</span>
+            <span class="ribbon-text">MESH OBSERVATORY · 集大成 · 第五十六弹 · 2026-11-15 · master · CI 全绿</span>
             <span class="ribbon-dot"></span>
             <span class="seal seal-lg seal-zhu">止音纪元</span>
           </div>

@@ -34,6 +34,8 @@
 | 6 | rg_earless_deeps 无耳之底 | Hersil 无耳 | 死寂 | ♭G |
 | 7 | rg_unfinished_hall 未完之殿 | 最后的钟 DLG_HERSIL (ending) | 真空 | ♭B |
 
+**第八地域（2026-11-15 落地）**：`rg_windcoast 风钟海岸 Windbell Coast`——§2 七地域廊道之外的「序章之后的世界」，`flag.organ_gate_open` 之后开量；生物群落海蚀悬崖 · 风鸣礁 · 低八度 ♭E2（风鸣）。本次是**数据级首落**：区域并进 regions.json、Navmesh 已烘焙、音乐 `mus_windcoast_explore/_amb` + `lp_windcoast` 同步在册、无任何新 Boss 即开放探索。唯一守门者「雾啸长老 Wind-Revenant」仍是 EPIC-VI 设计稿（选项、刷新起放节奏、引入方式全部挂在 EPIC-VI GO/NO-GO 单上），本版本不生成它。词源与意象均引自 `docs/lore/NEW-LANDS.md`——canon 的增补纪律未破。
+
 > 无【护主钟】（鸣弦那一声是玩家亲自敲）。遗憾：第 1 钟已嘶，玩家在进入时被免于沉默，理由未明 — 本作不写谜底。
 
 ---

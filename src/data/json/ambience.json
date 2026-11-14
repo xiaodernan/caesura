@@ -873,5 +873,92 @@
       ],
       "hammerP": 0.4
     }
+  },
+  {
+    "id": "mus_windcoast_amb",
+    "layers": [
+      {
+        "hz": 55.0,
+        "wave": "sine",
+        "peak": 0.05,
+        "detune": 0
+      },
+      {
+        "hz": 110.0,
+        "wave": "sine",
+        "peak": 0.03,
+        "detune": 0
+      },
+      {
+        "hz": 165.0,
+        "wave": "triangle",
+        "peak": 0.014,
+        "detune": 2
+      },
+      {
+        "hz": 220.0,
+        "wave": "triangle",
+        "peak": 0.008,
+        "detune": -2
+      }
+    ],
+    "lpHz": 280,
+    "breath": {
+      "hz": 0.06,
+      "depth": 0.009
+    },
+    "sources": [
+      {
+        "layer": "motion",
+        "hz": 700,
+        "pos": {
+          "x": 480,
+          "y": 40,
+          "z": -20
+        },
+        "peak": 0.026,
+        "attackSec": 1.6,
+        "durSec": 5.0,
+        "everySec": [
+          12,
+          26
+        ]
+      },
+      {
+        "layer": "texture",
+        "hz": 1800,
+        "pos": {
+          "x": 620,
+          "y": 2,
+          "z": 80
+        },
+        "peak": 0.016,
+        "attackSec": 0.006,
+        "durSec": 0.9,
+        "everySec": [
+          2.4,
+          6.5
+        ]
+      }
+    ],
+    "bell": {
+      "scale": [
+        116.54,
+        123.47,
+        155.56,
+        174.81,
+        233.08,
+        246.94
+      ],
+      "everySec": [
+        6,
+        11
+      ],
+      "peak": [
+        0.015,
+        0.04
+      ],
+      "hammerP": 0.35
+    }
   }
 ]

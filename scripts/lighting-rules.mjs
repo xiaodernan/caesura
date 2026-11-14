@@ -70,6 +70,8 @@ export const LIGHT_RULINGS = {
   lp_brokenbar_camp: LIGHT_BASELINE_RULING,
   lp_drowned_choir: LIGHT_BASELINE_RULING,
   lp_unfinished_hall: LIGHT_BASELINE_RULING,
+  // 新增一行同口径裁决：风钟海岸也没拿艺术口径给数，沿用灰盒期三层光默认（这是名单缺口不是新设计）
+  lp_windcoast: LIGHT_BASELINE_RULING,
   // §8 自己开的那道口子：「禁止无 key 光的纯自发光场景（深窖除外——其唯一光源是矿缝，属设计例外）」
   lp_earless_deeps:
     LIGHT_BASELINE_RULING +

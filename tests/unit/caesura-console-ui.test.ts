@@ -3467,21 +3467,21 @@ describe('KI-563 Spring Cloud Gateway 过滤器全家桶 OrderedChain / RateLimi
     }
   })
 })
-// ============ 第五十五弹 · 止音纪元世界图 · map 行 ============
-describe('第五十五弹 止音纪元世界图（row-map）', () => {
+// ============ 第五十六弹 · 止音纪元世界图 · map 行 ============
+describe('第五十六弹 止音纪元世界图（row-map）', () => {
   const realMap = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
 
-  it('map markup/CSS 自证合规：7 节点 + 七钟记 + reduced-motion', () => {
+  it('map markup/CSS 自证合规：8 节点 + 八钟记 + reduced-motion', () => {
     const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
     const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
     expect(html).toContain('row-map')
     expect(html).toContain('id="map-detail"')
     expect(html).toContain('id="map-detail-title"')
-    for (const rg of ['rg_resthold', 'rg_whisperwode', 'rg_drowned_choir', 'rg_brokenbar_camp', 'rg_fellcarillon', 'rg_earless_deeps', 'rg_unfinished_hall']) {
+    for (const rg of ['rg_resthold', 'rg_whisperwode', 'rg_drowned_choir', 'rg_brokenbar_camp', 'rg_fellcarillon', 'rg_earless_deeps', 'rg_unfinished_hall', 'rg_windcoast']) {
       expect(html).toContain('data-region="' + rg + '"')
     }
-    expect((html.match(/class="map-node /g) || []).length).toBe(7)
-    for (const bell of ['♭E', '♭F', '♭A', '♭C', '♭D', '♭G', '♭B']) expect(html).toContain(bell)
+    expect((html.match(/class="map-node /g) || []).length).toBe(8)
+    for (const bell of ['♭E', '♭F', '♭A', '♭C', '♭D', '♭G', '♭B', '♭E2']) expect(html).toContain(bell)
     expect(css).toContain('.row-map')
     expect(css).toContain('.map-node--active')
     expect(css).toContain('.map-bells')

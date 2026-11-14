@@ -50,5 +50,13 @@
   {
     "id": "mus_unfinished_hall_explore",
     "form": null
+  },
+  {
+    "id": "mus_windcoast_explore",
+    "form": "prime",
+    "rootHz": 55.0,
+    "beatsPerNote": 2,
+    "wave": "sine",
+    "peak": 0.032
   }
 ]

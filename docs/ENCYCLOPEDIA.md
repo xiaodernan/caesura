@@ -14,7 +14,7 @@
 
 ---
 
-## 2 · 主线廊道（七城 · 七 Boss）
+## 2 · 主线廊道（七城 · 七 Boss · 外一篇余响新大陆）
 
 | # | 地域 | Boss | 真音符 |
 |---|---|---|---|
@@ -25,6 +25,7 @@
 | 5 | 破钟崖 `rg_fellcarillon` | Bell-Phantom 巨钟裂魂 | ♭D |
 | 6 | 无耳之底 `rg_earless_deeps` | Hersil 无耳 | ♭G |
 | 7 | 未完之殿 `rg_unfinished_hall` | 最后的钟 DLG_HERSIL | ♭B |
+| 8 | 风钟海岸 `rg_windcoast`（第八地域 · 序章之后 · `flag.organ_gate_open` 开锁） | 风啸长老 Wind-Revenant（设计稿 · 本版本未生成 Boss） | ♭E2（低八度·风鸣）|
 
 七 Boss × 七音符与世界观音景见 `docs/WORLD-BIBLE.md`、`docs/lore/NEW-LANDS.md`（NEW-LANDS：再推一层）；史诗六章：`docs/EPIC-V.md`、`docs/EPIC-VI.md`。
 

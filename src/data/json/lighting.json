@@ -13,7 +13,11 @@
     "lights": {
       "hemiIntensity": 1.0,
       "keyIntensity": 2.0,
-      "keyDir": [12, 20, 8],
+      "keyDir": [
+        12,
+        20,
+        8
+      ],
       "pointIntensity": 64
     }
   },
@@ -28,7 +32,11 @@
     "lights": {
       "hemiIntensity": 0.7,
       "keyIntensity": 1.5,
-      "keyDir": [12, 20, 8],
+      "keyDir": [
+        12,
+        20,
+        8
+      ],
       "pointIntensity": 64
     }
   },
@@ -42,7 +50,11 @@
     "lights": {
       "hemiIntensity": 0.7,
       "keyIntensity": 1.5,
-      "keyDir": [12, 20, 8],
+      "keyDir": [
+        12,
+        20,
+        8
+      ],
       "pointIntensity": 64
     },
     "note": "天光是落日渐层（#C56A3E→#6B3F66 两停），单色格装不下两停 ⇒ sky 省略，雾色按「无天光」走 DARK"
@@ -60,7 +72,11 @@
     "lights": {
       "hemiIntensity": 0.7,
       "keyIntensity": 0,
-      "keyDir": [12, 20, 8],
+      "keyDir": [
+        12,
+        20,
+        8
+      ],
       "pointIntensity": 64
     },
     "note": "原文「无天光（纯黑）」⇒ sky 省略；低饱和恐怖由 saturateMul 0.65 承担"
@@ -76,7 +92,11 @@
     "lights": {
       "hemiIntensity": 0.7,
       "keyIntensity": 1.5,
-      "keyDir": [12, 20, 8],
+      "keyDir": [
+        12,
+        20,
+        8
+      ],
       "pointIntensity": 64
     }
   },
@@ -90,7 +110,11 @@
     "lights": {
       "hemiIntensity": 0.7,
       "keyIntensity": 1.5,
-      "keyDir": [12, 20, 8],
+      "keyDir": [
+        12,
+        20,
+        8
+      ],
       "pointIntensity": 64
     },
     "note": "原文「无（地下）」⇒ sky 省略"
@@ -109,8 +133,31 @@
     "lights": {
       "hemiIntensity": 0.7,
       "keyIntensity": 1.5,
-      "keyDir": [12, 20, 8],
+      "keyDir": [
+        12,
+        20,
+        8
+      ],
       "pointIntensity": 64
+    }
+  },
+  {
+    "id": "lp_windcoast",
+    "base": "#24333E",
+    "sec": "#31424E",
+    "accent": "#C8B88A",
+    "emit": "#7FC4D1",
+    "sky": "#54666F",
+    "dark": "#070D10",
+    "lights": {
+      "hemiIntensity": 0.62,
+      "keyIntensity": 1.3,
+      "keyDir": [
+        16,
+        22,
+        6
+      ],
+      "pointIntensity": 48
     }
   }
 ]
