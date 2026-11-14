@@ -1284,6 +1284,79 @@ export function buildCacheConsistencyReading(opts: {
   ccRigged?: boolean
 }, now: () => number): Promise<DelayedDoubleDeleteReading | null>
 
+/** KI-562：BPlusOrdered/TrgmGin/VectorHnsw 选项与 study 入口，opt-in 默认；失败时返回 null */
+export function buildPgVectorReading(opts: {
+  now?: () => number
+  pgvector?: boolean
+  pgSeed?: number
+  pgMessages?: number
+  pgDocs?: number
+  pgDims?: number
+  pgFreeOrderedRangeScan?: boolean
+  pgFreeFuzzyPatternMatch?: boolean
+  pgFreeVectorSimilarity?: boolean
+  pgRigged?: boolean
+}, now: () => number): Promise<PgVectorReading | null>
+
+/** KI-563：OrderedChain/RateLimitGatewayFilter/CircuitBreakerGatewayFilter 选项与 study 入口，opt-in 默认；失败时返回 null */
+export function buildGatewayFiltersReading(opts: {
+  now?: () => number
+  gatewayFilters?: boolean
+  gwfSeed?: number
+  gwfMessages?: number
+  gwfFreeOrderedCorrect?: boolean
+  gwfFreeRateLimited?: boolean
+  gwfFreeCircuitBroken?: boolean
+  gwfRigged?: boolean
+}, now: () => number): Promise<GatewayFiltersReading | null>
+
+/** KI-562 PostgreSQL 查询引擎教学件（BPlusOrdered=100 / TrgmGin=010 / VectorHnsw=001）+ verifyPgVectorSoundness 双路自证 + 三路篡改 + 因果锁 + 21 真件 */
+export interface PgVectorReading {
+  config: Record<string, any>
+  rows: Array<{
+    protocol: string
+    scenarios: Array<{
+      id: string; docs: number; processed: number; matched: number; ordered: number
+      state: 'hit' | 'miss'; fault: string; recall: number | null
+    }>
+    trilemma: { orderedRangeScan: boolean; fuzzyPatternMatch: boolean; vectorSimilarity: boolean }
+    metrics: { stateHits: number; vectorRecall: number | null }
+  }>
+  vectors: Record<string, string>
+  verdict: Record<string, any>
+  noUniversalWinner: boolean
+  trilemmaDistinguishes: boolean
+  scenarioDistinguishes: boolean
+  noStrategyWinsAll: boolean
+  builtAt: number
+  rigged: boolean
+  causalLocks: { bplusFanoutCausallyUnerasable: boolean; trgmCandidateSupersetCausallyUnerasable: boolean; vectorRecallFloorCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
+  crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; baselineHolds?: boolean; falsifiable?: boolean; laneA: Record<string, any>; laneB: Record<string, any>; laneC?: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+}
+
+/** KI-563 Spring Cloud Gateway 过滤器全家桶教学件（OrderedChain=100 / RateLimitGatewayFilter=010 / CircuitBreakerGatewayFilter=001）+ verifyGatewayFiltersSoundness 三 Lane 自证 + 三路篡改 + 因果锁 + 21 真件 */
+export interface GatewayFiltersReading {
+  config: Record<string, any>
+  rows: Array<{
+    protocol: string
+    scenarios: Array<{
+      id: string; messages: number; processed: number; matched: number; state: 'hit' | 'miss'; fault: string
+    }>
+    trilemma: { orderedCorrect: boolean; rateLimited: boolean; circuitBroken: boolean }
+    metrics: { stateHits: number }
+  }>
+  vectors: Record<string, string>
+  verdict: Record<string, any>
+  noUniversalWinner: boolean
+  trilemmaDistinguishes: boolean
+  scenarioDistinguishes: boolean
+  noStrategyWinsAll: boolean
+  builtAt: number
+  rigged: boolean
+  causalLocks: { onionWrapperCausallyUnerasable: boolean; bucketThroughputCausallyUnerasable: boolean; halfOpenRecoveryCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
+  crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; baselineHolds?: boolean; falsifiable?: boolean; laneA: Record<string, any>; laneB: Record<string, any>; laneC?: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+}
+
 /** KI-545：ExclusiveConsumer/SharedConsumer/ClusteredConsumer Spring Cloud Stream 绑定三策略真跑读数（三策略 × 四场景 + 三难向量 + verifySpringStreamBindingSoundness 双路交叉印证 + 十一枚真件交叉印证）。 */
 export interface SpringStreamBindingReading {
   config: Record<string, any>
@@ -1412,6 +1485,10 @@ export interface SystemsBlock {
   redisSlots: RedisSlotMapReading | null
   /** KI-558：DelayedDoubleDelete/SubscribeBinlog/OutboxPolling 延迟双删（opt-in）—— 前端 .row-cc */
   cacheConsistency: DelayedDoubleDeleteReading | null
+  /** KI-562 PostgreSQL 查询引擎教学件 opt-in */
+  pgvector: PgVectorReading | null
+  /** KI-563 Gateway 过滤器全家桶教学件 opt-in */
+  gatewayFilters: GatewayFiltersReading | null
   promptCache: PromptCacheReading | null
   builtAt: number
 }
@@ -2075,6 +2152,24 @@ export function buildSystems(opts?: {
   ccFreeCdcInfra?: boolean
   ccFreeOutboxWrite?: boolean
   ccRigged?: boolean
+  /** KI-562：BPlusOrdered/TrgmGin/VectorHnsw 查询引擎教学件 opt-in */
+  pgvector?: boolean
+  pgSeed?: number
+  pgMessages?: number
+  pgDocs?: number
+  pgDims?: number
+  pgFreeOrderedRangeScan?: boolean
+  pgFreeFuzzyPatternMatch?: boolean
+  pgFreeVectorSimilarity?: boolean
+  pgRigged?: boolean
+  /** KI-563：OrderedChain/RateLimitGatewayFilter/CircuitBreakerGatewayFilter 过滤器全家桶 opt-in */
+  gatewayFilters?: boolean
+  gwfSeed?: number
+  gwfMessages?: number
+  gwfFreeOrderedCorrect?: boolean
+  gwfFreeRateLimited?: boolean
+  gwfFreeCircuitBroken?: boolean
+  gwfRigged?: boolean
 }): Promise<SystemsBlock>
 
 /** KI-501：真跑缓存防护三件套（击穿/穿透/雪崩）收敛成前端三面板紧凑读数；单维失败落 null。 */

@@ -288,6 +288,14 @@ export interface GameCloudOptions {
   /** KI-557 Redis Cluster 哈希槽教学件 opt-in（SlotModulo/HashTagSlot/ConsistentSlot） */
   redisSlots?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck?: any; causalLocks?: any; [k: string]: any }
   rsmNow?: () => number
+  /** KI-562 PostgreSQL 查询引擎教学件 opt-in（BPlusOrdered/TrgmGin/VectorHnsw） */
+  pgvector?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck?: any; causalLocks?: any; [k: string]: any }
+  /** pgvectorNow 注入时间；status().pgvector 的 builtAt 会基于它 */
+  pgvectorNow?: () => number
+  /** KI-563 Spring Cloud Gateway 过滤器全家桶 opt-in（OrderedChain/RateLimitGatewayFilter/CircuitBreakerGatewayFilter） */
+  gatewayFilters?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck?: any; causalLocks?: any; [k: string]: any }
+  /** gwfNow 注入时间；status().gatewayFilters 的 builtAt 会基于它 */
+  gwfNow?: () => number
   /** KI-558 DelayedDoubleDelete/SubscribeBinlog/OutboxPolling 延迟双删对齐教学件 opt-in */
   cacheConsistency?: boolean | Record<string, any> | { rows: any; vectors: any; verdict: any; crosscheck?: any; causalLocks?: any; [k: string]: any }
   ccNow?: () => number
@@ -397,6 +405,10 @@ export function createGameCloud(opts?: GameCloudOptions): {
   runCacheConsistencyStudy: (() => Promise<any>) | null
   /** KI-557 Redis Cluster 哈希槽教学件 opt-in（SlotModulo/HashTagSlot/ConsistentSlot；缺省 opts.redisSlots 时为 null） */
   runRedisSlotsStudy: (() => Promise<any>) | null
+  /** KI-562 PostgreSQL 查询引擎教学件 opt-in（BPlusOrdered/TrgmGin/VectorHnsw），缺省 opts.pgvector 时为 null */
+  runPgVectorStudy: (() => Promise<any>) | null
+  /** KI-563 Spring Cloud Gateway 过滤器全家桶 opt-in，缺省 opts.gatewayFilters 时为 null */
+  runGatewayFiltersStudy: (() => Promise<any>) | null
   /** KI-491：灰度/金丝雀决策器（未配 opts.gray 时为 null）。 */
   gray: any
   /** KI-489：把游戏真 EventBus（duck-typed {on,emit}）按白名单接进云事件总线。 */

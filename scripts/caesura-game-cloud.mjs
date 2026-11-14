@@ -68,6 +68,8 @@ import { redisHaStudy, redisHaSnapshot } from './caesura-redis-ha.mjs'
 import { redisStreamStudy, redisStreamSnapshot } from './caesura-redis-stream.mjs'
 import { springVaultStudy, springVaultSnapshot } from './caesura-spring-vault.mjs'
 import { slotMapStudy, slotMapSnapshot } from './caesura-redis-slot-map.mjs'
+import { pgVectorStudy, pgVectorSnapshot } from './caesura-pgvector.mjs'
+import { gatewayFiltersStudy, gatewayFiltersSnapshot } from './caesura-gateway-filters.mjs'
 import { promptCacheStudy, promptCacheSnapshot } from './caesura-prompt-cache.mjs'
 import { cacheConsistencyStudy, cacheConsistencySnapshot } from './caesura-cache-consistency.mjs'
 import { springStreamBindingStudy, springStreamBindingSnapshot } from './caesura-spring-stream-binding.mjs'
@@ -1122,6 +1124,42 @@ export function createGameCloud(opts = {}) {
     return rsmCached
   }
 
+  // KI-562 PostgreSQL 查询引擎教学件——BPlusOrdered=100 / TrgmGin=010 / VectorHnsw=001 +
+  // verifyPgVectorSoundness 双路自证 + 三路篡改 + 因果锁 + 21 真件。
+  // opts.pgvector === true 默认注册；对象注入时 rows/vectors/verdict 完整即直接用；false 关闭。
+  const pgvCfg = opts.pgvector === true ? {} : (opts.pgvector && typeof opts.pgvector === 'object' ? opts.pgvector : null)
+  const pgvInjected = pgvCfg !== null && opts.pgvector &&
+    typeof opts.pgvector === 'object' && Array.isArray(opts.pgvector.rows) &&
+    opts.pgvector.vectors && opts.pgvector.verdict
+  let pgvCached = null
+  async function pgvSnapshotForStatus() {
+    if (pgvCfg === null) return null
+    if (pgvCached) return pgvCached
+    const study = pgvInjected
+      ? opts.pgvector
+      : await pgVectorStudy({ ...pgvCfg, now: opts.pgvectorNow ?? pgvCfg.now })
+    pgvCached = pgVectorSnapshot(study)
+    return pgvCached
+  }
+
+  // KI-563 Spring Cloud Gateway 过滤器全家桶教学件——OrderedChain=100 / RateLimitGatewayFilter=010 / CircuitBreakerGatewayFilter=001 +
+  // verifyGatewayFiltersSoundness 三 Lane 自证 + 三路篡改 + 因果锁 + 21 真件。
+  // opts.gatewayFilters === true 默认注册；对象注入时 rows/vectors/verdict 完整即直接用；false 关闭。
+  const gwfCfg = opts.gatewayFilters === true ? {} : (opts.gatewayFilters && typeof opts.gatewayFilters === 'object' ? opts.gatewayFilters : null)
+  const gwfInjected = gwfCfg !== null && opts.gatewayFilters &&
+    typeof opts.gatewayFilters === 'object' && Array.isArray(opts.gatewayFilters.rows) &&
+    opts.gatewayFilters.vectors && opts.gatewayFilters.verdict
+  let gwfCached = null
+  async function gwfSnapshotForStatus() {
+    if (gwfCfg === null) return null
+    if (gwfCached) return gwfCached
+    const study = gwfInjected
+      ? opts.gatewayFilters
+      : await gatewayFiltersStudy({ ...gwfCfg, now: opts.gwfNow ?? gwfCfg.now })
+    gwfCached = gatewayFiltersSnapshot(study)
+    return gwfCached
+  }
+
   const ssbCfg = opts.springStreamBinding === true ? {} : (opts.springStreamBinding && typeof opts.springStreamBinding === 'object' ? opts.springStreamBinding : null)
   const ssbInjected = ssbCfg !== null && opts.springStreamBinding &&
     typeof opts.springStreamBinding === 'object' && Array.isArray(opts.springStreamBinding.rows) &&
@@ -1351,6 +1389,10 @@ export function createGameCloud(opts = {}) {
     runPromptCacheStudy: pcCfg === null ? null : () => promptCacheStudy({ ...pcCfg, now: opts.pcNow ?? pcCfg.now }),
     /** KI-557 Redis Cluster 哈希槽教学件（SlotModulo/HashTagSlot/ConsistentSlot 三策略；opt-in） */
     runRedisSlotsStudy: rsmCfg === null ? null : () => slotMapStudy({ ...rsmCfg, now: opts.rsmNow ?? rsmCfg.now }),
+    /** KI-562 PostgreSQL 查询引擎教学件——BPlusOrdered/TrgmGin/VectorHnsw 选项与 study 入口（opt-in） */
+    runPgVectorStudy: pgvCfg === null ? null : () => pgVectorStudy({ ...pgvCfg, now: opts.pgvectorNow ?? pgvCfg.now }),
+    /** KI-563 Spring Cloud Gateway 过滤器全家桶教学件——OrderedChain/RateLimitGatewayFilter/CircuitBreakerGatewayFilter 入口（opt-in） */
+    runGatewayFiltersStudy: gwfCfg === null ? null : () => gatewayFiltersStudy({ ...gwfCfg, now: opts.gwfNow ?? gwfCfg.now }),
     /** KI-558 MQ 驱动的缓存一致性三策略（DelayedDoubleDelete/SubscribeBinlog/OutboxPolling 三策略；opt-in） */
     runCacheConsistencyStudy: ccCfg === null ? null : () => cacheConsistencyStudy({ ...ccCfg, now: opts.ccNow ?? ccCfg.now }),
     /** KI-545：CDC outbox join 教学件；缺 opts.springStreamBinding 时为 null；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异不封赢家）+ verifySpringStreamBindingSoundness 双路自证 + 十一枚真件交叉印证。 */
@@ -1437,6 +1479,8 @@ export function createGameCloud(opts = {}) {
         promptCache: await pcSnapshotForStatus(),
         redisSlots: await rsmSnapshotForStatus(),
         cacheConsistency: await ccSnapshotForStatus(),
+        pgvector: await pgvSnapshotForStatus(),
+        gatewayFilters: await gwfSnapshotForStatus(),
         springStreamBinding: await ssbSnapshotForStatus(),
         cdcOutboxJoin: await cojSnapshotForStatus(),
         traceSampling: await tsSnapshotForStatus(),

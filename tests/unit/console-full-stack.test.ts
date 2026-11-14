@@ -30,6 +30,8 @@ const TEACHING_ROWS: Array<{ feature: string; rowClass: string; ids: string[]; c
   { feature: 'KI-552 Redis HA 三策略',                    rowClass: 'row-rea', ids: ['rea-matrix', 'rea-ladder', 'rea-verif'],           cssPrefix: '.rea',  render: 'renderRedisHa' },
   { feature: 'KI-554 Spring Cloud Vault 三策略',           rowClass: 'row-svt', ids: ['svt-matrix', 'svt-ladder', 'svt-verif'],           cssPrefix: '.svt',  render: 'renderSpringVault' },
   { feature: 'KI-555 前缀亲和 prompt-cache 三策略',      rowClass: 'row-pc',  ids: ['pc-matrix', 'pc-ladder', 'pc-verif'],               cssPrefix: '.pc',   render: 'renderPromptCache' },
+  { feature: 'KI-562 PostgreSQL 查询引擎教学件',        rowClass: 'row-pg',  ids: ['pg-matrix', 'pg-ladder', 'pg-verif'],               cssPrefix: '.pg',   render: 'renderPgVector' },
+  { feature: 'KI-563 Spring Cloud Gateway 过滤器全家桶',        rowClass: 'row-gf',  ids: ['gf-matrix', 'gf-ladder', 'gf-verif'],               cssPrefix: '.gf',   render: 'renderGatewayFilters' },
 ]
 
 const SYSTEMS_FOR: Record<string, keyof typeof snap.systems> = {
@@ -44,6 +46,8 @@ const SYSTEMS_FOR: Record<string, keyof typeof snap.systems> = {
   'row-rea': 'redisHa',
   'row-svt': 'springVault',
   'row-pc': 'promptCache',
+  'row-pg': 'pgvector',
+  'row-gf': 'gatewayFilters',
 }
 
 describe('集大成 dashboard · 11 件微服务教学件产物静态完整性闸门', () => {
@@ -80,7 +84,7 @@ describe('集大成 dashboard · 11 件微服务教学件产物静态完整性�
 
   it('snapshot.systems contains the expected 47+ keys and 9 teaching entries simultaneously', () => {
     const systems = snap.systems ?? {}
-    for (const key of ['springFeign', 'springConfig', 'springBus', 'redisPipeline', 'gatewayRetry', 'springStreamBinding', 'redisStream', 'springConsul', 'redisHa', 'springVault', 'promptCache']) {
+    for (const key of ['springFeign', 'springConfig', 'springBus', 'redisPipeline', 'gatewayRetry', 'springStreamBinding', 'redisStream', 'springConsul', 'redisHa', 'springVault', 'promptCache', 'pgvector', 'gatewayFilters']) {
       expect(systems[key], `missing systems.${key}`).toBeDefined()
     }
   })
@@ -99,5 +103,7 @@ describe('集大成 dashboard · 11 件微服务教学件产物静态完整性�
     expect(boot).toContain('redisHa')
     expect(boot).toContain('springVault')
     expect(boot).toContain('promptCache')
+    expect(boot).toContain('pgvector')
+    expect(boot).toContain('gatewayFilters')
   })
 })

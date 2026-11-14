@@ -2958,4 +2958,73 @@ describe('caesura-game-cloud', () => {
     expect(rigged!.vectors.DelayedDoubleDelete).toBe('011')
     expect(rigged!.vectors.OutboxPolling).toBe('110')
   })
+
+  it('pgvector opt-in：status().pgvector 双路自证 + 三路篡改 + 因果锁 + 21 真件（缺省 null，KI-562）', async () => {
+    const idle = await createGameCloud({ gameId: 'gid-pg0', gamePort: 7986, sources, cloud: fakeCloud() }).status()
+    expect(idle.pgvector).toBe(null)
+    const gc = await createGameCloud({
+      gameId: 'gid-pg1', gamePort: 7987, sources, cloud: fakeCloud(),
+      pgvector: true, pgvectorNow: () => 5620,
+    })
+    const st = (await gc.status()).pgvector
+    expect(st).not.toBe(null)
+    expect(st!.builtAt).toBe(5620)
+    expect(st!.config.docs).toBe(256)
+    expect(st!.rows.length).toBe(3)
+    expect(st!.vectors).toEqual({ BPlusOrdered: '100', TrgmGin: '010', VectorHnsw: '001' })
+    expect(st!.noUniversalWinner).toBe(true)
+    expect(st!.trilemmaDistinguishes).toBe(true)
+    expect(st!.verdict.vectorFromTrilemma).toBe(true)
+    expect(st!.noStrategyWinsAll).toBe(true)
+    const cp = st!.crosscheck.soundness
+    expect(cp.holds).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.tamper.forcedSeqScan.holds).toBe(false)
+    expect(cp.tamper.strictEquality.holds).toBe(false)
+    expect(cp.tamper.invertedCosine.holds).toBe(false)
+    expect(Object.keys(st!.crosscheck.evidence).length).toBe(21)
+    expect(st!.causalLocks.causalLocksAllHold).toBe(true)
+    expect(await gc.runPgVectorStudy!()).toMatchObject({ vectors: st!.vectors })
+    // rigged 假定世界：三策略全员 111，riggedConvergenceCollapsed=true
+    const rigged = (await (await createGameCloud({
+      gameId: 'gid-pg2', gamePort: 7988, sources, cloud: fakeCloud(),
+      pgvector: { rigged: true }, pgvectorNow: () => 5621,
+    })).status()).pgvector
+    expect(rigged!.vectors).toEqual({ BPlusOrdered: '111', TrgmGin: '111', VectorHnsw: '111' })
+    expect(rigged!.verdict.riggedConvergenceCollapsed).toBe(true)
+  })
+
+  it('gatewayFilters opt-in：status().gatewayFilters 三 Lane 自证 + 三路篡改 + 因果锁 + 21 真件（缺省 null，KI-563）', async () => {
+    const idle = await createGameCloud({ gameId: 'gid-gf0', gamePort: 7989, sources, cloud: fakeCloud() }).status()
+    expect(idle.gatewayFilters).toBe(null)
+    const gc = await createGameCloud({
+      gameId: 'gid-gf1', gamePort: 7991, sources, cloud: fakeCloud(),
+      gatewayFilters: true, gwfNow: () => 5630,
+    })
+    const st = (await gc.status()).gatewayFilters
+    expect(st).not.toBe(null)
+    expect(st!.builtAt).toBe(5630)
+    expect(st!.config.messages).toBe(96)
+    expect(st!.rows.length).toBe(3)
+    expect(st!.vectors).toEqual({ OrderedChain: '100', RateLimitGatewayFilter: '010', CircuitBreakerGatewayFilter: '001' })
+    expect(st!.noUniversalWinner).toBe(true)
+    expect(st!.trilemmaDistinguishes).toBe(true)
+    expect(st!.verdict.vectorFromTrilemma).toBe(true)
+    expect(st!.noStrategyWinsAll).toBe(true)
+    const cp = st!.crosscheck.soundness
+    expect(cp.holds).toBe(true)
+    expect(cp.falsifiable).toBe(true)
+    expect(cp.tamper.reorderedFilter.holds).toBe(false)
+    expect(cp.tamper.overdraftBucket.holds).toBe(false)
+    expect(cp.tamper.alwaysClosed.holds).toBe(false)
+    expect(Object.keys(st!.crosscheck.evidence).length).toBe(21)
+    expect(st!.causalLocks.causalLocksAllHold).toBe(true)
+    expect(await gc.runGatewayFiltersStudy!()).toMatchObject({ vectors: st!.vectors })
+    const rigged = (await (await createGameCloud({
+      gameId: 'gid-gf2', gamePort: 7992, sources, cloud: fakeCloud(),
+      gatewayFilters: { rigged: true }, gwfNow: () => 5631,
+    })).status()).gatewayFilters
+    expect(rigged!.vectors).toEqual({ OrderedChain: '111', RateLimitGatewayFilter: '111', CircuitBreakerGatewayFilter: '111' })
+    expect(rigged!.verdict.riggedConvergenceCollapsed).toBe(true)
+  })
 })

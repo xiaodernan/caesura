@@ -67,6 +67,8 @@ import { springVaultStudy, springVaultSnapshot } from './caesura-spring-vault.mj
 import { promptCacheStudy, promptCacheSnapshot } from './caesura-prompt-cache.mjs'
 import { slotMapStudy, slotMapSnapshot } from './caesura-redis-slot-map.mjs'
 import { cacheConsistencyStudy, cacheConsistencySnapshot } from './caesura-cache-consistency.mjs'
+import { pgVectorStudy, pgVectorSnapshot } from './caesura-pgvector.mjs'
+import { gatewayFiltersStudy, gatewayFiltersSnapshot } from './caesura-gateway-filters.mjs'
 import { traceSamplingStudy, traceSamplingSnapshot } from './caesura-trace-sampling.mjs'
 
 /** 场景 id 的固定顺序（前端按此排布，判词口径由本件拥有）。 */
@@ -429,7 +431,9 @@ export async function buildSystems(opts = {}) {
   const redisSlots = opts.redisSlots === false ? null : await buildRedisSlotMapReading(opts, now)
   // KI-558 MQ 驱动的缓存一致性三策略（DelayedDoubleDelete/SubscribeBinlog/OutboxPolling + 双路自证 + 三路篡改双删丢失/位点重置/非原子 + 三因果锁）
   const cacheConsistency = opts.cacheConsistency === false ? null : await buildCacheConsistencyReading(opts, now)
-  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, priorityQueue, batchStreamJoin, cdcOutboxJoin, springStreamBinding, springFeign, springConfig, springBus, redisPipeline, gatewayRetry, springConsul, redisHa, redisStream, springVault, promptCache, redisSlots, cacheConsistency, builtAt: now() }
+const pgvector = opts.pgvector === false ? null : await buildPgVectorReading(opts, now)
+const gatewayFilters = opts.gatewayFilters === false ? null : await buildGatewayFiltersReading(opts, now)
+  return { lsm, hw, guards, rateLimit, failureDetector, bplusIndex, mvccTxn, distributedTxn, raftConsensus, distributedLock, idGen, distributedRateLimit, configConsistency, cacheCoherency, messageDelivery, delayQueue, retryDlq, consumerGroup, backpressure, logCompaction, bloomFilter, cacheReplacement, streamWindow, hyperLogLog, crdt, springBatch, traceSampling, distributedSession, transactionalOutbox, loadBalance, circuitBreaker, llmGateway, gatewayRouting, idempotentConsumer, consumerRebalance, priorityQueue, batchStreamJoin, cdcOutboxJoin, springStreamBinding, springFeign, springConfig, springBus, redisPipeline, gatewayRetry, springConsul, redisHa, redisStream, springVault, promptCache, redisSlots, cacheConsistency, pgvector, gatewayFilters, builtAt: now() }
 }
 
 /**
@@ -653,6 +657,56 @@ export async function buildCacheConsistencyReading(opts, now) {
       ...(opts.ccRigged === true ? { rigged: true } : {}),
     })
     return cacheConsistencySnapshot(s)
+  } catch (e) {
+    return null
+  }
+}
+
+/**
+ * KI-563 Spring Cloud Gateway 过滤器全家桶教学件——OrderedChain=100 / RateLimitGatewayFilter=010 / CircuitBreakerGatewayFilter=001
+ *   + verifyGatewayFiltersSoundness 三 Lane 自证 + 三路篡改（reorderedFilter/overdraftBucket/alwaysClosed）+ 因果锁 + 21 真件
+ * 失败返回 null；CLI 双源一致；rigged 塌缩仅用于对照论证。
+ * @param {object} opts { gatewayFilters?:false, gwfSeed?, gwfMessages?, gwfFreeOrderedCorrect?, gwfFreeRateLimited?, gwfFreeCircuitBroken?, gwfRigged? }
+ * @param {()=>number} now 时间戳供应商（builtAt 会基于它）
+ */
+export async function buildGatewayFiltersReading(opts, now) {
+  try {
+    const s = await gatewayFiltersStudy({
+      now,
+      ...(opts.gwfSeed ? { seed: Math.max(0, Math.floor(Number(opts.gwfSeed))) } : {}),
+      ...(opts.gwfMessages ? { messages: Math.max(16, Math.floor(Number(opts.gwfMessages))) } : {}),
+      ...(opts.gwfFreeOrderedCorrect === true ? { freeOrderedCorrect: true } : {}),
+      ...(opts.gwfFreeRateLimited === true ? { freeRateLimited: true } : {}),
+      ...(opts.gwfFreeCircuitBroken === true ? { freeCircuitBroken: true } : {}),
+      ...(opts.gwfRigged === true ? { rigged: true } : {}),
+    })
+    return gatewayFiltersSnapshot(s)
+  } catch (e) {
+    return null
+  }
+}
+
+/**
+ * KI-562 PostgreSQL 查询引擎教学件——BPlusOrdered=100 / TrgmGin=010 / VectorHnsw=001
+ *   + verifyPgVectorSoundness 双路自证 + 三路篡改（forcedSeqScan/strictEquality/invertedCosine）+ 因果锁 + 21 真件
+ * 失败返回 null；CLI 双源一致；rigged 塌缩仅用于对照论证。
+ * @param {object} opts { pgvector?:false, pgSeed?, pgMessages?, pgDocs?, pgDims?, pgFreeOrderedRangeScan?, pgFreeFuzzyPatternMatch?, pgFreeVectorSimilarity?, pgRigged? }
+ * @param {()=>number} now 时间戳供应商（builtAt 会基于它）
+ */
+export async function buildPgVectorReading(opts, now) {
+  try {
+    const s = await pgVectorStudy({
+      now,
+      ...(opts.pgSeed ? { seed: Math.max(0, Math.floor(Number(opts.pgSeed))) } : {}),
+      ...(opts.pgMessages ? { messages: Math.max(16, Math.floor(Number(opts.pgMessages))) } : {}),
+      ...(opts.pgDocs ? { docs: Math.max(32, Math.floor(Number(opts.pgDocs))) } : {}),
+      ...(opts.pgDims ? { dims: Math.max(2, Math.floor(Number(opts.pgDims))) } : {}),
+      ...(opts.pgFreeOrderedRangeScan === true ? { freeOrderedRangeScan: true } : {}),
+      ...(opts.pgFreeFuzzyPatternMatch === true ? { freeFuzzyPatternMatch: true } : {}),
+      ...(opts.pgFreeVectorSimilarity === true ? { freeVectorSimilarity: true } : {}),
+      ...(opts.pgRigged === true ? { rigged: true } : {}),
+    })
+    return pgVectorSnapshot(s)
   } catch (e) {
     return null
   }

@@ -150,6 +150,8 @@
       renderSpringVault(snap.systems ? snap.systems.springVault : null)
       renderPromptCache(snap.systems ? snap.systems.promptCache : null)
       renderCacheConsistency(snap.systems ? snap.systems.cacheConsistency : null)
+      renderPgVector(snap.systems ? snap.systems.pgvector : null)
+      renderGatewayFilters(snap.systems ? snap.systems.gatewayFilters : null)
       renderTraceSampling(snap.systems ? snap.systems.traceSampling : null)
       setLive(true, result.source)
     }).catch(function (e) {
@@ -4247,6 +4249,262 @@
   }
 
   /* ================= KI-552 Sentinel/SyncPair/Cluster Redis HA 三策略 —— 第四十七维 · rea 霸 ================= */
+
+  /* ================= KI-562 PostgreSQL 查询引擎教学件 · pg 行（renderPgVector） ================= */
+  function renderPgVector(pg) {
+    renderPgMatrix(pg && pg.rows, pg && pg.config)
+    renderPgLadder(pg && pg.rows)
+    renderPgTrilemma(pg && pg.rows, pg && pg.verdict, pg && pg.crosscheck, pg && pg.causalLocks)
+  }
+
+  function pgMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 缺失</div>'
+    if (note) note.textContent = 'systems.pgvector 缺失 · 请在 src/ 构建或 npm run console:data 重新生成'
+  }
+
+  function pgCell(c) {
+    if (!c) return { cls: '', ch: '—', tip: '' }
+    var cls = c.state === 'hit' ? 'hit' : 'miss'
+    var ch = c.state === 'hit' ? String(c.matched) : 'miss'
+    if (c.recall != null) ch = Number(c.recall).toFixed(2)
+    var tip = 'matched=' + c.matched + ' / docs=' + c.docs + ' · fault=' + c.fault + (c.recall != null ? ' · recall@8=' + c.recall : '') + ' · ordered=' + c.ordered
+    return { cls: cls, ch: ch, tip: tip }
+  }
+
+  function renderPgMatrix(rows, config) {
+    var box = $('#pg-matrix'), note = $('#pg-matrix-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      pgMissing(box, note, 'pg 教学件'); return
+    }
+    var scenarios = ['rangeScan', 'fuzzyLike', 'vectorSearch', 'cleanRerun']
+    var head = '<div class="pg-mat-row pg-mat-head"><span class="pg-mat-proto">协议</span>' +
+      scenarios.map(function (sc) { return '<span class="pg-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="pg-mat-cost">命中率</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = pgCell(cell)
+        return '<span class="pg-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '" title="' + esc(st.tip) + '">' + esc(st.ch) + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="pg-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="pg-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="pg-mat-cost"><b>' + esc(fmt(m.stateHits)) + '</b>/4 hit</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'BPlusOrdered 靠 B+ 树保证 range 有序完备（matched=与暴力过滤一致）/ TrgmGin 靠 GIN 候选过滤供 LIKE %x%（matched=真匹配数）/ VectorHnsw 靠 HNSW 近似余弦 kNN（cell 显示 recall@8）。cleanRerun 每行都等于本身：同 seed 摘要幂等。价格区间 [1280,4480] 分；模糊探针 ≥ 3 字符与 show_trgm 对齐；向量为 16 维余弦单位向量。'
+  }
+
+  function renderPgLadder(rows) {
+    var box = $('#pg-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = Math.round(((m.stateHits || 0) / 4) * 100)
+      var recall = m.vectorRecall == null ? 'n/a' : fmt(m.vectorRecall)
+      var vec = r.trilemma ? (String(Number(r.trilemma.orderedRangeScan)) + String(Number(r.trilemma.fuzzyPatternMatch)) + String(Number(r.trilemma.vectorSimilarity))) : '???'
+      return '<div class="pg-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="pg-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">命中 ' + esc(String(m.stateHits || 0)) + '/4 · recall@8 ' + esc(recall) + ' · 向量 ' + esc(vec) + '</span></div>'
+    }).join('')
+  }
+
+  function renderPgTrilemma(rows, verdict, crosscheck, causalLocks) {
+    var box = $('#pg-trilemma'), veBox = $('#pg-verif'), cxBox = $('#pg-crosscheck'), note = $('#pg-trilemma-note')
+    var probes = $('#pg-probes')
+    if (!Array.isArray(rows) || !rows.length) {
+      pgMissing(box, note, 'pg 教学件'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''
+      if (probes) probes.innerHTML = ''; return
+    }
+    var flags = [['orderedRangeScan', '有序范围扫描'], ['fuzzyPatternMatch', '模糊子串匹配'], ['vectorSimilarity', '向量相似度']]
+    var head = '<div class="pg-vec pg-vec-head"><span class="proto">协议</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="pg-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="pg-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    var byProto = {}
+    rows.forEach(function (r) { byProto[r.protocol] = r })
+    var cp = crosscheck && crosscheck.soundness
+    if (veBox) {
+      veBox.innerHTML = [
+        '<div class="pg-rb-row"><b>BPlusOrdered</b> 有序范围扫描=true（range[1280,4480] 严格递增 + 恰等于暴力过滤） 模糊=false（LIKE 无左前缀） 向量=false</div>',
+        '<div class="pg-rb-row"><b>TrgmGin</b> 有序=false（GIN 不承诺序） 模糊=true（GIN trgm 候选 ⊇ 真匹配，探针 ≥ 3 字符） 向量=false</div>',
+        '<div class="pg-rb-row"><b>VectorHnsw</b> 有序=false 模糊=false 向量=true（余弦 kNN，recall@8 = ' + esc(String(cp && cp.laneC ? cp.laneC.recall8 : '?')) + ' ≥ 0.75）</div>',
+        cp ? '<div class="pg-rb-row"><b>verifyPgVectorSoundness</b> holds=' + (cp.holds ? 'true' : 'false') + ' nontrivial=' + (cp.nontrivial ? 'true' : 'false') + ' falsifiable=' + (cp.falsifiable ? 'true' : 'false') + ' · laneA{ordered=' + esc(String(cp.laneA && cp.laneA.ordered)) + ' complete=' + esc(String(cp.laneA && cp.laneA.complete)) + ' count=' + esc(String(cp.laneA && cp.laneA.count)) + '} laneB{supersetHolds=' + esc(String(cp.laneB && cp.laneB.supersetHolds)) + ' probes=' + esc(String(cp.laneB && cp.laneB.probes)) + ' cand=' + esc(String(cp.laneB && cp.laneB.candidateCount)) + ' true=' + esc(String(cp.laneB && cp.laneB.trueMatchCount)) + '} laneC{recall8=' + esc(String(cp.laneC && cp.laneC.recall8)) + ' floor=' + esc(String(cp.laneC && cp.laneC.floor)) + '}</div>' : '',
+        cp ? '<div class="pg-rb-row"><b>三路篡改</b> forcedSeqScan=' + (cp.tamper && cp.tamper.forcedSeqScan && cp.tamper.forcedSeqScan.holds ? 'holds' : '✗ 已证实伪') +
+          ' · strictEquality=' + (cp.tamper && cp.tamper.strictEquality && cp.tamper.strictEquality.holds ? 'holds' : '✗ 已证实伪') +
+          ' · invertedCosine=' + (cp.tamper && cp.tamper.invertedCosine && cp.tamper.invertedCosine.holds ? 'holds' : '✗ 已证实伪') + '</div>' : '',
+      ].join('')
+    }
+
+    if (cxBox && crosscheck && crosscheck.evidence) {
+      var ev = crosscheck.evidence
+      cxBox.innerHTML =
+        '<div>① <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' / ' + esc(fmt(ev.routerTracked)) + '</div>' +
+        '<div>② <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 实际命中 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
+        '<div>③ <b>createWal</b> lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+        '<div>④ <b>createBus</b> pg.vector.bound 通知 ' + esc(fmt(ev.notices)) + ' 次 / listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+        '<div>⑤ <b>createRedisCache</b> pg-meta 位图 ' + esc(fmt(ev.redisBitmapHits)) + ' 次 / entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+        '<div>⑥ <b>createObjectPool</b> 创建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+        '<div>⑦ <b>createTokenBucket</b> 放行 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒绝 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+        '<div>⑧ <b>createMinHeapDelayQueue</b> 触发 ' + esc(fmt(ev.heapFired)) + ' 件 / pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+        '<div>⑨ <b>createPackedCounters</b> 和=' + esc(fmt(ev.counterSum)) + ' / falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>' +
+        '<div>⑩ <b>createFullJitterBackoff</b> jitterSpread <b>' + esc(String((ev.jitterSpread ?? 0).toFixed(4))) + '</b>（64 次 delayFor 采样）</div>' +
+        '<div>⑪ <b>compareRemapping</b> 一致性 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>'
+    } else if (cxBox) {
+      cxBox.innerHTML = '<div class="nodata">证据缺失</div>'
+    }
+
+    var v = verdict || {}
+    var locks = causalLocks || {}
+    var chips = [
+      '<span class="chip" data-verdict="noUniversalWinner"><b>noUniversalWinner</b> ' + (v.noUniversalWinner === true ? '✓ 三英雄互斥' : '✗') + '</span>',
+      '<span class="chip" data-verdict="noStrategyWinsAll"><b>noStrategyWinsAll</b> ' + (v.noStrategyWinsAll === true ? '✓ 无 111' : '✗') + '</span>',
+      '<span class="chip" data-verdict="vectorFromTrilemma"><b>vectorFromTrilemma</b> ' + (v.vectorFromTrilemma === true ? '✓ 向量同源' : '✗') + '</span>',
+      '<span class="chip" data-verdict="scenarioDistinguishes"><b>scenarioDistinguishes</b> ' + (v.scenarioDistinguishes === true ? '✓ 场景可区分' : '✗') + '</span>',
+      '<span class="chip" data-verdict="causalLocksAllHold"><b>causalLocksAllHold</b> ' + (locks.causalLocksAllHold === true ? '✓' : '✗') + '</span>',
+      '<span class="chip jade-t" data-verdict="honestReading">offline 实验 = 教学语料 · 不是 PG 执行计划 · 无真实 PG</span>',
+    ]
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '三元组 [orderedRangeScan / fuzzyPatternMatch / vectorSimilarity]：BPlusOrdered=100（range[1280,4480] 有序完备）/ TrgmGin=010（LIKE %x% 唯一正解，≤2 字符探针不承诺）/ VectorHnsw=001（recall@8 实测 ' + esc(String((locks.probes && locks.probes.recall8) ?? '?')) + ' ≥ ' + esc(String((locks.probes && locks.probes.recallFloor) ?? 0.75)) + '）。因果锁：bplusFanout（真 split×? 高 ≤5）/ trgmCandidateSuperset（≥3 字符探针全覆盖）/ vectorRecallFloor。全 16 维余弦距离，语料 256 件 seeded（562）钟器；探针 = 语料中 ≥ 3 字符子串按频次降序取前 5。本教学件是 seeded 确定性实验室，不是 PG 官方基准，也不替代 EXPLAIN ANALYZE。'
+  }
+
+  /* ================= KI-563 Spring Cloud Gateway 过滤器全家桶 · gf 行（renderGatewayFilters） ================= */
+  function renderGatewayFilters(gf) {
+    renderGfMatrix(gf && gf.rows, gf && gf.config)
+    renderGfLadder(gf && gf.rows)
+    renderGfTrilemma(gf && gf.rows, gf && gf.verdict, gf && gf.crosscheck, gf && gf.causalLocks)
+  }
+
+  function gfMissing(list, note, label) {
+    if (list) list.innerHTML = '<div class="nodata">' + esc(label) + ' 缺失</div>'
+    if (note) note.textContent = 'systems.gatewayFilters 缺失 · 请在 src/ 构建或 npm run console:data 重新生成'
+  }
+
+  function gfCell(c) {
+    if (!c) return { cls: '', ch: '—', tip: '' }
+    var cls = c.state === 'hit' ? 'hit' : 'miss'
+    var ch = c.state === 'hit' ? String(c.matched) : 'miss'
+    var tip = 'matched=' + c.matched + ' / processed=' + c.processed + ' · fault=' + c.fault
+    return { cls: cls, ch: ch, tip: tip }
+  }
+
+  function renderGfMatrix(rows, config) {
+    var box = $('#gf-matrix'), note = $('#gf-matrix-note')
+    if (!Array.isArray(rows) || !rows.length) {
+      gfMissing(box, note, 'gf 教学件'); return
+    }
+    var scenarios = ['normalTraffic', 'burstOverload', 'downstreamOutage', 'cleanRerun']
+    var head = '<div class="gf-mat-row gf-mat-head"><span class="gf-mat-proto">协议</span>' +
+      scenarios.map(function (sc) { return '<span class="gf-sc">' + esc(sc) + '</span>' }).join('') +
+      '<span class="gf-mat-cost">命中率</span></div>'
+    var body = rows.map(function (row) {
+      var cells = scenarios.map(function (sc) {
+        var cell = Array.isArray(row.scenarios) ? row.scenarios.find(function (x) { return x.id === sc }) : null
+        var st = gfCell(cell)
+        return '<span class="gf-cell ' + st.cls + '" data-strategy="' + esc(row.protocol) + '" data-s="' + esc(sc) +
+          '" data-state="' + (st.cls || 'na') + '" title="' + esc(st.tip) + '">' + esc(st.ch) + '</span>'
+      }).join('')
+      var m = row.metrics || {}
+      return '<div class="gf-mat-row" data-strategy="' + esc(row.protocol) + '">' +
+        '<span class="gf-mat-proto">' + esc(row.protocol) + '</span>' +
+        cells + '<span class="gf-mat-cost"><b>' + esc(fmt(m.stateHits)) + '</b>/4 hit</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+    if (note) note.textContent = 'OrderedChain 守语义（Onion 包裹序 pre 升/post 降）；RateLimitGatewayFilter 守入口（capacity=2 真 tokenBucket，7 次 burst 恰 2 放行）；CircuitBreakerGatewayFilter 守下游（5 败必 OPEN、cooldown 后 HALF_OPEN 探针、成功回 CLOSED）。三位互补互斥不封赢家——生产网关三件套必须同时配齐；burstOverload 全靠 bucket、downstreamOutage 全靠 breaker。'
+  }
+
+  function renderGfLadder(rows) {
+    var box = $('#gf-ladder')
+    if (!box || !Array.isArray(rows) || !rows.length) { if (box) box.innerHTML = ''; return }
+    box.innerHTML = rows.map(function (r) {
+      var m = r.metrics || {}
+      var w = Math.round(((m.stateHits || 0) / 4) * 100)
+      var vec = r.trilemma ? (String(Number(r.trilemma.orderedCorrect)) + String(Number(r.trilemma.rateLimited)) + String(Number(r.trilemma.circuitBroken))) : '???'
+      return '<div class="gf-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
+        '<span class="gf-bar"><i style="width:' + w + '%"></i></span>' +
+        '<span class="num">命中 ' + esc(String(m.stateHits || 0)) + '/4 · 向量 ' + esc(vec) + '</span></div>'
+    }).join('')
+  }
+
+  function renderGfTrilemma(rows, verdict, crosscheck, causalLocks) {
+    var box = $('#gf-trilemma'), veBox = $('#gf-verif'), cxBox = $('#gf-crosscheck'), note = $('#gf-trilemma-note')
+    var probes = $('#gf-probes')
+    if (!Array.isArray(rows) || !rows.length) {
+      gfMissing(box, note, 'gf 教学件'); if (cxBox) cxBox.innerHTML = ''; if (veBox) veBox.innerHTML = ''
+      if (probes) probes.innerHTML = ''; return
+    }
+    var flags = [['orderedCorrect', '顺序正确'], ['rateLimited', '入口限流'], ['circuitBroken', '断路器兜底']]
+    var head = '<div class="gf-vec gf-vec-head"><span class="proto">协议</span>' +
+      flags.map(function (fl) { return '<span>' + fl[1] + '</span>' }).join('') + '<span class="vec">向量</span></div>'
+    var body = rows.map(function (r) {
+      var t = r.trilemma || {}
+      var cells = flags.map(function (fl) {
+        var yes = t[fl[0]] === true
+        return '<span class="gf-flag ' + (yes ? 'yes' : 'no') + '" data-strategy="' + esc(r.protocol) + '" data-k="' + fl[0] +
+          '" data-v="' + (yes ? '1' : '0') + '">' + (yes ? '✓' : '✗') + '</span>'
+      }).join('')
+      var vec = flags.map(function (fl) { return t[fl[0]] === true ? '1' : '0' }).join('')
+      return '<div class="gf-vec" data-strategy="' + esc(r.protocol) + '"><span class="proto">' + esc(r.protocol) + '</span>' + cells +
+        '<span class="vec" data-vec="' + vec + '">' + vec + '</span></div>'
+    }).join('')
+    box.innerHTML = head + body
+
+    var cp = crosscheck && crosscheck.soundness
+    if (veBox) {
+      veBox.innerHTML = [
+        '<div class="gf-rb-row"><b>OrderedChain</b> 顺序=true（Onion：pre 升序 / post 降序 / 同 order 保留注册序，Security 在前 Rewrite 在后） 限流=false 断路=false</div>',
+        '<div class="gf-rb-row"><b>RateLimitGatewayFilter</b> 顺序=false（不修正 context 可见性） 限流=true（tokenBucket capacity=2/refillPerSec=1） 断路=false</div>',
+        '<div class="gf-rb-row"><b>CircuitBreakerGatewayFilter</b> 顺序=false 限流=false 断路=true（count-based：5 败必 OPEN，OPEN 直接拒绝，cooldown 后 HALF_OPEN 放行探针）</div>',
+        cp ? '<div class="gf-rb-row"><b>verifyGatewayFiltersSoundness</b> holds=' + (cp.holds ? 'true' : 'false') + ' nontrivial=' + (cp.nontrivial ? 'true' : 'false') + ' falsifiable=' + (cp.falsifiable ? 'true' : 'false') + ' · laneA{orderedCorrect=' + esc(String(cp.laneA && cp.laneA.orderedCorrect)) + ' securityBeforeRewrite=' + esc(String(cp.laneA && cp.laneA.securityBeforeRewrite)) + '} laneB{allowed=' + esc(String(cp.laneB && cp.laneB.allowed)) + ' rejected=' + esc(String(cp.laneB && cp.laneB.rejected)) + '} laneC{opened=' + esc(String(cp.laneC && cp.laneC.opened)) + ' rejectedInOpen=' + esc(String(cp.laneC && cp.laneC.rejectedInOpen)) + ' afterCooldown=' + esc(String(cp.laneC && cp.laneC.afterCooldown)) + '}</div>' : '',
+        cp ? '<div class="gf-rb-row"><b>三路篡改</b> reorderedFilter=' + (cp.tamper && cp.tamper.reorderedFilter && cp.tamper.reorderedFilter.holds ? 'holds' : '✗ 已证实伪') +
+          ' · overdraftBucket=' + (cp.tamper && cp.tamper.overdraftBucket && cp.tamper.overdraftBucket.holds ? 'holds' : '✗ 已证实伪') +
+          ' · alwaysClosed=' + (cp.tamper && cp.tamper.alwaysClosed && cp.tamper.alwaysClosed.holds ? 'holds' : '✗ 已证实伪') + '</div>' : '',
+      ].join('')
+    }
+
+    if (cxBox && crosscheck && crosscheck.evidence) {
+      var ev = crosscheck.evidence
+      cxBox.innerHTML =
+        '<div>① <b>createShardRouter.remapOn</b> 迁移 ' + esc(fmt(ev.routerMoved)) + ' / ' + esc(fmt(ev.routerTracked)) + '</div>' +
+        '<div>② <b>createHashRing</b> ' + esc(fmt(ev.ringNodes)) + ' 节点 / 实际命中 ' + esc(fmt(ev.ringShardsUsed)) + '</div>' +
+        '<div>③ <b>createWal</b> lines ' + esc(fmt(ev.walLines)) + ' / restore+replay <b>' + esc(fmt(ev.walReplayed)) + '</b></div>' +
+        '<div>④ <b>createBus</b> gateway.filter.bound 通知 ' + esc(fmt(ev.notices)) + ' 次 / listenerCount ' + esc(fmt(ev.busListeners)) + '</div>' +
+        '<div>⑤ <b>createRedisCache</b> gateway:route 位图 ' + esc(fmt(ev.redisBitmapHits)) + ' 次 / entries ' + esc(fmt(ev.redisSlots)) + '</div>' +
+        '<div>⑥ <b>createObjectPool</b> 创建 ' + esc(fmt(ev.poolCreated)) + ' / 复用 ' + esc(fmt(ev.poolReused)) + '</div>' +
+        '<div>⑦ <b>createTokenBucket</b> 放行 <b>' + esc(fmt(ev.bucketAllowed)) + '</b> / 拒绝 ' + esc(fmt(ev.bucketRejected)) + '</div>' +
+        '<div>⑧ <b>createMinHeapDelayQueue</b> 触发 ' + esc(fmt(ev.heapFired)) + ' 件 / pending ' + esc(fmt(ev.heapPending)) + '</div>' +
+        '<div>⑨ <b>createPackedCounters</b> 和=' + esc(fmt(ev.counterSum)) + ' / falseSharingPairs=' + esc(fmt(ev.counterFalseSharing)) + '</div>' +
+        '<div>⑩ <b>createFullJitterBackoff</b> jitterSpread <b>' + esc(String((ev.jitterSpread ?? 0).toFixed(4))) + '</b>（64 次 delayFor 采样）</div>' +
+        '<div>⑪ <b>compareRemapping</b> 一致性 ' + esc(String((ev.remapConsistentRate ?? 0).toFixed(4))) + ' vs 取模 ' + esc(String((ev.remapModuloRate ?? 0).toFixed(4))) + '</div>'
+    } else if (cxBox) {
+      cxBox.innerHTML = '<div class="nodata">证据缺失</div>'
+    }
+
+    var v = verdict || {}
+    var locks = causalLocks || {}
+    var chips = [
+      '<span class="chip" data-verdict="noUniversalWinner"><b>noUniversalWinner</b> ' + (v.noUniversalWinner === true ? '✓ 三英雄互斥' : '✗') + '</span>',
+      '<span class="chip" data-verdict="noStrategyWinsAll"><b>noStrategyWinsAll</b> ' + (v.noStrategyWinsAll === true ? '✓ 无 111' : '✗') + '</span>',
+      '<span class="chip" data-verdict="vectorFromTrilemma"><b>vectorFromTrilemma</b> ' + (v.vectorFromTrilemma === true ? '✓ 向量同源' : '✗') + '</span>',
+      '<span class="chip" data-verdict="scenarioDistinguishes"><b>scenarioDistinguishes</b> ' + (v.scenarioDistinguishes === true ? '✓ 场景可区分' : '✗') + '</span>',
+      '<span class="chip" data-verdict="causalLocksAllHold"><b>causalLocksAllHold</b> ' + (locks.causalLocksAllHold === true ? '✓' : '✗') + '</span>',
+      '<span class="chip jade-t" data-verdict="honestReading">offline 实验 = 教学语料 · 真 tokenBucket + 真断路器状态机 · 无真 Gateway server</span>',
+    ]
+    if (probes) probes.innerHTML = chips.join('')
+    if (note) note.textContent = '三元组 [orderedCorrect / rateLimited / circuitBroken]：OrderedChain=100（pre 升/post 降）/ RateLimitGatewayFilter=010（capacity=2 · 7 次突发恰 2 放行）/ CircuitBreakerGatewayFilter=001（5 败必 OPEN → cooldown → HALF_OPEN → CLOSED）。因果锁：onionWrapper（pre 升、Security 必在 Rewrite 前）/ bucketThroughput（burst 超容必拒）/ halfOpenRecovery（OPEN 必拒绝 · HALF_OPEN 必放行探针）。本教学件是 seeded 确定性实验室——resilience4j 状态机的等价精简版，不替代生产验证。'
+  }
 
   function renderRedisHa(rea) {
     renderReaMatrix(rea && rea.rows, rea && rea.config)

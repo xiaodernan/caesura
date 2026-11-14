@@ -84,7 +84,9 @@
     "prompt-cache:live": "node scripts/caesura-prompt-cache.mjs --live",
     "llm:warmup": "node scripts/caesura-llm-client.mjs --warmup",
     "cache-consistency:bench": "node scripts/caesura-cache-consistency.mjs --bench",
-    "slot-map:bench": "node scripts/caesura-redis-slot-map.mjs --bench"
+    "slot-map:bench": "node scripts/caesura-redis-slot-map.mjs --bench",
+    "pgvector:bench": "node scripts/caesura-pgvector.mjs --bench",
+    "gateway-filters:bench": "node scripts/caesura-gateway-filters.mjs --bench"
   },
   "dependencies": {
     "three": "^0.186.0"

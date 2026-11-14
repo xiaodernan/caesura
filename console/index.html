@@ -994,13 +994,47 @@
     </article>
   </section>
 
+  <!-- 第五十三弹 · PostgreSQL 查询引擎教学件——BPlusOrdered / TrgmGin / VectorHnsw（KI-562） -->
+  <section class="row row-pg">
+    <article class="panel panel-pg">
+      <div class="panel-head"><h2>第五十三弹 · BPlusOrdered / TrgmGin / VectorHnsw · PG 三索引各司其职（range/fuzzy/knn）</h2><span class="hint">BPlusOrdered=100（有序范围扫描直通，等值/区间 O(log n)）· TrgmGin=010（pg_trgm + GIN 候选过滤，LIKE '%x%' 的唯一正解）· VectorHnsw=001（pgvector HNSW 近似余弦 kNN）——三个能力互斥，谁也替谁不了；默认 BPlusOrdered=100 / TrgmGin=010 / VectorHnsw=001，不封赢家</span></div>
+      <div class="pg-matrix" id="pg-matrix"></div>
+      <div class="pg-ladder" id="pg-ladder"></div>
+      <p class="note" id="pg-matrix-note">—</p>
+    </article>
+    <article class="panel panel-pg">
+      <div class="panel-head"><h2>[orderedRangeScan / fuzzyPatternMatch / vectorSimilarity] · 双路自证 + 三路篡改 + 因果锁</h2><span class="hint">三元组字节：100/010/001；verifyPgVectorSoundness 三条 Lane：A＝B+ 树 range 有序+完备（对照暴力过滤）/ B＝pg_trgm 候选超集（true-match ⊆ candidates，探针 ≥ 3 字符与 show_trgm 对齐）/ C＝HNSW recall@8 ≥ 0.75（固定 seed 实测 ≈ 1.0）；tamper：forcedSeqScan（乱序）/ strictEquality（等值谓词错杀）/ invertedCosine（余弦反向贪心）——三路喂回同一 holds 公式现算 false；全 16 维单位向量确定性语料 256 件钟器</span></div>
+      <div class="pg-trilemma" id="pg-trilemma"></div>
+      <div class="pg-verif" id="pg-verif"></div>
+      <div class="pg-crosscheck" id="pg-crosscheck"></div>
+      <div class="pg-probes" id="pg-probes"></div>
+      <p class="note" id="pg-trilemma-note">—</p>
+    </article>
+  </section>
+
+  <!-- 第五十四弹 · Spring Cloud Gateway 过滤器全家桶教学件——OrderedChain / RateLimitGatewayFilter / CircuitBreakerGatewayFilter（KI-563） -->
+  <section class="row row-gf">
+    <article class="panel panel-gf">
+      <div class="panel-head"><h2>第五十四弹 · OrderedChain / RateLimitGatewayFilter / CircuitBreakerGatewayFilter · Gateway 三件套</h2><span class="hint">OrderedChain=100（Ordered + Onion：pre 升 / post 降，语义的地基）· RateLimitGatewayFilter=010（tokenBucket capacity=2：入口超限即拒，7 次 burst 恰 2 放行）· CircuitBreakerGatewayFilter=001（count-based：5 败必 OPEN · cooldown 后 HALF_OPEN 探针 · 成功回 CLOSED）三位互斥、互不替代、不封赢家——生产网关必须三件套齐配</span></div>
+      <div class="gf-matrix" id="gf-matrix"></div>
+      <div class="gf-ladder" id="gf-ladder"></div>
+      <p class="note" id="gf-matrix-note">—</p>
+    </article>
+    <article class="panel panel-gf">
+      <div class="panel-head"><h2>[orderedCorrect / rateLimited / circuitBroken] · 三 Lane 自证 + 三路篡改 + 因果锁</h2><span class="hint">三元组字节：100/010/001；verifyGatewayFiltersSoundness 三条 Lane：A＝Onion 包裹序（Security→Rewrite→RateLimit→CircuitBreaker）/ B＝tokenBucket 真计数 / C＝断路器状态机 5 败→OPEN→cooldown→HALF_OPEN→CLOSED；tamper：reorderedFilter（Ordered 注解丢失·注册序倒序）/ overdraftBucket（桶无限放行）/ alwaysClosed（断路器永不切断）——各自喂回同一 holds 公式现算 false；seeded 确定性实验室 · 非 Gateway server · resilience4j count-based 等价精简版（O(1) 调用）</span></div>
+      <div class="gf-trilemma" id="gf-trilemma"></div>
+      <div class="gf-verif" id="gf-verif"></div>
+      <div class="gf-crosscheck" id="gf-crosscheck"></div>
+      <div class="gf-probes" id="gf-probes"></div>
+      <p class="note" id="gf-trilemma-note">—</p>
+    </article>
   </section>
 
         <!-- 集大成 · 终局仪典 · 玉玦铭 -->
         <section class="row row-ribbon" aria-hidden="true">
           <div class="ribbon">
             <span class="seal seal-lg seal-jade">CAESURA</span>
-            <span class="ribbon-text">MESH OBSERVATORY · 集大成 · 五十二维并行 · 2026-11-14 · master f3cb0ad · CI 全绿</span>
+            <span class="ribbon-text">MESH OBSERVATORY · 集大成 · 第五十四弹 · 2026-11-14 · master · CI 全绿</span>
             <span class="ribbon-dot"></span>
             <span class="seal seal-lg seal-zhu">止音纪元</span>
           </div>

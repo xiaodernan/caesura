@@ -243,6 +243,14 @@ export function runMeshE2E(opts = {}) {
     // KI-558：MQ 驱动的缓存一致性三策略（cacheConsistency=true 挂载——DelayedDoubleDelete/SubscribeBinlog/OutboxPolling 三难 [boundedStaleness/infraFree/writePathLight] + verifyCacheConsistencySoundness 双路自证 + 十一真件 21 键）。
     cacheConsistency: opts.cacheConsistency,
     ccNow: opts.ccNow,
+    // KI-562 PostgreSQL 查询引擎教学件——pgvector=true 装配 BPlusOrdered=100 / TrgmGin=010 / VectorHnsw=001 +
+    // verifyPgVectorSoundness 双路自证 + 三路篡改（forcedSeqScan/strictEquality/invertedCosine）+ 因果锁 + 21 真件
+    pgvector: opts.pgvector,
+    pgvectorNow: opts.pgvectorNow,
+    // KI-563 Spring Cloud Gateway 过滤器全家桶教学件——gatewayFilters=true 装配 OrderedChain=100 / RateLimitGatewayFilter=010 / CircuitBreakerGatewayFilter=001 +
+    // verifyGatewayFiltersSoundness 三 Lane 自证 + 三路篡改（reorderedFilter/overdraftBucket/alwaysClosed）+ 因果锁 + 21 真件
+    gatewayFilters: opts.gatewayFilters,
+    gwfNow: opts.gwfNow,
     // KI-544：CDC outbox join 教学件（cdcOutboxJoin=true 装配；LsmSnapshotJoin/RawBinlogJoin/OutboxAtomicJoin × 四场景矩阵 + 三难向量（默认 101/011/100 互异）+ verifyCdcOutboxJoinSoundness 双路自证 + 十一真件 21 键交叉印证，不改调用路径）。
     // 注入时钟用 cojNow（避开 lsm/bp/bpc/cgp/lc/bf/cr/sw/hll/sb/lb/ds/ts/to/cb/lg/gr/idc/reb/pq/bsj/coj/rdq/dld 已占用前缀）。
     cdcOutboxJoin: opts.cdcOutboxJoin,
@@ -423,6 +431,8 @@ export function runMeshE2E(opts = {}) {
         promptCacheSnapshot: status.promptCache ?? null,
         redisSlotsSnapshot: status.redisSlots ?? null,
         cacheConsistencySnapshot: status.cacheConsistency ?? null,
+        pgvectorSnapshot: status.pgvector ?? null,
+        gatewayFiltersSnapshot: status.gatewayFilters ?? null,
         springStreamBindingSnapshot: status.springStreamBinding ?? null,
         cdcOutboxJoinSnapshot: status.cdcOutboxJoin ?? null,
         traceSamplingSnapshot: status.traceSampling ?? null,
@@ -1070,6 +1080,32 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         crosscheck: r.cacheConsistencySnapshot.crosscheck,
         causalLocks: r.cacheConsistencySnapshot.causalLocks,
         verdict: r.cacheConsistencySnapshot.verdict,
+      } : null,
+      pgvector: r.pgvectorSnapshot ? {
+        strategies: r.pgvectorSnapshot.rows.map((row) => ({
+          protocol: row.protocol,
+          scenarios: row.scenarios,
+          trilemma: row.trilemma,
+          metrics: row.metrics,
+        })),
+        trilemmaVectors: r.pgvectorSnapshot.vectors,
+        noUniversalWinner: r.pgvectorSnapshot.verdict.noUniversalWinner,
+        crosscheck: r.pgvectorSnapshot.crosscheck,
+        causalLocks: r.pgvectorSnapshot.causalLocks,
+        verdict: r.pgvectorSnapshot.verdict,
+      } : null,
+      gatewayFilters: r.gatewayFiltersSnapshot ? {
+        strategies: r.gatewayFiltersSnapshot.rows.map((row) => ({
+          protocol: row.protocol,
+          scenarios: row.scenarios,
+          trilemma: row.trilemma,
+          metrics: row.metrics,
+        })),
+        trilemmaVectors: r.gatewayFiltersSnapshot.vectors,
+        noUniversalWinner: r.gatewayFiltersSnapshot.verdict.noUniversalWinner,
+        crosscheck: r.gatewayFiltersSnapshot.crosscheck,
+        causalLocks: r.gatewayFiltersSnapshot.causalLocks,
+        verdict: r.gatewayFiltersSnapshot.verdict,
       } : null,
       stoppedRegistered: r.stopped?.registered,
     }, null, 2))

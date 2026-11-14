@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": 1794605461773,
+  "generatedAt": 1794643509365,
   "generator": "caesura-console-gen",
   "scenarios": [
     {
@@ -1365,12 +1365,12 @@
           "keys": 1,
           "versions": 2,
           "commitLogSize": 1,
-          "now": 1794605461775
+          "now": 1794643509367
         },
         "final": {
           "A": {
             "value": 101,
-            "commitTs": 1794605461775,
+            "commitTs": 1794643509367,
             "tombstone": false
           }
         }
@@ -3646,7 +3646,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794605461773,
+                "lastTimestamp": 1794643509365,
                 "workerId": 1
               },
               "fault": {
@@ -3742,7 +3742,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794605461773,
+                "lastTimestamp": 1794643509365,
                 "workerId": 1
               },
               "fault": {
@@ -3774,7 +3774,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794605461774,
+                "lastTimestamp": 1794643509366,
                 "workerId": 1
               },
               "fault": {
@@ -3806,7 +3806,7 @@
               "contiguous": true,
               "detail": {
                 "note": "Snowflake 趋势递增+本地生成，但墙钟回拨⇒停发或重复",
-                "lastTimestamp": 1794605461773,
+                "lastTimestamp": 1794643509365,
                 "workerId": 1
               },
               "fault": {
@@ -4522,7 +4522,7 @@
         "capacity": 8,
         "perShardCap": 2
       },
-      "builtAt": 1794605461773
+      "builtAt": 1794643509365
     },
     "configConsistency": {
       "config": {
@@ -5020,7 +5020,7 @@
         "burstCount": 12,
         "windowMs": 10000
       },
-      "builtAt": 1794605461773
+      "builtAt": 1794643509365
     },
     "cacheCoherency": {
       "config": {
@@ -5549,7 +5549,7 @@
         "crashAtWrite": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794605461773
+      "builtAt": 1794643509365
     },
     "messageDelivery": {
       "config": {
@@ -6038,10 +6038,10 @@
         "crashAfterSendAt": 3,
         "windowMs": 10000
       },
-      "builtAt": 1794605461773
+      "builtAt": 1794643509365
     },
     "delayQueue": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 518,
         "tasks": 12,
@@ -6068,7 +6068,7 @@
               "id": "allOk",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 26804,
+              "lateMs": 68804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6080,7 +6080,7 @@
               "id": "tickSkew",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 26804,
+              "lateMs": 68804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6092,7 +6092,7 @@
               "id": "farFuture",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 27136,
+              "lateMs": 69136,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6104,7 +6104,7 @@
               "id": "manyCancels",
               "protocol": "TimingWheel",
               "fired": 6,
-              "lateMs": 16858,
+              "lateMs": 30858,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6128,7 +6128,7 @@
               "id": "concurrentWorkers",
               "protocol": "TimingWheel",
               "fired": 12,
-              "lateMs": 26804,
+              "lateMs": 68804,
               "duplicatePickups": 0,
               "lostOnRestart": 0,
               "opUnits": 12,
@@ -6139,7 +6139,7 @@
           ],
           "totals": {
             "fired": 54,
-            "lateMs": 124406,
+            "lateMs": 306406,
             "duplicatePickups": 0,
             "lostOnRestart": 6,
             "opUnits": 72
@@ -6375,7 +6375,7 @@
       }
     },
     "retryDlq": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 520,
         "messages": 16,
@@ -6793,7 +6793,7 @@
       }
     },
     "consumerGroup": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 523,
         "consumers": 3,
@@ -7299,7 +7299,7 @@
       }
     },
     "backpressure": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "steps": 48,
         "mu": 2,
@@ -8344,7 +8344,7 @@
       }
     },
     "logCompaction": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 526,
         "ops": 24,
@@ -9405,7 +9405,7 @@
       }
     },
     "bloomFilter": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 527,
         "capacity": 1024,
@@ -10104,7 +10104,7 @@
       }
     },
     "cacheReplacement": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 528,
         "capacity": 16,
@@ -10747,7 +10747,7 @@
       }
     },
     "streamWindow": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 529,
         "windowSize": 100,
@@ -12806,7 +12806,7 @@
       }
     },
     "hyperLogLog": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 530,
         "cardinality": 4096,
@@ -29726,7 +29726,7 @@
       }
     },
     "crdt": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 531,
         "replicaCount": 3,
@@ -30182,7 +30182,7 @@
       }
     },
     "springBatch": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 532,
         "items": 96,
@@ -30621,7 +30621,7 @@
       "rigged": false
     },
     "traceSampling": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 533,
         "items": 64,
@@ -31323,7 +31323,7 @@
       "rigged": false
     },
     "distributedSession": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 535,
         "sessions": 96,
@@ -31679,7 +31679,7 @@
       "rigged": false
     },
     "transactionalOutbox": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 534,
         "items": 96,
@@ -32130,7 +32130,7 @@
       "rigged": false
     },
     "loadBalance": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 536,
         "requests": 96,
@@ -32550,7 +32550,7 @@
       "rigged": false
     },
     "circuitBreaker": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 537,
         "calls": 96,
@@ -33080,7 +33080,7 @@
       "rigged": false
     },
     "llmGateway": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 538,
         "mode": "offline",
@@ -33475,7 +33475,7 @@
       "rigged": false
     },
     "gatewayRouting": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 539,
         "requests": 96,
@@ -33813,7 +33813,7 @@
       "rigged": false
     },
     "idempotentConsumer": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 540,
         "messages": 96,
@@ -34242,7 +34242,7 @@
       "rigged": false
     },
     "consumerRebalance": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 541,
         "partitions": 6,
@@ -34652,7 +34652,7 @@
       "rigged": false
     },
     "priorityQueue": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 542,
         "messages": 96,
@@ -34944,7 +34944,7 @@
       "rigged": false
     },
     "batchStreamJoin": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 543,
         "messages": 96,
@@ -35221,7 +35221,7 @@
       "rigged": false
     },
     "cdcOutboxJoin": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 544,
         "messages": 96,
@@ -35484,7 +35484,7 @@
       "rigged": false
     },
     "springStreamBinding": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 545,
         "messages": 96,
@@ -35745,7 +35745,7 @@
       "rigged": false
     },
     "springFeign": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 546,
         "messages": 96,
@@ -36000,7 +36000,7 @@
       "rigged": false
     },
     "springConfig": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 547,
         "messages": 96,
@@ -36256,7 +36256,7 @@
       "rigged": false
     },
     "springBus": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 548,
         "messages": 96,
@@ -36512,7 +36512,7 @@
       "rigged": false
     },
     "redisPipeline": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 549,
         "messages": 96,
@@ -36768,7 +36768,7 @@
       "rigged": false
     },
     "gatewayRetry": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 550,
         "messages": 96,
@@ -37024,7 +37024,7 @@
       "rigged": false
     },
     "springConsul": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 551,
         "messages": 96,
@@ -37281,7 +37281,7 @@
       "rigged": false
     },
     "redisHa": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 552,
         "messages": 96,
@@ -37538,7 +37538,7 @@
       "rigged": false
     },
     "redisStream": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 553,
         "messages": 96,
@@ -37794,7 +37794,7 @@
       "rigged": false
     },
     "springVault": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 554,
         "messages": 96,
@@ -38050,7 +38050,7 @@
       "rigged": false
     },
     "promptCache": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 555,
         "messages": 96,
@@ -38504,7 +38504,7 @@
       "rigged": false
     },
     "redisSlots": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 557,
         "messages": 96,
@@ -38773,7 +38773,7 @@
       "rigged": false
     },
     "cacheConsistency": {
-      "builtAt": 1794605461773,
+      "builtAt": 1794643509365,
       "config": {
         "seed": 558,
         "writes": 24,
@@ -39276,6 +39276,555 @@
       },
       "rigged": false
     },
-    "builtAt": 1794605461773
+    "pgvector": {
+      "builtAt": 1794643509365,
+      "config": {
+        "seed": 562,
+        "messages": 96,
+        "docs": 256,
+        "dims": 16,
+        "freeOrderedRangeScan": false,
+        "freeFuzzyPatternMatch": false,
+        "freeVectorSimilarity": false,
+        "rigged": false
+      },
+      "rows": [
+        {
+          "protocol": "BPlusOrdered",
+          "scenarios": [
+            {
+              "id": "rangeScan",
+              "docs": 256,
+              "processed": 256,
+              "matched": 94,
+              "ordered": 1,
+              "state": "hit",
+              "fault": "range[1280,4480]",
+              "recall": null
+            },
+            {
+              "id": "fuzzyLike",
+              "docs": 256,
+              "processed": 256,
+              "matched": 0,
+              "ordered": 0,
+              "state": "miss",
+              "fault": "like %%钟钟函%%",
+              "recall": null
+            },
+            {
+              "id": "vectorSearch",
+              "docs": 256,
+              "processed": 256,
+              "matched": 0,
+              "ordered": 0,
+              "state": "miss",
+              "fault": "knn k=8 cosine",
+              "recall": null
+            },
+            {
+              "id": "cleanRerun",
+              "docs": 256,
+              "processed": 256,
+              "matched": 256,
+              "ordered": 1,
+              "state": "hit",
+              "fault": "none",
+              "recall": null
+            }
+          ],
+          "trilemma": {
+            "orderedRangeScan": true,
+            "fuzzyPatternMatch": false,
+            "vectorSimilarity": false
+          },
+          "metrics": {
+            "stateHits": 2,
+            "vectorRecall": null
+          }
+        },
+        {
+          "protocol": "TrgmGin",
+          "scenarios": [
+            {
+              "id": "rangeScan",
+              "docs": 256,
+              "processed": 256,
+              "matched": 0,
+              "ordered": 0,
+              "state": "miss",
+              "fault": "range[1280,4480]",
+              "recall": null
+            },
+            {
+              "id": "fuzzyLike",
+              "docs": 256,
+              "processed": 256,
+              "matched": 17,
+              "ordered": 0,
+              "state": "hit",
+              "fault": "like %%钟钟函%%",
+              "recall": null
+            },
+            {
+              "id": "vectorSearch",
+              "docs": 256,
+              "processed": 256,
+              "matched": 0,
+              "ordered": 0,
+              "state": "miss",
+              "fault": "knn k=8 cosine",
+              "recall": null
+            },
+            {
+              "id": "cleanRerun",
+              "docs": 256,
+              "processed": 256,
+              "matched": 256,
+              "ordered": 1,
+              "state": "hit",
+              "fault": "none",
+              "recall": null
+            }
+          ],
+          "trilemma": {
+            "orderedRangeScan": false,
+            "fuzzyPatternMatch": true,
+            "vectorSimilarity": false
+          },
+          "metrics": {
+            "stateHits": 2,
+            "vectorRecall": null
+          }
+        },
+        {
+          "protocol": "VectorHnsw",
+          "scenarios": [
+            {
+              "id": "rangeScan",
+              "docs": 256,
+              "processed": 256,
+              "matched": 0,
+              "ordered": 0,
+              "state": "miss",
+              "fault": "range[1280,4480]",
+              "recall": null
+            },
+            {
+              "id": "fuzzyLike",
+              "docs": 256,
+              "processed": 256,
+              "matched": 0,
+              "ordered": 0,
+              "state": "miss",
+              "fault": "like %%钟钟函%%",
+              "recall": null
+            },
+            {
+              "id": "vectorSearch",
+              "docs": 256,
+              "processed": 256,
+              "matched": 8,
+              "ordered": 0,
+              "state": "hit",
+              "fault": "knn k=8 cosine",
+              "recall": 1
+            },
+            {
+              "id": "cleanRerun",
+              "docs": 256,
+              "processed": 256,
+              "matched": 256,
+              "ordered": 1,
+              "state": "hit",
+              "fault": "none",
+              "recall": null
+            }
+          ],
+          "trilemma": {
+            "orderedRangeScan": false,
+            "fuzzyPatternMatch": false,
+            "vectorSimilarity": true
+          },
+          "metrics": {
+            "stateHits": 2,
+            "vectorRecall": 1
+          }
+        }
+      ],
+      "vectors": {
+        "BPlusOrdered": "100",
+        "TrgmGin": "010",
+        "VectorHnsw": "001"
+      },
+      "verdict": {
+        "vectors": {
+          "BPlusOrdered": "100",
+          "TrgmGin": "010",
+          "VectorHnsw": "001"
+        },
+        "noUniversalWinner": true,
+        "trilemmaDistinguishes": true,
+        "scenarioDistinguishes": true,
+        "noStrategyWinsAll": true,
+        "vectorFromTrilemma": true,
+        "rigged": false,
+        "rigged_pkg_flags": {
+          "freeOrderedRangeScan": false,
+          "freeFuzzyPatternMatch": false,
+          "freeVectorSimilarity": false
+        },
+        "riggedConvergenceCollapsed": false
+      },
+      "noUniversalWinner": true,
+      "trilemmaDistinguishes": true,
+      "scenarioDistinguishes": true,
+      "noStrategyWinsAll": true,
+      "causalLocks": {
+        "bplusFanoutCausallyUnerasable": true,
+        "trgmCandidateSupersetCausallyUnerasable": true,
+        "vectorRecallFloorCausallyUnerasable": true,
+        "causalLocksAllHold": true,
+        "probes": {
+          "treeHeight": 4,
+          "treeSplits": 81,
+          "treePuts": 512,
+          "trgmProbes": 4,
+          "recall8": 1,
+          "recallFloor": 0.75
+        }
+      },
+      "crosscheck": {
+        "evidence": {
+          "routerMoved": 13,
+          "routerTracked": 80,
+          "ringNodes": 4,
+          "ringShardsUsed": 4,
+          "walLines": 80,
+          "walReplayed": 80,
+          "notices": 12,
+          "busListeners": 1,
+          "redisBitmapHits": 96,
+          "redisSlots": 96,
+          "poolCreated": 2,
+          "poolReused": 1,
+          "bucketAllowed": 3,
+          "bucketRejected": 4,
+          "heapFired": 3,
+          "heapPending": 0,
+          "counterSum": 2080,
+          "counterFalseSharing": 56,
+          "jitterSpread": 1.876,
+          "remapConsistentRate": 0.25,
+          "remapModuloRate": 0.515
+        },
+        "soundness": {
+          "laneA": {
+            "ordered": true,
+            "complete": true,
+            "count": 94,
+            "bruteCount": 94
+          },
+          "laneB": {
+            "probes": 5,
+            "supersetHolds": true,
+            "candidateCount": 318,
+            "trueMatchCount": 76
+          },
+          "laneC": {
+            "recall8": 1,
+            "floor": 0.75,
+            "holds": true
+          },
+          "baselineHolds": true,
+          "holds": true,
+          "nontrivial": true,
+          "falsifiable": true,
+          "tamper": {
+            "forcedSeqScan": {
+              "holds": false,
+              "reason": "forcedSeqScan：不走索引的顺序扫描不保证有序输出（ORDER BY 丢失），laneA.ordered=false → holds=false"
+            },
+            "strictEquality": {
+              "holds": false,
+              "reason": "strictEquality：把 LIKE %x% 当等值谓词，候选=title 完全相等，真匹配被过滤，laneB.supersetHolds=false → holds=false"
+            },
+            "invertedCosine": {
+              "holds": false,
+              "reason": "invertedCosine：余弦符号取反，贪心朝最远的人走，recall8=0 塌破下界 → holds=false"
+            }
+          },
+          "events": [
+            "bplus.range.certified",
+            "trgm.candidates.superset",
+            "hnsw.recall.floored"
+          ]
+        }
+      },
+      "rigged": false
+    },
+    "gatewayFilters": {
+      "builtAt": 1794643509365,
+      "config": {
+        "seed": 563,
+        "messages": 96,
+        "freeOrderedCorrect": false,
+        "freeRateLimited": false,
+        "freeCircuitBroken": false,
+        "rigged": false
+      },
+      "rows": [
+        {
+          "protocol": "OrderedChain",
+          "scenarios": [
+            {
+              "id": "normalTraffic",
+              "messages": 96,
+              "processed": 96,
+              "matched": 96,
+              "state": "hit",
+              "fault": "filter-eval"
+            },
+            {
+              "id": "burstOverload",
+              "messages": 96,
+              "processed": 96,
+              "matched": 0,
+              "state": "miss",
+              "fault": "burst-penetration-or-rejection"
+            },
+            {
+              "id": "downstreamOutage",
+              "messages": 96,
+              "processed": 96,
+              "matched": 0,
+              "state": "miss",
+              "fault": "downstream-down"
+            },
+            {
+              "id": "cleanRerun",
+              "messages": 96,
+              "processed": 96,
+              "matched": 9,
+              "state": "hit",
+              "fault": "none"
+            }
+          ],
+          "trilemma": {
+            "orderedCorrect": true,
+            "rateLimited": false,
+            "circuitBroken": false
+          },
+          "metrics": {
+            "stateHits": 2
+          }
+        },
+        {
+          "protocol": "RateLimitGatewayFilter",
+          "scenarios": [
+            {
+              "id": "normalTraffic",
+              "messages": 96,
+              "processed": 96,
+              "matched": 96,
+              "state": "hit",
+              "fault": "filter-eval"
+            },
+            {
+              "id": "burstOverload",
+              "messages": 96,
+              "processed": 96,
+              "matched": 2,
+              "state": "hit",
+              "fault": "burst-penetration-or-rejection"
+            },
+            {
+              "id": "downstreamOutage",
+              "messages": 96,
+              "processed": 96,
+              "matched": 0,
+              "state": "miss",
+              "fault": "downstream-down"
+            },
+            {
+              "id": "cleanRerun",
+              "messages": 96,
+              "processed": 96,
+              "matched": 9,
+              "state": "hit",
+              "fault": "none"
+            }
+          ],
+          "trilemma": {
+            "orderedCorrect": false,
+            "rateLimited": true,
+            "circuitBroken": false
+          },
+          "metrics": {
+            "stateHits": 3
+          }
+        },
+        {
+          "protocol": "CircuitBreakerGatewayFilter",
+          "scenarios": [
+            {
+              "id": "normalTraffic",
+              "messages": 96,
+              "processed": 96,
+              "matched": 96,
+              "state": "hit",
+              "fault": "filter-eval"
+            },
+            {
+              "id": "burstOverload",
+              "messages": 96,
+              "processed": 96,
+              "matched": 0,
+              "state": "miss",
+              "fault": "burst-penetration-or-rejection"
+            },
+            {
+              "id": "downstreamOutage",
+              "messages": 96,
+              "processed": 96,
+              "matched": 1,
+              "state": "hit",
+              "fault": "downstream-down"
+            },
+            {
+              "id": "cleanRerun",
+              "messages": 96,
+              "processed": 96,
+              "matched": 9,
+              "state": "hit",
+              "fault": "none"
+            }
+          ],
+          "trilemma": {
+            "orderedCorrect": false,
+            "rateLimited": false,
+            "circuitBroken": true
+          },
+          "metrics": {
+            "stateHits": 3
+          }
+        }
+      ],
+      "vectors": {
+        "OrderedChain": "100",
+        "RateLimitGatewayFilter": "010",
+        "CircuitBreakerGatewayFilter": "001"
+      },
+      "verdict": {
+        "vectors": {
+          "OrderedChain": "100",
+          "RateLimitGatewayFilter": "010",
+          "CircuitBreakerGatewayFilter": "001"
+        },
+        "noUniversalWinner": true,
+        "trilemmaDistinguishes": true,
+        "scenarioDistinguishes": true,
+        "noStrategyWinsAll": true,
+        "vectorFromTrilemma": true,
+        "rigged": false,
+        "rigged_pkg_flags": {
+          "freeOrderedCorrect": false,
+          "freeRateLimited": false,
+          "freeCircuitBroken": false
+        },
+        "riggedConvergenceCollapsed": false
+      },
+      "noUniversalWinner": true,
+      "trilemmaDistinguishes": true,
+      "scenarioDistinguishes": true,
+      "noStrategyWinsAll": true,
+      "causalLocks": {
+        "onionWrapperCausallyUnerasable": true,
+        "bucketThroughputCausallyUnerasable": true,
+        "halfOpenRecoveryCausallyUnerasable": true,
+        "causalLocksAllHold": true,
+        "probes": {
+          "preFirst": "in:SecurityGatewayFilter",
+          "handlerAt": 4,
+          "burstAllowed": 2,
+          "openedAtFive": true,
+          "rejectedWhileOpen": true,
+          "closedAgain": true
+        }
+      },
+      "crosscheck": {
+        "evidence": {
+          "routerMoved": 20,
+          "routerTracked": 80,
+          "ringNodes": 4,
+          "ringShardsUsed": 4,
+          "walLines": 80,
+          "walReplayed": 80,
+          "notices": 12,
+          "busListeners": 1,
+          "redisBitmapHits": 96,
+          "redisSlots": 96,
+          "poolCreated": 2,
+          "poolReused": 1,
+          "bucketAllowed": 3,
+          "bucketRejected": 4,
+          "heapFired": 3,
+          "heapPending": 0,
+          "counterSum": 2080,
+          "counterFalseSharing": 56,
+          "jitterSpread": 1.992,
+          "remapConsistentRate": 0.235,
+          "remapModuloRate": 0.54
+        },
+        "soundness": {
+          "laneA": {
+            "orderedCorrect": true,
+            "sawHandler": true,
+            "securityBeforeRewrite": true,
+            "seqHash": 2819050181
+          },
+          "laneB": {
+            "allowed": 2,
+            "rejected": 5,
+            "capacity": 2,
+            "burst": 7,
+            "holds": true
+          },
+          "laneC": {
+            "state": "CLOSED",
+            "opened": true,
+            "rejectedInOpen": 1,
+            "afterCooldown": "CLOSED",
+            "closedAgain": true,
+            "holds": true
+          },
+          "baselineHolds": true,
+          "holds": true,
+          "nontrivial": true,
+          "falsifiable": true,
+          "tamper": {
+            "reorderedFilter": {
+              "holds": false,
+              "reason": "reorderedFilter：Ordered 注册表被倒着喂入，pre 序颠倒（Security 在 Rewrite 之后才看见请求），laneA.orderedCorrect=false → holds=false"
+            },
+            "overdraftBucket": {
+              "holds": false,
+              "reason": "overdraftBucket：令牌桶无限放行，7 次 burst capacity=2 全放，laneB.allowed=7 ≠ 2 → holds=false"
+            },
+            "alwaysClosed": {
+              "holds": false,
+              "reason": "alwaysClosed：断路器永远 CLOSED，5 败之后第 6 次调用仍走 fn，OPEN 态从未出现，laneC.holds=false → holds=false"
+            }
+          },
+          "events": [
+            "gateway.order.onion",
+            "gateway.rate-limit.bucketed",
+            "gateway.breaker.transitioned"
+          ]
+        }
+      },
+      "rigged": false
+    },
+    "builtAt": 1794643509365
   }
 }

@@ -812,6 +812,47 @@ export function runMeshE2E(opts?: any): {
       causalLocks: { crc16DistributionCausallyUnerasable: boolean; hashTagBindingCausallyUnerasable: boolean; slotMigrationFloorCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
       crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; baselineHolds?: boolean; falsifiable?: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
     } | null
+    /** KI-563 Spring Cloud Gateway 过滤器全家桶教学件（OrderedChain=100 / RateLimitGatewayFilter=010 / CircuitBreakerGatewayFilter=001），缺省 opt-in gatewayFilters 为 null */
+    gatewayFiltersSnapshot: {
+      config: Record<string, any>
+      rows: Array<{
+        protocol: string
+        scenarios: Array<{
+          id: string; messages: number; processed: number; matched: number; state: 'hit' | 'miss'; fault: string
+        }>
+        trilemma: { orderedCorrect: boolean; rateLimited: boolean; circuitBroken: boolean }
+        metrics: { stateHits: number }
+      }>
+      vectors: Record<string, string>
+      noUniversalWinner: boolean
+      trilemmaDistinguishes: boolean
+      builtAt: number
+      rigged: boolean
+      verdict: Record<string, any>
+      causalLocks: { onionWrapperCausallyUnerasable: boolean; bucketThroughputCausallyUnerasable: boolean; halfOpenRecoveryCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
+      crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; baselineHolds?: boolean; falsifiable?: boolean; laneA: Record<string, any>; laneB: Record<string, any>; laneC?: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+    } | null
+    /** KI-562 PostgreSQL 查询引擎教学件（BPlusOrdered=100 / TrgmGin=010 / VectorHnsw=001），缺省 opt-in pgvector 为 null */
+    pgvectorSnapshot: {
+      config: Record<string, any>
+      rows: Array<{
+        protocol: string
+        scenarios: Array<{
+          id: string; docs: number; processed: number; matched: number; ordered: number
+          state: 'hit' | 'miss'; fault: string; recall: number | null
+        }>
+        trilemma: { orderedRangeScan: boolean; fuzzyPatternMatch: boolean; vectorSimilarity: boolean }
+        metrics: { stateHits: number; vectorRecall: number | null }
+      }>
+      vectors: Record<string, string>
+      noUniversalWinner: boolean
+      trilemmaDistinguishes: boolean
+      builtAt: number
+      rigged: boolean
+      verdict: Record<string, any>
+      causalLocks: { bplusFanoutCausallyUnerasable: boolean; trgmCandidateSupersetCausallyUnerasable: boolean; vectorRecallFloorCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
+      crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; baselineHolds?: boolean; falsifiable?: boolean; laneA: Record<string, any>; laneB: Record<string, any>; laneC?: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
+    } | null
     /** KI-558 DelayedDoubleDelete / SubscribeBinlog / OutboxPolling 延迟双删对齐——缺 opt-in cacheConsistency 为 null */
     cacheConsistencySnapshot: {
       config: Record<string, any>

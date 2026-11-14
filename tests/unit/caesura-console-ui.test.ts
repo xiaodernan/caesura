@@ -3293,3 +3293,177 @@ describe('KI-558 MQ 驱动的缓存一致性 · DelayedDoubleDelete / SubscribeB
     expect(verif).toContain('outboxNotAtomic=')
   })
 })
+// ============ KI-562 PostgreSQL 查询引擎教学件 · pg 行 ============
+describe('KI-562 PostgreSQL 查询引擎 BPlusOrdered / TrgmGin / VectorHnsw（pg 行）', () => {
+  const realPg = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+
+  it('pg markup/CSS 自证合规：12 cell + 100/010/001 + 状态分档 + reduced-motion', async () => {
+    const dom = await runApp(realPg)
+    const matrix = dom.els['pg-matrix'].innerHTML
+    expect(matrix).toContain('pg-mat-head')
+    for (const p of ['BPlusOrdered', 'TrgmGin', 'VectorHnsw']) {
+      expect(matrix).toContain('data-strategy="' + p + '"')
+    }
+    for (const sc of ['rangeScan', 'fuzzyLike', 'vectorSearch', 'cleanRerun']) {
+      expect(matrix).toContain('data-s="' + sc + '"')
+    }
+    expect((matrix.match(/class="pg-cell /g) || []).length).toBe(12)
+    // 三索引各自赢得自己的场景：B+ 拿 range，TrgmGin 拿 fuzzyLike，HNSW 拿 vectorSearch
+    expect(matrix).toContain('data-strategy="BPlusOrdered" data-s="rangeScan" data-state="hit"')
+    expect(matrix).toContain('data-strategy="TrgmGin" data-s="fuzzyLike" data-state="hit"')
+    expect(matrix).toContain('data-strategy="VectorHnsw" data-s="vectorSearch" data-state="hit"')
+    // 互斥：TrgmGin 拿不了 rangeScan，VectorHnsw 拿不了 rangeScan
+    expect(matrix).toContain('data-strategy="TrgmGin" data-s="rangeScan" data-state="miss"')
+    expect(matrix).toContain('data-strategy="VectorHnsw" data-s="rangeScan" data-state="miss"')
+    const tri = dom.els['pg-trilemma'].innerHTML
+    expect(tri).toContain('data-vec="100"')
+    expect(tri).toContain('data-vec="010"')
+    expect(tri).toContain('data-vec="001"')
+    expect(dom.els['pg-ladder'].innerHTML).toContain('pg-bar')
+  })
+
+  it('pg markup/CSS 同源 + systems.pgvector 缺失时优雅降级', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-pg')
+    expect(html).toContain('id="pg-matrix"')
+    expect(html).toContain('id="pg-verif"')
+    expect(html).toContain('id="pg-crosscheck"')
+    expect(html).toContain('id="pg-probes"')
+    expect(html).toContain('BPlusOrdered=100')
+    expect(html).toContain('TrgmGin=010')
+    expect(html).toContain('VectorHnsw=001')
+    expect(css).toContain('.pg-cell')
+    expect(css).toContain('.pg-cell.hit')
+    expect(css).toContain('.pg-cell.miss')
+    expect(css).toContain('.pg-flag.yes')
+    expect(css).toContain('.pg-bar > i')
+    expect(css).toContain('.pg-verif')
+    expect(css).toContain('transition: none')
+    const noPg = JSON.parse(JSON.stringify(realPg as any))
+    noPg.systems.pgvector = null
+    return runApp(noPg).then((dom2: any) => {
+      expect(dom2.els['pg-matrix'].innerHTML).toContain('缺失')
+      expect(dom2.els['pg-trilemma'].innerHTML).toContain('缺失')
+      expect(dom2.els['pg-matrix-note'].textContent).toContain('systems.pgvector 缺失')
+    })
+  })
+
+  it('pg chips 数据驱动诚实：数值来自 snapshot 而非硬编码，trilemma 值与 snapshot 同源', async () => {
+    const dom = await runApp(realPg)
+    const chips = dom.els['pg-probes'].innerHTML
+    const snap = (realPg as any).systems.pgvector
+    const chipOf = (key: string) => {
+      const m = chips.match(new RegExp('data-verdict="' + key + '"[^>]*>([\\s\\S]*?)</span>'))
+      return m ? m[1] : ''
+    }
+    expect(chipOf('noUniversalWinner')).toContain(snap.verdict.noUniversalWinner === true ? '✓' : '✗')
+    expect(chipOf('noStrategyWinsAll')).toContain(snap.verdict.noStrategyWinsAll === true ? '✓' : '✗')
+    expect(chipOf('vectorFromTrilemma')).toContain(snap.verdict.vectorFromTrilemma === true ? '✓' : '✗')
+    expect(chipOf('scenarioDistinguishes')).toContain(snap.verdict.scenarioDistinguishes === true ? '✓' : '✗')
+    expect(chipOf('causalLocksAllHold')).toContain(snap.causalLocks.causalLocksAllHold === true ? '✓' : '✗')
+    // 每行 trilemma 与 snapshot 值一致
+    const tri = dom.els['pg-trilemma'].innerHTML
+    for (const row of snap.rows) {
+      for (const k of ['orderedRangeScan', 'fuzzyPatternMatch', 'vectorSimilarity']) {
+        const want = (row as any).trilemma[k] === true ? '1' : '0'
+        expect(tri).toContain('data-k="' + k + '" data-v="' + want + '"')
+      }
+    }
+    // 双路自证 + 三路篡改在 verif 行展开
+    const verif = dom.els['pg-verif'].innerHTML
+    expect(verif).toContain('holds=')
+    expect(verif).toContain('forcedSeqScan=')
+    expect(verif).toContain('strictEquality=')
+    expect(verif).toContain('invertedCosine=')
+    // 十一件证据骨架在 crosscheck 展开
+    const cx = dom.els['pg-crosscheck'].innerHTML
+    for (const marker of ['createShardRouter', 'createHashRing', 'createWal', 'createBus', 'createRedisCache', 'createObjectPool', 'createTokenBucket', 'createMinHeapDelayQueue', 'createPackedCounters', 'createFullJitterBackoff', 'compareRemapping']) {
+      expect(cx).toContain(marker)
+    }
+  })
+})
+// ============ KI-563 Spring Cloud Gateway 过滤器全家桶 · gf 行 ============
+describe('KI-563 Spring Cloud Gateway 过滤器全家桶 OrderedChain / RateLimitGatewayFilter / CircuitBreakerGatewayFilter（gf 行）', () => {
+  const realGf = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+
+  it('gf markup/CSS 自证合规：12 cell + 100/010/001 + Onion 序 + reduced-motion', async () => {
+    const dom = await runApp(realGf)
+    const matrix = dom.els['gf-matrix'].innerHTML
+    expect(matrix).toContain('gf-mat-head')
+    for (const p of ['OrderedChain', 'RateLimitGatewayFilter', 'CircuitBreakerGatewayFilter']) {
+      expect(matrix).toContain('data-strategy="' + p + '"')
+    }
+    for (const sc of ['normalTraffic', 'burstOverload', 'downstreamOutage', 'cleanRerun']) {
+      expect(matrix).toContain('data-s="' + sc + '"')
+    }
+    expect((matrix.match(/class="gf-cell /g) || []).length).toBe(12)
+    expect(matrix).toContain('data-strategy="OrderedChain" data-s="normalTraffic" data-state="hit"')
+    expect(matrix).toContain('data-strategy="RateLimitGatewayFilter" data-s="burstOverload" data-state="hit"')
+    expect(matrix).toContain('data-strategy="CircuitBreakerGatewayFilter" data-s="downstreamOutage" data-state="hit"')
+    expect(matrix).toContain('data-strategy="OrderedChain" data-s="downstreamOutage" data-state="miss"')
+    const tri = dom.els['gf-trilemma'].innerHTML
+    expect(tri).toContain('data-vec="100"')
+    expect(tri).toContain('data-vec="010"')
+    expect(tri).toContain('data-vec="001"')
+    expect(dom.els['gf-ladder'].innerHTML).toContain('gf-bar')
+  })
+
+  it('gf markup/CSS 同源 + systems.gatewayFilters 缺失时优雅降级', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-gf')
+    expect(html).toContain('id="gf-matrix"')
+    expect(html).toContain('id="gf-verif"')
+    expect(html).toContain('id="gf-crosscheck"')
+    expect(html).toContain('id="gf-probes"')
+    expect(html).toContain('OrderedChain=100')
+    expect(html).toContain('RateLimitGatewayFilter=010')
+    expect(html).toContain('CircuitBreakerGatewayFilter=001')
+    expect(css).toContain('.gf-cell')
+    expect(css).toContain('.gf-cell.hit')
+    expect(css).toContain('.gf-cell.miss')
+    expect(css).toContain('.gf-flag.yes')
+    expect(css).toContain('.gf-bar > i')
+    expect(css).toContain('.gf-verif')
+    expect(css).toContain('transition: none')
+    const noGf = JSON.parse(JSON.stringify(realGf as any))
+    noGf.systems.gatewayFilters = null
+    return runApp(noGf).then((dom2: any) => {
+      expect(dom2.els['gf-matrix'].innerHTML).toContain('缺失')
+      expect(dom2.els['gf-trilemma'].innerHTML).toContain('缺失')
+      expect(dom2.els['gf-matrix-note'].textContent).toContain('systems.gatewayFilters 缺失')
+    })
+  })
+
+  it('gf chips 数据驱动诚实：数值来自 snapshot 而非硬编码，trilemma 值与 snapshot 同源', async () => {
+    const dom = await runApp(realGf)
+    const chips = dom.els['gf-probes'].innerHTML
+    const snap = (realGf as any).systems.gatewayFilters
+    const chipOf = (key: string) => {
+      const m = chips.match(new RegExp('data-verdict="' + key + '"[^>]*>([\\s\\S]*?)</span>'))
+      return m ? m[1] : ''
+    }
+    expect(chipOf('noUniversalWinner')).toContain(snap.verdict.noUniversalWinner === true ? '✓' : '✗')
+    expect(chipOf('noStrategyWinsAll')).toContain(snap.verdict.noStrategyWinsAll === true ? '✓' : '✗')
+    expect(chipOf('vectorFromTrilemma')).toContain(snap.verdict.vectorFromTrilemma === true ? '✓' : '✗')
+    expect(chipOf('scenarioDistinguishes')).toContain(snap.verdict.scenarioDistinguishes === true ? '✓' : '✗')
+    expect(chipOf('causalLocksAllHold')).toContain(snap.causalLocks.causalLocksAllHold === true ? '✓' : '✗')
+    const tri = dom.els['gf-trilemma'].innerHTML
+    for (const row of snap.rows) {
+      for (const k of ['orderedCorrect', 'rateLimited', 'circuitBroken']) {
+        const want = (row as any).trilemma[k] === true ? '1' : '0'
+        expect(tri).toContain('data-k="' + k + '" data-v="' + want + '"')
+      }
+    }
+    const verif = dom.els['gf-verif'].innerHTML
+    expect(verif).toContain('holds=')
+    expect(verif).toContain('reorderedFilter=')
+    expect(verif).toContain('overdraftBucket=')
+    expect(verif).toContain('alwaysClosed=')
+    const cx = dom.els['gf-crosscheck'].innerHTML
+    for (const marker of ['createShardRouter', 'createHashRing', 'createWal', 'createBus', 'createRedisCache', 'createObjectPool', 'createTokenBucket', 'createMinHeapDelayQueue', 'createPackedCounters', 'createFullJitterBackoff', 'compareRemapping']) {
+      expect(cx).toContain(marker)
+    }
+  })
+})
