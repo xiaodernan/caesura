@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "fa7736c025f2cd1619253a6ca5033f3582d802bb",
+  "head": "a9ef97cef534e85ea94456734e8230676964cb8e",
   "branch": "master",
-  "subject": "chore(boot): bump index.html title — let Pages rebuild hash (FPS Mouse Axis fix visible)",
-  "date": "2026-11-14T23:00:33+08:00",
+  "subject": "feat(input): GameplaySettings 新增 invertMouseY 开关（鼠标 Y 轴反转）—— 玩家\"翻转\"视角纵轴",
+  "date": "2026-11-14T23:14:26+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/fa7736c025f2cd1619253a6ca5033f3582d802bb",
+    "url": "https://github.com/xiaodernan/caesura/commit/a9ef97cef534e85ea94456734e8230676964cb8e",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
