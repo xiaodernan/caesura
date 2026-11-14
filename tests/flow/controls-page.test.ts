@@ -179,7 +179,7 @@ describe('KI-337 「操作」页签是现推的：没接把手就没有这一页
     expect(html(rig(true).p), '把手接上了就要有能点进去的格子').toContain('data-act="tab" data-arg="ops"')
     const without = html(rig(false).p)
     expect(without, '没接把手却给一个页签 = 点了没反应的假可达').not.toContain('data-arg="ops"')
-    expect((without.match(/data-act="tab"/g) ?? []).length, 'TABS 那六格 + 手册 一格不多一格不少').toBe(7)
+    expect((without.match(/data-act="tab"/g) ?? []).length, 'TABS 那六格 + 手册 + 游记 一格不多一格不少').toBe(8)
   })
 
   it('没接把手时被硬点进 ops 也只有那句实话，没有一张凭空的表', () => {
@@ -189,7 +189,7 @@ describe('KI-337 「操作」页签是现推的：没接把手就没有这一页
     expect(html(r.p), '不许凭空画出一列键名').not.toContain('data-act="arm"')
   })
 
-  it('左右换页那条也数得到第八页：从「存档」翻两步 → 「手册」→「操作」', () => {
+  it('左右换页那条也数得到第九页：从「存档」翻三步 → 「手册」→「游记」→「操作」', () => {
     const r = rig(true)
     click(r.p, 'tab', 'save')
     pump(r.p, r.input, ['pageNext'])
@@ -197,7 +197,10 @@ describe('KI-337 「操作」页签是现推的：没接把手就没有这一页
     expect(page1, '第一步落「手册」——所有玩家都能看的教学小册子，不需要任何把手').toContain('data-act="tab" data-arg="manual"')
     pump(r.p, r.input, ['pageNext'])
     const page2 = html(r.p)
-    expect(page2, '第二步落「操作」').toContain('data-act="arm"')
+    expect(page2, '第二步落「游记」——八区指北针，同样不抓把手').toContain('data-act="tab" data-arg="atlas"')
+    pump(r.p, r.input, ['pageNext'])
+    const page3 = html(r.p)
+    expect(page3, '第三步落「操作」').toContain('data-act="arm"')
   })
 })
 
