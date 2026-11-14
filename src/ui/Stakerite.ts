@@ -71,6 +71,11 @@ const PLAYER_MANUAL: Record<'zh' | 'en', string> = {
 
 <h2>Encore · 风钟海岸</h2>
 <div class="row"><span class="name">剩下一片海</span><span class="note">Ending 之后，未竟厅被敲响了第一拍——海岸线的那头，还有三段话，等你去走</span></div>
+
+<h2>刻痕 <span style="opacity:.6">（8 区 · 10 处 · 纯闪念）</span></h2>
+<div class="row"><span class="name">E 触碰</span><span class="note">每区一两块「刻痕」碎碑/石刻/破钟壳：按 E 去读它。它们不给任务、不给战利品、不需要前置、也没什么伤害——就是这个世界愿意对你多说的几句话</span></div>
+<div class="row"><span class="name">两段字就结束了</span><span class="note">一句中文 + 一句英文都是原文，不夹杂：停在标题行的语言一侧，就是这个刻痕在自己的年代里留下的底稿。刻痕从不要求「你看完」——你觉得无聊，走就行</span></div>
+<div class="row"><span class="name">读不出来也没关系</span><span class="note">铜绿、水痕、磨损、鸟从没落过的枝条——刻痕本身就是答案，文本只是你走近它时，风愿意借你一回耳朵</span></div>
 `,
   en: `
 <h2>Your first hour · only four moves to learn</h2>
@@ -106,6 +111,11 @@ const PLAYER_MANUAL: Record<'zh' | 'en', string> = {
 
 <h2>Encore · Windbell Coast</h2>
 <div class="row"><span class="name">The coast is waiting</span><span class="note">Epilogue done → the Unfinished Hall sounds its first real bell; the shore has more to say when you arrive</span></div>
+
+<h2>Resonance Marks <span style="opacity:.6">(8 regions · 10 spots · lore only)</span></h2>
+<div class="row"><span class="name">Press E to touch</span><span class="note">One or two "resonance" slabs per region — scar-stones, carved bell shards, branches no bird landed on: E to read them. They give no quest, no loot, no flag, no damage — only a sentence the world is willing to say out loud</span></div>
+<div class="row"><span class="name">Bilingual by its own mouth</span><span class="note">Each mark carries its own zh/en draft side by side — the line you see is the one the mark wrote in its own era, never a mash-up. Marks never demand you finish reading; if you're bored, walk on</span></div>
+<div class="row"><span class="name">It's fine not to understand</span><span class="note">Verdigris, water-stains, softened edges — the mark itself is the answer; the text is only the wind lending you its hearing when you lean in</span></div>
 `,
 }
 
