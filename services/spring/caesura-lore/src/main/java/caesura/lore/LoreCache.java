@@ -21,6 +21,16 @@ public class LoreCache {
   private final AtomicLong hits = new AtomicLong();
   private final AtomicLong misses = new AtomicLong();
   private final AtomicLong searches = new AtomicLong();
+  /**
+   * 单飞锁（single-flight / thundering-herd 抑制）：冷启动时同一 key 的并发请求
+   * 曾经全部抢着算（实测 8 个并发 → 8 次 miss、8 次重复序列化）。
+   * 不引 Guava——Java 自带 ReentrantLock + 分段 64 条即可：
+   * 只保证「同一 key 同时只有一个在算」，不伤并发度（锁是分段的，热路径零竞争）。
+   */
+  private final java.util.concurrent.locks.ReentrantLock[] stripes =
+      java.util.stream.IntStream.range(0, 64)
+          .mapToObj(i -> new java.util.concurrent.locks.ReentrantLock())
+          .toArray(java.util.concurrent.locks.ReentrantLock[]::new);
 
   public LoreCache(CacheManager cacheManager) {
     this.cacheManager = cacheManager;
@@ -28,7 +38,7 @@ public class LoreCache {
 
   public record Stats(long cacheHits, long cacheMisses, long searches, double hitRate) {}
 
-  /** 从命名空间读一个载荷；没有就从 supplier 算一个并放回去 */
+  /** 从命名空间读一个载荷；没有就从 supplier 算一个并放回去。双检 + 单飞：冷启动也不重复算同一份 */
   public String getOrCompute(String namespace, String key, Supplier<String> compute) {
     Cache cache = cacheManager.getCache(namespace);
     if (cache != null) {
@@ -37,10 +47,21 @@ public class LoreCache {
         hits.incrementAndGet();
         return cached;
       }
-      misses.incrementAndGet();
-      String fresh = compute.get();
-      cache.put(key, fresh);
-      return fresh;
+      java.util.concurrent.locks.ReentrantLock lock = stripes[Math.floorMod((namespace + ':' + key).hashCode(), stripes.length)];
+      lock.lock();
+      try {
+        String second = cache.get(key, String.class);   // 双检：等到锁的时候多半已经有答案了
+        if (second != null) {
+          hits.incrementAndGet();
+          return second;
+        }
+        misses.incrementAndGet();
+        String fresh = compute.get();
+        cache.put(key, fresh);
+        return fresh;
+      } finally {
+        lock.unlock();
+      }
     }
     // 没有配置缓存实现也得能跑——慢一点，但不许静默报错
     return compute.get();
