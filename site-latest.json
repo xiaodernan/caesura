@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "b402a77920858767efd5dc34407a81b872cac1c1",
+  "head": "20ec9fd7ac3dcac922f0978d477521e93b33c032",
   "branch": "master",
-  "subject": "test(camera): pin pitch-axis sign——mouse-down = look-down (user-requested behavior)",
-  "date": "2026-11-14T22:23:33+08:00",
+  "subject": "feat(llm): scripts/llm-cache-verify.mjs — 活体验证 gpt-6-sol 缓存命中率 + stream/usage",
+  "date": "2026-11-14T22:33:32+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/b402a77920858767efd5dc34407a81b872cac1c1",
+    "url": "https://github.com/xiaodernan/caesura/commit/20ec9fd7ac3dcac922f0978d477521e93b33c032",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
