@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "b2275f31fa0d58c8428407c503a5d45f11c83a92",
+  "head": "155b3946fb3fa63b63c96a6df7f275c7a6630cbb",
   "branch": "master",
-  "subject": "feat(i18n): actionLabels 手柄按钮 + UI_INTENT 英文（padLabel D-pad Up/Down/Left/Right · intentLabel Up/Down/Confirm/Back/Page Prev/Next/Pick 1-9）",
-  "date": "2026-11-14T21:30:31+08:00",
+  "subject": "feat(i18n): DialogueBox 人格印英文对照（直→Direct · 诗→Verse · 默→Hush · 激→Edge）",
+  "date": "2026-11-14T21:35:33+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/b2275f31fa0d58c8428407c503a5d45f11c83a92",
+    "url": "https://github.com/xiaodernan/caesura/commit/155b3946fb3fa63b63c96a6df7f275c7a6630cbb",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
