@@ -3467,3 +3467,47 @@ describe('KI-563 Spring Cloud Gateway 过滤器全家桶 OrderedChain / RateLimi
     }
   })
 })
+// ============ 第五十五弹 · 止音纪元世界图 · map 行 ============
+describe('第五十五弹 止音纪元世界图（row-map）', () => {
+  const realMap = JSON.parse(readFileSync(resolve(ROOT, 'snapshot.json'), 'utf8'))
+
+  it('map markup/CSS 自证合规：7 节点 + 七钟记 + reduced-motion', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    expect(html).toContain('row-map')
+    expect(html).toContain('id="map-detail"')
+    expect(html).toContain('id="map-detail-title"')
+    for (const rg of ['rg_resthold', 'rg_whisperwode', 'rg_drowned_choir', 'rg_brokenbar_camp', 'rg_fellcarillon', 'rg_earless_deeps', 'rg_unfinished_hall']) {
+      expect(html).toContain('data-region="' + rg + '"')
+    }
+    expect((html.match(/class="map-node /g) || []).length).toBe(7)
+    for (const bell of ['♭E', '♭F', '♭A', '♭C', '♭D', '♭G', '♭B']) expect(html).toContain(bell)
+    expect(css).toContain('.row-map')
+    expect(css).toContain('.map-node--active')
+    expect(css).toContain('.map-bells')
+    expect(css).toContain('transition: none')
+    expect(html).toContain('未完之殿')
+    expect(html).toContain('玄石集市')
+  })
+
+  it('map 键盘可达 + boot 默认选中未完之殿（aria-live detail 落地）', async () => {
+    const dom = await runApp(realMap)
+    const detail = dom.els['map-detail'].innerHTML
+    expect(detail).toContain('♭B')
+    expect(detail).toContain('DLG_HERSIL')
+    expect(detail).toContain('boss_arena')
+    expect(dom.els['map-detail-title'].textContent).toContain('未完之殿')
+  })
+
+  it('app.js 含世界图数据块：七地图键与 WORLD-BIBLE §2 同源', () => {
+    const app = readFileSync(resolve(ROOT, 'app.js'), 'utf8')
+    expect(app).toContain('WORLD_MAP')
+    for (const rg of ['rg_resthold', 'rg_whisperwode', 'rg_drowned_choir', 'rg_brokenbar_camp', 'rg_fellcarillon', 'rg_earless_deeps', 'rg_unfinished_hall']) {
+      expect(app).toContain(rg)
+    }
+    expect(app).toContain('bootWorldMap')
+    expect(app).toContain('map-node--active')
+    expect(app).toContain('♭E')
+    expect(app).toContain('♭B')
+  })
+})

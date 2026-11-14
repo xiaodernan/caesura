@@ -3779,3 +3779,42 @@ body[data-fullscreen="true"] .row > .panel { grid-column: span 1; }
   .gf-mat-cost { grid-column: span 3; text-align: left; }
   .gf-cell { font-size: 9px; min-height: 21px; line-height: 21px; }
 }
+
+/* ================= 第五十五弹 · 止音纪元世界图（SVG 节点 + 七声钟记 · CSS-only · reduced-motion 全关） ================= */
+.row-map { grid-template-columns: 1.85fr 1.15fr; align-items: stretch; }
+.panel-map { overflow: hidden; }
+.world-map { display: block; width: 100%; height: auto; max-height: 540px; }
+.map-land { transition: opacity .25s ease; }
+.map-vein { opacity: .8; }
+.map-halo { opacity: .62; transition: opacity .2s ease; }
+.map-label { fill: var(--silver); font-family: var(--mono); font-size: 11px; letter-spacing: .1em; }
+.map-mark { transition: transform .18s ease; transform-origin: center; }
+.map-node { cursor: pointer; outline: none; }
+.map-node:hover .map-halo, .map-node:focus-visible .map-halo { opacity: 1; }
+.map-node:hover .map-mark, .map-node:focus-visible .map-mark { transform: scale(1.09); }
+.map-node:focus-visible .map-label { fill: #ffeabf; }
+.map-node--active .map-halo { opacity: 1; stroke: var(--gold); stroke-width: 1.3; }
+.map-node--active .map-label { fill: var(--gold); }
+.panel-map-detail { border-top: 1px solid var(--gold-faint); }
+.map-detail {
+  font-family: var(--mono); font-size: 9.5px; color: var(--silver); line-height: 1.8;
+  border: 1px dashed var(--line-soft); border-radius: 3px; padding: 10px 12px; margin-bottom: 8px; min-height: 176px;
+}
+.map-detail b { color: var(--gold); font-weight: 600; }
+.map-detail .md-row { display: flex; gap: 8px; align-items: baseline; margin-bottom: 4px; }
+.map-detail .md-k { color: var(--muted); min-width: 44px; font-size: 8.5px; letter-spacing: .08em; }
+.map-bells { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.map-bells span {
+  font-family: var(--mono); font-size: 9px; color: var(--muted); border: 1px solid var(--line-soft);
+  border-radius: 2px; padding: 2px 7px; background: var(--ash-2);
+}
+.map-bells .bell-final { color: var(--gold); border-color: var(--gold); box-shadow: 0 0 8px rgba(201,180,88,.28); }
+@media (prefers-reduced-motion: reduce) {
+  .map-halo, .map-mark, .world-map .map-land { transition: none; }
+  .map-node:hover .map-mark, .map-node:focus-visible .map-mark { transform: none; }
+}
+@media (max-width: 1020px) {
+  .row-map { grid-template-columns: 1fr; }
+  .world-map { max-height: 420px; }
+}
+.map-detail .md-v { flex: 1; }

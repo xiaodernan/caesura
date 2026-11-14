@@ -45,6 +45,142 @@
     })
   }
 
+  /* ================= 止音纪元世界图（bootWorldMap · 七节点键盘可聚焦 · 同源 WORLD-BIBLE §2/§3） ================= */
+  var WORLD_MAP = {
+    rg_resthold: {
+      title: '玄石集市 · Resthold',
+      rows: [
+        ['方位', 'hub · 集市摊位 · 冥石旗飘'],
+        ['守门者', '虚礼典礼官 Meg 的主账房'],
+        ['声部', '低中音 · 短句 · 罕用否定词'],
+        ['同声道', 'DLG_MEG 闷绝之声'],
+        ['钟记', '♭E · 停息之音 · ♭E 起始'],
+        ['遗产', '两枚音色石 · 一段压缩失真的录音'],
+      ],
+      lore: '集市的账本从不在钟声里合上；Meg 把自己的声音磨成了停息的纸页。',
+    },
+    rg_whisperwode: {
+      title: '频率树林 · Whisperwode',
+      rows: [
+        ['方位', 'forest · 古频率林 · 导航频率发射阵'],
+        ['守门者', 'Hexgirl 迷雾探子'],
+        ['声部', '迷途之音 · 高频微颤'],
+        ['同声道', 'DLG_CORVIN 末代档案官 · 书生腔'],
+        ['钟记', '♭F · 迷途之音'],
+        ['遗产', '未完成的档案集 · 三页未落款'],
+      ],
+      lore: '树林按频率引导方向——不是指南针，是一套会唱歌的罗盘；听不见的人永远走不出来。',
+    },
+    rg_drowned_choir: {
+      title: '水下唱诗班 · Drowned Choir',
+      rows: [
+        ['方位', 'dungeon · 淹水唱诗厅 · 水位定盘'],
+        ['守门者', '沉默传道师'],
+        ['声部', '潜流之音 · 低语的男低音'],
+        ['同声道', 'DLG_BELLTONGUE 守钟人'],
+        ['钟记', '♭A · 潜流之音'],
+        ['遗产', '残壳（未碎）· 第三句话'],
+      ],
+      lore: '唱诗班泡在水里依然开口——不是歌声，是从肺底冒出来的最后全票。',
+    },
+    rg_brokenbar_camp: {
+      title: '断栏营 · Brokenbar Camp',
+      rows: [
+        ['方位', 'camp · 断栏军营 · 钢筋外骨骼兵器坊'],
+        ['守门者', 'Brute 断栏兽'],
+        ['声部', '残刃之音 · 近距离金属呻吟'],
+        ['同声道', 'DLG_HALTRUNE 盯梢的'],
+        ['钟记', '♭C · 残刃之音'],
+        ['遗产', '一段只有他听到的弦振指令'],
+      ],
+      lore: '栏杆折断之后，军营才开始数断了多少年的钟——答案是七年。',
+    },
+    rg_fellcarillon: {
+      title: '破钟崖 · Fellcarillon',
+      rows: [
+        ['方位', 'ruins · 悬崖钟楼 · 坠落的巨钟'],
+        ['守门者', 'Bell-Phantom 巨钟裂魂'],
+        ['声部', '裂响 · 金属崩裂回声'],
+        ['同声道', 'DLG_FACELESS 无名刺客'],
+        ['钟记', '♭D · 裂响'],
+        ['遗产', '碑文（他刻在木船舷侧的三个字）'],
+      ],
+      lore: '每一次钟裂，崖底就多一座新石像；老人们说，石像在替钟记日子。',
+    },
+    rg_earless_deeps: {
+      title: '无耳之底 · Earless Deeps',
+      rows: [
+        ['方位', 'underground · 无耳洞穴 · 回声被吃掉的地层'],
+        ['守门者', 'Hersil 无耳'],
+        ['声部', '死寂 · 不是安静，是声音被收走了'],
+        ['同声道', 'DLG_TABLET 刻痕入石者'],
+        ['钟记', '♭G · 死寂'],
+        ['遗产', '整块碑文 · 要看玩家敲的那一记'],
+      ],
+      lore: '你在这里说的每一句话都会被石头吞掉；唯一留下的，是别人之前说过的话。',
+    },
+    rg_unfinished_hall: {
+      title: '未完之殿 · The Unfinished Hall',
+      rows: [
+        ['方位', 'boss_arena · 终末大殿 · 所有余响收束的点'],
+        ['守门者', '最后的钟 DLG_HERSIL'],
+        ['声部', '真空 · 没有泛音，只有起奏'],
+        ['同声道', 'DLG_HERSIL 最后的钟'],
+        ['钟记', '♭B · 真空'],
+        ['遗产', '最终铃语 · 先敲钟，再说抱歉'],
+      ],
+      lore: '未完之殿没有钟——它等的是一个你敲钟的人。敲下去，世界才知道自己是不是还在。',
+    },
+  }
+
+  function renderMapDetail(key) {
+    var d = WORLD_MAP[key] || WORLD_MAP.rg_unfinished_hall
+    var t = document.querySelector ? document.querySelector('#map-detail-title') : null
+    var box = document.querySelector ? document.querySelector('#map-detail') : null
+    if (t) t.textContent = d.title
+    if (!box) return
+    var html = ''
+    for (var i = 0; i < d.rows.length; i++) {
+      html += '<div class="md-row"><span class="md-k">' + esc(d.rows[i][0]) + '</span><span class="md-v">' + esc(d.rows[i][1]) + '</span></div>'
+    }
+    html += '<div class="md-row"><span class="md-k">识途</span><span class="md-v">' + esc(d.lore) + '</span></div>'
+    box.innerHTML = html
+  }
+
+  function bootWorldMap() {
+    var active = 'rg_unfinished_hall'
+    var qsa = document.querySelectorAll ? document.querySelectorAll.bind(document) : null
+    var nodes = qsa ? qsa('.map-node') : []
+    function pick(region) {
+      active = region
+      var all = qsa ? qsa('.map-node') : []
+      for (var i = 0; i < all.length; i++) {
+        var el = all[i]
+        var on = el.getAttribute && el.getAttribute('data-region') === region
+        if (el.classList) {
+          if (on) { if (el.classList.add) el.classList.add('map-node--active') } else if (el.classList.remove) el.classList.remove('map-node--active')
+        }
+      }
+      renderMapDetail(region)
+    }
+    if (nodes && nodes.length) {
+      for (var i = 0; i < nodes.length; i++) {
+        ;(function (el) {
+          var region = el.getAttribute ? el.getAttribute('data-region') : null
+          if (!region) return
+          if (el.addEventListener) {
+            el.addEventListener('click', function () { pick(region) })
+            el.addEventListener('focus', function () { pick(region) })
+            el.addEventListener('keydown', function (e) {
+              if (e && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); pick(region) }
+            })
+          }
+        })(nodes[i])
+      }
+    }
+    renderMapDetail(active)
+  }
+
   /* ---------------- 入口 ---------------- */
   /* ---------------- 主题切换（4 挚墨，CSS-only）---------------- */
   function bootTheme() {
@@ -91,6 +227,7 @@
   function boot() {
     bootTheme()
     bootFullscreen()
+    bootWorldMap()
     loadSnapshot().then(function (result) {
       var snap = result.data
       index(snap)
