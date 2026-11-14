@@ -503,3 +503,17 @@ npm run prompt-cache:live -- --rounds=4 --stream     # 流式对照
 - 不声称 `cacheMissRetry` 能消除抖动（它只是**减少**浪费：抖动仍可能连续发生）；
 - 不声称离线 `estimateTokens` 是真 tokenizer（它仍是**工程近似**；live 一律以真 `usage` 为准）。
 
+
+## 第十三节 · 2026-11-15 真机复核（NEW-LANDS 候选生成负载）
+
+2026-11-15 用 wkapi.pro/v1 · gpt-6-sol · temp=0.65 · stream+include_usage 跑了一轮「新 NPC 候选台词生成」（`.scratch/newlands-voices2.mjs`，六位新 NPC 各 3 条），**同一份请求两次调用**，作为 §12 结论的独立复核：
+
+```
+第 1 次（冷）  prompt=7979  cached=0     hitRate=0.000  3280ms
+第 2 次（热）  prompt=7988  cached=6670  hitRate=0.835  2253ms
+```
+
+- 首调必 miss 与 §12 的「第 2~3 轮起命中」一致；6670/7988 ≈ 83.5% 落在 DLG_CORVIN 78–82% 之上、`identical lane` 的 100% 之下——与 shard 路由抖动一致，**不是代码缺陷**。
+- 读数来自尾 chunk 的 `usage.prompt_tokens_details.cached_tokens`（经 `normalizeUsage`），零估算。
+- 同批候选已登记进 `docs/lore/NEW-LANDS-VOICES.md` 第二批——**仍不入 dialogue.json**。
+- 结论延续 §12：客户端不可消除 shard miss；可用的杠杆只有 stream+include_usage（含 `prompt_cache_key` 路由亲和）+ ≥2 块字节稳定前缀。

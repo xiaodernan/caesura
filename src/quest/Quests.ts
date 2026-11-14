@@ -21,6 +21,8 @@ export interface QuestEvent {
   state: string
   index: number
   label: string
+  /** 步进 label 的 i18n 键（透传，UI 据此 t() 渲染，缺省时回退 label） */
+  labelKey?: string
   started: boolean
   /** 这一步是否**收束**了整条线（末步的 advanceOn 命中） */
   completed: boolean
@@ -140,9 +142,11 @@ export class Quests {
     const step = q.steps[index]
     this.states.set(q.id, step.state)
     const completed = this.completedQuests.has(q.id)
-    this.onEvent({ questId: q.id, state: step.state, index, label: step.label, started, completed })
+    this.onEvent({ questId: q.id, state: step.state, index, label: step.label, labelKey: step.labelKey, started, completed })
     bus.emit('quest.changed', {
-      questId: q.id, state: step.state, index, total: q.steps.length, label: step.label, started, completed,
+      questId: q.id, state: step.state, index, total: q.steps.length, label: step.label,
+      ...(step.labelKey ? { labelKey: step.labelKey } : {}),
+      started, completed,
       // KI-137：marker **原样透传**——任务机不认识"世界的哪一点"（那是 Objectives 那一层的事）
       ...(step.marker ? { marker: step.marker } : {}),
     })

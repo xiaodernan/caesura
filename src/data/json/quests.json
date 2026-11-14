@@ -21,7 +21,8 @@
         "tags": [
           "D",
           "H"
-        ]
+        ],
+        "labelKey": "quest.bells.step1_open"
       },
       {
         "state": "BELLS.STEP1_JUDGED",
@@ -39,7 +40,8 @@
         "tags": [
           "C",
           "H"
-        ]
+        ],
+        "labelKey": "quest.bells.step1_judged"
       },
       {
         "state": "BELLS.STEP2_OPEN",
@@ -56,7 +58,8 @@
         "tags": [
           "D",
           "M"
-        ]
+        ],
+        "labelKey": "quest.bells.step2_open"
       },
       {
         "state": "BELLS.STEP2_SECOND",
@@ -72,7 +75,8 @@
         },
         "tags": [
           "D"
-        ]
+        ],
+        "labelKey": "quest.bells.step2_second"
       },
       {
         "state": "BELLS.STEP2_THIRD",
@@ -89,7 +93,8 @@
         "tags": [
           "D",
           "H"
-        ]
+        ],
+        "labelKey": "quest.bells.step2_third"
       },
       {
         "state": "BELLS.STEP3_OPEN",
@@ -106,7 +111,8 @@
         "tags": [
           "H",
           "C"
-        ]
+        ],
+        "labelKey": "quest.bells.step3_open"
       },
       {
         "state": "BELLS.STEP3_REFUSED",
@@ -123,7 +129,8 @@
         "tags": [
           "H",
           "C"
-        ]
+        ],
+        "labelKey": "quest.bells.step3_refused"
       },
       {
         "state": "BELLS.STEP4_DECIDE",
@@ -145,7 +152,8 @@
         "tags": [
           "C",
           "M"
-        ]
+        ],
+        "labelKey": "quest.bells.step4_decide"
       }
     ]
   },
@@ -170,7 +178,8 @@
         },
         "tags": [
           "D"
-        ]
+        ],
+        "labelKey": "quest.corvin.step1_open"
       },
       {
         "state": "CORVIN.STEP2_DELIVER",
@@ -187,7 +196,8 @@
           "flags": [
             "flag.corvin_core_delivered"
           ]
-        }
+        },
+        "labelKey": "quest.corvin.step2_deliver"
       },
       {
         "state": "CORVIN.STEP3_REMAINS",
@@ -204,7 +214,8 @@
         "tags": [
           "D",
           "H"
-        ]
+        ],
+        "labelKey": "quest.corvin.step3_remains"
       },
       {
         "state": "CORVIN.STEP4_CONFRONT",
@@ -221,7 +232,8 @@
         "tags": [
           "C",
           "H"
-        ]
+        ],
+        "labelKey": "quest.corvin.step4_confront"
       },
       {
         "state": "CORVIN.STEP5_SCHISM",
@@ -243,7 +255,8 @@
         "tags": [
           "C",
           "M"
-        ]
+        ],
+        "labelKey": "quest.corvin.step5_schism"
       }
     ]
   },
@@ -269,7 +282,8 @@
         "tags": [
           "D",
           "H"
-        ]
+        ],
+        "labelKey": "quest.meg.step1_open"
       },
       {
         "state": "MEG.STEP2_EXCHANGE",
@@ -286,7 +300,8 @@
           "flags": [
             "flag.meg_second_fragment"
           ]
-        }
+        },
+        "labelKey": "quest.meg.step2_exchange"
       },
       {
         "state": "MEG.STEP3_EXTRACT",
@@ -304,7 +319,8 @@
           "D",
           "H",
           "M"
-        ]
+        ],
+        "labelKey": "quest.meg.step3_extract"
       },
       {
         "state": "MEG.STEP4_CONVERGE",
@@ -321,7 +337,8 @@
         "tags": [
           "C",
           "M"
-        ]
+        ],
+        "labelKey": "quest.meg.step4_converge"
       }
     ]
   },
@@ -346,7 +363,8 @@
         },
         "tags": [
           "D"
-        ]
+        ],
+        "labelKey": "quest.haltrune.step1_open"
       },
       {
         "state": "HALTRUNE.STEP2_ROSTER",
@@ -368,7 +386,8 @@
         "tags": [
           "D",
           "H"
-        ]
+        ],
+        "labelKey": "quest.haltrune.step2_roster"
       },
       {
         "state": "HALTRUNE.STEP3_LASTWATCH",
@@ -385,7 +404,8 @@
         "tags": [
           "C",
           "M"
-        ]
+        ],
+        "labelKey": "quest.haltrune.step3_lastwatch"
       },
       {
         "state": "HALTRUNE.STEP4_PASSING",
@@ -406,7 +426,8 @@
         "tags": [
           "C",
           "M"
-        ]
+        ],
+        "labelKey": "quest.haltrune.step4_passing"
       }
     ]
   },
@@ -432,7 +453,8 @@
         "tags": [
           "D",
           "H"
-        ]
+        ],
+        "labelKey": "quest.faceless.step1_open"
       },
       {
         "state": "FACELESS.STEP2_ANSWER",
@@ -449,7 +471,8 @@
           "flags": [
             "flag.faceless_answered"
           ]
-        }
+        },
+        "labelKey": "quest.faceless.step2_answer"
       },
       {
         "state": "FACELESS.STEP3_VESSEL",
@@ -467,7 +490,8 @@
           "flags": [
             "flag.faceless_clue_ring_complete"
           ]
-        }
+        },
+        "labelKey": "quest.faceless.step3_vessel"
       },
       {
         "state": "FACELESS.STEP4_IDENTITY",
@@ -490,7 +514,8 @@
         "tags": [
           "C",
           "M"
-        ]
+        ],
+        "labelKey": "quest.faceless.step4_identity"
       }
     ]
   },
@@ -516,7 +541,8 @@
         "tags": [
           "D",
           "H"
-        ]
+        ],
+        "labelKey": "quest.threewords.step1"
       },
       {
         "state": "THREEWORDS.STEP2",
@@ -533,7 +559,8 @@
         "tags": [
           "D",
           "H"
-        ]
+        ],
+        "labelKey": "quest.threewords.step2"
       },
       {
         "state": "THREEWORDS.STEP3",
@@ -550,7 +577,8 @@
         "tags": [
           "C",
           "H"
-        ]
+        ],
+        "labelKey": "quest.threewords.step3"
       },
       {
         "state": "THREEWORDS.STEP4",
@@ -566,6 +594,87 @@
         },
         "tags": [
           "D",
+          "M"
+        ],
+        "labelKey": "quest.threewords.step4"
+      }
+    ]
+  },
+  {
+    "id": "q_afterglow",
+    "nameKey": "quest.afterglow",
+    "displayName": "余响归位",
+    "npc": "npc_tablet",
+    "outcome": "终幕三线依次收尾：档案里的火 / 营地的答复 / 灰里的归属——石版收下这四笔，沉默才肯真正过夜。",
+    "steps": [
+      {
+        "state": "AFTERGLOW.STEP1",
+        "marker": {
+          "kind": "region",
+          "id": "rg_fellcarillon"
+        },
+        "label": "钟坠院崖壁：替他把烧掉的那一页问回来",
+        "labelKey": "quest.afterglow.step1",
+        "advanceOn": {
+          "flags": [
+            "flag.corvin_archive_confronted"
+          ]
+        },
+        "tags": [
+          "D",
+          "H"
+        ]
+      },
+      {
+        "state": "AFTERGLOW.STEP2",
+        "marker": {
+          "kind": "region",
+          "id": "rg_brokenbar_camp"
+        },
+        "label": "破拍营地：七个兵四个名字——替他把营地定性",
+        "labelKey": "quest.afterglow.step2",
+        "advanceOn": {
+          "flags": [
+            "flag.brokenbar_resolved"
+          ]
+        },
+        "tags": [
+          "D",
+          "M"
+        ]
+      },
+      {
+        "state": "AFTERGLOW.STEP3",
+        "marker": {
+          "kind": "region",
+          "id": "rg_unfinished_hall"
+        },
+        "label": "未竟厅大门：音栓钥匙最终落在谁手里",
+        "labelKey": "quest.afterglow.step3",
+        "advanceOn": {
+          "flags": [
+            "flag.organ_key_held"
+          ]
+        },
+        "tags": [
+          "C",
+          "H"
+        ]
+      },
+      {
+        "state": "AFTERGLOW.STEP4",
+        "marker": {
+          "kind": "region",
+          "id": "rg_unfinished_hall"
+        },
+        "label": "初句圣所深处：把归属写进它的灰里",
+        "labelKey": "quest.afterglow.step4",
+        "advanceOn": {
+          "flags": [
+            "flag.faceless_identity_written"
+          ]
+        },
+        "tags": [
           "M"
         ]
       }

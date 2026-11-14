@@ -28,7 +28,7 @@
 
 七 Boss × 七音符与世界观音景见 `docs/WORLD-BIBLE.md`、`docs/lore/NEW-LANDS.md`（NEW-LANDS：再推一层）；史诗六章：`docs/EPIC-V.md`、`docs/EPIC-VI.md`。
 
-**任务链**：`q_bells` · `q_corvin` · `q_meg` · `q_haltrune` · `q_faceless` · `q_threewords`（2026-11-15 第六件 · pilgrimage 链）。
+**任务链**：`q_bells` · `q_corvin` · `q_meg` · `q_haltrune` · `q_faceless` · `q_threewords`（2026-11-15 第六件 · pilgrimage 链）· `q_afterglow`（2026-11-15 第七件《余响归位》· 收尾巡礼线——零新对白/旗标/状态，全部锚定既有对话写手）。
 **敌影**：`docs/BESTIARY.md`（10 只全谱：嘈壳到万籁）。
 
 ---

@@ -2178,6 +2178,13 @@ export interface QuestStep {
   state: string
   label: string
   /**
+   * 这一步的 i18n 键（Lang.ts）。给定了它 ⇒ HUD 用 `t(labelKey) ?? label` 渲染——
+   * 原始中文 `label` 留作兜底（老档/未登记仍然能显示）。**新步骤必须登记键**：
+   * `quests.json` 的 `labelKey` 与 Lang 双语各存一份，EN 模式不许漏出中文（i18n 闸）
+   * （tests/unit/quest-label-i18n.test.ts 对账）。
+   */
+  labelKey?: string
+  /**
    * 这一步的**目标指示**：HUD 据此在屏幕边缘画一枚指向它的箭头（KI-137）。
    * 省略 = 这一步没有世界指向（纯对话抉择一类的步骤）⇒ HUD 不画。
    */

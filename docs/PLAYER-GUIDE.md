@@ -52,7 +52,7 @@ npm run dev        # 浏览器 → http://localhost:5173/?fresh=1
 - **音色晶**（`weapon.tuningSword` 一类——`weapons.json`里的Id）有 DDS / 终结 / 呼应收声，每件的 Weapon Buffet 都在游戏内永久记忆。不追求极限百分比；按你打得准的节奏来。
 
 ### 4 · 推进主线的正确姿势
-线索：主线做 `quests.json` 的六个任务：
+线索：主线做 `quests.json` 的七个任务：
 
 1. **停息之钟**（`quest.bells`）—— 找钟。敲几次之后它就会自己停。
 2. **铃语学录**（`quest.corvin`）—— 档案官；钟声与档案之间。
@@ -60,6 +60,7 @@ npm run dev        # 浏览器 → http://localhost:5173/?fresh=1
 4. **塔中人已死**（`quest.haltrune`）—— 断栏营
 5. **无可名之器**（`quest.faceless`）
 6. **三句话**（`quest.threewords`）—— 横向 pilgrimage
+7. **余响归位**（`quest.afterglow`）—— 把收尾的四笔账依次交清：档案里的火 / 营地的答复 / 音栓钥匙 / 灰里的归属
 
 什么都不会在没把的时候被推到你脸上——按你节奏点字起、找档、遇敌、回城；三件套（轻/重/石子）的搭配比一把顶级武器更重要。
 
@@ -135,6 +136,7 @@ Rebind: `src/settings/Bindings.ts`; `ClampBindings()` filters illegal keys. Defa
 4. **The Man in-turn** (`quest.haltrune`) — Brokenbar
 5. **The Vessel** (`quest.faceless`) — the unnamed vessel
 6. **The Three Words** (`quest.threewords`) — the pilgrimage backbone
+7. **The Settling of Echoes** (`quest.afterglow`) — the closing tour: the archive fire, the camp's answer, the stop-key, the belonging written in ash
 
 Nothing is pushed; each step is granted on screen after the relevant dialogue beat. Three weapons and two tanky-arc hits are a better first build than a max-tier polearm.
 

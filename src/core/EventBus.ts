@@ -110,6 +110,8 @@ export interface GameEvents {
     index: number
     total: number
     label: string
+    /** 步进 label 的 i18n 键（可选）：给定了 UI 就用 t() 渲染，label 兜底 */
+    labelKey?: string
     started: boolean
     completed: boolean
     marker?: { kind: 'npc' | 'interact' | 'region' | 'pos'; id?: string; pos?: { x: number; y: number; z: number } }

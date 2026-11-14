@@ -162,7 +162,10 @@ export class Hud {
       bus.on('ui.prompt', (p) => { this.prompt = p.text }),
       bus.on('quest.changed', (p) => {
         // 任务不在场（没接）时不占屏：started=false 的播报只擦旧行，不画空行
-        this.quest = p.started || p.index >= 0 ? { label: p.label, index: p.index, total: p.total, done: p.completed } : null
+        // labelKey 给定 ⇒ HUD 用 t() 渲染（语言切换即从 Lang 取另一半）；缺省回退原始 label
+        this.quest = p.started || p.index >= 0
+          ? { label: p.labelKey ? (t(p.labelKey) ?? p.label) : p.label, index: p.index, total: p.total, done: p.completed }
+          : null
         this.questFlash = 1
       }),
       bus.on('ui.target', (p) => {
