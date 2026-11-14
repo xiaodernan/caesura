@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "5792b8f6be9f201fd0b973a10c56dfad708387d8",
+  "head": "d6aa7897699edbae1e01f9596d68ec6ede1e5524",
   "branch": "master",
-  "subject": "chore(status): re-embed site-latest.json",
-  "date": "2026-11-14T17:12:47Z",
+  "subject": "fix(test): PauseOverlay / BossDefeatRit 双语对账 — zh 无英文、en 无中文，两边各自自证",
+  "date": "2026-11-15T01:20:17+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/5792b8f6be9f201fd0b973a10c56dfad708387d8",
+    "url": "https://github.com/xiaodernan/caesura/commit/d6aa7897699edbae1e01f9596d68ec6ede1e5524",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
