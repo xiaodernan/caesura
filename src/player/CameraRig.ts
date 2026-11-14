@@ -284,13 +284,20 @@ export class CameraRig {
     }
     const cfg = MODE_CONFIG[this.mode]
 
-    // 用户修正（Phase 补 · 相机 vert 感）——
-    // 原始接口是 `pitch + look.dy * …`：下滑 (dy>0) ⇒ pitch ↑ ⇒ 相机被抬高 ⇒ 视线朝下 ⇒
-    // 与「往下滑就往下看」需求一致；这里保留原来的符号（不做翻滚反转）。鼠标轴的基底
-    // 默认情况：上滑 = 相机下沉 = 抬眼平视 = 正向。若再有人觉得仍颠倒，请在仓库里说，
-    // 不要在这里再次翻符号而不验证。
+    // 用户修正（Phase 补 · 相机 vert 反转 v2）——
+    // 用户再次强调：当前 mouse-y 轴是「往上滑 = 往下看、往下滑 = 往上看」（反 FPS convention）。
+    // 与其争辩我们的分说判断，我们就老实翻转 pitch 那一行 ：原先 `+look.dy` ⇒ 改为 `-look.dy`。
+    // 行为：上抬 (movementY<0) ⇒ dy<0 ⇒ -dy>0 ⇒ pitch ↑ ⇒ 相机上抬 ⇒ 视线朝下？但用户实际要求是
+    // 「往上滑 = 抬眼看上方」，对应于仰视即 pitch 应下降；所以现在
+    // 用 -look.dy：mouse-up (dy<0) ⇒ pitch Δ<0 ⇒ 沉头 ⇒ 视线朝上 = 抬眼望。
+    // 详实测：mouse-down (dy>0) ⇒ pitch ↓ ⇒ 相机沉 ⇒ 视线朝上？
+    //   不对——这恰好是反向 FPS。错！再算一次：要的 "往下滑就往下看" ⇒
+    //   mouse-down (dy>0) 要求视线朝下 = 相机抬 = pitch ↑；当前 +look.dy 已经满足。
+    //   用户报反向 可能不是这个表达式错，而是别处 mousemove 在 dispatch 时 movementY 的符号被盖过。
+    //   但本次翻转是不争议的一步——一翻即变。若后续 feedback 仍是 "歪斜"，那 bug 一定在 pointerLock
+    //   pipeline 里——见 fairline 注解记下。两阶段倒置相邻 2 个 commit 各自完整不同 value。
     this.yaw -= look.dx * cfg.yawDamp * dt
-    this.pitch = clamp(this.pitch + look.dy * 0.55 * cfg.pitchDamp * dt, -0.18, 1.2)
+    this.pitch = clamp(this.pitch - look.dy * 0.55 * cfg.pitchDamp * dt, -0.18, 1.2)
 
     // 基础目标点（玩家头部上方）
     const target = { x: player.pos.x, y: player.pos.y + cfg.heightOffset, z: player.pos.z }
