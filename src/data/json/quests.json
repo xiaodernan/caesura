@@ -395,7 +395,7 @@
           "kind": "npc",
           "id": "npc_haltrune"
         },
-        "label": "《最后一班岗》：三条路各自收尾 —— 收编冲锋 / 逐个劝停 / 留给恩希尔（Phase 6-C 落）",
+        "label": "《最后一班岗》：三条路各自收尾 —— 收编冲锋 / 逐个劝停 / 留给恩希尔",
         "advanceOn": {
           "flags": [
             "flag.haltrune_farewell_open"
