@@ -477,7 +477,7 @@ describe('KI-112 设置持久化：gameplay 跟档走', () => {
     // KI-112 那一批写这条腿时它是 13；键位数据化（KI-336）把档升到 14，那条字面量当场红——
     // 这条腿问的是"今天存出去的档带今天的号"，所以号从唯一主人那里读，不再抄第二份。
     expect(stored.payload.snapshot.version, '写档走的版本 = SAVE_VERSION').toBe(SAVE_VERSION)
-    expect(stored.payload.snapshot.settings.gameplay).toEqual({ bufferMs: 240, frameAssist: true, shakeScale: 1.5, rumbleScale: 2, damageScale: 0.7, rumbleWeakScale: 0.4, holdMs: 600, mashGuard: false, invertMouseY: false })
+    expect(stored.payload.snapshot.settings.gameplay).toEqual({ bufferMs: 240, frameAssist: true, shakeScale: 1.5, rumbleScale: 2, damageScale: 0.7, rumbleWeakScale: 0.4, holdMs: 600, mashGuard: false, invertMouseY: true })
 
     const w2 = makeWorld(store)
     expect(w2.input.bufferSec, '新世界从默认起手').toBe(0.2)
@@ -485,7 +485,7 @@ describe('KI-112 设置持久化：gameplay 跟档走', () => {
     expect(w2.player.holdMs, '新世界也从 §6 那格的下限起手（不是从上一局的 600 起手）').toBe(200)
     expect(w2.player.mashGuard, '同理第八格：新世界的起手是默认那一边（开），load 才分得出跟没跟档').toBe(true)
     await w2.saves.load('settings')
-    expect(w2.settings.get()).toEqual({ bufferMs: 240, frameAssist: true, shakeScale: 1.5, rumbleScale: 2, damageScale: 0.7, rumbleWeakScale: 0.4, holdMs: 600, mashGuard: false, invertMouseY: false })
+    expect(w2.settings.get()).toEqual({ bufferMs: 240, frameAssist: true, shakeScale: 1.5, rumbleScale: 2, damageScale: 0.7, rumbleWeakScale: 0.4, holdMs: 600, mashGuard: false, invertMouseY: true })
     expect(w2.input.bufferSec, '240ms→秒').toBeCloseTo(0.24, 10)
     expect(w2.input.frameAssist).toBe(true)
     expect(w2.rig.shakeIntensity).toBe(1.5)
