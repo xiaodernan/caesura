@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "b965acc60a19f0ab4d521f89964ed7bd6cfb1ded",
+  "head": "23945e519c37ea12ee3b51c369eab06a29d880ab",
   "branch": "master",
-  "subject": "docs(lore): NEW-LANDS-VOICES 第二批候选录 + 冷/热双轮 cache 实测行",
-  "date": "2026-11-14T23:57:27+08:00",
+  "subject": "docs(player-guide): 双语新增「2.1 · 镜头与鼠标 Y 轴反转 / Camera & mouse Y-invert」",
+  "date": "2026-11-14T23:58:46+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/b965acc60a19f0ab4d521f89964ed7bd6cfb1ded",
+    "url": "https://github.com/xiaodernan/caesura/commit/23945e519c37ea12ee3b51c369eab06a29d880ab",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
