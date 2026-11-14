@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "5419957fee27ac4ff2b490d11974fd8f93ede7f7",
+  "head": "b2275f31fa0d58c8428407c503a5d45f11c83a92",
   "branch": "master",
-  "subject": "fix(ci): site-sync 连续推送竞争自愈——re-embed 前先 rebase origin/master 再推",
-  "date": "2026-11-14T21:25:50+08:00",
+  "subject": "feat(i18n): actionLabels 手柄按钮 + UI_INTENT 英文（padLabel D-pad Up/Down/Left/Right · intentLabel Up/Down/Confirm/Back/Page Prev/Next/Pick 1-9）",
+  "date": "2026-11-14T21:30:31+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/5419957fee27ac4ff2b490d11974fd8f93ede7f7",
+    "url": "https://github.com/xiaodernan/caesura/commit/b2275f31fa0d58c8428407c503a5d45f11c83a92",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
