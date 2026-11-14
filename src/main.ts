@@ -190,11 +190,11 @@ function ownedWeaponUids(): string[] {
 }
 function selectWeaponSlot(slot: number): void {
   const uid = ownedWeaponUids()[slot]
-  if (!uid) { bus.emit('ui.notify', { text: `第 ${slot + 1} 把武器：尚未拥有`, kind: 'info' }); return }
+  if (!uid) { bus.emit('ui.notify', { text: t('ui.notify.weaponSlotLocked', { n: slot + 1 }), kind: 'info' }); return }
   const res = rpg.equip(uid)
   if (!res.ok) return
   refreshRpg()
-  bus.emit('ui.notify', { text: `装备 · ${gearLabel(rpg, uid)}`, kind: 'info' })
+  bus.emit('ui.notify', { text: t('ui.notify.equipped', { item: gearLabel(rpg, uid) }), kind: 'info' })
 }
 
 const lock = new LockOn(player, playerBase.lockOn)
@@ -635,7 +635,7 @@ const quests = new Quests(
   questTable,
   (e) => {
     bus.emit('ui.notify', {
-      text: e.started ? `新的委托 · ${e.label}` : `委托推进 · ${e.label}`,
+      text: e.started ? t('ui.notify.questNew', { label: e.label }) : t('ui.notify.questAdvance', { label: e.label }),
       kind: e.started ? 'boss' : 'reward',
     })
   },
@@ -716,7 +716,7 @@ const talk = new DialogueSession({
 function openDialogue(npcId: string): void {
   if (talk.open(npcId)) return
   const name = registry.maybeGet<NpcData>(npcId)?.displayName ?? '对方'
-  bus.emit('ui.notify', { text: `${name}没有说话（这条线还没写到这里）`, kind: 'info' })
+  bus.emit('ui.notify', { text: t('ui.notify.npcSilent', { name }), kind: 'info' })
 }
 
 /** 交互物落地：调音桩休息、机关传送（= UE 的 Level Streaming 遮蔽传送） */
@@ -1159,20 +1159,20 @@ async function startRun(slot: string | null): Promise<void> {
     streaming.teleport(time.tick, player.pos)
     player.floorY = surface.floorAt(player.pos)?.y ?? 0
     spawner.syncActive(streaming.byState('active').map((c) => c.key))
-    bus.emit('ui.notify', { text: `回到上次调音桩 · ${snap.regionId ?? '未知区域'}`, kind: 'info' })
+    bus.emit('ui.notify', { text: t('ui.notify.respawned', { region: snap.regionId ?? t('ui.notify.unknownRegion') }), kind: 'info' })
   }
   // 读档可能恢复了音级/装备/背包 ⇒ 派生值与手里的武器都要跟着回来（顺序：先 restore 再 refresh）
   refreshRpg()
   // 新开局（不是读档）放 §6 的开场：黑场、声先死、无 UI 无旁白那一条
   if (!slot) startCinematic('CINE_OPEN')
   // 开场引导（KI-111 后续）：新鲜开局给一句操作/目标提示，避免玩家陷在黑场里不知道干什么
-  bus.emit('ui.notify', { text: 'WASD 移动 · 鼠标视角 · E 交互 · Tab 地图', kind: 'info' })
+  bus.emit('ui.notify', { text: t('ui.notify.controlsHint'), kind: 'info' })
   // KI-138：开场两拍要说清"第一件该干什么"。**只说操作是半句**（实测反馈「不知道要干什么」）：
   // 拍 1 是醒来，拍 2 是"休垒建立基地"（production-plan §6.1）——那两拍里玩家真正要做的是
   // ① 找钟声守铃姨领第一件委托（她就在休垒，8/0/26），② 顺路在发光的调音桩上加点。
   // **不给坐标**：坐标由目标指示那枚箭头给（KI-137），这里只说"找谁"。
-  bus.emit('ui.notify', { text: '休垒的钟声守在等你 —— 找她领第一件委托（发光的调音桩可以先加点）', kind: 'info' })
-  bus.emit('ui.notify', { text: `音级 ${rpg.prog.rank} · 遗响 ${rpg.prog.xp}${rpg.prog.unspent > 0 ? ` · 未分配点 ${rpg.prog.unspent}` : ''}`, kind: 'info' })
+  bus.emit('ui.notify', { text: t('ui.notify.firstQuestHint'), kind: 'info' })
+  bus.emit('ui.notify', { text: t('ui.notify.rank', { rank: rpg.prog.rank, xp: rpg.prog.xp }) + (rpg.prog.unspent > 0 ? t('ui.notify.unspent', { n: rpg.prog.unspent }) : ''), kind: 'info' })
   // KI-141：序章目标（还没接任何委托时，箭头指着该先找的人）
   applyPrologueObjective()
   booted = true

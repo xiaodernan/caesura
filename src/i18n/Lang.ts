@@ -451,6 +451,17 @@ const ZH: Record<string, string> = {
   'ui.pause.sealB': '音',
   'ui.pause.glyph': '止',
   'ui.boot.online': '[caesura] online — WASD/Shift/Ctrl-roll/LMB/RMB/F guard/G parry/Q lock/E interact(优先)/execute(处决·背刺)/1·2·3 换装/R·C 乐章战技 I·II/Tab 调音桩面板(需站在调音桩前)/E 与 NPC 交谈/1-9 选对话选项/Esc pause',
+  'ui.notify.weaponSlotLocked': '第 ${n} 把武器：尚未拥有',
+  'ui.notify.equipped': '装备 · ${item}',
+  'ui.notify.questNew': '新的委托 · ${label}',
+  'ui.notify.questAdvance': '委托推进 · ${label}',
+  'ui.notify.npcSilent': '${name}没有说话（这条线还没写到这里）',
+  'ui.notify.respawned': '回到上次调音桩 · ${region}',
+  'ui.notify.unknownRegion': '未知区域',
+  'ui.notify.controlsHint': 'WASD 移动 · 鼠标视角 · E 交互 · Tab 地图',
+  'ui.notify.firstQuestHint': '休垒的钟声守在等你 —— 找她领第一件委托（发光的调音桩可以先加点）',
+  'ui.notify.rank': '音级 ${rank} · 遗响 ${xp}',
+  'ui.notify.unspent': ' · 未分配点 ${n}',
 }
 
 const EN: Record<string, string> = {
@@ -889,6 +900,17 @@ const EN: Record<string, string> = {
   'ui.pause.sealB': '||',
   'ui.pause.glyph': '⏸',
   'ui.boot.online': '[caesura] online — WASD/Shift/Ctrl-roll/LMB/RMB/F guard/G parry/Q lock/E interact(max)/execute(backstab)/1·2·3 equip/R·C skills I·II/Tab tuning peg (needs to be at the peg)/E talk to NPC/1-9 pick dialogue/Esc pause',
+  'ui.notify.weaponSlotLocked': 'Weapon slot ${n} not owned yet',
+  'ui.notify.equipped': 'Equipped · ${item}',
+  'ui.notify.questNew': 'New task · ${label}',
+  'ui.notify.questAdvance': 'Task advanced · ${label}',
+  'ui.notify.npcSilent': '${name} has not spoken yet (no line scripted)',
+  'ui.notify.respawned': 'Back at the tuning peg · ${region}',
+  'ui.notify.unknownRegion': 'Unknown region',
+  'ui.notify.controlsHint': 'WASD move · mouse look · E interact · Tab map',
+  'ui.notify.firstQuestHint': 'The Bellkeeper of the Exveil waits — find her for your first contract (you may grow points at the glowing tuning peg)',
+  'ui.notify.rank': 'Rank ${rank} · Echo ${xp}',
+  'ui.notify.unspent': ' · Unspent ${n}',
 }
 
 const DICTS: Record<Lang, Record<string, string>> = { zh: ZH, en: EN }
