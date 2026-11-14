@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "2de03b290c6b43c869e294ac4c9784126dc16e72",
+  "head": "331e2ad97cc2bd92782c6c4ad95923cd463561c5",
   "branch": "master",
-  "subject": "fix(boot): index.html 标题回退为「CAESURA · 止音纪元 / The Epoch of Hush」— 回收 debug 残留",
-  "date": "2026-11-15T01:38:48+08:00",
+  "subject": "docs(readme): 双语 README 对账最新主线（6885 测试 / Wave 56 / 八地域 / fresh=1 入口 / site-latest.json 同步）",
+  "date": "2026-11-15T01:43:34+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/2de03b290c6b43c869e294ac4c9784126dc16e72",
+    "url": "https://github.com/xiaodernan/caesura/commit/331e2ad97cc2bd92782c6c4ad95923cd463561c5",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
