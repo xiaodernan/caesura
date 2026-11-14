@@ -14,9 +14,10 @@ import { describe, expect, it } from 'vitest'
 const HTML = readFileSync(fileURLToPath(new URL('../../index.html', import.meta.url)), 'utf8')
 
 describe('index.html：启封仪典 · 止音启明（Phase F-42）', () => {
-  it('含 CAESURA 主 word（.word 载体金色描边字）与「止音纪元」副标（<small>）', () => {
+  it('含 CAESURA 主 word（.word 载体金色描边字）与「止音纪元」/「The Epoch of Hush」双语副标（<small> · 一个 zh-i18n 一个 en-i18n）', () => {
     expect(HTML).toContain('<span class="word">CAESURA</span>')
-    expect(HTML).toContain('<small>止音纪元</small>')
+    expect(HTML).toContain('<small class="zh-i18n">止音纪元</small>')
+    expect(HTML).toContain('<small class="en-i18n">The Epoch of Hush</small>')
   })
 
   it('背景是三层暗纹径向（墨青→深底），外环双描金丝印 + 顶烬点伪元素', () => {
