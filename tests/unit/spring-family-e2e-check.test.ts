@@ -13,19 +13,19 @@ import {
 /**
  * spring-family-e2e-check.mjs 单元测试（headless 可证：不启动 Java 进程）。
  *
- * 只测纯函数与名册形状；真正的端到端跑（起六件 jar）是脚本的运行路径，不进 vitest。
+ * 只测纯函数与名册形状；真正的端到端跑（起七件 jar）是脚本的运行路径，不进 vitest。
  */
 
 describe('spring-family-e2e-check：三张名册同形', () => {
-  it('START_ORDER／JAR_PATHS／SERVICE_PORTS／HEALTH_URLS 四份名册覆盖同样的六件', () => {
+  it('START_ORDER／JAR_PATHS／SERVICE_PORTS／HEALTH_URLS 四份名册覆盖同样的七件', () => {
     for (const svc of START_ORDER) {
       expect(JAR_PATHS.has(svc), `${svc} 缺 jar 路径`).toBe(true)
       expect(SERVICE_PORTS.has(svc), `${svc} 缺端口`).toBe(true)
       expect(HEALTH_URLS.has(svc), `${svc} 缺健康 URL`).toBe(true)
     }
-    expect(JAR_PATHS.size).toBe(6)
-    expect(SERVICE_PORTS.size).toBe(6)
-    expect(HEALTH_URLS.size).toBe(6)
+    expect(JAR_PATHS.size).toBe(7)
+    expect(SERVICE_PORTS.size).toBe(7)
+    expect(HEALTH_URLS.size).toBe(7)
   })
 
   it('jar 路径全部指向 target/ 下的 artifactId-version.jar（KI-452 的形状）', () => {

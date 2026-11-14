@@ -1,13 +1,13 @@
 /**
  * scripts/spring-family-e2e-check.mjs —— Spring Cloud 家族端到端验收器（KI-454 固化版）。
  *
- * <p>它只干一件事：**一次命令把整族从起到问答都量一遍**——按次序起六件 jar →
- * 等每件各自的健康端点 → 打几条真实的探针（registry/gate 名册/gateway 路由/report 汇总）→
+ * <p>它只干一件事：**一次命令把整族从起到问答都量一遍**——按次序起七件 jar →
+ * 等每件各自的健康端点 → 打几条真实的探针（registry/gate 名册/gateway 路由/report 汇总/lore BM25）→
  * 汇总成判决 → 收尾停掉自己起的子进程（除非 `--keep-running`）。
  * 不做判定：探针拿回来的原文交给调用方，判决口径住在下面的 `PROBES` 表里，改判据就是改那张表。
  *
  * 用法：
- *   node scripts/spring-family-e2e-check.mjs                 完整起六件、等六件、探四条、停六件
+ *   node scripts/spring-family-e2e-check.mjs                 完整起七件、等七件、探八条、停七件
  *   node scripts/spring-family-e2e-check.mjs --keep-running   验完不停（留活给人看/继续用）
  *   node scripts/spring-family-e2e-check.mjs --timeout=180    每件健康等候上限秒数（默认 120）
  *   node scripts/spring-family-e2e-check.mjs --run-gate=<id>  健康后额外经网关跑一道门（如 gate-data，约 1s）
@@ -27,7 +27,7 @@ import net from 'node:net'
 /** 仓库根（脚本住在 `<root>/scripts/` 下，两层上去就是 root；中文路径要 decode，用 fileURLToPath） */
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 
-/** 六件的启动次序：registry → config → gate → report → client → gateway */
+/** 七件的启动次序：registry → config → gate → report → client → gateway → lore */
 export const START_ORDER = [
   'caesura-registry',
   'caesura-config',
@@ -35,6 +35,7 @@ export const START_ORDER = [
   'caesura-report',
   'caesura-client',
   'caesura-gateway',
+  'caesura-lore',
 ]
 
 /** 各服务的 jar 相对路径（target/ 不入库；构建状态由前置检查负责） */
@@ -45,6 +46,7 @@ export const JAR_PATHS = new Map([
   ['caesura-report', 'services/spring/caesura-report/target/caesura-report-0.1.0.jar'],
   ['caesura-client', 'services/spring/caesura-client/target/caesura-client-0.1.0.jar'],
   ['caesura-gateway', 'services/spring/caesura-gateway/target/caesura-gateway-0.1.0.jar'],
+  ['caesura-lore', 'services/spring/caesura-lore/target/caesura-lore-0.1.0.jar'],
 ])
 
 /** 端口（唯一出处：docker-compose.yml / 各 application.yml） */
@@ -55,6 +57,7 @@ export const SERVICE_PORTS = new Map([
   ['caesura-report', 8082],
   ['caesura-client', 8083],
   ['caesura-gateway', 8099],
+  ['caesura-lore', 8084],
 ])
 
 /** 等待健康那段用的 URL（各服务 context-path 下的 actuator，registry 没有"健康"只有 apps 名册） */
@@ -65,6 +68,7 @@ export const HEALTH_URLS = new Map([
   ['caesura-report', 'http://127.0.0.1:8082/report/actuator/health'],
   ['caesura-client', 'http://127.0.0.1:8083/actuator/health'],
   ['caesura-gateway', 'http://127.0.0.1:8099/actuator/health'],
+  ['caesura-lore', 'http://127.0.0.1:8084/actuator/health'],
 ])
 
 /** gate/report 真正依赖的那一份配置（config server 以 native 后端供 `caesura-gates`）：
@@ -91,6 +95,24 @@ export const PROBES = [
     name: 'client 健康',
     url: 'http://127.0.0.1:8083/actuator/health',
     expect: { jsonPath: ['status'], equals: 'UP' },
+    retries: 1,
+  },
+  {
+    name: 'lore 世界谱（48 条真实文本）',
+    url: 'http://127.0.0.1:8084/lore/codex?lang=zh',
+    expect: { jsonPath: ['total'], equals: 48 },
+    retries: 1,
+  },
+  {
+    name: 'lore BM25 检索（万籁 → 命中 2 条）',
+    url: 'http://127.0.0.1:8084/lore/search?q=%E4%B8%87%E7%B1%81&limit=5&lang=zh',
+    expect: { jsonPath: ['total'], equals: 2 },
+    retries: 1,
+  },
+  {
+    name: 'lore 缓存后端自报（memory 默认）+ 命中率',
+    url: 'http://127.0.0.1:8084/lore/stats',
+    expect: { jsonPath: ['entries'], equals: 48 },
     retries: 1,
   },
 ]
@@ -289,9 +311,9 @@ async function main() {
     console.log('[e2e-check] caesura-config 名册已就位（:8888）')
   }
 
-  // 阶段 3：gate / report / client / gateway
-  children.push(...spawnPhase(['caesura-gate', 'caesura-report', 'caesura-client', 'caesura-gateway'], logDir))
-  for (const svc of ['caesura-gate', 'caesura-report', 'caesura-client', 'caesura-gateway']) {
+  // 阶段 3：gate / report / client / gateway / lore
+  children.push(...spawnPhase(['caesura-gate', 'caesura-report', 'caesura-client', 'caesura-gateway', 'caesura-lore'], logDir))
+  for (const svc of ['caesura-gate', 'caesura-report', 'caesura-client', 'caesura-gateway', 'caesura-lore']) {
     const r = await waitHttp(HEALTH_URLS.get(svc), timeoutMs, 1000)
     if (!r.ok) fail(`${svc} 健康等候超时（${timeoutSec}s）：${r.error ?? `HTTP ${r.status}`}（日志：.scratch/e2e-check/${svc}.log）`)
     console.log(`[e2e-check] ${svc} 起来了（:${SERVICE_PORTS.get(svc)}）`)
@@ -339,12 +361,12 @@ async function main() {
 
   // ── 收尾 ─────────────────────────────────────────────────────────
   if (keep) {
-    console.log('[e2e-check] --keep-running：六件保持运行（手动停：Get-NetTCPConnection -State Listen | ? LocalPort in 8761,8888,8081,8082,8083,8099 | Stop-Process）')
+    console.log('[e2e-check] --keep-running：七件保持运行（手动停：Get-NetTCPConnection -State Listen | ? LocalPort in 8761,8888,8081,8082,8083,8099,8084 | Stop-Process）')
   } else {
     for (const item of children.splice(0)) {
       try { item.child.kill() } catch {}
     }
-    console.log('[e2e-check] 六件已停')
+    console.log('[e2e-check] 七件已停')
   }
 
   process.exit(allOk ? 0 : 1)

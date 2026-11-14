@@ -1,0 +1,23 @@
+# caesura-lore bootstrap.yml —— Config Client 的启动前配置
+# 优先于 application.yml 读取：先向配置服务器索取 caesura-lore 的配置段，
+# 拿不到才退回本地 application.yml（Spring Cloud Config 标准降级）。
+spring:
+  application:
+    name: caesura-lore
+  cloud:
+    config:
+      uri: ${CAESURA_CONFIG_URL:http://localhost:8888}
+      fail-fast: false
+      retry:
+        max-attempts: 6
+        initial-interval: 1000
+        multiplier: 1.1
+        max-interval: 30000
+
+# 这个服务不调用其它服务，关掉 fetch/registry 轮询（省资源，也免得 e2e spawn 竞态）
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: false
+  instance:
+    hostname: ${EUREKA_HOSTNAME:localhost}

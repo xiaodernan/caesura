@@ -1,4 +1,4 @@
-# services/spring/docker-compose.yml —— 把五服务族一次起起来（KI-422；KI-430 补上容器形态）
+# services/spring/docker-compose.yml —— 把七服务族一次起起来（KI-422；KI-430 补上容器形态；KI-564 并轨 caesura-lore）
 #
 # **先构建再起**（compose 不替你编译 jar）：
 #   cd services/spring && mvn -DskipTests package
@@ -89,6 +89,25 @@ services:
     command: ["java", "-jar", "caesura-client/target/caesura-client-0.1.0.jar", "--eureka.client.service-url.defaultZone=http://caesura-registry:8761/eureka/", "--eureka.instance.hostname=caesura-client"]
     ports:
       - "8083:8083"
+
+  caesura-lore:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: caesura/lore:0.1.0
+    working_dir: /workspace/services/spring
+    volumes:
+      - ../..:/workspace
+    environment:
+      CAESURA_CONFIG_URL: "http://caesura-config:8888"
+      # 默认 memory 缓存；想切 Redis：把这里换成 redis 并保证 compose 里有 redis 服务
+      CAESURA_LORE_CACHE: "memory"
+    depends_on:
+      - caesura-config
+      - caesura-registry
+    command: ["java", "-jar", "caesura-lore/target/caesura-lore-0.1.0.jar", "--eureka.client.service-url.defaultZone=http://caesura-registry:8761/eureka/", "--eureka.instance.hostname=caesura-lore"]
+    ports:
+      - "8084:8084"
 
   caesura-gateway:
     build:

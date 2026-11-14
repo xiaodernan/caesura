@@ -9,6 +9,8 @@
     caesura-gateway   Spring Cloud Gateway：单一入口 /gate/** 与 /report/**
     caesura-gate      执行器：**只调用**仓库既有的 npm／node 入口，自己不做任何判定
     caesura-report    汇总：把各门的判决汇成仓库既有 finish() 那套判决形状
+    caesura-client    Config Client：演示 Node 侧与 Spring 家族配置服务器的对账形状
+    caesura-lore      世界谱后端（2026-11-15）：/lore/codex 只读出 48 条真实文本 + /lore/search BM25；memory|redis 双后端缓存 + /lore/stats 命中率
 
   为什么是「守门人」而不是「玩法服务器」：docs/gameplay.md 第 6 行明写「无专用服务器」，
   游戏客户端自带渲染，没有任何生产流量要经过这一层。这一族只对**主干自己**有用：
@@ -44,6 +46,7 @@
     <module>caesura-gate</module>
     <module>caesura-report</module>
     <module>caesura-client</module>
+    <module>caesura-lore</module>
   </modules>
 
   <properties>

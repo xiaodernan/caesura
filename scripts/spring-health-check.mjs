@@ -10,7 +10,7 @@
  * Java 侧只负责「我起来了」、「我拉到了配置」、「熔断器已就绪」这三条编排事实。
  *
  * 用法：
- *   node scripts/spring-health-check.mjs              探全部五服务（端口 8081/8082/8083/8761/8888/8099）
+ *   node scripts/spring-health-check.mjs              探全部七服务（端口 8081/8082/8083/8084/8761/8888/8099）
  *   node scripts/spring-health-check.mjs caesura-gate 只探一道门（名 → 端口，见下表）
  *
  * 退出码：0 = 全部 UP；1 = 有 DOWN；2 = 用法不对／连不上（拒绝连接不是服务 DOWN，是网络不通）。
@@ -24,6 +24,7 @@ export const SERVICE_PORTS = new Map([
   ['caesura-report', 8082],
   ['caesura-client', 8083],
   ['caesura-gateway', 8099],
+  ['caesura-lore', 8084],
 ])
 
 /** 一个服务的 health 上下文路径（context-path 与 actuator 路径的组合） */
@@ -34,6 +35,7 @@ export const HEALTH_PATH = new Map([
   ['caesura-report', '/report/actuator/health'],
   ['caesura-client', '/actuator/health'],
   ['caesura-gateway', '/actuator/health'],
+  ['caesura-lore', '/actuator/health'],
 ])
 
 /** 探一道服务：返回 { name, port, ok, status, body } */

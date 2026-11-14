@@ -23,18 +23,20 @@ function mockFetch(status: number, body: unknown, ok = true) {
 }
 
 describe('KI-429/F2｜spring-health-check：探针形状与退出逻辑', () => {
-  it('SERVICE_PORTS 六服务齐全（与 docker-compose.yml / application.yml 同源）', () => {
+  it('SERVICE_PORTS 七服务齐全（与 docker-compose.yml / application.yml 同源）', () => {
     expect([...SERVICE_PORTS.keys()].sort()).toEqual([
-      'caesura-client', 'caesura-config', 'caesura-gate', 'caesura-gateway', 'caesura-registry', 'caesura-report'
+      'caesura-client', 'caesura-config', 'caesura-gate', 'caesura-gateway', 'caesura-lore', 'caesura-registry', 'caesura-report'
     ])
+    expect(SERVICE_PORTS.get('caesura-lore')).toBe(8084)
     expect(SERVICE_PORTS.get('caesura-gate')).toBe(8081)
     expect(SERVICE_PORTS.get('caesura-config')).toBe(8888)
   })
 
-  it('HEALTH_PATH 六服务各有一条（context-path + /actuator/health）', () => {
+  it('HEALTH_PATH 七服务各有一条（context-path + /actuator/health）', () => {
     expect(HEALTH_PATH.get('caesura-gate')).toBe('/gate/actuator/health')
     expect(HEALTH_PATH.get('caesura-report')).toBe('/report/actuator/health')
     expect(HEALTH_PATH.get('caesura-client')).toBe('/actuator/health')
+    expect(HEALTH_PATH.get('caesura-lore')).toBe('/actuator/health')
   })
 
   it('probeOne 返回 UP 时 ok=true、status=200、body 解析为对象', async () => {
@@ -69,10 +71,10 @@ describe('KI-429/F2｜spring-health-check：探针形状与退出逻辑', () => 
     expect(r.body).toContain('未知服务：caesura-nonexistent')
   })
 
-  it('probeAll 返回六份结果，每份都有 name/port/ok/status/body', async () => {
+  it('probeAll 返回七份结果，每份都有 name/port/ok/status/body', async () => {
     mockFetch(200, { status: 'UP' })
     const results = await probeAll()
-    expect(results.length).toBe(6)
+    expect(results.length).toBe(7)
     for (const r of results) {
       expect(r).toMatchObject({ name: expect.any(String), port: expect.any(Number), ok: expect.any(Boolean), status: expect.any(Number) })
     }

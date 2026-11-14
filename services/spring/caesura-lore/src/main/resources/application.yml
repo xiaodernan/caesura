@@ -1,0 +1,40 @@
+# caesura-lore application.yml — 本地兜底配置（配置服务器不可用时的退路）
+spring:
+  application:
+    name: caesura-lore
+  config:
+    # 没有配置服务器也行（optional:）——本服务不吃任何外部阈值
+    import: optional:configserver:${CAESURA_CONFIG_URL:http://localhost:8888}
+  cache:
+    # 我们自己拿 CacheManager 做手动缓存（/lore/stats 要命中率）；Boot 不建默认那份
+    type: none
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+
+server:
+  port: 8084
+
+# Node 侧探针读取的健康端口（scripts/spring-health-check.mjs）：
+#   http://localhost:8084/actuator/health
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+  health:
+    redis:
+      # memory 模式默认不依赖 Redis；设 CAESURA_LORE_CACHE=redis 时把 redis 也纳入健康
+      enabled: ${CAESURA_LORE_HEALTH_REDIS:false}
+
+# 与 Node 侧约定：caesura-lore 只做「世界谱的只读检索」，不持有任何判定
+# 所有阈值（门名册/熔断/重试）仍由 Node 侧的 scripts/spring-family-rules.mjs 拍板
+caesura:
+  lore:
+    cache: ${CAESURA_LORE_CACHE:memory}   # memory | redis
+    version: "0.1.0"
+    corpus: "codex/index.html → lore/codex.json（scripts/lore-codex-snapshot.mjs）"
