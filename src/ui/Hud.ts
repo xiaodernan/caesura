@@ -2,6 +2,7 @@ import { bus, type StatusId, type StatusPulse } from '../core/EventBus'
 import { keyOf, type ActionName, type Binds } from '../core/Input'
 import { actionLabel } from './actionLabels'
 import { registry } from '@/core/Registry'
+import { t } from '@/i18n/Lang'
 import type { ProgressionData } from '@/data/schema'
 import { statuses } from '@/data'
 
@@ -380,7 +381,7 @@ export class Hud {
     ctx.textBaseline = 'alphabetic'
     ctx.font = `${Math.round(13 * s)}px ${SERIF}`
     ctx.fillStyle = css(GOLD, 0.42 + 0.4 * clamp01(this.questFlash))
-    ctx.fillText(q.done ? '谱册 · 一段收束' : `谱册 · ${q.index + 1}/${q.total}`, x, y)
+    ctx.fillText(q.done ? t('ui.hud.codex.done') : t('ui.hud.codex.progress', { index: q.index + 1, total: q.total }), x, y)
     y += 20 * s
     ctx.font = `${Math.round(14 * s)}px ${SERIF}`
     ctx.fillStyle = css(BONE, a * 0.85)
@@ -441,7 +442,7 @@ export class Hud {
     ctx.textAlign = 'left'
     ctx.textBaseline = 'alphabetic'
     ctx.fillStyle = css(GOLD, a)
-    ctx.fillText(`音级 ${this.rank}`, x0, yc - 18 * s)
+    ctx.fillText(t('ui.hud.rank', { rank: this.rank }), x0, yc - 18 * s)
     ctx.restore()
     this.rankFlash = Math.max(0, this.rankFlash - 0.012)
   }
@@ -545,7 +546,7 @@ export class Hud {
       ctx.textAlign = 'left'
       ctx.textBaseline = 'middle'
       ctx.fillStyle = css(col, 0.9)
-      ctx.fillText('失谐 · 正在褪色', x0 + w + 10 * s, y)
+      ctx.fillText(t('ui.hud.offtune'), x0 + w + 10 * s, y)
     }
     ctx.restore()
   }
@@ -972,11 +973,11 @@ export class Hud {
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillStyle = css(BONE, 0.92 * a)
-    ctx.fillText('休 止', cx, cy)
+    ctx.fillText(t('ui.hud.theHush'), cx, cy)
     const s = this.scale()
     ctx.font = `${14 * s}px ${SERIF}`
     ctx.fillStyle = css(BONE, 0.45 * a)
-    ctx.fillText('你的节拍停在这里', cx, cy + size * 0.75)
+    ctx.fillText(t('ui.hud.theHush.sub'), cx, cy + size * 0.75)
 
     // 往生一印：右下角的暗金小方框 + 极简的「寂」（余烬落尽之后的字）
     const boxU = 9 * s
@@ -986,6 +987,6 @@ export class Hud {
     ctx.strokeRect(bx, by, boxU * 2, boxU * 2)
     ctx.fillStyle = css([201, 180, 88], 0.9 * a)
     ctx.font = `${boxU * 1.35}px ${SERIF}`
-    ctx.fillText('寂', bx + boxU, by + boxU)
+    ctx.fillText(t('ui.hud.seal'), bx + boxU, by + boxU)
   }
 }

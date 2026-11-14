@@ -1,5 +1,6 @@
 import { PICK_INTENTS, type UiIntent } from '@/core/Input'
 import type { DialogueView } from '@/quest/Dialogue'
+import { t } from '@/i18n/Lang'
 
 /**
  * 对话框（Phase 6-B / narrative §3.2 的 subtitlesRequired）。
@@ -146,8 +147,8 @@ export class DialogueBox {
       `<div class="ch" data-ch="${c.id}"><span class="k">${c.index}</span><span class="t">${c.text}</span><span class="s">${STYLE_LABEL[c.style] ?? ''}</span></div>`,
     ).join('')
     const hint = v.choices.length > 0
-      ? '1-9 选择 · Esc 离开'
-      : '空格 / 回车 继续 · Esc 离开'
+      ? t('ui.dialogue.1to9')
+      : t('ui.dialogue.continue')
     this.root.innerHTML = `
       <div class="wrap"><div class="box">
         <div class="who">${who}</div>

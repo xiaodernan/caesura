@@ -1,0 +1,39 @@
+name: site-sync
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    if: "!contains(github.event.head_commit.message, 'chore(status): re-embed site-latest.json')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v24
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Regenerate site-latest.json
+        run: |
+          node scripts/build-site-latest.mjs
+
+      - name: Commit and push if changed
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! git diff --quiet site-latest.json; then
+            git config user.name 'caesura-bot'
+            git config user.email 'caesura-bot@noreply.local'
+            git add site-latest.json
+            git commit -m 'chore(status): re-embed site-latest.json'
+            git push origin master
+          else
+            echo 'site-latest.json already fresh'
+          fi

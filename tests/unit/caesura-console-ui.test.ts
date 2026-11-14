@@ -3511,3 +3511,35 @@ describe('第五十五弹 止音纪元世界图（row-map）', () => {
     expect(app).toContain('♭B')
   })
 })
+// ============ 中/EN 双语切换 · lang-toggle 行 ============
+describe('中/EN 双语切换（lang-toggle）', () => {
+  it('lang markup/css/js 自证合规：按钮 + 记忆键 + reduced-motion 兜底', () => {
+    const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
+    const css = readFileSync(resolve(ROOT, 'styles.css'), 'utf8')
+    const app = readFileSync(resolve(ROOT, 'app.js'), 'utf8')
+    expect(html).toContain('id="lang-toggle"')
+    expect(html).toContain('class="lang-toggle"')
+    expect(css).toContain('.lang-toggle')
+    expect(css).toContain('prefers-reduced-motion')
+    expect(app).toContain('LANG_EXACT')
+    expect(app).toContain('function bootLang')
+    expect(app).toContain("'caesura-console-lang'")
+    expect(app).toContain('WeakMap')
+    expect(app).toContain("data-lang")
+  })
+
+  it('app.js LANG_EXACT 含 248 条 zh→en 精确映射；逐条非空', () => {
+    const app = readFileSync(resolve(ROOT, 'app.js'), 'utf8')
+    const i = app.indexOf('LANG_EXACT')
+    expect(i).toBeGreaterThan(-1)
+    const start = app.indexOf('{', i)
+    const endMarker = '\n  })\n'
+    const endIdx = app.indexOf(endMarker, start)
+    const block = app.slice(start, endIdx)
+    const lines = block.split('\n').filter((l) => /^  '/.test(l) && l.trim().length > 8)
+    expect(lines.length).toBeGreaterThanOrEqual(240)
+    const sample = lines.find((l) => l.startsWith("  '止音纪元'"))
+    expect(sample).toBeDefined()
+    expect(sample).toContain('The Age of Silence')
+  })
+})

@@ -1,4 +1,5 @@
 import type { ActionName, UiIntent } from '@/core/Input'
+import { getLang } from '@/i18n/Lang'
 
 /**
  * 动作的中文名只有一份（KI-337）。
@@ -32,11 +33,36 @@ export const ACTION_LABELS = {
   ability3: '武器槽三',
   map: '地图',
   pause: '暂停',
-  throwCrystal: '投掷晶石'
+  throwCrystal: '投掷晶石',
 } satisfies Record<ActionName, string>
 
+const ACTION_LABELS_EN: Record<ActionName, string> = {
+  moveUp: 'Forward',
+  moveDown: 'Back',
+  moveLeft: 'Left',
+  moveRight: 'Right',
+  sprint: 'Sprint',
+  jump: 'Rise',
+  dodge: 'Dodge',
+  attackLight: 'Strike',
+  attackHeavy: 'Fall',
+  guard: 'Guard',
+  parry: 'Parry',
+  lockOn: 'Target',
+  interact: 'Hand',
+  weaponSkill: 'Song I',
+  weaponSkillB: 'Song II',
+  observe: 'Tune',
+  ability1: 'Ark I',
+  ability2: 'Ark II',
+  ability3: 'Ark III',
+  map: 'Map',
+  pause: 'Pause',
+  throwCrystal: 'Fling',
+}
+
 /** 逐格取字（不写 `?? action` 那种兜底：名册是编译期全盖住的，落到这里的一定是名册里的动作） */
-export const actionLabel = (action: ActionName): string => ACTION_LABELS[action]
+export const actionLabel = (action: ActionName): string => (getLang() === 'en' ? ACTION_LABELS_EN : ACTION_LABELS)[action]
 
 /**
  * 手柄按钮的显示名（KI-343）——与上面那张同一个文件、同一条理由：**给人看的名字只有一份**。

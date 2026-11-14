@@ -1,3 +1,4 @@
+import { t } from '@/i18n/Lang'
 /**
  * 电影黑边仪典（Phase F-50 · 前端第二十七维）：
  * `cinematics.current` 非空期间，屏幕上下各落一道纯黑幕布，中央偏下落一行「谱题」题字
@@ -98,7 +99,7 @@ export class CinematicLetterbox {
     this.root.appendChild(this.skip)
     this.root.appendChild(this.mark)
     document.body.appendChild(this.root)
-    this.skip.textContent = hooks.skipHint ?? 'ESC · 跳过'
+    this.skip.textContent = hooks.skipHint ?? t('ui.letterbox.replay')
     this.lastId = null
     this.lastNote = null
   }

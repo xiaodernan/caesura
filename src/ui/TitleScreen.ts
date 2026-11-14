@@ -5,6 +5,7 @@ import { allGearItems } from '@/rpg/Loot'
 import type { SlotCard } from '@/save/Slots'
 import { SAVE_CARD_CSS, saveCardHtml, saveCards, type SaveCardView } from './SaveSlots'
 import type { OriginData, ProgressionData } from '@/data/schema'
+import { getLang, setLang, t } from '@/i18n/Lang'
 
 /**
  * 开场「定弦」（KI-031② / §2.2）。出身是叙事动作而不是设置项：这一屏在 `loop.start()`
@@ -115,6 +116,11 @@ const CSS = `
 #title ::-webkit-scrollbar{width:.6vh}
 #title ::-webkit-scrollbar-thumb{background:#3d372e;border-radius:1vh}
 @media (prefers-reduced-motion: reduce){#title *,#title *::before,#title *::after{animation:none !important;transition:none !important}}
+#title .lang-chip{position:absolute;top:26px;left:26px;z-index:5;background:rgba(9,10,15,.4);color:#c9b258;
+  border:1px solid rgba(201,180,88,.4);padding:5px 11px;border-radius:2px;font-family:Georgia,serif;font-size:11px;
+  letter-spacing:.18em;cursor:pointer;transition:border-color .2s ease,color .2s ease}
+#title .lang-chip:hover{color:#f0e6c2;border-color:#c9b258}
+#title .lang-chip:focus-visible{outline:1px solid #c9b258;outline-offset:2px}
 `
 
 /** 静态余烬粒子层：14 粒子、位置/周期/延迟全部写死在 CSS 的 nth-child 里（确定性、无随机、离屏即关） */
@@ -295,7 +301,13 @@ export class TitleScreen {
   }
 
   private click(e: MouseEvent): void {
-    const el = (e.target as HTMLElement).closest('[data-act]') as HTMLElement | null
+    const target = e.target as HTMLElement
+    if (target.dataset && target.dataset.langToggle !== undefined) {
+      setLang(getLang() === 'zh' ? 'en' : 'zh')
+      this.render()
+      return
+    }
+    const el = target.closest('[data-act]') as HTMLElement | null
     if (!el || el.dataset.disabled) return
     const act = el.dataset.act!
     if (act === 'card') this.chooseNew(el.dataset.arg!)
@@ -314,29 +326,29 @@ export class TitleScreen {
         <div class="nm">${c.name}</div>
         <div class="wp">${c.weaponName}</div>
         <div class="bl">${c.blurb}</div>
-        ${c.passive ? `<div class="ps">被动 · ${c.passive}</div>` : ''}
+        ${c.passive ? `<div class="ps">${t('ui.title.passive')} · ${c.passive}</div>` : ''}
         <div class="at">${c.attrs.map((a) => `${a.label} ${a.value}`).join('<br>')}</div>
       </div>`).join('')
     const cont = this.canBrowseSlots
       ? `<div class="act${this.focus.kind === 'continue' ? ' sel' : ''}" data-act="continue">${
-        this.hasSaveable ? '续 · 挑一格回到上次调音桩'
+        this.hasSaveable ? t('ui.title.cta.continue')
           // 三种「进得去」各有各的说法：问不出来 ≠ 有档读不出来 ≠ 没档（KI-386）
-          : this.hasRosterFault ? '查看 · 本机存档问不出来'
-            : '查看 · 本机有读不出来的存档'}</div>`
+          : this.hasRosterFault ? t('ui.title.cta.fault')
+            : t('ui.title.cta.unreadable')}</div>`
       : ''
-    const hint = !this.rosterSettled ? '正在查看本机存档…'
+    const hint = !this.rosterSettled ? t('ui.title.hint.loading')
       // 失败那一路要说自己的原因：只留一句「坏了」，玩家除了再来一次，没有第二条信息可依据
-      : this.rosterFault !== null ? `本机存档问不出来 · ${this.rosterFault}`
-        : this.hasSaveable ? '←/→ 选弦 · Enter 定弦 · ↓ 挑存档'
+      : this.rosterFault !== null ? `${t('ui.title.hint.fault')} · ${this.rosterFault}`
+        : this.hasSaveable ? t('ui.title.hint.idle')
         // 「没有可续的档」与「有档但读不出来」是两件事：后者要说出来，否则玩家以为自己很干净，
         // 下一次休息就把那一格覆盖了。原因的原话在卡上（挑档屏/存档页都看得到）。
-        : this.hasBlocked ? '本机有存档，但读不出来 · ↓ 看是哪一格' : '本机没有可续的存档'
+        : this.hasBlocked ? t('ui.title.hint.blocked') : t('ui.title.hint.newgame')
     return `
       <div class="astro" aria-hidden="true"></div>
       <div class="vignette" aria-hidden="true"></div>
       <div class="embers" aria-hidden="true">${EMBERS}</div>
-      <h1>止音纪元</h1>
-      <div class="sub">CAESURA · 为她定一根弦</div>
+      <h1>${t('ui.title.h1')}</h1>${this.renderLangChip()}
+      <div class="sub">${t('ui.title.sub')}</div>
       <div class="cards">${cards}</div>
       <div class="acts">${cont}</div>
       <div class="hint">${hint}</div>`
@@ -356,10 +368,10 @@ export class TitleScreen {
       <div class="astro" aria-hidden="true"></div>
       <div class="vignette" aria-hidden="true"></div>
       <div class="embers" aria-hidden="true">${EMBERS}</div>
-      <h1>止音纪元</h1>
-      <div class="sub">${fault ? '问不出来 · ← 返回定弦' : '挑一格 · Enter 读取 · ← 返回定弦'}</div>
+      <h1>${t('ui.title.h1')}</h1>${this.renderLangChip()}
+      <div class="sub">${fault ? t('ui.title.hint.sub.fault') : t('ui.title.sub.read')}</div>
       <div class="scards">${html}</div>
-      <div class="acts"><div class="act" data-act="back">返回定弦</div></div>`
+      <div class="acts"><div class="act" data-act="back">${t('ui.title.back')}</div></div>`
   }
 
   private renderConfirm(): string {
@@ -368,20 +380,25 @@ export class TitleScreen {
     /* 两种「要先问一句」的措辞不能混：一种是**看得见**有档（原样），一种是**看不见**有没有档（KI-386）。
        后者若照抄前者，就是把一次读失败报成一条确定事实——那正是这一批要治的形状。 */
     const warn = this.rosterFault === null
-      ? '本机已有可读的存档。开新弦不会立刻动它，但下一次休息会把自动槽写掉。'
-      : `本机存档问不出来（${this.rosterFault}）。开新弦不会立刻动它，但下一次休息可能覆盖一份看不见的存档。`
+      ? t('ui.title.confirm.warn.existing')
+      : t('ui.title.confirm.warn.fault', { fault: this.rosterFault })
     return `
       <div class="astro" aria-hidden="true"></div>
       <div class="vignette" aria-hidden="true"></div>
       <div class="embers" aria-hidden="true">${EMBERS}</div>
-      <h1>开一根新弦</h1>
+      <h1>${t('ui.title.h1.newgame')}</h1>${this.renderLangChip()}
       <div class="sub">${warn}</div>
       <div class="sub">${line}</div>
       <div class="acts">
-        <div class="act${this.focus.index === 0 ? ' sel' : ''}" data-act="new-no">取消 · 回去挑存档</div>
-        <div class="act${this.focus.index === 1 ? ' sel' : ''}" data-act="new-yes">确认开新弦</div>
+        <div class="act${this.focus.index === 0 ? ' sel' : ''}" data-act="new-no">${t('ui.title.confirm.back')}</div>
+        <div class="act${this.focus.index === 1 ? ' sel' : ''}" data-act="new-yes">${t('ui.title.confirm.sure')}</div>
       </div>
-      <div class="hint">←/→ 选 · Enter 确认</div>`
+      <div class="hint">${t('ui.title.hint.confirm')}</div>`
+  }
+
+  private renderLangChip(): string {
+    const label = getLang() === 'zh' ? 'EN' : '中文'
+    return `<button class="lang-chip" data-lang-toggle type="button" aria-label="${label}" title="${label}">${label}</button>`
   }
 
   private render(): void {
