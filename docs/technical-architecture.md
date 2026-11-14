@@ -7902,3 +7902,34 @@ await import(VALIDATOR_SPEC as string)
 **不声称**：① 不声称内存表与网关配置同步——变更路径是 routes.json → Node 侧表，与网关自己的配置来源是两条路（`refreshRoutes` 只负责"通知网关重读"，不保证网关真的重读成功）；② 不声称 `route.changed` 的消费者策略（丢缓存／重建连接／各订阅方自定）；③ 不声称 routes.json 有版本/校验和（顺序只按 order+id 再排）；④ 不声称任何真 Gateway 真的被刷新过（全部 headless 进程内读数）。
 
 **读数与剩余欠账见账本 KI-451 那一行。**
+
+
+## 附录 B：双语 i18n 基建与站点同步（2026-11-15 落）
+
+### B1. src/i18n/Lang.ts（语言基础设施）
+
+**为什么要做这件事**：止音纪元的文案全部住汉语里，而既定规则是「玩家全程不夹英文」——切换语言时不能一半英语一半汉语混着。本节把「玩家界面的双语切换」从零落地，作为后续双语全覆盖的地基。
+
+**`src/i18n/Lang.ts`**：自研的字典化 t() 风格基建：
+- `getLang()` / `setLang('en'|'zh')` / `t(key, vars?)` — 同形 dict，vars 支持 {key} 替换
+- 默认 'zh'（止音纪元是一块中文唱片）；localStorage 'caesura-lang' 记忆用户选择
+- **不打 CJK 字段**（dialogue.json/NPC canon/物品名）：数据层不动，UI 锁死单一字段
+- EN 侧追求「止音语气」（短、哑、碑文感），不允许把中文直译成现代英文口气
+
+**已覆盖**：`src/ui/TitleScreen.ts`（止音纪元 h1/副标题/四种 hint 变体/继续/确认/被动/标签全部换 t()）、`src/ui/Hud.ts`（6 处：codex 完成/进度、音级、失谐、theHush、theHush.sub、seal 寂）、`src/ui/DialogueBox.ts`（1-9 选择/Esc 离开）、`src/ui/CinematicLetterbox.ts`（ESC 回放）、`src/ui/actionLabels.ts`（21 键位标签同名双语表 `ACTION_LABELS`(zh) / `ACTION_LABELS_EN`(en)，`getLang()==='en'` 时 actionLabel() 路由 EN 表）
+
+**接线点**：所有 UI 文案必须通过 t('ui.*') 走字典；任何 literal 出现在上述 UI 文件里都对应一条 Lang.ts 里的 zh key 与 en key。
+
+### B2. 站点实时同步流水线（.github/workflows/site-sync.yml + scripts/build-site-latest.mjs + docs/SITE-SYNC.md）
+
+**目标**：用户网站（个人展示页）能直连读取 master 当前真值（不是缓存式快照、不是手写数字）。
+
+**`site-latest.json` schema**（仅主干）：schema/defaultBranch/head/branch/subject/date/kv(KI.rows/SYS.rows/ARCH.sections/ARCH.holes/PKG.scripts)/suites/headMgt.url，与 `scripts/phase-status.mjs` 同源（实时读取），所有值严格来自 `git rev-parse HEAD` + `git log -1 --format=...` + `scripts/phase-status.mjs`。
+
+**触发**：master push 自动跑 build-site-latest.mjs 并重写 site-latest.json；幂等（同 SHA = 同字节）；回执提交用 `chore(status)`，避免 workflow 自身无限触发。
+
+**消费方式**：展示页 fetch 一次 raw URL（`raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json`，TLS + CORS 全部允许，无需凭据），渲染「最新 master 通过 CI → commit short sha → KV 现读」即可。
+
+### B3. 中文手册（docs/PLAYER-GUIDE.md · 中英对照）
+
+《止音纪元》新玩家手册——纯中文、覆盖键位操作 / 战斗机制 / 主线推进 / Boss 攻略 / 调试快捷入口 / 控制台 URL。EN 半册以 English companion 与 README.en.md 同步落地（两份独立 README，单一语境）。
