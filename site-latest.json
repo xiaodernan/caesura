@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "7df7db239b2229811792249593e39ab083281907",
+  "head": "486bd264efb134ba5e51a732071f9357120118ba",
   "branch": "master",
-  "subject": "feat(spring): caesura-lore LoreCache 单飞锁防惊群 双检+分段64锁 stampede 8到1 p95 131到75ms",
-  "date": "2026-11-15T06:18:00+08:00",
+  "subject": "feat(site): 五大展示页互链 导航一致 codex/cast/tutorial/console/game 双语页眉页脚互导 LANG_EXACT 四键并轨 EN 不漏中文",
+  "date": "2026-11-15T06:57:17+08:00",
   "kv": {
     "KI.rows": 482,
     "KI.Implemented": 305,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/7df7db239b2229811792249593e39ab083281907",
+    "url": "https://github.com/xiaodernan/caesura/commit/486bd264efb134ba5e51a732071f9357120118ba",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
