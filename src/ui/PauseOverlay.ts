@@ -1,4 +1,5 @@
 import { PauseControl } from '@/core/PauseControl'
+import { t } from '@/i18n/Lang'
 
 /**
  * 玩家手动暂停的「止音仪典」（Phase F-45）。
@@ -77,7 +78,7 @@ export class PauseOverlay {
     this.root.className = 'pause-overlay'
     this.root.setAttribute('aria-hidden', 'true')
     this.root.setAttribute('aria-role', 'presentation')
-    this.root.innerHTML = `<div class="panel"><div class="ring"></div><div class="ring ring-b"></div><div class="seal" aria-hidden="true">止</div><div class="seal seal-b" aria-hidden="true">音</div><h1 class="glyph">止</h1><div class="sub">PAUSED</div><div class="rule"></div><div class="hint">Esc · 再一次 · 继续</div></div>`
+    this.root.innerHTML = `<div class="panel"><div class="ring"></div><div class="ring ring-b"></div><div class="seal" aria-hidden="true">${t('ui.pause.seal')}</div><div class="seal seal-b" aria-hidden="true">${t('ui.pause.sealB')}</div><h1 class="glyph">${t('ui.pause.glyph')}</h1><div class="sub">PAUSED</div><div class="rule"></div><div class="hint">${t('ui.pause.hint')}</div></div>`
     document.body.appendChild(this.root)
   }
 

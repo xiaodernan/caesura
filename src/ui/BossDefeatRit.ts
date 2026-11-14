@@ -1,5 +1,6 @@
 import { bus } from '@/core/EventBus'
 import { nameOf } from '@/combat/CombatManager'
+import { t } from '@/i18n/Lang'
 
 /**
  * Boss 终局「烬印」（Phase F-49 · 前端第二十六维；F-48 KI-529 已占第二十五维）：
@@ -101,11 +102,11 @@ export class BossDefeatRit {
     return `<div class="altar">
       <span class="corner-tl" aria-hidden="true"></span><span class="corner-tr" aria-hidden="true"></span>
       <span class="corner-bl" aria-hidden="true"></span><span class="corner-br" aria-hidden="true"></span>
-      <div class="overline">TERMINUS · 终 · 印</div>
+      <div class="overline">${t('ui.boss.defeatRit.overline')}</div>
       <h1>${name}</h1>
-      <div class="sub">焚烬将寂 · 沉音归墟</div>
+      <div class="sub">${t('ui.boss.defeatRit.sub')}</div>
       <div class="rule"></div>
-      <div class="seal" aria-hidden="true">终</div>
+      <div class="seal" aria-hidden="true">${t('ui.boss.defeatRit.seal')}</div>
     </div>`
   }
 

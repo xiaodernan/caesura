@@ -440,6 +440,16 @@ const ZH: Record<string, string> = {
   'ui.map.farwatch': '远望 ${n}m',
   'ui.map.noneLandmarks': '还没有看见任何地标。',
   'ui.map.noneFacilities': '这一带还没有可用的机关。',
+  'ui.boss.defeatRit.overline': 'TERMINUS · 终 · 印',
+  'ui.boss.defeatRit.sub': '焚烬将寂 · 沉音归墟',
+  'ui.boss.defeatRit.seal': '终',
+  'ui.boss.phase.sub': '第 ${phase} · 共 ${phases} 阶',
+  'ui.boss.phrase.glyph': '命',
+  'ui.boss.phrase.phases': '第${phase} / ${phases} 段',
+  'ui.pause.hint': 'Esc · 再一次 · 继续',
+  'ui.pause.seal': '止',
+  'ui.pause.sealB': '音',
+  'ui.pause.glyph': '止',
 }
 
 const EN: Record<string, string> = {
@@ -867,6 +877,16 @@ const EN: Record<string, string> = {
   'ui.map.farwatch': 'Sight ${n}m',
   'ui.map.noneLandmarks': 'No landmarks sighted yet.',
   'ui.map.noneFacilities': 'No working facilities here yet.',
+  'ui.boss.defeatRit.overline': 'TERMINUS · SEAL OF END',
+  'ui.boss.defeatRit.sub': 'The ember stills; the buried tone returns below',
+  'ui.boss.defeatRit.seal': 'END',
+  'ui.boss.phase.sub': 'Phase ${phase} of ${phases}',
+  'ui.boss.phrase.glyph': 'L',
+  'ui.boss.phrase.phases': 'Phase ${phase} / ${phases}',
+  'ui.pause.hint': 'Esc · press again · resume',
+  'ui.pause.seal': 'STOP',
+  'ui.pause.sealB': '||',
+  'ui.pause.glyph': '⏸',
 }
 
 const DICTS: Record<Lang, Record<string, string>> = { zh: ZH, en: EN }

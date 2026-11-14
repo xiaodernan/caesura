@@ -1,5 +1,6 @@
 import { bus } from '@/core/EventBus'
 import { nameOf } from '@/combat/CombatManager'
+import { t } from '@/i18n/Lang'
 
 /**
  * Boss「换段誓约」（Phase F-47 · 前端第二十四维；F-46 PauseOverlay 已占第二十三维）：
@@ -98,7 +99,7 @@ export class BossPhaseBanner {
       <span class="corner-foot-left" aria-hidden="true"></span>
       <span class="corner-foot-right" aria-hidden="true"></span>
       <h2>${name}</h2>
-      <div class="sub">第 ${p.phase} · 共 ${p.phases} 阶</div>
+      <div class="sub">${t('ui.boss.phase.sub', { phase: p.phase, phases: p.phases })}</div>
       <div class="rule"></div>
     </div>`
   }

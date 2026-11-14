@@ -1,4 +1,5 @@
 import { bus } from '../core/EventBus'
+import { t } from '@/i18n/Lang'
 
 /**
  * Boss 乐句线 HUD（Phase 7 F3）。
@@ -97,7 +98,7 @@ export class BossPhraseBar {
     ctx.font = '600 10px Georgia, "Songti SC", "STSong", serif'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText('命', x + barW - 13.5, y + 12.7)
+    ctx.fillText(t('ui.boss.phrase.glyph'), x + barW - 13.5, y + 12.7)
 
     // 乐句线名（nameKey）+ 段次小字（沿用副标金）
     ctx.fillStyle = '#efe6d2'
@@ -107,7 +108,7 @@ export class BossPhraseBar {
     ctx.fillText(this.nameKey ?? `phase-${this.phase}`, x + 12, y + 17)
     ctx.fillStyle = 'rgba(227, 207, 143, 0.85)'
     ctx.font = '10px Georgia, "Songti SC", serif'
-    ctx.fillText(`第${this.phase} / ${this.phases} 段`, x + 12, y + 35)
+    ctx.fillText(t('ui.boss.phrase.phases', { phase: this.phase, phases: this.phases }), x + 12, y + 35)
 
     // 中央乐谱 staff：一条细梁 + 四拍钉（1-based 对齐 rhythm.beat.beatInBar）
     const staffY = y + barH - 12
