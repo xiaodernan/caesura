@@ -28,7 +28,8 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 
 **Live**: <https://xiaodernan.github.io/caesura/?fresh=1> (always rebuilds from `master`)  
 - Tutorial: <https://xiaodernan.github.io/caesura/tutorial/> (bilingual · 8 steps · lives with the game) ·  
-- Console: <https://xiaodernan.github.io/caesura/console/> (Wave 56 / Eight-Region Worldview panel)  
+- Console: <https://xiaodernan.github.io/caesura/console/> (Wave 56 / Eight-Region Worldview panel) ·  
+- Cast Roster: <https://xiaodernan.github.io/caesura/cast/> (Cast roster — 15 roles · regions · NPCs · bosses · bilingual EN/zh)  
 - Sync truth: `https://raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json`
 
 ## Where to read

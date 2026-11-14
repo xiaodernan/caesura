@@ -25,7 +25,8 @@ npm run dev            # Vite dev server；浏览器打开 http://localhost:5173
 
 **线上地址**：<https://xiaodernan.github.io/caesura/?fresh=1>（最新 master 自动构建）  
 - 新手教程：<https://xiaodernan.github.io/caesura/tutorial/>（双语 / 8 步 / 鼠标 Y 轴段） ·  
-- 系统台：<https://xiaodernan.github.io/caesura/console/>（目前 Wave 56 / 八地域世界图 / 集大成 panels）  
+- 系统台：<https://xiaodernan.github.io/caesura/console/>（Wave 56 / 八地域世界图 / 集大成 panels） ·  
+- 角色图鉴：<https://xiaodernan.github.io/caesura/cast/>（Cast Roster · 15 个势力/地域/NPC/Boss，中/EN 双语） ·  
 - 数据最新：`master` 每推即重嵌 `site-latest.json`（raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json）  
 
 > 注意：线上是 `?fresh=1` 的干净状态，页面证据文件总会对账最新 master；页面首屏可能短暂停在 boot 屏。
