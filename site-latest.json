@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "35c9952dc4bdea5869dcf5f0b1bc415488a904ff",
+  "head": "0fe625993635ba2310e68b42bd461f8f5ce1e11e",
   "branch": "master",
-  "subject": "fix(ci): site-sync checkout v24 → v4（no such action version）",
-  "date": "2026-11-14T19:01:00+08:00",
+  "subject": "docs(i18n): technical-architecture 附录 B（i18n 基建正式登记：src/i18n/Lang.ts / TitleScreen|Hud|DialogueBox|CinematicLetterbox|actionLabels / 站点 site-sync / PLAYER-GUIDE / README.en.md / site-latest.json schema-v1）",
+  "date": "2026-11-14T19:07:08+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/35c9952dc4bdea5869dcf5f0b1bc415488a904ff",
+    "url": "https://github.com/xiaodernan/caesura/commit/0fe625993635ba2310e68b42bd461f8f5ce1e11e",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
