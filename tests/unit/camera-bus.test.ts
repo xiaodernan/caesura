@@ -100,9 +100,8 @@ describe('批17 分支死角：update 路径（蒙太奇推轨 / 入地钳制 / 
   it('低谷地形 + 俯角拉满：posSmooth.y 钳在 0.35，镜头不许入地', () => {
     const r = rig()
     const p = fp({ pos: { x: 0, y: -2, z: 0 } })
-    // 相机几何（修正后）：pitch 越小 ⇒ 相机越低 ⇒ 更靠近地板；dy>0 推 pitch 下行（玩家上移鼠标指向身后→往下）。
-    // 我们需要"俯角拉满"的场景（相机最低），所以喂 dy>0 持续推 pitch 到下限，移到低点 → 触发地板保护。
-    for (let i = 0; i < 12; i++) r.update(0.5, p, { dx: 0, dy: 0.8 }, null)
+    // 相机几何（默认）：mouse-up ⇒ dy<0 ⇒ pitch ↓ ⇒ 相机沉向 player floor ⇒ 入地触发地板保护
+    for (let i = 0; i < 12; i++) r.update(0.5, p, { dx: 0, dy: -0.8 }, null)
     expect(posSmoothOf(r).y, '期望位深陷地下 ⇒ 每帧都被抬回地板之上').toBe(0.35)
   })
 
