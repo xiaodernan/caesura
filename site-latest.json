@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "5ea4acfb66785f5289761e06b458b2d4544a128f",
+  "head": "a64079b150c98485a392e553b8797fff142ca71b",
   "branch": "master",
-  "subject": "feat(site): 世界谱 codex 页 浏览器内 BM25 双语检索 48 条真实项目文本 同源发布 /caesura/codex/",
-  "date": "2026-11-15T04:57:27+08:00",
+  "subject": "chore(gates): id-scope 命名洞登记 codex/ 世界谱页（Pages workflow dist/codex 同源发布）",
+  "date": "2026-11-15T05:04:36+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/5ea4acfb66785f5289761e06b458b2d4544a128f",
+    "url": "https://github.com/xiaodernan/caesura/commit/a64079b150c98485a392e553b8797fff142ca71b",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
