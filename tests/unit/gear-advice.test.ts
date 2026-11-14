@@ -158,7 +158,8 @@ describe('KI-060 面板是它的读者（没有消费方的表就是死数据）
     .join('\n')
 
   it('装备页画了 ★，而且分数只问 Equipment 一次（面板自己不加权）', () => {
-    expect(code, '面板没画那一颗星').toContain('★ 建议')
+    expect(code, '面板没画那一颗星').toContain('★')
+    expect(code, '这颗星必须接在 stak.gear.suggested 上（双语真值；zh 渲染为「★ 建议」，en 为「★ Advice」）').toContain("stak.gear.suggested")
     expect(code, '面板绕过了 Equipment.adviceStars').toContain('adviceStars(')
     expect(code, '面板绕过了 Equipment.adviceDelta').toContain('adviceDelta(')
     expect(code, '面板里不许出现第二份权重乘法').not.toMatch(/gearAdvice\.weights/)
