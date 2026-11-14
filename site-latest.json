@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "1483c22c4aeaff095eb57ff9394b9b8ed42a70dd",
+  "head": "f233df8715f46c65dcd066a7c067a41412c44439",
   "branch": "master",
-  "subject": "feat(i18n): Stakerite 锻造面板七个 Tab + 操作 Tab 双语化（调音/装备/行囊/谱册/交易/存档/操作 中 EN）",
-  "date": "2026-11-14T19:42:46+08:00",
+  "subject": "feat(tutorial): /tutorial/ 终端落地——新玩家七步入门小册子（开弦→横拖→弹反→锁定→音色相生→耳鸣→寄存 · 墨白文排版 · Enter 文案链）+ Pages 部署 tutorial/ 至 /caesura/tutorial/",
+  "date": "2026-11-14T19:49:34+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/1483c22c4aeaff095eb57ff9394b9b8ed42a70dd",
+    "url": "https://github.com/xiaodernan/caesura/commit/f233df8715f46c65dcd066a7c067a41412c44439",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
