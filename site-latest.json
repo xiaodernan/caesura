@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "a8d5bd4243f5255d9d8d74db51c3c558b7b5a501",
+  "head": "3fd9055b39a2ab7de1f9bf1adf688fe2db344406",
   "branch": "master",
-  "subject": "feat(ui): RegionBanner 接线完成 + 文档对账 + F-107（resolves Docs consistency gates reds）",
-  "date": "2026-11-15T02:05:03+08:00",
+  "subject": "feat(ui): atmosphere 色散上加 feTurbulence rail migration（160s 呼吸 + reduced-motion no-op）",
+  "date": "2026-11-15T02:14:37+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/a8d5bd4243f5255d9d8d74db51c3c558b7b5a501",
+    "url": "https://github.com/xiaodernan/caesura/commit/3fd9055b39a2ab7de1f9bf1adf688fe2db344406",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
