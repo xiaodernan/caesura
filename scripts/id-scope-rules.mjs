@@ -73,6 +73,10 @@ export const NAMED_HOLES = [
     area: 'cast',
     why: '角色图鉴页（`cast/index.html`）：玩家专吃一口看完整故事/势力/派系的静态 HTML，**不在 source code 主体里**（无 runtime、无 import、不进 bundle 也不进 dialogue.json）；Pages workflow 把它拷入 dist/cast/ 一同部署到 https://xiaodernan.github.io/caesura/cast/；玩家看到的「止音纪元 Cast Roster」属于 metaLanding 而非 game-internal；id-scope 规则提示这一堆「有一个文件落库却不在交付总体（按号引用规则为 src/scripts 走查面）」——这是合法不入走查的扩大，不属于走查面外遗留。这里登记它作为命名的洞，连门 `id-scope-rules 的 §6 `豁免的证据要现在能打开`` ——它在 Pages deploy workflow 里有 `cp -R cast/. dist/cast/`，本行的载体在 .github/workflows/pages.yml 第 41 行附近。',
   },
+  {
+    area: 'codex',
+    why: '世界谱页（`codex/index.html`，2026-11-15 落）：48 条项目真实文本的**浏览器内 BM25 双语检索**展示页——纯静态 HTML/CSS/JS，**不在 source code 主体里**（无 runtime、无 import、不进 bundle 也不进 dialogue.json、零网络零 LLM）；Pages workflow 把它拷入 dist/codex/ 一同部署到 https://xiaodernan.github.io/caesura/codex/；玩家看到的「止音纪元 · 世界谱」属于 metaLanding 而非 game-internal；id-scope 规则提示这一堆「有一个文件落库却不在交付总体（按号引用规则为 src/scripts 走查面）」——这是合法不入走查的扩大，不属于走查面外遗留。这里登记它作为命名的洞，连门 `id-scope-rules 的 §6 `豁免的证据要现在能打开`` ——它在 Pages deploy workflow 里有 `cp -R codex/. dist/codex/`，本行的载体在 .github/workflows/pages.yml 第 47 行附近。',
+  },
 ]
 
 /**
