@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "b771f41aaac97a8c22458564bd5763f4637b549a",
+  "head": "fa7736c025f2cd1619253a6ca5033f3582d802bb",
   "branch": "master",
-  "subject": "fix(camera): pitch axis default (mouse-up = look-up, mouse-down = look-down) — restore ORIGINAL sign, correct prior flip",
-  "date": "2026-11-14T22:54:01+08:00",
+  "subject": "chore(boot): bump index.html title — let Pages rebuild hash (FPS Mouse Axis fix visible)",
+  "date": "2026-11-14T23:00:33+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/b771f41aaac97a8c22458564bd5763f4637b549a",
+    "url": "https://github.com/xiaodernan/caesura/commit/fa7736c025f2cd1619253a6ca5033f3582d802bb",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
