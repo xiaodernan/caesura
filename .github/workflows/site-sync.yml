@@ -33,7 +33,11 @@ jobs:
             git config user.email 'caesura-bot@noreply.local'
             git add site-latest.json
             git commit -m 'chore(status): re-embed site-latest.json'
-            git push origin master
+            # 连发两次 master 会让先后台两个 refresh job 同时落地 site-latest.json；
+            # 先把自己的重嵌提交 rebase 到最新 master 上，再推——否则后一把 job 必然被非 fast-forward 拒
+            git fetch origin master --depth=1
+            git rebase origin/master
+            git push origin HEAD:master
           else
             echo 'site-latest.json already fresh'
           fi
