@@ -20,11 +20,16 @@ npm run dev            # Vite dev server → http://localhost:5173/?fresh=1
 ## Verify
 
 ```bash
-npm run check          # tsc --noEmit + validate:data + full suite (4850+ legs, 518 files, 0 reds)
+npm run check          # tsc --noEmit + validate:data + full suite (6885 legs, 523 files, 0 reds)
 npm test               # the suite, one green pass after another
 npm run validate:data  # schema linter — current: 0 ERROR / 2 WARN (pre-registered)
 npm run build          # tsc + vite build + dist text scan — 0 findings
 ```
+
+**Live**: <https://xiaodernan.github.io/caesura/?fresh=1> (always rebuilds from `master`)  
+- Tutorial: <https://xiaodernan.github.io/caesura/tutorial/> (bilingual · 8 steps · lives with the game) ·  
+- Console: <https://xiaodernan.github.io/caesura/console/> (Wave 56 / Eight-Region Worldview panel)  
+- Sync truth: `https://raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json`
 
 ## Where to read
 

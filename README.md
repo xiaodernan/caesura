@@ -23,11 +23,18 @@ npm run dev            # Vite dev server；浏览器打开 http://localhost:5173
 
 `?fresh=1` 直进世界（标题屏仅在无存档时出现）。
 
+**线上地址**：<https://xiaodernan.github.io/caesura/?fresh=1>（最新 master 自动构建）  
+- 新手教程：<https://xiaodernan.github.io/caesura/tutorial/>（双语 / 8 步 / 鼠标 Y 轴段） ·  
+- 系统台：<https://xiaodernan.github.io/caesura/console/>（目前 Wave 56 / 八地域世界图 / 集大成 panels）  
+- 数据最新：`master` 每推即重嵌 `site-latest.json`（raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json）  
+
+> 注意：线上是 `?fresh=1` 的干净状态，页面证据文件总会对账最新 master；页面首屏可能短暂停在 boot 屏。
+
 ## 验证
 
 ```bash
-npm run check          # tsc --noEmit + validate:data + 全部测试（当前：0 错 / 4949 条 / 418 个文件）
-npm test               # 仅测试（磁盘名册 418，曲线 4540→4555→4574→4883→4891→4907→4933→4949 随批次递增）
+npm run check          # tsc --noEmit + validate:data + 全部测试（6885 条 / 523 文件，零红）
+npm test               # 仅测试（磁盘名册 523，曲线 6885）
 npm run validate:data  # 数据门（当前：0 ERROR / 2 WARN，均为既有项）
 npm run coverage       # 覆盖率棘轮门（空报表退化按 exit 2 记账，不判 guilty）
 npm run build          # tsc + vite build + check-dist（产物：dist/）
