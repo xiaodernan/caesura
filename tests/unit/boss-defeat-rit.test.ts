@@ -1,4 +1,5 @@
 import { beforeAll, afterEach, describe, expect, it } from 'vitest'
+import { setLang } from '@/i18n/Lang'
 import { bus } from '@/core/EventBus'
 import { BossDefeatRit } from '@/ui/BossDefeatRit'
 
@@ -67,6 +68,7 @@ beforeAll(() => {
 afterEach(() => {
   head.children = []
   body.children = []
+  setLang('zh')
 })
 
 describe('BossDefeatRit：阶段 F-49 Boss 终局「烬印」', () => {
@@ -78,16 +80,27 @@ describe('BossDefeatRit：阶段 F-49 Boss 终局「烬印」', () => {
     rit.dispose()
   })
 
-  it('emit boss.defeated ⇒ altar 亮起并渲染 Boss 中文名 + 「终」印 + 焚烬将寂副标', () => {
+  it('emit boss.defeated ⇒ altar 亮起并渲染 Boss 中文名 + 「终」印 + 焚烬将寂副标；中/EN 两种语言分列各自自证', () => {
     const rit = new BossDefeatRit()
     bus.emit('boss.defeated', { id: 'boss_myriad', dataId: 'en_myriad', nameKey: 'enemy.myriad', holdTicks: 120 })
     const root = body.children.find((el) => el.id === 'boss-defeat-rit')!
     expect(root.classList.contains('on')).toBe(true)
     expect(root.innerHTML).toContain('万籁 The Myriad')
     expect(root.innerHTML).toContain('焚烬将寂')
-    expect(root.innerHTML).toContain('TERMINUS')
+    // zh：未译的英文 TERMINUS 不许出现（中文模式走中文封口）；「终 · 印」是中文侧的仪典封口
+    expect(root.innerHTML).not.toContain('TERMINUS')
+    expect(root.innerHTML).toContain('终 · 印')
     expect(root.innerHTML).toContain('终')
     rit.dispose()
+    // en：EN 模式必须见到 en 术语终结（TERMINUS）和英文封口
+    setLang('en')
+    const rit2 = new BossDefeatRit()
+    bus.emit('boss.defeated', { id: 'boss_myriad', dataId: 'en_myriad', nameKey: 'enemy.myriad', holdTicks: 120 })
+    const root2 = body.children.find((el) => el.id === 'boss-defeat-rit')!
+    expect(root2.innerHTML).toContain('TERMINUS · SEAL OF END')
+    expect(root2.innerHTML).not.toContain('焚烬将寂')
+    rit2.dispose()
+    setLang('zh')
   })
 
   it('连续两次 emit ⇒ 内容真更新到最新一次的 Boss（不残留旧 Boss）', () => {

@@ -1,4 +1,5 @@
 import { beforeAll, afterEach, describe, expect, it } from 'vitest'
+import { setLang } from '@/i18n/Lang'
 import { GameTime } from '@/core/Time'
 import { PauseControl } from '@/core/PauseControl'
 import { PauseOverlay } from '@/ui/PauseOverlay'
@@ -80,6 +81,7 @@ beforeAll(() => {
 afterEach(() => {
   head.children = []
   body.children = []
+  setLang('zh')
 })
 
 describe('PauseOverlay：阶段 F-45 玩家手动暂停的「止音仪典」', () => {
@@ -101,8 +103,23 @@ describe('PauseOverlay：阶段 F-45 玩家手动暂停的「止音仪典」', (
     const root = body.children.find((el) => el.id === 'pause-overlay')!
     expect(root.classList.contains('on'), 'Esc 触发玩家那一格 → overlay 出现').toBe(true)
     expect(root.innerHTML, '止 glyph 在').toContain('止')
-    expect(root.innerHTML, 'PAUSED 字在').toContain('PAUSED')
+    // zh：「已暂停」在屏；EN 的 PAUSED 不许冒（本地化对账）
+    expect(root.innerHTML, 'zh 下「已暂停」上屏').toContain('已暂停')
+    expect(root.innerHTML, 'zh 下不应冒出 en-exclusive sub').not.toContain('PAUSED')
     expect(root.innerHTML, 'Esc 提示在').toContain('Esc')
+    overlay.dispose()
+    // en：英文模式「PAUSED」上屏，zh 的「已暂停」不许冒
+    setLang('en')
+    const time2 = new GameTime()
+    const pause2 = new PauseControl(time2)
+    const overlay2 = new PauseOverlay({ pause: pause2 })
+    pause2.toggleByUser()
+    overlay2.update()
+    const root2 = body.children.find((el) => el.id === 'pause-overlay')!
+    expect(root2.innerHTML).toContain('PAUSED')
+    expect(root2.innerHTML).not.toContain('已暂停')
+    overlay2.dispose()
+    setLang('zh')
   })
 
   it('update() 跟踪 userPaused 的对称：再次 Esc 之后 overlay 出现/消失、随 pausedByUser 翻转', () => {
