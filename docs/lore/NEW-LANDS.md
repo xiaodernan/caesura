@@ -6,6 +6,7 @@
 > **永远不写世界外的物质规律**：没有飞行、没有复活、没有神力。六地域的「不可思议」都只从钟与声学里长出来。
 >
 > **落地登记（2026-11-15）**：首个落库件是 `rg_windcoast 风钟海岸`——数据级首落（regions.json + navmesh + 音乐/ lighting 环境声 + unlockFlag organ_gate_open）；
+> 本区对外公开的「八块区域逐一速查」见 `docs/lore/REGIONS-ATLAS.md`（F-108，2026-11-15 落）；不进 runtime、不进 dialogue.json、不加 Boss/NPC，仅做世界观索引与 pacing 断言。
 > 无新 Boss、无新 NPC、无 dialogue.json 牵扯；本册《六地域 × 六 Boss × 六 NPC》其余仍然是设计稿、不入库、不落 runtime。
 
 ---
