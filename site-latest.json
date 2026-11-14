@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "1c7785adb95835501635dbf598da863a9de6ed32",
+  "head": "5ea4acfb66785f5289761e06b458b2d4544a128f",
   "branch": "master",
-  "subject": "fix(tests): controls-page KI-337 页签数口径对齐游记（TABS六格+手册+游记=8；左右换页改三步 手册 游记 操作）+ EPIC-VII whisper 候选 canon 对账 0 ok 4 dup 8 conflict",
-  "date": "2026-11-15T04:38:52+08:00",
+  "subject": "feat(site): 世界谱 codex 页 浏览器内 BM25 双语检索 48 条真实项目文本 同源发布 /caesura/codex/",
+  "date": "2026-11-15T04:57:27+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/1c7785adb95835501635dbf598da863a9de6ed32",
+    "url": "https://github.com/xiaodernan/caesura/commit/5ea4acfb66785f5289761e06b458b2d4544a128f",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
