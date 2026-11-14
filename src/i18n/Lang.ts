@@ -670,6 +670,7 @@ const EN: Record<string, string> = {
   'world.flavor.bells.donechange': 'Every bell that rings changes the one who hears it',
   'world.flavor.silence.canhearself': 'This sentence can only be heard by silence itself',
   'world.flavor.remind.bellscouldnevercomeback': 'Remember — some bells never come back',
+  'world.flavor.inscriptionYearOfNoWater': 'An inscription, one line of characters — but water soaked into the strokes long ago',
   'ui.hud.codex.progress': 'Codex · ${index}/${total}',
   'ui.hud.rank': 'Pitch ${rank}',
   'ui.hud.offtune': 'Off-tune · fading',

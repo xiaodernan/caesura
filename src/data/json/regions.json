@@ -934,6 +934,18 @@
           "y": -50,
           "z": 60
         }
+      },
+      {
+        "id": "in_drownedchoir_water_inscription",
+        "kind": "inspect",
+        "verb": "拓下石刻上的初句",
+        "verbKey": "interact.first_phrase_rubbing",
+        "notifyKey": "world.flavor.inscriptionYearOfNoWater",
+        "pos": {
+          "x": 320,
+          "y": -40,
+          "z": 100
+        }
       }
     ],
     "music": {
