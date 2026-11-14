@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "07af757098387fdff195006b7b23ccf2c8ef509d",
+  "head": "1483c22c4aeaff095eb57ff9394b9b8ed42a70dd",
   "branch": "master",
-  "subject": "docs(site): SITE-INTEG.md——把 master site-latest.json 接入个人展示页的 drop-in 集成卡（live commit + KV 现读）",
-  "date": "2026-11-14T19:30:23+08:00",
+  "subject": "feat(i18n): Stakerite 锻造面板七个 Tab + 操作 Tab 双语化（调音/装备/行囊/谱册/交易/存档/操作 中 EN）",
+  "date": "2026-11-14T19:42:46+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/07af757098387fdff195006b7b23ccf2c8ef509d",
+    "url": "https://github.com/xiaodernan/caesura/commit/1483c22c4aeaff095eb57ff9394b9b8ed42a70dd",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
