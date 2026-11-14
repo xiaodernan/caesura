@@ -23,8 +23,11 @@
   #app { position:fixed; inset:0; }
   #atmosphere { position:fixed; inset:0; z-index:5; pointer-events:none;
     background: radial-gradient(ellipse 118% 104% at 50% 50%, transparent 56%, rgba(2,2,5,.22) 78%, rgba(0,0,0,.42) 100%); }
-  #atmosphere::after { content:''; position:absolute; inset:0; opacity:.05; mix-blend-mode:overlay;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='176' height='176'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E"); }
+  #atmosphere::after { content:''; position:absolute; inset:-20%; opacity:.055; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='176' height='176'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+    background-size: 600px 600px; animation: atmos-drift 160s linear infinite; }
+  @keyframes atmos-drift { 0% { transform:translate3d(0,0,0) } 100% { transform:translate3d(-120px,-120px,0) } }
+  @media (prefers-reduced-motion: reduce) { #atmosphere::after { animation:none } }
   #hud { position:fixed; inset:0; pointer-events:none; z-index:6; }
   #boot { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:16px;
           font-family:Georgia, "Songti SC", "STSong", "SimSun", serif; z-index:10;
