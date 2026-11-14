@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "4e040f27490bc348f43aa7c4b00e17e454a3b9dc",
+  "head": "b771f41aaac97a8c22458564bd5763f4637b549a",
   "branch": "master",
-  "subject": "feat(pressure): scripts/pressure-mesh.mjs — 轻量 in-process 压测网关链",
-  "date": "2026-11-14T22:50:41+08:00",
+  "subject": "fix(camera): pitch axis default (mouse-up = look-up, mouse-down = look-down) — restore ORIGINAL sign, correct prior flip",
+  "date": "2026-11-14T22:54:01+08:00",
   "kv": {
     "KI.rows": 481,
     "KI.Implemented": 304,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/4e040f27490bc348f43aa7c4b00e17e454a3b9dc",
+    "url": "https://github.com/xiaodernan/caesura/commit/b771f41aaac97a8c22458564bd5763f4637b549a",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
