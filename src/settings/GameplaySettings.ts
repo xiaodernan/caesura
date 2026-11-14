@@ -66,7 +66,7 @@ export const DEFAULT_GAMEPLAY_SETTINGS: Readonly<GameplaySettings> = Object.free
   damageScale: 1,
   holdMs: 200,
   mashGuard: true,
-  invertMouseY: true
+  invertMouseY: false
 })
 
 /** 数值格的界（与规格出处一一对应；boolean 格不在此表） */
