@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "38a1f625f7f819329e5def90d673d0bc18a6b651",
+  "head": "f74aad953eeacab5178ce9ff06ee6f6eb98cf1c3",
   "branch": "master",
-  "subject": "docs(llm): 2026-11-15 真机 A/B 复核 非流75.7-78.9 流式77.8-83.6 无系统性差 控制台脚注与EN双语并轨",
-  "date": "2026-11-15T07:35:30+08:00",
+  "subject": "feat(world): 刻痕扩容至 14 处 lore 52 条 雾语林回音树 破拍营地未数拍石 风钟海岸盐龛潮痕 双语文案同轨 Atlas 手册 codex 测试全部并轨",
+  "date": "2026-11-15T07:54:11+08:00",
   "kv": {
     "KI.rows": 482,
     "KI.Implemented": 305,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/38a1f625f7f819329e5def90d673d0bc18a6b651",
+    "url": "https://github.com/xiaodernan/caesura/commit/f74aad953eeacab5178ce9ff06ee6f6eb98cf1c3",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
