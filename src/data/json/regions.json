@@ -391,6 +391,18 @@
           "y": 0,
           "z": -20
         }
+      },
+      {
+        "id": "in_resthold_ash_well",
+        "kind": "inspect",
+        "verb": "看井石上盖了又揭、揭了又盖的铁罩",
+        "verbKey": "interact.traceWellIronLid",
+        "notifyKey": "world.flavor.rest.ashWell",
+        "pos": {
+          "x": -30,
+          "y": 0,
+          "z": -12
+        }
       }
     ],
     "music": {

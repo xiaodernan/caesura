@@ -17,6 +17,7 @@ const STORE_KEY = 'caesura-lang'
 
 const ZH: Record<string, string> = {
   'interact.readSlateNoHair': '看那块没有字迹的匾',
+  'interact.traceWellIronLid': '看井石上盖了又揭、揭了又盖的铁罩',
   'interact.traceScoreDirectionSo': '看地上那道反向乐谱',
   'interact.touchingDustThatKnows': '轻触知道事的灰',
   'interact.readPoemOnCrackedBell': '读破钟壳上的诗句',
@@ -74,6 +75,7 @@ const ZH: Record<string, string> = {
   'ui.hud.codex.done': '谱册 · 一段收束',
   'world.flavor.rest.firstbreath': '世界在你第一次呼吸前就已经停住了——你听得到的，是它无法收回的遗言',
   'world.flavor.rest.namelessstone': '山下那座墓碑无名无姓，只有一道刮痕，横在那里',
+  'world.flavor.rest.ashWell': '井里的水从没响过——镇子上的人不让任何东西掉进去，生怕掉下去会响；不会响的水，才最干净',
   'world.flavor.inscriptionYearOfNoWater': '这一块刻了一行字，但水漫进了字里很久',
   'world.flavor.whisperwode.echoKeeper': '这棵老树的年轮里收着整片林子的回声——站在它面前，你听得见自己三年前的脚步声',
   'world.flavor.camp.beatstoneNoCount': '这块石头还在自己按拍，只是没人再数了——数拍的人走了很久',
@@ -619,6 +621,7 @@ const ZH: Record<string, string> = {
 
 const EN: Record<string, string> = {
   'interact.readSlateNoHair': 'Look at the blank slate with no writing',
+  'interact.traceWellIronLid': 'Look at the iron lid on the well, lifted and covered again',
   'interact.traceScoreDirectionSo': 'Trace the backward score on the ground',
   'interact.touchingDustThatKnows': 'Touch the dust that already knows',
   'interact.readPoemOnCrackedBell': 'Read the poem on the cracked bell-shell',
@@ -676,6 +679,7 @@ const EN: Record<string, string> = {
   'ui.hud.codex.done': 'Codex · one chapter closed',
   'world.flavor.rest.firstbreath': 'The world had already stopped before your first breath — what you hear is the last word it couldn’t take back',
   'world.flavor.rest.namelessstone': 'Below the hill, a headstone with no name — only a single scrape, laid across the stone',
+  'world.flavor.rest.ashWell': 'The water in this well has never sounded — the town lets nothing fall in for fear it will ring on the way down; water that never rings is the only pure water',
   'world.flavor.whisperwode.treesdontspeak': 'The trees in Whisperwode don’t speak their names — they speak yours',
   'world.flavor.drowned.bellbottom': 'At the bottom, a bell never struck. Once water covers it, no one hears it again',
   'world.flavor.camp.beatsunit': 'Everyone here forgot their names. They kept their beats',
