@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "75784a343e19dbb3ba4ed243864edbb1907a62f5",
+  "head": "5dd19bb1bb661f55a096818e4ec26a79bc9dbef9",
   "branch": "master",
-  "subject": "fix(ui): 前端美化+防重叠灰度分池文本截断 面板头右侧标签防挤占 kv行 baseline+wrap 防溢出",
-  "date": "2026-11-15T13:17:25+08:00",
+  "subject": "fix(ui): 集大成调度台 47 面板从 149 处溢出降到 1 处 栅格面板 min-width:0 长camelCase破词 梯形行 flex-wrap",
+  "date": "2026-11-15T13:36:07+08:00",
   "kv": {
     "KI.rows": 482,
     "KI.Implemented": 305,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/75784a343e19dbb3ba4ed243864edbb1907a62f5",
+    "url": "https://github.com/xiaodernan/caesura/commit/5dd19bb1bb661f55a096818e4ec26a79bc9dbef9",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
