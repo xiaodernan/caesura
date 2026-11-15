@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "07ba0815a392b427871f04656b2edbe72c8a037e",
+  "head": "b40564e0307e4a39286a2b8db3c188a839e6bddd",
   "branch": "master",
-  "subject": "feat(ui): 标题屏《半沉之钟》内联 SVG 背景层（零素材 · 三种屏共用 · 6939/532 全绿）",
-  "date": "2026-11-15T15:22:54+08:00",
+  "subject": "feat(story): 篇六《雨审判》上线 + 全站互链 + smoke:live 13 入口",
+  "date": "2026-11-15T15:45:50+08:00",
   "kv": {
-    "KI.rows": 485,
-    "KI.Implemented": 308,
+    "KI.rows": 486,
+    "KI.Implemented": 309,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/07ba0815a392b427871f04656b2edbe72c8a037e",
+    "url": "https://github.com/xiaodernan/caesura/commit/b40564e0307e4a39286a2b8db3c188a839e6bddd",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
