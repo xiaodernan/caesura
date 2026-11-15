@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "4175989a93fcc854c44503ee3ec4022434e1fd54",
+  "head": "f6fd4bc08066a071ccbad418136b25189c8c8199",
   "branch": "master",
-  "subject": "feat(ui): 游记选读「余响集八篇」入口（zh/en 双份 · Atlas Tab 静态内容）",
-  "date": "2026-11-15T17:25:38+08:00",
+  "subject": "test(console): 12 条无回归门钉 F-124 溢出挤压硬化 LANG_EXACT 对账 KI-573",
+  "date": "2026-11-15T17:47:39+08:00",
   "kv": {
-    "KI.rows": 490,
-    "KI.Implemented": 313,
+    "KI.rows": 491,
+    "KI.Implemented": 314,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/4175989a93fcc854c44503ee3ec4022434e1fd54",
+    "url": "https://github.com/xiaodernan/caesura/commit/f6fd4bc08066a071ccbad418136b25189c8c8199",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
