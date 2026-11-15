@@ -30,7 +30,7 @@ jobs:
 
       - name: Install Playwright (no package.json pollution)
         run: |
-          npm i --no-save playwright@1.58.0
+          npm i --no-save playwright@1.65.1
           npx playwright install --with-deps chromium
 
       - name: Generate offline editions (PDF)
