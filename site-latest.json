@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "409aa2b0c6e684fe61c5c042864b9bfe7ad70769",
+  "head": "07ba0815a392b427871f04656b2edbe72c8a037e",
   "branch": "master",
-  "subject": "feat(story): 篇五《回声庭园》上线 + 全站 13 处互链 + smoke:live 12 入口",
-  "date": "2026-11-15T14:58:25+08:00",
+  "subject": "feat(ui): 标题屏《半沉之钟》内联 SVG 背景层（零素材 · 三种屏共用 · 6939/532 全绿）",
+  "date": "2026-11-15T15:22:54+08:00",
   "kv": {
-    "KI.rows": 484,
-    "KI.Implemented": 307,
+    "KI.rows": 485,
+    "KI.Implemented": 308,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/409aa2b0c6e684fe61c5c042864b9bfe7ad70769",
+    "url": "https://github.com/xiaodernan/caesura/commit/07ba0815a392b427871f04656b2edbe72c8a037e",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
