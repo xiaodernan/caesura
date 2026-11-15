@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "0a0c647a00ee102caa0aef92d14a86df62251300",
+  "head": "19679877748774b749cc70524796716da55761b1",
   "branch": "master",
-  "subject": "feat(content): 刻痕第二波：钟队院二处（钟壳凿痕 · staveTrue）· 19 spots KI-582",
-  "date": "2026-11-15T22:29:22+08:00",
+  "subject": "feat(admin): 止音后台 · 用户观察站 + 全站本机埋点（KI-583 · 19 endpoints）",
+  "date": "2026-11-15T23:08:51+08:00",
   "kv": {
-    "KI.rows": 500,
-    "KI.Implemented": 323,
+    "KI.rows": 501,
+    "KI.Implemented": 324,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/0a0c647a00ee102caa0aef92d14a86df62251300",
+    "url": "https://github.com/xiaodernan/caesura/commit/19679877748774b749cc70524796716da55761b1",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
