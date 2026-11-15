@@ -25,6 +25,22 @@ describe('World Codex（codex/index.html）', () => {
     expect(HTML).toContain('id="langToggle"')
   })
 
+  it('漫步按钮（id="wander"）、快捷搜索芯片容器（id="quick"）、详情模态（id="veil"）都存在', () => {
+    expect(HTML).toContain('id="wander"')
+    expect(HTML).toContain('id="quick"')
+    expect(HTML).toContain('id="veil"')
+    expect(HTML).toContain('id="mtitle"')
+    expect(HTML).toContain('id="mbody"')
+    // 键盘："/" 聚焦搜索；Esc 清空；卡片键盘可达（data-i + tabindex）
+    expect(HTML).toContain("ev.key === '/'")
+    expect(HTML).toContain("ev.key === 'Escape'")
+    expect(HTML).toContain('data-i=')
+    expect(HTML).toContain('tabindex="0"')
+    // 漫步：从 CODEX 里随机取一条打开详情
+    expect(HTML).toContain('Math.floor(Math.random()')
+    expect(HTML).toContain('openEntry')
+  })
+
   it('CODEX 条目数 ≥ 52，且八个地域、三 Boss、三 Ending、十四处刻痕、六片新陆齐全', () => {
     const entries = (HTML.match(/cat:'(?:reach|boss|ending|term|mark|system|epic|lands)'/g) ?? []).length
     expect(entries, 'CODEX entries').toBeGreaterThanOrEqual(52)

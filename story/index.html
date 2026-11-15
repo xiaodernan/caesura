@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>风钟海岸 · 盐 / Windbell Coast · Salt — CAESURA 短篇</title>
+<meta name="description" content="《止音纪元》原创短篇 · 风钟海岸听雾站守夜人阿衡：钟没有响的那个夜，世界决定完最后一句话。双语对照 · 零网络 · 零 LLM。 / Original short story from The Epoch of Hush — the night the bell refused to ring, and the world decided on its last sentence. Bilingual, offline, zero LLM.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🧂</text></svg>">
+<style>
+  :root {
+    --gold: #d9b46a;
+    --gold-soft: rgba(217,180,106,.32);
+    --ink: #f3ede0;
+    --ink-dim: rgba(243,237,224,.62);
+    --panel: rgba(18,22,38,.6);
+    --serif: "Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#05070f; color:var(--ink); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; }
+  .bg { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .bg.radial {
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(217,180,106,.15), transparent 60%),
+      radial-gradient(800px 700px at 50% 118%, rgba(90,140,180,.14), transparent 62%),
+      radial-gradient(600px 420px at 12% 104%, rgba(127,215,208,.07), transparent 60%),
+      #05070f;
+  }
+  .bg.noise { position:fixed; inset:0; z-index:-1; opacity:.05; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .wrap { max-width:860px; margin:0 auto; padding:26px 26px 90px; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .brand { font-size:.8rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; opacity:.9; }
+  .brand a { color:inherit; text-decoration:none; border-bottom:1px dotted rgba(217,180,106,.5); }
+  .brand a:hover { color:#ffe4a4; }
+  .toplinks { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toplinks a { font-size:.72rem; color:var(--ink-dim); text-decoration:none; border:1px solid rgba(243,237,224,.14); padding:6px 12px; border-radius:999px; transition:all .22s ease; }
+  .toplinks a:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .lang-row button { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(217,180,106,.12); border:1px solid var(--gold-soft); padding:6px 15px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; }
+  .lang-row button:hover { background:rgba(217,180,106,.22); box-shadow:0 0 16px rgba(217,180,106,.25); }
+
+  [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="en"] .zh-copy { display:none !important; }
+
+  header.hero { text-align:center; padding:52px 14px 30px; position:relative; }
+  .kicker { font-size:.72rem; letter-spacing:.42em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:20px; }
+  .kicker b { color:var(--gold); font-weight:600; }
+  h1 { font-size:clamp(2.6rem, 10vw, 4.6rem); font-weight:600; letter-spacing:.18em;
+       background:linear-gradient(180deg,#fffaf0 0%, #ecd9a8 30%, #d9b46a 62%, #7c5f33 100%);
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+       text-shadow:0 0 90px rgba(217,180,106,.3); }
+  .subtitle { margin-top:14px; font-size:.82rem; color:var(--ink-dim); letter-spacing:.3em; text-transform:uppercase; }
+  .rule { width:170px; height:1px; margin:24px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .meta { margin-top:16px; font-size:.7rem; color:rgba(243,237,224,.45); letter-spacing:.18em; text-transform:uppercase; }
+  .meta a { color:var(--gold); text-decoration:none; }
+
+  article { background:var(--panel); border:1px solid rgba(243,237,224,.1); border-radius:18px; padding:38px 40px 34px; position:relative; }
+  article::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--gold), transparent); opacity:.7; }
+  article p { font-size:1.04rem; line-height:2.02; letter-spacing:.02em; color:rgba(243,237,224,.92); margin-bottom:1.5em; text-indent:2em; }
+  article p.no-indent { text-indent:0; }
+  article p em { color:#ffe9b3; font-style:normal; }
+  article p strong { color:var(--gold); font-weight:600; }
+  .beat { width:100%; text-align:center; margin:.4em 0 1.4em; letter-spacing:.5em; color:rgba(217,180,106,.6); font-size:.8rem; }
+  .coda { text-align:center; font-style:italic; color:rgba(243,237,224,.75); letter-spacing:.08em; margin-top:.6em; }
+
+  .note { margin:26px auto 0; max-width:720px; text-align:center; font-size:.74rem; color:rgba(243,237,224,.42); line-height:1.9; letter-spacing:.04em; }
+  .note a { color:var(--gold); text-decoration:none; border-bottom:1px dotted rgba(217,180,106,.5); }
+
+  footer { margin-top:56px; border-top:1px solid rgba(243,237,224,.09); padding-top:22px; display:flex; flex-wrap:wrap; gap:10px 26px; justify-content:space-between; font-size:.7rem; color:rgba(243,237,224,.4); letter-spacing:.06em; }
+  footer a { color:var(--gold); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @media (max-width:640px) { .wrap { padding:20px 12px 70px; } article { padding:26px 20px 24px; } article p { font-size:.98rem; text-indent:2em; } }
+</style>
+</head>
+<body>
+<div class="bg radial" aria-hidden="true"></div>
+<div class="bg noise" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><a href="/caesura/">CAESURA</a> · 《止音纪元》</div>
+    <div class="toplinks">
+      <a href="/caesura/"><span class="zh-copy">游戏</span><span class="en-copy">Game</span></a>
+      <a href="/caesura/codex/"><span class="zh-copy">世界谱</span><span class="en-copy">Codex</span></a>
+      <a href="/caesura/cast/"><span class="zh-copy">角色图鉴</span><span class="en-copy">Cast</span></a>
+      <a href="/caesura/tutorial/"><span class="zh-copy">教程</span><span class="en-copy">Tutorial</span></a>
+      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button></span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <p class="kicker zh-copy">短篇 · <b>风钟海岸</b> · 《盐》</p>
+    <p class="kicker en-copy">Short story · <b>Windbell Coast</b> · “Salt”</p>
+    <h1 class="zh-copy">盐</h1>
+    <h1 class="en-copy">Salt</h1>
+    <p class="subtitle zh-copy">听雾站守夜人 · 阿衡</p>
+    <p class="subtitle en-copy">The Night-Keeper of the Listening Post · A Hén</p>
+    <div class="rule"></div>
+    <p class="meta zh-copy">约 5 分钟 · <a href="/caesura/codex/">世界谱</a> 与 <a href="/caesura/">游戏</a> 同源世界观 · 零 LLM 撰写</p>
+    <p class="meta en-copy">about 5 minutes · same world as the <a href="/caesura/codex/">codex</a> and the <a href="/caesura/">game</a> · written without LLM assistance</p>
+  </header>
+
+  <article>
+    <div class="zh-copy">
+      <p>阿衡第一次上岗的那个晚上，父亲把她推到石盘边，让她自己听。</p>
+      <p class="no-indent">"你不用记。"他说，"你只要数。"</p>
+      <p>数什么？她问。父亲说：<em>数节拍</em>。</p>
+      <p class="no-indent">那一夜她数了四个。年复一年，她数过很多个<strong>四</strong>。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>父亲的手在四十一年的岗楼上磨出了一层盐霜。每天更换的药膏和布，复读的记录手册，字句始终如一——<em>"今夜如故"</em>。</p>
+      <p>直到最后那一页。那是她父亲第四千次落笔之后，唯一一次改了字句。<em>"今夜不同。"</em>写完这一句，他再也没有下一句。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>冬末的一个夜里，风停了。</p>
+      <p>这是她守站以来第一次听不见任何声音，连海浪也屏住了。共鸣腔里传来一种低得她不敢相信自己的声音，像一个巨人停止了磨盘，转而专注地屏住呼吸。</p>
+      <p>她站起来，又蹲下。</p>
+      <p><strong>她听见了。</strong></p>
+
+      <div class="beat">· · ·</div>
+
+      <p>不是钟声。是钟声的残页。</p>
+      <p>一种她从未在任何钟里听过的音高——低到先于她的耳朵到达她的骨头。每三拍之后，又缺了一拍，像一句不肯说完的话，被她父亲、她奶奶、奶奶的奶奶一代代地数过、听过、擦干过，年复一年藏在这座岬角的石缝里。</p>
+      <p>她忽然明白了：<strong>这不是一座灯塔。从来不是。</strong>这不是为了给船看清前路建的钟。这是<em>世界的屏息之所</em>。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>她没有照前辈那样去数。她把自己的手掌放上那块石盘，按了一个她从没做过、却从身体内部长出来的拍子——<em>三拍一停</em>，和那段声音严丝合缝地合上了。</p>
+      <p>风来了。没有钟响，却没有任何一段沉默比这一刻更完整。雾像从天上垂下来的布，把海面一寸寸盖住。每一块盐石都像刚从火里出来，带着一点热，一点光。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">天快亮的时候，父亲的记录手册里多了一行新字。不是她写的，也不是她父亲的字迹——那一行写得又老又新：</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.1rem; letter-spacing:.05em;">"原来还有人认识这个字。"</p>
+      <p class="coda">她收起父亲的手册。她没有告诉任何人。她拿起那块擦镜的布，开始擦那只石盅——因为钟没响的日子，守夜人不下班；钟响的日子，守夜人也不下班，只是记录方式变了。</p>
+      <p class="coda">风钟海岸没有结束。它只是从这一夜起，有了<strong>第一个能听懂那第四个拍子的人</strong>。</p>
+    </div>
+
+    <div class="en-copy">
+      <p>The night A Hén first went on watch, her father put her at the stone pan and told her to listen.</p>
+      <p class="no-indent">“You don’t need to remember,” he said. “You only need to count.”</p>
+      <p>Count what? she asked. He said: <em>count the beats</em>.</p>
+      <p class="no-indent">That night she counted <strong>four</strong>. Year after year, she has counted many <strong>fours</strong>.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>Her father’s hands wore forty-one winters of salt into that tower. The liniment and the cloth he changed daily; the ledger in his hand never varied — <em>“Tonight, as always.”</em></p>
+      <p>Until the last page. That was the fourth thousand such entry he ever wrote, and the only one he ever changed: <em>“Tonight is different.”</em> After those words, there were no more words.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>Late in winter, on a night with no moon, the wind stopped.</p>
+      <p>For the first time since she had taken the watch, she heard nothing — not even the surf breathing. From the resonance chamber came something too low for her to believe: as if some giant had stopped the mill-wheel and turned, instead, to hold its breath.</p>
+      <p>She stood up, and she knelt down.</p>
+      <p><strong>She heard it.</strong></p>
+
+      <div class="beat">· · ·</div>
+
+      <p>Not a bell. The bell’s torn page.</p>
+      <p>A pitch she had never found in any bell — pitched so low it reached her bones before her ears. Three beats, and then one missing. A sentence that refused to finish, counted and heard and wiped dry by her father and his father and his mother before him, season upon season, hidden like that in the cracks of this headland.</p>
+      <p>She understood at last: <strong>this was never a lighthouse. It was never built to guide ships.</strong> This is where the world <em>holds its breath</em>.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>She did not count as the others had counted. She laid her palm on the stone pan and pressed out a beat she had never been taught, one grown from inside her — <em>three, pause</em> — and it matched the voice exactly.</p>
+      <p>The wind came. No bell tolled, and no silence in her life had ever been this complete. The fog descended like a cloth lowered from heaven, covering the sea one palm at a time. Every salt-stained stone was warm, as if it had just come out of the fire, carrying a little light.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">Near dawn, in her father’s ledger, a new line appeared. Not in her hand, and not in her father’s — old and new at once:</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.1rem; letter-spacing:.05em;">“So there is still someone who knows this script.”</p>
+      <p class="coda">She closed her father’s ledger. She did not tell anyone. She took up the polishing cloth and began to wipe the stone bowl clean — because on the nights when the bell is silent, the keeper does not leave her post; and on the nights when the bell tolls, the keeper does not leave her post either. Only the form of the record changes.</p>
+      <p class="coda">Windbell Coast does not end. From that night, it has <strong>someone who can hear the fourth beat</strong>.</p>
+    </div>
+  </article>
+
+  <div class="note">
+    <span class="zh-copy">《盐》是与 <a href="/caesura/">《止音纪元》</a> 同源的原创短篇——阿衡不是 Boss，不是 NPC，她是这片海的第四根弦。风钟海岸的其余三段话，仍旧等你在游戏里去走。</span>
+    <span class="en-copy">“Salt” is an original short story from the same world as <a href="/caesura/">The Epoch of Hush</a> — A Hén is not a boss or an NPC, she is the fourth string of this coast. Three more sentences are still waiting for you in the game.</span>
+  </div>
+
+  <footer>
+    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/">游戏</a> · <a href="/caesura/tutorial/">入门教程</a> · <a href="/caesura/codex/">世界谱</a> · <a href="/caesura/cast/">角色图鉴</a> · <a href="/caesura/console/">调度台</a></span>
+    <span class="en-copy">© CAESURA · <a href="/caesura/">Game</a> · <a href="/caesura/tutorial/">Tutorial</a> · <a href="/caesura/codex/">World Codex</a> · <a href="/caesura/cast/">Cast Roster</a> · <a href="/caesura/console/">Console</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('langToggle');
+  function apply(lang) {
+    root.setAttribute('data-lang', lang);
+    root.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en');
+    try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+  }
+  btn.addEventListener('click', function () {
+    apply(root.getAttribute('data-lang') === 'en' ? 'zh' : 'en');
+  });
+  var saved = 'zh';
+  try { saved = localStorage.getItem('caesura-lang') || 'zh'; } catch (e) { /* noop */ }
+  apply(saved === 'en' ? 'en' : 'zh');
+})();
+</script>
+</body>
+</html>

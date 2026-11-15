@@ -106,6 +106,30 @@
 
   @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
   @media (max-width:640px) { .wrap { padding:20px 14px 60px; } #grid { grid-template-columns:1fr; } .hint-line { flex-direction:column; gap:2px; } }
+
+  /* quick chips */
+  .quick { display:flex; flex-wrap:wrap; gap:7px; justify-content:center; margin:12px auto 2px; max-width:900px; }
+  .quick .q { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink-dim); background:transparent; border:1px dashed rgba(217,180,106,.35); border-radius:8px; padding:5px 13px; letter-spacing:.08em; transition:all .2s ease; }
+  .quick .q:hover { color:var(--gold); border-color:var(--gold); box-shadow:0 0 12px rgba(217,180,106,.2); }
+
+  /* search row with wander */
+  .search-row { position:relative; display:flex; gap:10px; max-width:860px; margin:0 auto; align-items:stretch; }
+  .search-row .search-shell { flex:1; margin:0; min-width:0; }
+  #wander { cursor:pointer; font-family:inherit; font-size:.92rem; color:var(--gold); background:rgba(217,180,106,.08); border:1px solid var(--gold-soft); border-radius:22px; padding:0 22px; letter-spacing:.16em; transition:all .25s ease; display:flex; align-items:center; gap:7px; }
+  #wander:hover { background:rgba(217,180,106,.18); box-shadow:0 0 26px rgba(217,180,106,.3); transform:translateY(-1px); }
+
+  /* detail modal */
+  .veil { position:fixed; inset:0; z-index:60; background:rgba(3,5,12,.8); backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; padding:26px; opacity:0; pointer-events:none; transition:opacity .28s ease; }
+  .veil.on { opacity:1; pointer-events:auto; }
+  .sheet { width:100%; max-width:700px; max-height:78vh; overflow:auto; background:var(--panel-hard); border:1px solid rgba(217,180,106,.42); border-radius:18px; padding:26px 28px 22px; box-shadow:0 30px 90px rgba(0,0,0,.65), 0 0 70px rgba(217,180,106,.09); transform:translateY(16px); transition:transform .3s ease; }
+  .veil.on .sheet { transform:translateY(0); }
+  .sheet .tag { margin-bottom:14px; }
+  .sheet h2 { font-size:1.42rem; color:#f5ead2; line-height:1.35; letter-spacing:.04em; margin-bottom:12px; }
+  .sheet p { font-size:.95rem; line-height:1.8; color:rgba(243,237,224,.9); }
+  .sheet-foot { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:18px; }
+  .sheet-foot .kbd { font-size:.68rem; color:rgba(243,237,224,.4); letter-spacing:.12em; }
+  .sheet-close { cursor:pointer; font-family:inherit; font-size:.74rem; color:var(--ink-dim); background:transparent; border:1px solid rgba(243,237,224,.2); border-radius:999px; padding:8px 20px; letter-spacing:.2em; transition:all .2s ease; }
+  .sheet-close:hover { color:var(--gold); border-color:var(--gold-soft); }
 </style>
 </head>
 <body>
@@ -122,6 +146,8 @@
       <a href="/caesura/cast/" class="en-copy">Cast Roster</a>
       <a href="/caesura/console/" class="zh-copy">调度台</a>
       <a href="/caesura/console/" class="en-copy">Console</a>
+      <a href="/caesura/story/" class="zh-copy">《盐》</a>
+      <a href="/caesura/story/" class="en-copy">Salt</a>
       <button id="langToggle" type="button" aria-label="switch language">EN / 中文</button>
     </div>
   </div>
@@ -136,19 +162,35 @@
     <div class="rule"></div>
   </header>
 
-  <div class="search-shell" role="search">
-    <span class="search-icon">⌕</span>
-    <input id="q" type="search" autocomplete="off" spellcheck="false"
-           placeholder="搜「万籁」「敲不碎的铃」「第二幕」「频率罗盘」……" />
+  <div class="search-row" role="search">
+    <div class="search-shell">
+      <span class="search-icon">⌕</span>
+      <input id="q" type="search" autocomplete="off" spellcheck="false"
+             placeholder="搜「万籁」「敲不碎的铃」「第二幕」「频率罗盘」……" />
+    </div>
+    <button id="wander" type="button" aria-label="随机漫步 · wander into a random page">↻<span class="zh-copy">漫步</span><span class="en-copy">Wander</span></button>
   </div>
   <div class="hint-line">
-    <span class="zh-copy">索引正文为项目真实文本（docs / Lang.ts / regions.json），点击卡片不会跳转到任何外部站点</span>
-    <span class="en-copy">Corpus is real project text (docs / Lang.ts / regions.json); clicking cards never leaves this page</span>
+    <span class="zh-copy">索引正文为项目真实文本（docs / Lang.ts / regions.json）· 按 <kbd>/</kbd> 聚焦搜索 · <kbd>Esc</kbd> 清空</span>
+    <span class="en-copy">Corpus is real project text (docs / Lang.ts / regions.json) · press <kbd>/</kbd> to focus search · <kbd>Esc</kbd> to clear</span>
     <span class="count"><b id="hitCount">0</b> <span class="zh-copy">条</span><span class="en-copy">hits</span></span>
   </div>
+  <div class="quick" id="quick" aria-label="快捷搜索 · quick queries"></div>
 
   <div class="chips" id="chips"></div>
   <main id="grid" aria-live="polite"></main>
+
+  <div class="veil" id="veil" role="dialog" aria-modal="true" aria-labelledby="mtitle" aria-hidden="true">
+    <div class="sheet">
+      <span class="tag tag-term" id="mtag">Term</span>
+      <h2 id="mtitle"></h2>
+      <p id="mbody"></p>
+      <div class="sheet-foot">
+        <span class="kbd"><kbd>Esc</kbd> <span class="zh-copy">关闭 · Enter 也行</span><span class="en-copy">close · Enter works too</span></span>
+        <button class="sheet-close" id="mclose" type="button"><span class="zh-copy">合上 · Close</span><span class="en-copy">Close · 合上</span></button>
+      </div>
+    </div>
+  </div>
 
   <footer>
     <span class="zh-copy"><b>实现</b>：BM25（k1=1.5 · b=0.75）· 中文 bigram + 英文词元 · 词频 × IDF · 纯浏览器计算</span>
@@ -373,9 +415,48 @@ function matchesLang(e, qToks) {
   return scoreDoc(CODEX.indexOf(e), qToks);
 }
 
+const CATEGORY_LABELS = {
+  reach: { zh: '地域', en: 'Reach' }, boss: { zh: 'Boss', en: 'Boss' }, ending: { zh: '结局', en: 'Ending' },
+  term: { zh: '术语', en: 'Term' }, mark: { zh: '刻痕', en: 'Mark' },
+  system: { zh: '系统', en: 'System' }, epic: { zh: '史诗', en: 'Epic' }, lands: { zh: '新陆', en: 'New Land' },
+};
+const tagLabelFor = (cat, lang) => CATEGORY_LABELS[cat]?.[lang] ?? cat;
+
+function openEntry(e) {
+  $('#mtag').textContent = tagLabelFor(e.cat, state.lang);
+  $('#mtag').className = 'tag tag-' + e.cat;
+  $('#mtitle').textContent = e.title[state.lang];
+  $('#mbody').textContent = e.body[state.lang];
+  const veil = $('#veil');
+  veil.classList.add('on');
+  veil.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal() {
+  const veil = $('#veil');
+  veil.classList.remove('on');
+  veil.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+const QUICK = [
+  { zh: '万籁', en: 'The Myriad', q: '万籁' },
+  { zh: '无耳深窖', en: 'Earless Deeps', q: '无耳' },
+  { zh: '频率罗盘', en: 'Frequency Compass', q: '频率罗盘' },
+  { zh: '第四口钟', en: 'the fourth bell', q: '第四口钟' },
+  { zh: '刻痕', en: 'Marks', q: '刻痕' },
+  { zh: '恩希尔', en: 'Hersil', q: '恩希尔' },
+  { zh: '余响归位', en: 'Afterglow', q: '余响' },
+  { zh: '低音之城', en: 'Bass Citadel', q: '低音之城' },
+];
+function renderQuick() {
+  $('#quick').innerHTML = QUICK.map((q) =>
+    `<button class="q" type="button" data-q="${q.q}">${state.lang === 'zh' ? q.zh : q.en}</button>`
+  ).join('');
+}
+
 function render() {
   const qToks = tokenize(state.query);
-  const scored = CODEX.map((e, i) => ({ e, s: qToks.length ? scoreDoc(i, qToks) : 1 }))
+  const scored = CODEX.map((e, i) => ({ e, i, s: qToks.length ? scoreDoc(i, qToks) : 1 }))
     .filter(({ e, s }) => (state.cat === 'all' || e.cat === state.cat) && (qToks.length === 0 || s > 0))
     .sort((a, b) => b.s - a.s)
     .slice(0, 60);
@@ -385,12 +466,9 @@ function render() {
     grid.innerHTML = `<div class="empty"><b>∅</b><br>${state.lang === 'zh' ? '没找到 —— 换个词：<b>万籁</b> / <b>频率罗盘</b> / <b>第四口钟</b>？' : 'Nothing found — try <b>The Myriad</b>, <b>Frequency Compass</b>, <b>the fourth bell</b>.'}</div>`;
     return;
   }
-  grid.innerHTML = scored.map(({ e }) => {
-    const tagLabel = { reach: state.lang === 'zh' ? '地域' : 'Reach', boss: 'Boss', ending: state.lang === 'zh' ? '结局' : 'Ending',
-      term: state.lang === 'zh' ? '术语' : 'Term', mark: state.lang === 'zh' ? '刻痕' : 'Mark',
-      system: state.lang === 'zh' ? '系统' : 'System', epic: state.lang === 'zh' ? '史诗' : 'Epic', lands: state.lang === 'zh' ? '新陆' : 'New Land' }[e.cat];
-    return `<article class="card">
-      <span class="tag tag-${e.cat}">${tagLabel}</span>
+  grid.innerHTML = scored.map(({ e, i }) => {
+    return `<article class="card" data-i="${i}" tabindex="0" role="button">
+      <span class="tag tag-${e.cat}">${tagLabelFor(e.cat, state.lang)}</span>
       <h3>${highlight(e.title[state.lang], qToks)}</h3>
       <p>${highlight(e.body[state.lang], qToks)}</p>
     </article>`;
@@ -406,6 +484,7 @@ function applyLang(lang) {
   const q = $('#q');
   q.setAttribute('placeholder', lang === 'zh' ? '搜「万籁」「敲不碎的铃」「频率罗盘」……' : 'Search: “The Myriad”, “unbreakable bell”, “frequency compass”…');
   renderChips();
+  renderQuick();
   render();
 }
 
@@ -417,6 +496,51 @@ $('#chips').addEventListener('click', (ev) => {
   state.cat = b.getAttribute('data-cat');
   renderChips();
   render();
+});
+$('#quick').addEventListener('click', (ev) => {
+  const b = ev.target.closest('[data-q]');
+  if (!b) return;
+  const q = b.getAttribute('data-q');
+  state.query = q;
+  $('#q').value = q;
+  render();
+  $('#q').focus();
+});
+$('#grid').addEventListener('click', (ev) => {
+  const card = ev.target.closest('.card');
+  if (!card) return;
+  const i = Number(card.getAttribute('data-i'));
+  if (Number.isInteger(i) && CODEX[i]) openEntry(CODEX[i]);
+});
+$('#grid').addEventListener('keydown', (ev) => {
+  if (ev.key === 'Enter' || ev.key === ' ') {
+    const card = ev.target.closest('.card');
+    if (!card) return;
+    ev.preventDefault();
+    const i = Number(card.getAttribute('data-i'));
+    if (Number.isInteger(i) && CODEX[i]) openEntry(CODEX[i]);
+  }
+});
+$('#wander').addEventListener('click', () => {
+  openEntry(CODEX[Math.floor(Math.random() * CODEX.length)]);
+});
+$('#mclose').addEventListener('click', closeModal);
+$('#veil').addEventListener('click', (ev) => { if (ev.target === ev.currentTarget) closeModal(); });
+document.addEventListener('keydown', (ev) => {
+  const t = ev.target;
+  const inField = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+  if (ev.key === '/' && !inField) {
+    ev.preventDefault();
+    $('#q').focus();
+    return;
+  }
+  if (ev.key === 'Escape') {
+    if (document.activeElement === $('#veil').firstElementChild || $('#veil').classList.contains('on')) { closeModal(); return; }
+    if (state.query) { state.query = ''; $('#q').value = ''; render(); return; }
+    if (document.activeElement === $('#q')) $('#q').blur();
+    return;
+  }
+  if (ev.key === 'Enter' && $('#veil').classList.contains('on')) closeModal();
 });
 $('#langToggle').addEventListener('click', () => applyLang(state.lang === 'zh' ? 'en' : 'zh'));
 
