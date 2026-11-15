@@ -11,6 +11,7 @@
  *   ├── story/empty-bar/（短篇之三）
  *   ├── story/ledger/（短篇之四）
  *   ├── story/garden/（短篇之五）
+ *   ├── story/tribunal/（短篇之六）
  *   ├── console/      （集大成调度台）
  *   └── raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json
  *
@@ -35,6 +36,7 @@ const ENDPOINTS = [
   { name: 'story-3', url: 'https://xiaodernan.github.io/caesura/story/empty-bar/', marker: '空拍子' },
   { name: 'story-4', url: 'https://xiaodernan.github.io/caesura/story/ledger/', marker: '账本' },
   { name: 'story-5', url: 'https://xiaodernan.github.io/caesura/story/garden/', marker: '回声庭园' },
+  { name: 'story-6', url: 'https://xiaodernan.github.io/caesura/story/tribunal/', marker: '雨审判' },
 ]
 
 const asJson = argv.includes('--json')

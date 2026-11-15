@@ -20,7 +20,7 @@ npm run dev            # Vite dev server → http://localhost:5173/?fresh=1
 ## Verify
 
 ```bash
-npm run check          # tsc --noEmit + validate:data + full suite (6939 legs, 532 files, 0 reds)
+npm run check          # tsc --noEmit + validate:data + full suite (6945 legs, 533 files, 0 reds)
 npm test               # the suite, one green pass after another
 npm run validate:data  # schema linter — current: 0 ERROR / 2 WARN (pre-registered)
 npm run build          # tsc + vite build + dist text scan — 0 findings
@@ -36,6 +36,7 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - "The Empty Bar" (original short story, no. 3): <https://xiaodernan.github.io/caesura/story/empty-bar/> (Unfinished Hall · seventy-three years of rotation · Hersil · bilingual · zero LLM · added 2026-11-15)  
 - "The Ledger" (original short story, no. 4): <https://xiaodernan.github.io/caesura/story/ledger/> (Resthold · the page Meg never dared to close · bilingual · zero LLM · added 2026-11-15)  
 - "The Garden of Return" (original short story, no. 5): <https://xiaodernan.github.io/caesura/story/garden/> (The Afterland · the sixth sound · The Owner of the Old Bell · bilingual · zero LLM · added 2026-11-15)  
+- "The Rain Tribunal" (original short story, no. 6): <https://xiaodernan.github.io/caesura/story/tribunal/> (The Afterland · the Rainbell Valley · The Drowning Jurist · seven years between sessions · bilingual · zero LLM · added 2026-11-15)  
 - Sync truth: `https://raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json`
 
 ## Where to read

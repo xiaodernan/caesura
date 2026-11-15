@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>雨审判 / The Rain Tribunal · CAESURA 短篇 之六 — 余响新陆 · 雨钟谷地</title>
+<meta name="description" content="《止音纪元》原创短篇之六 · 雨钟谷地 · 第七年的审判，法庭里从没有人——除「请看见」之外的证词不存在。双语对照 · 零网络 · 零 LLM。 / The sixth original short story — on the seventh anniversary of the Drowning Jurist's court, a single testimony exists: "please see." Bilingual, offline, zero LLM.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🌧️</text></svg>">
+<style>
+  :root {
+    --gold: #9cc4e4;
+    --gold-soft: rgba(156,196,228,.32);
+    --ink: #f3ede0;
+    --ink-dim: rgba(243,237,224,.62);
+    --panel: rgba(14,22,34,.72);
+    --serif: "Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#04070f; color:var(--ink); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; }
+  .bg { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .bg.radial {
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(156,196,228,.12), transparent 60%),
+      radial-gradient(900px 700px at 50% 118%, rgba(70,110,160,.17), transparent 62%),
+      radial-gradient(650px 420px at 15% 104%, rgba(190,220,245,.06), transparent 60%),
+      #04070f;
+  }
+  .bg.noise { position:fixed; inset:0; z-index:-1; opacity:.05; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .wrap { max-width:860px; margin:0 auto; padding:26px 26px 90px; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .brand { font-size:.8rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; opacity:.9; }
+  .brand a { color:inherit; text-decoration:none; border-bottom:1px dotted rgba(156,196,228,.5); }
+  .brand a:hover { color:#eaf5ff; }
+  .toplinks { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toplinks a { font-size:.72rem; color:var(--ink-dim); text-decoration:none; border:1px solid rgba(243,237,224,.14); padding:6px 12px; border-radius:999px; transition:all .22s ease; }
+  .toplinks a:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .lang-row button { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(156,196,228,.12); border:1px solid var(--gold-soft); padding:6px 15px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; }
+  .lang-row button:hover { background:rgba(156,196,228,.22); box-shadow:0 0 16px rgba(156,196,228,.25); }
+
+  [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="en"] .zh-copy { display:none !important; }
+
+  header.hero { text-align:center; padding:52px 14px 30px; }
+  .kicker { font-size:.72rem; letter-spacing:.42em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:20px; }
+  .kicker b { color:var(--gold); font-weight:600; }
+  h1 { font-size:clamp(2.4rem, 9vw, 4rem); font-weight:600; letter-spacing:.16em;
+       background:linear-gradient(180deg,#f0f7ff 0%, #9cc4e4 28%, #5e86ab 58%, #233850 100%);
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+       text-shadow:0 0 90px rgba(156,196,228,.3); }
+  .subtitle { margin-top:14px; font-size:.8rem; color:var(--ink-dim); letter-spacing:.3em; text-transform:uppercase; }
+  .rule { width:170px; height:1px; margin:24px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .meta { margin-top:16px; font-size:.7rem; color:rgba(243,237,224,.45); letter-spacing:.18em; text-transform:uppercase; }
+  .meta a { color:var(--gold); text-decoration:none; }
+
+  article { background:var(--panel); border:1px solid rgba(243,237,224,.1); border-radius:18px; padding:38px 40px 34px; position:relative; }
+  article::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--gold), transparent); opacity:.7; }
+  article p { font-size:1.04rem; line-height:2.02; letter-spacing:.02em; color:rgba(243,237,224,.92); margin-bottom:1.5em; text-indent:2em; overflow-wrap:break-word; }
+  article p.no-indent { text-indent:0; }
+  article p em { color:#e2eefb; font-style:normal; }
+  article p strong { color:var(--gold); font-weight:600; }
+  .beat { width:100%; text-align:center; margin:.4em 0 1.4em; letter-spacing:.5em; color:rgba(156,196,228,.6); font-size:.8rem; }
+  .coda { text-align:center; font-style:italic; color:rgba(243,237,224,.78); letter-spacing:.06em; margin-top:.6em; }
+
+  .note { margin:26px auto 0; max-width:720px; text-align:center; font-size:.74rem; color:rgba(243,237,224,.42); line-height:1.9; letter-spacing:.04em; }
+  .note a { color:var(--gold); text-decoration:none; border-bottom:1px dotted rgba(156,196,228,.5); }
+
+  footer { margin-top:56px; border-top:1px solid rgba(243,237,224,.09); padding-top:22px; display:flex; flex-wrap:wrap; gap:10px 26px; justify-content:space-between; font-size:.7rem; color:rgba(243,237,224,.4); letter-spacing:.06em; }
+  footer a { color:var(--gold); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @media (max-width:640px) { .wrap { padding:20px 12px 70px; } article { padding:26px 20px 24px; } article p { font-size:.98rem; text-indent:2em; } }
+</style>
+</head>
+<body>
+<div class="bg radial" aria-hidden="true"></div>
+<div class="bg noise" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><a href="/caesura/">CAESURA</a> · 《止音纪元》</div>
+    <div class="toplinks">
+      <a href="/caesura/story/"><span class="zh-copy">《盐》</span><span class="en-copy">“Salt”</span></a>
+      <a href="/caesura/story/unnamed-stone/"><span class="zh-copy">《山下无名碑》</span><span class="en-copy">“The Nameless Stone”</span></a>
+      <a href="/caesura/story/empty-bar/"><span class="zh-copy">《空拍子》</span><span class="en-copy">“The Empty Bar”</span></a>
+      <a href="/caesura/story/ledger/"><span class="zh-copy">《账本》</span><span class="en-copy">“The Ledger”</span></a>
+      <a href="/caesura/story/garden/"><span class="zh-copy">《回声庭园》</span><span class="en-copy">“The Garden of Return”</span></a>
+      <a href="/caesura/codex/"><span class="zh-copy">世界谱</span><span class="en-copy">Codex</span></a>
+      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button></span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <p class="kicker zh-copy">短篇 · <b>雨钟谷地</b> · 之六《雨审判》</p>
+    <p class="kicker en-copy">Short story · <b>The Rainbell Valley</b> · No. 6 “The Rain Tribunal”</p>
+    <h1 class="zh-copy">雨审判</h1>
+    <h1 class="en-copy">The Rain Tribunal</h1>
+    <p class="subtitle zh-copy">余响新陆 · 雨钟谷地 · 雨罪审判者</p>
+    <p class="subtitle en-copy">The Afterland · the Rainbell Valley · The Drowning Jurist</p>
+    <div class="rule"></div>
+    <p class="meta zh-copy">约 5 分钟 · 与 <a href="/caesura/codex/">世界谱</a> 同源世界观 · 设定册《新六地域》同源 · 零 LLM 撰写</p>
+    <p class="meta en-copy">about 5 minutes · same world as the <a href="/caesura/codex/">codex</a> · from the New Six Lands design canon · written without LLM assistance</p>
+  </header>
+
+  <article>
+    <div class="zh-copy">
+      <p>雨钟谷地的审判，每七年开一次庭。没有原告，没有被告席——法庭上只有一位审判者，和一位把所有东西都记在纸上的书记。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>雨罪审判者穿一件从不干的法袍。它的袖口从不滴水，但掌心永远是湿的——那是雨住在布里面，谁也不知道它从什么时候开始的。</p>
+      <p>他的起诉书上写着<em>七条沉钟罪责</em>：七口钟在雨里各自犯过什么。纸上全是被泡散又凝固的字，没有人看得清——不是不想看，是这份纸，从落笔那天起，就没有干过。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>雨书记坐在法庭的角落，负责记。他的字一次次被雨水泡散又重新写深——他从第一个字学会的唯一一件事，就是在雨还没来得及泡掉它之前，先把它压进纸里。</p>
+      <p>七年又七年，他的纸堆了七摞。<em>每一摞，都等同一件事：等一个人，愿意说一句——不管是认罪，还是辩护。</em></p>
+
+      <div class="beat">· · ·</div>
+
+      <p>这一场，念到的是第七条罪责：<em>「谷地自己的钟，未经允许，替它自己自愿转身。」</em></p>
+      <p>审判者念了整整一个钟头。雨声替他念了大半句——句号之间，所有的钟声都在雨里学着一起落。这一条究竟有没有犯过，七年一审、审了七年，答案始终一样：有记录的，那是谷地自愿的。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>就在第七年的法庭里，雨书记突然站了起来。</p>
+      <p>审判者看着他。七场散会的光线都是这样灰的——没有一个记录会被收回，因为没人想加进这条被纸泡掉的东西里。</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.15rem; letter-spacing:.05em;">「书记，请看见。」</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>不是辩护，不是认罪，不是证词——法庭里所有的词语前面，从来没人说过「请看见」。</p>
+      <p>审判者停了。雨里，谷地那口沉钟的钟壳里，滚落出自己也说不清楚的那一下——不是认罪，也不是辩护，而是「在」。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">审判者把起诉书合上。七条罪责里，没有一条从此消失——但审判也不再只是审判。</p>
+      <p class="coda">雨书记这一次没有低头重抄。这一页，留了下来。字迹还在——因为它压进纸里的那一笔，是他写字以来，第一笔没被雨泡掉的字。</p>
+      <p class="coda">雨没有停。法庭空了七年的那个空位，终于有人坐了下来。</p>
+    </div>
+
+    <div class="en-copy">
+      <p>The Rainbell Valley sits in session once every seven years. There is no prosecutor, no dock — there is one jurist, and one clerk who writes everything down.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>The Drowning Jurist wears a robe that never dries. Its cuffs never drip, but its palms are forever water — the rain lives inside the cloth, and no one remembers when it started.</p>
+      <p>His indictment lists <em>seven charges</em> — seven bells, and what each one did in the rain. The writing is nothing but dissolved and re-hardened strokes; nobody can read it. Not because anyone refuses — but no page written in that room has once been dry.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>The clerk sits in the corner, keeping the record. Every line he writes is drowned, then written deeper — the only lesson he ever learned was to press the words into the page before the water could carry them off.</p>
+      <p>Seven years upon seven years, and he leaves seven stacks of paper. <em>Every stack stands for the same thing — waiting for one person, willing to say one sentence: an admission, or a defense.</em></p>
+
+      <div class="beat">· · ·</div>
+
+      <p>This time, he reads charge seven: <em>“The valley’s own bell, with no one’s permission, turned itself away.”</em></p>
+      <p>The jurist reads for a full hour. The rain itself reads most of it — between every period, all the bells learn to fall in learning how to fall. Whether the charge stands, seven years upon seven years of verdict has always come to one thing: the valley turned, and that is on record.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>And in that same seventh year, the clerk stands up.</p>
+      <p>The jurist looks at him. The light has been this grey for seven sessions — nobody recorded anything, since nobody ever wanted to add to what the paper had already carried away.</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.15rem; letter-spacing:.05em;">“Clerk. Please see.”</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>Not a defense. Not an admission. Not a testimony — not one word in this room had ever before been preceded by <em>please see</em>.</p>
+      <p>The jurist stops. And from the shell of the sunken bell, a single tone it could not explain rolled through the rain — not an admission, not a defense, only <em>is</em>.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">The jurist closes the indictment. None of the seven charges vanish — but the court is no longer only a court.</p>
+      <p class="coda">The clerk does not copy the page again. This one stays. The writing is still there — because that one stroke was the first in his life the rain could not dissolve.</p>
+      <p class="coda">The rain never stopped. And the empty seat that had stood empty for seven years — finally, someone sat down.</p>
+    </div>
+  </article>
+
+  <div class="note">
+    <span class="zh-copy">《雨审判》取材于《止音纪元》设定册《新六大陆 · NEW-LANDS》第二境（<strong>rg_rainbell_valley</strong> · 雨钟谷地 · ♭F2 · 雨罪审判者 · DLG_RAIN · 主线「雨钟起诉书」），是 companion fiction（双语对照 · 零 LLM · 零网络 · 不落 runtime）。 <a href="/caesura/story/">篇一：《盐》</a> · <a href="/caesura/story/unnamed-stone/">篇二：《山下无名碑》</a> · <a href="/caesura/story/empty-bar/">篇三：《空拍子》</a> · <a href="/caesura/story/ledger/">篇四：《账本》</a> · <a href="/caesura/story/garden/">篇五：《回声庭园》</a> · <a href="/caesura/codex/">世界谱</a></span>
+    <span class="en-copy">“The Rain Tribunal” is adapted from the “New Six Lands · NEW-LANDS” design canon — the second land (<strong>rg_rainbell_valley</strong> · the Rainbell Valley · ♭F2 · The Drowning Jurist · DLG_RAIN · the main arc “The Rainbell Indictment”). Companion fiction (bilingual · zero LLM · offline · not shipped in runtime). <a href="/caesura/story/">Part one: “Salt”</a> · <a href="/caesura/story/unnamed-stone/">Part two: “The Nameless Stone”</a> · <a href="/caesura/story/empty-bar/">Part three: “The Empty Bar”</a> · <a href="/caesura/story/ledger/">Part four: “The Ledger”</a> · <a href="/caesura/story/garden/">Part five: “The Garden of Return”</a> · <a href="/caesura/codex/">World Codex</a></span>
+  </div>
+
+  <footer>
+    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/">游戏</a> · <a href="/caesura/story/">《盐》· 篇一</a> · <a href="/caesura/story/unnamed-stone/">篇二 · 山下无名碑</a> · <a href="/caesura/story/empty-bar/">篇三 · 空拍子</a> · <a href="/caesura/story/ledger/">篇四 · 账本</a> · <a href="/caesura/story/garden/">篇五 · 回声庭园</a> · <a href="/caesura/codex/">世界谱</a></span>
+    <span class="en-copy">© CAESURA · <a href="/caesura/">Game</a> · <a href="/caesura/story/">“Salt” · No. 1</a> · <a href="/caesura/story/unnamed-stone/">No. 2 · The Nameless Stone</a> · <a href="/caesura/story/empty-bar/">No. 3 · The Empty Bar</a> · <a href="/caesura/story/ledger/">No. 4 · The Ledger</a> · <a href="/caesura/story/garden/">No. 5 · The Garden of Return</a> · <a href="/caesura/codex/">World Codex</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('langToggle');
+  var saved = 'zh';
+  try { saved = localStorage.getItem('caesura-lang') || 'zh'; } catch (e) { /* noop */ }
+  function apply(lang) {
+    root.setAttribute('data-lang', lang);
+    root.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en');
+    try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+  }
+  if (btn) btn.addEventListener('click', function () {
+    apply(root.getAttribute('data-lang') === 'en' ? 'zh' : 'en');
+  });
+  apply(saved === 'en' ? 'en' : 'zh');
+})();
+</script>
+</body>
+</html>
