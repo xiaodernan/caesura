@@ -2058,6 +2058,18 @@
           "y": -144,
           "z": 240
         }
+      },
+      {
+        "id": "in_earless_wax_deaf",
+        "kind": "inspect",
+        "verb": "看栏杆上的蜡笔画",
+        "verbKey": "interact.wax_drawings",
+        "notifyKey": "world.flavor.deeps.earAbsent",
+        "pos": {
+          "x": -150,
+          "y": -144,
+          "z": 330
+        }
       }
     ],
     "music": {
