@@ -40,13 +40,15 @@ jobs:
         #   /caesura/cast/     — 角色图鉴 Cast Roster，双语 cast page
         #   /caesura/codex/    — 世界谱 World Codex，浏览器内 BM25 双语检索，零网络零 LLM
         #   /caesura/story/    —《盐》原创短篇（风钟海岸·听雾站），双语对照，零 LLM
+        #   /caesura/admin/    — 止音后台 · 用户观察站（KI-583 · 密码 123 · 静态静态页，种子数据）
         run: |
-          mkdir -p dist/console dist/tutorial dist/cast dist/codex dist/story
+          mkdir -p dist/console dist/tutorial dist/cast dist/codex dist/story dist/admin
           cp -R console/. dist/console/
           cp -R tutorial/. dist/tutorial/
           cp -R cast/. dist/cast/
           cp -R codex/. dist/codex/
           cp -R story/. dist/story/
+          cp -R admin/. dist/admin/
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

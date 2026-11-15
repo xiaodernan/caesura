@@ -18,6 +18,7 @@
  *   ├── story/stonethroat/（短篇之九）
  *   ├── story/first-bell/（短篇之十 · 创世）
  *   ├── console/      （集大成调度台）
+ *   ├── admin/        （止音后台 · 用户观察站 · 密码 123 · 静态页种子数据）
  *   └── raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json
  *
  * 纪律：
@@ -47,6 +48,7 @@ const ENDPOINTS = [
   { name: 'story-9', url: 'https://xiaodernan.github.io/caesura/story/doors/', marker: '千门' },
   { name: 'story-10', url: 'https://xiaodernan.github.io/caesura/story/stonethroat/', marker: '石喉' },
   { name: 'story-11', url: 'https://xiaodernan.github.io/caesura/story/first-bell/', marker: '第一钟' },
+  { name: 'admin', url: 'https://xiaodernan.github.io/caesura/admin/', marker: 'CAESURA / USER OBSERVATORY' },
 ]
 
 const asJson = argv.includes('--json')

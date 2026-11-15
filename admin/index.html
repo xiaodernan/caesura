@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>止音后台 · 止音纪元用户观察站 — CAESURA User Observatory</title>
+<meta name="description" content="看懂 CAESURA 的访客：转化漏斗、留存、24 小时分布、异常日、退出点与智能优化建议。客户端静态页；聚合数据为固定种子可复现的模拟队列，本机实况见 localStorage。" />
+<link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+<div class="aurora" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+
+<!-- ══════════ 门 · the courtesy door（密码 123 · 所有人可进）══════════ -->
+<div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title">
+  <div class="gate-card" id="gate-card">
+    <div class="gate-sigil" aria-hidden="true">
+      <svg viewBox="0 0 96 96" width="84" height="84">
+        <circle cx="48" cy="48" r="42" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"/>
+        <circle cx="48" cy="48" r="28" fill="none" stroke="currentColor" stroke-width="1.1" opacity=".8"/>
+        <circle cx="48" cy="48" r="4.6" fill="currentColor"/>
+        <path d="M48 2 V30 M48 66 V94 M2 48 H30 M66 48 H94" stroke="currentColor" stroke-width=".8" opacity=".55"/>
+        <path d="M12 60 Q30 30 48 48 T84 36" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".9"/>
+      </svg>
+    </div>
+    <p class="gate-kicker" data-i18n="gate.kicker">CAESURA / 用户观察站</p>
+    <h1 id="gate-title" data-i18n="gate.title">止音后台 · 门</h1>
+    <p class="gate-hint" data-i18n="gate.hint">输入口令 <b>123</b> 即可进入。所有人都能进——这是一道礼貌的门，不是保险箱；里面只有数据与解读。</p>
+    <form id="gate-form" autocomplete="off">
+      <input id="gate-input" type="password" inputmode="numeric" maxlength="8" placeholder="···" aria-label="口令 / passphrase" autocomplete="off" />
+      <button id="gate-submit" type="submit" data-i18n="gate.enter">入内</button>
+    </form>
+    <p class="gate-error" id="gate-error" role="alert" aria-live="assertive" data-i18n="gate.error">不对。口令是 123 —— 人人可知。</p>
+    <p class="gate-foot" data-i18n="gate.foot">客户端门只阻止误入，不保护任何数据；静态托管上连入口都是公开的。这页没有秘密。</p>
+  </div>
+</div>
+
+<!-- ══════════ 顶栏 ══════════ -->
+<header class="topbar">
+  <div class="brand">
+    <div class="sigil" aria-hidden="true">
+      <svg viewBox="0 0 48 48" width="40" height="40">
+        <circle cx="24" cy="24" r="21" fill="none" stroke="currentColor" stroke-width="1" opacity=".4"/>
+        <circle cx="24" cy="24" r="13.5" fill="none" stroke="currentColor" stroke-width="1.1"/>
+        <circle cx="24" cy="24" r="3.2" fill="currentColor"/>
+        <path d="M24 3 V17 M24 31 V45" stroke="currentColor" stroke-width=".7" opacity=".6"/>
+      </svg>
+    </div>
+    <div class="brand-text">
+      <h1 data-i18n="brand.h1">止音后台 · 用户观察站</h1>
+      <p>CAESURA / USER OBSERVATORY</p>
+    </div>
+  </div>
+  <div class="topbar-meta">
+    <button class="lang-toggle" id="lang-toggle" type="button" aria-pressed="false" title="EN / 中文">EN</button>
+    <div class="clock"><span id="clock">--:--:--</span><small id="clock-zone" data-i18n="topbar.clock">本地时间</small></div>
+    <div class="badge" title="静态托管 · 无后端上报通道（report @8082 未对公网开放）"><i class="dot"></i><span data-i18n="topbar.static">静态 · 种子数据</span></div>
+    <a class="games-link" href="/caesura/" data-i18n="topbar.back">返回游戏</a>
+  </div>
+</header>
+
+<main id="deck" class="deck" hidden>
+
+  <!-- ① 速览 KPI —————————————————————————— -->
+  <section class="kpis" id="kpis" aria-label="核心指标"></section>
+
+  <!-- ② 日活趋势 + ③ 漏斗 —————————————————————————— -->
+  <section class="grid-2">
+    <article class="panel" aria-labelledby="p-trend">
+      <div class="panel-head">
+        <h2 id="p-trend" data-i18n="trend.h2">日活 · 30 天 + 线性外推</h2>
+        <span class="hint" data-i18n="trend.hint">实线＝真实（模拟）日会话 · 虚线＝7 日均线 · 酒红＝未来 7 日朴素外推</span>
+      </div>
+      <div class="chart-wrap"><svg id="chart-trend" viewBox="0 0 720 210" role="img" aria-labelledby="p-trend"></svg></div>
+      <div class="trend-foot" id="trend-foot"></div>
+    </article>
+
+    <article class="panel" aria-labelledby="p-funnel">
+      <div class="panel-head">
+        <h2 id="p-funnel" data-i18n="funnel.h2">转化漏斗 · 抵达 → 结局</h2>
+        <span class="hint" data-i18n="funnel.hint">每步相对上一步的转化；最右＝整体完读率</span>
+      </div>
+      <div class="funnel" id="funnel"></div>
+      <div class="funnel-foot" id="funnel-foot"></div>
+    </article>
+  </section>
+
+  <!-- ④ 渠道 & ⑤ 设备语言 —————————————————————————— -->
+  <section class="grid-2">
+    <article class="panel" aria-labelledby="p-channels">
+      <div class="panel-head"><h2 id="p-channels" data-i18n="channels.h2">渠道 × 会话 × 完读率</h2><span class="hint" data-i18n="channels.hint">宽度＝会话份额，右列＝抵达结局率</span></div>
+      <div class="channels" id="channels"></div>
+    </article>
+
+    <article class="panel" aria-labelledby="p-devices">
+      <div class="panel-head"><h2 id="p-devices" data-i18n="devices.h2">设备 & 语言</h2><span class="hint" data-i18n="devices.hint">StatCounter 2025：移动端 ≈ 62%（本页模拟 58%）</span></div>
+      <div class="devices">
+        <svg id="chart-devices" viewBox="0 0 180 180" role="img" aria-labelledby="p-devices"></svg>
+        <div class="device-legend" id="device-legend"></div>
+      </div>
+      <div class="locale-bar" id="locale-bar" aria-hidden="false"></div>
+    </article>
+  </section>
+
+  <!-- ⑥ 24 小时分布 —————————————————————————— -->
+  <article class="panel panel-wide" aria-labelledby="p-hours">
+    <div class="panel-head"><h2 id="p-hours" data-i18n="hours.h2">24 小时分布 · 深夜钟鸣窗口</h2><span class="hint" data-i18n="hours.hint">金框＝20:00–00:00；CN 玩家集中的四辰</span></div>
+    <svg id="chart-hours" viewBox="0 0 720 150" role="img" aria-labelledby="p-hours"></svg>
+    <div class="hours-foot" id="hours-foot"></div>
+  </article>
+
+  <!-- ⑦ 留存矩阵 —————————————————————————— -->
+  <article class="panel panel-wide" aria-labelledby="p-cohort">
+    <div class="panel-head"><h2 id="p-cohort" data-i18n="cohort.h2">周队列留存 · 谁还在回来</h2><span class="hint" data-i18n="cohort.hint">行＝入坑周 · 列＝第 N 日留存 · 空＝尚未到期</span></div>
+    <div class="cohort-scroll">
+      <table class="cohort" id="cohort"></table>
+    </div>
+  </article>
+
+  <!-- ⑧ 异常日 + ⑨ 退出/Rage —————————————————————————— -->
+  <section class="grid-2">
+    <article class="panel" aria-labelledby="p-anom">
+      <div class="panel-head"><h2 id="p-anom" data-i18n="anom.h2">异常日 · |z| ≥ 1.8</h2><span class="hint" data-i18n="anom.hint">基于 30 天会话数的整体 z 分数</span></div>
+      <ul class="anom" id="anom"></ul>
+      <p class="anom-note" data-i18n="anom.note">判读：连续两个高于 +2σ 才考虑扩容与限流；单日尖刺大概率是周末与首屏曝光。</p>
+    </article>
+
+    <article class="panel" aria-labelledby="p-exits">
+      <div class="panel-head"><h2 id="p-exits" data-i18n="exits.h2">退出点 & Rage-click 热点</h2><span class="hint" data-i18n="exits.hint">玩家在哪里离开，在哪里连点不存在的按钮</span></div>
+      <div class="exits"><h3 data-i18n="exits.h3a">退出率 Top</h3><div id="exit-list"></div></div>
+      <div class="exits"><h3 data-i18n="exits.h3b">Rage-click Top</h3><div id="rage-list"></div></div>
+    </article>
+  </section>
+
+  <!-- ⑩ 智能优化建议 —————————————————————————— -->
+  <article class="panel panel-wide panel-recs" aria-labelledby="p-recs">
+    <div class="panel-head">
+      <h2 id="p-recs" data-i18n="recs.h2">智能优化建议 · 按当前数据现场推导</h2>
+      <span class="hint" id="recs-count"></span>
+    </div>
+    <p class="recs-note" data-i18n="recs.note">规则即策略：每条建议都携带它被触发的指标、阈值与当前值；改了数据，建议会跟着变。不给没被数据点名的行动。</p>
+    <div class="recs" id="recs"></div>
+  </article>
+
+  <!-- ⑪ 本机实况 —————————————————————————— -->
+  <article class="panel panel-wide" aria-labelledby="p-live">
+    <div class="panel-head"><h2 id="p-live" data-i18n="live.h2">本机实况 · 你这台浏览器真实发生的一切</h2><span class="hint">localStorage · caesura.telemetry.v1 · 不出本机</span></div>
+    <div class="live-grid">
+      <div class="live-stats" id="live-stats"></div>
+      <div class="live-events">
+        <h3 data-i18n="live.h3">最近 12 条事件</h3>
+        <ol id="live-events"></ol>
+      </div>
+    </div>
+    <div class="live-actions">
+      <button id="live-clear" type="button" class="btn-ghost" data-i18n="live.clear">清空本机记录</button>
+      <button id="live-export" type="button" class="btn-ghost" data-i18n="live.export">导出本机 JSON</button>
+    </div>
+  </article>
+
+  <!-- ⑫ 导出 —————————————————————————— -->
+  <div class="export-bar">
+    <button id="export-csv" type="button" class="btn-gold" data-i18n="export.csv">导出日数据 CSV</button>
+    <button id="export-json" type="button" class="btn-gold" data-i18n="export.json">导出全部 JSON</button>
+    <button id="copy-digest" type="button" class="btn-gold" data-i18n="export.digest">复制运营日报</button>
+    <span class="export-note" id="export-note" aria-live="polite"></span>
+  </div>
+
+  <!-- ⑬ 方法论与来源 —————————————————————————— -->
+  <footer class="method">
+    <h2 data-i18n="method.h2">方法论 · 这页数的家底</h2>
+    <p id="method-note"></p>
+    <ul id="method-refs"></ul>
+    <p class="method-fine"><span id="method-disclaimer"></span><br />
+      <span data-i18n="method.fine2">玩家进程零 LLM · 零网络请求；本后台同上。真实用户流量接入 Spring report（@8082）后，可整体替换数据源而不动本页分析逻辑。</span><br />
+      <span data-i18n="method.fine3">刻意公开的门禁 · 密码 123 · KI-583。</span></p>
+  </footer>
+</main>
+
+<script defer src="../tracker.js"></script>
+<script type="module" src="./app.js"></script>
+</body>
+</html>

@@ -29,6 +29,7 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 **Live**: <https://xiaodernan.github.io/caesura/?fresh=1> (always rebuilds from `master`)  
 - Tutorial: <https://xiaodernan.github.io/caesura/tutorial/> (bilingual · 9 steps · lives with the game) ·  
 - Console: <https://xiaodernan.github.io/caesura/console/> (Wave 56 / Eight-Region Worldview panel) ·  
+- **The Observatory (user analytics)**: <https://xiaodernan.github.io/caesura/admin/> (passphrase **123** · conversion funnel · retention cohorts · anomaly-day detection · exit & rage-click hotspots · 10 ranked moves derived from the data · bilingual · static seeded dataset + live local telemetry in localStorage · KI-583) ·  
 - Cast Roster: <https://xiaodernan.github.io/caesura/cast/> (Cast roster — 15 roles · regions · NPCs · bosses · bilingual EN/zh)  
 - World Codex: <https://xiaodernan.github.io/caesura/codex/> (52 real project texts · bilingual BM25 in-browser index · no network · no LLM · added 2026-11-15)  
 - "Salt" (original short story): <https://xiaodernan.github.io/caesura/story/> (Windbell Coast · the Listening Post · bilingual · zero LLM · added 2026-11-15)  
