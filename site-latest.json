@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "ad5d20e9c3d43eed8bd315334d49c1c1d18200e4",
+  "head": "42c699f7f7673ec52d964b3b80ecced5805ad4d0",
   "branch": "master",
-  "subject": "docs(ledger): KI-587 LLM 实活命中 97.8%（warmup 3 轮 [0,6912,6912]）+ prompt-cache:live 三 lane + 环境注入陷阱澄清",
-  "date": "2026-11-16T00:03:48+08:00",
+  "subject": "fix(llm-auth): 旧名回落（CAESURA_* > LLM_* > 默认）+ env.example + 根点件洞保持三枚 · KI-588",
+  "date": "2026-11-16T00:34:19+08:00",
   "kv": {
-    "KI.rows": 505,
-    "KI.Implemented": 328,
+    "KI.rows": 506,
+    "KI.Implemented": 329,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/ad5d20e9c3d43eed8bd315334d49c1c1d18200e4",
+    "url": "https://github.com/xiaodernan/caesura/commit/42c699f7f7673ec52d964b3b80ecced5805ad4d0",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
