@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "c90d08f2eb0954ed73bbd2eeea5755b3d0deaf21",
+  "head": "4175989a93fcc854c44503ee3ec4022434e1fd54",
   "branch": "master",
-  "subject": "feat(story): 篇八《千门》上线 + 《余响集》扩容至八篇 + smoke:live 16 入口 + llm-cache 复核 + bench 复测",
-  "date": "2026-11-15T17:06:42+08:00",
+  "subject": "feat(ui): 游记选读「余响集八篇」入口（zh/en 双份 · Atlas Tab 静态内容）",
+  "date": "2026-11-15T17:25:38+08:00",
   "kv": {
-    "KI.rows": 489,
-    "KI.Implemented": 312,
+    "KI.rows": 490,
+    "KI.Implemented": 313,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/c90d08f2eb0954ed73bbd2eeea5755b3d0deaf21",
+    "url": "https://github.com/xiaodernan/caesura/commit/4175989a93fcc854c44503ee3ec4022434e1fd54",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
