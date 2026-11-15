@@ -25,6 +25,9 @@
 
 * { box-sizing: border-box; }
 
+/* 长中文串在窄列里强制换行 + 不撑破 flex 容器（所有面板共享防线） */
+body, body * { overflow-wrap: break-word; }
+
 html, body { margin: 0; padding: 0; min-height: 100%; }
 
 body {
@@ -173,8 +176,9 @@ main { padding: clamp(18px, 3vw, 40px) clamp(18px, 4vw, 56px) 48px; max-width: 1
 .panel-head h2 {
   margin: 0; font-family: var(--serif); font-weight: 600;
   font-size: 16px; letter-spacing: .08em; color: #ddd7c4;
+  min-width: 0; overflow-wrap: break-word; text-wrap: balance;
 }
-.panel-head .hint { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; color: var(--gold-dim); }
+.panel-head .hint { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; color: var(--gold-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 46%; flex-shrink: 1; align-self: flex-start; padding-top: 4px; }
 .note { margin: 14px 0 0; font-size: 11px; color: var(--muted); border-left: 2px solid var(--line); padding-left: 10px; }
 
 /* ---------- 拓扑 ---------- */
@@ -221,7 +225,7 @@ main { padding: clamp(18px, 3vw, 40px) clamp(18px, 4vw, 56px) 48px; max-width: 1
 
 /* ---------- 灰度分池 + 探针 ---------- */
 .gray-split { display: flex; height: 26px; border: 1px solid var(--line); margin-bottom: 14px; }
-.gray-seg { display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 10px; letter-spacing: .06em; transition: flex-grow .9s cubic-bezier(.2,.8,.2,1); }
+.gray-seg { display: flex; align-items: center; justify-content: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; font-family: var(--mono); font-size: 10px; letter-spacing: .06em; transition: flex-grow .9s cubic-bezier(.2,.8,.2,1); }
 .gray-seg.primary { background: linear-gradient(90deg, #26303a, #33404d); color: var(--silver); }
 .gray-seg.canary  { background: linear-gradient(90deg, var(--gold-dim), var(--gold)); color: #17150e; }
 .probes { display: flex; flex-direction: column; gap: 7px; }
@@ -245,8 +249,8 @@ main { padding: clamp(18px, 3vw, 40px) clamp(18px, 4vw, 56px) 48px; max-width: 1
 .ring .fg { fill: none; stroke: var(--jade); stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1s cubic-bezier(.2,.8,.2,1); }
 .ring .pct { font-family: var(--serif); font-size: 20px; fill: #e8e3d3; }
 .kv { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 0; }
-.kv li { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed var(--line-soft); font-size: 11px; }
-.kv li span:first-child { color: var(--muted); }
+.kv li { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 5px 0; border-bottom: 1px dashed var(--line-soft); font-size: 11px; }
+.kv li span:first-child { color: var(--muted); min-width: 0; overflow-wrap: break-word; }
 .kv li span:last-child { font-family: var(--mono); color: #e2dcc8; }
 
 /* ---------- 计网曲线 ---------- */
