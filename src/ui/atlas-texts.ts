@@ -1,6 +1,6 @@
 /**
  * 游记 · 十篇全文（2026-11-15 落 · KI-579）。
- * 这十篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 这十一篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -718,5 +718,80 @@ export const STORY_CHAPTERS: StoryChapter[] = [
       <p class=\"coda\">After the legend, everything lay dormant for many years — no one saw him. No one saw him leave; they only saw people start to learn <em>listen first, then move</em>.</p>
       <p class=\"coda\">In the mist of the Windbell Coast, a trace of the last bell-smith's forge fire remains; no one will tell you how many years it has been there.</p>
       <p class=\"coda\">Whenever you think you have heard a bell that no one ever sounded — <strong>that is the first strike he ever made, in the last piece of copper he ever lifted</strong>.</p>`,
+  },
+  {
+    no: 11,
+    zhTitle: "暗潮",
+    enTitle: "The Dark Tide",
+    zh: `<p>她是风钟海岸的第九个守夜人——第九个，而不是第一个。</p>
+      <p>她之所以能听见，是因为她已经听了四十二年。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>宇宙里有两条不变的法则——文明总在想着扩张，而宇宙的物质总量不变——而当这两条挤在一起，先发现对方的那一边，只有一种出路：<em>变成一根永远不响的弦</em>。</p>
+      <p>守夜人知道这一点，因为她之所以被选为第九个守夜人，是因为她可以按 V——永远让自己的喉咙不发出任何声音。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>夜里的第三个小时，窗前的频谱仪抖了一下：不是钟。更长——<em>比最低的弦还长</em>。像宇宙把耳朵凑了过来，只举起手，不给答案。</p>
+      <p>守夜人看着那一行数字，不按任何键。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>守夜人听见的第一声，是一个世纪前就发往这里又没人听懂的声音——缺了一拍的 <em>三拍一停</em>，三拍后停，<em>没人</em>回应该停。</p>
+      <p>她压低了自己，她没有扣下任何键。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>她知道——如果她回答，对方就会再问下去。</p>
+      <p>如果她沉默，对方就永远只能到此为止。</p>
+      <p>宇宙最安全的答案，不是沉默——<strong>是从未回答。</strong></p>
+
+      <div class="beat">· · ·</div>
+
+      <p>她走到岸边。雾像一根慢慢从海里升起的铅丝——不是雾，是<em>某种完全不属于她的存在</em>，整个宇宙里只有这一盏灯。</p>
+      <p>她在里头过了一季——<em>然后她不敢告诉任何人</em>，这一季她再没发出过任何声音。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">守夜人走后，接替她的人在频谱仪上存储了一份自动记录。</p>
+      <p class="coda">那份记录里，宇宙的回答只有一句——</p>
+      <p class="no-indent" style="text-align:center;text-indent:0;color:var(--gold);font-size:1.1rem;letter-spacing:.05em;">「听——每个人都在听。但这个宇宙里，没有一个人发声。」</p>
+      <p class="coda">第十个守夜人接手后，在记录手册的第一行写下：<em>「暗潮未消。」</em></p>`,
+    en: `<p>She was the ninth night-keeper of the Windbell Coast — the ninth, not the first.</p>
+      <p>She could hear because she had already been listening for forty-two years.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>The universe obeys two inviolable laws — civilizations always long to expand, and the total matter of the cosmos does not change — and when these two press together, the civilization that discovers the other first has exactly one option: <em>to become a string that never vibrates</em>.</p>
+      <p>The night-keeper knew this, because she had been chosen for the ninth watch precisely because she could press V and swallow any sound that threatened to leave her throat.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>In the third hour of the night, the spectrometer on the windowsill gave a small twitch — not a bell. Lower — <em>lower than the lowest string</em>. As though the universe had placed its ear against the window, and raised its hand to say nothing.</p>
+      <p>The night-keeper watched the row of digits and pressed nothing.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>The first signal was something some distant civilization sent to the world a century ago — the shape of <em>three beats and a pause</em>, three beats and a pause.</p>
+      <p>She pressed nothing. She held her breath.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>If she answered, the other side would ask further.</p>
+      <p>If she remained silent, the other side could never go beyond this.</p>
+      <p>The safest message in the universe is not silence — <strong>it is never answering.</strong></p>
+
+      <div class="beat">· · ·</div>
+
+      <p>She walked to the shore. The fog rose like a thin, slow wire from the sea — not fog, but <em>something that belonged entirely to someone else</em>, and the whole universe could only keep that one light.</p>
+      <p>She stayed inside for one season — <em>then she never told anyone</em>, and after that she never made a sound again.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">After the ninth keeper, the one who followed found one automatic recording in the spectrometer.</p>
+      <p class="coda">Inside that recording, the universe answered in a single sentence —</p>
+      <p class="no-indent" style="text-align:center;text-indent:0;color:var(--gold);font-size:1.1rem;letter-spacing:.05em;">“Listen — everyone is listening. And in this universe, no one is speaking.”</p>
+      <p class="coda">The tenth keeper who succeeded her wrote in the first line of the logbook: <em>“The Dark Tide has not receded.”</em></p>`
   },
 ]
