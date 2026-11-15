@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "4258a4bc0cbacb8930c9ea165e6a771b6a11816a",
+  "head": "a49b4b16ffba92a6741e1dd4ff16aff46b9d6bc9",
   "branch": "master",
-  "subject": "content(inscriptions): 第 21 处刻痕·无耳深窖·蜡笔画里那个听 · KI-589",
-  "date": "2026-11-16T00:56:58+08:00",
+  "subject": "content(atlas): 收束篇《余响集·第十二个听者》· KI-590 (Atlas 12 chapters)",
+  "date": "2026-11-16T01:18:02+08:00",
   "kv": {
-    "KI.rows": 507,
-    "KI.Implemented": 330,
+    "KI.rows": 508,
+    "KI.Implemented": 331,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/4258a4bc0cbacb8930c9ea165e6a771b6a11816a",
+    "url": "https://github.com/xiaodernan/caesura/commit/a49b4b16ffba92a6741e1dd4ff16aff46b9d6bc9",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
