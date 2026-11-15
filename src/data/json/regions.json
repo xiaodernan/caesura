@@ -2106,6 +2106,18 @@
           "y": -144,
           "z": 330
         }
+      },
+      {
+        "id": "in_earless_wax_seals",
+        "kind": "inspect",
+        "verb": "数封耳匣里还没被认领的蜡封",
+        "verbKey": "interact.countWaxSeals",
+        "notifyKey": "world.flavor.deeps.waxSeals",
+        "pos": {
+          "x": 40,
+          "y": -144,
+          "z": 130
+        }
       }
     ],
     "music": {
