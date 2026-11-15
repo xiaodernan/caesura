@@ -395,7 +395,10 @@ describe('vite.config.ts 的收集面：锚在 tests/ 下面，且与磁盘名�
     const walk = (dir: string, skipTop: boolean): string[] => {
       const out: string[] = []
       for (const e of readdirSync(dir, { withFileTypes: true })) {
-        if (skipTop && ['node_modules', 'dist', '.git'].includes(e.name)) continue
+        // `verdict-titles` 会在仓根下建临时隔离根 `ki298-e2e-<pid>`（gitignored），另一进程
+        // 跑这一格的时候可能正好撞上它被删掉（ENOENT）——与 `node_modules`/`dist`/`.git`
+        // 同一族：不是测试文件，跳过即可。
+        if (skipTop && (['node_modules', 'dist', '.git'].includes(e.name) || /^ki298-e2e-/.test(e.name))) continue
         const p = join(dir, e.name)
         if (e.isDirectory()) out.push(...walk(p, true))
         else out.push(p)

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>账本 / The Ledger · CAESURA 短篇 之四 — 麦格的账本</title>
+<meta name="description" content="《止音纪元》原创短篇之四 · 休垒主账房 · 麦格的账本——她在每一页都写下一个字，就是没写收尾那一笔。双语对照 · 零网络 · 零 LLM。 / The fourth original short story — Meg the Valet-Master-of-the-Ledger, the only page she never closed. Bilingual, offline, zero LLM.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>📖</text></svg>">
+<style>
+  :root {
+    --gold: #f3ce8f;
+    --gold-soft: rgba(243,206,143,.32);
+    --ink: #f3ede0;
+    --ink-dim: rgba(243,237,224,.62);
+    --panel: rgba(28,20,12,.7);
+    --serif: "Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#05070f; color:var(--ink); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; }
+  .bg { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .bg.radial {
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(243,206,143,.12), transparent 60%),
+      radial-gradient(900px 700px at 50% 118%, rgba(120,80,40,.17), transparent 62%),
+      radial-gradient(650px 420px at 12% 104%, rgba(203,177,255,.06), transparent 60%),
+      #05070f;
+  }
+  .bg.noise { position:fixed; inset:0; z-index:-1; opacity:.05; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .wrap { max-width:860px; margin:0 auto; padding:26px 26px 90px; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .brand { font-size:.8rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; opacity:.9; }
+  .brand a { color:inherit; text-decoration:none; border-bottom:1px dotted rgba(243,206,143,.5); }
+  .brand a:hover { color:#fff2d0; }
+  .toplinks { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toplinks a { font-size:.72rem; color:var(--ink-dim); text-decoration:none; border:1px solid rgba(243,237,224,.14); padding:6px 12px; border-radius:999px; transition:all .22s ease; }
+  .toplinks a:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .lang-row button { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(243,206,143,.12); border:1px solid var(--gold-soft); padding:6px 15px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; }
+  .lang-row button:hover { background:rgba(243,206,143,.22); box-shadow:0 0 16px rgba(243,206,143,.25); }
+
+  [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="en"] .zh-copy { display:none !important; }
+
+  header.hero { text-align:center; padding:52px 14px 30px; }
+  .kicker { font-size:.72rem; letter-spacing:.42em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:20px; }
+  .kicker b { color:var(--gold); font-weight:600; }
+  h1 { font-size:clamp(2.4rem, 9vw, 4rem); font-weight:600; letter-spacing:.16em;
+       background:linear-gradient(180deg,#fffbe6 0%, #f3ce8f 28%, #c9a258 58%, #7d6436 100%);
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+       text-shadow:0 0 90px rgba(243,206,143,.3); }
+  .subtitle { margin-top:14px; font-size:.8rem; color:var(--ink-dim); letter-spacing:.3em; text-transform:uppercase; }
+  .rule { width:170px; height:1px; margin:24px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .meta { margin-top:16px; font-size:.7rem; color:rgba(243,237,224,.45); letter-spacing:.18em; text-transform:uppercase; }
+  .meta a { color:var(--gold); text-decoration:none; }
+
+  article { background:var(--panel); border:1px solid rgba(243,237,224,.1); border-radius:18px; padding:38px 40px 34px; position:relative; }
+  article::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--gold), transparent); opacity:.7; }
+  article p { font-size:1.04rem; line-height:2.02; letter-spacing:.02em; color:rgba(243,237,224,.92); margin-bottom:1.5em; text-indent:2em; overflow-wrap:break-word; }
+  article p.no-indent { text-indent:0; }
+  article p em { color:#ffe9b3; font-style:normal; }
+  article p strong { color:var(--gold); font-weight:600; }
+  .beat { width:100%; text-align:center; margin:.4em 0 1.4em; letter-spacing:.5em; color:rgba(243,206,143,.6); font-size:.8rem; }
+  .coda { text-align:center; font-style:italic; color:rgba(243,237,224,.78); letter-spacing:.06em; margin-top:.6em; }
+
+  .note { margin:26px auto 0; max-width:720px; text-align:center; font-size:.74rem; color:rgba(243,237,224,.42); line-height:1.9; letter-spacing:.04em; }
+  .note a { color:var(--gold); text-decoration:none; border-bottom:1px dotted rgba(243,206,143,.5); }
+
+  footer { margin-top:56px; border-top:1px solid rgba(243,237,224,.09); padding-top:22px; display:flex; flex-wrap:wrap; gap:10px 26px; justify-content:space-between; font-size:.7rem; color:rgba(243,237,224,.4); letter-spacing:.06em; }
+  footer a { color:var(--gold); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @media (max-width:640px) { .wrap { padding:20px 12px 70px; } article { padding:26px 20px 24px; } article p { font-size:.98rem; text-indent:2em; } }
+</style>
+</head>
+<body>
+<div class="bg radial" aria-hidden="true"></div>
+<div class="bg noise" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><a href="/caesura/">CAESURA</a> · 《止音纪元》</div>
+    <div class="toplinks">
+      <a href="/caesura/story/"><span class="zh-copy">《盐》</span><span class="en-copy">“Salt”</span></a>
+      <a href="/caesura/story/unnamed-stone/"><span class="zh-copy">《山下无名碑》</span><span class="en-copy">“The Nameless Stone”</span></a>
+      <a href="/caesura/story/empty-bar/"><span class="zh-copy">《空拍子》</span><span class="en-copy">“The Empty Bar”</span></a>
+      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button></span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <p class="kicker zh-copy">短篇 · <b>休垒</b> · 之四《账本》</p>
+    <p class="kicker en-copy">Short story · <b>Resthold</b> · No. 4 “The Ledger”</p>
+    <h1 class="zh-copy">账本</h1>
+    <h1 class="en-copy">The Ledger</h1>
+    <p class="subtitle zh-copy">休垒 · 虚礼典礼官 Meg 的主账房</p>
+    <p class="subtitle en-copy">Resthold · Meg the Valet-Master-of-the-Ledger's counting house</p>
+    <div class="rule"></div>
+    <p class="meta zh-copy">约 5 分钟 · <a href="/caesura/codex/">世界谱</a> 与 <a href="/caesura/">游戏</a> 同源世界观 · 零 LLM 撰写</p>
+    <p class="meta en-copy">about 5 minutes · same world as the <a href="/caesura/codex/">codex</a> and the <a href="/caesura/">game</a> · written without LLM assistance</p>
+  </header>
+
+  <article>
+    <div class="zh-copy">
+      <p>麦格的主账房在休垒的旧街区末尾，靠近水缸，靠近大家避讳的那口钟。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>账上的字，她记得最清楚的一笔是四十七天前——一个面色异常、但腰上的金很旧的人，买了一张新弦、一块音色石，用现银付了，但在"余额"一栏里她没写数字。</p>
+      <p class="no-indent">她只写了一个字：<em>未。</em></p>
+
+      <div class="beat">· · ·</div>
+
+      <p>她从小就学会一件事：有些事如果急着结清，就会永远消失。所以账房里她养了三本账——官账、街账，和一本她自己的，谁都没看过。</p>
+      <p>第三本账的最后一页，只有一行是空的。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>她翻了很多年，终于看懂那一行写的是什么：<em>『这笔账不能算。对方不是登记的人。』</em></p>
+      <p>她记不清那是哪一年、哪一个人。但她记得那个人来的时候，手里捏着一块还没被敲过的钟铜——她收了那块铜，却从来没记过这笔账，仿佛他从来不曾走进过这个门。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.1rem; letter-spacing:.05em;">“原来不是他没付。是他不允许我收。”</p>
+      <p>他不是来买东西的。他是来把那块钟铜还回去的——还给世界里一个已经不认识它的人。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">她最后一次翻那本账的时候，在缺了一行的地方补上了一笔她从不敢写的账：</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.1rem; letter-spacing:.05em;">“已收。”</p>
+      <p class="coda">“那个不可以收的人，终于把不可以收的东西，收回去了。”</p>
+      <p class="coda">她把第三本账放回架子最高处。那天以后，她再没数过任何一页。</p>
+    </div>
+
+    <div class="en-copy">
+      <p>Meg’s counting house sits at the back of Resthold’s old market, near the water jars, near the bell everyone avoids.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>Among all the entries, the one she remembered best was forty-seven days ago: a man with an unusually fair face but very old gold at his belt, who bought a new cord and a resonance stone, paid in coin — and in the “balance” column she wrote no number.</p>
+      <p class="no-indent">She only wrote one word: <em>outstanding.</em></p>
+
+      <div class="beat">· · ·</div>
+
+      <p>Since childhood she had been taught one rule: some things, if you rush to settle them, vanish forever. So in her counting house she kept three ledgers — an official ledger, a street ledger, and one of her own that no one else ever saw.</p>
+      <p>The third ledger, on its last page, had only one line that was empty.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>She spent years turning its pages before she could finally read the line: <em>“This entry cannot stand. The other party is not who I think.”</em></p>
+      <p>She no longer remembered what year, or which person. But she remembered him coming in, carrying a piece of bell metal that had never been struck — she accepted it, and she never entered this transaction in any book. As if he had never passed through the door.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.1rem; letter-spacing:.05em;">“He never owed me. He never meant for me to take it.”</p>
+      <p>He was not buying anything. He was returning the bell metal — to a world that no longer knew how to hold it.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">The last time she opened that ledger, she filled the missing line with an entry she had never once allowed herself to write:</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.1rem; letter-spacing:.05em;">“Received.”</p>
+      <p class="coda">“The one person who could never receive anything, finally received what he had come to return.”</p>
+      <p class="coda">She put the third ledger back on the top shelf. From that day on, she never counted another page.</p>
+    </div>
+  </article>
+
+  <div class="note">
+    <span class="zh-copy">《账本》是《止音纪元》世界谱里 Meg（DLG_MEG）唯一的独幕日常——她收下每一件走进她账房的旧物，却有一页账，她写了一辈子，始终没敢合上。 <a href="/caesura/story/">篇一：《盐》</a> · <a href="/caesura/story/unnamed-stone/">篇二：《山下无名碑》</a> · <a href="/caesura/story/empty-bar/">篇三：《空拍子》</a> · <a href="/caesura/codex/">世界谱</a></span>
+    <span class="en-copy">“The Ledger” is the only hour Meg (DLG_MEG) ever stepped into the light — she records everything that passes through her counting house, yet one page of it, she never dared close, all her life. <a href="/caesura/story/">Part one: “Salt”</a> · <a href="/caesura/story/unnamed-stone/">Part two: “The Nameless Stone”</a> · <a href="/caesura/story/empty-bar/">Part three: “The Empty Bar”</a> · <a href="/caesura/codex/">World Codex</a></span>
+  </div>
+
+  <footer>
+    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/">游戏</a> · <a href="/caesura/story/">《盐》· 篇一</a> · <a href="/caesura/story/unnamed-stone/">篇二 · 山下无名碑</a> · <a href="/caesura/story/empty-bar/">篇三 · 空拍子</a> · <a href="/caesura/codex/">世界谱</a></span>
+    <span class="en-copy">© CAESURA · <a href="/caesura/">Game</a> · <a href="/caesura/story/">“Salt” · No. 1</a> · <a href="/caesura/story/unnamed-stone/">No. 2 · The Nameless Stone</a> · <a href="/caesura/story/empty-bar/">No. 3 · The Empty Bar</a> · <a href="/caesura/codex/">World Codex</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('langToggle');
+  var saved = 'zh';
+  try { saved = localStorage.getItem('caesura-lang') || 'zh'; } catch (e) { /* noop */ }
+  function apply(lang) {
+    root.setAttribute('data-lang', lang);
+    root.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en');
+    try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+  }
+  if (btn) btn.addEventListener('click', function () {
+    apply(root.getAttribute('data-lang') === 'en' ? 'zh' : 'en');
+  });
+  apply(saved === 'en' ? 'en' : 'zh');
+})();
+</script>
+</body>
+</html>
