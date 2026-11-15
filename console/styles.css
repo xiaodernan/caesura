@@ -3844,3 +3844,25 @@ body[data-fullscreen="true"] .row > .panel { grid-column: span 1; }
   .lang-toggle { transition: none; }
 }
 
+
+
+/* ---------- 余响八篇 · 沉默的编年史（KI-574） ---------- */
+.story-chain { display: grid; gap: 7px; margin-top: 10px; }
+.chain-item {
+  display: grid; grid-template-columns: auto auto 1fr auto;
+  gap: 4px 14px; align-items: baseline;
+  border: 1px solid var(--line-soft); border-radius: 10px;
+  background: linear-gradient(180deg, rgba(255,255,255,.025), rgba(255,255,255,0));
+  padding: 8px 12px; transition: border-color .2s ease, background .2s ease;
+}
+.chain-item:hover { border-color: var(--gold-dim); background: rgba(201,180,88,.05); }
+.chain-item .chain-no { font-family: var(--mono); font-size: 10px; color: var(--gold-dim); letter-spacing: .12em; white-space: nowrap; }
+.chain-item .chain-name { color: #e8dfc8; text-decoration: none; font-size: 13px; letter-spacing: .06em; white-space: nowrap; border-bottom: 1px dotted rgba(201,180,88,.4); }
+.chain-item .chain-name:hover { color: var(--gold); border-bottom-color: var(--gold); }
+.chain-item .chain-pitch { font-family: var(--mono); font-size: 11px; color: var(--gold); letter-spacing: .04em; white-space: nowrap; }
+.chain-item .chain-arc { font-size: 11px; color: var(--muted); overflow-wrap: anywhere; text-align: right; min-width: 0; }
+.story-chain-note a { color: var(--gold-dim); }
+@media (max-width: 720px) {
+  .chain-item { grid-template-columns: auto 1fr auto; }
+  .chain-item .chain-arc { grid-column: 1 / -1; text-align: left; }
+}
