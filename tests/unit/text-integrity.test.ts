@@ -268,6 +268,8 @@ describe('游离控制字符（KI-098）：转义序列被某一次写盘解释�
     // 目前整体入库的根点文件一共三枚：.gitignore / .editorconfig / .gitattributes
     // （见本会话 2026-11-09 批次：三枚同批入库，每一枚在 text-corpus.mjs 的
     //   ROOT_DOT_FILES 里都有一条已声明的形状并各带"谁经过它"）。
+    // 说明：作者侧 LLM 环境模板命名为 `env.example`（非点件，照常进总体、照常扫文本）；
+    // 根点件洞保持三枚——.env 族形状一律归 ROOT_DOT_FILES 的 /^\.env(\..+)?$/，其中亦无密钥入库。
     // 再悄悄多一枚、或少掉一枚，都需要同本行一起改。
     const rootDots = tracked.filter((t) => !t.includes('/') && t.startsWith('.'))
     expect(rootDots, '根的点开头条目被排除是**已命名的洞**：除当前入库的三枚（.editorconfig / .gitattributes / .gitignore）之外每多一个都要先把它接进总体').toEqual(['.editorconfig', '.gitattributes', '.gitignore'])
