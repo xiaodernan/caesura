@@ -2410,6 +2410,18 @@
           "y": 152,
           "z": -200
         }
+      },
+      {
+        "id": "in_unfinishedhall_last_page",
+        "kind": "inspect",
+        "verb": "看谱架上永远不会翻过去的谱",
+        "verbKey": "interact.readMaestroFinalScore",
+        "notifyKey": "world.flavor.unfinishedhall.lastPage",
+        "pos": {
+          "x": -32,
+          "y": 152,
+          "z": -150
+        }
       }
     ],
     "music": {
