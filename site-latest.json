@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "6268a54761d0bde24851e11bc77ecb32f2cdf46f",
+  "head": "b351431f2dd122845539b62f1ad39099d2f04e7a",
   "branch": "master",
-  "subject": "content(inscriptions): 第 24 处刻痕·沉唱堂「嵌石里的书页」 · KI-597",
-  "date": "2026-11-16T05:12:28+08:00",
+  "subject": "content(inscriptions): 第 25 处刻痕·钟坠院「结住的钟影」 · KI-598",
+  "date": "2026-11-16T05:32:37+08:00",
   "kv": {
-    "KI.rows": 515,
-    "KI.Implemented": 338,
+    "KI.rows": 516,
+    "KI.Implemented": 339,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/6268a54761d0bde24851e11bc77ecb32f2cdf46f",
+    "url": "https://github.com/xiaodernan/caesura/commit/b351431f2dd122845539b62f1ad39099d2f04e7a",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
