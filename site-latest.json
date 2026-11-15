@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "2bcd21bd069580351035459e00825ee2bef81bd4",
+  "head": "0a4443673c80e53917e9bfd554b514b1870c78ff",
   "branch": "master",
-  "subject": "feat(story): 《余响集》原创短篇全集页上线 + smoke:live 14 入口",
-  "date": "2026-11-15T16:07:39+08:00",
+  "subject": "feat(story): 篇七《霜锤》上线 + 《余响集》扩容至七篇 + smoke:live 15 入口",
+  "date": "2026-11-15T16:34:33+08:00",
   "kv": {
-    "KI.rows": 487,
-    "KI.Implemented": 310,
+    "KI.rows": 488,
+    "KI.Implemented": 311,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/2bcd21bd069580351035459e00825ee2bef81bd4",
+    "url": "https://github.com/xiaodernan/caesura/commit/0a4443673c80e53917e9bfd554b514b1870c78ff",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
