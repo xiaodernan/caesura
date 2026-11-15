@@ -141,7 +141,7 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">未竟厅 · 一处</span><span class="note">银镜后面那道「钟摆」；时间走来走去，就是走不到头</span></div>
 <div class="row"><span class="name">风钟海岸 · 三处</span><span class="note">那阵带着钟的风——它带着一个又一个钟的余温，却从不让你清楚地听到；盐结的小龛被海天天抹去又天天重写；防波堤上一道道潮痕，像一首被海擦了又写的歌</span></div>
 
-<h2>选读 · 余响集八篇 <span style="opacity:.6">（与游戏同源的八个故事，在线阅读）</span></h2>
+<h2>选读 · 余响集十篇 <span style="opacity:.6">（与游戏同源的十个故事，在线阅读）</span></h2>
 <div class="row"><span class="name">篇一《盐》· 风钟海岸</span><span class="note">听雾站守夜人阿衡——钟不是用来敲的，是用来记住的；风钟海岸从此有了第四根弦</span></div>
 <div class="row"><span class="name">篇二《山下无名碑》· 休垒</span><span class="note">石匠女儿阿汀在山脚下找到一块没有字、没有名字的碑——风一停，石头就会把自己写上去</span></div>
 <div class="row"><span class="name">篇三《空拍子》· 未竟厅</span><span class="note">轮值了七十三年的恩希尔，在一记空拍之后，被人问出他唯一等不到的那个人</span></div>
@@ -150,7 +150,9 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">篇六《雨审判》· 雨钟谷地</span><span class="note">七年一庭、没有被告席，书记站了也坐下、抄了也泡掉——直到他说「请看见」</span></div>
 <div class="row"><span class="name">篇七《霜锤》· 霜锤崖</span><span class="note">末任钟匠拒绝去捡最后一次淬火掉的手套；一个近乎赤裸的少年敲了一记——冰为他开了一整个黄昏</span></div>
 <div class="row"><span class="name">篇八《千门》· 回廊钟</span><span class="note">一千扇门通向同一扇门，直到她念出自己家的门号——门自己开了</span></div>
-<div class="row"><span class="name">全集</span><span class="note">《止音纪元 · 余响集》收录全部八篇 · xiaodernan.github.io/caesura/story/anthology/</span></div>
+<div class="row"><span class="name">篇九《石喉》· 低音之城</span><span class="note">城里的孩子生下就被盖住嘴，每一句话以沉默计价——直到那个连价也开不出来的问题</span></div>
+<div class="row"><span class="name">篇十《第一钟》· 创世</span><span class="note">这场本是沉默；最后的铸钟人把铜烧进炉子——铸出一口从没被人敲过的钟</span></div>
+<div class="row"><span class="name">全集</span><span class="note">《止音纪元 · 余响集》收录全部十篇 · xiaodernan.github.io/caesura/story/anthology/</span></div>
 
 <h2>怎么不迷路</h2>
 <div class="row"><span class="name">Tab = 地图</span><span class="note">总表看你走过哪片，哪里还亮着（亮 = 终章出口还没开）；再按一次收起</span></div>
@@ -181,7 +183,7 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">The Unfinished Hall · one</span><span class="note">The pendulum behind the silver mirror; time swings back and forth and never reaches an end</span></div>
 <div class="row"><span class="name">Windbell Coast · three</span><span class="note">The wind that carries bells — it brings the warmth of bell after bell but never lets you hear them clearly; the salt-crusted shrine the sea erases and rewrites every day; the tide-lines on the causeway, a song scraped and rewritten</span></div>
 
-<h2>The Aftermath · all eight stories <span style="opacity:.6">(companion fiction — the same world, told in prose)</span></h2>
+<h2>The Aftermath · all ten stories <span style="opacity:.6">(companion fiction — the same world, told in prose)</span></h2>
 <div class="row"><span class="name">No. 1 “Salt” · Windbell Coast</span><span class="note">A Hén, night-keeper of the Listening Post — the bell isn't meant to sound, only to be heard; the coast has its fourth string now</span></div>
 <div class="row"><span class="name">No. 2 “The Nameless Stone” · Resthold</span><span class="note">A mason's daughter finds a slab with no name, no word at the foot of the hill — when the wind stops, the stone writes itself</span></div>
 <div class="row"><span class="name">No. 3 “The Empty Bar” · The Unfinished Hall</span><span class="note">Seventy-three years into rotation, Hersil ends one empty bar — and is asked the only question he kept postponing</span></div>
@@ -190,7 +192,9 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">No. 6 “The Rain Tribunal” · The Rainbell Valley</span><span class="note">Every seven years, one court with no prosecutor and no dock — until the clerk stands and says: please see</span></div>
 <div class="row"><span class="name">No. 7 “The Frostbell” · The Frostbell Cliff</span><span class="note">The Last Frostwright refuses the glove that fell at his final quench; an almost bare-handed boy strikes once — and the ice opens for a whole dusk</span></div>
 <div class="row"><span class="name">No. 8 “The Thousand Doors” · The Arcade of Echoes</span><span class="note">A thousand doors open onto one door — until she names her own, and the first door opens itself</span></div>
-<div class="row"><span class="name">All eight</span><span class="note">“CAESURA · The Aftermath” collects all eight in one read · xiaodernan.github.io/caesura/story/anthology/</span></div>
+<div class="row"><span class="name">No. 9 “The Stone-Throat” · The City of Low Tones</span><span class="note">Every sentence priced in silence — until she writes the one question no one bothered to price</span></div>
+<div class="row"><span class="name">No. 10 “The First Bell” · The Creation</span><span class="note">The first sounding wasn't a bell — it was the world agreeing to hold its breath</span></div>
+<div class="row"><span class="name">All ten</span><span class="note">“CAESURA · The Aftermath” collects all ten in one read · xiaodernan.github.io/caesura/story/anthology/</span></div>
 
 <h2>Wayfinding</h2>
 <div class="row"><span class="name">Tab = the map</span><span class="note">The master chart shows where you have walked and what is still lit — lit means the ending is still sealed; press Tab again to fold it away</span></div>

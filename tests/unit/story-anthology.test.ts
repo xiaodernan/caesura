@@ -28,14 +28,14 @@ describe('余响集（story/anthology/index.html）', () => {
     expect(HTML).toContain('The Aftermath')
   })
 
-  it('中文正文：含九篇全部标题', () => {
-    for (const marker of ['《盐》', '《山下无名碑》', '《空拍子》', '《账本》', '《回声庭园》', '《雨审判》', '《霜锤》', '《千门》', '《石喉》']) {
+  it('中文正文：含十篇全部标题', () => {
+    for (const marker of ['《盐》', '《山下无名碑》', '《空拍子》', '《账本》', '《回声庭园》', '《雨审判》', '《霜锤》', '《千门》', '《石喉》', '《第一钟》']) {
       expect(HTML, `zh missing: ${marker}`).toContain(marker)
     }
   })
 
-  it('英文正文：含九篇全部标题', () => {
-    for (const marker of ['“Salt”', '“The Nameless Stone”', '“The Empty Bar”', '“The Ledger”', '“The Garden of Return”', '“The Rain Tribunal”', '“The Frostbell”', '“The Thousand Doors”', '“The Stone-Throat”']) {
+  it('英文正文：含十篇全部标题', () => {
+    for (const marker of ['“Salt”', '“The Nameless Stone”', '“The Empty Bar”', '“The Ledger”', '“The Garden of Return”', '“The Rain Tribunal”', '“The Frostbell”', '“The Thousand Doors”', '“The Stone-Throat”', '“The First Bell”']) {
       expect(HTML, `en missing: ${marker}`).toContain(marker)
     }
   })
@@ -45,8 +45,8 @@ describe('余响集（story/anthology/index.html）', () => {
     expect(HTML).not.toMatch(/<link[^>]*href=["']https?:/)
   })
 
-  it('九篇全部能链到（href 出口必须全）', () => {
-    for (const href of ['/caesura/story/', '/caesura/story/unnamed-stone/', '/caesura/story/empty-bar/', '/caesura/story/ledger/', '/caesura/story/garden/', '/caesura/story/tribunal/', '/caesura/story/frostbell/', '/caesura/story/doors/', '/caesura/story/stonethroat/', '/caesura/', '/caesura/codex/']) {
+  it('十篇全部能链到（href 出口必须全）', () => {
+    for (const href of ['/caesura/story/', '/caesura/story/unnamed-stone/', '/caesura/story/empty-bar/', '/caesura/story/ledger/', '/caesura/story/garden/', '/caesura/story/tribunal/', '/caesura/story/frostbell/', '/caesura/story/doors/', '/caesura/story/stonethroat/', '/caesura/story/first-bell/', '/caesura/', '/caesura/codex/']) {
       expect(HTML, `missing link: ${href}`).toContain(href)
     }
   })

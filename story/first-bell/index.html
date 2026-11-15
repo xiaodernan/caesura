@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第一钟 / The First Bell · CAESURA 短篇 之十 — 鸣响之前的地方</title>
+<meta name="description" content="《止音纪元》原创短篇之十 · 鸣响之前的世界——最后的铸钟人，在一口从没被敲响的钟前，决定了这个世界的全部声音。双语对照 · 零网络 · 零 LLM。 / The tenth original short story — before anything sounded, one bell-smith stood before a bell he never struck and set the law of this world. Bilingual, offline, zero LLM.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🔔</text></svg>">
+<style>
+  :root {
+    --gold: #f3ce8f;
+    --gold-soft: rgba(243,206,143,.32);
+    --ink: #f3ede0;
+    --ink-dim: rgba(243,237,224,.62);
+    --panel: rgba(28,20,12,.7);
+    --serif: "Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#070608; color:var(--ink); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; }
+  .bg { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .bg.radial {
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(243,206,143,.13), transparent 60%),
+      radial-gradient(900px 700px at 50% 118%, rgba(120,80,40,.17), transparent 62%),
+      radial-gradient(650px 420px at 88% 104%, rgba(203,177,255,.06), transparent 60%),
+      #070608;
+  }
+  .bg.noise { position:fixed; inset:0; z-index:-1; opacity:.05; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .wrap { max-width:860px; margin:0 auto; padding:26px 26px 90px; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .brand { font-size:.8rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; opacity:.9; }
+  .brand a { color:inherit; text-decoration:none; border-bottom:1px dotted rgba(243,206,143,.5); }
+  .brand a:hover { color:#fff2d0; }
+  .toplinks { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toplinks a { font-size:.72rem; color:var(--ink-dim); text-decoration:none; border:1px solid rgba(243,237,224,.14); padding:6px 12px; border-radius:999px; transition:all .22s ease; }
+  .toplinks a:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .lang-row button { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(243,206,143,.12); border:1px solid var(--gold-soft); padding:6px 15px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; }
+  .lang-row button:hover { background:rgba(243,206,143,.22); box-shadow:0 0 16px rgba(243,206,143,.25); }
+
+  [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="en"] .zh-copy { display:none !important; }
+
+  header.hero { text-align:center; padding:52px 14px 30px; }
+  .kicker { font-size:.72rem; letter-spacing:.42em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:20px; }
+  .kicker b { color:var(--gold); font-weight:600; }
+  h1 { font-size:clamp(2.4rem, 9vw, 4rem); font-weight:600; letter-spacing:.16em;
+       background:linear-gradient(180deg,#fffbe6 0%, #f3ce8f 28%, #c9a258 58%, #7d6436 100%);
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+       text-shadow:0 0 90px rgba(243,206,143,.3); }
+  .subtitle { margin-top:14px; font-size:.8rem; color:var(--ink-dim); letter-spacing:.3em; text-transform:uppercase; }
+  .rule { width:170px; height:1px; margin:24px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .meta { margin-top:16px; font-size:.7rem; color:rgba(243,237,224,.45); letter-spacing:.18em; text-transform:uppercase; }
+  .meta a { color:var(--gold); text-decoration:none; }
+
+  article { background:var(--panel); border:1px solid rgba(243,237,224,.1); border-radius:18px; padding:38px 40px 34px; position:relative; }
+  article::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--gold), transparent); opacity:.7; }
+  article p { font-size:1.04rem; line-height:2.02; letter-spacing:.02em; color:rgba(243,237,224,.92); margin-bottom:1.5em; text-indent:2em; overflow-wrap:break-word; }
+  article p.no-indent { text-indent:0; }
+  article p em { color:#ffe9b3; font-style:normal; }
+  article p strong { color:var(--gold); font-weight:600; }
+  .beat { width:100%; text-align:center; margin:.4em 0 1.4em; letter-spacing:.5em; color:rgba(243,206,143,.6); font-size:.8rem; }
+  .coda { text-align:center; font-style:italic; color:rgba(243,237,224,.78); letter-spacing:.06em; margin-top:.6em; }
+
+  .note { margin:26px auto 0; max-width:720px; text-align:center; font-size:.74rem; color:rgba(243,237,224,.42); line-height:1.9; letter-spacing:.04em; }
+  .note a { color:var(--gold); text-decoration:none; border-bottom:1px dotted rgba(243,206,143,.5); }
+
+  footer { margin-top:56px; border-top:1px solid rgba(243,237,224,.09); padding-top:22px; display:flex; flex-wrap:wrap; gap:10px 26px; justify-content:space-between; font-size:.7rem; color:rgba(243,237,224,.4); letter-spacing:.06em; }
+  footer a { color:var(--gold); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @media (max-width:640px) { .wrap { padding:20px 12px 70px; } article { padding:26px 20px 24px; } article p { font-size:.98rem; text-indent:2em; } }
+</style>
+</head>
+<body>
+<div class="bg radial" aria-hidden="true"></div>
+<div class="bg noise" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><a href="/caesura/">CAESURA</a> · 《止音纪元》</div>
+    <div class="toplinks">
+      <a href="/caesura/story/"><span class="zh-copy">《盐》</span><span class="en-copy">“Salt”</span></a>
+      <a href="/caesura/story/unnamed-stone/"><span class="zh-copy">《山下无名碑》</span><span class="en-copy">“The Nameless Stone”</span></a>
+      <a href="/caesura/story/empty-bar/"><span class="zh-copy">《空拍子》</span><span class="en-copy">“The Empty Bar”</span></a>
+      <a href="/caesura/story/stonethroat/"><span class="zh-copy">《石喉》</span><span class="en-copy">“The Stone-Throat”</span></a>
+      <a href="/caesura/story/anthology/"><span class="zh-copy">《余响集》</span><span class="en-copy">The Aftermath</span></a>
+      <a href="/caesura/codex/"><span class="zh-copy">世界谱</span><span class="en-copy">Codex</span></a>
+      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button></span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <p class="kicker zh-copy">短篇 · <b>鸣响之前</b> · 之十</p>
+    <p class="kicker en-copy">Short story · <b>Before the Sounding</b> · No. 10</p>
+    <h1 class="zh-copy">第一钟</h1>
+    <h1 class="en-copy">The First Bell</h1>
+    <p class="subtitle zh-copy">创世传说 · 最后的铸钟人</p>
+    <p class="subtitle en-copy">The creation legend · The Last Bell-Smith</p>
+    <div class="rule"></div>
+    <p class="meta zh-copy">约 5 分钟 · 与 <a href="/caesura/codex/">世界谱</a> 同源世界观 · 创世传说 · 零 LLM 撰写</p>
+    <p class="meta en-copy">about 5 minutes · same world as the <a href="/caesura/codex/">codex</a> · the creation legend · written without LLM assistance</p>
+  </header>
+
+  <article>
+    <div class="zh-copy">
+      <p>沉默不是这一场的开始——沉默本来就是这一场。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>最后的铸钟人来了之后，世界才第一次有了一个名字：<em>吵闹</em>。</p>
+      <p>那时候的世界没有钟。只有人用力敲、用力打、用力把自己整个消音。地下的石头不睡，地上的钟还没经过；风只是怒，没有音高可依。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>他是来替世界铸钟的，但知情的人只有他一个：<strong>钟一响，世界要付的账就结了</strong>。从此以后，人会长出喉咙、长出手、长出需要被自己咽下去的字句；每一个愿意爽快地把字咽下去的人，都会拿到再清醒的一颗心。</p>
+      <p>他知道这些。他拿到了所有的铜——没人记得是哪一家送的。那些铜片，被炉火烧了三个月，烧到头发都在教他发颤。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>他挖了个洞，把刚烧好、还不能响的铜水，倒进从地下挖来的模具里。没有铙钹、没有敲锤、没有教人怎么敲——<em>这口钟没有被任何人敲过</em>。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>最后的铸钟人做了一件所有钟匠都没想到的事。他让这口钟失去了全部音程——没有一个音让他划定，钟的身体只是钟的身体：<em>他</em>是钟这个字，钟是他这一句。</p>
+      <p>他对着最深的地底吹了一口气。铜水沉了下去，永远只把自己的一半分给大地，<em>留下了另一半给世界</em>。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>他没有等钟冷却。他只是把最后一块铜片放在一起，然后留下了这么一句：</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.1rem; letter-spacing:.05em;">「世界收到的第一个声音，是没有人的声音；世界送出的第一个沉默，是有人的沉默。」</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">传说之后，裂开了很多年——没有人见到他。没人见过他走，只见到人开始学「先听，再动」。</p>
+      <p class="coda">风钟海岸的雾里残留着最后的铸钟人的铜火；没人会告诉你它是多少年留下来的。</p>
+      <p class="coda">每当你听见一口从没敲过的钟——<strong>那就是他用最后一块铜，替你们做出的第一次</strong>。</p>
+    </div>
+
+    <div class="en-copy">
+      <p>Silence was not the beginning of the story — silence had always been it.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>Only after the last bell-smith arrived did the world have a name at last: <em>noise</em>.</p>
+      <p>Back then there were no bells. People hammered hard and struck hard and suppressed themselves entirely. The stone beneath had no sleep; the surface had no bell to lend it; the wind was only rage, never pitch.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>He arrived to cast the world's first bell, and only he knew this: <strong>the moment it sounds, the world pays its balance in full</strong>. From then on, every human being would grow a throat, a hand, and words they would have to gulp down whole; and the ones willing to gulp first would be the ones to wake up most clearly.</p>
+      <p>He knew this. He collected all the copper — no one remembers which house supplied it. The metal spent three months in the furnace; by then even his hair sent shivers through him.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>He dug a pit, and poured the bronze — molten, and still not ready to ring — into the mould lifted from the earth. No clapper, no hammer, no instruction on how to strike — <em>this bell was never struck by anyone</em>.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>The Last Bell-Smith did something no other bell-smith in history had thought of. He stripped the bell of every pitch it had been given — he set no note for it. It is the body of a bell; nothing more: <em>he</em> was the character; the bell was this one sentence.</p>
+      <p>He breathed toward the deepest part of the soil. The bronze went down and surrendered only half of itself to the earth — <em>and kept the other half for the world</em>.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>He did not wait for the metal to cool. He only set the last piece of copper into place, and left behind one line:</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.1rem; letter-spacing:.05em;">“The first sound this world ever heard was not a human sound; the first silence it ever offered was not a human silence.”</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">After the legend, everything lay dormant for many years — no one saw him. No one saw him leave; they only saw people start to learn <em>listen first, then move</em>.</p>
+      <p class="coda">In the mist of the Windbell Coast, a trace of the last bell-smith's forge fire remains; no one will tell you how many years it has been there.</p>
+      <p class="coda">Whenever you think you have heard a bell that no one ever sounded — <strong>that is the first strike he ever made, in the last piece of copper he ever lifted</strong>.</p>
+    </div>
+  </article>
+
+  <div class="note">
+    <span class="zh-copy">《第一钟》是《止音纪元》世界观的创世传说（与 <a href="/caesura/codex/">世界谱</a> 同源 canon），companion fiction（双语对照 · 零 LLM · 零网络 · 不落 runtime）。 <a href="/caesura/story/">篇一：《盐》</a> · <a href="/caesura/story/unnamed-stone/">篇二：《山下无名碑》</a> · <a href="/caesura/story/empty-bar/">篇三：《空拍子》</a> · <a href="/caesura/story/ledger/">篇四：《账本》</a> · <a href="/caesura/story/garden/">篇五：《回声庭园》</a> · <a href="/caesura/story/tribunal/">篇六：《雨审判》</a> · <a href="/caesura/story/frostbell/">篇七：《霜锤》</a> · <a href="/caesura/story/doors/">篇八：《千门》</a> · <a href="/caesura/story/stonethroat/">篇九：《石喉》</a> · <a href="/caesura/codex/">世界谱</a></span>
+    <span class="en-copy">“The First Bell” is this world's creation legend — the same source canon as the <a href="/caesura/codex/">World Codex</a>. Companion fiction (bilingual · zero LLM · offline · not shipped in runtime). <a href="/caesura/story/">Part one: “Salt”</a> · <a href="/caesura/story/unnamed-stone/">Part two: “The Nameless Stone”</a> · <a href="/caesura/story/empty-bar/">Part three: “The Empty Bar”</a> · <a href="/caesura/story/ledger/">Part four: “The Ledger”</a> · <a href="/caesura/story/garden/">Part five: “The Garden of Return”</a> · <a href="/caesura/story/tribunal/">Part six: “The Rain Tribunal”</a> · <a href="/caesura/story/frostbell/">Part seven: “The Frostbell”</a> · <a href="/caesura/story/doors/">Part eight: “The Thousand Doors”</a> · <a href="/caesura/story/stonethroat/">Part nine: “The Stone-Throat”</a> · <a href="/caesura/codex/">World Codex</a></span>
+  </div>
+
+  <footer>
+    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/">游戏</a> · <a href="/caesura/story/">《盐》· 篇一</a> · <a href="/caesura/story/unnamed-stone/">篇二 · 山下无名碑</a> · <a href="/caesura/story/empty-bar/">篇三 · 空拍子</a> · <a href="/caesura/story/ledger/">篇四 · 账本</a> · <a href="/caesura/story/garden/">篇五 · 回声庭园</a> · <a href="/caesura/story/tribunal/">篇六 · 雨审判</a> · <a href="/caesura/story/frostbell/">篇七 · 霜锤</a> · <a href="/caesura/story/doors/">篇八 · 千门</a> · <a href="/caesura/story/stonethroat/">篇九 · 石喉</a> · <a href="/caesura/codex/">世界谱</a></span>
+    <span class="en-copy">© CAESURA · <a href="/caesura/">Game</a> · <a href="/caesura/story/">“Salt” · No. 1</a> · <a href="/caesura/story/unnamed-stone/">No. 2 · The Nameless Stone</a> · <a href="/caesura/story/empty-bar/">No. 3 · The Empty Bar</a> · <a href="/caesura/story/ledger/">No. 4 · The Ledger</a> · <a href="/caesura/story/garden/">No. 5 · The Garden of Return</a> · <a href="/caesura/story/tribunal/">No. 6 · The Rain Tribunal</a> · <a href="/caesura/story/frostbell/">No. 7 · The Frostbell</a> · <a href="/caesura/story/doors/">No. 8 · The Thousand Doors</a> · <a href="/caesura/story/stonethroat/">No. 9 · The Stone-Throat</a> · <a href="/caesura/codex/">World Codex</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('langToggle');
+  var saved = 'zh';
+  try { saved = localStorage.getItem('caesura-lang') || 'zh'; } catch (e) { /* noop */ }
+  function apply(lang) {
+    root.setAttribute('data-lang', lang);
+    root.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en');
+    try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+  }
+  if (btn) btn.addEventListener('click', function () {
+    apply(root.getAttribute('data-lang') === 'en' ? 'zh' : 'en');
+  });
+  apply(saved === 'en' ? 'en' : 'zh');
+})();
+</script>
+</body>
+</html>

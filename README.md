@@ -34,10 +34,11 @@ npm run dev            # Vite dev server；浏览器打开 http://localhost:5173
 - 《账本》（短篇原创之四）：<https://xiaodernan.github.io/caesura/story/ledger/>（休垒 · Meg 不敢合上的那一页账 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《回声庭园》（短篇原创之五）：<https://xiaodernan.github.io/caesura/story/garden/>（余响新陆 · 第六境 · 旧钟的主人 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《雨审判》（短篇原创之六）：<https://xiaodernan.github.io/caesura/story/tribunal/>（余响新陆 · 雨钟谷地 · 雨罪审判者 · 七年一庭 · 双语对照 · 零 LLM · 2026-11-15） ·  
-- 《余响集》（全集页 · 整册入口 · 支持一键打印成纸质卷）：<https://xiaodernan.github.io/caesura/story/anthology/>（九篇整册 · 史诗般总起预告 · EPIC-VII 前置 · 2026-11-15） ·  
+- 《余响集》（全集页 · 整册入口 · 支持一键打印成纸质卷）：<https://xiaodernan.github.io/caesura/story/anthology/>（十篇整册 · 史诗般总起预告 · EPIC-VII 前置 · 2026-11-15） ·  
 - 《霜锤》（短篇原创之七）：<https://xiaodernan.github.io/caesura/story/frostbell/>（霜锤崖 · 末任钟匠 · 冻成冰的声音 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《千门》（短篇原创之八）：<https://xiaodernan.github.io/caesura/story/doors/>（回廊钟 · 一千扇门 · 守门人 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《石喉》（短篇原创之九）：<https://xiaodernan.github.io/caesura/story/stonethroat/>（低音之城 · 石喉母亲 · 不需要货币的音 · 双语对照 · 零 LLM · 2026-11-15） ·  
+- 《第一钟》（短篇原创之十 · 创世）：<https://xiaodernan.github.io/caesura/story/first-bell/>（鸣响之前 · 最后的铸钟人 · 全部世界的声音 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 数据最新：`master` 每推即重嵌 `site-latest.json`（raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json）  
 
 > 注意：线上是 `?fresh=1` 的干净状态，页面证据文件总会对账最新 master；页面首屏可能短暂停在 boot 屏。
@@ -45,8 +46,8 @@ npm run dev            # Vite dev server；浏览器打开 http://localhost:5173
 ## 验证
 
 ```bash
-npm run check          # tsc --noEmit + validate:data + 全部测试（6981 条 / 538 文件，零红）
-npm test               # 仅测试（磁盘名册 538，曲线 6981）
+npm run check          # tsc --noEmit + validate:data + 全部测试（6988 条 / 539 文件，零红）
+npm test               # 仅测试（磁盘名册 539，曲线 6988）
 npm run validate:data  # 数据门（当前：0 ERROR / 2 WARN，均为既有项）
 npm run coverage       # 覆盖率棘轮门（空报表退化按 exit 2 记账，不判 guilty）
 npm run build          # tsc + vite build + check-dist（产物：dist/）
