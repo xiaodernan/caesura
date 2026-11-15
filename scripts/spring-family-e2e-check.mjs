@@ -115,6 +115,12 @@ export const PROBES = [
     expect: { jsonPath: ['entries'], equals: 52 },
     retries: 1,
   },
+  {
+    name: 'lore SQLite 词袋倒排路径（engine=fts 同裁判对照）· 万籁 → boss',
+    url: 'http://127.0.0.1:8084/lore/search?q=%E4%B8%87%E7%B1%81&limit=1&lang=zh&engine=fts',
+    expect: { jsonPath: ['hits', '0', 'id'], equals: 'boss-the-myriad-earless-deeps' },
+    retries: 1,
+  },
 ]
 
 /** 一条探针的判读（纯函数，可测） */

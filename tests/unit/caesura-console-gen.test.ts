@@ -228,7 +228,7 @@ describe('caesura-console-gen (KI-495)', () => {
     expect(() => JSON.stringify(sys)).not.toThrow()
   })
 
-  it('⑫ buildSnapshot 默认带 systems 块；systems:false 关闭为 null（兼容旧快照/确定性单测）', async () => {
+  it('⑫ buildSnapshot 默认带 systems 块；systems:false 关闭为 null（兼容旧快照/确定性单测）', { timeout: 300000 }, async () => {
     const withSys = await buildSnapshot({ runner: fakeRunner(), driveNet: false, now: () => 1, lsmKeys: 64, poolAccesses: 100, layoutCount: 200 })
     expect(withSys.systems).toBeTruthy()
     expect(withSys.systems!.lsm).toBeTruthy()

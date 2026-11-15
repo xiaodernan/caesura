@@ -225,7 +225,7 @@ describe('真跑一趟：跑测器自己在真红的时候印几个名字（KI-2
    * 「边走边读那片树」的门撞车（`doc-section-citations`／`requirement-citations`／`filemap-paths`
    * 三道门都逐份读 `tests/` 下的文件）⇒ 写临时文件的那一趟必须住到交付总体外面去。
    *
-   * 隔离的办法：**把跑测器整份复制到 `.scratch/` 下的一个临时根**。跑测器的根是从它自己的
+   * 隔离的办法：**把跑测器整份复制到仓根下的一个临时根**。跑测器的根是从它自己的
    * `import.meta.url` 推出来的（`scripts/test.mjs` 顶上那句）⇒ 复制到哪儿，根就是哪儿。
    * 复制件与原件的差别**只有一处**：vitest 入口的路径（临时根底下没有 `node_modules`）。
    * 那处替换在这条腿里当众验一遍（把替换换回去必须与原件逐字节相同）⇒ 复制件量的是**今天**的
@@ -235,7 +235,7 @@ describe('真跑一趟：跑测器自己在真红的时候印几个名字（KI-2
    * 往上找 `node_modules` 的 ⇒ 临时根住在仓里，它第一跳就落在本仓的 `node_modules` 上；
    * 住到仓外就得再造一份依赖树（ junction 那种删法在本机有前科，不走）。
    */
-  const TMP_ROOT = root + '.scratch/ki298-e2e-' + process.pid + '/'
+  const TMP_ROOT = root + 'ki298-e2e-' + process.pid + '/'
   const TMP_A = 'tests/unit/zz-red-a.test.ts'
   const TMP_B = 'tests/unit/zz-red-b.test.ts'
   /** 跑测器里那一句 vitest 入口（复制件只许改这一处） */

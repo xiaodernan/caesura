@@ -9,17 +9,21 @@
 |---|---|
 | 52 条真实文本的只读 API（双语） | 玩家后端 / 存档服务器（`gameplay.md` 明写「无专用服务器」） |
 | Java 侧 BM25：中文 bigram + 英文词元，k1=1.5 · b=0.75 · 标题×3 | 对 dialogue.json 的任何读写（它**根本读不到**仓库——快照打在 jar 里） |
-| memory\|redis 双后端缓存，`/lore/stats` 可查命中率 | 门名册 / 熔断 / 重试的第二个主人 |
-| `mvn -DskipTests package` 即构建；e2e 一条龙拉起 | 生产网关（那个是 caesura-gateway） |
+| **双引擎检索**：`?engine=bm25`（内存路 · 默认）⇔ `?engine=fts`（SQLite 词袋倒排 · in-memory `jdbc:sqlite::memory:` · `posting` 复合主键 `PRIMARY KEY(token, entry_id)` · `df` 一 token 一查）—— 同裁判评估两条路（分词与打分出自 `LoreTokenizer` + `LoreScoring`） | 门名册 / 熔断 / 重试的第二个主人 |
+| memory\|redis 双后端缓存，`/lore/stats` 可查命中率 + 数据库体检（`db.entries/postings/distinctTokens/avgdl/buildMs/plan`） | 生产网关（那个是 caesura-gateway） |
+| `mvn -DskipTests package` 即构建；e2e 一条龙拉起 | eureka 注册不是默认（见下） |
+
+**⚠️ 注册纪律（2026-11-15）**：默认**不注册任何注册中心**（`EUREKA_REGISTER=false` 缺省）—— 共享机器上的 8761 可能是别家的注册中心。整族 e2e 同族起 8761 时要演示注册，显式 `EUREKA_REGISTER=true` 即可。曾误注一次 CAESURA-LORE 到本机 careeros-discovery（8761），已用 Eureka API 干净注销（Registry 现回归 404）。
 
 ## 端点
 
 ```
-GET  /lore/codex?lang=zh|en        → { lang, total: 48, entries: [...] }   （每种语言一份载荷，分别入缓存）
+GET  /lore/codex?lang=zh|en        → { lang, total: 52, entries: [...] }   （每种语言一份载荷，分别入缓存）
 GET  /lore/codex/{id}?lang=zh|en   → 200 单条 / 404 {"error":"not_found"}
-GET  /lore/search?q=万籁&limit=5    → { q, lang, total, tookMs, algorithm, hits: [{id,cat,title,body,score}] }
-POST /lore/search  {"q":"万籁","limit":5,"lang":"zh"}  （同上；JSON 体形态）
-GET  /lore/stats                   → { entries, cacheBackend, cacheHits, cacheMisses, searches, hitRate, uptimeMs, playerProcessLlm: false }
+GET  /lore/search?q=万籁&limit=5[&engine=fts]   → { q, lang, total, tookMs, algorithm, engine, hits: [{id,cat,title,body,score}] }
+POST /lore/search  {"q":"万籁","limit":5,"lang":"zh","engine":"fts"}  （同上；JSON 体形态）
+GET  /lore/explain?q=万籁          → { q, tokens, plan, engine }（EXPLAIN QUERY PLAN 原文 + 分词；每问必真算，不进缓存）
+GET  /lore/stats                   → { entries, cacheBackend, cacheHits, cacheMisses, searches, hitRate, uptimeMs, playerProcessLlm: false, db: { entries, postings, distinctTokens, avgdl, buildMs, type, plan } }
 GET  /lore/health（≡ actuator /actuator/health 的 lore 环节）→ { entries: 52 }
 ```
 
@@ -44,6 +48,19 @@ node scripts/lore-codex-snapshot.mjs
 | `redis` | `CAESURA_LORE_CACHE=redis` + `SPRING_DATA_REDIS_HOST/PORT` | `RedisCacheManager`，10 分钟 TTL，`lore:` 键前缀 |
 
 **真机验证（2026-11-15 · throwaway 容器 · 已销毁）**：`redis:7.4-alpine` @ 16399 · health UP（redis 组件 UP）· `KEYS 'lore:*'` → `lore:codex:codex:zh` + `lore:search:search:zh:万籁:5` · 同一查询 ×3 ⇒ `hitRate=0.6`。
+
+## SQLite 词袋倒排·可观测性（2026-11-15 落）
+
+- `posting(token TEXT, entry_id TEXT, tf INTEGER, PRIMARY KEY(token, entry_id)) WITHOUT ROWID` —— 逗号复合主键 = 免二级索引、
+  `df(token PK, df)` —— 建索引期一次算好，热路径零聚合；`entry(dl)` —— 文档长度现算好的。
+- `LoreTokenizer` + `LoreScoring` 是内存路（`LoreRanker`）与 SQLite 路的**同一份分词 / 同一份打分**（k1=1.5 · b=0.75 · idf 同一公式）——
+  两个引擎对照 = 同裁判评两个实现，调的是存储与索引，不是判分标准。
+- 实机读数（`engine=fts` vs `engine=bm25`，同一份 52 条世界谱）：
+  `q=万籁` → 同样命中 `boss-the-myriad-earless-deeps` 与 `reach-earless-deeps`（同样 score ≈ 14.70 / 9.68）——**分数完全一致（同裁判）**；
+  `/lore/explain?q=万籁` → tokens=[万， 万籁， 籁]，`plan: SEARCH posting USING PRIMARY KEY (token=?)`——证明 PK 命中，不是全表扫。
+- `/lore/stats` 新增 `db` 块：`entries=52 · postings=4893 · distinctTokens=2438 · avgdl≈141.9 · buildMs≈921 · type=sqlite-inmemory · plan=SEARCH TABLE posting USING PRIMARY KEY (token=?)`。
+- 冷启只付一次建索引成本（in-memory SQLite 约 0.9s），**运行期零磁盘**（`:memory:`）；52 条规模选内存路即可，SQLite 路是
+  「数据库索引怎么把 BM25 做对」的真身对照，不是 production over-engineering。
 
 缓存的是**序列化后的 JSON 载荷**（不是对象）：两种后端行为一致、热点路径零重复 Jackson 序列化。
 放行手动 `getOrCompute`（不走 `@Cacheable`）——命中/未命中计数在自己手里，`/lore/stats` 才说得出真话。

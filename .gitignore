@@ -25,3 +25,4 @@ vite.config.ts.timestamp-*.mjs
 
 # KI-421：Maven 构建输出（Spring Cloud 微服务族）——含 .class/.jar（含 NUL），是构建产物不是源码
 services/**/target/
+ki298-e2e-*/
