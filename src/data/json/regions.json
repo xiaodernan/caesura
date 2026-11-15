@@ -1688,6 +1688,18 @@
           "y": 64,
           "z": -200
         }
+      },
+      {
+        "id": "in_fellcarillon_stave_true",
+        "kind": "inspect",
+        "verb": "数钟壳上的凿痕",
+        "verbKey": "interact.count_chisel_marks",
+        "notifyKey": "world.flavor.fellcarillon.staveTrue",
+        "pos": {
+          "x": 195,
+          "y": 64,
+          "z": -232
+        }
       }
     ],
     "music": {
