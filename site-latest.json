@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "f6fd4bc08066a071ccbad418136b25189c8c8199",
+  "head": "1d65a01be44095f64af9ce545876631dee5bedb6",
   "branch": "master",
-  "subject": "test(console): 12 条无回归门钉 F-124 溢出挤压硬化 LANG_EXACT 对账 KI-573",
-  "date": "2026-11-15T17:47:39+08:00",
+  "subject": "feat(console): 集大成调度台新增「余响八篇 · 沉默的编年史」面板 KI-574",
+  "date": "2026-11-15T18:13:35+08:00",
   "kv": {
-    "KI.rows": 491,
-    "KI.Implemented": 314,
+    "KI.rows": 492,
+    "KI.Implemented": 315,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/f6fd4bc08066a071ccbad418136b25189c8c8199",
+    "url": "https://github.com/xiaodernan/caesura/commit/1d65a01be44095f64af9ce545876631dee5bedb6",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
