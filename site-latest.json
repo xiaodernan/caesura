@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "9225c30c56ef7c2c5dddf2c7e72cdc83259efecc",
+  "head": "54fed8803dd6e5d8456c367d0c88781b6e3c1439",
   "branch": "master",
-  "subject": "feat(input): 滚轮接入视角纵向（往上滑往上看、往下滑往下看，游玩态生效） · KI-593",
-  "date": "2026-11-16T03:40:10+08:00",
+  "subject": "chore(status): re-embed site-latest.json",
+  "date": "2026-11-16T03:41:02+08:00",
   "kv": {
     "KI.rows": 511,
     "KI.Implemented": 334,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/9225c30c56ef7c2c5dddf2c7e72cdc83259efecc",
+    "url": "https://github.com/xiaodernan/caesura/commit/54fed8803dd6e5d8456c367d0c88781b6e3c1439",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
