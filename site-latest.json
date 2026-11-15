@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "5dd19bb1bb661f55a096818e4ec26a79bc9dbef9",
+  "head": "4ad9e4a40adf99948dae9c930dc0772d7c5c3be4",
   "branch": "master",
-  "subject": "fix(ui): 集大成调度台 47 面板从 149 处溢出降到 1 处 栅格面板 min-width:0 长camelCase破词 梯形行 flex-wrap",
-  "date": "2026-11-15T13:36:07+08:00",
+  "subject": "fix(ui): #hud 显式写 width:100%/height:100% 防止 canvas intrinsic 300x150 顶替电平",
+  "date": "2026-11-15T13:43:02+08:00",
   "kv": {
     "KI.rows": 482,
     "KI.Implemented": 305,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/5dd19bb1bb661f55a096818e4ec26a79bc9dbef9",
+    "url": "https://github.com/xiaodernan/caesura/commit/4ad9e4a40adf99948dae9c930dc0772d7c5c3be4",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
