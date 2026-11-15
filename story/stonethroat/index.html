@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>石喉 / The Stone-Throat · CAESURA 短篇 之九 — 余响新陆 · 低音之城</title>
+<meta name="description" content="《止音纪元》原创短篇之九 · 低音之城 · 她把说过的话一句句吞成石头，等一个人把它们敲出来。双语对照 · 零网络 · 零 LLM。 / The ninth original short story — the City of Low Tones, where her words, one by one, became stones in her throat. Bilingual, offline, zero LLM.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🪨</text></svg>">
+<style>
+  :root {
+    --gold: #c9b458;
+    --gold-soft: rgba(201,180,88,.32);
+    --ink: #f3ede0;
+    --ink-dim: rgba(243,237,224,.62);
+    --panel: rgba(22,19,10,.78);
+    --serif: "Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#0a0906; color:var(--ink); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; }
+  .bg { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .bg.radial {
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(201,180,88,.1), transparent 60%),
+      radial-gradient(900px 700px at 50% 118%, rgba(90,70,30,.16), transparent 62%),
+      radial-gradient(650px 420px at 12% 104%, rgba(201,180,88,.06), transparent 60%),
+      #0a0906;
+  }
+  .bg.noise { position:fixed; inset:0; z-index:-1; opacity:.05; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .wrap { max-width:860px; margin:0 auto; padding:26px 26px 90px; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .brand { font-size:.8rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; opacity:.9; }
+  .brand a { color:inherit; text-decoration:none; border-bottom:1px dotted rgba(201,180,88,.5); }
+  .brand a:hover { color:#fff2cd; }
+  .toplinks { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toplinks a { font-size:.72rem; color:var(--ink-dim); text-decoration:none; border:1px solid rgba(243,237,224,.14); padding:6px 12px; border-radius:999px; transition:all .22s ease; }
+  .toplinks a:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .lang-row button { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(201,180,88,.12); border:1px solid var(--gold-soft); padding:6px 15px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; }
+  .lang-row button:hover { background:rgba(201,180,88,.22); box-shadow:0 0 16px rgba(201,180,88,.25); }
+
+  [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="en"] .zh-copy { display:none !important; }
+
+  header.hero { text-align:center; padding:52px 14px 30px; }
+  .kicker { font-size:.72rem; letter-spacing:.42em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:20px; }
+  .kicker b { color:var(--gold); font-weight:600; }
+  h1 { font-size:clamp(2.4rem, 9vw, 4rem); font-weight:600; letter-spacing:.16em;
+       background:linear-gradient(180deg,#fff8e1 0%, #c9b458 28%, #8a7433 58%, #423619 100%);
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+       text-shadow:0 0 90px rgba(201,180,88,.3); }
+  .subtitle { margin-top:14px; font-size:.8rem; color:var(--ink-dim); letter-spacing:.3em; text-transform:uppercase; }
+  .rule { width:170px; height:1px; margin:24px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .meta { margin-top:16px; font-size:.7rem; color:rgba(243,237,224,.45); letter-spacing:.18em; text-transform:uppercase; }
+  .meta a { color:var(--gold); text-decoration:none; }
+
+  article { background:var(--panel); border:1px solid rgba(243,237,224,.1); border-radius:18px; padding:38px 40px 34px; position:relative; }
+  article::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--gold), transparent); opacity:.7; }
+  article p { font-size:1.04rem; line-height:2.02; letter-spacing:.02em; color:rgba(243,237,224,.92); margin-bottom:1.5em; text-indent:2em; overflow-wrap:break-word; }
+  article p.no-indent { text-indent:0; }
+  article p em { color:#ffe9b3; font-style:normal; }
+  article p strong { color:var(--gold); font-weight:600; }
+  .beat { width:100%; text-align:center; margin:.4em 0 1.4em; letter-spacing:.5em; color:rgba(201,180,88,.6); font-size:.8rem; }
+  .coda { text-align:center; font-style:italic; color:rgba(243,237,224,.78); letter-spacing:.06em; margin-top:.6em; }
+
+  .note { margin:26px auto 0; max-width:720px; text-align:center; font-size:.74rem; color:rgba(243,237,224,.42); line-height:1.9; letter-spacing:.04em; }
+  .note a { color:var(--gold); text-decoration:none; border-bottom:1px dotted rgba(201,180,88,.5); }
+
+  footer { margin-top:56px; border-top:1px solid rgba(243,237,224,.09); padding-top:22px; display:flex; flex-wrap:wrap; gap:10px 26px; justify-content:space-between; font-size:.7rem; color:rgba(243,237,224,.4); letter-spacing:.06em; }
+  footer a { color:var(--gold); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @media (max-width:640px) { .wrap { padding:20px 12px 70px; } article { padding:26px 20px 24px; } article p { font-size:.98rem; text-indent:2em; } }
+</style>
+</head>
+<body>
+<div class="bg radial" aria-hidden="true"></div>
+<div class="bg noise" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><a href="/caesura/">CAESURA</a> · 《止音纪元》</div>
+    <div class="toplinks">
+      <a href="/caesura/story/"><span class="zh-copy">《盐》</span><span class="en-copy">“Salt”</span></a>
+      <a href="/caesura/story/empty-bar/"><span class="zh-copy">《空拍子》</span><span class="en-copy">“The Empty Bar”</span></a>
+      <a href="/caesura/story/tribunal/"><span class="zh-copy">《雨审判》</span><span class="en-copy">“The Rain Tribunal”</span></a>
+      <a href="/caesura/story/doors/"><span class="zh-copy">《千门》</span><span class="en-copy">“The Thousand Doors”</span></a>
+      <a href="/caesura/story/anthology/"><span class="zh-copy">《余响集》</span><span class="en-copy">The Aftermath</span></a>
+      <a href="/caesura/codex/"><span class="zh-copy">世界谱</span><span class="en-copy">Codex</span></a>
+      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button></span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <p class="kicker zh-copy">短篇 · <b>低音之城</b> · 之九</p>
+    <p class="kicker en-copy">Short story · <b>The City of Low Tones</b> · No. 9</p>
+    <h1 class="zh-copy">石喉</h1>
+    <h1 class="en-copy">The Stone-Throat</h1>
+    <p class="subtitle zh-copy">余响新陆 · 低音之城 · 石喉母亲</p>
+    <p class="subtitle en-copy">The Afterland · the City of Low Tones · The Stone-Throat Matriarch</p>
+    <div class="rule"></div>
+    <p class="meta zh-copy">约 5 分钟 · 与 <a href="/caesura/codex/">世界谱</a> 同源世界观 · 设定册《新六地域》同源 · 零 LLM 撰写</p>
+    <p class="meta en-copy">about 5 minutes · same world as the <a href="/caesura/codex/">codex</a> · from the New Six Lands design canon · written without LLM assistance</p>
+  </header>
+
+  <article>
+    <div class="zh-copy">
+      <p>低音之城的规矩很简单：地下水在漏，所以每一句话都必须说得比水低。</p>
+      <p>没有人敢开口。最怕的是孩子——孩子一出生，嘴就被布盖上了：城里的人不是禁语，他们<strong>买卖</strong>语。说一句话，付一笔沉默作价。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>石喉母亲坐在大教堂的正中。没人看过她直起腰——她的喉咙里锁着很多以前咽下去的话，一块比一块大，从第一声到最后一声。</p>
+      <p>她的律法只有一条：<em>每一句话，都必须是你自己用，用自己脖子上说过的口音，换来的。</em></p>
+
+      <div class="beat">· · ·</div>
+
+      <p>一个来的少女站在她面前。她想问的问题很小，但是她问了一整天才问完——因为每个字都是一笔钱。石喉母亲没有抬手示意她坐下，也没有赶她走；她只是把纸递给少女，说：</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.1rem; letter-spacing:.05em;">「写下来，让河水替她数。」</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>少女在纸上写了几句之后，石喉母亲开了口——她一开口，整个教堂的地下水都停了一拍。因为母亲那一块是无别的：那块她自己吞下去的、从来不肯对谁说出来的话，沉在喉咙最深的地方，被吞得<em>太多</em>，已经没法分辨是摩擦声还是咳嗽。</p>
+      <p>她看了一眼纸上写的那句话，笑了一笑——没有嘴上说话，喉咙只是发出了很低很低的频率，像一块石头在很深的地方松了一毫米。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>少女问了：「那块石头，是你自己吞下去的？」</p>
+      <p>石喉母亲没有回答。少女继续写：「第一句。孩子来的时候像一块石头那样安静——谁的话，被塞进去的？」</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">教堂外面，水依然在响。只是今天，在很久很久以后，地下水记下了它自己曾经听见过的最轻的一句话——</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.1rem; letter-spacing:.05em;">「谁，不该沉默。」</p>
+      <p class="coda">从那天起，低音之城的每一份价目表，都少了一栏——「沉默」本身，就被划去了价。</p>
+      <p class="coda">石喉母亲再也不能开口了。可城市从此有了一个不需要货币的音：一句<em>忘记被付价</em>的话语。</p>
+    </div>
+
+    <div class="en-copy">
+      <p>The City of Low Tones has a simple law: the groundwater is leaking, so every voice must be pitched lower than the water.</p>
+      <p>No one speaks above it. The worst offenders are the children — each baby born has its mouth covered at birth. The people of the city are not forbidden to speak; they <strong>sell</strong> it. Every sentence has a price, paid in silence.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>The Stone-Throat Matriarch sits at the center of the cathedral. No one has ever seen the matriarch straighten. Inside her throat, sealed many a sentence she herself swallowed, each heavier than the last — from the first word to the last.</p>
+      <p>Her law has exactly one clause: <em>every word you say must be an accent you are willing to carry for the rest of your life.</em></p>
+
+      <div class="beat">· · ·</div>
+
+      <p>A girl stands before her. She wants to ask one small question, but it takes her a whole day — every character is a coin. The matriarch does not offer a chair and does not wave her out. She only hands the girl paper and says:</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.1rem; letter-spacing:.05em;">“Write it. Let the river keep count.”</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>After the girl had written only a few lines, the matriarch answered — and in that instant, the groundwater under the cathedral stopped for a single whole beat. Because the stone she carried was hers alone: a sentence she had swallowed so many times, down to the very bottom of her throat, it was no longer clear whether it was a scrape or a cough.</p>
+      <p>She looked at the line the girl had written, and she smiled — not aloud, but low, so low it was almost below hearing, like a stone moving one millimeter at the bottom of a deep well.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>The girl asked: “That stone. You swallowed it yourself?”</p>
+      <p>The matriarch did not answer. The girl went on writing: “The first one. The one that was shoved down when every new child came in — whose voice was it?”</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">Outside the cathedral, the water kept sounding. But from that day on, the groundwater remembered the softest sentence it had ever heard —</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.1rem; letter-spacing:.05em;">“who, should not have to hold their silence.”</p>
+      <p class="coda">From that day, every price list in the City of Low Tones had one line struck out — the price of silence itself.</p>
+      <p class="coda">The matriarch cannot speak again. But the city has a pitch that costs nothing: a sentence that was <em>never paid for</em>.</p>
+    </div>
+  </article>
+
+  <div class="note">
+    <span class="zh-copy">《石喉》取材于《止音纪元》设定册《新六大陆 · NEW-LANDS》第十境（<strong>rg_lowtone_land</strong> · 低音之城 · ♭A2 · 石喉母亲 The Stone-Throat Matriarch · DLG_STONETHROAT · 主线「石喉记账」），是 companion fiction（双语对照 · 零 LLM · 零网络 · 不落 runtime）。 <a href="/caesura/story/">篇一：《盐》</a> · <a href="/caesura/story/unnamed-stone/">篇二：《山下无名碑》</a> · <a href="/caesura/story/empty-bar/">篇三：《空拍子》</a> · <a href="/caesura/story/ledger/">篇四：《账本》</a> · <a href="/caesura/story/tribunal/">篇六：《雨审判》</a> · <a href="/caesura/story/doors/">篇八：《千门》</a> · <a href="/caesura/story/anthology/">全集：《余响集》</a> · <a href="/caesura/codex/">世界谱</a></span>
+    <span class="en-copy">“The Stone-Throat” is adapted from the “New Six Lands · NEW-LANDS” design canon — the tenth land (<strong>rg_lowtone_land</strong> · the City of Low Tones · ♭A2 · The Stone-Throat Matriarch · DLG_STONETHROAT · the main arc “The Stone-Throat Ledger”). Companion fiction (bilingual · zero LLM · offline · not shipped in runtime). <a href="/caesura/story/">Part one: “Salt”</a> · <a href="/caesura/story/unnamed-stone/">Part two: “The Nameless Stone”</a> · <a href="/caesura/story/empty-bar/">Part three: “The Empty Bar”</a> · <a href="/caesura/story/ledger/">Part four: “The Ledger”</a> · <a href="/caesura/story/tribunal/">Part six: “The Rain Tribunal”</a> · <a href="/caesura/story/doors/">Part eight: “The Thousand Doors”</a> · <a href="/caesura/story/anthology/">All stories: “The Aftermath”</a> · <a href="/caesura/codex/">World Codex</a></span>
+  </div>
+
+  <footer>
+    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/">游戏</a> · <a href="/caesura/story/">《盐》· 篇一</a> · <a href="/caesura/story/unnamed-stone/">篇二 · 山下无名碑</a> · <a href="/caesura/story/empty-bar/">篇三 · 空拍子</a> · <a href="/caesura/story/ledger/">篇四 · 账本</a> · <a href="/caesura/story/garden/">篇五 · 回声庭园</a> · <a href="/caesura/story/tribunal/">篇六 · 雨审判</a> · <a href="/caesura/story/frostbell/">篇七 · 霜锤</a> · <a href="/caesura/story/doors/">篇八 · 千门</a> · <a href="/caesura/codex/">世界谱</a></span>
+    <span class="en-copy">© CAESURA · <a href="/caesura/">Game</a> · <a href="/caesura/story/">“Salt” · No. 1</a> · <a href="/caesura/story/unnamed-stone/">No. 2 · The Nameless Stone</a> · <a href="/caesura/story/empty-bar/">No. 3 · The Empty Bar</a> · <a href="/caesura/story/ledger/">No. 4 · The Ledger</a> · <a href="/caesura/story/garden/">No. 5 · The Garden of Return</a> · <a href="/caesura/story/tribunal/">No. 6 · The Rain Tribunal</a> · <a href="/caesura/story/frostbell/">No. 7 · The Frostbell</a> · <a href="/caesura/story/doors/">No. 8 · The Thousand Doors</a> · <a href="/caesura/codex/">World Codex</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('langToggle');
+  var saved = 'zh';
+  try { saved = localStorage.getItem('caesura-lang') || 'zh'; } catch (e) { /* noop */ }
+  function apply(lang) {
+    root.setAttribute('data-lang', lang);
+    root.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en');
+    try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+  }
+  if (btn) btn.addEventListener('click', function () {
+    apply(root.getAttribute('data-lang') === 'en' ? 'zh' : 'en');
+  });
+  apply(saved === 'en' ? 'en' : 'zh');
+})();
+</script>
+</body>
+</html>

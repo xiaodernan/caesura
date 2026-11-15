@@ -15,6 +15,7 @@
  *   ├── story/anthology/（余响集 · 全集页）
  *   ├── story/frostbell/（短篇之七）
  *   ├── story/doors/（短篇之八）
+ *   ├── story/stonethroat/（短篇之九）
  *   ├── console/      （集大成调度台）
  *   └── raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json
  *
@@ -43,6 +44,7 @@ const ENDPOINTS = [
   { name: 'story-7', url: 'https://xiaodernan.github.io/caesura/story/anthology/', marker: '余响集' },
   { name: 'story-8', url: 'https://xiaodernan.github.io/caesura/story/frostbell/', marker: '霜锤' },
   { name: 'story-9', url: 'https://xiaodernan.github.io/caesura/story/doors/', marker: '千门' },
+  { name: 'story-10', url: 'https://xiaodernan.github.io/caesura/story/stonethroat/', marker: '石喉' },
 ]
 
 const asJson = argv.includes('--json')
