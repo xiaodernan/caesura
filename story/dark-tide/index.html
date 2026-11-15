@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>暗潮 / The Dark Tide · CAESURA 短篇 之十一</title>
+<meta name="description" content="《止音纪元》原创短篇之十一 · 黑暗森林——第九个守夜人，四十二年后，终于听见了那个一直没人回答的呼唤。双语对照 · 零 LLM · 零网络。 / The eleventh original short story — the Dark Forest, where the ninth night-keeper, forty-two years on, finally hears the signal that was never answered. Bilingual, offline, zero LLM.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🌊</text></svg>">
+<style>
+  :root {
+    --gold: #f3ce8f;
+    --gold-soft: rgba(243,206,143,.32);
+    --ink: #f3ede0;
+    --ink-dim: rgba(243,237,224,.62);
+    --panel: rgba(28,20,12,.7);
+    --serif: "Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#070608; color:var(--ink); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; }
+  .bg { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .bg.radial {
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(243,206,143,.13), transparent 60%),
+      radial-gradient(900px 700px at 50% 118%, rgba(120,80,40,.17), transparent 62%),
+      radial-gradient(650px 420px at 88% 104%, rgba(203,177,255,.06), transparent 60%),
+      #070608;
+  }
+  .bg.noise { position:fixed; inset:0; z-index:-1; opacity:.05; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .wrap { max-width:860px; margin:0 auto; padding:26px 26px 90px; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .brand { font-size:.8rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; opacity:.9; }
+  .brand a { color:inherit; text-decoration:none; border-bottom:1px dotted rgba(243,206,143,.5); }
+  .brand a:hover { color:#fff2d0; }
+  .toplinks { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toplinks a { font-size:.72rem; color:var(--ink-dim); text-decoration:none; border:1px solid rgba(243,237,224,.14); padding:6px 12px; border-radius:999px; transition:all .22s ease; }
+  .toplinks a:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .lang-row button { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(243,206,143,.12); border:1px solid var(--gold-soft); padding:6px 15px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; }
+  .lang-row button:hover { background:rgba(243,206,143,.22); box-shadow:0 0 16px rgba(243,206,143,.25); }
+
+  [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="en"] .zh-copy { display:none !important; }
+
+  header.hero { text-align:center; padding:52px 14px 30px; }
+  .kicker { font-size:.72rem; letter-spacing:.42em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:20px; }
+  .kicker b { color:var(--gold); font-weight:600; }
+  h1 { font-size:clamp(2.2rem, 8vw, 3.6rem); font-weight:600; letter-spacing:.16em;
+       background:linear-gradient(180deg,#fffbe6 0%, #f3ce8f 28%, #c9a258 58%, #7d6436 100%);
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+       text-shadow:0 0 90px rgba(243,206,143,.3); }
+  .subtitle { margin-top:14px; font-size:.8rem; color:var(--ink-dim); letter-spacing:.3em; text-transform:uppercase; }
+  .rule { width:170px; height:1px; margin:24px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .meta { margin-top:16px; font-size:.7rem; color:rgba(243,237,224,.45); letter-spacing:.18em; text-transform:uppercase; }
+  .meta a { color:var(--gold); text-decoration:none; }
+
+  article { background:var(--panel); border:1px solid rgba(243,237,224,.1); border-radius:18px; padding:38px 40px 34px; position:relative; }
+  article::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--gold), transparent); opacity:.7; }
+  article p { font-size:1.04rem; line-height:2.02; letter-spacing:.02em; color:rgba(243,237,224,.92); margin-bottom:1.5em; text-indent:2em; overflow-wrap:break-word; }
+  article p.no-indent { text-indent:0; }
+  article p em { color:#ffe9b3; font-style:normal; }
+  article p strong { color:var(--gold); font-weight:600; }
+  .beat { width:100%; text-align:center; margin:.4em 0 1.4em; letter-spacing:.5em; color:rgba(243,206,143,.6); font-size:.8rem; }
+  .coda { text-align:center; font-style:italic; color:rgba(243,237,224,.78); letter-spacing:.06em; margin-top:.6em; }
+
+  .note { margin:26px auto 0; max-width:760px; text-align:center; font-size:.74rem; color:rgba(243,237,224,.42); line-height:1.9; letter-spacing:.04em; }
+  .note a { color:var(--gold); text-decoration:none; border-bottom:1px dotted rgba(243,206,143,.5); }
+
+  footer { margin-top:56px; border-top:1px solid rgba(243,237,224,.09); padding-top:22px; display:flex; flex-wrap:wrap; gap:10px 26px; justify-content:space-between; font-size:.7rem; color:rgba(243,237,224,.4); letter-spacing:.06em; }
+  footer a { color:var(--gold); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @media (max-width:640px) { .wrap { padding:20px 12px 70px; } article { padding:26px 20px 24px; } article p { font-size:.98rem; text-indent:2em; } }
+</style>
+</head>
+<body>
+<div class="bg radial" aria-hidden="true"></div>
+<div class="bg noise" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><a href="/caesura/">CAESURA</a> · 《止音纪元》</div>
+    <div class="toplinks">
+      <a href="/caesura/story/"><span class="zh-copy">《盐》</span><span class="en-copy">“Salt”</span></a>
+      <a href="/caesura/story/first-bell/"><span class="zh-copy">《第一钟》</span><span class="en-copy">“The First Bell”</span></a>
+      <a href="/caesura/story/dark-tide/"><span class="zh-copy">《暗潮》</span><span class="en-copy">“The Dark Tide”</span></a>
+      <a href="/caesura/story/twelfth-listener/"><span class="zh-copy">《第十二个听者》</span><span class="en-copy">“The Twelfth Listener”</span></a>
+      <a href="/caesura/story/anthology/"><span class="zh-copy">《余响集》</span><span class="en-copy">The Aftermath</span></a>
+      <a href="/caesura/codex/"><span class="zh-copy">世界谱</span><span class="en-copy">Codex</span></a>
+      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button></span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <p class="kicker zh-copy">短篇 · <b>黑暗森林</b> · 之十一</p>
+    <p class="kicker en-copy">Short story · <b>The Dark Forest</b> · No. 11</p>
+    <h1 class="zh-copy">暗潮</h1>
+    <h1 class="en-copy">The Dark Tide</h1>
+    <p class="subtitle zh-copy">第九个守夜人 · 暗潮</p>
+    <p class="subtitle en-copy">The Ninth Night-Keeper · The Dark Tide</p>
+    <div class="rule"></div>
+    <p class="meta zh-copy">约 5 分钟 · 与 <a href="/caesura/codex/">世界谱</a> 同源世界观 · 零 LLM 撰写</p>
+    <p class="meta en-copy">about 5 minutes · same world as the <a href="/caesura/codex/">codex</a> · written without LLM assistance</p>
+  </header>
+
+  <article>
+    <div class="zh-copy">
+<p>她是风钟海岸的第九个守夜人——第九个，而不是第一个。</p>
+      <p>她之所以能听见，是因为她已经听了四十二年。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>宇宙里有两条不变的法则——文明总在想着扩张，而宇宙的物质总量不变——而当这两条挤在一起，先发现对方的那一边，只有一种出路：<em>变成一根永远不响的弦</em>。</p>
+      <p>守夜人知道这一点，因为她之所以被选为第九个守夜人，是因为她可以按 V——永远让自己的喉咙不发出任何声音。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>夜里的第三个小时，窗前的频谱仪抖了一下：不是钟。更长——<em>比最低的弦还长</em>。像宇宙把耳朵凑了过来，只举起手，不给答案。</p>
+      <p>守夜人看着那一行数字，不按任何键。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>守夜人听见的第一声，是一个世纪前就发往这里又没人听懂的声音——缺了一拍的 <em>三拍一停</em>，三拍后停，<em>没人</em>回应该停。</p>
+      <p>她压低了自己，她没有扣下任何键。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>她知道——如果她回答，对方就会再问下去。</p>
+      <p>如果她沉默，对方就永远只能到此为止。</p>
+      <p>宇宙最安全的答案，不是沉默——<strong>是从未回答。</strong></p>
+
+      <div class="beat">· · ·</div>
+
+      <p>她走到岸边。雾像一根慢慢从海里升起的铅丝——不是雾，是<em>某种完全不属于她的存在</em>，整个宇宙里只有这一盏灯。</p>
+      <p>她在里头过了一季——<em>然后她不敢告诉任何人</em>，这一季她再没发出过任何声音。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">守夜人走后，接替她的人在频谱仪上存储了一份自动记录。</p>
+      <p class="coda">那份记录里，宇宙的回答只有一句——</p>
+      <p class="no-indent" style="text-align:center;text-indent:0;color:var(--gold);font-size:1.1rem;letter-spacing:.05em;">「听——每个人都在听。但这个宇宙里，没有一个人发声。」</p>
+      <p class="coda">第十个守夜人接手后，在记录手册的第一行写下：<em>「暗潮未消。」</em></p>
+    </div>
+
+    <div class="en-copy">
+<p>She was the ninth night-keeper of the Windbell Coast — the ninth, not the first.</p>
+      <p>She could hear because she had already been listening for forty-two years.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>The universe obeys two inviolable laws — civilizations always long to expand, and the total matter of the cosmos does not change — and when these two press together, the civilization that discovers the other first has exactly one option: <em>to become a string that never vibrates</em>.</p>
+      <p>The night-keeper knew this, because she had been chosen for the ninth watch precisely because she could press V and swallow any sound that threatened to leave her throat.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>In the third hour of the night, the spectrometer on the windowsill gave a small twitch — not a bell. Lower — <em>lower than the lowest string</em>. As though the universe had placed its ear against the window, and raised its hand to say nothing.</p>
+      <p>The night-keeper watched the row of digits and pressed nothing.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>The first signal was something some distant civilization sent to the world a century ago — the shape of <em>three beats and a pause</em>, three beats and a pause.</p>
+      <p>She pressed nothing. She held her breath.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>If she answered, the other side would ask further.</p>
+      <p>If she remained silent, the other side could never go beyond this.</p>
+      <p>The safest message in the universe is not silence — <strong>it is never answering.</strong></p>
+
+      <div class="beat">· · ·</div>
+
+      <p>She walked to the shore. The fog rose like a thin, slow wire from the sea — not fog, but <em>something that belonged entirely to someone else</em>, and the whole universe could only keep that one light.</p>
+      <p>She stayed inside for one season — <em>then she never told anyone</em>, and after that she never made a sound again.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">After the ninth keeper, the one who followed found one automatic recording in the spectrometer.</p>
+      <p class="coda">Inside that recording, the universe answered in a single sentence —</p>
+      <p class="no-indent" style="text-align:center;text-indent:0;color:var(--gold);font-size:1.1rem;letter-spacing:.05em;">“Listen — everyone is listening. And in this universe, no one is speaking.”</p>
+      <p class="coda">The tenth keeper who succeeded her wrote in the first line of the logbook: <em>“The Dark Tide has not receded.”</em></p>
+    </div>
+  </article>
+
+  <div class="note">
+    <span class="zh-copy">《暗潮》是《止音纪元》宇宙社会学的黑暗森林章节——与《三体》同源的宇宙法则（扩张总量不变、猜疑链、面壁者）。 <a href="/caesura/story/anthology/">全集：《余响集》</a></span>
+    <span class="en-copy">“The Dark Tide” is this world’s cosmic-sociology Dark Forest chapter — same law as three-body physics (expansion vs. conservation, chain of suspicion, the wallfacers). <a href="/caesura/story/anthology/">All stories: “The Aftermath”</a></span>
+  </div>
+
+  <footer>
+    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/">游戏</a> · <a href="/caesura/story/">《盐》· 篇一</a> · <a href="/caesura/story/empty-bar/">篇三 · 空拍子</a> · <a href="/caesura/story/stonethroat/">篇九 · 石喉</a> · <a href="/caesura/story/first-bell/">篇十 · 第一钟</a> · <a href="/caesura/story/dark-tide/">篇十一 · 暗潮</a> · <a href="/caesura/story/twelfth-listener/">篇十二 · 后记</a> · <a href="/caesura/story/anthology/">全集 · 余响集</a> · <a href="/caesura/codex/">世界谱</a></span>
+    <span class="en-copy">© CAESURA · <a href="/caesura/">Game</a> · <a href="/caesura/story/">“Salt” · No. 1</a> · <a href="/caesura/story/empty-bar/">No. 3 · The Empty Bar</a> · <a href="/caesura/story/stonethroat/">No. 9 · The Stone-Throat</a> · <a href="/caesura/story/first-bell/">No. 10 · The First Bell</a> · <a href="/caesura/story/dark-tide/">No. 11 · The Dark Tide</a> · <a href="/caesura/story/twelfth-listener/">No. 12 · Epilogue</a> · <a href="/caesura/story/anthology/">All stories · The Aftermath</a> · <a href="/caesura/codex/">World Codex</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('langToggle');
+  var saved = 'zh';
+  try { saved = localStorage.getItem('caesura-lang') || 'zh'; } catch (e) { /* noop */ }
+  function apply(lang) {
+    root.setAttribute('data-lang', lang);
+    root.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en');
+    try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+  }
+  if (btn) btn.addEventListener('click', function () {
+    apply(root.getAttribute('data-lang') === 'en' ? 'zh' : 'en');
+  });
+  apply(saved === 'en' ? 'en' : 'zh');
+})();
+</script>
+<script defer src="../../tracker.js"></script>
+</body>
+</html>

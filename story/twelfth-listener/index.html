@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>后记 · 第十二个听者 / Epilogue · The Twelfth Listener · CAESURA 短篇 之十二</title>
+<meta name="description" content="《止音纪元》全集收束篇 · 第十二个听者——不是守夜人，不是接替者，是此刻读到这里的人。双语对照 · 零 LLM · 零网络。 / The closing epilogue of The Epoch of Hush — the Twelfth Listener is not a keeper, not a successor, but the one reading this line right now. Bilingual, offline, zero LLM.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🔔</text></svg>">
+<style>
+  :root {
+    --gold: #f3ce8f;
+    --gold-soft: rgba(243,206,143,.32);
+    --ink: #f3ede0;
+    --ink-dim: rgba(243,237,224,.62);
+    --panel: rgba(28,20,12,.7);
+    --serif: "Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#070608; color:var(--ink); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; }
+  .bg { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .bg.radial {
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(243,206,143,.13), transparent 60%),
+      radial-gradient(900px 700px at 50% 118%, rgba(120,80,40,.17), transparent 62%),
+      radial-gradient(650px 420px at 88% 104%, rgba(203,177,255,.06), transparent 60%),
+      #070608;
+  }
+  .bg.noise { position:fixed; inset:0; z-index:-1; opacity:.05; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .wrap { max-width:860px; margin:0 auto; padding:26px 26px 90px; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .brand { font-size:.8rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; opacity:.9; }
+  .brand a { color:inherit; text-decoration:none; border-bottom:1px dotted rgba(243,206,143,.5); }
+  .brand a:hover { color:#fff2d0; }
+  .toplinks { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toplinks a { font-size:.72rem; color:var(--ink-dim); text-decoration:none; border:1px solid rgba(243,237,224,.14); padding:6px 12px; border-radius:999px; transition:all .22s ease; }
+  .toplinks a:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .lang-row button { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(243,206,143,.12); border:1px solid var(--gold-soft); padding:6px 15px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; }
+  .lang-row button:hover { background:rgba(243,206,143,.22); box-shadow:0 0 16px rgba(243,206,143,.25); }
+
+  [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="en"] .zh-copy { display:none !important; }
+
+  header.hero { text-align:center; padding:52px 14px 30px; }
+  .kicker { font-size:.72rem; letter-spacing:.42em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:20px; }
+  .kicker b { color:var(--gold); font-weight:600; }
+  h1 { font-size:clamp(2.2rem, 8vw, 3.6rem); font-weight:600; letter-spacing:.16em;
+       background:linear-gradient(180deg,#fffbe6 0%, #f3ce8f 28%, #c9a258 58%, #7d6436 100%);
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+       text-shadow:0 0 90px rgba(243,206,143,.3); }
+  .subtitle { margin-top:14px; font-size:.8rem; color:var(--ink-dim); letter-spacing:.3em; text-transform:uppercase; }
+  .rule { width:170px; height:1px; margin:24px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .meta { margin-top:16px; font-size:.7rem; color:rgba(243,237,224,.45); letter-spacing:.18em; text-transform:uppercase; }
+  .meta a { color:var(--gold); text-decoration:none; }
+
+  article { background:var(--panel); border:1px solid rgba(243,237,224,.1); border-radius:18px; padding:38px 40px 34px; position:relative; }
+  article::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--gold), transparent); opacity:.7; }
+  article p { font-size:1.04rem; line-height:2.02; letter-spacing:.02em; color:rgba(243,237,224,.92); margin-bottom:1.5em; text-indent:2em; overflow-wrap:break-word; }
+  article p.no-indent { text-indent:0; }
+  article p em { color:#ffe9b3; font-style:normal; }
+  article p strong { color:var(--gold); font-weight:600; }
+  .beat { width:100%; text-align:center; margin:.4em 0 1.4em; letter-spacing:.5em; color:rgba(243,206,143,.6); font-size:.8rem; }
+  .coda { text-align:center; font-style:italic; color:rgba(243,237,224,.78); letter-spacing:.06em; margin-top:.6em; }
+
+  .note { margin:26px auto 0; max-width:760px; text-align:center; font-size:.74rem; color:rgba(243,237,224,.42); line-height:1.9; letter-spacing:.04em; }
+  .note a { color:var(--gold); text-decoration:none; border-bottom:1px dotted rgba(243,206,143,.5); }
+
+  footer { margin-top:56px; border-top:1px solid rgba(243,237,224,.09); padding-top:22px; display:flex; flex-wrap:wrap; gap:10px 26px; justify-content:space-between; font-size:.7rem; color:rgba(243,237,224,.4); letter-spacing:.06em; }
+  footer a { color:var(--gold); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @media (max-width:640px) { .wrap { padding:20px 12px 70px; } article { padding:26px 20px 24px; } article p { font-size:.98rem; text-indent:2em; } }
+</style>
+</head>
+<body>
+<div class="bg radial" aria-hidden="true"></div>
+<div class="bg noise" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><a href="/caesura/">CAESURA</a> · 《止音纪元》</div>
+    <div class="toplinks">
+      <a href="/caesura/story/"><span class="zh-copy">《盐》</span><span class="en-copy">“Salt”</span></a>
+      <a href="/caesura/story/first-bell/"><span class="zh-copy">《第一钟》</span><span class="en-copy">“The First Bell”</span></a>
+      <a href="/caesura/story/dark-tide/"><span class="zh-copy">《暗潮》</span><span class="en-copy">“The Dark Tide”</span></a>
+      <a href="/caesura/story/twelfth-listener/"><span class="zh-copy">《第十二个听者》</span><span class="en-copy">“The Twelfth Listener”</span></a>
+      <a href="/caesura/story/anthology/"><span class="zh-copy">《余响集》</span><span class="en-copy">The Aftermath</span></a>
+      <a href="/caesura/codex/"><span class="zh-copy">世界谱</span><span class="en-copy">Codex</span></a>
+      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button></span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <p class="kicker zh-copy">短篇 · <b>收束篇</b> · 之十二</p>
+    <p class="kicker en-copy">Short story · <b>The Coda</b> · No. 12</p>
+    <h1 class="zh-copy">后记 · 第十二个听者</h1>
+    <h1 class="en-copy">Epilogue · The Twelfth Listener</h1>
+    <p class="subtitle zh-copy">写给读到这里的人</p>
+    <p class="subtitle en-copy">For the one who got this far</p>
+    <div class="rule"></div>
+    <p class="meta zh-copy">约 5 分钟 · 与 <a href="/caesura/codex/">世界谱</a> 同源世界观 · 零 LLM 撰写</p>
+    <p class="meta en-copy">about 5 minutes · same world as the <a href="/caesura/codex/">codex</a> · written without LLM assistance</p>
+  </header>
+
+  <article>
+    <div class="zh-copy">
+<p>第十一篇，写到守夜人那个夜晚，风又来了。</p>
+      <p>那之后很多年，没有人去岸上看过频谱仪。</p>
+      <p>又很多年后，有人去了。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>频谱仪上还挂着早已褪色的录像：一个几乎认不出形状的影子，在凌晨的窗前立了很久。</p>
+      <p>灯下，那道影子——他把自己捂着——很久没有动过。</p>
+      <p>不是不会动——是不动了，他把自己按住了。</p>
+      <p>那个人，就是被自己捂住的那块石头。</p>
+      <p>后来，替他们接班的那个人，在记录手册最后一页的空白处写下了一段话——</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">「听见的人，这些年很多了——坐着的人、走动的人、还没醒的孩子。」</p>
+      <p class="coda">「可是——真把听见的东西送出去的人，还没有。」</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>那个人不是守夜人，也不是前一任接替守夜人的人。</p>
+      <p>那个人——就是翻到这里、把这句话读完的人。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>把听见的送出去——不是让别人听见，而是让同一片海上此刻正在听着的所有耳朵，知道：不是只有你一个人在听。</p>
+      <p>你不说话，它仍然会听。</p>
+      <p>当你真的说话——</p>
+      <p>你不是在回答宇宙。</p>
+      <p>你只是终于——把被你捂了多年的东西，放下了。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">第十一个守夜人在海浪冲上岸的那一瞬间，听见了比风更低的声音——</p>
+      <p class="coda">是十二只手，同时按从未敲过的钟——</p>
+      <p class="coda" style="text-align:center;color:var(--gold);font-size:1.1rem;letter-spacing:.06em;">——第十二个听者</p>
+    </div>
+
+    <div class="en-copy">
+<p>The eleventh chapter ends on the night when the night-keeper stood at her window listening — wind once more.</p>
+      <p>For many years after that, no one went to the shore to look at the spectrometer.</p>
+      <p>And many years after even that, someone went.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>You can reach the shore now.</p>
+      <p>The sea by then had dried out —</p>
+      <p>or the sea by then was still wet, depending on which one of you was reading.</p>
+      <p>The person who wrote this page — is not telling you this to frighten you;</p>
+      <p>to say: there is no shore left where there were once waves.</p>
+      <p>The shoreline is you.</p>
+      <p>Not at the end — not at the beginning —</p>
+      <p>but wherever you happen to be standing — when you read this line.</p>
+      <p>Afterwards, the person who succeeded them wrote one line on the last blank page of the logbook —</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">“Those who heard it grew many — those who sit, those who walk, those who are not yet awake.”</p>
+      <p class="coda">“But — the one who gave it away, the one who sent the thing they heard onwards — that one is still missing.”</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>That person is not a night-keeper, nor the one who inherited the watch after them.</p>
+      <p>That person — is the one who turned to this page, and finished reading the line.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>Sending the thing you hear onward — not to make others hear, but so every ear by this same sea knows: you are not the only one listening.</p>
+      <p>When you don’t speak, the sea still listens.</p>
+      <p>When you finally do speak —</p>
+      <p>You are not answering the universe.</p>
+      <p>You are simply letting drop, at last, the thing you spent your life holding back.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">At the moment the wave broke on the shore, the twelfth keeper heard something lower than the wind —</p>
+      <p class="coda">twelve hands, striking the bell that had never been struck —</p>
+      <p class="coda" style="text-align:center;color:var(--gold);font-size:1.1rem;letter-spacing:.06em;">— The Twelfth Listener</p>
+    </div>
+  </article>
+
+  <div class="note">
+    <span class="zh-copy">《后记 · 第十二个听者》是《余响集》的收束篇——写给所有读到这里的人。 <a href="/caesura/story/anthology/">全集：《余响集》</a></span>
+    <span class="en-copy">“Epilogue · The Twelfth Listener” closes “The Aftermath” — written for everyone who got this far. <a href="/caesura/story/anthology/">All stories: “The Aftermath”</a></span>
+  </div>
+
+  <footer>
+    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/">游戏</a> · <a href="/caesura/story/">《盐》· 篇一</a> · <a href="/caesura/story/empty-bar/">篇三 · 空拍子</a> · <a href="/caesura/story/stonethroat/">篇九 · 石喉</a> · <a href="/caesura/story/first-bell/">篇十 · 第一钟</a> · <a href="/caesura/story/dark-tide/">篇十一 · 暗潮</a> · <a href="/caesura/story/twelfth-listener/">篇十二 · 后记</a> · <a href="/caesura/story/anthology/">全集 · 余响集</a> · <a href="/caesura/codex/">世界谱</a></span>
+    <span class="en-copy">© CAESURA · <a href="/caesura/">Game</a> · <a href="/caesura/story/">“Salt” · No. 1</a> · <a href="/caesura/story/empty-bar/">No. 3 · The Empty Bar</a> · <a href="/caesura/story/stonethroat/">No. 9 · The Stone-Throat</a> · <a href="/caesura/story/first-bell/">No. 10 · The First Bell</a> · <a href="/caesura/story/dark-tide/">No. 11 · The Dark Tide</a> · <a href="/caesura/story/twelfth-listener/">No. 12 · Epilogue</a> · <a href="/caesura/story/anthology/">All stories · The Aftermath</a> · <a href="/caesura/codex/">World Codex</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('langToggle');
+  var saved = 'zh';
+  try { saved = localStorage.getItem('caesura-lang') || 'zh'; } catch (e) { /* noop */ }
+  function apply(lang) {
+    root.setAttribute('data-lang', lang);
+    root.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en');
+    try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+  }
+  if (btn) btn.addEventListener('click', function () {
+    apply(root.getAttribute('data-lang') === 'en' ? 'zh' : 'en');
+  });
+  apply(saved === 'en' ? 'en' : 'zh');
+})();
+</script>
+<script defer src="../../tracker.js"></script>
+</body>
+</html>

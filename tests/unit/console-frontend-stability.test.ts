@@ -66,14 +66,15 @@ describe('console 前端稳定性门钉（F-124 的长期护栏）', () => {
     expect(APP).toContain("querySelectorAll('body *')")
   })
 
-  it('index.html 页脚含故事链接出口（盐 / 空拍子 / 账本 / 余响集 / 霜锤 / 千门）', () => {
+  it('index.html 页脚含故事链接出口（盐 / 空拍子 / 账本 / 余响集 / 霜锤 / 千门 / 暗潮 / 后记）', () => {
     for (const href of ['/caesura/story/', '/caesura/story/empty-bar/', '/caesura/story/ledger/',
-      '/caesura/story/anthology/', '/caesura/story/frostbell/', '/caesura/story/doors/']) {
+      '/caesura/story/anthology/', '/caesura/story/frostbell/', '/caesura/story/doors/',
+      '/caesura/story/dark-tide/', '/caesura/story/twelfth-listener/']) {
       expect(HTML, `missing story href: ${href}`).toContain(href)
     }
   })
 
-  it('LANG_EXACT 含八篇故事双语键（盐系列本页切英文时不裸奔 CJK）', () => {
+  it('LANG_EXACT 含十二篇故事双语键（盐系列本页切英文时不裸奔 CJK）', () => {
     for (const pair of [
       "'《盐》': 'Salt',",
       "'《空拍子》': 'The Empty Bar',",
@@ -83,6 +84,10 @@ describe('console 前端稳定性门钉（F-124 的长期护栏）', () => {
       "'《余响集》': 'The Aftermath',",
       "'《霜锤》': 'The Frostbell',",
       "'《千门》': 'The Thousand Doors',",
+      "'《暗潮》': 'The Dark Tide',",
+      "'《后记 · 第十二个听者》': 'Epilogue · The Twelfth Listener',",
+      "'篇十一': 'No. 11',",
+      "'篇十二': 'No. 12',",
     ]) {
       expect(APP, `missing LANG_EXACT pair: ${pair}`).toContain(pair)
     }

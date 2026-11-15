@@ -17,6 +17,8 @@
  *   ├── story/doors/（短篇之八）
  *   ├── story/stonethroat/（短篇之九）
  *   ├── story/first-bell/（短篇之十 · 创世）
+ *   ├── story/dark-tide/（短篇之十一 · 暗潮 · 黑暗森林）
+ *   ├── story/twelfth-listener/（短篇之十二 · 后记 · 第十二个听者）
  *   ├── console/      （集大成调度台）
  *   ├── admin/        （止音后台 · 用户观察站 · 密码 123 · 静态页种子数据）
  *   └── raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json
@@ -49,6 +51,8 @@ const ENDPOINTS = [
   { name: 'story-10', url: 'https://xiaodernan.github.io/caesura/story/stonethroat/', marker: '石喉' },
   { name: 'story-11', url: 'https://xiaodernan.github.io/caesura/story/first-bell/', marker: '第一钟' },
   { name: 'admin', url: 'https://xiaodernan.github.io/caesura/admin/', marker: 'CAESURA / USER OBSERVATORY' },
+  { name: 'story-12', url: 'https://xiaodernan.github.io/caesura/story/dark-tide/', marker: '暗潮' },
+  { name: 'story-13', url: 'https://xiaodernan.github.io/caesura/story/twelfth-listener/', marker: '第十二个听者' },
 ]
 
 const asJson = argv.includes('--json')

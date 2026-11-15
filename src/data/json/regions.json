@@ -2338,6 +2338,18 @@
           "y": 152,
           "z": -240
         }
+      },
+      {
+        "id": "in_unfinishedhall_unstruck_bell",
+        "kind": "inspect",
+        "verb": "看那座小龛",
+        "verbKey": "interact.small_shrine",
+        "notifyKey": "world.flavor.unfinishedhall.unstruckBell",
+        "pos": {
+          "x": 16,
+          "y": 152,
+          "z": -200
+        }
       }
     ],
     "music": {
