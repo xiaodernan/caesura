@@ -113,7 +113,7 @@ const PLAYER_MANUAL: Record<'zh' | 'en', string> = {
 <h2>Encore · Windbell Coast</h2>
 <div class="row"><span class="name">The coast is waiting</span><span class="note">Epilogue done → the Unfinished Hall sounds its first real bell; the shore has more to say when you arrive</span></div>
 
-<h2>Resonance Marks <span style="opacity:.6">(8 regions · 14 spots · lore only)</span></h2>
+<h2>Resonance Marks <span style="opacity:.6">(8 regions · 18 spots · lore only)</span></h2>
 <div class="row"><span class="name">Press E to touch</span><span class="note">One or two "resonance" slabs per region — scar-stones, carved bell shards, branches no bird landed on: E to read them. They give no quest, no loot, no flag, no damage — only a sentence the world is willing to say out loud</span></div>
 <div class="row"><span class="name">Bilingual by its own mouth</span><span class="note">Each mark carries its own zh/en draft side by side — the line you see is the one the mark wrote in its own era, never a mash-up. Marks never demand you finish reading; if you're bored, walk on</span></div>
 <div class="row"><span class="name">It's fine not to understand</span><span class="note">Verdigris, water-stains, softened edges — the mark itself is the answer; the text is only the wind lending you its hearing when you lean in</span></div>
@@ -132,15 +132,15 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">未竟厅 <span style="opacity:.55">@+152</span></span><span class="note">终章：恩希尔（Hersil）。先拆指挥棒，再逐小节闪避；Ending 由你这一句定下来</span></div>
 <div class="row"><span class="name">风钟海岸 <span style="opacity:.55">@0</span></span><span class="note">Encore · EPIC-V。一片 Epilogue 之后的新海 — 风是带钟的风，却从不肯让你听清。她在等你把余音走完</span></div>
 
-<h2>刻痕在哪 <span style="opacity:.6">（E 触碰 · 14 处）</span></h2>
+<h2>刻痕在哪 <span style="opacity:.6">（E 触碰 · 18 处）</span></h2>
 <div class="row"><span class="name">休垒 · 两处</span><span class="note">崖下那面「初息碑」：世界在你第一次呼吸前就已经停住了；山下那块无名的碑 — 只有一道刮痕</span></div>
-<div class="row"><span class="name">雾语林 · 两处</span><span class="note">那条鸟从没落过的枝条——树不说自己的名字，它们说你的；年轮里收着整片林子的回声——你听得见自己三年前的脚步声</span></div>
+<div class="row"><span class="name">雾语林 · 三处</span><span class="note">那条鸟从没落过的枝条——树不说自己的名字，它们说你的；年轮里收着整片林子的回声——你听得见自己三年前的脚步声；年轮被削去的地方不是年份，是名字</span></div>
 <div class="row"><span class="name">沉唱堂 · 两处</span><span class="note">没被敲过的水下钟（水没过它时，人也听不见了）；被水泡软的刻痕 — 一句「水漫进了字里很久」</span></div>
 <div class="row"><span class="name">破拍营地 · 两处</span><span class="note">划痕密布的雇员名册——这里所有人都忘了自己叫什么，记得自己的拍子；还有一块没人再数拍的石头，它还在自己按拍</span></div>
 <div class="row"><span class="name">钟坠院 · 一处</span><span class="note">那段从没被敲过、也从没被摘下的铜 — 唯一一块没学会沉默的铜块</span></div>
 <div class="row"><span class="name">无耳深窖 · 一处</span><span class="note">知道事的灰；井底那只眼睛睁开的那一刻，世界变得比有人在场还安静</span></div>
 <div class="row"><span class="name">未竟厅 · 一处</span><span class="note">银镜后面那道「钟摆」；时间走来走去，就是走不到头</span></div>
-<div class="row"><span class="name">风钟海岸 · 三处</span><span class="note">那阵带着钟的风——它带着一个又一个钟的余温，却从不让你清楚地听到；盐结的小龛被海天天抹去又天天重写；防波堤上一道道潮痕，像一首被海擦了又写的歌</span></div>
+<div class="row"><span class="name">风钟海岸 · 六处</span><span class="note">那阵带着钟的风——它带着一个又一个钟的余温，却从不让你清楚地听到；盐结的小龛被海天天抹去又天天重写；防波堤上一道道潮痕，像一首被海擦了又写的歌；断崖礁岩上黑碑似的——它擦不干净；贝壳里压着字——「生」；按下那颗响石，整片海都没动</span></div>
 
 <h2>选读 · 余响集十一篇 <span style="opacity:.6">（与游戏同源的十一个故事，在线阅读）</span></h2>
 <div class="row"><span class="name">篇一《盐》· 风钟海岸</span><span class="note">听雾站守夜人阿衡——钟不是用来敲的，是用来记住的；风钟海岸从此有了第四根弦</span></div>
@@ -182,15 +182,15 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">The Unfinished Hall <span style="opacity:.55">@+152</span></span><span class="note">Final: Hersil. Break the baton first, then ride his 3/4 bars — every downbeat is yours; the ending you speak now is the one the world keeps</span></div>
 <div class="row"><span class="name">Windbell Coast <span style="opacity:.55">@0</span></span><span class="note">Encore · EPIC-V. The first new shore after the Epilogue — a wind that carries bells but never lets you hear them; she is waiting for the coda you still owe</span></div>
 
-<h2>Where the marks are <span style="opacity:.6">(E to touch · 14 spots)</span></h2>
+<h2>Where the marks are <span style="opacity:.6">(E to touch · 18 spots)</span></h2>
 <div class="row"><span class="name">Resthold · two</span><span class="note">The First-Breath slab beneath the cliff: the world stopped before your first breath; the nameless stone below the hill — a single scrape across the face</span></div>
-<div class="row"><span class="name">Whisperwode · two</span><span class="note">The branch no bird ever landed on — the trees don't speak their names, they speak yours; the old tree's rings keep the whole forest's echoes — your own footsteps from three years ago</span></div>
+<div class="row"><span class="name">Whisperwode · three</span><span class="note">The branch no bird ever landed on — the trees don't speak their names, they speak yours; the old tree's rings keep the whole forest's echoes — your own footsteps from three years ago; the ring's hollows aren't years — they're names</span></div>
 <div class="row"><span class="name">Drowned Choir · two</span><span class="note">The unstruck bell under the water (once water covers it, no one hears it again); the inscription softened past reading — one line, "the water has been inside the characters for years"</span></div>
 <div class="row"><span class="name">Brokenbar Camp · two</span><span class="note">The roster dense with scratches — everyone here forgot their names and kept their beats; the beatstone no one counts anymore, still keeping time by itself</span></div>
 <div class="row"><span class="name">Fellcarillon · one</span><span class="note">The copper never struck and never taken down — the only block of metal that never learned silence</span></div>
 <div class="row"><span class="name">Earless Deeps · one</span><span class="note">The dust that already knows; when the eye at the bottom opened, the world went quieter than any stage</span></div>
 <div class="row"><span class="name">The Unfinished Hall · one</span><span class="note">The pendulum behind the silver mirror; time swings back and forth and never reaches an end</span></div>
-<div class="row"><span class="name">Windbell Coast · three</span><span class="note">The wind that carries bells — it brings the warmth of bell after bell but never lets you hear them clearly; the salt-crusted shrine the sea erases and rewrites every day; the tide-lines on the causeway, a song scraped and rewritten</span></div>
+<div class="row"><span class="name">Windbell Coast · six</span><span class="note">The wind that carries bells — it brings the warmth of bell after bell but never lets you hear them clearly; the salt-crusted shrine the sea erases and rewrites every day; the tide-lines on the causeway, a song scraped and rewritten; a slab at the cliff’s black face, damply fresh-wiped; a seashell papered with one character — “born”; the listening stone — its whole sea goes still</span></div>
 
 <h2>The Aftermath · all eleven stories <span style="opacity:.6">(companion fiction — the same world, told in prose)</span></h2>
 <div class="row"><span class="name">No. 1 “Salt” · Windbell Coast</span><span class="note">A Hén, night-keeper of the Listening Post — the bell isn't meant to sound, only to be heard; the coast has its fourth string now</span></div>

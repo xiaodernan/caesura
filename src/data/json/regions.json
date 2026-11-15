@@ -630,6 +630,18 @@
           "y": 0,
           "z": 190
         }
+      },
+      {
+        "id": "in_whisperwode_year_rind",
+        "kind": "inspect",
+        "verb": "看那座小龛",
+        "verbKey": "interact.small_shrine",
+        "notifyKey": "world.flavor.whisperwode.yearRind",
+        "pos": {
+          "x": 270,
+          "y": 0,
+          "z": 130
+        }
       }
     ],
     "music": {
@@ -2588,6 +2600,42 @@
           "x": 660,
           "y": 0,
           "z": -150
+        }
+      },
+      {
+        "id": "in_windcoast_ledger_edge",
+        "kind": "inspect",
+        "verb": "数墙上的挂钩",
+        "verbKey": "interact.count_hooks",
+        "notifyKey": "world.flavor.windcoast.ledgerEdge",
+        "pos": {
+          "x": 572,
+          "y": 0,
+          "z": 166
+        }
+      },
+      {
+        "id": "in_windcoast_mist_shell",
+        "kind": "inspect",
+        "verb": "看那座小龛",
+        "verbKey": "interact.small_shrine",
+        "notifyKey": "world.flavor.windcoast.mistShell",
+        "pos": {
+          "x": 648,
+          "y": 0,
+          "z": 184
+        }
+      },
+      {
+        "id": "in_windcoast_listening_stone",
+        "kind": "inspect",
+        "verb": "看那座小龛",
+        "verbKey": "interact.small_shrine",
+        "notifyKey": "world.flavor.windcoast.listeningStone",
+        "pos": {
+          "x": 500,
+          "y": 0,
+          "z": 188
         }
       }
     ],
