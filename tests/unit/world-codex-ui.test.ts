@@ -52,7 +52,7 @@ describe('World Codex（codex/index.html）', () => {
       'a bell never struck',
       'your own footsteps from three years ago',
       'no one counts it anymore',
-      'The tide-lines',
+      'Tide-Lines',
     ]) {
       expect(HTML, `missing mark line: ${line}`).toContain(line)
     }
