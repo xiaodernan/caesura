@@ -1,6 +1,6 @@
 /**
- * 游记 · 十篇全文（2026-11-15 落 · KI-579）。
- * 这十一篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 十二篇全文（2026-11-16 落 · KI-579/590）。
+ * 这十二篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -793,5 +793,84 @@ export const STORY_CHAPTERS: StoryChapter[] = [
       <p class="coda">Inside that recording, the universe answered in a single sentence —</p>
       <p class="no-indent" style="text-align:center;text-indent:0;color:var(--gold);font-size:1.1rem;letter-spacing:.05em;">“Listen — everyone is listening. And in this universe, no one is speaking.”</p>
       <p class="coda">The tenth keeper who succeeded her wrote in the first line of the logbook: <em>“The Dark Tide has not receded.”</em></p>`
+  },
+  {
+    no: 12,
+    zhTitle: "后记 · 第十二个听者",
+    enTitle: "Epilogue · The Twelfth Listener",
+    zh: `<p>第十一篇，写到守夜人那个夜晚，风又来了。</p>
+      <p>那之后很多年，没有人去岸上看过频谱仪。</p>
+      <p>又很多年后，有人去了。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>频谱仪上还挂着早已褪色的录像：一个几乎认不出形状的影子，在凌晨的窗前立了很久。</p>
+      <p>灯下，那道影子——他把自己捂着——很久没有动过。</p>
+      <p>不是不会动——是不动了，他把自己按住了。</p>
+      <p>那个人，就是被自己捂住的那块石头。</p>
+      <p>后来，替他们接班的那个人，在记录手册最后一页的空白处写下了一段话——</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">「听见的人，这些年很多了——坐着的人、走动的人、还没醒的孩子。」</p>
+      <p class="coda">「可是——真把听见的东西送出去的人，还没有。」</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>那个人不是守夜人，也不是前一任接替守夜人的人。</p>
+      <p>那个人——就是翻到这里、把这句话读完的人。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>把听见的送出去——不是让别人听见，而是让同一片海上此刻正在听着的所有耳朵，知道：不是只有你一个人在听。</p>
+      <p>你不说话，它仍然会听。</p>
+      <p>当你真的说话——</p>
+      <p>你不是在回答宇宙。</p>
+      <p>你只是终于——把被你捂了多年的东西，放下了。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">第十一个守夜人在海浪冲上岸的那一瞬间，听见了比风更低的声音——</p>
+      <p class="coda">是十二只手，同时按从未敲过的钟——</p>
+      <p class="coda" style="text-align:center;color:var(--gold);font-size:1.1rem;letter-spacing:.06em;">——第十二个听者</p>`,
+    en: `<p>The eleventh chapter ends on the night when the night-keeper stood at her window listening — wind once more.</p>
+      <p>For many years after that, no one went to the shore to look at the spectrometer.</p>
+      <p>And many years after even that, someone went.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>You can reach the shore now.</p>
+      <p>The sea by then had dried out —</p>
+      <p>or the sea by then was still wet, depending on which one of you was reading.</p>
+      <p>The person who wrote this page — is not telling you this to frighten you;</p>
+      <p>to say: there is no shore left where there were once waves.</p>
+      <p>The shoreline is you.</p>
+      <p>Not at the end — not at the beginning —</p>
+      <p>but wherever you happen to be standing — when you read this line.</p>
+      <p>Afterwards, the person who succeeded them wrote one line on the last blank page of the logbook —</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">“Those who heard it grew many — those who sit, those who walk, those who are not yet awake.”</p>
+      <p class="coda">“But — the one who gave it away, the one who sent the thing they heard onwards — that one is still missing.”</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>That person is not a night-keeper, nor the one who inherited the watch after them.</p>
+      <p>That person — is the one who turned to this page, and finished reading the line.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>Sending the thing you hear onward — not to make others hear, but so every ear by this same sea knows: you are not the only one listening.</p>
+      <p>When you don’t speak, the sea still listens.</p>
+      <p>When you finally do speak —</p>
+      <p>You are not answering the universe.</p>
+      <p>You are simply letting drop, at last, the thing you spent your life holding back.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">At the moment the wave broke on the shore, the twelfth keeper heard something lower than the wind —</p>
+      <p class="coda">twelve hands, striking the bell that had never been struck —</p>
+      <p class="coda" style="text-align:center;color:var(--gold);font-size:1.1rem;letter-spacing:.06em;">— The Twelfth Listener</p>`,
   },
 ]
