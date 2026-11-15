@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>山下无名碑 / The Nameless Stone · CAESURA 短篇 之二</title>
+<meta name="description" content="《止音纪元》原创短篇之二 · 休垒山下那块没有名字的石碑：阿汀接手父亲的活计——拂灰、添水、说一句不要紧的话。双语对照 · 零网络 · 零 LLM。 / The second original short story from The Epoch of Hush — A Ting takes over her father's work at the nameless stone under the hill. Bilingual, offline, zero LLM.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🪨</text></svg>">
+<style>
+  :root {
+    --gold: #a8c6c0;
+    --gold-soft: rgba(168,198,192,.32);
+    --ink: #f3ede0;
+    --ink-dim: rgba(243,237,224,.62);
+    --panel: rgba(14,22,30,.68);
+    --serif: "Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#05070f; color:var(--ink); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; }
+  .bg { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .bg.radial {
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(168,198,192,.12), transparent 60%),
+      radial-gradient(900px 700px at 50% 118%, rgba(90,120,150,.15), transparent 62%),
+      radial-gradient(650px 420px at 88% 104%, rgba(217,180,106,.06), transparent 60%),
+      #05070f;
+  }
+  .bg.noise { position:fixed; inset:0; z-index:-1; opacity:.05; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .wrap { max-width:860px; margin:0 auto; padding:26px 26px 90px; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .brand { font-size:.8rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; opacity:.9; }
+  .brand a { color:inherit; text-decoration:none; border-bottom:1px dotted rgba(168,198,192,.5); }
+  .brand a:hover { color:#e9f5f1; }
+  .toplinks { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toplinks a { font-size:.72rem; color:var(--ink-dim); text-decoration:none; border:1px solid rgba(243,237,224,.14); padding:6px 12px; border-radius:999px; transition:all .22s ease; }
+  .toplinks a:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .lang-row button { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(168,198,192,.12); border:1px solid var(--gold-soft); padding:6px 15px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; }
+  .lang-row button:hover { background:rgba(168,198,192,.22); box-shadow:0 0 16px rgba(168,198,192,.25); }
+
+  [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="en"] .zh-copy { display:none !important; }
+
+  header.hero { text-align:center; padding:52px 14px 30px; }
+  .kicker { font-size:.72rem; letter-spacing:.42em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:20px; }
+  .kicker b { color:var(--gold); font-weight:600; }
+  h1 { font-size:clamp(2rem, 7.5vw, 3.6rem); font-weight:600; letter-spacing:.1em;
+       background:linear-gradient(180deg,#f2faf7 0%, #cfe3dd 28%, #a8c6c0 60%, #5f7a72 100%);
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+       text-shadow:0 0 80px rgba(168,198,192,.28); }
+  .subtitle { margin-top:14px; font-size:.8rem; color:var(--ink-dim); letter-spacing:.3em; text-transform:uppercase; }
+  .rule { width:170px; height:1px; margin:24px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .meta { margin-top:16px; font-size:.7rem; color:rgba(243,237,224,.45); letter-spacing:.18em; text-transform:uppercase; }
+  .meta a { color:var(--gold); text-decoration:none; }
+
+  article { background:var(--panel); border:1px solid rgba(243,237,224,.1); border-radius:18px; padding:38px 40px 34px; position:relative; }
+  article::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--gold), transparent); opacity:.7; }
+  article p { font-size:1.04rem; line-height:2.02; letter-spacing:.02em; color:rgba(243,237,224,.92); margin-bottom:1.5em; text-indent:2em; }
+  article p.no-indent { text-indent:0; }
+  article p em { color:#d9efe8; font-style:normal; }
+  article p strong { color:var(--gold); font-weight:600; }
+  .beat { width:100%; text-align:center; margin:.4em 0 1.4em; letter-spacing:.5em; color:rgba(168,198,192,.6); font-size:.8rem; }
+  .coda { text-align:center; font-style:italic; color:rgba(243,237,224,.78); letter-spacing:.06em; margin-top:.6em; }
+
+  .note { margin:26px auto 0; max-width:720px; text-align:center; font-size:.74rem; color:rgba(243,237,224,.42); line-height:1.9; letter-spacing:.04em; }
+  .note a { color:var(--gold); text-decoration:none; border-bottom:1px dotted rgba(168,198,192,.5); }
+
+  footer { margin-top:56px; border-top:1px solid rgba(243,237,224,.09); padding-top:22px; display:flex; flex-wrap:wrap; gap:10px 26px; justify-content:space-between; font-size:.7rem; color:rgba(243,237,224,.4); letter-spacing:.06em; }
+  footer a { color:var(--gold); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @media (max-width:640px) { .wrap { padding:20px 12px 70px; } article { padding:26px 20px 24px; } article p { font-size:.98rem; text-indent:2em; } }
+</style>
+</head>
+<body>
+<div class="bg radial" aria-hidden="true"></div>
+<div class="bg noise" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><a href="/caesura/">CAESURA</a> · 《止音纪元》</div>
+    <div class="toplinks">
+      <a href="/caesura/story/"><span class="zh-copy">《盐》· 篇一</span><span class="en-copy">“Salt” · No. 1</span></a>
+      <a href="/caesura/codex/"><span class="zh-copy">世界谱</span><span class="en-copy">Codex</span></a>
+      <a href="/caesura/tutorial/"><span class="zh-copy">教程</span><span class="en-copy">Tutorial</span></a>
+      <a href="/caesura/cast/"><span class="zh-copy">角色图鉴</span><span class="en-copy">Cast</span></a>
+      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button></span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <p class="kicker zh-copy">短篇 · <b>休垒</b> · 之二《山下无名碑》</p>
+    <p class="kicker en-copy">Short story · <b>Resthold</b> · No. 2 “The Nameless Stone”</p>
+    <h1 class="zh-copy">山下无名碑</h1>
+    <h1 class="en-copy">The Nameless Stone</h1>
+    <p class="subtitle zh-copy">休垒 · 山脚 · 石匠的女儿阿汀</p>
+    <p class="subtitle en-copy">Resthold · at the foot of the hill · A Ting, the stonecutter’s daughter</p>
+    <div class="rule"></div>
+    <p class="meta zh-copy">约 5 分钟 · <a href="/caesura/codex/">世界谱</a> 与 <a href="/caesura/">游戏</a> 同源世界观 · 零 LLM 撰写</p>
+    <p class="meta en-copy">about 5 minutes · same world as the <a href="/caesura/codex/">codex</a> and the <a href="/caesura/">game</a> · written without LLM assistance</p>
+  </header>
+
+  <article>
+    <div class="zh-copy">
+      <p>休垒山下的那块石碑，没有名字。</p>
+      <p>每天傍晚，石匠的女儿阿汀要沿山脚小路走一趟——拂一遍灰、添一勺水，再说一句无关紧要的话。这是她父亲临终前交给她的<em>唯一一项活计</em>。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>第一年，她问父亲：这是给谁的？</p>
+      <p class="no-indent">父亲说：<em>给被遗忘的人</em>。</p>
+      <p>第二年，她问：你叫得出那个人的名字吗？</p>
+      <p class="no-indent">父亲说：<em>他没有名字</em>。</p>
+      <p>第三年，她开始自己回答：这是给第一口钟的——钟响了又停了，<em>没有人替它收尾</em>。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>休垒人不信这个。他们说这碑是给那些哑了的人——哑了的人死透了，却不知道自己正在被记得。休垒人管这叫<em>「最后的照面」</em>。</p>
+      <p>阿汀没有反驳。她只是每次拂碑时，悄悄选一个位置，用指节轻轻磕三下——像父亲敲过的那种「<strong>锁紧</strong>」。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>后来，休垒的钟终于响了。</p>
+      <p>没有人看得见是谁敲的——人人都在自己的屋里，听那一记。阿汀走到山下，把手掌<strong>平贴在石碑上</strong>，等。</p>
+      <p>等到了。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>碑里传来一声极低极长的共振——不是钟声，而是<em>钟声的注脚</em>，像什么东西替无名的石碑签了一个名。</p>
+      <p>石碑没有碎，也没有亮。它只是不再是一块无名的石头了。</p>
+      <p><strong>它变成了休垒唯一一块知道自己被记得的石头。</strong></p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">她收回手，对着碑说了一句从没说过的话：</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.12rem; letter-spacing:.05em;">“这算两个人了。你，和替你响的那一记。”</p>
+      <p class="coda">年复一年，休垒人问阿汀那碑是给谁的，她都答不上来。直到有一年，她给了一个答案：</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.05rem;">“给不知道自己还能被记得的人。”</p>
+      <p class="coda">说完这句，她照例朝石碑轻轻地点了一下头——就像父亲敲过一千次的「锁紧」。</p>
+    </div>
+
+    <div class="en-copy">
+      <p>The stone under the hill has no name.</p>
+      <p>Every evening, A Ting, the stonecutter’s daughter, walks the path beneath the hill — a pass with a cloth, a bowl of water, a sentence of no consequence. It is the <em>only work her father left her</em> before he died.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>The first year, she asked him: whose is it for?</p>
+      <p class="no-indent">He said: <em>for the forgotten</em>.</p>
+      <p>The second year, she asked: can you say the person’s name?</p>
+      <p class="no-indent">He said: <em>there is no name</em>.</p>
+      <p>The third year, she began to answer herself: <em>it is for the First Bell — it rang and then it stopped, and no one closed it out.</em></p>
+
+      <div class="beat">· · ·</div>
+
+      <p>The people of Resthold did not believe her. They said the stone was for those who went mute — for those who died mute, unaware that they were being remembered even as they were being forgotten. They called it <em>“the last crossing.”</em></p>
+      <p>A Ting did not argue. She only, each time, found a spot on the stone and knocked it three times with her knuckles — a <strong>“lock-tight”</strong> her father had knocked a thousand times.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>Then, one winter, the bell of Resthold rang.</p>
+      <p>No one saw who rang it — everyone was indoors, listening. A Ting walked down the hill, laid her <strong>flat palm against the stone</strong>, and waited.</p>
+      <p>It came.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>From inside the stone came a very low, very long resonance — not the bell itself, but <em>the bell’s footnote</em>, as if something were signing for the stone at last.</p>
+      <p>The stone did not crack, and it did not shine. It simply was no longer nameless.</p>
+      <p><strong>It had become the only stone in Resthold that knew it was remembered.</strong></p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">She drew her hand back and said to the stone a sentence she had never said:</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.12rem; letter-spacing:.05em;">“That makes two of us. You, and the one who rang on your behalf.”</p>
+      <p class="coda">Year after year, when people asked A Ting whose stone it was, she could not answer — until one year she finally gave one:</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.05rem;">“For those who don’t know they can be remembered.”</p>
+      <p class="coda">Then, as ever, she gave the stone one small nod — the same small nod she had seen her father give a thousand times, the one he called his <em>lock-tight</em>.</p>
+    </div>
+  </article>
+
+  <div class="note">
+    <span class="zh-copy">《山下无名碑》与 <a href="/caesura/">《止音纪元》</a> 同源世界观——休垒、第一钟、「最后的照面」都真实存在于这个世界的语言里。这不是续篇，是序章之前的序章。 <a href="/caesura/story/">篇一：《盐》</a> · <a href="/caesura/codex/">世界谱</a></span>
+    <span class="en-copy">“The Nameless Stone” shares its world with <a href="/caesura/">The Epoch of Hush</a> — Resthold, the First Bell, the “last crossing,” all live in the game’s own tongue. Not a sequel — a preface to the preface. <a href="/caesura/story/">Part one: “Salt”</a> · <a href="/caesura/codex/">World Codex</a></span>
+  </div>
+
+  <footer>
+    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/">游戏</a> · <a href="/caesura/story/">《盐》· 篇一</a> · <a href="/caesura/codex/">世界谱</a> · <a href="/caesura/cast/">角色图鉴</a> · <a href="/caesura/tutorial/">入门教程</a></span>
+    <span class="en-copy">© CAESURA · <a href="/caesura/">Game</a> · <a href="/caesura/story/">“Salt” · No. 1</a> · <a href="/caesura/codex/">World Codex</a> · <a href="/caesura/cast/">Cast Roster</a> · <a href="/caesura/tutorial/">Tutorial</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('langToggle');
+  function apply(lang) {
+    root.setAttribute('data-lang', lang);
+    root.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en');
+    try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+  }
+  btn.addEventListener('click', function () {
+    apply(root.getAttribute('data-lang') === 'en' ? 'zh' : 'en');
+  });
+  var saved = 'zh';
+  try { saved = localStorage.getItem('caesura-lang') || 'zh'; } catch (e) { /* noop */ }
+  apply(saved === 'en' ? 'en' : 'zh');
+})();
+</script>
+</body>
+</html>

@@ -32,6 +32,7 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - Cast Roster: <https://xiaodernan.github.io/caesura/cast/> (Cast roster — 15 roles · regions · NPCs · bosses · bilingual EN/zh)  
 - World Codex: <https://xiaodernan.github.io/caesura/codex/> (52 real project texts · bilingual BM25 in-browser index · no network · no LLM · added 2026-11-15)  
 - "Salt" (original short story): <https://xiaodernan.github.io/caesura/story/> (Windbell Coast · the Listening Post · bilingual · zero LLM · added 2026-11-15)  
+- "The Nameless Stone" (original short story, no. 2): <https://xiaodernan.github.io/caesura/story/unnamed-stone/> (Resthold · at the foot of the hill · bilingual · zero LLM · added 2026-11-15)  
 - Sync truth: `https://raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json`
 
 ## Where to read

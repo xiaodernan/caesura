@@ -1,0 +1,19 @@
+name: smoke-live
+
+on:
+  schedule:
+    # 每 6 小时一次：不是每次推送都撞公开 CDN，只是看「用户现在点进去还是不是最新的」
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+      - name: Probe the six public endpoints + site-latest.json
+        run: node scripts/smoke-live.mjs --json
