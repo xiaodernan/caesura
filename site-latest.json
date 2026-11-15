@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "4a9734ff8bde9370bcccb7d15bbf1232d9dbc4dd",
+  "head": "8fa21d78377feed688fc6c40f8e9968f45f6f7d1",
   "branch": "master",
-  "subject": "feat(story): 篇九《石喉》上线 + 《余响集》扩容至九篇 + 集大成调度台篇九行",
-  "date": "2026-11-15T18:35:21+08:00",
+  "subject": "feat(story): 《余响集》支持一键打印纸质整卷 + 教程页同步 print stylesheet KI-576",
+  "date": "2026-11-15T18:53:26+08:00",
   "kv": {
-    "KI.rows": 493,
-    "KI.Implemented": 316,
+    "KI.rows": 494,
+    "KI.Implemented": 317,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/4a9734ff8bde9370bcccb7d15bbf1232d9dbc4dd",
+    "url": "https://github.com/xiaodernan/caesura/commit/8fa21d78377feed688fc6c40f8e9968f45f6f7d1",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
