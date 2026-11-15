@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "dc419ac3acb80cb209caca751c0616f751529d1e",
+  "head": "409aa2b0c6e684fe61c5c042864b9bfe7ad70769",
   "branch": "master",
-  "subject": "feat(story): 篇四《账本》上线 + 全站 11 处互链 + smoke-live 11 入口 + test-scope TOCTOU 修 (KI-565)",
-  "date": "2026-11-15T14:36:12+08:00",
+  "subject": "feat(story): 篇五《回声庭园》上线 + 全站 13 处互链 + smoke:live 12 入口",
+  "date": "2026-11-15T14:58:25+08:00",
   "kv": {
-    "KI.rows": 483,
-    "KI.Implemented": 306,
+    "KI.rows": 484,
+    "KI.Implemented": 307,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/dc419ac3acb80cb209caca751c0616f751529d1e",
+    "url": "https://github.com/xiaodernan/caesura/commit/409aa2b0c6e684fe61c5c042864b9bfe7ad70769",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
