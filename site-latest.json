@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "7fe9beb1db41b82ca44ca94aeaaa7da5f808e398",
+  "head": "5a3013ef8f2b0c74d13690aef63073943eaa81af",
   "branch": "master",
-  "subject": "content(inscriptions): 第 26 处刻痕·无耳深窖「封耳匣里的蜡封」 · KI-599",
-  "date": "2026-11-16T05:49:04+08:00",
+  "subject": "content(inscriptions): 第 27 处刻痕·破拍营地「收工后的节拍器」 · KI-600",
+  "date": "2026-11-16T06:03:28+08:00",
   "kv": {
-    "KI.rows": 517,
-    "KI.Implemented": 340,
+    "KI.rows": 518,
+    "KI.Implemented": 341,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/7fe9beb1db41b82ca44ca94aeaaa7da5f808e398",
+    "url": "https://github.com/xiaodernan/caesura/commit/5a3013ef8f2b0c74d13690aef63073943eaa81af",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
