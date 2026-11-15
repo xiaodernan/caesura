@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "c9c7c8234bf571bafdbcf92a35be6e29926582b6",
+  "head": "6268a54761d0bde24851e11bc77ecb32f2cdf46f",
   "branch": "master",
-  "subject": "content(inscriptions): 第 23 处刻痕·休垒「不让响的水井」 · KI-596",
-  "date": "2026-11-16T04:55:24+08:00",
+  "subject": "content(inscriptions): 第 24 处刻痕·沉唱堂「嵌石里的书页」 · KI-597",
+  "date": "2026-11-16T05:12:28+08:00",
   "kv": {
-    "KI.rows": 514,
-    "KI.Implemented": 337,
+    "KI.rows": 515,
+    "KI.Implemented": 338,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/c9c7c8234bf571bafdbcf92a35be6e29926582b6",
+    "url": "https://github.com/xiaodernan/caesura/commit/6268a54761d0bde24851e11bc77ecb32f2cdf46f",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
