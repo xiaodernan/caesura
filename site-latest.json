@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "2daae574e865aa97df856a41cc4224736ae14ad6",
+  "head": "3e938c870ef6278162abc824fe3a109c9520e051",
   "branch": "master",
-  "subject": "ci(snapshot-pdf): playwright 1.58.0 -> 1.65.1 适配 ubuntu26.04 runner KI-578",
-  "date": "2026-11-15T20:29:44+08:00",
+  "subject": "docs(ki578): CI 落地实录 addendum ubuntu26.04 artifact 复读 ID size",
+  "date": "2026-11-15T20:37:56+08:00",
   "kv": {
     "KI.rows": 496,
     "KI.Implemented": 319,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/2daae574e865aa97df856a41cc4224736ae14ad6",
+    "url": "https://github.com/xiaodernan/caesura/commit/3e938c870ef6278162abc824fe3a109c9520e051",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
