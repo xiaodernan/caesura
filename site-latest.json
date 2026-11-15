@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "952e723d0a867f9beedeaab6053c6c9da9dd3cd7",
+  "head": "d42ebdabde1eca0127aeb31881e67a55432ebd88",
   "branch": "master",
-  "subject": "test(smoke): 公开站冒烟自检增入《山下无名碑》入口 story-2 （8/8 全绿）",
-  "date": "2026-11-15T10:01:04+08:00",
+  "subject": "chore(status): status:embed 回填 PKG.scripts 81→82",
+  "date": "2026-11-15T10:04:12+08:00",
   "kv": {
     "KI.rows": 482,
     "KI.Implemented": 305,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/952e723d0a867f9beedeaab6053c6c9da9dd3cd7",
+    "url": "https://github.com/xiaodernan/caesura/commit/d42ebdabde1eca0127aeb31881e67a55432ebd88",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
