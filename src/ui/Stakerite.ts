@@ -12,6 +12,7 @@ import { GAMEPLAY_BOUNDS, type GameplaySettings } from '@/settings/GameplaySetti
 import { BIND_BOUNDS, type BindChannel } from '@/settings/Bindings'
 import { DEFAULT_QUALITY, QUALITY_NAMES, type QualityTier } from '@/settings/Quality'
 import { actionLabel, intentLabel, padLabel } from '@/ui/actionLabels'
+import { STORY_CHAPTERS } from './atlas-texts'
 import type { RpgRuntime } from '@/rpg/Runtime'
 import type { SlotCard } from '@/save/Slots'
 import { SAVE_CARD_CSS, saveCards, saveCardHtml, slotLabel, type SaveCardView } from '@/ui/SaveSlots'
@@ -154,6 +155,13 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">篇十《第一钟》· 创世</span><span class="note">这场本是沉默；最后的铸钟人把铜烧进炉子——铸出一口从没被人敲过的钟</span></div>
 <div class="row"><span class="name">全集</span><span class="note">《止音纪元 · 余响集》收录全部十篇 · xiaodernan.github.io/caesura/story/anthology/</span></div>
 
+<h2>宇宙的尺度 · 献给刘慈欣 <span style="opacity:.6">（《三体》三部曲：黑暗森林 · 猜疑链 · 面壁者）</span></h2>
+<div class="row"><span class="name">黑暗森林</span><span class="note">宇宙里谁先进入，谁就知道了其他所有沉默的形状。幸存的人从不回答——不是因为闹着玩，善意和恶意在频道上长得一模一样</span></div>
+<div class="row"><span class="name">猜疑链</span><span class="note">谁都不敢先决定——于是每个人都很礼貌。这是宇宙最华丽的孤独礼仪：每个人都在听，没人先开口</span></div>
+<div class="row"><span class="name">面壁者</span><span class="note">把答案压进心里的人。别人能读你的脸，不读你的想法——能活过全人类的有时候只是那块沉下去的石头</span></div>
+<div class="row"><span class="name">宇宙这件事</span><span class="note">文明只是上面撒上去的几粒尘——人类还没认识它的尘埃。《止音纪元》的故事里有一口不熄的钟；宇宙有它自己的沉默，连钟都还没被允许</span></div>
+<div class="row"><span class="name">阅读</span><span class="note">刘慈欣《三体》三部曲：《三体》·《黑暗森林》·《死神永生》——对这个世界最外交的一次致敬</span></div>
+
 <h2>怎么不迷路</h2>
 <div class="row"><span class="name">Tab = 地图</span><span class="note">总表看你走过哪片，哪里还亮着（亮 = 终章出口还没开）；再按一次收起</span></div>
 <div class="row"><span class="name">看光、听乐</span><span class="note">每一区的主色与它的弦（休垒 ♭E / 雾语林 ♭F / 沉唱堂 ♭A / 破拍 ♭C / 钟坠院 ♭D / 无耳 ♭G / 未竟厅 ♭B）—— 转调就是换了一块钟鸣学习网</span></div>
@@ -195,6 +203,13 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">No. 9 “The Stone-Throat” · The City of Low Tones</span><span class="note">Every sentence priced in silence — until she writes the one question no one bothered to price</span></div>
 <div class="row"><span class="name">No. 10 “The First Bell” · The Creation</span><span class="note">The first sounding wasn't a bell — it was the world agreeing to hold its breath</span></div>
 <div class="row"><span class="name">All ten</span><span class="note">“CAESURA · The Aftermath” collects all ten in one read · xiaodernan.github.io/caesura/story/anthology/</span></div>
+
+<h2>The scale of the cosmos · for Liu Cixin <span style="opacity:.6">(the trilogy: The Dark Forest · the Chain of Suspicion · the Wallfacer)</span></h2>
+<div class="row"><span class="name">The Dark Forest</span><span class="note">Whoever arrives first in the universe learns the shape of every other silence. The survivor never answers — not from malice, but because kindness and malice arrive identical on this bandwidth</span></div>
+<div class="row"><span class="name">The Chain of Suspicion</span><span class="note">No one dares decide first — so everyone is polite. The grandest silence culture: everyone listens, no one speaks first</span></div>
+<div class="row"><span class="name">The Wallfacer</span><span class="note">The one who keeps the answer inside them. Others can read your face, not your mind — sometimes only the stone sunk far enough below the surface outlives everyone</span></div>
+<div class="row"><span class="name">The Universe</span><span class="note">Civilization is just dust sprinkled across it. In this world there is one bell that survives; the universe has its own silence, and the bell has not yet been allowed</span></div>
+<div class="row"><span class="name">Reading</span><span class="note">Liu Cixin's Three Body trilogy: The Three-Body Problem · The Dark Forest · Death's End — the most diplomatic embrace this world has ever received</span></div>
 
 <h2>Wayfinding</h2>
 <div class="row"><span class="name">Tab = the map</span><span class="note">The master chart shows where you have walked and what is still lit — lit means the ending is still sealed; press Tab again to fold it away</span></div>
@@ -1300,12 +1315,26 @@ export class Stakerite {
 
   private renderAtlas(): string {
     const lang = getLang()
+    const header = lang === 'en'
+      ? 'The Aftermath · ten full chapters<span style="opacity:.6"> (原文 — stays in the game)</span>'
+      : '篇章 · 止音纪元 · 十篇全文<span style="opacity:.6">（原文直入——不出游戏）</span>'
+    const chaptersHtml = STORY_CHAPTERS.map((c) => `
+      <div class="chapter"><h3>${lang === 'en' ? `No.${c.no} · ${c.enTitle}` : `篇${c.no} · 《${c.zhTitle}》`}</h3>
+        <div class="chapter-body">${lang === 'en' ? c.en : c.zh}</div></div>`).join('')
     return `
       <style>.atlas-page svg { opacity:.35 } .atlas-page em { color: #ffedc4; font-style: normal; }
              .atlas-page strong { color: #ffe4a4; font-weight: 600; letter-spacing:.02em }
              .atlas-page .note { color: rgba(242,237,228,.78); font-size: .85em }
+             .chapter { border-bottom: 1px solid rgba(243,206,143,.16); padding: 1em 0 }
+             .chapter:last-child { border-bottom: 0 }
+             .chapter h3 { margin: 0 0 .55em; color: #f3ce8f; font-size: 1em; letter-spacing:.12em }
+             .chapter-body p { margin: 0 0 .95em }
+             .chapter-body .beat { text-align: center; letter-spacing:.5em; color: rgba(243,206,143,.6); margin: .3em 0 }
+             .chapter-body .coda { font-style: italic; text-align: center; color: rgba(243,237,224,.78); margin-top:.7em }
       </style>
-      <div class="atlas-page">${PLAYER_ATLAS[lang === 'en' ? 'en' : 'zh']}</div>`
+      <div class="atlas-page">${PLAYER_ATLAS[lang === 'en' ? 'en' : 'zh']}
+      <h2>${header}</h2>
+      ${chaptersHtml}</div>`
   }
 
   private renderGear(): string {
