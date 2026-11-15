@@ -32,6 +32,7 @@ npm run dev            # Vite dev server；浏览器打开 http://localhost:5173
 - 《山下无名碑》（短篇原创之二）：<https://xiaodernan.github.io/caesura/story/unnamed-stone/>（休垒 · 山脚 · 石匠的女儿阿汀 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《空拍子》（短篇原创之三）：<https://xiaodernan.github.io/caesura/story/empty-bar/>（未竟厅 · 七十三年轮值 · 恩希尔的注视 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《账本》（短篇原创之四）：<https://xiaodernan.github.io/caesura/story/ledger/>（休垒 · Meg 不敢合上的那一页账 · 双语对照 · 零 LLM · 2026-11-15） ·  
+- 《回声庭园》（短篇原创之五）：<https://xiaodernan.github.io/caesura/story/garden/>（余响新陆 · 第六境 · 旧钟的主人 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 数据最新：`master` 每推即重嵌 `site-latest.json`（raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json）  
 
 > 注意：线上是 `?fresh=1` 的干净状态，页面证据文件总会对账最新 master；页面首屏可能短暂停在 boot 屏。
@@ -39,8 +40,8 @@ npm run dev            # Vite dev server；浏览器打开 http://localhost:5173
 ## 验证
 
 ```bash
-npm run check          # tsc --noEmit + validate:data + 全部测试（6933 条 / 531 文件，零红）
-npm test               # 仅测试（磁盘名册 531，曲线 6933）
+npm run check          # tsc --noEmit + validate:data + 全部测试（6939 条 / 532 文件，零红）
+npm test               # 仅测试（磁盘名册 532，曲线 6939）
 npm run validate:data  # 数据门（当前：0 ERROR / 2 WARN，均为既有项）
 npm run coverage       # 覆盖率棘轮门（空报表退化按 exit 2 记账，不判 guilty）
 npm run build          # tsc + vite build + check-dist（产物：dist/）

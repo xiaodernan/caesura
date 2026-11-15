@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>回声庭园 / The Garden of Return · CAESURA 短篇 之五 — 余响新陆 · 第六境</title>
+<meta name="description" content="《止音纪元》原创短篇之五 · 回声庭园 · 雾海尽头·等一个从不敲钟的女人 · 「敲过的每一下都替你记了」 · 双语对照 · 零网络 · 零 LLM。 / The fifth original short story — the Garden of Return at the end of the Sea of Mist, where the keeper keeps every strike you never made. Bilingual, offline, zero LLM.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🌿</text></svg>">
+<style>
+  :root {
+    --gold: #a8d8c0;
+    --gold-soft: rgba(168,216,192,.32);
+    --ink: #f3ede0;
+    --ink-dim: rgba(243,237,224,.62);
+    --panel: rgba(16,26,22,.72);
+    --serif: "Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#050b0a; color:var(--ink); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; }
+  .bg { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .bg.radial {
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(168,216,192,.13), transparent 60%),
+      radial-gradient(900px 700px at 50% 118%, rgba(60,110,80,.17), transparent 62%),
+      radial-gradient(650px 420px at 88% 104%, rgba(210,240,220,.06), transparent 60%),
+      #050b0a;
+  }
+  .bg.noise { position:fixed; inset:0; z-index:-1; opacity:.05; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .wrap { max-width:860px; margin:0 auto; padding:26px 26px 90px; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .brand { font-size:.8rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; opacity:.9; }
+  .brand a { color:inherit; text-decoration:none; border-bottom:1px dotted rgba(168,216,192,.5); }
+  .brand a:hover { color:#eafff2; }
+  .toplinks { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toplinks a { font-size:.72rem; color:var(--ink-dim); text-decoration:none; border:1px solid rgba(243,237,224,.14); padding:6px 12px; border-radius:999px; transition:all .22s ease; }
+  .toplinks a:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .lang-row button { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(168,216,192,.12); border:1px solid var(--gold-soft); padding:6px 15px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; }
+  .lang-row button:hover { background:rgba(168,216,192,.22); box-shadow:0 0 16px rgba(168,216,192,.25); }
+
+  [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="en"] .zh-copy { display:none !important; }
+
+  header.hero { text-align:center; padding:52px 14px 30px; }
+  .kicker { font-size:.72rem; letter-spacing:.42em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:20px; }
+  .kicker b { color:var(--gold); font-weight:600; }
+  h1 { font-size:clamp(2.4rem, 9vw, 4rem); font-weight:600; letter-spacing:.16em;
+       background:linear-gradient(180deg,#f3fff5 0%, #a8d8c0 28%, #6fa98b 58%, #2e5541 100%);
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+       text-shadow:0 0 90px rgba(168,216,192,.3); }
+  .subtitle { margin-top:14px; font-size:.8rem; color:var(--ink-dim); letter-spacing:.3em; text-transform:uppercase; }
+  .rule { width:170px; height:1px; margin:24px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .meta { margin-top:16px; font-size:.7rem; color:rgba(243,237,224,.45); letter-spacing:.18em; text-transform:uppercase; }
+  .meta a { color:var(--gold); text-decoration:none; }
+
+  article { background:var(--panel); border:1px solid rgba(243,237,224,.1); border-radius:18px; padding:38px 40px 34px; position:relative; }
+  article::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--gold), transparent); opacity:.7; }
+  article p { font-size:1.04rem; line-height:2.02; letter-spacing:.02em; color:rgba(243,237,224,.92); margin-bottom:1.5em; text-indent:2em; overflow-wrap:break-word; }
+  article p.no-indent { text-indent:0; }
+  article p em { color:#d7f5e2; font-style:normal; }
+  article p strong { color:var(--gold); font-weight:600; }
+  .beat { width:100%; text-align:center; margin:.4em 0 1.4em; letter-spacing:.5em; color:rgba(168,216,192,.6); font-size:.8rem; }
+  .coda { text-align:center; font-style:italic; color:rgba(243,237,224,.78); letter-spacing:.06em; margin-top:.6em; }
+
+  .note { margin:26px auto 0; max-width:720px; text-align:center; font-size:.74rem; color:rgba(243,237,224,.42); line-height:1.9; letter-spacing:.04em; }
+  .note a { color:var(--gold); text-decoration:none; border-bottom:1px dotted rgba(168,216,192,.5); }
+
+  footer { margin-top:56px; border-top:1px solid rgba(243,237,224,.09); padding-top:22px; display:flex; flex-wrap:wrap; gap:10px 26px; justify-content:space-between; font-size:.7rem; color:rgba(243,237,224,.4); letter-spacing:.06em; }
+  footer a { color:var(--gold); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @media (max-width:640px) { .wrap { padding:20px 12px 70px; } article { padding:26px 20px 24px; } article p { font-size:.98rem; text-indent:2em; } }
+</style>
+</head>
+<body>
+<div class="bg radial" aria-hidden="true"></div>
+<div class="bg noise" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><a href="/caesura/">CAESURA</a> · 《止音纪元》</div>
+    <div class="toplinks">
+      <a href="/caesura/story/"><span class="zh-copy">《盐》</span><span class="en-copy">“Salt”</span></a>
+      <a href="/caesura/story/unnamed-stone/"><span class="zh-copy">《山下无名碑》</span><span class="en-copy">“The Nameless Stone”</span></a>
+      <a href="/caesura/story/empty-bar/"><span class="zh-copy">《空拍子》</span><span class="en-copy">“The Empty Bar”</span></a>
+      <a href="/caesura/story/ledger/"><span class="zh-copy">《账本》</span><span class="en-copy">“The Ledger”</span></a>
+      <a href="/caesura/codex/"><span class="zh-copy">世界谱</span><span class="en-copy">Codex</span></a>
+      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button></span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <p class="kicker zh-copy">短篇 · <b>回声庭园</b> · 之五</p>
+    <p class="kicker en-copy">Short story · <b>The Garden of Return</b> · No. 5</p>
+    <h1 class="zh-copy">回声庭园</h1>
+    <h1 class="en-copy">The Garden of Return</h1>
+    <p class="subtitle zh-copy">余响新陆 · 第六境 · 旧钟的主人</p>
+    <p class="subtitle en-copy">The Afterland · the sixth sound · The Owner of the Old Bell</p>
+    <div class="rule"></div>
+    <p class="meta zh-copy">约 5 分钟 · 与 <a href="/caesura/codex/">世界谱</a> 同源世界观 · 设定册《新六地域》同源 · 零 LLM 撰写</p>
+    <p class="meta en-copy">about 5 minutes · same world as the <a href="/caesura/codex/">codex</a> · from the New Six Lands design canon · written without LLM assistance</p>
+  </header>
+
+  <article>
+    <div class="zh-copy">
+      <p>雾海尽头开着一座花园。没有路伸向它，只有很久很久以前掉进岩洞里的水——<em>每一滴，都替别人落着</em>。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>走进去的人什么声响也听不见：不听见风，不听见自己的鞋，不听见自己咽下去的那口唾沫。然后一朵纸样的花会在她脚边慢慢盛开，她才听清——那朵花，<em>就是她刚才那一口没说出口的话</em>。</p>
+      <p>这里所有的声音都是回来的。来的人走过的路，每一步都隔着一段还没走完的回音；敲一记旧钟，它会替你走完剩下的路。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>旧钟的主人站在园子尽头，她是这个庭园里唯一年轻的一个——比她亲手护了多年的任何一口钟都年轻。她的手掌从没被钟锤碰过，所以她的手从来不知道疼。</p>
+      <p>「你来得真晚，」她说，声音却比钟乳石洞还老。「我在这片雾里替所有从门口进来的人开后门——敲过的，没敲完的，都在我这儿。」</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>她从袖子里取出一口腹腔里有弦的小木钟，放在旅人的耳边——钟不会响，它只负责<strong>指向</strong>。「你听见的，就是它要你听见的那一下。」</p>
+      <p>然后她又掏出一张叠得角都软了的纸，那是一张欠条，背面写着一行字：</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.1rem; letter-spacing:.05em;">「敲过的每一下都替你记了。」</p>
+      <p>「你要划掉两笔——你这一生里，敲过的、最重的两下。划多，我不收；划少，我不认。」</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>旅人想了很久。雾海里的水滴还在替别人落着，她在纸面上轻轻划了两笔。</p>
+      <p>第一笔：三年前她没敲出的那一声——一个跌下悬崖的孩子被她伸手拉了回来。那一刻她堵住了自己的喉咙，让全世界先听见那孩子的第一声哭，再听见身边自己那一声没发出来的。</p>
+      <p>第二笔：她落在这个庭园里的第一滴水——那一声不是她敲的，但它替她敲了。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>旧钟的主人收回欠条时，手指在她掌心轻轻按了一下——那就是「谢谢」。她说：</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.1rem; letter-spacing:.05em;">「这里的水只替你记一下。敲不出来的，我这里，永远算数。」</p>
+      <p>「想不起来的那些，」她顿了顿，「不用你划。它们还在你自己手上——下一回想划的时候，来我这儿划。」</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">旅人离开庭园时，雾海没有在她身后合上。只是她从那天起，再没有在雾海边说过一句无关紧要的话。</p>
+      <p class="coda">她的耳边从此挂着一根弦——每当她正要沉默的时候，那根弦就替她响一声：短的、轻的、像水滴落在岩洼里的注视。</p>
+      <p class="coda">走出庭园的人，耳朵里都多了一根弦——敲过的每一下，都替他记了。</p>
+    </div>
+
+    <div class="en-copy">
+      <p>At the end of the Sea of Mist there is a garden. No road leads to it — only the water that fell into the cavern a thousand years ago, and every drop is still falling for someone else.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>A traveler walks in and hears nothing: not the wind, not her own steps, not the swallow of her own throat. Then a paper-white flower unfolds at her feet, and she finally makes out the sound — the flower is <em>the sentence she had just swallowed</em>.</p>
+      <p>Every voice here returns. Her steps are echoed by the half-finished footfalls of everyone who walked these paths before her; strike a bell once, and it will walk the rest of the way for you.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>The keeper, The Owner of the Old Bell, stands at the far end of the garden. She is the youngest thing in it — younger than any bell she has ever tended. Her hands have never known a hammer, and her palms have never learned pain.</p>
+      <p>“You arrived too late,” she says. Her voice is older than the cavern walls. “I keep the back door open for everyone who comes in from the front — everything that was struck, everything that was left unfinished, is kept here.”</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>From her sleeve she takes a small wooden bell, its cavity strung with chords, and holds it to the traveler’s ear. The bell will never ring — it only points. “What you hear,” she says, “is the one strike it needs you to hear.”</p>
+      <p>Then she unfolds a slip of paper, its corners gone soft from so many hands, and lays it on the ledge. On its back is a single line:</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.1rem; letter-spacing:.05em;">“Every strike you ever made has been kept for you.”</p>
+      <p>“Cross out two entries — the heaviest two you ever struck, in all your life. Cross out more, I won’t take them. Cross out fewer, I won’t accept them.”</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>The traveler thinks for a long time. Somewhere behind her, the water keeps falling in its own good time, and she marks two lines on the slip.</p>
+      <p>The first: three years ago, the one she didn’t strike — a child who had gone over the edge, and she’d pulled him back. In that instant she had pressed her own throat shut so the world could hear his first cry before anything else — even before the cry that died inside her.</p>
+      <p>The second: the first drop of water she let fall into this garden — not a strike of hers at all, but it had struck one for her.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>The keeper folds the slip away. As her hand closes, one finger rests, briefly, in the traveler’s palm — that is how she says <em>thank you</em>. Then she says:</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.1rem; letter-spacing:.05em;">“The water keeps you only once. The ones you never strike — here, those always count.”</p>
+      <p>“The ones you can’t remember,” she adds, “don’t cross them out. They’re still in your hands. Come back here when you’re ready to.”</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">When the traveler left the garden, the Sea of Mist did not close behind her. Only that from that day on, she never spoke uselessly at the garden’s edge.</p>
+      <p class="coda">From then on there was a string inside her ear — and whenever she was about to hold her silence, it struck once for her: short, light, the way a drop of water lands, watching, in a rock pool.</p>
+      <p class="coda">Everyone who walks out of that garden carries a string in their ear — every strike they ever made is kept for them.</p>
+    </div>
+  </article>
+
+  <div class="note">
+    <span class="zh-copy">《回声庭园》取材于《止音纪元》设定册《新六大陆 · NEW-LANDS》第六境（<strong>rg_garden_of_return</strong> · 回声庭园 · ♭G2 · 旧钟的主人 · DLG_OWNER · 主线「木钟预言」），是 companion fiction（双语对照 · 零 LLM · 零网络 · 不落 runtime）。 <a href="/caesura/story/">篇一：《盐》</a> · <a href="/caesura/story/unnamed-stone/">篇二：《山下无名碑》</a> · <a href="/caesura/story/empty-bar/">篇三：《空拍子》</a> · <a href="/caesura/story/ledger/">篇四：《账本》</a> · <a href="/caesura/codex/">世界谱</a></span>
+    <span class="en-copy">“The Garden of Return” is adapted from the “New Six Lands · NEW-LANDS” design canon — the sixth land (<strong>rg_garden_of_return</strong> · The Garden of Return · ♭G2 · The Owner of the Old Bell · DLG_OWNER · the main arc “The Wooden Bell Prophecy”). Companion fiction (bilingual · zero LLM · offline · not shipped in runtime). <a href="/caesura/story/">Part one: “Salt”</a> · <a href="/caesura/story/unnamed-stone/">Part two: “The Nameless Stone”</a> · <a href="/caesura/story/empty-bar/">Part three: “The Empty Bar”</a> · <a href="/caesura/story/ledger/">Part four: “The Ledger”</a> · <a href="/caesura/codex/">World Codex</a></span>
+  </div>
+
+  <footer>
+    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/">游戏</a> · <a href="/caesura/story/">《盐》· 篇一</a> · <a href="/caesura/story/unnamed-stone/">篇二 · 山下无名碑</a> · <a href="/caesura/story/empty-bar/">篇三 · 空拍子</a> · <a href="/caesura/story/ledger/">篇四 · 账本</a> · <a href="/caesura/codex/">世界谱</a></span>
+    <span class="en-copy">© CAESURA · <a href="/caesura/">Game</a> · <a href="/caesura/story/">“Salt” · No. 1</a> · <a href="/caesura/story/unnamed-stone/">No. 2 · The Nameless Stone</a> · <a href="/caesura/story/empty-bar/">No. 3 · The Empty Bar</a> · <a href="/caesura/story/ledger/">No. 4 · The Ledger</a> · <a href="/caesura/codex/">World Codex</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('langToggle');
+  var saved = 'zh';
+  try { saved = localStorage.getItem('caesura-lang') || 'zh'; } catch (e) { /* noop */ }
+  function apply(lang) {
+    root.setAttribute('data-lang', lang);
+    root.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en');
+    try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+  }
+  if (btn) btn.addEventListener('click', function () {
+    apply(root.getAttribute('data-lang') === 'en' ? 'zh' : 'en');
+  });
+  apply(saved === 'en' ? 'en' : 'zh');
+})();
+</script>
+</body>
+</html>
