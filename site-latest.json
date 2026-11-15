@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "40bd619417378469b6a7e6748d2ad5b9f47e66b4",
+  "head": "c9c7c8234bf571bafdbcf92a35be6e29926582b6",
   "branch": "master",
-  "subject": "perf(smoke): smoke:live 并发压测档（--concurrency · Promise pool · wall/p50/p95/p99 · 21/21） · KI-595",
-  "date": "2026-11-16T04:26:45+08:00",
+  "subject": "content(inscriptions): 第 23 处刻痕·休垒「不让响的水井」 · KI-596",
+  "date": "2026-11-16T04:55:24+08:00",
   "kv": {
-    "KI.rows": 513,
-    "KI.Implemented": 336,
+    "KI.rows": 514,
+    "KI.Implemented": 337,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/40bd619417378469b6a7e6748d2ad5b9f47e66b4",
+    "url": "https://github.com/xiaodernan/caesura/commit/c9c7c8234bf571bafdbcf92a35be6e29926582b6",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
