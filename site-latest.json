@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "a0562389a8f7135053595ea954e8b09d1b20aeda",
+  "head": "952e723d0a867f9beedeaab6053c6c9da9dd3cd7",
   "branch": "master",
-  "subject": "feat(site): smoke:live 公开站冒烟自检 cron 每 6 小时 7入口全绿 + 原创短篇之二《山下无名碑》 休垒山脚 双语对照 /caesura/story/unnamed-stone/ 互链 README 双语并轨",
-  "date": "2026-11-15T09:55:32+08:00",
+  "subject": "test(smoke): 公开站冒烟自检增入《山下无名碑》入口 story-2 （8/8 全绿）",
+  "date": "2026-11-15T10:01:04+08:00",
   "kv": {
     "KI.rows": 482,
     "KI.Implemented": 305,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/a0562389a8f7135053595ea954e8b09d1b20aeda",
+    "url": "https://github.com/xiaodernan/caesura/commit/952e723d0a867f9beedeaab6053c6c9da9dd3cd7",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
