@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "a64da245b6a5702dcb429cc4a0ab6bf2075ffdf6",
+  "head": "bcc89368278a6884f2112c500296930e9c63479a",
   "branch": "master",
-  "subject": "feat(ui): 游记「篇章 · 止音纪元」十篇双语全文 + 「宇宙的尺度 · 献给刘慈欣」节 KI-579",
-  "date": "2026-11-15T20:57:51+08:00",
+  "subject": "fix(atlas): 篇十一《暗潮》修复 altas-texts 静默 elision hole KI-580",
+  "date": "2026-11-15T21:32:02+08:00",
   "kv": {
-    "KI.rows": 497,
-    "KI.Implemented": 320,
+    "KI.rows": 498,
+    "KI.Implemented": 321,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/a64da245b6a5702dcb429cc4a0ab6bf2075ffdf6",
+    "url": "https://github.com/xiaodernan/caesura/commit/bcc89368278a6884f2112c500296930e9c63479a",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
