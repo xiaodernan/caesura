@@ -24,6 +24,7 @@ const ENDPOINTS = [
   { name: 'cast', url: 'https://xiaodernan.github.io/caesura/cast/', marker: '角色图鉴' },
   { name: 'codex', url: 'https://xiaodernan.github.io/caesura/codex/', marker: '世界谱' },
   { name: 'story', url: 'https://xiaodernan.github.io/caesura/story/', marker: '盐' },
+  { name: 'story-2', url: 'https://xiaodernan.github.io/caesura/story/unnamed-stone/', marker: '无名碑' },
   { name: 'console', url: 'https://xiaodernan.github.io/caesura/console/', marker: '集大成' },
   { name: 'site-latest', url: 'https://raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json', marker: '"schema": 1' },
 ]
