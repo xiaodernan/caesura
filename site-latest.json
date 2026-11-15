@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "7c57162ba6910be94d15a53e4a03211a656941e6",
+  "head": "dc419ac3acb80cb209caca751c0616f751529d1e",
   "branch": "master",
-  "subject": "docs(workplan): F-123~F-126 前端挤压溢出治本 HUD 100% 集大成面板 149→1 各页面防 overflow",
-  "date": "2026-11-15T13:57:44+08:00",
+  "subject": "feat(story): 篇四《账本》上线 + 全站 11 处互链 + smoke-live 11 入口 + test-scope TOCTOU 修 (KI-565)",
+  "date": "2026-11-15T14:36:12+08:00",
   "kv": {
-    "KI.rows": 482,
-    "KI.Implemented": 305,
+    "KI.rows": 483,
+    "KI.Implemented": 306,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/7c57162ba6910be94d15a53e4a03211a656941e6",
+    "url": "https://github.com/xiaodernan/caesura/commit/dc419ac3acb80cb209caca751c0616f751529d1e",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
