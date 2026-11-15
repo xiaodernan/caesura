@@ -79,7 +79,15 @@ export const NAMED_HOLES = [
   },
   {
     area: 'story',
-    why: '《盐》短篇故事页（`story/index.html`，2026-11-15 落）：《止音纪元》原创短篇《盐》的双语单页——**纯静态 HTML/CSS/JS**（无 runtime、无 import、不进 bundle 也不进 dialogue.json、零网络零 LLM、与游戏同源世界观）；Pages workflow 把它拷入 dist/story/ 一同部署到 https://xiaodernan.github.io/caesura/story/；玩家看到的「《盐》· 风钟海岸听雾站守夜人」属于 metaLanding 而非 game-internal；id-scope 规则提示这一堆「有一个文件落库却不在交付总体（按号引用规则为 src/scripts 走查面）」——这是合法不入走查的扩大，不属于走查面外遗留。这里登记它作为命名的洞，连门 `id-scope-rules 的 §6 `豁免的证据要现在能打开`` ——它在 Pages deploy workflow 里有 `cp -R story/. dist/story/`，本行的载体在 .github/workflows/pages.yml 第 47 行附近。',
+    why: '《盐》短篇故事页（`story/index.html`，2026-11-15 落）：《止音纪元》原创短篇《盐》的双语单页——**纯静态 HTML/CSS/JS**（无 runtime、无 import、不进 bundle 也不进 dialogue.json、零网络零 LLM、与游戏同源世界观）；Pages workflow 把它拷入 dist/story/ 一同部署到 https://xiaodernan.github.io/caesura/story/；玩家看到的「《盐》· 风钟海岸听雾站守夜人」属于 metaLanding 而非 game-internal；id-scope 规则提示这一堆「有一个文件落库却不在交付总体（按号引用规则为 src/scripts 走查面）」——这是合法不入走查的扩大，不属于走查面外遗留。这里登记它作为命名的洞，连门 `id-scope-rules 的 §6 `豁免的证据要现在能打开`` ——它在 Pages deploy workflow 里有 `cp -R story/. dist/story/`，本行的载体在 .github/workflows/pages.yml 第 50 行附近。',
+  },
+  {
+    area: 'admin',
+    why: '止音后台 · 用户观察站（`admin/index.html`，2026-11-15 落）：纯静态双语 HTML/CSS/JS 观察站（无 runtime、无 import、不进 bundle 也不进 dialogue.json、零网络零 LLM——**唯一被读的是 localStorage `caesura.telemetry.v1`，只在本机**）；聚合数据为 `admin/data.js` 固定种子可复现的模拟队列，`scripts/gen-analytics.mjs` 是它的生成物；Pages workflow 把它拷入 dist/admin/ 一同部署到 https://xiaodernan.github.io/caesura/admin/（口令 123，礼貌的门不是安全边界）；玩家看到的「止音纪元 · 用户观察站」属于 metaLanding 而非 game-internal；id-scope 规则提示这一堆「有一个文件落库却不在交付总体（按号引用规则为 src/scripts 走查面）」——这是合法不入走查的扩大，不属于走查面外遗留。这里登记它作为命名的洞，连门 `id-scope-rules 的 §6 `豁免的证据要现在能打开`` ——它在 Pages deploy workflow 里有 `cp -R admin/. dist/admin/`，本行的载体在 .github/workflows/pages.yml 第 51 行附近。',
+  },
+  {
+    area: 'public',
+    why: 'vite publicDir 透传资产（`public/tracker.js`，2026-11-15 落）：全站本机行为埋点——pageview / click（带视口象限粗粒度）/ rage（800ms 内 3 连点 <40px）/ error 四类事件，写 `localStorage caesura.telemetry.v1` 环形缓冲 400 条，**零网络、零 LLM、不出本机**；vite 默认 publicDir 在构建时把 `public/*` 原样拷进 dist/（= https://xiaodernan.github.io/caesura/tracker.js），Pages workflow 不必特地登记 `cp public/tracker.js`；玩家在任意页面加载这个脚本只是被记在本机浏览器里，到 /caesura/admin/ 页的「本机实况」面板查看；id-scope 规则提示这一堆「有一个文件落库却不在交付总体（按号引用规则为 src/scripts 走查面）」——这是合法不入走查的扩大，不属于走查面外遗留。这里登记它作为命名的洞（单文件静态资产，与 console/admin 同类的 metaLanding，不是 game-internal）。',
   },
 ]
 
