@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "1d65a01be44095f64af9ce545876631dee5bedb6",
+  "head": "4a9734ff8bde9370bcccb7d15bbf1232d9dbc4dd",
   "branch": "master",
-  "subject": "feat(console): 集大成调度台新增「余响八篇 · 沉默的编年史」面板 KI-574",
-  "date": "2026-11-15T18:13:35+08:00",
+  "subject": "feat(story): 篇九《石喉》上线 + 《余响集》扩容至九篇 + 集大成调度台篇九行",
+  "date": "2026-11-15T18:35:21+08:00",
   "kv": {
-    "KI.rows": 492,
-    "KI.Implemented": 315,
+    "KI.rows": 493,
+    "KI.Implemented": 316,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/1d65a01be44095f64af9ce545876631dee5bedb6",
+    "url": "https://github.com/xiaodernan/caesura/commit/4a9734ff8bde9370bcccb7d15bbf1232d9dbc4dd",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
