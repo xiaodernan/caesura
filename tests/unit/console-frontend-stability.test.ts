@@ -1,0 +1,90 @@
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { resolve } from 'node:path'
+import { describe, expect, it } from 'vitest'
+
+/**
+ * console（集大成调度台）前端稳定性门钉——F-124 的长期护栏，2026-11-15 KI-573 落。
+ * 这些选择器被删一个，面板立刻在内窗口里再次撑破 / 挤压 / 断词失效：
+ *   `.panel{min-width:0}` · `.panel-head{flex-wrap:wrap}` · `text-wrap:balance` ·
+ *   `body *{overflow-wrap:anywhere}` · `[class$="-sc"]{break-all}` · 行内 `.num{flex-basis:…}`。
+ */
+
+const ROOT = resolve(fileURLToPath(new URL('../..', import.meta.url)))
+const CSS = readFileSync(resolve(ROOT, 'console/styles.css'), 'utf8')
+const APP = readFileSync(resolve(ROOT, 'console/app.js'), 'utf8')
+const HTML = readFileSync(resolve(ROOT, 'console/index.html'), 'utf8')
+
+const panelBlock = () => {
+  const i = CSS.indexOf('.panel {')
+  return i >= 0 ? CSS.slice(i, i + 400) : ''
+}
+const panelHeadBlock = () => {
+  const i = CSS.indexOf('.panel-head {')
+  return i >= 0 ? CSS.slice(i, i + 240) : ''
+}
+
+describe('console 前端稳定性门钉（F-124 的长期护栏）', () => {
+  it('body, body * 断词（中文 + camelCase 长串不撑破列）', () => {
+    expect(CSS).toContain('body, body * { overflow-wrap: anywhere;')
+  })
+
+  it('`.panel{min-width:0}` 在位（grid 列不撑破）', () => {
+    expect(panelBlock()).toContain('min-width: 0')
+  })
+
+  it('`.panel-head{flex-wrap:wrap}` 在位（梯形行可换行）', () => {
+    expect(panelHeadBlock()).toContain('flex-wrap: wrap')
+  })
+
+  it('`.panel-head h2` 居中断词（min-width:0 + text-wrap:balance）', () => {
+    expect(CSS).toMatch(/\.panel-head h2 \{[^}]*min-width:\s*0;[^}]*text-wrap: balance;/s)
+  })
+
+  it('`.cc-line .num` 梯形行重排基线存在', () => {
+    expect(CSS).toMatch(/\.cc-line\s+\.num\s*\{[^}]*flex-basis:\s*\d+px/)
+  })
+
+  it('`.pg-line .num` 梯形行重排基线存在', () => {
+    expect(CSS).toMatch(/\.pg-line\s+\.num\s*\{[^}]*flex-basis:\s*\d+px/)
+  })
+
+  it('`.pc-line .num` 梯形行重排基线存在', () => {
+    expect(CSS).toMatch(/\.pc-line\s+\.num\s*\{[^}]*flex-basis:\s*\d+px/)
+  })
+
+  it('`.gf-line .num` 梯形行重排基线存在', () => {
+    expect(CSS).toMatch(/\.gf-line\s+\.num\s*\{[^}]*flex-basis:\s*\d+px/)
+  })
+
+  it('`[class$="-sc"]` 断词兜底（break-all）在位', () => {
+    expect(CSS).toContain('[class$="-sc"]')
+    expect(CSS).toMatch(/\[class\$="-sc"\]\s*\{[^}]*overflow-wrap: anywhere/)
+  })
+
+  it('app.js 保留 overflow 巡检钩（querySelectorAll(body *)）', () => {
+    expect(APP).toContain("querySelectorAll('body *')")
+  })
+
+  it('index.html 页脚含故事链接出口（盐 / 空拍子 / 账本 / 余响集 / 霜锤 / 千门）', () => {
+    for (const href of ['/caesura/story/', '/caesura/story/empty-bar/', '/caesura/story/ledger/',
+      '/caesura/story/anthology/', '/caesura/story/frostbell/', '/caesura/story/doors/']) {
+      expect(HTML, `missing story href: ${href}`).toContain(href)
+    }
+  })
+
+  it('LANG_EXACT 含八篇故事双语键（盐系列本页切英文时不裸奔 CJK）', () => {
+    for (const pair of [
+      "'《盐》': 'Salt',",
+      "'《空拍子》': 'The Empty Bar',",
+      "'《账本》': 'The Ledger',",
+      "'《回声庭园》': 'The Garden of Return',",
+      "'《雨审判》': 'The Rain Tribunal',",
+      "'《余响集》': 'The Aftermath',",
+      "'《霜锤》': 'The Frostbell',",
+      "'《千门》': 'The Thousand Doors',",
+    ]) {
+      expect(APP, `missing LANG_EXACT pair: ${pair}`).toContain(pair)
+    }
+  })
+})

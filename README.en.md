@@ -20,7 +20,7 @@ npm run dev            # Vite dev server → http://localhost:5173/?fresh=1
 ## Verify
 
 ```bash
-npm run check          # tsc --noEmit + validate:data + full suite (6963 legs, 536 files, 0 reds)
+npm run check          # tsc --noEmit + validate:data + full suite (6975 legs, 537 files, 0 reds)
 npm test               # the suite, one green pass after another
 npm run validate:data  # schema linter — current: 0 ERROR / 2 WARN (pre-registered)
 npm run build          # tsc + vite build + dist text scan — 0 findings
