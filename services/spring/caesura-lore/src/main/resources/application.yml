@@ -16,6 +16,16 @@ spring:
 server:
   port: 8084
 
+# Eureka：**默认不注册**（2026-11-15 安全修正）—— 本机 8761 可能是别家的注册中心（共享机），
+# 不加约束就把「你的有服」注册进去是污染别人的目录。整族 e2e（registry 同族跑起 8761）要演示注册，
+# 就显式加：--eureka.client.register-with-eureka=true
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_DEFAULTZONE:http://localhost:8761/eureka/}
+    register-with-eureka: ${EUREKA_REGISTER:false}
+    fetch-registry: false
+
 # Node 侧探针读取的健康端口（scripts/spring-health-check.mjs）：
 #   http://localhost:8084/actuator/health
 management:

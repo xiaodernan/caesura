@@ -34,13 +34,15 @@ public class LoreController {
 
   private final LoreCorpus corpus;
   private final LoreRanker ranker;
+  private final LoreSqliteIndex sqlite;
   private final LoreCache cache;
   private final ObjectMapper mapper;
   private final long startedAt = System.currentTimeMillis();
 
-  public LoreController(LoreCorpus corpus, LoreRanker ranker, LoreCache cache, ObjectMapper mapper) {
+  public LoreController(LoreCorpus corpus, LoreRanker ranker, LoreSqliteIndex sqlite, LoreCache cache, ObjectMapper mapper) {
     this.corpus = corpus;
     this.ranker = ranker;
+    this.sqlite = sqlite;
     this.cache = cache;
     this.mapper = mapper;
   }
@@ -69,22 +71,39 @@ public class LoreController {
     String q = body == null ? "" : body.path("q").asText("");
     String lang = body == null ? "zh" : body.path("lang").asText("zh");
     int limit = body == null ? 5 : Math.min(50, Math.max(1, body.path("limit").asInt(5)));
-    return respondSearch(q, lang, limit);
+    String engine = body == null ? "bm25" : body.path("engine").asText("bm25");
+    return respondSearch(q, lang, limit, safeEngine(engine));
   }
 
   /** 只读检索的 GET 形态（浏览器直接可用；e2e 也用这一条打 BM25 探针） */
   @org.springframework.web.bind.annotation.GetMapping(value = "/lore/search", produces = "application/json")
   public ResponseEntity<String> searchGet(@RequestParam(defaultValue = "") String q,
       @RequestParam(defaultValue = "zh") String lang,
-      @RequestParam(defaultValue = "5") int limit) {
-    return respondSearch(q, safeLang(lang), Math.min(50, Math.max(1, limit)));
+      @RequestParam(defaultValue = "5") int limit,
+      @RequestParam(defaultValue = "bm25") String engine) {
+    return respondSearch(q, safeLang(lang), Math.min(50, Math.max(1, limit)), safeEngine(engine));
   }
 
-  private ResponseEntity<String> respondSearch(String q, String lang, int limit) {
+  private String safeEngine(String engine) {
+    return "fts".equalsIgnoreCase(engine) ? "fts" : "bm25";
+  }
+
+  private ResponseEntity<String> respondSearch(String q, String lang, int limit, String engine) {
     cache.noteSearch();
-    String cacheKey = "search:" + safeLang(lang) + ":" + normalize(q) + ":" + limit;
-    String payload = cache.getOrCompute("search", cacheKey, () -> renderSearch(q, lang, limit));
+    String cacheKey = "search:" + engine + ":" + safeLang(lang) + ":" + normalize(q) + ":" + limit;
+    String payload = cache.getOrCompute("search", cacheKey, () -> renderSearch(q, lang, limit, engine));
     return ResponseEntity.ok().contentType(JSON).body(payload);
+  }
+
+  /** 数据库引擎自述（EXPLAIN QUERY PLAN 原文 + 分词结果）—— 不进缓存、每问必真算 */
+  @GetMapping(value = "/lore/explain", produces = "application/json")
+  public ResponseEntity<String> explain(@RequestParam(defaultValue = "") String q) {
+    try {
+      return ResponseEntity.ok().contentType(JSON).body(mapper.writeValueAsString(sqlite.explain(q)));
+    } catch (Exception e) {
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).contentType(JSON)
+          .body("{\"error\":\"explain_failed\"}");
+    }
   }
 
   @GetMapping(value = "/lore/stats", produces = "application/json")
@@ -92,7 +111,7 @@ public class LoreController {
     LoreCache.Stats s = cache.stats();
     ObjectNode node = mapper.createObjectNode();
     node.put("entries", corpus.size());
-    node.put("corpus", "48-real-texts-of-the-epoch-of-hush");
+    node.put("corpus", "52-real-texts-of-the-epoch-of-hush");
     node.put("cacheBackend", cache.backend());
     node.put("cacheHits", s.cacheHits());
     node.put("cacheMisses", s.cacheMisses());
@@ -100,6 +119,12 @@ public class LoreController {
     node.put("hitRate", s.hitRate());
     node.put("uptimeMs", System.currentTimeMillis() - startedAt);
     node.put("playerProcessLlm", false);
+    ObjectNode db = mapper.createObjectNode();
+    for (Map.Entry<String, Object> kv : sqlite.healthBlock().entrySet()) {
+      Object v = kv.getValue();
+      if (v instanceof Number) db.put(kv.getKey(), ((Number) v).doubleValue()); else db.put(kv.getKey(), String.valueOf(v));
+    }
+    node.set("db", db);
     return ResponseEntity.ok().contentType(JSON).body(node.toString());
   }
 
@@ -128,9 +153,9 @@ public class LoreController {
     return corpus.byId(id).map(e -> entryNode(e, lang, null).toString()).orElse(null);
   }
 
-  private String renderSearch(String q, String lang, int limit) {
+  private String renderSearch(String q, String lang, int limit, String engine) {
     long t0 = System.nanoTime();
-    List<LoreRanker.Hit> hits = ranker.search(q, limit);
+    List<LoreRanker.Hit> hits = "fts".equals(engine) ? sqlite.search(q, limit) : ranker.search(q, limit);
     double tookMs = (System.nanoTime() - t0) / 1_000_000.0;
     ObjectNode root = mapper.createObjectNode();
     root.put("q", q);
@@ -138,6 +163,8 @@ public class LoreController {
     root.put("total", hits.size());
     root.put("tookMs", tookMs);
     root.put("algorithm", "BM25(k1=1.5,b=0.75,titleBoost=3)");
+    root.put("engine", engine);
+    if ("fts".equals(engine)) root.put("engineDetail", "sqlite-inmemory / posting PK(token, entry_id) / idf(df table, one lookup per term)");
     ArrayNode arr = root.putArray("hits");
     for (LoreRanker.Hit hit : hits) {
       arr.add(entryNode(hit.entry(), safeLang(lang), hit.score()));

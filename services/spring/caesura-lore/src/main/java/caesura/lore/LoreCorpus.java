@@ -66,6 +66,14 @@ public class LoreCorpus {
     return immutable.size();
   }
 
+  /** 打分文本池：标题 ×3（BM25F-lite）+ 正文 —— 分词与 df 的唯一出处（bm25 路与 sqlite 路共用） */
+  public String textPool(LoreEntry e) {
+    return e.title().zh() + ' ' + e.title().en() + ' '
+        + e.title().zh() + ' ' + e.title().en() + ' '
+        + e.title().zh() + ' ' + e.title().en() + ' '
+        + e.body().zh() + ' ' + e.body().en();
+  }
+
   public Optional<LoreEntry> byId(String id) {
     for (LoreEntry e : immutable) {
       if (e.id().equals(id)) return Optional.of(e);

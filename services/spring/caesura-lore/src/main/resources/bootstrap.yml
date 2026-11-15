@@ -15,9 +15,11 @@ spring:
         max-interval: 30000
 
 # 这个服务不调用其它服务，关掉 fetch/registry 轮询（省资源，也免得 e2e spawn 竞态）
+# 默认**不注册**——shared 机器上的 8761 可能是别家的注册中心；整族 e2e 同族起 8761 时
+# 显式设 EUREKA_REGISTER=true 即可恢复注册
 eureka:
   client:
-    register-with-eureka: true
+    register-with-eureka: ${EUREKA_REGISTER:false}
     fetch-registry: false
   instance:
     hostname: ${EUREKA_HOSTNAME:localhost}
