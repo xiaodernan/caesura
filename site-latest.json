@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "5b14dd8c1490612b1ef597c3a810c2d89dcf716d",
+  "head": "0a0c647a00ee102caa0aef92d14a86df62251300",
   "branch": "master",
-  "subject": "feat(content): 刻痕扩容：风钟海岸三处新铭刻 + 雾语林年轮一篇 · 18 spots KI-581",
-  "date": "2026-11-15T22:04:41+08:00",
+  "subject": "feat(content): 刻痕第二波：钟队院二处（钟壳凿痕 · staveTrue）· 19 spots KI-582",
+  "date": "2026-11-15T22:29:22+08:00",
   "kv": {
-    "KI.rows": 499,
-    "KI.Implemented": 322,
+    "KI.rows": 500,
+    "KI.Implemented": 323,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/5b14dd8c1490612b1ef597c3a810c2d89dcf716d",
+    "url": "https://github.com/xiaodernan/caesura/commit/0a0c647a00ee102caa0aef92d14a86df62251300",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
