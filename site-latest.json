@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "ce0b44684187db0b73f1ea3951fd9b62bb3362eb",
-  "branch": "HEAD",
-  "subject": "content(story): 《余响集》故事站补齐篇十一《暗潮》与篇十二《后记·第十二个听者》 · 第 22 处刻痕「从未敲过的钟」 · KI-591/592",
-  "date": "2026-11-16T03:10:14+08:00",
+  "head": "9225c30c56ef7c2c5dddf2c7e72cdc83259efecc",
+  "branch": "master",
+  "subject": "feat(input): 滚轮接入视角纵向（往上滑往上看、往下滑往下看，游玩态生效） · KI-593",
+  "date": "2026-11-16T03:40:10+08:00",
   "kv": {
-    "KI.rows": 510,
-    "KI.Implemented": 333,
+    "KI.rows": 511,
+    "KI.Implemented": 334,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/ce0b44684187db0b73f1ea3951fd9b62bb3362eb",
+    "url": "https://github.com/xiaodernan/caesura/commit/9225c30c56ef7c2c5dddf2c7e72cdc83259efecc",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
