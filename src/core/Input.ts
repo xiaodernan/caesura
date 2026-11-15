@@ -308,6 +308,8 @@ export class Input {
   private padHeld = new Set<ActionName>()
   private prevHeld = new Set<ActionName>()
   private mouseLook = { dx: 0, dy: 0 }
+  /** 滚轮观看：滚轮滚动量逐帧攒表达式里用，poll 消费后归零（与 mouseLook 同一消费点） */
+  private wheelLook = 0
   private padState = { moveX: 0, moveY: 0, lookX: 0, lookY: 0 }
   private bufferedEdges = new Map<ActionName, number>()
   private elapsed = 0
@@ -448,6 +450,9 @@ export class Input {
         this.mouseLook.dy += e.movementY
       }
     })
+    /** 滚轮 = 视野纵向（往上滑 = 抬眼看上面 / 往下滑 = 俯视看下面）—— 仅游玩态生效，菜单/地图/演出开时不抢；
+        滚轮缩放地图仍归 MapUI 自己管。没有任何既有调用方，是纯增量。 */
+    window.addEventListener('wheel', (e) => { if (this.uiOwner !== null) return; this.wheelLook += e.deltaY }, { passive: true })
     window.addEventListener('blur', () => {
       this.kbHeld.clear(); this.mouseHeld.clear(); this.padHeld.clear()
       this.kbUiHeld.clear(); this.padUiHeld.clear()
@@ -630,11 +635,11 @@ export class Input {
       move: m,
       look: {
         dx: this.mouseLook.dx * 0.0022 + this.padState.lookX * 2.4,
-        dy: this.mouseLook.dy * 0.0022 + this.padState.lookY * 2.4
+        dy: this.mouseLook.dy * 0.0022 + this.padState.lookY * 2.4 + this.wheelLook * 0.0012
       },
       edges, held
     }
-    this.mouseLook.dx = 0; this.mouseLook.dy = 0
+    this.mouseLook.dx = 0; this.mouseLook.dy = 0; this.wheelLook = 0
     this.prevHeld = deviceHeld
   }
 
