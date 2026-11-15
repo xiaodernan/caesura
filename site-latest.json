@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "2c4f85f83db103d20adf8a1e9d17c4318720de81",
-  "branch": "HEAD",
-  "subject": "feat(console): StateGraph · 状态图内核教学单元（四节点 SVG + 微内核 5 不变量 · codex 补「状态图/检查点回放」54 条 · Atlas「状态机与灵魂」） · KI-594",
-  "date": "2026-11-16T04:02:59+08:00",
+  "head": "40bd619417378469b6a7e6748d2ad5b9f47e66b4",
+  "branch": "master",
+  "subject": "perf(smoke): smoke:live 并发压测档（--concurrency · Promise pool · wall/p50/p95/p99 · 21/21） · KI-595",
+  "date": "2026-11-16T04:26:45+08:00",
   "kv": {
-    "KI.rows": 512,
-    "KI.Implemented": 335,
+    "KI.rows": 513,
+    "KI.Implemented": 336,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/2c4f85f83db103d20adf8a1e9d17c4318720de81",
+    "url": "https://github.com/xiaodernan/caesura/commit/40bd619417378469b6a7e6748d2ad5b9f47e66b4",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
