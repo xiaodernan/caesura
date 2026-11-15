@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "f68cffce4fda8967dc623e01da9e05086d971d42",
+  "head": "737fcbb646ba64bf06ee364e87a427f418e659ce",
   "branch": "master",
-  "subject": "fix(tests): world-codex-ui 潮痕线标记大小写修正 与正文一致",
-  "date": "2026-11-15T08:00:50+08:00",
+  "subject": "test(lore): e2e 新增 fts 探针 万籁 engine=fts 百回 工作台 VI/verdict-titles 临时根挪出 .scratch/ 防 ENOENT console-gen 60s 超时放宽至 300s 注册纪律文档化 F-115",
+  "date": "2026-11-15T09:01:24+08:00",
   "kv": {
     "KI.rows": 482,
     "KI.Implemented": 305,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/f68cffce4fda8967dc623e01da9e05086d971d42",
+    "url": "https://github.com/xiaodernan/caesura/commit/737fcbb646ba64bf06ee364e87a427f418e659ce",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
