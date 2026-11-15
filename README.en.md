@@ -27,12 +27,13 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 ```
 
 **Live**: <https://xiaodernan.github.io/caesura/?fresh=1> (always rebuilds from `master`)  
-- Tutorial: <https://xiaodernan.github.io/caesura/tutorial/> (bilingual · 8 steps · lives with the game) ·  
+- Tutorial: <https://xiaodernan.github.io/caesura/tutorial/> (bilingual · 9 steps · lives with the game) ·  
 - Console: <https://xiaodernan.github.io/caesura/console/> (Wave 56 / Eight-Region Worldview panel) ·  
 - Cast Roster: <https://xiaodernan.github.io/caesura/cast/> (Cast roster — 15 roles · regions · NPCs · bosses · bilingual EN/zh)  
 - World Codex: <https://xiaodernan.github.io/caesura/codex/> (52 real project texts · bilingual BM25 in-browser index · no network · no LLM · added 2026-11-15)  
 - "Salt" (original short story): <https://xiaodernan.github.io/caesura/story/> (Windbell Coast · the Listening Post · bilingual · zero LLM · added 2026-11-15)  
 - "The Nameless Stone" (original short story, no. 2): <https://xiaodernan.github.io/caesura/story/unnamed-stone/> (Resthold · at the foot of the hill · bilingual · zero LLM · added 2026-11-15)  
+- "The Empty Bar" (original short story, no. 3): <https://xiaodernan.github.io/caesura/story/empty-bar/> (Unfinished Hall · seventy-three years of rotation · Hersil · bilingual · zero LLM · added 2026-11-15)  
 - Sync truth: `https://raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json`
 
 ## Where to read

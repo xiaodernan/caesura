@@ -27,6 +27,8 @@ const ENDPOINTS = [
   { name: 'story-2', url: 'https://xiaodernan.github.io/caesura/story/unnamed-stone/', marker: '无名碑' },
   { name: 'console', url: 'https://xiaodernan.github.io/caesura/console/', marker: '集大成' },
   { name: 'site-latest', url: 'https://raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json', marker: '"schema": 1' },
+  { name: 'hub', url: 'https://xiaodernan.github.io/', marker: '/caesura/story/' },
+  { name: 'story-3', url: 'https://xiaodernan.github.io/caesura/story/empty-bar/', marker: '空拍子' },
 ]
 
 const asJson = argv.includes('--json')
