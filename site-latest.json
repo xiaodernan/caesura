@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "c3eeddb6218f22c877f8c5178307576e77447076",
+  "head": "67780910ec0e596efc0f627f5a2925f8a7d5ea4c",
   "branch": "master",
-  "subject": "feat(spring): caesura-lore 缓存降级自持 + 启动预热 LoreWarmup 首个请求即 hit Redis 挂了 degradedRequests 记账不打挂主链路 实机四组读数",
-  "date": "2026-11-15T09:44:34+08:00",
+  "subject": "docs(workplan): F-119 公开站并发静态读数 登记 6 端点 192 GET 零错误",
+  "date": "2026-11-15T09:46:54+08:00",
   "kv": {
     "KI.rows": 482,
     "KI.Implemented": 305,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/c3eeddb6218f22c877f8c5178307576e77447076",
+    "url": "https://github.com/xiaodernan/caesura/commit/67780910ec0e596efc0f627f5a2925f8a7d5ea4c",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
