@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "65b51a1abed14ae174b17c8d13050616f05f5c6d",
+  "head": "829a1080aa75ac38414989da008da1810317422e",
   "branch": "master",
-  "subject": "feat(story): 篇十《第一钟》(创世) 上线 + anthology 十篇 + smoke:live 18 入口",
-  "date": "2026-11-15T19:18:05+08:00",
+  "subject": "feat(tooling): 离线便携 PDF artifact 流水线 KI-578",
+  "date": "2026-11-15T20:27:14+08:00",
   "kv": {
-    "KI.rows": 495,
-    "KI.Implemented": 318,
+    "KI.rows": 496,
+    "KI.Implemented": 319,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/65b51a1abed14ae174b17c8d13050616f05f5c6d",
+    "url": "https://github.com/xiaodernan/caesura/commit/829a1080aa75ac38414989da008da1810317422e",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
