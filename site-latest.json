@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "a49b4b16ffba92a6741e1dd4ff16aff46b9d6bc9",
-  "branch": "master",
-  "subject": "content(atlas): 收束篇《余响集·第十二个听者》· KI-590 (Atlas 12 chapters)",
-  "date": "2026-11-16T01:18:02+08:00",
+  "head": "ce0b44684187db0b73f1ea3951fd9b62bb3362eb",
+  "branch": "HEAD",
+  "subject": "content(story): 《余响集》故事站补齐篇十一《暗潮》与篇十二《后记·第十二个听者》 · 第 22 处刻痕「从未敲过的钟」 · KI-591/592",
+  "date": "2026-11-16T03:10:14+08:00",
   "kv": {
-    "KI.rows": 508,
-    "KI.Implemented": 331,
+    "KI.rows": 510,
+    "KI.Implemented": 333,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/a49b4b16ffba92a6741e1dd4ff16aff46b9d6bc9",
+    "url": "https://github.com/xiaodernan/caesura/commit/ce0b44684187db0b73f1ea3951fd9b62bb3362eb",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
