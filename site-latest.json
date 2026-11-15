@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "bd297ef38c937f503f7a1104297c60e23c7936d9",
+  "head": "75784a343e19dbb3ba4ed243864edbb1907a62f5",
   "branch": "master",
-  "subject": "feat(site): 原创短篇之三《空拍子》 未竟厅 · 七十三年轮值 · 恩希尔与空拍子 /caesura/story/empty-bar/ 双语 互链 README 双语并轨 smoke:live 第十条入口",
-  "date": "2026-11-15T10:14:58+08:00",
+  "subject": "fix(ui): 前端美化+防重叠灰度分池文本截断 面板头右侧标签防挤占 kv行 baseline+wrap 防溢出",
+  "date": "2026-11-15T13:17:25+08:00",
   "kv": {
     "KI.rows": 482,
     "KI.Implemented": 305,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/bd297ef38c937f503f7a1104297c60e23c7936d9",
+    "url": "https://github.com/xiaodernan/caesura/commit/75784a343e19dbb3ba4ed243864edbb1907a62f5",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
