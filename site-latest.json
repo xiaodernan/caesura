@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "f74aad953eeacab5178ce9ff06ee6f6eb98cf1c3",
+  "head": "f68cffce4fda8967dc623e01da9e05086d971d42",
   "branch": "master",
-  "subject": "feat(world): 刻痕扩容至 14 处 lore 52 条 雾语林回音树 破拍营地未数拍石 风钟海岸盐龛潮痕 双语文案同轨 Atlas 手册 codex 测试全部并轨",
-  "date": "2026-11-15T07:54:11+08:00",
+  "subject": "fix(tests): world-codex-ui 潮痕线标记大小写修正 与正文一致",
+  "date": "2026-11-15T08:00:50+08:00",
   "kv": {
     "KI.rows": 482,
     "KI.Implemented": 305,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/f74aad953eeacab5178ce9ff06ee6f6eb98cf1c3",
+    "url": "https://github.com/xiaodernan/caesura/commit/f68cffce4fda8967dc623e01da9e05086d971d42",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
