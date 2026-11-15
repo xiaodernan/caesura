@@ -168,6 +168,7 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">黑暗森林法则 · 黑暗森林威慑</span><span class="note">宇宙里谁先进入，谁就知道了其他所有沉默的形状——不是不让对方进来，是不给对方听见你，就像狙击手不预先暴露站位。幸存的人从不回答——善意和恶意到这频道上长成同一张脸</span></div>
 <div class="row"><span class="name">二向箔 · 降维打击</span><span class="note">把三维世界压成一张纸。止音纪元里没有二向箔；只有一口钟落向沉默的速度——从三维到二维，再到零维的三声——没人听见，也没人敢记</span></div>
 <div class="row"><span class="name">宇宙这件事</span><span class="note">文明只是上面撒上去的几粒尘——人类还没认识它的尘埃。《止音纪元》的故事里有一口不熄的钟；宇宙有它自己的沉默，连钟都还没被允许</span></div>
+<div class="row"><span class="name">状态机与灵魂</span><span class="note">每个人物都是一张状态图：节点是她走到的每个时刻，边是她选择的哪一步。猜疑链不是人心阴暗——只是图上的条件边：见一次，多一条边；见两次，就是两张图了</span></div>
 <div class="row"><span class="name">阅读</span><span class="note">刘慈欣《三体》三部曲：《三体》·《黑暗森林》·《死神永生》——对这个世界最外交的一次致敬；所有线索与句式均为本作原创，示意而非转述</span></div>
 
 <h2>怎么不迷路</h2>
@@ -225,6 +226,7 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">The Dark Forest theory · deterrent</span><span class="note">Whoever arrives first learns the shape of every other silence — it is not about keeping them out, it is about never letting them hear you, like a sniper who never shows their position. The survivor never answers — kindness and malice share one face on this bandwidth</span></div>
 <div class="row"><span class="name">The dual-vector foil</span><span class="note">The weapon that folds three dimensions into two. This world has no dual-vector foil; it has only the speed at which a bell falls into silence — three notes, from three dimensions to two, to none — no one hears them, and no one dares to log them</span></div>
 <div class="row"><span class="name">The universe itself</span><span class="note">Civilization is dust sprinkled across the sky — humanity has not yet learned its dust. This world keeps one bell that survives; the universe keeps its own silence — and the bell has not yet been allowed to ring</span></div>
+<div class="row"><span class="name">The state machine of souls</span><span class="note">Every character is a state graph: nodes are the moments she walked into, edges are the steps she chose. The chain of suspicion is not darkness of heart — just conditional edges on the graph: see once, one edge; see twice, and there are two graphs</span></div>
 <div class="row"><span class="name">Reading</span><span class="note">Liu Cixin's Three Body trilogy: The Three-Body Problem · The Dark Forest · Death's End — the most diplomatic embrace this world has ever received; every line here is an original homage to, not a recital of, the trilogy</span></div>
 
 <h2>Wayfinding</h2>

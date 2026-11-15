@@ -88,6 +88,9 @@ describe('console 前端稳定性门钉（F-124 的长期护栏）', () => {
       "'《后记 · 第十二个听者》': 'Epilogue · The Twelfth Listener',",
       "'篇十一': 'No. 11',",
       "'篇十二': 'No. 12',",
+      "'STATEGRAPH · 状态图内核': 'State Graph Kernel',",
+      "'节点是纯函数：同入参同出参（×100）': 'Nodes are pure: same input → same output (×100)',",
+      "'interrupt() 人审回路：挂起→审批→同 thread 恢复（interrupt → resume）': 'interrupt() human-in-the-loop: suspend → approve → resume on the same thread',",
     ]) {
       expect(APP, `missing LANG_EXACT pair: ${pair}`).toContain(pair)
     }

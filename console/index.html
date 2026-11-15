@@ -1098,6 +1098,46 @@
       <div class="map-bells" aria-hidden="true"><span style="color:#8fd0db">♭E2</span><span>♭E</span><span>♭F</span><span>♭A</span><span>♭C</span><span>♭D</span><span>♭G</span><span class="bell-final">♭B</span></div>
       <p class="note map-bells-note">♭E2 海岸低八度 + ♭E..♭B 七声钟记（对应七场 Boss 根音符；♭B = 未完之殿真空）</p>
     </article>
+    <!-- STATEGRAPH · 状态图内核（KI-594：LangGraph 式状态图微内核教学 —— 节点/条件边/状态归约/检查点回放/人审 interrupt；与 CAESURA NPC 对话图/LLM 创作管线同构；零网络 · 纯浏览器现算） -->
+    <article class="panel panel-stategraph">
+      <div class="panel-head"><h2>STATEGRAPH · 状态图内核</h2><span class="hint">plan → write → qa → commit · qa 回环条件边 · 与 CAESURA 对话图同构</span></div>
+      <div class="sg-graph" id="sg-graph" role="img" aria-label="StateGraph — four nodes plan, write, qa, commit, with a conditional edge from qa back to write">
+        <svg viewBox="0 0 560 210" width="100%" role="presentation">
+          <defs>
+            <marker id="sg-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#c9a23a"/>
+            </marker>
+          </defs>
+          <g class="sg-node" data-node="plan">
+            <rect x="10" y="70" width="120" height="62" rx="10" fill="#1c1a17" stroke="#c9a23a" stroke-width="1.5"/>
+            <text x="70" y="97" text-anchor="middle" font-size="15" fill="#e3c469" font-family="Georgia, serif" letter-spacing=".1em">plan</text>
+            <text x="70" y="117" text-anchor="middle" font-size="9" fill="#a9a59a" font-family="Consolas, monospace">规划 · outline</text>
+          </g>
+          <g class="sg-node" data-node="write">
+            <rect x="160" y="70" width="120" height="62" rx="10" fill="#1c1a17" stroke="#4f9b86" stroke-width="1.5"/>
+            <text x="220" y="97" text-anchor="middle" font-size="15" fill="#9fd6c5" font-family="Georgia, serif" letter-spacing=".1em">write</text>
+            <text x="220" y="117" text-anchor="middle" font-size="9" fill="#a9a59a" font-family="Consolas, monospace">撰写 · draft</text>
+          </g>
+          <g class="sg-node" data-node="qa">
+            <rect x="310" y="70" width="110" height="62" rx="10" fill="#1c1a17" stroke="#c9a23a" stroke-width="1.5"/>
+            <text x="365" y="97" text-anchor="middle" font-size="15" fill="#e3c469" font-family="Georgia, serif" letter-spacing=".1em">qa</text>
+            <text x="365" y="117" text-anchor="middle" font-size="9" fill="#a9a59a" font-family="Consolas, monospace">自检 · verify</text>
+          </g>
+          <g class="sg-node" data-node="commit">
+            <rect x="450" y="70" width="100" height="62" rx="10" fill="#151310" stroke="#8f6f43" stroke-width="1.5"/>
+            <text x="500" y="97" text-anchor="middle" font-size="13" fill="#c9a23a" font-family="Georgia, serif" letter-spacing=".08em">commit</text>
+            <text x="500" y="117" text-anchor="middle" font-size="9" fill="#a9a59a" font-family="Consolas, monospace">入库 · seal</text>
+          </g>
+          <line x1="130" y1="101" x2="156" y2="101" stroke="#c9a23a" stroke-width="2" marker-end="url(#sg-arrow)"/>
+          <line x1="280" y1="101" x2="306" y2="101" stroke="#c9a23a" stroke-width="2" marker-end="url(#sg-arrow)"/>
+          <line x1="420" y1="101" x2="446" y2="101" stroke="#c9a23a" stroke-width="2" marker-end="url(#sg-arrow)"/>
+          <path d="M 365 132 C 365 188, 220 188, 220 132" fill="none" stroke="#e0784a" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#sg-arrow)"/>
+          <text x="292" y="178" text-anchor="middle" font-size="9" fill="#e0784a" font-family="Consolas, monospace">qa 不过 → write</text>
+        </svg>
+      </div>
+      <div class="sg-verdicts" id="sg-verdicts"></div>
+      <p class="note" id="sg-note">—</p>
+    </article>
     <article class="panel panel-story">
       <div class="panel-head"><h2 id="story-chain-title">余响十二篇 · 沉默的编年史</h2><span class="hint">原创短篇 · 双语对照 · 零 LLM · 全集入口 → 余响集</span></div>
       <div class="story-chain">

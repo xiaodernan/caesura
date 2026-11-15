@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>止音纪元 · 世界谱 / CAESURA · The World Codex</title>
-<meta name="description" content="《止音纪元》真实世界的双语检索页 — BM25 浏览器内检索：八区、首领、结局、术语、十四处刻痕。零网络 · 零 LLM · 零服务端。 / Bilingual BM25 search over the real world of The Epoch of Hush — eight reaches, bosses, endings, terms, fourteen carved marks. No network, no LLM, no server.">
+<meta name="description" content="《止音纪元》真实世界的双语检索页 — BM25 浏览器内检索：八区、首领、结局、术语（含状态图 StateGraph 词条）、二十二处刻痕。零网络 · 零 LLM · 零服务端。 / Bilingual BM25 search over the real world of The Epoch of Hush — eight reaches, bosses, endings, terms (incl. State Graph), twenty-two carved marks. No network, no LLM, no server.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🔕</text></svg>">
 <style>
   :root {
@@ -296,6 +296,11 @@ const CODEX = [
     body:{zh:'终章那「唯一不响的石」—— HERSIL 的碑文。它不是威胁；它是「沉默不是空白，是等待」的证明。', en:'The single unringing stone of the finale — HERSIL’s inscription. Not a threat; proof that silence isn’t blank — it’s waiting.'} },
   { cat:'term', title:{zh:'缄默 Unfinished Hall', en:'The Unfinished Hall'},
     body:{zh:'终末大殿，所有钟的余响在此收束。每一记敲过的钟都在此有住址——第四口钟悬在梁上的那一刻，你听见的第四个字就是你自己。', en:'The terminal hall where every resonance comes home. Every toll has an address here — when the fourth bell hangs from the beam, the fourth word you hear is your own.'} },
+
+  { cat:'term', title:{zh:'状态图 StateGraph', en:'State Graph'},
+    body:{zh:'LangGraph 的图：节点是纯函数、条件边按 state 路由、状态用 reducer（Annotated[list, add]）归约合并、Checkpointer 以 thread_id 持久化恢复、interrupt() 挂起人审环节。CÆSURA 每个 NPC 都是一张状态图（DLG_* 节点 + flag 条件边）——dialogue.json 冻结即图冻结；LLM 创作管线 warmup→plan→write→qa→commit 亦是一张图。玩家进程零 LLM。', en:'A LangGraph: nodes are pure functions; conditional edges route on state; state merges through a reducer (Annotated[list, add]); a checkpointer persists and replays by thread_id; interrupt() suspends for human review. Every NPC in the game is a state graph (DLG_* nodes + flag edges) — a frozen dialogue.json is a frozen graph; the authoring pipeline warmup→plan→write→qa→commit is one too. Zero LLM in the player process.'} },
+  { cat:'term', title:{zh:'检查点回放 Checkpointer replay', en:'Checkpointer replay'},
+    body:{zh:'thread_id + state 指纹 ⇒ 第二次 invoke 直接读检查点，不重算、不复制、结果逐字节一致——这是「灵魂不走完同一路」的反面：守夜人 Daemon 线程走到哪，下次就接着哪开始，零副作用。', en:'thread_id + state fingerprint ⇒ the second invoke replays the checkpoint verbatim — no recompute, no duplicate effects. The counterpart of “the soul never walks the same road”: wherever the Daemon thread stopped, the next pass resumes exactly there, side effects intact.'} },
 
   /* ---------- 刻痕 the carved marks ---------- */
   { cat:'mark', title:{zh:'刻痕 · 初息碑（休垒）', en:'Mark · First-Breath Slab (Resthold)'},

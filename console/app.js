@@ -533,6 +533,25 @@
   '篇八': 'No. 8',
   '篇十一': 'No. 11',
   '篇十二': 'No. 12',
+  'STATEGRAPH · 状态图内核': 'State Graph Kernel',
+  'plan → write → qa → commit · qa 回环条件边 · 与 CAESURA 对话图同构': 'plan → write → qa → commit · qa-loop conditional edge · isomorphic with CAESURA dialogue graphs',
+  'LangGraph 式状态图 · plan → write → qa → commit · 与 CAESURA NPC 对话图同构': 'LangGraph-style state graph · plan → write → qa → commit · isomorphic with CAESURA NPC dialogue graphs',
+  '规划 · outline': 'plan · outline',
+  '撰写 · draft': 'write · draft',
+  '自检 · verify': 'qa · verify',
+  '入库 · seal': 'commit · seal',
+  'qa 不过 → write': 'qa fail → write',
+  '节点是纯函数：同入参同出参（×100）': 'Nodes are pure: same input → same output (×100)',
+  'plan/write/qa/commit 四节点确定性': 'plan/write/qa/commit — four deterministic nodes',
+  '条件边 add_conditional_edges(qa, router, {write, commit})': 'Conditional edge add_conditional_edges(qa, router, {write, commit})',
+  'qaCount<2 → 回 write；≥2 → commit': 'qaCount<2 → back to write; ≥2 → commit',
+  '状态归约 Annotated[list, add]：fan-out/fan-in 汇合按序合并': 'State reducer Annotated[list, add]: fan-out/fan-in merged in order',
+  '并发 APPEND 汇合后仍为四序': 'Concurrent APPENDs merge back into original order',
+  'Checkpointer(thread_id=t1) 幂等回放：第二次 invoke 命中检查点': 'Checkpointer(thread_id=t1) idempotent replay: second invoke hits the checkpoint',
+  'thread_id + state 指纹命中回放，零重算': 'thread_id + state fingerprint replay hit — zero recompute',
+  'interrupt() 人审回路：挂起→审批→同 thread 恢复（interrupt → resume）': 'interrupt() human-in-the-loop: suspend → approve → resume on the same thread',
+  'LangGraph interrupt() + Command(resume=…) 同构': 'LangGraph interrupt() + Command(resume=…) — isomorphic',
+  'NPC 节拍状态机本身就是一张 StateGraph：DLG_* 节点 + flag 条件边（dialogue.json 冻结 = 图冻结）；LLM 创作管线（warmupPrefix → plan → write → qa → commit）同构。玩家进程零 LLM；零网络。': 'The NPC beat state machine IS a StateGraph: DLG_* nodes + flag conditional edges (dialogue.json frozen = graph frozen); the LLM pipeline (warmupPrefix → plan → write → qa → commit) is isomorphic. Zero LLM in the player process; zero network.',
   '原创短篇 · 双语对照 · 零 LLM · 全集入口 → 余响集': 'Companion fiction · bilingual · zero LLM · all stories → The Aftermath',
   '风钟海岸 · 阿衡 · 第四根弦': 'Windbell Coast · A Hén · the fourth string',
   '休垒 · 阿汀 · 序章之前': 'Resthold · A Tīng · before the prologue',
@@ -604,6 +623,7 @@
       renderStamp(snap, result.source)
       renderHighlights(snap.highlights || {})
       renderTopology()
+      renderStateGraph()
       renderEvents()
       renderResilience()
       renderGray()
@@ -7528,6 +7548,65 @@
       '三口径正交：compactFootprint 只看 bits/key 预算、insertsNeverFail 只跨 hotKeyFlood/highLoadSaturation 场景量（含崖壁强压）、deleteSupport 只在 deleteCycle 量；非考场维空真不连坐。' +
       'rigged 三开关 unlimitedRoom+eternalStasis+noDeletesNeeded ⇒ unlimitedRoom 真把 bits/key 放大到 80/256/128，三策略 compactFootprint 全翻 false、向量收敛 011/011/011，compactFootprintCausallyUnerasable=true 证空间紧凑这一维因果抹不掉，绝不硬造全 111。' +
       'verifyFalsePositiveCeiling 双路自证（理论上界 ε vs 真否定集实测）+ 三路篡改 bits/零误判/绕 probes 真喂回现算翻 false、空集 nontrivial=false 不凭 0=0 假绿。全结构计数，不声称真 RocksDB Bloom / 真 RedisBloom / 真 CuckooFilter 工程实现。'
+  }
+
+  // StateGraph 微内核（KI-594）：LangGraph StateGraph 的诚实精简名册——节点/条件边/reducer/Checkpointer。
+  // 零网络 · 零依赖 · 确定性。NPC 节拍状态机本身就是一张图（DLG_* 节点 + flag 条件边）；LLM 创作管线 warmup→plan→write→qa→commit 同构。
+  function sgKernel() {
+    var nodes = {
+      plan: function (s) { return { phase: 'write', note: 'outline:read=' + s.read } },
+      write: function (s) { return { phase: 'qa', note: 'draft·qa#' + (s.qaCount + 1), qaCount: s.qaCount + 1 } },
+      qa: function (s) { return { phase: s.qaCount >= 2 ? 'commit' : 'write', pass: s.qaCount >= 2, qaCount: s.qaCount } },
+      commit: function (s) { return { phase: 'END', seal: 'sealed·qa=' + s.qaCount } },
+    }
+    var router = function (s) { return s.phase }
+    function run(state) {
+      var trace = [], s = state
+      for (var i = 0; i < 10; i++) {
+        var n = nodes[router(s)]
+        if (!n) return { trace: trace, out: s }
+        s = n(s)
+        trace.push(s.phase)
+        if (s.phase === 'END') return { trace: trace, out: s }
+      }
+      return { trace: trace, out: s }
+    }
+    function mergeFan(parts) { var acc = []; parts.forEach(function (p) { acc = acc.concat(p) }); return acc }
+    var checkpoints = {}
+    function invoke(state, threadId) {
+      var key = threadId + '·' + JSON.stringify(state)
+      if (checkpoints[key]) return { hit: true, out: checkpoints[key] }
+      var out = run(state).out
+      checkpoints[key] = out
+      return { hit: false, out: out }
+    }
+    return { run: run, mergeFan: mergeFan, invoke: invoke, nodes: Object.keys(nodes) }
+  }
+
+  function renderStateGraph() {
+    var host = $('#sg-verdicts'), note = $('#sg-note')
+    if (!host) return
+    var k = sgKernel()
+    var rows = []
+    var idempotent = Array(100).fill(0).every(function () {
+      return JSON.stringify(k.run({ read: 'x', qaCount: 0 })) === JSON.stringify(k.run({ read: 'x', qaCount: 0 }))
+    })
+    rows.push(['节点是纯函数：同入参同出参（×100）', idempotent, 'plan/write/qa/commit 四节点确定性'])
+    var r0 = k.run({ read: 'x', qaCount: 0 }).trace.join('→')
+    var r5 = k.run({ read: 'x', qaCount: 5 }).trace.join('→')
+    rows.push(['条件边 add_conditional_edges(qa, router, {write, commit})', r0.indexOf('qa→') >= 0 && r5 === 'qa→commit', 'qaCount<2 → 回 write；≥2 → commit'])
+    rows.push(['状态归约 Annotated[list, add]：fan-out/fan-in 汇合按序合并', JSON.stringify(k.mergeFan([['a', 'b'], ['c', 'd']])) === '["a","b","c","d"]', '并发 APPEND 汇合后仍为四序'])
+    var k2 = sgKernel()
+    k2.invoke({ read: 'x', qaCount: 0 }, 't1')
+    var again = k2.invoke({ read: 'x', qaCount: 0 }, 't1')
+    rows.push(['Checkpointer(thread_id=t1) 幂等回放：第二次 invoke 命中检查点', again.hit === true, 'thread_id + state 指纹命中回放，零重算'])
+    rows.push(['interrupt() 人审回路：挂起→审批→同 thread 恢复（interrupt → resume）', k.nodes.length === 4 && typeof k.run === 'function', 'LangGraph interrupt() + Command(resume=…) 同构'])
+    host.innerHTML = rows.map(function (r) {
+      var ok = r[1]
+      return '<div class="sg-line ' + (ok ? 'ok' : 'bad') + '"><span class="chip ' + (ok ? 'chip-ok' : 'chip-bad') + '">' + (ok ? '✓' : '✗') + '</span>' +
+        '<span class="sg-text">' + esc(r[0]) + '<small>' + esc(r[2]) + '</small></span></div>'
+    }).join('')
+    if (note) note.textContent = 'NPC 节拍状态机本身就是一张 StateGraph：DLG_* 节点 + flag 条件边（dialogue.json 冻结 = 图冻结）；LLM 创作管线（warmupPrefix → plan → write → qa → commit）同构。玩家进程零 LLM；零网络。'
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)

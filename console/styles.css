@@ -3866,3 +3866,16 @@ body[data-fullscreen="true"] .row > .panel { grid-column: span 1; }
   .chain-item { grid-template-columns: auto 1fr auto; }
   .chain-item .chain-arc { grid-column: 1 / -1; text-align: left; }
 }
+/* StateGraph panel (KI-594) */
+.panel-stategraph .sg-graph{background:var(--panel,#1c1a17);border:1px solid var(--line,rgba(243,237,224,.12));border-radius:10px;padding:12px;margin:8px 0 12px}
+.panel-stategraph .sg-graph .sg-node rect{transition:stroke .3s}
+.panel-stategraph .sg-graph .sg-node:hover rect{stroke:#e3c469}
+.sg-verdicts{display:flex;flex-direction:column;gap:8px}
+.sg-line{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid rgba(243,237,224,.1);border-radius:8px;overflow-wrap:anywhere}
+.sg-line.ok{border-color:rgba(80,200,150,.35)}
+.sg-line.bad{border-color:rgba(224,120,74,.4)}
+.sg-line .sg-text small{display:block;color:rgba(243,237,224,.55);font-size:.78em;margin-top:2px}
+.sg-line .chip{display:inline-block;min-width:1.4em;text-align:center;font-weight:700;border-radius:6px;padding:2px 6px}
+.sg-line .chip-ok{color:#7de0b0;background:rgba(80,200,150,.15);border:1px solid rgba(80,200,150,.4)}
+.sg-line .chip-bad{color:#f0a07a;background:rgba(224,120,74,.15);border:1px solid rgba(224,120,74,.4)}
+@media (max-width: 720px){.sg-graph svg{width:100%;height:auto}}
