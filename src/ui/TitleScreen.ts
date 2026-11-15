@@ -122,10 +122,45 @@ const CSS = `
   letter-spacing:.18em;cursor:pointer;transition:border-color .2s ease,color .2s ease}
 #title .lang-chip:hover{color:#f0e6c2;border-color:#c9b258}
 #title .lang-chip:focus-visible{outline:1px solid #c9b258;outline-offset:2px}
+/* == half-immersed bell sea layer (inline SVG, deterministic, zero assets) == */
+#title .sea{position:absolute;left:0;right:0;bottom:0;height:68vh;overflow:hidden;pointer-events:none;z-index:0;opacity:.66;mask-image:radial-gradient(ellipse 96% 100% at 50% 100%,#000 48%,transparent 94%);-webkit-mask-image:radial-gradient(ellipse 96% 100% at 50% 100%,#000 48%,transparent 94%)}
+#title .sea svg{width:100%;height:100%;display:block}
+#title h1{position:relative;z-index:1}
 `
 
 /** 静态余烬粒子层：14 粒子、位置/周期/延迟全部写死在 CSS 的 nth-child 里（确定性、无随机、离屏即关） */
 const EMBERS = Array.from({ length: 14 }, () => '<i></i>').join('')
+
+/**
+ * 标题屏背景层：半沉的钟——《止音纪元》最核心的意象（半沉损毁的钟，从雾海里露出来一半）。
+ * 纯内联 SVG、零外部素材、零随机（每个圆点坐标都是写死的），与 .embers/.astro 层叠；
+ * 边缘由 CSS mask 渐隐进背景色，不压任何 UI 文字。
+ */
+const SEA_STARS = [
+  [86, 40, 1.5, .8], [172, 96, 1.1, .55], [240, 28, 1.8, .9], [318, 142, 1.2, .5], [364, 62, 1.5, .75],
+  [428, 22, 1.0, .45], [482, 118, 1.7, .85], [540, 74, 1.2, .6], [598, 30, 1.9, .9], [646, 152, 1.1, .5],
+  [702, 46, 1.6, .8], [748, 108, 1.2, .55], [806, 18, 1.8, .85], [854, 132, 1.1, .45], [912, 66, 1.6, .75],
+  [968, 24, 1.2, .55], [1016, 138, 1.8, .9], [1068, 92, 1.4, .65], [1098, 30, 1.1, .5], [148, 168, 1.0, .4],
+  [272, 178, 1.3, .6], [392, 190, 1.0, .4], [662, 196, 1.3, .55], [872, 186, 1.0, .4], [1120, 168, 1.3, .55]
+].map(([x, y, r, o]) => `<circle cx="${x}" cy="${y}" r="${r}" opacity="${o}"/>`).join('')
+
+const SEA_ART = `<div class="sea" aria-hidden="true"><svg viewBox="0 0 1200 560" preserveAspectRatio="xMidYMax meet">
+<defs>
+<linearGradient id="tsgSeaBell" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b241d"/><stop offset=".55" stop-color="#1b1714"/><stop offset="1" stop-color="#12100e"/></linearGradient>
+<radialGradient id="tsgSeaGlow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffb86b" stop-opacity=".55"/><stop offset=".55" stop-color="#c9b458" stop-opacity=".16"/><stop offset="1" stop-color="#c9b458" stop-opacity="0"/></radialGradient>
+</defs>
+<g fill="#e8dfcb">${SEA_STARS}</g>
+<rect x="0" y="428" width="1200" height="1.4" fill="#c9b458" opacity=".06"/>
+<ellipse cx="600" cy="430" rx="250" ry="26" fill="url(#tsgSeaGlow)"/>
+<path d="M600 128 C505 128 455 178 448 258 C440 340 385 380 372 432 L828 432 C815 380 760 340 752 258 C745 178 695 128 600 128 Z" fill="url(#tsgSeaBell)" stroke="#c9b458" stroke-opacity=".3" stroke-width="2"/>
+<path d="M570 128 C570 112 630 112 630 128 Z" fill="#2b241d" stroke="#c9b458" stroke-opacity=".3" stroke-width="2"/>
+<polyline points="655,205 628,262 662,318 626,378" fill="none" stroke="#06080f" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>
+<ellipse cx="600" cy="434" rx="120" ry="6" fill="none" stroke="#ffc46b" stroke-opacity=".5" stroke-width="1.5"/>
+<ellipse cx="600" cy="443" rx="212" ry="8" fill="none" stroke="#ffc46b" stroke-opacity=".32" stroke-width="1.2"/>
+<ellipse cx="600" cy="455" rx="318" ry="10" fill="none" stroke="#ffc46b" stroke-opacity=".18" stroke-width="1"/>
+<ellipse cx="600" cy="470" rx="440" ry="12" fill="none" stroke="#ffc46b" stroke-opacity=".09" stroke-width="1"/>
+<g stroke="#ffd98a" stroke-opacity=".28" stroke-width="2" stroke-linecap="round"><line x1="556" y1="458" x2="556" y2="505"/><line x1="600" y1="460" x2="600" y2="528"/><line x1="644" y1="458" x2="644" y2="500"/></g>
+</svg></div>`
 
 export interface TitleHooks {
   /** 选定出身开新弦：由 main.ts 调 `rpg.restring(id)` + 开环（确认屏之后才会走到） */
@@ -347,6 +382,7 @@ export class TitleScreen {
     return `
       <div class="astro" aria-hidden="true"></div>
       <div class="vignette" aria-hidden="true"></div>
+      ${SEA_ART}
       <div class="embers" aria-hidden="true">${EMBERS}</div>
       <h1>${t('ui.title.h1')}</h1>${this.renderLangChip()}
       <div class="sub">${t('ui.title.sub')}</div>
@@ -369,6 +405,7 @@ export class TitleScreen {
     return `
       <div class="astro" aria-hidden="true"></div>
       <div class="vignette" aria-hidden="true"></div>
+      ${SEA_ART}
       <div class="embers" aria-hidden="true">${EMBERS}</div>
       <h1>${t('ui.title.h1')}</h1>${this.renderLangChip()}
       <div class="sub">${fault ? t('ui.title.hint.sub.fault') : t('ui.title.sub.read')}</div>
@@ -387,6 +424,7 @@ export class TitleScreen {
     return `
       <div class="astro" aria-hidden="true"></div>
       <div class="vignette" aria-hidden="true"></div>
+      ${SEA_ART}
       <div class="embers" aria-hidden="true">${EMBERS}</div>
       <h1>${t('ui.title.h1.newgame')}</h1>${this.renderLangChip()}
       <div class="sub">${warn}</div>
