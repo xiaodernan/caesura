@@ -1402,6 +1402,18 @@
           "y": 0,
           "z": -300
         }
+      },
+      {
+        "id": "in_brokenbar_metronome_marks",
+        "kind": "inspect",
+        "verb": "听收工后石堆里自己响的节拍",
+        "verbKey": "interact.listenEmptyMetronome",
+        "notifyKey": "world.flavor.camp.emptyMetronome",
+        "pos": {
+          "x": 16,
+          "y": 0,
+          "z": -144
+        }
       }
     ],
     "music": {
