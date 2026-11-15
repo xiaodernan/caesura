@@ -20,7 +20,7 @@ npm run dev            # Vite dev server → http://localhost:5173/?fresh=1
 ## Verify
 
 ```bash
-npm run check          # tsc --noEmit + validate:data + full suite (6957 legs, 535 files, 0 reds)
+npm run check          # tsc --noEmit + validate:data + full suite (6963 legs, 536 files, 0 reds)
 npm test               # the suite, one green pass after another
 npm run validate:data  # schema linter — current: 0 ERROR / 2 WARN (pre-registered)
 npm run build          # tsc + vite build + dist text scan — 0 findings
@@ -37,8 +37,9 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - "The Ledger" (original short story, no. 4): <https://xiaodernan.github.io/caesura/story/ledger/> (Resthold · the page Meg never dared to close · bilingual · zero LLM · added 2026-11-15)  
 - "The Garden of Return" (original short story, no. 5): <https://xiaodernan.github.io/caesura/story/garden/> (The Afterland · the sixth sound · The Owner of the Old Bell · bilingual · zero LLM · added 2026-11-15)  
 - "The Rain Tribunal" (original short story, no. 6): <https://xiaodernan.github.io/caesura/story/tribunal/> (The Afterland · the Rainbell Valley · The Drowning Jurist · seven years between sessions · bilingual · zero LLM · added 2026-11-15)  
-- "The Aftermath" (complete short fiction, whole-volume portal): <https://xiaodernan.github.io/caesura/story/anthology/> (all seven stories · epic-prelude tease · ahead of EPIC-VII · added 2026-11-15)  
+- "The Aftermath" (complete short fiction, whole-volume portal): <https://xiaodernan.github.io/caesura/story/anthology/> (all eight stories · epic-prelude tease · ahead of EPIC-VII · added 2026-11-15)  
 - "The Frostbell" (original short story, no. 7): <https://xiaodernan.github.io/caesura/story/frostbell/> (The Frostbell Cliff · The Last Frostwright · the sound the ice kept · bilingual · zero LLM · added 2026-11-15)  
+- "The Thousand Doors" (original short story, no. 8): <https://xiaodernan.github.io/caesura/story/doors/> (The Arcade of Echoes · the Gatekeeper of a Thousand Doors · bilingual · zero LLM · added 2026-11-15)  
 - Sync truth: `https://raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json`
 
 ## Where to read

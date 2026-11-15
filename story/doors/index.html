@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>千门 / The Thousand Doors · CAESURA 短篇 之八 — 余响新陆 · 回廊钟</title>
+<meta name="description" content="《止音纪元》原创短篇之八 · 回廊钟 · 一千扇通向同一扇门的门，守门人等你说出你敲过哪一扇。双语对照 · 零网络 · 零 LLM。 / The eighth original short story — the Arcade of Echoes. A thousand doors that all open onto the same one; the Gatekeeper only wants to know which one you knocked. Bilingual, offline, zero LLM.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🚪</text></svg>">
+<style>
+  :root {
+    --gold: #d8b98a;
+    --gold-soft: rgba(216,185,138,.32);
+    --ink: #f3ede0;
+    --ink-dim: rgba(243,237,224,.62);
+    --panel: rgba(24,20,14,.78);
+    --serif: "Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#0a0806; color:var(--ink); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; }
+  .bg { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .bg.radial {
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(216,185,138,.12), transparent 60%),
+      radial-gradient(900px 700px at 50% 118%, rgba(110,80,40,.16), transparent 62%),
+      radial-gradient(650px 420px at 88% 104%, rgba(216,185,138,.06), transparent 60%),
+      #0a0806;
+  }
+  .bg.noise { position:fixed; inset:0; z-index:-1; opacity:.05; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .wrap { max-width:860px; margin:0 auto; padding:26px 26px 90px; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .brand { font-size:.8rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; opacity:.9; }
+  .brand a { color:inherit; text-decoration:none; border-bottom:1px dotted rgba(216,185,138,.5); }
+  .brand a:hover { color:#fff4dd; }
+  .toplinks { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toplinks a { font-size:.72rem; color:var(--ink-dim); text-decoration:none; border:1px solid rgba(243,237,224,.14); padding:6px 12px; border-radius:999px; transition:all .22s ease; }
+  .toplinks a:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .lang-row button { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(216,185,138,.12); border:1px solid var(--gold-soft); padding:6px 15px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; }
+  .lang-row button:hover { background:rgba(216,185,138,.22); box-shadow:0 0 16px rgba(216,185,138,.25); }
+
+  [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="en"] .zh-copy { display:none !important; }
+
+  header.hero { text-align:center; padding:52px 14px 30px; }
+  .kicker { font-size:.72rem; letter-spacing:.42em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:20px; }
+  .kicker b { color:var(--gold); font-weight:600; }
+  h1 { font-size:clamp(2.4rem, 9vw, 4rem); font-weight:600; letter-spacing:.16em;
+       background:linear-gradient(180deg,#fff6e3 0%, #d8b98a 28%, #8f6f3d 58%, #43301a 100%);
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+       text-shadow:0 0 90px rgba(216,185,138,.3); }
+  .subtitle { margin-top:14px; font-size:.8rem; color:var(--ink-dim); letter-spacing:.3em; text-transform:uppercase; }
+  .rule { width:170px; height:1px; margin:24px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .meta { margin-top:16px; font-size:.7rem; color:rgba(243,237,224,.45); letter-spacing:.18em; text-transform:uppercase; }
+  .meta a { color:var(--gold); text-decoration:none; }
+
+  article { background:var(--panel); border:1px solid rgba(243,237,224,.1); border-radius:18px; padding:38px 40px 34px; position:relative; }
+  article::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--gold), transparent); opacity:.7; }
+  article p { font-size:1.04rem; line-height:2.02; letter-spacing:.02em; color:rgba(243,237,224,.92); margin-bottom:1.5em; text-indent:2em; overflow-wrap:break-word; }
+  article p.no-indent { text-indent:0; }
+  article p em { color:#ffe9bd; font-style:normal; }
+  article p strong { color:var(--gold); font-weight:600; }
+  .beat { width:100%; text-align:center; margin:.4em 0 1.4em; letter-spacing:.5em; color:rgba(216,185,138,.6); font-size:.8rem; }
+  .coda { text-align:center; font-style:italic; color:rgba(243,237,224,.78); letter-spacing:.06em; margin-top:.6em; }
+
+  .note { margin:26px auto 0; max-width:720px; text-align:center; font-size:.74rem; color:rgba(243,237,224,.42); line-height:1.9; letter-spacing:.04em; }
+  .note a { color:var(--gold); text-decoration:none; border-bottom:1px dotted rgba(216,185,138,.5); }
+
+  footer { margin-top:56px; border-top:1px solid rgba(243,237,224,.09); padding-top:22px; display:flex; flex-wrap:wrap; gap:10px 26px; justify-content:space-between; font-size:.7rem; color:rgba(243,237,224,.4); letter-spacing:.06em; }
+  footer a { color:var(--gold); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @media (max-width:640px) { .wrap { padding:20px 12px 70px; } article { padding:26px 20px 24px; } article p { font-size:.98rem; text-indent:2em; } }
+</style>
+</head>
+<body>
+<div class="bg radial" aria-hidden="true"></div>
+<div class="bg noise" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><a href="/caesura/">CAESURA</a> · 《止音纪元》</div>
+    <div class="toplinks">
+      <a href="/caesura/story/"><span class="zh-copy">《盐》</span><span class="en-copy">“Salt”</span></a>
+      <a href="/caesura/story/empty-bar/"><span class="zh-copy">《空拍子》</span><span class="en-copy">“The Empty Bar”</span></a>
+      <a href="/caesura/story/frostbell/"><span class="zh-copy">《霜锤》</span><span class="en-copy">“The Frostbell”</span></a>
+      <a href="/caesura/story/anthology/"><span class="zh-copy">《余响集》</span><span class="en-copy">The Aftermath</span></a>
+      <a href="/caesura/codex/"><span class="zh-copy">世界谱</span><span class="en-copy">Codex</span></a>
+      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button></span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <p class="kicker zh-copy">短篇 · <b>回廊钟</b> · 之八</p>
+    <p class="kicker en-copy">Short story · <b>The Arcade of Echoes</b> · No. 8</p>
+    <h1 class="zh-copy">千门</h1>
+    <h1 class="en-copy">The Thousand Doors</h1>
+    <p class="subtitle zh-copy">余响新陆 · 回廊钟 · 守门人</p>
+    <p class="subtitle en-copy">The Afterland · the Arcade of Echoes · The Gatekeeper of a Thousand Doors</p>
+    <div class="rule"></div>
+    <p class="meta zh-copy">约 5 分钟 · 与 <a href="/caesura/codex/">世界谱</a> 同源世界观 · 设定册《新六地域》同源 · 零 LLM 撰写</p>
+    <p class="meta en-copy">about 5 minutes · same world as the <a href="/caesura/codex/">codex</a> · from the New Six Lands design canon · written without LLM assistance</p>
+  </header>
+
+  <article>
+    <div class="zh-copy">
+      <p>九年前她迷了路。回廊钟一千扇门，每一扇都和她记忆里那一扇长得一样——门环的锈，门板的裂，门后同样一段很远的回音。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>她走了很多条路，数过很多扇门。每一扇门后面都是同一个回廊，同一列没有尽头的门框，同一段敲门声的影子——仿佛每一扇门都在用自己的门板，替同一扇门说话。</p>
+      <p>终于，她走到回廊的尽头。守门人坐在最后一扇门前面。他的眼睛是两扇门——谁都不知道它们是开着的，还是关着的。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>她上前，声音比刚进来时钝了很多：「你听我说——我敲过一千扇门。每一扇都通向同一个地方。你告诉我，到底哪一扇才是真的。」</p>
+      <p>守门人不动。他只是问：</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.15rem; letter-spacing:.05em;">「一千扇，你都敲了？」</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>「第三百一扇。第七百二十扇。一千、一千零一、一千零二……」她一个一个念下去。守门人一直看着她，没有打断。</p>
+      <p>她念到的最后一扇，是第一千零一扇——<em>她自己家的门。</em></p>
+
+      <div class="beat">· · ·</div>
+
+      <p>很久以后，她才明白她在念什么。她念到的所有门，全部通向同一个地方：童年的门。每一扇门都替她把同样的敲门声放回来——来自她还没来得及回应的自己。</p>
+      <p>守门人从袖子里取出一张只开到「第一扇门」的地图。他说：</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.15rem; letter-spacing:.05em;">「所有的门通往同一扇门。你来时敲过的那一记，就是它。」</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>她哭了很久。回廊里很久没有出现过眼泪——守门人没有去收拾，只是站开，让出出口。</p>
+      <p>她把双手贴在那扇门上。她没有再敲。门自己开了。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">回家的路，从来没有离开过。</p>
+      <p class="coda">每一扇门都替她记住了那记敲门——没有一扇门会真正关上。</p>
+      <p class="coda">敲过的每一扇，都通向第一扇。每个人迷路，都是从迷失自己开始的。</p>
+    </div>
+
+    <div class="en-copy">
+      <p>Nine years ago she lost her way. The Arcade of Echoes had a thousand doors — every one identical to the one in her memory: the same rust on the ring, the same crack in the plank, the same distant echo behind it.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>She walked many roads, and counted many doors. All of them opened onto the same arcade: the same endless row of frames, the same shadow of a knock — as if each door were using its own plank to speak on behalf of the one true door.</p>
+      <p>At last she reached the far end. The Gatekeeper sat before the last door. His eyes were two doors — no one could tell whether they were open or shut.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>She stepped forward. Her voice had grown duller since she entered: “Listen to me — I knocked on a thousand doors. Every one opened onto the same place. Tell me which one is real.”</p>
+      <p>The Gatekeeper did not move. He asked only one thing:</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.15rem; letter-spacing:.05em;">“And you knocked on all of them?”</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>“Door three hundred and one. Door seven hundred and twenty. One thousand. One thousand and one. One thousand and two…” She gave them one by one. The Gatekeeper never interrupted her.</p>
+      <p>The last door she named was the one thousand and first — <em>the door of her own home.</em></p>
+
+      <div class="beat">· · ·</div>
+
+      <p>Much later she understood what she had been naming. All the doors she had called out were the same door: the doorway to her childhood. Each one returned the same knock — the knock her unspoken self had never answered.</p>
+      <p>From his sleeve the Gatekeeper drew a map that opens only to the first of them. He said:</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.15rem; letter-spacing:.05em;">“All the doors lead to the same door. The one you knocked when you came — that is it.”</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>She wept for a long time. The arcade had seen no tears in living memory — the Gatekeeper did not tidy them away; he only stepped aside, and made room.</p>
+      <p>She laid both hands on the door. She did not knock again. The door opened itself.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">The way home has never once left you.</p>
+      <p class="coda">Every door remembers the knock it hinged for you — and no door in that arcade was ever truly closed.</p>
+      <p class="coda">Every door you knocked leads back to the first one. Every lost traveler begins by losing themselves.</p>
+    </div>
+  </article>
+
+  <div class="note">
+    <span class="zh-copy">《千门》取材于《止音纪元》设定册《新六大陆 · NEW-LANDS》第十一境（<strong>rg_arcade_echo</strong> · 回廊钟 · ♭C2 · 一千扇门的守门人 · DLG_GATEKEEPER · 主线「千门敲门」），是 companion fiction（双语对照 · 零 LLM · 零网络 · 不落 runtime）。 <a href="/caesura/story/">篇一：《盐》</a> · <a href="/caesura/story/unnamed-stone/">篇二：《山下无名碑》</a> · <a href="/caesura/story/empty-bar/">篇三：《空拍子》</a> · <a href="/caesura/story/ledger/">篇四：《账本》</a> · <a href="/caesura/story/garden/">篇五：《回声庭园》</a> · <a href="/caesura/story/tribunal/">篇六：《雨审判》</a> · <a href="/caesura/story/frostbell/">篇七：《霜锤》</a> · <a href="/caesura/story/anthology/">全集：《余响集》</a> · <a href="/caesura/codex/">世界谱</a></span>
+    <span class="en-copy">“The Thousand Doors” is adapted from the “New Six Lands · NEW-LANDS” design canon — the eleventh land (<strong>rg_arcade_echo</strong> · the Arcade of Echoes · ♭C2 · The Gatekeeper of a Thousand Doors · DLG_GATEKEEPER · the main arc “The Thousand Doors”). Companion fiction (bilingual · zero LLM · offline · not shipped in runtime). <a href="/caesura/story/">Part one: “Salt”</a> · <a href="/caesura/story/unnamed-stone/">Part two: “The Nameless Stone”</a> · <a href="/caesura/story/empty-bar/">Part three: “The Empty Bar”</a> · <a href="/caesura/story/ledger/">Part four: “The Ledger”</a> · <a href="/caesura/story/garden/">Part five: “The Garden of Return”</a> · <a href="/caesura/story/tribunal/">Part six: “The Rain Tribunal”</a> · <a href="/caesura/story/frostbell/">Part seven: “The Frostbell”</a> · <a href="/caesura/story/anthology/">All stories: “The Aftermath”</a> · <a href="/caesura/codex/">World Codex</a></span>
+  </div>
+
+  <footer>
+    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/">游戏</a> · <a href="/caesura/story/">《盐》· 篇一</a> · <a href="/caesura/story/unnamed-stone/">篇二 · 山下无名碑</a> · <a href="/caesura/story/empty-bar/">篇三 · 空拍子</a> · <a href="/caesura/story/ledger/">篇四 · 账本</a> · <a href="/caesura/story/garden/">篇五 · 回声庭园</a> · <a href="/caesura/story/tribunal/">篇六 · 雨审判</a> · <a href="/caesura/story/frostbell/">篇七 · 霜锤</a> · <a href="/caesura/codex/">世界谱</a></span>
+    <span class="en-copy">© CAESURA · <a href="/caesura/">Game</a> · <a href="/caesura/story/">“Salt” · No. 1</a> · <a href="/caesura/story/unnamed-stone/">No. 2 · The Nameless Stone</a> · <a href="/caesura/story/empty-bar/">No. 3 · The Empty Bar</a> · <a href="/caesura/story/ledger/">No. 4 · The Ledger</a> · <a href="/caesura/story/garden/">No. 5 · The Garden of Return</a> · <a href="/caesura/story/tribunal/">No. 6 · The Rain Tribunal</a> · <a href="/caesura/story/frostbell/">No. 7 · The Frostbell</a> · <a href="/caesura/codex/">World Codex</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('langToggle');
+  var saved = 'zh';
+  try { saved = localStorage.getItem('caesura-lang') || 'zh'; } catch (e) { /* noop */ }
+  function apply(lang) {
+    root.setAttribute('data-lang', lang);
+    root.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en');
+    try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+  }
+  if (btn) btn.addEventListener('click', function () {
+    apply(root.getAttribute('data-lang') === 'en' ? 'zh' : 'en');
+  });
+  apply(saved === 'en' ? 'en' : 'zh');
+})();
+</script>
+</body>
+</html>
