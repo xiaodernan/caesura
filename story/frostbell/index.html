@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>霜锤 / The Frostbell · CAESURA 短篇 之七 — 余响新陆 · 新七地域之十二</title>
+<meta name="description" content="《止音纪元》原创短篇之七 · 霜锤崖 · 末任钟匠的一只手套，放着不肯捡 · 敲一记，听自己的声音回来。双语对照 · 零网络 · 零 LLM。 / The seventh original short story — the Frostbell Cliff. The Last Frostwright never picks up the glove that fell at his final quench; the valley waits for one strike nobody dares make. Bilingual, offline, zero LLM.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>❄️</text></svg>">
+<style>
+  :root {
+    --gold: #b8d4e8;
+    --gold-soft: rgba(184,212,232,.32);
+    --ink: #f3ede0;
+    --ink-dim: rgba(243,237,224,.62);
+    --panel: rgba(10,18,26,.78);
+    --serif: "Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#060a12; color:var(--ink); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; }
+  .bg { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .bg.radial {
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(184,212,232,.12), transparent 60%),
+      radial-gradient(900px 700px at 50% 118%, rgba(70,110,150,.17), transparent 62%),
+      radial-gradient(650px 420px at 12% 104%, rgba(210,235,255,.06), transparent 60%),
+      #060a12;
+  }
+  .bg.noise { position:fixed; inset:0; z-index:-1; opacity:.05; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .wrap { max-width:860px; margin:0 auto; padding:26px 26px 90px; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .brand { font-size:.8rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; opacity:.9; }
+  .brand a { color:inherit; text-decoration:none; border-bottom:1px dotted rgba(184,212,232,.5); }
+  .brand a:hover { color:#eaf6ff; }
+  .toplinks { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toplinks a { font-size:.72rem; color:var(--ink-dim); text-decoration:none; border:1px solid rgba(243,237,224,.14); padding:6px 12px; border-radius:999px; transition:all .22s ease; }
+  .toplinks a:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .lang-row button { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(184,212,232,.12); border:1px solid var(--gold-soft); padding:6px 15px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; }
+  .lang-row button:hover { background:rgba(184,212,232,.22); box-shadow:0 0 16px rgba(184,212,232,.25); }
+
+  [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="en"] .zh-copy { display:none !important; }
+
+  header.hero { text-align:center; padding:52px 14px 30px; }
+  .kicker { font-size:.72rem; letter-spacing:.42em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:20px; }
+  .kicker b { color:var(--gold); font-weight:600; }
+  h1 { font-size:clamp(2.4rem, 9vw, 4rem); font-weight:600; letter-spacing:.16em;
+       background:linear-gradient(180deg,#f5fbff 0%, #b8d4e8 28%, #6b93b5 58%, #274058 100%);
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+       text-shadow:0 0 90px rgba(184,212,232,.3); }
+  .subtitle { margin-top:14px; font-size:.8rem; color:var(--ink-dim); letter-spacing:.3em; text-transform:uppercase; }
+  .rule { width:170px; height:1px; margin:24px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .meta { margin-top:16px; font-size:.7rem; color:rgba(243,237,224,.45); letter-spacing:.18em; text-transform:uppercase; }
+  .meta a { color:var(--gold); text-decoration:none; }
+
+  article { background:var(--panel); border:1px solid rgba(243,237,224,.1); border-radius:18px; padding:38px 40px 34px; position:relative; }
+  article::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--gold), transparent); opacity:.7; }
+  article p { font-size:1.04rem; line-height:2.02; letter-spacing:.02em; color:rgba(243,237,224,.92); margin-bottom:1.5em; text-indent:2em; overflow-wrap:break-word; }
+  article p.no-indent { text-indent:0; }
+  article p em { color:#e8f4ff; font-style:normal; }
+  article p strong { color:var(--gold); font-weight:600; }
+  .beat { width:100%; text-align:center; margin:.4em 0 1.4em; letter-spacing:.5em; color:rgba(184,212,232,.6); font-size:.8rem; }
+  .coda { text-align:center; font-style:italic; color:rgba(243,237,224,.78); letter-spacing:.06em; margin-top:.6em; }
+
+  .note { margin:26px auto 0; max-width:720px; text-align:center; font-size:.74rem; color:rgba(243,237,224,.42); line-height:1.9; letter-spacing:.04em; }
+  .note a { color:var(--gold); text-decoration:none; border-bottom:1px dotted rgba(184,212,232,.5); }
+
+  footer { margin-top:56px; border-top:1px solid rgba(243,237,224,.09); padding-top:22px; display:flex; flex-wrap:wrap; gap:10px 26px; justify-content:space-between; font-size:.7rem; color:rgba(243,237,224,.4); letter-spacing:.06em; }
+  footer a { color:var(--gold); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @media (max-width:640px) { .wrap { padding:20px 12px 70px; } article { padding:26px 20px 24px; } article p { font-size:.98rem; text-indent:2em; } }
+</style>
+</head>
+<body>
+<div class="bg radial" aria-hidden="true"></div>
+<div class="bg noise" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><a href="/caesura/">CAESURA</a> · 《止音纪元》</div>
+    <div class="toplinks">
+      <a href="/caesura/story/"><span class="zh-copy">《盐》</span><span class="en-copy">“Salt”</span></a>
+      <a href="/caesura/story/unnamed-stone/"><span class="zh-copy">《山下无名碑》</span><span class="en-copy">“The Nameless Stone”</span></a>
+      <a href="/caesura/story/empty-bar/"><span class="zh-copy">《空拍子》</span><span class="en-copy">“The Empty Bar”</span></a>
+      <a href="/caesura/story/tribunal/"><span class="zh-copy">《雨审判》</span><span class="en-copy">“The Rain Tribunal”</span></a>
+      <a href="/caesura/story/anthology/"><span class="zh-copy">《余响集》</span><span class="en-copy">The Aftermath</span></a>
+      <a href="/caesura/codex/"><span class="zh-copy">世界谱</span><span class="en-copy">Codex</span></a>
+      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button></span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <p class="kicker zh-copy">短篇 · <b>霜锤崖</b> · 之七</p>
+    <p class="kicker en-copy">Short story · <b>The Frostbell</b> · No. 7</p>
+    <h1 class="zh-copy">霜锤</h1>
+    <h1 class="en-copy">The Frostbell</h1>
+    <p class="subtitle zh-copy">余响新陆 · 第十二境 · 末任钟匠</p>
+    <p class="subtitle en-copy">The Afterland · the twelfth land · The Last Frostwright</p>
+    <div class="rule"></div>
+    <p class="meta zh-copy">约 5 分钟 · 与 <a href="/caesura/codex/">世界谱</a> 同源世界观 · 设定册《新六地域》同源 · 零 LLM 撰写</p>
+    <p class="meta en-copy">about 5 minutes · same world as the <a href="/caesura/codex/">codex</a> · from the New Six Lands design canon · written without LLM assistance</p>
+  </header>
+
+  <article>
+    <div class="zh-copy">
+      <p>霜锤崖上有一间作坊。炉火烧了整整一年，从来没有退过——因为火退一次，冰会把钟缝合拢，再想打开它，就只能等下一个黄昏。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>末任钟匠是这个世界上最后一位懂得淬火的人。每一口钟从冰里敲出来之后，他都要做同一件事：把它敲一记，听一听——敲一记之后，能不能听到自己回来的声音。</p>
+      <p>能听到的，验收合格，装船发往山下。听不到的，<em>他不告诉任何人</em>，只把它重新冻回崖壁，等下一次黄昏。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>最后一次淬火那天，他的手掉了下来。不是手，是一只皮手套——他自己的，皮革是用山下所有钟弦的断头拧成的。</p>
+      <p>他没有捡。他只是站在原地看着它，看了三天。山下没有人敢上来。山上的冰，会冻住走动的影子。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>第四天，一个没人认识的少年走到了崖脚。他没有带工具，只带一双近乎赤裸的手。他沿着冰道走上来，走到作坊门口时，冰裂开了一条——只够一只脚站进去的缝。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>末任钟匠坐在炉边。他的眼睛已经看不清了——冰在他眼睛里住了太久。</p>
+      <p>少年没有弯腰捡那只手套。他只是站直了，卷起袖子，把赤裸的手伸向断弦拧成的钟槌——敲了一记。</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.1rem; letter-spacing:.05em;">就那一声。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>霜锤崖的冰，在同一天黄昏融化了。整整一个黄昏——钟乳石一滴滴落，每一滴都和很多年前那一滴撞上了。</p>
+      <p>少年听见了自己回来的声音。不是从山下回来的——是从他从前没来得及说完的话里回来的，是从无数条没有断成弦的弦里回来的。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">末任钟匠闭上眼睛。他说，<em>冰是时间的另一面，它冻住的每一秒都响过。</em></p>
+      <p class="coda">少年把手套捡起来，戴在自己手上。末任钟匠没有阻止他——因为冰里的每一秒，已经替他响过一次了。</p>
+      <p class="coda">离开崖壁的人，在崖脚看见满崖的冰花都裂成了好看的裂纹。<br>那是他回来的声音，在冰下<strong>一寸一寸</strong>地醒过来。</p>
+    </div>
+
+    <div class="en-copy">
+      <p>On the Frostbell Cliff stands a workshop. The furnace has burned for a whole year — it has never once been allowed to die down. If the fire retreats even once, the ice knits itself over the bell’s mouth, and only one more dusk opens it again.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>The Last Frostwright is the last man alive who knows how to temper a bell. After every bell is struck out of the ice, he performs one duty: he strikes it once and listens — after one strike, can he hear his own voice coming back?</p>
+      <p>If he can, the bell passes muster and goes down to the valley. If he can’t, <em>he tells no one</em> — he freezes it back into the cliff for the next dusk.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>On the last quench of the last bell, he lost something. Not a hand — a glove. His own. Its leather was twisted from the cut ends of every bell rope he’d ever finished.</p>
+      <p>He did not pick it up. He stood there and looked at it for three days. No one from the valley dared come up. The ice up here freezes anything that moves.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>On the fourth day, a boy no one knew arrived at the cliff’s foot. He carried no tool — only his hands, almost bare. He climbed the ice path and reached the workshop door; the ice split for him a gap only wide enough for one foot.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>The Last Frostwright sat by the furnace. His eyes had gone blind — the ice had lived in them for too long.</p>
+      <p>The boy did not reach down for the glove. He simply stood straight, folded his sleeve, and stretched his bare hand toward the mallet woven of dead rope-ends — and struck once.</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.1rem; letter-spacing:.05em;">Just one note.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>The ice of the Frostbell broke the same dusk. A whole dusk — the stalactites dripped one by one, and each drop rang against every drop that had fallen here years ago.</p>
+      <p>The boy heard his own voice coming back. Not from the valley — from every word he had never finished saying; from every rope that had never been twisted into a string.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">The Last Frostwright closed his eyes. He said: <em>ice is the other face of time — every second it freezes has sounded.</em></p>
+      <p class="coda">The boy picked up the glove and put it on his own hand. The Last Frostwright did not stop him. Every second inside that ice — had already sounded once for him.</p>
+      <p class="coda">Whoever leaves the cliff now will see the frost-flowers all cracked open, like beautiful cracks.<br>That is his returning voice — waking, <strong>inch by inch</strong>, beneath the ice.</p>
+    </div>
+  </article>
+
+  <div class="note">
+    <span class="zh-copy">《霜锤》取材于《止音纪元》设定册《新六大陆 · NEW-LANDS》第十二境（<strong>rg_hoarfrost_bell</strong> · 霜锤崖 · ♭D2 · 霜锤的末任钟匠 Master Frostwright · DLG_FROSTWRIGHT · 主线「霜锤验收」），是 companion fiction（双语对照 · 零 LLM · 零网络 · 不落 runtime）。 <a href="/caesura/story/">篇一：《盐》</a> · <a href="/caesura/story/unnamed-stone/">篇二：《山下无名碑》</a> · <a href="/caesura/story/empty-bar/">篇三：《空拍子》</a> · <a href="/caesura/story/ledger/">篇四：《账本》</a> · <a href="/caesura/story/garden/">篇五：《回声庭园》</a> · <a href="/caesura/story/tribunal/">篇六：《雨审判》</a> · <a href="/caesura/story/anthology/">全集：《余响集》</a> · <a href="/caesura/codex/">世界谱</a></span>
+    <span class="en-copy">“The Frostbell” is adapted from the “New Six Lands · NEW-LANDS” design canon — the twelfth land (<strong>rg_hoarfrost_bell</strong> · the Frostbell Cliff · ♭D2 · The Last Frostwright · DLG_FROSTWRIGHT · the main arc “Inspection of the Frostbell”). Companion fiction (bilingual · zero LLM · offline · not shipped in runtime). <a href="/caesura/story/">Part one: “Salt”</a> · <a href="/caesura/story/unnamed-stone/">Part two: “The Nameless Stone”</a> · <a href="/caesura/story/empty-bar/">Part three: “The Empty Bar”</a> · <a href="/caesura/story/ledger/">Part four: “The Ledger”</a> · <a href="/caesura/story/garden/">Part five: “The Garden of Return”</a> · <a href="/caesura/story/tribunal/">Part six: “The Rain Tribunal”</a> · <a href="/caesura/story/anthology/">All stories: “The Aftermath”</a> · <a href="/caesura/codex/">World Codex</a></span>
+  </div>
+
+  <footer>
+    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/">游戏</a> · <a href="/caesura/story/">《盐》· 篇一</a> · <a href="/caesura/story/unnamed-stone/">篇二 · 山下无名碑</a> · <a href="/caesura/story/empty-bar/">篇三 · 空拍子</a> · <a href="/caesura/story/ledger/">篇四 · 账本</a> · <a href="/caesura/story/garden/">篇五 · 回声庭园</a> · <a href="/caesura/story/tribunal/">篇六 · 雨审判</a> · <a href="/caesura/codex/">世界谱</a></span>
+    <span class="en-copy">© CAESURA · <a href="/caesura/">Game</a> · <a href="/caesura/story/">“Salt” · No. 1</a> · <a href="/caesura/story/unnamed-stone/">No. 2 · The Nameless Stone</a> · <a href="/caesura/story/empty-bar/">No. 3 · The Empty Bar</a> · <a href="/caesura/story/ledger/">No. 4 · The Ledger</a> · <a href="/caesura/story/garden/">No. 5 · The Garden of Return</a> · <a href="/caesura/story/tribunal/">No. 6 · The Rain Tribunal</a> · <a href="/caesura/codex/">World Codex</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('langToggle');
+  var saved = 'zh';
+  try { saved = localStorage.getItem('caesura-lang') || 'zh'; } catch (e) { /* noop */ }
+  function apply(lang) {
+    root.setAttribute('data-lang', lang);
+    root.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en');
+    try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+  }
+  if (btn) btn.addEventListener('click', function () {
+    apply(root.getAttribute('data-lang') === 'en' ? 'zh' : 'en');
+  });
+  apply(saved === 'en' ? 'en' : 'zh');
+})();
+</script>
+</body>
+</html>

@@ -13,6 +13,7 @@
  *   ├── story/garden/（短篇之五）
  *   ├── story/tribunal/（短篇之六）
  *   ├── story/anthology/（余响集 · 全集页）
+ *   ├── story/frostbell/（短篇之七）
  *   ├── console/      （集大成调度台）
  *   └── raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json
  *
@@ -39,6 +40,7 @@ const ENDPOINTS = [
   { name: 'story-5', url: 'https://xiaodernan.github.io/caesura/story/garden/', marker: '回声庭园' },
   { name: 'story-6', url: 'https://xiaodernan.github.io/caesura/story/tribunal/', marker: '雨审判' },
   { name: 'story-7', url: 'https://xiaodernan.github.io/caesura/story/anthology/', marker: '余响集' },
+  { name: 'story-8', url: 'https://xiaodernan.github.io/caesura/story/frostbell/', marker: '霜锤' },
 ]
 
 const asJson = argv.includes('--json')
