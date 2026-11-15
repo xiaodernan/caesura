@@ -982,6 +982,18 @@
           "y": -40,
           "z": 100
         }
+      },
+      {
+        "id": "in_drownedchoir_pages_fused",
+        "kind": "inspect",
+        "verb": "看石缝里嵌住的几页旧书",
+        "verbKey": "interact.findFusedPages",
+        "notifyKey": "world.flavor.drowned.pagesFused",
+        "pos": {
+          "x": 370,
+          "y": -40,
+          "z": 88
+        }
       }
     ],
     "music": {
