@@ -2649,6 +2649,18 @@
           "y": 0,
           "z": 188
         }
+      },
+      {
+        "id": "in_windcoast_cracked_tideline",
+        "kind": "inspect",
+        "verb": "看那座小龛",
+        "verbKey": "interact.small_shrine",
+        "notifyKey": "world.flavor.windcoast.crackedTideline",
+        "pos": {
+          "x": 611,
+          "y": 0,
+          "z": 141
+        }
       }
     ],
     "secrets": [
