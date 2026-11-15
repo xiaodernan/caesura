@@ -56,22 +56,39 @@ const ENDPOINTS = [
 ]
 
 const asJson = argv.includes('--json')
+const concIdx = argv.indexOf('--concurrency')
+const concEq = argv.find((a) => a.startsWith('--concurrency='))
+const concRaw = concEq ? Number(concEq.slice('--concurrency='.length)) : (concIdx >= 0 ? Number(argv[concIdx + 1]) : 4)
+const concurrency = Math.max(1, Math.min(16, Number.isFinite(concRaw) ? concRaw : 4))
 
-const results = []
-for (const e of ENDPOINTS) {
-  const t0 = performance.now()
-  try {
-    const res = await fetch(e.url, { signal: AbortSignal.timeout(10000) })
-    const text = await res.text()
-    const ok = res.ok && text.includes(e.marker)
-    results.push({ name: e.name, ok, status: res.status, bytes: Buffer.byteLength(text), ms: Math.round(performance.now() - t0) })
-  } catch (err) {
-    results.push({ name: e.name, ok: false, status: 0, bytes: 0, ms: Math.round(performance.now() - t0), error: String(err) })
+// 并发压测：同一批 21 个端点以 N 路并发发出（Promise pool），逐个验证 marker、
+// 统计总时长与 p50/p95/p99。不新增权限、不改 marker、不跨网络滥用——仅本机连 Pages。
+const results = new Array(ENDPOINTS.length)
+let cursor = 0
+const tGlobal = performance.now()
+async function worker() {
+  while (true) {
+    const i = cursor++
+    if (i >= ENDPOINTS.length) return
+    const e = ENDPOINTS[i]
+    const t0 = performance.now()
+    try {
+      const res = await fetch(e.url, { signal: AbortSignal.timeout(10000) })
+      const text = await res.text()
+      const ok = res.ok && text.includes(e.marker)
+      results[i] = { name: e.name, ok, status: res.status, bytes: Buffer.byteLength(text), ms: Math.round(performance.now() - t0) }
+    } catch (err) {
+      results[i] = { name: e.name, ok: false, status: 0, bytes: 0, ms: Math.round(performance.now() - t0), error: String(err) }
+    }
   }
 }
+await Promise.all(Array.from({ length: concurrency }, worker))
+const wallMs = Math.round(performance.now() - tGlobal)
 
 const failed = results.filter((r) => !r.ok)
-const summary = { total: results.length, ok: results.length - failed.length, failed: failed.map((r) => r.name), results }
+const sorted = [...results].map((r) => r.ms).sort((a, b) => a - b)
+const pct = (p) => sorted[Math.min(sorted.length - 1, Math.max(0, Math.ceil((p / 100) * sorted.length) - 1))]
+const summary = { total: results.length, ok: results.length - failed.length, failed: failed.map((r) => r.name), concurrency, wallMs, p50: pct(50), p95: pct(95), p99: pct(99), results }
 
 if (asJson) {
   console.log(JSON.stringify(summary))
@@ -81,6 +98,6 @@ if (asJson) {
     const mark = r.ok ? 'pass' : 'FAIL'
     console.log(`  ${mark} ${r.name.padEnd(12)} HTTP ${String(r.status).padStart(3)} ${String(r.bytes).padStart(7)} B ${String(r.ms).padStart(5)} ms`)
   }
-  console.log(`[smoke-live] ${summary.ok}/${summary.total} endpoints ok${failed.length ? ' — FAILED: ' + failed.map((r) => r.name).join(', ') : ''}`)
+  console.log(`[smoke-live] ${summary.ok}/${summary.total} endpoints ok${failed.length ? ' — FAILED: ' + failed.map((r) => r.name).join(', ') : ''} · concurrency=${concurrency} wall=${wallMs}ms p50=${summary.p50}ms p95=${summary.p95}ms p99=${summary.p99}ms`)
 }
 exit(failed.length === 0 ? 0 : 1)
