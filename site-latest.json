@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "47d599f3a37a6cd4cbb0e768b6fe0997e03fee36",
+  "head": "4c62c7c53e3e7fb587e3ec67a92e1bbde74f5564",
   "branch": "master",
-  "subject": "content: 第 20 处刻痕「裂开的潮纹」（Windbell Coast tideline-crack）· KI-584 (光合 5)",
-  "date": "2026-11-15T23:34:57+08:00",
+  "subject": "content(atlas): 三体致敬扩写：红岸基地·叶文洁·ETO·智子·宇宙社会学两公理·面壁计划·黑暗森林威慑·二向箔 · KI-585",
+  "date": "2026-11-15T23:40:49+08:00",
   "kv": {
-    "KI.rows": 502,
-    "KI.Implemented": 325,
+    "KI.rows": 503,
+    "KI.Implemented": 326,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/47d599f3a37a6cd4cbb0e768b6fe0997e03fee36",
+    "url": "https://github.com/xiaodernan/caesura/commit/4c62c7c53e3e7fb587e3ec67a92e1bbde74f5564",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
