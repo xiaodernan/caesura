@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "4c62c7c53e3e7fb587e3ec67a92e1bbde74f5564",
+  "head": "629504b74d8353da439e5f0f2860d87fa88c7cc4",
   "branch": "master",
-  "subject": "content(atlas): 三体致敬扩写：红岸基地·叶文洁·ETO·智子·宇宙社会学两公理·面壁计划·黑暗森林威慑·二向箔 · KI-585",
-  "date": "2026-11-15T23:40:49+08:00",
+  "subject": "docs(ledger): KI-586 mesh:stress 双档实测 + KI-587 LLM 缓存实活命中 97.8% warmup",
+  "date": "2026-11-15T23:55:46+08:00",
   "kv": {
-    "KI.rows": 503,
-    "KI.Implemented": 326,
+    "KI.rows": 504,
+    "KI.Implemented": 327,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/4c62c7c53e3e7fb587e3ec67a92e1bbde74f5564",
+    "url": "https://github.com/xiaodernan/caesura/commit/629504b74d8353da439e5f0f2860d87fa88c7cc4",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
