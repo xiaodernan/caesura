@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "829a1080aa75ac38414989da008da1810317422e",
+  "head": "2daae574e865aa97df856a41cc4224736ae14ad6",
   "branch": "master",
-  "subject": "feat(tooling): 离线便携 PDF artifact 流水线 KI-578",
-  "date": "2026-11-15T20:27:14+08:00",
+  "subject": "ci(snapshot-pdf): playwright 1.58.0 -> 1.65.1 适配 ubuntu26.04 runner KI-578",
+  "date": "2026-11-15T20:29:44+08:00",
   "kv": {
     "KI.rows": 496,
     "KI.Implemented": 319,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/829a1080aa75ac38414989da008da1810317422e",
+    "url": "https://github.com/xiaodernan/caesura/commit/2daae574e865aa97df856a41cc4224736ae14ad6",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
