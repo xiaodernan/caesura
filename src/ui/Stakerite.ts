@@ -156,12 +156,18 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">篇十一《暗潮》· 创世</span><span class="note">守夜人听见一个世纪前就准备好的三拍一停——整个宇宙都在听，但这个宇宙里没人发声</span></div>
 <div class="row"><span class="name">全集</span><span class="note">《止音纪元 · 余响集》收录全部十一篇 · xiaodernan.github.io/caesura/story/anthology/</span></div>
 
-<h2>宇宙的尺度 · 献给刘慈欣 <span style="opacity:.6">（《三体》三部曲：黑暗森林 · 猜疑链 · 面壁者）</span></h2>
-<div class="row"><span class="name">黑暗森林</span><span class="note">宇宙里谁先进入，谁就知道了其他所有沉默的形状。幸存的人从不回答——不是因为闹着玩，善意和恶意在频道上长得一模一样</span></div>
+<h2>宇宙的尺度 · 献给刘慈欣 <span style="opacity:.6">（《三体》三部曲：《三体》·《黑暗森林》·《死神永生》）</span></h2>
+<div class="row"><span class="name">红岸基地</span><span class="note">国与国之间偷偷把雷达对准天空——想知道那头有没有人在听。止音纪元里没有红岸基地；这里有更早的红岸——每一口钟都是一次对宇宙的沉默认证</span></div>
+<div class="row"><span class="name">叶文洁 · 那一问</span><span class="note">她把「人类该不该活下去」这个问题塞进了光里——太阳替她把光放大了很多很多倍。止音纪元的钟也问不答；听见的人自己去决定自己聋还是听</span></div>
+<div class="row"><span class="name">地球三体组织 · ETO</span><span class="note">有人决定：既然你们愿意听见，我们就替自己，也替星海——人替自己做了一次永久的选择，然后全集都没人敢反悔</span></div>
+<div class="row"><span class="name">智子 · Sophon</span><span class="note">质子被折成两耳之光——看人比人看得细。止音纪元的钟只有一个延迟；它们聋着——那是它们最大的仁慈</span></div>
+<div class="row"><span class="name">宇宙社会学两条公理</span><span class="note">第一公理：生存是文明的第一需要；第二公理：文明不断增长，宇宙中的物质总量基本保持不变——不是道德，是加速度</span></div>
+<div class="row"><span class="name">面壁计划 · 面壁者</span><span class="note">四位面壁者，由联合国托管——罗辑把「你们愿意开火吗」压进心里。别人能读你的脸，不读你的想法——能活过全人类的有时候只是那块沉下去的石头</span></div>
 <div class="row"><span class="name">猜疑链</span><span class="note">谁都不敢先决定——于是每个人都很礼貌。这是宇宙最华丽的孤独礼仪：每个人都在听，没人先开口</span></div>
-<div class="row"><span class="name">面壁者</span><span class="note">把答案压进心里的人。别人能读你的脸，不读你的想法——能活过全人类的有时候只是那块沉下去的石头</span></div>
+<div class="row"><span class="name">黑暗森林法则 · 黑暗森林威慑</span><span class="note">宇宙里谁先进入，谁就知道了其他所有沉默的形状——不是不让对方进来，是不给对方听见你，就像狙击手不预先暴露站位。幸存的人从不回答——善意和恶意到这频道上长成同一张脸</span></div>
+<div class="row"><span class="name">二向箔 · 降维打击</span><span class="note">把三维世界压成一张纸。止音纪元里没有二向箔；只有一口钟落向沉默的速度——从三维到二维，再到零维的三声——没人听见，也没人敢记</span></div>
 <div class="row"><span class="name">宇宙这件事</span><span class="note">文明只是上面撒上去的几粒尘——人类还没认识它的尘埃。《止音纪元》的故事里有一口不熄的钟；宇宙有它自己的沉默，连钟都还没被允许</span></div>
-<div class="row"><span class="name">阅读</span><span class="note">刘慈欣《三体》三部曲：《三体》·《黑暗森林》·《死神永生》——对这个世界最外交的一次致敬</span></div>
+<div class="row"><span class="name">阅读</span><span class="note">刘慈欣《三体》三部曲：《三体》·《黑暗森林》·《死神永生》——对这个世界最外交的一次致敬；所有线索与句式均为本作原创，示意而非转述</span></div>
 
 <h2>怎么不迷路</h2>
 <div class="row"><span class="name">Tab = 地图</span><span class="note">总表看你走过哪片，哪里还亮着（亮 = 终章出口还没开）；再按一次收起</span></div>
@@ -206,12 +212,18 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">No. 11 “The Dark Tide” · The Creation</span><span class="note">A listening post picks up a signal a century old — three beats and a pause, never answered</span></div>
 <div class="row"><span class="name">All eleven</span><span class="note">“CAESURA · The Aftermath” collects all eleven in one read · xiaodernan.github.io/caesura/story/anthology/</span></div>
 
-<h2>The scale of the cosmos · for Liu Cixin <span style="opacity:.6">(the trilogy: The Dark Forest · the Chain of Suspicion · the Wallfacer)</span></h2>
-<div class="row"><span class="name">The Dark Forest</span><span class="note">Whoever arrives first in the universe learns the shape of every other silence. The survivor never answers — not from malice, but because kindness and malice arrive identical on this bandwidth</span></div>
+<h2>The scale of the cosmos · for Liu Cixin <span style="opacity:.6">(the trilogy: The Three-Body Problem · The Dark Forest · Death's End)</span></h2>
+<div class="row"><span class="name">The Red Coast</span><span class="note">A nation secretly aimed its radar at the sky — wanting to know if anyone was listening. There is no Red Coast in this world; there are older red coasts: every bell is a silent handshake with the universe</span></div>
+<div class="row"><span class="name">Ye Wenjie · the question</span><span class="note">She sent the question “does humanity deserve to be heard?” into the light — the Sun was her amplifier. The bells of this world ask too, and they do not answer; those who hear decide for themselves whether they are deaf or listening</span></div>
+<div class="row"><span class="name">Earth-Trisolaris Organization · ETO</span><span class="note">Someone decided: if they would listen to us, then we would speak on behalf of all of Earth — a permanent choice made in one afternoon, and never revoked</span></div>
+<div class="row"><span class="name">Sophon</span><span class="note">Protons folded into listening eyes, finer than any eye that ever lived. This world's bells get only one delay — and they are deaf by choice; that is their greatest mercy</span></div>
+<div class="row"><span class="name">The two axioms of cosmic sociology</span><span class="note">Axiom one: survival is a civilization's first need. Axiom two: civilization grows, but the matter of the universe stays roughly the same — not morals, acceleration</span></div>
+<div class="row"><span class="name">The Wallfacer Project</span><span class="note">Four Wallfacers, held by the United Nations — Luo Ji kept the question “will you fire?” inside him. Others can read your face, not your mind — sometimes only the stone sunk far enough below the surface outlives everyone</span></div>
 <div class="row"><span class="name">The Chain of Suspicion</span><span class="note">No one dares decide first — so everyone is polite. The grandest silence culture: everyone listens, no one speaks first</span></div>
-<div class="row"><span class="name">The Wallfacer</span><span class="note">The one who keeps the answer inside them. Others can read your face, not your mind — sometimes only the stone sunk far enough below the surface outlives everyone</span></div>
-<div class="row"><span class="name">The Universe</span><span class="note">Civilization is just dust sprinkled across it. In this world there is one bell that survives; the universe has its own silence, and the bell has not yet been allowed</span></div>
-<div class="row"><span class="name">Reading</span><span class="note">Liu Cixin's Three Body trilogy: The Three-Body Problem · The Dark Forest · Death's End — the most diplomatic embrace this world has ever received</span></div>
+<div class="row"><span class="name">The Dark Forest theory · deterrent</span><span class="note">Whoever arrives first learns the shape of every other silence — it is not about keeping them out, it is about never letting them hear you, like a sniper who never shows their position. The survivor never answers — kindness and malice share one face on this bandwidth</span></div>
+<div class="row"><span class="name">The dual-vector foil</span><span class="note">The weapon that folds three dimensions into two. This world has no dual-vector foil; it has only the speed at which a bell falls into silence — three notes, from three dimensions to two, to none — no one hears them, and no one dares to log them</span></div>
+<div class="row"><span class="name">The universe itself</span><span class="note">Civilization is dust sprinkled across the sky — humanity has not yet learned its dust. This world keeps one bell that survives; the universe keeps its own silence — and the bell has not yet been allowed to ring</span></div>
+<div class="row"><span class="name">Reading</span><span class="note">Liu Cixin's Three Body trilogy: The Three-Body Problem · The Dark Forest · Death's End — the most diplomatic embrace this world has ever received; every line here is an original homage to, not a recital of, the trilogy</span></div>
 
 <h2>Wayfinding</h2>
 <div class="row"><span class="name">Tab = the map</span><span class="note">The master chart shows where you have walked and what is still lit — lit means the ending is still sealed; press Tab again to fold it away</span></div>
