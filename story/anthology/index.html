@@ -74,6 +74,30 @@
 
   @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
   @media (max-width:640px) { .wrap { padding:20px 12px 70px; } .toc-item { padding:16px 16px; } }
+  .print-btn { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(216,185,138,.12); border:1px solid var(--gold-soft); padding:6px 13px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; white-space:nowrap; }
+  .print-btn:hover { background:rgba(216,185,138,.22); box-shadow:0 0 16px rgba(216,185,138,.25); }
+  .print-spacer { display:inline-block; width:8px; }
+
+  @media print {
+    @page { margin: 17mm 16mm; }
+    html, body { background: #ffffff !important; color: #1a1611 !important; font-family: Georgia, "Songti SC", "STSong", "Noto Serif SC", serif !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .bg, .topbar, #langToggle, #printBtn, .kicker, .subtitle, .rule, .note, footer, .toc-title, .tag { display: none !important; }
+    .wrap { max-width: none; padding: 0; }
+    header.hero { text-align: left; padding: 0 0 8mm; border-bottom: 1.6pt solid #1a1611; margin-bottom: 9mm; }
+    h1 { font-size: 33pt !important; letter-spacing: .08em !important; background: none !important; -webkit-text-fill-color: #1a1611 !important; color: #1a1611 !important; text-shadow: none !important; }
+    .preface { max-width: none; font-size: 11.5pt; line-height: 2; color: #1a1611; margin-bottom: 10mm; }
+    .preface .dropcap::first-letter { float: none; font-size: 1.2em; color: #1a1611; padding: 0; }
+    .shelf { display: block; }
+    .toc-item { display: block; background: none !important; border: 0 !important; border-top: .6pt solid #d8cfc0; border-radius: 0; padding: 7mm 0 8mm; margin: 0; page-break-inside: avoid; break-inside: avoid; box-shadow: none !important; transform: none !important; }
+    .toc-item::before { display: none !important; }
+    .toc-item .no { font-family: var(--serif); font-size: 8.5pt; color: #6b5a3a; letter-spacing: .25em; text-transform: uppercase; }
+    .toc-item h2 { font-size: 17pt; margin: 2mm 0 3mm; color: #1a1611; background: none !important; -webkit-text-fill-color: #1a1611 !important; }
+    .toc-item p { font-size: 11pt; line-height: 1.9; color: #1a1611; overflow-wrap: break-word; }
+    .toc-item .tag { display: none !important; }
+    .coda { max-width: none; font-size: 10.5pt; color: #1a1611; line-height: 2; margin-top: 10mm; }
+    .coda strong { color: #1a1611; }
+    a { color: #1a1611 !important; text-decoration: none !important; }
+  }
 </style>
 </head>
 <body>
@@ -89,7 +113,7 @@
       <a href="/caesura/tutorial/"><span class="zh-copy">教程</span><span class="en-copy">Tutorial</span></a>
       <a href="/caesura/cast/"><span class="zh-copy">角色图鉴</span><span class="en-copy">Cast</span></a>
       <a href="/caesura/"><span class="zh-copy">游戏</span><span class="en-copy">Game</span></a>
-      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button></span>
+      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button><span class="print-spacer"></span><button id="printBtn" class="print-btn" type="button" aria-label="打印本页 · print this page"><span class="zh-copy">🖨 打印整卷</span><span class="en-copy">🖨 Print</span></button></span>
     </div>
   </div>
 
@@ -108,7 +132,6 @@
 
   <div class="toc-title zh-copy">目 · 录 · 约四十五分钟</div>
   <div class="toc-title en-copy">Contents · about forty-five minutes</div>
-
   <div class="shelf">
 
     <a class="toc-item" href="/caesura/story/">
@@ -226,6 +249,8 @@
   if (btn) btn.addEventListener('click', function () {
     apply(root.getAttribute('data-lang') === 'en' ? 'zh' : 'en');
   });
+  var printBtn = document.getElementById('printBtn');
+  if (printBtn) printBtn.addEventListener('click', function () { window.print(); });
   apply(saved === 'en' ? 'en' : 'zh');
 })();
 </script>

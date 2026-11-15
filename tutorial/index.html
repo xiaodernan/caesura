@@ -53,6 +53,25 @@
   .cta-row a:hover { border-color: var(--gold); background: var(--gold-faint); box-shadow: 0 0 22px rgba(201,180,88,.12); transform: translateY(-1px) }
   .lang { font-family: var(--mono); font-size: 11px; border: 1px solid var(--line); background: #141419; color: #d8cba0; padding: 7px 16px; border-radius: 2px; cursor: pointer; letter-spacing: .12em }
   .lang:hover { border-color: var(--gold); color: var(--gold) }
+
+  @media print {
+    @page { margin: 16mm 15mm; }
+    html, body { background: #ffffff !important; color: #1a1611 !important; font-family: Georgia, "Songti SC", "STSong", "Noto Serif SC", serif !important; }
+    header { background: none !important; text-align: left !important; padding: 0 0 7mm !important; border-bottom: 1.6pt solid #1a1611; margin: 0 0 8mm !important; }
+    .seal, .cta-row, #printBtn, #langToggle, .key, .num { color: #1a1611 !important; }
+    .seal, .cta-row, #printBtn, #langToggle { display: none !important; }
+    h1 span { background: none !important; -webkit-text-fill-color: #1a1611 !important; color: #1a1611 !important; text-shadow: none !important; }
+    h1, .sub { text-align: left; }
+    .step { background: none !important; border: 1px solid #d8cfc0 !important; border-radius: 0 !important; padding: 5mm 6mm !important; break-inside: avoid; page-break-inside: avoid; grid-template-columns: 40px 1fr; }
+    .step::before { display: none; }
+    .step .num { color: #1a1611 !important; border-color: #d8cfc0 !important; }
+    .step .zh-copy .title, .step .en-copy .title { color: #1a1611 !important; }
+    .step .body { color: #333 !important; }
+    .step .tip { color: #6b5a3a !important; background: none !important; border: 1px solid #d8cfc0 !important; }
+    .key { color: #1a1611 !important; background: #fff !important; border: 1px solid #d8cfc0 !important; }
+    header::before { display: none; }
+    main { max-width: none; }
+  }
   main { max-width: 920px; margin: 0 auto }
   header::before {
     content: "❖"; display: block; color: rgba(201,180,88,.5); font-size: 13px;
@@ -109,6 +128,7 @@
     <a href="https://xiaodernan.github.io/caesura/console/">Systems console</a>
     <a href="https://github.com/xiaodernan/caesura/blob/master/docs/PLAYER-GUIDE.md">Full guide</a>
     <button class="lang" id="langToggle" aria-label="Toggle language / 切换语言">EN / 中文</button>
+    <button class="lang" id="printBtn" aria-label="Print this primer / 打印本小册子">🖨 Print</button>
   </div>
 </header>
 
@@ -283,6 +303,8 @@
     root.lang = root.dataset.lang === 'en' ? 'en-US' : 'zh-CN';
   } catch (e) { /* keep default zh */ }
   var btn = document.getElementById('langToggle');
+  var printBtn = document.getElementById('printBtn');
+  if (printBtn) printBtn.addEventListener('click', function () { window.print(); });
   if (!btn) return;
   btn.addEventListener('click', function () {
     var next = root.dataset.lang === 'en' ? 'zh' : 'en';

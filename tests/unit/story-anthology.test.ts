@@ -50,4 +50,13 @@ describe('余响集（story/anthology/index.html）', () => {
       expect(HTML, `missing link: ${href}`).toContain(href)
     }
   })
+
+  it('纸质整卷：@media print 样式 + #printBtn 按钮 + window.print() 直连', () => {
+    expect(HTML).toContain('@media print')
+    expect(HTML).toContain('@page')
+    expect(HTML).toContain('break-inside: avoid')
+    expect(HTML).toContain('id="printBtn"')
+    expect(HTML).toContain('window.print()')
+    expect(HTML).toContain('.shelf')
+  })
 })
