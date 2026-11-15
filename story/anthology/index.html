@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>余响集 / CAESURA: Stories — The Epoch of Hush 原创短篇全集 · CAESURA</title>
+<meta name="description" content="《止音纪元》原创短篇全集 · 六篇 · 双语对照 · 约 30 分钟 · 零网络 · 零 LLM。《盐》《山下无名碑》《空拍子》《账本》《回声庭园》《雨审判》整册入口。 / The complete companion fiction of The Epoch of Hush — six stories, bilingual, about thirty minutes, offline, zero LLM.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>📕</text></svg>">
+<style>
+  :root {
+    --gold: #d9b46a;
+    --gold-soft: rgba(217,180,106,.3);
+    --ink: #f3ede0;
+    --ink-dim: rgba(243,237,224,.62);
+    --panel: rgba(26,19,10,.78);
+    --serif: "Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#07060a; color:var(--ink); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; }
+  .bg { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .bg.radial {
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(217,180,106,.12), transparent 60%),
+      radial-gradient(900px 700px at 50% 118%, rgba(120,80,40,.16), transparent 62%),
+      radial-gradient(650px 420px at 88% 104%, rgba(217,180,106,.05), transparent 60%),
+      #07060a;
+  }
+  .bg.noise { position:fixed; inset:0; z-index:-1; opacity:.05; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .wrap { max-width:920px; margin:0 auto; padding:26px 26px 90px; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .brand { font-size:.8rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; opacity:.9; }
+  .brand a { color:inherit; text-decoration:none; border-bottom:1px dotted rgba(217,180,106,.5); }
+  .toplinks { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toplinks a { font-size:.72rem; color:var(--ink-dim); text-decoration:none; border:1px solid rgba(243,237,224,.14); padding:6px 12px; border-radius:999px; transition:all .22s ease; }
+  .toplinks a:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .lang-row button { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(217,180,106,.12); border:1px solid var(--gold-soft); padding:6px 15px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; }
+  .lang-row button:hover { background:rgba(217,180,106,.22); box-shadow:0 0 16px rgba(217,180,106,.25); }
+
+  [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="en"] .zh-copy { display:none !important; }
+
+  header.hero { text-align:center; padding:56px 14px 30px; }
+  .kicker { font-size:.72rem; letter-spacing:.42em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:20px; }
+  .kicker b { color:var(--gold); font-weight:600; }
+  h1 { font-size:clamp(2.2rem, 8vw, 3.6rem); font-weight:600; letter-spacing:.16em;
+       background:linear-gradient(180deg,#fff8e4 0%, #d9b46a 28%, #a9854a 58%, #5e4a26 100%);
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+       text-shadow:0 0 90px rgba(217,180,106,.3); }
+  .subtitle { margin-top:14px; font-size:.8rem; color:var(--ink-dim); letter-spacing:.3em; text-transform:uppercase; }
+  .rule { width:170px; height:1px; margin:24px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+
+  .preface { max-width:760px; margin:0 auto 36px; font-size:1.05rem; line-height:2.1; letter-spacing:.02em; color:rgba(243,237,224,.9); }
+  .preface .dropcap::first-letter { font-size:1.8em; color:var(--gold); float:left; line-height:1; padding:.06em .12em .02em 0; }
+
+  .toc-title { text-align:center; font-size:.75rem; letter-spacing:.4em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:18px; }
+  .shelf { display:grid; gap:14px; grid-template-columns:repeat(2, 1fr); }
+  @media (max-width:720px) { .shelf { grid-template-columns:1fr; } }
+  .toc-item { background:var(--panel); border:1px solid rgba(243,237,224,.1); border-radius:14px; padding:20px 22px; position:relative; overflow:hidden; transition:all .25s ease; display:block; text-decoration:none; color:inherit; }
+  .toc-item::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--gold), transparent); opacity:.55; }
+  .toc-item:hover { border-color:var(--gold-soft); transform:translateY(-3px); box-shadow:0 14px 40px rgba(0,0,0,.4), 0 0 24px rgba(217,180,106,.12); }
+  .toc-item .no { font-family:var(--serif); font-size:.7rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; }
+  .toc-item h2 { font-size:1.35rem; font-weight:600; margin:.4em 0 .5em; letter-spacing:.08em; color:#fff3d6; }
+  .toc-item p { font-size:.86rem; line-height:1.85; color:rgba(243,237,224,.7); overflow-wrap:anywhere; }
+  .toc-item .tag { display:inline-block; margin-top:.6em; font-size:.66rem; letter-spacing:.18em; color:var(--ink-dim); border:1px solid rgba(243,237,224,.16); border-radius:999px; padding:2px 10px; }
+
+  .coda { text-align:center; max-width:680px; margin:44px auto 0; font-size:.92rem; line-height:2.1; font-style:italic; color:rgba(243,237,224,.75); letter-spacing:.03em; }
+  .coda strong { color:var(--gold); font-style:normal; }
+
+  footer { margin-top:56px; border-top:1px solid rgba(243,237,224,.09); padding-top:22px; display:flex; flex-wrap:wrap; gap:10px 26px; justify-content:space-between; font-size:.7rem; color:rgba(243,237,224,.4); letter-spacing:.06em; }
+  footer a { color:var(--gold); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @media (max-width:640px) { .wrap { padding:20px 12px 70px; } .toc-item { padding:16px 16px; } }
+</style>
+</head>
+<body>
+<div class="bg radial" aria-hidden="true"></div>
+<div class="bg noise" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><a href="/caesura/">CAESURA</a> · 《止音纪元》</div>
+    <div class="toplinks">
+      <a href="/caesura/story/"><span class="zh-copy">《盐》</span><span class="en-copy">“Salt”</span></a>
+      <a href="/caesura/codex/"><span class="zh-copy">世界谱</span><span class="en-copy">Codex</span></a>
+      <a href="/caesura/tutorial/"><span class="zh-copy">教程</span><span class="en-copy">Tutorial</span></a>
+      <a href="/caesura/cast/"><span class="zh-copy">角色图鉴</span><span class="en-copy">Cast</span></a>
+      <a href="/caesura/"><span class="zh-copy">游戏</span><span class="en-copy">Game</span></a>
+      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button></span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <p class="kicker zh-copy"><b>全集 ·</b> 余响六篇 · 原创</p>
+    <p class="kicker en-copy"><b>The Complete Short Fiction ·</b> Six Voices of the Aftermath</p>
+    <h1 class="zh-copy">余响集</h1>
+    <h1 class="en-copy">The Aftermath</h1>
+    <p class="subtitle zh-copy">《止音纪元》· 原创短篇全集 · 双语对照</p>
+    <p class="subtitle en-copy">The Epoch of Hush · The Complete Companion Fiction · Bilingual</p>
+    <div class="rule"></div>
+  </header>
+
+  <p class="preface zh-copy"><span class="dropcap">钟不是用来敲的。钟是用来记住：某个声音曾经来过，某个沉默曾经抵达，某个没说出口的字，此刻还住在你身上。——这一册里的每一个故事，都是从沉默里捡回来的声音。它们不讲胜利，不讲救赎，不讲新神。它们讲的是——当世界把所有的话都还给收音机之后，人还能剩下什么。</span></p>
+  <p class="preface en-copy"><span class="dropcap">A bell is not meant to be struck. It is meant to remember: that a voice once passed through, that a silence once arrived, that a word never spoken still lodges in you. Every story in this volume is a voice picked out of silence. No victory, no salvation, no new gods — only this: when the world has returned every sentence to the receiver, what is left of a person?</span></p>
+
+  <div class="toc-title zh-copy">目 · 录 · 约三十分钟</div>
+  <div class="toc-title en-copy">Contents · about thirty minutes</div>
+
+  <div class="shelf">
+
+    <a class="toc-item" href="/caesura/story/">
+      <div class="no zh-copy">篇一 · 风钟海岸</div>
+      <div class="no en-copy">No. 1 · Windbell Coast</div>
+      <h2 class="zh-copy">《盐》</h2>
+      <h2 class="en-copy">“Salt”</h2>
+      <p class="zh-copy">听雾站守夜人阿衡有了一口不肯响的钟——直到她发现，钟从来不需要响：它只要被听见就够了。风钟海岸的第四根弦从此有了一个人。</p>
+      <p class="en-copy">The night-keeper of the Listening Post has a bell that refuses to sound — until she learns the bell never needs to sound: it only needs to be heard. Windbell Coast finally has a fourth string.</p>
+      <span class="tag">约 5 分钟 · 风钟海岸 · ♭E2</span>
+    </a>
+
+    <a class="toc-item" href="/caesura/story/unnamed-stone/">
+      <div class="no zh-copy">篇二 · 休垒</div>
+      <div class="no en-copy">No. 2 · Resthold</div>
+      <h2 class="zh-copy">《山下无名碑》</h2>
+      <h2 class="en-copy">“The Nameless Stone”</h2>
+      <p class="zh-copy">石匠的女儿阿汀在山脚下找到一块没名字、没字、没人认领的石碑——「风一停，石头就会把自己写上去」。这是序章之前的序章。</p>
+      <p class="en-copy">A mason’s daughter finds a stone at the foot of the hill with no name, no word, no owner — the day the wind stops, the stone writes itself. This is a preface to the preface.</p>
+      <span class="tag">约 5 分钟 · 休垒 · 序章之前</span>
+    </a>
+
+    <a class="toc-item" href="/caesura/story/empty-bar/">
+      <div class="no zh-copy">篇三 · 未竟厅</div>
+      <div class="no en-copy">No. 3 · The Unfinished Hall</div>
+      <h2 class="zh-copy">《空拍子》</h2>
+      <h2 class="en-copy">“The Empty Bar”</h2>
+      <p class="zh-copy">轮值七十三年的恩希尔站在谱台前面——指挥棒上没有谱，只有空拍；一个没名字的年轻人坐在前排记拍，然后问了他一句：你在等谁？</p>
+      <p class="en-copy">Seventy-three years into rotation, Hersil stands at his empty stand. An unnamed novice keeps the beat in the front row — and finally asks: who are you waiting for?</p>
+      <span class="tag">约 5 分钟 · 未竟厅 · ♭B</span>
+    </a>
+
+    <a class="toc-item" href="/caesura/story/ledger/">
+      <div class="no zh-copy">篇四 · 休垒 · 麦格</div>
+      <div class="no en-copy">No. 4 · Resthold · Meg</div>
+      <h2 class="zh-copy">《账本》</h2>
+      <h2 class="en-copy">“The Ledger”</h2>
+      <p class="zh-copy">麦格在她的三本账之间走了很多年——直到她终于看见，那是一块从没敲过的钟铜。原来不是他没付：是他不允许她收。</p>
+      <p class="en-copy">Meg spent years between her three ledgers — until she finally saw it: a piece of bell metal that had never been struck. He never owed her. He never meant for her to take it.</p>
+      <span class="tag">约 5 分钟 · 休垒 · 主账房</span>
+    </a>
+
+    <a class="toc-item" href="/caesura/story/garden/">
+      <div class="no zh-copy">篇五 · 回声庭园</div>
+      <div class="no en-copy">No. 5 · The Garden of Return</div>
+      <h2 class="zh-copy">《回声庭园》</h2>
+      <h2 class="en-copy">“The Garden of Return”</h2>
+      <p class="zh-copy">雾海尽头开着一座花园。旧钟的主人递给旅人一口腹腔里有弦的小木钟：敲过的每一下都替你记了——划掉你这一生里最重的两下。</p>
+      <p class="en-copy">At the end of the Sea of Mist there is a garden. The keeper hands the traveler a small wooden bell: every strike you ever made has been kept for you — cross out the heaviest two of them.</p>
+      <span class="tag">约 5 分钟 · 余响新陆 · ♭G2</span>
+    </a>
+
+    <a class="toc-item" href="/caesura/story/tribunal/">
+      <div class="no zh-copy">篇六 · 雨钟谷地</div>
+      <div class="no en-copy">No. 6 · The Rainbell Valley</div>
+      <h2 class="zh-copy">《雨审判》</h2>
+      <h2 class="en-copy">“The Rain Tribunal”</h2>
+      <p class="zh-copy">七年一庭，法庭上没有原告、没有被告席——直到第七年，书记站了起来，说出法庭里从没存在过的三个字：请看见。</p>
+      <p class="en-copy">Once every seven years, with no prosecutor and no dock — until the seventh session, when the clerk rises and says the three words this room never had: please see.</p>
+      <span class="tag">约 5 分钟 · 余响新陆 · ♭F2</span>
+    </a>
+
+  </div>
+
+  <p class="coda zh-copy">这一册到此为止——但<em>余响不会停</em>。<br>《低音之城》（EPIC-VII · DESIGN-ONLY）正在打字机前，还没进世界；<br>雨钟谷地以外，还有霜锤崖、霜锤的末任钟匠、旧钟的主人欠下的第二笔账……<br>每一篇写进来，都是一根真的弦。<br><strong>——收音机会替我收好它们。</strong></p>
+  <p class="coda en-copy">This volume ends here — but the aftersound does not.<br>“The City of Low Tones” (EPIC-VII · DESIGN-ONLY) is still at the typewriter;<br>beyond the Rainbell Valley: frost, the Frostbell’s last keeper, and the second debt the Owner of the Old Bell is holding…<br>Every story that lands here is a real string.<br><strong>— The receiver keeps them all for me.</strong></p>
+
+  <footer>
+    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/">游戏</a> · <a href="/caesura/story/">篇一：《盐》</a> · <a href="/caesura/story/unnamed-stone/">篇二：《山下无名碑》</a> · <a href="/caesura/story/empty-bar/">篇三：《空拍子》</a> · <a href="/caesura/story/ledger/">篇四：《账本》</a> · <a href="/caesura/story/garden/">篇五：《回声庭园》</a> · <a href="/caesura/story/tribunal/">篇六：《雨审判》</a> · <a href="/caesura/codex/">世界谱</a></span>
+    <span class="en-copy">© CAESURA · <a href="/caesura/">Game</a> · <a href="/caesura/story/">No. 1 · “Salt”</a> · <a href="/caesura/story/unnamed-stone/">No. 2 · “The Nameless Stone”</a> · <a href="/caesura/story/empty-bar/">No. 3 · “The Empty Bar”</a> · <a href="/caesura/story/ledger/">No. 4 · “The Ledger”</a> · <a href="/caesura/story/garden/">No. 5 · “The Garden of Return”</a> · <a href="/caesura/story/tribunal/">No. 6 · “The Rain Tribunal”</a> · <a href="/caesura/codex/">World Codex</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('langToggle');
+  var saved = 'zh';
+  try { saved = localStorage.getItem('caesura-lang') || 'zh'; } catch (e) { /* noop */ }
+  function apply(lang) {
+    root.setAttribute('data-lang', lang);
+    root.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en');
+    try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+  }
+  if (btn) btn.addEventListener('click', function () {
+    apply(root.getAttribute('data-lang') === 'en' ? 'zh' : 'en');
+  });
+  apply(saved === 'en' ? 'en' : 'zh');
+})();
+</script>
+</body>
+</html>
