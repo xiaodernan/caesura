@@ -1724,6 +1724,18 @@
           "y": 64,
           "z": -232
         }
+      },
+      {
+        "id": "in_fellcarillon_frozen_shadow",
+        "kind": "inspect",
+        "verb": "看崖壁上结住的几道钟影",
+        "verbKey": "interact.readShadowOnIce",
+        "notifyKey": "world.flavor.fellcarillon.frozenShadow",
+        "pos": {
+          "x": 240,
+          "y": 64,
+          "z": -300
+        }
       }
     ],
     "music": {
