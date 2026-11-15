@@ -119,6 +119,7 @@ public class LoreController {
     node.put("hitRate", s.hitRate());
     node.put("uptimeMs", System.currentTimeMillis() - startedAt);
     node.put("playerProcessLlm", false);
+    node.put("degradedRequests", s.degradedRequests());
     ObjectNode db = mapper.createObjectNode();
     for (Map.Entry<String, Object> kv : sqlite.healthBlock().entrySet()) {
       Object v = kv.getValue();
@@ -136,6 +137,12 @@ public class LoreController {
 
   private String normalize(String q) {
     return q == null ? "" : q.trim().toLowerCase().replaceAll("\\s+", " ");
+  }
+
+  /** 启动预热用：同样的 key（`codex:zh`/`codex:en`）、同样的载荷 —— 首个真实请求直接命中 */
+  public void warmCodexCache() {
+    cache.warm("codex", "codex:zh", () -> renderCodex("zh"));
+    cache.warm("codex", "codex:en", () -> renderCodex("en"));
   }
 
   private String renderCodex(String lang) {

@@ -23,7 +23,7 @@ GET  /lore/codex/{id}?lang=zh|en   → 200 单条 / 404 {"error":"not_found"}
 GET  /lore/search?q=万籁&limit=5[&engine=fts]   → { q, lang, total, tookMs, algorithm, engine, hits: [{id,cat,title,body,score}] }
 POST /lore/search  {"q":"万籁","limit":5,"lang":"zh","engine":"fts"}  （同上；JSON 体形态）
 GET  /lore/explain?q=万籁          → { q, tokens, plan, engine }（EXPLAIN QUERY PLAN 原文 + 分词；每问必真算，不进缓存）
-GET  /lore/stats                   → { entries, cacheBackend, cacheHits, cacheMisses, searches, hitRate, uptimeMs, playerProcessLlm: false, db: { entries, postings, distinctTokens, avgdl, buildMs, type, plan } }
+GET  /lore/stats                   → { entries, cacheBackend, cacheHits, cacheMisses, searches, hitRate, degradedRequests, uptimeMs, playerProcessLlm: false, db: { entries, postings, distinctTokens, avgdl, buildMs, type, plan } }
 GET  /lore/health（≡ actuator /actuator/health 的 lore 环节）→ { entries: 52 }
 ```
 
@@ -45,9 +45,24 @@ node scripts/lore-codex-snapshot.mjs
 | 模式 | 触发 | 行为 |
 |---|---|---|
 | `memory`（默认） | `CAESURA_LORE_CACHE=memory` 或缺省 | `ConcurrentMapCacheManager`，零外部依赖，健康不被 Redis 拖垮 |
-| `redis` | `CAESURA_LORE_CACHE=redis` + `SPRING_DATA_REDIS_HOST/PORT` | `RedisCacheManager`，10 分钟 TTL，`lore:` 键前缀 |
+| `redis`（降级自持） | `CAESURA_LORE_CACHE=redis` + `SPRING_DATA_REDIS_HOST/PORT` | `RedisCacheManager`，10 分钟 TTL，`lore:` 键前缀；**挂了也降级不打挂主链路，只记 `degradedRequests`** |
 
 **真机验证（2026-11-15 · throwaway 容器 · 已销毁）**：`redis:7.4-alpine` @ 16399 · health UP（redis 组件 UP）· `KEYS 'lore:*'` → `lore:codex:codex:zh` + `lore:search:search:zh:万籁:5` · 同一查询 ×3 ⇒ `hitRate=0.6`。
+
+## 缓存降级与启动预热（2026-11-15 落）
+
+**启动预热**（`LoreWarmup`）：context 就绪后把 `codex:zh` + `codex:en` 两个载荷直接放进缓存（**不进 hit/miss 记账**——预热是机器开机成本，不进用户流量的 hitRate）。实机读数：warmed in **15.36 ms**；首个真实 `/lore/codex?lang=zh` 请求 = **hit**（hits=1 · misses=0 · hitRate=1.0）。
+
+**缓存降级**：`getOrCompute` 的读/写都吞 `RuntimeException` 并计入 `degradedRequests`——
+Redis 挂了不许把主链路拖死。实机读数（`CAESURA_LORE_CACHE=redis` · `SPRING_DATA_REDIS_HOST=localhost` · `PORT=16399` 无容器）：
+
+```
+GET /lore/codex?lang=zh        → 200 total=52
+GET /lore/search?q=万籁&limit=2 → 200 total=2
+GET /lore/stats                 → cacheBackend=RedisCacheManager · degraded=4 · hits=0 · misses=0
+```
+
+**结论**：缓存只增不减——缓存挂了就现算、记账不丢、主链路永远不因为缓存失败而 500。`degradedRequests` 是给运维看的信号（>0 = 该去查 Redis 了）。
 
 ## SQLite 词袋倒排·可观测性（2026-11-15 落）
 
