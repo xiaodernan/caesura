@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "bb2e7762defdc438b9185a18ec0b31dc991cf213",
+  "head": "265764758f857870f8ae22c34dc6aa5807989ea7",
   "branch": "master",
-  "subject": "docs(spring-family): KI-612 账本——本机错位端口整族 ALL GREEN · PHASE-STATUS 重嵌 KI.rows 530 / Implemented 353",
-  "date": "2026-11-16T17:01:15+08:00",
+  "subject": "fix(codex): 顶栏横向溢出 — 世界谱顶部横向导航行过宽 (scrollWidth 1087 > innerWidth 1000 @1000px) · .lang-row 补 flex-wrap+justify-content:flex-end",
+  "date": "2026-11-16T17:18:52+08:00",
   "kv": {
     "KI.rows": 530,
     "KI.Implemented": 353,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/bb2e7762defdc438b9185a18ec0b31dc991cf213",
+    "url": "https://github.com/xiaodernan/caesura/commit/265764758f857870f8ae22c34dc6aa5807989ea7",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
