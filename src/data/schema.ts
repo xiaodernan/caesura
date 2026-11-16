@@ -1328,12 +1328,12 @@ export interface InteractableRef {
   /** 提示文案里的动词，覆盖按 kind 的默认值（如吊机 ≠ 共鸣井）；**`verbKey`（Phase 6 双语）给定时优先**——EN 模式不许漏中文 */
   verb?: string
   /**
-   * 动词的本地化键（`interact.*`，Lang zh/en 双存储）。`Interactables.update` 用 `t(verbKey) ?? verb ?? VERB[kind]` 渲染。
+   * 动词的本地化键（`interact.*`，Lang zh / zh-TW / en 三态对账）。`Interactables.update` 用 `t(verbKey) ?? verb ?? VERB[kind]` 渲染。
    * 新数据必须登记 verbKey：`tests/unit/region-verb-i18n.test.ts` 钉住「每一条 verb 都有中文逐字对账、英文零 CJK」。
    */
   verbKey?: string
   /**
-   * 触发后播报文案的本地化键（`world.flavor.*`，Lang zh/en 双存储）。给定了它 ⇒ batch 时走 `t(notifyKey)` 上屏；
+   * 触发后播报文案的本地化键（`world.flavor.*`，Lang zh / zh-TW / en 三态对账）。给定了它 ⇒ batch 时走 `t(notifyKey)` 上屏；
    * 旧字段 `notify`（raw 中文）保留兼容——新数据请登记 notifyKey，不要写死仅中文。
    */
   notifyKey?: string

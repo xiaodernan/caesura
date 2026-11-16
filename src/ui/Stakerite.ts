@@ -32,7 +32,7 @@ import { SAVE_CARD_CSS, saveCards, saveCardHtml, slotLabel, type SaveCardView } 
 
 /**
  * 「手册」页签（始终可用）：玩家从第一帧起就能读到的游戏说明书——不在文档里、不在终端上，
- * 而是在每一次调音桩面板里。本语言（zh/en）由 getLang() 在渲染时挑一半。
+ * 而是在每一次调音桩面板里。本语言由 getLang() 在渲染时挑一半：zh（简体）/ zh-TW（繁體）/ en 三态。
  *  content 不走 Lang 字典：若每段文字都进 Lang，要的是双重同构门守住它，
  *  而这一页的行文就是散文本身——双语并不是冷硬的 key-value，是平行的两份散文。
  *  结构：节 × 段落 × 键（control list）。
@@ -373,7 +373,7 @@ const TABS: { id: Tab; label: string; hint: string }[] = [
 const MANUAL_TAB: { id: Tab; label: string; hint: string } = { id: 'manual', label: t('stak.tab.manual'), hint: t('stak.tab.manual.hint') }
 /**
  * 「游记」页签（2026-11-15）：八区小记 + 刻痕指路 + 边界之外（未开门世界）—— 为新来的玩家把整个世界
- * 摊在一页上。和「手册」同为不抓把手、永远可用的一页；正文住在 PLAYER_ATLAS，zh/en 两份静态对照。
+ * 摊在一页上。和「手册」同为不抓把手、永远可用的一页；正文住在 PLAYER_ATLAS，zh / zh-TW / en 三份静态对照。
  */
 const ATLAS_TAB: { id: Tab; label: string; hint: string } = { id: 'atlas', label: t('stak.tab.atlas'), hint: t('stak.tab.atlas.hint') }
 
