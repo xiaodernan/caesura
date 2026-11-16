@@ -654,6 +654,18 @@
           "y": 0,
           "z": 130
         }
+      },
+      {
+        "id": "in_whisperwode_cradle_hollow",
+        "kind": "inspect",
+        "verb": "看树洞里蒙着薄布的那个小匣子",
+        "verbKey": "interact.lookCradleHollow",
+        "notifyKey": "world.flavor.whisperwode.cradleHollow",
+        "pos": {
+          "x": 300,
+          "y": 0,
+          "z": 40
+        }
       }
     ],
     "music": {

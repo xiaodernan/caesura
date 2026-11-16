@@ -57,18 +57,21 @@ describe('World Codex（codex/index.html）', () => {
     }
   })
 
-  it('十四处刻痕全文入库（中英平行）', () => {
+  it('二十九处刻痕全文入库（中英平行）', () => {
     const marks = (HTML.match(/cat:'mark'/g) ?? []).length
-    expect(marks, 'mark entries').toBe(14)
+    expect(marks, 'mark entries').toBe(29)
     for (const line of [
-      'before your first breath',
-      'The trees in Whisperwode',
-      'At the bottom, a bell never struck',
-      'The pendulum',
-      'a bell never struck',
+      'First-Breath Slab (Resthold)',
+      'The Unbird’d Branch (Whisperwode)',
+      'The Submerged Bell (Drowned Choir)',
+      'The Pendulum’s Mirror (Unfinished Hall)',
       'your own footsteps from three years ago',
-      'no one counts it anymore',
-      'Tide-Lines',
+      'The Unstopped Metronome (Brokenbar)',
+      'The Wax-Deaf (Earless Deeps)',
+      'Tide-Lines (Windbell Coast)',
+      'The Apologizing Chisel (Fellcarillon)',
+      'The Toothed Crack (Windbell Coast)',
+      'The Satchel of Seals (Earless Deeps)',
     ]) {
       expect(HTML, `missing mark line: ${line}`).toContain(line)
     }
