@@ -17,7 +17,7 @@ export const TELEMETRY = {
       {
         "labelZh": "Baymard Institute · 平均购物车放弃率 70.22%",
         "labelEn": "Baymard Institute · avg. cart abandonment 70.22%",
-        "detail": "2026-10-28 更新 · 50 项研究 2006–2025 · 非加权均值 · 2026-11-16 检索核对（baymard.com/lists/cart-abandonment-rate）。"
+        "detail": "2026-10-28 更新 · 50 项研究 2006–2025 · 非加权均值 · 2026-11-17 实测再取核对（baymard.com/blog/cart-abandonment-rate：正文明载 70.22% · 50 published studies · 2006–2025，数值无变化）。"
       },
       {
         "labelZh": "Nielsen Norman Group · 10 秒法则",
