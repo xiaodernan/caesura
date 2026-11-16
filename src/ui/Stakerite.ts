@@ -69,6 +69,7 @@ const PLAYER_MANUAL: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">Save 与 Map 互补</span><span class="note">迷路时按 Tab 看地图；目标在哪儿地图会告诉你</span></div>
 <div class="row"><span class="name">卡进战斗</span><span class="note">按 E 和她们说话——每段对话都是一键通关道路</span></div>
 <div class="row"><span class="name">输入不认</span><span class="note">调音 → 操作 → 逐行改键：把任意一行换掉</span></div>
+<div class="row"><span class="name">还想看看这款游戏是怎么做出来的？</span><span class="note">浏览器打开 <code>xiaodernan.github.io/caesura/admin/</code> ——口令 <code>123</code> 即可进入「用户观察站」：你可以看着这款游戏是怎么被造出来、用户怎么退出、哪一天特别热闹。这里不卖资料、不收订阅，只摆放数据和推导</span></div>
 
 <h2>Encore · 风钟海岸</h2>
 <div class="row"><span class="name">剩下一片海</span><span class="note">Ending 之后，未竟厅被敲响了第一拍——海岸线的那头，还有三段话，等你去走</span></div>
@@ -109,6 +110,7 @@ const PLAYER_MANUAL: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">Map & Save are tools</span><span class="note">Map (Tab) shows where you haven't walked; peg (E) writes the save</span></div>
 <div class="row"><span class="name">Stuck in combat</span><span class="note">Walk up to them, press E; every dialogue is a road out</span></div>
 <div class="row"><span class="name">Default key wrong</span><span class="note">Tune → Ops tab → rebind any line you'd rather swap</span></div>
+<div class="row"><span class="name">Want to peek behind the curtain?</span><span class="note">Open <code>xiaodernan.github.io/caesura/admin/</code> — passphrase <code>123</code> lets you into the Observatory: watch how this game was built, what makes players leave, which days it had a peak. No paywall, no newsletter, just data and reasoning put on a shelf</span></div>
 
 <h2>Encore · Windbell Coast</h2>
 <div class="row"><span class="name">The coast is waiting</span><span class="note">Epilogue done → the Unfinished Hall sounds its first real bell; the shore has more to say when you arrive</span></div>
