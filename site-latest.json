@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "355cf43414ca33c70888e979c301645bf1a83aa6",
+  "head": "097b42541310607ac947dcef772c665d0083acf9",
   "branch": "master",
-  "subject": "chore(i18n): TW 表随篇十五《低音之城》原文重生（+1.26KB · ≈109KB）",
-  "date": "2026-11-16T21:40:59+08:00",
+  "subject": "site-latest: 355cf43 (post-rebase reconcile)",
+  "date": "2026-11-16T21:41:07+08:00",
   "kv": {
     "KI.rows": 534,
     "KI.Implemented": 357,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/355cf43414ca33c70888e979c301645bf1a83aa6",
+    "url": "https://github.com/xiaodernan/caesura/commit/097b42541310607ac947dcef772c665d0083acf9",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
