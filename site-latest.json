@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "abc7b5227aaa20e6c0d0786643b5f68b2907861c",
+  "head": "fc152172c7cb2f3161f590c16ba5b51cd6c535b3",
   "branch": "master",
-  "subject": "feat(story): No.16《钟摆渡人 / The Pendulum Ferryman》+ 全站互链对账（KI-618）",
-  "date": "2026-11-16T23:41:37+08:00",
+  "subject": "chore(pages): Pages 镜像 site-latest.json（hub 直读 /caesura/site-latest.json）",
+  "date": "2026-11-16T23:46:31+08:00",
   "kv": {
     "KI.rows": 536,
     "KI.Implemented": 359,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/abc7b5227aaa20e6c0d0786643b5f68b2907861c",
+    "url": "https://github.com/xiaodernan/caesura/commit/fc152172c7cb2f3161f590c16ba5b51cd6c535b3",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
