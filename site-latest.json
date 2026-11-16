@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "3fa4ae5b84bbacc264e6f8ce87059314a7d66cec",
+  "head": "3f536fb13f8683d036dfdd1ff4783bf25232ad71",
   "branch": "master",
-  "subject": "content(inscriptions): 第 30 处刻痕·风钟海岸「甲板旧木」· Codex 三十条 + 刻痕教 doctrine · KI-605",
-  "date": "2026-11-16T13:40:35+08:00",
+  "subject": "feat(tutorial): Step 10 状态图与灵魂双语 · KI-606 + docs: llm-cache-fix 实测复核 aizzz · KI-587/606",
+  "date": "2026-11-16T14:36:26+08:00",
   "kv": {
-    "KI.rows": 523,
-    "KI.Implemented": 346,
+    "KI.rows": 524,
+    "KI.Implemented": 347,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/3fa4ae5b84bbacc264e6f8ce87059314a7d66cec",
+    "url": "https://github.com/xiaodernan/caesura/commit/3f536fb13f8683d036dfdd1ff4783bf25232ad71",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
