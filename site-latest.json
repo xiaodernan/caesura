@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "a7efb0ef318029d2a4e40a6409b057d022646c2f",
+  "head": "454d59f2785637791c6e4582669ac7abfdadba59",
   "branch": "master",
-  "subject": "site-latest: 349930b (post-rebase reconcile)",
-  "date": "2026-11-17T03:22:48+08:00",
+  "subject": "feat(story): KI-621《余响集》第十七篇《未竟账页》落地",
+  "date": "2026-11-17T04:18:01+08:00",
   "kv": {
-    "KI.rows": 538,
-    "KI.Implemented": 361,
+    "KI.rows": 539,
+    "KI.Implemented": 362,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/a7efb0ef318029d2a4e40a6409b057d022646c2f",
+    "url": "https://github.com/xiaodernan/caesura/commit/454d59f2785637791c6e4582669ac7abfdadba59",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
