@@ -93,7 +93,8 @@
     "gateway-filters:bench": "node scripts/caesura-gateway-filters.mjs --bench",
     "ai:director": "node scripts/ai-director.mjs",
     "ai:director:live": "node scripts/ai-director.mjs --live",
-    "ai:director:qa": "node scripts/ai-director-transitions-qa.mjs"
+    "ai:director:qa": "node scripts/ai-director-transitions-qa.mjs",
+    "ai:dispatch": "node scripts/ai-world-dispatch.mjs"
   },
   "dependencies": {
     "three": "^0.186.0"
