@@ -138,3 +138,36 @@ npm run llm:diff        # 机读再认谁泄漏进 dialogue.json（应永远 0�
 > ⑤ 总裁决：**keep**。
 
 诚实边界（不变）：LLM 便签不下定论；候选仍 `requiresHumanReview=true`；**dialogue.json 零改动**；裁决仍在作者。若采纳，请手抄并注 `decision: 'kept' | 'trimmed' | 'rejected'`（仅供追溯，不参与 schema 校验）。据此建议（非强制）保留本线作为董娘剪刀师侧的声。
+## 2026-11-17 `llm:qa` · aizzz 新 endpoint 实跑 + 网络颤抖兜底
+
+**任务源**：用户指示「现在大模型的 api 已经修改了……用新的，这个内容」；新 endpoint `api.aizzz.xyz/v1`、模型 `gpt-6.1-terra`（默认 env 已切换；`.env` 不入仓库、密钥只从 env 读）。
+
+**实践**：本轮 `scripts/llm-dialogue-qa.mjs`
+
+1. `callSingle` 包进 `try/catch`；网络颤抖（ECONNRESET / fetch failed / 超时）`等 1.5s` 后重试一次——本轮
+   仍不写回 dialogue.json，零文件落入仓库。
+2. 所有循环中非 200 / 解析失败 → `"verdict": "skip"` 并发回结构化原因，不挂死。
+3. `--out` 失效 / 小量对话也跑得通；`--json` 同步输出 JSONL 到文件。
+
+**真跑 `DLG_MEG` 12 节点结果**（真 key · proxy 7897）：
+
+| Verdict | 数 | 代表 |
+|---------|---|------|
+| pass    | 4 | n0 n2 n4 n16（audio-coach 合格） |
+| flag    | 7 | n1 n3 n5 n6 n7 n8 n9（「“录音”偏现代」「解释过满」「缺 MEG 冷淡讽刺」等） |
+| skip    | 1 | n10（纯动作环境） |
+
+—— `all 12 节点 HTTP 200 · lazy retry 不触发`。
+
+**Flag 质量**：其中 ①「“录音”偏现代」、②「连续交代地点、机制与获取方式」、③「末句解释过满」——
+每一条都命中 MEG 的 *声线总纲*（冷慢、压着火、余音比敲击重要）。这 7 条 flag 不会自动落任何文件，
+纯粹的问题列表，留给作者裁决。
+
+**玩家进程**：零 LLM · 零网络 · dialogue.json 零改写。
+
+### 诚实边界
+
+- 输出结构 `{id, speaker, quote, verdict, issues[]}` 零变化。
+- verdict 仅作作者参考；4 pass 不代表这四句“好”，7 flag 不代表“必须改”。
+- 12 节点一次跑完 ≠ 节点全调 LLM（504流永远可能断）—— llm-dialogue-qa 已自救，worked end-to-end。
+- `--out` 真跑失败不会有符号泄漏：log 文件落 `.scratch/`，不会进仓库。

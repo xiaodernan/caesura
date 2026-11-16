@@ -69,9 +69,7 @@ for (const conv of CONVS) {
 }
 
 async function callSingle(it) {
-  // 保留 llm-dialogue-qa 自身的「审稿人 / 严格 JSONL」系统提示；bible 不是审稿文风 = 不能罩这 81 条节点。
-  // 直接 callLlm + 同 temperature=0 + 流协议 + 护存（等同旧提示，但现在可读 cache 数字）。
-  const out = await callLlm({
+  const msgs = () => ({
     model: MODEL,
     stream: true,
     stream_options: { include_usage: true },
@@ -82,8 +80,21 @@ async function callSingle(it) {
       { role: 'user', content: `dialogue.id=${it.id}\ndialogue.speaker=${it.speaker}\ndialogue.emotion=${it.emotion ?? 'n/a'}\n\n${it.text}` },
     ],
   })
-  const content = out.text || ''
-  return { status: out.status, text: content, json: out.usage ? { choices: [{ message: { content } }], usage: out.usage } : null, ms: out.dt, cachedTokens: out.cachedTokens }
+  try {
+    const out = await callLlm(msgs())
+    const content = out.text || ''
+    return { status: out.status, text: content, json: out.usage ? { choices: [{ message: { content } }], usage: out.usage } : null, ms: out.dt, cachedTokens: out.cachedTokens }
+  } catch (e) {
+    /* 网络颤抖：等 1.5s 重试一次（仍在 same process，不撤脚本） */
+    await new Promise((r) => setTimeout(r, 1500))
+    try {
+      const out = await callLlm(msgs())
+      const content = out.text || ''
+      return { status: out.status, text: content, json: out.usage ? { choices: [{ message: { content } }], usage: out.usage } : null, ms: out.dt, cachedTokens: out.cachedTokens }
+    } catch (e2) {
+      return { status: 0, text: '', json: null, ms: 0, cachedTokens: 0, error: String(e2?.message || e2) }
+    }
+  }
 }
 
 if (isCliInvocation) {
@@ -94,9 +105,14 @@ if (isCliInvocation) {
   console.error(`[llm-dialogue-qa] ${NODES.length} dialogue nodes @ ${BASE} (${MODEL})`)
   const outChunks = []
   for (const it of NODES) {
-    const out = await callSingle(it)
+    let out
+    try {
+      out = await callSingle(it)
+    } catch (e) {
+      out = { status: 0, text: '', json: null, ms: 0, cachedTokens: 0, error: String(e?.message || e) }
+    }
     if (out.status !== 200) {
-      outChunks.push(JSON.stringify({ id: it.id, speaker: it.speaker, quote: it.text, verdict: 'skip', issues: [`http ${out.status}`] }) + '\n')
+      outChunks.push(JSON.stringify({ id: it.id, speaker: it.speaker, quote: it.text, verdict: 'skip', issues: [`http ${out.status}: ${out.error ?? 'err'}`] }) + '\n')
       continue
     }
     const content = String(out.json?.choices?.[0]?.message?.content ?? '').trim()
