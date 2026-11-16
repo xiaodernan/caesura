@@ -2769,6 +2769,18 @@
           "y": 0,
           "z": 141
         }
+      },
+      {
+        "id": "in_windcoast_hulk_plank",
+        "kind": "inspect",
+        "verb": "看潮里露出来的那块船底旧木",
+        "verbKey": "interact.lookHulkPlank",
+        "notifyKey": "world.flavor.windcoast.hulkPlank",
+        "pos": {
+          "x": 480,
+          "y": 0,
+          "z": -80
+        }
       }
     ],
     "secrets": [

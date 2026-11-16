@@ -28,7 +28,7 @@ npm run dev            # Vite dev server；浏览器打开 http://localhost:5173
 - 系统台：<https://xiaodernan.github.io/caesura/console/>（Wave 56 / 八地域世界图 / 集大成 panels） ·  
 - **止音后台 · 用户观察站**：<https://xiaodernan.github.io/caesura/admin/>（口令 **123** · 转化漏斗 · 留存矩阵 · 异常日检测 · 退出点 & Rage-click · 按数据现场推导的 Top-10 优化动作 · 双语 · 静态种子数据 + 本机实况 localStorage · KI-583） ·  
 - 角色图鉴：<https://xiaodernan.github.io/caesura/cast/>（Cast Roster · 15 个势力/地域/NPC/Boss，中/EN 双语） ·  
-- 世界谱：<https://xiaodernan.github.io/caesura/codex/>（World Codex · 56 条真实项目文本的双语 BM25 检索 · 浏览器内索引 · 零网络 · 零 LLM · 2026-11-16） ·  
+- 世界谱：<https://xiaodernan.github.io/caesura/codex/>（World Codex · 57 条真实项目文本的双语 BM25 检索 · 浏览器内索引 · 零网络 · 零 LLM · 2026-11-16） ·  
 - 《盐》（短篇原创）：<https://xiaodernan.github.io/caesura/story/>（风钟海岸 · 听雾站 · 《盐》· 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《山下无名碑》（短篇原创之二）：<https://xiaodernan.github.io/caesura/story/unnamed-stone/>（休垒 · 山脚 · 石匠的女儿阿汀 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《空拍子》（短篇原创之三）：<https://xiaodernan.github.io/caesura/story/empty-bar/>（未竟厅 · 七十三年轮值 · 恩希尔的注视 · 双语对照 · 零 LLM · 2026-11-15） ·  
