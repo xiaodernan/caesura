@@ -75,7 +75,7 @@ const STRINGS = {
   'ai.draft.h4': { zh: '第十七篇游记 · 草稿（人工闸，不落库）', en: 'Travelogue No.17 · draft (human gate; not committed)' },
   'ai.offline': { zh: '离线 dry-run 产物——跑 npm run ai:director:live 生成真机版本。', en: 'Offline dry-run artifact — run npm run ai:director:live to produce the real one.' },
   'ai.l.h3': { zh: '自带 Key · 现场诊断', en: 'Bring your own key · live' },
-  'ai.l.note': { zh: 'Key 只存你这台浏览器的 sessionStorage，不落盘、不上报、不进任何仓库；网关已向浏览器开放 CORS（实测）。每次调用消耗的是你自己网关上的 token。', en: 'Your key lives only in this browser’s sessionStorage — never on disk, never reported, never in any repo. The gateway allows browser CORS (verified). Calls spend your gateway’s tokens.' },
+  'ai.l.note': { zh: 'Key 只存你这台浏览器的 sessionStorage，不落盘、不上报、不进任何仓库；网关 CORS 已实测开放。连得上与否取决于你的网络路径（本机 Clash：让浏览器走系统代理/TUN；海外直连；否则本机 npm run ai:director:live）。每次调用消耗的是你自己网关上的 token。', en: 'Your key lives only in this browser’s sessionStorage — never on disk, never reported, never in any repo; the gateway’s CORS is open (verified). Reachability depends on your network path (local Clash: browser must use the system proxy/TUN; overseas: direct; otherwise use npm run ai:director:live locally). Calls spend your gateway’s tokens.' },
   'ai.l.base': { zh: 'Base URL（OpenAI 兼容）', en: 'Base URL (OpenAI-compatible)' },
   'ai.l.model': { zh: '模型', en: 'Model' },
   'ai.l.key': { zh: 'API Key', en: 'API Key' },
@@ -612,7 +612,7 @@ async function runAiLive(e) {
     out.textContent = content || T('(空响应)', '(empty response)')
     wrap.hidden = false
   } catch (e2) {
-    showAiError(`${T('请求失败：', 'Request failed: ')}${(e2 && e2.message) || e2}\n${T('（网关已实测向浏览器开放 CORS；请检查 Base URL / Key。或改用本机 npm run ai:director:live）', '(The gateway allows browser CORS (verified); check Base URL / key — or run npm run ai:director:live locally)')}`)
+    showAiError(`${T('请求失败：', 'Request failed: ')}${(e2 && e2.message) || e2}\n${T('（诚实提示：CORS 网关是开放的，但你的浏览器能不能到到网关是另一回事——本机 Clash Verge 下浏览器需走系统代理/TUN 才能连上 aizzz；海外网络可直连；如两者都不行，用本机 npm run ai:director:live 生成真跑产物即可在「最近一次真机运行」查看）', '(Honest note: the gateway’s CORS is open, but whether your browser can reach the gateway is a separate question — with local Clash Verge your browser needs the system proxy/TUN; overseas networks reach it directly. Either way, npm run ai:director:live on the machine produces the mirrored report on the left.)')}`)
   } finally {
     btn.disabled = false
     btn.textContent = T('真跑诊断 →', 'Run live diagnosis →')
