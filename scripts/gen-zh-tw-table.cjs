@@ -33,6 +33,7 @@ try {
     'story/twelfth-listener/index.html',
     'story/bell-picker/index.html',
     'story/lampwright-bell/index.html',
+    'story/lowtone-city/index.html',
   ];
 
   const PHRASES = new Set();
