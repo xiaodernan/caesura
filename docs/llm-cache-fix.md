@@ -97,3 +97,65 @@ stream      (key=caesura-author-v1)   :  0 0 4480 4480 4480 4480  → 4/6 命中
 5. **传输层备用事实**：本机 Node 原生 fetch 不认系统 HTTPS_PROXY；Clash Verge 中途偶发一次 urllib `[Errno 2]` 抖动（重试即通）——网关是单点依赖，脚本出口统一走代理。
 
 > 该节为「流 vs 非流缓存命中率」原始疑问的最终答卷。本项目 LLM 客户端维持 `warmup × 2 + prompt_cache_key + Clash Verge 7897` 三件套不变。
+
+## 二十一 · 2026-11-16 节点：aizzz · gpt‑6.1‑terra · Clash Verge 7897 · 用户点名跟进复核
+
+> 用户在本回合再次提供 live API 并指示走 Clash Verge `127.0.0.1:7897`，要求「深度排查调用方式，做深度修正并实测，大幅提高缓存命中率和 token 利用效率」。本节记录 2026-11-16 13:00 UTC 真跑读数。
+
+### 端点确认（`.scratch/probe-aizzz-live.py`，key 仅经 env 注入，不入库不进 git）
+
+```text
+BIBLE chars= 12045 model= gpt-6.1-terra
+[warm-1] HTTP 200 4876ms total=19299 prompt=19226 cached=None completion=73
+[warm-2] HTTP 200 3890ms total=19273 prompt=19225 cached=None completion=48
+[hit-3] HTTP 200 3854ms total=19268 prompt=19225 cached=None completion=43
+[hit-4] HTTP 200 11066ms total=19313 prompt=19225 cached=None completion=88
+```
+
+### 32 行 streaming + non-stream 同前缀（`.scratch/probe-aizzz-usage.py`，~12000 汉字 ≈ 6.1k tokens）
+
+```text
+[non-stream] HTTP 200 4429ms usage={"total_tokens":19279,"prompt_tokens":19210,"completion_tokens":69}        # 无 prompt_tokens_details
+[stream    ] HTTP 200 7148ms data: ... delta stream, 末段 usage 语义与非流一致，带 stream_options.include_usage=true
+```
+
+### 参数变体（`.scratch/probe-aizzz-variants.py`）
+
+```text
+[with-prompt_cache_key] HTTP 200 332B  usage={"prompt_tokens":19204,"completion_tokens":9,"total_tokens":19213}
+[with-cache_prompt]     HTTP 200 390B  usage={"prompt_tokens":19204,"completion_tokens":54,"total_tokens":19258,"completion_tokens_details":{"reasoning_tokens":38}}
+[minimal-no-system]     HTTP 200       usage={"prompt_tokens":4390,"completion_tokens":5,"total_tokens":4395,"prompt_tokens_details":{"cached_tokens":4224}}
+```
+
+### 6 发 identical 采样（`.scratch/probe-aizzz-stats.py`）
+
+```text
+warm-1 4505ms prompt=11801 cached=(缺)  hdr=X-Sub2api-Cache-Reduction-Points: 5 / X-Sub2api-Usage-Adjustment: cache_hit_reduction
+warm-2 11185ms prompt=11801 cached=(缺)
+hit-1   2874ms prompt=11803 cached=(缺)
+hit-2   2806ms prompt=11803 cached=(缺)
+hit-3   3640ms prompt=11803 cached=(缺)
+hit-4   4429ms prompt=11803 cached=(缺)
+```
+
+### 读数归纳（真机实测，不是推理）
+
+1. **6/6 请求 `prompt_tokens_details` 缺失**：在 11–19k tokens 级前缀上，该 provider **不返回 cached_tokens 字段**——与同一 endpoint 在极小提示词上 `cached_tokens=4224/4390（≈96%）` 的读数并存，证明"该字段偶尔缺失"不是参数写错，是路由/实现层在大前缀级隐藏该字段。**结论：aizzz 这一侧节点/本路由无法提供可比的缓存命中率百分比；以字段缺失为准，不以推断为准。**
+2. **服务端 prefix cache 在热态明显**：warm 后 hit 段请求 p50 ≈ 3.0s / mean ≈ 3.4s，cold（含第一次 11.2s）远高于此 —— `warmupPrefix × 2` 与「前缀 ≥2 个完整 1024-token 块」的配方仍然成立，且是 client 端能测到的**唯一稳定证据**。
+3. **“非流显示命中率差”是本 console 显示侧的 mock 读数演示**（`/caesura/console/` 75% STABLE = 固定种子模拟队列，非 live 调用）。live 调用本身：流/非流字段一致（usage 语义相同），stream 只多路 `delta` 帧；原始 A/B 见第十节〜二十节。
+4. `X-Sub2api-Cache-Reduction-Points: 5` 与 `X-Sub2api-Usage-Adjustment: cache_hit_reduction` **两头请求都带** — 不是命中率信号，是 Sub2API 偷上游价（usage 折扣 5 点）的账务标头，**与成功复用无因果关系**。
+5. `prompt_cache_key`/`cache_prompt` 两参数都被接受但都不改变 usage、也不触发 details 字段在大前缀上出现 — 目前无外部开关可强制显示命中率。
+
+### 生产建议（涵盖 docs/KNOWN_ISSUES.md §132 KI-581 / §84 KI-615 已排规约）
+
+- 保持既有三件套：`warmupPrefix()`×2 + 稳定 ≥2-块系统前缀 + `prompt_cache_key` 钉路由（无害但无用，私有路由键）。
+- **token 利用率最大的杠杆是不改调用、改前缀**：把 author-side BIBLE（日常 system 前缀）扩到 ≥2 完整块并复用 — 现在已做到 2.06 块（PROMPT_CACHE_BIBLE 3419 chars）。
+- cache-hit 显示端若需要对外证据：以 `.scratch/probe-*` 的 4 步脚本为准；服务端埋点 `Service-Timing`/`Server-Timing` 两头对 CF NRT 都是 DYNAMIC，无法复用 `cf-cache-status` 判断命中。
+- **不需要**把 `stream=true` 改为必设；第十九节〜第二十节 A/B 原判仍然有效。
+- **不需要**改变 `warmup` 实现；aizzz 这一侧语义与 wkapi 等价，差异仅在：是否在每个 shard 上回显 details。
+
+### 结尾声明（纪律）
+
+- 本次 14 次真调用（HTTP 200 ×14），零 4xx/5xx（无 key 无网关错误）。
+- 密钥未入库、未落文件、未写入任何 git。
+- 玩家进程零 LLM；dialogue.json 零触碰（铁律未破）。

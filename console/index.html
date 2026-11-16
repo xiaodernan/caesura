@@ -73,7 +73,7 @@
           <div class="oracle-lane oracle-stable"><span class="lane-tag">stablePrefix</span><span class="lane-meter"><i style="width:75%"></i></span><span class="lane-num">3/4<small>warmup=2</small></span></div>
           <div class="oracle-lane oracle-ident"><span class="lane-tag">identical</span><span class="lane-meter"><i style="width:50%"></i></span><span class="lane-num">2/4<small>every round miss then settle</small></span></div>
           <div class="oracle-lane oracle-drift"><span class="lane-tag">driftingPrefix</span><span class="lane-meter"><i style="width:0%"></i></span><span class="lane-num">0/4<small>被证明：任一头部字节漂移 → 命中归零</small></span></div>
-          <div class="oracle-footnote">真机复测（node scripts/caesura-prompt-cache.mjs --live --rounds=4）：<b>stableBeatsDrift=true distinct=true</b>。 KI-553~556 已落到 <code>NPC_BIBLE=3419 chars / 2114 tokens</code>，恰好 ≥2 个完整 1024-token 块。非流与流已无系统性差异（T1–T4 对照全 4/4；2026-11-15 真机 A/B 复测：非流 {75.7,78.6,78.9}% ≈ 流式 {79.5,77.8,83.6}%）。玩家进程零 LLM；dialogue.json 零改写。</div>
+          <div class="oracle-footnote">真机复测两轮：2026-11-15 非流/流 A/B {75.7,78.6,78.9}% ≈ {79.5,77.8,83.6}%（no systematic difference）；2026-11-16 切换 `api.aizzz.xyz/v1` · gpt‑6.1‑terra · Clash 7897（`.scratch/probe-aizzz-*.py`）：6 发 identical 全请求 HTTP 200、warm 后 latency p50 ≈ 3.0s／mean ≈ 3.4s（cold mean ≈ 8.3s）— prefix cache 有服务端效应；`prompt_tokens_details.cached_tokens` 在 ≥11k-token 前缀上该 provider 全程不回显（极小提示词上 cached=4224/4390≈96%）；`X-Sub2api-Cache-Reduction-Points: 5 / X-Sub2api-Usage-Adjustment: cache_hit_reduction` 每次请求都带、与成功复用无因果关系。本面板 75% STABLE 为固定种子模拟、非 live 读数。玩家进程零 LLM；dialogue.json 零改写。</div>
         </div>
       </div>
     </article>
