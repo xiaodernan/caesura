@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "14b92d5f302541571b8c68cf249a14d9e130d2ae",
+  "head": "1e6f4c9fcdad1e680501d27ee74baf7f730af37f",
   "branch": "master",
-  "subject": "site-latest: 02956f6 (post-rebase reconcile)",
-  "date": "2026-11-17T07:13:11+08:00",
+  "subject": "feat(admin): KI-631 导出 AI 诊断备忘（Markdown）",
+  "date": "2026-11-17T07:25:15+08:00",
   "kv": {
-    "KI.rows": 548,
-    "KI.Implemented": 371,
+    "KI.rows": 549,
+    "KI.Implemented": 372,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/14b92d5f302541571b8c68cf249a14d9e130d2ae",
+    "url": "https://github.com/xiaodernan/caesura/commit/1e6f4c9fcdad1e680501d27ee74baf7f730af37f",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
