@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "cda8c53a787b7680b68d7f76c136f968a342f6fa",
+  "head": "46a2f1c32672cbf85a2895c7e4a3ba6efec02702",
   "branch": "master",
-  "subject": "docs(llm): llm:qa CORVIN 实跑结论落档（13/15 HTTP 200 · 2 flag-skip）",
-  "date": "2026-11-17T01:24:10+08:00",
+  "subject": "site-latest: cda8c53 (post-rebase reconcile)",
+  "date": "2026-11-17T01:24:19+08:00",
   "kv": {
     "KI.rows": 537,
     "KI.Implemented": 360,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/cda8c53a787b7680b68d7f76c136f968a342f6fa",
+    "url": "https://github.com/xiaodernan/caesura/commit/46a2f1c32672cbf85a2895c7e4a3ba6efec02702",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
