@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "5ed9d0adbb86b184d4e05c1d7211e4b3945d5129",
+  "head": "9fd5f47a32679f2639ae5e81923594bc3abd7c46",
   "branch": "master",
-  "subject": "site-latest: 0a356f2 (post-rebase reconcile)",
-  "date": "2026-11-17T05:10:29+08:00",
+  "subject": "feat(ai): KI-624 AI 导演第二阶段「流转 QA」＋ StateGraph 抽库",
+  "date": "2026-11-17T05:43:59+08:00",
   "kv": {
-    "KI.rows": 541,
-    "KI.Implemented": 364,
+    "KI.rows": 542,
+    "KI.Implemented": 365,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -16,7 +16,7 @@
     "SYS.Blocked": 0,
     "ARCH.sections": 202,
     "ARCH.holes": "none",
-    "PKG.scripts": 84
+    "PKG.scripts": 85
   },
   "suites": {
     "consoleUi": 150,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/5ed9d0adbb86b184d4e05c1d7211e4b3945d5129",
+    "url": "https://github.com/xiaodernan/caesura/commit/9fd5f47a32679f2639ae5e81923594bc3abd7c46",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
