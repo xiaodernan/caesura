@@ -61,6 +61,7 @@ const STRINGS = {
   'live.export': { zh: '导出本机 JSON', en: 'Export local JSON' },
   'export.csv': { zh: '导出日数据 CSV', en: 'Export daily CSV' },
   'export.json': { zh: '导出全部 JSON', en: 'Export full JSON' },
+  'export.ai': { zh: '导出 AI 诊断备忘', en: 'Export AI diagnosis memo' },
   'export.digest': { zh: '复制运营日报', en: 'Copy ops digest' },
   'method.h2': { zh: '方法论 · 这页数的家底', en: 'Methodology · where these numbers come from' },
   'method.fine2': { zh: '玩家进程零 LLM · 零网络请求；本后台同上。真实用户流量接入 Spring report（@8082）后，可整体替换数据源而不动本页分析逻辑。', en: 'The game process has zero LLM calls and zero network; this deck is the same. Once real telemetry is wired through the Spring report service (@8082), the data source can be swapped wholesale without touching the analysis here.' },
@@ -442,6 +443,59 @@ function exportJson() {
   download('caesura_analytics_full.json', JSON.stringify(TELEMETRY, null, 2), 'application/json;charset=utf-8')
   note(T('已下载 caesura_analytics_full.json', 'caesura_analytics_full.json downloaded'))
 }
+
+/* KI-631 · 导出 AI 诊断备忘（Markdown）：唯一把真机产物的人带到桌面上的通道 */
+async function exportAiMemo() {
+  const fetchSafe = async (url) => {
+    try { const r = await fetch(url, { cache: 'no-store' }); if (!r.ok) throw new Error('HTTP ' + r.status); return await r.json() } catch { return null }
+  }
+  const [d, qa] = await Promise.all([
+    fetchSafe('./ai-director-latest.json'),
+    fetchSafe('./ai-director-transitions-qa.json'),
+  ])
+  if (!d) { note(T('读不出 ai-director-latest.json——先跑一次真机诊断', 'Could not read ai-director-latest.json — run the live director first')); return }
+  const u = d.usage || {}
+  const kv = (d.worldSnapshot && d.worldSnapshot.phaseStatus) || {}
+  const lines = [
+    '# CÆSURA · AI 导演诊断备忘',
+    `生成于 ${d.generatedAt ?? '—'} · mode ${d.mode ?? '—'} · 模型 ${d.model ?? '—'} · 语料 ${d.corpusSize ?? '—'} chunks`,
+    `LLM 调用 ${u.calls ?? 0} 次 · cached_tokens ${u.cachedTokens ?? 0} · statuses [${(u.statuses ?? []).join(',')}]`,
+    '',
+    '## 世界现状快照（机器现读 · 不许手写）',
+    `KI ${kv.KIImplemented ?? '?'} / ${kv.KIrows ?? '?'} · SYS ${kv.SYSImplemented ?? '?'} · ARCH ${kv.ARCHSections ?? '?'} · atlas ${d.worldSnapshot?.atlasEntries ?? '?'} 篇 · story ${d.worldSnapshot?.storyChapters ?? '?'} 篇 · dialogue ${d.worldSnapshot?.dialogue?.trees ?? '?'} 棵 / ${d.worldSnapshot?.dialogue?.nodes ?? '?'} 格 / 旗标 ${d.worldSnapshot?.dialogue?.distinctFlags ?? '?'}`,
+    '',
+    '## 一致性审计',
+  ]
+  if (d.audit) {
+    lines.push(`consistency: ${d.audit.consistency}/100`, `verdictZh: ${d.audit.verdictZh ?? '—'}`, `verdictEn: ${d.audit.verdictEn ?? '—'}`)
+    lines.push('', 'risks:')
+    for (const r of d.audit.risks ?? []) lines.push(`- [${r.severity}] ${r.itemZh ?? ''} — ${r.detailZh ?? ''}`)
+    lines.push('', 'gaps:')
+    for (const g of d.audit.gapsZh ?? []) lines.push(`- ${g}`)
+  } else {
+    lines.push('（本次运行无 audit —— offline dry-run）')
+  }
+  lines.push('', '## 世界状态流转提案（人工闸）')
+  const verdictByFlag = new Map(((qa && qa.verdicts) || []).map((v) => [v.flag, v]))
+  ;(d.transitions ?? []).forEach((t, i) => {
+    const qaV = verdictByFlag.get(t.flag)
+    lines.push(`${i + 1}. ${t.flag}`)
+    lines.push(`   ${t.fromZh} → ${t.toZh}`)
+    lines.push(`   ${t.narrativeZh ?? ''}`)
+    if (qaV) lines.push(`   裁决: ${qaV.canonFit}${qaV.notesZh ? ` — ${qaV.notesZh}` : ''}`)
+  })
+  lines.push('', '## 第十七篇游记 · 草稿（requiresHumanReview · 不落库）')
+  if (d.atlasDraft) {
+    lines.push(`No.${d.atlasDraft.no} 《${d.atlasDraft.titleZh}》 / No.${d.atlasDraft.no} “${d.atlasDraft.titleEn ?? ''}”`)
+    lines.push(d.atlasDraft.pZh ?? '')
+    lines.push(`— ${d.atlasDraft.codaZh ?? ''}`)
+  } else {
+    lines.push('（无草稿）')
+  }
+  lines.push('', '---', '> 机器生成稿件 · 人工闸后方可落库 · 零玩家运行时')
+  download('caesura_ai-director-memo.md', lines.join('\n'), 'text/markdown;charset=utf-8')
+  note(T('已下载 caesura_ai-director-memo.md', 'caesura_ai-director-memo.md downloaded'))
+}
 function digestText() {
   const d = TELEMETRY.daily
   const today = d[d.length - 1]
@@ -818,6 +872,7 @@ $('#lang-toggle').addEventListener('click', () => setLang(LANG === 'zh' ? 'zh-TW
 $('#gate-form').addEventListener('submit', (e) => { e.preventDefault(); tryUnlock($('#gate-input').value.trim()) })
 $('#export-csv').addEventListener('click', exportCsv)
 $('#export-json').addEventListener('click', exportJson)
+$('#export-ai').addEventListener('click', exportAiMemo)
 $('#copy-digest').addEventListener('click', copyDigest)
 $('#live-export').addEventListener('click', () => {
   const doc = readLocalTelemetry()
