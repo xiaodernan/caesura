@@ -57,9 +57,9 @@ describe('World Codex（codex/index.html）', () => {
     }
   })
 
-  it('三十处刻痕全文入库（中英平行）', () => {
+  it('三十一处刻痕全文入库（中英平行）', () => {
     const marks = (HTML.match(/cat:'mark'/g) ?? []).length
-    expect(marks, 'mark entries').toBe(30)
+    expect(marks, 'mark entries').toBe(31)
     for (const line of [
       'First-Breath Slab (Resthold)',
       'The Unbird’d Branch (Whisperwode)',
@@ -73,6 +73,7 @@ describe('World Codex（codex/index.html）', () => {
       'The Toothed Crack (Windbell Coast)',
       'The Satchel of Seals (Earless Deeps)',
       'The Hull-Plank (Windbell Coast)',
+      'The Half-Burned Sheet (Brokenbar)',
     ]) {
       expect(HTML, `missing mark line: ${line}`).toContain(line)
     }

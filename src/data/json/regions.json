@@ -1426,6 +1426,18 @@
           "y": 0,
           "z": -144
         }
+      },
+      {
+        "id": "in_brokenbar_soundtower",
+        "kind": "inspect",
+        "verb": "在塌落的砖缝里挖出一刀没烧尽的谱",
+        "verbKey": "interact.digBurntSheet",
+        "notifyKey": "world.flavor.camp.soundtower",
+        "pos": {
+          "x": -80,
+          "y": 0,
+          "z": -120
+        }
       }
     ],
     "music": {

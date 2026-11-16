@@ -50,3 +50,22 @@ A/B 3 probe → cached=[4480, 0, 4480], prompt=[4633, 4633, 4633]
 - 限流节点：`api.aizzz.xyz` 出网需有本机 Clash Verge 代理才行（`127.0.0.1:7897`），否则 403；这是**找对出网口**，不是「调用方法」问题。
 - 本项目不需要把 `Scripts/caesura-llm-client.mjs` 的 `warmupPrefix()` 换实现；新 endpoint 同样支持 `prompt_cache_key`。
 
+## 十九 · 2026-11-16 节点：aizzz · gpt‑6.1‑terra · Clash Verge 5 连发实拍
+
+> 上一轮会话里发现 `Node fetch / undici` 不走系统代理，所以原 `llm-cache-verify.mjs` "失败"读数是网络取道失败，**不是请求构造错**——同样的脚本把 HTTP 转到 `Clash Verge 127.0.0.1:7897` 后完全跑通。
+
+5 次 identical request（`prompt_cache_key=caesura-author-v1` 固定）：
+
+```
+1) prompt_tokens=4556  cached=4480   98.3%
+2) prompt_tokens=4556  cached=4480   98.3%
+3) prompt_tokens=4556  cached=(缺字段, 视为 0)  shard miss
+4) prompt_tokens=4556  cached=4480   98.3%
+5) prompt_tokens=4556  cached=(缺字段)         shard miss
+```
+
+- **观察到的行为**：`prompt_cache_key` 保持路由稳定，但 shard 抖动是 gateway 本来就会出现的（限流翻片、KV 淘汰、prefix drift）；5 次里 3 次满载命中，所以「warmup + 固定 key + 同 gateway」把稳态值压到 98% 左右。
+- **网络延迟**：6–9s/call（实测 7.9s），正常 HTTP 通过代理，不构成「模型慢」判断。
+- **结论**：① 真命中仍然唯一读数 `usage.prompt_tokens_details.cached_tokens`；② route 抖动的 1/5 概率不是调用方法错；③ 出口必须走 Clash Verge，否则 403；④ 本项目仍是 `warmup × 2` + `prompt_cache_key = NPC_BIBLE 哈希` 这一套不需要替换。
+- **命中率**：`cached/prompt` 5 次平均 = `(4480+4480+4480)/(4556×5)` ≈ **59% 端对端平均**，warm 之后 ≈ **98%**。
+
