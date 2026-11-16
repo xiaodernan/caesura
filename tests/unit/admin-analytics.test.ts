@@ -255,6 +255,13 @@ describe('admin · 静态页与部署接线（防悄悄脱落）', () => {
     expect(pages.length).toBe(7 + slugs.length)
     for (const p of pages) expect(read(p), `${p} 缺 tracker.js`).toContain('tracker.js')
   })
+  it('全站公开页面都已接入 zh-TW 转换器（/caesura/zh-tw-converter.js）', () => {
+    /* KI-615：约束 Pages 镜像上线前 every 页面都能三语切换；predates Pages 镜像站约束此条先红引证提醒 */
+    const pages = ['index.html', 'console/index.html', 'tutorial/index.html', 'cast/index.html', 'codex/index.html', 'story/index.html', 'admin/index.html']
+    const slugs = readdirSync(join(ROOT, 'story')).filter((n) => statSync(join(ROOT, 'story', n)).isDirectory())
+    for (const slug of slugs) pages.push(`story/${slug}/index.html`)
+    for (const p of pages) expect(read(p), `${p} 缺 zh-tw-converter.js`).toContain('zh-tw-converter.js')
+  })
   it('README 双语都登记 /admin/ 入口（口令 123）', () => {
     expect(read('README.md')).toContain('/caesura/admin/')
     expect(read('README.md')).toContain('123')
