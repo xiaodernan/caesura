@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "a7bd60137a3c2ed809e5e7fa30c7c8d0e9adf106",
+  "head": "2c3d1701db1b1c8b065c481c83e861f661114f86",
   "branch": "master",
-  "subject": "site-latest: 10e7e40 (console zh-TW 三态 + codex 切换修复)",
-  "date": "2026-11-16T20:34:59+08:00",
+  "subject": "feat(codex): 世界谱 TW 查询归一 —— 繁體字搜索简体语料打中（KI-615 续）",
+  "date": "2026-11-16T20:47:31+08:00",
   "kv": {
     "KI.rows": 533,
     "KI.Implemented": 356,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/a7bd60137a3c2ed809e5e7fa30c7c8d0e9adf106",
+    "url": "https://github.com/xiaodernan/caesura/commit/2c3d1701db1b1c8b065c481c83e861f661114f86",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
