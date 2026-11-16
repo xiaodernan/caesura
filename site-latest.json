@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "594f73beb3cd003fa01c4fc8a3971d552373c4df",
+  "head": "8641168c30befd629a631c9c4b902c669323b768",
   "branch": "master",
-  "subject": "site-latest: 86d7174 (post-rebase reconcile)",
-  "date": "2026-11-16T23:58:58+08:00",
+  "subject": "feat(atlas): StateGraph 活蓝图 —— Atlas 教学区每张 NPC 任务线都画出运行时真节点（DLG_MEG 样本）",
+  "date": "2026-11-17T00:12:17+08:00",
   "kv": {
     "KI.rows": 536,
     "KI.Implemented": 359,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/594f73beb3cd003fa01c4fc8a3971d552373c4df",
+    "url": "https://github.com/xiaodernan/caesura/commit/8641168c30befd629a631c9c4b902c669323b768",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
