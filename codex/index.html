@@ -567,6 +567,7 @@ function applyLang(lang) {
   tgl.setAttribute('aria-label', lang === 'zh' ? 'switch to Traditional Chinese' : (lang === 'zh-TW' ? 'switch to English' : 'switch to Simplified Chinese'));
   try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
   if (lang === 'zh-TW' && window.__caesuraZhTW && window.__caesuraZhTW.applyToDocument) window.__caesuraZhTW.applyToDocument();
+  else if (lang === 'zh' && window.__caesuraZhTW && window.__caesuraZhTW.restoreOriginals) window.__caesuraZhTW.restoreOriginals();
   renderChips();
   renderQuick();
   render();

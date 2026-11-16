@@ -362,7 +362,7 @@
       var reapply = function(){ window.__caesuraZhTW && window.__caesuraZhTW.applyToDocument && window.__caesuraZhTW.applyToDocument(); };
       if (window.__caesuraZhTW) reapply();
       else document.addEventListener('DOMContentLoaded', reapply);
-    } else if (cur === 'zh-TW' && next === 'zh') {
+    } else if (next === 'zh') {
       // restore simplified originals in place (converter keeps a copy of every converted node)
       if (window.__caesuraZhTW && window.__caesuraZhTW.restoreOriginals) window.__caesuraZhTW.restoreOriginals();
     }

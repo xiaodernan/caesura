@@ -13,9 +13,23 @@
  * Originals are kept in a Map<Text,string> so toggling back to 简体 is lossless.
  */
 (function () {
+  /* resolve the compact dictionary relative to THIS script (works no matter where GitHub Pages mounts the site) */
+  var TABLE_URL = '/caesura/zh-tw.compact.json';
+  try {
+    var cur = document.currentScript && document.currentScript.src;
+    if (cur) TABLE_URL = cur.replace(/zh-tw-converter\.js([?#].*)?$/, 'zh-tw.compact.json');
+    else {
+      var scripts = document.getElementsByTagName('script');
+      for (var i = 0; i < scripts.length; i++) {
+        var src = scripts[i].src || '';
+        if (src.indexOf('zh-tw-converter.js') !== -1) { TABLE_URL = src.replace(/zh-tw-converter\.js([?#].*)?$/, 'zh-tw.compact.json'); break; }
+      }
+    }
+  } catch (e) { /* keep absolute default */ }
+
   function loadTable(cb) {
     var req = new XMLHttpRequest();
-    req.open('GET', '/caesura/zh-tw.compact.json', true);
+    req.open('GET', TABLE_URL, true);
     req.onload = function () {
       try {
         var t = JSON.parse(req.response);
