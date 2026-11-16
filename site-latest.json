@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "cfab8fb85a7949f7c2e30f733733557358076f1e",
+  "head": "261a32d5d9d73a6c733b400cdea38b0459a1288c",
   "branch": "master",
-  "subject": "feat(i18n): zh-TW 繁體雙軌 —— 简体/繁體/EN 三态全站运行时切换（KI-615）",
-  "date": "2026-11-16T19:46:06+08:00",
+  "subject": "site-latest: cfab8fb (KI-615 zh-TW 三态上线)",
+  "date": "2026-11-16T19:47:47+08:00",
   "kv": {
     "KI.rows": 532,
     "KI.Implemented": 355,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/cfab8fb85a7949f7c2e30f733733557358076f1e",
+    "url": "https://github.com/xiaodernan/caesura/commit/261a32d5d9d73a6c733b400cdea38b0459a1288c",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
