@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "699af811e63ba20ba2682bef5e6d15f5086128af",
+  "head": "e0eca080a0ec3ddda998dc9069b4b7b341975857",
   "branch": "master",
-  "subject": "content(story): 《余响集》第十四篇《灯匠》· KI-613 · codex 弹性列溢出修复 · spring lore 73",
-  "date": "2026-11-16T17:33:12+08:00",
+  "subject": "chore(status): re-embed site-latest.json",
+  "date": "2026-11-16T17:35:17+08:00",
   "kv": {
     "KI.rows": 531,
     "KI.Implemented": 354,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/699af811e63ba20ba2682bef5e6d15f5086128af",
+    "url": "https://github.com/xiaodernan/caesura/commit/e0eca080a0ec3ddda998dc9069b4b7b341975857",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
