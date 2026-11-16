@@ -1117,4 +1117,46 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">Once a year, she pushes the pendulum once from its highest edge to its lowest and then <em>keeps her hand on the lowest point</em> — she does not push it, letting it come gradually to a stop. The moment the pendulum comes to rest, the Unfinished Hall is complete.</p>
     <p class="coda">Completing something that was never finished —<br>itself is the completion.</p>`,
   },
+  {
+    no: 17,
+    zhTitle: "未竟账页",
+    enTitle: "The Unfinished Ledger Page",
+    zh: `<p>未竟厅最深处，钟摆旁边放着一本账——那本账没有主人，是老大师临死前搁在那里的。没有人见过他搁下它的那一刻；只知道有一天清早，守摆人看见那本账正放在钟摆最低点的位置，封皮是他常用的那一烫金账角，书脊上没有名字。她每天推摆的时候，顺手就看一眼。它记的从来不是谁欠了什么，而是每一笔债被写下来的那一刻。</p>
+    <p>账页被翻到最后一页的时候，渡人发现一件事：末行没有姓名，只有一格空白——不是漏填，是这一笔还没有落成。她在厅里待了这么多年，账翻到这里从来不往后再翻；风吹过去，那一页自己掀开又落下，像一扇小门开了又关。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她以为是某一夜手批的时候忘了。她翻前面每一页核对——每一页都有名字：老兵、母亲、孩子、石喉的母亲、风、雨；连「风钟海岸欠了雨钟谷地一场雾」这种话，都被老大师一笔一笔写得工工整整；连「盐自己长出了牙」这种根本不用交账的事，他也记下了日期。只有末行，空的。</p>
+    <p>石喉的母亲曾经问过她要那页空白抄回去对账——她记账的人最在意对得上数——守摆人只说了一句话：「那一笔还没落下来，急什么。」石喉的母亲便没再说，临走只在门口站了很久，好像听见有什么东西正从更远的地方走过来。</p>
+    <p>恩希尔走之前，在账页上停留过一次。她看见他的影子落在那一页上，却没有落下任何字。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>后来那格空白自己慢慢变旧了——纸角卷曲、墨迹褪去、页缝里积进了灰。渡人没有再补写它，也没有再翻开它。她只是每天擦它，像擦一口从没敲响的钟。她给它买了一小块布，单独叠好放在账页下面；谁问起，她就说那块布是给账盖的，盖不是不盖，就等它自己开口的时候。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">去未竟厅的人，都会被渡人带到那一页前站一会儿。</p>
+    <p class="coda">不是为了添上什么。<em>是为了认领那格空白。</em></p>
+    <p class="coda">她知道——每个人都欠过一句从没说出口的话。只是那句话的名字，一直留在末行，等着自己被想起来。</p>`,
+    en: `<p>At the deepest reach of the Unfinished Hall, beside the pendulum, sits a ledger — the Last Master left it there the night before he died. No one saw the moment he set it down; it was simply there one morning, square on the lowest point of the pendulum, its cover the same gold-tooled corner he used, no name on its spine. Every time the Ferryman pushes the pendulum, she glances at it. It never records who owes what; it records the moment each debt was written down.</p>
+    <p>When the ledger was turned to its final page, the Ferryman noticed something: the last line holds no name — only an empty square. Not an omission. A debt that has not yet settled.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>She thought it was a lapse from some late night. She checked every page, front to back — each one had a name: the old soldier, the mother, the boy, the Stone-Throat Matriarch, the wind, the rain. Even “the Wind-Bell Coast owes the Rain-Bell Valley one fog” is set down in the Last Master’s immaculate strokes. Only the final line: blank.</p>
+    <p>The Stone-Throat Matriarch once asked her for that blank page to take back and square the books — she was a ledger-keeper, keeping things square was what she knew how to do. The Ferryman said only: “That entry has not settled yet. Why the hurry.” The Matriarch said nothing more, though at the door she stood for a long time, as if something far away was on its way here.</p>
+    <p>Once, before he left, Hersil lingered over that page. She saw his shadow fall across it, and not one stroke followed.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Over the years the empty square aged on its own — the page corner curled, the ink faded, grey settled into the seam. The Ferryman never wrote into it, never opened it again. She only polished it, every day, the way one polishes a bell that was never struck.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">Everyone who comes to the Unfinished Hall is led to stand before that page for a moment.</p>
+    <p class="coda">Not to add anything. <em>To claim the empty square.</em></p>
+    <p class="coda">She knows — everyone owes one sentence never spoken aloud. Its name has always waited in the final line, waiting to be remembered.</p>`,
+  },
 ]
+
