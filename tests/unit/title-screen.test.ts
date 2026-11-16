@@ -274,7 +274,7 @@ describe('标题屏 · 挑档续玩（KI-025②）', () => {
     expect(focus()).toEqual({ kind: 'slot', index: 0 })
     const s = view(t)
     expect(s.match(/class="slot sel"/g)?.length, '选中记号只有一处').toBe(1)
-    expect(s).toContain('<div class="slot sel"><div class="scard ok" data-slot="slot1"')
+    expect(s).toContain('<div class="slot sel" data-tip="读取这一格——接着你上次写下的谱继续"><div class="scard ok" data-slot="slot1"')
   })
 
   it('← / Escape 从挑档屏回定弦，不算一次决定', async () => {
@@ -686,3 +686,36 @@ describe('余烬仪典（ember rite）视觉装饰：纯 CSS、无障碍安全',
   })
 })
 
+describe('标题屏 · 按键教学说明 data-tip（KI-627）', () => {
+  it('定弦屏：出身卡 / 续档 / 语言 chip 都带 data-tip 教学说明（中文原文）', async () => {
+    const { t } = await screen(() => roster())
+    const s = view(t)
+    expect(s).toContain('data-tip="←/→ 选弦 · Enter 定弦——你的止音纪元从这里开始"')
+    expect(s).toContain('data-tip="读取你上一次停下的存档——回到那一刻的调音桩"')
+    expect(s).toContain('data-tip="切换 简体 / 繁體 / English"')
+    expect((s.match(/data-tip=/g) ?? []).length).toBeGreaterThanOrEqual(3)
+    t.dispose()
+  })
+
+  it('切到 EN：教学说明跟随语言切换为英文原文', async () => {
+    const { setLang } = await import('@/i18n/Lang')
+    setLang('en')
+    const { t } = await screen(() => roster())
+    const s = view(t)
+    expect(s).toContain('your Epoch of Hush begins here')
+    expect(s).toContain('Reads your last save')
+    t.dispose()
+    setLang('zh')
+  })
+
+  it('注入的 CSS 含 [data-tip] 悬停 + focus-visible tooltip 规则', async () => {
+    const { t } = await screen(() => roster())
+    const head = (globalThis as unknown as { document: { head: FakeEl } }).document.head
+    const css = head.children.map((c) => (c as unknown as { textContent: string }).textContent).join('\n')
+    expect(css).toContain('#title [data-tip]')
+    expect(css).toContain('#title [data-tip]::after')
+    expect(css).toContain('#title [data-tip]:hover::after')
+    expect(css).toContain('#title [data-tip]:focus-visible::after')
+    t.dispose()
+  })
+})

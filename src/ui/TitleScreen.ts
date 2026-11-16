@@ -116,6 +116,11 @@ const CSS = `
 #title .astro{opacity:.9}
 #title ::-webkit-scrollbar{width:.6vh}
 #title ::-webkit-scrollbar-thumb{background:#3d372e;border-radius:1vh}
+/* == 主界面教学说明：所有可点处的悬停/键盘焦点都展示 data-tip（纯 CSS、零 JS、逐键双语） == */
+#title [data-tip]{position:relative}
+#title [data-tip]::after{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 1.1vh);transform:translate(-50%,.6vh);background:rgba(14,12,10,.96);border:1px solid rgba(201,180,88,.45);color:#e8dfc2;font-family:Georgia,"Songti SC","STSong",serif;font-size:1.28vh;letter-spacing:.1em;line-height:1.5;padding:.55vh 1.1vh;border-radius:.5vh;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .18s ease,transform .18s ease;z-index:40;box-shadow:0 .4vh 1.4vh rgba(0,0,0,.55)}
+#title [data-tip]:hover::after,#title [data-tip]:focus-visible::after{opacity:1;transform:translate(-50%,0)}
+#title .slot{position:relative}
 @media (prefers-reduced-motion: reduce){#title *,#title *::before,#title *::after{animation:none !important;transition:none !important}}
 #title .lang-chip{position:absolute;top:26px;left:26px;z-index:5;background:rgba(9,10,15,.4);color:#c9b258;
   border:1px solid rgba(201,180,88,.4);padding:5px 11px;border-radius:2px;font-family:Georgia,serif;font-size:11px;
@@ -358,7 +363,7 @@ export class TitleScreen {
 
   private renderString(): string {
     const cards = this.cards.map((c, i) => `
-      <div class="card${this.focus.kind === 'card' && this.focus.index === i ? ' sel' : ''}" data-act="card" data-arg="${c.id}">
+      <div class="card${this.focus.kind === 'card' && this.focus.index === i ? ' sel' : ''}" data-act="card" data-arg="${c.id}" data-tip="${t('ui.title.tip.card')}">
         <div class="nm">${c.name}</div>
         <div class="wp">${c.weaponName}</div>
         <div class="bl">${c.blurb}</div>
@@ -366,7 +371,7 @@ export class TitleScreen {
         <div class="at">${c.attrs.map((a) => `${a.label} ${a.value}`).join('<br>')}</div>
       </div>`).join('')
     const cont = this.canBrowseSlots
-      ? `<div class="act${this.focus.kind === 'continue' ? ' sel' : ''}" data-act="continue">${
+      ? `<div class="act${this.focus.kind === 'continue' ? ' sel' : ''}" data-act="continue" data-tip="${t('ui.title.tip.continue')}">${
         this.hasSaveable ? t('ui.title.cta.continue')
           // 三种「进得去」各有各的说法：问不出来 ≠ 有档读不出来 ≠ 没档（KI-386）
           : this.hasRosterFault ? t('ui.title.cta.fault')
@@ -400,7 +405,7 @@ export class TitleScreen {
       ? `<div class="hint">本机存档问不出来 · ${this.rosterFault}</div>`
       : this.slotViews.map((v) => {
         const i = pick.findIndex((p) => p.slot === v.slot)
-        return `<div class="slot${i >= 0 && i === this.focus.index ? ' sel' : ''}">${saveCardHtml(v, ['load'])}</div>`
+        return `<div class="slot${i >= 0 && i === this.focus.index ? ' sel' : ''}" data-tip="${t('ui.title.tip.slot')}">${saveCardHtml(v, ['load'])}</div>`
       }).join('')
     return `
       <div class="astro" aria-hidden="true"></div>
@@ -410,7 +415,7 @@ export class TitleScreen {
       <h1>${t('ui.title.h1')}</h1>${this.renderLangChip()}
       <div class="sub">${fault ? t('ui.title.hint.sub.fault') : t('ui.title.sub.read')}</div>
       <div class="scards">${html}</div>
-      <div class="acts"><div class="act" data-act="back">${t('ui.title.back')}</div></div>`
+      <div class="acts"><div class="act" data-act="back" data-tip="${t('ui.title.tip.back')}">${t('ui.title.back')}</div></div>`
   }
 
   private renderConfirm(): string {
@@ -430,8 +435,8 @@ export class TitleScreen {
       <div class="sub">${warn}</div>
       <div class="sub">${line}</div>
       <div class="acts">
-        <div class="act${this.focus.index === 0 ? ' sel' : ''}" data-act="new-no">${t('ui.title.confirm.back')}</div>
-        <div class="act${this.focus.index === 1 ? ' sel' : ''}" data-act="new-yes">${t('ui.title.confirm.sure')}</div>
+        <div class="act${this.focus.index === 0 ? ' sel' : ''}" data-act="new-no" data-tip="${t('ui.title.tip.cancel')}">${t('ui.title.confirm.back')}</div>
+        <div class="act${this.focus.index === 1 ? ' sel' : ''}" data-act="new-yes" data-tip="${t('ui.title.tip.sure')}">${t('ui.title.confirm.sure')}</div>
       </div>
       <div class="hint">${t('ui.title.hint.confirm')}</div>`
   }
@@ -440,7 +445,7 @@ export class TitleScreen {
     const cur = getLang()
     const label = cur === 'zh' ? '繁體' : cur === 'zh-TW' ? 'EN' : '简体'
     const aria = cur === 'zh' ? 'switch to Traditional Chinese' : cur === 'zh-TW' ? 'switch to English' : 'switch to Simplified Chinese'
-    return `<button class="lang-chip" data-lang-toggle type="button" aria-label="${aria}" title="${aria}">${label}</button>`
+    return `<button class="lang-chip" data-lang-toggle type="button" aria-label="${aria}" title="${aria}" data-tip="${t('ui.title.tip.lang')}">${label}</button>`
   }
 
   private render(): void {
