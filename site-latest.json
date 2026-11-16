@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "1d28705ceeb2475a3d4e013f0bdaa0a105fe0727",
+  "head": "f7aea74281d32e3bca25d87fdf25afacc9bc27af",
   "branch": "master",
-  "subject": "content(inscriptions): 第 31 处刻痕·破拍营地「烧剩的火谱」· Codex 73 件 · Spring Cloud 简笔手册 · KI-607/608",
-  "date": "2026-11-16T14:54:18+08:00",
+  "subject": "content(story): 余响集第十三篇《拾钟人》· KI-609 · Atlas LangGraph school · KI-608 · 滚轮教学 · 账本落盘",
+  "date": "2026-11-16T15:34:58+08:00",
   "kv": {
-    "KI.rows": 525,
-    "KI.Implemented": 348,
+    "KI.rows": 527,
+    "KI.Implemented": 350,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/1d28705ceeb2475a3d4e013f0bdaa0a105fe0727",
+    "url": "https://github.com/xiaodernan/caesura/commit/f7aea74281d32e3bca25d87fdf25afacc9bc27af",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
