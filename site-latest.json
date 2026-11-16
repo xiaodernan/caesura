@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "58be2063ff69eb0b687d6495ef94c0d994572dc5",
+  "head": "4a77963249c2542f6170414f6e2f1fed0a4eaab0",
   "branch": "master",
-  "subject": "site-latest: 1e6f4c9 (post-rebase reconcile)",
-  "date": "2026-11-17T07:26:11+08:00",
+  "subject": "test(build): smoke-live 补 AI 导演产物端点观察（29/29）",
+  "date": "2026-11-17T07:46:20+08:00",
   "kv": {
-    "KI.rows": 549,
-    "KI.Implemented": 372,
+    "KI.rows": 550,
+    "KI.Implemented": 373,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/58be2063ff69eb0b687d6495ef94c0d994572dc5",
+    "url": "https://github.com/xiaodernan/caesura/commit/4a77963249c2542f6170414f6e2f1fed0a4eaab0",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
