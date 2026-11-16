@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "7d1fdfbf872d5e383242250f1583d100fe066059",
+  "head": "0a356f2c87ba2409d9ddcce82fb66de71d4f6f0f",
   "branch": "master",
-  "subject": "site-latest: 00c620e (post-rebase reconcile)",
-  "date": "2026-11-17T04:49:58+08:00",
+  "subject": "feat(story): KI-623《余响集》第十八篇《第四下》落地",
+  "date": "2026-11-17T05:08:19+08:00",
   "kv": {
-    "KI.rows": 540,
-    "KI.Implemented": 363,
+    "KI.rows": 541,
+    "KI.Implemented": 364,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/7d1fdfbf872d5e383242250f1583d100fe066059",
+    "url": "https://github.com/xiaodernan/caesura/commit/0a356f2c87ba2409d9ddcce82fb66de71d4f6f0f",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
