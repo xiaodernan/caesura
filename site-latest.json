@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "4e3842a2d27d8f647ff77e00c26755c815fb63d9",
+  "head": "5a38cc686991deb2ebc2d44566e318145dd7af5e",
   "branch": "master",
-  "subject": "site-latest: 44dfcc2 (post-rebase reconcile)",
-  "date": "2026-11-17T06:02:01+08:00",
+  "subject": "chore(data): KI-626 真实数据锚点 Baymard 70.22% 实测再取 + Spring Cloud 本地构建验证",
+  "date": "2026-11-17T06:16:04+08:00",
   "kv": {
-    "KI.rows": 543,
-    "KI.Implemented": 366,
+    "KI.rows": 544,
+    "KI.Implemented": 367,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/4e3842a2d27d8f647ff77e00c26755c815fb63d9",
+    "url": "https://github.com/xiaodernan/caesura/commit/5a38cc686991deb2ebc2d44566e318145dd7af5e",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
