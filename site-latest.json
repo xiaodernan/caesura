@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "e0eca080a0ec3ddda998dc9069b4b7b341975857",
+  "head": "f069b0f7ef712d5dc353f8edceb39772834f5740",
   "branch": "master",
-  "subject": "chore(status): re-embed site-latest.json",
-  "date": "2026-11-16T17:35:17+08:00",
+  "subject": "chore(env): .env.example 默认 endpoint 切到 aizzz / gpt-6.1-terra（保留 wkapi.pro 作回落）",
+  "date": "2026-11-16T18:04:44+08:00",
   "kv": {
     "KI.rows": 531,
     "KI.Implemented": 354,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/e0eca080a0ec3ddda998dc9069b4b7b341975857",
+    "url": "https://github.com/xiaodernan/caesura/commit/f069b0f7ef712d5dc353f8edceb39772834f5740",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
