@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "f069b0f7ef712d5dc353f8edceb39772834f5740",
+  "head": "328a63e241f56bcd5573ec9a80702ea00cbe5f84",
   "branch": "master",
-  "subject": "chore(env): .env.example 默认 endpoint 切到 aizzz / gpt-6.1-terra（保留 wkapi.pro 作回落）",
-  "date": "2026-11-16T18:04:44+08:00",
+  "subject": "tutorial: 新增 Step 11《世界谱》(en: 'The Codex · what to search') · v1.7 → v1.8 · 指引玩家用 1-3 个字在《世界谱》检索状态图 / flags / bosses 等",
+  "date": "2026-11-16T18:27:06+08:00",
   "kv": {
     "KI.rows": 531,
     "KI.Implemented": 354,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/f069b0f7ef712d5dc353f8edceb39772834f5740",
+    "url": "https://github.com/xiaodernan/caesura/commit/328a63e241f56bcd5573ec9a80702ea00cbe5f84",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
