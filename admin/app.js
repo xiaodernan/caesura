@@ -12,11 +12,16 @@ import {
 const SVGNS = 'http://www.w3.org/2000/svg'
 const $ = (sel, root = document) => root.querySelector(sel)
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)]
-const T = (zh, en) => (LANG === 'zh' ? zh : en)
+// zh-TW: simplified source is converted at runtime by /caesura/zh-tw-converter.js (loaded via defer)
+const tw = (s) => (window.__caesuraZhTW && typeof window.__caesuraZhTW.toTraditional === 'function' ? window.__caesuraZhTW.toTraditional(s) : s)
+const T = (zh, en) => (LANG === 'en' ? en : (LANG === 'zh-TW' ? tw(zh) : zh))
 
 /* ─────────── 语言 ─────────── */
 let LANG = 'zh'
-try { LANG = localStorage.getItem('caesura-lang') === 'en' ? 'en' : 'zh' } catch { /* 默认中文 */ }
+try {
+  const saved = localStorage.getItem('caesura-lang')
+  if (saved === 'en' || saved === 'zh-TW') LANG = saved
+} catch { /* 默认中文 */ }
 
 const STRINGS = {
   'brand.h1': { zh: '止音后台 · 用户观察站', en: 'The Observatory · User Deck' },
@@ -63,14 +68,22 @@ const STRINGS = {
 }
 
 function applyI18n() {
+  const tw = (LANG === 'zh-TW' && window.__caesuraZhTW && typeof window.__caesuraZhTW.toTraditional === 'function') ? window.__caesuraZhTW.toTraditional : (s) => s;
+  const sourceKey = (LANG === 'zh-TW' ? 'zh' : LANG);
   for (const el of $$('[data-i18n]')) {
     const v = STRINGS[el.dataset.i18n]
-    if (v) el.textContent = v[LANG]
+    if (v) el.textContent = tw(v[sourceKey] || v.zh || v.en)
   }
   document.documentElement.dataset.lang = LANG
-  document.documentElement.lang = LANG === 'zh' ? 'zh-CN' : 'en'
-  $('#lang-toggle').textContent = LANG === 'zh' ? 'EN' : '中'
-  $('#lang-toggle').setAttribute('aria-pressed', String(LANG === 'en'))
+  document.documentElement.lang = LANG === 'en' ? 'en-US' : (LANG === 'zh-TW' ? 'zh-TW' : 'zh-CN')
+  // 非 data-i18n 的内联节点：整份委托给 zh-tw-converter（apply/restore 成对）
+  if (window.__caesuraZhTW) {
+    if (LANG === 'zh-TW' && typeof window.__caesuraZhTW.applyToDocument === 'function') window.__caesuraZhTW.applyToDocument();
+    else if (LANG === 'zh' && typeof window.__caesuraZhTW.restoreOriginals === 'function') window.__caesuraZhTW.restoreOriginals();
+  }
+  const t = $('#lang-toggle');
+  t.textContent = LANG === 'en' ? 'EN' : (LANG === 'zh-TW' ? '繁體' : '简体')
+  t.setAttribute('aria-pressed', String(LANG === 'en'))
 }
 function setLang(next) {
   LANG = next
@@ -451,7 +464,7 @@ function tickClock() {
 }
 
 /* ─────────── 启动 ─────────── */
-$('#lang-toggle').addEventListener('click', () => setLang(LANG === 'zh' ? 'en' : 'zh'))
+$('#lang-toggle').addEventListener('click', () => setLang(LANG === 'zh' ? 'zh-TW' : (LANG === 'zh-TW' ? 'en' : 'zh')))
 $('#gate-form').addEventListener('submit', (e) => { e.preventDefault(); tryUnlock($('#gate-input').value.trim()) })
 $('#export-csv').addEventListener('click', exportCsv)
 $('#export-json').addEventListener('click', exportJson)

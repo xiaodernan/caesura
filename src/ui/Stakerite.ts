@@ -3,7 +3,7 @@ import type { ItemData, MovesetData, SlotKey, WeaponData } from '@/data/schema'
 import { itemOf } from '@/rpg/Inventory'
 import { progressionData } from '@/rpg/Progression'
 import { SLOTS, type EquipMods } from '@/rpg/Equipment'
-import { t, getLang } from '@/i18n/Lang'
+import { t, getLang, toTraditional } from '@/i18n/Lang'
 import { upgradeStep, maxLevelOf, TIMBITE, DROSS, salvageValue } from '@/rpg/Upgrade'
 import { sellPrice, stackSellPrice, shopData, CURRENCY } from '@/rpg/Shop'
 import { movementName, unlockItemName, SCORE } from '@/rpg/Movements'
@@ -2036,8 +2036,12 @@ export class Stakerite {
     /** 画质档位一行（F2 UI）：◀▶ 循环 0→3，读 `ops.quality()`，写 `ops.setQuality()`。 */
     const q = this.ops.quality()
     const QUALITY_DISPLAY_EN = ['Low', 'Medium', 'High', 'Ultra']
-    const qualityDisplay = (q: number): string =>
-      (getLang() === 'en' ? QUALITY_DISPLAY_EN[q] : QUALITY_NAMES[q as QualityTier]) ?? QUALITY_NAMES[DEFAULT_QUALITY]
+    const qualityDisplay = (q: number): string => {
+      const l = getLang()
+      if (l === 'en') return QUALITY_DISPLAY_EN[q] ?? QUALITY_DISPLAY_EN[DEFAULT_QUALITY]
+      const zh = QUALITY_NAMES[q as QualityTier] ?? QUALITY_NAMES[DEFAULT_QUALITY]
+      return l === 'zh-TW' ? toTraditional(zh) : zh
+    }
     const qName = qualityDisplay(q)
     const qPrev = qualityDisplay((q - 1 + 4) % 4)
     const qNext = qualityDisplay((q + 1) % 4)

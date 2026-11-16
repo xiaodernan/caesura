@@ -5,7 +5,7 @@ import { allGearItems } from '@/rpg/Loot'
 import type { SlotCard } from '@/save/Slots'
 import { SAVE_CARD_CSS, saveCardHtml, saveCards, type SaveCardView } from './SaveSlots'
 import type { OriginData, ProgressionData } from '@/data/schema'
-import { getLang, setLang, t } from '@/i18n/Lang'
+import { getLang, setLang, nextLang, t } from '@/i18n/Lang'
 
 /**
  * 开场「定弦」（KI-031② / §2.2）。出身是叙事动作而不是设置项：这一屏在 `loop.start()`
@@ -339,7 +339,7 @@ export class TitleScreen {
   private click(e: MouseEvent): void {
     const target = e.target as HTMLElement
     if (target.dataset && target.dataset.langToggle !== undefined) {
-      setLang(getLang() === 'zh' ? 'en' : 'zh')
+      setLang(nextLang(getLang()))
       this.render()
       return
     }
@@ -437,8 +437,10 @@ export class TitleScreen {
   }
 
   private renderLangChip(): string {
-    const label = getLang() === 'zh' ? 'EN' : '中文'
-    return `<button class="lang-chip" data-lang-toggle type="button" aria-label="${label}" title="${label}">${label}</button>`
+    const cur = getLang()
+    const label = cur === 'zh' ? '繁體' : cur === 'zh-TW' ? 'EN' : '简体'
+    const aria = cur === 'zh' ? 'switch to Traditional Chinese' : cur === 'zh-TW' ? 'switch to English' : 'switch to Simplified Chinese'
+    return `<button class="lang-chip" data-lang-toggle type="button" aria-label="${aria}" title="${aria}">${label}</button>`
   }
 
   private render(): void {

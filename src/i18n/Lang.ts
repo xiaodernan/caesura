@@ -1,19 +1,44 @@
 /**
- * src/i18n/Lang.ts — 界面文案双语切换（i18n 基建 · 中文/EN 等价 · 默认中文）
+ * src/i18n/Lang.ts — 界面文案三语切换（i18n 基建 · 中文/EN 等价 · 简体/繁體双轨 · 默认中文）
  *
  * 这一套把「止音纪元」玩家界面上每一行汉字换成可切换的键/值。规则：
  *  - 默认 'zh'（止音纪元是一块中文唱片）；localStorage 'caesura-lang' 记忆用户选择
+ *  - 'zh-TW'（繁體中文）以 zh 词典为真源，查词时即时转传统（longest-match 贪婪替换，
+ *    表由 scripts/gen-zh-tw-table.ts 生成、与静态页共用同一张公共表）
  *  - 任何界面文案都必须走 t('key') —— 原生英文也得进 zh dict（中文 mode 里无英文台词）
  *  - 数据字段里的内容（如 NPC 台词/物品描述/姓名）由数据真源管，不进本文件（rewrite 锁不破）
+ *    —— 运行时渲染它们的 DOM 由 zh-tw-converter 负责转传统
  *  - EN 侧追求"止音语气"：短、哑、碑文感；不许把中文直译成现代英文口气
  *
  * 当前覆盖范围：HUD 固定文案（6）/ 标题界面（15）/ 对白框（2）/ 过场字幕（1）/ 键位标签（21）
  * 后文圣典（ Stakerite 锻造台 ）在后续阶段——见 docs/PHASE-STATUS.md
  */
 
-export type Lang = 'zh' | 'en'
+// scripts/gen-zh-tw-table.cjs 产物： public/zh-tw.compact.json 与 src/i18n/zh-tw.compact.json 同一张表
+import ZH_TW_TABLE from './zh-tw.compact.json'
+
+export type Lang = 'zh' | 'zh-TW' | 'en'
 
 const STORE_KEY = 'caesura-lang'
+
+/* ---------- 简→繁 转换器（与 public/zh-tw-converter.js 同构，源自同一张表） ---------- */
+const ZH_TW_MAP: Record<string, string> = (ZH_TW_TABLE as unknown as { map: Record<string, string> }).map
+const ZH_TW_MAXLEN = Math.max(8, ...Object.keys(ZH_TW_MAP).map((k) => k.length))
+export const toTraditional = (s: string): string => {
+  if (!s) return s
+  let out = ''
+  let i = 0
+  while (i < s.length) {
+    let matched = false
+    for (let len = Math.min(ZH_TW_MAXLEN, s.length - i); len >= 1; len--) {
+      const key = s.substring(i, i + len)
+      const v = ZH_TW_MAP[key]
+      if (v !== undefined) { out += v; i += len; matched = true; break }
+    }
+    if (!matched) { out += s.charAt(i); i += 1 }
+  }
+  return out
+}
 
 const ZH: Record<string, string> = {
   'interact.readSlateNoHair': '看那块没有字迹的匾',
@@ -1255,30 +1280,38 @@ const EN: Record<string, string> = {
   'ui.hud.bindsMove': 'Move',
 }
 
-const DICTS: Record<Lang, Record<string, string>> = { zh: ZH, en: EN }
+const DICTS = { zh: ZH, en: EN } as const
 
 let current: Lang = (() => {
   try {
     const stored = typeof localStorage !== 'undefined' ? localStorage.getItem(STORE_KEY) : null
-    return stored === 'en' ? 'en' : 'zh'
+    return stored === 'en' ? 'en' : stored === 'zh-TW' ? 'zh-TW' : 'zh'
   } catch {
     return 'zh'
   }
 })()
 
 export const getLang = (): Lang => current
+export const isZh = (): boolean => current !== 'en'
 
 export const setLang = (next: Lang): Lang => {
-  current = next === 'en' ? 'en' : 'zh'
+  current = next === 'en' ? 'en' : next === 'zh-TW' ? 'zh-TW' : 'zh'
   try {
     if (typeof localStorage !== 'undefined') localStorage.setItem(STORE_KEY, current)
   } catch { /* noop */ }
   return current
 }
 
-/** 取词：${name} 占位会走 vars；缺词时回落 key 本身并保持一种安静 */
+/** 循环 简体 → 繁體 → EN（标题屏/任何三态切换共用） */
+export const nextLang = (cur: Lang = current): Lang => (cur === 'zh' ? 'zh-TW' : cur === 'zh-TW' ? 'en' : 'zh')
+
+/**
+ * 取词：${name} 占位会走 vars；缺词时回落 key 本身并保持一种安静。
+ * zh-TW：以中文（简体）词典为真源，输出即时转传统。
+ */
 export const t = (key: string, vars?: Record<string, string | number>): string => {
-  let out = DICTS[current][key] ?? DICTS.zh[key] ?? key
+  let out = DICTS[current === 'en' ? 'en' : 'zh'][key] ?? ZH[key] ?? key
+  if (current === 'zh-TW') out = toTraditional(out)
   if (vars) {
     for (const name of Object.keys(vars)) {
       out = out.split('${' + name + '}').join(String(vars[name]))
@@ -1287,4 +1320,4 @@ export const t = (key: string, vars?: Record<string, string | number>): string =
   return out
 }
 
-export const LANGS: readonly Lang[] = ['zh', 'en']
+export const LANGS: readonly Lang[] = ['zh', 'zh-TW', 'en']

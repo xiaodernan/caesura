@@ -101,8 +101,8 @@
   .block { border-left: 2px solid rgba(201,180,88,.4); padding: 10px 16px; font-size: 13.5px; font-style: italic; color: rgba(242,237,228,.9); border-radius: 0 4px 4px 0; background: linear-gradient(90deg, rgba(201,180,88,.05), transparent 60%) }
   footer { text-align: center; margin-top: 46px; padding-top: 22px; border-top: 1px solid rgba(201,180,88,.12); font-family: var(--mono); font-size: 11px; color: rgba(242,237,228,.45) }
   footer a { color: var(--gold-dim) }
-  html[data-lang="zh"] .en-copy, html[data-lang="en"] .zh-copy { display: none }
-  html[data-lang="zh"] .zh-copy, html[data-lang="en"] .en-copy { display: block }
+  html[data-lang="zh"] .en-copy, html[data-lang="zh-TW"] .en-copy, html[data-lang="en"] .zh-copy { display: none }
+  html[data-lang="zh"] .zh-copy, html[data-lang="zh-TW"] .zh-copy, html[data-lang="en"] .en-copy { display: block }
   @media (prefers-reduced-motion: no-preference) {
     .step { transition: border-color .25s ease }
     .step:hover { border-color: rgba(201,180,88,.45) }
@@ -127,7 +127,7 @@
     <a href="https://xiaodernan.github.io/caesura/?fresh=1">Start a fresh run</a>
     <a href="https://xiaodernan.github.io/caesura/console/">Systems console</a>
     <a href="https://github.com/xiaodernan/caesura/blob/master/docs/PLAYER-GUIDE.md">Full guide</a>
-    <button class="lang" id="langToggle" aria-label="Toggle language / 切换语言">EN / 中文</button>
+    <button class="lang" id="langToggle" aria-label="Toggle language / 切换语言 / 切換語言">简体 / 繁體 / EN</button>
     <button class="lang" id="printBtn" aria-label="Print this primer / 打印本小册子">🖨 Print</button>
   </div>
 </header>
@@ -335,22 +335,37 @@
   <div class="en-copy">CAESURA · v1.8 · Official Tutorial · close this page to return · <br /><a href="https://xiaodernan.github.io/caesura/">Back to the game</a> · <a href="https://xiaodernan.github.io/caesura/cast/">Cast Roster</a> · <a href="https://xiaodernan.github.io/caesura/codex/">World Codex</a> · <a href="https://xiaodernan.github.io/caesura/console/">Console</a> · <a href="https://xiaodernan.github.io/caesura/story/">Salt</a> · <a href="https://xiaodernan.github.io/caesura/story/empty-bar/">The Empty Bar</a> · <a href="https://xiaodernan.github.io/caesura/story/ledger/">The Ledger</a> · <a href="https://xiaodernan.github.io/caesura/story/garden/">The Garden of Return</a> · <a href="https://xiaodernan.github.io/caesura/story/tribunal/">The Rain Tribunal</a> · <a href="https://xiaodernan.github.io/caesura/story/anthology/">The Aftermath</a> · <a href="https://xiaodernan.github.io/caesura/story/frostbell/">The Frostbell</a> · <a href="https://xiaodernan.github.io/caesura/story/doors/">The Thousand Doors</a> · <a href="https://xiaodernan.github.io/caesura/story/stonethroat/">The Stone-Throat</a> · <a href="https://xiaodernan.github.io/caesura/story/first-bell/">The First Bell</a> · <a href="https://xiaodernan.github.io/caesura/story/dark-tide/">The Dark Tide</a> · <a href="https://xiaodernan.github.io/caesura/story/twelfth-listener/">The Twelfth Listener</a> · <a href="/caesura/story/bell-picker/">No. 13 · The Bell-Picker</a> · <a href="/caesura/story/lampwright-bell/">No. 14 · The Lampwright</a> · <a href="https://xiaodernan.github.io/caesura/admin/">Observatory (passphrase 123)</a></div>
 </footer>
 
+<script defer src="/caesura/zh-tw-converter.js"></script>
 <script>
 (function () {
   var root = document.documentElement;
   try {
     var saved = localStorage.getItem('caesura-lang');
-    if (saved === 'en' || saved === 'zh') root.dataset.lang = saved;
-    root.lang = root.dataset.lang === 'en' ? 'en-US' : 'zh-CN';
+    if (saved === 'en' || saved === 'zh' || saved === 'zh-TW') root.dataset.lang = saved;
+    root.lang = root.dataset.lang === 'en' ? 'en-US' : (root.dataset.lang === 'zh-TW' ? 'zh-TW' : 'zh-CN');
   } catch (e) { /* keep default zh */ }
+  if (root.dataset.lang === 'zh-TW') {
+    var restore = function(){ window.__caesuraZhTW && window.__caesuraZhTW.applyToDocument && window.__caesuraZhTW.applyToDocument(); };
+    var readyFn = function () { restore(); };
+    if (document.readyState !== 'loading') readyFn(); else document.addEventListener('DOMContentLoaded', readyFn);
+  }
   var btn = document.getElementById('langToggle');
   var printBtn = document.getElementById('printBtn');
   if (printBtn) printBtn.addEventListener('click', function () { window.print(); });
   if (!btn) return;
   btn.addEventListener('click', function () {
-    var next = root.dataset.lang === 'en' ? 'zh' : 'en';
+    var cur = root.dataset.lang;
+    var next = cur === 'zh' ? 'zh-TW' : (cur === 'zh-TW' ? 'en' : 'zh');
     root.dataset.lang = next;
-    root.lang = next === 'en' ? 'en-US' : 'zh-CN';
+    root.lang = next === 'en' ? 'en-US' : (next === 'zh-TW' ? 'zh-TW' : 'zh-CN');
+    if (next === 'zh-TW') {
+      var reapply = function(){ window.__caesuraZhTW && window.__caesuraZhTW.applyToDocument && window.__caesuraZhTW.applyToDocument(); };
+      if (window.__caesuraZhTW) reapply();
+      else document.addEventListener('DOMContentLoaded', reapply);
+    } else if (cur === 'zh-TW' && next === 'zh') {
+      // restore simplified originals in place (converter keeps a copy of every converted node)
+      if (window.__caesuraZhTW && window.__caesuraZhTW.restoreOriginals) window.__caesuraZhTW.restoreOriginals();
+    }
     try { localStorage.setItem('caesura-lang', next); } catch (e) { /* noop */ }
   });
 })();

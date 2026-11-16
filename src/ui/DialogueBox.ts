@@ -1,6 +1,6 @@
 import { PICK_INTENTS, type UiIntent } from '@/core/Input'
 import type { DialogueView } from '@/quest/Dialogue'
-import { t, getLang } from '@/i18n/Lang'
+import { t, getLang, toTraditional } from '@/i18n/Lang'
 
 /**
  * 对话框（Phase 6-B / narrative §3.2 的 subtitlesRequired）。
@@ -71,8 +71,12 @@ const CSS = `
 /** 每一种人格的单字印（中文真值 — 测试钉死）；EN 用罗马词同源对照 */
 const STYLE_LABEL: Record<string, string> = { blunt: '直', poetic: '诗', silent: '默', provoke: '激' }
 const STYLE_LABEL_EN: Record<string, string> = { blunt: 'Direct', poetic: 'Verse', silent: 'Hush', provoke: 'Edge' }
-const styleLabel = (style: string): string =>
-  (getLang() === 'en' ? STYLE_LABEL_EN : STYLE_LABEL)[style] ?? style
+const styleLabel = (style: string): string => {
+  const lang = getLang()
+  if (lang === 'en') return STYLE_LABEL_EN[style] ?? style
+  const zh = STYLE_LABEL[style] ?? style
+  return lang === 'zh-TW' ? toTraditional(zh) : zh
+}
 
 export interface DialogueHooks {
   /** 玩家选了第 index 个选项（1 起） */

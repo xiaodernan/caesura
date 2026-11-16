@@ -1,5 +1,8 @@
 import type { ActionName, UiIntent } from '@/core/Input'
-import { getLang } from '@/i18n/Lang'
+import { getLang, toTraditional } from '@/i18n/Lang'
+
+/** 当前语言是繁體时，zh 真源即时转传统；en 直接用 EN 表 */
+const zhMaybeTrad = <T extends string>(zhVal: T): string => (getLang() === 'zh-TW' ? toTraditional(zhVal) : zhVal)
 
 /**
  * 动作的中文名只有一份（KI-337）。
@@ -62,7 +65,7 @@ const ACTION_LABELS_EN: Record<ActionName, string> = {
 }
 
 /** 逐格取字（不写 `?? action` 那种兜底：名册是编译期全盖住的，落到这里的一定是名册里的动作） */
-export const actionLabel = (action: ActionName): string => (getLang() === 'en' ? ACTION_LABELS_EN : ACTION_LABELS)[action]
+export const actionLabel = (action: ActionName): string => (getLang() === 'en' ? ACTION_LABELS_EN[action] : zhMaybeTrad(ACTION_LABELS[action]))
 
 /**
  * 手柄按钮的显示名（KI-343）——与上面那张同一个文件、同一条理由：**给人看的名字只有一份**。
@@ -91,8 +94,8 @@ const PAD_BUTTON_LABELS_EN: Record<number, string> = {
 /** 一枚下标的显示名；非整数与界外都落回 `Pad<n>`（这一串与 `Bindings.ts` 的目标拼写同一门语言） */
 export const padLabel = (index: number): string =>
   (Number.isInteger(index)
-    ? (getLang() === 'en' ? PAD_BUTTON_LABELS_EN : PAD_BUTTON_LABELS)[index]
-    : undefined) ?? `Pad${index}`
+    ? (getLang() === 'en' ? PAD_BUTTON_LABELS_EN[index] : zhMaybeTrad(PAD_BUTTON_LABELS[index] ?? ''))
+    : undefined) || `Pad${index}`
 
 /**
  * 菜单意图的显示名（KI-344）——同一个文件、同一条理由：**给人看的名字只有一份**。
@@ -117,4 +120,4 @@ const UI_INTENT_LABELS_EN: Record<UiIntent, string> = {
 }
 
 /** 逐格取字（与 `actionLabel` 同一口径：名册是编译期全盖住的，落到这里的一定是名册上的意图） */
-export const intentLabel = (intent: UiIntent): string => (getLang() === 'en' ? UI_INTENT_LABELS_EN : UI_INTENT_LABELS)[intent]
+export const intentLabel = (intent: UiIntent): string => (getLang() === 'en' ? UI_INTENT_LABELS_EN[intent] : zhMaybeTrad(UI_INTENT_LABELS[intent]))

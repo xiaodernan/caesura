@@ -64,8 +64,9 @@
   .chips span { border: 1px solid var(--line); border-radius: 2px; padding: 2px 6px; color: rgba(242,237,228,.65) }
   footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid rgba(201,180,88,.12); font-family: var(--mono); font-size: 11px; color: rgba(242,237,228,.45) }
   footer a { color: var(--gold-dim) }
+  html[data-lang="zh-TW"] .en-copy, html[data-lang="en"] .zh-copy { display: none }
   html[data-lang="zh"] .en-copy, html[data-lang="en"] .zh-copy { display: none }
-  html[data-lang="zh"] .zh-copy, html[data-lang="en"] .en-copy { display: block }
+  html[data-lang="zh"] .zh-copy, html[data-lang="zh-TW"] .zh-copy, html[data-lang="en"] .en-copy { display: block }
 </style>
 </head>
 <body>
@@ -80,7 +81,7 @@
     <h1>CAESURA · <span>Cast Roster</span></h1>
     <p class="sub">Fifteen faces, seven bosses, a world still under construction</p>
   </div>
-  <button class="lang" id="langToggle" aria-label="Toggle language / 切换语言">EN / 中文</button>
+  <button class="lang" id="langToggle" aria-label="繁體 / EN / Simplified">繁體</button>
 </header>
 
 <main>
@@ -113,23 +114,30 @@
     { tag: 'ARCHITECTURE', tagEn: 'ARCHITECTURE', name: 'spring-family-e2e', role: 'Spring Cloud · Eureka/Gateway/Config', nameEn: 'spring-family-e2e', roleEn: 'Spring Cloud · Eureka+Gateway+Config', descript: '真实微服务系统——Eureka 注册中心 + 配置中心 + Gateway 路由 + 应用内部熔断器全套跑通。', descriptEn: 'A real microservice mesh: Eureka registry, config server, gateway routing, circuit breakers — all wired and verified in CI.', chips: ['Spring', 'Redis', 'Eureka', 'Gateway'] },
   ];
 
-  const blurbFor = (r) => {
-    const zh = {
-      tag: r.tag, name: r.name, role: r.role, descript: r.descript, chips: r.chips,
-    };
-    const en = {
-      tag: r.tagEn, name: r.nameEn, role: r.roleEn, descript: r.descriptEn, chips: r.chips,
-    };
-    return window.LANG_TOGGLE ? en : zh;
-  };
+  const tw = (s) => (window.__caesuraZhTW && typeof window.__caesuraZhTW.toTraditional === 'function') ? window.__caesuraZhTW.toTraditional(s) : s;
+  const pickLoc = (r, l) => l === 'en'
+    ? { tag: r.tagEn, name: r.nameEn, role: r.roleEn, descript: r.descriptEn, chips: r.chips }
+    : l === 'zh-TW'
+      ? { tag: tw(r.tag), name: tw(r.name), role: tw(r.role), descript: tw(r.descript), chips: r.chips }
+      : { tag: r.tag, name: r.name, role: r.role, descript: r.descript, chips: r.chips };
+
+  function applyLang(l) {
+    const html = document.documentElement;
+    html.setAttribute('data-lang', l);
+    html.lang = l === 'en' ? 'en-US' : (l === 'zh-TW' ? 'zh-TW' : 'zh-CN');
+    try { localStorage.setItem('caesura-lang', l); } catch (e) { /* noop */ }
+    const btn = document.getElementById('langToggle');
+    if (btn) btn.textContent = l === 'zh' ? '繁體' : (l === 'zh-TW' ? 'EN' : '简体');
+    if (window.__caesuraZhTW) {
+      if (l === 'zh-TW' && window.__caesuraZhTW.applyToDocument) window.__caesuraZhTW.applyToDocument();
+      else if (l === 'zh' && window.__caesuraZhTW.restoreOriginals) window.__caesuraZhTW.restoreOriginals();
+    }
+  }
 
   function render() {
+    const l = document.documentElement.getAttribute('data-lang') || 'zh';
     const data = ROSTER.map((r) => {
-      const loc = window.LANG_TOGGLE ? {
-        tag: r.tagEn, name: r.nameEn, role: r.roleEn, descript: r.descriptEn, chips: r.chips,
-      } : {
-        tag: r.tag, name: r.name, role: r.role, descript: r.descript, chips: r.chips,
-      };
+      const loc = pickLoc(r, l);
       return `
         <div class="card">
           <div class="tag">${loc.tag}</div>
@@ -144,15 +152,21 @@
 
   const toggleEl = document.getElementById('langToggle');
   toggleEl.addEventListener('click', () => {
-    const html = document.documentElement;
-    const isZh = html.getAttribute('data-lang') === 'zh';
-    if (isZh) { html.setAttribute('data-lang', 'en'); html.lang = 'en-US'; }
-    else { html.setAttribute('data-lang', 'zh'); html.lang = 'zh-CN'; }
+    const cur = document.documentElement.getAttribute('data-lang') || 'zh';
+    const next = cur === 'zh' ? 'zh-TW' : (cur === 'zh-TW' ? 'en' : 'zh');
+    applyLang(next);
     render();
   });
 
+  // boot: honor saved language; re-render once the converter table is ready (TW gets proper glyphs then)
+  try {
+    const saved = localStorage.getItem('caesura-lang');
+    if (saved === 'en' || saved === 'zh-TW') applyLang(saved);
+  } catch (e) { /* default zh */ }
   render();
+  window.addEventListener('load', render);
 </script>
 <script defer src="../tracker.js"></script>
+<script defer src="/caesura/zh-tw-converter.js"></script>
 </body>
 </html>

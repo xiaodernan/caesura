@@ -37,7 +37,7 @@ ARCH.duplicates=0
 ARCH.holes=none
 PKG.scripts=82
 PKG.deps=1
-PKG.devDeps=6
+PKG.devDeps=7
 ```
 <!-- PHASE-STATUS:END-KV -->
 

@@ -40,6 +40,7 @@
   .lang-row button { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(203,177,255,.12); border:1px solid var(--gold-soft); padding:6px 15px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; }
   .lang-row button:hover { background:rgba(203,177,255,.22); box-shadow:0 0 16px rgba(203,177,255,.25); }
 
+  [data-lang="zh-TW"] .en-copy { display:none !important; }
   [data-lang="zh"] .en-copy { display:none !important; }
   [data-lang="en"] .zh-copy { display:none !important; }
 
@@ -202,15 +203,21 @@
   try { saved = localStorage.getItem('caesura-lang') || 'zh'; } catch (e) { /* noop */ }
   function apply(lang) {
     root.setAttribute('data-lang', lang);
-    root.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en');
+    root.setAttribute('lang', lang === 'en' ? 'en-US' : (lang === 'zh-TW' ? 'zh-TW' : 'zh-CN'));
     try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+    if (window.__caesuraZhTW) {
+      if (lang === 'zh-TW' && window.__caesuraZhTW.applyToDocument) window.__caesuraZhTW.applyToDocument();
+      else if (lang === 'zh' && window.__caesuraZhTW.restoreOriginals) window.__caesuraZhTW.restoreOriginals();
+    }
+    btn.textContent = lang === 'zh' ? '繁體' : (lang === 'zh-TW' ? 'EN' : '简体');
   }
   if (btn) btn.addEventListener('click', function () {
-    apply(root.getAttribute('data-lang') === 'en' ? 'zh' : 'en');
+    var cur = root.getAttribute('data-lang'); apply(cur === 'zh' ? 'zh-TW' : (cur === 'zh-TW' ? 'en' : 'zh'));
   });
-  apply(saved === 'en' ? 'en' : 'zh');
+  apply(saved === 'en' || saved === 'zh-TW' ? saved : 'zh');
 })();
 </script>
 <script defer src="../../tracker.js"></script>
+<script defer src="/caesura/zh-tw-converter.js"></script>
 </body>
 </html>

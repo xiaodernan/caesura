@@ -14,6 +14,11 @@
         r.dataset.lang = 'en';
         r.lang = 'en-US';
         document.title = 'CAESURA · The Epoch of Hush';
+      } else if (s === 'zh-TW') {
+        var r2 = document.documentElement;
+        r2.dataset.lang = 'zh-TW';
+        r2.lang = 'zh-TW';
+        document.title = 'CAESURA · 止音紀元';
       }
     } catch (e) { /* 默认中文 */ }
   })();
@@ -50,6 +55,7 @@
   @media (prefers-reduced-motion: reduce) { #boot::after { animation:none; } }
   html[data-lang="en"] .zh-i18n { display:none }
   html[data-lang="zh"] .en-i18n { display:none }
+  html[data-lang="zh-TW"] .en-i18n { display:none }
 </style>
 </head>
 <body>
@@ -59,5 +65,21 @@
   <div id="boot"><span class="word">CAESURA</span><small class="zh-i18n">止音纪元</small><small class="en-i18n">The Epoch of Hush</small></div>
   <script type="module" src="/src/main.ts"></script>
 <script defer src="./tracker.js"></script>
+<script defer src="/caesura/zh-tw-converter.js"></script>
+<script>
+  /* in-game: every panel that re-renders into the DOM (title screen / Stakerite / dialogue)
+     must stay Traditional while saved==='zh-TW' — text nodes are converted as they appear. */
+  (function () {
+    var saved = null;
+    try { saved = localStorage.getItem('caesura-lang'); } catch (e) { /* noop */ }
+    if (saved !== 'zh-TW') return;
+    /* defer scripts (zh-tw-converter.js) finish before window.onload — the converter is guaranteed to exist there */
+    window.addEventListener('load', function () {
+      if (!window.__caesuraZhTW) return;
+      window.__caesuraZhTW.applyToDocument();
+      window.__caesuraZhTW.observe(document.body);
+    });
+  })();
+</script>
 </body>
 </html>

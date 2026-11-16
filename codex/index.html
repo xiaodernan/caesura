@@ -31,6 +31,7 @@
   .bg.noise { z-index:-1; opacity:.05; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
 
   [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="zh-TW"] .en-copy { display:none !important; }
   [data-lang="en"] .zh-copy { display:none !important; }
   .wrap { max-width:1180px; margin:0 auto; padding:28px 26px 80px; }
 
@@ -459,7 +460,13 @@ function scoreDoc(qi, qToks) {
 }
 
 /* ---------- UI state ---------- */
-const state = { lang: 'zh', cat: 'all', query: '' };
+const twS = (s) => (window.__caesuraZhTW && typeof window.__caesuraZhTW.toTraditional === 'function') ? window.__caesuraZhTW.toTraditional(s) : s;
+const srcKey = () => (state.lang === 'en' ? 'en' : 'zh');
+const pickLang = (pair) => {
+  if (state.lang === 'en') return pair.en;
+  return state.lang === 'zh-TW' ? twS(pair.zh) : pair.zh;
+};
+const state = { lang: (() => { try { const s = localStorage.getItem('caesura-lang'); return (s === 'en' || s === 'zh-TW') ? s : 'zh'; } catch { return 'zh' } })(), cat: 'all', query: '' };
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => [...document.querySelectorAll(sel)];
 
@@ -476,7 +483,7 @@ function highlight(text, qToks) {
 
 function renderChips() {
   $('#chips').innerHTML = CATS.map((c) =>
-    `<button class="chip${c.id === state.cat ? ' on' : ''}" data-cat="${c.id}" type="button">${state.lang === 'zh' ? c.zh : c.en}</button>`
+    `<button class="chip${c.id === state.cat ? ' on' : ''}" data-cat="${c.id}" type="button">${pickLang(c)}</button>`
   ).join('');
 }
 
@@ -490,13 +497,13 @@ const CATEGORY_LABELS = {
   term: { zh: '术语', en: 'Term' }, mark: { zh: '刻痕', en: 'Mark' },
   system: { zh: '系统', en: 'System' }, epic: { zh: '史诗', en: 'Epic' }, lands: { zh: '新陆', en: 'New Land' },
 };
-const tagLabelFor = (cat, lang) => CATEGORY_LABELS[cat]?.[lang] ?? cat;
+const tagLabelFor = (cat, lang) => pickLang(CATEGORY_LABELS[cat] ?? { zh: cat, en: cat });
 
 function openEntry(e) {
-  $('#mtag').textContent = tagLabelFor(e.cat, state.lang);
+  $('#mtag').textContent = tagLabelFor(e.cat, srcKey());
   $('#mtag').className = 'tag tag-' + e.cat;
-  $('#mtitle').textContent = e.title[state.lang];
-  $('#mbody').textContent = e.body[state.lang];
+  $('#mtitle').textContent = pickLang(e.title);
+  $('#mbody').textContent = pickLang(e.body);
   const veil = $('#veil');
   veil.classList.add('on');
   veil.setAttribute('aria-hidden', 'false');
@@ -520,7 +527,7 @@ const QUICK = [
 ];
 function renderQuick() {
   $('#quick').innerHTML = QUICK.map((q) =>
-    `<button class="q" type="button" data-q="${q.q}">${state.lang === 'zh' ? q.zh : q.en}</button>`
+    `<button class="q" type="button" data-q="${q.q}">${pickLang(q)}</button>`
   ).join('');
 }
 
@@ -532,15 +539,16 @@ function render() {
     .slice(0, 60);
   $('#hitCount').textContent = String(scored.length);
   const grid = $('#grid');
+  const zhEmpty = '没找到 —— 换个词：<b>万籁</b> / <b>频率罗盘</b> / <b>第四口钟</b>？';
   if (!scored.length) {
-    grid.innerHTML = `<div class="empty"><b>∅</b><br>${state.lang === 'zh' ? '没找到 —— 换个词：<b>万籁</b> / <b>频率罗盘</b> / <b>第四口钟</b>？' : 'Nothing found — try <b>The Myriad</b>, <b>Frequency Compass</b>, <b>the fourth bell</b>.'}</div>`;
+    grid.innerHTML = `<div class="empty"><b>∅</b><br>${state.lang === 'en' ? 'Nothing found — try <b>The Myriad</b>, <b>Frequency Compass</b>, <b>the fourth bell</b>.' : (state.lang === 'zh-TW' ? twS(zhEmpty) : zhEmpty)}</div>`;
     return;
   }
   grid.innerHTML = scored.map(({ e, i }) => {
     return `<article class="card" data-i="${i}" tabindex="0" role="button">
-      <span class="tag tag-${e.cat}">${tagLabelFor(e.cat, state.lang)}</span>
-      <h3>${highlight(e.title[state.lang], qToks)}</h3>
-      <p>${highlight(e.body[state.lang], qToks)}</p>
+      <span class="tag tag-${e.cat}">${tagLabelFor(e.cat, srcKey())}</span>
+      <h3>${highlight(pickLang(e.title), qToks)}</h3>
+      <p>${highlight(pickLang(e.body), qToks)}</p>
     </article>`;
   }).join('');
 }
@@ -548,11 +556,17 @@ function render() {
 function applyLang(lang) {
   state.lang = lang;
   document.documentElement.setAttribute('data-lang', lang);
-  document.documentElement.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en');
-  $$('.zh-copy').forEach((el) => { el.style.display = lang === 'zh' ? '' : 'none'; });
+  document.documentElement.setAttribute('lang', lang === 'en' ? 'en-US' : (lang === 'zh-TW' ? 'zh-TW' : 'zh-CN'));
+  $$('.zh-copy').forEach((el) => { el.style.display = lang !== 'en' ? '' : 'none'; });
   $$('.en-copy').forEach((el) => { el.style.display = lang === 'en' ? '' : 'none'; });
   const q = $('#q');
-  q.setAttribute('placeholder', lang === 'zh' ? '搜「万籁」「敲不碎的铃」「频率罗盘」……' : 'Search: “The Myriad”, “unbreakable bell”, “frequency compass”…');
+  const zhPh = '搜「万籁」「敲不碎的铃」「频率罗盘」……';
+  q.setAttribute('placeholder', lang === 'en' ? 'Search: “The Myriad”, “unbreakable bell”, “frequency compass”…' : (lang === 'zh-TW' ? twS(zhPh) : zhPh));
+  const tgl = $('#langToggle');
+  tgl.textContent = lang === 'zh' ? '繁體' : (lang === 'zh-TW' ? 'EN' : '简体');
+  tgl.setAttribute('aria-label', lang === 'zh' ? 'switch to Traditional Chinese' : (lang === 'zh-TW' ? 'switch to English' : 'switch to Simplified Chinese'));
+  try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+  if (lang === 'zh-TW' && window.__caesuraZhTW && window.__caesuraZhTW.applyToDocument) window.__caesuraZhTW.applyToDocument();
   renderChips();
   renderQuick();
   render();
@@ -615,8 +629,14 @@ document.addEventListener('keydown', (ev) => {
 $('#langToggle').addEventListener('click', () => applyLang(state.lang === 'zh' ? 'en' : 'zh'));
 
 renderChips();
-applyLang('zh');
+// boot: honor saved language; re-apply once the converter table is ready (TW glyphs refresh then)
+window.addEventListener('load', () => { if (state.lang === 'zh-TW') applyLang('zh-TW'); });
+var savedLang = 'zh';
+try { savedLang = localStorage.getItem('caesura-lang'); } catch (e) { /* noop */ }
+applyLang(savedLang === 'en' || savedLang === 'zh-TW' ? savedLang : 'zh');
 </script>
+<script defer src="/caesura/zh-tw-converter.js"></script>
 <script defer src="../tracker.js"></script>
+<!-- re-run boot once converter is ready is wired above (load listener) -->
 </body>
 </html>
