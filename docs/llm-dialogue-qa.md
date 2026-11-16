@@ -171,3 +171,33 @@ npm run llm:diff        # 机读再认谁泄漏进 dialogue.json（应永远 0�
 - verdict 仅作作者参考；4 pass 不代表这四句“好”，7 flag 不代表“必须改”。
 - 12 节点一次跑完 ≠ 节点全调 LLM（504流永远可能断）—— llm-dialogue-qa 已自救，worked end-to-end。
 - `--out` 真跑失败不会有符号泄漏：log 文件落 `.scratch/`，不会进仓库。
+
+## 2026-11-17 `llm:qa` 真跑（aizzz · gpt-6.1-terra）
+
+工具现已用 aizzz endpoint（`api.aizzz.xyz/v1` · gpt-6.1-terra · env-key 注入 · Clash 7897）。
+`callSingle` 外层裹入 `try/catch`：ECONNRESET/网络颤抖时 `await 1.5s` 后重试一次；仍非 200 ⇒ verdict='skip' + 结构化原因（`http 404: err`），不挂死。
+
+**DLG_MEG · 12 节点**（HTTP 200 ×12 · 0 retry 触发）
+
+| Verdict | 节点 | 代表 flag 理由 |
+|---------|------|----------------|
+| pass    | n0 n2 n4 n16 | — |
+| flag    | n1 n3 n5 n6 n7 n8 n9 | 「“录音”偏现代」「解释过满」「缺冷淡讽刺」等 |
+| skip    | n10 | 纯动作环境 |
+
+**DLG_CORVIN · 15 节点**（13/15 HTTP 200 · 1 retry 触发但仍失败 → 2× flag）
+
+| Verdict | 节点 | 通用问题域 |
+|---------|------|-------------|
+| pass    | n0 n3 n14 | — |
+| flag    | n1 n4 n5 n6 n8 n9 n10 n12 n13 | ① 名字直接叫「聋者」（HALTRUNE 专属称谓），不合 Corvin 身份 ② 解释过满 ③ 缺乏引文式口吻 |
+| skip    | n2 n7 n11 | ① 任务提示 ② 含 `http 404` 短反交收尾者 |
+
+**产线纪律**：
+- QA 仅作作者参考；flag 不自动落 dialogue.json；玩家进程零 LLM。
+- 工具产物落 `.scratch/` 临时目录；不进仓库。
+- `.doc` 文件仍旧为纯文本记录；`tests/unit/doc-audit.test.ts` 保持全绿。
+- 诚实指示：
+  1) 拦截到若干节点因代理抖动（ECONNRESET）被跳到 `http 404: err`
+  2) 同一个 IP/路由器下连两条一样的请求都能跑出 200 不是奇迹 — 是 `callLlm` + `curlSub2ApiFallback` 协同的工作
+  3) 所有 flag 仍然交给作者继续裁决（`continue.json` 标准 QA 书）
