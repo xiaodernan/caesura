@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "6e2183f75f44667a51e3dff1609cbad67f3b8b94",
+  "head": "3c3bed4ce023e1bdf511c7e0923b01c2e5317804",
   "branch": "master",
-  "subject": "content(atlas, codex): Atlas 加入'观察站（口令 123）'· Codex 新增'观察站 The Observatory'{KI-614} · 世界谱 73→74 · Spring family 重打",
-  "date": "2026-11-16T18:55:34+08:00",
+  "subject": "chore(status): re-embed site-latest.json",
+  "date": "2026-11-16T18:57:12+08:00",
   "kv": {
     "KI.rows": 532,
     "KI.Implemented": 355,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/6e2183f75f44667a51e3dff1609cbad67f3b8b94",
+    "url": "https://github.com/xiaodernan/caesura/commit/3c3bed4ce023e1bdf511c7e0923b01c2e5317804",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
