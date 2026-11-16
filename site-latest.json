@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "7e6e15fe34af6c65cc99a1775a8412d3b0ec4fc4",
+  "head": "41795447e1b8ce0de32d47559e75f477ba8973d0",
   "branch": "master",
-  "subject": "site-latest: 421568a (post-rebase reconcile)",
-  "date": "2026-11-17T00:23:25+08:00",
+  "subject": "docs(pressure): Pages 实测压力探针（KI-619）",
+  "date": "2026-11-17T00:31:03+08:00",
   "kv": {
-    "KI.rows": 536,
-    "KI.Implemented": 359,
+    "KI.rows": 537,
+    "KI.Implemented": 360,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/7e6e15fe34af6c65cc99a1775a8412d3b0ec4fc4",
+    "url": "https://github.com/xiaodernan/caesura/commit/41795447e1b8ce0de32d47559e75f477ba8973d0",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
