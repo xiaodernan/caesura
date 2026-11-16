@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "64cf326bb0600be02a4b71d013920a7591240b18",
+  "head": "10e7e4019f19e6d9a1a095a164dc15eeaa9fc8a6",
   "branch": "master",
-  "subject": "site-latest: acd9e62 (KI-615 账本/工面同步 + converter 自定位)",
-  "date": "2026-11-16T20:19:30+08:00",
+  "subject": "fix(i18n): 调度台 console 接入 zh-TW 三态循环 + codex 切换器跳过 TW 的真bug",
+  "date": "2026-11-16T20:33:39+08:00",
   "kv": {
     "KI.rows": 533,
     "KI.Implemented": 356,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/64cf326bb0600be02a4b71d013920a7591240b18",
+    "url": "https://github.com/xiaodernan/caesura/commit/10e7e4019f19e6d9a1a095a164dc15eeaa9fc8a6",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
