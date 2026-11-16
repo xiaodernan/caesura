@@ -19,6 +19,7 @@
  *   ├── story/first-bell/（短篇之十 · 创世）
  *   ├── story/dark-tide/（短篇之十一 · 暗潮 · 黑暗森林）
  *   ├── story/twelfth-listener/（短篇之十二 · 后记 · 第十二个听者）
+ *   ├── story/bell-picker/（短篇之十三 · 拾钟人 · 余响拾遗）
  *   ├── console/      （集大成调度台）
  *   ├── admin/        （止音后台 · 用户观察站 · 密码 123 · 静态页种子数据）
  *   └── raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json
@@ -53,6 +54,7 @@ const ENDPOINTS = [
   { name: 'admin', url: 'https://xiaodernan.github.io/caesura/admin/', marker: 'CAESURA / USER OBSERVATORY' },
   { name: 'story-12', url: 'https://xiaodernan.github.io/caesura/story/dark-tide/', marker: '暗潮' },
   { name: 'story-13', url: 'https://xiaodernan.github.io/caesura/story/twelfth-listener/', marker: '第十二个听者' },
+  { name: 'story-14', url: 'https://xiaodernan.github.io/caesura/story/bell-picker/', marker: '拾钟人' },
 ]
 
 const asJson = argv.includes('--json')
@@ -61,7 +63,7 @@ const concEq = argv.find((a) => a.startsWith('--concurrency='))
 const concRaw = concEq ? Number(concEq.slice('--concurrency='.length)) : (concIdx >= 0 ? Number(argv[concIdx + 1]) : 4)
 const concurrency = Math.max(1, Math.min(16, Number.isFinite(concRaw) ? concRaw : 4))
 
-// 并发压测：同一批 21 个端点以 N 路并发发出（Promise pool），逐个验证 marker、
+// 并发压测：同一批 22 个端点以 N 路并发发出（Promise pool），逐个验证 marker、
 // 统计总时长与 p50/p95/p99。不新增权限、不改 marker、不跨网络滥用——仅本机连 Pages。
 const results = new Array(ENDPOINTS.length)
 let cursor = 0

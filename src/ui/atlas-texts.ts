@@ -1,6 +1,6 @@
 /**
- * 游记 · 十二篇全文（2026-11-16 落 · KI-579/590）。
- * 这十二篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 十三篇全文（2026-11-16 落 · KI-579/590/609）。
+ * 这十三篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -872,5 +872,71 @@ export const STORY_CHAPTERS: StoryChapter[] = [
       <p class="coda">At the moment the wave broke on the shore, the twelfth keeper heard something lower than the wind —</p>
       <p class="coda">twelve hands, striking the bell that had never been struck —</p>
       <p class="coda" style="text-align:center;color:var(--gold);font-size:1.1rem;letter-spacing:.06em;">— The Twelfth Listener</p>`,
+  },
+
+  {
+    no: 13,
+    zhTitle: "拾钟人",
+    enTitle: "The Bell-Picker",
+    zh: `<p>没有人记得拾钟人从哪一年开始走。只记得他走的时候不问路——问路的人已经没有了；他只问每一处钟最后一次响是哪一年。没有人答得上来，他就点点头，像听懂了什么似的，把那块地方在布口袋上画一个记号。</p>
+    <p>他走的时候背着一只旧布袋。布袋里没有干粮、没有水囊、没有火种。布袋里装的，是八座走过的钟里剩下的东西：一只钟口、一根钟舌、几片被海水吃薄的铜皮——每一件都锈得温柔，像被很多人抱过又放下。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>休垒的人让他看了那口从井底捞上来的钟。钟没有了底，里面长满了芦苇和青苔。拾钟人没有碰它——他说底没了的东西，口还在，就还算没碎。休垒的人请他喝酒。他喝了半口，把剩下的半口泼在土里，说：「给井里的那位。」</p>
+    <p>低语林的人不让他进林子。他就在林外站了很久，说：「钟舌不在钟里也是钟舌。」林里的风后来吹出来一片铜绿色的苔藓，落在他的脚边。他把它包进油布里，放在布袋最里面——那里是留给最小的东西的。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>沉唱堂的人给了他一页纸。纸上的字已经被水泡糊了，只剩最后一行，「第四下——」没写完。拾钟人把纸对折了两折，夹进簿子里。他没有问：没写完的字，不需要问。</p>
+    <p>破拍营地的人围着他看布袋。有人认出了铎坠——那是火谱里那把交响乐队烧剩的「弱拍」；那是整条乐句里唯一没被敲过的那一拍。拾钟人说：「我不是来收古董的。我是来替它们把沉默收拾干净的。」营地里安静了很久，然后有人在火里添了一根柴。没有人唱歌，但火光跳了一下，像呼应似的。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>叩钟镇的人告诉他，整座吊钟山只剩下一小块「影子」——那一块影子是钟在熄灭前最后一刻留在雪地上的。拾钟人把那一块影子记在了布口袋上。低语林的铜皮、叩钟镇的雪影、沉唱堂的半行字……他记下来的从来不是「东西」，而是「东西离开之后剩下的那一点气」。</p>
+    <p>未完之厅的人问他：整理这些东西做什么。他说：「给以后想敲钟的人，留一个不闷的起手式。」未完之厅的人笑了——他们在笑一件没人信会发生的事。拾钟人不生气。不整理的人也不止他一个，但他决定做那个整理的人。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>他最后到的是风钟海岸。岬角尽头，海水退去时露出那块旧船板——每一根蚀透的榫卯都不说它漂了多远；这个岬角的旧名字，就叫「它回来的地方」。拾钟人把布袋放下，从里面取出全程最大的一件东西：一根钟舌。它锈得很深，但他一握住它，就知道它曾经属于一口完整的钟。</p>
+    <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.1rem; letter-spacing:.05em;">「第四下还没人敲」</p>
+    <p>他把钟舌挂上那根已经断了的桅杆底座——不是为了响，是为了让这片海记得：曾经有一颗心脏在等一次敲击。他没有在石头上刻字：船板已经替这个岬角说完了。他只在布袋上又添了一个记号。然后他转身，往回走。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">多年以后，守钟人阿衡的石盘边上，多出一只旧布袋。袋口系着一根油布包的铜皮。布袋里有很多件锈得温柔的东西和一张字条：</p>
+    <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.1rem; letter-spacing:.05em;">「留给第四下敲钟的人」</p>
+    <p class="coda">守钟人没有问是谁放的。她把布袋收进了石盘底下，和手册一起。<br>有些礼物，收下了就等于替送的人，继续保管了。</p>
+    <p class="coda">风钟海岸依然没有钟声。<br>但每一件抵达过布袋的东西，都被好好地放着——<br>像每一片在等一次敲击的沉默，终于找到了一个愿意替它们存档的人。</p>`,
+    en: `<p>No one remembers the year the Bell-Picker first set out. Only that he never asked for directions — the ones who would have pointed have stopped answering; he asked only one thing, at every reach: the year the last bell rang. No one could say, so he nodded, as if he had understood something, and drew a small mark on his canvas sack.</p>
+    <p>He carried an old canvas sack on his back. There was no bread in it, no waterskin, no tinder. It held what remained of every bell he crossed: one rim, one clapper, a few sheets of copper eaten thin by the sea — each warm with rust, as though it had been held by many hands and set down gently, again and again.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>At Resthold, they showed him the bell they had hauled up from the well. It had no bottom; reed and moss grew inside it. The Bell-Picker did not touch it — a thing with no bottom still has a rim, he said, and a rim is not yet broken. They offered him wine. He drank half and poured the other half into the earth, and said: “For the one down the well.”</p>
+    <p>In Whisperwode they would not let him in. He stood at the treeline a long while, and said: “A clapper is a clapper, even outside the bell.” The wind from the wood afterwards blew down a strip of verdigris moss that landed at his feet. He wrapped it in oilcloth and set it deepest in the sack — the pocket reserved for the smallest things.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>At Drowned Choir they gave him a page. The ink had bloomed into water, only the last line survived — “the fourth—” never finished. He folded it twice and kept it in his pocketbook. He did not ask. The unfinished do not ask to be finished; they ask to be carried.</p>
+    <p>At Brokenbar Camp they ringed him, looking into the sack. Someone recognised the clapper — the weak beat from the half of the score the fire had not taken, the one note of the whole phrase that had never once been struck. “I am not here for antiques,” he said. “I am here to put the silences in order.” The camp went still for a long moment. Then someone fed the fire one more log. No one sang. But the light leapt, once, as if it had answered.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>At Fellcarillon they told him that the whole bell-mountain had shrunk to a single patch of “shadow” — the shadow the bell had thrown on the snow in the last instant before it went out. He marked the shadow on his canvas sack. The copper from Whisperwode, the snow-shadow from Fellcarillon, the half line from Drowned Choir… He was never writing things down. He was writing down what the things kept breathing after they were gone.</p>
+    <p>At the Unfinished Hall they asked him: what is all this for. He said: “So that whoever wants to ring again someday has a first grip that does not startle them.” The people of the Unfinished Hall laughed — they were laughing at something no one believed would happen. He did not mind. Not everyone refuses to set things in order. Someone must be the one who does the setting.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>His last stop was Windbell Coast. At the headland’s end, the tide went out and left a plank of old hull — every peg sheared by the sea still carries the cape’s old name: <em>the place it came home</em>. The Bell-Picker set the sack down and drew out the largest thing in it: one clapper. The rust was deep, but the moment he closed his hand around it he knew it had once belonged to a whole bell.</p>
+    <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.1rem; letter-spacing:.05em;">“the fourth has no one to ring it yet”</p>
+    <p>He hung the clapper on the broken stump of the mast — not to make a sound, but to let this sea remember: there was once a heart waiting for one more blow. He carved nothing into the stone. The plank had already said everything this headland had to say. He drew one more mark on the sack. Then he turned and walked back.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">Years later, beside Keeper A Hén’s stone pan, a canvas sack was found. It was tied with a strip of oilcloth around a piece of copper. Inside were many things, worn warm with rust, and a slip of paper that read:</p>
+    <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.1rem; letter-spacing:.05em;">“For the one who rings the fourth.”</p>
+    <p class="coda">The keeper did not ask who had left it. She set the sack under the pan, beside the ledger.<br>Some gifts, once accepted, become someone else’s to keep.</p>
+    <p class="coda">Windbell Coast still has no bell.<br>But everything that entered that sack is kept —<br>every silence waiting for one more stroke has found, at last, someone willing to hold them all on file.</p>`,
   },
 ]

@@ -142,7 +142,7 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">未竟厅 · 三处</span><span class="note">银镜后面那道「钟摆」；时间走来走去，就是走不到头；厅里唯一一口从没敲过的钟——等最后一个不会来的大师；谱架上那本永远不会翻过去的谱——恩希尔每天指挥到那一页，合上，再开</span></div>
 <div class="row"><span class="name">风钟海岸 · 八处</span><span class="note">那阵带着钟的风——它带着一个又一个钟的余温，却从不让你清楚地听到；盐结的小龛被海天天抹去又天天重写；防波堤上一道道潮痕，像一首被海擦了又写的歌；断崖礁岩上黑碑似的——它擦不干净；贝壳里压着字——「生」；按下那颗响石，整片海都没动；潮纹裂开了——盐从裂缝里自己长出了牙齿；那块潮里露出的船底旧木——每一根蚀透的榫卯都抬着这个岬角的旧名「它回来的地方」</span></div>
 
-<h2>选读 · 余响集十二篇 <span style="opacity:.6">（与游戏同源的十二个故事，在线阅读）</span></h2>
+<h2>选读 · 余响集十三篇 <span style="opacity:.6">（与游戏同源的十三个故事，在线阅读）</span></h2>
 <div class="row"><span class="name">篇一《盐》· 风钟海岸</span><span class="note">听雾站守夜人阿衡——钟不是用来敲的，是用来记住的；风钟海岸从此有了第四根弦</span></div>
 <div class="row"><span class="name">篇二《山下无名碑》· 休垒</span><span class="note">石匠女儿阿汀在山脚下找到一块没有字、没有名字的碑——风一停，石头就会把自己写上去</span></div>
 <div class="row"><span class="name">篇三《空拍子》· 未竟厅</span><span class="note">轮值了七十三年的恩希尔，在一记空拍之后，被人问出他唯一等不到的那个人</span></div>
@@ -155,7 +155,8 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">篇十《第一钟》· 创世</span><span class="note">这场本是沉默；最后的铸钟人把铜烧进炉子——铸出一口从没被人敲过的钟</span></div>
 <div class="row"><span class="name">篇十一《暗潮》· 黑暗森林</span><span class="note">守夜人听见一个世纪前就准备好的三拍一停——整个宇宙都在听，但这个宇宙里没人发声</span></div>
 <div class="row"><span class="name">后记《第十二个听者》· 终曲</span><span class="note">一个把听见的人送出去的人——那个人是你</span></div>
-<div class="row"><span class="name">全集</span><span class="note">《止音纪元 · 余响集》收录全部十二篇 · xiaodernan.github.io/caesura/story/anthology/</span></div>
+<div class="row"><span class="name">篇十三《拾钟人》· 风钟海岸</span><span class="note">走过八片走过的钟里，把每一钟剩下的东西都收拾干净的人——留给第四下敲钟的人</span></div>
+<div class="row"><span class="name">全集</span><span class="note">《止音纪元 · 余响集》收录全部十三篇 · xiaodernan.github.io/caesura/story/anthology/</span></div>
 
 <h2>宇宙的尺度 · 献给刘慈欣 <span style="opacity:.6">（《三体》三部曲：《三体》·《黑暗森林》·《死神永生》）</span></h2>
 <div class="row"><span class="name">红岸基地</span><span class="note">国与国之间偷偷把雷达对准天空——想知道那头有没有人在听。止音纪元里没有红岸基地；这里有更早的红岸——每一口钟都是一次对宇宙的沉默认证</span></div>
@@ -170,6 +171,13 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">宇宙这件事</span><span class="note">文明只是上面撒上去的几粒尘——人类还没认识它的尘埃。《止音纪元》的故事里有一口不熄的钟；宇宙有它自己的沉默，连钟都还没被允许</span></div>
 <div class="row"><span class="name">状态机与灵魂</span><span class="note">每个人物都是一张状态图：节点是她走到的每个时刻，边是她选择的哪一步。猜疑链不是人心阴暗——只是图上的条件边：见一次，多一条边；见两次，就是两张图了</span></div>
 <div class="row"><span class="name">阅读</span><span class="note">刘慈欣《三体》三部曲：《三体》·《黑暗森林》·《死神永生》——对这个世界最外交的一次致敬；所有线索与句式均为本作原创，示意而非转述</span></div>
+
+<h2>LangGraph 教学 · 游戏里的每一个 NPC 都是一张状态图 · One NPC, one StateGraph</h2>
+<div class="row"><span class="name">世界里没有「NPC」，只有「Node」</span><span class="note">对话树的每一格都是一个节点。节点之间的迁移，LangGraph 叫「条件边」，本作叫 <code>advanceOn.flags</code>——一个节点只有把它的 flags 全置完才走向下一格。世界不允许 LLM 现场写一句台词，但允许「读你有没有做过 X」去决定下一格</span></div>
+<div class="row"><span class="name">flag = 一根焊死的隘口</span><span class="note">一个 NPC 的 WorldState 不是「心情」、不是分数、不是位置——是一组布尔位：<code>flag.meg_soundscroll_complete=true</code> 之后，「麦格·完成」节点才点亮。未点亮节，她还站在上一格</span></div>
+<div class="row"><span class="name">对话 = 有向无环图</span><span class="note">一个 NPC 的对话图**总是 DAG**：没有边指向前驱，没有环。绕过「去你没去的地方」，NPC 会直接把你送回去——这就是 LangGraph 叫 <code>START/END</code> 的原因，本作把它叫做「开始/结束」</span></div>
+<div class="row"><span class="name">拓扑与玩家无关</span><span class="note">因为图是 DAG，所以最坏情况只有 1 种：你从不走这一支——NPC 这一支永远是暗的。这不是 bug；这是沉默的代价。Subtitle 永远是：没去过这一格，就别提要走这一格</span></div>
+<div class="row"><span class="name">读图的人永远能知道</span><span class="note">你想知道这一次怎么开启 Ending III？看上面六行，依次核对三个 flag——每一项只要没被置上去，它对你的永远是一扇未开的门。LangGraph 里叫 <code>state.get('flag')</code>，本作也这么做</span></div>
 
 <h2>怎么不迷路</h2>
 <div class="row"><span class="name">Tab = 地图</span><span class="note">总表看你走过哪片，哪里还亮着（亮 = 终章出口还没开）；再按一次收起</span></div>
@@ -200,7 +208,7 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">The Unfinished Hall · three</span><span class="note">The pendulum behind the silver mirror; time swings back and forth and never reaches an end; the only bell in the hall — never struck, waiting for a last master who never comes; the score on the stand that never gets turned — Hersil conducts up to that page every day, then closes the book and reopens it</span></div>
 <div class="row"><span class="name">Windbell Coast · eight</span><span class="note">The wind that carries bells — it brings the warmth of bell after bell but never lets you hear them clearly; the salt-crusted shrine the sea erases and rewrites every day; the tide-lines on the causeway, a song scraped and rewritten; a slab at the cliff’s black face, damply fresh-wiped; a seashell papered with one character — “born”; the listening stone — its whole sea goes still; the tide-line cracked — salt grew teeth from the split; the ship-timber that washed in — every sheared peg still carries this headland’s old name, “the place it came home”</span></div>
 
-<h2>The Aftermath · all twelve stories <span style="opacity:.6">(companion fiction — the same world, told in prose)</span></h2>
+<h2>The Aftermath · all thirteen stories <span style="opacity:.6">(companion fiction — the same world, told in prose)</span></h2>
 <div class="row"><span class="name">No. 1 “Salt” · Windbell Coast</span><span class="note">A Hén, night-keeper of the Listening Post — the bell isn't meant to sound, only to be heard; the coast has its fourth string now</span></div>
 <div class="row"><span class="name">No. 2 “The Nameless Stone” · Resthold</span><span class="note">A mason's daughter finds a slab with no name, no word at the foot of the hill — when the wind stops, the stone writes itself</span></div>
 <div class="row"><span class="name">No. 3 “The Empty Bar” · The Unfinished Hall</span><span class="note">Seventy-three years into rotation, Hersil ends one empty bar — and is asked the only question he kept postponing</span></div>
@@ -213,7 +221,8 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">No. 10 “The First Bell” · The Creation</span><span class="note">The first sounding wasn't a bell — it was the world agreeing to hold its breath</span></div>
 <div class="row"><span class="name">No. 11 “The Dark Tide” · The Dark Forest</span><span class="note">A listening post picks up a signal a century old — three beats and a pause, never answered</span></div>
 <div class="row"><span class="name">No. 12 “Epilogue · The Twelfth Listener” · the coda</span><span class="note">The one who finally sent the thing they heard onward — that one is you</span></div>
-<div class="row"><span class="name">All twelve</span><span class="note">“CAESURA · The Aftermath” collects all twelve in one read · xiaodernan.github.io/caesura/story/anthology/</span></div>
+<div class="row"><span class="name">No. 13 “The Bell-Picker” · Windbell Coast</span><span class="note">The one who walked the eight reaches gathering what each bell left behind — this page keeps it for the one who rings the fourth</span></div>
+<div class="row"><span class="name">All thirteen</span><span class="note">“CAESURA · The Aftermath” collects all thirteen in one read · xiaodernan.github.io/caesura/story/anthology/</span></div>
 
 <h2>The scale of the cosmos · for Liu Cixin <span style="opacity:.6">(the trilogy: The Three-Body Problem · The Dark Forest · Death's End)</span></h2>
 <div class="row"><span class="name">The Red Coast</span><span class="note">A nation secretly aimed its radar at the sky — wanting to know if anyone was listening. There is no Red Coast in this world; there are older red coasts: every bell is a silent handshake with the universe</span></div>
@@ -228,6 +237,13 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">The universe itself</span><span class="note">Civilization is dust sprinkled across the sky — humanity has not yet learned its dust. This world keeps one bell that survives; the universe keeps its own silence — and the bell has not yet been allowed to ring</span></div>
 <div class="row"><span class="name">The state machine of souls</span><span class="note">Every character is a state graph: nodes are the moments she walked into, edges are the steps she chose. The chain of suspicion is not darkness of heart — just conditional edges on the graph: see once, one edge; see twice, and there are two graphs</span></div>
 <div class="row"><span class="name">Reading</span><span class="note">Liu Cixin's Three Body trilogy: The Three-Body Problem · The Dark Forest · Death's End — the most diplomatic embrace this world has ever received; every line here is an original homage to, not a recital of, the trilogy</span></div>
+
+<h2>LangGraph school · every NPC in this game is a state graph · One soul, one DAG</h2>
+<div class="row"><span class="name">There is no "NPC" — only "node"</span><span class="note">Every square of the conversation tree is a node. The hop from one node to the next, LangGraph calls "conditional edge"; this world calls it <code>advanceOn.flags</code> — a node fires only when its flags all stand set; otherwise she stays on the previous square</span></div>
+<div class="row"><span class="name">A flag is a pinned gate, not a mood</span><span class="note">An NPC's WorldState is not a feeling, not a meter, not a location — it is a fixed set of boolean cells: when <code>flag.meg_soundscroll_complete=true</code> appears, the "Meg · complete" node lights; before that it stays dark. Nothing else sets it, nothing else reads it</span></div>
+<div class="row"><span class="name">Conversation graphs are DAGs</span><span class="note">Each NPC's graph is a Directed Acyclic Graph — no backward edges, no loops. Skimp the heel, and your visit to the finale cannot cycle back; the only edge that walks there is the one she already crossed once before you. LangGraph calls this <code>START/END</code>; we call it "the beginning and the end of the speech"</span></div>
+<div class="row"><span class="name">Topology stays put; the player does not</span><span class="note">Because the graph is a DAG, the worst possible shape is "one branch unwalked": an NPC branch can stay dark for a whole run — that is a feature of silence, not a bug. The whole world is wired so nothing penalizes your curiosity; nothing guarantees you find everything either</span></div>
+<div class="row"><span class="name">A reader can audit the whole tree</span><span class="note">Want to know how Ending III opens? Walk the rows above: if you can name every flag on the path, you have written your ending already. LangGraph calls this <code>state.get(flag)</code>; this world does exactly the same thing, without renaming it</span></div>
 
 <h2>Wayfinding</h2>
 <div class="row"><span class="name">Tab = the map</span><span class="note">The master chart shows where you have walked and what is still lit — lit means the ending is still sealed; press Tab again to fold it away</span></div>
@@ -1334,8 +1350,8 @@ export class Stakerite {
   private renderAtlas(): string {
     const lang = getLang()
     const header = lang === 'en'
-      ? 'The Aftermath · twelve full chapters<span style="opacity:.6"> (原文 — stays in the game)</span>'
-      : '篇章 · 止音纪元 · 十二篇全文<span style="opacity:.6">（原文直入——不出游戏）</span>'
+      ? 'The Aftermath · thirteen full chapters<span style="opacity:.6"> (原文 — stays in the game)</span>'
+      : '篇章 · 止音纪元 · 十三篇全文<span style="opacity:.6">（原文直入——不出游戏）</span>'
     const chaptersHtml = STORY_CHAPTERS.map((c) => `
       <div class="chapter"><h3>${lang === 'en' ? `No.${c.no} · ${c.enTitle}` : `篇${c.no} · 《${c.zhTitle}》`}</h3>
         <div class="chapter-body">${lang === 'en' ? c.en : c.zh}</div></div>`).join('')

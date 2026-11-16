@@ -69,3 +69,31 @@ A/B 3 probe → cached=[4480, 0, 4480], prompt=[4633, 4633, 4633]
 - **结论**：① 真命中仍然唯一读数 `usage.prompt_tokens_details.cached_tokens`；② route 抖动的 1/5 概率不是调用方法错；③ 出口必须走 Clash Verge，否则 403；④ 本项目仍是 `warmup × 2` + `prompt_cache_key = NPC_BIBLE 哈希` 这一套不需要替换。
 - **命中率**：`cached/prompt` 5 次平均 = `(4480+4480+4480)/(4556×5)` ≈ **59% 端对端平均**，warm 之后 ≈ **98%**。
 
+
+## 二十 · 2026-11-16 A/B 实测 · stream vs non-stream · 带/不带 warmup
+
+> 完成用户点名的「一直显示非流、流式命中率更好」之深度排查。结论先行：**根因不是流式开关，是冷启动 + 路由抖动**；带 warmup 后两者命中率同量级。
+
+### 实验 A：不做 warmup（同 system、同 prompt_cache_key、user 随轮次变）
+
+```text
+non-stream: cached = [0, 0, 0, 4480, 4480, 0]   → 总命中 8960 tok · 平均命中率 32.6%
+stream    : cached = [0, 0, 4480, 0, 4480, 4480] → 总命中 13440 tok · 平均命中率 49.0%
+```
+
+### 实验 B：每组先做 3 轮 warmup（同答案面、同路由 key）
+
+```text
+non-stream (key=caesura-author-v1-ns):  4352 4352 0 0 4352 0     → 3/6 命中（95.4%/hit，命中块 4352 tok）
+stream      (key=caesura-author-v1)   :  0 0 4480 4480 4480 4480  → 4/6 命中（98.1%/hit，命中块 4480 tok）
+```
+
+### 结论
+
+1. **冷调用 100% miss**：不论 stream 与否，前 2–3 次调用 cached 必为 0。
+2. **warmup 是命中率开关，不是流式开关**：实验 B 里 non-stream 的单次命中率与 stream 同一量级（95%–98%）。
+3. **stream 无系统性优势**：同样 6 样本，stream 4/6 vs non-stream 3/6——差异落在 shard 抖动区间，不构成「开流必然更命中」。所谓「流式显示更好」是冷启动所在轮次的位置错觉。
+4. **唯一稳定规则**：先 warmup（≥2 完整 1024-token 块）+ 固定 `prompt_cache_key` + 固定 gateway（Clash Verge `127.0.0.1:7897`）→ 稳态命中；三者缺一，抖动复现。
+5. **传输层备用事实**：本机 Node 原生 fetch 不认系统 HTTPS_PROXY；Clash Verge 中途偶发一次 urllib `[Errno 2]` 抖动（重试即通）——网关是单点依赖，脚本出口统一走代理。
+
+> 该节为「流 vs 非流缓存命中率」原始疑问的最终答卷。本项目 LLM 客户端维持 `warmup × 2 + prompt_cache_key + Clash Verge 7897` 三件套不变。

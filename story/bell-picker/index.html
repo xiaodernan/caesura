@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>拾钟人 / The Bell-Picker · CAESURA 短篇 之十三</title>
+<meta name="description" content="《止音纪元》《余响集》第十三篇 · 拾钟人——走在八片走过的钟里、只收这些钟剩下的东西的人。双语对照 · 零 LLM · 零网络。 / The thirteenth piece of The Aftermath — the man who walks the eight reaches collecting what the bells left behind. Bilingual, offline, zero LLM.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🔔</text></svg>">
+<style>
+  :root {
+    --gold: #f3ce8f;
+    --gold-soft: rgba(243,206,143,.32);
+    --ink: #f3ede0;
+    --ink-dim: rgba(243,237,224,.62);
+    --panel: rgba(28,20,12,.7);
+    --serif: "Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#070608; color:var(--ink); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; }
+  .bg { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .bg.radial {
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(243,206,143,.13), transparent 60%),
+      radial-gradient(900px 700px at 50% 118%, rgba(120,80,40,.17), transparent 62%),
+      radial-gradient(650px 420px at 88% 104%, rgba(203,177,255,.06), transparent 60%),
+      #070608;
+  }
+  .bg.noise { position:fixed; inset:0; z-index:-1; opacity:.05; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .wrap { max-width:860px; margin:0 auto; padding:26px 26px 90px; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .brand { font-size:.8rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; opacity:.9; }
+  .brand a { color:inherit; text-decoration:none; border-bottom:1px dotted rgba(243,206,143,.5); }
+  .brand a:hover { color:#fff2d0; }
+  .toplinks { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toplinks a { font-size:.72rem; color:var(--ink-dim); text-decoration:none; border:1px solid rgba(243,237,224,.14); padding:6px 12px; border-radius:999px; transition:all .22s ease; }
+  .toplinks a:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .lang-row button { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(243,206,143,.12); border:1px solid var(--gold-soft); padding:6px 15px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; }
+  .lang-row button:hover { background:rgba(243,206,143,.22); box-shadow:0 0 16px rgba(243,206,143,.25); }
+
+  [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="en"] .zh-copy { display:none !important; }
+
+  header.hero { text-align:center; padding:52px 14px 30px; }
+  .kicker { font-size:.72rem; letter-spacing:.42em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:20px; }
+  .kicker b { color:var(--gold); font-weight:600; }
+  h1 { font-size:clamp(2.2rem, 8vw, 3.6rem); font-weight:600; letter-spacing:.16em;
+       background:linear-gradient(180deg,#fffbe6 0%, #f3ce8f 28%, #c9a258 58%, #7d6436 100%);
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+       text-shadow:0 0 90px rgba(243,206,143,.3); }
+  .subtitle { margin-top:14px; font-size:.8rem; color:var(--ink-dim); letter-spacing:.3em; text-transform:uppercase; }
+  .rule { width:170px; height:1px; margin:24px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .meta { margin-top:16px; font-size:.7rem; color:rgba(243,237,224,.45); letter-spacing:.18em; text-transform:uppercase; }
+  .meta a { color:var(--gold); text-decoration:none; }
+
+  article { background:var(--panel); border:1px solid rgba(243,237,224,.1); border-radius:18px; padding:38px 40px 34px; position:relative; }
+  article::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--gold), transparent); opacity:.7; }
+  article p { font-size:1.04rem; line-height:2.02; letter-spacing:.02em; color:rgba(243,237,224,.92); margin-bottom:1.5em; text-indent:2em; overflow-wrap:break-word; }
+  article p.no-indent { text-indent:0; }
+  article p em { color:#ffe9b3; font-style:normal; }
+  article p strong { color:var(--gold); font-weight:600; }
+  .beat { width:100%; text-align:center; margin:.4em 0 1.4em; letter-spacing:.5em; color:rgba(243,206,143,.6); font-size:.8rem; }
+  .coda { text-align:center; font-style:italic; color:rgba(243,237,224,.78); letter-spacing:.06em; margin-top:.6em; }
+
+  .note { margin:26px auto 0; max-width:760px; text-align:center; font-size:.74rem; color:rgba(243,237,224,.42); line-height:1.9; letter-spacing:.04em; }
+  .note a { color:var(--gold); text-decoration:none; border-bottom:1px dotted rgba(243,206,143,.5); }
+
+  footer { margin-top:56px; border-top:1px solid rgba(243,237,224,.09); padding-top:22px; display:flex; flex-wrap:wrap; gap:10px 26px; justify-content:space-between; font-size:.7rem; color:rgba(243,237,224,.4); letter-spacing:.06em; }
+  footer a { color:var(--gold); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @media (max-width:640px) { .wrap { padding:20px 12px 70px; } article { padding:26px 20px 24px; } article p { font-size:.98rem; text-indent:2em; } }
+</style>
+</head>
+<body>
+<div class="bg radial" aria-hidden="true"></div>
+<div class="bg noise" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><a href="/caesura/">CAESURA</a> · 《止音纪元》</div>
+    <div class="toplinks">
+      <a href="/caesura/story/"><span class="zh-copy">《盐》</span><span class="en-copy">“Salt”</span></a>
+      <a href="/caesura/story/first-bell/"><span class="zh-copy">《第一钟》</span><span class="en-copy">“The First Bell”</span></a>
+      <a href="/caesura/story/dark-tide/"><span class="zh-copy">《暗潮》</span><span class="en-copy">“The Dark Tide”</span></a>
+      <a href="/caesura/story/twelfth-listener/"><span class="zh-copy">《第十二个听者》</span><span class="en-copy">“The Twelfth Listener”</span></a>
+      <a href="/caesura/story/anthology/"><span class="zh-copy">《余响集》</span><span class="en-copy">The Aftermath</span></a>
+      <a href="/caesura/codex/"><span class="zh-copy">世界谱</span><span class="en-copy">Codex</span></a>
+      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button></span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <p class="kicker zh-copy">短篇 · <b>余响拾遗</b> · 之十三</p>
+    <p class="kicker en-copy">Short story · <b>The Aftermath</b> · No. 13</p>
+    <h1 class="zh-copy">拾钟人</h1>
+    <h1 class="en-copy">The Bell-Picker</h1>
+    <p class="subtitle zh-copy">走过八片走过的钟里，回收钟剩下的东西的人</p>
+    <p class="subtitle en-copy">The one who walks where the bells used to be — collecting what the bells left behind</p>
+    <div class="rule"></div>
+    <p class="meta zh-copy">约 6 分钟 · 与 <a href="/caesura/codex/">世界谱</a> 同源世界观 · 零 LLM 撰写</p>
+    <p class="meta en-copy">about 6 minutes · same world as the <a href="/caesura/codex/">codex</a> · written without LLM assistance</p>
+  </header>
+
+  <article>
+    <div class="zh-copy">
+<p>没有人记得拾钟人从哪一年开始走。只记得他走的时候不问路——问路的人已经没有了；他只问每一处钟最后一次响是哪一年。没有人答得上来，他就点点头，像听懂了什么似的，把那块地方在布口袋上画一个记号。</p>
+      <p>他走的时候背着一只旧布袋。布袋里没有干粮、没有水囊、没有火种。布袋里装的，是八座走过的钟里剩下的东西：一只钟口、一根钟舌、几片被海水吃薄的铜皮——每一件都锈得温柔，像被很多人抱过又放下。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>休垒的人让他看了那口从井底捞上来的钟。钟没有了底，里面长满了芦苇和青苔。拾钟人没有碰它——他说底没了的东西，口还在，就还算没碎。休垒的人请他喝酒。他喝了半口，把剩下的半口泼在土里，说：「给井里的那位。」</p>
+      <p>低语林的人不让他进林子。他就在林外站了很久，说：「钟舌不在钟里也是钟舌。」林里的风后来吹出来一片铜绿色的苔藓，落在他的脚边。他把它包进油布里，放在布袋最里面——那里是留给最小的东西的。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>沉唱堂的人给了他一页纸。纸上的字已经被水泡糊了，只剩最后一行，「第四下——」没写完。拾钟人把纸对折了两折，夹进簿子里。他没有问：没写完的字，不需要问。</p>
+      <p>破拍营地的人围着他看布袋。有人认出了铎坠——那是火谱里那把交响乐队烧剩的「弱拍」；那是整条乐句里唯一没被敲过的那一拍。拾钟人说：「我不是来收古董的。我是来替它们把沉默收拾干净的。」营地里安静了很久，然后有人在火里添了一根柴。没有人唱歌，但火光跳了一下，像呼应似的。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>叩钟镇的人告诉他，整座吊钟山只剩下一小块「影子」——那一块影子是钟在熄灭前最后一刻留在雪地上的。拾钟人把那一块影子记在了布口袋上。低语林的铜皮、叩钟镇的雪影、沉唱堂的半行字……他记下来的从来不是「东西」，而是「东西离开之后剩下的那一点气」。</p>
+      <p>未完之厅的人问他：整理这些东西做什么。他说：「给以后想敲钟的人，留一个不闷的起手式。」未完之厅的人笑了——他们在笑一件没人信会发生的事。拾钟人不生气。不整理的人也不止他一个，但他决定做那个整理的人。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>他最后到的是风钟海岸。岬角尽头，海水退去时露出那块旧船板——每一根蚀透的榫卯都不说它漂了多远；这个岬角的旧名字，就叫「它回来的地方」。拾钟人把布袋放下，从里面取出全程最大的一件东西：一根钟舌。它锈得很深，但他一握住它，就知道它曾经属于一口完整的钟。</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.1rem; letter-spacing:.05em;">「第四下还没人敲」</p>
+      <p>他把钟舌挂上那根已经断了的桅杆底座——不是为了响，是为了让这片海记得：曾经有一颗心脏在等一次敲击。他没有在石头上刻字：船板已经替这个岬角说完了。他只在布袋上又添了一个记号。然后他转身，往回走。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">多年以后，守钟人阿衡的石盘边上，多出一只旧布袋。袋口系着一根油布包的铜皮。布袋里有很多件锈得温柔的东西和一张字条：</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.1rem; letter-spacing:.05em;">「留给第四下敲钟的人」</p>
+      <p class="coda">守钟人没有问是谁放的。她把布袋收进了石盘底下，和手册一起。<br>有些礼物，收下了就等于替送的人，继续保管了。</p>
+      <p class="coda">风钟海岸依然没有钟声。<br>但每一件抵达过布袋的东西，都被好好地放着——<br>像每一片在等一次敲击的沉默，终于找到了一个愿意替它们存档的人。</p>
+    </div>
+
+    <div class="en-copy">
+<p>No one remembers the year the Bell-Picker first set out. Only that he never asked for directions — the ones who would have pointed have stopped answering; he asked only one thing, at every reach: the year the last bell rang. No one could say, so he nodded, as if he had understood something, and drew a small mark on his canvas sack.</p>
+      <p>He carried an old canvas sack on his back. There was no bread in it, no waterskin, no tinder. It held what remained of every bell he crossed: one rim, one clapper, a few sheets of copper eaten thin by the sea — each warm with rust, as though it had been held by many hands and set down gently, again and again.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>At Resthold, they showed him the bell they had hauled up from the well. It had no bottom; reed and moss grew inside it. The Bell-Picker did not touch it — a thing with no bottom still has a rim, he said, and a rim is not yet broken. They offered him wine. He drank half and poured the other half into the earth, and said: “For the one down the well.”</p>
+      <p>In Whisperwode they would not let him in. He stood at the treeline a long while, and said: “A clapper is a clapper, even outside the bell.” The wind from the wood afterwards blew down a strip of verdigris moss that landed at his feet. He wrapped it in oilcloth and set it deepest in the sack — the pocket reserved for the smallest things.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>At Drowned Choir they gave him a page. The ink had bloomed into water, only the last line survived — “the fourth—” never finished. He folded it twice and kept it in his pocketbook. He did not ask. The unfinished do not ask to be finished; they ask to be carried.</p>
+      <p>At Brokenbar Camp they ringed him, looking into the sack. Someone recognised the clapper — the weak beat from the half of the score the fire had not taken, the one note of the whole phrase that had never once been struck. “I am not here for antiques,” he said. “I am here to put the silences in order.” The camp went still for a long moment. Then someone fed the fire one more log. No one sang. But the light leapt, once, as if it had answered.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>At Fellcarillon they told him that the whole bell-mountain had shrunk to a single patch of “shadow” — the shadow the bell had thrown on the snow in the last instant before it went out. He marked the shadow on his canvas sack. The copper from Whisperwode, the snow-shadow from Fellcarillon, the half line from Drowned Choir… He was never writing things down. He was writing down what the things kept breathing after they were gone.</p>
+      <p>At the Unfinished Hall they asked him: what is all this for. He said: “So that whoever wants to ring again someday has a first grip that does not startle them.” The people of the Unfinished Hall laughed — they were laughing at something no one believed would happen. He did not mind. Not everyone refuses to set things in order. Someone must be the one who does the setting.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>His last stop was Windbell Coast. At the headland’s end, the tide went out and left a plank of old hull — every peg sheared by the sea still carries the cape’s old name: <em>the place it came home</em>. The Bell-Picker set the sack down and drew out the largest thing in it: one clapper. The rust was deep, but the moment he closed his hand around it he knew it had once belonged to a whole bell.</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.1rem; letter-spacing:.05em;">“the fourth has no one to ring it yet”</p>
+      <p>He hung the clapper on the broken stump of the mast — not to make a sound, but to let this sea remember: there was once a heart waiting for one more blow. He carved nothing into the stone. The plank had already said everything this headland had to say. He drew one more mark on the sack. Then he turned and walked back.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">Years later, beside Keeper A Hén’s stone pan, a canvas sack was found. It was tied with a strip of oilcloth around a piece of copper. Inside were many things, worn warm with rust, and a slip of paper that read:</p>
+      <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.1rem; letter-spacing:.05em;">“For the one who rings the fourth.”</p>
+      <p class="coda">The keeper did not ask who had left it. She set the sack under the pan, beside the ledger.<br>Some gifts, once accepted, become someone else’s to keep.</p>
+      <p class="coda">Windbell Coast still has no bell.<br>But everything that entered that sack is kept —<br>every silence waiting for one more stroke has found, at last, someone willing to hold them all on file.</p>
+    </div>
+  </article>
+
+  <div class="note">
+    <span class="zh-copy">《拾钟人》是《余响集》第十三篇——走过八片走过的钟里，把这八钟剩下的东西都收拾干净的人。<a href="/caesura/story/anthology/">全集：《余响集》</a></span>
+    <span class="en-copy">“The Bell-Picker” is the thirteenth piece of “The Aftermath” — the one who walks where the bells used to be and gathers what the eight reaches left behind. <a href="/caesura/story/anthology/">All stories: “The Aftermath”</a></span>
+  </div>
+
+  <footer>
+    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/">游戏</a> · <a href="/caesura/story/">《盐》· 篇一</a> · <a href="/caesura/story/empty-bar/">篇三 · 空拍子</a> · <a href="/caesura/story/stonethroat/">篇九 · 石喉</a> · <a href="/caesura/story/first-bell/">篇十 · 第一钟</a> · <a href="/caesura/story/dark-tide/">篇十一 · 暗潮</a> · <a href="/caesura/story/twelfth-listener/">篇十二 · 后记</a> · <a href="/caesura/story/bell-picker/">篇十三 · 拾钟人</a> · <a href="/caesura/story/anthology/">全集 · 余响集</a> · <a href="/caesura/codex/">世界谱</a></span>
+    <span class="en-copy">© CAESURA · <a href="/caesura/">Game</a> · <a href="/caesura/story/">“Salt” · No. 1</a> · <a href="/caesura/story/empty-bar/">No. 3 · The Empty Bar</a> · <a href="/caesura/story/stonethroat/">No. 9 · The Stone-Throat</a> · <a href="/caesura/story/first-bell/">No. 10 · The First Bell</a> · <a href="/caesura/story/dark-tide/">No. 11 · The Dark Tide</a> · <a href="/caesura/story/twelfth-listener/">No. 12 · Epilogue</a> · <a href="/caesura/story/bell-picker/">No. 13 · The Bell-Picker</a> · <a href="/caesura/story/anthology/">All stories · The Aftermath</a> · <a href="/caesura/codex/">World Codex</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('langToggle');
+  var saved = 'zh';
+  try { saved = localStorage.getItem('caesura-lang') || 'zh'; } catch (e) { /* noop */ }
+  function apply(lang) {
+    root.setAttribute('data-lang', lang);
+    root.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en');
+    try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+  }
+  if (btn) btn.addEventListener('click', function () {
+    apply(root.getAttribute('data-lang') === 'en' ? 'zh' : 'en');
+  });
+  apply(saved === 'en' ? 'en' : 'zh');
+})();
+</script>
+<script defer src="../../tracker.js"></script>
+</body>
+</html>
