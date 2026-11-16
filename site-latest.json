@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "86d7174508aaf2fd81d87bde66eaeee7a30598f5",
+  "head": "594f73beb3cd003fa01c4fc8a3971d552373c4df",
   "branch": "master",
-  "subject": "test(i18n): 全站 zh-tw-converter.js 接线门钉（防客/故事/Admin 三类页面脱落）",
-  "date": "2026-11-16T23:58:05+08:00",
+  "subject": "site-latest: 86d7174 (post-rebase reconcile)",
+  "date": "2026-11-16T23:58:58+08:00",
   "kv": {
     "KI.rows": 536,
     "KI.Implemented": 359,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/86d7174508aaf2fd81d87bde66eaeee7a30598f5",
+    "url": "https://github.com/xiaodernan/caesura/commit/594f73beb3cd003fa01c4fc8a3971d552373c4df",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
