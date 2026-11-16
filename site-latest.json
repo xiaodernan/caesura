@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "00c620e0233a9900633b98e9f6bd5135d62b085d",
+  "head": "7d1fdfbf872d5e383242250f1583d100fe066059",
   "branch": "master",
-  "subject": "feat(admin): KI-622 状态图检查站 · StateGraph 实跑可视化",
-  "date": "2026-11-17T04:48:27+08:00",
+  "subject": "site-latest: 00c620e (post-rebase reconcile)",
+  "date": "2026-11-17T04:49:58+08:00",
   "kv": {
     "KI.rows": 540,
     "KI.Implemented": 363,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/00c620e0233a9900633b98e9f6bd5135d62b085d",
+    "url": "https://github.com/xiaodernan/caesura/commit/7d1fdfbf872d5e383242250f1583d100fe066059",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
