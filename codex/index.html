@@ -531,8 +531,19 @@ function renderQuick() {
   ).join('');
 }
 
+/* TW→CN 单字逆表（codex 搜索归一：TW 查询进繁體界面时，对简体语料的 BM25 仍能打中） */
+let CN2 = null;
+try { fetch('/caesura/zh-cn.compact.json').then((r) => r.json()).then((d) => { CN2 = (d && d.map) || null; }).catch(() => { /* 离线/404 不影响英文主路径 */ }); } catch (e) { /* fetch 不可用静默 */ }
+const normQ = (s) => {
+  if (!CN2 || state.lang !== 'zh-TW') return s;
+  let out = '';
+  for (const ch of String(s)) out += (CN2[ch] || ch);
+  return out;
+};
+
 function render() {
-  const qToks = tokenize(state.query);
+  const qToks = tokenize(normQ(state.query));
+  const hToks = tokenize(state.query);
   const scored = CODEX.map((e, i) => ({ e, i, s: qToks.length ? scoreDoc(i, qToks) : 1 }))
     .filter(({ e, s }) => (state.cat === 'all' || e.cat === state.cat) && (qToks.length === 0 || s > 0))
     .sort((a, b) => b.s - a.s)
@@ -547,8 +558,8 @@ function render() {
   grid.innerHTML = scored.map(({ e, i }) => {
     return `<article class="card" data-i="${i}" tabindex="0" role="button">
       <span class="tag tag-${e.cat}">${tagLabelFor(e.cat, srcKey())}</span>
-      <h3>${highlight(pickLang(e.title), qToks)}</h3>
-      <p>${highlight(pickLang(e.body), qToks)}</p>
+      <h3>${highlight(pickLang(e.title), hToks)}</h3>
+      <p>${highlight(pickLang(e.body), hToks)}</p>
     </article>`;
   }).join('');
 }

@@ -85,12 +85,29 @@ try {
   entries.sort((a, b) => b[2] - a[2]);
 
   // Emit compact output — one copy for the static pages (runtime fetch),
-  // one copy bundled for the in-game t() (imported by src/i18n/Lang.ts).
+  // one copy bundled for the in-game t() (imported by src/i18n/Lang.ts),
+  // plus a small TW→CN single-char reverse table (used by the codex search).
   const out = { map: Object.fromEntries(entries.map(([k, v]) => [k, v])) };
   const json = JSON.stringify(out);
+  const conv2 = OpenCC.Converter({ from: 'tw', to: 'cn' });
+  const REVERSE = {};
+  const twChars = new Set();
+  for (const v of CONV.values()) {
+    for (const ch of String(v)) if (/[\u4e00-\u9fff]/.test(ch)) twChars.add(ch);
+  }
+  for (const v of CHAR_CONV.values()) {
+    if (/[\u4e00-\u9fff]/.test(v)) twChars.add(v);
+  }
+  for (const ch of twChars) {
+    const s = conv2(ch);
+    if (s !== ch && s.length === 1) REVERSE[ch] = s;
+  }
+  const rev = JSON.stringify({ map: REVERSE });
   fs.writeFileSync(path.join(ROOT, 'public', 'zh-tw.compact.json'), json);
   fs.writeFileSync(path.join(ROOT, 'src', 'i18n', 'zh-tw.compact.json'), json);
+  fs.writeFileSync(path.join(ROOT, 'public', 'zh-cn.compact.json'), rev);
   console.log('wrote public/zh-tw.compact.json + src/i18n/zh-tw.compact.json, size =', json.length, 'bytes');
+  console.log('wrote public/zh-cn.compact.json, reverse single-char map size =', rev.length, 'bytes');
 } catch (e) {
   console.error('ERR', e.message || e);
   process.exit(1);
