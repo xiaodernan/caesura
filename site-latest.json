@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "97b686c0fc5ce14e355a67d9efd8fd00404c6e0c",
+  "head": "2de22d9e6fee18f43c4bf45a9633018fa0b034f3",
   "branch": "master",
-  "subject": "content(inscriptions): 第 28 处刻痕·未竟厅「谱架上那段不会走完的谱」 · KI-601",
-  "date": "2026-11-16T06:17:04+08:00",
+  "subject": "content(codex): 刻痕全集入册 · 二十九处刻痕 canon finalize + 两条 doctrine 词条 · KI-602/603/604",
+  "date": "2026-11-16T13:22:23+08:00",
   "kv": {
-    "KI.rows": 519,
-    "KI.Implemented": 342,
+    "KI.rows": 522,
+    "KI.Implemented": 345,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/97b686c0fc5ce14e355a67d9efd8fd00404c6e0c",
+    "url": "https://github.com/xiaodernan/caesura/commit/2de22d9e6fee18f43c4bf45a9633018fa0b034f3",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
