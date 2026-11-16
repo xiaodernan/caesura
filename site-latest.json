@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "3f536fb13f8683d036dfdd1ff4783bf25232ad71",
+  "head": "1d28705ceeb2475a3d4e013f0bdaa0a105fe0727",
   "branch": "master",
-  "subject": "feat(tutorial): Step 10 状态图与灵魂双语 · KI-606 + docs: llm-cache-fix 实测复核 aizzz · KI-587/606",
-  "date": "2026-11-16T14:36:26+08:00",
+  "subject": "content(inscriptions): 第 31 处刻痕·破拍营地「烧剩的火谱」· Codex 73 件 · Spring Cloud 简笔手册 · KI-607/608",
+  "date": "2026-11-16T14:54:18+08:00",
   "kv": {
-    "KI.rows": 524,
-    "KI.Implemented": 347,
+    "KI.rows": 525,
+    "KI.Implemented": 348,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/3f536fb13f8683d036dfdd1ff4783bf25232ad71",
+    "url": "https://github.com/xiaodernan/caesura/commit/1d28705ceeb2475a3d4e013f0bdaa0a105fe0727",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
