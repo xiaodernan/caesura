@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "199f03dff3d52a172964d304e9edd423408538fb",
+  "head": "55e32c749d0a6abcfea5365270754c69064f5f4c",
   "branch": "master",
-  "subject": "site-latest: 2c3d170 (post-rebase reconcile)",
-  "date": "2026-11-16T20:48:36+08:00",
+  "subject": "docs(llm): aizzz · gpt-6.1-terra 缓存复核报告（§二十一 · 2026-11-16）+ console 证据页脚对齐",
+  "date": "2026-11-16T21:10:49+08:00",
   "kv": {
     "KI.rows": 533,
     "KI.Implemented": 356,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/199f03dff3d52a172964d304e9edd423408538fb",
+    "url": "https://github.com/xiaodernan/caesura/commit/55e32c749d0a6abcfea5365270754c69064f5f4c",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
