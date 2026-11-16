@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "4da0fddeeb215089555500c07ee1c490b1fe7032",
+  "head": "2e6cee8500f0dd40df399cd6c15acd88fa7980eb",
   "branch": "master",
-  "subject": "site-latest: 2292c75 (post-rebase reconcile)",
-  "date": "2026-11-17T01:48:19+08:00",
+  "subject": "feat(ai): KI-620 AI 导演引擎 · 大模型深度嵌入项目整体能力",
+  "date": "2026-11-17T03:00:42+08:00",
   "kv": {
-    "KI.rows": 537,
-    "KI.Implemented": 360,
+    "KI.rows": 538,
+    "KI.Implemented": 361,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -16,7 +16,7 @@
     "SYS.Blocked": 0,
     "ARCH.sections": 202,
     "ARCH.holes": "none",
-    "PKG.scripts": 82
+    "PKG.scripts": 84
   },
   "suites": {
     "consoleUi": 150,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/4da0fddeeb215089555500c07ee1c490b1fe7032",
+    "url": "https://github.com/xiaodernan/caesura/commit/2e6cee8500f0dd40df399cd6c15acd88fa7980eb",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
