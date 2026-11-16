@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "9510920697f2974e1c0d291b53c8d58b9c8a620c",
+  "head": "7887f2168daa4f83c548c52bae6a97a0dfb37dfc",
   "branch": "master",
-  "subject": "fix(console): ob-bar / hll-bar 百分比 clamp 到 100（第二十八/四十八维条形外溢）",
-  "date": "2026-11-16T23:05:56+08:00",
+  "subject": "site-latest: 9510920 (post-rebase reconcile)",
+  "date": "2026-11-16T23:07:12+08:00",
   "kv": {
     "KI.rows": 535,
     "KI.Implemented": 358,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/9510920697f2974e1c0d291b53c8d58b9c8a620c",
+    "url": "https://github.com/xiaodernan/caesura/commit/7887f2168daa4f83c548c52bae6a97a0dfb37dfc",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
