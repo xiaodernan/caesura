@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "f7aea74281d32e3bca25d87fdf25afacc9bc27af",
+  "head": "fce6f8a7f4839b77233f9b7aa739636e2c215520",
   "branch": "master",
-  "subject": "content(story): 余响集第十三篇《拾钟人》· KI-609 · Atlas LangGraph school · KI-608 · 滚轮教学 · 账本落盘",
-  "date": "2026-11-16T15:34:58+08:00",
+  "subject": "ops(spring,admin,pressure): lore 73 段 · e2e 快照对账 · Pages 实打压测 · admin 先验换真实引用（KI-610/611）",
+  "date": "2026-11-16T16:44:51+08:00",
   "kv": {
-    "KI.rows": 527,
-    "KI.Implemented": 350,
+    "KI.rows": 529,
+    "KI.Implemented": 352,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/f7aea74281d32e3bca25d87fdf25afacc9bc27af",
+    "url": "https://github.com/xiaodernan/caesura/commit/fce6f8a7f4839b77233f9b7aa739636e2c215520",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
