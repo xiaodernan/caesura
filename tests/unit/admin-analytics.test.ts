@@ -223,6 +223,13 @@ describe('admin · 静态页与部署接线（防悄悄脱落）', () => {
   it('pages.yml 把 admin 拷进 dist', () => {
     expect(read('.github/workflows/pages.yml')).toContain('cp -R admin/. dist/admin/')
   })
+  it('pages.yml 把 site-latest.json 镜像进 dist（/caesura/site-latest.json 可直访）', () => {
+    /* 防脱落：如果将来删除这一步，hub 从 Pages 直读最新官宣就会 404；钉住 */
+    const yml = read('.github/workflows/pages.yml')
+    expect(yml).toContain('cp site-latest.json dist/')
+    /* dist 里的副本必须是真的 site-latest.json（含 nexus/master head），内容会被 build-site-latest.mjs 刷新 */
+    expect(yml).toContain('site-latest.json')
+  })
   it('smoke-live 第 19 个入口：admin（25 端点）+ 篇十一/篇十二/篇十三/篇十四/篇十五/篇十六故事页', () => {
     const sm = read('scripts/smoke-live.mjs')
     expect(sm).toContain("name: 'admin'")

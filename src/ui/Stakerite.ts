@@ -184,6 +184,55 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">拓扑与玩家无关</span><span class="note">因为图是 DAG，所以最坏情况只有 1 种：你从不走这一支——NPC 这一支永远是暗的。这不是 bug；这是沉默的代价。Subtitle 永远是：没去过这一格，就别提要走这一格</span></div>
 <div class="row"><span class="name">读图的人永远能知道</span><span class="note">你想知道这一次怎么开启 Ending III？看上面六行，依次核对三个 flag——每一项只要没被置上去，它对你的永远是一扇未开的门。LangGraph 里叫 <code>state.get('flag')</code>，本作也这么做</span></div>
 
+<h2>StateGraph · 麦格一线活蓝图 · A real NPC, a real DAG</h2>
+<div class="row"><span class="name" style="opacity:.6">样本 DLG_MEG · q_meg（四段对话 → 四个 flag → 终局节点）| Visualised exactly as coded, not invented</span></div>
+<div style="overflow-x:auto; padding:12px 8px 4px;">
+<svg width="760" height="240" viewBox="0 0 760 240" role="img" aria-label="DLG_MEG quest line state graph">
+  <defs>
+    <marker id="arrow" viewBox="0 -5 10 10" refX="9" refY="0" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,-5L10,0L0,5" fill="#c9a258"/></marker>
+  </defs>
+  <!-- nodes -->
+  <g font-family="'SFMono-Regular',Consolas,monospace" font-size="10" fill="#f3ede0">
+    <!-- n0 root -->
+    <rect x="10" y="18" width="150" height="82" rx="6" fill="#1a1711" stroke="#c9a258" stroke-width="1.4"/>
+    <text x="20" y="36" fill="#c9a258" font-weight="700">DLG_MEG / n0</text>
+    <text x="20" y="52" fill="#f3ede0">别站那么近，你踩到我</text>
+    <text x="20" y="66" fill="#8a7735">emotion: bored</text>
+    <text x="20" y="82" fill="#c9a258" font-weight="700">flag → flag.meg_first_fragment</text>
+    <!-- n1 -->
+    <rect x="200" y="18" width="150" height="82" rx="6" fill="#1a1711" stroke="#806f3a" stroke-width="1.1"/>
+    <text x="210" y="36" fill="#c9a258" font-weight="700">n1 · soft</text>
+    <text x="210" y="52" fill="#f3ede0">我认识她？我替她保管</text>
+    <text x="210" y="66" fill="#8a7735">emotion: soft</text>
+    <text x="210" y="82" fill="#c9a258" font-weight="700">→ flag.meg_second_fragment</text>
+    <!-- n2 -->
+    <rect x="390" y="18" width="150" height="82" rx="6" fill="#1a1711" stroke="#806f3a" stroke-width="1.1"/>
+    <text x="400" y="36" fill="#c9a258" font-weight="700">n2 · even</text>
+    <text x="400" y="52" fill="#f3ede0">……不急。录音会等人，</text>
+    <text x="400" y="66" fill="#8a7735">emotion: even</text>
+    <text x="400" y="82" fill="#c9a258" font-weight="700">→ flag.meg_whisper_extracted</text>
+    <!-- n3 terminal -->
+    <rect x="580" y="18" width="160" height="82" rx="6" fill="#231d12" stroke="#f3ce8f" stroke-width="2"/>
+    <text x="590" y="36" fill="#f3ce8f" font-weight="700">END · 终局</text>
+    <text x="590" y="52" fill="#f3ede0">声卷归一·四段拼图全部到手</text>
+    <text x="590" y="66" fill="#806f3a">游客朝光明方向走</text>
+    <text x="590" y="82" fill="#f3ce8f" font-weight="700">→ flag.meg_soundscroll_complete</text>
+    <!-- edges -->
+    <line x1="162" y1="59" x2="200" y2="59" stroke="#c9a258" stroke-width="1.6" marker-end="url(#arrow)"/>
+    <line x1="352" y1="59" x2="390" y2="59" stroke="#c9a258" stroke-width="1.6" marker-end="url(#arrow)"/>
+    <line x1="542" y1="59" x2="580" y2="59" stroke="#c9a258" stroke-width="1.6" marker-end="url(#arrow)"/>
+    <!-- burn annotation -->
+    <g fill="#8a7735">
+      <text x="14" y="130">// advances: 4 lines of advanceOn.flags from q_meg.steps[] — the runtime walks this exact path.</text>
+      <text x="14" y="150">// EN mode: same shape, English nodes, same flags on the wire.</text>
+      <text x="14" y="170">// Reader ↔ source: src/data/json/quests.json · q_meg.steps[0]..[3]</text>
+      <text x="14" y="190">// Caveat: quests may fan out by condition; this is the happy-path spine</text>
+    </g>
+  </g>
+</svg>
+</div>
+<div class="row"><span class="name">为什么画在这里，而不是在 Codex 画一张？</span><span class="note">codex 放的是世界谱的全部词条；这里是游戏自己在读的那张图——同一张图，一个给人读，一个给机器跑</span></div>
+
 <h2>怎么不迷路</h2>
 <div class="row"><span class="name">Tab = 地图</span><span class="note">总表看你走过哪片，哪里还亮着（亮 = 终章出口还没开）；再按一次收起</span></div>
 <div class="row"><span class="name">看光、听乐</span><span class="note">每一区的主色与它的弦（休垒 ♭E / 雾语林 ♭F / 沉唱堂 ♭A / 破拍 ♭C / 钟坠院 ♭D / 无耳 ♭G / 未竟厅 ♭B）—— 转调就是换了一块钟鸣学习网</span></div>
@@ -252,6 +301,48 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">Conversation graphs are DAGs</span><span class="note">Each NPC's graph is a Directed Acyclic Graph — no backward edges, no loops. Skimp the heel, and your visit to the finale cannot cycle back; the only edge that walks there is the one she already crossed once before you. LangGraph calls this <code>START/END</code>; we call it "the beginning and the end of the speech"</span></div>
 <div class="row"><span class="name">Topology stays put; the player does not</span><span class="note">Because the graph is a DAG, the worst possible shape is "one branch unwalked": an NPC branch can stay dark for a whole run — that is a feature of silence, not a bug. The whole world is wired so nothing penalizes your curiosity; nothing guarantees you find everything either</span></div>
 <div class="row"><span class="name">A reader can audit the whole tree</span><span class="note">Want to know how Ending III opens? Walk the rows above: if you can name every flag on the path, you have written your ending already. LangGraph calls this <code>state.get(flag)</code>; this world does exactly the same thing, without renaming it</span></div>
+
+<h2>StateGraph · a working Meg thread, mapped</h2>
+<div class="row"><span class="name" style="opacity:.6">Sample DLG_MEG · q_meg (four conversations · four flags · one terminal node) | Mapped from code, not invention</span></div>
+<div style="overflow-x:auto; padding:12px 8px 4px;">
+<svg width="760" height="240" viewBox="0 0 760 240" role="img" aria-label="DLG_MEG quest line state graph">
+  <defs>
+    <marker id="arrow-en" viewBox="0 -5 10 10" refX="9" refY="0" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,-5L10,0L0,5" fill="#c9a258"/></marker>
+  </defs>
+  <g font-family="'SFMono-Regular',Consolas,monospace" font-size="10" fill="#f3ede0">
+    <rect x="10" y="18" width="150" height="82" rx="6" fill="#1a1711" stroke="#c9a258" stroke-width="1.4"/>
+    <text x="20" y="36" fill="#c9a258" font-weight="700">DLG_MEG / n0</text>
+    <text x="20" y="52" fill="#f3ede0">Stay clear of my stall …</text>
+    <text x="20" y="66" fill="#8a7735">emotion: bored</text>
+    <text x="20" y="82" fill="#c9a258" font-weight="700">→ flag.meg_first_fragment</text>
+    <rect x="200" y="18" width="150" height="82" rx="6" fill="#1a1711" stroke="#806f3a" stroke-width="1.1"/>
+    <text x="210" y="36" fill="#c9a258" font-weight="700">n1 · soft</text>
+    <text x="210" y="52" fill="#f3ede0">Do I know her? I keep</text>
+    <text x="210" y="66" fill="#8a7735">emotion: soft</text>
+    <text x="210" y="82" fill="#c9a258" font-weight="700">→ flag.meg_second_fragment</text>
+    <rect x="390" y="18" width="150" height="82" rx="6" fill="#1a1711" stroke="#806f3a" stroke-width="1.1"/>
+    <text x="400" y="36" fill="#c9a258" font-weight="700">n2 · even</text>
+    <text x="400" y="52" fill="#f3ede0">…No rush. The recording</text>
+    <text x="400" y="66" fill="#8a7735">emotion: even</text>
+    <text x="400" y="82" fill="#c9a258" font-weight="700">→ flag.meg_whisper_extracted</text>
+    <rect x="580" y="18" width="160" height="82" rx="6" fill="#231d12" stroke="#f3ce8f" stroke-width="2"/>
+    <text x="590" y="36" fill="#f3ce8f" font-weight="700">END · terminal node</text>
+    <text x="590" y="52" fill="#f3ede0">Soundscroll complete — all four fragments delivered</text>
+    <text x="590" y="66" fill="#806f3a">the game moves onward, no more check</text>
+    <text x="590" y="82" fill="#f3ce8f" font-weight="700">→ flag.meg_soundscroll_complete</text>
+    <line x1="162" y1="59" x2="200" y2="59" stroke="#c9a258" stroke-width="1.6" marker-end="url(#arrow-en)"/>
+    <line x1="352" y1="59" x2="390" y2="59" stroke="#c9a258" stroke-width="1.6" marker-end="url(#arrow-en)"/>
+    <line x1="542" y1="59" x2="580" y2="59" stroke="#c9a258" stroke-width="1.6" marker-end="url(#arrow-en)"/>
+    <g fill="#8a7735">
+      <text x="14" y="130">// advances: 4 lines of advanceOn.flags from q_meg.steps[] — the runtime walks this exact path.</text>
+      <text x="14" y="150">// EN mode: same shape, English nodes, same flags on the wire.</text>
+      <text x="14" y="170">// Reader ↔ source: src/data/json/quests.json · q_meg.steps[0]..[3]</text>
+      <text x="14" y="190">// Caveat: quests may fan out by condition; this is the happy-path spine</text>
+    </g>
+  </g>
+</svg>
+</div>
+<div class="row"><span class="name">Why draw it here, not in the Codex</span><span class="note">the codex indexes the world; here the game is looking at its own controller — same graph, one for the reader, one for the runtime</span></div>
 
 <h2>Wayfinding</h2>
 <div class="row"><span class="name">Tab = the map</span><span class="note">The master chart shows where you have walked and what is still lit — lit means the ending is still sealed; press Tab again to fold it away</span></div>
