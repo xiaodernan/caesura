@@ -61,6 +61,8 @@ const ENDPOINTS = [
   { name: 'story-17', url: 'https://xiaodernan.github.io/caesura/story/pendulum-ferryman/', marker: '钟摆渡人' },
   { name: 'story-18', url: 'https://xiaodernan.github.io/caesura/story/unfinished-ledger/', marker: '未竟账页' },
   { name: 'story-19', url: 'https://xiaodernan.github.io/caesura/story/fourth-strike/', marker: '第四下' },
+  { name: 'ai-json-commit', url: 'https://xiaodernan.github.io/caesura/admin/ai-director-latest.json', marker: '"authorOnly": true' },
+  { name: 'ai-json-qa', url: 'https://xiaodernan.github.io/caesura/admin/ai-director-transitions-qa.json', marker: '"authorOnly": true' },
 ]
 
 const asJson = argv.includes('--json')
@@ -69,7 +71,7 @@ const concEq = argv.find((a) => a.startsWith('--concurrency='))
 const concRaw = concEq ? Number(concEq.slice('--concurrency='.length)) : (concIdx >= 0 ? Number(argv[concIdx + 1]) : 4)
 const concurrency = Math.max(1, Math.min(16, Number.isFinite(concRaw) ? concRaw : 4))
 
-// 并发压测：同一批 25 个端点以 N 路并发发出（Promise pool），逐个验证 marker、
+// 并发压测：同一批 29 个端点以 N 路并发发出（Promise pool），逐个验证 marker、
 // 统计总时长与 p50/p95/p99。不新增权限、不改 marker、不跨网络滥用——仅本机连 Pages。
 const results = new Array(ENDPOINTS.length)
 let cursor = 0
