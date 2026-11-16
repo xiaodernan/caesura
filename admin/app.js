@@ -84,6 +84,16 @@ const STRINGS = {
   'ai.l.result': { zh: '模型现场答复', en: 'The model’s live reply' },
   'sg.h2': { zh: '状态图检查站 · StateGraph 实跑', en: 'StateGraph checkpoints · the real run' },
   'sg.hint': { zh: 'AI 导演引擎的真实运行轨迹——七节点 · 三个 LLM 边共享同一 system 前缀 · 产物过人工闸', en: 'The real trajectory of the AI Director engine — seven nodes · three LLM edges sharing one system prefix · artifacts pass the human gate' },
+  'build.h2': { zh: '研发状态 · Build Observatory', en: 'Build Observatory · the repo’s vital signs' },
+  'build.hint': { zh: '仓库工程体征——site-latest.json + GitHub Actions API（公网 · 只读 · 无凭证）', en: 'The repo’s vital signs — site-latest.json + GitHub Actions API (public, read-only, no credentials)' },
+  'build.state.h3': { zh: '主分支现状', en: 'Master, right now' },
+  'build.ki': { zh: 'KI 完成度', en: 'KI implemented' },
+  'build.sys': { zh: 'SYS 实现进度', en: 'SYS implemented' },
+  'build.scripts': { zh: 'scripts · devDeps · ARCH', en: 'scripts · devDeps · ARCH' },
+  'build.updated': { zh: 'site-latest 更新于', en: 'site-latest updated' },
+  'build.runs.h3': { zh: '最近 CI（主分支）', en: 'Recent CI (master)' },
+  'build.note': { zh: '凡绿过之处即此页展示之处；每一次推送都在跑。', en: 'What is green here actually ran — every push keeps it that way.' },
+  'build.err': { zh: '读不到公网 CI 状态（网络 / rate-limit）——上面现状仍然有效。', en: 'Could not reach the public CI feed (network / rate-limit) — the snapshot on the left still holds.' },
 }
 
 function applyI18n() {
@@ -717,6 +727,73 @@ async function renderStateGraph() {
   legend.textContent = '— LLM 边共享同一 system 前缀（prompt_cache_key 按前缀派生）· 绿 ✓ = 该检查点 ok · 虚线框 = LLM 节点'
 }
 
+/* ─────────── 研发状态（KI-630 · Build Observatory）─────────── */
+async function renderBuild() {
+  const svgless = document.getElementById('panel-build')
+  if (!svgless) return
+  const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = String(v) }
+  const setBar = (id, frac) => { const el = document.getElementById(id); if (el) el.style.width = `${Math.max(0, Math.min(1, frac)) * 100}%` }
+  /* A — site-latest.json：仓展示面板的唯一真相源（与 hub fallback 同一份） */
+  try {
+    const r = await fetch(`https://raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json?ts=${Date.now()}`, { cache: 'no-store' })
+    if (!r.ok) throw new Error('HTTP ' + r.status)
+    const d = await r.json()
+    const kv = (d && d.kv) || {}
+    const kiRows = Number(kv['KI.rows']) || 0
+    const kiImpl = Number(kv['KI.Implemented']) || 0
+    const sysRows = Number(kv['SYS.rows']) || 0
+    const sysImpl = Number(kv['SYS.Implemented']) || 0
+    setText('build-head', `master @ ${String(d.head || '').slice(0, 7)}`)
+    setBar('build-ki-bar', kiRows > 0 ? kiImpl / kiRows : 0)
+    setBar('build-sys-bar', sysRows > 0 ? sysImpl / sysRows : 0)
+    setText('build-ki-num', `${kiImpl} / ${kiRows} · ${kiRows > 0 ? Math.round((kiImpl / kiRows) * 100) : 0}%`)
+    setText('build-sys-num', `${sysImpl} / ${sysRows} · ${sysRows > 0 ? Math.round((sysImpl / sysRows) * 100) : 0}%`)
+    setText('build-scripts-num', `PKG.scripts ${kv['PKG.scripts'] ?? '—'} · devDeps ${kv['PKG.devDeps'] ?? '—'} · ARCH.sections ${kv['ARCH.sections'] ?? '—'}`)
+    setText('build-updated', d.date ? String(d.date).slice(0, 19).replace('T', ' ') : '—')
+  } catch (error) {
+    setText('build-head', 'site-latest.json 不可达')
+    setText('build-ki-num', '— / —')
+    setText('build-sys-num', '— / —')
+  }
+  /* B — GitHub Actions API：最近 8 条运行，公网只读，无需凭证 */
+  const runsEl = document.getElementById('build-runs')
+  const errEl = document.getElementById('build-error')
+  try {
+    const r = await fetch('https://api.github.com/repos/xiaodernan/caesura/actions/runs?branch=master&per_page=8', { cache: 'no-store' })
+    if (!r.ok) throw new Error('HTTP ' + r.status)
+    const d = await r.json()
+    const runs = Array.isArray(d.workflow_runs) ? d.workflow_runs.slice(0, 5) : []
+    runsEl.replaceChildren(...runs.map((run) => {
+      const li = document.createElement('li')
+      const concluded = String(run.conclusion || '')
+      const status = String(run.status || '')
+      const ok = concluded === 'success'
+      const fail = concluded === 'failure' || concluded === 'timed_out' || concluded === 'cancelled'
+      li.className = `build-run${ok ? ' ok' : fail ? ' fail' : ' run'}`
+      const name = document.createElement('b')
+      name.textContent = String(run.name || 'workflow').trim()
+      const meta = document.createElement('span')
+      const sha = String(run.head_sha || '').slice(0, 7)
+      const dt = run.created_at ? String(run.created_at).slice(5, 16).replace('T', ' ') : ''
+      const when = dt ? `${dt.slice(0, 5)} ${dt.slice(6)}` : ''
+      meta.textContent = `${ok ? '✓' : fail ? '✗' : '○'} ${sha} · ${when}`
+      const link = document.createElement('a')
+      link.href = run.html_url || 'https://github.com/xiaodernan/caesura/actions'
+      link.target = '_blank'
+      link.rel = 'noreferrer'
+      link.textContent = '→'
+      link.setAttribute('aria-label', `open run ${sha}`)
+      li.append(name, meta, link)
+      return li
+    }))
+    errEl.hidden = true
+  } catch {
+    runsEl.replaceChildren()
+    errEl.textContent = T('读不到公网 CI 状态（网络 / rate-limit）——上面现状仍然有效。', 'Could not reach the public CI feed (network / rate-limit) — the snapshot on the left still holds.')
+    errEl.hidden = false
+  }
+}
+
 /* ─────────── 方法论 ─────────── */
 function renderMethod() {
   const m = TELEMETRY.meta
@@ -729,7 +806,7 @@ function renderMethod() {
 function renderAll() {
   renderKpis(); renderTrend(); renderFunnel(); renderChannels(); renderDevices()
   renderHours(); renderCohorts(); renderAnomalies(); renderExits(); renderRecs()
-  renderLive(); renderMethod(); renderAiCommitted(); hydrateAiLive(); renderStateGraph()
+  renderLive(); renderMethod(); renderAiCommitted(); hydrateAiLive(); renderStateGraph(); renderBuild()
 }
 function tickClock() {
   const t = new Date()

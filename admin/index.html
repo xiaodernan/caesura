@@ -212,6 +212,31 @@
     <p class="sg-error" id="sg-error" hidden role="alert"></p>
   </article>
 
+  <!-- ⑪d 研发状态 · Build Observatory（KI-630）————————— -->
+  <article class="panel panel-wide panel-build" id="panel-build" aria-labelledby="p-build">
+    <div class="panel-head">
+      <h2 id="p-build" data-i18n="build.h2">研发状态 · Build Observatory</h2>
+      <span class="hint" data-i18n="build.hint">仓库工程体征——site-latest.json + GitHub Actions API（公网 · 只读 · 无凭证）</span>
+    </div>
+    <div class="build-grid">
+      <div class="build-box">
+        <h3><span data-i18n="build.state.h3">主分支现状</span> · <code id="build-head">—</code></h3>
+        <div class="build-rows">
+          <div class="build-row"><span class="build-label" data-i18n="build.ki">KI 完成度</span><div class="build-bar"><div class="build-fill" id="build-ki-bar"></div></div><b id="build-ki-num" class="build-mono">—</b></div>
+          <div class="build-row"><span class="build-label" data-i18n="build.sys">SYS 实现进度</span><div class="build-bar"><div class="build-fill build-fill-sys" id="build-sys-bar"></div></div><b id="build-sys-num" class="build-mono">—</b></div>
+          <div class="build-row"><span class="build-label" data-i18n="build.scripts">scripts · devDeps · ARCH</span><b id="build-scripts-num" class="build-mono">—</b></div>
+          <div class="build-row"><span class="build-label" data-i18n="build.updated">site-latest 更新于</span><b id="build-updated" class="build-mono">—</b></div>
+        </div>
+      </div>
+      <div class="build-box">
+        <div class="build-box-head"><h3 data-i18n="build.runs.h3">最近 CI（主分支）</h3><a class="build-link" href="https://github.com/xiaodernan/caesura/actions" target="_blank" rel="noreferrer">GitHub Actions →</a></div>
+        <ol id="build-runs" class="build-runs"></ol>
+        <p class="build-note" id="build-note" data-i18n="build.note">凡绿过之处即此页展示之处；每一次推送都在跑。</p>
+        <p class="build-error" id="build-error" hidden role="alert"></p>
+      </div>
+    </div>
+  </article>
+
   <!-- ⑫ 导出 —————————————————————————— -->
   <div class="export-bar">
     <button id="export-csv" type="button" class="btn-gold" data-i18n="export.csv">导出日数据 CSV</button>
