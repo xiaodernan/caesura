@@ -90,7 +90,9 @@
     "cache-consistency:bench": "node scripts/caesura-cache-consistency.mjs --bench",
     "slot-map:bench": "node scripts/caesura-redis-slot-map.mjs --bench",
     "pgvector:bench": "node scripts/caesura-pgvector.mjs --bench",
-    "gateway-filters:bench": "node scripts/caesura-gateway-filters.mjs --bench"
+    "gateway-filters:bench": "node scripts/caesura-gateway-filters.mjs --bench",
+    "ai:director": "node scripts/ai-director.mjs",
+    "ai:director:live": "node scripts/ai-director.mjs --live"
   },
   "dependencies": {
     "three": "^0.186.0"

@@ -282,3 +282,53 @@ header, main, footer { position: relative; z-index: 1; }
   .f-label, .ch-label, .x-path, .cohort tbody th { color: #111; }
   .deck { padding: 0; max-width: none; }
 }
+
+/* ─── AI 导演 · 真·LLM 诊断（KI-620）───────────────────────────── */
+.panel-ai .ai-grid { display: grid; grid-template-columns: 1.18fr 1fr; gap: 14px; }
+@media (max-width: 1020px) { .panel-ai .ai-grid { grid-template-columns: 1fr; } }
+.ai-box { background: var(--ash-2); border: 1px solid var(--line-soft); border-radius: 12px; padding: 14px 16px; min-width: 0; }
+.ai-box-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ai-box-head h3 { font-family: var(--serif); font-size: 15px; color: #e8dfc2; margin: 0; }
+.ai-chip { font: 600 10px/1 var(--mono); letter-spacing: .1em; padding: 4px 10px; border: 1px solid var(--gold); color: var(--gold); border-radius: 999px; white-space: nowrap; }
+.ai-chip-live { border-color: var(--jade); color: var(--jade); }
+.ai-meta { font-size: 10px; color: var(--muted); letter-spacing: .05em; margin: 8px 0 4px; }
+.ai-meta code { color: var(--gold); }
+.ai-hero { display: flex; gap: 16px; align-items: center; padding: 10px 12px; border: 1px solid var(--gold-faint); border-radius: 10px; background: linear-gradient(135deg, var(--gold-faint), transparent 65%); margin: 8px 0 12px; }
+.ai-score { font: 800 44px/1 var(--mono); color: var(--gold); text-align: center; min-width: 86px; }
+.ai-score small { display: block; font-size: 9px; letter-spacing: .12em; color: var(--muted); margin-top: 4px; font-weight: 500; }
+.ai-verdict p { margin: 0; font-size: 12.5px; color: #d8d2bd; font-family: var(--serif); line-height: 1.7; }
+.ai-cols { display: grid; grid-template-columns: 1.2fr 1fr; gap: 12px; margin-bottom: 10px; }
+@media (max-width: 720px) { .ai-cols { grid-template-columns: 1fr; } }
+.panel-ai h4 { font: 600 10px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 10px 0 6px; }
+.ai-risks { list-style: none; margin: 0; padding: 0; }
+.ai-risk { border-left: 3px solid var(--muted); background: var(--ash-1); padding: 6px 9px; margin: 5px 0; font-size: 11px; line-height: 1.6; color: #cfd3dd; border-radius: 0 6px 6px 0; }
+.ai-risk b { color: #ece7d2; font-weight: 600; }
+.ai-risk-high { border-left-color: var(--wine); }
+.ai-risk-med { border-left-color: #d8a35c; }
+.ai-risk-low { border-left-color: var(--muted); }
+.ai-gaps { list-style: none; margin: 0; padding: 0; }
+.ai-gaps li { font-size: 11px; padding: 5px 9px; background: var(--ash-1); border-radius: 6px; margin: 5px 0; color: #cfd3dd; }
+.ai-gaps li::before { content: '▸ '; color: var(--gold); }
+.ai-transitions { list-style: none; counter-reset: trn; margin: 0; padding: 0; }
+.ai-transition { counter-increment: trn; position: relative; padding: 8px 10px 8px 34px; margin: 6px 0; background: var(--ash-1); border-left: 2px solid var(--gold-dim); border-radius: 0 8px 8px 0; font-size: 11px; }
+.ai-transition::before { content: counter(trn); position: absolute; left: 9px; top: 9px; font: 700 12px var(--mono); color: var(--gold); }
+.ai-t-route { color: #e8dfc2; font-family: var(--serif); font-size: 12px; }
+.ai-t-meta { font: 10px var(--mono); color: var(--jade); margin: 3px 0; letter-spacing: .05em; }
+.ai-transition p { margin: 2px 0 0; color: #b9bec9; line-height: 1.6; }
+.ai-draft { background: var(--ash-1); border: 1px dashed var(--line); border-radius: 10px; padding: 10px 12px; }
+.ai-draft h5 { margin: 0 0 6px; font-family: var(--serif); font-size: 13px; color: #ece7d2; }
+.ai-draft p { margin: 4px 0; font-size: 12px; color: #cfd3dd; }
+.ai-coda { color: var(--gold) !important; font-style: italic; }
+.ai-draft small { color: var(--muted); font-size: 9px; letter-spacing: .08em; }
+.ai-offline { font-size: 10.5px; color: #d8a35c; }
+.ai-error { color: #ff8a8a; font-size: 11px; white-space: pre-wrap; line-height: 1.6; }
+.ai-note { font-size: 10px; color: var(--muted); line-height: 1.65; margin: 8px 0; }
+.ai-note code { color: var(--gold); }
+.ai-note-fine { border-top: 1px solid var(--line-soft); padding-top: 8px; }
+.ai-field { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
+.ai-field label { font: 600 9px/1 var(--mono); letter-spacing: .12em; color: var(--muted); text-transform: uppercase; }
+.ai-field input { background: var(--ash-1); border: 1px solid var(--line-soft); color: #e6e1cf; padding: 8px 10px; border-radius: 7px; font-family: var(--mono); font-size: 12px; transition: border-color .2s; }
+.ai-field input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold-faint); }
+.ai-run { width: 100%; margin-top: 10px; }
+.ai-run[disabled] { opacity: .55; cursor: wait; }
+#ai-result-wrap pre { background: var(--ash-1); border: 1px solid var(--line-soft); border-radius: 8px; padding: 10px 12px; max-height: 380px; overflow: auto; white-space: pre-wrap; font: 12px/1.75 var(--sans); color: #d8d2bd; }

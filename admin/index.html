@@ -159,6 +159,45 @@
     </div>
   </article>
 
+  <!-- ⑪b AI 导演 · 真·LLM 诊断（深度嵌入 · 两条路） ———————————— -->
+  <article class="panel panel-wide panel-ai" id="panel-ai" aria-labelledby="p-ai">
+    <div class="panel-head">
+      <h2 id="p-ai" data-i18n="ai.h2">AI 导演 · 真·LLM 诊断</h2>
+      <span class="hint" data-i18n="ai.hint">深度嵌入：左＝最近一次真机运行（随仓库镜像）｜右＝自带 Key 现场诊断</span>
+    </div>
+    <div class="ai-grid">
+      <div class="ai-box ai-committed" id="ai-committed">
+        <div class="ai-box-head"><h3 data-i18n="ai.c.h3">最近一次真机运行 · 止音纪元</h3><span class="ai-chip" id="ai-mode-chip">…</span></div>
+        <p class="ai-meta"><code id="ai-generated">—</code> · <span id="ai-model-line">—</span></p>
+        <div class="ai-hero">
+          <div class="ai-score"><span id="ai-consistency">—</span><small data-i18n="ai.consistency">一致性 / 100</small></div>
+          <div class="ai-verdict"><p id="ai-verdict">—</p></div>
+        </div>
+        <div class="ai-cols">
+          <div><h4 data-i18n="ai.risks.h4">风险 · LLM 点名</h4><ul id="ai-risks" class="ai-risks"></ul></div>
+          <div><h4 data-i18n="ai.gaps.h4">缺口</h4><ul id="ai-gaps" class="ai-gaps"></ul></div>
+        </div>
+        <h4 data-i18n="ai.transitions.h4">世界状态流转提案 · from → to（人工闸后落库）</h4>
+        <ol id="ai-transitions" class="ai-transitions"></ol>
+        <h4 data-i18n="ai.draft.h4">第十七篇游记 · 草稿（人工闸，不落库）</h4>
+        <div id="ai-draft" class="ai-draft"></div>
+        <p id="ai-offline-note" class="ai-offline" hidden data-i18n="ai.offline">离线 dry-run 产物——跑 npm run ai:director:live 生成真机版本。</p>
+        <p id="ai-load-error" class="ai-error" hidden role="alert"></p>
+      </div>
+      <form class="ai-box ai-live" id="ai-live-form" autocomplete="off">
+        <div class="ai-box-head"><h3 data-i18n="ai.l.h3">自带 Key · 现场诊断</h3><span class="ai-chip ai-chip-live">LIVE</span></div>
+        <p class="ai-note" data-i18n="ai.l.note">Key 只存你这台浏览器的 sessionStorage，不落盘、不上报、不进任何仓库；网关已向浏览器开放 CORS（实测）。每次调用消耗的是你自己网关上的 token。</p>
+        <div class="ai-field"><label for="ai-base" data-i18n="ai.l.base">Base URL（OpenAI 兼容）</label><input id="ai-base" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://api.aizzz.xyz/v1" /></div>
+        <div class="ai-field"><label for="ai-model" data-i18n="ai.l.model">模型</label><input id="ai-model" type="text" autocomplete="off" spellcheck="false" placeholder="gpt-6.1-terra" /></div>
+        <div class="ai-field"><label for="ai-key" data-i18n="ai.l.key">API Key</label><input id="ai-key" type="password" autocomplete="off" spellcheck="false" placeholder="sk-…" /></div>
+        <button class="btn-gold ai-run" id="ai-run" type="submit" data-i18n="ai.l.run">真跑诊断 →</button>
+        <p class="ai-note ai-note-fine" data-i18n="ai.l.fine">发送内容＝本页聚合数据的 ≤800 字摘要（不含任何个人信息）；模型回复原样呈现。</p>
+        <div id="ai-result-wrap" hidden><h4 data-i18n="ai.l.result">模型现场答复</h4><pre id="ai-result"></pre></div>
+        <p id="ai-error" class="ai-error" hidden role="alert"></p>
+      </form>
+    </div>
+  </article>
+
   <!-- ⑫ 导出 —————————————————————————— -->
   <div class="export-bar">
     <button id="export-csv" type="button" class="btn-gold" data-i18n="export.csv">导出日数据 CSV</button>

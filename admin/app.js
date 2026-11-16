@@ -65,6 +65,23 @@ const STRINGS = {
   'method.h2': { zh: '方法论 · 这页数的家底', en: 'Methodology · where these numbers come from' },
   'method.fine2': { zh: '玩家进程零 LLM · 零网络请求；本后台同上。真实用户流量接入 Spring report（@8082）后，可整体替换数据源而不动本页分析逻辑。', en: 'The game process has zero LLM calls and zero network; this deck is the same. Once real telemetry is wired through the Spring report service (@8082), the data source can be swapped wholesale without touching the analysis here.' },
   'method.fine3': { zh: '刻意公开的门禁 · 密码 123 · KI-583。', en: 'The door is public on purpose · passphrase 123 · KI-583.' },
+  'ai.h2': { zh: 'AI 导演 · 真·LLM 诊断', en: 'AI Director · real-LLM diagnosis' },
+  'ai.hint': { zh: '深度嵌入：左＝最近一次真机运行（随仓库镜像）｜右＝自带 Key 现场诊断', en: 'Embedded deep: left = latest on-machine run (mirrored with the repo) · right = bring-your-own-key live diagnosis' },
+  'ai.c.h3': { zh: '最近一次真机运行 · 止音纪元', en: 'Latest on-machine run · Epoch of Hush' },
+  'ai.consistency': { zh: '一致性 / 100', en: 'Consistency / 100' },
+  'ai.risks.h4': { zh: '风险 · LLM 点名', en: 'Risks · named by the LLM' },
+  'ai.gaps.h4': { zh: '缺口', en: 'Gaps' },
+  'ai.transitions.h4': { zh: '世界状态流转提案 · from → to（人工闸后落库）', en: 'World state transitions · from → to (human gate first)' },
+  'ai.draft.h4': { zh: '第十七篇游记 · 草稿（人工闸，不落库）', en: 'Travelogue No.17 · draft (human gate; not committed)' },
+  'ai.offline': { zh: '离线 dry-run 产物——跑 npm run ai:director:live 生成真机版本。', en: 'Offline dry-run artifact — run npm run ai:director:live to produce the real one.' },
+  'ai.l.h3': { zh: '自带 Key · 现场诊断', en: 'Bring your own key · live' },
+  'ai.l.note': { zh: 'Key 只存你这台浏览器的 sessionStorage，不落盘、不上报、不进任何仓库；网关已向浏览器开放 CORS（实测）。每次调用消耗的是你自己网关上的 token。', en: 'Your key lives only in this browser’s sessionStorage — never on disk, never reported, never in any repo. The gateway allows browser CORS (verified). Calls spend your gateway’s tokens.' },
+  'ai.l.base': { zh: 'Base URL（OpenAI 兼容）', en: 'Base URL (OpenAI-compatible)' },
+  'ai.l.model': { zh: '模型', en: 'Model' },
+  'ai.l.key': { zh: 'API Key', en: 'API Key' },
+  'ai.l.run': { zh: '真跑诊断 →', en: 'Run live diagnosis →' },
+  'ai.l.fine': { zh: '发送内容＝本页聚合数据的 ≤800 字摘要（不含任何个人信息）；模型回复原样呈现。', en: 'What is sent = a ≤800-char digest of this page’s aggregate data (no personal information). The model’s reply is shown verbatim.' },
+  'ai.l.result': { zh: '模型现场答复', en: 'The model’s live reply' },
 }
 
 function applyI18n() {
@@ -444,6 +461,164 @@ async function copyDigest() {
 }
 function note(msg) { $('#export-note').textContent = msg; setTimeout(() => { $('#export-note').textContent = '' }, 3200) }
 
+/* ─────────── AI 导演（KI-620 · 真·LLM 嵌入）─────────── */
+const aiEl = (id) => document.getElementById(id)
+const clearEl = (el) => { while (el && el.firstChild) el.removeChild(el.firstChild) }
+function makeEl(tag, className, text) {
+  const el = document.createElement(tag)
+  if (className) el.className = className
+  if (text !== undefined) el.textContent = text
+  return el
+}
+const AI_LIVE_KEY = 'caesura-ai-live'
+
+function buildDigest() {
+  const t = TELEMETRY
+  const daily = t.daily
+  const last7 = daily.slice(-7)
+  const prev7 = daily.slice(-14, -7)
+  const sumSessions = (a) => a.reduce((n, d) => n + d.sessions, 0)
+  const meanBounce = (a) => (a.length ? a.reduce((n, d) => n + d.bounce, 0) / a.length : 0)
+  const funnel = t.funnel.steps
+  const clearRate = funnel[0].count ? funnel[funnel.length - 1].count / funnel[0].count : 0
+  const topExit = [...t.pages].sort((a, b) => b.exitShare - a.exitShare)[0]
+  const topRage = [...t.pages].sort((a, b) => b.rageClicks - a.rageClicks)[0]
+  const mobile = (t.devices.find((d) => d.id === 'mobile') || {}).share
+  const zhShare = (t.locales.find((l) => l.id === 'zh') || {}).share
+  const lateWindow = t.hourly.slice(20).reduce((n, h) => n + h.share, 0) + (t.hourly[0]?.share ?? 0)
+  return {
+    cohort: 'simulated · seed 20261115 · 2026-10-17 → 2026-11-15',
+    sessions: t.totals.sessions,
+    newUsers: t.totals.newUsers,
+    endings: t.totals.endings,
+    storyFinishes: t.totals.storyFinishes,
+    last7Sessions: sumSessions(last7),
+    prev7Sessions: sumSessions(prev7),
+    last7Bounce: Math.round(meanBounce(last7) * 100) / 100,
+    funnelClearRatePct: Math.round(clearRate * 1000) / 10,
+    mobileShare: mobile,
+    zhShare,
+    topExitPage: `${topExit.path} (exit ${(topExit.exitShare * 100).toFixed(0)}%)`,
+    topRagePage: `${topRage.path} (×${topRage.rageClicks})`,
+    lateWindowShare: Math.round(lateWindow * 1000) / 1000,
+  }
+}
+
+async function renderAiCommitted() {
+  const chip = aiEl('ai-mode-chip')
+  if (!chip) return
+  const gen = aiEl('ai-generated'), mod = aiEl('ai-model-line'), verdict = aiEl('ai-verdict'), cons = aiEl('ai-consistency')
+  const risks = aiEl('ai-risks'), gaps = aiEl('ai-gaps'), transitions = aiEl('ai-transitions'), draft = aiEl('ai-draft')
+  const off = aiEl('ai-offline-note'), err = aiEl('ai-load-error')
+  off.hidden = true; err.hidden = true
+  let d
+  try {
+    const r = await fetch('./ai-director-latest.json', { cache: 'no-store' })
+    if (!r.ok) throw new Error('HTTP ' + r.status)
+    d = await r.json()
+  } catch (e) {
+    err.textContent = T('读取 ai-director-latest.json 失败：', 'Failed to load ai-director-latest.json: ') + String((e && e.message) || e)
+    err.hidden = false
+    chip.textContent = '—'
+    return
+  }
+  const isEn = LANG === 'en'
+  const audit = d.audit
+  chip.textContent = d.mode === 'live' ? 'LIVE' : String(d.mode || 'offline').toUpperCase()
+  gen.textContent = String(d.generatedAt || '').slice(0, 19).replace('T', ' ')
+  const u = d.usage || {}
+  mod.textContent = `${d.model || '—'} · ${d.corpusSize || 0} chunks · ${u.calls || 0} calls · ${u.cachedTokens || 0} cached`
+  cons.textContent = audit && Number.isFinite(Number(audit.consistency)) ? String(audit.consistency) : '—'
+  verdict.textContent = audit ? (isEn ? audit.verdictEn : audit.verdictZh) || '—' : '—'
+  clearEl(risks); clearEl(gaps); clearEl(transitions); clearEl(draft)
+  for (const r of (audit && audit.risks) || []) {
+    const li = makeEl('li', `ai-risk ai-risk-${r.severity || 'low'}`)
+    li.append(
+      makeEl('b', null, (isEn ? (r.itemEn || r.itemZh) : (r.itemZh || r.itemEn)) || ''),
+      makeEl('span', null, ` — ${(isEn ? r.detailEn : r.detailZh) || ''}`),
+    )
+    risks.appendChild(li)
+  }
+  for (const g of (audit && (isEn ? audit.gapsEn : audit.gapsZh)) || []) gaps.appendChild(makeEl('li', null, g))
+  for (const tr of d.transitions || []) {
+    const li = makeEl('li', 'ai-transition')
+    li.append(
+      makeEl('div', 'ai-t-route', `${(isEn ? tr.fromEn : tr.fromZh) || '—'}  →  ${(isEn ? tr.toEn : tr.toZh) || '—'}`),
+      makeEl('div', 'ai-t-meta', `${tr.flag || ''} · ${T('人工闸', 'human gate')}`),
+      makeEl('p', null, (isEn ? tr.narrativeEn : tr.narrativeZh) || ''),
+    )
+    transitions.appendChild(li)
+  }
+  const dr = d.atlasDraft
+  if (dr) {
+    draft.append(
+      makeEl('h5', null, `No.${dr.no} · ${(isEn ? dr.titleEn : dr.titleZh) || ''}`),
+      makeEl('p', null, (isEn ? dr.pEn : dr.pZh) || ''),
+      makeEl('p', 'ai-coda', `— ${(isEn ? dr.codaEn : dr.codaZh) || ''}`),
+      makeEl('small', null, T('requiresHumanReview · 不落库', 'requiresHumanReview · not committed')),
+    )
+  } else {
+    draft.append(makeEl('p', null, T('（尚无草稿）', '(no draft yet)')))
+  }
+  off.hidden = !(d.mode === 'offline' || !audit)
+}
+
+function showAiError(msg) { const errEl = aiEl('ai-error'); if (errEl) { errEl.textContent = msg; errEl.hidden = false } }
+function hydrateAiLive() {
+  let saved = null
+  try { saved = JSON.parse(sessionStorage.getItem(AI_LIVE_KEY) || 'null') } catch { saved = null }
+  const baseEl = aiEl('ai-base'), modelEl = aiEl('ai-model'), keyEl = aiEl('ai-key')
+  if (baseEl) baseEl.value = (saved && saved.base) || 'https://api.aizzz.xyz/v1'
+  if (modelEl) modelEl.value = (saved && saved.model) || 'gpt-6.1-terra'
+  if (keyEl && saved && saved.key) keyEl.value = saved.key
+}
+
+async function runAiLive(e) {
+  e.preventDefault()
+  const errEl = aiEl('ai-error'), wrap = aiEl('ai-result-wrap'), out = aiEl('ai-result'), btn = aiEl('ai-run')
+  errEl.hidden = true
+  const base = (aiEl('ai-base').value || '').trim().replace(/\/+$/, '')
+  const model = (aiEl('ai-model').value || '').trim()
+  const key = (aiEl('ai-key').value || '').trim()
+  if (!base || !model || !key) { showAiError(T('Base URL / 模型 / Key 都要填', 'Base URL, model and key are all required')); return }
+  try { sessionStorage.setItem(AI_LIVE_KEY, JSON.stringify({ base, model, key })) } catch { /* noop */ }
+  btn.disabled = true
+  btn.textContent = T('思考中…', 'Thinking…')
+  try {
+    const digest = buildDigest()
+    const sys = LANG === 'en'
+      ? 'You are the World Director and product analyst of CÆSURA (The Epoch of Hush). Read the telemetry digest from the admin observatory and reply with: 1) overall situation (≤80 words), 2) three biggest risks — each with metric, threshold, current value, 3) three next optimizations — each with its trigger metric, 4) one in-game “world state transition” suggestion players could actually feel. Be concrete; cite the numbers; no filler. English.'
+      : '你是《止音纪元》的世界导演兼数据分析师。读下面这份后台观察站的埋点摘要，答复：① 总评（≤80字）② 三个最大风险（每条给出指标、阈值、现值）③ 三个下一步优化（每条给触发指标）④ 一条玩家可感知的游戏内「世界状态流转」建议。要具体，引用数字，不要废话。中文。'
+    const res = await fetch(`${base}/chat/completions`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model, temperature: 0.4, max_tokens: 1200,
+        messages: [
+          { role: 'system', content: sys },
+          { role: 'user', content: `埋点摘要：\n${JSON.stringify(digest, null, 1)}` },
+        ],
+      }),
+    })
+    const raw = await res.text()
+    if (!res.ok) {
+      let msg = `HTTP ${res.status}`
+      try { const j = JSON.parse(raw); msg += ` · ${(j && j.error && j.error.message) || raw.slice(0, 200)}` } catch { msg += ` · ${raw.slice(0, 200)}` }
+      showAiError(msg)
+      return
+    }
+    let content = ''
+    try { content = (JSON.parse(raw)?.choices?.[0]?.message?.content) || '' } catch { content = raw }
+    out.textContent = content || T('(空响应)', '(empty response)')
+    wrap.hidden = false
+  } catch (e2) {
+    showAiError(`${T('请求失败：', 'Request failed: ')}${(e2 && e2.message) || e2}\n${T('（网关已实测向浏览器开放 CORS；请检查 Base URL / Key。或改用本机 npm run ai:director:live）', '(The gateway allows browser CORS (verified); check Base URL / key — or run npm run ai:director:live locally)')}`)
+  } finally {
+    btn.disabled = false
+    btn.textContent = T('真跑诊断 →', 'Run live diagnosis →')
+  }
+}
+
 /* ─────────── 方法论 ─────────── */
 function renderMethod() {
   const m = TELEMETRY.meta
@@ -456,7 +631,7 @@ function renderMethod() {
 function renderAll() {
   renderKpis(); renderTrend(); renderFunnel(); renderChannels(); renderDevices()
   renderHours(); renderCohorts(); renderAnomalies(); renderExits(); renderRecs()
-  renderLive(); renderMethod()
+  renderLive(); renderMethod(); renderAiCommitted(); hydrateAiLive()
 }
 function tickClock() {
   const t = new Date()
@@ -480,6 +655,7 @@ $('#live-clear').addEventListener('click', () => {
   renderLive()
   note(T('本机记录已清空', 'Local records cleared'))
 })
+$('#ai-live-form')?.addEventListener('submit', runAiLive)
 
 // ?key=123 一键入内；已解锁则直接进
 const params = new URLSearchParams(location.search)
