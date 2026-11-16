@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "48c297bbb9860b40ea478ffeaac6647926ac0cbe",
+  "head": "227622bb3cdcea088165f001a9e4b9a67ea28380",
   "branch": "master",
-  "subject": "docs(cache): §二十三 流 vs 非流 A/B 实测（aizzz · 2026-11-17）",
-  "date": "2026-11-17T01:13:17+08:00",
+  "subject": "site-latest: 48c297b (post-rebase reconcile)",
+  "date": "2026-11-17T01:13:23+08:00",
   "kv": {
     "KI.rows": 537,
     "KI.Implemented": 360,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/48c297bbb9860b40ea478ffeaac6647926ac0cbe",
+    "url": "https://github.com/xiaodernan/caesura/commit/227622bb3cdcea088165f001a9e4b9a67ea28380",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
