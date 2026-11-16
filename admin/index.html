@@ -198,6 +198,20 @@
     </div>
   </article>
 
+  <!-- ⑪c 状态图检查站 · StateGraph 实跑可视化（KI-622） ———————— -->
+  <article class="panel panel-wide panel-stategraph" id="panel-stategraph" aria-labelledby="p-sg">
+    <div class="panel-head">
+      <h2 id="p-sg" data-i18n="sg.h2">状态图检查站 · StateGraph 实跑</h2>
+      <span class="hint" data-i18n="sg.hint">AI 导演引擎的真实运行轨迹——七节点 · 三个 LLM 边共享同一 system 前缀 · 产物过人工闸</span>
+    </div>
+    <svg id="sg-graph" viewBox="0 0 980 250" role="img" aria-labelledby="p-sg"></svg>
+    <div class="sg-foot">
+      <span><span id="sg-corpus-label">corpus</span> <b id="sg-corpus">—</b> chunks · <span id="sg-calls-label">LLM calls</span> <b id="sg-calls">—</b> · <span id="sg-cached-label">cached</span> <b id="sg-cached">—</b> tokens · <span id="sg-total-label">耗时</span> <b id="sg-total">—</b>ms</span>
+      <code id="sg-rerun">npm run ai:director:live</code>
+    </div>
+    <p class="sg-error" id="sg-error" hidden role="alert"></p>
+  </article>
+
   <!-- ⑫ 导出 —————————————————————————— -->
   <div class="export-bar">
     <button id="export-csv" type="button" class="btn-gold" data-i18n="export.csv">导出日数据 CSV</button>

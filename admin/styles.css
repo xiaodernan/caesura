@@ -332,3 +332,10 @@ header, main, footer { position: relative; z-index: 1; }
 .ai-run { width: 100%; margin-top: 10px; }
 .ai-run[disabled] { opacity: .55; cursor: wait; }
 #ai-result-wrap pre { background: var(--ash-1); border: 1px solid var(--line-soft); border-radius: 8px; padding: 10px 12px; max-height: 380px; overflow: auto; white-space: pre-wrap; font: 12px/1.75 var(--sans); color: #d8d2bd; }
+
+/* --- AI director StateGraph checkpoint panel (KI-622) --------------------- */
+.panel-stategraph #sg-graph { width: 100%; height: auto; display: block; margin-top: 10px; background: var(--ash-1); border: 1px solid var(--line-soft); border-radius: 10px; }
+.sg-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; font: 10px var(--mono); color: var(--muted); letter-spacing: .06em; }
+.sg-foot b { color: var(--gold); font-weight: 600; }
+.sg-foot code { background: var(--ash-1); border: 1px solid var(--line-soft); border-radius: 6px; padding: 4px 8px; color: var(--jade); }
+.sg-error { color: #ff8a8a; font-size: 11px; }

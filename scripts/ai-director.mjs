@@ -346,6 +346,10 @@ async function main() {
     .addEdge('draftContent', 'writeArtifacts')
   // 条件边演示：audit 失败（例如 live 解析失败）仍继续后续节点，产物如实登记
   await graph.run('loadWorld', state)
+  // 二次落盘：graph.run 返回后 checkpoints 是完整七节点（writeArtifacts 自身的那一条也有了），
+  // 重写产物让镜像 JSON 与 RUN 报告从此都是完整轨迹——避免少写一格又像什么都没发生。
+  state.graphCheckpoints = graph.checkpoints
+  writeArtifacts(state)
   const failed = state.errors.length
   console.log(`[ai-director] mode=${state.mode} canon=${state.corpusSize} chunks · llm_calls=${state.usage.calls} · cached_tokens=${state.usage.cachedTokens} · errors=${failed}`)
   state.graphCheckpoints = graph.checkpoints

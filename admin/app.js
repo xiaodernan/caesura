@@ -82,6 +82,8 @@ const STRINGS = {
   'ai.l.run': { zh: '真跑诊断 →', en: 'Run live diagnosis →' },
   'ai.l.fine': { zh: '发送内容＝本页聚合数据的 ≤800 字摘要（不含任何个人信息）；模型回复原样呈现。', en: 'What is sent = a ≤800-char digest of this page’s aggregate data (no personal information). The model’s reply is shown verbatim.' },
   'ai.l.result': { zh: '模型现场答复', en: 'The model’s live reply' },
+  'sg.h2': { zh: '状态图检查站 · StateGraph 实跑', en: 'StateGraph checkpoints · the real run' },
+  'sg.hint': { zh: 'AI 导演引擎的真实运行轨迹——七节点 · 三个 LLM 边共享同一 system 前缀 · 产物过人工闸', en: 'The real trajectory of the AI Director engine — seven nodes · three LLM edges sharing one system prefix · artifacts pass the human gate' },
 }
 
 function applyI18n() {
@@ -619,6 +621,88 @@ async function runAiLive(e) {
   }
 }
 
+/* ─────────── 状态图检查站（KI-622 · StateGraph 实跑可视化）─────────── */
+const SG_NODES = [
+  { id: 'loadWorld', zh: '加载世界快照', en: 'Load world' },
+  { id: 'retrieveCanon', zh: 'RAG 检索 canon', en: 'Retrieve canon' },
+  { id: 'warmup', zh: '预热前缀缓存', en: 'Warmup prefix' },
+  { id: 'audit', zh: '一致性审计', en: 'Consistency audit', llm: true },
+  { id: 'proposeTransitions', zh: '状态流转提案', en: 'Transitions', llm: true },
+  { id: 'draftContent', zh: '篇十七草稿', en: 'Draft No.17', llm: true },
+  { id: 'writeArtifacts', zh: '落盘产物', en: 'Write artifacts' },
+]
+
+async function renderStateGraph() {
+  const svg = document.getElementById('sg-graph')
+  if (!svg) return
+  const err = document.getElementById('sg-error')
+  let d
+  try {
+    const r = await fetch('./ai-director-latest.json', { cache: 'no-store' })
+    if (!r.ok) throw new Error('HTTP ' + r.status)
+    d = await r.json()
+  } catch (e) {
+    err.textContent = T('读取 ai-director-latest.json 失败：', 'Failed to load ai-director-latest.json: ') + String((e && e.message) || e)
+    err.hidden = false
+    return
+  }
+  err.hidden = true
+  const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = String(v) }
+  const u = d.usage || {}
+  const checks = new Map((d.graphCheckpoints || []).map((c) => [c.node, c]))
+  const total = (d.graphCheckpoints || []).reduce((n, c) => n + (Number(c.ms) || 0), 0)
+  setText('sg-corpus', d.corpusSize ?? 0)
+  setText('sg-calls', u.calls ?? 0)
+  setText('sg-cached', u.cachedTokens ?? 0)
+  setText('sg-total', total)
+
+  clearSvg(svg)
+  const SVGNS = 'http://www.w3.org/2000/svg'
+  const defs = svgEl('defs', {}, svg)
+  const marker = svgEl('marker', { id: 'sg-arrow', viewBox: '0 0 10 10', refX: '9', refY: '5', markerWidth: '7', markerHeight: '7', orient: 'auto-start-reverse' }, defs)
+  svgEl('path', { d: 'M 0 0 L 10 5 L 0 10 z', fill: 'rgba(201,180,88,.55)' }, marker)
+
+  const BOX_W = 112
+  const BOX_H = 62
+  const GAP = 16
+  const TOTAL = SG_NODES.length
+  const startX = (980 - (TOTAL * BOX_W + (TOTAL - 1) * GAP)) / 2
+  const Y = 88
+  for (let i = 0; i < TOTAL; i += 1) {
+    const node = SG_NODES[i]
+    const x = startX + i * (BOX_W + GAP)
+    const cp = checks.get(node.id)
+    const ok = cp ? cp.ok !== false : null
+    const ms = cp ? Number(cp.ms) || 0 : null
+
+    if (i < TOTAL - 1) {
+      svgEl('line', { x1: x + BOX_W + 1, y1: Y + BOX_H / 2, x2: x + BOX_W + GAP - 1, y2: Y + BOX_H / 2, stroke: 'rgba(201,180,88,.5)', 'stroke-width': 1.6, 'marker-end': 'url(#sg-arrow)' }, svg)
+    }
+
+    const g = svgEl('g', {}, svg)
+    svgEl('rect', { x, y: Y, width: BOX_W, height: BOX_H, rx: 9, fill: ok === false ? 'rgba(165,68,82,.24)' : 'rgba(201,180,88,.10)', stroke: ok === false ? '#a54452' : '#c9b458', 'stroke-width': 1.2, 'stroke-dasharray': node.llm ? '4 3' : 'none' }, g)
+    const label = T(node.zh, node.en)
+    const t1 = svgEl('text', { x: x + BOX_W / 2, y: Y + 22, 'text-anchor': 'middle', fill: '#e8dfc2', 'font-size': 11.5, 'font-family': '"Noto Serif SC","Songti SC",Georgia,serif' }, g)
+    t1.textContent = label
+    if (node.llm) {
+      const tag = svgEl('text', { x: x + BOX_W / 2, y: Y + 38, 'text-anchor': 'middle', fill: '#4f9b86', 'font-size': 8.5, 'font-family': 'Consolas, monospace', 'letter-spacing': 2 }, g)
+      tag.textContent = 'LLM'
+    } else {
+      const tag = svgEl('text', { x: x + BOX_W / 2, y: Y + 38, 'text-anchor': 'middle', fill: '#6f7684', 'font-size': 8.5, 'font-family': 'Consolas, monospace', 'letter-spacing': 2 }, g)
+      tag.textContent = 'GRAPH'
+    }
+    // checkpoint 徽章 + 耗时
+    svgEl('circle', { cx: x + BOX_W / 2, cy: Y + BOX_H + 16, r: 8.5, fill: ok === false ? '#a54452' : '#2e4a3f', stroke: ok === false ? '#d88a8a' : '#4f9b86', 'stroke-width': 1 }, g)
+    const check = svgEl('text', { x: x + BOX_W / 2, y: Y + BOX_H + 19.5, 'text-anchor': 'middle', fill: '#dff3ea', 'font-size': 9, 'font-family': 'Consolas, monospace' }, g)
+    check.textContent = ok === false ? '✗' : '✓'
+    const t2 = svgEl('text', { x: x + BOX_W / 2, y: Y + BOX_H + 33, 'text-anchor': 'middle', fill: '#8b93a1', 'font-size': 8.5, 'font-family': 'Consolas, monospace' }, g)
+    t2.textContent = ms === null ? '—' : `${ms.toLocaleString()}ms`
+  }
+
+  const legend = svgEl('text', { x: 490, y: 236, 'text-anchor': 'middle', fill: '#6f7684', 'font-size': 8, 'font-family': 'Consolas, monospace', 'letter-spacing': 1.5 }, svg)
+  legend.textContent = '— LLM 边共享同一 system 前缀（prompt_cache_key 按前缀派生）· 绿 ✓ = 该检查点 ok · 虚线框 = LLM 节点'
+}
+
 /* ─────────── 方法论 ─────────── */
 function renderMethod() {
   const m = TELEMETRY.meta
@@ -631,7 +715,7 @@ function renderMethod() {
 function renderAll() {
   renderKpis(); renderTrend(); renderFunnel(); renderChannels(); renderDevices()
   renderHours(); renderCohorts(); renderAnomalies(); renderExits(); renderRecs()
-  renderLive(); renderMethod(); renderAiCommitted(); hydrateAiLive()
+  renderLive(); renderMethod(); renderAiCommitted(); hydrateAiLive(); renderStateGraph()
 }
 function tickClock() {
   const t = new Date()
