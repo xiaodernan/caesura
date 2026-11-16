@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "d561ce85e208aea5142e338b850c0c70c93eb143",
+  "head": "349930b3bce9166437bf259a0adf02e61b0b5418",
   "branch": "master",
-  "subject": "site-latest: 2e6cee8 (post-rebase reconcile)",
-  "date": "2026-11-17T03:02:21+08:00",
+  "subject": "fix(admin): AI 现场诊断文案诚实化——CORS 开放不等于网络可达",
+  "date": "2026-11-17T03:18:40+08:00",
   "kv": {
     "KI.rows": 538,
     "KI.Implemented": 361,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/d561ce85e208aea5142e338b850c0c70c93eb143",
+    "url": "https://github.com/xiaodernan/caesura/commit/349930b3bce9166437bf259a0adf02e61b0b5418",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
