@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "114eedb53a4ed180db448dcc2dc45db44a03fa1f",
+  "head": "019bff98eb4ed882c304fe27ef90bc6716526cf5",
   "branch": "master",
-  "subject": "site-latest: 9b26c4a (post-rebase reconcile)",
-  "date": "2026-11-16T22:41:02+08:00",
+  "subject": "fix(console): ssthresh 轴标数字精度（AIMD 拥塞窗口轨迹 panel）",
+  "date": "2026-11-16T22:53:11+08:00",
   "kv": {
     "KI.rows": 535,
     "KI.Implemented": 358,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/114eedb53a4ed180db448dcc2dc45db44a03fa1f",
+    "url": "https://github.com/xiaodernan/caesura/commit/019bff98eb4ed882c304fe27ef90bc6716526cf5",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
