@@ -110,12 +110,12 @@
     originals = new Map();
   }
 
-  var observed = false;
+  var activeObs = null;
+  /** 安装 MutationObserver 让新增/改动的文本节点在 TW 模式下即时转传统；返回句柄可 disconnect */
   function observe(root) {
-    if (observed) return;
+    if (activeObs) return activeObs;
     var target = root || document.body;
-    if (!target) return;
-    observed = true;
+    if (!target) return null;
     var mo = new MutationObserver(function (mutations) {
       if (!table) return;
       for (var i = 0; i < mutations.length; i++) {
@@ -134,6 +134,10 @@
       }
     });
     mo.observe(target, { childList: true, subtree: true, characterData: true });
+    activeObs = {
+      disconnect: function () { mo.disconnect(); activeObs = null; },
+    };
+    return activeObs;
   }
 
   function ready(fn) {

@@ -627,7 +627,7 @@ document.addEventListener('keydown', (ev) => {
   }
   if (ev.key === 'Enter' && $('#veil').classList.contains('on')) closeModal();
 });
-$('#langToggle').addEventListener('click', () => applyLang(state.lang === 'zh' ? 'en' : 'zh'));
+$('#langToggle').addEventListener('click', () => applyLang(state.lang === 'zh' ? 'zh-TW' : (state.lang === 'zh-TW' ? 'en' : 'zh')));
 
 renderChips();
 // boot: honor saved language; re-apply once the converter table is ready (TW glyphs refresh then)

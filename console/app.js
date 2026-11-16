@@ -581,9 +581,18 @@
     var btn = document.getElementById ? document.getElementById('lang-toggle') : null
     if (!btn) return
     var stored = null
-    try { stored = (typeof localStorage !== 'undefined' && localStorage.getItem('caesura-console-lang')) || 'zh' } catch (_) { stored = 'zh' }
-    var mode = stored === 'en' ? 'en' : 'zh'
+    try { stored = (typeof localStorage !== 'undefined' && (localStorage.getItem('caesura-console-lang') || localStorage.getItem('caesura-lang'))) || 'zh' } catch (_) { stored = 'zh' }
+    var mode = (stored === 'en' || stored === 'zh-TW') ? stored : 'zh'
     var originals = typeof WeakMap !== 'undefined' ? new WeakMap() : null
+    function tw() { return (window.__caesuraZhTW && typeof window.__caesuraZhTW.applyToDocument === 'function') ? window.__caesuraZhTW : null }
+    function applyToBody() { var c = tw(); if (c) c.applyToDocument() }
+    function restoreBody() { var c = tw(); if (c && c.restoreOriginals) c.restoreOriginals() }
+    var obsHandle = null
+    function observeBody() {
+      var c = tw(); if (!c || !c.observe) return
+      if (!obsHandle) obsHandle = c.observe(document.body)
+    }
+    function unobserveBody() { if (obsHandle && obsHandle.disconnect) { obsHandle.disconnect(); obsHandle = null } }
     function snapshotAndSwap(to) {
       var els = document.querySelectorAll ? document.querySelectorAll('body *') : []
       for (var i = 0; i < els.length; i++) {
@@ -604,17 +613,44 @@
         }
       }
     }
-    document.documentElement.setAttribute('data-lang', mode)
-    btn.setAttribute('aria-pressed', mode === 'en' ? 'true' : 'false')
-    btn.textContent = mode === 'en' ? '中' : 'EN'
-    if (mode === 'en') snapshotAndSwap('en')
+    function render(m) {
+      document.documentElement.setAttribute('data-lang', m)
+      document.documentElement.setAttribute('lang', m === 'en' ? 'en-US' : (m === 'zh-TW' ? 'zh-TW' : 'zh-CN'))
+      btn.setAttribute('aria-pressed', m === 'en' ? 'true' : 'false')
+      btn.textContent = m === 'zh' ? '繁體' : (m === 'zh-TW' ? 'EN' : '简体')
+      try { if (typeof localStorage !== 'undefined') localStorage.setItem('caesura-console-lang', m) } catch (_) {}
+    }
+    /* zh -> zh-TW -> en -> zh */
+    function go(next) {
+      if (next === 'zh') {
+        // EN 先还原成简体原文，再把 converter 的 TW→zh 复位
+        snapshotAndSwap('zh')
+        restoreBody()
+        unobserveBody()
+      } else if (next === 'zh-TW') {
+        if (mode === 'en') snapshotAndSwap('zh') // EN→简体
+        applyToBody()                             // 简体→繁體（converter 处理）
+        observeBody()                             // 之后动态注入的节点（载入的 snapshot）也转
+      } else if (next === 'en') {
+        if (mode !== 'zh') restoreBody()           // TW→简体
+        unobserveBody()
+        snapshotAndSwap('en')                       // 简体→EN
+      }
+      mode = next
+      render(mode)
+    }
+    if (mode === 'zh-TW') {
+      /* 等 converter defer 就绪（window.load 兜底 DOMContentLoaded） */
+      var ready = function () { applyToBody(); observeBody() }
+      if (document.readyState === 'complete' || document.readyState === 'interactive') ready()
+      else window.addEventListener('load', ready)
+    } else if (mode === 'en') {
+      snapshotAndSwap('en')
+    }
+    render(mode)
     btn.addEventListener('click', function () {
-      mode = mode === 'en' ? 'zh' : 'en'
-      document.documentElement.setAttribute('data-lang', mode)
-      btn.setAttribute('aria-pressed', mode === 'en' ? 'true' : 'false')
-      btn.textContent = mode === 'en' ? '中' : 'EN'
-      try { if (typeof localStorage !== 'undefined') localStorage.setItem('caesura-console-lang', mode) } catch (_) {}
-      snapshotAndSwap(mode)
+      var next = mode === 'zh' ? 'zh-TW' : (mode === 'zh-TW' ? 'en' : 'zh')
+      go(next)
     })
   }
 
