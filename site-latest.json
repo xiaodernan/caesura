@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "4481ccb1e0b4bd16dbaec95cabfc70516cec1f87",
+  "head": "02ffda6b5b46ea43bea10848825fe2e53ee56dda",
   "branch": "master",
-  "subject": "feat(ai): KI-628 Pages 27 端点压力探针（3000/3000）+ KI-629 AI 导演「世界巡礼周报」",
-  "date": "2026-11-17T06:56:58+08:00",
+  "subject": "site-latest: 4481ccb (post-rebase reconcile)",
+  "date": "2026-11-17T06:57:12+08:00",
   "kv": {
     "KI.rows": 547,
     "KI.Implemented": 370,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/4481ccb1e0b4bd16dbaec95cabfc70516cec1f87",
+    "url": "https://github.com/xiaodernan/caesura/commit/02ffda6b5b46ea43bea10848825fe2e53ee56dda",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
