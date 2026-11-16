@@ -3563,7 +3563,7 @@
     var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.maxRelativeError) ? r.metrics.maxRelativeError : 0 }).concat([0.0001]))
     box.innerHTML = rows.map(function (r) {
       var m = r.metrics || {}
-      var w = isNum(m.maxRelativeError) ? Math.round(m.maxRelativeError / Math.max(max, 0.001) * 100) : 0
+      var w = isNum(m.maxRelativeError) ? Math.min(100, Math.round(m.maxRelativeError / Math.max(max, 0.001) * 100)) : 0
       var card = Math.max(1, m.exactCard ?? 1)
       return '<div class="hll-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
         '<span class="hll-bar"><i style="width:' + w + '%"></i></span>' +
@@ -7071,7 +7071,7 @@
     var max = Math.max.apply(null, rows.map(function (r) { return r.metrics && isNum(r.metrics.committed) ? r.metrics.committed : 1 }).concat([1]))
     box.innerHTML = rows.map(function (r) {
       var m = r.metrics || {}
-      var w = isNum(m.delivered) ? Math.round(m.delivered / max * 100) : 0
+      var w = isNum(m.delivered) ? Math.min(100, Math.round(m.delivered / max * 100)) : 0
       return '<div class="ob-line" data-strategy="' + esc(r.protocol) + '"><span class="tag">' + esc(r.protocol) + '</span>' +
         '<span class="ob-bar"><i style="width:' + w + '%"></i></span>' +
         '<span class="num">提交 ' + esc(fmt(m.committed)) + ' · 投递 ' + esc(fmt(m.delivered)) + ' · 丢 ' + esc(String(m.lost)) + ' · 重 ' + esc(String(m.duplicates)) + ' · lag ' + esc(String(m.maxDeliveryLag)) + '</span></div>'
