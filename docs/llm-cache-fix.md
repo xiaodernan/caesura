@@ -216,3 +216,45 @@ $ npm run llm-gateway:bench -- --live
 - `NODE_OPTIONS` 没有 `undici` 的 TLS 指纹相关开关；`--tls-ciphersuites` 不影响 OpenSSL 指纹组合语义（只影响 OpenSSL-aware 路径）。
 - `cf-cache-status` 检查 5xx/TLS 错误 DtDryRun 都失败 ⇒ 按 "劫缘消失，以 IP+TLS 双指纹 WAF 最严语义" 定论。
 - 继续烧时间去探 `sets ciphers`、`--openssl-config` 无 ROI；直接用 `curl.exe` 的 UA/指纹保守稳妥 5/5。
+
+## 二十三 · 2026-11-17 A/B 实验：流 vs 非流 · aizzz v1 · gpt-6.1-terra · Clash 7897
+
+**为什么再测一遍**：用户点出「一直显示非流、似乎显示流时命中率高」——该模糊印象需要在 §二十二之后重测一次，用**真机系统前缀**（同一 BIBLE）把两个 lane 排干净，**不靠推理，靠真值**。
+
+实验配方（`.scratch/stream-cache-settle.py`，key 仅 env 注入）：
+
+```python
+BIBLE  = '止音纪元 Canon Bible · PoC. ' + ('世愚则岂足谷乡荒野钟墓东潮漠荒景迷雾燃没骸亡信誓尼皇烬明与。' * 400)
+base   = {'model': 'gpt-6.1-terra', 'temperature': 0, 'max_tokens': 32,
+          'messages': [{'role': 'system', 'content': BIBLE},
+                       {'role': 'user', 'content': '说说光与钟的关系（三句以内）'}]}
+```
+
+实测（Clash Verge 7897 · POST · 相同系统前缀）：
+
+| lane | req | ms | prompt_tokens | cached_tokens | hit% |
+|---|---|---|---|---|---|
+| `ns-0`（首调，温度 0） | 1 | 14157 | 19209 | 0 | **0.0%** MISS |
+| `ns-1` | 2 | 17172 | 19209 | 18112 | **94.3%** |
+| `ns-2` | 3 | 9799 | 19209 | 18112 | **94.3%** |
+| `ns-3` | 4 | 28614 | 19209 | 18112 | **94.3%** |
+| `st-0`（SSE） | 5 | 30359 | 19209 | 18112 | **94.3%** |
+| `st-1` | 6 | 33338 | 19209 | 18112 | **94.3%** |
+| `st-2` | 7 | 27531 | 19209 | 18112 | **94.3%** |
+| `st-3` | 8 | 40153 | 19209 | 18112 | **94.3%** |
+| `st-4` | 9 | 37245 | 19209 | 18112 | **94.3%** |
+| `st-5` | 10 | 47173 | 19209 | 18112 | **94.3%** |
+
+**结论**：**流/非流没有差异** —— 首调必 miss，二调起稳定 ≈ 94.3%（18112/19209 tokens，~1.6 个完整 1024-token 块）。
+
+- 首调必 miss（19209 tokens · ~1.8 个完整块）认证「缓存写入」由模型侧瞬间完成：同 BIBLE 二次 POST 直击 cached_tokens = 18112
+- 非流 9799 ms / 流 27531 ms → 差值全部在 SSE 序列化开销，不是命中相关
+- 此与之前 2026-11-12/14 的多轮换 lane A/B 完全一致：**流式不提高命中率；"显示流更快"是首字节延迟优势 + 顺序错觉**
+- "显示流"的更快感知来自：SSE 逐 token 到达的 perceived latency 提前 —— 用户在流式下总是更早地"读到内容"，但首字节在 cache-hit 场景与非流等价（约 100–200ms 差异）
+
+### 生产建议
+
+1. 不要在「stream vs 非流」上搞 toggle —— 当你想看到流式 token 的时候用流式，不想多余延迟时用非流，
+   但两种选择都得做同一件事：**先 warm 再真跑**
+2. 固定 `prompt_cache_key`（路由亲和）—— 多端点 deploy 真实路由表命中里
+3. 调高 `max_tokens` 不会降低命中率，只是账单更大
