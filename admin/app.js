@@ -524,6 +524,13 @@ async function renderAiCommitted() {
     chip.textContent = '—'
     return
   }
+  /* KI-624 · 流转 QA 裁决（可选；缺文件时不阻塞面板） */
+  let qa = null
+  try {
+    const qr = await fetch('./ai-director-transitions-qa.json', { cache: 'no-store' })
+    if (qr.ok) qa = await qr.json()
+  } catch { qa = null }
+  const verdictByFlag = new Map((((qa && qa.verdicts)) || []).map((v) => [v.flag, v]))
   const isEn = LANG === 'en'
   const audit = d.audit
   chip.textContent = d.mode === 'live' ? 'LIVE' : String(d.mode || 'offline').toUpperCase()
@@ -544,9 +551,16 @@ async function renderAiCommitted() {
   for (const g of (audit && (isEn ? audit.gapsEn : audit.gapsZh)) || []) gaps.appendChild(makeEl('li', null, g))
   for (const tr of d.transitions || []) {
     const li = makeEl('li', 'ai-transition')
+    const meta = makeEl('div', 'ai-t-meta', `${tr.flag || ''} · ${T('人工闸', 'human gate')}`)
+    const verdict = verdictByFlag.get(tr.flag)
+    if (verdict && verdict.canonFit) {
+      const badge = makeEl('span', `ai-verdict-badge ai-verdict-${verdict.canonFit}`, String(verdict.canonFit))
+      badge.title = `${verdict.notesZh || ''}${verdict.notesEn ? ' / ' + verdict.notesEn : ''}`
+      meta.appendChild(badge)
+    }
     li.append(
       makeEl('div', 'ai-t-route', `${(isEn ? tr.fromEn : tr.fromZh) || '—'}  →  ${(isEn ? tr.toEn : tr.toZh) || '—'}`),
-      makeEl('div', 'ai-t-meta', `${tr.flag || ''} · ${T('人工闸', 'human gate')}`),
+      meta,
       makeEl('p', null, (isEn ? tr.narrativeEn : tr.narrativeZh) || ''),
     )
     transitions.appendChild(li)

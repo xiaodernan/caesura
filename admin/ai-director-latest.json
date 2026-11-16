@@ -6,73 +6,73 @@
   "requiresHumanReview": true,
   "schema": 1,
   "mode": "live",
-  "generatedAt": "2026-11-16T20:26:06.585Z",
+  "generatedAt": "2026-11-16T21:12:54.247Z",
   "model": "gpt-6.1-terra",
   "endpoint": "https://api.aizzz.xyz/v1",
   "focus": "止音纪元 世界现状 十七篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响",
-  "corpusSize": 1257,
+  "corpusSize": 1327,
   "canon": [
     {
       "rank": 1,
-      "score": 39.889,
+      "score": 40.084,
       "preview": "[短篇][story/anthology] 约 7 分钟 · 低音之城 · 石喉母亲 · 听账 · 余响"
     },
     {
       "rank": 2,
-      "score": 38.712,
+      "score": 38.959,
       "preview": "[短篇][story/stonethroat] 余响新陆 · 低音之城 · 石喉母亲"
     },
     {
       "rank": 3,
-      "score": 33.362,
+      "score": 33.64,
       "preview": "[短篇][story/anthology] 约 5 分钟 · 低音之城 · ♭A2"
     },
     {
       "rank": 4,
-      "score": 28.214,
+      "score": 28.356,
       "preview": "[短篇][story/stonethroat] 石喉 / The Stone-Throat · CAESURA 短篇 之九 — 余响新陆 · 低音之城"
     },
     {
       "rank": 5,
-      "score": 27.899,
+      "score": 28.029,
       "preview": "[设定][docs/WORLD-BIBLE.md#30] 七地域之外还有一整片「余响新大陆」：沉钟三界 + 低音三州——风钟海岸 / 雨钟谷地 / 低音之城 / 回廊钟 / 霜锤崖 / 回声庭园。 守门者、NPC、余音音符与三界合奏见 `docs/lore/NEW-LANDS.md`；《风钟纪元》（EPIC-VI · 设计稿）在这片大地上的三段路见 `docs/EPIC-VI.md`。 《低音之城 · 后钟纪元》（EPIC-VII · 设计稿 · 2026-11-15 落 · 不进 runtime）把「沉默被产业化」的后果写成三幕——低音之城 / 霜锤崖 / 回廊钟：见 `docs/EPIC-VII.md`。"
     },
     {
       "rank": 6,
-      "score": 26.028,
+      "score": 26.265,
       "preview": "[短篇][story/lowtone-city] 低音之城 / The City of Low Tones · CAESURA 短篇 之十五"
     },
     {
       "rank": 7,
-      "score": 25.584,
+      "score": 25.683,
       "preview": "[设定][docs/WORLD-BIBLE.md#1] # CAESURA《止音纪元》 · 世界圣经（world-bible v1 · 2026-11-14）"
     },
     {
       "rank": 8,
-      "score": 21.088,
+      "score": 21.107,
       "preview": "[短篇][story/anthology] 约 5 分钟 · 后记 · 余响 · 终章"
     },
     {
       "rank": 9,
-      "score": 20.957,
-      "preview": "[短篇][story/anthology] 约 7 分钟 · 未竟厅 · 钟摆渡人 · 余响"
+      "score": 21.028,
+      "preview": "[短篇][story/stonethroat] · 低音之城 · ♭A2 · 石喉母亲 The Stone-Throat Matriarch · DLG_STONETHROAT · 主线「石喉记账」），是 companion fiction（双语对照 · 零 LLM · 零网络 · 不落 runtime）。"
     },
     {
       "rank": 10,
-      "score": 20.897,
-      "preview": "[短篇][story/stonethroat] · 低音之城 · ♭A2 · 石喉母亲 The Stone-Throat Matriarch · DLG_STONETHROAT · 主线「石喉记账」），是 companion fiction（双语对照 · 零 LLM · 零网络 · 不落 runtime）。"
+      "score": 20.971,
+      "preview": "[短篇][story/anthology] 约 7 分钟 · 未竟厅 · 钟摆渡人 · 余响"
     }
   ],
   "worldSnapshot": {
     "date": "2026-11-16",
     "phaseStatus": {
-      "KIrows": 539,
-      "KIImplemented": 362,
+      "KIrows": 541,
+      "KIImplemented": 364,
       "SYSImplemented": 73,
       "ARCHSections": 202
     },
-    "atlasEntries": 17,
-    "storyChapters": 17,
+    "atlasEntries": 18,
+    "storyChapters": 18,
     "storyList": [
       "anthology",
       "bell-picker",
@@ -80,6 +80,7 @@
       "doors",
       "empty-bar",
       "first-bell",
+      "fourth-strike",
       "frostbell",
       "garden",
       "lampwright-bell",
@@ -100,124 +101,121 @@
     "npcs": 7
   },
   "audit": {
-    "consistency": 68,
-    "verdictZh": "现有证据支持余响新大陆及相关短篇存在，但不足以核验快照中的实现状态与章节计数。",
-    "verdictEn": "Evidence supports the new continent and related stories, but cannot verify implementation or chapter counts.",
+    "consistency": 78,
+    "verdictZh": "快照中的游记数量与名单相符；余响新大陆有设定依据，但其后续篇章标为设计稿，不应视为已入运行内容。",
+    "verdictEn": "The story count matches the list. The New Lands are canon, but later epics are design drafts, not runtime content.",
     "risks": [
       {
-        "severity": "high",
-        "itemZh": "设计稿与运行时边界",
-        "itemEn": "Design/runtime boundary",
-        "detailZh": "EPIC-VII 明示不进 runtime；勿将其三幕后果视为已实现现状。",
-        "detailEn": "EPIC-VII is explicitly excluded from runtime; do not treat its consequences as implemented state."
+        "severity": "med",
+        "itemZh": "设计稿与运行内容混淆",
+        "itemEn": "Drafts may be mistaken for runtime content",
+        "detailZh": "证据明确标注 EPIC-VI、EPIC-VII 为设计稿，且 EPIC-VII 不进 runtime。",
+        "detailEn": "The evidence labels EPIC-VI and EPIC-VII as design drafts; EPIC-VII is explicitly excluded from runtime."
       },
       {
         "severity": "med",
-        "itemZh": "短篇不等于运行时内容",
-        "itemEn": "Stories are not runtime content",
-        "detailZh": "石喉条目标为 companion fiction，且标注不落 runtime；不能据此推断主线状态。",
-        "detailEn": "Stone-Throat is companion fiction and excluded from runtime; it does not establish mainline state."
+        "itemZh": "世界现状缺少实现状态交叉证据",
+        "itemEn": "Implementation status lacks cross-checking evidence",
+        "detailZh": "快照列出 KI、ARCH、NPC 等数量，但检索片段未验证这些实现计数。",
+        "detailEn": "The snapshot gives KI, ARCH, and NPC counts, but retrieved evidence does not verify them."
       },
       {
-        "severity": "med",
-        "itemZh": "快照计数缺乏交叉证据",
-        "itemEn": "Snapshot counts lack corroboration",
-        "detailZh": "检索片段未提供 KI 实现数、ARCH 章节数或对话树计数的核验依据。",
-        "detailEn": "The retrieved excerpts do not verify KI implementation, ARCH chapter, or dialogue-tree counts."
+        "severity": "low",
+        "itemZh": "游记篇数口径需区分",
+        "itemEn": "Story-count terminology may be ambiguous",
+        "detailZh": "快照称 Atlas 词条 18 篇、短篇篇章 18 篇；名单也有 18 项，但证据未解释两者口径。",
+        "detailEn": "The snapshot lists 18 Atlas entries and 18 stories; the list has 18 items, but the evidence does not define the distinction."
       }
     ],
     "gapsZh": [
-      "缺少 KI 与 ARCH 的计数明细及核验时间点。",
-      "缺少新陆守门者、NPC、余音音符与三界合奏的具体证据。"
+      "缺少完整的新陆设定与守门者、NPC、余音音符证据。",
+      "缺少各系统实现计数及运行状态的直接证据。"
     ],
     "gapsEn": [
-      "No KI/ARCH count breakdown or verification date.",
-      "No specifics on new-land gatekeepers, NPCs, notes, or triad composition."
+      "Full New Lands details, including gatekeepers, NPCs, and echo notes, are missing.",
+      "Direct evidence for system implementation counts and runtime status is missing."
     ]
   },
   "transitions": [
     {
-      "fromZh": "低音之城：沉默已成为产业",
-      "fromEn": "Low Tones: silence has become an industry",
-      "toZh": "低音之城：石喉记账留下可追查的余响",
-      "toEn": "Low Tones: the Stone-Throat ledger leaves an echo that can be traced",
-      "flag": "flag.proposed.lowtone_ledger_echo_traced",
-      "narrativeZh": "账目中的余响被重新听见，城中人开始追问沉默如何定价。",
-      "narrativeEn": "An echo in the ledger is heard again, prompting residents to question how silence was priced.",
-      "npcReactionZh": "石喉母亲允许听账者复核一笔记录。",
-      "npcReactionEn": "The Stone-Throat Matriarch allows a listener to review one entry.",
-      "atlasHookZh": "一笔尚未核清的余响账目",
-      "atlasHookEn": "An unresolved account of an echo",
+      "fromZh": "低音之城：沉默被产业化的后果尚未进入可玩状态",
+      "fromEn": "Low-Tone City: the consequences of industrialized silence are not yet playable",
+      "toZh": "低音之城：玩家记录一项沉默产业后果",
+      "toEn": "Low-Tone City: the player records one consequence of the silence industry",
+      "flag": "flag.proposed.lowtone_industry_consequence_recorded",
+      "narrativeZh": "记录使沉默产业化的后果成为可追查的公共条目。",
+      "narrativeEn": "The record makes a consequence of industrialized silence publicly traceable.",
+      "npcReactionZh": "相关者回应记录内容，不改变既有事实。",
+      "npcReactionEn": "Those involved respond to the record without changing established facts.",
+      "atlasHookZh": "沉默产业化后果的记录",
+      "atlasHookEn": "A record of industrialized silence",
       "requiresHumanReview": true,
-      "canonEvidence": [
-        "[短篇][story/stonethroat] 石喉母亲",
-        "[短篇][story/anthology] 听账 · 余响",
-        "[短篇][story/lowtone-city] 低音之城"
+      "evidenceRefs": [
+        "docs/WORLD-BIBLE.md#30",
+        "docs/EPIC-VII.md"
       ]
     },
     {
-      "fromZh": "低音之城：听账仍停留在个别记录",
-      "fromEn": "Low Tones: listening to accounts remains limited to individual records",
-      "toZh": "低音之城：听账者留下可供后来者查验的记录",
-      "toEn": "Low Tones: listeners leave records for others to examine",
-      "flag": "flag.proposed.lowtone_listening_record_kept",
-      "narrativeZh": "听账结果被留存；后来的听者可以比较记录，而不必把判断交给单一账本。",
-      "narrativeEn": "Listening results are kept so later listeners can compare records instead of relying on one ledger.",
-      "npcReactionZh": "听账者把复核结果交给下一位听者。",
-      "npcReactionEn": "A listener passes the review results to the next listener.",
-      "atlasHookZh": "可供复核的听账记录",
-      "atlasHookEn": "A listening record open to review",
+      "fromZh": "石喉记账：玩家尚未核对一笔账目",
+      "fromEn": "Stone-Throat ledger: the player has not yet checked an entry",
+      "toZh": "石喉记账：玩家已核对一笔账目",
+      "toEn": "Stone-Throat ledger: the player has checked an entry",
+      "flag": "flag.proposed.stonethroat_ledger_entry_checked",
+      "narrativeZh": "核对结果留下可供后续游记引用的账目记录。",
+      "narrativeEn": "The check leaves a ledger record that a later travelogue can reference.",
+      "npcReactionZh": "石喉母亲回应这笔账目的核对结果。",
+      "npcReactionEn": "The Stone-Throat Matriarch responds to the checked entry.",
+      "atlasHookZh": "一笔经核对的石喉账目",
+      "atlasHookEn": "A checked Stone-Throat ledger entry",
       "requiresHumanReview": true,
-      "canonEvidence": [
-        "[短篇][story/anthology] 听账",
-        "[短篇][story/stonethroat] 石喉记账"
+      "evidenceRefs": [
+        "story/stonethroat"
       ]
     },
     {
-      "fromZh": "余响新陆：未竟厅的事项仍未收束",
-      "fromEn": "Echoing New Lands: matters in the Unfinished Hall remain unresolved",
-      "toZh": "余响新陆：未竟厅的一项事项被交接，而非宣告完结",
-      "toEn": "Echoing New Lands: one matter in the Unfinished Hall is handed on, not declared finished",
-      "flag": "flag.proposed.unfinished_hall_matter_handed_on",
-      "narrativeZh": "钟摆渡人将未竟事项交给后来者，留下继续查证的路径。",
-      "narrativeEn": "The Pendulum Ferryman hands an unfinished matter to a successor, leaving a path for further inquiry.",
-      "npcReactionZh": "钟摆渡人说明交接边界，不替后来者下结论。",
-      "npcReactionEn": "The Pendulum Ferryman defines the handoff without deciding the matter for others.",
-      "atlasHookZh": "一项仍待查证的交接",
-      "atlasHookEn": "A handoff still awaiting inquiry",
+      "fromZh": "余响新陆：玩家尚未留下新陆见闻索引",
+      "fromEn": "Echoing New Lands: the player has not left an indexed account",
+      "toZh": "余响新陆：玩家已将一处见闻纳入索引",
+      "toEn": "Echoing New Lands: the player has indexed one observation",
+      "flag": "flag.proposed.new_lands_observation_indexed",
+      "narrativeZh": "一处见闻被整理为索引，供后续行程查阅。",
+      "narrativeEn": "One observation is indexed for consultation on later journeys.",
+      "npcReactionZh": "同行者可据索引回应这处见闻。",
+      "npcReactionEn": "Companions can respond to the observation through the index.",
+      "atlasHookZh": "余响新陆的一则见闻索引",
+      "atlasHookEn": "An indexed observation from the New Lands",
       "requiresHumanReview": true,
-      "canonEvidence": [
-        "[短篇][story/anthology] 未竟厅 · 钟摆渡人 · 余响"
+      "evidenceRefs": [
+        "docs/WORLD-BIBLE.md#30",
+        "story/stonethroat"
       ]
     },
     {
-      "fromZh": "余响新陆：多个地域已有游记记录",
-      "fromEn": "Echoing New Lands: several regions have travelogue entries",
-      "toZh": "余响新陆：读者能沿游记线索回查低音之城的记录",
-      "toEn": "Echoing New Lands: readers can follow travelogue leads back to records in Low Tones",
-      "flag": "flag.proposed.atlas_lowtone_record_linked",
-      "narrativeZh": "游记线索连回低音之城的记录，跨地域的查证有了明确入口。",
-      "narrativeEn": "A travelogue lead links back to a Low Tones record, giving cross-region inquiry a clear starting point.",
-      "npcReactionZh": "记录保管者标出来源，不补写未证实的内容。",
-      "npcReactionEn": "The record keeper marks the source without adding unverified details.",
-      "atlasHookZh": "从游记回查低音之城",
-      "atlasHookEn": "Trace a travelogue lead to Low Tones",
+      "fromZh": "游记终章：玩家尚未整理余响记录",
+      "fromEn": "Travelogue ending: the player has not organized the echo records",
+      "toZh": "游记终章：玩家已整理一组余响记录",
+      "toEn": "Travelogue ending: the player has organized a set of echo records",
+      "flag": "flag.proposed.echo_records_compiled",
+      "narrativeZh": "整理后的记录为终章留下可回访的余响线索。",
+      "narrativeEn": "The compiled records leave an echo clue that can be revisited in the ending.",
+      "npcReactionZh": "记录中的人物与地点成为回访提示。",
+      "npcReactionEn": "People and places in the records become prompts for revisiting.",
+      "atlasHookZh": "终章中的余响记录",
+      "atlasHookEn": "Echo records in the ending",
       "requiresHumanReview": true,
-      "canonEvidence": [
-        "[设定][docs/WORLD-BIBLE.md#30] 余响新大陆与低音之城",
-        "[短篇][story/lowtone-city] 低音之城",
-        "[短篇][story/anthology] 余响"
+      "evidenceRefs": [
+        "story/anthology"
       ]
     }
   ],
   "atlasDraft": {
     "no": 17,
-    "titleZh": "未封之账",
-    "titleEn": "The Unclosed Ledger",
-    "pZh": "回廊钟的桌上，多了一页账。纸边沾着石粉，末行没有数目。记账人翻过它，背面也没有字。她把纸压在旧账下，没有盖章。门外的钟声停了一息，又照常走了。",
-    "pEn": "A page lay on the desk at Corridor Bell. Stone dust marked its edge; the final line held no figure. The keeper turned it over. The back was blank too. She set it beneath the old ledger without stamping it. Outside, the bell paused for one beat, then continued.",
-    "codaZh": "纸没有归档。桌角压着一枚空白签。",
-    "codaEn": "The page remained unfiled. A blank tag held down its corner.",
+    "titleZh": "未收的摆",
+    "titleEn": "The Unclaimed Swing",
+    "pZh": "未竟厅的渡票少了一张。钟摆渡人把空格留着，没有补写姓名。夜里，纸边轻轻翘起；他压上一枚旧砝码。",
+    "pEn": "One crossing slip was missing from the unfinished hall. The Pendulum Ferryman left the space blank. At night, the paper’s edge lifted. He set an old weight upon it.",
+    "codaZh": "清晨，空格仍在。",
+    "codaEn": "By morning, the space was still blank.",
     "requiresHumanReview": true
   },
   "usage": {
@@ -233,37 +231,37 @@
   "graphCheckpoints": [
     {
       "node": "loadWorld",
-      "ms": 22,
+      "ms": 29,
       "ok": true
     },
     {
       "node": "retrieveCanon",
-      "ms": 170,
+      "ms": 299,
       "ok": true
     },
     {
       "node": "warmup",
-      "ms": 7434,
+      "ms": 4881,
       "ok": true
     },
     {
       "node": "audit",
-      "ms": 11514,
+      "ms": 12154,
       "ok": true
     },
     {
       "node": "proposeTransitions",
-      "ms": 25545,
+      "ms": 20842,
       "ok": true
     },
     {
       "node": "draftContent",
-      "ms": 6800,
+      "ms": 7283,
       "ok": true
     },
     {
       "node": "writeArtifacts",
-      "ms": 14,
+      "ms": 52,
       "ok": true
     }
   ],

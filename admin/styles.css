@@ -339,3 +339,9 @@ header, main, footer { position: relative; z-index: 1; }
 .sg-foot b { color: var(--gold); font-weight: 600; }
 .sg-foot code { background: var(--ash-1); border: 1px solid var(--line-soft); border-radius: 6px; padding: 4px 8px; color: var(--jade); }
 .sg-error { color: #ff8a8a; font-size: 11px; }
+
+/* --- AI director transitions QA verdict badges (KI-624) -------------------- */
+.ai-verdict-badge { display: inline-block; margin-left: 8px; font: 600 9px/1 var(--mono); letter-spacing: .1em; padding: 2px 7px; border-radius: 4px; vertical-align: 1px; text-transform: uppercase; }
+.ai-verdict-canon { background: rgba(79,155,134,.18); color: #6fd3b8; border: 1px solid rgba(79,155,134,.4); }
+.ai-verdict-new-canon { background: rgba(201,180,88,.12); color: #e8d5a3; border: 1px solid rgba(201,180,88,.4); }
+.ai-verdict-conflict { background: rgba(165,68,82,.18); color: #ff9a9a; border: 1px solid rgba(165,68,82,.45); }

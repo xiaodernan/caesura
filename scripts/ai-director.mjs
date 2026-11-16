@@ -37,6 +37,7 @@ import { fileURLToPath } from 'node:url'
 import { authorLlmEnv } from './caesura-author-env.mjs'
 import { callLlm, applyAuthorProxyFromEnv } from './caesura-llm-client.mjs'
 import { buildWorldCorpus, buildIndex, retrieve } from './lib/world-rag.mjs'
+import { StateGraph } from './lib/stategraph.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '..')
@@ -47,37 +48,7 @@ const FOCUS = FOCUS_FLAG >= 0 ? String(args[FOCUS_FLAG + 1] ?? '').trim() : ''
 const TODAY = new Date().toISOString().slice(0, 10)
 const NOW_ISO = new Date().toISOString()
 
-/* ═══════════ 零依赖 StateGraph（LangGraph 的 Node 侧真实现）═══════════ */
-class StateGraph {
-  constructor() {
-    this.nodes = new Map()
-    this.edges = []
-    this.conditional = []
-    this.checkpoints = []
-  }
-  addNode(name, fn) { this.nodes.set(name, fn); return this }
-  addEdge(from, to) { this.edges.push([from, to]); return this }
-  addConditionalEdges(from, router, mapping) { this.conditional.push({ from, router, mapping }); return this }
-  _next(current, state) {
-    const c = this.conditional.find((x) => x.from === current)
-    if (c) return c.mapping[c.router(state)] ?? null
-    const e = this.edges.find(([f]) => f === current)
-    return e ? e[1] : null
-  }
-  async run(entry, state) {
-    let current = entry
-    while (current) {
-      const fn = this.nodes.get(current)
-      if (!fn) throw new Error(`StateGraph: 未知节点 ${current}`)
-      const t0 = Date.now()
-      let ok = true
-      try { await fn(state) } catch (e) { ok = false; state.errors.push({ node: current, message: String(e && e.message || e) }) }
-      this.checkpoints.push({ node: current, ms: Date.now() - t0, ok })
-      current = this._next(current, state)
-    }
-    return state
-  }
-}
+/* ═══════════ StateGraph 内核住 scripts/lib/stategraph.mjs（KI-624 抽出）═══════════ */
 
 /* ═══════════ 读数小工具（全部现读，不许手写）═══════════ */
 const readJson = (p) => JSON.parse(readFileSync(p, 'utf8'))

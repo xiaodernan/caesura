@@ -1,0 +1,85 @@
+{
+  "$comment": "KI-624 AI 导演第二阶段「流转 QA」产物 · 作者侧 · 不进玩家运行时 · 人工闸后方可采纳 · 绝不包含任何密钥",
+  "runtime": false,
+  "authorOnly": true,
+  "containsCredentials": false,
+  "requiresHumanReview": true,
+  "schema": 1,
+  "mode": "live",
+  "generatedAt": "2026-11-16T21:14:19.223Z",
+  "model": "gpt-6.1-terra",
+  "endpoint": "https://api.aizzz.xyz/v1",
+  "source": "ai-director-latest.json @ 2026-11-16T21:12:54.247Z",
+  "roster": {
+    "dialogueFlags": 33,
+    "questLines": 7
+  },
+  "ragChunksPerTransition": 3,
+  "corpusSize": 1327,
+  "transitionsRead": 4,
+  "verdicts": [
+    {
+      "flag": "flag.proposed.lowtone_industry_consequence_recorded",
+      "canonFit": "new-canon",
+      "conflicts": [],
+      "notesZh": "低音之城及沉默产业后果有据；可追查公共条目是新增状态。",
+      "notesEn": "The city and consequence are established; the public record state is new.",
+      "requiresHumanReview": true
+    },
+    {
+      "flag": "flag.proposed.stonethroat_ledger_entry_checked",
+      "canonFit": "new-canon",
+      "conflicts": [],
+      "notesZh": "石喉记账与账目核对有据；玩家核对状态是新增设定。",
+      "notesEn": "The ledger is established; player verification is a new state.",
+      "requiresHumanReview": true
+    },
+    {
+      "flag": "flag.proposed.new_lands_observation_indexed",
+      "canonFit": "new-canon",
+      "conflicts": [],
+      "notesZh": "余响新陆有既有见闻；将见闻编入索引是新增设定。",
+      "notesEn": "The lands and stories are established; indexing is new.",
+      "requiresHumanReview": true
+    },
+    {
+      "flag": "flag.proposed.echo_records_compiled",
+      "canonFit": "new-canon",
+      "conflicts": [],
+      "notesZh": "整理余响记录与既有故事相符；该终章旗标为新增设定。",
+      "notesEn": "Compiling echoes fits existing fiction; the finale flag is new.",
+      "requiresHumanReview": true
+    }
+  ],
+  "usage": {
+    "calls": 1,
+    "cachedTokens": 0,
+    "statuses": [
+      200
+    ]
+  },
+  "graphCheckpoints": [
+    {
+      "node": "load",
+      "ms": 30,
+      "ok": true
+    },
+    {
+      "node": "retrieve",
+      "ms": 272,
+      "ok": true
+    },
+    {
+      "node": "judge",
+      "ms": 11347,
+      "ok": true
+    },
+    {
+      "node": "writeArtifacts",
+      "ms": 25,
+      "ok": true
+    }
+  ],
+  "errors": [],
+  "humanGate": "人工审核通过前，任何提案一律不进 quests.json / dialogue.json / atlas-texts.ts"
+}
