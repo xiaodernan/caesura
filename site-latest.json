@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "acd9e6200d90954eeca6564f7347ae40942256f9",
+  "head": "64cf326bb0600be02a4b71d013920a7591240b18",
   "branch": "master",
-  "subject": "fix(i18n): zh-TW 双轨收尾 —— 回切简体无损还原 + 账本登记 KI-615",
-  "date": "2026-11-16T20:17:07+08:00",
+  "subject": "site-latest: acd9e62 (KI-615 账本/工面同步 + converter 自定位)",
+  "date": "2026-11-16T20:19:30+08:00",
   "kv": {
     "KI.rows": 533,
     "KI.Implemented": 356,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/acd9e6200d90954eeca6564f7347ae40942256f9",
+    "url": "https://github.com/xiaodernan/caesura/commit/64cf326bb0600be02a4b71d013920a7591240b18",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
