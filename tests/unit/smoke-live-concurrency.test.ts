@@ -27,7 +27,7 @@ describe('scripts/smoke-live.mjs · 并发压测档（KI-595）', () => {
 
   it('22 个端点完整保留、marker 判据原样', () => {
     const endpoints = (SM.match(/\{ name: '/g) ?? []).length
-    expect(endpoints).toBe(22)
+    expect(endpoints).toBe(23)
     for (const marker of ["name: 'admin'", "name: 'story-12'", "name: 'story-13'", "name: 'story-14'", "/caesura/story/dark-tide/", "/caesura/story/twelfth-listener/", "/caesura/story/bell-picker/"]) {
       expect(SM).toContain(marker)
     }

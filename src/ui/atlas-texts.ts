@@ -1,6 +1,6 @@
 /**
- * 游记 · 十三篇全文（2026-11-16 落 · KI-579/590/609）。
- * 这十三篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 十四篇全文（2026-11-16 落 · KI-579/590/609/613）。
+ * 这十四篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -938,5 +938,67 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="no-indent" style="text-align:center; text-indent:0; color:var(--gold); font-size:1.1rem; letter-spacing:.05em;">“For the one who rings the fourth.”</p>
     <p class="coda">The keeper did not ask who had left it. She set the sack under the pan, beside the ledger.<br>Some gifts, once accepted, become someone else’s to keep.</p>
     <p class="coda">Windbell Coast still has no bell.<br>But everything that entered that sack is kept —<br>every silence waiting for one more stroke has found, at last, someone willing to hold them all on file.</p>`,
+  },
+
+  {
+    no: 14,
+    zhTitle: "灯匠",
+    enTitle: "The Lampwright",
+    zh: `<p>风钟海岸最东端，有一间灯坊。这间灯坊从不关门——不是因为不关，而是因为没有什么可关的。阿瓷收下一批旧铜：钟的口、钟的舌、钟的碎片——八区的废品商贩廉价卖来。</p>
+    <p>她不是钟匠，不是铸师，她只是一个会把破铜熔进灯身的灯匠。但她不在乎敲打。她在乎的是：每一块铜都带着一圈完整的老痕迹。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>那个冬天，她每天关门后把铜片一片片排开。她发现它们并不都相同——有一块尤其重，几乎是其他的两倍；有一块很轻，几乎拍一下就响。她把它们排成一排，像是在替它们按音阶排队。</p>
+    <p>有一天夜里，一个行商敲开了灯坊的门——他不是来买灯的，是来卖铜的。他说这批旧铜来自八个区域：沉唱堂、叩钟镇、破拍营地——每一块都来自被碎掉的钟。每一块都被海蚀蚀。阿瓷点头，但她没有问来历——她不在乎来历。她在乎的是：这些铜自己记住了什么。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>议会的书记员每年来收税。他看到灯坊门口排着的铜片，皱眉说：这些铜都在发霉、会腐蚀、它们没用。阿瓷没有反驳。她只是说：这些铜不是用来用的。它们的的确确存在过。</p>
+    <p>书记员走后，阿瓷把那片最重的铜重新拿起来。那一刻铜片发出了很低的共鸣——像有人把他指尖深深按进烛芯，但还没按下去。她屏住了呼吸。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>那一冬之后的春天，一个老妇人来到灯坊。老妇人什么也没说，她只是把一只旧腕表递给阿瓷——那是一只从没走过的表。阿瓷打开它，里面的发条已完全锈死。她还给老妇人：这表再也走不动了。老妇人说：「我知道。」然后转身走了。</p>
+    <p>阿瓷那晚坐在灯坊里很久。她想到她手边排着的铜片——它们不也是一样的东西吗：从没响过，却从不真正沉默。她拿起那块最重的铜，用布擦了很久。铜片慢慢亮了起来——像有人把这块铜重新想起来了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>那年夏末，海边卷来了一场风暴。渔村里有个孩子被卷入潮间带——灯坊的灯火忽然自己低了一扇。阿瓷没有犹豫。她从架子上取下那片最重的铜，用布裹住，冲了出去。</p>
+    <p>风暴到达岬角时，孩子还站在水里，腿脚冰凉。阿瓷把铜片举到孩子耳边，铜片自己震了一下——很轻，但足够让孩子闭上眼睛、抬头看天。然后铜片裂成了两半。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">孩子被找到了。阿瓷回灯坊，把铜片的两半放在架子上。那晚，整间灯坊都安静了。</p>
+    <p class="coda">她再也没有用那片铜做灯。她只是把那两半放在架子上，每天擦它一次。灯坊还是一样亮，铜片还是一样静。</p>
+    <p class="coda">被风蚀过的铜——<br>被打碎的钟仍在记忆里敲响；<br>被分两半的沉默依然等待一个整体的归来。</p>`,
+    en: `<p>At the very eastern end of Windbell Coast, there is a lampforge. It never closes the door — not because it does not want to, but because there is nothing to close it for. A-Zi accepted a crate of old copper: bell-rims, bell-clappers, bell-shards — a scrap dealer bought them cheap from all eight reaches.</p>
+    <p>She is not a bell-smith, not a foundry-keeper. She is a lampwright who happens to be able to melt broken copper into lamp bodies. She does not care about striking. She cares about this: every piece of copper came with a full circle of old marks around it.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>That winter, she lined the pieces up every night after closing. She found they were not all the same — one piece was especially heavy, almost twice the weight of the others; one was almost light enough to bounce with a tap. She lined them up as though she were filing them by pitch.</p>
+    <p>One night, a traveling merchant knocked at the lampforge. He did not come to buy lamps — he came to sell more copper. He said this batch came from eight reaches: Drowned Choir, Fellcarillon, Brokenbar Camp — every piece came from a broken bell. Every piece had been etched by the sea. A-Zi nodded, but she did not ask where they came from. She did not care about provenance. She cared about what the copper itself remembered.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The council clerk comes every year to collect taxes. He saw the copper pieces lined up at the door and frowned: these are all oxidizing, they will corrode, they are useless. A-Zi did not argue. She only said: these are not meant to be used. They were really here.</p>
+    <p>After the clerk left, A-Zi picked up the heaviest piece again. In that moment, the copper gave a very low resonance — as though someone had pressed a finger deep against a wick but had not yet pressed down. She held her breath.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The following spring, an old woman came to the lampforge. She said nothing; she only handed A-Zi a broken old watch — a watch that had never run. A-Zi opened it: the mainspring was rusted completely dead. She gave it back. The old woman said: “I know.” Then she turned and left.</p>
+    <p>That night, A-Zi sat in the lampforge for a long time. She thought of the copper pieces lined up on her workbench — weren't they the same thing: never ringing, yet never truly silent? She picked up the heaviest piece and wiped it with a cloth for a very long time. The copper slowly began to shine — as though someone had just remembered this piece.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>At the end of that summer, a storm swept in from the sea. A child from the fishing village was swept into the tide-flats — and the lamp suddenly dimmed by one pane. A-Zi did not hesitate. She took the heaviest piece from the shelf, wrapped it in cloth, and ran out.</p>
+    <p>When the storm reached the headland, the child was still standing in the water, legs numb with cold. A-Zi held the copper piece near the child's ear; the copper chimed on its own — very softly, but enough to make the child close their eyes and look up at the sky. Then the copper piece cracked in two.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">The child was found. A-Zi returned to the lampforge and placed the two halves on the shelf. That night, the whole lampforge went quiet.</p>
+    <p class="coda">She never used the piece to make a lamp. She only kept the two halves on the shelf, wiping them once a day. The lampforge stayed as bright as ever, and the copper halves stayed as quiet as ever.</p>
+    <p class="coda">The wind will never forget —<br>the bells broken still ring inside the memory;<br>the silence split in two still waits for one whole return.</p>`,
   },
 ]

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>灯匠 / The Lampwright · CAESURA 短篇 之十四</title>
+<meta name="description" content="《止音纪元》《余响集》第十四篇 · 灯匠——风钟海岸最东端的灯坊，阿瓷把八区旧铜熔进灯身，铜自己替她找到了孩子。双语对照 · 零 LLM · 零网络。 / The fourteenth piece of The Aftermath — the lampwright at the eastern end of Windbell Coast, who melted the eight reaches’ old copper into lamp bodies — and the copper itself led her to a child. Bilingual, offline, zero LLM.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🔔</text></svg>">
+<style>
+  :root {
+    --gold: #f3ce8f;
+    --gold-soft: rgba(243,206,143,.32);
+    --ink: #f3ede0;
+    --ink-dim: rgba(243,237,224,.62);
+    --panel: rgba(28,20,12,.7);
+    --serif: "Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#070608; color:var(--ink); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; }
+  .bg { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .bg.radial {
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(243,206,143,.12), transparent 60%),
+      radial-gradient(900px 700px at 50% 118%, rgba(120,80,40,.18), transparent 62%),
+      radial-gradient(650px 420px at 88% 104%, rgba(203,177,255,.07), transparent 60%),
+      #070608;
+  }
+  .bg.noise { position:fixed; inset:0; z-index:-1; opacity:.05; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .wrap { max-width:860px; margin:0 auto; padding:26px 26px 90px; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .brand { font-size:.8rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; opacity:.9; }
+  .brand a { color:inherit; text-decoration:none; border-bottom:1px dotted rgba(243,206,143,.5); }
+  .brand a:hover { color:#fff2d0; }
+  .toplinks { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toplinks a { font-size:.72rem; color:var(--ink-dim); text-decoration:none; border:1px solid rgba(243,237,224,.14); padding:6px 12px; border-radius:999px; transition:all .22s ease; }
+  .toplinks a:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .lang-row button { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(243,206,143,.12); border:1px solid var(--gold-soft); padding:6px 15px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; }
+  .lang-row button:hover { background:rgba(243,206,143,.22); box-shadow:0 0 16px rgba(243,206,143,.25); }
+
+  [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="en"] .zh-copy { display:none !important; }
+
+  header.hero { text-align:center; padding:52px 14px 30px; }
+  .kicker { font-size:.72rem; letter-spacing:.42em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:20px; }
+  .kicker b { color:var(--gold); font-weight:600; }
+  h1 { font-size:clamp(2.2rem, 8vw, 3.6rem); font-weight:600; letter-spacing:.16em;
+       background:linear-gradient(180deg,#fffbe6 0%, #f3ce8f 28%, #c9a258 58%, #7d6436 100%);
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+       text-shadow:0 0 90px rgba(243,206,143,.3); }
+  .subtitle { margin-top:14px; font-size:.8rem; color:var(--ink-dim); letter-spacing:.3em; text-transform:uppercase; }
+  .rule { width:170px; height:1px; margin:24px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .meta { margin-top:16px; font-size:.7rem; color:rgba(243,237,224,.45); letter-spacing:.18em; text-transform:uppercase; }
+  .meta a { color:var(--gold); text-decoration:none; }
+
+  article { background:var(--panel); border:1px solid rgba(243,237,224,.1); border-radius:18px; padding:38px 40px 34px; position:relative; }
+  article::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--gold), transparent); opacity:.7; }
+  article p { font-size:1.04rem; line-height:2.02; letter-spacing:.02em; color:rgba(243,237,224,.92); margin-bottom:1.5em; text-indent:2em; overflow-wrap:break-word; }
+  article p.no-indent { text-indent:0; }
+  article p em { color:#ffe9b3; font-style:normal; }
+  article p strong { color:var(--gold); font-weight:600; }
+  .beat { width:100%; text-align:center; margin:.4em 0 1.4em; letter-spacing:.5em; color:rgba(243,206,143,.6); font-size:.8rem; }
+  .coda { text-align:center; font-style:italic; color:rgba(243,237,224,.78); letter-spacing:.06em; margin-top:.6em; }
+
+  .note { margin:26px auto 0; max-width:760px; text-align:center; font-size:.74rem; color:rgba(243,237,224,.42); line-height:1.9; letter-spacing:.04em; }
+  .note a { color:var(--gold); text-decoration:none; border-bottom:1px dotted rgba(243,206,143,.5); }
+
+  footer { margin-top:56px; border-top:1px solid rgba(243,237,224,.09); padding-top:22px; display:flex; flex-wrap:wrap; gap:10px 26px; justify-content:space-between; font-size:.7rem; color:rgba(243,237,224,.4); letter-spacing:.06em; }
+  footer a { color:var(--gold); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @media (max-width:640px) { .wrap { padding:20px 12px 70px; } article { padding:26px 20px 24px; } article p { font-size:.98rem; text-indent:2em; } }
+</style>
+</head>
+<body>
+<div class="bg radial" aria-hidden="true"></div>
+<div class="bg noise" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><a href="/caesura/">CAESURA</a> · 《止音纪元》</div>
+    <div class="toplinks">
+      <a href="/caesura/story/"><span class="zh-copy">《盐》</span><span class="en-copy">“Salt”</span></a>
+      <a href="/caesura/story/first-bell/"><span class="zh-copy">《第一钟》</span><span class="en-copy">“The First Bell”</span></a>
+      <a href="/caesura/story/dark-tide/"><span class="zh-copy">《暗潮》</span><span class="en-copy">“The Dark Tide”</span></a>
+      <a href="/caesura/story/twelfth-listener/"><span class="zh-copy">《第十二个听者》</span><span class="en-copy">“The Twelfth Listener”</span></a>
+      <a href="/caesura/story/bell-picker/"><span class="zh-copy">《拾钟人》</span><span class="en-copy">“The Bell-Picker”</span></a>
+      <a href="/caesura/story/anthology/"><span class="zh-copy">《余响集》</span><span class="en-copy">The Aftermath</span></a>
+      <a href="/caesura/codex/"><span class="zh-copy">世界谱</span><span class="en-copy">Codex</span></a>
+      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button></span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <p class="kicker zh-copy">短篇 · <b>余响之十四</b> · 之十四</p>
+    <p class="kicker en-copy">Short story · <b>The Aftermath</b> · No. 14</p>
+    <h1 class="zh-copy">灯匠</h1>
+    <h1 class="en-copy">The Lampwright</h1>
+    <p class="subtitle zh-copy">风钟海岸最东端的灯坊</p>
+    <p class="subtitle en-copy">The lampforge at the eastern end of Windbell Coast</p>
+    <div class="rule"></div>
+    <p class="meta zh-copy">约 7 分钟 · 与 <a href="/caesura/codex/">世界谱</a> 同源世界观 · 零 LLM 撰写</p>
+    <p class="meta en-copy">about 7 minutes · same world as the <a href="/caesura/codex/">codex</a> · written without LLM assistance</p>
+  </header>
+
+  <article>
+    <div class="zh-copy">
+<p>风钟海岸最东端，有一间灯坊。这间灯坊从不关门——不是因为不关，而是因为没有什么可关的。阿瓷收下一批旧铜：钟的口、钟的舌、钟的碎片——八区的废品商贩廉价卖来。</p>
+      <p>她不是钟匠，不是铸师，她只是一个会把破铜熔进灯身的灯匠。但她不在乎敲打。她在乎的是：每一块铜都带着一圈完整的老痕迹。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>那个冬天，她每天关门后把铜片一片片排开。她发现它们并不都相同——有一块尤其重，几乎是其他的两倍；有一块很轻，几乎拍一下就响。她把它们排成一排，像是在替它们按音阶排队。</p>
+      <p>有一天夜里，一个行商敲开了灯坊的门——他不是来买灯的，是来卖铜的。他说这批旧铜来自八个区域：沉唱堂、叩钟镇、破拍营地——每一块都来自被碎掉的钟。每一块都被海蚀蚀。阿瓷点头，但她没有问来历——她不在乎来历。她在乎的是：这些铜自己记住了什么。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>议会的书记员每年来收税。他看到灯坊门口排着的铜片，皱眉说：这些铜都在发霉、会腐蚀、它们没用。阿瓷没有反驳。她只是说：这些铜不是用来用的。它们的的确确存在过。</p>
+      <p>书记员走后，阿瓷把那片最重的铜重新拿起来。那一刻铜片发出了很低的共鸣——像有人把他指尖深深按进烛芯，但还没按下去。她屏住了呼吸。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>那一冬之后的春天，一个老妇人来到灯坊。老妇人什么也没说，她只是把一只旧腕表递给阿瓷——那是一只从没走过的表。阿瓷打开它，里面的发条已完全锈死。她还给老妇人：这表再也走不动了。老妇人说：「我知道。」然后转身走了。</p>
+      <p>阿瓷那晚坐在灯坊里很久。她想到她手边排着的铜片——它们不也是一样的东西吗：从没响过，却从不真正沉默。她拿起那块最重的铜，用布擦了很久。铜片慢慢亮了起来——像有人把这块铜重新想起来了。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>那年夏末，海边卷来了一场风暴。渔村里有个孩子被卷入潮间带——灯坊的灯火忽然自己低了一扇。阿瓷没有犹豫。她从架子上取下那片最重的铜，用布裹住，冲了出去。</p>
+      <p>风暴到达岬角时，孩子还站在水里，腿脚冰凉。阿瓷把铜片举到孩子耳边，铜片自己震了一下——很轻，但足够让孩子闭上眼睛、抬头看天。然后铜片裂成了两半。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">孩子被找到了。阿瓷回灯坊，把铜片的两半放在架子上。那晚，整间灯坊都安静了。</p>
+      <p class="coda">她再也没有用那片铜做灯。她只是把那两半放在架子上，每天擦它一次。灯坊还是一样亮，铜片还是一样静。</p>
+      <p class="coda">被风蚀过的铜——<br>被打碎的钟仍在记忆里敲响；<br>被分两半的沉默依然等待一个整体的归来。</p>
+    </div>
+
+    <div class="en-copy">
+<p>At the very eastern end of Windbell Coast, there is a lampforge. It never closes the door — not because it does not want to, but because there is nothing to close it for. A-Zi accepted a crate of old copper: bell-rims, bell-clappers, bell-shards — a scrap dealer bought them cheap from all eight reaches.</p>
+      <p>She is not a bell-smith, not a foundry-keeper. She is a lampwright who happens to be able to melt broken copper into lamp bodies. She does not care about striking. She cares about this: every piece of copper came with a full circle of old marks around it.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>That winter, she lined the pieces up every night after closing. She found they were not all the same — one piece was especially heavy, almost twice the weight of the others; one was almost light enough to bounce with a tap. She lined them up as though she were filing them by pitch.</p>
+      <p>One night, a traveling merchant knocked at the lampforge. He did not come to buy lamps — he came to sell more copper. He said this batch came from eight reaches: Drowned Choir, Fellcarillon, Brokenbar Camp — every piece came from a broken bell. Every piece had been etched by the sea. A-Zi nodded, but she did not ask where they came from. She did not care about provenance. She cared about what the copper itself remembered.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>The council clerk comes every year to collect taxes. He saw the copper pieces lined up at the door and frowned: these are all oxidizing, they will corrode, they are useless. A-Zi did not argue. She only said: these are not meant to be used. They were really here.</p>
+      <p>After the clerk left, A-Zi picked up the heaviest piece again. In that moment, the copper gave a very low resonance — as though someone had pressed a finger deep against a wick but had not yet pressed down. She held her breath.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>The following spring, an old woman came to the lampforge. She said nothing; she only handed A-Zi a broken old watch — a watch that had never run. A-Zi opened it: the mainspring was rusted completely dead. She gave it back. The old woman said: “I know.” Then she turned and left.</p>
+      <p>That night, A-Zi sat in the lampforge for a long time. She thought of the copper pieces lined up on her workbench — weren't they the same thing: never ringing, yet never truly silent? She picked up the heaviest piece and wiped it with a cloth for a very long time. The copper slowly began to shine — as though someone had just remembered this piece.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>At the end of that summer, a storm swept in from the sea. A child from the fishing village was swept into the tide-flats — and the lamp suddenly dimmed by one pane. A-Zi did not hesitate. She took the heaviest piece from the shelf, wrapped it in cloth, and ran out.</p>
+      <p>When the storm reached the headland, the child was still standing in the water, legs numb with cold. A-Zi held the copper piece near the child's ear; the copper chimed on its own — very softly, but enough to make the child close their eyes and look up at the sky. Then the copper piece cracked in two.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">The child was found. A-Zi returned to the lampforge and placed the two halves on the shelf. That night, the whole lampforge went quiet.</p>
+      <p class="coda">She never used the piece to make a lamp. She only kept the two halves on the shelf, wiping them once a day. The lampforge stayed as bright as ever, and the copper halves stayed as quiet as ever.</p>
+      <p class="coda">The wind will never forget —<br>the bells broken still ring inside the memory;<br>the silence split in two still waits for one whole return.</p>
+    </div>
+  </article>
+
+  <div class="note">
+    <span class="zh-copy">《灯匠》是《余响集》第十四篇——风钟海岸最东端的灯坊，灯匠阿瓷把来自八个钟碎片的铜熔进灯身。<a href="/caesura/story/anthology/">全集：《余响集》</a></span>
+    <span class="en-copy">“The Lampwright” is the fourteenth piece of “The Aftermath” — the lampwright at the eastern end of Windbell Coast, who melted bell-shards from the eight reaches into lamp bodies. <a href="/caesura/story/anthology/">All stories: “The Aftermath”</a></span>
+  </div>
+
+  <footer>
+    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/">游戏</a> · <a href="/caesura/story/">《盐》· 篇一</a> · <a href="/caesura/story/empty-bar/">篇三 · 空拍子</a> · <a href="/caesura/story/stonethroat/">篇九 · 石喉</a> · <a href="/caesura/story/first-bell/">篇十 · 第一钟</a> · <a href="/caesura/story/dark-tide/">篇十一 · 暗潮</a> · <a href="/caesura/story/twelfth-listener/">篇十二 · 后记</a> · <a href="/caesura/story/bell-picker/">篇十三 · 拾钟人</a> · <a href="/caesura/story/lampwright-bell/">篇十四 · 灯匠</a> · <a href="/caesura/story/anthology/">全集 · 余响集</a> · <a href="/caesura/codex/">世界谱</a></span>
+    <span class="en-copy">© CAESURA · <a href="/caesura/">Game</a> · <a href="/caesura/story/">“Salt” · No. 1</a> · <a href="/caesura/story/empty-bar/">No. 3 · The Empty Bar</a> · <a href="/caesura/story/stonethroat/">No. 9 · The Stone-Throat</a> · <a href="/caesura/story/first-bell/">No. 10 · The First Bell</a> · <a href="/caesura/story/dark-tide/">No. 11 · The Dark Tide</a> · <a href="/caesura/story/twelfth-listener/">No. 12 · Epilogue</a> · <a href="/caesura/story/bell-picker/">No. 13 · The Bell-Picker</a> · <a href="/caesura/story/lampwright-bell/">No. 14 · The Lampwright</a> · <a href="/caesura/story/anthology/">All stories · The Aftermath</a> · <a href="/caesura/codex/">World Codex</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('langToggle');
+  var saved = 'zh';
+  try { saved = localStorage.getItem('caesura-lang') || 'zh'; } catch (e) { /* noop */ }
+  function apply(lang) {
+    root.setAttribute('data-lang', lang);
+    root.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en');
+    try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+  }
+  if (btn) btn.addEventListener('click', function () {
+    apply(root.getAttribute('data-lang') === 'en' ? 'zh' : 'en');
+  });
+  apply(saved === 'en' ? 'en' : 'zh');
+})();
+</script>
+<script defer src="../../tracker.js"></script>
+</body>
+</html>
