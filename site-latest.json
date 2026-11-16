@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "fce6f8a7f4839b77233f9b7aa739636e2c215520",
+  "head": "bb2e7762defdc438b9185a18ec0b31dc991cf213",
   "branch": "master",
-  "subject": "ops(spring,admin,pressure): lore 73 段 · e2e 快照对账 · Pages 实打压测 · admin 先验换真实引用（KI-610/611）",
-  "date": "2026-11-16T16:44:51+08:00",
+  "subject": "docs(spring-family): KI-612 账本——本机错位端口整族 ALL GREEN · PHASE-STATUS 重嵌 KI.rows 530 / Implemented 353",
+  "date": "2026-11-16T17:01:15+08:00",
   "kv": {
-    "KI.rows": 529,
-    "KI.Implemented": 352,
+    "KI.rows": 530,
+    "KI.Implemented": 353,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/fce6f8a7f4839b77233f9b7aa739636e2c215520",
+    "url": "https://github.com/xiaodernan/caesura/commit/bb2e7762defdc438b9185a18ec0b31dc991cf213",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
