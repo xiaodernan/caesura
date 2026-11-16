@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "46a2f1c32672cbf85a2895c7e4a3ba6efec02702",
+  "head": "841743b1e29f5f2f0f73c34cc209c682528e70b9",
   "branch": "master",
-  "subject": "site-latest: cda8c53 (post-rebase reconcile)",
-  "date": "2026-11-17T01:24:19+08:00",
+  "subject": "test(i18n): zh-TW 字典表字节级双拷贝门钉（public + src/i18n）",
+  "date": "2026-11-17T01:35:26+08:00",
   "kv": {
     "KI.rows": 537,
     "KI.Implemented": 360,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/46a2f1c32672cbf85a2895c7e4a3ba6efec02702",
+    "url": "https://github.com/xiaodernan/caesura/commit/841743b1e29f5f2f0f73c34cc209c682528e70b9",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
