@@ -2,17 +2,17 @@ import { describe, expect, it } from 'vitest'
 import { STORY_CHAPTERS } from '@/ui/atlas-texts'
 
 /**
- * src/ui/atlas-texts.ts — 十四篇双语全文内嵌模块的门钉（2026-11-15 KI-580）。
- * 这些腿钉住的是「游记」一定能把十一篇短篇读出来的基本盘：
- *   ① 十四篇齐全 · 编号 1..14；
+ * src/ui/atlas-texts.ts — 十五篇双语全文内嵌模块的门钉（2026-11-16 KI-616 扩）。
+ * 这些腿钉住的是「游记」一定能把十五篇短篇读出来的基本盘：
+ *   ① 十五篇齐全 · 编号 1..15；
  *   ② 中文篇与英文篇都必须有真实正文（百句级不是占位符）；
  *   ③ 每篇至少有一个被游记渲染依赖的标记（p / beat / coda）；
  *   ④ 名称与姜读相对应（中文标题·英文标题与故事对齐，防机械错位）。
  */
 
-describe('Atlas 十四篇全文（atlas-texts.ts）', () => {
-  it('恰好十四篇 · 编号 1..14 严格递增', () => {
-    expect(STORY_CHAPTERS.length).toBe(14)
+describe('Atlas 十五篇全文（atlas-texts.ts）', () => {
+  it('恰好十五篇 · 编号 1..15 严格递增', () => {
+    expect(STORY_CHAPTERS.length).toBe(15)
     STORY_CHAPTERS.forEach((c, i) => expect(c.no).toBe(i + 1))
   })
 
@@ -30,17 +30,17 @@ describe('Atlas 十四篇全文（atlas-texts.ts）', () => {
     }
   })
 
-  it('中文标题严格对应（十四篇顺序）', () => {
+  it('中文标题严格对应（十五篇顺序）', () => {
     expect(STORY_CHAPTERS.map((c) => c.zhTitle)).toEqual([
       '盐', '山下无名碑', '空拍子', '账本', '回声庭园',
-      '雨审判', '霜锤', '千门', '石喉', '第一钟', '暗潮', '后记 · 第十二个听者', '拾钟人', '灯匠',
+      '雨审判', '霜锤', '千门', '石喉', '第一钟', '暗潮', '后记 · 第十二个听者', '拾钟人', '灯匠', '低音之城',
     ])
   })
 
-  it('英文标题严格对应（十四篇顺序）', () => {
+  it('英文标题严格对应（十五篇顺序）', () => {
     expect(STORY_CHAPTERS.map((c) => c.enTitle)).toEqual([
       'Salt', 'The Nameless Stone', 'The Empty Bar', 'The Ledger', 'The Garden of Return',
-      'The Rain Tribunal', 'The Frostbell', 'The Thousand Doors', 'The Stone-Throat', 'The First Bell', 'The Dark Tide', 'Epilogue · The Twelfth Listener', 'The Bell-Picker', 'The Lampwright',
+      'The Rain Tribunal', 'The Frostbell', 'The Thousand Doors', 'The Stone-Throat', 'The First Bell', 'The Dark Tide', 'Epilogue · The Twelfth Listener', 'The Bell-Picker', 'The Lampwright', 'The City of Low Tones',
     ])
   })
 

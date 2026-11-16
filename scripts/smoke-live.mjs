@@ -57,6 +57,7 @@ const ENDPOINTS = [
   { name: 'story-13', url: 'https://xiaodernan.github.io/caesura/story/twelfth-listener/', marker: '第十二个听者' },
   { name: 'story-14', url: 'https://xiaodernan.github.io/caesura/story/bell-picker/', marker: '拾钟人' },
   { name: 'story-15', url: 'https://xiaodernan.github.io/caesura/story/lampwright-bell/', marker: '灯匠' },
+  { name: 'story-16', url: 'https://xiaodernan.github.io/caesura/story/lowtone-city/', marker: '低音之城' },
 ]
 
 const asJson = argv.includes('--json')
@@ -65,7 +66,7 @@ const concEq = argv.find((a) => a.startsWith('--concurrency='))
 const concRaw = concEq ? Number(concEq.slice('--concurrency='.length)) : (concIdx >= 0 ? Number(argv[concIdx + 1]) : 4)
 const concurrency = Math.max(1, Math.min(16, Number.isFinite(concRaw) ? concRaw : 4))
 
-// 并发压测：同一批 23 个端点以 N 路并发发出（Promise pool），逐个验证 marker、
+// 并发压测：同一批 24 个端点以 N 路并发发出（Promise pool），逐个验证 marker、
 // 统计总时长与 p50/p95/p99。不新增权限、不改 marker、不跨网络滥用——仅本机连 Pages。
 const results = new Array(ENDPOINTS.length)
 let cursor = 0

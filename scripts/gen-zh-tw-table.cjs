@@ -16,6 +16,8 @@ try {
     'console/index.html',
     'admin/index.html',
     'src/i18n/Lang.ts',
+    'src/ui/atlas-texts.ts',
+    'src/ui/Stakerite.ts',
     'story/index.html',
     'story/anthology/index.html',
     'story/frostbell/index.html',

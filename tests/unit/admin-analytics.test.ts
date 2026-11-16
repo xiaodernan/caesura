@@ -223,7 +223,7 @@ describe('admin · 静态页与部署接线（防悄悄脱落）', () => {
   it('pages.yml 把 admin 拷进 dist', () => {
     expect(read('.github/workflows/pages.yml')).toContain('cp -R admin/. dist/admin/')
   })
-  it('smoke-live 第 19 个入口：admin（23 端点）+ 篇十一/篇十二/篇十三/篇十四故事页', () => {
+  it('smoke-live 第 19 个入口：admin（24 端点）+ 篇十一/篇十二/篇十三/篇十四/篇十五故事页', () => {
     const sm = read('scripts/smoke-live.mjs')
     expect(sm).toContain("name: 'admin'")
     expect(sm).toContain('/caesura/admin/')
@@ -236,8 +236,10 @@ describe('admin · 静态页与部署接线（防悄悄脱落）', () => {
     expect(sm).toContain('/caesura/story/bell-picker/')
     expect(sm).toContain("name: 'story-15'")
     expect(sm).toContain('/caesura/story/lampwright-bell/')
+    expect(sm).toContain("name: 'story-16'")
+    expect(sm).toContain('/caesura/story/lowtone-city/')
     const entries = (sm.match(/\{ name: '/g) ?? []).length
-    expect(entries).toBe(23)
+    expect(entries).toBe(24)
   })
   it('public/tracker.js 存在且为本机埋点', () => {
     const t = read('public/tracker.js')

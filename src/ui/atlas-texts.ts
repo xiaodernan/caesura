@@ -1,6 +1,6 @@
 /**
- * 游记 · 十四篇全文（2026-11-16 落 · KI-579/590/609/613）。
- * 这十四篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 十五篇全文（2026-11-16 落 · KI-616）。
+ * 这十五篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -1000,5 +1000,71 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">The child was found. A-Zi returned to the lampforge and placed the two halves on the shelf. That night, the whole lampforge went quiet.</p>
     <p class="coda">She never used the piece to make a lamp. She only kept the two halves on the shelf, wiping them once a day. The lampforge stayed as bright as ever, and the copper halves stayed as quiet as ever.</p>
     <p class="coda">The wind will never forget —<br>the bells broken still ring inside the memory;<br>the silence split in two still waits for one whole return.</p>`,
+  },
+
+  {
+    no: 15,
+    zhTitle: "低音之城",
+    enTitle: "The City of Low Tones",
+    zh: `<p>低音之城没有货币，因为声音本身就是账。一下钟响，城就替敲钟的人记一笔——钟舌欠钟壳一声，风欠珊瑚一声，连山脊上的石头都欠下面那些被压弯的房梁一声。</p>
+    <p>城里所有的债都由石喉母亲来记。石喉是整个城，也是她的喉咙。她住进石喉的那天起就再没有一句话是闲的——她说的每一句，都是一行账。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>账本上从不写收据，因为一切债都在回响里自动录入。一只狐狸从山脊跑下来，离开废墟的时候断了一条左腿——账本自动多出一行：断腿欠山脊一跳。一只燕子在屋顶放巢，搬走的时候泥浆掉下来——泥浆欠房梁一片灰。</p>
+    <p>有人嘲笑她记得太细：一片灰、一声跳、一团风。母亲不说话，她只是写。石喉越来越深，账本越来越厚。城里管这叫「全城的记账安眠」。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>那年夏天，海岸来了一个小女孩。她说她欠了海一记 E♭。不是她吹的，不是她唱的——是她从海边带回来一段没有被谁唱完的调，一路藏在路上，怕它跑掉，结果走进城时那段调就跑了。</p>
+    <p>海发了一张传票给母亲：一个失落的芦管调，欠账还讫之前，小女孩不许离开海岸。</p>
+    <p>城里的商人围上来指点：那就还一记呗，就一记 E♭。小女孩摇头。她不会唱那个音。那音不是她的——她只是路过时听进去的。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>母亲在城门口坐了很久。她想了很多种办法：可以让海自己重播、可以让城里每个人帮她唱一遍、可以让商人们去找芦管。都不行。那记 E♭从未在任何人的嗓子里。它只在一个路过的海面上短暂存在，然后散开。</p>
+    <p>母亲第一次见到了一笔她付不起的账。不是钱付不起，是她的账本从根本上不认这种东西——它不是别人给你的，而是你恰好听见了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>那天晚上，母亲没有写字。她坐下来，对着小女孩听了一整夜——不是听 E♭，是听小女孩怎么讲那段调。她讲得很慢，断了几次，重新讲了三遍。</p>
+    <p>第二天早上，母亲把账本合上，走到城门，对海使者说：这笔账记下了。不是因为还上了，是因为有人愿意听一个她还不起的账。</p>
+    <p>海使者愣了很久，然后说：「那就抵。」低音之城从此有一个新字——<em>听账。</em></p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">后来母亲在账本最末页开了一个新栏：不记欠多少，只记谁来坐一坐、听多久。</p>
+    <p class="coda">账本第一次没有那么厚。</p>
+    <p class="coda">如果你有一天走进低音之城，你会看到石喉母亲合上账本，朝你点一下头。<br>她不问你为什么来。<br>她知道你来，是因为你也有一笔账，欠给某样你记不起却一直听见的东西。</p>`,
+    en: `<p>The Bass Citadel has no currency, because sound itself is the ledger. One toll of the bell, and the city chalks up a debt: the clapper owes the shell one note, the wind owes the coral one sigh, the ridge of stone above owes the bent roof-beam below it one murmur.</p>
+    <p>Every debt in the city is recorded by the Stone-Throat Matriarch. The Stone-Throat is the whole city, and it is her throat. From the day she moved in, no word out of her has ever been idle — every sentence she says is one line of the ledger.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>No receipt is ever written, because every debt registers itself in the echo. A fox comes off the ridge and leaves the ruin with a torn hind leg — the ledger auto-files: a torn leg owes the ridge one leap. A swallow builds a nest on a roofbeam and leaves the mud behind — the mud owes the roofbeam one grey fleck.</p>
+    <p>Some mock her for the detail: one fleck, one leap, one wisp of wind. The Matriarch does not speak back. She only writes. The Stone-Throat deepens. The ledger thickens. The city calls this “the whole city counting its sleep.”</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>That summer, a little girl came from the coast. She said she owed the sea one E♭. Not that she whistled it. Not that she sang it — she had picked up a tune no one ever finished, carried it home, and it slipped away as she entered the city.</p>
+    <p>The sea sent the Matriarch a summons: one lost reed-pipe melody, pending payment — the girl was not allowed to leave the coast.</p>
+    <p>The merchants ganged up to advise her: just pay it, one E♭. The girl shook her head. She could not sing that note. The note was not hers — she had only passed by and heard it.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The Matriarch sat at the city gate for a long time. She thought of every possible solution: the sea could replay it, every person in the city could try to sing it, merchants could fetch a reed-pipe. None would do. The E♭ had never been in any throat. It had existed only briefly on a passing sea, then dispersed.</p>
+    <p>For the first time, the Matriarch faced an invoice she could not pay. Not that she could not afford the coin — her ledger, in its very form, did not recognize this item. It had not been handed to her. She had simply heard it.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>That night, the Matriarch stopped writing. She sat and listened to the girl for one whole night — not to the E♭, but to how the girl told the melody. She told it slowly, stumbling several times, telling it again three times.</p>
+    <p>The next morning, the Matriarch closed the ledger, walked to the city gate, and told the sea's messenger: this debt is recorded. Not paid — just recorded, because someone was willing to hear a debt they could not describe.</p>
+    <p>The messenger stood there for a long time. Then he said: “Then it clears.”<br>The Bass Citadel had a new entry — <em>the debt of listening.</em></p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">Later, the Matriarch opened a new column at the very back of the ledger: it does not count what is owed, only who comes to sit, and how long they listen.</p>
+    <p class="coda">The ledger is not quite as thick anymore.</p>
+    <p class="coda">If you ever walk into the Bass Citadel, you will see the Matriarch close her ledger and nod to you once.<br>She will not ask why you have come.<br>She already knows — it is because you, too, owe something to something you cannot remember, but have always heard.</p>`,
   },
 ]
