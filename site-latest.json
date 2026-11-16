@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "da35a255a04793fb3fad85b8a67bd8cf26015bb8",
+  "head": "d7461a74d0e55f9b6edb5fad85b9d594d877d2dd",
   "branch": "master",
-  "subject": "feat(llm): aizzz 新端点 llm:qa 实跑验证 + 网络颤抖兜底",
-  "date": "2026-11-17T00:54:51+08:00",
+  "subject": "site-latest: da35a25 (post-rebase reconcile)",
+  "date": "2026-11-17T00:55:00+08:00",
   "kv": {
     "KI.rows": 537,
     "KI.Implemented": 360,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/da35a255a04793fb3fad85b8a67bd8cf26015bb8",
+    "url": "https://github.com/xiaodernan/caesura/commit/d7461a74d0e55f9b6edb5fad85b9d594d877d2dd",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
