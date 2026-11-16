@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "328a63e241f56bcd5573ec9a80702ea00cbe5f84",
+  "head": "6e2183f75f44667a51e3dff1609cbad67f3b8b94",
   "branch": "master",
-  "subject": "tutorial: 新增 Step 11《世界谱》(en: 'The Codex · what to search') · v1.7 → v1.8 · 指引玩家用 1-3 个字在《世界谱》检索状态图 / flags / bosses 等",
-  "date": "2026-11-16T18:27:06+08:00",
+  "subject": "content(atlas, codex): Atlas 加入'观察站（口令 123）'· Codex 新增'观察站 The Observatory'{KI-614} · 世界谱 73→74 · Spring family 重打",
+  "date": "2026-11-16T18:55:34+08:00",
   "kv": {
-    "KI.rows": 531,
-    "KI.Implemented": 354,
+    "KI.rows": 532,
+    "KI.Implemented": 355,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/328a63e241f56bcd5573ec9a80702ea00cbe5f84",
+    "url": "https://github.com/xiaodernan/caesura/commit/6e2183f75f44667a51e3dff1609cbad67f3b8b94",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
