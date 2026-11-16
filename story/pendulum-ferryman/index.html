@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>钟摆渡人 / The Pendulum Ferryman · CAESURA 短篇 之十六</title>
+<meta name="description" content="《止音纪元》《余响集》第十六篇 · 钟摆渡人——未竟厅最深处守罢人守着一座替时间摆、给不存在的人摆的钟摆；她替厅里每一个人保管它们放下的东西。双语对照 · 零 LLM · 零网络。 / The sixteenth piece of The Aftermath — the Pendulum Ferryman, who keeps a pendulum that swings for time itself; she keeps what the hall's never-heard visitors set down for her before they left. Bilingual, offline, zero LLM.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🔔</text></svg>">
+<style>
+  :root {
+    --gold: #f3ce8f;
+    --gold-soft: rgba(243,206,143,.32);
+    --ink: #f3ede0;
+    --ink-dim: rgba(243,237,224,.62);
+    --panel: rgba(28,20,12,.7);
+    --serif: "Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#070608; color:var(--ink); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; }
+  .bg { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .bg.radial {
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(243,206,143,.12), transparent 60%),
+      radial-gradient(900px 700px at 50% 118%, rgba(120,80,40,.18), transparent 62%),
+      radial-gradient(650px 420px at 88% 104%, rgba(203,177,255,.07), transparent 60%),
+      #070608;
+  }
+  .bg.noise { position:fixed; inset:0; z-index:-1; opacity:.05; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .wrap { max-width:860px; margin:0 auto; padding:26px 26px 90px; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .brand { font-size:.8rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; opacity:.9; }
+  .brand a { color:inherit; text-decoration:none; border-bottom:1px dotted rgba(243,206,143,.5); }
+  .brand a:hover { color:#fff2d0; }
+  .toplinks { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toplinks a { font-size:.72rem; color:var(--ink-dim); text-decoration:none; border:1px solid rgba(243,237,224,.14); padding:6px 12px; border-radius:999px; transition:all .22s ease; }
+  .toplinks a:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .lang-row button { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(243,206,143,.12); border:1px solid var(--gold-soft); padding:6px 15px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; }
+  .lang-row button:hover { background:rgba(243,206,143,.22); box-shadow:0 0 16px rgba(243,206,143,.25); }
+
+  [data-lang="zh-TW"] .en-copy { display:none !important; }
+  [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="en"] .zh-copy { display:none !important; }
+
+  header.hero { text-align:center; padding:52px 14px 30px; }
+  .kicker { font-size:.72rem; letter-spacing:.42em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:20px; }
+  .kicker b { color:var(--gold); font-weight:600; }
+  h1 { font-size:clamp(2.2rem, 8vw, 3.6rem); font-weight:600; letter-spacing:.16em;
+       background:linear-gradient(180deg,#fffbe6 0%, #f3ce8f 28%, #c9a258 58%, #7d6436 100%);
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+       text-shadow:0 0 90px rgba(243,206,143,.3); }
+  .subtitle { margin-top:14px; font-size:.8rem; color:var(--ink-dim); letter-spacing:.3em; text-transform:uppercase; }
+  .rule { width:170px; height:1px; margin:24px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .meta { margin-top:16px; font-size:.7rem; color:rgba(243,237,224,.45); letter-spacing:.18em; text-transform:uppercase; }
+  .meta a { color:var(--gold); text-decoration:none; }
+
+  article { background:var(--panel); border:1px solid rgba(243,237,224,.1); border-radius:18px; padding:38px 40px 34px; position:relative; }
+  article::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--gold), transparent); opacity:.7; }
+  article p { font-size:1.04rem; line-height:2.02; letter-spacing:.02em; color:rgba(243,237,224,.92); margin-bottom:1.5em; text-indent:2em; overflow-wrap:break-word; }
+  article p.no-indent { text-indent:0; }
+  article p em { color:#ffe9b3; font-style:normal; }
+  article p strong { color:var(--gold); font-weight:600; }
+  .beat { width:100%; text-align:center; margin:.4em 0 1.4em; letter-spacing:.5em; color:rgba(243,206,143,.6); font-size:.8rem; }
+  .coda { text-align:center; font-style:italic; color:rgba(243,237,224,.78); letter-spacing:.06em; margin-top:.6em; }
+
+  .note { margin:26px auto 0; max-width:760px; text-align:center; font-size:.74rem; color:rgba(243,237,224,.42); line-height:1.9; letter-spacing:.04em; }
+  .note a { color:var(--gold); text-decoration:none; border-bottom:1px dotted rgba(243,206,143,.5); }
+
+  footer { margin-top:56px; border-top:1px solid rgba(243,237,224,.09); padding-top:22px; display:flex; flex-wrap:wrap; gap:10px 26px; justify-content:space-between; font-size:.7rem; color:rgba(243,237,224,.4); letter-spacing:.06em; }
+  footer a { color:var(--gold); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @media (max-width:640px) { .wrap { padding:20px 12px 70px; } article { padding:26px 20px 24px; } article p { font-size:.98rem; text-indent:2em; } }
+</style>
+</head>
+<body>
+<div class="bg radial" aria-hidden="true"></div>
+<div class="bg noise" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><a href="/caesura/">CAESURA</a> · 《止音纪元》</div>
+    <div class="toplinks">
+      <a href="/caesura/story/"><span class="zh-copy">《盐》</span><span class="en-copy">“Salt”</span></a>
+      <a href="/caesura/story/first-bell/"><span class="zh-copy">《第一钟》</span><span class="en-copy">“The First Bell”</span></a>
+      <a href="/caesura/story/dark-tide/"><span class="zh-copy">《暗潮》</span><span class="en-copy">“The Dark Tide”</span></a>
+      <a href="/caesura/story/twelfth-listener/"><span class="zh-copy">《第十二个听者》</span><span class="en-copy">“The Twelfth Listener”</span></a>
+      <a href="/caesura/story/lowtone-city/"><span class="zh-copy">《低音之城》</span><span class="en-copy">“The City of Low Tones”</span></a>
+      <a href="/caesura/story/anthology/"><span class="zh-copy">《余响集》</span><span class="en-copy">The Aftermath</span></a>
+      <a href="/caesura/codex/"><span class="zh-copy">世界谱</span><span class="en-copy">Codex</span></a>
+      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button></span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <p class="kicker zh-copy">短篇 · <b>余响之十六</b> · 之十六</p>
+    <p class="kicker en-copy">Short story · <b>The Aftermath</b> · No. 16</p>
+    <h1 class="zh-copy">钟摆渡人</h1>
+    <h1 class="en-copy">The Pendulum Ferryman</h1>
+    <p class="subtitle zh-copy">替时间摆、给从不会来的人摆</p>
+    <p class="subtitle en-copy">Swinging for time itself, for the one who never comes</p>
+    <div class="rule"></div>
+    <p class="meta zh-copy">约 7 分钟 · 与 <a href="/caesura/codex/">世界谱</a> 同源世界观 · 零 LLM 撰写</p>
+    <p class="meta en-copy">about 7 minutes · same world as the <a href="/caesura/codex/">codex</a> · written without LLM assistance</p>
+  </header>
+
+  <article>
+    <div class="zh-copy">
+<p>在未竟厅最深处，有一座钟摆——它不是给钟用的，是给时间用的。它从老大师造完那座从没敲响的钟之后就开始摆，摆了三十年。</p>
+      <p>钟摆渡人就是那座钟摆的守摆人——每天早上她要把摆从最高一边推到最低一边，再从最低一边推到最高一边。一天推一百零二次，正好对上那座从没被敲响的钟里压电的速率。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>她年轻时曾经想过：为什么是她？她母亲在井边死的时候，老大师把这句问了她。她没有回答——她只是看着那口从没敲响的钟，它还在等那个从不会来的人。她忽然明白了：那个答案不重要。</p>
+      <p>她搬进了未竟厅，一住就是三十年。她学会了什么时候推、什么时候不推——摆自己有自己的节律；她学会了如何绕过那些「欠着的债」——每张谱子最后一页都被她按着不翻过去，因为她不介意自己替它们的主人再等一遍。</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>走进未竟厅的人不知道：钟摆的每次摆动，都会替厅里某个人放下一样东西。一个老兵把一枚从未发出去过的命令放在钟摆最低点，离开了。一个母亲把一句从没说出口的告别放在某一天里，再也没有回来。一个孩子放了一颗螺丝钉——她看了看，说：「你以后再来补它。」</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>多年后，恩希尔忽然要离开未竟厅。她知道那就是「等她太久」的那一刻。她没有试图留他——钟摆摆到最低点时她轻轻推了一下，摆就荡起来了。</p>
+      <p>她在想：他走了之后，谁还会替她来看这面摆？</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">如今未竟厅最深处仍然有一个钟摆。只是它旁边多了一把椅子——守摆人现在会偶尔坐在那里喝口茶，然后再站起来。</p>
+      <p class="coda">每年只有一次，她会把摆从最高一边推到最低一边，然后<em>站在最低点不放手</em>——不推它，等它自己慢慢停下来。摆停下来的那一刻，未竟厅就算真正被完成了。</p>
+      <p class="coda">完成一件从没被完成的事——<br>这件事本身就是完成。</p>
+    </div>
+
+    <div class="en-copy">
+<p>At the deepest reach of the Unfinished Hall stands a pendulum. It is not for a bell; it is for time. It began swinging the moment the Last Master finished crafting the bell that was never struck, and it has swung for thirty years since.</p>
+      <p>The Pendulum Ferryman is the pendulum's keeper — every morning she pushes the pendulum from its highest edge to its lowest, then from the lowest back to the highest. One hundred and two pushes a day, tuned exactly to the tick rate locked inside the never-struck bell.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>When she was young, she used to wonder: why her? When her mother died by the well, the Last Master put that question to her. She did not answer — she simply looked at the never-struck bell, still waiting for the one who would never come. At that moment she understood: the answer did not matter.</p>
+      <p>She moved into the hall and stayed for thirty years. She learned when to push, when not to — the pendulum kept its own rhythm; she learned how to step around the debts that were owed — every score's last page remained under her hand, never turned, because she didn't mind waiting once more on behalf of its owner.</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>Everyone who walked into the Unfinished Hall never knew: every swing of the pendulum set down something at the hall for somebody. An old soldier placed an order-command that was never issued at the pendulum's lowest point, and left. A mother left one unspoken farewell on one certain day, and never returned. A little boy left a screw — the Ferryman looked at it and said: “you can come back to fit it in later.”</p>
+
+      <div class="beat">· · ·</div>
+
+      <p>Years later, Hersil finally announced he was leaving the Unfinished Hall. She knew that was the moment he had been waiting for. She did not try to stop him — at the lowest point she tapped the pendulum once, and it swung away.</p>
+      <p>She wondered: who would come to look in on this pendulum after he was gone?</p>
+
+      <div class="beat">· · ·</div>
+
+      <p class="coda">Even today, at the deepest reach of the Unfinished Hall, the pendulum still swings. Only now there is a chair beside it — the Ferryman occasionally sits there with a cup of tea, then stands again.</p>
+      <p class="coda">Once a year, she pushes the pendulum once from its highest edge to its lowest and then <em>keeps her hand on the lowest point</em> — she does not push it, letting it come gradually to a stop. The moment the pendulum comes to rest, the Unfinished Hall is complete.</p>
+      <p class="coda">Completing something that was never finished —<br>itself is the completion.</p>
+    </div>
+  </article>
+
+  <div class="note">
+    <span class="zh-copy">《钟摆渡人》是《余响集》第十六篇——未竟厅最深处的守摆人，替走过未竟厅的每一个人保管它们寄存的东西。<a href="/caesura/story/anthology/">全集：《余响集》</a></span>
+    <span class="en-copy">“The Pendulum Ferryman” is the sixteenth piece of “The Aftermath” — the keeper who keeps what every traveler set down at the lowest point of the pendulum — none of whom ever came back for it. <a href="/caesura/story/anthology/">All stories: “The Aftermath”</a></span>
+  </div>
+
+  <footer>
+    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/">游戏</a> · <a href="/caesura/story/">《盐》· 篇一</a> · <a href="/caesura/story/empty-bar/">篇三 · 空拍子</a> · <a href="/caesura/story/stonethroat/">篇九 · 石喉</a> · <a href="/caesura/story/first-bell/">篇十 · 第一钟</a> · <a href="/caesura/story/twelfth-listener/">篇十二 · 后记</a> · <a href="/caesura/story/bell-picker/">篇十三 · 拾钟人</a> · <a href="/caesura/story/lampwright-bell/">篇十四 · 灯匠</a> · <a href="/caesura/story/lowtone-city/">篇十五 · 低音之城</a> · <a href="/caesura/story/pendulum-ferryman/">篇十六 · 钟摆渡人</a> · <a href="/caesura/story/pendulum-ferryman/">篇十六 · 钟摆渡人</a> · <a href="/caesura/story/anthology/">全集 · 余响集</a> · <a href="/caesura/codex/">世界谱</a></span>
+    <span class="en-copy">© CAESURA · <a href="/caesura/">Game</a> · <a href="/caesura/story/">“Salt” · No. 1</a> · <a href="/caesura/story/empty-bar/">No. 3 · The Empty Bar</a> · <a href="/caesura/story/stonethroat/">No. 9 · The Stone-Throat</a> · <a href="/caesura/story/first-bell/">No. 10 · The First Bell</a> · <a href="/caesura/story/twelfth-listener/">No. 12 · Epilogue</a> · <a href="/caesura/story/bell-picker/">No. 13 · The Bell-Picker</a> · <a href="/caesura/story/lampwright-bell/">No. 14 · The Lampwright</a> · <a href="/caesura/story/lowtone-city/">No. 15 · The City of Low Tones</a> · <a href="/caesura/story/pendulum-ferryman/">No. 16 · The Pendulum Ferryman</a> · <a href="/caesura/story/pendulum-ferryman/">No. 16 · The Pendulum Ferryman</a> · <a href="/caesura/story/anthology/">All stories · The Aftermath</a> · <a href="/caesura/codex/">World Codex</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('langToggle');
+  var saved = 'zh';
+  try { saved = localStorage.getItem('caesura-lang') || 'zh'; } catch (e) { /* noop */ }
+  function apply(lang) {
+    root.setAttribute('data-lang', lang);
+    root.setAttribute('lang', lang === 'en' ? 'en-US' : (lang === 'zh-TW' ? 'zh-TW' : 'zh-CN'));
+    try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+    if (window.__caesuraZhTW) {
+      if (lang === 'zh-TW' && window.__caesuraZhTW.applyToDocument) window.__caesuraZhTW.applyToDocument();
+      else if (lang === 'zh' && window.__caesuraZhTW.restoreOriginals) window.__caesuraZhTW.restoreOriginals();
+    }
+    btn.textContent = lang === 'zh' ? '繁體' : (lang === 'zh-TW' ? 'EN' : '简体');
+  }
+  if (btn) btn.addEventListener('click', function () {
+    var cur = root.getAttribute('data-lang'); apply(cur === 'zh' ? 'zh-TW' : (cur === 'zh-TW' ? 'en' : 'zh'));
+  });
+  apply(saved === 'en' || saved === 'zh-TW' ? saved : 'zh');
+})();
+</script>
+<script defer src="../../tracker.js"></script>
+<script defer src="/caesura/zh-tw-converter.js"></script>
+</body>
+</html>

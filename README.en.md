@@ -38,7 +38,7 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - "The Ledger" (original short story, no. 4): <https://xiaodernan.github.io/caesura/story/ledger/> (Resthold · the page Meg never dared to close · bilingual · zero LLM · added 2026-11-15)  
 - "The Garden of Return" (original short story, no. 5): <https://xiaodernan.github.io/caesura/story/garden/> (The Afterland · the sixth sound · The Owner of the Old Bell · bilingual · zero LLM · added 2026-11-15)  
 - "The Rain Tribunal" (original short story, no. 6): <https://xiaodernan.github.io/caesura/story/tribunal/> (The Afterland · the Rainbell Valley · The Drowning Jurist · seven years between sessions · bilingual · zero LLM · added 2026-11-15)  
-- "The Aftermath" (complete short fiction, whole-volume portal — printable as one paper volume): <https://xiaodernan.github.io/caesura/story/anthology/> (all fifteen stories · EPIC-VII draft now inside · updated 2026-11-16)  
+- "The Aftermath" (complete short fiction, whole-volume portal — printable as one paper volume): <https://xiaodernan.github.io/caesura/story/anthology/> (all sixteen stories · EPIC-VII draft now inside · updated 2026-11-16)  
 - "The Frostbell" (original short story, no. 7): <https://xiaodernan.github.io/caesura/story/frostbell/> (The Frostbell Cliff · The Last Frostwright · the sound the ice kept · bilingual · zero LLM · added 2026-11-15)  
 - "The Thousand Doors" (original short story, no. 8): <https://xiaodernan.github.io/caesura/story/doors/> (The Arcade of Echoes · the Gatekeeper of a Thousand Doors · bilingual · zero LLM · added 2026-11-15)  
 - "The Stone-Throat" (original short story, no. 9): <https://xiaodernan.github.io/caesura/story/stonethroat/> (The City of Low Tones · The Stone-Throat Matriarch · the pitch that costs nothing · bilingual · zero LLM · added 2026-11-15)  
@@ -48,6 +48,7 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - "The Bell-Picker" (original short story, no. 13 · what the bells left behind): <https://xiaodernan.github.io/caesura/story/bell-picker/> (the one who walked the eight reaches gathering the bells’ remains — left for the one who rings the fourth · bilingual · zero LLM · added 2026-11-16) 
 - "The Lampwright" (original short story, no. 14 · the copper that remembers): <https://xiaodernan.github.io/caesura/story/lampwright-bell/> (the lampforge at the eastern end of Windbell Coast — the bells that were broken still remember · bilingual · zero LLM · added 2026-11-16)  
 - "The City of Low Tones" (original short story, no. 15 · a debt paid in listening): <https://xiaodernan.github.io/caesura/story/lowtone-city/> (the Bass Citadel · the Stone-Throat Matriarch · a girl who owes the sea one E♭ · bilingual · zero LLM · added 2026-11-16)  
+- "The Pendulum Ferryman" (original short story, no. 16 · swinging for time itself): <https://xiaodernan.github.io/caesura/story/pendulum-ferryman/> (the pendulum in the Unfinished Hall · the keeper who kept what every traveler set down · bilingual · zero LLM · added 2026-11-16)  
 - Sync truth: `https://raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json`
 
 ## Where to read

@@ -1,6 +1,6 @@
 /**
- * 游记 · 十五篇全文（2026-11-16 落 · KI-616）。
- * 这十五篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 十六篇全文（2026-11-16 落 · KI-618）。
+ * 这十六篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -1066,5 +1066,55 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">Later, the Matriarch opened a new column at the very back of the ledger: it does not count what is owed, only who comes to sit, and how long they listen.</p>
     <p class="coda">The ledger is not quite as thick anymore.</p>
     <p class="coda">If you ever walk into the Bass Citadel, you will see the Matriarch close her ledger and nod to you once.<br>She will not ask why you have come.<br>She already knows — it is because you, too, owe something to something you cannot remember, but have always heard.</p>`,
+  },
+
+  {
+    no: 16,
+    zhTitle: "钟摆渡人",
+    enTitle: "The Pendulum Ferryman",
+    zh: `<p>在未竟厅最深处，有一座钟摆——它不是给钟用的，是给时间用的。它从老大师造完那座从没敲响的钟之后就开始摆，摆了三十年。</p>
+    <p>钟摆渡人就是那座钟摆的守摆人——每天早上她要把摆从最高一边推到最低一边，再从最低一边推到最高一边。一天推一百零二次，正好对上那座从没被敲响的钟里压电的速率。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她年轻时曾经想过：为什么是她？她母亲在井边死的时候，老大师把这句问了她。她没有回答——她只是看着那口从没敲响的钟，它还在等那个从不会来的人。她忽然明白了：那个答案不重要。</p>
+    <p>她搬进了未竟厅，一住就是三十年。她学会了什么时候推、什么时候不推——摆自己有自己的节律；她学会了如何绕过那些「欠着的债」——每张谱子最后一页都被她按着不翻过去，因为她不介意自己替它们的主人再等一遍。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>走进未竟厅的人不知道：钟摆的每次摆动，都会替厅里某个人放下一样东西。一个老兵把一枚从未发出去过的命令放在钟摆最低点，离开了。一个母亲把一句从没说出口的告别放在某一天里，再也没有回来。一个孩子放了一颗螺丝钉——她看了看，说：「你以后再来补它。」</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>多年后，恩希尔忽然要离开未竟厅。她知道那就是「等她太久」的那一刻。她没有试图留他——钟摆摆到最低点时她轻轻推了一下，摆就荡起来了。</p>
+    <p>她在想：他走了之后，谁还会替她来看这面摆？</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">如今未竟厅最深处仍然有一个钟摆。只是它旁边多了一把椅子——守摆人现在会偶尔坐在那里喝口茶，然后再站起来。</p>
+    <p class="coda">每年只有一次，她会把摆从最高一边推到最低一边，然后<em>站在最低点不放手</em>——不推它，等它自己慢慢停下来。摆停下来的那一刻，未竟厅就算真正被完成了。</p>
+    <p class="coda">完成一件从没被完成的事——<br>这件事本身就是完成。</p>`,
+    en: `<p>At the deepest reach of the Unfinished Hall stands a pendulum. It is not for a bell; it is for time. It began swinging the moment the Last Master finished crafting the bell that was never struck, and it has swung for thirty years since.</p>
+    <p>The Pendulum Ferryman is the pendulum's keeper — every morning she pushes the pendulum from its highest edge to its lowest, then from the lowest back to the highest. One hundred and two pushes a day, tuned exactly to the tick rate locked inside the never-struck bell.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>When she was young, she used to wonder: why her? When her mother died by the well, the Last Master put that question to her. She did not answer — she simply looked at the never-struck bell, still waiting for the one who would never come. At that moment she understood: the answer did not matter.</p>
+    <p>She moved into the hall and stayed for thirty years. She learned when to push, when not to — the pendulum kept its own rhythm; she learned how to step around the debts that were owed — every score's last page remained under her hand, never turned, because she didn't mind waiting once more on behalf of its owner.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Everyone who walked into the Unfinished Hall never knew: every swing of the pendulum set down something at the hall for somebody. An old soldier placed an order-command that was never issued at the pendulum's lowest point, and left. A mother left one unspoken farewell on one certain day, and never returned. A little boy left a screw — the Ferryman looked at it and said: “you can come back to fit it in later.”</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Years later, Hersil finally announced he was leaving the Unfinished Hall. She knew that was the moment he had been waiting for. She did not try to stop him — at the lowest point she tapped the pendulum once, and it swung away.</p>
+    <p>She wondered: who would come to look in on this pendulum after he was gone?</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">Even today, at the deepest reach of the Unfinished Hall, the pendulum still swings. Only now there is a chair beside it — the Ferryman occasionally sits there with a cup of tea, then stands again.</p>
+    <p class="coda">Once a year, she pushes the pendulum once from its highest edge to its lowest and then <em>keeps her hand on the lowest point</em> — she does not push it, letting it come gradually to a stop. The moment the pendulum comes to rest, the Unfinished Hall is complete.</p>
+    <p class="coda">Completing something that was never finished —<br>itself is the completion.</p>`,
   },
 ]

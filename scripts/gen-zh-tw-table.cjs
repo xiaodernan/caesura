@@ -34,6 +34,7 @@ try {
     'story/bell-picker/index.html',
     'story/lampwright-bell/index.html',
     'story/lowtone-city/index.html',
+    'story/pendulum-ferryman/index.html',
   ];
 
   const PHRASES = new Set();
