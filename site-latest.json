@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "37e540bf5e26e8eb239c7b5e661e9c32439d211a",
+  "head": "2292c75db6dc201ce45ec02f1ab31849ceb13717",
   "branch": "master",
-  "subject": "site-latest: 841743b (post-rebase reconcile)",
-  "date": "2026-11-17T01:36:07+08:00",
+  "subject": "docs(i18n): JSDoc/comment 对 zh / zh-TW / en 三态命名同步",
+  "date": "2026-11-17T01:47:27+08:00",
   "kv": {
     "KI.rows": 537,
     "KI.Implemented": 360,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/37e540bf5e26e8eb239c7b5e661e9c32439d211a",
+    "url": "https://github.com/xiaodernan/caesura/commit/2292c75db6dc201ce45ec02f1ab31849ceb13717",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
