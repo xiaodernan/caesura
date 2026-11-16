@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "2c3d1701db1b1c8b065c481c83e861f661114f86",
+  "head": "199f03dff3d52a172964d304e9edd423408538fb",
   "branch": "master",
-  "subject": "feat(codex): 世界谱 TW 查询归一 —— 繁體字搜索简体语料打中（KI-615 续）",
-  "date": "2026-11-16T20:47:31+08:00",
+  "subject": "site-latest: 2c3d170 (post-rebase reconcile)",
+  "date": "2026-11-16T20:48:36+08:00",
   "kv": {
     "KI.rows": 533,
     "KI.Implemented": 356,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/2c3d1701db1b1c8b065c481c83e861f661114f86",
+    "url": "https://github.com/xiaodernan/caesura/commit/199f03dff3d52a172964d304e9edd423408538fb",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
