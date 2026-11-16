@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "7827d3c3ea3c3935bf1c93edabdba788f3e0c1ab",
+  "head": "9c0f9c69d4ef451a17fbbac5ddf560d4702b6326",
   "branch": "master",
-  "subject": "feat(story): No.15《低音之城 / The City of Low Tones》+ 全站互链对账（KI-616）",
-  "date": "2026-11-16T21:38:57+08:00",
+  "subject": "site-latest: 7827d3c (post-rebase reconcile)",
+  "date": "2026-11-16T21:39:25+08:00",
   "kv": {
     "KI.rows": 534,
     "KI.Implemented": 357,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/7827d3c3ea3c3935bf1c93edabdba788f3e0c1ab",
+    "url": "https://github.com/xiaodernan/caesura/commit/9c0f9c69d4ef451a17fbbac5ddf560d4702b6326",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
