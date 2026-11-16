@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "44dfcc2f767b05a337adfb1a90fa2cf1e37d7644",
+  "head": "4e3842a2d27d8f647ff77e00c26755c815fb63d9",
   "branch": "master",
-  "subject": "docs(tutorial): KI-625 入门教程 Step 13「这世界怎么成的：AI 导演」＋ v1.10",
-  "date": "2026-11-17T06:01:31+08:00",
+  "subject": "site-latest: 44dfcc2 (post-rebase reconcile)",
+  "date": "2026-11-17T06:02:01+08:00",
   "kv": {
     "KI.rows": 543,
     "KI.Implemented": 366,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/44dfcc2f767b05a337adfb1a90fa2cf1e37d7644",
+    "url": "https://github.com/xiaodernan/caesura/commit/4e3842a2d27d8f647ff77e00c26755c815fb63d9",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
