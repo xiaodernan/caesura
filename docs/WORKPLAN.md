@@ -549,3 +549,4 @@ Phase B4 的三件套此前是"有人听、没人说"。
 | ? KI-603 | **Codex 词条补齐 ·「刻痕教」 +「余响集」（2026-11-16 落）**：`codex/index.html` 新增两条 `cat:'term'` 双语条目，52→54→56；README 双语计数同步 56。零 dialogue.json · 零 runtime。 | KI-603 |
 | ? KI-604 | **Codex 二十九处刻痕 canon finalize（2026-11-16 落）**：双语 canon 各 15+14=29 条，与 regions.json 严配齐；world-codex-ui 测试刻痕腿增至 29；零 runtime。| KI-604 |
 | ? KI-605 | **刻痕扩容 · 第 30 处：风钟海岸「甲板旧木」（2026-11-16 落）**：`rg_windcoast` 新增 `in_windcoast_hulk_plank`（world.flavor.windcoast.hulkPlank · pos(480,0,-80) · 新 interact.lookHulkPlank verbKey）；Lang.ts 双语；Stakerite 刻痕 29→30（风钟海岸 七处→八处/seven→eight）；Codex 56→57（新 `cat:'mark'` 词条「甲板旧木」）；meta description 同步 三十处刻痕；README 双语 · world-codex-ui.test.ts 记号钉死 30 处。零 dialogue.json · 零 runtime。 | KI-605 |
+| ? KI-606 | **新手教程 ·「状态图与灵魂」双语第 10 步（2026-11-16 落）**：`tutorial/index.html` 新增 Step 10 双语段落（中文「状态图与灵魂」· 英文「State graphs and souls」）；教程步数 9→10；行文案接引 codex「状态图 StateGraph」；零 dialogue.json · 零 runtime。 | KI-606 |

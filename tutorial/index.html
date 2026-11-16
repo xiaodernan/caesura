@@ -278,6 +278,31 @@
   </div>
 </div>
 
+<div class="step">
+  <div class="num">10</div>
+  <div>
+    <div class="zh-copy">
+      <div class="title">状态图与灵魂</div>
+      <div class="body">每个 NPC、每条主线 flag、每条感情线——<b>都是一张状态图</b>。一个 NPC 的对话树就是
+        <code>StateGraph(Nodes, Edges)</code>，条件边是 <code>advanceOn.flags</code>：你敲一下、写一行 flag、她就会走向下一格。
+        你读到的每一句台词，背后都是一条从上一个状态指向下一个状态的边。LangGraph 把这种东西画成 DAG——本作的
+        <code>dialogue.json</code> 就是一张等价的有向图，只是不喊出名字而已。
+      </div>
+      <div class="tip">重写一张状态图 = 换一条走线；推进条件就是一枚能拧回去的 flag</div>
+      <div class="tip">想读懂这张图？翻开 <a href="https://xiaodernan.github.io/caesura/codex/">世界谱</a> — 搜索「状态图 StateGraph」即可看到每一条边的定义</div>
+    </div>
+    <div class="en-copy">
+      <div class="title">State graphs and souls</div>
+      <div class="body">Every NPC, every story flag, every thread in the game — <b>is a state graph</b>. A conversation tree
+        is <code>StateGraph(Nodes, Edges)</code>; <code>advanceOn.flags</code> are the conditional edges: strike once, set a flag,
+        and she steps one cell forward. Every line you read is a directed edge from one state to the next. LangGraph draws
+        these as DAGs — this game's <code>dialogue.json</code> is the same object without the branding.
+      </div>
+      <div class="tip">Rewriting one graph = redrawing its line; changing one advance flag = rerouting a soul</div>
+    </div>
+  </div>
+</div>
+
 <div class="block zh-copy">
   <span style="color:rgba(242,237,228,.6)">一句给玩家的备忘</span><br>
   止音纪元不送你一把斩钉截铁的胜利——它送你一口铃、一个耳鸣、和一笔账。好好吹一吹那一口铃，玩家不用去看什么百科。
