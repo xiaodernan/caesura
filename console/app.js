@@ -1020,7 +1020,7 @@
     if (isNum(aimd.ssthresh) && aimd.ssthresh <= maxV) {
       var ty = ys(aimd.ssthresh)
       out += '<line class="thresh" x1="' + padL + '" y1="' + ty + '" x2="' + (W - padR) + '" y2="' + ty + '"/>'
-      out += '<text class="axis-txt" x="' + (W - padR - 66) + '" y="' + (ty - 4) + '" style="fill:var(--wine)">ssthresh ' + fmt(aimd.ssthresh) + '</text>'
+      out += '<text class="axis-txt" x="' + (W - padR - 4) + '" y="' + (ty - 4) + '" text-anchor="end" style="fill:var(--wine)">ssthresh ' + fmt(aimd.ssthresh, 2) + ' MSS</text>'
     }
     out += '<path class="area" d="' + area + '"/>'
     out += '<path class="line draw" d="' + line + '"/>'
@@ -1040,7 +1040,7 @@
     var aimd = s.aimd || {}, cubic = s.cubic || {}, rto = s.rto || {}, win = s.window || {}
     var items = [
       { k: '拥塞窗口 cwnd', v: fmt(aimd.cwnd, 1), u: 'MSS', hl: true },
-      { k: '慢启动阈值 ssthresh', v: fmt(aimd.ssthresh), u: 'MSS' },
+      { k: '慢启动阈值 ssthresh', v: fmt(aimd.ssthresh, 2), u: 'MSS' },
       { k: 'SRTT', v: fmt(rto.srtt), u: 'ms' },
       { k: 'RTO', v: fmt(rto.rto), u: 'ms', hl: true },
       { k: 'CUBIC Wmax', v: fmt(cubic.Wmax, 1), u: 'MSS' },
