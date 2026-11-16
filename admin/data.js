@@ -17,7 +17,7 @@ export const TELEMETRY = {
       {
         "labelZh": "Baymard Institute · 平均购物车放弃率 70.22%",
         "labelEn": "Baymard Institute · avg. cart abandonment 70.22%",
-        "detail": "2026-10-28 更新 · 50 项研究 2006–2025 · 非加权均值，先验带：漏斗会大幅流失。"
+        "detail": "2026-10-28 更新 · 50 项研究 2006–2025 · 非加权均值 · 2026-11-16 检索核对（baymard.com/lists/cart-abandonment-rate）。"
       },
       {
         "labelZh": "Nielsen Norman Group · 10 秒法则",
@@ -25,14 +25,14 @@ export const TELEMETRY = {
         "detail": "≈ 五分之一用户在首屏立即离开 / ~1 in 5 leaves at first paint. Prior band for bounce."
       },
       {
-        "labelZh": "Contentsquare Experience Benchmark 2024/25 · 跳出 ≈ 49–50% · 会话 ≈ 52–55 秒",
-        "labelEn": "Contentsquare Experience Benchmark 2024/25 · bounce ≈ 49–50% · session ≈ 52–55s",
-        "detail": "行业指纹 / Industry fingerprint used as sanity band."
+        "labelZh": "Contentsquare Benchmarks 2026 · 990 亿会话 · 6,500+ 站点",
+        "labelEn": "Contentsquare Benchmarks 2026 · 99B sessions · 6,500+ sites",
+        "detail": "全球行业基准的体量锚点（2025 版 900 亿 / 6,000 sites · 2026-11-16 检索 contentsquare.com 新闻稿）。"
       },
       {
-        "labelZh": "StatCounter Global Stats 2025 · 移动端 ≈ 62%",
-        "labelEn": "StatCounter Global Stats 2025 · mobile ≈ 62%",
-        "detail": "移动端流量权重 / Mobile traffic weight for the device mix."
+        "labelZh": "StatCounter · 2026-10 Worldwide：Mobile 60.87% / Desktop 39.13%",
+        "labelEn": "StatCounter · Oct 2026 worldwide: Mobile 60.87% / Desktop 39.13%",
+        "detail": "2026-11-16 检索 gs.statcounter.com（mobile vs desktop market share, October 2026）。"
       }
     ],
     "disclaimerZh": "模拟数据不构成真实用户统计；上线后若接入后端上报（Spring 调度台 report 服务 8082），本页可直接替换数据源为真实流。",
@@ -474,7 +474,7 @@ export const TELEMETRY = {
       "id": "mobile",
       "labelZh": "手机",
       "labelEn": "Mobile",
-      "share": 0.58,
+      "share": 0.61,
       "endingRate": 0.052,
       "avgDurationSec": 74
     },
@@ -482,7 +482,7 @@ export const TELEMETRY = {
       "id": "desktop",
       "labelZh": "桌面",
       "labelEn": "Desktop",
-      "share": 0.37,
+      "share": 0.34,
       "endingRate": 0.094,
       "avgDurationSec": 132
     },

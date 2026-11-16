@@ -19,13 +19,23 @@
  */
 
 import { spawn, spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, openSync } from 'node:fs'
+import { existsSync, mkdirSync, openSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import net from 'node:net'
 
 /** 仓库根（脚本住在 `<root>/scripts/` 下，两层上去就是 root；中文路径要 decode，用 fileURLToPath） */
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
+
+/** 段落数单一真源：scripts/lore-codex-snapshot.mjs 每次跑会重写这份快照，e2e 探针从这份文件读条数（不再钉死 52） */
+const LORE_EXPECTED = (() => {
+  try {
+    const d = JSON.parse(readFileSync(join(ROOT, 'services/spring/caesura-lore/src/main/resources/lore/codex.json'), 'utf8'))
+    return Array.isArray(d?.entries) ? d.entries.length : 0
+  } catch {
+    return 0
+  }
+})()
 
 /** 七件的启动次序：registry → config → gate → report → client → gateway → lore */
 export const START_ORDER = [
@@ -98,21 +108,21 @@ export const PROBES = [
     retries: 1,
   },
   {
-    name: 'lore 世界谱（52 条真实文本）',
+    name: `lore 世界谱（${LORE_EXPECTED} 条真实文本）`,
     url: 'http://127.0.0.1:8084/lore/codex?lang=zh',
-    expect: { jsonPath: ['total'], equals: 52 },
+    expect: { jsonPath: ['total'], equals: LORE_EXPECTED },
     retries: 1,
   },
   {
-    name: 'lore BM25 检索（万籁 → 命中 2 条）',
+    name: 'lore BM25 检索（万籁 → 命中 ≥ 2 条，语料扩容时允许更多）',
     url: 'http://127.0.0.1:8084/lore/search?q=%E4%B8%87%E7%B1%81&limit=5&lang=zh',
-    expect: { jsonPath: ['total'], equals: 2 },
+    expect: { jsonPath: ['total'], gte: 2 },
     retries: 1,
   },
   {
     name: 'lore 缓存后端自报（memory 默认）+ 命中率',
     url: 'http://127.0.0.1:8084/lore/stats',
-    expect: { jsonPath: ['entries'], equals: 52 },
+    expect: { jsonPath: ['entries'], equals: LORE_EXPECTED },
     retries: 1,
   },
   {
@@ -136,6 +146,7 @@ export function probeMatches(body, expect) {
         if (cur == null || typeof cur !== 'object') return false
         cur = cur[key]
       }
+      if (expect.gte !== undefined) return Number(cur) >= Number(expect.gte)
       return expect.equals === undefined ? cur !== undefined : cur === expect.equals
     } catch {
       return false

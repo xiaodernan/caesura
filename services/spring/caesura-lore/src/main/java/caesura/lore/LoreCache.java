@@ -12,7 +12,7 @@ import java.util.function.Supplier;
  * /lore/stats 能说出「这个服务快在哪儿、慢在哪儿」，而不是把缓存当黑盒。
  *
  * <p>缓存的是**序列化后的 JSON 载荷**（不是对象），两种后端（ConcurrentMap / Redis）
- * 行为一致，也避免 Jackson 在热点路径上重复序列化 52 条文本。
+ * 行为一致，也避免 Jackson 在热点路径上重复序列化整份语料（条数随快照增长，不在本文件钉死）。
  */
 @Component
 public class LoreCache {

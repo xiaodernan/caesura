@@ -6,10 +6,10 @@
  * 任何样本都可用 `node scripts/gen-analytics.mjs` 原样复算（幂等到字节）。
  *
  * 先验参考（公开研究，作为生成参数区间，**不是**本项目的真实遥测）：
- *   - Baymard Institute：平均购物车放弃率 70.22%（2026-10-28 更新，50 项研究 2006–2025 非加权均值）→ 漏斗大幅流失的暮尺度
+ *   - Baymard Institute：平均购物车放弃率 70.22%（updated Oct 28, 2026，50 项研究 2006–2025 非加权均值，2026-11 检索核对）→ 漏斗大幅流失的暮尺度
  *   - Nielsen Norman Group：用户在 ~10 秒内决定去留；约五分之一的人立即离开
- *   - Contentsquare Experience Benchmark 2024/25：平均跳出率 ≈ 49–50%；平均会话 ≈ 52–55 秒
- *   - StatCounter Global Stats 2025：移动端 Web 流量占比 ≈ 62%
+ *   - Contentsquare Digital Experience Benchmarks 2026：99 billion sessions · 6,500+ websites（2026-11 检索；前版 2025 = 90 billion / 6,000 sites）
+ *   - StatCounter Global Stats（2026-11 检索 · Worldwide · October 2026）：Mobile 60.87% / Desktop 39.13%
  * 真实用户数据见「本机实况」面板（localStorage，`caesura.telemetry.v1`）。
  *
  * 用法：node scripts/gen-analytics.mjs
@@ -83,8 +83,8 @@ const channels = [
 ].map((c) => ({ ...c, sessions: Math.round(c.share * totalSessions) }))
 
 const devices = [
-  { id: 'mobile', labelZh: '手机', labelEn: 'Mobile', share: 0.58, endingRate: 0.052, avgDurationSec: 74 },
-  { id: 'desktop', labelZh: '桌面', labelEn: 'Desktop', share: 0.37, endingRate: 0.094, avgDurationSec: 132 },
+  { id: 'mobile', labelZh: '手机', labelEn: 'Mobile', share: 0.61, endingRate: 0.052, avgDurationSec: 74 },
+  { id: 'desktop', labelZh: '桌面', labelEn: 'Desktop', share: 0.34, endingRate: 0.094, avgDurationSec: 132 },
   { id: 'tablet', labelZh: '平板', labelEn: 'Tablet', share: 0.05, endingRate: 0.061, avgDurationSec: 95 },
 ]
 
@@ -172,10 +172,10 @@ const payload = {
     noteZh: '本面板的聚合数据是固定种子（20261115）可复现的模拟队列：公开研究先验区间 × 30 天 × 4 次重算一致。它用来校准分析引擎与教学演示；本机实况（localStorage）展示的是你这台浏览器真实发生的一切。',
     noteEn: 'Aggregate figures are a reproducible simulated cohort (seed 20261115): public-research prior bands × 30 days × byte-identical regeneration. It calibrates the analysis engine and serves as a walkthrough; “Live (this browser)” below shows what actually happened on this device.',
     refs: [
-      { labelZh: 'Baymard Institute · 平均购物车放弃率 70.22%', labelEn: 'Baymard Institute · avg. cart abandonment 70.22%', detail: '2026-10-28 更新 · 50 项研究 2006–2025 · 非加权均值，先验带：漏斗会大幅流失。' },
+      { labelZh: 'Baymard Institute · 平均购物车放弃率 70.22%', labelEn: 'Baymard Institute · avg. cart abandonment 70.22%', detail: '2026-10-28 更新 · 50 项研究 2006–2025 · 非加权均值 · 2026-11-16 检索核对（baymard.com/lists/cart-abandonment-rate）。' },
       { labelZh: 'Nielsen Norman Group · 10 秒法则', labelEn: 'Nielsen Norman Group · the 10-second rule', detail: '≈ 五分之一用户在首屏立即离开 / ~1 in 5 leaves at first paint. Prior band for bounce.' },
-      { labelZh: 'Contentsquare Experience Benchmark 2024/25 · 跳出 ≈ 49–50% · 会话 ≈ 52–55 秒', labelEn: 'Contentsquare Experience Benchmark 2024/25 · bounce ≈ 49–50% · session ≈ 52–55s', detail: '行业指纹 / Industry fingerprint used as sanity band.' },
-      { labelZh: 'StatCounter Global Stats 2025 · 移动端 ≈ 62%', labelEn: 'StatCounter Global Stats 2025 · mobile ≈ 62%', detail: '移动端流量权重 / Mobile traffic weight for the device mix.' },
+      { labelZh: 'Contentsquare Benchmarks 2026 · 990 亿会话 · 6,500+ 站点', labelEn: 'Contentsquare Benchmarks 2026 · 99B sessions · 6,500+ sites', detail: '全球行业基准的体量锚点（2025 版 900 亿 / 6,000 sites · 2026-11-16 检索 contentsquare.com 新闻稿）。' },
+      { labelZh: 'StatCounter · 2026-10 Worldwide：Mobile 60.87% / Desktop 39.13%', labelEn: 'StatCounter · Oct 2026 worldwide: Mobile 60.87% / Desktop 39.13%', detail: '2026-11-16 检索 gs.statcounter.com（mobile vs desktop market share, October 2026）。' },
     ],
     disclaimerZh: '模拟数据不构成真实用户统计；上线后若接入后端上报（Spring 调度台 report 服务 8082），本页可直接替换数据源为真实流。',
     disclaimerEn: 'Simulated figures are not real user statistics. Once backend telemetry is wired (Spring report @8082), this deck can drop-in swap to live data.',

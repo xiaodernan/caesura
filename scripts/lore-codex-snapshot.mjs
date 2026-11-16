@@ -4,20 +4,21 @@
  * `Services/spring/caesura-lore/src/main/resources/lore/codex.json` 快照（2026-11-15）。
  *
  * 为什么需要：`caesura-lore` 是 Java 侧的「世界谱后端」，Java 侧不许读仓库数据表
- * （`javaReadsRepoDataFindings`）；它携带 jar 里打包的快照，把 52 条真实文本在
+ * （`javaReadsRepoDataFindings`）；它携带 jar 里打包的快照，把真实文本在
  * `/lore/codex` 与 `/lore/search` 上以 BM25 返回。快照是**同源**的——它不是手抄，
- * 而是这段脚本从页面源里真的切出来，生成时校验条目数=52、id 唯一。
+ * 而是这段脚本从页面源里真的切出来，生成时校验条目数 ≥ 50（当前 73）、id 唯一。
  *
  * 用法：`node scripts/lore-codex-snapshot.mjs`（写入后 git status 会显示该文件）
  * 作者侧脚本：不进 runtime、不进 dialogue.json、不读 env。
  */
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'
 import { resolve, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+// 注意:目录名是小写 `services`(此前写 Services 在 Linux 会静默造出双目录并写到一个对 CI 无用的副本)
 const SRC = join(ROOT, 'codex/index.html')
-const OUT = join(ROOT, 'Services/spring/caesura-lore/src/main/resources/lore/codex.json')
+const OUT = join(ROOT, 'services/spring/caesura-lore/src/main/resources/lore/codex.json')
 
 const html = readFileSync(SRC, 'utf8')
 const m = html.match(/const CODEX = (\[[\s\S]*?\n\]);/)
@@ -30,8 +31,9 @@ if (!m) {
 // eslint-disable-next-line no-eval
 const CODEX = Function(`"use strict"; return (${m[1]});`)()
 
-if (!Array.isArray(CODEX) || CODEX.length !== 52) {
-  console.error(`CODEX 条目数不是 52（实测 ${CODEX.length}）——要么页面改了，要么提取错位`)
+// 条目数随世界谱扩容增长：只要求"真有内容且唯一"，不再钉死 52。打印实际值,交由 e2e 探针读同一份文件对账。
+if (!Array.isArray(CODEX) || CODEX.length < 50) {
+  console.error(`CODEX 条目数异常（实测 ${Array.isArray(CODEX) ? CODEX.length : 'not array'}）——要么页面改了，要么提取错位`)
   process.exit(3)
 }
 
@@ -56,5 +58,5 @@ const entries = CODEX.map((e) => {
 
 mkdirSync(dirname(OUT), { recursive: true })
 writeFileSync(OUT, JSON.stringify({ schema: 1, source: 'codex/index.html', generated: new Date().toISOString().slice(0, 10), entries }, null, 2) + '\n')
-console.log(`lore/codex.json written: ${entries.length} entries`)
+console.log(`lore/codex.json written: ${entries.length} entries（expected count is read by spring-family-e2e-check.mjs from this file）`)
 console.log('sample:', entries.slice(0, 3).map((e) => e.id).join(', '))

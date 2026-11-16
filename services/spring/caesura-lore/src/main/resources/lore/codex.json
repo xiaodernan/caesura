@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "codex/index.html",
-  "generated": "2026-11-14",
+  "generated": "2026-11-16",
   "entries": [
     {
       "id": "reach-resthold",
@@ -280,6 +280,54 @@
       }
     },
     {
+      "id": "term-state-graph",
+      "cat": "term",
+      "title": {
+        "zh": "状态图 StateGraph",
+        "en": "State Graph"
+      },
+      "body": {
+        "zh": "LangGraph 的图：节点是纯函数、条件边按 state 路由、状态用 reducer（Annotated[list, add]）归约合并、Checkpointer 以 thread_id 持久化恢复、interrupt() 挂起人审环节。CÆSURA 每个 NPC 都是一张状态图（DLG_* 节点 + flag 条件边）——dialogue.json 冻结即图冻结；LLM 创作管线 warmup→plan→write→qa→commit 亦是一张图。玩家进程零 LLM。",
+        "en": "A LangGraph: nodes are pure functions; conditional edges route on state; state merges through a reducer (Annotated[list, add]); a checkpointer persists and replays by thread_id; interrupt() suspends for human review. Every NPC in the game is a state graph (DLG_* nodes + flag edges) — a frozen dialogue.json is a frozen graph; the authoring pipeline warmup→plan→write→qa→commit is one too. Zero LLM in the player process."
+      }
+    },
+    {
+      "id": "term-checkpointer-replay",
+      "cat": "term",
+      "title": {
+        "zh": "检查点回放 Checkpointer replay",
+        "en": "Checkpointer replay"
+      },
+      "body": {
+        "zh": "thread_id + state 指纹 ⇒ 第二次 invoke 直接读检查点，不重算、不复制、结果逐字节一致——这是「灵魂不走完同一路」的反面：守夜人 Daemon 线程走到哪，下次就接着哪开始，零副作用。",
+        "en": "thread_id + state fingerprint ⇒ the second invoke replays the checkpoint verbatim — no recompute, no duplicate effects. The counterpart of “the soul never walks the same road”: wherever the Daemon thread stopped, the next pass resumes exactly there, side effects intact."
+      }
+    },
+    {
+      "id": "term-the-doctrine-of-carved-marks",
+      "cat": "term",
+      "title": {
+        "zh": "刻痕教 The Doctrine of Carved Marks",
+        "en": "The Doctrine of Carved Marks"
+      },
+      "body": {
+        "zh": "这个世界的人最先学会的不是字，是刀。刻痕就是被凿出来的沉默——空间里携带的不在场证明，代价是一个位置、一把刀、和一支不肯说出口的仪式情感。刻痕用火山灰、盐、蜡、土封住一句话——风会读，水会泡，石头不会忘。",
+        "en": "The first thing this world’s makers learned was not letters, it was the chisel. A carved mark is silence made substantive — an absentee’s proof-of-being, paid for with position, a blade, and an unspoken rite of emotion. Marks seal a sentence with ash, salt, wax, soil — wind might read it, water wear it away, stone forgets nothing."
+      }
+    },
+    {
+      "id": "term-the-aftermath",
+      "cat": "term",
+      "title": {
+        "zh": "余响集 The Aftermath",
+        "en": "The Aftermath"
+      },
+      "body": {
+        "zh": "这个世界自己出版的沉默实录：十三篇短篇全部来自它自己的回声。与游戏同源、双语对照、零 LLM、零网络——不落 runtime、可打印成一卷纸质书。给所有没能开口听、也没能开口说的人。",
+        "en": "The world’s own record of its silence: thirteen short fictions, every one an echo of this world’s own weather. The same origin canon as the game — bilingual, zero LLM, zero network — not shipped in the runtime, printable as one paper volume. For everyone who neither listened aloud nor spoke aloud."
+      }
+    },
+    {
       "id": "mark-mark-first-breath-slab-resthold",
       "cat": "mark",
       "title": {
@@ -445,6 +493,210 @@
       "body": {
         "zh": "「防波堤上一道道潮痕，像一首被海擦了又写的歌。」",
         "en": "“Tide-lines scored into the causeway, a song the sea keeps erasing and rewriting.”"
+      }
+    },
+    {
+      "id": "mark-mark-the-whistleless-well-resthold",
+      "cat": "mark",
+      "title": {
+        "zh": "刻痕 · 不让响的井（休垒）",
+        "en": "Mark · The Whistleless Well (Resthold)"
+      },
+      "body": {
+        "zh": "「井里的水从没响过——镇里的人不肯让任何东西掉进去；一碰到就响的水，比响的人还吵。」镇北的铁罩上常揭常盖。 E 触碰。",
+        "en": "“The water in this well has never sounded — nothing is allowed to fall in for fear it would ring going down.” The iron lid at the north end lifts and covers, lifts and covers. E to touch."
+      }
+    },
+    {
+      "id": "mark-mark-the-pages-that-never-left-drowned-choir",
+      "cat": "mark",
+      "title": {
+        "zh": "刻痕 · 没出了的书页（沉唱堂）",
+        "en": "Mark · The Pages That Never Left (Drowned Choir)"
+      },
+      "body": {
+        "zh": "「这几页书从没出过一层字——没人递过它们；它们只是被水泡住了，字就长在石头上了。」石缝里夹着的纸。 E 触碰。",
+        "en": "“These pages never made it past one layer of print — no one ever handed them around; the water soaked into the paper, and the words grew into the stone instead.” Paper wedged into the stone gap. E to touch."
+      }
+    },
+    {
+      "id": "mark-mark-the-wax-deaf-earless-deeps",
+      "cat": "mark",
+      "title": {
+        "zh": "刻痕 · 蜡笔画的大耳朵（无耳深窖）",
+        "en": "Mark · The Wax-Deaf (Earless Deeps)"
+      },
+      "body": {
+        "zh": "「栏杆上的蜡笔画里，有个人把自己的耳朵画得特别大，旁边写了一个字——「听」。没人记得他的耳朵去了哪儿。」边上的蜡封盒只剩最后一卷。 E 触碰。",
+        "en": "“In the crayon drawings on the railing, someone drew their own ear far too large — beside it one character: ‘hear’. No one remembers where his ear went.” Only the last roll remains in the box. E to touch."
+      }
+    },
+    {
+      "id": "mark-mark-the-apologizing-chisel-fellcarillon",
+      "cat": "mark",
+      "title": {
+        "zh": "刻痕 · 道歉的凿子（钟坠院）",
+        "en": "Mark · The Apologizing Chisel (Fellcarillon)"
+      },
+      "body": {
+        "zh": "「钟壳外每一道凿痕都不是装饰——它们都是钟还没敲完时，刻刀从指侧滑下时写下的、没说出口的道歉。」没人能数清楚它真的划了几下。 E 触碰。",
+        "en": "“The chisel marks are no ornament — each one is an apology a chisel wrote sliding from the side of a hand, when the bell still would not ring.” No one has ever counted them right. E to touch."
+      }
+    },
+    {
+      "id": "mark-mark-the-frozen-shadows-fellcarillon",
+      "cat": "mark",
+      "title": {
+        "zh": "刻痕 · 结住的钟影（钟坠院）",
+        "en": "Mark · The Frozen Shadows (Fellcarillon)"
+      },
+      "body": {
+        "zh": "「钟从没响过一记——倒是冰替她记着每一记的波纹；每天早上冰的纹路都比前一天厚一圈。」崖壁上结着一道一道的影。 E 触碰。",
+        "en": "“The bell has never spoken — the ice keeps the rings of every sound that never left. Each morning the ice remembers one ring more.” Bands of frost on the cliff face recording what never sounded. E to touch."
+      }
+    },
+    {
+      "id": "mark-mark-the-never-struck-bell-unfinished-hall",
+      "cat": "mark",
+      "title": {
+        "zh": "刻痕 · 没敲过的那口（未竟厅）",
+        "en": "Mark · The Never-Struck Bell (Unfinished Hall)"
+      },
+      "body": {
+        "zh": "「这厅里唯一一口钟从没被敲过——它一直挂在那里，等最后一个不会来的大师。」钟摆银镜后的龛里挂着它。 E 触碰。",
+        "en": "“The only bell in this hall has never been struck — it hangs there, waiting for the last master who will never come.” Sheltered in the niche behind the silver mirror. E to touch."
+      }
+    },
+    {
+      "id": "mark-mark-the-torn-last-page-unfinished-hall",
+      "cat": "mark",
+      "title": {
+        "zh": "刻痕 · 撕掉的最后一页（未竟厅）",
+        "en": "Mark · The Torn Last Page (Unfinished Hall)"
+      },
+      "body": {
+        "zh": "「谱子的最后一页被撕掉了一半——恩希尔每天指挥到那里，然后合上，再开。他不演到最后一页，只是等最后一页来找他。」谱架上永远翻不到的那一页。 E 触碰。",
+        "en": "“The score’s last page was torn in half a long time ago — Hersil conducts up to that page every day, then closes the book and reopens it. He never performs the final page; he waits for it to come find him.” The page that never turns. E to touch."
+      }
+    },
+    {
+      "id": "mark-mark-the-name-ring-whisperwode",
+      "cat": "mark",
+      "title": {
+        "zh": "刻痕 · 削去名字的年轮（雾语林）",
+        "en": "Mark · The Name-Ring (Whisperwode)"
+      },
+      "body": {
+        "zh": "「把手掌贴上年轮——它被削去的地方不是年份，是名字。」把手贴在那道被挖空的沟里。 E 触碰。",
+        "en": "“Press your palm against the ring — what its depths cleaved off are not years, they are names.” Set your palm into the groove left behind. E to touch."
+      }
+    },
+    {
+      "id": "mark-mark-the-cloth-covered-hollow-whisperwode",
+      "cat": "mark",
+      "title": {
+        "zh": "刻痕 · 蒙着薄布的小匣子（雾语林）",
+        "en": "Mark · The Cloth-Covered Hollow (Whisperwode)"
+      },
+      "body": {
+        "zh": "「这是给那个从不敢开口唱歌的孩子的摇篮曲——每一片叶子一次，整个林子唱了二十年都没唱完。」树洞里蒙着薄布的竹匣。 E 触碰。",
+        "en": "“This is a lullaby for the child who never dared to sing — one leaf at a time, the whole wood has hummed for twenty years and never reached the end.” A small bamboo box tucked into a tree hollow under cloth. E to touch."
+      }
+    },
+    {
+      "id": "mark-mark-the-wet-smear-slab-windbell-coast",
+      "cat": "mark",
+      "title": {
+        "zh": "刻痕 · 湿痕黑碑（风钟海岸）",
+        "en": "Mark · The Wet-Smear Slab (Windbell Coast)"
+      },
+      "body": {
+        "zh": "「礁石边的断崖处，一块黑碑上没有刻字——只有一道湿痕，像谁刚刚擦过它。」望碑只是等风替谁说出一句。 E 触碰。",
+        "en": "“At the claw of the cliff edge, a black slab with no engraving — only a damp smear, as if someone had just wiped it.” You stare at the slab and wait for the wind to say something for you. E to touch."
+      }
+    },
+    {
+      "id": "mark-mark-the-smudged-shell-windbell-coast",
+      "cat": "mark",
+      "title": {
+        "zh": "刻痕 · 压字的贝壳（风钟海岸）",
+        "en": "Mark · The Smudged Shell (Windbell Coast)"
+      },
+      "body": {
+        "zh": "「贝壳里压着一张纸，字晕开了，只看得见最后一个字——「生」。」其余字都被海带走了。 E 触碰。",
+        "en": "“Inside the shell, a pressed slip of paper — the characters are washed away; only the last one survives: ‘live’.” The rest was carried off by the sea. E to touch."
+      }
+    },
+    {
+      "id": "mark-mark-the-still-press-stone-windbell-coast",
+      "cat": "mark",
+      "title": {
+        "zh": "刻痕 · 缩住的响石（风钟海岸）",
+        "en": "Mark · The Still Press-Stone (Windbell Coast)"
+      },
+      "body": {
+        "zh": "「按下那颗响石——这一刻，整片海都没动。」石头埋在潮痕里，手指按上去，潮声停了。 E 触碰。",
+        "en": "“Press the sound-stone — in that moment, the whole sea holds still.” A stone settled among the tidelines; your finger presses down and the surf quiets. E to touch."
+      }
+    },
+    {
+      "id": "mark-mark-the-toothed-crack-windbell-coast",
+      "cat": "mark",
+      "title": {
+        "zh": "刻痕 · 裂成牙齿的潮线（风钟海岸）",
+        "en": "Mark · The Toothed Crack (Windbell Coast)"
+      },
+      "body": {
+        "zh": "「潮纹在礁岩上裂开了——盐从裂缝里自己长出了牙齿。」每天分叉的纹路里都能摸到盐。 E 触碰。",
+        "en": "“Tidelines split open across the reef — salt grows its own teeth inside the crack.” Each day’s branching line will let you feel the tooth of it. E to touch."
+      }
+    },
+    {
+      "id": "mark-mark-the-unstopped-metronome-brokenbar",
+      "cat": "mark",
+      "title": {
+        "zh": "刻痕 · 独自记账的石（破拍营地）",
+        "en": "Mark · The Unstopped Metronome (Brokenbar)"
+      },
+      "body": {
+        "zh": "「每天凌晨收工之后，石堆里没人开的钟还在自己记账——没人再需要它了，它还在把没名字的人按拍报数。」石堆现在也只有风还在听。 E 触碰。",
+        "en": "“Every dawn after the camp emptied, the machine no one started kept marking time — nobody needed it anymore, and it still counts out beats for names nobody dared say.” Only the wind bothers to listen now. E to touch."
+      }
+    },
+    {
+      "id": "mark-mark-the-satchel-of-seals-earless-deeps",
+      "cat": "mark",
+      "title": {
+        "zh": "刻痕 · 封蜡匣（无耳深窖）",
+        "en": "Mark · The Satchel of Seals (Earless Deeps)"
+      },
+      "body": {
+        "zh": "「这里每一只蜡封都被认领过——没人挑错；只是听这件事，让每个活过来的人同时学会终生用一只耳朵。」封耳匣里只剩最后一只灰蜡封。 E 触碰。",
+        "en": "“Every wax seal down here was claimed — nobody chose wrong; it is listening itself that makes you keep one ear for life.” A satchel against the stone. E to touch."
+      }
+    },
+    {
+      "id": "mark-mark-the-hull-plank-windbell-coast",
+      "cat": "mark",
+      "title": {
+        "zh": "刻痕 · 甲板旧木（风钟海岸）",
+        "en": "Mark · The Hull-Plank (Windbell Coast)"
+      },
+      "body": {
+        "zh": "「那只船底板从海底回来了——每一根蚀透的榫卯都不说它漂了多远；这个岬角的旧名字，就叫「它回来的地方」。」潮一退就能摸到它。 E 触碰。",
+        "en": "“The hull-plank rose back over the reef — every peg sheared by the sea still carries this headland’s old name, ‘the place it came home’.” Touch it when the tide turns. E to touch."
+      }
+    },
+    {
+      "id": "mark-mark-the-half-burned-sheet-brokenbar",
+      "cat": "mark",
+      "title": {
+        "zh": "刻痕 · 烧剩的火谱（破拍营地）",
+        "en": "Mark · The Half-Burned Sheet (Brokenbar)"
+      },
+      "body": {
+        "zh": "「那一摞砖缝里夹出的火谱，是这一刻之前唯一一张完整的谱——每节的第一拍都没被擦掉。」塌掉的砖上还留着没烧透的痕。 E 触碰。",
+        "en": "“The half-burnt ream of sheet in the brick rubble was the only intact ream until this moment — every downbeat still legible, each first stroke of every bar kept by the wall.” The brick still betrays where the flame didn’t finish the job. E to touch."
       }
     },
     {

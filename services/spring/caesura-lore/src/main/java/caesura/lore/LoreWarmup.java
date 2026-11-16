@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
  * 启动预热：Context 就绪后把两个 codex 载荷（zh/en）直接放进缓存——
  * 首个真实用户请求不付冷启动代价（与 `warmupPrefix` 给 LLM 做烤热是同一条纪律：首调必 miss）。
  *
- * <p>这不是开机必请的外部依赖——两个 payload 都是纯内存计算（52 条文本的 JSON 序列化），
+ * <p>这不是开机必请的外部依赖——两个 payload 都是纯内存计算（N 条文本的 JSON 序列化，条数随快照增长，不在本文件钉死），
  * 构建期一次性付掉，测压路上再也不欠。</p>
  */
 @Component

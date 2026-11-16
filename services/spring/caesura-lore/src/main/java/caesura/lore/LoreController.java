@@ -111,7 +111,7 @@ public class LoreController {
     LoreCache.Stats s = cache.stats();
     ObjectNode node = mapper.createObjectNode();
     node.put("entries", corpus.size());
-    node.put("corpus", "52-real-texts-of-the-epoch-of-hush");
+    node.put("corpus", corpus.size() + "-real-texts-of-the-epoch-of-hush");
     node.put("cacheBackend", cache.backend());
     node.put("cacheHits", s.cacheHits());
     node.put("cacheMisses", s.cacheMisses());
