@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "097b42541310607ac947dcef772c665d0083acf9",
+  "head": "9b26c4adb81e762d8fb28d5f46407068716e6f52",
   "branch": "master",
-  "subject": "site-latest: 355cf43 (post-rebase reconcile)",
-  "date": "2026-11-16T21:41:07+08:00",
+  "subject": "feat(llm): aizzz 作者侧出网 + Clash Verge 出口修复（KI-617）",
+  "date": "2026-11-16T22:39:47+08:00",
   "kv": {
-    "KI.rows": 534,
-    "KI.Implemented": 357,
+    "KI.rows": 535,
+    "KI.Implemented": 358,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/097b42541310607ac947dcef772c665d0083acf9",
+    "url": "https://github.com/xiaodernan/caesura/commit/9b26c4adb81e762d8fb28d5f46407068716e6f52",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
