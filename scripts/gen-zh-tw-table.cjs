@@ -36,6 +36,7 @@ try {
     'story/lowtone-city/index.html',
     'story/pendulum-ferryman/index.html',
     'story/unfinished-ledger/index.html',
+    'story/fourth-strike/index.html',
   ];
 
   const PHRASES = new Set();

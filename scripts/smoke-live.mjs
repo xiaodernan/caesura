@@ -60,6 +60,7 @@ const ENDPOINTS = [
   { name: 'story-16', url: 'https://xiaodernan.github.io/caesura/story/lowtone-city/', marker: '低音之城' },
   { name: 'story-17', url: 'https://xiaodernan.github.io/caesura/story/pendulum-ferryman/', marker: '钟摆渡人' },
   { name: 'story-18', url: 'https://xiaodernan.github.io/caesura/story/unfinished-ledger/', marker: '未竟账页' },
+  { name: 'story-19', url: 'https://xiaodernan.github.io/caesura/story/fourth-strike/', marker: '第四下' },
 ]
 
 const asJson = argv.includes('--json')

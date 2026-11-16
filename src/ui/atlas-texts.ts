@@ -1158,5 +1158,46 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">Not to add anything. <em>To claim the empty square.</em></p>
     <p class="coda">She knows — everyone owes one sentence never spoken aloud. Its name has always waited in the final line, waiting to be remembered.</p>`,
   },
+  {
+    no: 18,
+    zhTitle: "第四下",
+    enTitle: "The Fourth Strike",
+    zh: `<p>岬角尽头那根断桅杆上，挂着一枚钟舌——拾钟人把它挂上去的时候，海风吹了一天，没有人问它是什么。它就那样挂着：不旧，也不新——它被人握过，被人放下，被人挂上去；它自己知道自己下一步要做什么。</p>
+    <p>没人敲过第四下。自从最后的铸钟人把第四口钟的位置空出来之后，每一口钟都只响三下：一响给报时，二响给记住，三响是给亲耳听见的人。第四下，连等都没有人敢等——世界把它留给那些还没到来的人。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>灯匠阿瓷的孩子在灯坊长大。她见过熔铜的时候星星掉进灯身，见过被打碎的钟在灯光里替她记住，见过母亲一整夜不睡地盯着那一锅铜——母亲从来不说钟曾经响过几下。她从小就听得见三下：听雾站的三下、创世那一口从没响过的钟的三下、还有风钟海岸每一座灯收灯时的三下。她母亲教她一件事：第四下不是等来的，是等出来的——是等你欠下那句话的人，自己走到桅杆下面来。</p>
+    <p>后来她长大了，守着岬角那盏灯，夜里替远在海上的人点着光。她知道断桅杆上那枚钟舌什么时候会动。她等了很多年——比等任何人都久。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>那年冬天，一个陌生人站到桅杆下面。他站了很久，什么也没说——他只把欠海的那句话还给了风。那句话里没有钟，没有报时，没有记住；那句话只是他自己。他交出去的时候，风停了一瞬。</p>
+    <p>灯不灭。塔上的光照着老样子落向海。岬角尽头，那枚钟舌轻轻晃了一下——不是被谁敲的，是风自己动的。三响之后，世界多了一声极轻的回响：没有哪一座灯记录过它，没有哪一口钟收到过它，可是每一只听过三响的耳朵，都在那一刻听见了自己的名字被风提了一下。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">没有人看见它。但每一个欠着一句从没说出口的话的人，都知道那一声是什么。</p>
+    <p class="coda">第四下不需要钟。第四下一直都是——认领自己没敢说的那句话的人，在心里第一次轻轻落下的那一声。</p>
+    <p class="coda">风替你收好了。海也是。钟也是。</p>`,
+    en: `<p>At the cape's end, on a broken mast, hangs a clapper — the Bell-Picker hung it there. All day the wind moved against it and no one asked what it was. It simply hangs there: not old, not new — it has been held, set down, and hung. It knows what it is about to do.</p>
+    <p>No one ever rang the fourth. Ever since the Last Bellfounder left the fourth bell's place empty, every bell rings three times: the first for the hour, the second for the memory, the third for the ones who heard it with their own ears. As for the fourth — no one even dares wait for it. The world kept it for those who had not yet come.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>A-Ci's child grew up in the lampforge. She had seen stars drop into the lamp bodies while the copper melted; she had seen the broken bells ring inside the light for her; she had watched her mother stay awake one whole night over the pot, and her mother never once said how many times the bells had rung. From first, she heard three: the three of the Listening Post, the three of the creation bell that never sounded, the three of every lamp closing down on Windbell Coast. Her mother taught her one thing — the fourth is not something you wait for; it is something you grow into waiting for, until the one who owes the sentence walks to the mast themselves.</p>
+    <p>Years later she became the keeper of the beacon at the cape, lighting it each night for those still out at sea. She knew when the clapper on the broken mast would move. She waited longer than she ever waited for any person.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>One winter, a stranger stopped at the foot of the mast. He stood there for a long time and said nothing — he simply gave the sentence he owed the sea back to the wind. That sentence held no bell, no hour, no memory; it was only himself. The wind stopped for one breath as it took it.</p>
+    <p>The beacon held. The light kept falling on the sea the way it always did. At the cape's end the clapper swayed — not struck, stirred. After the third strike the world kept a faint aftertone; no beacon recorded it, no bell received it, yet every ear that had ever heard the three heard its own name rise once on the wind.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">No one saw it. But every soul carrying one unspoken sentence knew what that sound was.</p>
+    <p class="coda">The fourth never needed a bell. The fourth has always been — the softest fall of the sentence you never dared to say, landing in your own chest at last.</p>
+    <p class="coda">The wind keeps it for you. So does the sea. So does the bell.</p>`,
+  },
 ]
 
