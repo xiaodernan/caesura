@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "8a69dd67bc516650d323be2e5e95f13dca0f3a72",
+  "head": "421568aa78586cc71f41f4f0dae8e1dda9d8d4e8",
   "branch": "master",
-  "subject": "site-latest: eae5857 (post-rebase reconcile)",
-  "date": "2026-11-17T00:19:43+08:00",
+  "subject": "chore(console): CACHE ORACLE 面板真值同步（2026-11-17 npm run llm:warmup --rounds=8）",
+  "date": "2026-11-17T00:22:55+08:00",
   "kv": {
     "KI.rows": 536,
     "KI.Implemented": 359,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/8a69dd67bc516650d323be2e5e95f13dca0f3a72",
+    "url": "https://github.com/xiaodernan/caesura/commit/421568aa78586cc71f41f4f0dae8e1dda9d8d4e8",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
