@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "380db307e291dce881cbd60589f8f866d9d62e20",
+  "head": "f2c6d2f8922d6020498bb3bad5a2cf7a49698708",
   "branch": "master",
-  "subject": "feat(ui): KI-627 主界面按键教学说明 · data-tip 三屏覆盖",
-  "date": "2026-11-17T06:31:39+08:00",
+  "subject": "site-latest: 380db30 (post-rebase reconcile)",
+  "date": "2026-11-17T06:33:35+08:00",
   "kv": {
     "KI.rows": 545,
     "KI.Implemented": 368,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/380db307e291dce881cbd60589f8f866d9d62e20",
+    "url": "https://github.com/xiaodernan/caesura/commit/f2c6d2f8922d6020498bb3bad5a2cf7a49698708",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
