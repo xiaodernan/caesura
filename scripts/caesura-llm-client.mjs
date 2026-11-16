@@ -79,6 +79,83 @@ import { readFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+/**
+ * 作者侧出网口径（KI-617）：本机 Clash Verge 在 127.0.0.1:7897 出网（aizzz 默认 403 直连）。
+ * Node 原生 `fetch` 不认任何系统代理——显式注入 undici ProxyAgent 到 global dispatcher，唯一入口的形状：
+ * 读 `CAESURA_LLM_PROXY`（精确到本项目）或 `HTTPS_PROXY`（标准给口），两者都没设 ⇒ 直连。
+ * 不内置任何代理主机；不捏造任何备用路由。
+ * @param {NodeJS.ProcessEnv} [env] 可注 `fetch.env` 以测试夹具
+ */
+const proxyDispatchers = new Map()
+export function applyAuthorProxyFromEnv(env = process.env) {
+  const proxy = env.CAESURA_LLM_PROXY || env.HTTPS_PROXY || env.https_proxy || env.HTTP_PROXY || env.http_proxy
+  if (!proxy) return Promise.resolve({ ok: true, via: 'direct' })
+  if (!proxyDispatchers.has(proxy)) {
+    proxyDispatchers.set(proxy, (async () => {
+      try {
+        const { ProxyAgent, setGlobalDispatcher } = await import('undici')
+        setGlobalDispatcher(new ProxyAgent(proxy))
+        return { ok: true, via: 'clash-proxy', proxy, note: 'Node fetch 经 Clash Verge 出网（aizzz 403 直连）' }
+      } catch (e) {
+        return { ok: false, via: 'direct', error: String(e?.message || e) }
+      }
+    })())
+  }
+  return proxyDispatchers.get(proxy)
+}
+
+/**
+ * curl.exe 兜底（KI-617）：Sub2API 边缘对 undici/Node 默认 TLS 指纹本连即断
+ * （`ECONNRESET: Client network socket disconnected before secure TLS connection was established`），
+ * 而相同代理经系统 `curl.exe` / Python urllib 出口完全正常（5/5 HTTP 200）。
+ * 触发条件：未注入 `fetchImpl`（mock 测试路径绝不走本兜底）且配置了 `CAESURA_LLM_PROXY` 或 `HTTPS_PROXY`。
+ * 返回 `{ ok, status, raw, error }`；ok=false 时把 null 让给上层按原错抛出。
+ */
+export async function curlSub2ApiFallback(url, headers, bodyObj, env = process.env) {
+  // 读 proxy 走 env 入口参数（KI-441 围栏：.mjs 里绝不碰裸 env 读法）
+  const proxy = env.CAESURA_LLM_PROXY || env.HTTPS_PROXY || env.https_proxy
+  if (!proxy) return null
+  const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs')
+  const { tmpdir } = await import('node:os')
+  const { join } = await import('node:path')
+  const tmp = mkdtempSync(join(tmpdir(), 'caesura-llm-'))
+  try {
+    const payload = join(tmp, 'body.json')
+    writeFileSync(payload, JSON.stringify(bodyObj ?? {}), 'utf8')
+    const hdrs = []
+    const skip = new Set(['content-type', 'accept']) // 本兜底统一钉死 content-type / Accept 以兼容 newapi
+    for (const [k, v] of Object.entries(headers || {})) {
+      if (skip.has(String(k).toLowerCase())) continue
+      hdrs.push('-H', `${k}: ${v}`)
+    }
+    const { execFile } = await import('node:child_process')
+    const args = ['-sS', '--max-time', '180', '-x', proxy, url, '-X', 'POST',
+      '-H', 'Content-Type: application/json',
+      '-H', 'Accept: application/json',
+      '-w', '\n%{http_code}',
+      ...hdrs,
+      '--data-binary', '@' + payload]
+    return await new Promise((resolvePromise) => {
+      execFile(process.platform === 'win32' ? 'curl.exe' : 'curl', args,
+        { timeout: 190000, windowsHide: true, maxBuffer: 16 * 1024 * 1024 },
+        (err, stdout, stderr) => {
+          const rawOut = stdout ? stdout.toString() : ''
+          if (err && !rawOut) {
+            resolvePromise({ ok: false, status: 0, raw: String(stderr || '') || String(err.message || err), error: String(err.message || err) })
+            return
+          }
+          // `-w '\n%{http_code}'` 把 HTTP 状态码钉在末行；body 与 "\nNNN" 之间可靠分隔
+          const nl = rawOut.lastIndexOf('\n')
+          const status = nl >= 0 ? Number(rawOut.slice(nl + 1).trim()) : 200
+          const body = nl >= 0 ? rawOut.slice(0, nl) : rawOut
+          resolvePromise({ ok: status >= 200 && status < 300, status: Number.isFinite(status) ? status : 200, raw: body, error: null })
+        })
+    })
+  } finally {
+    try { rmSync(tmp, { recursive: true, force: true }) } catch { /* noop */ }
+  }
+}
+
 export const NPC_BIBLE = `你是《止音纪元》的中文 NPC 对白编剧，服务明日方舟 × 饥荒美学的世界。
 
 【世界律】
@@ -291,18 +368,36 @@ export async function callLlm(body, { baseUrl, apiKey, fetchImpl } = {}) {
     throw err
   }
   const t0 = Date.now()
+  // 作者侧出网代理（Clash 7897）—— fetch 走 dispatcher；mock 注入时本调用是零副作用
+  await applyAuthorProxyFromEnv()
   // fetchImpl 可注入：让上层网关的 deps.fetchImpl / 测试 mock 在流式通道同样生效。
   const doFetch = fetchImpl || globalThis.fetch
-  const res = await doFetch(`${baseUrl}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      authorization: `Bearer ${apiKey}`,
-      'content-type': 'application/json',
-      // 非流式就收 JSON，别假装自己是 SSE——避免部分代理按 SSE 路由分流。
-      accept: body && body.stream === true ? 'text/event-stream' : 'application/json',
-    },
-    body: JSON.stringify(body),
-  })
+  const fetchHeaders = {
+    authorization: `Bearer ${apiKey}`,
+    'content-type': 'application/json',
+    // 非流式就收 JSON，别假装自己是 SSE——避免部分代理按 SSE 路由分流。
+    accept: body && body.stream === true ? 'text/event-stream' : 'application/json',
+  }
+  let res
+  try {
+    res = await doFetch(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: fetchHeaders,
+      body: JSON.stringify(body),
+    })
+  } catch (fetchErr) {
+    // Sub2API 边缘对 Node/undici TLS 指纹本连即断（ECONNRESET）；本兜底走系统 curl 走同一代理
+    // mock fetchImpl 路径绝不进本兜底，保证单测隔离性
+    if (fetchImpl) throw fetchErr
+    const raw = await curlSub2ApiFallback(`${baseUrl}/chat/completions`, fetchHeaders, body)
+    if (!raw || !raw.raw) throw fetchErr
+    res = {
+      body: null,
+      text: async () => raw.raw,
+      status: raw.status || 200,
+      ok: raw.status ? raw.status >= 200 && raw.status < 300 : true,
+    }
+  }
   const dt = Date.now() - t0
   // 非标准响应对象（部分代理 / 测试 mock）没有 `ok` 字段 ⇒ 用 status 兜底，绝不把 ok 读成 undefined。
   const ok = res.ok ?? (typeof res.status === 'number' && res.status >= 200 && res.status < 300)

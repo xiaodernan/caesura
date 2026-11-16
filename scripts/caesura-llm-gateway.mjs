@@ -45,8 +45,8 @@ import { createMinHeapDelayQueue } from './caesura-delay-queue.mjs'
 import { createFullJitterBackoff } from './caesura-retry-dlq.mjs'
 
 export const LLM_DEFAULTS = Object.freeze({
-  baseUrl: 'https://wkapi.pro/v1',
-  model: 'gpt-6-sol',
+  baseUrl: 'https://api.aizzz.xyz/v1',
+  model: 'gpt-6.1-terra',
   temperature: 0,
   maxTokens: 256,
   seed: 538,

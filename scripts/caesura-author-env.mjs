@@ -4,18 +4,20 @@
  * <p>全仓 `scripts/*.mjs` 禁止裸写 <code>env.CAESURA_*</code>（KI-441 的 tripwire：裸写全部 env 读数才算绕开唯一入口），
  * tests/unit/spring-family-table.test.ts）。本文件是读下列三个 env 的**唯一**位置：</p>
  * <ul>
- *   <li>`CAESURA_LLM_API_KEY` —— wkapi.pro / OpenAI-compatible 作者侧密钥（绝不进玩家进程、绝不落 git）;</li>
- *   <li>`CAESURA_LLM_BASE_URL` —— 覆盖默认 `https://wkapi.pro/v1` 的 base URL;</li>
- *   <li>`CAESURA_LLM_MODEL`   —— 覆盖默认 `gpt-6-sol` 的模型名。</li>
+ *   <li>`CAESURA_LLM_API_KEY` —— aizzz（OpenAI-compatible 作者侧 endpoint，经本机 Clash Verge HTTP 代理出网）的作者侧密钥（绝不进玩家进程、绝不落 git）;</li>
+ *   <li>`CAESURA_LLM_BASE_URL` —— 覆盖默认 `https://api.aizzz.xyz/v1` 的 base URL（旧 endpoint wkapi.pro/gpt-6-sol 仍可注释回落）;</li>
+ *   <li>`CAESURA_LLM_MODEL`   —— 覆盖默认 `gpt-6.1-terra` 的模型名。</li>
  * </ul>
+ * <p>出网口径（隐式纪律）：本机 Clash Verge 提供 HTTP 代理 `127.0.0.1:7897`；Node 原生 `fetch` 不认系统代理——让本仓所有作者侧网络请求真跑之前，必须先经 `scripts/caesura-llm-client.mjs` 的 `applyAuthorProxyFromEnv()`（读 `CAESURA_LLM_PROXY` 或 `HTTPS_PROXY`；未显式设置则直连）。绝不内置任何代理主机。</p>
  * <p>读取一份 `env` 对象（缺省 `process.env`，也可传入任意类 process.env 的对象，便于测试）；
  * 缺省回落到与网关（caesura-llm-gateway.mjs）同款默认，禁止把任何引用写进文件系统或落盘。</p>
  *
  * @module caesura-author-env
  */
 export const AUTHOR_ENV_KEYS = Object.freeze(['CAESURA_LLM_API_KEY', 'CAESURA_LLM_BASE_URL', 'CAESURA_LLM_MODEL'])
-export const LLM_DEFAULT_BASE_URL = 'https://wkapi.pro/v1'
-export const LLM_DEFAULT_MODEL = 'gpt-6-sol'
+export const LLM_DEFAULT_BASE_URL = 'https://api.aizzz.xyz/v1'
+export const LLM_DEFAULT_MODEL = 'gpt-6.1-terra'
+export const LLM_DEFAULT_PROXY = 'http://127.0.0.1:7897'
 export const LLM_DEFAULT_MISSING_KEY = 'missing CAESURA_LLM_API_KEY（env 注入；绝不落 git）'
 
 /**

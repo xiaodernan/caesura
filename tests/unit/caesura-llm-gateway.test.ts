@@ -40,8 +40,9 @@ function healthyFetch(calls: { n: number } = { n: 0 }) {
 
 describe('caesura-llm-gateway（KI-538）', () => {
   it('常量固定顺序 + 安全铁律：源码只从 env 读 key，base 强制带 /v1', () => {
-    expect(LLM_DEFAULTS.model).toBe('gpt-6-sol')
-    expect(LLM_DEFAULTS.baseUrl).toBe('https://wkapi.pro/v1')
+    // 默认 provider 已切到 aizzz + gpt-6.1-terra（2026-06-11 KI-617）；wkapi.pro/gpt-6-sol 仍可通过 env 回落
+    expect(LLM_DEFAULTS.model).toBe('gpt-6.1-terra')
+    expect(LLM_DEFAULTS.baseUrl).toBe('https://api.aizzz.xyz/v1')
     expect(LLM_STRATEGIES).toEqual(['OfflineDouble', 'LiveGrounded', 'CachedLive'])
     expect(LLM_SCENARIOS.length).toBe(6)
     expect(resolveApiKey({})).toBe('')
@@ -113,9 +114,9 @@ describe('caesura-llm-gateway（KI-538）', () => {
       }
     }
     const clock = () => { clockT += 40; return clockT }
-    const r = await callLlm([{ role: 'user', content: 'hello' }], { mode: 'live', baseUrl: 'https://wkapi.pro' }, { env: { CAESURA_LLM_API_KEY: 'sk-test' }, fetchImpl, clock })
+    const r = await callLlm([{ role: 'user', content: 'hello' }], { mode: 'live', baseUrl: 'https://api.aizzz.xyz/v1' }, { env: { CAESURA_LLM_API_KEY: 'sk-test' }, fetchImpl, clock })
     expect(calls.n).toBe(1)
-    expect(capturedBody.model).toBe('gpt-6-sol')
+    expect(capturedBody.model).toBe('gpt-6.1-terra')
     expect(capturedBody.messages.length).toBe(1)
     expect(r.ok).toBe(true)
     expect(r.content).toBe('live-真回复')

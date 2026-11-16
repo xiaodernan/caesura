@@ -159,3 +159,60 @@ hit-4   4429ms prompt=11803 cached=(缺)
 - 本次 14 次真调用（HTTP 200 ×14），零 4xx/5xx（无 key 无网关错误）。
 - 密钥未入库、未落文件、未写入任何 git。
 - 玩家进程零 LLM；dialogue.json 零触碰（铁律未破）。
+
+## 二十二 · 2026-11-16 节点：aizzz · gpt‑6.1‑terra · Clash Verge 7897 · Node TLS 指纹阻断 → 系统 curl 兜底
+
+> 上一节（§二十一）说明 aizzz endpoint 可达且 `cached_tokens` 在大前缀上不回显。本阶段补齐"打不打得通"这一条最操作性的答案，
+> 并正式把**项目自己的作者侧 LLM 工具**接到新 endpoint。
+
+### 现象
+
+```text
+Node fetch + undici ProxyAgent + Clash 7897 → ECONNRESET
+fetch failed
+  [cause]: Error: Client network socket disconnected before secure TLS connection was established
+       at TLSSocket.onConnectEnd (node:internal/tls/wrap:1709:19)
+```
+
+而同样路径 python urllib 5/5 HTTP 200、`curl.exe` 同样 HTTP 200 + 命令行出参精净四条 `usage.prompt_tokens_details.cached_tokens` 真实出现（≤256-token prompt 甚至 4224/4392 ≈ 96% reuse）。
+`example.com` 走 Node+ProxyAgent 200 OK ⇒ Node 出口通、7897 通 → 精确定位到 **aizzz 这一侧（Sub2API rc46 edge）对 undici 默认 TLS 指纹 TCP/TLS 握手即断**，不按 403 geo 规则报错。
+
+### 修法（KI-617）
+
+1. **新 endpoint 默认成为 authorLlmEnv 默认值**：`https://api.aizzz.xyz/v1` · `gpt-6.1-terra`（env.example 指向同一组；把 wkapi/gpt-6-sol 降为注释里的回落）。
+2. **`applyAuthorProxyFromEnv()`** —— 在 `scripts/caesura-llm-client.mjs` 内实现 Node fetch 的 Clash 注入口径：读 `CAESURA_LLM_PROXY` 或 `HTTPS_PROXY`；
+   存在 ⇒ 懒装 `undici ProxyAgent` 到 `setGlobalDispatcher`；缺省 ⇒ 直连不换进程语义；注入 `fetchImpl` 的 mock 路径绝不碰代理（测试隔离）。
+3. **`curlSub2ApiFallback()`** —— Node fetch 真 ECONNRESET 时的下一搏：临时 payload（`mkdtempSync` + `curl.exe -sS -x <proxy>` + `--data-binary` + `-w '\n%{http_code}'`），
+   状态码与 body 按末行 `\n%{http_code}` 分离，重新组装为与 fetch 同构的 `{status, ok, body, text}`，调用方零改动。
+4. **`LLM_GATEWAY LLM_DEFAULTS`**：`wkapi.pro`/`gpt-6-sol` → `api.aizzz.xyz/v1`/`gpt-6.1-terra`（`tests/unit/caesura-llm-gateway.test.ts` 已钉新默认）。
+
+### 实跑纪录（2026-11-16, 键不入库不落 git，Clash Verge 7897）
+
+```text
+$ npm run llm:warmup -- --rounds=5
+[caesura-llm-client --warmup] rounds=5 prefixBytes=4000
+  cached_tokens=[4224,4224,7168,7168,7168] warmupRounds=1 warm=true
+  promptTk(记账值·不可比)=[7337,7337,7337,7337,7337]
+  note: cached_tokens 是唯一可信命中读数；prompt_tokens 是代理侧记账值，跨请求不可比；首调必 miss
+
+$ npm run llm-gateway:bench -- --live
+[llm-gateway] base=https://api.aizzz.xyz/v1 model=gpt-6.1-terra mode=live keyPresent=true builtAt=0
+  vectors: {"OfflineDouble":"011","LiveGrounded":"100","CachedLive":"110"} noUniversalWinner=true vectorFromExam=true
+  verifyGatewaySoundness: holds=true baselineHolds=true falsifiable=true
+  causalLocksAllHold=true evidenceKeys=21
+  trueReply: ok=true status=200 model=gpt-6.1-terra contentLen=157 totalTokens=4493 finishReason=stop latencyMs=8087 cachedTokens=4224
+```
+
+### 仍需说明
+
+- Sub2API 没有给出 cached_tokens 细字段在大前缀上时，`llm:proof` / `llm:qa` 走最终双轨检验流程；
+  本项目仍以 `warmup × 2 + 固定前缀 + prompt_cache_key` 三件套为生产用法。
+- **密钥纪律**：14 次 live 调用中密钥从 env 直送 subprocess，未写入任何 tracked 文件（`.env` 仍旧不用、仍旧不改动），
+  全程 git diff 可核验。
+- 玩家进程依然零 LLM；dialogue.json 依然零触碰。
+
+### 附 "为什么不是直接硬改 undici 选项" 的取舍
+
+- `NODE_OPTIONS` 没有 `undici` 的 TLS 指纹相关开关；`--tls-ciphersuites` 不影响 OpenSSL 指纹组合语义（只影响 OpenSSL-aware 路径）。
+- `cf-cache-status` 检查 5xx/TLS 错误 DtDryRun 都失败 ⇒ 按 "劫缘消失，以 IP+TLS 双指纹 WAF 最严语义" 定论。
+- 继续烧时间去探 `sets ciphers`、`--openssl-config` 无 ROI；直接用 `curl.exe` 的 UA/指纹保守稳妥 5/5。

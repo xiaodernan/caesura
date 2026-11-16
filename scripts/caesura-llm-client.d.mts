@@ -79,6 +79,31 @@ export interface WarmupResult {
   prefixBytes: number
   note: string
 }
+
+export interface AuthorProxyResult {
+  ok: boolean
+  via: 'direct' | 'clash-proxy'
+  proxy?: string
+  note?: string
+  error?: string
+}
+/** 作者侧出网口径（KI-617）：响应 CAESURA_LLM_PROXY / HTTPS_PROXY 时懒装 undici ProxyAgent 到 setGlobalDispatcher；缺省直连 · mock 绝不碰代理。 */
+export function applyAuthorProxyFromEnv(env?: NodeJS.ProcessEnv): Promise<AuthorProxyResult>
+
+export interface CurlSub2ApiFallbackResult {
+  ok: boolean
+  status: number
+  raw: string
+  error: string | null
+}
+/** curl.exe 兜底（KI-617）：Node ECONNRESET 时走系统 curl 同一代理（状态码/body 按末行分离）；调用方组装同构响应。 */
+export function curlSub2ApiFallback(
+  url: string,
+  headers: Record<string, string>,
+  bodyObj: Record<string, unknown>,
+  env?: NodeJS.ProcessEnv,
+): Promise<CurlSub2ApiFallbackResult | null>
+
 /** 前缀预热：首调必 miss ⇒ 生产上先烤热再跑正题。零 key 时零网络请求。 */
 export function warmupPrefix(opts?: {
   rounds?: number
