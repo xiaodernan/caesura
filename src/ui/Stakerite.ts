@@ -13,6 +13,7 @@ import { BIND_BOUNDS, type BindChannel } from '@/settings/Bindings'
 import { DEFAULT_QUALITY, QUALITY_NAMES, type QualityTier } from '@/settings/Quality'
 import { actionLabel, intentLabel, padLabel } from '@/ui/actionLabels'
 import { STORY_CHAPTERS } from './atlas-texts'
+import { WORLD_CHRONICLE_W47 } from './world-chronicle'
 import type { RpgRuntime } from '@/rpg/Runtime'
 import type { SlotCard } from '@/save/Slots'
 import { SAVE_CARD_CSS, saveCards, saveCardHtml, slotLabel, type SaveCardView } from '@/ui/SaveSlots'
@@ -360,7 +361,7 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 `,
 }
 
-type Tab = 'tune' | 'gear' | 'bag' | 'moves' | 'trade' | 'save' | 'manual' | 'atlas' | 'ops'
+type Tab = 'tune' | 'gear' | 'bag' | 'moves' | 'trade' | 'save' | 'manual' | 'atlas' | 'chronicle' | 'ops'
 
 const TABS: { id: Tab; label: string; hint: string }[] = [
   { id: 'tune', label: t('stak.tab.tune'), hint: t('stak.tab.tune.hint') },
@@ -382,6 +383,11 @@ const MANUAL_TAB: { id: Tab; label: string; hint: string } = { id: 'manual', lab
  * 摊在一页上。和「手册」同为不抓把手、永远可用的一页；正文住在 PLAYER_ATLAS，zh / zh-TW / en 三份静态对照。
  */
 const ATLAS_TAB: { id: Tab; label: string; hint: string } = { id: 'atlas', label: t('stak.tab.atlas'), hint: t('stak.tab.atlas.hint') }
+/**
+ * 「本周纪事」页签（2026-11-17）：未竟厅史官写给世界的一封短信——
+ * 玩家只有在这里才能读到 "世界真的在变" 的直接证据。内容住在 world-chronicle.ts，zh/en 对仗。
+ */
+const CHRONICLE_TAB: { id: Tab; label: string; hint: string } = { id: 'chronicle', label: t('stak.tab.chronicle'), hint: t('stak.tab.chronicle.hint') }
 
 /**
  * 「操作」页签**不在上面那张表里**：它要 `OpsPanelDeps` 那组把手才有东西可改，
@@ -930,7 +936,7 @@ export class Stakerite {
 
   /** 页签名册现推（§55）：接得到把手才有「操作」；「手册」「游记」永远在，因为它们不抓把手 */
   private tabsOf(): { id: Tab; label: string; hint: string }[] {
-    return this.ops ? [...TABS, MANUAL_TAB, ATLAS_TAB, OPS_TAB] : [...TABS, MANUAL_TAB, ATLAS_TAB]
+    return this.ops ? [...TABS, MANUAL_TAB, ATLAS_TAB, CHRONICLE_TAB, OPS_TAB] : [...TABS, MANUAL_TAB, ATLAS_TAB, CHRONICLE_TAB]
   }
 
   /** 换页：进存档页就现取名册（离开时把未确认的那一笔撤掉，别把确认条留在别的页里） */
@@ -1375,7 +1381,8 @@ export class Stakerite {
               : this.tab === 'save' ? this.renderSave()
                 : this.tab === 'manual' ? this.renderManual()
                   : this.tab === 'atlas' ? this.renderAtlas()
-                    : this.renderOps()
+                    : this.tab === 'chronicle' ? this.renderChronicle()
+                      : this.renderOps()
     this.lastBody = raw
     const body = this.navUsed ? this.markFocus(raw) : raw
     return `
@@ -1474,6 +1481,24 @@ export class Stakerite {
       <div class="atlas-page">${PLAYER_ATLAS[lang === 'en' ? 'en' : 'zh']}
       <h2>${header}</h2>
       ${chaptersHtml}</div>`
+  }
+
+  private renderChronicle(): string {
+    const lang = getLang()
+    const w = WORLD_CHRONICLE_W47
+    const body = lang === 'en' ? w.en : w.zh
+    const title = lang === 'en' ? 'The Chronicle · week of Nov 16, 2026' : '本周纪事 · 2026-11-16'
+    return `
+      <style>.chronicle-page em { color: #ffedc4; font-style: normal; }
+             .chronicle-page strong { color: #ffe4a4; font-weight: 600; letter-spacing:.02em }
+             .chronicle-page .coda { font-style: italic; color: rgba(243,237,224,.78); text-align: center; margin:.7em 0 0 }
+             .chronicle-page p { margin:0 0 .95em }
+             .chronicle-page .beat { text-align: center; letter-spacing:.5em; color: rgba(243,206,143,.55); margin:.4em 0 }
+      </style>
+      <div class="chronicle-page">
+      <h2 style="font-family:var(--serif);color:#f3ce8f;margin:0 0 .5em;letter-spacing:.08em">${title}</h2>
+      ${body}
+      </div>`
   }
 
   private renderGear(): string {

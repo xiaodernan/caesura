@@ -175,11 +175,11 @@ function rig(withOps = true, onOpsTab = true, saves: SavePanelDeps = NO_SAVES): 
 }
 
 describe('KI-337 「操作」页签是现推的：没接把手就没有这一页', () => {
-  it('接了 ⇒ 七个页签里有点得动的「操作」；没接 ⇒ 名册仍是六个', () => {
+  it('接了 ⇒ 名册含有能点进的「操作」页签；没接 ⇒ 仍为九个页签', () => {
     expect(html(rig(true).p), '把手接上了就要有能点进去的格子').toContain('data-act="tab" data-arg="ops"')
     const without = html(rig(false).p)
     expect(without, '没接把手却给一个页签 = 点了没反应的假可达').not.toContain('data-arg="ops"')
-    expect((without.match(/data-act="tab"/g) ?? []).length, 'TABS 那六格 + 手册 + 游记 一格不多一格不少').toBe(8)
+    expect((without.match(/data-act="tab"/g) ?? []).length, 'TABS 那六格 + 手册 + 游记 + 本周纪事 一格不多一格不少').toBe(9)
   })
 
   it('没接把手时被硬点进 ops 也只有那句实话，没有一张凭空的表', () => {
@@ -189,7 +189,7 @@ describe('KI-337 「操作」页签是现推的：没接把手就没有这一页
     expect(html(r.p), '不许凭空画出一列键名').not.toContain('data-act="arm"')
   })
 
-  it('左右换页那条也数得到第九页：从「存档」翻三步 → 「手册」→「游记」→「操作」', () => {
+  it('左右换页那条也数得到第十页：从「存档」翻三步 → 「手册」→「游记」→「本周纪事」→「操作」', () => {
     const r = rig(true)
     click(r.p, 'tab', 'save')
     pump(r.p, r.input, ['pageNext'])
@@ -200,7 +200,10 @@ describe('KI-337 「操作」页签是现推的：没接把手就没有这一页
     expect(page2, '第二步落「游记」——八区指北针，同样不抓把手').toContain('data-act="tab" data-arg="atlas"')
     pump(r.p, r.input, ['pageNext'])
     const page3 = html(r.p)
-    expect(page3, '第三步落「操作」').toContain('data-act="arm"')
+    expect(page3, '第三步落「本周纪事」——《W47 世界巡礼》发声点，同样不抓把手').toContain('data-act="tab" data-arg="chronicle"')
+    pump(r.p, r.input, ['pageNext'])
+    const page4 = html(r.p)
+    expect(page4, '第四步落「操作」——逐行可改键').toContain('data-act="arm"')
   })
 })
 
