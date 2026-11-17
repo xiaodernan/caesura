@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "a48ccf8e2b56167e5f2c40e39a64e3685678cc05",
+  "head": "732bb95e32f9b11bfd09c432850ba83e23e048aa",
   "branch": "master",
-  "subject": "fix(story/anthology): align fact counts with KI-648 census - Twenty-Three Voices of the Aftermath + one hundred and fifteen minutes",
-  "date": "2026-11-17T14:27:27+08:00",
+  "subject": "feat(story): KI-649《余响集》第二十四篇《半声之后 / After Half a Chime》落地（LLM 真机草稿 → 人工闸落库）",
+  "date": "2026-11-17T14:41:14+08:00",
   "kv": {
-    "KI.rows": 566,
-    "KI.Implemented": 389,
+    "KI.rows": 567,
+    "KI.Implemented": 390,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/a48ccf8e2b56167e5f2c40e39a64e3685678cc05",
+    "url": "https://github.com/xiaodernan/caesura/commit/732bb95e32f9b11bfd09c432850ba83e23e048aa",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
