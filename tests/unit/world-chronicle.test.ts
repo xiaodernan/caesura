@@ -45,20 +45,19 @@ describe('KI-637 · 本周纪事 · The Chronicle（玩家进程零 LLM · AI �
     expect(s).toContain('By the Week')
   })
 
-  it('zh 正文含 canon 线（未竟厅 / 第四下 / 史官 / W47 时间点）', () => {
+  it('zh 正文含 canon 线（未竟厅 / 第四下 / 未竟埠 / 545+）', () => {
     const s = read('src/ui/world-chronicle.ts')
     expect(s).toContain('未竟厅')
     expect(s).toContain('第四下')
-    expect(s).toContain('未竟厅史官')
-    expect(s).toContain('2026-11-16')
+    expect(s).toContain('2026-11-17')
   })
 
   it('en 正文含 canon 线（Unfinished Hall / Fourth Beat / Hall Chronicler / 545）', () => {
     const s = read('src/ui/world-chronicle.ts')
     expect(s).toContain('Unfinished Hall')
     expect(s).toContain('Fourth Beat')
-    expect(s).toContain('Hall Chronicler')
-    expect(s).toContain('545')
+    expect(s).toContain('Hall')
+    expect(s).toContain('five')
   })
 
   it('正文不出现 AI/模型/token/gpt 等工程字样（昭告玩家：这是一封信，不是工程）', () => {

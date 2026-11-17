@@ -210,7 +210,7 @@ describe('调音桩面板：状态机与内容', () => {
     key('right')
     expect(html(p), '第八页（2026-11-15 新增）：游记 · 八区指北针').toContain('八区 · 指北针')
     key('right')
-    expect(html(p), '第九页（2026-11-17 新增）：本周纪事 · 世界的信').toContain('未竟厅史官')
+    expect(html(p), '第九页（2026-11-17 新增）：本周纪事 · 世界的信').toContain('第四下')
     key('right')
     expect(html(p), '再往右绕回头一页').toContain('六音级属性')
   })
