@@ -1,6 +1,6 @@
 /**
- * 游记 · 四十一篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672 扩）。
- * 这四十一篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 四十二篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673 扩）。
+ * 这四十二篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -2272,6 +2272,49 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She did not look at the sea.</p>
     <p class="coda">Some marks need not be asked where they came from.</p>
     <p class="coda">The age of hush has not ended. It has only, at last, learned one sentence by the threshold — first, do not ask; first, wait.</p>`,
+  },
+  {
+    no: 42,
+    zhTitle: "门槛上的盐",
+    enTitle: "Salt at the Threshold",
+    zh: `<p>潮水退后，门槛上的湿痕淡了。阿汐没有擦。薄簿仍合着，页角没有翻动。她从袖里掏出一粒盐——不知是怎么把它藏下来的，也不想为什么——她把它放在湿痕旁边，没有记下它。</p>
+    <p>天亮时，盐还在，湿痕也还在。木板被晒得很浅，湿痕呈现出一种很淡的颜色，比潮湿的木板浅一点、比干的也深一点。盐粒看着潮湿的光线，自己也像发光的——它就在那里。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>渡人某天又停在门口。阿汐没有叫他进来，她也没有出去。她只是隔着门槛看看他——他好像正在数着盐粒笑——他也有一粒盐藏在自己袖子里。他也没有把那粒盐拿出来。</p>
+    <p>她想起阿汐小时候母亲曾给过她一粒盐，说：盐会等你回来——它比你以为的耐心长很多。阿汐以为它说的是等饭，或者等池塘里的鱼。她没有真正听懂。也许她今天才懂了一点。</p>
+    <p>渡人说：它跟以前是一回事——还是不一样的。他说完就走了，走之前也没有回头。他的背影在她的眼里像一页薄簿慢慢翻走。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>阿汐又把薄簿拿起来看了一眼。薄页仍一动不动——它仍然是那一页没写下的那一页。她把它放回接缝旁。她慢慢明白：世界的某一页它就是这这样一页——它一直都在等的不是被记住，而是被放着。</p>
+    <p>她没有再拿起它。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有看海。</p>
+    <p class="coda">有些留下，不必登记。</p>
+    <p class="coda">止音纪元没有结束。它只是终于留下了一粒盐——盐不知道它被留下的那天起就开始发光了。</p>`,
+    en: `<p>After the tide withdrew, the mark on the threshold grew faint. Axi did not wipe it away. The ledger stayed closed, its page corner still. She took a grain of salt from her sleeve — she had no idea how it had gotten there, nor why she held it — and placed it beside the mark, and did not enter it.</p>
+    <p>At dawn, both remained. The boards were bleached pale; the mark showed in a faint shade — paler than damp wood, darker than any dry board. The grain of salt seemed to catch the new light and glow a little on its own — it was just there.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>One day the ferryman happened by. Axi did not call him in, nor did she come out. She only watched him over the threshold — he seemed to be smiling, as if there were a grain of salt of his own hidden away in his sleeve. He never brought it out either.</p>
+    <p>She remembered that, as a girl, her mother had once handed her a grain of salt, saying: salt will wait for you — it is far more patient than you think. Axi had assumed she was talking about rice, or a fish in a pond. She had never really understood. Perhaps, today, she had begun to understand a little.</p>
+    <p>The ferryman said: it is the same as before — or not the same. He left after that, without looking back. His back receded from her eyes like a thin page of the ledger turning on its own.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Axi lifted the ledger once more and looked at it. The page did not move — it was still the page that had never been written. She set it down beside the seam. She came slowly to know: there is a rule this world runs by — that page is not waiting to be remembered; it is waiting to be held.</p>
+    <p>She did not pick it up again.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some things remain without being entered.</p>
+    <p class="coda">The age of hush has not ended. It has only, at last, left behind one grain of salt — it began glowing the day it was left.</p>`,
   },
 ]
 

@@ -60,6 +60,7 @@ try {
     'story/the-scale-shadow/index.html',
     'story/beyond-the-threshold/index.html',
     'story/the-mark-outside/index.html',
+    'story/salt-at-the-threshold/index.html',
   ];
 
   const PHRASES = new Set();
