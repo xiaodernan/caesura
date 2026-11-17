@@ -73,6 +73,7 @@ const ENDPOINTS = [
   { name: 'story-29', url: 'https://xiaodernan.github.io/caesura/story/salt-on-the-sill/', marker: '窗台盐线' },
   { name: 'story-30', url: 'https://xiaodernan.github.io/caesura/story/after-the-salt-line/', marker: '盐线之后' },
   { name: 'story-31', url: 'https://xiaodernan.github.io/caesura/story/the-sill-keeps-count/', marker: '窗台记数' },
+  { name: 'story-32', url: 'https://xiaodernan.github.io/caesura/story/after-the-space/', marker: '空处之后' },
   { name: 'ai-json-commit', url: 'https://xiaodernan.github.io/caesura/admin/ai-director-latest.json', marker: '"authorOnly": true' },
   { name: 'ai-json-qa', url: 'https://xiaodernan.github.io/caesura/admin/ai-director-transitions-qa.json', marker: '"authorOnly": true' },
 ]

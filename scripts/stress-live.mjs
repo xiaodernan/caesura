@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * 止音纪元 · stress-live（KI-660 · 用户「压力测试」指令落地）
  *

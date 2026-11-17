@@ -1,6 +1,6 @@
 /**
- * 游记 · 三十篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659 扩）。
- * 这三十篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 三十一篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661 扩）。
+ * 这三十一篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -1758,6 +1758,47 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">When the wind came again, the bag did not move. On the sill, the two halves lay together and the space remained. That night she walked to the beach; when she came back, there was salt on the sole of her shoe.</p>
     <p class="coda">The door stayed shut. The space was not filled.</p>
     <p class="coda">The age of hush has not ended. It is learning two characters — wait.</p>`,
+  },
+  {
+    no: 31,
+    zhTitle: "空处之后",
+    enTitle: "After the Space",
+    zh: `<p>纸袋仍在门边。窗台中间留着一道空处，铜扣没有放进去。那枚铜扣是某天清晨自己长在窗台上的——同一道她在空气里闻见了一点陈旧的铜锈味，窗台上就多了一个小小的沉点。</p>
+    <p>她拾起来放在手里看了许久。铜扣的边缘有一点点磨过——那是回老宅门槛上、很远的那天傍晚被阿汐替阿沉按下去、又沿着石阶滚下来时，蹭掉的那层亮。它比任何时候都更薄、更旧，也更像某人一样走到了自己该到的地方。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她把它搁在木板接缝旁——床边那道被她称作「记数的线」的接缝。她以为那里会记住它。她用粉笔在它旁边点了一点，又点了一点；点到第七下，粉笔灰忽然碎在接缝里，像被风吹进木板的谷里，落不到她的指腹上。</p>
+    <p>木板没有记下铜扣。哪怕她换了铅笔、换了指甲、换了指腹——木板不认这么多数。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>那天晚上，退潮深一寸。她推开门，看见海在尽头发回深的明暗——一些很深很老的影子。浅点停在门外，没有越过盐线。她没有数它们，也没有捏着粉笔下楼。她只站在门槛上望了很久。</p>
+    <p>她忽然明白：盐线不属于任何人，也不属于任何人的记数法；它只是每天替世界画下一个空处——为什么它永远不结束，谁都说不准。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她后来没有再去数。退潮的时候，她看海；涨潮的时候，她看门缝。铜扣还在木板接缝旁，一动也不动。</p>
+    <p class="coda">木板没有记下铜扣。</p>
+    <p class="coda">止音纪元没有结束。它在学着不去数。</p>`,
+    en: `<p>The paper bag remained by the door. The space between the two halves on the sill was still empty; the copper button had not been placed there. The button had simply grown there one morning — Axi had smelled the stale oxide in the air, and the sill had a small heavy spot on it, waiting to be answered.</p>
+    <p>Axi lifted it and studied it in her palms for a long while. Its edges were worn — the shine had gone from the faraway evening it had been pressed through A-Chen's doorstep on her behalf, and then tumbled down the stone steps. It was thinner now, older, more homely, and somehow more like someone who had walked the rest of the way back.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>She set it beside the seam in the floorboard — the seam she had called her counting line. She thought it would remember it there. She touched chalk beside it once, twice; on the seventh touch the chalk dust broke into the seam, as if it had been drawn into the grain before her fingertip could feel it.</p>
+    <p>The floorboard kept no count of the button. Not for chalk, not for pencil, not for fingernail, not for fingertip. The boards would not learn her arithmetic.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>That evening the tide dropped a further inch. She pushed the door open and saw the sea at the far end sending back its deep contrasts — very dark and very old shapes. The shallow marks stopped outside the door, short of the salt line. She did not count them. She did not take chalk downstairs. She only stood on the threshold and looked for a long time.</p>
+    <p>She finally understood: the salt line belonged to no one, and to no one's arithmetic; it was the sea drawing a small empty space each day for the world, and no one could say why it would not end.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">In the end she stopped counting. At ebb she watched the sea; at flood she watched the slit in the door. The button stayed by the floorboard's seam, unmoving.</p>
+    <p class="coda">The floorboard kept no count of the button.</p>
+    <p class="coda">The age of hush has not ended. It is learning not to count.</p>`,
   },
 ]
 

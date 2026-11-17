@@ -49,6 +49,7 @@ try {
     'story/salt-on-the-sill/index.html',
     'story/after-the-salt-line/index.html',
     'story/the-sill-keeps-count/index.html',
+    'story/after-the-space/index.html',
   ];
 
   const PHRASES = new Set();
