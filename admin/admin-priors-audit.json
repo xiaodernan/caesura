@@ -1,0 +1,162 @@
+{
+  "$comment": "KI-636 · admin「先验审计」· AI priors audit · 作者侧 · runtime:false · 玩家进程零 LLM",
+  "runtime": false,
+  "authorOnly": true,
+  "containsCredentials": false,
+  "requiresHumanReview": true,
+  "schema": 1,
+  "mode": "live",
+  "generatedAt": "2026-11-17T01:17:15.357Z",
+  "model": "gpt-6.1-terra",
+  "endpoint": "https://api.aizzz.xyz/v1",
+  "telemetryHead": {
+    "totalSessions": 5005,
+    "meanBounce": "0.553",
+    "endingConversion": "0.058",
+    "mobileShare": "0.610"
+  },
+  "observed": {
+    "funnel": [
+      {
+        "id": "landed",
+        "count": 5005
+      },
+      {
+        "id": "pressed-start",
+        "count": 2928
+      },
+      {
+        "id": "in-world",
+        "count": 2386
+      },
+      {
+        "id": "atlas-open",
+        "count": 1038
+      },
+      {
+        "id": "chapter-finish",
+        "count": 680
+      },
+      {
+        "id": "ending",
+        "count": 289
+      }
+    ],
+    "devices": [
+      {
+        "id": "mobile",
+        "share": 0.61
+      },
+      {
+        "id": "desktop",
+        "share": 0.34
+      },
+      {
+        "id": "tablet",
+        "share": 0.05
+      }
+    ],
+    "locales": [
+      {
+        "id": "zh",
+        "share": 0.71
+      },
+      {
+        "id": "en",
+        "share": 0.29
+      }
+    ],
+    "pages": 11,
+    "refs": [
+      {
+        "labelZh": "Baymard Institute · 平均购物车放弃率 70.22%",
+        "labelEn": "Baymard Institute · avg. cart abandonment 70.22%",
+        "detail": "2026-10-28 更新 · 50 项研究 2006–2025 · 非加权均值 · 2026-11-17 实测再取核对（baymard.com/blog/cart-abandonment-rate：正文明载 70.22% · 50 published studies · 2006–2025，数值无变化）。"
+      },
+      {
+        "labelZh": "Nielsen Norman Group · 10 秒法则",
+        "labelEn": "Nielsen Norman Group · the 10-second rule",
+        "detail": "≈ 五分之一用户在首屏立即离开 / ~1 in 5 leaves at first paint. Prior band for bounce."
+      },
+      {
+        "labelZh": "Contentsquare Benchmarks 2026 · 990 亿会话 · 6,500+ 站点",
+        "labelEn": "Contentsquare Benchmarks 2026 · 99B sessions · 6,500+ sites",
+        "detail": "全球行业基准的体量锚点（2025 版 900 亿 / 6,000 sites · 2026-11-16 检索 contentsquare.com 新闻稿）。"
+      },
+      {
+        "labelZh": "StatCounter · 2026-10 Worldwide：Mobile 60.87% / Desktop 39.13%",
+        "labelEn": "StatCounter · Oct 2026 worldwide: Mobile 60.87% / Desktop 39.13%",
+        "detail": "2026-11-16 检索 gs.statcounter.com（mobile vs desktop market share, October 2026）。"
+      }
+    ]
+  },
+  "priors": [
+    {
+      "index": 1,
+      "label": "Baymard · 购物车放弃率（50 项研究 2006–2025 · 非加权均值约 70%）",
+      "prior": "Cart abandonment ~70%; ~1/3 of users who add a cart actually buy",
+      "band": "ecommerce / 转化漏斗 · 0.65–0.75 band"
+    },
+    {
+      "index": 2,
+      "label": "Nielsen Norman Group · 10 秒法则（首屏约五分之一用户立即离开）",
+      "prior": "~20% immediate bounce at first paint",
+      "band": "general web · 首屏 0.15–0.25 band"
+    },
+    {
+      "index": 3,
+      "label": "Contentsquare Benchmarks 2026 · 99B sessions / 6500+ sites · Mobile ~60%",
+      "prior": "globally mobile share exceeds desktop",
+      "band": "global web traffic · 2025–2026 band"
+    },
+    {
+      "index": 4,
+      "label": "StatCounter · Oct 2026 worldwide · Mobile 60.87% · Desktop 39.13%",
+      "prior": "mobile ≈ 61% · desktop ≈ 39% (worldwide)",
+      "band": "web device share · 2026 benchmark"
+    }
+  ],
+  "verdicts": [
+    {
+      "label": "Baymard购物车放弃率 / Baymard cart abandonment",
+      "verdict": "rejected",
+      "whyZh": "队列没有加购与购买分母，5.8%是会话到结局，无法对齐购物车转化。",
+      "whyEn": "No add-to-cart or purchase denominator; 5.8% is session-to-ending conversion, so the prior is not comparable."
+    },
+    {
+      "label": "NNG首屏10秒法则 / NNG 10-second rule",
+      "verdict": "rejected",
+      "whyZh": "55.3%是总体bounce，不是首屏或10秒内离开，缺少可比指标。",
+      "whyEn": "The 55.3% overall bounce rate is not first-paint or ten-second abandonment, so comparison lacks evidence."
+    },
+    {
+      "label": "Contentsquare移动流量 / Contentsquare mobile share",
+      "verdict": "plausible",
+      "whyZh": "移动占比61.0%，与约60%的全球基准一致，仅有轻微正偏。",
+      "whyEn": "Mobile share is 61.0%, aligning closely with the roughly 60% global benchmark."
+    },
+    {
+      "label": "StatCounter全球设备占比 / StatCounter worldwide device share",
+      "verdict": "plausible",
+      "whyZh": "移动61.0%、桌面39.0%，与60.87%和39.13%几乎完全一致。",
+      "whyEn": "Mobile at 61.0% and desktop at 39.0% nearly exactly match 60.87% and 39.13%."
+    }
+  ],
+  "overall": {
+    "verdictZh": "目前只能确认设备结构对齐；漏斗与离开行为尚未被这些先验有效验证。",
+    "verdictEn": "Only device mix aligns; funnel and exit behavior remain unvalidated by these priors.",
+    "readyZh": "值得现在接，以影子采集开始",
+    "readyEn": "Yes, start with shadow telemetry."
+  },
+  "sensitivity": {
+    "zh": "Baymard购物车先验最敏感：必须补齐加购、结账、购买分母；其次是NNG的首屏10秒事件。",
+    "en": "Baymard is most sensitive: add cart, checkout, and purchase denominators; next, capture first-paint and ten-second exits."
+  },
+  "usage": {
+    "cachedTokens": 4352,
+    "statuses": [
+      200
+    ],
+    "calls": 1
+  }
+}

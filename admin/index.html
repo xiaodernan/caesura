@@ -237,6 +237,29 @@
     </div>
   </article>
 
+  <!-- ⑪e 先验审计 · Priors Audit（KI-636）—————————— -->
+  <article class="panel panel-wide panel-priors" id="panel-priors" aria-labelledby="p-priors">
+    <div class="panel-head">
+      <h2 id="p-priors" data-i18n="priors.h2">先验审计 · Priors Audit</h2>
+      <span class="hint" data-i18n="priors.hint">LLM 对照 4 条公开研究先验逐项裁决本页模拟队列 · canon 对账的同形门</span>
+    </div>
+    <div class="priors-verdicts" id="priors-verdicts"></div>
+    <div class="priors-overall">
+      <p id="priors-overall-zh" class="priors-overall-zh">—</p>
+      <p id="priors-overall-en" class="priors-overall-en">—</p>
+      <h3 data-i18n="priors.sensitivity.h3">最敏感的先验</h3>
+      <p id="priors-sens-zh" class="priors-overall-zh">—</p>
+      <p id="priors-sens-en" class="priors-overall-en">—</p>
+      <h3 data-i18n="priors.ready.h3">接真机建议</h3>
+      <p id="priors-ready-zh" class="priors-overall-zh">—</p>
+      <p id="priors-ready-en" class="priors-overall-en">—</p>
+    </div>
+    <div class="priors-foot">
+      <span><span data-i18n="priors.calls">calls</span> <code id="priors-calls">—</code> · <span data-i18n="priors.cached">cached_tokens</span> <code id="priors-cached">—</code> · <span data-i18n="priors.date">audited</span> <code id="priors-date">—</code></span>
+      <span class="priors-note" data-i18n="priors.note">authorOnly · runtime:false · LLM 裁决 · 人工闸后方可落库</span>
+    </div>
+  </article>
+
   <!-- ⑫ 导出 —————————————————————————— -->
   <div class="export-bar">
     <button id="export-csv" type="button" class="btn-gold" data-i18n="export.csv">导出日数据 CSV</button>

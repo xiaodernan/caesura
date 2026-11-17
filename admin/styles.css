@@ -373,3 +373,27 @@ header, main, footer { position: relative; z-index: 1; }
 .build-run a { color: var(--gold); text-decoration: none; }
 .build-note { font-size: 10px; color: var(--muted); margin: 8px 0 0; }
 .build-error { color: #ff8a8a; font-size: 11px; line-height: 1.6; }
+
+/* --- Priors Audit panel (KI-636) ----------------------------------------- */
+.panel-priors .priors-verdicts { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.priors-row { display: grid; grid-template-columns: 32px 1fr auto; gap: 12px; align-items: center; background: var(--ash-2); border: 1px solid var(--line-soft); border-left: 3px solid var(--muted); padding: 10px 12px; border-radius: 10px; }
+.priors-row.plausible { border-left-color: var(--jade); }
+.priors-row.strained { border-left-color: #d8a35c; }
+.priors-row.rejected { border-left-color: var(--wine); }
+.priors-icon { font: 700 18px/1 var(--mono); color: var(--gold); text-align: center; }
+.priors-row.plausible .priors-icon { color: var(--jade); }
+.priors-row.strained .priors-icon { color: #d8a35c; }
+.priors-row.rejected .priors-icon { color: var(--wine); }
+.priors-title { font: 600 12.5px var(--serif); color: #e8dfc2; margin-bottom: 3px; }
+.priors-why { font: 11px/1.6 var(--sans); color: #cfd3dd; margin: 0; }
+.priors-badge { font: 600 9px/1 var(--mono); letter-spacing: .1em; padding: 4px 8px; border-radius: 4px; text-transform: uppercase; }
+.priors-badge-plausible { background: rgba(79,155,134,.18); color: #6fd3b8; border: 1px solid rgba(79,155,134,.4); }
+.priors-badge-strained { background: rgba(216,163,92,.18); color: #f0c874; border: 1px solid rgba(216,163,92,.4); }
+.priors-badge-rejected { background: rgba(165,68,82,.18); color: #ff9a9a; border: 1px solid rgba(165,68,82,.45); }
+.priors-overall h3 { font: 600 10px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 12px 0 4px; }
+.priors-overall p { font: 12px var(--serif); color: #d8d2bd; line-height: 1.7; margin: 0 0 2px; }
+.priors-overall-en { color: var(--muted); font-style: italic; }
+.priors-overall-zh { color: #d8d2bd; }
+.priors-foot { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 10px; font: 10px var(--mono); color: var(--muted); letter-spacing: .06em; }
+.priors-foot code { background: var(--ash-1); border: 1px solid var(--line-soft); border-radius: 6px; padding: 2px 6px; color: var(--gold); }
+.priors-note { color: var(--jade); }

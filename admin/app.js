@@ -84,6 +84,14 @@ const STRINGS = {
   'ai.l.fine': { zh: '发送内容＝本页聚合数据的 ≤800 字摘要（不含任何个人信息）；模型回复原样呈现。', en: 'What is sent = a ≤800-char digest of this page’s aggregate data (no personal information). The model’s reply is shown verbatim.' },
   'ai.l.result': { zh: '模型现场答复', en: 'The model’s live reply' },
   'ai.live': { zh: '实时', en: 'LIVE' },
+  'priors.h2': { zh: '先验审计 · Priors Audit', en: 'Priors Audit · the LLM’s second-guess' },
+  'priors.hint': { zh: 'LLM 对照 4 条公开研究先验逐项裁决本页模拟队列 · canon 对账的同形门', en: 'LLM verdicts against 4 public priors — canon-gate’s sibling door' },
+  'priors.sensitivity.h3': { zh: '最敏感的先验', en: 'Most sensitive prior' },
+  'priors.ready.h3': { zh: '接真机建议', en: 'Ready to wire live telemetry?' },
+  'priors.calls': { zh: 'calls', en: 'calls' },
+  'priors.cached': { zh: 'cached_tokens', en: 'cached_tokens' },
+  'priors.date': { zh: 'audited', en: 'audited' },
+  'priors.note': { zh: 'authorOnly · runtime:false · LLM 裁决 · 人工闸后方可落库', en: 'authorOnly · runtime:false · LLM-authored · human gate required' },
   'sg.h2': { zh: '状态图检查站 · StateGraph 实跑', en: 'StateGraph checkpoints · the real run' },
   'sg.hint': { zh: 'AI 导演引擎的真实运行轨迹——七节点 · 三个 LLM 边共享同一 system 前缀 · 产物过人工闸', en: 'The real trajectory of the AI Director engine — seven nodes · three LLM edges sharing one system prefix · artifacts pass the human gate' },
   'build.h2': { zh: '研发状态 · Build Observatory', en: 'Build Observatory · the repo’s vital signs' },
@@ -849,6 +857,49 @@ async function renderBuild() {
   }
 }
 
+/* ─────────── 先验审计（KI-636 · Priors Audit）─────────── */
+async function renderPriors() {
+  const root = document.getElementById('panel-priors')
+  if (!root) return
+  const vEl = document.getElementById('priors-verdicts')
+  const isEn = LANG === 'en'
+  let d
+  try {
+    const r = await fetch('./admin-priors-audit.json', { cache: 'no-store' })
+    if (!r.ok) throw new Error('HTTP ' + r.status)
+    d = await r.json()
+  } catch (e) {
+    vEl.replaceChildren(makeEl('p', 'priors-err', T('读取 admin-priors-audit.json 失败：', 'Failed to load admin-priors-audit.json: ') + String(e?.message ?? e)))
+    return
+  }
+  /* 渲染 4 条 verdict */
+  vEl.replaceChildren(...(d.verdicts ?? []).map((v) => {
+    const row = makeEl('div', `priors-row priors-${v.verdict}`)
+    const icon = makeEl('span', 'priors-icon', v.verdict === 'plausible' ? '✓' : v.verdict === 'strained' ? '△' : '✗')
+    const content = makeEl('div', 'priors-content')
+    const title = makeEl('div', 'priors-title', isEn ? v.label : v.label.split(' / ')[0])
+    const why = makeEl('p', 'priors-why', isEn ? v.whyEn : v.whyZh)
+    const badge = makeEl('span', `priors-badge priors-badge-${v.verdict}`, v.verdict.toUpperCase())
+    content.append(title, why)
+    row.append(icon, content, badge)
+    return row
+  }))
+  /* 注入 overall */
+  const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ?? '—' }
+  setText('priors-overall-zh', d.overall?.verdictZh)
+  setText('priors-overall-en', d.overall?.verdictEn)
+  setText('priors-sens-zh', d.sensitivity?.zh)
+  setText('priors-sens-en', d.sensitivity?.en)
+  setText('priors-ready-zh', d.overall?.readyZh)
+  setText('priors-ready-en', d.overall?.readyEn)
+  setText('priors-calls', d.usage?.calls)
+  setText('priors-cached', d.usage?.cachedTokens)
+  setText('priors-date', String(d.generatedAt || '').slice(0, 10))
+  /* zh-TW / zh 保持 zh-only · en 保持 en-only */
+  document.querySelectorAll('.priors-overall-zh').forEach((el) => { el.hidden = isEn })
+  document.querySelectorAll('.priors-overall-en').forEach((el) => { el.hidden = !isEn })
+}
+
 /* ─────────── 方法论 ─────────── */
 function renderMethod() {
   const m = TELEMETRY.meta
@@ -861,7 +912,7 @@ function renderMethod() {
 function renderAll() {
   renderKpis(); renderTrend(); renderFunnel(); renderChannels(); renderDevices()
   renderHours(); renderCohorts(); renderAnomalies(); renderExits(); renderRecs()
-  renderLive(); renderMethod(); renderAiCommitted(); hydrateAiLive(); renderStateGraph(); renderBuild()
+  renderLive(); renderMethod(); renderAiCommitted(); hydrateAiLive(); renderStateGraph(); renderBuild(); renderPriors()
 }
 function tickClock() {
   const t = new Date()
