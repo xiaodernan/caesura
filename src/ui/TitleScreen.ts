@@ -102,11 +102,17 @@ const CSS = `
 #title .act.sel{border-color:#ffb86b;color:#ffb86b;box-shadow:0 0 1.8vh rgba(255,184,107,.28),inset 0 0 1.4vh rgba(255,184,107,.12)}
 #title .hint{font-size:1.5vh;color:#6f6759;border-top:1px solid rgba(201,180,88,.14);padding-top:1.1vh;letter-spacing:.18em}
 #title .hint.subtle{font-size:1.05vh;opacity:.62;letter-spacing:.12em;border-top:0;padding-top:.42vh;color:rgba(242,237,228,.42);font-style:italic;text-transform:none}
+/* == KI-653（KI-645 行动 #1）：首屏 Start 固定按钮——低调常亮、永不消失，记录曝光/按下 == */
+#title .qs-start{position:fixed;right:2.2vw;bottom:3.2vh;z-index:70;display:flex;flex-direction:column;align-items:center;gap:.3vh;padding:1.15vh 2.8vh;background:linear-gradient(180deg,rgba(255,184,107,.18),rgba(255,184,107,.05));border:1px solid rgba(255,184,107,.55);color:#ffd98a;font-family:Georgia,"Songti SC","STSong",serif;font-size:1.85vh;letter-spacing:.32em;text-indent:.32em;cursor:pointer;border-radius:1vh;box-shadow:0 0 2.4vh rgba(255,184,107,.22),inset 0 0 1.8vh rgba(255,184,107,.10);transition:color .25s,border-color .25s,box-shadow .25s}
+#title .qs-start:hover{color:#ffe9b8;border-color:#ffb86b;box-shadow:0 0 3.6vh rgba(255,184,107,.42),inset 0 0 2.2vh rgba(255,184,107,.14)}
+#title .qs-start:active{transform:translateY(1px)}
+#title .qs-start:focus-visible{outline:2px solid #ffd98a;outline-offset:3px}
+#title .qs-start .qs-h{font-size:.92vh;letter-spacing:.5em;text-indent:.5em;color:rgba(255,217,138,.6)}
 #title .slot.sel .scard{border-color:#c9b458;box-shadow:0 0 2.4vh rgba(201,180,88,.35)}
 #title .slot .scard{cursor:default}
 #title .scards{font-size:1.7vh}
 /* == accessibility: visible keyboard focus ring + reduced-motion kill switch == */
-#title .card:focus-visible,#title .act:focus-visible{outline:2px solid #ffd98a;outline-offset:3px}
+#title .card:focus-visible,#title .act:focus-visible,#title .qs-start:focus-visible{outline:2px solid #ffd98a;outline-offset:3px}
 /* == 天象仪双环（一道虚、一道实）+ 画面压暗 vignette（pure CSS，无图片，仪典级 ambient rite） == */
 #title .astro{position:absolute;left:50%;top:34%;width:106vh;height:106vh;transform:translate(-50%,-50%);border:1px dashed rgba(201,180,88,.13);border-radius:50%;pointer-events:none;animation:tg-astro 260s linear infinite;box-shadow:inset 0 0 8vh rgba(201,180,88,.03)}
 #title .astro::after{content:'';position:absolute;inset:8vh;border:1px solid rgba(255,222,150,.07);border-radius:50%}
@@ -194,6 +200,8 @@ export class TitleScreen {
   private rosterFault: string | null = null
   /** 确认屏上待开的那根弦：只有"确认"才把它交出去 */
   private pendingOrigin: string | null = null
+  /** KI-653（KI-645 行动 #1）：首屏 Start 按钮的**曝光**只记一次，重渲染不重复记账 */
+  private quickstartShown = false
 
   constructor(private readonly hooks: TitleHooks, preselectId?: string) {
     this.cards = titleCards()
@@ -208,6 +216,7 @@ export class TitleScreen {
     this.root.addEventListener('click', (e) => this.click(e))
     this.show()
     this.render() // 先画一屏（hint 是"正在查看本机存档…"），名册回来再换：构造即空屏会闪一下白
+    this.trackQuickstart('quickstart-shown') // 首屏 Start 已经上屏 ⇒ 曝光记一次
     // 「有没有档可续」是问名册，不是问主存位的裸 key：以前那种问法看不见恢复位，
     // 于是"卡上说没有可续的存档"与"点 load 其实读得出来"能同时成立（一次假账）。
     /* 这一问有两条路，两条都要有人接（KI-386）。只写成功那一路时，一次抛出把整屏挂在
@@ -341,6 +350,19 @@ export class TitleScreen {
     this.render()
   }
 
+  /**
+   * KI-653（KI-645 行动 #1）：埋点**永不可用**于破坏本屏。`window.__caesuraTrack` 是 `public/tracker.js`
+   * 暴露给页面的最小通道（localStorage 环形缓冲 · 零网络 · 玩家进程零 LLM）；不存在 / 抛错都当作没记到。
+   */
+  private trackQuickstart(type: 'quickstart-shown' | 'quickstart-press'): void {
+    if (type === 'quickstart-shown' && this.quickstartShown) return
+    if (type === 'quickstart-shown') this.quickstartShown = true
+    try {
+      const w = (typeof window !== 'undefined' ? window : undefined) as unknown as { __caesuraTrack?: (t: string) => void } | undefined
+      if (w && typeof w.__caesuraTrack === 'function') w.__caesuraTrack(type)
+    } catch { /* 埋点永远不许弄坏本屏 */ }
+  }
+
   private click(e: MouseEvent): void {
     const target = e.target as HTMLElement
     if (target.dataset && target.dataset.langToggle !== undefined) {
@@ -351,6 +373,13 @@ export class TitleScreen {
     const el = target.closest('[data-act]') as HTMLElement | null
     if (!el || el.dataset.disabled) return
     const act = el.dataset.act!
+    if (act === 'qs-start') {
+      // KI-653：按下 = 以当前聚焦的弦立刻开场（聚焦在"续"时落回第一根弦——那是 Start 的语义）
+      this.trackQuickstart('quickstart-press')
+      const target = this.focus.kind === 'card' ? this.cards[this.focus.index]?.id : this.cards[0]?.id
+      if (target) this.chooseNew(target)
+      return
+    }
     if (act === 'card') this.chooseNew(el.dataset.arg!)
     else if (act === 'continue') { this.mode = 'slots'; this.focus = { kind: 'slot', index: 0 } }
     else if (act === 'load') this.hooks.onContinue(el.dataset.arg!)
@@ -394,7 +423,11 @@ export class TitleScreen {
       <div class="cards">${cards}</div>
       <div class="acts">${cont}</div>
       <div class="hint">${hint}</div>
-      <div class="hint subtle">${t('ui.title.hint.manual')}</div>`
+      <div class="hint subtle">${t('ui.title.hint.manual')}</div>
+      <button type="button" class="qs-start" data-act="qs-start" data-tip="${t('ui.title.tip.quickstart')}" aria-label="${t('ui.title.quickstart')}">
+        <span class="qs-k">${t('ui.title.quickstart')}</span>
+        <span class="qs-h">${t('ui.title.quickstart.hint')}</span>
+      </button>`
   }
 
   private renderSlots(): string {

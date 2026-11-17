@@ -1,7 +1,9 @@
 /* 止音纪元 · 止音前线埋点（KI-583）· 零网络 · 零 LLM · 只写本机 localStorage
  * The Epoch of Hush — front-line telemetry: zero network, zero LLM, device-local only.
  * What it stores: pageview / click (with coarse viewport quadrant) / rage (3 clicks inside 800ms & 40px) / error.
- * Ring buffer of 400 events. Read it back at /caesura/admin/ → 本机实况. Disable: localStorage.removeItem('caesura.telemetry.v1'). */
+ * Ring buffer of 400 events. Read it back at /caesura/admin/ → 本机实况. Disable: localStorage.removeItem('caesura.telemetry.v1').
+ * KI-653（KI-645 行动 #1）：`window.__caesuraTrack(type)` 是页面给自己打点的最小通道（首屏 Start 曝光/按下）；
+ *   同样只写本机、同样进环形缓冲，不触网、不升数据包。 */
 (function () {
   'use strict';
   try {
@@ -51,5 +53,17 @@
       bump('error');
       push({ type: 'error', path: path, msg: String((ev && ev.message) || 'unknown').slice(0, 80) });
     });
+
+    /* KI-653（KI-645 行动 #1）：页面自己的埋点最小入口。白名单长度与字符收口，绝不弄坏本体。 */
+    try {
+      window.__caesuraTrack = function (type) {
+        try {
+          if (typeof type !== 'string' || type.length === 0) return;
+          var k = String(type).slice(0, 32);
+          bump(k);
+          push({ type: k, path: path });
+        } catch (e) { /* noop */ }
+      };
+    } catch (e) { /* noop */ }
   } catch (e) { /* 埋点永远不许弄坏产品本体 */ }
 })();

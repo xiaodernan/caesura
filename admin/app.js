@@ -426,11 +426,16 @@ function renderLive() {
   const paths = new Set(doc.events.map((e) => e.path))
   const rages = doc.events.filter((e) => e.type === 'rage').length
   const pageviews = doc.events.filter((e) => e.type === 'pageview').length
+  /* KI-653（KI-645 行动 #1）：首屏 Start 的曝光/按下——真环形缓冲里的真事件 */
+  const qsShown = doc.events.filter((e) => e.type === 'quickstart-shown').length
+  const qsPress = doc.events.filter((e) => e.type === 'quickstart-press').length
   const mins = Math.max(1, Math.round((Date.now() - (doc.firstSeen ?? Date.now())) / 60000))
   const statsHtml = [
     { n: num(doc.events.length), l: T('事件总数', 'events') },
     { n: num(paths.size), l: T('到访页面数', 'pages seen') },
     { n: String(pageviews), l: T('页面浏览', 'page views') },
+    { n: String(qsShown), l: T('Start 曝光', 'quickstart shown') },
+    { n: String(qsPress), l: T('Start 按下', 'quickstart press') },
     { n: String(rages), l: 'rage-clicks' },
     { n: mins + 'm', l: T('首次到访至今', 'since first visit') },
     { n: String(doc.counts?.error ?? 0), l: T('JS 错误', 'JS errors') },
