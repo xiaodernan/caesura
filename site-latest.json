@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "d2564c50cad692a2ecb621f2d08af140fa4b2798",
+  "head": "0f88186cc8649fe8c83d23bf8c3e1eedcab21fc4",
   "branch": "master",
-  "subject": "feat(story): KI-648《余响集》第二十三篇《回声谷 / The Echo Vale》落地",
-  "date": "2026-11-17T14:18:11+08:00",
+  "subject": "site-latest: d2564c5 (post-rebase reconcile)",
+  "date": "2026-11-17T14:18:50+08:00",
   "kv": {
     "KI.rows": 566,
     "KI.Implemented": 389,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/d2564c50cad692a2ecb621f2d08af140fa4b2798",
+    "url": "https://github.com/xiaodernan/caesura/commit/0f88186cc8649fe8c83d23bf8c3e1eedcab21fc4",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
