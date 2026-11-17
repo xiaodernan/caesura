@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 /**
  * 《秤旁》故事页（story/beside-the-scale/index.html）自证：
- *   ① 文件存在 + 默认中文；② 双语两半齐全；③ 两半都带 canon（回廊钟 · 阿汐 · 铜扣 · 铁钉 · 秤盘）；
+ *   ① 文件存在 + 默认中文；② 双语两半齐全；③ 两半都带 canon（回廊钟 · 阿汐 · 铜扣 · 铁钉 · 铜秤）；
  *   ④ 零网络；⑤ 全集互链（篇三十三 + 前四篇 + 全集）；⑥ 埋点 + zh-tw 转换器 + 阅读进度同存；⑦ 第三十三篇 + 余响集之三十三。
  */
 const ROOT = resolve(fileURLToPath(new URL('../..', import.meta.url)))
@@ -30,8 +30,8 @@ describe('Story 之三十三《秤旁》（story/beside-the-scale/index.html）'
     expect(HTML).toContain('read-progress.js')
   })
 
-  it('中文正文：含 canon（回廊钟 · 阿汐 · 铜扣 · 铁钉 · 秤盘 · 薄页）', () => {
-    for (const marker of ['回廊钟', '阿汐', '铜扣', '铁钉', '秤盘', '薄页']) {
+  it('中文正文：含 canon（回廊钟 · 阿汐 · 铜扣 · 铁钉 · 铜秤 · 薄页）', () => {
+    for (const marker of ['回廊钟', '阿汐', '铜扣', '铁钉', '渡口', '薄页']) {
       expect(HTML, `zh missing: ${marker}`).toContain(marker)
     }
   })
