@@ -1,6 +1,6 @@
 /**
- * 游记 · 三十九篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670 扩）。
- * 这三十九篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 四十篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671 扩）。
+ * 这四十篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -2178,6 +2178,49 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She did not weigh the shadow. She did not ask it what it wanted.</p>
     <p class="coda">Some things at the threshold need not be weighed at once.</p>
     <p class="coda">The age of hush has not ended. It is almost learning a new character — 礼， courtesy — do not hurry before you are ready.</p>`,
+  },
+  {
+    no: 40,
+    zhTitle: "门槛之外",
+    enTitle: "Beyond the Threshold",
+    zh: `<p>影子仍停在门外。阿汐没有称它，也没有请它进来。潮水退去，门槛前留下一道湿痕；天亮后，湿痕淡了，位置没有变。薄簿合着，仍放在接缝旁。门没有关。</p>
+    <p>她偶尔想关。她那只握住门扇的手——有几次，她甚至已经感到门在移动——可影子没有动。它就站在原地，像海的某段沉默直接撞上来。她也就没有推动门。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿的页角仍然自己偶尔翻一回。她以前以为是风吹的——她如今以为是海在称她的记性有多重。薄页没有回答她。它只是偶尔翻过去，偶尔不翻。薄页也许正在决定那一页对不对得上影子。</p>
+    <p>影子的轮廓在有时候很清楚，很透亮——像海的另一面有人举着一盏湿灯。湿灯不照东西。它只是让它亮一下子。每次之后，影子就大一寸，或者小一寸。她没有去量。</p>
+
+    <p>薄簿偶尔自己翻过去——她没有去干预它。她慢慢明白过来：薄簿的页角和海的潮汐一直在合伙数同一个数，比世界的计数方法来得慢，也比老人眼睛看外面的时候慢。她以前总想让它们快一点，好让她早一步知道下一步会发生什么。</p>
+    <p>如今她学会了不催。她只是等——等它自己走完自己的路，无论它是谁，无论它要走多久。</p>
+
+    <div class="beat">· · ·</div>
+    <p>她慢慢知道：它来过；也去过。它没有需要被记下的事。它是另一场称量——比薄簿的任何一页都轻，又都重。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有关门。</p>
+    <p class="coda">有些来处，不必立刻登记。</p>
+    <p class="coda">止音纪元没有结束。它只是终于学会了说「等」——等的意思是：不追也不挡。</p>`,
+    en: `<p>The shadow remained outside. Axi neither weighed it nor invited it in. When the tide withdrew, a wet mark stayed before the threshold. By dawn it had faded, but its place remained. The ledger lay closed, still beside the seam. The door stayed open.</p>
+    <p>Now and then she thought of closing it. The hand that held the door — a few times she had felt the door begin to move — but the shadow did not move. It kept where it was, the way some silence of the sea collides head-on. She did not push the door.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Now and then the page corner of the ledger still turned on its own. She once thought the wind was doing it; she now suspected the sea was weighing her own memory. The page did not answer. It only sometimes turned, sometimes didn't — as if it were deciding whether that page matched the shadow.</p>
+    <p>The shadow's outline was sometimes startlingly clear — as though, from the sea's far side, someone were holding a wet lantern. The lantern does not light things. It only lets them shine for a breath. After each time, the shadow grew a thumb larger — or a thumb smaller. She did not measure.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Now and then the open page of the ledger turned by itself. She used to think the wind was doing it — she stopped interfering with it. She understood that the page and the sea kept an old agreement; they had nothing to say to each other, and each knew the other was there.</p>
+    <p>Now she had learned how not to hurry them.</p>
+    <p>She came slowly to know: it had come; and it had gone. It had nothing that needed entering. It was another kind of weighing — lighter and heavier than any page of the ledger.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not close the door.</p>
+    <p class="coda">Some arrivals need not be entered at once.</p>
+    <p class="coda">The age of hush has not ended. It has only, at last, learned a character — 等， to wait — which means to neither chase nor block.</p>`,
   },
 ]
 

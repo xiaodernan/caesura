@@ -58,6 +58,7 @@ try {
     'story/the-empty-scale/index.html',
     'story/beyond-the-scale/index.html',
     'story/the-scale-shadow/index.html',
+    'story/beyond-the-threshold/index.html',
   ];
 
   const PHRASES = new Set();
