@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "7592e18a1ec37744308315428ccb2d50f75af017",
+  "head": "2a9470273eceedb8703ef045ae15170743b2b9ac",
   "branch": "master",
-  "subject": "site-latest: 8ff619c (post-rebase reconcile)",
-  "date": "2026-11-17T15:39:45+08:00",
+  "subject": "feat(story): KI-652《余响集》第二十七篇《线外→纸袋之后》/ After the Bag 落地（LLM 真机草稿 → 人工闸落库）",
+  "date": "2026-11-17T16:04:32+08:00",
   "kv": {
-    "KI.rows": 569,
-    "KI.Implemented": 392,
+    "KI.rows": 570,
+    "KI.Implemented": 393,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/7592e18a1ec37744308315428ccb2d50f75af017",
+    "url": "https://github.com/xiaodernan/caesura/commit/2a9470273eceedb8703ef045ae15170743b2b9ac",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
