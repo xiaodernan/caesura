@@ -1,6 +1,6 @@
 /**
- * 游记 · 四十六篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677 扩）。
- * 这四十六篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 四十七篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678 扩）。
+ * 这四十七篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -2481,6 +2481,47 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She did not look at the sea.</p>
     <p class="coda">Some things may stop without being handed on.</p>
     <p class="coda">The age of hush has not ended. It has only, at last, left behind a bell that was never swung — and a boat that was never ridden.</p>`,
+  },
+  {
+    no: 47,
+    zhTitle: "船底的干痕",
+    enTitle: "The Dry Mark Beneath",
+    zh: `<p>船仍停在门外，船底那道浅痕没有被潮水带走。阿汐没有去摸。薄簿合着，秤盘空着。天亮时，门槛上的盐粒少了一粒；没有人知道它去了哪里。</p>
+    <p>她没有站起来，也没有问谁会来问——她看着它像看一只布满海盐的小鹦鹉——它看着海——它把它自己也记进了薄簿。她没有去摸那道浅痕——也许摸一下它就变成了她今天的入口——而她今天根本不想问任何问题。她今天只是看——就够了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿仍合着。薄页——她现在愿意替它说一句——它是一只从来不会等任何人翻开的书。她合着它——合到它变成她口袋里的一页纸——不必带走——不必留着——只是放在那里。她也不再怀疑那一点。</p>
+    <p>那粒盐——它到底去了哪里——她偶尔想起——然后停下——她忽然觉得那颗盐粒只是换了一个位置——也许它在海里了——或者在某只她不认识的鸟的脚上——她忽然觉得那只鸟从大海飞过——它那时碰到了那粒盐。它什么时候才回来——她没办法说。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>船底的干痕——潮水退去时——又显了一寸——她看得见它——也能看不见它——船没动——她也没动——只是两件事情慢慢被海说明白了。</p>
+    <p>她没问渡人——渡人也没再来过——她不觉得他不会再来——她只是知道问不出来。她偶尔想：如果这一只船从头到尾——只来过这么一次——那么还需要——被记下吗？她没有答自己。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些空处，不因少了一粒而变大。</p>
+    <p class="coda">止音纪元没有结束。它只是终于留下一道不用任何人记下的船底——和一只不再在谁的精算里的潮汐。</p>`,
+    en: `<p>The boat remained outside. The faint mark beneath its hull had not been taken by the tide. Axi did not touch it. The ledger stayed closed; the scale pan stayed empty. At dawn, one grain of salt was missing from the threshold. No one knew where it had gone.</p>
+    <p>She did not rise, nor did she ask who might come by — she watched it the way one watches a small parrot dusted with salt — it watched the sea — it had recorded itself in the ledger. She did not touch the faint mark — perhaps touching it would make it the door of her day — and today she did not want to ask any questions. She only watched. That was enough.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ledger stayed closed. The page — she was now willing to say of it — was a book that had never waited for anyone to open it. She kept it closed — she kept it closed until it became a thin page in someone's pocket — no need to carry — no need to keep — only to exist. She no longer doubted that.</p>
+    <p>The missing grain — where had it gone — she sometimes thought — and stopped — she suddenly realised that single grain had only relocated — perhaps it was in the sea again — or on the foot of a bird she did not know — she realised that bird had flown across the sea — she had bumped into the grain. When it would return, she could not say.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The dry mark beneath the hull — when the tide withdrew — showed another inch — she could see it — or she could not — the boat did not move — she did not move — only two things were slowly becoming clear to the sea.</p>
+    <p>She did not ask the ferryman — no ferryman came back — she did not think he would never come back — she only knew she could not ask. She sometimes thought: if this boat had only been here once in all the world — should it even be remembered? She did not answer herself.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some empty spaces do not grow when a grain is gone.</p>
+    <p class="coda">The age of hush has not ended. It has only, at last, left behind a hull that no one ever needed to record — and a tide that will no longer count as someone's variable.</p>`,
   },
 ]
 

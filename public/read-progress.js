@@ -12,7 +12,7 @@
 (function () {
   'use strict';
 
-  /* canon 顺序（篇一《盐》.. 篇四十六《未摆的一次》），与 src/ui/atlas-texts.ts 的 no 一一对应 */
+  /* canon 顺序（篇一《盐》.. 篇四十七《船底的干痕》），与 src/ui/atlas-texts.ts 的 no 一一对应 */
   var ORDER = [
     { slug: '', zh: '《盐》', en: '"Salt"' },
     { slug: 'unnamed-stone', zh: '《山下无名碑》', en: '"The Nameless Stone"' },
@@ -59,7 +59,8 @@
     { slug: 'the-unopened-page', zh: '《未开之页》', en: '"The Unopened Page"' },
     { slug: 'the-unsent-letter', zh: '《未寄出的信》', en: '"The Unsent Letter"' },
     { slug: 'after-the-empty-scale', zh: '《空秤之后》', en: '"After the Empty Scale"' },
-    { slug: 'the-unmade-swing', zh: '《未摆的一次》', en: '"The Unmade Swing"' }
+    { slug: 'the-unmade-swing', zh: '《未摆的一次》', en: '"The Unmade Swing"' },
+    { slug: 'the-dry-mark-beneath', zh: '《船底的干痕》', en: '"The Dry Mark Beneath"' }
   ];
 
   var PREFIX = '/caesura/story/';
@@ -134,7 +135,7 @@
                       : '/caesura/story/anthology/';
       var label = next
         ? (isEN ? 'Next · ' + next.en : '下一篇 · ' + next.zh)
-        : (isEN ? 'The Aftermath · all forty-six' : '余响集 · 四十六篇全集');
+        : (isEN ? 'The Aftermath · all forty-seven' : '余响集 · 四十七篇全集');
       var tag = isEN ? (next ? 'Keep reading' : 'Read the whole volume') : (next ? '继续读下一页' : '读完全册');
       nextCard = document.createElement('a');
       nextCard.className = 'read-next';
