@@ -52,6 +52,7 @@ try {
     'story/after-the-space/index.html',
     'story/the-unmarked-number/index.html',
     'story/beside-the-scale/index.html',
+    'story/the-unentered-page/index.html',
   ];
 
   const PHRASES = new Set();

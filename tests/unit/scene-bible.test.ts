@@ -20,7 +20,7 @@ import {
  *   ① 体量 ≥ 50k tokens 量级（approxTokens ≥ 38000）；
  *   ② sha256 幂等熵（跨进程、跨请求、跨并行会话同一哈希）；
  *   ③ 前缀字节**不含任何易变数据**（无 KI 号/日期/时刻/sha —— 那些一律走 user 消息）；
- *   ④ 世界谱 74 条 + 余响集三十三篇全文都在；包含最新篇目（《秤旁》/《未刻之数》）；
+ *   ④ 世界谱 74 条 + 余响集三十四篇全文都在；包含最新篇目（《未记的一页》/《秤旁》）；
  *   ⑤ cacheKey 形如 caesura-scene-<32 位 hex>，且由哈希派生；
  *   ⑥ stats 同口径（loreEntries=74 · atlasChapters=32 · containsVolatileDrift=false）；
  *   ⑦ 单飞 marker 读写往返（并行会话共享热身位置）；
@@ -49,13 +49,14 @@ describe('KI-663 · 场景圣经巨前缀（scripts/lib/scene-bible.mjs）', () 
     expect(sceneBibleStats().containsVolatileDrift).toBe(false)
   })
 
-  it('内容完整：世界谱 74 条 + 余响集三十三篇（与 src/ui/atlas-texts.ts 同源）', () => {
+  it('内容完整：世界谱 74 条 + 余响集三十四篇（与 src/ui/atlas-texts.ts 同源）', () => {
     const st = sceneBibleStats()
     expect(st.loreEntries, '世界谱条目应来自 codex.json 的 74 条').toBe(74)
-    expect(st.atlasChapters, '余响集全文条目应等于 atlas 的 33 篇').toBe(33)
+    expect(st.atlasChapters, '余响集全文条目应等于 atlas 的 34 篇').toBe(34)
     expect(sceneBible()).toContain('未刻之数')
     expect(sceneBible()).toContain('秤旁')
-    expect(sceneBible()).toContain('秤旁 / Beside the Scale')
+    expect(sceneBible()).toContain('未记的一页')
+    expect(sceneBible()).toContain('未记的一页 / The Unentered Page')
     expect(sceneBible()).toContain('空处之后')
     expect(sceneBible()).toContain('休垒')
   })
@@ -79,7 +80,7 @@ describe('KI-663 · 场景圣经巨前缀（scripts/lib/scene-bible.mjs）', () 
     expect(st.version).toBe('v1')
     expect(st.bytes).toBeGreaterThan(150 * 1024)
     expect(st.loreEntries).toBe(74)
-    expect(st.atlasChapters).toBe(33)
+    expect(st.atlasChapters).toBe(34)
   })
 
   it('单飞 marker 读写往返（并行会话共享热身位置 · 写后可读 · 测完删掉不污染真环境）', () => {

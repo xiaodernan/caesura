@@ -1,6 +1,6 @@
 /**
- * 游记 · 三十三篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664 扩）。
- * 这三十三篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 三十四篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665 扩）。
+ * 这三十四篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -1889,6 +1889,63 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She did not wipe it. She did not keep it. She only turned the ledger over, so that the open page faced upward.</p>
     <p class="coda">Some empty spaces do not wait for an answer.</p>
     <p class="coda">The age of hush has not ended. It is only learning two characters — set aside — which neither waits nor counts.</p>`,
+  },
+  {
+    no: 34,
+    zhTitle: "未记的一页",
+    enTitle: "The Unentered Page",
+    zh: `<p>铜扣、铁钉和薄簿仍在接缝旁。窗台上那道极淡的横线，还在——浅得谁都可以当它没出现过。阿汐把它看了很久，却没有抄进薄簿里。</p>
+    <p>她当然可以抄。她拿出簿子的时候，笔就在手里，墨也磨好了。可就在这一秒，她发现那条线和潮水涨的次数一样——如果抄了，就只剩一条线了，而不是「一次」。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>夜里涨潮的时候，她站在门口，看见海把窗台的那道横线盖住了。盐水在上面铺开，像给那条线换了一件很薄很旧的衣服。</p>
+    <p>海没有把横线抹掉——它只是替它换了件衣服。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>天亮的时候，横线不见了。木板上只剩一小块干处，位置在横线原来那边——干的颜色比旁边略深，像一枚没人贴上的邮票。</p>
+    <p>阿汐蹲下来看了很久。她没有数那块干处——她不像以前那样，要在脑子里给每件东西分一格。她这次仅仅是蹲在那里，看着它。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>铜扣、铁钉和薄簿仍在接缝旁。薄簿一直以它那种谁都说不稳的姿态躺着——既不是记着什么，也不是在等待什么。薄页上那道空格也是——没有人把它填掉。</p>
+    <p>渡人的船某天停在了门口。阿汐有片刻以为他会开口提醒她：你那里有东西干了。可是他没有。他只是把船缓缓远去，没有问她什么。她明白了：有些事他也是不会替她数下去的。</p>
+
+    <div class="beat">· · ·</div>
+    <p>她把薄簿合上，放回接缝旁。她没把那块干处算进去。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有记下来没有人记下它。海涨了又退，窗台亮了又暗。</p>
+    <p class="coda">有些记下来的事，不必写进簿里。</p>
+    <p class="coda">止音纪元没有结束。它只是在帮阿汐学会「留」这个字——留得住，不一定非得写下来。</p>`,
+    en: `<p>The copper button, the iron nail and the thin ledger remained beside the plank's seam. The very faint line on the sill — so faint that anyone could pretend it had never been there — was still on the sill. Axi studied it for a long time and did not copy it into the ledger.</p>
+    <p>Of course she could have. The ledger was in her lap; the pen was in her hand; the ink was ground. But in the same second she understood that the line was equal to the times the tide had risen — to copy it would have turned it into a line, and not into a once.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>At night, when the tide came in, she stood in the doorway and watched the sea cover the mark on the sill. The salt water spread across it, as if to dress the line in a thin, worn garment.</p>
+    <p>The sea did not wipe the line away — it only gave it a different cloth to wear.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>At daylight the line was gone. Only a small dry patch remained on the boards, where the line had once been — dry, a shade darker than the wood around it, like a stamp nobody had bothered to glue down.</p>
+    <p>Axi crouched beside it for a long time. She did not count the patch — she did not do what she used to do, dividing each thing into a numbered place in her mind. This time she simply squatted there, and looked.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The button, the nail, and the ledger remained beside the seam. The ledger had the uneasy posture it always wore — neither recording anything, nor waiting for anything. The blank on the open page also remained, as untouched as it had always been.</p>
+    <p>One day the ferryman's boat stopped at the door. For a moment Axi thought he would speak and remind her that something there had gone dry. He did not. He only drew the boat away, and asked her nothing. She understood then: there were things he would not keep counting for her either.</p>
+
+    <div class="beat">· · ·</div>
+    <p>She closed the ledger and set it back beside the seam. She did not count the dry patch.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">No one noted that she had not noted it. The sea came and went; the sill brightened and darkened.</p>
+    <p class="coda">Some things kept need not be entered.</p>
+    <p class="coda">The age of hush has not ended. It is only teaching Axi a character — 留， to leave — which means to hold, not always to write.</p>`,
   },
 ]
 
