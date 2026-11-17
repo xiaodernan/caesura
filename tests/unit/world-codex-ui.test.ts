@@ -79,6 +79,24 @@ describe('World Codex（codex/index.html）', () => {
     }
   })
 
+  it('史官问答（AI 史官 · 12 条双语 canon 问答 · 零 LLM 运行时）', () => {
+    expect(HTML).toContain('id="oracle-title"')
+    expect(HTML).toContain('id="oracle-grid"')
+    expect(HTML).toContain('id="oracle-answer"')
+    expect(HTML).toContain('CANON_ORACLE')
+    const entries = (HTML.match(/qZh: `/g) ?? []).length
+    expect(entries, 'CANON_ORACLE entries').toBeGreaterThanOrEqual(12)
+    for (const m of ['aEn: `', 'aZh: `', 'source: `', 'tags:']) {
+      expect(HTML, `missing field ${m}`).toContain(m)
+    }
+    // 双轨：中文答案与英文答案都存在，source 带落点
+    expect(HTML).toContain('出处')
+    expect(HTML).toContain('Source:')
+    // 史官问答内联嵌入、零外部请求用于取这一节
+    expect(HTML).not.toContain('src="https://')
+    expect(HTML).toContain('CANON_ORACLE')
+  })
+
   it('BM25 实现存在（k1 · b · idf · bigram）', () => {
     expect(HTML).toContain('K1 = 1.5')
     expect(HTML).toContain('B = 0.75')

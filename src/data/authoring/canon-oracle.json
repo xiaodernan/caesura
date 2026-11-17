@@ -1,0 +1,147 @@
+{
+  "$comment": "KI-633 · AI 史官问答集（作者侧实跑 + 人工闸后落库）· 静态文件 · 玩家运行时零 LLM · 随 pages 镜像 · 不含密钥",
+  "schema": 1,
+  "mode": "live",
+  "model": "gpt-6.1-terra",
+  "generatedAt": "2026-11-17T00:07:42.421Z",
+  "language": [
+    "zh",
+    "en"
+  ],
+  "requiresHumanReview": true,
+  "reviewed": true,
+  "entries": [
+    {
+      "qZh": "钟为什么总是响三下？",
+      "qEn": "Why do the bells always ring three times?",
+      "aZh": "现有篇章只记下碎钟仍会在灯光与记忆里响起，没有说明钟为何总响三下。三下的缘由，尚无定论。",
+      "aEn": "The surviving accounts say only that broken bells still ring in the light and in memory. They do not explain why bells always ring three times. The reason remains unsettled.",
+      "source": "短篇《灯匠之钟》；《未完账簿》",
+      "tags": [
+        "碎钟",
+        "未定"
+      ]
+    },
+    {
+      "qZh": "第四下是谁留给了醒着的人？",
+      "qEn": "Who kept the fourth strike for those still awake?",
+      "aZh": "无人敲响第四下。末钟匠离去后，第四口钟的位置一直空着；无人敢替它发声。谁把它留给醒着的人，故事没有说。",
+      "aEn": "No one rang the fourth. Since the Last Bellfounder left the fourth bell’s place empty, no one dared sound it in their stead. The story does not say who kept it for those still awake.",
+      "source": "短篇《第四下》",
+      "tags": [
+        "第四口钟",
+        "末钟匠"
+      ]
+    },
+    {
+      "qZh": "末行空白其实是谁的名字？",
+      "qEn": "Whose name is in that final blank line?",
+      "aZh": "末行没有可指认的名字。空格留给每个人：人人都欠下一句从未说出口的话，须等它被记起，名字才会落下。",
+      "aEn": "No name can yet be identified. The blank is held for everyone: each owes one sentence never spoken aloud. The name can be entered only when that sentence is remembered.",
+      "source": "短篇《未完的账页》",
+      "tags": [
+        "空白",
+        "未偿之债"
+      ]
+    },
+    {
+      "qZh": "老大师离开之前到底欠下了什么？",
+      "qEn": "What did the Last Master leave unpaid?",
+      "aZh": "他欠下的不是钱，而是未完的账：那些人与风雨各自留下的名字、承诺和回声，尤其是该归还却未归还的一阵雾。账册被留在摆锤最低处，未有结清之日。",
+      "aEn": "He left no monetary debt. He left an unfinished ledger: names, promises, and echoes owed among people, wind, and rain, including a fog that had yet to be returned. The ledger remained at the pendulum’s lowest point, unsettled.",
+      "source": "短篇《未完的账簿》《摆渡人》",
+      "tags": [
+        "未完之账",
+        "摆锤"
+      ]
+    },
+    {
+      "qZh": "海为什么欠了一记 E♭？",
+      "qEn": "Why does the sea owe an E♭?",
+      "aZh": "那记 E♭ 并非海欠下的。女孩听见一段无人唱完的调，带着它进城时，调便跑了。城里称这笔为“聆听之债”；谁欠谁，账上没有写明。",
+      "aEn": "The sea is not said to owe the E♭. The girl heard an unfinished tune and carried it toward the city; it slipped away as she entered. The city recorded a “debt of listening,” but the account does not say who owes whom.",
+      "source": "短篇《lowtone-city》／短篇《anthology》",
+      "tags": [
+        "聆听之债",
+        "E♭"
+      ]
+    },
+    {
+      "qZh": "万籁为什么不看，只听？",
+      "qEn": "Why does The Myriad not see — only hear?",
+      "aZh": "万籁听见，却不替别人听。把所听之物送向远处，不是为了让人都听见，而是让同一片海边的每只耳朵知道：还有别人在听。",
+      "aEn": "The Myriad hears, but does not hear in anyone else’s place. What is heard is sent onward not so that everyone must hear it, but so every ear by the same sea knows that someone else is listening.",
+      "source": "短篇《第十二位听者》",
+      "tags": [
+        "倾听",
+        "传递"
+      ]
+    },
+    {
+      "qZh": "钟摆渡人为什么不离开未竟厅？",
+      "qEn": "Why does the Pendulum Ferryman stay?",
+      "aZh": "她守在未竟厅最深处，为每个走过那里的人保管寄存之物，也让他们在老账末行那格空白前停留片刻，认领尚未落成的债。",
+      "aEn": "She keeps the things entrusted by everyone who passes through the Unfinished Hall. She also waits beside the old ledger’s blank final entry, where each visitor pauses to acknowledge an unfinished debt.",
+      "source": "短篇《钟摆渡人》／《余响集》第十六篇",
+      "tags": [
+        "未竟厅",
+        "空白债"
+      ]
+    },
+    {
+      "qZh": "恩希尔最后看到的那一眼是什么？",
+      "qEn": "What did Hersil see at the very last moment?",
+      "aZh": "恩希尔最后看到的，是她在摆锤最低处轻敲一下后，摆锤荡开。",
+      "aEn": "At the very last moment, he saw the pendulum swing away after she tapped it once at its lowest point.",
+      "source": "短篇《摆渡人》",
+      "tags": [
+        "恩希尔",
+        "摆锤"
+      ]
+    },
+    {
+      "qZh": "那句从没说出口的话是什么？",
+      "qEn": "What is the sentence no one ever said aloud?",
+      "aZh": "没有人知道那句话的内容。每个人都欠着一句未曾说出口的话；它的名字留在账簿末行，等着被想起来。",
+      "aEn": "No one knows the sentence’s words. Everyone owes a sentence never spoken aloud; its name remains in the ledger’s final line, waiting to be remembered.",
+      "source": "短篇《第四击》／《未完账簿》",
+      "tags": [
+        "未说之言",
+        "末行"
+      ]
+    },
+    {
+      "qZh": "灯匠的灯为什么有一盏一直亮着？",
+      "qEn": "Why does the lampwright keep one lamp lit?",
+      "aZh": "因为那盏灯是整个宇宙仅存的一点光。灯匠让它继续亮着，没有让炉火和铜片替代它。",
+      "aEn": "Because it was the only light the whole universe could keep. The lampwright kept it burning; the forge and the copper halves did not take its place.",
+      "source": "短篇《dark-tide》；短篇《lampwright-bell》",
+      "tags": [
+        "唯一之光",
+        "灯匠"
+      ]
+    },
+    {
+      "qZh": "拾钟人最后一次问，是在什么时候？",
+      "qEn": "When was the last time the Bell-Picker asked?",
+      "aZh": "证据只说他每到一处都会问“最后一声钟响于哪一年”，并未说明最后一次提问的具体时刻或地点。",
+      "aEn": "The evidence says he asked at every reach, “What year did the last bell ring?” It does not specify when or where he asked the question for the final time.",
+      "source": "短篇《拾钟人》",
+      "tags": [
+        "最后一问",
+        "末钟"
+      ]
+    },
+    {
+      "qZh": "第四下响不响，是谁决定的？",
+      "qEn": "Who decides whether the fourth strike will sound?",
+      "aZh": "无人决定。第四下从未响过；末任钟匠离去后，第四口钟的位置一直空着。",
+      "aEn": "No one decides. The fourth strike has never sounded; since the Last Bellfounder left, the place of the fourth bell has remained empty.",
+      "source": "短篇《fourth-strike》",
+      "tags": [
+        "第四下",
+        "空钟"
+      ]
+    }
+  ]
+}
