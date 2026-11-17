@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "e730a3a19cb71423aceb498dcdb5f178a5ca5c24",
+  "head": "2110e384c675ecf0ab1233cfeba6ae9a01bf6cbd",
   "branch": "master",
-  "subject": "feat(story): KI-673《余响集》第四十二篇《门槛上的盐 / Salt at the Threshold》落地（LLM 真机草稿 → 人工闸落库）",
-  "date": "2026-11-18T04:46:08+08:00",
+  "subject": "site-latest: e730a3a (post-rebase reconcile)",
+  "date": "2026-11-18T04:49:16+08:00",
   "kv": {
     "KI.rows": 591,
     "KI.Implemented": 414,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/e730a3a19cb71423aceb498dcdb5f178a5ca5c24",
+    "url": "https://github.com/xiaodernan/caesura/commit/2110e384c675ecf0ab1233cfeba6ae9a01bf6cbd",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
