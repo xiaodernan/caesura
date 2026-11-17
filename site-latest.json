@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "5c5e30cf4f22986e913bd8302a52cd1ae8e85b3f",
+  "head": "064c649f6d3057a4e20b76834880d34ae4837b11",
   "branch": "master",
-  "subject": "site-latest: 732bb95 (post-rebase reconcile)",
-  "date": "2026-11-17T14:47:56+08:00",
+  "subject": "docs(guide): 补滚轮操作与「滚轮纵向反转」教学（中英双轨；KI-593/KI-647）",
+  "date": "2026-11-17T15:09:47+08:00",
   "kv": {
     "KI.rows": 567,
     "KI.Implemented": 390,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/5c5e30cf4f22986e913bd8302a52cd1ae8e85b3f",
+    "url": "https://github.com/xiaodernan/caesura/commit/064c649f6d3057a4e20b76834880d34ae4837b11",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
