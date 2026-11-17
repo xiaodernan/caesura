@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "12ca122165f1799e9ba42cde2d618d89dc1477c0",
+  "head": "15997acf681467cff199d43892f77f3f1c0b3f79",
   "branch": "master",
-  "subject": "feat(title): KI-653 · 首屏 Start 固定可见按钮 + quickstart 曝光/按下埋点（KI-645 行动 #1）",
-  "date": "2026-11-17T16:20:42+08:00",
+  "subject": "site-latest: 12ca122 (post-rebase reconcile)",
+  "date": "2026-11-17T16:21:28+08:00",
   "kv": {
     "KI.rows": 571,
     "KI.Implemented": 394,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/12ca122165f1799e9ba42cde2d618d89dc1477c0",
+    "url": "https://github.com/xiaodernan/caesura/commit/15997acf681467cff199d43892f77f3f1c0b3f79",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
