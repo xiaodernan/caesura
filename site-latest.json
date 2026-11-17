@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "0f88186cc8649fe8c83d23bf8c3e1eedcab21fc4",
+  "head": "a48ccf8e2b56167e5f2c40e39a64e3685678cc05",
   "branch": "master",
-  "subject": "site-latest: d2564c5 (post-rebase reconcile)",
-  "date": "2026-11-17T14:18:50+08:00",
+  "subject": "fix(story/anthology): align fact counts with KI-648 census - Twenty-Three Voices of the Aftermath + one hundred and fifteen minutes",
+  "date": "2026-11-17T14:27:27+08:00",
   "kv": {
     "KI.rows": 566,
     "KI.Implemented": 389,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/0f88186cc8649fe8c83d23bf8c3e1eedcab21fc4",
+    "url": "https://github.com/xiaodernan/caesura/commit/a48ccf8e2b56167e5f2c40e39a64e3685678cc05",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
