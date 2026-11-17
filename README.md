@@ -35,7 +35,7 @@ npm run dev            # Vite dev server；浏览器打开 http://localhost:5173
 - 《账本》（短篇原创之四）：<https://xiaodernan.github.io/caesura/story/ledger/>（休垒 · Meg 不敢合上的那一页账 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《回声庭园》（短篇原创之五）：<https://xiaodernan.github.io/caesura/story/garden/>（余响新陆 · 第六境 · 旧钟的主人 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《雨审判》（短篇原创之六）：<https://xiaodernan.github.io/caesura/story/tribunal/>（余响新陆 · 雨钟谷地 · 雨罪审判者 · 七年一庭 · 双语对照 · 零 LLM · 2026-11-15） ·  
-- 《余响集》（全集页 · 整册入口 · 支持一键打印成纸质卷）：<https://xiaodernan.github.io/caesura/story/anthology/>（三十八篇整册 · 史诗般总起预告 · EPIC-VII 实写落地 · 2026-11-18 增篇三十八《秤盘之外》） ·  
+- 《余响集》（全集页 · 整册入口 · 支持一键打印成纸质卷）：<https://xiaodernan.github.io/caesura/story/anthology/>（三十九篇整册 · 史诗般总起预告 · EPIC-VII 实写落地 · 2026-11-18 增篇三十九《秤影》） ·  
 - 《霜锤》（短篇原创之七）：<https://xiaodernan.github.io/caesura/story/frostbell/>（霜锤崖 · 末任钟匠 · 冻成冰的声音 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《千门》（短篇原创之八）：<https://xiaodernan.github.io/caesura/story/doors/>（回廊钟 · 一千扇门 · 守门人 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《石喉》（短篇原创之九）：<https://xiaodernan.github.io/caesura/story/stonethroat/>（低音之城 · 石喉母亲 · 不需要货币的音 · 双语对照 · 零 LLM · 2026-11-15） ·  
@@ -68,6 +68,7 @@ npm run dev            # Vite dev server；浏览器打开 http://localhost:5173
 - 《未称之物》（短篇原创之三十六）：<https://xiaodernan.github.io/caesura/story/unweighed/>（回廊钟·未称之物 · 渡人把小铜秤放在门槛上秤盘空着 · 他没问要称什么 · 潮水退去时秤盘里多了一粒盐 · LLM 草稿 · 人工闸 · 零 LLM · 2026-11-18） ·  
 - 《空秤》（短篇原创之三十七）：<https://xiaodernan.github.io/caesura/story/the-empty-scale/>（回廊钟·空秤 · 渡人没有带走秤 · 盐粒仍留在原处 · 她合上薄簿没有记这一页 · 秤盘空着，也盛着 · LLM 草稿 · 人工闸 · 零 LLM · 2026-11-18） ·  
 - 《秤盘之外》（短篇原创之三十八）：<https://xiaodernan.github.io/caesura/story/beyond-the-scale/>（回廊钟·秤盘之外 · 盐粒仍在秤盘里 · 潮水退去时盐粒旁边干着一小处 · 她没有记下那一处 · 渡人说它已经是簿里的一页了 · LLM 草稿 · 人工闸 · 零 LLM · 2026-11-18） ·  
+- 《秤影》（短篇原创之三十九）：<https://xiaodernan.github.io/caesura/story/the-scale-shadow/>（回廊钟·秤影 · 潮退后秤盘上的湿痕淡了 · 门外多了一道影子 · 它停在门槛前没有进来 · 她没有问它要什么 · LLM 草稿 · 人工闸 · 零 LLM · 2026-11-18） ·  
 - 数据最新：`master` 每推即重嵌 `site-latest.json`（raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json）  
 
 > 注意：线上是 `?fresh=1` 的干净状态，页面证据文件总会对账最新 master；页面首屏可能短暂停在 boot 屏。

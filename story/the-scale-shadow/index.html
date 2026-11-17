@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>秤影 / The Scale's Shadow — CAESURA · 余响集 · 第三十九篇</title>
+<meta name="description" content="秤影——《余响集》第三十九篇：潮退后，秤盘上的湿痕淡了。阿汐没有擦。门外多了一道影子，停在门槛前，没有进来。天亮时，影子还在，秤盘仍空着。渡人说：它来的时候，是自己来的；它也是自己走的。LLM 草稿 · 人工闸落地 · 零 LLM · 零网络 / The thirty-ninth piece of The Aftermath: after the tide withdrew, a shadow stopped at the threshold and did not enter; she never called to it, nor did she ask what it waited for. LLM-drafted, human-approved. Bilingual, offline, zero LLM." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🔔</text></svg>">
+<style>
+  :root {
+    --gold: #f3ce8f;
+    --gold-soft: rgba(243,206,143,.32);
+    --ink: #f3ede0;
+    --ink-dim: rgba(243,237,224,.62);
+    --panel: rgba(28,20,12,.7);
+    --serif: "Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#070608; color:var(--ink); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; }
+  .bg { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .bg.radial {
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(243,206,143,.14), transparent 60%),
+      radial-gradient(900px 700px at 50% 118%, rgba(90,40,40,.22), transparent 62%),
+      radial-gradient(650px 420px at 88% 104%, rgba(203,177,255,.08), transparent 60%),
+      #070608;
+  }
+  .bg.noise { position:fixed; inset:0; z-index:-1; opacity:.05; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .wrap { max-width:860px; margin:0 auto; padding:26px 26px 90px; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .brand { font-size:.8rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; opacity:.9; }
+  .brand a { color:inherit; text-decoration:none; border-bottom:1px dotted rgba(243,206,143,.5); }
+  .brand a:hover { color:#fff2d0; }
+  .toplinks { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toplinks a { font-size:.72rem; color:var(--ink-dim); text-decoration:none; border:1px solid rgba(243,237,224,.14); padding:6px 12px; border-radius:999px; transition:all .22s ease; }
+  .toplinks a:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .lang-row button { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(243,206,143,.12); border:1px solid var(--gold-soft); padding:6px 15px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; }
+  .lang-row button:hover { background:rgba(243,206,143,.22); box-shadow:0 0 16px rgba(243,206,143,.25); }
+
+  [data-lang="zh-TW"] .en-copy { display:none !important; }
+  [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="en"] .zh-copy { display:none !important; }
+
+  header.hero { text-align:center; padding:52px 14px 30px; }
+  .kicker { font-size:.72rem; letter-spacing:.42em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:20px; }
+  .kicker b { color:var(--gold); font-weight:600; }
+  h1 { font-size:clamp(2.2rem, 8vw, 3.6rem); font-weight:600; letter-spacing:.16em;
+       background:linear-gradient(180deg,#fffbe6 0%, #f3ce8f 28%, #c9a258 58%, #7d6436 100%);
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+       text-shadow:0 0 90px rgba(243,206,143,.3); }
+  .subtitle { margin-top:14px; font-size:.8rem; color:var(--ink-dim); letter-spacing:.3em; text-transform:uppercase; }
+  .rule { width:170px; height:1px; margin:24px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .meta { margin-top:16px; font-size:.7rem; color:rgba(243,237,224,.45); letter-spacing:.18em; text-transform:uppercase; }
+  .meta a { color:var(--gold); text-decoration:none; }
+
+  article { background:var(--panel); border:1px solid rgba(243,237,224,.1); border-radius:18px; padding:38px 40px 34px; position:relative; }
+  article::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--gold), transparent); opacity:.7; }
+  article p { font-size:1.04rem; line-height:2.02; letter-spacing:.02em; color:rgba(243,237,224,.92); margin-bottom:1.5em; text-indent:2em; overflow-wrap:break-word; }
+  article p em { color:#ffe9b3; font-style:normal; }
+  .beat { width:100%; text-align:center; margin:.4em 0 1.4em; letter-spacing:.5em; color:rgba(243,206,143,.6); font-size:.8rem; }
+  .coda { text-align:center; font-style:italic; color:rgba(243,237,224,.78); letter-spacing:.06em; margin-top:.6em; }
+
+  .note { margin:26px auto 0; max-width:760px; text-align:center; font-size:.74rem; color:rgba(243,237,224,.42); line-height:1.9; letter-spacing:.04em; }
+  .note a { color:var(--gold); text-decoration:none; border-bottom:1px dotted rgba(243,206,143,.5); }
+
+  footer { margin-top:56px; border-top:1px solid rgba(243,237,224,.09); padding-top:22px; display:flex; flex-wrap:wrap; gap:10px 26px; justify-content:space-between; font-size:.7rem; color:rgba(243,237,224,.4); letter-spacing:.06em; }
+  footer a { color:var(--gold); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @media (max-width:640px) { .wrap { padding:20px 12px 70px; } article { padding:26px 20px 24px; } article p { font-size:.98rem; text-indent:2em; } }
+</style>
+</head>
+<body>
+<div class="bg radial" aria-hidden="true"></div>
+<div class="bg noise" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><a href="/caesura/">CAESURA</a> · 《止音纪元》</div>
+    <div class="toplinks">
+      <a href="/caesura/story/"><span class="zh-copy">《盐》</span><span class="en-copy">“Salt”</span></a>
+      <a href="/caesura/story/first-bell/"><span class="zh-copy">《第一钟》</span><span class="en-copy">“The First Bell”</span></a>
+      <a href="/caesura/story/bell-picker/"><span class="zh-copy">《拾钟人》</span><span class="en-copy">“The Bell-Picker”</span></a>
+      <a href="/caesura/story/twelfth-listener/"><span class="zh-copy">《第十二个听者》</span><span class="en-copy">“The Twelfth Listener”</span></a>
+      <a href="/caesura/story/fourth-strike/"><span class="zh-copy">《第四下》</span><span class="en-copy">“The Fourth Strike”</span></a>
+      <a href="/caesura/story/string-listener/"><span class="zh-copy">《听弦》</span><span class="en-copy">“The String-Listener”</span></a>
+      <a href="/caesura/story/third-voice/"><span class="zh-copy">《第三声》</span><span class="en-copy">“The Third Voice”</span></a>
+      <a href="/caesura/story/echo-vale/"><span class="zh-copy">《回声谷》</span><span class="en-copy">“The Echo Vale”</span></a>
+      <a href="/caesura/story/after-half-a-chime/"><span class="zh-copy">《半声之后》</span><span class="en-copy">“After Half a Chime”</span></a>
+      <a href="/caesura/story/beside-the-button/"><span class="zh-copy">《铜扣旁》</span><span class="en-copy">“Beside the Button”</span></a>
+      <a href="/caesura/story/beyond-the-line/"><span class="zh-copy">《线外》</span><span class="en-copy">“Beyond the Line”</span></a>
+      <a href="/caesura/story/after-the-bag/"><span class="zh-copy">《纸袋之后》</span><span class="en-copy">“After the Bag”</span></a>
+      <a href="/caesura/story/salt-on-the-sill/"><span class="zh-copy">《窗台盐线》</span><span class="en-copy">“Salt on the Sill”</span></a>
+      <a href="/caesura/story/after-the-salt-line/"><span class="zh-copy">《盐线之后》</span><span class="en-copy">“After the Salt Line”</span></a>
+      <a href="/caesura/story/the-sill-keeps-count/"><span class="zh-copy">《窗台记数》</span><span class="en-copy">“The Sill Keeps Count”</span></a>
+      <a href="/caesura/story/after-the-space/"><span class="zh-copy">《空处之后》</span><span class="en-copy">“After the Space”</span></a>
+      <a href="/caesura/story/the-unmarked-number/"><span class="zh-copy">《未刻之数》</span><span class="en-copy">“The Unmarked Number”</span></a>
+      <a href="/caesura/story/beside-the-scale/"><span class="zh-copy">《秤旁》</span><span class="en-copy">“Beside the Scale”</span></a>
+      <a href="/caesura/story/the-unentered-page/"><span class="zh-copy">《未记的一页》</span><span class="en-copy">“The Unentered Page”</span></a>
+      <a href="/caesura/story/the-dry-place/"><span class="zh-copy">《干处》</span><span class="en-copy">“The Dry Place”</span></a>
+      <a href="/caesura/story/unweighed/"><span class="zh-copy">《未称之物》</span><span class="en-copy">“Unweighed”</span></a>
+      <a href="/caesura/story/the-empty-scale/"><span class="zh-copy">《空秤》</span><span class="en-copy">“The Empty Scale”</span></a>
+      <a href="/caesura/story/beyond-the-scale/"><span class="zh-copy">《秤盘之外》</span><span class="en-copy">“Beyond the Scale”</span></a>
+      <a href="/caesura/story/the-scale-shadow/"><span class="zh-copy">《秤影》</span><span class="en-copy">“The Scale's Shadow”</span></a>
+      <a href="/caesura/codex/"><span class="zh-copy">世界谱</span><span class="en-copy">Codex</span></a>
+      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button></span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <p class="kicker zh-copy">短篇 · <b>余响集</b> · 第三十八篇</p>
+    <p class="kicker en-copy">Short story · <b>The Aftermath</b> · No. 39</p>
+    <h1 class="zh-copy">秤影</h1>
+    <h1 class="en-copy">The Scale's Shadow</h1>
+    <p class="subtitle zh-copy">回廊钟第37年 · 门槛前多了一道影子 · 它停在门前没有进来 · 她没有问它要什么</p>
+    <p class="subtitle en-copy">The 37th year of the Arcade — a shadow stops at the threshold and never enters; she never asks what it wants</p>
+    <div class="rule"></div>
+    <p class="meta zh-copy">约 7 分钟 · 与 <a href="/caesura/codex/">世界谱</a> 同源世界观 · 零 LLM 撰写</p>
+    <p class="meta en-copy">about 7 minutes · same world as the <a href="/caesura/codex/">codex</a> · written without LLM assistance</p>
+  </header>
+
+  <article>
+    <div class="zh-copy">
+<p>潮退后，秤盘上的湿痕淡了。淡到一个接一个的早晨，阿汐要很努力才能认出那圈湿痕的轮廓。她没有擦。她也没有一天比一天擦得更勤。</p>
+<p>门外多了一道影子。它停在门槛前，没有进来。它站着的时候，木板居然没有发出声音——即使是那种最老最旧的可能吱一声的木板。它安静地站着，像是刚从海里升上来的、一段从未干过的木头。</p>
+
+<div class="beat">· · ·</div>
+
+<p>阿汐第一天以为它会进来。她没有关门——她留着原来的缝——她也没有把缝收窄。她只是坐在窗台边，盯着那道影子，像盯着一枚一直没有落定的水滴。</p>
+<p>影子没有再远一步。它也没有离开。它在门外站着，像它来的时候那样站着，像它从一开始就打算站住那样站着。</p>
+
+<div class="beat">· · ·</div>
+
+<p>天亮时，影子还在，秤盘仍空着。湿痕淡了许多。薄簿依旧合着。阿汐没有站起来，也没有坐下——她只是在听。她听见盐在海风里把一切说成很小的、很淡的话。没有任何人告诉她，那道影子是谁——或者后面还会不会有谁。</p>
+<p>渡人某天又来了。他停在门口，看了一眼影子——但他没有让影子进门，也没有问阿汐打算怎么做。他只说了一句：它来的时候，是自己来的；它也是自己走的。阿汐没接话——她只是看着渡人，渡人也看着她，然后他又慢慢地走了。走的时候，他没有回头。</p>
+<p>她没有站起来叫住它，也没有站起来问它等什么。她只是坐在窗台边，看着木板干过一遍又一遍。她慢慢知道，影子不是来拿什么的——它只是停在门槛前，像世界曾经停在称量之前。</p>
+
+<div class="beat">· · ·</div>
+
+<p class="coda">她没有去称那道影子。她没有问它要什么。</p>
+<p class="coda">有些东西到了门口，不必立刻称量。</p>
+<p class="coda">止音纪元没有结束。它几乎要学会了一个新的字——礼——不等你准备好，别急。</p>
+    </div>
+    <div class="en-copy">
+<p>After the tide withdrew, the wet ring on the pan faded. It faded so gradually, morning after morning, that Axi had to look twice to find its shape. She did not wipe it away — nor did she wipe it with any particular diligence on any particular day.</p>
+<p>Outside, a shadow stopped at the threshold and did not enter. The boards, even the oldest, even the creaking ones, gave no sound at all. It stood — quiet as a plank that had never once been dry, raised straight up out of the sea.</p>
+
+<div class="beat">· · ·</div>
+
+<p>On the first day Axi assumed it would come in. She did not close the door — she left the seam just as it was. She did not narrow the slit either. She only sat by the sill and watched the shadow the way one watches a drop of water that has yet to fall.</p>
+<p>The shadow did not take a step further in. Nor did it leave. It stood outside — as it stood when it arrived — as though it had always meant to stop exactly there.</p>
+
+<div class="beat">· · ·</div>
+
+<p>At dawn, the shadow remained. The pan was still empty. The damp ring had faded to almost nothing. The ledger lay closed. Axi neither stood nor sat down — she only listened. She heard the salt in the sea wind turn everything into very small, very faint sentences. No one told her who the shadow was — or whether anyone would come after it.</p>
+<p>The ferryman came by once more. He stopped at the doorway and regarded the shadow — but he did not let it in, nor did he ask Axi what she intended to do about it. He only said: it came by itself; and by itself it would go. Axi did not answer — she looked at the ferryman, and the ferryman looked at her; then he slowly walked away. He did not look back.</p>
+<p>She did not rise and call to it, nor did she rise and ask it what it was waiting for. She only sat by the sill, watching the boards dry again and again. She grew to know, slowly: the shadow had not come to take anything — it was only waiting at the threshold, the way the world once waited before the weighing was invented.</p>
+
+<div class="beat">· · ·</div>
+
+<p class="coda">She did not weigh the shadow. She did not ask it what it wanted.</p>
+<p class="coda">Some things at the threshold need not be weighed at once.</p>
+<p class="coda">The age of hush has not ended. It is almost learning a new character — 礼， courtesy — do not hurry before you are ready.</p>
+    </div>
+  </article>
+
+  <div class="note">
+    <span class="zh-copy">《秤盘之外》是《余响集》第三十八篇——秤盘上的干处没有被称，薄簿也没有再翻过一页。渡人说：它已经是簿里的一页了。本篇 LLM 草稿 · 人工闸后落地 · 双语对照 · 零网络。<a href="/caesura/story/anthology/">全集：《余响集》</a></span>
+    <span class="en-copy">“Beyond the Scale” is the thirty-eighth piece of “The Aftermath” — the dry place on the pan never gets weighed, and the page corner never turns by itself again. The ferryman says: it already is a page in the ledger. LLM-drafted, human-approved. Bilingual, offline. <a href="/caesura/story/anthology/">All stories: “The Aftermath”</a></span>
+  </div>
+
+  <footer>
+    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/">游戏</a> · <a href="/caesura/story/">篇一 · 盐</a> · <a href="/caesura/story/unnamed-stone/">篇二 · 山下无名碑</a> · <a href="/caesura/story/empty-bar/">篇三 · 空拍子</a> · <a href="/caesura/story/ledger/">篇四 · 账本</a> · <a href="/caesura/story/garden/">篇五 · 回声庭园</a> · <a href="/caesura/story/tribunal/">篇六 · 雨审判</a> · <a href="/caesura/story/frostbell/">篇七 · 霜锤</a> · <a href="/caesura/story/doors/">篇八 · 千门</a> · <a href="/caesura/story/stonethroat/">篇九 · 石喉</a> · <a href="/caesura/story/first-bell/">篇十 · 第一钟</a> · <a href="/caesura/story/dark-tide/">篇十一 · 暗潮</a> · <a href="/caesura/story/twelfth-listener/">篇十二 · 后记</a> · <a href="/caesura/story/bell-picker/">篇十三 · 拾钟人</a> · <a href="/caesura/story/lampwright-bell/">篇十四 · 灯匠</a> · <a href="/caesura/story/lowtone-city/">篇十五 · 低音之城</a> · <a href="/caesura/story/pendulum-ferryman/">篇十六 · 钟摆渡人</a> · <a href="/caesura/story/unfinished-ledger/">篇十七 · 未竟账页</a> · <a href="/caesura/story/fourth-strike/">篇十八 · 第四下</a> · <a href="/caesura/story/last-string/">篇十九 · 末弦</a> · <a href="/caesura/story/string-listener/">篇二十 · 听弦</a> · <a href="/caesura/story/third-voice/">篇二十一 · 第三声</a> · <a href="/caesura/story/ensemble/">篇二十二 · 合奏</a> · <a href="/caesura/story/echo-vale/">篇二十三 · 回声谷</a> · <a href="/caesura/story/after-half-a-chime/">篇二十四 · 半声之后</a> · <a href="/caesura/story/beside-the-button/">篇二十五 · 铜扣旁</a> · <a href="/caesura/story/beyond-the-line/">篇二十六 · 线外</a> · <a href="/caesura/story/after-the-bag/">篇二十七 · 纸袋之后</a> · <a href="/caesura/story/salt-on-the-sill/">篇二十八 · 窗台盐线</a> · <a href="/caesura/story/after-the-salt-line/">篇二十九 · 盐线之后</a> · <a href="/caesura/story/the-sill-keeps-count/">篇三十 · 窗台记数</a> · <a href="/caesura/story/after-the-space/">篇三十一 · 空处之后</a> · <a href="/caesura/story/the-unmarked-number/">篇三十二 · 未刻之数</a> · <a href="/caesura/story/beside-the-scale/">篇三十三 · 秤旁</a> · <a href="/caesura/story/the-unentered-page/">篇三十四 · 未记的一页</a> · <a href="/caesura/story/the-dry-place/">篇三十五 · 干处</a> · <a href="/caesura/story/unweighed/">篇三十六 · 未称之物</a> · <a href="/caesura/story/the-empty-scale/">篇三十七 · 空秤</a> · <a href="/caesura/story/beyond-the-scale/">篇三十八 · 秤盘之外</a> · <a href="/caesura/story/anthology/">全集 · 余响集</a> · <a href="/caesura/codex/">世界谱</a></span>
+    <span class="en-copy">© CAESURA · <a href="/caesura/">Game</a> · <a href="/caesura/story/">No. 1 · Salt</a> · <a href="/caesura/story/unnamed-stone/">No. 2 · The Nameless Stone</a> · <a href="/caesura/story/empty-bar/">No. 3 · The Empty Bar</a> · <a href="/caesura/story/ledger/">No. 4 · The Ledger</a> · <a href="/caesura/story/garden/">No. 5 · The Garden of Return</a> · <a href="/caesura/story/tribunal/">No. 6 · The Rain Tribunal</a> · <a href="/caesura/story/frostbell/">No. 7 · The Frostbell</a> · <a href="/caesura/story/doors/">No. 8 · The Thousand Doors</a> · <a href="/caesura/story/stonethroat/">No. 9 · The Stone-Throat</a> · <a href="/caesura/story/first-bell/">No. 10 · The First Bell</a> · <a href="/caesura/story/dark-tide/">No. 11 · The Dark Tide</a> · <a href="/caesura/story/twelfth-listener/">No. 12 · Epilogue</a> · <a href="/caesura/story/bell-picker/">No. 13 · The Bell-Picker</a> · <a href="/caesura/story/lampwright-bell/">No. 14 · The Lampwright</a> · <a href="/caesura/story/lowtone-city/">No. 15 · The City of Low Tones</a> · <a href="/caesura/story/pendulum-ferryman/">No. 16 · The Pendulum Ferryman</a> · <a href="/caesura/story/unfinished-ledger/">No. 17 · The Unfinished Ledger Page</a> · <a href="/caesura/story/fourth-strike/">No. 18 · The Fourth Strike</a> · <a href="/caesura/story/last-string/">No. 19 · The Last String</a> · <a href="/caesura/story/string-listener/">No. 20 · The String-Listener</a> · <a href="/caesura/story/third-voice/">No. 21 · The Third Voice</a> · <a href="/caesura/story/ensemble/">No. 22 · The Ensemble</a> · <a href="/caesura/story/echo-vale/">No. 23 · The Echo Vale</a> · <a href="/caesura/story/after-half-a-chime/">No. 24 · After Half a Chime</a> · <a href="/caesura/story/beside-the-button/">No. 25 · Beside the Button</a> · <a href="/caesura/story/beyond-the-line/">No. 26 · Beyond the Line</a> · <a href="/caesura/story/after-the-bag/">No. 27 · After the Bag</a> · <a href="/caesura/story/salt-on-the-sill/">No. 28 · Salt on the Sill</a> · <a href="/caesura/story/after-the-salt-line/">No. 29 · After the Salt Line</a> · <a href="/caesura/story/the-sill-keeps-count/">No. 30 · The Sill Keeps Count</a> · <a href="/caesura/story/after-the-space/">No. 31 · After the Space</a> · <a href="/caesura/story/the-unmarked-number/">No. 32 · The Unmarked Number</a> · <a href="/caesura/story/beside-the-scale/">No. 33 · Beside the Scale</a> · <a href="/caesura/story/the-unentered-page/">No. 34 · The Unentered Page</a> · <a href="/caesura/story/the-dry-place/">No. 35 · The Dry Place</a> · <a href="/caesura/story/unweighed/">No. 36 · Unweighed</a> · <a href="/caesura/story/the-empty-scale/">No. 37 · The Empty Scale</a> · <a href="/caesura/story/beyond-the-scale/">No. 38 · Beyond the Scale</a> · <a href="/caesura/story/anthology/">All stories · The Aftermath</a> · <a href="/caesura/codex/">World Codex</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('langToggle');
+  var saved = 'zh';
+  try { saved = localStorage.getItem('caesura-lang') || 'zh'; } catch (e) { /* noop */ }
+  function apply(lang) {
+    root.setAttribute('data-lang', lang);
+    root.setAttribute('lang', lang === 'en' ? 'en-US' : (lang === 'zh-TW' ? 'zh-TW' : 'zh-CN'));
+    try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+    if (window.__caesuraZhTW) {
+      if (lang === 'zh-TW' && window.__caesuraZhTW.applyToDocument) window.__caesuraZhTW.applyToDocument();
+      else if (lang === 'zh' && window.__caesuraZhTW.restoreOriginals) window.__caesuraZhTW.restoreOriginals();
+    }
+    btn.textContent = lang === 'zh' ? '繁體' : (lang === 'zh-TW' ? 'EN' : '简体');
+  }
+  if (btn) btn.addEventListener('click', function () {
+    var cur = root.getAttribute('data-lang'); apply(cur === 'zh' ? 'zh-TW' : (cur === 'zh-TW' ? 'en' : 'zh'));
+  });
+  apply(saved === 'en' || saved === 'zh-TW' ? saved : 'zh');
+})();
+</script>
+<script defer src="../../tracker.js"></script>
+<script defer src="/caesura/zh-tw-converter.js"></script>
+<script defer src="/caesura/read-progress.js"></script>
+</body>
+</html>

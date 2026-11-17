@@ -1,6 +1,6 @@
 /**
- * 游记 · 三十八篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669 扩）。
- * 这三十八篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 三十九篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670 扩）。
+ * 这三十九篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -2135,6 +2135,49 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She lifted the ledger and set it down again beside the seam, gently.</p>
     <p class="coda">The scale did not weigh the dry place.</p>
     <p class="coda">The age of hush has not ended. It has only, at last, fallen still — still enough that she can hear the speed at which the sea speaks itself.</p>`,
+  },
+  {
+    no: 39,
+    zhTitle: "秤影",
+    enTitle: "The Scale's Shadow",
+    zh: `<p>潮退后，秤盘上的湿痕淡了。淡到一个接一个的早晨，阿汐要很努力才能认出那圈湿痕的轮廓。她没有擦。她也没有一天比一天擦得更勤。</p>
+    <p>门外多了一道影子。它停在门槛前，没有进来。它站着的时候，木板居然没有发出声音——即使是那种最老最旧的可能吱一声的木板。它安静地站着，像是刚从海里升上来的、一段从未干过的木头。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>阿汐第一天以为它会进来。她没有关门——她留着原来的缝——她也没有把缝收窄。她只是坐在窗台边，盯着那道影子，像盯着一枚一直没有落定的水滴。</p>
+    <p>影子没有再远一步。它也没有离开。它在门外站着，像它来的时候那样站着，像它从一开始就打算站住那样站着。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>天亮时，影子还在，秤盘仍空着。湿痕淡了许多。薄簿依旧合着。阿汐没有站起来，也没有坐下——她只是在听。她听见盐在海风里把一切说成很小的、很淡的话。没有任何人告诉她，那道影子是谁——或者后面还会不会有谁。</p>
+    <p>渡人某天又来了。他停在门口，看了一眼影子——但他没有让影子进门，也没有问阿汐打算怎么做。他只说了一句：它来的时候，是自己来的；它也是自己走的。阿汐没接话——她只是看着渡人，渡人也看着她，然后他又慢慢地走了。走的时候，他没有回头。</p>
+    <p>她没有站起来叫住它，也没有站起来问它等什么。她只是坐在窗台边，看着木板干过一遍又一遍。她慢慢知道，影子不是来拿什么的——它只是停在门槛前，像世界曾经停在称量之前。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去称那道影子。她没有问它要什么。</p>
+    <p class="coda">有些东西到了门口，不必立刻称量。</p>
+    <p class="coda">止音纪元没有结束。它几乎要学会了一个新的字——礼——不等你准备好，别急。</p>`,
+    en: `<p>After the tide withdrew, the wet ring on the pan faded. It faded so gradually, morning after morning, that Axi had to look twice to find its shape. She did not wipe it away — nor did she wipe it with any particular diligence on any particular day.</p>
+    <p>Outside, a shadow stopped at the threshold and did not enter. The boards, even the oldest, even the creaking ones, gave no sound at all. It stood — quiet as a plank that had never once been dry, raised straight up out of the sea.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>On the first day Axi assumed it would come in. She did not close the door — she left the seam just as it was. She did not narrow the slit either. She only sat by the sill and watched the shadow the way one watches a drop of water that has yet to fall.</p>
+    <p>The shadow did not take a step further in. Nor did it leave. It stood outside — as it stood when it arrived — as though it had always meant to stop exactly there.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>At dawn, the shadow remained. The pan was still empty. The damp ring had faded to almost nothing. The ledger lay closed. Axi neither stood nor sat down — she only listened. She heard the salt in the sea wind turn everything into very small, very faint sentences. No one told her who the shadow was — or whether anyone would come after it.</p>
+    <p>The ferryman came by once more. He stopped at the doorway and regarded the shadow — but he did not let it in, nor did he ask Axi what she intended to do about it. He only said: it came by itself; and by itself it would go. Axi did not answer — she looked at the ferryman, and the ferryman looked at her; then he slowly walked away. He did not look back.</p>
+    <p>She did not rise and call to it, nor did she rise and ask it what it was waiting for. She only sat by the sill, watching the boards dry again and again. She grew to know, slowly: the shadow had not come to take anything — it was only waiting at the threshold, the way the world once waited before the weighing was invented.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not weigh the shadow. She did not ask it what it wanted.</p>
+    <p class="coda">Some things at the threshold need not be weighed at once.</p>
+    <p class="coda">The age of hush has not ended. It is almost learning a new character — 礼， courtesy — do not hurry before you are ready.</p>`,
   },
 ]
 
