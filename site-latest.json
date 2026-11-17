@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "0f641d16d5316a8dad55d674638428dda68cb6c8",
+  "head": "070a3d75471bfb158ab0685ab0ed5f05269bb7c1",
   "branch": "master",
-  "subject": "site-latest: d05526a (post-rebase reconcile)",
-  "date": "2026-11-17T21:20:56+08:00",
+  "subject": "feat(ai): KI-663 · 场景圣经巨前缀（Codex 级 ~90% 缓存命中率与上下文利用 · 单飞热身）",
+  "date": "2026-11-17T21:39:10+08:00",
   "kv": {
-    "KI.rows": 580,
-    "KI.Implemented": 403,
+    "KI.rows": 581,
+    "KI.Implemented": 404,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/0f641d16d5316a8dad55d674638428dda68cb6c8",
+    "url": "https://github.com/xiaodernan/caesura/commit/070a3d75471bfb158ab0685ab0ed5f05269bb7c1",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
