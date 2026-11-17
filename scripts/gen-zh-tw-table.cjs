@@ -66,6 +66,7 @@ try {
     'story/after-the-empty-scale/index.html',
     'story/the-unmade-swing/index.html',
     'story/the-dry-mark-beneath/index.html',
+    'story/the-unasked-boat/index.html',
   ];
 
   const PHRASES = new Set();

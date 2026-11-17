@@ -1,6 +1,6 @@
 /**
- * 游记 · 四十七篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678 扩）。
- * 这四十七篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 四十八篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679 扩）。
+ * 这四十八篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -2522,6 +2522,47 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She did not look at the sea.</p>
     <p class="coda">Some empty spaces do not grow when a grain is gone.</p>
     <p class="coda">The age of hush has not ended. It has only, at last, left behind a hull that no one ever needed to record — and a tide that will no longer count as someone's variable.</p>`,
+  },
+  {
+    no: 48,
+    zhTitle: "未问之船",
+    enTitle: "The Unasked Boat",
+    zh: `<p>船仍停在门外。潮退时，船底的干痕露出一寸；潮涨时，它没有消失。阿汐没有问船要去哪里。薄簿合着，秤盘空着。小雪捂过的窗台仍在干痕的位置稍往上。天亮后，门槛上的盐少了一粒。她没有寻找。</p>
+    <p>她偶尔想过去看——她已经看过太多次——其实她每一眼都是不同的。——她没有站起来——她不是懒——也不是怕——只是她知道一旦走到门槛那边——她可能会不小心数。——她不想数。——她现在已经是知道不数的那种人。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿仍合着。薄页偶尔也会翻一回。她看着它翻一回又合住——她注意到每次翻开的位置不一样——她不知道是不是——也许它也在自己记自己。——她不去求证。——她知道求证——就是又要开始问——她现在不想问。</p>
+    <p>母亲——已经在她的故事里很久了——她也不常去想她了——但她偶尔又会想起一句：册子——它会自己翻——亲爱的——册子永远知道。她记了很久这句话。——她一直不知道到底册子是不是知道。——今天她没有看母亲。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮涨时·潮退时·干痕露了一寸·墨纹从海水中浮出来——她看它像母亲册子上的一行——可她不识那行——可她记得那样的笔顺——两个钩——三条平——没人会写——其实她知道——其实她知道不用写。</p>
+    <p>她今天没有去看海。——她今天只是坐着——坐在一个冬天的窗下——等着——她也不知道等的是什么——她也不知道什么时候会开始做下一件她不敢做的事——她只是等。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些船停着，不等人问。</p>
+    <p class="coda">止音纪元没有结束。它只是终于留下一只没有问过谁的船——和一本只被合着的薄簿。</p>`,
+    en: `<p>The boat remained outside. At ebb, an inch of the dry mark beneath its hull showed; at flood, it did not disappear. Axi did not ask where the boat was bound. The ledger stayed closed, the scale pan empty. Snow had touched the sill one finger's width above the place where the mark lived. By dawn, one grain of salt was gone from the threshold. She did not look for it.</p>
+    <p>She sometimes thought of getting up to look — she had looked many times — actually each glance was slightly different. She did not rise — not from laziness — not from fear — she only knew that if she went as far as the threshold — she might accidentally start counting. She did not want to count. She was now the kind of person who did not count.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ledger stayed closed. The page still turned by itself now and then. She watched it turn and close again — she noticed it opened at a different place each time — she did not know whether that was possible — perhaps the page was recording itself. She would not verify. She knew that to verify would mean to start asking again — she did not want to ask right now.</p>
+    <p>Her mother — has been in her stories for a long time now — she did not often think of her again — but now and then she remembered one line: the book — it will turn on its own — my dear — the book always knows. She had memorised that sentence a long time ago. She still never knew whether the book really knew. She did not ask her mother today.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>When the tide came in — when it went out — the mark revealed one inch — a pattern like a single line of calligraphy emerged from the seawater — she read it as one line of her mother's book — but she could not read what it said — she recognised only the gesture — two hooks — three flat strokes — no hand writes that — actually she knew — actually she knew not to write.</p>
+    <p>She did not go and look at the sea today. She only sat — in front of a winter window — waiting — she did not know what she was waiting for — she did not know when she would begin the next thing she had not dared to do — she only waited.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some boats stay without waiting to be asked.</p>
+    <p class="coda">The age of hush has not ended. It has only, at last, left behind a boat that was never asked — and a ledger that was only ever closed.</p>`,
   },
 ]
 
