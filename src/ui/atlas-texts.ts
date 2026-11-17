@@ -1,6 +1,6 @@
 /**
- * 游记 · 三十七篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668 扩）。
- * 这三十七篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 三十八篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669 扩）。
+ * 这三十八篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -2090,6 +2090,51 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She used to think "empty" meant "lacking". She understood now: empty is a kind of holding.</p>
     <p class="coda">The pan was empty, and held something.</p>
     <p class="coda">The age of hush has not ended. It has only left behind, at last, a scale that will never weigh anything — and one grain of salt that will never weigh itself.</p>`,
+  },
+  {
+    no: 38,
+    zhTitle: "秤盘之外",
+    enTitle: "Beyond the Scale",
+    zh: `<p>盐粒仍在秤盘里。阿汐没有称它，也没有把它移开。潮水退去时，秤盘留下一圈湿痕——一圈很浅很深的灰白色边线。盐粒旁边干着一小处。她没有记下那一处。</p>
+    <p>薄簿合着，页角没有翻动。她偶尔想到薄页自己会翻过去一页；她伸手想按住——可她没有按。页角也没有翻过去。它在那里，只是静静地抵住。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>有一天她忽然想用一块湿布擦一下秤盘。她就这么想了一下，那个念头就收回去了。不是因为它错——是因为她意识到，这个秤盘现在自己会呼吸，或者等同于呼吸。它已经不是一个物件；它也是「留」。</p>
+    <p>她不再许下「今天我把它称一称」的诺言。她连这种小小的诺言也没有了——连「想」一下都成了多余。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>渡人某天把船靠在门口。阿汐问他：这个秤盘上的干处要不要也写进薄簿？他听了一会儿，然后回答说：它已经是簿里的一页了。她愣了一阵——她明白了：薄簿的用途已经完了；薄簿的使命已经完成了。</p>
+    <p>那一天，她忽然觉得薄簿很轻——轻得像一片刚从海里捞出的叶子。可这也不是「轻」的意思；这是另一件不能用字准确说的事。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她忽然意识到那块被称为干处的地方，正如她母亲那本没写完的册子——最后的页角是别人按下去的，不是母亲自己按的。她要是按住——会不会很快就翻过下一页？她没有按，她也没有翻过。</p>
+
+    <p class="coda">她把薄簿抱回接缝旁，轻轻放下。</p>
+    <p class="coda">秤盘没有称那处干。</p>
+    <p class="coda">止音纪元没有结束。它只是终于安静下来——安静得她能听见海把自己说出来的速度。</p>`,
+    en: `<p>The grain of salt remained on the pan. Axi neither weighed it nor moved it. When the tide withdrew, a ring of wetness stayed on the brass — a very pale, very deep greyish borderline. Beside the grain, one small place remained dry. She did not enter it.</p>
+    <p>The ledger stayed closed; its page corner still. She sometimes thought about the page turning over by itself. She would reach to stop it — but she did not reach. The corner did not turn either. It simply held itself, still.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>One day she had the thought to wipe the pan with a wet cloth. She considered it, and then she did not. Not because the thought was wrong — but because she understood that this pan was now breathing, or something like breathing. It was no longer an object; it too had become "held".</p>
+    <p>She no longer made the small promise to herself — "today I will weigh it at least once". Even the thought had become superfluous.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ferryman drew his boat alongside the door one day. Axi asked him: does that dry patch on the pan belong in the ledger too? He listened for a moment, and then answered: it already is a page in the ledger. She went quiet for a beat — she understood: its errand was finished; its mission was complete.</p>
+    <p>That day, she felt the ledger had become light — light as a leaf dredged from the sea. It was not "light"; it was something no word in this world could be quite exact about.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>She found herself thinking that the dry place she called a piece of land was like her mother's unfinished book — its last page-corner had been pressed by someone else, never by her mother herself. If she pressed it — would the next page soon turn by itself? She did not press it, and she did not turn it.</p>
+
+    <p class="coda">She lifted the ledger and set it down again beside the seam, gently.</p>
+    <p class="coda">The scale did not weigh the dry place.</p>
+    <p class="coda">The age of hush has not ended. It has only, at last, fallen still — still enough that she can hear the speed at which the sea speaks itself.</p>`,
   },
 ]
 

@@ -10,9 +10,9 @@ import { STORY_CHAPTERS } from '@/ui/atlas-texts'
  *   ④ 名称与姜读相对应（中文标题·英文标题与故事对齐，防机械错位）。
  */
 
-describe('Atlas 三十七篇全文（atlas-texts.ts）', () => {
-  it('恰好三十七篇 · 编号 1..37 严格递增', () => {
-    expect(STORY_CHAPTERS.length).toBe(37)
+describe('Atlas 三十八篇全文（atlas-texts.ts）', () => {
+  it('恰好三十八篇 · 编号 1..38 严格递增', () => {
+    expect(STORY_CHAPTERS.length).toBe(38)
     STORY_CHAPTERS.forEach((c, i) => expect(c.no).toBe(i + 1))
   })
 
@@ -30,17 +30,17 @@ describe('Atlas 三十七篇全文（atlas-texts.ts）', () => {
     }
   })
 
-  it('中文标题严格对应（三十七篇顺序）', () => {
+  it('中文标题严格对应（三十八篇顺序）', () => {
     expect(STORY_CHAPTERS.map((c) => c.zhTitle)).toEqual([
       '盐', '山下无名碑', '空拍子', '账本', '回声庭园',
-      '雨审判', '霜锤', '千门', '石喉', '第一钟', '暗潮', '后记 · 第十二个听者', '拾钟人', '灯匠', '低音之城', '钟摆渡人', '未竟账页', '第四下', '末弦', '听弦', '第三声', '合奏', '回声谷', '半声之后', '铜扣旁', '线外', '纸袋之后', '窗台盐线', '盐线之后', '窗台记数', '空处之后', '未刻之数', '秤旁', '未记的一页', '干处', '未称之物', '空秤',
+      '雨审判', '霜锤', '千门', '石喉', '第一钟', '暗潮', '后记 · 第十二个听者', '拾钟人', '灯匠', '低音之城', '钟摆渡人', '未竟账页', '第四下', '末弦', '听弦', '第三声', '合奏', '回声谷', '半声之后', '铜扣旁', '线外', '纸袋之后', '窗台盐线', '盐线之后', '窗台记数', '空处之后', '未刻之数', '秤旁', '未记的一页', '干处', '未称之物', '空秤', '秤盘之外',
     ])
   })
 
-  it('英文标题严格对应（三十七篇顺序）', () => {
+  it('英文标题严格对应（三十八篇顺序）', () => {
     expect(STORY_CHAPTERS.map((c) => c.enTitle)).toEqual([
       'Salt', 'The Nameless Stone', 'The Empty Bar', 'The Ledger', 'The Garden of Return',
-      'The Rain Tribunal', 'The Frostbell', 'The Thousand Doors', 'The Stone-Throat', 'The First Bell', 'The Dark Tide', 'Epilogue · The Twelfth Listener', 'The Bell-Picker', 'The Lampwright', 'The City of Low Tones', 'The Pendulum Ferryman', 'The Unfinished Ledger Page', 'The Fourth Strike', 'The Last String', 'The String-Listener', 'The Third Voice', 'The Ensemble', 'The Echo Vale', 'After Half a Chime', 'Beside the Button', 'Beyond the Line', 'After the Bag', 'Salt on the Sill', 'After the Salt Line', 'The Sill Keeps Count', 'After the Space', 'The Unmarked Number', 'Beside the Scale', 'The Unentered Page', 'The Dry Place', 'Unweighed', 'The Empty Scale',
+      'The Rain Tribunal', 'The Frostbell', 'The Thousand Doors', 'The Stone-Throat', 'The First Bell', 'The Dark Tide', 'Epilogue · The Twelfth Listener', 'The Bell-Picker', 'The Lampwright', 'The City of Low Tones', 'The Pendulum Ferryman', 'The Unfinished Ledger Page', 'The Fourth Strike', 'The Last String', 'The String-Listener', 'The Third Voice', 'The Ensemble', 'The Echo Vale', 'After Half a Chime', 'Beside the Button', 'Beyond the Line', 'After the Bag', 'Salt on the Sill', 'After the Salt Line', 'The Sill Keeps Count', 'After the Space', 'The Unmarked Number', 'Beside the Scale', 'The Unentered Page', 'The Dry Place', 'Unweighed', 'The Empty Scale', 'Beyond the Scale',
     ])
   })
 

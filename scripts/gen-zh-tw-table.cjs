@@ -56,6 +56,7 @@ try {
     'story/the-dry-place/index.html',
     'story/unweighed/index.html',
     'story/the-empty-scale/index.html',
+    'story/beyond-the-scale/index.html',
   ];
 
   const PHRASES = new Set();
