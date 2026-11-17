@@ -1183,6 +1183,14 @@ async function startRun(slot: string | null): Promise<void> {
   // ① 找钟声守铃姨领第一件委托（她就在休垒，8/0/26），② 顺路在发光的调音桩上加点。
   // **不给坐标**：坐标由目标指示那枚箭头给（KI-137），这里只说"找谁"。
   bus.emit('ui.notify', { text: t('ui.notify.firstQuestHint'), kind: 'info' })
+  // KI-656（KI-645 行动 #2）：进入世界后也把两个长读入口说一次（不越 §41「只在调音桩前能打开」）
+  if (!slot) {
+    bus.emit('ui.notify', { text: t('ui.notify.atlasCodex'), kind: 'info' })
+    try {
+      const w = (typeof window !== 'undefined' ? window : undefined) as unknown as { __caesuraTrack?: (t: string) => void } | undefined
+      if (w && typeof w.__caesuraTrack === 'function') w.__caesuraTrack('inworld-atlas-hint')
+    } catch { /* 埋点永远不许弄坏开局 */ }
+  }
   bus.emit('ui.notify', { text: t('ui.notify.rank', { rank: rpg.prog.rank, xp: rpg.prog.xp }) + (rpg.prog.unspent > 0 ? t('ui.notify.unspent', { n: rpg.prog.unspent }) : ''), kind: 'info' })
   // KI-141：序章目标（还没接任何委托时，箭头指着该先找的人）
   applyPrologueObjective()
