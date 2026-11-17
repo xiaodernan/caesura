@@ -45,19 +45,19 @@ describe('KI-637 · 本周纪事 · The Chronicle（玩家进程零 LLM · AI �
     expect(s).toContain('By the Week')
   })
 
-  it('zh 正文含 canon 线（未竟厅 / 第四下 / 未竟账页 / 2026-11）', () => {
+  it('zh 正文含 canon 线（未竟厅 / 第四下 / 未竟账页 / 2026-11-17）', () => {
     const s = read('src/ui/world-chronicle.ts')
     expect(s).toContain('未竟厅')
     expect(s).toContain('第四下')
-    expect(s).toContain('2026-11')
+    expect(s).toContain('2026-11-17')
   })
 
-  it('en 正文含 canon 线（Unfinished Hall / The Fourth Strike / World Chronicle / claimed）', () => {
+  it('en 正文含 canon 线（Unfinished Hall / The Fourth Strike / World Chronicler / 561）', () => {
     const s = read('src/ui/world-chronicle.ts')
     expect(s).toContain('Unfinished Hall')
     expect(s).toContain('The Fourth Strike')
-    expect(s).toContain('World Chronicle')
-    expect(s).toContain('claimed')
+    expect(s).toContain('World Chronicler')
+    expect(s).toContain('561')
   })
 
   it('正文不出现 AI/模型/token/gpt 等工程字样（昭告玩家：这是一封信，不是工程）', () => {
