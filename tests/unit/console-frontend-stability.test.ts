@@ -142,7 +142,7 @@ describe('console 前端稳定性门钉（F-124 的长期护栏）', () => {
       "'篇三十八': 'No. 38',",
       "'《秤盘之外》': 'Beyond the Scale',",
       "'篇三十九': 'No. 39',",
-      "'《秤影》': 'The Scale\'s Shadow',",
+      "'《秤影》': 'The Scale\\'s Shadow',",
       "'余响三十九篇 · 沉默的编年史': 'Thirty-nine Chronicles · The Chronicles of Silence',",
 
       "'余响三十七篇 · 沉默的编年史': 'Thirty-seven Chronicles · The Chronicles of Silence',",
