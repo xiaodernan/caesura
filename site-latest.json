@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "eb9b87c3bc6afe594589328ff874a322a0aa9245",
+  "head": "44bca69771dcb37f31ac74af15b91c90540244e3",
   "branch": "master",
-  "subject": "site-latest: 723d95b (post-rebase reconcile)",
-  "date": "2026-11-17T11:11:45+08:00",
+  "subject": "feat(story): KI-641《余响集》第二十一篇《第三声 / The Third Voice》落地",
+  "date": "2026-11-17T11:28:03+08:00",
   "kv": {
-    "KI.rows": 558,
-    "KI.Implemented": 381,
+    "KI.rows": 559,
+    "KI.Implemented": 382,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/eb9b87c3bc6afe594589328ff874a322a0aa9245",
+    "url": "https://github.com/xiaodernan/caesura/commit/44bca69771dcb37f31ac74af15b91c90540244e3",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
