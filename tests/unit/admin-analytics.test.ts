@@ -230,7 +230,7 @@ describe('admin · 静态页与部署接线（防悄悄脱落）', () => {
     /* dist 里的副本必须是真的 site-latest.json（含 nexus/master head），内容会被 build-site-latest.mjs 刷新 */
     expect(yml).toContain('site-latest.json')
   })
-  it('smoke-live 第 25 个入口：admin（36 端点） + AI 导演双 JSON 端点+ 篇十一..篇二十五故事页', () => {
+  it('smoke-live 第 26 个入口：admin（37 端点） + AI 导演双 JSON 端点+ 篇十一..篇二十六故事页', () => {
     const sm = read('scripts/smoke-live.mjs')
     expect(sm).toContain("name: 'admin'")
     expect(sm).toContain('/caesura/admin/')
@@ -250,11 +250,13 @@ describe('admin · 静态页与部署接线（防悄悄脱落）', () => {
     expect(sm).toContain("name: 'story-24'")
     expect(sm).toContain("name: 'story-25'")
     expect(sm).toContain("name: 'story-26'")
+    expect(sm).toContain("name: 'story-27'")
     expect(sm).toContain('/caesura/story/third-voice/')
     expect(sm).toContain('/caesura/story/ensemble/')
     expect(sm).toContain('/caesura/story/echo-vale/')
     expect(sm).toContain('/caesura/story/after-half-a-chime/')
     expect(sm).toContain('/caesura/story/beside-the-button/')
+    expect(sm).toContain('/caesura/story/beyond-the-line/')
     expect(sm).toContain('/caesura/story/string-listener/')
     expect(sm).toContain("name: 'ai-json-commit'")
     expect(sm).toContain("name: 'ai-json-qa'")
@@ -269,7 +271,7 @@ describe('admin · 静态页与部署接线（防悄悄脱落）', () => {
     expect(sm).toContain('/caesura/story/unfinished-ledger/')
     expect(sm).toContain('/caesura/story/fourth-strike/')
     const entries = (sm.match(/\{ name: '/g) ?? []).length
-    expect(entries).toBe(36)
+    expect(entries).toBe(37)
   })
   it('public/tracker.js 存在且为本机埋点', () => {
     const t = read('public/tracker.js')

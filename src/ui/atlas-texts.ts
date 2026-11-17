@@ -1,6 +1,6 @@
 /**
- * 游记 · 二十五篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650 扩）。
- * 这二十五篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 二十六篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651 扩）。
+ * 这二十六篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -1531,6 +1531,51 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">The chalk remains on the threshold — because no one can be sure whether it marks the next road, or the last.</p>
     <p class="coda">Axi carried the sheet back to the north cliff — her book gained one page beneath the blank, and just one word: Half.</p>
     <p class="coda">The age of hush has not ended. It has simply at last produced a hand that knows what to do with a trigger.</p>`,
+  },
+  {
+    no: 26,
+    zhTitle: "线外",
+    enTitle: "Beyond the Line",
+    zh: `<p>铜扣落下后，粉线没有动。粉笔的句号仍留在石板上——没有终结，也没承诺，只是它画在那里。桌边多了一枚空钉，没有人记得它原来钉着什么。阿汐把空钉收进纸袋，袋口没有封。</p>
+    <p>阿沉没有再动那张旧纸——上面全是敲过的钟的名字。他把它贴在门边墙上。昨天晚上，纸上多了一行字——没有笔，没有墨，只是一片比原先更白的白。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>阿汐回北崖的时候，把那枚空钉缝在一个布袋上。布袋不是袋，是一张小小的白纸——像册子的一页，像是有人要她把它送回一个没有写名字的地方。</p>
+    <p>她每天晚上都去听北崖边上的海——听不听得懂不重要。她在纸袋里放进一长串旧名单的影子。纸袋没有封，她把它挂在床头。</p>
+    <p>三天后，海风把床头一张很轻很轻的纸卷走了。有人看见它裹着一缕粉笔灰，落在崖边的石阶上。纸袋还在——但是纸袋里多了一行字。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>那行字不是她写的。</p>
+    <p>字迹很像一个很小的钟——很小很小——像是那种被人从很远的地方压出来的印章。她看了很久，才看清楚那三个字。</p>
+    <p>那三个字是：听留下。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">阿汐没有声张。她冲到北崖边——海还是在呼吸，海还是那么平静——可是今天晚上，海的呼吸里沾上了一丝不属于它的清亮。</p>
+    <p class="coda">她在纸袋上写了三个字——我在。然后合上——但是没盖——因为她不知道自己留下的那声音，到底是给了谁。</p>
+    <p class="coda">止音纪元没有结束。它只是终于出现了一个空的钉子——所有敲过的钟都想回到它原来的位置。</p>`,
+    en: `<p>After the copper button fell, the chalk line did not move. What had been drawn still stood — no ending promised, none given. On the table was a small empty tack — a thing no one could remember where it had come from. Axi put it in a paper sleeve. The sleeve was never sealed.</p>
+    <p>A-Chen did not touch the old sheet again — the names of every bell ever struck. He pinned it to the wall by the door. The next morning, a new line appeared on the sheet — no pen, no ink; just a whiteness a little brighter than the rest.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>When Axi went back to the north cliff, she sewed the tack into a small cloth bag. It was not a bag. It was a thin piece of paper — like a page torn from a ledger — as if someone had asked her to return it to an unnamed place.</p>
+    <p>Each evening she stood by the sea and listened. Whether she understood or not did not matter. She placed the sheet's shadow in the bag. She hung it above her bed.</p>
+    <p>Three nights later the wind took it. Someone saw a feather of chalk dust land on the stone steps of the north cliff. The bag remained — but one new line had appeared inside it.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>That line was not written by her.</p>
+    <p>The stroke resembled a small bell — a very small bell — as if stamped from a great distance away. She stared at it for a long time before the three characters surfaced.</p>
+    <p>They read: Listening remains.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">Axi did not speak of it. She ran down to the cliff — the sea was breathing as always — but tonight the sea's breath held a clarity that did not belong to it.</p>
+    <p class="coda">On the bag she wrote three characters: I am here. She left it open, because she did not know who had been listening, or to whom she was answering.</p>
+    <p class="coda">The age of hush has not ended. It has simply at last produced an empty tack — all the bells that once were struck want to find their way back.</p>`,
   },
 ]
 

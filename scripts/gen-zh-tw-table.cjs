@@ -44,6 +44,7 @@ try {
     'story/echo-vale/index.html',
     'story/after-half-a-chime/index.html',
     'story/beside-the-button/index.html',
+    'story/beyond-the-line/index.html',
   ];
 
   const PHRASES = new Set();
