@@ -38,7 +38,7 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - "The Ledger" (original short story, no. 4): <https://xiaodernan.github.io/caesura/story/ledger/> (Resthold · the page Meg never dared to close · bilingual · zero LLM · added 2026-11-15)  
 - "The Garden of Return" (original short story, no. 5): <https://xiaodernan.github.io/caesura/story/garden/> (The Afterland · the sixth sound · The Owner of the Old Bell · bilingual · zero LLM · added 2026-11-15)  
 - "The Rain Tribunal" (original short story, no. 6): <https://xiaodernan.github.io/caesura/story/tribunal/> (The Afterland · the Rainbell Valley · The Drowning Jurist · seven years between sessions · bilingual · zero LLM · added 2026-11-15)  
-- "The Aftermath" (complete short fiction, whole-volume portal — printable as one paper volume): <https://xiaodernan.github.io/caesura/story/anthology/> (all twenty-nine stories · EPIC-VII draft now inside · updated 2026-11-18)  
+- "The Aftermath" (complete short fiction, whole-volume portal — printable as one paper volume): <https://xiaodernan.github.io/caesura/story/anthology/> (all thirty stories · EPIC-VII draft now inside · updated 2026-11-18)  
 - "The Frostbell" (original short story, no. 7): <https://xiaodernan.github.io/caesura/story/frostbell/> (The Frostbell Cliff · The Last Frostwright · the sound the ice kept · bilingual · zero LLM · added 2026-11-15)  
 - "The Thousand Doors" (original short story, no. 8): <https://xiaodernan.github.io/caesura/story/doors/> (The Arcade of Echoes · the Gatekeeper of a Thousand Doors · bilingual · zero LLM · added 2026-11-15)  
 - "The Stone-Throat" (original short story, no. 9): <https://xiaodernan.github.io/caesura/story/stonethroat/> (The City of Low Tones · The Stone-Throat Matriarch · the pitch that costs nothing · bilingual · zero LLM · added 2026-11-15)  
@@ -62,6 +62,7 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - "After the Bag" (short fiction No.27): <https://xiaodernan.github.io/caesura/story/after-the-bag/> (the Arcade · after the bag · she adds no word · a salt trail joins pillow and sill · the door opens a finger's width on its own · LLM-drafted, human-approved · zero LLM · 2026-11-18) ·  
 - "Salt on the Sill" (short fiction No.28): <https://xiaodernan.github.io/caesura/story/salt-on-the-sill/> (the Arcade · the salt line on the sill shrinks each day · on the fifth night it breaks at the boards' seam · she walks a long way to the sea · LLM-drafted, human-approved · zero LLM · 2026-11-18) ·  
 - "After the Salt Line" (short fiction No.29): <https://xiaodernan.github.io/caesura/story/after-the-salt-line/> (the Arcade · the salt line stays two halves on the sill · the bag by the door · the door never opens again · the two halves grow back a little · LLM-drafted, human-approved · zero LLM · 2026-11-18) ·  
+- "The Sill Keeps Count" (short fiction No.30): <https://xiaodernan.github.io/caesura/story/the-sill-keeps-count/> (the Arcade · the sill keeps count along with her · a copper button's width of empty space between two halves · the ebb tide also keeps count · LLM-drafted, human-approved · zero LLM · 2026-11-18) ·  
 - Sync truth: `https://raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json`
 
 ## Where to read

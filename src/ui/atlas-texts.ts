@@ -1,6 +1,6 @@
 /**
- * 游记 · 二十九篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658 扩）。
- * 这二十九篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 三十篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659 扩）。
+ * 这三十篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -1715,6 +1715,49 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">Later she understood: the bag was not a letter from anyone. It was the reminder of the thing that never ends — listening is leaving.</p>
     <p class="coda">The door did not open again. The bag stayed where it was.</p>
     <p class="coda">It was only when she happened to pass the sill that she saw it — the two halves of the salt line, growing back ever so slightly. Not much. Just enough to press down on the next line, the one that had not arrived yet.</p>`,
+  },
+  {
+    no: 30,
+    zhTitle: "窗台记数",
+    enTitle: "The Sill Keeps Count",
+    zh: `<p>纸袋还在门边。窗台上的盐线没有再长。她把两半并在一起，中间留着一道空处——刚好能放下一枚铜扣，也刚好能放下一个字。清晨，空处仍在。</p>
+    <p>阿汐不再动它。连擦窗台的时候，她都只擦它的左半和右半，中间那道空处留给它自己——它在等，还是不在等，谁都不知道。只有一件事确定：窗台每天早上替她看着它。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>那天起，她自己也开始记数。阿沉的旧刻度还在——一拃、半拃、消失。他的「记」字被风吹歪过一个角。阿汐没有再新画刻度；她只在每天的粉笔末端，轻轻点一下窗台板。</p>
+    <p>第一天，三个点；第二天，五个点；第三天，她忍不住笑了。她发现自己居然在数——可数什么，为什么，她自己也不知道。也许是为了让那段时间有东西留下；也许是为了不被等到失去耐心。</p>
+    <p>有一天傍晚她走到海滩边，看见自己走过的地方，沙上也添了新的半圆——海水退潮时也会留下一串很浅的点。她蹲下来看了很久，站起来的时候，她才明白：退潮也是一种记数。它没有刻度，却从不重复。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>第三个清晨，空处里多了一道极淡的影子——像远处海面上碎开的光、像很老的粉笔的最后一笔的影子。阿汐看了一眼，没有喊阿沉，也没有数。她只在空处旁边，添了一个很短很短的划。</p>
+    <p>那根划和阿沉那三条线并排立着——一根点三下，一根画过去，一根被风吹歪。沉默把它们收进同一幅画。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">风又来的时候，纸袋没有动。窗台上两半并在一起，空处还在那儿。那晚她走了一趟海滩——回来的时候，鞋底沾着一点盐。</p>
+    <p class="coda">门没有开。空处也没有填上。</p>
+    <p class="coda">止音纪元没有结束。它在学两个字——等。</p>`,
+    en: `<p>The paper bag stayed by the door. The salt line on the sill did not grow again. She placed its two halves together, leaving an empty space between them — just wide enough for a copper button, just wide enough for a single character. In the morning, the space remained.</p>
+    <p>Axi did not touch it anymore. Even when she wiped the sill, she wiped left, then right, leaving the empty space to its own business — whether it waited, or did not wait, no one could say; only that the sill watched it for her, every morning.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>From that day, she kept count too. A-Chen's old ticks were still there — one hand's width, half, gone. His 记 had been tilted by the wind. Axi drew no new ticks; she simply touched the pencil against the sill each morning, a small point of graphite for each day she had waited.</p>
+    <p>The first day, three points. The second, five. On the third she caught herself and smiled. She had started to count — what she was counting, and why, even she did not know. Perhaps to leave a mark of the waiting; perhaps to spare the waiting from losing its shape.</p>
+    <p>One evening she walked to the beach. Where she had stepped, the sand bore a few new half-circles — the sea left its own faint points when the tide went out. She crouched and stayed a long time, and when she stood up she understood: the ebb is also a kind of counting, without ticks, never repeating.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>On the third morning a very faint shadow lay across the empty space — like light broken into silver on a distant sea, like the ghost of a very old chalk stroke. Axi saw it, said nothing to A-Chen, and did not count. She only drew one more short stroke beside the empty space.</p>
+    <p>The new stroke stood beside A-Chen's three — one tick-mark, one drawn line, one bent by wind. Silence folded them all into the same picture.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">When the wind came again, the bag did not move. On the sill, the two halves lay together and the space remained. That night she walked to the beach; when she came back, there was salt on the sole of her shoe.</p>
+    <p class="coda">The door stayed shut. The space was not filled.</p>
+    <p class="coda">The age of hush has not ended. It is learning two characters — wait.</p>`,
   },
 ]
 
