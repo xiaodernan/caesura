@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "be7bf8d0aaac35de3f13e31534c70cd24c2f47da",
+  "head": "085017095037645ccb2eb24e131c3f137ec896ee",
   "branch": "master",
-  "subject": "feat(story): KI-643《余响集》第二十二篇《合奏 / The Ensemble》落地",
-  "date": "2026-11-17T12:06:44+08:00",
+  "subject": "site-latest: be7bf8d (post-rebase reconcile)",
+  "date": "2026-11-17T12:07:21+08:00",
   "kv": {
     "KI.rows": 561,
     "KI.Implemented": 384,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/be7bf8d0aaac35de3f13e31534c70cd24c2f47da",
+    "url": "https://github.com/xiaodernan/caesura/commit/085017095037645ccb2eb24e131c3f137ec896ee",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
