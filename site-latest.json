@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "1d185b54f277f14de9fb4d60796a69f372be9765",
+  "head": "39c7a16de94642ff13a0dc1ec4509dddba2b35f1",
   "branch": "master",
-  "subject": "feat(story): KI-650《余响集》第二十五篇《铜扣旁 / Beside the Button》落地（LLM 真机草稿 → 人工闸落库）",
-  "date": "2026-11-17T15:13:26+08:00",
+  "subject": "site-latest: 1d185b5 (post-rebase reconcile)",
+  "date": "2026-11-17T15:14:09+08:00",
   "kv": {
     "KI.rows": 568,
     "KI.Implemented": 391,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/1d185b54f277f14de9fb4d60796a69f372be9765",
+    "url": "https://github.com/xiaodernan/caesura/commit/39c7a16de94642ff13a0dc1ec4509dddba2b35f1",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
