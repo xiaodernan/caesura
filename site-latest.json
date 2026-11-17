@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "1eb0b270fd16a223324366bbdd6c171dd0919ba2",
+  "head": "c7e2ae6b0ede405a2259336f799c94306a34a0a1",
   "branch": "master",
-  "subject": "site-latest: 0224699 (post-rebase reconcile)",
-  "date": "2026-11-17T18:54:08+08:00",
+  "subject": "test(load): KI-660 · 压力测试落地（stress-live 工具 + 公网站实测零失败）",
+  "date": "2026-11-17T20:22:44+08:00",
   "kv": {
-    "KI.rows": 577,
-    "KI.Implemented": 400,
+    "KI.rows": 578,
+    "KI.Implemented": 401,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -16,7 +16,7 @@
     "SYS.Blocked": 0,
     "ARCH.sections": 202,
     "ARCH.holes": "none",
-    "PKG.scripts": 88
+    "PKG.scripts": 89
   },
   "suites": {
     "consoleUi": 150,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/1eb0b270fd16a223324366bbdd6c171dd0919ba2",
+    "url": "https://github.com/xiaodernan/caesura/commit/c7e2ae6b0ede405a2259336f799c94306a34a0a1",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
