@@ -83,6 +83,7 @@ const STRINGS = {
   'ai.l.run': { zh: '真跑诊断 →', en: 'Run live diagnosis →' },
   'ai.l.fine': { zh: '发送内容＝本页聚合数据的 ≤800 字摘要（不含任何个人信息）；模型回复原样呈现。', en: 'What is sent = a ≤800-char digest of this page’s aggregate data (no personal information). The model’s reply is shown verbatim.' },
   'ai.l.result': { zh: '模型现场答复', en: 'The model’s live reply' },
+  'ai.live': { zh: '实时', en: 'LIVE' },
   'sg.h2': { zh: '状态图检查站 · StateGraph 实跑', en: 'StateGraph checkpoints · the real run' },
   'sg.hint': { zh: 'AI 导演引擎的真实运行轨迹——七节点 · 三个 LLM 边共享同一 system 前缀 · 产物过人工闸', en: 'The real trajectory of the AI Director engine — seven nodes · three LLM edges sharing one system prefix · artifacts pass the human gate' },
   'build.h2': { zh: '研发状态 · Build Observatory', en: 'Build Observatory · the repo’s vital signs' },
@@ -597,7 +598,7 @@ async function renderAiCommitted() {
   const verdictByFlag = new Map((((qa && qa.verdicts)) || []).map((v) => [v.flag, v]))
   const isEn = LANG === 'en'
   const audit = d.audit
-  chip.textContent = d.mode === 'live' ? 'LIVE' : String(d.mode || 'offline').toUpperCase()
+  chip.textContent = d.mode === 'live' ? T('实时', 'LIVE') : String(d.mode || '离线').toUpperCase()
   gen.textContent = String(d.generatedAt || '').slice(0, 19).replace('T', ' ')
   const u = d.usage || {}
   mod.textContent = `${d.model || '—'} · ${d.corpusSize || 0} chunks · ${u.calls || 0} calls · ${u.cachedTokens || 0} cached`
@@ -767,7 +768,7 @@ async function renderStateGraph() {
       tag.textContent = 'LLM'
     } else {
       const tag = svgEl('text', { x: x + BOX_W / 2, y: Y + 38, 'text-anchor': 'middle', fill: '#6f7684', 'font-size': 8.5, 'font-family': 'Consolas, monospace', 'letter-spacing': 2 }, g)
-      tag.textContent = 'GRAPH'
+      tag.textContent = T('状态图', 'Graph')
     }
     // checkpoint 徽章 + 耗时
     svgEl('circle', { cx: x + BOX_W / 2, cy: Y + BOX_H + 16, r: 8.5, fill: ok === false ? '#a54452' : '#2e4a3f', stroke: ok === false ? '#d88a8a' : '#4f9b86', 'stroke-width': 1 }, g)
