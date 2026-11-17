@@ -35,12 +35,23 @@ npm run dev        # 浏览器 → http://localhost:5173/?fresh=1
 | `V` | 声纹观察（执性、观察两镜） | 拾音 |
 | `T` | 投掷音子 | 掷晶 |
 | `1` `2` `3` | 武器槽一 / 二 / 三 | 舟一 / 舟二 / 舟三 |
+| 鼠标滚轮 | 镜头俯仰（向上滑 = 抬眼向上看、向下滑 = 俯视） | 卷牙 |
 | `Tab` | 地图 | 图 |
 | `Esc` | 暂停 | 暂 |
 
 改键：`src/settings/Bindings.ts` ，`ClampBindings()` 做合法性过滤。手柄默认 Xbox 布局：十字键 12–15 / A=0 / B=1 / LT=6 / RT=7。
 
-### 2.1 · 镜头与「鼠标 Y 轴反转」
+### 2.1 · 镜头与「鼠标 Y 轴反转」· 滚轮
+
+**滚轮（KI-593 + KI-647，2026-11-17 落）**：
+
+- 默认（FPS 标准）：**往上滑往上看**，**往下滑往下看**。滚轮 = 镜头俯仰：滚一下 = 抬手抬头、俯视看脚边的钟与灰。
+- 滚轮有**独立反转格**（「滚轮纵向反转」/ Invert scroll axis）：`Esc` →「操作」页 → 「滚轮纵向反转」行切换。默认关。
+- 这一格**独立于鼠标 Y 轴反转**：只翻滚轮的纵轴，鼠标纵轴与水平旋转不受影响——「觉得滚轮反了但鼠标挺好」时单独翻滚轮即可。
+- 这一格同样是**会话级**偏好：不入存档、不入自动存档，每次启动回落到 FPS 标准，随时可再翻回。
+- 走路、战斗、界面滚动（菜单/地图/演出）都不会抢滚轮——地图缩放走地图面板自己的那道门（`Tab` 打开后生效）。
+
+**鼠标 Y 轴（原来的 2.1，仍在）**：
 
 - 默认（FPS 标准）：**鼠标上滑 = 抬眼向上看**，**鼠标下滑 = 俯视**。
 - 想要 Unity 口径（上滑 = 俯视）？游戏内按 `Esc` →「操作」页 → **「鼠标 Y 轴反转」**行切换。
@@ -120,12 +131,23 @@ who opts into the still-unwritten ending.
 | `V` | Listen (hold breath; observes weapon buffer) |
 | `T` | Throw crystal |
 | `1` `2` `3` | Weapon Ark I / II / III |
+| Mouse wheel | Camera pitch (wheel up = look up, wheel down = look down) |
 | `Tab` | Map |
 | `Esc` | Pause |
 
 Rebind: `src/settings/Bindings.ts`; `ClampBindings()` filters illegal keys. Default controller: Xbox layout, d-pad 12–15, A/B = 0/1, LT/RT = 6/7.
 
-### 2.1 · Camera & mouse Y-invert
+### 2.1 · Camera, mouse Y-invert & the scroll wheel
+
+**Mouse wheel (KI-593 + KI-647, landed 2026-11-17)**:
+
+- Default (FPS norm): **wheel up = look up**, **wheel down = look down** — the exact direction requested. One notch tilts the camera pitch the same sign as "mouse down = look down".
+- There is an **independent wheel-axis invert** ("Invert scroll axis" / 滚轮纵向反转）: `Esc` → Operations page → the **Invert scroll axis** row flips it. Default: off.
+- It is independent from Mouse Y-invert — flipping it changes the wheel only; mouse Y and horizontal turning are untouched, so "the wheel feels backwards but the mouse is fine" has its own switch.
+- This slot is a **session-scoped** preference: not persisted, never auto-saved — every launch falls back to the FPS norm; flip it again any time.
+- Menus, the map panel, and cinematics do not consume the wheel; the map keeps its own zoom wheel while open (`Tab`).
+
+**Mouse Y (the original 2.1, unchanged)**:
 
 - Default (FPS norm): **mouse up = look up**, **mouse down = look down**.
 - Prefer the Unity convention (mouse up = look down)? In-game: `Esc` → Operations page → **"Mouse Y-axis invert"** row.
