@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "38356ca5cb5ba7f32d4b4e3f798519f8bdad7a34",
+  "head": "b740cda924438a548fe951411b76c3c1d4c677f7",
   "branch": "master",
-  "subject": "feat(ui): KI-638 本周纪事 W47 真机重派 · 现读世界快照落盘",
-  "date": "2026-11-17T10:25:20+08:00",
+  "subject": "site-latest: 38356ca (post-rebase reconcile)",
+  "date": "2026-11-17T10:26:14+08:00",
   "kv": {
     "KI.rows": 556,
     "KI.Implemented": 379,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/38356ca5cb5ba7f32d4b4e3f798519f8bdad7a34",
+    "url": "https://github.com/xiaodernan/caesura/commit/b740cda924438a548fe951411b76c3c1d4c677f7",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
