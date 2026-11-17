@@ -12,7 +12,7 @@
 (function () {
   'use strict';
 
-  /* canon 顺序（篇一《盐》.. 篇四十二《门槛上的盐》），与 src/ui/atlas-texts.ts 的 no 一一对应 */
+  /* canon 顺序（篇一《盐》.. 篇四十三《未开之页》），与 src/ui/atlas-texts.ts 的 no 一一对应 */
   var ORDER = [
     { slug: '', zh: '《盐》', en: '"Salt"' },
     { slug: 'unnamed-stone', zh: '《山下无名碑》', en: '"The Nameless Stone"' },
@@ -55,7 +55,8 @@
     { slug: 'the-scale-shadow', zh: '《秤影》', en: '"The Scale\'s Shadow"' },
     { slug: 'beyond-the-threshold', zh: '《门槛之外》', en: '"Beyond the Threshold"' },
     { slug: 'the-mark-outside', zh: '《门外的湿痕》', en: '"The Mark Outside"' },
-    { slug: 'salt-at-the-threshold', zh: '《门槛上的盐》', en: '"Salt at the Threshold"' }
+    { slug: 'salt-at-the-threshold', zh: '《门槛上的盐》', en: '"Salt at the Threshold"' },
+    { slug: 'the-unopened-page', zh: '《未开之页》', en: '"The Unopened Page"' }
   ];
 
   var PREFIX = '/caesura/story/';
@@ -130,7 +131,7 @@
                       : '/caesura/story/anthology/';
       var label = next
         ? (isEN ? 'Next · ' + next.en : '下一篇 · ' + next.zh)
-        : (isEN ? 'The Aftermath · all forty-two' : '余响集 · 四十二篇全集');
+        : (isEN ? 'The Aftermath · all forty-three' : '余响集 · 四十三篇全集');
       var tag = isEN ? (next ? 'Keep reading' : 'Read the whole volume') : (next ? '继续读下一页' : '读完全册');
       nextCard = document.createElement('a');
       nextCard.className = 'read-next';

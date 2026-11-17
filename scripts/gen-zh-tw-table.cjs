@@ -61,6 +61,7 @@ try {
     'story/beyond-the-threshold/index.html',
     'story/the-mark-outside/index.html',
     'story/salt-at-the-threshold/index.html',
+    'story/the-unopened-page/index.html',
   ];
 
   const PHRASES = new Set();

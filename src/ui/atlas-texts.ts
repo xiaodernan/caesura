@@ -1,6 +1,6 @@
 /**
- * 游记 · 四十二篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673 扩）。
- * 这四十二篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 四十三篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674 扩）。
+ * 这四十三篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -2315,6 +2315,47 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She did not look at the sea.</p>
     <p class="coda">Some things remain without being entered.</p>
     <p class="coda">The age of hush has not ended. It has only, at last, left behind one grain of salt — it began glowing the day it was left.</p>`,
+  },
+  {
+    no: 43,
+    zhTitle: "未开之页",
+    enTitle: "The Unopened Page",
+    zh: `<p>门槛上的盐还在。阿汐没有看它，也没有看海。薄簿合着，页角平整。夜里潮水退去，门外多了一道浅浅的干痕。她没有起身。天亮时，干痕仍在，盐粒旁边空着一处。</p>
+    <p>她把手放在门槛上——木板的纹理在晨光里一条一条地亮着——那种没有谁去数过的纹路。她伸手想去摸一下那道干痕——但她没有伸手。不是她没想伸手——是她知道伸手就会让它变成手的一部分——而她想让它继续是它自己的东西。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿仍合着。薄页——她把它看作一页海的信封——什么时候会打开，她从来没有被告诉过。她渐渐懂了，她根本不用被告诉。她只是等——等没有人需要教的一件事。</p>
+    <p>影子某天又短了一寸。或者不是短了——是淡了一寸。她没有站起来问——她知道如果问，它就变成了她必须决定要不要回答的问题。她就继续等——看着它本身就够了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>渡人某天说：有些页不写，也是纸在呼吸。他说他看见过一本册子，它整本都在替它本来应该装着的东西呼吸。页没有颤——页只是呼吸。</p>
+    <p>她想——纸在呼吸——她用了很久才明白。薄页没翻开——页面没被人读过——可薄页每一秒都在变。纸张也会厌倦——或者不——纸也许不会厌倦，只是时间会穿过纸，把纸磨得更薄……或者更厚。她没有去查那个是哪种。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些页，不必翻开才算留下。</p>
+    <p class="coda">止音纪元没有结束。它只是终于翻开了它自己的薄页——没人记得什么时候翻的。</p>`,
+    en: `<p>The salt remained on the threshold. Axi looked neither at it nor at the sea. The ledger was closed, its page corner flat. At night the tide receded, leaving a faint dry mark outside the door. She did not rise. By dawn it remained, with an empty space beside the grain.</p>
+    <p>She kept her hand on the threshold — the boards' grain lit up in the morning light, one line at a time, uncounted. She wanted to reach and touch the dry mark — but she didn't. Not because she didn't want to — she knew that to touch it would make it part of her hand — and she wanted it to keep belonging to itself.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ledger stayed closed. The page — she thought of it as a letter the sea had never sent — when it would open, no one had ever told her. She had come slowly to know she did not need to be told. She only waited — waited for the one thing no one had ever had to teach her.</p>
+    <p>The shadow had shrunk by an inch, or rather, had faded by an inch. She did not rise to ask — she knew that if she asked, it would become a question she would have to decide to answer. She kept waiting — watching it was enough.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>One day the ferryman said: some pages, unwritten, are paper breathing. He said he had once seen a book that breathed for everything it should have held. The pages never trembled — the pages only breathed.</p>
+    <p>She thought about it — paper breathing — it took her a long time. The page did not open — no one read it — and yet the page was changing every second. Paper can grow tired too — or perhaps not — perhaps it simply allows time to wear through it, thinner and thinner… or thicker. She didn't investigate which.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some pages remain without being opened.</p>
+    <p class="coda">The age of hush has not ended. It has only, at last, opened its own thin page — and no one remembers when.</p>`,
   },
 ]
 
