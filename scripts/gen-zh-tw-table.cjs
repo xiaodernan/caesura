@@ -64,6 +64,7 @@ try {
     'story/the-unopened-page/index.html',
     'story/the-unsent-letter/index.html',
     'story/after-the-empty-scale/index.html',
+    'story/the-unmade-swing/index.html',
   ];
 
   const PHRASES = new Set();

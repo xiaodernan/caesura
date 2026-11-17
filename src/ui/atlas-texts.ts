@@ -1,6 +1,6 @@
 /**
- * 游记 · 四十五篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676 扩）。
- * 这四十五篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 四十六篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677 扩）。
+ * 这四十六篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -2440,6 +2440,47 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She did not look at the sea.</p>
     <p class="coda">Some things pass without leaving a weight.</p>
     <p class="coda">The age of hush has not ended. It has only, at last, laid down a scale that was never used — and a letter that was never opened.</p>`,
+  },
+  {
+    no: 46,
+    zhTitle: "未摆的一次",
+    enTitle: "The Unmade Swing",
+    zh: `<p>秤盘仍空着，盐粒留在原处。阿汐没有去看海。清晨，钟摆渡人的船停在门外，船上没有人，也没有桨。她没有叫他。潮水退去时，船仍停着；潮水回来时，船底多了一道浅痕。她把薄簿放在门槛边，没有翻开。那天，钟摆没有摆动。</p>
+    <p>她把薄簿放在门槛边——她往里看了一眼——薄簿合着的那一页，她仍然不知道它能不能被她看懂——也许它——她觉得它不需要被她看懂——它就只需要被合着。她没有叫渡人——不是不想叫——是她知道一旦叫了，摆可能会动——她想知道摆不动是什么样子——只是想知道——真的想知道——不是逃——是察看。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿合着。薄页偶尔也会自己翻过去一回。她看它像是在数某种她不懂的东西——比如潮水退去的次数——又比如浪带走的盐——又比如那一杆从没有人用过的秤还会用几次——她慢慢明白：薄页其实也在学——它在一格一格地学她的耐心。她的耐心从来都是它的教材。</p>
+    <p>船在门口待了很久。渡人没有出现，也没有向她挥手。也许他不是渡人——也许他只是一艘船。她没有去查那个——只是看着——没有去查——就够了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>那一天，钟摆没有摆动——她当真没动——海也没有动——连那粒盐都没有——谁都没动——只是薄页——慢慢合着——那种按顺序在等——那种不催的人在等。</p>
+    <p>她自己也没有数一件事情——她以前最爱数——海潮一号二号三号五号九号——她偶尔也会数——但她从来不在决定前数——她只是看——她觉得数到九的时候就不数了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些停下，不必有人接手。</p>
+    <p class="coda">止音纪元没有结束。它只是终于留下了一条没有摆过的钟——和一条没有坐过的船。</p>`,
+    en: `<p>The scale pan remained empty; the grain of salt stayed where it was. Axi did not look toward the sea. At dawn, the Pendulum Ferryman's boat stopped outside the door. It held no one and no oar. She did not call to him. The boat remained through the ebb. When the tide returned, a faint mark showed beneath its hull. She set the thin ledger by the threshold and left it closed. That day, the pendulum did not swing.</p>
+    <p>She set the ledger on the threshold — she looked inside — the page that faced up she still did not know whether she could read; perhaps not — she suspected it was not meant to be read — it was only meant to remain closed. She did not call the ferryman — not because she did not want to — she knew that if she called, the pendulum might swing — she wanted to know what it felt like when it did not swing — she only wanted to know — really to know — not to escape, but to observe.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ledger stayed closed. The page sometimes turned by itself — she watched it as if it were counting something she did not understand — perhaps the times the tide had gone out — perhaps the salt the waves had carried away — perhaps the number of times the unused scale would ever be used — she came slowly to understand that the page, too, was learning — it was learning one cell at a time the patience of her. Her patience was the material it studied.</p>
+    <p>The boat sat there for a long, long time. The ferryman never appeared, nor did he wave to her. Perhaps he was not the ferryman — perhaps he was only a boat. She did not investigate — she only watched — no investigation — was enough.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>That day, the pendulum did not swing — really it did not swing — nor did the sea swing — nor did the grain of salt — nobody moved — only the page — slowly stayed closed — the kind of waiting that goes in order — the waiting of those who never hurry.</p>
+    <p>She did not count a single thing — she used to be the most counting person in the world — tides one, two, three, five, nine — she still sometimes counted — but she never counted before deciding — she only looked — she had decided that by the ninth, she would stop counting.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some things may stop without being handed on.</p>
+    <p class="coda">The age of hush has not ended. It has only, at last, left behind a bell that was never swung — and a boat that was never ridden.</p>`,
   },
 ]
 
