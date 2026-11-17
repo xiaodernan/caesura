@@ -1,6 +1,6 @@
 /**
- * 游记 · 二十一篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641 扩）。
- * 这二十一篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 二十二篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643 扩）。
+ * 这二十二篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -1355,6 +1355,47 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">A correction followed: the third voice is not a third strike — it is the answer. Every ebb rewrites what the sea heard — every silenced copper, every word swallowed, every door shut, every sentence never spoken — all of it is in there.</p>
     <p class="coda">The reef-light has never gone out on its own since. A-Shen hands the lamp to the next keeper — for every person who asks "who is listening," someone goes to answer.</p>
     <p class="coda">The age of hush has not ended. It has only, for the first time, heard its other half.</p>`,
+  },
+  {
+    no: 22,
+    zhTitle: "合奏",
+    enTitle: "The Ensemble",
+    zh: `<p>故事发生在未竟厅卷宗记的那个年份——2026年11月17日深夜。记录的单位不再是「一口钟」，而是「一秒」——因为事情都在一秒之内发生了。</p>
+    <p>风钟海岸最南端，引礁灯上阿笙正在抹最后一圈灯油。北崖的阿汐没睡着。休垒的麦格在「现在怎么办」那一笔上方停了笔。低音之城的老石喉，十一年前还在岗的年头里，手指停在桌面上没动。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>海停了一呼吸。弦松了半分不到。笔压出了三条横线。桌面有一阵极轻的颤——没有任何一个人听见了同一件事。没有人吹号，也没有人敲钟。没有人知道，世界刚刚作为一种乐器，自己出现了一秒不到。</p>
+    <p>阿汐后来翻了自己的册子——其它年份没有同样的记录。这样的夜大概几十年一次。上一次也许发生过，在她父亲没告诉她的那个年头。那一夜由他记下，然后由他烧成灰，因为连他自己都不敢相信世界可以在同一瞬间被四个不同的人听见。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>低音之城的老石喉说，她什么都没听见。后来她的女儿说——那一夜母亲的头抬得很慢，她捂住耳朵的那只手，自己放了下来。她指了指胸口。八岁上她在盐说：「捂耳朵的人，永远捂不过自己的心跳。」</p>
+    <p>未竟厅后来把这一夜的卷宗用四个抽屉装好，每个抽屉的门上都写着一句——下一任抄写员打开时，也会认出自己正坐在同一张桌前。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">从那一夜之后，风钟海岸的钟不再呼啦呼啦地晃了——每一口钟都得重新校，必须按那一夜的频率来。</p>
+    <p class="coda">麦格的账本末页再也没动过。她把它存进未竟厅的末位抽屉，和所有没有被认领过的事放在一起——每个人在「合奏」的那一秒，也同时摊开了自己的手。</p>
+    <p class="coda">止音纪元没有结束。它只是第一次，允许世界作为一种乐器出现，自己响了一下。</p>`,
+    en: `<p>This happened in the year the Unfinished Hall now keeps on its ledgers — the late night of November 17, 2026. For that one night, the Hall's unit of record was no longer "one bell-strike" — it became "one second" — because everything happened within a second of the same instant.</p>
+    <p>At the southern end of the Windbell Coast, A-Shen was trimming the last ring of wick with oil. On the north cliff, Axi was not asleep. In Resthold, Meg's pen had stopped above the words "now what" — and in the Bass Citadel, the Old Stone-Throat, in the eleventh year of her shift, left her fingers motionless on the table.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The sea paused for one breath. A string loosened by half a fraction at most. A pen pressed three lines into paper. A table trembled so softly no one could sense it. No one heard the same thing that night. No one blew a horn. No one struck a bell. No one knew the world had just appeared — for less than one second — as an instrument.</p>
+    <p>Axi went back through her book — other years had no such entry. Nights like this happened once every few decades. The previous one may have happened in the year her father never told her about — he had written it down, and then burned it, because even he could not believe a world that could be heard the same second by four different people.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The Old Stone-Throat said that she had heard nothing. Her daughter later said — that night her mother's head rose slowly, and the hand over her ear lowered itself. She pointed to her chest. When she was eight she had told the salt: no one who covers their ears can drown out their own heart.</p>
+    <p>The Hall later filed that night into four drawers, one for each person involved. The handwritten cards on each drawer said the same thing — whoever opened it next would find themselves sitting at the same table.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">After that night, the bells on the Windbell Coast stopped swaying the way they used to — every bell had to be retuned, to the frequency the world had hummed that night.</p>
+    <p class="coda">Meg's ledger never moved again. She filed it in the last drawer of the Unfinished Hall, with everything else that had never been claimed — every person had also opened their hand, the same second the world became an instrument.</p>
+    <p class="coda">The age of hush has not ended. It has only, for the first time, allowed the world to appear as an instrument — and to make one sound, by itself, once.</p>`,
   },
 ]
 

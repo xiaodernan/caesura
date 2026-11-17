@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>合奏 / The Ensemble — CAESURA · 余响集 · 第二十二篇</title>
+<meta name="description" content="合奏——《余响集》第二十二篇：公历2026年11月17日深夜，风钟海岸南端引礁灯上、北崖上、休垒的账房和低音之城老石喉的手指，同时停住。四种人，四种感知，一秒内发生同一件事。双语对照 · 零 LLM · 零网络 / The twenty-second piece of The Aftermath: the night of November 17, 2026, four people in four places held still inside the same second. Bilingual, offline, zero LLM." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🔔</text></svg>">
+<style>
+  :root {
+    --gold: #f3ce8f;
+    --gold-soft: rgba(243,206,143,.32);
+    --ink: #f3ede0;
+    --ink-dim: rgba(243,237,224,.62);
+    --panel: rgba(28,20,12,.7);
+    --serif: "Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#070608; color:var(--ink); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; }
+  .bg { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .bg.radial {
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(243,206,143,.14), transparent 60%),
+      radial-gradient(900px 700px at 50% 118%, rgba(90,40,40,.22), transparent 62%),
+      radial-gradient(650px 420px at 88% 104%, rgba(203,177,255,.08), transparent 60%),
+      #070608;
+  }
+  .bg.noise { position:fixed; inset:0; z-index:-1; opacity:.05; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .wrap { max-width:860px; margin:0 auto; padding:26px 26px 90px; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .brand { font-size:.8rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; opacity:.9; }
+  .brand a { color:inherit; text-decoration:none; border-bottom:1px dotted rgba(243,206,143,.5); }
+  .brand a:hover { color:#fff2d0; }
+  .toplinks { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toplinks a { font-size:.72rem; color:var(--ink-dim); text-decoration:none; border:1px solid rgba(243,237,224,.14); padding:6px 12px; border-radius:999px; transition:all .22s ease; }
+  .toplinks a:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .lang-row button { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(243,206,143,.12); border:1px solid var(--gold-soft); padding:6px 15px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; }
+  .lang-row button:hover { background:rgba(243,206,143,.22); box-shadow:0 0 16px rgba(243,206,143,.25); }
+
+  [data-lang="zh-TW"] .en-copy { display:none !important; }
+  [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="en"] .zh-copy { display:none !important; }
+
+  header.hero { text-align:center; padding:52px 14px 30px; }
+  .kicker { font-size:.72rem; letter-spacing:.42em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:20px; }
+  .kicker b { color:var(--gold); font-weight:600; }
+  h1 { font-size:clamp(2.2rem, 8vw, 3.6rem); font-weight:600; letter-spacing:.16em;
+       background:linear-gradient(180deg,#fffbe6 0%, #f3ce8f 28%, #c9a258 58%, #7d6436 100%);
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+       text-shadow:0 0 90px rgba(243,206,143,.3); }
+  .subtitle { margin-top:14px; font-size:.8rem; color:var(--ink-dim); letter-spacing:.3em; text-transform:uppercase; }
+  .rule { width:170px; height:1px; margin:24px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .meta { margin-top:16px; font-size:.7rem; color:rgba(243,237,224,.45); letter-spacing:.18em; text-transform:uppercase; }
+  .meta a { color:var(--gold); text-decoration:none; }
+
+  article { background:var(--panel); border:1px solid rgba(243,237,224,.1); border-radius:18px; padding:38px 40px 34px; position:relative; }
+  article::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--gold), transparent); opacity:.7; }
+  article p { font-size:1.04rem; line-height:2.02; letter-spacing:.02em; color:rgba(243,237,224,.92); margin-bottom:1.5em; text-indent:2em; overflow-wrap:break-word; }
+  article p em { color:#ffe9b3; font-style:normal; }
+  .beat { width:100%; text-align:center; margin:.4em 0 1.4em; letter-spacing:.5em; color:rgba(243,206,143,.6); font-size:.8rem; }
+  .coda { text-align:center; font-style:italic; color:rgba(243,237,224,.78); letter-spacing:.06em; margin-top:.6em; }
+
+  .note { margin:26px auto 0; max-width:760px; text-align:center; font-size:.74rem; color:rgba(243,237,224,.42); line-height:1.9; letter-spacing:.04em; }
+  .note a { color:var(--gold); text-decoration:none; border-bottom:1px dotted rgba(243,206,143,.5); }
+
+  footer { margin-top:56px; border-top:1px solid rgba(243,237,224,.09); padding-top:22px; display:flex; flex-wrap:wrap; gap:10px 26px; justify-content:space-between; font-size:.7rem; color:rgba(243,237,224,.4); letter-spacing:.06em; }
+  footer a { color:var(--gold); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @media (max-width:640px) { .wrap { padding:20px 12px 70px; } article { padding:26px 20px 24px; } article p { font-size:.98rem; text-indent:2em; } }
+</style>
+</head>
+<body>
+<div class="bg radial" aria-hidden="true"></div>
+<div class="bg noise" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><a href="/caesura/">CAESURA</a> · 《止音纪元》</div>
+    <div class="toplinks">
+      <a href="/caesura/story/"><span class="zh-copy">《盐》</span><span class="en-copy">“Salt”</span></a>
+      <a href="/caesura/story/first-bell/"><span class="zh-copy">《第一钟》</span><span class="en-copy">“The First Bell”</span></a>
+      <a href="/caesura/story/bell-picker/"><span class="zh-copy">《拾钟人》</span><span class="en-copy">“The Bell-Picker”</span></a>
+      <a href="/caesura/story/twelfth-listener/"><span class="zh-copy">《第十二个听者》</span><span class="en-copy">“The Twelfth Listener”</span></a>
+      <a href="/caesura/story/fourth-strike/"><span class="zh-copy">《第四下》</span><span class="en-copy">“The Fourth Strike”</span></a>
+      <a href="/caesura/story/string-listener/"><span class="zh-copy">《听弦》</span><span class="en-copy">“The String-Listener”</span></a>
+      <a href="/caesura/story/third-voice/"><span class="zh-copy">《第三声》</span><span class="en-copy">“The Third Voice”</span></a>
+      <a href="/caesura/story/ensemble/"><span class="zh-copy">《合奏》</span><span class="en-copy">“The Ensemble”</span></a>
+      <a href="/caesura/codex/"><span class="zh-copy">世界谱</span><span class="en-copy">Codex</span></a>
+      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button></span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <p class="kicker zh-copy">短篇 · <b>余响集</b> · 第二十二篇</p>
+    <p class="kicker en-copy">Short story · <b>The Aftermath</b> · No. 22</p>
+    <h1 class="zh-copy">合奏</h1>
+    <h1 class="en-copy">The Ensemble</h1>
+    <p class="subtitle zh-copy">风钟海岸 · 停住的同一秒</p>
+    <p class="subtitle en-copy">Windbell Coast — the same second, world over</p>
+    <div class="rule"></div>
+    <p class="meta zh-copy">约 7 分钟 · 与 <a href="/caesura/codex/">世界谱</a> 同源世界观 · 零 LLM 撰写</p>
+    <p class="meta en-copy">about 7 minutes · same world as the <a href="/caesura/codex/">codex</a> · written without LLM assistance</p>
+  </header>
+
+  <article>
+    <div class="zh-copy">
+<p>故事发生在未竟厅卷宗记的那个年份——2026年11月17日深夜。记录的单位不再是「一口钟」，而是「一秒」——因为事情都在一秒之内发生了。</p>
+<p>风钟海岸最南端，引礁灯上阿笙正在抹最后一圈灯油。北崖的阿汐没睡着。休垒的麦格在「现在怎么办」那一笔上方停了笔。低音之城的老石喉，十一年前还在岗的年头里，手指停在桌面上没动。</p>
+
+<div class="beat">· · ·</div>
+
+<p>海停了一呼吸。弦松了半分不到。笔压出了三条横线。桌面有一阵极轻的颤——没有任何一个人听见了同一件事。没有人吹号，也没有人敲钟。没有人知道，世界刚刚作为一种乐器，自己出现了一秒不到。</p>
+<p>阿汐后来翻了自己的册子——其它年份没有同样的记录。这样的夜大概几十年一次。上一次也许发生过，在她父亲没告诉她的那个年头。那一夜由他记下，然后由他烧成灰，因为连他自己都不敢相信世界可以在同一瞬间被四个不同的人听见。</p>
+
+<div class="beat">· · ·</div>
+
+<p>低音之城的老石喉说，她什么都没听见。后来她的女儿说——那一夜母亲的头抬得很慢，她捂住耳朵的那只手，自己放了下来。她指了指胸口。八岁上她在盐说：「捂耳朵的人，永远捂不过自己的心跳。」</p>
+<p>未竟厅后来把这一夜的卷宗用四个抽屉装好，每个抽屉的门上都写着一句——下一任抄写员打开时，也会认出自己正坐在同一张桌前。</p>
+
+<div class="beat">· · ·</div>
+
+<p class="coda">从那一夜之后，风钟海岸的钟不再呼啦呼啦地晃了——每一口钟都得重新校，必须按那一夜的频率来。</p>
+<p class="coda">麦格的账本末页再也没动过。她把它存进未竟厅的末位抽屉，和所有没有被认领过的事放在一起——每个人在「合奏」的那一秒，也同时摊开了自己的手。</p>
+<p class="coda">止音纪元没有结束。它只是第一次，允许世界作为一种乐器出现，自己响了一下。</p>
+    </div>
+    <div class="en-copy">
+<p>This happened in the year the Unfinished Hall now keeps on its ledgers — the late night of November 17, 2026. For that one night, the Hall's unit of record was no longer "one bell-strike" — it became "one second" — because everything happened within a second of the same instant.</p>
+<p>At the southern end of the Windbell Coast, A-Shen was trimming the last ring of wick with oil. On the north cliff, Axi was not asleep. In Resthold, Meg's pen had stopped above the words "now what" — and in the Bass Citadel, the Old Stone-Throat, in the eleventh year of her shift, left her fingers motionless on the table.</p>
+
+<div class="beat">· · ·</div>
+
+<p>The sea paused for one breath. A string loosened by half a fraction at most. A pen pressed three lines into paper. A table trembled so softly no one could sense it. No one heard the same thing that night. No one blew a horn. No one struck a bell. No one knew the world had just appeared — for less than one second — as an instrument.</p>
+<p>Axi went back through her book — other years had no such entry. Nights like this happened once every few decades. The previous one may have happened in the year her father never told her about — he had written it down, and then burned it, because even he could not believe a world that could be heard the same second by four different people.</p>
+
+<div class="beat">· · ·</div>
+
+<p>The Old Stone-Throat said that she had heard nothing. Her daughter later said — that night her mother's head rose slowly, and the hand over her ear lowered itself. She pointed to her chest. When she was eight she had told the salt: no one who covers their ears can drown out their own heart.</p>
+<p>The Hall later filed that night into four drawers, one for each person involved. The handwritten cards on each drawer said the same thing — whoever opened it next would find themselves sitting at the same table.</p>
+
+<div class="beat">· · ·</div>
+
+<p class="coda">After that night, the bells on the Windbell Coast stopped swaying the way they used to — every bell had to be retuned, to the frequency the world had hummed that night.</p>
+<p class="coda">Meg's ledger never moved again. She filed it in the last drawer of the Unfinished Hall, with everything else that had never been claimed — every person had also opened their hand, the same second the world became an instrument.</p>
+<p class="coda">The age of hush has not ended. It has only, for the first time, allowed the world to appear as an instrument — and to make one sound, by itself, once.</p>
+    </div>
+  </article>
+
+  <div class="note">
+    <span class="zh-copy">《合奏》是《余响集》第二十二篇——公历2026年11月17日深夜，四个地方的四个人在同一秒停住。海停了、弦松了、笔停了、桌子颤了——没有人听见同一件事，但他们都抬起了头。<a href="/caesura/story/anthology/">全集：《余响集》</a></span>
+    <span class="en-copy">“The Ensemble” is the twenty-second piece of “The Aftermath” — the night of November 17, 2026, four people in four places held still inside the same second. No one heard the same thing — but every one of them looked up. <a href="/caesura/story/anthology/">All stories: “The Aftermath”</a></span>
+  </div>
+
+  <footer>
+    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/">游戏</a> · <a href="/caesura/story/">《盐》· 篇一</a> · <a href="/caesura/story/unnamed-stone/">篇二 · 山下无名碑</a> · <a href="/caesura/story/empty-bar/">篇三 · 空拍子</a> · <a href="/caesura/story/ledger/">篇四 · 账本</a> · <a href="/caesura/story/garden/">篇五 · 回声庭园</a> · <a href="/caesura/story/tribunal/">篇六 · 雨审判</a> · <a href="/caesura/story/frostbell/">篇七 · 霜锤</a> · <a href="/caesura/story/doors/">篇八 · 千门</a> · <a href="/caesura/story/stonethroat/">篇九 · 石喉</a> · <a href="/caesura/story/first-bell/">篇十 · 第一钟</a> · <a href="/caesura/story/dark-tide/">篇十一 · 暗潮</a> · <a href="/caesura/story/twelfth-listener/">篇十二 · 后记</a> · <a href="/caesura/story/bell-picker/">篇十三 · 拾钟人</a> · <a href="/caesura/story/lampwright-bell/">篇十四 · 灯匠</a> · <a href="/caesura/story/lowtone-city/">篇十五 · 低音之城</a> · <a href="/caesura/story/pendulum-ferryman/">篇十六 · 钟摆渡人</a> · <a href="/caesura/story/unfinished-ledger/">篇十七 · 未竟账页</a> · <a href="/caesura/story/fourth-strike/">篇十八 · 第四下</a> · <a href="/caesura/story/last-string/">篇十九 · 末弦</a> · <a href="/caesura/story/string-listener/">篇二十 · 听弦</a> · <a href="/caesura/story/third-voice/">篇二十一 · 第三声</a> · <a href="/caesura/story/ensemble/">篇二十二 · 合奏</a> · <a href="/caesura/story/anthology/">全集 · 余响集</a> · <a href="/caesura/codex/">世界谱</a></span>
+    <span class="en-copy">© CAESURA · <a href="/caesura/">Game</a> · <a href="/caesura/story/">“Salt” · No. 1</a> · <a href="/caesura/story/unnamed-stone/">No. 2 · “The Nameless Stone”</a> · <a href="/caesura/story/empty-bar/">No. 3 · “The Empty Bar”</a> · <a href="/caesura/story/ledger/">No. 4 · “The Ledger”</a> · <a href="/caesura/story/garden/">No. 5 · “The Garden of Return”</a> · <a href="/caesura/story/tribunal/">No. 6 · “The Rain Tribunal”</a> · <a href="/caesura/story/frostbell/">No. 7 · “The Frostbell”</a> · <a href="/caesura/story/doors/">No. 8 · “The Thousand Doors”</a> · <a href="/caesura/story/stonethroat/">No. 9 · “The Stone-Throat”</a> · <a href="/caesura/story/first-bell/">No. 10 · “The First Bell”</a> · <a href="/caesura/story/dark-tide/">No. 11 · “The Dark Tide”</a> · <a href="/caesura/story/twelfth-listener/">No. 12 · “Epilogue”</a> · <a href="/caesura/story/bell-picker/">No. 13 · “The Bell-Picker”</a> · <a href="/caesura/story/lampwright-bell/">No. 14 · “The Lampwright”</a> · <a href="/caesura/story/lowtone-city/">No. 15 · “The City of Low Tones”</a> · <a href="/caesura/story/pendulum-ferryman/">No. 16 · “The Pendulum Ferryman”</a> · <a href="/caesura/story/unfinished-ledger/">No. 17 · “The Unfinished Ledger Page”</a> · <a href="/caesura/story/fourth-strike/">No. 18 · “The Fourth Strike”</a> · <a href="/caesura/story/last-string/">No. 19 · “The Last String”</a> · <a href="/caesura/story/string-listener/">No. 20 · The String-Listener</a> · <a href="/caesura/story/third-voice/">No. 21 · The Third Voice</a> · <a href="/caesura/story/ensemble/">No. 22 · The Ensemble</a> · <a href="/caesura/story/anthology/">All stories · The Aftermath</a> · <a href="/caesura/codex/">World Codex</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('langToggle');
+  var saved = 'zh';
+  try { saved = localStorage.getItem('caesura-lang') || 'zh'; } catch (e) { /* noop */ }
+  function apply(lang) {
+    root.setAttribute('data-lang', lang);
+    root.setAttribute('lang', lang === 'en' ? 'en-US' : (lang === 'zh-TW' ? 'zh-TW' : 'zh-CN'));
+    try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+    if (window.__caesuraZhTW) {
+      if (lang === 'zh-TW' && window.__caesuraZhTW.applyToDocument) window.__caesuraZhTW.applyToDocument();
+      else if (lang === 'zh' && window.__caesuraZhTW.restoreOriginals) window.__caesuraZhTW.restoreOriginals();
+    }
+    btn.textContent = lang === 'zh' ? '繁體' : (lang === 'zh-TW' ? 'EN' : '简体');
+  }
+  if (btn) btn.addEventListener('click', function () {
+    var cur = root.getAttribute('data-lang'); apply(cur === 'zh' ? 'zh-TW' : (cur === 'zh-TW' ? 'en' : 'zh'));
+  });
+  apply(saved === 'en' || saved === 'zh-TW' ? saved : 'zh');
+})();
+</script>
+<script defer src="../../tracker.js"></script>
+<script defer src="/caesura/zh-tw-converter.js"></script>
+</body>
+</html>

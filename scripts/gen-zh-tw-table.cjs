@@ -40,6 +40,7 @@ try {
     'story/last-string/index.html',
     'story/string-listener/index.html',
     'story/third-voice/index.html',
+    'story/ensemble/index.html',
   ];
 
   const PHRASES = new Set();
