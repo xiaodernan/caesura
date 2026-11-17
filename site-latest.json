@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "b5ab168d66530fcfe63e58eae48a19d240795cd6",
+  "head": "dccdfdaee89c63932941c6af2f294a8bb67b4712",
   "branch": "master",
-  "subject": "site-latest: 2a5d9f7 (post-rebase reconcile)",
-  "date": "2026-11-17T08:30:25+08:00",
+  "subject": "feat(story): KI-634《余响集》第十九篇《末弦》落地",
+  "date": "2026-11-17T09:00:42+08:00",
   "kv": {
-    "KI.rows": 551,
-    "KI.Implemented": 374,
+    "KI.rows": 552,
+    "KI.Implemented": 375,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/b5ab168d66530fcfe63e58eae48a19d240795cd6",
+    "url": "https://github.com/xiaodernan/caesura/commit/dccdfdaee89c63932941c6af2f294a8bb67b4712",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
