@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "732bb95e32f9b11bfd09c432850ba83e23e048aa",
+  "head": "5c5e30cf4f22986e913bd8302a52cd1ae8e85b3f",
   "branch": "master",
-  "subject": "feat(story): KI-649《余响集》第二十四篇《半声之后 / After Half a Chime》落地（LLM 真机草稿 → 人工闸落库）",
-  "date": "2026-11-17T14:41:14+08:00",
+  "subject": "site-latest: 732bb95 (post-rebase reconcile)",
+  "date": "2026-11-17T14:47:56+08:00",
   "kv": {
     "KI.rows": 567,
     "KI.Implemented": 390,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/732bb95e32f9b11bfd09c432850ba83e23e048aa",
+    "url": "https://github.com/xiaodernan/caesura/commit/5c5e30cf4f22986e913bd8302a52cd1ae8e85b3f",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
