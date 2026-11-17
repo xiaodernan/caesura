@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "62b53567b9f92b6b728d517eb054740d6ca56eb1",
+  "head": "15cad982376d0caec1103e99433189d0f0e3a4d0",
   "branch": "master",
-  "subject": "feat(story): KI-675《余响集》第四十四篇《未寄出的信 / The Unsent Letter》落地（LLM 真机草稿 → 人工闸落库）",
-  "date": "2026-11-18T05:43:07+08:00",
+  "subject": "site-latest: 62b5356 (post-rebase reconcile)",
+  "date": "2026-11-18T05:44:03+08:00",
   "kv": {
     "KI.rows": 593,
     "KI.Implemented": 416,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/62b53567b9f92b6b728d517eb054740d6ca56eb1",
+    "url": "https://github.com/xiaodernan/caesura/commit/15cad982376d0caec1103e99433189d0f0e3a4d0",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
