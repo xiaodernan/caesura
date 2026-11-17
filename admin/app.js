@@ -429,6 +429,9 @@ function renderLive() {
   /* KI-653（KI-645 行动 #1）：首屏 Start 的曝光/按下——真环形缓冲里的真事件 */
   const qsShown = doc.events.filter((e) => e.type === 'quickstart-shown').length
   const qsPress = doc.events.filter((e) => e.type === 'quickstart-press').length
+  /* KI-654（KI-645 行动 #4）：正文读完记账——读完率的机器可验收证据 */
+  const storyFinishes = doc.events.filter((e) => e.type === 'story-finished').length
+  const storyNext = doc.events.filter((e) => e.type === 'story-next').length
   const mins = Math.max(1, Math.round((Date.now() - (doc.firstSeen ?? Date.now())) / 60000))
   const statsHtml = [
     { n: num(doc.events.length), l: T('事件总数', 'events') },
@@ -436,6 +439,8 @@ function renderLive() {
     { n: String(pageviews), l: T('页面浏览', 'page views') },
     { n: String(qsShown), l: T('Start 曝光', 'quickstart shown') },
     { n: String(qsPress), l: T('Start 按下', 'quickstart press') },
+    { n: String(storyFinishes), l: T('读完篇数', 'story finishes') },
+    { n: String(storyNext), l: T('下一篇点击', 'next-story taps') },
     { n: String(rages), l: 'rage-clicks' },
     { n: mins + 'm', l: T('首次到访至今', 'since first visit') },
     { n: String(doc.counts?.error ?? 0), l: T('JS 错误', 'JS errors') },
