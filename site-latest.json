@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "b829547c341382f1f370f0c2ee9727ae5938acd6",
+  "head": "e5e6a985d151e564ca8e68ee958fd5cf3ccc8717",
   "branch": "master",
-  "subject": "site-latest: 190f0aa (post-rebase reconcile)",
-  "date": "2026-11-18T02:37:14+08:00",
+  "subject": "chore(test): KI-670 收尾 - 门钉修复（ai-director gate draft.no 回到 39 与产物一致；console LANG_EXACT 的 The Scale's Shadow 转义匹配 app.js 原文，消灭 F-124 CJK 门钉假红）",
+  "date": "2026-11-18T03:18:28+08:00",
   "kv": {
-    "KI.rows": 587,
-    "KI.Implemented": 410,
+    "KI.rows": 588,
+    "KI.Implemented": 411,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/b829547c341382f1f370f0c2ee9727ae5938acd6",
+    "url": "https://github.com/xiaodernan/caesura/commit/e5e6a985d151e564ca8e68ee958fd5cf3ccc8717",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
