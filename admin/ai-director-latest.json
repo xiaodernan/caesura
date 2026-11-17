@@ -6,73 +6,73 @@
   "requiresHumanReview": true,
   "schema": 1,
   "mode": "live",
-  "generatedAt": "2026-11-17T12:38:51.304Z",
+  "generatedAt": "2026-11-17T13:05:11.747Z",
   "model": "gpt-6.1-terra",
   "endpoint": "https://api.aizzz.xyz/v1",
-  "focus": "第三十一篇《空处之后》之后 · 下一篇原创短篇",
-  "corpusSize": 2611,
+  "focus": "第三十二篇《未刻之数》之后 · 下一篇原创短篇",
+  "corpusSize": 2728,
   "canon": [
     {
       "rank": 1,
-      "score": 63.634,
-      "preview": "[短篇][story/anthology] 第三十一篇《空处之后》——铜扣自己长在窗台上，她把它搁在木板接缝旁，木板没有记下铜扣——"
+      "score": 60.446,
+      "preview": "[短篇][story/anthology] 第三十二篇《未刻之数》——渡人抬来袖里的小铜秤，针没有偏，簿页上只剩一个空格——"
     },
     {
       "rank": 2,
-      "score": 58.52,
-      "preview": "[短篇][story/after-the-space] 空处之后 / After the Space — CAESURA · 余响集 · 第三十一篇"
+      "score": 46.029,
+      "preview": "[短篇][story/the-unmarked-number] 未刻之数 / The Unmarked Number — CAESURA · 余响集 · 第三十二篇"
     },
     {
       "rank": 3,
-      "score": 32.505,
-      "preview": "[短篇][story/anthology] 约 7 分钟 · 回廊钟 · 空处之后 · 余响"
+      "score": 29.283,
+      "preview": "[短篇][story/after-the-space] 空处之后 / After the Space — CAESURA · 余响集 · 第三十一篇"
     },
     {
       "rank": 4,
-      "score": 29.15,
-      "preview": "[短篇][story/anthology] 第二十一篇《第三声》——灯灭了的那一夜，海说：我也听见了——"
+      "score": 25.833,
+      "preview": "[短篇][story/anthology] 约 7 分钟 · 回廊钟 · 未刻之数 · 余响"
     },
     {
       "rank": 5,
-      "score": 25.768,
-      "preview": "[短篇][story/anthology] 第十一篇《暗潮》讲宇宙社会学的黑暗森林法则——"
+      "score": 24.375,
+      "preview": "[短篇][story/anthology] 第三十一篇《空处之后》——铜扣自己长在窗台上，她把它搁在木板接缝旁，木板没有记下铜扣——"
     },
     {
       "rank": 6,
-      "score": 25.573,
-      "preview": "[短篇][story/third-voice] 第三声 / The Third Voice — CAESURA · 余响集 · 第二十一篇"
+      "score": 21.513,
+      "preview": "[短篇][story/anthology] 第十二篇《后记 · 第十二个听者》——写给翻到这里的你；"
     },
     {
       "rank": 7,
-      "score": 20.234,
-      "preview": "[短篇][story/twelfth-listener] 第十一篇，写到守夜人那个夜晚，风又来了。"
+      "score": 19.769,
+      "preview": "[短篇][story/anthology] 第三十篇《窗台记数》——纸袋还在门边，盐线没有再长，她把两半并在一起，中间留着一道空处——退潮也是一种记数——"
     },
     {
       "rank": 8,
-      "score": 19.697,
-      "preview": "[短篇][story/anthology] 第二十四篇《半声之后》——门都合上了，没敲过的钟的按钮自己往前挪——"
+      "score": 18.441,
+      "preview": "[短篇][story/anthology] 《止音纪元》· 原创短篇全集 · 双语对照"
     },
     {
       "rank": 9,
-      "score": 19.128,
-      "preview": "[短篇][story/third-voice] 《第三声》是《余响集》第二十一篇——风钟海岸最南端，灯灭了。阿笙在潮退后的礁石上，读到了海写下的答句：我也听见。"
+      "score": 16.855,
+      "preview": "[短篇][story/anthology] 第二十一篇《第三声》——灯灭了的那一夜，海说：我也听见了——"
     },
     {
       "rank": 10,
-      "score": 18.473,
-      "preview": "[短篇][story/anthology] 约 7 分钟 · 回廊钟 · 半声之后 · 余响"
+      "score": 16.537,
+      "preview": "[短篇][story/anthology] 第二十二篇《合奏》——四个人在同一秒停住：海停了、弦松了、笔停了、桌子颤了——"
     }
   ],
   "worldSnapshot": {
     "date": "2026-11-17",
     "phaseStatus": {
-      "KIrows": 578,
-      "KIImplemented": 401,
+      "KIrows": 579,
+      "KIImplemented": 402,
       "SYSImplemented": 73,
       "ARCHSections": 202
     },
-    "atlasEntries": 31,
-    "storyChapters": 31,
+    "atlasEntries": 32,
+    "storyChapters": 32,
     "storyList": [
       "after-half-a-chime",
       "after-the-bag",
@@ -100,6 +100,7 @@
       "stonethroat",
       "string-listener",
       "the-sill-keeps-count",
+      "the-unmarked-number",
       "third-voice",
       "tribunal",
       "twelfth-listener",
@@ -114,124 +115,124 @@
     "npcs": 7
   },
   "audit": {
-    "consistency": 42,
-    "verdictZh": "证据仅能确认第三十一篇及少量篇章线索，无法审计完整世界现状或其一致性。",
-    "verdictEn": "Evidence confirms only the thirty-first story and a few fragments; the broader world state cannot be audited.",
+    "consistency": 45,
+    "verdictZh": "快照与检索证据部分吻合，但证据不足以核验整体世界状态。",
+    "verdictEn": "The snapshot partly aligns with retrieved canon, but the evidence is insufficient to verify the overall world state.",
     "risks": [
       {
-        "severity": "high",
-        "itemZh": "世界现状缺乏对应证据",
-        "itemEn": "World state lacks supporting evidence",
-        "detailZh": "快照列出多项实现与实体数据，检索片段未提供佐证。",
-        "detailEn": "Snapshot counts and entities are not corroborated by retrieved evidence."
+        "severity": "med",
+        "itemZh": "篇目顺序证据有限",
+        "itemEn": "Limited evidence for story order",
+        "detailZh": "证据显示《空处之后》为第三十一篇、《未刻之数》为第三十二篇，无法核验其余篇目顺序。",
+        "detailEn": "Evidence places After the Space at 31 and The Unmarked Number at 32; other story positions are unverified."
       },
       {
         "severity": "high",
-        "itemZh": "篇章顺序线索不充分",
-        "itemEn": "Story chronology is under-supported",
-        "detailZh": "证据称《第三声》为第二十一篇，也出现其为第二十四篇的线索。",
-        "detailEn": "Evidence identifies The Third Voice as story twenty-one, while another fragment suggests twenty-four."
+        "itemZh": "实现数量无法核验",
+        "itemEn": "Implementation counts are unverifiable",
+        "detailZh": "KI、系统实现及 ARCH 数量仅见于快照，检索片段未提供对应记录。",
+        "detailEn": "KI, system implementation, and ARCH counts appear only in the snapshot, not in retrieved evidence."
       },
       {
         "severity": "med",
-        "itemZh": "设定含义可能被误读",
-        "itemEn": "Setting implications may be misread",
-        "detailZh": "《暗潮》片段称其讲黑暗森林法则，无法核对是否为可靠概述。",
-        "detailEn": "A fragment labels Dark Tide as dark-forest sociology, but that summary cannot be verified."
+        "itemZh": "世界状态缺乏交叉佐证",
+        "itemEn": "World-state claims lack corroboration",
+        "detailZh": "证据片段主要涉及篇名与情节摘句，无法确认快照中的对话树、旗标及 NPC 数量。",
+        "detailEn": "Retrieved excerpts mainly cover titles and story fragments; dialogue trees, flags, and NPC counts remain unverified."
       }
     ],
     "gapsZh": [
-      "缺少世界圣经及叙事圣经的具体条目。",
-      "缺少三十一篇全文与时间顺序依据。"
+      "缺少可核验的完整篇目目录与顺序证据。",
+      "缺少 KI、ARCH、对话树及 NPC 的对应 canon 记录。"
     ],
     "gapsEn": [
-      "Specific entries from the world and narrative bibles are missing.",
-      "Full texts and chronology evidence for all thirty-one stories are missing."
+      "A verifiable complete story index and ordering are missing.",
+      "Corresponding canon records for KI, ARCH, dialogue trees, and NPCs are missing."
     ]
   },
   "transitions": [
     {
-      "fromZh": "窗台铜扣尚未安置",
-      "fromEn": "window_latch_unplaced",
-      "toZh": "铜扣置于木板接缝旁",
-      "toEn": "latch_set_by_board_seam",
-      "flag": "flag.window_latch_set_by_board_seam",
-      "narrativeZh": "她把铜扣搁在木板接缝旁，木板仍没有记下它。",
-      "narrativeEn": "She sets the latch beside the board seam; the board still does not record it.",
-      "npcReactionZh": "无人能从木板上找到铜扣的记号。",
-      "npcReactionEn": "No one can find a mark of the latch on the board.",
-      "atlasHookZh": "未被木板记下的铜扣",
-      "atlasHookEn": "The latch the board did not record",
+      "fromZh": "袖里的小铜秤尚未入簿",
+      "fromEn": "the small copper scale has not been entered in the ledger",
+      "toZh": "小铜秤已作为未偏之秤留在空格旁",
+      "toEn": "the scale is recorded beside the blank slot as having shown no deviation",
+      "flag": "flag.copper_scale_no_deviation_recorded",
+      "narrativeZh": "渡人抬来的小铜秤针没有偏，簿页空格旁留下了它的位置。",
+      "narrativeEn": "The ferryman's small copper scale shows no deviation; its place is marked beside the blank ledger slot.",
+      "npcReactionZh": "渡人把秤留在簿页旁。",
+      "npcReactionEn": "The ferryman leaves the scale beside the ledger.",
+      "atlasHookZh": "未偏的铜秤与空格",
+      "atlasHookEn": "The unmoved scale and the blank slot",
       "requiresHumanReview": true,
       "canonEvidence": [
-        "[story/after-the-space] 铜扣自己长在窗台上，她把它搁在木板接缝旁，木板没有记下铜扣。"
+        "第三十二篇《未刻之数》：渡人抬来袖里的小铜秤，针没有偏，簿页上只剩一个空格。"
       ]
     },
     {
-      "fromZh": "风钟海岸南端灯火未灭",
-      "fromEn": "southern_wind_chime_coast_lamp_lit",
-      "toZh": "灯灭后海留下答句",
-      "toEn": "sea_answers_after_lamp_goes_out",
-      "flag": "flag.sea_answer_heard_after_lamp_out",
-      "narrativeZh": "灯灭后，阿笙在潮退礁石上读到海的答句：我也听见。",
-      "narrativeEn": "After the lamp goes out, A-Sheng reads the sea's answer on the exposed reef: I heard it too.",
-      "npcReactionZh": "阿笙读出了海留下的答句。",
-      "npcReactionEn": "A-Sheng reads the answer left by the sea.",
-      "atlasHookZh": "灯灭之后，海的答句",
-      "atlasHookEn": "The sea's answer after the lamp goes out",
+      "fromZh": "窗台上的铜扣未被木板记下",
+      "fromEn": "the copper button on the sill has not been recorded by the board",
+      "toZh": "铜扣与木板接缝并置，未被记入",
+      "toEn": "the button is placed by the board's joint and remains unrecorded",
+      "flag": "flag.copper_button_left_by_board_joint",
+      "narrativeZh": "她把铜扣搁在木板接缝旁；木板仍没有记下它。",
+      "narrativeEn": "She places the copper button beside the board's joint; the board still does not record it.",
+      "npcReactionZh": "她不再移动铜扣。",
+      "npcReactionEn": "She leaves the button where it is.",
+      "atlasHookZh": "接缝旁未入簿的铜扣",
+      "atlasHookEn": "The unrecorded button by the joint",
       "requiresHumanReview": true,
       "canonEvidence": [
-        "[story/third-voice] 风钟海岸最南端，灯灭了。阿笙在潮退后的礁石上，读到了海写下的答句：我也听见。"
+        "第三十一篇《空处之后》：铜扣自己长在窗台上，她把它搁在木板接缝旁，木板没有记下铜扣。"
       ]
     },
     {
-      "fromZh": "门已合上且按钮未动",
-      "fromEn": "doors_closed_button_unchanged",
-      "toZh": "未敲之钟的按钮前移",
-      "toEn": "unstruck_bell_button_moves_forward",
-      "flag": "flag.unstruck_bell_button_moved_forward",
-      "narrativeZh": "门都合上了，没敲过的钟的按钮自己往前挪了一格。",
-      "narrativeEn": "The doors are shut; the button of the unstruck bell moves forward on its own.",
-      "npcReactionZh": "守门人发现按钮的位置变了。",
-      "npcReactionEn": "The keeper finds the button in a new position.",
-      "atlasHookZh": "未敲之钟的按钮前移",
-      "atlasHookEn": "The unstruck bell's button moves",
+      "fromZh": "纸袋仍在门边，盐线未再长",
+      "fromEn": "the paper bag remains by the door and the salt line has not grown",
+      "toZh": "两半盐线并置，中间留空",
+      "toEn": "the two halves of the salt line are brought together with a space left between them",
+      "flag": "flag.salt_line_halves_kept_apart",
+      "narrativeZh": "她把两半盐线并在一起，中间仍留着一道空处；退潮也成为一种记数。",
+      "narrativeEn": "She brings the two halves together but leaves a space between them; the receding tide becomes a form of counting.",
+      "npcReactionZh": "门边的纸袋仍在，盐线没有延长。",
+      "npcReactionEn": "The paper bag stays by the door; the salt line does not lengthen.",
+      "atlasHookZh": "盐线之间留下的空处",
+      "atlasHookEn": "The space left between the salt line's halves",
       "requiresHumanReview": true,
       "canonEvidence": [
-        "[story/anthology] 第二十四篇《半声之后》——门都合上了，没敲过的钟的按钮自己往前挪。"
+        "第三十篇《窗台记数》：纸袋还在门边，盐线没有再长，她把两半并在一起，中间留着一道空处；退潮也是一种记数。"
       ]
     },
     {
-      "fromZh": "风再次来到守夜人的夜晚",
-      "fromEn": "wind_returns_on_the_watchers_night",
-      "toZh": "守夜人记下风的再次到来",
-      "toEn": "watcher_records_winds_return",
-      "flag": "flag.watcher_records_wind_return",
-      "narrativeZh": "守夜人把风再次到来的夜晚记下，风仍只是风。",
-      "narrativeEn": "The watcher records the night the wind returned; the wind remains only wind.",
-      "npcReactionZh": "守夜人把这一夜写进记录。",
-      "npcReactionEn": "The watcher enters the night in the record.",
-      "atlasHookZh": "守夜人夜里的风",
-      "atlasHookEn": "Wind on the watcher's night",
+      "fromZh": "四种声音各自停住",
+      "fromEn": "four sounds stop independently",
+      "toZh": "海、弦、笔与桌子的停顿被共同记下",
+      "toEn": "the pauses of sea, strings, pen, and table are recorded together",
+      "flag": "flag.four_part_pause_recorded",
+      "narrativeZh": "海停了，弦松了，笔停了，桌子颤了；四种停顿落在同一秒。",
+      "narrativeEn": "The sea stops, the strings slacken, the pen stops, and the table trembles; all four pauses fall in the same second.",
+      "npcReactionZh": "在场者一同停笔。",
+      "npcReactionEn": "Those present stop writing together.",
+      "atlasHookZh": "同一秒里的四种停顿",
+      "atlasHookEn": "Four pauses in the same second",
       "requiresHumanReview": true,
       "canonEvidence": [
-        "[story/twelfth-listener] 第十一篇，写到守夜人那个夜晚，风又来了。"
+        "第二十二篇《合奏》：四个人在同一秒停住：海停了、弦松了、笔停了、桌子颤了。"
       ]
     }
   ],
   "atlasDraft": {
-    "no": 32,
-    "titleZh": "未刻之数",
-    "titleEn": "The Unmarked Number",
-    "pZh": "木板接缝旁，铜扣留着。渡人把它移到秤盘上，指针没有偏。他在簿页写下一个空格，墨水停在格外。",
-    "pEn": "The brass button remained beside the plank seam. The ferryman moved it to the scale; the needle did not shift. In the ledger he left a blank. The ink stopped at its edge.",
-    "codaZh": "木板没有记下空格。",
-    "codaEn": "The plank did not record the blank.",
+    "no": 33,
+    "titleZh": "空格之侧",
+    "titleEn": "Beside the Blank",
+    "pZh": "渡人把小铜秤放在簿页旁。空格仍旧空着。桌上的木片被风推近半寸，又停下。没有人替它写上名字。",
+    "pEn": "The ferryman set the small copper scale beside the ledger. The blank stayed blank. A wooden sliver moved half an inch across the table, then stopped. No one wrote a name for it.",
+    "codaZh": "木片停在空格之外。",
+    "codaEn": "The sliver rested outside the blank.",
     "requiresHumanReview": true
   },
   "usage": {
     "calls": 4,
-    "cachedTokens": 14976,
+    "cachedTokens": 9984,
     "statuses": [
       200,
       200,
@@ -242,32 +243,32 @@
   "graphCheckpoints": [
     {
       "node": "loadWorld",
-      "ms": 11,
+      "ms": 10,
       "ok": true
     },
     {
       "node": "retrieveCanon",
-      "ms": 124,
+      "ms": 153,
       "ok": true
     },
     {
       "node": "warmup",
-      "ms": 7400,
+      "ms": 6134,
       "ok": true
     },
     {
       "node": "audit",
-      "ms": 8580,
+      "ms": 12090,
       "ok": true
     },
     {
       "node": "proposeTransitions",
-      "ms": 21820,
+      "ms": 29871,
       "ok": true
     },
     {
       "node": "draftContent",
-      "ms": 11175,
+      "ms": 15546,
       "ok": true
     },
     {

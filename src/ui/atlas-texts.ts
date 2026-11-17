@@ -1,6 +1,6 @@
 /**
- * 游记 · 三十一篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661 扩）。
- * 这三十一篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 三十二篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662 扩）。
+ * 这三十二篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -1799,6 +1799,55 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">In the end she stopped counting. At ebb she watched the sea; at flood she watched the slit in the door. The button stayed by the floorboard's seam, unmoving.</p>
     <p class="coda">The floorboard kept no count of the button.</p>
     <p class="coda">The age of hush has not ended. It is learning not to count.</p>`,
+  },
+  {
+    no: 32,
+    zhTitle: "未刻之数",
+    enTitle: "The Unmarked Number",
+    zh: `<p>木板接缝旁，铜扣留着。某天午后，渡人进了门——他每天照例路过这条旧巷，今天他在门口停住了，看着窗台上的那道空处，看了很久。</p>
+    <p>渡人是摆渡人——回廊钟下面的那条海峡，涨潮时他渡人向海，落潮时他渡人回崖。他从不问人要去哪里；他只问询问：你已经听够了吗？人们答不上来，就点点头，他就把船划出去。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>他走近窗台，不打招呼，也不解释。他从袖子里取出一只小铜秤——他随身带它，用它量许多不该量的东西：沉默的重量、旧事的重量、一枚铜扣的重量。</p>
+    <p>他把铜扣放到秤盘上。指针没有偏。他把它拨回来，再放一次，指针还是没有偏。他试了三次，都是这样。他最后收回秤盘，说了一句阿汐之前没听过的话：它已经不是那枚铜扣了。它是一个念头——念头不称重量。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>渡人又从袖子里取出一本很薄很簿的簿。封面没有字，纸页边缘被海水泡过。他在翻到的那一页上写了一个空格。墨一下子停在格外——没有任何一笔落在空格里面。</p>
+    <p>他合上薄页，照原路出门去了。阿汐没有叫住他。她以前见过他两次，也没有叫住过哪一次。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>渡人走后的第三天，她发现门边多了一个小铁钉。钉子比铜扣更老，老得像在那条海峡里泡过一百年。她不知道是渡人落下的，还是涨潮时替他放进来的——也许两者都是。她把钉子放在铜扣旁边，木板还是没有记下任何数。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她翻过薄页的影子——薄页的厚度和空格的厚度差不多重。</p>
+    <p class="coda">木板没有记下空格。</p>
+    <p class="coda">止音纪元没有结束。它在学着让空处真正地空着。</p>`,
+    en: `<p>The brass button remained beside the plank seam. On one of the afternoons, the ferryman came through the door — as he always did on this old lane; today he stopped at the threshold and kept his eyes on the empty space on the sill, and went on looking for a long time.</p>
+    <p>The ferryman is the one who ferries — across the strait beneath the Arcade of Echoes, at flood he takes people out toward the sea, at ebb he takes them back to the cliff. He never asks where anyone is going; he asks only one question — have you heard enough? If they could not answer, they nodded; he pushed the boat off.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>He walked up to the sill without a word or a reason. From his sleeve he drew a small brass scale — his constant companion, used to weigh things that were never meant to be weighed: the weight of silence, the weight of a past thing, the weight of a single brass button.</p>
+    <p>He set the button on the scale. The needle did not shift. He set it back, and tried again — the needle still did not shift. He did it a third time. It was the same. He finally folded the scale away and said a sentence Axi had never heard from him before: it is no longer the button. It is an intention — intentions do not weigh anything.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>From his sleeve he drew a very thin ledger. The cover had no title; the edges of the pages had been soaked by sea water. On the page he had opened it to, he drew a single blank. The ink stopped at its edge — not one stroke ever touched inside it.</p>
+    <p>He closed the ledger and left the same way he had come. Axi did not call after him. The last two times she had seen him, she had not called after him then either.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>On the third day after he left, she found a small iron nail by the door. It is older than the copper button — so old it might have spent a hundred years beneath the strait. She did not know whether the ferryman had left it, or whether the tide, at flood, had set it there for him — perhaps both. She set the nail beside the button; the plank still recorded no count.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She turned the ledger's shadow over in her mind — its thickness and the thickness of the blank were about the same weight.</p>
+    <p class="coda">The plank did not record the blank.</p>
+    <p class="coda">The age of hush has not ended. It is learning to let the empty space be genuinely empty.</p>`,
   },
 ]
 

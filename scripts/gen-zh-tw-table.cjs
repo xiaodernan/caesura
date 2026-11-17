@@ -50,6 +50,7 @@ try {
     'story/after-the-salt-line/index.html',
     'story/the-sill-keeps-count/index.html',
     'story/after-the-space/index.html',
+    'story/the-unmarked-number/index.html',
   ];
 
   const PHRASES = new Set();

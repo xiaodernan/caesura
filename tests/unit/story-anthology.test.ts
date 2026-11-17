@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 /**
  * 《余响集》全集页（story/anthology/index.html）自证：
- *   ① 文件存在 + 默认中文；② 语言切换 + 双语两半齐全；③ 正文含三十一篇故事的全部出口；
+ *   ① 文件存在 + 默认中文；② 语言切换 + 双语两半齐全；③ 正文含三十二篇故事的全部出口；
  *   ④ 零网络请求；⑤ 链接到全部六篇 + 世界谱 + 游戏。
  */
 
@@ -28,14 +28,14 @@ describe('余响集（story/anthology/index.html）', () => {
     expect(HTML).toContain('The Aftermath')
   })
 
-  it('中文正文：含三十一篇全部标题', () => {
-    for (const marker of ['《盐》', '《山下无名碑》', '《空拍子》', '《账本》', '《回声庭园》', '《雨审判》', '《霜锤》', '《千门》', '《石喉》', '《第一钟》', '《暗潮》', '《后记 · 第十二个听者》', '《拾钟人》', '《灯匠》', '《低音之城》', '《钟摆渡人》', '《未竟账页》', '《第四下》', '《末弦》', '《听弦》', '《第三声》', '《合奏》', '《回声谷》', '《半声之后》', '《铜扣旁》', '《线外》', '《纸袋之后》', '《窗台盐线》', '《盐线之后》', '《窗台记数》', '《空处之后》']) {
+  it('中文正文：含三十二篇全部标题', () => {
+    for (const marker of ['《盐》', '《山下无名碑》', '《空拍子》', '《账本》', '《回声庭园》', '《雨审判》', '《霜锤》', '《千门》', '《石喉》', '《第一钟》', '《暗潮》', '《后记 · 第十二个听者》', '《拾钟人》', '《灯匠》', '《低音之城》', '《钟摆渡人》', '《未竟账页》', '《第四下》', '《末弦》', '《听弦》', '《第三声》', '《合奏》', '《回声谷》', '《半声之后》', '《铜扣旁》', '《线外》', '《纸袋之后》', '《窗台盐线》', '《盐线之后》', '《窗台记数》', '《空处之后》', '《未刻之数》']) {
       expect(HTML, `zh missing: ${marker}`).toContain(marker)
     }
   })
 
-  it('英文正文：含三十一篇全部标题', () => {
-    for (const marker of ['“Salt”', '“The Nameless Stone”', '“The Empty Bar”', '“The Ledger”', '“The Garden of Return”', '“The Rain Tribunal”', '“The Frostbell”', '“The Thousand Doors”', '“The Stone-Throat”', '“The First Bell”', '“The Dark Tide”', '“Epilogue · The Twelfth Listener”', '“The Bell-Picker”', '“The Lampwright”', '“The City of Low Tones”', '“The Pendulum Ferryman”', '“The Unfinished Ledger Page”', '“The Fourth Strike”', '“The Last String”', '“The String-Listener”', '“The Third Voice”', '“The Ensemble”', '“The Echo Vale”', '“After Half a Chime”', '“Beside the Button”', '“Beyond the Line”', '“After the Bag”', '“Salt on the Sill”', '“After the Salt Line”', '“The Sill Keeps Count”', '“After the Space”']) {
+  it('英文正文：含三十二篇全部标题', () => {
+    for (const marker of ['“Salt”', '“The Nameless Stone”', '“The Empty Bar”', '“The Ledger”', '“The Garden of Return”', '“The Rain Tribunal”', '“The Frostbell”', '“The Thousand Doors”', '“The Stone-Throat”', '“The First Bell”', '“The Dark Tide”', '“Epilogue · The Twelfth Listener”', '“The Bell-Picker”', '“The Lampwright”', '“The City of Low Tones”', '“The Pendulum Ferryman”', '“The Unfinished Ledger Page”', '“The Fourth Strike”', '“The Last String”', '“The String-Listener”', '“The Third Voice”', '“The Ensemble”', '“The Echo Vale”', '“After Half a Chime”', '“Beside the Button”', '“Beyond the Line”', '“After the Bag”', '“Salt on the Sill”', '“After the Salt Line”', '“The Sill Keeps Count”', '“After the Space”', '“The Unmarked Number”']) {
       expect(HTML, `en missing: ${marker}`).toContain(marker)
     }
   })
@@ -45,8 +45,8 @@ describe('余响集（story/anthology/index.html）', () => {
     expect(HTML).not.toMatch(/<link[^>]*href=["']https?:/)
   })
 
-  it('三十一篇全部能链到（href 出口必须全）', () => {
-    for (const href of ['/caesura/story/', '/caesura/story/unnamed-stone/', '/caesura/story/empty-bar/', '/caesura/story/ledger/', '/caesura/story/garden/', '/caesura/story/tribunal/', '/caesura/story/frostbell/', '/caesura/story/doors/', '/caesura/story/stonethroat/', '/caesura/story/first-bell/', '/caesura/story/dark-tide/', '/caesura/story/twelfth-listener/', '/caesura/story/bell-picker/', '/caesura/story/lampwright-bell/', '/caesura/story/lowtone-city/', '/caesura/story/pendulum-ferryman/', '/caesura/story/unfinished-ledger/', '/caesura/story/fourth-strike/', '/caesura/story/last-string/', '/caesura/story/string-listener/', '/caesura/story/third-voice/', '/caesura/story/ensemble/', '/caesura/story/echo-vale/', '/caesura/story/after-half-a-chime/', '/caesura/story/beside-the-button/', '/caesura/story/beyond-the-line/', '/caesura/story/after-the-bag/', '/caesura/story/salt-on-the-sill/', '/caesura/story/after-the-salt-line/', '/caesura/story/the-sill-keeps-count/', '/caesura/story/after-the-space/', '/caesura/', '/caesura/codex/']) {
+  it('三十二篇全部能链到（href 出口必须全）', () => {
+    for (const href of ['/caesura/story/', '/caesura/story/unnamed-stone/', '/caesura/story/empty-bar/', '/caesura/story/ledger/', '/caesura/story/garden/', '/caesura/story/tribunal/', '/caesura/story/frostbell/', '/caesura/story/doors/', '/caesura/story/stonethroat/', '/caesura/story/first-bell/', '/caesura/story/dark-tide/', '/caesura/story/twelfth-listener/', '/caesura/story/bell-picker/', '/caesura/story/lampwright-bell/', '/caesura/story/lowtone-city/', '/caesura/story/pendulum-ferryman/', '/caesura/story/unfinished-ledger/', '/caesura/story/fourth-strike/', '/caesura/story/last-string/', '/caesura/story/string-listener/', '/caesura/story/third-voice/', '/caesura/story/ensemble/', '/caesura/story/echo-vale/', '/caesura/story/after-half-a-chime/', '/caesura/story/beside-the-button/', '/caesura/story/beyond-the-line/', '/caesura/story/after-the-bag/', '/caesura/story/salt-on-the-sill/', '/caesura/story/after-the-salt-line/', '/caesura/story/the-sill-keeps-count/', '/caesura/story/after-the-space/', '/caesura/story/the-unmarked-number/', '/caesura/', '/caesura/codex/']) {
       expect(HTML, `missing link: ${href}`).toContain(href)
     }
   })
