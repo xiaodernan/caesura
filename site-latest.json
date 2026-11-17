@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "9a965b8626d15b0ca0bd79eca74f5af39cd4b9a3",
+  "head": "bb55a6c48847eaa68d54982d96a60a48753013ca",
   "branch": "master",
-  "subject": "feat(story): KI-639《余响集》第二十篇《听弦 / The String-Listener》落地",
-  "date": "2026-11-17T10:57:20+08:00",
+  "subject": "site-latest: 9a965b8 (post-rebase reconcile)",
+  "date": "2026-11-17T10:58:19+08:00",
   "kv": {
     "KI.rows": 557,
     "KI.Implemented": 380,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/9a965b8626d15b0ca0bd79eca74f5af39cd4b9a3",
+    "url": "https://github.com/xiaodernan/caesura/commit/bb55a6c48847eaa68d54982d96a60a48753013ca",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
