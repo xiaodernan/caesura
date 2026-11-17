@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "92f1eebb7306581cccc735b55d64f62c151a6a49",
+  "head": "f380e986903e2afe1ce08857b67c33fba88316ce",
   "branch": "master",
-  "subject": "feat(story): KI-665《余响集》第三十四篇《未记的一页 / The Unentered Page》落地（LLM 真机草稿 → 人工闸落库）",
-  "date": "2026-11-17T22:49:05+08:00",
+  "subject": "site-latest: 92f1eeb (post-rebase reconcile)",
+  "date": "2026-11-17T22:50:08+08:00",
   "kv": {
     "KI.rows": 583,
     "KI.Implemented": 406,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/92f1eebb7306581cccc735b55d64f62c151a6a49",
+    "url": "https://github.com/xiaodernan/caesura/commit/f380e986903e2afe1ce08857b67c33fba88316ce",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
