@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "9dfde7bf09a5f0a7f68ad2fa1c9d57beddda991a",
+  "head": "826e26d0c089cd87e5444f7da72f69bd1be0e2b8",
   "branch": "master",
-  "subject": "feat(story): KI-668《余响集》第三十七篇《空秤 / The Empty Scale》落地（LLM 真机草稿 → 人工闸落库）+ 真机重跑回正",
-  "date": "2026-11-18T00:08:16+08:00",
+  "subject": "site-latest: 9dfde7b (post-rebase reconcile)",
+  "date": "2026-11-18T00:08:58+08:00",
   "kv": {
     "KI.rows": 586,
     "KI.Implemented": 409,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/9dfde7bf09a5f0a7f68ad2fa1c9d57beddda991a",
+    "url": "https://github.com/xiaodernan/caesura/commit/826e26d0c089cd87e5444f7da72f69bd1be0e2b8",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
