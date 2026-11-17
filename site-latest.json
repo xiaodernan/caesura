@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "e1c73f6481f417ef917603e13d34a964a4d81e65",
+  "head": "81192308012df7a79018f432986a80a2a3b1f62e",
   "branch": "master",
-  "subject": "feat(admin): KI-645 admin「趋势研判 · Forecast」· LLM 真嵌入后台面板",
-  "date": "2026-11-17T13:09:10+08:00",
+  "subject": "site-latest: e1c73f6 (post-rebase reconcile)",
+  "date": "2026-11-17T13:09:59+08:00",
   "kv": {
     "KI.rows": 563,
     "KI.Implemented": 386,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/e1c73f6481f417ef917603e13d34a964a4d81e65",
+    "url": "https://github.com/xiaodernan/caesura/commit/81192308012df7a79018f432986a80a2a3b1f62e",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
