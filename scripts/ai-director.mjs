@@ -18,7 +18,8 @@
  *
  * LangGraph 知识落地：实现一个零依赖的 StateGraph（addNode / addEdge / addConditionalEdges /
  * checkpoints），条件边按 mode 分流——offline 模式不触网、诚实落「未真跑」的占位产物；
- * live 模式三条 LLM 边共享同一 system 前缀（世界快照+canon 证据），首条调用即暖缓存。
+ * live 模式三条 LLM 边共享同一**场景圣经巨前缀**（≈62k tokens · 世界圣经+世界谱74条+余响集三十二篇全文
+ * · sha256 锚定、字节稳定），易变快照移入 user 消息，首条调用即暖缓存（KI-663）。
  *
  * 纪律（不可绕过）：
  *   - 玩家进程零 LLM、零网络 —— 本脚本是作者侧工具，产物 runtime:false。
@@ -38,6 +39,7 @@ import { authorLlmEnv } from './caesura-author-env.mjs'
 import { callLlm, applyAuthorProxyFromEnv } from './caesura-llm-client.mjs'
 import { buildWorldCorpus, buildIndex, retrieve } from './lib/world-rag.mjs'
 import { StateGraph } from './lib/stategraph.mjs'
+import { sceneBible, sceneBibleCacheKey, readWarmMarker, writeWarmMarker } from './lib/scene-bible.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '..')
@@ -105,15 +107,14 @@ const worldSnapshot = () => {
   }
 }
 
-/* ═══════════ LLM 调用（live 才有；三边共享同一 system 前缀 → 暖一条缓存）═══════════ */
-const DIRECTOR_SYSTEM = [
-  '你是《止音纪元》的「世界导演」（World Director）。你读过完整的世界圣经、叙事圣经、新陆设定与全部三十二篇游记。',
-  '你的工作不是写漂亮话，而是：① 对照 canon 证据审计世界现状；② 提出可落地的世界状态流转提案；③ 为下一篇游记产出可用的草稿。',
-  '铁律：',
-  '- 设定只能来自【canon 证据】片段；证据里没有的新设定必须标 requiresHumanReview:true 且不得伪造 canon 出处。',
-  '- 写作纪律：禁复仇、禁新神、禁现代感叹词、禁动作括号、禁半句抒情。',
-  '- 输出**严格的单个 JSON 对象**，不要 markdown 代码块、不要额外说明。',
-].join('\n')
+/* ═══════════ LLM 调用（live 才有；三边共享**场景圣经巨前缀** + canon 证据后缀 → 暖一条缓存）═══════════ */
+/* KI-663：前缀主体 = scripts/lib/scene-bible.mjs 的 SCENE_BIBLE
+   （世界圣经 + 世界谱 74 条 + 余响集三十二篇全文 ≈ 62k tokens · 字节稳定）；
+   易变的「世界现状快照」（日期/KI行数/篇目数）按 KI-555/KI-657 纪律迁入 user 消息，不再污染前缀字节 */
+
+/** 易变读数只进 user，不进 system：快照 + 本轮任务 */
+const withSnapshot = (state, task) =>
+  `【世界现状快照 · 易变】\n${snapshotToText(state.world)}\n\n${task}`
 
 const snapshotToText = (w) => [
   `KI 行数=${w.phaseStatus.KIrows} 已实现=${w.phaseStatus.KIImplemented} 系统已实现=${w.phaseStatus.SYSImplemented} ARCH 章节=${w.phaseStatus.ARCHSections}`,
@@ -161,14 +162,18 @@ async function nodeRetrieveCanon(state) {
   state.canonRetrieveMs = Date.now() - t0
 }
 
+/* KI-663：前缀 = 场景圣经巨石（stable bytes · sha256 锚）+ canon 证据（本轮 RAG top-10 · 挂后缀）。
+   日期/KI 行数/篇目数（易变）一律不进 system —— 全走 user 消息 withSnapshot()。
+   注意：canon 证据随 FOCUS 变 ⇒ 缓存按焦点自然分片（作者侧默认焦点固定 ⇒ 跨会话稳定）。 */
 const directorPrefix = (state) =>
-  DIRECTOR_SYSTEM + '\n\n【世界现状快照】\n' + snapshotToText(state.world) + '\n\n【canon 证据（RAG 检索 top-10）】\n' + (state.canon ?? []).map((c, i) => `${i + 1}. ${c.preview}`).join('\n')
+  sceneBible() + '\n\n【canon 证据（RAG 检索 top-10）】\n' +
+  (state.canon ?? []).map((c, i) => `${i + 1}. ${c.preview}`).join('\n')
 
 async function nodeAudit(state) {
   if (state.mode !== 'live') { state.audit = null; return }
   const prefix = state.prefix || directorPrefix(state)
   const task = '【任务·一致性审计】基于上面的 canon 证据，给出：{"consistency":0-100整数,"verdictZh":"≤60字总评","verdictEn":"≤30 words","risks":[{"severity":"high|med|low","itemZh":"风险点","itemEn":"risk","detailZh":"≤50字","detailEn":"≤30 words"}],"gapsZh":["≤30字缺口"],"gapsEn":["≤15 words"]}。risks 至少 2 条、至多 4 条；gaps 至少 2 条。只许 JSON。'
-  const out = await callDirector(state.env, { stdinPrefix: prefix, task, temperature: 0.4, maxTokens: 900 })
+  const out = await callDirector(state.env, { stdinPrefix: prefix, task: withSnapshot(state, task), temperature: 0.4, maxTokens: 900 })
   state.usage.calls += 1
   state.usage.cachedTokens += out.cachedTokens || 0
   state.usage.statuses.push(out.status)
@@ -180,7 +185,7 @@ async function nodeAudit(state) {
 async function nodeProposeTransitions(state) {
   if (state.mode !== 'live') { state.transitions = []; return }
   const task = '【任务·世界状态流转提案】现状：无耳深窖五环线索、低音之城、三十二篇游记写尽。提出 4 条**可直接落为 quest/flag 的状态流转提案**：{"transitions":[{"fromZh":"起点状态","fromEn":"from-state","toZh":"终点状态","toEn":"to-state","flag":"flag.xxx","narrativeZh":"≤80字叙事后果","narrativeEn":"≤45 words","npcReactionZh":"≤40字 NPC/世界反应","npcReactionEn":"≤25 words","atlasHookZh":"≤30字 可挂进 Atlas 的钩子","atlasHookEn":"≤18 words"}]}。硬约束：flag **必须**以 "flag." 开头、全小写 snake_case（如 flag.paper_bag_salt_line_kept），**不许**加 proposed / new / plan 之类的前缀；flag 名字要像现存 flag 一样直接落库。只许 JSON。'
-  const out = await callDirector(state.env, { stdinPrefix: state.prefix, task, temperature: 0.75, maxTokens: 1200 })
+  const out = await callDirector(state.env, { stdinPrefix: state.prefix, task: withSnapshot(state, task), temperature: 0.75, maxTokens: 1200 })
   state.usage.calls += 1
   state.usage.cachedTokens += out.cachedTokens || 0
   state.usage.statuses.push(out.status)
@@ -192,7 +197,7 @@ async function nodeProposeTransitions(state) {
 async function nodeDraftContent(state) {
   if (state.mode !== 'live') { state.atlasDraft = null; return }
   const task = '【任务·游记续写草稿】以钟摆渡人/止音纪元的笔法，为下一篇游记产出草稿：{"no":33,"titleZh":"≤10字","titleEn":"≤6 words","pZh":"≤120字正文","pEn":"≤70 words","codaZh":"≤40字尾声","codaEn":"≤25 words","requiresHumanReview":true}。笔法：不喧哗、不抒情、物件说话、留白。只许 JSON。'
-  const out = await callDirector(state.env, { stdinPrefix: state.prefix, task, temperature: 0.9, maxTokens: 800 })
+  const out = await callDirector(state.env, { stdinPrefix: state.prefix, task: withSnapshot(state, task), temperature: 0.9, maxTokens: 800 })
   state.usage.calls += 1
   state.usage.cachedTokens += out.cachedTokens || 0
   state.usage.statuses.push(out.status)
@@ -290,17 +295,27 @@ async function main() {
       // 代理口径全走 caesura-llm-client（applyAuthorProxyFromEnv / curlSub2ApiFallback 自己会读 env）——
       // 这里不再直接触碰环境变量名册（KI-441 唯一入口纪律）
       await applyAuthorProxyFromEnv()
-      // 烤**正题自己的前缀**（同一串 system → 首条 audit 即命中前缀缓存；而不是无关的 NPC bible）
       s.prefix = directorPrefix(s)
+      // KI-663 单飞热身：并行会话共享一个 marker（.scratch/scene-bible-<hash>.warm · 30 分钟新鲜度）
+      // 避免多个会话同时付第一波冷 miss；marker 之后的每个正题节点都吃到巨前缀缓存
+      const fresh = readWarmMarker()
+      if (fresh && Date.now() - Number(fresh.at ?? 0) < 30 * 60 * 1000 && (fresh.statuses ?? []).length > 0 && (fresh.statuses ?? []).every((code) => Number(code) === 200)) {
+        s.warmup = { singleFlight: true, note: '同 corpus（场景圣经同一哈希）30 分钟内已由并行会话烤热', statuses: fresh.statuses, cachedTokens: fresh.cachedTokens }
+        return
+      }
+      // 烤**正题自己的前缀**（场景圣经巨前缀同一串 system → 首条 audit 即命中前缀缓存；而不是无关的 NPC bible）
       const pre = await callLlm({
         model: s.env.model, stream: true, stream_options: { include_usage: true },
         temperature: 0, max_tokens: 8,
-        messages: [{ role: 'system', content: s.prefix }, { role: 'user', content: '（预热：只回一个词）' }],
-        prompt_cache_key: (await import('./caesura-llm-client.mjs')).derivePromptCacheKey([{ role: 'system', content: s.prefix }]),
+        messages: [{ role: 'system', content: sceneBible() }, { role: 'user', content: '（预热：只回一个词）' }],
+        prompt_cache_key: sceneBibleCacheKey(),
       }, { baseUrl: s.env.baseUrl, apiKey: s.env.apiKey })
       s.usage.calls += 1
       s.usage.cachedTokens += pre.cachedTokens || 0
       s.usage.statuses.push(pre.status)
+      if (pre.status === 200) {
+        writeWarmMarker({ calls: 1, cachedTokens: [pre.cachedTokens || 0], statuses: [pre.status], note: 'director warmup · scene-bible monolith' })
+      }
     })
     .addNode('audit', nodeAudit)
     .addNode('proposeTransitions', nodeProposeTransitions)

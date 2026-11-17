@@ -48,7 +48,7 @@ describe('admin · StateGraph 检查站（KI-622）', () => {
     for (const c of art.graphCheckpoints) {
       expect(c.ok, `checkpoint ${c.node} 未 ok`).toBe(true)
     }
-    expect(art.usage.calls).toBeGreaterThanOrEqual(4)
+    expect(art.usage.calls).toBeGreaterThanOrEqual(3) // KI-663 单飞热身：warmup 允许被并行会话摊销（3 条正题调用恒在）
     expect(Array.isArray(art.usage.statuses)).toBe(true)
     for (const s of art.usage.statuses) expect([200, 201]).toContain(Number(s))
   })

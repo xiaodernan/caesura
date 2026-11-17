@@ -48,7 +48,7 @@ describe('KI-620 · AI 导演引擎产物门钉', () => {
   it('真机产物：mode=live · 有 audit（一致性 0–100）· 提案 ≥1 条 · 草稿双语齐', () => {
     expect(art.mode).toBe('live')
     expect(art.model).toBeTruthy()
-    expect(art.usage.calls).toBeGreaterThanOrEqual(4)
+    expect(art.usage.calls).toBeGreaterThanOrEqual(3) // KI-663 单飞热身：warmup 允许被并行会话摊销（3 条正题调用恒在）
     expect(Array.isArray(art.usage.statuses)).toBe(true)
     for (const s of art.usage.statuses) expect([200, 201]).toContain(Number(s))
     const audit = art.audit
