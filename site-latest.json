@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "32b06bce9a51422022a2e721e6a46d3eb9fdef8f",
+  "head": "38356ca5cb5ba7f32d4b4e3f798519f8bdad7a34",
   "branch": "master",
-  "subject": "site-latest: c27ca1e (post-rebase reconcile)",
-  "date": "2026-11-17T10:05:52+08:00",
+  "subject": "feat(ui): KI-638 本周纪事 W47 真机重派 · 现读世界快照落盘",
+  "date": "2026-11-17T10:25:20+08:00",
   "kv": {
-    "KI.rows": 555,
-    "KI.Implemented": 378,
+    "KI.rows": 556,
+    "KI.Implemented": 379,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/32b06bce9a51422022a2e721e6a46d3eb9fdef8f",
+    "url": "https://github.com/xiaodernan/caesura/commit/38356ca5cb5ba7f32d4b4e3f798519f8bdad7a34",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
