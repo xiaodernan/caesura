@@ -63,6 +63,7 @@ try {
     'story/salt-at-the-threshold/index.html',
     'story/the-unopened-page/index.html',
     'story/the-unsent-letter/index.html',
+    'story/after-the-empty-scale/index.html',
   ];
 
   const PHRASES = new Set();

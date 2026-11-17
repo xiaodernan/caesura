@@ -1,6 +1,6 @@
 /**
- * 游记 · 四十四篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675 扩）。
- * 这四十四篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 四十五篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676 扩）。
+ * 这四十五篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -2399,6 +2399,47 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She did not step closer.</p>
     <p class="coda">Some letters remain without being sent.</p>
     <p class="coda">The age of hush has not ended. It has only, at last, received a letter that was never sent, and never needed to be.</p>`,
+  },
+  {
+    no: 45,
+    zhTitle: "空秤之后",
+    enTitle: "After the Empty Scale",
+    zh: `<p>薄簿仍合着。门槛边的信没有字，盐留在纸角。薄页偶尔自己翻过去一回，又翻回来了——阿汐没有管那些力。她把门开着，直到潮水退去。纸没有动，盐也没有落下。</p>
+    <p>她把手放在门口——风从缝里经过，什么声音也没发出——她知道如果她替那封信塞一下，它就不再是一封没有上过路的信；也许它一直不想上路；也许它只想就放在那里。她只是看着它。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>渡人的船从门外经过，没有停。他看见纸角多了一道浅痕——像秤盘曾经放在那里——他想了一下，然后又沿着水路走了。他本可以停下来问她要不要把信寄出去——他知道最要紧的不是知道寄不寄——而是那封信已经放在它该放的位置。</p>
+    <p>薄簿页角——扁平的——也像那封纸。她同时看了一眼二者——每件东西似乎都有一份「不用被打开」的体面感——比如母亲那一口老箱子——她从不打开——里面装的是什幺她从未问过——它是那种永远放在一口大小，永远不愿意被打开。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>盐——她看见盐像是在纸上打了一个底——换句话说，那封纸从干到潮，从潮到干——它根本就没打算动——只是想——其实不需要动——其实它哪儿也没打算去。她只是盯着它——它慢慢不动的灯光——像海波本身。</p>
+    <p>阿汐把薄簿放回接缝旁。她想：什么时候该收起这本册子了？——又想：什么时候该走了？——又想：什么时候这一片海就不再听她的问什么了？——又想：也许永远不。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些东西经过，不必留下重量。</p>
+    <p class="coda">止音纪元没有结束。它只是终于放下了一杆没有被称过的秤——和一封没有被拆封的信。</p>`,
+    en: `<p>The ledger stayed closed. The letter by the threshold had no words; salt remained on one corner. Now and then the page corner turned on its own — and turned back again; Axi did not interfere with any of that. She left the door open until the tide withdrew. The paper did not move, and the salt did not fall.</p>
+    <p>She set her hand on the doorway — the wind passed through the seam without making a sound — she knew that if she were to press into the letter, it would stop being a letter that had never been sent; perhaps it had always meant not to be sent; perhaps it only wanted to stay exactly where it lay. She only watched it.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ferryman passed without stopping. He saw a faint mark on the corner, as if a scale had once rested there — he considered — and moved on along the water road. He could have stopped and asked whether she wished the letter sent — he knew the important thing was not whether she wished to send it — the important thing was that it was exactly where it belonged.</p>
+    <p>The corner of the thin ledger — flat — also resembled the paper. She looked at both of them together — everything in the room seemed to have the dignity of not being opened — like her mother's old trunk — she never opened it — what was inside, she never asked — it was a thing whose whole life was staying in one place, never to be opened.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The grain of salt — she saw it as the bottom of the letter itself — that is to say, the paper had gone from dry to damp and back to dry all by itself — it never meant to move — it simply never cared to — it never intended to go anywhere. She only watched it — it held its own quiet light — like a small spoon of the sea.</p>
+    <p>Axi set the ledger back beside the seam. She thought: when should this book be finally shut? — and then: when should I finally leave? — and then: when would this sea stop listening to my questions? — and then: perhaps never.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some things pass without leaving a weight.</p>
+    <p class="coda">The age of hush has not ended. It has only, at last, laid down a scale that was never used — and a letter that was never opened.</p>`,
   },
 ]
 

@@ -87,6 +87,7 @@ const ENDPOINTS = [
   { name: 'story-43', url: 'https://xiaodernan.github.io/caesura/story/salt-at-the-threshold/', marker: '门槛上的盐' },
   { name: 'story-44', url: 'https://xiaodernan.github.io/caesura/story/the-unopened-page/', marker: '未开之页' },
   { name: 'story-45', url: 'https://xiaodernan.github.io/caesura/story/the-unsent-letter/', marker: '未寄出的信' },
+  { name: 'story-46', url: 'https://xiaodernan.github.io/caesura/story/after-the-empty-scale/', marker: '空秤之后' },
   { name: 'ai-json-commit', url: 'https://xiaodernan.github.io/caesura/admin/ai-director-latest.json', marker: '"authorOnly": true' },
   { name: 'ai-json-qa', url: 'https://xiaodernan.github.io/caesura/admin/ai-director-transitions-qa.json', marker: '"authorOnly": true' },
 ]
