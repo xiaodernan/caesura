@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "7b5d8b9857bae6f12625b07e4c4b2fc4f376cc77",
+  "head": "98480359756efabdc26f2e8bb90063109c948e8e",
   "branch": "master",
-  "subject": "feat(story): KI-671《余响集》第四十篇《门槛之外 / Beyond the Threshold》落地（LLM 真机草稿 → 人工闸落库）",
-  "date": "2026-11-18T03:53:18+08:00",
+  "subject": "site-latest: 7b5d8b9 (post-rebase reconcile)",
+  "date": "2026-11-18T03:54:52+08:00",
   "kv": {
     "KI.rows": 589,
     "KI.Implemented": 412,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/7b5d8b9857bae6f12625b07e4c4b2fc4f376cc77",
+    "url": "https://github.com/xiaodernan/caesura/commit/98480359756efabdc26f2e8bb90063109c948e8e",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
