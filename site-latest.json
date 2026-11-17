@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "38c9d7c5e012561b5d5c79c58ead9b7f4aac37dc",
+  "head": "e634e625617dbebf9244d1e801cc327d41883c9f",
   "branch": "master",
-  "subject": "site-latest: 9454f27 (post-rebase reconcile)",
-  "date": "2026-11-17T16:37:26+08:00",
+  "subject": "fix(codex): KI-655 · 谱册页误触修复 + 高频触发控件（KI-645 行动 #3）",
+  "date": "2026-11-17T16:50:03+08:00",
   "kv": {
-    "KI.rows": 572,
-    "KI.Implemented": 395,
+    "KI.rows": 573,
+    "KI.Implemented": 396,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/38c9d7c5e012561b5d5c79c58ead9b7f4aac37dc",
+    "url": "https://github.com/xiaodernan/caesura/commit/e634e625617dbebf9244d1e801cc327d41883c9f",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
