@@ -95,7 +95,8 @@
     "ai:director:live": "node scripts/ai-director.mjs --live",
     "ai:director:qa": "node scripts/ai-director-transitions-qa.mjs",
     "ai:dispatch": "node scripts/ai-world-dispatch.mjs",
-    "ai:priors": "node scripts/ai-admin-auditor.mjs"
+    "ai:priors": "node scripts/ai-admin-auditor.mjs",
+    "ai:forecast": "node scripts/ai-trend-forecast.mjs"
   },
   "dependencies": {
     "three": "^0.186.0"

@@ -397,3 +397,21 @@ header, main, footer { position: relative; z-index: 1; }
 .priors-foot { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 10px; font: 10px var(--mono); color: var(--muted); letter-spacing: .06em; }
 .priors-foot code { background: var(--ash-1); border: 1px solid var(--line-soft); border-radius: 6px; padding: 2px 6px; color: var(--gold); }
 .priors-note { color: var(--jade); }
+
+
+
+/* ── 趋势研判 · Forecast（KI-645）───────────────────────────────────────── */
+.panel-forecast h3 { font: 600 10px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 14px 0 4px; }
+.panel-forecast .priors-overall-zh, .panel-forecast .priors-overall-en { font: 12px var(--serif); line-height: 1.7; margin: 0 0 4px; }
+.panel-forecast .priors-overall-en { color: var(--muted); font-style: italic; }
+.forecast-row { grid-template-columns: 28px 1fr; }
+.forecast-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.forecast-badge { font: 600 9px/1 var(--mono); letter-spacing: .08em; padding: 3px 7px; border-radius: 4px; text-transform: uppercase; }
+.forecast-impact-high { background: rgba(165,68,82,.18); color: #ffb3b3; border: 1px solid rgba(165,68,82,.4); }
+.forecast-impact-medium { background: rgba(216,163,92,.16); color: #f0c874; border: 1px solid rgba(216,163,92,.4); }
+.forecast-impact-low { background: rgba(79,155,134,.14); color: #7fd8c0; border: 1px solid rgba(79,155,134,.35); }
+.forecast-effort-s { background: rgba(79,155,134,.14); color: #7fd8c0; }
+.forecast-effort-m { background: rgba(216,163,92,.16); color: #f0c874; }
+.forecast-effort-l { background: rgba(165,68,82,.16); color: #ffb3b3; }
+.forecast-metric { font: 10px var(--mono); color: var(--muted); border: 1px dashed var(--line-soft); border-radius: 4px; padding: 3px 7px; }
+.forecast-risk { font: 10.5px/1.6 var(--sans); color: #b8bdc9; margin: 6px 0 0; }

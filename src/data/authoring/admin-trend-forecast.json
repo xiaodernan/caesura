@@ -1,0 +1,206 @@
+{
+  "$comment": "KI-645 · admin 趋势研判 · LLM 裁决。authorOnly · runtime:false · 玩家进程零接触 · 人工闸后登账",
+  "runtime": false,
+  "authorOnly": true,
+  "containsCredentials": false,
+  "requiresHumanReview": true,
+  "schema": 1,
+  "mode": "live",
+  "generatedAt": "2026-11-17T04:33:00.646Z",
+  "model": "gpt-6.1-terra",
+  "endpoint": "https://api.aizzz.xyz/v1",
+  "telemetryHead": {
+    "totalSessions": 5005,
+    "meanBounce": "0.553",
+    "endingConversion": "0.058",
+    "mobileShare": "0.610",
+    "zhShare": "0.710",
+    "lateWindowShare": "0.406"
+  },
+  "forecast": {
+    "sessions": {
+      "points": [
+        219,
+        224,
+        229,
+        233,
+        238,
+        243,
+        248
+      ],
+      "slope": 4.853,
+      "r2": 0.435
+    },
+    "pageViews": {
+      "points": [
+        580,
+        591,
+        601,
+        612,
+        622,
+        633,
+        643
+      ],
+      "slope": 10.56,
+      "r2": 0.273
+    },
+    "bounce": {
+      "points": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "slope": 0,
+      "r2": 0
+    }
+  },
+  "observed": {
+    "funnel": [
+      {
+        "id": "landed",
+        "count": 5005
+      },
+      {
+        "id": "pressed-start",
+        "count": 2928
+      },
+      {
+        "id": "in-world",
+        "count": 2386
+      },
+      {
+        "id": "atlas-open",
+        "count": 1038
+      },
+      {
+        "id": "chapter-finish",
+        "count": 680
+      },
+      {
+        "id": "ending",
+        "count": 289
+      }
+    ],
+    "devices": [
+      {
+        "id": "mobile",
+        "share": 0.61
+      },
+      {
+        "id": "desktop",
+        "share": 0.34
+      },
+      {
+        "id": "tablet",
+        "share": 0.05
+      }
+    ],
+    "locales": [
+      {
+        "id": "zh",
+        "share": 0.71
+      },
+      {
+        "id": "en",
+        "share": 0.29
+      }
+    ],
+    "pages": 11,
+    "refs": [
+      {
+        "labelZh": "Baymard Institute · 平均购物车放弃率 70.22%",
+        "labelEn": "Baymard Institute · avg. cart abandonment 70.22%",
+        "detail": "2026-10-28 更新 · 50 项研究 2006–2025 · 非加权均值 · 2026-11-17 实测再取核对（baymard.com/blog/cart-abandonment-rate：正文明载 70.22% · 50 published studies · 2006–2025，数值无变化）。"
+      },
+      {
+        "labelZh": "Nielsen Norman Group · 10 秒法则",
+        "labelEn": "Nielsen Norman Group · the 10-second rule",
+        "detail": "≈ 五分之一用户在首屏立即离开 / ~1 in 5 leaves at first paint. Prior band for bounce."
+      },
+      {
+        "labelZh": "Contentsquare Benchmarks 2026 · 990 亿会话 · 6,500+ 站点",
+        "labelEn": "Contentsquare Benchmarks 2026 · 99B sessions · 6,500+ sites",
+        "detail": "全球行业基准的体量锚点（2025 版 900 亿 / 6,000 sites · 2026-11-16 检索 contentsquare.com 新闻稿）。"
+      },
+      {
+        "labelZh": "StatCounter · 2026-10 Worldwide：Mobile 60.87% / Desktop 39.13%",
+        "labelEn": "StatCounter · Oct 2026 worldwide: Mobile 60.87% / Desktop 39.13%",
+        "detail": "2026-11-16 检索 gs.statcounter.com（mobile vs desktop market share, October 2026）。"
+      }
+    ]
+  },
+  "summary": {
+    "zh": "漏斗结局率为百分之五点八；平均跳出率百分之五十五点三，但近七日趋势恒为百分之一，口径矛盾。",
+    "en": "Ending conversion is 5.8%. Mean bounce is 55.3%, but the seven-day trend is flat at 1%, an unresolved metric conflict."
+  },
+  "riskiestCohort": {
+    "zh": "到达首页后未按下开始者：漏斗流失百分之四十一点五，且首页退出占百分之三十四。",
+    "en": "Landing visitors who do not press Start: 41.5% funnel loss; the homepage accounts for 34% of exits.",
+    "cohort": "landing-bounce"
+  },
+  "actions": [
+    {
+      "seq": 1,
+      "actionZh": "为首页首屏增加固定可见的开始按钮，并记录曝光与按下事件；以按下率达到百分之六十四为验收。",
+      "actionEn": "Add a persistently visible Start button above the fold and log impressions and presses; accept at a 64% press rate.",
+      "rationaleZh": "首页到按下开始为百分之五十八点五；首页退出占百分之三十四。",
+      "rationaleEn": "Homepage-to-Start conversion is 58.5%; the homepage accounts for 34% of exits.",
+      "impact": "high",
+      "effort": "S",
+      "metric": "首页→按下开始转化率：58.5%→64%",
+      "riskZh": "按钮可能挤压首页主要内容，需检查移动端首屏。",
+      "riskEn": "The button may crowd primary content; verify the mobile first viewport."
+    },
+    {
+      "seq": 2,
+      "actionZh": "在世界入口增加直达游记与谱册的可见入口；以进入世界后打开率达到百分之五十为验收。",
+      "actionEn": "Add a visible direct entry to travel logs and scorebooks in the world; accept at a 50% open rate.",
+      "rationaleZh": "进入世界后仅百分之四十三点五打开游记或谱册，流失一千三百四十八人。",
+      "rationaleEn": "Only 43.5% open a log or scorebook after entering the world; 1,348 sessions are lost.",
+      "impact": "high",
+      "effort": "M",
+      "metric": "进入世界→打开游记或谱册转化率：43.5%→50%",
+      "riskZh": "新增入口可能分散世界页面的核心操作。",
+      "riskEn": "The added entry may distract from the world page's primary action."
+    },
+    {
+      "seq": 3,
+      "actionZh": "排查谱册页误触并修复高频触发控件；以该页每周暴躁点击数低于一百七十为验收。",
+      "actionEn": "Audit accidental taps and fix frequently triggered controls on the scorebook page; accept below 170 weekly rage clicks.",
+      "rationaleZh": "谱册页记录到二百一十三次暴躁点击；需核对统计周期与去重口径。",
+      "rationaleEn": "The scorebook page records 213 rage clicks; verify the reporting period and deduplication method.",
+      "impact": "high",
+      "effort": "M",
+      "metric": "谱册页每周暴躁点击数：213→低于170",
+      "riskZh": "点击事件口径不一致会造成错误归因。",
+      "riskEn": "Inconsistent click-event definitions could lead to false attribution."
+    },
+    {
+      "seq": 4,
+      "actionZh": "为正文加入阅读进度与下一篇入口；以读完率达到百分之七十为验收。",
+      "actionEn": "Add reading progress and a next-article entry to body pages; accept at a 70% completion rate.",
+      "rationaleZh": "打开游记或谱册后读完率为百分之六十五点五，未读完三百五十八人。",
+      "rationaleEn": "After opening a log or scorebook, completion is 65.5%; 358 sessions do not finish.",
+      "impact": "medium",
+      "effort": "M",
+      "metric": "打开游记或谱册→读完正文转化率：65.5%→70%",
+      "riskZh": "进度提示可能促使快速滚动而非有效阅读。",
+      "riskEn": "Progress indicators may encourage scrolling without meaningful reading."
+    }
+  ],
+  "sensitivity": {
+    "zh": "首页跳出最敏感：均值百分之五十五点三，但近七日百分之一，矛盾须先核实。",
+    "en": "Homepage bounce is the key sensitivity: 55.3% mean conflicts with a flat 1% seven-day trend; verify first."
+  },
+  "usage": {
+    "cachedTokens": 0,
+    "statuses": [
+      200
+    ],
+    "calls": 1
+  }
+}

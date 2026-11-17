@@ -92,6 +92,16 @@ const STRINGS = {
   'priors.cached': { zh: 'cached_tokens', en: 'cached_tokens' },
   'priors.date': { zh: 'audited', en: 'audited' },
   'priors.note': { zh: 'authorOnly · runtime:false · LLM 裁决 · 人工闸后方可落库', en: 'authorOnly · runtime:false · LLM-authored · human gate required' },
+  'forecast.h2': { zh: '趋势研判 · Forecast', en: 'Trend Forecast · what to move next' },
+  'forecast.hint': { zh: 'LLM 读遥测快照（30 天 DAU / 漏斗 / 移动端占比），给出按优先级排序的 4 条可验收行动', en: 'LLM reads the telemetry snapshot (30-day sessions / funnel / mobile share) and emits 4 prioritised, acceptance-ready actions' },
+  'forecast.summary.h3': { zh: '走势概要', en: 'Summary' },
+  'forecast.cohort.h3': { zh: '最危险的人群', en: 'Riskiest cohort' },
+  'forecast.actions.h3': { zh: '四条行动 · 按优先级', en: 'Four actions, in order' },
+  'forecast.sensitivity.h3': { zh: '最敏感的假设', en: 'Most sensitive assumption' },
+  'forecast.calls': { zh: 'calls', en: 'calls' },
+  'forecast.cached': { zh: 'cached_tokens', en: 'cached_tokens' },
+  'forecast.date': { zh: 'forecasted', en: 'forecasted' },
+  'forecast.note': { zh: 'authorOnly · runtime:false · LLM 裁决 · 人工闸后方可落库', en: 'authorOnly · runtime:false · LLM-authored · human gate required' },
   'sg.h2': { zh: '状态图检查站 · StateGraph 实跑', en: 'StateGraph checkpoints · the real run' },
   'sg.hint': { zh: 'AI 导演引擎的真实运行轨迹——七节点 · 三个 LLM 边共享同一 system 前缀 · 产物过人工闸', en: 'The real trajectory of the AI Director engine — seven nodes · three LLM edges sharing one system prefix · artifacts pass the human gate' },
   'build.h2': { zh: '研发状态 · Build Observatory', en: 'Build Observatory · the repo’s vital signs' },
@@ -900,6 +910,55 @@ async function renderPriors() {
   document.querySelectorAll('.priors-overall-en').forEach((el) => { el.hidden = !isEn })
 }
 
+/* ─────────── 趋势研判（KI-645 · Forecast）─────────── */
+async function renderForecast() {
+  const root = document.getElementById('panel-forecast')
+  if (!root) return
+  const vEl = document.getElementById('forecast-actions')
+  const isEn = LANG === 'en'
+  let d
+  try {
+    const r = await fetch('./admin-trend-forecast.json', { cache: 'no-store' })
+    if (!r.ok) throw new Error('HTTP ' + r.status)
+    d = await r.json()
+  } catch (e) {
+    vEl.replaceChildren(makeEl('p', 'priors-err', T('读取 admin-trend-forecast.json 失败：', 'Failed to load admin-trend-forecast.json: ') + String(e?.message ?? e)))
+    return
+  }
+  /* 渲染 4 条 action */
+  const effortLabel = (e) => (isEn ? (e === 'S' ? 'small' : e === 'M' ? 'medium' : 'large') : (e === 'S' ? '小' : e === 'M' ? '中' : '大'))
+  const impactLabel = (i) => (isEn ? i.toUpperCase() : (i === 'high' ? '高影响' : i === 'medium' ? '中影响' : '低影响'))
+  vEl.replaceChildren(...(d.actions ?? []).map((a) => {
+    const row = makeEl('div', 'priors-row forecast-row')
+    const icon = makeEl('span', 'priors-icon', String(a.seq ?? '·'))
+    const content = makeEl('div', 'priors-content')
+    const title = makeEl('div', 'priors-title', isEn ? a.actionEn : a.actionZh)
+    const why = makeEl('p', 'priors-why', isEn ? a.rationaleEn : a.rationaleZh)
+    const meta = makeEl('div', 'forecast-meta')
+    meta.append(
+      makeEl('span', `forecast-badge forecast-impact-${a.impact || 'medium'}`, impactLabel(a.impact || 'medium')),
+      makeEl('span', `forecast-badge forecast-effort-${(a.effort || 'M').toLowerCase()}`, (a.effort || 'M') + ' · ' + effortLabel(a.effort || 'M')),
+      makeEl('span', 'forecast-metric', String(a.metric ?? '')),
+    )
+    const risk = makeEl('p', 'forecast-risk', T('风险：', 'Risk: ') + (isEn ? a.riskEn : a.riskZh))
+    content.append(title, why, meta, risk)
+    row.append(icon, content)
+    return row
+  }))
+  const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ?? '—' }
+  setText('forecast-summary-zh', d.summary?.zh)
+  setText('forecast-summary-en', d.summary?.en)
+  setText('forecast-cohort-zh', d.riskiestCohort?.zh)
+  setText('forecast-cohort-en', d.riskiestCohort?.en)
+  setText('forecast-sens-zh', d.sensitivity?.zh)
+  setText('forecast-sens-en', d.sensitivity?.en)
+  setText('forecast-calls', d.usage?.calls)
+  setText('forecast-cached', d.usage?.cachedTokens)
+  setText('forecast-date', String(d.generatedAt || '').slice(0, 10))
+  document.querySelectorAll('#panel-forecast .priors-overall-zh').forEach((el) => { el.hidden = isEn })
+  document.querySelectorAll('#panel-forecast .priors-overall-en').forEach((el) => { el.hidden = !isEn })
+}
+
 /* ─────────── 方法论 ─────────── */
 function renderMethod() {
   const m = TELEMETRY.meta
@@ -912,7 +971,7 @@ function renderMethod() {
 function renderAll() {
   renderKpis(); renderTrend(); renderFunnel(); renderChannels(); renderDevices()
   renderHours(); renderCohorts(); renderAnomalies(); renderExits(); renderRecs()
-  renderLive(); renderMethod(); renderAiCommitted(); hydrateAiLive(); renderStateGraph(); renderBuild(); renderPriors()
+  renderLive(); renderMethod(); renderAiCommitted(); hydrateAiLive(); renderStateGraph(); renderBuild(); renderPriors(); renderForecast()
 }
 function tickClock() {
   const t = new Date()

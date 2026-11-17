@@ -260,6 +260,29 @@
     </div>
   </article>
 
+  <!-- 🔮 欢迎来到趋势研判 · Forecast（KI-645）—— LLM 读遥测快照，按优先级给出 4 条可验收行动 -->
+  <article class="panel panel-wide panel-priors panel-forecast" id="panel-forecast" aria-labelledby="p-forecast">
+    <div class="panel-head">
+      <h2 id="p-forecast" data-i18n="forecast.h2">趋势研判 · Forecast</h2>
+      <span class="hint" data-i18n="forecast.hint">LLM 读遥测快照（30 天 DAU / 漏斗 / 移动端占比），给出按优先级排序的 4 条可验收行动</span>
+    </div>
+    <h3 data-i18n="forecast.summary.h3">走势概要</h3>
+    <p id="forecast-summary-zh" class="priors-overall-zh">—</p>
+    <p id="forecast-summary-en" class="priors-overall-en">—</p>
+    <h3 data-i18n="forecast.cohort.h3">最危险的人群</h3>
+    <p id="forecast-cohort-zh" class="priors-overall-zh">—</p>
+    <p id="forecast-cohort-en" class="priors-overall-en">—</p>
+    <h3 data-i18n="forecast.actions.h3">四条行动 · 按优先级</h3>
+    <div class="priors-verdicts" id="forecast-actions"></div>
+    <h3 data-i18n="forecast.sensitivity.h3">最敏感的假设</h3>
+    <p id="forecast-sens-zh" class="priors-overall-zh">—</p>
+    <p id="forecast-sens-en" class="priors-overall-en">—</p>
+    <div class="priors-foot">
+      <span><span data-i18n="forecast.calls">calls</span> <code id="forecast-calls">—</code> · <span data-i18n="forecast.cached">cached_tokens</span> <code id="forecast-cached">—</code> · <span data-i18n="forecast.date">forecasted</span> <code id="forecast-date">—</code></span>
+      <span class="priors-note" data-i18n="forecast.note">authorOnly · runtime:false · LLM 裁决 · 人工闸后方可落库</span>
+    </div>
+  </article>
+
   <!-- ⑫ 导出 —————————————————————————— -->
   <div class="export-bar">
     <button id="export-csv" type="button" class="btn-gold" data-i18n="export.csv">导出日数据 CSV</button>
