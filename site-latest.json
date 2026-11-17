@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "4bd865be19c4e6b9a0f0ba800704362ea9b4ab2f",
+  "head": "169ada21bf3ca29b6703f2c9898e5f4826c3ae45",
   "branch": "master",
-  "subject": "feat(story): KI-674《余响集》第四十三篇《未开之页 / The Unopened Page》落地（LLM 真机草稿 → 人工闸落库）",
-  "date": "2026-11-18T05:20:42+08:00",
+  "subject": "site-latest: 4bd865b (post-rebase reconcile)",
+  "date": "2026-11-18T05:21:47+08:00",
   "kv": {
     "KI.rows": 592,
     "KI.Implemented": 415,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/4bd865be19c4e6b9a0f0ba800704362ea9b4ab2f",
+    "url": "https://github.com/xiaodernan/caesura/commit/169ada21bf3ca29b6703f2c9898e5f4826c3ae45",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
