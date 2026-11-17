@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "022469982c87f2f819f06de6f72dfcafd4cbc6a9",
+  "head": "1eb0b270fd16a223324366bbdd6c171dd0919ba2",
   "branch": "master",
-  "subject": "feat(story): KI-659《余响集》第三十篇《窗台记数 / The Sill Keeps Count》落地（LLM 真机草稿 → 人工闸落库）",
-  "date": "2026-11-17T18:52:03+08:00",
+  "subject": "site-latest: 0224699 (post-rebase reconcile)",
+  "date": "2026-11-17T18:54:08+08:00",
   "kv": {
     "KI.rows": 577,
     "KI.Implemented": 400,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/022469982c87f2f819f06de6f72dfcafd4cbc6a9",
+    "url": "https://github.com/xiaodernan/caesura/commit/1eb0b270fd16a223324366bbdd6c171dd0919ba2",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
