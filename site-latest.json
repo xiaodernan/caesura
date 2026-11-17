@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "8f75b1acd5e21fcea602d40b58ffbb20790e223e",
+  "head": "e1b94dcf2c8eb3a9aede1e8ae7e325b518e3def5",
   "branch": "master",
-  "subject": "feat(story): KI-679《余响集》第四十八篇《未问之船 / The Unasked Boat》落地（LLM 真机草稿 → 人工闸落库）",
-  "date": "2026-11-18T07:55:38+08:00",
+  "subject": "site-latest: 8f75b1a (post-rebase reconcile)",
+  "date": "2026-11-18T07:56:59+08:00",
   "kv": {
     "KI.rows": 597,
     "KI.Implemented": 420,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/8f75b1acd5e21fcea602d40b58ffbb20790e223e",
+    "url": "https://github.com/xiaodernan/caesura/commit/e1b94dcf2c8eb3a9aede1e8ae7e325b518e3def5",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
