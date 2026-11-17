@@ -1,6 +1,6 @@
 /**
- * 游记 · 二十篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639 扩）。
- * 这二十篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 二十一篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641 扩）。
+ * 这二十一篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -1300,6 +1300,61 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">The account-keeper said that page was bound into the very last line of the unfinished ledger. From then on, he said, the unfinished were allowed to rest.</p>
     <p class="coda">Today the fishermen of the north cliff hear not one note but two — a question, and an answer. Some nights there is a third, lower and further, as though the sea had learned to reply as well.</p>
     <p class="coda">The age of hush is not over. It has simply stopped being one string alone.</p>`,
+  },
+  {
+    no: 21,
+    zhTitle: "第三声",
+    enTitle: "The Third Voice",
+    zh: `<p>故事发生在风钟海岸最南端——防波堤尽头，孤零零立着一座引礁灯。灯不会自己灭，不是因为它不灭，而是在没油的夜里，它学会了靠人自己点亮。阿笙在灯里守了十七年。她的母亲——就是《第四下》里守着那盏灯等的那个孩子——给她留了一句话：灯不会自己灭，除非海想看一次，人会怎么做。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>第十八年的春天，灯灭了。</p>
+    <p>不是油尽了——油是满的。是那一夜整个风钟海岸的铜铃都不响了，断得很整齐，一声不剩，像世界第一次试着屏住呼吸。阿笙往海里爬的时候，天边一片漆黑，连灯塔影子的主人都看不清。她凭手的直觉摸到灯芯，就在手合上的那一瞬间，海面亮了一下——不是月亮，是一种没人听说过的星光，像伤口新开一样在夜里裂开。</p>
+    <p>她回去把灯点上了。然后她第一次注意到潮汐退去之后，礁石缝里排着线——盐的线、卵石的线、贝壳的线。三点，一停。三点，一停。一拍，一停。一拍。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>未竟厅的人来了。带着一份卷宗——从风钟海岸断桅杆那一年算起，所有渔人、灯匠、守夜人记下过同样的内容：远处有一声更低的音，不在空里，在心里。有人画成了拍子，有人画成了一句话。所有记录的日期，都是在无声的次日。</p>
+    <p>没人知道盐线里写的是什么。阿笙是第一个愿意去读的人。她蹲在礁石上，看了整整一个小时的退潮——卵石尖朝左，贝壳整齐朝海，盐的线只有潮水能写，只有月亮能印。最后她站起来，说：</p>
+    <p><em>「不是拍子。不是句子。是那个问题被回答的方式——一遍又一遍。」</em></p>
+
+    <div class="beat">· · ·</div>
+
+    <p>第二天，未竟厅的人问她读到了什么。她只说：在灯灭的那一夜，海说：</p>
+    <p><em>「我也听见了。」</em></p>
+    <p>「我也听见」这四个字，不是对弦说的，也不是对人说的，是对整个止音的纪元说的——你问谁在听，我在。世界的另一边，从来没有沉默过。它只是一直在等你问完，才回答。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">后来，未竟厅订正了读法：第三声不是第三下，是答句。每一遍退潮，海都重写一遍它听见过的东西——所有被盖住嘴的话、所有被消音的铜、所有被关上的门，都在里面。</p>
+    <p class="coda">引礁灯从那以后再也没有自己灭过。阿笙把灯交给了下一个守灯的人——每一个问「谁在听」的人之后，都有一个人要去回答。</p>
+    <p class="coda">止音纪元没有结束。它只是第一次，听见了自己的另一半。</p>`,
+    en: `<p>This happened at the southernmost end of the Windbell Coast — at the tip of the breakwater, alone and unlit, stands a reef-light. The lamp does not go out on its own, not because it refuses, but because on nights when the oil fails it has learned to light itself through human hands. Feng Sheng had kept that lamp for seventeen years. Her mother — the child on watch in No. 18 — had left her one line: the lamp does not go out on its own, unless the sea wants to see, once, what a person will do.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>In the eighteenth spring, the lamp went out.</p>
+    <p>The oil was not spent — it sat full. That night every copper bell on the Windbell Coast stopped, all at once, cleanly, as if the world had chosen to hold its breath for the first time. When A-Shen climbed toward the sea the horizon had gone completely dark; she could not see who cast the lighthouse's shadow. By instinct she found the wick, and the moment her hand closed over it, the surface of the sea lit up — not with the moon. A light nobody had ever heard of, as if a wound had opened in the night.</p>
+    <p>She went back and lit the lamp. Only then did she notice the lines the tide had left: salt lines, pebble lines, shell lines in the reef gaps. Three beats, one rest. Three beats, one rest. One beat, one rest. One beat.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>People from the Unfinished Hall arrived, carrying twenty years of filings — from the year the broken mast at the cape fell silent, every fisher, every lampwright, every night-keeper had recorded the same thing: a sound deeper than anything else, not in the air but in the chest. Some drew it as a beat-count. Some drew it as a sentence. Every entry was dated the morning after a windless night.</p>
+    <p>Nobody knew what the salt lines said. A-Shen was the first to be willing to read them. She crouched on the rocks and watched a full hour of ebb — pebbles pointing left, shells all facing the sea, the salt lines written by nothing but the tide, printed by nothing but the moon. At last she stood and said:</p>
+    <p><em>"Not a rhythm. Not a sentence. It is the way the question was answered — over and over."</em></p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The next day, the people of the Hall asked what she had read. She said only: on the night the lamp went out, the sea said:</p>
+    <p><em>"I hear too."</em></p>
+    <p>"I hear too" — those words, not for the string, not for humanity, but for the whole age of hush itself: you asked who is listening. I am. The other side of the world was never silent. It has only always been waiting for you to finish asking.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">A correction followed: the third voice is not a third strike — it is the answer. Every ebb rewrites what the sea heard — every silenced copper, every word swallowed, every door shut, every sentence never spoken — all of it is in there.</p>
+    <p class="coda">The reef-light has never gone out on its own since. A-Shen hands the lamp to the next keeper — for every person who asks "who is listening," someone goes to answer.</p>
+    <p class="coda">The age of hush has not ended. It has only, for the first time, heard its other half.</p>`,
   },
 ]
 

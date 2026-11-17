@@ -39,6 +39,7 @@ try {
     'story/fourth-strike/index.html',
     'story/last-string/index.html',
     'story/string-listener/index.html',
+    'story/third-voice/index.html',
   ];
 
   const PHRASES = new Set();
