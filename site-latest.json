@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "7d1fc073d255d8045061b8118cfacd7f46f94ce7",
+  "head": "da090d3d1d1e5a38e8e01ed30343d1ceabeb04fe",
   "branch": "master",
-  "subject": "site-latest: 37c1df5 (post-rebase reconcile)",
-  "date": "2026-11-17T09:12:58+08:00",
+  "subject": "feat(admin): KI-636 先验审计 · Priors Audit + npm ai:priors",
+  "date": "2026-11-17T09:35:47+08:00",
   "kv": {
-    "KI.rows": 553,
-    "KI.Implemented": 376,
+    "KI.rows": 554,
+    "KI.Implemented": 377,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -16,7 +16,7 @@
     "SYS.Blocked": 0,
     "ARCH.sections": 202,
     "ARCH.holes": "none",
-    "PKG.scripts": 86
+    "PKG.scripts": 87
   },
   "suites": {
     "consoleUi": 150,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/7d1fc073d255d8045061b8118cfacd7f46f94ce7",
+    "url": "https://github.com/xiaodernan/caesura/commit/da090d3d1d1e5a38e8e01ed30343d1ceabeb04fe",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
