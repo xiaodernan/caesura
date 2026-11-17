@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "190f0aa671f76cddb8f15303b020ca9f703c8268",
+  "head": "b829547c341382f1f370f0c2ee9727ae5938acd6",
   "branch": "master",
-  "subject": "chore(ai): KI-669 收尾 - 发布后真机重跑（canon=3481 · 4x[200] · cached=109,873 · errors=0 · flags 全 canon）自洽产出 No.39《秤影》草稿（留待下一个 KI 人工闸落库）+ ai-director.test.ts gate draft.no 39",
-  "date": "2026-11-18T02:36:21+08:00",
+  "subject": "site-latest: 190f0aa (post-rebase reconcile)",
+  "date": "2026-11-18T02:37:14+08:00",
   "kv": {
     "KI.rows": 587,
     "KI.Implemented": 410,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/190f0aa671f76cddb8f15303b020ca9f703c8268",
+    "url": "https://github.com/xiaodernan/caesura/commit/b829547c341382f1f370f0c2ee9727ae5938acd6",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
