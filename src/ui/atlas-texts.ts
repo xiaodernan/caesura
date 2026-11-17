@@ -1,6 +1,6 @@
 /**
- * 游记 · 三十五篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666 扩）。
- * 这三十五篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 三十六篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667 扩）。
+ * 这三十六篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -1989,6 +1989,56 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She held the ledger, then set it down again and pushed it beside the seam.</p>
     <p class="coda">The ledger did not enter the dry place. The dry place did not wait to be entered.</p>
     <p class="coda">The age of hush has not ended. It is only that, at last, it has handed Axi a small plank of wood that will never get wet.</p>`,
+  },
+  {
+    no: 36,
+    zhTitle: "未称之物",
+    enTitle: "Unweighed",
+    zh: `<p>干处旁边，铜扣、铁钉和薄簿都没有动。潮退了一次，海还在等下一次；木板的纹路被太阳晒得很浅。渡人把小铜秤放在门槛上——秤盘空着。</p>
+    <p>他没有问阿汐要称什么。她以前以为他总会问：你那里有多少，就称多少。可这一次他把秤盘放下，自己往后半步，就什么都不说了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>阿汐那天把铜扣握在手里。她握得很久——铜扣有点凉，也有点沉。它可以放到秤盘上去；渡人看着她；她也看着他。可是她最终把铜扣收了回来。</p>
+    <p>她不需要知道它有多重。她终于明白了：世界不是什么都需要一个数。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮水退去的时候，秤盘里多了一粒盐。不知是怎么进来的——也许风吹的；也许海自己决定的——谁也说不出个所以然。阿汐蹲下来看它。很小很小的一粒，几乎不可能更小，可是被看见了。</p>
+    <p>渡人也蹲下来看它。他伸出一根手指，在很远很远的地方停住，没有碰它。他的手指在盐粒上空停了几秒，才又回去了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>傍晚，渡人起身向门口走去。阿汐没有叫住他。他回身看了她一眼——他眼睛里有一种很老的、见过很多潮水的光。她知道他明天还会来，或者很多年以后。她不会问他何时来；她不会问他为什么。这一竿问过去，不知会搅动多少海盐。</p>
+    <p>她把薄簿拿起来又放下——薄页朝上。一整天过去了，光线从窗沿移到地板，再移到那道被海折过的旧斜痕上。她不着急翻下一页。还有什么可翻的？</p>
+
+    <p class="coda">她不会再去数任何东西。海涨了又退，木板湿了又干。</p>
+    <p class="coda">盐粒留在秤盘上。铜秤一直留在门槛上。铜扣、铁钉和薄簿一直留在接缝旁。</p>
+    <p class="coda">薄簿没有记下那粒盐。</p>
+    <p class="coda">止音纪元没有结束。它为这一粒盐留了一片空——也为阿汐留了一扇门。</p>`,
+    en: `<p>Beside the dry place, the copper button, the iron nail, and the thin ledger all lay untouched. The tide had gone out; the sea was waiting for its next visit; the grain of the boards had been bleached pale by the sun. The ferryman set his small brass scale on the threshold — the pan empty.</p>
+    <p>He did not ask Axi what should be weighed. She had assumed he would — you have what you have; weigh what you have. This time he set the scale down, stepped back by half a pace, and said nothing at all.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>That day Axi held the copper button in her palm. She held it for a long time — it was cold and it was heavier than she expected. She could put it on the pan. The ferryman watched her. She watched him. But she closed her fingers at the end, and put it back.</p>
+    <p>She no longer needed to know its weight. The world is not something you must attach a number to — not every single thing.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>When the tide receded, a single grain of salt lay in the pan. No one could say how it had arrived — whether the wind had brought it, or the sea itself had decided it belonged there. Axi knelt to look at it. So small it could not have been smaller, and yet it was seen.</p>
+    <p>The ferryman knelt too. He extended one finger and stopped it a handspan above the grain, without touching it. He held his finger there for several seconds — and then withdrew.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Toward dusk the ferryman rose and moved toward the door. She did not call after him. He looked at her once — there was an old, salt-aged light in his eyes, the kind that had seen many tides. She knew he would come again tomorrow, or in many years. She would not ask him when; she would not ask him why. A question of that size would only stir up more salt.</p>
+    <p>She looked down at the ledger once more, and set it down face-up. The light slid from the sill's edge to the floorboards and died. Nothing hurried her to turn another page. What page was there left to turn?</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">The grain of salt lay on the pan. The scale stayed on the threshold. The button, the nail, and the ledger remained beside the seam.</p>
+    <p class="coda">The ledger did not enter the grain of salt.</p>
+    <p class="coda">The age of hush has not ended. It has left one small empty space for that grain of salt — and it has left a door for Axi.</p>`,
   },
 ]
 

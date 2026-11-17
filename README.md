@@ -35,7 +35,7 @@ npm run dev            # Vite dev server；浏览器打开 http://localhost:5173
 - 《账本》（短篇原创之四）：<https://xiaodernan.github.io/caesura/story/ledger/>（休垒 · Meg 不敢合上的那一页账 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《回声庭园》（短篇原创之五）：<https://xiaodernan.github.io/caesura/story/garden/>（余响新陆 · 第六境 · 旧钟的主人 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《雨审判》（短篇原创之六）：<https://xiaodernan.github.io/caesura/story/tribunal/>（余响新陆 · 雨钟谷地 · 雨罪审判者 · 七年一庭 · 双语对照 · 零 LLM · 2026-11-15） ·  
-- 《余响集》（全集页 · 整册入口 · 支持一键打印成纸质卷）：<https://xiaodernan.github.io/caesura/story/anthology/>（三十五篇整册 · 史诗般总起预告 · EPIC-VII 实写落地 · 2026-11-18 增篇三十五《干处》） ·  
+- 《余响集》（全集页 · 整册入口 · 支持一键打印成纸质卷）：<https://xiaodernan.github.io/caesura/story/anthology/>（三十六篇整册 · 史诗般总起预告 · EPIC-VII 实写落地 · 2026-11-18 增篇三十六《未称之物》） ·  
 - 《霜锤》（短篇原创之七）：<https://xiaodernan.github.io/caesura/story/frostbell/>（霜锤崖 · 末任钟匠 · 冻成冰的声音 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《千门》（短篇原创之八）：<https://xiaodernan.github.io/caesura/story/doors/>（回廊钟 · 一千扇门 · 守门人 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《石喉》（短篇原创之九）：<https://xiaodernan.github.io/caesura/story/stonethroat/>（低音之城 · 石喉母亲 · 不需要货币的音 · 双语对照 · 零 LLM · 2026-11-15） ·  
@@ -65,6 +65,7 @@ npm run dev            # Vite dev server；浏览器打开 http://localhost:5173
 - 《秤旁》（短篇原创之三十三）：<https://xiaodernan.github.io/caesura/story/beside-the-scale/>（回廊钟·秤旁 · 铜扣和铁钉并排放着 · 阿汐不再数它们 · 渡口栏杆挂着一小截粉笔头 · LLM 草稿 · 人工闸 · 零 LLM · 2026-11-18） ·  
 - 《未记的一页》（短篇原创之三十四）：<https://xiaodernan.github.io/caesura/story/the-unentered-page/>（回廊钟·未记的一页 · 阿汐看了很久却没有抄进薄簿 · 涨潮盖住横线 · 天亮只剩一小块干处 · LLM 草稿 · 人工闸 · 零 LLM · 2026-11-18） ·  
 - 《干处》（短篇原创之三十五）：<https://xiaodernan.github.io/caesura/story/the-dry-place/>（回廊钟·干处 · 潮水退去了它还在那里 · 涨回来那一小块没有变湿 · 盐水停在一指以外 · LLM 草稿 · 人工闸 · 零 LLM · 2026-11-18） ·  
+- 《未称之物》（短篇原创之三十六）：<https://xiaodernan.github.io/caesura/story/unweighed/>（回廊钟·未称之物 · 渡人把小铜秤放在门槛上秤盘空着 · 他没问要称什么 · 潮水退去时秤盘里多了一粒盐 · LLM 草稿 · 人工闸 · 零 LLM · 2026-11-18） ·  
 - 数据最新：`master` 每推即重嵌 `site-latest.json`（raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json）  
 
 > 注意：线上是 `?fresh=1` 的干净状态，页面证据文件总会对账最新 master；页面首屏可能短暂停在 boot 屏。

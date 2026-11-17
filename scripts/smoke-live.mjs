@@ -78,6 +78,7 @@ const ENDPOINTS = [
   { name: 'story-34', url: 'https://xiaodernan.github.io/caesura/story/beside-the-scale/', marker: '秤旁' },
   { name: 'story-35', url: 'https://xiaodernan.github.io/caesura/story/the-unentered-page/', marker: '未记的一页' },
   { name: 'story-36', url: 'https://xiaodernan.github.io/caesura/story/the-dry-place/', marker: '干处' },
+  { name: 'story-37', url: 'https://xiaodernan.github.io/caesura/story/unweighed/', marker: '未称之物' },
   { name: 'ai-json-commit', url: 'https://xiaodernan.github.io/caesura/admin/ai-director-latest.json', marker: '"authorOnly": true' },
   { name: 'ai-json-qa', url: 'https://xiaodernan.github.io/caesura/admin/ai-director-transitions-qa.json', marker: '"authorOnly": true' },
 ]
