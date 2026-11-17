@@ -1,6 +1,6 @@
 /**
- * 游记 · 二十六篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651 扩）。
- * 这二十六篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 二十七篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652 扩）。
+ * 这二十七篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -1576,6 +1576,59 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">Axi did not speak of it. She ran down to the cliff — the sea was breathing as always — but tonight the sea's breath held a clarity that did not belong to it.</p>
     <p class="coda">On the bag she wrote three characters: I am here. She left it open, because she did not know who had been listening, or to whom she was answering.</p>
     <p class="coda">The age of hush has not ended. It has simply at last produced an empty tack — all the bells that once were struck want to find their way back.</p>`,
+  },
+  {
+    no: 27,
+    zhTitle: "纸袋之后",
+    enTitle: "After the Bag",
+    zh: `<p>桌边空着。铜扣的影子早没了，空钉也不在了——它现在住在纸袋里，袋口压着那行字。阿汐把纸袋放在膝盖上，没有添字。</p>
+    <p>那几天她常常打开袋子，再合上。不是为了看那行字——她比谁都清楚那三个字长什么样——她是在听它是不是比昨天轻一点。袋里只有纸，纸比空气重那么一点点；那一点点不肯变。海风进不来，她也没有让它进来。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>阿沉在门边的旧纸上又添了一行。他不敢用笔——笔会留下犹豫的痕迹；他用粉笔，因为粉笔会停在半空。他只写了一个字：听。写完他退后一步，看了很久，没有再写第二个字。</p>
+    <p>风从北崖方向来的时候，石板上那个「听」字晃了一下。不是风吹的——风不会认字。晃的是它自己。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>夜里她梦见海。那片海不是海，是一只很大的纸袋——大到能装下所有敲过的钟的回声。袋子的口绕了很多圈，在顶端打了一个很浅的结，浅到随时可以解开。</p>
+    <p>醒来以后，她发现枕头边到窗台之间多了一条细细的盐线。她没有擦它。她顺着那条盐线走到门边，把纸袋放在地上。</p>
+    <p>她终于开口了——不是说「听留下」，而是问：我可以回答吗？没有人回答。门没有动；纸袋的绳结也没有动。问句落在屋里，屋里把它接住了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>阿汐把袋子重新系了一次。新打的结更浅。她用粉笔在袋子上画了一个句号——和石板上那个一模一样——画完她笑了一下：这个句号里面没有字。</p>
+    <p>海风又起的那天晚上，门自己开了一条缝。纸袋没有动，袋口还是压着那行字；那行字还是没有变。门开了一条缝——刚好够风进去，不够别的东西出去，也不够进来。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">纸袋一直留在门边。袋口没有合严——风进去过，字没有变。</p>
+    <p class="coda">阿汐每晚把手放在袋子上，听一听那一点点重量还在不在。它在。</p>
+    <p class="coda">止音纪元没有结束。它只是在练习：留一条缝，让风自己决定要不要进来。</p>`,
+    en: `<p>The space beside the table was empty. The button's shadow was gone; the empty tack was gone too — it now lived inside the paper bag, its mouth folded over the line of characters. Axi kept the bag in her lap and added no words.</p>
+    <p>Those days she often opened the bag and closed it again. Not to reread the three characters — she knew their strokes better than anyone — but to check whether they had grown lighter overnight. The bag held only paper, which weighed a touch more than air; that touch refused to change. The sea wind could not enter, and she did not let it.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>A-Chen tried one more line on the old sheet by the door. He dared not reach for a pen — a pen would have recorded his hesitation; he reached for chalk, because chalk can stop mid-air. He wrote a single character: 听 (to listen). Then he stepped back and watched it for a long while, and did not write a second.</p>
+    <p>When the wind came down from the north cliff, the 听 on the slate quivered. Not from the wind — wind does not read. It quivered on its own.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>That night she dreamed of the sea. It was not the sea; it was an enormous paper bag, wide enough to hold the echo of every bell ever struck. Its mouth was wound many times over, and tied at the crown with a knot so shallow it could come loose at any moment.</p>
+    <p>She woke to a thin trail of salt running from her pillow to the windowsill. She did not wipe it away. She followed the salt to the door and set the bag on the floor.</p>
+    <p>At last she spoke — not "Listening remains", but a question: May I answer? No one answered. The door did not move; the knot did not move. The question settled in the room, and the room took it in.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Axi tied the bag once more. The new knot was shallower still. With chalk she drew a period on the bag's face — the same shape as the one on the slate — and smiled as she finished: this period held no character inside it.</p>
+    <p>On the night the sea wind rose again, the door opened a finger's width by itself. The bag did not move; its mouth still pressed down on the line of characters, and the characters had not changed. The door opened a finger's width — just enough for wind to enter, not enough for anything else to leave, and not enough to come in.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">The bag stayed by the door. The mouth never sealed — the wind had been inside, the characters had not changed.</p>
+    <p class="coda">Each night she rested a hand on the bag, listening for the small extra weight. It was there.</p>
+    <p class="coda">The age of hush has not ended. It is only practicing: to leave a seam, and let the wind decide whether it wants to come through.</p>`,
   },
 ]
 

@@ -6,78 +6,79 @@
   "requiresHumanReview": true,
   "schema": 1,
   "mode": "live",
-  "generatedAt": "2026-11-17T07:18:46.516Z",
+  "generatedAt": "2026-11-17T07:44:51.687Z",
   "model": "gpt-6.1-terra",
   "endpoint": "https://api.aizzz.xyz/v1",
-  "focus": "第二十五篇《铜扣旁》之后 · 下一篇原创短篇",
-  "corpusSize": 1969,
+  "focus": "第二十六篇《线外》之后 · 下一篇原创短篇",
+  "corpusSize": 2069,
   "canon": [
     {
       "rank": 1,
-      "score": 58.369,
-      "preview": "[短篇][story/anthology] 第二十五篇《铜扣旁》——粉线还在，铜扣停在了线外，阿汐替他按下了——"
+      "score": 45.897,
+      "preview": "[短篇][story/anthology] 第二十六篇《线外》——桌边一枚空钉，阿汐把它收进纸袋，海带走了它，纸袋里多了一行字：听留下——"
     },
     {
       "rank": 2,
-      "score": 38.018,
-      "preview": "[短篇][story/beside-the-button] 铜扣旁 / Beside the Button — CAESURA · 余响集 · 第二十五篇"
+      "score": 32.265,
+      "preview": "[短篇][story/beyond-the-line] 线外 / Beyond the Line — CAESURA · 余响集 · 第二十六篇"
     },
     {
       "rank": 3,
-      "score": 23.1,
+      "score": 22.822,
       "preview": "[短篇][story/after-half-a-chime] 半声之后 / After Half a Chime — CAESURA · 余响集 · 第二十四篇"
     },
     {
       "rank": 4,
-      "score": 22.476,
+      "score": 22.24,
       "preview": "[短篇][story/anthology] 第二十一篇《第三声》——灯灭了的那一夜，海说：我也听见了——"
     },
     {
       "rank": 5,
-      "score": 20.68,
-      "preview": "[短篇][story/anthology] 第十五篇《低音之城》——欠账只能用听来抵——"
+      "score": 21.518,
+      "preview": "[短篇][story/anthology] 第二十五篇《铜扣旁》——粉线还在，铜扣停在了线外，阿汐替他按下了——"
     },
     {
       "rank": 6,
-      "score": 19.82,
+      "score": 19.56,
       "preview": "[短篇][story/anthology] 第二十四篇《半声之后》——门都合上了，没敲过的钟的按钮自己往前挪——"
     },
     {
       "rank": 7,
-      "score": 19.18,
+      "score": 18.906,
       "preview": "[短篇][story/third-voice] 第三声 / The Third Voice — CAESURA · 余响集 · 第二十一篇"
     },
     {
       "rank": 8,
-      "score": 18.43,
-      "preview": "[短篇][story/anthology] 《止音纪元》· 原创短篇全集 · 双语对照"
+      "score": 18.832,
+      "preview": "[短篇][story/anthology] 第十六篇《钟摆渡人》——完成一件从不曾被完成的事，本身就是完成——"
     },
     {
       "rank": 9,
-      "score": 16.526,
-      "preview": "[短篇][story/anthology] 余响集 / CAESURA: Stories — The Epoch of Hush 原创短篇全集 · CAESURA"
+      "score": 18.406,
+      "preview": "[短篇][story/anthology] 《止音纪元》· 原创短篇全集 · 双语对照"
     },
     {
       "rank": 10,
-      "score": 16.272,
-      "preview": "[短篇][story/anthology] 约 7 分钟 · 回廊钟 · 铜扣旁 · 余响"
+      "score": 16.494,
+      "preview": "[短篇][story/anthology] 余响集 / CAESURA: Stories — The Epoch of Hush 原创短篇全集 · CAESURA"
     }
   ],
   "worldSnapshot": {
     "date": "2026-11-17",
     "phaseStatus": {
-      "KIrows": 568,
-      "KIImplemented": 391,
+      "KIrows": 569,
+      "KIImplemented": 392,
       "SYSImplemented": 73,
       "ARCHSections": 202
     },
-    "atlasEntries": 25,
-    "storyChapters": 25,
+    "atlasEntries": 26,
+    "storyChapters": 26,
     "storyList": [
       "after-half-a-chime",
       "anthology",
       "bell-picker",
       "beside-the-button",
+      "beyond-the-line",
       "dark-tide",
       "doors",
       "echo-vale",
@@ -108,112 +109,126 @@
     "npcs": 7
   },
   "audit": {
-    "consistency": 35,
-    "verdictZh": "现有证据仅支持末两篇的少量摘要，无法核验整体世界现状或设定一致性。",
-    "verdictEn": "The evidence only summarizes parts of the final two stories, so overall world-state consistency cannot be verified.",
+    "consistency": 48,
+    "verdictZh": "快照提供了规模统计，但检索证据仅覆盖少数篇章，无法核验整体世界状态的一致性。",
+    "verdictEn": "The snapshot gives inventory counts, but the excerpts are too limited to verify overall world-state consistency.",
     "risks": [
       {
         "severity": "high",
-        "itemZh": "整体设定缺少可核验证据",
-        "itemEn": "Insufficient evidence for the wider canon",
-        "detailZh": "检索片段未覆盖世界设定、叙事规则及多数游记内容。",
-        "detailEn": "The excerpts do not cover the world bible, narrative rules, or most travelogues."
+        "itemZh": "全局状态缺乏证据",
+        "itemEn": "No evidence for global state",
+        "detailZh": "检索片段未覆盖569行KI、392项实现或202章ARCH的内容与状态。",
+        "detailEn": "The excerpts do not substantiate the KI, implementation, or ARCH counts or states."
       },
       {
         "severity": "med",
-        "itemZh": "按钮移动的因果未明",
-        "itemEn": "The button's movement has no established cause",
-        "detailZh": "摘要称按钮自行前移，但未提供正文或解释，不能据此推定机制。",
-        "detailEn": "The summary says the button moved by itself, but provides no text or explanation establishing a mechanism."
+        "itemZh": "篇目对应关系不完整",
+        "itemEn": "Incomplete story mapping",
+        "detailZh": "片段只点名少数篇章，无法核对26篇名单与篇次、标题是否一致。",
+        "detailEn": "Only a few stories are named, so the 26-entry list and ordering cannot be verified."
       },
       {
         "severity": "med",
-        "itemZh": "铜扣动作与后果不明",
-        "itemEn": "The button press and its consequences are unclear",
-        "detailZh": "摘要仅称阿汐按下铜扣，未说明对象、过程或世界状态变化。",
-        "detailEn": "The summary only says Axi pressed the button; its target, process, and consequences are unspecified."
+        "itemZh": "系统与角色统计未获支持",
+        "itemEn": "System and character counts unsupported",
+        "detailZh": "证据没有对话树、旗标、NPC或系统实现数量的说明。",
+        "detailEn": "The excerpts do not describe dialogue trees, flags, NPCs, or system implementation counts."
       }
     ],
     "gapsZh": [
-      "缺少两篇相关游记的完整正文。",
-      "缺少世界规则与当前状态的直接证据。"
+      "缺少完整世界状态与KI条目证据。",
+      "缺少26篇游记及篇次的完整索引。",
+      "缺少对话树、旗标和NPC的相关证据。"
     ],
     "gapsEn": [
-      "Full texts of the two related stories are missing.",
-      "Direct evidence for world rules and current state is missing."
+      "Full world-state and KI entry evidence is missing.",
+      "A complete index of all 26 stories and their order is missing.",
+      "Evidence for dialogue trees, flags, and NPCs is missing."
     ]
   },
   "transitions": [
     {
-      "fromZh": "第二十五篇《铜扣旁》：粉线仍在，铜扣停在线外",
-      "fromEn": "Story 25, Beside the Button: the thread remains; the button rests beyond the line",
-      "toZh": "阿汐已替他按下铜扣",
-      "toEn": "Axi has pressed the button for him",
-      "flag": "flag.proposed.button_pressed_by_axi",
+      "fromZh": "未记录按钮自行前移",
+      "fromEn": "button_shift_unrecorded",
+      "toZh": "已记录未敲之钟按钮前移",
+      "toEn": "unstruck_bell_button_shift_recorded",
+      "flag": "flag.proposed.button_shift_recorded",
+      "narrativeZh": "门已合上，按钮仍向前挪；记录留下这一变化。",
+      "narrativeEn": "The doors are shut, yet the button moves forward; the change is recorded.",
+      "npcReactionZh": "旁人确认门已合上。",
+      "npcReactionEn": "A nearby witness confirms the doors are shut.",
+      "atlasHookZh": "未敲之钟的按钮",
+      "atlasHookEn": "The unstruck bell's button",
       "requiresHumanReview": true,
-      "narrativeZh": "铜扣越过粉线，按下的动作留下了新的记录。",
-      "narrativeEn": "The button crosses the thread, and the press becomes a new record.",
-      "npcReactionZh": "阿汐完成了按下铜扣的动作。",
-      "npcReactionEn": "Axi completes the press.",
-      "atlasHookZh": "粉线之外的铜扣",
-      "atlasHookEn": "The button beyond the thread"
+      "canonEvidence": [
+        "短篇证据6：第二十四篇《半声之后》——门都合上了，没敲过的钟的按钮自己往前挪。"
+      ]
     },
     {
-      "fromZh": "第二十四篇《半声之后》：门都合上，未敲钟的按钮自行前移",
-      "fromEn": "Story 24, After Half a Chime: the doors are shut; the unstruck bell's button moves forward by itself",
-      "toZh": "按钮前移已被见证，尚未敲响",
-      "toEn": "The button's movement has been witnessed; the bell remains unstruck",
-      "flag": "flag.proposed.unstruck_button_witnessed",
+      "fromZh": "粉线与铜扣尚未记录越线结果",
+      "fromEn": "powder_line_and_button_outcome_unrecorded",
+      "toZh": "已记录铜扣停在线外并被按下",
+      "toEn": "button_outside_line_and_pressed_recorded",
+      "flag": "flag.proposed.button_outside_line_pressed",
+      "narrativeZh": "铜扣停在线外，阿汐替他按下；记录保留粉线与结果。",
+      "narrativeEn": "The button stops beyond the powder line, and Axi presses it for him; both are recorded.",
+      "npcReactionZh": "阿汐完成按下。",
+      "npcReactionEn": "Axi presses the button.",
+      "atlasHookZh": "粉线外的铜扣",
+      "atlasHookEn": "The button beyond the powder line",
       "requiresHumanReview": true,
-      "narrativeZh": "见证者记录按钮的位置变化，没有人替它补上钟声。",
-      "narrativeEn": "A witness records the button's movement; no one supplies the missing chime.",
-      "npcReactionZh": "在场者留下按钮前移的记录。",
-      "npcReactionEn": "Those present record the button's movement.",
-      "atlasHookZh": "未敲响的按钮",
-      "atlasHookEn": "The unstruck button"
+      "canonEvidence": [
+        "短篇证据5：第二十五篇《铜扣旁》——粉线还在，铜扣停在了线外，阿汐替他按下了。"
+      ]
     },
     {
-      "fromZh": "第二十一篇《第三声》：灯灭之夜，海说自己也听见了",
-      "fromEn": "Story 21, The Third Voice: on the night the light went out, the sea said it had heard it too",
-      "toZh": "海的听见被记入第三声的见证",
-      "toEn": "The sea's hearing is entered as testimony to the third voice",
-      "flag": "flag.proposed.sea_heard_third_voice",
+      "fromZh": "空钉尚未收存",
+      "fromEn": "empty_nail_not_kept",
+      "toZh": "空钉入纸袋且纸袋多一行字",
+      "toEn": "empty_nail_bagged_with_a_new_line",
+      "flag": "flag.proposed.empty_nail_listen_line",
+      "narrativeZh": "阿汐把空钉收进纸袋；海带走它，袋里多了一行字：听留下。",
+      "narrativeEn": "Axi puts the empty nail in a paper bag. The sea takes it, and a line appears: Listen to what remains.",
+      "npcReactionZh": "纸袋留下“听留下”一行字。",
+      "npcReactionEn": "The bag bears the line, “Listen to what remains.”",
+      "atlasHookZh": "空钉与纸袋里的字",
+      "atlasHookEn": "The empty nail and the line in the bag",
       "requiresHumanReview": true,
-      "narrativeZh": "海的回应成为另一份听见的陈述，不替代原有见证。",
-      "narrativeEn": "The sea's reply becomes another account of hearing, without replacing the first.",
-      "npcReactionZh": "记录者把海的陈述并入见证。",
-      "npcReactionEn": "The recorder adds the sea's account to the testimony.",
-      "atlasHookZh": "海也听见了",
-      "atlasHookEn": "The sea heard it too"
+      "canonEvidence": [
+        "短篇证据1：第二十六篇《线外》——桌边一枚空钉，阿汐把它收进纸袋，海带走了它，纸袋里多了一行字：听留下。"
+      ]
     },
     {
-      "fromZh": "低音之城：欠账只能用听来抵",
-      "fromEn": "Lowtone City: debts can only be repaid by listening",
-      "toZh": "一笔欠账以一次聆听抵偿",
-      "toEn": "One debt is settled through an act of listening",
-      "flag": "flag.proposed.lowtone_debt_listened",
+      "fromZh": "一件从未完成之事仍未完成",
+      "fromEn": "never-completed_task_still_open",
+      "toZh": "该事被记为完成",
+      "toEn": "task_recorded_as_complete",
+      "flag": "flag.proposed.never_completed_task_complete",
+      "narrativeZh": "一件从不曾被完成的事被完成；完成本身成为记录。",
+      "narrativeEn": "A task that had never been completed is completed; the act itself becomes the record.",
+      "npcReactionZh": "世界留下这件事已完成的记录。",
+      "npcReactionEn": "The world records the task as complete.",
+      "atlasHookZh": "从未完成之事的完成",
+      "atlasHookEn": "Completion of what was never completed",
       "requiresHumanReview": true,
-      "narrativeZh": "债务不以物件清偿；一次聆听成为抵账的记录。",
-      "narrativeEn": "No object settles the debt; an act of listening is recorded as payment.",
-      "npcReactionZh": "城中账目记下这次聆听抵偿。",
-      "npcReactionEn": "The city's ledger records listening as payment.",
-      "atlasHookZh": "以聆听抵账",
-      "atlasHookEn": "Listening as payment"
+      "canonEvidence": [
+        "短篇证据8：第十六篇《钟摆渡人》——完成一件从不曾被完成的事，本身就是完成。"
+      ]
     }
   ],
   "atlasDraft": {
-    "no": 26,
-    "titleZh": "线外",
-    "titleEn": "Beyond the Line",
-    "pZh": "铜扣落下后，粉线没有动。桌边多了一枚空钉，没人记得它原来钉着什么。阿汐把空钉收进纸袋，袋口没有封。",
-    "pEn": "After the copper button fell, the pink line did not move. An empty tack remained at the edge of the table. No one remembered what it had held. Ah Xi put it in a paper sleeve and left the opening unsealed.",
-    "codaZh": "纸袋放在门边，空钉没有响。",
-    "codaEn": "The sleeve stayed by the door. The tack made no sound.",
+    "no": 27,
+    "titleZh": "纸袋之后",
+    "titleEn": "After the Bag",
+    "pZh": "桌边空着。纸袋留在阿汐手里，袋口压着那行字。她没有添字。",
+    "pEn": "The space beside the table was empty. Axi kept the paper bag, its mouth held shut over the line inside. She added no words.",
+    "codaZh": "袋口没有合严。",
+    "codaEn": "The bag stayed slightly open.",
     "requiresHumanReview": true
   },
   "usage": {
     "calls": 4,
-    "cachedTokens": 14976,
+    "cachedTokens": 9984,
     "statuses": [
       200,
       200,
@@ -224,37 +239,37 @@
   "graphCheckpoints": [
     {
       "node": "loadWorld",
-      "ms": 14,
+      "ms": 18,
       "ok": true
     },
     {
       "node": "retrieveCanon",
-      "ms": 200,
+      "ms": 238,
       "ok": true
     },
     {
       "node": "warmup",
-      "ms": 5190,
+      "ms": 7707,
       "ok": true
     },
     {
       "node": "audit",
-      "ms": 11059,
+      "ms": 11261,
       "ok": true
     },
     {
       "node": "proposeTransitions",
-      "ms": 23222,
+      "ms": 20164,
       "ok": true
     },
     {
       "node": "draftContent",
-      "ms": 8488,
+      "ms": 5946,
       "ok": true
     },
     {
       "node": "writeArtifacts",
-      "ms": 11,
+      "ms": 4,
       "ok": true
     }
   ],
