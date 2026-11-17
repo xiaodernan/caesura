@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>听弦 / The String-Listener — CAESURA · 余响集 · 第二十篇</title>
+<meta name="description" content="听弦——《余响集》第二十篇：弦自己找到频率之后的第五十三年，未竟厅设「听弦」一职，把最年轻的书记员阿汐派上北崖。她只需做一件事：把听见写进册子里——即使听不见。双语对照 · 零 LLM · 零网络 / The twentieth piece of The Aftermath: the fifty-third year after the string found its own frequency, the Unfinished Hall established the office of String-Listener, sending Axi, its youngest clerk, to the north cliff. She had one duty only: write what she hears into the book — even if she hears nothing. Bilingual, offline, zero LLM." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🔔</text></svg>">
+<style>
+  :root {
+    --gold: #f3ce8f;
+    --gold-soft: rgba(243,206,143,.32);
+    --ink: #f3ede0;
+    --ink-dim: rgba(243,237,224,.62);
+    --panel: rgba(28,20,12,.7);
+    --serif: "Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#070608; color:var(--ink); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; }
+  .bg { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .bg.radial {
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(243,206,143,.14), transparent 60%),
+      radial-gradient(900px 700px at 50% 118%, rgba(90,40,40,.22), transparent 62%),
+      radial-gradient(650px 420px at 88% 104%, rgba(203,177,255,.08), transparent 60%),
+      #070608;
+  }
+  .bg.noise { position:fixed; inset:0; z-index:-1; opacity:.05; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .wrap { max-width:860px; margin:0 auto; padding:26px 26px 90px; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .brand { font-size:.8rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; opacity:.9; }
+  .brand a { color:inherit; text-decoration:none; border-bottom:1px dotted rgba(243,206,143,.5); }
+  .brand a:hover { color:#fff2d0; }
+  .toplinks { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toplinks a { font-size:.72rem; color:var(--ink-dim); text-decoration:none; border:1px solid rgba(243,237,224,.14); padding:6px 12px; border-radius:999px; transition:all .22s ease; }
+  .toplinks a:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .lang-row button { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(243,206,143,.12); border:1px solid var(--gold-soft); padding:6px 15px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; }
+  .lang-row button:hover { background:rgba(243,206,143,.22); box-shadow:0 0 16px rgba(243,206,143,.25); }
+
+  [data-lang="zh-TW"] .en-copy { display:none !important; }
+  [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="en"] .zh-copy { display:none !important; }
+
+  header.hero { text-align:center; padding:52px 14px 30px; }
+  .kicker { font-size:.72rem; letter-spacing:.42em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:20px; }
+  .kicker b { color:var(--gold); font-weight:600; }
+  h1 { font-size:clamp(2.2rem, 8vw, 3.6rem); font-weight:600; letter-spacing:.16em;
+       background:linear-gradient(180deg,#fffbe6 0%, #f3ce8f 28%, #c9a258 58%, #7d6436 100%);
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+       text-shadow:0 0 90px rgba(243,206,143,.3); }
+  .subtitle { margin-top:14px; font-size:.8rem; color:var(--ink-dim); letter-spacing:.3em; text-transform:uppercase; }
+  .rule { width:170px; height:1px; margin:24px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .meta { margin-top:16px; font-size:.7rem; color:rgba(243,237,224,.45); letter-spacing:.18em; text-transform:uppercase; }
+  .meta a { color:var(--gold); text-decoration:none; }
+
+  article { background:var(--panel); border:1px solid rgba(243,237,224,.1); border-radius:18px; padding:38px 40px 34px; position:relative; }
+  article::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--gold), transparent); opacity:.7; }
+  article p { font-size:1.04rem; line-height:2.02; letter-spacing:.02em; color:rgba(243,237,224,.92); margin-bottom:1.5em; text-indent:2em; overflow-wrap:break-word; }
+  article p em { color:#ffe9b3; font-style:normal; }
+  .beat { width:100%; text-align:center; margin:.4em 0 1.4em; letter-spacing:.5em; color:rgba(243,206,143,.6); font-size:.8rem; }
+  .coda { text-align:center; font-style:italic; color:rgba(243,237,224,.78); letter-spacing:.06em; margin-top:.6em; }
+
+  .note { margin:26px auto 0; max-width:760px; text-align:center; font-size:.74rem; color:rgba(243,237,224,.42); line-height:1.9; letter-spacing:.04em; }
+  .note a { color:var(--gold); text-decoration:none; border-bottom:1px dotted rgba(243,206,143,.5); }
+
+  footer { margin-top:56px; border-top:1px solid rgba(243,237,224,.09); padding-top:22px; display:flex; flex-wrap:wrap; gap:10px 26px; justify-content:space-between; font-size:.7rem; color:rgba(243,237,224,.4); letter-spacing:.06em; }
+  footer a { color:var(--gold); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @media (max-width:640px) { .wrap { padding:20px 12px 70px; } article { padding:26px 20px 24px; } article p { font-size:.98rem; text-indent:2em; } }
+</style>
+</head>
+<body>
+<div class="bg radial" aria-hidden="true"></div>
+<div class="bg noise" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><a href="/caesura/">CAESURA</a> · 《止音纪元》</div>
+    <div class="toplinks">
+      <a href="/caesura/story/"><span class="zh-copy">《盐》</span><span class="en-copy">“Salt”</span></a>
+      <a href="/caesura/story/first-bell/"><span class="zh-copy">《第一钟》</span><span class="en-copy">“The First Bell”</span></a>
+      <a href="/caesura/story/bell-picker/"><span class="zh-copy">《拾钟人》</span><span class="en-copy">“The Bell-Picker”</span></a>
+      <a href="/caesura/story/twelfth-listener/"><span class="zh-copy">《第十二个听者》</span><span class="en-copy">“The Twelfth Listener”</span></a>
+      <a href="/caesura/story/fourth-strike/"><span class="zh-copy">《第四下》</span><span class="en-copy">“The Fourth Strike”</span></a>
+      <a href="/caesura/story/string-listener/"><span class="zh-copy">《听弦》</span><span class="en-copy">“The String-Listener”</span></a>
+      <a href="/caesura/codex/"><span class="zh-copy">世界谱</span><span class="en-copy">Codex</span></a>
+      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button></span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <p class="kicker zh-copy">短篇 · <b>余响集</b> · 第二十篇</p>
+    <p class="kicker en-copy">Short story · <b>The Aftermath</b> · No. 20</p>
+    <h1 class="zh-copy">听弦</h1>
+    <h1 class="en-copy">The String-Listener</h1>
+    <p class="subtitle zh-copy">北崖问弦：谁在听</p>
+    <p class="subtitle en-copy">The north cliff asks who is listening</p>
+    <div class="rule"></div>
+    <p class="meta zh-copy">约 7 分钟 · 与 <a href="/caesura/codex/">世界谱</a> 同源世界观 · 零 LLM 撰写</p>
+    <p class="meta en-copy">about 7 minutes · same world as the <a href="/caesura/codex/">codex</a> · written without LLM assistance</p>
+  </header>
+
+  <article>
+    <div class="zh-copy">
+<p>故事发生在北崖人称为「静听之日」的那个年头——一年里至多有两天没有风，连海都屏住呼吸。渔民们守着这两天出海，回来总讲：北崖传来一声极轻的音，像弦在自语。没人知道那一声是不是上一个年头的余音，也没人知道该把那一声算给谁。</p>
+
+<div class="beat">· · ·</div>
+
+<p>未竟厅为此开了一场例会。档案里，七百年没有任何一卷能回答「谁听见了那一声」。末行空白停在弦找到自己频率之后的第五十三年——也就是《未竟账页》里那一行没人敢对视的空白之后。会议决定：设立「听弦」一职——派未竟厅最年轻的书记员阿汐去。她只需做一件事：每逢静听之日，从日出站到日落；日落之前，在册子上写下她听见了什么——一个字也是「听见」，一个字也没有，也要写「听不见」。</p>
+<p>没人告诉她，这份册子自己还留着上一任写下的一句。</p>
+
+<div class="beat">· · ·</div>
+
+<p>第一年，她写：听不见。</p>
+<p>第三年，她写：听不见。</p>
+<p>第七年，她写：像一扇门的回声——但那是海做的梦。</p>
+<p>第十一年，她写：听不见。她开始把字写得极小，小到只有她自己看得清楚。未竟厅很久没有催问。也许没有人真的指望册子上会有答案。</p>
+<p>第三十一年，风停了足足一整天。日出时她站在崖边，日落时她还站在那里。她在册子上写下了她一生只写过一次的那句话：</p>
+<p><em>「弦问了我一句——谁在听？」</em></p>
+
+<div class="beat">· · ·</div>
+
+<p>整夜她都没合眼。不是害怕，是她想了一整夜「一个回答值多少」。回答一旦写下，就再也不是她的了；回答若不写下，就永远不属于弦。也许弦问的不是一个问题——只是想知道，还有没有人愿意回答。</p>
+<p>天将亮时，她亲手写下册子的最后一行：</p>
+<p><em>「有人在听。」</em></p>
+<p>然后她把册子留在北崖的石桌上——就是那个女孩曾站过的位置——合了合眼，等了半个清晨。没有别的声音，只有海——海早就学会了最客气的一种沉默。</p>
+
+<div class="beat">· · ·</div>
+
+<p class="coda">回到未竟厅时，她手里的册子多出了一页。墨迹不是她的，也不是弦的，而是第三只手——三横一竖，一个没人见过的记号。她没有描摹它，只把整本册子放回未竟厅的柜子里，轻轻关上了门。</p>
+<p class="coda">记账的人说：那一页从此合进了未竟账页最下面一行。从此，未竟的事物都可以休息。</p>
+<p class="coda">如今北崖的渔人听见的不再是一声，而是两声——一问，一答。有些夜里还有第三声，更低更远，像海也学会了回答。</p>
+<p class="coda">止音的纪元没有结束。它只是不再只剩一根弦。</p>
+    </div>
+    <div class="en-copy">
+<p>This happened in the years the north cliff people call "the days of still listening" — at most two days a year when there is no wind, when even the sea holds its breath. Fishermen kept to those two days, going out with the tide, and coming back with one thing to say: from the cliff came a single, very soft note, as if the string were talking to itself. No one knew whether that note was the echo of a previous year, or whom it should be counted to.</p>
+
+<div class="beat">· · ·</div>
+
+<p>The Unfinished Hall convened an ordinary session over it. In the archives, seven hundred years had not produced one volume that could answer "who heard that note." The final page had lain blank for the fifty-third year after the string found its own frequency — the very line, in the Unfinished Ledger Page, that no one had ever dared look at. The session resolved: establish the office of "String-Listener," and send the Hall's youngest clerk, Axi, to keep it. She was to do one thing only — on every day of still listening, stand from sunrise to sunset; before sunset, write in the book what she had heard. Whether one word, or none, she must still write: "heard nothing."</p>
+<p>No one told her that the book itself still kept one sentence written by the previous keeper.</p>
+
+<div class="beat">· · ·</div>
+
+<p>First year: heard nothing.</p>
+<p>Third year: heard nothing.</p>
+<p>Seventh year: something like the echo of a door — but that was the sea's dream.</p>
+<p>Eleventh year: heard nothing. She began writing so small that no one but her could read it. The Hall never pressed. Perhaps no one truly expected an answer.</p>
+<p>Thirty-first year. The wind stopped for a whole day. Sunrise found her at the cliff's edge; sunset found her still there. In the book she wrote the only sentence she was to write in her whole life:</p>
+<p><em>"The string asked me — who is listening?"</em></p>
+
+<div class="beat">· · ·</div>
+
+<p>She did not sleep that night. Not from fear — because she spent the whole night thinking about what an answer is worth. If she wrote it down, it would no longer be hers. If she did not write it down, it would never belong to the string. Perhaps the string was not asking a question at all — it only wanted to know whether anyone still was willing to answer.</p>
+<p>Just before dawn, she wrote the last line of the book herself:</p>
+<p><em>"Someone is listening."</em></p>
+<p>Then she left the book on the stone table — the very stone where the girl had once stood — and waited, eyes open, for half a morning. Nothing else came except the sea — and the sea had long since mastered the most courteous of silences.</p>
+
+<div class="beat">· · ·</div>
+
+<p class="coda">When she returned to the Unfinished Hall, the book held one extra page. The ink was not hers, and not the string's, but a third hand — three strokes one, a mark no one had ever seen. She did not copy it. She only set the whole book back in the Hall's cabinet and closed the door, gently.</p>
+<p class="coda">The account-keeper said that page was bound into the very last line of the unfinished ledger. From then on, he said, the unfinished were allowed to rest.</p>
+<p class="coda">Today the fishermen of the north cliff hear not one note but two — a question, and an answer. Some nights there is a third, lower and further, as though the sea had learned to reply as well.</p>
+<p class="coda">The age of hush is not over. It has simply stopped being one string alone.</p>
+    </div>
+  </article>
+
+  <div class="note">
+    <span class="zh-copy">《听弦》是《余响集》第二十篇——弦找到频率之后的第五十三年，未竟厅设「听弦」一职，把最年轻的书记员阿汐派上北崖。弦问了世界一句，世界终于有人回答。<a href="/caesura/story/anthology/">全集：《余响集》</a></span>
+    <span class="en-copy">“The String-Listener” is the twentieth piece of “The Aftermath” — the fifty-third year after the string found its own frequency, the Unfinished Hall opened the office of String-Listener. “The Last String” was the question; “The String-Listener” is the answer. <a href="/caesura/story/anthology/">All stories: “The Aftermath”</a></span>
+  </div>
+
+  <footer>
+    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/">游戏</a> · <a href="/caesura/story/">《盐》· 篇一</a> · <a href="/caesura/story/unnamed-stone/">篇二 · 山下无名碑</a> · <a href="/caesura/story/empty-bar/">篇三 · 空拍子</a> · <a href="/caesura/story/ledger/">篇四 · 账本</a> · <a href="/caesura/story/garden/">篇五 · 回声庭园</a> · <a href="/caesura/story/tribunal/">篇六 · 雨审判</a> · <a href="/caesura/story/frostbell/">篇七 · 霜锤</a> · <a href="/caesura/story/doors/">篇八 · 千门</a> · <a href="/caesura/story/stonethroat/">篇九 · 石喉</a> · <a href="/caesura/story/first-bell/">篇十 · 第一钟</a> · <a href="/caesura/story/dark-tide/">篇十一 · 暗潮</a> · <a href="/caesura/story/twelfth-listener/">篇十二 · 后记</a> · <a href="/caesura/story/bell-picker/">篇十三 · 拾钟人</a> · <a href="/caesura/story/lampwright-bell/">篇十四 · 灯匠</a> · <a href="/caesura/story/lowtone-city/">篇十五 · 低音之城</a> · <a href="/caesura/story/pendulum-ferryman/">篇十六 · 钟摆渡人</a> · <a href="/caesura/story/unfinished-ledger/">篇十七 · 未竟账页</a> · <a href="/caesura/story/fourth-strike/">篇十八 · 第四下</a> · <a href="/caesura/story/last-string/">篇十九 · 末弦</a> · <a href="/caesura/story/string-listener/">篇二十 · 听弦</a> · <a href="/caesura/story/anthology/">全集 · 余响集</a> · <a href="/caesura/codex/">世界谱</a></span>
+    <span class="en-copy">© CAESURA · <a href="/caesura/">Game</a> · <a href="/caesura/story/">“Salt” · No. 1</a> · <a href="/caesura/story/unnamed-stone/">No. 2 · “The Nameless Stone”</a> · <a href="/caesura/story/empty-bar/">No. 3 · “The Empty Bar”</a> · <a href="/caesura/story/ledger/">No. 4 · “The Ledger”</a> · <a href="/caesura/story/garden/">No. 5 · “The Garden of Return”</a> · <a href="/caesura/story/tribunal/">No. 6 · “The Rain Tribunal”</a> · <a href="/caesura/story/frostbell/">No. 7 · “The Frostbell”</a> · <a href="/caesura/story/doors/">No. 8 · “The Thousand Doors”</a> · <a href="/caesura/story/stonethroat/">No. 9 · “The Stone-Throat”</a> · <a href="/caesura/story/first-bell/">No. 10 · “The First Bell”</a> · <a href="/caesura/story/dark-tide/">No. 11 · “The Dark Tide”</a> · <a href="/caesura/story/twelfth-listener/">No. 12 · “Epilogue”</a> · <a href="/caesura/story/bell-picker/">No. 13 · “The Bell-Picker”</a> · <a href="/caesura/story/lampwright-bell/">No. 14 · “The Lampwright”</a> · <a href="/caesura/story/lowtone-city/">No. 15 · “The City of Low Tones”</a> · <a href="/caesura/story/pendulum-ferryman/">No. 16 · “The Pendulum Ferryman”</a> · <a href="/caesura/story/unfinished-ledger/">No. 17 · “The Unfinished Ledger Page”</a> · <a href="/caesura/story/fourth-strike/">No. 18 · “The Fourth Strike”</a> · <a href="/caesura/story/last-string/">No. 19 · “The Last String”</a> · <a href="/caesura/story/string-listener/">No. 20 · The String-Listener</a> · <a href="/caesura/story/anthology/">All stories · The Aftermath</a> · <a href="/caesura/codex/">World Codex</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('langToggle');
+  var saved = 'zh';
+  try { saved = localStorage.getItem('caesura-lang') || 'zh'; } catch (e) { /* noop */ }
+  function apply(lang) {
+    root.setAttribute('data-lang', lang);
+    root.setAttribute('lang', lang === 'en' ? 'en-US' : (lang === 'zh-TW' ? 'zh-TW' : 'zh-CN'));
+    try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+    if (window.__caesuraZhTW) {
+      if (lang === 'zh-TW' && window.__caesuraZhTW.applyToDocument) window.__caesuraZhTW.applyToDocument();
+      else if (lang === 'zh' && window.__caesuraZhTW.restoreOriginals) window.__caesuraZhTW.restoreOriginals();
+    }
+    btn.textContent = lang === 'zh' ? '繁體' : (lang === 'zh-TW' ? 'EN' : '简体');
+  }
+  if (btn) btn.addEventListener('click', function () {
+    var cur = root.getAttribute('data-lang'); apply(cur === 'zh' ? 'zh-TW' : (cur === 'zh-TW' ? 'en' : 'zh'));
+  });
+  apply(saved === 'en' || saved === 'zh-TW' ? saved : 'zh');
+})();
+</script>
+<script defer src="../../tracker.js"></script>
+<script defer src="/caesura/zh-tw-converter.js"></script>
+</body>
+</html>

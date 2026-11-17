@@ -38,7 +38,7 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - "The Ledger" (original short story, no. 4): <https://xiaodernan.github.io/caesura/story/ledger/> (Resthold · the page Meg never dared to close · bilingual · zero LLM · added 2026-11-15)  
 - "The Garden of Return" (original short story, no. 5): <https://xiaodernan.github.io/caesura/story/garden/> (The Afterland · the sixth sound · The Owner of the Old Bell · bilingual · zero LLM · added 2026-11-15)  
 - "The Rain Tribunal" (original short story, no. 6): <https://xiaodernan.github.io/caesura/story/tribunal/> (The Afterland · the Rainbell Valley · The Drowning Jurist · seven years between sessions · bilingual · zero LLM · added 2026-11-15)  
-- "The Aftermath" (complete short fiction, whole-volume portal — printable as one paper volume): <https://xiaodernan.github.io/caesura/story/anthology/> (all eighteen stories · EPIC-VII draft now inside · updated 2026-11-16)  
+- "The Aftermath" (complete short fiction, whole-volume portal — printable as one paper volume): <https://xiaodernan.github.io/caesura/story/anthology/> (all twenty stories · EPIC-VII draft now inside · updated 2026-11-17)  
 - "The Frostbell" (original short story, no. 7): <https://xiaodernan.github.io/caesura/story/frostbell/> (The Frostbell Cliff · The Last Frostwright · the sound the ice kept · bilingual · zero LLM · added 2026-11-15)  
 - "The Thousand Doors" (original short story, no. 8): <https://xiaodernan.github.io/caesura/story/doors/> (The Arcade of Echoes · the Gatekeeper of a Thousand Doors · bilingual · zero LLM · added 2026-11-15)  
 - "The Stone-Throat" (original short story, no. 9): <https://xiaodernan.github.io/caesura/story/stonethroat/> (The City of Low Tones · The Stone-Throat Matriarch · the pitch that costs nothing · bilingual · zero LLM · added 2026-11-15)  
@@ -51,6 +51,8 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - "The Pendulum Ferryman" (original short story, no. 16 · swinging for time itself): <https://xiaodernan.github.io/caesura/story/pendulum-ferryman/> (the pendulum in the Unfinished Hall · the keeper who kept what every traveler set down · bilingual · zero LLM · added 2026-11-16)  
 - "The Unfinished Ledger Page" (short fiction No.17): <https://xiaodernan.github.io/caesura/story/unfinished-ledger/> (The Unfinished Hall · the blank in the final line, waiting to be claimed · bilingual · zero LLM · 2026-11-17) ·  
 - "The Fourth Strike" (short fiction No.18): <https://xiaodernan.github.io/caesura/story/fourth-strike/> (Windbell Coast · the clapper on the broken mast never struck · the fourth never needed a bell — it always lands in your own chest · bilingual · zero LLM · 2026-11-17) ·  
+- "The Last String" (short fiction No.19): <https://xiaodernan.github.io/caesura/story/last-string/> (the North Cliff · the world was loud — a string on the north cliff found its own frequency · bilingual · zero LLM · 2026-11-17) ·  
+- "The String-Listener" (short fiction No.20): <https://xiaodernan.github.io/caesura/story/string-listener/> (the North Cliff · The Unfinished Hall · the string asks who is listening — someone finally answers · bilingual · zero LLM · 2026-11-17) ·  
 - Sync truth: `https://raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json`
 
 ## Where to read

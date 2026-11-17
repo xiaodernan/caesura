@@ -1,6 +1,6 @@
 /**
- * 游记 · 十六篇全文（2026-11-16 落 · KI-618）。
- * 这十六篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 二十篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639 扩）。
+ * 这二十篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -1237,6 +1237,69 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">More than three hundred years have passed since. No one has rediscovered that string. Not because it cannot be found—because no one has a life long enough to find it.</p>
     <p class="coda">But occasionally on windless days, fishermen far from that cliff hear it—a single note, very soft, like the string answering itself.</p>
     <p class="coda">The world has not been out of tune since that string found itself. Every bell that followed, every echo that followed, came from that one string, changed and carried forward.</p>`,
+  },
+  {
+    no: 20,
+    zhTitle: "听弦",
+    enTitle: "The String-Listener",
+    zh: `<p>故事发生在北崖人称为「静听之日」的那个年头——一年里至多有两天没有风，连海都屏住呼吸。渔民们守着这两天出海，回来总讲：北崖传来一声极轻的音，像弦在自语。没人知道那一声是不是上一个年头的余音，也没人知道该把那一声算给谁。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>未竟厅为此开了一场例会。档案里，七百年没有任何一卷能回答「谁听见了那一声」。末行空白停在弦找到自己频率之后的第五十三年——也就是《未竟账页》里那一行没人敢对视的空白之后。会议决定：设立「听弦」一职——派未竟厅最年轻的书记员阿汐去。她只需做一件事：每逢静听之日，从日出站到日落；日落之前，在册子上写下她听见了什么——一个字也是「听见」，一个字也没有，也要写「听不见」。</p>
+    <p>没人告诉她，这份册子自己还留着上一任写下的一句。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>第一年，她写：听不见。</p>
+    <p>第三年，她写：听不见。</p>
+    <p>第七年，她写：像一扇门的回声——但那是海做的梦。</p>
+    <p>第十一年，她写：听不见。她开始把字写得极小，小到只有她自己看得清楚。未竟厅很久没有催问。也许没有人真的指望册子上会有答案。</p>
+    <p>第三十一年，风停了足足一整天。日出时她站在崖边，日落时她还站在那里。她在册子上写下了她一生只写过一次的那句话：</p>
+    <p><em>「弦问了我一句——谁在听？」</em></p>
+
+    <div class="beat">· · ·</div>
+
+    <p>整夜她都没合眼。不是害怕，是她想了一整夜「一个回答值多少」。回答一旦写下，就再也不是她的了；回答若不写下，就永远不属于弦。也许弦问的不是一个问题——只是想知道，还有没有人愿意回答。</p>
+    <p>天将亮时，她亲手写下册子的最后一行：</p>
+    <p><em>「有人在听。」</em></p>
+    <p>然后她把册子留在北崖的石桌上——就是那个女孩曾站过的位置——合了合眼，等了半个清晨。没有别的声音，只有海——海早就学会了最客气的一种沉默。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">回到未竟厅时，她手里的册子多出了一页。墨迹不是她的，也不是弦的，而是第三只手——三横一竖，一个没人见过的记号。她没有描摹它，只把整本册子放回未竟厅的柜子里，轻轻关上了门。</p>
+    <p class="coda">记账的人说：那一页从此合进了未竟账页最下面一行。从此，未竟的事物都可以休息。</p>
+    <p class="coda">如今北崖的渔人听见的不再是一声，而是两声——一问，一答。有些夜里还有第三声，更低更远，像海也学会了回答。</p>
+    <p class="coda">止音的纪元没有结束。它只是不再只剩一根弦。</p>`,
+    en: `<p>This happened in the years the north cliff people call "the days of still listening" — at most two days a year when there is no wind, when even the sea holds its breath. Fishermen kept to those two days, going out with the tide, and coming back with one thing to say: from the cliff came a single, very soft note, as if the string were talking to itself. No one knew whether that note was the echo of a previous year, or whom it should be counted to.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The Unfinished Hall convened an ordinary session over it. In the archives, seven hundred years had not produced one volume that could answer "who heard that note." The final page had lain blank for the fifty-third year after the string found its own frequency — the very line, in the Unfinished Ledger Page, that no one had ever dared look at. The session resolved: establish the office of "String-Listener," and send the Hall's youngest clerk, Axi, to keep it. She was to do one thing only — on every day of still listening, stand from sunrise to sunset; before sunset, write in the book what she had heard. Whether one word, or none, she must still write: "heard nothing."</p>
+    <p>No one told her that the book itself still kept one sentence written by the previous keeper.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>First year: heard nothing.</p>
+    <p>Third year: heard nothing.</p>
+    <p>Seventh year: something like the echo of a door — but that was the sea's dream.</p>
+    <p>Eleventh year: heard nothing. She began writing so small that no one but her could read it. The Hall never pressed. Perhaps no one truly expected an answer.</p>
+    <p>Thirty-first year. The wind stopped for a whole day. Sunrise found her at the cliff's edge; sunset found her still there. In the book she wrote the only sentence she was to write in her whole life:</p>
+    <p><em>"The string asked me — who is listening?"</em></p>
+
+    <div class="beat">· · ·</div>
+
+    <p>She did not sleep that night. Not from fear — because she spent the whole night thinking about what an answer is worth. If she wrote it down, it would no longer be hers. If she did not write it down, it would never belong to the string. Perhaps the string was not asking a question at all — it only wanted to know whether anyone still was willing to answer.</p>
+    <p>Just before dawn, she wrote the last line of the book herself:</p>
+    <p><em>"Someone is listening."</em></p>
+    <p>Then she left the book on the stone table — the very stone where the girl had once stood — and waited, eyes open, for half a morning. Nothing else came except the sea — and the sea had long since mastered the most courteous of silences.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">When she returned to the Unfinished Hall, the book held one extra page. The ink was not hers, and not the string's, but a third hand — three strokes one, a mark no one had ever seen. She did not copy it. She only set the whole book back in the Hall's cabinet and closed the door, gently.</p>
+    <p class="coda">The account-keeper said that page was bound into the very last line of the unfinished ledger. From then on, he said, the unfinished were allowed to rest.</p>
+    <p class="coda">Today the fishermen of the north cliff hear not one note but two — a question, and an answer. Some nights there is a third, lower and further, as though the sea had learned to reply as well.</p>
+    <p class="coda">The age of hush is not over. It has simply stopped being one string alone.</p>`,
   },
 ]
 
