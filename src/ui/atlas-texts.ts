@@ -1,6 +1,6 @@
 /**
- * 游记 · 四十篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671 扩）。
- * 这四十篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 四十一篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672 扩）。
+ * 这四十一篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -2221,6 +2221,57 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She did not close the door.</p>
     <p class="coda">Some arrivals need not be entered at once.</p>
     <p class="coda">The age of hush has not ended. It has only, at last, learned a character — 等， to wait — which means to neither chase nor block.</p>`,
+  },
+  {
+    no: 41,
+    zhTitle: "门外的湿痕",
+    enTitle: "The Mark Outside",
+    zh: `<p>天亮后，门外的湿痕还在。它很浅，几乎比空气还淡了一点——可它就在那里。阿汐没有开门，也没有合上薄簿。她把手放在门槛上，等潮水退去。湿痕浅了一些，位置没有变。</p>
+    <p>她把手放在门槛上——木头很凉，凉得像另一双手在替她托着她的。她没有往里看，她也没有看向海。她只是坐在那里，等潮水把湿痕带走——或者把它留下来。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿仍合着。薄页仍偶尔自己翻一回——她已经明白那不是海在称她的记性有多重；那是薄页自己终于学会自己看自己的样子——像一只终于知道自己不用再等被翻开的鲁鱼。</p>
+    <p>影子某天又来了——或者不是影子，而是一段很长的影子的边缘；它停在门外。她没有叫他——她没有打算打开门。她只是对着它的方向站了一会儿，什么也没说，然后她照旧回到窗台边。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>湿痕不像是盐的印子——更像是有人很早以前在门槛上倒了一小碗海水。那碗水没有等人来接。它就留在那里，干了，湿了，再干了。她把薄簿推到接缝旁——还是没有打开它。</p>
+    <p>她偶尔想去看潮水到底是不是把它冲走了——可她还是没有站起来。她不是怕潮水——而是她知道去查，就只剩一道被记下的数字，数字不会替她等什么。</p>
+    <p>她仅仅是看着它。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮水退去。门槛前的湿痕更浅了——她蹲下来用手摸了摸那道痕迹——它很凉——那是另一场数字——一种不用手的、也不能用手写的记法。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些痕迹，不必追问来处。</p>
+    <p class="coda">止音纪元没有结束。它只是终于在门槛上学会了一句话——先别问，先等。</p>`,
+    en: `<p>By daylight, the wet mark remained outside the door. It was faint, almost fainter than the air itself — but it was there. Axi neither opened the door nor the ledger. She rested her hand on the threshold and waited for the tide to recede. The mark grew fainter. Its place did not change.</p>
+    <p>She set her hand on the wood — the wood was cold, the way another hand might have been holding hers in return. She did not look into the sea, nor did she look inward. She only sat, waiting for the tide to take the mark with it — or to leave it behind.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ledger stayed closed. The page still turned by itself now and then — she had figured out that this was not the sea weighing her memory; the page had simply learned to look at itself — like a fish that had finally stopped waiting to be looked at.</p>
+    <p>The shadow came back one day — or not the shadow, but the edge of a long shadow; it stopped outside. She did not call it — nor did she open the door. She stood for a while in the direction it had come from, saying nothing, and then she went back to the sill as usual.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The mark did not look like salt — it looked like someone had spilled a small bowl of sea water on the threshold a long time ago. The bowl had not waited for anyone to come carry it away. It simply stayed there, dried, and got wet again, and dried again. She pushed the ledger beside the seam — still without opening it.</p>
+    <p>Now and then she thought of checking whether the tide had finally taken it — but she never rose to look. She was not afraid of the tide — she only knew that if she went to check, the answer would be a number, and a number would not wait for her.</p>
+    <p>She only looked.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The tide receded. The mark grew fainter still — she knelt and touched it with two fingers — it was cold — another kind of number — a notation that cannot be written by hand, and cannot be read by hand either.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some marks need not be asked where they came from.</p>
+    <p class="coda">The age of hush has not ended. It has only, at last, learned one sentence by the threshold — first, do not ask; first, wait.</p>`,
   },
 ]
 
