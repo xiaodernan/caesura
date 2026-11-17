@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "7f9d9dc37963fe53b5cbf11bd30e6386c3d92957",
+  "head": "500969ed87e4fd44c230c4b4f27505f12474e9cc",
   "branch": "master",
-  "subject": "feat: KI-646 教程 v1.11 · 教程「30 秒快速上手 · 三步点亮」+ KI-647 滚轮纵向独立反转 invertWheelY",
-  "date": "2026-11-17T13:54:00+08:00",
+  "subject": "site-latest: 7f9d9dc (post-rebase reconcile)",
+  "date": "2026-11-17T13:55:10+08:00",
   "kv": {
     "KI.rows": 565,
     "KI.Implemented": 388,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/7f9d9dc37963fe53b5cbf11bd30e6386c3d92957",
+    "url": "https://github.com/xiaodernan/caesura/commit/500969ed87e4fd44c230c4b4f27505f12474e9cc",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
