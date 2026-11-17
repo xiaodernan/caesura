@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "81fbf6ae1c6e6057f2ddfabf39a2834b9eb9a940",
+  "head": "d69714a7b8a01fa7a380d7c08890d8e4dede54d2",
   "branch": "master",
-  "subject": "feat(story): KI-678《余响集》第四十七篇《船底的干痕 / The Dry Mark Beneath》落地（LLM 真机草稿 → 人工闸落库）",
-  "date": "2026-11-18T07:21:12+08:00",
+  "subject": "site-latest: 81fbf6a (post-rebase reconcile)",
+  "date": "2026-11-18T07:22:14+08:00",
   "kv": {
     "KI.rows": 596,
     "KI.Implemented": 419,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/81fbf6ae1c6e6057f2ddfabf39a2834b9eb9a940",
+    "url": "https://github.com/xiaodernan/caesura/commit/d69714a7b8a01fa7a380d7c08890d8e4dede54d2",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
