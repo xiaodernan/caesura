@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "ff56cf3778e572ffea50356ce29a204dff885ac8",
+  "head": "08e8b68bbae35cf1bbbb00bb602c44eea98096a0",
   "branch": "master",
-  "subject": "feat(ui): KI-642 本周纪事 W47 v3 · 篇二十一篇后世界快照重派",
-  "date": "2026-11-17T11:38:23+08:00",
+  "subject": "site-latest: ff56cf3 (post-rebase reconcile)",
+  "date": "2026-11-17T11:38:53+08:00",
   "kv": {
     "KI.rows": 560,
     "KI.Implemented": 383,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/ff56cf3778e572ffea50356ce29a204dff885ac8",
+    "url": "https://github.com/xiaodernan/caesura/commit/08e8b68bbae35cf1bbbb00bb602c44eea98096a0",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
