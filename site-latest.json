@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "422e0d96878b5d4ea3b2eff7dc56ece155e0bac3",
+  "head": "c714a756ae62fefe76714773dab70e7cada5f66a",
   "branch": "master",
-  "subject": "site-latest: e634e62 (post-rebase reconcile)",
-  "date": "2026-11-17T16:51:00+08:00",
+  "subject": "feat(title): KI-656 · 世界入口直达游记与谱册的可见入口（KI-645 行动 #2）",
+  "date": "2026-11-17T17:23:14+08:00",
   "kv": {
-    "KI.rows": 573,
-    "KI.Implemented": 396,
+    "KI.rows": 574,
+    "KI.Implemented": 397,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/422e0d96878b5d4ea3b2eff7dc56ece155e0bac3",
+    "url": "https://github.com/xiaodernan/caesura/commit/c714a756ae62fefe76714773dab70e7cada5f66a",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
