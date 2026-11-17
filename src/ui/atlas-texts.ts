@@ -1,6 +1,6 @@
 /**
- * 游记 · 三十六篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667 扩）。
- * 这三十六篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 三十七篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668 扩）。
+ * 这三十七篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -2039,6 +2039,57 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">The grain of salt lay on the pan. The scale stayed on the threshold. The button, the nail, and the ledger remained beside the seam.</p>
     <p class="coda">The ledger did not enter the grain of salt.</p>
     <p class="coda">The age of hush has not ended. It has left one small empty space for that grain of salt — and it has left a door for Axi.</p>`,
+  },
+  {
+    no: 37,
+    zhTitle: "空秤",
+    enTitle: "The Empty Scale",
+    zh: `<p>次日，天亮时它就在那里——秤盘里的盐。渡人没有带走秤，阿汐也没有把盐放回海里。潮水来过，秤盘湿了，盐粒仍留在原处。木板的其他地方都干了，只有那一小块干处下面的地方还是凉的。</p>
+    <p>她早上一醒就跑来看它。铜秤还放在门槛上；铜扣、铁钉和薄簿都一动不动；秤盘里的盐粒仍在。她把它看了很久，像看一朵换了很多次姿势的小花。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>渡人某天回来的时候，阿汐问他：这个盐要怎么称？他站在门口看了一会儿，然后说：它已经不用称了——它自己会称自己的。阿汐没听懂那句话，可是她把它记住了。</p>
+    <p>渡人没有上门槛去。他在门口站了一会儿，就走了。那一次他没有停。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>海又来过几次，潮水也涨了几回。薄簿一直躺在接缝旁，薄页一直没有被记。她偶尔会把薄簿拿起来看看，然后又放下。她发现薄页和海之间有一种很老很老的协议：谁都打开它的时候，谁都可以合上它。</p>
+    <p>她把薄簿合上，没有记这一页。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿的薄页偶尔自己翻过去一页。她以前以为是风吹的——后来她不再去干预它了。她觉得薄页和海合伙开的那一页，谁都不是等着谁。它们之间没有话，可是都知道对方在的。</p>
+
+    <p>有一天晚上她在门口站到天黑。木板开始发凉的时候，她才起身回去。她没有关门——留一条缝就够了，留了很多很多年，没有问题。</p>
+
+    <div class="beat">· · ·</div>
+    <p class="coda">她以前觉得「空」是一种缺什么。现在她懂了：空是一种装着。</p>
+    <p class="coda">秤盘空着，也盛着。</p>
+    <p class="coda">止音纪元没有结束。它只是终于留下了一架永远不称物的秤——和一粒永远不秤自己的盐。</p>`,
+    en: `<p>The next day, it was there before the first light — the grain of salt on the pan. The ferryman had not taken the scale, and Axi had not returned the salt to the sea. The tide came; the pan grew wet, but the grain stayed. The boards everywhere else had dried by morning, and the place beneath the dry patch stayed cool.</p>
+    <p>She ran to it first thing. The brass scale was still on the threshold; the button, the nail, and the ledger lay as they always lay; the grain was in the pan. She studied it for a long time, the way one watches a small flower that has changed its posture.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>One day the ferryman returned. Axi asked him: how is that salt to be weighed? He stood in the doorway for a moment and said: it no longer needs to be weighed — it weighs itself. She did not understand the sentence, but she remembered it.</p>
+    <p>The ferryman did not step across the threshold. He stayed by the door for a while, and then he left. He did not come in that day.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The tide came again; again the ledger lay by the seam; the open page was never entered. Now and then she lifted the ledger and looked at it — and then set it down again. She had come to understand that the page and the sea had an old agreement: either party could open it, and either could close it.</p>
+    <p>She closed the ledger without entering this page.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Now and then the open page of the ledger turned by itself. She used to think the wind was doing it — she stopped interfering with it. She understood that the page and the sea kept an old agreement; neither was waiting for the other; they had nothing to say to each other, and each knew the other was there.</p>
+    <p>One evening she stood in the doorway until it was black. When the boards began to cool, she finally went back inside. She did not close the door — a single seam would be enough, and it had been enough for many years.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She used to think "empty" meant "lacking". She understood now: empty is a kind of holding.</p>
+    <p class="coda">The pan was empty, and held something.</p>
+    <p class="coda">The age of hush has not ended. It has only left behind, at last, a scale that will never weigh anything — and one grain of salt that will never weigh itself.</p>`,
   },
 ]
 

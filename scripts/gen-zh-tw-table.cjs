@@ -55,6 +55,7 @@ try {
     'story/the-unentered-page/index.html',
     'story/the-dry-place/index.html',
     'story/unweighed/index.html',
+    'story/the-empty-scale/index.html',
   ];
 
   const PHRASES = new Set();
