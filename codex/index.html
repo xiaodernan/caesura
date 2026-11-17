@@ -145,6 +145,15 @@
 .oracle-source{font-size:.72rem;color:rgba(242,237,228,.5);margin:.3rem 0 0;letter-spacing:.05em}
 @media(max-width:600px){.oracle{padding:.9rem .7rem}.oracle-grid{grid-template-columns:1fr}}
 
+/* KI-655（KI-645 行动 #3 · 趋势研判裁决）：谱册页误触修复——高频触发控件命中区 ≥44px，
+   双击缩放/呼出平板整机菜单全部收口；对着 61% 移动端份额的真胖手指。
+   验收口径：该页每周暴躁点击数 < 170（admin/data.js 模拟遥测 · 本机环形缓冲 rage 计数同口径） */
+#langToggle,#wander,.sheet-close,.chip,.q,.oracle-chip,[data-cat],[data-q],[data-i]{min-height:44px}
+.chip,.q,#langToggle,.sheet-close,#wander{display:inline-flex;align-items:center;justify-content:center}
+#q,#langToggle,#wander,.sheet-close,.chip,.q,.oracle-chip,[data-cat],[data-q],[data-i],#grid .card{touch-action:manipulation;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+#wander,.sheet-close,.chip,.q,.oracle-chip,[data-cat],[data-q],[data-i]{user-select:none}
+#grid .card,.oracle-chip{cursor:pointer;min-height:88px}
+
 </style>
 </head>
 <body>
