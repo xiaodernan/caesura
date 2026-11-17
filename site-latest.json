@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "c27ca1e3be3e8a455bdb56fc3403a3b371bfd99b",
+  "head": "32b06bce9a51422022a2e721e6a46d3eb9fdef8f",
   "branch": "master",
-  "subject": "feat(ui): KI-637 游戏内「本周纪事 · The Chronicle」页签",
-  "date": "2026-11-17T10:05:07+08:00",
+  "subject": "site-latest: c27ca1e (post-rebase reconcile)",
+  "date": "2026-11-17T10:05:52+08:00",
   "kv": {
     "KI.rows": 555,
     "KI.Implemented": 378,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/c27ca1e3be3e8a455bdb56fc3403a3b371bfd99b",
+    "url": "https://github.com/xiaodernan/caesura/commit/32b06bce9a51422022a2e721e6a46d3eb9fdef8f",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
