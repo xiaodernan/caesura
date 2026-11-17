@@ -53,6 +53,7 @@ try {
     'story/the-unmarked-number/index.html',
     'story/beside-the-scale/index.html',
     'story/the-unentered-page/index.html',
+    'story/the-dry-place/index.html',
   ];
 
   const PHRASES = new Set();

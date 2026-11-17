@@ -1,6 +1,6 @@
 /**
- * 游记 · 三十四篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665 扩）。
- * 这三十四篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 三十五篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666 扩）。
+ * 这三十五篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -1946,6 +1946,49 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">No one noted that she had not noted it. The sea came and went; the sill brightened and darkened.</p>
     <p class="coda">Some things kept need not be entered.</p>
     <p class="coda">The age of hush has not ended. It is only teaching Axi a character — 留， to leave — which means to hold, not always to write.</p>`,
+  },
+  {
+    no: 35,
+    zhTitle: "干处",
+    enTitle: "The Dry Place",
+    zh: `<p>天亮后，干处还在。潮水退去了，它还在那里；潮水涨回来的时候，木板的其他地方都湿了，那一小块地方没有变湿。它比周围的木板大不了一枚指甲盖。</p>
+    <p>阿汐把薄簿放在干处旁边。她没有打开它。薄页已经不是她要读的那一页了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她试着用手指抹平那块干处的边缘。木板的纹理在它里面很清晰——像很久以前有人蘸着海盐描过一个圈，在雨后就是一块永远干的地方。</p>
+    <p>她想起母亲教她认字时总是说：木板上的干纹是海画的字，不必记，也不能抄。那时她没听懂。她以为“不必记”是教她不用功；“不能抄”是告诉她抄不来。她现在才明白：不必记，是因为它不会被遗忘的那种记；不能抄，是因为要等它自己开口。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮水每涨退一次，微凉一次。木板在冷的时候比铁板还硬；温度上来时，空气里会有一点蟹壳的气味。每一次涨退之间，那块干处纹丝不动地待在那里。</p>
+    <p>有一天它快要被涨潮完全盖住了。盐水爬上木板，涨到了那块干的边缘，停在它边上一指的地方——就那么多。它不像是被守护着；它像是有它自己的意愿。</p>
+    <p>她没有叫渡人来看。不是不信任他——是她忽然明白，那块干处既不属于渡口，也不属于薄簿，也不属于她。它只是被风吹了很多很多世代之后，终于自己落成了一个形状。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她把薄簿拿在手里又放下，盖住它，推到接缝旁。</p>
+    <p class="coda">薄簿没有记下干处。干处也没有等它记下。</p>
+    <p class="coda">止音纪元没有结束。它只是终于把一块永远不会弄湿的木板，交给了阿汐。</p>`,
+    en: `<p>At daylight, the dry place remained. When the tide went out, it was there; when it returned, the boards everywhere else became dark and wet, and that small place did not. It is no larger than a fingernail.</p>
+    <p>Axi set the thin ledger beside it. She did not open it. The open page was no longer the page she needed to read.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>She tried once to smooth its edge with her fingertip. The grain inside it was distinct — as if someone, ages ago, had dipped a brush in salt water and drawn a circle, and there it would stay dry, through every storm.</p>
+    <p>She remembered her mother's voice as a girl, teaching her characters: the dry on these boards is the sea's own writing, you must not record it and you cannot copy it. She had not understood then. She had thought "must not record" meant "do not bother"; and "cannot copy" meant "it is too hard". She understood now: must not record — because it is the kind of thing that is remembered without being written; cannot copy — because it is waiting for itself to speak.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Every flood-and-ebb cooled the planks; iron gets harder in the cold. A crab-shell smell lingered in the air. With every flood-and-ebb, the place did not shift an inch.</p>
+    <p>One day it came close to being covered entirely. Salt water climbed the boards and rose to its edge, stopping a single finger's width short — no farther. It was not guarded; it seemed to keep its own counsel.</p>
+    <p>She did not call the ferryman. Not from mistrust. It was that she had understood, without words: the patch was not the ferry's, not the ledger's, not hers. Only — after many, many generations of wind — had it finally settled into its own shape.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She held the ledger, then set it down again and pushed it beside the seam.</p>
+    <p class="coda">The ledger did not enter the dry place. The dry place did not wait to be entered.</p>
+    <p class="coda">The age of hush has not ended. It is only that, at last, it has handed Axi a small plank of wood that will never get wet.</p>`,
   },
 ]
 

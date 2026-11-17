@@ -38,7 +38,7 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - "The Ledger" (original short story, no. 4): <https://xiaodernan.github.io/caesura/story/ledger/> (Resthold · the page Meg never dared to close · bilingual · zero LLM · added 2026-11-15)  
 - "The Garden of Return" (original short story, no. 5): <https://xiaodernan.github.io/caesura/story/garden/> (The Afterland · the sixth sound · The Owner of the Old Bell · bilingual · zero LLM · added 2026-11-15)  
 - "The Rain Tribunal" (original short story, no. 6): <https://xiaodernan.github.io/caesura/story/tribunal/> (The Afterland · the Rainbell Valley · The Drowning Jurist · seven years between sessions · bilingual · zero LLM · added 2026-11-15)  
-- "The Aftermath" (complete short fiction, whole-volume portal — printable as one paper volume): <https://xiaodernan.github.io/caesura/story/anthology/> (all thirty-four stories · EPIC-VII draft now inside · updated 2026-11-18)  
+- "The Aftermath" (complete short fiction, whole-volume portal — printable as one paper volume): <https://xiaodernan.github.io/caesura/story/anthology/> (all thirty-five stories · EPIC-VII draft now inside · updated 2026-11-18)  
 - "The Frostbell" (original short story, no. 7): <https://xiaodernan.github.io/caesura/story/frostbell/> (The Frostbell Cliff · The Last Frostwright · the sound the ice kept · bilingual · zero LLM · added 2026-11-15)  
 - "The Thousand Doors" (original short story, no. 8): <https://xiaodernan.github.io/caesura/story/doors/> (The Arcade of Echoes · the Gatekeeper of a Thousand Doors · bilingual · zero LLM · added 2026-11-15)  
 - "The Stone-Throat" (original short story, no. 9): <https://xiaodernan.github.io/caesura/story/stonethroat/> (The City of Low Tones · The Stone-Throat Matriarch · the pitch that costs nothing · bilingual · zero LLM · added 2026-11-15)  
@@ -67,6 +67,7 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - "The Unmarked Number" (short fiction No.32): <https://xiaodernan.github.io/caesura/story/the-unmarked-number/> (the Arcade · the ferryman weighs the button; the needle never shifts; the ledger keeps a single blank the ink refuses to enter · LLM-drafted, human-approved · zero LLM · 2026-11-18) ·  
 - "Beside the Scale" (short fiction No.33): <https://xiaodernan.github.io/caesura/story/beside-the-scale/> (the Arcade · the button and the nail lie side by side; she no longer counts; a short chalk hangs unclaimed on the ferry rail · LLM-drafted, human-approved · zero LLM · 2026-11-18) ·  
 - "The Unentered Page" (short fiction No.34): <https://xiaodernan.github.io/caesura/story/the-unentered-page/> (the Arcade · she studies the line but does not copy it; the tide covers the line at night; by morning only a small dry patch remains · LLM-drafted, human-approved · zero LLM · 2026-11-18) ·  
+- "The Dry Place" (short fiction No.35): <https://xiaodernan.github.io/caesura/story/the-dry-place/> (the Arcade · one small place on the plank never gets wet; salt water rose to its edge and stopped a finger short · LLM-drafted, human-approved · zero LLM · 2026-11-18) ·  
 - Sync truth: `https://raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json`
 
 ## Where to read

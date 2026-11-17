@@ -9,8 +9,8 @@ import { describe, expect, it } from 'vitest'
  * 裁决原文：「为正文加入阅读进度与下一篇入口；以读完率达到百分之七十为验收」。
  * 这里钉住机器可验收的每一格：
  *   ① read-progress.js 存在、零网络、零 LLM；
- *   ② 全部 34 个正文页（篇一《盐》= /caesura/story/ + 33 个 slug 目录）都引用它；
- *   ③ canon 顺序 ORDER = 34 项，与 atlas-texts.ts 的 no: 1..34 对应；
+ *   ② 全部 35 个正文页（篇一《盐》= /caesura/story/ + 34 个 slug 目录）都引用它；
+ *   ③ canon 顺序 ORDER = 35 项，与 atlas-texts.ts 的 no: 1..35 对应；
  *   ④ 双语标签 · ⑤ 减动效/可访问性 · ⑥ story-finished 串联 KI-653 通道；
  *   ⑦ admin 本机实况两格真读数。
  */
@@ -30,7 +30,7 @@ describe('KI-654 · 阅读进度 + 下一篇入口（KI-645 行动 #4）', () =>
     expect(s).not.toMatch(/OpenAI|gpt-|claude-|api\.aizzz/)
   })
 
-  it('34 个正文页全部引用 /caesura/read-progress.js', () => {
+  it('35 个正文页全部引用 /caesura/read-progress.js', () => {
     const storyDir = resolve(ROOT, 'story')
     const pages = [
       'index.html',
@@ -38,7 +38,7 @@ describe('KI-654 · 阅读进度 + 下一篇入口（KI-645 行动 #4）', () =>
         .filter((d) => d.isDirectory() && d.name !== 'anthology')
         .map((d) => `${d.name}/index.html`)
     ]
-    expect(pages, 'expected salt root + 33 slugs').toHaveLength(34)
+    expect(pages, 'expected salt root + 34 slugs').toHaveLength(35)
     for (const rel of pages) {
       const s = read(resolve(storyDir, rel))
       expect(s, `missing read-progress in ${rel}`).toContain('data')
@@ -46,12 +46,12 @@ describe('KI-654 · 阅读进度 + 下一篇入口（KI-645 行动 #4）', () =>
     }
   })
 
-  it('canon 顺序 = 34 项 · 与 atlas-texts.ts 的 no 一一对应', () => {
+  it('canon 顺序 = 35 项 · 与 atlas-texts.ts 的 no 一一对应', () => {
     const s = read(RP)
     const m = s.match(/var ORDER = \[([\s\S]*?)\];/)
     expect(m, 'ORDER block not found').toBeTruthy()
     const slugs = [...m![1].matchAll(/slug: '([^']*)'/g)].map((x) => x[1])
-    expect(slugs).toHaveLength(34)
+    expect(slugs).toHaveLength(35)
     expect(slugs[0]).toBe('')           // 篇一《盐》= /caesura/story/
     expect(slugs[1]).toBe('unnamed-stone')
     expect(slugs[25]).toBe('beyond-the-line')
@@ -63,13 +63,14 @@ describe('KI-654 · 阅读进度 + 下一篇入口（KI-645 行动 #4）', () =>
     expect(slugs[31]).toBe('the-unmarked-number')
     expect(slugs[32]).toBe('beside-the-scale')
     expect(slugs[33]).toBe('the-unentered-page')
+    expect(slugs[34]).toBe('the-dry-place')
     const atlas = read(resolve(ROOT, 'src/ui/atlas-texts.ts'))
-    expect((atlas.match(/no: \d+,/g) || []).length).toBe(34)
+    expect((atlas.match(/no: \d+,/g) || []).length).toBe(35)
   })
 
   it('双语标签与本机记账键在源码里', () => {
     const s = read(RP)
-    for (const marker of ['下一篇', 'Next · ', '余响集 · 三十四篇全集', 'Keep reading', 'caesura.reading.v1', 'story-finished']) {
+    for (const marker of ['下一篇', 'Next · ', '余响集 · 三十五篇全集', 'Keep reading', 'caesura.reading.v1', 'story-finished']) {
       expect(s, `missing: ${marker}`).toContain(marker)
     }
   })
