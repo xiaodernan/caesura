@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "fc812d7a7fd4a24dc9bb994dd92ee9150ff830b0",
+  "head": "f8dd6cbdc758b093bb5a45b6e0a6db60c8c3a80b",
   "branch": "master",
-  "subject": "feat(story): KI-666《余响集》第三十五篇《干处 / The Dry Place》落地（LLM 真机草稿 → 人工闸落库）",
-  "date": "2026-11-17T23:14:53+08:00",
+  "subject": "site-latest: fc812d7 (post-rebase reconcile)",
+  "date": "2026-11-17T23:16:02+08:00",
   "kv": {
     "KI.rows": 584,
     "KI.Implemented": 407,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/fc812d7a7fd4a24dc9bb994dd92ee9150ff830b0",
+    "url": "https://github.com/xiaodernan/caesura/commit/f8dd6cbdc758b093bb5a45b6e0a6db60c8c3a80b",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
