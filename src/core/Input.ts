@@ -285,13 +285,13 @@ export type AnswerSource = 'key' | 'mouse' | 'pad'
 
 export interface FrameInput {
   move: { x: number; y: number }
-  look: { dx: number; dy: number }
+  look: { dx: number; dy: number; wheelDy: number }
   edges: Set<ActionName>
   held: Set<ActionName>
 }
 
 const blankFrame = (): FrameInput => ({
-  move: { x: 0, y: 0 }, look: { dx: 0, dy: 0 },
+  move: { x: 0, y: 0 }, look: { dx: 0, dy: 0, wheelDy: 0 },
   edges: new Set(), held: new Set()
 })
 
@@ -635,7 +635,8 @@ export class Input {
       move: m,
       look: {
         dx: this.mouseLook.dx * 0.0022 + this.padState.lookX * 2.4,
-        dy: this.mouseLook.dy * 0.0022 + this.padState.lookY * 2.4 + this.wheelLook * 0.0012
+        dy: this.mouseLook.dy * 0.0022 + this.padState.lookY * 2.4,
+        wheelDy: this.wheelLook * 0.0012
       },
       edges, held
     }

@@ -77,7 +77,7 @@ function makeWorld(originId = 'origin_tuner', seed: number | string = 0x51f3a2, 
     // 只记玩家砍出去的有效命中（敌人出手、弹反、格挡都不算）
     bus.on('combat.hit', (p) => { if (p.attackerId === 'player' && p.result === 'hit') hits.push({ damage: p.damage, victim: p.victimId }) })
   ]
-  const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0 }, held: new Set<string>(), edges: new Set<string>() }
+  const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0, wheelDy: 0 }, held: new Set<string>(), edges: new Set<string>() }
   const input = { frame, enabled: true } as unknown as Input
   player.camYawRef = 0
   refreshPlayer(rpg, player)

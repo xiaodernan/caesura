@@ -174,6 +174,8 @@ export class CameraRig {
 
   /** GameplaySettings.invertMouseY 进线：false= FPS norm (pitch += dy), true= invert */
   invertMouseY = false
+  /** GameplaySettings.invertWheelY 进线：false= 下滑 = 镜头低头 (view tilts down), true= invert */
+  invertWheelY = false
 
   constructor(fov = 50, near = 0.1, far = 400) {
     this.baseFov = fov
@@ -265,7 +267,7 @@ export class CameraRig {
    * @param lockTarget 锁定目标位置
    * @param shakeDt 震镜/FOV 用的时间步（逻辑 tick dt，KI-017）
    */
-  update(dt: number, player: PlayerController, look: { dx: number; dy: number }, lockTarget: Vec3 | null, shakeDt = dt): void {
+  update(dt: number, player: PlayerController, look: { dx: number; dy: number; wheelDy?: number }, lockTarget: Vec3 | null, shakeDt = dt): void {
     /**
      * **锁定 ⇒ 相机走越肩那一格**（combat.md §7「锁定式越肩推轨，**FOV 45°**」）。
      *
@@ -293,8 +295,14 @@ export class CameraRig {
     // 要 "往下滑 = 俯视" ⇒ mouse-down (dy>0) ⇒ pitch 上升 ⇒ 相机 raise above target ⇒ 视线朝下 = 低头看地。
     // 因此 **`+look.dy`** 才是我们要的符号（而非 v1/v2 之前的 `-look.dy`，后者把 FPS 变颠倒）。
     // v1/v2 历史：第一版以为 require `-look.dy`，测试钉反；第二次老实翻后才意识到原 `+` 已经正。
+    // 滚轮（`wheelDy`）与鼠标纵轴各自独立：`invertMouseY` 翻 look.dy，`invertWheelY` 翻 wheelDy——
+    //
+    // 玩家固定诉求「往上滑往上看、往下滑往下看」：deltaY>0 (down-scroll) ⇒ pitch 上升 ⇒ 镜头抬高 ⇒ 俯视(视线朝下)；
+    // deltaY<0 (up-scroll) ⇒ pitch 下降 ⇒ 镜头沉低 ⇒ 仰视(视线朝上)。两个轴向不互相吞、不耦合。
     this.yaw -= look.dx * cfg.yawDamp * dt
-    const signdy = this.invertMouseY ? -look.dy : look.dy
+    const signMouse = this.invertMouseY ? -look.dy : look.dy
+    const signWheel = this.invertWheelY ? -(look.wheelDy ?? 0) : (look.wheelDy ?? 0)
+    const signdy = signMouse + signWheel
     this.pitch = clamp(this.pitch + signdy * 0.55 * cfg.pitchDamp * dt, -0.18, 1.2)
 
     // 基础目标点（玩家头部上方）

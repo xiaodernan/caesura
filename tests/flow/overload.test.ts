@@ -42,7 +42,7 @@ function makeWorld(seed = 'overload') {
   const combat = new CombatManager(player, ai, time, rhythm)
   const notes: string[] = []
   const off = bus.on('ui.notify', (p) => notes.push(p.text))
-  const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0 }, held: new Set<string>(), edges: new Set<string>() }
+  const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0, wheelDy: 0 }, held: new Set<string>(), edges: new Set<string>() }
   const input = { frame, enabled: true } as unknown as Input
   player.camYawRef = 0
   refreshPlayer(rpg, player) // 生产那份胶水：装备栏 → 玩家面板

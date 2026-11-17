@@ -31,7 +31,7 @@ function makeWorld() {
   combat.floorAt = () => 0 // 地面在 y=0：晶的碎裂走『落地』出口（生产由 Surface 注入；sonic-decoy 同款）
 
   const frame = {
-    move: { x: 0, y: 0 }, look: { dx: 0, dy: 0 },
+    move: { x: 0, y: 0 }, look: { dx: 0, dy: 0, wheelDy: 0 },
     held: new Set<string>(), edges: new Set<string>()
   }
   const input = { frame, enabled: true } as unknown as Input

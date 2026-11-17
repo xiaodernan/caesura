@@ -381,6 +381,8 @@ const ZH: Record<string, string> = {
 
   'stak.ops.invertMouseY.name': '鼠标 Y 轴反转',
   'stak.ops.invertMouseY.note': '上滑 = 俯视 / 下滑 = 抬眼天空。翻转鼠标纵轴方向（look.dy 取反；水平旋转不变）。默认关 — FPS 标准',
+  'stak.ops.invertWheelY.name': '滚轮纵向反转',
+  'stak.ops.invertWheelY.note': '滚轮下滑 = 镜头低头（看地面）。翻转滚轮纵轴方向（look.wheelDy 取反）；鼠标纵轴与水平旋转不受影响。默认关 — 往上滑往上看、往下滑往下看',
   'stak.ops.mashGuard.note': '§6 那一格 · 开着：同一式每用一次过载价涨一档（§7.2 休止斩／终止那两行，涨幅住在表里）。关掉：不再涨，而先前涨的那一截从翻到「关」的那一下起也不再收——重新打开从底价重新起算',
   'stak.ops.chan.name': '存取哪一半',
   'stak.ops.chan.note': '这一枚只管「存入」与「载入」两把：使用中哪一枚，按下去就动整张还是那半张（默认「两半一起」，逐字仍是 KI-362 那一次）。「清空」不受它管——请回空的始终是那一整盒，而半盒就是一只满盒。',
@@ -1010,6 +1012,8 @@ const EN: Record<string, string> = {
 
   'stak.ops.invertMouseY.name': 'Invert Y-axis',
   'stak.ops.invertMouseY.note': 'Mouse up = look down / mouse down = look up. Flips the vertical axis only (look.dy × -1; horizontal unchanged). Default off — FPS norm',
+  'stak.ops.invertWheelY.name': 'Invert scroll axis',
+  'stak.ops.invertWheelY.note': 'Scroll down = look down at the ground. Flips the scroll wheel axis only (look.wheelDy × -1); mouse Y and horizontal unchanged. Default off — pitch up when scrolling up, down when scrolling down',
   'stak.ops.mashGuard.note': '§6 — On: each use of the same move raises the overload price one tier (§7.2 the Rest-slash / termination rows; growth lives in the table). Off: it stops rising, and whatever had risen is no longer collected from the moment it flips off — turning it back on starts again from base price',
   'stak.ops.chan.name': 'Which half is touched',
   'stak.ops.chan.note': 'This picker rules only "Store" and "Load": the armed one decides whether a press moves the whole table or one half (default "both halves", verbatim KI-362). "Clear" ignores it — the ask back to empty is always the whole box, and a half-box is a full box.',

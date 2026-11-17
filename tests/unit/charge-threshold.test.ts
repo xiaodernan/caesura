@@ -29,7 +29,7 @@ function makePlayer(weaponId: string) {
   rhythm.setBpm(84, 4)
   const weapon = registry.get<WeaponData>(weaponId)
   const player = new PlayerController(playerBase, weapon, registry.get<MovesetData>(`moveset:${weapon.movesetId}`))
-  const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0 }, held: new Set<string>(), edges: new Set<string>() }
+  const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0, wheelDy: 0 }, held: new Set<string>(), edges: new Set<string>() }
   const input = { frame, enabled: true } as unknown as Input
   player.camYawRef = 0
   player.stats.stamina = player.stats.staMax // 蓄满那一记要花体力；canAct 不因体力空而挡

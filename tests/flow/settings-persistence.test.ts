@@ -464,7 +464,7 @@ describe('KI-112 v12→v13 迁移', () => {
 })
 
 describe('KI-112 设置持久化：gameplay 跟档走', () => {
-  it('改九格 → save ⇒ 档里按八格走（invertMouseY 不入档）→ 新世界 load ⇒ 九路消费者复原、第九格回落默认（FPS norm）', async () => {
+  it('改十格 → save ⇒ 档里按八格走（invertMouseY+invertWheelY 不入档）→ 新世界 load ⇒ 十路消费者复原、第九/十格回落默认（FPS norm / 滚轮默认）', async () => {
     const store = new MapStore()
     const w = makeWorld(store)
     // KI-384 把第八格也塞进这一条腿：它写的是 `false`，也就是**非默认**那一边——
@@ -477,8 +477,8 @@ describe('KI-112 设置持久化：gameplay 跟档走', () => {
     // KI-112 那一批写这条腿时它是 13；键位数据化（KI-336）把档升到 14，那条字面量当场红——
     // 这条腿问的是"今天存出去的档带今天的号"，所以号从唯一主人那里读，不再抄第二份。
     expect(stored.payload.snapshot.version, '写档走的版本 = SAVE_VERSION').toBe(SAVE_VERSION)
-    // invertMouseY 是会话内的镜头偏好，不入档（FPS norm 是出厂姿势）——档里不该出现这一格
-    expect(stored.payload.snapshot.settings.gameplay, '游戏设置存档剥除 invertMouseY（会话内状态不写进档）').toEqual({ bufferMs: 240, frameAssist: true, shakeScale: 1.5, rumbleScale: 2, damageScale: 0.7, rumbleWeakScale: 0.4, holdMs: 600, mashGuard: false })
+    // invertMouseY / invertWheelY 都是会话内的镜头偏好，不入档（出厂姿势）——档里不该出现这两格
+    expect(stored.payload.snapshot.settings.gameplay, '游戏设置存档剥除 invertMouseY+invertWheelY（会话内状态不写进档）').toEqual({ bufferMs: 240, frameAssist: true, shakeScale: 1.5, rumbleScale: 2, damageScale: 0.7, rumbleWeakScale: 0.4, holdMs: 600, mashGuard: false })
 
     const w2 = makeWorld(store)
     expect(w2.input.bufferSec, '新世界从默认起手').toBe(0.2)
@@ -486,7 +486,7 @@ describe('KI-112 设置持久化：gameplay 跟档走', () => {
     expect(w2.player.holdMs, '新世界也从 §6 那格的下限起手（不是从上一局的 600 起手）').toBe(200)
     expect(w2.player.mashGuard, '同理第八格：新世界的起手是默认那一边（开），load 才分得出跟没跟档').toBe(true)
     await w2.saves.load('settings')
-    expect(w2.settings.get()).toEqual({ bufferMs: 240, frameAssist: true, shakeScale: 1.5, rumbleScale: 2, damageScale: 0.7, rumbleWeakScale: 0.4, holdMs: 600, mashGuard: false, invertMouseY: false })
+    expect(w2.settings.get()).toEqual({ bufferMs: 240, frameAssist: true, shakeScale: 1.5, rumbleScale: 2, damageScale: 0.7, rumbleWeakScale: 0.4, holdMs: 600, mashGuard: false, invertMouseY: false, invertWheelY: false })
     expect(w2.input.bufferSec, '240ms→秒').toBeCloseTo(0.24, 10)
     expect(w2.input.frameAssist).toBe(true)
     expect(w2.rig.shakeIntensity).toBe(1.5)

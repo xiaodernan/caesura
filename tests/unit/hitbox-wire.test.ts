@@ -394,7 +394,7 @@ describe('wiresFrom：在场名册只有一个主人（真实例驱动）', () =
     player.applyRpg(rpg.mods())
     player.setSkills(rpg.skillLoadout())
     const ai = new AISystem()
-    const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0 }, held: new Set<string>(), edges: new Set<string>() }
+    const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0, wheelDy: 0 }, held: new Set<string>(), edges: new Set<string>() }
     const inp = { frame, enabled: true } as unknown as Input
     player.camYawRef = 0
     const tick = (n = 1): void => {

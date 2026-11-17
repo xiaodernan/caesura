@@ -39,7 +39,7 @@ function makeWorld() {
   const weapon = registry.get<WeaponData>('wp_drawpin_spear')
   const moveset = registry.get<MovesetData>(`moveset:${weapon.movesetId}`)
   const player = new PlayerController(playerBase, weapon, moveset)
-  const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0 }, held: new Set<string>(), edges: new Set<string>() }
+  const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0, wheelDy: 0 }, held: new Set<string>(), edges: new Set<string>() }
   const input = { frame, enabled: true } as unknown as Input
   player.camYawRef = 0
   player.yaw = Math.PI // 朝世界 -Z；与 `f.lunge` 的 `+sin/+cos` 朝向约定一致

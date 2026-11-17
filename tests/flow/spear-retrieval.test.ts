@@ -36,7 +36,7 @@ function makeWorld(weaponId = 'wp_drawpin_spear') {
   const combat = new CombatManager(player, ai, time, rhythm)
   // 地面查询是组合根注入的那一格：接上它，"落地"才贴得出 y=0，而不是停在高高的出手高度上
   combat.floorAt = () => 0
-  const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0 }, held: new Set<string>(), edges: new Set<string>() }
+  const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0, wheelDy: 0 }, held: new Set<string>(), edges: new Set<string>() }
   const input = { frame, enabled: true } as unknown as Input
   const notes: string[] = []
   const offFns = [

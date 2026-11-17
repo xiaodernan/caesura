@@ -36,7 +36,7 @@ function makeWorld(rank = 7) {
   const ai = new AISystem()
   const combat = new CombatManager(player, ai, time, rhythm)
   void combat
-  const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0 }, held: new Set<string>(), edges: new Set<string>() }
+  const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0, wheelDy: 0 }, held: new Set<string>(), edges: new Set<string>() }
   const input = { frame, enabled: true } as unknown as Input
 
   for (let i = 0; i < 40 && rpg.prog.rank < rank; i++) rpg.prog.addResonance(300)

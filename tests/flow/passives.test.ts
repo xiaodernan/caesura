@@ -51,7 +51,7 @@ function makeWorld(store = new MapStore()) {
     hasFlag: (k) => streaming.hasFlag(k)
   }, cellKey)
   const saves = new SaveGame({ player, streaming, spawner, clock: rhythm, time, rpg }, store)
-  const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0 }, held: new Set<string>(), edges: new Set<string>() }
+  const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0, wheelDy: 0 }, held: new Set<string>(), edges: new Set<string>() }
   const input = { frame, enabled: true } as unknown as Input
   player.camYawRef = 0
 

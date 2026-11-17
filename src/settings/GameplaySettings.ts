@@ -55,6 +55,13 @@ export interface GameplaySettings {
    * 老档没有此格 ⇒ 与发售行为一致。
    */
   invertMouseY: boolean
+  /**
+   * 滚轮纵向（scroll wheel Y）方向反转（默认 false：滚轮下滑 = 镜头朝下看 = 视线朝地；
+   *   即「往上滑往上看、往下滑往下看」—— 与用户固化诉求一致）。
+   * 翻改 `invertWheelY === true` 后，wheel deltaY 在灌入 look.wheelDy 之前乘以 -1。
+   * 仅滚轮受此开关影响；鼠标纵轴 invertMouseY 照常；水平 dx 不变；地图缩放（MapUI）不受影响。
+   */
+  invertWheelY: boolean
 }
 
 export const DEFAULT_GAMEPLAY_SETTINGS: Readonly<GameplaySettings> = Object.freeze({
@@ -66,7 +73,8 @@ export const DEFAULT_GAMEPLAY_SETTINGS: Readonly<GameplaySettings> = Object.free
   damageScale: 1,
   holdMs: 200,
   mashGuard: true,
-  invertMouseY: false
+  invertMouseY: false,
+  invertWheelY: false
 })
 
 /** 数值格的界（与规格出处一一对应；boolean 格不在此表） */
@@ -102,7 +110,8 @@ export function clampGameplaySettings(raw: unknown): GameplaySettings {
     damageScale: num('damageScale', GAMEPLAY_BOUNDS.damageScale),
     holdMs: num('holdMs', GAMEPLAY_BOUNDS.holdMs),
     mashGuard: typeof src.mashGuard === 'boolean' ? src.mashGuard : DEFAULT_GAMEPLAY_SETTINGS.mashGuard,
-    invertMouseY: typeof src.invertMouseY === 'boolean' ? src.invertMouseY : DEFAULT_GAMEPLAY_SETTINGS.invertMouseY
+    invertMouseY: typeof src.invertMouseY === 'boolean' ? src.invertMouseY : DEFAULT_GAMEPLAY_SETTINGS.invertMouseY,
+    invertWheelY: typeof src.invertWheelY === 'boolean' ? src.invertWheelY : DEFAULT_GAMEPLAY_SETTINGS.invertWheelY
   }
 }
 
@@ -112,7 +121,7 @@ export function clampGameplaySettings(raw: unknown): GameplaySettings {
  */
 export interface GameplaySettingsTargets {
   input: { bufferSec: number; frameAssist: boolean }
-  rig: { shakeIntensity: number; invertMouseY?: boolean }
+  rig: { shakeIntensity: number; invertMouseY?: boolean; invertWheelY?: boolean }
   /** 两把尺各一个字段（KI-359）：一个数灌两遍就是「独立」那半句没落地的那个形状 */
   haptics: { scale: number; weakScale: number }
   combat: { damageScale: number }
@@ -156,6 +165,7 @@ export class GameplaySettingsStore {
     this.targets.input.frameAssist = this.current.frameAssist
     this.targets.rig.shakeIntensity = this.current.shakeScale
     this.targets.rig.invertMouseY = this.current.invertMouseY
+    this.targets.rig.invertWheelY = this.current.invertWheelY
     this.targets.haptics.scale = this.current.rumbleScale
     this.targets.haptics.weakScale = this.current.rumbleWeakScale
     this.targets.combat.damageScale = this.current.damageScale

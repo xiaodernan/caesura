@@ -59,7 +59,7 @@ function makeWorld(patch?: Partial<GameplaySettings>) {
   player.setSkills(rpg.skillLoadout())
   const ai = new AISystem()
   const combat = new CombatManager(player, ai, time, rhythm)
-  const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0 }, held: new Set<string>(), edges: new Set<string>() }
+  const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0, wheelDy: 0 }, held: new Set<string>(), edges: new Set<string>() }
   const input = { frame, enabled: true, bufferSec: 0.2, frameAssist: false } as unknown as Input
   // 第六把消费者就是玩家自己：构造即灌一遍（`applyToTargets` 是唯一的灌入路径，测试不另写一份）
   const store = new GameplaySettingsStore({ input, rig: { shakeIntensity: 0 }, haptics: { scale: 1, weakScale: 1 }, combat, player }, patch)
@@ -188,10 +188,10 @@ describe('KI-384 取证：「连打」在这套代码里今天指着三件事，
 describe('KI-384 那一格：关的是涨价，而关掉那一刻就清账', () => {
   it('名册与默认：`mashGuard` 在表里、默认开，且消费者手里那一个字段就是它', () => {
     const keys = Object.keys(DEFAULT_GAMEPLAY_SETTINGS)
-    expect(keys, '玩法那一块今天有九格（KI-365 的七格 + KI-384 的连打涨价 + invertMouseY）').toContain('mashGuard')
+    expect(keys, '玩法那一块今天有十格（KI-365 的七格 + KI-384 的连打涨价 + invertMouseY + invertWheelY）').toContain('mashGuard')
     /* 格数由这一条腿钉住：`profile-contents` 与 `controls-page` 的标题里各抄了一份这个数，
        加格的人该在这里被撞一下，而不是等那两句人读的话自己烂掉。 */
-    expect(keys.length, '整块就是九格——多一格少一格本批都算改过形状').toBe(9)
+    expect(keys.length, '整块就是十格——多一格少一格本批都算改过形状').toBe(10)
     expect(DEFAULT_GAMEPLAY_SETTINGS.mashGuard, '默认开＝今天的行为逐字不变').toBe(true)
     const w = makeWorld()
     expect(w.player.mashGuard, '第五路消费者长成第六路：不接的话面板照样动、手感一个字不响').toBe(true)

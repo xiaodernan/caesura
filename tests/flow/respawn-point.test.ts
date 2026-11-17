@@ -43,7 +43,7 @@ function makePlayer() {
   const weapon = registry.get<WeaponData>('wp_tuning_sword')
   const moveset = registry.get<MovesetData>('ms_sword')
   const player = new PlayerController(playerBase, weapon, moveset)
-  const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0 }, held: new Set<string>(), edges: new Set<string>() }
+  const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0, wheelDy: 0 }, held: new Set<string>(), edges: new Set<string>() }
   const input = { frame, enabled: true } as unknown as Input
   const tick = (): void => {
     time.tick++

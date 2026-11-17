@@ -41,7 +41,7 @@ function makeWorld(patch?: Partial<GameplaySettings>) {
   const player = new PlayerController(playerBase, weapon, moveset)
   const ai = new AISystem()
   const combat = new CombatManager(player, ai, time, rhythm)
-  const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0 }, held: new Set<string>(), edges: new Set<string>() }
+  const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0, wheelDy: 0 }, held: new Set<string>(), edges: new Set<string>() }
   const input = { frame, enabled: true, bufferSec: 0.2, frameAssist: false } as unknown as Input
   // 第五把消费者就是玩家自己：构造即灌一遍（`applyToTargets` 是唯一的灌入路径，测试不另写一份）
   const store = new GameplaySettingsStore({ input, rig: { shakeIntensity: 0 }, haptics: { scale: 1, weakScale: 1 }, combat, player }, patch)

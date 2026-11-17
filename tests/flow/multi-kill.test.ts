@@ -34,7 +34,7 @@ function makeWorld() {
   const combat = new CombatManager(player, ai, time, rhythm)
 
   const frame = {
-    move: { x: 0, y: 0 }, look: { dx: 0, dy: 0 },
+    move: { x: 0, y: 0 }, look: { dx: 0, dy: 0, wheelDy: 0 },
     held: new Set<string>(), edges: new Set<string>()
   }
   const input = { frame, enabled: true } as unknown as Input
@@ -183,7 +183,7 @@ describe('KI-116：遗响的数额只有一个主人，播报的数字必须是�
     const ai = new AISystem()
     const combat = new CombatManager(player, ai, time, rhythm)
     const settle = new KillSettlement({ rpg, refresh: () => {}, checkpoint: () => {} } as never)
-    const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0 }, held: new Set<string>(), edges: new Set<string>() }
+    const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0, wheelDy: 0 }, held: new Set<string>(), edges: new Set<string>() }
     const input = { frame, enabled: true } as unknown as Input
     player.camYawRef = 0
     const tick = (n = 1): void => {

@@ -37,7 +37,7 @@ const tsFiles = (dir: string): string[] => {
 /** 假 Input：GameLoop 只用到 poll/endTick/frame 三个成员（与 flow 夹具同一口径） */
 function fakeInput(): Input {
   return {
-    frame: { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0 }, held: new Set<string>(), edges: new Set<string>() },
+    frame: { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0, wheelDy: 0 }, held: new Set<string>(), edges: new Set<string>() },
     enabled: true,
     poll: () => {},
     endTick: () => {},

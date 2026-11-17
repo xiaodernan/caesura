@@ -9,8 +9,8 @@ import type { WorldStates } from '@/quest/WorldStates'
 import type { Interactables } from '@/world/Interactables'
 import type { GameplaySettings } from '@/settings/GameplaySettings'
 
-/** 玩法设置落档形状：去掉会话级的 invertMouseY（见 settings.gameplay 的 JSDoc）。读档侧仍按 unknown 夹取，新旧档皆可读 */
-export type PersistedGameplay = Omit<GameplaySettings, 'invertMouseY'>
+/** 玩法设置落档形状：去掉会话级的 invertMouseY / invertWheelY（见 settings.gameplay 的 JSDoc）。读档侧仍按 unknown 夹取，新旧档皆可读 */
+export type PersistedGameplay = Omit<GameplaySettings, 'invertMouseY' | 'invertWheelY'>
 import type { Bindings } from '@/core/Input'
 import type { BindingProfile } from '@/settings/Bindings'
 import { migrateTo, registerMigration } from './Migration'
@@ -246,8 +246,8 @@ export interface Snapshot {
    * 同一句话有两种写法就是两个主人（§78「留空是如实」）。它与 `bindings` 各归各：这一格是
    * 「玩家留了几套」，那一格是「玩家此刻在用哪一张」，混成一格就变成"存个文件顺手换了键"。
    *
-   * `gameplay` 落档的是 `PersistedGameplay`（= `Omit<GameplaySettings, 'invertMouseY'>`）：
-   * 鼠标纵轴是会话级的镜头偏好，不跟档走——读档不灌它、写档也不存它，每次启动回落到 FPS norm（默认 false）。
+   * `gameplay` 落档的是 `PersistedGameplay`（= `Omit<GameplaySettings, 'invertMouseY' | 'invertWheelY'>`）：
+   * 鼠标纵轴与滚轮纵轴都是会话级的镜头偏好，不跟档走——读档不灌它们、写档也不存它们，每次启动回落到默认（false）。
    */
   settings?: { audio: Record<string, number>; gameplay?: PersistedGameplay; bindings?: Bindings; bindingsProfiles?: BindingProfile[]; quality?: number }
   /** 成长/背包/装备/掉落状态（v2 起）。v1 老档为 null ⇒ 保留运行时基线 */
@@ -518,10 +518,10 @@ export class SaveGame {
           for (const b of buses) audio[b] = w.audio.getVolume(b)
         }
         const gameplayOut = w.gameplay ? w.gameplay.get() : undefined
-        // invertMouseY 是会话级的镜头偏好，不跟档走（每次启动回落到 FPS norm）——落档前剔除
+        // invertMouseY / invertWheelY 是会话级的镜头偏好，不跟档走（每次启动回落到默认）——落档前剔除
         const gameplay: PersistedGameplay | undefined = (() => {
           if (!gameplayOut) return undefined
-          const { invertMouseY: _drop, ...rest } = gameplayOut
+          const { invertMouseY: _drop, invertWheelY: _drop2, ...rest } = gameplayOut
           return rest
         })()
         return {

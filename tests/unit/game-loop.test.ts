@@ -19,7 +19,7 @@ import type { Input } from '@/core/Input'
 
 function fakeInput(): Input {
   return {
-    frame: { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0 }, held: new Set<string>(), edges: new Set<string>() },
+    frame: { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0, wheelDy: 0 }, held: new Set<string>(), edges: new Set<string>() },
     enabled: true,
     poll: () => {},
     endTick: () => {},

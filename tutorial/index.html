@@ -106,7 +106,33 @@
   @media (prefers-reduced-motion: no-preference) {
     .step { transition: border-color .25s ease }
     .step:hover { border-color: rgba(201,180,88,.45) }
+    .qs3-card { transition: border-color .3s ease, box-shadow .3s ease }
+    .qs3-card:hover { border-color: rgba(201,180,88,.5); box-shadow: 0 0 30px rgba(201,180,88,.08) }
+    .qs3-pip { transition: all .3s ease }
+    .qs3-pip.lit { animation: qs3Pip .5s ease }
+    @keyframes qs3Pip { 0% { transform: scale(.6); opacity: .2 } 60% { transform: scale(1.35) } 100% { transform: scale(1); opacity: 1 } }
+    .qs3-stage2 { transition: filter .4s ease, opacity .4s ease }
+    .qs3-stage2.dim { opacity: .32; filter: grayscale(.8) }
   }
+  /* ── 30 秒快速上手（KI-646 · v1.11）：三步可交互点亮 · 中文/English ── */
+  .qs3 { border: 1px solid rgba(201,180,88,.4); background: linear-gradient(180deg, rgba(201,180,88,.07), rgba(22,22,29,.96) 40%); border-radius: 6px; padding: 20px 22px; margin: 0 0 22px; box-shadow: 0 0 34px rgba(201,180,88,.06) }
+  .qs3-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid rgba(201,180,88,.22); padding-bottom: 10px; margin-bottom: 14px }
+  .qs3-head h2 { font-size: 19px; color: #ffeacc; letter-spacing: .08em; font-weight: 500 }
+  .qs3-head .qs3-meta { font-family: var(--mono); font-size: 11px; color: rgba(201,180,88,.75); letter-spacing: .24em }
+  .qs3-stage { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px }
+  @media (max-width: 700px) { .qs3-stage { grid-template-columns: 1fr } }
+  .qs3-card { border: 1px solid var(--line); background: rgba(18,18,24,.92); border-radius: 6px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; cursor: pointer; text-align: left; font-family: inherit }
+  .qs3-card:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px }
+  .qs3-num { font-family: var(--mono); font-size: 13px; color: var(--gold-dim); letter-spacing: .2em; border: 1px solid rgba(201,180,88,.2); border-radius: 3px; align-self: flex-start; padding: 2px 10px }
+  .qs3-pip { width: 10px; height: 10px; border-radius: 50%; background: rgba(201,180,88,.18); display: inline-block; margin-left: 8px; vertical-align: 1px }
+  .qs3-pip.lit { background: var(--gold); box-shadow: 0 0 12px rgba(201,180,88,.6) }
+  .qs3-title { font-size: 16px; color: #ffeacc; letter-spacing: .05em }
+  .qs3-body { font-size: 12.5px; color: rgba(242,237,228,.82); line-height: 1.65 }
+  .qs3-go { margin-top: auto; font-family: var(--mono); font-size: 10.5px; color: rgba(201,180,88,.75); letter-spacing: .18em }
+  .qs3-done { margin-top: 14px; border: 1px solid rgba(201,180,88,.32); background: rgba(201,180,88,.06); border-radius: 4px; padding: 12px 16px; font-size: 13px; color: rgba(255,248,224,.85); display: none }
+  .qs3-done.show { display: block }
+  .qs3-done b { color: var(--gold) }
+
 </style>
 </head>
 <body>
@@ -133,6 +159,61 @@
 </header>
 
 <main>
+
+<!-- ── 30 秒快速上手（KI-646 · v1.11）：点三张卡，每张点亮一步——完整跑完前两局不需要教程，需要这三秒钟 ── -->
+<section class="qs3" id="qs3" aria-label="三十秒快速上手 / 30-second quick start">
+  <div class="qs3-head zh-copy">
+    <div>
+      <div class="qs3-meta">QUICK START / 00</div>
+      <h2>三十秒上手 · 三步点亮</h2>
+    </div>
+    <div class="qs3-meta">点三张卡 → 点亮三个灯 → 点亮即会打</div>
+  </div>
+  <div class="qs3-head en-copy">
+    <div>
+      <div class="qs3-meta">QUICK START / 00</div>
+      <h2>Thirty seconds · three lights</h2>
+    </div>
+    <div class="qs3-meta">Tap three cards → light three pips → you already know how to fight</div>
+  </div>
+  <div class="qs3-stage" role="group" aria-label="三步 / Three steps">
+    <button class="qs3-card" id="qs3-step-1" type="button" aria-pressed="false">
+      <span class="qs3-num zh-copy">01 · 定弦<span class="qs3-pip" data-pip="1"></span></span>
+      <span class="qs3-num en-copy">01 · String<span class="qs3-pip" data-pip="1"></span></span>
+      <span class="qs3-title zh-copy">按下 <span class="key">Enter</span> 启程</span>
+      <span class="qs3-title en-copy">Press <span class="key">Enter</span> to begin</span>
+      <span class="qs3-body zh-copy">主界面就是一次定弦——看到开局卡时，<span class="key">←</span> / <span class="key">→</span> 切换，<span class="key">Enter</span> 确认。这决定你第一局怎么打，但不是期末考试——进入游戏后再改级加点。</span>
+      <span class="qs3-body en-copy">The title is one tuning — pick any card with <span class="key">←</span> / <span class="key">→</span>, confirm with <span class="key">Enter</span>. It opens your first run; it does not bind you.</span>
+      <span class="qs3-go zh-copy">第 1 步 · 点一下 ✓</span>
+      <span class="qs3-go en-copy">Step 1 · tap me ✓</span>
+    </button>
+    <button class="qs3-card" id="qs3-step-2" type="button" aria-pressed="false">
+      <span class="qs3-num zh-copy">02 · 进世界<span class="qs3-pip" data-pip="2"></span></span>
+      <span class="qs3-num en-copy">02 · Enter<span class="qs3-pip" data-pip="2"></span></span>
+      <span class="qs3-title zh-copy"><span class="key">W</span> / <span class="key">A</span> / <span class="key">S</span> / <span class="key">D</span> 行走</span>
+      <span class="qs3-title en-copy"><span class="key">W</span> / <span class="key">A</span> / <span class="key">S</span> / <span class="key">D</span> to walk</span>
+      <span class="qs3-body zh-copy">进入游戏后用 <span class="key">W</span> <span class="key">A</span> <span class="key">S</span> <span class="key">D</span> 或方向键移动；<span class="key">Shift</span> 跑步 / <span class="key">Space</span> 跳越 / <span class="key">E</span> 互动——门牌、信、尸体、铃、书，都是<span class="key">E</span>。</span>
+      <span class="qs3-body en-copy">In game move with <span class="key">W</span> / <span class="key">A</span> / <span class="key">S</span> / <span class="key">D</span>; <span class="key">Shift</span> run · <span class="key">Space</span> jump · <span class="key">E</span> interact — doors, notes, corpses, bells, books all answer to <span class="key">E</span>.</span>
+      <span class="qs3-go zh-copy">第 2 步 · 点一下 ✓</span>
+      <span class="qs3-go en-copy">Step 2 · tap me ✓</span>
+    </button>
+    <button class="qs3-card" id="qs3-step-3" type="button" aria-pressed="false">
+      <span class="qs3-num zh-copy">03 · 活下来<span class="qs3-pip" data-pip="3"></span></span>
+      <span class="qs3-num en-copy">03 · Survive<span class="qs3-pip" data-pip="3"></span></span>
+      <span class="qs3-title zh-copy">左键 / <span class="key">J</span> 挥剑 · 右键 / <span class="key">K</span> 防御</span>
+      <span class="qs3-title en-copy">Left mouse / <span class="key">J</span> attack · Right mouse / <span class="key">K</span> guard</span>
+      <span class="qs3-body zh-copy">靠近了什么之后，按左键 / <span class="key">J</span> 挥剑；按右键 / <span class="key">K</span> 防御并弹反——会亮红闪的属于可弹反的攻击，红闪一出就防。音乐的拍子在每场 boss 战里就是反击的拍子。</span>
+      <span class="qs3-body en-copy">Stand near something, then left mouse / <span class="key">J</span> to swing; right mouse / <span class="key">K</span> to guard — and on red flashes, Riposte. In boss fights, the beat is the parry cue.</span>
+      <span class="qs3-go zh-copy">第 3 步 · 点一下 ✓</span>
+      <span class="qs3-go en-copy">Step 3 · tap me ✓</span>
+    </button>
+  </div>
+  <div class="qs3-done" id="qs3-done" role="status" aria-live="polite">
+    <span class="zh-copy"><b>三盏灯全亮。</b>你现在已经能打第一场遭遇了——按 <span class="key">Esc</span> 暂停、按 <span class="key">F</span> 打开手册，遇到不懂的看图鉴。完整教程在下面的 14 步；但你先打前三步，就不会卡。</span>
+    <span class="en-copy"><b>Three pips lit.</b> You can already fight the first encounter — <span class="key">Esc</span> pauses, <span class="key">F</span> opens the in-game manual, the codex answers everything else. The 14-step primer sits below; but your first three steps already carry you.</span>
+  </div>
+</section>
+
 
 <div class="step">
   <div class="num">01</div>
@@ -363,8 +444,8 @@
 </main>
 
 <footer>
-  <div class="zh-copy">CAESURA · v1.10 · 《止音纪元》官方教程 · 关闭本页即回游戏<br /><a href="https://xiaodernan.github.io/caesura/">返回游戏</a> · <a href="https://xiaodernan.github.io/caesura/cast/">角色图鉴</a> · <a href="https://xiaodernan.github.io/caesura/codex/">世界谱</a> · <a href="https://xiaodernan.github.io/caesura/console/">调度台</a> · <a href="https://xiaodernan.github.io/caesura/story/">《盐》</a> · <a href="https://xiaodernan.github.io/caesura/story/empty-bar/">《空拍子》</a> · <a href="https://xiaodernan.github.io/caesura/story/ledger/">《账本》</a> · <a href="https://xiaodernan.github.io/caesura/story/garden/">《回声庭园》</a> · <a href="https://xiaodernan.github.io/caesura/story/tribunal/">《雨审判》</a> · <a href="https://xiaodernan.github.io/caesura/story/anthology/">《余响集》</a> · <a href="https://xiaodernan.github.io/caesura/story/frostbell/">《霜锤》</a> · <a href="https://xiaodernan.github.io/caesura/story/doors/">《千门》</a> · <a href="https://xiaodernan.github.io/caesura/story/stonethroat/">《石喉》</a> · <a href="https://xiaodernan.github.io/caesura/story/first-bell/">《第一钟》</a> · <a href="https://xiaodernan.github.io/caesura/story/dark-tide/">《暗潮》</a> · <a href="https://xiaodernan.github.io/caesura/story/twelfth-listener/">《后记 · 第十二个听者》</a> · <a href="/caesura/story/bell-picker/">篇十三 · 拾钟人</a> · <a href="/caesura/story/lampwright-bell/">篇十四 · 灯匠</a> · <a href="/caesura/story/lowtone-city/">篇十五 · 低音之城</a> · <a href="/caesura/story/pendulum-ferryman/">篇十六 · 钟摆渡人</a> · <a href="/caesura/story/unfinished-ledger/">篇十七 · 未竟账页</a> · <a href="/caesura/story/fourth-strike/">篇十八 · 第四下</a> · <a href="/caesura/story/last-string/">篇十九 · 末弦</a> · <a href="/caesura/story/string-listener/">篇二十 · 听弦</a> · <a href="/caesura/story/third-voice/">篇二十一 · 第三声</a> · <a href="/caesura/story/ensemble/">篇二十二 · 合奏</a> · <a href="https://xiaodernan.github.io/caesura/admin/">止音后台（口令 123）</a></div>
-  <div class="en-copy">CAESURA · v1.10 · Official Tutorial · close this page to return · <br /><a href="https://xiaodernan.github.io/caesura/">Back to the game</a> · <a href="https://xiaodernan.github.io/caesura/cast/">Cast Roster</a> · <a href="https://xiaodernan.github.io/caesura/codex/">World Codex</a> · <a href="https://xiaodernan.github.io/caesura/console/">Console</a> · <a href="https://xiaodernan.github.io/caesura/story/">Salt</a> · <a href="https://xiaodernan.github.io/caesura/story/empty-bar/">The Empty Bar</a> · <a href="https://xiaodernan.github.io/caesura/story/ledger/">The Ledger</a> · <a href="https://xiaodernan.github.io/caesura/story/garden/">The Garden of Return</a> · <a href="https://xiaodernan.github.io/caesura/story/tribunal/">The Rain Tribunal</a> · <a href="https://xiaodernan.github.io/caesura/story/anthology/">The Aftermath</a> · <a href="https://xiaodernan.github.io/caesura/story/frostbell/">The Frostbell</a> · <a href="https://xiaodernan.github.io/caesura/story/doors/">The Thousand Doors</a> · <a href="https://xiaodernan.github.io/caesura/story/stonethroat/">The Stone-Throat</a> · <a href="https://xiaodernan.github.io/caesura/story/first-bell/">The First Bell</a> · <a href="https://xiaodernan.github.io/caesura/story/dark-tide/">The Dark Tide</a> · <a href="https://xiaodernan.github.io/caesura/story/twelfth-listener/">The Twelfth Listener</a> · <a href="/caesura/story/bell-picker/">No. 13 · The Bell-Picker</a> · <a href="/caesura/story/lampwright-bell/">No. 14 · The Lampwright</a> · <a href="/caesura/story/lowtone-city/">No. 15 · The City of Low Tones</a> · <a href="/caesura/story/pendulum-ferryman/">No. 16 · The Pendulum Ferryman</a> · <a href="/caesura/story/unfinished-ledger/">No. 17 · The Unfinished Ledger Page</a> · <a href="/caesura/story/fourth-strike/">No. 18 · The Fourth Strike</a> · <a href="/caesura/story/last-string/">No. 19 · The Last String</a> · <a href="/caesura/story/string-listener/">No. 20 · The String-Listener</a> · <a href="/caesura/story/third-voice/">No. 21 · The Third Voice</a> · <a href="/caesura/story/ensemble/">No. 22 · The Ensemble</a> · <a href="https://xiaodernan.github.io/caesura/admin/">Observatory (passphrase 123)</a></div>
+  <div class="zh-copy">CAESURA · v1.11 · 《止音纪元》官方教程 · 关闭本页即回游戏<br /><a href="https://xiaodernan.github.io/caesura/">返回游戏</a> · <a href="https://xiaodernan.github.io/caesura/cast/">角色图鉴</a> · <a href="https://xiaodernan.github.io/caesura/codex/">世界谱</a> · <a href="https://xiaodernan.github.io/caesura/console/">调度台</a> · <a href="https://xiaodernan.github.io/caesura/story/">《盐》</a> · <a href="https://xiaodernan.github.io/caesura/story/empty-bar/">《空拍子》</a> · <a href="https://xiaodernan.github.io/caesura/story/ledger/">《账本》</a> · <a href="https://xiaodernan.github.io/caesura/story/garden/">《回声庭园》</a> · <a href="https://xiaodernan.github.io/caesura/story/tribunal/">《雨审判》</a> · <a href="https://xiaodernan.github.io/caesura/story/anthology/">《余响集》</a> · <a href="https://xiaodernan.github.io/caesura/story/frostbell/">《霜锤》</a> · <a href="https://xiaodernan.github.io/caesura/story/doors/">《千门》</a> · <a href="https://xiaodernan.github.io/caesura/story/stonethroat/">《石喉》</a> · <a href="https://xiaodernan.github.io/caesura/story/first-bell/">《第一钟》</a> · <a href="https://xiaodernan.github.io/caesura/story/dark-tide/">《暗潮》</a> · <a href="https://xiaodernan.github.io/caesura/story/twelfth-listener/">《后记 · 第十二个听者》</a> · <a href="/caesura/story/bell-picker/">篇十三 · 拾钟人</a> · <a href="/caesura/story/lampwright-bell/">篇十四 · 灯匠</a> · <a href="/caesura/story/lowtone-city/">篇十五 · 低音之城</a> · <a href="/caesura/story/pendulum-ferryman/">篇十六 · 钟摆渡人</a> · <a href="/caesura/story/unfinished-ledger/">篇十七 · 未竟账页</a> · <a href="/caesura/story/fourth-strike/">篇十八 · 第四下</a> · <a href="/caesura/story/last-string/">篇十九 · 末弦</a> · <a href="/caesura/story/string-listener/">篇二十 · 听弦</a> · <a href="/caesura/story/third-voice/">篇二十一 · 第三声</a> · <a href="/caesura/story/ensemble/">篇二十二 · 合奏</a> · <a href="https://xiaodernan.github.io/caesura/admin/">止音后台（口令 123）</a></div>
+  <div class="en-copy">CAESURA · v1.11 · Official Tutorial · close this page to return · <br /><a href="https://xiaodernan.github.io/caesura/">Back to the game</a> · <a href="https://xiaodernan.github.io/caesura/cast/">Cast Roster</a> · <a href="https://xiaodernan.github.io/caesura/codex/">World Codex</a> · <a href="https://xiaodernan.github.io/caesura/console/">Console</a> · <a href="https://xiaodernan.github.io/caesura/story/">Salt</a> · <a href="https://xiaodernan.github.io/caesura/story/empty-bar/">The Empty Bar</a> · <a href="https://xiaodernan.github.io/caesura/story/ledger/">The Ledger</a> · <a href="https://xiaodernan.github.io/caesura/story/garden/">The Garden of Return</a> · <a href="https://xiaodernan.github.io/caesura/story/tribunal/">The Rain Tribunal</a> · <a href="https://xiaodernan.github.io/caesura/story/anthology/">The Aftermath</a> · <a href="https://xiaodernan.github.io/caesura/story/frostbell/">The Frostbell</a> · <a href="https://xiaodernan.github.io/caesura/story/doors/">The Thousand Doors</a> · <a href="https://xiaodernan.github.io/caesura/story/stonethroat/">The Stone-Throat</a> · <a href="https://xiaodernan.github.io/caesura/story/first-bell/">The First Bell</a> · <a href="https://xiaodernan.github.io/caesura/story/dark-tide/">The Dark Tide</a> · <a href="https://xiaodernan.github.io/caesura/story/twelfth-listener/">The Twelfth Listener</a> · <a href="/caesura/story/bell-picker/">No. 13 · The Bell-Picker</a> · <a href="/caesura/story/lampwright-bell/">No. 14 · The Lampwright</a> · <a href="/caesura/story/lowtone-city/">No. 15 · The City of Low Tones</a> · <a href="/caesura/story/pendulum-ferryman/">No. 16 · The Pendulum Ferryman</a> · <a href="/caesura/story/unfinished-ledger/">No. 17 · The Unfinished Ledger Page</a> · <a href="/caesura/story/fourth-strike/">No. 18 · The Fourth Strike</a> · <a href="/caesura/story/last-string/">No. 19 · The Last String</a> · <a href="/caesura/story/string-listener/">No. 20 · The String-Listener</a> · <a href="/caesura/story/third-voice/">No. 21 · The Third Voice</a> · <a href="/caesura/story/ensemble/">No. 22 · The Ensemble</a> · <a href="https://xiaodernan.github.io/caesura/admin/">Observatory (passphrase 123)</a></div>
 </footer>
 
 <script defer src="/caesura/zh-tw-converter.js"></script>
@@ -404,5 +485,39 @@
 </script>
 
 <script defer src="../tracker.js"></script>
+<script>
+/* 30 秒快速上手（KI-646 · v1.11）：三步点亮 + 一次性 localStorage 记录 */
+(function () {
+  var KEY = 'caesura-qs3-lit';
+  var doneEl = document.getElementById('qs3-done');
+  var cards = [document.getElementById('qs3-step-1'), document.getElementById('qs3-step-2'), document.getElementById('qs3-step-3')];
+  if (!doneEl || cards.some(function (c) { return !c; })) return;
+  var lit = { 1: false, 2: false, 3: false };
+  try { var saved = localStorage.getItem(KEY); if (saved) lit = JSON.parse(saved); } catch (e) { /* noop */ }
+  function pips(n) { return document.querySelectorAll('.qs3-pip[data-pip="' + n + '"]'); }
+  function paint(n, on) {
+    pips(n).forEach(function (p) { if (on) p.classList.add('lit'); else p.classList.remove('lit'); });
+    var cardsForN = document.querySelectorAll('#qs3-step-' + n);
+    cardsForN.forEach(function (c) { c.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+  }
+  function maybeComplete() {
+    if (lit[1] && lit[2] && lit[3]) {
+      doneEl.classList.add('show');
+      try { localStorage.setItem(KEY, JSON.stringify(lit)); } catch (e) { /* noop */ }
+    }
+  }
+  [1, 2, 3].forEach(function (n) {
+    paint(n, !!lit[n]);
+    var card = document.getElementById('qs3-step-' + n);
+    if (!card) return;
+    card.addEventListener('click', function () {
+      lit[n] = true;
+      paint(n, true);
+      maybeComplete();
+    });
+  });
+  if (lit[1] && lit[2] && lit[3]) doneEl.classList.add('show');
+})();
+</script>
 </body>
 </html>

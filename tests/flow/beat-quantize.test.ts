@@ -46,7 +46,7 @@ function makeWorld() {
   const player = new PlayerController(playerBase, weapon, moveset)
   const ai = new AISystem()
   const combat = new CombatManager(player, ai, time, rhythm)
-  const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0 }, held: new Set<string>(), edges: new Set<string>() }
+  const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0, wheelDy: 0 }, held: new Set<string>(), edges: new Set<string>() }
   const input = { frame, enabled: true } as unknown as Input
   player.camYawRef = 0
   function tick(n = 1): void {

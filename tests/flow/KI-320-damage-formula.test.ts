@@ -88,7 +88,7 @@ function makeWorld(weaponId = 'wp_tuning_sword') {
   const combat = new CombatManager(player, ai, time, rhythm)
   // 量具纪律①：抖动钉死（`CombatManager` 只用 `rng.float()`，替掉它不影响别处）
   combat.rng = { float: () => 0.5 } as unknown as Rng
-  const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0 }, held: new Set<string>(), edges: new Set<string>() }
+  const frame = { move: { x: 0, y: 0 }, look: { dx: 0, dy: 0, wheelDy: 0 }, held: new Set<string>(), edges: new Set<string>() }
   const input = { frame, enabled: true } as unknown as Input
   player.camYawRef = 0
   const hits: Array<{ attackerId: string; victimId: string; damage: number; result: string; backstab?: boolean; crit?: boolean }> = []
