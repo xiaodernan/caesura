@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "826e26d0c089cd87e5444f7da72f69bd1be0e2b8",
+  "head": "9d674c47b5ba33025196d383c8514bd65b767a26",
   "branch": "master",
-  "subject": "site-latest: 9dfde7b (post-rebase reconcile)",
-  "date": "2026-11-18T00:08:58+08:00",
+  "subject": "feat(story): KI-669《余响集》第三十八篇《秤盘之外 / Beyond the Scale》落地（LLM 真机草稿 → 人工闸落库）",
+  "date": "2026-11-18T02:22:13+08:00",
   "kv": {
-    "KI.rows": 586,
-    "KI.Implemented": 409,
+    "KI.rows": 587,
+    "KI.Implemented": 410,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/826e26d0c089cd87e5444f7da72f69bd1be0e2b8",
+    "url": "https://github.com/xiaodernan/caesura/commit/9d674c47b5ba33025196d383c8514bd65b767a26",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
