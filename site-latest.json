@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "bb55a6c48847eaa68d54982d96a60a48753013ca",
+  "head": "723d95bcbcb119cf41fa9f96c812143c4bb8ddea",
   "branch": "master",
-  "subject": "site-latest: 9a965b8 (post-rebase reconcile)",
-  "date": "2026-11-17T10:58:19+08:00",
+  "subject": "feat(ui): KI-640 本周纪事 W47 v2 · 篇二十后世界快照重派（cached_tokens=4352）",
+  "date": "2026-11-17T11:10:57+08:00",
   "kv": {
-    "KI.rows": 557,
-    "KI.Implemented": 380,
+    "KI.rows": 558,
+    "KI.Implemented": 381,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/bb55a6c48847eaa68d54982d96a60a48753013ca",
+    "url": "https://github.com/xiaodernan/caesura/commit/723d95bcbcb119cf41fa9f96c812143c4bb8ddea",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
