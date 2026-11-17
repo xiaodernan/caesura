@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "2a5d9f70d57ee5318342c2e8333ee93567b146c0",
+  "head": "b5ab168d66530fcfe63e58eae48a19d240795cd6",
   "branch": "master",
-  "subject": "feat(ai): KI-633 史官问答 · AI 生成的 canon 双语问答嵌进世界谱页",
-  "date": "2026-11-17T08:29:40+08:00",
+  "subject": "site-latest: 2a5d9f7 (post-rebase reconcile)",
+  "date": "2026-11-17T08:30:25+08:00",
   "kv": {
     "KI.rows": 551,
     "KI.Implemented": 374,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/2a5d9f70d57ee5318342c2e8333ee93567b146c0",
+    "url": "https://github.com/xiaodernan/caesura/commit/b5ab168d66530fcfe63e58eae48a19d240795cd6",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
