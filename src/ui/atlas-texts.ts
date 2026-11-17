@@ -1,6 +1,6 @@
 /**
- * 游记 · 三十二篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662 扩）。
- * 这三十二篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 三十三篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664 扩）。
+ * 这三十三篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -1848,6 +1848,47 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She turned the ledger's shadow over in her mind — its thickness and the thickness of the blank were about the same weight.</p>
     <p class="coda">The plank did not record the blank.</p>
     <p class="coda">The age of hush has not ended. It is learning to let the empty space be genuinely empty.</p>`,
+  },
+  {
+    no: 33,
+    zhTitle: "秤旁",
+    enTitle: "Beside the Scale",
+    zh: `<p>铜扣和铁钉并排放着。篇三十二那枚老得像海峡泡了一百年的钉子，和铜扣一起躺在木板接缝旁——像两件刚从海里捞上来的东西。阿汐没有数它们。她试了试袖子里的记数法，觉得什么都数不出来。</p>
+    <p>窗台的空处仍在。薄页上的空格也仍在——没有任何一笔落进去。她把那本簿子从袖子里抽出来，放在两件小东西旁边。它在那里会仔细地记住自己是什么，也会记住自己是什么都不是。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>海经过门外。每天早晨它退潮一次，浅点从门槛外走过；每天黄昏它涨回来一次，把浅点也带回去。她以前数过它们——一，二，三，五，九——后来她没有再数了。她坐在窗台边，听见风把木板接缝里的海盐吹散，却没有一句话被落在本子上。</p>
+    <p>她把手收回袖中，听海经过门外，没有替它记下声音。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>渡口的栏杆上挂着一小截粉笔头——阿汐某天路过那里的时候，看见它挂在上面，没有人取，也没有人挂回去。她以为是渡人留下的，也许是出过渡人的任何一个人都可以顺手挂在那里。</p>
+    <p>她回来的时候，窗台上的空处里多了一道极淡的横线。那条线很干净。她走近看了看——那不是字，只是一笔极淡的标点。或者是某种记下没被记下来的开始。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有擦它。她也没有留下它。她只是把簿子换了一个方向，让薄页的那一页朝上。</p>
+    <p class="coda">有些空处，不等答案。</p>
+    <p class="coda">止音纪元没有结束。它只是终于学会了「放着」这两个字——放不等待，也不算。</p>`,
+    en: `<p>The copper button and the iron nail lay side by side. The nail — older than salt — coiled like a thing that had soaked in the strait for a hundred years. They rested beside the seam in the floorboard like two small things dredged from the sea. Axi did not count them. She went over her pocket arithmetic and felt there was nothing there she could fold into a number.</p>
+    <p>The empty space on the sill remained, as did the blank in the ledger — not one stroke had ever entered it. She drew the ledger from her sleeve and set it beside the two small things. There it would remember what it was, and also remember what it was not.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The sea passed outside the door. Each morning it receded, leaving shallow points by the threshold; each evening it returned and took them with it. She had counted once — one, two, three, five, nine — and never counted again. She sat by the sill and listened to wind brush salt off the boards' seam, and not a single word was left on the page.</p>
+    <p>She drew her hand back into her sleeve and listened as the sea passed outside the door, leaving its sound unrecorded.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>On the ferry rail hung a short chalk nub. She came upon it one day travelling to the far side; no one took it and no one put it back. She supposed it had belonged to the ferryman — or that anyone who had ever crossed with him could have left it there.</p>
+    <p>When she returned, a very faint horizontal stroke lay across the empty space on the sill. The stroke was clean. She stepped closer and looked — it was not a character, only a faint period, or perhaps the mark of a thing that had decided to be remembered.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not wipe it. She did not keep it. She only turned the ledger over, so that the open page faced upward.</p>
+    <p class="coda">Some empty spaces do not wait for an answer.</p>
+    <p class="coda">The age of hush has not ended. It is only learning two characters — set aside — which neither waits nor counts.</p>`,
   },
 ]
 

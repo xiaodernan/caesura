@@ -51,6 +51,7 @@ try {
     'story/the-sill-keeps-count/index.html',
     'story/after-the-space/index.html',
     'story/the-unmarked-number/index.html',
+    'story/beside-the-scale/index.html',
   ];
 
   const PHRASES = new Set();

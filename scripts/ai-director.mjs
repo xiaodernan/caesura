@@ -18,7 +18,7 @@
  *
  * LangGraph 知识落地：实现一个零依赖的 StateGraph（addNode / addEdge / addConditionalEdges /
  * checkpoints），条件边按 mode 分流——offline 模式不触网、诚实落「未真跑」的占位产物；
- * live 模式三条 LLM 边共享同一**场景圣经巨前缀**（≈62k tokens · 世界圣经+世界谱74条+余响集三十二篇全文
+ * live 模式三条 LLM 边共享同一**场景圣经巨前缀**（≈62k tokens · 世界圣经+世界谱74条+余响集三十三篇全文
  * · sha256 锚定、字节稳定），易变快照移入 user 消息，首条调用即暖缓存（KI-663）。
  *
  * 纪律（不可绕过）：
@@ -109,7 +109,7 @@ const worldSnapshot = () => {
 
 /* ═══════════ LLM 调用（live 才有；三边共享**场景圣经巨前缀** + canon 证据后缀 → 暖一条缓存）═══════════ */
 /* KI-663：前缀主体 = scripts/lib/scene-bible.mjs 的 SCENE_BIBLE
-   （世界圣经 + 世界谱 74 条 + 余响集三十二篇全文 ≈ 62k tokens · 字节稳定）；
+   （世界圣经 + 世界谱 74 条 + 余响集三十三篇全文 ≈ 62k tokens · 字节稳定）；
    易变的「世界现状快照」（日期/KI行数/篇目数）按 KI-555/KI-657 纪律迁入 user 消息，不再污染前缀字节 */
 
 /** 易变读数只进 user，不进 system：快照 + 本轮任务 */
@@ -151,7 +151,7 @@ const parseJsonLoose = (raw) => {
 async function nodeLoadWorld(state) { state.world = worldSnapshot() }
 
 async function nodeRetrieveCanon(state) {
-  const focus = FOCUS || '止音纪元 世界现状 三十二篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响'
+  const focus = FOCUS || '止音纪元 世界现状 三十三篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响'
   const t0 = Date.now()
   const corpus = buildWorldCorpus(ROOT)
   const index = buildIndex(corpus)
@@ -184,7 +184,7 @@ async function nodeAudit(state) {
 
 async function nodeProposeTransitions(state) {
   if (state.mode !== 'live') { state.transitions = []; return }
-  const task = '【任务·世界状态流转提案】现状：无耳深窖五环线索、低音之城、三十二篇游记写尽。提出 4 条**可直接落为 quest/flag 的状态流转提案**：{"transitions":[{"fromZh":"起点状态","fromEn":"from-state","toZh":"终点状态","toEn":"to-state","flag":"flag.xxx","narrativeZh":"≤80字叙事后果","narrativeEn":"≤45 words","npcReactionZh":"≤40字 NPC/世界反应","npcReactionEn":"≤25 words","atlasHookZh":"≤30字 可挂进 Atlas 的钩子","atlasHookEn":"≤18 words"}]}。硬约束：flag **必须**以 "flag." 开头、全小写 snake_case（如 flag.paper_bag_salt_line_kept），**不许**加 proposed / new / plan 之类的前缀；flag 名字要像现存 flag 一样直接落库。只许 JSON。'
+  const task = '【任务·世界状态流转提案】现状：无耳深窖五环线索、低音之城、三十三篇游记写尽。提出 4 条**可直接落为 quest/flag 的状态流转提案**：{"transitions":[{"fromZh":"起点状态","fromEn":"from-state","toZh":"终点状态","toEn":"to-state","flag":"flag.xxx","narrativeZh":"≤80字叙事后果","narrativeEn":"≤45 words","npcReactionZh":"≤40字 NPC/世界反应","npcReactionEn":"≤25 words","atlasHookZh":"≤30字 可挂进 Atlas 的钩子","atlasHookEn":"≤18 words"}]}。硬约束：flag **必须**以 "flag." 开头、全小写 snake_case（如 flag.paper_bag_salt_line_kept），**不许**加 proposed / new / plan 之类的前缀；flag 名字要像现存 flag 一样直接落库。只许 JSON。'
   const out = await callDirector(state.env, { stdinPrefix: state.prefix, task: withSnapshot(state, task), temperature: 0.75, maxTokens: 1200 })
   state.usage.calls += 1
   state.usage.cachedTokens += out.cachedTokens || 0
@@ -196,7 +196,7 @@ async function nodeProposeTransitions(state) {
 
 async function nodeDraftContent(state) {
   if (state.mode !== 'live') { state.atlasDraft = null; return }
-  const task = '【任务·游记续写草稿】以钟摆渡人/止音纪元的笔法，为下一篇游记产出草稿：{"no":33,"titleZh":"≤10字","titleEn":"≤6 words","pZh":"≤120字正文","pEn":"≤70 words","codaZh":"≤40字尾声","codaEn":"≤25 words","requiresHumanReview":true}。笔法：不喧哗、不抒情、物件说话、留白。只许 JSON。'
+  const task = '【任务·游记续写草稿】以钟摆渡人/止音纪元的笔法，为下一篇游记产出草稿：{"no":34,"titleZh":"≤10字","titleEn":"≤6 words","pZh":"≤120字正文","pEn":"≤70 words","codaZh":"≤40字尾声","codaEn":"≤25 words","requiresHumanReview":true}。笔法：不喧哗、不抒情、物件说话、留白。只许 JSON。'
   const out = await callDirector(state.env, { stdinPrefix: state.prefix, task: withSnapshot(state, task), temperature: 0.9, maxTokens: 800 })
   state.usage.calls += 1
   state.usage.cachedTokens += out.cachedTokens || 0
