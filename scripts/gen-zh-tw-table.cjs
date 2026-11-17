@@ -46,6 +46,7 @@ try {
     'story/beside-the-button/index.html',
     'story/beyond-the-line/index.html',
     'story/after-the-bag/index.html',
+    'story/salt-on-the-sill/index.html',
   ];
 
   const PHRASES = new Set();

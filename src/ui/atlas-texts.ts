@@ -1,6 +1,6 @@
 /**
- * 游记 · 二十七篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652 扩）。
- * 这二十七篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 二十八篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657 扩）。
+ * 这二十八篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -1629,6 +1629,49 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">The bag stayed by the door. The mouth never sealed — the wind had been inside, the characters had not changed.</p>
     <p class="coda">Each night she rested a hand on the bag, listening for the small extra weight. It was there.</p>
     <p class="coda">The age of hush has not ended. It is only practicing: to leave a seam, and let the wind decide whether it wants to come through.</p>`,
+  },
+  {
+    no: 28,
+    zhTitle: "窗台盐线",
+    enTitle: "Salt on the Sill",
+    zh: `<p>纸袋还压着那行字。窗台的盐线没有断，风从门缝进来，停在袋口。阿汐把纸袋移开——下面没有字。</p>
+    <p>那道盐线从枕头边一直延伸到窗台，宽的地方不到一指。她不知道是谁画的——她只知道每天早上起来，它都短一点点。第一天它长两拃，第三天少了半拃，第五天再看，只剩一拃。</p>
+    <p>阿沉发现那条线之后，没有擦它，也没有碰它。他的处理方式更笨——他在窗台旁边用粉笔画了三条短刻度：一拃、半拃、消失。没有圈，没有箭头，只有三条线和下面一个字：记。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>阿汐第五天没有睡。她搬了一把椅子到门边，等那阵风。风来得很晚——像从很远很远的地方赶路的人。风到的时候，她听见门缝和窗框同时响了一声。</p>
+    <p>盐线断成两截的时候没有声音。它断在窗台两块木板的接缝处——一下子齐整的两半。她数到十七，风停了。窗台上两堆盐，白得像刚从海里捞出来。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>纸袋没有动过；袋口还是压着那行字；那行字还是没有变。她凑近窗台，看见盐粒的断口处，浮着一缕很细很舒服的粉笔灰——像旧纸被翻动过。</p>
+    <p>她鼓起勇气做了一件事：把袋口翻起一边，留很小很小的一口。风进去了，又出来。袋里那行字没有变，一个字都没有变。她把翻起的那一边松开——袋口回到原来的压痕，好像什么也没做过。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她最后没有再等一个明示。天亮的时候，她出了门，去了一趟很远的海边。</p>
+    <p class="coda">在那里，她发现所有退潮的地方，都有一条盐线。</p>
+    <p class="coda">止音纪元没有结束。它只是等人学会断一道缝——然后由风自己决定，门缝还在不在。</p>`,
+    en: `<p>The bag still pressed down on the line of writing. The salt trail on the sill had not broken. Wind came in through the door's slit and stopped at the bag's mouth. Axi lifted the bag — there was nothing written beneath it.</p>
+    <p>The line ran from the pillow's edge all the way to the sill, and at its widest it did not reach a single finger-width. She did not know who had drawn it — only that each morning she woke to find it a little shorter. The first day it spanned two hand-widths; by the third it was short of one; on the fifth morning, only a single hand's width remained.</p>
+    <p>A-Chen had seen the line too. He had not wiped it, had not touched it. His response was blunter: on the frame beside the sill he chalked three short marks — one hand's width, half, gone. No circles, no arrows, only the three ticks and a character beneath: 记 — note it.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>On the fifth night she did not sleep. She dragged a chair to the door and waited for the wind. It came late — the way a traveller arrives from somewhere very far away. And when it arrived, she heard the slit in the door and the window frame answer it with the same note, at the same time.</p>
+    <p>The salt line broke in silence. It broke exactly at the seam where the sill's two boards meet — in one clean parting. She had counted to seventeen when the wind stopped. Two small mounds of salt lay on the sill, white as if newly dredged from the sea.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The bag had not moved; its mouth still pressed down the line; the line had not changed a stroke. She knelt to the sill and saw, lodged in the break, a wisp of chalk dust so fine it was almost comfortable — as if an old sheet had been leafed through.</p>
+    <p>She gathered the courage to do one thing: she folded one corner of the bag's mouth open, leaving a very small, very little gap. The wind went in, and it came out again. The line inside did not change — not one character. She let the folded corner fall back. The mouth returned to its old crease, as though nothing had been done at all.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">In the end she did not wait for an explicit sign. At dawn she stepped out the door and walked a very long way to the sea.</p>
+    <p class="coda">There she found that every beach, after the tide goes out, leaves a salt line behind.</p>
+    <p class="coda">The age of hush has not ended. It is only waiting for someone to learn how to leave a seam — and then letting the wind decide whether the seam should stay.</p>`,
   },
 ]
 

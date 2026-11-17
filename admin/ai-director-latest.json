@@ -6,75 +6,76 @@
   "requiresHumanReview": true,
   "schema": 1,
   "mode": "live",
-  "generatedAt": "2026-11-17T07:44:51.687Z",
+  "generatedAt": "2026-11-17T09:36:19.117Z",
   "model": "gpt-6.1-terra",
   "endpoint": "https://api.aizzz.xyz/v1",
-  "focus": "第二十六篇《线外》之后 · 下一篇原创短篇",
-  "corpusSize": 2069,
+  "focus": "第二十七篇《纸袋之后》之后 · 下一篇原创短篇",
+  "corpusSize": 2281,
   "canon": [
     {
       "rank": 1,
-      "score": 45.897,
-      "preview": "[短篇][story/anthology] 第二十六篇《线外》——桌边一枚空钉，阿汐把它收进纸袋，海带走了它，纸袋里多了一行字：听留下——"
+      "score": 52.123,
+      "preview": "[短篇][story/after-the-bag] 纸袋之后 / After the Bag — CAESURA · 余响集 · 第二十七篇"
     },
     {
       "rank": 2,
-      "score": 32.265,
-      "preview": "[短篇][story/beyond-the-line] 线外 / Beyond the Line — CAESURA · 余响集 · 第二十六篇"
+      "score": 47.656,
+      "preview": "[短篇][story/anthology] 第二十七篇《纸袋之后》——袋口压着那行字，她没有添字；夜里她梦见海，醒来枕头边到窗台多了一条盐线——她没有擦它；门自己开了一条缝，刚好够风进去——"
     },
     {
       "rank": 3,
-      "score": 22.822,
-      "preview": "[短篇][story/after-half-a-chime] 半声之后 / After Half a Chime — CAESURA · 余响集 · 第二十四篇"
+      "score": 32.786,
+      "preview": "[短篇][story/anthology] 约 7 分钟 · 回廊钟 · 纸袋之后 · 余响"
     },
     {
       "rank": 4,
-      "score": 22.24,
-      "preview": "[短篇][story/anthology] 第二十一篇《第三声》——灯灭了的那一夜，海说：我也听见了——"
-    },
-    {
-      "rank": 5,
-      "score": 21.518,
-      "preview": "[短篇][story/anthology] 第二十五篇《铜扣旁》——粉线还在，铜扣停在了线外，阿汐替他按下了——"
-    },
-    {
-      "rank": 6,
-      "score": 19.56,
+      "score": 29.782,
       "preview": "[短篇][story/anthology] 第二十四篇《半声之后》——门都合上了，没敲过的钟的按钮自己往前挪——"
     },
     {
+      "rank": 5,
+      "score": 26.155,
+      "preview": "[短篇][story/after-half-a-chime] 半声之后 / After Half a Chime — CAESURA · 余响集 · 第二十四篇"
+    },
+    {
+      "rank": 6,
+      "score": 21.908,
+      "preview": "[短篇][story/anthology] 第二十一篇《第三声》——灯灭了的那一夜，海说：我也听见了——"
+    },
+    {
       "rank": 7,
-      "score": 18.906,
-      "preview": "[短篇][story/third-voice] 第三声 / The Third Voice — CAESURA · 余响集 · 第二十一篇"
+      "score": 19.546,
+      "preview": "[短篇][story/anthology] 第二十六篇《线外》——桌边一枚空钉，阿汐把它收进纸袋，海带走了它，纸袋里多了一行字：听留下——"
     },
     {
       "rank": 8,
-      "score": 18.832,
-      "preview": "[短篇][story/anthology] 第十六篇《钟摆渡人》——完成一件从不曾被完成的事，本身就是完成——"
+      "score": 19.498,
+      "preview": "[短篇][story/anthology] 约 7 分钟 · 回廊钟 · 半声之后 · 余响"
     },
     {
       "rank": 9,
-      "score": 18.406,
-      "preview": "[短篇][story/anthology] 《止音纪元》· 原创短篇全集 · 双语对照"
+      "score": 18.569,
+      "preview": "[短篇][story/anthology] 第十七篇《未竟账页》——末行的空白一直没有被填上，等着被认领——"
     },
     {
       "rank": 10,
-      "score": 16.494,
-      "preview": "[短篇][story/anthology] 余响集 / CAESURA: Stories — The Epoch of Hush 原创短篇全集 · CAESURA"
+      "score": 18.497,
+      "preview": "[短篇][story/third-voice] 第三声 / The Third Voice — CAESURA · 余响集 · 第二十一篇"
     }
   ],
   "worldSnapshot": {
     "date": "2026-11-17",
     "phaseStatus": {
-      "KIrows": 569,
-      "KIImplemented": 392,
+      "KIrows": 574,
+      "KIImplemented": 397,
       "SYSImplemented": 73,
       "ARCHSections": 202
     },
-    "atlasEntries": 26,
-    "storyChapters": 26,
+    "atlasEntries": 28,
+    "storyChapters": 28,
     "storyList": [
       "after-half-a-chime",
+      "after-the-bag",
       "anthology",
       "bell-picker",
       "beside-the-button",
@@ -93,6 +94,7 @@
       "ledger",
       "lowtone-city",
       "pendulum-ferryman",
+      "salt-on-the-sill",
       "stonethroat",
       "string-listener",
       "third-voice",
@@ -109,126 +111,112 @@
     "npcs": 7
   },
   "audit": {
-    "consistency": 48,
-    "verdictZh": "快照提供了规模统计，但检索证据仅覆盖少数篇章，无法核验整体世界状态的一致性。",
-    "verdictEn": "The snapshot gives inventory counts, but the excerpts are too limited to verify overall world-state consistency.",
+    "consistency": 42,
+    "verdictZh": "证据仅覆盖少数篇章片段，无法充分核验整体世界现状与连续性。",
+    "verdictEn": "The evidence covers only a few story fragments, so overall world state and continuity cannot be fully verified.",
     "risks": [
       {
         "severity": "high",
-        "itemZh": "全局状态缺乏证据",
-        "itemEn": "No evidence for global state",
-        "detailZh": "检索片段未覆盖569行KI、392项实现或202章ARCH的内容与状态。",
-        "detailEn": "The excerpts do not substantiate the KI, implementation, or ARCH counts or states."
+        "itemZh": "整体现状缺少可核对的 canon 证据",
+        "itemEn": "Overall state lacks verifiable canon evidence",
+        "detailZh": "快照列出大量实现与条目数量，检索片段未支持这些状态。",
+        "detailEn": "The snapshot lists extensive implementation counts, but retrieved fragments do not substantiate them."
       },
       {
         "severity": "med",
-        "itemZh": "篇目对应关系不完整",
-        "itemEn": "Incomplete story mapping",
-        "detailZh": "片段只点名少数篇章，无法核对26篇名单与篇次、标题是否一致。",
-        "detailEn": "Only a few stories are named, so the 26-entry list and ordering cannot be verified."
+        "itemZh": "篇章之间的时间与因果关系不明",
+        "itemEn": "Chronology and causality between stories are unclear",
+        "detailZh": "片段涉及第二十一、二十四、二十六、二十七篇，未说明相互关系。",
+        "detailEn": "Fragments reference stories 21, 24, 26, and 27 without establishing their relationships."
       },
       {
         "severity": "med",
-        "itemZh": "系统与角色统计未获支持",
-        "itemEn": "System and character counts unsupported",
-        "detailZh": "证据没有对话树、旗标、NPC或系统实现数量的说明。",
-        "detailEn": "The excerpts do not describe dialogue trees, flags, NPCs, or system implementation counts."
+        "itemZh": "异象的规则与状态持续性不明",
+        "itemEn": "Rules and persistence of anomalies are unclear",
+        "detailZh": "门缝、盐线、按钮移动等现象有记载，触发条件与后续状态未见说明。",
+        "detailEn": "A door gap, salt line, and moving button are noted, but their triggers and persistence are unspecified."
       }
     ],
     "gapsZh": [
-      "缺少完整世界状态与KI条目证据。",
-      "缺少26篇游记及篇次的完整索引。",
-      "缺少对话树、旗标和NPC的相关证据。"
+      "缺少世界规则及其对应的原文证据。",
+      "缺少游记全篇与快照条目的逐项映射。"
     ],
     "gapsEn": [
-      "Full world-state and KI entry evidence is missing.",
-      "A complete index of all 26 stories and their order is missing.",
-      "Evidence for dialogue trees, flags, and NPCs is missing."
+      "Evidence for world rules is missing.",
+      "No item-by-item mapping between stories and the snapshot."
     ]
   },
   "transitions": [
     {
-      "fromZh": "未记录按钮自行前移",
-      "fromEn": "button_shift_unrecorded",
-      "toZh": "已记录未敲之钟按钮前移",
-      "toEn": "unstruck_bell_button_shift_recorded",
-      "flag": "flag.proposed.button_shift_recorded",
-      "narrativeZh": "门已合上，按钮仍向前挪；记录留下这一变化。",
-      "narrativeEn": "The doors are shut, yet the button moves forward; the change is recorded.",
-      "npcReactionZh": "旁人确认门已合上。",
-      "npcReactionEn": "A nearby witness confirms the doors are shut.",
-      "atlasHookZh": "未敲之钟的按钮",
-      "atlasHookEn": "The unstruck bell's button",
-      "requiresHumanReview": true,
-      "canonEvidence": [
-        "短篇证据6：第二十四篇《半声之后》——门都合上了，没敲过的钟的按钮自己往前挪。"
-      ]
+      "fromZh": "纸袋中留有“听留下”",
+      "fromEn": "The paper bag holds the words “Listen remains”",
+      "toZh": "窗台盐线被留下",
+      "toEn": "The salt line remains on the sill",
+      "flag": "flag.paper_bag_salt_line_kept",
+      "narrativeZh": "阿汐没有擦去枕边延至窗台的盐线。",
+      "narrativeEn": "Axi leaves the salt line running from the pillow to the sill untouched.",
+      "npcReactionZh": "夜风从门缝穿过，没有带走盐线。",
+      "npcReactionEn": "Night wind passes through the open door without taking the salt line.",
+      "atlasHookZh": "窗台上未被擦去的盐线",
+      "atlasHookEn": "The salt line left on the sill",
+      "requiresHumanReview": true
     },
     {
-      "fromZh": "粉线与铜扣尚未记录越线结果",
-      "fromEn": "powder_line_and_button_outcome_unrecorded",
-      "toZh": "已记录铜扣停在线外并被按下",
-      "toEn": "button_outside_line_and_pressed_recorded",
-      "flag": "flag.proposed.button_outside_line_pressed",
-      "narrativeZh": "铜扣停在线外，阿汐替他按下；记录保留粉线与结果。",
-      "narrativeEn": "The button stops beyond the powder line, and Axi presses it for him; both are recorded.",
-      "npcReactionZh": "阿汐完成按下。",
-      "npcReactionEn": "Axi presses the button.",
-      "atlasHookZh": "粉线外的铜扣",
-      "atlasHookEn": "The button beyond the powder line",
-      "requiresHumanReview": true,
-      "canonEvidence": [
-        "短篇证据5：第二十五篇《铜扣旁》——粉线还在，铜扣停在了线外，阿汐替他按下了。"
-      ]
+      "fromZh": "门已合上，按钮未被敲响",
+      "fromEn": "The doors are shut; the button has not been struck",
+      "toZh": "按钮自行向前挪动",
+      "toEn": "The button moves forward on its own",
+      "flag": "flag.unstruck_button_moved_forward",
+      "narrativeZh": "无人敲响的钟仍留下了一个可见的变化。",
+      "narrativeEn": "The unstruck bell leaves a visible change behind.",
+      "npcReactionZh": "门内无人应声，按钮停在新的位置。",
+      "npcReactionEn": "No one answers from within; the button rests in its new position.",
+      "atlasHookZh": "未敲响的钟与前移的按钮",
+      "atlasHookEn": "The unstruck bell and its moved button",
+      "requiresHumanReview": true
     },
     {
-      "fromZh": "空钉尚未收存",
-      "fromEn": "empty_nail_not_kept",
-      "toZh": "空钉入纸袋且纸袋多一行字",
-      "toEn": "empty_nail_bagged_with_a_new_line",
-      "flag": "flag.proposed.empty_nail_listen_line",
-      "narrativeZh": "阿汐把空钉收进纸袋；海带走它，袋里多了一行字：听留下。",
-      "narrativeEn": "Axi puts the empty nail in a paper bag. The sea takes it, and a line appears: Listen to what remains.",
-      "npcReactionZh": "纸袋留下“听留下”一行字。",
-      "npcReactionEn": "The bag bears the line, “Listen to what remains.”",
-      "atlasHookZh": "空钉与纸袋里的字",
-      "atlasHookEn": "The empty nail and the line in the bag",
-      "requiresHumanReview": true,
-      "canonEvidence": [
-        "短篇证据1：第二十六篇《线外》——桌边一枚空钉，阿汐把它收进纸袋，海带走了它，纸袋里多了一行字：听留下。"
-      ]
+      "fromZh": "空钉已被收进纸袋",
+      "fromEn": "The empty nail has been placed in the paper bag",
+      "toZh": "纸袋带回“听留下”一行字",
+      "toEn": "The paper bag returns with the words “Listen remains”",
+      "flag": "flag.paper_bag_listen_remains_recorded",
+      "narrativeZh": "海带走空钉后，袋中留下了一行字。",
+      "narrativeEn": "After the sea takes the empty nail, one line remains in the bag.",
+      "npcReactionZh": "阿汐收起纸袋，没有再添字。",
+      "npcReactionEn": "Axi keeps the paper bag and adds no further words.",
+      "atlasHookZh": "空钉离开后留下的字",
+      "atlasHookEn": "The words left after the empty nail is taken",
+      "requiresHumanReview": true
     },
     {
-      "fromZh": "一件从未完成之事仍未完成",
-      "fromEn": "never-completed_task_still_open",
-      "toZh": "该事被记为完成",
-      "toEn": "task_recorded_as_complete",
-      "flag": "flag.proposed.never_completed_task_complete",
-      "narrativeZh": "一件从不曾被完成的事被完成；完成本身成为记录。",
-      "narrativeEn": "A task that had never been completed is completed; the act itself becomes the record.",
-      "npcReactionZh": "世界留下这件事已完成的记录。",
-      "npcReactionEn": "The world records the task as complete.",
-      "atlasHookZh": "从未完成之事的完成",
-      "atlasHookEn": "Completion of what was never completed",
-      "requiresHumanReview": true,
-      "canonEvidence": [
-        "短篇证据8：第十六篇《钟摆渡人》——完成一件从不曾被完成的事，本身就是完成。"
-      ]
+      "fromZh": "未竟账页末行空白",
+      "fromEn": "The final line of the unfinished ledger is blank",
+      "toZh": "末行仍空着，等待认领",
+      "toEn": "The final line remains blank, waiting to be claimed",
+      "flag": "flag.unfinished_ledger_blank_line_unclaimed",
+      "narrativeZh": "末行没有被填上，空白继续等待认领。",
+      "narrativeEn": "The final line is not filled; the blank continues to wait for a claimant.",
+      "npcReactionZh": "账页仍摊开着，无人写下名字。",
+      "npcReactionEn": "The ledger remains open; no name is written.",
+      "atlasHookZh": "仍待认领的末行空白",
+      "atlasHookEn": "The unclaimed blank on the final line",
+      "requiresHumanReview": true
     }
   ],
   "atlasDraft": {
-    "no": 27,
-    "titleZh": "纸袋之后",
-    "titleEn": "After the Bag",
-    "pZh": "桌边空着。纸袋留在阿汐手里，袋口压着那行字。她没有添字。",
-    "pEn": "The space beside the table was empty. Axi kept the paper bag, its mouth held shut over the line inside. She added no words.",
-    "codaZh": "袋口没有合严。",
-    "codaEn": "The bag stayed slightly open.",
+    "no": 29,
+    "titleZh": "盐线之后",
+    "titleEn": "After the Salt Line",
+    "pZh": "天亮时，盐线还在窗台。她把纸袋放在门边，没有装进去。风从门缝经过，袋口那行字仍旧朝上。",
+    "pEn": "At daylight, the salt line remained on the sill. She set the paper bag by the door without putting it inside. Wind passed through the gap; the line of writing at the mouth still faced upward.",
+    "codaZh": "门没有再开。纸袋留在原处。",
+    "codaEn": "The door did not open again. The bag stayed where it was.",
     "requiresHumanReview": true
   },
   "usage": {
     "calls": 4,
-    "cachedTokens": 9984,
+    "cachedTokens": 14976,
     "statuses": [
       200,
       200,
@@ -239,37 +227,37 @@
   "graphCheckpoints": [
     {
       "node": "loadWorld",
-      "ms": 18,
+      "ms": 8,
       "ok": true
     },
     {
       "node": "retrieveCanon",
-      "ms": 238,
+      "ms": 136,
       "ok": true
     },
     {
       "node": "warmup",
-      "ms": 7707,
+      "ms": 5654,
       "ok": true
     },
     {
       "node": "audit",
-      "ms": 11261,
+      "ms": 9218,
       "ok": true
     },
     {
       "node": "proposeTransitions",
-      "ms": 20164,
+      "ms": 17513,
       "ok": true
     },
     {
       "node": "draftContent",
-      "ms": 5946,
+      "ms": 6186,
       "ok": true
     },
     {
       "node": "writeArtifacts",
-      "ms": 4,
+      "ms": 5,
       "ok": true
     }
   ],
