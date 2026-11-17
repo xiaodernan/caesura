@@ -66,16 +66,16 @@ describe('console 前端稳定性门钉（F-124 的长期护栏）', () => {
     expect(APP).toContain("querySelectorAll('body *')")
   })
 
-  it('index.html 页脚含故事链接出口（盐 / 空拍子 / 账本 / 余响集 / 霜锤 / 千门 / 暗潮 / 后记 / 低音之城 / 钟摆渡人 / 未竟账页 / 第四下 / 末弦 / 听弦 / 第三声 / 合奏 / 回声谷 / 半声之后 / 铜扣旁 / 线外 / 纸袋之后 / 窗台盐线 / 盐线之后 / 窗台记数 / 空处之后 / 未刻之数 / 秤旁 / 未记的一页 / 干处 / 未称之物 / 空秤 / 秤盘之外 / 秤影 / 门槛之外 / 门外的湿痕 / 门槛上的盐 / 未开之页）', () => {
+  it('index.html 页脚含故事链接出口（盐 / 空拍子 / 账本 / 余响集 / 霜锤 / 千门 / 暗潮 / 后记 / 低音之城 / 钟摆渡人 / 未竟账页 / 第四下 / 末弦 / 听弦 / 第三声 / 合奏 / 回声谷 / 半声之后 / 铜扣旁 / 线外 / 纸袋之后 / 窗台盐线 / 盐线之后 / 窗台记数 / 空处之后 / 未刻之数 / 秤旁 / 未记的一页 / 干处 / 未称之物 / 空秤 / 秤盘之外 / 秤影 / 门槛之外 / 门外的湿痕 / 门槛上的盐 / 未开之页 / 未寄出的信）', () => {
     for (const href of ['/caesura/story/', '/caesura/story/empty-bar/', '/caesura/story/ledger/',
       '/caesura/story/anthology/', '/caesura/story/frostbell/', '/caesura/story/doors/',
       '/caesura/story/dark-tide/', '/caesura/story/twelfth-listener/', '/caesura/story/bell-picker/',
-      '/caesura/story/lampwright-bell/', '/caesura/story/lowtone-city/', '/caesura/story/pendulum-ferryman/', '/caesura/story/unfinished-ledger/', '/caesura/story/fourth-strike/', '/caesura/story/last-string/', '/caesura/story/string-listener/', '/caesura/story/third-voice/', '/caesura/story/ensemble/', '/caesura/story/echo-vale/', '/caesura/story/after-half-a-chime/', '/caesura/story/beside-the-button/', '/caesura/story/beyond-the-line/', '/caesura/story/after-the-bag/', '/caesura/story/salt-on-the-sill/', '/caesura/story/after-the-salt-line/', '/caesura/story/the-sill-keeps-count/', '/caesura/story/after-the-space/', '/caesura/story/the-unmarked-number/', '/caesura/story/beside-the-scale/', '/caesura/story/the-unentered-page/', '/caesura/story/the-dry-place/', '/caesura/story/unweighed/', '/caesura/story/the-empty-scale/', '/caesura/story/beyond-the-scale/', '/caesura/story/the-scale-shadow/', '/caesura/story/beyond-the-threshold/', '/caesura/story/the-mark-outside/', '/caesura/story/salt-at-the-threshold/', '/caesura/story/the-unopened-page/']) {
+      '/caesura/story/lampwright-bell/', '/caesura/story/lowtone-city/', '/caesura/story/pendulum-ferryman/', '/caesura/story/unfinished-ledger/', '/caesura/story/fourth-strike/', '/caesura/story/last-string/', '/caesura/story/string-listener/', '/caesura/story/third-voice/', '/caesura/story/ensemble/', '/caesura/story/echo-vale/', '/caesura/story/after-half-a-chime/', '/caesura/story/beside-the-button/', '/caesura/story/beyond-the-line/', '/caesura/story/after-the-bag/', '/caesura/story/salt-on-the-sill/', '/caesura/story/after-the-salt-line/', '/caesura/story/the-sill-keeps-count/', '/caesura/story/after-the-space/', '/caesura/story/the-unmarked-number/', '/caesura/story/beside-the-scale/', '/caesura/story/the-unentered-page/', '/caesura/story/the-dry-place/', '/caesura/story/unweighed/', '/caesura/story/the-empty-scale/', '/caesura/story/beyond-the-scale/', '/caesura/story/the-scale-shadow/', '/caesura/story/beyond-the-threshold/', '/caesura/story/the-mark-outside/', '/caesura/story/salt-at-the-threshold/', '/caesura/story/the-unopened-page/', '/caesura/story/the-unsent-letter/']) {
       expect(HTML, `missing story href: ${href}`).toContain(href)
     }
   })
 
-  it('LANG_EXACT 含四十三篇故事双语键（盐系列本页切英文时不裸奔 CJK）', () => {
+  it('LANG_EXACT 含四十四篇故事双语键（盐系列本页切英文时不裸奔 CJK）', () => {
     for (const pair of [
       "'《盐》': 'Salt',",
       "'《空拍子》': 'The Empty Bar',",
@@ -151,8 +151,10 @@ describe('console 前端稳定性门钉（F-124 的长期护栏）', () => {
       "'《门槛上的盐》': 'Salt at the Threshold',",
       "'篇四十三': 'No. 43',",
       "'《未开之页》': 'The Unopened Page',",
+      "'篇四十四': 'No. 44',",
+      "'《未寄出的信》': 'The Unsent Letter',",
 
-      "'余响四十三篇 · 沉默的编年史': 'Forty-Three Chronicles · The Chronicles of Silence',",
+      "'余响四十四篇 · 沉默的编年史': 'Forty-Four Chronicles · The Chronicles of Silence',",
 
       "'余响三十七篇 · 沉默的编年史': 'Thirty-seven Chronicles · The Chronicles of Silence',",
       "'STATEGRAPH · 状态图内核': 'State Graph Kernel',",

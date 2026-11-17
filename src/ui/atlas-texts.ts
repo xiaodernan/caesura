@@ -1,6 +1,6 @@
 /**
- * 游记 · 四十三篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674 扩）。
- * 这四十三篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 四十四篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675 扩）。
+ * 这四十四篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -2356,6 +2356,49 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She did not look at the sea.</p>
     <p class="coda">Some pages remain without being opened.</p>
     <p class="coda">The age of hush has not ended. It has only, at last, opened its own thin page — and no one remembers when.</p>`,
+  },
+  {
+    no: 44,
+    zhTitle: "未寄出的信",
+    enTitle: "The Unsent Letter",
+    zh: `<p>薄簿仍合着。门槛边多了一张干纸，没有字，也没有折痕。阿汐没有拾起它。潮水退去时，纸的一角沾了盐；潮水回来时，盐留在纸上，纸没有湿。渡人经过门口，没有停船。他只看了一眼，便沿着水路继续走。天亮后，纸还在那里。</p>
+    <p>她把手放在门口——风从门缝里经过——她没有替那张纸按一下，也没有替它寄一下。她只是站在那里，看着它像看一个从很久以前就躺在门口、今天才被潮水推回来的朋友。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿仍是那本薄薄的书。薄页仍然偶尔自己翻一回。她觉得那封信的干和薄页的开合之间有一种很深的对应——都是身体不用别人帮忙自己在等。船没有停——薄簿没有开——她也没有伸手。</p>
+    <p>渡人的船哪一天会再停在她的门口——没有人知道。她不想问。问就是为了要答案——可答案已经在纸里了——只是她不用读。她慢慢明白：世界上的有些信，寄出的途径只是「留在那里」。</p>
+    <p>她把薄簿收起来没有再动。她偶尔想：今天要不要数一数门口的潮水？可她数到第四次就不数了——数字是海的事——不是她的。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>盐粒——她总说盐粒像它自己一样——看着潮水来回——但是纸没有湿——说明它比潮水更硬——也比风更轻——只是到了这个门槛这里。</p>
+    <p>她看着那封没寄出的信。薄簿仍合着。她站在门口——她慢慢知道：未寄出的信，也是信——虽然没有告诉任何人——仍然在捎带着什么。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有走近它。</p>
+    <p class="coda">有些信，留下来并不等于寄出。</p>
+    <p class="coda">止音纪元没有结束。它只是终于收到了一封没寄出也不必收的信。</p>`,
+    en: `<p>The ledger stayed closed. Beside the threshold lay a dry sheet, without words or folds. Axi did not pick it up. When the tide receded, salt marked one corner; when it returned, the salt stayed and the paper remained dry. The ferryman passed without stopping. By dawn, the sheet was still there.</p>
+    <p>She set her hand on the doorway — wind moved through the seam — she neither pressed the paper nor sealed it to be sent. She only stood there, watching it as one watches an old friend who had spent so long at sea, and had only just now been washed ashore.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ledger remained thin and closed. Its page still turned by itself now and then. She felt there was a very deep symmetry between the dryness of the letter and the opening and closing of the page — both are waiting, without a hand to help. The boat went by — the ledger stayed shut — she did not lift a finger.</p>
+    <p>No one knew when the ferryman's boat would halt at her door next. She did not want to ask. To ask would be to want an answer — but the answer was already on the paper — she simply did not have to read it. She came slowly to know: some letters, in this world, are simply delivered by being left where they lie.</p>
+    <p>She left the ledger shut and did not move it again. Now and then she thought: maybe today I'll count the tides? But by the fourth count she stopped — numbers are the sea's affair — not hers.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The grain of salt — she always said it looked like itself — watched the tide come and go, while the paper did not get wet — it was harder than the sea — lighter than the wind — it had only, in the end, made its way to this threshold.</p>
+    <p>She looked at the unsent letter. The ledger stayed closed. She stood at the door — she came slowly to know: an unsent letter is still a letter — even if no one has been told — it still carries something.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not step closer.</p>
+    <p class="coda">Some letters remain without being sent.</p>
+    <p class="coda">The age of hush has not ended. It has only, at last, received a letter that was never sent, and never needed to be.</p>`,
   },
 ]
 

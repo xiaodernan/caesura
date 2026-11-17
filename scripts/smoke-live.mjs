@@ -86,6 +86,7 @@ const ENDPOINTS = [
   { name: 'story-42', url: 'https://xiaodernan.github.io/caesura/story/the-mark-outside/', marker: '门外的湿痕' },
   { name: 'story-43', url: 'https://xiaodernan.github.io/caesura/story/salt-at-the-threshold/', marker: '门槛上的盐' },
   { name: 'story-44', url: 'https://xiaodernan.github.io/caesura/story/the-unopened-page/', marker: '未开之页' },
+  { name: 'story-45', url: 'https://xiaodernan.github.io/caesura/story/the-unsent-letter/', marker: '未寄出的信' },
   { name: 'ai-json-commit', url: 'https://xiaodernan.github.io/caesura/admin/ai-director-latest.json', marker: '"authorOnly": true' },
   { name: 'ai-json-qa', url: 'https://xiaodernan.github.io/caesura/admin/ai-director-transitions-qa.json', marker: '"authorOnly": true' },
 ]

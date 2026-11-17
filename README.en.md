@@ -38,7 +38,7 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - "The Ledger" (original short story, no. 4): <https://xiaodernan.github.io/caesura/story/ledger/> (Resthold · the page Meg never dared to close · bilingual · zero LLM · added 2026-11-15)  
 - "The Garden of Return" (original short story, no. 5): <https://xiaodernan.github.io/caesura/story/garden/> (The Afterland · the sixth sound · The Owner of the Old Bell · bilingual · zero LLM · added 2026-11-15)  
 - "The Rain Tribunal" (original short story, no. 6): <https://xiaodernan.github.io/caesura/story/tribunal/> (The Afterland · the Rainbell Valley · The Drowning Jurist · seven years between sessions · bilingual · zero LLM · added 2026-11-15)  
-- "The Aftermath" (complete short fiction, whole-volume portal — printable as one paper volume): <https://xiaodernan.github.io/caesura/story/anthology/> (all forty-three stories · EPIC-VII draft now inside · updated 2026-11-18)  
+- "The Aftermath" (complete short fiction, whole-volume portal — printable as one paper volume): <https://xiaodernan.github.io/caesura/story/anthology/> (all forty-four stories · EPIC-VII draft now inside · updated 2026-11-18)  
 - "The Frostbell" (original short story, no. 7): <https://xiaodernan.github.io/caesura/story/frostbell/> (The Frostbell Cliff · The Last Frostwright · the sound the ice kept · bilingual · zero LLM · added 2026-11-15)  
 - "The Thousand Doors" (original short story, no. 8): <https://xiaodernan.github.io/caesura/story/doors/> (The Arcade of Echoes · the Gatekeeper of a Thousand Doors · bilingual · zero LLM · added 2026-11-15)  
 - "The Stone-Throat" (original short story, no. 9): <https://xiaodernan.github.io/caesura/story/stonethroat/> (The City of Low Tones · The Stone-Throat Matriarch · the pitch that costs nothing · bilingual · zero LLM · added 2026-11-15)  
@@ -76,6 +76,7 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - "The Mark Outside" (short fiction No.41): <https://xiaodernan.github.io/caesura/story/the-mark-outside/> (the Arcade · by daylight the wet mark remained; she neither opened the door nor the ledger; she rested her hand on the threshold · LLM-drafted, human-approved · zero LLM · 2026-11-18) ·  
 - "Salt at the Threshold" (short fiction No.42): <https://xiaodernan.github.io/caesura/story/salt-at-the-threshold/> (the Arcade · after the tide withdrew, she placed a grain of salt beside the faded mark; at dawn, both remained · LLM-drafted, human-approved · zero LLM · 2026-11-18) ·  
 - "The Unopened Page" (short fiction No.43): <https://xiaodernan.github.io/caesura/story/the-unopened-page/> (the Arcade · the salt remained on the threshold; she never rose to look; the ledger stayed closed, its page corner flat · LLM-drafted, human-approved · zero LLM · 2026-11-18) ·  
+- "The Unsent Letter" (short fiction No.44): <https://xiaodernan.github.io/caesura/story/the-unsent-letter/> (the Arcade · a dry sheet lay beside the threshold; the ferryman passed without stopping; at dawn, the sheet was still there · LLM-drafted, human-approved · zero LLM · 2026-11-18) ·  
 - Sync truth: `https://raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json`
 
 ## Where to read
