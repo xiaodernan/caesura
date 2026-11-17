@@ -10,9 +10,9 @@ import { STORY_CHAPTERS } from '@/ui/atlas-texts'
  *   ④ 名称与姜读相对应（中文标题·英文标题与故事对齐，防机械错位）。
  */
 
-describe('Atlas 二十三篇全文（atlas-texts.ts）', () => {
-  it('恰好二十三篇 · 编号 1..23 严格递增', () => {
-    expect(STORY_CHAPTERS.length).toBe(23)
+describe('Atlas 二十四篇全文（atlas-texts.ts）', () => {
+  it('恰好二十四篇 · 编号 1..24 严格递增', () => {
+    expect(STORY_CHAPTERS.length).toBe(24)
     STORY_CHAPTERS.forEach((c, i) => expect(c.no).toBe(i + 1))
   })
 
@@ -30,17 +30,17 @@ describe('Atlas 二十三篇全文（atlas-texts.ts）', () => {
     }
   })
 
-  it('中文标题严格对应（二十三篇顺序）', () => {
+  it('中文标题严格对应（二十四篇顺序）', () => {
     expect(STORY_CHAPTERS.map((c) => c.zhTitle)).toEqual([
       '盐', '山下无名碑', '空拍子', '账本', '回声庭园',
-      '雨审判', '霜锤', '千门', '石喉', '第一钟', '暗潮', '后记 · 第十二个听者', '拾钟人', '灯匠', '低音之城', '钟摆渡人', '未竟账页', '第四下', '末弦', '听弦', '第三声', '合奏', '回声谷',
+      '雨审判', '霜锤', '千门', '石喉', '第一钟', '暗潮', '后记 · 第十二个听者', '拾钟人', '灯匠', '低音之城', '钟摆渡人', '未竟账页', '第四下', '末弦', '听弦', '第三声', '合奏', '回声谷', '半声之后',
     ])
   })
 
-  it('英文标题严格对应（二十三篇顺序）', () => {
+  it('英文标题严格对应（二十四篇顺序）', () => {
     expect(STORY_CHAPTERS.map((c) => c.enTitle)).toEqual([
       'Salt', 'The Nameless Stone', 'The Empty Bar', 'The Ledger', 'The Garden of Return',
-      'The Rain Tribunal', 'The Frostbell', 'The Thousand Doors', 'The Stone-Throat', 'The First Bell', 'The Dark Tide', 'Epilogue · The Twelfth Listener', 'The Bell-Picker', 'The Lampwright', 'The City of Low Tones', 'The Pendulum Ferryman', 'The Unfinished Ledger Page', 'The Fourth Strike', 'The Last String', 'The String-Listener', 'The Third Voice', 'The Ensemble', 'The Echo Vale',
+      'The Rain Tribunal', 'The Frostbell', 'The Thousand Doors', 'The Stone-Throat', 'The First Bell', 'The Dark Tide', 'Epilogue · The Twelfth Listener', 'The Bell-Picker', 'The Lampwright', 'The City of Low Tones', 'The Pendulum Ferryman', 'The Unfinished Ledger Page', 'The Fourth Strike', 'The Last String', 'The String-Listener', 'The Third Voice', 'The Ensemble', 'The Echo Vale', 'After Half a Chime',
     ])
   })
 

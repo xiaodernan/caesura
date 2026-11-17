@@ -6,88 +6,93 @@
   "requiresHumanReview": true,
   "schema": 1,
   "mode": "live",
-  "generatedAt": "2026-11-16T21:12:54.247Z",
+  "generatedAt": "2026-11-17T06:24:19.298Z",
   "model": "gpt-6.1-terra",
   "endpoint": "https://api.aizzz.xyz/v1",
-  "focus": "止音纪元 世界现状 十七篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响",
-  "corpusSize": 1327,
+  "focus": "第二十三篇《回声谷》之后 · 下一篇原创短篇",
+  "corpusSize": 1772,
   "canon": [
     {
       "rank": 1,
-      "score": 40.084,
-      "preview": "[短篇][story/anthology] 约 7 分钟 · 低音之城 · 石喉母亲 · 听账 · 余响"
+      "score": 54.49,
+      "preview": "[短篇][story/anthology] 第二十三篇《回声谷》——所有被忘掉的声音都在这里托住，没有坠落——"
     },
     {
       "rank": 2,
-      "score": 38.959,
-      "preview": "[短篇][story/stonethroat] 余响新陆 · 低音之城 · 石喉母亲"
+      "score": 37.703,
+      "preview": "[短篇][story/echo-vale] 回声谷 / The Echo Vale — CAESURA · 余响集 · 第二十三篇"
     },
     {
       "rank": 3,
-      "score": 33.64,
-      "preview": "[短篇][story/anthology] 约 5 分钟 · 低音之城 · ♭A2"
+      "score": 33.708,
+      "preview": "[短篇][story/echo-vale] 《回声谷》是《余响集》第二十三篇——回廊钟第37年守夜，那一夜所有的门同时自己响了半声。阿沉走进那扇从未推开的门，遇见了收音人——一件不敢再想的东西，就能赎回一声失掉的钟的余音。"
     },
     {
       "rank": 4,
-      "score": 28.356,
-      "preview": "[短篇][story/stonethroat] 石喉 / The Stone-Throat · CAESURA 短篇 之九 — 余响新陆 · 低音之城"
+      "score": 23.104,
+      "preview": "[短篇][story/anthology] 第二十一篇《第三声》——灯灭了的那一夜，海说：我也听见了——"
     },
     {
       "rank": 5,
-      "score": 28.029,
-      "preview": "[设定][docs/WORLD-BIBLE.md#30] 七地域之外还有一整片「余响新大陆」：沉钟三界 + 低音三州——风钟海岸 / 雨钟谷地 / 低音之城 / 回廊钟 / 霜锤崖 / 回声庭园。 守门者、NPC、余音音符与三界合奏见 `docs/lore/NEW-LANDS.md`；《风钟纪元》（EPIC-VI · 设计稿）在这片大地上的三段路见 `docs/EPIC-VI.md`。 《低音之城 · 后钟纪元》（EPIC-VII · 设计稿 · 2026-11-15 落 · 不进 runtime）把「沉默被产业化」的后果写成三幕——低音之城 / 霜锤崖 / 回廊钟：见 `docs/EPIC-VII.md`。"
+      "score": 19.898,
+      "preview": "[短篇][story/third-voice] 第三声 / The Third Voice — CAESURA · 余响集 · 第二十一篇"
     },
     {
       "rank": 6,
-      "score": 26.265,
-      "preview": "[短篇][story/lowtone-city] 低音之城 / The City of Low Tones · CAESURA 短篇 之十五"
+      "score": 18.464,
+      "preview": "[短篇][story/anthology] 《止音纪元》· 原创短篇全集 · 双语对照"
     },
     {
       "rank": 7,
-      "score": 25.683,
-      "preview": "[设定][docs/WORLD-BIBLE.md#1] # CAESURA《止音纪元》 · 世界圣经（world-bible v1 · 2026-11-14）"
+      "score": 16.885,
+      "preview": "[短篇][story/anthology] 第十三篇《拾钟人》——把每一钟剩下的东西都收拾干净，留给第四下敲钟的人；"
     },
     {
       "rank": 8,
-      "score": 21.107,
-      "preview": "[短篇][story/anthology] 约 5 分钟 · 后记 · 余响 · 终章"
+      "score": 16.709,
+      "preview": "[短篇][story/anthology] 第二十篇《听弦》——弦问了世界一句，世界终于有人回答——"
     },
     {
       "rank": 9,
-      "score": 21.028,
-      "preview": "[短篇][story/stonethroat] · 低音之城 · ♭A2 · 石喉母亲 The Stone-Throat Matriarch · DLG_STONETHROAT · 主线「石喉记账」），是 companion fiction（双语对照 · 零 LLM · 零网络 · 不落 runtime）。"
+      "score": 16.571,
+      "preview": "[短篇][story/anthology] 余响集 / CAESURA: Stories — The Epoch of Hush 原创短篇全集 · CAESURA"
     },
     {
       "rank": 10,
-      "score": 20.971,
-      "preview": "[短篇][story/anthology] 约 7 分钟 · 未竟厅 · 钟摆渡人 · 余响"
+      "score": 16.43,
+      "preview": "[短篇][story/anthology] 约 7 分钟 · 回廊钟 · 回声谷 · 余响"
     }
   ],
   "worldSnapshot": {
-    "date": "2026-11-16",
+    "date": "2026-11-17",
     "phaseStatus": {
-      "KIrows": 541,
-      "KIImplemented": 364,
+      "KIrows": 566,
+      "KIImplemented": 389,
       "SYSImplemented": 73,
       "ARCHSections": 202
     },
-    "atlasEntries": 18,
-    "storyChapters": 18,
+    "atlasEntries": 23,
+    "storyChapters": 23,
     "storyList": [
       "anthology",
       "bell-picker",
       "dark-tide",
       "doors",
+      "echo-vale",
       "empty-bar",
+      "ensemble",
       "first-bell",
       "fourth-strike",
       "frostbell",
       "garden",
       "lampwright-bell",
+      "last-string",
       "ledger",
       "lowtone-city",
       "pendulum-ferryman",
       "stonethroat",
+      "string-listener",
+      "third-voice",
       "tribunal",
       "twelfth-listener",
       "unfinished-ledger",
@@ -101,126 +106,124 @@
     "npcs": 7
   },
   "audit": {
-    "consistency": 78,
-    "verdictZh": "快照中的游记数量与名单相符；余响新大陆有设定依据，但其后续篇章标为设计稿，不应视为已入运行内容。",
-    "verdictEn": "The story count matches the list. The New Lands are canon, but later epics are design drafts, not runtime content.",
+    "consistency": 48,
+    "verdictZh": "现有证据只局部印证游记篇目与回声谷设定，无法核验多数快照数据或整体一致性。",
+    "verdictEn": "Evidence supports only parts of the story list and Echo Vale; most snapshot data and overall consistency remain unverifiable.",
     "risks": [
       {
-        "severity": "med",
-        "itemZh": "设计稿与运行内容混淆",
-        "itemEn": "Drafts may be mistaken for runtime content",
-        "detailZh": "证据明确标注 EPIC-VI、EPIC-VII 为设计稿，且 EPIC-VII 不进 runtime。",
-        "detailEn": "The evidence labels EPIC-VI and EPIC-VII as design drafts; EPIC-VII is explicitly excluded from runtime."
+        "severity": "high",
+        "itemZh": "快照数据缺少证据支撑",
+        "itemEn": "Snapshot metrics lack evidence",
+        "detailZh": "KI、ARCH、系统实现、对话树与NPC数量均未见对应证据。",
+        "detailEn": "No evidence verifies KI, ARCH, implementation, dialogue-tree, or NPC counts."
       },
       {
         "severity": "med",
-        "itemZh": "世界现状缺少实现状态交叉证据",
-        "itemEn": "Implementation status lacks cross-checking evidence",
-        "detailZh": "快照列出 KI、ARCH、NPC 等数量，但检索片段未验证这些实现计数。",
-        "detailEn": "The snapshot gives KI, ARCH, and NPC counts, but retrieved evidence does not verify them."
+        "itemZh": "篇目清单未获完整核验",
+        "itemEn": "Story list is not fully verified",
+        "detailZh": "证据提及第二十一与第二十三篇，不能确认其余篇目及总数。",
+        "detailEn": "Evidence mentions stories 21 and 23, not the remaining titles or total."
       },
       {
-        "severity": "low",
-        "itemZh": "游记篇数口径需区分",
-        "itemEn": "Story-count terminology may be ambiguous",
-        "detailZh": "快照称 Atlas 词条 18 篇、短篇篇章 18 篇；名单也有 18 项，但证据未解释两者口径。",
-        "detailEn": "The snapshot lists 18 Atlas entries and 18 stories; the list has 18 items, but the evidence does not define the distinction."
+        "severity": "med",
+        "itemZh": "世界状态依据不足",
+        "itemEn": "World-state basis is insufficient",
+        "detailZh": "回声谷证据仅支持回廊钟第37年、门响半声及收音人相关情节。",
+        "detailEn": "Echo Vale evidence supports only its year, half-sounding doors, and the collector premise."
       }
     ],
     "gapsZh": [
-      "缺少完整的新陆设定与守门者、NPC、余音音符证据。",
-      "缺少各系统实现计数及运行状态的直接证据。"
+      "缺少其余游记与篇目原文证据。",
+      "缺少快照各项计数的来源与核验依据。"
     ],
     "gapsEn": [
-      "Full New Lands details, including gatekeepers, NPCs, and echo notes, are missing.",
-      "Direct evidence for system implementation counts and runtime status is missing."
+      "Evidence for the remaining travelogues and stories is missing.",
+      "Sources and verification for snapshot counts are missing."
     ]
   },
   "transitions": [
     {
-      "fromZh": "低音之城：沉默被产业化的后果尚未进入可玩状态",
-      "fromEn": "Low-Tone City: the consequences of industrialized silence are not yet playable",
-      "toZh": "低音之城：玩家记录一项沉默产业后果",
-      "toEn": "Low-Tone City: the player records one consequence of the silence industry",
-      "flag": "flag.proposed.lowtone_industry_consequence_recorded",
-      "narrativeZh": "记录使沉默产业化的后果成为可追查的公共条目。",
-      "narrativeEn": "The record makes a consequence of industrialized silence publicly traceable.",
-      "npcReactionZh": "相关者回应记录内容，不改变既有事实。",
-      "npcReactionEn": "Those involved respond to the record without changing established facts.",
-      "atlasHookZh": "沉默产业化后果的记录",
-      "atlasHookEn": "A record of industrialized silence",
+      "fromZh": "回廊钟第37年，所有门同时响了半声",
+      "fromEn": "In the 37th year of the Corridor Bell, every door rang for half a beat",
+      "toZh": "阿沉决定推开从未开启的门",
+      "toEn": "A Shen chooses to open the door never opened before",
+      "flag": "flag.proposed.echo_vale.open_untouched_door",
+      "narrativeZh": "阿沉进入回声谷，寻找收音人。",
+      "narrativeEn": "A Shen enters the Echo Vale to seek the sound collector.",
+      "npcReactionZh": "收音人等待阿沉说出他不敢再想的东西。",
+      "npcReactionEn": "The collector waits for A Shen to name what he dares not think of again.",
+      "atlasHookZh": "门内半声钟响的去处",
+      "atlasHookEn": "Where the half-struck bell leads",
       "requiresHumanReview": true,
-      "evidenceRefs": [
-        "docs/WORLD-BIBLE.md#30",
-        "docs/EPIC-VII.md"
+      "canonEvidence": [
+        "《回声谷》：回廊钟第37年，所有门同时自己响了半声；阿沉走进从未推开的门，遇见收音人。"
       ]
     },
     {
-      "fromZh": "石喉记账：玩家尚未核对一笔账目",
-      "fromEn": "Stone-Throat ledger: the player has not yet checked an entry",
-      "toZh": "石喉记账：玩家已核对一笔账目",
-      "toEn": "Stone-Throat ledger: the player has checked an entry",
-      "flag": "flag.proposed.stonethroat_ledger_entry_checked",
-      "narrativeZh": "核对结果留下可供后续游记引用的账目记录。",
-      "narrativeEn": "The check leaves a ledger record that a later travelogue can reference.",
-      "npcReactionZh": "石喉母亲回应这笔账目的核对结果。",
-      "npcReactionEn": "The Stone-Throat Matriarch responds to the checked entry.",
-      "atlasHookZh": "一笔经核对的石喉账目",
-      "atlasHookEn": "A checked Stone-Throat ledger entry",
+      "fromZh": "阿沉已遇见回声谷的收音人",
+      "fromEn": "A Shen has met the sound collector in the Echo Vale",
+      "toZh": "阿沉交出一件不敢再想的东西",
+      "toEn": "A Shen gives up something he dares not think of again",
+      "flag": "flag.proposed.echo_vale.trade_for_bell_echo",
+      "narrativeZh": "收音人以这件东西换回一声失掉的钟的余音。",
+      "narrativeEn": "The collector trades it for the aftersound of a lost bell.",
+      "npcReactionZh": "失掉的钟余音得以重听，代价留在阿沉身上。",
+      "npcReactionEn": "The lost bell's aftersound can be heard again; the cost remains with A Shen.",
+      "atlasHookZh": "失物与余音的交换",
+      "atlasHookEn": "The exchange of a lost thing for an aftersound",
       "requiresHumanReview": true,
-      "evidenceRefs": [
-        "story/stonethroat"
+      "canonEvidence": [
+        "《回声谷》：一件不敢再想的东西，就能赎回一声失掉的钟的余音。"
       ]
     },
     {
-      "fromZh": "余响新陆：玩家尚未留下新陆见闻索引",
-      "fromEn": "Echoing New Lands: the player has not left an indexed account",
-      "toZh": "余响新陆：玩家已将一处见闻纳入索引",
-      "toEn": "Echoing New Lands: the player has indexed one observation",
-      "flag": "flag.proposed.new_lands_observation_indexed",
-      "narrativeZh": "一处见闻被整理为索引，供后续行程查阅。",
-      "narrativeEn": "One observation is indexed for consultation on later journeys.",
-      "npcReactionZh": "同行者可据索引回应这处见闻。",
-      "npcReactionEn": "Companions can respond to the observation through the index.",
-      "atlasHookZh": "余响新陆的一则见闻索引",
-      "atlasHookEn": "An indexed observation from the New Lands",
+      "fromZh": "灯灭的那一夜，海听见了声音",
+      "fromEn": "On the night the lights went out, the sea heard a voice",
+      "toZh": "听者确认海也听见了第三声",
+      "toEn": "The listener confirms that the sea heard the third voice too",
+      "flag": "flag.proposed.third_voice.sea_witness_confirmed",
+      "narrativeZh": "海的听见被记入第三声的见证，不再只是人的说法。",
+      "narrativeEn": "The sea's hearing is recorded as testimony to the third voice, not only a human account.",
+      "npcReactionZh": "在场者把海的听见补入当夜记录。",
+      "npcReactionEn": "Those present add the sea's hearing to that night's record.",
+      "atlasHookZh": "灯灭之夜的海之见证",
+      "atlasHookEn": "The sea's testimony on the night the lights went out",
       "requiresHumanReview": true,
-      "evidenceRefs": [
-        "docs/WORLD-BIBLE.md#30",
-        "story/stonethroat"
+      "canonEvidence": [
+        "《第三声》篇名引句：灯灭了的那一夜，海说：我也听见了。"
       ]
     },
     {
-      "fromZh": "游记终章：玩家尚未整理余响记录",
-      "fromEn": "Travelogue ending: the player has not organized the echo records",
-      "toZh": "游记终章：玩家已整理一组余响记录",
-      "toEn": "Travelogue ending: the player has organized a set of echo records",
-      "flag": "flag.proposed.echo_records_compiled",
-      "narrativeZh": "整理后的记录为终章留下可回访的余响线索。",
-      "narrativeEn": "The compiled records leave an echo clue that can be revisited in the ending.",
-      "npcReactionZh": "记录中的人物与地点成为回访提示。",
-      "npcReactionEn": "People and places in the records become prompts for revisiting.",
-      "atlasHookZh": "终章中的余响记录",
-      "atlasHookEn": "Echo records in the ending",
+      "fromZh": "回声谷中仍有被忘掉的声音",
+      "fromEn": "Forgotten sounds remain in the Echo Vale",
+      "toZh": "听者将一声被忘掉的声音记入回廊钟档案",
+      "toEn": "A listener records one forgotten sound in the Corridor Bell archive",
+      "flag": "flag.proposed.echo_vale.forgotten_sound_recorded",
+      "narrativeZh": "一声被忘掉的声音有了记录，仍留在回声谷托住。",
+      "narrativeEn": "One forgotten sound is recorded while remaining held in the Echo Vale.",
+      "npcReactionZh": "记录者确认声音未坠落，也未被带离。",
+      "npcReactionEn": "The recorder confirms the sound has neither fallen nor been taken away.",
+      "atlasHookZh": "被忘掉的声音如何留下记录",
+      "atlasHookEn": "How a forgotten sound enters the record",
       "requiresHumanReview": true,
-      "evidenceRefs": [
-        "story/anthology"
+      "canonEvidence": [
+        "《回声谷》引句：所有被忘掉的声音都在这里托住，没有坠落。"
       ]
     }
   ],
   "atlasDraft": {
-    "no": 17,
-    "titleZh": "未收的摆",
-    "titleEn": "The Unclaimed Swing",
-    "pZh": "未竟厅的渡票少了一张。钟摆渡人把空格留着，没有补写姓名。夜里，纸边轻轻翘起；他压上一枚旧砝码。",
-    "pEn": "One crossing slip was missing from the unfinished hall. The Pendulum Ferryman left the space blank. At night, the paper’s edge lifted. He set an old weight upon it.",
-    "codaZh": "清晨，空格仍在。",
-    "codaEn": "By morning, the space was still blank.",
+    "no": 24,
+    "titleZh": "半声之后",
+    "titleEn": "After Half a Chime",
+    "pZh": "回廊钟第37年，门都合上了。门槛上留着一枚旧铜扣。阿沉没有认领它。收音人把它放进空匣，匣底响了一下。",
+    "pEn": "In the 37th year of the Corridor Bell, the doors had all closed. An old brass button lay on the threshold. A Shen did not claim it. The sound-collector placed it in an empty box. Something sounded once at the bottom.",
+    "codaZh": "匣子没有上锁。",
+    "codaEn": "The box was left unlocked.",
     "requiresHumanReview": true
   },
   "usage": {
     "calls": 4,
-    "cachedTokens": 15360,
+    "cachedTokens": 19968,
     "statuses": [
       200,
       200,
@@ -231,37 +234,37 @@
   "graphCheckpoints": [
     {
       "node": "loadWorld",
-      "ms": 29,
+      "ms": 8,
       "ok": true
     },
     {
       "node": "retrieveCanon",
-      "ms": 299,
+      "ms": 85,
       "ok": true
     },
     {
       "node": "warmup",
-      "ms": 4881,
+      "ms": 5195,
       "ok": true
     },
     {
       "node": "audit",
-      "ms": 12154,
+      "ms": 10075,
       "ok": true
     },
     {
       "node": "proposeTransitions",
-      "ms": 20842,
+      "ms": 22276,
       "ok": true
     },
     {
       "node": "draftContent",
-      "ms": 7283,
+      "ms": 7867,
       "ok": true
     },
     {
       "node": "writeArtifacts",
-      "ms": 52,
+      "ms": 3,
       "ok": true
     }
   ],

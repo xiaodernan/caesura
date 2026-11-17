@@ -42,6 +42,7 @@ try {
     'story/third-voice/index.html',
     'story/ensemble/index.html',
     'story/echo-vale/index.html',
+    'story/after-half-a-chime/index.html',
   ];
 
   const PHRASES = new Set();

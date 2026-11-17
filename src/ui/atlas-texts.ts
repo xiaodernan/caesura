@@ -1,6 +1,6 @@
 /**
- * 游记 · 二十三篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648 扩）。
- * 这二十三篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 二十四篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649 扩）。
+ * 这二十四篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -1443,6 +1443,49 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">Later, the ledgers would say that the Arcade never creaked again — not because nothing had happened, but because every sound had been gathered and held, forever.</p>
     <p class="coda">A-Chen still opens the doors every morning. He is no longer waiting for anything — he is simply keeping the small bell from falling through the floor of the world.</p>
     <p class="coda">The age of hush has not ended. It has simply, at last, found one person willing to give its sound back to the world.</p>`,
+  },
+  {
+    no: 24,
+    zhTitle: "半声之后",
+    enTitle: "After Half a Chime",
+    zh: `<p>故事接着回廊钟第37年的凌晨——所有的门都合上了。门槛上留着一枚旧铜扣，没有主人，没有刻字，也没有挂绳。这个世界里那种东西没有地方落——只剩下未竟厅的登记册。</p>
+    <p>阿沉没有去碰它。守门人收的本来就不是东西——而是其中不想被拾起的东西。他连续三天没有动那枚铜扣，铜扣却每天自己挪一节指头的距离，慢慢向回声谷那扇门移动。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>第四天，收音人出现在门前。他用了很久才把话说顺：「那不是扣子。它是一口没敲过的钟的按钮。它一直往钟里走，因为它想自己敲响。它选了你，守夜人。」</p>
+    <p>阿沉盯着那东西。它确实在变——边缘变得更圆，每晨露的颜色都比前一天深半度。</p>
+    <p>第七天，钟自己敲了——阿沉没有动手。它只响了半声。整个回廊，37年来第一次，像被什么抽了一下。老门一起震动，余音烫伤了所有还没来得及认领声音的耳朵。阿沉的肩膀痛得他跪了下去——那是整个回廊站成一行的重量。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>第八天，收音人推门进来。他在回廊的登记册下面压了一张小纸——那一枚旧铜扣已经不是铜扣了——它现在是一枚按钮，指尖按下去会有一记极轻的矿石般的触感。</p>
+    <p>「这个按钮，」收音人说，「每个人按下去，世界上就有一个从没敲过的钟会响半声——那半声被收音人带进回声谷，织进所有未竟的故事里去。谁都救不了这枚按钮。但谁按下它，谁就让一个故事往前走了一步。」</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">回廊钟没有自己再响，没有人为它按下那个按钮——它只等一个愿意的人。</p>
+    <p class="coda">阿汐从北崖送来一封信：「我在册子上写下了它。所有被忘掉的声音都替你守着——等能开的那一天。」</p>
+    <p class="coda">止音纪元没有结束。它只是终于出现了一个按钮——按下去，那半声就替世界摁响了一回。</p>`,
+    en: `<p>The story resumes on the same morning, in the thirty-seventh year of the Arcade of Echoes. The doors had all closed. On the threshold lay an old brass button — no owner, no inscription, not even a thread. In this world such a thing had nowhere to land — only the Unfinished Hall's registry knew its kind.</p>
+    <p>A-Chen did not touch it. Doorkeepers are not meant to collect what is on the threshold — they are meant to collect what does not want to be picked up. He did not touch it for three days. Yet each morning the button had moved one finger-width toward the door to the Echo Vale.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>On the fourth day the keeper appeared at the door. It took him a while to make the sentence. "That is not a button. It is the trigger of a bell that was never rung. It is on its way to the bell — because it wants to ring itself. It chose you, nightwatch."</p>
+    <p>A-Chen stared at the thing. It was changing — the rim growing rounder, deeper-colored each day.</p>
+    <p>On the seventh day the bell sounded — A-Chen did not move. It rang half a note. The whole arcade convulsed for a single instant, the first time it had done so in thirty-seven years. Old doors shivered; the echo branded every ear that had not yet claimed a voice of their own. A-Chen sank to his knees — that was the weight of the whole arcade standing in one line.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>On the eighth day the keeper stepped inside. He slid a small card under the registry: the brass button was no longer a button — it had become a trigger that carried, under the pad of the finger, a faint metallic ping.</p>
+    <p>"This trigger," he said, "presses down, and somewhere in the world a bell that was never rung might sound half a note — and the keeper will carry it into the Vale and weave it into the fabric of every unfinished story. No one can rescue this trigger. But whoever presses it lets a story take one step forward."</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">The arcade never rang on its own again, because no one pressed the trigger — it waits for a willing person.</p>
+    <p class="coda">Axi wrote from the north cliff: "I have entered this page. All the forgotten sounds wait with you — until the day the trigger is meant to be pressed."</p>
+    <p class="coda">The age of hush has not ended. It has simply at last produced a small trigger — and by pressing it, the world might finally allow itself that half a note.</p>`,
   },
 ]
 

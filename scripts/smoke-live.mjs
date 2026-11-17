@@ -66,6 +66,7 @@ const ENDPOINTS = [
   { name: 'story-22', url: 'https://xiaodernan.github.io/caesura/story/third-voice/', marker: '第三声' },
   { name: 'story-23', url: 'https://xiaodernan.github.io/caesura/story/ensemble/', marker: '合奏' },
   { name: 'story-24', url: 'https://xiaodernan.github.io/caesura/story/echo-vale/', marker: '回声谷' },
+  { name: 'story-25', url: 'https://xiaodernan.github.io/caesura/story/after-half-a-chime/', marker: '半声之后' },
   { name: 'ai-json-commit', url: 'https://xiaodernan.github.io/caesura/admin/ai-director-latest.json', marker: '"authorOnly": true' },
   { name: 'ai-json-qa', url: 'https://xiaodernan.github.io/caesura/admin/ai-director-transitions-qa.json', marker: '"authorOnly": true' },
 ]
