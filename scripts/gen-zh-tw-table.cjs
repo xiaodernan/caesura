@@ -37,6 +37,7 @@ try {
     'story/pendulum-ferryman/index.html',
     'story/unfinished-ledger/index.html',
     'story/fourth-strike/index.html',
+    'story/last-string/index.html',
   ];
 
   const PHRASES = new Set();

@@ -61,6 +61,7 @@ const ENDPOINTS = [
   { name: 'story-17', url: 'https://xiaodernan.github.io/caesura/story/pendulum-ferryman/', marker: '钟摆渡人' },
   { name: 'story-18', url: 'https://xiaodernan.github.io/caesura/story/unfinished-ledger/', marker: '未竟账页' },
   { name: 'story-19', url: 'https://xiaodernan.github.io/caesura/story/fourth-strike/', marker: '第四下' },
+  { name: 'story-20', url: 'https://xiaodernan.github.io/caesura/story/last-string/', marker: '末弦' },
   { name: 'ai-json-commit', url: 'https://xiaodernan.github.io/caesura/admin/ai-director-latest.json', marker: '"authorOnly": true' },
   { name: 'ai-json-qa', url: 'https://xiaodernan.github.io/caesura/admin/ai-director-transitions-qa.json', marker: '"authorOnly": true' },
 ]

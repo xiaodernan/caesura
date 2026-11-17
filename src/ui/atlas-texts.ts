@@ -1199,5 +1199,44 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">The fourth never needed a bell. The fourth has always been — the softest fall of the sentence you never dared to say, landing in your own chest at last.</p>
     <p class="coda">The wind keeps it for you. So does the sea. So does the bell.</p>`,
   },
+  {
+    no: 19,
+    zhTitle: "末弦",
+    enTitle: "The Last String",
+    zh: `<p>故事发生在很久以前。很久到没有人能记住，连风都只留下一小段尾音。那是一个世界还没有学会沉静时发生的事——树林会在没有风的时候自己合拢叶子，山脊上的钟每隔一阵子会响一声，没人知道它为什么响、响完一声又是为了什么。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>故事只讲一个女孩。她不是村里的，也不是别人找来的。没人见过她到哪，只看见她站在北崖边上，面向大海，整整三天三夜没动。她不吃，不睡，也不说话。人们远远地看，觉得她像一根被忘在崖边的琴弦，连风从她身边过去都会放低几分。</p>
+    <p>第四天，雨落下来。雨打在她肩上，打在石头上，打在那条看不见的弦上——然后，没有人听见。雨是唯一没听到的声音。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她等的不是什么人。她等的是弦自己决定自己的频率。第五天，太阳出来，落在她脚边，系着一团灯光，什么都不照。第五天过完，她开始轻声唱了一个音——不是为了唱，是因为弦自己在她身体里慢慢绷紧了，像一条收到风的缆绳，终于归到它必须待的那个频率。</p>
+    <p>没有人听见，因为她不是为了让人听见而唱的。她只是让那根弦找到了自己，再绷紧半拍，然后散掉——散了还是它自己，只是不再绷了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">整整三百多年过去，那片北崖上没有人再找到那条弦。没有人试图找到它，不是因为它不可能找到，而是没有人有足够长的一生。</p>
+    <p class="coda">但偶尔在没有风的时候，离崖很远的渔人会听见一声——只一声、极轻、像弦的自答。</p>
+    <p class="coda">那条弦找到了自己的频率之后，世界再也没有真正不和。每一口后来的钟，每一段后来的余音，都是那一根弦的回响变来的。</p>`,
+    en: `<p>The story happened so long ago that no one could remember it—not even the wind keeps more than a fragment of it. This was when the world had not yet learned to quiet. The forest closed its leaves when no wind was present; the bells on the ridge sounded every so often, and no one knew why they sounded or what the single note was for.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The story only tells of a girl. She was not a villager, and no one had summoned her. No one had seen her arrive; they only saw her standing on the north cliff facing the sea, motionless for three days and three nights. She did not eat, sleep, or speak. People watched from afar and thought her a string left behind on the cliff’s edge, the wind itself quieting by a fraction as it passed her.</p>
+    <p>On the fourth day, rain came. It struck her shoulders, the stone, and the invisible string—then nothing was heard. Rain was the one voice no one could no longer hear.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>She was not waiting for anyone. She was waiting for the string to decide its own frequency. On the fifth day the sun returned, laid itself at her feet, and lighted nothing. When the fifth day ended, she began to hum—not because singing was needed, but because the string inside her had drawn taut, like a cable gathering the wind to the exact pitch it must finally hold.</p>
+    <p>No one heard, because she had not been singing to be heard. Only to let that string become itself, tighten by half a beat—and then loosen, losing nothing it had been—just no longer strained.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">More than three hundred years have passed since. No one has rediscovered that string. Not because it cannot be found—because no one has a life long enough to find it.</p>
+    <p class="coda">But occasionally on windless days, fishermen far from that cliff hear it—a single note, very soft, like the string answering itself.</p>
+    <p class="coda">The world has not been out of tune since that string found itself. Every bell that followed, every echo that followed, came from that one string, changed and carried forward.</p>`,
+  },
 ]
 

@@ -66,16 +66,16 @@ describe('console 前端稳定性门钉（F-124 的长期护栏）', () => {
     expect(APP).toContain("querySelectorAll('body *')")
   })
 
-  it('index.html 页脚含故事链接出口（盐 / 空拍子 / 账本 / 余响集 / 霜锤 / 千门 / 暗潮 / 后记 / 低音之城 / 钟摆渡人 / 未竟账页 / 第四下）', () => {
+  it('index.html 页脚含故事链接出口（盐 / 空拍子 / 账本 / 余响集 / 霜锤 / 千门 / 暗潮 / 后记 / 低音之城 / 钟摆渡人 / 未竟账页 / 第四下 / 末弦）', () => {
     for (const href of ['/caesura/story/', '/caesura/story/empty-bar/', '/caesura/story/ledger/',
       '/caesura/story/anthology/', '/caesura/story/frostbell/', '/caesura/story/doors/',
       '/caesura/story/dark-tide/', '/caesura/story/twelfth-listener/', '/caesura/story/bell-picker/',
-      '/caesura/story/lampwright-bell/', '/caesura/story/lowtone-city/', '/caesura/story/pendulum-ferryman/', '/caesura/story/unfinished-ledger/', '/caesura/story/fourth-strike/']) {
+      '/caesura/story/lampwright-bell/', '/caesura/story/lowtone-city/', '/caesura/story/pendulum-ferryman/', '/caesura/story/unfinished-ledger/', '/caesura/story/fourth-strike/', '/caesura/story/last-string/']) {
       expect(HTML, `missing story href: ${href}`).toContain(href)
     }
   })
 
-  it('LANG_EXACT 含十八篇故事双语键（盐系列本页切英文时不裸奔 CJK）', () => {
+  it('LANG_EXACT 含十九篇故事双语键（盐系列本页切英文时不裸奔 CJK）', () => {
     for (const pair of [
       "'《盐》': 'Salt',",
       "'《空拍子》': 'The Empty Bar',",
@@ -93,6 +93,7 @@ describe('console 前端稳定性门钉（F-124 的长期护栏）', () => {
       "'《钟摆渡人》': 'The Pendulum Ferryman',",
       "'《未竟账页》': 'The Unfinished Ledger Page',",
       "'《第四下》': 'The Fourth Strike',",
+      "'《末弦》': 'The Last String',",
       "'篇十一': 'No. 11',",
       "'篇十二': 'No. 12',",
       "'篇十三': 'No. 13',",
@@ -101,8 +102,9 @@ describe('console 前端稳定性门钉（F-124 的长期护栏）', () => {
       "'篇十六': 'No. 16',",
       "'篇十七': 'No. 17',",
       "'篇十八': 'No. 18',",
+      "'篇十九': 'No. 19',",
 
-      "'余响十八篇 · 沉默的编年史': 'Eighteen Chronicles · The Chronicles of Silence',",
+      "'余响十九篇 · 沉默的编年史': 'Nineteen Chronicles · The Chronicles of Silence',",
       "'STATEGRAPH · 状态图内核': 'State Graph Kernel',",
       "'节点是纯函数：同入参同出参（×100）': 'Nodes are pure: same input → same output (×100)',",
       "'interrupt() 人审回路：挂起→审批→同 thread 恢复（interrupt → resume）': 'interrupt() human-in-the-loop: suspend → approve → resume on the same thread',",
