@@ -1,6 +1,6 @@
 /**
- * 游记 · 二十八篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657 扩）。
- * 这二十八篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 二十九篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658 扩）。
+ * 这二十九篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -1672,6 +1672,49 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">In the end she did not wait for an explicit sign. At dawn she stepped out the door and walked a very long way to the sea.</p>
     <p class="coda">There she found that every beach, after the tide goes out, leaves a salt line behind.</p>
     <p class="coda">The age of hush has not ended. It is only waiting for someone to learn how to leave a seam — and then letting the wind decide whether the seam should stay.</p>`,
+  },
+  {
+    no: 29,
+    zhTitle: "盐线之后",
+    enTitle: "After the Salt Line",
+    zh: `<p>天亮时，盐线还在窗台。两半，还是两半。阿汐把纸袋从枕头边移开，放在门边——没有装进去，没有翻开，也没有封死。她只把袋口按回那道旧压痕，让那行字仍旧朝上。</p>
+    <p>风从门缝经过的时候，袋口动了一下——不是被吹翻，是被带起了一线极薄的影子。袋口下面的那行字没有动。那行字永远不会替任何人动。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>阿沉没有再刻新的刻度。旧的三条线还在窗台边的粉笔画上——一拃、半拃、消失。第四天早上，他发现「消失」那条线下面，他自己的字——「记」——被风吹歪了一个角。</p>
+    <p>他没有改。歪了就让它歪着。歪的那一笔倒更像一封信的签名。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>阿汐每晚都去看那个袋子。袋口压着的那行字还是那三个字。她不再试图读更多。有一天下午，她忍不住做了一件事——坐在袋子旁边，把那行字从头到尾，一个字、一个字地读出声来。</p>
+    <p>读完第三个字的时候，门缝呵出一股凉风——带着盐味，也带着一点海藻晒干的气息。袋口的影子突然伸长，像有人在很远的地方，终于合上了脚步、定住了身子、听了一会儿。</p>
+    <p>她把手按在袋子上。什么也没有发生。她以前以为会有什么发生。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她后来明白了：袋子不是谁寄给她的信，是永远没有完结的那件事的提醒——听，就是留下。</p>
+    <p class="coda">门没有再开。纸袋留在原处。</p>
+    <p class="coda">要不是她走过窗台时无意中看了一眼——窗台上那两半盐线，好像又悄悄长回去了一点点。不多。只够压住下一句，还没有到的话。</p>`,
+    en: `<p>At daylight, the salt line remained on the sill. Two halves, still two halves. Axi lifted the bag from the pillow's edge and set it by the door — she did not put it away, did not fold it open, did not seal it. She simply pressed the mouth back into its old crease, so the line of writing still faced up.</p>
+    <p>When wind passed through the slit, the mouth shivered — not flipped, only lifted into the thinnest shadow. Nothing beneath it moved. The line of writing would never move on anyone's behalf.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>A-Chen chalked no new marks. The old three were still there — one hand's width, half, gone. On the fourth morning he found that the character he had chalked beneath them — 记， note it — had been tilted by the wind, one stroke bent sideways.</p>
+    <p>He did not fix it. If it bent, let it stay bent. The slanted stroke looked, strangely, more like a signature.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Each night she went to look at the bag. The three characters at its mouth were the same three. She no longer tried to coax more meaning from them. Then one afternoon she broke and did one thing — she sat beside the bag and read the line aloud, from the first stroke to the last, one character at a time.</p>
+    <p>As she finished the third character, the slit breathed out a cool wind — salt-smelling, with a trace of dried seaweed. The shadow at the bag's mouth stretched suddenly, as if somewhere far away a traveller had finally stopped walking, planted both feet, and listened.</p>
+    <p>She laid her hand flat on the bag. Nothing happened. She had thought something would.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">Later she understood: the bag was not a letter from anyone. It was the reminder of the thing that never ends — listening is leaving.</p>
+    <p class="coda">The door did not open again. The bag stayed where it was.</p>
+    <p class="coda">It was only when she happened to pass the sill that she saw it — the two halves of the salt line, growing back ever so slightly. Not much. Just enough to press down on the next line, the one that had not arrived yet.</p>`,
   },
 ]
 
