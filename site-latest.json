@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "46ad3092b158a013917f55374e1145b6a479ff40",
+  "head": "1fe7a845c4fe8fe878b8a9a5a7e5b0eec73816a9",
   "branch": "master",
-  "subject": "feat(story): KI-667《余响集》第三十六篇《未称之物 / Unweighed》落地（LLM 真机草稿 → 人工闸落库）+ 真机重跑回正",
-  "date": "2026-11-17T23:40:11+08:00",
+  "subject": "site-latest: 46ad309 (post-rebase reconcile)",
+  "date": "2026-11-17T23:41:21+08:00",
   "kv": {
     "KI.rows": 585,
     "KI.Implemented": 408,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/46ad3092b158a013917f55374e1145b6a479ff40",
+    "url": "https://github.com/xiaodernan/caesura/commit/1fe7a845c4fe8fe878b8a9a5a7e5b0eec73816a9",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
