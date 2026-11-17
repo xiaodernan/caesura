@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "1754522a4f32fa8df5069a86f5e78de9fdd56d9f",
+  "head": "37c1df5b6e2eff652f769020810f17ccb3683789",
   "branch": "master",
-  "subject": "site-latest: dccdfda (post-rebase reconcile)",
-  "date": "2026-11-17T09:02:06+08:00",
+  "subject": "fix(admin): KI-635 中文页全中文官方收尾 · 英文残留清零",
+  "date": "2026-11-17T09:12:21+08:00",
   "kv": {
-    "KI.rows": 552,
-    "KI.Implemented": 375,
+    "KI.rows": 553,
+    "KI.Implemented": 376,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/1754522a4f32fa8df5069a86f5e78de9fdd56d9f",
+    "url": "https://github.com/xiaodernan/caesura/commit/37c1df5b6e2eff652f769020810f17ccb3683789",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
