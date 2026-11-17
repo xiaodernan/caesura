@@ -38,7 +38,7 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - "The Ledger" (original short story, no. 4): <https://xiaodernan.github.io/caesura/story/ledger/> (Resthold · the page Meg never dared to close · bilingual · zero LLM · added 2026-11-15)  
 - "The Garden of Return" (original short story, no. 5): <https://xiaodernan.github.io/caesura/story/garden/> (The Afterland · the sixth sound · The Owner of the Old Bell · bilingual · zero LLM · added 2026-11-15)  
 - "The Rain Tribunal" (original short story, no. 6): <https://xiaodernan.github.io/caesura/story/tribunal/> (The Afterland · the Rainbell Valley · The Drowning Jurist · seven years between sessions · bilingual · zero LLM · added 2026-11-15)  
-- "The Aftermath" (complete short fiction, whole-volume portal — printable as one paper volume): <https://xiaodernan.github.io/caesura/story/anthology/> (all twenty-four stories · EPIC-VII draft now inside · updated 2026-11-18)  
+- "The Aftermath" (complete short fiction, whole-volume portal — printable as one paper volume): <https://xiaodernan.github.io/caesura/story/anthology/> (all twenty-five stories · EPIC-VII draft now inside · updated 2026-11-18)  
 - "The Frostbell" (original short story, no. 7): <https://xiaodernan.github.io/caesura/story/frostbell/> (The Frostbell Cliff · The Last Frostwright · the sound the ice kept · bilingual · zero LLM · added 2026-11-15)  
 - "The Thousand Doors" (original short story, no. 8): <https://xiaodernan.github.io/caesura/story/doors/> (The Arcade of Echoes · the Gatekeeper of a Thousand Doors · bilingual · zero LLM · added 2026-11-15)  
 - "The Stone-Throat" (original short story, no. 9): <https://xiaodernan.github.io/caesura/story/stonethroat/> (The City of Low Tones · The Stone-Throat Matriarch · the pitch that costs nothing · bilingual · zero LLM · added 2026-11-15)  
@@ -56,6 +56,8 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - "The Third Voice" (short fiction No.21): <https://xiaodernan.github.io/caesura/story/third-voice/> (the Windbell Coast · the night the lamp went out — the sea says, I hear too · bilingual · zero LLM · 2026-11-17) ·  
 - "The Ensemble" (short fiction No.22): <https://xiaodernan.github.io/caesura/story/ensemble/> (four places · the same second — the sea, the string, the pen, the table all held still · bilingual · zero LLM · 2026-11-17) ·  
 - "The Echo Vale" (short fiction No.23): <https://xiaodernan.github.io/caesura/story/echo-vale/> (the Arcade of Echoes at vigil-dark — every door sings at once; A-Chen walks through the door no one opened · bilingual · zero LLM · 2026-11-18) ·  
+- "After Half a Chime" (short fiction No.24): <https://xiaodernan.github.io/caesura/story/after-half-a-chime/> (the Arcade of Echoes · the doors all closed · a brass button no one pressed — the trigger of a bell that was never rung · LLM-drafted, human-approved · zero LLM · 2026-11-18) ·  
+- "Beside the Button" (short fiction No.25): <https://xiaodernan.github.io/caesura/story/beside-the-button/> (the 37th year of the Arcade · the chalk line · the daughter presses · the chalk stays · LLM-drafted, human-approved · zero LLM · 2026-11-18) ·  
 - Sync truth: `https://raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json`
 
 ## Where to read

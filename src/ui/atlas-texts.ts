@@ -1,6 +1,6 @@
 /**
- * 游记 · 二十四篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649 扩）。
- * 这二十四篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 二十五篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650 扩）。
+ * 这二十五篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -1486,6 +1486,51 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">The arcade never rang on its own again, because no one pressed the trigger — it waits for a willing person.</p>
     <p class="coda">Axi wrote from the north cliff: "I have entered this page. All the forgotten sounds wait with you — until the day the trigger is meant to be pressed."</p>
     <p class="coda">The age of hush has not ended. It has simply at last produced a small trigger — and by pressing it, the world might finally allow itself that half a note.</p>`,
+  },
+  {
+    no: 25,
+    zhTitle: "铜扣旁",
+    enTitle: "Beside the Button",
+    zh: `<p>回廊钟第37年的清晨，门槛上的旧铜扣又挪了一节指头。阿沉用粉笔在石板上画下它的位置——一条线，一枚扣，再加上一个门外的方向。傍晚，粉线还在，粉线不会说话——可铜扣已经停在了线外。它没有违抗任何命令——它只是在走，像它自己也不知道自己什么时候被忘掉的东西。</p>
+    <p>阿沉的女儿阿汐从北崖下来了。她从来没来过回廊钟。她看着那枚铜扣，说：「这东西不该放在这里——它不是安静的东西。它是哄了很久的东西。」</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>第三天，清早，阿沉在回廊钟角落里发现一张旧纸——上面全是敲过的钟的名字。最底下一行空白。空白前面只差一个字：半。</p>
+    <p>阿沉在心里默念——我们一直在担心它会敲响，可世界恰恰一直在等它拍下去的那一瞬。他把那枚铜扣重新放在线上。第二天，铜扣又挪了一节指头。粉线还是没动。</p>
+    <p>傍晚，收音人来了。他站在门外，看着铜扣，语气平淡地说：「它没有路走了——它是陪着所有想要开门的人，被人按下过的。它是你没有做的事情。」</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>阿沉这才意识到——自37年守夜以来，他一次都没有碰过那枚铜扣，他也一次都没有按下过。阿汐替他按下了。</p>
+    <p>它响了半声。</p>
+    <p>整个回廊只抖了一个瞬间——像被什么抽了一下——所有的门一起震动。阿沉倒在一根老柱边上——它也没再倒回去。阿汐捂着他的肩膀说：「和你之前听见过的那半声一样——按下去，就知道它不是叫人害怕，而是叫所有人自己知道该站在哪边。」</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">粉笔留在门槛上，谁也没有擦——因为没人敢断定这画的是下一条路。</p>
+    <p class="coda">阿汐把那张名单带回了北崖——她的册子里有了一页空白前面只有一个字：半。</p>
+    <p class="coda">止音纪元没有结束。只是终于有一个人，看见了它不再是遗物，而是按钮。</p>`,
+    en: `<p>On the morning after the doors closed — the thirty-seventh year of the Arcade — the old copper button on the threshold had moved another finger's width. A-Chen took a piece of chalk and drew a line on the stone beneath it. At dusk, the line remained, but the button rested beyond it now. It had not defied anyone. It was simply walking.</p>
+    <p>A-Chen's daughter Axi came down from the north cliff. She had never been to the Arcade. She looked at the brass and said: "This thing is not for the threshold. It is for the ones who were always too afraid to press it."</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>On the third morning, A-Chen found an old sheet in the corner of the arcade. Names of every bell ever struck were written on it. The last line was blank. Just one word above the blank: Half.</p>
+    <p>He thought for a long time — we have been afraid it would ring. But the world has been waiting for the one who dared to press it. He placed the button back on the line. The next day, it had moved another finger's width. The chalk still remained.</p>
+    <p>At dusk, the keeper came. He stood in the doorway, looking at the button. "It has no road to walk," he said flatly. "It is standing here because someone needs to press it. It is the thing you have never done."</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>A-Chen realized: in thirty-seven years of guarding the arcade, he had never pressed it. Axi pressed it for him.</p>
+    <p>It rang half a note.</p>
+    <p>The whole Arcade shuddered for a single instant — every door trembled at once, and the sound stayed with everyone who had not yet chosen their side. A-Chen crumpled against an old pillar. It did not crumple again. His daughter pressed a hand on his shoulder and whispered: "It was never the sound you feared. It was the silence standing in for you."</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">The chalk remains on the threshold — because no one can be sure whether it marks the next road, or the last.</p>
+    <p class="coda">Axi carried the sheet back to the north cliff — her book gained one page beneath the blank, and just one word: Half.</p>
+    <p class="coda">The age of hush has not ended. It has simply at last produced a hand that knows what to do with a trigger.</p>`,
   },
 ]
 
