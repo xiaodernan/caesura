@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "59c153db18e70869bc7b8425b5d791b7ad0f5c92",
+  "head": "047392ad4e528ca1dd8d550816cb578192b9ef2a",
   "branch": "master",
-  "subject": "chore(ai): KI-664 收尾 - 重跑真机产物（canon=2845 · 4×[200] · cached=99,660 · errors=0 · flags 全 canon）自洽产出 No.34《未记的一页》（留人工闸）+ 篇三十三英文门钉改口径（渡口=canon token）",
-  "date": "2026-11-17T22:20:45+08:00",
+  "subject": "site-latest: 59c153d (post-rebase reconcile)",
+  "date": "2026-11-17T22:21:18+08:00",
   "kv": {
     "KI.rows": 582,
     "KI.Implemented": 405,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/59c153db18e70869bc7b8425b5d791b7ad0f5c92",
+    "url": "https://github.com/xiaodernan/caesura/commit/047392ad4e528ca1dd8d550816cb578192b9ef2a",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
