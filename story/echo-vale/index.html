@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>回声谷 / The Echo Vale — CAESURA · 余响集 · 第二十三篇</title>
+<meta name="description" content="回声谷——《余响集》第二十三篇：回廊钟第37年守夜，那一夜所有门都自己响了半声。阿沉走进那扇从未推开的门，遇见了收音人——一件不敢再想的东西，就能赎回一声失掉的钟的余音。双语对照 · 零 LLM · 零网络 / The twenty-third piece of The Aftermath: the thirty-seventh vigil ends; every door sounds at once; A-Chen walks through the one door no one ever opened — and finds the keeper of the forgotten sounds. Bilingual, offline, zero LLM." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🔔</text></svg>">
+<style>
+  :root {
+    --gold: #f3ce8f;
+    --gold-soft: rgba(243,206,143,.32);
+    --ink: #f3ede0;
+    --ink-dim: rgba(243,237,224,.62);
+    --panel: rgba(28,20,12,.7);
+    --serif: "Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#070608; color:var(--ink); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; }
+  .bg { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .bg.radial {
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(243,206,143,.14), transparent 60%),
+      radial-gradient(900px 700px at 50% 118%, rgba(90,40,40,.22), transparent 62%),
+      radial-gradient(650px 420px at 88% 104%, rgba(203,177,255,.08), transparent 60%),
+      #070608;
+  }
+  .bg.noise { position:fixed; inset:0; z-index:-1; opacity:.05; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .wrap { max-width:860px; margin:0 auto; padding:26px 26px 90px; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .brand { font-size:.8rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; opacity:.9; }
+  .brand a { color:inherit; text-decoration:none; border-bottom:1px dotted rgba(243,206,143,.5); }
+  .brand a:hover { color:#fff2d0; }
+  .toplinks { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toplinks a { font-size:.72rem; color:var(--ink-dim); text-decoration:none; border:1px solid rgba(243,237,224,.14); padding:6px 12px; border-radius:999px; transition:all .22s ease; }
+  .toplinks a:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .lang-row button { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(243,206,143,.12); border:1px solid var(--gold-soft); padding:6px 15px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; }
+  .lang-row button:hover { background:rgba(243,206,143,.22); box-shadow:0 0 16px rgba(243,206,143,.25); }
+
+  [data-lang="zh-TW"] .en-copy { display:none !important; }
+  [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="en"] .zh-copy { display:none !important; }
+
+  header.hero { text-align:center; padding:52px 14px 30px; }
+  .kicker { font-size:.72rem; letter-spacing:.42em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:20px; }
+  .kicker b { color:var(--gold); font-weight:600; }
+  h1 { font-size:clamp(2.2rem, 8vw, 3.6rem); font-weight:600; letter-spacing:.16em;
+       background:linear-gradient(180deg,#fffbe6 0%, #f3ce8f 28%, #c9a258 58%, #7d6436 100%);
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+       text-shadow:0 0 90px rgba(243,206,143,.3); }
+  .subtitle { margin-top:14px; font-size:.8rem; color:var(--ink-dim); letter-spacing:.3em; text-transform:uppercase; }
+  .rule { width:170px; height:1px; margin:24px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .meta { margin-top:16px; font-size:.7rem; color:rgba(243,237,224,.45); letter-spacing:.18em; text-transform:uppercase; }
+  .meta a { color:var(--gold); text-decoration:none; }
+
+  article { background:var(--panel); border:1px solid rgba(243,237,224,.1); border-radius:18px; padding:38px 40px 34px; position:relative; }
+  article::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--gold), transparent); opacity:.7; }
+  article p { font-size:1.04rem; line-height:2.02; letter-spacing:.02em; color:rgba(243,237,224,.92); margin-bottom:1.5em; text-indent:2em; overflow-wrap:break-word; }
+  article p em { color:#ffe9b3; font-style:normal; }
+  .beat { width:100%; text-align:center; margin:.4em 0 1.4em; letter-spacing:.5em; color:rgba(243,206,143,.6); font-size:.8rem; }
+  .coda { text-align:center; font-style:italic; color:rgba(243,237,224,.78); letter-spacing:.06em; margin-top:.6em; }
+
+  .note { margin:26px auto 0; max-width:760px; text-align:center; font-size:.74rem; color:rgba(243,237,224,.42); line-height:1.9; letter-spacing:.04em; }
+  .note a { color:var(--gold); text-decoration:none; border-bottom:1px dotted rgba(243,206,143,.5); }
+
+  footer { margin-top:56px; border-top:1px solid rgba(243,237,224,.09); padding-top:22px; display:flex; flex-wrap:wrap; gap:10px 26px; justify-content:space-between; font-size:.7rem; color:rgba(243,237,224,.4); letter-spacing:.06em; }
+  footer a { color:var(--gold); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @media (max-width:640px) { .wrap { padding:20px 12px 70px; } article { padding:26px 20px 24px; } article p { font-size:.98rem; text-indent:2em; } }
+</style>
+</head>
+<body>
+<div class="bg radial" aria-hidden="true"></div>
+<div class="bg noise" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><a href="/caesura/">CAESURA</a> · 《止音纪元》</div>
+    <div class="toplinks">
+      <a href="/caesura/story/"><span class="zh-copy">《盐》</span><span class="en-copy">“Salt”</span></a>
+      <a href="/caesura/story/first-bell/"><span class="zh-copy">《第一钟》</span><span class="en-copy">“The First Bell”</span></a>
+      <a href="/caesura/story/bell-picker/"><span class="zh-copy">《拾钟人》</span><span class="en-copy">“The Bell-Picker”</span></a>
+      <a href="/caesura/story/twelfth-listener/"><span class="zh-copy">《第十二个听者》</span><span class="en-copy">“The Twelfth Listener”</span></a>
+      <a href="/caesura/story/fourth-strike/"><span class="zh-copy">《第四下》</span><span class="en-copy">“The Fourth Strike”</span></a>
+      <a href="/caesura/story/string-listener/"><span class="zh-copy">《听弦》</span><span class="en-copy">“The String-Listener”</span></a>
+      <a href="/caesura/story/third-voice/"><span class="zh-copy">《第三声》</span><span class="en-copy">“The Third Voice”</span></a>
+      <a href="/caesura/story/echo-vale/"><span class="zh-copy">《回声谷》</span><span class="en-copy">“The Echo Vale”</span></a>
+      <a href="/caesura/codex/"><span class="zh-copy">世界谱</span><span class="en-copy">Codex</span></a>
+      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button></span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <p class="kicker zh-copy">短篇 · <b>余响集</b> · 第二十一篇</p>
+    <p class="kicker en-copy">Short story · <b>The Aftermath</b> · No. 23</p>
+    <h1 class="zh-copy">回声谷</h1>
+    <h1 class="en-copy">The Echo Vale</h1>
+    <p class="subtitle zh-copy">回廊钟深夜 · 所有的门同时自己响了半声</p>
+    <p class="subtitle en-copy">The Arcade of Echoes — every door hums at once</p>
+    <div class="rule"></div>
+    <p class="meta zh-copy">约 7 分钟 · 与 <a href="/caesura/codex/">世界谱</a> 同源世界观 · 零 LLM 撰写</p>
+    <p class="meta en-copy">about 7 minutes · same world as the <a href="/caesura/codex/">codex</a> · written without LLM assistance</p>
+  </header>
+
+  <article>
+    <div class="zh-copy">
+<p>故事发生在卷宗记的那个年份——2026年11月18日，凌晨。回廊钟第37年守夜，那一夜所有门都自己响了半声。阿沉打开里屋那扇从没人推开的门，里头是一片再也写不完的黑。他往里走了很久，久到数不清步子——他知道自己会到哪，是因为那里亮了一下——不是黎明，是某个钟自己响了一声。他找不着那是什么钟。他只知道声音是从这里来的。</p>
+
+<div class="beat">· · ·</div>
+
+<p>谷里第一个收音人坐在那儿，桌子上摊开着一本账。阿沉的腿不认识那本书，但它的记忆认识得锃亮——书页的阳光，是给所有被忘记声音留的座位。</p>
+<p>"忘记过什么声音？"收音人问。</p>
+<p>"没有。"阿沉说，"我每天都记得铃。"</p>
+<p>收音人笑了，他把袖子里一枚小声签放进阿沉手里。签上写着他的名字。签是温的，是刚印下的。"把忘了的声音赎回去。价钱是——一件你以后不敢再想的东西。"</p>
+
+<div class="beat">· · ·</div>
+
+<p>阿沉顾虑了很久。他最不敢的那件事藏得太深了——他本以为他把它埋在了钟下、井下、女人的离别辞里。可那个小签一到他手里，他就记得了——是他死了的母亲，在他成人礼那天，按在他手心里一枚小小的钟，说"你听不到我了的时候，就听它"。</p>
+<p>"你做的是哪个工作——"收音人问。</p>
+<p>"回廊钟的守。"阿沉说，"我一直在等一扇门自己开。"</p>
+<p>"那你已经等到它开了。"</p>
+
+<div class="beat">· · ·</div>
+
+<p class="coda">后来的卷宗记下了：回廊钟的门没有再自己响过半声。不是因为没事发生——是因为所有声音都被托住了，永远不会再坠。</p>
+<p class="coda">阿沉还是每天早起开门。他不再等什么了——他只是守候那一声袖底的钟，等它成为开门的那半声。</p>
+<p class="coda">止音纪元没有结束。它只是终于有一个人，愿意把声音还给整个世界。</p>
+    </div>
+    <div class="en-copy">
+<p>This happened in the year kept by the unfinished hall's ledgers — the small hours of November 18, 2026. The Arcade of Echoes' thirty-seventh vigil ended that same night, every door humming half a note as the hour turned. A-Chen, who kept the arcade, opened the one door no one ever opened — and inside was a black so deep no ledger could have seen it. He walked until he lost count of his steps — all he knew was that at some point it grew bright — not from dawn, but from some bell ringing inside the dark.</p>
+
+<div class="beat">· · ·</div>
+
+<p>The Vale's first keeper sat at a desk with a great book open before him. A-Chen did not know the book — but his legs, his hands, the back of his neck all knew it — pages of sunlight provisioned for the forgotten sounds of everyone who ever came here.</p>
+<p>"What did you forget to hear?" the keeper asked.</p>
+<p>"Nothing," A-Chen said. "I hear the bells every day."</p>
+<p>The keeper smiled and drew from his sleeve a small sound-token, warm from being newly minted. "A sound you forgot. Its price: something you would not dare to think about, again, ever."</p>
+
+<div class="beat">· · ·</div>
+
+<p>A-Chen hedged for a long time. He had buried his most uncertain thing too deep — beneath a bell, a well, a farewell. But the token was warm, and once it touched him, he remembered: it was his mother, on the day he came of age, pressing a small bell into his palm. "When you can no longer hear me," she said, "listen to it."</p>
+<p>"What work do you do?" the keeper asked.</p>
+<p>"I keep the Arcade," A-Chen said. "I have been waiting for one door to open on its own."</p>
+<p>"Then it already has opened."</p>
+
+<div class="beat">· · ·</div>
+
+<p class="coda">Later, the ledgers would say that the Arcade never creaked again — not because nothing had happened, but because every sound had been gathered and held, forever.</p>
+<p class="coda">A-Chen still opens the doors every morning. He is no longer waiting for anything — he is simply keeping the small bell from falling through the floor of the world.</p>
+<p class="coda">The age of hush has not ended. It has simply, at last, found one person willing to give its sound back to the world.</p>
+    </div>
+  </article>
+
+  <div class="note">
+    <span class="zh-copy">《回声谷》是《余响集》第二十三篇——回廊钟第37年守夜，那一夜所有的门同时自己响了半声。阿沉走进那扇从未推开的门，遇见了收音人——一件不敢再想的东西，就能赎回一声失掉的钟的余音。<a href="/caesura/story/anthology/">全集：《余响集》</a></span>
+    <span class="en-copy">“The Third Voice” is the twenty-first piece of “The Aftermath” — at the southern tip of the Windbell Coast, the lamp went out. A-Shen found, in the salt the tide left behind, what the sea had written at last: “I hear too.” <a href="/caesura/story/anthology/">All stories: “The Aftermath”</a></span>
+  </div>
+
+  <footer>
+    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/">游戏</a> · <a href="/caesura/story/">《盐》· 篇一</a> · <a href="/caesura/story/unnamed-stone/">篇二 · 山下无名碑</a> · <a href="/caesura/story/empty-bar/">篇三 · 空拍子</a> · <a href="/caesura/story/ledger/">篇四 · 账本</a> · <a href="/caesura/story/garden/">篇五 · 回声庭园</a> · <a href="/caesura/story/tribunal/">篇六 · 雨审判</a> · <a href="/caesura/story/frostbell/">篇七 · 霜锤</a> · <a href="/caesura/story/doors/">篇八 · 千门</a> · <a href="/caesura/story/stonethroat/">篇九 · 石喉</a> · <a href="/caesura/story/first-bell/">篇十 · 第一钟</a> · <a href="/caesura/story/dark-tide/">篇十一 · 暗潮</a> · <a href="/caesura/story/twelfth-listener/">篇十二 · 后记</a> · <a href="/caesura/story/bell-picker/">篇十三 · 拾钟人</a> · <a href="/caesura/story/lampwright-bell/">篇十四 · 灯匠</a> · <a href="/caesura/story/lowtone-city/">篇十五 · 低音之城</a> · <a href="/caesura/story/pendulum-ferryman/">篇十六 · 钟摆渡人</a> · <a href="/caesura/story/unfinished-ledger/">篇十七 · 未竟账页</a> · <a href="/caesura/story/fourth-strike/">篇十八 · 第四下</a> · <a href="/caesura/story/last-string/">篇十九 · 末弦</a> · <a href="/caesura/story/string-listener/">篇二十 · 听弦</a> · <a href="/caesura/story/third-voice/">篇二十一 · 第三声</a> · <a href="/caesura/story/ensemble/">篇二十二 · 合奏</a> · <a href="/caesura/story/echo-vale/">篇二十三 · 回声谷</a> · <a href="/caesura/story/anthology/">全集 · 余响集</a> · <a href="/caesura/codex/">世界谱</a></span>
+    <span class="en-copy">© CAESURA · <a href="/caesura/">Game</a> · <a href="/caesura/story/">“Salt” · No. 1</a> · <a href="/caesura/story/unnamed-stone/">No. 2 · “The Nameless Stone”</a> · <a href="/caesura/story/empty-bar/">No. 3 · “The Empty Bar”</a> · <a href="/caesura/story/ledger/">No. 4 · “The Ledger”</a> · <a href="/caesura/story/garden/">No. 5 · “The Garden of Return”</a> · <a href="/caesura/story/tribunal/">No. 6 · “The Rain Tribunal”</a> · <a href="/caesura/story/frostbell/">No. 7 · “The Frostbell”</a> · <a href="/caesura/story/doors/">No. 8 · “The Thousand Doors”</a> · <a href="/caesura/story/stonethroat/">No. 9 · “The Stone-Throat”</a> · <a href="/caesura/story/first-bell/">No. 10 · “The First Bell”</a> · <a href="/caesura/story/dark-tide/">No. 11 · “The Dark Tide”</a> · <a href="/caesura/story/twelfth-listener/">No. 12 · “Epilogue”</a> · <a href="/caesura/story/bell-picker/">No. 13 · “The Bell-Picker”</a> · <a href="/caesura/story/lampwright-bell/">No. 14 · “The Lampwright”</a> · <a href="/caesura/story/lowtone-city/">No. 15 · “The City of Low Tones”</a> · <a href="/caesura/story/pendulum-ferryman/">No. 16 · “The Pendulum Ferryman”</a> · <a href="/caesura/story/unfinished-ledger/">No. 17 · “The Unfinished Ledger Page”</a> · <a href="/caesura/story/fourth-strike/">No. 18 · “The Fourth Strike”</a> · <a href="/caesura/story/last-string/">No. 19 · “The Last String”</a> · <a href="/caesura/story/string-listener/">No. 20 · The String-Listener</a> · <a href="/caesura/story/third-voice/">No. 21 · The Third Voice</a> · <a href="/caesura/story/ensemble/">No. 22 · The Ensemble</a> · <a href="/caesura/story/echo-vale/">No. 23 · The Echo Vale</a> · <a href="/caesura/story/anthology/">All stories · The Aftermath</a> · <a href="/caesura/codex/">World Codex</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('langToggle');
+  var saved = 'zh';
+  try { saved = localStorage.getItem('caesura-lang') || 'zh'; } catch (e) { /* noop */ }
+  function apply(lang) {
+    root.setAttribute('data-lang', lang);
+    root.setAttribute('lang', lang === 'en' ? 'en-US' : (lang === 'zh-TW' ? 'zh-TW' : 'zh-CN'));
+    try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+    if (window.__caesuraZhTW) {
+      if (lang === 'zh-TW' && window.__caesuraZhTW.applyToDocument) window.__caesuraZhTW.applyToDocument();
+      else if (lang === 'zh' && window.__caesuraZhTW.restoreOriginals) window.__caesuraZhTW.restoreOriginals();
+    }
+    btn.textContent = lang === 'zh' ? '繁體' : (lang === 'zh-TW' ? 'EN' : '简体');
+  }
+  if (btn) btn.addEventListener('click', function () {
+    var cur = root.getAttribute('data-lang'); apply(cur === 'zh' ? 'zh-TW' : (cur === 'zh-TW' ? 'en' : 'zh'));
+  });
+  apply(saved === 'en' || saved === 'zh-TW' ? saved : 'zh');
+})();
+</script>
+<script defer src="../../tracker.js"></script>
+<script defer src="/caesura/zh-tw-converter.js"></script>
+</body>
+</html>

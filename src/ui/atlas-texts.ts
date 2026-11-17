@@ -1,6 +1,6 @@
 /**
- * 游记 · 二十二篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643 扩）。
- * 这二十二篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 二十三篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648 扩）。
+ * 这二十三篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -1396,6 +1396,53 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">After that night, the bells on the Windbell Coast stopped swaying the way they used to — every bell had to be retuned, to the frequency the world had hummed that night.</p>
     <p class="coda">Meg's ledger never moved again. She filed it in the last drawer of the Unfinished Hall, with everything else that had never been claimed — every person had also opened their hand, the same second the world became an instrument.</p>
     <p class="coda">The age of hush has not ended. It has only, for the first time, allowed the world to appear as an instrument — and to make one sound, by itself, once.</p>`,
+  },
+  {
+    no: 23,
+    zhTitle: "回声谷",
+    enTitle: "The Echo Vale",
+    zh: `<p>故事发生在卷宗记的那个年份——2026年11月18日，凌晨。回廊钟第37年守夜，那一夜所有门都自己响了半声。阿沉打开里屋那扇从没人推开的门，里头是一片再也写不完的黑。他往里走了很久，久到数不清步子——他知道自己会到哪，是因为那里亮了一下——不是黎明，是某个钟自己响了一声。他找不着那是什么钟。他只知道声音是从这里来的。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>谷里第一个收音人坐在那儿，桌子上摊开着一本账。阿沉的腿不认识那本书，但它的记忆认识得锃亮——书页的阳光，是给所有被忘记声音留的座位。</p>
+    <p>"忘记过什么声音？"收音人问。</p>
+    <p>"没有。"阿沉说，"我每天都记得铃。"</p>
+    <p>收音人笑了，他把袖子里一枚小声签放进阿沉手里。签上写着他的名字。签是温的，是刚印下的。"把忘了的声音赎回去。价钱是——一件你以后不敢再想的东西。"</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>阿沉顾虑了很久。他最不敢的那件事藏得太深了——他本以为他把它埋在了钟下、井下、女人的离别辞里。可那个小签一到他手里，他就记得了——是他死了的母亲，在他成人礼那天，按在他手心里一枚小小的钟，说"你听不到我了的时候，就听它"。</p>
+    <p>"你做的是哪个工作——"收音人问。</p>
+    <p>"回廊钟的守。"阿沉说，"我一直在等一扇门自己开。"</p>
+    <p>"那你已经等到它开了。"</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">后来的卷宗记下了：回廊钟的门没有再自己响过半声。不是因为没事发生——是因为所有声音都被托住了，永远不会再坠。</p>
+    <p class="coda">阿沉还是每天早起开门。他不再等什么了——他只是守候那一声袖底的钟，等它成为开门的那半声。</p>
+    <p class="coda">止音纪元没有结束。它只是终于有一个人，愿意把声音还给整个世界。</p>`,
+    en: `<p>This happened in the year kept by the unfinished hall's ledgers — the small hours of November 18, 2026. The Arcade of Echoes' thirty-seventh vigil ended that same night, every door humming half a note as the hour turned. A-Chen, who kept the arcade, opened the one door no one ever opened — and inside was a black so deep no ledger could have seen it. He walked until he lost count of his steps — all he knew was that at some point it grew bright — not from dawn, but from some bell ringing inside the dark.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The Vale's first keeper sat at a desk with a great book open before him. A-Chen did not know the book — but his legs, his hands, the back of his neck all knew it — pages of sunlight provisioned for the forgotten sounds of everyone who ever came here.</p>
+    <p>"What did you forget to hear?" the keeper asked.</p>
+    <p>"Nothing," A-Chen said. "I hear the bells every day."</p>
+    <p>The keeper smiled and drew from his sleeve a small sound-token, warm from being newly minted. "A sound you forgot. Its price: something you would not dare to think about, again, ever."</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>A-Chen hedged for a long time. He had buried his most uncertain thing too deep — beneath a bell, a well, a farewell. But the token was warm, and once it touched him, he remembered: it was his mother, on the day he came of age, pressing a small bell into his palm. "When you can no longer hear me," she said, "listen to it."</p>
+    <p>"What work do you do?" the keeper asked.</p>
+    <p>"I keep the Arcade," A-Chen said. "I have been waiting for one door to open on its own."</p>
+    <p>"Then it already has opened."</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">Later, the ledgers would say that the Arcade never creaked again — not because nothing had happened, but because every sound had been gathered and held, forever.</p>
+    <p class="coda">A-Chen still opens the doors every morning. He is no longer waiting for anything — he is simply keeping the small bell from falling through the floor of the world.</p>
+    <p class="coda">The age of hush has not ended. It has simply, at last, found one person willing to give its sound back to the world.</p>`,
   },
 ]
 

@@ -41,6 +41,7 @@ try {
     'story/string-listener/index.html',
     'story/third-voice/index.html',
     'story/ensemble/index.html',
+    'story/echo-vale/index.html',
   ];
 
   const PHRASES = new Set();
