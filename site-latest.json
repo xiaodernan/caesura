@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "373417a3ef15e82f0783e744ce8c602f840562d1",
+  "head": "6497e58215563417dc7c9758f5453f692cfe058e",
   "branch": "master",
-  "subject": "feat(story): KI-677《余响集》第四十六篇《未摆的一次 / The Unmade Swing》落地（LLM 真机草稿 → 人工闸落库）",
-  "date": "2026-11-18T07:00:13+08:00",
+  "subject": "site-latest: 373417a (post-rebase reconcile)",
+  "date": "2026-11-18T07:03:49+08:00",
   "kv": {
     "KI.rows": 595,
     "KI.Implemented": 418,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/373417a3ef15e82f0783e744ce8c602f840562d1",
+    "url": "https://github.com/xiaodernan/caesura/commit/6497e58215563417dc7c9758f5453f692cfe058e",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
