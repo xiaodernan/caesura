@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "158be471040fb150beeab742ba5124cda0234624",
+  "head": "ff249241ab5b6d6c257dba0764a03cffdb3849c6",
   "branch": "master",
-  "subject": "site-latest: 3271cf0 (post-rebase reconcile)",
-  "date": "2026-11-18T08:39:37+08:00",
+  "subject": "feat(story): KI-682《余响集》第五十一篇《船未启 / The Boat Still》落地（LLM 真机草稿 → 人工闸落库）",
+  "date": "2026-11-18T08:58:30+08:00",
   "kv": {
-    "KI.rows": 599,
-    "KI.Implemented": 422,
+    "KI.rows": 600,
+    "KI.Implemented": 423,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/158be471040fb150beeab742ba5124cda0234624",
+    "url": "https://github.com/xiaodernan/caesura/commit/ff249241ab5b6d6c257dba0764a03cffdb3849c6",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
