@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "99bd1fb10dde1aee7bd7b7294fb45b28d1cf8128",
+  "head": "6c277847579613450f3ddb1d95b6b92600c4e0d9",
   "branch": "master",
-  "subject": "site-latest: 2e2322b (post-rebase reconcile)",
-  "date": "2026-11-18T12:46:50+08:00",
+  "subject": "feat(story): KI-688《余响集》第五十七篇《摆旁空位 / The Place Beside the Pendulum》落地（预起草稿复用 → LLM 终审 → 人工闸）",
+  "date": "2026-11-18T13:03:43+08:00",
   "kv": {
-    "KI.rows": 605,
-    "KI.Implemented": 428,
+    "KI.rows": 606,
+    "KI.Implemented": 429,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/99bd1fb10dde1aee7bd7b7294fb45b28d1cf8128",
+    "url": "https://github.com/xiaodernan/caesura/commit/6c277847579613450f3ddb1d95b6b92600c4e0d9",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
