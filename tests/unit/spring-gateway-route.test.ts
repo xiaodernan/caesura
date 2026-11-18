@@ -194,6 +194,19 @@ describe('spring-gateway-route：动态路由表（进程内热加载）', () =>
     fs.rmSync(tmpDir, { recursive: true })
   })
 
+  // 轮询等待：watcher 的 60ms 轮询 + 这台机子的调度抖动都吃不进 300ms 定时（2026-11-18 门禁闪红实钉）— 条件满足即返回，死条件 3s 超时。
+  function waitFor(cond: () => boolean, timeoutMs = 3000, intervalMs = 25): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const start = Date.now()
+      const tick = () => {
+        if (cond()) return resolve()
+        if (Date.now() - start > timeoutMs) return reject(new Error('waitFor: timed out waiting for watchRoutes event'))
+        setTimeout(tick, intervalMs)
+      }
+      tick()
+    })
+  }
+
   it('watchRoutes：首趟只取快照不触发；改文件后触发（added/removed）+ 广播 route.changed', () => {
     const fs = require('node:fs')
     const path = require('node:path')
@@ -214,27 +227,21 @@ describe('spring-gateway-route：动态路由表（进程内热加载）', () =>
     const stop = watchRoutes(table, file, 60, undefined, evbus)
     expect(table.list().map((r) => r.id)).toEqual(['r1'])
 
-    // 追加 r2 并改写 routes.json → 应该触发 route.changed
+    // 追加 r2 并改写 routes.json → 应该触发 route.changed（显式推进 mtime：本机 FS 粒度 ~2–10ms）
+    const bumped1 = new Date(Date.now() + 5000)
     fs.writeFileSync(file, JSON.stringify([
       { id: 'r1', uri: 'lb://service-1', order: 0 },
       { id: 'r2', uri: 'lb://service-2', order: 1 },
     ]))
+    fs.utimesSync(file, bumped1, bumped1)
 
-    return new Promise<void>((resolve, reject) => {
-      setTimeout(() => {
-        stop()
-        evbus.close()
-        fs.rmSync(tmpDir, { recursive: true })
-        try {
-          expect(events.length).toBe(1)
-          expect(events[0]!.added).toEqual(['r2'])
-          expect(events[0]!.removed).toEqual([])
-          expect(table.list().map((r) => r.id).sort()).toEqual(['r1', 'r2'])
-          resolve()
-        } catch (e) {
-          reject(e)
-        }
-      }, 300)
+    return waitFor(() => events.length === 1).then(() => {
+      stop()
+      evbus.close()
+      fs.rmSync(tmpDir, { recursive: true })
+      expect(events[0]!.added).toEqual(['r2'])
+      expect(events[0]!.removed).toEqual([])
+      expect(table.list().map((r) => r.id).sort()).toEqual(['r1', 'r2'])
     })
   })
 
@@ -257,21 +264,15 @@ describe('spring-gateway-route：动态路由表（进程内热加载）', () =>
       events.push({ added, removed })
     })
 
+    const bumped2 = new Date(Date.now() + 5000)
     fs.writeFileSync(file, JSON.stringify([{ id: 'r1', uri: 'lb://service-1', order: 0 }]))
+    fs.utimesSync(file, bumped2, bumped2)
 
-    return new Promise<void>((resolve, reject) => {
-      setTimeout(() => {
-        stop()
-        fs.rmSync(tmpDir, { recursive: true })
-        try {
-          expect(events.length).toBe(1)
-          expect(events[0]!.added).toEqual([])
-          expect(events[0]!.removed).toEqual(['r2'])
-          resolve()
-        } catch (e) {
-          reject(e)
-        }
-      }, 300)
+    return waitFor(() => events.length === 1).then(() => {
+      stop()
+      fs.rmSync(tmpDir, { recursive: true })
+      expect(events[0]!.added).toEqual([])
+      expect(events[0]!.removed).toEqual(['r2'])
     })
   })
 })

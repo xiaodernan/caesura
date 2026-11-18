@@ -6,73 +6,73 @@
   "requiresHumanReview": true,
   "schema": 1,
   "mode": "live",
-  "generatedAt": "2026-11-18T07:02:44.632Z",
+  "generatedAt": "2026-11-18T10:43:32.578Z",
   "model": "gpt-6.1-terra",
   "endpoint": "https://api.aizzz.xyz/v1",
-  "focus": "第六十二篇《摆旁的灰》之后 · 下一篇原创短篇",
-  "corpusSize": 7324,
+  "focus": "第六十三篇《灰未落》之后 · 下一篇原创短篇",
+  "corpusSize": 7518,
   "canon": [
     {
       "rank": 1,
-      "score": 64.811,
-      "preview": "[短篇][story/anthology] 第六十二篇《摆旁的灰》——指尖沾着一点灰——她没有擦——她没有洗手——"
+      "score": 63.539,
+      "preview": "[短篇][story/anthology] 第六十三篇《灰未落》——那一点灰还在——它大概只是不打算掉——"
     },
     {
       "rank": 2,
-      "score": 43.523,
-      "preview": "[短篇][story/the-ash-beside-the-pendulum] 摆旁的灰 / Ash Beside the Pendulum — CAESURA · 余响集 · 第六十二篇"
+      "score": 41.568,
+      "preview": "[短篇][story/ash-not-fallen] 灰未落 / Ash Not Fallen — CAESURA · 余响集 · 第六十三篇"
     },
     {
       "rank": 3,
-      "score": 35.977,
+      "score": 28.345,
       "preview": "[短篇][story/anthology] 第六十一篇《摆不回》——潮水退去——摆停在最低处——不必交给下一个人——"
     },
     {
       "rank": 4,
-      "score": 22.79,
-      "preview": "[短篇][story/anthology] 约 7 分钟 · 回廊钟 · 摆旁的灰 · 余响"
-    },
-    {
-      "rank": 5,
-      "score": 21.181,
+      "score": 20.741,
       "preview": "[短篇][story/the-swing-unreturned] 摆不回 / The Swing Unreturned — CAESURA · 余响集 · 第六十一篇"
     },
     {
-      "rank": 6,
-      "score": 20.985,
-      "preview": "[短篇][story/anthology] 第十二篇《后记 · 第十二个听者》——写给翻到这里的你；"
-    },
-    {
-      "rank": 7,
-      "score": 20.679,
-      "preview": "[短篇][story/anthology] 第五十七篇《摆旁空位》——摆旁有一个空位——谁也不坐——它自己够了——"
-    },
-    {
-      "rank": 8,
-      "score": 18.924,
+      "rank": 5,
+      "score": 18.938,
       "preview": "[短篇][story/anthology] 《止音纪元》· 原创短篇全集 · 双语对照"
     },
     {
-      "rank": 9,
-      "score": 18.595,
+      "rank": 6,
+      "score": 18.619,
       "preview": "[短篇][story/after-the-space] 空处之后 / After the Space — CAESURA · 余响集 · 第三十一篇"
     },
     {
-      "rank": 10,
-      "score": 17.624,
+      "rank": 7,
+      "score": 18.204,
+      "preview": "[短篇][story/anthology] 约 7 分钟 · 回廊钟 · 灰未落 · 余响"
+    },
+    {
+      "rank": 8,
+      "score": 17.86,
+      "preview": "[短篇][story/anthology] 第六十二篇《摆旁的灰》——指尖沾着一点灰——她没有擦——她没有洗手——"
+    },
+    {
+      "rank": 9,
+      "score": 17.201,
       "preview": "[短篇][story/anthology] 第六十篇《潮退添柴》——潮水退去——灶火跳了一下——她也跳了一下——她都懂——"
+    },
+    {
+      "rank": 10,
+      "score": 16.951,
+      "preview": "[短篇][story/anthology] 第二十三篇《回声谷》——所有被忘掉的声音都在这里托住，没有坠落——"
     }
   ],
   "worldSnapshot": {
     "date": "2026-11-18",
     "phaseStatus": {
-      "KIrows": 611,
-      "KIImplemented": 434,
+      "KIrows": 612,
+      "KIImplemented": 435,
       "SYSImplemented": 73,
       "ARCHSections": 202
     },
-    "atlasEntries": 62,
-    "storyChapters": 62,
+    "atlasEntries": 63,
+    "storyChapters": 63,
     "storyList": [
       "after-half-a-chime",
       "after-the-bag",
@@ -80,6 +80,7 @@
       "after-the-salt-line",
       "after-the-space",
       "anthology",
+      "ash-not-fallen",
       "at-ebb-one-stick",
       "bell-picker",
       "beside-the-button",
@@ -145,125 +146,142 @@
     "npcs": 7
   },
   "audit": {
-    "consistency": 72,
-    "verdictZh": "第六十二篇与最新余响证据吻合；但总篇数描述、地域名录及双语文本存在待核对的不一致。",
-    "verdictEn": "The sixty-second story matches the latest evidence, but the anthology count, reach list, and bilingual texts need reconciliation.",
+    "consistency": 74,
+    "verdictZh": "游记篇数与近期篇名有证据支撑；运行时计数缺少证据，余响集英文篇数定义冲突。",
+    "verdictEn": "The 63-story count has supporting evidence, but runtime totals are unverified and the anthology’s English count conflicts.",
     "risks": [
       {
-        "severity": "high",
-        "itemZh": "余响集篇数描述冲突",
+        "severity": "med",
+        "itemZh": "运行时统计无证据",
+        "itemEn": "Runtime totals lack evidence",
+        "detailZh": "KI、ARCH、对话树、旗标及NPC计数未见于所给canon证据，无法核验。",
+        "detailEn": "The supplied canon evidence does not verify KI, ARCH, dialogue-tree, flag, or NPC totals."
+      },
+      {
+        "severity": "med",
+        "itemZh": "余响集篇数表述冲突",
         "itemEn": "Conflicting anthology count",
-        "detailZh": "世界谱称余响集有十四篇，快照与所给正文均为六十二篇。",
-        "detailEn": "The world glossary says fourteen stories, while the snapshot and supplied canon contain sixty-two."
+        "detailZh": "世界谱称余响集十四篇，快照称63篇；所给篇目与证据支持63篇，英文描述疑似过时。",
+        "detailEn": "The World Atlas says fourteen stories, while the snapshot and evidence support 63; the English description may be stale."
       },
       {
-        "severity": "med",
-        "itemZh": "故事引用未列地域",
-        "itemEn": "Story references an unlisted reach",
-        "detailZh": "第十三篇提及「叩钟镇」，但世界谱八地域名单中没有此地。",
-        "detailEn": "Story 13 names Knockbell Town, absent from the world guide’s eight reaches."
-      },
-      {
-        "severity": "med",
-        "itemZh": "第十二篇中英内容不对应",
-        "itemEn": "Story 12 Chinese and English diverge",
-        "detailZh": "中文写频谱仪录像与被捂住的石头；英文改写为海岸线与读者，情节信息不同。",
-        "detailEn": "The Chinese version describes spectrometer footage and a covered stone; the English replaces these with shoreline and reader-focused material."
+        "severity": "low",
+        "itemZh": "短篇名单混有总集条目",
+        "itemEn": "Story list includes anthology entry",
+        "detailZh": "名单含 anthology；它可能是总集索引而非独立篇章，篇数口径不够明确。",
+        "detailEn": "The list includes “anthology,” possibly an index rather than a story, leaving the counting method unclear."
       }
     ],
     "gapsZh": [
-      "KI行数、实现数及ARCH章节数缺少可核对的canon出处。",
-      "对话树、旗标与NPC总数未在所给canon证据中逐项列明。"
+      "缺少运行时统计的源码或构建证据。",
+      "缺少63个短篇ID与canon篇章的一一映射。"
     ],
     "gapsEn": [
-      "The KI and ARCH metrics cannot be verified from the supplied canon evidence.",
-      "Dialogue-tree, flag, and NPC totals are not itemized in the supplied canon evidence."
+      "No source or build evidence verifies the runtime totals.",
+      "No one-to-one mapping from the 63 IDs to canon stories is provided."
     ]
   },
   "transitions": [
     {
-      "fromZh": "摆旁的灰尚未处理",
-      "fromEn": "ash beside the pendulum remains untouched",
-      "toZh": "阿汐允许灰自行留下或落去",
-      "toEn": "Axi allows the ash to remain or fall on its own",
-      "flag": "flag.ash_beside_pendulum_left_untouched",
-      "narrativeZh": "灰没有被擦去，也没有被写进薄簿；它留下多久，由它自己决定。",
-      "narrativeEn": "The ash is neither wiped away nor entered in the ledger; how long it stays is its own matter.",
-      "npcReactionZh": "阿汐不再把每一道痕迹都当作待处理之物。",
-      "npcReactionEn": "Axi no longer treats every trace as something to resolve.",
-      "atlasHookZh": "摆旁的灰仍在指尖。",
-      "atlasHookEn": "Ash remains beside the pendulum.",
-      "requiresHumanReview": true
+      "fromZh": "无耳深窖五环线索已发现",
+      "fromEn": "Five clues in the Earless Deeps discovered",
+      "toZh": "五环线索被带回休垒并登记",
+      "toEn": "Five clues returned to Resthold and entered in the ledger",
+      "flag": "flag.earless_clues_registered_at_resthold",
+      "narrativeZh": "五环线索不再只属于深窖；它们成为一笔尚未结清的共同记录。",
+      "narrativeEn": "The five clues no longer belong only to the Deeps; they become a shared record, still unsettled.",
+      "npcReactionZh": "麦格在主账房留出一行，不替线索写下结论。",
+      "npcReactionEn": "Meg leaves a line open in the counting house and writes no conclusion for the clues.",
+      "atlasHookZh": "五环线索的去向",
+      "atlasHookEn": "Where the five clues went",
+      "requiresHumanReview": true,
+      "canonEvidence": [
+        "世界谱：无耳深窖与休垒设定；麦格主账房",
+        "世界谱：刻痕教与账本相关设定"
+      ]
     },
     {
-      "fromZh": "薄簿合着，尚可被打开",
-      "fromEn": "the thin ledger is closed but could still be opened",
-      "toZh": "薄簿继续合着，不登记这一日",
-      "toEn": "the thin ledger stays closed and this day goes unrecorded",
-      "flag": "flag.thin_ledger_left_closed",
-      "narrativeZh": "阿汐不再为确认空白而翻开薄簿；这一日不必成为证词。",
-      "narrativeEn": "Axi no longer opens the ledger merely to confirm its blankness; this day need not become testimony.",
-      "npcReactionZh": "薄页没有翻动，屋里也无人催促。",
-      "npcReactionEn": "The page does not turn, and no one in the room hurries her.",
-      "atlasHookZh": "薄簿合着的一日。",
-      "atlasHookEn": "A day left outside the ledger.",
-      "requiresHumanReview": true
+      "fromZh": "低音之城的静默债已被记录",
+      "fromEn": "The debt of silence in the Bass Citadel has been recorded",
+      "toZh": "静默债不再定价，听账仍被保留",
+      "toEn": "Silence is no longer priced; listening remains recorded",
+      "flag": "flag.bass_citadel_silence_unpriced",
+      "narrativeZh": "城里的账本不再为沉默标价，只记下谁曾坐下倾听。",
+      "narrativeEn": "The city ledger no longer prices silence; it records only who sat and listened.",
+      "npcReactionZh": "石喉母亲合上账本，留下新的空栏。",
+      "npcReactionEn": "The Stone-Throat Matriarch closes the ledger, leaving a new column open.",
+      "atlasHookZh": "不再标价的沉默",
+      "atlasHookEn": "Silence without a price",
+      "requiresHumanReview": true,
+      "canonEvidence": [
+        "余响集 No.9《石喉》",
+        "余响集 No.15《低音之城》"
+      ]
     },
     {
-      "fromZh": "盐粒仍在门槛，来处未明",
-      "fromEn": "the grain of salt remains at the threshold, its origin unknown",
-      "toZh": "阿汐不再追问盐粒来处，也不移动它",
-      "toEn": "Axi stops asking where the grain came from and leaves it in place",
-      "flag": "flag.threshold_salt_left_unquestioned",
-      "narrativeZh": "盐仍留在原处；阿汐不寻找、不补齐，也不替它记数。",
-      "narrativeEn": "The salt stays where it is; Axi neither searches, replaces, nor counts it.",
-      "npcReactionZh": "盐没有回应，阿汐也不再要求回应。",
-      "npcReactionEn": "The salt gives no answer, and Axi no longer asks for one.",
-      "atlasHookZh": "门槛边不必登记的盐。",
-      "atlasHookEn": "Salt at the threshold, left unentered.",
-      "requiresHumanReview": true
+      "fromZh": "第六十三篇《灰未落》已读",
+      "fromEn": "No. 63, Ash Not Fallen, has been read",
+      "toZh": "灰仍留在指尖，未被登记或交接",
+      "toEn": "The ash remains on the fingertip, unrecorded and unhanded-on",
+      "flag": "flag.ash_not_fallen_left_unrecorded",
+      "narrativeZh": "灰没有落下，也没有进入薄簿；这一次，停留本身不必交代。",
+      "narrativeEn": "The ash neither falls nor enters the ledger; this time, remaining needs no account.",
+      "npcReactionZh": "阿汐不擦灰，也不等任何人来接。",
+      "npcReactionEn": "Axi leaves the ash untouched and waits for no one to take it.",
+      "atlasHookZh": "指尖未落的灰",
+      "atlasHookEn": "Ash still on the fingertip",
+      "requiresHumanReview": true,
+      "canonEvidence": [
+        "余响集 No.63《灰未落》",
+        "canon 证据 1、2"
+      ]
     },
     {
-      "fromZh": "摆停在最低处，交接仍被期待",
-      "fromEn": "the pendulum rests at its lowest point, with a handover still expected",
-      "toZh": "摆不交接，空位继续空着",
-      "toEn": "the pendulum is not handed on, and the place beside it stays empty",
-      "flag": "flag.pendulum_no_handover",
-      "narrativeZh": "阿汐不再等待接手的人；摆停在最低处，空位无人落座。",
-      "narrativeEn": "Axi no longer waits for someone to take over; the pendulum rests low, and no one sits beside it.",
-      "npcReactionZh": "摆没有动，空位也不需要解释。",
-      "npcReactionEn": "The pendulum does not move, and the empty place needs no explanation.",
-      "atlasHookZh": "摆旁无人落座的空位。",
-      "atlasHookEn": "The empty place beside the pendulum.",
-      "requiresHumanReview": true
+      "fromZh": "第六十三篇之后，世界仍保持未完状态",
+      "fromEn": "After No. 63, the world remains unfinished",
+      "toZh": "余响记录暂止，未新增游记或世界事件",
+      "toEn": "The afterglow record pauses without adding a tale or world event",
+      "flag": "flag.afterglow_record_paused",
+      "narrativeZh": "没有新的记录替沉默收尾；已留下的余响仍在，不被改写。",
+      "narrativeEn": "No new record closes the silence; the echoes already left remain unchanged.",
+      "npcReactionZh": "阿汐合着薄簿，继续照看眼前的火与盐。",
+      "npcReactionEn": "Axi keeps the ledger closed and tends the fire and salt before her.",
+      "atlasHookZh": "余响之后仍未完",
+      "atlasHookEn": "Still unfinished after the afterglow",
+      "requiresHumanReview": true,
+      "canonEvidence": [
+        "世界谱：余响归位与余响集定义",
+        "余响集 No.63《灰未落》",
+        "canon 证据 1、5"
+      ]
     }
   ],
   "atlasDraft": {
-    "no": 63,
-    "titleZh": "灰未落",
-    "titleEn": "Ash Not Fallen",
-    "pZh": "潮水退去，阿汐指尖沾着一点灰。她没有擦，也没有洗手。薄簿仍合着，盐仍在门槛边。她添了一根柴，灶火跳了一下。那一点灰还在。止音纪元没有结束。",
-    "pEn": "At ebb, a trace of ash clung to Axi’s fingertip. She did not wipe it away or wash her hand. The thin ledger stayed shut; the salt remained by the threshold. She fed one stick into the stove. The flame leapt once. The ash remained. The silenced epoch had not ended.",
-    "codaZh": "有些灰，暂时不落。",
-    "codaEn": "Some ash does not fall yet.",
+    "no": 64,
+    "titleZh": "摆旁的纸",
+    "titleEn": "Paper Beside the Pendulum",
+    "pZh": "摆停在最低处。阿汐没有去看海，指尖的灰也没有落。门槛边的盐仍在，薄簿仍合着。她添了一根柴，灶火跳了一下。摆没有动，阿汐也没有问它何时会动。\n\n潮水退去，干痕仍在。她没有把这件事记进薄簿。天亮后，灰还留在指尖旁。她没有擦，也没有洗手。\n\n有些停下，不必交给下一个人。",
+    "pEn": "The pendulum rested at its lowest point. Axi did not look toward the sea, and the ash on her fingertip did not fall. The salt remained by the threshold; the thin ledger stayed shut. She fed one stick into the stove. The flame leapt once. The pendulum did not move, and Axi did not ask when it would.\n\nAt ebb, the dry mark remained. She did not enter it in the thin ledger. By morning, the ash still rested beside her fingertip. She neither wiped it away nor washed her hand.\n\nSome things may stop without being handed on.",
+    "codaZh": "有些纸，不必翻开，也能留在原处。",
+    "codaEn": "Some paper can remain without being opened.",
     "requiresHumanReview": true,
     "editorialGateRevised": true
   },
   "editorialGate": {
-    "canonFidelity": 76,
-    "voiceFidelity": 82,
+    "canonFidelity": 72,
+    "voiceFidelity": 76,
     "verdict": "revise",
     "issues": [
-      "未添柴与第六十二篇不符",
-      "船与干痕偏离本篇场景"
+      "摆旁新添纸张，违反物件约束",
+      "影子移动缺少依据"
     ],
     "revised": true,
-    "at": "2026-11-18T07:02:44.632Z"
+    "at": "2026-11-18T10:43:32.578Z"
   },
   "usage": {
     "calls": 5,
-    "cachedTokens": 327006,
-    "promptTokens": 431916,
+    "cachedTokens": 330204,
+    "promptTokens": 437011,
     "statuses": [
       200,
       200,
@@ -276,52 +294,52 @@
       93.3,
       93.2,
       93.3,
-      93.5
+      92.7
     ],
     "perCall": [
       {
         "node": "warmup",
         "status": 200,
-        "dt": 5169,
-        "prompt": 85885,
-        "cached": 4089,
+        "dt": 9001,
+        "prompt": 86843,
+        "cached": 4135,
         "hitRate": 4.8,
         "attempts": 1
       },
       {
         "node": "audit",
         "status": 200,
-        "dt": 11445,
-        "prompt": 86420,
-        "cached": 80634,
+        "dt": 6884,
+        "prompt": 87383,
+        "cached": 81519,
         "hitRate": 93.3,
         "attempts": 1
       },
       {
         "node": "proposeTransitions",
         "status": 200,
-        "dt": 8250,
-        "prompt": 86523,
-        "cached": 80633,
+        "dt": 7107,
+        "prompt": 87486,
+        "cached": 81518,
         "hitRate": 93.2,
         "attempts": 1
       },
       {
         "node": "draftContent",
         "status": 200,
-        "dt": 4476,
-        "prompt": 86404,
-        "cached": 80635,
+        "dt": 6126,
+        "prompt": 87367,
+        "cached": 81519,
         "hitRate": 93.3,
         "attempts": 1
       },
       {
         "node": "editorialGate",
         "status": 200,
-        "dt": 8370,
-        "prompt": 86684,
-        "cached": 81015,
-        "hitRate": 93.5,
+        "dt": 12209,
+        "prompt": 87932,
+        "cached": 81513,
+        "hitRate": 92.7,
         "attempts": 1
       }
     ]
@@ -329,37 +347,37 @@
   "graphCheckpoints": [
     {
       "node": "loadWorld",
-      "ms": 17,
+      "ms": 9,
       "ok": true
     },
     {
       "node": "retrieveCanon",
-      "ms": 361,
+      "ms": 234,
       "ok": true
     },
     {
       "node": "warmup",
-      "ms": 6040,
+      "ms": 9906,
       "ok": true
     },
     {
       "node": "audit",
-      "ms": 19165,
+      "ms": 14940,
       "ok": true
     },
     {
       "node": "proposeTransitions",
-      "ms": 22976,
+      "ms": 24170,
       "ok": true
     },
     {
       "node": "draftContent",
-      "ms": 8821,
+      "ms": 14616,
       "ok": true
     },
     {
       "node": "editorialGate",
-      "ms": 13581,
+      "ms": 18295,
       "ok": true
     },
     {

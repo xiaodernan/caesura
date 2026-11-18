@@ -681,6 +681,64 @@
           "attempts": 1
         }
       ]
+    },
+    {
+      "at": "2026-11-18T10:43:32.578Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第六十三篇《灰未落》之后 · 下一篇原创短篇",
+      "calls": 5,
+      "cachedTokens": 330204,
+      "promptTokens": 437011,
+      "meanHitRate": 75.46,
+      "steadyStateHitRate": 93.13,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 200,
+          "dt": 9001,
+          "prompt": 86843,
+          "cached": 4135,
+          "hitRate": 4.8,
+          "attempts": 1
+        },
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 6884,
+          "prompt": 87383,
+          "cached": 81519,
+          "hitRate": 93.3,
+          "attempts": 1
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 7107,
+          "prompt": 87486,
+          "cached": 81518,
+          "hitRate": 93.2,
+          "attempts": 1
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 6126,
+          "prompt": 87367,
+          "cached": 81519,
+          "hitRate": 93.3,
+          "attempts": 1
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 12209,
+          "prompt": 87932,
+          "cached": 81513,
+          "hitRate": 92.7,
+          "attempts": 1
+        }
+      ]
     }
   ]
 }

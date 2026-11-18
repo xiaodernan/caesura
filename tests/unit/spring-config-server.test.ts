@@ -20,6 +20,19 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
+  // 轮询等待（2026-11-18 门禁闪红钉：300/350/400ms 定时等待在满载机子上吃不到 watcher 的 100ms 轮询）
+  function waitFor(cond: () => boolean, timeoutMs = 3000, intervalMs = 25): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const start = Date.now()
+      const tick = () => {
+        if (cond()) return resolve()
+        if (Date.now() - start > timeoutMs) return reject(new Error('waitFor: timed out waiting for config watcher event'))
+        setTimeout(tick, intervalMs)
+      }
+      tick()
+    })
+  }
+
 describe('spring-config-server：Spring Cloud Config Server 客户端', () => {
   it('loadConfigs：读取配置文件', () => {
     const fs = require('node:fs')
@@ -116,20 +129,18 @@ describe('spring-config-server：Spring Cloud Config Server 客户端', () => {
       expect((config.server as Record<string, unknown>).port).toBe(8082)
     })
 
-    // 修改配置文件
+    // 改写 + 显式推进 mtime：本机 FS 的 mtime 粒度 ~2–10ms（实测同毫秒桶两次写出现同 mtimeMs），不推进 ctime 粒度分辨不出变更
+    const bumped = new Date(Date.now() + 5000)
     fs.writeFileSync(
       path.join(tmpDir, 'caesura-gate.yml'),
       'server:\n  port: 8082\ncaesura_circuit_failure_threshold: 5\ncaesura_circuit_cooldown_sec: 120',
     )
+    fs.utimesSync(path.join(tmpDir, 'caesura-gate.yml'), bumped, bumped)
 
     // 等待监听器检测变化
-    return new Promise<void>((resolve) => {
-      setTimeout(() => {
-        expect(callbackCalled).toBe(true)
-        stopWatcher()
-        fs.rmSync(tmpDir, { recursive: true })
-        resolve()
-      }, 350)
+    return waitFor(() => callbackCalled).then(() => {
+      stopWatcher()
+      fs.rmSync(tmpDir, { recursive: true })
     })
   })
 
@@ -154,23 +165,21 @@ describe('spring-config-server：Spring Cloud Config Server 客户端', () => {
 
     const stopWatcher = startConfigWatcher(configs, tmpDir, 100, undefined, evbus)
 
-    // 修改配置文件
+    // 改写 + 显式推进 mtime（见上注 · 本机 FS mtime 粒度问题）
+    const bumped = new Date(Date.now() + 5000)
     fs.writeFileSync(
       path.join(tmpDir, 'caesura-gate.yml'),
       'server:\n  port: 8082\ncaesura_circuit_failure_threshold: 5',
     )
+    fs.utimesSync(path.join(tmpDir, 'caesura-gate.yml'), bumped, bumped)
 
     // 等待监听器检测变化
-    return new Promise<void>((resolve) => {
-      setTimeout(() => {
-        expect(received.length).toBe(1)
-        expect(received[0]!.name).toBe('caesura-gate')
-        expect((received[0]!.config.server as Record<string, unknown>).port).toBe(8082)
-        stopWatcher()
-        evbus.close()
-        fs.rmSync(tmpDir, { recursive: true })
-        resolve()
-      }, 400)
+    return waitFor(() => received.length === 1).then(() => {
+      expect(received[0]!.name).toBe('caesura-gate')
+      expect((received[0]!.config.server as Record<string, unknown>).port).toBe(8082)
+      stopWatcher()
+      evbus.close()
+      fs.rmSync(tmpDir, { recursive: true })
     })
   })
 

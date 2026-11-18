@@ -3179,5 +3179,54 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">Some ash does not fall yet.</p>
     <p class="coda">The age of hush has not ended. It has only, at last, left behind a trace of ash not yet fallen — and a fingertip that no longer waits for anyone to come fetch it.</p>`,
   },
+  {
+    no: 64,
+    zhTitle: "干痕未进",
+    enTitle: "The Mark Not Entered",
+    zh: `<p>摆停在最低处。阿汐没有去看海，指尖的灰也没有落。门槛边的盐仍在，薄簿仍合着。她添了一根柴，灶火跳了一下。摆没有动，阿汐也没有问它何时会动。</p>
+    <p>潮水退去，干痕仍在。她没有把这件事记进薄簿。天亮后，灰还留在指尖旁。她没有擦，也没有洗手。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿仍合着。——它合着是它的事——她指尖上那点灰也是它的事——她手伸出去——也没有擦——也没有碰——她只是把手停在那儿——她知道它还要停一段——她也知道它何时落——她不问——它也不说——它们对视——谁也不先开口。</p>
+    <p>那粒盐——它还是老样子——它从未挪动过——它可以挪——它不挪——她偶尔看它——她偶尔也不看——它都在那儿——它停在那儿就够了——她也在她停的地方停着。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮水又退去了——表盘不响——她听见木板收了一根手指的宽度——她继续添柴——灶火跳了一下——她也跳了一下——都懂了——都老朋友了。</p>
+    <p>母亲的声音回来——册子——它会自己翻——亲爱的——册子永远知道——她这回没有替它答——她也没有不答——她只是添柴——灶火静静地跳着——她心里说：好。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>盐没有动——灶火也没有动——木板收紧了半指——她把那根柴烧完了——灰没有落——她知道灰还在——她也不催它——有些灰会在她不看它的时候落下——有些事也一样——她不催。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些停下，不必交给下一个人。</p>
+    <p class="coda">止音纪元没有结束。它只是终于留下一道没有进薄簿的干痕——和一个还在指尖上的灰。</p>`,
+    en: `<p>The pendulum rested at its lowest point. Axi did not look toward the sea, and the ash on her fingertip did not fall. The salt remained by the threshold; the thin ledger stayed shut. She fed one stick into the stove. The flame leapt once. The pendulum did not move, and Axi did not ask when it would.</p>
+    <p>At ebb, the dry mark remained. She did not enter it in the thin ledger. By morning, the ash still rested beside her fingertip. She neither wiped it away nor washed her hand.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ledger stayed closed. — Its being closed was its own affair — the ash on her finger was hers — she reached out — and did not wipe — and did not touch — she only held her hand there — she knew it needed to linger a while — she knew when it would fall — she did not ask — it did not say — they regarded one another — neither spoke first.</p>
+    <p>That grain of salt — it remained as it always was — it had never moved — it could — it did not — she would glance at it now and then — sometimes she did not — it was always there — standing there was enough — she, too, stayed where she stayed.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The tide went out again — the dial never sounded — she heard the boards tighten by one finger's width — she kept feeding the fire — the flame leapt once — she leapt too — everyone understood — old companions, both of them.</p>
+    <p>Her mother's voice came back — the book — it will turn on its own — my dear — the book always knows — this time she did not answer for it — nor did she withhold the answer — she only fed the fire — the flame leapt on quietly — she thought: all right.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The salt did not move — neither did the fire — the boards tightened by half a finger — she burned that stick down to its ash — the ash did not fall — she knew it was still there — she did not hurry it — some ash falls when she is not looking — so do some things — she did not hurry.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some things may stop without being handed on.</p>
+    <p class="coda">The age of hush has not ended. It has only, at last, left behind an unrecorded mark that never entered the thin ledger — and a trace of ash still resting on her fingertip.</p>`,
+  },
 ]
 

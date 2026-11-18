@@ -106,6 +106,7 @@ const ENDPOINTS = [
   { name: 'story-62', url: 'https://xiaodernan.github.io/caesura/story/the-swing-unreturned/', marker: '摆不回' },
   { name: 'story-63', url: 'https://xiaodernan.github.io/caesura/story/the-ash-beside-the-pendulum/', marker: '摆旁的灰' },
   { name: 'story-64', url: 'https://xiaodernan.github.io/caesura/story/ash-not-fallen/', marker: '灰未落' },
+  { name: 'story-65', url: 'https://xiaodernan.github.io/caesura/story/the-mark-not-entered/', marker: '干痕未进' },
   { name: 'ai-json-commit', url: 'https://xiaodernan.github.io/caesura/admin/ai-director-latest.json', marker: '"authorOnly": true' },
   { name: 'ai-json-qa', url: 'https://xiaodernan.github.io/caesura/admin/ai-director-transitions-qa.json', marker: '"authorOnly": true' },
   { name: 'ai-json-cache', url: 'https://xiaodernan.github.io/caesura/admin/ai-cache-metrics.json', marker: '"entries"' },

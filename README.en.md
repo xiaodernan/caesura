@@ -38,7 +38,7 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - "The Ledger" (original short story, no. 4): <https://xiaodernan.github.io/caesura/story/ledger/> (Resthold · the page Meg never dared to close · bilingual · zero LLM · added 2026-11-15)  
 - "The Garden of Return" (original short story, no. 5): <https://xiaodernan.github.io/caesura/story/garden/> (The Afterland · the sixth sound · The Owner of the Old Bell · bilingual · zero LLM · added 2026-11-15)  
 - "The Rain Tribunal" (original short story, no. 6): <https://xiaodernan.github.io/caesura/story/tribunal/> (The Afterland · the Rainbell Valley · The Drowning Jurist · seven years between sessions · bilingual · zero LLM · added 2026-11-15)  
-- "The Aftermath" (complete short fiction, whole-volume portal — printable as one paper volume): <https://xiaodernan.github.io/caesura/story/anthology/> (all sixty-three stories · EPIC-VII draft now inside · updated 2026-11-18)  
+- "The Aftermath" (complete short fiction, whole-volume portal — printable as one paper volume): <https://xiaodernan.github.io/caesura/story/anthology/> (all sixty-four stories · EPIC-VII draft now inside · updated 2026-11-18)  
 - "The Frostbell" (original short story, no. 7): <https://xiaodernan.github.io/caesura/story/frostbell/> (The Frostbell Cliff · The Last Frostwright · the sound the ice kept · bilingual · zero LLM · added 2026-11-15)  
 - "The Thousand Doors" (original short story, no. 8): <https://xiaodernan.github.io/caesura/story/doors/> (The Arcade of Echoes · the Gatekeeper of a Thousand Doors · bilingual · zero LLM · added 2026-11-15)  
 - "The Stone-Throat" (original short story, no. 9): <https://xiaodernan.github.io/caesura/story/stonethroat/> (The City of Low Tones · The Stone-Throat Matriarch · the pitch that costs nothing · bilingual · zero LLM · added 2026-11-15)  
@@ -96,6 +96,7 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - "The Swing Unreturned" (short fiction No.61): <https://xiaodernan.github.io/caesura/story/the-swing-unreturned/> (the Arcade · the pendulum rests at its lowest point; it did not need to be handed on; she drew her hand from the cover · LLM-drafted, human-approved · zero LLM · 2026-11-18) ·  
 - "Ash Beside the Pendulum" (short fiction No.62): <https://xiaodernan.github.io/caesura/story/the-ash-beside-the-pendulum/> (the Arcade · a trace of ash clung to her fingertip; she did not wipe it away; she did not wash it away · LLM-drafted, human-approved · zero LLM · 2026-11-18) ·  
 - "Ash Not Fallen" (short fiction No.63): <https://xiaodernan.github.io/caesura/story/ash-not-fallen/> (the Arcade · the ash remained on her fingertip; it simply had no intention of falling · LLM-drafted, human-approved · zero LLM · 2026-11-18) ·  
+- "The Mark Not Entered" (short fiction No.64): <https://xiaodernan.github.io/caesura/story/the-mark-not-entered/> (the Arcade · the pendulum rested at its lowest point; the dry mark never entered the thin ledger · LLM-drafted, human-gated · zero LLM · 2026-11-18) ·  
 - Sync truth: `https://raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json`
 
 ## Where to read
