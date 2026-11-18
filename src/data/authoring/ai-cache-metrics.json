@@ -109,6 +109,149 @@
           "hitRate": 93.8
         }
       ]
+    },
+    {
+      "at": "2026-11-18T04:24:50.124Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第五十五篇《未动的摆》之后 · 下一篇原创短篇",
+      "calls": 4,
+      "cachedTokens": 213287,
+      "promptTokens": 302218,
+      "meanHitRate": 70.43,
+      "steadyStateHitRate": 93.9,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 200,
+          "dt": 10315,
+          "prompt": 75124,
+          "cached": 0,
+          "hitRate": 0
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 8932,
+          "prompt": 75684,
+          "cached": 71096,
+          "hitRate": 93.9
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 4710,
+          "prompt": 75571,
+          "cached": 71102,
+          "hitRate": 94.1
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 6869,
+          "prompt": 75839,
+          "cached": 71089,
+          "hitRate": 93.7
+        }
+      ]
+    },
+    {
+      "at": "2026-11-18T04:34:39.182Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第五十五篇《未动的摆》之后 · 下一篇原创短篇",
+      "calls": 5,
+      "cachedTokens": 216215,
+      "promptTokens": 306064,
+      "meanHitRate": 56.42,
+      "steadyStateHitRate": 70.53,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 200,
+          "dt": 5067,
+          "prompt": 76096,
+          "cached": 0,
+          "hitRate": 0
+        },
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 8367,
+          "prompt": 76563,
+          "cached": 72076,
+          "hitRate": 94.1
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 404,
+          "dt": 1280,
+          "prompt": 0,
+          "cached": 0,
+          "hitRate": 0
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 7931,
+          "prompt": 76548,
+          "cached": 72077,
+          "hitRate": 94.2
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 7595,
+          "prompt": 76857,
+          "cached": 72062,
+          "hitRate": 93.8
+        }
+      ]
+    },
+    {
+      "at": "2026-11-18T04:35:43.527Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第五十五篇《未动的摆》之后 · 下一篇原创短篇",
+      "calls": 4,
+      "cachedTokens": 288288,
+      "promptTokens": 306590,
+      "meanHitRate": 94.03,
+      "steadyStateHitRate": 94.03,
+      "perCall": [
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 7895,
+          "prompt": 76563,
+          "cached": 72076,
+          "hitRate": 94.1
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 6306,
+          "prompt": 76662,
+          "cached": 72071,
+          "hitRate": 94
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 5764,
+          "prompt": 76548,
+          "cached": 72077,
+          "hitRate": 94.2
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 7203,
+          "prompt": 76817,
+          "cached": 72064,
+          "hitRate": 93.8
+        }
+      ]
     }
   ]
 }

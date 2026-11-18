@@ -1,6 +1,6 @@
 /**
- * 游记 · 五十五篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684/KI-685/KI-686 扩）。
- * 这五十五篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 五十六篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684/KI-685/KI-686/KI-687 扩）。
+ * 这五十六篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -2850,6 +2850,47 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She did not look at the sea.</p>
     <p class="coda">Some stops leave nothing behind.</p>
     <p class="coda">The age of hush has not ended. It has only, at last, left behind a pendulum that never needed to swing — and a grain of salt forever standing watch.</p>`,
+  },
+  {
+    no: 56,
+    zhTitle: "未交接",
+    enTitle: "No Handover",
+    zh: `<p>清晨，壶边的盐还在，船底的干痕也还在。阿汐没有去看海。薄簿仍合着。她想起钟摆渡人那只从不摆的摆，便没有再等交接。有些停下，不必交给下一个人。</p>
+    <p>她不知道摆是不是真的不必交——大概没有人交接过——从第一天起它就是那样——它一直那样——它以后大概也还会那样——她忽然觉得它比谁都更懂得怎么一直停着。她把手放下——掌心朝下——按了一下木板——木板没有回应。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿仍合着。——她有一次想把它送去渡口——也许渡口的人需要一页空白——也许他们不需要——她没有去——她也没有问——她只是想：让它合着也很好。</p>
+    <p>那粒盐——她已经不记得哪一天它开始成为屋里一个固定的成员——它是她不曾请来的——它比她先到——它也会比她后走——她从不确定它是不是活的——她偶尔照顾它——就像照顾一盏不需要点的灯。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮水来过——她听见——她没去看。——木板在同一个频率上收紧了半分——她已经能分辨——它在第几道夹——她继续添柴——灶火跳了一下——她也跳了一下。</p>
+    <p>母亲的声音浮起来——册子——它会自己翻——亲爱的——册子永远知道——这回她几乎是替册子说完了——她心里说：那它们——大概也知道——交接不交接——无所谓。——灶火静静地跳着。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些摆，不必交给下一个人。</p>
+    <p class="coda">止音纪元没有结束。它只是终于留下一只从来不需要交接的摆——和一粒不必被签收的盐。</p>`,
+    en: `<p>At dawn, the salt beside the jar remained, as did the dry mark beneath the boat. Axi did not look at the sea. The thin ledger stayed shut. She thought of the Pendulum Ferryman’s pendulum, which never swung, and no longer waited for a handover. Some things may stop without being handed on.</p>
+    <p>She did not know whether the pendulum truly needed no one to take it on — perhaps no one ever had — it had been like that since the first day — always — and would likely remain so — she suddenly felt it understood better than anyone how to stay stopped. She lowered her hand — palm down — and touched the boards — the boards did not answer.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ledger stayed closed. — Once, she thought of sending it to the ferry crossing — perhaps the ferryman might need a blank page — perhaps not — she did not go — she did not ask — she only thought: let it remain closed, that is fine too.</p>
+    <p>That grain of salt — she no longer remembered when it had become a fixed member of the house — it had not been invited — it had arrived before she did — and would likely outlast her — she could never say whether it was alive — she cared for it now and then — as one cares for a lamp that needs no lighting.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The tide came — she heard it — she did not go and look. — The boards tightened by half a notch at their usual frequency — she could already tell — which clamp it was on — she kept feeding the fire — the flame leapt once — she leapt too.</p>
+    <p>Her mother's voice surfaced — the book — it will turn on its own — my dear — the book always knows — this time she nearly spoke for the book — thinking: then perhaps they — know too — that handover or no handover — makes no difference. — The flame leapt on, silently.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some swings need no keeper to take them on.</p>
+    <p class="coda">The age of hush has not ended. It has only, at last, left behind a pendulum that never required a handover — and a grain of salt never required a signature.</p>`,
   },
 ]
 

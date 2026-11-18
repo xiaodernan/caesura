@@ -74,6 +74,7 @@ try {
     'story/the-ring/index.html',
     'story/the-mark-beneath-the-jar/index.html',
     'story/the-unmoved-pendulum/index.html',
+    'story/no-handover/index.html',
   ];
 
   const PHRASES = new Set();

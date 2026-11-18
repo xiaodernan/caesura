@@ -38,7 +38,7 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - "The Ledger" (original short story, no. 4): <https://xiaodernan.github.io/caesura/story/ledger/> (Resthold · the page Meg never dared to close · bilingual · zero LLM · added 2026-11-15)  
 - "The Garden of Return" (original short story, no. 5): <https://xiaodernan.github.io/caesura/story/garden/> (The Afterland · the sixth sound · The Owner of the Old Bell · bilingual · zero LLM · added 2026-11-15)  
 - "The Rain Tribunal" (original short story, no. 6): <https://xiaodernan.github.io/caesura/story/tribunal/> (The Afterland · the Rainbell Valley · The Drowning Jurist · seven years between sessions · bilingual · zero LLM · added 2026-11-15)  
-- "The Aftermath" (complete short fiction, whole-volume portal — printable as one paper volume): <https://xiaodernan.github.io/caesura/story/anthology/> (all fifty-five stories · EPIC-VII draft now inside · updated 2026-11-18)  
+- "The Aftermath" (complete short fiction, whole-volume portal — printable as one paper volume): <https://xiaodernan.github.io/caesura/story/anthology/> (all fifty-six stories · EPIC-VII draft now inside · updated 2026-11-18)  
 - "The Frostbell" (original short story, no. 7): <https://xiaodernan.github.io/caesura/story/frostbell/> (The Frostbell Cliff · The Last Frostwright · the sound the ice kept · bilingual · zero LLM · added 2026-11-15)  
 - "The Thousand Doors" (original short story, no. 8): <https://xiaodernan.github.io/caesura/story/doors/> (The Arcade of Echoes · the Gatekeeper of a Thousand Doors · bilingual · zero LLM · added 2026-11-15)  
 - "The Stone-Throat" (original short story, no. 9): <https://xiaodernan.github.io/caesura/story/stonethroat/> (The City of Low Tones · The Stone-Throat Matriarch · the pitch that costs nothing · bilingual · zero LLM · added 2026-11-15)  
@@ -88,6 +88,7 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - "The Ring" (short fiction No.53): <https://xiaodernan.github.io/caesura/story/the-ring/> (the Arcade · the grain rested beside the jar; a pale ring that never closed; she never counted it · LLM-drafted, human-approved · zero LLM · 2026-11-18) ·  
 - "The Mark Beneath the Jar" (short fiction No.54): <https://xiaodernan.github.io/caesura/story/the-mark-beneath-the-jar/> (the Arcade · a pale ring where the jar once stood; a fine line within it; she never moved the jar away · LLM-drafted, human-approved · zero LLM · 2026-11-18) ·  
 - "The Unmoved Pendulum" (short fiction No.55): <https://xiaodernan.github.io/caesura/story/the-unmoved-pendulum/> (the Arcade · she said all right toward the boat; the ferryman of the pendulum never swung; she, too, was enough · LLM-drafted, human-approved · zero LLM · 2026-11-18) ·  
+- "No Handover" (short fiction No.56): <https://xiaodernan.github.io/caesura/story/no-handover/> (the Arcade · she no longer waited for a handover; some things stop without being handed on · LLM-drafted, human-approved · zero LLM · 2026-11-18) ·  
 - Sync truth: `https://raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json`
 
 ## Where to read
