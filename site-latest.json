@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "4168407bbc369d00775cb8cfd5943b4bb0947e15",
+  "head": "12962dd559f9885a1092e4c11f055f9da6c58a01",
   "branch": "master",
-  "subject": "feat(ai+story): KI-685《余响集》第五十四篇《壶底旧痕 / The Mark Beneath the Jar》+ LLM 缓存命中账本（admin 可观测）落地",
-  "date": "2026-11-18T11:59:19+08:00",
+  "subject": "site-latest: 4168407 (post-rebase reconcile)",
+  "date": "2026-11-18T12:00:38+08:00",
   "kv": {
     "KI.rows": 603,
     "KI.Implemented": 426,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/4168407bbc369d00775cb8cfd5943b4bb0947e15",
+    "url": "https://github.com/xiaodernan/caesura/commit/12962dd559f9885a1092e4c11f055f9da6c58a01",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
