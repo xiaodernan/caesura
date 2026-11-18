@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "4db9c85cb896246351c276ac901767ba03f8fded",
+  "head": "40537f7a18b939b91b7c391d81844d477a7ee613",
   "branch": "master",
-  "subject": "feat(story): KI-697《余响集》第六十六篇《火自己知道 / The Fire Knows》落地 + EditorialGate 传输异常纳入单节点重试（LLM 起草 → LLM 终审 → 人工闸）",
-  "date": "2026-11-18T21:02:47+08:00",
+  "subject": "site-latest: 4db9c85 (post-rebase reconcile)",
+  "date": "2026-11-18T21:03:34+08:00",
   "kv": {
     "KI.rows": 615,
     "KI.Implemented": 438,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/4db9c85cb896246351c276ac901767ba03f8fded",
+    "url": "https://github.com/xiaodernan/caesura/commit/40537f7a18b939b91b7c391d81844d477a7ee613",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
