@@ -80,6 +80,7 @@ try {
     'story/the-mark-remains/index.html',
     'story/at-ebb-one-stick/index.html',
     'story/the-swing-unreturned/index.html',
+    'story/the-ash-beside-the-pendulum/index.html',
   ];
 
   const PHRASES = new Set();

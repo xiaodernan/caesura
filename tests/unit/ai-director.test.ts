@@ -68,7 +68,7 @@ describe('KI-620 · AI 导演引擎产物门钉', () => {
     }
     const draft = art.atlasDraft
     expect(draft, 'atlasDraft 必须非空').toBeTruthy()
-    expect(draft.no).toBe(61)
+    expect(draft.no).toBe(62)
     expect(draft.titleZh).toBeTruthy()
     expect(draft.pZh).toBeTruthy()
     expect(draft.pEn).toBeTruthy()

@@ -1,6 +1,6 @@
 /**
- * 游记 · 六十一篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684/KI-685/KI-686/KI-687/KI-688/KI-689/KI-690/KI-691/KI-692 扩）。
- * 这六十一篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 六十二篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684/KI-685/KI-686/KI-687/KI-688/KI-689/KI-690/KI-691/KI-692/KI-693 扩）。
+ * 这六十二篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -3096,6 +3096,47 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She did not look at the sea.</p>
     <p class="coda">Some swings need not return to their starting place.</p>
     <p class="coda">The age of hush has not ended. It has only, at last, left behind a pendulum that never needed to swing back — and a grain of salt forever standing watch.</p>`,
+  },
+  {
+    no: 62,
+    zhTitle: "摆旁的灰",
+    enTitle: "Ash Beside the Pendulum",
+    zh: `<p>潮水退去，阿汐添了一根柴。她想起那只停在最低处的摆，指尖沾着一点灰。她没有擦，也没有把它写进薄簿。天亮后，灰还在指尖旁。她没有洗手。</p>
+    <p>那一点灰——它大概是从火里跳出来的——或者是从灯罩上落下的——她已经不追究——她偶尔看一眼它——它还在——她就觉得它和她是一类的——都是不急着被谁命名的东西。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿仍合着。——它合着是它的事——她指尖上的灰也是它的事——她手伸出去——也没有擦——也没有碰——她只是把手停在那儿——也许她不知道自己停在那儿——也许她知道——她知道也无所谓——她停着就好了。</p>
+    <p>那粒盐——它还是老样子——她看了一眼它——又看了一眼自己的指尖——它们像是两只对视的眼睛——谁都不先开口——她也没话好说——她只是看——看就够了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮水又退去了——表盘不响——门槛上那粒盐没动——她也没动——灶火静静地跳着——它跳它的——她过她的——她指尖上那点灰——大概会在明天或者后天——自己掉——或者不掉——她不关心。</p>
+    <p>母亲的声音回来——册子——它会自己翻——亲爱的——册子永远知道——她这回没有回应——也没有不回应——她只是添柴——灶火跳得更高了——她笑了一下——厨房里安静了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些痕迹，不必留下来。</p>
+    <p class="coda">止音纪元没有结束。它只是终于留下一粒不必被谁抹去的灰——和一个不再等任何人的天空。</p>`,
+    en: `<p>At ebb, Axi fed one stick into the stove. She thought of the pendulum resting at its lowest point; a trace of ash clung to her fingertip. She did not wipe it away or enter it in the thin ledger. By morning, the ash remained beside her hand. She did not wash it away.</p>
+    <p>That trace of ash — it had likely leapt out from the fire — or down from the lampshade — she no longer pursued it — she would glance at it now and then — it remained — she felt it belonged to her kind — things not in a hurry to be named by anyone.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ledger stayed closed. — Its being closed was its own affair — the ash on her finger was hers — she reached out — and did not wipe — and did not touch — she only held her hand there — perhaps she did not know she was holding it there — perhaps she did — it did not matter — holding it there was enough.</p>
+    <p>That grain of salt — it was as it always was — she looked at it — then at her fingertip — they were like two eyes regarding one another — neither spoke first — she had nothing to say either — she only looked — looking was enough.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The tide went out again — the dial never sounded — the grain of salt by the threshold did not move — she did not either — the flame leapt on quietly — it leapt, she went on — that ash on her fingertip — likely it would fall tomorrow, or the day after — or not — she did not concern herself.</p>
+    <p>Her mother's voice came back — the book — it will turn on its own — my dear — the book always knows — this time she neither answered — nor withheld the answer — she only fed the fire — the flame leapt higher — she laughed once — the kitchen went quiet.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some traces need not remain.</p>
+    <p class="coda">The age of hush has not ended. It has only, at last, left behind a trace of ash no one needed to erase — and a sky that no longer waits for anyone.</p>`,
   },
 ]
 

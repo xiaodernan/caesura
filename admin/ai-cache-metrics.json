@@ -565,6 +565,64 @@
           "attempts": 1
         }
       ]
+    },
+    {
+      "at": "2026-11-18T06:44:51.337Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第六十一篇《摆不回》之后 · 下一篇原创短篇",
+      "calls": 5,
+      "cachedTokens": 322529,
+      "promptTokens": 427069,
+      "meanHitRate": 75.44,
+      "steadyStateHitRate": 93.1,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 200,
+          "dt": 7801,
+          "prompt": 84925,
+          "cached": 4044,
+          "hitRate": 4.8,
+          "attempts": 1
+        },
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 6367,
+          "prompt": 85447,
+          "cached": 79622,
+          "hitRate": 93.2,
+          "attempts": 1
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 6526,
+          "prompt": 85550,
+          "cached": 79621,
+          "hitRate": 93.1,
+          "attempts": 1
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 6690,
+          "prompt": 85432,
+          "cached": 79623,
+          "hitRate": 93.2,
+          "attempts": 1
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 8241,
+          "prompt": 85715,
+          "cached": 79619,
+          "hitRate": 92.9,
+          "attempts": 1
+        }
+      ]
     }
   ]
 }
