@@ -3532,5 +3532,56 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">Some pages need not be turned.</p>
     <p class="coda">The age of hush has not ended. It has only lived one more dusk — the salt still stood, the ash continued to fade, the book turned to the next page on its own — and she was well.</p>`,
   },
+  {
+    no: 71,
+    zhTitle: "又多一个傍晚",
+    enTitle: "One More Dusk",
+    zh: `<p>回廊钟的薄簿合着，页角偶尔自翻。阿汐没有记下。门槛边的盐仍在，指尖的灰淡了。她没有去看海，也没有催它们。止音纪元又多了一个傍晚。</p>
+    <p>灶火自己燃着——水壶自己知道时候——她不添柴——也不熄柴——她只是看——册子自己翻过去了一页——她没有记——她也不想看——它翻它的——她自己她的。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿仍合着。——它合着是它的事——她不需要它开——册子里那一页自己会翻——它永远知道——她也不问它——她只是听——门槛边——她听见——盐也安静——灰也安静。</p>
+    <p>那粒盐——门槛上的——它还是老样子——从未挪动——也不需要挪动——她有时候看它——有时候不看——它都在那儿——它在那儿就够了——一道影子偶尔落在门槛上——她从不管它——管不着。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮水又退去了——表盘不响——木板收紧了一根手指的宽度——她还是没有去看海——她只是坐在灶旁——亮了又暗——暗了又亮——册子又翻了一页——她笑一下——都懂了——都老朋友了。</p>
+    <p>母亲的声音回来——我的孩子——你瘦了——让它自己翻吧——它知道时候了——她说：好——她只是听——已经是第几个傍晚——她不数了——她停了——它自己会算。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她有时候看门——盐在那里——她知道它从未挪开过——灰也淡了一层——簿自己翻了一页——她忽然觉得——这三件都不需要——任何笔触——不需要记——不需要填——不需要补——她也不需要催——她只是她——不再数了。</p>
+    <p>傍晚了——灯不多——她走到里间——簿在那里——它合着——它页角偶尔自己动一下——它会——她也会——它们都懂——这就够了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些傍晚，不需要谁数。</p>
+    <p class="coda">止音纪元没有结束。它只是又多了一个傍晚——盐仍立在门槛，册子自己翻到下一页，她也很好。</p>`,
+    en: `<p>At the Arcade of Echoes, the thin ledger stayed shut, its corner turning now and then. Axi recorded nothing. The salt remained by the threshold; the ash on her fingertip faded. She did not look toward the sea or hurry either of them. The age of hush lived through one more dusk.</p>
+    <p>The fire murmured on — the kettle knew its own hour — she did not add wood — she did not put it out — she only watched — the book turned one page on its own — she recorded nothing — neither did she look — it turned — and she did not follow.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ledger stayed closed. — Its being closed was its own affair — she did not need it open — the page turned on its own — the book always knew — she did not ask it — she only listened — by the threshold — she heard — the salt was quiet — the ash was quiet too.</p>
+    <p>That grain of salt — on the threshold — it remained as it always was — it had never moved — it did not need to — sometimes she glanced at it — sometimes she did not — it was always there — its being there was enough — sometimes a shadow fell across the threshold — she did not count it — she would not.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The tide went out again — the dial never sounded — the boards tightened by one finger's width — she still did not look toward the sea — she only sat by the stove — bright then dim — dim then bright — the book turned one more page — she smiled once — everyone understood — old companions, all of them.</p>
+    <p>Her mother's voice came back — my child — you are thinner — let it turn on its own — it knows its own hour — she said: all right — she only listened — she had stopped counting — she would not again — it knew how to count itself.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Sometimes she watched the door — the salt was there — she knew it had never moved — the ash had faded by a shade — the page turned on its own — she suddenly felt — none of them needed — any stroke — not filled — not remembered — not re-inked — neither did she — she was herself — she would not count.</p>
+    <p>Dusk came — the lamps were few — she walked to the inner room — the book lay there — closed — its page corner would turn now and then — it would — she would — they understood — that was enough.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some dusks need no one to count them.</p>
+    <p class="coda">The age of hush has not ended. It has only lived one more dusk — the salt still stood by the threshold, the book turned to the next page on its own — and she was well too.</p>`,
+  },
 ]
 

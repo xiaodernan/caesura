@@ -1179,6 +1179,64 @@
           "attempts": 1
         }
       ]
+    },
+    {
+      "at": "2026-11-18T14:46:45.979Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第七十篇《页角自翻》之后 · 下一篇原创短篇",
+      "calls": 5,
+      "cachedTokens": 362460,
+      "promptTokens": 479746,
+      "meanHitRate": 75.44,
+      "steadyStateHitRate": 93.1,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 200,
+          "dt": 4771,
+          "prompt": 95405,
+          "cached": 4543,
+          "hitRate": 4.8,
+          "attempts": 1
+        },
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 7595,
+          "prompt": 95987,
+          "cached": 89480,
+          "hitRate": 93.2,
+          "attempts": 1
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 8649,
+          "prompt": 96090,
+          "cached": 89479,
+          "hitRate": 93.1,
+          "attempts": 1
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 6629,
+          "prompt": 95972,
+          "cached": 89481,
+          "hitRate": 93.2,
+          "attempts": 1
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 7265,
+          "prompt": 96292,
+          "cached": 89477,
+          "hitRate": 92.9,
+          "attempts": 1
+        }
+      ]
     }
   ]
 }
