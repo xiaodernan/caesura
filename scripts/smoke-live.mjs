@@ -99,6 +99,7 @@ const ENDPOINTS = [
   { name: 'story-55', url: 'https://xiaodernan.github.io/caesura/story/the-mark-beneath-the-jar/', marker: '壶底旧痕' },
   { name: 'story-56', url: 'https://xiaodernan.github.io/caesura/story/the-unmoved-pendulum/', marker: '未动的摆' },
   { name: 'story-57', url: 'https://xiaodernan.github.io/caesura/story/no-handover/', marker: '未交接' },
+  { name: 'story-58', url: 'https://xiaodernan.github.io/caesura/story/beside-the-pendulum/', marker: '摆旁空位' },
   { name: 'ai-json-commit', url: 'https://xiaodernan.github.io/caesura/admin/ai-director-latest.json', marker: '"authorOnly": true' },
   { name: 'ai-json-qa', url: 'https://xiaodernan.github.io/caesura/admin/ai-director-transitions-qa.json', marker: '"authorOnly": true' },
   { name: 'ai-json-cache', url: 'https://xiaodernan.github.io/caesura/admin/ai-cache-metrics.json', marker: '"entries"' },

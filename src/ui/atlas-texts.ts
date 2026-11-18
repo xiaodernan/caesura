@@ -1,6 +1,6 @@
 /**
- * 游记 · 五十六篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684/KI-685/KI-686/KI-687 扩）。
- * 这五十六篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 五十七篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684/KI-685/KI-686/KI-687/KI-688 扩）。
+ * 这五十七篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -2891,6 +2891,47 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She did not look at the sea.</p>
     <p class="coda">Some swings need no keeper to take them on.</p>
     <p class="coda">The age of hush has not ended. It has only, at last, left behind a pendulum that never required a handover — and a grain of salt never required a signature.</p>`,
+  },
+  {
+    no: 57,
+    zhTitle: "摆旁空位",
+    enTitle: "The Place Beside the Pendulum",
+    zh: `<p>潮水退去时，木板在熟悉的频率上收紧。阿汐没有去看海，也没有翻开薄簿。门槛边的盐仍在，船仍停着。她想起钟摆渡人那只从不摆的摆，不再等交接。有些停下，不必交给下一个人。</p>
+    <p>她这两天忽然注意到摆旁有一个空位——不知道什么时候就有了——大概是给谁坐的——它一直空着——它也许一直就打算空着——她看它的时候——她几乎觉得它不空——它里面是整个止音纪元的入场门票——它摆在那里——谁也不坐——它自己够了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿仍合着。——她这两天偶尔想把它打开——不是为了记什么——只是为了看一眼它真的合着——它合着——她就安心——她合上了更安心——她笑了笑——自己摇了摇头——她心里说：你可真是个奇怪的女孩子。</p>
+    <p>那粒盐——它又多了一角的缺——或者又少了一角——她没有再检查——她已经不检查了——她只是在做饭的时候顺手看它一眼——它还在——她就继续把水烧开。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮水又来了——她没有听见——或者她听见了——她没有去听——木板在那个频率上收紧了——她的脚也跟着收紧了一点——她笑了。</p>
+    <p>母亲的声音回来——册子——它会自己翻——亲爱的——册子永远知道——她这回完全替它答了——她说：知道。——她说完以后厨房安静了很久——然后灶火又跳了一下。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些空位，不必有人坐下。</p>
+    <p class="coda">止音纪元没有结束。它只是终于留下一个从不必有人坐下的空位——和一只从不需要摆的摆。</p>`,
+    en: `<p>At ebb, the boards tightened at their familiar frequency. Axi did not look at the sea or open the thin ledger. The salt remained by the threshold; the boat remained outside. She thought of the Pendulum Ferryman’s pendulum, which never swung, and stopped waiting for a handover. Some things may stop without being handed on.</p>
+    <p>These past days she suddenly noticed an empty place beside the pendulum — she did not know when it had appeared — perhaps it was for someone to sit in — it had stayed empty ever since — perhaps it had always intended to stay empty — when she looked at it — she almost felt it was not empty at all — inside it was the admission ticket to the whole age of hush — it stood there — no one sat in it — it was enough on its own.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ledger stayed closed. — These past days she sometimes felt like opening it — not to record anything — only to see that it was truly shut — it was shut — she was at ease — having it shut made her more at ease — she laughed softly — and shook her head — thinking: you really are a strange girl.</p>
+    <p>That grain of salt — one more corner of it vanished — or perhaps one more corner appeared — she no longer checks — she does not check anymore — only, while cooking, she would glance at it in passing — it was still there — she would go on and boil the water.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The tide came in again — she did not hear it — or she heard it — she did not go and listen — the boards tightened at that frequency — her own foot tightened along with it — she laughed.</p>
+    <p>Her mother's voice came back — the book — it will turn on its own — my dear — the book always knows — this time she answered fully for it — she said: I know. — After she spoke, the kitchen was quiet for a long while — then the flame leapt once more.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some empty places need no one to sit in them.</p>
+    <p class="coda">The age of hush has not ended. It has only, at last, left behind an empty place that needed no one seated — and a pendulum that never needed to swing.</p>`,
   },
 ]
 
