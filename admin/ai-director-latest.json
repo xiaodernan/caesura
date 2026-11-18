@@ -6,73 +6,73 @@
   "requiresHumanReview": true,
   "schema": 1,
   "mode": "live",
-  "generatedAt": "2026-11-18T00:22:16.037Z",
+  "generatedAt": "2026-11-18T00:42:42.517Z",
   "model": "gpt-6.1-terra",
   "endpoint": "https://api.aizzz.xyz/v1",
-  "focus": "第四十九篇《船上的空处》之后 · 下一篇原创短篇",
-  "corpusSize": 5095,
+  "focus": "第五十篇《盐未上船》之后 · 下一篇原创短篇",
+  "corpusSize": 5256,
   "canon": [
     {
       "rank": 1,
-      "score": 64.544,
-      "preview": "[短篇][story/anthology] 第四十九篇《船上的空处》——船舱里多了一处干痕，形状刚好容下一粒盐——她没有把盐放进去——"
+      "score": 54.603,
+      "preview": "[短篇][story/anthology] 第五十篇《盐未上船》——盐放在门槛上，没有带到船边——后来潮水回来，盐少了一角——干痕没有变——"
     },
     {
       "rank": 2,
-      "score": 46.573,
-      "preview": "[短篇][story/the-place-aboard] 船上的空处 / The Place Aboard — CAESURA · 余响集 · 第四十九篇"
+      "score": 42.958,
+      "preview": "[短篇][story/salt-not-aboard] 盐未上船 / Salt Not Aboard — CAESURA · 余响集 · 第五十篇"
     },
     {
       "rank": 3,
-      "score": 41.622,
-      "preview": "[短篇][story/anthology] 篇四十九 · 回廊钟 · 船上的空处"
+      "score": 26.014,
+      "preview": "[短篇][story/anthology] 约 7 分钟 · 回廊钟 · 盐未上船 · 余响"
     },
     {
       "rank": 4,
-      "score": 26.294,
-      "preview": "[短篇][story/anthology] 约 7 分钟 · 回廊钟 · 船上的空处 · 余响"
+      "score": 18.682,
+      "preview": "[短篇][story/anthology] 《止音纪元》· 原创短篇全集 · 双语对照"
     },
     {
       "rank": 5,
-      "score": 24.161,
-      "preview": "[短篇][story/after-the-salt-line] 盐线之后 / After the Salt Line — CAESURA · 余响集 · 第二十九篇"
-    },
-    {
-      "rank": 6,
-      "score": 23.917,
+      "score": 18.544,
       "preview": "[短篇][story/after-the-space] 空处之后 / After the Space — CAESURA · 余响集 · 第三十一篇"
     },
     {
+      "rank": 6,
+      "score": 17.158,
+      "preview": "[短篇][story/string-listener] 《听弦》是《余响集》第二十篇——弦找到频率之后的第五十三年，未竟厅设「听弦」一职，把最年轻的书记员阿汐派上北崖。弦问了世界一句，世界终于有人回答。"
+    },
+    {
       "rank": 7,
-      "score": 23.79,
-      "preview": "[短篇][story/anthology] 第四十七篇《船底的干痕》——船仍停在门外；天亮时，门槛上的盐粒少了一粒——她没有去摸那道船底干痕——"
+      "score": 16.58,
+      "preview": "[短篇][story/anthology] 余响集 / CAESURA: Stories — The Epoch of Hush 原创短篇全集 · CAESURA"
     },
     {
       "rank": 8,
-      "score": 22.813,
-      "preview": "[短篇][story/anthology] 第十九篇《末弦》——世界曾经很吵，一条北崖上的弦找到了自己——"
+      "score": 14.527,
+      "preview": "[短篇][story/anthology] 第三十一篇《空处之后》——铜扣自己长在窗台上，她把它搁在木板接缝旁，木板没有记下铜扣——"
     },
     {
       "rank": 9,
-      "score": 21.609,
-      "preview": "[短篇][story/after-the-empty-scale] 空秤之后 / After the Empty Scale — CAESURA · 余响集 · 第四十五篇"
+      "score": 14.397,
+      "preview": "[短篇][story/anthology] 第二十九篇《盐线之后》——两半盐线还在窗台，纸袋留在门边，门没有再开——窗台上那两半盐线又悄悄长回去了一点点——"
     },
     {
       "rank": 10,
-      "score": 19.828,
-      "preview": "[短篇][story/anthology] 第四十一篇《门外的湿痕》——她把手放在门槛上，等潮水退去；湿痕浅了一些，位置没有变——"
+      "score": 14.168,
+      "preview": "[短篇][story/anthology] 第四十篇《门槛之外》——影子仍停在门外；阿汐没有请它进来；潮水退去，门槛前留下一道湿痕——门没有关——"
     }
   ],
   "worldSnapshot": {
     "date": "2026-11-18",
     "phaseStatus": {
-      "KIrows": 598,
-      "KIImplemented": 421,
+      "KIrows": 599,
+      "KIImplemented": 422,
       "SYSImplemented": 73,
       "ARCHSections": 202
     },
-    "atlasEntries": 49,
-    "storyChapters": 49,
+    "atlasEntries": 50,
+    "storyChapters": 50,
     "storyList": [
       "after-half-a-chime",
       "after-the-bag",
@@ -101,6 +101,7 @@
       "lowtone-city",
       "pendulum-ferryman",
       "salt-at-the-threshold",
+      "salt-not-aboard",
       "salt-on-the-sill",
       "stonethroat",
       "string-listener",
@@ -133,128 +134,113 @@
   },
   "audit": {
     "consistency": 78,
-    "verdictZh": "游记数量与快照吻合；但余响集篇数描述冲突，且多数运行指标无法由所给证据核验。",
-    "verdictEn": "The story count matches, but the anthology length conflicts and most runtime metrics cannot be verified from the supplied evidence.",
+    "verdictZh": "余响集篇数与名单一致；实现统计缺少可核验证据，且世界谱存在“十四篇”旧描述与五十篇现状冲突。",
+    "verdictEn": "The 50-story list is consistent, but implementation metrics lack evidence and an older canon reference still says fourteen stories.",
     "risks": [
       {
-        "severity": "high",
-        "itemZh": "余响集篇数自相矛盾",
-        "itemEn": "Conflicting anthology length",
-        "detailZh": "世界谱称「四十九篇」，其英译却写 fourteen；快照与篇目清单均为49篇。",
-        "detailEn": "The Chinese canon says 49 stories, while its English entry says fourteen; the snapshot and list say 49."
+        "severity": "med",
+        "itemZh": "余响集篇数描述冲突",
+        "itemEn": "Conflicting anthology count",
+        "detailZh": "世界谱称余响集为“十四篇”，快照及所给全集均为五十篇，需确认旧描述是否已过时。",
+        "detailEn": "The glossary says fourteen stories, while the snapshot and supplied anthology contain fifty; confirm the older count is obsolete."
       },
       {
         "severity": "med",
-        "itemZh": "运行统计缺少可核验证据",
-        "itemEn": "Runtime metrics lack verifiable evidence",
-        "detailZh": "KI、ARCH、对话树、旗标及 NPC 数量均未见于所给 canon 证据，无法确认快照准确性。",
-        "detailEn": "The supplied canon does not verify KI, ARCH, dialogue-tree, flag, or NPC counts."
+        "itemZh": "实现与架构统计无法核实",
+        "itemEn": "Implementation and architecture counts are unverifiable",
+        "detailZh": "KI、系统实现、ARCH、对话树及 NPC 数量均无对应实现清单或检索证据可供交叉核对。",
+        "detailEn": "No implementation inventory or retrieval evidence is provided to verify KI, system, ARCH, dialogue-tree, or NPC counts."
       },
       {
         "severity": "low",
-        "itemZh": "证据覆盖范围有限",
-        "itemEn": "Limited evidence coverage",
-        "detailZh": "检索证据仅列出 top-10，无法独立核验完整篇目清单及各条目实现状态。",
-        "detailEn": "Only the top 10 retrieved evidence items are supplied, so the full title list and implementation status cannot be independently checked."
+        "itemZh": "短篇词条与标题映射不明",
+        "itemEn": "Story IDs are not fully mapped to titles",
+        "detailZh": "名单含 50 个短篇 ID，但证据未给出 ID 到篇名的逐项映射，无法核验别名及收录对应关系。",
+        "detailEn": "The 50 IDs are listed without an ID-to-title mapping, so aliases and individual inclusion cannot be verified."
       }
     ],
     "gapsZh": [
-      "提供 KI、ARCH、系统实现数的统计来源与口径。",
-      "提供完整对话树、旗标及 NPC 清单以核验快照。"
+      "提供 KI、ARCH、系统实现及 NPC/对话树的可核验清单。",
+      "明确“十四篇”旧描述是否应更新，并给出短篇 ID 与篇名映射。"
     ],
     "gapsEn": [
-      "Provide sources and counting rules for KI, ARCH, and implemented-system totals.",
-      "Provide complete dialogue-tree, flag, and NPC inventories for verification."
+      "Provide auditable inventories for KI, ARCH, systems, NPCs, and dialogue trees.",
+      "Resolve the fourteen-story reference and map story IDs to titles."
     ]
   },
   "transitions": [
     {
-      "fromZh": "风钟海岸：玩家尚未触碰带钟的风刻痕",
-      "fromEn": "Windbell Coast: the player has not touched the Bell-Bearing Wind mark",
-      "toZh": "玩家触碰刻痕，确认风携余温却不让钟声清晰",
-      "toEn": "The player touches the mark and acknowledges that the wind carries warmth but not a clear bell",
-      "flag": "flag.windbell_bearing_wind_mark_touched",
-      "narrativeZh": "刻痕被触碰；风仍不响，余温仍在。",
-      "narrativeEn": "The mark is touched; the wind stays silent, and its warmth remains.",
-      "npcReactionZh": "海风掠过刻痕，没有留下可辨的钟声。",
-      "npcReactionEn": "The sea wind passes the mark without leaving a distinct bell sound.",
-      "atlasHookZh": "带钟的风：触碰后仍听不清",
-      "atlasHookEn": "Bell-bearing wind: still unclear after the touch",
-      "requiresHumanReview": true,
-      "canonEvidence": [
-        "世界谱·刻痕「带钟的风」",
-        "世界谱·风钟海岸"
-      ]
+      "fromZh": "纸袋留在门边，袋口未合严",
+      "fromEn": "The paper bag remains by the door, unsealed",
+      "toZh": "阿汐不再确认袋中那行字是否改变",
+      "toEn": "Axi no longer checks whether the line inside has changed",
+      "flag": "flag.paper_bag_left_unchecked",
+      "narrativeZh": "她让纸袋留在原处，不再把聆听变成核对。",
+      "narrativeEn": "She leaves the bag in place and stops turning listening into inspection.",
+      "npcReactionZh": "门缝仍开着，袋口没有合上。",
+      "npcReactionEn": "The door remains ajar; the bag stays open.",
+      "atlasHookZh": "门边的纸袋仍未封口。",
+      "atlasHookEn": "The paper bag remains unsealed by the door.",
+      "requiresHumanReview": true
     },
     {
-      "fromZh": "风钟海岸：玩家尚未触碰盐结小龛刻痕",
-      "fromEn": "Windbell Coast: the player has not touched the Salt Shrine mark",
-      "toZh": "玩家触碰刻痕，见证盐龛被海抹去又重写",
-      "toEn": "The player touches the mark and witnesses the sea erase and rewrite the salt shrine",
-      "flag": "flag.windbell_salt_shrine_witnessed",
-      "narrativeZh": "盐龛仍由海每日抹去、每日重写；玩家记下这次见证。",
-      "narrativeEn": "The sea still erases and rewrites the shrine each day; the player records having witnessed it.",
-      "npcReactionZh": "海水退去又回来，盐龛没有要求留下。",
-      "npcReactionEn": "The tide recedes and returns; the shrine asks nothing to be kept.",
-      "atlasHookZh": "盐结小龛：每日重写",
-      "atlasHookEn": "Salt Shrine: rewritten each day",
-      "requiresHumanReview": true,
-      "canonEvidence": [
-        "世界谱·刻痕「盐结小龛」",
-        "世界谱·刻痕教"
-      ]
+      "fromZh": "盐留在门槛上，船舱干痕未变",
+      "fromEn": "Salt remains at the threshold; the dry mark aboard is unchanged",
+      "toZh": "盐少了一角，阿汐不记具体时刻",
+      "toEn": "A corner of salt is gone; Axi does not record when",
+      "flag": "flag.threshold_salt_corner_missing",
+      "narrativeZh": "潮水回来后，盐少了一角；她不把变化写成证词。",
+      "narrativeEn": "When the tide returns, a corner is missing; she does not turn the change into testimony.",
+      "npcReactionZh": "船没有移动，干痕仍在。",
+      "npcReactionEn": "The boat does not move; the dry mark remains.",
+      "atlasHookZh": "门槛的盐少了一角。",
+      "atlasHookEn": "A corner of salt is missing from the threshold.",
+      "requiresHumanReview": true
     },
     {
-      "fromZh": "风钟海岸：玩家尚未触碰防波堤潮痕刻痕",
-      "fromEn": "Windbell Coast: the player has not touched the Tide-Lines mark",
-      "toZh": "玩家触碰刻痕，辨认潮痕是被海反复擦写的歌",
-      "toEn": "The player touches the mark and recognizes the tide-lines as a song repeatedly erased and rewritten by the sea",
-      "flag": "flag.windbell_tide_lines_read",
-      "narrativeZh": "潮痕仍会被海擦写；玩家不把它们当作固定谱句。",
-      "narrativeEn": "The sea keeps rewriting the tide-lines; the player does not treat them as a fixed score.",
-      "npcReactionZh": "潮水退去，石上的线条没有留下定稿。",
-      "npcReactionEn": "The tide recedes, leaving no final version of the lines on stone.",
-      "atlasHookZh": "防波堤潮痕：一首未定稿的歌",
-      "atlasHookEn": "Tide-lines: a song without a final draft",
-      "requiresHumanReview": true,
-      "canonEvidence": [
-        "世界谱·刻痕「防波堤潮痕」",
-        "余响集·第28篇《窗台盐线》"
-      ]
+      "fromZh": "阿汐仍在门边看着船与干痕",
+      "fromEn": "Axi still watches the boat and its dry mark from the doorway",
+      "toZh": "她不再追问盐与干痕是否一同抵达",
+      "toEn": "She no longer asks whether the salt and dry mark arrive together",
+      "flag": "flag.salt_and_dry_mark_unaccounted",
+      "narrativeZh": "她允许两处变化各自发生，不再要求它们同时抵达。",
+      "narrativeEn": "She lets the two changes happen separately and stops requiring them to arrive together.",
+      "npcReactionZh": "船仍停在门外，干痕没有改变。",
+      "npcReactionEn": "The boat remains outside; the dry mark is unchanged.",
+      "atlasHookZh": "船上的干痕仍容着一处空白。",
+      "atlasHookEn": "The dry mark aboard still holds an empty place.",
+      "requiresHumanReview": true
     },
     {
-      "fromZh": "风钟海岸：玩家尚未触碰缩住的响石刻痕",
-      "fromEn": "Windbell Coast: the player has not touched the Still Press-Stone mark",
-      "toZh": "玩家触碰刻痕，体验按下响石时整片海静止",
-      "toEn": "The player touches the mark and experiences the whole sea stilling when the sound-stone is pressed",
-      "flag": "flag.windbell_still_press_stone_pressed",
-      "narrativeZh": "按下响石，潮声停了一刻；松手后，刻痕仍记着这一停。",
-      "narrativeEn": "The surf stops for a moment when the stone is pressed; the mark retains that pause after release.",
-      "npcReactionZh": "海面停住片刻，没有回答，也没有被改变。",
-      "npcReactionEn": "The sea holds still briefly; it neither answers nor changes.",
-      "atlasHookZh": "缩住的响石：按下时海静止",
-      "atlasHookEn": "Still Press-Stone: the sea holds when pressed",
-      "requiresHumanReview": true,
-      "canonEvidence": [
-        "世界谱·刻痕「缩住的响石」",
-        "世界谱·风钟海岸"
-      ]
+      "fromZh": "阿汐仍把薄簿合着，盐留在门槛上",
+      "fromEn": "Axi keeps the ledger closed; the salt remains at the threshold",
+      "toZh": "她不记录盐角何时消失，也不寻找去处",
+      "toEn": "She records neither when the corner vanished nor where it went",
+      "flag": "flag.salt_corner_left_unrecorded",
+      "narrativeZh": "她记得变化，却不追索时刻；薄簿继续合着。",
+      "narrativeEn": "She remembers the change without pursuing its moment; the ledger stays closed.",
+      "npcReactionZh": "薄簿没有翻开，船也没有启程。",
+      "npcReactionEn": "The ledger remains closed, and the boat does not depart.",
+      "atlasHookZh": "没有记下盐角消失的时刻。",
+      "atlasHookEn": "The moment the salt corner vanished was not recorded.",
+      "requiresHumanReview": true
     }
   ],
   "atlasDraft": {
-    "no": 50,
-    "titleZh": "盐未上船",
-    "titleEn": "Salt Not Aboard",
-    "pZh": "潮水退去，船舱里的干痕还在。阿汐把盐放在门槛上，没有带到船边。船没有动。薄簿仍合着。后来潮水回来，盐少了一角，干痕没有变。她没有记下是哪一刻少的。",
-    "pEn": "At ebb, the dry mark remained inside the boat. Axi left the salt on the threshold, not aboard. The boat did not move. The ledger stayed closed. When the tide returned, one corner of the salt was gone, but the mark had not changed. She did not record when it happened.",
-    "codaZh": "有些东西，不必同时抵达。",
-    "codaEn": "Some things need not arrive together.",
+    "no": 51,
+    "titleZh": "船未启",
+    "titleEn": "The Boat Still",
+    "pZh": "潮退时，船底的干痕仍在。门槛上的盐少了一角，阿汐没有补齐。她把水壶放回原处，听见船板在潮气里轻轻收紧。船没有启程，门也没有关。天亮后，水壶旁多了一粒盐。她没有问它从哪里来。",
+    "pEn": "At ebb, the dry mark beneath the boat remained. One corner of the salt on the threshold was gone; Axi did not replace it. She put the water jar back and heard the boards tighten in the damp. The boat did not leave. The door stayed open. By morning, one grain of salt lay beside the jar. She did not ask where it came from.",
+    "codaZh": "有些东西回来，不必经过门。",
+    "codaEn": "Some things return without crossing the door.",
     "requiresHumanReview": true
   },
   "usage": {
-    "calls": 3,
-    "cachedTokens": 197821,
+    "calls": 4,
+    "cachedTokens": 132964,
     "statuses": [
+      200,
       200,
       200,
       200
@@ -263,37 +249,37 @@
   "graphCheckpoints": [
     {
       "node": "loadWorld",
-      "ms": 29,
+      "ms": 33,
       "ok": true
     },
     {
       "node": "retrieveCanon",
-      "ms": 607,
+      "ms": 671,
       "ok": true
     },
     {
       "node": "warmup",
-      "ms": 1107,
+      "ms": 7132,
       "ok": true
     },
     {
       "node": "audit",
-      "ms": 14764,
+      "ms": 16833,
       "ok": true
     },
     {
       "node": "proposeTransitions",
-      "ms": 26209,
+      "ms": 19285,
       "ok": true
     },
     {
       "node": "draftContent",
-      "ms": 9425,
+      "ms": 12978,
       "ok": true
     },
     {
       "node": "writeArtifacts",
-      "ms": 8,
+      "ms": 5,
       "ok": true
     }
   ],

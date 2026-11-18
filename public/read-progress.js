@@ -12,7 +12,7 @@
 (function () {
   'use strict';
 
-  /* canon 顺序（篇一《盐》.. 篇五十《盐未上船》），与 src/ui/atlas-texts.ts 的 no 一一对应 */
+  /* canon 顺序（篇一《盐》.. 篇五十一《船未启》），与 src/ui/atlas-texts.ts 的 no 一一对应 */
   var ORDER = [
     { slug: '', zh: '《盐》', en: '"Salt"' },
     { slug: 'unnamed-stone', zh: '《山下无名碑》', en: '"The Nameless Stone"' },
@@ -63,7 +63,8 @@
     { slug: 'the-dry-mark-beneath', zh: '《船底的干痕》', en: '"The Dry Mark Beneath"' },
     { slug: 'the-unasked-boat', zh: '《未问之船》', en: '"The Unasked Boat"' },
     { slug: 'the-place-aboard', zh: '《船上的空处》', en: '"The Place Aboard"' },
-    { slug: 'salt-not-aboard', zh: '《盐未上船》', en: '"Salt Not Aboard"' }
+    { slug: 'salt-not-aboard', zh: '《盐未上船》', en: '"Salt Not Aboard"' },
+    { slug: 'the-boat-still', zh: '《船未启》', en: '"The Boat Still"' }
   ];
 
   var PREFIX = '/caesura/story/';
@@ -138,7 +139,7 @@
                       : '/caesura/story/anthology/';
       var label = next
         ? (isEN ? 'Next · ' + next.en : '下一篇 · ' + next.zh)
-        : (isEN ? 'The Aftermath · all fifty' : '余响集 · 五十篇全集');
+        : (isEN ? 'The Aftermath · all fifty-one' : '余响集 · 五十一篇全集');
       var tag = isEN ? (next ? 'Keep reading' : 'Read the whole volume') : (next ? '继续读下一页' : '读完全册');
       nextCard = document.createElement('a');
       nextCard.className = 'read-next';
