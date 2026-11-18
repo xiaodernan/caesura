@@ -66,16 +66,16 @@ describe('console 前端稳定性门钉（F-124 的长期护栏）', () => {
     expect(APP).toContain("querySelectorAll('body *')")
   })
 
-  it('index.html 页脚含故事链接出口（盐 / 空拍子 / 账本 / 余响集 / 霜锤 / 千门 / 暗潮 / 后记 / 低音之城 / 钟摆渡人 / 未竟账页 / 第四下 / 末弦 / 听弦 / 第三声 / 合奏 / 回声谷 / 半声之后 / 铜扣旁 / 线外 / 纸袋之后 / 窗台盐线 / 盐线之后 / 窗台记数 / 空处之后 / 未刻之数 / 秤旁 / 未记的一页 / 干处 / 未称之物 / 空秤 / 秤盘之外 / 秤影 / 门槛之外 / 门外的湿痕 / 门槛上的盐 / 未开之页 / 未寄出的信 / 空秤之后 / 未摆的一次 / 船底的干痕 / 未问之船 / 船上的空处 / 盐未上船 / 船未启 / 壶边 / 圈印 / 壶底旧痕 / 未动的摆 / 未交接 / 摆旁空位 / 摆下的盐 / 干痕仍在 / 潮退添柴 / 摆不回 / 摆旁的灰 / 灰未落 / 干痕未进 / 灰不催 / 火自己知道 / 灰不归 / 淡痕）', () => {
+  it('index.html 页脚含故事链接出口（盐 / 空拍子 / 账本 / 余响集 / 霜锤 / 千门 / 暗潮 / 后记 / 低音之城 / 钟摆渡人 / 未竟账页 / 第四下 / 末弦 / 听弦 / 第三声 / 合奏 / 回声谷 / 半声之后 / 铜扣旁 / 线外 / 纸袋之后 / 窗台盐线 / 盐线之后 / 窗台记数 / 空处之后 / 未刻之数 / 秤旁 / 未记的一页 / 干处 / 未称之物 / 空秤 / 秤盘之外 / 秤影 / 门槛之外 / 门外的湿痕 / 门槛上的盐 / 未开之页 / 未寄出的信 / 空秤之后 / 未摆的一次 / 船底的干痕 / 未问之船 / 船上的空处 / 盐未上船 / 船未启 / 壶边 / 圈印 / 壶底旧痕 / 未动的摆 / 未交接 / 摆旁空位 / 摆下的盐 / 干痕仍在 / 潮退添柴 / 摆不回 / 摆旁的灰 / 灰未落 / 干痕未进 / 灰不催 / 火自己知道 / 灰不归 / 淡痕 / 未添的一笔）', () => {
     for (const href of ['/caesura/story/', '/caesura/story/empty-bar/', '/caesura/story/ledger/',
       '/caesura/story/anthology/', '/caesura/story/frostbell/', '/caesura/story/doors/',
       '/caesura/story/dark-tide/', '/caesura/story/twelfth-listener/', '/caesura/story/bell-picker/',
-      '/caesura/story/lampwright-bell/', '/caesura/story/lowtone-city/', '/caesura/story/pendulum-ferryman/', '/caesura/story/unfinished-ledger/', '/caesura/story/fourth-strike/', '/caesura/story/last-string/', '/caesura/story/string-listener/', '/caesura/story/third-voice/', '/caesura/story/ensemble/', '/caesura/story/echo-vale/', '/caesura/story/after-half-a-chime/', '/caesura/story/beside-the-button/', '/caesura/story/beyond-the-line/', '/caesura/story/after-the-bag/', '/caesura/story/salt-on-the-sill/', '/caesura/story/after-the-salt-line/', '/caesura/story/the-sill-keeps-count/', '/caesura/story/after-the-space/', '/caesura/story/the-unmarked-number/', '/caesura/story/beside-the-scale/', '/caesura/story/the-unentered-page/', '/caesura/story/the-dry-place/', '/caesura/story/unweighed/', '/caesura/story/the-empty-scale/', '/caesura/story/beyond-the-scale/', '/caesura/story/the-scale-shadow/', '/caesura/story/beyond-the-threshold/', '/caesura/story/the-mark-outside/', '/caesura/story/salt-at-the-threshold/', '/caesura/story/the-unopened-page/', '/caesura/story/the-unsent-letter/', '/caesura/story/after-the-empty-scale/', '/caesura/story/the-unmade-swing/', '/caesura/story/the-dry-mark-beneath/', '/caesura/story/the-unasked-boat/', '/caesura/story/the-place-aboard/', '/caesura/story/salt-not-aboard/', '/caesura/story/the-boat-still/', '/caesura/story/beside-the-jar/', '/caesura/story/the-ring/', '/caesura/story/the-mark-beneath-the-jar/', '/caesura/story/the-unmoved-pendulum/', '/caesura/story/no-handover/', '/caesura/story/beside-the-pendulum/', '/caesura/story/salt-beside-the-seat/', '/caesura/story/the-mark-remains/', '/caesura/story/at-ebb-one-stick/', '/caesura/story/the-swing-unreturned/', '/caesura/story/the-ash-beside-the-pendulum/', '/caesura/story/ash-not-fallen/', '/caesura/story/the-mark-not-entered/', '/caesura/story/the-ash-unhurried/', '/caesura/story/the-fire-knows/', '/caesura/story/the-ash-unreturned/', '/caesura/story/the-fading-mark/']) {
+      '/caesura/story/lampwright-bell/', '/caesura/story/lowtone-city/', '/caesura/story/pendulum-ferryman/', '/caesura/story/unfinished-ledger/', '/caesura/story/fourth-strike/', '/caesura/story/last-string/', '/caesura/story/string-listener/', '/caesura/story/third-voice/', '/caesura/story/ensemble/', '/caesura/story/echo-vale/', '/caesura/story/after-half-a-chime/', '/caesura/story/beside-the-button/', '/caesura/story/beyond-the-line/', '/caesura/story/after-the-bag/', '/caesura/story/salt-on-the-sill/', '/caesura/story/after-the-salt-line/', '/caesura/story/the-sill-keeps-count/', '/caesura/story/after-the-space/', '/caesura/story/the-unmarked-number/', '/caesura/story/beside-the-scale/', '/caesura/story/the-unentered-page/', '/caesura/story/the-dry-place/', '/caesura/story/unweighed/', '/caesura/story/the-empty-scale/', '/caesura/story/beyond-the-scale/', '/caesura/story/the-scale-shadow/', '/caesura/story/beyond-the-threshold/', '/caesura/story/the-mark-outside/', '/caesura/story/salt-at-the-threshold/', '/caesura/story/the-unopened-page/', '/caesura/story/the-unsent-letter/', '/caesura/story/after-the-empty-scale/', '/caesura/story/the-unmade-swing/', '/caesura/story/the-dry-mark-beneath/', '/caesura/story/the-unasked-boat/', '/caesura/story/the-place-aboard/', '/caesura/story/salt-not-aboard/', '/caesura/story/the-boat-still/', '/caesura/story/beside-the-jar/', '/caesura/story/the-ring/', '/caesura/story/the-mark-beneath-the-jar/', '/caesura/story/the-unmoved-pendulum/', '/caesura/story/no-handover/', '/caesura/story/beside-the-pendulum/', '/caesura/story/salt-beside-the-seat/', '/caesura/story/the-mark-remains/', '/caesura/story/at-ebb-one-stick/', '/caesura/story/the-swing-unreturned/', '/caesura/story/the-ash-beside-the-pendulum/', '/caesura/story/ash-not-fallen/', '/caesura/story/the-mark-not-entered/', '/caesura/story/the-ash-unhurried/', '/caesura/story/the-fire-knows/', '/caesura/story/the-ash-unreturned/', '/caesura/story/the-fading-mark/', '/caesura/story/the-unentered-stroke/']) {
       expect(HTML, `missing story href: ${href}`).toContain(href)
     }
   })
 
-  it('LANG_EXACT 含六十八篇故事双语键（盐系列本页切英文时不裸奔 CJK）', () => {
+  it('LANG_EXACT 含六十九篇故事双语键（盐系列本页切英文时不裸奔 CJK）', () => {
     for (const pair of [
       "'《盐》': 'Salt',",
       "'《空拍子》': 'The Empty Bar',",
@@ -216,8 +216,13 @@ describe('console 前端稳定性门钉（F-124 的长期护栏）', () => {
       "'淡痕': 'The Fading Mark',",
       "'篇六十八 · 淡痕': 'No. 68 · The Fading Mark',",
       "'灰挂着盐在门槛 · 淡痕不必补记 · 有些痕迹淡了也不必补': 'the ash still clung; the salt still stood; the faded mark stayed unrecorded',",
+      "'篇六十九': 'No. 69',",
+      "'《未添的一笔》': 'The Unentered Stroke',",
+      "'未添的一笔': 'The Unentered Stroke',",
+      "'篇六十九 · 未添的一笔': 'No. 69 · The Unentered Stroke',",
+      "'傍晚灰淡了她没写进薄簿 · 夜里簿自己翻过去一页她什么也没记': 'At dusk the ash faded; that night the page turned on its own; she recorded nothing',",
 
-      "'余响六十八篇 · 沉默的编年史': 'Sixty-Eight Chronicles · The Chronicles of Silence',",
+      "'余响六十九篇 · 沉默的编年史': 'Sixty-Nine Chronicles · The Chronicles of Silence',",
 
       "'余响三十七篇 · 沉默的编年史': 'Thirty-seven Chronicles · The Chronicles of Silence',",
       "'STATEGRAPH · 状态图内核': 'State Graph Kernel',",

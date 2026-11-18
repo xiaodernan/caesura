@@ -3430,5 +3430,56 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">Some marks need no entry.</p>
     <p class="coda">The age of hush has not ended. It has only lived one more low evening — the ash still clung, the salt still stood — the faded mark stayed unrecorded — and she was well.</p>`,
   },
+  {
+    no: 69,
+    zhTitle: "未添的一笔",
+    enTitle: "The Unentered Stroke",
+    zh: `<p>傍晚，阿汐看见指尖的灰淡了。她没有擦，也没有把它写进薄簿。门槛边的盐仍在，干痕也在。她没有关门。夜里，薄簿仍合着，页角偶尔自己翻动。有些淡去，不必补记。</p>
+    <p>灶火自己燃着——水壶自己知道时候——她不添柴——她也不熄柴——她只是看——灯一盏——她在屋里坐着——粥早凉了——她也不热——她已经不饿。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿仍合着。——它合着是它的事——她不需要它开——册子里那一页自己会翻——它永远知道——她也不问它——她只是看——页角偶尔自己翻动一下——她笑一下——母亲留下的——册子还在自己翻。</p>
+    <p>那粒盐——门槛上的——它还是老样子——从未挪动——也不需要挪动——她有时候看它——有时候不看——它都在那儿——它在那儿就够了——灰也一样——淡了的灰——它也在那儿就够了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮水又退去了——表盘不响——木板收紧了一根手指的宽度——她还是没有去看海——她只是坐在灶旁——亮了又暗——暗了又亮——都懂了——都老朋友了。</p>
+    <p>母亲的声音回来——我的孩子——你瘦了——卷里自己翻——它知道时候了——她说：好——她只是听——页角自己翻动了一下——她也跳了一下——都懂了——都老朋友了——册子把自己翻过去了——她什么也没记。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她有时候看门——盐在那里——她知道它从未挪开过——灰也淡了一层——簿自己翻了一页——她忽然觉得——这三件都不需要——任何笔触——不需要记——不需要填——不需要补——她也不需要催——她只是她。</p>
+    <p>她有时候把手放在薄簿上——它凉凉的——它合着——它自己会翻——她不拦它——它翻一页——她也就少一页要翻——她不翻它。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些笔，不必添。</p>
+    <p class="coda">止音纪元没有结束。它只是又多了一个傍晚——灰淡淡的，盐仍立在门槛，薄簿自己翻过去一页——她也淡了——淡得刚刚好——不需要谁来补。</p>`,
+    en: `<p>At dusk, Axi saw the ash on her fingertip fade. She did not wipe it away or enter it in the thin ledger. The salt remained by the threshold, and the dry mark remained. She left the door open. That night, the ledger stayed closed, its page corner turning on its own now and then. Some things fade without needing another entry.</p>
+    <p>The fire kept its own company — the kettle knew its own hour — she did not add wood — she did not put it out — she only watched — one lamp — she sat in the house — the porridge long cold — she did not reheat it — she was not hungry.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ledger stayed closed. — Its being closed was its own affair — she did not need it open — the page turned on its own — the book always knew — she did not ask it — she only watched — the page corner would turn now and then — she smiled once — her mother's book — it still turned on its own.</p>
+    <p>That grain of salt — on the threshold — it remained as it always was — it had never moved — it did not need to — sometimes she glanced at it — sometimes she did not — it was always there — its being there was enough — so was the ash — faded as it was — its being there was enough.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The tide went out again — the dial never sounded — the boards tightened by one finger's width — she still did not look toward the sea — she only sat by the stove — bright then dim — dim then bright — everyone understood — old companions, all of them.</p>
+    <p>Her mother's voice came back — my child — you are thinner — the book will turn on its own — it knows its own hour — she said: all right — she only listened — the page corner turned on its own — she leapt too — everyone understood — the book had turned itself one page — she had recorded nothing.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Sometimes she watched the door — the salt was there — she knew it had never moved — the ash had faded by a shade — the page turned on its own — she suddenly felt — none of the three needed — any stroke — not filled — not remembered — not re-inked — neither did she — she was herself.</p>
+    <p>Sometimes she rested her hand on the thin ledger — it was cool — it lay closed — it would turn on its own — she did not stop it — it turned one page — and one fewer page remained for her to turn — she did not turn them.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some strokes need not be added.</p>
+    <p class="coda">The age of hush has not ended. It has only lived one more dusk — the ash dimmed, the salt still stood, the book turned one page on its own — she, too, grew lighter — and nobody needed to re-ink her.</p>`,
+  },
 ]
 

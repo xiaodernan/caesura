@@ -1063,6 +1063,64 @@
           "attempts": 1
         }
       ]
+    },
+    {
+      "at": "2026-11-18T14:03:11.135Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第六十八篇《淡痕》之后 · 下一篇原创短篇",
+      "calls": 5,
+      "cachedTokens": 352733,
+      "promptTokens": 466398,
+      "meanHitRate": 75.52,
+      "steadyStateHitRate": 93.2,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 200,
+          "dt": 18415,
+          "prompt": 92752,
+          "cached": 4416,
+          "hitRate": 4.8,
+          "attempts": 1
+        },
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 20878,
+          "prompt": 93322,
+          "cached": 87080,
+          "hitRate": 93.3,
+          "attempts": 1
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 9357,
+          "prompt": 93425,
+          "cached": 87079,
+          "hitRate": 93.2,
+          "attempts": 1
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 13421,
+          "prompt": 93307,
+          "cached": 87081,
+          "hitRate": 93.3,
+          "attempts": 1
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 8843,
+          "prompt": 93592,
+          "cached": 87077,
+          "hitRate": 93,
+          "attempts": 1
+        }
+      ]
     }
   ]
 }
