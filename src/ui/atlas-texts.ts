@@ -1,6 +1,6 @@
 /**
- * 游记 · 六十二篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684/KI-685/KI-686/KI-687/KI-688/KI-689/KI-690/KI-691/KI-692/KI-693 扩）。
- * 这六十二篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 六十三篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684/KI-685/KI-686/KI-687/KI-688/KI-689/KI-690/KI-691/KI-692/KI-693/KI-694 扩）。
+ * 这六十三篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -3137,6 +3137,47 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She did not look at the sea.</p>
     <p class="coda">Some traces need not remain.</p>
     <p class="coda">The age of hush has not ended. It has only, at last, left behind a trace of ash no one needed to erase — and a sky that no longer waits for anyone.</p>`,
+  },
+  {
+    no: 63,
+    zhTitle: "灰未落",
+    enTitle: "Ash Not Fallen",
+    zh: `<p>潮水退去，阿汐指尖沾着一点灰。她没有擦，也没有洗手。薄簿仍合着，盐仍在门槛边。她添了一根柴，灶火跳了一下。那一点灰还在。止音纪元没有结束。</p>
+    <p>它落不下来——她知道——它大概只是不打算掉——它想再多待一会儿——它也许在等某个谁来接它——它等的是谁——她不问——它也不说——她们只是对视——谁也不先开口——这样很好。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿仍合着。——它合着是它的事——她指尖上那点灰也是它的事——她把手伸出来——也没有擦——也没有碰——她只是把手停在那儿——也许她知道它还要停一段——也许她不知道——她停着就好了——停着总是好的——她停着。</p>
+    <p>那粒盐——她偶尔看一眼它——它每天在门槛上——它没有动——她也没有动——它们像是同一件事的两面——一面是门槛上的守候——一面是指尖上的灰——她忽然觉得它们其实是同一粒盐。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮水又退去了——表盘不响——她听见木板收了一根手指的宽度——她继续添柴——灶火跳了一下——她也跳了一下——都懂了——都老朋友了。</p>
+    <p>母亲的声音没有回来——这回是她自己先问——她心里说：好——灶火静静地跳着——她把那根柴添了进去——它着了——她笑了一下——厨房安静了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些灰，暂时不落。</p>
+    <p class="coda">止音纪元没有结束。它只是终于留下一粒还没落下的灰——和一个不再等人来接的指尖。</p>`,
+    en: `<p>At ebb, a trace of ash clung to Axi’s fingertip. She did not wipe it away or wash her hand. The thin ledger stayed shut; the salt remained by the threshold. She fed one stick into the stove. The flame leapt once. The ash remained. The silenced epoch had not ended.</p>
+    <p>It would not fall — she knew — it simply had no intention of falling — it wanted to stay a little longer — perhaps it was waiting for someone to come fetch it — who it was waiting for — she did not ask — it did not say — they only regarded one another — neither spoke first — and that was fine.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ledger stayed closed. — Its being closed was its own affair — the ash on her finger was hers — she reached out — and did not wipe — and did not touch — she only held her hand there — perhaps she knew it needed to linger a while — perhaps not — holding it there was enough — holding was always fine — she held still.</p>
+    <p>That grain of salt — she would glance at it now and then — each day by the threshold — it had not moved — she had not either — they were like two faces of the same thing — one the keeping-watch of the threshold — one the ash on her fingertip — she suddenly felt they were the same grain.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The tide went out again — the dial never sounded — she heard the boards tighten by one finger's width — she kept feeding the fire — the flame leapt once — she leapt too — everyone understood — old companions, both of them.</p>
+    <p>Her mother's voice did not come back — this time she asked first — she thought: all right — the flame leapt on quietly — she fed that stick in — it caught — she laughed once — the kitchen went quiet.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some ash does not fall yet.</p>
+    <p class="coda">The age of hush has not ended. It has only, at last, left behind a trace of ash not yet fallen — and a fingertip that no longer waits for anyone to come fetch it.</p>`,
   },
 ]
 

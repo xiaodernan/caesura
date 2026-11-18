@@ -623,6 +623,64 @@
           "attempts": 1
         }
       ]
+    },
+    {
+      "at": "2026-11-18T07:02:44.632Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第六十二篇《摆旁的灰》之后 · 下一篇原创短篇",
+      "calls": 5,
+      "cachedTokens": 327006,
+      "promptTokens": 431916,
+      "meanHitRate": 75.62,
+      "steadyStateHitRate": 93.33,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 200,
+          "dt": 5169,
+          "prompt": 85885,
+          "cached": 4089,
+          "hitRate": 4.8,
+          "attempts": 1
+        },
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 11445,
+          "prompt": 86420,
+          "cached": 80634,
+          "hitRate": 93.3,
+          "attempts": 1
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 8250,
+          "prompt": 86523,
+          "cached": 80633,
+          "hitRate": 93.2,
+          "attempts": 1
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 4476,
+          "prompt": 86404,
+          "cached": 80635,
+          "hitRate": 93.3,
+          "attempts": 1
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 8370,
+          "prompt": 86684,
+          "cached": 81015,
+          "hitRate": 93.5,
+          "attempts": 1
+        }
+      ]
     }
   ]
 }
