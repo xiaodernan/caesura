@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "73cf44c4d8b0f397ab2e663dd99009d442750947",
+  "head": "5471cebffd86ff9d3fadf653924a8664a4c455f0",
   "branch": "master",
-  "subject": "feat(story): KI-699《余响集》第六十八篇《淡痕 / The Fading Mark》落地（LLM 起草 → LLM 终审 → 人工闸）",
-  "date": "2026-11-18T21:55:51+08:00",
+  "subject": "site-latest: 73cf44c (post-rebase reconcile)",
+  "date": "2026-11-18T21:56:34+08:00",
   "kv": {
     "KI.rows": 617,
     "KI.Implemented": 440,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/73cf44c4d8b0f397ab2e663dd99009d442750947",
+    "url": "https://github.com/xiaodernan/caesura/commit/5471cebffd86ff9d3fadf653924a8664a4c455f0",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
