@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "9dd47cebcde1cd8ff06e479e3e8803f41bcfbc67",
+  "head": "24db3b04ad74d3c6c630b757e74e239afa5a7bf0",
   "branch": "master",
-  "subject": "feat(story): KI-702《余响集》第七十一篇《又多一个傍晚 / One More Dusk》落地（LLM 起草 → LLM 终审 → 人工闸）",
-  "date": "2026-11-18T23:48:27+08:00",
+  "subject": "site-latest: 9dd47ce (post-rebase reconcile)",
+  "date": "2026-11-18T23:49:10+08:00",
   "kv": {
     "KI.rows": 620,
     "KI.Implemented": 443,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/9dd47cebcde1cd8ff06e479e3e8803f41bcfbc67",
+    "url": "https://github.com/xiaodernan/caesura/commit/24db3b04ad74d3c6c630b757e74e239afa5a7bf0",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
