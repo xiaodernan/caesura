@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "fd446067fd105766c2b9e3bac7a0bc1fe8b56261",
+  "head": "2e2322b066909f653349271dab0d2647d26a00cd",
   "branch": "master",
-  "subject": "site-latest: 514ace1 (post-rebase reconcile)",
-  "date": "2026-11-18T12:20:11+08:00",
+  "subject": "feat(story): KI-687《余响集》第五十六篇《未交接 / No Handover》落地 + 滚轮方向核查/主界面教学强化 + worktree 盘点",
+  "date": "2026-11-18T12:46:11+08:00",
   "kv": {
-    "KI.rows": 604,
-    "KI.Implemented": 427,
+    "KI.rows": 605,
+    "KI.Implemented": 428,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/fd446067fd105766c2b9e3bac7a0bc1fe8b56261",
+    "url": "https://github.com/xiaodernan/caesura/commit/2e2322b066909f653349271dab0d2647d26a00cd",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
