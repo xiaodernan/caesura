@@ -3583,5 +3583,56 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">Some dusks need no one to count them.</p>
     <p class="coda">The age of hush has not ended. It has only lived one more dusk — the salt still stood by the threshold, the book turned to the next page on its own — and she was well too.</p>`,
   },
+  {
+    no: 72,
+    zhTitle: "薄簿合着",
+    enTitle: "The Ledger, Shut",
+    zh: `<p>傍晚，钟摆停在最低处。阿汐没有数盐，也没有翻开薄簿。摆旁的空位仍无人坐。薄簿合着，页角轻轻抬起，又落回原处。有些页，合着也在。</p>
+    <p>水自己开了——水在灶上咕嘟咕嘟地响——它自己知道时候——她不动它——她不添柴——她只是听——薄簿合着——她也听——她听见页角偶尔自己动一下——她不动它——她不记——它自己会的——她什么也不必做。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿仍合着。——它合着是它的事——她不需要它开——册子里那一页自己会翻——它永远知道——她也不问它——她只是听——页角又自己动了一下——她笑一下——母亲留下的——册子还在自己翻。</p>
+    <p>那粒盐——门槛上的——它还是老样子——从未挪动——也不需要挪动——她有时候看它——有时候不看——它都在那儿——它在那儿就够了——灰也淡了——册子也合着——页角偶尔自己翻动——它也就在那儿就够了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮水又退去了——表盘不响——木板收紧了一根手指的宽度——她还是没有去看海——她只是坐在灶旁——亮了又暗——暗了又亮——册子自己又翻了一页——她笑一下——都懂了——都老朋友了。</p>
+    <p>母亲的声音回来——我的孩子——你瘦了——让它自己翻吧——它知道时候了——她说：好——她只是听——册子自己翻过去一页——她什么也没记——她也不觉得有什么要记的——它自己会记。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她有时候看门——盐在那里——她知道它从未挪开过——灰也淡了一层——簿自己翻了一页——她忽然觉得——这三件都不需要——任何笔触——不需要记——不需要填——不需要补——她也不需要催——她只是她。</p>
+    <p>傍晚了——灯不多——她走到里间——簿在那里——它合着——页角又偶尔轻轻地动了一下——它会——她也会——它们都懂——这就够了——她把手放在薄簿上——它凉凉的——她也就把手也放下去了——它不翻——她也不翻。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些页，合着也在。</p>
+    <p class="coda">止音纪元没有结束。它只是又多了一个傍晚——盐还在门槛，册子合着，页角偶尔自己翻——她也安宁——她也合着——她也在。</p>`,
+    en: `<p>At dusk, the pendulum rested at its lowest point. Axi did not count the salt or open the thin ledger. The place beside the pendulum remained empty. The ledger stayed shut; its corner lifted slightly, then settled. Some pages remain, even closed.</p>
+    <p>The water came to a boil on its own — it rumbled in the pot — it knew its own hour — she did not touch it — she did not add wood — she only listened — the ledger stayed shut — she listened there too — the page corner occasionally stirred on its own — she did not touch it — she recorded nothing — it would do so on its own — she need not do anything.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ledger stayed closed. — Its being closed was its own affair — she did not need it open — the page turned on its own — the book always knew — she did not ask it — she only listened — the corner stirred on its own once more — she smiled once — her mother's book — it still turned on its own.</p>
+    <p>That grain of salt — on the threshold — it remained as it always was — it had never moved — it did not need to — sometimes she glanced at it — sometimes she did not — it was always there — its being there was enough — the ash, too, had faded — the book, too, stayed shut — the page corner still turned now and then — it was enough that it was there.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The tide went out again — the dial never sounded — the boards tightened by one finger's width — she still did not look toward the sea — she only sat by the stove — bright then dim — dim then bright — the book turned one more page on its own — she smiled once — everyone understood — old companions, all of them.</p>
+    <p>Her mother's voice came back — my child — you are thinner — let it turn on its own — it knows its own hour — she said: all right — she only listened — the book turned one more page on its own — she recorded nothing — neither did she feel there was anything to record — it remembered itself.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Sometimes she watched the door — the salt was there — she knew it had never moved — the ash had faded by a shade — the page turned on its own — she suddenly felt — none of them needed — any stroke — not filled — not remembered — not re-inked — neither did she — she was herself.</p>
+    <p>Dusk came — the lamps were few — she walked to the inner room — the book lay there — closed — its page corner would stir now and then — it would — she would — they understood — that was enough — she rested her hand on the thin ledger — it was cool — she let her hand fall — it did not turn — and neither did she.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some pages remain, even closed.</p>
+    <p class="coda">The age of hush has not ended. It has only lived one more dusk — the salt still stood beside the threshold, the book lay shut, its corner turning now and then — and she, too, was at rest — shut, too, and she, too, was there.</p>`,
+  },
 ]
 

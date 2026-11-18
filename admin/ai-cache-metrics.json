@@ -1237,6 +1237,64 @@
           "attempts": 1
         }
       ]
+    },
+    {
+      "at": "2026-11-18T15:56:27.526Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第七十一篇《又多一个傍晚》之后 · 下一篇原创短篇",
+      "calls": 5,
+      "cachedTokens": 367581,
+      "promptTokens": 486110,
+      "meanHitRate": 75.52,
+      "steadyStateHitRate": 93.2,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 200,
+          "dt": 8715,
+          "prompt": 96681,
+          "cached": 4603,
+          "hitRate": 4.8,
+          "attempts": 1
+        },
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 13418,
+          "prompt": 97269,
+          "cached": 90745,
+          "hitRate": 93.3,
+          "attempts": 1
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 11798,
+          "prompt": 97372,
+          "cached": 90744,
+          "hitRate": 93.2,
+          "attempts": 1
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 8453,
+          "prompt": 97254,
+          "cached": 90746,
+          "hitRate": 93.3,
+          "attempts": 1
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 12352,
+          "prompt": 97534,
+          "cached": 90743,
+          "hitRate": 93,
+          "attempts": 1
+        }
+      ]
     }
   ]
 }

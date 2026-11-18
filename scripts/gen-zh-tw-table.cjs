@@ -90,6 +90,7 @@ try {
     'story/the-unentered-stroke/index.html',
     'story/the-corner-turns/index.html',
     'story/one-more-dusk/index.html',
+    'story/the-ledger-shut/index.html',
   ];
 
   const PHRASES = new Set();
