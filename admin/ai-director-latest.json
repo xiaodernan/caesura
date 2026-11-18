@@ -6,73 +6,73 @@
   "requiresHumanReview": true,
   "schema": 1,
   "mode": "live",
-  "generatedAt": "2026-11-18T00:42:42.517Z",
+  "generatedAt": "2026-11-18T01:05:34.128Z",
   "model": "gpt-6.1-terra",
   "endpoint": "https://api.aizzz.xyz/v1",
-  "focus": "第五十篇《盐未上船》之后 · 下一篇原创短篇",
-  "corpusSize": 5256,
+  "focus": "第五十一篇《船未启》之后 · 下一篇原创短篇",
+  "corpusSize": 5419,
   "canon": [
     {
       "rank": 1,
-      "score": 54.603,
-      "preview": "[短篇][story/anthology] 第五十篇《盐未上船》——盐放在门槛上，没有带到船边——后来潮水回来，盐少了一角——干痕没有变——"
+      "score": 57.373,
+      "preview": "[短篇][story/anthology] 第五十一篇《船未启》——船没有启程，门也没有关——天亮后，水壶旁多了一粒盐——她没有问它从哪里来——"
     },
     {
       "rank": 2,
-      "score": 42.958,
-      "preview": "[短篇][story/salt-not-aboard] 盐未上船 / Salt Not Aboard — CAESURA · 余响集 · 第五十篇"
+      "score": 47.007,
+      "preview": "[短篇][story/the-boat-still] 船未启 / The Boat Still — CAESURA · 余响集 · 第五十一篇"
     },
     {
       "rank": 3,
-      "score": 26.014,
-      "preview": "[短篇][story/anthology] 约 7 分钟 · 回廊钟 · 盐未上船 · 余响"
-    },
-    {
-      "rank": 4,
-      "score": 18.682,
-      "preview": "[短篇][story/anthology] 《止音纪元》· 原创短篇全集 · 双语对照"
-    },
-    {
-      "rank": 5,
-      "score": 18.544,
+      "score": 30.176,
       "preview": "[短篇][story/after-the-space] 空处之后 / After the Space — CAESURA · 余响集 · 第三十一篇"
     },
     {
-      "rank": 6,
-      "score": 17.158,
-      "preview": "[短篇][story/string-listener] 《听弦》是《余响集》第二十篇——弦找到频率之后的第五十三年，未竟厅设「听弦」一职，把最年轻的书记员阿汐派上北崖。弦问了世界一句，世界终于有人回答。"
+      "rank": 4,
+      "score": 25.519,
+      "preview": "[短篇][story/anthology] 第十一篇《暗潮》讲宇宙社会学的黑暗森林法则——"
     },
     {
-      "rank": 7,
-      "score": 16.58,
-      "preview": "[短篇][story/anthology] 余响集 / CAESURA: Stories — The Epoch of Hush 原创短篇全集 · CAESURA"
-    },
-    {
-      "rank": 8,
-      "score": 14.527,
+      "rank": 5,
+      "score": 25.161,
       "preview": "[短篇][story/anthology] 第三十一篇《空处之后》——铜扣自己长在窗台上，她把它搁在木板接缝旁，木板没有记下铜扣——"
     },
     {
+      "rank": 6,
+      "score": 23.792,
+      "preview": "[短篇][story/anthology] 第二十一篇《第三声》——灯灭了的那一夜，海说：我也听见了——"
+    },
+    {
+      "rank": 7,
+      "score": 22.391,
+      "preview": "[短篇][story/anthology] 篇四十一篇 · 回廊钟 · 门外的湿痕"
+    },
+    {
+      "rank": 8,
+      "score": 21.135,
+      "preview": "[短篇][story/anthology] 第四十一篇《门外的湿痕》——她把手放在门槛上，等潮水退去；湿痕浅了一些，位置没有变——"
+    },
+    {
       "rank": 9,
-      "score": 14.397,
-      "preview": "[短篇][story/anthology] 第二十九篇《盐线之后》——两半盐线还在窗台，纸袋留在门边，门没有再开——窗台上那两半盐线又悄悄长回去了一点点——"
+      "score": 20.22,
+      "preview": "[短篇][story/twelfth-listener] 第十一篇，写到守夜人那个夜晚，风又来了。"
     },
     {
       "rank": 10,
-      "score": 14.168,
-      "preview": "[短篇][story/anthology] 第四十篇《门槛之外》——影子仍停在门外；阿汐没有请它进来；潮水退去，门槛前留下一道湿痕——门没有关——"
+      "score": 19.874,
+      "preview": "[短篇][story/third-voice] 第三声 / The Third Voice — CAESURA · 余响集 · 第二十一篇"
     }
   ],
   "worldSnapshot": {
     "date": "2026-11-18",
     "phaseStatus": {
-      "KIrows": 599,
-      "KIImplemented": 422,
+      "KIrows": 600,
+      "KIImplemented": 423,
       "SYSImplemented": 73,
       "ARCHSections": 202
     },
-    "atlasEntries": 50,
-    "storyChapters": 50,
+    "atlasEntries": 51,
+    "storyChapters": 51,
     "storyList": [
       "after-half-a-chime",
       "after-the-bag",
@@ -105,6 +105,7 @@
       "salt-on-the-sill",
       "stonethroat",
       "string-listener",
+      "the-boat-still",
       "the-dry-mark-beneath",
       "the-dry-place",
       "the-empty-scale",
@@ -133,153 +134,210 @@
     "npcs": 7
   },
   "audit": {
-    "consistency": 78,
-    "verdictZh": "余响集篇数与名单一致；实现统计缺少可核验证据，且世界谱存在“十四篇”旧描述与五十篇现状冲突。",
-    "verdictEn": "The 50-story list is consistent, but implementation metrics lack evidence and an older canon reference still says fourteen stories.",
+    "consistency": 82,
+    "verdictZh": "游记总数与短篇数均为51，和快照及检索证据一致；实现统计缺少可核验出处，部分设定仍需逐项对照。",
+    "verdictEn": "The 51 Atlas entries and 51 stories align. Implementation counts lack verifiable evidence, and some canon details need item-by-item checking.",
     "risks": [
       {
         "severity": "med",
-        "itemZh": "余响集篇数描述冲突",
-        "itemEn": "Conflicting anthology count",
-        "detailZh": "世界谱称余响集为“十四篇”，快照及所给全集均为五十篇，需确认旧描述是否已过时。",
-        "detailEn": "The glossary says fourteen stories, while the snapshot and supplied anthology contain fifty; confirm the older count is obsolete."
+        "itemZh": "实现统计无法由所给证据核验",
+        "itemEn": "Implementation counts are unverifiable",
+        "detailZh": "KI、ARCH、对话树、旗标及NPC数量只见于快照，检索证据未提供对应数据。",
+        "detailEn": "KI, ARCH, dialogue, flag, and NPC counts appear only in the snapshot, not in the evidence."
       },
       {
         "severity": "med",
-        "itemZh": "实现与架构统计无法核实",
-        "itemEn": "Implementation and architecture counts are unverifiable",
-        "detailZh": "KI、系统实现、ARCH、对话树及 NPC 数量均无对应实现清单或检索证据可供交叉核对。",
-        "detailEn": "No implementation inventory or retrieval evidence is provided to verify KI, system, ARCH, dialogue-tree, or NPC counts."
+        "itemZh": "检索证据覆盖范围有限",
+        "itemEn": "Retrieved evidence has limited coverage",
+        "detailZh": "Top-10证据支持部分篇目与总数，但未逐项佐证全部51个短篇slug及实现状态。",
+        "detailEn": "The top ten support some stories and the total, but do not verify every slug or implementation status."
       },
       {
         "severity": "low",
-        "itemZh": "短篇词条与标题映射不明",
-        "itemEn": "Story IDs are not fully mapped to titles",
-        "detailZh": "名单含 50 个短篇 ID，但证据未给出 ID 到篇名的逐项映射，无法核验别名及收录对应关系。",
-        "detailEn": "The 50 IDs are listed without an ID-to-title mapping, so aliases and individual inclusion cannot be verified."
+        "itemZh": "余响集双语篇数表述不一致",
+        "itemEn": "Anthology count wording conflicts",
+        "detailZh": "世界谱英文将余响集描述为14篇；快照与本次证据指向51篇，需确认该英文描述是否过时。",
+        "detailEn": "The glossary says fourteen short fictions in English, while the snapshot and evidence indicate 51; confirm whether it is outdated."
       }
     ],
     "gapsZh": [
-      "提供 KI、ARCH、系统实现及 NPC/对话树的可核验清单。",
-      "明确“十四篇”旧描述是否应更新，并给出短篇 ID 与篇名映射。"
+      "缺少KI、ARCH及系统实现数量的可追溯证据。",
+      "缺少逐篇slug与51篇canon篇目的映射核验。"
     ],
     "gapsEn": [
-      "Provide auditable inventories for KI, ARCH, systems, NPCs, and dialogue trees.",
-      "Resolve the fourteen-story reference and map story IDs to titles."
+      "Traceable evidence for KI, ARCH, and system implementation counts is missing.",
+      "A slug-by-slug mapping to all 51 canon stories is missing."
     ]
   },
   "transitions": [
     {
-      "fromZh": "纸袋留在门边，袋口未合严",
-      "fromEn": "The paper bag remains by the door, unsealed",
-      "toZh": "阿汐不再确认袋中那行字是否改变",
-      "toEn": "Axi no longer checks whether the line inside has changed",
-      "flag": "flag.paper_bag_left_unchecked",
-      "narrativeZh": "她让纸袋留在原处，不再把聆听变成核对。",
-      "narrativeEn": "She leaves the bag in place and stops turning listening into inspection.",
-      "npcReactionZh": "门缝仍开着，袋口没有合上。",
-      "npcReactionEn": "The door remains ajar; the bag stays open.",
-      "atlasHookZh": "门边的纸袋仍未封口。",
-      "atlasHookEn": "The paper bag remains unsealed by the door.",
-      "requiresHumanReview": true
+      "fromZh": "门槛上的盐少了一角，水壶旁多了一粒盐",
+      "fromEn": "A corner of threshold salt is missing; a grain rests beside the water jar",
+      "toZh": "盐粒被留在水壶旁，不追问来处",
+      "toEn": "The grain remains beside the water jar, with no inquiry into its origin",
+      "flag": "flag.threshold_salt_left_unquestioned",
+      "narrativeZh": "阿汐不补齐门槛上的盐，也不为新来的盐粒登记来处。",
+      "narrativeEn": "Axi leaves the threshold salt incomplete and does not record where the new grain came from.",
+      "npcReactionZh": "阿汐把水壶放回原处，没有再看海。",
+      "npcReactionEn": "Axi returns the water jar to its place and does not look toward the sea again.",
+      "atlasHookZh": "水壶旁那粒未问来处的盐",
+      "atlasHookEn": "The grain of salt beside the water jar",
+      "requiresHumanReview": true,
+      "canonBasis": [
+        "余响集 No.50《盐未上船》",
+        "余响集 No.51《船未启》"
+      ]
     },
     {
-      "fromZh": "盐留在门槛上，船舱干痕未变",
-      "fromEn": "Salt remains at the threshold; the dry mark aboard is unchanged",
-      "toZh": "盐少了一角，阿汐不记具体时刻",
-      "toEn": "A corner of salt is gone; Axi does not record when",
-      "flag": "flag.threshold_salt_corner_missing",
-      "narrativeZh": "潮水回来后，盐少了一角；她不把变化写成证词。",
-      "narrativeEn": "When the tide returns, a corner is missing; she does not turn the change into testimony.",
-      "npcReactionZh": "船没有移动，干痕仍在。",
-      "npcReactionEn": "The boat does not move; the dry mark remains.",
-      "atlasHookZh": "门槛的盐少了一角。",
-      "atlasHookEn": "A corner of salt is missing from the threshold.",
-      "requiresHumanReview": true
+      "fromZh": "船未启程，门仍开着",
+      "fromEn": "The boat has not departed; the door remains open",
+      "toZh": "船仍停在门外，未被询问去向",
+      "toEn": "The boat remains outside, its destination unasked",
+      "flag": "flag.unasked_boat_left_at_threshold",
+      "narrativeZh": "阿汐不问船要去哪里；船继续停着，门也没有关。",
+      "narrativeEn": "Axi does not ask where the boat is bound; it remains, and the door stays open.",
+      "npcReactionZh": "渡人没有现身，也没有留下新的话。",
+      "npcReactionEn": "The ferryman does not appear or leave another message.",
+      "atlasHookZh": "门外仍停着的船",
+      "atlasHookEn": "The boat still outside the door",
+      "requiresHumanReview": true,
+      "canonBasis": [
+        "余响集 No.48《未问之船》",
+        "余响集 No.51《船未启》"
+      ]
     },
     {
-      "fromZh": "阿汐仍在门边看着船与干痕",
-      "fromEn": "Axi still watches the boat and its dry mark from the doorway",
-      "toZh": "她不再追问盐与干痕是否一同抵达",
-      "toEn": "She no longer asks whether the salt and dry mark arrive together",
-      "flag": "flag.salt_and_dry_mark_unaccounted",
-      "narrativeZh": "她允许两处变化各自发生，不再要求它们同时抵达。",
-      "narrativeEn": "She lets the two changes happen separately and stops requiring them to arrive together.",
-      "npcReactionZh": "船仍停在门外，干痕没有改变。",
-      "npcReactionEn": "The boat remains outside; the dry mark is unchanged.",
-      "atlasHookZh": "船上的干痕仍容着一处空白。",
-      "atlasHookEn": "The dry mark aboard still holds an empty place.",
-      "requiresHumanReview": true
+      "fromZh": "薄簿合着，未记下干痕与盐粒",
+      "fromEn": "The thin ledger is closed; neither the dry mark nor the grain is entered",
+      "toZh": "薄簿继续合着，留白不转为记录",
+      "toEn": "The thin ledger stays closed; its blank is not turned into an entry",
+      "flag": "flag.thin_ledger_blank_preserved",
+      "narrativeZh": "阿汐不翻开薄簿；没有登记的事仍留在原处。",
+      "narrativeEn": "Axi leaves the ledger unopened; what was not entered remains where it is.",
+      "npcReactionZh": "薄簿没有翻页，阿汐也没有补写。",
+      "npcReactionEn": "The ledger does not turn; Axi adds no entry.",
+      "atlasHookZh": "仍未写入薄簿的空白",
+      "atlasHookEn": "The blank still absent from the ledger",
+      "requiresHumanReview": true,
+      "canonBasis": [
+        "余响集 No.43《未开之页》",
+        "余响集 No.51《船未启》"
+      ]
     },
     {
-      "fromZh": "阿汐仍把薄簿合着，盐留在门槛上",
-      "fromEn": "Axi keeps the ledger closed; the salt remains at the threshold",
-      "toZh": "她不记录盐角何时消失，也不寻找去处",
-      "toEn": "She records neither when the corner vanished nor where it went",
-      "flag": "flag.salt_corner_left_unrecorded",
-      "narrativeZh": "她记得变化，却不追索时刻；薄簿继续合着。",
-      "narrativeEn": "She remembers the change without pursuing its moment; the ledger stays closed.",
-      "npcReactionZh": "薄簿没有翻开，船也没有启程。",
-      "npcReactionEn": "The ledger remains closed, and the boat does not depart.",
-      "atlasHookZh": "没有记下盐角消失的时刻。",
-      "atlasHookEn": "The moment the salt corner vanished was not recorded.",
-      "requiresHumanReview": true
+      "fromZh": "潮声经过，阿汐已不再替每件事记数",
+      "fromEn": "The tide passes; Axi no longer counts every occurrence",
+      "toZh": "听见的声响不必命名或记录",
+      "toEn": "A heard sound need not be named or recorded",
+      "flag": "flag.sound_left_unnamed",
+      "narrativeZh": "水壶旁的轻响被留在当下，不转成证词或账目。",
+      "narrativeEn": "The faint sound beside the water jar remains in the moment, not as testimony or an entry.",
+      "npcReactionZh": "阿汐不回头，只把水壶稳稳放回原处。",
+      "npcReactionEn": "Axi does not turn; she sets the water jar steadily back in place.",
+      "atlasHookZh": "不必辨认的一声",
+      "atlasHookEn": "A sound that need not be identified",
+      "requiresHumanReview": true,
+      "canonBasis": [
+        "余响集 No.51《船未启》",
+        "余响集 No.34《未记的一页》"
+      ]
     }
   ],
   "atlasDraft": {
-    "no": 51,
-    "titleZh": "船未启",
-    "titleEn": "The Boat Still",
-    "pZh": "潮退时，船底的干痕仍在。门槛上的盐少了一角，阿汐没有补齐。她把水壶放回原处，听见船板在潮气里轻轻收紧。船没有启程，门也没有关。天亮后，水壶旁多了一粒盐。她没有问它从哪里来。",
-    "pEn": "At ebb, the dry mark beneath the boat remained. One corner of the salt on the threshold was gone; Axi did not replace it. She put the water jar back and heard the boards tighten in the damp. The boat did not leave. The door stayed open. By morning, one grain of salt lay beside the jar. She did not ask where it came from.",
-    "codaZh": "有些东西回来，不必经过门。",
-    "codaEn": "Some things return without crossing the door.",
+    "no": 52,
+    "titleZh": "壶边",
+    "titleEn": "Beside the Jar",
+    "pZh": "水壶旁的盐粒还在。阿汐没有收起它。清晨，她把壶移开，木板上留着一圈浅印；盐粒没有滚动，印子也没有合拢。她把壶放回原处，没去数那圈印有几道。门外的船仍停着。潮水来过，船底的干痕没有变。",
+    "pEn": "The grain of salt remained beside the water jar. Axi did not put it away. At dawn she moved the jar, leaving a pale ring on the boards. The grain did not roll; the ring did not close. She returned the jar and did not count its edges. Outside, the boat remained. The tide came, and the dry mark beneath its hull did not change.",
+    "codaZh": "有些印子，不必围住什么。",
+    "codaEn": "Some marks need not enclose anything.",
     "requiresHumanReview": true
   },
   "usage": {
     "calls": 4,
-    "cachedTokens": 132964,
+    "cachedTokens": 202370,
+    "promptTokens": 286235,
     "statuses": [
       200,
       200,
       200,
       200
+    ],
+    "hitRates": [
+      0,
+      94.2,
+      94,
+      94.2
+    ],
+    "perCall": [
+      {
+        "node": "warmup",
+        "status": 200,
+        "dt": 7534,
+        "prompt": 71211,
+        "cached": 0,
+        "hitRate": 0
+      },
+      {
+        "node": "audit",
+        "status": 200,
+        "dt": 12334,
+        "prompt": 71647,
+        "cached": 67458,
+        "hitRate": 94.2
+      },
+      {
+        "node": "proposeTransitions",
+        "status": 200,
+        "dt": 7864,
+        "prompt": 71745,
+        "cached": 67453,
+        "hitRate": 94
+      },
+      {
+        "node": "draftContent",
+        "status": 200,
+        "dt": 7987,
+        "prompt": 71632,
+        "cached": 67459,
+        "hitRate": 94.2
+      }
     ]
   },
   "graphCheckpoints": [
     {
       "node": "loadWorld",
-      "ms": 33,
+      "ms": 26,
       "ok": true
     },
     {
       "node": "retrieveCanon",
-      "ms": 671,
+      "ms": 696,
       "ok": true
     },
     {
       "node": "warmup",
-      "ms": 7132,
+      "ms": 8342,
       "ok": true
     },
     {
       "node": "audit",
-      "ms": 16833,
+      "ms": 17947,
       "ok": true
     },
     {
       "node": "proposeTransitions",
-      "ms": 19285,
+      "ms": 24742,
       "ok": true
     },
     {
       "node": "draftContent",
-      "ms": 12978,
+      "ms": 11660,
       "ok": true
     },
     {
       "node": "writeArtifacts",
-      "ms": 5,
+      "ms": 9,
       "ok": true
     }
   ],

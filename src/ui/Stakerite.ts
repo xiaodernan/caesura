@@ -145,7 +145,7 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">未竟厅 · 三处</span><span class="note">银镜后面那道「钟摆」；时间走来走去，就是走不到头；厅里唯一一口从没敲过的钟——等最后一个不会来的大师；谱架上那本永远不会翻过去的谱——恩希尔每天指挥到那一页，合上，再开</span></div>
 <div class="row"><span class="name">风钟海岸 · 八处</span><span class="note">那阵带着钟的风——它带着一个又一个钟的余温，却从不让你清楚地听到；盐结的小龛被海天天抹去又天天重写；防波堤上一道道潮痕，像一首被海擦了又写的歌；断崖礁岩上黑碑似的——它擦不干净；贝壳里压着字——「生」；按下那颗响石，整片海都没动；潮纹裂开了——盐从裂缝里自己长出了牙齿；那块潮里露出的船底旧木——每一根蚀透的榫卯都抬着这个岬角的旧名「它回来的地方」</span></div>
 
-<h2>选读 · 余响集五十一篇 <span style="opacity:.6">（与游戏同源的五十一个故事，在线阅读）</span></h2>
+<h2>选读 · 余响集五十二篇 <span style="opacity:.6">（与游戏同源的五十二个故事，在线阅读）</span></h2>
 <div class="row"><span class="name">篇一《盐》· 风钟海岸</span><span class="note">听雾站守夜人阿衡——钟不是用来敲的，是用来记住的；风钟海岸从此有了第四根弦</span></div>
 <div class="row"><span class="name">篇二《山下无名碑》· 休垒</span><span class="note">石匠女儿阿汀在山脚下找到一块没有字、没有名字的碑——风一停，石头就会把自己写上去</span></div>
 <div class="row"><span class="name">篇三《空拍子》· 未竟厅</span><span class="note">轮值了七十三年的恩希尔，在一记空拍之后，被人问出他唯一等不到的那个人</span></div>
@@ -197,7 +197,8 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">篇四十九《船上的空处》· 回廊钟</span><span class="note">船仍停在门外。天亮时，船舱里多了一处干痕，形状刚好容下一粒盐。阿汐没有把盐放进去。潮来时，干痕还在</span></div>
 <div class="row"><span class="name">篇五十《盐未上船》· 回廊钟</span><span class="note">潮水退去，船舱里的干痕还在。阿汐把盐放在门槛上，没有带到船边。船没有动。后来潮水回来，盐少了一角，干痕没有变</span></div>
 <div class="row"><span class="name">篇五十一《船未启》· 回廊钟</span><span class="note">潮退时，船底的干痕仍在。门槛上的盐少了一角，阿汐没有补齐。她把水壶放回原处，听见船板在潮气里轻轻收紧。船没有启程，门也没有关。天亮后，水壶旁多了一粒盐</span></div>
-<div class="row"><span class="name">全集</span><span class="note">《止音纪元 · 余响集》收录全部五十一篇 · xiaodernan.github.io/caesura/story/anthology/</span></div>
+<div class="row"><span class="name">篇五十二《壶边》· 回廊钟</span><span class="note">水壶旁的盐粒还在。阿汐没有收起它。清晨，她把壶移开，木板上留着一圈浅印；盐粒没有滚动，印子也没有合拢</span></div>
+<div class="row"><span class="name">全集</span><span class="note">《止音纪元 · 余响集》收录全部五十二篇 · xiaodernan.github.io/caesura/story/anthology/</span></div>
 
 <h2>宇宙的尺度 · 献给刘慈欣 <span style="opacity:.6">（《三体》三部曲：《三体》·《黑暗森林》·《死神永生》）</span></h2>
 <div class="row"><span class="name">红岸基地</span><span class="note">国与国之间偷偷把雷达对准天空——想知道那头有没有人在听。止音纪元里没有红岸基地；这里有更早的红岸——每一口钟都是一次对宇宙的沉默认证</span></div>
@@ -298,7 +299,7 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">The Unfinished Hall · three</span><span class="note">The pendulum behind the silver mirror; time swings back and forth and never reaches an end; the only bell in the hall — never struck, waiting for a last master who never comes; the score on the stand that never gets turned — Hersil conducts up to that page every day, then closes the book and reopens it</span></div>
 <div class="row"><span class="name">Windbell Coast · eight</span><span class="note">The wind that carries bells — it brings the warmth of bell after bell but never lets you hear them clearly; the salt-crusted shrine the sea erases and rewrites every day; the tide-lines on the causeway, a song scraped and rewritten; a slab at the cliff’s black face, damply fresh-wiped; a seashell papered with one character — “born”; the listening stone — its whole sea goes still; the tide-line cracked — salt grew teeth from the split; the ship-timber that washed in — every sheared peg still carries this headland’s old name, “the place it came home”</span></div>
 
-<h2>The Aftermath · all fifty-one stories <span style="opacity:.6">(companion fiction — the same world, told in prose)</span></h2>
+<h2>The Aftermath · all fifty-two stories <span style="opacity:.6">(companion fiction — the same world, told in prose)</span></h2>
 <div class="row"><span class="name">No. 1 “Salt” · Windbell Coast</span><span class="note">A Hén, night-keeper of the Listening Post — the bell isn't meant to sound, only to be heard; the coast has its fourth string now</span></div>
 <div class="row"><span class="name">No. 2 “The Nameless Stone” · Resthold</span><span class="note">A mason's daughter finds a slab with no name, no word at the foot of the hill — when the wind stops, the stone writes itself</span></div>
 <div class="row"><span class="name">No. 3 “The Empty Bar” · The Unfinished Hall</span><span class="note">Seventy-three years into rotation, Hersil ends one empty bar — and is asked the only question he kept postponing</span></div>
@@ -350,7 +351,8 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">No. 49 “The Place Aboard” · The Arcade of Echoes</span><span class="note">The boat remained outside; at dawn the hull held a dry mark the size of one grain of salt; she placed nothing inside; the mark remained</span></div>
 <div class="row"><span class="name">No. 50 “Salt Not Aboard” · The Arcade of Echoes</span><span class="note">At ebb, the dry mark remained inside the boat; Axi left the salt on the threshold, not aboard; when the tide returned, one corner of the salt was gone, but the mark had not changed</span></div>
 <div class="row"><span class="name">No. 51 “The Boat Still” · The Arcade of Echoes</span><span class="note">At ebb, the dry mark beneath the boat remained; one corner of the salt on the threshold was gone; she put the water jar back and heard the boards tighten in the damp; by morning, one grain of salt lay beside the jar</span></div>
-<div class="row"><span class="name">All fifty-one</span><span class="note">“CAESURA · The Aftermath” collects all fifty-one in one read · xiaodernan.github.io/caesura/story/anthology/</span></div>
+<div class="row"><span class="name">No. 52 “Beside the Jar” · The Arcade of Echoes</span><span class="note">The grain of salt remained beside the water jar; at dawn she moved the jar and left a pale ring on the boards; the grain did not roll; the ring did not close</span></div>
+<div class="row"><span class="name">All fifty-two</span><span class="note">“CAESURA · The Aftermath” collects all fifty-two in one read · xiaodernan.github.io/caesura/story/anthology/</span></div>
 
 <h2>The scale of the cosmos · for Liu Cixin <span style="opacity:.6">(the trilogy: The Three-Body Problem · The Dark Forest · Death's End)</span></h2>
 <div class="row"><span class="name">The Red Coast</span><span class="note">A nation secretly aimed its radar at the sky — wanting to know if anyone was listening. There is no Red Coast in this world; there are older red coasts: every bell is a silent handshake with the universe</span></div>
@@ -1526,8 +1528,8 @@ export class Stakerite {
   private renderAtlas(): string {
     const lang = getLang()
     const header = lang === 'en'
-      ? 'The Aftermath · fifty-one full chapters<span style="opacity:.6"> (原文 — stays in the game)</span>'
-      : '篇章 · 止音纪元 · 五十一篇全文<span style="opacity:.6">（原文直入——不出游戏）</span>'
+      ? 'The Aftermath · fifty-two full chapters<span style="opacity:.6"> (原文 — stays in the game)</span>'
+      : '篇章 · 止音纪元 · 五十二篇全文<span style="opacity:.6">（原文直入——不出游戏）</span>'
     const chaptersHtml = STORY_CHAPTERS.map((c) => `
       <div class="chapter"><h3>${lang === 'en' ? `No.${c.no} · ${c.enTitle}` : `篇${c.no} · 《${c.zhTitle}》`}</h3>
         <div class="chapter-body">${lang === 'en' ? c.en : c.zh}</div></div>`).join('')

@@ -1,6 +1,6 @@
 /**
- * 游记 · 五十一篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682 扩）。
- * 这五十一篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 五十二篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683 扩）。
+ * 这五十二篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -2686,6 +2686,47 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She did not look at the sea.</p>
     <p class="coda">Some things return without crossing the door.</p>
     <p class="coda">The age of hush has not ended. It has only, at last, left behind a boat that never set out — and a grain of salt that asked for nothing.</p>`,
+  },
+  {
+    no: 52,
+    zhTitle: "壶边",
+    enTitle: "Beside the Jar",
+    zh: `<p>水壶旁的盐粒还在。阿汐没有收起它。清晨，她把壶移开，木板上留着一圈浅印；盐粒没有滚动，印子也没有合拢。她把壶放回原处，没去数那圈印有几道。门外的船仍停着。潮水来过，船底的干痕没有变。</p>
+    <p>她是在擦桌子的时候注意到它仍在——它没有挪动分毫——它也没有理由挪动——它就是那样——安稳地——待在壶边——像一个不需要任何人签收的来信。她擦完了桌子——又擦了壶身——没有去擦那些印子——也没有打算擦。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>那一圈浅印——她后来常看见——每次多看一眼——它就好像多开了一点——也好像没有——她分不清——她也不想分清——她只是觉得——有些印子——本来不是为了被丈量才出现的。</p>
+    <p>薄簿仍合着。——她偶尔想过拿它记一笔——笔搁在纸上——却没有落下——她忽然觉得这一笔要是落下——这圈印子就成了证词了——而她不想当证人。——她把笔放回去——它又安静了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮水来过几次——她没有特意去数——每一次回来——壶边的盐——还是那样——门外那只船——还是那样——她也没有再替它们数。——她现在已经是这样的人——不计数——只看。</p>
+    <p>母亲的话偶尔又回来——册子——它会自己翻——亲爱的——册子永远知道——这回她几乎是含笑了——她想：那它们自己也知道什么时候该停什么时候不该停。——她没有说出声——灶火正旺——她只是添了一根柴。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些印子，不必围住什么。</p>
+    <p class="coda">止音纪元没有结束。它只是终于留下一粒留在壶边的盐——和一圈没有合拢的浅印。</p>`,
+    en: `<p>The grain of salt remained beside the water jar. Axi did not put it away. At dawn she moved the jar, leaving a pale ring on the boards. The grain did not roll; the ring did not close. She returned the jar and did not count its edges. Outside, the boat remained. The tide came, and the dry mark beneath its hull did not change.</p>
+    <p>She noticed it while wiping the table — it had not moved at all — it had no reason to — it was simply there — settled, quietly — beside the jar — like a letter that needed no signature. She wiped the table — then the jar itself — but spared no wipe for the ring — she never meant to.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>That pale ring — she would see it often later — each time she looked longer, it seemed to open a little wider, or perhaps not — she could not tell — she did not want to — it seemed to her — that some marks were never meant to be measured into being.</p>
+    <p>The ledger stayed closed. — She considered once, briefly, jotting one line — the pen rested above the page — but never landed — she realised, suddenly, that to land would turn the ring into testimony — and she did not want to be a witness. — She set the pen back — and the house went still again.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The tide came and went — she did not count the times — each time it returned, the salt beside the jar remained as it was — the boat outside remained as it was — she no longer counted for them either. — She had become that kind of person — she did not count — she only watched.</p>
+    <p>Her mother's whisper circled back — the book — it will turn on its own — my dear — the book always knows — this time she almost smiled — she thought: then perhaps they know their own stopping and their own not-stopping as well. — She did not say it aloud — the stove flame was high — she only fed one more stick into it.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some marks need not enclose anything.</p>
+    <p class="coda">The age of hush has not ended. It has only, at last, left behind a grain of salt resting beside the jar — and a pale ring that never closed.</p>`,
   },
 ]
 

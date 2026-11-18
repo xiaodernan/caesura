@@ -39,7 +39,7 @@ import { authorLlmEnv } from './caesura-author-env.mjs'
 import { callLlm, applyAuthorProxyFromEnv } from './caesura-llm-client.mjs'
 import { buildWorldCorpus, buildIndex, retrieve } from './lib/world-rag.mjs'
 import { StateGraph } from './lib/stategraph.mjs'
-import { sceneBible, sceneBibleCacheKey, readWarmMarker, writeWarmMarker } from './lib/scene-bible.mjs'
+import { sceneBible, readWarmMarker, writeWarmMarker } from './lib/scene-bible.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '..')
@@ -140,6 +140,21 @@ async function callDirector(env, { stdinPrefix, task, temperature, maxTokens }) 
   return callLlm(body, { baseUrl: env.baseUrl, apiKey: env.apiKey })
 }
 
+
+/** 统一记账 + 单条日志：状态 / 耗时 / prompt / cached / 命中率（cached/prompt），逐条打印可定位冷热点 */
+const recordUsage = (state, label, out) => {
+  const prompt = Number(out?.usage?.prompt_tokens ?? 0)
+  const cached = out?.cachedTokens || 0
+  const hit = prompt > 0 ? Math.round((cached / prompt) * 1000) / 10 : 0
+  state.usage.calls += 1
+  state.usage.cachedTokens += cached
+  state.usage.promptTokens += prompt
+  state.usage.hitRates.push(hit)
+  state.usage.perCall.push({ node: label, status: out?.status, dt: out?.dt ?? null, prompt, cached, hitRate: hit })
+  state.usage.statuses.push(out?.status)
+  console.log(`[ai-director] ${label} status=${out?.status} dt=${out?.dt ?? '?'}ms prompt=${prompt} cached=${cached} hit=${hit}%`)
+}
+
 const parseJsonLoose = (raw) => {
   const s = String(raw ?? '').replace(/^```(?:json)?/i, '').replace(/```\s*$/i, '').trim()
   const m = s.match(/\{[\s\S]*\}/)
@@ -151,7 +166,7 @@ const parseJsonLoose = (raw) => {
 async function nodeLoadWorld(state) { state.world = worldSnapshot() }
 
 async function nodeRetrieveCanon(state) {
-  const focus = FOCUS || '止音纪元 世界现状 五十一篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响'
+  const focus = FOCUS || '止音纪元 世界现状 五十二篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响'
   const t0 = Date.now()
   const corpus = buildWorldCorpus(ROOT)
   const index = buildIndex(corpus)
@@ -174,9 +189,7 @@ async function nodeAudit(state) {
   const prefix = state.prefix || directorPrefix(state)
   const task = '【任务·一致性审计】基于上面的 canon 证据，给出：{"consistency":0-100整数,"verdictZh":"≤60字总评","verdictEn":"≤30 words","risks":[{"severity":"high|med|low","itemZh":"风险点","itemEn":"risk","detailZh":"≤50字","detailEn":"≤30 words"}],"gapsZh":["≤30字缺口"],"gapsEn":["≤15 words"]}。risks 至少 2 条、至多 4 条；gaps 至少 2 条。只许 JSON。'
   const out = await callDirector(state.env, { stdinPrefix: prefix, task: withSnapshot(state, task), temperature: 0.4, maxTokens: 900 })
-  state.usage.calls += 1
-  state.usage.cachedTokens += out.cachedTokens || 0
-  state.usage.statuses.push(out.status)
+  recordUsage(state, 'audit', out)
   const parsed = parseJsonLoose(out.text)
   if (!parsed) throw new Error(`audit: JSON 解析失败（head=${String(out.text).slice(0, 80)}）`)
   state.audit = parsed
@@ -184,11 +197,9 @@ async function nodeAudit(state) {
 
 async function nodeProposeTransitions(state) {
   if (state.mode !== 'live') { state.transitions = []; return }
-  const task = '【任务·世界状态流转提案】现状：无耳深窖五环线索、低音之城、五十一篇游记写尽。提出 4 条**可直接落为 quest/flag 的状态流转提案**：{"transitions":[{"fromZh":"起点状态","fromEn":"from-state","toZh":"终点状态","toEn":"to-state","flag":"flag.xxx","narrativeZh":"≤80字叙事后果","narrativeEn":"≤45 words","npcReactionZh":"≤40字 NPC/世界反应","npcReactionEn":"≤25 words","atlasHookZh":"≤30字 可挂进 Atlas 的钩子","atlasHookEn":"≤18 words"}]}。硬约束：flag **必须**以 "flag." 开头、全小写 snake_case（如 flag.paper_bag_salt_line_kept），**不许**加 proposed / new / plan 之类的前缀；flag 名字要像现存 flag 一样直接落库。只许 JSON。'
+  const task = '【任务·世界状态流转提案】现状：无耳深窖五环线索、低音之城、五十二篇游记写尽。提出 4 条**可直接落为 quest/flag 的状态流转提案**：{"transitions":[{"fromZh":"起点状态","fromEn":"from-state","toZh":"终点状态","toEn":"to-state","flag":"flag.xxx","narrativeZh":"≤80字叙事后果","narrativeEn":"≤45 words","npcReactionZh":"≤40字 NPC/世界反应","npcReactionEn":"≤25 words","atlasHookZh":"≤30字 可挂进 Atlas 的钩子","atlasHookEn":"≤18 words"}]}。硬约束：flag **必须**以 "flag." 开头、全小写 snake_case（如 flag.paper_bag_salt_line_kept），**不许**加 proposed / new / plan 之类的前缀；flag 名字要像现存 flag 一样直接落库。只许 JSON。'
   const out = await callDirector(state.env, { stdinPrefix: state.prefix, task: withSnapshot(state, task), temperature: 0.75, maxTokens: 1200 })
-  state.usage.calls += 1
-  state.usage.cachedTokens += out.cachedTokens || 0
-  state.usage.statuses.push(out.status)
+  recordUsage(state, 'proposeTransitions', out)
   const parsed = parseJsonLoose(out.text)
   if (!parsed?.transitions) throw new Error(`proposeTransitions: JSON 解析失败（head=${String(out.text).slice(0, 80)}）`)
   state.transitions = parsed.transitions
@@ -196,11 +207,9 @@ async function nodeProposeTransitions(state) {
 
 async function nodeDraftContent(state) {
   if (state.mode !== 'live') { state.atlasDraft = null; return }
-  const task = '【任务·游记续写草稿】以钟摆渡人/止音纪元的笔法，为下一篇游记产出草稿：{"no":52,"titleZh":"≤10字","titleEn":"≤6 words","pZh":"≤120字正文","pEn":"≤70 words","codaZh":"≤40字尾声","codaEn":"≤25 words","requiresHumanReview":true}。笔法：不喧哗、不抒情、物件说话、留白。只许 JSON。'
+  const task = '【任务·游记续写草稿】以钟摆渡人/止音纪元的笔法，为下一篇游记产出草稿：{"no":53,"titleZh":"≤10字","titleEn":"≤6 words","pZh":"≤120字正文","pEn":"≤70 words","codaZh":"≤40字尾声","codaEn":"≤25 words","requiresHumanReview":true}。笔法：不喧哗、不抒情、物件说话、留白。只许 JSON。'
   const out = await callDirector(state.env, { stdinPrefix: state.prefix, task: withSnapshot(state, task), temperature: 0.9, maxTokens: 800 })
-  state.usage.calls += 1
-  state.usage.cachedTokens += out.cachedTokens || 0
-  state.usage.statuses.push(out.status)
+  recordUsage(state, 'draftContent', out)
   const parsed = parseJsonLoose(out.text)
   if (!parsed?.pZh) throw new Error(`draftContent: JSON 解析失败（head=${String(out.text).slice(0, 80)}）`)
   state.atlasDraft = { ...parsed, requiresHumanReview: true }
@@ -281,7 +290,7 @@ function writeArtifacts(state) {
 /* ═══════════ 组图 ═══════════ */
 async function main() {
   const state = {
-    mode: MODE, errors: [], usage: { calls: 0, cachedTokens: 0, statuses: [] },
+    mode: MODE, errors: [], usage: { calls: 0, cachedTokens: 0, promptTokens: 0, statuses: [], hitRates: [], perCall: [] },
     world: null, canon: [], audit: null, transitions: [], atlasDraft: null, env: null, prefix: '',
   }
   const graph = new StateGraph()
@@ -303,18 +312,22 @@ async function main() {
         s.warmup = { singleFlight: true, note: '同 corpus（场景圣经同一哈希）30 分钟内已由并行会话烤热', statuses: fresh.statuses, cachedTokens: fresh.cachedTokens }
         return
       }
-      // 烤**正题自己的前缀**（场景圣经巨前缀同一串 system → 首条 audit 即命中前缀缓存；而不是无关的 NPC bible）
+      // KI-663 热身（修正）：烤**正题自己的 system 前缀**（sceneBible + canon 证据，逐字节同正题）
+      // 并用与三条正题调用**相同的派生键** derivePromptCacheKey —— 之前用裸 sceneBible + sceneBibleCacheKey()
+      // 烤了一串「没人用的缓存」：① system 字节差 canon 后缀（前缀缓存按最长公共前缀匹配，尾缀不同仍命中头部，
+      //    但路由亲和键不同 ⇒ 亲和主机不同 ⇒ 正题首调依旧冷）；② prompt_cache_key 不同 ⇒ 落到冷后端。
+      const { derivePromptCacheKey } = await import('./caesura-llm-client.mjs')
+      const warmMessages = [{ role: 'system', content: s.prefix }, { role: 'user', content: '（预热：只回一个词）' }]
+      const warmKey = derivePromptCacheKey(warmMessages)
       const pre = await callLlm({
         model: s.env.model, stream: true, stream_options: { include_usage: true },
         temperature: 0, max_tokens: 8,
-        messages: [{ role: 'system', content: sceneBible() }, { role: 'user', content: '（预热：只回一个词）' }],
-        prompt_cache_key: sceneBibleCacheKey(),
+        messages: warmMessages,
+        prompt_cache_key: warmKey,
       }, { baseUrl: s.env.baseUrl, apiKey: s.env.apiKey })
-      s.usage.calls += 1
-      s.usage.cachedTokens += pre.cachedTokens || 0
-      s.usage.statuses.push(pre.status)
+      recordUsage(s, 'warmup', pre)
       if (pre.status === 200) {
-        writeWarmMarker({ calls: 1, cachedTokens: [pre.cachedTokens || 0], statuses: [pre.status], note: 'director warmup · scene-bible monolith' })
+        writeWarmMarker({ calls: 1, cachedTokens: [pre.cachedTokens || 0], statuses: [pre.status], note: 'director warmup · task-prefix monolith (canon-suffixed)' })
       }
     })
     .addNode('audit', nodeAudit)
@@ -337,7 +350,8 @@ async function main() {
   state.graphCheckpoints = graph.checkpoints
   writeArtifacts(state)
   const failed = state.errors.length
-  console.log(`[ai-director] mode=${state.mode} canon=${state.corpusSize} chunks · llm_calls=${state.usage.calls} · cached_tokens=${state.usage.cachedTokens} · errors=${failed}`)
+  const meanHit = state.usage.hitRates.length ? Math.round((state.usage.hitRates.reduce((a, b) => a + b, 0) / state.usage.hitRates.length) * 10) / 10 : 0
+  console.log(`[ai-director] mode=${state.mode} canon=${state.corpusSize} chunks · llm_calls=${state.usage.calls} · cached_tokens=${state.usage.cachedTokens} · prompt_tokens=${state.usage.promptTokens} · mean_hit=${meanHit}% · errors=${failed}`)
   state.graphCheckpoints = graph.checkpoints
   if (failed > 0) {
     // 产物已写盘（如实含 errors）；以非零码退出让门/人注意到
