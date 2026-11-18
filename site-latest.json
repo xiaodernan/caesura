@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "addd199507580fc88afd4ddd93c933401c10d4a0",
+  "head": "07cf78936519ff043b7c095b3ee2fca08b447545",
   "branch": "master",
-  "subject": "site-latest: 24e4d97 (post-rebase reconcile)",
-  "date": "2026-11-18T10:55:24+08:00",
+  "subject": "feat(story): KI-684《余响集》第五十三篇《圈印 / The Ring》落地 + AI 导演「canon 编辑闸门」落地（LLM 起草 → LLM 终审 → 人工闸）",
+  "date": "2026-11-18T11:28:52+08:00",
   "kv": {
-    "KI.rows": 601,
-    "KI.Implemented": 424,
+    "KI.rows": 602,
+    "KI.Implemented": 425,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/addd199507580fc88afd4ddd93c933401c10d4a0",
+    "url": "https://github.com/xiaodernan/caesura/commit/07cf78936519ff043b7c095b3ee2fca08b447545",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
