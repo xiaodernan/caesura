@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "718693c3732b8cc03eebd491d5aef485c63868f9",
+  "head": "5187ecf1fb5120814697f776674133c6ed871139",
   "branch": "master",
-  "subject": "feat(story): KI-689《余响集》第五十八篇《摆下的盐 / Salt Beside the Seat》落地 + AI 导演单节点重试（404 抗故障）",
-  "date": "2026-11-18T13:27:53+08:00",
+  "subject": "site-latest: 718693c (post-rebase reconcile)",
+  "date": "2026-11-18T13:28:58+08:00",
   "kv": {
     "KI.rows": 607,
     "KI.Implemented": 430,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/718693c3732b8cc03eebd491d5aef485c63868f9",
+    "url": "https://github.com/xiaodernan/caesura/commit/5187ecf1fb5120814697f776674133c6ed871139",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
