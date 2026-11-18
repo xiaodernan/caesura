@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "4c06dcea091f6a587d4582d26bab9ee3a28c04fd",
+  "head": "7f723eee77c30a014a42dd4699a6b3bf902cce3e",
   "branch": "master",
-  "subject": "chore(status): re-embed site-latest.json",
-  "date": "2026-11-18T20:02:30Z",
+  "subject": "feat(story): KI-708《余响集》第七十七篇《未渡的一页 / The Unferried Page》落地（LLM 起草 → LLM 终审 → 人工闸）",
+  "date": "2026-11-19T07:03:25+08:00",
   "kv": {
-    "KI.rows": 625,
-    "KI.Implemented": 448,
+    "KI.rows": 626,
+    "KI.Implemented": 449,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/4c06dcea091f6a587d4582d26bab9ee3a28c04fd",
+    "url": "https://github.com/xiaodernan/caesura/commit/7f723eee77c30a014a42dd4699a6b3bf902cce3e",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
