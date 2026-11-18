@@ -1,6 +1,6 @@
 /**
- * 游记 · 六十篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684/KI-685/KI-686/KI-687/KI-688/KI-689/KI-690/KI-691 扩）。
- * 这六十篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 六十一篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684/KI-685/KI-686/KI-687/KI-688/KI-689/KI-690/KI-691/KI-692 扩）。
+ * 这六十一篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -3055,6 +3055,47 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She did not look at the sea.</p>
     <p class="coda">Some marks are enough left in ash.</p>
     <p class="coda">The age of hush has not ended. It has only, at last, left behind an unchanged mark beneath the hull — and a stove that kept being fed, one stick at a time.</p>`,
+  },
+  {
+    no: 61,
+    zhTitle: "摆不回",
+    enTitle: "The Swing Unreturned",
+    zh: `<p>潮水退去，门槛边的盐还在。阿汐听见木板收紧，没有去看海。薄簿合着，页角没有翻。她把手从封面上移开。摆停在最低处，不必交给下一个人。</p>
+    <p>她其实这两天一直在想摆的事——它怎么能一直停着——它不累吗——它不需要回去吗——她问过自己很多遍——后来她发现它不累——它不是停——它只是一直都这样——它从来没动过——它也不打算动——它只是在——她忽然愿意相信它每天都很好。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿仍合着。——那页角——她盯着看——看它很久——它真的没有翻动——她没有翻——它也没有自己翻——也许它不知道有页角这种东西——她笑了——她想：册子永远知道。——它合着——也就够了——。</p>
+    <p>那粒盐——今天她忽然想给它换个位置——手伸出去——停住了——她忽然觉得它就在那里——把它挪走就是她的失——她收回手——她不动了——她只是让它待着——它也不在乎她。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮水退了——到它该退到的位置——她没有去看——她听见木板收了一根手指的宽度——她继续添柴——灶火跳了一下——她也跳了一下——都老朋友了——她不忽然感慨了。</p>
+    <p>母亲的声音回来——册子——它会自己翻——亲爱的——册子永远知道——她这回自己先开口——她说：我知道。——灶火静静地跳着——她添了一根柴——它跳得更高了——她也笑了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些摆，不必回到原处。</p>
+    <p class="coda">止音纪元没有结束。它只是终于留下一只从不需要回到原处的摆——和一粒始终站着的盐。</p>`,
+    en: `<p>At ebb, the salt remained by the threshold. Axi heard the boards tighten and did not look toward the sea. The thin ledger stayed shut; its page corner did not turn. She drew her hand from its cover. The pendulum rested at its lowest point. It did not need to be handed on.</p>
+    <p>She had, in fact, been thinking about the pendulum for days — how could it stay stopped for so long — was it tired — did it not need to swing back — she asked herself many times — then decided it was not tired — it was not stopped — it simply had always been this way — it had never moved — it did not plan to — it was simply there — she suddenly chose to believe it was perfectly content every day.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ledger stayed closed. — That page corner — she stared at it — for a long while — it truly did not turn — she had not turned it — it did not turn itself — perhaps it did not know page corners existed — she laughed — thinking: the book always knows. — It was closed — that was enough.</p>
+    <p>That grain of salt — today she suddenly wanted to move its place — her hand reached out — and stopped — she suddenly felt it belonged right there — moving it would be her loss — she drew her hand back — she stayed put — she let it be — it did not care about her either.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The tide went out — out to where it always went — she did not go and see — she heard the boards tighten by one finger's width — she kept feeding the fire — the flame leapt once — she leapt too — old companions — she no longer found herself moved to comment.</p>
+    <p>Her mother's voice came back — the book — it will turn on its own — my dear — the book always knows — this time she spoke first — she said: I know. — The flame leapt on, quietly — she fed one more stick in — it leapt higher — she laughed too.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some swings need not return to their starting place.</p>
+    <p class="coda">The age of hush has not ended. It has only, at last, left behind a pendulum that never needed to swing back — and a grain of salt forever standing watch.</p>`,
   },
 ]
 

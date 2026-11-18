@@ -79,6 +79,7 @@ try {
     'story/salt-beside-the-seat/index.html',
     'story/the-mark-remains/index.html',
     'story/at-ebb-one-stick/index.html',
+    'story/the-swing-unreturned/index.html',
   ];
 
   const PHRASES = new Set();

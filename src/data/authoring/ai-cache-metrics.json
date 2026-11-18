@@ -507,6 +507,64 @@
           "attempts": 1
         }
       ]
+    },
+    {
+      "at": "2026-11-18T06:27:26.632Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第六十篇《潮退添柴》之后 · 下一篇原创短篇",
+      "calls": 5,
+      "cachedTokens": 318432,
+      "promptTokens": 421727,
+      "meanHitRate": 75.44,
+      "steadyStateHitRate": 93.1,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 200,
+          "dt": 5710,
+          "prompt": 83861,
+          "cached": 3993,
+          "hitRate": 4.8,
+          "attempts": 1
+        },
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 6809,
+          "prompt": 84378,
+          "cached": 78612,
+          "hitRate": 93.2,
+          "attempts": 1
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 7577,
+          "prompt": 84480,
+          "cached": 78609,
+          "hitRate": 93.1,
+          "attempts": 1
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 8692,
+          "prompt": 84362,
+          "cached": 78611,
+          "hitRate": 93.2,
+          "attempts": 1
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 7391,
+          "prompt": 84646,
+          "cached": 78607,
+          "hitRate": 92.9,
+          "attempts": 1
+        }
+      ]
     }
   ]
 }
