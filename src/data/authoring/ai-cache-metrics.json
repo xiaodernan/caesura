@@ -1527,6 +1527,64 @@
           "attempts": 1
         }
       ]
+    },
+    {
+      "at": "2026-11-18T19:53:21.316Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第七十六篇《摆旁一页》之后 · 下一篇原创短篇",
+      "calls": 5,
+      "cachedTokens": 394715,
+      "promptTokens": 521993,
+      "meanHitRate": 75.52,
+      "steadyStateHitRate": 93.2,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 200,
+          "dt": 5544,
+          "prompt": 103817,
+          "cached": 4943,
+          "hitRate": 4.8,
+          "attempts": 1
+        },
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 10263,
+          "prompt": 104440,
+          "cached": 97444,
+          "hitRate": 93.3,
+          "attempts": 1
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 8204,
+          "prompt": 104543,
+          "cached": 97443,
+          "hitRate": 93.2,
+          "attempts": 1
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 7895,
+          "prompt": 104424,
+          "cached": 97444,
+          "hitRate": 93.3,
+          "attempts": 1
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 7305,
+          "prompt": 104769,
+          "cached": 97441,
+          "hitRate": 93,
+          "attempts": 1
+        }
+      ]
     }
   ]
 }
