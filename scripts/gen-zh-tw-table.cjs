@@ -94,6 +94,7 @@ try {
     'story/the-unanswered-question/index.html',
     'story/one-line-in-the-night/index.html',
     'story/she-too-a-seam/index.html',
+    'story/a-page-beside-the-pendulum/index.html',
   ];
 
   const PHRASES = new Set();

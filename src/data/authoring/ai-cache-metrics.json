@@ -1469,6 +1469,64 @@
           "attempts": 1
         }
       ]
+    },
+    {
+      "at": "2026-11-18T18:51:50.932Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第七十五篇《她也一线》之后 · 下一篇原创短篇",
+      "calls": 5,
+      "cachedTokens": 389595,
+      "promptTokens": 514942,
+      "meanHitRate": 75.56,
+      "steadyStateHitRate": 93.25,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 200,
+          "dt": 5596,
+          "prompt": 102427,
+          "cached": 4877,
+          "hitRate": 4.8,
+          "attempts": 1
+        },
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 7867,
+          "prompt": 103039,
+          "cached": 96181,
+          "hitRate": 93.3,
+          "attempts": 1
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 8805,
+          "prompt": 103142,
+          "cached": 96179,
+          "hitRate": 93.2,
+          "attempts": 1
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 6329,
+          "prompt": 103023,
+          "cached": 96180,
+          "hitRate": 93.4,
+          "attempts": 1
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 7730,
+          "prompt": 103311,
+          "cached": 96178,
+          "hitRate": 93.1,
+          "attempts": 1
+        }
+      ]
     }
   ]
 }

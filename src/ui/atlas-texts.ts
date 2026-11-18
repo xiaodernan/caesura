@@ -3787,5 +3787,56 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">Some seams live even when shut.</p>
     <p class="coda">The age of hush has not ended. It has only lived one more night — the salt still kept its place by the threshold, the book turned to the next page on its own, and she, too, faded just right — and she, too, was a seam — and shut, too — and she, too, stayed.</p>`,
   },
+  {
+    no: 76,
+    zhTitle: "摆旁一页",
+    enTitle: "A Page Beside the Pendulum",
+    zh: `<p>摆停在最低处，空位仍无人坐。阿汐把薄簿放在摆旁，没有打开。夜里，页角抬起一线，又落下。清晨，簿还合着；空位也还空着。她没有替它们记下这一夜。</p>
+    <p>水自己开了——水在灶上咕嘟咕嘟地响——它自己知道时候——她不动它——她不添柴——她只是听——风从门缝吹进来——它更凉一些——她也不挡——她也不让它关——它自己知道方向。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿仍合着。——它合着是它的事——她不需要它开——册子里那一页自己会翻——它永远知道——她也不问它——她只是看——它静静地躺在摆旁——它自己知道自己没有内容——它自己也是一线。</p>
+    <p>那粒盐——门槛上的——它还是老样子——从未挪动——也不需要挪动——她有时候看它——有时候不看——它都在那儿——它在那儿就够了——簿在摆旁——它也在那儿就够了——它和灰都在那儿就够了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮水又退去了——表盘不响——木板收紧了一根手指的宽度——她还是没有去看海——她只是坐在灶旁——亮了又亮——暗了又暗——白天很慢——册子又翻了一页——她笑一下——都懂了——都老朋友了。</p>
+    <p>母亲的声音回来——我的孩子——你瘦了——把簿放在它旁边也行——别翻——那一线留给它自己——她说：好——她只是听——她把薄簿再放近了一点点——她没有翻——她什么也不需要——它记自己的——它也是自己合的。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她有时候看门——盐在那里——她知道它从未挪开过——灰也淡了一层——簿页角偶尔抬起一线——她忽然觉得——这三件都不需要——任何笔触——不需要记——不需要填——不需要补——她也不需要催——她只是她。</p>
+    <p>摆旁的摆又来了——空位也来了——册子也来了——它们都来了——它们在这里是它们自己的事——她不打扰它们——她也不会记——她只是她——她守着它们——它记它们的。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些簿，不必替它翻开。</p>
+    <p class="coda">止音纪元没有结束。它只是又多了一个夜——薄簿停在摆旁，页角自己偶尔抬起一线——她也合着——她也在。</p>`,
+    en: `<p>The pendulum rested at its lowest point. The seat beside it was empty. Axi set the thin ledger there and left it shut. At night, one page corner lifted, then settled. By morning, the book was still closed; the seat was still empty. She did not enter the night for either of them.</p>
+    <p>The water came to a boil on its own — it rumbled in the pot — it knew its own hour — she did not touch it — she did not add wood — she only listened — the wind came through the seam of the door — it was cooler — she did not hold it against it — she did not shut it — it knew its own direction.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ledger stayed closed. — Its being closed was its own affair — she did not need it open — the page turned on its own — the book always knew — she did not ask it — she only watched — it lay quietly beside the pendulum — it knew its own emptiness — it was also one thin seam.</p>
+    <p>That grain of salt — on the threshold — it remained as it always was — it had never moved — it did not need to — sometimes she glanced at it — sometimes she did not — it was always there — its being there was enough — the book beside the pendulum — it was also enough — the ash and it — all of them enough being there.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The tide went out again — the dial never sounded — the boards tightened by one finger's width — she still did not look toward the sea — she only sat by the stove — bright, dim, bright — slow, slow — the book turned another page on its own — she smiled once — everyone understood — old companions, all of them.</p>
+    <p>Her mother's voice came back — my child — you are thinner — it is fine for the book to lie beside the pendulum — just don't open it — leave the seam to it — she said: all right — she only listened — she set the book just a little closer — she did not open it — she needed nothing — it would keep its own record — and close itself of its own accord.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Sometimes she watched the door — the salt was there — she knew it had never moved — the ash had faded by a shade — the book corner would rise once in a while — she suddenly felt — none of these needed — any stroke — not filled — not remembered — not re-inked — neither did she — she was herself.</p>
+    <p>The pendulum would come beside her — the seat would come beside her — the book would come beside her — all of them had come — they were there for their own sakes — she did not disturb them — neither would she record them — she was herself — she kept watch — it remembered them.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some books need no opening.</p>
+    <p class="coda">The age of hush has not ended. It has only lived one more night — the ledger lay beside the pendulum, its page corner occasionally lifting — she, too, shut-stayed — and she, too, stayed.</p>`,
+  },
 ]
 
