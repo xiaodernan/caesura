@@ -88,6 +88,7 @@ try {
     'story/the-ash-unreturned/index.html',
     'story/the-fading-mark/index.html',
     'story/the-unentered-stroke/index.html',
+    'story/the-corner-turns/index.html',
   ];
 
   const PHRASES = new Set();

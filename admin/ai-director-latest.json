@@ -6,73 +6,73 @@
   "requiresHumanReview": true,
   "schema": 1,
   "mode": "live",
-  "generatedAt": "2026-11-18T14:03:11.135Z",
+  "generatedAt": "2026-11-18T14:25:08.495Z",
   "model": "gpt-6.1-terra",
   "endpoint": "https://api.aizzz.xyz/v1",
-  "focus": "第六十八篇《淡痕》之后 · 下一篇原创短篇",
-  "corpusSize": 8490,
+  "focus": "第六十九篇《未添的一笔》之后 · 下一篇原创短篇",
+  "corpusSize": 8706,
   "canon": [
     {
       "rank": 1,
-      "score": 54.768,
-      "preview": "[短篇][story/anthology] 第六十八篇《淡痕》——灰挂着，盐在门槛，痕淡了也不必补——"
+      "score": 64.154,
+      "preview": "[短篇][story/anthology] 第六十九篇《未添的一笔》——灰淡了她没写进薄簿——册子自己翻过去一页她什么也没记——"
     },
     {
       "rank": 2,
-      "score": 33.255,
-      "preview": "[短篇][story/the-fading-mark] 淡痕 / The Fading Mark — CAESURA · 余响集 · 第六十八篇"
+      "score": 50.376,
+      "preview": "[短篇][story/the-unentered-stroke] 未添的一笔 / The Unentered Stroke — CAESURA · 余响集 · 第六十九篇"
     },
     {
       "rank": 3,
-      "score": 27.019,
-      "preview": "[短篇][story/anthology] 第六十一篇《摆不回》——潮水退去——摆停在最低处——不必交给下一个人——"
+      "score": 45.927,
+      "preview": "[短篇][story/anthology] 篇六十九 · 回廊钟 · 未添的一笔"
     },
     {
       "rank": 4,
-      "score": 19.362,
-      "preview": "[短篇][story/the-swing-unreturned] 摆不回 / The Swing Unreturned — CAESURA · 余响集 · 第六十一篇"
+      "score": 29.504,
+      "preview": "[短篇][story/anthology] 约 7 分钟 · 回廊钟 · 未添的一笔 · 余响"
     },
     {
       "rank": 5,
-      "score": 18.977,
-      "preview": "[短篇][story/anthology] 《止音纪元》· 原创短篇全集 · 双语对照"
+      "score": 26.849,
+      "preview": "[短篇][story/anthology] 第六十一篇《摆不回》——潮水退去——摆停在最低处——不必交给下一个人——"
     },
     {
       "rank": 6,
-      "score": 18.697,
-      "preview": "[短篇][story/after-the-space] 空处之后 / After the Space — CAESURA · 余响集 · 第三十一篇"
+      "score": 24.101,
+      "preview": "[短篇][story/after-the-salt-line] 盐线之后 / After the Salt Line — CAESURA · 余响集 · 第二十九篇"
     },
     {
       "rank": 7,
-      "score": 18.427,
-      "preview": "[短篇][story/anthology] 第十八篇《第四下》——第四下不需要钟，它一直都在你心里——"
+      "score": 19.959,
+      "preview": "[短篇][story/anthology] 第四十九篇《船上的空处》——船舱里多了一处干痕，形状刚好容下一粒盐——她没有把盐放进去——"
     },
     {
       "rank": 8,
-      "score": 17.493,
-      "preview": "[短篇][story/anthology] 第六十四篇《干痕未进》——摆停在最低处——干痕未进薄簿——"
+      "score": 19.166,
+      "preview": "[短篇][story/the-swing-unreturned] 摆不回 / The Swing Unreturned — CAESURA · 余响集 · 第六十一篇"
     },
     {
       "rank": 9,
-      "score": 17.138,
-      "preview": "[短篇][story/anthology] 第六十三篇《灰未落》——那一点灰还在——它大概只是不打算掉——"
+      "score": 18.998,
+      "preview": "[短篇][story/anthology] 《止音纪元》· 原创短篇全集 · 双语对照"
     },
     {
       "rank": 10,
-      "score": 16.966,
-      "preview": "[短篇][story/anthology] 第六十六篇《火自己知道》——照自己的火候燃着——她不替它着急——"
+      "score": 18.729,
+      "preview": "[短篇][story/after-the-space] 空处之后 / After the Space — CAESURA · 余响集 · 第三十一篇"
     }
   ],
   "worldSnapshot": {
     "date": "2026-11-18",
     "phaseStatus": {
-      "KIrows": 617,
-      "KIImplemented": 440,
+      "KIrows": 618,
+      "KIImplemented": 441,
       "SYSImplemented": 73,
       "ARCHSections": 202
     },
-    "atlasEntries": 68,
-    "storyChapters": 68,
+    "atlasEntries": 69,
+    "storyChapters": 69,
     "storyList": [
       "after-half-a-chime",
       "after-the-bag",
@@ -131,6 +131,7 @@
       "the-swing-unreturned",
       "the-unasked-boat",
       "the-unentered-page",
+      "the-unentered-stroke",
       "the-unmade-swing",
       "the-unmarked-number",
       "the-unmoved-pendulum",
@@ -151,125 +152,121 @@
     "npcs": 7
   },
   "audit": {
-    "consistency": 78,
-    "verdictZh": "主线主题与多数设定相符，但双语文本存在实质差异，且快照与可核验篇目数量不一致。",
-    "verdictEn": "The core themes mostly align, but bilingual texts diverge materially and the snapshot’s story count exceeds the verifiable entries.",
+    "consistency": 72,
+    "verdictZh": "最新篇目证据支持游记已至第69篇，但圣经内部篇数与刻痕数量口径不一；实现快照缺少可核验证据。",
+    "verdictEn": "Evidence supports stories through No. 69, but the bible conflicts on story and mark counts; implementation figures are unverified.",
     "risks": [
       {
         "severity": "high",
-        "itemZh": "第十二篇中英文内容不一致",
-        "itemEn": "Story 12 differs substantially between Chinese and English",
-        "detailZh": "中文写录像影子与接班人；英文改为海岸与读者身份，关键情节和信息并不对应。",
-        "detailEn": "Chinese describes a recorded shadow and successor; English shifts to the shoreline and reader identity."
+        "itemZh": "余响集篇数口径冲突",
+        "itemEn": "Conflicting anthology counts",
+        "detailZh": "世界谱称六十九篇，所附全文标题却称六十四篇；快照与第69篇证据支持69篇。",
+        "detailEn": "The bible says 69 stories, while the supplied text heading says 64; the snapshot and No. 69 evidence support 69."
       },
       {
         "severity": "med",
-        "itemZh": "快照与所给篇目证据数量不匹配",
-        "itemEn": "Snapshot count exceeds supplied story evidence",
-        "detailZh": "快照称短篇及 Atlas 均为 68 篇，但所附全文仅到第 64 篇；检索证据只明确指向第 68 篇。",
-        "detailEn": "The snapshot claims 68 stories, but supplied full text ends at No. 64; retrieval evidence identifies No. 68."
+        "itemZh": "刻痕指路数量与清单不符",
+        "itemEn": "Atlas mark count conflicts with the mark list",
+        "detailZh": "Atlas 说明指向14处刻痕，但世界谱所列刻痕明显超过14处。",
+        "detailEn": "The Atlas describes pointers to 14 marks, but the bible lists substantially more."
       },
       {
         "severity": "med",
-        "itemZh": "刻痕总数与 Atlas 指引数不一致",
-        "itemEn": "Carved-mark count conflicts with Atlas pointer count",
-        "detailZh": "Atlas 设定称指向 14 处刻痕，所给世界谱列出的刻痕条目明显多于 14 处，未说明哪些属于指引范围。",
-        "detailEn": "Atlas specifies 14 pointers, while the world entry lists substantially more marks without identifying the intended subset."
+        "itemZh": "快照实现计数缺少本次证据支撑",
+        "itemEn": "Snapshot implementation counts lack supporting evidence",
+        "detailZh": "KI、系统实现、ARCH、对话树、旗标及NPC数量仅见于易变快照，检索证据无法核验。",
+        "detailEn": "KI, implementation, ARCH, dialogue-tree, flag, and NPC totals appear only in the mutable snapshot and cannot be verified from the retrieved evidence."
       }
     ],
     "gapsZh": [
-      "缺少第 65 至 67 篇全文，无法核验其与第 68 篇的连续性。",
-      "缺少 14 处 Atlas 指引刻痕的明确名单，无法核对覆盖范围。"
+      "缺少实现清单或代码统计，无法复核快照计数。",
+      "缺少14处刻痕指路的对应清单，无法核实Atlas口径。"
     ],
     "gapsEn": [
-      "Full texts for stories 65–67 are missing, preventing continuity checks against No. 68.",
-      "The exact 14 Atlas-mark pointers are unspecified, preventing coverage verification."
+      "No implementation inventory or code counts are provided to verify the snapshot.",
+      "No list maps the 14 Atlas mark pointers to the stated marks."
     ]
   },
   "transitions": [
     {
-      "fromZh": "灰仍挂在指尖，尚未落下",
-      "fromEn": "ash_still_clinging",
-      "toZh": "灰痕淡去，未被擦除或登记",
-      "toEn": "ash_faded_unrecorded",
-      "flag": "flag.fingertip_ash_faded_unrecorded",
-      "narrativeZh": "灰痕淡去，不补记；薄簿仍合着。",
-      "narrativeEn": "The ash mark fades without an entry; the ledger stays shut.",
-      "npcReactionZh": "阿汐不催灰，也不洗手。",
-      "npcReactionEn": "Axi neither hurries the ash nor washes her hand.",
-      "atlasHookZh": "灰淡了，无须补记。",
-      "atlasHookEn": "The ash fades without an entry.",
-      "requiresHumanReview": true
+      "fromZh": "无耳深窖：五处刻痕尚未形成可读线索",
+      "fromEn": "Earless Deeps: five carved marks remain unconnected",
+      "toZh": "无耳深窖：五处刻痕被一并记录，余音指向沉默之处",
+      "toEn": "Earless Deeps: all five marks are recorded, and their echoes point toward the silence",
+      "flag": "flag.earless_marks_recorded_together",
+      "narrativeZh": "将五处刻痕并读，不替它们补写结论；深窖留下了一条可以回访的听觉路径。",
+      "narrativeEn": "Read the five marks together without supplying a conclusion. The Deeps retain an audible path to revisit.",
+      "npcReactionZh": "万籁仍只听，不回应；脚步声之外，多了一段可辨的停顿。",
+      "npcReactionEn": "The Myriad still only listens. Beyond footsteps, a distinct pause can now be heard.",
+      "atlasHookZh": "五处刻痕的共同停顿",
+      "atlasHookEn": "The shared pause among five marks"
     },
     {
-      "fromZh": "盐留在门槛边，未被移动",
-      "fromEn": "salt_at_threshold_undisturbed",
-      "toZh": "盐仍在原处，成为已确认的留存状态",
-      "toEn": "salt_remains_confirmed",
-      "flag": "flag.threshold_salt_left_undisturbed",
-      "narrativeZh": "盐没有移动；它仍在门槛边，不必登记。",
-      "narrativeEn": "The salt remains by the threshold, needing no entry.",
-      "npcReactionZh": "阿汐看见盐仍在，继续听潮。",
-      "npcReactionEn": "Axi sees the salt remains and keeps listening to the tide.",
-      "atlasHookZh": "门槛边的盐仍在。",
-      "atlasHookEn": "The salt remains by the threshold.",
-      "requiresHumanReview": true
+      "fromZh": "低音之城：账目只记录可偿还的声音债",
+      "fromEn": "Bass Citadel: the ledger records only debts that can be repaid",
+      "toZh": "低音之城：账本新增“听账”，可记录未能偿还、但有人愿意倾听的债",
+      "toEn": "Bass Citadel: the ledger gains a listening-debt entry for what cannot be repaid but someone agrees to hear",
+      "flag": "flag.bass_citadel_listening_debt_recorded",
+      "narrativeZh": "石喉母亲合上旧账，留下新栏：不记欠多少，只记谁来坐一坐、听多久。",
+      "narrativeEn": "The Matriarch closes the old ledger and leaves a new column: who came to sit, and how long they listened.",
+      "npcReactionZh": "商人的价目表不再替沉默标价；母亲记下倾听，不索取偿还。",
+      "npcReactionEn": "The merchants no longer price silence. The Matriarch records listening without demanding repayment.",
+      "atlasHookZh": "新增的听账一栏",
+      "atlasHookEn": "The ledger's new column for listening"
     },
     {
-      "fromZh": "潮退后，干痕仍在，未记入薄簿",
-      "fromEn": "dry_mark_unentered",
-      "toZh": "干痕淡去，仍不补记",
-      "toEn": "dry_mark_faded_unentered",
-      "flag": "flag.dry_mark_faded_unentered",
-      "narrativeZh": "干痕渐淡，阿汐不重描，也不把它补进薄簿。",
-      "narrativeEn": "The mark fades; Axi neither redraws it nor enters it in the ledger.",
-      "npcReactionZh": "阿汐不追问痕迹，也不催它留下。",
-      "npcReactionEn": "Axi does not question the mark or urge it to remain.",
-      "atlasHookZh": "痕迹淡去，不必补记。",
-      "atlasHookEn": "The mark fades without an entry.",
-      "requiresHumanReview": true
+      "fromZh": "风钟海岸：拾钟人的布袋尚未归入守钟人的保管",
+      "fromEn": "Windbell Coast: the Bell-Picker's sack has not yet entered the keeper's care",
+      "toZh": "风钟海岸：布袋与未敲钟舌一并存放在石盘下",
+      "toEn": "Windbell Coast: the sack and its unstruck clapper are kept beneath the stone pan",
+      "flag": "flag.bell_picker_sack_kept",
+      "narrativeZh": "守钟人收下布袋与字条，不追问来处；等待第四下的物件有了共同的存放处。",
+      "narrativeEn": "The keeper accepts the sack and note without asking where they came from. The things awaiting the fourth strike share a place of keeping.",
+      "npcReactionZh": "守钟人把布袋收在石盘底下，与手册并放；海岸仍没有钟声。",
+      "npcReactionEn": "The keeper places the sack beneath the pan beside the ledger. The coast remains without a bell.",
+      "atlasHookZh": "石盘下的拾钟人布袋",
+      "atlasHookEn": "The Bell-Picker's sack beneath the stone pan"
     },
     {
-      "fromZh": "黄昏时薄簿仍合着，阿汐尚未离开里间",
-      "fromEn": "ledger_closed_at_evening",
-      "toZh": "阿汐看过薄簿，仍让它合着",
-      "toEn": "ledger_seen_left_closed",
-      "flag": "flag.thin_ledger_seen_left_closed",
-      "narrativeZh": "阿汐看了薄簿一眼，没有打开；这已足够。",
-      "narrativeEn": "Axi looks at the ledger but leaves it shut; that is enough.",
-      "npcReactionZh": "薄簿保持合拢，阿汐不再追问。",
-      "npcReactionEn": "The ledger stays closed; Axi asks nothing further.",
-      "atlasHookZh": "薄簿合着，也已足够。",
-      "atlasHookEn": "The closed ledger is enough.",
-      "requiresHumanReview": true
+      "fromZh": "未竟厅：末行空格尚未被来者认领",
+      "fromEn": "Unfinished Hall: no visitor has yet claimed the blank final entry",
+      "toZh": "未竟厅：来者在空格前停留，空白仍未填写但已被认领",
+      "toEn": "Unfinished Hall: a visitor pauses before the blank; it remains unwritten, but is claimed",
+      "flag": "flag.unfinished_blank_claimed",
+      "narrativeZh": "来者不添姓名，只在空格前停留片刻；空白仍空着，却不再只是无人看过的一格。",
+      "narrativeEn": "The visitor adds no name, only pauses before the blank. It remains empty, but is no longer simply unseen.",
+      "npcReactionZh": "守摆人不催促，也不补写；她让来者带着未说出口的话离开。",
+      "npcReactionEn": "The Ferryman neither hurries nor fills it. The visitor leaves carrying their unspoken sentence.",
+      "atlasHookZh": "空格被认领而未填写",
+      "atlasHookEn": "The claimed but unwritten blank"
     }
   ],
   "atlasDraft": {
-    "no": 69,
-    "titleZh": "未添的一笔",
-    "titleEn": "The Unentered Stroke",
-    "pZh": "傍晚，阿汐看见指尖的灰淡了。她没有擦，也没有把它写进薄簿。门槛边的盐仍在，干痕也在。她没有关门。夜里，薄簿仍合着，页角偶尔自己翻动。有些淡去，不必补记。",
-    "pEn": "At dusk, Axi saw the ash on her fingertip fade. She did not wipe it away or enter it in the thin ledger. The salt remained by the threshold, and the dry mark remained. She left the door open. That night, the ledger stayed closed, its page corner turning on its own now and then. Some things fade without needing another entry.",
-    "codaZh": "有些淡去，不必添上一笔。",
-    "codaEn": "Some things may fade without another stroke.",
+    "no": 70,
+    "titleZh": "未翻之页",
+    "titleEn": "The Page Left Shut",
+    "pZh": "傍晚，阿汐看见指尖的灰淡了。她没有擦，也没有把它写进薄簿。盐仍在门槛边，干痕仍在船底。薄簿合着，页角偶尔翻动。她没有记下。有些淡去，不必补记。",
+    "pEn": "At dusk, Axi saw the ash on her fingertip fade. She neither wiped it away nor entered it in the thin ledger. The salt remained by the threshold; the dry mark remained beneath the boat. The ledger stayed shut, its page corner turning now and then. She recorded nothing. Some things fade without needing another entry.",
+    "codaZh": "有些灰，落在合着的书上也算留下。",
+    "codaEn": "Some ash remains, even on a closed book.",
     "requiresHumanReview": true,
     "editorialGateRevised": true
   },
   "editorialGate": {
-    "canonFidelity": 78,
-    "voiceFidelity": 88,
+    "canonFidelity": 72,
+    "voiceFidelity": 84,
     "verdict": "revise",
     "issues": [
-      "薄簿未翻页与篇六十八的自翻页设定冲突",
-      "潮痕应与干痕区分"
+      "封面新落灰无据",
+      "结尾把未记之灰定为留下"
     ],
     "revised": true,
-    "at": "2026-11-18T14:03:11.135Z"
+    "at": "2026-11-18T14:25:08.495Z"
   },
   "usage": {
     "calls": 5,
-    "cachedTokens": 352733,
-    "promptTokens": 466398,
+    "cachedTokens": 357340,
+    "promptTokens": 473003,
     "statuses": [
       200,
       200,
@@ -279,55 +276,55 @@
     ],
     "hitRates": [
       4.8,
-      93.3,
       93.2,
-      93.3,
-      93
+      93.1,
+      93.2,
+      92.9
     ],
     "perCall": [
       {
         "node": "warmup",
         "status": 200,
-        "dt": 18415,
-        "prompt": 92752,
-        "cached": 4416,
+        "dt": 10840,
+        "prompt": 94065,
+        "cached": 4479,
         "hitRate": 4.8,
         "attempts": 1
       },
       {
         "node": "audit",
         "status": 200,
-        "dt": 20878,
-        "prompt": 93322,
-        "cached": 87080,
-        "hitRate": 93.3,
+        "dt": 7970,
+        "prompt": 94641,
+        "cached": 88216,
+        "hitRate": 93.2,
         "attempts": 1
       },
       {
         "node": "proposeTransitions",
         "status": 200,
-        "dt": 9357,
-        "prompt": 93425,
-        "cached": 87079,
-        "hitRate": 93.2,
+        "dt": 13392,
+        "prompt": 94744,
+        "cached": 88215,
+        "hitRate": 93.1,
         "attempts": 1
       },
       {
         "node": "draftContent",
         "status": 200,
-        "dt": 13421,
-        "prompt": 93307,
-        "cached": 87081,
-        "hitRate": 93.3,
+        "dt": 6783,
+        "prompt": 94626,
+        "cached": 88217,
+        "hitRate": 93.2,
         "attempts": 1
       },
       {
         "node": "editorialGate",
         "status": 200,
-        "dt": 8843,
-        "prompt": 93592,
-        "cached": 87077,
-        "hitRate": 93,
+        "dt": 6095,
+        "prompt": 94927,
+        "cached": 88213,
+        "hitRate": 92.9,
         "attempts": 1
       }
     ]
@@ -335,42 +332,42 @@
   "graphCheckpoints": [
     {
       "node": "loadWorld",
-      "ms": 8,
+      "ms": 10,
       "ok": true
     },
     {
       "node": "retrieveCanon",
-      "ms": 199,
+      "ms": 260,
       "ok": true
     },
     {
       "node": "warmup",
-      "ms": 19057,
+      "ms": 11387,
       "ok": true
     },
     {
       "node": "audit",
-      "ms": 29487,
+      "ms": 16363,
       "ok": true
     },
     {
       "node": "proposeTransitions",
-      "ms": 22737,
+      "ms": 31169,
       "ok": true
     },
     {
       "node": "draftContent",
-      "ms": 17395,
+      "ms": 11128,
       "ok": true
     },
     {
       "node": "editorialGate",
-      "ms": 13538,
+      "ms": 9744,
       "ok": true
     },
     {
       "node": "writeArtifacts",
-      "ms": 7,
+      "ms": 8,
       "ok": true
     }
   ],

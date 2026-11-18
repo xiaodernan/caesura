@@ -38,7 +38,7 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - "The Ledger" (original short story, no. 4): <https://xiaodernan.github.io/caesura/story/ledger/> (Resthold · the page Meg never dared to close · bilingual · zero LLM · added 2026-11-15)  
 - "The Garden of Return" (original short story, no. 5): <https://xiaodernan.github.io/caesura/story/garden/> (The Afterland · the sixth sound · The Owner of the Old Bell · bilingual · zero LLM · added 2026-11-15)  
 - "The Rain Tribunal" (original short story, no. 6): <https://xiaodernan.github.io/caesura/story/tribunal/> (The Afterland · the Rainbell Valley · The Drowning Jurist · seven years between sessions · bilingual · zero LLM · added 2026-11-15)  
-- "The Aftermath" (complete short fiction, whole-volume portal — printable as one paper volume): <https://xiaodernan.github.io/caesura/story/anthology/> (all sixty-nine stories · EPIC-VII draft now inside · updated 2026-11-18)  
+- "The Aftermath" (complete short fiction, whole-volume portal — printable as one paper volume): <https://xiaodernan.github.io/caesura/story/anthology/> (all seventy stories · EPIC-VII draft now inside · updated 2026-11-18)  
 - "The Frostbell" (original short story, no. 7): <https://xiaodernan.github.io/caesura/story/frostbell/> (The Frostbell Cliff · The Last Frostwright · the sound the ice kept · bilingual · zero LLM · added 2026-11-15)  
 - "The Thousand Doors" (original short story, no. 8): <https://xiaodernan.github.io/caesura/story/doors/> (The Arcade of Echoes · the Gatekeeper of a Thousand Doors · bilingual · zero LLM · added 2026-11-15)  
 - "The Stone-Throat" (original short story, no. 9): <https://xiaodernan.github.io/caesura/story/stonethroat/> (The City of Low Tones · The Stone-Throat Matriarch · the pitch that costs nothing · bilingual · zero LLM · added 2026-11-15)  
@@ -102,6 +102,7 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - "The Ash Unreturned" (short fiction No.67): <https://xiaodernan.github.io/caesura/story/the-ash-unreturned/> (the Arcade · the kettle knew its own hour; the ash never returned to the fire; she did not hurry it · LLM-drafted, human-gated · zero LLM · 2026-11-18) ·  
 - "The Fading Mark" (short fiction No.68): <https://xiaodernan.github.io/caesura/story/the-fading-mark/> (the Arcade · the faded mark stayed unrecorded; some lines fade, and she did not re-ink them · LLM-drafted, human-gated · zero LLM · 2026-11-18) ·  
 - "The Unentered Stroke" (short fiction No.69): <https://xiaodernan.github.io/caesura/story/the-unentered-stroke/> (the Arcade · that night the page turned on its own; she recorded nothing · LLM-drafted, human-gated · zero LLM · 2026-11-18) ·  
+- "The Corner Turns" (short fiction No.70): <https://xiaodernan.github.io/caesura/story/the-corner-turns/> (the Arcade · the page corner turned now and then; she recorded nothing; the book knew its own hour · LLM-drafted, human-gated · zero LLM · 2026-11-18) ·  
 - Sync truth: `https://raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json`
 
 ## Where to read

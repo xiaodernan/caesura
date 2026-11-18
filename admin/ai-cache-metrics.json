@@ -1121,6 +1121,64 @@
           "attempts": 1
         }
       ]
+    },
+    {
+      "at": "2026-11-18T14:25:08.495Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第六十九篇《未添的一笔》之后 · 下一篇原创短篇",
+      "calls": 5,
+      "cachedTokens": 357340,
+      "promptTokens": 473003,
+      "meanHitRate": 75.44,
+      "steadyStateHitRate": 93.1,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 200,
+          "dt": 10840,
+          "prompt": 94065,
+          "cached": 4479,
+          "hitRate": 4.8,
+          "attempts": 1
+        },
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 7970,
+          "prompt": 94641,
+          "cached": 88216,
+          "hitRate": 93.2,
+          "attempts": 1
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 13392,
+          "prompt": 94744,
+          "cached": 88215,
+          "hitRate": 93.1,
+          "attempts": 1
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 6783,
+          "prompt": 94626,
+          "cached": 88217,
+          "hitRate": 93.2,
+          "attempts": 1
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 6095,
+          "prompt": 94927,
+          "cached": 88213,
+          "hitRate": 92.9,
+          "attempts": 1
+        }
+      ]
     }
   ]
 }
