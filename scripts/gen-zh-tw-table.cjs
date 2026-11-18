@@ -86,6 +86,7 @@ try {
     'story/the-ash-unhurried/index.html',
     'story/the-fire-knows/index.html',
     'story/the-ash-unreturned/index.html',
+    'story/the-fading-mark/index.html',
   ];
 
   const PHRASES = new Set();

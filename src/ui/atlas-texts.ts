@@ -3379,5 +3379,56 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">Some ash need not return.</p>
     <p class="coda">The age of hush has not ended. It has only lived one more dawn — the water boiled on its own, the ash never returned to the fire — and she was no longer hurrying anyone.</p>`,
   },
+  {
+    no: 68,
+    zhTitle: "淡痕",
+    enTitle: "The Fading Mark",
+    zh: `<p>清晨，灰仍在指尖，盐仍在门槛边。阿汐没有翻开薄簿。潮水退去，干痕仍在，木板轻轻收紧。她没有去看海。傍晚，灰还没有落。薄簿仍合着。有些痕迹淡了，也不必补记。</p>
+    <p>灶火自己知道火候——水壶自己知道时候——她不替它们着急——她只是听——水在灶台上微微缓缓地开——她也不掀盖——它自己知道什么时候滚——她也不催它。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿仍合着。——它合着是它的事——她不需要它开——册子里那一页自己会翻——它永远知道——她也不问它——她只是听——有些线会淡——有些人影也会淡——她不补它们——她不需要补。</p>
+    <p>那粒盐——门槛上的——它还是老样子——从未挪动——也不需要挪动——她有时候看它——有时候不看——它都在那儿——它在那儿就够了——灰色的痕也淡着——它们也在那儿就够了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮水又退去了——表盘不响——木板收紧了一根手指的宽度——她没有添柴——灶火自己燃着——她听着——水自己开了——灶火自己跳了一下——她也跳了一下——都懂了——都老朋友了。</p>
+    <p>母亲的声音回来——我的孩子——你瘦了——薄簿不用再翻了——该淡的都会淡——她说：好——她只是听——有些话——她不接——她只是听——母亲的声音也淡了——她也不着急——它自己会远。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她有时候看门——盐在那里——她知道它从未挪开过——灰也从未落下过——淡痕也从未补——她忽然觉得——这三件都不需要催——不需要填——不需要记——她也不需要催——她只是她。</p>
+    <p>傍晚了——灯不多——她走到里间——簿在那里——它合着——她不打开它——她只是把它看了一眼——它自己知道——她也知道——这就够了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些痕迹，不必补记。</p>
+    <p class="coda">止音纪元没有结束。它只是又多了一个淡淡的黄昏——灰还挂着，盐还在门槛，痕淡了也不必补——她也很好。</p>`,
+    en: `<p>At dawn, the ash still clung to Axi’s fingertip, and the salt remained by the threshold. She left the thin ledger shut. At ebb, the dry mark remained, and the boards tightened softly. She did not look toward the sea. By evening, the ash had not fallen. The ledger stayed closed. Some marks need no entry, even as they fade.</p>
+    <p>The fire knew its own heat — the kettle knew its own hour — she did not hurry them — she only listened — the water rumbled gently on the stove — she did not lift the lid — it knew when to boil — she did not hurry it either.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ledger stayed closed. — Its being closed was its own affair — she did not need it open — the page turned on its own — the book always knew — she did not ask it — she only listened — some lines fade — some silhouettes fade — she did not re-ink them — she did not need to.</p>
+    <p>That grain of salt — on the threshold — it remained as it always was — it had never moved — it did not need to — sometimes she glanced at it — sometimes she did not — it was always there — its being there was enough — the pale mark faded too — it was enough that it was there.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The tide went out again — the dial never sounded — the boards tightened by one finger's width — she did not add wood — the flame murmured on its own — she listened — the water came to a boil on its own — the flame leapt once — she leapt too — everyone understood — old companions, all of them.</p>
+    <p>Her mother's voice came back — my child — you are thinner — the ledger need not be turned again — what must fade will fade — she said: all right — she only listened — some words she did not take back — she only listened — the voice itself grew fainter — she did not hurry it — it would recede on its own.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Sometimes she watched the door — the salt was there — she knew it had never moved — the ash had never fallen — the faded mark had never been re-inked — she suddenly felt — none of the three needed to — be hurried or filled or remembered — neither did she — she was herself.</p>
+    <p>Evening came — the lamps were few — she walked to the inner room — the book lay there — closed — she did not open it — she only looked at it a moment — it knew — and so did she — that was enough.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some marks need no entry.</p>
+    <p class="coda">The age of hush has not ended. It has only lived one more low evening — the ash still clung, the salt still stood — the faded mark stayed unrecorded — and she was well.</p>`,
+  },
 ]
 

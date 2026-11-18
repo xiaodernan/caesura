@@ -1005,6 +1005,64 @@
           "attempts": 1
         }
       ]
+    },
+    {
+      "at": "2026-11-18T13:42:10.714Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第六十七篇《灰不归》之后 · 下一篇原创短篇",
+      "calls": 5,
+      "cachedTokens": 347614,
+      "promptTokens": 459996,
+      "meanHitRate": 75.46,
+      "steadyStateHitRate": 93.13,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 200,
+          "dt": 4460,
+          "prompt": 91467,
+          "cached": 4355,
+          "hitRate": 4.8,
+          "attempts": 1
+        },
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 7120,
+          "prompt": 92032,
+          "cached": 85816,
+          "hitRate": 93.2,
+          "attempts": 1
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 9381,
+          "prompt": 92135,
+          "cached": 85815,
+          "hitRate": 93.1,
+          "attempts": 1
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 5171,
+          "prompt": 92016,
+          "cached": 85816,
+          "hitRate": 93.3,
+          "attempts": 1
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 5621,
+          "prompt": 92346,
+          "cached": 85812,
+          "hitRate": 92.9,
+          "attempts": 1
+        }
+      ]
     }
   ]
 }
