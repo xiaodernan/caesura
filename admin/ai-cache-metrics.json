@@ -56,6 +56,59 @@
           "hitRate": 93.6
         }
       ]
+    },
+    {
+      "at": "2026-11-18T04:03:52.280Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第五十四篇《壶底旧痕》之后 · 下一篇原创短篇",
+      "calls": 5,
+      "cachedTokens": 281000,
+      "promptTokens": 372905,
+      "meanHitRate": 75.26,
+      "steadyStateHitRate": 94.08,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 200,
+          "dt": 3620,
+          "prompt": 74136,
+          "cached": 0,
+          "hitRate": 0
+        },
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 7758,
+          "prompt": 74590,
+          "cached": 70255,
+          "hitRate": 94.2
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 5748,
+          "prompt": 74688,
+          "cached": 70250,
+          "hitRate": 94.1
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 5223,
+          "prompt": 74575,
+          "cached": 70256,
+          "hitRate": 94.2
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 5912,
+          "prompt": 74916,
+          "cached": 70239,
+          "hitRate": 93.8
+        }
+      ]
     }
   ]
 }

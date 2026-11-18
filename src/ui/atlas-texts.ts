@@ -1,6 +1,6 @@
 /**
- * 游记 · 五十四篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684/KI-685 扩）。
- * 这五十四篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 五十五篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684/KI-685/KI-686 扩）。
+ * 这五十五篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -2809,6 +2809,47 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She did not look at the sea.</p>
     <p class="coda">Some lines remain only between two places.</p>
     <p class="coda">The age of hush has not ended. It has only, at last, left behind a fine mark never eager to be named — and a grain of salt forever standing watch.</p>`,
+  },
+  {
+    no: 55,
+    zhTitle: "未动的摆",
+    enTitle: "The Unmoved Pendulum",
+    zh: `<p>清晨，阿汐移开水壶，木板上留着一圈浅印。盐粒没有滚动，印子也没有合拢。薄簿仍合着，船仍停在门外，船底的干痕没有变。她没有数那圈印，也没有去看海。她对着窗外的船说：行。灶火又跳了一下。</p>
+    <p>她不知道自己为什么说出那个字——也许是因为说完之后，整个屋子都松了一口气——也许是因为那只船听过太多沉默，听一句话反而显得像礼貌。她添柴的时候没有再回头。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>这一回她忽然想到钟摆渡人——那只从不摆的摆。——她从来没有见过渡人——没人见过——传说他本也只是一根弦、一只摆——它从不摆——因为它不必摆——它停在最低处就够了。——她想：她也像那只摆。——她也不必摆——她也够了。</p>
+    <p>薄簿仍合着。——母亲的册子——它会自己翻——亲爱的——册子永远知道——她今天没有听见它的声音——也许它今天也只是懒得出声——她没有催——她现在学会了——不催任何东西。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮水又来了。——她没有看。——她知道它一定来了——因为她听见木板又在那个频率上轻轻收紧了一根手指的宽度。——她继续添柴——她已经把那个频率记成自己的心跳了——它很慢——它是海的心跳。</p>
+    <p>她对那粒盐说：你先看着办。——她说完就愣了一下——然后自己先笑了——灶火静静地跳着——那粒盐站得稳稳的——像它从来不需要她操心。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些停下，不留下来。</p>
+    <p class="coda">止音纪元没有结束。它只是终于留下一只从不需要摆的摆——和一粒始终站着的盐。</p>`,
+    en: `<p>At dawn, Axi moved the water jar. A pale ring remained on the boards. The grain of salt had not rolled, and the ring had not closed. The thin ledger stayed shut. The boat remained outside, its dry mark unchanged. Axi did not count the ring or look at the sea. She said, toward the boat: “All right.” The stove flame leapt once.</p>
+    <p>She did not know why she had said the word — perhaps because once spoken, the whole house exhaled — perhaps because the boat had heard so much silence that one word sounded almost like courtesy. She fed the fire without turning around.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>This time she thought of the ferryman of the pendulum — that pendulum which never swung. — She had never seen the ferryman — no one had — it was said he was only a string, a single swing — it never swung — because it did not need to — resting at the lowest point was enough. — She thought: perhaps she, too, was like that pendulum. — She, too, need not swing — she, too, was enough.</p>
+    <p>The ledger stayed closed. — Her mother's book — it would turn on its own — my dear — the book always knows — today she did not hear its voice — perhaps today it, too, could not be bothered — she did not press — she had learned — never to press anything.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The tide came again. — She did not look. — She knew it had come — because she heard the boards tighten again by one finger's width in that same frequency. — She kept feeding the fire — she had already memorised that frequency as her own pulse — it was very slow — it was the sea's pulse.</p>
+    <p>She said to the grain of salt: see to it yourself, then. — She said it and startled herself — then laughed, quietly, first — the stove flame leapt on — the grain of salt stood as steady as ever — as though it had never required her worry.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some stops leave nothing behind.</p>
+    <p class="coda">The age of hush has not ended. It has only, at last, left behind a pendulum that never needed to swing — and a grain of salt forever standing watch.</p>`,
   },
 ]
 
