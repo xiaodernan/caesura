@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "c42eb0697a8d6bf436d494425d959edb2077e10a",
+  "head": "9ce2259b1956589191793be76281ff14c2e0d2b2",
   "branch": "master",
-  "subject": "chore(status): re-embed site-latest.json",
-  "date": "2026-11-18T12:10:26Z",
+  "subject": "feat(story): KI-696《余响集》第六十五篇《灰不催 / The Ash Unhurried》落地（LLM 起草 → LLM 终审 → 人工闸）",
+  "date": "2026-11-18T20:29:16+08:00",
   "kv": {
-    "KI.rows": 613,
-    "KI.Implemented": 436,
+    "KI.rows": 614,
+    "KI.Implemented": 437,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/c42eb0697a8d6bf436d494425d959edb2077e10a",
+    "url": "https://github.com/xiaodernan/caesura/commit/9ce2259b1956589191793be76281ff14c2e0d2b2",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
