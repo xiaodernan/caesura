@@ -76,6 +76,7 @@ try {
     'story/the-unmoved-pendulum/index.html',
     'story/no-handover/index.html',
     'story/beside-the-pendulum/index.html',
+    'story/salt-beside-the-seat/index.html',
   ];
 
   const PHRASES = new Set();

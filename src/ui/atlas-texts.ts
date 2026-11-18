@@ -1,6 +1,6 @@
 /**
- * 游记 · 五十七篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684/KI-685/KI-686/KI-687/KI-688 扩）。
- * 这五十七篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 五十八篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684/KI-685/KI-686/KI-687/KI-688/KI-689 扩）。
+ * 这五十八篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -2932,6 +2932,47 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She did not look at the sea.</p>
     <p class="coda">Some empty places need no one to sit in them.</p>
     <p class="coda">The age of hush has not ended. It has only, at last, left behind an empty place that needed no one seated — and a pendulum that never needed to swing.</p>`,
+  },
+  {
+    no: 58,
+    zhTitle: "摆下的盐",
+    enTitle: "Salt Beside the Seat",
+    zh: `<p>摆旁的空位仍无人坐。阿汐没有翻开薄簿。门槛边的盐仍在，船仍停着，船底的干痕没有变。她没有去看海。止音纪元没有结束。</p>
+    <p>她后来常常看那个空位——它总在那儿——没人坐——也没人提议谁坐——它不争不抢——它只是在——她几乎觉得它替她先到门口迎了一程——她也算是回应——她每天添水的时候会朝它点一下头——菜沉默的答了静默了——她没有解释给谁听。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿仍合着。——她今天又想把它打开——手放在封面上——停了——她心里说：不用急。——它合着是它的事——她看海也无需缘由——她把手收回来——它又安静了。</p>
+    <p>那粒盐——它大概是比她先到的——灶上、门槛上——她已经记不清了——它还是那样——不动——她偶尔觉得它其实是整个屋里唯一真正在乎时间的人——它在从不摆的摆旁——替它数钟——她替它看了——她觉得她其实什么也没数——它只是在陪着那个空位——陪到她也懒得了——她笑了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮水又来了——她没去看。——木板在那个频率上收了一根手指的宽度——她已经分辨得出它在第几道夹——她继续添柴——灶火跳了一下——她也跳了一下——她都懂了——不必再解释。</p>
+    <p>母亲的声音回来——册子——它会自己翻——亲爱的——册子永远知道——她这回没有替它答——她只是说：好。——厨房安静了——灶火静静地跳着。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些来过的，不必留下座位。</p>
+    <p class="coda">止音纪元没有结束。它只是终于留下一个不必有人落座的空位——和一粒替谁都数过的盐。</p>`,
+    en: `<p>The place beside the pendulum remained empty. Axi did not open the ledger. The salt remained by the threshold; the boat stayed outside, its dry mark unchanged. She did not look at the sea. The silenced epoch had not ended.</p>
+    <p>She would often look at that empty place afterwards — it was always there — no one sat — no one proposed that anyone should — it did not quarrel — it was simply there — she almost felt it had gone to the door ahead to welcome her — she, in turn, answered — each day at the stove she gave it a small nod — the silence returned the look, politely — she never explained it to anyone.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ledger stayed closed. — Today she again wanted to open it — her hand rested upon its cover — and paused — she thought: no hurry. — It kept to itself by being closed — her not-looking out to sea required no reason either — she drew her hand back — it went quiet again.</p>
+    <p>That grain of salt — likely it had arrived before her — by the stove, or the threshold — she no longer remembered — it was still itself — unstirring — she sometimes felt it was the only one in the whole house who truly cared about time — it stood beside the unswinging pendulum, counting for it — she had looked after it — she realised she had been counting nothing — it was only keeping the empty place company — until she, too, grew too tired — she laughed.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The tide came again — she did not go and see. — The boards tightened again by one finger's width at that frequency — she could already tell which clamp it was on — she kept feeding the fire — the flame leapt once — she leapt too — she understood — no need to explain anymore.</p>
+    <p>Her mother's voice came back — the book — it will turn on its own — my dear — the book always knows — this time she did not answer for it — she only said: all right. — The kitchen went still — the flame kept quietly leaping.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some arrivals need leave no seat behind.</p>
+    <p class="coda">The age of hush has not ended. It has only, at last, left behind an empty place that needed no one seated — and a grain of salt that counted on behalf of everyone.</p>`,
   },
 ]
 

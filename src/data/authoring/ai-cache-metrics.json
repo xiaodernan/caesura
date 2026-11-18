@@ -252,6 +252,145 @@
           "hitRate": 93.8
         }
       ]
+    },
+    {
+      "at": "2026-11-18T05:08:45.004Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第五十七篇《摆旁空位》之后 · 下一篇原创短篇",
+      "calls": 4,
+      "cachedTokens": 0,
+      "promptTokens": 0,
+      "meanHitRate": 0,
+      "steadyStateHitRate": 0,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 404,
+          "dt": 928,
+          "prompt": 0,
+          "cached": 0,
+          "hitRate": 0
+        },
+        {
+          "node": "audit",
+          "status": 404,
+          "dt": 316,
+          "prompt": 0,
+          "cached": 0,
+          "hitRate": 0
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 404,
+          "dt": 266,
+          "prompt": 0,
+          "cached": 0,
+          "hitRate": 0
+        },
+        {
+          "node": "draftContent",
+          "status": 404,
+          "dt": 248,
+          "prompt": 0,
+          "cached": 0,
+          "hitRate": 0
+        }
+      ]
+    },
+    {
+      "at": "2026-11-18T05:09:32.314Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第五十七篇《摆旁空位》之后 · 下一篇原创短篇",
+      "calls": 4,
+      "cachedTokens": 72925,
+      "promptTokens": 154560,
+      "meanHitRate": 23.53,
+      "steadyStateHitRate": 31.37,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 200,
+          "dt": 4197,
+          "prompt": 77043,
+          "cached": 0,
+          "hitRate": 0
+        },
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 6246,
+          "prompt": 77517,
+          "cached": 72925,
+          "hitRate": 94.1
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 404,
+          "dt": 1781,
+          "prompt": 0,
+          "cached": 0,
+          "hitRate": 0
+        },
+        {
+          "node": "draftContent",
+          "status": 404,
+          "dt": 728,
+          "prompt": 0,
+          "cached": 0,
+          "hitRate": 0
+        }
+      ]
+    },
+    {
+      "at": "2026-11-18T05:10:48.773Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第五十七篇《摆旁空位》之后 · 下一篇原创短篇",
+      "calls": 4,
+      "cachedTokens": 292192,
+      "promptTokens": 310454,
+      "meanHitRate": 94.1,
+      "steadyStateHitRate": 94.1,
+      "perCall": [
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 5280,
+          "prompt": 77517,
+          "cached": 73437,
+          "hitRate": 94.7,
+          "attempts": 1
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 8587,
+          "prompt": 77616,
+          "cached": 72920,
+          "hitRate": 93.9,
+          "attempts": 2
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 8948,
+          "prompt": 77502,
+          "cached": 72925,
+          "hitRate": 94.1,
+          "attempts": 2
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 9962,
+          "prompt": 77819,
+          "cached": 72910,
+          "hitRate": 93.7,
+          "attempts": 2
+        }
+      ]
     }
   ]
 }

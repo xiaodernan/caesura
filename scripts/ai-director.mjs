@@ -122,6 +122,13 @@ const snapshotToText = (w) => [
   `短篇名单：${w.storyList.join('、')}`,
 ].join('\n')
 
+/* 单节点重试（KI-689）：代理按节点轮换时个别节点对 ~77k 上下文返回 404·空 body
+   （实测：warmup/audit 先于 propose/draft 成功，随后该请求节点恢复）——任何非 2xx 一律最多 3 次
+   （0s / 1.5s / 3.0s 间隔），恢复后继续；仍失败 → 走与旧版一致的「如实落 errors、人工闸裁决」。
+   重试只在本节点内发生，不产生重复副作用；记账只计最终一次（attempts 逐条打印）。 */
+const MAX_ATTEMPTS = 3
+const isOk = (out) => out && (out.ok === true || (typeof out.status === 'number' && out.status >= 200 && out.status < 300))
+
 async function callDirector(env, { stdinPrefix, task, temperature, maxTokens }) {
   const body = {
     model: env.model,
@@ -137,7 +144,20 @@ async function callDirector(env, { stdinPrefix, task, temperature, maxTokens }) 
   // 与正题逐字节相同的 system 前缀 ⇒ prompt_cache_key 按前缀派生（client 内处理）
   const { derivePromptCacheKey } = await import('./caesura-llm-client.mjs')
   body.prompt_cache_key = derivePromptCacheKey(body.messages)
-  return callLlm(body, { baseUrl: env.baseUrl, apiKey: env.apiKey })
+  let last = null
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+    const out = await callLlm(body, { baseUrl: env.baseUrl, apiKey: env.apiKey })
+    if (isOk(out)) {
+      out.attempts = attempt
+      if (attempt > 1) console.log(`[ai-director] callLlm recovered on attempt ${attempt} (temperature=${temperature})`)
+      return out
+    }
+    last = out
+    last.attempts = attempt
+    console.warn(`[ai-director] callLlm attempt ${attempt}/${MAX_ATTEMPTS} failed status=${out?.status} dt=${out?.dt ?? '?'}ms — ${attempt < MAX_ATTEMPTS ? 'retrying' : 'giving up'}`)
+    if (attempt < MAX_ATTEMPTS) await new Promise((r) => setTimeout(r, 1500 * attempt))
+  }
+  return last
 }
 
 
@@ -150,7 +170,7 @@ const recordUsage = (state, label, out) => {
   state.usage.cachedTokens += cached
   state.usage.promptTokens += prompt
   state.usage.hitRates.push(hit)
-  state.usage.perCall.push({ node: label, status: out?.status, dt: out?.dt ?? null, prompt, cached, hitRate: hit })
+  state.usage.perCall.push({ node: label, status: out?.status, dt: out?.dt ?? null, prompt, cached, hitRate: hit, attempts: out?.attempts ?? 1 })
   state.usage.statuses.push(out?.status)
   console.log(`[ai-director] ${label} status=${out?.status} dt=${out?.dt ?? '?'}ms prompt=${prompt} cached=${cached} hit=${hit}%`)
 }
@@ -166,7 +186,7 @@ const parseJsonLoose = (raw) => {
 async function nodeLoadWorld(state) { state.world = worldSnapshot() }
 
 async function nodeRetrieveCanon(state) {
-  const focus = FOCUS || '止音纪元 世界现状 五十七篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响'
+  const focus = FOCUS || '止音纪元 世界现状 五十八篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响'
   const t0 = Date.now()
   const corpus = buildWorldCorpus(ROOT)
   const index = buildIndex(corpus)
@@ -197,7 +217,7 @@ async function nodeAudit(state) {
 
 async function nodeProposeTransitions(state) {
   if (state.mode !== 'live') { state.transitions = []; return }
-  const task = '【任务·世界状态流转提案】现状：无耳深窖五环线索、低音之城、五十七篇游记写尽。提出 4 条**可直接落为 quest/flag 的状态流转提案**：{"transitions":[{"fromZh":"起点状态","fromEn":"from-state","toZh":"终点状态","toEn":"to-state","flag":"flag.xxx","narrativeZh":"≤80字叙事后果","narrativeEn":"≤45 words","npcReactionZh":"≤40字 NPC/世界反应","npcReactionEn":"≤25 words","atlasHookZh":"≤30字 可挂进 Atlas 的钩子","atlasHookEn":"≤18 words"}]}。硬约束：flag **必须**以 "flag." 开头、全小写 snake_case（如 flag.paper_bag_salt_line_kept），**不许**加 proposed / new / plan 之类的前缀；flag 名字要像现存 flag 一样直接落库。只许 JSON。'
+  const task = '【任务·世界状态流转提案】现状：无耳深窖五环线索、低音之城、五十八篇游记写尽。提出 4 条**可直接落为 quest/flag 的状态流转提案**：{"transitions":[{"fromZh":"起点状态","fromEn":"from-state","toZh":"终点状态","toEn":"to-state","flag":"flag.xxx","narrativeZh":"≤80字叙事后果","narrativeEn":"≤45 words","npcReactionZh":"≤40字 NPC/世界反应","npcReactionEn":"≤25 words","atlasHookZh":"≤30字 可挂进 Atlas 的钩子","atlasHookEn":"≤18 words"}]}。硬约束：flag **必须**以 "flag." 开头、全小写 snake_case（如 flag.paper_bag_salt_line_kept），**不许**加 proposed / new / plan 之类的前缀；flag 名字要像现存 flag 一样直接落库。只许 JSON。'
   const out = await callDirector(state.env, { stdinPrefix: state.prefix, task: withSnapshot(state, task), temperature: 0.75, maxTokens: 1200 })
   recordUsage(state, 'proposeTransitions', out)
   const parsed = parseJsonLoose(out.text)
@@ -207,7 +227,7 @@ async function nodeProposeTransitions(state) {
 
 async function nodeDraftContent(state) {
   if (state.mode !== 'live') { state.atlasDraft = null; return }
-  const task = '【任务·游记续写草稿】以钟摆渡人/止音纪元的笔法，为下一篇游记产出草稿：{"no":58,"titleZh":"≤10字","titleEn":"≤6 words","pZh":"≤120字正文","pEn":"≤70 words","codaZh":"≤40字尾声","codaEn":"≤25 words","requiresHumanReview":true}。笔法：不喧哗、不抒情、物件说话、留白。只许 JSON。'
+  const task = '【任务·游记续写草稿】以钟摆渡人/止音纪元的笔法，为下一篇游记产出草稿：{"no":59,"titleZh":"≤10字","titleEn":"≤6 words","pZh":"≤120字正文","pEn":"≤70 words","codaZh":"≤40字尾声","codaEn":"≤25 words","requiresHumanReview":true}。笔法：不喧哗、不抒情、物件说话、留白。只许 JSON。'
   const out = await callDirector(state.env, { stdinPrefix: state.prefix, task: withSnapshot(state, task), temperature: 0.9, maxTokens: 800 })
   recordUsage(state, 'draftContent', out)
   const parsed = parseJsonLoose(out.text)
