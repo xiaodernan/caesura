@@ -66,6 +66,7 @@ const STRINGS = {
   'method.h2': { zh: '方法论 · 这页数的家底', en: 'Methodology · where these numbers come from' },
   'method.fine2': { zh: '玩家进程零 LLM · 零网络请求；本后台同上。真实用户流量接入 Spring report（@8082）后，可整体替换数据源而不动本页分析逻辑。', en: 'The game process has zero LLM calls and zero network; this deck is the same. Once real telemetry is wired through the Spring report service (@8082), the data source can be swapped wholesale without touching the analysis here.' },
   'method.fine3': { zh: '刻意公开的门禁 · 密码 123 · KI-583。', en: 'The door is public on purpose · passphrase 123 · KI-583.' },
+  'ai.cache': { zh: 'LLM 缓存命中（rolling 80 · 每次运行逐条记账）', en: 'LLM cache hits (rolling 80 · per-call ledger)' },
   'ai.h2': { zh: 'AI 导演 · 真·LLM 诊断', en: 'AI Director · real-LLM diagnosis' },
   'ai.hint': { zh: '深度嵌入：左＝最近一次真机运行（随仓库镜像）｜右＝自带 Key 现场诊断', en: 'Embedded deep: left = latest on-machine run (mirrored with the repo) · right = bring-your-own-key live diagnosis' },
   'ai.c.h3': { zh: '最近一次真机运行 · 止音纪元', en: 'Latest on-machine run · Epoch of Hush' },
@@ -103,7 +104,7 @@ const STRINGS = {
   'forecast.date': { zh: 'forecasted', en: 'forecasted' },
   'forecast.note': { zh: 'authorOnly · runtime:false · LLM 裁决 · 人工闸后方可落库', en: 'authorOnly · runtime:false · LLM-authored · human gate required' },
   'sg.h2': { zh: '状态图检查站 · StateGraph 实跑', en: 'StateGraph checkpoints · the real run' },
-  'sg.hint': { zh: 'AI 导演引擎的真实运行轨迹——七节点 · 三个 LLM 边共享同一 system 前缀 · 产物过人工闸', en: 'The real trajectory of the AI Director engine — seven nodes · three LLM edges sharing one system prefix · artifacts pass the human gate' },
+  'sg.hint': { zh: 'AI 导演引擎的真实运行轨迹——八节点（含 canon 编辑闸门）· 四个 LLM 边共享同一 system 前缀 · 产物过人工闸', en: 'The real trajectory of the AI Director engine — eight nodes (incl. the canon editorial gate) · four LLM edges sharing one system prefix · artifacts pass the human gate' },
   'build.h2': { zh: '研发状态 · Build Observatory', en: 'Build Observatory · the repo’s vital signs' },
   'build.hint': { zh: '仓库工程体征——site-latest.json + GitHub Actions API（公网 · 只读 · 无凭证）', en: 'The repo’s vital signs — site-latest.json + GitHub Actions API (public, read-only, no credentials)' },
   'build.state.h3': { zh: '主分支现状', en: 'Master, right now' },
@@ -728,6 +729,35 @@ async function runAiLive(e) {
   }
 }
 
+/* ─────────── LLM 缓存命中账本（KI-685 A · rolling 80 · 持久证据）─────────── */
+async function renderCacheMetrics() {
+  const el = document.getElementById('ai-cache-summary')
+  if (!el) return
+  let ledger
+  try {
+    const r = await fetch('./ai-cache-metrics.json', { cache: 'no-store' })
+    if (!r.ok) throw new Error('HTTP ' + r.status)
+    ledger = await r.json()
+  } catch {
+    el.textContent = T('暂无账本（跑一次 npm run ai:director:live 生成）', 'No ledger yet (run npm run ai:director:live once)')
+    return
+  }
+  const entries = Array.isArray(ledger && ledger.entries) ? ledger.entries : []
+  if (entries.length === 0) {
+    el.textContent = T('账本为空——下次 live 运行自动登记', 'Ledger empty — the next live run registers itself')
+    return
+  }
+  const last = entries[entries.length - 1] || {}
+  const latest = [...entries].reverse().find((e) => e && e.mode === 'live') || last
+  const fmt = (v) => (v === null || v === undefined || !Number.isFinite(Number(v)) ? '—' : String(v))
+  const steady = fmt(latest.steadyStateHitRate)
+  const mean = fmt(latest.meanHitRate)
+  const cached = Number(latest.cachedTokens) || 0
+  const approx = cached >= 1000 ? `${(cached / 1000).toFixed(1)}k` : String(cached)
+  el.textContent = T(`运行 ${entries.length} 次 · 最近 steady ${steady}% · mean ${mean}% · cached≈${approx}/call`,
+                     `${entries.length} runs · latest steady ${steady}% · mean ${mean}% · cached≈${approx}/call`)
+}
+
 /* ─────────── 状态图检查站（KI-622 · StateGraph 实跑可视化）─────────── */
 const SG_NODES = [
   { id: 'loadWorld', zh: '加载世界快照', en: 'Load world' },
@@ -735,7 +765,8 @@ const SG_NODES = [
   { id: 'warmup', zh: '预热前缀缓存', en: 'Warmup prefix' },
   { id: 'audit', zh: '一致性审计', en: 'Consistency audit', llm: true },
   { id: 'proposeTransitions', zh: '状态流转提案', en: 'Transitions', llm: true },
-  { id: 'draftContent', zh: '篇十七草稿', en: 'Draft No.17', llm: true },
+  { id: 'draftContent', zh: '下一篇草稿', en: 'Draft next', llm: true },
+  { id: 'editorialGate', zh: 'canon 编辑闸门', en: 'Editorial gate', llm: true },
   { id: 'writeArtifacts', zh: '落盘产物', en: 'Write artifacts' },
 ]
 
@@ -769,9 +800,9 @@ async function renderStateGraph() {
   const marker = svgEl('marker', { id: 'sg-arrow', viewBox: '0 0 10 10', refX: '9', refY: '5', markerWidth: '7', markerHeight: '7', orient: 'auto-start-reverse' }, defs)
   svgEl('path', { d: 'M 0 0 L 10 5 L 0 10 z', fill: 'rgba(201,180,88,.55)' }, marker)
 
-  const BOX_W = 112
+  const BOX_W = 108
   const BOX_H = 62
-  const GAP = 16
+  const GAP = 12
   const TOTAL = SG_NODES.length
   const startX = (980 - (TOTAL * BOX_W + (TOTAL - 1) * GAP)) / 2
   const Y = 88
@@ -981,7 +1012,7 @@ function renderMethod() {
 function renderAll() {
   renderKpis(); renderTrend(); renderFunnel(); renderChannels(); renderDevices()
   renderHours(); renderCohorts(); renderAnomalies(); renderExits(); renderRecs()
-  renderLive(); renderMethod(); renderAiCommitted(); hydrateAiLive(); renderStateGraph(); renderBuild(); renderPriors(); renderForecast()
+  renderLive(); renderMethod(); renderAiCommitted(); hydrateAiLive(); renderStateGraph(); renderBuild(); renderPriors(); renderForecast(); renderCacheMetrics();
 }
 function tickClock() {
   const t = new Date()

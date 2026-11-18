@@ -72,6 +72,7 @@ try {
     'story/the-boat-still/index.html',
     'story/beside-the-jar/index.html',
     'story/the-ring/index.html',
+    'story/the-mark-beneath-the-jar/index.html',
   ];
 
   const PHRASES = new Set();

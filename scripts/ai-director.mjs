@@ -166,7 +166,7 @@ const parseJsonLoose = (raw) => {
 async function nodeLoadWorld(state) { state.world = worldSnapshot() }
 
 async function nodeRetrieveCanon(state) {
-  const focus = FOCUS || '止音纪元 世界现状 五十三篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响'
+  const focus = FOCUS || '止音纪元 世界现状 五十四篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响'
   const t0 = Date.now()
   const corpus = buildWorldCorpus(ROOT)
   const index = buildIndex(corpus)
@@ -197,7 +197,7 @@ async function nodeAudit(state) {
 
 async function nodeProposeTransitions(state) {
   if (state.mode !== 'live') { state.transitions = []; return }
-  const task = '【任务·世界状态流转提案】现状：无耳深窖五环线索、低音之城、五十三篇游记写尽。提出 4 条**可直接落为 quest/flag 的状态流转提案**：{"transitions":[{"fromZh":"起点状态","fromEn":"from-state","toZh":"终点状态","toEn":"to-state","flag":"flag.xxx","narrativeZh":"≤80字叙事后果","narrativeEn":"≤45 words","npcReactionZh":"≤40字 NPC/世界反应","npcReactionEn":"≤25 words","atlasHookZh":"≤30字 可挂进 Atlas 的钩子","atlasHookEn":"≤18 words"}]}。硬约束：flag **必须**以 "flag." 开头、全小写 snake_case（如 flag.paper_bag_salt_line_kept），**不许**加 proposed / new / plan 之类的前缀；flag 名字要像现存 flag 一样直接落库。只许 JSON。'
+  const task = '【任务·世界状态流转提案】现状：无耳深窖五环线索、低音之城、五十四篇游记写尽。提出 4 条**可直接落为 quest/flag 的状态流转提案**：{"transitions":[{"fromZh":"起点状态","fromEn":"from-state","toZh":"终点状态","toEn":"to-state","flag":"flag.xxx","narrativeZh":"≤80字叙事后果","narrativeEn":"≤45 words","npcReactionZh":"≤40字 NPC/世界反应","npcReactionEn":"≤25 words","atlasHookZh":"≤30字 可挂进 Atlas 的钩子","atlasHookEn":"≤18 words"}]}。硬约束：flag **必须**以 "flag." 开头、全小写 snake_case（如 flag.paper_bag_salt_line_kept），**不许**加 proposed / new / plan 之类的前缀；flag 名字要像现存 flag 一样直接落库。只许 JSON。'
   const out = await callDirector(state.env, { stdinPrefix: state.prefix, task: withSnapshot(state, task), temperature: 0.75, maxTokens: 1200 })
   recordUsage(state, 'proposeTransitions', out)
   const parsed = parseJsonLoose(out.text)
@@ -207,7 +207,7 @@ async function nodeProposeTransitions(state) {
 
 async function nodeDraftContent(state) {
   if (state.mode !== 'live') { state.atlasDraft = null; return }
-  const task = '【任务·游记续写草稿】以钟摆渡人/止音纪元的笔法，为下一篇游记产出草稿：{"no":54,"titleZh":"≤10字","titleEn":"≤6 words","pZh":"≤120字正文","pEn":"≤70 words","codaZh":"≤40字尾声","codaEn":"≤25 words","requiresHumanReview":true}。笔法：不喧哗、不抒情、物件说话、留白。只许 JSON。'
+  const task = '【任务·游记续写草稿】以钟摆渡人/止音纪元的笔法，为下一篇游记产出草稿：{"no":55,"titleZh":"≤10字","titleEn":"≤6 words","pZh":"≤120字正文","pEn":"≤70 words","codaZh":"≤40字尾声","codaEn":"≤25 words","requiresHumanReview":true}。笔法：不喧哗、不抒情、物件说话、留白。只许 JSON。'
   const out = await callDirector(state.env, { stdinPrefix: state.prefix, task: withSnapshot(state, task), temperature: 0.9, maxTokens: 800 })
   recordUsage(state, 'draftContent', out)
   const parsed = parseJsonLoose(out.text)
@@ -313,6 +313,7 @@ function writeArtifacts(state) {
     '',
     art.errors.length ? '## 错误（如实登记）\n' + art.errors.map((e) => `- [${e.node}] ${e.message}`).join('\n') : '## 错误\n- 无',
     '',
+    '- cache hit ledger: `admin/ai-cache-metrics.json`（rolling ≤80 · perCall 逐条命中 · mean/steady 双列）',
     '> 本报告由 `scripts/ai-director.mjs` 机器生成；任何内容在人工审核前不进运行时数据。',
     '',
   ].join('\n')
@@ -323,6 +324,51 @@ function writeArtifacts(state) {
   const body = JSON.stringify(art, null, 2) + '\n'
   writeFileSync(target1, body, 'utf8')
   writeFileSync(target2, body, 'utf8')
+
+  // ⑦ LLM 缓存命中账本（rolling ≤80 次运行 · 独立文件 · 不改变最新产物对外形状）：
+  //    让「持续 ≈90% 命中、无突然掉缓存」从一次实测变成可长期审计的持久证据（admin 页读它渲染）。
+  try {
+    const metricsPath = resolve(ROOT, 'admin/ai-cache-metrics.json')
+    const authoringMetricsPath = resolve(ROOT, 'src/data/authoring/ai-cache-metrics.json')
+    let ledger = []
+    try {
+      const prior = JSON.parse(readFileSync(metricsPath, 'utf8'))
+      if (prior && Array.isArray(prior.entries)) ledger = prior.entries
+    } catch { ledger = [] }
+    const perCall = Array.isArray(state.usage.perCall) ? state.usage.perCall : []
+    const hitRates = Array.isArray(state.usage.hitRates) ? state.usage.hitRates : []
+    const meanHit = hitRates.length ? Math.round((hitRates.reduce((a, b) => a + b, 0) / hitRates.length) * 100) / 100 : null
+    // 稳态命中（剔除 warmup 首冷写）：单独记一列——这才是用户看的「≈90%」
+    const steady = perCall.length > 1 && perCall[0] && perCall[0].node === 'warmup' ? hitRates.slice(1) : hitRates
+    const steadyHit = steady.length ? Math.round((steady.reduce((a, b) => a + b, 0) / steady.length) * 100) / 100 : null
+    const entry = {
+      at: NOW_ISO,
+      mode: state.mode,
+      model: art.model,
+      focus: art.focus ?? null,
+      calls: art.usage.calls,
+      cachedTokens: art.usage.cachedTokens,
+      promptTokens: art.usage.promptTokens ?? null,
+      meanHitRate: meanHit,
+      steadyStateHitRate: steadyHit,
+      perCall,
+    }
+    if (!ledger.some((e) => e && e.at === entry.at)) ledger.push(entry)
+    ledger = ledger.slice(-80)
+    const metricsBody = JSON.stringify({
+      $comment: 'KI-685 A · LLM 缓存命中账本 · rolling ≤80 次 · 作者侧 · runtime:false · 绝不包含任何密钥',
+      version: 1,
+      runtime: false,
+      containsCredentials: false,
+      entries: ledger,
+    }, null, 2) + '\n'
+    writeFileSync(metricsPath, metricsBody, 'utf8')
+    writeFileSync(authoringMetricsPath, metricsBody, 'utf8')
+    console.log(`[ai-director] cache-metrics ledger: admin/ai-cache-metrics.json (entries=${ledger.length} · steadyHit=${steadyHit}%)`)
+  } catch (e) {
+    // 账本写失败不致命：最新产物已经落盘；如实登记到 errors 但不阻断管线
+    state.errors.push({ node: 'cacheMetrics', message: String((e && e.message) || e) })
+  }
 }
 
 /* ═══════════ 组图 ═══════════ */

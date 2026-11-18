@@ -1,0 +1,61 @@
+{
+  "$comment": "KI-685 A · LLM 缓存命中账本 · rolling ≤80 次 · 作者侧 · runtime:false · 绝不包含任何密钥",
+  "version": 1,
+  "runtime": false,
+  "containsCredentials": false,
+  "entries": [
+    {
+      "at": "2026-11-18T03:35:18.490Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第五十三篇《圈印》之后 · 下一篇原创短篇",
+      "calls": 5,
+      "cachedTokens": 277094,
+      "promptTokens": 368152,
+      "meanHitRate": 75.14,
+      "steadyStateHitRate": 93.93,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 200,
+          "dt": 4751,
+          "prompt": 73192,
+          "cached": 0,
+          "hitRate": 0
+        },
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 7946,
+          "prompt": 73637,
+          "cached": 69279,
+          "hitRate": 94.1
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 12322,
+          "prompt": 73735,
+          "cached": 69274,
+          "hitRate": 93.9
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 6630,
+          "prompt": 73622,
+          "cached": 69279,
+          "hitRate": 94.1
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 9248,
+          "prompt": 73966,
+          "cached": 69262,
+          "hitRate": 93.6
+        }
+      ]
+    }
+  ]
+}

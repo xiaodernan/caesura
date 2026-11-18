@@ -68,7 +68,7 @@ describe('KI-620 · AI 导演引擎产物门钉', () => {
     }
     const draft = art.atlasDraft
     expect(draft, 'atlasDraft 必须非空').toBeTruthy()
-    expect(draft.no).toBe(53)
+    expect(draft.no).toBe(54)
     expect(draft.titleZh).toBeTruthy()
     expect(draft.pZh).toBeTruthy()
     expect(draft.pEn).toBeTruthy()
@@ -83,6 +83,33 @@ describe('KI-620 · AI 导演引擎产物门钉', () => {
       expect(typeof gate.voiceFidelity).toBe('number')
       expect(Array.isArray(gate.issues)).toBe(true)
     }
+  })
+
+  it('cache hit 账本（admin/ai-cache-metrics.json）：存在 · rolling · 最新 live 条目与产物同构', () => {
+    const LEDGER = resolve(ROOT, 'admin/ai-cache-metrics.json')
+    expect(existsSync(LEDGER), 'admin/ai-cache-metrics.json 必须存在（writeArtifacts 落盘）').toBe(true)
+    const ledger = JSON.parse(read(LEDGER)) as Record<string, any>
+    expect(ledger.version).toBe(1)
+    expect(ledger.runtime).toBe(false)
+    expect(ledger.containsCredentials).toBe(false)
+    const entries = ledger.entries
+    expect(Array.isArray(entries)).toBe(true)
+    expect(entries.length).toBeGreaterThanOrEqual(1)
+    const live = entries.filter((e: any) => e && e.mode === 'live')
+    expect(live.length).toBeGreaterThanOrEqual(1)
+    const last = live[live.length - 1]
+    expect(last.calls).toBeGreaterThanOrEqual(3)
+    expect(Array.isArray(last.perCall)).toBe(true)
+    expect(last.perCall.length).toBe(last.calls)
+    for (const c of last.perCall) {
+      expect([200, 201]).toContain(Number(c.status))
+      expect(Number.isFinite(Number(c.prompt))).toBe(true)
+      expect(Number.isFinite(Number(c.cached))).toBe(true)
+      expect(Number.isFinite(Number(c.hitRate))).toBe(true)
+    }
+    // 与最新产物的 calls/cached 对齐（同一次运行的两种记账，不许漂移）
+    expect(last.calls).toBe(art.usage.calls)
+    expect(last.cachedTokens).toBe(art.usage.cachedTokens)
   })
 
   it('任何产物文件里不得出现密钥形状', () => {

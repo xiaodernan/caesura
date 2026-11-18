@@ -1,6 +1,6 @@
 /**
- * 游记 · 五十三篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684 扩）。
- * 这五十三篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 五十四篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684/KI-685 扩）。
+ * 这五十四篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -2768,6 +2768,47 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She did not look at the sea.</p>
     <p class="coda">Some marks need not wait to close.</p>
     <p class="coda">The age of hush has not ended. It has only, at last, left behind a pale ring that never chose to close — and a grain of salt unhurried to leave.</p>`,
+  },
+  {
+    no: 54,
+    zhTitle: "壶底旧痕",
+    enTitle: "The Mark Beneath the Jar",
+    zh: `<p>清晨，阿汐移开水壶，木板上留着一圈浅印。盐粒没有滚动，印子也没有合拢。薄簿仍合着，船仍停在门外。船底的干痕没有变。她没有数那圈印，也没有把壶移远。</p>
+    <p>这一回她留意到圈印的最深处——那里有一道极细的纹路，像一根没有拉过的弦——她蹲下去了一会儿——没有碰它——她心想：有些痕迹也不急着被谁认出来。她直起腰时，天已经亮了一格。她拍了拍膝盖上的灰——仿佛替那道纹路说了一声：别急。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>那粒盐仍立在圈印边缘——它没有滚动——仿佛它天生就站在那儿。她把它想象成一名站岗的小兵——它也不需要交接——它就是那样立着——一天一天——她习惯了。</p>
+    <p>薄簿仍合着。——她有一次把手按在封面上——停住了——她想：它里面肯定记录了所有没被说出口的事——也许一个字都没有——也许全是——她没有再问自己——她把手收了回去。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮水来了又退。——她没有出门。——她听见木板极轻微地——收紧了半分。——她知道它在收紧。——她也不知道它为什么收紧。——她只是继续添柴。</p>
+    <p>母亲的话没有回来。——这回是她自己先开口——对着窗外那只不动的船——她说：行。——然后她才意识到自己说了出来——厨房里静了一瞬——然后灶火又跳了一下。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些线，只在两处之间留下。</p>
+    <p class="coda">止音纪元没有结束。它只是终于留下一道不急着被认出来的细痕——和一粒始终站着的盐。</p>`,
+    en: `<p>At dawn, Axi moved the water jar, leaving a pale ring on the boards. The grain of salt did not roll, and the ring did not close. The ledger stayed shut; the boat remained outside, its dry mark unchanged. She did not count the ring or move the jar away.</p>
+    <p>This time she noticed the deepest point of the ring — a very fine line ran there, like a string never drawn — she crouched for a while — did not touch it — thinking: some traces are not eager to be named by anyone either. When she stood back up, the sky had brightened by one notch.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>That grain of salt still stood at the ring's edge — it had not rolled — as though it had been born standing. She imagined it as a small sentry at its post — it needed no relief — it simply stood — day after day — and she grew used to it.</p>
+    <p>The ledger stayed closed. — Once, she laid her hand upon its cover — and stopped — she thought: it must hold every unsaid thing — perhaps not a single word inside — perhaps all of them — she did not ask herself further — she drew her hand back.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The tide came and went again. — She did not go out. — She heard the boards, very faintly, — tighten by a half-notch. — She knew they had tightened. — She did not know why. — She only kept feeding the fire.</p>
+    <p>Her mother's phrase did not return. — This time she spoke first — toward the motionless boat — she said: all right. — Only then did she realise she had said it aloud — the kitchen went quiet for a moment — then the flame leapt once more.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some lines remain only between two places.</p>
+    <p class="coda">The age of hush has not ended. It has only, at last, left behind a fine mark never eager to be named — and a grain of salt forever standing watch.</p>`,
   },
 ]
 
