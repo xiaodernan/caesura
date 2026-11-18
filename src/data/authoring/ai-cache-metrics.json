@@ -797,6 +797,156 @@
           "attempts": 1
         }
       ]
+    },
+    {
+      "at": "2026-11-18T12:40:32.126Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第六十五篇《灰不催》之后 · 下一篇原创短篇",
+      "calls": 4,
+      "cachedTokens": 254862,
+      "promptTokens": 357914,
+      "meanHitRate": 71.1,
+      "steadyStateHitRate": 93.2,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 200,
+          "dt": 14246,
+          "prompt": 89042,
+          "cached": 4240,
+          "hitRate": 4.8,
+          "attempts": 1
+        },
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 24224,
+          "prompt": 89595,
+          "cached": 83541,
+          "hitRate": 93.2,
+          "attempts": 1
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 35708,
+          "prompt": 89698,
+          "cached": 83540,
+          "hitRate": 93.1,
+          "attempts": 1
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 9329,
+          "prompt": 89579,
+          "cached": 83541,
+          "hitRate": 93.3,
+          "attempts": 1
+        }
+      ]
+    },
+    {
+      "at": "2026-11-18T12:42:10.260Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第六十五篇《灰不催》之后 · 下一篇原创短篇",
+      "calls": 0,
+      "cachedTokens": 0,
+      "promptTokens": 0,
+      "meanHitRate": null,
+      "steadyStateHitRate": null,
+      "perCall": []
+    },
+    {
+      "at": "2026-11-18T12:42:47.096Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第六十五篇《灰不催》之后 · 下一篇原创短篇",
+      "calls": 3,
+      "cachedTokens": 251646,
+      "promptTokens": 268872,
+      "meanHitRate": 93.57,
+      "steadyStateHitRate": 93.57,
+      "perCall": [
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 9070,
+          "prompt": 89595,
+          "cached": 84053,
+          "hitRate": 93.8,
+          "attempts": 1
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 13414,
+          "prompt": 89698,
+          "cached": 83540,
+          "hitRate": 93.1,
+          "attempts": 1
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 26990,
+          "prompt": 89579,
+          "cached": 84053,
+          "hitRate": 93.8,
+          "attempts": 1
+        }
+      ]
+    },
+    {
+      "at": "2026-11-18T12:44:57.014Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第六十五篇《灰不催》之后 · 下一篇原创短篇",
+      "calls": 4,
+      "cachedTokens": 335183,
+      "promptTokens": 358753,
+      "meanHitRate": 93.4,
+      "steadyStateHitRate": 93.4,
+      "perCall": [
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 9545,
+          "prompt": 89595,
+          "cached": 84053,
+          "hitRate": 93.8,
+          "attempts": 1
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 12509,
+          "prompt": 89698,
+          "cached": 83540,
+          "hitRate": 93.1,
+          "attempts": 1
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 10362,
+          "prompt": 89579,
+          "cached": 84053,
+          "hitRate": 93.8,
+          "attempts": 1
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 16370,
+          "prompt": 89881,
+          "cached": 83537,
+          "hitRate": 92.9,
+          "attempts": 1
+        }
+      ]
     }
   ]
 }

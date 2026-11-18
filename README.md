@@ -35,7 +35,7 @@ npm run dev            # Vite dev server；浏览器打开 http://localhost:5173
 - 《账本》（短篇原创之四）：<https://xiaodernan.github.io/caesura/story/ledger/>（休垒 · Meg 不敢合上的那一页账 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《回声庭园》（短篇原创之五）：<https://xiaodernan.github.io/caesura/story/garden/>（余响新陆 · 第六境 · 旧钟的主人 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《雨审判》（短篇原创之六）：<https://xiaodernan.github.io/caesura/story/tribunal/>（余响新陆 · 雨钟谷地 · 雨罪审判者 · 七年一庭 · 双语对照 · 零 LLM · 2026-11-15） ·  
-- 《余响集》（全集页 · 整册入口 · 支持一键打印成纸质卷）：<https://xiaodernan.github.io/caesura/story/anthology/>（六十五篇整册 · 史诗般总起预告 · EPIC-VII 实写落地 · 2026-11-18 增篇六十五《灰不催》） ·  
+- 《余响集》（全集页 · 整册入口 · 支持一键打印成纸质卷）：<https://xiaodernan.github.io/caesura/story/anthology/>（六十六篇整册 · 史诗般总起预告 · EPIC-VII 实写落地 · 2026-11-18 增篇六十六《火自己知道》） ·  
 - 《霜锤》（短篇原创之七）：<https://xiaodernan.github.io/caesura/story/frostbell/>（霜锤崖 · 末任钟匠 · 冻成冰的声音 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《千门》（短篇原创之八）：<https://xiaodernan.github.io/caesura/story/doors/>（回廊钟 · 一千扇门 · 守门人 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《石喉》（短篇原创之九）：<https://xiaodernan.github.io/caesura/story/stonethroat/>（低音之城 · 石喉母亲 · 不需要货币的音 · 双语对照 · 零 LLM · 2026-11-15） ·  
@@ -95,6 +95,7 @@ npm run dev            # Vite dev server；浏览器打开 http://localhost:5173
 - 《灰未落》（短篇原创之六十三）：<https://xiaodernan.github.io/caesura/story/ash-not-fallen/>（回廊钟·灰未落 · 那一点灰还在 · 它大概只是不打算掉 · LLM 草稿 · 人工闸 · 零 LLM · 2026-11-18） ·  
 - 《干痕未进》（短篇原创之六十四）：<https://xiaodernan.github.io/caesura/story/the-mark-not-entered/>（回廊钟·干痕未进 · 摆停在最低处 · 干痕未进薄簿 · LLM 草稿 · 人工闸 · 零 LLM · 2026-11-18） ·  
 - 《灰不催》（短篇原创之六十五）：<https://xiaodernan.github.io/caesura/story/the-ash-unhurried/>（回廊钟·灰不催 · 阿汐添柴时指尖的灰还没有落 · 她没有催它 · LLM 草稿 · 人工闸 · 零 LLM · 2026-11-18） ·  
+- 《火自己知道》（短篇原创之六十六）：<https://xiaodernan.github.io/caesura/story/the-fire-knows/>（回廊钟·火自己知道 · 她不添柴也不熄柴 · 只看着灶火照自己的火候燃着 · LLM 草稿 · 人工闸 · 零 LLM · 2026-11-18） ·  
 - 数据最新：`master` 每推即重嵌 `site-latest.json`（raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json）  
 
 > 注意：线上是 `?fresh=1` 的干净状态，页面证据文件总会对账最新 master；页面首屏可能短暂停在 boot 屏。

@@ -3277,5 +3277,56 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">Some things fall without needing to be kept.</p>
     <p class="coda">The age of hush has not ended. It has only lived one more day without hurrying it — and one stick that knew its own heat.</p>`,
   },
+  {
+    no: 66,
+    zhTitle: "火自己知道",
+    enTitle: "The Fire Knows",
+    zh: `<p>潮水退去，阿汐添了一根柴。指尖的灰还没有落，她没有催它。门槛边的盐仍在，薄簿仍合着。她没有去看海，只让灶火照自己的火候燃着。</p>
+    <p>粥在灶上咕嘟咕嘟地响——灶火静静地跳着——她守着它——她不添柴——她不熄柴——她只是看——她知道灶火自己知道——它知道自己什么时候烧完——她不替它着急。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿仍合着。——它合着是它的事——她不需要它开——册子里那一页自己会翻——它永远知道——她也不问它——她只是听——灶火轻轻地响——她心里说：好。</p>
+    <p>那粒盐——门槛上的——它还是老样子——从未挪动——也不需要挪动——她有时候看它——有时候不看——它都在那儿——它在那儿就够了——灶火也一样——它在它自己那儿就够了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮水又退去了——表盘不响——木板收紧了一根手指的宽度——她没有添柴——灶火自己跳了一下——她听着——都懂了——都老朋友了——谁也不用多说。</p>
+    <p>母亲的声音回来——我的孩子——你瘦了——大锅里不用再添了——她说：好——她只是看——灶火自己知道火候——她也不催它——它自己会烧完——它也烧得下去——她都不催。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她有时候看灶——灶火静静地跳——她有时候不看——她也有时候把手放在门边——盐在那里——她知道它从未挪开过——灶火从未停过——她忽然觉得——这两件都不需要催——不需要停——她也不需要催——她只是她。</p>
+    <p>灶火跳了一下——是她也是它——都懂了——都老朋友了——火什么时候烧完——她不问——它也不答——它们对视——谁也不先开口。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些火候，自己知道。</p>
+    <p class="coda">止音纪元没有结束。它只是又多了一晚上不是她在喂火——是火自己在知道。</p>`,
+    en: `<p>At ebb, Axi fed one stick into the stove. The ash on her fingertip had not fallen; she did not hurry it. The salt remained by the threshold, and the thin ledger stayed shut. She did not look at the sea. She let the fire keep its own heat.</p>
+    <p>The porridge rumbled in the pot — the flame leapt quietly — she kept it company — she did not add wood — she did not put it out — she only watched — she knew the fire knew — it knew when its own wood would be spent — she did not hurry it on.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ledger stayed closed. — Its being closed was its own affair — she did not need it open — the page turned on its own — the book always knew — she did not ask it — she only listened — the fire murmured on — she thought: all right.</p>
+    <p>That grain of salt — on the threshold — it remained as it always was — it had never moved — it did not need to — sometimes she glanced at it — sometimes she did not — it was always there — its being there was enough — so was the fire — its being on was enough.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The tide went out again — the dial never sounded — the boards tightened by one finger's width — she did not add wood — the flame leapt on its own — she listened — everyone understood — old companions, all of them.</p>
+    <p>Her mother's voice came back — my child — you are thinner — there is no need to add to the great pot — she said: all right — she only watched — the fire knew its own heat — she did not hurry it — it would burn out in its own time — she did not hurry.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Sometimes she watched the stove — the flame leapt quietly — sometimes not — sometimes she rested her hand by the door — the salt was there — she knew it had never moved — the fire had never stopped — she suddenly felt — neither needed to — be hurried or halted — neither did she — she was herself.</p>
+    <p>The flame leapt once — was her — and was it — everyone understood — old companions both of them — when the fire would be spent — she did not ask — it did not say — they regarded one another — neither spoke first.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some heat knows itself.</p>
+    <p class="coda">The age of hush has not ended. It has only lived one more night on which it was not she who fed the fire — it was the fire, knowing itself.</p>`,
+  },
 ]
 

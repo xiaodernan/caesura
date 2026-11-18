@@ -290,6 +290,7 @@ describe('admin · 静态页与部署接线（防悄悄脱落）', () => {
     expect(sm).toContain("name: 'story-64'")
     expect(sm).toContain("name: 'story-65'")
     expect(sm).toContain("name: 'story-66'")
+    expect(sm).toContain("name: 'story-67'")
     expect(sm).toContain('/caesura/story/third-voice/')
     expect(sm).toContain('/caesura/story/ensemble/')
     expect(sm).toContain('/caesura/story/echo-vale/')
@@ -349,8 +350,9 @@ describe('admin · 静态页与部署接线（防悄悄脱落）', () => {
     expect(sm).toContain('/caesura/story/ash-not-fallen/')
     expect(sm).toContain('/caesura/story/the-mark-not-entered/')
     expect(sm).toContain('/caesura/story/the-ash-unhurried/')
+    expect(sm).toContain('/caesura/story/the-fire-knows/')
     const entries = (sm.match(/\{ name: '/g) ?? []).length
-    expect(entries).toBe(77)
+    expect(entries).toBe(78)
   })
   it('public/tracker.js 存在且为本机埋点', () => {
     const t = read('public/tracker.js')

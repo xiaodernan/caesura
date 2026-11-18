@@ -12,7 +12,7 @@
 (function () {
   'use strict';
 
-  /* canon 顺序（篇一《盐》.. 篇六十五《灰不催》），与 src/ui/atlas-texts.ts 的 no 一一对应 */
+  /* canon 顺序（篇一《盐》.. 篇六十六《火自己知道》），与 src/ui/atlas-texts.ts 的 no 一一对应 */
   var ORDER = [
     { slug: '', zh: '《盐》', en: '"Salt"' },
     { slug: 'unnamed-stone', zh: '《山下无名碑》', en: '"The Nameless Stone"' },
@@ -78,7 +78,8 @@
     { slug: 'the-ash-beside-the-pendulum', zh: '《摆旁的灰》', en: '"Ash Beside the Pendulum"' },
     { slug: 'ash-not-fallen', zh: '《灰未落》', en: '"Ash Not Fallen"' },
     { slug: 'the-mark-not-entered', zh: '《干痕未进》', en: '"The Mark Not Entered"' },
-    { slug: 'the-ash-unhurried', zh: '《灰不催》', en: '"The Ash Unhurried"' }
+    { slug: 'the-ash-unhurried', zh: '《灰不催》', en: '"The Ash Unhurried"' },
+    { slug: 'the-fire-knows', zh: '《火自己知道》', en: '"The Fire Knows"' }
   ];
 
   var PREFIX = '/caesura/story/';
@@ -153,7 +154,7 @@
                       : '/caesura/story/anthology/';
       var label = next
         ? (isEN ? 'Next · ' + next.en : '下一篇 · ' + next.zh)
-        : (isEN ? 'The Aftermath · all sixty-five' : '余响集 · 六十五篇全集');
+        : (isEN ? 'The Aftermath · all sixty-six' : '余响集 · 六十六篇全集');
       var tag = isEN ? (next ? 'Keep reading' : 'Read the whole volume') : (next ? '继续读下一页' : '读完全册');
       nextCard = document.createElement('a');
       nextCard.className = 'read-next';
