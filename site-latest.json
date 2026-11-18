@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "067851045dc05bc475397abfb7b750bcd6483c40",
+  "head": "43b589552ec3d164d9ce8b4aaef5d53dec27f1be",
   "branch": "master",
-  "subject": "site-latest: f04ebbe (post-rebase reconcile)",
-  "date": "2026-11-18T14:59:39+08:00",
+  "subject": "feat(story): KI-694《余响集》第六十三篇《灰未落 / Ash Not Fallen》落地（LLM 起草 → LLM 终审 → 人工闸）",
+  "date": "2026-11-18T18:35:23+08:00",
   "kv": {
-    "KI.rows": 611,
-    "KI.Implemented": 434,
+    "KI.rows": 612,
+    "KI.Implemented": 435,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/067851045dc05bc475397abfb7b750bcd6483c40",
+    "url": "https://github.com/xiaodernan/caesura/commit/43b589552ec3d164d9ce8b4aaef5d53dec27f1be",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
