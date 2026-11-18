@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "3271cf05dff991c913a296abec60f992caa221b8",
+  "head": "158be471040fb150beeab742ba5124cda0234624",
   "branch": "master",
-  "subject": "feat(story): KI-681《余响集》第五十篇《盐未上船 / Salt Not Aboard》落地（LLM 真机草稿 → 人工闸落库 · 整册五十篇里程碑）",
-  "date": "2026-11-18T08:38:43+08:00",
+  "subject": "site-latest: 3271cf0 (post-rebase reconcile)",
+  "date": "2026-11-18T08:39:37+08:00",
   "kv": {
     "KI.rows": 599,
     "KI.Implemented": 422,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/3271cf05dff991c913a296abec60f992caa221b8",
+    "url": "https://github.com/xiaodernan/caesura/commit/158be471040fb150beeab742ba5124cda0234624",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
