@@ -1,6 +1,6 @@
 /**
- * 游记 · 四十九篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680 扩）。
- * 这四十九篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 五十篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681 扩）。
+ * 这五十篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -2604,6 +2604,47 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She did not look at the sea.</p>
     <p class="coda">Some empty places do not wait to be filled.</p>
     <p class="coda">The age of hush has not ended. It has only, at last, left behind a dry mark exactly large enough for one grain of salt — and an answer that still stays outside the door.</p>`,
+  },
+  {
+    no: 50,
+    zhTitle: "盐未上船",
+    enTitle: "Salt Not Aboard",
+    zh: `<p>潮水退去，船舱里的干痕还在。阿汐把盐放在门槛上，没有带到船边。船没有动。薄簿仍合着。后来潮水回来，盐少了一角，干痕没有变。她没有记下是哪一刻少的。</p>
+    <p>她把那包盐放在门槛上已经是第三天——也不是刻意——只是她从灶上拿盐出来——本想顺手收进灰罐——手伸到一半——忽然停住了——她把它搁在了门槛上——然后没有想太多——只是第二天——它还在——第三天——多了一个角。她记得——也不强迫自己记得太清楚。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>船没有动。——它从没有动过——它也不需要动。——她现在已经不再替它着急——她只是偶尔从窗边看过去——它在——她就退回屋里——她不记得自己是什么时候学会不多看的。</p>
+    <p>薄簿仍合着。——她有一个上午几乎要翻开——她想记下那一角盐是怎么少的——她想了想——又把手收了回来——她忽然觉得——记下来——它反而就成了证词——而她不想当证人——她只是想当看着海的人。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>有一天她发现那包盐少的又多了一角——她没有声张——她甚至没有去看海了一眼——她只是在烧水的时候——把旧火调小了一档——仿佛替窗外那些没有名字的东西——留一点安静。</p>
+    <p>母亲的话偶尔又回来——册子——它会自己翻——亲爱的——册子永远知道——她这回没有立刻回答——她只是望着门槛上那一角——小了一点的盐——她心里想：也许它们是一起走的——她不需要谁先谁后——东西只要动了——就不必问是哪一刻。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些东西，不必同时抵达。</p>
+    <p class="coda">止音纪元没有结束。它只是终于留下一包没有上船的盐——和一道没有变的干痕。</p>`,
+    en: `<p>At ebb, the dry mark remained inside the boat. Axi left the salt on the threshold, not aboard. The boat did not move. The ledger stayed closed. When the tide returned, one corner of the salt was gone, but the mark had not changed. She did not record when it happened.</p>
+    <p>The packet of salt had been on the threshold for three days — not by design — she had taken it from the stove shelf — meaning to tuck it back into the ash jar — her hand stopped halfway — and she set it down upon the threshold instead — thought little of it — and only noted, the second day — it was still there — the third — one corner was missing. She remembered — or chose not to remember too clearly.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The boat did not move. — It never had. — It did not need to. — She had stopped worrying it for ages — she would only glance out from beside the window now and then — it was still there — she would step back in — she could not remember when she had learned not to look for too long.</p>
+    <p>The ledger stayed closed. — One morning she almost opened it — wanting to record how the corner had gone — she thought again — and drew her hand back — she suddenly realised — to record it — would make it into testimony — and she did not want to be a witness — she only wanted to be someone watching the sea.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>One day the corner was smaller again — she did not make a fuss — she did not even glance toward the sea — she only, while the water was on, turned the old flame down one notch — as if to leave a little quiet for the nameless things outside.</p>
+    <p>Her mother's whisper wandered back — the book — it will turn on its own — my dear — the book always knows — this time she did not answer at once — she only regarded the threshold and that ever-diminishing corner of salt — thinking: perhaps they travel together — it does not matter who arrives first — things that are already on their way need not be accounted for by the moment.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some things need not arrive together.</p>
+    <p class="coda">The age of hush has not ended. It has only, at last, left behind a packet of salt that never boarded — and a dry mark that never changed.</p>`,
   },
 ]
 

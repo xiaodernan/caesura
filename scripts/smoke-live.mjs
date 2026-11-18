@@ -92,6 +92,7 @@ const ENDPOINTS = [
   { name: 'story-48', url: 'https://xiaodernan.github.io/caesura/story/the-dry-mark-beneath/', marker: '船底的干痕' },
   { name: 'story-49', url: 'https://xiaodernan.github.io/caesura/story/the-unasked-boat/', marker: '未问之船' },
   { name: 'story-50', url: 'https://xiaodernan.github.io/caesura/story/the-place-aboard/', marker: '船上的空处' },
+  { name: 'story-51', url: 'https://xiaodernan.github.io/caesura/story/salt-not-aboard/', marker: '盐未上船' },
   { name: 'ai-json-commit', url: 'https://xiaodernan.github.io/caesura/admin/ai-director-latest.json', marker: '"authorOnly": true' },
   { name: 'ai-json-qa', url: 'https://xiaodernan.github.io/caesura/admin/ai-director-transitions-qa.json', marker: '"authorOnly": true' },
 ]

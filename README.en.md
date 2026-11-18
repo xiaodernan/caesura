@@ -38,7 +38,7 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - "The Ledger" (original short story, no. 4): <https://xiaodernan.github.io/caesura/story/ledger/> (Resthold · the page Meg never dared to close · bilingual · zero LLM · added 2026-11-15)  
 - "The Garden of Return" (original short story, no. 5): <https://xiaodernan.github.io/caesura/story/garden/> (The Afterland · the sixth sound · The Owner of the Old Bell · bilingual · zero LLM · added 2026-11-15)  
 - "The Rain Tribunal" (original short story, no. 6): <https://xiaodernan.github.io/caesura/story/tribunal/> (The Afterland · the Rainbell Valley · The Drowning Jurist · seven years between sessions · bilingual · zero LLM · added 2026-11-15)  
-- "The Aftermath" (complete short fiction, whole-volume portal — printable as one paper volume): <https://xiaodernan.github.io/caesura/story/anthology/> (all forty-nine stories · EPIC-VII draft now inside · updated 2026-11-18)  
+- "The Aftermath" (complete short fiction, whole-volume portal — printable as one paper volume): <https://xiaodernan.github.io/caesura/story/anthology/> (all fifty stories · EPIC-VII draft now inside · updated 2026-11-18)  
 - "The Frostbell" (original short story, no. 7): <https://xiaodernan.github.io/caesura/story/frostbell/> (The Frostbell Cliff · The Last Frostwright · the sound the ice kept · bilingual · zero LLM · added 2026-11-15)  
 - "The Thousand Doors" (original short story, no. 8): <https://xiaodernan.github.io/caesura/story/doors/> (The Arcade of Echoes · the Gatekeeper of a Thousand Doors · bilingual · zero LLM · added 2026-11-15)  
 - "The Stone-Throat" (original short story, no. 9): <https://xiaodernan.github.io/caesura/story/stonethroat/> (The City of Low Tones · The Stone-Throat Matriarch · the pitch that costs nothing · bilingual · zero LLM · added 2026-11-15)  
@@ -82,6 +82,7 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - "The Dry Mark Beneath" (short fiction No.47): <https://xiaodernan.github.io/caesura/story/the-dry-mark-beneath/> (the Arcade · the boat outside remained; the faint mark beneath its hull had not been taken by the tide; at dawn, one grain of salt was missing from the threshold · LLM-drafted, human-approved · zero LLM · 2026-11-18) ·  
 - "The Unasked Boat" (short fiction No.48): <https://xiaodernan.github.io/caesura/story/the-unasked-boat/> (the Arcade · the boat remained outside; at ebb an inch of the dry mark showed; Axi did not ask where it was bound · LLM-drafted, human-approved · zero LLM · 2026-11-18) ·  
 - "The Place Aboard" (short fiction No.49): <https://xiaodernan.github.io/caesura/story/the-place-aboard/> (the Arcade · the boat outside remained; at dawn the hull held a dry mark the size of one grain of salt; she placed nothing inside · LLM-drafted, human-approved · zero LLM · 2026-11-18) ·  
+- "Salt Not Aboard" (short fiction No.50): <https://xiaodernan.github.io/caesura/story/salt-not-aboard/> (the Arcade · at ebb the dry mark remained; the salt stayed on the threshold, not aboard; its corner kept vanishing · LLM-drafted, human-approved · zero LLM · 2026-11-18) ·  
 - Sync truth: `https://raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json`
 
 ## Where to read
