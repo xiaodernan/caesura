@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "6fc4a9d9c17cd2d54ec85ed7c6cc2ab8143860f8",
+  "head": "5be85a800028ca58038a09f37729996200f6f62f",
   "branch": "master",
-  "subject": "feat(story): KI-707《余响集》第七十六篇《摆旁一页 / A Page Beside the Pendulum》落地（LLM 起草 → LLM 终审 → 人工闸 · **史诗级首次「闸门 verdict=pass」全链路首绿**）",
-  "date": "2026-11-19T03:44:25+08:00",
+  "subject": "site-latest: 6fc4a9d (post-rebase reconcile)",
+  "date": "2026-11-19T03:47:30+08:00",
   "kv": {
     "KI.rows": 625,
     "KI.Implemented": 448,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/6fc4a9d9c17cd2d54ec85ed7c6cc2ab8143860f8",
+    "url": "https://github.com/xiaodernan/caesura/commit/5be85a800028ca58038a09f37729996200f6f62f",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
