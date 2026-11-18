@@ -93,6 +93,7 @@ try {
     'story/the-ledger-shut/index.html',
     'story/the-unanswered-question/index.html',
     'story/one-line-in-the-night/index.html',
+    'story/she-too-a-seam/index.html',
   ];
 
   const PHRASES = new Set();

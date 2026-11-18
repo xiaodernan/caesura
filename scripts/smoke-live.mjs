@@ -117,6 +117,7 @@ const ENDPOINTS = [
   { name: 'story-73', url: 'https://xiaodernan.github.io/caesura/story/the-ledger-shut/', marker: '薄簿合着' },
   { name: 'story-74', url: 'https://xiaodernan.github.io/caesura/story/the-unanswered-question/', marker: '未答之问' },
   { name: 'story-75', url: 'https://xiaodernan.github.io/caesura/story/one-line-in-the-night/', marker: '夜开的一线' },
+  { name: 'story-76', url: 'https://xiaodernan.github.io/caesura/story/she-too-a-seam/', marker: '她也一线' },
   { name: 'ai-json-commit', url: 'https://xiaodernan.github.io/caesura/admin/ai-director-latest.json', marker: '"authorOnly": true' },
   { name: 'ai-json-qa', url: 'https://xiaodernan.github.io/caesura/admin/ai-director-transitions-qa.json', marker: '"authorOnly": true' },
   { name: 'ai-json-cache', url: 'https://xiaodernan.github.io/caesura/admin/ai-cache-metrics.json', marker: '"entries"' },

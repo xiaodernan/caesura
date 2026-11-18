@@ -1411,6 +1411,64 @@
           "attempts": 1
         }
       ]
+    },
+    {
+      "at": "2026-11-18T17:48:05.909Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第七十四篇《夜开的一线》之后 · 下一篇原创短篇",
+      "calls": 5,
+      "cachedTokens": 383455,
+      "promptTokens": 507424,
+      "meanHitRate": 75.48,
+      "steadyStateHitRate": 93.15,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 200,
+          "dt": 6289,
+          "prompt": 100926,
+          "cached": 4806,
+          "hitRate": 4.8,
+          "attempts": 1
+        },
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 9918,
+          "prompt": 101531,
+          "cached": 94663,
+          "hitRate": 93.2,
+          "attempts": 1
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 9045,
+          "prompt": 101634,
+          "cached": 94662,
+          "hitRate": 93.1,
+          "attempts": 1
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 7934,
+          "prompt": 101516,
+          "cached": 94664,
+          "hitRate": 93.3,
+          "attempts": 1
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 8662,
+          "prompt": 101817,
+          "cached": 94660,
+          "hitRate": 93,
+          "attempts": 1
+        }
+      ]
     }
   ]
 }
