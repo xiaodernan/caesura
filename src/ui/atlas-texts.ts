@@ -1,6 +1,6 @@
 /**
- * 游记 · 五十二篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683 扩）。
- * 这五十二篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 五十三篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684 扩）。
+ * 这五十三篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -2727,6 +2727,47 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She did not look at the sea.</p>
     <p class="coda">Some marks need not enclose anything.</p>
     <p class="coda">The age of hush has not ended. It has only, at last, left behind a grain of salt resting beside the jar — and a pale ring that never closed.</p>`,
+  },
+  {
+    no: 53,
+    zhTitle: "圈印",
+    enTitle: "The Ring",
+    zh: `<p>船底的干痕还在，水壶旁的那粒盐也还在。清晨，阿汐把壶移开，木板上留着一圈浅印；盐粒没有滚动，印子也没有合拢。薄簿仍合着；船仍停在门外。她没有数那圈印。</p>
+    <p>这一回她没有立刻放回去——她把手停在半空——像在读一封只有一个字的信——然后她慢慢把壶搁回原处——壶底低低碰了一下木板——那圈印没有变——它只是原地缓缓开了半分。她后来没有再动过它。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>那圈印——她烧水的时候常瞥它一眼——它像一只没有说出任何话的嘴——她不确定自己是不是也被它看着——她几乎觉得它有自己的呼吸——她笑了一下——把火调小了一格。</p>
+    <p>薄簿仍合着。——她有一次把它翻开到最后一页——什么都没写——她看着那一页——忽然心里平静下来——仿佛整本册子都在替她说：不必留名。——她合上了。放回原处。——它只轻轻合了一下——像一次呼气。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮水又一次退去。——船底的干痕没有变。——她没有出门看它——她知道它没有变——知道——就是没有变的另一种形式。</p>
+    <p>母亲的话浮起来——册子——它会自己翻——亲爱的——册子永远知道——她这回没有回应——也没有不回应——她只是望着那圈印——心里说：行吧——你们自己看着办。——灶火跳了一下。柴尽了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些印子，不等它合拢。</p>
+    <p class="coda">止音纪元没有结束。它只是终于留下一圈不打算合拢的浅印——和一粒不急着离场的盐。</p>`,
+    en: `<p>The dry mark beneath the boat remained, and so did the grain of salt beside the jar. At dawn, Axi moved the jar, leaving a pale ring on the boards. The grain did not roll, and the ring did not close. The ledger stayed shut; the boat remained outside. She did not count the ring.</p>
+    <p>This time she did not set it back at once — she paused her hand mid-air — as though reading a letter with only a single word inside — then slowly lowered the jar back into place — its base made a low thud upon the boards — the ring did not change — it only, in place, eased a half-inch further open. She never touched it again after that.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>That ring — she would glance at it whenever the water came up — it was like a mouth that had never said anything — she could not say whether it was looking back — she almost felt it had its own breath — she gave a small laugh — and turned the flame down one notch.</p>
+    <p>The ledger stayed closed. — Once, she opened it to the very last page — blank — she regarded the empty page — and felt unexpectedly calm — as if the whole book were saying on her behalf: leave no name. — She closed it. She put it back. — It shut with only the softest sound — like a single exhale.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The tide went out again. — The dry mark beneath the hull did not change. — She did not go to see it — she knew it had not changed — knowing, she would later say, was the other way of seeing the unchanged.</p>
+    <p>Her mother's voice surfaced — the book — it will turn on its own — my dear — the book always knows — this time she did not answer — nor did she withhold the answer — she only regarded the ring — thinking: very well — look after it yourself. — The stove flame flared once. The stick was spent.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some marks need not wait to close.</p>
+    <p class="coda">The age of hush has not ended. It has only, at last, left behind a pale ring that never chose to close — and a grain of salt unhurried to leave.</p>`,
   },
 ]
 

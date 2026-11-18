@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
  * KI-622 · admin「状态图检查站」门钉：
  *   ① admin 页含状态图检查站面板（#panel-stategraph / #sg-graph / sg.h2）；
  *   ② app.js 有 renderStateGraph + 七节点名册，且 renderAll 真的调用它；
- *   ③ ai-director 产物的 graphCheckpoints 恰好七条、全部 ok（真机产物硬断言）；
+ *   ③ ai-director 产物的 graphCheckpoints 恰好八条、全部 ok（真机产物硬断言 · KI-684 起 编辑闸门入图）；
  *   ④ RUN 报告含七个节点名（人读证据齐全）；
  *   ⑤ styles.css 含 .panel-stategraph（样式不掉队）。
  */
@@ -41,10 +41,10 @@ describe('admin · StateGraph 检查站（KI-622）', () => {
     expect(css).toContain('.sg-foot')
   })
 
-  it('ai-director-latest.json：七条 graphCheckpoints 且全部 ok', () => {
+  it('ai-director-latest.json：八条 graphCheckpoints 且全部 ok', () => {
     const art = JSON.parse(read('src/data/authoring/ai-director-latest.json')) as Record<string, any>
     expect(Array.isArray(art.graphCheckpoints)).toBe(true)
-    expect(art.graphCheckpoints.length).toBe(7)
+    expect(art.graphCheckpoints.length).toBe(8)
     for (const c of art.graphCheckpoints) {
       expect(c.ok, `checkpoint ${c.node} 未 ok`).toBe(true)
     }

@@ -68,11 +68,21 @@ describe('KI-620 · AI 导演引擎产物门钉', () => {
     }
     const draft = art.atlasDraft
     expect(draft, 'atlasDraft 必须非空').toBeTruthy()
-    expect(draft.no).toBe(52)
+    expect(draft.no).toBe(53)
     expect(draft.titleZh).toBeTruthy()
     expect(draft.pZh).toBeTruthy()
     expect(draft.pEn).toBeTruthy()
     expect(draft.requiresHumanReview).toBe(true)
+
+    // KI-683 的自然延伸：live 产物必须带「canon 编辑闸门」终审格（verdict + fidelity 双分数）
+    const gate = art.editorialGate
+    expect(gate, 'editorialGate 必须非空').toBeTruthy()
+    if (!gate.skipped) {
+      expect(['pass', 'revise', 'reject']).toContain(gate.verdict)
+      expect(typeof gate.canonFidelity).toBe('number')
+      expect(typeof gate.voiceFidelity).toBe('number')
+      expect(Array.isArray(gate.issues)).toBe(true)
+    }
   })
 
   it('任何产物文件里不得出现密钥形状', () => {

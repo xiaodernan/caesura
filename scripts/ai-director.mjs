@@ -166,7 +166,7 @@ const parseJsonLoose = (raw) => {
 async function nodeLoadWorld(state) { state.world = worldSnapshot() }
 
 async function nodeRetrieveCanon(state) {
-  const focus = FOCUS || '止音纪元 世界现状 五十二篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响'
+  const focus = FOCUS || '止音纪元 世界现状 五十三篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响'
   const t0 = Date.now()
   const corpus = buildWorldCorpus(ROOT)
   const index = buildIndex(corpus)
@@ -197,7 +197,7 @@ async function nodeAudit(state) {
 
 async function nodeProposeTransitions(state) {
   if (state.mode !== 'live') { state.transitions = []; return }
-  const task = '【任务·世界状态流转提案】现状：无耳深窖五环线索、低音之城、五十二篇游记写尽。提出 4 条**可直接落为 quest/flag 的状态流转提案**：{"transitions":[{"fromZh":"起点状态","fromEn":"from-state","toZh":"终点状态","toEn":"to-state","flag":"flag.xxx","narrativeZh":"≤80字叙事后果","narrativeEn":"≤45 words","npcReactionZh":"≤40字 NPC/世界反应","npcReactionEn":"≤25 words","atlasHookZh":"≤30字 可挂进 Atlas 的钩子","atlasHookEn":"≤18 words"}]}。硬约束：flag **必须**以 "flag." 开头、全小写 snake_case（如 flag.paper_bag_salt_line_kept），**不许**加 proposed / new / plan 之类的前缀；flag 名字要像现存 flag 一样直接落库。只许 JSON。'
+  const task = '【任务·世界状态流转提案】现状：无耳深窖五环线索、低音之城、五十三篇游记写尽。提出 4 条**可直接落为 quest/flag 的状态流转提案**：{"transitions":[{"fromZh":"起点状态","fromEn":"from-state","toZh":"终点状态","toEn":"to-state","flag":"flag.xxx","narrativeZh":"≤80字叙事后果","narrativeEn":"≤45 words","npcReactionZh":"≤40字 NPC/世界反应","npcReactionEn":"≤25 words","atlasHookZh":"≤30字 可挂进 Atlas 的钩子","atlasHookEn":"≤18 words"}]}。硬约束：flag **必须**以 "flag." 开头、全小写 snake_case（如 flag.paper_bag_salt_line_kept），**不许**加 proposed / new / plan 之类的前缀；flag 名字要像现存 flag 一样直接落库。只许 JSON。'
   const out = await callDirector(state.env, { stdinPrefix: state.prefix, task: withSnapshot(state, task), temperature: 0.75, maxTokens: 1200 })
   recordUsage(state, 'proposeTransitions', out)
   const parsed = parseJsonLoose(out.text)
@@ -207,12 +207,46 @@ async function nodeProposeTransitions(state) {
 
 async function nodeDraftContent(state) {
   if (state.mode !== 'live') { state.atlasDraft = null; return }
-  const task = '【任务·游记续写草稿】以钟摆渡人/止音纪元的笔法，为下一篇游记产出草稿：{"no":53,"titleZh":"≤10字","titleEn":"≤6 words","pZh":"≤120字正文","pEn":"≤70 words","codaZh":"≤40字尾声","codaEn":"≤25 words","requiresHumanReview":true}。笔法：不喧哗、不抒情、物件说话、留白。只许 JSON。'
+  const task = '【任务·游记续写草稿】以钟摆渡人/止音纪元的笔法，为下一篇游记产出草稿：{"no":54,"titleZh":"≤10字","titleEn":"≤6 words","pZh":"≤120字正文","pEn":"≤70 words","codaZh":"≤40字尾声","codaEn":"≤25 words","requiresHumanReview":true}。笔法：不喧哗、不抒情、物件说话、留白。只许 JSON。'
   const out = await callDirector(state.env, { stdinPrefix: state.prefix, task: withSnapshot(state, task), temperature: 0.9, maxTokens: 800 })
   recordUsage(state, 'draftContent', out)
   const parsed = parseJsonLoose(out.text)
   if (!parsed?.pZh) throw new Error(`draftContent: JSON 解析失败（head=${String(out.text).slice(0, 80)}）`)
   state.atlasDraft = { ...parsed, requiresHumanReview: true }
+}
+
+/**
+ * 编辑闸门（live-only · KI-683 的自然延伸）：让模型对自己的草稿做终审再签字。
+ * 目的：把「LLM 只产出一稿」升级为「LLM 起草 → LLM 终审（canon fidelity / voice fidelity / verdict）
+ * → 必要时就地改写」。verdict=pass 原样放行；revise 且模型给了 revisedP* 时就地改写（原稿标注 editorialGateRevised）；
+ * reject 时原稿保留但打 `editorialGateRejected` 大旗，人工闸最终裁决。
+ * canon 事实（人物/物件/地名：回廊钟·阿汐·薄簿·钟摆渡人·盐·干痕·余响集）逐字校验模型输出，绝不静默信任。
+ */
+async function nodeEditorialGate(state) {
+  if (state.mode !== 'live') { state.editorialGate = null; return }
+  if (!state.atlasDraft) { state.editorialGate = { skipped: true, reason: 'no draft (draftContent failed? see errors)' }; return }
+  const d = state.atlasDraft
+  const task = `【任务·canon 编辑闸门】你是《止音纪元》终审编辑。基于上面的 canon 证据对这份游记草稿做终审：{"canonFidelity":0-100整数,"voiceFidelity":0-100整数,"verdict":"pass|revise|reject","issues":["≤20字问题"],"revisedPZh":"verdict=pass 时为 null；否则给出修订后的≤140字正文","revisedPEn":"verdict=pass 时为 null；否则给出修订后的≤80 words 正文"}。硬约束：①不得引入新人物/新物件；②canon 名词原样保留（回廊钟/阿汐/薄簿/钟摆渡人/盐/干痕/余响集/止音纪元）；③verdict 只许 pass|revise|reject；④只许 JSON。草稿：${JSON.stringify({ titleZh: d.titleZh, titleEn: d.titleEn, pZh: d.pZh, pEn: d.pEn, codaZh: d.codaZh, codaEn: d.codaEn })}`
+  const out = await callDirector(state.env, { stdinPrefix: state.prefix, task: withSnapshot(state, task), temperature: 0.2, maxTokens: 1100 })
+  recordUsage(state, 'editorialGate', out)
+  const parsed = parseJsonLoose(out.text)
+  if (!parsed) throw new Error(`editorialGate: JSON 解析失败（head=${String(out.text).slice(0, 80)}）`)
+  const clamp = (v) => Math.max(0, Math.min(100, Number(v) || 0))
+  const verdict = ['pass', 'revise', 'reject'].includes(parsed.verdict) ? parsed.verdict : 'revise'
+  state.editorialGate = {
+    canonFidelity: clamp(parsed.canonFidelity),
+    voiceFidelity: clamp(parsed.voiceFidelity),
+    verdict,
+    issues: Array.isArray(parsed.issues) ? parsed.issues.map((x) => String(x)).slice(0, 6) : [],
+    revised: false,
+    at: NOW_ISO,
+  }
+  if (verdict === 'revise' && typeof parsed.revisedPZh === 'string' && parsed.revisedPZh.trim() && typeof parsed.revisedPEn === 'string' && parsed.revisedPEn.trim()) {
+    state.atlasDraft = { ...state.atlasDraft, pZh: parsed.revisedPZh.trim(), pEn: parsed.revisedPEn.trim(), editorialGateRevised: true }
+    state.editorialGate.revised = true
+  } else if (verdict === 'reject') {
+    state.atlasDraft = { ...state.atlasDraft, editorialGateRejected: true }
+  }
 }
 
 function buildArtifacts(state) {
@@ -234,6 +268,7 @@ function buildArtifacts(state) {
     audit: state.audit ?? null,
     transitions: state.transitions ?? [],
     atlasDraft: state.atlasDraft ?? null,
+    editorialGate: state.editorialGate ?? null,
     usage: state.usage,
     graphCheckpoints: state.graphCheckpoints ?? [],
     errors: state.errors,
@@ -270,6 +305,9 @@ function writeArtifacts(state) {
     '## 下一篇游记 · 草稿（人工闸 · 不落库）',
     art.atlasDraft ? '```json\n' + JSON.stringify(art.atlasDraft, null, 2) + '\n```' : '_（offline 未真跑）_',
     '',
+    '## canon 编辑闸门（LLM 终审：canonFidelity / voiceFidelity / verdict / 是否就地改写）',
+    art.editorialGate ? '```json\n' + JSON.stringify(art.editorialGate, null, 2) + '\n```' : '_（offline 未真跑）_',
+    '',
     '## 图检查点（StateGraph checkpoints）',
     ...art.graphCheckpoints.map((c) => `- ${c.ok ? '✓' : '✗'} ${c.node} · ${c.ms}ms`),
     '',
@@ -291,7 +329,7 @@ function writeArtifacts(state) {
 async function main() {
   const state = {
     mode: MODE, errors: [], usage: { calls: 0, cachedTokens: 0, promptTokens: 0, statuses: [], hitRates: [], perCall: [] },
-    world: null, canon: [], audit: null, transitions: [], atlasDraft: null, env: null, prefix: '',
+    world: null, canon: [], audit: null, transitions: [], atlasDraft: null, editorialGate: null, env: null, prefix: '',
   }
   const graph = new StateGraph()
   graph
@@ -333,6 +371,7 @@ async function main() {
     .addNode('audit', nodeAudit)
     .addNode('proposeTransitions', nodeProposeTransitions)
     .addNode('draftContent', nodeDraftContent)
+    .addNode('editorialGate', nodeEditorialGate)
     .addNode('writeArtifacts', (s) => {
       s.graphCheckpoints = graph.checkpoints.map((c) => ({ ...c }))
       writeArtifacts(s)
@@ -342,7 +381,8 @@ async function main() {
     .addEdge('warmup', 'audit')
     .addEdge('audit', 'proposeTransitions')
     .addEdge('proposeTransitions', 'draftContent')
-    .addEdge('draftContent', 'writeArtifacts')
+    .addEdge('draftContent', 'editorialGate')
+    .addEdge('editorialGate', 'writeArtifacts')
   // 条件边演示：audit 失败（例如 live 解析失败）仍继续后续节点，产物如实登记
   await graph.run('loadWorld', state)
   // 二次落盘：graph.run 返回后 checkpoints 是完整七节点（writeArtifacts 自身的那一条也有了），
