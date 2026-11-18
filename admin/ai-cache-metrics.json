@@ -947,6 +947,64 @@
           "attempts": 1
         }
       ]
+    },
+    {
+      "at": "2026-11-18T13:09:56.311Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第六十六篇《火自己知道》之后 · 下一篇原创短篇",
+      "calls": 5,
+      "cachedTokens": 343007,
+      "promptTokens": 453803,
+      "meanHitRate": 75.52,
+      "steadyStateHitRate": 93.2,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 200,
+          "dt": 5955,
+          "prompt": 90240,
+          "cached": 4297,
+          "hitRate": 4.8,
+          "attempts": 1
+        },
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 6932,
+          "prompt": 90798,
+          "cached": 84679,
+          "hitRate": 93.3,
+          "attempts": 1
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 7623,
+          "prompt": 90901,
+          "cached": 84677,
+          "hitRate": 93.2,
+          "attempts": 1
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 5249,
+          "prompt": 90783,
+          "cached": 84679,
+          "hitRate": 93.3,
+          "attempts": 1
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 5726,
+          "prompt": 91081,
+          "cached": 84675,
+          "hitRate": 93,
+          "attempts": 1
+        }
+      ]
     }
   ]
 }

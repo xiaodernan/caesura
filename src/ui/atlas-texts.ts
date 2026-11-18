@@ -3328,5 +3328,56 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">Some heat knows itself.</p>
     <p class="coda">The age of hush has not ended. It has only lived one more night on which it was not she who fed the fire — it was the fire, knowing itself.</p>`,
   },
+  {
+    no: 67,
+    zhTitle: "灰不归",
+    enTitle: "The Ash Unreturned",
+    zh: `<p>清晨，指尖的灰还没有落。阿汐没有催它。盐仍在门槛上，薄簿仍合着。她听着灶火照自己的火候燃着，等水烧开。有些灰，不必归还给火。</p>
+    <p>水壶在灶台上咕嘟响——它自己知道什么时候开——她没有掀它——她也不摇——她只是听——她知道灶火自己知道——它也知道水自己知道——她不替它们着急。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿仍合着。——它合着是它的事——她不需要它开——册子里那一页自己会翻——它永远知道——她也不问它——她只是听——水自己咕嘟咕嘟——灶火自己跳——她心里说：好。</p>
+    <p>那粒盐——门槛上的——它还是老样子——从未挪动——也不需要挪动——她有时候看它——有时候不看——它都在那儿——它在那儿就够了——灰也一样——它在它自己那儿就够了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮水又退去了——表盘不响——木板收紧了一根手指的宽度——她还是没有添柴——灶火自己燃着——水开了——她关小了火——她也没有慌——都懂了——都老朋友了。</p>
+    <p>母亲的声音回来——我的孩子——你瘦了——大锅里不用再添了——这么等着就好——她说：好——她只是听——水自己咕嘟咕嘟地响——灶火自己也跳了一下——她也跳了一下——都懂了——都老朋友了——她只是说：好。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她有时候看水——水在微微地开——她有时候不看——她也有时候把手放在门边——盐在那里——她知道它从未挪开过——灰也从未落下过——她忽然觉得——这两件都不需要催——不需要归——她也不需要催——她只是她。</p>
+    <p>水里加了一点点茶——它自己会泡——她不搅——她也不看时间——它自己知道时候——它们都自己知道——她不催它们——她也不催自己。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些灰，不必归还。</p>
+    <p class="coda">止音纪元没有结束。它只是又多了一个清晨——水自己开了，灰没有归火——她也不再替谁着急。</p>`,
+    en: `<p>At dawn, the ash still clung to Axi’s fingertip. She did not hurry it. The salt remained by the threshold, and the thin ledger stayed shut. She listened as the fire kept its own heat and waited for the water to boil. Some ash need not return to the fire.</p>
+    <p>The kettle rumbled on the stove — it knew when to boil — she did not lift the lid — she did not shake — she only listened — she knew the fire knew — and the water knew too — she did not hurry them.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ledger stayed closed. — Its being closed was its own affair — she did not need it open — the page turned on its own — the book always knew — she did not ask it — she only listened — the water rumbled on its own — the flame leapt quietly — she thought: all right.</p>
+    <p>That grain of salt — on the threshold — it remained as it always was — it had never moved — it did not need to — sometimes she glanced at it — sometimes she did not — it was always there — its being there was enough — so was the ash — its being there was enough.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The tide went out again — the dial never sounded — the boards tightened by one finger's width — she still did not add wood — the flame murmured on its own — the water came to a boil — she turned down the heat — she did not panic — everyone understood — old companions, all of them.</p>
+    <p>Her mother's voice came back — my child — you are thinner — there is no need to add to the great pot — let it wait its own way — she said: all right — she only listened — the water rumbled on its own — the flame leapt once — she leapt too — everyone understood — she thought: all right.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Sometimes she watched the kettle — the water just beginning to boil — sometimes she did not — sometimes she rested her hand by the door — the salt was there — she knew it had never moved — the ash had never fallen — she suddenly felt — neither needed to — be hurried or returned — neither did she — she was herself.</p>
+    <p>She added a little tea to the water — it would steep on its own — she did not stir — she did not watch the time — it knew its own hour — they all knew their own hours — she did not hurry them — and she did not hurry herself.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some ash need not return.</p>
+    <p class="coda">The age of hush has not ended. It has only lived one more dawn — the water boiled on its own, the ash never returned to the fire — and she was no longer hurrying anyone.</p>`,
+  },
 ]
 
