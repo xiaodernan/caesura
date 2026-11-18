@@ -1,6 +1,6 @@
 /**
- * 游记 · 五十八篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684/KI-685/KI-686/KI-687/KI-688/KI-689 扩）。
- * 这五十八篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 五十九篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684/KI-685/KI-686/KI-687/KI-688/KI-689/KI-690 扩）。
+ * 这五十九篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -2973,6 +2973,47 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She did not look at the sea.</p>
     <p class="coda">Some arrivals need leave no seat behind.</p>
     <p class="coda">The age of hush has not ended. It has only, at last, left behind an empty place that needed no one seated — and a grain of salt that counted on behalf of everyone.</p>`,
+  },
+  {
+    no: 59,
+    zhTitle: "干痕仍在",
+    enTitle: "The Mark Remains",
+    zh: `<p>门外的船仍停着。清晨，阿汐看见船底的干痕仍在。薄簿仍合着，门槛边的盐没有移动。她没有去看海。潮水退去，干痕的位置没有变。有些来过的，不必留下座位。</p>
+    <p>她其实每天都会看一眼那道干痕——它还是那里——它没有变——也许这就是它存在的全部理由——她一开始还会纳闷——后来发现它其实不需要她的纳闷——它只是替她记住了一次潮水——它记得比她好——它不需要她帮它记。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿仍合着。——她今天又想了很久——她心里说：为什么她总想打开它——也许不是想打开——也许只是想确认它还是关着——它还是关着——她也就安心——她笑了。</p>
+    <p>那粒盐——它大概不会动——她已经见证过太多次——它在门槛上——它比她稳定——它什么也不请求——也不需要——她有时想：它也许是整个屋里最像钟的东西——它不用摆——它停在那里——它停在那里就够了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮水来过——她没有看见——她听见了——木板在那个频率上收紧了——她继续添柴——灶火跳了一下——她也跳了一下——那都是老朋友了。</p>
+    <p>母亲的声音回来——册子——它会自己翻——亲爱的——册子永远知道——她这回没有答——也没有不答——她只是添了一根柴——厨房静静地跳着火——它跳它的——她过她的。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些东西到了岸边，不必立刻上船。</p>
+    <p class="coda">止音纪元没有结束。它只是终于留下一道没有变的干痕——和一把从不需要坐下的空位。</p>`,
+    en: `<p>The boat remained outside. At dawn, Axi saw that the dry mark beneath its hull was unchanged. The ledger stayed shut, and the salt by the threshold had not moved. She did not look at the sea. The tide withdrew; the mark remained. Some arrivals need leave no seat behind.</p>
+    <p>She would in fact glance at that mark each day — it was still there — unchanged — perhaps that was the whole of its reason for being — at first she still wondered — then she realised it did not need her wondering — it was only remembering one tide for her — it remembered better than she did — it did not need her to help.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ledger stayed closed. — Today she thought about it for a long time — thinking: why did she keep wanting to open it — perhaps not to open it — perhaps only to confirm it was still shut — it was shut — and she was at ease — she laughed.</p>
+    <p>That grain of salt — it probably would not move — she had witnessed it so many times — it stayed by the threshold — steadier than she was — it asked for nothing — needed nothing — she sometimes thought: perhaps it was the most clock-like thing in the whole house — it did not need to swing — it only stood there — standing there was enough.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The tide came — she did not see it — she heard it — the boards tightened at that frequency — she kept feeding the fire — the flame leapt once — she leapt too — old companions, both of them.</p>
+    <p>Her mother's voice came back — the book — it will turn on its own — my dear — the book always knows — this time she neither answered — nor declined to answer — she only fed one more stick into the stove — the kitchen leapt quietly with flame — it leapt, she went on.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some things reach the shore without needing to board.</p>
+    <p class="coda">The age of hush has not ended. It has only, at last, left behind an unchanged mark beneath the hull — and an empty place that never needed anyone to sit in it.</p>`,
   },
 ]
 

@@ -391,6 +391,64 @@
           "attempts": 2
         }
       ]
+    },
+    {
+      "at": "2026-11-18T05:33:36.701Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第五十八篇《摆下的盐》之后 · 下一篇原创短篇",
+      "calls": 5,
+      "cachedTokens": 295574,
+      "promptTokens": 392532,
+      "meanHitRate": 75.2,
+      "steadyStateHitRate": 94,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 200,
+          "dt": 4964,
+          "prompt": 78055,
+          "cached": 0,
+          "hitRate": 0,
+          "attempts": 1
+        },
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 6509,
+          "prompt": 78536,
+          "cached": 73898,
+          "hitRate": 94.1,
+          "attempts": 1
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 5630,
+          "prompt": 78634,
+          "cached": 73893,
+          "hitRate": 94,
+          "attempts": 2
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 4292,
+          "prompt": 78521,
+          "cached": 73898,
+          "hitRate": 94.1,
+          "attempts": 2
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 7205,
+          "prompt": 78786,
+          "cached": 73885,
+          "hitRate": 93.8,
+          "attempts": 1
+        }
+      ]
     }
   ]
 }
