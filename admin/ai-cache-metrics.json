@@ -449,6 +449,64 @@
           "attempts": 1
         }
       ]
+    },
+    {
+      "at": "2026-11-18T06:07:03.542Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第五十九篇《干痕仍在》之后 · 下一篇原创短篇",
+      "calls": 5,
+      "cachedTokens": 315361,
+      "promptTokens": 417103,
+      "meanHitRate": 75.52,
+      "steadyStateHitRate": 93.2,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 200,
+          "dt": 4896,
+          "prompt": 82937,
+          "cached": 3949,
+          "hitRate": 4.8,
+          "attempts": 1
+        },
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 9740,
+          "prompt": 83447,
+          "cached": 77854,
+          "hitRate": 93.3,
+          "attempts": 1
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 7219,
+          "prompt": 83550,
+          "cached": 77853,
+          "hitRate": 93.2,
+          "attempts": 1
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 7988,
+          "prompt": 83431,
+          "cached": 77854,
+          "hitRate": 93.3,
+          "attempts": 1
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 10763,
+          "prompt": 83738,
+          "cached": 77851,
+          "hitRate": 93,
+          "attempts": 1
+        }
+      ]
     }
   ]
 }

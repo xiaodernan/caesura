@@ -1,6 +1,6 @@
 /**
- * 游记 · 五十九篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684/KI-685/KI-686/KI-687/KI-688/KI-689/KI-690 扩）。
- * 这五十九篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 六十篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684/KI-685/KI-686/KI-687/KI-688/KI-689/KI-690/KI-691 扩）。
+ * 这六十篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -3014,6 +3014,47 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She did not look at the sea.</p>
     <p class="coda">Some things reach the shore without needing to board.</p>
     <p class="coda">The age of hush has not ended. It has only, at last, left behind an unchanged mark beneath the hull — and an empty place that never needed anyone to sit in it.</p>`,
+  },
+  {
+    no: 60,
+    zhTitle: "潮退添柴",
+    enTitle: "At Ebb, One Stick",
+    zh: `<p>潮水退去，船底的干痕仍在。阿汐添了一根柴。薄簿仍合着，门槛边的盐没有移动。她没有去看海。火起来的时候她听见它跳了一下——像谁在敲一扇没开的门。</p>
+    <p>灶火跳起来的时候——她刚好抬头——她看见它跳了一下——那火苗好像在说——她心里想——要继续——继续烧下去——灶火又跳了一下——她让火跳着——她也静着——谁都不用解释——灶火跳它的——她过她的。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿仍合着。——它合着就是它的事——她添柴也是她的事——她不是不想打开——她只是没有打开的理由——她也不需要理由——合着是上好的状态——她偶尔笑——对火笑——对自己笑——火没有回她——她没生气。</p>
+    <p>那粒盐——它每天在门槛上——它不动——她也不动——她偶尔觉得它在替谁等什么——她偶尔又觉得它什么也不等——它只是在那儿——它停在那儿就够了——她也在她停的地方停着。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮水退了——退到它该退到的位置——她没去看——她听见木板收了一根手指的宽度——她已经分辨得出它在哪一道夹——她继续添柴——灶火跳了一下——她也跳了一下——她都懂。</p>
+    <p>母亲的声音没有回来——这回是她自己先问——她心里说：好——灶火跳了一下——她把那一棍柴添了进去——火着了一会儿。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些痕迹，留在灰里就够了。</p>
+    <p class="coda">止音纪元没有结束。它只是终于留下一道没有变的干痕——和一个添了一根又一根柴的灶火。</p>`,
+    en: `<p>The tide withdrew; the dry mark beneath the hull remained. Axi fed one stick into the stove. The thin ledger stayed shut, and the salt by the threshold had not moved. She did not look at the sea.</p>
+    <p>When the fire leapt — she happened to look up — she saw it leap once — as if the flame were saying — she thought — keep on — keep burning — the flame leapt again — she let it leap — she stayed quiet too — no one needed to explain — the flame leapt, she went on.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ledger stayed closed. — Its being closed was its own affair — her feeding the fire was hers — she did not avoid opening it — she simply had no reason to — and needed no reason — closed was a fine state to be in — she sometimes laughed — at the fire — at herself — the fire never answered — she was not cross.</p>
+    <p>That grain of salt — it stayed by the threshold each day — it did not move — she did not either — she sometimes felt it was waiting for someone — sometimes she felt it waited for nothing — it was only there — being there was enough — she, too, stayed where she stayed.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The tide went out — out to where it always went — she did not go and see — she heard the boards tighten by one finger's width — she already knew which clamp it was on — she kept feeding the fire — the flame leapt once — she leapt too — she understood.</p>
+    <p>Her mother's voice did not come back — this time she asked first — she thought: all right — the flame leapt once — she fed that stick in — the fire burnt for a while.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some marks are enough left in ash.</p>
+    <p class="coda">The age of hush has not ended. It has only, at last, left behind an unchanged mark beneath the hull — and a stove that kept being fed, one stick at a time.</p>`,
   },
 ]
 
