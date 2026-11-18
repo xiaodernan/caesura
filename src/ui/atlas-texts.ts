@@ -3685,5 +3685,56 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">Some questions need no answer.</p>
     <p class="coda">The age of hush has not ended. It has only lived one more dusk — the salt still stood by the threshold, the book turned another page on its own, and she was well — the unanswered question still stood there, faintly — it, too, needs no answer.</p>`,
   },
+  {
+    no: 74,
+    zhTitle: "夜开的一线",
+    enTitle: "One Line in the Night",
+    zh: `<p>傍晚，阿汐把手从门槛上移开。盐还在，薄簿合着，页角轻轻抬起，又落回原处。她带着那个不需要答案的问题坐下。夜里，门仍留着一线。清晨，门外的干痕还在。</p>
+    <p>水自己开了——水在灶上咕嘟咕嘟地响——它自己知道时候——她不动它——她不添柴——她只是听——门留着一线——她不关——她也不全开——她留着它——她让它陪了它一夜——它自己知道清晨会来。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿仍合着。——它合着是它的事——她不需要它开——册子里那一页自己会翻——它永远知道——她也不问它——她只是听——风从门缝吹进来——它更凉一些——她不挡它——她不让它关——它自己知道。</p>
+    <p>那粒盐——门槛上的——它还是老样子——从未挪动——也不需要挪动——她有时候看它——有时候不看——它都在那儿——它在那儿就够了——一线门缝——她有时候看它——有时候不看——它也在那儿就够了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮水又退去了——表盘不响——木板收紧了一根手指的宽度——她还是没有去看海——她只是坐在灶旁——亮了又亮——暗了又暗——白天也很慢——册子又翻了一页——她笑一下——都懂了——都老朋友了。</p>
+    <p>母亲的声音回来——我的孩子——你瘦了——别把那间留给谁——那一线留着就好了——她说：好——她只是听——风自己从门缝吹进来——它一会凉一会不太凉——她不拦它——母亲的话也淡了——她也不数它。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她有时候看门——盐在那里——她知道它从未挪开过——灰也淡了一层——簿自己翻了一页——她忽然觉得——这三件都不需要——任何笔触——不需要记——不需要填——不需要补——她也不需要催——她只是她。</p>
+    <p>她把手放在门槛上——它不动了——它自己在那儿——它也安静——它不觉得它需要一线什么——它也不闹——它只是它——它们都是——连门也不催——我也不催。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些门，留着一线就够了。</p>
+    <p class="coda">止音纪元没有结束。它只是又多了一个夜——门留着一线，盐立在门槛，册子自己翻到下一页——她也很好——她也安静——她也留了一线在那儿。</p>`,
+    en: `<p>At dusk, Axi drew her hand from the threshold. The salt remained; the thin ledger stayed shut. Its corner lifted, then settled. She sat with the question that needed no answer. Through the night, the door kept a narrow opening. By morning, the dry mark outside remained.</p>
+    <p>The water came to a boil on its own — it rumbled in the pot — it knew its own hour — she did not touch it — she did not add wood — she only listened — the door kept its seam — she did not shut it — she did not fully open it — she kept it — it kept her — it knew the morning would come.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ledger stayed closed. — Its being closed was its own affair — she did not need it open — the page turned on its own — the book always knew — she did not ask it — she only listened — the wind came through the seam of the door — it was cooler — she did not hold it against it — she did not shut it — it knew.</p>
+    <p>That grain of salt — on the threshold — it remained as it always was — it had never moved — it did not need to — sometimes she glanced at it — sometimes she did not — it was always there — its being there was enough — the narrow seam — sometimes she glanced at it — sometimes she did not — it was also enough.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The tide went out again — the dial never sounded — the boards tightened by one finger's width — she still did not look toward the sea — she only sat by the stove — bright, dim, bright — slow, slow — the book turned another page on its own — she smiled once — everyone understood — old companions, all of them.</p>
+    <p>Her mother's voice came back — my child — you are thinner — the seam can stay — let it stay there — she said: all right — she only listened — the wind came in on its own — sometimes it was not too cold — sometimes it was cool — she did not stop it — her mother's words, too, grew fainter — she did not count them either.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Sometimes she watched the door — the salt was there — she knew it had never moved — the ash had faded by a shade — the page turned on its own — she suddenly felt — none of them needed — any stroke — not filled — not remembered — not re-inked — neither did she — she was herself.</p>
+    <p>She rested her hand on the threshold — it did not move — it stayed there on its own — it stayed quietly — it did not need any seam — it never clamored — it simply stayed — they all simply stayed — even the door did not hurry — and she did not hurry either.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some doors need only a seam.</p>
+    <p class="coda">The age of hush has not ended. It has only lived one more night — the door stayed at one seam, the salt still stood by the threshold, the book turned one more page on its own — and she was well too — and quiet too — and she, too, left her own seam there.</p>`,
+  },
 ]
 
