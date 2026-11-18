@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "542696a7cd1a39aec4583f6f13ad63f6b575f7b5",
+  "head": "35601412dddb867c35f439b586926bb806de6618",
   "branch": "master",
-  "subject": "feat(story): KI-704《余响集》第七十三篇《未答之问 / The Unanswered Question》落地（LLM 起草 → LLM 终审 → 人工闸）",
-  "date": "2026-11-19T00:38:05+08:00",
+  "subject": "site-latest: 542696a (post-rebase reconcile)",
+  "date": "2026-11-19T00:39:01+08:00",
   "kv": {
     "KI.rows": 622,
     "KI.Implemented": 445,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/542696a7cd1a39aec4583f6f13ad63f6b575f7b5",
+    "url": "https://github.com/xiaodernan/caesura/commit/35601412dddb867c35f439b586926bb806de6618",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
