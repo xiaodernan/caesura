@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "e1b94dcf2c8eb3a9aede1e8ae7e325b518e3def5",
+  "head": "02e14eb338dfe187dc61cbee98c02cbb88a1033a",
   "branch": "master",
-  "subject": "site-latest: 8f75b1a (post-rebase reconcile)",
-  "date": "2026-11-18T07:56:59+08:00",
+  "subject": "feat(story): KI-680《余响集》第四十九篇《船上的空处 / The Place Aboard》落地（LLM 真机草稿 → 人工闸落库）",
+  "date": "2026-11-18T08:17:16+08:00",
   "kv": {
-    "KI.rows": 597,
-    "KI.Implemented": 420,
+    "KI.rows": 598,
+    "KI.Implemented": 421,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/e1b94dcf2c8eb3a9aede1e8ae7e325b518e3def5",
+    "url": "https://github.com/xiaodernan/caesura/commit/02e14eb338dfe187dc61cbee98c02cbb88a1033a",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
