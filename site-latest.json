@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "79fb891be58802dcb6e8f32666f76e2930ffa1f6",
+  "head": "e4be9155a36b9b1d523bd92fa6729a0da72acd98",
   "branch": "master",
-  "subject": "feat(story): KI-700《余响集》第六十九篇《未添的一笔 / The Unentered Stroke》落地（LLM 起草 → LLM 终审 → 人工闸）",
-  "date": "2026-11-18T22:17:32+08:00",
+  "subject": "site-latest: 79fb891 (post-rebase reconcile)",
+  "date": "2026-11-18T22:18:13+08:00",
   "kv": {
     "KI.rows": 618,
     "KI.Implemented": 441,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/79fb891be58802dcb6e8f32666f76e2930ffa1f6",
+    "url": "https://github.com/xiaodernan/caesura/commit/e4be9155a36b9b1d523bd92fa6729a0da72acd98",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
