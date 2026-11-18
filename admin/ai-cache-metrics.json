@@ -1295,6 +1295,64 @@
           "attempts": 1
         }
       ]
+    },
+    {
+      "at": "2026-11-18T16:18:56.055Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第七十二篇《薄簿合着》之后 · 下一篇原创短篇",
+      "calls": 5,
+      "cachedTokens": 372702,
+      "promptTokens": 493256,
+      "meanHitRate": 75.44,
+      "steadyStateHitRate": 93.1,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 200,
+          "dt": 7465,
+          "prompt": 98099,
+          "cached": 4671,
+          "hitRate": 4.8,
+          "attempts": 1
+        },
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 9908,
+          "prompt": 98693,
+          "cached": 92009,
+          "hitRate": 93.2,
+          "attempts": 1
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 7074,
+          "prompt": 98796,
+          "cached": 92008,
+          "hitRate": 93.1,
+          "attempts": 1
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 9183,
+          "prompt": 98677,
+          "cached": 92009,
+          "hitRate": 93.2,
+          "attempts": 1
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 8109,
+          "prompt": 98991,
+          "cached": 92005,
+          "hitRate": 92.9,
+          "attempts": 1
+        }
+      ]
     }
   ]
 }

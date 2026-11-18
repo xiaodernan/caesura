@@ -3634,5 +3634,56 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">Some pages remain, even closed.</p>
     <p class="coda">The age of hush has not ended. It has only lived one more dusk — the salt still stood beside the threshold, the book lay shut, its corner turning now and then — and she, too, was at rest — shut, too, and she, too, was there.</p>`,
   },
+  {
+    no: 73,
+    zhTitle: "未答之问",
+    enTitle: "The Unanswered Question",
+    zh: `<p>摆停在最低处，摆旁的空位仍无人坐。阿汐没有翻开薄簿。门外的船停着，潮水退去，船底的干痕仍在。她没有去看海，也没有数盐。</p>
+    <p>水自己开了——水在灶上咕嘟咕嘟地响——它自己知道时候——她不动它——她不添柴——她只是听——门外的船还是停着——它自己知道什么时候走——她不催——她也不问它什么时候走——它自己知道时刻——它自己知道时候。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿仍合着。——它合着是它的事——她不需要它开——册子里那一页自己会翻——它永远知道——她也不问它——她只是听——风从门外吹进来——它没有吹进册子——册子自己知道风的方向。</p>
+    <p>那粒盐——门槛上的——它还是老样子——从未挪动——也不需要挪动——她有时候看它——有时候不看——它都在那儿——它在那儿就够了——灰淡淡的——它也淡了——都自己待着——她也自己待着。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮水又退去了——表盘不响——木板收紧了一根手指的宽度——她还是没有去看海——她只是坐在灶旁——亮了又暗——暗了又亮——册子自己翻过了一页——她笑一下——都懂了——都老朋友了。</p>
+    <p>母亲的声音回来——我的孩子——你瘦了——不必再为这样一件事计划好——活着就可以了——她说：好——她只是听——船底的干痕偶尔露出来一下——它又被潮水盖回去——她不数它——它不数她——都懂了——都老朋友了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她有时候看门——盐在那里——她知道它从未挪开过——灰也淡了一层——簿自己翻了一页——她忽然觉得——这三件都不需要——任何笔触——不需要记——不需要填——不需要补——她也不需要催——她只是她。</p>
+    <p>她有一个问题——她从小就带着它——它也一直没有得到答案——它也不需要答案——她也不追问——它只是问——它也只是问——它只是自己淡淡地问着自己——她把手放在门槛上——盐也在那里——她也很好。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些问题，不必回答。</p>
+    <p class="coda">止音纪元没有结束。它只是又多了一个傍晚——盐还立在门槛，册子自己翻过去一页，她也很好——那个没回答的问题，依然淡淡地立在那里——它也不需要回答。</p>`,
+    en: `<p>The pendulum rested at its lowest point, and the place beside it remained empty. Axi did not open the thin ledger. The boat stayed outside. At ebb, the dry mark beneath its hull remained. She did not look toward the sea or count the salt.</p>
+    <p>The water came to a boil on its own — it rumbled in the pot — it knew its own hour — she did not touch it — she did not add wood — she only listened — the boat stayed outside — it would depart when it knew to — she did not hurry it — she had not asked what time it would leave — it knew its own hour — it knew its own time.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ledger stayed closed. — Its being closed was its own affair — she did not need it open — the page turned on its own — the book always knew — she did not ask it — she only listened — the wind came in from the door — it did not enter the book — the book knew the direction of the wind.</p>
+    <p>That grain of salt — on the threshold — it remained as it always was — it had never moved — it did not need to — sometimes she glanced at it — sometimes she did not — it was always there — its being there was enough — the ash, too, was fading — it was also fading — everything simply stayed — she stayed too.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The tide went out again — the dial never sounded — the boards tightened by one finger's width — she still did not look toward the sea — she only sat by the stove — bright then dim — dim then bright — the book turned one more page on its own — she smiled once — everyone understood — old companions, all of them.</p>
+    <p>Her mother's voice came back — my child — you are thinner — there is no need to plan for this anymore — living is enough — she said: all right — she only listened — the dry mark beneath the hull would show itself once in a while — then the tide would come cover it again — she did not count it — it did not count her — everyone understood — old companions, all of them.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Sometimes she watched the door — the salt was there — she knew it had never moved — the ash had faded by a shade — the page turned on its own — she suddenly felt — none of these needed — any stroke — not filled — not remembered — not re-inked — neither did she — she was herself.</p>
+    <p>She had a question — she had carried it since childhood — it had never answered itself either — it did not need an answer — she did not chase it — it only asked — and she only asked — it merely asked itself, quietly, in its own way — she rested her hand on the threshold — the salt was there — and she was well too.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some questions need no answer.</p>
+    <p class="coda">The age of hush has not ended. It has only lived one more dusk — the salt still stood by the threshold, the book turned another page on its own, and she was well — the unanswered question still stood there, faintly — it, too, needs no answer.</p>`,
+  },
 ]
 
