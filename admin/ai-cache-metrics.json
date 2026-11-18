@@ -739,6 +739,64 @@
           "attempts": 1
         }
       ]
+    },
+    {
+      "at": "2026-11-18T12:13:11.359Z",
+      "mode": "live",
+      "model": "gpt-6.1-terra",
+      "focus": "第六十四篇《干痕未进》之后 · 下一篇原创短篇",
+      "calls": 5,
+      "cachedTokens": 334305,
+      "promptTokens": 442379,
+      "meanHitRate": 75.46,
+      "steadyStateHitRate": 93.13,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 200,
+          "dt": 6513,
+          "prompt": 87965,
+          "cached": 4188,
+          "hitRate": 4.8,
+          "attempts": 1
+        },
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 7947,
+          "prompt": 88511,
+          "cached": 82530,
+          "hitRate": 93.2,
+          "attempts": 1
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 9375,
+          "prompt": 88614,
+          "cached": 82529,
+          "hitRate": 93.1,
+          "attempts": 1
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 7622,
+          "prompt": 88496,
+          "cached": 82531,
+          "hitRate": 93.3,
+          "attempts": 1
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 6808,
+          "prompt": 88793,
+          "cached": 82527,
+          "hitRate": 92.9,
+          "attempts": 1
+        }
+      ]
     }
   ]
 }
