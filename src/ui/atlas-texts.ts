@@ -1,6 +1,6 @@
 /**
- * 游记 · 四十八篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679 扩）。
- * 这四十八篇都是《止音纪元》世界谱同源的 original short fiction，
+ * 游记 · 四十九篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680 扩）。
+ * 这四十九篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
  * 静态字符串 · 不经 Lang 字典 · 与 PLAYER_ATLAS 同技 · 零 LLM · 零网络。
@@ -2563,6 +2563,47 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She did not look at the sea.</p>
     <p class="coda">Some boats stay without waiting to be asked.</p>
     <p class="coda">The age of hush has not ended. It has only, at last, left behind a boat that was never asked — and a ledger that was only ever closed.</p>`,
+  },
+  {
+    no: 49,
+    zhTitle: "船上的空处",
+    enTitle: "The Place Aboard",
+    zh: `<p>船仍停在门外。天亮时，船舱里多了一处干痕，形状刚好容下一粒盐。阿汐没有把盐放进去。潮来时，干痕还在。</p>
+    <p>她看见它是在打水回来的路上——她只是把目光放得很低——怕它会以为她在探它——她没有停下来——也没有走近——她只是把那个位置记住了——然后像往常一样走回了屋。她的脚步没有快——也没有慢——她现在已经知道太快和太慢都是一种问法。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿仍合着。她有一次几乎伸手去翻它——手伸到一半——停住了——她只是想知道空处的形状——她坐在手边——手放回到膝上——薄页没动。她没有告诉任何人——她也没有打算告诉。</p>
+    <p>那粒盐——它到底去了哪里——她早已不再追问——她只是记得门槛上少的是一粒——而这只船里多出的一处刚好。她没有想太多。——她只是在烧水的时候——把手停在旧门槛的位置——然后放开——她只是停了一瞬——没有任何仪式。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮来了。——干痕还在。——她看着海——海没有回应——她也不期待回应。——母亲说过：册子——它会自己翻——亲爱的——册子永远知道——她想：大概空处也是——它们自己知道——等或不等——它们都不急。</p>
+    <p>她没有把盐放进去。——不是不敢——不是舍不得——是她知道放进去——它就成为了一个答案——而她今天——是不想要答案的那一天。——她只是在那里坐着——坐在一个没有问号的上午——直到光从窗台挪开了一寸。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些空处，不等东西来填。</p>
+    <p class="coda">止音纪元没有结束。它只是终于留下一处容得下一粒盐的干痕——和一个仍然留在门外的答案。</p>`,
+    en: `<p>The boat remained outside. At dawn, a dry mark lay inside its hull, just large enough for a grain of salt. Axi did not place one there. When the tide returned, the mark remained.</p>
+    <p>She noticed it on the way back from the well — she held her gaze low — afraid it might think she was probing it — she did not stop — neither did she come closer — she only noted the place — and walked back into the house as she always did. Her step was neither fast nor slow — she now knew that both fast and slow were forms of asking.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ledger stayed closed. Once, she almost reached to open it — her hand had gone halfway — and stopped — she only wanted to know the shape of the empty place — she sat beside her hand — and put it back onto her knee — the page did not move. She told no one — and had no intention of telling.</p>
+    <p>The grain of salt — where had it gone — she no longer pursued it — she only remembered what was missing from the threshold was one grain — and what had appeared in the hull was exactly one shape. She did not think much of it. Only, as she put the water on — she paused her hand above the old threshold — and let it go — she only stopped for a moment — no ceremony of any kind.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The tide came in. — The mark remained. — She watched the sea — the sea gave no answer — she expected none. — Her mother had said: the book — it will turn on its own — my dear — the book always knows — she thought: perhaps the empty places are the same — they know — waiting or not — they are in no hurry.</p>
+    <p>She did not place the salt inside. — Not from fear — not from reluctance — she knew that to place it there would make it into an answer — and today — she did not want an answer. — She only sat there — on an unpunctuated morning — until the light moved one finger's width off the sill.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some empty places do not wait to be filled.</p>
+    <p class="coda">The age of hush has not ended. It has only, at last, left behind a dry mark exactly large enough for one grain of salt — and an answer that still stays outside the door.</p>`,
   },
 ]
 
