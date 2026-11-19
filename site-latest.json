@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "d3851187eae1ea151228ec51937f51cec323be1d",
+  "head": "b7467b347b158ce1a16d02444687c86927faf3cf",
   "branch": "master",
-  "subject": "chore(status): re-embed site-latest.json",
-  "date": "2026-11-19T09:38:39Z",
+  "subject": "feat(story): KI-713《余响集》第八十一篇《船边的一页 / A Page by the Boat》落地（真 live · gpt-6.2-sol）+ TitleScreen 修 a11y（lighthouse 1/1/1）+ IO 静态 .caesura latest 加深",
+  "date": "2026-11-19T20:02:40+08:00",
   "kv": {
-    "KI.rows": 630,
-    "KI.Implemented": 453,
+    "KI.rows": 631,
+    "KI.Implemented": 454,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/d3851187eae1ea151228ec51937f51cec323be1d",
+    "url": "https://github.com/xiaodernan/caesura/commit/b7467b347b158ce1a16d02444687c86927faf3cf",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
