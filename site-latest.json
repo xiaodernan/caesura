@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "a94fdbb3bc63d69c0f7371da33285dc40c3e80f3",
+  "head": "f1c97c36827fb20dac0a1ee26d1d5eef201dca90",
   "branch": "master",
-  "subject": "chore(status): re-embed site-latest.json",
-  "date": "2026-11-18T23:12:22Z",
+  "subject": "feat(story): KI-709《余响集》第七十八篇《盐还在 / The Salt Is There》落地（纯人写 · LLM 服务断供如实 · 阻塞绕过）+ 压测 mesh:stress 300/300",
+  "date": "2026-11-19T12:09:00+08:00",
   "kv": {
-    "KI.rows": 626,
-    "KI.Implemented": 449,
+    "KI.rows": 627,
+    "KI.Implemented": 450,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/a94fdbb3bc63d69c0f7371da33285dc40c3e80f3",
+    "url": "https://github.com/xiaodernan/caesura/commit/f1c97c36827fb20dac0a1ee26d1d5eef201dca90",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
