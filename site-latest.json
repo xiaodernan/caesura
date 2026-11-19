@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "d186e7c3749b6cda999a73c441fe58d21203b3e5",
+  "head": "a1d2a664813e6779698f61d65f4678ea29af89c0",
   "branch": "master",
-  "subject": "chore(status): re-embed site-latest.json",
-  "date": "2026-11-19T08:44:15Z",
+  "subject": "feat(sim): KI-712《真人行为模拟 · Real Visitors》落地（零 LLM · 零写入 · 全站 86 页 live 走查）",
+  "date": "2026-11-19T17:11:46+08:00",
   "kv": {
-    "KI.rows": 629,
-    "KI.Implemented": 452,
+    "KI.rows": 630,
+    "KI.Implemented": 453,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -16,7 +16,7 @@
     "SYS.Blocked": 0,
     "ARCH.sections": 202,
     "ARCH.holes": "none",
-    "PKG.scripts": 89
+    "PKG.scripts": 90
   },
   "suites": {
     "consoleUi": 150,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/d186e7c3749b6cda999a73c441fe58d21203b3e5",
+    "url": "https://github.com/xiaodernan/caesura/commit/a1d2a664813e6779698f61d65f4678ea29af89c0",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
