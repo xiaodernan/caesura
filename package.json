@@ -69,6 +69,7 @@
     "smoke:live": "node scripts/smoke-live.mjs",
     "stress:live": "node scripts/stress-live.mjs",
     "mesh:stress:max": "node scripts/pressure-mesh.mjs --iterations=5000 --concurrency=200",
+    "sim:realvisitor": "node scripts/sim-real-visitor.mjs",
     "spring-retry:bench": "node scripts/caesura-gateway-retry.mjs",
     "spring-consul:bench": "node scripts/caesura-spring-consul-kv.mjs",
     "spring-ha:bench": "node scripts/caesura-redis-ha.mjs",
