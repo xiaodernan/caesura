@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "5dcab00a0585303b083b30618ee37dd485e857d8",
+  "head": "e95f877a8473db419ab4ae2ff606df80010cd714",
   "branch": "master",
-  "subject": "site-latest: 7be6df48 (post-rebase reconcile)",
-  "date": "2026-11-19T20:08:50+08:00",
+  "subject": "feat(story): KI-714《余响集》第八十二篇《未寄的一页 / The Unsent Page》落地（真 live · gpt-6.2-sol 4 节点 cached=88.3/88.2/88.9/88.1）",
+  "date": "2026-11-19T23:34:15+08:00",
   "kv": {
-    "KI.rows": 631,
-    "KI.Implemented": 454,
+    "KI.rows": 632,
+    "KI.Implemented": 455,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/5dcab00a0585303b083b30618ee37dd485e857d8",
+    "url": "https://github.com/xiaodernan/caesura/commit/e95f877a8473db419ab4ae2ff606df80010cd714",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
