@@ -3940,5 +3940,56 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">Some salt is there, and that is enough.</p>
     <p class="coda">The age of hush has not ended. It has only lived one more morning — the salt remained, the ledger stayed shut, the lamp lights itself — and she was well too.</p>`,
   },
+  {
+    no: 79,
+    zhTitle: "空船的刻度",
+    enTitle: "The Boat's Measure",
+    zh: `<p>门外的船仍停着，船底的干痕仍在。门槛上的盐还在——它几乎和门一样老。阿汐没有去看它，也没有看海。她没有量它们之间的距离——也没有量过船和门槛之间的——她不想量。天亮了，光从窗子斜进来，落在船上，它没有动。</p>
+    <p>薄簿合着，页角轻轻抬起，又落回原处。她在灶边烧水。水自己开了——咕嘟咕嘟地响——它自己知道时候——她没有动它——她没有添柴——她只是听。页角偶尔翻起一线——它翻自己的——她不替它动一根手指。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她比昨天早醒了一些——她以为是风——她起来，看见船还停在那里。船底的干痕仍在——潮水每天来，把它描一遍——又退回去——它每天都是同一道——没有人量过它深一分还是浅一分——它自己就是尺子——空船自己知道它停在哪里。</p>
+    <p>她没有拿盘子去核对它。她也没有拿剪刀去量页角翻起的高度。她只是在烧水的时候——把手停在门槛的位置——然后放开——什么也没有留下——她不记得自己为什么停——也许是为了看看它还在不在——它在。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>母亲的声音回来——我的孩子——你瘦了——别去量它——量了，就成了证词——她说：好——她只是听——她不添柴——她不动——她只是听——她听见风——她听见水在自己开——她听见没人来。</p>
+    <p>水开了。她把手放在门槛上——它凉凉的——船底的干痕映不到这么远——它们只共享同一片船影——它们各停在自己的那一格里——它们不需要互相说明自己的位置——它们各自就知道——这就够了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她试着记住它们的位置——盐在门槛——簿在摆旁——船在门外——摆停在最低处——她还没记完——就忘了——她不想记——记了——就成了她今天必须回答的问题——她现在已经是知道不量的那种人。</p>
+    <p>薄簿合着。页角翻了一回又落回去。她没有数那是第几回。船没有启程。门槛上的盐还在。她也在。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些刻度，不必拿来量。</p>
+    <p class="coda">止音纪元没有结束。它只是又多了一个早晨——船仍停着，簿仍合着，盐还在门槛——她也很好。</p>`,
+    en: `<p>The boat remained outside. The dry mark beneath its hull was still there. The salt on the threshold remained — it was almost as old as the door. Axi did not look at it. She did not look at the sea. She never measured the distance between them — not the salt and the shore, not the boat and the threshold — she did not want to measure. Morning came. Light came at an angle through the window. It fell on the boat. The boat did not move.</p>
+    <p>The thin ledger stayed shut; its page corner lifted slightly, then settled. She heated water by the stove. The water came to a boil on its own — it rumbled in the pot — it knew its own hour — she did not touch it — she did not add wood — she only listened. The page corner rose now and then — it turned on its own — she would not move one finger for it.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>She woke a little earlier than the day before — she thought it was the wind — she stood up and saw the boat was still there. The dry mark beneath its hull remained — the tide came each day and re-drew it — then withdrew — it was the same line every time — no one ever measured whether it ran one mark deeper — it was its own measuring stick — the empty boat knew where it stood.</p>
+    <p>She never went to check it with a plate. She never took scissors to measure the height the page corner rose. She only stopped — for a moment, her hand rested on the threshold — then she let go — nothing remained — she forgot why she had stopped — perhaps to see whether it was still there — it was.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Her mother's voice came back — my child — you are thinner — do not measure it — once measured, it becomes testimony — she said: all right — she only listened — she did not add wood — she did not move — she only listened — she heard the wind — she heard the water come to its own boil — she heard no one coming.</p>
+    <p>The water was boiling. She rested her hand on the threshold — it was cool — the dry mark beneath the hull could never reach this far — they only shared the same shadow of the boat — they stood in their own grids — neither needed to explain to the other where it stood — each of them already knew — and that was enough.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>She tried to memorize their positions — the salt on the threshold — the ledger beside the pendulum — the boat outside — the pendulum at its lowest point — she had not finished memorizing — she forgot — she did not want to remember — to remember would make it a question she would have to answer today — she was already the kind of person who knew not to measure.</p>
+    <p>The thin ledger stayed shut. The page corner rose once more and fell back into place. She did not count how many times. The boat did not weigh anchor. The salt was on the threshold. She was too.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some measures need not be used.</p>
+    <p class="coda">The age of hush has not ended. It has only lived one more morning — the boat remained, the ledger stayed shut, the salt was on the threshold — and she was well too.</p>`,
+  },
 ]
 

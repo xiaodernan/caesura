@@ -129,40 +129,68 @@ const snapshotToText = (w) => [
 const MAX_ATTEMPTS = 3
 const isOk = (out) => out && (out.ok === true || (typeof out.status === 'number' && out.status >= 200 && out.status < 300))
 
-async function callDirector(env, { stdinPrefix, task, temperature, maxTokens }) {
-  const body = {
-    model: env.model,
-    stream: true,
-    stream_options: { include_usage: true },
-    temperature,
-    max_tokens: maxTokens,
-    messages: [
-      { role: 'system', content: stdinPrefix },
-      { role: 'user', content: task },
-    ],
-  }
+async function callDirector(env, { stdinPrefix, task, temperature, maxTokens, rescue = true }) {
+  const chain = Array.isArray(env.modelChain) && env.modelChain.length ? env.modelChain : [env.model]
   // 与正题逐字节相同的 system 前缀 ⇒ prompt_cache_key 按前缀派生（client 内处理）
   const { derivePromptCacheKey } = await import('./caesura-llm-client.mjs')
-  body.prompt_cache_key = derivePromptCacheKey(body.messages)
   let last = null
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
-    let out = null
-    // 传输级异常（ECONNRESET / curl 兜底也败）此前直接逃逸出重试环——编辑闸门只打一次就夭折（2026-11-18 定案：
-    // "fetch failed" ×3 全打在 editorialGate 而正题三条 OK）。与非 2xx 同级对待：重试后再交给人工闸兜底。
-    try {
-      out = await callLlm(body, { baseUrl: env.baseUrl, apiKey: env.apiKey })
-    } catch (e) {
-      out = { ok: false, status: 0, dt: null, error: String(e?.message || e) }
+  for (const modelName of chain) {
+    const body = {
+      model: modelName,
+      stream: true,
+      stream_options: { include_usage: true },
+      temperature,
+      max_tokens: maxTokens,
+      messages: [
+        { role: 'system', content: stdinPrefix },
+        { role: 'user', content: task },
+      ],
     }
-    if (isOk(out)) {
-      out.attempts = attempt
-      if (attempt > 1) console.log(`[ai-director] callLlm recovered on attempt ${attempt} (temperature=${temperature})`)
-      return out
+    body.prompt_cache_key = derivePromptCacheKey(body.messages)
+    const attemptOnce = async () => {
+      try {
+        return await callLlm(body, { baseUrl: env.baseUrl, apiKey: env.apiKey })
+      } catch (e) {
+        return { ok: false, status: 0, dt: null, error: String(e?.message || e) }
+      }
     }
-    last = out
-    last.attempts = attempt
-    console.warn(`[ai-director] callLlm attempt ${attempt}/${MAX_ATTEMPTS} failed status=${out?.status ?? 'throw'}${out?.error ? ` err=${out.error.slice(0, 80)}` : ''} — ${attempt < MAX_ATTEMPTS ? 'retrying' : 'giving up'}`)
-    if (attempt < MAX_ATTEMPTS) await new Promise((r) => setTimeout(r, 1500 * attempt))
+    let settled = false
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+      const out = await attemptOnce()
+      if (isOk(out)) {
+        out.attempts = attempt
+        out.modelUsed = modelName
+        if (attempt > 1) console.log(`[ai-director] model=${modelName} recovered on attempt ${attempt} (temperature=${temperature})`)
+        /* KI-710 · 「中途突然掉缓存/失去缓存」的自愈（2026-11-19 真实线上例：同前缀下 audit 90.3% / propose 90.2% / **draft 4.8%** / gate 90.0%）——
+           路由抖动把单条请求丢到冷后端。同请求重发一次（内容候选等价 · 人工闸不变），取 cached_tokens 更高的一份；
+           阈值：cached < 20000（巨前缀本应命中 ≈97K）。不读任何 env 开关——阈值与重试本身是纪律，不是可配置项。 */
+        const rescueMin = rescue === false ? 0 : 20000
+        if (rescueMin > 0 && (out.cachedTokens ?? 0) < rescueMin) {
+          console.warn(`[ai-director] model=${modelName} temperature=${temperature} cached=${out.cachedTokens ?? 0} < ${rescueMin} — 疑似路由抖动到冷后端，自愈重试一次`)
+          const rescue = await attemptOnce()
+          rescue.attempts = 1
+          rescue.modelUsed = modelName
+          if (isOk(rescue) && (rescue.cachedTokens ?? 0) > (out.cachedTokens ?? 0)) {
+            console.warn(`[ai-director] model=${modelName} 自愈生效：cached ${out.cachedTokens ?? 0} → ${rescue.cachedTokens ?? 0}`)
+            rescue.rescued = true
+            rescue.attempts = attempt + 1
+            return rescue
+          }
+          rescue.rescued = false
+          console.warn(`[ai-director] model=${modelName} 自愈未取优（rescue cached=${rescue.cachedTokens ?? 'n/a'}）— 保留原样并如实登记`)
+          out.rescued = false
+        }
+        return out
+      }
+      out.status = out?.status ?? 0
+      out.modelUsed = modelName
+      last = out
+      console.warn(`[ai-director] model=${modelName} attempt ${attempt}/${MAX_ATTEMPTS} failed status=${out?.status ?? 'throw'}${out?.error ? ` err=${String(out.error).slice(0, 80)}` : ''} — ${attempt < MAX_ATTEMPTS ? 'retrying' : 'giving up on this model'}`)
+      if (attempt < MAX_ATTEMPTS) await new Promise((r) => setTimeout(r, 1500 * attempt))
+    }
+    if (!settled && chain.length > 1 && chain.indexOf(modelName) < chain.length - 1) {
+      console.warn(`[ai-director] model=${modelName} 连续 ${MAX_ATTEMPTS} 次失败 — 按有序兜底链顺移到下一个模型`)
+    }
   }
   return last
 }
@@ -173,13 +201,16 @@ const recordUsage = (state, label, out) => {
   const prompt = Number(out?.usage?.prompt_tokens ?? 0)
   const cached = out?.cachedTokens || 0
   const hit = prompt > 0 ? Math.round((cached / prompt) * 1000) / 10 : 0
+  if (out?.modelUsed && out?.ok !== false && (out?.ok === true || (typeof out?.status === 'number' && out.status >= 200 && out.status < 300))) {
+    state.modelUsed = out.modelUsed // 成功路径记录本请求实际命中的模型（兜底链移位时也如实登记）
+  }
   state.usage.calls += 1
   state.usage.cachedTokens += cached
   state.usage.promptTokens += prompt
   state.usage.hitRates.push(hit)
-  state.usage.perCall.push({ node: label, status: out?.status, dt: out?.dt ?? null, prompt, cached, hitRate: hit, attempts: out?.attempts ?? 1 })
+  state.usage.perCall.push({ node: label, status: out?.status, dt: out?.dt ?? null, prompt, cached, hitRate: hit, attempts: out?.attempts ?? 1, model: out?.modelUsed ?? null })
   state.usage.statuses.push(out?.status)
-  console.log(`[ai-director] ${label} status=${out?.status} dt=${out?.dt ?? '?'}ms prompt=${prompt} cached=${cached} hit=${hit}%`)
+  console.log(`[ai-director] ${label} status=${out?.status} dt=${out?.dt ?? '?'}ms prompt=${prompt} cached=${cached} hit=${hit}% model=${out?.modelUsed ?? '?'}`)
 }
 
 const parseJsonLoose = (raw) => {
@@ -193,7 +224,7 @@ const parseJsonLoose = (raw) => {
 async function nodeLoadWorld(state) { state.world = worldSnapshot() }
 
 async function nodeRetrieveCanon(state) {
-  const focus = FOCUS || '止音纪元 世界现状 七十八篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响'
+  const focus = FOCUS || '止音纪元 世界现状 七十九篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响'
   const t0 = Date.now()
   const corpus = buildWorldCorpus(ROOT)
   const index = buildIndex(corpus)
@@ -234,7 +265,7 @@ async function nodeProposeTransitions(state) {
 
 async function nodeDraftContent(state) {
   if (state.mode !== 'live') { state.atlasDraft = null; return }
-  const task = '【任务·游记续写草稿】以钟摆渡人/止音纪元的笔法，为下一篇游记产出草稿：{"no":79,"titleZh":"≤10字","titleEn":"≤6 words","pZh":"≤120字正文","pEn":"≤70 words","codaZh":"≤40字尾声","codaEn":"≤25 words","requiresHumanReview":true}。笔法：不喧哗、不抒情、物件说话、留白。只许 JSON。'
+  const task = '【任务·游记续写草稿】以钟摆渡人/止音纪元的笔法，为下一篇游记产出草稿：{"no":80,"titleZh":"≤10字","titleEn":"≤6 words","pZh":"≤120字正文","pEn":"≤70 words","codaZh":"≤40字尾声","codaEn":"≤25 words","requiresHumanReview":true}。笔法：不喧哗、不抒情、物件说话、留白。只许 JSON。'
   const out = await callDirector(state.env, { stdinPrefix: state.prefix, task: withSnapshot(state, task), temperature: 0.9, maxTokens: 800 })
   recordUsage(state, 'draftContent', out)
   const parsed = parseJsonLoose(out.text)
@@ -286,7 +317,7 @@ function buildArtifacts(state) {
     schema: 1,
     mode: state.mode,
     generatedAt: NOW_ISO,
-    model: state.mode === 'live' ? state.env.model : '(offline dry-run)',
+    model: state.mode === 'live' ? (state.modelUsed ?? state.env.model) : '(offline dry-run)',
     endpoint: state.mode === 'live' ? state.env.baseUrl : '(offline)',
     focus: state.focus ?? null,
     corpusSize: state.corpusSize ?? 0,
@@ -424,18 +455,14 @@ async function main() {
         return
       }
       // KI-663 热身（修正）：烤**正题自己的 system 前缀**（sceneBible + canon 证据，逐字节同正题）
-      // 并用与三条正题调用**相同的派生键** derivePromptCacheKey —— 之前用裸 sceneBible + sceneBibleCacheKey()
-      // 烤了一串「没人用的缓存」：① system 字节差 canon 后缀（前缀缓存按最长公共前缀匹配，尾缀不同仍命中头部，
-      //    但路由亲和键不同 ⇒ 亲和主机不同 ⇒ 正题首调依旧冷）；② prompt_cache_key 不同 ⇒ 落到冷后端。
-      const { derivePromptCacheKey } = await import('./caesura-llm-client.mjs')
-      const warmMessages = [{ role: 'system', content: s.prefix }, { role: 'user', content: '（预热：只回一个词）' }]
-      const warmKey = derivePromptCacheKey(warmMessages)
-      const pre = await callLlm({
-        model: s.env.model, stream: true, stream_options: { include_usage: true },
-        temperature: 0, max_tokens: 8,
-        messages: warmMessages,
-        prompt_cache_key: warmKey,
-      }, { baseUrl: s.env.baseUrl, apiKey: s.env.apiKey })
+      // 走与三条正题调用相同的兜底链（callDirector），绝不为预热特供一套单独的劣质路径
+      const pre = await callDirector(s.env, {
+        stdinPrefix: s.prefix,
+        task: '（预热：只回一个词）',
+        temperature: 0,
+        maxTokens: 8,
+        rescue: false, // 冷启动写缓存本来就是它的活——不为它触发路由抖动自愈
+      })
       recordUsage(s, 'warmup', pre)
       if (pre.status === 200) {
         writeWarmMarker({ calls: 1, cachedTokens: [pre.cachedTokens || 0], statuses: [pre.status], note: 'director warmup · task-prefix monolith (canon-suffixed)' })

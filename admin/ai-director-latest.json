@@ -6,73 +6,73 @@
   "requiresHumanReview": true,
   "schema": 1,
   "mode": "live",
-  "generatedAt": "2026-11-18T19:53:21.316Z",
-  "model": "gpt-6.1-terra",
+  "generatedAt": "2026-11-19T04:50:30.106Z",
+  "model": "gpt-6.1-sol",
   "endpoint": "https://api.aizzz.xyz/v1",
-  "focus": "第七十六篇《摆旁一页》之后 · 下一篇原创短篇",
-  "corpusSize": 10286,
+  "focus": "第七十八篇《盐还在》之后 · 下一篇原创短篇",
+  "corpusSize": 10765,
   "canon": [
     {
       "rank": 1,
-      "score": 62.47,
-      "preview": "[短篇][story/anthology] 第七十六篇《摆旁一页》——阿汐把薄簿放在摆旁——没有替它们记下这一夜——"
+      "score": 58.076,
+      "preview": "[短篇][story/anthology] 第七十八篇《盐还在》——光斜进来落在盐身上——它没有动——"
     },
     {
       "rank": 2,
-      "score": 40.146,
-      "preview": "[短篇][story/a-page-beside-the-pendulum] 摆旁一页 / A Page Beside the Pendulum — CAESURA · 余响集 · 第七十六篇"
+      "score": 34.591,
+      "preview": "[短篇][story/the-salt-is-there] 盐还在 / The Salt Is There — CAESURA · 余响集 · 第七十八篇"
     },
     {
       "rank": 3,
-      "score": 24.668,
-      "preview": "[短篇][story/anthology] 第七十四篇《夜开的一线》——门留着一线——盐立在门槛——册子自己翻到下一页——"
-    },
-    {
-      "rank": 4,
-      "score": 22.631,
-      "preview": "[短篇][story/anthology] 第六十一篇《摆不回》——潮水退去——摆停在最低处——不必交给下一个人——"
-    },
-    {
-      "rank": 5,
-      "score": 22.387,
+      "score": 22.142,
       "preview": "[短篇][story/anthology] 第七十一篇《又多一个傍晚》——页角偶尔自翻——止音纪元又多了一个傍晚——"
     },
     {
-      "rank": 6,
-      "score": 21.448,
-      "preview": "[短篇][story/anthology] 第五十六篇《未交接》——她便没有再等交接——有些停下，不必交给下一个人——"
+      "rank": 4,
+      "score": 20.089,
+      "preview": "[短篇][story/anthology] 第七十四篇《夜开的一线》——门留着一线——盐立在门槛——册子自己翻到下一页——"
     },
     {
-      "rank": 7,
-      "score": 21.327,
-      "preview": "[短篇][story/anthology] 约 7 分钟 · 回廊钟 · 摆旁一页 · 余响"
-    },
-    {
-      "rank": 8,
-      "score": 19.879,
-      "preview": "[短篇][story/anthology] 第五十七篇《摆旁空位》——摆旁有一个空位——谁也不坐——它自己够了——"
-    },
-    {
-      "rank": 9,
-      "score": 19.196,
+      "rank": 5,
+      "score": 19.248,
       "preview": "[短篇][story/anthology] 《止音纪元》· 原创短篇全集 · 双语对照"
     },
     {
-      "rank": 10,
-      "score": 18.887,
+      "rank": 6,
+      "score": 18.96,
       "preview": "[短篇][story/after-the-space] 空处之后 / After the Space — CAESURA · 余响集 · 第三十一篇"
+    },
+    {
+      "rank": 7,
+      "score": 18.471,
+      "preview": "[短篇][story/anthology] 第十八篇《第四下》——第四下不需要钟，它一直都在你心里——"
+    },
+    {
+      "rank": 8,
+      "score": 18.471,
+      "preview": "[短篇][story/anthology] 第六十八篇《淡痕》——灰挂着，盐在门槛，痕淡了也不必补——"
+    },
+    {
+      "rank": 9,
+      "score": 18.469,
+      "preview": "[短篇][story/one-more-dusk] 又多一个傍晚 / One More Dusk — CAESURA · 余响集 · 第七十一篇"
+    },
+    {
+      "rank": 10,
+      "score": 18.189,
+      "preview": "[短篇][story/anthology] 第二十九篇《盐线之后》——两半盐线还在窗台，纸袋留在门边，门没有再开——窗台上那两半盐线又悄悄长回去了一点点——"
     }
   ],
   "worldSnapshot": {
-    "date": "2026-11-18",
+    "date": "2026-11-19",
     "phaseStatus": {
-      "KIrows": 625,
-      "KIImplemented": 448,
+      "KIrows": 627,
+      "KIImplemented": 450,
       "SYSImplemented": 73,
       "ARCHSections": 202
     },
-    "atlasEntries": 76,
-    "storyChapters": 76,
+    "atlasEntries": 78,
+    "storyChapters": 78,
     "storyList": [
       "a-page-beside-the-pendulum",
       "after-half-a-chime",
@@ -132,6 +132,7 @@
       "the-mark-remains",
       "the-place-aboard",
       "the-ring",
+      "the-salt-is-there",
       "the-scale-shadow",
       "the-sill-keeps-count",
       "the-swing-unreturned",
@@ -139,6 +140,7 @@
       "the-unasked-boat",
       "the-unentered-page",
       "the-unentered-stroke",
+      "the-unferried-page",
       "the-unmade-swing",
       "the-unmarked-number",
       "the-unmoved-pendulum",
@@ -160,124 +162,133 @@
   },
   "audit": {
     "consistency": 78,
-    "verdictZh": "游记篇数与最新篇目证据吻合；实现统计缺少可核验出处，部分世界谱与现状快照的口径需确认。",
-    "verdictEn": "The 76-entry Atlas matches the latest story evidence; implementation counts lack verification, and some canon scopes need clarification.",
+    "verdictZh": "主线意象与多数短篇相互呼应，但篇数声明及个别物件连续性存在明确冲突。",
+    "verdictEn": "The core motifs cohere, but the anthology count and a few continuity details conflict.",
     "risks": [
       {
-        "severity": "med",
-        "itemZh": "实现统计无法由所给证据核验",
-        "itemEn": "Implementation counts are unverified",
-        "detailZh": "KI、系统实现、ARCH、对话树与NPC数量均未见对应证据。",
-        "detailEn": "No supplied evidence substantiates the KI, system, ARCH, dialogue-tree, or NPC counts."
+        "severity": "high",
+        "itemZh": "短篇篇数声明自相矛盾",
+        "itemEn": "Conflicting anthology counts",
+        "detailZh": "标题称“六十四篇全文”，正文却列至第七十八篇；快照也称78篇。",
+        "detailEn": "The header says 64 stories, but the supplied text runs through No. 78; the snapshot says 78."
       },
       {
         "severity": "med",
-        "itemZh": "世界谱中的刻痕数量与快照口径不清",
-        "itemEn": "The mark-count scope is unclear",
-        "detailZh": "世界谱列出的刻痕远多于 Atlas 条目所述14处，需说明统计范围。",
-        "detailEn": "The world atlas lists far more marks than the stated 14; clarify the counting scope."
+        "itemZh": "引礁灯点亮方式不一致",
+        "itemEn": "Inconsistent reef-light operation",
+        "detailZh": "第21篇说灯油失效时靠人手点亮；第78篇称“灯自己会亮”，两者机制未交代如何兼容。",
+        "detailEn": "No. 21 says human hands light it when oil fails; No. 78 says the lamp lights itself, with no reconciliation."
+      },
+      {
+        "severity": "med",
+        "itemZh": "盐粒来源与位置连续性冲突",
+        "itemEn": "Salt grain continuity conflict",
+        "detailZh": "第42篇阿汐从袖中取出盐粒放在湿痕旁；第78篇却称盐始终未到过此处、从未移动。",
+        "detailEn": "No. 42 places a grain from Axi’s sleeve beside the mark; No. 78 says it never arrived or moved."
       },
       {
         "severity": "low",
-        "itemZh": "新版篇目证据覆盖不完整",
-        "itemEn": "Evidence coverage for newer stories is incomplete",
-        "detailZh": "检索证据直接确认第76篇及若干邻近篇目，未逐项核验全部76篇名单。",
-        "detailEn": "Evidence confirms story 76 and nearby entries, but does not individually verify all 76 listed stories."
+        "itemZh": "快照计数缺少可核验依据",
+        "itemEn": "Snapshot counts lack verification",
+        "detailZh": "KI、实现数、ARCH、对话树及旗标数均未在所给 canon 证据中定义或佐证。",
+        "detailEn": "The provided canon evidence does not define or verify the KI, implementation, ARCH, dialogue-tree, or flag counts."
       }
     ],
     "gapsZh": [
-      "提供各统计项的仓库文件或生成报告作为依据。",
-      "说明“14处刻痕”与世界谱全部刻痕之间的筛选口径。"
+      "缺少64篇与78篇篇数差异的权威说明。",
+      "缺少灯自亮与人工点灯的机制衔接。",
+      "缺少第42篇盐粒与第78篇盐粒是否同一物的确认。"
     ],
     "gapsEn": [
-      "Provide repository files or generated reports supporting each metric.",
-      "Clarify how the 14 Atlas marks are selected from all marks in the world bible."
+      "No authoritative explanation reconciles the 64- and 78-story counts.",
+      "The lamp’s self-lighting and human-lighting mechanisms are unreconciled.",
+      "It is unclear whether the salt grains in Nos. 42 and 78 are the same."
     ]
   },
   "transitions": [
     {
-      "fromZh": "薄簿仍在门边合着，摆停在最低处",
-      "fromEn": "The thin ledger remains shut by the doorway; the pendulum rests at its lowest point",
-      "toZh": "阿汐把薄簿放到摆旁，仍不翻开",
-      "toEn": "Axi places the thin ledger beside the pendulum and leaves it shut",
-      "flag": "flag.ledger_beside_pendulum",
-      "narrativeZh": "薄簿来到摆旁，仍合着；阿汐没有替这一夜记下什么。",
-      "narrativeEn": "The ledger rests beside the pendulum, still shut; Axi records nothing of the night.",
-      "npcReactionZh": "摆旁空位仍无人坐，摆停在最低处。",
-      "npcReactionEn": "The seat beside the pendulum remains empty; the pendulum stays at its lowest point.",
-      "atlasHookZh": "回廊钟：薄簿停在摆旁",
-      "atlasHookEn": "Arcade of Echoes: the ledger rests beside the pendulum",
+      "fromZh": "风钟海岸已解锁，带钟的风刻痕尚未触碰",
+      "fromEn": "Windbell Coast unlocked; Bell-Bearing Wind mark untouched",
+      "toZh": "带钟的风刻痕已触碰，海岸巡礼留下记录",
+      "toEn": "Bell-Bearing Wind mark touched; the coast pilgrimage recorded",
+      "flag": "flag.windbell_bearing_wind_mark_touched",
+      "narrativeZh": "触碰刻痕后，风仍不让人听清钟声，但这段未听清的余温被记入巡礼。",
+      "narrativeEn": "The wind still withholds the bells, but the warmth of what could not be heard enters the pilgrimage record.",
+      "npcReactionZh": "海岸没有新增说话者，风只继续携带钟的余温。",
+      "npcReactionEn": "No new voice appears on the coast; the wind continues to carry the bells’ warmth.",
+      "atlasHookZh": "带钟的风已留痕。",
+      "atlasHookEn": "The bell-bearing wind has left its mark.",
       "requiresHumanReview": true
     },
     {
-      "fromZh": "门留着一线，盐立在门槛",
-      "fromEn": "The door is left ajar; the salt stands on the threshold",
-      "toZh": "阿汐将手从门槛移开，门仍留着一线",
-      "toEn": "Axi draws her hand from the threshold; the door remains ajar",
-      "flag": "flag.threshold_seam_left_open",
-      "narrativeZh": "夜里风从门缝经过，清晨门外干痕仍在。",
-      "narrativeEn": "Wind passes through the door's narrow opening; by morning, the dry mark remains outside.",
-      "npcReactionZh": "薄簿页角轻轻抬起，又落回原处。",
-      "npcReactionEn": "The ledger's page corner lifts slightly, then settles.",
-      "atlasHookZh": "门槛：留一线，不追问",
-      "atlasHookEn": "Threshold: leave a seam; ask nothing",
+      "fromZh": "盐结小龛尚未触碰",
+      "fromEn": "Salt Shrine mark untouched",
+      "toZh": "盐结小龛已触碰，潮汐重写被见证",
+      "toEn": "Salt Shrine mark touched; the tide’s rewriting witnessed",
+      "flag": "flag.windbell_salt_shrine_witnessed",
+      "narrativeZh": "触碰小龛后，海仍每日抹去并重写盐痕；旅人不替它登记次数。",
+      "narrativeEn": "After the shrine is touched, the sea still erases and rewrites the salt each day; the traveler does not count its returns.",
+      "npcReactionZh": "海岸不作答，盐痕照常消退又出现。",
+      "npcReactionEn": "The coast gives no answer; the salt marks keep fading and returning.",
+      "atlasHookZh": "盐龛的重写已被见证。",
+      "atlasHookEn": "The shrine’s rewriting has been witnessed.",
       "requiresHumanReview": true
     },
     {
-      "fromZh": "摆旁空位仍无人坐，阿汐仍在数潮水",
-      "fromEn": "The place beside the pendulum is empty; Axi still counts the tides",
-      "toZh": "阿汐不再数潮水，只听木板收紧",
-      "toEn": "Axi stops counting the tides and listens to the boards tighten",
-      "flag": "flag.tide_count_released",
-      "narrativeZh": "潮水照常退去；她不再把每次退潮记成数字。",
-      "narrativeEn": "The tide recedes as before; she no longer turns each ebb into a number.",
-      "npcReactionZh": "木板在熟悉的频率上收紧，她没有去看海。",
-      "npcReactionEn": "The boards tighten at their familiar frequency; she does not look toward the sea.",
-      "atlasHookZh": "回廊钟：不再数潮",
-      "atlasHookEn": "Arcade of Echoes: no longer counting the tide",
+      "fromZh": "钟摆旁的空位尚未被认领",
+      "fromEn": "The empty place beside the pendulum unclaimed",
+      "toZh": "空位被认领，仍无人坐下",
+      "toEn": "The empty place claimed, yet left unoccupied",
+      "flag": "flag.pendulum_empty_place_claimed",
+      "narrativeZh": "旅人认领空位，却不坐下；空位仍空，未竟之事不因此被催促。",
+      "narrativeEn": "The traveler claims the place without sitting; it remains empty, and nothing unfinished is hurried.",
+      "npcReactionZh": "摆渡人不要求交接，钟摆仍停在最低处。",
+      "npcReactionEn": "The Ferryman requires no handover; the pendulum remains at its lowest point.",
+      "atlasHookZh": "空位已被认领，仍然空着。",
+      "atlasHookEn": "The place is claimed and remains empty.",
       "requiresHumanReview": true
     },
     {
-      "fromZh": "薄簿页角偶尔自翻，阿汐仍想确认它是否合着",
-      "fromEn": "The ledger's page corner turns on its own; Axi still wants to check that it is shut",
-      "toZh": "阿汐不再检查薄簿，只让它合着停在摆旁",
-      "toEn": "Axi stops checking the ledger and lets it remain shut beside the pendulum",
-      "flag": "flag.ledger_left_unchecked",
-      "narrativeZh": "页角自行抬起又落下；阿汐不记，也不替它翻页。",
-      "narrativeEn": "The page corner lifts and settles by itself; Axi neither records it nor turns the page for it.",
-      "npcReactionZh": "薄簿与摆各停在自己的位置，空位仍无人坐。",
-      "npcReactionEn": "The ledger and pendulum remain where they are; the seat stays empty.",
-      "atlasHookZh": "摆旁：不替薄簿翻页",
-      "atlasHookEn": "Beside the pendulum: do not turn the page for it",
+      "fromZh": "干痕尚未纳入薄簿",
+      "fromEn": "The dry mark not entered in the thin ledger",
+      "toZh": "干痕被见证但未登记",
+      "toEn": "The dry mark witnessed but left unentered",
+      "flag": "flag.dry_mark_witnessed_unentered",
+      "narrativeZh": "旅人看见潮退后仍在的干痕，却不把它写进薄簿；它仍属于自身。",
+      "narrativeEn": "The traveler witnesses the dry mark remaining after ebb, but leaves it out of the ledger; it remains its own.",
+      "npcReactionZh": "薄簿保持合拢，潮水照常涨退。",
+      "npcReactionEn": "The ledger stays shut; the tide continues its ordinary rise and fall.",
+      "atlasHookZh": "干痕被看见，没有入簿。",
+      "atlasHookEn": "The dry mark was seen, not entered.",
       "requiresHumanReview": true
     }
   ],
   "atlasDraft": {
-    "no": 77,
-    "titleZh": "未渡的一页",
-    "titleEn": "The Unferried Page",
-    "pZh": "薄簿仍在钟摆旁，页角轻轻抬起，又落回原处。阿汐没有替这一夜记下什么。门槛边的盐仍在，船底的干痕仍在。天亮时，薄簿还合着，摆旁的空位也还空着。她没有翻页，也没有去看海。",
-    "pEn": "The thin ledger remained beside the pendulum. Its page corner lifted slightly, then settled. Axi entered nothing of the night. The salt remained by the threshold, and the dry mark beneath the boat remained. By morning, the ledger was still shut, and the place beside the pendulum was still empty. She did not turn a page or look toward the sea.",
-    "codaZh": "有些渡，不必离岸。",
-    "codaEn": "Some crossings need not leave shore.",
+    "no": 79,
+    "titleZh": "空船的刻度",
+    "titleEn": "The Boat's Measure",
+    "pZh": "门外的船仍停着，船底的干痕仍在。门槛上的盐没有移动。阿汐没有看海，也没有量它们之间的距离。薄簿合着，页角轻轻抬起，又落回原处。水壶在灶上咕嘟作响。她把手放在门槛上，没有记下这一切。",
+    "pEn": "The boat remained outside, its dry mark beneath the hull unchanged. The salt on the threshold had not moved. Axi did not look toward the sea or measure the distance between them. The thin ledger stayed shut; its page corner lifted slightly, then settled. The kettle rumbled on the stove. She rested her hand on the threshold and recorded none of it.",
+    "codaZh": "有些刻度，不必拿来量。",
+    "codaEn": "Some measures need not be used.",
     "requiresHumanReview": true,
     "editorialGateRevised": true
   },
   "editorialGate": {
-    "canonFidelity": 82,
-    "voiceFidelity": 88,
+    "canonFidelity": 58,
+    "voiceFidelity": 78,
     "verdict": "revise",
     "issues": [
-      "封面盐痕无据",
-      "船板收紧缺乏依据"
+      "船舷浅痕无据，干痕在船底",
+      "水壶响一声无据，薄簿页角偶尔自翻"
     ],
     "revised": true,
-    "at": "2026-11-18T19:53:21.316Z"
+    "at": "2026-11-19T04:50:30.106Z"
   },
   "usage": {
     "calls": 5,
-    "cachedTokens": 394715,
-    "promptTokens": 521993,
+    "cachedTokens": 300807,
+    "promptTokens": 536359,
     "statuses": [
       200,
       200,
@@ -287,98 +298,103 @@
     ],
     "hitRates": [
       4.8,
-      93.3,
-      93.2,
-      93.3,
-      93
+      90.3,
+      90.2,
+      4.8,
+      90
     ],
     "perCall": [
       {
         "node": "warmup",
         "status": 200,
-        "dt": 5544,
-        "prompt": 103817,
-        "cached": 4943,
+        "dt": 4158,
+        "prompt": 106684,
+        "cached": 5080,
         "hitRate": 4.8,
-        "attempts": 1
+        "attempts": 1,
+        "model": "gpt-6.1-sol"
       },
       {
         "node": "audit",
         "status": 200,
-        "dt": 10263,
-        "prompt": 104440,
-        "cached": 97444,
-        "hitRate": 93.3,
-        "attempts": 1
+        "dt": 10002,
+        "prompt": 107321,
+        "cached": 96878,
+        "hitRate": 90.3,
+        "attempts": 1,
+        "model": "gpt-6.1-sol"
       },
       {
         "node": "proposeTransitions",
         "status": 200,
-        "dt": 8204,
-        "prompt": 104543,
-        "cached": 97443,
-        "hitRate": 93.2,
-        "attempts": 1
+        "dt": 7722,
+        "prompt": 107424,
+        "cached": 96874,
+        "hitRate": 90.2,
+        "attempts": 1,
+        "model": "gpt-6.1-sol"
       },
       {
         "node": "draftContent",
         "status": 200,
-        "dt": 7895,
-        "prompt": 104424,
-        "cached": 97444,
-        "hitRate": 93.3,
-        "attempts": 1
+        "dt": 6272,
+        "prompt": 107305,
+        "cached": 5109,
+        "hitRate": 4.8,
+        "attempts": 1,
+        "model": "gpt-6.1-sol"
       },
       {
         "node": "editorialGate",
         "status": 200,
-        "dt": 7305,
-        "prompt": 104769,
-        "cached": 97441,
-        "hitRate": 93,
-        "attempts": 1
+        "dt": 7928,
+        "prompt": 107625,
+        "cached": 96866,
+        "hitRate": 90,
+        "attempts": 1,
+        "model": "gpt-6.1-sol"
       }
     ]
   },
   "graphCheckpoints": [
     {
       "node": "loadWorld",
-      "ms": 99,
+      "ms": 28,
       "ok": true
     },
     {
       "node": "retrieveCanon",
-      "ms": 3557,
+      "ms": 704,
       "ok": true
     },
     {
       "node": "warmup",
-      "ms": 15208,
+      "ms": 17432,
       "ok": true
     },
     {
       "node": "audit",
-      "ms": 17594,
+      "ms": 26986,
       "ok": true
     },
     {
       "node": "proposeTransitions",
-      "ms": 24167,
+      "ms": 30113,
       "ok": true
     },
     {
       "node": "draftContent",
-      "ms": 12751,
+      "ms": 18193,
       "ok": true
     },
     {
       "node": "editorialGate",
-      "ms": 10978,
+      "ms": 19253,
       "ok": true
     },
     {
       "node": "writeArtifacts",
-      "ms": 51,
+      "ms": 1479,
       "ok": true
     }
   ],

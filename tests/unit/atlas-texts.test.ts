@@ -2,17 +2,17 @@ import { describe, expect, it } from 'vitest'
 import { STORY_CHAPTERS } from '@/ui/atlas-texts'
 
 /**
- * src/ui/atlas-texts.ts — 七十八篇双语全文内嵌模块的门钉（2026-11-16 KI-618 扩 · 2026-11-17/18 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684/KI-685/KI-686/KI-687/KI-688/KI-689/KI-690/KI-691/KI-692/KI-693/KI-694/KI-695/KI-696/KI-697/KI-698/KI-699/KI-700/KI-701/KI-702/KI-703/KI-704/KI-705/KI-706/KI-707/KI-708/KI-709 增篇十七→七十八）。
- * 这些腿钉住的是「游记」一定能把七十八篇短篇读出来的基本盘：
- *   ① 七十八篇齐全 · 编号 1..78；
+ * src/ui/atlas-texts.ts — 七十九篇双语全文内嵌模块的门钉（2026-11-16 KI-618 扩 · 2026-11-17/18 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684/KI-685/KI-686/KI-687/KI-688/KI-689/KI-690/KI-691/KI-692/KI-693/KI-694/KI-695/KI-696/KI-697/KI-698/KI-699/KI-700/KI-701/KI-702/KI-703/KI-704/KI-705/KI-706/KI-707/KI-708/KI-709/KI-710 增篇十七→七十九）。
+ * 这些腿钉住的是「游记」一定能把七十九篇短篇读出来的基本盘：
+ *   ① 七十九篇齐全 · 编号 1..79；
  *   ② 中文篇与英文篇都必须有真实正文（百句级不是占位符）；
  *   ③ 每篇至少有一个被游记渲染依赖的标记（p / beat / coda）；
  *   ④ 名称与姜读相对应（中文标题·英文标题与故事对齐，防机械错位）。
  */
 
-describe('Atlas 七十八篇全文（atlas-texts.ts）', () => {
-  it('恰好七十八篇 · 编号 1..78 严格递增', () => {
-    expect(STORY_CHAPTERS.length).toBe(78)
+describe('Atlas 七十九篇全文（atlas-texts.ts）', () => {
+  it('恰好七十九篇 · 编号 1..79 严格递增', () => {
+    expect(STORY_CHAPTERS.length).toBe(79)
     STORY_CHAPTERS.forEach((c, i) => expect(c.no).toBe(i + 1))
   })
 
@@ -30,17 +30,17 @@ describe('Atlas 七十八篇全文（atlas-texts.ts）', () => {
     }
   })
 
-  it('中文标题严格对应（七十八篇顺序）', () => {
+  it('中文标题严格对应（七十九篇顺序）', () => {
     expect(STORY_CHAPTERS.map((c) => c.zhTitle)).toEqual([
       '盐', '山下无名碑', '空拍子', '账本', '回声庭园',
-      '雨审判', '霜锤', '千门', '石喉', '第一钟', '暗潮', '后记 · 第十二个听者', '拾钟人', '灯匠', '低音之城', '钟摆渡人', '未竟账页', '第四下', '末弦', '听弦', '第三声', '合奏', '回声谷', '半声之后', '铜扣旁', '线外', '纸袋之后', '窗台盐线', '盐线之后', '窗台记数', '空处之后', '未刻之数', '秤旁', '未记的一页', '干处', '未称之物', '空秤', '秤盘之外', '秤影', '门槛之外', '门外的湿痕', '门槛上的盐', '未开之页', '未寄出的信', '空秤之后', '未摆的一次', '船底的干痕', '未问之船', '船上的空处', '盐未上船', '船未启', '壶边', '圈印', '壶底旧痕', '未动的摆', '未交接', '摆旁空位', '摆下的盐', '干痕仍在', '潮退添柴', '摆不回', '摆旁的灰', '灰未落', '干痕未进', '灰不催', '火自己知道', '灰不归', '淡痕', '未添的一笔', '页角自翻', '又多一个傍晚', '薄簿合着', '未答之问', '夜开的一线', '她也一线', '摆旁一页', '未渡的一页', '盐还在',
+      '雨审判', '霜锤', '千门', '石喉', '第一钟', '暗潮', '后记 · 第十二个听者', '拾钟人', '灯匠', '低音之城', '钟摆渡人', '未竟账页', '第四下', '末弦', '听弦', '第三声', '合奏', '回声谷', '半声之后', '铜扣旁', '线外', '纸袋之后', '窗台盐线', '盐线之后', '窗台记数', '空处之后', '未刻之数', '秤旁', '未记的一页', '干处', '未称之物', '空秤', '秤盘之外', '秤影', '门槛之外', '门外的湿痕', '门槛上的盐', '未开之页', '未寄出的信', '空秤之后', '未摆的一次', '船底的干痕', '未问之船', '船上的空处', '盐未上船', '船未启', '壶边', '圈印', '壶底旧痕', '未动的摆', '未交接', '摆旁空位', '摆下的盐', '干痕仍在', '潮退添柴', '摆不回', '摆旁的灰', '灰未落', '干痕未进', '灰不催', '火自己知道', '灰不归', '淡痕', '未添的一笔', '页角自翻', '又多一个傍晚', '薄簿合着', '未答之问', '夜开的一线', '她也一线', '摆旁一页', '未渡的一页', '盐还在', '空船的刻度',
     ])
   })
 
-  it('英文标题严格对应（七十八篇顺序）', () => {
+  it('英文标题严格对应（七十九篇顺序）', () => {
     expect(STORY_CHAPTERS.map((c) => c.enTitle)).toEqual([
       'Salt', 'The Nameless Stone', 'The Empty Bar', 'The Ledger', 'The Garden of Return',
-      'The Rain Tribunal', 'The Frostbell', 'The Thousand Doors', 'The Stone-Throat', 'The First Bell', 'The Dark Tide', 'Epilogue · The Twelfth Listener', 'The Bell-Picker', 'The Lampwright', 'The City of Low Tones', 'The Pendulum Ferryman', 'The Unfinished Ledger Page', 'The Fourth Strike', 'The Last String', 'The String-Listener', 'The Third Voice', 'The Ensemble', 'The Echo Vale', 'After Half a Chime', 'Beside the Button', 'Beyond the Line', 'After the Bag', 'Salt on the Sill', 'After the Salt Line', 'The Sill Keeps Count', 'After the Space', 'The Unmarked Number', 'Beside the Scale', 'The Unentered Page', 'The Dry Place', 'Unweighed', 'The Empty Scale', 'Beyond the Scale', "The Scale's Shadow", 'Beyond the Threshold', 'The Mark Outside', 'Salt at the Threshold', 'The Unopened Page', 'The Unsent Letter', 'After the Empty Scale', 'The Unmade Swing', 'The Dry Mark Beneath', 'The Unasked Boat', 'The Place Aboard', 'Salt Not Aboard', 'The Boat Still', 'Beside the Jar', 'The Ring', 'The Mark Beneath the Jar', 'The Unmoved Pendulum', 'No Handover', 'The Place Beside the Pendulum', 'Salt Beside the Seat', 'The Mark Remains', 'At Ebb, One Stick', 'The Swing Unreturned', 'Ash Beside the Pendulum', 'Ash Not Fallen', 'The Mark Not Entered', 'The Ash Unhurried', 'The Fire Knows', 'The Ash Unreturned', 'The Fading Mark', 'The Unentered Stroke', 'The Corner Turns', 'One More Dusk', 'The Ledger, Shut', 'The Unanswered Question', 'One Line in the Night', 'She, Too, a Seam', 'A Page Beside the Pendulum', 'The Unferried Page', 'The Salt Is There',
+      'The Rain Tribunal', 'The Frostbell', 'The Thousand Doors', 'The Stone-Throat', 'The First Bell', 'The Dark Tide', 'Epilogue · The Twelfth Listener', 'The Bell-Picker', 'The Lampwright', 'The City of Low Tones', 'The Pendulum Ferryman', 'The Unfinished Ledger Page', 'The Fourth Strike', 'The Last String', 'The String-Listener', 'The Third Voice', 'The Ensemble', 'The Echo Vale', 'After Half a Chime', 'Beside the Button', 'Beyond the Line', 'After the Bag', 'Salt on the Sill', 'After the Salt Line', 'The Sill Keeps Count', 'After the Space', 'The Unmarked Number', 'Beside the Scale', 'The Unentered Page', 'The Dry Place', 'Unweighed', 'The Empty Scale', 'Beyond the Scale', "The Scale's Shadow", 'Beyond the Threshold', 'The Mark Outside', 'Salt at the Threshold', 'The Unopened Page', 'The Unsent Letter', 'After the Empty Scale', 'The Unmade Swing', 'The Dry Mark Beneath', 'The Unasked Boat', 'The Place Aboard', 'Salt Not Aboard', 'The Boat Still', 'Beside the Jar', 'The Ring', 'The Mark Beneath the Jar', 'The Unmoved Pendulum', 'No Handover', 'The Place Beside the Pendulum', 'Salt Beside the Seat', 'The Mark Remains', 'At Ebb, One Stick', 'The Swing Unreturned', 'Ash Beside the Pendulum', 'Ash Not Fallen', 'The Mark Not Entered', 'The Ash Unhurried', 'The Fire Knows', 'The Ash Unreturned', 'The Fading Mark', 'The Unentered Stroke', 'The Corner Turns', 'One More Dusk', 'The Ledger, Shut', 'The Unanswered Question', 'One Line in the Night', 'She, Too, a Seam', 'A Page Beside the Pendulum', 'The Unferried Page', 'The Salt Is There', "The Boat's Measure",
     ])
   })
 

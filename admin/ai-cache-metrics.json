@@ -1585,6 +1585,69 @@
           "attempts": 1
         }
       ]
+    },
+    {
+      "at": "2026-11-19T04:50:30.106Z",
+      "mode": "live",
+      "model": "gpt-6.1-sol",
+      "focus": "第七十八篇《盐还在》之后 · 下一篇原创短篇",
+      "calls": 5,
+      "cachedTokens": 300807,
+      "promptTokens": 536359,
+      "meanHitRate": 56.02,
+      "steadyStateHitRate": 68.83,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 200,
+          "dt": 4158,
+          "prompt": 106684,
+          "cached": 5080,
+          "hitRate": 4.8,
+          "attempts": 1,
+          "model": "gpt-6.1-sol"
+        },
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 10002,
+          "prompt": 107321,
+          "cached": 96878,
+          "hitRate": 90.3,
+          "attempts": 1,
+          "model": "gpt-6.1-sol"
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 7722,
+          "prompt": 107424,
+          "cached": 96874,
+          "hitRate": 90.2,
+          "attempts": 1,
+          "model": "gpt-6.1-sol"
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 6272,
+          "prompt": 107305,
+          "cached": 5109,
+          "hitRate": 4.8,
+          "attempts": 1,
+          "model": "gpt-6.1-sol"
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 7928,
+          "prompt": 107625,
+          "cached": 96866,
+          "hitRate": 90,
+          "attempts": 1,
+          "model": "gpt-6.1-sol"
+        }
+      ]
     }
   ]
 }
