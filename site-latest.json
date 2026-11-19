@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "4fff284d3ee467eae3e0e24a4816df4bde327908",
+  "head": "e845ee6b5b86041cc767ab281ee98d2de6a6d6ec",
   "branch": "master",
-  "subject": "chore(status): re-embed site-latest.json",
-  "date": "2026-11-19T05:53:41Z",
+  "subject": "feat(story): KI-711《余响集》第八十篇《两条线 / Two Lines》落地（真 live · 用户指定模型 gpt-6.2-sol 首跑）+ aizzz 默认模型更换与热身多轮",
+  "date": "2026-11-19T15:34:55+08:00",
   "kv": {
-    "KI.rows": 628,
-    "KI.Implemented": 451,
+    "KI.rows": 629,
+    "KI.Implemented": 452,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 98,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/4fff284d3ee467eae3e0e24a4816df4bde327908",
+    "url": "https://github.com/xiaodernan/caesura/commit/e845ee6b5b86041cc767ab281ee98d2de6a6d6ec",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
