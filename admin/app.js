@@ -101,6 +101,15 @@ const STRINGS = {
   'forecast.sensitivity.h3': { zh: '最敏感的假设', en: 'Most sensitive assumption' },
   'forecast.calls': { zh: 'calls', en: 'calls' },
   'forecast.cached': { zh: 'cached_tokens', en: 'cached_tokens' },
+  'ledger.h2': { zh: '余响编年 · Weekly Ledger', en: 'Weekly Ledger · a chronicler’s entry' },
+  'ledger.hint': { zh: 'LLM 真跑 · 按最近一周为「止音纪元」写一段双语年鉴编年（canon 名词 · 编年史口吻）', en: 'Live LLM: a bilingual week ledger written by the chronicler, using only canon nouns · annual cadence, no sentiment' },
+  'ledger.portrait.h3': { zh: '编年正文', en: 'Chronicle body' },
+  'ledger.oneline.h3': { zh: '今日戳记 · Today’s stamp', en: 'Today’s stamp' },
+  'ledger.echo.h3': { zh: '回声 · Echo line', en: 'Echo line' },
+  'ledger.calls': { zh: 'calls', en: 'calls' },
+  'ledger.cached': { zh: 'cached_tokens', en: 'cached_tokens' },
+  'ledger.date': { zh: 'audited', en: 'audited' },
+  'ledger.note': { zh: 'authorOnly · runtime:false · LLM 真跑 · 人工闸后方可落库', en: 'authorOnly · runtime:false · LLM-authored · human gate required' },
   'forecast.date': { zh: 'forecasted', en: 'forecasted' },
   'forecast.note': { zh: 'authorOnly · runtime:false · LLM 裁决 · 人工闸后方可落库', en: 'authorOnly · runtime:false · LLM-authored · human gate required' },
   'sg.h2': { zh: '状态图检查站 · StateGraph 实跑', en: 'StateGraph checkpoints · the real run' },
@@ -909,6 +918,35 @@ async function renderBuild() {
 }
 
 /* ─────────── 先验审计（KI-636 · Priors Audit）─────────── */
+/* ─────────── 余响编年（KI-715 · Weekly Ledger）─────────── */
+const renderLedger = async () => {
+  const root = document.getElementById('panel-ledger')
+  if (!root) return
+  const isEn = LANG === 'en'
+  let d
+  try {
+    const r = await fetch('./ai-weekly-ledger.json', { cache: 'no-store' })
+    if (!r.ok) throw new Error('HTTP ' + r.status)
+    d = await r.json()
+  } catch (e) {
+    const v = document.getElementById('ledger-portrait-zh')
+    if (v) v.innerHTML = '<span class="priors-note">读取 ai-weekly-ledger.json 失败：' + String(e?.message ?? e) + '</span>'
+    return
+  }
+  const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ?? '—' }
+  setText('ledger-portrait-zh', d.portraitZh)
+  setText('ledger-portrait-en', d.portraitEn)
+  setText('ledger-oneline-zh', d.oneLineZh)
+  setText('ledger-oneline-en', d.oneLineEn)
+  setText('ledger-echo-zh', d.echoZh)
+  setText('ledger-echo-en', d.echoEn)
+  setText('ledger-calls', d.usage?.calls)
+  setText('ledger-cached', d.usage?.cachedTokens)
+  setText('ledger-date', String(d.generatedAt || '').slice(0, 10))
+  document.querySelectorAll('#panel-ledger .priors-overall-zh').forEach((el) => { el.hidden = isEn })
+  document.querySelectorAll('#panel-ledger .priors-overall-en').forEach((el) => { el.hidden = !isEn })
+}
+
 async function renderPriors() {
   const root = document.getElementById('panel-priors')
   if (!root) return
@@ -1012,7 +1050,7 @@ function renderMethod() {
 function renderAll() {
   renderKpis(); renderTrend(); renderFunnel(); renderChannels(); renderDevices()
   renderHours(); renderCohorts(); renderAnomalies(); renderExits(); renderRecs()
-  renderLive(); renderMethod(); renderAiCommitted(); hydrateAiLive(); renderStateGraph(); renderBuild(); renderPriors(); renderForecast(); renderCacheMetrics();
+  renderLive(); renderMethod(); renderAiCommitted(); hydrateAiLive(); renderStateGraph(); renderBuild(); renderPriors(); renderLedger(); renderForecast(); renderCacheMetrics();
 }
 function tickClock() {
   const t = new Date()

@@ -1,0 +1,30 @@
+{
+  "$comment": "KI-715 · 余响编年 · Weekly Ledger · LLM 真跑 · authorOnly · runtime:false · 人工闸后落库",
+  "runtime": false,
+  "authorOnly": true,
+  "containsCredentials": false,
+  "requiresHumanReview": true,
+  "schema": 1,
+  "mode": "live",
+  "generatedAt": "2026-11-19T15:42:13.085Z",
+  "model": "gpt-6.2-sol",
+  "endpoint": "https://api.aizzz.xyz/v1",
+  "portraitZh": "2026年11月19日，月第3周。回廊的薄簿仍合着，页角偶尔抬起又落回。门槛上的盐没有移动，船底干痕随潮显露又被覆住。阿汐没有记下这一夜；灯照常亮着。",
+  "portraitEn": "November 19, 2026, third week of the month. The thin ledger in the Arcade remained shut; its corner lifted now and then, then settled. Salt stayed on the threshold. The tide revealed the dry mark beneath the boat, then covered it again. Axi entered nothing of the night. The lamp stayed lit.",
+  "oneLineZh": "盐留在门槛，薄簿仍合着。",
+  "oneLineEn": "Salt stayed on the threshold; the ledger stayed shut.",
+  "echoZh": "页角自翻，不必记下。",
+  "echoEn": "The page turns; no entry is needed.",
+  "usage": {
+    "calls": 1,
+    "promptTokens": 111460,
+    "cachedTokens": 99083,
+    "hitRate": 88.9,
+    "statuses": [
+      200
+    ],
+    "attempts": 1,
+    "model": "gpt-6.2-sol"
+  },
+  "errors": []
+}
