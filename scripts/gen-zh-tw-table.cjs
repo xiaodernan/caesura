@@ -100,6 +100,7 @@ try {
     'story/the-boats-measure/index.html',
     'story/two-lines/index.html',
     'story/a-page-by-the-boat/index.html',
+    'story/the-unsent-page/index.html',
   ];
 
   const PHRASES = new Set();

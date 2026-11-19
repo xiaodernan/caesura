@@ -4089,5 +4089,56 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">Some pages remain pages outside the door.</p>
     <p class="coda">The age of hush has not ended. It has only lived one more evening — the ledger shut, the lamp lights itself, the door keeps a seam — and she was well too.</p>`,
   },
+  {
+    no: 82,
+    zhTitle: "未寄的一页",
+    enTitle: "The Unsent Page",
+    zh: `<p>清晨，船边的一页仍在。阿汐没有翻它。潮水退去，船底的干痕仍在；潮水回来，干痕又被覆住。她把手放在门槛上，听水壶自己咕嘟作响。没有人来取那一页。有些页，留在原处也是去处。</p>
+    <p>薄簿合着，页角偶尔抬起——又落回去。灯影晃了一下。她只是听。她没去翻页，也没去看海。水壶自己开了，它自己知道时候，她没碰它。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她以前总是害怕那一页会被认出来——某个潮来——它会自己翻过去——某个人会来取它——某天夜里她偶尔会想起那一页——每一次起意都被自己压住——因为她不想替它决定它要去哪里。今天早上，光线斜进来，落在它身上——它没有动——它是一直在那里——她不问它是什么——她不替它决定。</p>
+    <p>听海的时候，她总是听见——潮水涨退——干痕——她把手放在门槛上——凉的——船影斜横过来——它没有动——它是从她身上流出来的——它是她。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>母亲的声音回来——我的孩子——你瘦了——别去量——量了就成了证词——她说：好——她只是听——她听见风——她听见水在自己开——她听见没人来。</p>
+    <p>薄簿页角又抬起一线——它是自己的——它自己合上——她没数——它刚才是合着——它还是合着。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她望着门槛——那粒盐还在——它几乎和门一样老——她偶尔忘了它——光一来它就亮——它是她家里的一物——别人不需要记下它——它自己记着自己。</p>
+    <p>船没有启——没有人要启。光自己会亮——灯自己会亮——一切都会处理好——她不添柴——她不动——她只是听。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些页，留在原处也是去处。</p>
+    <p class="coda">止音纪元没有结束。它只是又过了一个早晨——船边仍在，簿阖着，灯自己会亮——她也很好。</p>`,
+    en: `<p>At dawn, the page by the boat remained. Axi did not turn it. The dry mark beneath the hull showed at ebb and was covered again when the tide returned. She rested her hand on the threshold and listened to the kettle rumble on its own. No one came for the page. Some pages find their way by staying.</p>
+    <p>The thin ledger stayed shut; its page corner lifted now and then and settled back. The lamplight trembled. She only listened. She did not turn the page, and she did not look at the sea. The kettle boiled on its own; it knew its own hour; she did not touch it.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>She had feared the page would be claimed — that some tide would come — that it would turn itself over — that someone would come to take it — she thought of it now and then — she had kept those thoughts soft — she would not decide its destination for it. The light came at an angle and fell on it — it did not move — it had always been there — she would not ask it what it was — she would not decide for it.</p>
+    <p>Listening to the tide she always heard the ebb and return — the dry mark — she rested her hand on the threshold — it was cool — the shape of the boat was cast across it — it did not move — it had come from her — it was her.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Her mother's voice came back — my child — you are thinner — do not measure it — once measured, it becomes testimony — she said: all right — she only listened — she heard the wind — she heard the kettle boil — she heard no one coming.</p>
+    <p>The corner of the thin ledger lifted once more, and settled back — it moved of its own weight — it closed on its own — she did not count — it had been shut — it is shut.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>She looked at the threshold — the grain of salt was there — it was nearly as old as the door — she occasionally forgot it — and the light came and revealed it again — it was one of her household — no one needed to record it — it recorded itself.</p>
+    <p>The boat did not weigh anchor — no one wished it — the light would come again — the lamp would light itself — all would take care of itself — she did not add wood — she did not move — she only listened.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some pages find their way by staying.</p>
+    <p class="coda">The age of hush has not ended. It has only lived one more morning — the page by the boat remained, the ledger stayed shut, the lamp lights itself — and she was well too.</p>`,
+  },
 ]
 

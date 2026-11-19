@@ -1764,6 +1764,69 @@
           "model": "gpt-6.2-sol"
         }
       ]
+    },
+    {
+      "at": "2026-11-19T12:13:27.421Z",
+      "mode": "live",
+      "model": "gpt-6.2-sol",
+      "focus": "第八十一篇《船边的一页》之后 · 下一篇原创短篇",
+      "calls": 5,
+      "cachedTokens": 491080,
+      "promptTokens": 555002,
+      "meanHitRate": 88.48,
+      "steadyStateHitRate": 88.38,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 200,
+          "dt": 3545,
+          "prompt": 110406,
+          "cached": 98125,
+          "hitRate": 88.9,
+          "attempts": 2,
+          "model": "gpt-6.2-sol"
+        },
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 11653,
+          "prompt": 111060,
+          "cached": 98084,
+          "hitRate": 88.3,
+          "attempts": 1,
+          "model": "gpt-6.2-sol"
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 9239,
+          "prompt": 111163,
+          "cached": 98078,
+          "hitRate": 88.2,
+          "attempts": 1,
+          "model": "gpt-6.2-sol"
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 6160,
+          "prompt": 111044,
+          "cached": 98725,
+          "hitRate": 88.9,
+          "attempts": 2,
+          "model": "gpt-6.2-sol"
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 6585,
+          "prompt": 111329,
+          "cached": 98068,
+          "hitRate": 88.1,
+          "attempts": 1,
+          "model": "gpt-6.2-sol"
+        }
+      ]
     }
   ]
 }
