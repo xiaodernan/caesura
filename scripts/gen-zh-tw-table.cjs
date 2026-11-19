@@ -96,6 +96,7 @@ try {
     'story/she-too-a-seam/index.html',
     'story/a-page-beside-the-pendulum/index.html',
     'story/the-unferried-page/index.html',
+    'story/the-salt-is-there/index.html',
   ];
 
   const PHRASES = new Set();

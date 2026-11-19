@@ -3889,5 +3889,56 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">Some pages need no opening.</p>
     <p class="coda">The age of hush has not ended. It has only lived one more night — the thin ledger remained beside the pendulum, its page corner occasionally lifting — she, too, shut-stayed — and she, too, stayed.</p>`,
   },
+  {
+    no: 78,
+    zhTitle: "盐还在",
+    enTitle: "The Salt Is There",
+    zh: `<p>天亮了，阿汐没有去看海。门槛上的盐还在。薄簿仍合着，摆停在最低处，空位仍无人坐。她没有再数它们，也没有记下什么。光线从窗子斜进来，落在它身上，它没有动。</p>
+    <p>水自己开了——水在灶上咕嘟咕嘟地响——它自己知道时候——她不动它——她不添柴——她只是听——薄簿在摆旁边——页角偶尔翻起一线——她不看——它翻自己的——它合自己的。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>门里的薄簿合着是它的事——它合着——它就在——它也合着——它自己知道——它与光与她都不声张。她坐在灶旁，看着薄簿——页角偶尔抬起——又落下——和摆一样——和盐一样——大家都一样。</p>
+    <p>那粒盐——门槛上的——它还是老样子——从未挪动——也不需要挪动——她有时候忘了它还在——当她想起来时它还在——它在那儿就够了——它在那儿就够了——没人需要记下它——它也不在名单里。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮水又退去了——表盘不响——风从门缝吹进来——它更凉一些——她不挡——它也不挡——它自己知道方向——她听着——她也知道方向。她把手放在门槛上——它凉凉的——它的形状和她不一样——却又像——它是从她身上流出来的——它是从门槛上稀出来的——它是她。</p>
+    <p>母亲的声音回来——我的孩子——你瘦了——你别忘了你——她说：好——她只是听——她不添柴——她不动——她只是听——她听见风——她听见盐——她听见没人来。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她有时候看门——盐依旧在那里——它几乎和门一样深——和薄簿一样深——和整座回廊一样深。她知道它从未来到过这儿——她知道它从未走过——她知道它从未成为过什么——她知道它始终没有变。</p>
+    <p>摆停在最低处——簿也合着——那粒盐也在那儿——所有的这些——都在等——都在看——都不想说——它不说出口——它只是在这儿——它把自己全部——给了回廊——给了薄簿——给了门槛。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些盐，在那儿就够了。</p>
+    <p class="coda">止音纪元没有结束。它只是又多了一个早晨——盐还在，簿还合着，灯自己会亮——她也很好。</p>`,
+    en: `<p>Morning came. Axi did not look at the sea. The salt on the threshold remained. The ledger was still shut. The pendulum lay at its lowest point. The seat remained empty. She did not count them. She recorded nothing. Light came at an angle through the window. It fell on the salt. The salt did not move.</p>
+    <p>The water came to a boil on its own — it rumbled in the pot — it knew its own hour — she did not touch it — she did not add wood — she only listened — the ledger lay beside the pendulum — one page corner rose — it settled — she watched — it turned on its own — it closed on its own.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ledger stayed closed. — Its being closed was its own affair — it stayed closed — it was there — it knew — it also drew no attention to itself — nor did the light — nor did she. She sat by the stove. She looked at the ledger. The page corner rose now and then. It settled. It was like the pendulum. It was like the salt. Everything was the same.</p>
+    <p>That grain of salt — on the threshold — it remained as it always was — it had never moved — it did not need to — sometimes she forgot it was there — when she remembered, it was still there — its being there was enough — it was not on anyone's list.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The tide went out again — the dial never sounded — the wind came through the seam of the door — it was cooler — she did not hold it against it — it did not press on her — it knew its own direction — she listened — she knew its direction too. She rested her hand on the threshold — it was cool — its shape was different from hers — and yet alike — it had come from her — it had seeped from the threshold — it was her.</p>
+    <p>Her mother's voice came back — my child — you are thinner — don't forget yourself — she said: all right — she only listened — she did not add wood — she did not move — she only listened — she heard the wind — she heard the salt — she heard no one coming.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Sometimes she watched the door — the salt was there — it reached as deep as the door — as deep as the ledger — as deep as the whole Arcade. She knew it had never reached there — she knew it had never left — she knew it had never become something else — she knew it had always remained unchanged.</p>
+    <p>The pendulum lay at its lowest point — the ledger stayed shut — that grain of salt was there — all of them — were waiting — they were all watching — none of them wanted to say anything — they would not speak — they only were there — they gave themselves wholly — to the Arcade — to the ledger — to the threshold.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some salt is there, and that is enough.</p>
+    <p class="coda">The age of hush has not ended. It has only lived one more morning — the salt remained, the ledger stayed shut, the lamp lights itself — and she was well too.</p>`,
+  },
 ]
 

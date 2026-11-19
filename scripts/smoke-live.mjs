@@ -120,6 +120,7 @@ const ENDPOINTS = [
   { name: 'story-76', url: 'https://xiaodernan.github.io/caesura/story/she-too-a-seam/', marker: '她也一线' },
   { name: 'story-77', url: 'https://xiaodernan.github.io/caesura/story/a-page-beside-the-pendulum/', marker: '摆旁一页' },
   { name: 'story-78', url: 'https://xiaodernan.github.io/caesura/story/the-unferried-page/', marker: '未渡的一页' },
+  { name: 'story-79', url: 'https://xiaodernan.github.io/caesura/story/the-salt-is-there/', marker: '盐还在' },
   { name: 'ai-json-commit', url: 'https://xiaodernan.github.io/caesura/admin/ai-director-latest.json', marker: '"authorOnly": true' },
   { name: 'ai-json-qa', url: 'https://xiaodernan.github.io/caesura/admin/ai-director-transitions-qa.json', marker: '"authorOnly": true' },
   { name: 'ai-json-cache', url: 'https://xiaodernan.github.io/caesura/admin/ai-cache-metrics.json', marker: '"entries"' },

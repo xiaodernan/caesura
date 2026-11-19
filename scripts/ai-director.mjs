@@ -193,7 +193,7 @@ const parseJsonLoose = (raw) => {
 async function nodeLoadWorld(state) { state.world = worldSnapshot() }
 
 async function nodeRetrieveCanon(state) {
-  const focus = FOCUS || '止音纪元 世界现状 七十七篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响'
+  const focus = FOCUS || '止音纪元 世界现状 七十八篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响'
   const t0 = Date.now()
   const corpus = buildWorldCorpus(ROOT)
   const index = buildIndex(corpus)
@@ -234,7 +234,7 @@ async function nodeProposeTransitions(state) {
 
 async function nodeDraftContent(state) {
   if (state.mode !== 'live') { state.atlasDraft = null; return }
-  const task = '【任务·游记续写草稿】以钟摆渡人/止音纪元的笔法，为下一篇游记产出草稿：{"no":78,"titleZh":"≤10字","titleEn":"≤6 words","pZh":"≤120字正文","pEn":"≤70 words","codaZh":"≤40字尾声","codaEn":"≤25 words","requiresHumanReview":true}。笔法：不喧哗、不抒情、物件说话、留白。只许 JSON。'
+  const task = '【任务·游记续写草稿】以钟摆渡人/止音纪元的笔法，为下一篇游记产出草稿：{"no":79,"titleZh":"≤10字","titleEn":"≤6 words","pZh":"≤120字正文","pEn":"≤70 words","codaZh":"≤40字尾声","codaEn":"≤25 words","requiresHumanReview":true}。笔法：不喧哗、不抒情、物件说话、留白。只许 JSON。'
   const out = await callDirector(state.env, { stdinPrefix: state.prefix, task: withSnapshot(state, task), temperature: 0.9, maxTokens: 800 })
   recordUsage(state, 'draftContent', out)
   const parsed = parseJsonLoose(out.text)

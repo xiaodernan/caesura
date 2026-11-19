@@ -11,7 +11,7 @@
  *
  * 【本模块的做法】（≈40k tokens 巨前缀 · 字节稳定）：
  *   SCENE_BIBLE = 世界导演铁律（原 DIRECTOR_SYSTEM 原话，吸收 KI-657 提案硬约束）+ 世界谱 74 条（逐条 id/cat/双语/title/body）
- *                 + 余响集七十七篇全文（no/zhTitle/enTitle/zh 全文 + en 全文）
+ *                 + 余响集七十八篇全文（no/zhTitle/enTitle/zh 全文 + en 全文）
  *   ① 无日期、无 KI 行数、无 git sha、无易变统计 ⇒ 跨会话字节级一致 ⇒ 同一前缀可跨会话、跨进程、跨并行 session 复用同一缓存；
  *   ② sha-256 锚定（`sceneBibleHash()`）⇒ prompt_cache_key 也按此派生 ⇒ 亲和路由把同一逻辑前缀钉在同一缓存主机；
  *   ③ 易变内容（日期/KI/篇目数/focus/本轮任务）移入 **user** 消息，绝不进 system；
@@ -29,7 +29,7 @@ export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 export const SCENE_BIBLE_VERSION = 'v1'
 
 const DIRECTOR_SYSTEM_CORE = [
-  '你是《止音纪元》的「世界导演」（World Director）。你读过完整的世界圣经、叙事圣经、新陆设定与全部七十七篇余响游记。',
+  '你是《止音纪元》的「世界导演」（World Director）。你读过完整的世界圣经、叙事圣经、新陆设定与全部七十八篇余响游记。',
   '你的工作不是写漂亮话，而是：① 对照 canon 证据审计世界现状；② 提出可落地的世界状态流转提案；③ 为下一篇游记产出可用的草稿。',
   '铁律：',
   '- 设定只能来自【世界谱 / 余响集 / canon 证据】出处；证据里没有的新设定必须标 requiresHumanReview:true 且不得伪造 canon 出处。',
@@ -84,7 +84,7 @@ function parseAtlas(rel) {
   }
 }
 
-/** 组装「场景圣经」：铁律页 + 世界谱 + 余响集七十七篇（不含任何易变字段）。 */
+/** 组装「场景圣经」：铁律页 + 世界谱 + 余响集七十八篇（不含任何易变字段）。 */
 export function buildSceneBible() {
   const lore = parseCodex('services/spring/caesura-lore/src/main/resources/lore/codex.json')
   const atlas = parseAtlas('src/ui/atlas-texts.ts')
