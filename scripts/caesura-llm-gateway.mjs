@@ -46,7 +46,7 @@ import { createFullJitterBackoff } from './caesura-retry-dlq.mjs'
 
 export const LLM_DEFAULTS = Object.freeze({
   baseUrl: 'https://api.aizzz.xyz/v1',
-  model: 'gpt-6.1-terra',
+  model: 'gpt-6.2-sol',
   temperature: 0,
   maxTokens: 256,
   seed: 538,

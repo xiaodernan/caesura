@@ -7,7 +7,7 @@
  *     （action / rationale / impact / effort / metric / risk，双语）；
  *   ④ 灵敏度：哪个假设崩了最伤。
  *
- * 模式 = `--live` 才真正出网（Clash Verge 7897 / aizzz gpt-6.1-terra · clash 代理）
+ * 模式 = `--live` 才真正出网（Clash Verge 7897 / aizzz gpt-6.2-sol · clash 代理）
  *       = 默认 dry-run（只打印 payload，不出网）。API key 只从 env（authoring）拿，绝不入库。
  * 用的是**本地 forecast() 的数据事实**，不是让 LLM 估数——LLM 只负责裁决结构，数字不变。
  * 玩家进程零 LLM；这是 admin 的可选面板，人工闸后入库。

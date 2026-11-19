@@ -679,7 +679,7 @@ function hydrateAiLive() {
   try { saved = JSON.parse(sessionStorage.getItem(AI_LIVE_KEY) || 'null') } catch { saved = null }
   const baseEl = aiEl('ai-base'), modelEl = aiEl('ai-model'), keyEl = aiEl('ai-key')
   if (baseEl) baseEl.value = (saved && saved.base) || 'https://api.aizzz.xyz/v1'
-  if (modelEl) modelEl.value = (saved && saved.model) || 'gpt-6.1-terra'
+  if (modelEl) modelEl.value = (saved && saved.model) || 'gpt-6.2-sol'
   if (keyEl && saved && saved.key) keyEl.value = saved.key
 }
 

@@ -3991,5 +3991,54 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">Some measures need not be used.</p>
     <p class="coda">The age of hush has not ended. It has only lived one more morning — the boat remained, the ledger stayed shut, the salt was on the threshold — and she was well too.</p>`,
   },
+  {
+    no: 80,
+    zhTitle: "两条线",
+    enTitle: "Two Lines",
+    zh: `<p>门外的船仍停着，船底的干痕还在。潮水退去，它就显露一寸；涨潮时，潮水覆过它；再退时，它还在原处。这条线——被潮水按住——它自己知道自己在哪里。薄簿合着，页角偶尔抬起一线，又落回去。阿汐没有量过它，也没有记下什么。她只是看着——看它自己知道——它自己就在——这就够了。</p>
+    <p>她在灶边烧水。水自己开了——咕嘟咕嘟地响——它自己知道时候——她不动它——她不添柴——她只是听。页角又翻了一回——它翻自己的——她不替它动一根手指。摆停在最低处——它好像一直停在那里——没有人上去拨它——它自己知道自己停在哪里。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>母亲的声音回来——我的孩子——你瘦了——别去量它——线量了就成了证词——她说：好——她只是听——她不添柴——她不动——她只是听——她听见风——她听见盐在门槛上还在——她听见没人来。</p>
+    <p>她试着记住那两条线——一条在船底——一条在簿页上——一条被潮水按——一条被它自己按——她也没有数——也没有记——记了——就会变成她今天必须回答的问题——她现在已经是知道不量的那种人。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>光从窗子斜进来——落在船上——它没有动——落在簿上——它也没有动——落在门槛的盐上——它还是没有动——它们一条线都没有动——它们各自就知道——它们在各自的位置上——它们在各自的边界上——这就够了。</p>
+    <p>她把手放在门槛上——它凉凉的——门槛是冷的——它是从海边来的——它不需要别人解释它是什么——它自己知道自己是什么——她笑了一下——没有声音——她自己知道她为什么笑。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>潮退了。干痕还在。页角又抬起一线——又落下去——她没有数那是第几回——船没有启程——薄簿没有翻——门槛上的盐还在——她也在。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些线，各自知道来处。</p>
+    <p class="coda">止音纪元没有结束。它只是又多了一次潮水——船仍停着，簿仍合着，线仍在各自的位置——她也很好。</p>`,
+    en: `<p>The boat remained outside, the dry mark beneath its hull still there. When the tide withdrew, it showed one more mark; at flood, the tide covered it; at the next ebb, it was there again. That line — pressed down by the tide — it knew where it lay. The thin ledger stayed shut; its page corner lifted now and then and settled back down. Axi never measured it, never entered anything of it. She only watched — watched it know itself — watched it be there — and that was enough.</p>
+    <p>She heated water by the stove. The water came to a boil on its own — it rumbled in the pot — it knew its own hour — she did not touch it — she did not add wood — she only listened. The page corner rose once more and fell back of its own weight. She would not move one finger for it. The pendulum lay at its lowest point — as if it had always been there — no one went to swing it — it knew where it was.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Her mother's voice came back — my child — you are thinner — do not measure it — a line, once measured, becomes testimony — she said: all right — she only listened — she did not add wood — she did not move — she only listened — she heard the wind — she heard the salt was still on the threshold — she heard no one coming.</p>
+    <p>She tried to remember the two lines — one on the hull — one on the page — one pressed down by the tide — one pressed down by itself — she did not count either — she did not write them down — to write them down would make them into a question she would have to answer today — she was already the kind of person who knew not to measure.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Light came at an angle through the window — it fell on the boat — the boat did not move — it fell on the ledger — the ledger did not move — it fell on the salt on the threshold — the salt did not move — neither line moved — each of them already knew — each of them was in its own place — each of them was a boundary — and that was enough.</p>
+    <p>She rested her hand on the threshold — it was cool — the threshold was cool — it had come from the sea — it did not need anyone to explain what it was — it knew what it was — she smiled — without a sound — and she knew why she was smiling.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The tide had withdrawn. The dry mark was there. The page corner lifted one more line and settled back down. She did not count how many times. The boat did not weigh anchor. The ledger did not open. The salt was on the threshold. She was too.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some lines know where they belong.</p>
+    <p class="coda">The age of hush has not ended. It has only lived one more tide — the boat remained, the ledger stayed shut, the lines remained in their own places — and she was well too.</p>`,
+  },
 ]
 

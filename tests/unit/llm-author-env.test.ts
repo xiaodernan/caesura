@@ -26,7 +26,7 @@ describe('authorLlmEnv · 优先级与回落（KI-587）', () => {
       apiKey: 'sk-test-1',
       baseUrl: 'https://example.test/v1',
       model: 'some-model',
-      modelChain: ['some-model', 'gpt-6.1-terra', 'gpt-6.1-sol', 'gpt-6.2-sol', 'gpt-5.6-terra'],
+      modelChain: ['some-model', 'gpt-6.2-sol', 'gpt-6.1-sol', 'gpt-6.2-astra', 'gpt-5.6-terra'],
     })
   })
   it('只有旧名 LLM_* ⇒ 回落生效（不再静默走空 key）', () => {
@@ -79,11 +79,11 @@ describe('authorLlmEnv · 优先级与回落（KI-587）', () => {
 describe('resolveModelChain · 有序模型兜底链（KI-710）', () => {
   it('CAESURA_LLM_MODELS 优先：逗号列表原样生效（去重 · 去空格）', () => {
     expect(resolveModelChain({ CAESURA_LLM_MODELS: 'a, b ,c, a' })).toEqual(['a', 'b', 'c'])
-    expect(resolveModelChain({ CAESURA_LLM_MODELS: ' , ', CAESURA_LLM_MODEL: 'solo' })).toEqual(['solo', 'gpt-6.1-terra', 'gpt-6.1-sol', 'gpt-6.2-sol', 'gpt-5.6-terra'])
+    expect(resolveModelChain({ CAESURA_LLM_MODELS: ' , ', CAESURA_LLM_MODEL: 'solo' })).toEqual(['solo', 'gpt-6.2-sol', 'gpt-6.1-sol', 'gpt-6.2-astra', 'gpt-5.6-terra'])
   })
   it('未设 MODELS ⇒ 首选（CAESURA>LLM）后接默认链，首选不重复', () => {
-    expect(resolveModelChain({ CAESURA_LLM_MODEL: 'gpt-6.1-terra' })).toEqual([...LLM_DEFAULT_MODEL_CHAIN])
-    expect(resolveModelChain({ LLM_MODEL: 'legacy-x' })).toEqual(['legacy-x', 'gpt-6.1-terra', 'gpt-6.1-sol', 'gpt-6.2-sol', 'gpt-5.6-terra'])
+    expect(resolveModelChain({ CAESURA_LLM_MODEL: 'gpt-6.2-sol' })).toEqual([...LLM_DEFAULT_MODEL_CHAIN])
+    expect(resolveModelChain({ LLM_MODEL: 'legacy-x' })).toEqual(['legacy-x', 'gpt-6.2-sol', 'gpt-6.1-sol', 'gpt-6.2-astra', 'gpt-5.6-terra'])
   })
   it('全空 ⇒ 整条默认链（首选 = terra）', () => {
     expect(resolveModelChain({})).toEqual([...LLM_DEFAULT_MODEL_CHAIN])

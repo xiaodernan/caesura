@@ -98,6 +98,7 @@ try {
     'story/the-unferried-page/index.html',
     'story/the-salt-is-there/index.html',
     'story/the-boats-measure/index.html',
+    'story/two-lines/index.html',
   ];
 
   const PHRASES = new Set();

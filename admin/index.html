@@ -189,7 +189,7 @@
         <div class="ai-box-head"><h3 data-i18n="ai.l.h3">自带 Key · 现场诊断</h3><span class="ai-chip ai-chip-live" data-i18n="ai.live">实时</span></div>
         <p class="ai-note" data-i18n="ai.l.note">Key 只存你这台浏览器的 sessionStorage，不落盘、不上报、不进任何仓库；网关 CORS 已实测开放。连得上与否取决于你的网络路径（本机 Clash：让浏览器走系统代理/TUN；海外直连；否则本机 npm run ai:director:live）。每次调用消耗的是你自己网关上的 token。</p>
         <div class="ai-field"><label for="ai-base" data-i18n="ai.l.base">Base URL（OpenAI 兼容）</label><input id="ai-base" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://api.aizzz.xyz/v1" /></div>
-        <div class="ai-field"><label for="ai-model" data-i18n="ai.l.model">模型</label><input id="ai-model" type="text" autocomplete="off" spellcheck="false" placeholder="gpt-6.1-terra" /></div>
+        <div class="ai-field"><label for="ai-model" data-i18n="ai.l.model">模型</label><input id="ai-model" type="text" autocomplete="off" spellcheck="false" placeholder="gpt-6.2-sol" /></div>
         <div class="ai-field"><label for="ai-key" data-i18n="ai.l.key">API Key</label><input id="ai-key" type="password" autocomplete="off" spellcheck="false" placeholder="sk-…" /></div>
         <button class="btn-gold ai-run" id="ai-run" type="submit" data-i18n="ai.l.run">真跑诊断 →</button>
         <p class="ai-note ai-note-fine" data-i18n="ai.l.fine">发送内容＝本页聚合数据的 ≤800 字摘要（不含任何个人信息）；模型回复原样呈现。</p>

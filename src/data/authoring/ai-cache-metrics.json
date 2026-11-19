@@ -1648,6 +1648,59 @@
           "model": "gpt-6.1-sol"
         }
       ]
+    },
+    {
+      "at": "2026-11-19T06:05:41.692Z",
+      "mode": "live",
+      "model": "gpt-6.2-sol",
+      "focus": "第七十九篇《空船的刻度》之后 · 下一篇原创短篇",
+      "calls": 4,
+      "cachedTokens": 384821,
+      "promptTokens": 435421,
+      "meanHitRate": 88.38,
+      "steadyStateHitRate": 88.38,
+      "perCall": [
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 7812,
+          "prompt": 108763,
+          "cached": 96691,
+          "hitRate": 88.9,
+          "attempts": 1,
+          "model": "gpt-6.2-sol"
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 12012,
+          "prompt": 108866,
+          "cached": 96045,
+          "hitRate": 88.2,
+          "attempts": 1,
+          "model": "gpt-6.2-sol"
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 10177,
+          "prompt": 108747,
+          "cached": 96052,
+          "hitRate": 88.3,
+          "attempts": 1,
+          "model": "gpt-6.2-sol"
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 6250,
+          "prompt": 109045,
+          "cached": 96033,
+          "hitRate": 88.1,
+          "attempts": 1,
+          "model": "gpt-6.2-sol"
+        }
+      ]
     }
   ]
 }
