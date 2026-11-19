@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "a1d2a664813e6779698f61d65f4678ea29af89c0",
+  "head": "2779f2081e4fc124ffe10fbc2517fd8cf28a0ece",
   "branch": "master",
-  "subject": "feat(sim): KI-712《真人行为模拟 · Real Visitors》落地（零 LLM · 零写入 · 全站 86 页 live 走查）",
-  "date": "2026-11-19T17:11:46+08:00",
+  "subject": "site-latest: a1d2a66 (post-rebase reconcile)",
+  "date": "2026-11-19T17:13:14+08:00",
   "kv": {
     "KI.rows": 630,
     "KI.Implemented": 453,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/a1d2a664813e6779698f61d65f4678ea29af89c0",
+    "url": "https://github.com/xiaodernan/caesura/commit/2779f2081e4fc124ffe10fbc2517fd8cf28a0ece",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
