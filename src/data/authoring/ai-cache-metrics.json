@@ -1701,6 +1701,69 @@
           "model": "gpt-6.2-sol"
         }
       ]
+    },
+    {
+      "at": "2026-11-19T09:23:01.987Z",
+      "mode": "live",
+      "model": "gpt-6.2-sol",
+      "focus": "第八十篇《两条线》之后 · 下一篇原创短篇",
+      "calls": 5,
+      "cachedTokens": 486261,
+      "promptTokens": 550124,
+      "meanHitRate": 88.4,
+      "steadyStateHitRate": 88.28,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 200,
+          "dt": 5336,
+          "prompt": 109428,
+          "cached": 97289,
+          "hitRate": 88.9,
+          "attempts": 2,
+          "model": "gpt-6.2-sol"
+        },
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 9319,
+          "prompt": 110075,
+          "cached": 97249,
+          "hitRate": 88.3,
+          "attempts": 1,
+          "model": "gpt-6.2-sol"
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 10295,
+          "prompt": 110178,
+          "cached": 97243,
+          "hitRate": 88.3,
+          "attempts": 1,
+          "model": "gpt-6.2-sol"
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 9096,
+          "prompt": 110059,
+          "cached": 97250,
+          "hitRate": 88.4,
+          "attempts": 1,
+          "model": "gpt-6.2-sol"
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 6188,
+          "prompt": 110384,
+          "cached": 97230,
+          "hitRate": 88.1,
+          "attempts": 1,
+          "model": "gpt-6.2-sol"
+        }
+      ]
     }
   ]
 }

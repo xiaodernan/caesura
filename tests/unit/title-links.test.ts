@@ -105,7 +105,7 @@ describe('KI-656 · 世界入口直达游记与谱册（KI-645 行动 #2）', ()
     for (const k of ['ui.title.links.aria', 'ui.title.link.atlas', 'ui.title.link.codex', 'ui.notify.atlasCodex']) {
       expect(src.split(`'${k}':`).length - 1, `missing in one table: ${k}`).toBeGreaterThanOrEqual(2)
     }
-    expect(src).toContain('游记 · 余响集（27篇全集）')
+    expect(src).toContain('游记 · 余响集（八十一篇全集）')
     expect(src).toContain('The Aftermath')
   })
 

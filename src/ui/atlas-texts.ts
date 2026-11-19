@@ -4040,5 +4040,54 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">Some lines know where they belong.</p>
     <p class="coda">The age of hush has not ended. It has only lived one more tide — the boat remained, the ledger stayed shut, the lines remained in their own places — and she was well too.</p>`,
   },
+  {
+    no: 81,
+    zhTitle: "船边的一页",
+    enTitle: "A Page by the Boat",
+    zh: `<p>船边的一页还没被翻开——它就在船边——簿是薄的——页角偶尔抬起——又落回去——她没有替它动一根手指。</p>
+    <p>风从门缝进来——灯影晃了一下——她听见——她只是听——她没有看——她只是听。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>阿汐以前总是怕纸软得经不住潮——她以前总是怕这一页——某一天——某个潮来——会被它自己认出来——然后翻过去——然后没人知道——然后又没有了——她想了很久——久到饭凉了——久到灯影动了很多次——她想明白了——它不是害怕——它只是和这页纸一起——在屋子里——待得很久了——很久了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>母亲的声音回来——我的孩子——你瘦了——别去量——量了就成了证词——她说：好——她只是听——她不添柴——她不动——她只是听——她听见风——她听见水在自己开——她听见没人来。</p>
+    <p>水壶自己开了——咕嘟咕嘟地响——它自己知道时候——她没有碰它——她听着——她只是听。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿合着——她没有翻——她也没有去看海——她只是把手放在门槛上——门槛上有一粒盐——光斜进来——落在它身上——它没有动——它是从她身上流出来的——它是她。</p>
+    <p>船没有启——没有人要启——灯自己会亮——门留着一线——它一直都在那儿。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些页，放在门外也仍是页。</p>
+    <p class="coda">止音纪元没有结束。它只是又多了一个傍晚——薄簿阖着，灯自己亮了，门留着一线——她也很好。</p>`,
+    en: `<p>A page by the boat — it lay by the boat — the book was thin — its corner lifted now and then — then settled — she would not move one finger for it.</p>
+    <p>The wind came in through the seam of the door — the lamplight trembled — she heard it — she only listened — she did not look — she only listened.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Axi had feared paper too soft for tide for too long — that page — someday — when the tide came — would recognize itself — then turn over — then no one would know — then it would be gone — she thought for a long time — long past the meal — long past many trembling lamp-flames — and understood — it was not afraid — it and the page had simply been in this room for a long time — a long time.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Her mother's voice came back — my child — you are thinner — do not measure it — once measured it becomes testimony — she said: all right — she only listened — she did not add wood — she did not move — she only listened — she heard the wind — she heard the water come to its own boil — she heard no one coming.</p>
+    <p>The kettle boiled on its own — it rumbled in the pot — it knew its own hour — she did not touch it — she listened — she only listened.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The thin ledger stayed shut — she did not open it — she did not look at the sea — she only rested her hand on the threshold — a grain of salt was on it — the light came at an angle — it fell on it — it did not move — it had come from her — it was her.</p>
+    <p>The boat did not weigh anchor — no one wished it — the lamp lights itself — the door keeps a narrow seam — it has always been there.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some pages remain pages outside the door.</p>
+    <p class="coda">The age of hush has not ended. It has only lived one more evening — the ledger shut, the lamp lights itself, the door keeps a seam — and she was well too.</p>`,
+  },
 ]
 
