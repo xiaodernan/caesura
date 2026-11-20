@@ -1,0 +1,38 @@
+{
+  "$comment": "KI-717 世界线人工闸 · 逐 flag 放行记录 · 由人工审阅 ai-director-latest.json + ai-director-transitions-qa.json 后填写 · 未列出的提案一律不进运行时",
+  "schema": 1,
+  "source": "admin/ai-director-latest.json",
+  "qa": "admin/ai-director-transitions-qa.json",
+  "reviewedBy": "human-gate",
+  "reviewedAt": "2026-11-20",
+  "decisions": [
+    {
+      "flag": "flag.boat_page_left_in_place",
+      "decision": "approve",
+      "chapter": 83,
+      "noteZh": "与第八十一/八十二篇的「未寄出」线一致；把「不替它决定去向」落成玩家可触发的状态，不改写既有 canon。",
+      "noteEn": "Consistent with the unsent-page line of chapters 81–82; makes the refusal to choose its destination a player-triggerable state without rewriting canon."
+    },
+    {
+      "flag": "flag.thin_ledger_left_unrecorded",
+      "decision": "approve",
+      "chapter": 83,
+      "noteZh": "薄簿合着、页角偶尔自翻是既有动作；新增的只是「这一夜不补记」这一格，不涉及新法则。",
+      "noteEn": "The shut ledger and the page-corner turning are established; only the decision not to add an entry for the night is new state, not new law."
+    },
+    {
+      "flag": "flag.hull_mark_left_unmeasured",
+      "decision": "approve",
+      "chapter": 83,
+      "noteZh": "船底干痕随潮显露覆没的意象与第七十九/八十篇同源；「不测量、不记成证词」是人物选择，不是新设定。",
+      "noteEn": "The hull mark appearing and being covered is established in chapters 79–80; not measuring or recording it is a character choice, not a new rule."
+    },
+    {
+      "flag": "flag.threshold_seam_left_open",
+      "decision": "approve",
+      "chapter": 83,
+      "noteZh": "QA 判为 new-canon：门未关与第七十四/七十五篇一致，风自行穿过是新增细节；作为已审新设接受，不冒充旧 canon。",
+      "noteEn": "QA marks this new-canon: the open door matches chapters 74–75, while wind passing through is new detail. Accepted as reviewed new lore, not presented as old canon."
+    }
+  ]
+}

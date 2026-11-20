@@ -1,0 +1,152 @@
+{
+  "$comment": "KI-717 AI 导演 ·「世界线」运行时表 · 由 scripts/echo-flow.mjs 生成 · 人工闸放行 · 玩家进程零 LLM",
+  "schema": 1,
+  "generatedAt": "2026-11-19T17:35:49.707Z",
+  "sourceDigest": "8fcbe0f49c35cfcf",
+  "qaDigest": "f0694914a90ea420",
+  "entries": [
+    {
+      "id": "ef_83_boat_page_left_in_place",
+      "flag": "flag.boat_page_left_in_place",
+      "chapter": 83,
+      "fromZh": "船边的一页仍未被翻动",
+      "fromEn": "The page by the boat remains unturned",
+      "toZh": "确认这一页可以留在原处，不替它决定去向",
+      "toEn": "Accept that the page may remain where it is without deciding its destination",
+      "narrativeZh": "这一页没有被取走，也没有被送出；它留在原处，仍是一页。",
+      "narrativeEn": "The page is neither taken nor sent. It stays where it is, still a page.",
+      "npcReactionZh": "阿汐不翻页，也不替它决定去向。",
+      "npcReactionEn": "Axi leaves the page unturned and does not choose its destination.",
+      "atlasHookZh": "船边未寄的一页仍在",
+      "atlasHookEn": "The unsent page remains by the boat",
+      "canonEvidence": [
+        "余响集第81篇《船边的一页》",
+        "余响集第82篇《未寄的一页》"
+      ],
+      "canonFit": "canon",
+      "qaNotesZh": "与船边一页留在原处且不替其决定去向的既有描写一致。",
+      "qaNotesEn": "Matches the page remaining in place without deciding its destination.",
+      "approval": {
+        "by": "human-gate",
+        "at": "2026-11-20",
+        "noteZh": "与第八十一/八十二篇的「未寄出」线一致；把「不替它决定去向」落成玩家可触发的状态，不改写既有 canon。",
+        "noteEn": "Consistent with the unsent-page line of chapters 81–82; makes the refusal to choose its destination a player-triggerable state without rewriting canon."
+      },
+      "source": {
+        "generatedAt": "2026-11-19T17:35:49.707Z",
+        "model": "gpt-6.2-sol",
+        "focus": "第八十二篇《未寄的一页》落地之后 · 下一篇原创短篇",
+        "digest": "8fcbe0f49c35cfcf",
+        "qaDigest": "f0694914a90ea420"
+      }
+    },
+    {
+      "id": "ef_83_thin_ledger_left_unrecorded",
+      "flag": "flag.thin_ledger_left_unrecorded",
+      "chapter": 83,
+      "fromZh": "薄簿合着，页角偶尔自翻",
+      "fromEn": "The thin ledger stays shut, its corner turning now and then",
+      "toZh": "记录者决定不替薄簿翻页或补记",
+      "toEn": "The keeper chooses not to turn or annotate the ledger",
+      "narrativeZh": "薄簿仍合着；页角自行抬起又落下，这一夜没有被补记。",
+      "narrativeEn": "The ledger stays shut. Its corner lifts and settles; no entry is added for the night.",
+      "npcReactionZh": "阿汐不干预页角，也不记下它的动作。",
+      "npcReactionEn": "Axi leaves the page corner alone and records nothing.",
+      "atlasHookZh": "页角自翻而无人补记",
+      "atlasHookEn": "The page turns without an added entry",
+      "canonEvidence": [
+        "余响集第76篇《摆旁一页》",
+        "余响集第77篇《未渡的一页》",
+        "余响集第82篇《未寄的一页》"
+      ],
+      "canonFit": "canon",
+      "qaNotesZh": "与薄簿合着、页角自翻且不补记的既有描写一致。",
+      "qaNotesEn": "Matches the closed ledger, self-turning page, and deliberate lack of recording.",
+      "approval": {
+        "by": "human-gate",
+        "at": "2026-11-20",
+        "noteZh": "薄簿合着、页角偶尔自翻是既有动作；新增的只是「这一夜不补记」这一格，不涉及新法则。",
+        "noteEn": "The shut ledger and the page-corner turning are established; only the decision not to add an entry for the night is new state, not new law."
+      },
+      "source": {
+        "generatedAt": "2026-11-19T17:35:49.707Z",
+        "model": "gpt-6.2-sol",
+        "focus": "第八十二篇《未寄的一页》落地之后 · 下一篇原创短篇",
+        "digest": "8fcbe0f49c35cfcf",
+        "qaDigest": "f0694914a90ea420"
+      }
+    },
+    {
+      "id": "ef_83_hull_mark_left_unmeasured",
+      "flag": "flag.hull_mark_left_unmeasured",
+      "chapter": 83,
+      "fromZh": "退潮时船底干痕显露",
+      "fromEn": "The hull's dry mark appears at ebb",
+      "toZh": "潮水覆回干痕，记录者不追量也不登记",
+      "toEn": "The returning tide covers the mark; the keeper neither measures nor records it",
+      "narrativeZh": "干痕随潮显露又被覆住，没有被量成证词。",
+      "narrativeEn": "The mark appears with the ebb and is covered by the tide, never measured into testimony.",
+      "npcReactionZh": "阿汐听潮，不去查看干痕的深浅。",
+      "npcReactionEn": "Axi listens to the tide and does not inspect the mark.",
+      "atlasHookZh": "潮水覆回船底干痕",
+      "atlasHookEn": "The tide covers the hull mark again",
+      "canonEvidence": [
+        "余响集第79篇《空船的刻度》",
+        "余响集第80篇《两条线》",
+        "余响集第82篇《未寄的一页》"
+      ],
+      "canonFit": "canon",
+      "qaNotesZh": "与干痕随潮显露覆没且阿汐不触碰、不追记的描写一致。",
+      "qaNotesEn": "Matches the hull mark being covered again and left unmeasured or recorded.",
+      "approval": {
+        "by": "human-gate",
+        "at": "2026-11-20",
+        "noteZh": "船底干痕随潮显露覆没的意象与第七十九/八十篇同源；「不测量、不记成证词」是人物选择，不是新设定。",
+        "noteEn": "The hull mark appearing and being covered is established in chapters 79–80; not measuring or recording it is a character choice, not a new rule."
+      },
+      "source": {
+        "generatedAt": "2026-11-19T17:35:49.707Z",
+        "model": "gpt-6.2-sol",
+        "focus": "第八十二篇《未寄的一页》落地之后 · 下一篇原创短篇",
+        "digest": "8fcbe0f49c35cfcf",
+        "qaDigest": "f0694914a90ea420"
+      }
+    },
+    {
+      "id": "ef_83_threshold_seam_left_open",
+      "flag": "flag.threshold_seam_left_open",
+      "chapter": 83,
+      "fromZh": "门留着一道窄缝",
+      "fromEn": "The door is left at a narrow opening",
+      "toZh": "夜过之后门缝仍留着，风自行进出",
+      "toEn": "After the night, the opening remains and the wind passes on its own",
+      "narrativeZh": "门没有关严，也没有被推开；风经过门缝，天亮时它仍留在那里。",
+      "narrativeEn": "The door is neither shut nor pushed wider. Wind passes through; by morning, the opening remains.",
+      "npcReactionZh": "阿汐不拦风，也不催门合上。",
+      "npcReactionEn": "Axi neither blocks the wind nor hurries the door shut.",
+      "atlasHookZh": "门缝留到天亮",
+      "atlasHookEn": "The door's narrow opening lasts until dawn",
+      "canonEvidence": [
+        "余响集第74篇《夜开的一线》",
+        "余响集第75篇《她也一线》",
+        "余响集第82篇《未寄的一页》"
+      ],
+      "canonFit": "new-canon",
+      "qaNotesZh": "门未关与既有描写一致，但风自行进出是新增细节。",
+      "qaNotesEn": "The open door is supported; wind passing through is newly introduced detail.",
+      "approval": {
+        "by": "human-gate",
+        "at": "2026-11-20",
+        "noteZh": "QA 判为 new-canon：门未关与第七十四/七十五篇一致，风自行穿过是新增细节；作为已审新设接受，不冒充旧 canon。",
+        "noteEn": "QA marks this new-canon: the open door matches chapters 74–75, while wind passing through is new detail. Accepted as reviewed new lore, not presented as old canon."
+      },
+      "source": {
+        "generatedAt": "2026-11-19T17:35:49.707Z",
+        "model": "gpt-6.2-sol",
+        "focus": "第八十二篇《未寄的一页》落地之后 · 下一篇原创短篇",
+        "digest": "8fcbe0f49c35cfcf",
+        "qaDigest": "f0694914a90ea420"
+      }
+    }
+  ]
+}
