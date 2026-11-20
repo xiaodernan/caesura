@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "00fef22fd9a0bbc64a72cc6995fe0cafa13071e2",
+  "head": "2fcf42e8739a8a3a4c6ed51b256ea94276d232d6",
   "branch": "master",
-  "subject": "feat(admin): KI-715《余响编年 · Weekly Ledger》落地（authorOnly · LLM 真跑 · 作者侧双拷贝 · 编年太史官口吻）",
-  "date": "2026-11-20T01:23:14+08:00",
+  "subject": "chore(status): re-embed site-latest.json",
+  "date": "2026-11-19T17:54:28Z",
   "kv": {
     "KI.rows": 633,
     "KI.Implemented": 456,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/00fef22fd9a0bbc64a72cc6995fe0cafa13071e2",
+    "url": "https://github.com/xiaodernan/caesura/commit/2fcf42e8739a8a3a4c6ed51b256ea94276d232d6",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
