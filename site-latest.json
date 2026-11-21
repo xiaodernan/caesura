@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "51d359c63556491b256e40e800532d3ec6759e07",
+  "head": "1b51eeb5c1696b5fc2630a3e80c71871798ce470",
   "branch": "master",
-  "subject": "feat: KI-733 收口 · aria 标签陈旧 81 篇→85 篇 + guide 首屏减流失闭环",
-  "date": "2026-11-21T23:01:09+08:00",
+  "subject": "feat: KI-734 LLM 顾问 payload 补访问量 · 落地闭环重生成不丢证据",
+  "date": "2026-11-21T23:22:43+08:00",
   "kv": {
-    "KI.rows": 651,
-    "KI.Implemented": 474,
+    "KI.rows": 652,
+    "KI.Implemented": 475,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 105,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/51d359c63556491b256e40e800532d3ec6759e07",
+    "url": "https://github.com/xiaodernan/caesura/commit/1b51eeb5c1696b5fc2630a3e80c71871798ce470",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
