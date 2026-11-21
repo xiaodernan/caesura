@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "10eccfcd877fb083e1089f2b2c9084ee5fb97973",
+  "head": "a4a8a297e4ee94b5cf397764a1b059a37177e4a9",
   "branch": "master",
-  "subject": "feat: KI-732 admin 深度优化顾问 · LLM 读真实遥测+工程健康给措施",
-  "date": "2026-11-21T21:56:40+08:00",
+  "subject": "chore(status): re-embed site-latest.json",
+  "date": "2026-11-21T13:57:48Z",
   "kv": {
     "KI.rows": 650,
     "KI.Implemented": 473,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/10eccfcd877fb083e1089f2b2c9084ee5fb97973",
+    "url": "https://github.com/xiaodernan/caesura/commit/a4a8a297e4ee94b5cf397764a1b059a37177e4a9",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
