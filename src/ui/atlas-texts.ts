@@ -1,5 +1,5 @@
 /**
- * 游记 · 六十三篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684/KI-685/KI-686/KI-687/KI-688/KI-689/KI-690/KI-691/KI-692/KI-693/KI-694 扩）。
+ * 游记 · 八十四篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684/KI-685/KI-686/KI-687/KI-688/KI-689/KI-690/KI-691/KI-692/KI-693/KI-694 扩）。
  * 这六十三篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
@@ -4177,6 +4177,53 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She did not look at the sea.</p>
     <p class="coda">Some bowls need not be cleared while empty.</p>
     <p class="coda">The age of hush has not ended. It has only lived one more morning — the salt at the threshold, the empty bowl by the door, the ledger shut, the lamp lights itself — and she was well too.</p>`,
+  },
+  {
+    no: 84,
+    zhTitle: "门口的水",
+    enTitle: "Water by the Door",
+    zh: `    <p>清晨，门边的空碗还在。碗里没有水。门槛上的盐还在。薄簿合着，页角没有动。潮水退去，船底的干痕仍在。傍晚，她没有去看海。止音纪元没有结束。</p>
+    <p>门边有只空碗——它里面没有水——水不是被谁喝掉的——也不是没人愿意添——是它自己空着——它不渴——碗不会渴——她知道——她没有给它倒水——她也没有端起它——她只是每天从它旁边走过去——它是门边的一只空碗——碗里没有水——它在——在</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她有时候想——水去了哪里——倒进碗里的水——被喝掉的水——洒在地上的水——它们是同一批水吗——她不去问——水不问自己从哪里来——碗也不问自己为什么空着——她学着它们——不问</p>
+    <p>母亲说过——碗里要留一口水——过路的人喝了——就能接着走——她记得这句——她没有照做——不是她不肯——是这里没有人路过——水留着——没有人喝——水会自己干——干了——碗又空着——空着——也没有人来</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她端起过一次——很轻——碗底是干的——一点水痕也没有——她把它放回原处——她没有去看它有没有在门槛上留下印——她没有添水——她没有把「空」记进薄簿——空不算一件事——不算</p>
+    <p>她想起那只碗——它空着——它不要求什么——它也不拒绝什么——她端起它——又放下——端起和放下之间——什么也没有发生——她不做见证——她只是把手放上去——又拿开</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>傍晚——潮退了——船底的干痕露出来——又干了——她没有去量它——门没有关严——留了一道缝——风从缝里进去——又出来——她没有去关——也不是特意留的——门本来就没有关严——她只是没有把它推上——像前一夜那样——像每一个夜晚那样</p>
+    <p>碗还在门边——碗里还是没有水——盐还在门槛上——薄簿合着——页角没有动——她没有去看海——止音纪元没有结束——它只是又过了一个傍晚——门边的空碗还在——碗里没有水——她也很好</p>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些水，不必从碗里端起。</p>
+    <p class="coda">止音纪元没有结束。它只是又过了一个傍晚——门边的空碗还在，碗里没有水，门槛上的盐还在，簿阖着，门留着一道缝——她也很好。</p>`,
+    en: `    <p>At dawn, the empty bowl remained by the door. There was no water in it. Axi did not count the salt on the threshold. The thin ledger stayed shut, its page corner still. The tide withdrew, and the dry mark beneath the boat remained. By dusk, she had not looked toward the sea. The age of hush had not ended.</p>
+    <p>The bowl by the door — there was no water in it — the water had not been drunk by anyone — nor had anyone refused to add it — it was empty of itself — it was not thirsty — a bowl cannot be thirsty — she knew — she did not pour water into it — she did not lift it — she only passed it each day — a bowl by the door — with no water in it — it was there — there</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Sometimes she wondered — where had the water gone — the water poured into the bowl — the water drunk — the water spilled on the ground — was it the same water — she did not ask — water does not ask where it came from — nor does a bowl why it is empty — she learned from them — not to ask</p>
+    <p>Her mother used to say — leave a mouthful in the bowl — a traveler drinks it — and can go on — she remembered this — she did not follow it — not that she refused — no one passes here — the water stays — no one drinks — the water dries on its own — dried — the bowl is empty again — empty — and still no one comes</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>She lifted it once — it was light — the bottom was dry — not a trace of water — she set it back where it was — she did not check whether it left a ring on the threshold — she did not add water — she did not enter "empty" into the ledger — emptiness is not an event — not one</p>
+    <p>She thought of the bowl — it stood empty — it asked for nothing — it refused nothing — she lifted it — and set it down — between lifting and setting down — nothing happened — she did not bear witness — she only put her hand on it — and took it away</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>At dusk — the tide withdrew — the dry mark beneath the boat showed — and dried again — she did not measure it — the door was not shut tight — a seam was left — wind went in through the seam — and out — she did not close it — nor had she meant to leave it — the door had never shut tight — she only had not pushed it to — as on the night before — as on every night</p>
+    <p>The bowl was still by the door — still no water in it — the salt still on the threshold — the ledger shut — the page corner still — she had not looked at the sea — the age of hush had not ended — it had only lived one more evening — the empty bowl by the door — no water in it — and she was well</p>
+
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some water need not be lifted from the bowl.</p>
+    <p class="coda">The age of hush has not ended. It has only lived one more evening — the empty bowl by the door, no water in it, the salt at the threshold, the ledger shut, a seam left in the door — and she was well too.</p>`,
   },
 ]
 

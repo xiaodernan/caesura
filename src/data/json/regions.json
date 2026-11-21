@@ -299,7 +299,8 @@
           "x": 74,
           "y": 0,
           "z": 3
-        }
+        },
+        "setsFlag": "flag.bass_citadel_listening_debt_recorded"
       },
       {
         "id": "in_resthold_noticeboard",
@@ -570,7 +571,8 @@
           "x": 380,
           "y": 0,
           "z": -120
-        }
+        },
+        "setsFlag": "flag.windbell_coast_bell_picker_sack_kept"
       },
       {
         "id": "in_whisperwode_shrine",
@@ -840,7 +842,8 @@
           "x": 250,
           "y": -40,
           "z": 80
-        }
+        },
+        "setsFlag": "flag.unfinished_hall_blank_line_claimed"
       },
       {
         "id": "in_choir_choir_positions",

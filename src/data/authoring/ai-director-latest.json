@@ -6,73 +6,73 @@
   "requiresHumanReview": true,
   "schema": 1,
   "mode": "live",
-  "generatedAt": "2026-11-19T17:35:49.707Z",
+  "generatedAt": "2026-11-21T05:47:19.555Z",
   "model": "gpt-6.2-sol",
   "endpoint": "https://api.aizzz.xyz/v1",
-  "focus": "第八十二篇《未寄的一页》落地之后 · 下一篇原创短篇",
-  "corpusSize": 11656,
+  "focus": "止音纪元 世界现状 八十三篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响",
+  "corpusSize": 11814,
   "canon": [
     {
       "rank": 1,
-      "score": 50.977,
-      "preview": "[短篇][story/the-unsent-page] 未寄的一页 / The Unsent Page — CAESURA · 余响集 · 第八十二篇"
+      "score": 46.575,
+      "preview": "[短篇][story/stonethroat] 余响新陆 · 低音之城 · 石喉母亲"
     },
     {
       "rank": 2,
-      "score": 45.51,
-      "preview": "[短篇][story/anthology] 篇八十二 · 回廊钟 · 未寄的一页"
+      "score": 45.397,
+      "preview": "[短篇][story/anthology] 约 7 分钟 · 低音之城 · 石喉母亲 · 听账 · 余响"
     },
     {
       "rank": 3,
-      "score": 28.372,
-      "preview": "[短篇][story/a-page-by-the-boat] 船边的一页 / A Page by the Boat — CAESURA · 余响集 · 第八十一篇"
+      "score": 41.958,
+      "preview": "[短篇][story/anthology] 约 5 分钟 · 低音之城 · ♭A2"
     },
     {
       "rank": 4,
-      "score": 27.931,
-      "preview": "[短篇][story/anthology] 约 7 分钟 · 回廊钟 · 未寄的一页 · 余响"
+      "score": 32.737,
+      "preview": "[短篇][story/lowtone-city] 低音之城 / The City of Low Tones · CAESURA 短篇 之十五"
     },
     {
       "rank": 5,
-      "score": 25.169,
-      "preview": "[短篇][story/anthology] 第七十七篇《未渡的一页》——摆轮完了——页角偶尔抬起又落下——她没有翻页也没有去看海——"
+      "score": 32,
+      "preview": "[短篇][story/stonethroat] 石喉 / The Stone-Throat · CAESURA 短篇 之九 — 余响新陆 · 低音之城"
     },
     {
       "rank": 6,
-      "score": 23.652,
-      "preview": "[短篇][story/anthology] 第三十四篇《未记的一页》——夜里涨潮盖住横线，天亮只剩一小块干处；她合上薄簿，没有把那块干处算进去——"
+      "score": 29.219,
+      "preview": "[设定][docs/WORLD-BIBLE.md#30] 七地域之外还有一整片「余响新大陆」：沉钟三界 + 低音三州——风钟海岸 / 雨钟谷地 / 低音之城 / 回廊钟 / 霜锤崖 / 回声庭园。 守门者、NPC、余音音符与三界合奏见 `docs/lore/NEW-LANDS.md`；《风钟纪元》（EPIC-VI · 设计稿）在这片大地上的三段路见 `docs/EPIC-VI.md`。 《低音之城 · 后钟纪元》（EPIC-VII · 设计稿 · 2026-11-15 落 · 不进 runtime）把「沉默被产业化」的后果写成三幕——低音之城 / 霜锤崖 / 回廊钟：见 `docs/EPIC-VII.md`。"
     },
     {
       "rank": 7,
-      "score": 21.964,
-      "preview": "[短篇][story/anthology] 第三十二篇《未刻之数》——渡人抬来袖里的小铜秤，针没有偏，簿页上只剩一个空格——"
+      "score": 26.649,
+      "preview": "[短篇][story/the-empty-bowl] 门边的空碗 / The Empty Bowl — CAESURA · 余响集 · 第八十三篇"
     },
     {
       "rank": 8,
-      "score": 21.197,
-      "preview": "[短篇][story/anthology] 第十二篇《后记 · 第十二个听者》——写给翻到这里的你；"
+      "score": 26.12,
+      "preview": "[设定][docs/WORLD-BIBLE.md#1] # CAESURA《止音纪元》 · 世界圣经（world-bible v1 · 2026-11-14）"
     },
     {
       "rank": 9,
-      "score": 21.12,
-      "preview": "[短篇][story/anthology] 篇八十一 · 回廊钟 · 船边的一页"
+      "score": 24.532,
+      "preview": "[短篇][story/stonethroat] 低音之城的规矩很简单：地下水在漏，所以每一句话都必须说得比水低。"
     },
     {
       "rank": 10,
-      "score": 19.336,
-      "preview": "[短篇][story/anthology] 《止音纪元》· 原创短篇全集 · 双语对照"
+      "score": 24.028,
+      "preview": "[短篇][story/stonethroat] · 低音之城 · ♭A2 · 石喉母亲 The Stone-Throat Matriarch · DLG_STONETHROAT · 主线「石喉记账」），是 companion fiction（双语对照 · 零 LLM · 零网络 · 不落 runtime）。"
     }
   ],
   "worldSnapshot": {
-    "date": "2026-11-19",
+    "date": "2026-11-21",
     "phaseStatus": {
-      "KIrows": 633,
-      "KIImplemented": 456,
-      "SYSImplemented": 73,
+      "KIrows": 641,
+      "KIImplemented": 464,
+      "SYSImplemented": 80,
       "ARCHSections": 202
     },
-    "atlasEntries": 82,
-    "storyChapters": 82,
+    "atlasEntries": 83,
+    "storyChapters": 83,
     "storyList": [
       "a-page-beside-the-pendulum",
       "a-page-by-the-boat",
@@ -124,6 +124,7 @@
       "the-corner-turns",
       "the-dry-mark-beneath",
       "the-dry-place",
+      "the-empty-bowl",
       "the-empty-scale",
       "the-fading-mark",
       "the-fire-knows",
@@ -165,143 +166,143 @@
     "npcs": 7
   },
   "audit": {
-    "consistency": 74,
-    "verdictZh": "核心主题与第八十二篇的回声证据一致；但篇数表述及刻痕导航数量存在明确冲突，快照计数也无法由所给证据核验。",
-    "verdictEn": "The core themes align with the evidence for story 82, but the anthology count and carved-mark navigation conflict; snapshot metrics are unverifiable here.",
+    "consistency": 72,
+    "verdictZh": "核心篇数与快照一致，但 EPIC 编号和新陆范围存在冲突，检索证据也不足以核验实现统计。",
+    "verdictEn": "The story count matches, but EPIC numbering and New Lands scope conflict; retrieved evidence cannot verify implementation metrics.",
     "risks": [
       {
         "severity": "high",
-        "itemZh": "余响集篇数表述冲突",
-        "itemEn": "Conflicting anthology counts",
-        "detailZh": "术语称余响集为八十二篇，世界谱章节却标注“六十四篇全文”，与快照及第八十二篇证据不一致。",
-        "detailEn": "The term defines 82 stories, while the world-bible heading says 64 full stories, conflicting with the snapshot and story 82 evidence."
+        "itemZh": "EPIC 编号与名称冲突",
+        "itemEn": "EPIC numbering and titles conflict",
+        "detailZh": "世界谱将 EPIC-V 定为《风钟纪元》；检索证据称 EPIC-VI 为《风钟纪元》。",
+        "detailEn": "The World Bible labels The Age of the Wind-Bells EPIC-V; retrieved evidence labels it EPIC-VI."
       },
       {
         "severity": "med",
-        "itemZh": "刻痕导航数量不符",
-        "itemEn": "Carved-mark navigation count mismatch",
-        "detailZh": "Atlas 说明指向 14 处刻痕；所给世界谱列出的刻痕条目明显超过 14 处，无法确认导航覆盖范围。",
-        "detailEn": "The Atlas points to 14 marks, while the supplied world-bible list contains substantially more; navigation coverage is unclear."
+        "itemZh": "新陆数量与名单不一致",
+        "itemEn": "New Lands count and list disagree",
+        "detailZh": "检索证据称有六片新陆，所列名单却只有风钟海岸、雨钟谷地、低音之城、回廊钟、霜锤崖、回声庭园；世界谱另含回声庭园与风钟海岸的不同归类。",
+        "detailEn": "Evidence says six New Lands, but its list and the World Bible classify the Garden and Windbell Coast differently."
       },
       {
         "severity": "med",
-        "itemZh": "快照实现计数缺少佐证",
-        "itemEn": "Snapshot implementation counts lack evidence",
-        "detailZh": "KI、系统实现、ARCH 章节、对话树及 NPC 数量均未在所给 canon 证据中提供可核对清单。",
-        "detailEn": "The evidence provides no auditable inventories for KI, implemented systems, ARCH chapters, dialogue trees, or NPC counts."
+        "itemZh": "实现统计缺少可核验证据",
+        "itemEn": "Implementation metrics lack verification",
+        "detailZh": "KI、ARCH、系统实现、对话树、旗标及 NPC 数量只见快照陈述，检索结果未提供对应实现证据。",
+        "detailEn": "The snapshot reports KI, ARCH, implementation, dialogue, flag, and NPC counts; retrieved evidence does not substantiate them."
+      },
+      {
+        "severity": "low",
+        "itemZh": "篇数口径需要说明",
+        "itemEn": "Story-count scope needs clarification",
+        "detailZh": "快照列出 83 篇，证据确认第 83 篇；但所给余响集标题称六十四篇，存在口径或版本标注歧义。",
+        "detailEn": "The snapshot and evidence point to 83 stories, while the supplied anthology heading says 64, leaving scope or version labeling unclear."
       }
     ],
     "gapsZh": [
-      "提供 KI 与系统实现条目的逐项清单及统计口径。",
-      "提供 Atlas 刻痕清单，说明 14 处与世界谱全部刻痕的对应关系。"
+      "缺少实现统计的源文件或审计记录，无法核验快照指标。",
+      "缺少 EPIC 编号的权威版本说明，无法确定冲突来源。"
     ],
     "gapsEn": [
-      "Provide itemized KI and implemented-system inventories with counting rules.",
-      "Map the 14 Atlas marks to the full world-bible mark list."
+      "Source files or audit records are missing to verify snapshot metrics.",
+      "An authoritative EPIC numbering record is missing to resolve the conflict."
     ]
   },
   "transitions": [
     {
-      "fromZh": "船边的一页仍未被翻动",
-      "fromEn": "The page by the boat remains unturned",
-      "toZh": "确认这一页可以留在原处，不替它决定去向",
-      "toEn": "Accept that the page may remain where it is without deciding its destination",
-      "flag": "flag.boat_page_left_in_place",
-      "narrativeZh": "这一页没有被取走，也没有被送出；它留在原处，仍是一页。",
-      "narrativeEn": "The page is neither taken nor sent. It stays where it is, still a page.",
-      "npcReactionZh": "阿汐不翻页，也不替它决定去向。",
-      "npcReactionEn": "Axi leaves the page unturned and does not choose its destination.",
-      "atlasHookZh": "船边未寄的一页仍在",
-      "atlasHookEn": "The unsent page remains by the boat",
+      "fromZh": "无耳深窖五环线索未完成",
+      "fromEn": "Earless Deeps five-ring clues incomplete",
+      "toZh": "无耳深窖五环线索已归档",
+      "toEn": "Earless Deeps five-ring clues archived",
+      "flag": "flag.earless_deeps_five_ring_clues_archived",
+      "narrativeZh": "五环线索被一并收录；深窖仍只听见脚步与屏息之间的差别。",
+      "narrativeEn": "The five-ring clues are filed together; the Deeps still distinguish only footsteps from held breath.",
+      "npcReactionZh": "万籁不回应，只让回声多停一拍。",
+      "npcReactionEn": "The Myriad gives no reply; the echo lingers one beat longer.",
+      "atlasHookZh": "归档五环线索后再访深窖。",
+      "atlasHookEn": "Return to the Deeps after filing the five clues.",
+      "requiresHumanReview": true
+    },
+    {
+      "fromZh": "低音之城的账目只记录声音债务",
+      "fromEn": "Bass Citadel ledgers record only debts of sound",
+      "toZh": "低音之城账本新增听账栏",
+      "toEn": "The Bass Citadel ledger gains a listening-debt column",
+      "flag": "flag.bass_citadel_listening_debt_recorded",
+      "narrativeZh": "一笔无法偿还的声音债务改为记录倾听者与倾听时长。",
+      "narrativeEn": "An unpayable sound-debt is recorded instead by listener and duration.",
+      "npcReactionZh": "石喉母亲合上账本，向来访者点头。",
+      "npcReactionEn": "The Stone-Throat Matriarch closes the ledger and nods to the visitor.",
+      "atlasHookZh": "在城门旁听完一笔未偿之账。",
+      "atlasHookEn": "Hear an unsettled account beside the city gate.",
       "requiresHumanReview": true,
       "canonEvidence": [
-        "余响集第81篇《船边的一页》",
-        "余响集第82篇《未寄的一页》"
+        "余响集第15篇《低音之城》",
+        "余响集第17篇《未竟账页》"
       ]
     },
     {
-      "fromZh": "薄簿合着，页角偶尔自翻",
-      "fromEn": "The thin ledger stays shut, its corner turning now and then",
-      "toZh": "记录者决定不替薄簿翻页或补记",
-      "toEn": "The keeper chooses not to turn or annotate the ledger",
-      "flag": "flag.thin_ledger_left_unrecorded",
-      "narrativeZh": "薄簿仍合着；页角自行抬起又落下，这一夜没有被补记。",
-      "narrativeEn": "The ledger stays shut. Its corner lifts and settles; no entry is added for the night.",
-      "npcReactionZh": "阿汐不干预页角，也不记下它的动作。",
-      "npcReactionEn": "Axi leaves the page corner alone and records nothing.",
-      "atlasHookZh": "页角自翻而无人补记",
-      "atlasHookEn": "The page turns without an added entry",
+      "fromZh": "风钟海岸的拾钟布袋尚未被接管",
+      "fromEn": "The Bell-Picker’s sack at Windbell Coast remains unclaimed",
+      "toZh": "阿衡收存布袋与未敲钟铜",
+      "toEn": "A Hén keeps the sack and its unstruck bell metal",
+      "flag": "flag.windbell_coast_bell_picker_sack_kept",
+      "narrativeZh": "布袋被收在石盘下；袋中之物仍未敲响，也未被丢弃。",
+      "narrativeEn": "The sack is kept beneath the stone pan; its contents remain unstruck and undiscarded.",
+      "npcReactionZh": "阿衡将布袋与手册并放，不追问来者。",
+      "npcReactionEn": "A Hén places the sack beside the ledger and asks no questions.",
+      "atlasHookZh": "在石盘下寻找拾钟人留下的布袋。",
+      "atlasHookEn": "Look beneath the stone pan for the Bell-Picker’s sack.",
       "requiresHumanReview": true,
       "canonEvidence": [
-        "余响集第76篇《摆旁一页》",
-        "余响集第77篇《未渡的一页》",
-        "余响集第82篇《未寄的一页》"
+        "余响集第13篇《拾钟人》",
+        "余响集第14篇《灯匠》"
       ]
     },
     {
-      "fromZh": "退潮时船底干痕显露",
-      "fromEn": "The hull's dry mark appears at ebb",
-      "toZh": "潮水覆回干痕，记录者不追量也不登记",
-      "toEn": "The returning tide covers the mark; the keeper neither measures nor records it",
-      "flag": "flag.hull_mark_left_unmeasured",
-      "narrativeZh": "干痕随潮显露又被覆住，没有被量成证词。",
-      "narrativeEn": "The mark appears with the ebb and is covered by the tide, never measured into testimony.",
-      "npcReactionZh": "阿汐听潮，不去查看干痕的深浅。",
-      "npcReactionEn": "Axi listens to the tide and does not inspect the mark.",
-      "atlasHookZh": "潮水覆回船底干痕",
-      "atlasHookEn": "The tide covers the hull mark again",
+      "fromZh": "未竟厅空白末行无人认领",
+      "fromEn": "The Unfinished Hall’s final blank line is unclaimed",
+      "toZh": "来访者认领空白但不填写姓名",
+      "toEn": "A visitor claims the blank without entering a name",
+      "flag": "flag.unfinished_hall_blank_line_claimed",
+      "narrativeZh": "空白末行得到认领，仍不添姓名；未竟之事无需因此结清。",
+      "narrativeEn": "The final blank is claimed but left unnamed; unfinished matters need not thereby be settled.",
+      "npcReactionZh": "守摆人让来访者在账页前静候片刻。",
+      "npcReactionEn": "The Ferryman lets the visitor stand quietly before the ledger.",
+      "atlasHookZh": "在钟摆旁认领空白末行。",
+      "atlasHookEn": "Claim the final blank beside the pendulum.",
       "requiresHumanReview": true,
       "canonEvidence": [
-        "余响集第79篇《空船的刻度》",
-        "余响集第80篇《两条线》",
-        "余响集第82篇《未寄的一页》"
-      ]
-    },
-    {
-      "fromZh": "门留着一道窄缝",
-      "fromEn": "The door is left at a narrow opening",
-      "toZh": "夜过之后门缝仍留着，风自行进出",
-      "toEn": "After the night, the opening remains and the wind passes on its own",
-      "flag": "flag.threshold_seam_left_open",
-      "narrativeZh": "门没有关严，也没有被推开；风经过门缝，天亮时它仍留在那里。",
-      "narrativeEn": "The door is neither shut nor pushed wider. Wind passes through; by morning, the opening remains.",
-      "npcReactionZh": "阿汐不拦风，也不催门合上。",
-      "npcReactionEn": "Axi neither blocks the wind nor hurries the door shut.",
-      "atlasHookZh": "门缝留到天亮",
-      "atlasHookEn": "The door's narrow opening lasts until dawn",
-      "requiresHumanReview": true,
-      "canonEvidence": [
-        "余响集第74篇《夜开的一线》",
-        "余响集第75篇《她也一线》",
-        "余响集第82篇《未寄的一页》"
+        "余响集第17篇《未竟账页》",
+        "余响集第84篇《门口的水》"
       ]
     }
   ],
   "atlasDraft": {
-    "no": 83,
-    "titleZh": "门边的空碗",
-    "titleEn": "The Empty Bowl",
-    "pZh": "清晨，门槛边的盐还在。阿汐没有数。薄簿合着，页角没有动。潮水退去，船底的干痕仍在。傍晚，她没有去看海。止音纪元没有结束。",
-    "pEn": "At dawn, the salt remained by the threshold. Axi did not count it. The thin ledger stayed shut, its page corner still. At ebb, the dry mark beneath the boat remained. By dusk, she had not looked toward the sea. The age of hush had not ended.",
-    "codaZh": "有些碗，空着也不必收走。",
-    "codaEn": "Some bowls need not be cleared while empty.",
+    "no": 84,
+    "titleZh": "门边的水",
+    "titleEn": "Water by the Door",
+    "pZh": "清晨，门边的空碗仍在，碗里没有水。门槛上的盐没有移动。阿汐没有端起碗，也没有问它为何空着。傍晚，潮水退去，船底的干痕仍在。她把门留着一线。",
+    "pEn": "At dawn, the empty bowl remained by the door, with no water in it. The salt on the threshold had not moved. Axi did not lift the bowl or ask why it was empty. At dusk, the tide withdrew and the dry mark beneath the boat remained. She left the door ajar.",
+    "codaZh": "有些水，留在碗里也不必盛起。",
+    "codaEn": "Some water need not be lifted from the bowl.",
     "requiresHumanReview": true,
     "editorialGateRevised": true
   },
   "editorialGate": {
-    "canonFidelity": 42,
-    "voiceFidelity": 76,
+    "canonFidelity": 72,
+    "voiceFidelity": 88,
     "verdict": "revise",
     "issues": [
-      "新增canon未载的空碗"
+      "与空碗永不添满冲突"
     ],
     "revised": true,
-    "at": "2026-11-19T17:35:49.707Z"
+    "at": "2026-11-21T05:47:19.555Z"
   },
   "usage": {
     "calls": 5,
-    "cachedTokens": 495822,
-    "promptTokens": 561090,
+    "cachedTokens": 501217,
+    "promptTokens": 567027,
     "statuses": [
       200,
       200,
@@ -312,27 +313,27 @@
     "hitRates": [
       88.9,
       88.3,
-      88.2,
       88.3,
+      88.4,
       88.1
     ],
     "perCall": [
       {
         "node": "warmup",
         "status": 200,
-        "dt": 4528,
-        "prompt": 111618,
-        "cached": 99202,
+        "dt": 3851,
+        "prompt": 112800,
+        "cached": 100280,
         "hitRate": 88.9,
-        "attempts": 3,
+        "attempts": 2,
         "model": "gpt-6.2-sol"
       },
       {
         "node": "audit",
         "status": 200,
-        "dt": 10177,
-        "prompt": 112277,
-        "cached": 99161,
+        "dt": 8501,
+        "prompt": 113465,
+        "cached": 100240,
         "hitRate": 88.3,
         "attempts": 1,
         "model": "gpt-6.2-sol"
@@ -340,29 +341,29 @@
       {
         "node": "proposeTransitions",
         "status": 200,
-        "dt": 8627,
-        "prompt": 112380,
-        "cached": 99154,
-        "hitRate": 88.2,
+        "dt": 4503,
+        "prompt": 113568,
+        "cached": 100234,
+        "hitRate": 88.3,
         "attempts": 1,
         "model": "gpt-6.2-sol"
       },
       {
         "node": "draftContent",
         "status": 200,
-        "dt": 7603,
-        "prompt": 112261,
-        "cached": 99161,
-        "hitRate": 88.3,
+        "dt": 5565,
+        "prompt": 113449,
+        "cached": 100241,
+        "hitRate": 88.4,
         "attempts": 1,
         "model": "gpt-6.2-sol"
       },
       {
         "node": "editorialGate",
         "status": 200,
-        "dt": 5285,
-        "prompt": 112554,
-        "cached": 99144,
+        "dt": 6063,
+        "prompt": 113745,
+        "cached": 100222,
         "hitRate": 88.1,
         "attempts": 1,
         "model": "gpt-6.2-sol"
@@ -372,42 +373,42 @@
   "graphCheckpoints": [
     {
       "node": "loadWorld",
-      "ms": 35,
+      "ms": 13,
       "ok": true
     },
     {
       "node": "retrieveCanon",
-      "ms": 1289,
+      "ms": 442,
       "ok": true
     },
     {
       "node": "warmup",
-      "ms": 21532,
+      "ms": 9673,
       "ok": true
     },
     {
       "node": "audit",
-      "ms": 18998,
+      "ms": 17705,
       "ok": true
     },
     {
       "node": "proposeTransitions",
-      "ms": 25772,
+      "ms": 19620,
       "ok": true
     },
     {
       "node": "draftContent",
-      "ms": 11644,
+      "ms": 9685,
       "ok": true
     },
     {
       "node": "editorialGate",
-      "ms": 8433,
+      "ms": 9507,
       "ok": true
     },
     {
       "node": "writeArtifacts",
-      "ms": 16,
+      "ms": 10,
       "ok": true
     }
   ],

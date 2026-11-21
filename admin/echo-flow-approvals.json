@@ -4,35 +4,35 @@
   "source": "admin/ai-director-latest.json",
   "qa": "admin/ai-director-transitions-qa.json",
   "reviewedBy": "human-gate",
-  "reviewedAt": "2026-11-20",
+  "reviewedAt": "2026-11-21",
   "decisions": [
     {
-      "flag": "flag.boat_page_left_in_place",
-      "decision": "approve",
-      "chapter": 83,
-      "noteZh": "与第八十一/八十二篇的「未寄出」线一致；把「不替它决定去向」落成玩家可触发的状态，不改写既有 canon。",
-      "noteEn": "Consistent with the unsent-page line of chapters 81–82; makes the refusal to choose its destination a player-triggerable state without rewriting canon."
+      "flag": "flag.earless_deeps_five_ring_clues_archived",
+      "decision": "reject",
+      "chapter": 84,
+      "noteZh": "QA 判为 conflict：与既有 flag.faceless_clue_ring_complete 的无耳深五环线索归档重复；驳回，不进运行时。",
+      "noteEn": "QA marks conflict: duplicates the existing flag.faceless_clue_ring_complete earless-deep five-ring clue archive. Rejected; not in runtime."
     },
     {
-      "flag": "flag.thin_ledger_left_unrecorded",
+      "flag": "flag.bass_citadel_listening_debt_recorded",
       "decision": "approve",
-      "chapter": 83,
-      "noteZh": "薄簿合着、页角偶尔自翻是既有动作；新增的只是「这一夜不补记」这一格，不涉及新法则。",
-      "noteEn": "The shut ledger and the page-corner turning are established; only the decision not to add an entry for the night is new state, not new law."
+      "chapter": 84,
+      "noteZh": "QA 判为 new-canon 且需人工审：低音之城的听债记录与既有「欠账只能用听来抵」同源；作为已审新设接受，不冒充旧 canon。",
+      "noteEn": "QA marks new-canon requiring human review: the bass citadel listening debt matches the established 'debts cleared by listening' motif. Accepted as reviewed new lore."
     },
     {
-      "flag": "flag.hull_mark_left_unmeasured",
+      "flag": "flag.windbell_coast_bell_picker_sack_kept",
       "decision": "approve",
-      "chapter": 83,
-      "noteZh": "船底干痕随潮显露覆没的意象与第七十九/八十篇同源；「不测量、不记成证词」是人物选择，不是新设定。",
-      "noteEn": "The hull mark appearing and being covered is established in chapters 79–80; not measuring or recording it is a character choice, not a new rule."
+      "chapter": 84,
+      "noteZh": "QA 判为 canon：风铃海岸拾钟人的袋子留下未动，与既有拾钟人收拾遗物线一致；落成玩家可触发的状态。",
+      "noteEn": "QA marks canon: the windbell-coast bell-picker's sack kept unturned matches the established bell-picker line. Made a player-triggerable state."
     },
     {
-      "flag": "flag.threshold_seam_left_open",
+      "flag": "flag.unfinished_hall_blank_line_claimed",
       "decision": "approve",
-      "chapter": 83,
-      "noteZh": "QA 判为 new-canon：门未关与第七十四/七十五篇一致，风自行穿过是新增细节；作为已审新设接受，不冒充旧 canon。",
-      "noteEn": "QA marks this new-canon: the open door matches chapters 74–75, while wind passing through is new detail. Accepted as reviewed new lore, not presented as old canon."
+      "chapter": 84,
+      "noteZh": "QA 判为 canon：未竟厅的空白末行被认领，与「末行空白等着被认领」的既有设定一致；不涉及新法则。",
+      "noteEn": "QA marks canon: the unfinished hall's blank final line being claimed matches the established 'blank awaits claiming' lore. No new law."
     }
   ]
 }

@@ -12,7 +12,7 @@
 (function () {
   'use strict';
 
-  /* canon 顺序（篇一《盐》.. 篇八十三《门边的空碗》），与 src/ui/atlas-texts.ts 的 no 一一对应 */
+  /* canon 顺序（篇一《盐》.. 篇八十四《门口的水》），与 src/ui/atlas-texts.ts 的 no 一一对应 */
   var ORDER = [
     { slug: '', zh: '《盐》', en: '"Salt"' },
     { slug: 'unnamed-stone', zh: '《山下无名碑》', en: '"The Nameless Stone"' },
@@ -96,7 +96,8 @@
     { slug: 'two-lines', zh: '《两条线》', en: 'Two Lines' },
     { slug: 'a-page-by-the-boat', zh: '《船边的一页》', en: 'A Page by the Boat' },
     { slug: 'the-unsent-page', zh: '《未寄的一页》', en: 'The Unsent Page' },
-    { slug: 'the-empty-bowl', zh: '《门边的空碗》', en: 'The Empty Bowl' }
+    { slug: 'the-empty-bowl', zh: '《门边的空碗》', en: 'The Empty Bowl' },
+    { slug: 'water-by-the-door', zh: '《门口的水》', en: 'Water by the Door' }
   ];
 
   var PREFIX = '/caesura/story/';
@@ -171,7 +172,7 @@
                       : '/caesura/story/anthology/';
       var label = next
         ? (isEN ? 'Next · ' + next.en : '下一篇 · ' + next.zh)
-        : (isEN ? 'The Aftermath · all eighty-three' : '余响集 · 八十三篇全集');
+        : (isEN ? 'The Aftermath · all eighty-four' : '余响集 · 八十四篇全集');
       var tag = isEN ? (next ? 'Keep reading' : 'Read the whole volume') : (next ? '继续读下一页' : '读完全册');
       nextCard = document.createElement('a');
       nextCard.className = 'read-next';

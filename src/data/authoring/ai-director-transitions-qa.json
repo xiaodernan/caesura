@@ -6,10 +6,10 @@
   "requiresHumanReview": true,
   "schema": 1,
   "mode": "live",
-  "generatedAt": "2026-11-20T05:12:59.519Z",
+  "generatedAt": "2026-11-21T05:50:44.145Z",
   "model": "gpt-6.2-sol",
   "endpoint": "https://api.aizzz.xyz/v1",
-  "source": "ai-director-latest.json @ 2026-11-19T17:35:49.707Z",
+  "source": "ai-director-latest.json @ 2026-11-21T05:47:19.555Z",
   "roster": {
     "dialogueFlags": 33,
     "questLines": 7
@@ -19,33 +19,35 @@
   "transitionsRead": 4,
   "verdicts": [
     {
-      "flag": "flag.boat_page_left_in_place",
-      "canonFit": "canon",
-      "conflicts": [],
-      "notesZh": "与船边一页留在原处且不替其决定去向的既有描写一致。",
-      "notesEn": "Matches the page remaining in place without deciding its destination."
+      "flag": "flag.earless_deeps_five_ring_clues_archived",
+      "canonFit": "conflict",
+      "conflicts": [
+        "与 flag.faceless_clue_ring_complete 的五环线索完成语义重叠"
+      ],
+      "notesZh": "名册已有同义完成旗标，不应另立重复旗标。",
+      "notesEn": "Duplicates the existing five-ring clue completion flag."
     },
     {
-      "flag": "flag.thin_ledger_left_unrecorded",
-      "canonFit": "canon",
-      "conflicts": [],
-      "notesZh": "与薄簿合着、页角自翻且不补记的既有描写一致。",
-      "notesEn": "Matches the closed ledger, self-turning page, and deliberate lack of recording."
-    },
-    {
-      "flag": "flag.hull_mark_left_unmeasured",
-      "canonFit": "canon",
-      "conflicts": [],
-      "notesZh": "与干痕随潮显露覆没且阿汐不触碰、不追记的描写一致。",
-      "notesEn": "Matches the hull mark being covered again and left unmeasured or recorded."
-    },
-    {
-      "flag": "flag.threshold_seam_left_open",
+      "flag": "flag.bass_citadel_listening_debt_recorded",
       "canonFit": "new-canon",
-      "requiresHumanReview": true,
       "conflicts": [],
-      "notesZh": "门未关与既有描写一致，但风自行进出是新增细节。",
-      "notesEn": "The open door is supported; wind passing through is newly introduced detail."
+      "notesZh": "新增听账栏及其记录方式；现有证据未确立此设定。",
+      "notesEn": "Adds a listening-debt ledger entry not established by the evidence.",
+      "requiresHumanReview": true
+    },
+    {
+      "flag": "flag.windbell_coast_bell_picker_sack_kept",
+      "canonFit": "canon",
+      "conflicts": [],
+      "notesZh": "短篇明确记载阿衡将旧布袋收在石盘底下。",
+      "notesEn": "The story explicitly says A-Heng stores the old sack beneath the stone disk."
+    },
+    {
+      "flag": "flag.unfinished_hall_blank_line_claimed",
+      "canonFit": "canon",
+      "conflicts": [],
+      "notesZh": "符合末行空白供人认领、但不填写姓名的既有设定。",
+      "notesEn": "Matches the established claim-without-filling rule for the blank line."
     }
   ],
   "usage": {
@@ -58,22 +60,22 @@
   "graphCheckpoints": [
     {
       "node": "load",
-      "ms": 113,
+      "ms": 8,
       "ok": true
     },
     {
       "node": "retrieve",
-      "ms": 859,
+      "ms": 992,
       "ok": true
     },
     {
       "node": "judge",
-      "ms": 35370,
+      "ms": 11458,
       "ok": true
     },
     {
       "node": "writeArtifacts",
-      "ms": 53,
+      "ms": 27,
       "ok": true
     }
   ],
