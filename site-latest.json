@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "9d470e2772129b4abd5da1c137018bd026dc1ede",
+  "head": "3719354071b5c2e2445cc5b5c289eec0b75e3bbe",
   "branch": "master",
-  "subject": "chore(status): re-embed site-latest.json",
-  "date": "2026-11-21T12:34:38Z",
+  "subject": "feat: KI-731 admin 全站健康监控 · 扇出压测接入面板",
+  "date": "2026-11-21T21:24:33+08:00",
   "kv": {
-    "KI.rows": 648,
-    "KI.Implemented": 471,
+    "KI.rows": 649,
+    "KI.Implemented": 472,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 105,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/9d470e2772129b4abd5da1c137018bd026dc1ede",
+    "url": "https://github.com/xiaodernan/caesura/commit/3719354071b5c2e2445cc5b5c289eec0b75e3bbe",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
