@@ -677,3 +677,4 @@ Phase B4 的三件套此前是"有人听、没人说"。
 | KI-731 | **admin 全站健康监控**：stress-fanout --json-out 基线 JSON + index.html site-health 区块 + app.js renderSiteHealth（只读、六项指标）+ styles.css 三列网格 · admin-site-health.test.ts 6 腿 | KI-731 |
 | KI-732 | **admin 深度优化顾问**：三路工程健康真实数据（压测/自我改进/缓存）纳入 LLM payload + engineeringHealth 产物快照 + forecast 面板证据标注 · 真跑 gpt-6.2-sol action#4 引用压测 · ai-optimization-advisor.test.ts 6 腿 | KI-732 |
 | KI-733 | **LLM 优化建议 #1 落地闭环**：首屏加 guide 直达角标（goto-guide→/tutorial/，记账且不误触开局）+ 修陈旧「八十一篇」→「八十五篇」+ forecast action#1 landed 标记 + admin「已落地」徽章 · title-links/title-screen/quickstart 61 腿 | KI-733 |
+| KI-734 | **LLM 顾问 payload 数据完整性 + landedHistory**：top_rage_click 增 views+rate（破「无访问量」幻觉）+ observed.topRage 留证 + gpt-6.2-sol 真跑重生成（action#1 直引 213/402/53%）+ landedHistory 持久化（重生成不抹证据）+ admin 已落地区块 · ai-optimization-advisor 8 腿 | KI-734 |

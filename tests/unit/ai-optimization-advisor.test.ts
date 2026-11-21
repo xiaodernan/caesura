@@ -57,15 +57,37 @@ describe('KI-732 · admin 深度优化顾问', () => {
     expect(css).toContain('.forecast-health-note')
   })
 
-  it('建议→落地闭环：action#1 标记 landed，admin 显示已落地徽章', () => {
-    const a1 = art.actions.find((a: any) => a.seq === 1)
-    expect(a1.landed).toBeTruthy()
-    expect(a1.landed.ki).toBe('KI-733')
-    expect(a1.landed.status).toBe('shipped-single-variable')
-    expect(a1.landed.evidence).toContain('TitleScreen.ts')
+  it('建议→落地闭环：landedHistory 持久化 KI-733（与 action 序号解耦，LLM 重生成不抹掉）', () => {
+    const hist = art.landedHistory ?? []
+    const k733 = hist.find((h: any) => h.ki === 'KI-733')
+    expect(k733).toBeTruthy()
+    expect(k733.status).toBe('shipped-single-variable')
+    expect(k733.evidence).toContain('TitleScreen.ts')
     const js = read('admin/app.js')
     expect(js).toContain('forecast-landed')
-    expect(js).toContain('a.landed')
+    expect(js).toContain('d.landedHistory')
+    expect(js).toContain("getElementById('forecast-landed')")
+    const html = read('admin/index.html')
+    expect(html).toContain('id="forecast-landed"')
+    expect(html).toContain('forecast.landed.h3')
+  })
+
+  it('KI-734 · payload 给 LLM 愤怒点击页的访问量+点击率（不再幻觉「无访问量」）', () => {
+    const script = read('scripts/ai-trend-forecast.mjs')
+    expect(script).toContain('topRageViews')
+    expect(script).toContain('topRageRate')
+    expect(script).toMatch(/top_rage_click:.*views.*rate=/)
+    expect(script).toContain('绝不许声称"无访问量/不能算点击率"')
+    // 产物留证：愤怒点击热点页连访问量一起进 observed（可审计）
+    expect(art.observed.topRage).toBeTruthy()
+    expect(art.observed.topRage.path).toBe('/story/ledger/')
+    expect(art.observed.topRage.views).toBeGreaterThan(0)
+    expect(art.observed.topRage.rageClicks).toBeGreaterThan(0)
+    expect(art.observed.topRage.rate).toBeGreaterThan(0)
+    // 真跑产物：LLM 已引用双数字，不再声称无数据
+    const a1 = art.actions.find((a: any) => a.seq === 1)
+    expect(a1.rationaleZh).toMatch(/402|浏览|点击率/)
+    expect(a1.rationaleZh).not.toMatch(/无访问量|不能计算点击率|尚无/)
   })
 
   it('双拷贝产物字节一致', () => {

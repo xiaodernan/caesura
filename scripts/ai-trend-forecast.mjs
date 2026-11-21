@@ -40,6 +40,10 @@ const funnel = d.funnel.steps
 const endingRate = funnel[funnel.length - 1].count / funnel[0].count
 const topExit = [...d.pages].sort((a, b) => b.exitShare - a.exitShare)[0]
 const topRage = [...d.pages].sort((a, b) => b.rageClicks - a.rageClicks)[0]
+// KI-734：愤怒点击页的**访问量**：此前 payload 只发 rageClicks，LLM 因此幻觉「无访问量、不能算点击率」。
+// admin/data.js 的 pages[] 本就带 views；此处现算 rate 一并喂给裁决层（可审计、非估算）。
+const topRageViews = Number(topRage?.views ?? 0)
+const topRageRate = topRageViews > 0 ? topRage.rageClicks / topRageViews : null
 const mobileShare = (d.devices.find((x) => x.id === 'mobile') ?? { share: 0 }).share
 const zhShare = (d.locales.find((x) => x.id === 'zh') ?? { share: 0 }).share
 const lateWindow = d.hourly.slice(20).reduce((n, h) => n + h.share, 0) + (d.hourly[0]?.share ?? 0)
@@ -66,7 +70,7 @@ const payload = [
   `zh_share: ${fmt(zhShare)}`,
   `late_window_share (20:00–00:00): ${fmt(lateWindow)}`,
   `top_exit: ${topExit.path} · ${fmt(topExit.exitShare)}`,
-  `top_rage_click: ${topRage.path} · ${topRage.rageClicks}`,
+  `top_rage_click: ${topRage.path} · ${topRage.rageClicks} clicks / ${topRageViews} views · rate=${topRageRate === null ? 'n/a' : fmt(topRageRate)} (${topRageRate === null ? 'no views' : (topRageRate * 100).toFixed(1) + '%'})`,
   `funnel: ${funnelSummary}`,
   `sessions forecast slope=${fmt(fS.slope)} · r²=${fmt(fS.r2)} · next-7 ${fS.points.join(',')}`,
   `pageViews forecast slope=${fmt(fV.slope)} · r²=${fmt(fV.r2)}`,
@@ -115,6 +119,7 @@ const SYSTEM = [
   '你看守的是止音纪元的公开页（静态站）＋ 游戏入口——每次推送全公网可镜像，出问题迭代必须快；',
   '你给出建议时必须给出验收标准：成功是"哪一个数字从 X 变到 Y"。',
   '只输出 JSON；双语并行；不奉承用户、不装大海、不写口号。',
+  'top_rage_click 已同时给出 clicks / views / rate——若 views 有值就必须据此算点击率，绝不许声称"无访问量/不能算点击率"；只有 views=0 或 rate=n/a 时才可说无数据。',
 ].join('\n')
 
 async function main() {
@@ -169,6 +174,8 @@ async function main() {
       devices: d.devices.map((x) => ({ id: x.id, share: x.share })),
       locales: d.locales.map((x) => ({ id: x.id, share: x.share })),
       pages: d.pages.length,
+      /** KI-734 · 愤怒点击热点页连访问量一起留证，杜绝「无访问量」幻觉 */
+      topRage: { path: topRage.path, labelZh: topRage.labelZh ?? null, rageClicks: topRage.rageClicks, views: topRageViews, rate: topRageRate === null ? null : Number(fmt(topRageRate)) },
       refs: d.meta.refs,
     },
     /** KI-732 · 喂给 LLM 的工程健康真实数据快照（可审计，非模型估算） */
@@ -181,9 +188,24 @@ async function main() {
     })(),
     summary: parsed.summary,
     riskiestCohort: parsed.riskiestCohort,
-    actions: parsed.actions,
-    sensitivity: parsed.sensitivity ?? null,
-    usage: { cachedTokens: out.cachedTokens ?? 0, statuses: [out.status], calls: 1 },
+  actions: parsed.actions,
+  sensitivity: parsed.sensitivity ?? null,
+  /** KI-734 · 已落地闭环账本：LLM 每次重生成会改写 4 条 actions，落地证据不能随之被抹掉。
+   *  从上一版产物继承（按 ki 去重幂等），与 action 序号解耦——"这条建议已变成代码"是历史事实，不是本轮裁决。 */
+  landedHistory: (() => {
+    const carried = []
+    const target = resolve(ROOT, 'admin/admin-trend-forecast.json')
+    let prev = null
+    try { prev = JSON.parse(readFileSync(target, 'utf8')) } catch { /* first run */ }
+    for (const rec of [
+      ...(prev?.landedHistory ?? []),
+      ...((prev?.actions ?? []).filter((a) => a?.landed).map((a) => ({ ...a.landed, _fromAction: a.seq }))),
+    ]) {
+      if (rec?.ki && !carried.some((x) => x.ki === rec.ki)) carried.push(rec)
+    }
+    return carried
+  })(),
+  usage: { cachedTokens: out.cachedTokens ?? 0, statuses: [out.status], calls: 1 },
   }
   const body = JSON.stringify(art, null, 2) + '\n'
   const target1 = resolve(ROOT, 'src/data/authoring/admin-trend-forecast.json')

@@ -435,6 +435,11 @@ header, main, footer { position: relative; z-index: 1; }
 .forecast-risk { font: 10.5px/1.6 var(--sans); color: #b8bdc9; margin: 6px 0 0; }
 .forecast-health-note { font: 10px/1.6 var(--mono); color: #8fd8c4; background: rgba(79,155,134,.1); border-left: 2px solid #4f9b86; padding: 7px 10px; margin: 4px 0 10px; border-radius: 0 6px 6px 0; word-break: break-word; }
 .forecast-badge.forecast-landed { background: rgba(79,155,134,.18); color: #8fd8c4; border-color: rgba(79,155,134,.5); }
+.forecast-landed-h3 { margin-top: 18px; }
+.forecast-landed-list { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 4px; }
+.forecast-landed-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 9px; border: 1px solid var(--line-soft); border-radius: 6px; background: rgba(79,155,134,.06); }
+.forecast-landed-row .forecast-landed-change { font: 11px/1.5 var(--sans); color: #d7dbe3; }
+.forecast-landed-row .forecast-landed-metric { font: 10px/1.5 var(--mono); color: var(--muted); }
 
 /* KI-720 真人上报面板：复用 live-stats 令牌；只加三处排版，不动既有面板。 */
 .live-real-note { font: 11.5px/1.72 var(--sans); color: var(--muted); margin: 8px 0 10px; }

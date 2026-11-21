@@ -108,6 +108,7 @@ const STRINGS = {
   'forecast.summary.h3': { zh: '走势概要', en: 'Summary' },
   'forecast.cohort.h3': { zh: '最危险的人群', en: 'Riskiest cohort' },
   'forecast.actions.h3': { zh: '四条行动 · 按优先级', en: 'Four actions, in order' },
+  'forecast.landed.h3': { zh: '已落地闭环 · 建议→代码', en: 'Shipped loop · advice → code' },
   'forecast.sensitivity.h3': { zh: '最敏感的假设', en: 'Most sensitive assumption' },
   'forecast.calls': { zh: 'calls', en: 'calls' },
   'forecast.cached': { zh: 'cached_tokens', en: 'cached_tokens' },
@@ -1202,6 +1203,20 @@ async function renderForecast() {
     row.append(icon, content)
     return row
   }))
+  /* KI-734 · 已落地闭环账本：与 4 条 action 解耦，LLM 重生成不抹掉历史证据 */
+  const landedEl = document.getElementById('forecast-landed')
+  if (landedEl) {
+    const landed = d.landedHistory ?? (d.actions ?? []).filter((a) => a?.landed).map((a) => a.landed)
+    landedEl.replaceChildren(...landed.map((rec) => {
+      const row = makeEl('div', 'forecast-landed-row')
+      row.append(
+        makeEl('span', 'forecast-badge forecast-landed', '✓ ' + String(rec.ki ?? '')),
+        makeEl('span', 'forecast-landed-change', isEn ? (rec.changeEn ?? rec.change ?? '') : (rec.change ?? '')),
+        makeEl('span', 'forecast-landed-metric', String(rec.targetMetric ?? '')),
+      )
+      return row
+    }))
+  }
   const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ?? '—' }
   setText('forecast-summary-zh', d.summary?.zh)
   setText('forecast-summary-en', d.summary?.en)

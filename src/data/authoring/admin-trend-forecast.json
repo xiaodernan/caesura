@@ -6,7 +6,7 @@
   "requiresHumanReview": true,
   "schema": 1,
   "mode": "live",
-  "generatedAt": "2026-11-21T13:29:59.781Z",
+  "generatedAt": "2026-11-21T15:15:33.718Z",
   "model": "gpt-6.2-sol",
   "endpoint": "https://api.aizzz.xyz/v1",
   "telemetryHead": {
@@ -110,6 +110,13 @@
       }
     ],
     "pages": 11,
+    "topRage": {
+      "path": "/story/ledger/",
+      "labelZh": "《账本》",
+      "rageClicks": 213,
+      "views": 402,
+      "rate": 0.53
+    },
     "refs": [
       {
         "labelZh": "Baymard Institute · 平均购物车放弃率 70.22%",
@@ -155,75 +162,67 @@
     }
   },
   "summary": {
-    "zh": "会话量预测缓升但拟合度中等；平均跳出率55.3%，结局转化率5.8%。",
-    "en": "Sessions are forecast to rise modestly with moderate fit; mean bounce is 55.3%, and ending conversion is 5.8%."
+    "zh": "会话预测七日由219升至248，但拟合度仅0.435；跳出率持平，结局转化为5.8%。",
+    "en": "Sessions are forecast to rise from 219 to 248 over seven days, but fit is modest (R² 0.435); bounce is flat and ending conversion is 5.8%."
   },
   "riskiestCohort": {
-    "zh": "首页到开始环节流失41.5%，首屏访客最危险。",
-    "en": "Homepage visitors who do not press start are the highest-risk group.",
-    "cohort": "landing-bounce"
+    "zh": "账本页高频连点者，点击率达53.0%。",
+    "en": "Ledger-page visitors generating repeated clicks; rage-click rate is 53.0%.",
+    "cohort": "rage-floor"
   },
   "actions": [
     {
       "seq": 1,
-      "actionZh": "拆查首页首屏到开始按钮的流失点并发布单变量改版。",
-      "actionEn": "Identify first-screen drop-offs and ship a single-variable homepage test.",
-      "rationaleZh": "5005人抵达首页，仅2928人开始；该步流失41.5%，平均跳出率55.3%。",
-      "rationaleEn": "Only 2,928 of 5,005 visitors pressed start; this step loses 41.5%, with 55.3% mean bounce.",
+      "actionZh": "修复游记账本页连点控件的状态与跳转反馈。",
+      "actionEn": "Fix control states and navigation feedback on the ledger story page.",
+      "rationaleZh": "当前213次点击、402次浏览，点击率53.0%；验收降至不高于30%。",
+      "rationaleEn": "Baseline: 213 clicks per 402 views, a 53.0% rate; acceptance target: at most 30%.",
       "impact": "high",
       "effort": "M",
-      "metric": "「抵达首页→按下开始」转化率：58.5%→至少63%（建议验收）",
-      "riskZh": "按钮改版可能造成误触；同时监测开始后的进入率。",
-      "riskEn": "A button change may increase accidental taps; also monitor start-to-world entry.",
-      "landed": {
-        "at": "2026-11-21",
-        "ki": "KI-733",
-        "change": "首屏新增 30 秒上手直链教程角标（goto-guide）；同时修正旧文案「八十一篇」→「八十五篇」",
-        "evidence": "src/ui/TitleScreen.ts (.qs-links/.qs-guide) · src/i18n/Lang.ts (ui.title.link.guide) · tests/unit/title-links.test.ts",
-        "targetMetric": "「抵达首页→按下开始」转化率：58.5%→至少63%（建议验收）",
-        "status": "shipped-single-variable"
-      }
+      "metric": "账本页高频连点率",
+      "riskZh": "若连点属于正常操作，可能误伤有效交互。",
+      "riskEn": "If repeated clicks are intentional, valid interactions could be impaired."
     },
     {
       "seq": 2,
-      "actionZh": "复现谱册页面的愤怒点击并修复对应无响应控件。",
-      "actionEn": "Reproduce ledger-page rage clicks and fix the unresponsive control.",
-      "rationaleZh": "谱册页记录213次愤怒点击；尚无该页访问量，不能计算点击率。",
-      "rationaleEn": "The ledger page recorded 213 rage clicks; page visits are unavailable, so its rate cannot be calculated.",
+      "actionZh": "在世界入口显著呈现游记与谱册入口，并记录打开事件。",
+      "actionEn": "Make the journal and scorebook entry prominent in-world and log open events.",
+      "rationaleZh": "进入世界后仅1038/2386打开游记或谱册，转化43.5%；验收达到50%。",
+      "rationaleEn": "Only 1,038 of 2,386 world entries open a journal or scorebook, a 43.5% rate; target 50%.",
       "impact": "high",
       "effort": "M",
-      "metric": "谱册页愤怒点击数：213→不高于150（同等观测窗口，建议验收）",
-      "riskZh": "修复可能改变谱册操作路径；回归检查阅读与翻页。",
-      "riskEn": "The fix may change ledger interactions; regression-test reading and page navigation."
+      "metric": "进入世界→打开游记/谱册转化率",
+      "riskZh": "入口过度突出可能遮挡世界内容。",
+      "riskEn": "An overly prominent entry could obscure world content."
     },
     {
       "seq": 3,
-      "actionZh": "检查读完正文后的结局入口与状态保存，补齐断点。",
-      "actionEn": "Audit ending access and progress persistence after article completion.",
-      "rationaleZh": "680人读完正文，仅289人抵达结局，后续转化约42.5%。",
-      "rationaleEn": "Of 680 article completers, 289 reached an ending, a downstream conversion of about 42.5%.",
+      "actionZh": "在正文读完页加入明确的抵达结局操作入口。",
+      "actionEn": "Add a clear path to the ending on completed-story pages.",
+      "rationaleZh": "读完正文后289/680抵达结局，转化42.5%；验收达到50%。",
+      "rationaleEn": "289 of 680 completed-story readers reach the ending, a 42.5% rate; target 50%.",
       "impact": "high",
       "effort": "M",
-      "metric": "「读完正文→抵达结局」转化率：42.5%→至少48%（建议验收）",
-      "riskZh": "入口提示可能剧透；测试中确认不提前暴露结局。",
-      "riskEn": "Prompts may spoil the story; verify they do not reveal endings early."
+      "metric": "读完正文→抵达结局转化率",
+      "riskZh": "过强提示可能削弱结局选择的自主感。",
+      "riskEn": "An overly forceful prompt could reduce perceived choice."
     },
     {
       "seq": 4,
-      "actionZh": "在压测同等负载下定位慢端点并压低公开页传输量。",
-      "actionEn": "Profile slow endpoints and reduce public-page payload under the same stress load.",
-      "rationaleZh": "压测470次请求覆盖94个端点、零失败，但尾部响应达1445毫秒，传输量16.1兆字节。",
-      "rationaleEn": "Stress testing had 470 requests across 94 endpoints and zero failures, but p95 was 1,445 ms and payload was 16.1 MB.",
+      "actionZh": "定位压测慢端点并将其尾部响应纳入性能修复。",
+      "actionEn": "Identify slow stress-test endpoints and include tail latency in performance fixes.",
+      "rationaleZh": "470次请求覆盖94个端点，失败为0，百分之九十五响应时间1445毫秒；验收低于1000毫秒且失败仍为0。",
+      "rationaleEn": "The 470-request, 94-endpoint test had zero failures and 1,445 ms p95 latency; target under 1,000 ms with zero failures.",
       "impact": "medium",
       "effort": "L",
-      "metric": "同负载压测的百分之九十五响应时间：1445毫秒→不高于1000毫秒（建议验收）",
-      "riskZh": "缓存或压缩可能导致公开镜像内容过期；核验版本一致性。",
-      "riskEn": "Caching or compression may stale public mirrors; verify version consistency."
+      "metric": "压测百分之九十五响应时间",
+      "riskZh": "降低延迟的改动可能增加资源消耗或引入回归。",
+      "riskEn": "Latency changes may increase resource use or introduce regressions."
     }
   ],
   "sensitivity": {
-    "zh": "首页跳出率最敏感：55.3%的访客未继续，直接限制后续结局人数。",
-    "en": "Homepage bounce is most sensitive: 55.3% do not continue, limiting downstream endings."
+    "zh": "进入世界后打开游记或谱册仅43.5%，该步流失1348人，最值得盯紧。",
+    "en": "Only 43.5% open a journal or scorebook after entering the world; this step loses 1,348 people."
   },
   "usage": {
     "cachedTokens": 0,
@@ -231,5 +230,15 @@
       200
     ],
     "calls": 1
-  }
+  },
+  "landedHistory": [
+    {
+      "at": "2026-11-21",
+      "ki": "KI-733",
+      "change": "首屏新增 30 秒上手直链教程角标（goto-guide）；同时修正旧文案「八十一篇」→「八十五篇」",
+      "evidence": "src/ui/TitleScreen.ts (.qs-links/.qs-guide) · src/i18n/Lang.ts (ui.title.link.guide) · tests/unit/title-links.test.ts",
+      "targetMetric": "「抵达首页→按下开始」转化率：58.5%→至少63%（建议验收）",
+      "status": "shipped-single-variable"
+    }
+  ]
 }
