@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "050860570a244b818da73e479551c3e7554455e9",
+  "head": "792187a550f26dff7095bf06680d57a8182b1f79",
   "branch": "master",
-  "subject": "site-latest: 735d405 (post-rebase reconcile)",
-  "date": "2026-11-21T14:31:48+08:00",
+  "subject": "feat: KI-725 AI 导演提案避让闸门 · StateGraph 自我改进闭环",
+  "date": "2026-11-21T15:07:41+08:00",
   "kv": {
-    "KI.rows": 642,
-    "KI.Implemented": 465,
+    "KI.rows": 643,
+    "KI.Implemented": 466,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 105,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/050860570a244b818da73e479551c3e7554455e9",
+    "url": "https://github.com/xiaodernan/caesura/commit/792187a550f26dff7095bf06680d57a8182b1f79",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
