@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "2aa91e8d4550393cce7bad2c2e1c95921d344d76",
+  "head": "8ed05111d44a1e0eda84b28e2e803822da32ccb8",
   "branch": "master",
-  "subject": "site-latest: 038b7c7 (post-rebase reconcile)",
-  "date": "2026-11-21T15:09:19+08:00",
+  "subject": "feat: KI-726 AI 导演终审反馈回灌 · StateGraph 第二自我改进闭环",
+  "date": "2026-11-21T15:37:21+08:00",
   "kv": {
-    "KI.rows": 643,
-    "KI.Implemented": 466,
+    "KI.rows": 644,
+    "KI.Implemented": 467,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 105,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/2aa91e8d4550393cce7bad2c2e1c95921d344d76",
+    "url": "https://github.com/xiaodernan/caesura/commit/8ed05111d44a1e0eda84b28e2e803822da32ccb8",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
