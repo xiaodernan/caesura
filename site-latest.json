@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "d85af3c7f89b569df5adfe6dd2aa2ec697c9f33f",
+  "head": "0422584e8aaf4b9ffb8a80f47534ef7e3d225490",
   "branch": "master",
-  "subject": "feat: KI-719~723 无尽世界/撞库压测/self-hosted CI/Spring telemetry",
-  "date": "2026-11-21T13:43:00+08:00",
+  "subject": "chore(status): re-embed site-latest.json",
+  "date": "2026-11-21T05:44:46Z",
   "kv": {
     "KI.rows": 641,
     "KI.Implemented": 464,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/d85af3c7f89b569df5adfe6dd2aa2ec697c9f33f",
+    "url": "https://github.com/xiaodernan/caesura/commit/0422584e8aaf4b9ffb8a80f47534ef7e3d225490",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
