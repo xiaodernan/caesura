@@ -1953,6 +1953,69 @@
           "model": "gpt-6.2-sol"
         }
       ]
+    },
+    {
+      "at": "2026-11-21T10:36:39.751Z",
+      "mode": "live",
+      "model": "gpt-6.2-sol",
+      "focus": "止音纪元 世界现状 八十四篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响",
+      "calls": 5,
+      "cachedTokens": 552722,
+      "promptTokens": 618176,
+      "meanHitRate": 89.42,
+      "steadyStateHitRate": 89.28,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 200,
+          "dt": 6048,
+          "prompt": 122921,
+          "cached": 110626,
+          "hitRate": 90,
+          "attempts": 2,
+          "model": "gpt-6.2-sol"
+        },
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 11261,
+          "prompt": 123559,
+          "cached": 110550,
+          "hitRate": 89.5,
+          "attempts": 1,
+          "model": "gpt-6.2-sol"
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 11234,
+          "prompt": 124220,
+          "cached": 110483,
+          "hitRate": 88.9,
+          "attempts": 1,
+          "model": "gpt-6.2-sol"
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 15643,
+          "prompt": 123642,
+          "cached": 110541,
+          "hitRate": 89.4,
+          "attempts": 1,
+          "model": "gpt-6.2-sol"
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 7351,
+          "prompt": 123834,
+          "cached": 110522,
+          "hitRate": 89.3,
+          "attempts": 1,
+          "model": "gpt-6.2-sol"
+        }
+      ]
     }
   ]
 }

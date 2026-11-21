@@ -1,113 +1,148 @@
 {
   "$comment": "KI-717 AI 导演 ·「世界线」运行时表 · 由 scripts/echo-flow.mjs 生成 · 人工闸放行 · 玩家进程零 LLM",
   "schema": 1,
-  "generatedAt": "2026-11-21T05:47:19.555Z",
-  "sourceDigest": "9b04debbcab6d8fc",
-  "qaDigest": "d8ac43577cd1d760",
+  "generatedAt": "2026-11-21T10:36:39.751Z",
+  "sourceDigest": "4ceb56316bda08e7",
+  "qaDigest": "abbe081210899af9",
   "entries": [
     {
-      "id": "ef_84_bass_citadel_listening_debt_recorded",
-      "flag": "flag.bass_citadel_listening_debt_recorded",
-      "chapter": 84,
-      "fromZh": "低音之城的账目只记录声音债务",
-      "fromEn": "Bass Citadel ledgers record only debts of sound",
-      "toZh": "低音之城账本新增听账栏",
-      "toEn": "The Bass Citadel ledger gains a listening-debt column",
-      "narrativeZh": "一笔无法偿还的声音债务改为记录倾听者与倾听时长。",
-      "narrativeEn": "An unpayable sound-debt is recorded instead by listener and duration.",
-      "npcReactionZh": "石喉母亲合上账本，向来访者点头。",
-      "npcReactionEn": "The Stone-Throat Matriarch closes the ledger and nods to the visitor.",
-      "atlasHookZh": "在城门旁听完一笔未偿之账。",
-      "atlasHookEn": "Hear an unsettled account beside the city gate.",
+      "id": "ef_85_door_bowl_water_left",
+      "flag": "flag.door_bowl_water_left",
+      "chapter": 85,
+      "fromZh": "门边空碗仍空着，阿汐未添水",
+      "fromEn": "The bowl by the door remains empty; Axi has not filled it.",
+      "toZh": "阿汐将一碗水留在空碗中",
+      "toEn": "Axi leaves water in the bowl by the door.",
+      "narrativeZh": "碗第一次盛水；水退后，碗是否仍空由后续状态决定。",
+      "narrativeEn": "For the first time, the bowl holds water; its state after the tide recedes remains open.",
+      "npcReactionZh": "阿汐不记录添水的时刻，只观察水是否留下。",
+      "npcReactionEn": "Axi does not record when she added the water; she watches to see whether it remains.",
+      "atlasHookZh": "门边空碗：添水后的去向",
+      "atlasHookEn": "The empty bowl: where the water goes",
       "canonEvidence": [
-        "余响集第15篇《低音之城》",
-        "余响集第17篇《未竟账页》"
-      ],
-      "canonFit": "new-canon",
-      "qaNotesZh": "新增听账栏及其记录方式；现有证据未确立此设定。",
-      "qaNotesEn": "Adds a listening-debt ledger entry not established by the evidence.",
-      "approval": {
-        "by": "human-gate",
-        "at": "2026-11-21",
-        "noteZh": "QA 判为 new-canon 且需人工审：低音之城的听债记录与既有「欠账只能用听来抵」同源；作为已审新设接受，不冒充旧 canon。",
-        "noteEn": "QA marks new-canon requiring human review: the bass citadel listening debt matches the established 'debts cleared by listening' motif. Accepted as reviewed new lore."
-      },
-      "source": {
-        "generatedAt": "2026-11-21T05:47:19.555Z",
-        "model": "gpt-6.2-sol",
-        "focus": "止音纪元 世界现状 八十三篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响",
-        "digest": "9b04debbcab6d8fc",
-        "qaDigest": "d8ac43577cd1d760"
-      }
-    },
-    {
-      "id": "ef_84_windbell_coast_bell_picker_sack_kept",
-      "flag": "flag.windbell_coast_bell_picker_sack_kept",
-      "chapter": 84,
-      "fromZh": "风钟海岸的拾钟布袋尚未被接管",
-      "fromEn": "The Bell-Picker’s sack at Windbell Coast remains unclaimed",
-      "toZh": "阿衡收存布袋与未敲钟铜",
-      "toEn": "A Hén keeps the sack and its unstruck bell metal",
-      "narrativeZh": "布袋被收在石盘下；袋中之物仍未敲响，也未被丢弃。",
-      "narrativeEn": "The sack is kept beneath the stone pan; its contents remain unstruck and undiscarded.",
-      "npcReactionZh": "阿衡将布袋与手册并放，不追问来者。",
-      "npcReactionEn": "A Hén places the sack beside the ledger and asks no questions.",
-      "atlasHookZh": "在石盘下寻找拾钟人留下的布袋。",
-      "atlasHookEn": "Look beneath the stone pan for the Bell-Picker’s sack.",
-      "canonEvidence": [
-        "余响集第13篇《拾钟人》",
-        "余响集第14篇《灯匠》"
-      ],
-      "canonFit": "canon",
-      "qaNotesZh": "短篇明确记载阿衡将旧布袋收在石盘底下。",
-      "qaNotesEn": "The story explicitly says A-Heng stores the old sack beneath the stone disk.",
-      "approval": {
-        "by": "human-gate",
-        "at": "2026-11-21",
-        "noteZh": "QA 判为 canon：风铃海岸拾钟人的袋子留下未动，与既有拾钟人收拾遗物线一致；落成玩家可触发的状态。",
-        "noteEn": "QA marks canon: the windbell-coast bell-picker's sack kept unturned matches the established bell-picker line. Made a player-triggerable state."
-      },
-      "source": {
-        "generatedAt": "2026-11-21T05:47:19.555Z",
-        "model": "gpt-6.2-sol",
-        "focus": "止音纪元 世界现状 八十三篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响",
-        "digest": "9b04debbcab6d8fc",
-        "qaDigest": "d8ac43577cd1d760"
-      }
-    },
-    {
-      "id": "ef_84_unfinished_hall_blank_line_claimed",
-      "flag": "flag.unfinished_hall_blank_line_claimed",
-      "chapter": 84,
-      "fromZh": "未竟厅空白末行无人认领",
-      "fromEn": "The Unfinished Hall’s final blank line is unclaimed",
-      "toZh": "来访者认领空白但不填写姓名",
-      "toEn": "A visitor claims the blank without entering a name",
-      "narrativeZh": "空白末行得到认领，仍不添姓名；未竟之事无需因此结清。",
-      "narrativeEn": "The final blank is claimed but left unnamed; unfinished matters need not thereby be settled.",
-      "npcReactionZh": "守摆人让来访者在账页前静候片刻。",
-      "npcReactionEn": "The Ferryman lets the visitor stand quietly before the ledger.",
-      "atlasHookZh": "在钟摆旁认领空白末行。",
-      "atlasHookEn": "Claim the final blank beside the pendulum.",
-      "canonEvidence": [
-        "余响集第17篇《未竟账页》",
+        "余响集第83篇《门边的空碗》",
         "余响集第84篇《门口的水》"
       ],
-      "canonFit": "canon",
-      "qaNotesZh": "符合末行空白供人认领、但不填写姓名的既有设定。",
-      "qaNotesEn": "Matches the established claim-without-filling rule for the blank line.",
+      "canonFit": "new-canon",
+      "qaNotesZh": "既有片段写碗中无水；添水是新状态，需人工审核。",
+      "qaNotesEn": "The cited canon shows the bowl empty; adding water introduces a new state.",
       "approval": {
         "by": "human-gate",
         "at": "2026-11-21",
-        "noteZh": "QA 判为 canon：未竟厅的空白末行被认领，与「末行空白等着被认领」的既有设定一致；不涉及新法则。",
-        "noteEn": "QA marks canon: the unfinished hall's blank final line being claimed matches the established 'blank awaits claiming' lore. No new law."
+        "noteZh": "QA 判 new-canon：空碗首次盛水是本篇新增动作；作为已审新设接受，不冒充旧 canon。水退后碗是否仍空留待后续状态。",
+        "noteEn": "QA marks new-canon: the bowl holding water for the first time is a new action. Accepted as reviewed new lore, not old canon."
       },
       "source": {
-        "generatedAt": "2026-11-21T05:47:19.555Z",
+        "generatedAt": "2026-11-21T10:36:39.751Z",
         "model": "gpt-6.2-sol",
-        "focus": "止音纪元 世界现状 八十三篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响",
-        "digest": "9b04debbcab6d8fc",
-        "qaDigest": "d8ac43577cd1d760"
+        "focus": "止音纪元 世界现状 八十四篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响",
+        "digest": "4ceb56316bda08e7",
+        "qaDigest": "abbe081210899af9"
+      }
+    },
+    {
+      "id": "ef_85_threshold_salt_set_by_bowl",
+      "flag": "flag.threshold_salt_set_by_bowl",
+      "chapter": 85,
+      "fromZh": "门槛上的盐仍在原处",
+      "fromEn": "The grain of salt remains on the threshold.",
+      "toZh": "阿汐将盐移到空碗旁，没有放入碗中",
+      "toEn": "Axi moves the salt beside the empty bowl without placing it inside.",
+      "narrativeZh": "盐离开门槛，碗仍空着；两件物品的位置发生改变。",
+      "narrativeEn": "The salt leaves the threshold while the bowl stays empty; both objects change position.",
+      "npcReactionZh": "阿汐看见位置变了，但不把这一举动写入薄簿。",
+      "npcReactionEn": "Axi notices the changed positions but does not enter the action in the ledger.",
+      "atlasHookZh": "门槛与空碗之间",
+      "atlasHookEn": "Between the threshold and the bowl",
+      "canonEvidence": [
+        "余响集第83篇《门边的空碗》",
+        "余响集第84篇《门口的水》"
+      ],
+      "canonFit": "new-canon",
+      "qaNotesZh": "既有片段写盐在门槛或原处；移至碗旁是新位置，需人工审核。",
+      "qaNotesEn": "Moving the salt beside the bowl is a new location not established by the cited canon.",
+      "approval": {
+        "by": "human-gate",
+        "at": "2026-11-21",
+        "noteZh": "QA 判 new-canon：盐从门槛移到碗旁、碗仍空，是位置变化的新动作；作为已审新设接受。",
+        "noteEn": "QA marks new-canon: moving the salt from the threshold beside the bowl while the bowl stays empty is a new positional action. Accepted as reviewed new lore."
+      },
+      "source": {
+        "generatedAt": "2026-11-21T10:36:39.751Z",
+        "model": "gpt-6.2-sol",
+        "focus": "止音纪元 世界现状 八十四篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响",
+        "digest": "4ceb56316bda08e7",
+        "qaDigest": "abbe081210899af9"
+      }
+    },
+    {
+      "id": "ef_85_boat_page_brought_inside",
+      "flag": "flag.boat_page_brought_inside",
+      "chapter": 85,
+      "fromZh": "船边的一页留在原处，尚未翻开",
+      "fromEn": "The page remains by the boat, unopened.",
+      "toZh": "阿汐将那一页带回门内，仍不翻开",
+      "toEn": "Axi brings the page inside and leaves it unopened.",
+      "narrativeZh": "那一页离开船边，但内容仍未揭示，后续去向待定。",
+      "narrativeEn": "The page leaves the boat, but its contents remain undisclosed; what happens next is unresolved.",
+      "npcReactionZh": "阿汐不替这页决定去处，只把它放在门内。",
+      "npcReactionEn": "Axi does not decide the page’s destination; she sets it inside the door.",
+      "atlasHookZh": "船边之页移入门内",
+      "atlasHookEn": "The page moves inside",
+      "canonEvidence": [
+        "余响集第81篇《船边的一页》",
+        "余响集第82篇《未寄的一页》"
+      ],
+      "canonFit": "new-canon",
+      "qaNotesZh": "既有片段写页留在船边；带回门内是新转移，未见明确矛盾，需人工审核。",
+      "qaNotesEn": "Bringing the page indoors is a new transition; the cited passages do not establish it.",
+      "approval": {
+        "by": "human-gate",
+        "at": "2026-11-21",
+        "noteZh": "QA 判 new-canon：船边未翻之页被带入门内、仍不翻开；与「不替它决定去向」的既有态度一致，仅位置变化是新增。",
+        "noteEn": "QA marks new-canon: bringing the unturned page inside while still not opening it matches the established 'not choosing its destination' stance; only the location changes."
+      },
+      "source": {
+        "generatedAt": "2026-11-21T10:36:39.751Z",
+        "model": "gpt-6.2-sol",
+        "focus": "止音纪元 世界现状 八十四篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响",
+        "digest": "4ceb56316bda08e7",
+        "qaDigest": "abbe081210899af9"
+      }
+    },
+    {
+      "id": "ef_85_door_closed_for_one_night",
+      "flag": "flag.door_closed_for_one_night",
+      "chapter": 85,
+      "fromZh": "门仍留着一道缝，风可以经过",
+      "fromEn": "The door remains ajar, leaving a seam for the wind.",
+      "toZh": "阿汐将门合上一个夜晚，未封住门缝",
+      "toEn": "Axi closes the door for one night without sealing the gap.",
+      "narrativeZh": "门暂时合上，风仍能经过门缝；次日是否重开尚未决定。",
+      "narrativeEn": "The door is closed for a night, but wind still passes through the gap; whether it opens again is undecided.",
+      "npcReactionZh": "屋内没有新增记录；清晨由阿汐决定是否开门。",
+      "npcReactionEn": "Nothing new is recorded indoors; Axi decides at dawn whether to open the door.",
+      "atlasHookZh": "门缝合上之后",
+      "atlasHookEn": "After the door is closed",
+      "canonEvidence": [
+        "余响集第83篇《门边的空碗》",
+        "余响集第84篇《门口的水》"
+      ],
+      "canonFit": "new-canon",
+      "qaNotesZh": "既有片段提及门缝与风，但未写合门一夜；此状态需人工审核。",
+      "qaNotesEn": "The canon mentions the door gap and wind, but not closing the door for one night.",
+      "approval": {
+        "by": "human-gate",
+        "at": "2026-11-21",
+        "noteZh": "QA 判 new-canon：门合上一夜但未封缝，风仍可过；与既有「门留缝」意象呼应，「合上一夜」是新增状态，作为已审新设接受。",
+        "noteEn": "QA marks new-canon: the door shut for one night yet the seam unsealed, with wind still passing through, echoes the established seam motif; the one-night closure is new. Accepted."
+      },
+      "source": {
+        "generatedAt": "2026-11-21T10:36:39.751Z",
+        "model": "gpt-6.2-sol",
+        "focus": "止音纪元 世界现状 八十四篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响",
+        "digest": "4ceb56316bda08e7",
+        "qaDigest": "abbe081210899af9"
       }
     }
   ]

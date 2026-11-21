@@ -150,7 +150,7 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">未竟厅 · 三处</span><span class="note">银镜后面那道「钟摆」；时间走来走去，就是走不到头；厅里唯一一口从没敲过的钟——等最后一个不会来的大师；谱架上那本永远不会翻过去的谱——恩希尔每天指挥到那一页，合上，再开</span></div>
 <div class="row"><span class="name">风钟海岸 · 八处</span><span class="note">那阵带着钟的风——它带着一个又一个钟的余温，却从不让你清楚地听到；盐结的小龛被海天天抹去又天天重写；防波堤上一道道潮痕，像一首被海擦了又写的歌；断崖礁岩上黑碑似的——它擦不干净；贝壳里压着字——「生」；按下那颗响石，整片海都没动；潮纹裂开了——盐从裂缝里自己长出了牙齿；那块潮里露出的船底旧木——每一根蚀透的榫卯都抬着这个岬角的旧名「它回来的地方」</span></div>
 
-<h2>选读 · 余响集八十四篇 <span style="opacity:.6">（与游戏同源的八十四个故事，在线阅读）</span></h2>
+<h2>选读 · 余响集八十五篇 <span style="opacity:.6">（与游戏同源的八十五个故事，在线阅读）</span></h2>
 <div class="row"><span class="name">篇一《盐》· 风钟海岸</span><span class="note">听雾站守夜人阿衡——钟不是用来敲的，是用来记住的；风钟海岸从此有了第四根弦</span></div>
 <div class="row"><span class="name">篇二《山下无名碑》· 休垒</span><span class="note">石匠女儿阿汀在山脚下找到一块没有字、没有名字的碑——风一停，石头就会把自己写上去</span></div>
 <div class="row"><span class="name">篇三《空拍子》· 未竟厅</span><span class="note">轮值了七十三年的恩希尔，在一记空拍之后，被人问出他唯一等不到的那个人</span></div>
@@ -233,8 +233,8 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">篇八十《两条线》· 回廊钟</span><span class="note">潮水退去，船底干痕还在；潮涨，它被覆过；再退，它还在原处。页角偶尔抬起又落回去</span></div>
 <div class="row"><span class="name">篇八十一《船边的一页》· 回廊钟</span><span class="note">门外的船仍停着，薄簿阖着放在钟摆旁。灯自己会亮。她没有记下这一夜</span></div>
 <div class="row"><span class="name">篇八十二《未寄的一页》· 回廊钟</span><span class="note">清晨，船边的一页仍在；潮水退去，干痕又见；潮水回来，又被覆住。她没有替它决定去处</span></div>
-<div class="row"><span class="name">篇八十四《门口的水》· 回廊钟</span><span class="note">清晨，门槛边的盐还在；薄簿合着，页角没有动。她没去看海</span></div>
-<div class="row"><span class="name">全集</span><span class="note">《止音纪元 · 余响集》收录全部八十四篇 · xiaodernan.github.io/caesura/story/anthology/</span></div>
+<div class="row"><span class="name">篇八十五《门内一夜》· 回廊钟</span><span class="note">清晨，门槛边的盐还在；薄簿合着，页角没有动。她没去看海</span></div>
+<div class="row"><span class="name">全集</span><span class="note">《止音纪元 · 余响集》收录全部八十五篇 · xiaodernan.github.io/caesura/story/anthology/</span></div>
 
 <h2>宇宙的尺度 · 献给刘慈欣 <span style="opacity:.6">（《三体》三部曲：《三体》·《黑暗森林》·《死神永生》）</span></h2>
 <div class="row"><span class="name">红岸基地</span><span class="note">国与国之间偷偷把雷达对准天空——想知道那头有没有人在听。止音纪元里没有红岸基地；这里有更早的红岸——每一口钟都是一次对宇宙的沉默认证</span></div>
@@ -418,7 +418,7 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">No. 80 “Two Lines” · The Arcade of Echoes</span><span class="note">The tide withdrew; the dry mark remained; the page corner lifted and settled; the lines knew their places</span></div>
 <div class="row"><span class="name">No. 81 “A Page by the Boat” · The Arcade of Echoes</span><span class="note">The boat remained outside; the ledger stayed shut; she recorded nothing of this night</span></div>
 <div class="row"><span class="name">No. 82 “The Unsent Page” · The Arcade of Echoes</span><span class="note">At dawn, the page by the boat remained; at ebb, the dry mark showed; at flood, it was covered again</span></div>
-<div class="row"><span class="name">No. 84 “Water by the Door” · The Arcade of Echoes</span><span class="note">At dawn, the salt remained by the threshold; the ledger stayed shut; by dusk she had not looked to the sea</span></div>
+<div class="row"><span class="name">No. 85 “A Night Within” · The Arcade of Echoes</span><span class="note">At dawn, the salt remained by the threshold; the ledger stayed shut; by dusk she had not looked to the sea</span></div>
 <div class="row"><span class="name">All eighty-three</span><span class="note">“CAESURA · The Aftermath” collects all eighty-three in one read · xiaodernan.github.io/caesura/story/anthology/</span></div>
 
 <h2>The scale of the cosmos · for Liu Cixin <span style="opacity:.6">(the trilogy: The Three-Body Problem · The Dark Forest · Death's End)</span></h2>
@@ -1601,7 +1601,7 @@ export class Stakerite {
     const lang = getLang()
     const header = lang === 'en'
       ? 'The Aftermath · eighty-three full chapters<span style="opacity:.6"> (原文 — stays in the game)</span>'
-      : '篇章 · 止音纪元 · 八十四篇全文<span style="opacity:.6">（原文直入——不出游戏）</span>'
+      : '篇章 · 止音纪元 · 八十五篇全文<span style="opacity:.6">（原文直入——不出游戏）</span>'
     const chaptersHtml = STORY_CHAPTERS.map((c) => `
       <div class="chapter"><h3>${lang === 'en' ? `No.${c.no} · ${c.enTitle}` : `篇${c.no} · 《${c.zhTitle}》`}</h3>
         <div class="chapter-body">${lang === 'en' ? c.en : c.zh}</div></div>`).join('')

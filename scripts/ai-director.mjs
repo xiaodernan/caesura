@@ -313,7 +313,7 @@ const parseJsonLoose = (raw) => {
 async function nodeLoadWorld(state) { state.world = worldSnapshot() }
 
 async function nodeRetrieveCanon(state) {
-  const focus = FOCUS || '止音纪元 世界现状 八十四篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响'
+  const focus = FOCUS || '止音纪元 世界现状 八十五篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响'
   const t0 = Date.now()
   const corpus = buildWorldCorpus(ROOT)
   const index = buildIndex(corpus)
@@ -356,7 +356,7 @@ async function nodeProposeTransitions(state) {
       : '',
     '硬约束：新提案的 flag 不得与避让名册同名、不得与既有旗标语义重复（例如想表达"归档线索"时，若名册已有同类归档旗标，就换一个 genuinely 不同的动作或直接用既有旗标名）。',
   ].filter(Boolean).join('\n')
-  const task = '【任务·世界状态流转提案】现状：无耳深窖五环线索、低音之城、八十四篇游记写尽。提出 4 条**可直接落为 quest/flag 的状态流转提案**：{"transitions":[{"fromZh":"起点状态","fromEn":"from-state","toZh":"终点状态","toEn":"to-state","flag":"flag.xxx","narrativeZh":"≤80字叙事后果","narrativeEn":"≤45 words","npcReactionZh":"≤40字 NPC/世界反应","npcReactionEn":"≤25 words","atlasHookZh":"≤30字 可挂进 Atlas 的钩子","atlasHookEn":"≤18 words"}]}。硬约束：flag **必须**以 "flag." 开头、全小写 snake_case（如 flag.paper_bag_salt_line_kept），**不许**加 proposed / new / plan 之类的前缀；flag 名字要像现存 flag 一样直接落库。只许 JSON。\n\n' + avoidBlock
+  const task = '【任务·世界状态流转提案】现状：无耳深窖五环线索、低音之城、八十五篇游记写尽。提出 4 条**可直接落为 quest/flag 的状态流转提案**：{"transitions":[{"fromZh":"起点状态","fromEn":"from-state","toZh":"终点状态","toEn":"to-state","flag":"flag.xxx","narrativeZh":"≤80字叙事后果","narrativeEn":"≤45 words","npcReactionZh":"≤40字 NPC/世界反应","npcReactionEn":"≤25 words","atlasHookZh":"≤30字 可挂进 Atlas 的钩子","atlasHookEn":"≤18 words"}]}。硬约束：flag **必须**以 "flag." 开头、全小写 snake_case（如 flag.paper_bag_salt_line_kept），**不许**加 proposed / new / plan 之类的前缀；flag 名字要像现存 flag 一样直接落库。只许 JSON。\n\n' + avoidBlock
   const out = await callDirector(state.env, { stdinPrefix: state.prefix, task: withSnapshot(state, task), temperature: 0.75, maxTokens: 1200 })
   recordUsage(state, 'proposeTransitions', out)
   const parsed = parseJsonLoose(out.text)

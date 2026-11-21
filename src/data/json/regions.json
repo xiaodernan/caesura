@@ -158,6 +158,7 @@
           "y": 0,
           "z": -27
         },
+        "setsFlag": "flag.door_bowl_water_left",
         "requiresState": {
           "key": "state.meg.ending",
           "value": "SILENCED"
@@ -173,6 +174,7 @@
           "y": 0,
           "z": 28
         },
+        "setsFlag": "flag.threshold_salt_set_by_bowl",
         "requiresState": {
           "key": "state.bells.fourth_dumb",
           "value": "INTACT"
@@ -203,6 +205,7 @@
           "y": 0,
           "z": 28
         },
+        "setsFlag": "flag.boat_page_brought_inside",
         "requiresState": {
           "key": "state.bells.fourth_dumb",
           "value": "MELTED"
@@ -218,6 +221,7 @@
           "y": 0,
           "z": 28
         },
+        "setsFlag": "flag.door_closed_for_one_night",
         "requiresState": {
           "key": "state.bells.fourth_dumb",
           "value": "SEALED"

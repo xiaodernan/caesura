@@ -1,6 +1,6 @@
 # AI 导演 · 流转 QA · TRANSITIONS-QA 2026-11-21
 
-- mode: `live` ｜ source: ai-director-latest.json @ 2026-11-21T05:47:19.555Z ｜ corpus: 11814 chunks
+- mode: `live` ｜ source: ai-director-latest.json @ 2026-11-21T10:36:39.751Z ｜ corpus: 11975 chunks
 - LLM calls: 1 ｜ cached_tokens: 0 ｜ statuses: [200]
 - 名册：dialogue flags 33 面 · quest lines 7 条
 
@@ -8,44 +8,45 @@
 ```json
 [
   {
-    "flag": "flag.earless_deeps_five_ring_clues_archived",
-    "canonFit": "conflict",
-    "conflicts": [
-      "与 flag.faceless_clue_ring_complete 的五环线索完成语义重叠"
-    ],
-    "notesZh": "名册已有同义完成旗标，不应另立重复旗标。",
-    "notesEn": "Duplicates the existing five-ring clue completion flag."
-  },
-  {
-    "flag": "flag.bass_citadel_listening_debt_recorded",
+    "flag": "flag.door_bowl_water_left",
     "canonFit": "new-canon",
     "conflicts": [],
-    "notesZh": "新增听账栏及其记录方式；现有证据未确立此设定。",
-    "notesEn": "Adds a listening-debt ledger entry not established by the evidence.",
+    "notesZh": "既有片段写碗中无水；添水是新状态，需人工审核。",
+    "notesEn": "The cited canon shows the bowl empty; adding water introduces a new state.",
     "requiresHumanReview": true
   },
   {
-    "flag": "flag.windbell_coast_bell_picker_sack_kept",
-    "canonFit": "canon",
+    "flag": "flag.threshold_salt_set_by_bowl",
+    "canonFit": "new-canon",
     "conflicts": [],
-    "notesZh": "短篇明确记载阿衡将旧布袋收在石盘底下。",
-    "notesEn": "The story explicitly says A-Heng stores the old sack beneath the stone disk."
+    "notesZh": "既有片段写盐在门槛或原处；移至碗旁是新位置，需人工审核。",
+    "notesEn": "Moving the salt beside the bowl is a new location not established by the cited canon.",
+    "requiresHumanReview": true
   },
   {
-    "flag": "flag.unfinished_hall_blank_line_claimed",
-    "canonFit": "canon",
+    "flag": "flag.boat_page_brought_inside",
+    "canonFit": "new-canon",
     "conflicts": [],
-    "notesZh": "符合末行空白供人认领、但不填写姓名的既有设定。",
-    "notesEn": "Matches the established claim-without-filling rule for the blank line."
+    "notesZh": "既有片段写页留在船边；带回门内是新转移，未见明确矛盾，需人工审核。",
+    "notesEn": "Bringing the page indoors is a new transition; the cited passages do not establish it.",
+    "requiresHumanReview": true
+  },
+  {
+    "flag": "flag.door_closed_for_one_night",
+    "canonFit": "new-canon",
+    "conflicts": [],
+    "notesZh": "既有片段提及门缝与风，但未写合门一夜；此状态需人工审核。",
+    "notesEn": "The canon mentions the door gap and wind, but not closing the door for one night.",
+    "requiresHumanReview": true
   }
 ]
 ```
 
 ## 图检查点
-- ✓ load · 8ms
-- ✓ retrieve · 992ms
-- ✓ judge · 11458ms
-- ✓ writeArtifacts · 27ms
+- ✓ load · 6ms
+- ✓ retrieve · 417ms
+- ✓ judge · 8499ms
+- ✓ writeArtifacts · 5ms
 
 ## 错误
 - 无

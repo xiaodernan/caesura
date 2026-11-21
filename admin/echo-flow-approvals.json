@@ -7,32 +7,32 @@
   "reviewedAt": "2026-11-21",
   "decisions": [
     {
-      "flag": "flag.earless_deeps_five_ring_clues_archived",
-      "decision": "reject",
-      "chapter": 84,
-      "noteZh": "QA 判为 conflict：与既有 flag.faceless_clue_ring_complete 的无耳深五环线索归档重复；驳回，不进运行时。",
-      "noteEn": "QA marks conflict: duplicates the existing flag.faceless_clue_ring_complete earless-deep five-ring clue archive. Rejected; not in runtime."
+      "flag": "flag.door_bowl_water_left",
+      "decision": "approve",
+      "chapter": 85,
+      "noteZh": "QA 判 new-canon：空碗首次盛水是本篇新增动作；作为已审新设接受，不冒充旧 canon。水退后碗是否仍空留待后续状态。",
+      "noteEn": "QA marks new-canon: the bowl holding water for the first time is a new action. Accepted as reviewed new lore, not old canon."
     },
     {
-      "flag": "flag.bass_citadel_listening_debt_recorded",
+      "flag": "flag.threshold_salt_set_by_bowl",
       "decision": "approve",
-      "chapter": 84,
-      "noteZh": "QA 判为 new-canon 且需人工审：低音之城的听债记录与既有「欠账只能用听来抵」同源；作为已审新设接受，不冒充旧 canon。",
-      "noteEn": "QA marks new-canon requiring human review: the bass citadel listening debt matches the established 'debts cleared by listening' motif. Accepted as reviewed new lore."
+      "chapter": 85,
+      "noteZh": "QA 判 new-canon：盐从门槛移到碗旁、碗仍空，是位置变化的新动作；作为已审新设接受。",
+      "noteEn": "QA marks new-canon: moving the salt from the threshold beside the bowl while the bowl stays empty is a new positional action. Accepted as reviewed new lore."
     },
     {
-      "flag": "flag.windbell_coast_bell_picker_sack_kept",
+      "flag": "flag.boat_page_brought_inside",
       "decision": "approve",
-      "chapter": 84,
-      "noteZh": "QA 判为 canon：风铃海岸拾钟人的袋子留下未动，与既有拾钟人收拾遗物线一致；落成玩家可触发的状态。",
-      "noteEn": "QA marks canon: the windbell-coast bell-picker's sack kept unturned matches the established bell-picker line. Made a player-triggerable state."
+      "chapter": 85,
+      "noteZh": "QA 判 new-canon：船边未翻之页被带入门内、仍不翻开；与「不替它决定去向」的既有态度一致，仅位置变化是新增。",
+      "noteEn": "QA marks new-canon: bringing the unturned page inside while still not opening it matches the established 'not choosing its destination' stance; only the location changes."
     },
     {
-      "flag": "flag.unfinished_hall_blank_line_claimed",
+      "flag": "flag.door_closed_for_one_night",
       "decision": "approve",
-      "chapter": 84,
-      "noteZh": "QA 判为 canon：未竟厅的空白末行被认领，与「末行空白等着被认领」的既有设定一致；不涉及新法则。",
-      "noteEn": "QA marks canon: the unfinished hall's blank final line being claimed matches the established 'blank awaits claiming' lore. No new law."
+      "chapter": 85,
+      "noteZh": "QA 判 new-canon：门合上一夜但未封缝，风仍可过；与既有「门留缝」意象呼应，「合上一夜」是新增状态，作为已审新设接受。",
+      "noteEn": "QA marks new-canon: the door shut for one night yet the seam unsealed, with wind still passing through, echoes the established seam motif; the one-night closure is new. Accepted."
     }
   ]
 }

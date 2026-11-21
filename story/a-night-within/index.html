@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>门内一夜 / A Night Within — CAESURA · 余响集 · 第八十五篇</title>
+<meta name="description" content="清晨，门槛边的盐还在。阿汐没有数。薄簿合着，页角没有动。傍晚，她没有去看海。有些夜晚，留在原处便够了。 · LLM 草稿 · 人工闸落地 · 双语 · 零网络 / The eighty-third piece of The Aftermath: at dawn, the salt remained by the threshold; the ledger stayed shut. LLM-drafted, human-gated, bilingual, offline." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🔔</text></svg>">
+<style>
+  :root {
+    --gold: #f3ce8f;
+    --gold-soft: rgba(243,206,143,.32);
+    --ink: #f3ede0;
+    --ink-dim: rgba(243,237,224,.62);
+    --panel: rgba(28,20,12,.7);
+    --serif: "Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#070608; color:var(--ink); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; }
+  .bg { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .bg.radial {
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(243,206,143,.14), transparent 60%),
+      radial-gradient(900px 700px at 50% 118%, rgba(90,40,40,.22), transparent 62%),
+      radial-gradient(650px 420px at 88% 104%, rgba(203,177,255,.08), transparent 60%),
+      #070608;
+  }
+  .bg.noise { position:fixed; inset:0; z-index:-1; opacity:.05; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .wrap { max-width:860px; margin:0 auto; padding:26px 26px 90px; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .brand { font-size:.8rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; opacity:.9; }
+  .brand a { color:inherit; text-decoration:none; border-bottom:1px dotted rgba(243,206,143,.5); }
+  .brand a:hover { color:#fff2d0; }
+  .toplinks { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toplinks a { font-size:.72rem; color:var(--ink-dim); text-decoration:none; border:1px solid rgba(243,237,224,.14); padding:6px 12px; border-radius:999px; transition:all .22s ease; }
+  .toplinks a:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .lang-row button { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(243,206,143,.12); border:1px solid var(--gold-soft); padding:6px 15px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; }
+  .lang-row button:hover { background:rgba(243,206,143,.22); box-shadow:0 0 16px rgba(243,206,143,.25); }
+
+  [data-lang="zh-TW"] .en-copy { display:none !important; }
+  [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="en"] .zh-copy { display:none !important; }
+
+  header.hero { text-align:center; padding:52px 14px 30px; }
+  .kicker { font-size:.72rem; letter-spacing:.42em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:20px; }
+  .kicker b { color:var(--gold); font-weight:600; }
+  h1 { font-size:clamp(2.2rem, 8vw, 3.6rem); font-weight:600; letter-spacing:.16em;
+       background:linear-gradient(180deg,#fffbe6 0%, #f3ce8f 28%, #c9a258 58%, #7d6436 100%);
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+       text-shadow:0 0 90px rgba(243,206,143,.3); }
+  .subtitle { margin-top:14px; font-size:.8rem; color:var(--ink-dim); letter-spacing:.3em; text-transform:uppercase; }
+  .rule { width:170px; height:1px; margin:24px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .meta { margin-top:16px; font-size:.7rem; color:rgba(243,237,224,.45); letter-spacing:.18em; text-transform:uppercase; }
+  .meta a { color:var(--gold); text-decoration:none; }
+
+  article { background:var(--panel); border:1px solid rgba(243,237,224,.1); border-radius:18px; padding:38px 40px 34px; position:relative; }
+  article::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--gold), transparent); opacity:.7; }
+  article p { font-size:1.04rem; line-height:2.02; letter-spacing:.02em; color:rgba(243,237,224,.92); margin-bottom:1.5em; text-indent:2em; overflow-wrap:break-word; }
+  article p em { color:#ffe9b3; font-style:normal; }
+  .beat { width:100%; text-align:center; margin:.4em 0 1.4em; letter-spacing:.5em; color:rgba(243,206,143,.6); font-size:.8rem; }
+  .coda { text-align:center; font-style:italic; color:rgba(243,237,224,.78); letter-spacing:.06em; margin-top:.6em; }
+
+  .note { margin:26px auto 0; max-width:760px; text-align:center; font-size:.74rem; color:rgba(243,237,224,.42); line-height:1.9; letter-spacing:.04em; }
+  .note a { color:var(--gold); text-decoration:none; border-bottom:1px dotted rgba(243,206,143,.5); }
+
+  footer { margin-top:56px; border-top:1px solid rgba(243,237,224,.09); padding-top:22px; display:flex; flex-wrap:wrap; gap:10px 26px; justify-content:space-between; font-size:.7rem; color:rgba(243,237,224,.4); letter-spacing:.06em; }
+  footer a { color:var(--gold); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @media (max-width:640px) { .wrap { padding:20px 12px 70px; } article { padding:26px 20px 24px; } article p { font-size:.98rem; text-indent:2em; } }
+</style>
+</head>
+<body>
+<div class="bg radial" aria-hidden="true"></div>
+<div class="bg noise" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><a href="/caesura/">CAESURA</a> · 《止音纪元》</div>
+    <div class="toplinks">
+      <a href="/caesura/story/"><span class="zh-copy">《盐》</span><span class="en-copy">“Salt”</span></a>
+      <a href="/caesura/story/first-bell/"><span class="zh-copy">《第一钟》</span><span class="en-copy">“The First Bell”</span></a>
+      <a href="/caesura/story/bell-picker/"><span class="zh-copy">《拾钟人》</span><span class="en-copy">“The Bell-Picker”</span></a>
+      <a href="/caesura/story/twelfth-listener/"><span class="zh-copy">《第十二个听者》</span><span class="en-copy">“The Twelfth Listener”</span></a>
+      <a href="/caesura/story/fourth-strike/"><span class="zh-copy">《第四下》</span><span class="en-copy">“The Fourth Strike”</span></a>
+      <a href="/caesura/story/string-listener/"><span class="zh-copy">《听弦》</span><span class="en-copy">“The String-Listener”</span></a>
+      <a href="/caesura/story/third-voice/"><span class="zh-copy">《第三声》</span><span class="en-copy">“The Third Voice”</span></a>
+      <a href="/caesura/story/echo-vale/"><span class="zh-copy">《回声谷》</span><span class="en-copy">“The Echo Vale”</span></a>
+      <a href="/caesura/story/after-half-a-chime/"><span class="zh-copy">《半声之后》</span><span class="en-copy">“After Half a Chime”</span></a>
+      <a href="/caesura/story/beside-the-button/"><span class="zh-copy">《铜扣旁》</span><span class="en-copy">“Beside the Button”</span></a>
+      <a href="/caesura/story/beyond-the-line/"><span class="zh-copy">《线外》</span><span class="en-copy">“Beyond the Line”</span></a>
+      <a href="/caesura/story/after-the-bag/"><span class="zh-copy">《纸袋之后》</span><span class="en-copy">“After the Bag”</span></a>
+      <a href="/caesura/story/salt-on-the-sill/"><span class="zh-copy">《窗台盐线》</span><span class="en-copy">“Salt on the Sill”</span></a>
+      <a href="/caesura/story/after-the-salt-line/"><span class="zh-copy">《盐线之后》</span><span class="en-copy">“After the Salt Line”</span></a>
+      <a href="/caesura/story/the-sill-keeps-count/"><span class="zh-copy">《窗台记数》</span><span class="en-copy">“The Sill Keeps Count”</span></a>
+      <a href="/caesura/story/after-the-space/"><span class="zh-copy">《空处之后》</span><span class="en-copy">“After the Space”</span></a>
+      <a href="/caesura/story/the-unmarked-number/"><span class="zh-copy">《未刻之数》</span><span class="en-copy">“The Unmarked Number”</span></a>
+      <a href="/caesura/story/beside-the-scale/"><span class="zh-copy">《秤旁》</span><span class="en-copy">“Beside the Scale”</span></a>
+      <a href="/caesura/story/the-unentered-page/"><span class="zh-copy">《未记的一页》</span><span class="en-copy">“The Unentered Page”</span></a>
+      <a href="/caesura/story/the-dry-place/"><span class="zh-copy">《干处》</span><span class="en-copy">“The Dry Place”</span></a>
+      <a href="/caesura/story/unweighed/"><span class="zh-copy">《未称之物》</span><span class="en-copy">“Unweighed”</span></a>
+      <a href="/caesura/story/the-empty-scale/"><span class="zh-copy">《空秤》</span><span class="en-copy">“The Empty Scale”</span></a>
+      <a href="/caesura/story/beyond-the-scale/"><span class="zh-copy">《秤盘之外》</span><span class="en-copy">“Beyond the Scale”</span></a>
+      <a href="/caesura/story/the-scale-shadow/"><span class="zh-copy">《秤影》</span><span class="en-copy">“The Scale's Shadow”</span></a>
+      <a href="/caesura/story/beyond-the-threshold/"><span class="zh-copy">《门槛之外》</span><span class="en-copy">“Beyond the Threshold”</span></a>
+      <a href="/caesura/story/the-mark-outside/"><span class="zh-copy">《门外的湿痕》</span><span class="en-copy">“The Mark Outside”</span></a>
+      <a href="/caesura/story/salt-at-the-threshold/"><span class="zh-copy">《门槛上的盐》</span><span class="en-copy">“Salt at the Threshold”</span></a>
+      <a href="/caesura/story/the-unopened-page/"><span class="zh-copy">《未开之页》</span><span class="en-copy">“The Unopened Page”</span></a>
+      <a href="/caesura/story/the-unsent-letter/"><span class="zh-copy">《未寄出的信》</span><span class="en-copy">“The Unsent Letter”</span></a>
+      <a href="/caesura/story/after-the-empty-scale/"><span class="zh-copy">《空秤之后》</span><span class="en-copy">“After the Empty Scale”</span></a>
+      <a href="/caesura/story/the-unmade-swing/"><span class="zh-copy">《未摆的一次》</span><span class="en-copy">“The Unmade Swing”</span></a>
+      <a href="/caesura/story/the-dry-mark-beneath/"><span class="zh-copy">《船底的干痕》</span><span class="en-copy">“The Dry Mark Beneath”</span></a>
+      <a href="/caesura/story/the-unasked-boat/"><span class="zh-copy">《未问之船》</span><span class="en-copy">“The Unasked Boat”</span></a>
+      <a href="/caesura/story/the-place-aboard/"><span class="zh-copy">《船上的空处》</span><span class="en-copy">“The Place Aboard”</span></a>
+      <a href="/caesura/story/salt-not-aboard/"><span class="zh-copy">《盐未上船》</span><span class="en-copy">“Salt Not Aboard”</span></a>
+      <a href="/caesura/story/the-boat-still/"><span class="zh-copy">《船未启》</span><span class="en-copy">“The Boat Still”</span></a>
+      <a href="/caesura/story/beside-the-jar/"><span class="zh-copy">《壶边》</span><span class="en-copy">“Beside the Jar”</span></a>
+      <a href="/caesura/story/the-ring/"><span class="zh-copy">《圈印》</span><span class="en-copy">“The Ring”</span></a>
+      <a href="/caesura/story/the-mark-beneath-the-jar/"><span class="zh-copy">《壶底旧痕》</span><span class="en-copy">“The Mark Beneath the Jar”</span></a>
+      <a href="/caesura/story/the-unmoved-pendulum/"><span class="zh-copy">《未动的摆》</span><span class="en-copy">“The Unmoved Pendulum”</span></a>
+      <a href="/caesura/story/no-handover/"><span class="zh-copy">《未交接》</span><span class="en-copy">“No Handover”</span></a>
+      <a href="/caesura/story/beside-the-pendulum/"><span class="zh-copy">《摆旁空位》</span><span class="en-copy">“The Place Beside the Pendulum”</span></a>
+      <a href="/caesura/story/salt-beside-the-seat/"><span class="zh-copy">《摆下的盐》</span><span class="en-copy">“Salt Beside the Seat”</span></a>
+      <a href="/caesura/story/the-mark-remains/"><span class="zh-copy">《干痕仍在》</span><span class="en-copy">“The Mark Remains”</span></a>
+      <a href="/caesura/story/at-ebb-one-stick/"><span class="zh-copy">《潮退添柴》</span><span class="en-copy">“At Ebb, One Stick”</span></a>
+      <a href="/caesura/story/the-swing-unreturned/"><span class="zh-copy">《摆不回》</span><span class="en-copy">“The Swing Unreturned”</span></a>
+      <a href="/caesura/story/the-ash-beside-the-pendulum/"><span class="zh-copy">《摆旁的灰》</span><span class="en-copy">“Ash Beside the Pendulum”</span></a>
+      <a href="/caesura/story/ash-not-fallen/"><span class="zh-copy">《灰未落》</span><span class="en-copy">“Ash Not Fallen”</span></a>
+      <a href="/caesura/story/the-mark-not-entered/"><span class="zh-copy">《干痕未进》</span><span class="en-copy">“The Mark Not Entered”</span></a>
+      <a href="/caesura/story/the-ash-unhurried/"><span class="zh-copy">《灰不催》</span><span class="en-copy">“The Ash Unhurried”</span></a>
+      <a href="/caesura/story/the-fire-knows/"><span class="zh-copy">《火自己知道》</span><span class="en-copy">“The Fire Knows”</span></a>
+      <a href="/caesura/story/the-ash-unreturned/"><span class="zh-copy">《灰不归》</span><span class="en-copy">“The Ash Unreturned”</span></a>
+      <a href="/caesura/story/the-fading-mark/"><span class="zh-copy">《淡痕》</span><span class="en-copy">“The Fading Mark”</span></a>
+      <a href="/caesura/story/the-unentered-stroke/"><span class="zh-copy">《未添的一笔》</span><span class="en-copy">“The Unentered Stroke”</span></a>
+      <a href="/caesura/story/the-corner-turns/"><span class="zh-copy">《页角自翻》</span><span class="en-copy">“The Corner Turns”</span></a>
+      <a href="/caesura/story/one-more-dusk/"><span class="zh-copy">《又多一个傍晚》</span><span class="en-copy">“One More Dusk”</span></a>
+      <a href="/caesura/story/the-ledger-shut/"><span class="zh-copy">《薄簿合着》</span><span class="en-copy">“The Ledger, Shut”</span></a>
+      <a href="/caesura/story/the-unanswered-question/"><span class="zh-copy">《未答之问》</span><span class="en-copy">“The Unanswered Question”</span></a>
+      <a href="/caesura/story/one-line-in-the-night/"><span class="zh-copy">《夜开的一线》</span><span class="en-copy">“One Line in the Night”</span></a>
+      <a href="/caesura/story/she-too-a-seam/"><span class="zh-copy">《她也一线》</span><span class="en-copy">“She, Too, a Seam”</span></a>
+      <a href="/caesura/story/a-page-beside-the-pendulum/"><span class="zh-copy">《摆旁一页》</span><span class="en-copy">“A Page Beside the Pendulum”</span></a>
+      <a href="/caesura/story/the-unferried-page/"><span class="zh-copy">《未渡的一页》</span><span class="en-copy">“The Unferried Page”</span></a>
+      <a href="/caesura/story/the-salt-is-there/"><span class="zh-copy">《盐还在》</span><span class="en-copy">“The Salt Is There”</span></a>
+      <a href="/caesura/story/the-boats-measure/"><span class="zh-copy">《空船的刻度》</span><span class="en-copy">“The Boat's Measure”</span></a>
+      <a href="/caesura/story/two-lines/"><span class="zh-copy">《两条线》</span><span class="en-copy">“Two Lines”</span></a>
+      <a href="/caesura/story/a-page-by-the-boat/"><span class="zh-copy">《船边的一页》</span><span class="en-copy">“A Page by the Boat”</span></a>
+      <a href="/caesura/story/the-unsent-page/"><span class="zh-copy">《未寄的一页》</span><span class="en-copy">“The Unsent Page”</span></a>
+      <a href="/caesura/story/the-empty-bowl/"><span class="zh-copy">《门边的空碗》</span><span class="en-copy">“The Empty Bowl”</span></a>
+      <a href="/caesura/story/water-by-the-door/"><span class="zh-copy">《门口的水》</span><span class="en-copy">“Water by the Door”</span></a>
+      <a href="/caesura/story/a-night-within/"><span class="zh-copy">《门内一夜》</span><span class="en-copy">“A Night Within”</span></a>
+      <a href="/caesura/codex/"><span class="zh-copy">世界谱</span><span class="en-copy">Codex</span></a>
+      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button></span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <p class="kicker zh-copy">短篇 · <b>余响集</b> · 第八十五篇</p>
+    <p class="kicker en-copy">Short story · <b>The Aftermath</b> · No. 85</p>
+    <h1 class="zh-copy">门内一夜</h1>
+    <h1 class="en-copy">A Night Within</h1>
+    <p class="subtitle zh-copy">回廊钟第37年 · 风过门缝 · 碗仍空着 · 盐没动 · 簿页角抬起又落回 · 她没有落笔</p>
+    <p class="subtitle en-copy">The 37th year of the Arcade — wind through the seam; the bowl still empty; the salt untouched; the ledger corner lifted and fell</p>
+    <div class="rule"></div>
+    <p class="meta zh-copy">约 7 分钟 · 与 <a href="/caesura/codex/">世界谱</a> 同源世界观 · 零网络</p>
+    <p class="meta en-copy">about 7 minutes · same world as the <a href="/caesura/codex/">codex</a> · fully offline</p>
+  </header>
+
+  <article>
+    <div class="zh-copy">
+<p>夜里，风从门缝进来，又出去。门边的碗仍空着。门槛上的盐没有移动。薄簿合着，页角抬起一线，随后落回。阿汐没有添水，也没有替这一夜落笔。清晨，潮水退去，船底的干痕显出来。</p>
+<p>门留着一道缝——不是忘了关——是它没有关严——风从缝里进来——又出去——她听着——风进来的时候她没有起身——风出去的时候她也没有起身——她只是让那一夜过去——像让一碗水自己空着——她不去管它</p>
+
+<div class="beat">· · ·</div>
+
+<p>碗在门边——它空着——她曾经想给它添一点水——她没有添——添了——它就不是空的了——它不是不能盛水——它是不必盛——她知道——她把手伸到碗边——又收回来——碗还是空的——空着——也还好</p>
+<p>门槛上的盐——一粒——两粒——它们没有动——她把目光放在它们上面——它们不因为有谁在看就动——她想起母亲说过——盐是留住的意思——她没有确认这句话——她只是让盐留在原处——留在门槛上——留在夜里</p>
+
+<div class="beat">· · ·</div>
+
+<p>薄簿合着——页角抬起来——抬了一线——又落回去——她没有翻——她看见它抬——又看见它落——它像是要说什么——又没有说——她不去替它说——她把目光移开——屋子里没有别的声音——只有风——从缝里——进来——出去</p>
+<p>她想起船边那一页——它还在船边——她没有去拿——它没有被翻开——它也不需要被带进来——外头的事情——留在外头——她听着风——风没有带来那一页——她也没有去带它——这一夜——就这样</p>
+
+<div class="beat">· · ·</div>
+
+<p>天快亮的时候——潮退了——船底的干痕露出来——它没有被人量过——也没有被人记下来——她看见了——她没有走过去——干痕在潮水里——又露出来——它不说话——她也不说话——她们各自——在——在这一夜里</p>
+<p>清晨——门缝还在——碗还空着——盐还在门槛上——簿合着——她没有添水——也没有落笔——夜里的事——没有被记下——也没有被改变——它只是过去了——像风吹过——进来——又出去</p>
+
+<p class="coda">她没有添水，也没有落笔。</p>
+<p class="coda">有些夜晚，留在原处便够了。</p>
+<p class="coda">止音纪元没有结束。它只是又过了一夜——门留着缝，碗空着，盐在门槛上，簿阖着，风进来又出去——她也很好。</p>
+    </div>
+    <div class="en-copy">
+<p>At night, wind passed through the door's seam and went out again. Axi did not rise. The bowl by the door remained empty. The salt on the threshold did not move. The thin ledger stayed shut, its corner lifted a line, then settled back. Axi added no water and made no entry for the night. At dawn, the tide withdrew, and the dry mark beneath the boat showed again.</p>
+<p>The door kept its seam — not forgotten, but never shut tight — the wind came through — and went out — she listened — when the wind came in she did not rise — when it went out she did not rise — she only let the night pass — as one lets a bowl stay empty — she did not tend to it</p>
+
+<div class="beat">· · ·</div>
+
+<p>The bowl by the door — it stood empty — she had once thought to add a little water — she did not — add water, and it would no longer be empty — it could hold water — it just need not — she knew — she put her hand near the bowl — and drew it back — the bowl was still empty — empty — and that was all right</p>
+<p>The salt on the threshold — one grain — two — they did not move — she set her eyes on them — they did not move because someone watched — she recalled her mother saying — salt means keeping — she did not confirm the saying — she only let the salt stay where it was — on the threshold — in the night</p>
+
+<div class="beat">· · ·</div>
+
+<p>The ledger lay shut — its corner lifted — lifted a line — then fell back — she did not turn it — she saw it lift — and saw it fall — as if to say something — and then not — she did not speak for it — she looked away — there was no other sound in the room — only the wind — through the seam — in — out</p>
+<p>She thought of the page by the boat — it was still there — she did not go for it — it had not been opened — nor did it need to be brought in — what was outside — stayed outside — she listened to the wind — the wind did not bring the page — nor did she fetch it — this night — was just this</p>
+
+<div class="beat">· · ·</div>
+
+<p>Near dawn — the tide withdrew — the dry mark beneath the boat showed — it had not been measured — nor written down — she saw it — she did not go over — the mark lay in the tide — showed again — it said nothing — she said nothing — each of them — present — in the night</p>
+<p>Morning — the seam remained — the bowl empty — the salt on the threshold — the ledger shut — she added no water — set down no line — the night's doings — were not recorded — nor changed — they only passed — like wind — in — and out</p>
+
+<p class="coda">She added no water, and made no entry.</p>
+<p class="coda">Some nights are enough left where they are.</p>
+<p class="coda">The age of hush has not ended. It has only lived one more night — the door ajar, the bowl empty, the salt on the threshold, the ledger shut, the wind in and out — and she was well too.</p>
+    </div>
+  </article>
+
+  <div class="note">
+    <span class="zh-copy">本篇为《余响集》双语对照 · 人工闸定稿 · 零网络 · 与<a href="/caesura/codex/">世界谱</a>同源世界观。<a href="/caesura/story/anthology/">全集：《余响集》</a></span>
+    <span class="en-copy">“The Aftermath,” bilingual, offline, human-gated — same world as the <a href="/caesura/codex/">codex</a>. <a href="/caesura/story/anthology/">All stories: “The Aftermath”</a></span>
+  </div>
+
+  <footer>
+    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/">游戏</a> · <a href="/caesura/story/">篇一 · 盐</a> · <a href="/caesura/story/unnamed-stone/">篇二 · 山下无名碑</a> · <a href="/caesura/story/empty-bar/">篇三 · 空拍子</a> · <a href="/caesura/story/ledger/">篇四 · 账本</a> · <a href="/caesura/story/garden/">篇五 · 回声庭园</a> · <a href="/caesura/story/tribunal/">篇六 · 雨审判</a> · <a href="/caesura/story/frostbell/">篇七 · 霜锤</a> · <a href="/caesura/story/doors/">篇八 · 千门</a> · <a href="/caesura/story/stonethroat/">篇九 · 石喉</a> · <a href="/caesura/story/first-bell/">篇十 · 第一钟</a> · <a href="/caesura/story/dark-tide/">篇十一 · 暗潮</a> · <a href="/caesura/story/twelfth-listener/">篇十二 · 后记</a> · <a href="/caesura/story/bell-picker/">篇十三 · 拾钟人</a> · <a href="/caesura/story/lampwright-bell/">篇十四 · 灯匠</a> · <a href="/caesura/story/lowtone-city/">篇十五 · 低音之城</a> · <a href="/caesura/story/pendulum-ferryman/">篇十六 · 钟摆渡人</a> · <a href="/caesura/story/unfinished-ledger/">篇十七 · 未竟账页</a> · <a href="/caesura/story/fourth-strike/">篇十八 · 第四下</a> · <a href="/caesura/story/last-string/">篇十九 · 末弦</a> · <a href="/caesura/story/string-listener/">篇二十 · 听弦</a> · <a href="/caesura/story/third-voice/">篇二十一 · 第三声</a> · <a href="/caesura/story/ensemble/">篇二十二 · 合奏</a> · <a href="/caesura/story/echo-vale/">篇二十三 · 回声谷</a> · <a href="/caesura/story/after-half-a-chime/">篇二十四 · 半声之后</a> · <a href="/caesura/story/beside-the-button/">篇二十五 · 铜扣旁</a> · <a href="/caesura/story/beyond-the-line/">篇二十六 · 线外</a> · <a href="/caesura/story/after-the-bag/">篇二十七 · 纸袋之后</a> · <a href="/caesura/story/salt-on-the-sill/">篇二十八 · 窗台盐线</a> · <a href="/caesura/story/after-the-salt-line/">篇二十九 · 盐线之后</a> · <a href="/caesura/story/the-sill-keeps-count/">篇三十 · 窗台记数</a> · <a href="/caesura/story/after-the-space/">篇三十一 · 空处之后</a> · <a href="/caesura/story/the-unmarked-number/">篇三十二 · 未刻之数</a> · <a href="/caesura/story/beside-the-scale/">篇三十三 · 秤旁</a> · <a href="/caesura/story/the-unentered-page/">篇三十四 · 未记的一页</a> · <a href="/caesura/story/the-dry-place/">篇三十五 · 干处</a> · <a href="/caesura/story/unweighed/">篇三十六 · 未称之物</a> · <a href="/caesura/story/the-empty-scale/">篇三十七 · 空秤</a> · <a href="/caesura/story/beyond-the-scale/">篇三十八 · 秤盘之外</a> · <a href="/caesura/story/the-scale-shadow/">篇三十九 · 秤影</a> · <a href="/caesura/story/beyond-the-threshold/">篇四十 · 门槛之外</a> · <a href="/caesura/story/the-mark-outside/">篇四十一篇 · 门外的湿痕</a> · <a href="/caesura/story/salt-at-the-threshold/">篇四十二 · 门槛上的盐</a> · <a href="/caesura/story/the-unopened-page/">篇四十三 · 未开之页</a> · <a href="/caesura/story/the-unsent-letter/">篇四十四 · 未寄出的信</a> · <a href="/caesura/story/after-the-empty-scale/">篇四十五 · 空秤之后</a> · <a href="/caesura/story/the-unmade-swing/">篇四十六 · 未摆的一次</a> · <a href="/caesura/story/the-dry-mark-beneath/">篇四十七 · 船底的干痕</a> · <a href="/caesura/story/the-unasked-boat/">篇四十八 · 未问之船</a> · <a href="/caesura/story/the-place-aboard/">篇四十九 · 船上的空处</a> · <a href="/caesura/story/salt-not-aboard/">篇五十 · 盐未上船</a> · <a href="/caesura/story/the-boat-still/">篇五十一 · 船未启</a> · <a href="/caesura/story/beside-the-jar/">篇五十二 · 壶边</a> · <a href="/caesura/story/the-ring/">篇五十三 · 圈印</a> · <a href="/caesura/story/the-mark-beneath-the-jar/">篇五十四 · 壶底旧痕</a> · <a href="/caesura/story/the-unmoved-pendulum/">篇五十五 · 未动的摆</a> · <a href="/caesura/story/no-handover/">篇五十六 · 未交接</a> · <a href="/caesura/story/beside-the-pendulum/">篇五十七 · 摆旁空位</a> · <a href="/caesura/story/salt-beside-the-seat/">篇五十八 · 摆下的盐</a> · <a href="/caesura/story/the-mark-remains/">篇五十九 · 干痕仍在</a> · <a href="/caesura/story/at-ebb-one-stick/">篇六十 · 潮退添柴</a> · <a href="/caesura/story/the-swing-unreturned/">篇六十一 · 摆不回</a> · <a href="/caesura/story/the-ash-beside-the-pendulum/">篇六十二 · 摆旁的灰</a> · <a href="/caesura/story/ash-not-fallen/">篇六十三 · 灰未落</a> · <a href="/caesura/story/the-mark-not-entered/">篇六十四 · 干痕未进</a> · <a href="/caesura/story/the-ash-unhurried/">篇六十五 · 灰不催</a> · <a href="/caesura/story/the-fire-knows/">篇六十六 · 火自己知道</a> · <a href="/caesura/story/the-ash-unreturned/">篇六十七 · 灰不归</a> · <a href="/caesura/story/the-fading-mark/">篇六十八 · 淡痕</a> · <a href="/caesura/story/the-unentered-stroke/">篇六十九 · 未添的一笔</a> · <a href="/caesura/story/the-corner-turns/">篇七十 · 页角自翻</a> · <a href="/caesura/story/one-more-dusk/">篇七十一 · 又多一个傍晚</a> · <a href="/caesura/story/the-ledger-shut/">篇七十二 · 薄簿合着</a> · <a href="/caesura/story/the-unanswered-question/">篇七十三 · 未答之问</a> · <a href="/caesura/story/one-line-in-the-night/">篇七十四 · 夜开的一线</a> · <a href="/caesura/story/she-too-a-seam/">篇七十五 · 她也一线</a> · <a href="/caesura/story/a-page-beside-the-pendulum/">篇七十六 · 摆旁一页</a> · <a href="/caesura/story/the-unferried-page/">篇七十七 · 未渡的一页</a> · <a href="/caesura/story/the-salt-is-there/">篇七十八 · 盐还在</a> · <a href="/caesura/story/the-boats-measure/">篇七十九 · 空船的刻度</a> · <a href="/caesura/story/two-lines/">篇八十 · 两条线</a> · <a href="/caesura/story/a-page-by-the-boat/">篇八十一 · 船边的一页</a> · <a href="/caesura/story/the-unsent-page/">篇八十二 · 未寄的一页</a> · <a href="/caesura/story/the-empty-bowl/">篇八十三 · 门边的空碗</a> · <a href="/caesura/story/water-by-the-door/">篇八十四 · 门口的水</a> · <a href="/caesura/story/a-night-within/">篇八十五 · 门内一夜</a> · <a href="/caesura/story/anthology/">全集 · 余响集</a> · <a href="/caesura/codex/">世界谱</a></span>
+    <span class="en-copy">© CAESURA · <a href="/caesura/">Game</a> · <a href="/caesura/story/">No. 1 · Salt</a> · <a href="/caesura/story/unnamed-stone/">No. 2 · The Nameless Stone</a> · <a href="/caesura/story/empty-bar/">No. 3 · The Empty Bar</a> · <a href="/caesura/story/ledger/">No. 4 · The Ledger</a> · <a href="/caesura/story/garden/">No. 5 · The Garden of Return</a> · <a href="/caesura/story/tribunal/">No. 6 · The Rain Tribunal</a> · <a href="/caesura/story/frostbell/">No. 7 · The Frostbell</a> · <a href="/caesura/story/doors/">No. 8 · The Thousand Doors</a> · <a href="/caesura/story/stonethroat/">No. 9 · The Stone-Throat</a> · <a href="/caesura/story/first-bell/">No. 10 · The First Bell</a> · <a href="/caesura/story/dark-tide/">No. 11 · The Dark Tide</a> · <a href="/caesura/story/twelfth-listener/">No. 12 · Epilogue</a> · <a href="/caesura/story/bell-picker/">No. 13 · The Bell-Picker</a> · <a href="/caesura/story/lampwright-bell/">No. 14 · The Lampwright</a> · <a href="/caesura/story/lowtone-city/">No. 15 · The City of Low Tones</a> · <a href="/caesura/story/pendulum-ferryman/">No. 16 · The Pendulum Ferryman</a> · <a href="/caesura/story/unfinished-ledger/">No. 17 · The Unfinished Ledger Page</a> · <a href="/caesura/story/fourth-strike/">No. 18 · The Fourth Strike</a> · <a href="/caesura/story/last-string/">No. 19 · The Last String</a> · <a href="/caesura/story/string-listener/">No. 20 · The String-Listener</a> · <a href="/caesura/story/third-voice/">No. 21 · The Third Voice</a> · <a href="/caesura/story/ensemble/">No. 22 · The Ensemble</a> · <a href="/caesura/story/echo-vale/">No. 23 · The Echo Vale</a> · <a href="/caesura/story/after-half-a-chime/">No. 24 · After Half a Chime</a> · <a href="/caesura/story/beside-the-button/">No. 25 · Beside the Button</a> · <a href="/caesura/story/beyond-the-line/">No. 26 · Beyond the Line</a> · <a href="/caesura/story/after-the-bag/">No. 27 · After the Bag</a> · <a href="/caesura/story/salt-on-the-sill/">No. 28 · Salt on the Sill</a> · <a href="/caesura/story/after-the-salt-line/">No. 29 · After the Salt Line</a> · <a href="/caesura/story/the-sill-keeps-count/">No. 30 · The Sill Keeps Count</a> · <a href="/caesura/story/after-the-space/">No. 31 · After the Space</a> · <a href="/caesura/story/the-unmarked-number/">No. 32 · The Unmarked Number</a> · <a href="/caesura/story/beside-the-scale/">No. 33 · Beside the Scale</a> · <a href="/caesura/story/the-unentered-page/">No. 34 · The Unentered Page</a> · <a href="/caesura/story/the-dry-place/">No. 35 · The Dry Place</a> · <a href="/caesura/story/unweighed/">No. 36 · Unweighed</a> · <a href="/caesura/story/the-empty-scale/">No. 37 · The Empty Scale</a> · <a href="/caesura/story/beyond-the-scale/">No. 38 · Beyond the Scale</a> · <a href="/caesura/story/the-scale-shadow/">No. 39 · The Scale's Shadow</a> · <a href="/caesura/story/beyond-the-threshold/">No. 40 · Beyond the Threshold</a> · <a href="/caesura/story/the-mark-outside/">No. 41 · The Mark Outside</a> · <a href="/caesura/story/salt-at-the-threshold/">No. 42 · Salt at the Threshold</a> · <a href="/caesura/story/the-unopened-page/">No. 43 · The Unopened Page</a> · <a href="/caesura/story/the-unsent-letter/">No. 44 · The Unsent Letter</a> · <a href="/caesura/story/after-the-empty-scale/">No. 45 · After the Empty Scale</a> · <a href="/caesura/story/the-unmade-swing/">No. 46 · The Unmade Swing</a> · <a href="/caesura/story/the-dry-mark-beneath/">No. 47 · The Dry Mark Beneath</a> · <a href="/caesura/story/the-unasked-boat/">No. 48 · The Unasked Boat</a> · <a href="/caesura/story/the-place-aboard/">No. 49 · The Place Aboard</a> · <a href="/caesura/story/salt-not-aboard/">No. 50 · Salt Not Aboard</a> · <a href="/caesura/story/the-boat-still/">No. 51 · The Boat Still</a> · <a href="/caesura/story/beside-the-jar/">No. 52 · Beside the Jar</a> · <a href="/caesura/story/the-ring/">No. 53 · The Ring</a> · <a href="/caesura/story/the-mark-beneath-the-jar/">No. 54 · The Mark Beneath the Jar</a> · <a href="/caesura/story/the-unmoved-pendulum/">No. 55 · The Unmoved Pendulum</a> · <a href="/caesura/story/no-handover/">No. 56 · No Handover</a> · <a href="/caesura/story/beside-the-pendulum/">No. 57 · The Place Beside the Pendulum</a> · <a href="/caesura/story/salt-beside-the-seat/">No. 58 · Salt Beside the Seat</a> · <a href="/caesura/story/the-mark-remains/">No. 59 · The Mark Remains</a> · <a href="/caesura/story/at-ebb-one-stick/">No. 60 · At Ebb, One Stick</a> · <a href="/caesura/story/the-swing-unreturned/">No. 61 · The Swing Unreturned</a> · <a href="/caesura/story/the-ash-beside-the-pendulum/">No. 62 · Ash Beside the Pendulum</a> · <a href="/caesura/story/ash-not-fallen/">No. 63 · Ash Not Fallen</a> · <a href="/caesura/story/the-mark-not-entered/">No. 64 · The Mark Not Entered</a> · <a href="/caesura/story/the-ash-unhurried/">No. 65 · The Ash Unhurried</a> · <a href="/caesura/story/the-fire-knows/">No. 66 · The Fire Knows</a> · <a href="/caesura/story/the-ash-unreturned/">No. 67 · The Ash Unreturned</a> · <a href="/caesura/story/the-fading-mark/">No. 68 · The Fading Mark</a> · <a href="/caesura/story/the-unentered-stroke/">No. 69 · The Unentered Stroke</a> · <a href="/caesura/story/the-corner-turns/">No. 70 · The Corner Turns</a> · <a href="/caesura/story/one-more-dusk/">No. 71 · One More Dusk</a> · <a href="/caesura/story/the-ledger-shut/">No. 72 · The Ledger, Shut</a> · <a href="/caesura/story/the-unanswered-question/">No. 73 · The Unanswered Question</a> · <a href="/caesura/story/one-line-in-the-night/">No. 74 · One Line in the Night</a> · <a href="/caesura/story/she-too-a-seam/">No. 75 · She, Too, a Seam</a> · <a href="/caesura/story/a-page-beside-the-pendulum/">No. 76 · A Page Beside the Pendulum</a> · <a href="/caesura/story/the-unferried-page/">No. 77 · The Unferried Page</a> · <a href="/caesura/story/the-salt-is-there/">No. 78 · The Salt Is There</a> · <a href="/caesura/story/the-boats-measure/">No. 79 · The Boat's Measure</a> · <a href="/caesura/story/two-lines/">No. 80 · Two Lines</a> · <a href="/caesura/story/a-page-by-the-boat/">No. 81 · A Page by the Boat</a> · <a href="/caesura/story/the-unsent-page/">No. 82 · The Unsent Page</a> · <a href="/caesura/story/the-empty-bowl/">No. 83 · The Empty Bowl</a> · <a href="/caesura/story/water-by-the-door/">No. 84 · Water by the Door</a> · <a href="/caesura/story/a-night-within/">No. 85 · A Night Within</a> · <a href="/caesura/story/anthology/">All stories · The Aftermath</a> · <a href="/caesura/codex/">World Codex</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('langToggle');
+  var saved = 'zh';
+  try { saved = localStorage.getItem('caesura-lang') || 'zh'; } catch (e) { /* noop */ }
+  function apply(lang) {
+    root.setAttribute('data-lang', lang);
+    root.setAttribute('lang', lang === 'en' ? 'en-US' : (lang === 'zh-TW' ? 'zh-TW' : 'zh-CN'));
+    try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+    if (window.__caesuraZhTW) {
+      if (lang === 'zh-TW' && window.__caesuraZhTW.applyToDocument) window.__caesuraZhTW.applyToDocument();
+      else if (lang === 'zh' && window.__caesuraZhTW.restoreOriginals) window.__caesuraZhTW.restoreOriginals();
+    }
+    btn.textContent = lang === 'zh' ? '繁體' : (lang === 'zh-TW' ? 'EN' : '简体');
+  }
+  if (btn) btn.addEventListener('click', function () {
+    var cur = root.getAttribute('data-lang'); apply(cur === 'zh' ? 'zh-TW' : (cur === 'zh-TW' ? 'en' : 'zh'));
+  });
+  apply(saved === 'en' || saved === 'zh-TW' ? saved : 'zh');
+})();
+</script>
+<script defer src="../../tracker.js"></script>
+<script defer src="/caesura/zh-tw-converter.js"></script>
+<script defer src="/caesura/read-progress.js"></script>
+</body>
+</html>

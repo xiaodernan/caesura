@@ -1,5 +1,5 @@
 /**
- * 游记 · 八十四篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684/KI-685/KI-686/KI-687/KI-688/KI-689/KI-690/KI-691/KI-692/KI-693/KI-694 扩）。
+ * 游记 · 八十五篇全文（2026-11-16 落 · KI-618 · 2026-11-17 KI-621/KI-623/KI-634/KI-639/KI-641/KI-643/KI-648/KI-649/KI-650/KI-651/KI-652/KI-657/KI-658/KI-659/KI-661/KI-662/KI-664/KI-665/KI-666/KI-667/KI-668/KI-669/KI-670/KI-671/KI-672/KI-673/KI-674/KI-675/KI-676/KI-677/KI-678/KI-679/KI-680/KI-681/KI-682/KI-683/KI-684/KI-685/KI-686/KI-687/KI-688/KI-689/KI-690/KI-691/KI-692/KI-693/KI-694 扩）。
  * 这六十三篇都是《止音纪元》世界谱同源的 original short fiction，
  * 中文/英文两份整篇内嵌——因为没有人会单独打开宣传册，
  * 所有内容必须直接放进游戏里。
@@ -4224,6 +4224,53 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">She did not look at the sea.</p>
     <p class="coda">Some water need not be lifted from the bowl.</p>
     <p class="coda">The age of hush has not ended. It has only lived one more evening — the empty bowl by the door, no water in it, the salt at the threshold, the ledger shut, a seam left in the door — and she was well too.</p>`,
+  },
+  {
+    no: 85,
+    zhTitle: "门内一夜",
+    enTitle: "A Night Within",
+    zh: `    <p>夜里，风从门缝进来，又出去。门边的碗仍空着。门槛上的盐没有移动。薄簿合着，页角抬起一线，随后落回。阿汐没有添水，也没有替这一夜落笔。清晨，潮水退去，船底的干痕显出来。</p>
+    <p>门留着一道缝——不是忘了关——是它没有关严——风从缝里进来——又出去——她听着——风进来的时候她没有起身——风出去的时候她也没有起身——她只是让那一夜过去——像让一碗水自己空着——她不去管它</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>碗在门边——它空着——她曾经想给它添一点水——她没有添——添了——它就不是空的了——它不是不能盛水——它是不必盛——她知道——她把手伸到碗边——又收回来——碗还是空的——空着——也还好</p>
+    <p>门槛上的盐——一粒——两粒——它们没有动——她把目光放在它们上面——它们不因为有谁在看就动——她想起母亲说过——盐是留住的意思——她没有确认这句话——她只是让盐留在原处——留在门槛上——留在夜里</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>薄簿合着——页角抬起来——抬了一线——又落回去——她没有翻——她看见它抬——又看见它落——它像是要说什么——又没有说——她不去替它说——她把目光移开——屋子里没有别的声音——只有风——从缝里——进来——出去</p>
+    <p>她想起船边那一页——它还在船边——她没有去拿——它没有被翻开——它也不需要被带进来——外头的事情——留在外头——她听着风——风没有带来那一页——她也没有去带它——这一夜——就这样</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>天快亮的时候——潮退了——船底的干痕露出来——它没有被人量过——也没有被人记下来——她看见了——她没有走过去——干痕在潮水里——又露出来——它不说话——她也不说话——她们各自——在——在这一夜里</p>
+    <p>清晨——门缝还在——碗还空着——盐还在门槛上——簿合着——她没有添水——也没有落笔——夜里的事——没有被记下——也没有被改变——它只是过去了——像风吹过——进来——又出去</p>
+
+    <p class="coda">她没有添水，也没有落笔。</p>
+    <p class="coda">有些夜晚，留在原处便够了。</p>
+    <p class="coda">止音纪元没有结束。它只是又过了一夜——门留着缝，碗空着，盐在门槛上，簿阖着，风进来又出去——她也很好。</p>`,
+    en: `    <p>At night, wind passed through the door's seam and went out again. Axi did not rise. The bowl by the door remained empty. The salt on the threshold did not move. The thin ledger stayed shut, its corner lifted a line, then settled back. Axi added no water and made no entry for the night. At dawn, the tide withdrew, and the dry mark beneath the boat showed again.</p>
+    <p>The door kept its seam — not forgotten, but never shut tight — the wind came through — and went out — she listened — when the wind came in she did not rise — when it went out she did not rise — she only let the night pass — as one lets a bowl stay empty — she did not tend to it</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The bowl by the door — it stood empty — she had once thought to add a little water — she did not — add water, and it would no longer be empty — it could hold water — it just need not — she knew — she put her hand near the bowl — and drew it back — the bowl was still empty — empty — and that was all right</p>
+    <p>The salt on the threshold — one grain — two — they did not move — she set her eyes on them — they did not move because someone watched — she recalled her mother saying — salt means keeping — she did not confirm the saying — she only let the salt stay where it was — on the threshold — in the night</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The ledger lay shut — its corner lifted — lifted a line — then fell back — she did not turn it — she saw it lift — and saw it fall — as if to say something — and then not — she did not speak for it — she looked away — there was no other sound in the room — only the wind — through the seam — in — out</p>
+    <p>She thought of the page by the boat — it was still there — she did not go for it — it had not been opened — nor did it need to be brought in — what was outside — stayed outside — she listened to the wind — the wind did not bring the page — nor did she fetch it — this night — was just this</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Near dawn — the tide withdrew — the dry mark beneath the boat showed — it had not been measured — nor written down — she saw it — she did not go over — the mark lay in the tide — showed again — it said nothing — she said nothing — each of them — present — in the night</p>
+    <p>Morning — the seam remained — the bowl empty — the salt on the threshold — the ledger shut — she added no water — set down no line — the night's doings — were not recorded — nor changed — they only passed — like wind — in — and out</p>
+
+    <p class="coda">She added no water, and made no entry.</p>
+    <p class="coda">Some nights are enough left where they are.</p>
+    <p class="coda">The age of hush has not ended. It has only lived one more night — the door ajar, the bowl empty, the salt on the threshold, the ledger shut, the wind in and out — and she was well too.</p>`,
   },
 ]
 

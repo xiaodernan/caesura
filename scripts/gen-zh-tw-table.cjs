@@ -103,6 +103,7 @@ try {
     'story/the-unsent-page/index.html',
     'story/the-empty-bowl/index.html',
   'story/water-by-the-door/index.html',
+  'story/a-night-within/index.html',
   ];
 
   const PHRASES = new Set();

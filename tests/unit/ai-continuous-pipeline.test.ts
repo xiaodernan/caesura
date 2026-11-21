@@ -28,13 +28,13 @@ describe('KI-728 · AI 导演持续产出流水线', () => {
     expect(SCRIPT).not.toContain('"no":84')
   })
 
-  it('现读 atlas 最大 no 与预期下一篇一致', () => {
+  it('现读 atlas 最大 no 与预期下一篇一致（动态，不写死篇号）', () => {
     const atlas = read('src/ui/atlas-texts.ts')
     const nos = [...atlas.matchAll(/^\s*no:\s*(\d+)/gm)].map((m) => Number(m[1])).filter((n) => Number.isFinite(n))
     const max = Math.max(...nos)
-    expect(max).toBeGreaterThanOrEqual(84)
-    // 当前发布 84 篇 → 下一篇 85
-    expect(max + 1).toBe(85)
+    expect(max).toBeGreaterThanOrEqual(85)
+    // 序列严格是 1..max（无断点、无重复）——每落地一篇，动态篇号自动 +1
+    expect(nos.sort((a, b) => a - b)).toEqual(Array.from({ length: max }, (_, i) => i + 1))
   })
 
   it('三机制并存：动态篇号 + 提案避让 + 终审回灌', () => {
