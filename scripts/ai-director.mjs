@@ -89,6 +89,56 @@ function dialogueSnapshot() {
   return { trees: trees.length, nodes, distinctFlags: flags.size }
 }
 
+/**
+ * KI-725 · canon flag 名册 + 历史 QA conflict 警示（回灌进 proposeTransitions）。
+ * 根因：第 84 篇 LLM 提案 flag.earless_deeps_five_ring_clues_archived 被 QA 判 conflict
+ * （与既有 flag.faceless_clue_ring_complete 重复）——因为提案节点从没见过既有 flag 名册。
+ * 这里把三个来源的真实 flag 收集为一份**禁用/避让名册**：
+ *   ① regions.json 的 interactables.setsFlag（玩家真能触发的旗标）；
+ *   ② echo-flow.json 的运行时 entries（已放行的世界线旗标）；
+ *   ③ 上一轮 transitions-qa.json 里 canonFit=conflict 的旗标（明确重复，必须避开）。
+ * 注：只做"避让提示"，不替 LLM 决定 flag——人工闸依旧是唯一放行口。
+ */
+function canonFlagRoster() {
+  const existing = new Set()
+  const flagRe = /flag\.[A-Za-z0-9_]+/g
+  // ① regions.json setsFlag
+  try {
+    const regions = readJson(resolve(ROOT, 'src/data/json/regions.json'))
+    for (const rg of regions ?? []) {
+      for (const it of rg.interactables ?? []) {
+        if (typeof it.setsFlag === 'string') existing.add(it.setsFlag)
+      }
+    }
+  } catch { /* 读不到不阻塞 */ }
+  // ② echo-flow.json 运行时 entries
+  try {
+    const flow = readJson(resolve(ROOT, 'src/data/json/echo-flow.json'))
+    for (const e of flow?.entries ?? []) if (typeof e.flag === 'string') existing.add(e.flag)
+  } catch { /* 读不到不阻塞 */ }
+  // ③ dialogue.json 的 flag
+  try {
+    const trees = readJson(resolve(ROOT, 'src/data/json/dialogue.json'))
+    for (const t of trees ?? []) for (const n of t.nodes ?? []) {
+      for (const c of n.choices ?? []) for (const m of JSON.stringify(c).matchAll(flagRe)) existing.add(m[0])
+      if (n.condition) for (const m of String(n.condition).matchAll(flagRe)) existing.add(m[0])
+    }
+  } catch { /* 读不到不阻塞 */ }
+  // 历史 conflict（QA 明确判重复 → 必须避开）
+  const conflicts = new Set()
+  try {
+    const qa = readJson(resolve(ROOT, 'admin/ai-director-transitions-qa.json'))
+    for (const v of qa?.verdicts ?? []) {
+      if (v.canonFit === 'conflict' && typeof v.flag === 'string') conflicts.add(v.flag)
+    }
+  } catch { /* 读不到不阻塞 */ }
+  return {
+    existing: [...existing].sort(),
+    conflicts: [...conflicts].sort(),
+    count: existing.size,
+  }
+}
+
 const worldSnapshot = () => {
   const kv = (() => { try { return readJson(resolve(ROOT, 'site-latest.json')).kv ?? {} } catch { return {} } })()
   const status = kvFromPhaseStatus()
@@ -255,11 +305,25 @@ async function nodeAudit(state) {
 
 async function nodeProposeTransitions(state) {
   if (state.mode !== 'live') { state.transitions = []; return }
-  const task = '【任务·世界状态流转提案】现状：无耳深窖五环线索、低音之城、六十四篇游记写尽。提出 4 条**可直接落为 quest/flag 的状态流转提案**：{"transitions":[{"fromZh":"起点状态","fromEn":"from-state","toZh":"终点状态","toEn":"to-state","flag":"flag.xxx","narrativeZh":"≤80字叙事后果","narrativeEn":"≤45 words","npcReactionZh":"≤40字 NPC/世界反应","npcReactionEn":"≤25 words","atlasHookZh":"≤30字 可挂进 Atlas 的钩子","atlasHookEn":"≤18 words"}]}。硬约束：flag **必须**以 "flag." 开头、全小写 snake_case（如 flag.paper_bag_salt_line_kept），**不许**加 proposed / new / plan 之类的前缀；flag 名字要像现存 flag 一样直接落库。只许 JSON。'
+  // KI-725 · 把既有 canon flag 名册 + 历史 conflict 回灌进提案节点：
+  // 让 LLM 在起草时就知道"这些旗标已经存在 / 这些被判过重复"，从源头减少 conflict。
+  const roster = canonFlagRoster()
+  state.canonFlagRoster = roster
+  const avoidBlock = [
+    '【避让名册 · 既有 canon flag（已存在于玩家世界 / 世界线 / 对白中）】',
+    roster.existing.length ? roster.existing.join(' ') : '（空）',
+    roster.conflicts.length
+      ? `【历史 QA 判为 conflict 的旗标 · 严禁重复提案】\n${roster.conflicts.join(' ')}`
+      : '',
+    '硬约束：新提案的 flag 不得与避让名册同名、不得与既有旗标语义重复（例如想表达"归档线索"时，若名册已有同类归档旗标，就换一个 genuinely 不同的动作或直接用既有旗标名）。',
+  ].filter(Boolean).join('\n')
+  const task = '【任务·世界状态流转提案】现状：无耳深窖五环线索、低音之城、八十四篇游记写尽。提出 4 条**可直接落为 quest/flag 的状态流转提案**：{"transitions":[{"fromZh":"起点状态","fromEn":"from-state","toZh":"终点状态","toEn":"to-state","flag":"flag.xxx","narrativeZh":"≤80字叙事后果","narrativeEn":"≤45 words","npcReactionZh":"≤40字 NPC/世界反应","npcReactionEn":"≤25 words","atlasHookZh":"≤30字 可挂进 Atlas 的钩子","atlasHookEn":"≤18 words"}]}。硬约束：flag **必须**以 "flag." 开头、全小写 snake_case（如 flag.paper_bag_salt_line_kept），**不许**加 proposed / new / plan 之类的前缀；flag 名字要像现存 flag 一样直接落库。只许 JSON。\n\n' + avoidBlock
   const out = await callDirector(state.env, { stdinPrefix: state.prefix, task: withSnapshot(state, task), temperature: 0.75, maxTokens: 1200 })
   recordUsage(state, 'proposeTransitions', out)
   const parsed = parseJsonLoose(out.text)
   if (!parsed?.transitions) throw new Error(`proposeTransitions: JSON 解析失败（head=${String(out.text).slice(0, 80)}）`)
+  // KI-725 · 机械自检：提案 flag 若撞上历史 conflict，标记（不自动丢弃，留人工闸裁决，但如实登记）。
+  state.transitionWarnings = (parsed.transitions ?? []).filter((t) => roster.conflicts.includes(t.flag)).map((t) => t.flag)
   state.transitions = parsed.transitions
 }
 
@@ -325,6 +389,14 @@ function buildArtifacts(state) {
     worldSnapshot: state.world,
     audit: state.audit ?? null,
     transitions: state.transitions ?? [],
+    /** KI-725 · 提案节点喂给 LLM 的避让名册规模 + 撞 conflict 的提案旗标（如实登记，不自动丢弃） */
+    proposalGuard: state.canonFlagRoster
+      ? {
+          existingCount: state.canonFlagRoster.count,
+          conflictFlags: state.canonFlagRoster.conflicts,
+          warnings: state.transitionWarnings ?? [],
+        }
+      : null,
     atlasDraft: state.atlasDraft ?? null,
     editorialGate: state.editorialGate ?? null,
     usage: state.usage,
@@ -359,6 +431,15 @@ function writeArtifacts(state) {
     '',
     '## 世界状态流转提案',
     art.transitions.length ? '```json\n' + JSON.stringify(art.transitions, null, 2) + '\n```' : '_（offline 未真跑）_',
+    '',
+    '## 提案避让闸门（KI-725 · canon flag 名册回灌 + 历史 conflict 警示）',
+    art.proposalGuard
+      ? [
+          `- 喂给 LLM 的既有 canon flag 名册：${art.proposalGuard.existingCount} 面（regions setsFlag + echo-flow entries + dialogue flags）`,
+          `- 历史 QA 判 conflict 的旗标（严禁重复）：${art.proposalGuard.conflictFlags.length ? art.proposalGuard.conflictFlags.join(' ') : '（无）'}`,
+          `- 本轮提案撞 conflict 的旗标（如实登记，人工闸裁决）：${art.proposalGuard.warnings.length ? art.proposalGuard.warnings.join(' ') : '（无 · 全部避让成功）'}`,
+        ].join('\n')
+      : '_（offline 未真跑）_',
     '',
     '## 下一篇游记 · 草稿（人工闸 · 不落库）',
     art.atlasDraft ? '```json\n' + JSON.stringify(art.atlasDraft, null, 2) + '\n```' : '_（offline 未真跑）_',

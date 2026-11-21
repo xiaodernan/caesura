@@ -668,3 +668,4 @@ Phase B4 的三件套此前是"有人听、没人说"。
 | KI-722 | **KI-722 落地：本机 self-hosted CI**——本仓库 `.github/workflows/local-gate.yml`（Windows self-hosted）跑数据校验/类型/账本自证/五门/构建；GitHub-hosted 主门禁保留；双轨测试护栏。 | KI-722 |
 | KI-723 | **KI-723 落地：无尽开放世界扇区生成器**——确定性 seed+depth 扇区（6 处可看 + 3 旗标 + nextDepth），36 条 KI-717 同形状世界线记录落 `endless-sectors.json`，`EndlessWorld.ts` + `main.ts` 玩家侧只读零 LLM，`npm run endless:gen`；数据门禁补真校验器。 | KI-723 |
 | KI-724 | **《余响集》第八十四篇《门口的水 / Water by the Door》（2026-11-21 · gpt-6.2-sol live → 人工闸）**：atlas no:84 · story/water-by-the-door/ · anthology/console/Stakerite/codex/README +1 · read-progress 84 · smoke-live 96（story-85）· LLM QA 4 条（1 conflict 驳回）· echo-flow 3 条 chapter:84 · zh-tw 655 单字 · 9+9 legs | KI-724 |
+| KI-725 | **AI 导演提案避让闸门（StateGraph 自我改进）**：canonFlagRoster 四来源名册注入 proposeTransitions + 历史 conflict 警示 + 机械自检 + proposalGuard 产物字段 + PROPOSAL-GUARD proof · 真跑 conflict 1→0 · 69 面名册提高上下文 · ai-proposal-guard.test.ts 5 腿 | KI-725 |
