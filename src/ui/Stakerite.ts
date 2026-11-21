@@ -15,6 +15,11 @@ import { actionLabel, intentLabel, padLabel } from '@/ui/actionLabels'
 import { STORY_CHAPTERS } from './atlas-texts'
 import { WORLD_CHRONICLE_W47 } from './world-chronicle'
 import type { RpgRuntime } from '@/rpg/Runtime'
+import type { EchoFlow } from '@/quest/EchoFlow'
+
+/** 世界线字段进 innerHTML 前的最小转义（数据是人工闸放行的 JSON，但仍不把 `<`/`&` 当标记） */
+const escapeHtml = (text: string): string =>
+  text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 import type { SlotCard } from '@/save/Slots'
 import { SAVE_CARD_CSS, saveCards, saveCardHtml, slotLabel, type SaveCardView } from '@/ui/SaveSlots'
 
@@ -44,36 +49,36 @@ const PLAYER_MANUAL: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">W A S D</span><span class="note">走动、转向——慢的走比快的走更早听到世界告诉你它在哪</span></div>
 <div class="row"><span class="name">Space</span><span class="note">跳</span></div>
 <div class="row"><span class="name">Left Shift / 左 Shift</span><span class="note">冲刺（声音大）</span></div>
-<div class="row"><span class="name">Mouse 左键 / RMB</span><span class="note">轻击 / 重击</span></div>
+<div class="row"><span class="name">Mouse 左键 / 鼠标右键</span><span class="note">轻击 / 重击</span></div>
 
 <h2>核心机制 · 声音 = 风险，沉默 = 通路</h2>
 <div class="row"><span class="name">你是声源</span><span class="note">每一步、每一刀、每一次被击，都是一笔「此刻我在哪」的账</span></div>
 <div class="row"><span class="name">万籁</span><span class="note">看她就已经暴露；她只用耳朵。无耳深窖是她的猎场——V（屏气）降低你的噪音，直到你像被风刮走的纸一样无声</span></div>
 <div class="row"><span class="name">铃姨 · 科温 · 盐歌</span><span class="note">都有要告诉你的事——走近按 E，听</span></div>
 
-<h2>三场 Boss · 提要</h2>
-<div class="row"><span class="name">奥斯塔拉（钟坠院 · 序幕）</span><span class="note">三阶段。P1 钟壳只吃 10% ——这一段不要硬破，保住状态等 P3</span></div>
+<h2>三场首领战 · 提要</h2>
+<div class="row"><span class="name">奥斯塔拉（钟坠院 · 序幕）</span><span class="note">三阶段。第一阶段钟壳只吃 10% ——这一段不要硬破，保住状态等 第三阶段</span></div>
 <div class="row"><span class="name">万籁（无耳深窖 · 隐藏）</span><span class="note">她不看你，她只听——按 V 把噪音压到最低，她能定位的边界就是你的安全带</span></div>
-<div class="row"><span class="name">恩希尔（未竟厅 · 终章）</span><span class="note">终局 Boss；先拆他的收尾「指挥棒」，然后在每一个小节边界做闪避</span></div>
+<div class="row"><span class="name">恩希尔（未竟厅 · 终章）</span><span class="note">终局首领；先拆他的收尾「指挥棒」，然后在每一个小节边界做闪避</span></div>
 
 <h2>开局导航</h2>
 <div class="row"><span class="name">调音桩</span><span class="note">Tab 开地图（看过哪片区）；再按一次收起；档案室 / 终末·叹息</span></div>
-<div class="row"><span class="name">存档</span><span class="note">调音桩前按 E 休息并保存；Boss 倒下会自动存</span></div>
+<div class="row"><span class="name">存档</span><span class="note">调音桩前按 E 休息并保存；首领倒下会自动存</span></div>
 <div class="row"><span class="name">配方</span><span class="note">Tab → 调音 → 查看派生面板（防御 / 负重上限 / 暴击率 / 暴击倍数 / 过载</span></div>
 
-<h2>Endings · 你的选择</h2>
+<h2>结局 · 你的选择</h2>
 <div class="row"><span class="name">敲响第四口钟</span><span class="note">钟回，世界回响——她得到了那段缺了大半辈子的话</span></div>
 <div class="row"><span class="name">交给她熔掉</span><span class="note">她熔了第四口钟，世界回到「只有敲一下」的工坊安静</span></div>
 <div class="row"><span class="name">永远不再触摸</span><span class="note">钟永远悬着 —— 你选了沉默——也是有代价的：这个世界会再沉一次</span></div>
 
 <h2>卡住了？</h2>
-<div class="row"><span class="name">Save 与 Map 互补</span><span class="note">迷路时按 Tab 看地图；目标在哪儿地图会告诉你</span></div>
+<div class="row"><span class="name">存档与地图互补</span><span class="note">迷路时按 Tab 看地图；目标在哪儿地图会告诉你</span></div>
 <div class="row"><span class="name">卡进战斗</span><span class="note">按 E 和她们说话——每段对话都是一键通关道路</span></div>
 <div class="row"><span class="name">输入不认</span><span class="note">调音 → 操作 → 逐行改键：把任意一行换掉</span></div>
 <div class="row"><span class="name">还想看看这款游戏是怎么做出来的？</span><span class="note">浏览器打开 <code>xiaodernan.github.io/caesura/admin/</code> ——口令 <code>123</code> 即可进入「用户观察站」：你可以看着这款游戏是怎么被造出来、用户怎么退出、哪一天特别热闹。这里不卖资料、不收订阅，只摆放数据和推导</span></div>
 
-<h2>Encore · 风钟海岸</h2>
-<div class="row"><span class="name">剩下一片海</span><span class="note">Ending 之后，未竟厅被敲响了第一拍——海岸线的那头，还有三段话，等你去走</span></div>
+<h2>返场 · 风钟海岸</h2>
+<div class="row"><span class="name">剩下一片海</span><span class="note">结局之后，未竟厅被敲响了第一拍——海岸线的那头，还有三段话，等你去走</span></div>
 
 <h2>刻痕 <span style="opacity:.6">（8 区 · 31 处 · 纯闪念）</span></h2>
 <div class="row"><span class="name">E 触碰</span><span class="note">每区一两块「刻痕」碎碑/石刻/破钟壳：按 E 去读它。它们不给任务、不给战利品、不需要前置、也没什么伤害——就是这个世界愿意对你多说的几句话</span></div>
@@ -126,14 +131,14 @@ const PLAYER_MANUAL: Record<'zh' | 'en', string> = {
 const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
   zh: `
 <h2>八区 · 指北针</h2>
-<div class="row"><span class="name">休垒 <span style="opacity:.55">@0</span></span><span class="note">起点 · 虚礼典礼官 Meg 的主账房 — 你学会「先听，再动」的地方；调音桩歇气存档都在这</span></div>
+<div class="row"><span class="name">休垒 <span style="opacity:.55">@0</span></span><span class="note">起点 · 虚礼典礼官麦格的主账房 — 你学会「先听，再动」的地方；调音桩歇气存档都在这</span></div>
 <div class="row"><span class="name">雾语林 <span style="opacity:.55">@0</span></span><span class="note">频率罗盘的回声；这里的树只认你的心跳 — 大声走路会把整片林子叫醒，按 V 屏息，悄悄穿过</span></div>
 <div class="row"><span class="name">沉唱堂 <span style="opacity:.55">@−40</span></span><span class="note">水声压过钟声；水下有一口从没被敲响的钟，也有一句被泡烂的碑文 — 先听低频，别急着断水上来</span></div>
-<div class="row"><span class="name">破拍营地 <span style="opacity:.55">@0</span></span><span class="note">残刃的营 — Brute 在这守桥；练「痛之后还能站住」的地方，不是测伤害的地方</span></div>
+<div class="row"><span class="name">破拍营地 <span style="opacity:.55">@0</span></span><span class="note">残刃的营 —— 莽夫在这里守桥；练「痛之后还能站住」的地方，不是测伤害的地方</span></div>
 <div class="row"><span class="name">钟坠院 <span style="opacity:.55">@+64</span></span><span class="note">序幕：奥斯塔拉（钟壳）。四层钟脸，一根断裂的鸣弦。她的「先敲一下，再说抱歉」只会在你站到最高处之后说</span></div>
-<div class="row"><span class="name">无耳深窖 <span style="opacity:.55">@−144</span></span><span class="note">隐藏：万籁（The Myriad）。她不看、只听 — 这一层连你自己的呼吸都像一把刀，按住 V 让世界静下来</span></div>
-<div class="row"><span class="name">未竟厅 <span style="opacity:.55">@+152</span></span><span class="note">终章：恩希尔（Hersil）。先拆指挥棒，再逐小节闪避；Ending 由你这一句定下来</span></div>
-<div class="row"><span class="name">风钟海岸 <span style="opacity:.55">@0</span></span><span class="note">Encore · EPIC-V。一片 Epilogue 之后的新海 — 风是带钟的风，却从不肯让你听清。她在等你把余音走完</span></div>
+<div class="row"><span class="name">无耳深窖 <span style="opacity:.55">@−144</span></span><span class="note">隐藏：万籁。她不看、只听 — 这一层连你自己的呼吸都像一把刀，按住 V 让世界静下来</span></div>
+<div class="row"><span class="name">未竟厅 <span style="opacity:.55">@+152</span></span><span class="note">终章：恩希尔。先拆指挥棒，再逐小节闪避；结局由你这一句定下来</span></div>
+<div class="row"><span class="name">风钟海岸 <span style="opacity:.55">@0</span></span><span class="note">返场 · 第五史诗。一段尾声之后的新海 — 风是带钟的风，却从不肯让你听清。她在等你把余音走完</span></div>
 
 <h2>刻痕在哪 <span style="opacity:.6">（E 触碰 · 31 处）</span></h2>
 <div class="row"><span class="name">休垒 · 三处</span><span class="note">崖下那面「初息碑」：世界在你第一次呼吸前就已经停住了；山下那块无名的碑—一道刮痕；镇子边的井上新盖的铁罩 — 水不许响</span></div>
@@ -145,7 +150,7 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">未竟厅 · 三处</span><span class="note">银镜后面那道「钟摆」；时间走来走去，就是走不到头；厅里唯一一口从没敲过的钟——等最后一个不会来的大师；谱架上那本永远不会翻过去的谱——恩希尔每天指挥到那一页，合上，再开</span></div>
 <div class="row"><span class="name">风钟海岸 · 八处</span><span class="note">那阵带着钟的风——它带着一个又一个钟的余温，却从不让你清楚地听到；盐结的小龛被海天天抹去又天天重写；防波堤上一道道潮痕，像一首被海擦了又写的歌；断崖礁岩上黑碑似的——它擦不干净；贝壳里压着字——「生」；按下那颗响石，整片海都没动；潮纹裂开了——盐从裂缝里自己长出了牙齿；那块潮里露出的船底旧木——每一根蚀透的榫卯都抬着这个岬角的旧名「它回来的地方」</span></div>
 
-<h2>选读 · 余响集八十二篇 <span style="opacity:.6">（与游戏同源的八十二个故事，在线阅读）</span></h2>
+<h2>选读 · 余响集八十三篇 <span style="opacity:.6">（与游戏同源的八十三个故事，在线阅读）</span></h2>
 <div class="row"><span class="name">篇一《盐》· 风钟海岸</span><span class="note">听雾站守夜人阿衡——钟不是用来敲的，是用来记住的；风钟海岸从此有了第四根弦</span></div>
 <div class="row"><span class="name">篇二《山下无名碑》· 休垒</span><span class="note">石匠女儿阿汀在山脚下找到一块没有字、没有名字的碑——风一停，石头就会把自己写上去</span></div>
 <div class="row"><span class="name">篇三《空拍子》· 未竟厅</span><span class="note">轮值了七十三年的恩希尔，在一记空拍之后，被人问出他唯一等不到的那个人</span></div>
@@ -228,13 +233,14 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">篇八十《两条线》· 回廊钟</span><span class="note">潮水退去，船底干痕还在；潮涨，它被覆过；再退，它还在原处。页角偶尔抬起又落回去</span></div>
 <div class="row"><span class="name">篇八十一《船边的一页》· 回廊钟</span><span class="note">门外的船仍停着，薄簿阖着放在钟摆旁。灯自己会亮。她没有记下这一夜</span></div>
 <div class="row"><span class="name">篇八十二《未寄的一页》· 回廊钟</span><span class="note">清晨，船边的一页仍在；潮水退去，干痕又见；潮水回来，又被覆住。她没有替它决定去处</span></div>
-<div class="row"><span class="name">全集</span><span class="note">《止音纪元 · 余响集》收录全部八十二篇 · xiaodernan.github.io/caesura/story/anthology/</span></div>
+<div class="row"><span class="name">篇八十三《门边的空碗》· 回廊钟</span><span class="note">清晨，门槛边的盐还在；薄簿合着，页角没有动。她没去看海</span></div>
+<div class="row"><span class="name">全集</span><span class="note">《止音纪元 · 余响集》收录全部八十三篇 · xiaodernan.github.io/caesura/story/anthology/</span></div>
 
 <h2>宇宙的尺度 · 献给刘慈欣 <span style="opacity:.6">（《三体》三部曲：《三体》·《黑暗森林》·《死神永生》）</span></h2>
 <div class="row"><span class="name">红岸基地</span><span class="note">国与国之间偷偷把雷达对准天空——想知道那头有没有人在听。止音纪元里没有红岸基地；这里有更早的红岸——每一口钟都是一次对宇宙的沉默认证</span></div>
 <div class="row"><span class="name">叶文洁 · 那一问</span><span class="note">她把「人类该不该活下去」这个问题塞进了光里——太阳替她把光放大了很多很多倍。止音纪元的钟也问不答；听见的人自己去决定自己聋还是听</span></div>
-<div class="row"><span class="name">地球三体组织 · ETO</span><span class="note">有人决定：既然你们愿意听见，我们就替自己，也替星海——人替自己做了一次永久的选择，然后全集都没人敢反悔</span></div>
-<div class="row"><span class="name">智子 · Sophon</span><span class="note">质子被折成两耳之光——看人比人看得细。止音纪元的钟只有一个延迟；它们聋着——那是它们最大的仁慈</span></div>
+<div class="row"><span class="name">地球三体组织</span><span class="note">有人决定：既然你们愿意听见，我们就替自己，也替星海——人替自己做了一次永久的选择，然后全集都没人敢反悔</span></div>
+<div class="row"><span class="name">智子</span><span class="note">质子被折成两耳之光——看人比人看得细。止音纪元的钟只有一个延迟；它们聋着——那是它们最大的仁慈</span></div>
 <div class="row"><span class="name">宇宙社会学两条公理</span><span class="note">第一公理：生存是文明的第一需要；第二公理：文明不断增长，宇宙中的物质总量基本保持不变——不是道德，是加速度</span></div>
 <div class="row"><span class="name">面壁计划 · 面壁者</span><span class="note">四位面壁者，由联合国托管——罗辑把「你们愿意开火吗」压进心里。别人能读你的脸，不读你的想法——能活过全人类的有时候只是那块沉下去的石头</span></div>
 <div class="row"><span class="name">猜疑链</span><span class="note">谁都不敢先决定——于是每个人都很礼貌。这是宇宙最华丽的孤独礼仪：每个人都在听，没人先开口</span></div>
@@ -244,17 +250,17 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">状态机与灵魂</span><span class="note">每个人物都是一张状态图：节点是她走到的每个时刻，边是她选择的哪一步。猜疑链不是人心阴暗——只是图上的条件边：见一次，多一条边；见两次，就是两张图了</span></div>
 <div class="row"><span class="name">阅读</span><span class="note">刘慈欣《三体》三部曲：《三体》·《黑暗森林》·《死神永生》——对这个世界最外交的一次致敬；所有线索与句式均为本作原创，示意而非转述</span></div>
 
-<h2>LangGraph 教学 · 游戏里的每一个 NPC 都是一张状态图 · One NPC, one StateGraph</h2>
-<div class="row"><span class="name">世界里没有「NPC」，只有「Node」</span><span class="note">对话树的每一格都是一个节点。节点之间的迁移，LangGraph 叫「条件边」，本作叫 <code>advanceOn.flags</code>——一个节点只有把它的 flags 全置完才走向下一格。世界不允许 LLM 现场写一句台词，但允许「读你有没有做过 X」去决定下一格</span></div>
-<div class="row"><span class="name">flag = 一根焊死的隘口</span><span class="note">一个 NPC 的 WorldState 不是「心情」、不是分数、不是位置——是一组布尔位：<code>flag.meg_soundscroll_complete=true</code> 之后，「麦格·完成」节点才点亮。未点亮节，她还站在上一格</span></div>
-<div class="row"><span class="name">对话 = 有向无环图</span><span class="note">一个 NPC 的对话图**总是 DAG**：没有边指向前驱，没有环。绕过「去你没去的地方」，NPC 会直接把你送回去——这就是 LangGraph 叫 <code>START/END</code> 的原因，本作把它叫做「开始/结束」</span></div>
-<div class="row"><span class="name">拓扑与玩家无关</span><span class="note">因为图是 DAG，所以最坏情况只有 1 种：你从不走这一支——NPC 这一支永远是暗的。这不是 bug；这是沉默的代价。Subtitle 永远是：没去过这一格，就别提要走这一格</span></div>
-<div class="row"><span class="name">读图的人永远能知道</span><span class="note">你想知道这一次怎么开启 Ending III？看上面六行，依次核对三个 flag——每一项只要没被置上去，它对你的永远是一扇未开的门。LangGraph 里叫 <code>state.get('flag')</code>，本作也这么做</span></div>
+<h2>状态图编排 · 游戏里的每一个角色都是一张状态图</h2>
+<div class="row"><span class="name">世界里没有「非玩家角色」，只有「节点」</span><span class="note">对话树的每一格都是一个节点。节点之间的迁移，状态图编排里叫「条件边」，本作叫 <code>advanceOn.flags</code>——一个节点只有把它的全部旗标置完才走向下一格。世界不允许大模型现场写一句台词，但允许「读你有没有做过某事」去决定下一格</span></div>
+<div class="row"><span class="name">旗标 = 一根焊死的隘口</span><span class="note">一个角色的世界状态不是「心情」、不是分数、不是位置——是一组布尔位：<code>flag.meg_soundscroll_complete=true</code> 之后，「麦格·完成」节点才点亮。未点亮节，她还站在上一格</span></div>
+<div class="row"><span class="name">对话 = 有向无环图</span><span class="note">一个角色的对话图**总是有向无环图**：没有边指向前驱，没有环。绕过「去你没去的地方」，角色会直接把你送回去——这就是状态图编排里 <code>START/END</code> 的意思，本作把它叫做「开始/结束」</span></div>
+<div class="row"><span class="name">拓扑与玩家无关</span><span class="note">因为图是有向无环图，所以最坏情况只有 1 种：你从不走这一支——角色这一支永远是暗的。这不是错误；这是沉默的代价。字幕永远是：没去过这一格，就别提要走这一格</span></div>
+<div class="row"><span class="name">读图的人永远能知道</span><span class="note">你想知道这一次怎么开启 第三种结局？看上面六行，依次核对三根旗标——每一项只要没被置上去，它对你的永远是一扇未开的门。状态图编排里叫 <code>state.get('flag')</code>，本作也这么做</span></div>
 
-<h2>StateGraph · 麦格一线活蓝图 · A real NPC, a real DAG</h2>
-<div class="row"><span class="name" style="opacity:.6">样本 DLG_MEG · q_meg（四段对话 → 四个 flag → 终局节点）| Visualised exactly as coded, not invented</span></div>
+<h2>状态图 · 麦格一线活蓝图 · 真角色、真有向无环图</h2>
+<div class="row"><span class="name" style="opacity:.6">样本 DLG_MEG · q_meg（四段对话 → 四根旗标 → 终局节点）| 按代码原样画出，不是想象</span></div>
 <div style="overflow-x:auto; padding:12px 8px 4px;">
-<svg width="760" height="240" viewBox="0 0 760 240" role="img" aria-label="DLG_MEG quest line state graph">
+<svg width="760" height="240" viewBox="0 0 760 240" role="img" aria-label="麦格任务线状态图">
   <defs>
     <marker id="arrow" viewBox="0 -5 10 10" refX="9" refY="0" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,-5L10,0L0,5" fill="#c9a258"/></marker>
   </defs>
@@ -264,19 +270,19 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
     <rect x="10" y="18" width="150" height="82" rx="6" fill="#1a1711" stroke="#c9a258" stroke-width="1.4"/>
     <text x="20" y="36" fill="#c9a258" font-weight="700">DLG_MEG / n0</text>
     <text x="20" y="52" fill="#f3ede0">别站那么近，你踩到我</text>
-    <text x="20" y="66" fill="#8a7735">emotion: bored</text>
+    <text x="20" y="66" fill="#8a7735">情绪：淡淡</text>
     <text x="20" y="82" fill="#c9a258" font-weight="700">flag → flag.meg_first_fragment</text>
     <!-- n1 -->
     <rect x="200" y="18" width="150" height="82" rx="6" fill="#1a1711" stroke="#806f3a" stroke-width="1.1"/>
-    <text x="210" y="36" fill="#c9a258" font-weight="700">n1 · soft</text>
+    <text x="210" y="36" fill="#c9a258" font-weight="700">第二格 · 温和</text>
     <text x="210" y="52" fill="#f3ede0">我认识她？我替她保管</text>
-    <text x="210" y="66" fill="#8a7735">emotion: soft</text>
+    <text x="210" y="66" fill="#8a7735">情绪：温和</text>
     <text x="210" y="82" fill="#c9a258" font-weight="700">→ flag.meg_second_fragment</text>
     <!-- n2 -->
     <rect x="390" y="18" width="150" height="82" rx="6" fill="#1a1711" stroke="#806f3a" stroke-width="1.1"/>
-    <text x="400" y="36" fill="#c9a258" font-weight="700">n2 · even</text>
+    <text x="400" y="36" fill="#c9a258" font-weight="700">第三格 · 平静</text>
     <text x="400" y="52" fill="#f3ede0">……不急。录音会等人，</text>
-    <text x="400" y="66" fill="#8a7735">emotion: even</text>
+    <text x="400" y="66" fill="#8a7735">情绪：平静</text>
     <text x="400" y="82" fill="#c9a258" font-weight="700">→ flag.meg_whisper_extracted</text>
     <!-- n3 terminal -->
     <rect x="580" y="18" width="160" height="82" rx="6" fill="#231d12" stroke="#f3ce8f" stroke-width="2"/>
@@ -290,23 +296,23 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
     <line x1="542" y1="59" x2="580" y2="59" stroke="#c9a258" stroke-width="1.6" marker-end="url(#arrow)"/>
     <!-- burn annotation -->
     <g fill="#8a7735">
-      <text x="14" y="130">// advances: 4 lines of advanceOn.flags from q_meg.steps[] — the runtime walks this exact path.</text>
-      <text x="14" y="150">// EN mode: same shape, English nodes, same flags on the wire.</text>
-      <text x="14" y="170">// Reader ↔ source: src/data/json/quests.json · q_meg.steps[0]..[3]</text>
-      <text x="14" y="190">// Caveat: quests may fan out by condition; this is the happy-path spine</text>
+      <text x="14" y="130">// 推进：q_meg.steps[] 中四条 advanceOn.flags —— 运行时就沿这条路走。</text>
+      <text x="14" y="150">// 英文模式：形状相同、节点用英文、线上旗标相同。</text>
+      <text x="14" y="170">// 读图人 ↔ 来源：<code>src/data/json/quests.json</code> · <code>q_meg.steps[0]..[3]</code></text>
+      <text x="14" y="190">// 注意：任务可以按条件分叉；这里画的是主干那条路</text>
     </g>
   </g>
 </svg>
 </div>
-<div class="row"><span class="name">为什么画在这里，而不是在 Codex 画一张？</span><span class="note">codex 放的是世界谱的全部词条；这里是游戏自己在读的那张图——同一张图，一个给人读，一个给机器跑</span></div>
+<div class="row"><span class="name">为什么画在这里，而不是在世界谱里画一张？</span><span class="note">世界谱放的是全部词条；这里是游戏自己在读的那张图——同一张图，一个给人读，一个给机器跑</span></div>
 
 <h2>怎么不迷路</h2>
 <div class="row"><span class="name">Tab = 地图</span><span class="note">总表看你走过哪片，哪里还亮着（亮 = 终章出口还没开）；再按一次收起</span></div>
 <div class="row"><span class="name">看光、听乐</span><span class="note">每一区的主色与它的弦（休垒 ♭E / 雾语林 ♭F / 沉唱堂 ♭A / 破拍 ♭C / 钟坠院 ♭D / 无耳 ♭G / 未竟厅 ♭B）—— 转调就是换了一块钟鸣学习网</span></div>
-<div class="row"><span class="name">找不到路</span><span class="note">调音桩按 E 休息 = 保存；Boss 倒后自动存档；「余响归位」主线会自己走，你只需要去找它</span></div>
+<div class="row"><span class="name">找不到路</span><span class="note">调音桩按 E 休息 = 保存；首领倒后自动存档；「余响归位」主线会自己走，你只需要去找它</span></div>
 
 <h2>边界之外 · 还没有开门的世界</h2>
-<div class="row"><span class="name">风钟海岸之后</span><span class="note">雨钟谷地 / 低音之城 / 回声庭园 / 霜锤崖 — 这些都在作者的设计稿里（EPIC-V《风钟纪元》/ EPIC-VI）：没有 region、没有 NPC、没有运行时代码。它们在等你敲完第四口钟之后再决定要不要开门</span></div>
+<div class="row"><span class="name">风钟海岸之后</span><span class="note">雨钟谷地 / 低音之城 / 回声庭园 / 霜锤崖 — 这些都在作者的设计稿里（第五史诗《风钟纪元》/ 第六史诗）：没有开放地域、没有角色、没有运行时代码。它们在等你敲完第四口钟之后再决定要不要开门</span></div>
 `,
   en: `
 <h2>The eight reaches · bearing</h2>
@@ -329,7 +335,7 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">The Unfinished Hall · three</span><span class="note">The pendulum behind the silver mirror; time swings back and forth and never reaches an end; the only bell in the hall — never struck, waiting for a last master who never comes; the score on the stand that never gets turned — Hersil conducts up to that page every day, then closes the book and reopens it</span></div>
 <div class="row"><span class="name">Windbell Coast · eight</span><span class="note">The wind that carries bells — it brings the warmth of bell after bell but never lets you hear them clearly; the salt-crusted shrine the sea erases and rewrites every day; the tide-lines on the causeway, a song scraped and rewritten; a slab at the cliff’s black face, damply fresh-wiped; a seashell papered with one character — “born”; the listening stone — its whole sea goes still; the tide-line cracked — salt grew teeth from the split; the ship-timber that washed in — every sheared peg still carries this headland’s old name, “the place it came home”</span></div>
 
-<h2>The Aftermath · all eighty-two stories <span style="opacity:.6">(companion fiction — the same world, told in prose)</span></h2>
+<h2>The Aftermath · all eighty-three stories <span style="opacity:.6">(companion fiction — the same world, told in prose)</span></h2>
 <div class="row"><span class="name">No. 1 “Salt” · Windbell Coast</span><span class="note">A Hén, night-keeper of the Listening Post — the bell isn't meant to sound, only to be heard; the coast has its fourth string now</span></div>
 <div class="row"><span class="name">No. 2 “The Nameless Stone” · Resthold</span><span class="note">A mason's daughter finds a slab with no name, no word at the foot of the hill — when the wind stops, the stone writes itself</span></div>
 <div class="row"><span class="name">No. 3 “The Empty Bar” · The Unfinished Hall</span><span class="note">Seventy-three years into rotation, Hersil ends one empty bar — and is asked the only question he kept postponing</span></div>
@@ -412,7 +418,8 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
 <div class="row"><span class="name">No. 80 “Two Lines” · The Arcade of Echoes</span><span class="note">The tide withdrew; the dry mark remained; the page corner lifted and settled; the lines knew their places</span></div>
 <div class="row"><span class="name">No. 81 “A Page by the Boat” · The Arcade of Echoes</span><span class="note">The boat remained outside; the ledger stayed shut; she recorded nothing of this night</span></div>
 <div class="row"><span class="name">No. 82 “The Unsent Page” · The Arcade of Echoes</span><span class="note">At dawn, the page by the boat remained; at ebb, the dry mark showed; at flood, it was covered again</span></div>
-<div class="row"><span class="name">All eighty-two</span><span class="note">“CAESURA · The Aftermath” collects all eighty-two in one read · xiaodernan.github.io/caesura/story/anthology/</span></div>
+<div class="row"><span class="name">No. 83 “The Empty Bowl” · The Arcade of Echoes</span><span class="note">At dawn, the salt remained by the threshold; the ledger stayed shut; by dusk she had not looked to the sea</span></div>
+<div class="row"><span class="name">All eighty-three</span><span class="note">“CAESURA · The Aftermath” collects all eighty-three in one read · xiaodernan.github.io/caesura/story/anthology/</span></div>
 
 <h2>The scale of the cosmos · for Liu Cixin <span style="opacity:.6">(the trilogy: The Three-Body Problem · The Dark Forest · Death's End)</span></h2>
 <div class="row"><span class="name">The Red Coast</span><span class="note">A nation secretly aimed its radar at the sky — wanting to know if anyone was listening. There is no Red Coast in this world; there are older red coasts: every bell is a silent handshake with the universe</span></div>
@@ -469,8 +476,8 @@ const PLAYER_ATLAS: Record<'zh' | 'en', string> = {
     <g fill="#8a7735">
       <text x="14" y="130">// advances: 4 lines of advanceOn.flags from q_meg.steps[] — the runtime walks this exact path.</text>
       <text x="14" y="150">// EN mode: same shape, English nodes, same flags on the wire.</text>
-      <text x="14" y="170">// Reader ↔ source: src/data/json/quests.json · q_meg.steps[0]..[3]</text>
-      <text x="14" y="190">// Caveat: quests may fan out by condition; this is the happy-path spine</text>
+      <text x="14" y="170">// 读图人 ↔ 来源：<code>src/data/json/quests.json</code> · <code>q_meg.steps[0]..[3]</code></text>
+      <text x="14" y="190">// 注意：任务可以按条件分叉；这里画的是主干那条路</text>
     </g>
   </g>
 </svg>
@@ -1006,7 +1013,12 @@ export class Stakerite {
      */
     private readonly bindsSource: { readonly binds: Binds; readonly uiBinds: UiBinds } | null = null,
     /** 「操作」页的把手（KI-337）；没接就没有那一页（见 `OPS_TAB`） */
-    private readonly ops: OpsPanelDeps | null = null) {
+    private readonly ops: OpsPanelDeps | null = null,
+    /**
+     * KI-717「世界线」读数源。用 getter 而不是实例：组合根里 `EchoFlow` 要等 `streaming`/`worldStates`
+     * 装配完才构造，而面板本身在更早的装配段就建好了——传实例会撞 TDZ，传闭包只会在真正渲染时取值。
+     */
+    private readonly flowSource: (() => EchoFlow | null) | null = null) {
     const style = document.createElement('style')
     style.textContent = PANEL_CSS + CSS + SAVE_CARD_CSS
     document.head.appendChild(style)
@@ -1588,8 +1600,8 @@ export class Stakerite {
   private renderAtlas(): string {
     const lang = getLang()
     const header = lang === 'en'
-      ? 'The Aftermath · eighty-two full chapters<span style="opacity:.6"> (原文 — stays in the game)</span>'
-      : '篇章 · 止音纪元 · 八十二篇全文<span style="opacity:.6">（原文直入——不出游戏）</span>'
+      ? 'The Aftermath · eighty-three full chapters<span style="opacity:.6"> (原文 — stays in the game)</span>'
+      : '篇章 · 止音纪元 · 八十三篇全文<span style="opacity:.6">（原文直入——不出游戏）</span>'
     const chaptersHtml = STORY_CHAPTERS.map((c) => `
       <div class="chapter"><h3>${lang === 'en' ? `No.${c.no} · ${c.enTitle}` : `篇${c.no} · 《${c.zhTitle}》`}</h3>
         <div class="chapter-body">${lang === 'en' ? c.en : c.zh}</div></div>`).join('')
@@ -1614,17 +1626,69 @@ export class Stakerite {
     const w = WORLD_CHRONICLE_W47
     const body = lang === 'en' ? w.en : w.zh
     const title = lang === 'en' ? 'The Chronicle · week of Nov 16, 2026' : '本周纪事 · 2026-11-16'
+    const flow = this.flowSource?.() ?? null
     return `
       <style>.chronicle-page em { color: #ffedc4; font-style: normal; }
              .chronicle-page strong { color: #ffe4a4; font-weight: 600; letter-spacing:.02em }
              .chronicle-page .coda { font-style: italic; color: rgba(243,237,224,.78); text-align: center; margin:.7em 0 0 }
              .chronicle-page p { margin:0 0 .95em }
              .chronicle-page .beat { text-align: center; letter-spacing:.5em; color: rgba(243,206,143,.55); margin:.4em 0 }
+             .worldline { margin:1.6em 0 0; padding:1.1em 0 0; border-top:1px solid rgba(201,180,88,.28) }
+             .worldline h3 { font-family:var(--serif); color:#f3ce8f; font-size:1.02em; letter-spacing:.08em; margin:0 0 .35em }
+             .worldline .wl-hint { color:rgba(243,237,224,.62); font-size:.86em; margin:0 0 1em }
+             .worldline .wl-chapter h4 { font:600 .8em/1.4 var(--mono); color:#8fd8c4; letter-spacing:.12em; margin:1em 0 .4em; text-transform:uppercase }
+             .worldline ul { list-style:none; margin:0; padding:0 }
+             .worldline li { margin:0 0 .7em; padding:.7em .85em; border-left:2px solid rgba(201,180,88,.28); background:rgba(255,255,255,.02); border-radius:0 6px 6px 0 }
+             .worldline li.is-reached { border-left-color:#c9b458; background:rgba(201,180,88,.06) }
+             .worldline .wl-head { display:flex; gap:.6em; align-items:baseline; flex-wrap:wrap }
+             .worldline .wl-badge { flex:0 0 auto; font:600 .68em/1 var(--mono); letter-spacing:.1em; padding:.3em .5em; border-radius:4px; border:1px solid rgba(201,180,88,.35); color:rgba(243,237,224,.6) }
+             .worldline li.is-reached .wl-badge { color:#ffe4a4; border-color:rgba(201,180,88,.6); background:rgba(201,180,88,.1) }
+             .worldline .wl-title { font-family:var(--serif); color:#f3ede0 }
+             .worldline p { margin:.45em 0 0; color:rgba(243,237,224,.78); font-size:.92em }
+             .worldline p.wl-npc { color:#b9e3d6 }
+             .worldline p.wl-hook { color:rgba(243,206,143,.78); font-family:var(--serif) }
+             .worldline p.wl-open { color:rgba(243,237,224,.46); font-style:italic }
       </style>
       <div class="chronicle-page">
       <h2 style="font-family:var(--serif);color:#f3ce8f;margin:0 0 .5em;letter-spacing:.08em">${title}</h2>
       ${body}
+      ${flow ? this.renderWorldline(flow, lang) : ''}
       </div>`
+  }
+
+  /**
+   * KI-717「世界线」：把 AI 导演提出、QA 裁决、人工闸放行的 from → to 摊在纪事页。
+   * 只读 `EchoFlow` 派生出来的快照；没有抵达的条目不编细节，只留一句「还没走到这里」。
+   */
+  private renderWorldline(flow: EchoFlow, lang: 'zh' | 'zh-TW' | 'en'): string {
+    const all = flow.snapshot()
+    const reached = all.filter((e) => e.reached).length
+    const head = lang === 'en'
+      ? `Worldline · ${reached} of ${all.length} reached`
+      : `世界线 · 已抵达 ${reached} / ${all.length}`
+    const hint = lang === 'en'
+      ? 'Only what was actually done on the Windcoast lights up here. The rest stays open; nothing is invented in its place.'
+      : '只有真的在风岸做过的事才在这里点亮；没到的仍留白，不替它发生。'
+    const chapters = flow.byChapter().map((group) => {
+      const chapterTitle = lang === 'en' ? `Chapter ${group.chapter}` : `第 ${group.chapter} 篇`
+      const items = group.entries.map((e) => {
+        const title = lang === 'en' ? `${e.fromEn} → ${e.toEn}` : `${e.fromZh} → ${e.toZh}`
+        const badge = e.reached
+          ? (lang === 'en' ? 'reached' : '已抵达')
+          : (lang === 'en' ? 'open' : '未抵达')
+        const detail = e.reached
+          ? `<p>${escapeHtml(lang === 'en' ? e.narrativeEn : e.narrativeZh)}</p>
+             <p class="wl-npc">${escapeHtml(lang === 'en' ? e.npcReactionEn : e.npcReactionZh)}</p>
+             <p class="wl-hook">${escapeHtml(lang === 'en' ? e.atlasHookEn : e.atlasHookZh)}</p>`
+          : `<p class="wl-open">${lang === 'en' ? 'Not reached yet. This part of the world has not moved.' : '还没走到这里——这一格仍然空着。'}</p>`
+        return `<li class="${e.reached ? 'is-reached' : 'is-open'}">
+          <div class="wl-head"><span class="wl-badge">${badge}</span><span class="wl-title">${escapeHtml(title)}</span></div>
+          ${detail}
+        </li>`
+      }).join('')
+      return `<section class="wl-chapter"><h4>${chapterTitle}</h4><ul>${items}</ul></section>`
+    }).join('')
+    return `<section class="worldline"><h3>${head}</h3><p class="wl-hint">${hint}</p>${chapters}</section>`
   }
 
   private renderGear(): string {

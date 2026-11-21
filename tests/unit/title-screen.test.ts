@@ -692,7 +692,7 @@ describe('标题屏 · 按键教学说明 data-tip（KI-627）', () => {
     const s = view(t)
     expect(s).toContain('data-tip="←/→ 选弦 · Enter 定弦——你的止音纪元从这里开始"')
     expect(s).toContain('data-tip="读取你上一次停下的存档——回到那一刻的调音桩"')
-    expect(s).toContain('data-tip="切换 简体 / 繁體 / English"')
+    expect(s).toContain('data-tip="切换 简体 / 繁體 / 英文"') // KI-719：中文模式不夹 English
     expect((s.match(/data-tip=/g) ?? []).length).toBeGreaterThanOrEqual(3)
     t.dispose()
   })

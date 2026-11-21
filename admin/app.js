@@ -59,12 +59,20 @@ const STRINGS = {
   'live.h3': { zh: '最近 12 条事件', en: 'Last 12 events' },
   'live.clear': { zh: '清空本机记录', en: 'Clear local records' },
   'live.export': { zh: '导出本机 JSON', en: 'Export local JSON' },
+  'live.real.h2': { zh: '真人上报 · 本机 Spring 观察站', en: 'Real reporting · local Spring observatory' },
+  'live.real.note': { zh: '默认不上报。只有你在下面打开开关之后，浏览器才会向本机 report 服务（8082）发送匿名事件；公网静态站没有后端时如实显示「不可达」，绝不拿模拟数据冒充真实访客。', en: 'Off by default. Only after you flip the switch below does the browser send anonymous events to the local report service (8082). On a public static host with no backend it honestly reports “unreachable” — simulated data is never passed off as real visitors.' },
+  'live.real.toggle': { zh: '开启真人上报', en: 'Enable real reporting' },
+  'live.real.toggle.off': { zh: '关闭真人上报', en: 'Disable real reporting' },
+  'live.real.refresh': { zh: '拉取真实日聚合', en: 'Fetch real daily rollup' },
+  'live.real.on': { zh: '真人上报已开启', en: 'Real reporting is on' },
+  'live.real.off': { zh: '真人上报已关闭', en: 'Real reporting is off' },
+  'live.real.unreachable': { zh: '不可达：本观察站还没有连到 report 服务；这里不显示模拟值。', en: 'Unreachable: no report service is connected; simulated values are not shown here.' },
   'export.csv': { zh: '导出日数据 CSV', en: 'Export daily CSV' },
   'export.json': { zh: '导出全部 JSON', en: 'Export full JSON' },
   'export.ai': { zh: '导出 AI 诊断备忘', en: 'Export AI diagnosis memo' },
   'export.digest': { zh: '复制运营日报', en: 'Copy ops digest' },
   'method.h2': { zh: '方法论 · 这页数的家底', en: 'Methodology · where these numbers come from' },
-  'method.fine2': { zh: '玩家进程零 LLM · 零网络请求；本后台同上。真实用户流量接入 Spring report（@8082）后，可整体替换数据源而不动本页分析逻辑。', en: 'The game process has zero LLM calls and zero network; this deck is the same. Once real telemetry is wired through the Spring report service (@8082), the data source can be swapped wholesale without touching the analysis here.' },
+  'method.fine2': { zh: '玩家进程零 LLM · 零网络请求（真人上报默认关，须显式开启）；本后台同上。真人流已接入 Spring report（@8082）的只追加端点，上面「真人上报」面板直接现算真实事件；下面的 30 天队列仍是固定种子的模拟校准数据，两者不混用。', en: 'The player process has zero LLM calls and zero network (real reporting is off unless explicitly enabled); this deck is the same. The real stream is wired to the Spring report service (@8082) as an append-only endpoint — the “Real reporting” panel above computes from actual events. The 30-day cohort below remains a fixed-seed simulated calibration set; the two are never mixed.' },
   'method.fine3': { zh: '刻意公开的门禁 · 密码 123 · KI-583。', en: 'The door is public on purpose · passphrase 123 · KI-583.' },
   'ai.cache': { zh: 'LLM 缓存命中（rolling 80 · 每次运行逐条记账）', en: 'LLM cache hits (rolling 80 · per-call ledger)' },
   'ai.h2': { zh: 'AI 导演 · 真·LLM 诊断', en: 'AI Director · real-LLM diagnosis' },
@@ -463,6 +471,50 @@ function renderLive() {
   }).join('')
 }
 
+/* KI-720：真人上报（opt-in）。只从 Spring report 读**真实**逐日聚合，拿不到就如实说不可达。 */
+const LIVE_ENDPOINT_KEY = 'caesura.telemetry.endpoint'
+function liveReportEndpoint() {
+  const field = $('#live-report-endpoint')
+  const raw = (field?.value || '/report/live/events').trim()
+  return raw.length > 0 ? raw : '/report/live/events'
+}
+function renderLiveReportState() {
+  const state = (window.__caesuraLiveTelemetryState && window.__caesuraLiveTelemetryState()) || { enabled: false, endpoint: liveReportEndpoint() }
+  const btn = $('#live-report-toggle')
+  if (btn) btn.textContent = state.enabled ? STRINGS['live.real.toggle.off'][LANG === 'en' ? 'en' : 'zh'] : STRINGS['live.real.toggle'][LANG === 'en' ? 'en' : 'zh']
+  const el = $('#live-report-state')
+  if (el) el.textContent = state.enabled
+    ? T('真人上报已开启 · 端点 ' + state.endpoint + ' · 匿名白名单字段', 'Real reporting on · endpoint ' + state.endpoint + ' · anonymous allowlisted fields')
+    : T('真人上报已关闭 · 浏览器仍只写本机 localStorage', 'Real reporting off · browser still writes localStorage only')
+}
+async function refreshLiveReport() {
+  const stats = $('#live-report-stats')
+  const state = $('#live-report-state')
+  if (!stats) return
+  const endpoint = liveReportEndpoint().replace(/\/events\/?$/, '/daily')
+  try {
+    const url = endpoint + (endpoint.includes('?') ? '&' : '?') + 'days=30'
+    const res = await fetch(url, { headers: { Accept: 'application/json' }, credentials: 'omit' })
+    if (!res.ok) throw new Error('http_' + res.status)
+    const data = await res.json()
+    if (data?.cohortKind !== 'live' || !Array.isArray(data.daily)) throw new Error('not_live')
+    const rows = data.daily.slice(-30)
+    const sum = (k) => rows.reduce((a, r) => a + Number(r[k] ?? 0), 0)
+    stats.innerHTML = [
+      { n: num(data.events ?? 0), l: T('真实事件', 'real events') },
+      { n: num(sum('sessions')), l: T('真实会话', 'real sessions') },
+      { n: num(sum('pageViews')), l: T('真实浏览', 'real page views') },
+      { n: num(sum('clicks')), l: T('真实点击', 'real clicks') },
+      { n: num(sum('rage')), l: 'rage-clicks' },
+      { n: num(sum('errors')), l: T('真实错误', 'real errors') },
+    ].map((s) => `<div class="live-stat"><div class="l-num">${s.n}</div><div class="l-label">${s.l}</div></div>`).join('')
+    if (state) state.textContent = T('真实日聚合 · 来自 ' + url, 'Real daily rollup · from ' + url)
+  } catch (e) {
+    stats.innerHTML = ''
+    if (state) state.textContent = STRINGS['live.real.unreachable'][LANG === 'en' ? 'en' : 'zh'] + ' (' + e.message + ')'
+  }
+}
+
 /* ─────────── 导出 ─────────── */
 function download(filename, text, mime) {
   const blob = new Blob([text], { type: mime })
@@ -633,6 +685,13 @@ async function renderAiCommitted() {
     const qr = await fetch('./ai-director-transitions-qa.json', { cache: 'no-store' })
     if (qr.ok) qa = await qr.json()
   } catch { qa = null }
+  /* KI-717 · 世界线运行时表（可选）：有放行记录的 flag 才在玩家进程里存在 */
+  let flow = null
+  try {
+    const fr = await fetch('./echo-flow.json', { cache: 'no-store' })
+    if (fr.ok) flow = await fr.json()
+  } catch { flow = null }
+  const flowByFlag = new Map((((flow && flow.entries)) || []).map((e) => [e.flag, e]))
   const verdictByFlag = new Map((((qa && qa.verdicts)) || []).map((v) => [v.flag, v]))
   const isEn = LANG === 'en'
   const audit = d.audit
@@ -1050,7 +1109,7 @@ function renderMethod() {
 function renderAll() {
   renderKpis(); renderTrend(); renderFunnel(); renderChannels(); renderDevices()
   renderHours(); renderCohorts(); renderAnomalies(); renderExits(); renderRecs()
-  renderLive(); renderMethod(); renderAiCommitted(); hydrateAiLive(); renderStateGraph(); renderBuild(); renderPriors(); renderLedger(); renderForecast(); renderCacheMetrics();
+  renderLive(); renderLiveReportState(); renderMethod(); renderAiCommitted(); hydrateAiLive(); renderStateGraph(); renderBuild(); renderPriors(); renderLedger(); renderForecast(); renderCacheMetrics();
 }
 function tickClock() {
   const t = new Date()
@@ -1075,6 +1134,17 @@ $('#live-clear').addEventListener('click', () => {
   renderLive()
   note(T('本机记录已清空', 'Local records cleared'))
 })
+$('#live-report-toggle')?.addEventListener('click', () => {
+  const current = (window.__caesuraLiveTelemetryState && window.__caesuraLiveTelemetryState()) || { enabled: false }
+  if (typeof window.__caesuraLiveTelemetry !== 'function') {
+    note(T('埋点脚本未加载', 'Tracker script not loaded')); return
+  }
+  const next = window.__caesuraLiveTelemetry(!current.enabled, liveReportEndpoint())
+  note(next.enabled ? STRINGS['live.real.on'][LANG === 'en' ? 'en' : 'zh'] : STRINGS['live.real.off'][LANG === 'en' ? 'en' : 'zh'])
+  renderLiveReportState()
+})
+$('#live-report-refresh')?.addEventListener('click', () => { refreshLiveReport(); note(T('正在拉取真实数据', 'Fetching real data')) })
+$('#live-report-endpoint')?.addEventListener('change', renderLiveReportState)
 $('#ai-live-form')?.addEventListener('submit', runAiLive)
 
 // ?key=123 一键入内；已解锁则直接进

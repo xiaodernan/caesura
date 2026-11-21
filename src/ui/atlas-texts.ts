@@ -4140,5 +4140,43 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">Some pages find their way by staying.</p>
     <p class="coda">The age of hush has not ended. It has only lived one more morning — the page by the boat remained, the ledger stayed shut, the lamp lights itself — and she was well too.</p>`,
   },
+  {
+    no: 83,
+    zhTitle: "门边的空碗",
+    enTitle: "The Empty Bowl",
+    zh: `<p>清晨，门槛边的盐还在。阿汐没有数。薄簿合着，页角没有动。潮水退去，船底的干痕仍在。傍晚，她没有去看海。止音纪元没有结束。</p>
+    <p>门边有只空碗——它不是被留在那里等谁——没有人来用它——它自己知道自己空着——它也知道自己永远不会被添——它不算满——也不算空——它只是在门那边——被放在那里——在——在</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她有时候也想去拿它——她没去拿——她不去——收它就会意味着有人曾经想用它——然后放弃了它——然后它又空着了——她不去问——她只是看着它——它是门边的一个碗</p>
+    <p>她想起以前——有人经常在门边放一碗饭——有人替人留过一碗——母亲说过——别把碗空着——因为空着的碗像一个不说话的口——她听见这句——她也没有记</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她真的去拿过一次——她摸它——它还是温的——但那是她自己的手——它不是别人留给她的碗——它不是别人留给她的饭——它就是一只碗</p>
+    <p>她把它放回去——她没洗它——她没动它——她也没记下——她没添柴——她没动</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>傍晚光线斜进来——它斜进来——它落在门边的空碗上——它没有动——她看它——她偶尔想起它——她又想起它——她不去问它——它只是在那里</p>
+
+    <p class="coda">她没有去看海。</p>
+    <p class="coda">有些碗，空着也不必收走。</p>
+    <p class="coda">止音纪元没有结束。它只是又过了一个早晨——门边的盐还在，门边的空碗还在，簿阖着，灯自己会亮——她也很好。</p>`,
+    en: `<p>At dawn, the salt remained by the threshold. Axi did not count it. The thin ledger stayed shut, its page corner still. At ebb, the dry mark beneath the boat remained. By dusk, she had not looked toward the sea. The age of hush had not ended.</p>
+    <p>The bowl by the door — it lay there of its own choosing — no one came to use it — it knew itself to be empty — it also knew it would never be filled again — it was not-full — it was not-empty — it was a bowl by the door — it was there — it was there</p>
+    <p>Sometimes she thought to take it — she did not — to pack it up would mean someone once meant to use it — and then abandoned it — and then it was empty again — she did not ask — she only watched it — a bowl by the door</p>
+    <p>She remembered once — someone often left a bowl of rice by the door — someone once held a bowl for another — her mother said — don't leave the bowl empty — because an empty bowl is a mouth that doesn't speak — she heard this — she recorded none of it</p>
+    <p>She touched it once — it was warm — but it was her hand — this was not someone else's bowl — this was not someone else's rice — it was just a bowl</p>
+    <p>She put it back — she did not wash it — she did not move it — she entered nothing — she did not add wood — she did not move</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The light came at an angle — it fell on the empty bowl by the door — the bowl did not move — she watched it — she remembered it again — she did not ask about it — it was there</p>
+    <p class="coda">She did not look at the sea.</p>
+    <p class="coda">Some bowls need not be cleared while empty.</p>
+    <p class="coda">The age of hush has not ended. It has only lived one more morning — the salt at the threshold, the empty bowl by the door, the ledger shut, the lamp lights itself — and she was well too.</p>`,
+  },
 ]
 

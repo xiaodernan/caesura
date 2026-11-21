@@ -57,11 +57,12 @@ describe('caesura-redis-slot-map（KI-557）', () => {
     expect(r.slotsUsed).toBeGreaterThan(0)
   })
 
-  it('向量表：SlotModulo=100 / HashTagSlot=110 / ConsistentSlot=011；无 111', () => {
+  it('向量表由实测推导：SlotModulo=100 / HashTagSlot=010 / ConsistentSlot=101；无 111', () => {
     const study = slotMapStudy({ now: () => 557 })
     expect(study.vectors.SlotModulo).toBe('100')
-    expect(study.vectors.HashTagSlot).toBe('110')
-    expect(study.vectors.ConsistentSlot).toBe('001')
+    expect(study.vectors.HashTagSlot).toBe('010') // hash tag 换共定位 ⇒ 丢分布均匀
+    expect(study.vectors.ConsistentSlot).toBe('101') // 环换最小迁移 ⇒ 丢 hash tag 共定位
+    expect(study.verdict.vectorFromTrilemma).toBe(true)
     expect(Object.values(study.vectors)).not.toContain('111')
     expect(study.verdict.noUniversalWinner).toBe(true)
     expect(study.verdict.trilemmaDistinguishes).toBe(true)
@@ -120,7 +121,7 @@ describe('caesura-redis-slot-map（KI-557）', () => {
     expect(c.probes.crcSampleCount).toBe(1024)
   })
 
-  it('rigged 单开 freeEven：仅 ConsistentSlot 上浮 distributesEvenly（001→101），其他两策略不受影响', () => {
+  it('rigged 单开 freeEven：仅 HashTagSlot 上浮 distributesEvenly（010→110），其他两策略不受影响', () => {
     const s = slotMapStudy({ now: () => 557, rigged: true, freeEven: true })
     expect(s.vectors.ConsistentSlot).toBe('101')
     expect(s.vectors.SlotModulo).toBe('100')
@@ -129,19 +130,19 @@ describe('caesura-redis-slot-map（KI-557）', () => {
     expect(s.verdict.riggedConvergenceCollapsed).toBe(false)
   })
 
-  it('rigged 单开 freeColocation：仅 SlotModulo 和 ConsistentSlot 上浮 colocationByHashTag（100→110 / 001→011）', () => {
+  it('rigged 单开 freeColocation：SlotModulo（100→110）与 ConsistentSlot（101→111）上浮共定位，HashTagSlot 本就为真', () => {
     const s = slotMapStudy({ now: () => 557, rigged: true, freeColocation: true })
     expect(s.vectors.SlotModulo).toBe('110')
-    expect(s.vectors.HashTagSlot).toBe('110') // already true — unaffected
-    expect(s.vectors.ConsistentSlot).toBe('011')
+    expect(s.vectors.HashTagSlot).toBe('010') // 共定位本就为真、均衡本就为假 ⇒ 完全不受影响
+    expect(s.vectors.ConsistentSlot).toBe('111')
     expect(s.verdict.riggedConvergenceCollapsed).toBe(false)
   })
 
-  it('rigged 单开 freeMigrationMin：SlotModulo 与 HashTagSlot 上浮 minMigration（100→101 / 110→111）', () => {
+  it('rigged 单开 freeMigrationMin：SlotModulo（100→101）与 HashTagSlot（010→011）上浮最小迁移，ConsistentSlot 本就为真', () => {
     const s = slotMapStudy({ now: () => 557, rigged: true, freeMigrationMin: true })
     expect(s.vectors.SlotModulo).toBe('101')
-    expect(s.vectors.HashTagSlot).toBe('111')
-    expect(s.vectors.ConsistentSlot).toBe('001') // already true — unaffected
+    expect(s.vectors.HashTagSlot).toBe('011')
+    expect(s.vectors.ConsistentSlot).toBe('101') // already true — unaffected
     expect(s.verdict.riggedConvergenceCollapsed).toBe(false)
   })
 

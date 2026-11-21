@@ -237,7 +237,7 @@ export function runMeshE2E(opts = {}) {
     // KI-555：前缀亲和 prompt-cache 教学件（promptCache=true 挂载——VolatilePrefix/StablePrefix/BudgetedPrefix 三难 [cacheHitRate/infoFidelity/tokenEfficiency] + verifyPromptCacheSoundness 双路自证 + 十一件 21 物证）。
     promptCache: opts.promptCache,
     pcNow: opts.pcNow,
-    // KI-557 Redis Cluster 哈希槽拓扑教学件（SlotModulo=100 / HashTagSlot=110 / ConsistentSlot=001） + verifySlotMapSoundness 双路自证 + 三路篡改 + 三因果锁 + 21 物证
+    // KI-557 Redis Cluster 哈希槽拓扑教学件（SlotModulo=100 / HashTagSlot=010 / ConsistentSlot=101） + verifySlotMapSoundness 双路自证 + 三路篡改 + 三因果锁 + 21 物证
     redisSlots: opts.redisSlots,
     rsmNow: opts.rsmNow,
     // KI-558：MQ 驱动的缓存一致性三策略（cacheConsistency=true 挂载——DelayedDoubleDelete/SubscribeBinlog/OutboxPolling 三难 [boundedStaleness/infraFree/writePathLight] + verifyCacheConsistencySoundness 双路自证 + 十一真件 21 键）。

@@ -532,7 +532,7 @@
           "kind": "npc",
           "id": "npc_meg"
         },
-        "label": "在玄石集市找到 Meg —— 她替你保管着水边的账",
+        "label": "在玄石集市找到麦格 —— 她替你保管着水边的账",
         "advanceOn": {
           "flags": [
             "flag.meg_met"

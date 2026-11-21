@@ -1107,7 +1107,7 @@ export function createGameCloud(opts = {}) {
   // opts.springStreamBinding===true 走钳制默认参数（可覆盖 now/seed/messages/interval/nailedSnapshot/freeBinlog/noLatch/rigged 等）；
   // 传对象且 rows/vectors/verdict 齐全时当现成 study 注入；默认 springStreamBinding:false 非破坏（同 KI-513/.../543 法）。
   // 不声称真 Debezium-class CDC / 真 entity join / 真 snapshot atomic commit—全程结构计数。
-  // KI-557 Redis Cluster 哈希槽教学件（SlotModulo=100 / HashTagSlot=110 / ConsistentSlot=001 + verifySlotMapSoundness 双路自证 + 三路篡改 + 三因果锁 + 21 物证）
+  // KI-557 Redis Cluster 哈希槽教学件（SlotModulo=100 / HashTagSlot=010 / ConsistentSlot=101 + verifySlotMapSoundness 双路自证 + 三路篡改 + 三因果锁 + 21 物证）
   // opts.redisSlots === true 默认开（注入 {}）；显式 false 关闭。
   const rsmCfg = opts.redisSlots === true ? {} : (opts.redisSlots && typeof opts.redisSlots === 'object' ? opts.redisSlots : null)
   const rsmInjected = rsmCfg !== null && opts.redisSlots &&

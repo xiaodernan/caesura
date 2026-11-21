@@ -184,11 +184,14 @@ describe('KI-653 · 首屏 Start 固定按钮（KI-645 行动 #1）', () => {
     expect(src).toContain('ENTER THE WORLD')
   })
 
-  it('tracker.js：暴露 __caesuraTrack 且零网络（不引入 fetch/ xhr）', () => {
+  it('tracker.js：暴露 __caesuraTrack；默认零网络，真人上报须显式 opt-in（KI-720）', () => {
     const src = readFileSync(resolve(ROOT, 'public/tracker.js'), 'utf8')
     expect(src).toContain('__caesuraTrack')
-    expect(src).not.toMatch(/fetch\s*\(/)
     expect(src).not.toMatch(/XMLHttpRequest/)
+    expect(src).toContain('window.__caesuraLiveTelemetry')
+    const gate = src.indexOf('if (!live.enabled || typeof window.fetch')
+    expect(gate).toBeGreaterThan(-1)
+    expect(src.indexOf('window.fetch(live.endpoint')).toBeGreaterThan(gate)
   })
 
   it('admin 本机实况：Start 曝光/按下两格真读数（不是装饰）', () => {

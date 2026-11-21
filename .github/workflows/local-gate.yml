@@ -1,0 +1,65 @@
+name: local-gate
+
+# 用户明确授权的自托管 Runner（KI-722）。默认 CI 仍在 GitHub-hosted Ubuntu；
+# 这一条只在本机 Windows self-hosted runner 上跑，用来验证「中文路径 + 本机 npm/Java 工具链」
+# 与云端 CI 的结果是否一致。两类 runner 并存，不互相替代。
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'src/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'docs/**'
+      - '.github/workflows/local-gate.yml'
+
+concurrency:
+  group: local-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  local-gate:
+    name: 本机门禁（self-hosted Windows）
+    runs-on: [self-hosted, Windows, X64]
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: 检出到 Runner 工作目录
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+
+      - name: 依赖安装
+        run: npm ci
+
+      - name: 数据校验
+        run: npm run validate:data
+
+      - name: 类型检查
+        run: npm run lint
+
+      - name: 账本机读区逐字自证
+        run: npm run status:embed -- --check
+
+      - name: 四门文档对账
+        run: |
+          node node_modules/vitest/vitest.mjs run tests/unit/doc-audit.test.ts tests/unit/decl-parity.test.ts tests/unit/import-targets.test.ts tests/unit/phase-status.test.ts tests/unit/ledger-rules.test.ts --no-cache --reporter=default
+
+      - name: 构建产物
+        run: npm run build
+
+      - name: 报表
+        if: always()
+        run: git status --short

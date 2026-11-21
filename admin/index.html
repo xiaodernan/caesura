@@ -159,6 +159,19 @@
     </div>
   </article>
 
+  <!-- ⑪a 真人上报 · Spring report 8082（KI-720） -->
+  <article class="panel panel-wide" aria-labelledby="p-live-real">
+    <div class="panel-head"><h2 id="p-live-real" data-i18n="live.real.h2">真人上报 · 本机 Spring 观察站</h2><span class="hint">opt-in · 匿名白名单字段 · 只追加 JSONL</span></div>
+    <p class="live-real-note" data-i18n="live.real.note">默认不上报。只有你在下面打开开关之后，浏览器才会向本机 report 服务（8082）发送匿名事件；公网静态站没有后端时如实显示「不可达」，绝不拿模拟数据冒充真实访客。</p>
+    <div class="live-actions">
+      <label class="live-real-endpoint">Endpoint <input id="live-report-endpoint" type="text" value="/report/live/events" spellcheck="false" aria-label="真人上报端点" /></label>
+      <button id="live-report-toggle" type="button" class="btn-ghost" data-i18n="live.real.toggle">开启真人上报</button>
+      <button id="live-report-refresh" type="button" class="btn-ghost" data-i18n="live.real.refresh">拉取真实日聚合</button>
+    </div>
+    <div class="live-stats" id="live-report-stats"></div>
+    <p class="live-real-state" id="live-report-state" aria-live="polite"></p>
+  </article>
+
   <!-- ⑪b AI 导演 · 真·LLM 诊断（深度嵌入 · 两条路） ———————————— -->
   <article class="panel panel-wide panel-ai" id="panel-ai" aria-labelledby="p-ai">
     <div class="panel-head">

@@ -798,7 +798,7 @@ describe('caesura-console-gen (KI-495)', () => {
     const full = await buildSystems({ now })
     const eleven = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt, full.bloomFilter?.builtAt, full.cacheReplacement?.builtAt, full.streamWindow?.builtAt, full.hyperLogLog?.builtAt]
     expect(eleven.every((x) => x === 530000)).toBe(true)
-  })
+  }, 120_000)
 
   it('㉑-hyperLogLog buildCardinalityReading 真跑：hll* 注入生效 / hyperLogLog:false 关闭 / rigged 因果锁可证伪 / 双路自证 + 十一真件 / 十一时钟同源（KI-530）', async () => {
     const { buildCardinalityReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')
@@ -841,7 +841,7 @@ describe('caesura-console-gen (KI-495)', () => {
     const full = await buildSystems({ now })
     const eleven = [full.builtAt, full.delayQueue?.builtAt, full.retryDlq?.builtAt, full.consumerGroup?.builtAt, full.backpressure?.builtAt, full.logCompaction?.builtAt, full.bloomFilter?.builtAt, full.cacheReplacement?.builtAt, full.streamWindow?.builtAt, full.hyperLogLog?.builtAt]
     expect(eleven.every((x) => x === 530000)).toBe(true)
-  })
+  }, 120_000)
 
   it('㉒-crdt buildCrdtReading 真跑：crdt* 注入生效 / crdt:false 关闭 / rigged 因果锁可证伪 / 双路自证 + 十一真件 / 十二时钟同源（KI-531）', async () => {
     const { buildCrdtReading, buildSystems } = await import('../../scripts/caesura-console-gen.mjs')

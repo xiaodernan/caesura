@@ -415,3 +415,9 @@ header, main, footer { position: relative; z-index: 1; }
 .forecast-effort-l { background: rgba(165,68,82,.16); color: #ffb3b3; }
 .forecast-metric { font: 10px var(--mono); color: var(--muted); border: 1px dashed var(--line-soft); border-radius: 4px; padding: 3px 7px; }
 .forecast-risk { font: 10.5px/1.6 var(--sans); color: #b8bdc9; margin: 6px 0 0; }
+
+/* KI-720 真人上报面板：复用 live-stats 令牌；只加三处排版，不动既有面板。 */
+.live-real-note { font: 11.5px/1.72 var(--sans); color: var(--muted); margin: 8px 0 10px; }
+.live-real-endpoint { display: inline-flex; align-items: center; gap: 6px; font: 10px var(--mono); color: var(--muted); }
+.live-real-endpoint input { width: 240px; max-width: 60vw; padding: 6px 8px; border: 1px solid var(--line-soft); border-radius: 3px; background: var(--ash-2); color: var(--silver); font: 10.5px var(--mono); }
+.live-real-state { font: 11px/1.6 var(--mono); color: var(--muted); margin: 10px 0 0; }

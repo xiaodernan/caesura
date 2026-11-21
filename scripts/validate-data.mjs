@@ -106,7 +106,7 @@ if (rootArg && !existsSync(JSON_DIR)) {
   console.error(`${DATA_ROOT_FLAG} 指向的目录不存在：${JSON_DIR}（拼错的路径不算「表很干净」）`)
   process.exit(2)
 }
-const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json', 'shop.json', 'states.json', 'ambience.json', 'explore.json', 'battle.json', 'ducking.json', 'weather.json', 'cinematics.json', 'lighting.json', 'vfx.json', 'squad.json']
+const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json', 'shop.json', 'states.json', 'ambience.json', 'explore.json', 'battle.json', 'ducking.json', 'weather.json', 'cinematics.json', 'lighting.json', 'vfx.json', 'squad.json', 'echo-flow.json', 'endless-sectors.json']
 /**
  * KI-413②：注入的数据根要先**像数据根**。「名册里的表读不到」这一格有两种完全不同的病：真表里确实少了一张
  * （那是判决，必须报出来），以及喂进来的那格根本不是数据根——拼错了、指到上一级了、给了个空目录。
@@ -391,6 +391,56 @@ const SUBJECT_WAIVERS = [
  * 每个函数报哪张表 = 它体内 `const file = '…'`，它读了哪张表 = 体内 `data['…']` 加上 `data[file]` 这一种
  * 变量式，调用点 = `calledNames(本文件, 'validate')`。判据本体住 `validator-map-rules.mjs`（两端都要喂合成的）。
  */
+/**
+ * KI-717 / KI-723：世界线表不再是一份「JSON.parse 过就算检过」的死表。
+ * 这两张表的字段形状由玩家侧 `EchoFlow` / `EndlessWorld` 真读，校验器按同一契约查。
+ */
+function validateEchoFlow() {
+  const file = 'echo-flow.json'
+  const table = data[file]
+  const rows = table && Array.isArray(table.entries) ? table.entries : []
+  if (!rows.length) { report.error(file, 'entries', '世界线条目为空 ⇒ 玩家侧纪事页永远没有世界线'); return }
+  const seen = new Set()
+  for (let i = 0; i < rows.length; i++) {
+    const e = rows[i]
+    const at = `entries[${i}]`
+    if (!isObj(e)) { report.error(file, at, '不是对象'); continue }
+    if (!isStr(e.flag) || !e.flag.startsWith('flag.')) report.error(file, at + '.flag', `非法旗标 ${JSON.stringify(e.flag)}`)
+    if (seen.has(e.flag)) report.error(file, at + '.flag', `重复旗标 ${e.flag}`)
+    seen.add(e.flag)
+    for (const k of ['fromZh', 'fromEn', 'toZh', 'toEn', 'narrativeZh', 'narrativeEn', 'atlasHookZh', 'atlasHookEn']) {
+      if (!isStr(e[k]) || e[k].length === 0) report.error(file, at + '.' + k, '玩家可见文本不得为空')
+    }
+    if (!Array.isArray(e.canonEvidence) || e.canonEvidence.length === 0) report.error(file, at + '.canonEvidence', '出处不得为空')
+    if (!isObj(e.approval)) report.error(file, at + '.approval', '人工闸字段缺失')
+  }
+}
+
+function validateEndlessSectors() {
+  const file = 'endless-sectors.json'
+  const table = data[file]
+  const rows = table && Array.isArray(table.sectors) ? table.sectors : []
+  if (!rows.length) { report.error(file, 'sectors', '扇区表为空 ⇒ 「无尽世界」是一张空地图'); return }
+  const seenFlags = new Set()
+  for (let i = 0; i < rows.length; i++) {
+    const s = rows[i]
+    const at = `sectors[${i}]`
+    if (!isObj(s)) { report.error(file, at, '不是对象'); continue }
+    if (s.nextDepth !== s.depth + 1) report.error(file, at + '.nextDepth', '下一扇区指针不连续 ⇒ 世界会在这一格走到尽头')
+    if (!Array.isArray(s.marks) || s.marks.length < 6) report.error(file, at + '.marks', '每扇区至少 6 处可看，否则「很大很空」')
+    if (!Array.isArray(s.flags) || s.flags.length < 3) report.error(file, at + '.flags', '每扇区至少 3 根旗标')
+    for (const f of (Array.isArray(s.flags) ? s.flags : [])) {
+      if (!isStr(f?.flag)) { report.error(file, at + '.flags', '旗标必须为字符串'); continue }
+      if (seenFlags.has(f.flag)) report.error(file, at + '.flags', `重复旗标 ${f.flag}`)
+      seenFlags.add(f.flag)
+    }
+    if (!isStr(s.guideZh) || !isStr(s.guideEn) || !s.guideZh || !s.guideEn) report.error(file, at + '.guide', '每扇区都必须有双语指路，防止玩家迷失')
+  }
+  if (!Array.isArray(table.entries) || table.entries.length !== seenFlags.size) {
+    report.error(file, 'entries', '世界线条目数必须与扇区旗标数一一对应')
+  }
+}
+
 function validateValidatorMap() {
   const SELF = 'scripts/validate-data.mjs'
   let text = null
@@ -3318,6 +3368,8 @@ void dialogueInfo.ids
 // worldstate 最后：它要拿 regions/enemies 的 id 与"谁在读旗标"做双向对账
 validateWorldstate()
 validateGearRarityCoverage()
+validateEchoFlow()
+validateEndlessSectors()
 validateVocabDrift()
 // KI-093 排在最后：它读的是本文件的源码，而"有没有被调用"正是它的一条判据 ⇒ 调用点必须已经写下去了
 validateValidatorMap()

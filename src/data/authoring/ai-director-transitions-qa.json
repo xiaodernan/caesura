@@ -6,49 +6,46 @@
   "requiresHumanReview": true,
   "schema": 1,
   "mode": "live",
-  "generatedAt": "2026-11-16T21:14:19.223Z",
-  "model": "gpt-6.1-terra",
+  "generatedAt": "2026-11-20T05:12:59.519Z",
+  "model": "gpt-6.2-sol",
   "endpoint": "https://api.aizzz.xyz/v1",
-  "source": "ai-director-latest.json @ 2026-11-16T21:12:54.247Z",
+  "source": "ai-director-latest.json @ 2026-11-19T17:35:49.707Z",
   "roster": {
     "dialogueFlags": 33,
     "questLines": 7
   },
   "ragChunksPerTransition": 3,
-  "corpusSize": 1327,
+  "corpusSize": 11814,
   "transitionsRead": 4,
   "verdicts": [
     {
-      "flag": "flag.proposed.lowtone_industry_consequence_recorded",
-      "canonFit": "new-canon",
+      "flag": "flag.boat_page_left_in_place",
+      "canonFit": "canon",
       "conflicts": [],
-      "notesZh": "低音之城及沉默产业后果有据；可追查公共条目是新增状态。",
-      "notesEn": "The city and consequence are established; the public record state is new.",
-      "requiresHumanReview": true
+      "notesZh": "与船边一页留在原处且不替其决定去向的既有描写一致。",
+      "notesEn": "Matches the page remaining in place without deciding its destination."
     },
     {
-      "flag": "flag.proposed.stonethroat_ledger_entry_checked",
-      "canonFit": "new-canon",
+      "flag": "flag.thin_ledger_left_unrecorded",
+      "canonFit": "canon",
       "conflicts": [],
-      "notesZh": "石喉记账与账目核对有据；玩家核对状态是新增设定。",
-      "notesEn": "The ledger is established; player verification is a new state.",
-      "requiresHumanReview": true
+      "notesZh": "与薄簿合着、页角自翻且不补记的既有描写一致。",
+      "notesEn": "Matches the closed ledger, self-turning page, and deliberate lack of recording."
     },
     {
-      "flag": "flag.proposed.new_lands_observation_indexed",
-      "canonFit": "new-canon",
+      "flag": "flag.hull_mark_left_unmeasured",
+      "canonFit": "canon",
       "conflicts": [],
-      "notesZh": "余响新陆有既有见闻；将见闻编入索引是新增设定。",
-      "notesEn": "The lands and stories are established; indexing is new.",
-      "requiresHumanReview": true
+      "notesZh": "与干痕随潮显露覆没且阿汐不触碰、不追记的描写一致。",
+      "notesEn": "Matches the hull mark being covered again and left unmeasured or recorded."
     },
     {
-      "flag": "flag.proposed.echo_records_compiled",
+      "flag": "flag.threshold_seam_left_open",
       "canonFit": "new-canon",
+      "requiresHumanReview": true,
       "conflicts": [],
-      "notesZh": "整理余响记录与既有故事相符；该终章旗标为新增设定。",
-      "notesEn": "Compiling echoes fits existing fiction; the finale flag is new.",
-      "requiresHumanReview": true
+      "notesZh": "门未关与既有描写一致，但风自行进出是新增细节。",
+      "notesEn": "The open door is supported; wind passing through is newly introduced detail."
     }
   ],
   "usage": {
@@ -61,22 +58,22 @@
   "graphCheckpoints": [
     {
       "node": "load",
-      "ms": 30,
+      "ms": 113,
       "ok": true
     },
     {
       "node": "retrieve",
-      "ms": 272,
+      "ms": 859,
       "ok": true
     },
     {
       "node": "judge",
-      "ms": 11347,
+      "ms": 35370,
       "ok": true
     },
     {
       "node": "writeArtifacts",
-      "ms": 25,
+      "ms": 53,
       "ok": true
     }
   ],

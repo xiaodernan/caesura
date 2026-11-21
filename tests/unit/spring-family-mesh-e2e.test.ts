@@ -1753,7 +1753,7 @@ describe('spring-family-mesh-e2e', () => {
     expect(bare23.cacheConsistencySnapshot).toBe(null)
   })
 
-  it("e2e KI-557·redisSlots=true 装机→redisSlotsSnapshot 可读（SlotModulo=100 / HashTagSlot=110 / ConsistentSlot=001 + 双路自证 + 三路篡改 + 三因果锁 + 21 物证）", async () => {
+  it("e2e KI-557·redisSlots=true 装机→redisSlotsSnapshot 可读（SlotModulo=100 / HashTagSlot=010 / ConsistentSlot=101 + 双路自证 + 三路篡改 + 三因果锁 + 21 物证）", async () => {
     const e = runMeshE2E({ redisSlots: true, rsmNow: () => 5570 })
     const r = await e.run()
     expect(r.started?.registered).toBe(true)
@@ -1763,7 +1763,7 @@ describe('spring-family-mesh-e2e', () => {
     expect(d!.builtAt).toBe(5570)
     expect(d!.config.messages).toBe(96)
     expect(d!.rows.length).toBe(3)
-    expect(d!.vectors).toEqual({ SlotModulo: '100', HashTagSlot: '110', ConsistentSlot: '001' })
+    expect(d!.vectors).toEqual({ SlotModulo: '100', HashTagSlot: '010', ConsistentSlot: '101' })
     expect(d!.noUniversalWinner).toBe(true)
     expect(d!.trilemmaDistinguishes).toBe(true)
     expect(d!.verdict.vectorFromTrilemma).toBe(true)

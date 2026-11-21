@@ -13,6 +13,7 @@ import questsRaw from './json/quests.json'
 import statusesRaw from './json/statuses.json'
 import movementsRaw from './json/movements.json'
 import worldstateRaw from './json/worldstate.json'
+import echoFlowRaw from './json/echo-flow.json'
 import statesRaw from './json/states.json'
 import reactionsRaw from './json/reactions.json'
 import squadRaw from './json/squad.json'
@@ -48,6 +49,11 @@ export const statuses = statusesRaw as unknown as StatusConfig
 export const movements = movementsRaw as unknown as MovementConfig
 /** 世界状态的写入规则表（narrative §7 的执行位）：发生了什么 ⇒ 立哪个旗标 */
 export const worldstate = worldstateRaw as unknown as WorldStateRule[]
+/**
+ * KI-717「世界线」运行时表：由 `scripts/echo-flow.mjs` 从 AI 导演 transitions + 流转 QA + 人工闸
+ * 编译而来。这里只导出原始对象；类型与读取纪律住 `quest/EchoFlow.ts`（零 LLM、只读）。
+ */
+export const echoFlowTable = echoFlowRaw as unknown as { schema: number; generatedAt: string | null; entries: unknown[] }
 /** 值域型世界状态登记表（narrative §7 的 `STATE.*`）：一格状态有哪几个取值、缺省是哪个 */
 export const worldStates = statesRaw as unknown as WorldStateDef[]
 /** §8 受击反应表（只有有承载体的行：R1 玩家受击 / R4 破势时长）；派生读取走 combat/Reactions.ts */

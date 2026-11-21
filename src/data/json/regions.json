@@ -2674,7 +2674,8 @@
           "x": 664,
           "y": 0,
           "z": -28
-        }
+        },
+        "setsFlag": "flag.threshold_seam_left_open"
       },
       {
         "id": "in_windcoast_cairn",
@@ -2732,7 +2733,8 @@
           "x": 660,
           "y": 0,
           "z": -150
-        }
+        },
+        "setsFlag": "flag.hull_mark_left_unmeasured"
       },
       {
         "id": "in_windcoast_ledger_edge",
@@ -2744,7 +2746,8 @@
           "x": 572,
           "y": 0,
           "z": 166
-        }
+        },
+        "setsFlag": "flag.thin_ledger_left_unrecorded"
       },
       {
         "id": "in_windcoast_mist_shell",
@@ -2792,7 +2795,8 @@
           "x": 480,
           "y": 0,
           "z": -80
-        }
+        },
+        "setsFlag": "flag.boat_page_left_in_place"
       }
     ],
     "secrets": [

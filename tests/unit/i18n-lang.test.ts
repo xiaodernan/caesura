@@ -54,6 +54,33 @@ describe('i18n Lang 双字典同构', () => {
     }
   })
 
+  /** KI-719：ZH 侧的对称门——中文模式不许出现叙述性英文。按键名、配置路径与插值占位符显式排除。 */
+  it('ZH 字典里不许出现叙述性英文（中文模式不夹杂英文）', () => {
+    const zh = bodyOf(dictBlock('ZH'))
+    expect(Object.keys(zh).length).toBeGreaterThan(0)
+    const forbidden = /\b(Boss|Codex|LangGraph|NPC|StateGraph|DAG|Ending|Encore|English|Meg|FPS|DEF|pause|online)\b/i
+    for (const [k, raw] of Object.entries(zh)) {
+      const v = raw.replace(/\$\{[^}]*\}/g, ' ').replace(/\`[^\`]*\`/g, ' ')
+      expect(v, `ZH 键 ${k} 里还夹着英文叙述`).not.toMatch(forbidden)
+    }
+  })
+
+  it('玩家手册 / 图鉴的中文块不夹杂英文（按键名与 <code> 标识符白名单）', () => {
+    const stak = readFileSync(resolve(fileURLToPath(new URL('../../src/ui/Stakerite.ts', import.meta.url))), 'utf8')
+    const marker = 'const PLAYER_'
+    expect(stak, '双语静态手册不在 Stakerite.ts 里').toContain(marker)
+    const zhBlocks = [...stak.matchAll(/^  zh: `([\s\S]*?)`,\n/gm)].map((m) => m[1]).filter((b) => b.includes('<h2>'))
+    expect(zhBlocks.length, 'PLAYER_MANUAL / PLAYER_ATLAS 的中文块被扫空了').toBe(2)
+    const allow = new Set(['Tab', 'Shift', 'Space', 'Left', 'Mouse', 'RMB', 'END', 'START', 'n0', 'n1', 'n2', 'n3', 'flag', 'emotion'])
+    for (const raw of zhBlocks) {
+      // 代码标识符与链接不是「英文句子」；只审可见叙述里的成串拉丁词。
+      const visible = raw.replace(/<code[^>]*>[\s\S]*?<\/code>/g, ' ').replace(/<[^>]+>/g, ' ')
+      const latin = [...visible.matchAll(/[A-Za-z][A-Za-z0-9_./-]*/g)]
+        .map((m) => m[0]).filter((w) => w.length >= 2 && !allow.has(w) && !/[._/-]/.test(w))
+      expect(latin, `中文块里还有英文：${latin.slice(0, 12).join(' ')}`).toEqual([])
+    }
+  })
+
   it('每个 t() 键都能在 EN/ZH 至少一侧读出字符串（不吐 key 兜底）', () => {
     const zh = keysOf(dictBlock('ZH'))
     for (const k of zh) {

@@ -1,4 +1,4 @@
-import { t } from '@/i18n/Lang'
+import { t, getLang } from '@/i18n/Lang'
 import { bus } from '@/core/EventBus'
 import { Vector3 } from 'three'
 import { GameTime, TICK_DT, TICK_HZ } from '@/core/Time'
@@ -13,7 +13,7 @@ import { GameLoop } from '@/core/GameLoop'
 import { Input, pumpMenu, type MenuOwner, type MenuPump } from '@/core/Input'
 import { RhythmClock } from '@/core/RhythmClock'
 import { registry } from '@/core/Registry'
-import { registerGameData, playerBase, regions, worldstate, dialogues, quests as questTable, worldStates as worldStateDefs, cinematics as cinematicRows } from '@/data'
+import { registerGameData, playerBase, regions, worldstate, dialogues, quests as questTable, worldStates as worldStateDefs, cinematics as cinematicRows, echoFlowTable } from '@/data'
 import { resolveMarker } from '@/quest/Objectives'
 import { respawnTarget, type RespawnPost } from '@/world/Respawn'
 import type { ItemData, MovesetData, NpcData, RegionData, RegionMusic, Vec3, WeaponData } from '@/data/schema'
@@ -71,6 +71,8 @@ import { SlotRoster } from '@/save/Slots'
 import { Checkpoints } from '@/save/Checkpoint'
 import { WorldState } from '@/quest/WorldState'
 import { WorldStates } from '@/quest/WorldStates'
+import { EchoFlow, echoFlowEntriesOf, announceEchoFlow } from '@/quest/EchoFlow'
+import { endlessEntriesOf, endlessWorldTable } from '@/quest/EndlessWorld'
 import { Quests } from '@/quest/Quests'
 import { DialogueEngine, type DialogueContext } from '@/quest/Dialogue'
 import { DialogueSession } from '@/quest/Settlement'
@@ -314,7 +316,7 @@ const panel = new Stakerite(rpg, {
   list: () => saveRoster.list(),
   write: (slot) => saves.save(slot),
   erase: (slot) => saves.erase(slot)
-}, input, makeOpsHandles(input, () => bindingsStore, () => gameplayStore, () => qualityStore, () => 0))
+}, input, makeOpsHandles(input, () => bindingsStore, () => gameplayStore, () => qualityStore, () => 0), () => echoFlow)
 /**
  * 对话框（Phase 6-B）。它只回吐玩家的选择，效果由 `showTurn` → `applyDialogueEffects` 统一落盘：
  * UI 不做第二个真值（与调音桩面板同一条纪律）。
@@ -414,6 +416,14 @@ const homeRegion = streaming.regionAt(player.pos)
  * 而 `const` 在声明行之前读不到（TDZ）：留在下面，将来任何一条带状态的变体会让开局撞一次 ReferenceError。
  */
 const worldStates = new WorldStates(worldStateDefs)
+const echoFlow = new EchoFlow(
+  [...echoFlowEntriesOf(echoFlowTable), ...endlessEntriesOf(endlessWorldTable)],
+  (k) => streaming.hasFlag(k),
+)
+bus.on('world.flag', (p) => {
+  const entry = echoFlow.onWorldFlag(p.key, p.value)
+  if (entry) announceEchoFlow(entry, getLang() === 'en' ? 'en' : 'zh')
+})
 let shownRegion = homeRegion?.id ?? null
 /**
  * §2.3「她在唱歌时，休垒全 BGM 加一层人声垫片」／§2.4「一个会自己打更的鼓」：

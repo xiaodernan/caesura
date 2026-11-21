@@ -55,7 +55,7 @@
 | Redis HA | `spring-ha:bench` | Sentinel=100 / SyncPair=010 / Cluster=101 |
 | Redis Stream | `spring-stream:bench` | PubSub=010 / PersistentQueue=100 / StreamLog=110 |
 | Vault | `spring-vault:bench` | K8sStatic=100 / AppRoleLease=010 / DynamicRotation=001 |
-| Redis Cluster 哈希槽 | `slot-map:bench` | SlotModulo=100 / HashTagSlot=110 / ConsistentSlot=001；双路自证 + 三路篡改 |
+| Redis Cluster 哈希槽 | `slot-map:bench` | SlotModulo=100 / HashTagSlot=010 / ConsistentSlot=101；双路自证 + 三路篡改 |
 | Cache 一致性 | `cache-consistency:bench` | DelayedDoubleDelete=011 / SubscribeBinlog=101 / OutboxPolling=110；三路篡改（deleteLost/offsetReset/outboxNotAtomic） |
 | PostgreSQL 引擎 | `pgvector:bench` | BPlusOrdered=100 / TrgmGin=010 / VectorHnsw=001；三路篡改 forcedSeqScan/strictEquality/invertedCosine |
 | Gateway 过滤器链 | `gateway-filters:bench` | OrderedChain=100 / RateLimitGatewayFilter=010 / CircuitBreakerGatewayFilter=001；三路篡改 reorderedFilter/overdraftBucket/alwaysClosed |

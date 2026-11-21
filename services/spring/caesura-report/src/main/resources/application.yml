@@ -31,6 +31,8 @@ caesura:
     # 逐道排队要等好几分钟（最重的几道门是整套测试与构建）；一起跑就快得多。
     # 但它有上限：上限自己也是一个数，它必须**只有一处出处**（判据 spring-family-rules 盯着）。
     concurrency: 3
+    # KI-720：真人行为真实上报的只追加文件。浏览器默认不上报；显式开启才写这里。
+    live-events-path: data/live-events.jsonl
 
 management:
   endpoints:

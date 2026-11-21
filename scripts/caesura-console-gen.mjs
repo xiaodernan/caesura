@@ -590,7 +590,7 @@ export async function buildSpringVaultReading(opts, now) {
 }
 
 /**
- * KI-557 Redis Cluster 哈希槽教学件（SlotModulo=100 / HashTagSlot=110 / ConsistentSlot=001）——
+ * KI-557 Redis Cluster 哈希槽教学件（SlotModulo=100 / HashTagSlot=010 / ConsistentSlot=101）——
  *   verifySlotMapSoundness 双路自证 + 三路篡改（wrongCrcSeed CRC 表坏 / missingBrace 去括号 / forcedModulo 强制模）
  *   失败返回 null；KD 双源一致；rigged 各自只上浮所属策略。
  * @param {object} opts { redisSlots?:false, rsmSeed?, rsmMessages?, rsmFreeEven?, rsmFreeColocation?, rsmFreeMigrationMin?, rsmRigged? }

@@ -791,7 +791,7 @@ export function runMeshE2E(opts?: any): {
       causalLocks: { prefixAffinityCausallyUnerasable: boolean; tokenBudgetCausallyUnerasable: boolean; factRankCausallyUnerasable: boolean; causalLocksAllHold: boolean; probes?: Record<string, number> }
       crosscheck: { evidence: Record<string, any>; soundness: { holds: boolean; nontrivial: boolean; laneA: Record<string, any>; laneB: Record<string, any>; tamper: Record<string, any> } & Record<string, any> }
     } | null
-    /** KI-557 Redis Cluster 哈希槽拓扑教学件（SlotModulo=100 / HashTagSlot=110 / ConsistentSlot=001）——缺 opt-in redisSlots 为 null */
+    /** KI-557 Redis Cluster 哈希槽拓扑教学件（SlotModulo=100 / HashTagSlot=010 / ConsistentSlot=101）——缺 opt-in redisSlots 为 null */
     redisSlotsSnapshot: {
       config: Record<string, any>
       rows: Array<{

@@ -179,6 +179,9 @@ src/
   quest/
     WorldState.ts      世界状态写入层（Phase 6-A 已落）：`worldstate.json` 的规则表 ⇒ 立旗 + 播报；
                        只走 bus，自己不存旗标
+    EchoFlow.ts        KI-717「世界线」运行时（零 LLM）：读 `echo-flow.json`（AI 导演提案 → QA → 人工闸），
+                       `world.flag` 一到就记「已抵达」，供纪事页摊开 from→to / NPC 反应 / atlas hook；
+                       `sync()` 从旗标现读，读档回退不另存快照，提示只发一次
     QuestState.ts      任务状态机：notStarted→active(step k)→completed/failed，
                        目标条件订阅 EventBus 计数
     WorldFlags.ts      全局 flag 仓（位图 + 命名 bool/int/string 三层），存档序列化，
@@ -365,6 +368,7 @@ src/
 | `scripts/sim-real-visitor.mjs`（真人行为模拟器 · read-only · 全站 86 页 live 走查） · `scripts/sim-real-visitor.d.mts`（类型声明） · `tests/unit/sim-real-visitor.test.ts`（5 legs） | **Phase F-185（2026-11-19，前端第一百零三维）《真人行为模拟》**：新增 sim 模拟用户——impatient-bounce（86 页 × status/字节/契约标记/墙时 判定）· blind-click（anthology 起 12 跳 seed 固定跳转）· referrer-hop（出域链核验）；`sim:realvisitor` → package.json PKG.scripts=**90**；**记录**：冷场 Pages 对 KI-711 （two-lines） 滞后，sim 捕获并如实登记；`tests/unit/sim-real-visitor.test.ts`（5 legs）入 CI；对机器走查强于裸 fetch 全站的页面回归门。 |
 | `ui/atlas-texts.ts`（扩篇八十二）· `story/the-unsent-page/`（新公开页 · STORY No. 82） | **Phase F-186（2026-11-19，前端第一百零五维）《未寄的一页》第八十二篇 · gp-6.2-sol 真跑**：`STORY_CHAPTERS` 新增 `no:82`——篇八十二故事：簿阖着、潮水来回、干痕又见；`/caesura/story/the-unsent-page/` 双语静态页 · canon 与 anthology 双向锚；`story/anthology/` 扩八十二篇（英文 kicker「Eighty-Two Voices of the Aftermath」）；console「余响八十二篇」+ 双 chain-item · PLAYER_ATLAS 双语 +1 行；"`console-frontend-stability.test.ts` 修双引号未闭合 cascade 副作用"（本轮Cascade I/O 警示）；`ai-director.mjs` 语料推进（no:83）· `read-progress.js` ORDER 82 项 · `scene-bible.mjs` atlasChapters=82 · `smoke-live.mjs` → **94 端点**（新增 story-83 · marker「未寄的一页」）· `gen-zh-tw-table.cjs`（PAGES 扩 the-unsent-page）。 |
 | `ui/atlas-texts.ts`（扩篇八十一）· `story/a-page-by-the-boat/`（新公开页 · 真 LLM 起草→LLM 终审 revise→人工闸扩写） | **Phase F-186（2026-11-19，前端第一百零四维）《船边的一页》第八十一篇 · gpt-6.2-sol 真跑**：`STORY_CHAPTERS` 新增 `no:81`——薄簿合着、灯自己会亮、门留一线（更深 canon 边界，无任何史诗新大纲）· `/caesura/story/a-page-by-the-boat/` 双语静态页（tracker + zh-tw-converter + read-progress · 零网络）；`story/anthology/` 扩八十一篇；console「余响八十一篇」+ 双 chain-item + app.js LANG_EXACT 新增 5 键；PLAYER_ATLAS 双语 +1 行；README 双语 +1 条；codex + Spring lore 同步；`ai-director.mjs` 语料推进（no:82）+ **Companion browser tool 系统性确认：Acc/BP/SEO 全 1.0· Lighthouse 零硬伤**·`TitleScreen.tsx` 修三处纵向 a11y（nav aria-label mismatch · button name mismatch · placeholder meta description 缺失）：009 因中文键适配。 **守卫**：atlas-texts.test.ts（1..81）· story-anthology.test.ts（八十一篇）· story-a-page-by-the-boat.test.ts（**8 腿**）· story-read-progress.test.ts（ORDER 81 项）· console-frontend-stability.test.ts（footer + LANG_EXACT 八十一篇 + `篇八十一·船边的一页` 双对子断言）· admin-analytics.test.ts（smoke **93 端点**）· smoke-live-concurrency.test.ts（93 端点）· scene-bible.test.ts（atlasChapters=81）· ai-director.test.ts（artifact-gated draft.no 81）。 |
+| `ui/atlas-texts.ts`（扩篇八十三）· `story/the-empty-bowl/`（新公开页 · gpt-6.2-sol 真跑 · 编辑闸 revise → 人工扩写） | **Phase F-187（2026-11-20，前端第一百零六维）《门边的空碗》第八十三篇 · gpt-6.2-sol 真跑**：`STORY_CHAPTERS` 新增 `no:83`——门槛边的盐还在、薄簿合着、空碗在门边（不是等谁）·「有些碗，空着也不必收走」· `/caesura/story/the-empty-bowl/` 双语静态页（tracker + zh-tw-converter + read-progress · 零网络）；`story/anthology/` 扩八十三篇；console「余响八十三篇」+ 双 chain-item + app.js LANG_EXACT 新增；PLAYER_ATLAS 双语 +1 行；README 双语 +1 条；codex + Spring lore 同步；`scripts/smoke-live.mjs` 95 端点（story-84 marker=门边的空碗）；`gen-zh-tw-table` 重生成 653 单字；AI 导演八节点真跑（llm_calls=5 · cached 495,822 / prompt 561,090 · mean_hit 88.4% · errors=0）→ editorialGate revise（canonFidelity 78 / voiceFidelity 82）→ 人工扩写；`tests/unit/story-the-empty-bowl.test.ts` 10 legs。 |
 
 
 
@@ -8049,3 +8053,17 @@ await import(VALIDATOR_SPEC as string)
 ### B3. 中文手册（docs/PLAYER-GUIDE.md · 中英对照）
 
 《止音纪元》新玩家手册——纯中文、覆盖键位操作 / 战斗机制 / 主线推进 / Boss 攻略 / 调试快捷入口 / 控制台 URL。EN 半册以 English companion 与 README.en.md 同步落地（两份独立 README，单一语境）。
+
+## 18. 无尽世界扇区 · 真人上报 · 本机 CI（KI-718～723，2026-11-20）
+
+### 18.1 `src/quest/EndlessWorld.ts` — 无尽开放世界的玩家侧读表
+
+这一模块只读 `src/data/json/endless-sectors.json`：那张表由 `scripts/endless-world.mjs` 以固定 seed+depth 确定性生成，并经生成器级人工闸放行。`EndlessWorld` 提供 `sector(depth)` / `nextDepth()` / `describe(depth,lang)` / `entryFor(flag)`；每个扇区都有 6 处可看的东西、3 根旗标与下一扇区指针，因此「世界无穷大」不是空地图。`main.ts` 把生成出的 36 条世界线记录与 KI-717 的人工连载记录一起交给同一个 `EchoFlow` 运行时——玩家进程零 LLM、零联网。作者侧用 `npm run endless:gen` 无限追加深度，同 seed 逐字可复现。
+
+### 18.2 真人行为上报（KI-720）
+
+`services/spring/caesura-report/src/main/java/caesura/report/LiveTelemetryController.java` 提供只追加的匿名事件端点：`POST /live/events`（type/path/q/session 白名单、单行 ≤4 KiB、每 IP 每秒 30 条限流）与 `GET /live/daily`（按天现算，未收到事件就如实回 0）。浏览器 `public/tracker.js` **默认零网络**，只有 `window.__caesuraLiveTelemetry(true, endpoint)` 才上报；管理员页「真人上报」面板读真实日聚合，拿不到后端时显示不可达，绝不拿 `admin/data.js` 的固定种子模拟队列冒充真实访客。两条数据源分开展示。
+
+### 18.3 撞库压测与双轨 CI（KI-721 / KI-722）
+
+`scripts/stress-credential-stuffing.mjs` 压的是内存登录守卫（定长比较、失败计数、锁定窗口），不伪装成打真站；`npm run stress:stuffing` 的判据是错误口令零误收、锁定真发生、同 seed 计数逐字一致。`.github/workflows/local-gate.yml` 声明 `runs-on: [self-hosted, Windows, X64]`，跑数据校验 / 类型 / 账本自证 / 五门 / 构建；GitHub-hosted 的 `check.yml` 保留，两轨并存。

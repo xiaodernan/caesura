@@ -158,7 +158,10 @@ function ringSlotOwners(nodes, virtualNodes = 64) {
   const ring = createHashRing({ virtualNodes, salt: String(SLOT_MAP_DEFAULTS.seed) })
   for (const n of nodes) ring.addNode(n)
   const owners = new Array(SLOT_MAP_DEFAULTS.slots)
-  for (let s = 0; s < SLOT_MAP_DEFAULTS.slots; s++) owners[s] = ring.lookup('slot:' + s)
+  for (let s = 0; s < SLOT_MAP_DEFAULTS.slots; s++) {
+    const hit = ring.lookup('slot:' + s)
+    owners[s] = hit.nodeId ?? nodes[0]
+  }
   return owners
 }
 
@@ -323,15 +326,23 @@ export function createConsistentSlot(opts = {}) {
   return { protocol: 'ConsistentSlot', invoke }
 }
 
-function trilemmaOf(p, flags, readings) {
-  // rigged 升高「自由成本」让所属策略无偿得到对应位：各旗帜只动自己的那一位，不跨策略。
-  if (p === 'SlotModulo') {
-    return { distributesEvenly: true, colocationByHashTag: flags?.freeColocation === true, minMigration: flags?.freeMigrationMin === true }
+/** 三难位**全部由场景实测读数推导**（零查表、零硬编码赢家）。
+ * - distributesEvenly：hotTagColocate 场景下**被占用的槽数 / 键数** ≥ 0.5（键真摊得开，不是挤在少数 tag 槽）
+ * - colocationByHashTag：hotTagColocate 场景下 colocationRate ≥ 0.99（同 tag 真同槽）
+ * - minMigration：addShard 场景下 migrationRatio < 0.30（加分片时归属基本不变）
+ * rigged 旗标是「显式免费授予该能力」：只把**本来为 0 的位**顶成 1，不跨位乱动。 */
+function trilemmaOf(p, flags, readings = {}) {
+  const hot = readings.hotTagColocate ?? {}
+  const add = readings.addShard ?? {}
+  const spread = Number(hot.messages) > 0 ? Number(hot.slotsUsed ?? 0) / Number(hot.messages) : 0
+  const even = spread >= 0.5
+  const colocation = Number(hot.colocationRate ?? 0) >= 0.99
+  const migration = Number(add.migrationRatio ?? 1) < 0.30
+  return {
+    distributesEvenly: even || flags?.freeEven === true,
+    colocationByHashTag: colocation || flags?.freeColocation === true,
+    minMigration: migration || flags?.freeMigrationMin === true,
   }
-  if (p === 'HashTagSlot') {
-    return { distributesEvenly: true, colocationByHashTag: true, minMigration: flags?.freeMigrationMin === true }
-  }
-  return { distributesEvenly: flags?.freeEven === true, colocationByHashTag: flags?.freeColocation === true, minMigration: true }
 }
 const vectorOf = (t) => `${Number(t.distributesEvenly)}${Number(t.colocationByHashTag)}${Number(t.minMigration)}`
 
@@ -371,6 +382,12 @@ function runScenario(p, corpus, sc, flags) {
     slotMin: r.min,
     slotMax: r.max,
     stddev: r.stddev,
+    evenReduction: r.evenReduction,
+    colocationRate: r.colocationRate ?? 0,
+    tagGroups: r.tagGroups ?? 0,
+    tagMismatchedGroups: r.tagMismatchedGroups ?? 0,
+    migratedKeys: r.migratedKeys ?? 0,
+    migrationRatio: r.migrationRatio ?? 1,
     fault: faultOf(sc),
   }
 }
@@ -390,7 +407,8 @@ export function slotMapStudy(opts = {}) {
   const rows = []
   for (const p of SLOT_MAP_STRATEGIES) {
     const cells = SLOT_MAP_SCENARIOS.map((sc) => runScenario(p, corpus, sc, flags))
-    const t = trilemmaOf(p, flags)
+    const readings = Object.fromEntries(cells.map((c) => [c.id, c]))
+    const t = trilemmaOf(p, flags, readings)
     rows.push({
       protocol: p,
       scenarios: cells,

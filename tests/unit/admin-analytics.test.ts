@@ -383,13 +383,39 @@ describe('admin · 静态页与部署接线（防悄悄脱落）', () => {
     expect(sm).toContain('/caesura/story/two-lines/')
     expect(sm).toContain('/caesura/story/a-page-by-the-boat/')
     expect(sm).toContain('/caesura/story/the-unsent-page/')
+    expect(sm).toContain('/caesura/story/the-empty-bowl/')
     const entries = (sm.match(/\{ name: '/g) ?? []).length
-    expect(entries).toBe(94)
+    expect(entries).toBe(95)
   })
-  it('public/tracker.js 存在且为本机埋点', () => {
+  it('public/tracker.js 存在且默认本机埋点；真人上报必须显式 opt-in（KI-720）', () => {
     const t = read('public/tracker.js')
     expect(t).toContain('caesura.telemetry.v1')
-    expect(t).not.toMatch(/fetch\(|XMLHttpRequest|sendBeacon|navigator\.send/)
+    expect(t).not.toMatch(/XMLHttpRequest|sendBeacon|navigator\.send/)
+    expect(t).toContain('__caesuraLiveTelemetry')
+    // fetch 只许出现在 opt-in 的 report() 里，且前面必须有 live.enabled 闸门。
+    const gate = t.indexOf('if (!live.enabled || typeof window.fetch')
+    const call = t.indexOf('window.fetch(live.endpoint')
+    expect(gate).toBeGreaterThan(-1)
+    expect(call).toBeGreaterThan(gate)
+    expect(t).not.toMatch(/localStorage\.getItem\(LIVE_KEY\)\s*===\s*'1'\s*\?\s*true\s*:\s*false/)
+    expect(t).toContain("localStorage.getItem(LIVE_KEY) === '1'") // 缺省关，只有显式写 1 才开
+  })
+  it('真人上报面板：opt-in 开关 + 真实日聚合端点；拿不到时如实显示不可达（KI-720）', () => {
+    const html = read('admin/index.html')
+    expect(html).toContain('id="live-report-toggle"')
+    expect(html).toContain('id="live-report-refresh"')
+    expect(html).toContain('id="live-report-stats"')
+    expect(html).toContain('/report/live/events')
+    const js = read('admin/app.js')
+    expect(js).toContain('__caesuraLiveTelemetry')
+    expect(js).toContain("data?.cohortKind !== 'live'")
+    expect(js).toContain("replace(/\\/events\\/?$/, '/daily')")
+    expect(js).toContain('live.real.unreachable')
+    const java = read('services/spring/caesura-report/src/main/java/caesura/report/LiveTelemetryController.java')
+    expect(java).toContain('@PostMapping("/live/events")')
+    expect(java).toContain('@GetMapping("/live/daily")')
+    expect(java).toContain('MAX_EVENTS_PER_SEC = 30')
+    expect(java).toContain('rate_limited')
   })
   it('全站公开页面都已挂 tracker.js（游戏/教程/图鉴/谱/调度台/全集故事/后台）', () => {
     const pages = ['index.html', 'console/index.html', 'tutorial/index.html', 'cast/index.html', 'codex/index.html', 'story/index.html', 'admin/index.html']

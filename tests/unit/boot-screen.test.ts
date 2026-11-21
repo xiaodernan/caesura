@@ -46,4 +46,15 @@ describe('index.html：启封仪典 · 止音启明（Phase F-42）', () => {
   it('不破坏 main.ts 的接管：boot 节点存在且 id 仍为 boot（main.ts 按 id 藏起来）', () => {
     expect(HTML).toMatch(/<div id="boot">/)
   })
+
+  it('首屏就有「简明说明书」常驻入口：真链接指向 ./tutorial/，中英双语、z-index 高于 boot（KI-718）', () => {
+    expect(HTML).toContain('id="quickstart-dock"')
+    expect(HTML).toMatch(/<a id="quickstart-dock" href="\.\/tutorial\/"/)
+    expect(HTML).toContain('简明说明书')
+    expect(HTML).toContain('Quick Start Manual')
+    const css = HTML.slice(HTML.indexOf('#quickstart-dock {'), HTML.indexOf('#quickstart-dock {') + 500)
+    expect(css).toContain('z-index:20')
+    expect(css).toContain('position:fixed')
+    expect(readFileSync(fileURLToPath(new URL('../../tutorial/index.html', import.meta.url)), 'utf8')).toContain('快速上手')
+  })
 })

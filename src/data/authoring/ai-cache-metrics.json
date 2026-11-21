@@ -1827,6 +1827,69 @@
           "model": "gpt-6.2-sol"
         }
       ]
+    },
+    {
+      "at": "2026-11-19T17:35:49.707Z",
+      "mode": "live",
+      "model": "gpt-6.2-sol",
+      "focus": "第八十二篇《未寄的一页》落地之后 · 下一篇原创短篇",
+      "calls": 5,
+      "cachedTokens": 495822,
+      "promptTokens": 561090,
+      "meanHitRate": 88.36,
+      "steadyStateHitRate": 88.23,
+      "perCall": [
+        {
+          "node": "warmup",
+          "status": 200,
+          "dt": 4528,
+          "prompt": 111618,
+          "cached": 99202,
+          "hitRate": 88.9,
+          "attempts": 3,
+          "model": "gpt-6.2-sol"
+        },
+        {
+          "node": "audit",
+          "status": 200,
+          "dt": 10177,
+          "prompt": 112277,
+          "cached": 99161,
+          "hitRate": 88.3,
+          "attempts": 1,
+          "model": "gpt-6.2-sol"
+        },
+        {
+          "node": "proposeTransitions",
+          "status": 200,
+          "dt": 8627,
+          "prompt": 112380,
+          "cached": 99154,
+          "hitRate": 88.2,
+          "attempts": 1,
+          "model": "gpt-6.2-sol"
+        },
+        {
+          "node": "draftContent",
+          "status": 200,
+          "dt": 7603,
+          "prompt": 112261,
+          "cached": 99161,
+          "hitRate": 88.3,
+          "attempts": 1,
+          "model": "gpt-6.2-sol"
+        },
+        {
+          "node": "editorialGate",
+          "status": 200,
+          "dt": 5285,
+          "prompt": 112554,
+          "cached": 99144,
+          "hitRate": 88.1,
+          "attempts": 1,
+          "model": "gpt-6.2-sol"
+        }
+      ]
     }
   ]
 }
