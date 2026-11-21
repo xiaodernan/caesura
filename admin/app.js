@@ -83,6 +83,7 @@ const STRINGS = {
   'ai.gaps.h4': { zh: '缺口', en: 'Gaps' },
   'ai.transitions.h4': { zh: '世界状态流转提案 · from → to（人工闸后落库）', en: 'World state transitions · from → to (human gate first)' },
   'ai.selfimprove.h4': { zh: '自我改进闸门 · StateGraph 双向反馈', en: 'Self-improvement gates · StateGraph bidirectional feedback' },
+  'health.h4': { zh: '全站健康 · 高并发扇出压测', en: 'Site health · high-concurrency fan-out stress' },
   'ai.draft.h4': { zh: '第十七篇游记 · 草稿（人工闸，不落库）', en: 'Travelogue No.17 · draft (human gate; not committed)' },
   'ai.offline': { zh: '离线 dry-run 产物——跑 npm run ai:director:live 生成真机版本。', en: 'Offline dry-run artifact — run npm run ai:director:live to produce the real one.' },
   'ai.l.h3': { zh: '自带 Key · 现场诊断', en: 'Bring your own key · live' },
@@ -803,8 +804,45 @@ async function renderAiCommitted() {
   off.hidden = !(d.mode === 'offline' || !audit)
 }
 
-function showAiError(msg) { const errEl = aiEl('ai-error'); if (errEl) { errEl.textContent = msg; errEl.hidden = false } }
-function hydrateAiLive() {
+/* KI-731 · 全站健康监控：读 stress-fanout-latest.json（静态基线，admin 只读不真打压测，避免冲击 CDN） */
+async function renderSiteHealth() {
+  const el = aiEl('site-health')
+  if (!el) return
+  let r = null
+  try {
+    const res = await fetch('./stress-fanout-latest.json', { cache: 'no-store' })
+    if (res.ok) r = await res.json()
+  } catch { r = null }
+  clearEl(el)
+  if (!r || typeof r.failures !== 'number') {
+    el.appendChild(makeEl('p', null, T('（尚无压测基线——跑 node scripts/stress-fanout.mjs --json-out=admin/stress-fanout-latest.json）', '(no stress baseline — run node scripts/stress-fanout.mjs --json-out=admin/stress-fanout-latest.json)')))
+    return
+  }
+  const isEn = LANG === 'en'
+  const ok = r.failures === 0
+  const head = makeEl('div', `site-health-head ${ok ? 'sh-ok' : 'sh-bad'}`)
+  head.append(
+    makeEl('b', null, ok ? (isEn ? '● all endpoints healthy' : '● 全端点健康') : (isEn ? '● failures detected' : '● 检测到失败')),
+    makeEl('span', null, `${r.requests} ${isEn ? 'requests' : '请求'} × ${r.distinct} ${isEn ? 'endpoints' : '端点'}`),
+  )
+  const stats = makeEl('div', 'site-health-stats')
+  const rows = [
+    [isEn ? 'failure rate' : '失败率', `${(r.failureRate * 100).toFixed(2)}%`],
+    ['p50', `${r.p50}ms`],
+    ['p95', `${r.p95}ms`],
+    ['p99', `${r.p99}ms`],
+    [isEn ? 'throughput' : '吞吐', `${((r.totalBytes / 1024 / 1024)).toFixed(1)} MB`],
+    [isEn ? 'measured at' : '测量于', String(r.generatedAt || '').slice(0, 19).replace('T', ' ')],
+  ]
+  for (const [k, v] of rows) {
+    const cell = makeEl('div', 'site-health-cell')
+    cell.append(makeEl('small', null, k), makeEl('code', null, v))
+    stats.appendChild(cell)
+  }
+  el.append(head, stats)
+}
+
+function showAiError(msg) { const errEl = aiEl('ai-error'); if (errEl) { errEl.textContent = msg; errEl.hidden = false } }function hydrateAiLive() {
   let saved = null
   try { saved = JSON.parse(sessionStorage.getItem(AI_LIVE_KEY) || 'null') } catch { saved = null }
   const baseEl = aiEl('ai-base'), modelEl = aiEl('ai-model'), keyEl = aiEl('ai-key')
@@ -1171,7 +1209,7 @@ function renderMethod() {
 function renderAll() {
   renderKpis(); renderTrend(); renderFunnel(); renderChannels(); renderDevices()
   renderHours(); renderCohorts(); renderAnomalies(); renderExits(); renderRecs()
-  renderLive(); renderLiveReportState(); renderMethod(); renderAiCommitted(); hydrateAiLive(); renderStateGraph(); renderBuild(); renderPriors(); renderLedger(); renderForecast(); renderCacheMetrics();
+  renderLive(); renderLiveReportState(); renderMethod(); renderAiCommitted(); hydrateAiLive(); renderStateGraph(); renderBuild(); renderPriors(); renderLedger(); renderForecast(); renderCacheMetrics(); renderSiteHealth();
 }
 function tickClock() {
   const t = new Date()

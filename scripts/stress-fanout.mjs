@@ -18,7 +18,7 @@
  * 退出码：0 = 全部 200 且非空；1 = 有失败；2 = 参数/网络/解析错误。
  */
 import process from 'node:process'
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
@@ -46,14 +46,15 @@ export function storyUrls() {
 }
 
 function parseArgs(argv) {
-  const args = { multiplier: 1, proxy: null, origin: ORIGIN }
+  const args = { multiplier: 1, proxy: null, origin: ORIGIN, jsonOut: null }
   for (const a of argv) {
-    const m = a.match(/^--([a-z]+)=(.+)$/)
+    const m = a.match(/^--([a-z-]+)=(.+)$/)
     if (!m) continue
     const [, k, v] = m
     if (k === 'multiplier') args.multiplier = Math.max(1, Math.min(64, Number(v) || 1))
     else if (k === 'proxy') args.proxy = v
     else if (k === 'origin') args.origin = v
+    else if (k === 'json-out') args.jsonOut = v
   }
   return args
 }
@@ -89,8 +90,11 @@ async function main() {
   const totalBytes = samples.reduce((a, s) => a + s.bytes, 0)
   const fails = samples.filter((s) => !s.ok)
   const report = {
+    generatedAt: new Date().toISOString(),
+    origin: args.origin,
     distinct: urls.length,
     requests: samples.length,
+    multiplier: args.multiplier,
     wallMs,
     failures: fails.length,
     failureRate: samples.length ? fails.length / samples.length : 1,
@@ -104,6 +108,12 @@ async function main() {
     failSample: fails.slice(0, 5).map((s) => `${s.url} status=${s.status} ${s.error || ''}`),
   }
   console.log('[stress-fanout] ' + JSON.stringify(report, null, 2))
+  if (args.jsonOut) {
+    const out = resolve(ROOT, args.jsonOut)
+    mkdirSync(dirname(out), { recursive: true })
+    writeFileSync(out, JSON.stringify(report, null, 2) + '\n', 'utf8')
+    console.log(`[stress-fanout] report written: ${args.jsonOut}`)
+  }
   process.exitCode = report.failures === 0 ? 0 : 1
 }
 

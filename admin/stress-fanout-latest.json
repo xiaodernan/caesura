@@ -1,0 +1,18 @@
+{
+  "generatedAt": "2026-11-21T12:36:47.165Z",
+  "origin": "https://xiaodernan.github.io",
+  "distinct": 94,
+  "requests": 470,
+  "multiplier": 5,
+  "wallMs": 1561,
+  "failures": 0,
+  "failureRate": 0,
+  "mean": 1357.3,
+  "min": 1058,
+  "p50": 1352,
+  "p95": 1445,
+  "p99": 1473,
+  "max": 1530,
+  "totalBytes": 16924480,
+  "failSample": []
+}

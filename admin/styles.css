@@ -323,6 +323,16 @@ header, main, footer { position: relative; z-index: 1; }
 .ai-si-ok span:last-child { color: #8fd8c4; }
 .ai-si-warn { border-left-color: #d8a35c; }
 .ai-si-warn span:last-child { color: #d8a35c; }
+.site-health { margin: 4px 0 10px; }
+.site-health-head { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; font: 11px/1.5 var(--mono); padding: 8px 10px; background: var(--ash-1); border-left: 2px solid var(--jade); border-radius: 0 8px 8px 0; }
+.site-health-head.sh-ok b { color: #8fd8c4; }
+.site-health-head.sh-bad { border-left-color: #ff8a8a; }
+.site-health-head.sh-bad b { color: #ff8a8a; }
+.site-health-head span { color: var(--muted); }
+.site-health-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 6px; }
+.site-health-cell { display: flex; flex-direction: column; gap: 2px; padding: 7px 9px; background: var(--ash-1); border-radius: 6px; }
+.site-health-cell small { font: 9px var(--mono); color: var(--muted); letter-spacing: .08em; }
+.site-health-cell code { font: 12px var(--mono); color: var(--gold); }
 .ai-draft { background: var(--ash-1); border: 1px dashed var(--line); border-radius: 10px; padding: 10px 12px; }
 .ai-draft h5 { margin: 0 0 6px; font-family: var(--serif); font-size: 13px; color: #ece7d2; }
 .ai-draft p { margin: 4px 0; font-size: 12px; color: #cfd3dd; }
