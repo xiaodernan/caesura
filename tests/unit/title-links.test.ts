@@ -100,12 +100,33 @@ describe('KI-656 · 世界入口直达游记与谱册（KI-645 行动 #2）', ()
     expect(html).toContain('aria-label=')
   })
 
+  it('KI-733 · 首屏三条直达链接含 guide（LLM 优化建议 #1 减流失单变量）', async () => {
+    const { TitleScreen } = await import('@/ui/TitleScreen')
+    const t = new TitleScreen(hooks([]))
+    const html = (t as unknown as { root: FakeEl }).root.innerHTML
+    expect(html).toContain('href="/caesura/tutorial/"')
+    expect(html).toContain('data-act="goto-guide"')
+    expect(html).toContain('qs-guide')
+    expect(html).toContain('30秒上手')
+  })
+
+  it('Lang.ts zh/en 两表都有 guide 键（中文纯中文、英文纯英文）', () => {
+    const src = readFileSync(resolve(ROOT, 'src/i18n/Lang.ts'), 'utf8')
+    expect(src.split("'ui.title.link.guide':").length - 1).toBeGreaterThanOrEqual(2)
+    expect(src).toContain("'ui.title.link.guide': '30秒上手 · 先看教程'")
+    expect(src).toContain("'ui.title.link.guide': '30s guide · read first'")
+  })
+
   it('Lang.ts zh/en 两表都有四个键', () => {
     const src = readFileSync(resolve(ROOT, 'src/i18n/Lang.ts'), 'utf8')
-    for (const k of ['ui.title.links.aria', 'ui.title.link.atlas', 'ui.title.link.codex', 'ui.notify.atlasCodex']) {
+    for (const k of ['ui.title.links.aria', 'ui.title.link.atlas', 'ui.title.link.codex', 'ui.title.link.guide', 'ui.notify.atlasCodex']) {
       expect(src.split(`'${k}':`).length - 1, `missing in one table: ${k}`).toBeGreaterThanOrEqual(2)
     }
-    expect(src).toContain('游记 · 余响集（八十一篇全集）')
+    expect(src).toContain('游记 · 余响集（八十五篇全集）')
+    expect(src).toContain('游记 · 余响集（八十五篇全集）世界谱')
+    expect(src).toContain('Atlas · The Aftermath (all 85) · World Codex')
+    expect(src).not.toContain('八十一篇全集')
+    expect(src).not.toContain('all 81')
     expect(src).toContain('The Aftermath')
   })
 
@@ -137,6 +158,18 @@ describe('KI-656 · 世界入口直达游记与谱册（KI-645 行动 #2）', ()
     await tick()
     clickAct((t as unknown as { root: FakeEl }).root, 'goto-codex')
     expect(calls).toContain('title-link-codex')
+    expect(news).toEqual([])
+  })
+
+  it('KI-733 · 点击 guide 链接：记账 title-link-guide（且不误触开局）', async () => {
+    const { TitleScreen } = await import('@/ui/TitleScreen')
+    const news: string[] = []
+    const calls: string[] = []
+    ;(g.window as Record<string, unknown>).__caesuraTrack = (t: string) => { calls.push(t) }
+    const t = new TitleScreen(hooks(news))
+    await tick()
+    clickAct((t as unknown as { root: FakeEl }).root, 'goto-guide')
+    expect(calls).toContain('title-link-guide')
     expect(news).toEqual([])
   })
 

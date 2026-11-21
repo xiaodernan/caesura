@@ -174,7 +174,15 @@
       "effort": "M",
       "metric": "「抵达首页→按下开始」转化率：58.5%→至少63%（建议验收）",
       "riskZh": "按钮改版可能造成误触；同时监测开始后的进入率。",
-      "riskEn": "A button change may increase accidental taps; also monitor start-to-world entry."
+      "riskEn": "A button change may increase accidental taps; also monitor start-to-world entry.",
+      "landed": {
+        "at": "2026-11-21",
+        "ki": "KI-733",
+        "change": "首屏新增 30 秒上手直链教程角标（goto-guide）；同时修正旧文案「八十一篇」→「八十五篇」",
+        "evidence": "src/ui/TitleScreen.ts (.qs-links/.qs-guide) · src/i18n/Lang.ts (ui.title.link.guide) · tests/unit/title-links.test.ts",
+        "targetMetric": "「抵达首页→按下开始」转化率：58.5%→至少63%（建议验收）",
+        "status": "shipped-single-variable"
+      }
     },
     {
       "seq": 2,

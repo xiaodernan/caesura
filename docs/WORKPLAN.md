@@ -676,3 +676,4 @@ Phase B4 的三件套此前是"有人听、没人说"。
 | KI-730 | **全站扇出压力测试**：stress-fanout.mjs（ORDER 现读 94 端点 × multiplier 并发）· 实测 5×470/10×940 请求零失败 · p99 2.3s/4.1s · 报告 STRESS-FANOUT-2026-11-21 · stress-fanout.test.ts 5 腿 | KI-730 |
 | KI-731 | **admin 全站健康监控**：stress-fanout --json-out 基线 JSON + index.html site-health 区块 + app.js renderSiteHealth（只读、六项指标）+ styles.css 三列网格 · admin-site-health.test.ts 6 腿 | KI-731 |
 | KI-732 | **admin 深度优化顾问**：三路工程健康真实数据（压测/自我改进/缓存）纳入 LLM payload + engineeringHealth 产物快照 + forecast 面板证据标注 · 真跑 gpt-6.2-sol action#4 引用压测 · ai-optimization-advisor.test.ts 6 腿 | KI-732 |
+| KI-733 | **LLM 优化建议 #1 落地闭环**：首屏加 guide 直达角标（goto-guide→/tutorial/，记账且不误触开局）+ 修陈旧「八十一篇」→「八十五篇」+ forecast action#1 landed 标记 + admin「已落地」徽章 · title-links/title-screen/quickstart 61 腿 | KI-733 |

@@ -57,6 +57,17 @@ describe('KI-732 · admin 深度优化顾问', () => {
     expect(css).toContain('.forecast-health-note')
   })
 
+  it('建议→落地闭环：action#1 标记 landed，admin 显示已落地徽章', () => {
+    const a1 = art.actions.find((a: any) => a.seq === 1)
+    expect(a1.landed).toBeTruthy()
+    expect(a1.landed.ki).toBe('KI-733')
+    expect(a1.landed.status).toBe('shipped-single-variable')
+    expect(a1.landed.evidence).toContain('TitleScreen.ts')
+    const js = read('admin/app.js')
+    expect(js).toContain('forecast-landed')
+    expect(js).toContain('a.landed')
+  })
+
   it('双拷贝产物字节一致', () => {
     expect(read('admin/admin-trend-forecast.json')).toBe(read('src/data/authoring/admin-trend-forecast.json'))
   })

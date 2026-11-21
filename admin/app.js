@@ -1194,6 +1194,9 @@ async function renderForecast() {
       makeEl('span', `forecast-badge forecast-effort-${(a.effort || 'M').toLowerCase()}`, (a.effort || 'M') + ' · ' + effortLabel(a.effort || 'M')),
       makeEl('span', 'forecast-metric', String(a.metric ?? '')),
     )
+    if (a.landed) {
+      meta.appendChild(makeEl('span', 'forecast-badge forecast-landed', isEn ? `✓ shipped ${a.landed.ki}` : `✓ 已落地 ${a.landed.ki}`))
+    }
     const risk = makeEl('p', 'forecast-risk', T('风险：', 'Risk: ') + (isEn ? a.riskEn : a.riskZh))
     content.append(title, why, meta, risk)
     row.append(icon, content)

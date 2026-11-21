@@ -113,6 +113,9 @@ const CSS = `
 #title .qs-link{font-family:Georgia,"Songti SC","STSong",serif;font-size:1.28vh;letter-spacing:.16em;text-decoration:none;color:rgba(255,217,138,.75);border:1px solid rgba(201,180,88,.3);border-radius:999px;padding:.62vh 1.5vh;background:rgba(9,10,15,.38);transition:color .25s,border-color .25s,box-shadow .25s}
 #title .qs-link:hover{color:#ffd98a;border-color:rgba(255,217,138,.65);box-shadow:0 0 1.6vh rgba(255,184,107,.2)}
 #title .qs-link:focus-visible{outline:2px solid #ffd98a;outline-offset:3px}
+/* KI-733 · LLM 优化建议 #1 首屏减流失单变量：guide 入口更醒目（金边微光，尺寸/排版与其余链接一致，不挤压不重叠） */
+#title .qs-guide{color:#ffd98a;border-color:rgba(255,217,138,.6);background:rgba(255,184,107,.1)}
+#title .qs-guide:hover{box-shadow:0 0 2vh rgba(255,184,107,.35)}
 #title .slot.sel .scard{border-color:#c9b458;box-shadow:0 0 2.4vh rgba(201,180,88,.35)}
 #title .slot .scard{cursor:default}
 #title .scards{font-size:1.7vh}
@@ -394,10 +397,10 @@ export class TitleScreen {
       if (target) this.chooseNew(target)
       return
     }
-    if (act === 'goto-anthology' || act === 'goto-codex') {
-      // KI-656：世界入口「直达」——先记账再跳走；无 location 的宿主（测试替身）只记账不跳
-      this.trackQuickstart(act === 'goto-anthology' ? 'title-link-anthology' : 'title-link-codex')
-      this.navigate(act === 'goto-anthology' ? '/caesura/story/anthology/' : '/caesura/codex/')
+    if (act === 'goto-anthology' || act === 'goto-codex' || act === 'goto-guide') {
+      // KI-656/733：世界入口「直达」——先记账再跳走；guide 是 LLM 优化建议 #1 的首屏减流失单变量
+      this.trackQuickstart(act === 'goto-anthology' ? 'title-link-anthology' : act === 'goto-guide' ? 'title-link-guide' : 'title-link-codex')
+      this.navigate(act === 'goto-anthology' ? '/caesura/story/anthology/' : act === 'goto-guide' ? '/caesura/tutorial/' : '/caesura/codex/')
       return
     }
     if (act === 'card') this.chooseNew(el.dataset.arg!)
@@ -445,6 +448,7 @@ export class TitleScreen {
       <div class="hint">${hint}</div>
       <div class="hint subtle">${t('ui.title.hint.manual')}</div>
       <nav class="qs-links" aria-label="${t('ui.title.links.aria')}">
+        <a class="qs-link qs-guide" href="/caesura/tutorial/" data-act="goto-guide" aria-label="${t('ui.title.link.guide')}" data-tip="${t('ui.title.link.guide')}">${t('ui.title.link.guide')}</a>
         <a class="qs-link" href="/caesura/story/anthology/" data-act="goto-anthology" aria-label="${t('ui.title.link.atlas')}">${t('ui.title.link.atlas')}</a>
         <a class="qs-link" href="/caesura/codex/" data-act="goto-codex" aria-label="${t('ui.title.link.codex')}">${t('ui.title.link.codex')}</a>
       </nav>
