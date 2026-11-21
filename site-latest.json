@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "5b77dfeefe3cd7b9909f895aa34c187a123f9e7a",
+  "head": "735d405875e463a82092c40310bc14fc1df3039f",
   "branch": "master",
-  "subject": "feat: KI-724 第八十四篇《门口的水》· gpt-6.2-sol live 真跑 + 世界线 conflict 闸门",
-  "date": "2026-11-21T14:29:39+08:00",
+  "subject": "chore(status): re-embed site-latest.json",
+  "date": "2026-11-21T06:31:47Z",
   "kv": {
     "KI.rows": 642,
     "KI.Implemented": 465,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/5b77dfeefe3cd7b9909f895aa34c187a123f9e7a",
+    "url": "https://github.com/xiaodernan/caesura/commit/735d405875e463a82092c40310bc14fc1df3039f",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
