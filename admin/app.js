@@ -82,6 +82,7 @@ const STRINGS = {
   'ai.risks.h4': { zh: '风险 · LLM 点名', en: 'Risks · named by the LLM' },
   'ai.gaps.h4': { zh: '缺口', en: 'Gaps' },
   'ai.transitions.h4': { zh: '世界状态流转提案 · from → to（人工闸后落库）', en: 'World state transitions · from → to (human gate first)' },
+  'ai.selfimprove.h4': { zh: '自我改进闸门 · StateGraph 双向反馈', en: 'Self-improvement gates · StateGraph bidirectional feedback' },
   'ai.draft.h4': { zh: '第十七篇游记 · 草稿（人工闸，不落库）', en: 'Travelogue No.17 · draft (human gate; not committed)' },
   'ai.offline': { zh: '离线 dry-run 产物——跑 npm run ai:director:live 生成真机版本。', en: 'Offline dry-run artifact — run npm run ai:director:live to produce the real one.' },
   'ai.l.h3': { zh: '自带 Key · 现场诊断', en: 'Bring your own key · live' },
@@ -583,6 +584,20 @@ async function exportAiMemo() {
   } else {
     lines.push('（无草稿）')
   }
+  /* KI-725 / KI-726 · 自我改进闸门（StateGraph 双向反馈）*/
+  lines.push('', '## 自我改进闸门（StateGraph 双向反馈）')
+  if (d.proposalGuard) {
+    lines.push(`① 提案避让：${d.proposalGuard.existingCount ?? 0} 面 canon flag 名册喂进上下文`)
+    lines.push(`   历史冲突已识别 ${(d.proposalGuard.conflictFlags ?? []).length} 面；本轮撞冲突 ${(d.proposalGuard.warnings ?? []).length} 面`)
+  } else {
+    lines.push('① 提案避让：（本产物未含该字段）')
+  }
+  if (d.editorialFeedbackIn) {
+    lines.push(`② 终审回灌：读到上轮 verdict=${d.editorialFeedbackIn.verdict ?? '—'} · issues ${(d.editorialFeedbackIn.issues ?? []).length} 条已注入起草`)
+    lines.push(`   本轮终审 verdict=${d.editorialGate?.verdict ?? '—'} · issues ${(d.editorialGate?.issues ?? []).length} 条`)
+  } else {
+    lines.push('② 终审回灌：（本产物未含该字段）')
+  }
   lines.push('', '---', '> 机器生成稿件 · 人工闸后方可落库 · 零玩家运行时')
   download('caesura_ai-director-memo.md', lines.join('\n'), 'text/markdown;charset=utf-8')
   note(T('已下载 caesura_ai-director-memo.md', 'caesura_ai-director-memo.md downloaded'))
@@ -726,6 +741,53 @@ async function renderAiCommitted() {
       makeEl('p', null, (isEn ? tr.narrativeEn : tr.narrativeZh) || ''),
     )
     transitions.appendChild(li)
+  }
+  /* KI-725 / KI-726 · 自我改进闸门可视化：提案避让 + 终审反馈回灌两个闭环 */
+  const si = aiEl('ai-selfimprove')
+  if (si) {
+    clearEl(si)
+    const pg = d.proposalGuard
+    const ef = d.editorialFeedbackIn
+    const eg = d.editorialGate
+    const rows = []
+    // 闭环一：提案避让（KI-725）
+    if (pg) {
+      const conflicts = (pg.conflictFlags || []).length
+      const warnings = (pg.warnings || []).length
+      rows.push([
+        T('① 提案避让', '① Proposal guard'),
+        `${pg.existingCount ?? 0} ${T('面名册喂进上下文', 'canon flags in context')}`,
+        `${conflicts} ${T('历史冲突已识别', 'historical conflicts known')}`,
+        warnings === 0 ? T('本轮冲突 0 ✓', 'round conflicts 0 ✓') : `${warnings} ${T('本轮撞冲突（待人工闸）', 'round warnings (human gate)')}`,
+        warnings === 0 ? 'ok' : 'warn',
+      ])
+    }
+    // 闭环二：终审反馈回灌（KI-726）
+    if (ef) {
+      const n = (ef.issues || []).length
+      const nowIssues = Array.isArray(eg && eg.issues) ? eg.issues.length : null
+      rows.push([
+        T('② 终审回灌', '② Editorial feedback'),
+        `${T('读到上轮', 'last verdict')} ${ef.verdict || '—'}`,
+        `${n} ${T('条上轮问题已注入', 'prior issues injected')}`,
+        nowIssues === 0 ? T('本轮终审 pass ✓', 'this round pass ✓') : (nowIssues != null ? `${nowIssues} ${T('条本轮问题', 'this round issues')}` : '—'),
+        nowIssues === 0 ? 'ok' : 'warn',
+      ])
+    }
+    if (rows.length) {
+      for (const [name, a, b, c, tone] of rows) {
+        const row = makeEl('div', `ai-si-row ai-si-${tone}`)
+        row.append(
+          makeEl('b', null, name),
+          makeEl('span', null, a),
+          makeEl('span', null, b),
+          makeEl('span', null, c),
+        )
+        si.appendChild(row)
+      }
+    } else {
+      si.appendChild(makeEl('p', null, T('（本轮产物未含反馈闸门字段——运行新版 ai:director:live 后显示）', '(this artifact has no feedback-guard fields — run the new ai:director:live to show)')))
+    }
   }
   const dr = d.atlasDraft
   if (dr) {

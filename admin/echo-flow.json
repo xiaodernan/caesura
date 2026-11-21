@@ -2,7 +2,7 @@
   "$comment": "KI-717 AI 导演 ·「世界线」运行时表 · 由 scripts/echo-flow.mjs 生成 · 人工闸放行 · 玩家进程零 LLM",
   "schema": 1,
   "generatedAt": "2026-11-21T05:47:19.555Z",
-  "sourceDigest": "9f279a86f6e19691",
+  "sourceDigest": "9b04debbcab6d8fc",
   "qaDigest": "d8ac43577cd1d760",
   "entries": [
     {
@@ -36,7 +36,7 @@
         "generatedAt": "2026-11-21T05:47:19.555Z",
         "model": "gpt-6.2-sol",
         "focus": "止音纪元 世界现状 八十三篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响",
-        "digest": "9f279a86f6e19691",
+        "digest": "9b04debbcab6d8fc",
         "qaDigest": "d8ac43577cd1d760"
       }
     },
@@ -71,7 +71,7 @@
         "generatedAt": "2026-11-21T05:47:19.555Z",
         "model": "gpt-6.2-sol",
         "focus": "止音纪元 世界现状 八十三篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响",
-        "digest": "9f279a86f6e19691",
+        "digest": "9b04debbcab6d8fc",
         "qaDigest": "d8ac43577cd1d760"
       }
     },
@@ -106,7 +106,7 @@
         "generatedAt": "2026-11-21T05:47:19.555Z",
         "model": "gpt-6.2-sol",
         "focus": "止音纪元 世界现状 八十三篇游记 收尾 下一阶段 状态流转 flag 任务 钟 无耳 低音之城 余响",
-        "digest": "9f279a86f6e19691",
+        "digest": "9b04debbcab6d8fc",
         "qaDigest": "d8ac43577cd1d760"
       }
     }

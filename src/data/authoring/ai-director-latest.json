@@ -413,5 +413,23 @@
     }
   ],
   "errors": [],
-  "humanGate": "人工审核通过前，本文件里的任何条目一律不进 dialogue.json / atlas-texts.ts / quests.json / npcs.json"
+  "humanGate": "人工审核通过前，本文件里的任何条目一律不进 dialogue.json / atlas-texts.ts / quests.json / npcs.json",
+  "proposalGuard": {
+    "existingCount": 69,
+    "conflictFlags": [
+      "flag.earless_deeps_five_ring_clues_archived"
+    ],
+    "warnings": [
+      "flag.earless_deeps_five_ring_clues_archived"
+    ]
+  },
+  "editorialFeedbackIn": {
+    "verdict": "revise",
+    "issues": [
+      "与空碗永不添满冲突"
+    ],
+    "draftTitle": "门边的水",
+    "generatedAt": "2026-11-21T05:47:19.555Z",
+    "backfilled": true
+  }
 }
