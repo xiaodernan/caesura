@@ -673,3 +673,4 @@ Phase B4 的三件套此前是"有人听、没人说"。
 | KI-727 | **admin 自我改进闸门可视化**：index.html ai-selfimprove 区块 + i18n 双语 · app.js renderAiCommitted 渲染 proposalGuard/editorialFeedbackIn 两行闭环 + exportAiMemo 导出 · styles.css 四列网格 · 产物回填真实数据 · echo-flow 重编译 · admin-selfimprove-panel.test.ts 5 腿 | KI-727 |
 | KI-728 | **AI 导演持续产出流水线**：nextChapterNo 现读 atlas max+1 动态篇号（去 hardcode）+ 双闭环自动运转 · 真跑产出 no:85 且 conflict=0/上轮 issues 已规避 · CONTINUOUS-PIPELINE proof · ai-continuous-pipeline.test.ts 5 腿 | KI-728 |
 | KI-729 | **《余响集》第八十五篇《门内一夜 / A Night Within》（2026-11-21 · KI-728 动态篇号首次端到端落地 · gpt-6.2-sol live → pass → 人工闸）**：atlas no:85 · story/a-night-within/ · 全站级联 +1 · read-progress 85 · smoke-live 97（story-86）· LLM QA 4 条全 new-canon 审过 · echo-flow 4 条 chapter:85 · zh-tw 656 单字 · 9 腿 | KI-729 |
+| KI-730 | **全站扇出压力测试**：stress-fanout.mjs（ORDER 现读 94 端点 × multiplier 并发）· 实测 5×470/10×940 请求零失败 · p99 2.3s/4.1s · 报告 STRESS-FANOUT-2026-11-21 · stress-fanout.test.ts 5 腿 | KI-730 |
