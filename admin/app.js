@@ -1163,6 +1163,22 @@ async function renderForecast() {
     vEl.replaceChildren(makeEl('p', 'priors-err', T('读取 admin-trend-forecast.json 失败：', 'Failed to load admin-trend-forecast.json: ') + String(e?.message ?? e)))
     return
   }
+  /* KI-732 · 工程健康数据源标注（让 LLM 建议的依据透明可见） */
+  const healthEl = document.getElementById('forecast-health')
+  if (healthEl && d.engineeringHealth) {
+    const eh = d.engineeringHealth
+    const parts = []
+    if (eh.stressFanout) parts.push(isEn
+      ? `stress ${eh.stressFanout.endpoints} endpoints / ${eh.stressFanout.requests} req / failures ${eh.stressFanout.failures} / p99 ${eh.stressFanout.p99}ms`
+      : `压测 ${eh.stressFanout.endpoints} 端点 / ${eh.stressFanout.requests} 请求 / 失败 ${eh.stressFanout.failures} / p99 ${eh.stressFanout.p99}ms`)
+    if (eh.selfImprove) parts.push(isEn
+      ? `self-improve roster ${eh.selfImprove.roster} / conflicts ${eh.selfImprove.roundConflicts} / gate ${eh.selfImprove.gateVerdict}`
+      : `自我改进 名册 ${eh.selfImprove.roster} / 冲突 ${eh.selfImprove.roundConflicts} / 终审 ${eh.selfImprove.gateVerdict}`)
+    if (eh.llmCache) parts.push(isEn
+      ? `cache steady ${eh.llmCache.steadyHit}%`
+      : `缓存 稳态 ${eh.llmCache.steadyHit}%`)
+    healthEl.textContent = (isEn ? 'Based on live data: ' : '基于现场真实数据：') + parts.join(' · ')
+  }
   /* 渲染 4 条 action */
   const effortLabel = (e) => (isEn ? (e === 'S' ? 'small' : e === 'M' ? 'medium' : 'large') : (e === 'S' ? '小' : e === 'M' ? '中' : '大'))
   const impactLabel = (i) => (isEn ? i.toUpperCase() : (i === 'high' ? '高影响' : i === 'medium' ? '中影响' : '低影响'))

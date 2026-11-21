@@ -72,6 +72,26 @@ const payload = [
   `pageViews forecast slope=${fmt(fV.slope)} · r²=${fmt(fV.r2)}`,
   `bounce forecast slope=${fmt(fB.slope)} · last-7d trend ${fB.points.map((x) => x.toFixed(1) + '%').join(', ')}`,
   '',
+  '【工程健康 · 现场真实数据（非估算）】',
+  (() => {
+    const lines = []
+    try {
+      const h = JSON.parse(readFileSync(resolve(ROOT, 'admin/stress-fanout-latest.json'), 'utf8'))
+      lines.push(`stress_fanout: ${h.requests} requests / ${h.distinct} endpoints / failures=${h.failures} / p95=${h.p95}ms / p99=${h.p99}ms / ${(h.totalBytes / 1048576).toFixed(1)}MB`)
+    } catch { lines.push('stress_fanout: (no baseline)') }
+    try {
+      const a = JSON.parse(readFileSync(resolve(ROOT, 'admin/ai-director-latest.json'), 'utf8'))
+      const pg = a.proposalGuard, ef = a.editorialFeedbackIn
+      lines.push(`self_improve: canon flag roster ${pg?.existingCount ?? 0} · historical conflicts ${pg?.conflictFlags?.length ?? 0} · round conflicts ${pg?.warnings?.length ?? 0} · editorial feedback verdict ${ef?.verdict ?? 'n/a'} · this-round gate ${a.editorialGate?.verdict ?? 'n/a'}`)
+    } catch { lines.push('self_improve: (no data)') }
+    try {
+      const c = JSON.parse(readFileSync(resolve(ROOT, 'admin/ai-cache-metrics.json'), 'utf8'))
+      const last = (c.entries ?? []).slice(-1)[0] ?? {}
+      lines.push(`llm_cache: steady_hit=${last.steadyStateHitRate ?? '?'}% · mean_hit=${last.meanHitRate ?? '?'}% · last_model=${last.model ?? '?'}`)
+    } catch { lines.push('llm_cache: (no data)') }
+    return lines.join('\n')
+  })(),
+  '',
   '必须输出合法 JSON，字段严格如下（不许多键，不许少键）：',
   '{"summary":{"zh":"≤60 字，客观描述趋势","en":"≤30 words"},',
   ' "riskiestCohort":{"zh":"≤40 字，点名最危险的一批人，必须落到一个具体的 funnel 步/指标","en":"≤25 words","cohort":"landing-bounce | mobile-late | ending-gap | rage-floor | d1-churn"},',
@@ -81,6 +101,7 @@ const payload = [
   '约束：',
   '- actions 必须有且仅有 4 条，seq 从 1 到 4，按优先级排序；',
   '- 每条 action 必须能直接挂进《止音纪元》的 backlog，不能是空话（不许写 "优化体验" "加强引导" 这类无法验收的命名）；',
+  '- 每条 action 可以针对「运营增长」或「工程健康」（压测/自我改进/缓存），但必须引用上面的具体数字（含工程健康字段）；',
   '- 任何 verdict 不得以"因为 LLM 是这样说的"为由——必须引用上面的数字；',
   '- 中文 zh 全部用中文，不允许夹带英文字母（metric 那格可以有指标名缩写如 "landing→press" 这种）；',
   '- EN 字段全部用英文，不允许夹中文；',
@@ -150,6 +171,14 @@ async function main() {
       pages: d.pages.length,
       refs: d.meta.refs,
     },
+    /** KI-732 · 喂给 LLM 的工程健康真实数据快照（可审计，非模型估算） */
+    engineeringHealth: (() => {
+      const o = {}
+      try { const h = JSON.parse(readFileSync(resolve(ROOT, 'admin/stress-fanout-latest.json'), 'utf8')); o.stressFanout = { requests: h.requests, endpoints: h.distinct, failures: h.failures, p95: h.p95, p99: h.p99, mb: Number(((h.totalBytes / 1048576).toFixed(1))) } } catch { /* none */ }
+      try { const a = JSON.parse(readFileSync(resolve(ROOT, 'admin/ai-director-latest.json'), 'utf8')); o.selfImprove = { roster: a.proposalGuard?.existingCount ?? 0, roundConflicts: a.proposalGuard?.warnings?.length ?? 0, editorialVerdict: a.editorialFeedbackIn?.verdict ?? null, gateVerdict: a.editorialGate?.verdict ?? null } } catch { /* none */ }
+      try { const c = JSON.parse(readFileSync(resolve(ROOT, 'admin/ai-cache-metrics.json'), 'utf8')); const last = (c.entries ?? []).slice(-1)[0] ?? {}; o.llmCache = { steadyHit: last.steadyStateHitRate ?? null, meanHit: last.meanHitRate ?? null, model: last.model ?? null } } catch { /* none */ }
+      return o
+    })(),
     summary: parsed.summary,
     riskiestCohort: parsed.riskiestCohort,
     actions: parsed.actions,

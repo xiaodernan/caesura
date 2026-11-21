@@ -6,8 +6,8 @@
   "requiresHumanReview": true,
   "schema": 1,
   "mode": "live",
-  "generatedAt": "2026-11-17T04:33:00.646Z",
-  "model": "gpt-6.1-terra",
+  "generatedAt": "2026-11-21T13:29:59.781Z",
+  "model": "gpt-6.2-sol",
   "endpoint": "https://api.aizzz.xyz/v1",
   "telemetryHead": {
     "totalSessions": 5005,
@@ -133,68 +133,89 @@
       }
     ]
   },
+  "engineeringHealth": {
+    "stressFanout": {
+      "requests": 470,
+      "endpoints": 94,
+      "failures": 0,
+      "p95": 1445,
+      "p99": 1473,
+      "mb": 16.1
+    },
+    "selfImprove": {
+      "roster": 69,
+      "roundConflicts": 0,
+      "editorialVerdict": "revise",
+      "gateVerdict": "pass"
+    },
+    "llmCache": {
+      "steadyHit": 89.28,
+      "meanHit": 89.42,
+      "model": "gpt-6.2-sol"
+    }
+  },
   "summary": {
-    "zh": "漏斗结局率为百分之五点八；平均跳出率百分之五十五点三，但近七日趋势恒为百分之一，口径矛盾。",
-    "en": "Ending conversion is 5.8%. Mean bounce is 55.3%, but the seven-day trend is flat at 1%, an unresolved metric conflict."
+    "zh": "会话量预测缓升但拟合度中等；平均跳出率55.3%，结局转化率5.8%。",
+    "en": "Sessions are forecast to rise modestly with moderate fit; mean bounce is 55.3%, and ending conversion is 5.8%."
   },
   "riskiestCohort": {
-    "zh": "到达首页后未按下开始者：漏斗流失百分之四十一点五，且首页退出占百分之三十四。",
-    "en": "Landing visitors who do not press Start: 41.5% funnel loss; the homepage accounts for 34% of exits.",
+    "zh": "首页到开始环节流失41.5%，首屏访客最危险。",
+    "en": "Homepage visitors who do not press start are the highest-risk group.",
     "cohort": "landing-bounce"
   },
   "actions": [
     {
       "seq": 1,
-      "actionZh": "为首页首屏增加固定可见的开始按钮，并记录曝光与按下事件；以按下率达到百分之六十四为验收。",
-      "actionEn": "Add a persistently visible Start button above the fold and log impressions and presses; accept at a 64% press rate.",
-      "rationaleZh": "首页到按下开始为百分之五十八点五；首页退出占百分之三十四。",
-      "rationaleEn": "Homepage-to-Start conversion is 58.5%; the homepage accounts for 34% of exits.",
+      "actionZh": "拆查首页首屏到开始按钮的流失点并发布单变量改版。",
+      "actionEn": "Identify first-screen drop-offs and ship a single-variable homepage test.",
+      "rationaleZh": "5005人抵达首页，仅2928人开始；该步流失41.5%，平均跳出率55.3%。",
+      "rationaleEn": "Only 2,928 of 5,005 visitors pressed start; this step loses 41.5%, with 55.3% mean bounce.",
       "impact": "high",
-      "effort": "S",
-      "metric": "首页→按下开始转化率：58.5%→64%",
-      "riskZh": "按钮可能挤压首页主要内容，需检查移动端首屏。",
-      "riskEn": "The button may crowd primary content; verify the mobile first viewport."
+      "effort": "M",
+      "metric": "「抵达首页→按下开始」转化率：58.5%→至少63%（建议验收）",
+      "riskZh": "按钮改版可能造成误触；同时监测开始后的进入率。",
+      "riskEn": "A button change may increase accidental taps; also monitor start-to-world entry."
     },
     {
       "seq": 2,
-      "actionZh": "在世界入口增加直达游记与谱册的可见入口；以进入世界后打开率达到百分之五十为验收。",
-      "actionEn": "Add a visible direct entry to travel logs and scorebooks in the world; accept at a 50% open rate.",
-      "rationaleZh": "进入世界后仅百分之四十三点五打开游记或谱册，流失一千三百四十八人。",
-      "rationaleEn": "Only 43.5% open a log or scorebook after entering the world; 1,348 sessions are lost.",
+      "actionZh": "复现谱册页面的愤怒点击并修复对应无响应控件。",
+      "actionEn": "Reproduce ledger-page rage clicks and fix the unresponsive control.",
+      "rationaleZh": "谱册页记录213次愤怒点击；尚无该页访问量，不能计算点击率。",
+      "rationaleEn": "The ledger page recorded 213 rage clicks; page visits are unavailable, so its rate cannot be calculated.",
       "impact": "high",
       "effort": "M",
-      "metric": "进入世界→打开游记或谱册转化率：43.5%→50%",
-      "riskZh": "新增入口可能分散世界页面的核心操作。",
-      "riskEn": "The added entry may distract from the world page's primary action."
+      "metric": "谱册页愤怒点击数：213→不高于150（同等观测窗口，建议验收）",
+      "riskZh": "修复可能改变谱册操作路径；回归检查阅读与翻页。",
+      "riskEn": "The fix may change ledger interactions; regression-test reading and page navigation."
     },
     {
       "seq": 3,
-      "actionZh": "排查谱册页误触并修复高频触发控件；以该页每周暴躁点击数低于一百七十为验收。",
-      "actionEn": "Audit accidental taps and fix frequently triggered controls on the scorebook page; accept below 170 weekly rage clicks.",
-      "rationaleZh": "谱册页记录到二百一十三次暴躁点击；需核对统计周期与去重口径。",
-      "rationaleEn": "The scorebook page records 213 rage clicks; verify the reporting period and deduplication method.",
+      "actionZh": "检查读完正文后的结局入口与状态保存，补齐断点。",
+      "actionEn": "Audit ending access and progress persistence after article completion.",
+      "rationaleZh": "680人读完正文，仅289人抵达结局，后续转化约42.5%。",
+      "rationaleEn": "Of 680 article completers, 289 reached an ending, a downstream conversion of about 42.5%.",
       "impact": "high",
       "effort": "M",
-      "metric": "谱册页每周暴躁点击数：213→低于170",
-      "riskZh": "点击事件口径不一致会造成错误归因。",
-      "riskEn": "Inconsistent click-event definitions could lead to false attribution."
+      "metric": "「读完正文→抵达结局」转化率：42.5%→至少48%（建议验收）",
+      "riskZh": "入口提示可能剧透；测试中确认不提前暴露结局。",
+      "riskEn": "Prompts may spoil the story; verify they do not reveal endings early."
     },
     {
       "seq": 4,
-      "actionZh": "为正文加入阅读进度与下一篇入口；以读完率达到百分之七十为验收。",
-      "actionEn": "Add reading progress and a next-article entry to body pages; accept at a 70% completion rate.",
-      "rationaleZh": "打开游记或谱册后读完率为百分之六十五点五，未读完三百五十八人。",
-      "rationaleEn": "After opening a log or scorebook, completion is 65.5%; 358 sessions do not finish.",
+      "actionZh": "在压测同等负载下定位慢端点并压低公开页传输量。",
+      "actionEn": "Profile slow endpoints and reduce public-page payload under the same stress load.",
+      "rationaleZh": "压测470次请求覆盖94个端点、零失败，但尾部响应达1445毫秒，传输量16.1兆字节。",
+      "rationaleEn": "Stress testing had 470 requests across 94 endpoints and zero failures, but p95 was 1,445 ms and payload was 16.1 MB.",
       "impact": "medium",
-      "effort": "M",
-      "metric": "打开游记或谱册→读完正文转化率：65.5%→70%",
-      "riskZh": "进度提示可能促使快速滚动而非有效阅读。",
-      "riskEn": "Progress indicators may encourage scrolling without meaningful reading."
+      "effort": "L",
+      "metric": "同负载压测的百分之九十五响应时间：1445毫秒→不高于1000毫秒（建议验收）",
+      "riskZh": "缓存或压缩可能导致公开镜像内容过期；核验版本一致性。",
+      "riskEn": "Caching or compression may stale public mirrors; verify version consistency."
     }
   ],
   "sensitivity": {
-    "zh": "首页跳出最敏感：均值百分之五十五点三，但近七日百分之一，矛盾须先核实。",
-    "en": "Homepage bounce is the key sensitivity: 55.3% mean conflicts with a flat 1% seven-day trend; verify first."
+    "zh": "首页跳出率最敏感：55.3%的访客未继续，直接限制后续结局人数。",
+    "en": "Homepage bounce is most sensitive: 55.3% do not continue, limiting downstream endings."
   },
   "usage": {
     "cachedTokens": 0,
