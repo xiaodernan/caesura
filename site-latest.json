@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "5e1d232a8e732a7d793e44393ca6ab24ae76cbdb",
+  "head": "aac380540e3819d083dd375915da9e45c1fd74e3",
   "branch": "master",
-  "subject": "site-latest: 8271ac0 (post-rebase reconcile)",
-  "date": "2026-11-21T19:46:10+08:00",
+  "subject": "feat: KI-730 全站扇出压力测试 · 94 端点高并发零失败",
+  "date": "2026-11-21T20:32:00+08:00",
   "kv": {
-    "KI.rows": 647,
-    "KI.Implemented": 470,
+    "KI.rows": 648,
+    "KI.Implemented": 471,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 105,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/5e1d232a8e732a7d793e44393ca6ab24ae76cbdb",
+    "url": "https://github.com/xiaodernan/caesura/commit/aac380540e3819d083dd375915da9e45c1fd74e3",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
