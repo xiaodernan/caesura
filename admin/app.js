@@ -112,6 +112,11 @@ const STRINGS = {
   'forecast.sensitivity.h3': { zh: '最敏感的假设', en: 'Most sensitive assumption' },
   'forecast.calls': { zh: 'calls', en: 'calls' },
   'forecast.cached': { zh: 'cached_tokens', en: 'cached_tokens' },
+  'router.h2': { zh: 'LLM 条件路由 · World Router', en: 'LLM Conditional Router · World Router' },
+  'router.hint': { zh: '状态图内核第一次真用条件边：LLM 读世界状态选分支（非提案文本）· 五分支互斥 · 可证伪', en: 'First real use of conditional edges: the LLM reads world state and picks a branch (not a proposal blob) · five exclusive branches · falsifiable' },
+  'router.path.h3': { zh: '实际走过的分支', en: 'Branch actually taken' },
+  'router.verdict.h3': { zh: '三难自证', en: 'Trilemma proof' },
+  'router.llm.h3': { zh: 'LLM 决策', en: 'LLM decision' },
   'ledger.h2': { zh: '余响编年 · Weekly Ledger', en: 'Weekly Ledger · a chronicler’s entry' },
   'ledger.hint': { zh: 'LLM 真跑 · 按最近一周为「止音纪元」写一段双语年鉴编年（canon 名词 · 编年史口吻）', en: 'Live LLM: a bilingual week ledger written by the chronicler, using only canon nouns · annual cadence, no sentiment' },
   'ledger.portrait.h3': { zh: '编年正文', en: 'Chronicle body' },
@@ -1010,6 +1015,31 @@ async function renderStateGraph() {
   legend.textContent = '— LLM 边共享同一 system 前缀（prompt_cache_key 按前缀派生）· 绿 ✓ = 该检查点 ok · 虚线框 = LLM 节点'
 }
 
+/* ─────────── LLM 条件路由（KI-735 · World Router）─────────── */
+async function renderRouter() {
+  const panel = document.getElementById('panel-router')
+  if (!panel) return
+  const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = String(v ?? '—') }
+  try {
+    const r = await fetch('./ai-world-router.json', { cache: 'no-store' })
+    if (!r.ok) throw new Error('HTTP ' + r.status)
+    const d = await r.json()
+    const route = d.decision?.next ?? '—'
+    const path = (d.checkpoints || []).map((c) => c.node).join(' → ')
+    const tri = d.trilemma || {}
+    const llm = (tri.strategies || []).find((s) => s.strategy === 'LLMDecided')
+    setText('router-route', T(`路由分支：${route}`, `Routed branch: ${route}`))
+    setText('router-path', path || '—')
+    setText('router-verdict', llm ? `${llm.key} · falsifiable=${tri.falsifiable} · collapsed=${tri.riggedConvergenceCollapsed}` : '—')
+    const dec = d.decision || {}
+    setText('router-decision', `${dec.source ?? '—'} · ${dec.reason ?? ''}`.trim())
+    setText('router-meta', `${d.mode ?? '—'} · ${d.model ?? 'fixture'} · ${d.generatedAt ?? ''}`)
+  } catch (e) {
+    setText('router-route', T('读取失败（静态页以随包产物为准）', 'Unavailable (bundled artifact is authoritative)'))
+    setText('router-path', '—')
+  }
+}
+
 /* ─────────── 研发状态（KI-630 · Build Observatory）─────────── */
 async function renderBuild() {
   const svgless = document.getElementById('panel-build')
@@ -1243,7 +1273,7 @@ function renderMethod() {
 function renderAll() {
   renderKpis(); renderTrend(); renderFunnel(); renderChannels(); renderDevices()
   renderHours(); renderCohorts(); renderAnomalies(); renderExits(); renderRecs()
-  renderLive(); renderLiveReportState(); renderMethod(); renderAiCommitted(); hydrateAiLive(); renderStateGraph(); renderBuild(); renderPriors(); renderLedger(); renderForecast(); renderCacheMetrics(); renderSiteHealth();
+  renderLive(); renderLiveReportState(); renderMethod(); renderAiCommitted(); hydrateAiLive(); renderStateGraph(); renderRouter(); renderBuild(); renderPriors(); renderLedger(); renderForecast(); renderCacheMetrics(); renderSiteHealth();
 }
 function tickClock() {
   const t = new Date()

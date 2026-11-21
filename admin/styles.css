@@ -358,6 +358,16 @@ header, main, footer { position: relative; z-index: 1; }
 .sg-foot code { background: var(--ash-1); border: 1px solid var(--line-soft); border-radius: 6px; padding: 4px 8px; color: var(--jade); }
 .sg-error { color: #ff8a8a; font-size: 11px; }
 
+/* KI-735 · LLM 条件路由面板（三列不重叠 · 折行保护） */
+.panel-router .router-route { margin-top: 10px; font: 600 13px var(--sans); color: var(--gold); letter-spacing: .04em; }
+.router-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
+.router-box { min-width: 0; background: var(--ash-1); border: 1px solid var(--line-soft); border-radius: 10px; padding: 10px 12px; }
+.router-box h3 { margin: 0 0 6px; font: 600 11px var(--sans); color: var(--muted); letter-spacing: .05em; }
+.router-box code { display: block; font: 10px/1.6 var(--mono); color: var(--jade); overflow-wrap: anywhere; word-break: break-word; }
+.router-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; font: 10px var(--mono); color: var(--muted); }
+.router-foot code { background: var(--ash-1); border: 1px solid var(--line-soft); border-radius: 6px; padding: 4px 8px; color: var(--jade); }
+@media (max-width: 760px) { .router-grid { grid-template-columns: 1fr; } }
+
 /* --- AI director transitions QA verdict badges (KI-624) -------------------- */
 .ai-verdict-badge { display: inline-block; margin-left: 8px; font: 600 9px/1 var(--mono); letter-spacing: .1em; padding: 2px 7px; border-radius: 4px; vertical-align: 1px; text-transform: uppercase; }
 .ai-verdict-canon { background: rgba(79,155,134,.18); color: #6fd3b8; border: 1px solid rgba(79,155,134,.4); }

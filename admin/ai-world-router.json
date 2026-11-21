@@ -1,0 +1,133 @@
+{
+  "schema": 1,
+  "kind": "llm-driven-stategraph-router",
+  "ki": "KI-735",
+  "generatedAt": "2026-11-21T15:40:17.252Z",
+  "mode": "live",
+  "model": "gpt-6.2-sol",
+  "seed": "canon",
+  "worldState": {
+    "seed": "canon",
+    "head": "1b51eeb5c1696b5fc2630a3e80c71871798ce470",
+    "subject": "feat: KI-734 LLM 顾问 payload 补访问量 · 落地闭环重生成不丢证据",
+    "tension": 89,
+    "threads": 4,
+    "lastKind": "resolve",
+    "anchors": [
+      "[短篇][story/anthology] 约 7 分钟 · 未竟厅 · 钟摆渡人 · 余响",
+      "[短篇][story/stonethroat] 余响新陆 · 低音之城 · 石喉母亲",
+      "[短篇][story/anthology] 约 7 分钟 · 未竟厅 · 未竟账页 · 余响",
+      "[短篇][story/anthology] 约 7 分钟 · 低音之城 · 石喉母亲 · 听账 · 余响",
+      "[短篇][story/anthology] 约 5 分钟 · 低音之城 · ♭A2"
+    ],
+    "loaded": true,
+    "canonCount": 5,
+    "decision": {
+      "next": "escalate",
+      "reason": "张力高达89，且仍有4条线索并行",
+      "canon": "[短篇][story/stonethroat] 余响新陆 · 低音之城 · 石喉母亲",
+      "source": "llm",
+      "status": 200
+    },
+    "draft": {
+      "branch": "escalate",
+      "task": "张力逼近阈值：写一个冲突升格的世界事件（≤60字/≤40词），物件说话、不喧哗。",
+      "reached": true
+    }
+  },
+  "decision": {
+    "next": "escalate",
+    "reason": "张力高达89，且仍有4条线索并行",
+    "canon": "[短篇][story/stonethroat] 余响新陆 · 低音之城 · 石喉母亲",
+    "source": "llm",
+    "status": 200
+  },
+  "rawDecisionHead": "{\"text\":\"{\\\"next\\\":\\\"escalate\\\",\\\"reason\\\":\\\"张力高达89，且仍有4条线索并行\\\",\\\"canon\\\":\\\"[短篇][story/stonethroat] 余响新陆 · 低音之城 · 石喉母亲\\\"}\",\"usage\":{\"prompt_tokens\":18769,\"completion_tokens\":185,\"total_tokens\":18954,\"prompt_tokens_details\":{\"cached_tokens\":",
+  "branchReached": true,
+  "draft": {
+    "branch": "escalate",
+    "task": "张力逼近阈值：写一个冲突升格的世界事件（≤60字/≤40词），物件说话、不喧哗。",
+    "reached": true
+  },
+  "checkpoints": [
+    {
+      "node": "loadState",
+      "ms": 0,
+      "ok": true
+    },
+    {
+      "node": "retrieveCanon",
+      "ms": 0,
+      "ok": true
+    },
+    {
+      "node": "llmRoute",
+      "ms": 17426,
+      "ok": true
+    },
+    {
+      "node": "draft_escalate",
+      "ms": 0,
+      "ok": true
+    },
+    {
+      "node": "writeArtifacts",
+      "ms": 0,
+      "ok": true
+    }
+  ],
+  "usage": {
+    "calls": 1,
+    "cachedTokens": 16890,
+    "promptTokens": 18769,
+    "statuses": [
+      200
+    ]
+  },
+  "trilemma": {
+    "generatedAt": 1795275617252,
+    "states": 5,
+    "branches": [
+      "escalate",
+      "resolve",
+      "branch",
+      "foreshadow",
+      "breather"
+    ],
+    "dims": [
+      "stateResponsive",
+      "canonGrounded",
+      "auditable"
+    ],
+    "strategies": [
+      {
+        "strategy": "LLMDecided",
+        "key": "111",
+        "llmCalls": 5,
+        "stateResponsive": true,
+        "canonGrounded": true,
+        "auditable": true,
+        "distinctBranches": 4
+      },
+      {
+        "strategy": "ConstantBaseline",
+        "key": "001",
+        "llmCalls": 0,
+        "stateResponsive": false,
+        "canonGrounded": false,
+        "auditable": true,
+        "distinctBranches": 1
+      }
+    ],
+    "tamper": "none",
+    "rigged": false,
+    "riggedConvergenceCollapsed": false,
+    "falsifiable": true,
+    "noUniversalWinner": true
+  },
+  "errors": [],
+  "runtime": false,
+  "authorOnly": true,
+  "containsCredentials": false,
+  "requiresHumanReview": true
+}

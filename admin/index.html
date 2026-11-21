@@ -230,6 +230,21 @@
     <p class="sg-error" id="sg-error" hidden role="alert"></p>
   </article>
 
+  <!-- ⑪s LLM 条件路由 · World Router（KI-735）—— LLM 真当 addConditionalEdges 的 router -->
+  <article class="panel panel-wide panel-router" id="panel-router" aria-labelledby="p-router">
+    <div class="panel-head">
+      <h2 id="p-router" data-i18n="router.h2">LLM 条件路由 · World Router</h2>
+      <span class="hint" data-i18n="router.hint">状态图内核第一次真用条件边：LLM 读世界状态选分支（非提案文本）· 五分支互斥 · 可证伪</span>
+    </div>
+    <div class="router-route" id="router-route">—</div>
+    <div class="router-grid">
+      <div class="router-box"><h3 data-i18n="router.path.h3">实际走过的分支</h3><code id="router-path">—</code></div>
+      <div class="router-box"><h3 data-i18n="router.verdict.h3">三难自证</h3><code id="router-verdict">—</code></div>
+      <div class="router-box"><h3 data-i18n="router.llm.h3">LLM 决策</h3><code id="router-decision">—</code></div>
+    </div>
+    <div class="router-foot"><code id="router-rerun">npm run ai:world-router:live</code><span id="router-meta">—</span></div>
+  </article>
+
   <!-- ⑪d 研发状态 · Build Observatory（KI-630）————————— -->
   <article class="panel panel-wide panel-build" id="panel-build" aria-labelledby="p-build">
     <div class="panel-head">
