@@ -139,6 +139,31 @@ function canonFlagRoster() {
   }
 }
 
+/**
+ * KI-726 · 编辑闸门反馈回灌（StateGraph 自我改进闭环第二环，与 KI-725 提案避让对称）。
+ * 从上一轮产物的 editorialGate（LLM 终审 verdict + issues）读取"上次被指出的问题"，
+ * 注入下一轮 draftContent 任务，让起草节点一开始就规避同类问题。
+ * 典型：第 85 篇终审 issues=["标题与正文重复","首句干痕无据"] —— 若起草时就被告知，
+ * 就不会再让标题复述正文、也不会用无 canon 依据的干痕起句。
+ * 纪律：只做提示，不替 LLM 写正文；终审权仍在 editorialGate + 人工闸。
+ */
+function editorialFeedback() {
+  let last = null
+  try {
+    const art = readJson(resolve(ROOT, 'src/data/authoring/ai-director-latest.json'))
+    const g = art?.editorialGate
+    if (g && Array.isArray(g.issues)) {
+      last = {
+        verdict: g.verdict ?? null,
+        issues: g.issues.filter((x) => typeof x === 'string').slice(0, 6),
+        draftTitle: art?.atlasDraft?.titleZh ?? null,
+        generatedAt: art?.generatedAt ?? null,
+      }
+    }
+  } catch { /* 读不到不阻塞 */ }
+  return last
+}
+
 const worldSnapshot = () => {
   const kv = (() => { try { return readJson(resolve(ROOT, 'site-latest.json')).kv ?? {} } catch { return {} } })()
   const status = kvFromPhaseStatus()
@@ -329,7 +354,18 @@ async function nodeProposeTransitions(state) {
 
 async function nodeDraftContent(state) {
   if (state.mode !== 'live') { state.atlasDraft = null; return }
-  const task = '【任务·游记续写草稿】以钟摆渡人/止音纪元的笔法，为下一篇游记产出草稿：{"no":84,"titleZh":"≤10字","titleEn":"≤6 words","pZh":"≤120字正文","pEn":"≤70 words","codaZh":"≤40字尾声","codaEn":"≤25 words","requiresHumanReview":true}。笔法：不喧哗、不抒情、物件说话、留白。只许 JSON。'
+  // KI-726 · 把上一轮编辑闸门的终审反馈注入起草任务：LLM 起草时即知"上次被终审指出的问题"，避免重犯。
+  const feedback = editorialFeedback()
+  state.editorialFeedback = feedback
+  const feedbackBlock = feedback
+    ? [
+        '【上一轮终审反馈 · 起草时必须规避同类问题】',
+        `上次 verdict=${feedback.verdict ?? '?'}，终审 issues：${feedback.issues.length ? feedback.issues.join('；') : '（无）'}`,
+        '硬约束：本次草稿不得重复上次被指出的问题（例如"标题复述正文""用无 canon 依据的意象起句"）；'
+        + '标题独立、正文物件说话、起句只用 canon 已确立的物件与动作。',
+      ].join('\n')
+    : ''
+  const task = '【任务·游记续写草稿】以钟摆渡人/止音纪元的笔法，为下一篇游记产出草稿：{"no":84,"titleZh":"≤10字","titleEn":"≤6 words","pZh":"≤120字正文","pEn":"≤70 words","codaZh":"≤40字尾声","codaEn":"≤25 words","requiresHumanReview":true}。笔法：不喧哗、不抒情、物件说话、留白。只许 JSON。' + (feedbackBlock ? '\n\n' + feedbackBlock : '')
   const out = await callDirector(state.env, { stdinPrefix: state.prefix, task: withSnapshot(state, task), temperature: 0.9, maxTokens: 800 })
   recordUsage(state, 'draftContent', out)
   const parsed = parseJsonLoose(out.text)
@@ -397,6 +433,8 @@ function buildArtifacts(state) {
           warnings: state.transitionWarnings ?? [],
         }
       : null,
+    /** KI-726 · 本轮起草时读到的上一轮终审反馈（verdict + issues） */
+    editorialFeedbackIn: state.editorialFeedback ?? null,
     atlasDraft: state.atlasDraft ?? null,
     editorialGate: state.editorialGate ?? null,
     usage: state.usage,
@@ -443,6 +481,14 @@ function writeArtifacts(state) {
     '',
     '## 下一篇游记 · 草稿（人工闸 · 不落库）',
     art.atlasDraft ? '```json\n' + JSON.stringify(art.atlasDraft, null, 2) + '\n```' : '_（offline 未真跑）_',
+    '',
+    '## 终审反馈回灌（KI-726 · 起草时读到的上一轮 issues）',
+    art.editorialFeedbackIn
+      ? [
+          `- 读取到上一轮 verdict=\`${art.editorialFeedbackIn.verdict}\`，issues：${art.editorialFeedbackIn.issues.length ? art.editorialFeedbackIn.issues.join('；') : '（无）'}`,
+          `- 起草时已注入"规避同类问题"提示（标题独立 / 起句只用 canon 物件）`,
+        ].join('\n')
+      : '_（上一轮无终审反馈或首次运行）_',
     '',
     '## canon 编辑闸门（LLM 终审：canonFidelity / voiceFidelity / verdict / 是否就地改写）',
     art.editorialGate ? '```json\n' + JSON.stringify(art.editorialGate, null, 2) + '\n```' : '_（offline 未真跑）_',
