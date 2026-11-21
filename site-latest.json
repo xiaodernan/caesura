@@ -2,21 +2,21 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "35690ee8962af8ae5c8b83d853a1854d8c273390",
+  "head": "d85af3c7f89b569df5adfe6dd2aa2ec697c9f33f",
   "branch": "master",
-  "subject": "Merge branch 'master' of github.com:xiaodernan/caesura",
-  "date": "2026-11-20T13:57:31+08:00",
+  "subject": "feat: KI-719~723 无尽世界/撞库压测/self-hosted CI/Spring telemetry",
+  "date": "2026-11-21T13:43:00+08:00",
   "kv": {
-    "KI.rows": 633,
-    "KI.Implemented": 456,
+    "KI.rows": 641,
+    "KI.Implemented": 464,
     "KI.Partial": 167,
     "KI.Blocked": 10,
-    "SYS.rows": 98,
-    "SYS.Implemented": 73,
+    "SYS.rows": 105,
+    "SYS.Implemented": 80,
     "SYS.Blocked": 0,
     "ARCH.sections": 202,
     "ARCH.holes": "none",
-    "PKG.scripts": 91
+    "PKG.scripts": 93
   },
   "suites": {
     "consoleUi": 150,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/35690ee8962af8ae5c8b83d853a1854d8c273390",
+    "url": "https://github.com/xiaodernan/caesura/commit/d85af3c7f89b569df5adfe6dd2aa2ec697c9f33f",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
