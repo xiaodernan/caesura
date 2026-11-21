@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "6d7488de23bd7e447a13b64447f6808b6c7eb68e",
+  "head": "86dd164e0472a3c6039092268d04b8a882063d96",
   "branch": "master",
-  "subject": "site-latest: 8bf848c (post-rebase reconcile)",
-  "date": "2026-11-21T15:38:25+08:00",
+  "subject": "feat: KI-727 admin 自我改进闸门可视化 · StateGraph 双闭环接入面板",
+  "date": "2026-11-21T16:02:11+08:00",
   "kv": {
-    "KI.rows": 644,
-    "KI.Implemented": 467,
+    "KI.rows": 645,
+    "KI.Implemented": 468,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 105,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/6d7488de23bd7e447a13b64447f6808b6c7eb68e",
+    "url": "https://github.com/xiaodernan/caesura/commit/86dd164e0472a3c6039092268d04b8a882063d96",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
