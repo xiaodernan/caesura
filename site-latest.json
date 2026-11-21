@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "038b7c7970ecdcf644b1850f966ba40c3f9ac39e",
+  "head": "2aa91e8d4550393cce7bad2c2e1c95921d344d76",
   "branch": "master",
-  "subject": "chore(status): re-embed site-latest.json",
-  "date": "2026-11-21T07:09:18Z",
+  "subject": "site-latest: 038b7c7 (post-rebase reconcile)",
+  "date": "2026-11-21T15:09:19+08:00",
   "kv": {
     "KI.rows": 643,
     "KI.Implemented": 466,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/038b7c7970ecdcf644b1850f966ba40c3f9ac39e",
+    "url": "https://github.com/xiaodernan/caesura/commit/2aa91e8d4550393cce7bad2c2e1c95921d344d76",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
