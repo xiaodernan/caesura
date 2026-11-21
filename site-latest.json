@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "8cc30e43e01694308a8055398494a5cf34ed151f",
+  "head": "8271ac06b8f3e7b27c619873a410c7946e9217de",
   "branch": "master",
-  "subject": "feat: KI-729 第八十五篇《门内一夜》· KI-728 动态篇号流水线首次端到端落地",
-  "date": "2026-11-21T19:45:00+08:00",
+  "subject": "chore(status): re-embed site-latest.json",
+  "date": "2026-11-21T11:46:12Z",
   "kv": {
     "KI.rows": 647,
     "KI.Implemented": 470,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/8cc30e43e01694308a8055398494a5cf34ed151f",
+    "url": "https://github.com/xiaodernan/caesura/commit/8271ac06b8f3e7b27c619873a410c7946e9217de",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
