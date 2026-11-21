@@ -671,3 +671,4 @@ Phase B4 的三件套此前是"有人听、没人说"。
 | KI-725 | **AI 导演提案避让闸门（StateGraph 自我改进）**：canonFlagRoster 四来源名册注入 proposeTransitions + 历史 conflict 警示 + 机械自检 + proposalGuard 产物字段 + PROPOSAL-GUARD proof · 真跑 conflict 1→0 · 69 面名册提高上下文 · ai-proposal-guard.test.ts 5 腿 | KI-725 |
 | KI-726 | **AI 导演终审反馈回灌（StateGraph 第二闭环）**：editorialFeedback 读上轮 issues 注入 draftContent + editorialFeedbackIn 字段 + EDITORIAL-FEEDBACK proof · 真跑 issues 1→0 / pass · ai-editorial-feedback.test.ts 5 腿 · 与 KI-725 构成双向闭环 | KI-726 |
 | KI-727 | **admin 自我改进闸门可视化**：index.html ai-selfimprove 区块 + i18n 双语 · app.js renderAiCommitted 渲染 proposalGuard/editorialFeedbackIn 两行闭环 + exportAiMemo 导出 · styles.css 四列网格 · 产物回填真实数据 · echo-flow 重编译 · admin-selfimprove-panel.test.ts 5 腿 | KI-727 |
+| KI-728 | **AI 导演持续产出流水线**：nextChapterNo 现读 atlas max+1 动态篇号（去 hardcode）+ 双闭环自动运转 · 真跑产出 no:85 且 conflict=0/上轮 issues 已规避 · CONTINUOUS-PIPELINE proof · ai-continuous-pipeline.test.ts 5 腿 | KI-728 |

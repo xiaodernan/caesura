@@ -72,6 +72,20 @@ function atlasEntryCount() {
   return (raw.match(/^\s*no:\s*\d+/gm) || []).length
 }
 
+/**
+ * KI-728 · 下一篇游记号（动态现读，不再 hardcode）。
+ * 从 atlas-texts.ts 的 no 序列取最大值 +1 —— 这样每落地一篇，下一次 --live 自动产出再下一篇，
+ * 真正实现"不停产出新篇章"。读不到时回退到 atlas 条目数 +1（保底）。
+ */
+function nextChapterNo() {
+  try {
+    const raw = readFileSync(resolve(ROOT, 'src/ui/atlas-texts.ts'), 'utf8')
+    const nos = [...raw.matchAll(/^\s*no:\s*(\d+)/gm)].map((m) => Number(m[1])).filter((n) => Number.isFinite(n))
+    if (nos.length) return Math.max(...nos) + 1
+  } catch { /* 读不到用保底 */ }
+  return atlasEntryCount() + 1
+}
+
 function dialogueSnapshot() {
   const trees = readJson(resolve(ROOT, 'src/data/json/dialogue.json'))
   const nodes = trees.reduce((n, t) => n + (t.nodes?.length ?? 0), 0)
@@ -365,7 +379,8 @@ async function nodeDraftContent(state) {
         + '标题独立、正文物件说话、起句只用 canon 已确立的物件与动作。',
       ].join('\n')
     : ''
-  const task = '【任务·游记续写草稿】以钟摆渡人/止音纪元的笔法，为下一篇游记产出草稿：{"no":84,"titleZh":"≤10字","titleEn":"≤6 words","pZh":"≤120字正文","pEn":"≤70 words","codaZh":"≤40字尾声","codaEn":"≤25 words","requiresHumanReview":true}。笔法：不喧哗、不抒情、物件说话、留白。只许 JSON。' + (feedbackBlock ? '\n\n' + feedbackBlock : '')
+  const nextNo = nextChapterNo()
+  const task = `【任务·游记续写草稿】以钟摆渡人/止音纪元的笔法，为下一篇游记产出草稿：{"no":${nextNo},"titleZh":"≤10字","titleEn":"≤6 words","pZh":"≤120字正文","pEn":"≤70 words","codaZh":"≤40字尾声","codaEn":"≤25 words","requiresHumanReview":true}。笔法：不喧哗、不抒情、物件说话、留白。只许 JSON。` + (feedbackBlock ? '\n\n' + feedbackBlock : '')
   const out = await callDirector(state.env, { stdinPrefix: state.prefix, task: withSnapshot(state, task), temperature: 0.9, maxTokens: 800 })
   recordUsage(state, 'draftContent', out)
   const parsed = parseJsonLoose(out.text)
