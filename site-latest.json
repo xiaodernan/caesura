@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "1b51eeb5c1696b5fc2630a3e80c71871798ce470",
+  "head": "56ba21faf826f869ec6b9595c6856879aa707ee8",
   "branch": "master",
-  "subject": "feat: KI-734 LLM 顾问 payload 补访问量 · 落地闭环重生成不丢证据",
-  "date": "2026-11-21T23:22:43+08:00",
+  "subject": "feat: KI-735 LLM 驱动条件路由世界状态机 · StateGraph.addConditionalEdges 首次真用",
+  "date": "2026-11-21T23:44:39+08:00",
   "kv": {
-    "KI.rows": 652,
-    "KI.Implemented": 475,
+    "KI.rows": 653,
+    "KI.Implemented": 476,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 105,
@@ -16,7 +16,7 @@
     "SYS.Blocked": 0,
     "ARCH.sections": 202,
     "ARCH.holes": "none",
-    "PKG.scripts": 93
+    "PKG.scripts": 95
   },
   "suites": {
     "consoleUi": 150,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/1b51eeb5c1696b5fc2630a3e80c71871798ce470",
+    "url": "https://github.com/xiaodernan/caesura/commit/56ba21faf826f869ec6b9595c6856879aa707ee8",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
