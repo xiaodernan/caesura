@@ -20,18 +20,18 @@ describe('Motif Atlas 余响索引（story/atlas/index.html）', () => {
     expect(out).toContain('motif-atlas: OK')
   })
 
-  it('91 张卡片 · href 与 ORDER 一一对应', () => {
+  it('92 张卡片 · href 与 ORDER 一一对应', () => {
     const hrefs = [...HTML.matchAll(/<a class="card" href="([^"]+)"/g)].map((m) => m[1])
-    expect(hrefs).toHaveLength(91)
+    expect(hrefs).toHaveLength(92)
     const slugs = [...ORDER.matchAll(/slug: '([^']*)'/g)].map((m) => m[1])
-    expect(slugs).toHaveLength(91)
+    expect(slugs).toHaveLength(92)
     for (let i = 0; i < slugs.length; i++) {
       const expected = '/caesura/story/' + (slugs[i] ? slugs[i] + '/' : '')
       expect(hrefs[i], `card #${i + 1}`).toBe(expected)
     }
   })
 
-  it('母题按出现频次 + 标题加权取前四：第90篇必须带 empty，第91篇必须带 bell', () => {
+  it('母题按出现频次 + 标题加权取前四：第90/91/92篇必须带对应主母题', () => {
     const card90 = HTML.match(/class="card" href="\/caesura\/story\/the-one-left-empty\/" data-no="90" data-motifs="([^"]*)"/)
     expect(card90, '第90篇卡片缺失').toBeTruthy()
     expect(card90![1].split(' ')).toContain('empty')
@@ -39,6 +39,11 @@ describe('Motif Atlas 余响索引（story/atlas/index.html）', () => {
     expect(card91, '第91篇卡片缺失').toBeTruthy()
     expect(card91![1].split(' ')).toContain('bell')
     expect(card91![1].split(' ')).toContain('empty')
+    const card92 = HTML.match(/class="card" href="\/caesura\/story\/the-black-at-the-pour-gate\/" data-no="92" data-motifs="([^"]*)"/)
+    expect(card92, '第92篇卡片缺失').toBeTruthy()
+    expect(card92![1].split(' ')).toContain('bell')
+    expect(card92![1].split(' ')).toContain('empty')
+    expect(card92![1].split(' ')).toContain('line')
     for (const m of HTML.matchAll(/data-no="\d+" data-motifs="([^"]*)"/g)) {
       const tags = m[1].split(' ').filter(Boolean)
       expect(tags.length, `card ${m[0].slice(0, 30)} 标签数`).toBeGreaterThan(0)

@@ -4580,5 +4580,86 @@ export const STORY_CHAPTERS: StoryChapter[] = [
 <p class="coda">Some bells spare the copper and leave only a bell-shaped emptiness — lean in and listen, and what you hear is your own breath going once around inside it, not scattering.</p>
 <p class="coda">The age of hush has not ended. It has only gained one more bell — no bronze, no clapper, no sound; the furnace banked low, the mould closed, the line of the seam still there, waiting for someone who does not mean to strike it.</p>`,
   },
+  {
+    no: 92,
+    zhTitle: "浇口上的黑",
+    enTitle: "The Black at the Pour Gate",
+    zh: `<p>第二天早上，阿汐提着一只木桶、一块布，回到铸钟坊。桶里是井水，布里裹着一把细沙。</p>
+<p>她要擦掉浇口上那圈黑。</p>
+<p>守坊人从炉边站起来，走到坑边，说：放下。</p>
+
+<div class="beat">· · ·</div>
+
+<p>她说：它脏了三十九年。</p>
+<p>他说：那不是脏。</p>
+<p>他蹲下，用指腹在口沿上抹了一下，举给她看。指腹黑了一层，像沾了很细的炭。他说：这是蜡钟留下来的全部。</p>
+
+<div class="beat">· · ·</div>
+
+<p>她不懂。他就在沙地上画：先画一只钟，说，铸钟不是从铜开始的，是从蜡开始的。匠人先把钟刻出来——一只有唇、有肩、有腰的蜡钟，连钟钮上的纹都刻好。</p>
+<p>然后裹泥。泥壳一层一层裹上去，裹厚，裹硬，只留一个口，就是浇口。</p>
+<p>再烧。火从外面烧，蜡从里面化，顺着浇口流出来，流得干干净净；蜡走过的路，留下烟，烟结在口沿上，就是这圈黑。</p>
+<p>他说：蜡没有了，泥壳里就空出一个钟形的洞。铜要从浇口进来，把这个洞填满。填满了，敲碎泥壳，铜就是钟。</p>
+
+<div class="beat">· · ·</div>
+
+<p>阿汐看着那圈黑，问：那这只呢？</p>
+<p>守坊人说：蜡烧掉了，洞空出来了，铜没有来。</p>
+<p>她问：蜡钟在里面待了多久？</p>
+<p>他说：十一天。刻了十一天，烧了一夜。</p>
+<p>她把手指按在黑上。黑不脏手，只是把指纹填满。她忽然想到一件事：那只蜡钟有过唇，有过肩，有过腰；有人刻过它，看过它，也许还在它旁边吃过一顿饭。它比很多真的钟都更完整地存在过——只是没有铜。</p>
+
+<div class="beat">· · ·</div>
+
+<p>她把布收起来，把桶提出坊门，把水倒在坡下的干土上。水渗得很快，像被什么喝掉了。</p>
+<p>回来时，她翻开薄簿，在昨夜那一行下面添了一句：</p>
+<p>第九十一口，先有蜡，后有黑，未铸。</p>
+<p>守坊人看了一眼，说：你漏了一句。</p>
+<p>她问：漏了什么？</p>
+<p>他指了指浇口：<strong>它来过。</strong></p>
+<p>她就把这三个字也写上了。</p>
+
+<p class="coda">不是所有的钟都由铜证明自己来过。</p>
+<p class="coda">有的钟是一层烟，一圈黑，一个被火烧空的形状；它没有响过，却把“曾经有过”留在了最窄的地方——浇口只有拳头大，可它记得一整只钟。</p>
+<p class="coda">止音纪元没有结束。它只是又多了一条证据：炉子压着小火，泥壳合着，口沿上的黑不擦；有人来问，守坊人就说，那不是脏，那是一口钟的签名。</p>`,
+    en: `<p>The next morning Axi came back to the casting yard with a wooden bucket, a cloth, and a little fine sand folded into the cloth.</p>
+<p>She meant to scrub the ring of black off the pour gate.</p>
+<p>The yard-keeper rose from the furnace, came to the edge of the pit, and said: put it down.</p>
+
+<div class="beat">· · ·</div>
+
+<p>She said: it has been dirty for thirty-nine years.</p>
+<p>He said: that is not dirt.</p>
+<p>He crouched and wiped a fingertip along the rim, then held it up for her. The fingertip was black, as if touched with very fine charcoal. He said: that is all that is left of the wax bell.</p>
+
+<div class="beat">· · ·</div>
+
+<p>She did not understand. So he drew in the sand: first a bell. He said, casting a bell does not begin with bronze. It begins with wax. The founder carves the bell first — a wax bell with a lip, a shoulder, a waist, even the pattern on its crown cut in.</p>
+<p>Then the clay. Layer upon layer, thick and hard, with one opening left: the pour gate.</p>
+<p>Then the fire. The fire burns from outside; the wax melts within and runs out through the gate, runs clean; the way the wax went keeps its smoke, and the smoke sets on the rim. That is this ring of black.</p>
+<p>He said: the wax is gone, and inside the clay shell an emptiness in the shape of a bell is left. The bronze is meant to come in through the gate and fill that emptiness. When it is full, you break the shell, and the bronze is the bell.</p>
+
+<div class="beat">· · ·</div>
+
+<p>Axi looked at the ring of black and asked: and this one?</p>
+<p>The yard-keeper said: the wax burned out. The emptiness opened. The bronze never came.</p>
+<p>She asked: how long was the wax bell in there?</p>
+<p>He said: eleven days. Eleven days to carve, one night to burn.</p>
+<p>She pressed her finger to the black. It did not soil her hand; it only filled the ridges of her fingerprint. And she thought of something: that wax bell had had a lip, a shoulder, a waist; someone had carved it, looked at it, perhaps even eaten a meal beside it. It had existed more completely than many real bells — it simply had no bronze.</p>
+
+<div class="beat">· · ·</div>
+
+<p>She put the cloth away, carried the bucket out of the yard, and poured the water onto the dry earth downhill. It sank quickly, as if something had drunk it.</p>
+<p>When she came back, she opened the thin ledger and added a line beneath the one from the night before:</p>
+<p>the ninety-first bell: wax first, then black, not cast.</p>
+<p>The yard-keeper glanced at it and said: you left out a line.</p>
+<p>She asked: what did I leave out?</p>
+<p>He pointed at the pour gate: <strong>it was here.</strong></p>
+<p>So she wrote those words too.</p>
+
+<p class="coda">Not every bell proves it was here by its bronze.</p>
+<p class="coda">Some bells are a layer of smoke, a ring of black, a shape burned hollow; they never rang, and yet they left “there was once” in the narrowest place — the pour gate is only a fist wide, and it remembers a whole bell.</p>
+<p class="coda">The age of hush has not ended. It has only gained one more piece of evidence: the furnace banked low, the clay shells closed, the black on the rim left unscrubbed. When someone asks, the yard-keeper says: that is not dirt. That is a bell’s signature.</p>`,
+  },
 ]
 
