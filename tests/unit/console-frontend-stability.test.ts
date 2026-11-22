@@ -285,6 +285,9 @@ describe('console 前端稳定性门钉（F-124 的长期护栏）', () => {
       "'篇八十六': 'No. 86',",
       "'《碗底的一线》': 'A Line at the Bottom of the Bowl',",
       "'篇八十六 · 碗底的一线': 'No. 86 · A Line at the Bottom of the Bowl',",
+      "'篇八十七': 'No. 87',",
+      "'《碗沿的缺口》': 'The Chip on the Rim',",
+      "'篇八十七 · 碗沿的缺口': 'No. 87 · The Chip on the Rim',",
       "'《未寄的一页》': 'The Unsent Page',",
       "'未寄的一页': 'The Unsent Page',",
       "'清晨船边的一页仍在 · 阿汐没有翻它 · 潮退又见潮涨又覆': 'The page by the boat remained at dawn.',",
@@ -301,9 +304,9 @@ describe('console 前端稳定性门钉（F-124 的长期护栏）', () => {
       "'门外的船仍停着船底的干痕仍在 · 阿汐没有量它们之间的距离 · 有些刻度不必拿来量': 'Some measures need not be used.',",
       "'天亮了阿汐没有去看海 · 光斜进来落在盐身上它没有动 · 有些盐在那儿就够了': 'Some salt is there, and that is enough',",
 
-      "'余响八十六篇 · 沉默的编年史': 'Eighty-Six Chronicles · The Chronicles of Silence',",
-      "'八十六篇都是《止音纪元》的人间注脚——每一篇双语对照、零 LLM；完整全文见': 'The eighty-six stories are The Epoch of Hush in mortal footnotes — each one bilingual, zero LLM; the full volume:',",
-      "'（约四百三十分钟 · 八十六篇整册可读）': '(about 430 minutes · read all eighty-six)',",
+      "'余响八十七篇 · 沉默的编年史': 'Eighty-Seven Chronicles · The Chronicles of Silence',",
+      "'八十七篇都是《止音纪元》的人间注脚——每一篇双语对照、零 LLM；完整全文见': 'The eighty-seven stories are The Epoch of Hush in mortal footnotes — each one bilingual, zero LLM; the full volume:',",
+      "'（约四百三十五分钟 · 八十七篇整册可读）': '(about 435 minutes · read all eighty-seven)',",
 
       "'余响三十七篇 · 沉默的编年史': 'Thirty-seven Chronicles · The Chronicles of Silence',",
       "'STATEGRAPH · 状态图内核': 'State Graph Kernel',",

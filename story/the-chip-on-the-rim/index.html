@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>碗沿的缺口 / The Chip on the Rim — CAESURA · 余响集 · 第八十七篇</title>
+<meta name="description" content="中午，阿汐用拇指沿碗沿摸了一圈。那里有一个很多年前磕出的缺口，已经被日子磨圆，不再割手。缺口朝里——不是藏起来，是不让日子再从那里割到人。 · LLM 草稿 · 人工闸落地 · 双语对照 · 零网络 / The eighty-seventh piece of The Aftermath: at noon Axi runs her thumb along the rim of the bowl and finds an old chip, rounded by days. LLM-drafted, human-gated, bilingual, offline." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🔔</text></svg>">
+<style>
+  :root {
+    --gold: #f3ce8f;
+    --gold-soft: rgba(243,206,143,.32);
+    --ink: #f3ede0;
+    --ink-dim: rgba(243,237,224,.62);
+    --panel: rgba(28,20,12,.7);
+    --serif: "Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { background:#070608; color:var(--ink); font-family:var(--serif); -webkit-font-smoothing:antialiased; }
+  body { min-height:100vh; }
+  .bg { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+  .bg.radial {
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(243,206,143,.14), transparent 60%),
+      radial-gradient(900px 700px at 50% 118%, rgba(90,40,40,.22), transparent 62%),
+      radial-gradient(650px 420px at 88% 104%, rgba(203,177,255,.08), transparent 60%),
+      #070608;
+  }
+  .bg.noise { position:fixed; inset:0; z-index:-1; opacity:.05; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .wrap { max-width:860px; margin:0 auto; padding:26px 26px 90px; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .brand { font-size:.8rem; letter-spacing:.3em; color:var(--gold); text-transform:uppercase; opacity:.9; }
+  .brand a { color:inherit; text-decoration:none; border-bottom:1px dotted rgba(243,206,143,.5); }
+  .brand a:hover { color:#fff2d0; }
+  .toplinks { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toplinks a { font-size:.72rem; color:var(--ink-dim); text-decoration:none; border:1px solid rgba(243,237,224,.14); padding:6px 12px; border-radius:999px; transition:all .22s ease; }
+  .toplinks a:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .lang-row button { cursor:pointer; font-family:inherit; font-size:.72rem; color:var(--ink); background:rgba(243,206,143,.12); border:1px solid var(--gold-soft); padding:6px 15px; border-radius:999px; letter-spacing:.1em; transition:all .22s ease; }
+  .lang-row button:hover { background:rgba(243,206,143,.22); box-shadow:0 0 16px rgba(243,206,143,.25); }
+
+  [data-lang="zh-TW"] .en-copy { display:none !important; }
+  [data-lang="zh"] .en-copy { display:none !important; }
+  [data-lang="en"] .zh-copy { display:none !important; }
+
+  header.hero { text-align:center; padding:52px 14px 30px; }
+  .kicker { font-size:.72rem; letter-spacing:.42em; color:var(--ink-dim); text-transform:uppercase; margin-bottom:20px; }
+  .kicker b { color:var(--gold); font-weight:600; }
+  h1 { font-size:clamp(2.2rem, 8vw, 3.6rem); font-weight:600; letter-spacing:.16em;
+       background:linear-gradient(180deg,#fffbe6 0%, #f3ce8f 28%, #c9a258 58%, #7d6436 100%);
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+       text-shadow:0 0 90px rgba(243,206,143,.3); }
+  .subtitle { margin-top:14px; font-size:.8rem; color:var(--ink-dim); letter-spacing:.3em; text-transform:uppercase; }
+  .rule { width:170px; height:1px; margin:24px auto 0; background:linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .meta { margin-top:16px; font-size:.7rem; color:rgba(243,237,224,.45); letter-spacing:.18em; text-transform:uppercase; }
+  .meta a { color:var(--gold); text-decoration:none; }
+
+  article { background:var(--panel); border:1px solid rgba(243,237,224,.1); border-radius:18px; padding:38px 40px 34px; position:relative; }
+  article::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, var(--gold), transparent); opacity:.7; }
+  article p { font-size:1.04rem; line-height:2.02; letter-spacing:.02em; color:rgba(243,237,224,.92); margin-bottom:1.5em; text-indent:2em; overflow-wrap:break-word; }
+  article p em { color:#ffe9b3; font-style:normal; }
+  .beat { width:100%; text-align:center; margin:.4em 0 1.4em; letter-spacing:.8em; color:rgba(243,206,143,.55); font-size:.9rem; }
+  article p.coda { text-indent:0; text-align:center; color:var(--gold); font-size:.95rem; letter-spacing:.08em; margin-bottom:.9em; }
+  article p.coda:last-child { margin-top:1.8em; color:rgba(243,237,224,.7); font-size:.9rem; font-style:italic; }
+
+  .note { max-width:760px; margin:26px auto 0; font-size:.74rem; line-height:1.9; color:rgba(243,237,224,.42); text-align:center; letter-spacing:.04em; }
+  .note a { color:var(--gold); text-decoration:none; }
+
+  footer { margin-top:44px; border-top:1px solid rgba(243,237,224,.09); padding-top:22px; display:flex; flex-wrap:wrap; gap:10px 22px; justify-content:space-between; font-size:.7rem; color:rgba(243,237,224,.4); letter-spacing:.06em; }
+  footer a { color:var(--gold); text-decoration:none; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+  @media (max-width:640px) { .wrap { padding:20px 12px 70px; } article { padding:26px 20px 24px; } article p { font-size:1rem; line-height:1.96; } header.hero { padding:40px 8px 22px; } }
+</style>
+</head>
+<body>
+<div class="bg radial" aria-hidden="true"></div>
+<div class="bg noise" aria-hidden="true"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><a href="/caesura/">CAESURA</a> · 《止音纪元》</div>
+    <div class="toplinks">
+      <a href="/caesura/story/a-line-in-the-bowl/"><span class="zh-copy">前篇《碗底的一线》</span><span class="en-copy">Prev · “A Line at the Bottom of the Bowl”</span></a>
+      <a href="/caesura/story/atlas/"><span class="zh-copy">余响索引</span><span class="en-copy">Motif Atlas</span></a>
+      <a href="/caesura/story/anthology/"><span class="zh-copy">余响集</span><span class="en-copy">The Aftermath</span></a>
+      <a href="/caesura/codex/"><span class="zh-copy">世界谱</span><span class="en-copy">Codex</span></a>
+      <a href="/caesura/tutorial/"><span class="zh-copy">教程</span><span class="en-copy">Tutorial</span></a>
+      <a href="/caesura/"><span class="zh-copy">游戏</span><span class="en-copy">Game</span></a>
+      <span class="lang-row"><button id="langToggle" type="button" aria-label="切换语言 · switch language">EN / 中文</button></span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <p class="kicker zh-copy">短篇 · <b>余响集</b> · 第八十七篇</p>
+    <p class="kicker en-copy">Short story · <b>The Aftermath</b> · No. 87</p>
+    <h1 class="zh-copy">碗沿的缺口</h1>
+    <h1 class="en-copy">The Chip on the Rim</h1>
+    <p class="subtitle zh-copy">回廊钟第37年 · 一个很多年前磕出的缺口 · 已经被日子磨圆</p>
+    <p class="subtitle en-copy">The 37th year of the Arcade — a chip knocked out years ago, rounded smooth by days</p>
+    <div class="rule"></div>
+    <p class="meta zh-copy">约 6 分钟 · 与 <a href="/caesura/codex/">世界谱</a> 同源世界观 · 零网络</p>
+    <p class="meta en-copy">about 6 minutes · same world as the <a href="/caesura/codex/">codex</a> · fully offline</p>
+  </header>
+
+  <article>
+    <div class="zh-copy">
+<p>中午，阿汐用拇指沿着碗沿摸了一圈。碗沿上有一个很小的缺口，是很多年前磕的；釉掉了一小块，露出里面的胎，颜色比外面浅。她摸到那里，停了一下。</p>
+<p>缺口不割手。它已经被日子磨圆了。她想，刚磕坏的时候它一定很利；后来谁也没有再磕它，它自己就慢慢钝了。不是修好的钝，是它不再需要伤人的钝。</p>
+
+<div class="beat">· · ·</div>
+
+<p>门槛上的盐还在；薄簿合着；船停着。她今天没有看海。缺口里落进一点光，像碗沿自己含着的一小口水——只是光，不会洒。</p>
+<p>她想起自己小时候也磕过一个碗；母亲没有骂她，只把碗转过来，让缺口朝里。她到今天才懂：让缺口朝里，不是藏起来，是不让日子再从那里割到人。</p>
+
+<div class="beat">· · ·</div>
+
+<p>傍晚，她把碗转了一下，让缺口朝着门里。潮水涨起来，船碰木桩，声音很轻。她没有起身。</p>
+<p>夜里，她摸黑也能找到那个缺口——它像一个很小的记号，告诉她碗还是这一只。有些东西靠完整被认出来，有些靠一道小小的缺。</p>
+
+<div class="beat">· · ·</div>
+
+<p>天快亮时，她把碗放回门边。缺口朝里。新的一天没有比昨天多什么，也没有少什么。她很好。</p>
+<p>她把碗放回原处，缺口朝里，像把一句不好听的话收进自己嘴里。门槛上的盐没有变少，也没有变多。她想，碗沿磕坏的那天，家里大概也是这样一个中午——有人手一滑，谁都没有说话，饭还是吃完了。</p>
+
+<p class="coda">碗沿有个小缺口，摸上去已经不割手了。</p>
+<p class="coda">不是所有缺都要补——有些缺，是日子替人磨圆的。</p>
+<p class="coda">止音纪元没有结束。它只是又多了一个碗沿的缺口——盐在门槛上，簿合着，船停着，缺口朝里——她也很好。</p>
+    </div>
+    <div class="en-copy">
+<p>At noon, Axi ran her thumb once around the rim of the bowl. A very small chip had been knocked out of it years ago; a little glaze was gone, showing the clay beneath, paler than the outside. Her thumb reached it and paused.</p>
+<p>The chip did not cut. Days had rounded it. She thought: when it was fresh it must have been sharp; afterwards no one had struck it again, and it had slowly grown blunt by itself. Not the bluntness of a repair — the bluntness of no longer needing to wound.</p>
+
+<div class="beat">· · ·</div>
+
+<p>The salt on the threshold was still there; the ledger shut; the boat still. She did not look at the sea today. A little light fell into the chip, as if the rim held a small mouthful of water of its own — only light, which cannot spill.</p>
+<p>She remembered chipping a bowl herself as a child; her mother did not scold her, only turned the bowl around so the chip faced inward. Only today did she understand: turning the chip inward is not hiding it — it is keeping days from cutting anyone there again.</p>
+
+<div class="beat">· · ·</div>
+
+<p>At dusk she turned the bowl a little, so the chip faced the inside of the door. The tide rose; the boat touched the post; the sound was very soft. She did not rise.</p>
+<p>At night she could find the chip in the dark — a very small mark telling her the bowl was still this bowl. Some things are known by being whole; some by a small absence.</p>
+
+<div class="beat">· · ·</div>
+
+<p>Near dawn she set the bowl back by the door. The chip faced inward. The new day held nothing more than yesterday, and nothing less. She was well.</p>
+<p>She set the bowl back in its place, chip inward, as one tucks an unkind word back into one's own mouth. The salt on the threshold had neither lessened nor grown. She thought: on the day the rim was chipped, the house must have had a noon like this — someone's hand slipped, no one spoke, and the meal was finished all the same.</p>
+
+<p class="coda">A small chip on the rim; it no longer cuts when touched.</p>
+<p class="coda">Not every absence needs filling — some are rounded by days on our behalf.</p>
+<p class="coda">The age of hush has not ended. It has only gained one more chip on a rim — the salt on the threshold, the ledger shut, the boat still, the chip turned inward — and she was well too.</p>
+    </div>
+  </article>
+
+  <div class="note">
+    <span class="zh-copy">本篇为《余响集》双语对照 · 人工闸定稿 · 零网络 · 与<a href="/caesura/codex/">世界谱</a>同源世界观。<a href="/caesura/story/anthology/">全集：《余响集》</a> · <a href="/caesura/story/atlas/">母题检索：余响索引</a></span>
+    <span class="en-copy">“The Aftermath,” bilingual, offline, human-gated — same world as the <a href="/caesura/codex/">codex</a>. <a href="/caesura/story/anthology/">All stories</a> · <a href="/caesura/story/atlas/">Motif Atlas</a></span>
+  </div>
+
+  <footer>
+    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/">游戏</a> · <a href="/caesura/story/a-line-in-the-bowl/">篇八十六 · 碗底的一线</a> · <a href="/caesura/story/the-chip-on-the-rim/">篇八十七 · 碗沿的缺口</a> · <a href="/caesura/story/anthology/">全集 · 余响集</a> · <a href="/caesura/story/atlas/">余响索引</a></span>
+    <span class="en-copy">© CAESURA · <a href="/caesura/">Game</a> · <a href="/caesura/story/a-line-in-the-bowl/">No. 86 · A Line at the Bottom of the Bowl</a> · <a href="/caesura/story/the-chip-on-the-rim/">No. 87 · The Chip on the Rim</a> · <a href="/caesura/story/anthology/">All stories</a> · <a href="/caesura/story/atlas/">Motif Atlas</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('langToggle');
+  var saved = 'zh';
+  try { saved = localStorage.getItem('caesura-lang') || 'zh'; } catch (e) { /* noop */ }
+  function apply(lang) {
+    root.setAttribute('data-lang', lang);
+    root.setAttribute('lang', lang === 'en' ? 'en-US' : (lang === 'zh-TW' ? 'zh-TW' : 'zh-CN'));
+    try { localStorage.setItem('caesura-lang', lang); } catch (e) { /* noop */ }
+    if (window.__caesuraZhTW) {
+      if (lang === 'zh-TW' && window.__caesuraZhTW.applyToDocument) window.__caesuraZhTW.applyToDocument();
+      else if (lang === 'zh' && window.__caesuraZhTW.restoreOriginals) window.__caesuraZhTW.restoreOriginals();
+    }
+    btn.textContent = lang === 'zh' ? '繁體' : (lang === 'zh-TW' ? 'EN' : '简体');
+  }
+  if (btn) btn.addEventListener('click', function () {
+    var cur = root.getAttribute('data-lang'); apply(cur === 'zh' ? 'zh-TW' : (cur === 'zh-TW' ? 'en' : 'zh'));
+  });
+  apply(saved === 'en' || saved === 'zh-TW' ? saved : 'zh');
+})();
+</script>
+<script defer src="../../tracker.js"></script>
+<script defer src="/caesura/zh-tw-converter.js"></script>
+<script defer src="/caesura/read-progress.js"></script>
+</body>
+</html>

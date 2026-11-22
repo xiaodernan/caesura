@@ -49,10 +49,10 @@ describe('KI-663 · 场景圣经巨前缀（scripts/lib/scene-bible.mjs）', () 
     expect(sceneBibleStats().containsVolatileDrift).toBe(false)
   })
 
-  it('内容完整：世界谱 74 条 + 余响集八十六篇（与 src/ui/atlas-texts.ts 同源）', () => {
+  it('内容完整：世界谱 74 条 + 余响集八十七篇（与 src/ui/atlas-texts.ts 同源）', () => {
     const st = sceneBibleStats()
     expect(st.loreEntries, '世界谱条目应来自 codex.json 的 74 条').toBe(74)
-    expect(st.atlasChapters, '余响集全文条目应等于 atlas 的 86 篇').toBe(86)
+    expect(st.atlasChapters, '余响集全文条目应等于 atlas 的 87 篇').toBe(87)
     expect(sceneBible()).toContain('未刻之数')
     expect(sceneBible()).toContain('秤旁')
     expect(sceneBible()).toContain('未记的一页')
@@ -148,7 +148,7 @@ describe('KI-663 · 场景圣经巨前缀（scripts/lib/scene-bible.mjs）', () 
     expect(st.version).toBe('v1')
     expect(st.bytes).toBeGreaterThan(150 * 1024)
     expect(st.loreEntries).toBe(74)
-    expect(st.atlasChapters).toBe(86)
+    expect(st.atlasChapters).toBe(87)
   })
 
   it('单飞 marker 读写往返（并行会话共享热身位置 · 写后可读 · 测完删掉不污染真环境）', () => {

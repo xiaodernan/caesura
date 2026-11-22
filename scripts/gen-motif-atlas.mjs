@@ -67,7 +67,7 @@ function motifTags(entry, lang) {
 function build() {
   const order = readOrder()
   const atlas = readAtlas()
-  if (order.length !== 86) throw new Error(`ORDER 应为 86 项，实读 ${order.length}`)
+  if (order.length < 1) throw new Error('ORDER 为空')
   const rows = order.map((o, i) => {
     const no = i + 1
     const a = atlas.get(no) || { zhTitle: o.zh, enTitle: o.en, zh: o.zh, en: o.en }
@@ -100,8 +100,8 @@ function build() {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>余响索引 / Motif Atlas — CAESURA · 八十六篇母题检索</title>
-<meta name="description" content="《止音纪元 · 余响集》八十六篇的母题索引：盐、碗、船、簿、门、钟、光、线、潮、灰、风、空——搜一个词，找到所有写过它的故事。双语 · 零网络 · 零 LLM。 / A motif atlas for the eighty-six stories of CAESURA: salt, bowl, boat, ledger, door, bell, light, line, tide, ash, wind, empty. Search one word, find every story that wrote it. Bilingual, offline, zero LLM.">
+<title>余响索引 / Motif Atlas — CAESURA · ${order.length} 篇母题检索</title>
+<meta name="description" content="《止音纪元 · 余响集》${order.length} 篇的母题索引：盐、碗、船、簿、门、钟、光、线、潮、灰、风、空——搜一个词，找到所有写过它的故事。双语 · 零网络 · 零 LLM。 / A motif atlas for the ${order.length} stories of CAESURA: salt, bowl, boat, ledger, door, bell, light, line, tide, ash, wind, empty. Search one word, find every story that wrote it. Bilingual, offline, zero LLM.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🧭</text></svg>">
 <style>
   :root { --gold:#d9b46a; --gold-soft:rgba(217,180,106,.3); --ink:#f3ede0; --ink-dim:rgba(243,237,224,.62); --panel:rgba(26,19,10,.78); --serif:"Songti SC","Noto Serif CJK SC","Noto Serif SC",Georgia,serif; }
@@ -179,17 +179,17 @@ function build() {
   </div>
 
   <header class="hero">
-    <p class="kicker zh-copy">索引 · <b>余响集</b> · 八十六篇母题</p>
-    <p class="kicker en-copy">Index · <b>The Aftermath</b> · motifs across eighty-six stories</p>
+    <p class="kicker zh-copy">索引 · <b>余响集</b> · ${order.length} 篇母题</p>
+    <p class="kicker en-copy">Index · <b>The Aftermath</b> · motifs across ${order.length} stories</p>
     <h1 class="zh-copy">余响索引</h1>
     <h1 class="en-copy">Motif Atlas</h1>
     <p class="subtitle zh-copy">搜一个词，找到所有写过它的故事</p>
     <p class="subtitle en-copy">Search one word, find every story that wrote it</p>
     <div class="rule"></div>
     <div class="stats">
-      <span class="zh-copy">收录<b id="statTotal">86</b>篇</span><span class="en-copy">Stories<b id="statTotalEn">86</b></span>
+      <span class="zh-copy">收录<b id="statTotal">${order.length}</b>篇</span><span class="en-copy">Stories<b id="statTotalEn">${order.length}</b></span>
       <span class="zh-copy">母题<b id="statMotifs">${chips.length}</b>类</span><span class="en-copy">Motifs<b id="statMotifsEn">${chips.length}</b></span>
-      <span class="zh-copy">本机已读<b id="statRead">0</b>/86</span><span class="en-copy">Read here<b id="statReadEn">0</b>/86</span>
+      <span class="zh-copy">本机已读<b id="statRead">0</b>/${order.length}</span><span class="en-copy">Read here<b id="statReadEn">0</b>/${order.length}</span>
     </div>
     <div class="quick">
       <button id="continueBtn" type="button"><span class="zh-copy">接着读</span><span class="en-copy">Continue reading</span></button>
@@ -211,8 +211,8 @@ ${cards}
   <p class="empty" id="empty"><span class="zh-copy">没有匹配的故事——换一个词，或清掉筛选。</span><span class="en-copy">No story matches — try another word, or clear the filters.</span></p>
 
   <footer>
-    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/story/anthology/">全集 · 余响集</a> · <a href="/caesura/codex/">世界谱</a> · <a href="/caesura/story/a-line-in-the-bowl/">最新 · 篇八十六</a> · 零网络 · 零 LLM</span>
-    <span class="en-copy">© CAESURA · <a href="/caesura/story/anthology/">All stories</a> · <a href="/caesura/codex/">World Codex</a> · <a href="/caesura/story/a-line-in-the-bowl/">Newest · No. 86</a> · offline · zero LLM</span>
+    <span class="zh-copy">© CAESURA《止音纪元》· <a href="/caesura/story/anthology/">全集 · 余响集</a> · <a href="/caesura/codex/">世界谱</a> · <a href="/caesura/story/${rows[rows.length - 1].slug}/">最新 · 篇${order.length}</a> · 零网络 · 零 LLM</span>
+    <span class="en-copy">© CAESURA · <a href="/caesura/story/anthology/">All stories</a> · <a href="/caesura/codex/">World Codex</a> · <a href="/caesura/story/${rows[rows.length - 1].slug}/">Newest · No. ${order.length}</a> · offline · zero LLM</span>
   </footer>
 </div>
 <script>
@@ -316,7 +316,7 @@ if (process.argv.includes('--check')) {
   if (!existsSync(OUT_FILE)) { console.error('motif-atlas: missing story/atlas/index.html'); process.exit(1) }
   const now = read(OUT_FILE)
   if (now !== html) { console.error('motif-atlas: generated page is stale — run node scripts/gen-motif-atlas.mjs'); process.exit(1) }
-  console.log('motif-atlas: OK — 86 stories, 12 motifs, in sync')
+  console.log('motif-atlas: OK — 87 stories, 12 motifs, in sync')
 } else {
   writeFileSync(OUT_FILE, html, 'utf8')
   console.log('motif-atlas: wrote story/atlas/index.html')

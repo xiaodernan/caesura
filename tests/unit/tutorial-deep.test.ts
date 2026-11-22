@@ -49,15 +49,15 @@ describe('KI-738 · 教程页补上「深处」与「拾遗」', () => {
   })
 })
 
-describe('KI-738 · 页脚全集跟上 86 篇 + 叠字', () => {
-  it('页脚补到第八十六篇（五篇新链接都在，中英各一份）', () => {
-    for (const slug of ['the-unsent-page', 'the-empty-bowl', 'water-by-the-door', 'a-night-within', 'a-line-in-the-bowl']) {
+describe('KI-738 · 页脚全集跟上 87 篇 + 叠字', () => {
+  it('页脚补到第八十七篇（六篇新链接都在，中英各一份）', () => {
+    for (const slug of ['the-unsent-page', 'the-empty-bowl', 'water-by-the-door', 'a-night-within', 'a-line-in-the-bowl', 'the-chip-on-the-rim']) {
       expect(html).toContain('/caesura/story/' + slug + '/')
     }
-    expect(html).toContain('篇八十五 · 门内一夜')
-    expect(html).toContain('No. 85 · A Night Within')
     expect(html).toContain('篇八十六 · 碗底的一线')
     expect(html).toContain('No. 86 · A Line at the Bottom of the Bowl')
+    expect(html).toContain('篇八十七 · 碗沿的缺口')
+    expect(html).toContain('No. 87 · The Chip on the Rim')
     expect(html).toContain('No. 82 · The Unsent Page')
   })
 

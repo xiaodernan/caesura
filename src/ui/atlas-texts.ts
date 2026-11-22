@@ -4319,5 +4319,52 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">Some cracks are not breaks — they let light be held too.</p>
     <p class="coda">The age of hush has not ended. It has only gained one more line at the bottom of a bowl — the salt on the threshold, the ledger shut, the boat still, the wind in and out — and she was well too.</p>`,
   },
+  {
+    no: 87,
+    zhTitle: "碗沿的缺口",
+    enTitle: "The Chip on the Rim",
+    zh: `    <p>中午，阿汐用拇指沿着碗沿摸了一圈。碗沿上有一个很小的缺口，是很多年前磕的；釉掉了一小块，露出里面的胎，颜色比外面浅。她摸到那里，停了一下。</p>
+    <p>缺口不割手。它已经被日子磨圆了。她想，刚磕坏的时候它一定很利；后来谁也没有再磕它，它自己就慢慢钝了。不是修好的钝，是它不再需要伤人的钝。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>门槛上的盐还在；薄簿合着；船停着。她今天没有看海。缺口里落进一点光，像碗沿自己含着的一小口水——只是光，不会洒。</p>
+    <p>她想起自己小时候也磕过一个碗；母亲没有骂她，只把碗转过来，让缺口朝里。她到今天才懂：让缺口朝里，不是藏起来，是不让日子再从那里割到人。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>傍晚，她把碗转了一下，让缺口朝着门里。潮水涨起来，船碰木桩，声音很轻。她没有起身。</p>
+    <p>夜里，她摸黑也能找到那个缺口——它像一个很小的记号，告诉她碗还是这一只。有些东西靠完整被认出来，有些靠一道小小的缺。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>天快亮时，她把碗放回门边。缺口朝里。新的一天没有比昨天多什么，也没有少什么。她很好。</p>
+    <p>她把碗放回原处，缺口朝里，像把一句不好听的话收进自己嘴里。门槛上的盐没有变少，也没有变多。她想，碗沿磕坏的那天，家里大概也是这样一个中午——有人手一滑，谁都没有说话，饭还是吃完了。</p>
+
+    <p class="coda">碗沿有个小缺口，摸上去已经不割手了。</p>
+    <p class="coda">不是所有缺都要补——有些缺，是日子替人磨圆的。</p>
+    <p class="coda">止音纪元没有结束。它只是又多了一个碗沿的缺口——盐在门槛上，簿合着，船停着，缺口朝里——她也很好。</p>`,
+    en: `    <p>At noon, Axi ran her thumb once around the rim of the bowl. A very small chip had been knocked out of it years ago; a little glaze was gone, showing the clay beneath, paler than the outside. Her thumb reached it and paused.</p>
+    <p>The chip did not cut. Days had rounded it. She thought: when it was fresh it must have been sharp; afterwards no one had struck it again, and it had slowly grown blunt by itself. Not the bluntness of a repair — the bluntness of no longer needing to wound.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The salt on the threshold was still there; the ledger shut; the boat still. She did not look at the sea today. A little light fell into the chip, as if the rim held a small mouthful of water of its own — only light, which cannot spill.</p>
+    <p>She remembered chipping a bowl herself as a child; her mother did not scold her, only turned the bowl around so the chip faced inward. Only today did she understand: turning the chip inward is not hiding it — it is keeping days from cutting anyone there again.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>At dusk she turned the bowl a little, so the chip faced the inside of the door. The tide rose; the boat touched the post; the sound was very soft. She did not rise.</p>
+    <p>At night she could find the chip in the dark — a very small mark telling her the bowl was still this bowl. Some things are known by being whole; some by a small absence.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Near dawn she set the bowl back by the door. The chip faced inward. The new day held nothing more than yesterday, and nothing less. She was well.</p>
+    <p>She set the bowl back in its place, chip inward, as one tucks an unkind word back into one's own mouth. The salt on the threshold had neither lessened nor grown. She thought: on the day the rim was chipped, the house must have had a noon like this — someone's hand slipped, no one spoke, and the meal was finished all the same.</p>
+
+    <p class="coda">A small chip on the rim; it no longer cuts when touched.</p>
+    <p class="coda">Not every absence needs filling — some are rounded by days on our behalf.</p>
+    <p class="coda">The age of hush has not ended. It has only gained one more chip on a rim — the salt on the threshold, the ledger shut, the boat still, the chip turned inward — and she was well too.</p>`,
+  },
 ]
 
