@@ -201,8 +201,9 @@ export interface Bindings {
  * 词表只有一份账，别人要循环它就 `import` 这份，不要把四格字面量再抄一遍——`tests/unit/ui-intents.test.ts`
  * 的那把喂读循环原来就是抄的，KI-390 把它改成按名册走，第五格进来那天它自己会红。
  *
- * **五格全在这里说清楚，是因为每加一格就多一个读者**：面板／地图之外，对话框与标题屏从前各自挂着
- * DOM 监听器（KI-062 第二腿把它们接进来）。第五格 `cinematic` 是**唯一没有 `uiStep` 的那一格**——
+ * **每一格全在这里说清楚，是因为每加一格就多一个读者**：面板／地图／深处（KI-737：地图里"再下一层"
+ * 开的那块屏）之外，对话框与标题屏从前各自挂着
+ * DOM 监听器（KI-062 第二腿把它们接进来）。过场 `cinematic` 是**唯一没有 `uiStep` 的那一格**——
  * 过场没有"被框住的那一行"，它要的只是一个出口，所以它的读者是 `src/core/CinematicExit.ts`
  * 里那一句（收束当前这条），不是某块屏的重绘。
  *
@@ -211,7 +212,7 @@ export interface Bindings {
  * 过场一旦算作 overlay，它自己的时间就不再往前走（黑场永久停着）。所以这一格只夺**菜单读数**
  * （意图通道＋`preventDefault`），不夺**世界时间**，也不碰玩法那条闸门（`enabled`／`playLive` 各归各的主人）。
  */
-export const MENU_OWNERS = ['panel', 'map', 'dialogue', 'title', 'cinematic'] as const
+export const MENU_OWNERS = ['panel', 'map', 'descend', 'dialogue', 'title', 'cinematic'] as const
 export type MenuOwner = typeof MENU_OWNERS[number]
 
 /**

@@ -74,6 +74,8 @@ import { WorldStates } from '@/quest/WorldStates'
 import { EchoFlow, echoFlowEntriesOf, announceEchoFlow } from '@/quest/EchoFlow'
 import { WanderingEchoes } from '@/quest/WanderingEchoes'
 import type { WanderingEcho } from '@/quest/WanderingEchoes'
+import { DescendRun } from '@/quest/Descend'
+import { DescendPanel } from '@/ui/DescendPanel'
 import { endlessEntriesOf, endlessWorldTable } from '@/quest/EndlessWorld'
 import { Quests } from '@/quest/Quests'
 import { DialogueEngine, type DialogueContext } from '@/quest/Dialogue'
@@ -338,6 +340,19 @@ dialogueBox.setSpeakerResolver((id) => registry.maybeGet<NpcData>(id)?.displayNa
  * （`streaming.isExplored`），通行设施是 `Interactables` 的现读清单 + 它自己的 `stateOf`。
  * 它**不落任何快旅**（§4.3 那条要等「详图选中调音桩 → 确认」，登记在 KI-087）。
  */
+/**
+ * 深处（KI-737）：把 KI-723 造好的无尽扇区表接成**玩家真能走下去的一层**。
+ * 表原本只被拿去拼 EchoFlow 条目，`EndlessWorld` 的三个方法没有一处玩家侧调用——数据里「无穷大」、
+ * 游戏里摸不到。这里给出一条真入口：地图 → 深处 → 一层层往下。
+ *
+ * 深度与手记只活在这次下行里（回地表归零）；已审前十二层的三条动作走既有 `world.flag` 通道，
+ * 是**真后果**（纪事页能查到）。复沓层不落旗标——理由写在 `quest/Descend.ts` 的文件头。
+ */
+const descendRun = new DescendRun({
+  hasFlag: (k) => streaming.hasFlag(k),
+  setFlag: (k) => streaming.setFlag(k),
+  notify: (text, kind) => bus.emit('ui.notify', { text, kind: kind ?? 'info' }),
+})
 const mapUi = new MapUI(regions, {
   regionAt: (pos) => streaming.regionAt(pos),
   isExplored: (pos) => streaming.isExplored(pos),
@@ -351,6 +366,18 @@ const mapUi = new MapUI(regions, {
   })),
   // 与调音桩面板同一条纪律（KI-061）：面板只"提出"收起来，解冻世界与交还输入是持有者的活
   onRequestClose: () => setMapOpen(false),
+  // KI-737：地图是「世界有多大」的读数口，所以「再往下还有」也从这里进
+  onDescend: () => setDescendOpen(true),
+  descendDepth: () => descendRun.depth,
+})
+
+/**
+ * 深处屏（KI-737）。与另外两块面板同一条纪律：它只"提出"收起来（`onRequestClose`），
+ * 世界停摆与交还输入归 `setOverlay` 那一处。
+ */
+const descendPanel = new DescendPanel({
+  run: descendRun,
+  onRequestClose: () => setDescendOpen(false),
 })
 
 /**
@@ -374,11 +401,12 @@ let overlay: Overlay = null
 
 function setOverlay(open: Overlay): void {
   overlay = open
-  if (open === 'panel') { mapUi.close(); panel.show() }
-  else if (open === 'map') { panel.close(); mapUi.show() }
+  if (open === 'panel') { mapUi.close(); descendPanel.close(); panel.show() }
+  else if (open === 'map') { panel.close(); descendPanel.close(); mapUi.show() }
+  else if (open === 'descend') { panel.close(); mapUi.close(); descendPanel.show() }
   // 'dialogue' / 'title'：两块面板都收，但世界同样停摆、通道同样有人认领——
   // 走的是同一条腿，不给它们另开一套"只暂停不认领"的旁路（那正是两个主人的形状）。
-  else { panel.close(); mapUi.close() }
+  else { panel.close(); mapUi.close(); descendPanel.close() }
   // uiOwner：菜单读数的所有权（KI-062）——开着才发意图、关着一格都不发，也不抢浏览器的默认行为。
   // 玩法那条（enabled）与这条是两件事：世界停摆期间正是菜单需要读数的时候。
   // 世界停摆：只报「菜单在不在场」这一格（KI-387）——玩家自己按出来的那次暂停归 `PauseControl`
@@ -395,6 +423,8 @@ function setOverlay(open: Overlay): void {
 function setPanelOpen(open: boolean): void { setOverlay(open ? 'panel' : null) }
 /** 地图（`map` 键与面板的 onRequestClose 走它） */
 function setMapOpen(open: boolean): void { setOverlay(open ? 'map' : null) }
+/** 深处（地图里的「再下一层」与深处屏的 onRequestClose 走它，KI-737） */
+function setDescendOpen(open: boolean): void { setOverlay(open ? 'descend' : null) }
 const overlayOpen = (): boolean => overlay !== null
 new CombatDebugger()
 const haptics = new Haptics(input)
@@ -1089,6 +1119,7 @@ function feedMenu(): void {
   input.uiOwner = owner
   if (owner === 'panel') panel.uiStep(input.uiEdges)
   else if (owner === 'map') mapUi.uiStep(input.uiEdges)
+  else if (owner === 'descend') descendPanel.uiStep(input.uiEdges)
   else if (owner === 'dialogue') dialogueBox.uiStep(input.uiEdges)
   else if (owner === 'title') title?.uiStep(input.uiEdges)
   else if (owner === 'cinematic') readCinematicExit(input.uiEdges, () => skipCinematic())
@@ -1286,7 +1317,7 @@ if (freshBoot) {
  * 只有拿得到实例才读得着——`muffleHz`（消音那条低通的实时频率，斜坡走到哪一格）与 `dispose()`
  * （装配层的收尾口；测试与实机从此共用同一个，`AudioEngine` 因此不是一只没有生产消费方的 API）。
  */
-;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, lights, player, ai, combat, lock, rig, bus, streaming, surface, greybox, wallGreybox, interact, props, hud, spawner, nodes, worldState, projectileVis, actors: visuals, bossArena, saves, saveRoster, checkpoints, rpg, settlement, panel, setPanelOpen, mapUi, setMapOpen, quests, dialogueEngine, dialogueBox, openDialogue, debugPanels, debugWires, refreshRpg, observe, saveNow: () => saves.save('autosave'), get title() { return title } }
+;(window as unknown as Record<string, unknown>).__caesura = { loop, time, input, rhythm, arena, lights, player, ai, combat, lock, rig, bus, streaming, surface, greybox, wallGreybox, interact, props, hud, spawner, nodes, worldState, projectileVis, actors: visuals, bossArena, saves, saveRoster, checkpoints, rpg, settlement, panel, setPanelOpen, mapUi, setMapOpen, descendRun, descendPanel, setDescendOpen, quests, dialogueEngine, dialogueBox, openDialogue, debugPanels, debugWires, refreshRpg, observe, saveNow: () => saves.save('autosave'), get title() { return title } }
 
 document.getElementById('boot')!.style.display = 'none'
 ;(window as unknown as Record<string, unknown>).__CAESURA_BOOTED__ = true

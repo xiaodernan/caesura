@@ -61,6 +61,11 @@ export interface MapDeps {
   facilities: () => readonly MapFacility[]
   /** 面板不自己收自己：把「收起来」交给持有者（见文件头） */
   onRequestClose: () => void
+  /** KI-737：从这里进「深处」（无尽扇区的玩家侧屏）。地图只提出，开哪块屏由持有者决定。
+   *  可选：没接的宿主不画这一栏（宁可没有这一栏，也不给一个按下去什么都不发生的假把手） */
+  onDescend?: () => void
+  /** 这一趟下行走到第几层（`DescendRun.depth` 的现读；地图不自己养深度）。缺省按第 1 层印 */
+  descendDepth?: () => number
 }
 
 /**
@@ -291,6 +296,8 @@ export class MapUI {
   private onClick(e: MouseEvent): void {
     const el = closestOf(e.target, '[data-act]')
     if (el?.dataset.act === 'close') this.deps.onRequestClose()
+    // KI-737：地图是「世界有多大」的读数口 ⇒ 「再往下还有」也该从这里进（不另造一个只有内行知道的键）
+    else if (el?.dataset.act === 'descend') this.deps.onDescend?.()
   }
 
   private onDown(e: MouseEvent): void {
@@ -453,6 +460,13 @@ export class MapUI {
       <span class="num">${t('ui.map.farwatch', { n: l.sightRange })}</span></div>`).join('')
       || `<div class="empty">${t('ui.map.noneLandmarks')}</div>`
 
+    // KI-737：只有宿主真的接了「深处」，这一栏才印（否则就是一个按下去什么都不发生的假把手）
+    const descendHtml = typeof this.deps.onDescend === 'function'
+      ? `<h2>${t('ui.map.descend', { n: this.deps.descendDepth?.() ?? 1 })}</h2>
+      <div class="row"><span class="name">${t('ui.map.descendHint')}</span>
+        <span class="act"><button class="act" data-act="descend">${t('ui.descend.descend')}</button></span></div>`
+      : ''
+
     return `
       <h2>${t('ui.map.regions', { n: regions.length, total: this.regions.length })}</h2>
       ${regionRows}
@@ -461,6 +475,7 @@ export class MapUI {
       ${facilityRows}
       <h2>${t('ui.map.landmarks')}</h2>
       ${landmarkRows}
+      ${descendHtml}
       <div class="hint">${t('ui.map.fasttravelHint')}</div>`
   }
 }
