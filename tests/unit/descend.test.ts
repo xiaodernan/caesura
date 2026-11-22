@@ -241,3 +241,37 @@ describe('KI-737 · 接线与守卫（面板读真值、菜单有主、源码不
     expect(/data-row\]'\)[\s\S]{0,200}this\.close\(\)/.test(panel)).toBe(false)
   })
 })
+
+describe('KI-741 · 深处的可见性（新系统不许只有翻文档的人找得到）', () => {
+  const read = (p: string) => readFileSync(new URL('../../' + p, import.meta.url), 'utf8')
+
+  it('手记不只报条数：最近三条正文摊在屏上（做了什么都看得见）', () => {
+    const panel = read('src/ui/DescendPanel.ts')
+    expect(panel).toContain('run.journal.slice(-3)')
+    expect(panel).toContain('ui.descend.journal.recent')
+    expect(panel).toContain('j-l')
+  })
+
+  it('第一次开地图说一次「深处在哪」，且只一次（会话级，不进存档）', () => {
+    const main = read('src/main.ts')
+    expect(/if \(open && !deepHintShown\)/.test(main)).toBe(true)
+    expect(main).toContain("t('ui.notify.deepHint')")
+    // 阈值：不许写成每次开地图都喊一遍
+    expect(/if \(open\) \{\s*bus\.emit\('ui\.notify', \{ text: t\('ui\.notify\.deepHint'\)/.test(main)).toBe(false)
+  })
+
+  it('新增的每条字在中英两表里都真的有（含「最近做的事 / 还没动过手」）', () => {
+    const prev = getLang()
+    try {
+      for (const lang of ['zh', 'en'] as const) {
+        setLang(lang)
+        for (const k of ['ui.notify.deepHint', 'ui.descend.journal.recent', 'ui.descend.journal.empty']) {
+          const out = t(k)
+          expect(out).not.toBe(k)
+          expect(out.trim().length).toBeGreaterThan(0)
+          if (lang === 'en') expect(ZH_RE.test(out)).toBe(false)
+        }
+      }
+    } finally { setLang(prev) }
+  })
+})

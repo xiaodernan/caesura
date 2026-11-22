@@ -70,6 +70,8 @@ const CSS = `
 .descend-root footer .tip { color: rgba(201,180,88,.72); }
 .descend-root footer .honest { color: rgba(165,140,120,.78); }
 .descend-root footer .journal { color: rgba(232,223,203,.62); }
+.descend-root footer .j-h { display: block; margin-top: 2px; color: rgba(201,180,88,.6); letter-spacing: .08em; }
+.descend-root footer .j-l { display: block; padding-left: 10px; border-left: 1px solid rgba(201,180,88,.18); margin-top: 2px; }
 @media (max-width: 980px) {
   .descend-root .grid { grid-template-columns: minmax(0,1fr); grid-auto-rows: minmax(0,1fr); }
   .descend-root .dp { inset: 2vh 2vw; }
@@ -180,6 +182,8 @@ export class DescendPanel {
       return `<button class="row nav ${cls}${i === this.focus ? ' sel' : ''}" data-row="${i}">${label}</button>`
     }
     const marks = s.marks.map((m) => `<li class="mark">${zh ? m.zh : m.en}</li>`).join('')
+    // KI-741：手记不只报条数——最近三条正文直接摊在屏幕上（做了什么都看得见，不用回忆）
+    const recent = run.journal.slice(-3)
     const acts = actRows.map((r) => {
       const a = floor.actions[r.index]
       const done = run.done(floor.depth, r.index)
@@ -222,7 +226,11 @@ export class DescendPanel {
         <footer>
           <div class="tip">${t('ui.descend.tip', { charted: run.charted })}</div>
           <div class="honest">${t('ui.descend.honest', { charted: run.charted })}</div>
-          <div class="journal">${t('ui.descend.journal', { n: run.journal.length })}</div>
+          <div class="journal">${t('ui.descend.journal', { n: run.journal.length })}${
+            recent.length
+              ? `<span class="j-h">${t('ui.descend.journal.recent')}</span>` + recent.map((l) => `<span class="j-l">${zh ? l.zh : l.en}</span>`).join('')
+              : `<span class="j-h">${t('ui.descend.journal.empty')}</span>`
+          }</div>
         </footer>
       </div>`
   }

@@ -423,7 +423,16 @@ function setOverlay(open: Overlay): void {
 /** 调音桩/商摊面板（既有调用点的名字不变：`__caesura.setPanelOpen`、面板的 onRequestClose） */
 function setPanelOpen(open: boolean): void { setOverlay(open ? 'panel' : null) }
 /** 地图（`map` 键与面板的 onRequestClose 走它） */
-function setMapOpen(open: boolean): void { setOverlay(open ? 'map' : null) }
+let deepHintShown = false
+function setMapOpen(open: boolean): void {
+  // KI-741：第一次打开地图时说一次「深处在右栏最后一行」——新系统不该只有翻文档的人找得到。
+  // 会话级一次（不进存档、不立旗标）：说多了是噪音，一次是引导。
+  if (open && !deepHintShown) {
+    deepHintShown = true
+    bus.emit('ui.notify', { text: t('ui.notify.deepHint'), kind: 'info' })
+  }
+  setOverlay(open ? 'map' : null)
+}
 /** 深处（地图里的「再下一层」与深处屏的 onRequestClose 走它，KI-737） */
 function setDescendOpen(open: boolean): void {
   // KI-739：开一次记一次（带当时深度）——「有没有人真的找到深处」不该靠猜
