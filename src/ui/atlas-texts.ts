@@ -4366,5 +4366,52 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">Not every absence needs filling — some are rounded by days on our behalf.</p>
     <p class="coda">The age of hush has not ended. It has only gained one more chip on a rim — the salt on the threshold, the ledger shut, the boat still, the chip turned inward — and she was well too.</p>`,
   },
+  {
+    no: 88,
+    zhTitle: "门缝的风",
+    enTitle: "The Wind at the Seam",
+    zh: `    <p>入夜起风。风不大，绕着屋子走了一圈，又走一圈，像在找一个能进来的地方。它找到了门缝——门板与门框之间那一条，比头发宽不了多少。</p>
+    <p>风从缝里进来，先把门后的灰吹成一道很细的弧。阿汐听见了，没有起身。风的声音比人说话轻，比人叹气长；它不催促什么，只是把屋里的空气换掉一小部分，再换掉一小部分。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>门槛上的盐没有动。盐太沉了，风推不动它。她想：风能进来的地方，盐不一定进得来；盐能守住的地方，风也不一定守得住。两样东西各守各的，谁也不欠谁。</p>
+    <p>她把碗放到门边，让碗口迎着那道缝。风落进碗里，转了一圈，出不去，就慢慢停了。碗里那一点风比外面暖，像被碗收下了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她想起很多年前有个人也这样放过碗——不是接风，是接一句没有被说出口的话。那人后来走了；碗还在；缝还在；风每年都来，来的日子前后差不了几天。</p>
+    <p>夜里风大了一点。门缝像一根很细的弦，被风拨着，发出一个几乎听不见的音。她不觉得吵。有些声音不是来打扰的，是来告诉你还有东西在动。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>天快亮时风停了。门缝里剩下一点凉，像有人刚从这里走过。她把碗里的风倒回门外——它本来就不属于屋里，留住它，它就不再是风了。</p>
+    <p>然后她照旧把碗放回原处，把盐推回门槛正中。她伸手检查了一遍门缝：缝还在，不宽不窄。新的一天没有比昨天多什么，也没有少什么。她很好。</p>
+
+    <p class="coda">门缝一直都在，风每年都来。</p>
+    <p class="coda">不是所有进来的都要留住——有些只是路过，替你说了那句你没法说的话。</p>
+    <p class="coda">止音纪元没有结束。它只是又多了一道门缝的风——盐在门槛上，薄簿合着，船停着，碗口朝门——她也很好。</p>`,
+    en: `    <p>At nightfall the wind rose. It was not a strong wind; it walked around the house once, then once more, as if looking for a way in. It found the seam — the one between door and frame, no wider than a hair.</p>
+    <p>The wind came through and first blew the dust behind the door into a very thin arc. Axi heard it and did not rise. The wind was softer than speech, longer than a sigh; it hurried nothing, only exchanged a small part of the room's air, and then another small part.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The salt on the threshold did not move. Salt is too heavy; the wind cannot push it. She thought: where the wind can enter, salt need not enter; where salt can keep watch, the wind need not keep watch. Each guards its own, and neither owes the other.</p>
+    <p>She set the bowl by the door, its mouth turned to the seam. The wind fell into the bowl, went once around, could not get out, and slowly stopped. That little wind in the bowl was warmer than the wind outside, as if the bowl had taken it in.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>She remembered that years ago someone had set a bowl there in just this way — not to catch wind, but to catch a sentence that had never been spoken. That person left afterwards; the bowl remained; the seam remained; the wind came every year, within a few days of the same date.</p>
+    <p>At night the wind grew a little. The seam was like a very fine string, plucked by the wind, giving out a note almost too quiet to hear. She did not find it noisy. Some sounds do not come to disturb you; they come to tell you something is still moving.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Near dawn the wind stopped. A little coolness stayed in the seam, as if someone had just walked past. She poured the wind from the bowl back outside — it had never belonged indoors; keep it, and it would stop being wind.</p>
+    <p>Then she set the bowl back in its place as always, and pushed the salt back to the middle of the threshold. She reached out and checked the seam once: still there, neither wider nor narrower. The new day held nothing more than yesterday, and nothing less. She was well.</p>
+
+    <p class="coda">The seam has always been there; the wind comes every year.</p>
+    <p class="coda">Not everything that enters must be kept — some only pass through, saying on your behalf the thing you could not say.</p>
+    <p class="coda">The age of hush has not ended. It has only gained one more wind at a seam — the salt on the threshold, the ledger shut, the boat still, the bowl facing the door — and she was well too.</p>`,
+  },
 ]
 

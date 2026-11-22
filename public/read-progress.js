@@ -100,7 +100,8 @@
     { slug: 'water-by-the-door', zh: '《门口的水》', en: 'Water by the Door' },
     { slug: 'a-night-within', zh: '《门内一夜》', en: 'A Night Within' },
     { slug: 'a-line-in-the-bowl', zh: '《碗底的一线》', en: 'A Line at the Bottom of the Bowl' },
-    { slug: 'the-chip-on-the-rim', zh: '《碗沿的缺口》', en: 'The Chip on the Rim' }
+    { slug: 'the-chip-on-the-rim', zh: '《碗沿的缺口》', en: 'The Chip on the Rim' },
+    { slug: 'the-wind-at-the-seam', zh: '《门缝的风》', en: 'The Wind at the Seam' }
   ];
 
   var PREFIX = '/caesura/story/';
@@ -175,7 +176,7 @@
                       : '/caesura/story/anthology/';
       var label = next
         ? (isEN ? 'Next · ' + next.en : '下一篇 · ' + next.zh)
-        : (isEN ? 'The Aftermath · all eighty-seven' : '余响集 · 八十七篇全集');
+        : (isEN ? 'The Aftermath · all eighty-eight' : '余响集 · 八十八篇全集');
       var tag = isEN ? (next ? 'Keep reading' : 'Read the whole volume') : (next ? '继续读下一页' : '读完全册');
       nextCard = document.createElement('a');
       nextCard.className = 'read-next';

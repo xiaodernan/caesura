@@ -316,7 +316,7 @@ if (process.argv.includes('--check')) {
   if (!existsSync(OUT_FILE)) { console.error('motif-atlas: missing story/atlas/index.html'); process.exit(1) }
   const now = read(OUT_FILE)
   if (now !== html) { console.error('motif-atlas: generated page is stale — run node scripts/gen-motif-atlas.mjs'); process.exit(1) }
-  console.log('motif-atlas: OK — 87 stories, 12 motifs, in sync')
+  console.log(`motif-atlas: OK — ${(html.match(/class="card" href=/g) || []).length} stories, in sync`)
 } else {
   writeFileSync(OUT_FILE, html, 'utf8')
   console.log('motif-atlas: wrote story/atlas/index.html')
