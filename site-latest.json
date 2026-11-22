@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "d53082aadcfae1479866bdaeb12bf4899e88229e",
+  "head": "c925bd58974eff12792226538c9eaa50d4597e4a",
   "branch": "master",
-  "subject": "余响索引新增五条母题路径（20 站互不抢篇）+ 路径站号/进度与互斥筛选",
-  "date": "2026-11-22T21:36:44+08:00",
+  "subject": "教程/README 增补母题路径指引（五条四站线）",
+  "date": "2026-11-22T21:39:34+08:00",
   "kv": {
     "KI.rows": 659,
     "KI.Implemented": 482,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/d53082aadcfae1479866bdaeb12bf4899e88229e",
+    "url": "https://github.com/xiaodernan/caesura/commit/c925bd58974eff12792226538c9eaa50d4597e4a",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
