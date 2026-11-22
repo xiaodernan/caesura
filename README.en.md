@@ -38,7 +38,7 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - "The Ledger" (original short story, no. 4): <https://xiaodernan.github.io/caesura/story/ledger/> (Resthold · the page Meg never dared to close · bilingual · zero LLM · added 2026-11-15)  
 - "The Garden of Return" (original short story, no. 5): <https://xiaodernan.github.io/caesura/story/garden/> (The Afterland · the sixth sound · The Owner of the Old Bell · bilingual · zero LLM · added 2026-11-15)  
 - "The Rain Tribunal" (original short story, no. 6): <https://xiaodernan.github.io/caesura/story/tribunal/> (The Afterland · the Rainbell Valley · The Drowning Jurist · seven years between sessions · bilingual · zero LLM · added 2026-11-15)  
-- "The Aftermath" (complete short fiction, whole-volume portal — printable as one paper volume): <https://xiaodernan.github.io/caesura/story/anthology/> (all eighty-five stories · EPIC-VII draft now inside · updated 2026-11-19)  
+- "The Aftermath" (complete short fiction, whole-volume portal — printable as one paper volume): <https://xiaodernan.github.io/caesura/story/anthology/> (all eighty-six stories · EPIC-VII draft now inside · updated 2026-11-22)  
 - "The Frostbell" (original short story, no. 7): <https://xiaodernan.github.io/caesura/story/frostbell/> (The Frostbell Cliff · The Last Frostwright · the sound the ice kept · bilingual · zero LLM · added 2026-11-15)  
 - "The Thousand Doors" (original short story, no. 8): <https://xiaodernan.github.io/caesura/story/doors/> (The Arcade of Echoes · the Gatekeeper of a Thousand Doors · bilingual · zero LLM · added 2026-11-15)  
 - "The Stone-Throat" (original short story, no. 9): <https://xiaodernan.github.io/caesura/story/stonethroat/> (The City of Low Tones · The Stone-Throat Matriarch · the pitch that costs nothing · bilingual · zero LLM · added 2026-11-15)  
@@ -115,7 +115,10 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - "Two Lines" (short fiction No.80): <https://xiaodernan.github.io/caesura/story/two-lines/> (the Arcade · the tide withdrew; the dry mark remained · LLM-drafted, human-gated · zero LLM · 2026-11-19) ·  
 - "A Page by the Boat" (short fiction No.81): <https://xiaodernan.github.io/caesura/story/a-page-by-the-boat/> (the Arcade · the boat remained outside; the ledger stayed shut · LLM-drafted, human-gated · zero LLM · 2026-11-19) ·  
 - "The Unsent Page" (short fiction No.82): <https://xiaodernan.github.io/caesura/story/the-unsent-page/> (the Arcade · at dawn, the page by the boat remained; at ebb, the dry mark showed · LLM-drafted, human-gated · zero LLM · 2026-11-19) ·  
-- "A Night Within" (short fiction No.85): <https://xiaodernan.github.io/caesura/story/the-empty-bowl/> (the Arcade · at dawn, the salt remained by the threshold; the ledger stayed shut · LLM-drafted, human-gated · zero LLM · 2026-11-19) ·  
+- "The Empty Bowl" (short fiction No.83): <https://xiaodernan.github.io/caesura/story/the-empty-bowl/> (the Arcade · at dawn the salt remained by the threshold; the ledger shut; the corner still; she did not look at the sea · LLM-drafted, human-gated · zero LLM · 2026-11-19) ·  
+- "Water by the Door" (short fiction No.84): <https://xiaodernan.github.io/caesura/story/water-by-the-door/> (the Arcade · no water in the empty bowl; the salt untouched; a seam left in the door · LLM-drafted, human-gated · zero LLM · 2026-11-19) ·  
+- "A Night Within" (short fiction No.85): <https://xiaodernan.github.io/caesura/story/a-night-within/> (the Arcade · wind through the seam; the bowl still empty; the salt untouched; the ledger corner lifted and fell · LLM-drafted, human-gated · zero LLM · 2026-11-19) ·  
+- "A Line at the Bottom of the Bowl" (short fiction No.86): <https://xiaodernan.github.io/caesura/story/a-line-in-the-bowl/> (the Arcade · a hairline at the bottom of the bowl; empty, it does not leak; it can hold light too · LLM-drafted, human-gated · zero LLM · 2026-11-22) ·  
 - Sync truth: `https://raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json`
 
 ## Stress runs (measured 2026-11-22)

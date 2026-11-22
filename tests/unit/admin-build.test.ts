@@ -32,7 +32,7 @@ describe('admin · 研发状态 Build Observatory（KI-630）', () => {
     expect(js).toContain('raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json')
     expect(js).toContain('api.github.com/repos/xiaodernan/caesura/actions/runs?branch=master&per_page=8')
     expect(js).toContain('renderBuild()')
-    expect(js).toContain("renderAiCommitted(); hydrateAiLive(); renderStateGraph(); renderBuild()")
+    expect(js).toContain("renderAiCommitted(); hydrateAiLive(); renderStateGraph(); renderRouter(); renderBuild(); renderPriors()")
     expect(js).toContain('build-error')
     expect(js).toContain('build-runs')
   })

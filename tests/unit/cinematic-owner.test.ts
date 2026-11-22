@@ -82,9 +82,9 @@ const mainLive = live(mainSrc)
 const 名册 = (CORE as unknown as Record<string, unknown>).MENU_OWNERS as readonly string[] | undefined
 
 describe('KI-390 乙案：第五格主人在 core 那一侧（A 组）', () => {
-  it('core 把五格主人作为**一份可枚举名册**交出来，第五格叫 `cinematic`', () => {
+  it('core 把名册作为**一份可枚举名册**交出来，第五格叫 `cinematic`（现含 descend 共六格）', () => {
     expect(名册, 'core 没有 `MENU_OWNERS`：值域今天只活在 `MenuOwner` 那句字面量里，别人没法按它循环').toBeDefined()
-    expect([...(名册 ?? [])].sort(), '名册应是五格，且第五格是 `cinematic`').toEqual(['cinematic', 'dialogue', 'map', 'panel', 'title'])
+    expect([...(名册 ?? [])].sort(), '名册应是六格，含 `descend`，且 `cinematic` 在场').toEqual(['cinematic', 'descend', 'dialogue', 'map', 'panel', 'title'])
   })
 
   it('`MenuOwner` 由名册派生，不再另抄一遍字面量（词表只有一份账）', () => {

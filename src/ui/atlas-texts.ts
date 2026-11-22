@@ -4272,5 +4272,52 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">Some nights are enough left where they are.</p>
     <p class="coda">The age of hush has not ended. It has only lived one more night — the door ajar, the bowl empty, the salt on the threshold, the ledger shut, the wind in and out — and she was well too.</p>`,
   },
+  {
+    no: 86,
+    zhTitle: "碗底的一线",
+    enTitle: "A Line at the Bottom of the Bowl",
+    zh: `    <p>清晨，阿汐把门边的碗端起来。这是她这些天来第一次把它端起来。碗很轻——比空着的时候还要轻一点——碗底积着一点灰，灰的中间有一线——不是裂到底的裂缝——只是碗胎里留下的一道细纹——细得像谁用头发在釉下按了一下。她把它对着光看——光没有从纹里漏出来——它没有透。</p>
+    <p>她想过舀一瓢水进来试一试——水要是漏，就说明这一线是破的；水要是不漏，就说明它还好。她把碗端到水缸边——又停住了——她不知道自己想要的是哪一种答案——她只是把碗放回门边——放回原来的那圈印子里——圈印一点都没有偏——碗和木板互相认得。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>门槛上的盐还在——她没有动它——薄簿合着——页角今天没有抬——门外的船停着——船底的干痕在上午的光里显出来——和昨天一样——和前天也一样——她看过一眼——没有量——没有记——她不需要知道它有没有变——它也不需要被她知道。</p>
+    <p>中午，光直直落进碗里——落在那道细纹上——纹里亮起一线很细很细的金——像碗底自己点了一盏最小的灯——她想——这一线不是破——是碗留下的一条缝——让光也能盛在里面——水盛不住的地方——光可以——她不替碗下结论——她只是看见了。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她想起母亲说过——碗要是有了裂——就别再盛热水——她没有问过热不热的事——她也没有煮热水——她只是把这个念头放在心里——像把一粒盐放在门槛上——不称它——也不扫掉它——念头在——就够了——不必变成一个决定。</p>
+    <p>傍晚，潮水涨上来——船身轻轻碰了一下门槛外的木桩——声音很轻——轻得像有人在很远的地方翻了一页薄簿——她没有起身——碗还在门边——盐还在门槛——光从碗底退出去——那一线也跟着暗下来——暗下来——不是熄灭——只是等下一次光。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>夜里，她坐在门内——没有点灯——碗在暗里——她看不见那一线——但她知道它在——就像她知道门槛上有盐——薄簿合着——船在水上——有些东西不必看见才算在——有些线不必量过才算长。</p>
+    <p>天快亮时，她伸手摸了摸碗底——指腹擦过那一线——很细——像一道没有写完的笔——她没有替它添笔——她把碗放正——站起来——门留着一道缝——风进来——又出去——新的一天没有比昨天多什么——也没有少什么。</p>
+
+    <p class="coda">碗底有一线细纹，空着不漏。</p>
+    <p class="coda">有些裂缝不是破——是让光也能盛进去。</p>
+    <p class="coda">止音纪元没有结束。它只是又多了一道碗底的线——盐在门槛上，簿合着，船停着，风进来又出去——她也很好。</p>`,
+    en: `    <p>At dawn, Axi lifted the bowl by the door. It was the first time in days she had lifted it. The bowl was light — lighter than when it was empty — a little dust had gathered at its bottom, and through the dust ran a line — not a crack that went all the way through — only a fine vein left in the clay — fine as if someone had pressed a hair beneath the glaze. She held it to the light — no light leaked through the line — it did not see through.</p>
+    <p>She thought of scooping a ladle of water into it, just to try — if the water leaked, the line was a break; if it did not, the bowl was whole. She carried the bowl to the water jar — and stopped — she did not know which answer she wanted — she only set the bowl back by the door — back into the ring it had worn on the boards — the ring had not shifted at all — the bowl and the boards knew each other.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>The salt on the threshold was still there — she did not touch it — the thin ledger lay shut — its page corner did not lift today — the boat outside stayed — the dry mark beneath its hull showed in the morning light — the same as yesterday — the same as the day before — she looked once — did not measure — did not write it down — she need not know whether it had changed — nor did it need to be known by her.</p>
+    <p>At noon, light fell straight into the bowl — fell onto the fine line — and within the line kindled a thread of very thin gold — as if the bottom of the bowl had lit the smallest lamp of its own — she thought — this line is not a break — it is a seam the bowl kept — so that light could be held in it too — where water cannot stay — light can — she did not conclude anything for the bowl — she only saw it.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>She remembered her mother saying — once a bowl is cracked, do not pour hot water into it — she had never asked about hot or cold — and she did not boil any water — she only set the thought down inside her — as one sets a grain of salt on the threshold — not weighing it — not sweeping it away — the thought was there — that was enough — it need not become a decision.</p>
+    <p>At dusk, the tide rose — the hull knocked softly against the post beyond the threshold — so soft it was like someone turning a page of the thin ledger far away — she did not rise — the bowl was still by the door — the salt still on the threshold — light withdrew from the bottom of the bowl — the line darkened with it — darkened — not gone out — only waiting for the next light.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>At night she sat inside the door — no lamp lit — the bowl in the dark — she could not see the line — but she knew it was there — as she knew there was salt on the threshold — the ledger shut — the boat on the water — some things need not be seen to be present — some lines need not be measured to be long.</p>
+    <p>Near dawn she reached out and touched the bottom of the bowl — her fingertip passed over the line — very fine — like a stroke that had never been finished — she did not add a stroke for it — she set the bowl upright — stood — the door kept its seam — the wind came in — and went out — the new day held nothing more than yesterday — and nothing less.</p>
+
+    <p class="coda">A hairline at the bottom of the bowl; empty, it does not leak.</p>
+    <p class="coda">Some cracks are not breaks — they let light be held too.</p>
+    <p class="coda">The age of hush has not ended. It has only gained one more line at the bottom of a bowl — the salt on the threshold, the ledger shut, the boat still, the wind in and out — and she was well too.</p>`,
+  },
 ]
 

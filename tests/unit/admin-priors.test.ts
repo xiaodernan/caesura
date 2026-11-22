@@ -32,7 +32,7 @@ describe('admin · 先验审计 Priors Audit（KI-636）', () => {
   it('app.js 有 renderPriors + fetch audit JSON + 调用 renderAll', () => {
     expect(js).toContain('renderPriors')
     expect(js).toContain('./admin-priors-audit.json')
-    expect(js).toContain('renderAiCommitted(); hydrateAiLive(); renderStateGraph(); renderBuild(); renderPriors()')
+    expect(js).toContain('renderAiCommitted(); hydrateAiLive(); renderStateGraph(); renderRouter(); renderBuild(); renderPriors()')
   })
 
   it('styles.css 含 priors 样式（无 @import / 无外链）', () => {
