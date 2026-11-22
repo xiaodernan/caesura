@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * gen-motif-atlas.mjs — 由 read-progress.js 的 ORDER 与 atlas-texts.ts 的双语正文，
- * 生成《余响索引 / Motif Atlas》：86 篇按母题可检索、可筛选，零网络、零 LLM。
+ * 生成《余响索引 / Motif Atlas》：全量篇目按母题可检索、可筛选，零网络、零 LLM。
  *
  * 用法：node scripts/gen-motif-atlas.mjs [--check]
  *   --check 只校验生成物是否与源一致（CI / 门禁用），不写盘。
