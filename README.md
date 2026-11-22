@@ -144,7 +144,7 @@ node scripts/stress-live.mjs --target=/caesura/ --concurrency=24 --rounds=2
 # 48/48 HTTP 200 且 body 非空 · 0 失败 · mean 267.5ms · p50 132ms · p95 424ms · p99 504ms · 305,136 bytes
 
 node scripts/sim-real-visitor.mjs --seed=1
-# 93/93 页面 200 · 0 坏页 · 盲点 12 跳 0 失败 · 出域 referrer 200 · 3,164,579 bytes · avg 34,028 bytes · 5,721ms
+# 94/94 页面 200 · 0 坏页 · 盲点 12 跳 0 失败 · 出域 referrer 200 · 3,184,351 bytes · avg 33,876 bytes · 5,880ms（冷）/ 471ms（CDN 已热）
 ```
 
 前者测本侧路由链 / 决策 / transport mock 的开销（进程内、确定性）；后者打公网只读页面，
