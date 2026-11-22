@@ -2237,3 +2237,27 @@ export interface WorldStateDef {
   /** 这一格要回答的叙事问题与取值裁决（叙事评审读这里，引擎不读） */
   note?: string
 }
+
+/**
+ * 「拾遗」世界细节遭遇的一条（`wandering-echoes.json`，KI-736）。
+ *
+ * 与 `worldstate.json` 的规则刻意不同：拾遗**没有后果**（不写旗标、不给奖励），
+ * 只有"看见"——所以它不受"每条 setFlag 必须有读者"那条数据闸门约束。
+ * 它的闸门是只读的：`requiresFlag` / `requiresState` 只决定"这条此刻出不出现"。
+ */
+export interface WanderingEchoData {
+  /** 全局唯一，形如 `we_<区域短名>_<小写蛇形>` */
+  id: string
+  /** 必须存在于 regions.json 的 id */
+  regionId: string
+  titleZh: string
+  titleEn: string
+  textZh: string
+  textEn: string
+  /** 权重（缺省 1；确定性加权选取用，不是概率百分比） */
+  weight?: number
+  /** 可选闸门：这条旗标已立才出现 */
+  requiresFlag?: string
+  /** 可选闸门：这个值域格等于该值才出现 */
+  requiresState?: { key: string; value: string }
+}

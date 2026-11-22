@@ -106,7 +106,7 @@ if (rootArg && !existsSync(JSON_DIR)) {
   console.error(`${DATA_ROOT_FLAG} 指向的目录不存在：${JSON_DIR}（拼错的路径不算「表很干净」）`)
   process.exit(2)
 }
-const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json', 'shop.json', 'states.json', 'ambience.json', 'explore.json', 'battle.json', 'ducking.json', 'weather.json', 'cinematics.json', 'lighting.json', 'vfx.json', 'squad.json', 'echo-flow.json', 'endless-sectors.json']
+const FILES = ['player.json', 'movesets.json', 'weapons.json', 'enemies.json', 'loot.json', 'regions.json', 'items.json', 'progression.json', 'statuses.json', 'movements.json', 'worldstate.json', 'npcs.json', 'dialogue.json', 'quests.json', 'reactions.json', 'shop.json', 'states.json', 'ambience.json', 'explore.json', 'battle.json', 'ducking.json', 'weather.json', 'cinematics.json', 'lighting.json', 'vfx.json', 'squad.json', 'echo-flow.json', 'endless-sectors.json', 'wandering-echoes.json']
 /**
  * KI-413②：注入的数据根要先**像数据根**。「名册里的表读不到」这一格有两种完全不同的病：真表里确实少了一张
  * （那是判决，必须报出来），以及喂进来的那格根本不是数据根——拼错了、指到上一级了、给了个空目录。
@@ -469,6 +469,43 @@ function validateValidatorMap() {
  * 词表对账（KI-074 / KI-076）：按 `from` 逐份读载体文件（一次一趟，缓存着），把顶上每张手抄名单比一遍。
  * 读不到载体或读不到某条声明都报 ERROR —— **看不见的门比没有门更糟**（它让所有人都以为有人在看）。
  */
+/**
+ * KI-736：「拾遗」世界细节遭遇表。玩家侧 `quest/WanderingEchoes.ts` 真读这几列，
+ * 所以按同一契约查：区域必须存在、双语不得为空、中文不夹英文、每区至少两条（密度层不许形同虚设）。
+ */
+function validateWanderingEchoes() {
+  const file = 'wandering-echoes.json'
+  const table = data[file]
+  const rows = table && Array.isArray(table.entries) ? table.entries : []
+  if (!rows.length) { report.error(file, 'entries', '拾遗表为空 ⇒ 世界又变成「很大、很空」'); return }
+  const regionIds = new Set((data['regions.json'] ?? []).map((r) => r.id))
+  const seen = new Set()
+  const byRegion = new Map()
+  for (let i = 0; i < rows.length; i++) {
+    const e = rows[i]
+    const at = `entries[${i}]`
+    if (!isObj(e)) { report.error(file, at, '不是对象'); continue }
+    if (!isStr(e.id) || !/^we_[a-z0-9_]+$/.test(e.id)) report.error(file, at + '.id', `id 必须形如 we_xxx_yyy：${JSON.stringify(e.id)}`)
+    if (isStr(e.id) && seen.has(e.id)) report.error(file, at + '.id', `重复 id ${e.id}`)
+    if (isStr(e.id)) seen.add(e.id)
+    if (!regionIds.has(e.regionId)) report.error(file, at + '.regionId', `区域不在 regions.json：${JSON.stringify(e.regionId)}`)
+    byRegion.set(e.regionId, (byRegion.get(e.regionId) || 0) + 1)
+    for (const k of ['titleZh', 'titleEn', 'textZh', 'textEn']) {
+      if (!isStr(e[k])) report.error(file, at + '.' + k, '玩家可见文本不得为空')
+    }
+    if (isStr(e.textZh) && /[A-Za-z]{2,}/.test(e.textZh)) report.error(file, at + '.textZh', '中文模式不许夹英文单词（原生英文也要译成中文）')
+    if (isStr(e.titleZh) && e.titleZh.length > 6) report.error(file, at + '.titleZh', '标题超过 6 字 ⇒ 不是「一眼看见的一小段」')
+    if (isStr(e.textZh) && e.textZh.length > 60) report.error(file, at + '.textZh', '正文超过 60 字 ⇒ 不是「一条细节」')
+    if (e.weight !== undefined && (!Number.isInteger(e.weight) || e.weight < 1)) report.error(file, at + '.weight', 'weight 必须是 ≥1 的整数')
+    if (e.requiresFlag !== undefined && (!isStr(e.requiresFlag) || !e.requiresFlag.startsWith('flag.'))) report.error(file, at + '.requiresFlag', 'requiresFlag 必须是 flag.* 形状')
+    if (e.requiresState !== undefined && (!isObj(e.requiresState) || !isStr(e.requiresState.key) || !isStr(e.requiresState.value))) report.error(file, at + '.requiresState', 'requiresState 必须是 { key, value }')
+  }
+  for (const rid of regionIds) {
+    const n = byRegion.get(rid) || 0
+    if (n < 2) report.error(file, rid, `该区只有 ${n} 条拾遗 ⇒ 密度层形同虚设（每区至少 2 条）`)
+  }
+}
+
 function validateVocabDrift() {
   const cache = new Map()
   const corpusFor = (from) => {
@@ -3370,6 +3407,7 @@ validateWorldstate()
 validateGearRarityCoverage()
 validateEchoFlow()
 validateEndlessSectors()
+validateWanderingEchoes()
 validateVocabDrift()
 // KI-093 排在最后：它读的是本文件的源码，而"有没有被调用"正是它的一条判据 ⇒ 调用点必须已经写下去了
 validateValidatorMap()

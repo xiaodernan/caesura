@@ -13,7 +13,7 @@ import { GameLoop } from '@/core/GameLoop'
 import { Input, pumpMenu, type MenuOwner, type MenuPump } from '@/core/Input'
 import { RhythmClock } from '@/core/RhythmClock'
 import { registry } from '@/core/Registry'
-import { registerGameData, playerBase, regions, worldstate, dialogues, quests as questTable, worldStates as worldStateDefs, cinematics as cinematicRows, echoFlowTable } from '@/data'
+import { registerGameData, playerBase, regions, worldstate, dialogues, quests as questTable, worldStates as worldStateDefs, cinematics as cinematicRows, echoFlowTable, wanderingEchoesTable } from '@/data'
 import { resolveMarker } from '@/quest/Objectives'
 import { respawnTarget, type RespawnPost } from '@/world/Respawn'
 import type { ItemData, MovesetData, NpcData, RegionData, RegionMusic, Vec3, WeaponData } from '@/data/schema'
@@ -72,6 +72,8 @@ import { Checkpoints } from '@/save/Checkpoint'
 import { WorldState } from '@/quest/WorldState'
 import { WorldStates } from '@/quest/WorldStates'
 import { EchoFlow, echoFlowEntriesOf, announceEchoFlow } from '@/quest/EchoFlow'
+import { WanderingEchoes } from '@/quest/WanderingEchoes'
+import type { WanderingEcho } from '@/quest/WanderingEchoes'
 import { endlessEntriesOf, endlessWorldTable } from '@/quest/EndlessWorld'
 import { Quests } from '@/quest/Quests'
 import { DialogueEngine, type DialogueContext } from '@/quest/Dialogue'
@@ -640,6 +642,20 @@ const worldState = new WorldState(worldstate, {
   setFlag: (k) => streaming.setFlag(k)
 })
 /**
+ * 拾遗层（KI-736）：八区各若干条「走着走着撞见的一段具体之物」。
+ * 触发**只有一个声源**——`ui.region.enter`（跨区那一帧）；开局首区由 boot 末尾补一次。
+ * 确定性选取 + 会话内不重复 + 零 LLM：同档读两次看到的是同一个世界。
+ */
+const echoes = new WanderingEchoes(wanderingEchoesTable.entries as WanderingEcho[], {
+  hasFlag: (k) => streaming.hasFlag(k),
+  stateOf: (k) => worldStates.get(k) ?? null,
+  onEcho: (e) => {
+    const en = getLang() === 'en'
+    bus.emit('ui.notify', { text: `${en ? e.titleEn : e.titleZh} · ${en ? e.textEn : e.textZh}`, kind: 'info' })
+  },
+})
+bus.on('ui.region.enter', (p) => { echoes.onRegionEnter(p.regionId) })
+/**
  * 叙事层（Phase 6-B）：任务状态机 + NPC 关系 + 对话引擎。
  * 三者共用**一个**上下文（旗标 / 关系 / 任务步 / 背包 / 已读），所以"对话看得见什么"
  * 与"任务推进到哪"永远是同一份事实——不存在 UI 与逻辑各记一套的情况。
@@ -1204,6 +1220,8 @@ async function startRun(slot: string | null): Promise<void> {
   bus.emit('ui.notify', { text: t('ui.notify.rank', { rank: rpg.prog.rank, xp: rpg.prog.xp }) + (rpg.prog.unspent > 0 ? t('ui.notify.unspent', { n: rpg.prog.unspent }) : ''), kind: 'info' })
   // KI-141：序章目标（还没接任何委托时，箭头指着该先找的人）
   applyPrologueObjective()
+  // KI-736：开局首区也算「进场一次」——区域事件只在跨区时发，否则第一区永远看不到拾遗
+  if (homeRegion) echoes.onRegionEnter(homeRegion.id)
   booted = true
   loop.start()
 }

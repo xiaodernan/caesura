@@ -1,0 +1,133 @@
+{
+  "schema": 1,
+  "kind": "wandering-echo-candidates",
+  "ki": "KI-736",
+  "generatedAt": "2026-11-22T04:50:30.722Z",
+  "mode": "live",
+  "model": "gpt-6.2-sol",
+  "anchors": [
+    "[短篇][story/anthology] 约 7 分钟 · 回廊钟 · 船底的干痕 · 余响",
+    "[短篇][story/anthology] 约 7 分钟 · 回廊钟 · 淡痕 · 余响",
+    "[短篇][story/anthology] 约 7 分钟 · 回廊钟 · 壶底旧痕 · 余响",
+    "[短篇][story/anthology] 约 7 分钟 · 回廊钟 · 门外的湿痕 · 余响",
+    "[短篇][story/anthology] 约 7 分钟 · 回廊钟 · 干痕仍在 · 余响",
+    "[短篇][story/anthology] 约 7 分钟 · 回廊钟 · 干痕未进 · 余响",
+    "[短篇][story/anthology] 约 7 分钟 · 回廊钟 · 薄簿合着 · 余响",
+    "[短篇][story/anthology] 约 7 分钟 · 回廊钟 · 摆旁的灰 · 余响",
+    "[短篇][story/anthology] 约 7 分钟 · 回廊钟 · 灰未落 · 余响",
+    "[短篇][story/anthology] 约 7 分钟 · 回廊钟 · 灰不催 · 余响"
+  ],
+  "regions": [
+    "rg_resthold",
+    "rg_whisperwode",
+    "rg_drowned_choir",
+    "rg_brokenbar_camp",
+    "rg_fellcarillon",
+    "rg_earless_deeps",
+    "rg_unfinished_hall",
+    "rg_windcoast"
+  ],
+  "candidates": [
+    {
+      "id": "we_resthold_empty_bowl",
+      "regionId": "rg_resthold",
+      "titleZh": "门边碗",
+      "titleEn": "Bowl by the Gate",
+      "textZh": "门边的空碗扣住一撮摆旁的灰。",
+      "textEn": "The empty bowl by the gate covers a pinch of ash beside the pendulum.",
+      "canonAnchor": "摆旁的灰",
+      "requiresFlag": null,
+      "weight": 3
+    },
+    {
+      "id": "we_whisperwode_bark_notch",
+      "regionId": "rg_whisperwode",
+      "titleZh": "树皮刻痕",
+      "titleEn": "Bark Notch",
+      "textZh": "树皮上的刻痕里积着一道淡痕。",
+      "textEn": "A pale trace gathers inside the notch cut into the bark.",
+      "canonAnchor": "淡痕",
+      "requiresFlag": null,
+      "weight": 3
+    },
+    {
+      "id": "we_drowned_choir_halfbeat",
+      "regionId": "rg_drowned_choir",
+      "titleZh": "水下半拍",
+      "titleEn": "Underwater Beat",
+      "textZh": "船底的干痕旁，水声停在没唱完的一拍。",
+      "textEn": "Beside the dry mark beneath the boat, the sound underwater stops mid-beat.",
+      "canonAnchor": "船底的干痕",
+      "requiresFlag": null,
+      "weight": 3
+    },
+    {
+      "id": "we_brokenbar_camp_repair",
+      "regionId": "rg_brokenbar_camp",
+      "titleZh": "补拍",
+      "titleEn": "Mended Beat",
+      "textZh": "裂开的节拍被一针粗线缝住，灰未落。",
+      "textEn": "A coarse stitch binds the broken beat; the ash has not fallen.",
+      "canonAnchor": "灰未落",
+      "requiresFlag": null,
+      "weight": 3
+    },
+    {
+      "id": "we_fellcarillon_bell_shell",
+      "regionId": "rg_fellcarillon",
+      "titleZh": "钟壳内侧",
+      "titleEn": "Inside the Bell",
+      "textZh": "落钟的钟壳内侧，干痕仍在。",
+      "textEn": "Inside the fallen bell's shell, the dry mark remains.",
+      "canonAnchor": "干痕仍在",
+      "requiresFlag": null,
+      "weight": 3
+    },
+    {
+      "id": "we_earless_deeps_salt_ledger",
+      "regionId": "rg_earless_deeps",
+      "titleZh": "盐账",
+      "titleEn": "Salt Ledger",
+      "textZh": "盐粒压住薄簿合着的一角，页边留着干痕未进。",
+      "textEn": "Salt grains weigh down a corner of the closed ledger; the dry mark stops at the edge.",
+      "canonAnchor": "干痕未进",
+      "requiresFlag": null,
+      "weight": 3
+    },
+    {
+      "id": "we_unfinished_hall_unwritten_page",
+      "regionId": "rg_unfinished_hall",
+      "titleZh": "未完页",
+      "titleEn": "Unfinished Page",
+      "textZh": "管风琴旁，薄簿合着，最后一行只写了一半。",
+      "textEn": "Beside the organ, the ledger lies closed; its last line is only half written.",
+      "canonAnchor": "薄簿合着",
+      "requiresFlag": null,
+      "weight": 3
+    },
+    {
+      "id": "we_windcoast_travel_knot",
+      "regionId": "rg_windcoast",
+      "titleZh": "远行结",
+      "titleEn": "Travel Knot",
+      "textZh": "门外的湿痕旁，绳结朝着海风的方向收紧。",
+      "textEn": "Beside the wet mark outside the door, a knot tightens toward the sea wind.",
+      "canonAnchor": "门外的湿痕",
+      "requiresFlag": null,
+      "weight": 3
+    }
+  ],
+  "usage": {
+    "calls": 1,
+    "cachedTokens": 4425,
+    "promptTokens": 5404,
+    "statuses": [
+      200
+    ]
+  },
+  "errors": [],
+  "runtime": false,
+  "authorOnly": true,
+  "requiresHumanReview": true,
+  "containsCredentials": false
+}

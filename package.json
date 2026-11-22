@@ -103,7 +103,9 @@
     "ai:priors": "node scripts/ai-admin-auditor.mjs",
     "ai:forecast": "node scripts/ai-trend-forecast.mjs",
     "ai:world-router": "node scripts/ai-world-router.mjs",
-    "ai:world-router:live": "node scripts/ai-world-router.mjs --live"
+    "ai:world-router:live": "node scripts/ai-world-router.mjs --live",
+    "ai:echoes": "node scripts/ai-wandering-echoes.mjs",
+    "ai:echoes:live": "node scripts/ai-wandering-echoes.mjs --live"
   },
   "dependencies": {
     "three": "^0.186.0"

@@ -679,3 +679,4 @@ Phase B4 的三件套此前是"有人听、没人说"。
 | KI-733 | **LLM 优化建议 #1 落地闭环**：首屏加 guide 直达角标（goto-guide→/tutorial/，记账且不误触开局）+ 修陈旧「八十一篇」→「八十五篇」+ forecast action#1 landed 标记 + admin「已落地」徽章 · title-links/title-screen/quickstart 61 腿 | KI-733 |
 | KI-734 | **LLM 顾问 payload 数据完整性 + landedHistory**：top_rage_click 增 views+rate（破「无访问量」幻觉）+ observed.topRage 留证 + gpt-6.2-sol 真跑重生成（action#1 直引 213/402/53%）+ landedHistory 持久化（重生成不抹证据）+ admin 已落地区块 · ai-optimization-advisor 8 腿 | KI-734 |
 | KI-735 | **LLM 条件路由世界状态机**：llm-router 可注入判据（三难现算/tamper 三路精确切片/rigged 塌缩/falsifiable 真值推导）+ ai-world-router 首次真用 addConditionalEdges（gpt-6.2-sol 真选五分支之一、条件边连唯一 draft、checkpoints 留证）+ world-rag canon + 双拷贝人工闸产物（真跑 90% 命中）+ admin panel-router（双语三列）+ ai:world-router(:live) · 13 腿守卫 | KI-735 |
+| KI-736 | **拾遗 · 世界细节遭遇**：ai-wandering-echoes 作者侧（RAG canon + 真跑 gpt-6.2-sol）+ 人工策展运行时表 + WanderingEchoes 确定性选取（区域/旗标/值域门控、会话内不重复、零 LLM）+ validate-data 校验 + main.ts 接 ui.region.enter + 双语守卫 | KI-736 |
