@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "e579714823748b92bb7a473b534eaf679d0943b2",
+  "head": "91f19d1d4421a481411b2ce4638dfee58133089b",
   "branch": "master",
-  "subject": "chore: 删掉误建的空文件 __caesuraTrack",
-  "date": "2026-11-22T13:50:06+08:00",
+  "subject": "feat: KI-740 服务注册租约 → 自动摘除 → 有界故障转移",
+  "date": "2026-11-22T13:58:43+08:00",
   "kv": {
-    "KI.rows": 657,
-    "KI.Implemented": 480,
+    "KI.rows": 658,
+    "KI.Implemented": 481,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 105,
@@ -16,7 +16,7 @@
     "SYS.Blocked": 0,
     "ARCH.sections": 202,
     "ARCH.holes": "none",
-    "PKG.scripts": 97
+    "PKG.scripts": 98
   },
   "suites": {
     "consoleUi": 150,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/e579714823748b92bb7a473b534eaf679d0943b2",
+    "url": "https://github.com/xiaodernan/caesura/commit/91f19d1d4421a481411b2ce4638dfee58133089b",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
