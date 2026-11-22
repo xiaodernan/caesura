@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "d58c5386d6fa58e95ce7dd4b56590b13e1053600",
+  "head": "cfa064906acc67672fa5c0775dd717e63ed0c91b",
   "branch": "master",
-  "subject": "content(story): essay 87 The Chip on the Rim; align anthology, atlas, console, tutorial, README",
-  "date": "2026-11-22T20:37:23+08:00",
+  "subject": "docs(sim): refresh the 94-page real-visitor reading (cold + warm CDN)",
+  "date": "2026-11-22T20:39:36+08:00",
   "kv": {
     "KI.rows": 659,
     "KI.Implemented": 482,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/d58c5386d6fa58e95ce7dd4b56590b13e1053600",
+    "url": "https://github.com/xiaodernan/caesura/commit/cfa064906acc67672fa5c0775dd717e63ed0c91b",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
