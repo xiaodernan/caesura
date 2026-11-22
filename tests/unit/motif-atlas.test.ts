@@ -31,6 +31,17 @@ describe('Motif Atlas 余响索引（story/atlas/index.html）', () => {
     }
   })
 
+  it('母题按出现频次 + 标题加权取前四：第90篇必须带 empty 主母题', () => {
+    const card90 = HTML.match(/class="card" href="\/caesura\/story\/the-one-left-empty\/" data-no="90" data-motifs="([^"]*)"/)
+    expect(card90, '第90篇卡片缺失').toBeTruthy()
+    expect(card90![1].split(' ')).toContain('empty')
+    for (const m of HTML.matchAll(/data-no="\d+" data-motifs="([^"]*)"/g)) {
+      const tags = m[1].split(' ').filter(Boolean)
+      expect(tags.length, `card ${m[0].slice(0, 30)} 标签数`).toBeGreaterThan(0)
+      expect(tags.length, `card ${m[0].slice(0, 30)} 标签数`).toBeLessThanOrEqual(8)
+    }
+  })
+
   it('12 个母题筛 + 搜索框 + 已读统计', () => {
     const chips = [...HTML.matchAll(/class="chip" data-motif="([^"]+)"/g)].map((m) => m[1])
     expect(new Set(chips).size).toBe(12)

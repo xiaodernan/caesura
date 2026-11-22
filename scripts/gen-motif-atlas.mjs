@@ -59,8 +59,18 @@ function esc(s) {
 }
 
 function motifTags(entry, lang) {
-  const text = (lang === 'zh' ? entry.zh : entry.en) + ' ' + entry.title
-  const hits = MOTIFS.filter((m) => m.re.test(text)).slice(0, 4).map((m) => m.id)
+  const body = lang === 'zh' ? entry.zh : entry.en
+  const title = lang === 'zh' ? entry.zhTitle : entry.enTitle
+  /* 按出现次数打分，标题命中 ×3——让「空着的一格」这类主母题不被固定顺序挤掉 */
+  const scored = MOTIFS.map((m) => {
+    const re = new RegExp(m.re.source, 'gi')
+    const bodyHits = (body.match(re) || []).length
+    const titleHits = (title.match(re) || []).length
+    return { id: m.id, score: bodyHits + titleHits * 3 }
+  })
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score)
+  const hits = scored.slice(0, 4).map((m) => m.id)
   return hits.length ? hits : ['echo']
 }
 
