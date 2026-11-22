@@ -2,13 +2,13 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "91f19d1d4421a481411b2ce4638dfee58133089b",
+  "head": "b85165f62ebfd125d750372c0b51fea40f2b54a6",
   "branch": "master",
-  "subject": "feat: KI-740 服务注册租约 → 自动摘除 → 有界故障转移",
-  "date": "2026-11-22T13:58:43+08:00",
+  "subject": "feat: KI-741 深处的可见性 · 手记正文 + 地图首开提示",
+  "date": "2026-11-22T14:04:44+08:00",
   "kv": {
-    "KI.rows": 658,
-    "KI.Implemented": 481,
+    "KI.rows": 659,
+    "KI.Implemented": 482,
     "KI.Partial": 167,
     "KI.Blocked": 10,
     "SYS.rows": 105,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/91f19d1d4421a481411b2ce4638dfee58133089b",
+    "url": "https://github.com/xiaodernan/caesura/commit/b85165f62ebfd125d750372c0b51fea40f2b54a6",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
