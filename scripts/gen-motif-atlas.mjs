@@ -84,16 +84,42 @@ function build() {
       if (!m) return '<span class="tag"><span class="zh-copy">回声</span><span class="en-copy">Echo</span></span>'
       return `<span class="tag" data-motif="${m.id}"><span class="zh-copy">${m.zh}</span><span class="en-copy">${m.en}</span></span>`
     }).join('')
-    return `    <a class="card" href="${href}" data-motifs="${[...new Set([...r.motifs, ...r.motifsEn])].join(' ')}" data-index="${esc((r.zhTitle + ' ' + r.enTitle + ' ' + r.zh + ' ' + r.en).toLowerCase())}">
+    return `    <a class="card" href="${href}" data-no="${r.no}" data-motifs="${[...new Set([...r.motifs, ...r.motifsEn])].join(' ')}" data-index="${esc((r.zhTitle + ' ' + r.enTitle + ' ' + r.zh + ' ' + r.en).toLowerCase())}">
       <span class="no">篇 ${r.no} · No. ${r.no}</span>
       <h2 class="zh-copy">《${esc(r.zhTitle)}》</h2>
       <h2 class="en-copy">“${esc(r.enTitle)}”</h2>
-      <div class="tags">${tags}</div>
+      <div class="tags">${tags}<span class="tag step-tag"></span></div>
       <span class="read-flag zh-copy">已读</span><span class="read-flag en-copy">Read</span>
     </a>`
   }).join('\n')
 
   const chipButtons = chips.map((m) => `      <button type="button" class="chip" data-motif="${m.id}"><span class="zh-copy">${m.zh}</span><span class="en-copy">${m.en}</span> <b data-count="${m.id}">0</b></button>`).join('\n')
+
+  // 母题路径：一条路串起 4 个母题，各取「该母题下最早、且未被任何一条路占用」的一篇。
+  // 路径之间互不抢篇（全局 claimed），每条路再按篇号升序读——结果完全由数据决定且可复现。
+  const ROUTES = [
+    { id: 'salt-line', zh: '盐线', en: 'Salt Line', motifs: ['salt', 'line', 'bowl', 'tide'] },
+    { id: 'door-line', zh: '门线', en: 'Door Line', motifs: ['door', 'wind', 'light', 'bell'] },
+    { id: 'boat-line', zh: '船线', en: 'Boat Line', motifs: ['boat', 'tide', 'empty', 'salt'] },
+    { id: 'ash-line', zh: '灰线', en: 'Ash Line', motifs: ['ash', 'bell', 'light', 'empty'] },
+    { id: 'bowl-line', zh: '碗线', en: 'Bowl Line', motifs: ['bowl', 'line', 'empty', 'door'] },
+  ]
+  const claimed = new Set()
+  const routeMeta = ROUTES.map((route) => {
+    const used = new Set()
+    const nos = []
+    for (const motif of route.motifs) {
+      const hit = rows.find((r) => {
+        if (used.has(r.no) || claimed.has(r.no)) return false
+        const tags = new Set([...r.motifs, ...r.motifsEn])
+        return tags.has(motif)
+      })
+      if (hit) { used.add(hit.no); claimed.add(hit.no); nos.push(hit.no) }
+    }
+    return { id: route.id, zh: route.zh, en: route.en, nos: nos.sort((a, b) => a - b) }
+  }).filter((r) => r.nos.length > 0)
+  const routeButtons = routeMeta.map((r) => `      <button type="button" class="route" data-route="${r.id}"><span class="zh-copy">${r.zh}</span><span class="en-copy">${r.en}</span> <b>${r.nos.length}</b></button>`).join('\n')
+  const routeJson = JSON.stringify(routeMeta.map((r) => ({ id: r.id, zh: r.zh, en: r.en, nos: r.nos })))
 
   return `<!DOCTYPE html>
 <html lang="zh-CN" data-lang="zh">
@@ -141,6 +167,14 @@ function build() {
   .chip:hover { color:var(--gold); border-color:var(--gold-soft); }
   .chip[aria-pressed="true"] { color:#1a130a; background:var(--gold); border-color:var(--gold); }
   .chip b { font-weight:600; opacity:.72; margin-left:2px; }
+  .routes { display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:12px; }
+  .routes-label { width:100%; text-align:center; font-size:.64rem; letter-spacing:.28em; color:rgba(243,237,224,.38); text-transform:uppercase; margin-bottom:2px; }
+  .route { cursor:pointer; font-family:inherit; font-size:.74rem; color:var(--ink-dim); background:rgba(243,237,224,.04); border:1px dashed rgba(243,237,224,.2); border-radius:999px; padding:6px 14px; transition:all .2s ease; }
+  .route:hover { color:var(--gold); border-color:var(--gold-soft); }
+  .route[aria-pressed="true"] { color:#1a130a; background:var(--gold); border-color:var(--gold); border-style:solid; }
+  .route b { font-weight:600; opacity:.7; margin-left:3px; }
+  .step-tag { display:none; color:#1a130a; background:var(--gold); border-color:var(--gold); font-weight:600; }
+  .card.has-step .step-tag { display:inline-block; }
   .countline { margin:18px 0 10px; text-align:center; font-size:.76rem; color:var(--ink-dim); letter-spacing:.08em; }
   .grid { display:grid; gap:12px; grid-template-columns:repeat(3, minmax(0, 1fr)); }
   @media (max-width:900px) { .grid { grid-template-columns:repeat(2, minmax(0, 1fr)); } }
@@ -195,6 +229,11 @@ function build() {
       <button id="continueBtn" type="button"><span class="zh-copy">接着读</span><span class="en-copy">Continue reading</span></button>
       <button id="randomBtn" type="button"><span class="zh-copy">随便读一篇</span><span class="en-copy">Surprise me</span></button>
     </div>
+    <div class="routes" id="routes" role="group" aria-label="母题路径 · motif routes">
+      <span class="routes-label zh-copy">母题路径 · 不知从哪读起，就走一条</span>
+      <span class="routes-label en-copy">Motif routes · not sure where to start? walk one line</span>
+${routeButtons}
+    </div>
   </header>
 
   <section class="controls" aria-label="检索与筛选 · search and filters">
@@ -226,7 +265,7 @@ ${cards}
     try { localStorage.setItem('caesura-lang', l); } catch (e) { /* noop */ }
     var btn = document.getElementById('langToggle');
     if (btn) btn.textContent = l === 'en' ? '中文 / EN' : 'EN / 中文';
-    renderCount();
+    filter();
   }
   document.getElementById('langToggle').addEventListener('click', function () {
     var cur = root.getAttribute('data-lang');
@@ -238,6 +277,9 @@ ${cards}
   var active = null;
   var q = document.getElementById('q');
   var countline = document.getElementById('countline');
+  var ROUTES = ${routeJson};
+  var activeRoute = null;
+  var routeBtns = Array.prototype.slice.call(document.querySelectorAll('.route'));
 
   function isEN() { return root.getAttribute('data-lang') === 'en'; }
 
@@ -247,22 +289,35 @@ ${cards}
     readSet = (doc && doc.done) || {};
   } catch (e) { readSet = {}; }
   var readCount = 0;
-  var firstUnread = null;
   cards.forEach(function (c) {
     var slug = (c.getAttribute('href') || '').replace('/caesura/story/', '').replace(/\\/$/, '') || '(salt)';
     if (readSet[slug]) { c.classList.add('is-read'); readCount++; }
-    else if (!firstUnread) { firstUnread = c; }
   });
   document.getElementById('statRead').textContent = readCount;
   document.getElementById('statReadEn').textContent = readCount;
   document.getElementById('continueBtn').addEventListener('click', function () {
-    var target = firstUnread || cards[Math.floor(Math.random() * cards.length)];
+    var pool = cards.filter(function (c) { return !c.hidden });
+    var unread = pool.filter(function (c) { return !c.classList.contains('is-read') });
+    var target = unread[0] || pool[Math.floor(Math.random() * pool.length)] || cards[0];
     if (target) location.href = target.getAttribute('href');
   });
   document.getElementById('randomBtn').addEventListener('click', function () {
-    var pool = cards.filter(function (c) { return !c.hidden; });
+    var pool = cards.filter(function (c) { return !c.hidden });
     var target = pool[Math.floor(Math.random() * pool.length)] || cards[Math.floor(Math.random() * cards.length)];
     if (target) location.href = target.getAttribute('href');
+  });
+
+  routeBtns.forEach(function (b) {
+    b.addEventListener('click', function () {
+      var id = b.getAttribute('data-route');
+      activeRoute = activeRoute === id ? null : id;
+      if (activeRoute) {
+        active = null;
+        chips.forEach(function (x) { x.setAttribute('aria-pressed', 'false'); });
+      }
+      routeBtns.forEach(function (x) { x.setAttribute('aria-pressed', String(x.getAttribute('data-route') === activeRoute)); });
+      filter();
+    });
   });
 
   function motifCount(id) {
@@ -275,6 +330,10 @@ ${cards}
     b.addEventListener('click', function () {
       var id = b.getAttribute('data-motif');
       active = active === id ? null : id;
+      if (active) {
+        activeRoute = null;
+        routeBtns.forEach(function (x) { x.setAttribute('aria-pressed', 'false'); });
+      }
       chips.forEach(function (x) { x.setAttribute('aria-pressed', String(x.getAttribute('data-motif') === active)); });
       filter();
     });
@@ -283,21 +342,34 @@ ${cards}
   function filter() {
     var needle = (q.value || '').trim().toLowerCase();
     var shown = 0;
+    var route = null;
+    for (var i = 0; i < ROUTES.length; i++) { if (ROUTES[i].id === activeRoute) route = ROUTES[i]; }
+    var routeIndex = {};
+    if (route) route.nos.forEach(function (no, idx) { routeIndex[no] = idx + 1; });
     cards.forEach(function (c) {
+      var no = Number(c.getAttribute('data-no'));
+      var okRoute = !route || routeIndex[no] > 0;
       var okMotif = !active || (' ' + c.getAttribute('data-motifs') + ' ').indexOf(' ' + active + ' ') >= 0;
       var okText = !needle || (c.getAttribute('data-index') || '').indexOf(needle) >= 0;
-      var ok = okMotif && okText;
+      var ok = okRoute && okMotif && okText;
       c.hidden = !ok;
+      var step = route ? routeIndex[no] : 0;
+      c.classList.toggle('has-step', !!step);
+      var badge = c.querySelector('.step-tag');
+      if (badge) badge.textContent = step ? (isEN() ? 'Stop ' + step : '第 ' + step + ' 站') : '';
       if (ok) shown++;
     });
     document.getElementById('empty').classList.toggle('show', shown === 0);
-    renderCount(shown);
+    renderCount(shown, route);
   }
-  function renderCount(shown) {
+  function renderCount(shown, route) {
     var n = typeof shown === 'number' ? shown : cards.filter(function (c) { return !c.hidden }).length;
+    var name = route ? (isEN() ? route.en : route.zh) : '';
+    var readOnRoute = 0;
+    if (route) route.nos.forEach(function (no) { var c = document.querySelector('.card[data-no="' + no + '"]'); if (c && c.classList.contains('is-read')) readOnRoute++; });
     countline.textContent = isEN()
-      ? n + ' of ' + cards.length + ' stories' + (active ? ' · motif: ' + active : '')
-      : n + ' / ' + cards.length + ' 篇' + (active ? ' · 母题筛选' : '');
+      ? n + ' of ' + cards.length + ' stories' + (active ? ' · motif: ' + active : '') + (route ? ' · route: ' + name + ' (' + readOnRoute + '/' + route.nos.length + ' read)' : '')
+      : n + ' / ' + cards.length + ' 篇' + (active ? ' · 母题筛选' : '') + (route ? ' · 路径：' + name + '（已读 ' + readOnRoute + '/' + route.nos.length + '）' : '');
   }
   q.addEventListener('input', filter);
   apply(lang === 'zh-TW' || lang === 'en' ? lang : 'zh');
