@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "71f3a33fbf8c6b980136e4e34cf334d24651bbc7",
+  "head": "00b22fc04086dc15d87c3eadaa373fd1d90946c5",
   "branch": "master",
-  "subject": "第90篇《空着的一格》+ 全集/索引/控制台/教程/README/母题索引 90 篇对齐",
-  "date": "2026-11-22T22:18:54+08:00",
+  "subject": "余响索引母题打分：按频次+标题加权取前四，第90篇正确归入 empty",
+  "date": "2026-11-22T22:29:08+08:00",
   "kv": {
     "KI.rows": 659,
     "KI.Implemented": 482,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/71f3a33fbf8c6b980136e4e34cf334d24651bbc7",
+    "url": "https://github.com/xiaodernan/caesura/commit/00b22fc04086dc15d87c3eadaa373fd1d90946c5",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
