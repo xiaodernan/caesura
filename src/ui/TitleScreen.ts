@@ -450,6 +450,7 @@ export class TitleScreen {
       <nav class="qs-links" aria-label="${t('ui.title.links.aria')}">
         <a class="qs-link qs-guide" href="/caesura/tutorial/" data-act="goto-guide" aria-label="${t('ui.title.link.guide')}" data-tip="${t('ui.title.link.guide')}">${t('ui.title.link.guide')}</a>
         <a class="qs-link" href="/caesura/story/anthology/" data-act="goto-anthology" aria-label="${t('ui.title.link.atlas')}">${t('ui.title.link.atlas')}</a>
+        <a class="qs-link" href="/caesura/story/atlas/" data-act="goto-motifs" aria-label="${t('ui.title.link.motifs')}">${t('ui.title.link.motifs')}</a>
         <a class="qs-link" href="/caesura/codex/" data-act="goto-codex" aria-label="${t('ui.title.link.codex')}">${t('ui.title.link.codex')}</a>
       </nav>
       <button type="button" class="qs-start" data-act="qs-start" data-tip="${t('ui.title.tip.quickstart')}" aria-label="${t('ui.title.quickstart')}">

@@ -35,6 +35,7 @@ npm run dev            # Vite dev server；浏览器打开 http://localhost:5173
 - 《账本》（短篇原创之四）：<https://xiaodernan.github.io/caesura/story/ledger/>（休垒 · Meg 不敢合上的那一页账 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《回声庭园》（短篇原创之五）：<https://xiaodernan.github.io/caesura/story/garden/>（余响新陆 · 第六境 · 旧钟的主人 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《雨审判》（短篇原创之六）：<https://xiaodernan.github.io/caesura/story/tribunal/>（余响新陆 · 雨钟谷地 · 雨罪审判者 · 七年一庭 · 双语对照 · 零 LLM · 2026-11-15） ·  
+- **余响索引**（母题检索 · 八十六篇一键筛）: <https://xiaodernan.github.io/caesura/story/atlas/>（盐 / 碗 / 船 / 簿 / 门 / 钟 / 光 / 线 / 潮 / 灰 / 风 / 空 · 搜一个词找到所有写过它的故事 · 本机已读进度 · 零网络 · 零 LLM · 2026-11-22） ·  
 - 《余响集》（全集页 · 整册入口 · 支持一键打印成纸质卷）：<https://xiaodernan.github.io/caesura/story/anthology/>（八十六篇整册 · 史诗般总起预告 · EPIC-VII 实写落地 · 2026-11-22 增篇八十六《碗底的一线》） ·  
 - 《霜锤》（短篇原创之七）：<https://xiaodernan.github.io/caesura/story/frostbell/>（霜锤崖 · 末任钟匠 · 冻成冰的声音 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《千门》（短篇原创之八）：<https://xiaodernan.github.io/caesura/story/doors/>（回廊钟 · 一千扇门 · 守门人 · 双语对照 · 零 LLM · 2026-11-15） ·  

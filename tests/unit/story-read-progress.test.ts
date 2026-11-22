@@ -35,7 +35,7 @@ describe('KI-654 · 阅读进度 + 下一篇入口（KI-645 行动 #4）', () =>
     const pages = [
       'index.html',
       ...readdirSync(storyDir, { withFileTypes: true })
-        .filter((d) => d.isDirectory() && d.name !== 'anthology')
+        .filter((d) => d.isDirectory() && d.name !== 'anthology' && d.name !== 'atlas')
         .map((d) => `${d.name}/index.html`)
     ]
     expect(pages, 'expected salt root + 85 slugs').toHaveLength(86)
