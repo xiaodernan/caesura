@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "4138225f4207d6c2003a68fc6b8ab1d27a21513e",
+  "head": "1747c438faab6258a1dbb6452e95a664c5add9e3",
   "branch": "master",
-  "subject": "test(sim): sample the motif atlas in real-visitor runs and record 93-page readings",
-  "date": "2026-11-22T19:38:02+08:00",
+  "subject": "feat(atlas): continue-reading and surprise-me actions with a stable generator gate",
+  "date": "2026-11-22T20:17:27+08:00",
   "kv": {
     "KI.rows": 659,
     "KI.Implemented": 482,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/4138225f4207d6c2003a68fc6b8ab1d27a21513e",
+    "url": "https://github.com/xiaodernan/caesura/commit/1747c438faab6258a1dbb6452e95a664c5add9e3",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
