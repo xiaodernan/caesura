@@ -118,6 +118,22 @@ npm run build          # tsc + vite build + dist text scan — 0 findings
 - "A Night Within" (short fiction No.85): <https://xiaodernan.github.io/caesura/story/the-empty-bowl/> (the Arcade · at dawn, the salt remained by the threshold; the ledger stayed shut · LLM-drafted, human-gated · zero LLM · 2026-11-19) ·  
 - Sync truth: `https://raw.githubusercontent.com/xiaodernan/caesura/master/site-latest.json`
 
+## Stress runs (measured 2026-11-22)
+
+Two reproducible paths; the readings are recorded as-is:
+
+```bash
+node scripts/pressure-mesh.mjs --iterations=400 --concurrency=40
+# 400/400 ok · 0 errors · avg 195µs · p50/p95/p99 = 180/363/809µs · heap +1.1MB
+
+node scripts/stress-live.mjs --target=/caesura/ --concurrency=24 --rounds=2
+# 48/48 HTTP 200 with non-empty bodies · 0 failures · mean 267.5ms · p50 132ms · p95 424ms · p99 504ms · 305,136 bytes
+```
+
+The first measures our own routing chain / decision / transport-mock cost (in-process, deterministic);
+the second hammers the public read-only page and measures CDN + Pages concurrency and tail latency.
+Both are read-only; any non-zero failure rate exits 1.
+
 ## Where to read
 
 | Doc | What it covers |

@@ -127,6 +127,21 @@ npm run coverage       # 覆盖率棘轮门（空报表退化按 exit 2 记账�
 npm run build          # tsc + vite build + check-dist（产物：dist/）
 ```
 
+## 压力测试实测（2026-11-22）
+
+两条可复现的压测路径，读数原样记录，不做修饰：
+
+```bash
+node scripts/pressure-mesh.mjs --iterations=400 --concurrency=40
+# 400/400 成功 · 0 错误 · avg 195µs · p50/p95/p99 = 180/363/809µs · heap +1.1MB
+
+node scripts/stress-live.mjs --target=/caesura/ --concurrency=24 --rounds=2
+# 48/48 HTTP 200 且 body 非空 · 0 失败 · mean 267.5ms · p50 132ms · p95 424ms · p99 504ms · 305,136 bytes
+```
+
+前者测本侧路由链 / 决策 / transport mock 的开销（进程内、确定性）；后者打公网只读页面，
+测 CDN + Pages 的并发承受与尾部延迟。两者都只读、不改数据，失败率非零即退出码 1。
+
 ## 文档地图
 
 | 文档 | 内容 |
