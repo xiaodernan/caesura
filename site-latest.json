@@ -2,10 +2,10 @@
   "schema": 1,
   "repo": "xiaodernan/caesura",
   "defaultBranch": "master",
-  "head": "1747c438faab6258a1dbb6452e95a664c5add9e3",
+  "head": "d58c5386d6fa58e95ce7dd4b56590b13e1053600",
   "branch": "master",
-  "subject": "feat(atlas): continue-reading and surprise-me actions with a stable generator gate",
-  "date": "2026-11-22T20:17:27+08:00",
+  "subject": "content(story): essay 87 The Chip on the Rim; align anthology, atlas, console, tutorial, README",
+  "date": "2026-11-22T20:37:23+08:00",
   "kv": {
     "KI.rows": 659,
     "KI.Implemented": 482,
@@ -26,7 +26,7 @@
     "gameCloud": 94
   },
   "headMgt": {
-    "url": "https://github.com/xiaodernan/caesura/commit/1747c438faab6258a1dbb6452e95a664c5add9e3",
+    "url": "https://github.com/xiaodernan/caesura/commit/d58c5386d6fa58e95ce7dd4b56590b13e1053600",
     "ci": "check + spring-family-e2e green on every master push"
   }
 }
