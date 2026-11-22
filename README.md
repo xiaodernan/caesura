@@ -35,7 +35,7 @@ npm run dev            # Vite dev server；浏览器打开 http://localhost:5173
 - 《账本》（短篇原创之四）：<https://xiaodernan.github.io/caesura/story/ledger/>（休垒 · Meg 不敢合上的那一页账 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《回声庭园》（短篇原创之五）：<https://xiaodernan.github.io/caesura/story/garden/>（余响新陆 · 第六境 · 旧钟的主人 · 双语对照 · 零 LLM · 2026-11-15） ·  
 - 《雨审判》（短篇原创之六）：<https://xiaodernan.github.io/caesura/story/tribunal/>（余响新陆 · 雨钟谷地 · 雨罪审判者 · 七年一庭 · 双语对照 · 零 LLM · 2026-11-15） ·  
-- **余响索引**（母题检索 · 九十二篇一键筛 · 五条四站母题路径）: <https://xiaodernan.github.io/caesura/story/atlas/>（盐 / 碗 / 船 / 簿 / 门 / 钟 / 光 / 线 / 潮 / 灰 / 风 / 空 · 搜一个词找到所有写过它的故事 · 盐线 / 门线 / 船线 / 灰线 / 碗线互不抢篇 · 本机已读进度 · 零网络 · 零 LLM · 2026-11-22） ·  
+- **余响索引**（母题检索 · 九十二篇一键筛 · 六条四站母题路径）: <https://xiaodernan.github.io/caesura/story/atlas/>（盐 / 碗 / 船 / 簿 / 门 / 钟 / 光 / 线 / 潮 / 灰 / 风 / 空 · 搜一个词找到所有写过它的故事 · 盐线 / 门线 / 船线 / 灰线 / 碗线 / 钟线互不抢篇 · 本机已读进度 · 零网络 · 零 LLM · 2026-11-22） ·  
 - 《碗沿的缺口》（短篇原创之八十七）：<https://xiaodernan.github.io/caesura/story/the-chip-on-the-rim/>（回廊钟·碗沿的缺口 · 被日子磨圆 · 缺口朝里 · 不是所有缺都要补 · LLM 草稿 · 人工闸 · 零 LLM · 2026-11-22） ·  
 - 《门缝的风》（短篇原创之八十八）：<https://xiaodernan.github.io/caesura/story/the-wind-at-the-seam/>（回廊钟·门缝的风 · 风每年都来 · 缝一直都在 · 不是所有进来的都要留住 · LLM 草稿 · 人工闸 · 零 LLM · 2026-11-22） ·  
 - 《风在灰上写字》（短篇原创之八十九）：<https://xiaodernan.github.io/caesura/story/the-wind-writes-on-the-ash/>（回廊钟·冷火塘 · 灰替风记账 · 线每天换方向 · 有些账不抄下来才不会被记成债 · 双语对照 · 零 LLM · 2026-11-22） ·  

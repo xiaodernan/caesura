@@ -113,6 +113,7 @@ function build() {
     { id: 'boat-line', zh: '船线', en: 'Boat Line', motifs: ['boat', 'tide', 'empty', 'salt'] },
     { id: 'ash-line', zh: '灰线', en: 'Ash Line', motifs: ['ash', 'bell', 'light', 'empty'] },
     { id: 'bowl-line', zh: '碗线', en: 'Bowl Line', motifs: ['bowl', 'line', 'empty', 'door'] },
+    { id: 'bell-line', zh: '钟线', en: 'Bell Line', motifs: ['bell', 'line', 'empty', 'ash'] },
   ]
   const claimed = new Set()
   const routeMeta = ROUTES.map((route) => {

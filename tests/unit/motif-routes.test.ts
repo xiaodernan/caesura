@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 /**
  * 《余响索引》母题路径（M8-T1298）静态契约：
- *   · 5 条路径（盐 / 门 / 船 / 灰 / 碗），每条 4 站；
+ *   · 6 条路径（盐 / 门 / 船 / 灰 / 碗 / 钟），每条 4 站；
  *   · 每站必须对应真实卡片 data-no，且同一路径内不重复；
  *   · 页面内嵌 ROUTES JSON 与按钮 data-route 一一对应；
  *   · 卡片带 step-tag 槽位，路径模式才有内容。
@@ -13,10 +13,10 @@ import { describe, expect, it } from 'vitest'
 const ROOT = resolve(fileURLToPath(new URL('../..', import.meta.url)))
 const HTML = readFileSync(resolve(ROOT, 'story/atlas/index.html'), 'utf8')
 
-const ROUTE_IDS = ['salt-line', 'door-line', 'boat-line', 'ash-line', 'bowl-line']
+const ROUTE_IDS = ['salt-line', 'door-line', 'boat-line', 'ash-line', 'bowl-line', 'bell-line']
 
-describe('Motif Atlas · 母题路径（五条四站线）', () => {
-  it('五条路径按钮都在，各自 data-route 唯一', () => {
+describe('Motif Atlas · 母题路径（六条四站线）', () => {
+  it('六条路径按钮都在，各自 data-route 唯一', () => {
     const ids = [...HTML.matchAll(/class="route" data-route="([^"]+)"/g)].map((m) => m[1])
     expect(ids.sort()).toEqual([...ROUTE_IDS].sort())
   })
@@ -25,7 +25,7 @@ describe('Motif Atlas · 母题路径（五条四站线）', () => {
     const json = HTML.match(/var ROUTES = (\[[\s\S]*?\]);/)
     expect(json, '内嵌 ROUTES JSON 缺失').toBeTruthy()
     const routes = JSON.parse(json![1])
-    expect(routes).toHaveLength(5)
+    expect(routes).toHaveLength(6)
     const known = new Set([...HTML.matchAll(/class="card" href="[^"]*" data-no="(\d+)"/g)].map((m) => Number(m[1])))
     expect(known.size).toBe(92)
     for (const route of routes) {
@@ -35,11 +35,11 @@ describe('Motif Atlas · 母题路径（五条四站线）', () => {
     }
   })
 
-  it('路径互不抢篇（20 个站号全不同），每条路按篇号升序', () => {
+  it('路径互不抢篇（24 个站号全不同），每条路按篇号升序', () => {
     const routes = JSON.parse(HTML.match(/var ROUTES = (\[[\s\S]*?\]);/)![1])
     const all = routes.flatMap((r: any) => r.nos)
-    expect(all).toHaveLength(20)
-    expect(new Set(all).size).toBe(20)
+    expect(all).toHaveLength(24)
+    expect(new Set(all).size).toBe(24)
     for (const route of routes) {
       for (let i = 1; i < route.nos.length; i++) expect(route.nos[i]).toBeGreaterThan(route.nos[i - 1])
     }
