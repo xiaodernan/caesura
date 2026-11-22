@@ -20,11 +20,11 @@ describe('Motif Atlas 余响索引（story/atlas/index.html）', () => {
     expect(out).toContain('motif-atlas: OK')
   })
 
-  it('89 张卡片 · href 与 ORDER 一一对应', () => {
+  it('90 张卡片 · href 与 ORDER 一一对应', () => {
     const hrefs = [...HTML.matchAll(/<a class="card" href="([^"]+)"/g)].map((m) => m[1])
-    expect(hrefs).toHaveLength(89)
+    expect(hrefs).toHaveLength(90)
     const slugs = [...ORDER.matchAll(/slug: '([^']*)'/g)].map((m) => m[1])
-    expect(slugs).toHaveLength(89)
+    expect(slugs).toHaveLength(90)
     for (let i = 0; i < slugs.length; i++) {
       const expected = '/caesura/story/' + (slugs[i] ? slugs[i] + '/' : '')
       expect(hrefs[i], `card #${i + 1}`).toBe(expected)

@@ -102,7 +102,8 @@
     { slug: 'a-line-in-the-bowl', zh: '《碗底的一线》', en: 'A Line at the Bottom of the Bowl' },
     { slug: 'the-chip-on-the-rim', zh: '《碗沿的缺口》', en: 'The Chip on the Rim' },
     { slug: 'the-wind-at-the-seam', zh: '《门缝的风》', en: 'The Wind at the Seam' },
-    { slug: 'the-wind-writes-on-the-ash', zh: '《风在灰上写字》', en: 'The Wind Writes on the Ash' }
+    { slug: 'the-wind-writes-on-the-ash', zh: '《风在灰上写字》', en: 'The Wind Writes on the Ash' },
+    { slug: 'the-one-left-empty', zh: '《空着的一格》', en: 'The One Left Empty' }
   ];
 
   var PREFIX = '/caesura/story/';
@@ -177,7 +178,7 @@
                       : '/caesura/story/anthology/';
       var label = next
         ? (isEN ? 'Next · ' + next.en : '下一篇 · ' + next.zh)
-        : (isEN ? 'The Aftermath · all eighty-nine' : '余响集 · 八十九篇全集');
+        : (isEN ? 'The Aftermath · all ninety' : '余响集 · 九十篇全集');
       var tag = isEN ? (next ? 'Keep reading' : 'Read the whole volume') : (next ? '继续读下一页' : '读完全册');
       nextCard = document.createElement('a');
       nextCard.className = 'read-next';

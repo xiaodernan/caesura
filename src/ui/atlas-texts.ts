@@ -4460,5 +4460,54 @@ export const STORY_CHAPTERS: StoryChapter[] = [
     <p class="coda">Some accounts are never copied — and so never become debts.</p>
     <p class="coda">The age of hush has not ended. It has only gained one more line written on ash — the salt on the threshold, the thin ledger shut, the boat still, the wind having passed — and she was well too.</p>`,
   },
+  {
+    no: 90,
+    zhTitle: "空着的一格",
+    enTitle: "The One Left Empty",
+    zh: `    <p>回廊钟的东墙有一排灯龛，四十七格，一格一盏铜灯。阿汐数过很多回：四十六盏亮着，最末一格空着。</p>
+    <p>那一格不是灯坏了。里面没有钩子，没有灯座，连烟熏的痕迹也没有——好像砌墙的人砌到那里，忽然停下来，把这一格留给了墙自己。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>来的人不肯让一格空着。有人放一粒盐进去，有人放一枚铜扣，有人把自己路上捡的半截灯芯搁在格口。第二天再看，东西都不在了。不是被谁拿走：盐化进石头，铜扣落进墙缝，灯芯被穿堂风带走。那一格不存东西，也没打算存。</p>
+    <p>守灯的老人说，当年墙砌歪了一寸，这一格跟着歪，挂不住灯。后来没人来补，就让它空着。他说：空着的那一格比别的格干净，也比别的格亮——因为它不挡光。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>阿汐把手伸进去。里面没有风，没有凉，也没有回声。她的手在黑暗里待了一会儿，什么也没有摸到；退出来时，指尖上连灰都没有沾。</p>
+    <p>她忽然明白：这一格不是忘了装灯，它是让整面墙还能被数下去的那一格。数到四十六，总要有个地方停一停。</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>她翻开薄簿，把这一页的最后一行留给它：第四十七格，空。写完她没有合上簿，等墨自己干。墨干得很慢，像一个不肯马上被记下的答案。</p>
+    <p>第二天，一个赶路的人在那一格前站了很久。他说他一路上都在数灯，数到第四十六盏，就不知道再往前该往哪里走了；看见这一格空着，他反而知道该往哪里去了。</p>
+    <p>阿汐没有把灯补上。她把小扫帚靠在墙边，让那一格继续空着。灯是给走路的人看的；空着的那一格，是给数灯的人留的。</p>
+
+    <p class="coda">墙要留一格空着，数才数得下去。</p>
+    <p class="coda">不是所有的空都要填满——有些空格，是给走到这里的人留的。</p>
+    <p class="coda">止音纪元没有结束。它只是又多了一格空——盐在门槛上，薄簿合着，船停着，风来过，灯都亮着，只有一格留给没有灯的人——她也很好。</p>`,
+    en: `    <p>On the east wall of the Arcade of Echoes runs a row of lamp niches — forty-seven of them, one copper lamp apiece. Axi has counted them many times: forty-six are lit, and the last one is empty.</p>
+    <p>It is not that the lamp there broke. The niche has no hook, no socket, not even a soot stain — as if the builder had climbed to that spot, stopped, and left this one niche to the wall itself.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Visitors cannot bear to leave a single niche empty. Someone puts in a grain of salt, someone a copper button, someone half a wick picked up along the road. By the next day nothing is there. No one has taken it: the salt melts into the stone, the button drops into the seam, the wick is carried off by the through-draft. That niche keeps nothing, and never meant to.</p>
+    <p>The old lamplighter says the wall was laid an inch crooked, and this niche went with it, so no lamp would hang straight. No one came to mend it; they let it stay empty. He says: the empty one is cleaner than the others, and brighter too — because it does not block the light.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>Axi puts her hand inside. No wind there, no cold, no echo. Her hand stays in the dark a while and touches nothing; when she draws it out, not even ash clings to her fingertips.</p>
+    <p>She understands, suddenly: this niche did not forget a lamp — it is the one that lets the whole wall still be counted. When you have counted to forty-six, there must be a place to stop.</p>
+
+    <div class="beat">· · ·</div>
+
+    <p>She opens the thin ledger and gives the last line of the page to it: the forty-seventh niche, empty. She does not close the book when she has written; she waits for the ink to dry. It dries slowly, like an answer that refuses to be recorded at once.</p>
+    <p>The next day a traveler stands a long while before that niche. He says he had been counting the lamps all along the road, and when he reached the forty-sixth he no longer knew which way to go; seeing this one empty, he knew.</p>
+    <p>Axi does not fill it with a lamp. She leans the small broom against the wall and lets the niche stay empty. Lamps are for those who walk; the empty one is kept for those who count.</p>
+
+    <p class="coda">A wall must leave one niche empty, or the counting cannot go on.</p>
+    <p class="coda">Not every emptiness needs filling — some empty places are kept for whoever arrives here.</p>
+    <p class="coda">The age of hush has not ended. It has only gained one more empty niche — the salt on the threshold, the thin ledger shut, the boat still, the wind having passed, every lamp burning, one niche kept for those who carry no lamp — and she was well too.</p>`,
+  },
 ]
 
